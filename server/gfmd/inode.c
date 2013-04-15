@@ -797,6 +797,8 @@ inode_schedule_replication(
 			    user_name(inode_get_user(inode)),
 			    host_name(dst),
 			    gfarm_error_string(e));
+
+			/* prefer GFARM_ERR_NO_MEMORY to the first error */
 			if (save_e == GFARM_ERR_NO_ERROR ||
 			    e == GFARM_ERR_NO_MEMORY)
 				save_e = e;
@@ -806,6 +808,8 @@ inode_schedule_replication(
 		    != GFARM_ERR_NO_ERROR) {
 			/* may sleep */
 			file_replicating_free_by_error_before_request(fr);
+
+			/* prefer GFARM_ERR_NO_MEMORY to the first error */
 			if (save_e == GFARM_ERR_NO_ERROR ||
 			    e == GFARM_ERR_NO_MEMORY)
 				save_e = e;
@@ -832,7 +836,6 @@ inode_schedule_replication(
 		    (long long)inode_get_gen(inode),
 		    user_name(inode_get_user(inode)), n_success, n_desired);
 
-	/* prefer GFARM_ERR_NO_MEMORY to the first error */
 	return (save_e);
 }
 
@@ -1079,6 +1082,11 @@ update_replicas(struct inode *inode, struct host *spool_host,
 				 * the old one
 				 */
 				removal_pendingq_enqueue(deferred_cleanup);
+
+				/*
+				 * prefer GFARM_ERR_NO_MEMORY to the
+				 * first error
+				 */
 				if (save_e == GFARM_ERR_NO_ERROR ||
 				    e == GFARM_ERR_NO_MEMORY)
 					save_e = e;
@@ -1088,6 +1096,11 @@ update_replicas(struct inode *inode, struct host *spool_host,
 			    != GFARM_ERR_NO_ERROR) {
 				file_replicating_free_by_error_before_request(
 				    fr); /* may sleep */
+
+				/*
+				 * prefer GFARM_ERR_NO_MEMORY to the
+				 * first error
+				 */
 				if (save_e == GFARM_ERR_NO_ERROR ||
 				    e == GFARM_ERR_NO_MEMORY)
 					save_e = e;
@@ -1105,6 +1118,7 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	 * #673 - retry automatic replication when a request of
 	 * replication is failure
 	 */
+	/* avoid calling replica_check if GFARM_ERR_NO_MEMORY occurs */
 	if (save_e != GFARM_ERR_NO_ERROR && save_e != GFARM_ERR_NO_MEMORY)
 		replica_check_signal_rep_request_failed();
 }
@@ -3373,6 +3387,7 @@ inode_check_pending_replication(struct file_opening *fo)
 		 * #673 - retry automatic replication when a request of
 		 * replication is failure
 		 */
+		/* avoid calling replica_check if GFARM_ERR_NO_MEMORY occurs */
 		if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_MEMORY)
 			replica_check_signal_rep_request_failed();
 	}
