@@ -848,6 +848,8 @@ inode_schedule_replication(
 			    user_name(inode_get_user(inode)),
 			    host_name(dst),
 			    gfarm_error_string(e));
+
+			/* prefer GFARM_ERR_NO_MEMORY to the first error */
 			if (save_e == GFARM_ERR_NO_ERROR ||
 			    e == GFARM_ERR_NO_MEMORY)
 				save_e = e;
@@ -877,7 +879,6 @@ inode_schedule_replication(
 		    (long long)inode_get_gen(inode),
 		    user_name(inode_get_user(inode)), n_success, n_desired);
 
-	/* prefer GFARM_ERR_NO_MEMORY to the first error */
 	return (save_e);
 }
 
@@ -1129,6 +1130,11 @@ update_replicas(struct inode *inode, struct host *spool_host,
 				if (deferred_cleanup != NULL)
 					dead_file_copy_schedule_removal(
 					    deferred_cleanup);
+
+				/*
+				 * prefer GFARM_ERR_NO_MEMORY to the
+				 * first error
+				 */
 				if (save_e == GFARM_ERR_NO_ERROR ||
 				    e == GFARM_ERR_NO_MEMORY)
 					save_e = e;
@@ -1146,6 +1152,7 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	 * #673 - retry automatic replication when a request of
 	 * replication is failure
 	 */
+	/* avoid calling replica_check if GFARM_ERR_NO_MEMORY occurs */
 	if (save_e != GFARM_ERR_NO_ERROR && save_e != GFARM_ERR_NO_MEMORY)
 		replica_check_signal_rep_request_failed();
 }
@@ -3520,6 +3527,7 @@ inode_check_pending_replication(struct file_opening *fo)
 		 * #673 - retry automatic replication when a request of
 		 * replication is failure
 		 */
+		/* avoid calling replica_check if GFARM_ERR_NO_MEMORY occurs */
 		if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_MEMORY)
 			replica_check_signal_rep_request_failed();
 	}
