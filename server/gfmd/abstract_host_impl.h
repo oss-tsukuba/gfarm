@@ -29,7 +29,6 @@ struct abstract_host {
 	struct peer *peer;
 	int protocol_version;
 	int is_active;
-	gfarm_uint32_t peer_generation;
 
 	struct netsendq *sendq;
 };

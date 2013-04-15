@@ -99,7 +99,8 @@ struct inum_path_array *peer_findxmlattrctx_get(struct peer *);
 void peer_stat_add(struct peer *, unsigned int, int);
 
 gfarm_error_t peer_get_port(struct peer *, int *);
-gfarm_int64_t peer_get_id(struct peer *);
+gfarm_int64_t peer_get_private_peer_id(struct peer *);
+void peer_set_private_peer_id(struct peer *);
 struct peer* peer_get_parent(struct peer *);
 
 /* only used by gfmd channel */

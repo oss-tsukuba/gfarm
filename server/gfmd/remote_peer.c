@@ -29,6 +29,7 @@ struct remote_peer {
 
 	struct local_peer *parent_peer;
 	struct remote_peer *next_sibling;	/* must be a remote peer */
+	gfarm_uint64_t remote_peer_id;
 
 	int port, proto_family, proto_transport; /* for gfarm_file_trace */
 
@@ -261,7 +262,7 @@ remote_peer_alloc(struct peer *parent_peer, gfarm_int64_t remote_peer_id,
 	rp = local_peer_lookup_remote(parent_local_peer, remote_peer_id);
 	if (rp != NULL) {
 		/*
-		 * decrement refcount of 'lp', since is has been incremented
+		 * decrement refcount of 'rp', since is has been incremented
 		 * by local_peer_lookup_remote().
 		 */
 		peer_del_ref(remote_peer_to_peer(rp));
@@ -274,12 +275,13 @@ remote_peer_alloc(struct peer *parent_peer, gfarm_int64_t remote_peer_id,
 
 	peer = remote_peer_to_peer(remote_peer);
 	peer_construct_common(peer, &remote_peer_ops, diag);
-	peer->peer_id = remote_peer_id;
+	peer_set_private_peer_id(peer);
+
 	/* We don't pass auth_method for now */
 	peer_authorized_common(peer, auth_id_type, username, hostname, NULL,
 	    auth_method);
-
 	remote_peer->parent_peer = parent_local_peer;
+	remote_peer->remote_peer_id = remote_peer_id;
 	remote_peer->proto_family = proto_family;
 	remote_peer->proto_transport = proto_transport;
 	remote_peer->port = port;
@@ -315,7 +317,7 @@ remote_peer_id_lookup_from_siblings(struct remote_peer *remote_peer,
 	gfarm_int64_t remote_peer_id)
 {
 	for (; remote_peer != NULL; remote_peer = remote_peer->next_sibling) {
-		if (remote_peer->super.peer_id == remote_peer_id) {
+		if (remote_peer->remote_peer_id == remote_peer_id) {
 			peer_add_ref(&remote_peer->super);
 			return (remote_peer);
 		}

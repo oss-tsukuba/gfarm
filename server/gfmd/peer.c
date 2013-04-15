@@ -59,9 +59,10 @@ struct peer_closing_queue {
 	&peer_closing_queue.head
 };
 
-static const char peer_cookie_seqno_diag[] = "peer_cookie_seqno_mutex";
-static pthread_mutex_t peer_cookie_seqno_mutex = PTHREAD_MUTEX_INITIALIZER;
+static const char peer_seqno_diag[] = "peer_seqno_mutex";
+static pthread_mutex_t peer_seqno_mutex = PTHREAD_MUTEX_INITIALIZER;
 static gfarm_uint64_t cookie_seqno = 1;
+static gfarm_int64_t private_peer_id_seqno = 1;
 
 void
 peer_closer_wakeup(struct peer *peer)
@@ -229,6 +230,7 @@ peer_clear_common(struct peer *peer)
 	peer->user = NULL;
 	peer->host = NULL;
 	peer->peer_type = peer_type_foreground_channel;
+	peer->private_peer_id = 0;
 
 	/*
 	 * foreground channel
@@ -325,7 +327,7 @@ peer_free_common(struct peer *peer, const char *diag)
 	 * free common resources
 	 */
 
-	peer->peer_id = 0; /* to support remote peer */
+	peer->private_peer_id = 0;
 
 	peer->user = NULL;
 	peer->host = NULL;
@@ -379,9 +381,19 @@ peer_get_port(struct peer *peer, int *portp)
 }
 
 gfarm_int64_t
-peer_get_id(struct peer *peer)
+peer_get_private_peer_id(struct peer *peer)
 {
-	return (peer->peer_id);
+	return (peer->private_peer_id);
+}
+
+void
+peer_set_private_peer_id(struct peer *peer)
+{
+	static const char diag[] = "peer_set_private_peer_id";
+
+	gfarm_mutex_lock(&peer_seqno_mutex, diag, peer_seqno_diag);
+	peer->private_peer_id = private_peer_id_seqno++;
+	gfarm_mutex_unlock(&peer_seqno_mutex, diag, peer_seqno_diag);
 }
 
 struct peer *
@@ -622,11 +634,9 @@ peer_add_pending_new_generation_by_cookie(
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
-	gfarm_mutex_lock(&peer_cookie_seqno_mutex,
-	    diag, peer_cookie_seqno_diag);
+	gfarm_mutex_lock(&peer_seqno_mutex, diag, peer_seqno_diag);
 	result = cookie_seqno++;
-	gfarm_mutex_unlock(&peer_cookie_seqno_mutex,
-	    diag, peer_cookie_seqno_diag);
+	gfarm_mutex_unlock(&peer_seqno_mutex, diag, peer_seqno_diag);
 
 	cookie->inode = inode;
 	*cookiep = cookie->id = result;

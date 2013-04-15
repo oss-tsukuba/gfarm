@@ -964,7 +964,7 @@ gfmdc_client_remote_peer_alloc(struct peer *peer)
 	if ((e = gfmdc_slave_send_request_sync(NULL,
 	    gfmdc_client_remote_peer_alloc_result, NULL, diag,
 	    GFM_PROTO_REMOTE_PEER_ALLOC, "lissiii",
-	    peer_get_id(peer), peer_get_auth_id_type(peer),
+	    peer_get_private_peer_id(peer), peer_get_auth_id_type(peer),
 	    peer_get_username(peer), peer_get_hostname(peer),
 	    proto_family, proto_transport, port)) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_UNFIXED,
@@ -1010,24 +1010,23 @@ gfmdc_ensure_remote_peer(struct peer *peer, struct peer **mhpeerp)
 {
 	gfarm_error_t e;
 	struct local_peer *lpeer = peer_to_local_peer(peer);
-	struct abstract_host *mah, *lpeer_mah;
+	struct abstract_host *mah;
 	struct peer *my_mhpeer = NULL;
+	gfarm_int64_t master_id;
 	int retry_count = 0;
-	gfarm_uint32_t gen, lpeer_gen;
 	const char diag[] = "gfmdc_ensure_remote_peer";
 
 	for (;;) {
 		mah = mdhost_to_abstract_host(mdhost_lookup_master());
-		e = abstract_host_sender_lock(mah, &my_mhpeer, diag);
+		e = abstract_host_sender_lock(mah, NULL, &my_mhpeer, diag);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "%s (abstract_host_sender_lock): %s",
 			    diag, gfarm_error_string(e));
 			return (e);
 		}
-		gen = abstract_host_get_peer_generation(mah);
-		if (local_peer_get_remote_peer_allocated(lpeer, &lpeer_mah,
-			&lpeer_gen) && lpeer_mah == mah && lpeer_gen == gen)
+		master_id = peer_get_private_peer_id(my_mhpeer);
+		if (local_peer_get_remote_peer_allocated(lpeer))
 			break;
 		abstract_host_sender_unlock(mah, my_mhpeer, diag);
 
@@ -1044,7 +1043,7 @@ gfmdc_ensure_remote_peer(struct peer *peer, struct peer **mhpeerp)
 			    diag, gfarm_error_string(e));
 			return (e);
 		}
-		local_peer_set_remote_peer_allocated(lpeer, mah, gen);
+		local_peer_set_remote_peer_allocated(lpeer, master_id);
 		retry_count++;
 	}
 

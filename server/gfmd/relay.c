@@ -417,7 +417,7 @@ slave_request_relay(struct mdhost *master_mh,
 	 * |xid|size|request=GFM_PROTO_REMOTE_RPC|peer_id|command|arg...|
 	 */
 	e = slave_request_relay0(master_mh, r, command, format, app, isref,
-	    "il", GFM_PROTO_REMOTE_RPC, peer_get_id(peer));
+	    "il", GFM_PROTO_REMOTE_RPC, peer_get_private_peer_id(peer));
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s", gfarm_error_string(e));
@@ -1018,20 +1018,12 @@ request_reply_dynarg_master(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 		return (e);
 	}
 
-	if ((e = abstract_host_sender_lock(ah, &mhpeer, diag))
+	if ((e = abstract_host_sender_lock(ah, slave_mhpeer, &mhpeer, diag))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: %s (abstract_host_sender_lock): %s",
 		    diag, relay_diag, gfarm_error_string(e));
 		return (e);
-	}
-
-	if (mhpeer != slave_mhpeer) {
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "gfmd_channel(%s): peer switch during rpc relay reply",
-		    abstract_host_get_name(ah));
-		e = GFARM_ERR_CONNECTION_ABORTED;
-		goto unlock_sender;
 	}
 
 	if ((e = gfp_xdr_send_async_result_header(conn, xid, size))
@@ -1143,7 +1135,7 @@ request_reply_dynarg_slave(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 	relay_xid_allocated = 1;
 
 	if ((e = gfp_xdr_send(r->conn, "ili", GFM_PROTO_REMOTE_RPC,
-	    peer_get_id(peer), command)) != GFARM_ERR_NO_ERROR) {
+	    peer_get_private_peer_id(peer), command)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: %s (gfp_xdr_send): %s",
 		    diag, relay_diag, gfarm_error_string(e));
@@ -1552,17 +1544,11 @@ gfm_server_put_vreply(struct peer *peer, gfp_xdr_xid_t xid,
 		 */
 		slave_mhpeer = peer_get_parent(peer);
 		ah = mdhost_to_abstract_host(peer_get_mdhost(slave_mhpeer));
-		if ((e = abstract_host_sender_lock(ah, &mhpeer, diag))
-		    != GFARM_ERR_NO_ERROR) {
+		if ((e = abstract_host_sender_lock(ah, slave_mhpeer,
+		    &mhpeer, diag)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "%s: abstract_host_sender_lock(): %s",
 			    diag, gfarm_error_string(e));
-		} else if (mhpeer != slave_mhpeer) {
-			abstract_host_sender_unlock(ah, mhpeer, diag);
-			gflog_error(GFARM_MSG_UNFIXED, "gfmd_channel(%s): "
-			    "peer switch during rpc relay reply",
-			    abstract_host_get_name(ah));
-			e = GFARM_ERR_CONNECTION_ABORTED;
 		} else {
 			master_get_db_update_info(peer, &seqnum, &flags);
 			e = master_reply_relay(peer, xid, isref, diag,
@@ -1617,17 +1603,11 @@ gfm_server_put_vreply_begin(struct peer *peer, struct peer **slave_mhpeerp,
 		 */
 		slave_mhpeer = peer_get_parent(peer);
 		ah = mdhost_to_abstract_host(peer_get_mdhost(slave_mhpeer));
-		if ((e = abstract_host_sender_lock(ah, &mhpeer, diag))
-		    != GFARM_ERR_NO_ERROR) {
+		if ((e = abstract_host_sender_lock(ah, slave_mhpeer, &mhpeer,
+		    diag)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "%s: abstract_host_sender_lock(): %s",
 			    diag, gfarm_error_string(e));
-		} else if (mhpeer != slave_mhpeer) {
-			abstract_host_sender_unlock(ah, mhpeer, diag);
-			gflog_error(GFARM_MSG_UNFIXED, "gfmd_channel(%s): "
-			    "peer switch during rpc relay reply",
-			    abstract_host_get_name(ah));
-			e = GFARM_ERR_CONNECTION_ABORTED;
 		} else {
 			master_get_db_update_info(peer, &seqnum, &flags);
 			e = gfp_xdr_rpc_send_result_begin(

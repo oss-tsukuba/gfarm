@@ -73,7 +73,6 @@ abstract_host_init(struct abstract_host *h, struct abstract_host_ops *ops,
 	h->can_send = 1;
 	h->can_receive = 1;
 	h->is_active = 0;
-	h->peer_generation = 0;
 
 	gfarm_cond_init(&h->ready_to_send, diag, "ready_to_send");
 	gfarm_cond_init(&h->ready_to_receive, diag, "ready_to_receive");
@@ -209,18 +208,19 @@ abstract_host_get_peer(struct abstract_host *h, const char *diag)
 }
 
 /*
- * If abstract_host_get_peer_by_generation() is called and non-NULL value
+ * If abstract_host_get_peer_with_id() is called and non-NULL value
  * is returned, the same number of abstract_host_put_peer() calls should be
  * made.
  */
 struct peer *
-abstract_host_get_peer_by_generation(struct abstract_host *h,
-    gfarm_uint32_t generation, const char *diag)
+abstract_host_get_peer_with_id(struct abstract_host *h,
+    gfarm_int64_t private_peer_id, const char *diag)
 {
 	struct peer *peer = NULL;
 
 	abstract_host_mutex_lock(h, diag);
-	if (h->peer_generation == generation && h->peer != NULL) {
+	if (h->peer != NULL &&
+	    peer_get_private_peer_id(h->peer) == private_peer_id) {
 		peer = h->peer;
 		peer_add_ref(peer);
 	}
@@ -234,12 +234,6 @@ abstract_host_put_peer(struct abstract_host *h, struct peer *peer)
 {
 	if (peer != NULL)
 		peer_del_ref(peer);
-}
-
-gfarm_uint32_t
-abstract_host_get_peer_generation(struct abstract_host *h)
-{
-	return (h->peer_generation);
 }
 
 struct netsendq *
@@ -277,34 +271,38 @@ abstract_host_sender_trylock(struct abstract_host *host, struct peer **peerp,
 #endif
 
 gfarm_error_t
-abstract_host_sender_lock(struct abstract_host *host, struct peer **peerp,
-	const char *diag)
+abstract_host_sender_lock(struct abstract_host *host, struct peer *peer0,
+	struct peer **peerp, const char *diag)
 {
 	gfarm_error_t e;
-	struct peer *peer0;
+	struct peer *host_peer;
+	gfarm_int64_t private_peer_id0 = 0;
+
+	if (peer0 != NULL)
+		private_peer_id0 = peer_get_private_peer_id(peer0);
 
 	abstract_host_mutex_lock(host, diag);
 
 	for (;;) {
-		peer0 = host->peer;
-		if (peer0 == NULL) {
+		host_peer = host->peer;
+		if (host_peer == NULL) {
+			e = GFARM_ERR_CONNECTION_ABORTED;
+			break;
+		}
+		if (peer0 != NULL &&
+		    peer_get_private_peer_id(host_peer) != private_peer_id0) {
 			e = GFARM_ERR_CONNECTION_ABORTED;
 			break;
 		}
 		if (host->can_send) {
 			host->can_send = 0;
-			peer_add_ref(peer0);
-			*peerp = peer0;
+			peer_add_ref(host_peer);
+			*peerp = host_peer;
 			e = GFARM_ERR_NO_ERROR;
 			break;
 		}
 		gfarm_cond_wait(&host->ready_to_send, &host->mutex,
 		    diag, "ready_to_send");
-		/* peer comparison works only if at least one is a local peer */
-		if (host->peer != peer0) {
-			e = GFARM_ERR_CONNECTION_ABORTED;
-			break;
-		}
 	}
 
 	abstract_host_mutex_unlock(host, diag);
@@ -328,24 +326,33 @@ abstract_host_sender_unlock(struct abstract_host *host, struct peer *peer,
 }
 
 static gfarm_error_t
-abstract_host_receiver_lock(struct abstract_host *host, struct peer **peerp,
-	const char *diag)
+abstract_host_receiver_lock(struct abstract_host *host, struct peer *peer0,
+	struct peer **peerp, const char *diag)
 {
 	gfarm_error_t e;
-	struct peer *peer0;
+	struct peer *host_peer;
+	gfarm_int64_t private_peer_id0 = 0;
+
+	if (peer0 != NULL)
+		private_peer_id0 = peer_get_private_peer_id(peer0);
 
 	abstract_host_mutex_lock(host, diag);
 
 	for (;;) {
-		peer0 = host->peer;
-		if (peer0 == NULL) {
+		host_peer = host->peer;
+		if (host_peer == NULL) {
+			e = GFARM_ERR_CONNECTION_ABORTED;
+			break;
+		}
+		if (peer0 != NULL &&
+		    peer_get_private_peer_id(host_peer) != private_peer_id0) {
 			e = GFARM_ERR_CONNECTION_ABORTED;
 			break;
 		}
 		if (host->can_receive) {
 			host->can_receive = 0;
-			peer_add_ref(peer0);
-			*peerp = peer0;
+			peer_add_ref(host_peer);
+			*peerp = host_peer;
 			e = GFARM_ERR_NO_ERROR;
 			break;
 		}
@@ -357,11 +364,6 @@ abstract_host_receiver_lock(struct abstract_host *host, struct peer **peerp,
 		    abstract_host_get_name(host));
 		gfarm_cond_wait(&host->ready_to_receive,
 		    &host->mutex, diag, "ready_to_receive");
-		/* peer comparison works only if at least one is a local peer */
-		if (host->peer != peer0) {
-			e = GFARM_ERR_CONNECTION_ABORTED;
-			break;
-		}
 	}
 
 	abstract_host_mutex_unlock(host, diag);
@@ -404,7 +406,6 @@ abstract_host_set_peer(struct abstract_host *h, struct peer *p, int version)
 	h->protocol_version = version;
 	h->is_active = 1;
 	h->ops->set_peer_locked(h, p);
-	h->peer_generation++;
 
 	peer_add_ref(p);
 
@@ -598,7 +599,7 @@ async_server_main(struct local_peer *local_peer0,
 	gfarm_error_t e;
 	static const char diag[] = "gfm_server_channel_main";
 
-	e = abstract_host_receiver_lock(host, &peer,
+	e = abstract_host_receiver_lock(host, peer0, &peer,
 	    back_channel_type_name(peer0));
 	if (e != GFARM_ERR_NO_ERROR) { /* already disconnected */
 		gflog_error(GFARM_MSG_1002781,
@@ -723,7 +724,7 @@ async_client_sender_lock(struct abstract_host *host, struct peer *peer0,
 	gfarm_error_t e;
 	struct peer *peer;
 
-	e = abstract_host_sender_lock(host, &peer, diag);
+	e = abstract_host_sender_lock(host, peer0, &peer, diag);
 	if (e != GFARM_ERR_NO_ERROR) {
 #if 0 /* abstract_host_sender_trylock() need this, but sender_lock doesn't */
 		if (e == GFARM_ERR_DEVICE_BUSY) {
@@ -947,7 +948,7 @@ async_server_vput_wrapped_reply(struct abstract_host *host,
 	 * Since this is a reply, the peer is probably living,
 	 * thus, not using peer_sender_trylock() is mostly ok.
 	 */
-	if ((e = abstract_host_sender_lock(host, &peer, diag))
+	if ((e = abstract_host_sender_lock(host, peer0, &peer, diag))
 	    != GFARM_ERR_NO_ERROR)
 		return (e);
 

@@ -40,8 +40,5 @@ void local_peer_add_child(struct local_peer *,
 void local_peer_get_numeric_name(struct local_peer *, char *, size_t);
 void local_peer_for_child_peers(struct local_peer *,
 	void (*)(struct remote_peer **, void *), void *, const char *);
-void local_peer_set_remote_peer_allocated(struct local_peer *,
-	struct abstract_host *, gfarm_uint32_t);
-void local_peer_unset_remote_peer_allocated(struct local_peer *);
-int local_peer_get_remote_peer_allocated(struct local_peer *, 
-	struct abstract_host **, gfarm_uint32_t *);
+void local_peer_set_remote_peer_allocated(struct local_peer *, gfarm_int64_t);
+int local_peer_get_remote_peer_allocated(struct local_peer *);
