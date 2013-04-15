@@ -48,13 +48,19 @@ then
 	. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
 fi
 
-case $1 in
-    slavestart)
+CMD=$1
+case X$CMD in
+    Xslavestart)
 	OPTIONS="-S $OPTIONS"
+	CMD=start
+	;;
+    Xkill)
+	sig_stop=SIGKILL
+	CMD=stop
 	;;
 esac
 
 # add more flags through ${${name}_flags}
 command_args="-P $pidfile $OPTIONS"
 
-run_rc_command "$1"
+run_rc_command "$CMD"

@@ -56,10 +56,12 @@ start|slavestart)
 	$DAEMON -P "$PIDFILE" $OPTIONS
 	;;
 
-stop)
+stop|kill)
+	SIGNAL=TERM
+	[ $1 = kill ] && SIGNAL=KILL
 	if [ -f "$PIDFILE" ]; then
 		pid=`cat "$PIDFILE"`
-		if kill -TERM $pid; then
+		if kill -$SIGNAL $pid; then
 			while kill -0 $pid 2>/dev/null; do
 				echo "old $FILE (pid $pid) is still running, sleeping..."
 				logger -p ${warning_facility}.${warning_priority} "old $FILE (pid $pid) is still running, sleeping..."
@@ -94,7 +96,7 @@ status)
 	;;
 
 *)
-	echo "Usage: $0 { start | stop | restart | status }"
+	echo "Usage: $0 {start|slavestart|stop|kill|restart|status}"
 	exit 1
 	;;
 esac

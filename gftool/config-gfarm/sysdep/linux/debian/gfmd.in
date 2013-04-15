@@ -37,12 +37,18 @@ case "$1" in
 		--retry TERM/forever/-0/1 --exec $DAEMON
 	echo "."
 	;;
+  kill)
+	echo -n "Stopping gfarm server: $FILE"
+	start-stop-daemon --stop --signal KILL --quiet --pidfile $PIDFILE \
+		--retry TERM/forever/-0/1 --exec $DAEMON
+	echo "."
+	;;
   restart|force-reload)
 	$0 stop
 	$0 start
 	;;
   *)
-	echo "Usage: /etc/init.d/$FILE {start|stop|restart}"
+	echo "Usage: /etc/init.d/$FILE {start|slavestart|stop|kill|restart|force-reload}"
 	exit 1
 	;;
 esac
