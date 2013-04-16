@@ -446,6 +446,58 @@ get_all_hostids()
 }
 
 #
+# Output host-IDs of all gfmd targets ("gfmd1", "gfmd2", ...) to standard out.
+#
+get_gfmd_hostids()
+{
+	log_debug "get_gfmd_hostids"
+
+	I=1
+	while true; do
+		[ "X`eval echo \\$gfmd$I`" = X ] && break
+		echo "gfmd$I"
+		I=`expr $I + 1`
+	done
+
+	log_debug "end get_gfmd_hostids"
+}
+
+#
+# Output host-IDs of all gfsd targets ("gfsd1", "gfsd2", ...) to standard out.
+#
+get_gfsd_hostids()
+{
+	log_debug "get_gfsd_hostids"
+
+	I=1
+	while true; do
+		[ "X`eval echo \\$gfsd$I`" = X ] && break
+		eval echo "gfsd$I"
+		I=`expr $I + 1`
+	done
+
+	log_debug "end get_gfsd_hostids"
+}
+
+#
+# Output host-IDs of all client targets ("client1", "client2", ...) to
+# standard out.
+#
+get_client_hostids()
+{
+	log_debug "get_client_hostids"
+
+	I=1
+	while true; do
+		[ "X`eval echo \\$client$I`" = X ] && break
+		eval echo "client$I"
+		I=`expr $I + 1`
+	done
+
+	log_debug "end get_client_hostids"
+}
+
+#
 # Distribute 'gfarm2.conf' file to all hosts.
 #
 distribute_gfarm_conf()
@@ -472,17 +524,44 @@ distribute_shared_key()
 {
 	log_debug "distribute_shared_key: FILE=$1"
 
-	get_all_hostids | while read DIST_HOSTID; do
+	get_gfmd_hostids | while read DIST_HOSTID; do
 		for DIST_USER in - _gfarmfs _gfarmmd; do
-			exec_client_host_agent $DIST_HOSTID $DIST_USER \
+			exec_gfmd_host_agent $DIST_HOSTID $DIST_USER \
 				restore-shared-key < "$1"
 			if [ $? -ne 0 ]; then
-				log_error "gfservice restore-shared-key" \
+				log_warn "gfservice restore-shared-key" \
 					"$DIST_USER@$DIST_HOSTID failed"
+				continue
 			fi
 			log_debug "distribute_shared_key: distributed to" \
 				"$DIST_USER@$DIST_HOSTID"
 		done
+	done
+
+	get_gfsd_hostids | while read DIST_HOSTID; do
+		for DIST_USER in - _gfarmfs; do
+			exec_gfsd_host_agent $DIST_HOSTID $DIST_USER \
+				restore-shared-key < "$1"
+			if [ $? -ne 0 ]; then
+				log_warn "gfservice restore-shared-key" \
+					"$DIST_USER@$DIST_HOSTID failed"
+				continue
+			fi
+			log_debug "distribute_shared_key: distributed to" \
+				"$DIST_USER@$DIST_HOSTID"
+		done
+	done
+
+	get_client_hostids | while read DIST_HOSTID; do
+		exec_client_host_agent $DIST_HOSTID - \
+			restore-shared-key < "$1"
+		if [ $? -ne 0 ]; then
+			log_warn "gfservice restore-shared-key" \
+				"$USER@$DIST_HOSTID failed"
+			continue
+		fi
+		log_debug "distribute_shared_key: distributed to" \
+			"$USER@$DIST_HOSTID"
 	done
 
 	log_debug "end distribute_shared_key"
