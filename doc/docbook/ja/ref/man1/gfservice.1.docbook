@@ -353,6 +353,15 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
+<term><command>kill-gfmd</command></term>
+<listitem>
+<para>
+<command>gfmd</command> が実行中なら、強制停止 (SIGKILL を送付) します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><command>restart-backend-db</command></term>
 <listitem>
 <para>
