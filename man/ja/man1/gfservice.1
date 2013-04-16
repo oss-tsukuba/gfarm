@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE" "1" "15 February 2013" "Gfarm" ""
+.TH "GFSERVICE" "1" "16 April 2013" "Gfarm" ""
 
 .SH NAME
 gfservice \- リモートホストから Gfarm のサーバーを制御する。
@@ -195,6 +195,9 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 \fBstop-gfarm\fR
 バックエンドデータベースおよび \fBgfmd\fR が実行中なら、
 実行を停止します。
+.TP
+\fBkill-gfmd\fR
+\fBgfmd\fR が実行中なら、強制停止 (SIGKILL を送付) します。
 .TP
 \fBrestart-backend-db\fR
 サブコマンド \fBstop-backend-db\fR と

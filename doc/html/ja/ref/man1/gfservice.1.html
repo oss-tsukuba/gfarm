@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfservice</B
-> [<TT
+>  [<TT
 CLASS="REPLACEABLE"
 ><I
 >オプション</I
@@ -170,17 +170,13 @@ TYPE="1"
 >「<CODE
 CLASS="OPTION"
 >-f</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->ファイル</I
-></TT
+>ファイル</CODE
 >」オプションが指定
-されていれば、その<TT
+されていれば、その<CODE
 CLASS="PARAMETER"
-><I
->ファイル</I
-></TT
+>ファイル</CODE
 >を読み込みます。</P
 ></LI
 ><LI
@@ -323,19 +319,15 @@ CLASS="COMMAND"
 ><CODE
 CLASS="OPTION"
 >-f</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->ファイル</I
-></TT
+>ファイル</CODE
 ></DT
 ><DD
 ><P
->デフォルトの設定ファイルの代わりに、「<TT
+>デフォルトの設定ファイルの代わりに、「<CODE
 CLASS="PARAMETER"
-><I
->ファイル</I
-></TT
+>ファイル</CODE
 >」を
 読み込みます。</P
 ></DD
@@ -343,19 +335,15 @@ CLASS="PARAMETER"
 ><CODE
 CLASS="OPTION"
 >-t</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->時間</I
-></TT
+>時間</CODE
 ></DT
 ><DD
 ><P
->操作のタイムアウトを、「<TT
+>操作のタイムアウトを、「<CODE
 CLASS="PARAMETER"
-><I
->時間</I
-></TT
+>時間</CODE
 >」秒とします。
 <B
 CLASS="COMMAND"
@@ -366,11 +354,9 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >gfservice</B
 > の指定時間が経過するかまで待ちます。
-「<TT
+「<CODE
 CLASS="PARAMETER"
-><I
->時間</I
-></TT
+>時間</CODE
 >」として 「no」を指定すると、タイムアウトは
 起きなくなります。
 デフォルト値は、「no」です。</P
@@ -628,6 +614,18 @@ CLASS="COMMAND"
 ><DT
 ><B
 CLASS="COMMAND"
+>kill-gfmd</B
+></DT
+><DD
+><P
+><B
+CLASS="COMMAND"
+>gfmd</B
+> が実行中なら、強制停止 (SIGKILL を送付) します。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
 >restart-backend-db</B
 ></DT
 ><DD
@@ -765,16 +763,12 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >set-gfmd-conf</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
-> <TT
+>設定名称</CODE
+> <CODE
 CLASS="PARAMETER"
-><I
->値</I
-></TT
+>値</CODE
 ></DT
 ><DD
 ><P
@@ -784,16 +778,12 @@ CLASS="FILENAME"
 > ファイルに</P
 ><P
 CLASS="LITERALLAYOUT"
->	<TT
+>	<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
->&nbsp;<TT
+>設定名称</CODE
+>&nbsp;<CODE
 CLASS="PARAMETER"
-><I
->値</I
-></TT
+>値</CODE
 ></P
 ><P
 >という行を加えます。
@@ -801,11 +791,9 @@ CLASS="PARAMETER"
 CLASS="FILENAME"
 >gfmd.conf</TT
 > に
-「<TT
+「<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>設定名称</CODE
 >」という行が存在している場合、
 <B
 CLASS="COMMAND"
@@ -816,11 +804,9 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >unset-gfmd-conf</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>設定名称</CODE
 ></DT
 ><DD
 ><P
@@ -828,20 +814,16 @@ CLASS="PARAMETER"
 CLASS="FILENAME"
 >gfmd.conf</TT
 > ファイルから
-「<TT
+「<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>設定名称</CODE
 >」行を削除します。
 <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> ファイルに「<TT
+> ファイルに「<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>設定名称</CODE
 >」
 行がない場合、ファイルは更新されません。</P
 ></DD
@@ -985,11 +967,9 @@ gfmd のレプリケーションが自動的に有効になります。</P
 ><B
 CLASS="COMMAND"
 >config-gfarm-slave</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->マスタホスト ID</I
-></TT
+>マスタホスト ID</CODE
 ></DT
 ><DD
 ><P
@@ -998,11 +978,9 @@ CLASS="COMMAND"
 >config-gfarm</B
 > と基本的に同じですが、
 レプリケーション機能が自動的に有効になり、
-「<TT
+「<CODE
 CLASS="PARAMETER"
-><I
->マスタホスト ID</I
-></TT
+>マスタホスト ID</CODE
 >」上で動作する gfmd のスレーブ
 として動作します。
 <B
@@ -1074,11 +1052,9 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >unconfig-gfarm-slave</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->マスタホスト ID</I
-></TT
+>マスタホスト ID</CODE
 ></DT
 ><DD
 ><P
@@ -1290,31 +1266,23 @@ CLASS="VARIABLELIST"
 ><B
 CLASS="COMMAND"
 >mount</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->ディレクトリ</I
-></TT
-> <TT
+>ディレクトリ</CODE
+> <CODE
 CLASS="PARAMETER"
-><I
->オプション...</I
-></TT
+>オプション...</CODE
 ></DT
 ><DD
 ><P
->リモートホスト上の「<TT
+>リモートホスト上の「<CODE
 CLASS="PARAMETER"
-><I
->ディレクトリ</I
-></TT
+>ディレクトリ</CODE
 >」に、Gfarm2
 ファイルシステムをマウントします。
-引数「<TT
+引数「<CODE
 CLASS="PARAMETER"
-><I
->オプション</I
-></TT
+>オプション</CODE
 >」は <B
 CLASS="COMMAND"
 >gfarm2fs</B
@@ -1338,19 +1306,15 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >unmount</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->ディレクトリ</I
-></TT
+>ディレクトリ</CODE
 ></DT
 ><DD
 ><P
->リモートホスト上の「<TT
+>リモートホスト上の「<CODE
 CLASS="PARAMETER"
-><I
->ディレクトリ</I
-></TT
+>ディレクトリ</CODE
 >」にマウントされた
 Gfarm2 ファイルシステムをアンマウントします。</P
 ></DD
@@ -1358,11 +1322,9 @@ Gfarm2 ファイルシステムをアンマウントします。</P
 ><B
 CLASS="COMMAND"
 >umount</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->ディレクトリ</I
-></TT
+>ディレクトリ</CODE
 ></DT
 ><DD
 ><P
@@ -1375,16 +1337,12 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >set-gfarm-conf</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
-> <TT
+>設定名称</CODE
+> <CODE
 CLASS="PARAMETER"
-><I
->値</I
-></TT
+>値</CODE
 ></DT
 ><DD
 ><P
@@ -1394,16 +1352,12 @@ CLASS="FILENAME"
 > ファイルに</P
 ><P
 CLASS="LITERALLAYOUT"
->	<TT
+>	<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
->&nbsp;<TT
+>設定名称</CODE
+>&nbsp;<CODE
 CLASS="PARAMETER"
-><I
->値</I
-></TT
+>値</CODE
 ></P
 ><P
 >という行を加えます。
@@ -1411,11 +1365,9 @@ CLASS="PARAMETER"
 CLASS="FILENAME"
 >gfarm2.conf</TT
 > に
-「<TT
+「<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>設定名称</CODE
 >」という行が存在している場合、
 <B
 CLASS="COMMAND"
@@ -1426,11 +1378,9 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >unset-gfarm-conf</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>設定名称</CODE
 ></DT
 ><DD
 ><P
@@ -1438,20 +1388,16 @@ CLASS="PARAMETER"
 CLASS="FILENAME"
 >gfarm2.conf</TT
 > ファイルから
-「<TT
+「<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>設定名称</CODE
 >」行を削除します。
 <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> ファイルに「<TT
+> ファイルに「<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>設定名称</CODE
 >」
 行がない場合、ファイルは更新されません。</P
 ></DD
@@ -1547,17 +1493,13 @@ CLASS="FILENAME"
 CLASS="COMMAND"
 >gfcmd</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->command-name</I
-></TT
+>command-name</CODE
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->command-argument ...</I
-></TT
+>command-argument ...</CODE
 ></DT
 ><DD
 ><P
@@ -1692,27 +1634,27 @@ CLASS="REPLACEABLE"
 CLASS="COMMAND"
 >gfservice</B
 >から実行される
-"<TT
+"<CODE
 CLASS="FUNCTION"
 >subcmd_<TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
-></TT
+></CODE
 >"という名
 前のシェル関数、 <B
 CLASS="COMMAND"
 >gfservice-agent</B
 >から実行される
-"<TT
+"<CODE
 CLASS="FUNCTION"
 >subcmd_<TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
->_agent</TT
+>_agent</CODE
 >"
 という名前のシェル関数が実装されている必要があります。</P
 ><P
@@ -1723,27 +1665,27 @@ CLASS="REPLACEABLE"
 >name</I
 ></TT
 >" のサブコマンドファイル
-は、 "<TT
+は、 "<CODE
 CLASS="FUNCTION"
 ><TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
->_depends</TT
+>_depends</CODE
 >" と
 いう名前のシェル関数で、そのサブコマンドが依存している他のサブコマンド
 のリストを返す必要があります．サブコマンドのリストはスペースで区切られ
 たサブコマンドの文字列です．依存している他のサブコマンドがない場合は空文字列を返して
 下さい。同様に、サブコマンドファイルは
-"<TT
+"<CODE
 CLASS="FUNCTION"
 ><TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
->_agent_depends</TT
+>_agent_depends</CODE
 >"
 という名前のシェル関数で、そのサブコマンドのエージェントが依存している
 他のサブコマンドのリストを返す必要があります。</P
