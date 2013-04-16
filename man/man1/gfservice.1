@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE" "1" "15 February 2013" "Gfarm" ""
+.TH "GFSERVICE" "1" "16 April 2013" "Gfarm" ""
 
 .SH NAME
 gfservice \- control Gfarm servers from a remote host
@@ -190,6 +190,9 @@ Stop \fBgfmd\fR if it is running currently.
 \fBstop-gfarm\fR
 Stop \fBgfmd\fR and a backend database if they are running
 currently.
+.TP
+\fBkill-gfmd\fR
+Kill \fBgfmd\fR (send SIGKILL) if it is running currently.
 .TP
 \fBrestart-backend-db\fR
 Perform "\fBstop-backend-db\fR" and 

@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfservice</B
-> [<TT
+>  [<TT
 CLASS="REPLACEABLE"
 ><I
 >options</I
@@ -168,17 +168,13 @@ TYPE="1"
 ><CODE
 CLASS="OPTION"
 >-f</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->file</I
-></TT
+>file</CODE
 > option is specified, read
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->file</I
-></TT
+>file</CODE
 >.</P
 ></LI
 ><LI
@@ -208,9 +204,12 @@ Note that the configuration file itself is a Bourne-shell script and
 CLASS="COMMAND"
 >gfservice</B
 > includes (exactly to say, 
-<I
+<SPAN
+CLASS="emphasis"
+><I
 CLASS="EMPHASIS"
 >evaluates</I
+></SPAN
 >) the file.
 See gfservice.conf(5) for more details about the configuration file.</P
 ><P
@@ -326,55 +325,43 @@ CLASS="COMMAND"
 ><CODE
 CLASS="OPTION"
 >-f</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->file</I
-></TT
+>file</CODE
 ></DT
 ><DD
 ><P
->Read configuration from <TT
+>Read configuration from <CODE
 CLASS="PARAMETER"
-><I
->file</I
-></TT
+>file</CODE
 > instead of the default.</P
 ></DD
 ><DT
 ><CODE
 CLASS="OPTION"
 >-t</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->time</I
-></TT
+>time</CODE
 ></DT
 ><DD
 ><P
->Set operation timeout in <TT
+>Set operation timeout in <CODE
 CLASS="PARAMETER"
-><I
->time</I
-></TT
+>time</CODE
 > seconds.
 When <B
 CLASS="COMMAND"
 >gfservice</B
 > tries to start or stop a server program
 (gfmd, gfsd or a backend database), it waits until the operation is complete
-or <TT
+or <CODE
 CLASS="PARAMETER"
-><I
->time</I
-></TT
+>time</CODE
 > interval is elapsed.
-If "no" is specified as <TT
+If "no" is specified as <CODE
 CLASS="PARAMETER"
-><I
->time</I
-></TT
+>time</CODE
 >, timeout never occurs.
 The default value is "no".</P
 ></DD
@@ -637,6 +624,18 @@ currently.</P
 ><DT
 ><B
 CLASS="COMMAND"
+>kill-gfmd</B
+></DT
+><DD
+><P
+>Kill <B
+CLASS="COMMAND"
+>gfmd</B
+> (send SIGKILL) if it is running currently.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
 >restart-backend-db</B
 ></DT
 ><DD
@@ -774,32 +773,24 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >set-gfmd-conf</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
-> <TT
+>directive</CODE
+> <CODE
 CLASS="PARAMETER"
-><I
->value</I
-></TT
+>value</CODE
 ></DT
 ><DD
 ><P
 >Add</P
 ><P
 CLASS="LITERALLAYOUT"
->	<TT
+>	<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
->&nbsp;<TT
+>directive</CODE
+>&nbsp;<CODE
 CLASS="PARAMETER"
-><I
->value</I
-></TT
+>value</CODE
 ></P
 ><P
 >line to <TT
@@ -810,11 +801,9 @@ If <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
 > already has a
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 > line, <B
 CLASS="COMMAND"
 >gfservice</B
@@ -825,19 +814,15 @@ deletes it and then add a new line.</P
 ><B
 CLASS="COMMAND"
 >unset-gfmd-conf</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 ></DT
 ><DD
 ><P
->Delete a <TT
+>Delete a <CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 > line in
 <TT
 CLASS="FILENAME"
@@ -847,11 +832,9 @@ If <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
 > file doesn't contain
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 > line, the file is unchanged.</P
 ></DD
 ><DT
@@ -999,11 +982,9 @@ but gfmd replication is enabled automatically.</P
 ><B
 CLASS="COMMAND"
 >config-gfarm-slave</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->master-host-id</I
-></TT
+>master-host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1012,11 +993,9 @@ CLASS="COMMAND"
 >config-gfarm</B
 >
 but gfmd replication is enabled automatically and the remote gfmd host
-is configured as a slave of <TT
+is configured as a slave of <CODE
 CLASS="PARAMETER"
-><I
->master-host-id</I
-></TT
+>master-host-id</CODE
 >.
 Then <B
 CLASS="COMMAND"
@@ -1094,11 +1073,9 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >unconfig-gfarm-slave</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->master-host-id</I
-></TT
+>master-host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1318,31 +1295,23 @@ CLASS="VARIABLELIST"
 ><B
 CLASS="COMMAND"
 >mount</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->directory</I
-></TT
-> <TT
+>directory</CODE
+> <CODE
 CLASS="PARAMETER"
-><I
->option...</I
-></TT
+>option...</CODE
 ></DT
 ><DD
 ><P
->Mount a Gfarm2 filesystem on <TT
+>Mount a Gfarm2 filesystem on <CODE
 CLASS="PARAMETER"
-><I
->directory</I
-></TT
+>directory</CODE
 > on the
 remote host.
-The argument <TT
+The argument <CODE
 CLASS="PARAMETER"
-><I
->option</I
-></TT
+>option</CODE
 > is an option to 
 <B
 CLASS="COMMAND"
@@ -1367,19 +1336,15 @@ more details about the configuration file.</P
 ><B
 CLASS="COMMAND"
 >unmount</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->directory</I
-></TT
+>directory</CODE
 ></DT
 ><DD
 ><P
->Unmount a Gfarm2 filesystem on <TT
+>Unmount a Gfarm2 filesystem on <CODE
 CLASS="PARAMETER"
-><I
->directory</I
-></TT
+>directory</CODE
 > on the
 remote host.</P
 ></DD
@@ -1387,11 +1352,9 @@ remote host.</P
 ><B
 CLASS="COMMAND"
 >umount</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->directory</I
-></TT
+>directory</CODE
 ></DT
 ><DD
 ><P
@@ -1404,32 +1367,24 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >set-gfarm-conf</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
-> <TT
+>directive</CODE
+> <CODE
 CLASS="PARAMETER"
-><I
->value</I
-></TT
+>value</CODE
 ></DT
 ><DD
 ><P
 >Add</P
 ><P
 CLASS="LITERALLAYOUT"
->	<TT
+>	<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
->&nbsp;<TT
+>directive</CODE
+>&nbsp;<CODE
 CLASS="PARAMETER"
-><I
->value</I
-></TT
+>value</CODE
 ></P
 ><P
 >line to <TT
@@ -1440,11 +1395,9 @@ If <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
 > already has a
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 > line, <B
 CLASS="COMMAND"
 >gfservice</B
@@ -1455,19 +1408,15 @@ deletes it and then add a new line.</P
 ><B
 CLASS="COMMAND"
 >unset-gfarm-conf</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 ></DT
 ><DD
 ><P
->Delete a <TT
+>Delete a <CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 > line in
 <TT
 CLASS="FILENAME"
@@ -1477,11 +1426,9 @@ If <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
 > file doesn't contain
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 > line, the file is unchanged.</P
 ></DD
 ><DT
@@ -1575,17 +1522,13 @@ on the remote host.</P
 CLASS="COMMAND"
 >gfcmd</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->command-name</I
-></TT
+>command-name</CODE
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->command-argument ...</I
-></TT
+>command-argument ...</CODE
 ></DT
 ><DD
 ><P
@@ -1713,27 +1656,27 @@ CLASS="REPLACEABLE"
 ></TT
 >", must have
 shell function named
-"<TT
+"<CODE
 CLASS="FUNCTION"
 >subcmd_<TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
-></TT
+></CODE
 >" which
 will be executed from <B
 CLASS="COMMAND"
 >gfservice</B
 >, and
-"<TT
+"<CODE
 CLASS="FUNCTION"
 >subcmd_<TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
->_agent</TT
+>_agent</CODE
 >"
 which will be executed from <B
 CLASS="COMMAND"
@@ -1748,27 +1691,27 @@ CLASS="REPLACEABLE"
 >name</I
 ></TT
 >", must have shell function named
-"<TT
+"<CODE
 CLASS="FUNCTION"
 ><TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
->_depends</TT
+>_depends</CODE
 >" which
 must return list of sub-commands. List of sub-commands must be a
 string which is space separated list of sub-command names. If
 sub-command or it's agent does not have dependencies, return empty
 string.  Similarly, sub-command file must have shell function named
-"<TT
+"<CODE
 CLASS="FUNCTION"
 ><TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
->_agent_depends</TT
+>_agent_depends</CODE
 >"
 which must return list of sub-command's agents.</P
 ></DIV
