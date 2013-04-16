@@ -499,6 +499,32 @@ stop_gfsd()
 	return 0
 }
 
+#
+# Kill gfmd.
+#   TO DO: Don't execute $GFMD_RC.  Use service_ctl instead.
+#
+kill_gfmd()
+{
+	log_debug "kill_gfmd: TIMEOUT=$1"
+
+	I=0
+	STOPPED=false
+	while [ "X$1" = Xno ] || [ $I -le "$1" ]; do
+		$GFMD_RC status > /dev/null 2>&1
+		if [ $? -eq 3 -o $? -eq 127 ]; then
+			STOPPED=true
+			break
+		fi
+		[ $I -eq 0 ] && $GFMD_RC kill > /dev/null 2>&1
+		sleep 1
+		I=`expr $I + 1`
+	done
+
+	[ $STOPPED != true ] && log_error "failed to kill gfmd"
+	log_debug "end kill_gfmd"
+	return 0
+}
+
 ######################################################################
 
 #
@@ -719,6 +745,22 @@ subcmd_stop_gfmd()
 	stop_gfmd $TIMEOUT
 
 	log_debug "end subcmd_stop_gfmd"
+}
+
+#
+# Sub-command: Kill-gfmd
+# Kill gfmd.
+#
+subcmd_kill_gfmd()
+{
+	log_debug "subcmd_kill_gfmd"
+
+	set_gfmd_params
+	TIMEOUT=`get_param timeout || echo 'no'`
+	log_debug "subcmd_kill_gfmd: timeout=$TIMEOUT"
+	kill_gfmd $TIMEOUT
+
+	log_debug "end subcmd_kill_gfmd"
 }
 
 #
@@ -1241,6 +1283,9 @@ stop-gfmd)
 	;;
 stop-gfsd)
 	subcmd_stop_gfsd
+	;;
+kill-gfmd)
+	subcmd_kill_gfmd
 	;;
 config-gfarm)
 	subcmd_config_gfarm

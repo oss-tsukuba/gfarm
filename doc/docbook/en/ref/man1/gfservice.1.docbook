@@ -347,6 +347,15 @@ currently.
 </varlistentry>
 
 <varlistentry>
+<term><command>kill-gfmd</command></term>
+<listitem>
+<para>
+Kill <command>gfmd</command> (send SIGKILL) if it is running currently.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><command>restart-backend-db</command></term>
 <listitem>
 <para>
