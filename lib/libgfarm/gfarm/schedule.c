@@ -1691,6 +1691,7 @@ select_hosts(struct gfm_connection *gfm_server,
 	else
 		search_idle_set_domain_filter(NULL);
 	gfs_profile(gfarm_gettimerval(&t2));
+retry_list_add:
 	for (i = 0; i < ninfos; i++) {
 		e = search_idle_candidate_list_add(gfm_server, &infos[i]);
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -1700,6 +1701,12 @@ select_hosts(struct gfm_connection *gfm_server,
 			    gfarm_error_string(e));
 			return (e);
 		}
+	}
+	if (write_mode && write_target_domain != NULL &&
+	    search_idle_candidate_host_number == 0) {
+		write_target_domain = NULL;
+		search_idle_set_domain_filter(NULL);
+		goto retry_list_add;
 	}
 	gfs_profile(gfarm_gettimerval(&t3));
 	if (acyclic)
