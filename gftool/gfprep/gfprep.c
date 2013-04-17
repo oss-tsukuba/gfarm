@@ -159,10 +159,12 @@ gfprep_usage_common(int error)
 {
 	fprintf(stderr,
 "Usage: %s [-?] [-q (quiet)] [-v (verbose)] [-d (debug)]\n"
-"\t[-S <source domainname to select a file>]\n"
-"\t[-h <source hostfile to select a file>]\n"
+"\t[-S <source domainname to select a replica>]\n"
+"\t[-h <source hostfile to select a replica>]\n"
 "\t[-L (select a src_host within specified source)(limited scope)]\n"
-"\t[-D <destination domainname>] [-H <destination hostfile>]\n"
+"\t[-D <destination domainname\n"
+"\t     ('' means all nodes even if write_target_domain is set)>]\n"
+"\t[-H <destination hostfile>]\n"
 "\t[-j <#parallel(connections)>]\n"
 "\t[-w <scheduling way (noplan,greedy)(default:noplan)>]\n"
 "\t[-W <#KB> (threshold size to flat connections cost)(for -w greedy)]\n"
@@ -500,6 +502,7 @@ gfprep_filter_hostinfohash(const char *path,
 	     !gfarm_hash_iterator_is_end(&iter);
 	     gfarm_hash_iterator_next(&iter)) {
 		struct gfprep_host_info **hip, **hip_orig, *hi;
+
 		he = gfarm_hash_iterator_access(&iter);
 		if (he == NULL)
 			continue; /* unexpected */
@@ -2809,7 +2812,7 @@ main(int argc, char *argv[])
 	const char *opt_src_hostfile = NULL; /* -h */
 	const char *opt_dst_hostfile = NULL; /* -H */
 	const char *opt_src_domain = NULL;   /* -S */
-	const char *opt_dst_domain = NULL;   /* -D */
+	char *opt_dst_domain = NULL;   /* -D */
 	const char *opt_way = NULL; /* -w */
 	gfarm_uint64_t opt_sched_threshold_size
 		= 50 * 1024 * 1024; /* -W, default=50MiB */
@@ -3043,8 +3046,22 @@ main(int argc, char *argv[])
 			}
 		}
 	}
-	if (opt_dst_domain == NULL)
+
+	if (opt_dst_domain == NULL) {
 		opt_dst_domain = gfarm_schedule_write_target_domain();
+		gfprep_verbose("use write_target_domain: %s", opt_dst_domain);
+	} else if (strcmp(opt_dst_domain, "") == 0)
+		opt_dst_domain = NULL; /* select from all nodes */
+	if (opt_dst_domain != NULL) {
+		/*
+		 * NOTE: gfarm_schedule_write_target_domain() may be
+		 * free()ed after gfarm_terminate().
+		 */
+		opt_dst_domain = strdup(opt_dst_domain);
+		if (opt_dst_domain == NULL)
+			gfprep_fatal("no memory");
+	}
+
 	if (opt_n_para <= 0)
 		opt_n_para = gfarm_client_parallel_copy;
 	if (opt_n_para <= 0) {
@@ -3240,11 +3257,12 @@ main(int argc, char *argv[])
 		int n_src_all = 0;
 		struct gfarm_hash_table *exclude_hash_dstname;
 		const char *exclude_dst_domain;
+
 		e = gfprep_create_hostinfohash_all(
 		    src_dir, &n_src_all, &hash_all_src);
 		gfprep_fatal_e(e, "gfprep_create_hostinfohash_all");
 		if (n_src_all == 0) {
-			gfprep_error("no available src host");
+			gfprep_error("no available node for source");
 			exit(EXIT_FAILURE);
 		}
 		if (is_gfpcopy) {
@@ -3260,14 +3278,15 @@ main(int argc, char *argv[])
 					       opt_src_domain,
 					       exclude_hash_dstname,
 					       exclude_dst_domain);
-		gfprep_fatal_e(e, "gfprep_filter_hostinfohash for target src");
+		gfprep_fatal_e(e, "gfprep_filter_hostinfohash for source");
 		/* count n_src_available only */
 		e = gfprep_hostinfohash_to_array(src_dir, &n_src_available,
 						 NULL, hash_src);
-		gfprep_fatal_e(e,
-			       "gfprep_hostinfohash_to_array for target src");
+		gfprep_fatal_e(e, "gfprep_hostinfohash_to_array for soruce");
 		if (n_src_available == 0) {
-			gfprep_error("no available src host");
+			gfprep_error(
+			    "no available node for source "
+			    "(wrong -S/-h/-D/-H or write_target_domain ?)");
 			exit(EXIT_FAILURE);
 		}
 		/* src scope */
@@ -3302,7 +3321,8 @@ main(int argc, char *argv[])
 			    dst_dir, &n_all_dst, &hash_all_dst);
 			gfprep_fatal_e(e, "gfprep_create_hostinfohash_all");
 			if (n_all_dst == 0) {
-				gfprep_error("no available dst host");
+				gfprep_error(
+				    "no available node for destination");
 				exit(EXIT_FAILURE);
 			}
 			this_hash_all_dst = hash_all_dst;
@@ -3312,12 +3332,16 @@ main(int argc, char *argv[])
 					       opt_dst_domain,
 					       exclude_hash_srcname,
 					       exclude_src_domain);
-		gfprep_fatal_e(e, "gfprep_filter_hostinfohash for dst");
+		gfprep_fatal_e(
+		    e, "gfprep_filter_hostinfohash for destination");
 		e = gfprep_hostinfohash_to_array(dst_dir, &n_array_dst,
 						 &array_dst, hash_dst);
-		gfprep_fatal_e(e, "gfprep_hostinfohash_to_array for dst");
+		gfprep_fatal_e(
+		    e, "gfprep_hostinfohash_to_array for destination");
 		if (n_array_dst == 0) {
-			gfprep_error("no available dst host");
+			gfprep_error(
+			    "no available node for destination "
+			    "(wrong -S/-h/-D/-H or write_target_domain ?)");
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -3593,8 +3617,9 @@ main(int argc, char *argv[])
 			n_src_select = gfarm_list_length(&src_select_list);
 			if (n_src_select == 0) {
 				gfarm_list_free(&src_select_list);
-				gfprep_error("no available src host: %s",
-					    src_url);
+				gfprep_error(
+				    "no available replica for source: %s",
+				    src_url);
 				gfprep_count_ng_file(entry->src_size);
 				goto next_entry;
 			}
@@ -3715,9 +3740,10 @@ main(int argc, char *argv[])
 		if (is_gfpcopy) { /* gfpcopy */
 			assert(src_is_gfarm ? n_src_select > 0 : 1);
 			if (dst_is_gfarm && n_dst_select <= 0) {
-				gfprep_error("lack of dst host to copy"
-					    " (n_dst=%d): %s",
-					    n_dst_select, src_url);
+				gfprep_error(
+				    "insufficient number of destination nodes"
+				    " to copy (n_dst=%d): %s",
+				    n_dst_select, src_url);
 				gfprep_count_ng_file(entry->src_size);
 				goto next_entry_with_free;
 			}
@@ -3725,10 +3751,10 @@ main(int argc, char *argv[])
 		} else if (opt_migrate) { /* gfprep -m */
 			assert(n_src_select > 0);
 			if (n_dst_select < n_src_select) {
-				gfprep_error("lack of dst host to migrate"
-					    " (n_src=%d, n_dst=%d): %s",
-					    n_src_select, n_dst_select,
-					    src_url);
+				gfprep_error(
+				    "insufficient number of destination nodes"
+				    " to migrate (n_src=%d, n_dst=%d): %s",
+				    n_src_select, n_dst_select, src_url);
 				n_desire = n_dst_select;
 			} else
 				n_desire = n_src_select;
@@ -3759,10 +3785,10 @@ main(int argc, char *argv[])
 				}
 				goto next_entry_with_free;
 			} else if (n_dst_select < n_desire) {/* n_desire > 0 */
-				gfprep_error("lack of dst host to replicate"
-					    " (n_desire=%d, n_dst=%d): %s",
-					    n_desire, n_dst_select,
-					    src_url);
+				gfprep_error(
+				    "insufficient number of destination nodes"
+				    " to replicate (n_desire=%d, n_dst=%d):"
+				    " %s", n_desire, n_dst_select, src_url);
 				n_desire = n_dst_select;
 				if (n_desire <= 0) {
 					gfprep_count_ng_file(entry->src_size);
@@ -3955,6 +3981,7 @@ next_entry:
 	free(dst_dir);
 	free(src_real_url);
 	free(dst_real_url);
+	free(opt_dst_domain);
 
 	e = gfarm_terminate();
 	gfprep_warn_e(e, "gfarm_terminate");
