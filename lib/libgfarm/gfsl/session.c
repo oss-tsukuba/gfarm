@@ -1372,7 +1372,7 @@ secSessionInitiate(int fd, const gss_name_t acceptorName,
 	goto Fail;
     }
     if (acknack == GFARM_SS_AUTH_NACK) {
-	gflog_auth_error(GFARM_MSG_1000678,
+	gflog_auth_notice(GFARM_MSG_1000678,
 	    "%s: session refused by acceptor", acceptorDistName);
 	majStat = GSS_S_UNAUTHORIZED;
 	goto Fail;

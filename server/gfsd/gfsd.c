@@ -367,7 +367,7 @@ connect_gfm_server0(int use_timeout)
 				    gfarm_error_string(e));
 				return (e);
 			}
-			gflog_reduced_error(GFARM_MSG_1000550, &connlog,
+			gflog_reduced_warning(GFARM_MSG_1000550, &connlog,
 			    "connecting to gfmd at %s:%d failed, "
 			    "sleep %d sec: %s",
 			    gfarm_ctxp->metadb_server_name,
@@ -1147,7 +1147,7 @@ gfsd_create_ancestor_dir(char *path)
 			if (errno == EEXIST) {
 				/* maybe race */
 			} else {
-				gflog_warning(GFARM_MSG_1000467,
+				gflog_error(GFARM_MSG_1000467,
 				    "mkdir(`%s') failed: %s", path,
 				    strerror(errno));
 				errno = ENOENT;
@@ -2775,7 +2775,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	free(path);
 	if (local_fd < 0) {
 		dst_err = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_1002182,
+		gflog_notice(GFARM_MSG_1002182,
 		    "%s: cannot open local file for %lld:%lld: %s", diag,
 		    (long long)rep->ino, (long long)rep->gen, strerror(errno));
 	} else if ((conn_err = gfs_client_connection_acquire_by_host(gfm_server,
@@ -2811,7 +2811,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		e = gfs_client_replica_recv(src_gfsd, rep->ino, rep->gen,
 		    local_fd, &dst_err, &conn_err);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1003513,
+			gflog_warning(GFARM_MSG_1003513,
 			    "%s: replica_recv %lld:%lld: %s",
 			    diag, (long long)rep->ino, (long long)rep->gen,
 			    gfarm_error_string(e));
@@ -3636,7 +3636,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfarm_sockaddr_to_string(client_addr,
 			    addr_string, GFARM_SOCKADDR_STRLEN);
-			gflog_warning(GFARM_MSG_1000552, "%s: %s", addr_string,
+			gflog_notice(GFARM_MSG_1000552, "%s: %s", addr_string,
 			    gfarm_error_string(e));
 			client_name = strdup(addr_string);
 			if (client_name == NULL)
