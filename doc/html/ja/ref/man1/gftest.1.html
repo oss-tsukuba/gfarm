@@ -2,7 +2,7 @@
 <HTML
 ><HEAD
 ><TITLE
->gfstat</TITLE
+>gftest</TITLE
 ><META
 NAME="GENERATOR"
 CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
@@ -15,9 +15,9 @@ VLINK="#840084"
 ALINK="#0000FF"
 ><H1
 ><A
-NAME="GFSTAT.1"
+NAME="GFTEST.1"
 ></A
->gfstat</H1
+>gftest</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfstat&nbsp;--&nbsp;display file or directory status</DIV
+>gfstat&nbsp;--&nbsp;Gfarm ファイルまたはディレクトリの情報を調べる</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -36,18 +36,18 @@ NAME="SYNOPSIS"
 ><P
 ><B
 CLASS="COMMAND"
->gfstat</B
-> [<TT
+>gftest</B
+>  <TT
 CLASS="REPLACEABLE"
 ><I
 >options</I
 ></TT
->]  <TT
+>   <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
 ></TT
->... </P
+> </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -57,11 +57,7 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
-><B
-CLASS="COMMAND"
->gfstat</B
-> displays information about the
-specified files or directories in the Gfarm filesystem.</P
+>指定したファイルあるいはディレクトリの情報を調べます．</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -78,29 +74,65 @@ CLASS="VARIABLELIST"
 ><DT
 ><CODE
 CLASS="OPTION"
->-M</CODE
+>-d</CODE
 ></DT
 ><DD
 ><P
->displays metadata server information as well.</P
+>ディレクトリであれば 0 を返します</P
 ></DD
 ><DT
 ><CODE
 CLASS="OPTION"
->-c</CODE
+>-e</CODE
 ></DT
 ><DD
 ><P
->displays only the number of file replicas.</P
+>存在すれば 0 を返します</P
 ></DD
 ><DT
 ><CODE
 CLASS="OPTION"
->-l</CODE
+>-f</CODE
 ></DT
 ><DD
 ><P
->does not follow symbolic links, but show the link information itself.</P
+>通常ファイルであれば 0 を返します</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-h</CODE
+></DT
+><DD
+><P
+>シンボリックリンクであれば 0 を返します</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-s</CODE
+></DT
+><DD
+><P
+>通常ファイルで、サイズが 0 より大きければ 0 を返します</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-L</CODE
+></DT
+><DD
+><P
+>通常ファイルで、実ファイルが同一ホストに格納されていれば 0 を返します</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-R</CODE
+></DT
+><DD
+><P
+>通常ファイルで、実ファイルが同一ホストに格納されていなければ 0 を返します</P
 ></DD
 ><DT
 ><CODE
@@ -109,7 +141,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->displays a list of command options.</P
+>引数オプションを表示します．</P
 ></DD
 ></DL
 ></DIV

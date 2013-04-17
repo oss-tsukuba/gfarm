@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "18 November 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "17 April 2013" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -1305,9 +1305,8 @@ Example:
 .fi
 .TP
 \fBreplica_check_host_down_thresh \fIseconds\fB\fR
-If a gfsd is down, the replica_check assumes that the gfsd is not down
-until the specified seconds.  This is useful to maintain a gfsd.  The
-default value is 10800 seconds (3 hours).
+This statement specifies an interval to start replica check after a
+gfsd is down.  The default value is 10800 seconds (3 hours).
 
 This parameter is only available in gfmd.conf.
 
@@ -1318,12 +1317,10 @@ Example:
 .fi
 .TP
 \fBreplica_check_sleep_time \fInanoseconds\fB\fR
-If this value is increased, the replica_check works more slowly only
-when the gfmd is busy.  When the gfmd is not busy, the replica_check
-works at full speed.  This directive specifies the nanoseconds to
-sleep in the replica_check.  The default value is 100000 nanoseconds
-(0.1 millisecond).  The maximum value is 1000000000 nanoseconds (1
-second).
+This statement specifies the sleep time in nanoseconds during the
+replica check when gfmd is busy.  The default value is 100000
+nanoseconds (0.1 millisecond).  The maximum value is 1000000000
+nanoseconds (1 second).
 
 This parameter is only available in gfmd.conf.
 
@@ -1334,9 +1331,8 @@ Example:
 .fi
 .TP
 \fBreplica_check_minimum_interval \fIseconds\fB\fR
-This directive specifies the minimum interval in seconds, for the
-replica_check to work.  The default value is 10 seconds, i.e. the
-replica_check can work up to one time every 10 seconds.
+This statement specifies the minimum interval in seconds, to start the
+next replica check.  The default value is 10 seconds.
 
 This parameter is only available in gfmd.conf.
 
