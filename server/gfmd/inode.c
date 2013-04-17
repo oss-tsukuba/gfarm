@@ -3897,7 +3897,7 @@ inode_remove_replica_in_cache(struct inode *inode, struct host *spool_host)
 		}
 	}
 	if (foundp == NULL) {
-		gflog_error(GFARM_MSG_1002818,
+		gflog_notice(GFARM_MSG_1002818,
 		    "(%lld, %lld, %s) : %s",
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode), host_name(spool_host),

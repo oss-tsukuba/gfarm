@@ -341,7 +341,7 @@ deal_with_invalid_file(const char *file, struct stat *stp, int valid_inum_gen,
 			e = move_file_to_lost_found(file, stp, inum, gen,
 			    size_mismatch);
 		else {
-			gflog_warning(GFARM_MSG_1003530,
+			gflog_notice(GFARM_MSG_1003530,
 			    "%s: unsupported file (ignored)", file);
 			e = GFARM_ERR_INVALID_ARGUMENT;
 		}
