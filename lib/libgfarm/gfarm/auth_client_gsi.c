@@ -153,7 +153,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 		gfarmGssDeleteName(&acceptor_name, NULL, NULL);
 	if (session == NULL) {
 		if (gflog_auth_get_verbose()) {
-			gflog_error(GFARM_MSG_1000700,
+			gflog_notice(GFARM_MSG_1000700,
 			    "Can't initiate session because of:");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
