@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE" "1" "16 April 2013" "Gfarm" ""
+.TH "GFSERVICE" "1" "18 April 2013" "Gfarm" ""
 
 .SH NAME
 gfservice \- control Gfarm servers from a remote host
@@ -424,24 +424,34 @@ on the remote host.
 .TP
 \fBgfcmd \fIcommand-name\fB \fIcommand-argument ...\fB\fR
 Execute a Gfarm command on the remote host.
-.SH "SUB-COMMANDS WHICH OPERATE ON MULTIPLE HOSTS"
+.SH "SUB-COMMANDS FOR MULTIPLE HOSTS"
 .PP
 The followings are sub-commands which operate on multiple hosts.
 The host-id argument must not be specified.
 .TP
-\fBstart-all-servers\fR
-For each host configured in configuration file, start a backend database
-and \fBgfmd\fR if host-id is "gfmd\fIn\fR",
-start \fBgfsd\fR if host-id is "gfsd\fIn\fR".
+\fBstart-all\fR
+Start all backend databases, \fBgfmd\fR servers and 
+\fBgfsd\fR servers.
 .TP
-\fBstop-all-servers\fR
-For each host configured in configuration file, stop a backend database
-and \fBgfmd\fR if host-id is "gfmd\fIn\fR",
-stop \fBgfsd\fR if host-id is "gfsd\fIn\fR".
+\fBstop-all\fR
+Stop all \fBgfsd\fR servers, \fBgfmd\fR servers
+and backend databases,
 .TP
-\fBrestart-all-servers\fR
-Perform "\fBstop-all-servers\fR" and
-"\fBstart-all-servers\fR" sub-commands successively.
+\fBrestart-all\fR
+Perform "\fBstop-all\fR" and
+"\fBstart-all\fR" sub-commands successively.
+.TP
+\fBconfig-all\fR
+Perform "\fBconfig-gfarm-master\fR" for
+\fIgfmd1\fR and "\fBconfig-gfarm-slave\fR"
+for all other gfmd nodes.
+Then, perform "\fBconfig-gfsd\fR" for all gfds nodes.
+Finally, perform "\fBconfig-client\fR" for all client nodes.
+.TP
+\fBunconfig-all\fR
+Perform "\fBunconfig-client\fR" for all client nodes.
+Then, perform "\fBunconfig-gfsd\fR" for all gfds nodes.
+Finally, perform "\fBunconfig-gfarm\fR" for all gfmd nodes.
 .SH "PLUGIN SYSTEM"
 .PP
 \fBgfservice\fR has a plug-in system so that user can add
