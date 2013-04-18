@@ -856,47 +856,66 @@ Gfarm2 ファイルシステムをアンマウントします。
 </refsect1>
 
 <refsect1 id='multi-host-sub-commands'>
-<title>SUB-COMMANDS OPERATE ON MULTIPLE HOSTS</title>
+<title>SUB-COMMANDS FOR MULTIPLE HOSTS</title>
 
 <para>
 以下に挙げているのは、複数のホストを操作するサブコマンドです。
-コマンド行にはホスト ID は不要です。
+コマンド行で、ホスト ID を指定することはできません。
 </para>
 
 <variablelist>
 
 <varlistentry>
-<term><command>start-all-servers</command></term>
+<term><command>start-all</command></term>
 <listitem>
 <para>
-設定ファイルで定義されているホストそれぞれに対し、ホスト ID が
-「gfmd<replaceable>n</replaceable>」ならばバックエンドデータベースと 
-<command>gfmd</command>を起動し、 ホスト ID が
-「gfsd<replaceable>n</replaceable>」ならば <command>gfsd</command> を
-起動します。
+すべてのバックエンドデータベース、gfmd、gfsd を起動します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>stop-all-servers</command></term>
+<term><command>stop-all</command></term>
 <listitem>
 <para>
-設定ファイルで定義されているホストそれぞれに対し、ホスト ID が
-「gfmd<replaceable>n</replaceable>」ならばバックエンドデータベースと 
-<command>gfmd</command>の実行を停止し、 ホスト ID が
-「gfsd<replaceable>n</replaceable>」ならば <command>gfsd</command> の
-実行を停止します。
+すべての gfsd、gfmd、バックエンドデータベースを停止します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-all-servers</command></term>
+<term><command>restart-all</command></term>
 <listitem>
 <para>
-サブコマンド <command>stop-all-servers</command> と
-<command>start-all-servers</command> を続けて実行します。
+サブコマンド <command>stop-all</command> と
+<command>start-all</command> を続けて実行します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><command>config-all</command></term>
+<listitem>
+<para>
+<replaceable>gfmd1</replaceable> に対して
+"<command>config-gfarm-master</command>" を実行し、それ以外のすべての gfmd
+に対して "<command>config-gfarm-slave</command>" を実行します。
+次にすべての gfsd に対して "<command>config-gfsd</command>" を実行します。
+最後にすべてのクライアントに対して、"<command>config-client</command>" を
+実行します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><command>unconfig-all</command></term>
+<listitem>
+<para>
+すべてのクライアントに対して、"<command>unconfig-client</command>" を実行
+します。
+次にすべての gfsd に対して "<command>unconfig-gfsd</command>" を実行します。
+最後にすべての gfmd に対して "<command>unconfig-gfarm</command>" を
+実行します。
 </para>
 </listitem>
 </varlistentry>

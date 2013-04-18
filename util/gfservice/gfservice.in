@@ -15,8 +15,14 @@ DEFAULT_SUDO=sudo
 DEFAULT_SSH=ssh
 DEFAULT_GFARM2FS_BIN_PATH="@bindir@"
 
+# Myself, used for execute 'gfservice' as a child.
+GFSERVICE="$0"
+
 # Debug flag.
 DEBUG=false
+
+# Automatical shared key distribution flag.
+SETUP_SHARED_KEY=false
 
 # Configuration file.
 GFSERVICE_CONF=${GFSERVICE_CONF-"$DEFAULT_CONF"}
@@ -955,27 +961,24 @@ subcmd_start_gfsd()
 }
 
 #
-# Sub-command: start-all-servers
+# Sub-command: start-all
 #
-subcmd_start_all_servers()
+subcmd_start_all()
 {
-	log_debug "subcmd_start_all_servers"
+	log_debug "subcmd_start_all"
 
 	check_argc $# 0
-	for ID in `get_all_hostids`; do
-		if is_gfmd_hostid $ID; then
-			HOSTID=$ID
-			subcmd_start_backend_db
-			sleep_postmaster_startup
-			subcmd_start_gfmd
-		fi
-		if is_gfsd_hostid $ID; then
-			HOSTID=$ID
-			subcmd_start_gfsd
-		fi
+	get_gfmd_hostids | while read HOSTID; do
+		$GFSERVICE start-gfarm $HOSTID "$@" < /dev/null \
+			|| log_warn "failed to start-gfarm on $HOSTID"
 	done
 
-        log_debug "end subcmd_start_all_servers"
+	get_gfsd_hostids | while read HOSTID; do
+		$GFSERVICE start-gfsd $HOSTID "$@" < /dev/null \
+			|| log_warn "failed to start-gfsd on $HOSTID"
+	done
+
+        log_debug "end subcmd_start_all"
 }
 
 #
@@ -1024,27 +1027,25 @@ subcmd_stop_gfsd()
 }
 
 #
-# Sub-command: stop-all-servers
+# Sub-command: stop-all
 #
-subcmd_stop_all_servers()
+subcmd_stop_all()
 {
-	log_debug "subcmd_stop_all_servers"
+	log_debug "subcmd_stop_all"
 	RESULT=0
 
 	check_argc $# 0
-	for ID in `get_all_hostids`; do
-		if is_gfmd_hostid $ID; then
-			HOSTID=$ID
-			subcmd_stop_gfmd
-			subcmd_stop_backend_db
-		fi
-		if is_gfsd_hostid $ID; then
-			HOSTID=$ID
-			subcmd_stop_gfsd
-		fi
+	get_gfsd_hostids | while read HOSTID; do
+		$GFSERVICE stop-gfsd $HOSTID "$@" < /dev/null \
+			|| log_warn "failed to stop-gfsd on $HOSTID"
 	done
 
-        log_debug "end subcmd_stop_all_servers"
+	get_gfmd_hostids | while read HOSTID; do
+		$GFSERVICE stop-gfarm $HOSTID "$@" < /dev/null \
+			|| log_warn "failed to stop-gfarm on $HOSTID"
+	done
+
+        log_debug "end subcmd_stop_all"
 }
 
 #
@@ -1107,7 +1108,8 @@ subcmd_config_gfarm()
 	#
 	# Create a new shared secret key.
 	#
-	if [ "X$AUTH_TYPE" = Xsharedsecret -a X$SETUP_SHAREDKEY = Xtrue ]; then
+	if [ "X$AUTH_TYPE" = Xsharedsecret -a X$SETUP_SHARED_KEY = Xtrue ];
+	then
 		exec_remote_host_gfcmd $HOSTID - gfkey -f \
 			-p $SHARED_KEY_VALIDITY_PERIOD
 		[ $? -ne 0 ] && log_error "gfkey failed"
@@ -1123,7 +1125,8 @@ subcmd_config_gfarm()
 	# Distribute a shared secret key from the gfmd host.
 	#
 	rm -f $TMP_FILE
-	if [ "X$AUTH_TYPE" = Xsharedsecret -a X$SETUP_SHAREDKEY = Xtrue ]; then
+	if [ "X$AUTH_TYPE" = Xsharedsecret -a X$SETUP_SHARED_KEY = Xtrue ];
+	then
 		exec_client_host_agent $HOSTID - backup-shared-key > $TMP_FILE
 		[ $? -ne 0 ] && log_error "gfservice backup-shared-key failed"
 		distribute_shared_key $TMP_FILE
@@ -1191,7 +1194,8 @@ subcmd_config_gfarm_master()
 	#
 	# Create a new shared secret key.
 	#
-	if [ "X$AUTH_TYPE" = Xsharedsecret -a X$SETUP_SHAREDKEY = Xtrue ]; then
+	if [ "X$AUTH_TYPE" = Xsharedsecret -a X$SETUP_SHARED_KEY = Xtrue ];
+	then
 		exec_remote_host_gfcmd $HOSTID - gfkey -f \
 			-p $SHARED_KEY_VALIDITY_PERIOD
 		[ $? -ne 0 ] && log_error "gfkey failed"
@@ -1207,7 +1211,7 @@ subcmd_config_gfarm_master()
 	# Distribute a shared secret key from the gfmd host.
 	#
 	rm -f $TMP_FILE
-	if [ "X$AUTH_TYPE" = Xsharedsecret -a X$SETUP_SHAREDKEY = Xtrue ]; then
+	if [ "X$AUTH_TYPE" = Xsharedsecret -a X$SETUP_SHARED_KEY = Xtrue ]; then
 		exec_client_host_agent $HOSTID - backup-shared-key > $TMP_FILE
 		[ $? -ne 0 ] && log_error "gfservice backup-shared-key failed"
 		distribute_shared_key $TMP_FILE
@@ -1330,7 +1334,8 @@ subcmd_config_gfarm_slave()
 	#
 	# Copy a shared secret key from the master gfmd host to the slave.
 	#
-	if [ "X$AUTH_TYPE" = Xsharedsecret -a X$SETUP_SHAREDKEY = Xtrue ]; then
+	if [ "X$AUTH_TYPE" = Xsharedsecret -a X$SETUP_SHARED_KEY = Xtrue ];
+	then
 		rm -f $TMP_FILE
 		exec_client_host_agent $MASTER - backup-shared-key \
 			> $TMP_FILE
@@ -1437,7 +1442,8 @@ subcmd_config_gfsd()
 	# Copy a shared secret key from gfmd1 to the gfsd host.
 	#
 	rm -f $TMP_FILE
-	if [ "X$AUTH_TYPE" = Xsharedsecret -a X$SETUP_SHAREDKEY = Xtrue ]; then
+	if [ "X$AUTH_TYPE" = Xsharedsecret -a X$SETUP_SHARED_KEY = Xtrue ];
+	then
 		rm -f $TMP_FILE
 		exec_client_host_agent gfmd1 - backup-shared-key \
 			> $TMP_FILE
@@ -1512,7 +1518,8 @@ subcmd_config_client()
 	# Copy a shared secret key from gfmd1 to the client host.
 	#
 	rm -f $TMP_FILE
-	if [ "X$AUTH_TYPE" = Xsharedsecret -a X$SETUP_SHAREDKEY = Xtrue ]; then
+	if [ "X$AUTH_TYPE" = Xsharedsecret -a X$SETUP_SHARED_KEY = Xtrue ];
+	then
 		rm -f $TMP_FILE
 		exec_client_host_agent gfmd1 - backup-shared-key \
 			> $TMP_FILE
@@ -1526,6 +1533,38 @@ subcmd_config_client()
 
 	rm -f $TMP_FILE
 	log_debug "end subcmd_config_client"
+}
+
+#
+# Sub-command: config-all
+#
+subcmd_config_all()
+{
+	log_debug "subcmd_config_all"
+
+	check_argc $# 0
+	[ "X$gfmd1" = X ] && log_error "host-id 'gfmd1' not defined"
+
+	$GFSERVICE config-gfarm-master gfmd1 "$@" \
+		|| log_error "failed to config-gfarm-master for gfmd1"
+
+	get_gfmd_hostids | while read HOSTID; do
+		[ "X$HOSTID" = Xgfmd1 ] && continue
+		$GFSERVICE config-gfarm-slave $HOSTID gfmd1 "$@" < /dev/null \
+			|| log_warn "failed to config-gfarm-slave for $HOSTID"
+	done
+
+	get_gfsd_hostids | while read HOSTID; do
+		$GFSERVICE config-gfsd $HOSTID "$@" < /dev/null \
+			|| log_warn "failed to config-gfsd for $HOSTID"
+	done
+
+	get_client_hostids | while read HOSTID; do
+		$GFSERVICE config-client $HOSTID "$@" < /dev/null \
+			|| log_warn "failed to config-client for $HOSTID"
+	done
+
+        log_debug "end subcmd_config_all"
 }
 
 #
@@ -1649,6 +1688,34 @@ subcmd_unconfig_client()
 		"gfservice unconfig-client failed"
 
 	log_debug "end subcmd_unconfig_client"
+}
+
+#
+# Sub-command: config-all
+#
+subcmd_unconfig_all()
+{
+	log_debug "subcmd_unconfig_all"
+
+	check_argc $# 0
+	[ "X$gfmd1" = X ] && log_error "host-id 'gfmd1' not defined"
+
+	get_client_hostids | while read HOSTID; do
+		$GFSERVICE unconfig-client $HOSTID "$@" < /dev/null \
+			|| log_warn "failed to unconfig-client for $HOSTID"
+	done
+
+	get_gfsd_hostids | while read HOSTID; do
+		$GFSERVICE unconfig-gfsd $HOSTID "$@" < /dev/null \
+			|| log_warn "failed to unconfig-gfsd for $HOSTID"
+	done
+
+	get_gfmd_hostids | while read HOSTID; do
+		$GFSERVICE unconfig-gfarm $HOSTID "$@" < /dev/null \
+			|| log_warn "failed to unconfig-gfarm for $HOSTID"
+	done
+
+        log_debug "end subcmd_unconfig_all"
 }
 
 #
@@ -1974,7 +2041,7 @@ while true; do
 		-t*)	TIMEOUT=`echo "X$OPT" | sed -e 's/^X-t//'`
 			OPT=
 			;;
-		-k)	SETUP_SHAREDKEY=true
+		-k)	SETUP_SHARED_KEY=true
 			OPT=
 			;;
 		*)	BAD_OPT=`echo "X$OPT" | sed -e 's/^X-\(.\).*$/\1/'`
@@ -1994,17 +2061,18 @@ SUBCMD="$1"
 log_debug "main: set SUBCMD=$SUBCMD"
 shift
 
-if [ X$SUBCMD != Xstart-all-servers ] &&
-	[ X$SUBCMD != Xstop-all-servers ] &&
-	[ X$SUBCMD != Xrestart-all-servers ]; then
-	if [ $# -lt 1 ]; then
+case "$SUBCMD" in
+*-all-servers|*-all)
+	true
+	;;
+*)	if [ $# -lt 1 ]; then
 		print_usage
 		exit 1
 	fi
 	HOSTID="$1"
 	log_debug "main: set HOSTID=$HOSTID"
 	shift
-fi
+esac
 
 if [ "X$TIMEOUT" != Xno ]; then
 	expr "$TIMEOUT" : '^[1-9][0-9]*$' > /dev/null 2>&1 || {
@@ -2012,7 +2080,7 @@ if [ "X$TIMEOUT" != Xno ]; then
 	}
 fi
 
-if [ X$SETUP_SHAREDKEY = Xtrue ]; then
+if [ X$SETUP_SHARED_KEY = Xtrue ]; then
 	expr $SUBCMD : '^config-.*' > /dev/null 2>&1 || {
 		log_error "'-k' option specified with invalid sub command"
 	}
@@ -2033,11 +2101,9 @@ fi
 . "$GFSERVICE_CONF"
 log_debug "main: read the configuration file: FILE=$GFSERVICE_CONF"
 
-if $DEBUG; then
-	GFSERVICE="$0 -f $GFSERVICE_CONF -d"
-else
-	GFSERVICE="$0 -f $GFSERVICE_CONF"
-fi
+GFSERVICE="$0 -f $GFSERVICE_CONF -t $TIMEOUT"
+$DEBUG && GFSERVICE="$GFSERVICE -d"
+$SETUP_SHARED_KEY && GFSERVICE="$GFSERVICE -k"
 
 #
 # Perform the specified sub-command.
@@ -2087,8 +2153,8 @@ start-gfarm-slave)
 start-gfsd)
 	subcmd_start_gfsd "$@"
 	;;
-start-all-servers)
-	subcmd_start_all_servers "$@"
+start-all-servers|start-all)
+	subcmd_start_all "$@"
 	;;
 stop-backend-db)
 	subcmd_stop_backend_db "$@"
@@ -2103,8 +2169,8 @@ stop-gfarm)
 stop-gfsd)
 	subcmd_stop_gfsd "$@"
 	;;
-stop-all-servers)
-	subcmd_stop_all_servers "$@"
+stop-all-servers|stop-all)
+	subcmd_stop_all "$@"
 	;;
 kill-gfmd)
 	subcmd_kill_gfmd "$@"
@@ -2150,9 +2216,9 @@ restart-gfsd)
 	subcmd_stop_gfsd "$@"
 	subcmd_start_gfsd "$@"
 	;;
-restart-all-servers)
-	subcmd_stop_all_servers "$@"
-	subcmd_start_all_servers "$@"
+restart-all-servers|restart-all)
+	subcmd_stop_all "$@"
+	subcmd_start_all "$@"
 	;;
 config-gfarm)
 	subcmd_config_gfarm "$@"
@@ -2168,6 +2234,9 @@ config-gfsd)
 	;;
 config-client)
 	subcmd_config_client "$@"
+	;;
+config-all)
+	subcmd_config_all "$@"
 	;;
 unconfig-gfarm|unconfig-gfarm-master)
 	subcmd_stop_gfmd "$@"
@@ -2185,6 +2254,9 @@ unconfig-gfsd)
 	;;
 unconfig-client)
 	subcmd_unconfig_client "$@"
+	;;
+unconfig-all)
+	subcmd_unconfig_all "$@"
 	;;
 promote|promote-gfmd)
 	subcmd_promote "$@"
