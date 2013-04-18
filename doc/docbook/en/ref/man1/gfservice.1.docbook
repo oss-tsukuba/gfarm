@@ -850,7 +850,7 @@ Execute a Gfarm command on the remote host.
 </refsect1>
 
 <refsect1 id='multi-host-sub-commands'>
-<title>SUB-COMMANDS WHICH OPERATE ON MULTIPLE HOSTS</title>
+<title>SUB-COMMANDS FOR MULTIPLE HOSTS</title>
 
 <para>
 The followings are sub-commands which operate on multiple hosts.
@@ -860,33 +860,55 @@ The host-id argument must not be specified.
 <variablelist>
 
 <varlistentry>
-<term><command>start-all-servers</command></term>
+<term><command>start-all</command></term>
 <listitem>
 <para>
-For each host configured in configuration file, start a backend database
-and <command>gfmd</command> if host-id is "gfmd<replaceable>n</replaceable>",
-start <command>gfsd</command> if host-id is "gfsd<replaceable>n</replaceable>".
+Start all backend databases, <command>gfmd</command> servers and 
+<command>gfsd</command> servers.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>stop-all-servers</command></term>
+<term><command>stop-all</command></term>
 <listitem>
 <para>
-For each host configured in configuration file, stop a backend database
-and <command>gfmd</command> if host-id is "gfmd<replaceable>n</replaceable>",
-stop <command>gfsd</command> if host-id is "gfsd<replaceable>n</replaceable>".
+Stop all <command>gfsd</command> servers, <command>gfmd</command> servers
+and backend databases,
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-all-servers</command></term>
+<term><command>restart-all</command></term>
 <listitem>
 <para>
-Perform "<command>stop-all-servers</command>" and
-"<command>start-all-servers</command>" sub-commands successively.
+Perform "<command>stop-all</command>" and
+"<command>start-all</command>" sub-commands successively.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><command>config-all</command></term>
+<listitem>
+<para>
+Perform "<command>config-gfarm-master</command>" for
+<replaceable>gfmd1</replaceable> and "<command>config-gfarm-slave</command>"
+for all other gfmd nodes.
+Then, perform "<command>config-gfsd</command>" for all gfds nodes.
+Finally, perform "<command>config-client</command>" for all client nodes.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><command>unconfig-all</command></term>
+<listitem>
+<para>
+Perform "<command>unconfig-client</command>" for all client nodes.
+Then, perform "<command>unconfig-gfsd</command>" for all gfds nodes.
+Finally, perform "<command>unconfig-gfarm</command>" for all gfmd nodes.
 </para>
 </listitem>
 </varlistentry>
