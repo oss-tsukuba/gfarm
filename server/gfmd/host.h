@@ -52,12 +52,12 @@ int host_is_valid(struct host *);
 
 int host_check_busy(struct host *host, gfarm_int64_t);
 
-int host_unique_sort(int, struct host **);
-
 struct file_replicating;
 gfarm_error_t host_replicating_new(struct host *, struct file_replicating **);
 struct inode;
 
+int host_unique_sort(int, struct host **);
+void host_intersect(int *, struct host **, int *, struct host **);
 gfarm_error_t host_except(int *, struct host **, int *, struct host **,
 	int (*)(struct host *, void *), void *);
 
