@@ -222,7 +222,7 @@ create:
 	if (fp == NULL) {
 		if (e != GFARM_ERR_NO_ERROR &&
 		    e != GFARM_ERRMSG_SHAREDSECRET_KEY_FILE_NOT_EXIST) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1003703,
 			    "%s, create the key again: %s",
 			    gfarm_error_string(e), keyfilename);
 			e = GFARM_ERR_NO_ERROR;
