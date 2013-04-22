@@ -810,7 +810,7 @@ resuming_thread(void *arg)
 		 * set cs->cause, if it's first error at a main part
 		 * of a COMPOUND block
 		 */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003700,
 		    "resumed action failed in a COMPOUND block: %s",
 		    gfarm_error_string(e));
 		if (cs->cause == GFARM_ERR_NO_ERROR && !cs->skip)
