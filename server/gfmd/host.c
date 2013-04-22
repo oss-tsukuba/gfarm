@@ -898,6 +898,42 @@ host_unique_sort(int nhosts, struct host **hosts)
 	return (host_unique(nhosts, hosts));
 }
 
+/*
+ * calculate hosts1[] = intersect(hosts1[], hosts2[])
+ *
+ * this function modifies *nhosts1p, hosts1[], *nhosts2 and hosts2[]
+ * i.e. duplicate hosts may be removed, host order may be sorted.
+ */
+void
+host_intersect(int *nhosts1p, struct host **hosts1,
+	int *nhosts2p, struct host **hosts2)
+{
+	int nhosts1 = *nhosts1p, nhosts2 = *nhosts2p;
+	int cmp, i, j, n;
+
+	if (nhosts1 <= 0 || nhosts2 <= 0) { /* short cut */
+		*nhosts1p = 0;
+		return;
+	}
+
+	nhosts1 = host_unique_sort(nhosts1, hosts1);
+	nhosts2 = host_unique_sort(nhosts2, hosts2);
+	i = j = n = 0;
+	while (i < nhosts1 && j < nhosts2) {
+		cmp = host_order(&hosts1[i], &hosts2[j]);
+		if (cmp < 0) {
+			i++;
+		} else if (cmp == 0) {
+			hosts1[n++] = hosts1[i++]; /* maybe n == i here */
+			j++;
+		} else /* cmp > 0 */ {
+			j++;
+		}
+	}
+	*nhosts1p = n;
+	*nhosts2p = nhosts2;
+}
+
 /* NOTE: both hosts[] and exceptions[] must be host_unique_sort()ed */
 static gfarm_error_t
 host_exclude(int *nhostsp, struct host **hosts,

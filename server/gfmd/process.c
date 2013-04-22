@@ -743,7 +743,7 @@ process_reopen_file(struct process *process,
 {
 	struct file_opening *fo;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
-	int to_create, is_creating_file_replica;
+	int no_replica, to_create, is_creating_file_replica;
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001627,
@@ -770,7 +770,8 @@ process_reopen_file(struct process *process,
 		    (long long)inode_get_gen(fo->inode));
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 	}
-	if (inode_has_no_replica(fo->inode) &&
+	no_replica = inode_has_no_replica(fo->inode);
+	if (no_replica &&
 	    (fo->flag & GFARM_FILE_TRUNC) == 0 &&
 	    inode_get_size(fo->inode) > 0) {
 		gflog_error(GFARM_MSG_1003474,
@@ -784,8 +785,7 @@ process_reopen_file(struct process *process,
 	to_create = 0;
 	is_creating_file_replica = (fo->flag & GFARM_FILE_CREATE_REPLICA) != 0;
 
-	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 ||
-	    inode_has_no_replica(fo->inode)) {
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 || no_replica) {
 		if (is_creating_file_replica) {
 			e = inode_add_replica(fo->inode, spool_host, 0);
 			if (e != GFARM_ERR_NO_ERROR) {
@@ -1255,9 +1255,9 @@ process_replica_added(struct process *process,
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
-	if (inode_has_no_replica(fo->inode)) { /* no file copy */
+	if (inode_has_no_replica(fo->inode)) {
 		gflog_debug(GFARM_MSG_1003543,
-		    "%s: inode %lld: no file copy", diag,
+		    "%s: inode %lld: no replica", diag,
 		    (long long)inode_get_number(fo->inode));
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if (inode_has_replica(fo->inode, spool_host)) {

@@ -659,6 +659,7 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 		if (host_assigned) {
 			free(host);
 			host = NULL;
+			host_assigned = 0;
 			/*
 			 * reschedule another host unless host is
 			 * explicitly specified
