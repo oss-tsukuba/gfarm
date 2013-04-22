@@ -1,3 +1,47 @@
+Release note for Gfarm 2.5.7.4
+==============================
+
+[2013.4.22]
+
+New feature
+* gfpcopy - copy missing or obsolete files when the target directory
+  exists [sf.net trac #632]
+
+Bug fix
+* operation not permitted happens when creating the same sequence of
+  files at the same time [sf.net trac #643]
+* "protocol error" is incorrectly reported even when it is a network
+  error [sf.net trac #658]
+* postgres server for gfarm may not correctly start up on Ubuntu 12.04
+  [sf.net trac #652]
+* write-mode open may fail due to inappropriate replica scheduling
+  [sf.net trac #682]
+* gfpcopy-test.sh does not report throughput [sf.net trac #628]
+* libgfarm - gfs_realpath() may crash [sf.net trac #591]
+* gfsd - terminates even when there are still opening files in write
+  mode if two or more files are opened in write mode
+* gfsd fails to start when the connection to gfmd is disconnected
+  during the spool check [sf.net trac #587]
+* gfsd - die when unexpected error happens in gfs_server_status since
+  gfmd disconnects the connection [sf.net trac #595]
+* number of replicas may increase when opened in the truncate mode,
+  which is introduced by Gfarm 2.5.7.1  [sf.net trac #583]
+* gfmd crashes when gfmd-initiated replication is invoked against a
+  filesystem node which is down, which is introduced by Gfarm
+  2.5.7.3 [sf.net trac #601]
+* potential deadlock in gfmd [sf.net trac #614]
+* gfmd - fix invalid strdup_ck() calls [sf.net trac #460]
+* gfmd may crash when gfsd is down [sf.net trac #589, #616]
+* failover does not work after accessed by a Gfarm URL [sf.net trac
+  #625]
+* gfmd executed by slavestart (force_slave) crashes when promoting to
+  the master [sf.net trac #635]
+* gfmdhost command can make gfmd crash [sf.net trac #594]
+* libgfarm - gfm_host_is_local() may crash when gfmd connection is
+  disconnected [sf.net trac #580]
+* gfmd - fix invalid strdup_ck() calls [sf.net trac #460]
+* ls fails once after restart or failover of gfmd [sf.net trac #578]
+
 Release note for Gfarm 2.5.7.3
 ==============================
 
