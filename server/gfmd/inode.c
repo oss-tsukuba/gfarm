@@ -1104,7 +1104,14 @@ inode_get_group(struct inode *inode)
 int
 inode_has_no_replica(struct inode *inode)
 {
-	return (inode->u.c.s.f.copies == NULL);
+	struct file_copy *copy;
+
+	for (copy = inode->u.c.s.f.copies; copy != NULL;
+	    copy = copy->host_next) {
+		if (FILE_COPY_IS_VALID(copy))
+			return (0);
+	}
+	return (1);
 }
 
 static gfarm_int64_t
@@ -3127,43 +3134,56 @@ inode_schedule_confirm_for_write(struct file_opening *opening,
 	struct inode_open_state *ios = opening->inode->u.c.state;
 	struct file_opening *fo;
 	struct file_copy *copy;
-	int already_opened, host_match;
 
 	if (!inode_is_file(opening->inode))
 		gflog_fatal(GFARM_MSG_1000331,
 		    "inode_schedule_confirm_for_write: not a file");
-	if (ios != NULL &&
-	    (fo = ios->openings.opening_next) != &ios->openings) {
-		already_opened = host_match = 0;
-		for (; fo != &ios->openings; fo = fo->opening_next) {
-			if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 &&
-			    fo->u.f.spool_host != NULL)
-				return (fo->u.f.spool_host == spool_host);
-			if (fo->u.f.spool_host != NULL &&
-			    host_is_disk_available(fo->u.f.spool_host, 0)) {
-				already_opened = 1;
-				if (fo->u.f.spool_host == spool_host)
-					host_match = 1;
-			}
-		}
-		if (already_opened)
-			return (host_match);
-	}
-	/* not opened */
+
 	if (inode_has_no_replica(opening->inode)) {
+		/*
+		 * the caller of this function already ensures the following
+		 * assertion.  If it was not true, the caller replied
+		 * GFARM_ERR_STALE_FILE_HANDLE to a client.
+		 */
+		assert((opening->flag & GFARM_FILE_TRUNC) != 0 ||
+		    inode_get_size(opening->inode) == 0);
+
+		if (!host_is_disk_available(spool_host, 0))
+			return (0);
+
+		/*
+		 * process_reopen_file() adds a replica,
+		 * just after the call of inode_schedule_confirm_for_write().
+		 * thus, it won't happen that two different clients are
+		 * simultaneously creating a file.
+		 */
 		*to_createp = 1;
 		return (1);
 	}
+
+	if (ios != NULL &&
+	    (fo = ios->openings.opening_next) != &ios->openings) {
+		for (; fo != &ios->openings; fo = fo->opening_next) {
+			if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 &&
+			    fo->u.f.spool_host != NULL) {
+				/* this replica must be valid */
+				return (fo->u.f.spool_host == spool_host);
+			}
+		}
+	}
+	/* not opened for writing */
 	copy = inode_get_file_copy(opening->inode, spool_host);
 	if (copy != NULL) {
 		/*
 		 * if a replication is ongoing, don't allow to create new one,
 		 * because it incurs a race.
 		 */
-		return (FILE_COPY_IS_VALID(copy)); /* == inode_has_replica() */
+		return (FILE_COPY_IS_VALID(copy) /* == inode_has_replica() */
+		    && host_is_disk_available(spool_host, 0));
 	}
-	if ((opening->flag & GFARM_FILE_TRUNC) != 0 ||
-	    inode_get_size(opening->inode) == 0) {
+	if (((opening->flag & GFARM_FILE_TRUNC) != 0 ||
+	     inode_get_size(opening->inode) == 0) &&
+	    host_is_disk_available(spool_host, 0)) {
 		/*
 		 * http://sourceforge.net/apps/trac/gfarm/ticket/68
 		 * (measures against disk full for a file overwriting case)
@@ -3197,8 +3217,8 @@ inode_schedule_file_default(struct file_opening *opening,
 	gfarm_error_t e;
 	struct inode_open_state *ios = opening->inode->u.c.state;
 	struct file_opening *fo;
-	int n, nhosts, write_mode, truncate_flag;
-	struct host **hosts;
+	int n, nhosts, n_opening_hosts, write_mode, truncate_flag;
+	struct host **hosts, **opening_hosts;
 	gfarm_off_t necessary_space = 0; /* i.e. use default value */
 
 	/* XXX FIXME too long giant lock */
@@ -3221,7 +3241,7 @@ inode_schedule_file_default(struct file_opening *opening,
 		    (unsigned long long)inode_get_number(opening->inode),
 		    (unsigned long long)inode_get_gen(opening->inode),
 		    (unsigned long long)inode_get_size(opening->inode));
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+		return (GFARM_ERR_STALE_FILE_HANDLE);
 	}
 	if ((write_mode || truncate_flag) && ios != NULL &&
 	    (fo = ios->openings.opening_next) != &ios->openings) {
@@ -3234,6 +3254,9 @@ inode_schedule_file_default(struct file_opening *opening,
 				/*
 				 * already opened for writing. 
 				 * only that replica is allowed in this case.
+				 * we do not check host_is_disk_available(),
+				 * because there is no other choice here.
+				 * the replica must be valid.
 				 */
 				GFARM_MALLOC_ARRAY(hosts, 1);
 				if (hosts == NULL)
@@ -3259,30 +3282,41 @@ inode_schedule_file_default(struct file_opening *opening,
 			 * host_is_up()/host_is_disk_available() may change
 			 * even while the giant lock is held.
 			 */
-			GFARM_MALLOC_ARRAY(hosts, n);
-			if (hosts == NULL)
+			GFARM_MALLOC_ARRAY(opening_hosts, n);
+			if (opening_hosts == NULL)
 				return (GFARM_ERR_NO_MEMORY);
 
-			nhosts = 0;
+			n_opening_hosts = 0;
 			for (fo = ios->openings.opening_next;
 			    fo != &ios->openings; fo = fo->opening_next) {
 				if (fo->u.f.spool_host != NULL &&
 				    host_is_disk_available(
 				    fo->u.f.spool_host, 0)) {
-					assert(nhosts < n);
-					hosts[nhosts++] = fo->u.f.spool_host;
+					assert(n_opening_hosts < n);
+					opening_hosts[n_opening_hosts++] =
+					    fo->u.f.spool_host;
 				}
 			}
+
+			e = inode_alloc_file_copy_hosts(opening->inode,
+			    file_copy_is_valid_and_disk_available,
+			    &necessary_space, &nhosts, &hosts);
+			if (e != GFARM_ERR_NO_ERROR) {
+				free(opening_hosts);
+				return (e);
+			}
+
+			/* opening_hosts may only have an obsolete replica */
+			host_intersect(&nhosts, hosts,
+			    &n_opening_hosts, opening_hosts);
 			if (nhosts > 0) {
-				/*
-				 * there may be duplicated entries in hosts[],
-				 * thus we call host_unique_sort() here.
-				 */
-				*np = host_unique_sort(nhosts, hosts);
+				*np = nhosts;
 				*hostsp = hosts;
 				return (GFARM_ERR_NO_ERROR);
 			}
 			free(hosts);
+			free(opening_hosts);
+			/* try other filesystem nodes, then */
 		}
 	}
 	if (write_mode) {
@@ -3885,8 +3919,6 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	/* have enough privilege? i.e. can read the file? */
 	if ((e = inode_access(inode, user, GFS_R_OK)) != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (inode_has_no_replica(inode)) /* no file copy */
-		return (GFARM_ERR_NO_SUCH_OBJECT);
 	if (!inode_has_replica(inode, src))
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	if ((copy = inode_get_file_copy(inode, dst)) != NULL) {
