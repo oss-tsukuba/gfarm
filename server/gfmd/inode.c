@@ -4036,13 +4036,13 @@ inode_schedule_file_default(struct file_opening *opening,
 			/* opening_hosts may only have an obsolete replica */
 			host_intersect(&nhosts, hosts,
 			    &n_opening_hosts, opening_hosts);
+			free(opening_hosts);
 			if (nhosts > 0) {
 				*np = nhosts;
 				*hostsp = hosts;
 				return (GFARM_ERR_NO_ERROR);
 			}
 			free(hosts);
-			free(opening_hosts);
 			/* try other filesystem nodes, then */
 		}
 	}
