@@ -377,12 +377,12 @@ gfs_pio_close(GFS_File gf)
 		/* ignore error when a file is opened in read-only mode */
 		if ((gf->open_flags & GFARM_FILE_ACCMODE)
 		    == GFARM_FILE_RDONLY) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1003687,
 			    "close error (ignored): %s",
 			    gfarm_error_string(e));
 			e = GFARM_ERR_NO_ERROR;
 		} else
-			gflog_debug(GFARM_MSG_UNFIXED, "close error: %s",
+			gflog_debug(GFARM_MSG_1003688, "close error: %s",
 			    gfarm_error_string(e));
 	}
 	if (e_save == GFARM_ERR_NO_ERROR)
