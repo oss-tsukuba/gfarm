@@ -1,3 +1,36 @@
+Release note for Gfarm 2.5.8
+============================
+
+[2013.4.22]
+
+New command
+* gftest - check entry type
+
+New feature
+* gfprep, gfpcopy - honor write_target_domain directive
+
+Updated feature
+* gfmd init script - kill to immediately stop the gfmd
+* log level adjustment to make ZABBIX alerts usable - step 3 [sf.net
+  trac #679]
+
+Bug fix
+* no filesystem node happens when updating a file not stored in
+  write_target_domain
+* operation not permitted happens when creating the same sequence of
+  files at the same time [sf.net trac #643]
+* private mode in ubuntu does not work since gfarm-2.5.8-rc3 [sf.net
+  trac #661]
+* replica_check_host_down_thresh does not work [sf.net trac #655]
+* "protocol error" is incorrectly reported even when it is a network
+  error [sf.net trac #658]
+* postgres server for gfarm may not correctly start up on Ubuntu 12.04
+  [sf.net trac #652]
+* gfrm -h can remove a replica that may be used for replication
+  [sf.net trac #676]
+* write-mode open may fail due to inappropriate replica scheduling
+  [sf.net trac #682]
+
 Release note for Gfarm 2.5.8-rc3
 ================================
 
