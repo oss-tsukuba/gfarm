@@ -53,7 +53,7 @@ int host_is_up_with_grace(struct host *, gfarm_time_t);
 int host_is_valid(struct host *);
 
 int host_unique_sort(int, struct host **);
-
+void host_intersect(int *, struct host **, int *, struct host **);
 gfarm_error_t host_except(int *, struct host **, int *, struct host **,
 	int (*)(struct host *, void *), void *);
 
