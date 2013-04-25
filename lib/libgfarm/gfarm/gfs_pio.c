@@ -1123,6 +1123,11 @@ sync_internal(GFS_File gf, int operation, double *time)
 	gfarm_error_t e;
 	gfarm_timerval_t t1, t2;
 
+#ifdef __KERNEL__	/* may called at exit, fd passing refers tsk->files */
+	if (!gfs_pio_is_view_set(gf)) /* view isn't set yet */
+		return (GFARM_ERR_NO_ERROR);
+#endif /* __KERNEL__ */
+
 	GFARM_KERNEL_UNUSE2(t1, t2);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));

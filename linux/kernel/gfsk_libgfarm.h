@@ -48,6 +48,9 @@ struct gfsk_file_private {
 		GFS_DirPlus dirp;
 		GFS_File filp;
 	} f_u;
+	struct {
+		void *entry;
+	}dirinfo;
 	struct file *f_file;
 	struct list_head f_openlist;
 	struct mutex f_lock;
