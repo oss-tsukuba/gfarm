@@ -254,6 +254,10 @@ gfarm_fstat(struct file *file, struct inode *inode)
 		ge = gfs_pio_stat(priv->f_u.filp, &gstat);
 		if (ge == GFARM_ERR_NO_ERROR)
 			gfarm_stat_set(inode, &gstat);
+		else
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"%s: gfs_pio_stat fail, %d",
+				__func__, ge);
 		return (GFARM_ERROR_TO_ERRNO(ge));
 	} else
 		return (gfarm_stat(file->f_dentry, NULL));
@@ -548,6 +552,9 @@ gfarm_createfile(struct inode *inode, struct dentry *dentry, int flag,
 			}
 		} else {
 			gfarm_priv_free(file);
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"%s: gfs_pio_create_igen %s fail, %d",
+				__func__, path, ge);
 		}
 	}
 	kfree(path);

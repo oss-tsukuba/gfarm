@@ -29,7 +29,7 @@ gfsk_inode_eq(struct inode *inode, void *data)
 		if (gi->i_gen == idata->gen)
 			return (1);
 	 	if (!gi->i_gen || !idata->new) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_UNFIXED,
 				"%s:ino=%lld gen=%lld:%lld"
 				", but asume same. new=%d\n", __func__,
 				 idata->ino, gi->i_gen, idata->gen, idata->new);
