@@ -241,7 +241,6 @@ gfsk_writepage(struct page *page, struct writeback_control *wbc)
 
 	GFSK_CTX_SET();
 
-	// int test_set_page_writeback(page) は要らないか？
 	page_cache_get(page);
 
 	if (!(file = gfsk_open_file_get(inode))) {
