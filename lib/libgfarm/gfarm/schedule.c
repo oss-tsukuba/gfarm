@@ -1840,7 +1840,7 @@ search_idle_cyclic(struct gfm_connection *gfm_server,
  */
 static gfarm_error_t
 select_hosts(struct gfm_connection *gfm_server,
-	int acyclic, int write_mode,
+	int acyclic, int write_mode, char *write_target_domain,
 	int ninfos, struct gfarm_host_sched_info *infos,
 	int *nohostsp, char **ohosts, int *oports)
 {
@@ -1874,10 +1874,12 @@ select_hosts(struct gfm_connection *gfm_server,
 		return (e);
 	}
 	/* set target domain */
-	if (write_mode)
-		search_idle_set_domain_filter(
-			gfarm_schedule_write_target_domain());
+	if (write_mode && write_target_domain != NULL)
+		search_idle_set_domain_filter(write_target_domain);
+	else
+		search_idle_set_domain_filter(NULL);
 	gfs_profile(gfarm_gettimerval(&t2));
+retry_list_add:
 	for (i = 0; i < ninfos; i++) {
 		e = search_idle_candidate_list_add(gfm_server, &infos[i]);
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -1887,6 +1889,12 @@ select_hosts(struct gfm_connection *gfm_server,
 			    gfarm_error_string(e));
 			return (e);
 		}
+	}
+	if (write_mode && write_target_domain != NULL &&
+	    staticp->search_idle_candidate_host_number == 0) {
+		write_target_domain = NULL;
+		search_idle_set_domain_filter(NULL);
+		goto retry_list_add;
 	}
 	gfs_profile(gfarm_gettimerval(&t3));
 	if (acyclic)
@@ -1917,12 +1925,15 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 	int write_mode, char **hostp, int *portp)
 {
 	gfarm_error_t e;
-	char *host;
+	char *host, *target_domain = gfarm_schedule_write_target_domain();
 	int port, n = 1;
 
 	SCHED_MUTEX_LOCK(staticp)
-	e = select_hosts(gfm_server, 1, write_mode, nhosts, infos,
-	    &n, &host, &port);
+	e = select_hosts(gfm_server, 1, write_mode, target_domain,
+		nhosts, infos, &n, &host, &port);
+	if (target_domain != NULL && e == GFARM_ERRMSG_NO_FILESYSTEM_NODE)
+		e = select_hosts(gfm_server, 1, write_mode, NULL,
+			nhosts, infos, &n, &host, &port);
 	SCHED_MUTEX_UNLOCK(staticp)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1945,7 +1956,9 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 
 struct select_hosts_by_path_info {
 	const char *path;
-	int acyclic, write_mode, ninfos;
+	int acyclic, write_mode;
+	char *target_domain;
+	int ninfos;
 	struct gfarm_host_sched_info *infos;
 	int *nohostsp;
 	char **ohosts;
@@ -1968,11 +1981,16 @@ select_hosts_by_path_rpc(struct gfm_connection **gfm_serverp, void *closure)
 	}
 	gfm_client_connection_lock(*gfm_serverp);
 	if ((e = select_hosts(*gfm_serverp, si->acyclic, si->write_mode,
-	    si->ninfos, si->infos, si->nohostsp, si->ohosts, si->oports))
+	    si->target_domain, si->ninfos, si->infos, si->nohostsp, si->ohosts,
+	    si->oports))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "select_hosts: %s",
 		    gfarm_error_string(e));
+	if (si->target_domain != NULL && e == GFARM_ERRMSG_NO_FILESYSTEM_NODE)
+		e = select_hosts(*gfm_serverp, si->acyclic, si->write_mode,
+			NULL, si->ninfos, si->infos, si->nohostsp, si->ohosts,
+			si->oports);
 	gfm_client_connection_unlock(*gfm_serverp);
 	return (e);
 }
@@ -2000,7 +2018,8 @@ select_hosts_by_path(const char *path,
 	int *nohostsp, char **ohosts, int *oports)
 {
 	struct select_hosts_by_path_info si = {
-		path, acyclic, write_mode, ninfos,
+		path, acyclic, write_mode,
+		gfarm_schedule_write_target_domain(), ninfos,
 		infos, nohostsp, ohosts, oports
 	};
 
