@@ -4204,11 +4204,6 @@ inode_replication_free(struct file_replication *fr)
 		inode_remove_check(inode);
 }
 
-static gfarm_error_t
-inode_remove_replica_gen_deferred(struct inode *inode,
-	struct host *spool_host, gfarm_int64_t gen,
-	struct dead_file_copy **deferred_cleanupp);
-
 gfarm_error_t
 inode_replicated(struct file_replication *fr,
 	gfarm_int32_t src_errcode, gfarm_int32_t dst_errcode, gfarm_off_t size)
@@ -4259,27 +4254,9 @@ inode_replicated(struct file_replication *fr,
 			    (long long)size,
 			    (long long)inode_get_gen(inode),
 			    (long long)inode_get_size(inode));
-		e = inode_remove_replica_gen_deferred(inode,
-		    file_replication_get_dst(fr), file_replication_get_gen(fr),
-		    &dfc);
-		if (e == GFARM_ERR_NO_ERROR) {
-			dead_file_copy_schedule_removal(dfc);
-		} else if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-			gflog_info(GFARM_MSG_1002433,
-			    "cannot remove an incomplete replica "
-			    "(%s, %lld:%lld): probably already removed",
-			    host_name(file_replication_get_dst(fr)),
-			    (long long)inode_get_number(inode),
-			    (long long)file_replication_get_gen(fr));
-		} else {
-			gflog_error(GFARM_MSG_1002434,
-			    "cannot remove an incomplete replica "
-			    "(%s, %lld:%lld): %s",
-			    host_name(file_replication_get_dst(fr)),
-			    (long long)inode_get_number(inode),
-			    (long long)file_replication_get_gen(fr),
-			    gfarm_error_string(e));
-		}
+		inode_remove_replica_incomplete(inode,
+		    file_replication_get_dst(fr),
+		    file_replication_get_gen(fr));
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
 	}
 
@@ -4690,6 +4667,9 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 				e = GFARM_ERR_NO_SUCH_OBJECT;
 			}
 		}
+	} else if (!metadata_only) {
+		e = remove_replica_entity(inode, gen, spool_host, 0,
+		    deferred_cleanupp);
 	} else {
 		/* remove_replica_entity() must be already called */
 		gflog_debug(GFARM_MSG_1002488,
@@ -4711,29 +4691,36 @@ inode_remove_replica_metadata(struct inode *inode, struct host *spool_host,
 	    NULL, 0, 1, NULL));
 }
 
-static gfarm_error_t
-inode_remove_replica_gen_deferred(struct inode *inode,
-	struct host *spool_host, gfarm_int64_t gen,
-	struct dead_file_copy **deferred_cleanupp)
-{
-	return (inode_remove_replica_internal(inode, spool_host, gen,
-	    NULL, 1, 0, deferred_cleanupp));
-}
-
-gfarm_error_t
-inode_remove_replica_gen(struct inode *inode, struct host *spool_host,
-	gfarm_int64_t gen)
-{
-	return (inode_remove_replica_gen_deferred(inode, spool_host, gen,
-	    NULL));
-}
-
 gfarm_error_t
 inode_remove_replica_protected(struct inode *inode, struct host *spool_host,
 	struct file_opening *fo)
 {
 	return (inode_remove_replica_internal(inode, spool_host,
 	    inode_get_gen(inode), fo, 0, 0, NULL));
+}
+
+/* remove an incomplete replica, when a replication fails */
+void
+inode_remove_replica_incomplete(struct inode *inode, struct host *spool_host,
+	gfarm_int64_t gen)
+{
+	gfarm_error_t e;
+
+	e = inode_remove_replica_internal(inode, spool_host, gen,
+	    NULL, 1, 0, NULL);
+	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		gflog_info(GFARM_MSG_1002433,
+		    "cannot remove an incomplete replica (%s, %lld:%lld): "
+		    "probably already removed",
+		    host_name(spool_host),
+		    (long long)inode_get_number(inode), (long long)gen);
+	} else if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_1002434,
+		    "cannot remove an incomplete replica (%s, %lld:%lld): %s",
+		    host_name(spool_host),
+		    (long long)inode_get_number(inode), (long long)gen,
+		    gfarm_error_string(e));
+	}
 }
 
 gfarm_error_t

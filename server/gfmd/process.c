@@ -120,7 +120,7 @@ file_opening_free(struct file_opening *fo, gfarm_mode_t mode)
 			    (long long)inode_get_number(fo->inode),
 			    (long long)fo->u.f.replica_source->gen,
 			    host_name(fo->u.f.replica_source->dst));
-			(void)inode_remove_replica_gen(fo->inode,
+			inode_remove_replica_incomplete(fo->inode,
 			    fo->u.f.replica_source->dst,
 			    fo->u.f.replica_source->gen);
 			free(fo->u.f.replica_source);
@@ -1363,10 +1363,9 @@ process_replica_added(struct process *process,
 		    (long long)size, (long long)inode_get_size(fo->inode),
 		    (long long)fo->u.f.replica_source->gen,
 		    (long long)inode_get_gen(fo->inode));
-		e = inode_remove_replica_gen(fo->inode, spool_host,
+		e = GFARM_ERR_INVALID_FILE_REPLICA;
+		inode_remove_replica_incomplete(fo->inode, spool_host,
 		    fo->u.f.replica_source->gen);
-		if (e == GFARM_ERR_NO_ERROR || e == GFARM_ERR_NO_SUCH_OBJECT)
-			e = GFARM_ERR_INVALID_FILE_REPLICA;
 	} else
 		e = inode_add_replica(fo->inode, spool_host, 1);
 	free(fo->u.f.replica_source);
