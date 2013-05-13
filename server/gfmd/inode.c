@@ -4379,7 +4379,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 {
 	struct file_copy **copyp, *copy, **foundp = NULL;
 	gfarm_error_t e;
-	int num_valid = 0, num_invalid = 0;
+	int num_valid = 0, num_incomplete = 0;
 
 	if (gen == inode->i_gen) {
 		for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;
@@ -4388,8 +4388,8 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 				foundp = copyp;
 			if (FILE_COPY_IS_VALID(copy))
 				++num_valid;
-			else
-				++num_invalid;
+			else if (!FILE_COPY_IS_BEING_REMOVED(copy))
+				++num_incomplete;
 		}
 		if (foundp == NULL) {
 			gflog_debug(GFARM_MSG_1001770,
@@ -4421,7 +4421,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 				    "being removed" : "invalid");
 				e = GFARM_ERR_NO_SUCH_OBJECT;
 			} else if (FILE_COPY_IS_VALID(copy) &&
-				   num_invalid > 0) {
+				   num_incomplete > 0) {
 				/* the replica may be used for replication */
 				gflog_debug(GFARM_MSG_UNFIXED,
 				    "remove_replica(%lld:%lld, %s): "
