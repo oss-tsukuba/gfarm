@@ -916,8 +916,9 @@ async_server_vput_wrapped_reply_unlocked(struct abstract_host *host,
 
 	if (debug_mode) {
 		gflog_info(GFARM_MSG_1002794,
-		    "%s: <%s> sending reply: %d",
-		    abstract_host_get_name(host), diag, (int)errcode);
+		    "%s: <%s> sending reply: %d (%s)",
+		    abstract_host_get_name(host), diag, (int)errcode,
+		    gfarm_error_string(errcode));
 	}
 
 	client = peer_get_conn(peer);

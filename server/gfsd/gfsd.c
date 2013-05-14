@@ -528,6 +528,9 @@ gfs_server_get_request(struct gfp_xdr *client, size_t size, const char *diag,
 	va_list ap;
 	gfarm_error_t e;
 
+	if (debug_mode)
+		gflog_info(GFARM_MSG_UNFIXED, "<%s> start receiving", diag);
+
 	va_start(ap, format);
 	e = gfp_xdr_vrecv_request_parameters(client, 0, &size, format, &ap);
 	va_end(ap);
@@ -546,7 +549,7 @@ gfs_server_put_reply_common(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 	gfarm_error_t e;
 
 	if (debug_mode)
-		gflog_debug(GFARM_MSG_1000458, "reply: %s: %d (%s)",
+		gflog_info(GFARM_MSG_1000458, "<%s> sending reply: %d (%s)",
 		    diag, (int)ecode, gfarm_error_string(ecode));
 
 	e = gfp_xdr_vsend_async_wrapped_result(client, xid, 0,
@@ -607,6 +610,10 @@ gfs_async_server_get_request(struct gfp_xdr *client, size_t size,
 	va_list ap;
 	gfarm_error_t e;
 
+	if (debug_mode)
+		gflog_info(GFARM_MSG_UNFIXED, "<%s> async start receiving",
+		    diag);
+
 	va_start(ap, format);
 	e = gfp_xdr_vrecv_request_parameters(client, 0, &size, format, &ap);
 	va_end(ap);
@@ -625,7 +632,8 @@ gfs_async_server_put_reply_common(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 	gfarm_error_t e;
 
 	if (debug_mode)
-		gflog_debug(GFARM_MSG_1002381, "async_reply: %s: %d (%s)",
+		gflog_info(GFARM_MSG_1002381,
+		    "<%s> async sending reply: %d (%s)",
 		    diag, (int)ecode, gfarm_error_string(ecode));
 
 	e = gfp_xdr_vsend_async_result(client, xid, ecode, format, app);
@@ -2599,8 +2607,9 @@ gfs_async_server_fhstat(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	gfarm_int32_t atime_nsec = 0, mtime_nsec = 0;
 	int save_errno = 0;
 	char *path;
+	static const char diag[] = "GFS_PROTO_FHSTAT";
 
-	e = gfs_async_server_get_request(conn, size, "fhstat",
+	e = gfs_async_server_get_request(conn, size, diag,
 	    "ll", &ino, &gen);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -2618,7 +2627,7 @@ gfs_async_server_fhstat(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	free(path);
 
 	return (gfs_async_server_put_reply_with_errno(conn, xid,
-	    "fhstat", save_errno,
+	    diag, save_errno,
 	    "llili", filesize, atime_sec, atime_nsec, mtime_sec, mtime_nsec));
 }
 
@@ -2630,8 +2639,9 @@ gfs_async_server_fhremove(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	gfarm_uint64_t gen;
 	int save_errno = 0;
 	char *path;
+	static const char diag[] = "GFS_PROTO_FHREMOVE";
 
-	e = gfs_async_server_get_request(conn, size, "fhremove",
+	e = gfs_async_server_get_request(conn, size, diag,
 	    "ll", &ino, &gen);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -2642,7 +2652,7 @@ gfs_async_server_fhremove(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	free(path);
 
 	return (gfs_async_server_put_reply_with_errno(conn, xid,
-	    "fhremove", save_errno, ""));
+	    diag, save_errno, ""));
 }
 
 gfarm_error_t
@@ -2654,9 +2664,10 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
 	gfarm_off_t used = 0, avail = 0;
+	static const char diag[] = "GFS_PROTO_STATUS";
 
 	/* just check that size == 0 */
-	e = gfs_async_server_get_request(conn, size, "status", "");
+	e = gfs_async_server_get_request(conn, size, diag, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -2679,7 +2690,7 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 		}
 	}
 	return (gfs_async_server_put_reply_with_errno(conn, xid,
-	    "status", save_errno,
+	    diag, save_errno,
 	    "fffll", loadavg[0], loadavg[1], loadavg[2], used, avail));
 }
 

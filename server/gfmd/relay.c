@@ -1455,7 +1455,8 @@ gfm_server_put_vreply_to_client(struct peer *peer, gfp_xdr_xid_t xid,
 
 	if (debug_mode)
 		gflog_info(GFARM_MSG_1000229,
-		    "<%s> sending reply: %d", diag, (int)ecode);
+		    "<%s> sending reply: %d (%s)", diag, (int)ecode,
+		    gfarm_error_string(ecode));
 
 	e = gfp_xdr_vsend_async_wrapped_result(client, xid, isref,
 	    0, NULL, NULL, ecode, format, app);
@@ -1482,7 +1483,8 @@ gfm_server_put_vreply_to_slave(struct peer *peer, gfp_xdr_xid_t xid,
 
 	if (debug_mode)
 		gflog_info(GFARM_MSG_UNFIXED,
-		    "<%s> sending reply: %d", diag, (int)ecode);
+		    "<%s> sending reply: %d (%s)", diag, (int)ecode,
+		    gfarm_error_string(ecode));
 
 	e = async_server_vput_wrapped_reply_unlocked(
 	    peer_get_abstract_host(slave_mhpeer),
@@ -1586,8 +1588,9 @@ gfm_server_put_vreply_begin(struct peer *peer, struct peer **slave_mhpeerp,
 	gfarm_uint64_t flags;
 
 	if (debug_mode)
-		gflog_info(GFARM_MSG_UNFIXED, "<%s> xid:%d sending reply: %s",
-		    diag, (int)xid, gfarm_error_string(ecode));
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "<%s> xid:%d sending reply: %d (%s)",
+		    diag, (int)xid, (int)ecode, gfarm_error_string(ecode));
 
 	if (peer_get_async(peer) == NULL) {
 		/* The request comes from a client. */
