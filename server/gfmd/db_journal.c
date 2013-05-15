@@ -1735,7 +1735,7 @@ db_journal_write_inode_uint32_modify_core(enum journal_operation ope, void *arg)
 }
 
 static gfarm_error_t
-db_journal_write_inode_uint32_modify(gfarm_uint32_t seqnum,
+db_journal_write_inode_uint32_modify(gfarm_uint64_t seqnum,
 	enum journal_operation ope, struct db_inode_uint32_modify_arg *arg)
 {
 	return (db_journal_write(seqnum, ope, arg,
