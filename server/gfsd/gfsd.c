@@ -689,6 +689,10 @@ gfm_async_client_send_request(struct gfp_xdr *bc_conn,
 	gfarm_error_t e;
 	va_list ap;
 
+	if (debug_mode)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "<%s> async sending request(%d)", diag, (int)command);
+
 	va_start(ap, format);
 	e = gfp_xdr_vsend_async_request(bc_conn, async,
 	    result_callback, disconnect_callback, closure,
@@ -708,6 +712,10 @@ gfm_async_client_recv_reply(struct gfp_xdr *bc_conn, const char *diag,
 	gfarm_error_t e;
 	gfarm_int32_t errcode;
 	va_list ap;
+
+	if (debug_mode)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "<%s> async receiving reply", diag);
 
 	va_start(ap, format);
 	e = gfp_xdr_vrpc_result_sized(bc_conn, 0, &size,
