@@ -233,7 +233,7 @@ postgresql)
 		rm -f $tablelist
 
 		# remove journal file
-		mv $JOURNAL_FILE $JOURNAL_FILE.bak >& /dev/null &&
+		mv $JOURNAL_FILE $JOURNAL_FILE.bak >/dev/null 2>&1 &&
 			echo "journal file ($JOURNAL_FILE) is renamed to $JOURNAL_FILE.bak"
 		$STOP_GFMD && service_ctl gfmd start
 		status=0
