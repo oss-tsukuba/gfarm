@@ -10,6 +10,7 @@
 #include "gfm_client.h"
 #include "lookup.h"
 #include "host.h"
+#include "gfarm_path.h"
 
 static char *program_name = "gftest";
 
@@ -88,7 +89,7 @@ int
 main(int argc, char *argv[])
 {
 	gfarm_error_t e;
-	char *file = NULL;
+	char *file = NULL, *realpath = NULL;
 	struct gfs_stat st;
 	int ch, mode_ch = 0, ret = 1;
 
@@ -126,10 +127,15 @@ main(int argc, char *argv[])
 	e = gfarm_initialize(&argc, &argv);
 	error_check("gfarm_initialize", e);
 
-	e = gfs_lstat(file, &st);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (1); /* not exist */
+	e = gfarm_realpath_by_gfarm2fs(file, &realpath);
+	if (e == GFARM_ERR_NO_ERROR)
+		file = realpath;
 
+	e = gfs_lstat(file, &st);
+	if (e != GFARM_ERR_NO_ERROR) {
+		free(realpath);
+		return (1); /* not exist */
+	}
 	switch (mode_ch) {
 	case 'd': ret = GFARM_S_ISDIR(st.st_mode); break;
 	case 'e': ret = 1;			   break;
@@ -153,6 +159,7 @@ main(int argc, char *argv[])
 		break;
 	}
 	gfs_stat_free(&st);
+	free(realpath);
 
 	e = gfarm_terminate();
 	error_check("gfarm_terminate", e);
