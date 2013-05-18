@@ -488,9 +488,9 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 		    gfarm_error_string(e));
 
 	/* on-demand replication */
-	if (e == GFARM_ERR_NO_ERROR &&
-	    !gfm_host_is_local(gf->gfm_server, host) &&
-	    gf_on_demand_replication) {
+	if (gf_on_demand_replication &&
+	    e == GFARM_ERR_NO_ERROR &&
+	    !gfm_host_is_local(gf->gfm_server, host)) {
 		e = gfs_replicate_to_local(gf, host, port);
 		if (e == GFARM_ERR_NO_ERROR) {
 			free(host);
