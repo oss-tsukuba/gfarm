@@ -9,5 +9,5 @@ if gfmkdir $gftmpdir && gftest -d $gftmpdir; then
     exit_code=$exit_pass
 fi
 
-gfrmdir $gfrmdir
+gfrmdir $gftmpdir
 exit $exit_code
