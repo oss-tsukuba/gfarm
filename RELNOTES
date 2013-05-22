@@ -1,3 +1,20 @@
+Release note for Gfarm 2.5.8.1
+==============================
+
+[2013.5.22]
+
+Updated feature
+* gftest - support relative path and multiple Gfarm file systems when
+  mounted by gfarm2fs
+
+Bug fix
+* gfmd - fix assertion error when the sequence number of operations is
+  larger than 4G
+* gfprep - -x option may cause "file busy" [sf.net trac #689]
+* invalid replica may remain when a replication fails [sf.net trac
+  #680]
+* gfdump.postgresql - fix bashism
+
 Release note for Gfarm 2.5.8
 ============================
 
