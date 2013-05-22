@@ -1,3 +1,15 @@
+Release note for Gfarm 2.5.7.5
+==============================
+
+[2013.5.22]
+
+Bug fix
+* gfmd - fix assertion error when the sequence number of operations is
+  larger than 4G
+* invalid replica may remain when a replication fails [sf.net trac
+  #680]
+* gfdump.postgresql - fix bashism
+
 Release note for Gfarm 2.5.7.4
 ==============================
 
