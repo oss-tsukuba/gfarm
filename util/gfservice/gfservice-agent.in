@@ -396,6 +396,32 @@ start_gfmd()
 }
 
 #
+# Start gfmd as a slave.
+#   TO DO: Don't execute $GFMD_RC.  Use service_ctl instead.
+#
+slavestart_gfmd()
+{
+	log_debug "slavestart_gfmd: TIMEOUT=$1"
+
+	I=0
+	STARTED=false
+	while [ "X$1" = Xno ] || [ $I -le "$1" ]; do
+		$GFMD_RC status > /dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			STARTED=true
+			break
+		fi
+		[ $I -eq 0 ] && $GFMD_RC slavestart > /dev/null 2>&1
+		sleep 1
+		I=`expr $I + 1`
+	done
+
+	[ $STARTED != true ] && log_error "failed to start gfmd as a slave"
+	log_debug "end slavestart_gfmd"
+	return 0
+}
+
+#
 # Start gfsd.
 #   TO DO: Don't execute $GFSD_RC.  Use service_ctl instead.
 #
@@ -693,8 +719,7 @@ subcmd_start_gfmd_slave()
 	set_gfmd_params
 	TIMEOUT=`get_param timeout || echo 'no'`
 	log_debug "subcmd_start_gfmd_slave: timeout=$TIMEOUT"
-	set_conf $GFMD_CONF metadb_server_force_slave enable
-	start_gfmd $TIMEOUT
+	slavestart_gfmd $TIMEOUT
 
 	log_debug "end subcmd_start_gfmd_slave"
 }
