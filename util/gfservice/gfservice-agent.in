@@ -375,30 +375,49 @@ start_pgsql()
 #
 start_gfmd()
 {
-	log_debug "start_gfmd: TIMEOUT=$1 SLAVESTART=$2"
+	log_debug "start_gfmd: TIMEOUT=$1"
 
 	I=0
 	STARTED=false
-
-	if [ "X$2" = Xtrue ]; then
-		START=slavestart
-	else
-		START=start
-	fi
-
 	while [ "X$1" = Xno ] || [ $I -le "$1" ]; do
 		$GFMD_RC status > /dev/null 2>&1
 		if [ $? -eq 0 ]; then
 			STARTED=true
 			break
 		fi
-		[ $I -eq 0 ] && $GFMD_RC $START > /dev/null 2>&1
+		[ $I -eq 0 ] && $GFMD_RC start > /dev/null 2>&1
 		sleep 1
 		I=`expr $I + 1`
 	done
 
 	[ $STARTED != true ] && log_error "failed to start gfmd"
 	log_debug "end start_gfmd"
+	return 0
+}
+
+#
+# Start gfmd as a slave.
+#   TO DO: Don't execute $GFMD_RC.  Use service_ctl instead.
+#
+slavestart_gfmd()
+{
+	log_debug "slavestart_gfmd: TIMEOUT=$1"
+
+	I=0
+	STARTED=false
+	while [ "X$1" = Xno ] || [ $I -le "$1" ]; do
+		$GFMD_RC status > /dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			STARTED=true
+			break
+		fi
+		[ $I -eq 0 ] && $GFMD_RC slavestart > /dev/null 2>&1
+		sleep 1
+		I=`expr $I + 1`
+	done
+
+	[ $STARTED != true ] && log_error "failed to start gfmd as a slave"
+	log_debug "end slavestart_gfmd"
 	return 0
 }
 
@@ -667,7 +686,7 @@ subcmd_start_gfmd()
 	set_gfmd_params
 	TIMEOUT=`get_param timeout || echo 'no'`
 	log_debug "subcmd_start_gfmd: timeout=$TIMEOUT"
-	start_gfmd $TIMEOUT false
+	start_gfmd $TIMEOUT
 
 	log_debug "subcmd_start_gfmd"
 }
@@ -684,7 +703,7 @@ subcmd_start_gfmd_master()
 	TIMEOUT=`get_param timeout || echo 'no'`
 	log_debug "subcmd_start_gfmd_master: timeout=$TIMEOUT"
 	unset_conf $GFMD_CONF metadb_server_force_slave
-	start_gfmd $TIMEOUT false
+	start_gfmd $TIMEOUT
 
 	log_debug "end subcmd_start_gfmd_master"
 }
@@ -700,7 +719,7 @@ subcmd_start_gfmd_slave()
 	set_gfmd_params
 	TIMEOUT=`get_param timeout || echo 'no'`
 	log_debug "subcmd_start_gfmd_slave: timeout=$TIMEOUT"
-	start_gfmd $TIMEOUT true
+	slavestart_gfmd $TIMEOUT
 
 	log_debug "end subcmd_start_gfmd_slave"
 }
