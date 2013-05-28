@@ -26,7 +26,9 @@ int host_status_callout_retry(struct host *);
 void host_disconnect_request(struct host *, struct peer *);
 struct callout *host_status_callout(struct host *);
 struct peer *host_get_peer(struct host *);
+struct peer *host_get_peer_by_generation(struct host *, gfarm_uint32_t);
 void host_put_peer(struct host *, struct peer *);
+gfarm_uint32_t host_get_peer_generation(struct host *h);
 
 char *host_name(struct host *);
 int host_port(struct host *);

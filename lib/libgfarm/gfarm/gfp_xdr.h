@@ -140,6 +140,10 @@ gfarm_error_t gfp_xdr_vsend_async_wrapped_request(struct gfp_xdr *,
 	result_callback_t, disconnect_callback_t, void *,
 	const char *, va_list *,
 	gfarm_int32_t, const char *, va_list *, int);
+gfarm_error_t gfp_xdr_send_async_raw_request(struct gfp_xdr *,
+	gfp_xdr_async_peer_t, result_callback_t, disconnect_callback_t,
+	void *, size_t, void *);
+
 gfarm_error_t gfp_xdr_recv_async_header(struct gfp_xdr *, int, int,
 	enum gfp_xdr_msg_type *, gfp_xdr_xid_t *, size_t *);
 

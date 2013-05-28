@@ -1009,6 +1009,16 @@
 	  入力: l:peer_id
 	  出力: i:エラー
 
+	GFM_PROTO_REMOTE_PEER_DISCONNECT
+	  入力: l:peer_id
+	  出力: i:エラー
+
+	  ※ slave gfmd に接続している gfsd に対する接続切断を、master
+	     gfmd が slave gfmd に対して要求する。gfsd が 別の gfmd に
+	     再接続したことを master gfmd が検知したり、gfsd のホスト情報
+	     が (gfhost -d によって) メタデータから削除されたりした際に
+	     使用する。
+
 	GFM_PROTO_REMOTE_RPC … クライアントおよびgfsdからの要求のリレー
 	  入力: l:peer_id
 		これ以降、リレーする gfm protocol の
@@ -1016,7 +1026,7 @@
 	  出力: リレーされた gfm protocol の出力
 
 	GFM_PROTO_REMOTE_GFS_RPC … gfsd back channel への要求のリレー
-	  入力: s:fsnode
+	  入力: l:peer_id
 		これ以降、リレーする gfs protocol の
 			プロトコルID、入力引数が続く
 	  出力: リレーされた gfs protocol の出力

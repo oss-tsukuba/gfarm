@@ -1927,11 +1927,9 @@ gfm_server_hostname_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 {
 	gfarm_int32_t e;
 	char *hostname;
-	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_HOSTNAME_SET";
 
-	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
-	    GFM_PROTO_HOSTNAME_SET, "s", &hostname);
+	e = gfm_server_get_request(peer, sizep, diag, "s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip) {
@@ -1939,22 +1937,19 @@ gfm_server_hostname_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	if (relay == NULL) {
-		/* do not relay RPC to master gfmd */
-		giant_lock();
-		if (from_client) {
-			gflog_debug(GFARM_MSG_1001578,
-			    "operation is not permitted for from_client");
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		} else
-			e = peer_set_host(peer, hostname);
-		giant_unlock();
-	}
+	/* do not relay RPC to master gfmd */
+	giant_lock();
+	if (from_client) {
+		gflog_debug(GFARM_MSG_1001578,
+		    "operation is not permitted for from_client");
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else
+		e = peer_set_host(peer, hostname);
+	giant_unlock();
 
 	free(hostname);
 
-	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
 }
 
 /*

@@ -54,6 +54,10 @@ struct local_peer {
 
 	struct remote_peer *child_peers;
 	pthread_mutex_t child_peers_mutex;
+
+	/* used for inter-gfmd RPC relay */
+	int received_remote_peer_disconnect;
+	struct gfarm_thr_statewait statewait;
 };
 
 static struct local_peer *local_peer_table;
@@ -337,8 +341,12 @@ local_peer_free(struct peer *peer)
 	gfarm_uint64_t private_peer_id = peer_get_private_peer_id(peer);
 	int remote_peer_allocated = ((peer->flags &
 	    PEER_FLAGS_REMOTE_PEER_ALLOCATED) != 0);
+	int received_remote_peer_disconnect =
+	    local_peer->received_remote_peer_disconnect;
 	int peer_is_master_gfmd = 0;
 	static const char diag[] = "local_peer_free";
+
+	gfarm_thr_statewait_terminate(&local_peer->statewait, diag);
 
 	/*
 	 * to support remote peer
@@ -376,10 +384,13 @@ local_peer_free(struct peer *peer)
 	    diag, local_peer_table_diag);
 
 	/* gfmdc_client_remote_peer_free() doesn't wait result */
-	if (remote_peer_allocated && (e = gfmdc_client_remote_peer_free(
-	    private_peer_id)) != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
-		    "failed free remote peer: %s", gfarm_error_string(e));
+	if (remote_peer_allocated && !received_remote_peer_disconnect) {
+		if ((e = gfmdc_client_remote_peer_free(private_peer_id))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "failed free remote peer: %s",
+			    gfarm_error_string(e));
+		}
 	}
 
 	if (peer_is_master_gfmd)
@@ -480,6 +491,9 @@ local_peer_alloc0(int fd, struct gfp_xdr *conn,
 	if (local_peer->super.iostatp == NULL)
 		local_peer->super.iostatp = gfarm_iostat_get_ip(fd);
 
+	local_peer->received_remote_peer_disconnect = 0;
+	gfarm_thr_statewait_initialize(&local_peer->statewait, diag);
+
 	*local_peerp = local_peer;
 
 	gfarm_mutex_unlock(&local_peer_table_mutex, diag,
@@ -559,8 +573,7 @@ local_peer_watch_readable(struct local_peer *local_peer)
 }
 
 struct local_peer *
-local_peer_lookup(struct local_peer *parent_peer,
-	gfarm_int64_t private_peer_id)
+local_peer_lookup(gfarm_int64_t private_peer_id)
 {
 	struct local_peer *result = NULL;
 	struct peer *peer;
@@ -572,12 +585,10 @@ local_peer_lookup(struct local_peer *parent_peer,
 
 	for (i = 0; i < local_peer_table_size; i++) {
 		peer = &local_peer_table[i].super;
-		if (peer->process != NULL &&
-		    peer->private_peer_id == private_peer_id) {
+		if (peer->private_peer_id == private_peer_id) {
 			result = &local_peer_table[i];
 			break;
 		}
-			
 	}
 
 	gfarm_mutex_unlock(&local_peer_table_mutex, diag,
@@ -704,4 +715,16 @@ local_peer_set_remote_peer_allocated(struct local_peer *peer,
 {
 	local_peer_to_peer(peer)->flags |= PEER_FLAGS_REMOTE_PEER_ALLOCATED;
 	peer->master_private_peer_id = master_private_peer_id;
+}
+
+struct gfarm_thr_statewait *
+local_peer_get_statewait(struct local_peer *peer)
+{
+	return (&peer->statewait);
+}
+
+void
+local_peer_set_received_remote_peer_disconnect(struct local_peer *local_peer)
+{
+	local_peer->received_remote_peer_disconnect = 1;
 }

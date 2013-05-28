@@ -75,3 +75,4 @@ struct mdhost *mdhost_lookup_master(void);
 struct mdhost *mdhost_lookup_metadb_server(struct gfarm_metadb_server *);
 int mdhost_get_count(void);
 int mdhost_self_is_master_candidate(void);
+struct thread_pool *mdhost_send_manager_get_thrpool(void);

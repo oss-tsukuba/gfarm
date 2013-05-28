@@ -508,7 +508,7 @@ abstract_host_disconnect_request(struct abstract_host *h, struct peer *peer,
 	}
 }
 
-static gfarm_error_t
+gfarm_error_t
 async_channel_protocol_switch(struct abstract_host *host, struct peer *peer,
 	gfp_xdr_xid_t xid, size_t size,
 	channel_protocol_switch_t channel_protocol_switch)
@@ -879,6 +879,39 @@ async_client_vsend_request(struct abstract_host *host,
 	    NULL, NULL, command, format, app, 0));
 }
 
+gfarm_error_t
+async_client_send_raw_request(struct abstract_host *host,
+	struct peer *peer0, const char *diag,
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback, void *closure,
+	size_t size, void *data)
+{
+	gfarm_error_t e;
+	struct peer *peer;
+	int command = 0;
+	gfp_xdr_async_peer_t async;
+	struct gfp_xdr *server;
+
+	if (debug_mode)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: <%s> channel sending a raw request",
+		    abstract_host_get_name(host), diag);
+
+	if ((e = async_client_sender_lock(host, peer0, &peer, command,
+	    diag)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s", gfarm_error_string(e));
+		return (e);
+	}
+
+	async = peer_get_async(peer0);
+	server = peer_get_conn(peer0);
+	e = gfp_xdr_send_async_raw_request(server, async,
+	    result_callback, disconnect_callback, closure, size, data);
+
+	async_client_sender_unlock(host, peer, diag);
+	return (e);
+}
+
 /* abstract_host_receiver_lock() must be already called here by
  * channel_main() */
 gfarm_error_t
@@ -978,6 +1011,22 @@ async_server_vput_reply(struct abstract_host *host,
 {
 	return (async_server_vput_wrapped_reply(host, peer0, xid,
 	    0, diag, 0, NULL, NULL, errcode, format, app));
+}
+
+gfarm_error_t
+async_server_put_reply(struct abstract_host *host,
+	struct peer *peer0, gfp_xdr_xid_t xid,
+	const char *diag,
+	gfarm_error_t errcode, const char *format, ...)
+{
+	gfarm_error_t e;
+	va_list ap;
+
+	va_start(ap, format);
+	e = async_server_vput_wrapped_reply(host, peer0, xid,
+	    0, diag, 0, NULL, NULL, errcode, format, &ap);
+	va_end(ap);
+	return (e);
 }
 
 /* abstract_host_receiver_lock() must be already called here by

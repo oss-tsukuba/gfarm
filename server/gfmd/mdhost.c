@@ -74,6 +74,8 @@ pthread_mutex_t mdhost_master_mutex = PTHREAD_MUTEX_INITIALIZER;
 static const char MDHOST_MASTER_MUTEX_DIAG[]	= "mdhost_master_mutex";
 static struct mdhost *mdhost_master;
 
+struct netsendq_manager *mdhost_send_manager;
+
 #define MDHOST_HASHTAB_SIZE	31
 
 #define FOREACH_MDHOST(it) \
@@ -468,6 +470,10 @@ struct abstract_host_ops mdhost_ops = {
 	mdhost_disabled,
 };
 
+const struct netsendq_type *
+	mdhost_queue_types[NETSENDQ_TYPE_GFM_PROTO_NUM_TYPES] = {
+};
+
 static struct mdhost *
 mdhost_new(struct gfarm_metadb_server *ms)
 {
@@ -481,7 +487,7 @@ mdhost_new(struct gfarm_metadb_server *ms)
 		return (NULL);
 	}
 
-	e = abstract_host_init(&m->ah, &mdhost_ops, NULL,  diag);
+	e = abstract_host_init(&m->ah, &mdhost_ops, mdhost_send_manager, diag);
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(m);
 		gflog_error(GFARM_MSG_UNFIXED,
@@ -1389,6 +1395,13 @@ mdhost_init(void)
 			gflog_fatal(GFARM_MSG_1002971,
 			    "%s", gfarm_error_string(e));
 	}
+
+	mdhost_send_manager = netsendq_manager_new(
+	    NETSENDQ_TYPE_GFM_PROTO_NUM_TYPES, mdhost_queue_types,
+	    /* XXX FIXME: use different config parameter */
+	    gfarm_metadb_thread_pool_size, gfarm_metadb_job_queue_length,
+	    "send queue to mdhost");
+
 	if ((self = mdhost_lookup(metadb_server_name)) == NULL) {
 		ms.name = strdup_ck(metadb_server_name, diag);
 		ms.port = gfmd_port;
@@ -1429,4 +1442,10 @@ mdhost_init(void)
 			    gfarm_error_string(e));
 	}
 	mdhost_activate(self);
+}
+
+struct thread_pool *
+mdhost_send_manager_get_thrpool(void)
+{
+	return (netsendq_manager_get_thrpool(mdhost_send_manager));
 }

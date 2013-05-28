@@ -1,15 +1,26 @@
-/* for struct mdhost */
+/*
+ * Netsendq types for 'struct mdhost'.
+ */
 #ifdef not_def_REPLY_QUEUE
 #define NETSENDQ_TYPE_GFM_PROTO_REPLY_TO_GFMD		0
 #define NETSENDQ_TYPE_GFM_PROTO_JOURNAL_READY_TO_RECV	1
 #endif
+
+#if 1
+/* Not used currently. */
+#define NETSENDQ_TYPE_GFM_PROTO_NUM_TYPES		0
+#else
 #define NETSENDQ_TYPE_GFM_PROTO_JOURNAL_SEND		0
 #define NETSENDQ_TYPE_GFM_PROTO_PEER_FREE		1
 #define NETSENDQ_TYPE_GFM_PROTO_PEER_ALLOC		2
 #define NETSENDQ_TYPE_GFM_PROTO_GFS_RPC			3
 #define NETSENDQ_TYPE_GFM_PROTO_RPC			4
 #define NETSENDQ_TYPE_GFM_PROTO_NUM_TYPES		5
-/* for struct host */
+#endif
+
+/*
+ * Netsendq types for 'struct host'.
+ */
 #define NETSENDQ_TYPE_GFS_PROTO_STATUS			0
 #ifdef not_def_REPLY_QUEUE
 #define NETSENDQ_TYPE_GFM_PROTO_REPLY_TO_GFSD		1
@@ -51,3 +62,4 @@ void netsendq_host_becomes_up(struct netsendq *);
 
 struct netsendq_manager *netsendq_manager_new(
 	int, const struct netsendq_type *const *, int, int, const char *);
+struct thread_pool *netsendq_manager_get_thrpool(struct netsendq_manager *);

@@ -28,7 +28,7 @@ void local_peer_shutdown_all_prepare_to_wait(void);
 void local_peer_shutdown_all_wait(void);
 void local_peer_shutdown_all(void);
 void local_peer_detach_all(void);
-struct local_peer *local_peer_lookup(struct local_peer *, gfarm_int64_t);
+struct local_peer *local_peer_lookup(gfarm_int64_t);
 struct remote_peer *local_peer_lookup_remote(struct local_peer *,
 	gfarm_int64_t);
 
@@ -42,3 +42,5 @@ void local_peer_for_child_peers(struct local_peer *,
 	void (*)(struct remote_peer **, void *), void *, const char *);
 void local_peer_set_remote_peer_allocated(struct local_peer *, gfarm_int64_t);
 int local_peer_get_remote_peer_allocated(struct local_peer *);
+struct gfarm_thr_statewait *local_peer_get_statewait(struct local_peer *);
+void local_peer_set_received_remote_peer_disconnect(struct local_peer *);

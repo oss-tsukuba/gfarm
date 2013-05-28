@@ -263,6 +263,39 @@ gfp_xdr_vsend_async_wrapped_request(struct gfp_xdr *server,
 	    wrapping_format, wrapping_app, command, format, app, isref));
 }
 
+gfarm_error_t
+gfp_xdr_send_async_raw_request(struct gfp_xdr *server,
+	gfp_xdr_async_peer_t async_server,
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback,
+	void *closure, 
+	size_t size, void *data)
+{
+	gfarm_error_t e;
+	gfarm_int32_t xid;
+
+	e = gfp_xdr_send_async_request_header(server, async_server, size,
+	    result_callback, disconnect_callback, closure, &xid);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	e = gfp_xdr_send(server, "r", size, data);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfp_xdr_send_async_request_error(async_server, xid,
+		    "gfp_xdr_vsend");
+		return (e);
+	}
+
+	e = gfp_xdr_flush(server);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfp_xdr_send_async_request_error(async_server, xid,
+		    "gfp_xdr_flush");
+		return (e);
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
 /*
  * used by both client and server side. XXX should be moved to gfp_xdr.c
  */

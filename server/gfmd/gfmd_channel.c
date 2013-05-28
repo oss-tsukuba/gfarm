@@ -45,6 +45,7 @@
 #include "db_journal.h"
 #include "relay.h"
 #include "gfmd_channel.h"
+#include "back_channel.h"
 #include "gfmd.h" /* protocol_service(), gfmd_terminate() */
 #include "thrstatewait.h"
 
@@ -1098,14 +1099,95 @@ gfmdc_server_remote_peer_free(struct mdhost *mh, struct peer *peer,
 {
 	gfarm_error_t e;
 	gfarm_int64_t remote_peer_id;
+	struct remote_peer *remote_peer;
 	static const char diag[] = "GFM_PROTO_REMOTE_PEER_FREE";
 
-	if ((e = gfmdc_server_get_request(peer, size, diag, "l",
-	    &remote_peer_id)) == GFARM_ERR_NO_ERROR) {
+	do {
+		e = gfmdc_server_get_request(peer, size, diag, "l",
+		    &remote_peer_id);
+		if (e != GFARM_ERR_NO_ERROR)
+			break;
+		remote_peer = local_peer_lookup_remote(
+		    peer_to_local_peer(peer), remote_peer_id);
+		if (remote_peer == NULL) {
+			e = GFARM_ERR_INVALID_REMOTE_PEER;
+			break;
+		}
+
+		assert(peer_get_parent(remote_peer_to_peer(remote_peer)) !=
+		    NULL);
+
 		/* XXXRELAY this takes giant lock */
-		e = remote_peer_free_by_id(peer, remote_peer_id);
-	}
+		giant_lock();
+		remote_peer_set_received_remote_peer_free(remote_peer);
+		peer_free(remote_peer_to_peer(remote_peer));
+		giant_unlock();
+	} while (0);
 	e = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
+	return (e);
+}
+
+static gfarm_error_t
+gfmdc_client_remote_peer_disconnect_result(struct mdhost *mh,
+	struct peer *peer, size_t size, gfarm_error_t e, void *closure,
+	const char *diag)
+{
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if ((e = gfmdc_client_recv_result(peer, mh, size, diag, ""))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED, "%s : %s",
+		    mdhost_get_name(mh), gfarm_error_string(e));
+	return (e);
+}
+
+gfarm_error_t
+gfmdc_client_remote_peer_disconnect(struct mdhost *mh, struct peer *peer,
+    gfarm_int64_t remote_peer_id)
+{
+	gfarm_error_t e;
+	static const char diag[] = "GFM_PROTO_REMOTE_PEER_DISCONNECT";
+
+	if ((e = gfmdc_client_send_request_async(mh, peer,
+	    gfmdc_client_remote_peer_disconnect_result, NULL, diag,
+	    GFM_PROTO_REMOTE_PEER_DISCONNECT, "l", remote_peer_id))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: %s", diag, gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfmdc_server_remote_peer_disconnect(struct mdhost *mh, struct peer *peer,
+	gfp_xdr_xid_t xid, size_t size)
+{
+	gfarm_error_t e, e2;
+	gfarm_int64_t peer_id;
+	struct peer *gfs_peer;
+	static const char diag[] = "GFM_PROTO_REMOTE_PEER_DISCONNECT";
+
+	do {
+		if ((e = gfmdc_server_get_request(peer, size, diag, "l",
+		    &peer_id)) != GFARM_ERR_NO_ERROR)
+			break;
+		gfs_peer = local_peer_to_peer(local_peer_lookup(peer_id));
+		if (gfs_peer == NULL)
+			break;  /* 'gfsd_peer' has already been disposed. */
+		if (peer_get_peer_type(gfs_peer) != peer_type_back_channel) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "received peer-disconnect reqeust with an invalid "
+			    "peer id: %lld", (long long)peer_id);
+			e = GFARM_ERR_INVALID_REMOTE_PEER;
+			break;
+		}
+		local_peer_set_received_remote_peer_disconnect(
+		    peer_to_local_peer(gfs_peer));
+		host_disconnect_request(peer_get_host(gfs_peer), gfs_peer);
+	} while (0);
+
+	e2 = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
+	if (e == GFARM_ERR_NO_ERROR)
+		e = e2;
 	return (e);
 }
 
@@ -1193,6 +1275,909 @@ gfmdc_server_remote_rpc(struct mdhost *mh, struct peer *peer,
 	return (e);
 }
 
+/*
+ * Closure for gfmdc_master_server_remote_gfs_rpc().
+ */
+struct master_server_remote_gfs_rpc_closure {
+	struct abstract_host *abhost;
+	gfarm_int64_t private_peer_id;
+	gfarm_int64_t remote_peer_id;
+	gfp_xdr_xid_t xid;
+	size_t size;
+	struct gfarm_thr_statewait *statewait;
+};
+
+/*
+ * Create an object of 'struct master_server_remote_gfs_rpc_closure'.
+ */
+static struct master_server_remote_gfs_rpc_closure *
+master_server_remote_gfs_rpc_closure_alloc(struct abstract_host *abhost,
+	gfarm_int64_t private_peer_id, gfarm_int64_t remote_peer_id, 
+	gfp_xdr_xid_t xid, size_t size, struct gfarm_thr_statewait *statewait)
+{
+	struct master_server_remote_gfs_rpc_closure *closure;
+
+	GFARM_MALLOC(closure);
+	if (closure == NULL)
+		return (NULL);
+	closure->abhost          = abhost;
+	closure->private_peer_id = private_peer_id;
+	closure->remote_peer_id  = remote_peer_id;
+	closure->xid             = xid;
+	closure->size            = size;
+	closure->statewait       = statewait;
+
+	return (closure);
+}
+
+/*
+ * Dispose an object of 'struct master_server_remote_gfs_rpc_closure'.
+ */
+static void
+master_server_remote_gfs_rpc_closure_free(
+	struct master_server_remote_gfs_rpc_closure *closure)
+{
+	free(closure);
+}
+
+/*
+ * Internal function of gfmdc_master_server_remote_gfs_rpc(), invoked via
+ * a thread pool.
+ */
+static void *
+gfmdc_master_server_remote_gfs_rpc_thread(void *arg)
+{
+	struct master_server_remote_gfs_rpc_closure *closure = arg;
+	struct peer *peer;
+	struct remote_peer *remote_peer;
+	gfarm_error_t e;
+	static const char diag[] =
+	    "GFM_PROTO_REMOTE_GFS_RPC master (request from slave)";
+
+	/* increment refcount */
+	if ((peer = abstract_host_get_peer_with_id(closure->abhost, 
+	    closure->private_peer_id, diag)) == NULL)
+		e = GFARM_ERR_CONNECTION_ABORTED;
+	else if ((remote_peer = local_peer_lookup_remote(
+	    peer_to_local_peer(peer), closure->remote_peer_id)) == NULL)
+		e = GFARM_ERR_INVALID_REMOTE_PEER;
+	else {
+		e = async_channel_protocol_switch(
+		    peer_get_abstract_host(remote_peer_to_peer(remote_peer)),
+		    remote_peer_to_peer(remote_peer), closure->xid,
+		    closure->size, async_back_channel_protocol_switch);
+	}
+
+	/* decrement refcount */
+	if (peer != NULL)
+		abstract_host_put_peer(closure->abhost, peer);
+	gfarm_thr_statewait_signal(closure->statewait, e, diag);
+	return (NULL);
+}
+
+/*
+ * Protocol handler of GFM_PROTO_REMOTE_GFS_RPC for master gfmd.  It receives
+ * a GFM_PROTO_REMOTE_GFS_RPC request from a slave gfmd and sends its reply.
+ */
+static gfarm_error_t
+gfmdc_master_server_remote_gfs_rpc(struct mdhost *mh, struct peer *peer,
+	gfp_xdr_xid_t xid, size_t size)
+{
+	gfarm_error_t e;
+	struct gfp_xdr *conn = peer_get_conn(peer);
+	gfarm_int64_t remote_peer_id;
+	struct remote_peer *remote_peer = NULL;
+	struct gfarm_thr_statewait *statewait;
+	struct master_server_remote_gfs_rpc_closure *closure;
+	int eof;
+	static const char diag[] =
+	    "GFM_PROTO_REMOTE_GFS_RPC master (request from slave)";
+
+	if (debug_mode) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: <%s> start remote rpc receiving from %s",
+		    peer_get_hostname(peer), diag,
+		    peer_get_service_name(peer));
+	}
+
+	do {
+		e = gfp_xdr_recv_sized(conn, 0, 1, &size, &eof, "l",
+		    &remote_peer_id);
+		if (e != GFARM_ERR_NO_ERROR) {
+			/* XXXRELAY fix rpc residual */
+			(void) gfp_xdr_purge(conn, 0, size);
+			break;
+		}
+		if (eof) {
+			e = GFARM_ERR_UNEXPECTED_EOF;
+			break;
+		}
+		remote_peer = local_peer_lookup_remote(
+		    peer_to_local_peer(peer), remote_peer_id);
+		if (remote_peer == NULL) {
+			/* XXXRELAY fix rpc residual */
+			e = GFARM_ERR_INVALID_REMOTE_PEER;
+			break;
+		}
+		if (remote_peer_get_peer_type(remote_peer) !=
+		    peer_type_back_channel) {
+			/* XXXRELAY fix rpc residual */
+			e = GFARM_ERR_INVALID_REMOTE_PEER;
+			break;
+		}
+	} while (0);
+
+	statewait = remote_peer_get_statewait(remote_peer);
+	gfarm_thr_statewait_reset(statewait, diag);
+	closure = master_server_remote_gfs_rpc_closure_alloc(
+	    mdhost_to_abstract_host(mh), peer_get_private_peer_id(peer),
+	    remote_peer_id, xid, size, statewait);
+	if (closure == NULL)
+		e = GFARM_ERR_NO_MEMORY;
+
+	if (e != GFARM_ERR_NO_ERROR && !eof) {
+		(void) gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
+		return (e);
+	}
+
+	thrpool_add_job(journal_sync_thread_pool,
+	    gfmdc_master_server_remote_gfs_rpc_thread, closure);
+	e = gfarm_thr_statewait_wait(statewait, diag);
+	master_server_remote_gfs_rpc_closure_free(closure);
+
+	return (e);
+}
+
+/*
+ * Closure for gfmdc_slave_server_remote_gfs_rpc().
+ */
+struct slave_server_remote_gfs_rpc_closure {
+	struct abstract_host *abhost;
+	gfarm_int64_t private_peer_id;
+	gfp_xdr_xid_t xid;
+	size_t size;
+	void *data;
+	gfarm_error_t errcode;  /* only used in a reply. */
+};
+
+/*
+ * Create an object of 'struct slave_server_remote_gfs_rpc_closure'.
+ */
+static struct slave_server_remote_gfs_rpc_closure *
+slave_server_remote_gfs_rpc_closure_alloc(struct abstract_host *abhost,
+	gfarm_int64_t private_peer_id, gfp_xdr_xid_t xid, size_t size,
+	void *data)
+{
+	struct slave_server_remote_gfs_rpc_closure *closure;
+
+	GFARM_MALLOC(closure);
+	if (closure == NULL)
+		return (NULL);
+	closure->data = malloc(size);
+	if (closure->data == NULL) {
+		free(closure);
+		return (NULL);
+	}
+
+	closure->abhost          = abhost;
+	closure->private_peer_id = private_peer_id;
+	closure->xid             = xid;
+	closure->size            = size;
+	if (data != NULL)
+		memcpy(closure->data, data, size);
+
+	return (closure);
+}
+
+/*
+ * Dispose an object of 'struct slave_server_remote_gfs_rpc_closure'.
+ */
+static void
+slave_server_remote_gfs_rpc_closure_free(
+	struct slave_server_remote_gfs_rpc_closure *closure)
+{
+	free(closure->data);
+	free(closure);
+}
+
+/*
+ * Resize data buffer in an object of
+ * 'struct slave_server_remote_gfs_rpc_closure'.
+ */
+static int
+slave_server_remote_gfs_rpc_closure_resize(
+	struct slave_server_remote_gfs_rpc_closure *closure, size_t size)
+{
+	void *new_data;
+
+	if (size > closure->size) {
+		new_data = realloc(closure->data, size);
+		if (new_data == NULL)
+			return (0);
+		closure->data = new_data;
+	}
+
+	closure->size = size;
+	return (1);
+}
+
+/*
+ * Internal function of gfmdc_slave_server_remote_gfs_rpc_result(),
+ * invoked via a thread pool.
+ */
+static void *
+gfmdc_slave_server_remote_gfs_rpc_result_thread(void *arg)
+{
+	struct slave_server_remote_gfs_rpc_closure *closure = arg;
+	struct peer *peer;
+	static const char diag[] =
+	    "GFM_PROTO_REMOTE_GFS_RPC slave (reply to master)";
+
+	/* increment refcount */
+	peer = abstract_host_get_peer_with_id(closure->abhost,
+	    closure->private_peer_id, diag);
+	if (peer == NULL)
+		return (NULL);
+
+	if (debug_mode)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: <%s> sending reply: %d (%s)",
+		    peer_get_hostname(peer), diag, (int)closure->errcode,
+		    gfarm_error_string(closure->errcode));
+
+	if (closure->errcode == GFARM_ERR_NO_ERROR) {
+		(void) async_server_put_reply(closure->abhost, peer,
+		    closure->xid, diag, closure->errcode, "r",
+		    (int) closure->size, closure->data);
+	} else {
+		(void) async_server_put_reply(closure->abhost, peer,
+		    closure->xid, diag, closure->errcode, "");
+	}
+
+	/* decrement refcount */
+	abstract_host_put_peer(closure->abhost, peer);
+	slave_server_remote_gfs_rpc_closure_free(closure);
+	return (NULL);
+}
+
+/*
+ * 'result_callback' handler for gfmdc_slave_server_remote_gfs_rpc().
+ */
+static gfarm_error_t
+gfmdc_slave_server_remote_gfs_rpc_result(gfarm_error_t errcode, void *arg,
+    size_t size, void *data)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	struct slave_server_remote_gfs_rpc_closure *closure = arg;
+
+	if (!slave_server_remote_gfs_rpc_closure_resize(closure, size)) {
+		slave_server_remote_gfs_rpc_closure_free(closure);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	memcpy(closure->data, data, size);
+	closure->errcode = errcode;
+
+	thrpool_add_job(journal_sync_thread_pool,
+	    gfmdc_slave_server_remote_gfs_rpc_result_thread, closure);
+	return (e);
+}
+
+/*
+ * 'disconnect_callback' handler for gfmdc_slave_server_remote_gfs_rpc().
+ */
+static void
+gfmdc_slave_server_remote_gfs_rpc_disconnect(gfarm_error_t errcode, void *arg)
+{
+	assert(errcode != GFARM_ERR_NO_ERROR);
+	(void) gfmdc_slave_server_remote_gfs_rpc_result(errcode, arg, 0, NULL);
+}
+
+/*
+ * Protocol handler of GFM_PROTO_REMOTE_GFS_RPC for slave gfmd.  It forwards
+ * a GFS protocol request from a master gfmd to gfsd and relays its reply
+ * in the opposite direction.
+ */
+static gfarm_error_t
+gfmdc_slave_server_remote_gfs_rpc(struct mdhost *mh, struct peer *peer,
+	gfp_xdr_xid_t xid, size_t size)
+{
+	gfarm_error_t e;
+	struct gfp_xdr *conn = peer_get_conn(peer);
+	struct local_peer *gfs_lpeer;
+	struct peer *gfs_peer;
+	gfarm_int64_t peer_id;
+	size_t data_size;
+	int eof;
+	struct slave_server_remote_gfs_rpc_closure *closure = NULL;
+	static const char diag[] =
+	    "GFM_PROTO_REMOTE_GFS_RPC slave (request from master)";
+
+	if (debug_mode) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: <%s> start remote rpc receiving from %s",
+		    peer_get_hostname(peer), diag,
+		    peer_get_service_name(peer));
+	}
+
+	do {
+		e = gfp_xdr_recv_sized(conn, 0, 1, &size, &eof, "l", &peer_id);
+		if (e != GFARM_ERR_NO_ERROR) {
+			/* XXXRELAY fix rpc residual */
+			(void) gfp_xdr_purge(conn, 0, size);
+			break;
+		} else if (eof) {
+			e = GFARM_ERR_UNEXPECTED_EOF;
+			break;
+		}
+
+		/*
+		 * We dispose 'closure' at
+		 * gfmdc_slave_server_remote_gfs_rpc_result_thread().
+		 */
+		closure = slave_server_remote_gfs_rpc_closure_alloc(
+		    mdhost_to_abstract_host(mh),
+		    peer_get_private_peer_id(peer), xid, size, NULL);
+		if (closure == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			(void) gfp_xdr_purge(conn, 0, size);
+			break;
+		}
+
+		data_size = size;
+		e = gfp_xdr_recv(conn, 1, &eof, "r", data_size, &data_size,
+		    closure->data);
+		if (e != GFARM_ERR_NO_ERROR) {
+			/* XXXRELAY fix rpc residual */
+			(void) gfp_xdr_purge(conn, 0, size);
+			break;
+		} else if (eof) {
+			e = GFARM_ERR_UNEXPECTED_EOF;
+			break;
+		} else if (data_size != 0) {
+			e = GFARM_ERR_PROTOCOL;
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s: <%s> protocol redidual %u",
+			    peer_get_hostname(peer), diag, (int)data_size);
+		}
+
+		gfs_lpeer = local_peer_lookup(peer_id);
+		if (gfs_lpeer == NULL) {
+			e = GFARM_ERR_INVALID_REMOTE_PEER;
+			break;
+		}
+		gfs_peer = local_peer_to_peer(gfs_lpeer);
+
+		/*
+		 * Wait until GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL procedure
+		 * on this slave gfmd has been completed.  Note that master
+		 * gfmd may finish the procedure earlier than the slave gfmd
+		 * and it requests GFS_PROTO_STATUS to the gfsd server
+		 * immediately.
+		 */
+		if (peer_get_peer_type(gfs_peer) ==
+		    peer_type_foreground_channel) {
+			e = gfarm_thr_statewait_wait(
+			    local_peer_get_statewait(gfs_lpeer), diag);
+			if (e != GFARM_ERR_NO_ERROR)
+				break;
+		}
+
+		peer_add_ref(gfs_peer);   /* increment refcount */
+		e = gfs_client_relay(peer_get_abstract_host(gfs_peer),
+		    gfs_peer, size, closure->data, closure,
+		    gfmdc_slave_server_remote_gfs_rpc_result,
+		    gfmdc_slave_server_remote_gfs_rpc_disconnect);
+		peer_del_ref(gfs_peer);   /* decrement refcount */
+	} while (0);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (!eof) {
+			(void) gfmdc_server_put_reply(mh, peer, xid, diag, e,
+			    "");
+		}
+		if (closure != NULL)
+			slave_server_remote_gfs_rpc_closure_free(closure);
+	}
+	return (e);
+}
+
+/*
+ * Closure for gfmdc_slave_client_remote_gfs_rpc().
+ */
+struct slave_client_remote_gfs_rpc_closure {
+	struct abstract_host *abhost;
+	void *closure;
+	gfarm_int32_t
+		(*result_callback)(gfarm_error_t, void *, size_t, void *);
+	void (*disconnect_callback)(gfarm_error_t, void *);
+	gfarm_int64_t private_peer_id;
+	int request;
+	size_t size;
+	void *data;
+};
+
+/*
+ * Create an object of 'struct slave_client_remote_gfs_rpc_closure'.
+ */
+static struct slave_client_remote_gfs_rpc_closure *
+slave_client_remote_gfs_rpc_closure_alloc(struct abstract_host *abhost,
+	void *closure,
+	gfarm_error_t (*result_callback)(gfarm_error_t, void *, size_t,
+	    void *),
+	void (*disconnect_callback)(gfarm_error_t, void *),
+	gfarm_int64_t private_peer_id, int request, size_t size, void *data)
+{
+	struct slave_client_remote_gfs_rpc_closure *wclosure;
+
+	GFARM_MALLOC(wclosure);
+	if (wclosure == NULL)
+		return (NULL);
+	wclosure->data = malloc(size);
+	if (wclosure->data == NULL) {
+		free(wclosure);
+		return (NULL);
+	}
+
+	wclosure->abhost              = abhost;
+	wclosure->closure             = closure;
+	wclosure->result_callback     = result_callback;
+	wclosure->disconnect_callback = disconnect_callback;
+	wclosure->private_peer_id     = private_peer_id;
+	wclosure->request             = request;
+	wclosure->size                = size;
+	if (data != NULL)
+		memcpy(wclosure->data, data, size);
+
+	return (wclosure);
+}
+
+/*
+ * Dispose an object of 'struct slave_client_remote_gfs_rpc_closure'.
+ */
+static void
+slave_client_remote_gfs_rpc_closure_free(
+	struct slave_client_remote_gfs_rpc_closure *wclosure)
+{
+	free(wclosure->data);
+	free(wclosure);
+}
+
+/*
+ * Resize data buffer in an object of
+ * 'struct slave_client_remote_gfs_rpc_closure'.
+ */
+static int
+slave_client_remote_gfs_rpc_closure_resize(
+	struct slave_client_remote_gfs_rpc_closure *wclosure, size_t size)
+{
+	void *new_data;
+
+	if (size > wclosure->size) {
+		new_data = realloc(wclosure->data, size);
+		if (new_data == NULL)
+			return (0);
+		wclosure->data = new_data;
+	}
+
+	wclosure->size = size;
+	return (1);
+}
+
+/*
+ * 'result_callback' handler for gfmdc_slave_client_remote_gfs_rpc().
+ */
+static gfarm_error_t
+gfmdc_slave_client_remote_gfs_rpc_result(void *p, void *arg, size_t size)
+{
+	gfarm_error_t e;
+	struct peer *peer = p;
+	struct gfp_xdr *conn = peer_get_conn(peer);
+	struct slave_client_remote_gfs_rpc_closure *wclosure = arg;
+	gfarm_int32_t errcode = GFARM_ERR_NO_ERROR;
+	size_t data_size;
+	int eof;
+	static const char diag[] =
+	    "GFM_PROTO_REMOTE_GFS_RPC slave (reply from master)";
+
+	if (debug_mode)
+		gflog_info(GFARM_MSG_UNFIXED, "%s: <%s> receiving reply",
+		    peer_get_hostname(peer), diag);
+
+	do {
+		if (!slave_client_remote_gfs_rpc_closure_resize(wclosure,
+		    size)) {
+			e = GFARM_ERR_NO_MEMORY;
+			errcode = e;
+			(void) gfp_xdr_purge(conn, 0, size);
+			break;
+		}
+		
+		/*
+		 * Get an error code of GFM_PROTO_REMOTE_GFS_RPC.
+		 */
+		e = gfp_xdr_recv_sized(conn, 0, 1, &size, &eof, "i", &errcode);
+		if (e != GFARM_ERR_NO_ERROR) {
+			errcode = e;
+			(void) gfp_xdr_purge(conn, 0, size);
+			break;
+		} else if (eof) {
+			e = GFARM_ERR_UNEXPECTED_EOF;
+			errcode = e;
+			break;
+		}
+
+		/*
+		 * Get an error code of a GFS protocol request wrapped by
+		 * GFM_PROTO_REMOTE_GFS_RPC.
+		 */
+		if (errcode == GFARM_ERR_NO_ERROR) {
+			e = gfp_xdr_recv_sized(conn, 0, 1, &size, &eof, "i",
+			    &errcode);
+			if (e != GFARM_ERR_NO_ERROR) {
+				errcode = e;
+				(void) gfp_xdr_purge(conn, 0, size);
+				break;
+			} else if (eof) {
+				e = GFARM_ERR_UNEXPECTED_EOF;
+				errcode = e;
+				break;
+			}
+		}
+
+		data_size = size;
+		e = gfp_xdr_recv(conn, 1, &eof, "r", data_size, &data_size,
+		    wclosure->data);
+		if (e != GFARM_ERR_NO_ERROR) {
+			errcode = e;
+			(void) gfp_xdr_purge(conn, 0, data_size);
+		} else if (eof) {
+			e = GFARM_ERR_UNEXPECTED_EOF;
+			errcode = e;
+		} else if (data_size != 0) {
+			e = GFARM_ERR_PROTOCOL;
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s: <%s> protocol redidual %u",
+			    peer_get_hostname(peer), diag, (int)data_size);
+		}
+	} while (0);
+
+	if (errcode == GFARM_ERR_NO_ERROR) {
+		e = wclosure->result_callback(errcode, wclosure->closure,
+		    size, wclosure->data);
+	} else {
+		e = wclosure->result_callback(errcode, wclosure->closure,
+		    0, "");
+	}
+
+	slave_client_remote_gfs_rpc_closure_free(wclosure);
+	return (e);
+}
+
+/*
+ * 'disconnect_callback' handler for gfmdc_slave_client_remote_gfs_rpc().
+ */
+static void
+gfmdc_slave_client_remote_gfs_rpc_disconnect(void *p, void *arg)
+{
+	struct slave_client_remote_gfs_rpc_closure *wclosure = arg;
+
+	(void) wclosure->result_callback(GFARM_ERR_UNEXPECTED_EOF, 
+	    wclosure->closure, 0, "");
+	slave_client_remote_gfs_rpc_closure_free(wclosure);
+}
+
+/*
+ * Internal function of gfmdc_slave_client_remote_gfs_rpc_thread().
+ * It converts '...' to va_list, in order to call
+ * async_client_vsend_wrapped_request() which takes two va_list arguments.
+ */
+static void *
+gfmdc_slave_client_remote_gfs_rpc_thread00(
+	struct slave_client_remote_gfs_rpc_closure *wclosure, char *format,
+	va_list *app, char *wformat, ...)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	va_list wap;
+	struct peer *gfs_peer;
+	struct peer *mh_peer = NULL;
+	static const char diag[] =
+	    "GFM_PROTO_REMOTE_GFS_RPC slave (request to master)";
+
+	do {
+		/* increment refcount */
+		gfs_peer = abstract_host_get_peer_with_id(wclosure->abhost,
+		    wclosure->private_peer_id, diag);
+		if (gfs_peer == NULL) {
+			e = GFARM_ERR_CONNECTION_ABORTED;
+			break;
+		}
+		e = gfmdc_ensure_remote_peer(gfs_peer, &mh_peer);
+		/* decrement refcount */
+		abstract_host_put_peer(wclosure->abhost, gfs_peer);
+		if (e != GFARM_ERR_NO_ERROR)
+			break;
+
+		if (debug_mode)
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "%s: <%s> sending requset",
+			    peer_get_hostname(mh_peer), diag);
+
+		va_start(wap, wformat);
+		(void) async_client_vsend_wrapped_request_unlocked(
+		    peer_get_abstract_host(mh_peer), diag,
+		    gfmdc_slave_client_remote_gfs_rpc_result,
+		    gfmdc_slave_client_remote_gfs_rpc_disconnect, wclosure,
+		    wformat, &wap, wclosure->request, format, app, 0);
+		va_end(wap);
+	} while (0);
+
+	if (mh_peer != NULL)
+		gfmdc_ensure_remote_peer_end(mh_peer);
+	if (e != GFARM_ERR_NO_ERROR) {
+		(void) wclosure->result_callback(e, wclosure->closure, 0, "");
+		slave_client_remote_gfs_rpc_closure_free(wclosure);
+	}
+
+	return (NULL);
+}
+
+/*
+ * Internal function of gfmdc_slave_client_remote_gfs_rpc_thread().
+ * It converts '...' to va_list, in order to call
+ * async_client_vsend_wrapped_request() which takes two va_list arguments.
+ */
+static void *
+gfmdc_slave_client_remote_gfs_rpc_thread0(
+	struct slave_client_remote_gfs_rpc_closure *wclosure,
+	char *format, ...)
+{
+	void *result;
+	va_list ap;
+
+	va_start(ap, format);
+	result = gfmdc_slave_client_remote_gfs_rpc_thread00(wclosure, format,
+	    &ap, "il", GFM_PROTO_REMOTE_GFS_RPC, wclosure->private_peer_id);
+	va_end(ap);
+
+	return (result);
+}
+
+/*
+ * Internal function of gfmdc_slave_client_remote_gfs_rpc(), invoked via
+ * a thread pool.
+ */
+static void *
+gfmdc_slave_client_remote_gfs_rpc_thread(void *arg)
+{
+	struct slave_client_remote_gfs_rpc_closure *wclosure = arg;
+
+	return (gfmdc_slave_client_remote_gfs_rpc_thread0(wclosure,
+		"r", wclosure->size, wclosure->data));
+}
+
+/*
+ * Protocol handler of GFM_PROTO_REMOTE_GFS_RPC for slave gfmd.  It forwards
+ * a GFS protocol request from gfsd to a master gfmd and relays its reply
+ * in the opposite direction.
+ */
+gfarm_error_t
+gfmdc_slave_client_remote_gfs_rpc(struct peer *gfs_peer, void *closure,
+	gfarm_error_t (*result_callback)(gfarm_error_t, void *, size_t,
+	    void *),
+	void (*disconnect_callback)(gfarm_error_t, void *),
+	int request, size_t size, void *data)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	struct slave_client_remote_gfs_rpc_closure *wclosure;
+	static const char diag[] =
+	    "GFM_PROTO_REMOTE_GFS_RPC slave (request to master)";
+
+	/*
+	 * We dispose 'wclosure' in
+	 * gfmdc_slave_client_remote_gfs_rpc_result() or
+	 * gfmdc_slave_client_remote_gfs_rpc_disconnect().
+	 */
+	wclosure = slave_client_remote_gfs_rpc_closure_alloc(
+	    peer_get_abstract_host(gfs_peer), closure, result_callback,
+	    disconnect_callback, peer_get_private_peer_id(gfs_peer),
+	    request, size, data);
+	if (wclosure == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %s", diag,
+		    gfarm_error_string(e));
+		return (e);
+	}
+
+	thrpool_add_job(journal_sync_thread_pool,
+	    gfmdc_slave_client_remote_gfs_rpc_thread, wclosure);
+
+	return (e);
+}
+
+/*
+ * Wrapped closure for gfmdc_master_client_remote_gfs_rpc().
+ */
+struct master_client_remote_gfs_rpc_closure {
+	gfarm_int32_t (*result_callback)(void *, void *, size_t);
+	void (*disconnect_callback)(void *, void *);
+	void *closure;
+};
+
+static struct master_client_remote_gfs_rpc_closure *
+master_client_remote_gfs_rpc_closure_alloc(
+	gfarm_int32_t (*result_callback)(void *, void *, size_t),
+	void (*disconnect_callback)(void *, void *),
+	void *closure)
+{
+	struct master_client_remote_gfs_rpc_closure *wclosure;
+
+	GFARM_MALLOC(wclosure);
+	if (wclosure == NULL)
+		return (NULL);
+	wclosure->result_callback     = result_callback;
+	wclosure->disconnect_callback = disconnect_callback;
+	wclosure->closure             = closure;
+	return (wclosure);
+}
+
+static void
+master_client_remote_gfs_rpc_closure_free(
+	struct master_client_remote_gfs_rpc_closure *wclosure)
+{
+	free(wclosure);
+}
+
+/*
+ * 'result_callback' handler for gfmdc_master_client_remote_gfs_rpc0().
+ */
+static gfarm_int32_t
+gfmdc_master_client_remote_gfs_rpc_result(void *p, void *arg, size_t size)
+{
+	gfarm_error_t e;
+	gfarm_error_t errcode;
+	struct peer *peer = p;
+	struct gfp_xdr *conn = peer_get_conn(peer);
+	int eof;
+	struct master_client_remote_gfs_rpc_closure *wclosure = arg;
+	static const char diag[] =
+	    "GFM_PROTO_REMOTE_GFS_RPC master (reply from slave)";
+
+	/*
+	 * Get an error code of GFM_PROTO_REMOTE_GFS_RPC.
+	 */
+	if ((e = gfp_xdr_recv_sized(conn, 0, 1, &size, &eof, "i", &errcode))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: %s", diag, gfarm_error_string(e));
+	} else if (eof) {
+		e = GFARM_ERR_UNEXPECTED_EOF;
+	}
+
+	if (e == GFARM_ERR_NO_ERROR && errcode == GFARM_ERR_NO_ERROR)
+		e = (wclosure->result_callback)(p, wclosure->closure, size);
+	else
+		(wclosure->disconnect_callback)(peer, wclosure->closure);
+
+	master_client_remote_gfs_rpc_closure_free(wclosure);
+	return (e);
+}
+
+/*
+ * 'disconnect_callback' handler for gfmdc_master_client_remote_gfs_rpc0().
+ */
+static void
+gfmdc_master_client_remote_gfs_rpc_disconnect(void *p, void *arg)
+{
+	struct master_client_remote_gfs_rpc_closure *wclosure = arg;
+
+	(wclosure->disconnect_callback)(p, wclosure->closure);
+	master_client_remote_gfs_rpc_closure_free(wclosure);
+}
+
+/*
+ * Internal function of gfmdc_master_client_remote_gfs_rpc().
+ * It converts '...' to va_list, in order to call
+ * async_client_vsend_wrapped_request() which takes two va_list arguments.
+ */
+static gfarm_error_t
+gfmdc_master_client_remote_gfs_rpc0(struct abstract_host *ah,
+	struct peer *peer, const char *diag,
+	gfarm_int32_t (*result_callback)(void *, void *, size_t),
+	void (*disconnect_callback)(void *, void *), void *closure,
+	gfarm_int32_t command, const char *format, va_list *app,
+	const char *wformat, ...)
+{
+	gfarm_error_t e;
+	struct master_client_remote_gfs_rpc_closure *wclosure;
+	va_list wap;
+	static const char wdiag[] =
+	    "GFM_PROTO_REMOTE_GFS_RPC master (request to slave)";
+	
+	gflog_debug(GFARM_MSG_UNFIXED, "%s: sending request", wdiag);
+
+	/*
+	 * We dispose 'wclosure' in
+	 * gfmdc_master_client_remote_gfs_rpc_result() or
+	 * gfmdc_master_client_remote_gfs_rpc_disconnect().
+	 */
+	wclosure = master_client_remote_gfs_rpc_closure_alloc(result_callback,
+	    disconnect_callback, closure);
+	if (wclosure == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: no memory", wdiag);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	va_start(wap, wformat);
+	e = async_client_vsend_wrapped_request(ah, peer, diag,
+	    gfmdc_master_client_remote_gfs_rpc_result,
+	    gfmdc_master_client_remote_gfs_rpc_disconnect, wclosure,
+	    wformat, &wap, command, format, app, 0);
+	va_end(wap);
+
+	return (e);
+}
+
+/*
+ * Protocol handler of GFM_PROTO_REMOTE_GFS_RPC for master gfmd.  It sends
+ * a GFS protocol request to gfsd via a slave gfmd and receives its reply.
+ */
+gfarm_error_t
+gfmdc_master_client_remote_gfs_rpc(struct abstract_host *ah,
+	struct peer *peer, const char *diag,
+	gfarm_int32_t (*result_callback)(void *, void *, size_t),
+	void (*disconnect_callback)(void *, void *), void *closure,
+	gfarm_int32_t command, const char *format, va_list *app)
+{
+	struct remote_peer *rp = peer_to_remote_peer(peer);
+
+	return (gfmdc_master_client_remote_gfs_rpc0(ah, peer, diag,
+	    result_callback, disconnect_callback, closure, command,
+	    format, app, "il", GFM_PROTO_REMOTE_GFS_RPC,
+	    remote_peer_get_remote_peer_id(rp)));
+}
+
+/*
+ * Internal function of gfmdc_server_vput_remote_gfs_rpc_reply().
+ * It converts '...' to va_list, in order to call
+ * async_server_vput_wrapped_reply() which takes two va_list arguments.
+ */
+static gfarm_error_t
+gfmdc_server_vput_remote_gfs_rpc_reply0(struct abstract_host *ah,
+	struct peer *peer, gfp_xdr_xid_t xid, const char *diag,
+	gfarm_error_t errcode, char *format, va_list *app, char *wformat, ...)
+{
+	va_list wap;
+	gfarm_error_t e;
+	struct peer *parent_peer;
+	struct abstract_host *parent_ah;
+
+	parent_peer = peer_get_parent(peer);
+	if (parent_peer == NULL)
+		return (GFARM_ERR_INVALID_REMOTE_PEER);
+	peer_add_ref(parent_peer);  /* increment refcount */
+	parent_ah = peer_get_abstract_host(parent_peer);
+
+	va_start(wap, wformat);
+	e = async_server_vput_wrapped_reply(parent_ah, parent_peer, xid, 0,
+	    diag, GFARM_ERR_NO_ERROR, wformat, &wap, errcode, format, app);
+	va_end(wap);
+
+	peer_del_ref(parent_peer);  /* decrement refcount */
+	return (e);
+}
+
+/*
+ * Send a reply of GFM_PROTO_REMOTE_GFS_RPC request.
+ */
+gfarm_error_t
+gfmdc_server_vput_remote_gfs_rpc_reply(struct abstract_host *ah,
+	struct peer *peer, gfp_xdr_xid_t xid, const char *diag,
+	gfarm_error_t errcode, char *format, va_list *app)
+{
+	return (gfmdc_server_vput_remote_gfs_rpc_reply0(ah, peer, xid, diag,
+	    errcode, format, app, ""));
+}
+
 struct gfmdc_fhopen_closure {
 	void *closure;
 	gfarm_error_t (*callback)(void *, gfarm_error_t, gfarm_int32_t);
@@ -1270,6 +2255,21 @@ gfmdc_protocol_switch(struct abstract_host *h,
 	case GFM_PROTO_REMOTE_RPC:
 		/* in master */
 		e = gfmdc_server_remote_rpc(mh, peer, xid, size);
+		break;
+	case GFM_PROTO_REMOTE_GFS_RPC:
+		if (mdhost_self_is_master()) {
+			/* in master */
+			e = gfmdc_master_server_remote_gfs_rpc(mh, peer, xid,
+			    size);
+		} else {
+			/* in slave */
+			e = gfmdc_slave_server_remote_gfs_rpc(mh, peer, xid,
+			    size);
+		}
+		break;
+	case GFM_PROTO_REMOTE_PEER_DISCONNECT:
+		/* in slave */
+		e = gfmdc_server_remote_peer_disconnect(mh, peer, xid, size);
 		break;
 	default:
 		*unknown_request = 1;

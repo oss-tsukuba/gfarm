@@ -740,3 +740,10 @@ netsendq_manager_new(int num_types, const struct netsendq_type *const *types,
 
 	return (manager);
 }
+
+struct thread_pool *
+netsendq_manager_get_thrpool(struct netsendq_manager *manager)
+{
+	return (manager->send_thrpool);
+}
+

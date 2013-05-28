@@ -14,6 +14,7 @@
 #include "gfp_xdr.h"
 #include "auth.h"
 #include "gfm_proto.h"
+#include "gfmd_channel.h"
 
 #include "subr.h"
 #include "peer.h"
@@ -38,6 +39,7 @@ struct remote_peer {
 	gfarm_uint64_t db_update_flags;
 
 	/* used for inter-gfmd RPC relay */
+	int received_remote_peer_free;
 	struct gfarm_thr_statewait statewait;
 };
 
@@ -72,6 +74,12 @@ enum peer_type
 remote_peer_get_peer_type(struct remote_peer *remote_peer)
 {
 	return (peer_get_peer_type(&remote_peer->super));
+}
+
+gfarm_int64_t
+remote_peer_get_remote_peer_id(struct remote_peer *remote_peer)
+{
+	return (remote_peer->remote_peer_id);
 }
 
 static gfp_xdr_async_peer_t
@@ -165,8 +173,6 @@ remote_peer_notice_disconnected(struct peer *peer,
 static void
 remote_peer_shutdown(struct peer *peer)
 {
-	/* XXX FIXME */
-	assert(0);
 }
 
 static void
@@ -191,33 +197,21 @@ static void
 remote_peer_free(struct peer *peer)
 {
 	struct remote_peer *remote_peer = peer_to_remote_peer(peer);
+	struct peer *parent_peer = remote_peer_get_parent(peer);
 	static const char diag[] = "remote_peer_free";
 
+	if (peer->peer_type == peer_type_back_channel &&
+	    !remote_peer->received_remote_peer_free &&
+	    parent_peer != NULL) {
+		(void) gfmdc_client_remote_peer_disconnect(
+		    peer_get_mdhost(parent_peer), parent_peer,
+			remote_peer->remote_peer_id);
+	}
 	local_peer_for_child_peers(remote_peer->parent_peer,
 	    remote_peer_remove_from_children, remote_peer, diag);
 	
 	peer_free_common(peer, diag);
 	free(remote_peer); /* XXXRELAY is this safe? */
-}
-
-gfarm_error_t
-remote_peer_free_by_id(struct peer *parent_peer,
-	gfarm_int64_t remote_peer_id)
-{
-	struct remote_peer *remote_peer = local_peer_lookup_remote(
-	    peer_to_local_peer(parent_peer), remote_peer_id);
-
-	if (remote_peer == NULL)
-		return (GFARM_ERR_INVALID_REMOTE_PEER);
-
-	assert(remote_peer->parent_peer != NULL);
-	giant_lock();
-
-	remote_peer_free(&remote_peer->super);
-
-	giant_unlock();
-
-	return (GFARM_ERR_NO_ERROR);
 }
 
 void
@@ -286,6 +280,7 @@ remote_peer_alloc(struct peer *parent_peer, gfarm_int64_t remote_peer_id,
 	remote_peer->proto_transport = proto_transport;
 	remote_peer->port = port;
 	remote_peer_clear_db_update_info(remote_peer);
+	remote_peer->received_remote_peer_free = 0;
 	gfarm_thr_statewait_initialize(&remote_peer->statewait, diag);
 
 	local_peer_add_child(parent_local_peer,
@@ -329,4 +324,10 @@ struct gfarm_thr_statewait *
 remote_peer_get_statewait(struct remote_peer *remote_peer)
 {
 	return (&remote_peer->statewait);
+}
+
+void
+remote_peer_set_received_remote_peer_free(struct remote_peer *remote_peer)
+{
+	remote_peer->received_remote_peer_free = 1;
 }
