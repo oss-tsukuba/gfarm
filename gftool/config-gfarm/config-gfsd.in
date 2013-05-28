@@ -356,13 +356,6 @@ echo $GFARM_CONF: "updated (local_user_map)" ||
 ABORT "$GFARM_CONF: cannot append local_user_map statements"
 
 # gfhost
-if [ -z "${GLOBUS_LOCATION-}" ] && [ -n "$globus_location" ] &&
-   [ -f "$globus_location/etc/globus-user-env.sh" ]
-then
-	GLOBUS_LOCATION="$globus_location"
-	export GLOBUS_LOCATION
-	. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
-fi
 if [ X"$CONFIG_PREFIX" != X ]; then
 	GFARM_CONFIG_FILE="$GFARM_CLIENT_CONF"
 	export GFARM_CONFIG_FILE
