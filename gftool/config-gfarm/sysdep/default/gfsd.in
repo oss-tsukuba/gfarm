@@ -28,20 +28,11 @@ CONF="@config_gfarm_gfarm_config@"
 DAEMON="@config_gfarm_prefix@/sbin/$PROG"
 PIDFILE="@config_gfarm_gfsd_pid_file@"
 OPTIONS="@config_gfarm_gfsd_option@"
-globus_location="@config_gfarm_globus_location@"
 
 # gfsd service certificate
 X509_USER_CERT=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdcert.pem
 X509_USER_KEY=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdkey.pem
 export X509_USER_CERT X509_USER_KEY
-
-if [ -z "${GLOBUS_LOCATION-}" ] && [ -n "$globus_location" ] &&
-   [ -f "$globus_location/etc/globus-user-env.sh" ]
-then
-	GLOBUS_LOCATION="$globus_location"
-	export GLOBUS_LOCATION
-	. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
-fi
 
 case $1 in 
 start)

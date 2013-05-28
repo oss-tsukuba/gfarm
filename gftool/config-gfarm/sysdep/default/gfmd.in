@@ -28,17 +28,8 @@ CONF="@config_gfarm_gfmd_config@"
 DAEMON="@config_gfarm_prefix@/sbin/$PROG"
 PIDFILE="@config_gfarm_gfmd_pid_file@"
 OPTIONS="@config_gfarm_gfmd_option@"
-globus_location="@config_gfarm_globus_location@"
 warning_facility=local0
 warning_priority=notice
-
-if [ -z "${GLOBUS_LOCATION-}" ] && [ -n "$globus_location" ] &&
-   [ -f "$globus_location/etc/globus-user-env.sh" ]
-then
-	GLOBUS_LOCATION="$globus_location"
-	export GLOBUS_LOCATION
-	. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
-fi
 
 case $1 in 
 start|slavestart)
