@@ -30,7 +30,7 @@ gfarm_error_t gfm_server_switch_async_back_channel(
 	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
 gfarm_error_t gfs_client_relay(struct abstract_host *, struct peer *, size_t,
 	void *, void *,
-	gfarm_int32_t (*)(gfarm_error_t, void *, size_t, void *), 
+	gfarm_int32_t (*)(gfarm_error_t, void *, size_t, void *),
 	void (*)(gfarm_error_t, void *));
 
 struct netsendq_type;

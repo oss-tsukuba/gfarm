@@ -1292,7 +1292,7 @@ struct master_server_remote_gfs_rpc_closure {
  */
 static struct master_server_remote_gfs_rpc_closure *
 master_server_remote_gfs_rpc_closure_alloc(struct abstract_host *abhost,
-	gfarm_int64_t private_peer_id, gfarm_int64_t remote_peer_id, 
+	gfarm_int64_t private_peer_id, gfarm_int64_t remote_peer_id,
 	gfp_xdr_xid_t xid, size_t size, struct gfarm_thr_statewait *statewait)
 {
 	struct master_server_remote_gfs_rpc_closure *closure;
@@ -1335,7 +1335,7 @@ gfmdc_master_server_remote_gfs_rpc_thread(void *arg)
 	    "GFM_PROTO_REMOTE_GFS_RPC master (request from slave)";
 
 	/* increment refcount */
-	if ((peer = abstract_host_get_peer_with_id(closure->abhost, 
+	if ((peer = abstract_host_get_peer_with_id(closure->abhost,
 	    closure->private_peer_id, diag)) == NULL)
 		e = GFARM_ERR_CONNECTION_ABORTED;
 	else if ((remote_peer = local_peer_lookup_remote(
@@ -1791,7 +1791,7 @@ gfmdc_slave_client_remote_gfs_rpc_result(void *p, void *arg, size_t size)
 			(void) gfp_xdr_purge(conn, 0, size);
 			break;
 		}
-		
+
 		/*
 		 * Get an error code of GFM_PROTO_REMOTE_GFS_RPC.
 		 */
@@ -1861,7 +1861,7 @@ gfmdc_slave_client_remote_gfs_rpc_disconnect(void *p, void *arg)
 {
 	struct slave_client_remote_gfs_rpc_closure *wclosure = arg;
 
-	(void) wclosure->result_callback(GFARM_ERR_UNEXPECTED_EOF, 
+	(void) wclosure->result_callback(GFARM_ERR_UNEXPECTED_EOF,
 	    wclosure->closure, 0, "");
 	slave_client_remote_gfs_rpc_closure_free(wclosure);
 }
@@ -2092,7 +2092,7 @@ gfmdc_master_client_remote_gfs_rpc0(struct abstract_host *ah,
 	va_list wap;
 	static const char wdiag[] =
 	    "GFM_PROTO_REMOTE_GFS_RPC master (request to slave)";
-	
+
 	gflog_debug(GFARM_MSG_UNFIXED, "%s: sending request", wdiag);
 
 	/*

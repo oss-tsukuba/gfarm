@@ -498,7 +498,7 @@ protocol_switch_slave_closure_alloc(struct abstract_host *abhost,
 
 	GFARM_MALLOC(closure);
 	if (closure == NULL)
-		return NULL;
+		return (NULL);
 	closure->abhost          = abhost;
 	closure->private_peer_id = private_peer_id;
 	closure->xid             = xid;
@@ -506,7 +506,7 @@ protocol_switch_slave_closure_alloc(struct abstract_host *abhost,
 	closure->data            = malloc(size);
 	if (closure->data == NULL) {
 		free(closure);
-		return NULL;
+		return (NULL);
 	}
 	if (data != NULL)
 		memcpy(closure->data, data, size);
@@ -788,7 +788,7 @@ gfm_server_switch_back_channel_common(
 		gfarm_thr_statewait_signal(
 		    local_peer_get_statewait(local_peer), e2, diag);
 	}
-	
+
 	callout_setfunc(host_status_callout(host),
 	    NULL /* or, use back_channel_send_manager thread pool? */,
 	    gfs_client_status_callout, host);
@@ -948,7 +948,7 @@ gfs_client_relay_result(void *p, void *arg, size_t size)
 	e2 = wclosure->result_callback(e, wclosure->closure, size, data);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = e2;
-	
+
 	free(data);
 	gfs_client_relay_closure_free(wclosure);
 	return (e);
@@ -1003,7 +1003,7 @@ gfs_client_relay(struct abstract_host *abhost, struct peer *peer,
 {
 	struct gfs_client_relay_closure *wclosure;
 
-	wclosure = gfs_client_relay_closure_alloc(abhost, 
+	wclosure = gfs_client_relay_closure_alloc(abhost,
 	    peer_get_private_peer_id(peer), size, data, closure,
 	    result_callback, disconnect_callback);
 	if (wclosure == NULL)

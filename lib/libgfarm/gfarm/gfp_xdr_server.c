@@ -268,7 +268,7 @@ gfp_xdr_send_async_raw_request(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server,
 	result_callback_t result_callback,
 	disconnect_callback_t disconnect_callback,
-	void *closure, 
+	void *closure,
 	size_t size, void *data)
 {
 	gfarm_error_t e;
