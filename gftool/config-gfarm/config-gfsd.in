@@ -93,7 +93,7 @@ display_plain_params()
 	echo "ncpu                         [-n]: $NCPU"
 	echo "spool directory                  : $SPOOL_DIRECTORY"
 	echo "rc script                        : $RC_DIR/$RC_NAME"
-	echo "gfarm client conf file           : $GFARM_CONF"
+	echo "gfarm client conf file           : $GFARM_CLIENT_CONF"
 	echo "gfsd pid file                    : $GFSD_PID_FILE"
 
 	sanity
@@ -110,7 +110,7 @@ display_script_params()
 	echo "NCPU=$NCPU"
 	echo "SPOOL_DIRECTORY=$SPOOL_DIRECTORY"
 	echo "GFSD_RC=$RC_DIR/$RC_NAME"
-	echo "GFARM_CONF=$GFARM_CONF"
+	echo "GFARM_CONF=$GFARM_CLIENT_CONF"
 	echo "GFSD_PID_FILE=$GFSD_PID_FILE"
 
 	sanity
