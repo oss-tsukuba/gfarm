@@ -56,7 +56,7 @@
 #endif
 
 #define MAX_CONFIG_LINE_LENGTH	1023
- 
+
 char *gfarm_config_file = GFARM_CONFIG;
 
 void
@@ -397,16 +397,15 @@ map_user(gfarm_stringlist *map_file_list, const char *from, char **to_p,
 	}
 search_end:
 	if (*to_p == NULL) { /* not found */
-	 	*to_p = strdup(from);
+		*to_p = strdup(from);
 		if (*to_p == NULL)
 			e = GFARM_ERR_NO_MEMORY;
-	}	
-finish:	
+	}
+finish:
 	if (map != NULL)
 		fclose(map);
 	if (e != GFARM_ERR_NO_ERROR) {
-		if (*to_p != NULL)	 
-			free(*to_p);
+		free(*to_p);
 		gflog_error(GFARM_MSG_1000010,
 		    "%s line %d: %s", mapfile, lineno,
 		    gfarm_error_string(e));
@@ -828,7 +827,7 @@ char *gfarm_localfs_datadir = NULL;
 /* IO statistics */
 char *gfarm_iostat_gfmd_path;
 char *gfarm_iostat_gfsd_path;
-int	gfarm_iostat_max_client = MISC_DEFAULT;
+int gfarm_iostat_max_client = MISC_DEFAULT;
 #define GFARM_IOSTAT_MAX_CLIENT 1024
 
 /* for debug */
@@ -894,8 +893,8 @@ static gfarm_int64_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
 int gfarm_simultaneous_replication_receivers = MISC_DEFAULT;
 int gfarm_gfsd_connection_cache = MISC_DEFAULT;
 int gfarm_gfmd_connection_cache = MISC_DEFAULT;
-int gfarm_xattr_size_limit = MISC_DEFAULT;;
-int gfarm_xmlattr_size_limit = MISC_DEFAULT;;
+int gfarm_xattr_size_limit = MISC_DEFAULT;
+int gfarm_xmlattr_size_limit = MISC_DEFAULT;
 int gfarm_metadb_max_descriptors = MISC_DEFAULT;
 int gfarm_metadb_stack_size = MISC_DEFAULT;
 int gfarm_metadb_thread_pool_size = MISC_DEFAULT;
@@ -1404,7 +1403,7 @@ gfarm_strtoken(char **cursorp, char **tokenp)
 			}
 			*p++ = *s++;
 			break;
-		case '\n':	
+		case '\n':
 		case '#':
 		case '\0':
 			*p = '\0';
@@ -1579,7 +1578,7 @@ parse_netparam_arguments(char *p, char **op)
 			"Too many netparam arguments passed");
 		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 	}
-	
+
 	e = gfarm_hostspec_parse(host, &hostspecp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/*
@@ -1659,7 +1658,7 @@ parse_sockopt_arguments(char *p, char **op)
 			return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 		}
 	}
-	
+
 	if (is_listener) {
 		e = gfarm_sockopt_listener_config_add(option);
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -2570,8 +2569,8 @@ parse_debug_command(char *p, char **op)
 	 * In case an error occurs.
 	 */
 error:
-        for (i = 0; i < argc; i++)
-                free(argv[i]);
+	for (i = 0; i < argc; i++)
+		free(argv[i]);
 	return (e);
 }
 
@@ -2858,8 +2857,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_network_receive_timeout);
 	} else if (strcmp(s, o = "file_trace") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_file_trace);
- 	} else if (strcmp(s, o = "debug_command") == 0) {
- 		e = parse_debug_command(p, &o);
+	} else if (strcmp(s, o = "debug_command") == 0) {
+		e = parse_debug_command(p, &o);
 	} else if (strcmp(s, o = "fatal_action") == 0) {
 		e = parse_fatal_action(p, &fatal_action);
 		gflog_set_fatal_action(fatal_action);
@@ -3037,7 +3036,7 @@ gfarm_config_set_default_misc(void)
 		gfarm_minimum_free_disk_space =
 		    GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT;
 	if (gfarm_simultaneous_replication_receivers == MISC_DEFAULT)
-		 gfarm_simultaneous_replication_receivers =
+		gfarm_simultaneous_replication_receivers =
 		    GFARM_SIMULTANEOUS_REPLICATION_RECEIVERS_DEFAULT;
 	if (gfarm_gfsd_connection_cache == MISC_DEFAULT)
 		gfarm_gfsd_connection_cache =
