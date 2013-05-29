@@ -11,7 +11,7 @@
 </refmeta>
 
 <refnamediv id='name'>
-<refname>gfstat</refname>
+<refname>gftest</refname>
 <refpurpose>Gfarm ファイルまたはディレクトリの情報を調べる</refpurpose>
 </refnamediv>
 
