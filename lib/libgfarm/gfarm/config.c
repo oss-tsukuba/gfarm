@@ -780,6 +780,8 @@ static struct {
 static enum gfarm_spool_check_level gfarm_spool_check_level =
 	GFARM_SPOOL_CHECK_LEVEL_DEFAULT;
 static const char *gfarm_spool_check_level_name = NULL;
+#define GFARM_SPOOL_BASE_LOAD_DEFAULT	0.0F
+float gfarm_spool_base_load = MISC_DEFAULT;
 
 /* GFM dependent */
 char *gfarm_metadb_server_name = NULL;
@@ -2625,6 +2627,8 @@ parse_one_line(char *s, char *p, char **op)
 		    gfarm_auth_server_cred_name_set);
 	} else if (strcmp(s, o = "spool_check_level") == 0) {
 		e = parse_spool_check_level(p);
+	} else if (strcmp(s, o = "spool_base_load") == 0) {
+		e = parse_set_misc_float(p, &gfarm_spool_base_load);
 
 	} else if (strcmp(s, o = "metadb_server_host") == 0) {
 		e = parse_set_var(p, &gfarm_metadb_server_name);
@@ -2982,6 +2986,8 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_spool_check_level == GFARM_SPOOL_CHECK_LEVEL_DEFAULT)
 		(void)gfarm_spool_check_level_set(
 			GFARM_SPOOL_CHECK_LEVEL_LOST_FOUND);
+	if (gfarm_spool_base_load == MISC_DEFAULT)
+		gfarm_spool_base_load = GFARM_SPOOL_BASE_LOAD_DEFAULT;
 
 	if (gfarm_spool_server_listen_backlog == MISC_DEFAULT)
 		gfarm_spool_server_listen_backlog = LISTEN_BACKLOG_DEFAULT;
