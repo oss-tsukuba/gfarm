@@ -261,6 +261,10 @@ display_plain_params()
     echo "rc script for gfmd               : $RC_DIR/gfmd"
     echo "rc script for backend            : $RC_DIR/$RC_BACKEND_BASENAME"
     echo "gfmd conf file                   : $GFMD_CONF"
+    if $PRIVATE_MODE; then
+	echo "gfsd conf file                   : $GFSD_CONF"
+	echo "usermap file                     : $USERMAP_FILE"
+    fi
     echo "gfarm client conf file           : $GFARM_CONF"
     echo "gfmd pid file                    : $GFMD_PID_FILE"
     echo "backend pid file                 : $BACKEND_PID_FILE"
@@ -292,6 +296,10 @@ display_script_params()
     echo     "GFMD_RC=$RC_DIR/gfmd"
     echo     "BACKEND_RC=$RC_DIR/$RC_BACKEND_BASENAME"
     echo     "GFMD_CONF=$GFMD_CONF"
+    if $PRIVATE_MODE; then
+	echo     "GFSD_CONF=$GFSD_CONF"
+	echo     "USERMAP_FILE=$USERMAP_FILE"
+    fi
     echo     "GFARM_CONF=$GFARM_CONF"
     echo     "GFMD_PID_FILE=$GFMD_PID_FILE"
     echo     "BACKEND_PID_FILE=$BACKEND_PID_FILE"
@@ -464,6 +472,10 @@ else
 fi
 : ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
 : ${GFMD_CONF:="$GFARM_CONF_DIR/gfmd.conf"}
+if $PRIVATE_MODE; then
+	: ${GFSD_CONF:="$GFARM_CONF_DIR/gfsd.conf"}
+	: ${USERMAP_FILE:="$GFARM_CONF_DIR/usermap"}
+fi
 
 : ${METADATA_JOURNAL_DIR:="$CONFIG_PREFIX/var/gfarm-metadata/journal"}
 
@@ -698,12 +710,11 @@ make_configuration_file_$BACKEND_TYPE
 
 # private user mode
 if $PRIVATE_MODE; then
-	GFSD_CONF="$GFARM_CONF_DIR/gfsd.conf"
-	USERMAP_FILE="$GFARM_CONF_DIR/usermap"
 	echo _gfarmfs `whoami` > $USERMAP_FILE
 	echo _gfarmmd `whoami` >> $USERMAP_FILE
 	cp $GFARM_CONF $GFSD_CONF
 	echo local_user_map $USERMAP_FILE >> $GFMD_CONF
+	echo local_user_map $USERMAP_FILE >> $GFSD_CONF
 fi
 
 # create run scripts

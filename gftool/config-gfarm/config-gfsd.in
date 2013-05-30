@@ -346,15 +346,6 @@ grep -v "^# spool_check_level lost_found" $GFARM_CONF > /dev/null ||
 if $PRIVATE_MODE; then
 # only private mode
 
-# update configuration file
-USERMAP_FILE="$GFARM_CONF_DIR/usermap"
-[ -f $USERMAP_FILE ] || ABORT "$USERMAP_FILE: no such file"
-grep -v "^local_user_map" $GFARM_CONF > $GFARM_CONF.tmp &&
-echo local_user_map $USERMAP_FILE >> $GFARM_CONF.tmp &&
-mv $GFARM_CONF.tmp $GFARM_CONF &&
-echo $GFARM_CONF: "updated (local_user_map)" ||
-ABORT "$GFARM_CONF: cannot append local_user_map statements"
-
 # gfhost
 if [ X"$CONFIG_PREFIX" != X ]; then
 	GFARM_CONFIG_FILE="$GFARM_CLIENT_CONF"
