@@ -544,6 +544,28 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>spool_base_load</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>load-average</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the CPU load adding to the real CPU load.
+This option is only available for a gfsd node (or a file system node).
+The default base load is 0.0.  This option can be used to pretend to
+be busy or idle to change the scheduling priority.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_base_load&nbsp;1.0</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >metadb_server_host</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -2799,6 +2821,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;spool_server_cred_service_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_cred_name_statement&#62;&nbsp;|<br>
 		  &#60;spool_check_level_statement&#62;&nbsp;|<br>
+		  &#60;spool_base_load_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_host_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_port_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_cred_type_statement&#62;&nbsp;|<br>
@@ -2885,6 +2908,7 @@ CLASS="LITERALLAYOUT"
 	&#60;spool_server_cred_name_statement&#62;&nbsp;::=<br>
 		  "spool_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
 	&#60;spool_check_level_statement&#62;&nbsp;::=&nbsp;"spool_check_level"&nbsp;&#60;spck_level&#62;<br>
+	&#60;spool_base_load_statement&#62;&nbsp;::=&nbsp;"spool_base_load"&nbsp;&#60;load&#62;<br>
 	&#60;metadb_server_host_statement&#62;&nbsp;::=&nbsp;"metadb_server_host"&nbsp;&#60;hostname&#62;<br>
 	&#60;metadb_server_port_statement&#62;&nbsp;::=&nbsp;"metadb_server_port"&nbsp;&#60;portnumber&#62;<br>
 	&#60;metadb_server_cred_type_statement&#62;&nbsp;::=<br>

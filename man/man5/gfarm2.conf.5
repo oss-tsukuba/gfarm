@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "17 April 2013" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "31 May 2013" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -237,6 +237,18 @@ For example,
 
 .nf
 	spool_check_level disable
+.fi
+.TP
+\fBspool_base_load \fIload-average\fB\fR
+This statement specifies the CPU load adding to the real CPU load.
+This option is only available for a gfsd node (or a file system node).
+The default base load is 0.0.  This option can be used to pretend to
+be busy or idle to change the scheduling priority.
+
+For example,
+
+.nf
+	spool_base_load 1.0
 .fi
 .TP
 \fBmetadb_server_host \fIhostname\fB\fR
@@ -1355,6 +1367,7 @@ notation.
 		\~\~<spool_server_cred_service_statement> |
 		\~\~<spool_server_cred_name_statement> |
 		\~\~<spool_check_level_statement> |
+		\~\~<spool_base_load_statement> |
 		\~\~<metadb_server_host_statement> |
 		\~\~<metadb_server_port_statement> |
 		\~\~<metadb_server_cred_type_statement> |
@@ -1441,6 +1454,7 @@ notation.
 	<spool_server_cred_name_statement> ::=
 		\~\~"spool_server_cred_name" <cred_name>
 	<spool_check_level_statement> ::= "spool_check_level" <spck_level>
+	<spool_base_load_statement> ::= "spool_base_load" <load>
 	<metadb_server_host_statement> ::= "metadb_server_host" <hostname>
 	<metadb_server_port_statement> ::= "metadb_server_port" <portnumber>
 	<metadb_server_cred_type_statement> ::=
