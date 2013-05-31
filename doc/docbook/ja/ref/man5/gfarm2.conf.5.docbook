@@ -334,6 +334,22 @@ gfsd起動時のスプールチェックを有効にします。スプールチェックでは、
 </varlistentry>
 
 <varlistentry>
+<term><token>spool_base_load</token> <parameter>CPU負荷</parameter></term>
+<listitem>
+<para>
+指定されたCPU負荷をgfsdのCPU負荷に加えます。
+このオプションはgfsdノード（ファイルシステムノード）でのみ有効です。
+デフォルトは0.0です。
+このオプションにより、スケジューリングの優先度を変更することができます。
+</para>
+<para>例:</para>
+<literallayout>
+	spool_base_load 1.0
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>metadb_server_host</token> <parameter>gfmdホスト名</parameter></term>
 <listitem>
 <para>gfmdが動作しているホスト名を指定します。</para>
@@ -1828,6 +1844,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_name_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_check_level_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_base_load_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_host_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt; |
@@ -1918,6 +1935,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;spool_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_name" &lt;cred_name&gt;
 	&lt;spool_check_level_statement&gt; ::= "spool_check_level" &lt;spck_level&gt;
+	&lt;spool_base_load_statement&gt; ::= "spool_base_load" &lt;load&gt;
 	&lt;metadb_server_host_statement&gt; ::= "metadb_server_host" &lt;hostname&gt;
 	&lt;metadb_server_port_statement&gt; ::= "metadb_server_port" &lt;portnumber&gt;
 	&lt;metadb_server_cred_type_statement&gt; ::=
