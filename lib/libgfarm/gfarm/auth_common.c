@@ -158,6 +158,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	FILE *fp = NULL;
 	static char keyfile_basename[] = "/" GFARM_AUTH_SHARED_KEY_BASENAME;
 	char *keyfilename;
+	int free_required = 0;
 	unsigned int expire;
 
 	uid_t o_uid;
@@ -168,17 +169,20 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 #ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
 	o_uid = o_gid = 0;
 #endif
-	GFARM_MALLOC_ARRAY(keyfilename, 
-		strlen(home) + sizeof(keyfile_basename));
+	keyfilename = getenv("GFARM_SHARED_KEY");
 	if (keyfilename == NULL) {
-		gflog_debug(GFARM_MSG_1001023,
-			"allocation of 'keyfilename' failed: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		return (GFARM_ERR_NO_MEMORY);
+		free_required = 1;
+		GFARM_MALLOC_ARRAY(keyfilename, 
+		    strlen(home) + sizeof(keyfile_basename));
+		if (keyfilename == NULL) {
+			gflog_debug(GFARM_MSG_1001023,
+			    "allocation of 'keyfilename' failed: %s",
+			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		strcpy(keyfilename, home);
+		strcat(keyfilename, keyfile_basename);
 	}
-	strcpy(keyfilename, home);
-	strcat(keyfilename, keyfile_basename);
-
 	if (pwd != NULL) {
 		gfarm_auth_privilege_lock(diag);
 		o_gid = getegid();
@@ -269,7 +273,8 @@ create:
 		*expirep = expire;
 	}
 finish:
-	free(keyfilename);
+	if (free_required)
+		free(keyfilename);
 	if (pwd != NULL) {
 		if (seteuid(0) == -1 && is_root) /* recover root privilege */
 			gflog_error_errno(GFARM_MSG_1002342, "seteuid(0)");
