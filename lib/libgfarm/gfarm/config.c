@@ -826,6 +826,9 @@ char *gfarm_postgresql_conninfo = NULL;
 /* LocalFS dependent */
 char *gfarm_localfs_datadir = NULL;
 
+/* security */
+static char *gfarm_shared_key_file = NULL;
+
 /* IO statistics */
 char *gfarm_iostat_gfmd_path;
 char *gfarm_iostat_gfsd_path;
@@ -947,6 +950,7 @@ gfarm_config_clear(void)
 		&gfarm_postgresql_password,
 		&gfarm_postgresql_conninfo,
 		&gfarm_localfs_datadir,
+		&gfarm_shared_key_file,
 		&schedule_write_target_domain,
 		&journal_dir,
 	};
@@ -1221,6 +1225,12 @@ void
 gfarm_set_metadb_server_force_slave(int slave)
 {
 	metadb_server_force_slave = slave;
+}
+
+char *
+gfarm_get_shared_key_file()
+{
+	return (gfarm_shared_key_file);
 }
 
 enum gfarm_spool_check_level
@@ -2719,6 +2729,8 @@ parse_one_line(char *s, char *p, char **op)
 		if (e == GFARM_ERR_NO_ERROR)
 			e = set_backend_db_type_localfs();
 
+	} else if (strcmp(s, o = "shared_key_file") == 0) {
+		e = parse_set_var(p, &gfarm_shared_key_file);
 	} else if (strcmp(s, o = "auth") == 0) {
 		e = parse_auth_arguments(p, &o);
 	} else if (strcmp(s, o = "netparam") == 0) {
