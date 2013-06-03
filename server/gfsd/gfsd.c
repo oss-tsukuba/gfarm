@@ -2553,7 +2553,7 @@ gfs_server_replica_recv(struct gfp_xdr *client, gfp_xdr_xid_t xid, size_t size,
 #endif
 	do {
 		rv = read(local_fd, buffer, file_read_size);
-		bc if (rv <= 0) {
+		if (rv <= 0) {
 			if (rv == -1)
 				error = gfarm_errno_to_error(errno);
 			break;
