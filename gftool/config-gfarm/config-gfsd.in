@@ -95,7 +95,7 @@ display_plain_params()
 	echo "rc script                        : $RC_DIR/$RC_NAME"
 	echo "gfarm client conf file           : $GFARM_CLIENT_CONF"
 	if $PRIVATE_MODE; then
-		echo "gfsd conf file                   : $GFSD_CONF"
+		echo "gfsd conf file                   : $GFARM_CONF"
 		echo "usermap file                     : $USERMAP_FILE"
 	fi
 	echo "gfsd pid file                    : $GFSD_PID_FILE"
@@ -116,7 +116,7 @@ display_script_params()
 	echo "GFSD_RC=$RC_DIR/$RC_NAME"
 	echo "GFARM_CONF=$GFARM_CLIENT_CONF"
 	if $PRIVATE_MODE; then
-		echo "GFSD_CONF=$GFSD_CONF"
+		echo "GFSD_CONF=$GFARM_CONF"
 		echo "USERMAP_FILE=$USERMAP_FILE"
 	fi
 	echo "GFSD_PID_FILE=$GFSD_PID_FILE"
@@ -212,7 +212,6 @@ else
 	: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
 fi
 : ${GFARM_CLIENT_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
-: ${GFSD_CONF:="$GFARM_CONF_DIR/gfsd.conf"}
 : ${USERMAP_FILE:="$GFARM_CONF_DIR/usermap"}
 
 : ${FQ_HOSTNAME:=`fq_hostname`}
