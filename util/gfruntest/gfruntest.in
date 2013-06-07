@@ -64,6 +64,7 @@ print_usage()
 	echo "Usage: $PROGRAM [option...] testcase [<argument>...]"	1>&2
 	echo "Option:"							1>&2
 	echo "  -d                  debug mode"				1>&2
+	echo "  -k                  pass '-k' option to gfservice"      1>&2
 	echo "  -f <config_file>    specify the gfservice configuration file" \
 		1>&2
 	echo "  -p <parameter_file> specify the test parameter file"	1>&2
@@ -156,6 +157,9 @@ while [ $# -ge 1 ]; do
 			echo "failed to open configuration file \"$1\"" 1>&2
 			exit 1
 		fi
+		shift
+		;;
+	-k)	GFSERVICE="$GFSERVICE -k"
 		shift
 		;;
 	-p)	shift

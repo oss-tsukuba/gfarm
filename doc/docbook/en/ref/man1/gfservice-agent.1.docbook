@@ -2,7 +2,7 @@
 
 <refentry id='gfservice-agent.1'>
 
-<refentryinfo><date>7 Nov 2012</date></refentryinfo>
+<refentryinfo><date>6 Jun 2013</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice-agent</refentrytitle>
@@ -19,6 +19,7 @@
 <cmdsynopsis>
   <command>gfservice-agent</command>
     <arg choice='opt'><replaceable>options</replaceable></arg>
+    <arg choice='plain'>host-id</arg>
     <arg choice='plain'>sub-command</arg>
     <arg choice='opt'><replaceable>argument ...</replaceable></arg>
 </cmdsynopsis>
@@ -44,6 +45,12 @@ and Sudo.
 </para>
 
 <para>
+Host-id argument is the same as that of <command>gfservice</command>, but
+<command>gfservice-agent</command> uses host-id for recognizing type of
+host ("gfmd", "gfsd" or "client") and debug messages only.
+</para>
+
+<para>
 Sub-command names of <command>gfservice-agent</command> are similar to
 those of <command>gfservice</command>, but their arguments are different.
 For example, <command>"unmount"</command> sub-command of
@@ -53,7 +60,7 @@ argument:
 </para>
 
 <literallayout>
-	gfservice-agent unmount directory=/somewhere
+	gfservice-agent client3 unmount directory=/somewhere
 </literallayout>
 
 <para>
@@ -111,6 +118,9 @@ sub-commands.
 <para>
 Execute <command>config-gfarm -T</command> command and output a value of
 the parameter <replaceable>name</replaceable> to standard out.
+If the "<parameter>param</parameter>=<replaceable>name</replaceable>"
+argument is not specified, it outputs entire
+<command>config-gfarm -T</command> results.
 </para>
 </listitem>
 </varlistentry>
@@ -125,6 +135,9 @@ the parameter <replaceable>name</replaceable> to standard out.
 <para>
 Execute <command>config-gfsd -T</command> command and output a value of
 the parameter <replaceable>name</replaceable> to standard out.
+If the "<parameter>param</parameter>=<replaceable>name</replaceable>"
+argument is not specified, it outputs entire
+<command>config-gfsd -T</command> results.
 </para>
 </listitem>
 </varlistentry>
@@ -387,13 +400,34 @@ line to <filename>gfarm2.conf</filename> file.
 
 <varlistentry>
 <term>
+<command>set-gfsd-conf</command>
+<parameter>directive</parameter>=<replaceable>name</replaceable>
+<parameter>value</parameter>=<replaceable>value</replaceable>
+</term>
+<listitem>
+<para>
+Add
+</para>
+
+<literallayout>
+	<replaceable>directive</replaceable> <replaceable>value</replaceable>
+</literallayout>
+
+<para>
+line to <filename>gfsd.conf</filename> file.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
 <command>unset-gfmd-conf</command>
 <parameter>directive</parameter>=<replaceable>name</replaceable>
 </term>
 <listitem>
 <para>
 Delete a <replaceable>directive</replaceable> line in
-<filename>gfarm2.conf</filename> file.
+<filename>gfmd.conf</filename> file.
 </para>
 </listitem>
 </varlistentry>
@@ -406,7 +440,20 @@ Delete a <replaceable>directive</replaceable> line in
 <listitem>
 <para>
 Delete a <replaceable>directive</replaceable> line in
-<filename>gfmd.conf</filename> file.
+<filename>gfarm2.conf</filename> file.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unset-gfsd-conf</command>
+<parameter>directive</parameter>=<replaceable>name</replaceable>
+</term>
+<listitem>
+<para>
+Delete a <replaceable>directive</replaceable> line in
+<filename>gfsd.conf</filename> file.
 </para>
 </listitem>
 </varlistentry>
@@ -440,6 +487,28 @@ Output <filename>gfmd.conf</filename> file to standard out.
 <listitem>
 <para>
 Output <filename>gfarm2.conf</filename> file to standard out.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-gfsd-conf</command>
+</term>
+<listitem>
+<para>
+Output <filename>gfsd.conf</filename> file to standard out.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-usermap</command>
+</term>
+<listitem>
+<para>
+Output <filename>usermap</filename> file to standard out.
 </para>
 </listitem>
 </varlistentry>
@@ -486,6 +555,30 @@ The backup data are read from standard in.
 <listitem>
 <para>
 Restore <filename>gfarm2.conf</filename> file.
+The backup data are read from standard in.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-gfsd-conf</command>
+</term>
+<listitem>
+<para>
+Restore <filename>gfsd.conf</filename> file.
+The backup data are read from standard in.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-usermap</command>
+</term>
+<listitem>
+<para>
+Restore <filename>usermap</filename> file.
 The backup data are read from standard in.
 </para>
 </listitem>

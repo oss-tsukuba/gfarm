@@ -16,7 +16,7 @@ subcmd_get_host()
 	log_debug "subcmd_get_host"
 
 	check_argc $# 0
-	check_hostid $HOSTID
+	check_hostid any $HOSTID
 	get_host $HOSTID
 	[ $? -ne 0 ] && log_error "gfservice get_host failed"
 

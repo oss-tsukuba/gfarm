@@ -245,7 +245,7 @@ test_configuration()
 	HOSTS=`$GFSERVICE $DEBUG gfcmd client1 gfwhere $GFARM_FILE2`
 	SPOOL_PATH=`$GFSERVICE $DEBUG gfcmd client1 gfspoolpath $GFARM_FILE2`
 	for HOST in $HOSTS; do
-		ID=`$GFSERVICE $DEBUG get_hostid $HOST`
+		ID=`$GFSERVICE $DEBUG get_gfsd_hostid_by_name $HOST`
 		cat $TMP_FILE | $GFSERVICE $DEBUG compare_spool_file $ID \
 			$SPOOL_PATH
 		if [ $? -ne 0 ]; then

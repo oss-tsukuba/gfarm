@@ -35,10 +35,10 @@ subcmd_reboot_host()
 	log_debug "subcmd_reboot_host"
 
 	check_argc $# 0
-	check_hostid $HOSTID
+	check_hostid any $HOSTID
 	REBOOT_CMD=`get_reboot_cmd $HOSTID`
 
-	exec_client_host_agent $HOSTID root reboot_host "reboot-cmd=$REBOOT_CMD"
+	exec_remote_host_agent $HOSTID root reboot_host "reboot-cmd=$REBOOT_CMD"
 	[ $? -ne 0 ] && log_error "gfservice reboot_host failed"
 
 	log_debug "end subcmd_reboot_host"

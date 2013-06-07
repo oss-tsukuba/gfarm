@@ -20,7 +20,7 @@
   <command>gfservice</command>
     <arg choice='opt'><replaceable>オプション</replaceable></arg>
     <arg choice='plain'>サブコマンド</arg>
-    <arg choice='opt'>ホスト ID</arg>
+    <arg choice='opt'>ホストID</arg>
     <arg choice='opt'><replaceable>引数 ...</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -49,13 +49,13 @@
 
 <para>
 ここで、「<replaceable>start-gfmd</replaceable>」はサブコマンド、
-「<replaceable>gfmd2</replaceable>」 はホスト ID をそれぞれ表しています。
+「<replaceable>gfmd2</replaceable>」 はホストID をそれぞれ表しています。
 このコマンド行を実行すると、<command>gfservice</command> は
 「<replaceable>gfmd2</replaceable>」と名付けられたホスト上の gfmd の
 実行開始を試みます。
 リモートのサーバーホストを指定する際、<command>gfservice</command> では
-ホスト名の代わりにホスト ID  を用います。
-ホスト ID (<replaceable>gfmd1</replaceable>、
+ホスト名の代わりにホストID  を用います。
+ホストID (<replaceable>gfmd1</replaceable>、
 <replaceable>gfmd2</replaceable>、...) は <command>gfservice</command> 用
 の設定ファイルで定義します。
 以下に、設定ファイルの記述例を載せます。
@@ -144,8 +144,8 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 
 <para>
 <command>gfservice</command>はユーザが新しくサブコマンドを追加できるよ
-うに、プラグインシステムを採用しています。プラグインシステムについての
-詳しい説明はこの man ページの "PLUGIN SYSTEM"の節を参照して下さい。
+うに、プラグインシステムを採用しています。
+詳しい説明は "PLUG-IN SYSTEM" の節を参照して下さい。
 </para>
 </refsect1>
 
@@ -194,14 +194,10 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 <term><option>-k</option></term>
 <listitem>
 <para>
-認証タイプが「sharedsecret (共有秘密鍵)」の場合に共有秘密鍵の設定を行
-います。このオプションが<command>config-gfarm</command> サブコマンドも
-しくは <command>config-gfarm-master</command> サブコマンドと共に指定さ
-れた場合、<command>gfservice</command>は共有秘密鍵を作成し、作成した鍵
-を設定ファイルで定義されているすべてのホストに配布します。 
-このオプションが <command>config-gfarm-slave</command>、
-<command>config-gfsd</command>、 <command>config-client</command>と共
-に指定された場合、gfmd ホストから鍵をコピーします。
+このオプションが<command>config-gfarm</command> サブコマンドもしくは
+<command>config-gfarm-master</command> サブコマンドと共に指定された場合、
+<command>gfservice</command> は <command>gfkey</command> コマンドを用いて
+共有秘密鍵ファイルを作成します。 
 </para>
 </listitem>
 </varlistentry>
@@ -214,7 +210,7 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 
 <para>
 以下に挙げているのは、<command>gfmd</command> を操作するサブコマンドです。
-コマンド行に与えるホスト ID は、「gfmd<replaceable>n</replaceable>」
+コマンド行に与えるホストID は、「gfmd<replaceable>n</replaceable>」
 (gfmd1, gfmd2, ...) でなくてはなりません。
 それ以外の場合、<command>gfservice</command> はエラーを通知してただちに
 終了します。
@@ -223,7 +219,10 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 <variablelist>
 
 <varlistentry>
-<term><command>backend-db-status</command></term>
+<term>
+<command>backend-db-status</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 バックエンドデータベースが実行中であれば、終了コード 0 で終了します。
@@ -233,7 +232,10 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 </varlistentry>
 
 <varlistentry>
-<term><command>gfmd-status</command></term>
+<term>
+<command>gfmd-status</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 gfmd が実行中であれば、終了コード 0 で終了します。
@@ -243,7 +245,10 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>start-backend-db</command></term>
+<term>
+<command>start-backend-db</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 バックエンドデータベースが実行中でなければ、実行を開始します。
@@ -252,7 +257,10 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>start-gfmd</command></term>
+<term>
+<command>start-gfmd</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 <command>gfmd</command> が実行中でなければ、実行を開始します。
@@ -261,33 +269,35 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>start-gfmd-master</command></term>
+<term>
+<command>start-gfmd-master</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
-リモートホスト上の <filename>gfmd.conf</filename> ファイルに設定名称
-「<varname>metadb_server_force_slave</varname>」の記述行があればそれを
-削除します。
-その後で、<command>gfmd</command> が実行中でなければ、実行を開始します。
-このサブコマンドは、リモートホスト上の <command>gfmd</command> が
-マスター gfmd として動作することを保証するものではありません。
+サブコマンド <command>start-gfmd</command> の別名です。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>start-gfmd-slave</command></term>
+<term>
+<command>start-gfmd-slave</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
-リモートホスト上の <filename>gfmd.conf</filename> ファイルに変更を加え、
-設定名称「<varname>metadb_server_force_slave</varname>」に値「enabled」
-をセットします。
-その後で、<command>gfmd</command> が実行中でなければ、実行を開始します。
+サブコマンド <command>start-gfmd</command> と同じですが、gfmd には
+<option>-S</option> オプションが付与されます。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>start-gfarm</command></term>
+<term>
+<command>start-gfarm</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 バックエンドデータベースおよび <command>gfmd</command> が実行中でなければ、
@@ -297,35 +307,35 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>start-gfarm-master</command></term>
+<term>
+<command>start-gfarm-master</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
-リモートホスト上の <filename>gfmd.conf</filename> ファイルに設定名称
-「<varname>metadb_server_force_slave</varname>」の記述行があればそれを
-削除します。
-その後で、バックエンドデータベースおよび <command>gfmd</command> が実行中
-でなければ、実行を開始します。
-このサブコマンドは、リモートホスト上の <command>gfmd</command> が
-マスター gfmd として動作することを保証するものではありません。
+サブコマンド <command>start-gfarm</command> の別名です。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>start-gfarm-slave</command></term>
+<term>
+<command>start-gfarm-slave</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
-リモートホスト上の <filename>gfmd.conf</filename> ファイルに変更を加え、
-設定名称「<varname>metadb_server_force_slave</varname>」に値「enabled」を
-セットします。
-その後で、バックエンドデータベースおよび <command>gfmd</command> が実行中
-でなければ、実行を開始します。
+サブコマンド <command>start-gfarm</command> と同じですが、gfmd には
+<option>-S</option> オプションが付与されます。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>stop-backend-db</command></term>
+<term>
+<command>stop-backend-db</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 バックエンドデータベースが実行中なら、実行を停止します。
@@ -334,7 +344,10 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>stop-gfmd</command></term>
+<term>
+<command>stop-gfmd</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 <command>gfmd</command> が実行中なら、実行を停止します。
@@ -343,7 +356,10 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>stop-gfarm</command></term>
+<term>
+<command>stop-gfarm</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 バックエンドデータベースおよび <command>gfmd</command> が実行中なら、
@@ -353,7 +369,10 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>kill-gfmd</command></term>
+<term>
+<command>kill-gfmd</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 <command>gfmd</command> が実行中なら、強制停止 (SIGKILL を送付) します。
@@ -362,7 +381,10 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-backend-db</command></term>
+<term>
+<command>restart-backend-db</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 サブコマンド <command>stop-backend-db</command> と
@@ -372,7 +394,10 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-gfmd</command></term>
+<term>
+<command>restart-gfmd</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 サブコマンド <command>stop-gfmd</command>」と
@@ -382,17 +407,22 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-gfmd-master</command></term>
+<term>
+<command>restart-gfmd-master</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
-サブコマンド <command>stop-gfmd</command> と
-<command>start-gfmd-master</command> を続けて実行します。
+サブコマンド <command>restart-gfmd</command> の別名です。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-gfmd-slave</command></term>
+<term>
+<command>restart-gfmd-slave</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 サブコマンド <command>stop-gfmd</command> と
@@ -402,7 +432,10 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-gfarm</command></term>
+<term>
+<command>restart-gfarm</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 サブコマンド <command>stop-gfarm</command> と
@@ -412,17 +445,22 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-gfarm-master</command></term>
+<term>
+<command>restart-gfarm-master</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
-サブコマンド <command>stop-gfarm</command> と
-<command>start-gfarm-master</command> を続けて実行します。
+サブコマンド <command>restart-gfarm</command> の別名です。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-gfarm-slave</command></term>
+<term>
+<command>restart-gfarm-slave</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 サブコマンド <command>stop-gfarm</command> と
@@ -432,7 +470,10 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>promote</command></term>
+<term>
+<command>promote</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 <command>gfmd</command> をスレーブからマスターへ昇格させます。
@@ -441,7 +482,10 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>promote-gfmd</command></term>
+<term>
+<command>promote-gfmd</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 サブコマンド <command>promote</command> の別名です。
@@ -450,7 +494,12 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>set-gfmd-conf</command> <parameter>設定名称</parameter> <parameter>値</parameter></term>
+<term>
+<command>set-gfmd-conf</command>
+<parameter>ホストID</parameter>
+<parameter>設定名称</parameter>
+<parameter>値</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上の <filename>gfmd.conf</filename> ファイルに
@@ -470,7 +519,36 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>unset-gfmd-conf</command> <parameter>設定名称</parameter></term>
+<term>
+<command>set-gfsd-conf</command>
+<parameter>ホストID</parameter>
+<parameter>設定名称</parameter>
+<parameter>値</parameter>
+</term>
+<listitem>
+<para>
+リモートホスト上の <filename>gfsd.conf</filename> ファイルに
+</para>
+
+<literallayout>
+	<parameter>設定名称</parameter> <parameter>値</parameter>
+</literallayout>
+
+<para>
+という行を加えます。
+既に <filename>gfsd.conf</filename> に
+「<parameter>設定名称</parameter>」という行が存在している場合、
+<command>gfservice</command> はそれを削除してから、新たに行を追加します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unset-gfmd-conf</command>
+<parameter>ホストID</parameter>
+<parameter>設定名称</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上の <filename>gfmd.conf</filename> ファイルから
@@ -482,7 +560,26 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>backup-backend-db</command></term>
+<term>
+<command>unset-gfsd-conf</command>
+<parameter>ホストID</parameter>
+<parameter>設定名称</parameter>
+</term>
+<listitem>
+<para>
+リモートホスト上の <filename>gfsd.conf</filename> ファイルから
+「<parameter>設定名称</parameter>」行を削除します。
+<filename>gfsd.conf</filename> ファイルに「<parameter>設定名称</parameter>」
+行がない場合、ファイルは更新されません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-backend-db</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上のバックエンドデータベースのバックアップを行い、
@@ -492,7 +589,10 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>backup-gfmd-conf</command></term>
+<term>
+<command>backup-gfmd-conf</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上の <filename>gfarm2.conf</filename> ファイルを、標準出力
@@ -502,7 +602,36 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>restore-backend-db</command></term>
+<term>
+<command>backup-gfsd-conf</command>
+<parameter>ホストID</parameter>
+</term>
+<listitem>
+<para>
+リモートホスト上の <filename>gfsd.conf</filename> ファイルを、標準出力
+へ出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-usermap</command>
+<parameter>ホストID</parameter>
+</term>
+<listitem>
+<para>
+リモートホスト上の <filename>usermap</filename> ファイルを、標準出力
+へ出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-backend-db</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上のバックエンドデータベースのデータを復旧します。
@@ -512,7 +641,10 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>restore-gfmd-conf</command></term>
+<term>
+<command>restore-gfmd-conf</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上の <filename>gfmd.conf</filename> ファイルを復旧します。
@@ -523,7 +655,38 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>config-gfarm</command></term>
+<term>
+<command>restore-gfsd-conf</command>
+<parameter>ホストID</parameter>
+</term>
+<listitem>
+<para>
+リモートホスト上の <filename>gfsd.conf</filename> ファイルを復旧します。
+<command>gfservice</command> は、<filename>gfsd.conf</filename> の
+バックアップデータを標準入力から読み込みます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-usermap</command>
+<parameter>ホストID</parameter>
+</term>
+<listitem>
+<para>
+リモートホスト上の <filename>usermap</filename> ファイルを復旧します。
+<command>gfservice</command> は、<filename>usermap</filename> の
+バックアップデータを標準入力から読み込みます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>config-gfarm</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上で <command>config-gfarm</command> コマンドを実行します。
@@ -533,20 +696,18 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 レプリケーション機能を有効にするときは、このサブコマンドは使用せず、代わりに
 <command>config-gfarm-master</command> ないし
 <command>config-gfarm-slave</command> を使って下さい。
-<command>gfservice</command>は<filename>gfarm2.conf</filename> ファイ
-ルを設定ファイルで定義されているすべてのホスト
-(gfmd<replaceable>n</replaceable>、 gfsd<replaceable>n</replaceable>、
-client<replaceable>n</replaceable>) に配布します。
-認証タイプが「sharedsecret (共有秘密鍵)」であり、 か
-つ<option>-k</option>オプションが指定された場合、
-<command>gfservice</command>は <command>gfkey</command> コマンドを用い
-て共有秘密鍵を作成し、作成した鍵を同じく配布します。
+<option>-k</option>オプションが指定されている場合、
+<command>gfservice</command>は <command>gfkey</command> コマンドを用いて
+gfmd ホスト上に共有秘密鍵ファイルを作成します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>config-gfarm-master</command></term>
+<term>
+<command>config-gfarm-master</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 このサブコマンドは <command>config-gfarm</command> と基本的に同じですが、
@@ -556,26 +717,37 @@ gfmd のレプリケーションが自動的に有効になります。
 </varlistentry>
 
 <varlistentry>
-<term><command>config-gfarm-slave</command> <parameter>マスタホスト ID</parameter></term>
+<term>
+<command>config-gfarm-slave</command>
+<parameter>ホストID</parameter>
+<parameter>マスターホストID</parameter>
+</term>
 <listitem>
 <para>
 サブコマンド <command>config-gfarm</command> と基本的に同じですが、
 レプリケーション機能が自動的に有効になり、
-「<parameter>マスタホスト ID</parameter>」上で動作する gfmd のスレーブ
+「<parameter>マスターホストID</parameter>」上で動作する gfmd のスレーブ
 として動作します。
 <command>gfservice</command> は <command>gfmdhost</command> コマンドを
 用いてこのスレーブホストをサーバーリストに加えます。
 また、マスター gfmd ホスト上の <filename>gfarm2.conf</filename> ファイル
 を更新して、<varname>metadb_server_list</varname> にこのスレーブホストを
-加え、設定ファイルで定義されているすべてのホスト
-(gfmd<replaceable>n</replaceable>、gfsd<replaceable>n</replaceable>、
-client<replaceable>n</replaceable>) に配布します。
+加え、設定ファイルで定義されているすべてのホストに配布します。
+変数「gfmd<replaceable>n</replaceable>_PRIVATE_MODE」の値が「true」に
+セットされている場合は、同様に <filename>gfsd.conf</filename> ファイル
+を更新し、すべての gfmd ホストと gfsd ホストに配布します。
+変数「gfmd<replaceable>n</replaceable>_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルをマスター gfmd ホストからこのスレーブ gfmd
+ホストへコピーします。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>unconfig-gfarm</command></term>
+<term>
+<command>unconfig-gfarm</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 サブコマンド <command>stop-gfsd</command> を実行して、その後 gfmd や
@@ -587,7 +759,10 @@ client<replaceable>n</replaceable>) に配布します。
 </varlistentry>
 
 <varlistentry>
-<term><command>unconfig-gfarm-master</command></term>
+<term>
+<command>unconfig-gfarm-master</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 サブコマンド <command>unconfig-gfarm</command> の別名です。
@@ -596,18 +771,24 @@ client<replaceable>n</replaceable>) に配布します。
 </varlistentry>
 
 <varlistentry>
-<term><command>unconfig-gfarm-slave</command> <parameter>マスタホスト ID</parameter></term>
+<term>
+<command>unconfig-gfarm-slave</command>
+<parameter>ホストID</parameter>
+<parameter>マスターホストID</parameter>
+</term>
 <listitem>
 <para>
 サブコマンド <command>unonfig-gfarm</command> と基本的に同じですが、
 以下の追加処理を行います。
 <command>gfmdhost</command> コマンドを用いてサーバーリストから、その
 スレーブホストを削除します。
-また、設定ファイルで定義されているすべてのホスト
-(gfmd<replaceable>n</replaceable>、gfsd<replaceable>n</replaceable>、
-client<replaceable>n</replaceable>) の <filename>gfarm2.conf</filename>
-を更新し、<varname>metadb_server_list</varname> に設定されたサーバーリスト
-から、そのスレーブホストを削除します。
+また、設定ファイルで定義されているすべてのホストの
+<filename>gfarm2.conf</filename> を更新し、
+<varname>metadb_server_list</varname> に設定されたサーバーリストから、
+そのスレーブホストを削除します。
+変数「gfmd<replaceable>n</replaceable>_PRIVATE_MODE」の値が「true」に
+セットされている場合は、同様に <filename>gfsd.conf</filename> ファイル
+を更新し、すべての gfmd ホストと gfsd ホストに配布します。
 </para>
 </listitem>
 </varlistentry>
@@ -620,7 +801,7 @@ client<replaceable>n</replaceable>) の <filename>gfarm2.conf</filename>
 
 <para>
 以下に挙げているのは、<command>gfsd</command> を操作するサブコマンドです。
-コマンド行に与えるホスト ID は、「gfsd<replaceable>n</replaceable>」
+コマンド行に与えるホストID は、「gfsd<replaceable>n</replaceable>」
 (gfsd1, gfsd2, ...) でなくてはなりません。
 それ以外の場合、<command>gfservice</command> はエラーを通知してただちに
 終了します。
@@ -629,7 +810,10 @@ client<replaceable>n</replaceable>) の <filename>gfarm2.conf</filename>
 <variablelist>
 
 <varlistentry>
-<term><command>gfsd-status</command></term>
+<term>
+<command>gfsd-status</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 gfsd が実行中であれば、終了コード 0 で終了します。
@@ -639,7 +823,10 @@ gfsd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>start-gfsd</command></term>
+<term>
+<command>start-gfsd</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 <command>gfsd</command> が実行中でなければ、実行を開始します。
@@ -648,7 +835,10 @@ gfsd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>stop-gfsd</command></term>
+<term>
+<command>stop-gfsd</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 <command>gfsd</command> が実行中なら、実行を停止します。
@@ -657,7 +847,10 @@ gfsd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-gfsd</command></term>
+<term>
+<command>restart-gfsd</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 サブコマンド<command>stop-gfsd</command> と
@@ -667,7 +860,84 @@ gfsd が実行中であれば、終了コード 0 で終了します。
 </varlistentry>
 
 <varlistentry>
-<term><command>config-gfsd</command></term>
+<term>
+<command>set-gfsd-conf</command>
+<parameter>ホストID</parameter>
+<parameter>設定名称</parameter>
+<parameter>値</parameter></term>
+<listitem>
+<para>
+gfmd 用の <command>set-gfsd-conf</command> サブコマンドと同じです。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unset-gfsd-conf</command>
+<parameter>ホストID</parameter>
+<parameter>設定名称</parameter>
+</term>
+<listitem>
+<para>
+gfmd 用の <command>unset-gfsd-conf</command> サブコマンドと同じです。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-gfsd-conf</command>
+<parameter>ホストID</parameter>
+</term>
+<listitem>
+<para>
+gfmd 用の <command>backup-gfsd-conf</command> サブコマンドと同じです。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-usermap</command>
+<parameter>ホストID</parameter>
+</term>
+<listitem>
+<para>
+gfmd 用の <command>backup-usermap</command> サブコマンドと同じです。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-gfsd-conf</command>
+<parameter>ホストID</parameter>
+</term>
+<listitem>
+<para>
+gfmd 用の <command>restore-gfsd-conf</command> サブコマンドと同じです。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-usermap</command>
+<parameter>ホストID</parameter>
+</term>
+<listitem>
+<para>
+gfmd 用の <command>restore-usermap</command> サブコマンドと同じです。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>config-gfsd</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上で <command>config-gfsd</command> コマンドを実行します。
@@ -676,12 +946,17 @@ gfsd が実行中であれば、終了コード 0 で終了します。
 その値が <command>config-gfsd</command> にオプションとして付与されます。
 また、<command>gfservice</command> は <command>gfhost</command> コマンド
 を用いて、リモートホストをファイルシステムノードとして登録します。
+変数「gfsd<replaceable>n</replaceable>_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルを gfmd1 から gfsd ホストへコピーします。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>unconfig-gfsd</command></term>
+<term>
+<command>unconfig-gfsd</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 サブコマンド <command>stop-gfsd</command> を実行して、その後 gfsd が
@@ -698,7 +973,7 @@ gfsd が実行中であれば、終了コード 0 で終了します。
 
 <para>
 以下に挙げているのは、クライアントを操作するサブコマンドです。
-コマンド行に与えるホスト ID は、「gfmd<replaceable>n</replaceable>」
+コマンド行に与えるホストID は、「gfmd<replaceable>n</replaceable>」
 (gfmd1, gfmd2, ...)、「gfsd<replaceable>n</replaceable>」(gfsd1, gfsd2, ...)、
 「client<replaceable>n</replaceable>」(client1, client2, ...) のいずれか
 でなくてはなりません。
@@ -709,23 +984,28 @@ gfsd が実行中であれば、終了コード 0 で終了します。
 <variablelist>
 
 <varlistentry>
-<term><command>mount</command> <parameter>ディレクトリ</parameter> <parameter>オプション...</parameter></term>
+<term>
+<command>mount</command>
+<parameter>ホストID</parameter>
+<parameter>ディレクトリ</parameter>
+<parameter>オプション...</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上の「<parameter>ディレクトリ</parameter>」に、Gfarm2
 ファイルシステムをマウントします。
 引数「<parameter>オプション</parameter>」は <command>gfarm2fs</command>
-コマンドへの引数とみなされます。<command>gfarm2fs</command>コマンドが
-Gfarmのインストール先(%%BINDIR)とは異なるディレクトリにインストールさ
-れている場合は、 <filename>gfservice.conf</filename>
-で<command>gfarm2fs</command>コマンドのパスを設定できます。設定方法に
-ついては gfservice.conf(5) を参照して下さい。
+コマンドへの引数とみなされます。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>unmount</command> <parameter>ディレクトリ</parameter></term>
+<term>
+<command>unmount</command>
+<parameter>ホストID</parameter>
+<parameter>ディレクトリ</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上の「<parameter>ディレクトリ</parameter>」にマウントされた
@@ -735,7 +1015,11 @@ Gfarm2 ファイルシステムをアンマウントします。
 </varlistentry>
 
 <varlistentry>
-<term><command>umount</command> <parameter>ディレクトリ</parameter></term>
+<term>
+<command>umount</command>
+<parameter>ホストID</parameter>
+<parameter>ディレクトリ</parameter>
+</term>
 <listitem>
 <para>
 サブコマンド <command>unmount</command> の別名です。
@@ -744,7 +1028,11 @@ Gfarm2 ファイルシステムをアンマウントします。
 </varlistentry>
 
 <varlistentry>
-<term><command>set-gfarm-conf</command> <parameter>設定名称</parameter> <parameter>値</parameter></term>
+<term>
+<command>set-gfarm-conf</command>
+<parameter>ホストID</parameter>
+<parameter>設定名称</parameter>
+<parameter>値</parameter></term>
 <listitem>
 <para>
 リモートホスト上の <filename>gfarm2.conf</filename> ファイルに
@@ -764,7 +1052,11 @@ Gfarm2 ファイルシステムをアンマウントします。
 </varlistentry>
 
 <varlistentry>
-<term><command>unset-gfarm-conf</command> <parameter>設定名称</parameter></term>
+<term>
+<command>unset-gfarm-conf</command>
+<parameter>ホストID</parameter>
+<parameter>設定名称</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上の <filename>gfarm2.conf</filename> ファイルから
@@ -776,7 +1068,10 @@ Gfarm2 ファイルシステムをアンマウントします。
 </varlistentry>
 
 <varlistentry>
-<term><command>backup-gfarm-conf</command></term>
+<term>
+<command>backup-gfarm-conf</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上の <filename>gfarm2.conf</filename> ファイルを、標準出力
@@ -786,7 +1081,10 @@ Gfarm2 ファイルシステムをアンマウントします。
 </varlistentry>
 
 <varlistentry>
-<term><command>backup-shared-key</command></term>
+<term>
+<command>backup-shared-key</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上の共有秘密鍵ファイルを、標準出力へ出力します。
@@ -795,7 +1093,10 @@ Gfarm2 ファイルシステムをアンマウントします。
 </varlistentry>
 
 <varlistentry>
-<term><command>restore-gfarm-conf</command></term>
+<term>
+<command>restore-gfarm-conf</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上の <filename>gfarm2.conf</filename> ファイルを復旧します。
@@ -806,7 +1107,10 @@ Gfarm2 ファイルシステムをアンマウントします。
 </varlistentry>
 
 <varlistentry>
-<term><command>restore-shared-key</command></term>
+<term>
+<command>restore-shared-key</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上の共有秘密鍵ファイルを復旧します。
@@ -817,19 +1121,23 @@ Gfarm2 ファイルシステムをアンマウントします。
 </varlistentry>
 
 <varlistentry>
-<term><command>config-client</command></term>
+<term>
+<command>config-client</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
-<filename>gfarm2.conf</filename> ファイルをgfmd1からクライアントホスト
-へコピーします。このサブコマンドと共に<option>-k</option>オプションが
-指定された場合は、共有秘密鍵ファイルについても gfmd1 からクライアント
-ホストへコピーします。
+変数「client<replaceable>n</replaceable>_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルを gfmd1 からクライアントホストへコピーします。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>unconfig-client</command></term>
+<term>
+<command>unconfig-client</command>
+<parameter>ホストID</parameter>
+</term>
 <listitem>
 <para>
 リモートホスト上の <filename>gfarm2.conf</filename> ファイルおよび
@@ -841,6 +1149,7 @@ Gfarm2 ファイルシステムをアンマウントします。
 <varlistentry>
 <term>
 <command>gfcmd</command>
+<parameter>ホストID</parameter>
 <parameter>command-name</parameter>
 <parameter>command-argument ...</parameter>
 </term>
@@ -860,13 +1169,15 @@ Gfarm2 ファイルシステムをアンマウントします。
 
 <para>
 以下に挙げているのは、複数のホストを操作するサブコマンドです。
-コマンド行で、ホスト ID を指定することはできません。
+コマンド行で、ホストID を指定することはできません。
 </para>
 
 <variablelist>
 
 <varlistentry>
-<term><command>start-all</command></term>
+<term>
+<command>start-all</command>
+</term>
 <listitem>
 <para>
 すべてのバックエンドデータベース、gfmd、gfsd を起動します。
@@ -875,7 +1186,9 @@ Gfarm2 ファイルシステムをアンマウントします。
 </varlistentry>
 
 <varlistentry>
-<term><command>stop-all</command></term>
+<term>
+<command>stop-all</command>
+</term>
 <listitem>
 <para>
 すべての gfsd、gfmd、バックエンドデータベースを停止します。
@@ -884,7 +1197,9 @@ Gfarm2 ファイルシステムをアンマウントします。
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-all</command></term>
+<term>
+<command>restart-all</command>
+</term>
 <listitem>
 <para>
 サブコマンド <command>stop-all</command> と
@@ -894,7 +1209,9 @@ Gfarm2 ファイルシステムをアンマウントします。
 </varlistentry>
 
 <varlistentry>
-<term><command>config-all</command></term>
+<term>
+<command>config-all</command>
+</term>
 <listitem>
 <para>
 <replaceable>gfmd1</replaceable> に対して
@@ -908,7 +1225,9 @@ Gfarm2 ファイルシステムをアンマウントします。
 </varlistentry>
 
 <varlistentry>
-<term><command>unconfig-all</command></term>
+<term>
+<command>unconfig-all</command>
+</term>
 <listitem>
 <para>
 すべてのクライアントに対して、"<command>unconfig-client</command>" を実行
@@ -924,7 +1243,7 @@ Gfarm2 ファイルシステムをアンマウントします。
 
 </refsect1>
 
-<refsect1 id='plugin'><title>PLUGIN SYSTEM</title>
+<refsect1 id='plugin'><title>PLUG-IN SYSTEM</title>
 
 <para>
 <command>gfservice</command>はユーザが新しくサブコマンドが追加できるよ
