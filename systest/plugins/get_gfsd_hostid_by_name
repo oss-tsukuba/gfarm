@@ -1,0 +1,30 @@
+#
+# Dependencies of this sub-command
+#
+get_gfsd_hostid_by_name_depends()
+{
+	echo ""
+}
+
+#
+# Sub-command: get hostid by name
+#
+# Get gfsd hostid from hostname written in configuration file.
+#
+subcmd_get_gfsd_hostid_by_name()
+{
+	log_debug "subcmd_get_gfsd_hostid_by_name"
+
+	for ID in `get_gfsd_hostids`; do
+		HOSTNAME=`exec_remote_host_agent $ID root \
+			get-config-gfsd-param "param=GFSD_HOSTNAME"`
+		if [ X$HOSTNAME = X$HOSTID ]; then
+			echo $ID
+			log_debug "subcmd_get_gfsd_hostid_by_name: $ID"
+			return 0
+		fi
+	done
+
+	log_debug "end subcmd_get_gfsd_hostid_by_name"
+	return 1
+}

@@ -14,8 +14,8 @@ subcmd_compare_spool_file()
 	log_debug "subcmd_compare_spool_file"
 
 	check_argc $# 1
-	check_gfsd_hostid $HOSTID
-	cat - | exec_gfsd_host_agent $HOSTID root compare_spool_file "$@"
+	check_hostid gfsd $HOSTID
+	cat - | exec_remote_host_agent $HOSTID root compare_spool_file "$@"
 	[ $? -ne 0 ] && log_error "gfservice compare_spool_file failed"
 
 	log_debug "end subcmd_compare_spool_file"
@@ -36,8 +36,6 @@ compare_spool_file_agent_depends()
 subcmd_compare_spool_file_agent()
 {
 	log_debug "subcmd_compare_spool_file_agent"
-
-	set_gfsd_params
 
 	diff -q - $SPOOL_DIR/$1
 	[ $? -ne 0 ] && log_error "file has difference"

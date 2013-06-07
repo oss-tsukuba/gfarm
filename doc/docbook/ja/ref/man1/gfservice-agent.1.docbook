@@ -2,7 +2,7 @@
 
 <refentry id='gfservice-agent.1'>
 
-<refentryinfo><date>7 Nov 2012</date></refentryinfo>
+<refentryinfo><date>6 Jun 2013</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice-agent</refentrytitle>
@@ -19,6 +19,7 @@
 <cmdsynopsis>
   <command>gfservice-agent</command>
     <arg choice='opt'><replaceable>オプション</replaceable></arg>
+    <arg choice='plain'>ホスト ID</arg>
     <arg choice='plain'>サブコマンド</arg>
     <arg choice='opt'><replaceable>引数 ...</replaceable></arg>
 </cmdsynopsis>
@@ -44,6 +45,13 @@
 </para>
 
 <para>
+ホスト ID 引数は <command>gfservice</command> のものと同じですが、
+<command>gfservice-agent</command> ではホスト ID をホストの種別
+("gfmd", "gfsd", "client" のいずれか) を区別するため、および
+デバッグメッセージのためにしか使っていません。
+</para>
+
+<para>
 <command>gfservice-agent</command> のサブコマンド名は 
 <command>gfservice</command> のものに似ていますが、引数は異なります。
 たとえば、<command>gfservice-agent</command> の <command>unmount</command>
@@ -53,7 +61,7 @@
 </para>
 
 <literallayout>
-	gfservice-agent unmount directory=/somewhere
+	gfservice-agent client3 unmount directory=/somewhere
 </literallayout>
 
 <para>
@@ -110,6 +118,9 @@
 <para>
 「<command>config-gfarm -T</command>」コマンドを実行して、
 「<replaceable>パラメタ名</replaceable> 」の値を標準出力に出力します。
+引数「<parameter>param</parameter>=<replaceable>パラメタ名</replaceable>」
+が省略された場合は、「<command>config-gfarm -T</command>」コマンドの
+結果すべてを出力します。
 </para>
 </listitem>
 </varlistentry>
@@ -125,6 +136,9 @@
 「<command>config-gfsd -T</command>」コマンドを実行して、
 「<replaceable>パラメタ名</replaceable>」の値を標準出力に
 出力します。
+引数「<parameter>param</parameter>=<replaceable>パラメタ名</replaceable>」
+が省略された場合は、「<command>config-gfsd -T</command>」コマンドの
+結果すべてを出力します。
 </para>
 </listitem>
 </varlistentry>
@@ -389,12 +403,33 @@ Gfarm2 ファイルシステムを「<replaceable>ディレクトリ</replaceable>」に
 
 <varlistentry>
 <term>
+<command>set-gfsd-conf</command>
+<parameter>directive</parameter>=<replaceable>設定名称</replaceable>
+<parameter>value</parameter>=<replaceable>値</replaceable>
+</term>
+<listitem>
+<para>
+<filename>gfsd.conf</filename> ファイルに、
+</para>
+
+<literallayout>
+	<replaceable>設定名称</replaceable> <replaceable>値</replaceable>
+</literallayout>
+
+<para>
+という行を追加します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
 <command>unset-gfmd-conf</command>
 <parameter>directive</parameter>=<replaceable>設定名称</replaceable>
 </term>
 <listitem>
 <para>
-「<replaceable>設定名称</replaceable>」行を <filename>gfarm2.conf</filename>
+「<replaceable>設定名称</replaceable>」行を <filename>gfmd.conf</filename>
 ファイルから削除します。
 </para>
 </listitem>
@@ -407,7 +442,20 @@ Gfarm2 ファイルシステムを「<replaceable>ディレクトリ</replaceable>」に
 </term>
 <listitem>
 <para>
-「<replaceable>設定名称</replaceable>」行を <filename>gfmd.conf</filename>
+「<replaceable>設定名称</replaceable>」行を <filename>gfarm.conf</filename>
+ファイルから削除します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unset-gfsd-conf</command>
+<parameter>directive</parameter>=<replaceable>設定名称</replaceable>
+</term>
+<listitem>
+<para>
+「<replaceable>設定名称</replaceable>」行を <filename>gfsd.conf</filename>
 ファイルから削除します。
 </para>
 </listitem>
@@ -443,6 +491,28 @@ Gfarm2 ファイルシステムを「<replaceable>ディレクトリ</replaceable>」に
 <listitem>
 <para>
 <filename>gfarm2.conf</filename> ファイルを標準出力に出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-gfsd-conf</command>
+</term>
+<listitem>
+<para>
+<filename>gfsd.conf</filename> ファイルを標準出力に出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-usermap</command>
+</term>
+<listitem>
+<para>
+<filename>usermap</filename> ファイルを標準出力に出力します。
 </para>
 </listitem>
 </varlistentry>
@@ -490,6 +560,30 @@ Gfarm2 ファイルシステムを「<replaceable>ディレクトリ</replaceable>」に
 <listitem>
 <para>
 <filename>gfarm2.conf</filename> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-gfsd-conf</command>
+</term>
+<listitem>
+<para>
+<filename>gfsd.conf</filename> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-usermap</command>
+</term>
+<listitem>
+<para>
+<filename>usermap</filename> ファイルをリストアします。
 バックアップデータは、標準入力から読み込みます。
 </para>
 </listitem>

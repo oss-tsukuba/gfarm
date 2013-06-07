@@ -17,7 +17,7 @@ subcmd_check_hostids_defined()
 
 	check_argc $# 1
 	for ID in $@; do
-		check_hostid $ID
+		check_hostid any $ID
 		HOST=`get_host $ID`
 	done
 
