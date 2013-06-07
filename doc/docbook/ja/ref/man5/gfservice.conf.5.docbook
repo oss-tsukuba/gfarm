@@ -165,6 +165,31 @@ gfmd サーバー上で <command>gfservice-agent</command> コマンドが
 </varlistentry>
 
 <varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable>_AUTH_TYPE</varname></term>
+<listitem>
+<para>
+認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
+<command>config-gfarm</command> を実行したときの
+<varname>AUTH_TYPE</varname> の値が採用されます。
+(変数 <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname> の値によって、この
+ときの <varname>AUTH_TYPE</varname> の値は変わるので、注意して下さい。)
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable>_REPLICATION_MODE</varname></term>
+<listitem>
+<para>
+この変数の値を「async」にセットすると、
+<command>gfservice config-gfarm-slave</command> の際にこの gfmd は
+非同期 (async) スレーブになります。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><varname>gfmd<replaceable>n</replaceable>_SSH</varname></term>
 <listitem>
 <para>
@@ -254,6 +279,20 @@ gfsd サーバー上で <command>gfservice-agent</command> コマンドが
 </varlistentry>
 
 <varlistentry>
+<term><varname>gfsd<replaceable>n</replaceable>_AUTH_TYPE</varname></term>
+<listitem>
+<para>
+認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
+<command>config-gfarm</command> を実行したときの
+<varname>AUTH_TYPE</varname> の値が採用されます。
+(変数 <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname> の値によって、この
+ときの <varname>AUTH_TYPE</varname> の値は変わるので、注意して下さい。)
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><varname>gfsd<replaceable>n</replaceable>_SSH</varname></term>
 <listitem>
 <para>
@@ -320,14 +359,13 @@ client サーバーを定義するために用います。
 </varlistentry>
 
 <varlistentry>
-<term><varname>client<replaceable>n</replaceable>_GFARM2FS_BIN_PATH</varname></term>
+<term><varname>client<replaceable>n</replaceable>_GFARM2FS</varname></term>
 <listitem>
 <para>
-クライアントホスト上で <command>gfarm2fs</command> コマンドがインストー
-ルされているディレクトリへのパスを指定します。
-この変数が宣言されていると <command>gfservice</command> は指定されたパ
-スの <command>gfarm2fs</command> コマンドを実行します。
-デフォルトは「%%BINDIR%%」です。
+<command>gfarm2fs</command> コマンドのパスおよびオプションを指定します。
+<command>gfservice</command> がクライアントホスト上で gfarm2fs コマンド
+を実行してファイルシステムをマウントする際、この変数が利用されます。
+デフォルトは「%%BINDIR%%/gfarm2fs」です。
 </para>
 </listitem>
 </varlistentry>
@@ -364,6 +402,31 @@ gfarm2.confファイルのパスを絶対パスで指定します。
 この値が設定されていない場合、<command>gfservice</command>はgfmd1の
 gfarm2.confファイルのパスと同じパスを使用します(gfarm2.confファイルの
 パスは「gfmd1_CONFIG_GFARM_OPTIONS」シェル変数の値を基に決定されます)。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_PRIVATE_MODE</varname></term>
+<listitem>
+<para>
+この変数に「true」をセットすると、<command>gfservice</command> が
+サブコマンド <command>config-client</command> を実行する際、クライアント
+ホスト側の処理は root 権限を持たずに行います。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_AUTH_TYPE</varname></term>
+<listitem>
+<para>
+認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
+<command>config-gfarm</command> を実行したときの
+<varname>AUTH_TYPE</varname> の値が採用されます。
+(変数 <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname> の値によって、この
+ときの <varname>AUTH_TYPE</varname> の値は変わるので、注意して下さい。)
 </para>
 </listitem>
 </varlistentry>

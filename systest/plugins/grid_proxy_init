@@ -33,7 +33,7 @@ subcmd_grid_proxy_init()
 	log_debug "subcmd_grid_proxy_init"
 
 	check_argc $# 0
-	check_hostid $HOSTID
+	check_hostid any $HOSTID
 	USER=`whoami`
 	PASS_PHRASE=`get_globus_pass_phrase $HOSTID $USER`
 
@@ -41,7 +41,7 @@ subcmd_grid_proxy_init()
 		log_error "Globus pass phrase is not set in gfservice.conf"
 	fi
 
-	exec_client_host_agent $HOSTID - grid_proxy_init \
+	exec_remote_host_agent $HOSTID - grid_proxy_init \
 		"pass-phrase=$PASS_PHRASE"
 	[ $? -ne 0 ] && log_error "gfservice grid_proxy_init failed"
 

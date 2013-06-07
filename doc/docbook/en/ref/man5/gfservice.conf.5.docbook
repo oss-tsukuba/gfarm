@@ -2,7 +2,7 @@
 
 <refentry id='gfservice.conf.5'>
 
-<refentryinfo><date>8 Mar 2013</date></refentryinfo>
+<refentryinfo><date>6 Jun 2013</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice.conf</refentrytitle>
@@ -164,6 +164,31 @@ in private mode.
 </varlistentry>
 
 <varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable>_AUTH_TYPE</varname></term>
+<listitem>
+<para>
+Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+If the variable is not declared, its value is chosen from
+<varname>AUTH_TYPE</varname> value output by
+<command>config-gfarm -T</command> command executed on gfmd1.
+(Note that the value <varname>AUTH_TYPE</varname> above is affected by
+the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable>_REPLICATION_MODE</varname></term>
+<listitem>
+<para>
+Setting this variable to "async",
+<command>gfservice config-gfarm-slave</command> configures the gfmd
+host as an async slave.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><varname>gfmd<replaceable>n</replaceable>_SSH</varname></term>
 <listitem>
 <para>
@@ -252,6 +277,20 @@ in private mode.
 </varlistentry>
 
 <varlistentry>
+<term><varname>gfsd<replaceable>n</replaceable>_AUTH_TYPE</varname></term>
+<listitem>
+<para>
+Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+If the variable is not declared, its value is chosen from
+<varname>AUTH_TYPE</varname> value output by
+<command>config-gfarm -T</command> command executed on gfmd1.
+(Note that the value <varname>AUTH_TYPE</varname> above is affected by
+the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><varname>gfsd<replaceable>n</replaceable>_SSH</varname></term>
 <listitem>
 <para>
@@ -317,13 +356,13 @@ Otherwise it executes <command>"gfservice-agent"</command>.
 </varlistentry>
 
 <varlistentry>
-<term><varname>client<replaceable>n</replaceable>_GFARM2FS_BIN_PATH</varname></term>
+<term><varname>client<replaceable>n</replaceable>_GFARM2FS</varname></term>
 <listitem>
 <para>
-Specify a path to a directory where <command>gfarm2fs</command>
-command is installed on the client host. The the variable is declared,
-<command>gfservice</command> executes <command>gfarm2fs</command> with
-specified path. The default value is %%BINDIR%%.
+Specify a path to <command>gfarm2fs</command> command and its options.
+The variable is used when <command>gfservice</command> executes
+<command>gfarm2fs</command> command to mount a file system.
+The default value is "%%BINDIR%%/gfarm2fs".
 </para>
 </listitem>
 </varlistentry>
@@ -360,6 +399,30 @@ Specify a gfarm2.conf file in absolute path.
 If a value is not set, <command>gfservice</command> uses a same path as
 the path of gfarm2.conf in gfmd1(determined from the 'gfmd1_CONFIG_GFARM_OPTIONS'
 shell variable).
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_PRIVATE_MODE</varname></term>
+<listitem>
+<para>
+If this variable is set to "true", <command>gfservice</command> processes
+the sub-command <command>config-client</command> without root privilege.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_AUTH_TYPE</varname></term>
+<listitem>
+<para>
+Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+If the variable is not declared, its value is chosen from
+<varname>AUTH_TYPE</varname> value output by
+<command>config-gfarm -T</command> command executed on gfmd1.
+(Note that the value <varname>AUTH_TYPE</varname> above is affected by
+the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
 </para>
 </listitem>
 </varlistentry>

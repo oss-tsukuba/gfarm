@@ -2,7 +2,7 @@
 
 <refentry id='gfservice.1'>
 
-<refentryinfo><date>15 Feb 2013</date></refentryinfo>
+<refentryinfo><date>6 Jun 2013</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice</refentrytitle>
@@ -139,8 +139,8 @@ all hosts you want to operate using <command>gfservice</command>.
 
 <para>
 <command>gfservice</command> has a plug-in system so that user can add
-new sub-commands. See "PLUGIN SYSTEM" section of this man page for
-details about a plug-in system.
+new sub-commands. See "PLUG-IN SYSTEM" section of this man page for
+more details.
 </para>
 
 </refsect1>
@@ -188,16 +188,11 @@ The default value is "no".
 <term><option>-k</option></term>
 <listitem>
 <para>
-Setup shared key if authentication type is "sharedsecret".
 When this option is specified with sub-command
 <command>config-gfarm</command> or
 <command>config-gfarm-master</command>, <command>gfservice</command>
-creates a shared secret key and then distributes the key to all hosts
-defined in the configuration file.
-When this option is specified with sub-commands
-<command>config-gfarm-slave</command> or
-<command>config-gfsd</command>, <command>config-client</command>,
-<command>gfservice</command> copies the key from gfmd host.
+creates a shared secret key files using <command>gfkey</command>
+command.
 </para>
 </listitem>
 </varlistentry>
@@ -219,7 +214,10 @@ immediately.
 <variablelist>
 
 <varlistentry>
-<term><command>backend-db-status</command></term>
+<term>
+<command>backend-db-status</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Exit with an exit code 0, if a backend database is currently running.
@@ -229,7 +227,10 @@ Otherwise exits with 1.
 </varlistentry>
 
 <varlistentry>
-<term><command>gfmd-status</command></term>
+<term>
+<command>gfmd-status</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Exit with an exit code 0, if <command>gfmd</command> is currently running.
@@ -239,7 +240,10 @@ Otherwise exits with 1.
 </varlistentry>
 
 <varlistentry>
-<term><command>start-backend-db</command></term>
+<term>
+<command>start-backend-db</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Start a backend database if it is not running currently.
@@ -248,7 +252,10 @@ Start a backend database if it is not running currently.
 </varlistentry>
 
 <varlistentry>
-<term><command>start-gfmd</command></term>
+<term>
+<command>start-gfmd</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Start <command>gfmd</command> if it is not running currently.
@@ -257,32 +264,35 @@ Start <command>gfmd</command> if it is not running currently.
 </varlistentry>
 
 <varlistentry>
-<term><command>start-gfmd-master</command></term>
+<term>
+<command>start-gfmd-master</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
-Delete <varname>metadb_server_force_slave</varname> directive in 
-<filename>gfmd.conf</filename> on the remote host if the directive is
-specified in the file.
-Then start <command>gfmd</command> if it is not running currently.
-Note that this sub-command doesn't ensure that <command>gfmd</command>
-on the remote host runs in master mode.
+An alias of "<command>start-gfmd</command>" sub-command.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>start-gfmd-slave</command></term>
+<term>
+<command>start-gfmd-slave</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
-Set <varname>metadb_server_force_slave</varname> directive in 
-<filename>gfmd.conf</filename> on the remote host to the value "enabled".
-Then start <command>gfmd</command> if it is not running currently.
+This sub-command is the same as "<command>start-gfmd</command>",
+but <option>-S</option> option is added to <command>gfmd</command>.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>start-gfarm</command></term>
+<term>
+<command>start-gfarm</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Start a backend database and <command>gfmd</command> if they are
@@ -292,34 +302,35 @@ not running currently.
 </varlistentry>
 
 <varlistentry>
-<term><command>start-gfarm-master</command></term>
+<term>
+<command>start-gfarm-master</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
-Delete <varname>metadb_server_force_slave</varname> directive in 
-<filename>gfmd.conf</filename> on the remote host if the directive is
-specified in the file.
-Then start a backend database and <command>gfmd</command> if they are
-not running currently.
-Note that this sub-command doesn't ensure that <command>gfmd</command>
-on the remote host runs in a master mode.
+An alias of "<command>start-gfarm</command>" sub-command.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>start-gfarm-slave</command></term>
+<term>
+<command>start-gfarm-slave</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
-Set <varname>metadb_server_force_slave</varname> directive in 
-<filename>gfmd.conf</filename> on the remote host to the value "enabled".
-Then start a backend database and <command>gfmd</command> if they are
-not running currently.
+This sub-command is the same as "<command>start-gfarm</command>",
+but <option>-S</option> option is added to <command>gfmd</command>.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>stop-backend-db</command></term>
+<term>
+<command>stop-backend-db</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Stop a backend database if it is running currently.
@@ -328,7 +339,10 @@ Stop a backend database if it is running currently.
 </varlistentry>
 
 <varlistentry>
-<term><command>stop-gfmd</command></term>
+<term>
+<command>stop-gfmd</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Stop <command>gfmd</command> if it is running currently.
@@ -337,7 +351,10 @@ Stop <command>gfmd</command> if it is running currently.
 </varlistentry>
 
 <varlistentry>
-<term><command>stop-gfarm</command></term>
+<term>
+<command>stop-gfarm</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Stop <command>gfmd</command> and a backend database if they are running
@@ -347,7 +364,10 @@ currently.
 </varlistentry>
 
 <varlistentry>
-<term><command>kill-gfmd</command></term>
+<term>
+<command>kill-gfmd</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Kill <command>gfmd</command> (send SIGKILL) if it is running currently.
@@ -356,7 +376,10 @@ Kill <command>gfmd</command> (send SIGKILL) if it is running currently.
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-backend-db</command></term>
+<term>
+<command>restart-backend-db</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Perform "<command>stop-backend-db</command>" and 
@@ -366,7 +389,10 @@ Perform "<command>stop-backend-db</command>" and
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-gfmd</command></term>
+<term>
+<command>restart-gfmd</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Perform "<command>stop-gfmd</command>" and
@@ -376,17 +402,22 @@ Perform "<command>stop-gfmd</command>" and
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-gfmd-master</command></term>
+<term>
+<command>restart-gfmd-master</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
-Perform "<command>stop-gfmd</command>" and
-"<command>start-gfmd-master</command>" sub-commands successively.
+An alias of "<command>restart-gfmd</command>" sub-command.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-gfmd-slave</command></term>
+<term>
+<command>restart-gfmd-slave</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Perform "<command>stop-gfmd</command>" and 
@@ -396,7 +427,10 @@ Perform "<command>stop-gfmd</command>" and
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-gfarm</command></term>
+<term>
+<command>restart-gfarm</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Perform "<command>stop-gfarm</command>" and 
@@ -406,17 +440,22 @@ Perform "<command>stop-gfarm</command>" and
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-gfarm-master</command></term>
+<term>
+<command>restart-gfarm-master</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
-Perform "<command>stop-gfarm</command>" and 
-"<command>start-gfarm-master</command>" sub-commands successively.
+An alias of "<command>restart-gfarm</command>" sub-command.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-gfarm-slave</command></term>
+<term>
+<command>restart-gfarm-slave</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Perform "<command>stop-gfarm</command>" and 
@@ -426,7 +465,10 @@ Perform "<command>stop-gfarm</command>" and
 </varlistentry>
 
 <varlistentry>
-<term><command>promote</command></term>
+<term>
+<command>promote</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Promote <command>gfmd</command> from a slave to a master.
@@ -435,7 +477,10 @@ Promote <command>gfmd</command> from a slave to a master.
 </varlistentry>
 
 <varlistentry>
-<term><command>promote-gfmd</command></term>
+<term>
+<command>promote-gfmd</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 An alias of "<command>promote</command>" sub-command.
@@ -444,7 +489,12 @@ An alias of "<command>promote</command>" sub-command.
 </varlistentry>
 
 <varlistentry>
-<term><command>set-gfmd-conf</command> <parameter>directive</parameter> <parameter>value</parameter></term>
+<term>
+<command>set-gfmd-conf</command>
+<parameter>host-id</parameter>
+<parameter>directive</parameter>
+<parameter>value</parameter>
+</term>
 <listitem>
 <para>
 Add
@@ -464,7 +514,36 @@ deletes it and then add a new line.
 </varlistentry>
 
 <varlistentry>
-<term><command>unset-gfmd-conf</command> <parameter>directive</parameter></term>
+<term>
+<command>set-gfsd-conf</command>
+<parameter>host-id</parameter>
+<parameter>directive</parameter>
+<parameter>value</parameter>
+</term>
+<listitem>
+<para>
+Add
+</para>
+
+<literallayout>
+	<parameter>directive</parameter> <parameter>value</parameter>
+</literallayout>
+
+<para>
+line to <filename>gfsd.conf</filename> file on the remote host.
+If <filename>gfsd.conf</filename> already has a
+<parameter>directive</parameter> line, <command>gfservice</command>
+deletes it and then add a new line.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unset-gfmd-conf</command>
+<parameter>host-id</parameter>
+<parameter>directive</parameter>
+</term>
 <listitem>
 <para>
 Delete a <parameter>directive</parameter> line in
@@ -476,7 +555,25 @@ If <filename>gfmd.conf</filename> file doesn't contain
 </varlistentry>
 
 <varlistentry>
-<term><command>backup-backend-db</command></term>
+<term>
+<command>unset-gfsd-conf</command>
+<parameter>host-id</parameter>
+<parameter>directive</parameter>
+</term>
+<listitem>
+<para>
+Delete a <parameter>directive</parameter> line in
+<filename>gfsd.conf</filename> file on the remote host.
+If <filename>gfsd.conf</filename> file doesn't contain
+<parameter>directive</parameter> line, the file is unchanged.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-backend-db</command>
+</term>
 <listitem>
 <para>
 Backup a backend database on the remote host and output the backup data
@@ -486,7 +583,10 @@ to standard out.
 </varlistentry>
 
 <varlistentry>
-<term><command>backup-gfmd-conf</command></term>
+<term>
+<command>backup-gfmd-conf</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Output <filename>gfmd.conf</filename> file on the remote host to
@@ -496,7 +596,40 @@ standard out.
 </varlistentry>
 
 <varlistentry>
-<term><command>restore-backend-db</command></term>
+<term>
+<command>backup-gfsd-conf</command>
+<parameter>host-id</parameter>
+</term>
+<listitem>
+<para>
+Output <filename>gfsd.conf</filename> file on the remote host to
+standard out.
+This sub-command can be worked only when the remote host is configured
+in the private mode.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-usermap</command>
+<parameter>host-id</parameter>
+</term>
+<listitem>
+<para>
+Output <filename>usermap</filename> file on the remote host to
+standard out.
+This sub-command can be worked only when the remote host is configured
+in the private mode.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-backend-db</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Restore a backend database on the remote host.
@@ -506,7 +639,10 @@ The backup data are read from standard in.
 </varlistentry>
 
 <varlistentry>
-<term><command>restore-gfmd-conf</command></term>
+<term>
+<command>restore-gfmd-conf</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Recover <filename>gfmd.conf</filename> file on the remote host.
@@ -517,7 +653,42 @@ from standard in.
 </varlistentry>
 
 <varlistentry>
-<term><command>config-gfarm</command></term>
+<term>
+<command>restore-gfsd-conf</command>
+<parameter>host-id</parameter>
+</term>
+<listitem>
+<para>
+Recover <filename>gfsd.conf</filename> file on the remote host.
+<command>gfservice</command> reads a backup of <filename>gfsd.conf</filename>
+from standard in.
+This sub-command can be worked only when the remote host is configured
+in the private mode.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-usermap</command>
+<parameter>host-id</parameter>
+</term>
+<listitem>
+<para>
+Recover <filename>usermap</filename> file on the remote host.
+<command>gfservice</command> reads a backup of <filename>usermap</filename>
+from standard in.
+This sub-command can be worked only when the remote host is configured
+in the private mode.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>config-gfarm</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Execute <command>config-gfarm</command> command on the remote host.
@@ -528,21 +699,18 @@ options.
 Don't use this sub-command when you want to enable replication of gfmd.
 Instead, use "<command>config-gfarm-master</command>" or
 "<command>config-gfarm-slave</command>" sub-command in that case.
-<command>gfservice</command> distributes
-<filename>gfarm2.conf</filename> file to all hosts defined in the
-configuration file(gfmd<replaceable>n</replaceable>,
-gfsd<replaceable>n</replaceable> and
-client<replaceable>n</replaceable>).
-If authentication type is "sharedsecret" and <option>-k</option>
-option is specified, <command>gfservice</command> also creates a
-shared secret key using <command>gfkey</command> command and then
-distributes the key.
+If <option>-k</option> option is specified, <command>gfservice</command>
+also creates a shared secret key files onto the gfmd host, using
+<command>gfkey</command> command.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>config-gfarm-master</command></term>
+<term>
+<command>config-gfarm-master</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 This sub-command is the same as <command>config-gfarm</command>
@@ -552,7 +720,11 @@ but gfmd replication is enabled automatically.
 </varlistentry>
 
 <varlistentry>
-<term><command>config-gfarm-slave</command> <parameter>master-host-id</parameter></term>
+<term>
+<command>config-gfarm-slave</command>
+<parameter>host-id</parameter>
+<parameter>master-host-id</parameter>
+</term>
 <listitem>
 <para>
 This sub-command is the same as <command>config-gfarm</command>
@@ -564,14 +736,22 @@ using <command>gfmdhost</command> command.
 <varname>metadb_server_list</varname> directive in
 <filename>gfarm2.conf</filename> file on the master gfmd host and
 distribute the updated <filename>gfarm2.conf</filename> file to all hosts
-defined in the configuration file (gfmd<replaceable>n</replaceable>,
-gfsd<replaceable>n</replaceable> and client<replaceable>n</replaceable>).
+defined in the configuration file.
+It also updates <filename>gfsd.conf</filename> file and distributes it to
+all gfmd and gfsd hosts, if "gfmd<replaceable>n</replaceable>_PRIVATE_MODE"
+variable is set to "true".
+If the value of the variable "gfmd<replaceable>n</replaceable>_AUTH_TYPE"
+is "sharedsecret", it also copies a shared key file from the maste gfmd
+to the slave gfmd host.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>unconfig-gfarm</command></term>
+<term>
+<command>unconfig-gfarm</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Execute "<command>stop-gfarm</command>" sub-command and then delete all
@@ -583,7 +763,10 @@ If you want to unconfigure a slave gfmd, use
 </varlistentry>
 
 <varlistentry>
-<term><command>unconfig-gfarm-master</command></term>
+<term>
+<command>unconfig-gfarm-master</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 An alias of "<command>unconfig-gfarm</command>" sub-command.
@@ -592,7 +775,11 @@ An alias of "<command>unconfig-gfarm</command>" sub-command.
 </varlistentry>
 
 <varlistentry>
-<term><command>unconfig-gfarm-slave</command> <parameter>master-host-id</parameter></term>
+<term>
+<command>unconfig-gfarm-slave</command>
+<parameter>host-id</parameter>
+<parameter>master-host-id</parameter>
+</term>
 <listitem>
 <para>
 This sub-command is the same as "<command>unconfig-gfarm</command>",
@@ -601,8 +788,10 @@ It also deletes the slave host from a server list using
 <command>gfmdhost</command> command and from
 <varname>metadb_server_list</varname> directive in
 <filename>gfarm2.conf</filename> file on all hosts defined in the
-configuration file (gfmd<replaceable>n</replaceable>, 
-gfsd<replaceable>n</replaceable> and client<replaceable>n</replaceable>).
+configuration file.
+It also updates <filename>gfsd.conf</filename> file and distributes it to
+all gfmd and gfsd hosts, if "gfmd<replaceable>n</replaceable>_PRIVATE_MODE"
+variable is set to "true".
 </para>
 </listitem>
 </varlistentry>
@@ -624,7 +813,10 @@ immediately.
 <variablelist>
 
 <varlistentry>
-<term><command>gfsd-status</command></term>
+<term>
+<command>gfsd-status</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Exit with an exit code 0, if <command>gfsd</command> is currently running.
@@ -634,7 +826,9 @@ Otherwise exits with 1.
 </varlistentry>
 
 <varlistentry>
-<term><command>start-gfsd</command></term>
+<term>
+<command>start-gfsd</command>
+</term>
 <listitem>
 <para>
 Start <command>gfsd</command> if it is not running currently.
@@ -643,7 +837,9 @@ Start <command>gfsd</command> if it is not running currently.
 </varlistentry>
 
 <varlistentry>
-<term><command>stop-gfsd</command></term>
+<term>
+<command>stop-gfsd</command>
+</term>
 <listitem>
 <para>
 Stop <command>gfsd</command> if it is running currently.
@@ -652,7 +848,10 @@ Stop <command>gfsd</command> if it is running currently.
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-gfsd</command></term>
+<term>
+<command>restart-gfsd</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Perform "<command>stop-gfsd</command>" and "<command>start-gfsd</command>"
@@ -662,7 +861,85 @@ sub-commands successively.
 </varlistentry>
 
 <varlistentry>
-<term><command>config-gfsd</command></term>
+<term>
+<command>set-gfsd-conf</command>
+<parameter>host-id</parameter>
+<parameter>directive</parameter>
+<parameter>value</parameter>
+</term>
+<listitem>
+<para>
+Same as <command>set-gfsd-conf</command> sub-command for gfmd.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unset-gfsd-conf</command>
+<parameter>host-id</parameter>
+<parameter>directive</parameter>
+</term>
+<listitem>
+<para>
+Same as <command>unset-gfsd-conf</command> sub-command for gfmd.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-gfsd-conf</command>
+<parameter>host-id</parameter>
+</term>
+<listitem>
+<para>
+Same as <command>backup-gfsd-conf</command> sub-command for gfmd.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-usermap</command>
+<parameter>host-id</parameter>
+</term>
+<listitem>
+<para>
+Same as <command>backup-usermap</command> sub-command for gfmd.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-gfsd-conf</command>
+<parameter>host-id</parameter>
+</term>
+<listitem>
+<para>
+Same as <command>restore-gfsd-conf</command> sub-command for gfmd.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-usermap</command>
+<parameter>host-id</parameter>
+</term>
+<listitem>
+<para>
+Same as <command>restore-usermap</command> sub-command for gfmd.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>config-gfsd</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Execute "<command>config-gfsd</command>" command on the remote host.
@@ -672,12 +949,18 @@ its value is passed to <command>config-gfsd</command> command as
 options.
 <command>gfservice</command> also registers the configured remote host
 as a filesystem node using <command>gfhost</command> command.
+If the value of the variable "gfsd<replaceable>n</replaceable>_AUTH_TYPE"
+is "sharedsecret", it also copies a shared key file from gfmd1 to the
+gfsd host.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>unconfig-gfsd</command></term>
+<term>
+<command>unconfig-gfsd</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Execute "<command>stop-gfsd</command>" sub-command and then delete all
@@ -704,24 +987,28 @@ immediately.
 <variablelist>
 
 <varlistentry>
-<term><command>mount</command> <parameter>directory</parameter> <parameter>option...</parameter></term>
+<term>
+<command>mount</command>
+<parameter>host-id</parameter>
+<parameter>directory</parameter>
+<parameter>option...</parameter>
+</term>
 <listitem>
 <para>
 Mount a Gfarm2 filesystem on <parameter>directory</parameter> on the
 remote host.
 The argument <parameter>option</parameter> is an option to 
-<command>gfarm2fs</command> command. If <command>gfarm2fs</command>
-command is installed to a directory different from directory which
-Gfarm is installed(%%BINDIR%%), you can specify a path
-to <command>gfarm2fs</command> command
-in <filename>gfservice.conf</filename>. See gfservice.conf(5) for
-more details about the configuration file.
+<command>gfarm2fs</command> command.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>unmount</command> <parameter>directory</parameter></term>
+<term>
+<command>unmount</command>
+<parameter>host-id</parameter>
+<parameter>directory</parameter>
+</term>
 <listitem>
 <para>
 Unmount a Gfarm2 filesystem on <parameter>directory</parameter> on the
@@ -731,7 +1018,11 @@ remote host.
 </varlistentry>
 
 <varlistentry>
-<term><command>umount</command> <parameter>directory</parameter></term>
+<term>
+<command>umount</command>
+<parameter>host-id</parameter>
+<parameter>directory</parameter>
+</term>
 <listitem>
 <para>
 An alias of "<command>unmount</command>" sub-command.
@@ -740,7 +1031,12 @@ An alias of "<command>unmount</command>" sub-command.
 </varlistentry>
 
 <varlistentry>
-<term><command>set-gfarm-conf</command> <parameter>directive</parameter> <parameter>value</parameter></term>
+<term>
+<command>set-gfarm-conf</command>
+<parameter>host-id</parameter>
+<parameter>directive</parameter>
+<parameter>value</parameter>
+</term>
 <listitem>
 <para>
 Add
@@ -760,7 +1056,11 @@ deletes it and then add a new line.
 </varlistentry>
 
 <varlistentry>
-<term><command>unset-gfarm-conf</command> <parameter>directive</parameter></term>
+<term>
+<command>unset-gfarm-conf</command>
+<parameter>host-id</parameter>
+<parameter>directive</parameter>
+</term>
 <listitem>
 <para>
 Delete a <parameter>directive</parameter> line in
@@ -772,7 +1072,10 @@ If <filename>gfarm2.conf</filename> file doesn't contain
 </varlistentry>
 
 <varlistentry>
-<term><command>backup-gfarm-conf</command></term>
+<term>
+<command>backup-gfarm-conf</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Output <filename>gfarm2.conf</filename> file on the remote host to
@@ -782,7 +1085,10 @@ standard out.
 </varlistentry>
 
 <varlistentry>
-<term><command>backup-shared-key</command></term>
+<term>
+<command>backup-shared-key</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Output a shared secret key file to standard out.
@@ -791,7 +1097,10 @@ Output a shared secret key file to standard out.
 </varlistentry>
 
 <varlistentry>
-<term><command>restore-gfarm-conf</command></term>
+<term>
+<command>restore-gfarm-conf</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Recover <filename>gfarm2.conf</filename> file on the remote host.
@@ -802,7 +1111,10 @@ from standard in.
 </varlistentry>
 
 <varlistentry>
-<term><command>restore-shared-key</command></term>
+<term>
+<command>restore-shared-key</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Recover a shared secret key file on the remote host.
@@ -813,18 +1125,26 @@ standard in.
 </varlistentry>
 
 <varlistentry>
-<term><command>config-client</command></term>
+<term>
+<command>config-client</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Copy <filename>gfarm2.conf</filename> file from gfmd1 to the client
-host. This sub-command also copies a shared secret key file when
-<option>-k</option> option is specified.
+host.
+If the value of the variable "client<replaceable>n</replaceable>_AUTH_TYPE"
+is "sharedsecret", it also copies a shared key file from gfmd1 to the
+client host.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><command>unconfig-client</command></term>
+<term>
+<command>unconfig-client</command>
+<parameter>host-id</parameter>
+</term>
 <listitem>
 <para>
 Delete <filename>gfarm2.conf</filename> file and a shared secret key file
@@ -836,6 +1156,7 @@ on the remote host.
 <varlistentry>
 <term>
 <command>gfcmd</command>
+<parameter>host-id</parameter>
 <parameter>command-name</parameter>
 <parameter>command-argument ...</parameter>
 </term>
@@ -860,7 +1181,9 @@ The host-id argument must not be specified.
 <variablelist>
 
 <varlistentry>
-<term><command>start-all</command></term>
+<term>
+<command>start-all</command>
+</term>
 <listitem>
 <para>
 Start all backend databases, <command>gfmd</command> servers and 
@@ -870,7 +1193,9 @@ Start all backend databases, <command>gfmd</command> servers and
 </varlistentry>
 
 <varlistentry>
-<term><command>stop-all</command></term>
+<term>
+<command>stop-all</command>
+</term>
 <listitem>
 <para>
 Stop all <command>gfsd</command> servers, <command>gfmd</command> servers
@@ -880,7 +1205,9 @@ and backend databases,
 </varlistentry>
 
 <varlistentry>
-<term><command>restart-all</command></term>
+<term>
+<command>restart-all</command>
+</term>
 <listitem>
 <para>
 Perform "<command>stop-all</command>" and
@@ -890,7 +1217,9 @@ Perform "<command>stop-all</command>" and
 </varlistentry>
 
 <varlistentry>
-<term><command>config-all</command></term>
+<term>
+<command>config-all</command>
+</term>
 <listitem>
 <para>
 Perform "<command>config-gfarm-master</command>" for
@@ -903,7 +1232,9 @@ Finally, perform "<command>config-client</command>" for all client nodes.
 </varlistentry>
 
 <varlistentry>
-<term><command>unconfig-all</command></term>
+<term>
+<command>unconfig-all</command>
+</term>
 <listitem>
 <para>
 Perform "<command>unconfig-client</command>" for all client nodes.
@@ -917,7 +1248,7 @@ Finally, perform "<command>unconfig-gfarm</command>" for all gfmd nodes.
 
 </refsect1>
 
-<refsect1 id='plugin'><title>PLUGIN SYSTEM</title>
+<refsect1 id='plugin'><title>PLUG-IN SYSTEM</title>
 
 <para>
 <command>gfservice</command> has a plug-in system so that user can add
