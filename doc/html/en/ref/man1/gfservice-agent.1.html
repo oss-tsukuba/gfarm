@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -40,12 +40,12 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfservice-agent</B
-> [<TT
+>  [<TT
 CLASS="REPLACEABLE"
 ><I
 >options</I
 ></TT
->]  sub-command  [<TT
+>]  host-id   sub-command  [<TT
 CLASS="REPLACEABLE"
 ><I
 >argument ...</I
@@ -89,6 +89,16 @@ CLASS="COMMAND"
 > via SSH
 and Sudo.</P
 ><P
+>Host-id argument is the same as that of <B
+CLASS="COMMAND"
+>gfservice</B
+>, but
+<B
+CLASS="COMMAND"
+>gfservice-agent</B
+> uses host-id for recognizing type of
+host ("gfmd", "gfsd" or "client") and debug messages only.</P
+><P
 >Sub-command names of <B
 CLASS="COMMAND"
 >gfservice-agent</B
@@ -105,21 +115,19 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >gfservice-agent</B
 > takes
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
 >"directory=<TT
 CLASS="REPLACEABLE"
 ><I
 >directory</I
 ></TT
->"</I
-></TT
+>"</CODE
 >
 argument:</P
 ><P
 CLASS="LITERALLAYOUT"
->	gfservice-agent&nbsp;unmount&nbsp;directory=/somewhere</P
+>	gfservice-agent&nbsp;client3&nbsp;unmount&nbsp;directory=/somewhere</P
 ><P
 >while <B
 CLASS="COMMAND"
@@ -200,22 +208,18 @@ CLASS="VARIABLELIST"
 CLASS="COMMAND"
 >get-config-gfarm-param</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->param</I
-></TT
+>param</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfarm-options</I
-></TT
+>config-gfarm-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -233,29 +237,39 @@ CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
-> to standard out.</P
+> to standard out.
+If the "<CODE
+CLASS="PARAMETER"
+>param</CODE
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+>"
+argument is not specified, it outputs entire
+<B
+CLASS="COMMAND"
+>config-gfarm -T</B
+> results.</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >get-config-gfsd-param</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->param</I
-></TT
+>param</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfsd-options</I
-></TT
+>config-gfsd-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -273,18 +287,30 @@ CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
-> to standard out.</P
+> to standard out.
+If the "<CODE
+CLASS="PARAMETER"
+>param</CODE
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+>"
+argument is not specified, it outputs entire
+<B
+CLASS="COMMAND"
+>config-gfsd -T</B
+> results.</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >backend-db-status</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfarm-options</I
-></TT
+>config-gfarm-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -301,11 +327,9 @@ Otherwise exits with 1.</P
 CLASS="COMMAND"
 >gfmd-status</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfarm-options</I
-></TT
+>config-gfarm-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -322,11 +346,9 @@ Otherwise exits with 1.</P
 CLASS="COMMAND"
 >gfsd-status</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfsd-options</I
-></TT
+>config-gfsd-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -343,22 +365,18 @@ Otherwise exits with 1.</P
 CLASS="COMMAND"
 >start-backend-db</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfarm-options</I
-></TT
+>config-gfarm-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
 >options</I
 ></TT
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->timeout</I
-></TT
+>timeout</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -374,22 +392,18 @@ CLASS="REPLACEABLE"
 CLASS="COMMAND"
 >start-gfmd</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfarm-options</I
-></TT
+>config-gfarm-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
 >options</I
 ></TT
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->timeout</I
-></TT
+>timeout</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -405,22 +419,18 @@ CLASS="REPLACEABLE"
 CLASS="COMMAND"
 >start-gfsd</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfsd-options</I
-></TT
+>config-gfsd-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
 >options</I
 ></TT
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->timeout</I
-></TT
+>timeout</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -436,11 +446,9 @@ CLASS="REPLACEABLE"
 CLASS="COMMAND"
 >config-gfarm</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfarm-options</I
-></TT
+>config-gfarm-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -459,11 +467,9 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >config-gfarm-master</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfarm-options</I
-></TT
+>config-gfarm-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -475,11 +481,9 @@ CLASS="REPLACEABLE"
 >Execute <B
 CLASS="COMMAND"
 >config-gfarm</B
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->-r</I
-></TT
+>-r</CODE
 > command.</P
 ></DD
 ><DT
@@ -487,11 +491,9 @@ CLASS="PARAMETER"
 CLASS="COMMAND"
 >config-gfsd</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfsd-options</I
-></TT
+>config-gfsd-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -510,11 +512,9 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >unconfig-gfarm</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfarm-options</I
-></TT
+>config-gfarm-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -534,11 +534,9 @@ files and directories created by gfmd and a backend database.</P
 CLASS="COMMAND"
 >unconfig-gfsd</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfsd-options</I
-></TT
+>config-gfsd-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -558,11 +556,9 @@ files and directories created by gfsd.</P
 CLASS="COMMAND"
 >unconfig-client</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfsd-options</I
-></TT
+>config-gfsd-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -581,11 +577,9 @@ CLASS="FILENAME"
 CLASS="COMMAND"
 >promote</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfarm-options</I
-></TT
+>config-gfarm-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -604,11 +598,9 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >promote-gfmd</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->config-gfarm-options</I
-></TT
+>config-gfarm-options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -627,22 +619,18 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >mount</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->directory</I
-></TT
+>directory</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
 >directory</I
 ></TT
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->options</I
-></TT
+>options</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -663,11 +651,9 @@ CLASS="REPLACEABLE"
 CLASS="COMMAND"
 >unmount</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->directory</I
-></TT
+>directory</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -689,11 +675,9 @@ CLASS="REPLACEABLE"
 CLASS="COMMAND"
 >umount</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->directory</I
-></TT
+>directory</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -712,22 +696,18 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >set-gfmd-conf</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->value</I
-></TT
+>value</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -761,22 +741,18 @@ CLASS="FILENAME"
 CLASS="COMMAND"
 >set-gfarm-conf</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->value</I
-></TT
+>value</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -808,13 +784,83 @@ CLASS="FILENAME"
 ><DT
 ><B
 CLASS="COMMAND"
->unset-gfmd-conf</B
+>set-gfsd-conf</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
+>directive</CODE
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+>
+<CODE
+CLASS="PARAMETER"
+>value</CODE
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>value</I
+></TT
+></DT
+><DD
+><P
+>Add</P
+><P
+CLASS="LITERALLAYOUT"
+>	<TT
+CLASS="REPLACEABLE"
 ><I
 >directive</I
 ></TT
+>&nbsp;<TT
+CLASS="REPLACEABLE"
+><I
+>value</I
+></TT
+></P
+><P
+>line to <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> file.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>unset-gfmd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>directive</CODE
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+></DT
+><DD
+><P
+>Delete a <TT
+CLASS="REPLACEABLE"
+><I
+>directive</I
+></TT
+> line in
+<TT
+CLASS="FILENAME"
+>gfmd.conf</TT
+> file.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>unset-gfarm-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>directive</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -837,13 +883,11 @@ CLASS="FILENAME"
 ><DT
 ><B
 CLASS="COMMAND"
->unset-gfarm-conf</B
+>unset-gfsd-conf</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
@@ -860,7 +904,7 @@ CLASS="REPLACEABLE"
 > line in
 <TT
 CLASS="FILENAME"
->gfmd.conf</TT
+>gfsd.conf</TT
 > file.</P
 ></DD
 ><DT
@@ -894,6 +938,30 @@ CLASS="COMMAND"
 >Output <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
+> file to standard out.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>backup-gfsd-conf</B
+></DT
+><DD
+><P
+>Output <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> file to standard out.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>backup-usermap</B
+></DT
+><DD
+><P
+>Output <TT
+CLASS="FILENAME"
+>usermap</TT
 > file to standard out.</P
 ></DD
 ><DT
@@ -947,6 +1015,32 @@ The backup data are read from standard in.</P
 ><DT
 ><B
 CLASS="COMMAND"
+>restore-gfsd-conf</B
+></DT
+><DD
+><P
+>Restore <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> file.
+The backup data are read from standard in.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>restore-usermap</B
+></DT
+><DD
+><P
+>Restore <TT
+CLASS="FILENAME"
+>usermap</TT
+> file.
+The backup data are read from standard in.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
 >restore-shared-key</B
 ></DT
 ><DD
@@ -962,22 +1056,18 @@ The backup data are read from standard in.</P
 CLASS="COMMAND"
 >gfcmd</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->cmd</I
-></TT
+>cmd</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
 >command-name</I
 ></TT
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->args</I
-></TT
+>args</CODE
 >="<TT
 CLASS="REPLACEABLE"
 ><I

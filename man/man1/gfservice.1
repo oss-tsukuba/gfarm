@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE" "1" "18 April 2013" "Gfarm" ""
+.TH "GFSERVICE" "1" "07 June 2013" "Gfarm" ""
 
 .SH NAME
 gfservice \- control Gfarm servers from a remote host
@@ -95,8 +95,8 @@ Since \fBgfservice\fR executes an agent command named
 all hosts you want to operate using \fBgfservice\fR\&.
 .PP
 \fBgfservice\fR has a plug-in system so that user can add
-new sub-commands. See "PLUGIN SYSTEM" section of this man page for
-details about a plug-in system.
+new sub-commands. See "PLUG-IN SYSTEM" section of this man page for
+more details.
 .SH "OPTIONS"
 .TP
 \fB-d\fR
@@ -117,16 +117,11 @@ If "no" is specified as \fItime\fR, timeout never occurs.
 The default value is "no".
 .TP
 \fB-k\fR
-Setup shared key if authentication type is "sharedsecret".
 When this option is specified with sub-command
 \fBconfig-gfarm\fR or
 \fBconfig-gfarm-master\fR, \fBgfservice\fR
-creates a shared secret key and then distributes the key to all hosts
-defined in the configuration file.
-When this option is specified with sub-commands
-\fBconfig-gfarm-slave\fR or
-\fBconfig-gfsd\fR, \fBconfig-client\fR,
-\fBgfservice\fR copies the key from gfmd host.
+creates a shared secret key files using \fBgfkey\fR
+command.
 .SH "SUB-COMMANDS FOR GFMD"
 .PP
 The followings are sub-commands which operate \fBgfmd\fR\&.
@@ -135,100 +130,84 @@ The given host-id argument must be "gfmd\fIn\fR"
 Otherwise \fBgfservice\fR reports an error and exits
 immediately.
 .TP
-\fBbackend-db-status\fR
+\fBbackend-db-status \fIhost-id\fB\fR
 Exit with an exit code 0, if a backend database is currently running.
 Otherwise exits with 1.
 .TP
-\fBgfmd-status\fR
+\fBgfmd-status \fIhost-id\fB\fR
 Exit with an exit code 0, if \fBgfmd\fR is currently running.
 Otherwise exits with 1.
 .TP
-\fBstart-backend-db\fR
+\fBstart-backend-db \fIhost-id\fB\fR
 Start a backend database if it is not running currently.
 .TP
-\fBstart-gfmd\fR
+\fBstart-gfmd \fIhost-id\fB\fR
 Start \fBgfmd\fR if it is not running currently.
 .TP
-\fBstart-gfmd-master\fR
-Delete metadb_server_force_slave directive in 
-\fIgfmd.conf\fR on the remote host if the directive is
-specified in the file.
-Then start \fBgfmd\fR if it is not running currently.
-Note that this sub-command doesn't ensure that \fBgfmd\fR
-on the remote host runs in master mode.
+\fBstart-gfmd-master \fIhost-id\fB\fR
+An alias of "\fBstart-gfmd\fR" sub-command.
 .TP
-\fBstart-gfmd-slave\fR
-Set metadb_server_force_slave directive in 
-\fIgfmd.conf\fR on the remote host to the value "enabled".
-Then start \fBgfmd\fR if it is not running currently.
+\fBstart-gfmd-slave \fIhost-id\fB\fR
+This sub-command is the same as "\fBstart-gfmd\fR",
+but \fB-S\fR option is added to \fBgfmd\fR\&.
 .TP
-\fBstart-gfarm\fR
+\fBstart-gfarm \fIhost-id\fB\fR
 Start a backend database and \fBgfmd\fR if they are
 not running currently.
 .TP
-\fBstart-gfarm-master\fR
-Delete metadb_server_force_slave directive in 
-\fIgfmd.conf\fR on the remote host if the directive is
-specified in the file.
-Then start a backend database and \fBgfmd\fR if they are
-not running currently.
-Note that this sub-command doesn't ensure that \fBgfmd\fR
-on the remote host runs in a master mode.
+\fBstart-gfarm-master \fIhost-id\fB\fR
+An alias of "\fBstart-gfarm\fR" sub-command.
 .TP
-\fBstart-gfarm-slave\fR
-Set metadb_server_force_slave directive in 
-\fIgfmd.conf\fR on the remote host to the value "enabled".
-Then start a backend database and \fBgfmd\fR if they are
-not running currently.
+\fBstart-gfarm-slave \fIhost-id\fB\fR
+This sub-command is the same as "\fBstart-gfarm\fR",
+but \fB-S\fR option is added to \fBgfmd\fR\&.
 .TP
-\fBstop-backend-db\fR
+\fBstop-backend-db \fIhost-id\fB\fR
 Stop a backend database if it is running currently.
 .TP
-\fBstop-gfmd\fR
+\fBstop-gfmd \fIhost-id\fB\fR
 Stop \fBgfmd\fR if it is running currently.
 .TP
-\fBstop-gfarm\fR
+\fBstop-gfarm \fIhost-id\fB\fR
 Stop \fBgfmd\fR and a backend database if they are running
 currently.
 .TP
-\fBkill-gfmd\fR
+\fBkill-gfmd \fIhost-id\fB\fR
 Kill \fBgfmd\fR (send SIGKILL) if it is running currently.
 .TP
-\fBrestart-backend-db\fR
+\fBrestart-backend-db \fIhost-id\fB\fR
 Perform "\fBstop-backend-db\fR" and 
 "\fBstart-backend-db\fR" sub-commands successively.
 .TP
-\fBrestart-gfmd\fR
+\fBrestart-gfmd \fIhost-id\fB\fR
 Perform "\fBstop-gfmd\fR" and
 "\fBstart-gfmd\fR" sub-commands successively.
 .TP
-\fBrestart-gfmd-master\fR
-Perform "\fBstop-gfmd\fR" and
-"\fBstart-gfmd-master\fR" sub-commands successively.
+\fBrestart-gfmd-master \fIhost-id\fB\fR
+An alias of "\fBrestart-gfmd\fR" sub-command.
 .TP
-\fBrestart-gfmd-slave\fR
+\fBrestart-gfmd-slave \fIhost-id\fB\fR
 Perform "\fBstop-gfmd\fR" and 
 "\fBstart-gfmd-slave\fR" sub-commands successively.
 .TP
-\fBrestart-gfarm\fR
+\fBrestart-gfarm \fIhost-id\fB\fR
 Perform "\fBstop-gfarm\fR" and 
 "\fBstart-gfarm\fR" sub-commands successively.
 .TP
-\fBrestart-gfarm-master\fR
-Perform "\fBstop-gfarm\fR" and 
-"\fBstart-gfarm-master\fR" sub-commands successively.
+\fBrestart-gfarm-master \fIhost-id\fB\fR
+An alias of "\fBrestart-gfarm\fR" sub-command.
 .TP
-\fBrestart-gfarm-slave\fR
+\fBrestart-gfarm-slave \fIhost-id\fB\fR
 Perform "\fBstop-gfarm\fR" and 
 "\fBstart-gfarm-slave\fR" sub-commands successively.
 .TP
-\fBpromote\fR
+\fBpromote \fIhost-id\fB\fR
 Promote \fBgfmd\fR from a slave to a master.
 .TP
-\fBpromote-gfmd\fR
+\fBpromote-gfmd \fIhost-id\fB\fR
 An alias of "\fBpromote\fR" sub-command.
 .TP
-\fBset-gfmd-conf \fIdirective\fB \fIvalue\fB\fR
+\fBset-gfmd-conf \fIhost-id\fB \fIdirective\fB \fIvalue\fB\fR
 Add
 
 .nf
@@ -240,30 +219,74 @@ If \fIgfmd.conf\fR already has a
 \fIdirective\fR line, \fBgfservice\fR
 deletes it and then add a new line.
 .TP
-\fBunset-gfmd-conf \fIdirective\fB\fR
+\fBset-gfsd-conf \fIhost-id\fB \fIdirective\fB \fIvalue\fB\fR
+Add
+
+.nf
+	\fIdirective\fR \fIvalue\fR
+.fi
+
+line to \fIgfsd.conf\fR file on the remote host.
+If \fIgfsd.conf\fR already has a
+\fIdirective\fR line, \fBgfservice\fR
+deletes it and then add a new line.
+.TP
+\fBunset-gfmd-conf \fIhost-id\fB \fIdirective\fB\fR
 Delete a \fIdirective\fR line in
 \fIgfmd.conf\fR file on the remote host.
 If \fIgfmd.conf\fR file doesn't contain
+\fIdirective\fR line, the file is unchanged.
+.TP
+\fBunset-gfsd-conf \fIhost-id\fB \fIdirective\fB\fR
+Delete a \fIdirective\fR line in
+\fIgfsd.conf\fR file on the remote host.
+If \fIgfsd.conf\fR file doesn't contain
 \fIdirective\fR line, the file is unchanged.
 .TP
 \fBbackup-backend-db\fR
 Backup a backend database on the remote host and output the backup data
 to standard out.
 .TP
-\fBbackup-gfmd-conf\fR
+\fBbackup-gfmd-conf \fIhost-id\fB\fR
 Output \fIgfmd.conf\fR file on the remote host to
 standard out.
 .TP
-\fBrestore-backend-db\fR
+\fBbackup-gfsd-conf \fIhost-id\fB\fR
+Output \fIgfsd.conf\fR file on the remote host to
+standard out.
+This sub-command can be worked only when the remote host is configured
+in the private mode.
+.TP
+\fBbackup-usermap \fIhost-id\fB\fR
+Output \fIusermap\fR file on the remote host to
+standard out.
+This sub-command can be worked only when the remote host is configured
+in the private mode.
+.TP
+\fBrestore-backend-db \fIhost-id\fB\fR
 Restore a backend database on the remote host.
 The backup data are read from standard in.
 .TP
-\fBrestore-gfmd-conf\fR
+\fBrestore-gfmd-conf \fIhost-id\fB\fR
 Recover \fIgfmd.conf\fR file on the remote host.
 \fBgfservice\fR reads a backup of \fIgfmd.conf\fR
 from standard in.
 .TP
-\fBconfig-gfarm\fR
+\fBrestore-gfsd-conf \fIhost-id\fB\fR
+Recover \fIgfsd.conf\fR file on the remote host.
+\fBgfservice\fR reads a backup of \fIgfsd.conf\fR
+from standard in.
+This sub-command can be worked only when the remote host is configured
+in the private mode.
+.TP
+\fBrestore-usermap \fIhost-id\fB\fR
+Recover \fIusermap\fR file on the remote host.
+\fBgfservice\fR reads a backup of \fIusermap\fR
+from standard in.
+This sub-command can be worked only when the remote host is configured
+in the private mode.
+.TP
+\fBconfig-gfarm \fIhost-id\fB\fR
 Execute \fBconfig-gfarm\fR command on the remote host.
 If "gfmd\fIn\fR_CONFIG_GFARM_OPTIONS" variable is
 declared in the configuration file of \fBgfservice\fR,
@@ -272,21 +295,15 @@ options.
 Don't use this sub-command when you want to enable replication of gfmd.
 Instead, use "\fBconfig-gfarm-master\fR" or
 "\fBconfig-gfarm-slave\fR" sub-command in that case.
-\fBgfservice\fR distributes
-\fIgfarm2.conf\fR file to all hosts defined in the
-configuration file(gfmd\fIn\fR,
-gfsd\fIn\fR and
-client\fIn\fR).
-If authentication type is "sharedsecret" and \fB-k\fR
-option is specified, \fBgfservice\fR also creates a
-shared secret key using \fBgfkey\fR command and then
-distributes the key.
+If \fB-k\fR option is specified, \fBgfservice\fR
+also creates a shared secret key files onto the gfmd host, using
+\fBgfkey\fR command.
 .TP
-\fBconfig-gfarm-master\fR
+\fBconfig-gfarm-master \fIhost-id\fB\fR
 This sub-command is the same as \fBconfig-gfarm\fR
 but gfmd replication is enabled automatically.
 .TP
-\fBconfig-gfarm-slave \fImaster-host-id\fB\fR
+\fBconfig-gfarm-slave \fIhost-id\fB \fImaster-host-id\fB\fR
 This sub-command is the same as \fBconfig-gfarm\fR
 but gfmd replication is enabled automatically and the remote gfmd host
 is configured as a slave of \fImaster-host-id\fR\&.
@@ -296,27 +313,34 @@ using \fBgfmdhost\fR command.
 metadb_server_list directive in
 \fIgfarm2.conf\fR file on the master gfmd host and
 distribute the updated \fIgfarm2.conf\fR file to all hosts
-defined in the configuration file (gfmd\fIn\fR,
-gfsd\fIn\fR and client\fIn\fR).
+defined in the configuration file.
+It also updates \fIgfsd.conf\fR file and distributes it to
+all gfmd and gfsd hosts, if "gfmd\fIn\fR_PRIVATE_MODE"
+variable is set to "true".
+If the value of the variable "gfmd\fIn\fR_AUTH_TYPE"
+is "sharedsecret", it also copies a shared key file from the maste gfmd
+to the slave gfmd host.
 .TP
-\fBunconfig-gfarm\fR
+\fBunconfig-gfarm \fIhost-id\fB\fR
 Execute "\fBstop-gfarm\fR" sub-command and then delete all
 files and directories created by gfmd and a backend database.
 If you want to unconfigure a slave gfmd, use
 "\fBunconfig-gfarm-slave\fR" sub-command instead.
 .TP
-\fBunconfig-gfarm-master\fR
+\fBunconfig-gfarm-master \fIhost-id\fB\fR
 An alias of "\fBunconfig-gfarm\fR" sub-command.
 .TP
-\fBunconfig-gfarm-slave \fImaster-host-id\fB\fR
+\fBunconfig-gfarm-slave \fIhost-id\fB \fImaster-host-id\fB\fR
 This sub-command is the same as "\fBunconfig-gfarm\fR",
 but \fBgfservice\fR does some additional works.
 It also deletes the slave host from a server list using
 \fBgfmdhost\fR command and from
 metadb_server_list directive in
 \fIgfarm2.conf\fR file on all hosts defined in the
-configuration file (gfmd\fIn\fR, 
-gfsd\fIn\fR and client\fIn\fR).
+configuration file.
+It also updates \fIgfsd.conf\fR file and distributes it to
+all gfmd and gfsd hosts, if "gfmd\fIn\fR_PRIVATE_MODE"
+variable is set to "true".
 .SH "SUB-COMMANDS FOR GFSD"
 .PP
 The followings are sub-commands which operate \fBgfsd\fR\&.
@@ -325,7 +349,7 @@ The given host-id argument must be "gfsd\fIn\fR"
 Otherwise \fBgfservice\fR reports an error and exits
 immediately.
 .TP
-\fBgfsd-status\fR
+\fBgfsd-status \fIhost-id\fB\fR
 Exit with an exit code 0, if \fBgfsd\fR is currently running.
 Otherwise exits with 1.
 .TP
@@ -335,11 +359,29 @@ Start \fBgfsd\fR if it is not running currently.
 \fBstop-gfsd\fR
 Stop \fBgfsd\fR if it is running currently.
 .TP
-\fBrestart-gfsd\fR
+\fBrestart-gfsd \fIhost-id\fB\fR
 Perform "\fBstop-gfsd\fR" and "\fBstart-gfsd\fR"
 sub-commands successively.
 .TP
-\fBconfig-gfsd\fR
+\fBset-gfsd-conf \fIhost-id\fB \fIdirective\fB \fIvalue\fB\fR
+Same as \fBset-gfsd-conf\fR sub-command for gfmd.
+.TP
+\fBunset-gfsd-conf \fIhost-id\fB \fIdirective\fB\fR
+Same as \fBunset-gfsd-conf\fR sub-command for gfmd.
+.TP
+\fBbackup-gfsd-conf \fIhost-id\fB\fR
+Same as \fBbackup-gfsd-conf\fR sub-command for gfmd.
+.TP
+\fBbackup-usermap \fIhost-id\fB\fR
+Same as \fBbackup-usermap\fR sub-command for gfmd.
+.TP
+\fBrestore-gfsd-conf \fIhost-id\fB\fR
+Same as \fBrestore-gfsd-conf\fR sub-command for gfmd.
+.TP
+\fBrestore-usermap \fIhost-id\fB\fR
+Same as \fBrestore-usermap\fR sub-command for gfmd.
+.TP
+\fBconfig-gfsd \fIhost-id\fB\fR
 Execute "\fBconfig-gfsd\fR" command on the remote host.
 If "gfsd\fIn\fR_CONFIG_GFSD_OPTIONS" variable is
 declared in the configuration file of \fBgfservice\fR,
@@ -347,8 +389,11 @@ its value is passed to \fBconfig-gfsd\fR command as
 options.
 \fBgfservice\fR also registers the configured remote host
 as a filesystem node using \fBgfhost\fR command.
+If the value of the variable "gfsd\fIn\fR_AUTH_TYPE"
+is "sharedsecret", it also copies a shared key file from gfmd1 to the
+gfsd host.
 .TP
-\fBunconfig-gfsd\fR
+\fBunconfig-gfsd \fIhost-id\fB\fR
 Execute "\fBstop-gfsd\fR" sub-command and then delete all
 files and directories created by gfsd.
 .SH "SUB-COMMANDS FOR CLIENT"
@@ -360,25 +405,20 @@ or "client\fIn\fR" (client1, client2, ...).
 Otherwise \fBgfservice\fR reports an error and exits
 immediately.
 .TP
-\fBmount \fIdirectory\fB \fIoption...\fB\fR
+\fBmount \fIhost-id\fB \fIdirectory\fB \fIoption...\fB\fR
 Mount a Gfarm2 filesystem on \fIdirectory\fR on the
 remote host.
 The argument \fIoption\fR is an option to 
-\fBgfarm2fs\fR command. If \fBgfarm2fs\fR
-command is installed to a directory different from directory which
-Gfarm is installed(%%BINDIR%%), you can specify a path
-to \fBgfarm2fs\fR command
-in \fIgfservice.conf\fR\&. See gfservice.conf(5) for
-more details about the configuration file.
+\fBgfarm2fs\fR command.
 .TP
-\fBunmount \fIdirectory\fB\fR
+\fBunmount \fIhost-id\fB \fIdirectory\fB\fR
 Unmount a Gfarm2 filesystem on \fIdirectory\fR on the
 remote host.
 .TP
-\fBumount \fIdirectory\fB\fR
+\fBumount \fIhost-id\fB \fIdirectory\fB\fR
 An alias of "\fBunmount\fR" sub-command.
 .TP
-\fBset-gfarm-conf \fIdirective\fB \fIvalue\fB\fR
+\fBset-gfarm-conf \fIhost-id\fB \fIdirective\fB \fIvalue\fB\fR
 Add
 
 .nf
@@ -390,39 +430,41 @@ If \fIgfarm2.conf\fR already has a
 \fIdirective\fR line, \fBgfservice\fR
 deletes it and then add a new line.
 .TP
-\fBunset-gfarm-conf \fIdirective\fB\fR
+\fBunset-gfarm-conf \fIhost-id\fB \fIdirective\fB\fR
 Delete a \fIdirective\fR line in
 \fIgfarm2.conf\fR file on the remote host.
 If \fIgfarm2.conf\fR file doesn't contain
 \fIdirective\fR line, the file is unchanged.
 .TP
-\fBbackup-gfarm-conf\fR
+\fBbackup-gfarm-conf \fIhost-id\fB\fR
 Output \fIgfarm2.conf\fR file on the remote host to
 standard out.
 .TP
-\fBbackup-shared-key\fR
+\fBbackup-shared-key \fIhost-id\fB\fR
 Output a shared secret key file to standard out.
 .TP
-\fBrestore-gfarm-conf\fR
+\fBrestore-gfarm-conf \fIhost-id\fB\fR
 Recover \fIgfarm2.conf\fR file on the remote host.
 \fBgfservice\fR reads a backup of \fIgfarm2.conf\fR
 from standard in.
 .TP
-\fBrestore-shared-key\fR
+\fBrestore-shared-key \fIhost-id\fB\fR
 Recover a shared secret key file on the remote host.
 \fBgfservice\fR reads a backup of the shared secret key from
 standard in.
 .TP
-\fBconfig-client\fR
+\fBconfig-client \fIhost-id\fB\fR
 Copy \fIgfarm2.conf\fR file from gfmd1 to the client
-host. This sub-command also copies a shared secret key file when
-\fB-k\fR option is specified.
+host.
+If the value of the variable "client\fIn\fR_AUTH_TYPE"
+is "sharedsecret", it also copies a shared key file from gfmd1 to the
+client host.
 .TP
-\fBunconfig-client\fR
+\fBunconfig-client \fIhost-id\fB\fR
 Delete \fIgfarm2.conf\fR file and a shared secret key file
 on the remote host.
 .TP
-\fBgfcmd \fIcommand-name\fB \fIcommand-argument ...\fB\fR
+\fBgfcmd \fIhost-id\fB \fIcommand-name\fB \fIcommand-argument ...\fB\fR
 Execute a Gfarm command on the remote host.
 .SH "SUB-COMMANDS FOR MULTIPLE HOSTS"
 .PP
@@ -452,7 +494,7 @@ Finally, perform "\fBconfig-client\fR" for all client nodes.
 Perform "\fBunconfig-client\fR" for all client nodes.
 Then, perform "\fBunconfig-gfsd\fR" for all gfds nodes.
 Finally, perform "\fBunconfig-gfarm\fR" for all gfmd nodes.
-.SH "PLUGIN SYSTEM"
+.SH "PLUG-IN SYSTEM"
 .PP
 \fBgfservice\fR has a plug-in system so that user can add
 new sub-commands. If given sub-command is not provided by

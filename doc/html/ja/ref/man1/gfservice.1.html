@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -37,12 +37,12 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfservice</B
-> [<TT
+>  [<TT
 CLASS="REPLACEABLE"
 ><I
 >オプション</I
 ></TT
->]  サブコマンド  [ホスト ID] [<TT
+>]  サブコマンド  [ホストID] [<TT
 CLASS="REPLACEABLE"
 ><I
 >引数 ...</I
@@ -112,7 +112,7 @@ CLASS="REPLACEABLE"
 ><I
 >gfmd2</I
 ></TT
->」 はホスト ID をそれぞれ表しています。
+>」 はホストID をそれぞれ表しています。
 このコマンド行を実行すると、<B
 CLASS="COMMAND"
 >gfservice</B
@@ -128,8 +128,8 @@ CLASS="REPLACEABLE"
 CLASS="COMMAND"
 >gfservice</B
 > では
-ホスト名の代わりにホスト ID  を用います。
-ホスト ID (<TT
+ホスト名の代わりにホストID  を用います。
+ホストID (<TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd1</I
@@ -170,17 +170,13 @@ TYPE="1"
 >「<CODE
 CLASS="OPTION"
 >-f</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->ファイル</I
-></TT
+>ファイル</CODE
 >」オプションが指定
-されていれば、その<TT
+されていれば、その<CODE
 CLASS="PARAMETER"
-><I
->ファイル</I
-></TT
+>ファイル</CODE
 >を読み込みます。</P
 ></LI
 ><LI
@@ -283,8 +279,8 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >gfservice</B
 >はユーザが新しくサブコマンドを追加できるよ
-うに、プラグインシステムを採用しています。プラグインシステムについての
-詳しい説明はこの man ページの "PLUGIN SYSTEM"の節を参照して下さい。</P
+うに、プラグインシステムを採用しています。
+詳しい説明は "PLUG-IN SYSTEM" の節を参照して下さい。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -323,19 +319,15 @@ CLASS="COMMAND"
 ><CODE
 CLASS="OPTION"
 >-f</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->ファイル</I
-></TT
+>ファイル</CODE
 ></DT
 ><DD
 ><P
->デフォルトの設定ファイルの代わりに、「<TT
+>デフォルトの設定ファイルの代わりに、「<CODE
 CLASS="PARAMETER"
-><I
->ファイル</I
-></TT
+>ファイル</CODE
 >」を
 読み込みます。</P
 ></DD
@@ -343,19 +335,15 @@ CLASS="PARAMETER"
 ><CODE
 CLASS="OPTION"
 >-t</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->時間</I
-></TT
+>時間</CODE
 ></DT
 ><DD
 ><P
->操作のタイムアウトを、「<TT
+>操作のタイムアウトを、「<CODE
 CLASS="PARAMETER"
-><I
->時間</I
-></TT
+>時間</CODE
 >」秒とします。
 <B
 CLASS="COMMAND"
@@ -366,11 +354,9 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >gfservice</B
 > の指定時間が経過するかまで待ちます。
-「<TT
+「<CODE
 CLASS="PARAMETER"
-><I
->時間</I
-></TT
+>時間</CODE
 >」として 「no」を指定すると、タイムアウトは
 起きなくなります。
 デフォルト値は、「no」です。</P
@@ -382,32 +368,22 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->認証タイプが「sharedsecret (共有秘密鍵)」の場合に共有秘密鍵の設定を行
-います。このオプションが<B
+>このオプションが<B
 CLASS="COMMAND"
 >config-gfarm</B
-> サブコマンドも
-しくは <B
-CLASS="COMMAND"
->config-gfarm-master</B
-> サブコマンドと共に指定さ
-れた場合、<B
-CLASS="COMMAND"
->gfservice</B
->は共有秘密鍵を作成し、作成した鍵
-を設定ファイルで定義されているすべてのホストに配布します。 
-このオプションが <B
-CLASS="COMMAND"
->config-gfarm-slave</B
->、
+> サブコマンドもしくは
 <B
 CLASS="COMMAND"
->config-gfsd</B
->、 <B
+>config-gfarm-master</B
+> サブコマンドと共に指定された場合、
+<B
 CLASS="COMMAND"
->config-client</B
->と共
-に指定された場合、gfmd ホストから鍵をコピーします。</P
+>gfservice</B
+> は <B
+CLASS="COMMAND"
+>gfkey</B
+> コマンドを用いて
+共有秘密鍵ファイルを作成します。 </P
 ></DD
 ></DL
 ></DIV
@@ -424,7 +400,7 @@ NAME="GFMD-SUB-COMMANDS"
 CLASS="COMMAND"
 >gfmd</B
 > を操作するサブコマンドです。
-コマンド行に与えるホスト ID は、「gfmd<TT
+コマンド行に与えるホストID は、「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
@@ -445,6 +421,10 @@ CLASS="VARIABLELIST"
 ><B
 CLASS="COMMAND"
 >backend-db-status</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -455,6 +435,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >gfmd-status</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -465,6 +449,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >start-backend-db</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -474,6 +462,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >start-gfmd</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -486,53 +478,46 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >start-gfmd-master</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->リモートホスト上の <TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> ファイルに設定名称
-「<CODE
-CLASS="VARNAME"
->metadb_server_force_slave</CODE
->」の記述行があればそれを
-削除します。
-その後で、<B
+>サブコマンド <B
 CLASS="COMMAND"
->gfmd</B
-> が実行中でなければ、実行を開始します。
-このサブコマンドは、リモートホスト上の <B
-CLASS="COMMAND"
->gfmd</B
-> が
-マスター gfmd として動作することを保証するものではありません。</P
+>start-gfmd</B
+> の別名です。</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >start-gfmd-slave</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->リモートホスト上の <TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> ファイルに変更を加え、
-設定名称「<CODE
-CLASS="VARNAME"
->metadb_server_force_slave</CODE
->」に値「enabled」
-をセットします。
-その後で、<B
+>サブコマンド <B
 CLASS="COMMAND"
->gfmd</B
-> が実行中でなければ、実行を開始します。</P
+>start-gfmd</B
+> と同じですが、gfmd には
+<CODE
+CLASS="OPTION"
+>-S</CODE
+> オプションが付与されます。</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >start-gfarm</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -546,55 +531,46 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >start-gfarm-master</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->リモートホスト上の <TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> ファイルに設定名称
-「<CODE
-CLASS="VARNAME"
->metadb_server_force_slave</CODE
->」の記述行があればそれを
-削除します。
-その後で、バックエンドデータベースおよび <B
+>サブコマンド <B
 CLASS="COMMAND"
->gfmd</B
-> が実行中
-でなければ、実行を開始します。
-このサブコマンドは、リモートホスト上の <B
-CLASS="COMMAND"
->gfmd</B
-> が
-マスター gfmd として動作することを保証するものではありません。</P
+>start-gfarm</B
+> の別名です。</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >start-gfarm-slave</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->リモートホスト上の <TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> ファイルに変更を加え、
-設定名称「<CODE
-CLASS="VARNAME"
->metadb_server_force_slave</CODE
->」に値「enabled」を
-セットします。
-その後で、バックエンドデータベースおよび <B
+>サブコマンド <B
 CLASS="COMMAND"
->gfmd</B
-> が実行中
-でなければ、実行を開始します。</P
+>start-gfarm</B
+> と同じですが、gfmd には
+<CODE
+CLASS="OPTION"
+>-S</CODE
+> オプションが付与されます。</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >stop-backend-db</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -604,6 +580,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >stop-gfmd</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -616,6 +596,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >stop-gfarm</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -629,6 +613,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >kill-gfmd</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -641,6 +629,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restart-backend-db</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -657,6 +649,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restart-gfmd</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -673,22 +669,26 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restart-gfmd-master</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
 >サブコマンド <B
 CLASS="COMMAND"
->stop-gfmd</B
-> と
-<B
-CLASS="COMMAND"
->start-gfmd-master</B
-> を続けて実行します。</P
+>restart-gfmd</B
+> の別名です。</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >restart-gfmd-slave</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -705,6 +705,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restart-gfarm</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -721,22 +725,26 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restart-gfarm-master</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
 >サブコマンド <B
 CLASS="COMMAND"
->stop-gfarm</B
-> と
-<B
-CLASS="COMMAND"
->start-gfarm-master</B
-> を続けて実行します。</P
+>restart-gfarm</B
+> の別名です。</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >restart-gfarm-slave</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -753,6 +761,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >promote</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -765,6 +777,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >promote-gfmd</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -777,16 +793,18 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >set-gfmd-conf</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
-> <TT
+>ホストID</CODE
+>
+<CODE
 CLASS="PARAMETER"
-><I
->値</I
-></TT
+>設定名称</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>値</CODE
 ></DT
 ><DD
 ><P
@@ -796,16 +814,12 @@ CLASS="FILENAME"
 > ファイルに</P
 ><P
 CLASS="LITERALLAYOUT"
->	<TT
+>	<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
->&nbsp;<TT
+>設定名称</CODE
+>&nbsp;<CODE
 CLASS="PARAMETER"
-><I
->値</I
-></TT
+>値</CODE
 ></P
 ><P
 >という行を加えます。
@@ -813,11 +827,56 @@ CLASS="PARAMETER"
 CLASS="FILENAME"
 >gfmd.conf</TT
 > に
-「<TT
+「<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>設定名称</CODE
+>」という行が存在している場合、
+<B
+CLASS="COMMAND"
+>gfservice</B
+> はそれを削除してから、新たに行を追加します。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>set-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>設定名称</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>値</CODE
+></DT
+><DD
+><P
+>リモートホスト上の <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> ファイルに</P
+><P
+CLASS="LITERALLAYOUT"
+>	<CODE
+CLASS="PARAMETER"
+>設定名称</CODE
+>&nbsp;<CODE
+CLASS="PARAMETER"
+>値</CODE
+></P
+><P
+>という行を加えます。
+既に <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> に
+「<CODE
+CLASS="PARAMETER"
+>設定名称</CODE
 >」という行が存在している場合、
 <B
 CLASS="COMMAND"
@@ -828,11 +887,14 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >unset-gfmd-conf</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>ホストID</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>設定名称</CODE
 ></DT
 ><DD
 ><P
@@ -840,20 +902,48 @@ CLASS="PARAMETER"
 CLASS="FILENAME"
 >gfmd.conf</TT
 > ファイルから
-「<TT
+「<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>設定名称</CODE
 >」行を削除します。
 <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> ファイルに「<TT
+> ファイルに「<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>設定名称</CODE
+>」
+行がない場合、ファイルは更新されません。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>unset-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>設定名称</CODE
+></DT
+><DD
+><P
+>リモートホスト上の <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> ファイルから
+「<CODE
+CLASS="PARAMETER"
+>設定名称</CODE
+>」行を削除します。
+<TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> ファイルに「<CODE
+CLASS="PARAMETER"
+>設定名称</CODE
 >」
 行がない場合、ファイルは更新されません。</P
 ></DD
@@ -861,6 +951,10 @@ CLASS="PARAMETER"
 ><B
 CLASS="COMMAND"
 >backup-backend-db</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -871,6 +965,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >backup-gfmd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -883,7 +981,45 @@ CLASS="FILENAME"
 ><DT
 ><B
 CLASS="COMMAND"
+>backup-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
+></DT
+><DD
+><P
+>リモートホスト上の <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> ファイルを、標準出力
+へ出力します。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>backup-usermap</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
+></DT
+><DD
+><P
+>リモートホスト上の <TT
+CLASS="FILENAME"
+>usermap</TT
+> ファイルを、標準出力
+へ出力します。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
 >restore-backend-db</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -894,6 +1030,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restore-gfmd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -913,7 +1053,59 @@ CLASS="FILENAME"
 ><DT
 ><B
 CLASS="COMMAND"
+>restore-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
+></DT
+><DD
+><P
+>リモートホスト上の <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> ファイルを復旧します。
+<B
+CLASS="COMMAND"
+>gfservice</B
+> は、<TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> の
+バックアップデータを標準入力から読み込みます。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>restore-usermap</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
+></DT
+><DD
+><P
+>リモートホスト上の <TT
+CLASS="FILENAME"
+>usermap</TT
+> ファイルを復旧します。
+<B
+CLASS="COMMAND"
+>gfservice</B
+> は、<TT
+CLASS="FILENAME"
+>usermap</TT
+> の
+バックアップデータを標準入力から読み込みます。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
 >config-gfarm</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -941,49 +1133,27 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >config-gfarm-slave</B
 > を使って下さい。
-<B
-CLASS="COMMAND"
->gfservice</B
->は<TT
-CLASS="FILENAME"
->gfarm2.conf</TT
-> ファイ
-ルを設定ファイルで定義されているすべてのホスト
-(gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->、 gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->、
-client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->) に配布します。
-認証タイプが「sharedsecret (共有秘密鍵)」であり、 か
-つ<CODE
+<CODE
 CLASS="OPTION"
 >-k</CODE
->オプションが指定された場合、
+>オプションが指定されている場合、
 <B
 CLASS="COMMAND"
 >gfservice</B
 >は <B
 CLASS="COMMAND"
 >gfkey</B
-> コマンドを用い
-て共有秘密鍵を作成し、作成した鍵を同じく配布します。</P
+> コマンドを用いて
+gfmd ホスト上に共有秘密鍵ファイルを作成します。</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >config-gfarm-master</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -997,11 +1167,14 @@ gfmd のレプリケーションが自動的に有効になります。</P
 ><B
 CLASS="COMMAND"
 >config-gfarm-slave</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->マスタホスト ID</I
-></TT
+>ホストID</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>マスターホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1010,11 +1183,9 @@ CLASS="COMMAND"
 >config-gfarm</B
 > と基本的に同じですが、
 レプリケーション機能が自動的に有効になり、
-「<TT
+「<CODE
 CLASS="PARAMETER"
-><I
->マスタホスト ID</I
-></TT
+>マスターホストID</CODE
 >」上で動作する gfmd のスレーブ
 として動作します。
 <B
@@ -1033,29 +1204,35 @@ CLASS="FILENAME"
 CLASS="VARNAME"
 >metadb_server_list</CODE
 > にこのスレーブホストを
-加え、設定ファイルで定義されているすべてのホスト
-(gfmd<TT
+加え、設定ファイルで定義されているすべてのホストに配布します。
+変数「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->、gfsd<TT
+>_PRIVATE_MODE」の値が「true」に
+セットされている場合は、同様に <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> ファイル
+を更新し、すべての gfmd ホストと gfsd ホストに配布します。
+変数「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->、
-client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->) に配布します。</P
+>_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルをマスター gfmd ホストからこのスレーブ gfmd
+ホストへコピーします。</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >unconfig-gfarm</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1074,6 +1251,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >unconfig-gfarm-master</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1086,11 +1267,14 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >unconfig-gfarm-slave</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->マスタホスト ID</I
-></TT
+>ホストID</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>マスターホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1104,32 +1288,27 @@ CLASS="COMMAND"
 >gfmdhost</B
 > コマンドを用いてサーバーリストから、その
 スレーブホストを削除します。
-また、設定ファイルで定義されているすべてのホスト
-(gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->、gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->、
-client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->) の <TT
+また、設定ファイルで定義されているすべてのホストの
+<TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
->
-を更新し、<CODE
+> を更新し、
+<CODE
 CLASS="VARNAME"
 >metadb_server_list</CODE
-> に設定されたサーバーリスト
-から、そのスレーブホストを削除します。</P
+> に設定されたサーバーリストから、
+そのスレーブホストを削除します。
+変数「gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_PRIVATE_MODE」の値が「true」に
+セットされている場合は、同様に <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> ファイル
+を更新し、すべての gfmd ホストと gfsd ホストに配布します。</P
 ></DD
 ></DL
 ></DIV
@@ -1146,7 +1325,7 @@ NAME="GFSD-SUB-COMMANDS"
 CLASS="COMMAND"
 >gfsd</B
 > を操作するサブコマンドです。
-コマンド行に与えるホスト ID は、「gfsd<TT
+コマンド行に与えるホストID は、「gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
@@ -1167,6 +1346,10 @@ CLASS="VARIABLELIST"
 ><B
 CLASS="COMMAND"
 >gfsd-status</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1177,6 +1360,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >start-gfsd</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1189,6 +1376,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >stop-gfsd</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1201,6 +1392,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restart-gfsd</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1216,7 +1411,119 @@ CLASS="COMMAND"
 ><DT
 ><B
 CLASS="COMMAND"
+>set-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>設定名称</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>値</CODE
+></DT
+><DD
+><P
+>gfmd 用の <B
+CLASS="COMMAND"
+>set-gfsd-conf</B
+> サブコマンドと同じです。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>unset-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>設定名称</CODE
+></DT
+><DD
+><P
+>gfmd 用の <B
+CLASS="COMMAND"
+>unset-gfsd-conf</B
+> サブコマンドと同じです。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>backup-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
+></DT
+><DD
+><P
+>gfmd 用の <B
+CLASS="COMMAND"
+>backup-gfsd-conf</B
+> サブコマンドと同じです。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>backup-usermap</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
+></DT
+><DD
+><P
+>gfmd 用の <B
+CLASS="COMMAND"
+>backup-usermap</B
+> サブコマンドと同じです。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>restore-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
+></DT
+><DD
+><P
+>gfmd 用の <B
+CLASS="COMMAND"
+>restore-gfsd-conf</B
+> サブコマンドと同じです。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>restore-usermap</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
+></DT
+><DD
+><P
+>gfmd 用の <B
+CLASS="COMMAND"
+>restore-usermap</B
+> サブコマンドと同じです。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
 >config-gfsd</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1242,12 +1549,23 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >gfhost</B
 > コマンド
-を用いて、リモートホストをファイルシステムノードとして登録します。</P
+を用いて、リモートホストをファイルシステムノードとして登録します。
+変数「gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルを gfmd1 から gfsd ホストへコピーします。</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >unconfig-gfsd</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1269,7 +1587,7 @@ NAME="CLIENT-SUB-COMMANDS"
 >SUB-COMMANDS FOR CLIENT</H2
 ><P
 >以下に挙げているのは、クライアントを操作するサブコマンドです。
-コマンド行に与えるホスト ID は、「gfmd<TT
+コマンド行に与えるホストID は、「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
@@ -1302,67 +1620,53 @@ CLASS="VARIABLELIST"
 ><B
 CLASS="COMMAND"
 >mount</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->ディレクトリ</I
-></TT
-> <TT
+>ホストID</CODE
+>
+<CODE
 CLASS="PARAMETER"
-><I
->オプション...</I
-></TT
+>ディレクトリ</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>オプション...</CODE
 ></DT
 ><DD
 ><P
->リモートホスト上の「<TT
+>リモートホスト上の「<CODE
 CLASS="PARAMETER"
-><I
->ディレクトリ</I
-></TT
+>ディレクトリ</CODE
 >」に、Gfarm2
 ファイルシステムをマウントします。
-引数「<TT
+引数「<CODE
 CLASS="PARAMETER"
-><I
->オプション</I
-></TT
+>オプション</CODE
 >」は <B
 CLASS="COMMAND"
 >gfarm2fs</B
 >
-コマンドへの引数とみなされます。<B
-CLASS="COMMAND"
->gfarm2fs</B
->コマンドが
-Gfarmのインストール先(%%BINDIR)とは異なるディレクトリにインストールさ
-れている場合は、 <TT
-CLASS="FILENAME"
->gfservice.conf</TT
->
-で<B
-CLASS="COMMAND"
->gfarm2fs</B
->コマンドのパスを設定できます。設定方法に
-ついては gfservice.conf(5) を参照して下さい。</P
+コマンドへの引数とみなされます。</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >unmount</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->ディレクトリ</I
-></TT
+>ホストID</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>ディレクトリ</CODE
 ></DT
 ><DD
 ><P
->リモートホスト上の「<TT
+>リモートホスト上の「<CODE
 CLASS="PARAMETER"
-><I
->ディレクトリ</I
-></TT
+>ディレクトリ</CODE
 >」にマウントされた
 Gfarm2 ファイルシステムをアンマウントします。</P
 ></DD
@@ -1370,11 +1674,14 @@ Gfarm2 ファイルシステムをアンマウントします。</P
 ><B
 CLASS="COMMAND"
 >umount</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->ディレクトリ</I
-></TT
+>ホストID</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>ディレクトリ</CODE
 ></DT
 ><DD
 ><P
@@ -1387,16 +1694,18 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >set-gfarm-conf</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
-> <TT
+>ホストID</CODE
+>
+<CODE
 CLASS="PARAMETER"
-><I
->値</I
-></TT
+>設定名称</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>値</CODE
 ></DT
 ><DD
 ><P
@@ -1406,16 +1715,12 @@ CLASS="FILENAME"
 > ファイルに</P
 ><P
 CLASS="LITERALLAYOUT"
->	<TT
+>	<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
->&nbsp;<TT
+>設定名称</CODE
+>&nbsp;<CODE
 CLASS="PARAMETER"
-><I
->値</I
-></TT
+>値</CODE
 ></P
 ><P
 >という行を加えます。
@@ -1423,11 +1728,9 @@ CLASS="PARAMETER"
 CLASS="FILENAME"
 >gfarm2.conf</TT
 > に
-「<TT
+「<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>設定名称</CODE
 >」という行が存在している場合、
 <B
 CLASS="COMMAND"
@@ -1438,11 +1741,14 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >unset-gfarm-conf</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>ホストID</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>設定名称</CODE
 ></DT
 ><DD
 ><P
@@ -1450,20 +1756,16 @@ CLASS="PARAMETER"
 CLASS="FILENAME"
 >gfarm2.conf</TT
 > ファイルから
-「<TT
+「<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>設定名称</CODE
 >」行を削除します。
 <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> ファイルに「<TT
+> ファイルに「<CODE
 CLASS="PARAMETER"
-><I
->設定名称</I
-></TT
+>設定名称</CODE
 >」
 行がない場合、ファイルは更新されません。</P
 ></DD
@@ -1471,6 +1773,10 @@ CLASS="PARAMETER"
 ><B
 CLASS="COMMAND"
 >backup-gfarm-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1484,6 +1790,10 @@ CLASS="FILENAME"
 ><B
 CLASS="COMMAND"
 >backup-shared-key</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1493,6 +1803,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restore-gfarm-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1513,6 +1827,10 @@ CLASS="FILENAME"
 ><B
 CLASS="COMMAND"
 >restore-shared-key</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1527,24 +1845,29 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >config-client</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
-><TT
-CLASS="FILENAME"
->gfarm2.conf</TT
-> ファイルをgfmd1からクライアントホスト
-へコピーします。このサブコマンドと共に<CODE
-CLASS="OPTION"
->-k</CODE
->オプションが
-指定された場合は、共有秘密鍵ファイルについても gfmd1 からクライアント
-ホストへコピーします。</P
+>変数「client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルを gfmd1 からクライアントホストへコピーします。</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >unconfig-client</B
+>
+<CODE
+CLASS="PARAMETER"
+>ホストID</CODE
 ></DT
 ><DD
 ><P
@@ -1559,17 +1882,17 @@ CLASS="FILENAME"
 CLASS="COMMAND"
 >gfcmd</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->command-name</I
-></TT
+>ホストID</CODE
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->command-argument ...</I
-></TT
+>command-name</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>command-argument ...</CODE
 ></DT
 ><DD
 ><P
@@ -1587,7 +1910,7 @@ NAME="MULTI-HOST-SUB-COMMANDS"
 >SUB-COMMANDS FOR MULTIPLE HOSTS</H2
 ><P
 >以下に挙げているのは、複数のホストを操作するサブコマンドです。
-コマンド行で、ホスト ID を指定することはできません。</P
+コマンド行で、ホストID を指定することはできません。</P
 ><P
 ></P
 ><DIV
@@ -1689,7 +2012,7 @@ CLASS="REFSECT1"
 NAME="PLUGIN"
 ></A
 ><H2
->PLUGIN SYSTEM</H2
+>PLUG-IN SYSTEM</H2
 ><P
 ><B
 CLASS="COMMAND"
@@ -1717,27 +2040,27 @@ CLASS="REPLACEABLE"
 CLASS="COMMAND"
 >gfservice</B
 >から実行される
-"<TT
+"<CODE
 CLASS="FUNCTION"
 >subcmd_<TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
-></TT
+></CODE
 >"という名
 前のシェル関数、 <B
 CLASS="COMMAND"
 >gfservice-agent</B
 >から実行される
-"<TT
+"<CODE
 CLASS="FUNCTION"
 >subcmd_<TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
->_agent</TT
+>_agent</CODE
 >"
 という名前のシェル関数が実装されている必要があります。</P
 ><P
@@ -1748,27 +2071,27 @@ CLASS="REPLACEABLE"
 >name</I
 ></TT
 >" のサブコマンドファイル
-は、 "<TT
+は、 "<CODE
 CLASS="FUNCTION"
 ><TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
->_depends</TT
+>_depends</CODE
 >" と
 いう名前のシェル関数で、そのサブコマンドが依存している他のサブコマンド
 のリストを返す必要があります．サブコマンドのリストはスペースで区切られ
 たサブコマンドの文字列です．依存している他のサブコマンドがない場合は空文字列を返して
 下さい。同様に、サブコマンドファイルは
-"<TT
+"<CODE
 CLASS="FUNCTION"
 ><TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
->_agent_depends</TT
+>_agent_depends</CODE
 >"
 という名前のシェル関数で、そのサブコマンドのエージェントが依存している
 他のサブコマンドのリストを返す必要があります。</P
