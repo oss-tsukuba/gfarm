@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE.CONF" "5" "08 March 2013" "Gfarm" ""
+.TH "GFSERVICE.CONF" "5" "07 June 2013" "Gfarm" ""
 
 .SH NAME
 gfservice.conf \- gfservice の設定ファイル
@@ -107,6 +107,19 @@ gfmd サーバー上で \fBgfservice-agent\fR コマンドが
 リモートホスト上の gfmd をプライベートモードで動作させる場合は、この
 変数に「true」をセットします。
 .TP
+\fBgfmd\fIn\fB_AUTH_TYPE\fR
+認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
+\fBconfig-gfarm\fR を実行したときの
+AUTH_TYPE の値が採用されます。
+(変数 gfmd1_CONFIG_GFARM_OPTIONS の値によって、この
+ときの AUTH_TYPE の値は変わるので、注意して下さい。)
+.TP
+\fBgfmd\fIn\fB_REPLICATION_MODE\fR
+この変数の値を「async」にセットすると、
+\fBgfservice config-gfarm-slave\fR の際にこの gfmd は
+非同期 (async) スレーブになります。
+.TP
 \fBgfmd\fIn\fB_SSH\fR
 SSH クライアントコマンドのパスおよびオプションを指定します。
 \fBgfservice\fR が gfmd サーバーに接続するために
@@ -151,6 +164,14 @@ gfsd サーバー上で \fBgfservice-agent\fR コマンドが
 リモートホスト上の gfsd をプライベートモードで動作させる場合は、この
 変数に「true」をセットします。
 .TP
+\fBgfsd\fIn\fB_AUTH_TYPE\fR
+認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
+\fBconfig-gfarm\fR を実行したときの
+AUTH_TYPE の値が採用されます。
+(変数 gfmd1_CONFIG_GFARM_OPTIONS の値によって、この
+ときの AUTH_TYPE の値は変わるので、注意して下さい。)
+.TP
 \fBgfsd\fIn\fB_SSH\fR
 SSH クライアントコマンドのパスおよびオプションを指定します。
 \fBgfservice\fR が gfsd サーバーに接続するために
@@ -184,12 +205,11 @@ client サーバーを定義するために用います。
 「\fB$client\fIn\fB_GFBINDIR/gfservice-agent\fR」を実行します。
 宣言されていない場合は、「\fBgfservice-agent\fR」を実行します。
 .TP
-\fBclient\fIn\fB_GFARM2FS_BIN_PATH\fR
-クライアントホスト上で \fBgfarm2fs\fR コマンドがインストー
-ルされているディレクトリへのパスを指定します。
-この変数が宣言されていると \fBgfservice\fR は指定されたパ
-スの \fBgfarm2fs\fR コマンドを実行します。
-デフォルトは「%%BINDIR%%」です。
+\fBclient\fIn\fB_GFARM2FS\fR
+\fBgfarm2fs\fR コマンドのパスおよびオプションを指定します。
+\fBgfservice\fR がクライアントホスト上で gfarm2fs コマンド
+を実行してファイルシステムをマウントする際、この変数が利用されます。
+デフォルトは「%%BINDIR%%/gfarm2fs」です。
 .TP
 \fBclient\fIn\fB_SSH\fR
 SSH クライアントコマンドのパスおよびオプションを指定します。
@@ -208,3 +228,16 @@ gfarm2.confファイルのパスを絶対パスで指定します。
 この値が設定されていない場合、\fBgfservice\fRはgfmd1の
 gfarm2.confファイルのパスと同じパスを使用します(gfarm2.confファイルの
 パスは「gfmd1_CONFIG_GFARM_OPTIONS」シェル変数の値を基に決定されます)。
+.TP
+\fBclient\fIn\fB_PRIVATE_MODE\fR
+この変数に「true」をセットすると、\fBgfservice\fR が
+サブコマンド \fBconfig-client\fR を実行する際、クライアント
+ホスト側の処理は root 権限を持たずに行います。
+.TP
+\fBclient\fIn\fB_AUTH_TYPE\fR
+認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
+\fBconfig-gfarm\fR を実行したときの
+AUTH_TYPE の値が採用されます。
+(変数 gfmd1_CONFIG_GFARM_OPTIONS の値によって、この
+ときの AUTH_TYPE の値は変わるので、注意して下さい。)

@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE-AGENT" "1" "07 November 2012" "Gfarm" ""
+.TH "GFSERVICE-AGENT" "1" "07 June 2013" "Gfarm" ""
 
 .SH NAME
 gfservice-agent \- gfservice のエージェント
 .SH SYNOPSIS
 
-\fBgfservice-agent\fR [ \fB\fIオプション\fB\fR ] \fBサブコマンド\fR [ \fB\fI引数 ...\fB\fR ]
+\fBgfservice-agent\fR [ \fB\fIオプション\fB\fR ] \fBホスト ID\fR \fBサブコマンド\fR [ \fB\fI引数 ...\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
@@ -24,6 +24,11 @@ gfservice-agent \- gfservice のエージェント
 日常の利用では、SSH と Sudo を介して \fBgfservice\fR コマンド
 によって実行されるだけです。
 .PP
+ホスト ID 引数は \fBgfservice\fR のものと同じですが、
+\fBgfservice-agent\fR ではホスト ID をホストの種別
+("gfmd", "gfsd", "client" のいずれか) を区別するため、および
+デバッグメッセージのためにしか使っていません。
+.PP
 \fBgfservice-agent\fR のサブコマンド名は 
 \fBgfservice\fR のものに似ていますが、引数は異なります。
 たとえば、\fBgfservice-agent\fR の \fBunmount\fR
@@ -32,7 +37,7 @@ gfservice-agent \- gfservice のエージェント
 という引数をとります。
 
 .nf
-	gfservice-agent unmount directory=/somewhere
+	gfservice-agent client3 unmount directory=/somewhere
 .fi
 .PP
 これに対して、\fBgfservice\fR では、
@@ -58,11 +63,17 @@ gfservice-agent \- gfservice のエージェント
 \fBget-config-gfarm-param \fIparam\fB=\fIパラメタ名\fB \fIconfig-gfarm-options\fB=\fIオプション\fB\fR
 「\fBconfig-gfarm -T\fR」コマンドを実行して、
 「\fIパラメタ名\fR 」の値を標準出力に出力します。
+引数「\fIparam\fR=\fIパラメタ名\fR」
+が省略された場合は、「\fBconfig-gfarm -T\fR」コマンドの
+結果すべてを出力します。
 .TP
 \fBget-config-gfsd-param \fIparam\fB=\fIパラメタ名\fB \fIconfig-gfsd-options\fB=\fIオプション\fB\fR
 「\fBconfig-gfsd -T\fR」コマンドを実行して、
 「\fIパラメタ名\fR」の値を標準出力に
 出力します。
+引数「\fIparam\fR=\fIパラメタ名\fR」
+が省略された場合は、「\fBconfig-gfsd -T\fR」コマンドの
+結果すべてを出力します。
 .TP
 \fBbackend-db-status \fIconfig-gfarm-options\fB=\fIオプション\fB\fR
 バックエンドデータベースが動作中であれば、終了コード 0 で終了します。
@@ -141,12 +152,25 @@ Gfarm2 ファイルシステムを「\fIディレクトリ\fR」に
 
 という行を追加します。
 .TP
+\fBset-gfsd-conf \fIdirective\fB=\fI設定名称\fB \fIvalue\fB=\fI値\fB\fR
+\fIgfsd.conf\fR ファイルに、
+
+.nf
+	\fI設定名称\fR \fI値\fR
+.fi
+
+という行を追加します。
+.TP
 \fBunset-gfmd-conf \fIdirective\fB=\fI設定名称\fB\fR
-「\fI設定名称\fR」行を \fIgfarm2.conf\fR
+「\fI設定名称\fR」行を \fIgfmd.conf\fR
 ファイルから削除します。
 .TP
 \fBunset-gfarm-conf \fIdirective\fB=\fI設定名称\fB\fR
-「\fI設定名称\fR」行を \fIgfmd.conf\fR
+「\fI設定名称\fR」行を \fIgfarm.conf\fR
+ファイルから削除します。
+.TP
+\fBunset-gfsd-conf \fIdirective\fB=\fI設定名称\fB\fR
+「\fI設定名称\fR」行を \fIgfsd.conf\fR
 ファイルから削除します。
 .TP
 \fBbackup-backend-db\fR
@@ -158,6 +182,12 @@ Gfarm2 ファイルシステムを「\fIディレクトリ\fR」に
 .TP
 \fBbackup-gfarm-conf\fR
 \fIgfarm2.conf\fR ファイルを標準出力に出力します。
+.TP
+\fBbackup-gfsd-conf\fR
+\fIgfsd.conf\fR ファイルを標準出力に出力します。
+.TP
+\fBbackup-usermap\fR
+\fIusermap\fR ファイルを標準出力に出力します。
 .TP
 \fBbackup-shared-key\fR
 \fI$HOME/.gfarm_shared_key\fR ファイルを標準出力に
@@ -173,6 +203,14 @@ Gfarm2 ファイルシステムを「\fIディレクトリ\fR」に
 .TP
 \fBrestore-gfarm-conf\fR
 \fIgfarm2.conf\fR ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
+.TP
+\fBrestore-gfsd-conf\fR
+\fIgfsd.conf\fR ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
+.TP
+\fBrestore-usermap\fR
+\fIusermap\fR ファイルをリストアします。
 バックアップデータは、標準入力から読み込みます。
 .TP
 \fBrestore-shared-key\fR

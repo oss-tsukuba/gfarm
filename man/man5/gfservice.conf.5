@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE.CONF" "5" "08 March 2013" "Gfarm" ""
+.TH "GFSERVICE.CONF" "5" "07 June 2013" "Gfarm" ""
 
 .SH NAME
 gfservice.conf \- configuration file of gfservice
@@ -106,6 +106,19 @@ Do not delete or edit the declaration even after
 Set this variable to "true" if gfmd on the remote host is configured
 in private mode.
 .TP
+\fBgfmd\fIn\fB_AUTH_TYPE\fR
+Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+If the variable is not declared, its value is chosen from
+AUTH_TYPE value output by
+\fBconfig-gfarm -T\fR command executed on gfmd1.
+(Note that the value AUTH_TYPE above is affected by
+the variable gfmd1_CONFIG_GFARM_OPTIONS\&.)
+.TP
+\fBgfmd\fIn\fB_REPLICATION_MODE\fR
+Setting this variable to "async",
+\fBgfservice config-gfarm-slave\fR configures the gfmd
+host as an async slave.
+.TP
 \fBgfmd\fIn\fB_SSH\fR
 Specify a path to an SSH client command and its options.
 The variable is used when \fBgfservice\fR executes an SSH
@@ -149,6 +162,14 @@ Do not delete or edit the declaration even after
 Set this variable to "true" if gfsd on the remote host is configured
 in private mode.
 .TP
+\fBgfsd\fIn\fB_AUTH_TYPE\fR
+Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+If the variable is not declared, its value is chosen from
+AUTH_TYPE value output by
+\fBconfig-gfarm -T\fR command executed on gfmd1.
+(Note that the value AUTH_TYPE above is affected by
+the variable gfmd1_CONFIG_GFARM_OPTIONS\&.)
+.TP
 \fBgfsd\fIn\fB_SSH\fR
 Specify a path to an SSH client command and its options.
 The variable is used when \fBgfservice\fR executes an SSH
@@ -181,11 +202,11 @@ If the variable is declared, \fBgfservice\fR executes
 \fB"$client\fIn\fB_GFBINDIR/gfservice-agent"\fR\&.
 Otherwise it executes \fB"gfservice-agent"\fR\&.
 .TP
-\fBclient\fIn\fB_GFARM2FS_BIN_PATH\fR
-Specify a path to a directory where \fBgfarm2fs\fR
-command is installed on the client host. The the variable is declared,
-\fBgfservice\fR executes \fBgfarm2fs\fR with
-specified path. The default value is %%BINDIR%%.
+\fBclient\fIn\fB_GFARM2FS\fR
+Specify a path to \fBgfarm2fs\fR command and its options.
+The variable is used when \fBgfservice\fR executes
+\fBgfarm2fs\fR command to mount a file system.
+The default value is "%%BINDIR%%/gfarm2fs".
 .TP
 \fBclient\fIn\fB_SSH\fR
 Specify a path to an SSH client command and its options.
@@ -204,3 +225,15 @@ Specify a gfarm2.conf file in absolute path.
 If a value is not set, \fBgfservice\fR uses a same path as
 the path of gfarm2.conf in gfmd1(determined from the 'gfmd1_CONFIG_GFARM_OPTIONS'
 shell variable).
+.TP
+\fBclient\fIn\fB_PRIVATE_MODE\fR
+If this variable is set to "true", \fBgfservice\fR processes
+the sub-command \fBconfig-client\fR without root privilege.
+.TP
+\fBclient\fIn\fB_AUTH_TYPE\fR
+Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+If the variable is not declared, its value is chosen from
+AUTH_TYPE value output by
+\fBconfig-gfarm -T\fR command executed on gfmd1.
+(Note that the value AUTH_TYPE above is affected by
+the variable gfmd1_CONFIG_GFARM_OPTIONS\&.)
