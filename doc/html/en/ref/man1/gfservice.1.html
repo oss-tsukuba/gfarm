@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfservice</B
-> [<TT
+>  [<TT
 CLASS="REPLACEABLE"
 ><I
 >options</I
@@ -168,17 +168,13 @@ TYPE="1"
 ><CODE
 CLASS="OPTION"
 >-f</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->file</I
-></TT
+>file</CODE
 > option is specified, read
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->file</I
-></TT
+>file</CODE
 >.</P
 ></LI
 ><LI
@@ -208,9 +204,12 @@ Note that the configuration file itself is a Bourne-shell script and
 CLASS="COMMAND"
 >gfservice</B
 > includes (exactly to say, 
-<I
+<SPAN
+CLASS="emphasis"
+><I
 CLASS="EMPHASIS"
 >evaluates</I
+></SPAN
 >) the file.
 See gfservice.conf(5) for more details about the configuration file.</P
 ><P
@@ -286,8 +285,8 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >gfservice</B
 > has a plug-in system so that user can add
-new sub-commands. See "PLUGIN SYSTEM" section of this man page for
-details about a plug-in system.</P
+new sub-commands. See "PLUG-IN SYSTEM" section of this man page for
+more details.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -326,55 +325,43 @@ CLASS="COMMAND"
 ><CODE
 CLASS="OPTION"
 >-f</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->file</I
-></TT
+>file</CODE
 ></DT
 ><DD
 ><P
->Read configuration from <TT
+>Read configuration from <CODE
 CLASS="PARAMETER"
-><I
->file</I
-></TT
+>file</CODE
 > instead of the default.</P
 ></DD
 ><DT
 ><CODE
 CLASS="OPTION"
 >-t</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->time</I
-></TT
+>time</CODE
 ></DT
 ><DD
 ><P
->Set operation timeout in <TT
+>Set operation timeout in <CODE
 CLASS="PARAMETER"
-><I
->time</I
-></TT
+>time</CODE
 > seconds.
 When <B
 CLASS="COMMAND"
 >gfservice</B
 > tries to start or stop a server program
 (gfmd, gfsd or a backend database), it waits until the operation is complete
-or <TT
+or <CODE
 CLASS="PARAMETER"
-><I
->time</I
-></TT
+>time</CODE
 > interval is elapsed.
-If "no" is specified as <TT
+If "no" is specified as <CODE
 CLASS="PARAMETER"
-><I
->time</I
-></TT
+>time</CODE
 >, timeout never occurs.
 The default value is "no".</P
 ></DD
@@ -385,8 +372,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->Setup shared key if authentication type is "sharedsecret".
-When this option is specified with sub-command
+>When this option is specified with sub-command
 <B
 CLASS="COMMAND"
 >config-gfarm</B
@@ -398,24 +384,11 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >gfservice</B
 >
-creates a shared secret key and then distributes the key to all hosts
-defined in the configuration file.
-When this option is specified with sub-commands
-<B
+creates a shared secret key files using <B
 CLASS="COMMAND"
->config-gfarm-slave</B
-> or
-<B
-CLASS="COMMAND"
->config-gfsd</B
->, <B
-CLASS="COMMAND"
->config-client</B
->,
-<B
-CLASS="COMMAND"
->gfservice</B
-> copies the key from gfmd host.</P
+>gfkey</B
+>
+command.</P
 ></DD
 ></DL
 ></DIV
@@ -453,6 +426,10 @@ CLASS="VARIABLELIST"
 ><B
 CLASS="COMMAND"
 >backend-db-status</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -463,6 +440,10 @@ Otherwise exits with 1.</P
 ><B
 CLASS="COMMAND"
 >gfmd-status</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -476,6 +457,10 @@ Otherwise exits with 1.</P
 ><B
 CLASS="COMMAND"
 >start-backend-db</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -485,6 +470,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >start-gfmd</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -497,52 +486,49 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >start-gfmd-master</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
->Delete <CODE
-CLASS="VARNAME"
->metadb_server_force_slave</CODE
-> directive in 
-<TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> on the remote host if the directive is
-specified in the file.
-Then start <B
+>An alias of "<B
 CLASS="COMMAND"
->gfmd</B
-> if it is not running currently.
-Note that this sub-command doesn't ensure that <B
-CLASS="COMMAND"
->gfmd</B
->
-on the remote host runs in master mode.</P
+>start-gfmd</B
+>" sub-command.</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >start-gfmd-slave</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
->Set <CODE
-CLASS="VARNAME"
->metadb_server_force_slave</CODE
-> directive in 
-<TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> on the remote host to the value "enabled".
-Then start <B
+>This sub-command is the same as "<B
+CLASS="COMMAND"
+>start-gfmd</B
+>",
+but <CODE
+CLASS="OPTION"
+>-S</CODE
+> option is added to <B
 CLASS="COMMAND"
 >gfmd</B
-> if it is not running currently.</P
+>.</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >start-gfarm</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -556,54 +542,49 @@ not running currently.</P
 ><B
 CLASS="COMMAND"
 >start-gfarm-master</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
->Delete <CODE
-CLASS="VARNAME"
->metadb_server_force_slave</CODE
-> directive in 
-<TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> on the remote host if the directive is
-specified in the file.
-Then start a backend database and <B
+>An alias of "<B
 CLASS="COMMAND"
->gfmd</B
-> if they are
-not running currently.
-Note that this sub-command doesn't ensure that <B
-CLASS="COMMAND"
->gfmd</B
->
-on the remote host runs in a master mode.</P
+>start-gfarm</B
+>" sub-command.</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >start-gfarm-slave</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
->Set <CODE
-CLASS="VARNAME"
->metadb_server_force_slave</CODE
-> directive in 
-<TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> on the remote host to the value "enabled".
-Then start a backend database and <B
+>This sub-command is the same as "<B
+CLASS="COMMAND"
+>start-gfarm</B
+>",
+but <CODE
+CLASS="OPTION"
+>-S</CODE
+> option is added to <B
 CLASS="COMMAND"
 >gfmd</B
-> if they are
-not running currently.</P
+>.</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >stop-backend-db</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -613,6 +594,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >stop-gfmd</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -625,6 +610,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >stop-gfarm</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -638,6 +627,10 @@ currently.</P
 ><B
 CLASS="COMMAND"
 >kill-gfmd</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -650,6 +643,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restart-backend-db</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -666,6 +663,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restart-gfmd</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -682,22 +683,26 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restart-gfmd-master</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
->Perform "<B
+>An alias of "<B
 CLASS="COMMAND"
->stop-gfmd</B
->" and
-"<B
-CLASS="COMMAND"
->start-gfmd-master</B
->" sub-commands successively.</P
+>restart-gfmd</B
+>" sub-command.</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >restart-gfmd-slave</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -714,6 +719,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restart-gfarm</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -730,22 +739,26 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restart-gfarm-master</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
->Perform "<B
+>An alias of "<B
 CLASS="COMMAND"
->stop-gfarm</B
->" and 
-"<B
-CLASS="COMMAND"
->start-gfarm-master</B
->" sub-commands successively.</P
+>restart-gfarm</B
+>" sub-command.</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >restart-gfarm-slave</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -762,6 +775,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >promote</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -774,6 +791,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >promote-gfmd</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -786,32 +807,30 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >set-gfmd-conf</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
-> <TT
+>host-id</CODE
+>
+<CODE
 CLASS="PARAMETER"
-><I
->value</I
-></TT
+>directive</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>value</CODE
 ></DT
 ><DD
 ><P
 >Add</P
 ><P
 CLASS="LITERALLAYOUT"
->	<TT
+>	<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
->&nbsp;<TT
+>directive</CODE
+>&nbsp;<CODE
 CLASS="PARAMETER"
-><I
->value</I
-></TT
+>value</CODE
 ></P
 ><P
 >line to <TT
@@ -822,11 +841,56 @@ If <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
 > already has a
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
+> line, <B
+CLASS="COMMAND"
+>gfservice</B
+>
+deletes it and then add a new line.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>set-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>directive</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>value</CODE
+></DT
+><DD
+><P
+>Add</P
+><P
+CLASS="LITERALLAYOUT"
+>	<CODE
+CLASS="PARAMETER"
+>directive</CODE
+>&nbsp;<CODE
+CLASS="PARAMETER"
+>value</CODE
+></P
+><P
+>line to <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> file on the remote host.
+If <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> already has a
+<CODE
+CLASS="PARAMETER"
+>directive</CODE
 > line, <B
 CLASS="COMMAND"
 >gfservice</B
@@ -837,19 +901,20 @@ deletes it and then add a new line.</P
 ><B
 CLASS="COMMAND"
 >unset-gfmd-conf</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>host-id</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>directive</CODE
 ></DT
 ><DD
 ><P
->Delete a <TT
+>Delete a <CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 > line in
 <TT
 CLASS="FILENAME"
@@ -859,11 +924,41 @@ If <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
 > file doesn't contain
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
+> line, the file is unchanged.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>unset-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>directive</CODE
+></DT
+><DD
+><P
+>Delete a <CODE
+CLASS="PARAMETER"
+>directive</CODE
+> line in
+<TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> file on the remote host.
+If <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> file doesn't contain
+<CODE
+CLASS="PARAMETER"
+>directive</CODE
 > line, the file is unchanged.</P
 ></DD
 ><DT
@@ -880,6 +975,10 @@ to standard out.</P
 ><B
 CLASS="COMMAND"
 >backup-gfmd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -892,7 +991,49 @@ standard out.</P
 ><DT
 ><B
 CLASS="COMMAND"
+>backup-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
+></DT
+><DD
+><P
+>Output <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> file on the remote host to
+standard out.
+This sub-command can be worked only when the remote host is configured
+in the private mode.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>backup-usermap</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
+></DT
+><DD
+><P
+>Output <TT
+CLASS="FILENAME"
+>usermap</TT
+> file on the remote host to
+standard out.
+This sub-command can be worked only when the remote host is configured
+in the private mode.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
 >restore-backend-db</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -903,6 +1044,10 @@ The backup data are read from standard in.</P
 ><B
 CLASS="COMMAND"
 >restore-gfmd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -922,7 +1067,63 @@ from standard in.</P
 ><DT
 ><B
 CLASS="COMMAND"
+>restore-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
+></DT
+><DD
+><P
+>Recover <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> file on the remote host.
+<B
+CLASS="COMMAND"
+>gfservice</B
+> reads a backup of <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+>
+from standard in.
+This sub-command can be worked only when the remote host is configured
+in the private mode.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>restore-usermap</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
+></DT
+><DD
+><P
+>Recover <TT
+CLASS="FILENAME"
+>usermap</TT
+> file on the remote host.
+<B
+CLASS="COMMAND"
+>gfservice</B
+> reads a backup of <TT
+CLASS="FILENAME"
+>usermap</TT
+>
+from standard in.
+This sub-command can be worked only when the remote host is configured
+in the private mode.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
 >config-gfarm</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -954,50 +1155,27 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >config-gfarm-slave</B
 >" sub-command in that case.
-<B
-CLASS="COMMAND"
->gfservice</B
-> distributes
-<TT
-CLASS="FILENAME"
->gfarm2.conf</TT
-> file to all hosts defined in the
-configuration file(gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->,
-gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
-> and
-client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->).
-If authentication type is "sharedsecret" and <CODE
+If <CODE
 CLASS="OPTION"
 >-k</CODE
->
-option is specified, <B
+> option is specified, <B
 CLASS="COMMAND"
 >gfservice</B
-> also creates a
-shared secret key using <B
+>
+also creates a shared secret key files onto the gfmd host, using
+<B
 CLASS="COMMAND"
 >gfkey</B
-> command and then
-distributes the key.</P
+> command.</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >config-gfarm-master</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1011,11 +1189,14 @@ but gfmd replication is enabled automatically.</P
 ><B
 CLASS="COMMAND"
 >config-gfarm-slave</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->master-host-id</I
-></TT
+>host-id</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>master-host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1024,11 +1205,9 @@ CLASS="COMMAND"
 >config-gfarm</B
 >
 but gfmd replication is enabled automatically and the remote gfmd host
-is configured as a slave of <TT
+is configured as a slave of <CODE
 CLASS="PARAMETER"
-><I
->master-host-id</I
-></TT
+>master-host-id</CODE
 >.
 Then <B
 CLASS="COMMAND"
@@ -1054,28 +1233,35 @@ distribute the updated <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
 > file to all hosts
-defined in the configuration file (gfmd<TT
+defined in the configuration file.
+It also updates <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> file and distributes it to
+all gfmd and gfsd hosts, if "gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->,
-gfsd<TT
+>_PRIVATE_MODE"
+variable is set to "true".
+If the value of the variable "gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
-> and client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->).</P
+>_AUTH_TYPE"
+is "sharedsecret", it also copies a shared key file from the maste gfmd
+to the slave gfmd host.</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >unconfig-gfarm</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1094,6 +1280,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >unconfig-gfarm-master</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1106,11 +1296,14 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >unconfig-gfarm-slave</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->master-host-id</I
-></TT
+>host-id</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>master-host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1135,23 +1328,18 @@ CLASS="VARNAME"
 CLASS="FILENAME"
 >gfarm2.conf</TT
 > file on all hosts defined in the
-configuration file (gfmd<TT
+configuration file.
+It also updates <TT
+CLASS="FILENAME"
+>gfsd.conf</TT
+> file and distributes it to
+all gfmd and gfsd hosts, if "gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->, 
-gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
-> and client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->).</P
+>_PRIVATE_MODE"
+variable is set to "true".</P
 ></DD
 ></DL
 ></DIV
@@ -1189,6 +1377,10 @@ CLASS="VARIABLELIST"
 ><B
 CLASS="COMMAND"
 >gfsd-status</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1226,6 +1418,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restart-gfsd</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1241,7 +1437,119 @@ sub-commands successively.</P
 ><DT
 ><B
 CLASS="COMMAND"
+>set-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>directive</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>value</CODE
+></DT
+><DD
+><P
+>Same as <B
+CLASS="COMMAND"
+>set-gfsd-conf</B
+> sub-command for gfmd.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>unset-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>directive</CODE
+></DT
+><DD
+><P
+>Same as <B
+CLASS="COMMAND"
+>unset-gfsd-conf</B
+> sub-command for gfmd.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>backup-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
+></DT
+><DD
+><P
+>Same as <B
+CLASS="COMMAND"
+>backup-gfsd-conf</B
+> sub-command for gfmd.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>backup-usermap</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
+></DT
+><DD
+><P
+>Same as <B
+CLASS="COMMAND"
+>backup-usermap</B
+> sub-command for gfmd.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>restore-gfsd-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
+></DT
+><DD
+><P
+>Same as <B
+CLASS="COMMAND"
+>restore-gfsd-conf</B
+> sub-command for gfmd.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>restore-usermap</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
+></DT
+><DD
+><P
+>Same as <B
+CLASS="COMMAND"
+>restore-usermap</B
+> sub-command for gfmd.</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
 >config-gfsd</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1271,12 +1579,24 @@ CLASS="COMMAND"
 as a filesystem node using <B
 CLASS="COMMAND"
 >gfhost</B
-> command.</P
+> command.
+If the value of the variable "gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_AUTH_TYPE"
+is "sharedsecret", it also copies a shared key file from gfmd1 to the
+gfsd host.</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >unconfig-gfsd</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1330,68 +1650,53 @@ CLASS="VARIABLELIST"
 ><B
 CLASS="COMMAND"
 >mount</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->directory</I
-></TT
-> <TT
+>host-id</CODE
+>
+<CODE
 CLASS="PARAMETER"
-><I
->option...</I
-></TT
+>directory</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>option...</CODE
 ></DT
 ><DD
 ><P
->Mount a Gfarm2 filesystem on <TT
+>Mount a Gfarm2 filesystem on <CODE
 CLASS="PARAMETER"
-><I
->directory</I
-></TT
+>directory</CODE
 > on the
 remote host.
-The argument <TT
+The argument <CODE
 CLASS="PARAMETER"
-><I
->option</I
-></TT
+>option</CODE
 > is an option to 
 <B
 CLASS="COMMAND"
 >gfarm2fs</B
-> command. If <B
-CLASS="COMMAND"
->gfarm2fs</B
->
-command is installed to a directory different from directory which
-Gfarm is installed(%%BINDIR%%), you can specify a path
-to <B
-CLASS="COMMAND"
->gfarm2fs</B
-> command
-in <TT
-CLASS="FILENAME"
->gfservice.conf</TT
->. See gfservice.conf(5) for
-more details about the configuration file.</P
+> command.</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >unmount</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->directory</I
-></TT
+>host-id</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>directory</CODE
 ></DT
 ><DD
 ><P
->Unmount a Gfarm2 filesystem on <TT
+>Unmount a Gfarm2 filesystem on <CODE
 CLASS="PARAMETER"
-><I
->directory</I
-></TT
+>directory</CODE
 > on the
 remote host.</P
 ></DD
@@ -1399,11 +1704,14 @@ remote host.</P
 ><B
 CLASS="COMMAND"
 >umount</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->directory</I
-></TT
+>host-id</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>directory</CODE
 ></DT
 ><DD
 ><P
@@ -1416,32 +1724,30 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >set-gfarm-conf</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
-> <TT
+>host-id</CODE
+>
+<CODE
 CLASS="PARAMETER"
-><I
->value</I
-></TT
+>directive</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>value</CODE
 ></DT
 ><DD
 ><P
 >Add</P
 ><P
 CLASS="LITERALLAYOUT"
->	<TT
+>	<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
->&nbsp;<TT
+>directive</CODE
+>&nbsp;<CODE
 CLASS="PARAMETER"
-><I
->value</I
-></TT
+>value</CODE
 ></P
 ><P
 >line to <TT
@@ -1452,11 +1758,9 @@ If <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
 > already has a
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 > line, <B
 CLASS="COMMAND"
 >gfservice</B
@@ -1467,19 +1771,20 @@ deletes it and then add a new line.</P
 ><B
 CLASS="COMMAND"
 >unset-gfarm-conf</B
-> <TT
+>
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>host-id</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>directive</CODE
 ></DT
 ><DD
 ><P
->Delete a <TT
+>Delete a <CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 > line in
 <TT
 CLASS="FILENAME"
@@ -1489,17 +1794,19 @@ If <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
 > file doesn't contain
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->directive</I
-></TT
+>directive</CODE
 > line, the file is unchanged.</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >backup-gfarm-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1513,6 +1820,10 @@ standard out.</P
 ><B
 CLASS="COMMAND"
 >backup-shared-key</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1522,6 +1833,10 @@ CLASS="COMMAND"
 ><B
 CLASS="COMMAND"
 >restore-gfarm-conf</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1542,6 +1857,10 @@ from standard in.</P
 ><B
 CLASS="COMMAND"
 >restore-shared-key</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1556,6 +1875,10 @@ standard in.</P
 ><B
 CLASS="COMMAND"
 >config-client</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1563,16 +1886,24 @@ CLASS="COMMAND"
 CLASS="FILENAME"
 >gfarm2.conf</TT
 > file from gfmd1 to the client
-host. This sub-command also copies a shared secret key file when
-<CODE
-CLASS="OPTION"
->-k</CODE
-> option is specified.</P
+host.
+If the value of the variable "client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_AUTH_TYPE"
+is "sharedsecret", it also copies a shared key file from gfmd1 to the
+client host.</P
 ></DD
 ><DT
 ><B
 CLASS="COMMAND"
 >unconfig-client</B
+>
+<CODE
+CLASS="PARAMETER"
+>host-id</CODE
 ></DT
 ><DD
 ><P
@@ -1587,17 +1918,17 @@ on the remote host.</P
 CLASS="COMMAND"
 >gfcmd</B
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->command-name</I
-></TT
+>host-id</CODE
 >
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->command-argument ...</I
-></TT
+>command-name</CODE
+>
+<CODE
+CLASS="PARAMETER"
+>command-argument ...</CODE
 ></DT
 ><DD
 ><P
@@ -1728,7 +2059,7 @@ CLASS="REFSECT1"
 NAME="PLUGIN"
 ></A
 ><H2
->PLUGIN SYSTEM</H2
+>PLUG-IN SYSTEM</H2
 ><P
 ><B
 CLASS="COMMAND"
@@ -1753,27 +2084,27 @@ CLASS="REPLACEABLE"
 ></TT
 >", must have
 shell function named
-"<TT
+"<CODE
 CLASS="FUNCTION"
 >subcmd_<TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
-></TT
+></CODE
 >" which
 will be executed from <B
 CLASS="COMMAND"
 >gfservice</B
 >, and
-"<TT
+"<CODE
 CLASS="FUNCTION"
 >subcmd_<TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
->_agent</TT
+>_agent</CODE
 >"
 which will be executed from <B
 CLASS="COMMAND"
@@ -1788,27 +2119,27 @@ CLASS="REPLACEABLE"
 >name</I
 ></TT
 >", must have shell function named
-"<TT
+"<CODE
 CLASS="FUNCTION"
 ><TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
->_depends</TT
+>_depends</CODE
 >" which
 must return list of sub-commands. List of sub-commands must be a
 string which is space separated list of sub-command names. If
 sub-command or it's agent does not have dependencies, return empty
 string.  Similarly, sub-command file must have shell function named
-"<TT
+"<CODE
 CLASS="FUNCTION"
 ><TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
->_agent_depends</TT
+>_agent_depends</CODE
 >"
 which must return list of sub-command's agents.</P
 ></DIV

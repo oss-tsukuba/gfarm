@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE" "1" "18 April 2013" "Gfarm" ""
+.TH "GFSERVICE" "1" "07 June 2013" "Gfarm" ""
 
 .SH NAME
 gfservice \- リモートホストから Gfarm のサーバーを制御する。
 .SH SYNOPSIS
 
-\fBgfservice\fR [ \fB\fIオプション\fB\fR ] \fBサブコマンド\fR [ \fBホスト ID\fR ] [ \fB\fI引数 ...\fB\fR ]
+\fBgfservice\fR [ \fB\fIオプション\fB\fR ] \fBサブコマンド\fR [ \fBホストID\fR ] [ \fB\fI引数 ...\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
@@ -28,13 +28,13 @@ gfservice \- リモートホストから Gfarm のサーバーを制御する。
 .fi
 .PP
 ここで、「\fIstart-gfmd\fR」はサブコマンド、
-「\fIgfmd2\fR」 はホスト ID をそれぞれ表しています。
+「\fIgfmd2\fR」 はホストID をそれぞれ表しています。
 このコマンド行を実行すると、\fBgfservice\fR は
 「\fIgfmd2\fR」と名付けられたホスト上の gfmd の
 実行開始を試みます。
 リモートのサーバーホストを指定する際、\fBgfservice\fR では
-ホスト名の代わりにホスト ID  を用います。
-ホスト ID (\fIgfmd1\fR、
+ホスト名の代わりにホストID  を用います。
+ホストID (\fIgfmd1\fR、
 \fIgfmd2\fR、...) は \fBgfservice\fR 用
 の設定ファイルで定義します。
 以下に、設定ファイルの記述例を載せます。
@@ -98,8 +98,8 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 \fBgfservice-agent\fR をインストールしておく必要があります。
 .PP
 \fBgfservice\fRはユーザが新しくサブコマンドを追加できるよ
-うに、プラグインシステムを採用しています。プラグインシステムについての
-詳しい説明はこの man ページの "PLUGIN SYSTEM"の節を参照して下さい。
+うに、プラグインシステムを採用しています。
+詳しい説明は "PLUG-IN SYSTEM" の節を参照して下さい。
 .SH "OPTIONS"
 .TP
 \fB-d\fR
@@ -122,118 +122,96 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 デフォルト値は、「no」です。
 .TP
 \fB-k\fR
-認証タイプが「sharedsecret (共有秘密鍵)」の場合に共有秘密鍵の設定を行
-います。このオプションが\fBconfig-gfarm\fR サブコマンドも
-しくは \fBconfig-gfarm-master\fR サブコマンドと共に指定さ
-れた場合、\fBgfservice\fRは共有秘密鍵を作成し、作成した鍵
-を設定ファイルで定義されているすべてのホストに配布します。 
-このオプションが \fBconfig-gfarm-slave\fR、
-\fBconfig-gfsd\fR、 \fBconfig-client\fRと共
-に指定された場合、gfmd ホストから鍵をコピーします。
+このオプションが\fBconfig-gfarm\fR サブコマンドもしくは
+\fBconfig-gfarm-master\fR サブコマンドと共に指定された場合、
+\fBgfservice\fR は \fBgfkey\fR コマンドを用いて
+共有秘密鍵ファイルを作成します。 
 .SH "SUB-COMMANDS FOR GFMD"
 .PP
 以下に挙げているのは、\fBgfmd\fR を操作するサブコマンドです。
-コマンド行に与えるホスト ID は、「gfmd\fIn\fR」
+コマンド行に与えるホストID は、「gfmd\fIn\fR」
 (gfmd1, gfmd2, ...) でなくてはなりません。
 それ以外の場合、\fBgfservice\fR はエラーを通知してただちに
 終了します。
 .TP
-\fBbackend-db-status\fR
+\fBbackend-db-status \fIホストID\fB\fR
 バックエンドデータベースが実行中であれば、終了コード 0 で終了します。
 それ以外の場合は、1 で終了します。
 .TP
-\fBgfmd-status\fR
+\fBgfmd-status \fIホストID\fB\fR
 gfmd が実行中であれば、終了コード 0 で終了します。
 それ以外の場合は、1 で終了します。
 .TP
-\fBstart-backend-db\fR
+\fBstart-backend-db \fIホストID\fB\fR
 バックエンドデータベースが実行中でなければ、実行を開始します。
 .TP
-\fBstart-gfmd\fR
+\fBstart-gfmd \fIホストID\fB\fR
 \fBgfmd\fR が実行中でなければ、実行を開始します。
 .TP
-\fBstart-gfmd-master\fR
-リモートホスト上の \fIgfmd.conf\fR ファイルに設定名称
-「metadb_server_force_slave」の記述行があればそれを
-削除します。
-その後で、\fBgfmd\fR が実行中でなければ、実行を開始します。
-このサブコマンドは、リモートホスト上の \fBgfmd\fR が
-マスター gfmd として動作することを保証するものではありません。
+\fBstart-gfmd-master \fIホストID\fB\fR
+サブコマンド \fBstart-gfmd\fR の別名です。
 .TP
-\fBstart-gfmd-slave\fR
-リモートホスト上の \fIgfmd.conf\fR ファイルに変更を加え、
-設定名称「metadb_server_force_slave」に値「enabled」
-をセットします。
-その後で、\fBgfmd\fR が実行中でなければ、実行を開始します。
+\fBstart-gfmd-slave \fIホストID\fB\fR
+サブコマンド \fBstart-gfmd\fR と同じですが、gfmd には
+\fB-S\fR オプションが付与されます。
 .TP
-\fBstart-gfarm\fR
+\fBstart-gfarm \fIホストID\fB\fR
 バックエンドデータベースおよび \fBgfmd\fR が実行中でなければ、
 実行を開始します。
 .TP
-\fBstart-gfarm-master\fR
-リモートホスト上の \fIgfmd.conf\fR ファイルに設定名称
-「metadb_server_force_slave」の記述行があればそれを
-削除します。
-その後で、バックエンドデータベースおよび \fBgfmd\fR が実行中
-でなければ、実行を開始します。
-このサブコマンドは、リモートホスト上の \fBgfmd\fR が
-マスター gfmd として動作することを保証するものではありません。
+\fBstart-gfarm-master \fIホストID\fB\fR
+サブコマンド \fBstart-gfarm\fR の別名です。
 .TP
-\fBstart-gfarm-slave\fR
-リモートホスト上の \fIgfmd.conf\fR ファイルに変更を加え、
-設定名称「metadb_server_force_slave」に値「enabled」を
-セットします。
-その後で、バックエンドデータベースおよび \fBgfmd\fR が実行中
-でなければ、実行を開始します。
+\fBstart-gfarm-slave \fIホストID\fB\fR
+サブコマンド \fBstart-gfarm\fR と同じですが、gfmd には
+\fB-S\fR オプションが付与されます。
 .TP
-\fBstop-backend-db\fR
+\fBstop-backend-db \fIホストID\fB\fR
 バックエンドデータベースが実行中なら、実行を停止します。
 .TP
-\fBstop-gfmd\fR
+\fBstop-gfmd \fIホストID\fB\fR
 \fBgfmd\fR が実行中なら、実行を停止します。
 .TP
-\fBstop-gfarm\fR
+\fBstop-gfarm \fIホストID\fB\fR
 バックエンドデータベースおよび \fBgfmd\fR が実行中なら、
 実行を停止します。
 .TP
-\fBkill-gfmd\fR
+\fBkill-gfmd \fIホストID\fB\fR
 \fBgfmd\fR が実行中なら、強制停止 (SIGKILL を送付) します。
 .TP
-\fBrestart-backend-db\fR
+\fBrestart-backend-db \fIホストID\fB\fR
 サブコマンド \fBstop-backend-db\fR と
 \fBstart-backend-db\fR を続けて実行します。
 .TP
-\fBrestart-gfmd\fR
+\fBrestart-gfmd \fIホストID\fB\fR
 サブコマンド \fBstop-gfmd\fR」と
 「\fBstart-gfmd\fR を続けて実行します。
 .TP
-\fBrestart-gfmd-master\fR
-サブコマンド \fBstop-gfmd\fR と
-\fBstart-gfmd-master\fR を続けて実行します。
+\fBrestart-gfmd-master \fIホストID\fB\fR
+サブコマンド \fBrestart-gfmd\fR の別名です。
 .TP
-\fBrestart-gfmd-slave\fR
+\fBrestart-gfmd-slave \fIホストID\fB\fR
 サブコマンド \fBstop-gfmd\fR と
 \fBstart-gfmd-slave\fR を続けて実行します。
 .TP
-\fBrestart-gfarm\fR
+\fBrestart-gfarm \fIホストID\fB\fR
 サブコマンド \fBstop-gfarm\fR と
 \fBstart-gfarm\fR を続けて実行します。
 .TP
-\fBrestart-gfarm-master\fR
-サブコマンド \fBstop-gfarm\fR と
-\fBstart-gfarm-master\fR を続けて実行します。
+\fBrestart-gfarm-master \fIホストID\fB\fR
+サブコマンド \fBrestart-gfarm\fR の別名です。
 .TP
-\fBrestart-gfarm-slave\fR
+\fBrestart-gfarm-slave \fIホストID\fB\fR
 サブコマンド \fBstop-gfarm\fR と
 \fBstart-gfarm-slave\fR を続けて実行します。
 .TP
-\fBpromote\fR
+\fBpromote \fIホストID\fB\fR
 \fBgfmd\fR をスレーブからマスターへ昇格させます。
 .TP
-\fBpromote-gfmd\fR
+\fBpromote-gfmd \fIホストID\fB\fR
 サブコマンド \fBpromote\fR の別名です。
 .TP
-\fBset-gfmd-conf \fI設定名称\fB \fI値\fB\fR
+\fBset-gfmd-conf \fIホストID\fB \fI設定名称\fB \fI値\fB\fR
 リモートホスト上の \fIgfmd.conf\fR ファイルに
 
 .nf
@@ -245,30 +223,66 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 「\fI設定名称\fR」という行が存在している場合、
 \fBgfservice\fR はそれを削除してから、新たに行を追加します。
 .TP
-\fBunset-gfmd-conf \fI設定名称\fB\fR
+\fBset-gfsd-conf \fIホストID\fB \fI設定名称\fB \fI値\fB\fR
+リモートホスト上の \fIgfsd.conf\fR ファイルに
+
+.nf
+	\fI設定名称\fR \fI値\fR
+.fi
+
+という行を加えます。
+既に \fIgfsd.conf\fR に
+「\fI設定名称\fR」という行が存在している場合、
+\fBgfservice\fR はそれを削除してから、新たに行を追加します。
+.TP
+\fBunset-gfmd-conf \fIホストID\fB \fI設定名称\fB\fR
 リモートホスト上の \fIgfmd.conf\fR ファイルから
 「\fI設定名称\fR」行を削除します。
 \fIgfmd.conf\fR ファイルに「\fI設定名称\fR」
 行がない場合、ファイルは更新されません。
 .TP
-\fBbackup-backend-db\fR
+\fBunset-gfsd-conf \fIホストID\fB \fI設定名称\fB\fR
+リモートホスト上の \fIgfsd.conf\fR ファイルから
+「\fI設定名称\fR」行を削除します。
+\fIgfsd.conf\fR ファイルに「\fI設定名称\fR」
+行がない場合、ファイルは更新されません。
+.TP
+\fBbackup-backend-db \fIホストID\fB\fR
 リモートホスト上のバックエンドデータベースのバックアップを行い、
 バックアップデータを標準出力へ出力します。
 .TP
-\fBbackup-gfmd-conf\fR
+\fBbackup-gfmd-conf \fIホストID\fB\fR
 リモートホスト上の \fIgfarm2.conf\fR ファイルを、標準出力
 へ出力します。
 .TP
-\fBrestore-backend-db\fR
+\fBbackup-gfsd-conf \fIホストID\fB\fR
+リモートホスト上の \fIgfsd.conf\fR ファイルを、標準出力
+へ出力します。
+.TP
+\fBbackup-usermap \fIホストID\fB\fR
+リモートホスト上の \fIusermap\fR ファイルを、標準出力
+へ出力します。
+.TP
+\fBrestore-backend-db \fIホストID\fB\fR
 リモートホスト上のバックエンドデータベースのデータを復旧します。
 バックアップデータは、標準入力から読み込みます。
 .TP
-\fBrestore-gfmd-conf\fR
+\fBrestore-gfmd-conf \fIホストID\fB\fR
 リモートホスト上の \fIgfmd.conf\fR ファイルを復旧します。
 \fBgfservice\fR は、\fIgfmd.conf\fR の
 バックアップデータを標準入力から読み込みます。
 .TP
-\fBconfig-gfarm\fR
+\fBrestore-gfsd-conf \fIホストID\fB\fR
+リモートホスト上の \fIgfsd.conf\fR ファイルを復旧します。
+\fBgfservice\fR は、\fIgfsd.conf\fR の
+バックアップデータを標準入力から読み込みます。
+.TP
+\fBrestore-usermap \fIホストID\fB\fR
+リモートホスト上の \fIusermap\fR ファイルを復旧します。
+\fBgfservice\fR は、\fIusermap\fR の
+バックアップデータを標準入力から読み込みます。
+.TP
+\fBconfig-gfarm \fIホストID\fB\fR
 リモートホスト上で \fBconfig-gfarm\fR コマンドを実行します。
 このとき、設定ファイルで変数
 「gfmd\fIn\fR_CONFIG_GFARM_OPTIONS」が宣言されていれば、
@@ -276,112 +290,129 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 レプリケーション機能を有効にするときは、このサブコマンドは使用せず、代わりに
 \fBconfig-gfarm-master\fR ないし
 \fBconfig-gfarm-slave\fR を使って下さい。
-\fBgfservice\fRは\fIgfarm2.conf\fR ファイ
-ルを設定ファイルで定義されているすべてのホスト
-(gfmd\fIn\fR、 gfsd\fIn\fR、
-client\fIn\fR) に配布します。
-認証タイプが「sharedsecret (共有秘密鍵)」であり、 か
-つ\fB-k\fRオプションが指定された場合、
-\fBgfservice\fRは \fBgfkey\fR コマンドを用い
-て共有秘密鍵を作成し、作成した鍵を同じく配布します。
+\fB-k\fRオプションが指定されている場合、
+\fBgfservice\fRは \fBgfkey\fR コマンドを用いて
+gfmd ホスト上に共有秘密鍵ファイルを作成します。
 .TP
-\fBconfig-gfarm-master\fR
+\fBconfig-gfarm-master \fIホストID\fB\fR
 このサブコマンドは \fBconfig-gfarm\fR と基本的に同じですが、
 gfmd のレプリケーションが自動的に有効になります。
 .TP
-\fBconfig-gfarm-slave \fIマスタホスト ID\fB\fR
+\fBconfig-gfarm-slave \fIホストID\fB \fIマスターホストID\fB\fR
 サブコマンド \fBconfig-gfarm\fR と基本的に同じですが、
 レプリケーション機能が自動的に有効になり、
-「\fIマスタホスト ID\fR」上で動作する gfmd のスレーブ
+「\fIマスターホストID\fR」上で動作する gfmd のスレーブ
 として動作します。
 \fBgfservice\fR は \fBgfmdhost\fR コマンドを
 用いてこのスレーブホストをサーバーリストに加えます。
 また、マスター gfmd ホスト上の \fIgfarm2.conf\fR ファイル
 を更新して、metadb_server_list にこのスレーブホストを
-加え、設定ファイルで定義されているすべてのホスト
-(gfmd\fIn\fR、gfsd\fIn\fR、
-client\fIn\fR) に配布します。
+加え、設定ファイルで定義されているすべてのホストに配布します。
+変数「gfmd\fIn\fR_PRIVATE_MODE」の値が「true」に
+セットされている場合は、同様に \fIgfsd.conf\fR ファイル
+を更新し、すべての gfmd ホストと gfsd ホストに配布します。
+変数「gfmd\fIn\fR_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルをマスター gfmd ホストからこのスレーブ gfmd
+ホストへコピーします。
 .TP
-\fBunconfig-gfarm\fR
+\fBunconfig-gfarm \fIホストID\fB\fR
 サブコマンド \fBstop-gfsd\fR を実行して、その後 gfmd や
 バックエンドデータベースが作成したファイルやディレクトリをすべて削除します。
 スレーブ gfmd を廃止する場合は、代わりにサブコマンド
 \fBunconfig-gfarm-slave\fR を使用して下さい。
 .TP
-\fBunconfig-gfarm-master\fR
+\fBunconfig-gfarm-master \fIホストID\fB\fR
 サブコマンド \fBunconfig-gfarm\fR の別名です。
 .TP
-\fBunconfig-gfarm-slave \fIマスタホスト ID\fB\fR
+\fBunconfig-gfarm-slave \fIホストID\fB \fIマスターホストID\fB\fR
 サブコマンド \fBunonfig-gfarm\fR と基本的に同じですが、
 以下の追加処理を行います。
 \fBgfmdhost\fR コマンドを用いてサーバーリストから、その
 スレーブホストを削除します。
-また、設定ファイルで定義されているすべてのホスト
-(gfmd\fIn\fR、gfsd\fIn\fR、
-client\fIn\fR) の \fIgfarm2.conf\fR
-を更新し、metadb_server_list に設定されたサーバーリスト
-から、そのスレーブホストを削除します。
+また、設定ファイルで定義されているすべてのホストの
+\fIgfarm2.conf\fR を更新し、
+metadb_server_list に設定されたサーバーリストから、
+そのスレーブホストを削除します。
+変数「gfmd\fIn\fR_PRIVATE_MODE」の値が「true」に
+セットされている場合は、同様に \fIgfsd.conf\fR ファイル
+を更新し、すべての gfmd ホストと gfsd ホストに配布します。
 .SH "SUB-COMMANDS FOR GFSD"
 .PP
 以下に挙げているのは、\fBgfsd\fR を操作するサブコマンドです。
-コマンド行に与えるホスト ID は、「gfsd\fIn\fR」
+コマンド行に与えるホストID は、「gfsd\fIn\fR」
 (gfsd1, gfsd2, ...) でなくてはなりません。
 それ以外の場合、\fBgfservice\fR はエラーを通知してただちに
 終了します。
 .TP
-\fBgfsd-status\fR
+\fBgfsd-status \fIホストID\fB\fR
 gfsd が実行中であれば、終了コード 0 で終了します。
 それ以外の場合は、1 で終了します。
 .TP
-\fBstart-gfsd\fR
+\fBstart-gfsd \fIホストID\fB\fR
 \fBgfsd\fR が実行中でなければ、実行を開始します。
 .TP
-\fBstop-gfsd\fR
+\fBstop-gfsd \fIホストID\fB\fR
 \fBgfsd\fR が実行中なら、実行を停止します。
 .TP
-\fBrestart-gfsd\fR
+\fBrestart-gfsd \fIホストID\fB\fR
 サブコマンド\fBstop-gfsd\fR と
 \fBstart-gfsd\fR を続けて実行します。
 .TP
-\fBconfig-gfsd\fR
+\fBset-gfsd-conf \fIホストID\fB \fI設定名称\fB \fI値\fB\fR
+gfmd 用の \fBset-gfsd-conf\fR サブコマンドと同じです。
+.TP
+\fBunset-gfsd-conf \fIホストID\fB \fI設定名称\fB\fR
+gfmd 用の \fBunset-gfsd-conf\fR サブコマンドと同じです。
+.TP
+\fBbackup-gfsd-conf \fIホストID\fB\fR
+gfmd 用の \fBbackup-gfsd-conf\fR サブコマンドと同じです。
+.TP
+\fBbackup-usermap \fIホストID\fB\fR
+gfmd 用の \fBbackup-usermap\fR サブコマンドと同じです。
+.TP
+\fBrestore-gfsd-conf \fIホストID\fB\fR
+gfmd 用の \fBrestore-gfsd-conf\fR サブコマンドと同じです。
+.TP
+\fBrestore-usermap \fIホストID\fB\fR
+gfmd 用の \fBrestore-usermap\fR サブコマンドと同じです。
+.TP
+\fBconfig-gfsd \fIホストID\fB\fR
 リモートホスト上で \fBconfig-gfsd\fR コマンドを実行します。
 このとき、設定ファイルで変数
 「gfsd\fIn\fR_CONFIG_GFARM_OPTIONS」が宣言されていれば、
 その値が \fBconfig-gfsd\fR にオプションとして付与されます。
 また、\fBgfservice\fR は \fBgfhost\fR コマンド
 を用いて、リモートホストをファイルシステムノードとして登録します。
+変数「gfsd\fIn\fR_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルを gfmd1 から gfsd ホストへコピーします。
 .TP
-\fBunconfig-gfsd\fR
+\fBunconfig-gfsd \fIホストID\fB\fR
 サブコマンド \fBstop-gfsd\fR を実行して、その後 gfsd が
 作成したファイルやディレクトリをすべて削除します。
 .SH "SUB-COMMANDS FOR CLIENT"
 .PP
 以下に挙げているのは、クライアントを操作するサブコマンドです。
-コマンド行に与えるホスト ID は、「gfmd\fIn\fR」
+コマンド行に与えるホストID は、「gfmd\fIn\fR」
 (gfmd1, gfmd2, ...)、「gfsd\fIn\fR」(gfsd1, gfsd2, ...)、
 「client\fIn\fR」(client1, client2, ...) のいずれか
 でなくてはなりません。
 それ以外の場合、\fBgfservice\fR はエラーを通知してただちに
 終了します。
 .TP
-\fBmount \fIディレクトリ\fB \fIオプション...\fB\fR
+\fBmount \fIホストID\fB \fIディレクトリ\fB \fIオプション...\fB\fR
 リモートホスト上の「\fIディレクトリ\fR」に、Gfarm2
 ファイルシステムをマウントします。
 引数「\fIオプション\fR」は \fBgfarm2fs\fR
-コマンドへの引数とみなされます。\fBgfarm2fs\fRコマンドが
-Gfarmのインストール先(%%BINDIR)とは異なるディレクトリにインストールさ
-れている場合は、 \fIgfservice.conf\fR
-で\fBgfarm2fs\fRコマンドのパスを設定できます。設定方法に
-ついては gfservice.conf(5) を参照して下さい。
+コマンドへの引数とみなされます。
 .TP
-\fBunmount \fIディレクトリ\fB\fR
+\fBunmount \fIホストID\fB \fIディレクトリ\fB\fR
 リモートホスト上の「\fIディレクトリ\fR」にマウントされた
 Gfarm2 ファイルシステムをアンマウントします。
 .TP
-\fBumount \fIディレクトリ\fB\fR
+\fBumount \fIホストID\fB \fIディレクトリ\fB\fR
 サブコマンド \fBunmount\fR の別名です。
 .TP
-\fBset-gfarm-conf \fI設定名称\fB \fI値\fB\fR
+\fBset-gfarm-conf \fIホストID\fB \fI設定名称\fB \fI値\fB\fR
 リモートホスト上の \fIgfarm2.conf\fR ファイルに
 
 .nf
@@ -393,45 +424,43 @@ Gfarm2 ファイルシステムをアンマウントします。
 「\fI設定名称\fR」という行が存在している場合、
 \fBgfservice\fR はそれを削除してから、新たに行を追加します。
 .TP
-\fBunset-gfarm-conf \fI設定名称\fB\fR
+\fBunset-gfarm-conf \fIホストID\fB \fI設定名称\fB\fR
 リモートホスト上の \fIgfarm2.conf\fR ファイルから
 「\fI設定名称\fR」行を削除します。
 \fIgfarm2.conf\fR ファイルに「\fI設定名称\fR」
 行がない場合、ファイルは更新されません。
 .TP
-\fBbackup-gfarm-conf\fR
+\fBbackup-gfarm-conf \fIホストID\fB\fR
 リモートホスト上の \fIgfarm2.conf\fR ファイルを、標準出力
 へ出力します。
 .TP
-\fBbackup-shared-key\fR
+\fBbackup-shared-key \fIホストID\fB\fR
 リモートホスト上の共有秘密鍵ファイルを、標準出力へ出力します。
 .TP
-\fBrestore-gfarm-conf\fR
+\fBrestore-gfarm-conf \fIホストID\fB\fR
 リモートホスト上の \fIgfarm2.conf\fR ファイルを復旧します。
 \fBgfservice\fR は、\fIgfarm2.conf\fR の
 バックアップデータを標準入力から読み込みます。
 .TP
-\fBrestore-shared-key\fR
+\fBrestore-shared-key \fIホストID\fB\fR
 リモートホスト上の共有秘密鍵ファイルを復旧します。
 \fBgfservice\fR は、共有秘密鍵のバックアップデータを標準入力
 から読み込みます。
 .TP
-\fBconfig-client\fR
-\fIgfarm2.conf\fR ファイルをgfmd1からクライアントホスト
-へコピーします。このサブコマンドと共に\fB-k\fRオプションが
-指定された場合は、共有秘密鍵ファイルについても gfmd1 からクライアント
-ホストへコピーします。
+\fBconfig-client \fIホストID\fB\fR
+変数「client\fIn\fR_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルを gfmd1 からクライアントホストへコピーします。
 .TP
-\fBunconfig-client\fR
+\fBunconfig-client \fIホストID\fB\fR
 リモートホスト上の \fIgfarm2.conf\fR ファイルおよび
 共有秘密鍵ファイルを削除します。
 .TP
-\fBgfcmd \fIcommand-name\fB \fIcommand-argument ...\fB\fR
+\fBgfcmd \fIホストID\fB \fIcommand-name\fB \fIcommand-argument ...\fB\fR
 リモートホスト上で Gfarm コマンドを実行します。
 .SH "SUB-COMMANDS FOR MULTIPLE HOSTS"
 .PP
 以下に挙げているのは、複数のホストを操作するサブコマンドです。
-コマンド行で、ホスト ID を指定することはできません。
+コマンド行で、ホストID を指定することはできません。
 .TP
 \fBstart-all\fR
 すべてのバックエンドデータベース、gfmd、gfsd を起動します。
@@ -457,7 +486,7 @@ Gfarm2 ファイルシステムをアンマウントします。
 次にすべての gfsd に対して "\fBunconfig-gfsd\fR" を実行します。
 最後にすべての gfmd に対して "\fBunconfig-gfarm\fR" を
 実行します。
-.SH "PLUGIN SYSTEM"
+.SH "PLUG-IN SYSTEM"
 .PP
 \fBgfservice\fRはユーザが新しくサブコマンドが追加できるよ
 うに、プラグインシステムを採用しています。指定されたサブコマンドを

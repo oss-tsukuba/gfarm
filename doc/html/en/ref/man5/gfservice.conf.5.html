@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -44,9 +44,12 @@ CLASS="COMMAND"
 > doesn't read a configuration file.)</P
 ><P
 >The configuration file itself is a Bourne-shell script.
-It is <I
+It is <SPAN
+CLASS="emphasis"
+><I
 CLASS="EMPHASIS"
 >evaluated as a script</I
+></SPAN
 > by
 <B
 CLASS="COMMAND"
@@ -86,9 +89,12 @@ CLASS="REPLACEABLE"
 >db12.example.com</I
 ></TT
 > respectively.
-Whitespaces <I
+Whitespaces <SPAN
+CLASS="emphasis"
+><I
 CLASS="EMPHASIS"
 >must not</I
+></SPAN
 > be inserted around '='.</P
 ><P
 >The variables named <TT
@@ -333,6 +339,56 @@ CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
+>_AUTH_TYPE</CODE
+></DT
+><DD
+><P
+>Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+If the variable is not declared, its value is chosen from
+<CODE
+CLASS="VARNAME"
+>AUTH_TYPE</CODE
+> value output by
+<B
+CLASS="COMMAND"
+>config-gfarm -T</B
+> command executed on gfmd1.
+(Note that the value <CODE
+CLASS="VARNAME"
+>AUTH_TYPE</CODE
+> above is affected by
+the variable <CODE
+CLASS="VARNAME"
+>gfmd1_CONFIG_GFARM_OPTIONS</CODE
+>.)</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_REPLICATION_MODE</CODE
+></DT
+><DD
+><P
+>Setting this variable to "async",
+<B
+CLASS="COMMAND"
+>gfservice config-gfarm-slave</B
+> configures the gfmd
+host as an async slave.</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
 >_SSH</CODE
 ></DT
 ><DD
@@ -517,6 +573,37 @@ CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
+>_AUTH_TYPE</CODE
+></DT
+><DD
+><P
+>Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+If the variable is not declared, its value is chosen from
+<CODE
+CLASS="VARNAME"
+>AUTH_TYPE</CODE
+> value output by
+<B
+CLASS="COMMAND"
+>config-gfarm -T</B
+> command executed on gfmd1.
+(Note that the value <CODE
+CLASS="VARNAME"
+>AUTH_TYPE</CODE
+> above is affected by
+the variable <CODE
+CLASS="VARNAME"
+>gfmd1_CONFIG_GFARM_OPTIONS</CODE
+>.)</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
 >_SSH</CODE
 ></DT
 ><DD
@@ -656,23 +743,23 @@ CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_GFARM2FS_BIN_PATH</CODE
+>_GFARM2FS</CODE
 ></DT
 ><DD
 ><P
->Specify a path to a directory where <B
+>Specify a path to <B
 CLASS="COMMAND"
 >gfarm2fs</B
->
-command is installed on the client host. The the variable is declared,
-<B
+> command and its options.
+The variable is used when <B
 CLASS="COMMAND"
 >gfservice</B
-> executes <B
+> executes
+<B
 CLASS="COMMAND"
 >gfarm2fs</B
-> with
-specified path. The default value is %%BINDIR%%.</P
+> command to mount a file system.
+The default value is "%%BINDIR%%/gfarm2fs".</P
 ></DD
 ><DT
 ><CODE
@@ -713,6 +800,78 @@ CLASS="COMMAND"
 > executes a Sudo
 command on the client host via SSH.
 The default value is "sudo".</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_GFARM_CONF</CODE
+></DT
+><DD
+><P
+>Specify a gfarm2.conf file in absolute path.
+If a value is not set, <B
+CLASS="COMMAND"
+>gfservice</B
+> uses a same path as
+the path of gfarm2.conf in gfmd1(determined from the 'gfmd1_CONFIG_GFARM_OPTIONS'
+shell variable).</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_PRIVATE_MODE</CODE
+></DT
+><DD
+><P
+>If this variable is set to "true", <B
+CLASS="COMMAND"
+>gfservice</B
+> processes
+the sub-command <B
+CLASS="COMMAND"
+>config-client</B
+> without root privilege.</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_AUTH_TYPE</CODE
+></DT
+><DD
+><P
+>Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
+If the variable is not declared, its value is chosen from
+<CODE
+CLASS="VARNAME"
+>AUTH_TYPE</CODE
+> value output by
+<B
+CLASS="COMMAND"
+>config-gfarm -T</B
+> command executed on gfmd1.
+(Note that the value <CODE
+CLASS="VARNAME"
+>AUTH_TYPE</CODE
+> above is affected by
+the variable <CODE
+CLASS="VARNAME"
+>gfmd1_CONFIG_GFARM_OPTIONS</CODE
+>.)</P
 ></DD
 ></DL
 ></DIV

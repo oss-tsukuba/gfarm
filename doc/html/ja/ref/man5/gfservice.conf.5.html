@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -48,9 +48,12 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >gfservice</B
 > によって
-<I
+<SPAN
+CLASS="emphasis"
+><I
 CLASS="EMPHASIS"
 >スクリプトとして評価されます。</I
+></SPAN
 >
 以下に、設定ファイルの記述例を示します。</P
 ><P
@@ -331,6 +334,56 @@ CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
+>_AUTH_TYPE</CODE
+></DT
+><DD
+><P
+>認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
+<B
+CLASS="COMMAND"
+>config-gfarm</B
+> を実行したときの
+<CODE
+CLASS="VARNAME"
+>AUTH_TYPE</CODE
+> の値が採用されます。
+(変数 <CODE
+CLASS="VARNAME"
+>gfmd1_CONFIG_GFARM_OPTIONS</CODE
+> の値によって、この
+ときの <CODE
+CLASS="VARNAME"
+>AUTH_TYPE</CODE
+> の値は変わるので、注意して下さい。)</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_REPLICATION_MODE</CODE
+></DT
+><DD
+><P
+>この変数の値を「async」にセットすると、
+<B
+CLASS="COMMAND"
+>gfservice config-gfarm-slave</B
+> の際にこの gfmd は
+非同期 (async) スレーブになります。</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
 >_SSH</CODE
 ></DT
 ><DD
@@ -516,6 +569,37 @@ CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
+>_AUTH_TYPE</CODE
+></DT
+><DD
+><P
+>認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
+<B
+CLASS="COMMAND"
+>config-gfarm</B
+> を実行したときの
+<CODE
+CLASS="VARNAME"
+>AUTH_TYPE</CODE
+> の値が採用されます。
+(変数 <CODE
+CLASS="VARNAME"
+>gfmd1_CONFIG_GFARM_OPTIONS</CODE
+> の値によって、この
+ときの <CODE
+CLASS="VARNAME"
+>AUTH_TYPE</CODE
+> の値は変わるので、注意して下さい。)</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
 >_SSH</CODE
 ></DT
 ><DD
@@ -656,24 +740,20 @@ CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_GFARM2FS_BIN_PATH</CODE
+>_GFARM2FS</CODE
 ></DT
 ><DD
 ><P
->クライアントホスト上で <B
+><B
 CLASS="COMMAND"
 >gfarm2fs</B
-> コマンドがインストー
-ルされているディレクトリへのパスを指定します。
-この変数が宣言されていると <B
+> コマンドのパスおよびオプションを指定します。
+<B
 CLASS="COMMAND"
 >gfservice</B
-> は指定されたパ
-スの <B
-CLASS="COMMAND"
->gfarm2fs</B
-> コマンドを実行します。
-デフォルトは「%%BINDIR%%」です。</P
+> がクライアントホスト上で gfarm2fs コマンド
+を実行してファイルシステムをマウントする際、この変数が利用されます。
+デフォルトは「%%BINDIR%%/gfarm2fs」です。</P
 ></DD
 ><DT
 ><CODE
@@ -714,6 +794,79 @@ CLASS="COMMAND"
 > が SSH を介してクライアントホスト上で Sudo
 コマンドを実行する際、この変数が利用されます。
 デフォルトは「sudo」です。</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_GFARM_CONF</CODE
+></DT
+><DD
+><P
+>gfarm2.confファイルのパスを絶対パスで指定します。
+この値が設定されていない場合、<B
+CLASS="COMMAND"
+>gfservice</B
+>はgfmd1の
+gfarm2.confファイルのパスと同じパスを使用します(gfarm2.confファイルの
+パスは「gfmd1_CONFIG_GFARM_OPTIONS」シェル変数の値を基に決定されます)。</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_PRIVATE_MODE</CODE
+></DT
+><DD
+><P
+>この変数に「true」をセットすると、<B
+CLASS="COMMAND"
+>gfservice</B
+> が
+サブコマンド <B
+CLASS="COMMAND"
+>config-client</B
+> を実行する際、クライアント
+ホスト側の処理は root 権限を持たずに行います。</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_AUTH_TYPE</CODE
+></DT
+><DD
+><P
+>認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
+<B
+CLASS="COMMAND"
+>config-gfarm</B
+> を実行したときの
+<CODE
+CLASS="VARNAME"
+>AUTH_TYPE</CODE
+> の値が採用されます。
+(変数 <CODE
+CLASS="VARNAME"
+>gfmd1_CONFIG_GFARM_OPTIONS</CODE
+> の値によって、この
+ときの <CODE
+CLASS="VARNAME"
+>AUTH_TYPE</CODE
+> の値は変わるので、注意して下さい。)</P
 ></DD
 ></DL
 ></DIV

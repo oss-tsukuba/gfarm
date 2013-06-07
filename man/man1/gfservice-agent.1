@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE-AGENT" "1" "07 November 2012" "Gfarm" ""
+.TH "GFSERVICE-AGENT" "1" "07 June 2013" "Gfarm" ""
 
 .SH NAME
 gfservice-agent \- agent of gfservice
 .SH SYNOPSIS
 
-\fBgfservice-agent\fR [ \fB\fIoptions\fB\fR ] \fBsub-command\fR [ \fB\fIargument ...\fB\fR ]
+\fBgfservice-agent\fR [ \fB\fIoptions\fB\fR ] \fBhost-id\fR \fBsub-command\fR [ \fB\fIargument ...\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
@@ -24,6 +24,10 @@ directly by an user.
 In daily use, it is executed only by \fBgfservice\fR via SSH
 and Sudo.
 .PP
+Host-id argument is the same as that of \fBgfservice\fR, but
+\fBgfservice-agent\fR uses host-id for recognizing type of
+host ("gfmd", "gfsd" or "client") and debug messages only.
+.PP
 Sub-command names of \fBgfservice-agent\fR are similar to
 those of \fBgfservice\fR, but their arguments are different.
 For example, \fB"unmount"\fR sub-command of
@@ -32,7 +36,7 @@ For example, \fB"unmount"\fR sub-command of
 argument:
 
 .nf
-	gfservice-agent unmount directory=/somewhere
+	gfservice-agent client3 unmount directory=/somewhere
 .fi
 .PP
 while \fB"unmount"\fR sub-command of \fBgfservice\fR
@@ -59,10 +63,16 @@ sub-commands.
 \fBget-config-gfarm-param \fIparam\fB=\fIname\fB \fIconfig-gfarm-options\fB=\fIoptions\fB\fR
 Execute \fBconfig-gfarm -T\fR command and output a value of
 the parameter \fIname\fR to standard out.
+If the "\fIparam\fR=\fIname\fR"
+argument is not specified, it outputs entire
+\fBconfig-gfarm -T\fR results.
 .TP
 \fBget-config-gfsd-param \fIparam\fB=\fIname\fB \fIconfig-gfsd-options\fB=\fIoptions\fB\fR
 Execute \fBconfig-gfsd -T\fR command and output a value of
 the parameter \fIname\fR to standard out.
+If the "\fIparam\fR=\fIname\fR"
+argument is not specified, it outputs entire
+\fBconfig-gfsd -T\fR results.
 .TP
 \fBbackend-db-status \fIconfig-gfarm-options\fB=\fIoptions\fB\fR
 Exit with an exit code 0, if a backend database is currently running.
@@ -139,13 +149,26 @@ Add
 
 line to \fIgfarm2.conf\fR file.
 .TP
+\fBset-gfsd-conf \fIdirective\fB=\fIname\fB \fIvalue\fB=\fIvalue\fB\fR
+Add
+
+.nf
+	\fIdirective\fR \fIvalue\fR
+.fi
+
+line to \fIgfsd.conf\fR file.
+.TP
 \fBunset-gfmd-conf \fIdirective\fB=\fIname\fB\fR
 Delete a \fIdirective\fR line in
-\fIgfarm2.conf\fR file.
+\fIgfmd.conf\fR file.
 .TP
 \fBunset-gfarm-conf \fIdirective\fB=\fIname\fB\fR
 Delete a \fIdirective\fR line in
-\fIgfmd.conf\fR file.
+\fIgfarm2.conf\fR file.
+.TP
+\fBunset-gfsd-conf \fIdirective\fB=\fIname\fB\fR
+Delete a \fIdirective\fR line in
+\fIgfsd.conf\fR file.
 .TP
 \fBbackup-backend-db\fR
 Backup a backend database and output the backup data to standard out.
@@ -155,6 +178,12 @@ Output \fIgfmd.conf\fR file to standard out.
 .TP
 \fBbackup-gfarm-conf\fR
 Output \fIgfarm2.conf\fR file to standard out.
+.TP
+\fBbackup-gfsd-conf\fR
+Output \fIgfsd.conf\fR file to standard out.
+.TP
+\fBbackup-usermap\fR
+Output \fIusermap\fR file to standard out.
 .TP
 \fBbackup-shared-key\fR
 Output \fI$HOME/.gfarm_shared_key\fR file to standard out.
@@ -169,6 +198,14 @@ The backup data are read from standard in.
 .TP
 \fBrestore-gfarm-conf\fR
 Restore \fIgfarm2.conf\fR file.
+The backup data are read from standard in.
+.TP
+\fBrestore-gfsd-conf\fR
+Restore \fIgfsd.conf\fR file.
+The backup data are read from standard in.
+.TP
+\fBrestore-usermap\fR
+Restore \fIusermap\fR file.
 The backup data are read from standard in.
 .TP
 \fBrestore-shared-key\fR
