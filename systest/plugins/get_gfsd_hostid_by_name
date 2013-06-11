@@ -7,7 +7,7 @@ get_gfsd_hostid_by_name_depends()
 }
 
 #
-# Sub-command: get hostid by name
+# Sub-command: systest::gfarm_v2::get_gfsd_hostid_by_name
 #
 # Get gfsd hostid from hostname written in configuration file.
 #

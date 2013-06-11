@@ -4,7 +4,7 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-datadir=$(default_datadir)/gfarm/systest/common_scripts
+datadir=$(default_datadir)/gfarm/systest/common_scripts/gfarm_v2
 
 DATA =	$(srcdir)/check_gfmd_connected \
 	$(srcdir)/check_gfmd_master \

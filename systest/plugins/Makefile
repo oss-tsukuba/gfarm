@@ -4,7 +4,7 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-datadir=$(default_datadir)/gfarm/gfservice
+datadir=$(default_datadir)/gfarm/gfservice/systest/gfarm_v2
 
 DATA =	$(srcdir)/get_host \
 	$(srcdir)/gfjournal_m \

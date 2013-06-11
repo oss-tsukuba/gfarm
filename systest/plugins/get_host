@@ -7,7 +7,7 @@ get_host_depends()
 }
 
 #
-# Sub-command: get host
+# Sub-command: systest::gfarm_v2::get_host
 #
 # Get hostname written in configuration file
 #
@@ -18,7 +18,7 @@ subcmd_get_host()
 	check_argc $# 0
 	check_hostid any $HOSTID
 	get_host $HOSTID
-	[ $? -ne 0 ] && log_error "gfservice get_host failed"
+	[ $? -ne 0 ] && log_error "gfservice systest::gfarm_v2::get_host failed"
 
 	log_debug "end subcmd_get_host"
 }

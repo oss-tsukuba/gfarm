@@ -7,7 +7,7 @@ gfjournal_m_depends()
 }
 
 #
-# Sub-command: gfjournal_m
+# Sub-command: systest::gfarm_v2::gfjournal_m
 #
 subcmd_gfjournal_m()
 {
@@ -15,8 +15,8 @@ subcmd_gfjournal_m()
 
 	check_argc $# 0
 	check_hostid gfmd $HOSTID
-	exec_remote_host_agent $HOSTID root gfjournal_m "$@"
-	[ $? -ne 0 ] && log_error "gfservice gfjournal_m failed"
+	exec_remote_host_agent $HOSTID root systest::gfarm_v2::gfjournal_m "$@"
+	[ $? -ne 0 ] && log_error "gfservice systest::gfarm_v2::gfjournal_m failed"
 
 	log_debug "end subcmd_gfjournal_m"
 }
