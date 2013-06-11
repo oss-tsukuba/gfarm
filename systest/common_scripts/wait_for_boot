@@ -3,7 +3,7 @@
 #
 wait_for_boot()
 {
-	HOSTNAME=`$GFSERVICE $DEBUG get_host $1`
+	HOSTNAME=`$GFSERVICE systest::gfarm_v2::get_host $1`
 	I=0
 	while [ $I -lt $2 ]; do
 		ssh -o "ConnectTimeout=1" $HOSTNAME true

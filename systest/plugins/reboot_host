@@ -28,7 +28,7 @@ reboot_host_depends()
 }
 
 #
-# Sub-command: reboot_host
+# Sub-command: systest::gfarm_v2::reboot_host
 #
 subcmd_reboot_host()
 {
@@ -38,8 +38,8 @@ subcmd_reboot_host()
 	check_hostid any $HOSTID
 	REBOOT_CMD=`get_reboot_cmd $HOSTID`
 
-	exec_remote_host_agent $HOSTID root reboot_host "reboot-cmd=$REBOOT_CMD"
-	[ $? -ne 0 ] && log_error "gfservice reboot_host failed"
+	exec_remote_host_agent $HOSTID root systest::gfarm_v2::reboot_host "reboot-cmd=$REBOOT_CMD"
+	[ $? -ne 0 ] && log_error "gfservice systest::gfarm_v2::reboot_host failed"
 
 	log_debug "end subcmd_reboot_host"
 }
@@ -53,7 +53,7 @@ reboot_host_agent_depends()
 }
 
 #
-# Sub-command: reboot_host
+# Sub-command: systest::gfarm_v2::reboot_host
 # reboot host
 #
 subcmd_reboot_host_agent()

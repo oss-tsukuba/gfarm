@@ -3,13 +3,13 @@
 #
 failback()
 {
-	$GFSERVICE $DEBUG -t $4 stop-gfmd $2
+	$GFSERVICE -t $4 stop-gfmd $2
 	[ $? -ne 0 ] && return 1
 
-	$GFSERVICE $DEBUG promote-gfmd $1
+	$GFSERVICE promote-gfmd $1
 	[ $? -ne 0 ] && return 1
 
-	$GFSERVICE $DEBUG -t $4 start-gfmd-slave $2
+	$GFSERVICE -t $4 start-gfmd-slave $2
 	[ $? -ne 0 ] && return 1
 
 	check_gfmd_master $1 $3 $5

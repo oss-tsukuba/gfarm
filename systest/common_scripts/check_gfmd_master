@@ -3,7 +3,7 @@
 #
 check_gfmd_master()
 {
-	TARGET_HOSTNAME=`$GFSERVICE $DEBUG get-config-gfarm-param $1 \
+	TARGET_HOSTNAME=`$GFSERVICE get-config-gfarm-param $1 \
 		BACKEND_HOSTNAME`
 	[ "X$TARGET_HOSTNAME" = X ] && return 1
 
@@ -15,7 +15,7 @@ check_gfmd_master()
 
 	I=0
 	while [ $I -lt $3 ]; do
-		MODE=`$GFSERVICE $DEBUG gfcmd $2 gfmdhost -l | \
+		MODE=`$GFSERVICE gfcmd $2 gfmdhost -l | \
 			awk "/${TARGET_HOSTNAME}/{ print \\\$2 }"`
 		if [ X$MODE = Xmaster ]; then
 			return 0

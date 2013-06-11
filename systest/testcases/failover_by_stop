@@ -1,11 +1,11 @@
 #
 # Test case for failover of gfmd by stopping process
 #
-load 	"check_gfmd_master" \
-	"check_gfmd_slave" \
-	"failback" \
-	"check_journal_seqnum_max" \
-	"check_gfmd_connected"
+load 	"gfarm_v2::check_gfmd_master" \
+	"gfarm_v2::check_gfmd_slave" \
+	"gfarm_v2::failback" \
+	"gfarm_v2::check_journal_seqnum_max" \
+	"gfarm_v2::check_gfmd_connected"
 
 #
 # Test parameters
@@ -23,21 +23,21 @@ test_failover_by_stop()
 	TIMEOUT=${TIMEOUT-"10"}
 
 	# prepare: check whether required hosts are defined
-	$GFSERVICE $DEBUG check_hostids_defined - \
+	$GFSERVICE systest::gfarm_v2::check_hostids_defined - \
 		"gfmd1 gfmd2 gfmd3 client1"
 	[ $? -ne 0 ] && return $RESULT_UNSUPPORTED
 
-	AUTH_TYPE=`$GFSERVICE $DEBUG get-config-gfarm-param gfmd1 AUTH_TYPE`
+	AUTH_TYPE=`$GFSERVICE get-config-gfarm-param gfmd1 AUTH_TYPE`
 	if [ X$AUTH_TYPE = Xgsi ] || [ X$AUTH_TYPE = Xgsi_auth ]; then
-		$GFSERVICE $DEBUG grid_proxy_init client1
+		$GFSERVICE systest::gfarm_v2::grid_proxy_init client1
 	fi
 
 	# step: stop gfmd on gfmd1
-	$GFSERVICE $DEBUG -t $TIMEOUT stop-gfmd gfmd1
+	$GFSERVICE -t $TIMEOUT stop-gfmd gfmd1
 	[ $? -ne 0 ] && log_warn "$TESTNAME: failed to stop gfmd on gfmd1"
 
 	# step: promote gfmd on gfmd2
-	$GFSERVICE $DEBUG promote-gfmd gfmd2
+	$GFSERVICE promote-gfmd gfmd2
 	[ $? -ne 0 ] && log_warn "$TESTNAME: failed to stop gfmd on gfmd1"
 
 	# step: check whether gfmd on gfmd2 is master
@@ -48,7 +48,7 @@ test_failover_by_stop()
 	fi
 
 	# step: set gfmd on gfmd1 to be slave
-	$GFSERVICE $DEBUG -t $TIMEOUT start-gfmd-slave gfmd1
+	$GFSERVICE -t $TIMEOUT start-gfmd-slave gfmd1
 	[ $? -ne 0 ] && log_warn "$TESTNAME: failed to start gfmd on gfmd1" \
 		"as slave"
 

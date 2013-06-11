@@ -5,7 +5,7 @@ check_replica_num()
 {
 	I=0
 	while [ $I -lt $4 ]; do
-		FILE_NUM=`$GFSERVICE $DEBUG gfcmd $1 gfwhere $2 | wc -w`
+		FILE_NUM=`$GFSERVICE gfcmd $1 gfwhere $2 | wc -w`
 		if [ $FILE_NUM -eq $3 ]; then
 			return 0
 		fi
