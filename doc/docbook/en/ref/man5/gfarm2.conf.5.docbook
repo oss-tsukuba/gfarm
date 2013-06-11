@@ -1775,7 +1775,6 @@ notation.</para>
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
 		&nbsp;&nbsp;&lt;simultaneous_replication_receivers&gt; |
 		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
-		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
 		&nbsp;&nbsp;&lt;xmlattr_size_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;xattr_size_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;attr_cache_limit_statement&gt; |
