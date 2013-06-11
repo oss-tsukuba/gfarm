@@ -7,7 +7,7 @@ config_gfarm_update_r_depends()
 }
 
 #
-# Sub-command: config_gfarm_update_r
+# Sub-command: systest::gfarm_v2::config_gfarm_update_r
 #
 subcmd_config_gfarm_update_r()
 {
@@ -15,8 +15,8 @@ subcmd_config_gfarm_update_r()
 
 	check_argc $# 0
 	check_hostid gfmd $HOSTID
-	exec_remote_host_agent $HOSTID root config_gfarm_update_r "$@"
-	[ $? -ne 0 ] && log_error "gfservice config_gfarm_update_r failed"
+	exec_remote_host_agent $HOSTID root systest::gfarm_v2::config_gfarm_update_r "$@"
+	[ $? -ne 0 ] && log_error "gfservice systest::gfarm_v2::config_gfarm_update_r failed"
 
 	log_debug "end subcmd_config_gfarm_update_r"
 }
@@ -30,7 +30,7 @@ config_gfarm_update_r_agent_depends()
 }
 
 #
-# Sub-command: config_gfarm_update_r
+# Sub-command: systest::gfarm_v2::config_gfarm_update_r
 # execute config-gfarm-update -r
 #
 subcmd_config_gfarm_update_r_agent()

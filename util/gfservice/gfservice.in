@@ -2380,16 +2380,19 @@ gfcmd)
 	subcmd_gfcmd "$@"
 	;;
 *)
+	SUBCMD="`echo $SUBCMD | sed -e 's|::|/|g'`"
+	SUBCMD_FUNC="`basename $SUBCMD`"
 	if [ -f $GFSERVICE_PLUGIN_PATH/$SUBCMD ]; then
 		log_debug "loading plugin: $SUBCMD"
 		. $GFSERVICE_PLUGIN_PATH/$SUBCMD
 
-		for DEPEND_FILE in `${SUBCMD}_depends`; do
-			log_debug "loading plugin: $DEPEND_FILE"
-			. $GFSERVICE_PLUGIN_PATH/$DEPEND_FILE
+		DEFPEND_FILES="`${SUBCMD_FUNC}_depends | sed -e 's|::|/|g'`"
+		for I in $DEFPEND_FILES; do
+			log_debug "loading plugin: $I"
+			. $GFSERVICE_PLUGIN_PATH/$I
 		done
 
-		subcmd_${SUBCMD} "$@"
+		subcmd_${SUBCMD_FUNC} "$@"
 	else
 		echo "$0: invalid sub-command: $SUBCMD" 1>&2
 		EXITCODE=1

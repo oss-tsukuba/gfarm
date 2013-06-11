@@ -7,7 +7,7 @@ read_and_register_depends()
 }
 
 #
-# Sub-command: read_and_register
+# Sub-command: systest::gfarm_v2::read_and_register
 #
 subcmd_read_and_register()
 {
@@ -49,10 +49,10 @@ subcmd_read_and_register()
 			&& log_error "failed to get GFSD_HOSTNAME of $HOSTID"
 	fi
 
-	cat $TMP_FILE | exec_remote_host_agent $HOSTID - read_and_register \
+	cat $TMP_FILE | exec_remote_host_agent $HOSTID - systest::gfarm_v2::read_and_register \
 		"gfarm-url=gfarm://${BACKEND_HOSTNAME}:${GFMD_PORT}/${FILE_PATH}" \
 		"filesystem-node=$GFSD_HOSTNAME"
-	[ $? -ne 0 ] && log_error "gfservice read_and_register failed"
+	[ $? -ne 0 ] && log_error "gfservice systest::gfarm_v2::read_and_register failed"
 
 	rm -f $TMP_FILE
 
@@ -68,7 +68,7 @@ read_and_register_agent_depends()
 }
 
 #
-# Sub-command: read_and_register
+# Sub-command: systest::gfarm_v2::read_and_register
 # read stdin and register to the Gfarm file system
 #
 subcmd_read_and_register_agent()

@@ -7,7 +7,7 @@ check_hostids_defined_depends()
 }
 
 #
-# Sub-command: check_hostids_defined
+# Sub-command: systest::gfarm_v2::check_hostids_defined
 #
 # Check whether given hostids are defined in configuration file
 #

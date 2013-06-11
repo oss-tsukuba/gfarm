@@ -3,10 +3,10 @@
 #
 check_file_location()
 {
-	TARGET_HOST=`$GFSERVICE $DEBUG get-config-gfsd-param $2 GFSD_HOSTNAME`
+	TARGET_HOST=`$GFSERVICE get-config-gfsd-param $2 GFSD_HOSTNAME`
 	[ X$TARGET_HOST = X ] && return 1
 
-	for HOST in `$GFSERVICE $DEBUG gfcmd $3 gfwhere $1`; do
+	for HOST in `$GFSERVICE gfcmd $3 gfwhere $1`; do
 		if [ X$HOST = X$TARGET_HOST ]; then
 			return 0
 		fi

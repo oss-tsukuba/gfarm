@@ -7,7 +7,7 @@ compare_spool_file_depends()
 }
 
 #
-# Sub-command: compare_spool_file
+# Sub-command: systest::gfarm_v2::compare_spool_file
 #
 subcmd_compare_spool_file()
 {
@@ -15,8 +15,8 @@ subcmd_compare_spool_file()
 
 	check_argc $# 1
 	check_hostid gfsd $HOSTID
-	cat - | exec_remote_host_agent $HOSTID root compare_spool_file "$@"
-	[ $? -ne 0 ] && log_error "gfservice compare_spool_file failed"
+	cat - | exec_remote_host_agent $HOSTID root systest::gfarm_v2::compare_spool_file "$@"
+	[ $? -ne 0 ] && log_error "gfservice systest::gfarm_v2::compare_spool_file failed"
 
 	log_debug "end subcmd_compare_spool_file"
 }
@@ -30,7 +30,7 @@ compare_spool_file_agent_depends()
 }
 
 #
-# Sub-command: compare_spool_file
+# Sub-command: systest::gfarm_v2::compare_spool_file
 # compare contents from stdin with the spool file
 #
 subcmd_compare_spool_file_agent()

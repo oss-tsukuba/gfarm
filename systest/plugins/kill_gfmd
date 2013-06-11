@@ -7,7 +7,7 @@ kill_gfmd_depends()
 }
 
 #
-# Sub-command: kill_gfmd
+# Sub-command: systest::gfarm_v2::kill_gfmd
 #
 subcmd_kill_gfmd()
 {
@@ -16,8 +16,8 @@ subcmd_kill_gfmd()
 	check_argc $# 0
 	check_hostid gfmd $HOSTID
 
-	exec_remote_host_agent $HOSTID root kill_gfmd
-	[ $? -ne 0 ] && log_error "gfservice kill_gfmd failed"
+	exec_remote_host_agent $HOSTID root systest::gfarm_v2::kill_gfmd
+	[ $? -ne 0 ] && log_error "gfservice systest::gfarm_v2::kill_gfmd failed"
 
 	log_debug "end subcmd_kill_gfmd"
 }
@@ -31,7 +31,7 @@ kill_gfmd_agent_depends()
 }
 
 #
-# Sub-command: kill_gfmd
+# Sub-command: systest::gfarm_v2::kill_gfmd
 # kill currently running gfmd
 #
 subcmd_kill_gfmd_agent()
