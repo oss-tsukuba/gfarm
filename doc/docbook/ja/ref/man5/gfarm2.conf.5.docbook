@@ -1178,7 +1178,7 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 <term><token>simultaneous_replication_receivers</token> <parameter>同時処理数</parameter></term>
 <listitem>
 <para>gfmd 主導の複製処理を、単一複製作成ホストに対して、
-同時いくつまで並行して行なうことを許すかを設定します。
+同時にいくつまで並行して行なうことを許すかを設定します。
 デフォルトは 20です。
 </para>
 <para>例:</para>
@@ -1722,7 +1722,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 <!--		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; | -->
 <!--		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; | -->
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
-		&nbsp;&nbsp;&lt;simultaneous_replication_receivers&gt; |
+		&nbsp;&nbsp;&lt;simultaneous_replication_receivers_statement&gt; |
 		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
 		&nbsp;&nbsp;&lt;xmlattr_size_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;xattr_size_limit_statement&gt; |
@@ -1831,7 +1831,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 <!--	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt; -->
 	&lt;minimum_free_disk_space_statement&gt; ::=
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
-	&lt;simultaneous_replication_receivers&gt; ::= "simultaneous_replication_receivers" &lt;number&gt;
+	&lt;simultaneous_replication_receivers_statement&gt; ::= "simultaneous_replication_receivers" &lt;number&gt;
 	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
 	&lt;xmlattr_size_limit_statement&gt; ::= "xmlattr_size_limit" &lt;size&gt;
 	&lt;xattr_size_limit_statement&gt; ::= "xattr_size_limit" &lt;size&gt;
