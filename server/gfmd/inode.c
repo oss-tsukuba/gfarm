@@ -2329,9 +2329,6 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	dir_entry_set_inode(entry, n);
 	inode_modified(parent);
 
-	if (inode_is_file(n))  /* after setting i_user and i_group */
-		quota_update_file_add(n);
-
 	e = xattr_inherit(parent, n,
 			  &acl_def, &acl_def_size,
 			  &acl_acc, &acl_acc_size,
@@ -2340,9 +2337,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002803, "xattr_inherit() failed: %s",
 			    gfarm_error_string(e));
-		if (inode_is_file(n)) {
-			quota_update_file_remove(n);
-		} else if (inode_is_dir(n)) {
+		if (inode_is_dir(n)) {
 			/* "." and ".." are freed automatically */
 			dir_free(n->u.c.s.d.entries);
 		} else if (inode_is_symlink(n)) {
@@ -2354,6 +2349,8 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	}
 
 	inode_db_init(n);
+	if (inode_is_file(n))  /* after setting i_user and i_group */
+		quota_update_file_add(n);
 
 	if (acl_def != NULL) {
 		assert(inode_is_dir(n));
@@ -2902,6 +2899,9 @@ inode_create_file_in_lost_found(
 		    (unsigned long long)inode_get_number(n),
 		    gfarm_error_string(e));
 	/* abandon `e' */
+
+	/* assert(inode_is_file(n)); */
+	quota_update_file_add(n);
 
 	*inodep = n;
 	return (GFARM_ERR_NO_ERROR);
