@@ -1655,6 +1655,7 @@ transform_to_master(void)
 	 */
 	slave_clear_db_update_info();
 
+	quota_check();
 	replica_check_start();
 }
 
@@ -2212,6 +2213,7 @@ main(int argc, char **argv)
 		gfmd_startup_state_notify_ready();
 		if (is_master) {
 			sock = open_accepting_socket(gfmd_port);
+			quota_check();
 			replica_check_start();
 		} else if (gfarm_get_metadb_server_slave_listen()) {
 			sock = open_accepting_socket(gfmd_port);
@@ -2220,6 +2222,7 @@ main(int argc, char **argv)
 		}
 	} else {
 		sock = open_accepting_socket(gfmd_port);
+		quota_check();
 		replica_check_start();
 	}
 
