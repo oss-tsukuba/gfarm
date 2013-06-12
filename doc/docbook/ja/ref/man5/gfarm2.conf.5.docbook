@@ -1941,7 +1941,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; |
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
 		&nbsp;&nbsp;&lt;gfs_proto_fhremove_request_window_statement&gt; |
-		&nbsp;&nbsp;&lt;gfs_proto_replication_request_statement&gt; |
+		&nbsp;&nbsp;&lt;gfs_proto_replication_request_window_statement&gt; |
 		&nbsp;&nbsp;&lt;simultaneous_replication_receivers_statement&gt; |
 		&nbsp;&nbsp;&lt;outstanding_file_replication_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
