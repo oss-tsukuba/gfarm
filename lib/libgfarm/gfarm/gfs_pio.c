@@ -598,19 +598,19 @@ do_write(GFS_File gf, const char *buffer, size_t length,
 gfarm_error_t
 gfs_pio_flush(GFS_File gf)
 {
-	gfarm_error_t e = gfs_pio_check_view_default(gf);
+	gfarm_error_t e;
 	size_t written;
-
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001304,
-			"gfs_pio_check_view_default() failed: %s",
-			gfarm_error_string(e));
-		return (e);
-	}
 
 	CHECK_WRITABLE(gf);
 
 	if ((gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) != 0) {
+		e = gfs_pio_check_view_default(gf);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001304,
+			    "gfs_pio_check_view_default() failed: %s",
+			    gfarm_error_string(e));
+			return (e);
+		}
 		e = do_write(gf, gf->buffer, gf->length, &written);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001305,
