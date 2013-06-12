@@ -104,34 +104,6 @@ quota_clear_value_all_user_and_group()
 }
 
 static void
-quota_active_user_set_db(struct quota *q, struct user *u)
-{
-	if (user_is_valid(u)) {
-		gfarm_error_t e = db_quota_user_set(q, user_name(u));
-		if (e == GFARM_ERR_NO_ERROR)
-			q->on_db = 1;
-		else
-			gflog_error(GFARM_MSG_1000410,
-				    "db_quota_user_set(%s) %s",
-				    user_name(u), gfarm_error_string(e));
-	}
-}
-
-static void
-quota_active_group_set_db(struct quota *q, struct group *g)
-{
-	if (group_is_valid(g)) {
-		gfarm_error_t e = db_quota_group_set(q, group_name(g));
-		if (e == GFARM_ERR_NO_ERROR)
-			q->on_db = 1;
-		else
-			gflog_error(GFARM_MSG_1000411,
-				    "db_quota_group_set(%s) %s",
-				    group_name(g), gfarm_error_string(e));
-	}
-}
-
-static void
 quota_set_value_user(void *closure, struct user *u)
 {
 	struct quota *q = user_quota(u);
@@ -140,7 +112,6 @@ quota_set_value_user(void *closure, struct user *u)
 		return;
 
 	quota_check_softlimit_exceed(q);
-	quota_active_user_set_db(q, u);
 }
 
 static void
@@ -152,7 +123,6 @@ quota_set_value_group(void *closure, struct group *g)
 		return;
 
 	quota_check_softlimit_exceed(q);
-	quota_active_group_set_db(q, g);
 }
 
 static void
@@ -371,8 +341,8 @@ int64_add(gfarm_int64_t orig, gfarm_int64_t diff)
 		q->phy_num = int64_add(q->phy_num, ncopy);		\
 	}
 
-static void
-quota_update_file_add_common(struct inode *inode, int quotacheck)
+void
+quota_update_file_add(struct inode *inode)
 {
 	gfarm_off_t size = inode_get_size(inode);
 	gfarm_int64_t ncopy = inode_get_ncopy_with_dead_host(inode);
@@ -384,8 +354,6 @@ quota_update_file_add_common(struct inode *inode, int quotacheck)
 		if (is_checked(uq)) {
 			update_file_add(uq, size, ncopy);
 			quota_check_softlimit_exceed(uq);
-			if (!quotacheck)
-				quota_active_user_set_db(uq, u);
 		}
 	}
 	if (g) {
@@ -393,8 +361,6 @@ quota_update_file_add_common(struct inode *inode, int quotacheck)
 		if (is_checked(gq)) {
 			update_file_add(gq, size, ncopy);
 			quota_check_softlimit_exceed(gq);
-			if (!quotacheck)
-				quota_active_group_set_db(gq, g);
 		}
 	}
 
@@ -419,13 +385,7 @@ static void
 quota_update_file_add_for_quotacheck(void *closure, struct inode *inode)
 {
 	if (inode_is_file(inode)) /* all inodes by inode_lookup_all() */
-		quota_update_file_add_common(inode, 1);
-}
-
-void
-quota_update_file_add(struct inode *inode)
-{
-	quota_update_file_add_common(inode, 0);
+		quota_update_file_add(inode);
 }
 
 #define update_file_resize(q, old_size, new_size, ncopy)		\
@@ -448,7 +408,6 @@ quota_update_file_resize(struct inode *inode, gfarm_off_t new_size)
 		if (is_checked(uq)) {
 			update_file_resize(uq, old_size, new_size, ncopy);
 			quota_check_softlimit_exceed(uq);
-			quota_active_user_set_db(uq, u);
 		}
 	}
 	if (g) {
@@ -456,7 +415,6 @@ quota_update_file_resize(struct inode *inode, gfarm_off_t new_size)
 		if (is_checked(gq)) {
 			update_file_resize(gq, old_size, new_size, ncopy);
 			quota_check_softlimit_exceed(gq);
-			quota_active_group_set_db(gq, g);
 		}
 	}
 }
@@ -479,7 +437,6 @@ quota_update_replica_num(struct inode *inode, gfarm_int64_t n)
 		if (is_checked(uq)) {
 			update_replica_num(uq, size, n);
 			quota_check_softlimit_exceed(uq);
-			quota_active_user_set_db(uq, u);
 		}
 	}
 	if (g) {
@@ -487,7 +444,6 @@ quota_update_replica_num(struct inode *inode, gfarm_int64_t n)
 		if (is_checked(gq)) {
 			update_replica_num(gq, size, n);
 			quota_check_softlimit_exceed(gq);
-			quota_active_group_set_db(gq, g);
 		}
 	}
 }
@@ -525,7 +481,6 @@ quota_update_file_remove(struct inode *inode)
 		if (is_checked(uq)) {
 			update_file_remove(uq, size, ncopy);
 			quota_check_softlimit_exceed(uq);
-			quota_active_user_set_db(uq, u);
 		}
 	}
 	if (g) {
@@ -533,7 +488,6 @@ quota_update_file_remove(struct inode *inode)
 		if (is_checked(gq)) {
 			update_file_remove(gq, size, ncopy);
 			quota_check_softlimit_exceed(gq);
-			quota_active_group_set_db(gq, g);
 		}
 	}
 }
@@ -639,6 +593,18 @@ quota_group_remove(struct group *g)
 		q->on_db = 0;
 	}
 	q->space = QUOTA_NOT_CHECK_YET;
+}
+
+void
+quota_check(void)
+{
+	/* zero clear and set true in is_checked */
+	quota_clear_value_all_user_and_group();
+	/* load all inodes from memory and count usage values of files */
+	/* XXX FIXME too long giant lock */
+	inode_lookup_all(NULL, quota_update_file_add_for_quotacheck);
+	/* update memory */
+	quota_set_value_all_user_and_group();
 }
 
 /* server operations */
@@ -924,13 +890,8 @@ gfm_server_quota_check(struct peer *peer, int from_client, int skip)
 			    " or !user_is_admin", diag);
 		return (gfm_server_put_reply(peer, diag, e, ""));
 	}
-	/* zero clear and set true in is_checked */
-	quota_clear_value_all_user_and_group();
-	/* load all inodes from memory and count usage values of files */
 	/* XXX FIXME too long giant lock */
-	inode_lookup_all(NULL, quota_update_file_add_for_quotacheck);
-	/* update memory and db */
-	quota_set_value_all_user_and_group();
+	quota_check();
 	giant_unlock();
 
 	return (gfm_server_put_reply(peer, diag, e, ""));

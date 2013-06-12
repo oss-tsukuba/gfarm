@@ -1768,6 +1768,7 @@ main(int argc, char **argv)
 
 	/* master */
 
+	quota_check();
 	replica_check_start();
 	accepting_loop(sock);
 
