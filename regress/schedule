@@ -75,7 +75,8 @@ gftool/gfreg/0byte.sh
 gftool/gfrm/0byte.sh
 gftool/gfreg/1byte.sh
 gftool/gfrm/1byte.sh
-gftool/gfsetfacl/acl.sh
+#gftool/gfsetfacl/acl.sh
+gftool/gfsetfacl/acl-light.sh
 gftool/gfstat/gfstat.sh
 gftool/gftest/gftest_reg.sh
 gftool/gftest/gftest_dir.sh
