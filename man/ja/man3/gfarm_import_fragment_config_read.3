@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFARM_IMPORT_FRAGMENT_CONFIG_READ" "3" "18 March 2003" "Gfarm" ""
 .SH NAME
-gfarm_import_fragment_config_read \- �ե饰���ȹ����ե�������ɤ߹���
+gfarm_import_fragment_config_read \- フラグメント構成ファイルを読み込む
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,35 +14,35 @@ char *gfarm_import_fragment_config_read (char *\fIconfig\fB, int *\fInp\fB, char
 \fR
 .SH "DESCRIPTION"
 .PP
-Gfarm�ե�����򥤥�ݡ��Ȥ��륢�ץꥱ��������Ѥ�����ؿ��ΰ�ĤǤ���
+Gfarmファイルをインポートするアプリケーション用の補助関数の一つです。
 .PP
-import �ι����ե�����̾��
+import の構成ファイル名を
 \fIconfig\fR
-�˻��ꤹ��ȡ����Υե����뤫�顢
-�ۥ��Ȥ������
+に指定すると、そのファイルから、
+ホストの配列を
 \fIhost_table_p\fR
-�λؤ���ˡ��ޤ����������������
+の指す先に、また、サイズの配列を
 \fIsize_table_p\fR
-�λؤ�����֤��ޤ��������ե�����˹�ʸ���顼�����������ˤϡ�
+の指す先に返します。構成ファイルに構文エラーが生じた場合には、
 \fIerror_line_p\fR
-�λؤ���ˡ��ե�����ι��ֹ���֤��ޤ��������ͤ� -1 
-�ξ��ˤϡ���ʸ�ʳ��Υ��顼�����Ǥ���
+の指す先に、ファイルの行番号を返します。この値が -1 
+の場合には、構文以外のエラー原因です。
 .PP
-�����ե�����ϡ��ƹԤ�������Ƕ��ڤ�줿�������ȥۥ���̾����ʤ�����Ǥ���
+構成ファイルは、各行が、空白で区切られたサイズとホスト名からなる形式です。
 .PP
-�����������ۥ��Ȥ������ gfarm_strings_free_deeply() ���Ѥ��Ʋ���
-����ɬ�פ�����ޤ���
-�ޤ�������������������������� free() ���Ѥ��Ʋ�������ɬ�פ�����ޤ���
+ここで得たホストの配列は gfarm_strings_free_deeply() を用いて解放
+する必要があります。
+また、ここで得たサイズの配列は free() を用いて解放する必要があります。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "SEE ALSO"
 .PP
 \fBgfarm_hostlist_read\fR(3)

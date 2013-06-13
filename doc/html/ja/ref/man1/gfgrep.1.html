@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfgrep&nbsp;--&nbsp;����ե������ grep ����</DIV
+>gfgrep&nbsp;--&nbsp;並列ファイルを grep する</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -41,17 +41,17 @@ CLASS="COMMAND"
 > {gfarm:gfgrep}  -o <TT
 CLASS="REPLACEABLE"
 ><I
->����gfarm-URL</I
+>出力gfarm-URL</I
 ></TT
 >   <TT
 CLASS="REPLACEABLE"
 ><I
->����ɽ��</I
+>正規表現</I
 ></TT
 >   <TT
 CLASS="REPLACEABLE"
 ><I
->����gfarm-URL</I
+>入力gfarm-URL</I
 ></TT
 >... </P
 ><P
@@ -61,17 +61,17 @@ CLASS="COMMAND"
 > {gfarm:gfgrep}  -o <TT
 CLASS="REPLACEABLE"
 ><I
->����gfarm-URL</I
+>出力gfarm-URL</I
 ></TT
 >   -e <TT
 CLASS="REPLACEABLE"
 ><I
->����ɽ��</I
+>正規表現</I
 ></TT
 >   <TT
 CLASS="REPLACEABLE"
 ><I
->����gfarm-URL</I
+>入力gfarm-URL</I
 ></TT
 >... </P
 ></DIV
@@ -83,23 +83,23 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->gfrun ����ƤӽФ���륢�ץꥱ�������Υ���ץ롦�ץ������Ǥ���</P
+>gfrun から呼び出されるアプリケーションのサンプル・プログラムです。</P
 ><P
->�ޤ�����������ե�����ӥ塼�����Ѥ��� Gfarm �ե�����˽��Ϥ�����ˤ�
-�ʤäƤ��ޤ���</P
+>また、ローカルファイルビューを利用して Gfarm ファイルに出力する例にも
+なっています。</P
 ><P
->���� gfarm-URL ��������ɽ���򸡺�������̤� ���� gfarm-URL �˽��Ϥ�
-�ޤ���</P
+>入力 gfarm-URL から正規表現を検索し、結果を 出力 gfarm-URL に出力し
+ます。</P
 ><P
->�������򸫤��ʬ�����̤ꡢ<B
+>ソースを見ると分かる通り、<B
 CLASS="COMMAND"
 >gfrun</B
-> ����ƤӽФ���륢�ץꥱ�������ϡ�
--I ����� -N ���ץ������ᤷ���������������ͤ�
+> から呼び出されるアプリケーションは、
+-I および -N オプションを解釈し、ここから得た値で
 <TT
 CLASS="FUNCTION"
 >gfs_pio_set_local()</TT
-> ��ƤӽФ�ɬ�פ�����ޤ���</P
+> を呼び出す必要があります。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -120,12 +120,12 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->����ɽ��</I
+>正規表現</I
 ></TT
 ></DT
 ><DD
 ><P
->��-�פǻϤޤ�����ɽ������ꤷ���������Ѥ��ޤ���</P
+>「-」で始まる正規表現を指定したい場合に用います。</P
 ></DD
 ><DT
 ><TT
@@ -139,7 +139,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->���� Gfarm �ե������ URL ����ꤷ�ޤ���</P
+>出力 Gfarm ファイルの URL を指定します。</P
 ></DD
 ><DT
 ><TT
@@ -148,7 +148,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������ץ�����ɽ�����ޤ���</P
+>引数オプションを表示します。</P
 ></DD
 ></DL
 ></DIV

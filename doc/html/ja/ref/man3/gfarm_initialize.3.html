@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfarm_initialize&nbsp;--&nbsp;Gfarm �饤�֥�����������</DIV
+>gfarm_initialize&nbsp;--&nbsp;Gfarm ライブラリを初期化する</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -87,23 +87,23 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->Gfarm �饤�֥����������ޤ���
-Gfarm �饤�֥�� API �����Ѥ�������ɬ���Ƥ�ɬ�פ�����ޤ���
-�����ˤϡ��ץ������� main �ؿ���
+>Gfarm ライブラリを初期化します。
+Gfarm ライブラリ API を利用する前に必ず呼ぶ必要があります。
+引数には、プログラムの main 関数の
 <TT
 CLASS="PARAMETER"
 ><I
 >argc</I
 ></TT
 >
-�����ؤΥݥ��󥿤ȡ�
+引数へのポインタと、
 <TT
 CLASS="PARAMETER"
 ><I
 >argv</I
 ></TT
 >
-�����ؤΥݥ��󥿤��Ϥ��ޤ���</P
+引数へのポインタを渡します。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -124,7 +124,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ｪλ�򼨤��ޤ���</P
+>正常終了を示します。</P
 ></DD
 ><DT
 ><CODE
@@ -133,7 +133,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->������­�Τ����������ߤ��ޤ�����</P
+>メモリ不足のため処理を中止しました。</P
 ></DD
 ><DT
 ><CODE
@@ -142,7 +142,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤵ�줿�᥿�ǡ��������ФΥ��ɥ쥹��褬�Ǥ��ޤ���</P
+>指定されたメタデータサーバのアドレス解決ができません。</P
 ></DD
 ><DT
 ><CODE
@@ -151,7 +151,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�᥿�ǡ��������Ф���ã�Ǥ��ޤ���</P
+>メタデータサーバに到達できません。</P
 ></DD
 ><DT
 ><CODE
@@ -160,7 +160,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�᥿�ǡ��������Фؤ���³�������ॢ���Ȥ򤪤����ޤ�����</P
+>メタデータサーバへの接続がタイムアウトをおこしました。</P
 ></DD
 ><DT
 ><CODE
@@ -169,7 +169,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�᥿�ǡ��������ФȤ��̿��˥ץ��ȥ��륨�顼��ȯ�����ޤ�����</P
+>メタデータサーバとの通信にプロトコルエラーが発生しました。</P
 ></DD
 ><DT
 ><CODE
@@ -178,7 +178,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�᥿�ǡ��������ФȤ��̿������Ǥ��ޤ�����</P
+>メタデータサーバとの通信が切断しました。</P
 ></DD
 ><DT
 ><CODE
@@ -187,7 +187,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�᥿�ǡ��������Фؤ�ǧ�ڤ˼��Ԥ��ޤ�����</P
+>メタデータサーバへの認証に失敗しました。</P
 ></DD
 ><DT
 ><CODE
@@ -196,7 +196,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤵ�줿ǧ�ڥץ��ȥ���ϥ��ݡ��Ȥ��Ƥ��ޤ���</P
+>指定された認証プロトコルはサポートしていません。</P
 ></DD
 ><DT
 ><CODE
@@ -205,7 +205,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�᥿�ǡ��������Ф��Ф���ǧ�ڤ˼��Ԥ��ޤ�����</P
+>メタデータサーバに対する認証に失敗しました。</P
 ></DD
 ><DT
 ><CODE
@@ -214,13 +214,13 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->������­�Τ����������ߤ��ޤ�����</P
+>メモリ不足のため処理を中止しました。</P
 ></DD
 ><DT
->����¾</DT
+>その他</DT
 ><DD
 ><P
->�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+>上記以外のエラーが生じたことを示します。
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
@@ -228,7 +228,7 @@ CLASS="REFENTRYTITLE"
 >gfarm_error_string</SPAN
 >(3)</SPAN
 >
-�ˤ�ꥨ�顼�θ�����ʸ������Ѵ����뤳�Ȥ��Ǥ��ޤ���</P
+によりエラーの原因を文字列に変換することができます。</P
 ></DD
 ></DL
 ></DIV

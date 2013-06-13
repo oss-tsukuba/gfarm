@@ -13,7 +13,7 @@
 
 <refnamediv id='name'>
 <refname>gfarm_url_fragments_replicate</refname>
-<refpurpose>�ե�����Υ�ץꥫ���������</refpurpose>
+<refpurpose>ファイルのレプリカを作成する</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -34,20 +34,20 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>�ե�����
+<para>ファイル
 <parameter>gfarm_url</parameter>
-��ʣ����Ĺ��
+の複製を、長さ
 <parameter>ndsthosts</parameter>
-��ʸ��������
+の文字列配列
 <parameter>dsthosts</parameter>
-�ǻ��ꤷ���ۥ��Ȥ˺������ޤ���
-���δؿ��Ǥϡ��¹Է����Υե������ʣ���ˤ����ѤǤ��ޤ���
+で指定したホストに作成します。
+この関数では、実行形式のファイルの複製には利用できません。
 </para>
 
 <para>
-�ե�����Υե����륤��ǥå�����������ꡢ���ꤵ�줿�ۥ��Ȥ�����
+ファイルのファイルインデックスの総数より、指定されたホストの総数
 <parameter>ndsthosts</parameter>
-�����ʤ����ϡ����ꤵ�줿�ۥ��Ȥ��饦��ɥ��ӥ�ǳ�����Ƥ��ޤ���
+が少ない場合は、指定されたホストがラウンドロビンで割り当てられます。
 </para>
 
 </refsect1>
@@ -57,29 +57,29 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
 <listitem>
-<para>�����Ȥ��ơ��¹Է����Υե����롢
-�ǥ��쥯�ȥ�ʤ��̾�ե�����ʳ��Υե��������ꤷ�ޤ�����</para>
+<para>引数として、実行形式のファイル、
+ディレクトリなど通常ファイル以外のファイルを指定しました。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

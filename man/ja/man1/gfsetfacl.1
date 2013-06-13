@@ -6,82 +6,82 @@
 .TH "GFSETFACL" "1" "08 March 2011" "Gfarm" ""
 
 .SH NAME
-gfsetfacl \- Gfarm �ե�����Υ�����������ꥹ�Ȥ����ꤹ��
+gfsetfacl \- Gfarm ファイルのアクセス制御リストを設定する
 .SH SYNOPSIS
 
-\fBgfsetfacl\fR [ \fB\fI���ץ����\fB\fR ] [ \fB\fIpath\fB\fR\fI ...\fR ]
+\fBgfsetfacl\fR [ \fB\fIオプション\fB\fR ] [ \fB\fIpath\fB\fR\fI ...\fR ]
 
 .SH "DESCRIPTION"
 .PP
-\fBgfsetfacl\fR �� Gfarm �ե����륷���ƥ��ˤ���
-�ե������ǥ��쥯�ȥ�Υ�����������ȥ�����ꥹ�� (ACL) �����ꤷ�ޤ���
+\fBgfsetfacl\fR は Gfarm ファイルシステム上にある
+ファイルやディレクトリのアクセスコントロールリスト (ACL) を設定します．
 .SH "OPTIONS"
 .TP
 \fB-b\fR
-���٤Ƥγ�ĥ ACL ����ȥ�������ޤ���
-���� ACL (��ͭ�ԡ����롼�ס�����¾) �Ϻ������ޤ���
+すべての拡張 ACL エントリを削除します．
+基本 ACL (所有者，グループ，その他) は削除されません．
 .TP
 \fB-k\fR
-�ǥե���� ACL �����������ޤ���
+デフォルト ACL だけを削除します．
 .TP
 \fB-n\fR
-ACL �ޥ�������ȥ��Ʒ׻����ޤ���gfsetfacl ���ޥ�ɥǥե����
-�ε�ư�ϡ��ޥ�������ȥ꤬���ꤵ��ʤ��ä��������ޥ�������ȥ��Ʒ�
-�����ޤ���
+ACL マスクエントリを再計算しません．gfsetfacl コマンドデフォルト
+の挙動は，マスクエントリが指定されなかった場合だけマスクエントリを再計
+算します．
 .TP
 \fB-r\fR
-��� ACL �ޥ�������ȥ��Ʒ׻����ޤ����ޥ�������ȥ����ꤷ����
-���Ƥ�Ʒ׻����ޤ���(-n ���ץ����⻲�Ȥ��Ƥ���������)
+常に ACL マスクエントリを再計算します．マスクエントリを指定したと
+しても再計算します．(-n オプションも参照してください．)
 .TP
 \fB-t\fR
-�ƥ��ȥ⡼�ɤǤ����ե������ǥ��쥯�ȥ�� ACL ���ѹ���������ˡ�
-ACL ���Ϥ��ѹ�ͽ��ο����� ACL ��ʸ�����ɽ�����ޤ���
+テストモードです．ファイルやディレクトリの ACL を変更する代わりに，
+ACL 入力と変更予定の新しい ACL を文字列で表示します．
 .TP
 \fB-m \fIacl_spec\fB\fR
-�ե������ǥ��쥯�ȥ�� ACL ����ȥ���ɲäޤ����ִ����뤿��ˡ�
-ACL ����ȥ��ʸ����ɽ���򤳤Υ��ץ����ǻ��ꤷ�ޤ���
-ʣ���� ACL ����ȥ�򥳥��ʸ�� (`,') �Ƕ��ڤ�ޤ���
+ファイルやディレクトリの ACL エントリを追加または置換するために，
+ACL エントリの文字列表現をこのオプションで指定します．
+複数の ACL エントリをコンマ文字 (`,') で区切ります．
 .TP
 \fB-M \fIacl_file\fB\fR
-�ե������ǥ��쥯�ȥ�� ACL ����ȥ���ɲäޤ����ִ����뤿��ˡ�
-ACL ʸ����ɽ�������Ҥ��줿�ե�����ޤ���ɸ������ (`-') 
-����ꤷ�ޤ���
-���� ACL �ե��������Ϥ� gfgetfacl ���ޥ�ɤν��Ϥ�����դ��ޤ���
+ファイルやディレクトリの ACL エントリを追加または置換するために，
+ACL 文字列表現が記述されたファイルまたは標準入力 (`-') 
+を指定します．
+この ACL ファイル入力は gfgetfacl コマンドの出力を受け付けます．
 .TP
 \fB-?\fR
-�������ץ�����ɽ�����ޤ���
+引数オプションを表示します．
 .SH "ACL ENTRIES"
 .PP
-gfsetfacl ���ޥ�ɤϰʲ��� ACL ����ȥ�񼰤�ǧ�����ޤ���
-perms �ե�����ɤϵ��Ĥ�ɽ��ʸ�����Ȥ߹�碌�Ǥ���
-�ǥե���� ACL ����ȥ�� d[efault:] ��Ƭ��������ޤ���
+gfsetfacl コマンドは以下の ACL エントリ書式を認識します．
+perms フィールドは許可を表す文字を組み合わせです．
+デフォルト ACL エントリは d[efault:] 接頭辞を持ちます．
 .TP
 \fB[d[efault:]u[ser]::perms\fR
-��ͭ�Ԥε���
+所有者の許可
 .TP
 \fB[d[efault:]u[ser]:username:perms\fR
-��̾�桼���ε���
+指名ユーザの許可
 .TP
 \fB[d[efault:]g[roup]::perms\fR
-�ե����륰�롼�פε���
+ファイルグループの許可
 .TP
 \fB[d[efault:]g[roup]:groupname:perms\fR
-��̾���롼�פε���
+指名グループの許可
 .TP
 \fB[d[efault:]m[ask]::perms\fR
-�¹Ը��Υޥ���(����ε���) (��ͭ�ԤȤ���¾���ʳ��˸���)
+実行権のマスク(最大の許可) (所有者とその他、以外に効果)
 .TP
 \fB[d[efault:]o[ther]::perms\fR
-����¾�ؤε���
+その他への許可
 .SH "EXAMPLES"
 .TP
-\fB��̾�桼���ؤ��ɤ߹��ߥ�����������Ĥ��롥\fR
+\fB指名ユーザへの読み込みアクセスを許可する．\fR
 gfsetfalc -m u:testuser:r filename
 .TP
-\fBfilename2 �� ACL ��filename1 �� ACL ���ִ����롥\fR
+\fBfilename2 の ACL をfilename1 の ACL で置換する．\fR
 gfgetfacl filename1 | gfsetfacl -b -M - filename2
 .TP
-\fBĹ�������� ACL ʸ����ɽ��\fR
+\fB長い形式の ACL 文字列表現\fR
 .nf
 # comment
 user::rw-
@@ -95,7 +95,7 @@ default:group::r-x
 default:other::r-x
 .fi
 .TP
-\fBû�������� ACL ʸ����ɽ��\fR
+\fB短い形式の ACL 文字列表現\fR
 .nf
 u::rw,u:user1:rw,g::r,g:group1:rw,m::r,o::r,d:u::rwx,d:g::rx,d:o::rx
 .fi

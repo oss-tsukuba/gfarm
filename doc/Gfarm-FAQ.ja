@@ -1,449 +1,449 @@
-Gfarm FAQ - Gfarm �˴ؤ���褯�������
+Gfarm FAQ - Gfarm に関するよくある質問
 
 Copyright (c) 2003-2008 National Institute of Advanced Industrial
 Science and Technology (AIST).  All Rights Reserved.
 
 Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 
-�ܼ�:
+目次:
 *****
-1. ����
-  1.1 Gfarm �Ȥϲ��Ǥ�����
-  1.2 Gfarm �Ϥɤ��������������ɤǤ��ޤ�����
-  1.3 gfmd �ϡ��ɤ����٤Υ������񤷤ޤ�����
-  1.4 gfmd ��¹Ԥ���ޥ���ϡ��ɤ����٤Υǥ��������񤷤ޤ�����
-  1.5 gfmd �����Ѥ���ǥ�������ץ����Ϥɤ����٤����ꤹ�٤��Ǥ�����
+1. 一般
+  1.1 Gfarm とは何ですか？
+  1.2 Gfarm はどこからダウンロードできますか？
+  1.3 gfmd は，どの程度のメモリを消費しますか？
+  1.4 gfmd を実行するマシンは，どの程度のディスク消費しますか？
+  1.5 gfmd が利用するディスクリプタ数はどの程度を想定すべきですか？
 
-2. �ȥ�֥롦���塼�ƥ���
-  2.1 �ե����륷���ƥ�Ρ��ɡ��᥿�����Ф���³�Ǥ��ޤ���
-  2.2 �ե����륢�����������ե�����ʣ���������ʤɤ�ǧ�ڥ��顼��
-     �����Ƥ��ޤ��ޤ������뤤�ϡ�no filesystem node �Ȥ������顼��ȯ��
-     ���Ƥ��ޤ��ޤ���
-  2.3 �ե����륷���ƥ�Ρ��ɤΥǥ�����������å��夷�Ƥ��ޤ��ޤ�������
-     ������Ф����Ǥ��礦����
-  2.4 ̵�̿����֤ǻߤޤäƤ��� gfarm ���饤����Ȥ� gfsd ���Ĥ뤳�Ȥ�
-     ����ΤǤ�����
-  2.5 �ե�����ι������郎���������褦�Ǥ���
-  2.6 gfmd �� gfsd ���۾ｪλ�����ݡ��ɤ�����Х����ե��������
-      �Ǥ��ޤ�����
+2. トラブル・シューティング
+  2.1 ファイルシステムノード，メタサーバに接続できません．
+  2.2 ファイルアクセス時，ファイル複製作成時などに認証エラーが
+     起きてしまいます．あるいは，no filesystem node というエラーが発生
+     してしまいます．
+  2.3 ファイルシステムノードのディスクがクラッシュしてしまいました．ど
+     うすればいいでしょうか？
+  2.4 無通信状態で止まっている gfarm クライアントや gfsd が残ることが
+     あるのですが？
+  2.5 ファイルの更新時刻がおかしいようです．
+  2.6 gfmd や gfsd が異常終了した際，どうすればコアファイルを回収
+      できますか？
 
-3. �������ƥ�
-  3.1 Gfarm �� firewall �˼���Ƥ��ʤ��Ķ��ǰ����˱��ѤǤ��ޤ�����
-  3.2 sharedsecret ǧ�ڡ�gsi_auth ��ˡ��gsi ǧ�ڤΰ㤤�ϡ�
+3. セキュリティ
+  3.1 Gfarm は firewall に守られていない環境で安全に運用できますか？
+  3.2 sharedsecret 認証，gsi_auth 手法，gsi 認証の違いは？
 
-4. ���»���
-  4.1 �ʲ��ε�ǽ�Ϥޤ���ʬŪ�ˤ������ݡ��Ȥ���Ƥ��ޤ���
-  4.2 Gfarm-1.x�ǥ��ݡ��Ȥ���Ƥ����ʲ��ε�ǽ�Ϥޤ����ݡ��Ȥ���Ƥ���
-     ����
-  4.3 Gfarm-1.x�ǥ��ݡ��Ȥ���Ƥ����ʲ��ε�ǽ�ϥ��ݡ��Ȥ����ͽ��Ϥ�
-    ��ޤ���
+4. 制限事項
+  4.1 以下の機能はまだ部分的にしかサポートされていません．
+  4.2 Gfarm-1.xでサポートされていた以下の機能はまだサポートされていま
+     せん．
+  4.3 Gfarm-1.xでサポートされていた以下の機能はサポートされる予定はあ
+    りません．
 
 
-1. ����
+1. 一般
 **********
-  1.1 Gfarm �Ȥϲ��Ǥ�����
+  1.1 Gfarm とは何ですか？
 
-	������ URL ��������������
+	下記の URL をご覧ください．
 
 		http://datafarm.apgrid.org/
 
-  1.2 Gfarm �Ϥɤ��������������ɤǤ��ޤ�����
+  1.2 Gfarm はどこからダウンロードできますか？
 
-	������ URL �������ۤ���Ƥ��ޤ���
+	下記の URL から配布されています．
 
 		http://sourceforge.net/projects/gfarm/
 
-	�ʤ�����ȯ�ǤΥ����������ɤϰʲ��Υ��ޥ�ɤ�����Ǥ��ޤ���
+	なお，開発版のソースコードは以下のコマンドで入手できます．
 
 		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm_v2/trunk gfarm_v2
 		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm2fs/trunk gfarm2fs
 
-  1.3 gfmd �ϡ��ɤ����٤Υ������񤷤ޤ�����
+  1.3 gfmd は，どの程度のメモリを消費しますか？
 
-	64bit Linux �ޥ����� Gfarm-2.5.1 �����Ѥ����硤�����褽��
-	���Ѥ�ϰʲ����̤�Ȥʤ�ޤ�����������
-		OH (�����С��إå�) = 8 �Х���
-		align() = 16���ܿ����ڤ�夲����̤�32̤���ʤ�32���ڤ�夲��
-	�Ȥ��ޤ���
+	64bit Linux マシン上で Gfarm-2.5.1 を利用する場合，おおよその
+	見積りは以下の通りとなります．ただし，
+		OH (オーバーヘッド) = 8 バイト
+		align() = 16の倍数に切り上げ．結果が32未満なら32に切り上げ．
+	とします．
 
-	(a) ��ĥ°�� (xattr) 1�Ĥ������ɬ�פʥХ��ȿ�:
-		  align(64 + OH) �� align(��ĥ°����̾�Τ�Ĺ�� + 1 + OH)
-		= 80 + align(��ĥ°����̾�Τ�Ĺ�� + 1 + OH)
+	(a) 拡張属性 (xattr) 1つあたりに必要なバイト数:
+		  align(64 + OH) ＋ align(拡張属性の名称の長さ + 1 + OH)
+		= 80 + align(拡張属性の名称の長さ + 1 + OH)
 
-	(i) i-node 1�Ĥ������ɬ�פʥХ��ȿ�:
+	(i) i-node 1つあたりに必要なバイト数:
 		  align(168 + OH)
 		= 176
 
-	(e) �ǥ��쥯�ȥꡦ����ȥ�1�Ĥ������ɬ�פʥХ��ȿ�:
-		  align(56 + OH) + align(strlen(basename(�ѥ�̾)) + OH)
-		= 64 + align(strlen(basename(�ѥ�̾)) + OH)
+	(e) ディレクトリ・エントリ1つあたりに必要なバイト数:
+		  align(56 + OH) + align(strlen(basename(パス名)) + OH)
+		= 64 + align(strlen(basename(パス名)) + OH)
 
-	(r) �ե�����ʣ�� 1�Ĥ������ɬ�פʥХ��ȿ�:
+	(r) ファイル複製 1つあたりに必要なバイト数:
 		  align(24 + OH)
 		= 32
 
 
-	��ĥ°���ο�����ʬ���ʤ���硤�ե����롦�ǥ��쥯�ȥꡦ����ܥ�å�
-	��󥯤��줾���ɬ�פʥХ��ȿ��ϡ��ʲ����̤�Ȥʤ�ޤ���
+	拡張属性の数が十分少ない場合，ファイル・ディレクトリ・シンボリック
+	リンクそれぞれに必要なバイト数は，以下の通りとなります．
 
-	(d) �ǥ��쥯�ȥ� 1�Ĥ������ɬ�פʥХ��ȿ�:
+	(d) ディレクトリ 1つあたりに必要なバイト数:
 		  (i) + (e) 
 		  + align(56 + OH) + align(strlen(".") + OH)
 		  + align(56 + OH) + align(strlen("..") + OH)
-		= 176 + 64 + align(strlen(basename(�ѥ�̾)) + OH)
+		= 176 + 64 + align(strlen(basename(パス名)) + OH)
 		  + 64 + 32 + 64 + 32
-		= 432 + align(strlen(basename(�ѥ�̾)) + OH)
+		= 432 + align(strlen(basename(パス名)) + OH)
 
-	(s) ����ܥ�å���� 1�Ĥ������ɬ�פʥХ��ȿ�:
-		  (i) + (e) + align(strlen(����ܥ�å���󥯤λؤ���)+1 + OH)
-		= 176 + 64 + align(strlen(basename(�ѥ�̾)) + OH)
-		  + align(strlen(����ܥ�å���󥯤λؤ���)+1 + OH)
-		= 240 + align(strlen(basename(�ѥ�̾)) + OH)
-		  + align(strlen(����ܥ�å���󥯤λؤ���)+1 + OH)
+	(s) シンボリックリンク 1つあたりに必要なバイト数:
+		  (i) + (e) + align(strlen(シンボリックリンクの指す先)+1 + OH)
+		= 176 + 64 + align(strlen(basename(パス名)) + OH)
+		  + align(strlen(シンボリックリンクの指す先)+1 + OH)
+		= 240 + align(strlen(basename(パス名)) + OH)
+		  + align(strlen(シンボリックリンクの指す先)+1 + OH)
 
-	(f) �ե����� 1�Ĥ�����ΥХ��ȿ���ɬ�פʥХ��ȿ�:
-		(i) + (e) + (r) �� ʣ����
-		= 176 + 64 + align(strlen(basename(�ѥ�̾)) + OH)
-		  + 32 �� ʣ����
-		= 240 + align(strlen(basename(�ѥ�̾)) + OH) + 32 �� ʣ����
+	(f) ファイル 1つあたりのバイト数に必要なバイト数:
+		(i) + (e) + (r) × 複製数
+		= 176 + 64 + align(strlen(basename(パス名)) + OH)
+		  + 32 × 複製数
+		= 240 + align(strlen(basename(パス名)) + OH) + 32 × 複製数
 
 
-	����ˡ����ˡ��ѥ�̾�κǸ�Υ���ݡ��ͥ������Ĺ���� 14ʸ�����١�
-	�ե������ʣ������3������ܥ�å���󥯤λؤ��褬55ʸ���Ȳ��ꤷ�ơ�
-	�嵭��׻�����ȡ��ʲ��Τ褦�ˤʤ�ޤ���
+	さらに，仮に，パス名の最後のコンポーネント部の長さが 14文字程度，
+	ファイルの複製数が3，シンボリックリンクの指す先が55文字と仮定して，
+	上記を計算すると，以下のようになります．
 
-	(d) �ǥ��쥯�ȥ�1�Ĥ�����: 432�Х���
-	(s) ����ܥ�å������1�Ĥ�����: 336�Х���
-	(f) �ե�����1�Ĥ�����: 368�Х���
+	(d) ディレクトリ1つあたり: 432バイト
+	(s) シンボリック・リンク1つあたり: 336バイト
+	(f) ファイル1つあたり: 368バイト
 
-  1.4 gfmd ��¹Ԥ���ޥ���ϡ��ɤ����٤Υǥ��������񤷤ޤ�����
+  1.4 gfmd を実行するマシンは，どの程度のディスク消費しますか？
 
-	gfmd ��ɬ�ץ����̤ο������٤Ǥ���
+	gfmd の必要メモリ量の数倍程度です．
 
-  1.5 gfmd �����Ѥ���ǥ�������ץ����Ϥɤ����٤����ꤹ�٤��Ǥ�����
+  1.5 gfmd が利用するディスクリプタ数はどの程度を想定すべきですか？
 
-	�����ͤϡ�gfmd.conf �� metadb_server_max_descriptors �ǻ��ꤷ�ޤ���
+	この値は，gfmd.conf の metadb_server_max_descriptors で指定します．
 
-	���ꤹ���ͤη׻���ˡ�ϰʲ����̤�Ǥ���
-	    Nm: �᥿�ǡ��������п������������
-	    Nf: �ե����륷���ƥ�Ρ��ɿ������������
-	    Nc: Ʊ�����ѥ��饤����ȡ��ץ������������������
-	�Ȥ���ȡ��������Ͱʾ�����ꤷ�Ƥ���ɬ�פ�����ޤ���
-	    (Nm - 1) * 2 + Nf * (Nf + 1) + Nc * (Nf + 1) + �㴳��
+	設定する値の計算方法は以下の通りです．
+	    Nm: メタデータサーバ数の想定最大値
+	    Nf: ファイルシステムノード数の想定最大値
+	    Nc: 同時利用クライアント・プロセス数の想定最大値
+	とすると，下記の値以上に設定しておく必要があります．
+	    (Nm - 1) * 2 + Nf * (Nf + 1) + Nc * (Nf + 1) + 若干数
 
-	gfmd ��ư���ˡ������ƥ�Υ��� (/var/log/messages �ʤ�) ��
-	�ʲ��Τ褦��ɽ������ޤ��Τǡ���ǧ���ƤߤƤ���������
-	    gfmd[��]: �� max descriptors = 131072
-	������ɽ�����줿�ͤ� metadb_server_max_descriptors �ǻ��ꤷ����
-	���⾮�������ϡ�OS �� hard limit ����ˤ�����¤�����Ƥ��ޤ���
-	hard limit ��������䤹�ˤϡ��ʲ��Τ褦�ˤ��ޤ���
-	Linux �ξ��:
-	    Linux �ξ��ϡ�hard limit ����ˤ�����¤ǤϤʤ���Gfarm ��
-	    sysctl fs.file-max ����� 75% ̤���Ȥʤ�褦���¤��Ƥ��ޤ���
-	    ���Τ��� gfmd.conf �Ρ�metadb_server_max_descriptors 131072��
-	    �Ȥ��������ºݤ�ͭ���ˤ���ˤϡ��ե����� /etc/sysctl.conf ��
-	    ��fs.file-max=180224�פȤ��ä��������줿�塢��֡��Ȥ��뤫��
-	    ���뤤�ϥ��ޥ�ɡ�/sbin/sysctl -p�פ�¹Ԥ��ޤ���
-	NetBSD �ξ��:
-	    �ե����� /etc/sysctl.conf �ˡ�kern.maxfiles=180224�פȤ��ä�
-	    �����Ԥʤ�����֡��Ȥ��뤫�����뤤�ϥ��ޥ��
-	    ��/sbin/sysctl -f /etc/sysctl.conf�פ�¹Ԥ��ޤ���
-	FreeBSD �ξ��:
-	    �ե����� /etc/sysctl.conf �˰ʲ��Τ褦�������Ԥʤ���
+	gfmd 起動時に，システムのログ (/var/log/messages など) に
+	以下のように表示されますので，確認してみてください．
+	    gfmd[〜]: 〜 max descriptors = 131072
+	ここで表示された値が metadb_server_max_descriptors で指定した値
+	よりも小さい場合は，OS の hard limit 設定により制限を受けています．
+	hard limit 設定を増やすには，以下のようにします．
+	Linux の場合:
+	    Linux の場合は，hard limit 設定による制限ではなく，Gfarm が
+	    sysctl fs.file-max 設定の 75% 未満となるよう制限しています．
+	    このため gfmd.conf の「metadb_server_max_descriptors 131072」
+	    という設定を実際に有効にするには，ファイル /etc/sysctl.conf に
+	    「fs.file-max=180224」といった設定入れた後、リブートするか，
+	    あるいはコマンド「/sbin/sysctl -p」を実行します．
+	NetBSD の場合:
+	    ファイル /etc/sysctl.conf に「kern.maxfiles=180224」といった
+	    設定を行ない，リブートするか，あるいはコマンド
+	    「/sbin/sysctl -f /etc/sysctl.conf」を実行します．
+	FreeBSD の場合:
+	    ファイル /etc/sysctl.conf に以下のような設定を行ない，
 		kern.maxfiles=180224
 		kern.maxfilesperproc=131072
-	    ��֡��Ȥ��뤫�����뤤�ϥ��ޥ��
-	    ��/sbin/sysctl -f /etc/sysctl.conf�פ�¹Ԥ��ޤ���
-	Solaris �ξ��:
-	    �ե����� /etc/system �ˡ�set rlim_fd_max = 131072�פȤ��ä�
-	    �����Ԥʤ�����֡��Ȥ��ޤ���
+	    リブートするか，あるいはコマンド
+	    「/sbin/sysctl -f /etc/sysctl.conf」を実行します．
+	Solaris の場合:
+	    ファイル /etc/system に「set rlim_fd_max = 131072」といった
+	    設定を行ない，リブートします．
 	
-	�ʤ���Linux ��Ǥϡ��ѥ�᡼�� net.netfilter.nf_conntrack_max ��
-	��������ˤ����դ��Ƥ���������
-	���Υѥ�᡼�����̾��¸�ߤ��ޤ��󤬡�iptables ���ε�ǽ�����Ѥ���
-	������ϡ���ư���� /var/log/messages ���˰ʲ��Τ褦�ʥ�å�������
-	��Ͽ���졤�ѥ�᡼����ưŪ���ɲä���ޤ���
+	なお，Linux 上では，パラメータ net.netfilter.nf_conntrack_max の
+	設定状況にも注意してください．
+	このパラメータは通常は存在しませんが，iptables 等の機能を利用して
+	いる場合は，起動時に /var/log/messages 等に以下のようなメッセージが
+	記録され，パラメータが動的に追加されます．
 		kernel: nf_conntrack version 0.5.0 (16384 buckets, 65536 max)
-	�ޤ�����������˥ͥåȥ���̿������¤���Ƥ�������Ǥϡ��ʲ���
-	�褦�ʥ�å���������Ͽ����ޤ���
+	また，この設定にネットワーク通信が制限されている状況では，以下の
+	ようなメッセージが記録されます．
 		kernel: nf_conntrack: table full, dropping packet.
-	���Τ褦�ʾ������Ǥϡ�/etc/sysctl.conf ���㤨�аʲ��Τ褦�������
-	�ɲä���ʤɤ��ơ����¤���¤���ɬ�פ�����ޤ���
+	このような状況下では，/etc/sysctl.conf に例えば以下のような設定を
+	追加するなどして，制限を緩和する必要があります．
 		net.netfilter.nf_conntrack_max=131072
-	�ʤ������Τ褦����٤Τ���������ǡ��᥿�ǡ��������м��Ȥ�
-	iptables ��ư�������ȤϿ侩�Ǥ��ޤ������ӥե��������������
-	�Ѱդ��뤳�Ȥ򤪴��ᤷ�ޤ���
+	なお，このように負荷のかかる状況で，メタデータサーバ自身で
+	iptables を動かすことは推奨できません．別途ファイアウォールを
+	用意することをお勧めします．
 	
-	����:
+	参考:
 
-	�׻����γƹ�ΰ�̣�ϡ��ʲ����̤�Ǥ���
+	計算式の各項の意味は，以下の通りです．
 
 	    (Nm - 1) * 2 =
-		gfmd ����³�ο�:(Nm - 1) *
-		(�ͥåȥ����³�ѥǥ�������ץ�:1 +
-		 ���㡼�ʥ�ե�����򥢥��������뤿��Υǥ�������ץ�:1)
+		gfmd 間接続の数:(Nm - 1) *
+		(ネットワーク接続用ディスクリプタ:1 +
+		 ジャーナルファイルをアクセスするためのディスクリプタ:1)
 
 	    Nf * (Nf + 1) =
-		Nf * ( �� gfsd �Υ롼�ȥץ�����:1 +
-		       �Хå�����ͥ�����ץ�����:1 +
-		       ��ưʣ��������gfsd�ץ�������:(Nf - 1) )
+		Nf * ( 各 gfsd のルートプロセス:1 +
+		       バックチャネル処理プロセス:1 +
+		       自動複製処理用gfsdプロセス数:(Nf - 1) )
 
 	    Nc * (Nf + 1) =
-		Nc * (���饤����Ȥ�gfmd�δ֤Υ����å���:1 +
-		      ���饤������б���gfsd��gfmd�δ֤���³:Nf )
+		Nc * (クライアントとgfmdの間のソケット用:1 +
+		      クライアント対応用gfsdとgfmdの間の接続:Nf )
 
-	   �㴳 = backend �ǡ����١�����³�䡤
-		���㡼�ʥ�ե����륢�������ѤΥե�����ǥ�������ץ� 
+	   若干 = backend データベース接続や，
+		ジャーナルファイルアクセス用のファイルディスクリプタ 
 
-	���Τ������֥��饤������б���gfsd��gfmd�δ֤���³�פ�ʬ�ϡ�
-	�ºݤˤϤ�äȾ������ʤ��ǽ���⤢��ޤ���������Ʊ����¿����
-	Gfarm�ե�����򥪡��ץ󤷤Ƥ�����ϡ������ Nf �ޤ�ã�����ǽ����
-	����ޤ������뤤�ϡ��⤷Ʊ�������ץ���� Nf ��꾯�ʤ����Ǥ�
-	gfsd_connection_cache �ѥ�᡼�������ꤷ�Ƥ�����ϡ�
-	min(Nf, gfsd_connection_cache) �ޤ�ã���ޤ���
+	このうち，「クライアント対応用gfsdとgfmdの間の接続」の分は，
+	実際にはもっと小さくなる可能性もあります．しかし同時に多数の
+	Gfarmファイルをオープンしている場合は，最大で Nf まで達する可能性も
+	あります．あるいは，もし同時オープン数が Nf より少ない場合でも
+	gfsd_connection_cache パラメータを設定している場合は，
+	min(Nf, gfsd_connection_cache) まで達します．
 
-	gfmd �ϡ�descriptor 1�Ĥ����ꡤ��320�Х��ȤΥ������񤷤ޤ���
+	gfmd は，descriptor 1つあたり，約320バイトのメモリを消費します．
 
 
-2. �ȥ�֥롦���塼�ƥ���
+2. トラブル・シューティング
 *******************
-  2.1 �ե����륷���ƥ�Ρ��ɡ��᥿�����Ф���³�Ǥ��ޤ���
+  2.1 ファイルシステムノード，メタサーバに接続できません．
 
-	�ǥե���Ȥ�����Ǥϡ��ե����륷���ƥ�Ρ��ɤ� 600/tcp ��
-	600/udp �����Ѥ����᥿�����ХΡ��ɤ� 601/tcp �����Ѥ��ޤ���
+	デフォルトの設定では，ファイルシステムノードは 600/tcp と
+	600/udp を利用し，メタサーバノードは 601/tcp を利用します．
 
-	�ä� 'gfhost -lv' �ǡ�'x.xx/x.xx/x.xx' ��ɽ�������ե����륷��
-	�ƥ�Ρ��ɤϡ�600/udp �Ǥ���³�˼��Ԥ��Ƥ��ޤ���
+	特に 'gfhost -lv' で，'x.xx/x.xx/x.xx' と表示されるファイルシス
+	テムノードは，600/udp での接続に失敗しています．
 
-	�ǥե���ȤΥݡ����ֹ�ϡ�config-gfarm��config-gfsd �Υ���
-	�������ѹ����뤳�Ȥ��Ǥ��ޤ����ܺ٤ϥ��󥹥ȡ��륬���ɤ򻲾�
-	���Ƥ���������
+	デフォルトのポート番号は，config-gfarm，config-gfsd のオプ
+	ションで変更することができます．詳細はインストールガイドを参照
+	してください．
 
-  2.2 �ե����륢�����������ե�����ʣ���������ʤɤ�ǧ�ڥ��顼��
-     �����Ƥ��ޤ��ޤ������뤤�ϡ�no filesystem node �Ȥ������顼��ȯ��
-     ���Ƥ��ޤ��ޤ���
+  2.2 ファイルアクセス時，ファイル複製作成時などに認証エラーが
+     起きてしまいます．あるいは，no filesystem node というエラーが発生
+     してしまいます．
 
-	�ե����륷���ƥ�Ρ��ɤ��Ф��붦ͭ�����뤤�� GSI �����꤬����
-	���ʤ���Ƥ��ʤ���ǽ��������ޤ���
+	ファイルシステムノードに対する共有鍵あるいは GSI の設定が正し
+	くなされていない可能性があります．
 
-	��ͭ��ǧ�ڤξ��ϡ��ƥե����륷���ƥ�Ρ��ɤΥۡ���ǥ��쥯��
-	���Ʊ��ζ�ͭ���ե�����(~/.gfarm_shared_key) ���֤���Ƥ��뤫
-	��ǧ���Ƥ���������
+	共有鍵認証の場合は，各ファイルシステムノードのホームディレクト
+	リに同一の共有鍵ファイル(~/.gfarm_shared_key) が置かれているか
+	確認してください．
 
-	GSIǧ�ڤξ��ϡ�ɽ�������ǧ�ڥ��顼��å������˽����б�����
-	�������������顼�ξܺ٤� gfmd.conf ����� gfarm2.conf �ˡ�����
-	��log_auth_verbose enable�פ�񤭲ä��뤳�Ȥˤ��
-	/var/log/messages (�ʤ���/var/adm/messages) �˵�Ͽ�����뤳�Ȥ�
-	�Ǥ��ޤ���
-	ǧ�ڥ��顼�˴ؤ���ܺ٤ʾ���� http://www.globus.org �������
-	��ޤ���
-	���ߤΤȤ������᥿�ǡ�����Ĺ�����Τ����gfmd����³�ˤ����Ƥϡ�
-	GSIǧ�ڤϥ��ݡ��Ȥ���Ƥ��ʤ����ˤ⤴���դ���������
+	GSI認証の場合は，表示される認証エラーメッセージに従い対応して
+	ください．エラーの詳細は gfmd.conf および gfarm2.conf に，設定
+	「log_auth_verbose enable」を書き加えることにより
+	/var/log/messages (ないし/var/adm/messages) に記録させることが
+	できます．
+	認証エラーに関する詳細な情報は http://www.globus.org より得ら
+	れます．
+	現在のところ，メタデータ冗長構成のためのgfmd間接続においては，
+	GSI認証はサポートされていない点にもご注意ください．
 
-	����Ǥ�ǧ�ڥ��顼����������ϡ�Gfarm �ե����륷���ƥ�δ���
-	�Ԥ�Ϣ�����Ƥ������������ξ�硤_gfarmfs �桼���ζ�ͭ����GSI��
-	���꤬�������ʤ���Ƥ��ʤ���ǽ��������ޤ���
+	それでも認証エラーが生じる場合は，Gfarm ファイルシステムの管理
+	者に連絡してください．この場合，_gfarmfs ユーザの共有鍵、GSIの
+	設定が正しくなされていない可能性があります．
 
-	�ʤ���GSIǧ�ڤˤ����Ƥϰʲ��Τ褦���������դ���ɬ�פ�����ޤ���
+	なお，GSI認証においては以下のような点に注意する必要があります．
 
-	(1) ���Ѥ���ե����륷���ƥ�Ρ��ɤ���ӡ��᥿�ǡ��������ФΥ�
-	��åɥޥåץե�����(/etc/grid-security/grid-mapfile)
-	������������ȥ꤬��Ͽ����Ƥ��ޤ�����
+	(1) 利用するファイルシステムノードおよび，メタデータサーバのグ
+	リッドマップファイル(/etc/grid-security/grid-mapfile)
+	に正しいエントリが登録されていますか？
 
-	�äˡ�Globus Toolkit version 2 (GT2) �� version 3 (GT3) �ʹߤǤϡ�
-	���֥�������̾�˰㤤������Τ�ɬ�פǤ���GT2 �� Email �ե������
-	�ϡ�GT3 �ʹߤǤ� emailAddress �Ȥʤ�ޤ����ޤ� GT2 �� USERID
-	�ե�����ɤ� GT3 �ʹߤǤ� UID �Ȥʤ�ޤ���ξ���Υ饤�֥�������
-	������ϡ��ߴ����Τ���ˡ�ξ���Υ���ȥ�� grid-mapfile ����Ͽ
-	����ɬ�פ�����ޤ���
+	特に，Globus Toolkit version 2 (GT2) と version 3 (GT3) 以降では，
+	サブジェクト名に違いがあるので必要です．GT2 の Email フィールド
+	は，GT3 以降では emailAddress となります．また GT2 の USERID
+	フィールドは GT3 以降では UID となります．両方のライブラリを利用
+	する場合は，互換性のために，両方のエントリを grid-mapfile に登録
+	する必要があります．
 
-	gfmd��gfsd�֤��̿���GSIǧ�ڤ�Ȥ���硤��2����@host@�פȤ���
-	gfsd�ξ������grid-mapfile����Ͽ����Ƥ��ޤ�����
+	gfmd−gfsd間の通信にGSI認証を使う場合，第2欄を「@host@」とした
+	gfsdの証明書もgrid-mapfileに登録されていますか？
 
-	(2) �桼��������(~/.globus/usercert.pem)���ۥ��Ⱦ�����
-	(/etc/grid-security/hostcert.pem)�Υѡ��ߥå���� 0644 �ˤʤä�
-	���ޤ����� �ޤ�gfsd�Υ����ӥ�����������Ѥ��Ƥ����硤������
-	�������̩���Υ����ʡ��ϡ�_gfarmfs�פȤ���ɬ�פ�����ޤ���
+	(2) ユーザ証明書(~/.globus/usercert.pem)，ホスト証明書
+	(/etc/grid-security/hostcert.pem)のパーミッションが 0644 になって
+	いますか？ またgfsdのサービス証明書を利用している場合，証明書
+	および秘密鍵のオーナーは「_gfarmfs」とする必要があります．
 
-	(3) �桼�������񡤥ۥ��Ⱦ����񡤥����ӥ��������ͭ�����¤�
-	�ڤ�Ƥ��ޤ��󤫡�
+	(3) ユーザ証明書，ホスト証明書，サービス証明書の有効期限は
+	切れていませんか？
 
-	(4) �桼�������񡤥ۥ��Ⱦ����񡤥����ӥ�������˽�̾���Ƥ���
-	CA �ξ������ͭ���ʤ�Τ������� /etc/grid-security/certificates
-	����Ͽ����Ƥ��ޤ����� ͭ�����¤��ڤ�Ƥ��ޤ��󤫡�
+	(4) ユーザ証明書，ホスト証明書，サービス証明書に署名している
+	CA の証明書は有効なものが正しく /etc/grid-security/certificates
+	に登録されていますか？ 有効期限が切れていませんか？
 
-	signing_policy �ե�����ˤ����� CA �Υ��֥�������̾�� (1) ��Ʊ
-	�ͤ��Ѳ�����Τ����դ�ɬ�פǤ���
+	signing_policy ファイルにおける CA のサブジェクト名も (1) と同
+	様に変化するので注意が必要です．
 
-	(5) /etc/grid-security/certificates ����Ͽ����Ƥ��� CRL ��
-	ͭ�����¤��ڤ�Ƥ��ޤ��󤫡�
+	(5) /etc/grid-security/certificates に登録されている CRL の
+	有効期限が切れていませんか？
 
-	(6) gfarm.conf �� metadb_serverhost �ι�ǻ��ꤷ�Ƥ���᥿�ǡ���
-	�����ФΥۥ���̾�ϡ��ۥ��Ⱦ�����˽񤫤�Ƥ���ۥ���̾�Ȱ��פ���
-	���ޤ�����
+	(6) gfarm.conf の metadb_serverhost の項で指定しているメタデータ
+	サーバのホスト名は、ホスト証明書に書かれているホスト名と一致して
+	いますか？
 
-	(7) gfhost ���ޥ�ɤ���Ͽ����ۥ��Ȥθ�ͭ���̻Ҥϡ��ۥ��Ⱦ�����
-	�ʤ��������ӥ�������˽񤫤�Ƥ���ۥ���̾�Ȱ��פ��Ƥ��ޤ����� 
+	(7) gfhost コマンドで登録するホストの固有識別子は，ホスト証明書
+	ないしサービス証明書に書かれているホスト名と一致していますか？ 
 
-	(8) ���ƤΥۥ��Ȥǻ��郎���������ꤵ��Ƥ��ޤ����� Globus �� 
-	GSI �饤�֥��ξ�硤�ۥ��ȴ֤� 5ʬ�ʾ���郎���äƤ����ǧ��
-	�˼��Ԥ��Ƥ��ޤ��ޤ���
+	(8) 全てのホストで時刻が正しく設定されていますか？ Globus の 
+	GSI ライブラリの場合，ホスト間で 5分以上時刻が狂っていると認証
+	に失敗してしまいます．
 
-  2.3 �ե����륷���ƥ�Ρ��ɤΥǥ�����������å��夷�Ƥ��ޤ��ޤ�������
-     ������Ф����Ǥ��礦����
+  2.3 ファイルシステムノードのディスクがクラッシュしてしまいました．ど
+     うすればいいでしょうか？
 
-	gfncopy ���ޥ�ɤǥե�����ʣ������2�ʾ�����ꤷ�Ƥ�����ϡ�
-	¾�Υե����륷���ƥ�Ρ��ɤ�ʣ����¸�ߤ���Τ�����Ϥ���ޤ���
+	gfncopy コマンドでファイル複製数を2以上に設定している場合は，
+	他のファイルシステムノードに複製が存在するので問題はありません．
 
-	���ޤ��ޥ���å��夷���Ρ��ɤΥե�������ɤ߹��ߥ����������Ƥ�
-	�����ϡ���ưŪ�� network_receive_timeout �ø��¾�Υե�����
-	�����ƥ�Ρ��ɤ�ʣ�����ɤ߹��ߤ��ڤ��ؤ�ꡤ���ץꥱ��������
-	�⥨�顼�����Τ���ޤ���network_receive_timeout �ϥǥե����
-	�Ǥ�60�äǤ���
+	たまたまクラッシュしたノードのファイルを読み込みアクセスしてい
+	た場合は，自動的に network_receive_timeout 秒後に他のファイル
+	システムノードの複製の読み込みに切り替わり，アプリケーションに
+	もエラーは通知されません．network_receive_timeout はデフォルト
+	では60秒です．
 
-	������������å��夷���Ρ��ɤΥե������񤭹��ߥ����������Ƥ�
-	�����ϡ����Υ��ץꥱ���������Ф����񤭹��ߥ��顼���֤ꡤ��
-	���ϼ����ޤ���
+	ただし，クラッシュしたノードのファイルを書き込みアクセスしてい
+	た場合は，そのアプリケーションに対し，書き込みエラーが返り，更
+	新は失われます．
 
-	����å��夹��� replica_check_host_down_thresh �ø�ˡ���ưŪ
-	�˻��ꤷ��ʣ������ʣ������������ޤ����ǥե���ȤǤ�3���֤Ǥ���
+	クラッシュすると replica_check_host_down_thresh 秒後に，自動的
+	に指定した複製数の複製が作成されます．デフォルトでは3時間です．
 
-	�ե�����ʣ������2�ʾ�����ꤷ�Ƥ��ʤ����ϡ�����å��夷���ե�
-	���륷���ƥ�Ρ��ɤˤ����ʤ�ʣ���ϥ��������Ǥ��ʤ��ʤ�ޤ�����
-	������truncate �ϲ�ǽ�Ǥ���
+	ファイル複製数を2以上に設定していない場合は，クラッシュしたファ
+	イルシステムノードにしかない複製はアクセスできなくなります．た
+	だし，truncate は可能です．
 
-	�ե����륷���ƥ�Ρ��ɤ����줹��ȡ���ư���˥᥿�ǡ����ȥ��ס�
-	��ǥ��쥯�ȥ�ΰ���������å����Ԥ�졤��Ӥ��Ƥ��ʤ����ϡ�
-	/lost+found �ǥ��쥯�ȥ�˰�ư����ޤ���
+	ファイルシステムノードを復旧すると，起動時にメタデータとスプー
+	ルディレクトリの一貫性チェックが行われ，一貫していない場合は，
+	/lost+found ディレクトリに移動されます．
 
-  2.4 ̵�̿����֤ǻߤޤäƤ��� gfarm ���饤����Ȥ� gfsd ���Ĥ뤳�Ȥ�
-     ����ΤǤ�����
+  2.4 無通信状態で止まっている gfarm クライアントや gfsd が残ることが
+     あるのですが？
 
-	�ͥåȥ�����󥿡��ե����������ɤ�����䡢�ͥåȥ�����Τ�
-	�ȥ�֥�ǡ���ʬ�֤ˤ�ä��̿������䤷����硢���Τ褦�ʤ��Ȥ�
-	�������ǽ��������ޤ����ä˹���ͥåȥ�����̤����̿�����
-	������Ϥ��Τ褦�ʲ�ǽ���������ޤ������Τ褦�ʾ�硢
-	gfarm.conf �ˡ�sockopt keepalive�פȤ��������ä��뤳�Ȥǡ�
-	��ߤ����ץ�������ưŪ�˥��顼�ǽ�λ�����뤳�Ȥ��Ǥ���褦
-	�ˤʤ�ޤ���Gfarm 1.3.1 �ʹߤ� config-gfarm ����������
-	gfarm.conf �ϡ��ǥե���ȤǤ��������ޤ�Ǥ��ޤ���
+	ネットワークインターフェースカードの問題や、ネットワーク自体の
+	トラブルで、数分間によって通信が途絶した場合、このようなことが
+	起きる可能性があります。特に広域ネットワークを通して通信して
+	いる場合はこのような可能性が増えます。そのような場合、
+	gfarm.conf に「sockopt keepalive」という設定を加えることで、
+	停止したプログラムを自動的にエラーで終了させることができるよう
+	になります。Gfarm 1.3.1 以降の config-gfarm で生成した
+	gfarm.conf は、デフォルトでこの設定を含んでいます。
 
-	���뤤�ϡ��⤷ /etc/nsswitch.conf �ǡ�ldap�פ���ꤷ�Ƥ����硤
-	�����Ĥ��� Linux �ǥ����ȥ�ӥ塼�����ǡ����Τ褦�����꤬
-	�����Ƥ��ޤ�������Ū�ˤ� Fedora Core 3��Fedora Core 5��CentOS 4.4
-	�ʤɤǤ���Red Hat 8 �Ǥϡ���������������Ƥ��ޤ���
-	����ϥ����ƥ���°�Υ饤�֥��ΥХ�������������������Ǥ��ꡤ
-	���ζ���Ū�ʾ��ϡ��ե����� KNOWN_PROBLEMS.ja �˵��ܤ��Ƥ���ޤ���
-	��������ξ�硤��ldap�פλ������������Ȥ�¾�ˤϡ����ߤ�
-	�Ȥ�����������Τ��Ƥ��ޤ���
+	あるいは，もし /etc/nsswitch.conf で「ldap」を指定している場合，
+	いくつかの Linux ディストリビューションで，このような問題が
+	生じています．具体的には Fedora Core 3，Fedora Core 5，CentOS 4.4
+	などです．Red Hat 8 では，この問題は生じていません．
+	これはシステム附属のライブラリのバグが原因で生じる問題であり，
+	その具体的な条件は，ファイル KNOWN_PROBLEMS.ja に記載してあります．
+	この問題の場合，「ldap」の指定を取り除くことの他には，現在の
+	ところ回避策が知られていません．
 	
-  2.5 �ե�����ι������郎���������褦�Ǥ���
+  2.5 ファイルの更新時刻がおかしいようです．
 
-	�ե�����ι�������ϼºݤΥե��������������ե����륷���ƥ�Ρ�
-	�ɤι�������Ȥʤ�ޤ����ե����륷���ƥ�Ρ��ɤλ��郎��������
-	�ꤵ��Ƥ��ʤ���硤���Υե����륷���ƥ�Ρ��ɤ˽񤭹��ޤ줿�ե�
-	����ι�������ʤɤ����������ʤäƤ��ޤ��ޤ���NTP�ʤɤ����Ѥ�
-	�ƥե����륷���ƥ�Ρ��ɤλ�������������ꤷ�Ƥ���������
+	ファイルの更新時刻は実際のファイルを作成したファイルシステムノー
+	ドの更新時刻となります．ファイルシステムノードの時刻が正しく設
+	定されていない場合，そのファイルシステムノードに書き込まれたファ
+	イルの更新時刻などがおかしくなってしまいます．NTPなどを利用し
+	てファイルシステムノードの時刻を正しく設定してください．
 
-  2.6 gfmd �� gfsd ���۾ｪλ�����ݡ��ɤ�����Х����ե���������Ǥ��ޤ�����
+  2.6 gfmd や gfsd が異常終了した際，どうすればコアファイルを回収できますか？
 
-	gfmd �� gfsd �� Linux ���ư�����Ƥ����硤�۾ｪλ���Ƥ⥳��
-	�ե�����ϥǥե���ȤǤϺ�������ޤ��󡥥����ե������������
-	�ˤϡ�root ���¤ǰʲ��κ�Ȥ�ԤäƤ���������
+	gfmd や gfsd を Linux 上で動かしている場合，異常終了してもコア
+	ファイルはデフォルトでは作成されません．コアファイルを回収する
+	には，root 権限で以下の作業を行ってください．
 
-	(1) �����ͥ�Υѥ�᥿���ѹ����ޤ����ʲ��ιԤ� sysctl ������
-	�ե����� (/etc/sysctl.conf) �������˲ä��ޤ���
+	(1) カーネルのパラメタを変更します．以下の行を sysctl の設定
+	ファイル (/etc/sysctl.conf) の末尾に加えます．
 
 		fs.suid_dumpable = 1
 		kernel.core_pattern = /var/tmp/core.%e.%p
 
-	"kernel.core_pattern" �ԤǤϡ������ե�����Υѥ�����ꤷ�ޤ���
-	"%e", "%p" �Ϥ��줾�졤�ץ������̾����ӥץ����� ID ��Ÿ��
-	����ޤ����ä����顤������ɤ߹���ľ���ޤ���
+	"kernel.core_pattern" 行では，コアファイルのパスを指定します．
+	"%e", "%p" はそれぞれ，プログラム名およびプロセス ID に展開
+	されます．加えたら，設定を読み込み直します．
 
 		/sbin/sysctl -p
 
-	(2) �����ե�����κ��祵���������ꤷ�ޤ���
-	"/etc/security/limits.conf" �ե�����ˡ��ʲ��ιԤ��ɲä��ޤ���
+	(2) コアファイルの最大サイズを設定します．
+	"/etc/security/limits.conf" ファイルに，以下の行を追加します．
 
 		*	soft	core	unlimited
 
-	��������ϡ�OS �Ƶ�ư���ͭ���ˤʤ�ޤ���
+	この設定は，OS 再起動後に有効になります．
 
-	���ߤ� gfmd �� gfsd ��ư����ǡ�ľ���������Ŭ�Ѥ��������ϡ�
-	�ʲ��Τ褦�� ulimit ���ޥ�ɼ¹Ը塤gfmd �ޤ��� gfsd ��Ƶ�ư
-	���Ƥ���������
+	現在も gfmd や gfsd が動作中で，直ちに設定を適用したい場合は，
+	以下のように ulimit コマンド実行後，gfmd または gfsd を再起動
+	してください．
 
 		ulimit -c unlimited
 		/etc/init.d/gfmd restart
 		/etc/init.d/gfsd restart
 
-	(3) gfmd �� gfsd �� Red Hat �⤷���Ϥ��줫���������� OS ��ư��
-	������RPM �ѥå�������Ƴ�������뤤�� prefix �� /usr �Ȥ���Ƴ��
-	���Ƥ������ "prelink" �Ȥ�����������֤˴ؤ��������Ԥ�ɬ��
-	������ޤ���"/etc/prelink.conf.d/gfarm.conf" �Ȥ����ե������
-	���������ʲ��Τ褦�ʹԤ�­���ơ�prelink ���оݳ��Ȥ��ޤ���
+	(3) gfmd や gfsd を Red Hat もしくはそれから派生した OS で動作
+	させ、RPM パッケージで導入、あるいは prefix を /usr として導入
+	している場合は "prelink" という日時ジョブに関する設定を行う必要
+	があります．"/etc/prelink.conf.d/gfarm.conf" というファイルを
+	作成し、以下のような行を足して、prelink の対象外とします．
 
 		-b /usr/sbin/gfmd
 		-b /usr/sbin/gfsd
 		-b /usr/lib/libgfarm.*
 
-	/usr/local �ʤɤ�Ƴ�����Ƥ�����Ϥ��������ɬ�פ���ޤ�
-	��prelink ���оݤȤʤ�ǥ��쥯�ȥ�ˤĤ��Ƥ�
-	/etc/prelink.conf �򻲾Ȥ��Ƥ����������ޤ� prelink �ˤĤ��Ƥ�
-	man �ڡ����򻲾Ȥ��Ƥ���������
+	/usr/local などに導入している場合はこの設定は必要ありませ
+	ん．prelink の対象となるディレクトリについては
+	/etc/prelink.conf を参照してください．また prelink については
+	man ページを参照してください．
 
 
-3. �������ƥ�
+3. セキュリティ
 ***************
-  3.1 Gfarm �� firewall �˼���Ƥ��ʤ��Ķ��ǰ����˱��ѤǤ��ޤ�����
+  3.1 Gfarm は firewall に守られていない環境で安全に運用できますか？
 
-	Gfarm �ϡ�sharedsecret ǧ�ڡ�gsi_auth ��ˡ��gsi ǧ�ڤ�
-	3 �����ǧ����ˡ�򥵥ݡ��Ȥ��Ƥ��ޤ�����
-	Internet �Ķ��Ǥϡ�sharedsecret ǧ�ڤ� gsi_auth ��ˡ�Ǥ�
-	�����Ȥϸ����ޤ���gsi ǧ�ڤ����Ѥ�侩���ޤ���
-	����ˤĤ��Ƥϡ����ι��ܤ򻲾Ȥ��Ƥ���������
+	Gfarm は，sharedsecret 認証，gsi_auth 手法，gsi 認証の
+	3 種類の認証方法をサポートしていますが，
+	Internet 環境では，sharedsecret 認証や gsi_auth 手法では
+	安全とは言えません．gsi 認証の利用を推奨します．
+	これについては，次の項目を参照してください．
 
-  3.2 sharedsecret ǧ�ڡ�gsi_auth ��ˡ��gsi ǧ�ڤΰ㤤�ϡ�
+  3.2 sharedsecret 認証，gsi_auth 手法，gsi 認証の違いは？
 
-	��sharedsecret��ǧ�ڤϡ���ͭ�����Ѥ���ǧ�ڤǤ���
-	Gfarm �� sharedsecret ǧ�ڤξ�硤�󶡤��Ƥ��륵���ӥ���ǧ�ڤ�
-	���Ǥ��ꡤ�ǡ������Ф����̾��Ź沽���󶡤��Ƥ���櫓�ǤϤ���
-	�ޤ��󤫤顤�ѥ��å���İ�䡤TCP ���å����ξ�ü��ʤɤδ���
-	���Ĥ�ޤ���
-	���äơ�firewall �Ǽ���Ƥ���Ķ���ΤߤǤ����Ѥ򤪴��ᤷ��
-	����sharedsecret ǧ�ڤ��󶡤��Ƥ�����ͳ�ϡ���®�ʤ��Ȥȡ�����
-	���μ����μ�֤�ʤ��뤳�ȤǤ���
+	「sharedsecret」認証は，共有鍵を用いた認証です．
+	Gfarm の sharedsecret 認証の場合，提供しているサービスが認証だ
+	けであり，データに対する署名や暗号化を提供しているわけではあり
+	ませんから，パケット盗聴や，TCP セッションの乗っ取りなどの危険
+	が残ります．
+	従って，firewall で守られている環境内のみでの利用をお勧めしま
+	す．sharedsecret 認証を提供している理由は，高速なことと，公開
+	鍵の取得の手間を省けることです．
 
-	��gsi��(Grid Security Infrastructure) ǧ�ڤϡ��������˴�Ť���ǧ
-	����ˡ�Ǥ���Gfarm �� Globus ���󶡤��� GSI �饤�֥����Ѥ���
-	���ޤ���Globus ���ǡ����ΰŹ沽�򥵥ݡ��Ȥ��Ƥ��뤿�ᡤ
-	sharedsecret ǧ�ڤ�������Ǥ���ȹͤ����ޤ�����������͢��
-	�Ǥ� Globus �ξ�硤�С������ˤ�äƤϰŹ沽�򥵥ݡ��Ȥ��Ƥ�
-	�ʤ����Ȥ�����ޤ������Ȥ��� Globus �����Ź沽�򥵥ݡ��Ȥ��Ƥ�
-	��С������Ǥ��뤫��ǧ���Ƥ������Ȥ򤪴��ᤷ�ޤ���
+	「gsi」(Grid Security Infrastructure) 認証は，公開鍵に基づいた認
+	証方法です．Gfarm は Globus の提供する GSI ライブラリを用いて
+	います．Globus がデータの暗号化をサポートしているため，
+	sharedsecret 認証よりも安全であると考えられます．ただし，輸出
+	版の Globus の場合，バージョンによっては暗号化をサポートしてい
+	ないことがあります．お使いの Globus が，暗号化をサポートしてい
+	るバージョンであるか確認しておくことをお勧めします．
 
-	��gsi_auth�׼�ˡ�ξ�硤ǧ�ڽ����Τߤ� GSI �饤�֥����Ѥ���
-	���θ���̿��ˤϥǡ������Ф����̾��Ź沽�����ˤ���ݸ�Τʤ���
-	���Υǡ���ž�����Ѥ��ޤ������Τ��� sharedsecret ǧ�ڤ�Ʊ�͡�
-	�ѥ��å���İ�䡤TCP ���å����ξ�ü��ʤɤδ������Ĥ�ޤ���
-	���äơ�firewall �Ǽ���Ƥ���Ķ���ΤߤǤ����Ѥ򤪴��ᤷ��
-	����gsi_auth ��ˡ���󶡤��Ƥ�����ͳ�ϡ��ǡ���ž������®�ʤ���
-	�Ǥ���
+	「gsi_auth」手法の場合，認証処理のみに GSI ライブラリを用い，
+	その後の通信にはデータに対する署名や暗号化処理による保護のない，
+	生のデータ転送を用います．このため sharedsecret 認証と同様，
+	パケット盗聴や，TCP セッションの乗っ取りなどの危険が残ります．
+	従って，firewall で守られている環境内のみでの利用をお勧めしま
+	す．gsi_auth 手法を提供している理由は，データ転送が高速なこと
+	です．
 
-	gsi ǧ�ڤ� gsi_auth ��ˡ�ϡ������������ɤ� configure ����
-	--with-globus ���ץ�������ꤷ�ʤ��ȡ�ͭ���ˤʤ�ޤ���
-	GSI �˴ؤ���ܤ�������ϡ�http://www.globus.org/ �򻲾Ȥ�
-	�Ƥ���������
+	gsi 認証や gsi_auth 手法は，ソースコードの configure 時に
+	--with-globus オプションを指定しないと，有効になりません．
+	GSI に関する詳しい情報は，http://www.globus.org/ を参照し
+	てください．
 
 
-4. ���»���
+4. 制限事項
 ***********
-  4.1 Gfarm-1.x�ǥ��ݡ��Ȥ���Ƥ����ʲ��ε�ǽ�ϥ��ݡ��Ȥ���Ƥ��ޤ���
+  4.1 Gfarm-1.xでサポートされていた以下の機能はサポートされていません．
 
-	�ե�����ӥ塼���ե������ʬ���Ǽ
+	ファイルビュー，ファイルの分割格納
 
-  4.2 Gfarm-1.x�ǥ��ݡ��Ȥ���Ƥ����ʲ��ε�ǽ�ϥ��ݡ��Ȥ����ͽ��Ϥ�
-    ��ޤ���
+  4.2 Gfarm-1.xでサポートされていた以下の機能はサポートされる予定はあ
+    りません．
 
-	��⡼�ȥץ������ε�ư
+	リモートプログラムの起動

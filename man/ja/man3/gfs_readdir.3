@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_READDIR" "3" "29 October 2003" "Gfarm" ""
 .SH NAME
-gfs_readdir \- �ǥ��쥯�ȥ������ɤ߹���
+gfs_readdir \- ディレクトリ内容読み込み
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,23 +14,23 @@ char *gfs_readdir (GFS_Dir \fIdir\fB, struct gfs_dirent ** \fIentryp\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-����
+引数
 \fIdir\fR
-�ǻ��ꤷ���ǥ��쥯�ȥ꤫�顢1 �ĤΥǥ��쥯�ȥꡦ����ȥ�
-���ɤ߹��ߡ����Υݥ��󥿤�
+で指定したディレクトリから、1 つのディレクトリ・エントリ
+を読み込み、そのポインタを
 \fIentryp\fR
-�λؤ�����֤��ޤ���
+の指す先に返します。
 \fIentryp\fR
-�λؤ��ΰ�ϡ�����Ʊ��
+の指す領域は、次に同じ
 \fIdir\fR
-������ gfs_readdir() �ʤ��� gfs_closedir() ��ƤӽФ������˼����ޤ���
+引数で gfs_readdir() ないし gfs_closedir() を呼び出した時に失われます。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "SEE ALSO"
 .PP
 \fBgfs_closedir\fR(3),

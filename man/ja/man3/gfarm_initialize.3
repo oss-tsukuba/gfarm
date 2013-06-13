@@ -6,7 +6,7 @@
 .TH "GFARM_INITIALIZE" "3" "26 June 2010" "Gfarm" ""
 
 .SH NAME
-gfarm_initialize \- Gfarm �饤�֥�����������
+gfarm_initialize \- Gfarm ライブラリを初期化する
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -15,52 +15,52 @@ gfarm_error_t gfarm_initialize (int * \fIargcp\fB, char *** \fIargvp\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-Gfarm �饤�֥����������ޤ���
-Gfarm �饤�֥�� API �����Ѥ�������ɬ���Ƥ�ɬ�פ�����ޤ���
-�����ˤϡ��ץ������� main �ؿ���
+Gfarm ライブラリを初期化します。
+Gfarm ライブラリ API を利用する前に必ず呼ぶ必要があります。
+引数には、プログラムの main 関数の
 \fIargc\fR
-�����ؤΥݥ��󥿤ȡ�
+引数へのポインタと、
 \fIargv\fR
-�����ؤΥݥ��󥿤��Ϥ��ޤ���
+引数へのポインタを渡します。
 .SH "RETURN VALUES"
 .TP
 \fBGFARM_ERR_NO_ERROR\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
 \fBGFARM_ERR_UNKNOWN_HOST\fR
-���ꤵ�줿�᥿�ǡ��������ФΥ��ɥ쥹��褬�Ǥ��ޤ���
+指定されたメタデータサーバのアドレス解決ができません。
 .TP
 \fBGFARM_ERR_NETWORK_IS_UNREACHABLE\fR
-�᥿�ǡ��������Ф���ã�Ǥ��ޤ���
+メタデータサーバに到達できません。
 .TP
 \fBGFARM_ERR_OPERATION_TIMED_OUT\fR
-�᥿�ǡ��������Фؤ���³�������ॢ���Ȥ򤪤����ޤ�����
+メタデータサーバへの接続がタイムアウトをおこしました。
 .TP
 \fBGFARM_ERR_PROTOCOL\fR
-�᥿�ǡ��������ФȤ��̿��˥ץ��ȥ��륨�顼��ȯ�����ޤ�����
+メタデータサーバとの通信にプロトコルエラーが発生しました。
 .TP
 \fBGFARM_ERR_BROKEN_PIPE\fR
-�᥿�ǡ��������ФȤ��̿������Ǥ��ޤ�����
+メタデータサーバとの通信が切断しました。
 .TP
 \fBGFARM_ERR_PERMISSION_DENIED\fR
-�᥿�ǡ��������Фؤ�ǧ�ڤ˼��Ԥ��ޤ�����
+メタデータサーバへの認証に失敗しました。
 .TP
 \fBGFARM_ERR_PROTOCOL_NOT_SUPPORTED\fR
-���ꤵ�줿ǧ�ڥץ��ȥ���ϥ��ݡ��Ȥ��Ƥ��ޤ���
+指定された認証プロトコルはサポートしていません。
 .TP
 \fBGFARM_ERR_AUTHENTICATION\fR
-�᥿�ǡ��������Ф��Ф���ǧ�ڤ˼��Ԥ��ޤ�����
+メタデータサーバに対する認証に失敗しました。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 \fBgfarm_error_string\fR(3)
-�ˤ�ꥨ�顼�θ�����ʸ������Ѵ����뤳�Ȥ��Ǥ��ޤ���
+によりエラーの原因を文字列に変換することができます。
 .SH "SEE ALSO"
 .PP
 \fBgfarm_terminate\fR(3)

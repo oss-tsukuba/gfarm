@@ -11,23 +11,23 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfperf-replica</refname>
-<refpurpose>Gfarm �ե�����ʣ������ǽ¬���Ԥ���</refpurpose>
+<refpurpose>Gfarm ファイル複製の性能測定を行う。</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfperf-replica</command>
-    <arg choice='plain'>-s, --src <replaceable>ʣ����gfsd̾</replaceable></arg>
-    <arg choice='plain'>-s, --dst <replaceable>ʣ����gfsd̾</replaceable></arg>
-    <arg choice='opt'>-l, --filesize <replaceable>�ե����륵����</replaceable></arg>
-    <arg choice='opt'>-t, --testdir <replaceable>�ƥ��ȥǥ��쥯�ȥ�</replaceable></arg>
+    <arg choice='plain'>-s, --src <replaceable>複製元gfsd名</replaceable></arg>
+    <arg choice='plain'>-s, --dst <replaceable>複製先gfsd名</replaceable></arg>
+    <arg choice='opt'>-l, --filesize <replaceable>ファイルサイズ</replaceable></arg>
+    <arg choice='opt'>-t, --testdir <replaceable>テストディレクトリ</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>���� <parameter>�ƥ��ȥǥ��쥯�ȥ�</parameter> �˥ƥ����ѤΥե�����������������ʣ����ǽ��¬�ꤷ�ޤ���
+<para>引数 <parameter>テストディレクトリ</parameter> にテスト用のファイルを作成し、その複製性能を測定します。
 </para>
 </refsect1>
 
@@ -35,40 +35,40 @@
 <variablelist>
 
 <varlistentry>
-<term><option>-s, --src</option> <parameter>ʣ����gfsd̾</parameter></term>
+<term><option>-s, --src</option> <parameter>複製元gfsd名</parameter></term>
 <listitem>
 <para>
-ʣ����gfsd̾����ꤷ�ޤ���
+複製元gfsd名を指定します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-d, --dst</option> <parameter>ʣ����gfsd̾</parameter></term>
+<term><option>-d, --dst</option> <parameter>複製先gfsd名</parameter></term>
 <listitem>
 <para>
-ʣ����gfsd̾����ꤷ�ޤ���
+複製先gfsd名を指定します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-l, --filesize</option> <parameter>�ե����륵����</parameter></term>
+<term><option>-l, --filesize</option> <parameter>ファイルサイズ</parameter></term>
 <listitem>
 <para>
-�ƥ��Ȥǻ��Ѥ���ե����륵��������ꤷ�ޤ���
-�ǥե���Ȥ�1M�Ǥ���
+テストで使用するファイルサイズを指定します。
+デフォルトは1Mです。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-t, --testdir</option> <parameter>�ƥ��ȥǥ��쥯�ȥ�</parameter></term>
+<term><option>-t, --testdir</option> <parameter>テストディレクトリ</parameter></term>
 <listitem>
 <para>
-�ƥ��Ȥ�»ܤ���ǥ��쥯�ȥ����ꤷ�ޤ���
-gfarm url (gfarm:///�ǻϤޤ���) ����ꤷ�ޤ���
-�ǥե���Ȥ�gfarm:///tmp�Ǥ���
+テストを実施するディレクトリを指定します。
+gfarm url (gfarm:///で始まるもの) を指定します。
+デフォルトはgfarm:///tmpです。
 </para>
 </listitem>
 </varlistentry>

@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfarm_import_fragment_config_read&nbsp;--&nbsp;�ե饰���ȹ����ե�������ɤ߹���</DIV
+>gfarm_import_fragment_config_read&nbsp;--&nbsp;フラグメント構成ファイルを読み込む</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -103,45 +103,45 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->Gfarm�ե�����򥤥�ݡ��Ȥ��륢�ץꥱ��������Ѥ�����ؿ��ΰ�ĤǤ���</P
+>Gfarmファイルをインポートするアプリケーション用の補助関数の一つです。</P
 ><P
->import �ι����ե�����̾��
+>import の構成ファイル名を
 <TT
 CLASS="PARAMETER"
 ><I
 >config</I
 ></TT
 >
-�˻��ꤹ��ȡ����Υե����뤫�顢
-�ۥ��Ȥ������
+に指定すると、そのファイルから、
+ホストの配列を
 <TT
 CLASS="PARAMETER"
 ><I
 >host_table_p</I
 ></TT
 >
-�λؤ���ˡ��ޤ����������������
+の指す先に、また、サイズの配列を
 <TT
 CLASS="PARAMETER"
 ><I
 >size_table_p</I
 ></TT
 >
-�λؤ�����֤��ޤ��������ե�����˹�ʸ���顼�����������ˤϡ�
+の指す先に返します。構成ファイルに構文エラーが生じた場合には、
 <TT
 CLASS="PARAMETER"
 ><I
 >error_line_p</I
 ></TT
 >
-�λؤ���ˡ��ե�����ι��ֹ���֤��ޤ��������ͤ� -1 
-�ξ��ˤϡ���ʸ�ʳ��Υ��顼�����Ǥ���</P
+の指す先に、ファイルの行番号を返します。この値が -1 
+の場合には、構文以外のエラー原因です。</P
 ><P
->�����ե�����ϡ��ƹԤ�������Ƕ��ڤ�줿�������ȥۥ���̾����ʤ�����Ǥ���</P
+>構成ファイルは、各行が、空白で区切られたサイズとホスト名からなる形式です。</P
 ><P
->�����������ۥ��Ȥ������ gfarm_strings_free_deeply() ���Ѥ��Ʋ���
-����ɬ�פ�����ޤ���
-�ޤ�������������������������� free() ���Ѥ��Ʋ�������ɬ�פ�����ޤ���</P
+>ここで得たホストの配列は gfarm_strings_free_deeply() を用いて解放
+する必要があります。
+また、ここで得たサイズの配列は free() を用いて解放する必要があります。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -162,7 +162,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ｪλ�򼨤��ޤ���</P
+>正常終了を示します。</P
 ></DD
 ><DT
 ><TT
@@ -171,13 +171,13 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->������­�Τ����������ߤ��ޤ�����</P
+>メモリ不足のため処理を中止しました。</P
 ></DD
 ><DT
->����¾</DT
+>その他</DT
 ><DD
 ><P
->�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</P
+>上記以外のエラーが生じたことを示します。</P
 ></DD
 ></DL
 ></DIV

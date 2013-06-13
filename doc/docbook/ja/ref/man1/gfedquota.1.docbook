@@ -12,36 +12,36 @@
 
 <refnamediv id='name'>
 <refname>gfedquota</refname>
-<refpurpose>�ե���������¤��Խ�</refpurpose>
+<refpurpose>ファイルの制限を編集</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfedquota</command>
-    <arg choice='opt'><replaceable>���ץ����</replaceable></arg>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfedquota</command> �ϡ��桼���䥰�롼�פ��Ф���ե�����
-���¤��Խ��Ǥ��ޤ���
+<para><command>gfedquota</command> は、ユーザやグループに対するファイル
+制限を編集できます。
 </para>
 <para>
-���¤μ���ˤϡ����եȥ�ߥåȤȥϡ��ɥ�ߥåȤ�����ޤ���
-���եȥ�ߥåȤˤ�ͱͽ���֤�����Ǥ��ޤ���
-���¤����оݤϡ��ե�������ι�פȥե����륵�����ι�ס���ץꥫ��ޤ�
-���¥ե�������ι�פȼ¥ե����륵�����ι�פǤ���
-�����ͤ� 'disable' �ޤ��� -1  ����ꤹ��ȡ�̵���¤ˤʤ�ޤ���
-���¤��뤿��Υ��ץ�������ꤷ�ʤ���С���������� (quota) ���Ѥ���
-����
+制限の種類には、ソフトリミットとハードリミットがあります。
+ソフトリミットには猶予期間を設定できます。
+制限する対象は、ファイル数の合計とファイルサイズの合計、レプリカを含め
+た実ファイル数の合計と実ファイルサイズの合計です。
+制限値に 'disable' または -1  を指定すると、無制限になります。
+制限するためのオプションを指定しなければ、割り当て量 (quota) は変わりま
+せん。
 </para>
 <para>
-���Υ��ޥ�ɤ� gfarmadm ���롼�פ˽�°��������Ԥ������¹ԤǤ��ޤ���
+このコマンドは gfarmadm グループに所属する管理者だけが実行できます。
 </para>
 <para>
-<command>gfedquota</command> ���ޥ�ɼ¹Ը�
-�� <command>gfquotacheck</command> ���ޥ�ɤ�¹Ԥ���� quota ��ͭ����
-�ʤ�ޤ���
+<command>gfedquota</command> コマンド実行後
+に <command>gfquotacheck</command> コマンドを実行すると quota が有効に
+なります。
 </para>
 </refsect1>
 
@@ -51,93 +51,93 @@
 <varlistentry>
 <term><option>-P NAME, --path=NAME</option></term>
 <listitem>
-<para>���ꤷ���ѥ�̾�ˤ������Υ᥿�ǡ��������Ф���ꤷ�ޤ���</para>
+<para>指定したパス名により特定のメタデータサーバを指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-u NAME, --user=NAME</option></term>
 <listitem>
-<para>���¤��Խ������оݤΥ桼��̾����ꤷ�ޤ���</para>
+<para>制限を編集する対象のユーザ名を指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-g NAME, --group=NAME</option></term>
 <listitem>
-<para>���¤��Խ������оݤΥ��롼��̾����ꤷ�ޤ���</para>
+<para>制限を編集する対象のグループ名を指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-G SECOND, --grace=SECOND</option></term>
 <listitem>
-<para>���եȥ�ߥåȤ�ͱͽ���֤��äǻ��ꤷ�ޤ���</para>
+<para>ソフトリミットの猶予時間を秒で指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-s BYTE, --softspc=BYTE</option></term>
 <listitem>
-<para>�ե���������̤Υ��եȥ�ߥåȤ�Х��ȿ��ǻ��ꤷ�ޤ���</para>
+<para>ファイル使用量のソフトリミットをバイト数で指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-h BYTE, --hardspc=BYTE</option></term>
 <listitem>
-<para>�ե���������̤Υϡ��ɥ�ߥåȤ�Х��ȿ��ǻ��ꤷ�ޤ���</para>
+<para>ファイル使用量のハードリミットをバイト数で指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-m NUM, --softnum=NUM</option></term>
 <listitem>
-<para>�ե�������Υ��եȥ�ߥåȤ���ͤǻ��ꤷ�ޤ���</para>
+<para>ファイル数のソフトリミットを数値で指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-n NUM, --hardnum=NUM</option></term>
 <listitem>
-<para>�ե�������Υϡ��ɥ�ߥåȤ���ͤǻ��ꤷ�ޤ���</para>
+<para>ファイル数のハードリミットを数値で指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-S BYTE, --physoftspc=BYTE</option></term>
 <listitem>
-<para>��ץꥫ��ޤ᤿�¥ե���������̤Υ��եȥ�ߥåȤ�
-�Х��ȿ��ǻ��ꤷ�ޤ���</para>
+<para>レプリカを含めた実ファイル使用量のソフトリミットを
+バイト数で指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-H BYTE, --phyhardspc=BYTE</option></term>
 <listitem>
-<para>��ץꥫ��ޤ᤿�¥ե���������̤Υϡ��ɥ�ߥåȤ�
-�Х��ȿ��ǻ��ꤷ�ޤ���</para>
+<para>レプリカを含めた実ファイル使用量のハードリミットを
+バイト数で指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-M NUM, --physoftnum=NUM</option></term>
 <listitem>
-<para>��ץꥫ��ޤ᤿�¥ե�������Υ��եȥ�ߥåȤ���ͤǻ��ꤷ�ޤ���</para>
+<para>レプリカを含めた実ファイル数のソフトリミットを数値で指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-N NUM, --phyhardnum=NUM</option></term>
 <listitem>
-<para>��ץꥫ��ޤ᤿�¥ե�������Υϡ��ɥ�ߥåȤ���ͤǻ��ꤷ�ޤ���</para>
+<para>レプリカを含めた実ファイル数のハードリミットを数値で指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
 

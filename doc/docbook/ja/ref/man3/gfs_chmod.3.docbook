@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_chmod</refname>
-<refpurpose>�⡼���ѹ�</refpurpose>
+<refpurpose>モード変更</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -33,21 +33,21 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>����
+<para>引数
 <parameter>gfarm_url</parameter>
-�˻��ꤷ��̾���Υե����롦�ǥ��쥯�ȥ�Υ⡼�ɤ�
+に指定した名前のファイル・ディレクトリのモードを、
 <parameter>mode</parameter>
-���ѹ����ޤ�������
+に変更します。この
 <parameter>mode</parameter>
-���ͤΰ�̣��
+の値の意味は
 <function>chmod(2)</function>
-��Ʊ�ͤǤ���������9�ӥåȤΤ�ͭ���Ǥ���
+と同様ですが、下位9ビットのみ有効です。
 </para>
 
-<para>ʣ���Υե饰���Ȥ���ʤ�ե�����μ¹�°�����ѹ��ˤ�����
-����ޤ����¹�°����������ˤϼ¹�°���򤹤٤�����ȤϤǤ��ޤ���
-���ʤ��Ȥ��Ĥμ¹ԥӥåȤϻĤ��Ƥ���ɬ�פ�����ޤ���
-�դˡ��¹�°���������ʤ����˼¹�°����Ω�Ƥ뤳�ȤϤǤ��ޤ���</para>
+<para>複数のフラグメントからなるファイルの実行属性の変更には制約が
+あります。実行属性がある場合には実行属性をすべて落すことはできません。
+少なくとも一つの実行ビットは残しておく必要があります。
+逆に、実行属性が全くない場合に実行属性を立てることはできません。</para>
 
 </refsect1>
 
@@ -57,53 +57,53 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
 <listitem>
-<para>gfmd(8) ���뤤�� gfsd(8) ���Ф���桼����ǧ�ڤ����Ԥ��ޤ�����</para>
+<para>gfmd(8) あるいは gfsd(8) に対するユーザー認証が失敗しました。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
-<para>���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ�ؤΥ����������븢�¤�����ޤ���</para>
+<para>指定したパス名の親ディレクトリへのアクセスする権限がありません。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
 <listitem>
-<para>�ץ�������¹Ԥ��Ƥ���桼���������ե�����ν�ͭ�ԤǤ⡢�����ƥ������
-�Ǥ⤢��ޤ��󡣤ޤ��ϡ�ʣ���Υե饰���Ȥ��ĥե�����μ¹ԥӥåȤ�
-���ʤ��Ȥ��ĤϤ�����֤��������ʤ����֤ˡ����뤤�Ϥ��εդ��ѹ����褦��
-���ޤ�����</para>
+<para>プロセスを実行しているユーザーが、ファイルの所有者でも、システム管理者
+でもありません。または、複数のフラグメントをもつファイルの実行ビットを
+少なくとも一つはある状態から全くない状態に、あるいはその逆に変更しようと
+しました。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
-<para>���ꤵ�줿�ѥ�̾��¸�ߤ��ޤ���</para>
+<para>指定されたパス名が存在しません。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
 <listitem>
-<para>���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤϥǥ��쥯�ȥ�Ǥʤ��ä����Ȥ�
-�����ޤ���</para>
+<para>指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。</para>
 </listitem>
 </varlistentry>
 
@@ -111,15 +111,15 @@
 <varlistentry>
 <term><constant>GFARM_ERR_READ_ONLY_FILE_SYSTEM</constant></term>
 <listitem>
-<para>���ꤷ���ѥ�̾���ɤ߹������ѥե����륷���ƥ��ˤ���ޤ���</para>
+<para>指定したパス名は読み込み専用ファイルシステム上にあります。</para>
 </listitem>
 </varlistentry>
 -->
 
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 

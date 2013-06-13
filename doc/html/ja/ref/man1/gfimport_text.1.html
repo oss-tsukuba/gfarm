@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfimport_text&nbsp;--&nbsp;�ƥ����ȡ��ե������ե饰���Ȥ�ʬ���Ƽ�����</DIV
+>gfimport_text&nbsp;--&nbsp;テキスト・ファイルをフラグメントに分けて取り込む</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -41,12 +41,12 @@ CLASS="COMMAND"
 > [<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 >]  <TT
 CLASS="REPLACEABLE"
 ><I
->���ϥե�����</I
+>入力ファイル</I
 ></TT
 > </P
 ></DIV
@@ -58,9 +58,9 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->�����˻��ꤷ���ƥ����ȡ��ե�����򡢰�Ԥ�ʣ���Υե饰���Ȥ�ʬ�䤹
-�뤳�ȤΤʤ��褦��ʬ�䤷�� Gfarm �ե����륷���ƥ�˼�����
-����ץ롦�ץ������Ǥ���</P
+>引数に指定したテキスト・ファイルを、一行を複数のフラグメントに分割す
+ることのないように分割して Gfarm ファイルシステムに取り込む
+サンプル・プログラムです。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -81,18 +81,18 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->�ۥ��Ȼ���ե�����</I
+>ホスト指定ファイル</I
 ></TT
 ></DT
 ><DD
 ><P
->�ե饰���Ȥ����֤���ۥ���̾�Υꥹ�Ȥ򵭺ܤ����ե�����̾����ꤷ�ޤ���
-�ۥ���̾�ϡ��ƹԤ˰�ۥ��Ȥ��ĵ��Ҥ��ޤ���
-���ϥե�����Ϥ��줾��Υե饰���ȥ��������ۤܶ����Ȥʤ�褦��
-ʬ�䤵��ޤ���</P
+>フラグメントを配置するホスト名のリストを記載したファイル名を指定します。
+ホスト名は、各行に一ホストずつ記述します。
+入力ファイルはそれぞれのフラグメントサイズがほぼ均等となるように
+分割されます。</P
 ><P
->�ե�����̾�Ȥ��� ``-'' ����ꤷ����硢ɸ�����Ϥ���ۥ���̾�Υꥹ�Ȥ�
-�ɤ߹��ߤޤ���</P
+>ファイル名として ``-'' を指定した場合、標準入力からホスト名のリストを
+読み込みます。</P
 ></DD
 ><DT
 ><TT
@@ -101,18 +101,18 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->�ե饰���ȹ����ե�����</I
+>フラグメント構成ファイル</I
 ></TT
 ></DT
 ><DD
 ><P
->�ƥե饰���ȤΤ����褽�Υ������ȡ����֤���ۥ��Ȥ򵭺ܤ����ե���
-��̾����ꤷ�ޤ���</P
+>各フラグメントのおおよそのサイズと、配置するホストを記載したファイ
+ル名を指定します。</P
 ><P
->�����ե�����ϡ��ƹԤ�������Ƕ��ڤ�줿�������ȥۥ���̾����ʤ�����Ǥ���</P
+>構成ファイルは、各行が、空白で区切られたサイズとホスト名からなる形式です。</P
 ><P
->�ե�����̾�Ȥ��� ``-'' ����ꤷ����硢ɸ�����Ϥ���ե饰���ȹ�����
-�ɤ߹��ߤޤ���</P
+>ファイル名として ``-'' を指定した場合、標準入力からフラグメント構成を
+読み込みます。</P
 ></DD
 ><DT
 ><TT
@@ -126,7 +126,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->���� Gfarm �ե������ URL ����ꤷ�ޤ���</P
+>出力 Gfarm ファイルの URL を指定します。</P
 ></DD
 ><DT
 ><TT
@@ -135,7 +135,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������ץ�����ɽ�����ޤ���</P
+>引数オプションを表示します。</P
 ></DD
 ></DL
 ></DIV
@@ -154,16 +154,16 @@ NAME="AEN52"
 ></A
 ><P
 ><B
->Example 1. ���ꤷ���Ŀ���ʬ�䤷�Ƽ�����</B
+>Example 1. 指定した個数に分割して取り込む</B
 ></P
 ><P
->�ʲ��ϡ��ե������8�ĤΥե饰���Ȥ�ʬ�䤷��
-�ե����� <TT
+>以下は、ファイルを8個のフラグメントに分割し、
+ファイル <TT
 CLASS="REPLACEABLE"
 ><I
 >gfarm:file</I
 ></TT
-> �Ȥ��Ƽ�������Ǥ���
+> として取り込む例です。
 <TABLE
 BORDER="0"
 BGCOLOR="#E0E0E0"
@@ -185,22 +185,22 @@ NAME="AEN57"
 ></A
 ><P
 ><B
->Example 2. ��������ץ���������ꤷ������θĿ���ʬ�䤷�Ƽ�����</B
+>Example 2. 処理するプログラムを指定し、特定の個数に分割して取り込む</B
 ></P
 ><P
->�ʲ��ϡ��ե������8�ĤΥե饰���Ȥ�ʬ�䤷��
-���ꤷ���ץ������ <TT
+>以下は、ファイルを8個のフラグメントに分割し、
+指定したプログラム <TT
 CLASS="REPLACEABLE"
 ><I
 >gfarm:prog</I
 ></TT
-> ��¹Բ�ǽ�ʥۥ��Ȥˡ�
-�ե����� <TT
+> を実行可能なホストに、
+ファイル <TT
 CLASS="REPLACEABLE"
 ><I
 >gfarm:file</I
 ></TT
-> �Ȥ��Ƽ�������Ǥ���
+> として取り込む例です。
 <TABLE
 BORDER="0"
 BGCOLOR="#E0E0E0"
@@ -222,28 +222,28 @@ NAME="AEN63"
 ></A
 ><P
 ><B
->Example 3. ��¸�� gfarm �ե������Ʊ�����֤Ǽ�����</B
+>Example 3. 既存の gfarm ファイルと同じ配置で取り込む</B
 ></P
 ><P
->�ʲ��ϡ���¸�� gfarm �ե����� <TT
+>以下は、既存の gfarm ファイル <TT
 CLASS="REPLACEABLE"
 ><I
 >gfarm:template</I
 ></TT
-> ��
-Ʊ���Ŀ��Υե饰���Ȥ�ʬ�䤷��
+> と
+同じ個数のフラグメントに分割し、
 <TT
 CLASS="REPLACEABLE"
 ><I
 >gfarm:template</I
 ></TT
-> ��¸�ߤ���Τ�Ʊ���ۥ��Ȥˡ�
-�ե����� <TT
+> が存在するのと同じホストに、
+ファイル <TT
 CLASS="REPLACEABLE"
 ><I
 >gfarm:file</I
 ></TT
-> �Ȥ��Ƽ�������Ǥ���
+> として取り込む例です。
 <TABLE
 BORDER="0"
 BGCOLOR="#E0E0E0"

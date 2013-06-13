@@ -12,21 +12,21 @@
 
 <refnamediv id='name'>
 <refname>gfmkdir</refname>
-<refpurpose>Gfarm �ǥ��쥯�ȥ��������롣</refpurpose>
+<refpurpose>Gfarm ディレクトリを作成する。</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfmkdir</command>
-    <arg choice='opt'><replaceable>���ץ����</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>gfarm�ѥ�</replaceable></arg>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarmパス</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>Gfarm�ѥ��˻��ꤷ���ǥ��쥯�ȥ��������ޤ���</para>
+<para>Gfarmパスに指定したディレクトリを作成します。</para>
 
 </refsect1>
 
@@ -35,14 +35,14 @@
 <varlistentry>
 <term><option>-p</option></term>
 <listitem>
-<para>���ꤷ���ǥ��쥯�ȥ꤬¸�ߤ��Ƥ⥨�顼�ˤ��ޤ���
-ɬ�פ˱����ƿƥǥ��쥯�ȥ��������ޤ���</para>
+<para>指定したディレクトリが存在してもエラーにしません。
+必要に応じて親ディレクトリを作成します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

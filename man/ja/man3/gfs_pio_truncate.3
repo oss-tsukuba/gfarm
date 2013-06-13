@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_PIO_TRUNCATE" "3" "17 November 2004" "Gfarm" ""
 .SH NAME
-gfs_pio_truncate \- ���ꤷ��Ĺ���˥ե������ڤ�ͤ�롣�⤷���ϳ�ĥ���롣
+gfs_pio_truncate \- 指定した長さにファイル切り詰める。もしくは拡張する。
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,37 +14,37 @@ char *gfs_pio_truncate (GFS_File \fIgf\fB, file_offset_t \fIlength\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-�ե�����
+ファイル
 \fIgf\fR
-��Ĺ�����ѹ����ޤ���
+の長さを変更します。
 .PP
-����
+引数
 \fIlength\fR
-���ե�����
+がファイル
 \fIgf\fR
-����û��������ڤ�ͤ�ޤ���
+よりも短かければ切り詰めます。
 .PP
-����
+引数
 \fIlength\fR
-���ե�����
+がファイル
 \fIgf\fR
-����Ĺ����г�ĥ���ޤ�����ĥ���줿��ʬ���ɤ�����ϥ������֤��ޤ���
+よりも長ければ拡張します。拡張された部分を読んだ場合はゼロを返します。
 .PP
-�ե�����ݥ��󥿤��ѹ����ޤ���
+ファイルポインタは変更しません。
 .PP
-�ե�����Ͻ񤭹����Ѥ˥����ץ󤵤�Ƥ��ʤ���Фʤ�ޤ���
-���Τ��ᡢ�����ץ���� GFS_FILE_MODE_WRITE 
-�ե饰����ꤹ��ɬ�פ�����ޤ���
+ファイルは書き込み用にオープンされていなければなりません。
+このため、オープン時に GFS_FILE_MODE_WRITE 
+フラグを指定する必要があります。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "SEE ALSO"
 .PP
 \fBgfs_pio_create\fR(3),

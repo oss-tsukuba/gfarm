@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfarm_hostlist_read&nbsp;--&nbsp;�ۥ��ȹ����ե�������ɤ߹���</DIV
+>gfarm_hostlist_read&nbsp;--&nbsp;ホスト構成ファイルを読み込む</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -98,36 +98,36 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->Gfarm�ե�����򥤥�ݡ��Ȥ��륢�ץꥱ��������Ѥ�����ؿ��ΰ�ĤǤ���</P
+>Gfarmファイルをインポートするアプリケーション用の補助関数の一つです。</P
 ><P
->�ۥ��ȹ����ե�����̾��
+>ホスト構成ファイル名を
 <TT
 CLASS="PARAMETER"
 ><I
 >filename</I
 ></TT
 >
-�˻��ꤹ��ȡ����Υե����뤫�顢
-�ۥ��Ȥ������
+に指定すると、そのファイルから、
+ホストの配列を
 <TT
 CLASS="PARAMETER"
 ><I
 >line_table_p</I
 ></TT
 >
-�λؤ���ˤ��֤��ޤ���
-�����ե�����˹�ʸ���顼�����������ˤϡ�
+の指す先にに返します。
+構成ファイルに構文エラーが生じた場合には、
 <TT
 CLASS="PARAMETER"
 ><I
 >error_line_p</I
 ></TT
 >
-�λؤ���ˡ��ե�����ι��ֹ���֤��ޤ��������ͤ� -1 
-�ξ��ˤϡ���ʸ�ʳ��Υ��顼�����Ǥ���</P
+の指す先に、ファイルの行番号を返します。この値が -1 
+の場合には、構文以外のエラー原因です。</P
 ><P
->�����������ۥ��Ȥ������ gfarm_strings_free_deeply() ���Ѥ��Ʋ���
-����ɬ�פ�����ޤ���</P
+>ここで得たホストの配列は gfarm_strings_free_deeply() を用いて解放
+する必要があります。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -148,7 +148,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ｪλ�򼨤��ޤ���</P
+>正常終了を示します。</P
 ></DD
 ><DT
 ><TT
@@ -157,13 +157,13 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->������­�Τ����������ߤ��ޤ�����</P
+>メモリ不足のため処理を中止しました。</P
 ></DD
 ><DT
->����¾</DT
+>その他</DT
 ><DD
 ><P
->�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</P
+>上記以外のエラーが生じたことを示します。</P
 ></DD
 ></DL
 ></DIV

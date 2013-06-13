@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_readline</refname>
-<refpurpose>����ɤ߹���</refpurpose>
+<refpurpose>一行読み込み</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -36,55 +36,55 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>
-�ե����� <parameter>gf</parameter>
-���顢����ɤ߹��ߤޤ���
+ファイル <parameter>gf</parameter>
+から、一行読み込みます。
 </para>
 
 <para>
-���� <parameter>bufp</parameter>
-�ϡ��ǽ�� NULL �ǽ�������줿�ݥ����ѿ��Υ��ɥ쥹����ꤷ�ޤ���
-�ؿ� <function>gfs_pio_readline()</function> �ϡ������Ϥ��Ѥ���
-�Хåե���ưŪ�˳�����ơ����Υ��ɥ쥹�򤳤Υݥ����ѿ��˵�Ͽ���ޤ���
-���� <parameter>sizep</parameter> �ϡ�0 �ǽ�������� size_t �����ѿ�
-�Υ��ɥ쥹����ꤷ�ޤ��������ѿ��ϡ��Хåե��Υ�������Ͽ���뤿���
-�Ȥ��ޤ���
-���뤤�ϡ�malloc(3) �ǳ�����Ƥ��Хåե���ؤ��ݥ��󥿤Υ��ɥ쥹��
-���� <parameter>bufp</parameter>
-�˻��ꤹ�뤳�Ȥ�Ǥ��ޤ������ξ�硢
-���� <parameter>sizep</parameter> 
-�ϡ�������Ƥ��Хåե��Υ������ǽ�������Ƥ����ޤ���
-�Ԥ�Ĺ�����Хåե��Υ�������ۤ�����ˤϡ��Хåե��ϼ�ưŪ��
-realloc(3) ���졢
-���� <parameter>bufp</parameter>
-�����
-���� <parameter>sizep</parameter> 
-�ǻ��ꤵ�줿�ѿ��⤽��˽��äƹ�������ޤ���
-�ե�������ɤ߽���ä��顢���Υݥ��󥿤� free(3) �ǲ�������ɬ�פ�
-����ޤ���
+引数 <parameter>bufp</parameter>
+は、最初は NULL で初期化されたポインタ変数のアドレスを指定します。
+関数 <function>gfs_pio_readline()</function> は、入出力に用いる
+バッファを動的に割り当て、そのアドレスをこのポインタ変数に記録します。
+引数 <parameter>sizep</parameter> は、0 で初期化した size_t 型の変数
+のアドレスを指定します。この変数は、バッファのサイズを記録するために
+使われます。
+あるいは、malloc(3) で割り当てたバッファを指すポインタのアドレスを
+引数 <parameter>bufp</parameter>
+に指定することもできます。この場合、
+引数 <parameter>sizep</parameter> 
+は、割り当てたバッファのサイズで初期化しておきます。
+行の長さがバッファのサイズを越える場合には、バッファは自動的に
+realloc(3) され、
+引数 <parameter>bufp</parameter>
+および
+引数 <parameter>sizep</parameter> 
+で指定された変数もそれに従って更新されます。
+ファイルを読み終わったら、このポインタを free(3) で解放する必要が
+あります。
 </para>
 
 <para>
-���� <parameter>lenp</parameter>
-�λؤ��ѿ��ˤϡ��ɤ߹����Ĺ�����֤��ޤ���
-����Ĺ���ˤϡ����������ʬ��ޤߤޤ���
+引数 <parameter>lenp</parameter>
+の指す変数には、読み込んだ長さを返します。
+この長さには、行末記号の分も含みます。
 </para>
 
 <para>
-�ؿ� gfs_pio_gets(3) ��Ʊ�͡����δؿ��Ϲ����β��Ե���������ޤ���
-�ޤ���ʸ����ν����򼨤� '\0' ʸ���򡢾���ղä��ޤ���
-�ޤ���
-���� <parameter>lenp</parameter>
-�λؤ��ѿ����֤ä��ͤ�Ȥ��С�ʸ�� '\0' ��ޤ�Ԥ򰷤����Ȥ�Ǥ��ޤ���
+関数 gfs_pio_gets(3) と同様、この関数は行末の改行記号を削除しません。
+また、文字列の終わりを示す '\0' 文字を、常に付加します。
+また、
+引数 <parameter>lenp</parameter>
+の指す変数に返った値を使えば、文字 '\0' を含む行を扱うこともできます。
 </para>
 
 <para>
 <acronym>EOF</acronym>
-�ϡ����Ϥ�Ĺ���� 0 ʸ���Ǥ��뤳�Ȥ�Ƚ�Ǥ��ޤ���
+は、入力の長さが 0 文字であることで判断します。
 </para>
 
 <para>
-���δؿ��ϡ�gfs_pio_readdelim(f, bufp, sizep, lenp, "\n", 1) ��
-�����Ǥ���
+この関数は、gfs_pio_readdelim(f, bufp, sizep, lenp, "\n", 1) と
+等価です。
 </para>
 
 </refsect1>
@@ -94,21 +94,21 @@ realloc(3) ���졢
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
-<para>���ξ��⡢<parameter>bufp</parameter> �λؤ��ݥ����ѿ���
-�ؤ��ΰ�� free(3) ����ɬ�פ�����ޤ��������դ��Ƥ���������</para>
+<para>メモリ不足のため処理を中止しました。</para>
+<para>この場合も、<parameter>bufp</parameter> の指すポインタ変数の
+指す領域を free(3) する必要がありますから注意してください。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>
@@ -117,7 +117,7 @@ realloc(3) ���졢
 <refsect1 id='examples'><title>EXAMPLES</title>
 
 <example role="example">
-<title><function>gfs_pio_readline</function> �ؿ��λ�����</title>
+<title><function>gfs_pio_readline</function> 関数の使用例</title>
 <para><programlisting>
 #include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;

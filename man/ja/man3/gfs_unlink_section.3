@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_UNLINK_SECTION" "3" "19 May 2005" "Gfarm" ""
 .SH NAME
-gfs_unlink_section \- �ե����륻���������
+gfs_unlink_section \- ファイルセクション削除
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,31 +14,31 @@ char *gfs_unlink_section (char * \fIgfarm_url\fB, char * \fIsection\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-����
+引数
 \fIgfarm_url\fR,
 \fIsection\fR
-�˻��ꤷ���ե����륻�������������ޤ���
+に指定したファイルセクションを削除します。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
 \fBGFARM_ERR_AUTHENTICATION\fR
-gfmd(8) ���Ф���桼����ǧ�ڤ����Ԥ��ޤ�����
+gfmd(8) に対するユーザー認証が失敗しました。
 .TP
 \fBGFARM_ERR_PERMISSION_DENIED\fR
 \fIgfarm_url\fR
-�οƥǥ��쥯�ȥ�ؽ񤭹��ߥ����������븢�¤�����ޤ���
+の親ディレクトリへ書き込みアクセスする権限がありません。
 .TP
 \fBGFARM_ERR_NO_SUCH_OBJECT\fR
-���ꤵ�줿�ե����륻�������¸�ߤ��ޤ���
+指定されたファイルセクションが存在しません。
 .TP
 \fBGFARM_ERR_NOT_A_DIRECTORY\fR
-���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤϥǥ��쥯�ȥ�Ǥʤ��ä����Ȥ�
-�����ޤ���
+指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。

@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfarm_import_fragment_config_read</refname>
-<refpurpose>�ե饰���ȹ����ե�������ɤ߹���</refpurpose>
+<refpurpose>フラグメント構成ファイルを読み込む</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -36,25 +36,25 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>Gfarm�ե�����򥤥�ݡ��Ȥ��륢�ץꥱ��������Ѥ�����ؿ��ΰ�ĤǤ���</para>
+<para>Gfarmファイルをインポートするアプリケーション用の補助関数の一つです。</para>
 
-<para>import �ι����ե�����̾��
+<para>import の構成ファイル名を
 <parameter>config</parameter>
-�˻��ꤹ��ȡ����Υե����뤫�顢
-�ۥ��Ȥ������
+に指定すると、そのファイルから、
+ホストの配列を
 <parameter>host_table_p</parameter>
-�λؤ���ˡ��ޤ����������������
+の指す先に、また、サイズの配列を
 <parameter>size_table_p</parameter>
-�λؤ�����֤��ޤ��������ե�����˹�ʸ���顼�����������ˤϡ�
+の指す先に返します。構成ファイルに構文エラーが生じた場合には、
 <parameter>error_line_p</parameter>
-�λؤ���ˡ��ե�����ι��ֹ���֤��ޤ��������ͤ� -1 
-�ξ��ˤϡ���ʸ�ʳ��Υ��顼�����Ǥ���</para>
+の指す先に、ファイルの行番号を返します。この値が -1 
+の場合には、構文以外のエラー原因です。</para>
 
-<para>�����ե�����ϡ��ƹԤ�������Ƕ��ڤ�줿�������ȥۥ���̾����ʤ�����Ǥ���</para>
+<para>構成ファイルは、各行が、空白で区切られたサイズとホスト名からなる形式です。</para>
 
-<para>�����������ۥ��Ȥ������ gfarm_strings_free_deeply() ���Ѥ��Ʋ���
-����ɬ�פ�����ޤ���
-�ޤ�������������������������� free() ���Ѥ��Ʋ�������ɬ�פ�����ޤ���</para>
+<para>ここで得たホストの配列は gfarm_strings_free_deeply() を用いて解放
+する必要があります。
+また、ここで得たサイズの配列は free() を用いて解放する必要があります。</para>
 
 
 </refsect1>
@@ -64,19 +64,19 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

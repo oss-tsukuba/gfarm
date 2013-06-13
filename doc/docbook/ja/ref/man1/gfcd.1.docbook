@@ -12,36 +12,36 @@
 
 <refnamediv id='name'>
 <refname>gfcd</refname>
-<refpurpose>Gfarm ║ю╢╚е╟егеьепе╚еъдЄ╩╤╣╣д╣дыбг</refpurpose>
+<refpurpose>Gfarm ф╜ЬценуГЗуВгуГмуВпуГИуГкуВТхдЙцЫ┤уБЩуВЛуАВ</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfcd</command>
-    <arg choice='opt'><replaceable>е╟егеьепе╚еъ</replaceable></arg>
+    <arg choice='opt'><replaceable>уГЗуВгуГмуВпуГИуГк</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>Gfarm ║ю╢╚е╟егеьепе╚еъдЄ ╗╪─ъд╖д┐е╟егеьепе╚еъд╦╩╤╣╣д╖д▐д╣бг
-е╟егеьепе╚еъдЄ╗╪─ъд╖д╩дд╛ь╣чд╧бвецб╝е╢д╬ Gfarm е█б╝ере╟егеьепе╚еъд╟двды
-gfarm:/<replaceable>е░еэб╝е╨еыецб╝е╢</replaceable> д╦╩╤╣╣д╖д▐д╣бг
+<para>Gfarm ф╜ЬценуГЗуВгуГмуВпуГИуГкуВТ цМЗхоЪуБЧуБЯуГЗуВгуГмуВпуГИуГкуБлхдЙцЫ┤уБЧуБ╛уБЩуАВ
+уГЗуВгуГмуВпуГИуГкуВТцМЗхоЪуБЧуБкуБДха┤хРИуБпуАБуГжуГ╝уВ╢уБо Gfarm уГЫуГ╝уГауГЗуВгуГмуВпуГИуГкуБзуБВуВЛ
+gfarm:/<replaceable>уВ░уГнуГ╝уГРуГлуГжуГ╝уВ╢</replaceable> уБлхдЙцЫ┤уБЧуБ╛уБЩуАВ
 </para>
 <para>
-│╞Gfarm е│е▐еєе╔дм║ю╢╚е╟егеьепе╚еъдЄ╗▓╛╚д╟дндыдшджд╦бв│╞ецб╝е╢д╬
-е╖езеы└▀─ъе╒ебедеыд╦░╩▓╝д╬─ъ╡┴дЄ─╔▓├д╖д╞дпд└д╡ддбг
+хРДGfarm уВ│уГЮуГ│уГЙуБМф╜ЬценуГЗуВгуГмуВпуГИуГкуВТхПВчЕзуБзуБНуВЛуВИуБЖуБлуАБхРДуГжуГ╝уВ╢уБо
+уВ╖уВзуГлшинхоЪуГХуВбуВдуГлуБлф╗еф╕ЛуБохоЪч╛йуВТш┐╜хКауБЧуБжуБПуБауБХуБДуАВ
 </para>
 <variablelist>
   <varlistentry>
-    <term>Bourne shell ╖╧е╖езеыд╬╛ь╣ч</term>
+    <term>Bourne shell ч│╗уВ╖уВзуГлуБоха┤хРИ</term>
     <listitem>
       <screen>gfcd() { eval "`gfsetdir $1`"; }</screen>
     </listitem>
   </varlistentry>
   <varlistentry>
-    <term>csh  ╖╧е╖езеыд╬╛ь╣ч</term>
+    <term>csh  ч│╗уВ╖уВзуГлуБоха┤хРИ</term>
     <listitem>
       <screen>alias gfcd 'eval `gfsetdir \!*`'</screen>
     </listitem>

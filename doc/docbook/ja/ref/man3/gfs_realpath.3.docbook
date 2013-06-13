@@ -13,7 +13,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_realpath</refname>
-<refpurpose>���������줿���Хѥ�̾���֤�</refpurpose>
+<refpurpose>正規化された絶対パス名を返す</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -35,14 +35,14 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para><function>gfs_realpath</function> �ϡ�
+<para><function>gfs_realpath</function> は，
 <parameter>gfarm_url</parameter>
-��Ϳ����줿�ѥ�̾�Υۡ���ǥ��쥯�ȥ��Ÿ������
-'.'��'..' ��;ʬ�� '/' ���褷�ơ�
-���������줿���Хѥ�̾��ưŪ�˳��ݤ�������˳�Ǽ���ޤ���
-ưŪ�˳��ݤ��줿����Υݥ��󥿤�
-<parameter>resolved_pathp</parameter> ���֤���ޤ���
-���Υ����ΰ�Ϥ��θ� free(3) �ˤ�곫������ɬ�פ�����ޤ���</para>
+で与えられたパス名のホームディレクトリを展開し，
+'.'，'..' や余分な '/' を解決して，
+正規化された絶対パス名を動的に確保されるメモリに格納します．
+動的に確保されたメモリのポインタは
+<parameter>resolved_pathp</parameter> に返されます．
+このメモリ領域はこの後 free(3) により開放する必要があります．</para>
 
 </refsect1>
 
@@ -52,50 +52,50 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
 <listitem>
-<para>���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤϥǥ��쥯�ȥ�Ǥʤ��ä�
-���Ȥ򼨤��ޤ���</para>
+<para>指定したパス名の親ディレクトリが、実際にはディレクトリでなかった
+ことを示します．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
 <listitem>
-<para><parameter>gfarm_url</parameter> �� NULL �ݥ��󥿤Ǥ���</para>
+<para><parameter>gfarm_url</parameter> が NULL ポインタです．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
-<para>���ꤵ�줿�ѥ��إ����������븢�¤�����ޤ���</para>
+<para>指定されたパスへアクセスする権限がありません．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
-<para>���ꤵ�줿�ѥ�̾��¸�ߤ��ޤ���</para>
+<para>指定されたパス名が存在しません．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します．</para>
 </listitem>
 </varlistentry>
 </variablelist>

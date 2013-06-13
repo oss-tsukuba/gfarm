@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfarm_initialize</refname>
-<refpurpose>Gfarm �饤�֥�����������</refpurpose>
+<refpurpose>Gfarm ライブラリを初期化する</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -32,13 +32,13 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>Gfarm �饤�֥����������ޤ���
-Gfarm �饤�֥�� API �����Ѥ�������ɬ���Ƥ�ɬ�פ�����ޤ���
-�����ˤϡ��ץ������� main �ؿ���
+<para>Gfarm ライブラリを初期化します。
+Gfarm ライブラリ API を利用する前に必ず呼ぶ必要があります。
+引数には、プログラムの main 関数の
 <parameter>argc</parameter>
-�����ؤΥݥ��󥿤ȡ�
+引数へのポインタと、
 <parameter>argv</parameter>
-�����ؤΥݥ��󥿤��Ϥ��ޤ���</para>
+引数へのポインタを渡します。</para>
 
 </refsect1>
 
@@ -47,75 +47,75 @@ Gfarm �饤�֥�� API �����Ѥ�������ɬ���Ƥ�ɬ�פ�����ޤ���
 <varlistentry>
 <term><constant>GFARM_ERR_NO_ERROR</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_UNKNOWN_HOST</constant></term>
 <listitem>
-<para>���ꤵ�줿�᥿�ǡ��������ФΥ��ɥ쥹��褬�Ǥ��ޤ���</para>
+<para>指定されたメタデータサーバのアドレス解決ができません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NETWORK_IS_UNREACHABLE</constant></term>
 <listitem>
-<para>�᥿�ǡ��������Ф���ã�Ǥ��ޤ���</para>
+<para>メタデータサーバに到達できません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_OPERATION_TIMED_OUT</constant></term>
 <listitem>
-<para>�᥿�ǡ��������Фؤ���³�������ॢ���Ȥ򤪤����ޤ�����</para>
+<para>メタデータサーバへの接続がタイムアウトをおこしました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_PROTOCOL</constant></term>
 <listitem>
-<para>�᥿�ǡ��������ФȤ��̿��˥ץ��ȥ��륨�顼��ȯ�����ޤ�����</para>
+<para>メタデータサーバとの通信にプロトコルエラーが発生しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_BROKEN_PIPE</constant></term>
 <listitem>
-<para>�᥿�ǡ��������ФȤ��̿������Ǥ��ޤ�����</para>
+<para>メタデータサーバとの通信が切断しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
-<para>�᥿�ǡ��������Фؤ�ǧ�ڤ˼��Ԥ��ޤ�����</para>
+<para>メタデータサーバへの認証に失敗しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_PROTOCOL_NOT_SUPPORTED</constant></term>
 <listitem>
-<para>���ꤵ�줿ǧ�ڥץ��ȥ���ϥ��ݡ��Ȥ��Ƥ��ޤ���</para>
+<para>指定された認証プロトコルはサポートしていません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
 <listitem>
-<para>�᥿�ǡ��������Ф��Ф���ǧ�ڤ˼��Ԥ��ޤ�����</para>
+<para>メタデータサーバに対する認証に失敗しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+<para>上記以外のエラーが生じたことを示します。
 <citerefentry><refentrytitle>gfarm_error_string</refentrytitle><manvolnum>3</manvolnum></citerefentry>
-�ˤ�ꥨ�顼�θ�����ʸ������Ѵ����뤳�Ȥ��Ǥ��ޤ���
+によりエラーの原因を文字列に変換することができます。
 </para>
 </listitem>
 </varlistentry>

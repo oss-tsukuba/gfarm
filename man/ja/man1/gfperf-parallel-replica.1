@@ -6,37 +6,37 @@
 .TH "GFPERF-PARALLEL-REPLICA" "1" "07 March 2012" "Gfarm" ""
 
 .SH NAME
-gfperf-parallel-replica \- Gfarm �ե�����ʣ������ǽ¬���Ԥ���
+gfperf-parallel-replica \- Gfarm ファイル複製の性能測定を行う。
 .SH SYNOPSIS
 
-\fBgfperf-parallel-replica\fR \fB-s, --src \fIʣ����gfsd̾\fB\fR \fB-s, --dst \fIʣ����gfsd̾\fB\fR [ \fB-l, --filesize \fI�ե����륵����\fB\fR ] [ \fB-t, --testdir \fI�ƥ��ȥǥ��쥯�ȥ�\fB\fR ] [ \fB-n, --name \fI���롼��̾\fB\fR ] [ \fB-w, --wait \fI���ϻ���\fB\fR ]
+\fBgfperf-parallel-replica\fR \fB-s, --src \fI複製元gfsd名\fB\fR \fB-s, --dst \fI複製先gfsd名\fB\fR [ \fB-l, --filesize \fIファイルサイズ\fB\fR ] [ \fB-t, --testdir \fIテストディレクトリ\fB\fR ] [ \fB-n, --name \fIグループ名\fB\fR ] [ \fB-w, --wait \fI開始時刻\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
-���� \fI�ƥ��ȥǥ��쥯�ȥ�\fR �˥ƥ����ѤΥե�����������������ʣ����ǽ��¬�ꤷ�ޤ���
+引数 \fIテストディレクトリ\fR にテスト用のファイルを作成し、その複製性能を測定します。
 .PP
-�ܥ��ޥ�ɤ�gfperf.rb��������˸ƽФ���뤳�Ȥ���Ԥ��Ƥ��ޤ���
+本コマンドはgfperf.rbから並列に呼出されることを期待しています。
 .SH "OPTIONS"
 .TP
-\fB-s, --src \fIʣ����gfsd̾\fB\fR
-ʣ����gfsd̾����ꤷ�ޤ���
+\fB-s, --src \fI複製元gfsd名\fB\fR
+複製元gfsd名を指定します。
 .TP
-\fB-d, --dst \fIʣ����gfsd̾\fB\fR
-ʣ����gfsd̾����ꤷ�ޤ���
+\fB-d, --dst \fI複製先gfsd名\fB\fR
+複製先gfsd名を指定します。
 .TP
-\fB-l, --filesize \fI�ե����륵����\fB\fR
-�ƥ��Ȥǻ��Ѥ���ե����륵��������ꤷ�ޤ���
-�ǥե���Ȥ�1M�Ǥ���
+\fB-l, --filesize \fIファイルサイズ\fB\fR
+テストで使用するファイルサイズを指定します。
+デフォルトは1Mです。
 .TP
-\fB-t, --testdir \fI�ƥ��ȥǥ��쥯�ȥ�\fB\fR
-�ƥ��Ȥ�»ܤ���ǥ��쥯�ȥ����ꤷ�ޤ���
-gfarm url (gfarm:///�ǻϤޤ���) ����ꤷ�ޤ���
-�ǥե���Ȥ�gfarm:///tmp�Ǥ���
+\fB-t, --testdir \fIテストディレクトリ\fB\fR
+テストを実施するディレクトリを指定します。
+gfarm url (gfarm:///で始まるもの) を指定します。
+デフォルトはgfarm:///tmpです。
 .TP
-\fB-n, --name \fI���롼��̾\fB\fR
-ʣ����ư���줿�����ܰ��Ȥʤ륰�롼��̾����ꤷ�ޤ���
+\fB-n, --name \fIグループ名\fB\fR
+複数起動された場合に目印となるグループ名を指定します。
 .TP
-\fB-w, --wait \fI���ϻ���\fB\fR
-���ꤵ�줿����ˤʤ�ޤǥƥ��Ȥ򳫻Ϥ��ޤ���
-�̾gfperf.rb�ˤ����ꤵ��ޤ���
-�����UTC�ǻ��ꤵ�졢���߻������10�ðʾ���λ���ϻ���Ǥ��ޤ���
+\fB-w, --wait \fI開始時刻\fB\fR
+指定された時刻になるまでテストを開始しません。
+通常、gfperf.rbにより指定されます。
+時刻はUTCで指定され、現在時刻よりも10秒以上先の時刻は指定できません。

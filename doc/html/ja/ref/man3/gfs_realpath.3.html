@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfs_realpath&nbsp;--&nbsp;���������줿���Хѥ�̾���֤�</DIV
+>gfs_realpath&nbsp;--&nbsp;正規化された絶対パス名を返す</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -91,24 +91,24 @@ NAME="DESCRIPTION"
 ><TT
 CLASS="FUNCTION"
 >gfs_realpath</TT
-> �ϡ�
+> は，
 <TT
 CLASS="PARAMETER"
 ><I
 >gfarm_url</I
 ></TT
 >
-��Ϳ����줿�ѥ�̾�Υۡ���ǥ��쥯�ȥ��Ÿ������
-'.'��'..' ��;ʬ�� '/' ���褷�ơ�
-���������줿���Хѥ�̾��ưŪ�˳��ݤ�������˳�Ǽ���ޤ���
-ưŪ�˳��ݤ��줿����Υݥ��󥿤�
+で与えられたパス名のホームディレクトリを展開し，
+'.'，'..' や余分な '/' を解決して，
+正規化された絶対パス名を動的に確保されるメモリに格納します．
+動的に確保されたメモリのポインタは
 <TT
 CLASS="PARAMETER"
 ><I
 >resolved_pathp</I
 ></TT
-> ���֤���ޤ���
-���Υ����ΰ�Ϥ��θ� free(3) �ˤ�곫������ɬ�פ�����ޤ���</P
+> に返されます．
+このメモリ領域はこの後 free(3) により開放する必要があります．</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -129,7 +129,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ｪλ�򼨤��ޤ���</P
+>正常終了を示します．</P
 ></DD
 ><DT
 ><TT
@@ -138,7 +138,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->������­�Τ����������ߤ��ޤ�����</P
+>メモリ不足のため処理を中止しました．</P
 ></DD
 ><DT
 ><TT
@@ -147,8 +147,8 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤϥǥ��쥯�ȥ�Ǥʤ��ä�
-���Ȥ򼨤��ޤ���</P
+>指定したパス名の親ディレクトリが、実際にはディレクトリでなかった
+ことを示します．</P
 ></DD
 ><DT
 ><TT
@@ -162,7 +162,7 @@ CLASS="PARAMETER"
 ><I
 >gfarm_url</I
 ></TT
-> �� NULL �ݥ��󥿤Ǥ���</P
+> が NULL ポインタです．</P
 ></DD
 ><DT
 ><TT
@@ -171,7 +171,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤵ�줿�ѥ��إ����������븢�¤�����ޤ���</P
+>指定されたパスへアクセスする権限がありません．</P
 ></DD
 ><DT
 ><TT
@@ -180,13 +180,13 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤵ�줿�ѥ�̾��¸�ߤ��ޤ���</P
+>指定されたパス名が存在しません．</P
 ></DD
 ><DT
->����¾</DT
+>その他</DT
 ><DD
 ><P
->�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</P
+>上記以外のエラーが生じたことを示します．</P
 ></DD
 ></DL
 ></DIV

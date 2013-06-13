@@ -11,31 +11,31 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfperf-metadata</refname>
-<refpurpose>Gfarm �᥿�ǡ�������ǽ¬���Ԥ���</refpurpose>
+<refpurpose>Gfarm メタデータの性能測定を行う。</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfperf-metadata</command>
-    <arg choice='opt'>-n, --number <replaceable>�ƥ��ȼ»ܿ�</replaceable></arg>
-    <arg choice='opt'>-t, --testdir <replaceable>�ƥ��ȥǥ��쥯�ȥ�</replaceable></arg>
-    <arg choice='opt'>-u, --unit <replaceable>���Ϥ�ñ��</replaceable></arg>
+    <arg choice='opt'>-n, --number <replaceable>テスト実施数</replaceable></arg>
+    <arg choice='opt'>-t, --testdir <replaceable>テストディレクトリ</replaceable></arg>
+    <arg choice='opt'>-u, --unit <replaceable>出力の単位</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>���� <parameter>�ƥ��ȥǥ��쥯�ȥ�</parameter> �˥ƥ����ѤΥե������ǥ��쥯�ȥ������������μ¹���ǽ��¬�ꤷ�ޤ���
+<para>引数 <parameter>テストディレクトリ</parameter> にテスト用のファイルやディレクトリを作成し、その実行性能を測定します。
 </para>
-<para>¬�ꤹ����ܤϼ����̤�Ǥ���
+<para>測定する項目は次の通りです。
 <variablelist>
   <varlistentry>
     <term>create</term>
     <listitem>
       <para>
-	gfs_pio_create()�ޤ���creat()����ǽ��¬�ꤷ�ޤ���
-	���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+	gfs_pio_create()またはcreat()の性能を測定します。
+	出力結果は１回辺りの平均値です。
       </para>
     </listitem>
   </varlistentry>
@@ -43,9 +43,9 @@
     <term>readdir</term>
     <listitem>
       <para>
-	gfs_opendir_caching()����<parameter>�ƥ��ȼ»ܿ�</parameter>ʬgfs_readdir()��Ԥ���gfs_closedir()��¹Ԥ���ޤǤ���ǽ��¬�ꤷ�ޤ���
-	posix�ξ���opendir()����<parameter>�ƥ��ȼ»ܿ�</parameter>ʬreaddir()��Ԥ���closedir()��¹Ԥ���ޤǤ���ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤Ͼ嵭¬��ˤ����ä����֤�<parameter>�ƥ��ȼ»ܿ�</parameter>�ǳ�ä�ʿ���ͤǤ���
+	gfs_opendir_caching()から<parameter>テスト実施数</parameter>分gfs_readdir()を行い、gfs_closedir()を実行するまでの性能を測定します。
+	posixの場合はopendir()から<parameter>テスト実施数</parameter>分readdir()を行い、closedir()を実行するまでの性能を測定します。
+        出力結果は上記測定にかかった時間を<parameter>テスト実施数</parameter>で割った平均値です，
       </para>
     </listitem>
   </varlistentry>
@@ -53,8 +53,8 @@
     <term>readdir+stat</term>
     <listitem>
       <para>
-	�嵭readdir��¬�����<parameter>�ƥ��ȼ»ܿ�</parameter>ʬgfs_lstat_cached()�ޤ���lstat()��¹Ԥ������֤�­����¬�ꤷ����ΤǤ���
-        ���Ϸ�̤�¬��ˤ����ä����֤�<parameter>�ƥ��ȼ»ܿ�</parameter>�ǳ�ä�ʿ���ͤǤ���
+	上記readdirの測定時に<parameter>テスト実施数</parameter>分gfs_lstat_cached()またはlstat()を実行した時間を足して測定したものです。
+        出力結果は測定にかかった時間を<parameter>テスト実施数</parameter>で割った平均値です。
       </para>
     </listitem>
   </varlistentry>
@@ -62,8 +62,8 @@
     <term>unlink</term>
     <listitem>
       <para>
-	gfs_unlink()�ޤ���unlink()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+	gfs_unlink()またはunlink()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </para>
     </listitem>
   </varlistentry>
@@ -71,8 +71,8 @@
     <term>mkdir</term>
     <listitem>
       <para>
-	gfs_mkdir()�ޤ���mkdir()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+	gfs_mkdir()またはmkdir()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </para>
     </listitem>
   </varlistentry>
@@ -80,8 +80,8 @@
     <term>stat</term>
     <listitem>
       <para>
-	gfs_lstat()�ޤ���lstat()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+	gfs_lstat()またはlstat()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </para>
     </listitem>
   </varlistentry>
@@ -89,8 +89,8 @@
     <term>chmod</term>
     <listitem>
       <para>
-	gfs_chmod()�ޤ���chmod()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+	gfs_chmod()またはchmod()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </para>
     </listitem>
   </varlistentry>
@@ -98,8 +98,8 @@
     <term>utimes</term>
     <listitem>
       <para>
-	gfs_utimes()�ޤ���utimes()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+	gfs_utimes()またはutimes()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </para>
     </listitem>
   </varlistentry>
@@ -107,8 +107,8 @@
     <term>rename</term>
     <listitem>
       <para>
-	gfs_rename()�ޤ���rename()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+	gfs_rename()またはrename()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </para>
     </listitem>
   </varlistentry>
@@ -116,8 +116,8 @@
     <term>symlink</term>
     <listitem>
       <para>
-	gfs_symlink()�ޤ���symlink()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+	gfs_symlink()またはsymlink()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </para>
     </listitem>
   </varlistentry>
@@ -125,8 +125,8 @@
     <term>readlink</term>
     <listitem>
       <para>
-	gfs_readlink()�ޤ���readlink()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+	gfs_readlink()またはreadlink()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </para>
     </listitem>
   </varlistentry>
@@ -134,8 +134,8 @@
     <term>setxattr</term>
     <listitem>
       <para>
-	gfs_setxattr()�ޤ���setxattr()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+	gfs_setxattr()またはsetxattr()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </para>
     </listitem>
   </varlistentry>
@@ -143,8 +143,8 @@
     <term>getxattr</term>
     <listitem>
       <para>
-	gfs_getxattr()�ޤ���getxattr()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+	gfs_getxattr()またはgetxattr()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </para>
     </listitem>
   </varlistentry>
@@ -152,8 +152,8 @@
     <term>removexattr</term>
     <listitem>
       <para>
-	gfs_removexattr()�ޤ���removexattr()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+	gfs_removexattr()またはremovexattr()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </para>
     </listitem>
   </varlistentry>
@@ -161,8 +161,8 @@
     <term>rmdir</term>
     <listitem>
       <para>
-	gfs_rmdir()�ޤ���rmdir()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+	gfs_rmdir()またはrmdir()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </para>
     </listitem>
   </varlistentry>
@@ -174,30 +174,30 @@
 <variablelist>
 
 <varlistentry>
-<term><option>-n, --number</option> <parameter>�ƥ��ȼ»ܿ�</parameter></term>
+<term><option>-n, --number</option> <parameter>テスト実施数</parameter></term>
 <listitem>
 <para>
-���줾���¬����ܤ��Ф��Ʋ���»ܤ��뤫����ꤷ�ޤ����ǥե���Ȥ�250�Ǥ���
+それぞれの測定項目に対して何回実施するかを指定します。デフォルトは250です。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-t, --testdir</option> <parameter>�ƥ��ȥǥ��쥯�ȥ�</parameter></term>
+<term><option>-t, --testdir</option> <parameter>テストディレクトリ</parameter></term>
 <listitem>
 <para>
-�ƥ��Ȥ�»ܤ���ǥ��쥯�ȥ����ꤷ�ޤ���
-gfarm url(gfarm:///�ǻϤޤ���)����ꤷ����硢������gfarm��Υǥ��쥯�ȥ���Ф���libgfarm�δؿ�����Ѥ���������ǽ��¬�ꤷ�ޤ���
-file url(file:///�ǻϤޤ���)����ꤷ����硢������unix�ե����륷���ƥ���posix�δؿ�����Ѥ���������ǽ��¬�ꤷ�ޤ���
-�ǥե���Ȥ�gfarm:///tmp�Ǥ���
+テストを実施するディレクトリを指定します。
+gfarm url(gfarm:///で始まるもの)を指定した場合、該当のgfarm上のディレクトリに対してlibgfarmの関数を使用した場合の性能を測定します。
+file url(file:///で始まるもの)を指定した場合、該当のunixファイルシステム上にposixの関数を使用した場合の性能を測定します。
+デフォルトはgfarm:///tmpです。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-u, --uinit</option> <parameter>���Ϥ�ñ��</parameter></term>
+<term><option>-u, --uinit</option> <parameter>出力の単位</parameter></term>
 <listitem>
-<para>ops(operations per second)�ޤ���usec����ꤷ�ޤ������ꤷ��ñ�̤ǽ��Ϥ��֤��ޤ����ǥե���Ȥ�ops�Ǥ���
+<para>ops(operations per second)またはusecを指定します。指定した単位で出力を返します。デフォルトはopsです。
 </para>
 </listitem>
 </varlistentry>

@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfperf-tree&nbsp;--&nbsp;Gfarm �ǥ��쥯�ȥ�ĥ꡼����ǽ¬���Ԥ���</DIV
+>gfperf-tree&nbsp;--&nbsp;Gfarm ディレクトリツリーの性能測定を行う。</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,22 +40,22 @@ CLASS="COMMAND"
 >  [-t, --testdir <TT
 CLASS="REPLACEABLE"
 ><I
->�ƥ��ȥǥ��쥯�ȥ�</I
+>テストディレクトリ</I
 ></TT
 >] [-w, --width <TT
 CLASS="REPLACEABLE"
 ><I
->�ǥ��쥯�ȥ��</I
+>ディレクトリ数</I
 ></TT
 >] [-d, --depth <TT
 CLASS="REPLACEABLE"
 ><I
->�ǥ��쥯�ȥ곬��</I
+>ディレクトリ階層</I
 ></TT
 >] [-u, --unit <TT
 CLASS="REPLACEABLE"
 ><I
->���Ϥ�ñ��</I
+>出力の単位</I
 ></TT
 >]</P
 ></DIV
@@ -67,12 +67,12 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->���� <CODE
+>引数 <CODE
 CLASS="PARAMETER"
->�ƥ��ȥǥ��쥯�ȥ�</CODE
-> �˥ƥ����ѤΥǥ��쥯�ȥ�ĥ꡼�����������������μ¹���ǽ��¬�ꤷ�ޤ������������ǥ����ȥ�ο���width��depth��Ǥ���</P
+>テストディレクトリ</CODE
+> にテスト用のディレクトリツリーを作成、削除し、その実行性能を測定します。生成されるディクトリの数はwidthのdepth乗です。</P
 ><P
->¬�ꤹ�����Ƥϻ��ꤵ�줿�ǥ��쥯�ȥ�ĥ꡼���������ڤӺ���ˤ����ä����֤�¬�ꤷ�����ꤵ�줿ñ�̤�ɽ�����ޤ���</P
+>測定する内容は指定されたディレクトリツリーの生成、及び削除にかかった時間を測定し、指定された単位で表示します。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -92,14 +92,14 @@ CLASS="OPTION"
 >-t, --testdir</CODE
 > <CODE
 CLASS="PARAMETER"
->�ƥ��ȥǥ��쥯�ȥ�</CODE
+>テストディレクトリ</CODE
 ></DT
 ><DD
 ><P
->�ƥ��Ȥ�»ܤ���ǥ��쥯�ȥ����ꤷ�ޤ���
-gfarm url(gfarm:///�ǻϤޤ���)����ꤷ����硢������gfarm��Υǥ��쥯�ȥ���Ф���libgfarm�δؿ�����Ѥ���������ǽ��¬�ꤷ�ޤ���
-file url(file:///�ǻϤޤ���)����ꤷ����硢������unix�ե����륷���ƥ���posix�δؿ�����Ѥ���������ǽ��¬�ꤷ�ޤ���
-�ǥե���Ȥ�gfarm:///tmp�Ǥ���</P
+>テストを実施するディレクトリを指定します。
+gfarm url(gfarm:///で始まるもの)を指定した場合、該当のgfarm上のディレクトリに対してlibgfarmの関数を使用した場合の性能を測定します。
+file url(file:///で始まるもの)を指定した場合、該当のunixファイルシステム上にposixの関数を使用した場合の性能を測定します。
+デフォルトはgfarm:///tmpです。</P
 ></DD
 ><DT
 ><CODE
@@ -107,11 +107,11 @@ CLASS="OPTION"
 >-w, --width</CODE
 > <CODE
 CLASS="PARAMETER"
->�ǥ��쥯�ȥ��</CODE
+>ディレクトリ数</CODE
 ></DT
 ><DD
 ><P
->���֥ǥ��쥯�ȥ��������������ꤷ�ޤ���</P
+>サブディレクトリを作成する数を指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -119,11 +119,11 @@ CLASS="OPTION"
 >-d, --depth</CODE
 > <CODE
 CLASS="PARAMETER"
->�ǥ��쥯�ȥ곬��</CODE
+>ディレクトリ階層</CODE
 ></DT
 ><DD
 ><P
->���֥ǥ��쥯�ȥ�򲿳��غ������뤫���ꤷ�ޤ���</P
+>サブディレクトリを何階層作成するか指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -131,11 +131,11 @@ CLASS="OPTION"
 >-u, --uinit</CODE
 > <CODE
 CLASS="PARAMETER"
->���Ϥ�ñ��</CODE
+>出力の単位</CODE
 ></DT
 ><DD
 ><P
->ops(operations per second)�ޤ���usec����ꤷ�ޤ������ꤷ��ñ�̤ǽ��Ϥ��֤��ޤ����ǥե���Ȥ�ops�Ǥ���</P
+>ops(operations per second)またはusecを指定します。指定した単位で出力を返します。デフォルトはopsです。</P
 ></DD
 ></DL
 ></DIV

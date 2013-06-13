@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfarm_strings_free_deeply</refname>
-<refpurpose>Ê¸»úÎó¤ò²òÊü¤¹¤ë</refpurpose>
+<refpurpose>æ–‡å­—åˆ—ã‚’è§£æ”¾ã™ã‚‹</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -33,12 +33,12 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>Í×ÁÇ¿ô 
+<para>è¦ç´ æ•° 
 <parameter>n</parameter>
-¤ÎÊ¸»úÎóÇÛÎó
+ã®æ–‡å­—åˆ—é…åˆ—
 <parameter>strings</parameter>
-¤ò²òÊü¤·¤Þ¤¹¡£
-¤Þ¤¿¡¢ÇÛÎóÍ×ÁÇ¤Î³ÆÊ¸»úÎó¤â¡¢²òÊü¤·¤Þ¤¹¡£</para>
+ã‚’è§£æ”¾ã—ã¾ã™ã€‚
+ã¾ãŸã€é…åˆ—è¦ç´ ã®å„æ–‡å­—åˆ—ã‚‚ã€è§£æ”¾ã—ã¾ã™ã€‚</para>
 </refsect1>
 </refentry>
 

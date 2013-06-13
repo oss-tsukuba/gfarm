@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_seek</refname>
-<refpurpose>���ꤷ�����֤˥���������</refpurpose>
+<refpurpose>指定した位置にシークする</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -35,29 +35,29 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>�ե�����
+<para>ファイル
 <parameter>gf</parameter>
-��
+を、
 <parameter>whence</parameter>
-��
+と
 <parameter>offset</parameter>
-�ǻ��ꤷ�����֤˥��������ޤ���
-����
+で指定した位置にシークします。
+引数
 <parameter>offset</parameter>
-�ϡ�
+は、
 <parameter>whence</parameter>
-��
-0 �ξ��ˤϥե�������Ƭ���顢
-1 �ξ��ˤϸ��ߤΥ��������֤��顢
-2 �ξ��ˤϥե�������������Υ��ե��åȤǤ���</para>
+が
+0 の場合にはファイル先頭から、
+1 の場合には現在のシーク位置から、
+2 の場合にはファイル末尾からのオフセットです。</para>
 
-<para>����
+<para>引数
 <parameter>result</parameter>
-��
+が
 <acronym>NULL</acronym>
-�Ǥʤ����ˤϡ���ư��ΰ��֤�
+でない場合には、移動後の位置を
 <parameter>result</parameter>
-�λؤ�����֤��ޤ���</para>
+の指す先に返します。</para>
 
 </refsect1>
 
@@ -66,19 +66,19 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

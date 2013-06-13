@@ -6,238 +6,238 @@
 .TH "GFSERVICE.CONF" "5" "07 June 2013" "Gfarm" ""
 
 .SH NAME
-gfservice.conf \- gfservice ������ե�����
+gfservice.conf \- gfservice の設定ファイル
 .SH "DESCRIPTION"
 .PP
-\fBgfservice\fR �ϡ������ե����뤫���ɤ߹��ߤޤ���
-(\fBgfservice-agent\fR ������ե�������ɤߤޤ���)
+\fBgfservice\fR は、設定をファイルから読み込みます。
+(\fBgfservice-agent\fR は設定ファイルを読みません。)
 .PP
-����ե�����Ϥ��켫�Τ���Bourne �����륹����ץȤˤʤäƤ��ޤ���
-�ե�����ϡ�\fBgfservice\fR �ˤ�ä�
-\fB������ץȤȤ���ɾ������ޤ���\fR
-�ʲ��ˡ�����ե�����ε�����򼨤��ޤ���
+設定ファイルはそれ自体が、Bourne シェルスクリプトになっています。
+ファイルは、\fBgfservice\fR によって
+\fBスクリプトとして評価されます。\fR
+以下に、設定ファイルの記述例を示します。
 
 .nf
-	# gfmd �����С�
+	# gfmd サーバー
 	gfmd1=db1.example.com
 	gfmd2=db2.example.com
 .fi
 .PP
-Bourne �������Ʊ�ͤˡ���#�פǻϤޤ�Ԥ���Ԥ�̵�뤵��ޤ���
-����ʳ��ιԤǤϡ��������ѿ���������ޤ���
-������Ǥϡ��ѿ� \fIgfmd1\fR ��
-\fIdb1.example.com\fR �Ȥ����ͤ˥��åȤ���
-�ѿ� \fIgfmd2\fR �ˤ�
-\fIdb12.example.com\fR �Ȥ����ͤ򤽤줾�쥻�å�
-���Ƥ��ޤ���
-��=�פ�����˶���ʸ�����֤����ȤϤǤ��ʤ��Τǡ����դ��Ʋ�������
+Bourne シェルと同様に、「#」で始まる行や空行は無視されます。
+それ以外の行では、シェル変数を宣言します。
+この例では、変数 \fIgfmd1\fR を
+\fIdb1.example.com\fR という値にセットし、
+変数 \fIgfmd2\fR には
+\fIdb12.example.com\fR という値をそれぞれセット
+しています。
+「=」の前後に空白文字を置くことはできないので、注意して下さい。
 .PP
-�ѿ� \fIgfmd1\fR �� \fIgfmd2\fR
-�ϡ֥ۥ��� ID�פȤ��ƻ��Ѥ��ޤ���
-\fBgfservice\fR �Ǥϡ��ۥ��Ȥ���ꤹ��ݤ˥ۥ���̾�ǤϤʤ���
-�ۥ��� ID����Ѥ��ޤ���
+変数 \fIgfmd1\fR と \fIgfmd2\fR
+は「ホスト ID」として使用します。
+\fBgfservice\fR では、ホストを指定する際にホスト名ではなく、
+ホスト IDを使用します。
 
 .nf
 	\fBgfservice \fIstart-gfmd\fB \fIgfmd2\fB\fR
 .fi
 .PP
-�嵭�Υ��ޥ�ɤ�¹Ԥ���ȡ�\fBgfservice\fR �ϥ����С�
-\fIgfmd2\fR ���Ĥޤ� metadb2.example.com ��� gfmd
-��ư���ޤ���
-�ۥ��� ID �������ο��� 1 ���顢Ϣ³���Ƴ�����Ƥʤ��ƤϤʤ�ޤ���
+上記のコマンドを実行すると、\fBgfservice\fR はサーバー
+\fIgfmd2\fR 、つまり metadb2.example.com 上の gfmd
+を起動します。
+ホスト ID の末尾の数は 1 から、連続して割り当てなくてはなりません。
 .PP
-gfsd �����С��ȥ��饤����ȥۥ��Ȥ���ꤹ��ˤϡ��ۥ��� ID 
-��gfs\fIn\fR�פȡ�client\fIn\fR��
-�򤽤줾����Ѥ��ޤ���
+gfsd サーバーとクライアントホストを指定するには、ホスト ID 
+「gfs\fIn\fR」と「client\fIn\fR」
+をそれぞれ使用します。
 
 .nf
-	# gfsd �����С�
+	# gfsd サーバー
 	gfsd1=fs1.example.com
 
-	# ���饤�����
+	# クライアント
 	client1=pc1.example.com
 	client2=pc2.example.com
 	client3=pc2.example.com
 .fi
 .PP
-�ۥ��� ID �ѿ��˲ä���\fBgfservice\fR �ϥۥ��� ID �˴�Ϣ����
-�ѿ��򤤤��Ĥ�ǧ�����ޤ���
+ホスト ID 変数に加え、\fBgfservice\fR はホスト ID に関連する
+変数をいくつか認識します。
 
 .nf
-	# gfmd1 �˴ؤ�������
+	# gfmd1 に関する設定
 	gfmd1_CONFIG_GFARM_OPTIONS="-X -A $LOGNAME"
 	gfmd1_SSH="ssh -i $HOME/.ssh/id_rsa_gfservice"
 	gfmd1_SUDO=/usr/local/bin/sudo
 .fi
 .PP
-������Ǽ����Ƥ���褦�ˡ�����ʸ����ޤ��ͤ򥻥åȤ���ˤϡ�����������
-���ޤ���
-$VARNAME �ϡ��������ѿ��⤷���ϴĶ��ѿ� 
-VARNAME ���ͤ�Ÿ������ޤ���
+この例で示しているように、空白文字を含む値をセットするには、引用符を使用
+します。
+$VARNAME は、シェル変数もしくは環境変数 
+VARNAME の値に展開されます。
 .SH "VARIABLES ABOUT GFMD"
 .PP
-�ѿ���gfmd\fIn\fR��(gfmd1, gfmd2, ...) �ϡ�gfmd
-�����С���������뤿����Ѥ��ޤ���
-̾������gfmd\fIn\fR_�פǻϤޤ��ѿ� (���Ȥ���
-\fIgfmd1_SSH\fR) �ϡ��б�����
-��gfmd\fIn\fR�ץ����С�������ѥ�᥿�򥻥åȤ��뤿��
-���Ѥ��ޤ���
-\fBgfservice\fR �����ߤΤȤ���ǧ�������ѿ��ϡ��ʲ����̤�Ǥ���
+変数「gfmd\fIn\fR」(gfmd1, gfmd2, ...) は、gfmd
+サーバーを定義するために用います。
+名前が「gfmd\fIn\fR_」で始まる変数 (たとえば
+\fIgfmd1_SSH\fR) は、対応する
+「gfmd\fIn\fR」サーバーの設定パラメタをセットするため
+に用います。
+\fBgfservice\fR が現在のところ認識する変数は、以下の通りです。
 .TP
 \fBgfmd\fIn\fB\fR
-gfmd �����С�����Ͽ���ޤ���
-�ѿ����ͤϡ������С��ۥ��ȤΥۥ���̾ (�⤷���� IP ���ɥ쥹) ��ɽ���ޤ���
+gfmd サーバーを登録します。
+変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。
 .TP
 \fBgfmd\fIn\fB_GFBINDIR\fR
-gfmd �����С���� \fBgfservice-agent\fR ���ޥ�ɤ�
-���󥹥ȡ��뤵��Ƥ���ǥ��쥯�ȥ�ؤΥѥ�����ꤷ�ޤ���
-�����ѿ����������Ƥ���� \fBgfservice\fR �ϡ�
-��\fB$gfmd\fIn\fB_GFBINDIR/gfservice-agent\fR�פ�¹Ԥ��ޤ���
-�������Ƥ��ʤ����ϡ���\fBgfservice-agent\fR�פ�¹Ԥ��ޤ���
+gfmd サーバー上で \fBgfservice-agent\fR コマンドが
+インストールされているディレクトリへのパスを指定します。
+この変数が宣言されていると \fBgfservice\fR は、
+「\fB$gfmd\fIn\fB_GFBINDIR/gfservice-agent\fR」を実行します。
+宣言されていない場合は、「\fBgfservice-agent\fR」を実行します。
 .TP
 \fBgfmd\fIn\fB_CONFIG_GFARM_OPTIONS\fR
-\fBconfig-gfarm\fR ���ޥ�ɤΥ��ץ�������ꤷ�ޤ���
-�ǥե�����ͤϡ���ʸ���� (���ץ����ʤ�) �Ǥ���
-\fBgfservice\fR �� \fBconfig-gfarm\fR ���֥��ޥ��
-����Ӥ���¾¿���Υ��֥��ޥ�ɤ�¹Ԥ���ݤˡ������ѿ��򻲾Ȥ��ޤ���
-\fBconfig-gfarm\fR ����λ������Ǥ��äƤ⡢�����ѿ��������
-��������ꡢ�Խ�������Ϥ��ʤ��ǲ�������
+\fBconfig-gfarm\fR コマンドのオプションを指定します。
+デフォルト値は、空文字列 (オプションなし) です。
+\fBgfservice\fR は \fBconfig-gfarm\fR サブコマンド
+およびその他多くのサブコマンドを実行する際に、この変数を参照します。
+\fBconfig-gfarm\fR が完了した後であっても、この変数の宣言を
+削除したり、編集したりはしないで下さい。
 .TP
 \fBgfmd\fIn\fB_PRIVATE_MODE\fR
-��⡼�ȥۥ��Ⱦ�� gfmd ��ץ饤�١��ȥ⡼�ɤ�ư�������ϡ�����
-�ѿ��ˡ�true�פ򥻥åȤ��ޤ���
+リモートホスト上の gfmd をプライベートモードで動作させる場合は、この
+変数に「true」をセットします。
 .TP
 \fBgfmd\fIn\fB_AUTH_TYPE\fR
-ǧ�ڥ����� ("sharedsecret", "gsi", "gsi_auth" �Τ����줫) ����ꤷ�ޤ���
-�����ѿ����������Ƥ��ʤ����ϡ�gfmd1 ���
-\fBconfig-gfarm\fR ��¹Ԥ����Ȥ���
-AUTH_TYPE ���ͤ����Ѥ���ޤ���
-(�ѿ� gfmd1_CONFIG_GFARM_OPTIONS ���ͤˤ�äơ�����
-�Ȥ��� AUTH_TYPE ���ͤ��Ѥ��Τǡ����դ��Ʋ�������)
+認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
+\fBconfig-gfarm\fR を実行したときの
+AUTH_TYPE の値が採用されます。
+(変数 gfmd1_CONFIG_GFARM_OPTIONS の値によって、この
+ときの AUTH_TYPE の値は変わるので、注意して下さい。)
 .TP
 \fBgfmd\fIn\fB_REPLICATION_MODE\fR
-�����ѿ����ͤ��async�פ˥��åȤ���ȡ�
-\fBgfservice config-gfarm-slave\fR �κݤˤ��� gfmd ��
-��Ʊ�� (async) ���졼�֤ˤʤ�ޤ���
+この変数の値を「async」にセットすると、
+\fBgfservice config-gfarm-slave\fR の際にこの gfmd は
+非同期 (async) スレーブになります。
 .TP
 \fBgfmd\fIn\fB_SSH\fR
-SSH ���饤����ȥ��ޥ�ɤΥѥ�����ӥ��ץ�������ꤷ�ޤ���
-\fBgfservice\fR �� gfmd �����С�����³���뤿���
-SSH ���饤����ȥ��ޥ�ɤ�¹Ԥ���ݡ������ѿ������Ѥ���ޤ���
-�ǥե���Ȥϡ�ssh�פǤ���
+SSH クライアントコマンドのパスおよびオプションを指定します。
+\fBgfservice\fR が gfmd サーバーに接続するために
+SSH クライアントコマンドを実行する際、この変数が利用されます。
+デフォルトは「ssh」です。
 .TP
 \fBgfmd\fIn\fB_SUDO\fR
-Sudo ���ޥ�ɤΥѥ�����ӥ��ץ�������ꤷ�ޤ���
-\fBgfservice\fR �� SSH ��𤷤� gfmd �����С���� Sudo
-���ޥ�ɤ�¹Ԥ���ݡ������ѿ������Ѥ���ޤ���
-�ǥե���Ȥϡ�sudo�פǤ���
+Sudo コマンドのパスおよびオプションを指定します。
+\fBgfservice\fR が SSH を介して gfmd サーバー上で Sudo
+コマンドを実行する際、この変数が利用されます。
+デフォルトは「sudo」です。
 .SH "VARIABLES ABOUT GFSD"
 .PP
-�ѿ���gfsd\fIn\fR��(gfsd1, gfsd2, ...) �ϡ�gfsd
-�����С���������뤿����Ѥ��ޤ���
-̾������gfsd\fIn\fR_�פǻϤޤ��ѿ� (���Ȥ���
-\fIgfsd1_SSH\fR) �ϡ��б�����
-��gfsd\fIn\fR�ץ����С�������ѥ�᥿�򥻥åȤ��뤿��
-���Ѥ��ޤ���
-\fBgfservice\fR �����ߤΤȤ���ǧ�������ѿ��ϡ��ʲ����̤�Ǥ���
+変数「gfsd\fIn\fR」(gfsd1, gfsd2, ...) は、gfsd
+サーバーを定義するために用います。
+名前が「gfsd\fIn\fR_」で始まる変数 (たとえば
+\fIgfsd1_SSH\fR) は、対応する
+「gfsd\fIn\fR」サーバーの設定パラメタをセットするため
+に用います。
+\fBgfservice\fR が現在のところ認識する変数は、以下の通りです。
 .TP
 \fBgfsd\fIn\fB\fR
-gfsd �����С�����Ͽ���ޤ���
-�ѿ����ͤϡ������С��ۥ��ȤΥۥ���̾ (�⤷���� IP ���ɥ쥹) ��ɽ���ޤ���
+gfsd サーバーを登録します。
+変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。
 .TP
 \fBgfsd\fIn\fB_GFBINDIR\fR
-gfsd �����С���� \fBgfservice-agent\fR ���ޥ�ɤ�
-���󥹥ȡ��뤵��Ƥ���ǥ��쥯�ȥ�ؤΥѥ�����ꤷ�ޤ���
-�����ѿ����������Ƥ���� \fBgfservice\fR �ϡ�
-��\fB$gfsd\fIn\fB_GFBINDIR/gfservice-agent\fR�פ�¹Ԥ��ޤ���
-�������Ƥ��ʤ����ϡ���\fBgfservice-agent\fR�פ�¹Ԥ��ޤ���
+gfsd サーバー上で \fBgfservice-agent\fR コマンドが
+インストールされているディレクトリへのパスを指定します。
+この変数が宣言されていると \fBgfservice\fR は、
+「\fB$gfsd\fIn\fB_GFBINDIR/gfservice-agent\fR」を実行します。
+宣言されていない場合は、「\fBgfservice-agent\fR」を実行します。
 .TP
 \fBgfsd\fIn\fB_CONFIG_GFSD_OPTIONS\fR
-\fBconfig-gfsd\fR ���ޥ�ɤΥ��ץ�������ꤷ�ޤ���
-�ǥե�����ͤϡ���ʸ���� (���ץ����ʤ�) �Ǥ���
-\fBgfservice\fR �� \fBconfig-gfsd\fR ���֥��ޥ��
-����Ӥ���¾¿���Υ��֥��ޥ�ɤ�¹Ԥ���ݤˡ������ѿ��򻲾Ȥ��ޤ���
-\fBconfig-gfsd\fR ����λ������Ǥ��äƤ⡢�����ѿ��������
-��������ꡢ�Խ�������Ϥ��ʤ��ǲ�������
+\fBconfig-gfsd\fR コマンドのオプションを指定します。
+デフォルト値は、空文字列 (オプションなし) です。
+\fBgfservice\fR は \fBconfig-gfsd\fR サブコマンド
+およびその他多くのサブコマンドを実行する際に、この変数を参照します。
+\fBconfig-gfsd\fR が完了した後であっても、この変数の宣言を
+削除したり、編集したりはしないで下さい。
 .TP
 \fBgfsd\fIn\fB_PRIVATE_MODE\fR
-��⡼�ȥۥ��Ⱦ�� gfsd ��ץ饤�١��ȥ⡼�ɤ�ư�������ϡ�����
-�ѿ��ˡ�true�פ򥻥åȤ��ޤ���
+リモートホスト上の gfsd をプライベートモードで動作させる場合は、この
+変数に「true」をセットします。
 .TP
 \fBgfsd\fIn\fB_AUTH_TYPE\fR
-ǧ�ڥ����� ("sharedsecret", "gsi", "gsi_auth" �Τ����줫) ����ꤷ�ޤ���
-�����ѿ����������Ƥ��ʤ����ϡ�gfmd1 ���
-\fBconfig-gfarm\fR ��¹Ԥ����Ȥ���
-AUTH_TYPE ���ͤ����Ѥ���ޤ���
-(�ѿ� gfmd1_CONFIG_GFARM_OPTIONS ���ͤˤ�äơ�����
-�Ȥ��� AUTH_TYPE ���ͤ��Ѥ��Τǡ����դ��Ʋ�������)
+認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
+\fBconfig-gfarm\fR を実行したときの
+AUTH_TYPE の値が採用されます。
+(変数 gfmd1_CONFIG_GFARM_OPTIONS の値によって、この
+ときの AUTH_TYPE の値は変わるので、注意して下さい。)
 .TP
 \fBgfsd\fIn\fB_SSH\fR
-SSH ���饤����ȥ��ޥ�ɤΥѥ�����ӥ��ץ�������ꤷ�ޤ���
-\fBgfservice\fR �� gfsd �����С�����³���뤿���
-SSH ���饤����ȥ��ޥ�ɼ¹Ԥ���ݡ������ѿ������Ѥ���ޤ���
-�ǥե���Ȥϡ�ssh�פǤ���
+SSH クライアントコマンドのパスおよびオプションを指定します。
+\fBgfservice\fR が gfsd サーバーに接続するために
+SSH クライアントコマンド実行する際、この変数が利用されます。
+デフォルトは「ssh」です。
 .TP
 \fBgfsd\fIn\fB_SUDO\fR
-Sudo ���ޥ�ɤΥѥ�����ӥ��ץ�������ꤷ�ޤ���
-\fBgfservice\fR �� SSH ��𤷤� gfsd �����С���� Sudo
-���ޥ�ɤ�¹Ԥ���ݡ������ѿ������Ѥ���ޤ���
-�ǥե���Ȥϡ�sudo�פǤ���
+Sudo コマンドのパスおよびオプションを指定します。
+\fBgfservice\fR が SSH を介して gfsd サーバー上で Sudo
+コマンドを実行する際、この変数が利用されます。
+デフォルトは「sudo」です。
 .SH "VARIABLES ABOUT CLIENT"
 .PP
-�ѿ���client\fIn\fR��(client1, client2, ...) �ϡ�
-client �����С���������뤿����Ѥ��ޤ���
-̾������client\fIn\fR_�פǻϤޤ��ѿ� (���Ȥ���
-\fIclient1_SSH\fR) �ϡ��б�����
-��client\fIn\fR�ץ����С�������ѥ�᥿�򥻥åȤ���
-������Ѥ��ޤ���
-\fBgfservice\fR �����ߤΤȤ���ǧ�������ѿ��ϡ��ʲ����̤�Ǥ���
+変数「client\fIn\fR」(client1, client2, ...) は、
+client サーバーを定義するために用います。
+名前が「client\fIn\fR_」で始まる変数 (たとえば
+\fIclient1_SSH\fR) は、対応する
+「client\fIn\fR」サーバーの設定パラメタをセットする
+ために用います。
+\fBgfservice\fR が現在のところ認識する変数は、以下の通りです。
 .TP
 \fBclient\fIn\fB\fR
-���饤����ȥۥ��Ȥ���Ͽ���ޤ���
-�ѿ����ͤϡ����饤����ȥۥ��ȤΥۥ���̾ (�⤷���� IP ���ɥ쥹) ��
-ɽ���ޤ���
+クライアントホストを登録します。
+変数の値は、クライアントホストのホスト名 (もしくは IP アドレス) を
+表します。
 .TP
 \fBclient\fIn\fB_GFBINDIR\fR
-���饤����ȥۥ��Ⱦ�� \fBgfservice-agent\fR ���ޥ�ɤ�
-���󥹥ȡ��뤵��Ƥ���ǥ��쥯�ȥ�ؤΥѥ�����ꤷ�ޤ���
-�����ѿ����������Ƥ���� \fBgfservice\fR �ϡ�
-��\fB$client\fIn\fB_GFBINDIR/gfservice-agent\fR�פ�¹Ԥ��ޤ���
-�������Ƥ��ʤ����ϡ���\fBgfservice-agent\fR�פ�¹Ԥ��ޤ���
+クライアントホスト上で \fBgfservice-agent\fR コマンドが
+インストールされているディレクトリへのパスを指定します。
+この変数が宣言されていると \fBgfservice\fR は、
+「\fB$client\fIn\fB_GFBINDIR/gfservice-agent\fR」を実行します。
+宣言されていない場合は、「\fBgfservice-agent\fR」を実行します。
 .TP
 \fBclient\fIn\fB_GFARM2FS\fR
-\fBgfarm2fs\fR ���ޥ�ɤΥѥ�����ӥ��ץ�������ꤷ�ޤ���
-\fBgfservice\fR �����饤����ȥۥ��Ⱦ�� gfarm2fs ���ޥ��
-��¹Ԥ��ƥե����륷���ƥ��ޥ���Ȥ���ݡ������ѿ������Ѥ���ޤ���
-�ǥե���Ȥϡ�%%BINDIR%%/gfarm2fs�פǤ���
+\fBgfarm2fs\fR コマンドのパスおよびオプションを指定します。
+\fBgfservice\fR がクライアントホスト上で gfarm2fs コマンド
+を実行してファイルシステムをマウントする際、この変数が利用されます。
+デフォルトは「%%BINDIR%%/gfarm2fs」です。
 .TP
 \fBclient\fIn\fB_SSH\fR
-SSH ���饤����ȥ��ޥ�ɤΥѥ�����ӥ��ץ�������ꤷ�ޤ���
-\fBgfservice\fR �����饤����ȥۥ��Ȥ���³���뤿���
-SSH ���饤����ȥ��ޥ�ɼ¹Ԥ���ݡ������ѿ������Ѥ���ޤ���
-�ǥե���Ȥϡ�ssh�פǤ���
+SSH クライアントコマンドのパスおよびオプションを指定します。
+\fBgfservice\fR がクライアントホストに接続するために
+SSH クライアントコマンド実行する際、この変数が利用されます。
+デフォルトは「ssh」です。
 .TP
 \fBclient\fIn\fB_SUDO\fR
-Sudo ���ޥ�ɤΥѥ�����ӥ��ץ�������ꤷ�ޤ���
-\fBgfservice\fR �� SSH ��𤷤ƥ��饤����ȥۥ��Ⱦ�� Sudo
-���ޥ�ɤ�¹Ԥ���ݡ������ѿ������Ѥ���ޤ���
-�ǥե���Ȥϡ�sudo�פǤ���
+Sudo コマンドのパスおよびオプションを指定します。
+\fBgfservice\fR が SSH を介してクライアントホスト上で Sudo
+コマンドを実行する際、この変数が利用されます。
+デフォルトは「sudo」です。
 .TP
 \fBclient\fIn\fB_GFARM_CONF\fR
-gfarm2.conf�ե�����Υѥ������Хѥ��ǻ��ꤷ�ޤ���
-�����ͤ����ꤵ��Ƥ��ʤ���硢\fBgfservice\fR��gfmd1��
-gfarm2.conf�ե�����Υѥ���Ʊ���ѥ�����Ѥ��ޤ�(gfarm2.conf�ե������
-�ѥ��ϡ�gfmd1_CONFIG_GFARM_OPTIONS�ץ������ѿ����ͤ��˷��ꤵ��ޤ�)��
+gfarm2.confファイルのパスを絶対パスで指定します。
+この値が設定されていない場合、\fBgfservice\fRはgfmd1の
+gfarm2.confファイルのパスと同じパスを使用します(gfarm2.confファイルの
+パスは「gfmd1_CONFIG_GFARM_OPTIONS」シェル変数の値を基に決定されます)。
 .TP
 \fBclient\fIn\fB_PRIVATE_MODE\fR
-�����ѿ��ˡ�true�פ򥻥åȤ���ȡ�\fBgfservice\fR ��
-���֥��ޥ�� \fBconfig-client\fR ��¹Ԥ���ݡ����饤�����
-�ۥ���¦�ν����� root ���¤�������˹Ԥ��ޤ���
+この変数に「true」をセットすると、\fBgfservice\fR が
+サブコマンド \fBconfig-client\fR を実行する際、クライアント
+ホスト側の処理は root 権限を持たずに行います。
 .TP
 \fBclient\fIn\fB_AUTH_TYPE\fR
-ǧ�ڥ����� ("sharedsecret", "gsi", "gsi_auth" �Τ����줫) ����ꤷ�ޤ���
-�����ѿ����������Ƥ��ʤ����ϡ�gfmd1 ���
-\fBconfig-gfarm\fR ��¹Ԥ����Ȥ���
-AUTH_TYPE ���ͤ����Ѥ���ޤ���
-(�ѿ� gfmd1_CONFIG_GFARM_OPTIONS ���ͤˤ�äơ�����
-�Ȥ��� AUTH_TYPE ���ͤ��Ѥ��Τǡ����դ��Ʋ�������)
+認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
+\fBconfig-gfarm\fR を実行したときの
+AUTH_TYPE の値が採用されます。
+(変数 gfmd1_CONFIG_GFARM_OPTIONS の値によって、この
+ときの AUTH_TYPE の値は変わるので、注意して下さい。)

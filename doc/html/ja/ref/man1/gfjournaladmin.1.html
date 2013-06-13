@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfjournaladmin&nbsp;--&nbsp;���㡼�ʥ�ե����������쥳���ɤ�õ�롣</DIV
+>gfjournaladmin&nbsp;--&nbsp;ジャーナルファイルの特定レコードを消去する。</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,17 +40,17 @@ CLASS="COMMAND"
 >  [<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 >]  <TT
 CLASS="REPLACEABLE"
 ><I
->���㡼�ʥ�ե�����</I
+>ジャーナルファイル</I
 ></TT
 >   <TT
 CLASS="REPLACEABLE"
 ><I
->���������ֹ�</I
+>シーケンス番号</I
 ></TT
 > </P
 ></DIV
@@ -65,43 +65,43 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfjournaladmin</B
-> �ϡ����㡼�ʥ�ե�������椫�顢
-���������ֹ� <TT
+> は、ジャーナルファイルの中から、
+シーケンス番号 <TT
 CLASS="REPLACEABLE"
 ><I
 >sequence-number</I
 ></TT
-> ����ä�
-�쥳���ɤ�õ�ޤ���
-�쥳���ɤϡ�Ʊ��Ĺ���� NOP (no operation) �쥳���ɤ��֤��������뤿�ᡢ
-���㡼�ʥ�ե��������¾�Υ쥳���ɤ���ư�����ꡢ���Ƥ��ѹ����줿�ꤹ��
-���ȤϤ���ޤ���</P
+> を持った
+レコードを消去します。
+レコードは、同じ長さの NOP (no operation) レコードで置き換えられるため、
+ジャーナルファイル内の他のレコードが移動したり、内容が変更されたりする
+ことはありません。</P
 ><P
->gfmd �ϥ᥿�ǡ�������������Τ���ȡ��ʲ��Τ褦�ʥ�����å����������
-�����������˽�λ���ޤ���</P
+>gfmd はメタデータの不整合を検知すると、以下のようなログメッセージを出力
+し、ただちに終了します。</P
 ><P
 CLASS="LITERALLAYOUT"
 >	db_journal_store_thread&nbsp;:&nbsp;seqnum=938&nbsp;ope=FILECOPY_ADD&nbsp;:&nbsp;\<br>
 	&nbsp;&nbsp;&nbsp;&nbsp;already&nbsp;exists</P
 ><P
->���Τ褦���������ȯ�����ƤϤʤ�ʤ���ΤǤϤ���ޤ�����gfmd �ΥХ���
-��äư�ö�����Ƥ��ޤ��ȡ�gfmd ��Ƶ�ư�Ǥ��ʤ��ʤ�ޤ���
-��ư���� gfmd �ϥ��㡼�ʥ�ǡ�����Ŭ�Ѥ�Ԥ����ᡢ�Ƥ���������Τ��ơ�
-��λ���Ƥ��ޤ��ޤ���
+>このような不整合は発生してはならないものではありますが、gfmd のバグに
+よって一旦生じてしまうと、gfmd を再起動できなくなります。
+起動時に gfmd はジャーナルデータの適用を行うため、再び不整合を検知して、
+終了してしまいます。
 <B
 CLASS="COMMAND"
 >gfjournaladmin</B
-> ���ޥ�ɤϡ����Τ褦�ʾ�������ȴ���Ф�
-����˻��Ѥ��ޤ���
-�嵭�Υ�����å������Ǥϡ����������ֹ� 938 �Υ쥳���ɤˤ�ä������礬
-�����Ƥ��뤳�Ȥ�������Ƥ��ޤ���
-���Υ쥳���ɤ�ä��ˤϡ����Τ褦�˥��ޥ�ɤ�¹Ԥ��ޤ���</P
+> コマンドは、このような状況から抜け出す
+ために使用します。
+上記のログメッセージでは、シーケンス番号 938 のレコードによって不整合が
+起きていることが示されています。
+このレコードを消すには、次のようにコマンドを実行します。</P
 ><P
 CLASS="LITERALLAYOUT"
 >	gfjournaladmin&nbsp;/var/gfarm-metadata/journal/0000000000.gmj&nbsp;938</P
 ><P
->BEGIN (���ڥ졼�����ID 1) ����� END (���ڥ졼�����ID 2) ��
-���㡼�ʥ�쥳���ɤϾä����Ȥ��Ǥ��ʤ��Τǡ����դ��Ʋ�������</P
+>BEGIN (オペレーションID 1) および END (オペレーションID 2) の
+ジャーナルレコードは消すことができないので、注意して下さい。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -122,7 +122,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������ץ�����ɽ�����ޤ���</P
+>引数オプションを表示します。</P
 ></DD
 ><DT
 ><CODE
@@ -134,7 +134,7 @@ CLASS="OPTION"
 ><CODE
 CLASS="OPTION"
 >-h</CODE
-> ��Ʊ���Ǥ���</P
+> と同じです。</P
 ></DD
 ><DT
 ><CODE
@@ -143,7 +143,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->���㡼�ʥ�ե�������ɤ߹��ߤޤ������ºݤ˽񤭽Ф������ϹԤ��ޤ��󡣡�</P
+>ジャーナルファイルは読み込みますが、実際に書き出す処理は行いません。　</P
 ></DD
 ><DT
 ><CODE
@@ -152,7 +152,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->��Ĺ��ɽ����Ԥ��ޤ���</P
+>冗長な表示を行います。</P
 ></DD
 ></DL
 ></DIV

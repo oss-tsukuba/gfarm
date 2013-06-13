@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfusage&nbsp;--&nbsp;���ߤλ����̤�ɽ������</DIV
+>gfusage&nbsp;--&nbsp;現在の使用量を表示する</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfusage</B
->  [���ץ����] [̾��]</P
+>  [オプション] [名前]</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -50,23 +50,23 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfusage</B
-> �ϡ�Gfarm �ե����륷���ƥ�λ����̤�
-�桼�����Ȥ䥰�롼�פ��Ȥ�ɽ�����ޤ���
+> は、Gfarm ファイルシステムの使用量を
+ユーザごとやグループごとに表示します。
 <CODE
 CLASS="PARAMETER"
->̾��</CODE
->����ꤹ��ȡ����Υ桼���䥰�롼�פ�����ɽ��
-���ޤ���
-�ǥե���Ȥϥ桼���λ����̤�ɽ�����ޤ�����-g ���ץ�������ꤹ��ȡ���
-�롼�פλ����̤�ɽ�����ޤ���
+>名前</CODE
+>を指定すると、そのユーザやグループだけを表示
+します。
+デフォルトはユーザの使用量を表示しますが、-g オプションを指定すると、グ
+ループの使用量を表示します。
 <B
 CLASS="COMMAND"
 >gfedquota</B
-> �� <B
+> と <B
 CLASS="COMMAND"
 >gfquotacheck</B
-> �ˤ��
-�ƻ����̥ơ��֥���ۤ���ȡ��桼���䥰�롼�פλ����̤����ѤǤ��ޤ���</P
+> によっ
+て使用量テーブルを構築すると、ユーザやグループの使用量を利用できます。</P
 ></DIV
 ><DT
 ><CODE
@@ -75,7 +75,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->���ꤷ���ѥ�̾�ˤ������Υ᥿�ǡ��������Ф���ꤷ�ޤ���</P
+>指定したパス名により特定のメタデータサーバを指定します。</P
 ></DD
 ><DIV
 CLASS="REFSECT1"
@@ -96,7 +96,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->���롼�פλ����̤�ɽ�����ޤ���</P
+>グループの使用量を表示します。</P
 ></DD
 ><DT
 ><CODE
@@ -105,7 +105,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������ץ�����ɽ�����ޤ���</P
+>引数オプションを表示します。</P
 ></DD
 ></DL
 ></DIV

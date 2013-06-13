@@ -11,25 +11,25 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfperf-wrapper.sh</refname>
-<refpurpose>Gfarm ���ꤵ�줿ǧ�������ǥ��ޥ�ɵ�ư��Ԥ���</refpurpose>
+<refpurpose>Gfarm 指定された認証方式でコマンド起動を行う。</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfperf-wrapper.sh</command>
     <arg choice='plain'>sharedsecret | gsi_auth | gsi </arg>
-    <arg choice='plain'><replaceable>���ޥ��</replaceable></arg>
+    <arg choice='plain'><replaceable>コマンド</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>sharedsecret��gsi_auth�ޤ��ϡ�gsiǧ�ڤΤ����줫��<replaceable>���ޥ��</replaceable>��ư���ޤ���
-ͽ��gfmd�ڤ�gfsd�˳���ǧ�������������������꤬�ʤ���Ƥ���ɬ�פ�����ޤ���
+<para>sharedsecret、gsi_authまたは、gsi認証のいずれかで<replaceable>コマンド</replaceable>を起動します。
+予めgfmd及びgfsdに該当認証方式を受け入れる設定がなされている必要があります。
 </para>
 <para>
-�ܥ��ޥ�ɤ�������GFARM_CONFIG_FILE�Ķ��ѿ�����Ѥ��ޤ������˥��åȤ���Ƥ�������ܥ��ޥ�ɤˤ���񤭤���ޤ���
+本コマンドは内部でGFARM_CONFIG_FILE環境変数を使用します。既にセットされている場合は本コマンドにより上書きされます。
 </para>
 </refsect1>
 
@@ -40,7 +40,7 @@
 <term><option>sharedsecret | gsi_auth | gsi</option></term>
 <listitem>
 <para>
-ǧ����������ꤷ�ޤ���
+認証方式を指定します。
 </para>
 </listitem>
 </varlistentry>

@@ -11,32 +11,32 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfperf-parallel-write</refname>
-<refpurpose>Gfarm �ե�����������ǽ¬���Ԥ���</refpurpose>
+<refpurpose>Gfarm ファイル書込の性能測定を行う。</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfperf-parallel-write</command>
-    <arg choice='opt'>-t, --testdir <replaceable>�ƥ��ȥǥ��쥯�ȥ�</replaceable></arg>
-    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fs�ޥ���ȥݥ����</replaceable></arg>
-    <arg choice='opt'>-l, --filesize <replaceable>�ե����륵����</replaceable></arg>
-    <arg choice='opt'>-b, --bufsize <replaceable>�Хåե�������</replaceable></arg>
-    <arg choice='opt'>-r, --random <replaceable>������</replaceable></arg>
-    <arg choice='opt'>-g, --gfsd <replaceable>gfsd̾</replaceable></arg>
-    <arg choice='opt'>-o, --overwrite <replaceable>overwrite�ե饰</replaceable></arg>
-    <arg choice='opt'>-k, --timeout <replaceable>timeout�ÿ�</replaceable></arg>
-    <arg choice='opt'>-n, --name <replaceable>���롼��̾</replaceable></arg>
-    <arg choice='opt'>-w, --wait <replaceable>���ϻ���</replaceable></arg>
+    <arg choice='opt'>-t, --testdir <replaceable>テストディレクトリ</replaceable></arg>
+    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fsマウントポイント</replaceable></arg>
+    <arg choice='opt'>-l, --filesize <replaceable>ファイルサイズ</replaceable></arg>
+    <arg choice='opt'>-b, --bufsize <replaceable>バッファサイズ</replaceable></arg>
+    <arg choice='opt'>-r, --random <replaceable>ランダム</replaceable></arg>
+    <arg choice='opt'>-g, --gfsd <replaceable>gfsd名</replaceable></arg>
+    <arg choice='opt'>-o, --overwrite <replaceable>overwriteフラグ</replaceable></arg>
+    <arg choice='opt'>-k, --timeout <replaceable>timeout秒数</replaceable></arg>
+    <arg choice='opt'>-n, --name <replaceable>グループ名</replaceable></arg>
+    <arg choice='opt'>-w, --wait <replaceable>開始時刻</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>���� <parameter>�ƥ��ȥǥ��쥯�ȥ�</parameter> �˥ƥ����ѤΥե����������������ν����ǽ��¬�ꤷ�ޤ���overwrite���˸¤���ٺ��������ƥ��ȥե�����Ϻ�����줺��Ʊ���ѥ�᡼���Ǽ���ư�����Ȥ��˺����Ѥ���ޤ���
+<para>引数 <parameter>テストディレクトリ</parameter> にテスト用のファイルを作成し、その書込性能を測定します。overwrite時に限り一度作成したテストファイルは削除されずに同じパラメータで次回起動したときに再利用されます。
 </para>
 <para>
-�ܥ��ޥ�ɤ�gfperf.rb��������˸ƽФ���뤳�Ȥ���Ԥ��Ƥ��ޤ���
+本コマンドはgfperf.rbから並列に呼出されることを期待しています。
 </para>
 </refsect1>
 
@@ -44,103 +44,103 @@
 <variablelist>
 
 <varlistentry>
-<term><option>-t, --testdir</option> <parameter>�ƥ��ȥǥ��쥯�ȥ�</parameter></term>
+<term><option>-t, --testdir</option> <parameter>テストディレクトリ</parameter></term>
 <listitem>
 <para>
-�ƥ��Ȥ�»ܤ���ǥ��쥯�ȥ����ꤷ�ޤ���
-gfarm url (gfarm:///�ǻϤޤ���) ����ꤷ�ޤ���
-�ǥե���Ȥ�gfarm:///tmp�Ǥ���
+テストを実施するディレクトリを指定します。
+gfarm url (gfarm:///で始まるもの) を指定します。
+デフォルトはgfarm:///tmpです。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fs�ޥ���ȥݥ����</parameter></term>
+<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fsマウントポイント</parameter></term>
 <listitem>
 <para>
-gfarm2fs�Υޥ���ȥݥ���Ȥ���ꤷ�ޤ���
+gfarm2fsのマウントポイントを指定します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-l, --filesize</option> <parameter>�ե����륵����</parameter></term>
+<term><option>-l, --filesize</option> <parameter>ファイルサイズ</parameter></term>
 <listitem>
 <para>
-�ƥ��Ȥǻ��Ѥ���ե����륵��������ꤷ�ޤ���
-�ǥե���Ȥ�1M�Ǥ���
+テストで使用するファイルサイズを指定します。
+デフォルトは1Mです。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-b, --bufsize</option> <parameter>�Хåե�������</parameter></term>
+<term><option>-b, --bufsize</option> <parameter>バッファサイズ</parameter></term>
 <listitem>
 <para>
-�ƥ��Ȥǻ��Ѥ���Хåե�����������ꤷ�ޤ���
-�ǥե���Ȥ�4K�Ǥ���
+テストで使用するバッファサイズを指定します。
+デフォルトは4Kです。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-r, --random</option> <parameter>������</parameter></term>
+<term><option>-r, --random</option> <parameter>ランダム</parameter></term>
 <listitem>
 <para>
-������ǥե������񤭹��ߤޤ���
-���ץ����ΰ����ˤϲ����Ϥ��Ƥ⤫�ޤ��ޤ���
-�ܥ��ץ�������ꤷ�ʤ��ä���硢�������󥷥�����ˤʤ�ޤ���
+ランダムでファイルを書き込みます。
+オプションの引数には何を渡してもかまいません。
+本オプションを指定しなかった場合、シーケンシャル書込になります。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-g, --gfsd</option> <parameter>gfsd̾</parameter></term>
+<term><option>-g, --gfsd</option> <parameter>gfsd名</parameter></term>
 <listitem>
 <para>
-�ե�������������gfsd����ꤷ�ޤ���
-�ܥ��ץ�������ꤷ�ʤ��ä�����gfarm����ưŪ�˳����Ƥ�gfsd����Ѥ��ޤ���
+ファイルを作成するgfsdを指定します。
+本オプションを指定しなかった場合はgfarmが自動的に割当てたgfsdを使用します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-o, --overwrite</option> <parameter>overwrite�ե饰</parameter></term>
+<term><option>-o, --overwrite</option> <parameter>overwriteフラグ</parameter></term>
 <listitem>
 <para>
-���٥ե��������������Υե�������Ф��ƾ�񤭤�Ԥ��ޤ���
-���ץ����ΰ����ˤϲ����Ϥ��Ƥ⤫�ޤ��ޤ���
-�ܥ��ץ�������ꤷ�ʤ��ä���硢1�Х��ȤΥե�������Ф��ɵ������Ԥ��ޤ���
+１度ファイルを作成しそのファイルに対して上書きを行います。
+オプションの引数には何を渡してもかまいません。
+本オプションを指定しなかった場合、1バイトのファイルに対し追記書込を行います。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-k, --timeout</option> <parameter>timeout�ÿ�</parameter></term>
+<term><option>-k, --timeout</option> <parameter>timeout秒数</parameter></term>
 <listitem>
 <para>
-����κ�����֤���ꤷ�ޤ����ǥե���Ȥ�60�äǤ���
-���λ�����˽񤭹��᤿�Х��ȿ����߹��ߤˤ����ä����֤ǳ�ä��ͤ���ǽ�ͤȤ��ޤ���
+書込の最大時間を指定します。デフォルトは60秒です。
+この時間内に書き込めたバイト数を書み込みにかかった時間で割った値を性能値とします。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-n, --name</option> <parameter>���롼��̾</parameter></term>
+<term><option>-n, --name</option> <parameter>グループ名</parameter></term>
 <listitem>
 <para>
-ʣ����ư���줿�����ܰ��Ȥʤ륰�롼��̾����ꤷ�ޤ���
+複数起動された場合に目印となるグループ名を指定します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-w, --wait</option> <parameter>���ϻ���</parameter></term>
+<term><option>-w, --wait</option> <parameter>開始時刻</parameter></term>
 <listitem>
 <para>
-���ꤵ�줿����ˤʤ�ޤǥƥ��Ȥ򳫻Ϥ��ޤ���
-�̾gfperf.rb�ˤ����ꤵ��ޤ���
-�����UTC�ǻ��ꤵ�졢���߻������10�ðʾ���λ���ϻ���Ǥ��ޤ���
+指定された時刻になるまでテストを開始しません。
+通常、gfperf.rbにより指定されます。
+時刻はUTCで指定され、現在時刻よりも10秒以上先の時刻は指定できません。
 </para>
 </listitem>
 </varlistentry>

@@ -6,26 +6,26 @@
 .TH "GFPS" "1" "11 October 2005" "Gfarm" ""
 
 .SH NAME
-gfps \- ���߼¹���Υ���֤�ɽ�����롣
+gfps \- 現在実行中のジョブを表示する。
 .SH SYNOPSIS
 
-\fBgfps\fR [ \fB\fI���ץ����\fB\fR ] [ \fB\fI�����ID\fB\fR\fI ...\fR ]
+\fBgfps\fR [ \fB\fIオプション\fB\fR ] [ \fB\fIジョブID\fB\fR\fI ...\fR ]
 
 .SH "DESCRIPTION"
 .PP
-�����˻��ꤷ�������ID�˴ؤ�������ɽ�����ޤ���
-�������ά�������ˤϡ����桼�������¤Ǽ¹���Υ�������Ƥ�ɽ������
-����
+引数に指定したジョブIDに関する情報を表示します。
+引数を省略した場合には、自ユーザー権限で実行中のジョブ全てを表示しま
+す。
 .SH "OPTIONS"
 .TP
 \fB-a\fR
-���ƤΥ桼�����Υ���֤�ɽ�����ޤ���
+全てのユーザーのジョブを表示します。
 .TP
 \fB-l\fR
-���ܺ٤ʾ����ɽ�����ޤ���
+より詳細な情報を表示します。
 .TP
 \fB-v\fR
-�ܺ٤˥��顼��å�������ɽ�����ޤ���
+詳細にエラーメッセージを表示します．
 .TP
 \fB-?\fR
-�������ץ�����ɽ�����ޤ���
+引数オプションを表示します。

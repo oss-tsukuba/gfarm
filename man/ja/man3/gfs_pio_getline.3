@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_PIO_GETLINE" "3" "18 March 2003" "Gfarm" ""
 .SH NAME
-gfs_pio_getline \- ����ɤ߹���
+gfs_pio_getline \- 一行読み込み
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,34 +14,34 @@ char *gfs_pio_getline (GFS_File \fIf\fB, char * \fIs\fB, size_t \fIsize\fB, int 
 \fR
 .SH "DESCRIPTION"
 .PP
-�ե�����
+ファイル
 \fIgf\fR
-���顢ʸ����
+から、文字列
 \fIs\fR
-�ˡ�����ɤ߹��ߤޤ���
-����
+に、一行読み込みます。
+引数
 \fIsize\fR
-��ʸ������
+に文字配列
 \fIs\fR
-���礭������ꤷ�ޤ����Ԥ�
+の大きさを指定します。行が
 \fIsize\fR
-��ۤ������ȡ���Ԥ�Ĺ�������礦��
+を越えた場合と、一行の長さがちょうど
 \fIsize\fR
-- 1 ���ä�������̤��뤳�ȤϤǤ��ޤ���
+- 1 だった場合を区別することはできません。
 EOF
-�ξ��ˤ�
+の場合には
 \fIeofp\fR
-�λؤ���� 1 ���֤�������ʤ��� 0 ���֤��ޤ���
+の指す先に 1 を返し、さもなくば 0 を返します。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "SEE ALSO"
 .PP
 \fBgfs_pio_create\fR(3),

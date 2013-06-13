@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfstat</refname>
-<refpurpose>Gfarm е╒ебедеыд▐д┐д╧е╟егеьепе╚еъд╬╛Ё╩єдЄ╔╜╝ид╣ды</refpurpose>
+<refpurpose>Gfarm уГХуВбуВдуГлуБ╛уБЯуБпуГЗуВгуГмуВпуГИуГкуБоцГЕха▒уВТшбичд║уБЩуВЛ</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -27,7 +27,7 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para>╗╪─ъд╖д┐е╒ебедеыдвдыддд╧е╟егеьепе╚еъд╬╛Ё╩єдЄ╔╜╝ид╖д▐д╣бе</para>
+<para>цМЗхоЪуБЧуБЯуГХуВбуВдуГлуБВуВЛуБДуБпуГЗуВгуГмуВпуГИуГкуБоцГЕха▒уВТшбичд║уБЧуБ╛уБЩя╝О</para>
 
 </refsect1>
 
@@ -38,28 +38,28 @@
 <varlistentry>
 <term><option>-M</option></term>
 <listitem>
-<para>есе┐е╟б╝е┐бже╡б╝е╨д╬╛Ё╩єдт╔╜╝ид╖д▐д╣бе</para>
+<para>уГбуВ┐уГЗуГ╝уВ┐уГ╗уВ╡уГ╝уГРуБоцГЕха▒уВВшбичд║уБЧуБ╛уБЩя╝О</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-c</option></term>
 <listitem>
-<para>е╒ебедеы╩г└╜д╬┐Їд╬д▀дЄ╔╜╝ид╖д▐д╣бе</para>
+<para>уГХуВбуВдуГлшдЗшг╜уБоцХ░уБоуБ┐уВТшбичд║уБЧуБ╛уБЩя╝О</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-l</option></term>
 <listitem>
-<para>е╖еєе▄еъе├епеъеєепдЄ├йдщд║бееъеєеп╝л┐╚д╬╛Ё╩єдЄ╔╜╝ид╖д▐д╣бе</para>
+<para>уВ╖уГ│уГЬуГкуГГуВпуГкуГ│уВпуВТш╛┐уВЙуБЪя╝ОуГкуГ│уВпшЗкш║луБоцГЕха▒уВТшбичд║уБЧуБ╛уБЩя╝О</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>░·┐Їеке╫е╖ечеєдЄ╔╜╝ид╖д▐д╣бе</para>
+<para>х╝ХцХ░уВкуГЧуВ╖уГзуГ│уВТшбичд║уБЧуБ╛уБЩя╝О</para>
 </listitem>
 </varlistentry>
 

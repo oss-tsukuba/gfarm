@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_PIO_GETS" "3" "13 May 2004" "Gfarm" ""
 .SH NAME
-gfs_pio_gets \- ����ɤ߹���
+gfs_pio_gets \- 一行読み込み
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,37 +14,37 @@ char *gfs_pio_gets (GFS_File \fIf\fB, char * \fIs\fB, size_t \fIsize\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-�ե�����
+ファイル
 \fIgf\fR
-���顢ʸ����
+から、文字列
 \fIs\fR
-�ˡ�����ɤ߹��ߤޤ���
-����
+に、一行読み込みます。
+引数
 \fIsize\fR
-��ʸ������
+に文字配列
 \fIs\fR
-���礭������ꤷ�ޤ���
+の大きさを指定します。
 .PP
-�ؿ� gfs_pio_getline(3) �Ȱۤʤꡢ���δؿ��Ϲ����β��Ե������
-���ޤ��󡣰�Ԥ����Ƥ�ʸ�������Ǽ�᤭��ʤ���硢���뤤�ϥե�����
-�����˲��Ե��椬¸�ߤ��ʤ���硢���Ϸ�̤�ʸ������������˲��Ե���
-���Ĥ��ޤ��󡣤�����ʸ����ν����򼨤� '\\0' ʸ���ϡ��ɤ���ξ��
-�Ǥ��ղä���ޤ���
+関数 gfs_pio_getline(3) と異なり、この関数は行末の改行記号を削除
+しません。一行の内容を文字配列に納めきれない場合、あるいはファイル
+末尾に改行記号が存在しない場合、入力結果の文字配列の末尾に改行記号
+がつきません。しかし文字列の終わりを示す '\\0' 文字は、どちらの場合
+でも付加されます。
 .PP
 EOF
-�ϡ����Ϸ�̤�ʸ�������Ĺ���� 0 ʸ���Ǥ��뤳�Ȥ�Ƚ�Ǥ��ޤ���
+は、入力結果の文字配列の長さが 0 文字であることで判断します。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "EXAMPLES"
-.SS "GFS_PIO_GETS �ؿ��λ�����"
+.SS "GFS_PIO_GETS 関数の使用例"
 .PP
 
 .nf

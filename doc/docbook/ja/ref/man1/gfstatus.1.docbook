@@ -12,13 +12,13 @@
 
 <refnamediv id='name'>
 <refname>gfstatus</refname>
-<refpurpose>Gfarmе╒ебедеые╖е╣е╞ерд╬╛Ё╩єдЄ╔╜╝ид╣ды</refpurpose>
+<refpurpose>GfarmуГХуВбуВдуГлуВ╖уВ╣уГЖуГауБоцГЕха▒уВТшбичд║уБЩуВЛ</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfstatus</command>
-    <arg choice='opt'><replaceable>еке╫е╖ечеє</replaceable></arg>
+    <arg choice='opt'><replaceable>уВкуГЧуВ╖уГзуГ│</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -26,7 +26,7 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para>Gfarmе╒ебедеые╖е╣е╞ерд╬╛Ё╩єдЄ╔╜╝ид╖д▐д╣бе</para>
+<para>GfarmуГХуВбуВдуГлуВ╖уВ╣уГЖуГауБоцГЕха▒уВТшбичд║уБЧуБ╛уБЩя╝О</para>
 
 </refsect1>
 
@@ -36,15 +36,15 @@
 <varlistentry>
 <term><option>-d</option></term>
 <listitem>
-<para>е╟е╨е├е░есе├е╗б╝е╕дЄ╔╜╝ид╖д▐д╣бе</para>
+<para>уГЗуГРуГГуВ░уГбуГГуВ╗уГ╝уВ╕уВТшбичд║уБЧуБ╛уБЩя╝О</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-P</option> <parameter>е╤е╣╠╛</parameter></term>
+<term><option>-P</option> <parameter>уГСуВ╣хРН</parameter></term>
 <listitem>
 <para>
-╗╪─ъд╖д┐е╤е╣╠╛д╦дшдъ╞├─ъд╬есе┐е╟б╝е┐е╡б╝е╨дЄ╗╪─ъд╖д▐д╣бе
+цМЗхоЪуБЧуБЯуГСуВ╣хРНуБлуВИуВКчЙ╣хоЪуБоуГбуВ┐уГЗуГ╝уВ┐уВ╡уГ╝уГРуВТцМЗхоЪуБЧуБ╛уБЩя╝О
 </para>
 </listitem>
 </varlistentry>
@@ -52,7 +52,7 @@
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>░·┐Їеке╫е╖ечеєдЄ╔╜╝ид╖д▐д╣бг</para>
+<para>х╝ХцХ░уВкуГЧуВ╖уГзуГ│уВТшбичд║уБЧуБ╛уБЩуАВ</para>
 </listitem>
 </varlistentry>
 

@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfarm_import_fragment_size_alloc</refname>
-<refpurpose>�ե饰���ȥ�����������������Ƥ�</refpurpose>
+<refpurpose>フラグメントサイズの配列を割り当てる</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -33,23 +33,23 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>Gfarm�ե�����򥤥�ݡ��Ȥ��륢�ץꥱ��������Ѥ�����ؿ��ΰ�ĤǤ���</para>
+<para>Gfarmファイルをインポートするアプリケーション用の補助関数の一つです。</para>
 
-<para>����ݡ��Ƚ����ˤϡ��ե�����򡢤ɤ줯�餤�Υ������Υե饰���Ȥ�
-ʬ�䤹�뤫�Ȥ�������ɬ�פǤ������ե�����Υ����������
+<para>インポート処理には、ファイルを、どれくらいのサイズのフラグメントに
+分割するかという情報が必要です。元ファイルのサイズを引数
 <parameter>total_size</parameter>
-�ˡ��ե饰���ȿ������
+に、フラグメント数を引数
 <parameter>n</parameter>
-��Ϳ����ȡ����δؿ��Ϸ�̤Ȥ��ơ��ƥե饰���Ȥ�ʬ�䥵�������ܰ¤�
-���ǿ�
+に与えると、この関数は結果として、各フラグメントの分割サイズの目安を、
+要素数
 <parameter>n</parameter>
-������Ȥ����֤��ޤ���</para>
+の配列として返します。</para>
 
-<para>���δؿ��� gfarm_hostlist_read(3) �ؿ��η�̤��Ȥ߹�碌�뤳�Ȥˤ�äơ�
-gfarm_import_fragment_config_read(3) �ؿ����֤��ե饰����ʬ�����
-��Ʊ�������ξ�������뤳�Ȥ��Ǥ��ޤ���</para>
+<para>この関数と gfarm_hostlist_read(3) 関数の結果を組み合わせることによって、
+gfarm_import_fragment_config_read(3) 関数が返すフラグメント分割情報
+と同じ形式の情報を得ることができます。</para>
 
-<para>���δؿ������������ free(3) ���Ѥ��Ʋ�������ɬ�פ�����ޤ���</para>
+<para>この関数で得た配列は free(3) を用いて解放する必要があります。</para>
 
 </refsect1>
 
@@ -58,14 +58,14 @@ gfarm_import_fragment_config_read(3) �ؿ����֤��ե饰����ʬ�����
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>����������������硢
-file_offset_t �����������Ƭ���ǤؤΥݥ��󥿤��֤��ޤ���</para>
+<para>処理に成功した場合、
+file_offset_t 型の配列の先頭要素へのポインタを返します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

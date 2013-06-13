@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gffindxmlattr&nbsp;--&nbsp;�ե������XML��ĥ°����XPath�ˤ�긡������</DIV
+>gffindxmlattr&nbsp;--&nbsp;ファイルのXML拡張属性をXPathにより検索する</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -72,18 +72,18 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->���ꤵ�줿XPath���˰��פ���XML��ĥ°���򸡺�����
-���פ����ѥ�̾��XML��ĥ°��̾��ɽ�����ޤ���
-���ꤵ�줿path���ե�����ξ�硤���Υե������XML��ĥ°���򸡺����ޤ���
-�ɤ߹��߸��¤Τʤ��ե������̵�뤵��ޤ���</P
+>指定されたXPath式に一致するXML拡張属性を検索し，
+一致したパス名とXML拡張属性名を表示します．
+指定されたpathがファイルの場合，そのファイルのXML拡張属性を検索します．
+読み込み権限のないファイルは無視されます．</P
 ><P
->���ꤵ�줿path���ǥ��쥯�ȥ�ξ�硤depth�ǻ��ꤵ�줿�����ޤǺƵ�Ū�˸������ޤ���
-0�ξ�硤���ꤵ�줿�ǥ��쥯�ȥ�򸡺����ޤ���
-depth�����ꤵ��ʤ���硤̵���¤˸������ޤ���
-����ͤ����ꤵ�줿���ϥ��顼�Ȥʤ�ޤ���
-�ޤ����¹Ը��¤Τʤ��ǥ��쥯�ȥ�ϸ�������ޤ���</P
+>指定されたpathがディレクトリの場合，depthで指定された深さまで再帰的に検索します．
+0の場合，指定されたディレクトリを検索します．
+depthが指定されない場合，無制限に検索します．
+負の値が指定された場合はエラーとなります．
+また，実行権限のないディレクトリは検索されません．</P
 ><P
->���Ϸ�̤ϡ����פ����ѥ�̾��XML°��̾�����ڤ�ʸ��delim�Ƕ��ڤä�ɽ������ޤ���</P
+>出力結果は，一致したパス名とXML属性名が区切り文字delimで区切って表示されます．</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -104,7 +104,7 @@ CLASS="OPTION"
 > depth</DT
 ><DD
 ><P
->depth�ǻ��ꤵ�줿�����ޤǺƵ�Ū�˸������ޤ���</P
+>depthで指定された深さまで再帰的に検索します．</P
 ></DD
 ><DT
 ><CODE
@@ -113,8 +113,8 @@ CLASS="OPTION"
 > delim</DT
 ><DD
 ><P
->���פ����ѥ�̾��XML��ĥ°��̾�ζ��ڤ�ʸ������ꤷ�ޤ���
--F���ץ���󤬻��ꤵ��ʤ����ϥ��֤Ȥʤ�ޤ���</P
+>一致したパス名とXML拡張属性名の区切り文字を指定します．
+-Fオプションが指定されない場合はタブとなります．</P
 ></DD
 ><DT
 ><CODE
@@ -123,7 +123,7 @@ CLASS="OPTION"
 > XPath-file</DT
 ><DD
 ><P
->��������XPath�����ɤ߹���ե��������ꤷ�ޤ���</P
+>検索するXPath式を読み込むファイルを指定します．</P
 ></DD
 ><DT
 ><CODE
@@ -132,7 +132,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������ץ�����ɽ�����ޤ���</P
+>引数オプションを表示します．</P
 ></DD
 ></DL
 ></DIV

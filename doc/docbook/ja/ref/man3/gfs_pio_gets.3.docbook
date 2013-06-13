@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_gets</refname>
-<refpurpose>����ɤ߹���</refpurpose>
+<refpurpose>一行読み込み</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -34,29 +34,29 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>�ե�����
+<para>ファイル
 <parameter>gf</parameter>
-���顢ʸ����
+から、文字列
 <parameter>s</parameter>
-�ˡ�����ɤ߹��ߤޤ���
-����
+に、一行読み込みます。
+引数
 <parameter>size</parameter>
-��ʸ������
+に文字配列
 <parameter>s</parameter>
-���礭������ꤷ�ޤ���
+の大きさを指定します。
 </para>
 
 <para>
-�ؿ� gfs_pio_getline(3) �Ȱۤʤꡢ���δؿ��Ϲ����β��Ե������
-���ޤ��󡣰�Ԥ����Ƥ�ʸ�������Ǽ�᤭��ʤ���硢���뤤�ϥե�����
-�����˲��Ե��椬¸�ߤ��ʤ���硢���Ϸ�̤�ʸ������������˲��Ե���
-���Ĥ��ޤ��󡣤�����ʸ����ν����򼨤� '\0' ʸ���ϡ��ɤ���ξ��
-�Ǥ��ղä���ޤ���
+関数 gfs_pio_getline(3) と異なり、この関数は行末の改行記号を削除
+しません。一行の内容を文字配列に納めきれない場合、あるいはファイル
+末尾に改行記号が存在しない場合、入力結果の文字配列の末尾に改行記号
+がつきません。しかし文字列の終わりを示す '\0' 文字は、どちらの場合
+でも付加されます。
 </para>
 
 <para>
 <acronym>EOF</acronym>
-�ϡ����Ϸ�̤�ʸ�������Ĺ���� 0 ʸ���Ǥ��뤳�Ȥ�Ƚ�Ǥ��ޤ���
+は、入力結果の文字配列の長さが 0 文字であることで判断します。
 </para>
 
 </refsect1>
@@ -66,19 +66,19 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>
@@ -87,7 +87,7 @@
 <refsect1 id='examples'><title>EXAMPLES</title>
 
 <example role="example">
-<title><function>gfs_pio_gets</function> �ؿ��λ�����</title>
+<title><function>gfs_pio_gets</function> 関数の使用例</title>
 <para><programlisting>
 #include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;

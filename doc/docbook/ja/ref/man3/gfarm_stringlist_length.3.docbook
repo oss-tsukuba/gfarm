@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfarm_stringlist_length</refname>
-<refpurpose>stringlist ¤ÎÊ¸»úÎó¿ô¤òÊÖ¤¹</refpurpose>
+<refpurpose>stringlist ã®æ–‡å­—åˆ—æ•°ã‚’è¿”ã™</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -33,12 +33,12 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para><parameter>listp</parameter>
-¤ÎÉ½¤¹Ê¸»úÎóÇÛÎó¤ÎÇÛÎóÍ×ÁÇ¿ô¤òÊÖ¤·¤Þ¤¹¡£</para>
+ã®è¡¨ã™æ–‡å­—åˆ—é…åˆ—ã®é…åˆ—è¦ç´ æ•°ã‚’è¿”ã—ã¾ã™ã€‚</para>
 
 </refsect1>
 
 <refsect1 id='return-values'><title>RETURN VALUES</title>
-<para>Ê¸»úÎó¤Î¿ô¤òÊÖ¤·¤Þ¤¹¡£</para>
+<para>æ–‡å­—åˆ—ã®æ•°ã‚’è¿”ã—ã¾ã™ã€‚</para>
 
 </refsect1>
 

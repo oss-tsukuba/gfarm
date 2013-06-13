@@ -11,7 +11,7 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfwhere</refname>
-<refpurpose>Gfarm е╒ебедеыд╬еье╫еъелд╬╜ъ║▀дЄ╔╜╝ид╣дыбг</refpurpose>
+<refpurpose>Gfarm уГХуВбуВдуГлуБоуГмуГЧуГкуВлуБоцЙАхЬиуВТшбичд║уБЩуВЛуАВ</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -25,10 +25,10 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>╗╪─ъд╖д┐е╒ебедеыд╦д─ддд╞бвеье╫еъелд╬╜ъ║▀дЄ╔╜╝ид╖д▐д╣бг
--r двдыддд╧ -R еке╫е╖ечеєдЄ╔╒д▒дыд╚бв
-╗╪─ъд╡дьд┐е╟егеьепе╚еъд╦┤▐д▐дьдые╒ебедеыд╬еье╫еъелд╬╜ъ║▀дЄ
-║╞╡в┼кд╦╔╜╝ид╖д▐д╣бг</para>
+<para>цМЗхоЪуБЧуБЯуГХуВбуВдуГлуБлуБдуБДуБжуАБуГмуГЧуГкуВлуБоцЙАхЬиуВТшбичд║уБЧуБ╛уБЩуАВ
+-r уБВуВЛуБДуБп -R уВкуГЧуВ╖уГзуГ│уВТф╗ШуБСуВЛуБиуАБ
+цМЗхоЪуБХуВМуБЯуГЗуВгуГмуВпуГИуГкуБлхРлуБ╛уВМуВЛуГХуВбуВдуГлуБоуГмуГЧуГкуВлуБоцЙАхЬиуВТ
+хЖНх╕░чЪДуБлшбичд║уБЧуБ╛уБЩуАВ</para>
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
@@ -36,14 +36,14 @@
 <varlistentry>
 <term><option>-r, -R</option></term>
 <listitem>
-<para>е╟егеьепе╚еъд╦┤▐д▐дьдые╒ебедеыд╬еье╫еъелд╬╜ъ║▀дЄ
-║╞╡в┼кд╦╔╜╝ид╖д▐д╣бг</para>
+<para>уГЗуВгуГмуВпуГИуГкуБлхРлуБ╛уВМуВЛуГХуВбуВдуГлуБоуГмуГЧуГкуВлуБоцЙАхЬиуВТ
+хЖНх╕░чЪДуБлшбичд║уБЧуБ╛уБЩуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>░·┐Їеке╫е╖ечеєдЄ╔╜╝ид╖д▐д╣бг</para>
+<para>х╝ХцХ░уВкуГЧуВ╖уГзуГ│уВТшбичд║уБЧуБ╛уБЩуАВ</para>
 </listitem>
 </varlistentry>
 </variablelist>

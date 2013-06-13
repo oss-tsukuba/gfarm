@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_REALPATH" "3" "04 December 2003" "Gfarm" ""
 .SH NAME
-gfs_realpath \- ���������줿���Хѥ�̾���֤�
+gfs_realpath \- 正規化された絶対パス名を返す
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,34 +14,34 @@ char *gfs_realpath (const char * \fIgfarm_url\fB, char ** \fIresolved_pathp\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-\fBgfs_realpath\fR �ϡ�
+\fBgfs_realpath\fR は，
 \fIgfarm_url\fR
-��Ϳ����줿�ѥ�̾�Υۡ���ǥ��쥯�ȥ��Ÿ������
-\&'.'��'..' ��;ʬ�� '/' ���褷�ơ�
-���������줿���Хѥ�̾��ưŪ�˳��ݤ�������˳�Ǽ���ޤ���
-ưŪ�˳��ݤ��줿����Υݥ��󥿤�
-\fIresolved_pathp\fR ���֤���ޤ���
-���Υ����ΰ�Ϥ��θ� free(3) �ˤ�곫������ɬ�פ�����ޤ���
+で与えられたパス名のホームディレクトリを展開し，
+\&'.'，'..' や余分な '/' を解決して，
+正規化された絶対パス名を動的に確保されるメモリに格納します．
+動的に確保されたメモリのポインタは
+\fIresolved_pathp\fR に返されます．
+このメモリ領域はこの後 free(3) により開放する必要があります．
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します．
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました．
 .TP
 \fBGFARM_ERR_NOT_A_DIRECTORY\fR
-���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤϥǥ��쥯�ȥ�Ǥʤ��ä�
-���Ȥ򼨤��ޤ���
+指定したパス名の親ディレクトリが、実際にはディレクトリでなかった
+ことを示します．
 .TP
 \fBGFARM_ERR_INVALID_ARGUMENT\fR
-\fIgfarm_url\fR �� NULL �ݥ��󥿤Ǥ���
+\fIgfarm_url\fR が NULL ポインタです．
 .TP
 \fBGFARM_ERR_PERMISSION_DENIED\fR
-���ꤵ�줿�ѥ��إ����������븢�¤�����ޤ���
+指定されたパスへアクセスする権限がありません．
 .TP
 \fBGFARM_ERR_NO_SUCH_OBJECT\fR
-���ꤵ�줿�ѥ�̾��¸�ߤ��ޤ���
+指定されたパス名が存在しません．
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します．

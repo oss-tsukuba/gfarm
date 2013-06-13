@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfsd(8)&nbsp;--&nbsp;Gfarm�ե����륷���ƥࡦ�ǡ����</DIV
+>gfsd(8)&nbsp;--&nbsp;Gfarmファイルシステム・デーモン</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,7 +40,7 @@ CLASS="COMMAND"
 >  [<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 >]</P
 ></DIV
@@ -52,17 +52,17 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->gfsd�ϡ�Gfarm�饤�֥��ȶ�Ĵ����ư���Gfarm�ե����륷����
-���¸�����ǡ����ץ������Ǥ���
-gfsd�ϥե����륷���ƥ�Ρ��ɤ����ۥ��Ⱦ�ǡ�
-root���¤Ǥ��餫����Ω���夲�Ƥ���ɬ�פ�����ޤ���</P
+>gfsdは、Gfarmライブラリと協調して動作し、Gfarmファイルシステ
+ムを実現するデーモンプログラムです。
+gfsdはファイルシステムノードの全ホスト上で、
+root権限であらかじめ立ち上げておく必要があります。</P
 ><P
->gfsd���󶡤���Τϡ��ե�����μ��ΤؤΥ��������Ǥ���
-gfsd �����Ѥ���ݡ����ֹ�ϡ�gfmd ����������᥿�ǡ�������������ޤ���</P
+>gfsdが提供するのは、ファイルの実体へのアクセスです。
+gfsd が利用するポート番号は、gfmd が管理するメタデータから取得します。</P
 ><P
->gfsd�ϥ桼�����¤�ư����뤳�Ȥ��ǽ�Ǥ��������ξ��¾�Υ桼���Ϥ�
-��gfsd�����Ѥ��뤳�Ȥ��Ǥ��ޤ���
-�ܺ٤�SETUP.private.ja�򻲾Ȥ��Ƥ���������</P
+>gfsdはユーザ権限で動作させることも可能ですが，この場合他のユーザはこ
+のgfsdを利用することができません。
+詳細はSETUP.private.jaを参照してください。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -82,12 +82,12 @@ CLASS="OPTION"
 >-L</CODE
 > <CODE
 CLASS="PARAMETER"
->������٥�</CODE
+>ログレベル</CODE
 ></DT
 ><DD
 ><P
->���Υ��ץ����ǻ��ꤷ����٥�ʾ��ͥ���٤Υ�������Ϥ��ޤ���
-����Ǥ����ͤ�gfarm2.conf(5)��log_level�ι�򻲾Ȥ��Ƥ���������</P
+>このオプションで指定したレベル以上の優先度のログを出力します。
+指定できる値はgfarm2.conf(5)のlog_levelの項を参照してください。</P
 ></DD
 ><DT
 ><CODE
@@ -95,11 +95,11 @@ CLASS="OPTION"
 >-P</CODE
 > <CODE
 CLASS="PARAMETER"
->PID�ե�����</CODE
+>PIDファイル</CODE
 ></DT
 ><DD
 ><P
->gfsd��process ID�򡢻��ꤷ���ե�����˵�Ͽ���ޤ���</P
+>gfsdのprocess IDを、指定したファイルに記録します。</P
 ></DD
 ><DT
 ><CODE
@@ -108,31 +108,31 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->��ư���ˡ����ס���ǥ��쥯�ȥ�θ�����Ԥ��ޤ����ե����륷���ƥ�Ρ���
-�Υۥ���̾���Ѥ�ä��Ȥ������Ѥ���ȡ���������Ǽ����Ƥ���ե�������
-���ǡ��������Ф���Ͽ���뤳�Ȥ��Ǥ��ޤ���</P
+>起動時に、スプールディレクトリの検査を行います。ファイルシステムノード
+のホスト名が変わったときに利用すると、正しく格納されているファイルをメ
+タデータサーバに登録することができます。</P
 ><P
 ><CODE
 CLASS="OPTION"
 >-c</CODE
->���ץ�����2����ꤹ���(�ޤ���
+>オプションを2回指定すると(または
 <CODE
 CLASS="OPTION"
 >-cc</CODE
->���ץ����)���᥿�ǡ��������Ф���Ͽ����Ƥ��ʤ�̵��
-�ʥե������õ�뤳�Ȥ��Ǥ��ޤ���</P
+>オプション)、メタデータサーバに登録されていない無効
+なファイルを消去することができます。</P
 ><P
 ><CODE
 CLASS="OPTION"
 >-c</CODE
->���ץ�����3����ꤹ���(�ޤ���
+>オプションを3回指定すると(または
 <CODE
 CLASS="OPTION"
 >-ccc</CODE
->���ץ����)���᥿�ǡ��������Ф���Ͽ����Ƥ��ʤ�̵
-���ʥե������Gfarm�ե����륷���ƥ��lost+found�ǥ����ȥ�˰�ư���뤳��
-���Ǥ��ޤ�������ˡ��ե����륷���ƥ�Ρ��ɾ��¸�ߤ��ʤ��ե������ؤ�
-�Ƥ��롢̵���ʥ᥿�ǡ����������ޤ���ɸ��Ǥ���ư��Ǥ���</P
+>オプション)、メタデータサーバに登録されていない無
+効なファイルをGfarmファイルシステムのlost+foundディクトリに移動すること
+ができます。さらに、ファイルシステムノード上に存在しないファイルを指し
+ている、無効なメタデータを削除します。標準でこの動作です。</P
 ></DD
 ><DT
 ><CODE
@@ -141,14 +141,14 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�ǥХå����ץ����Ǥ����ǡ����Ȥ��ƤǤϤʤ����ե������饦��ɡ�
-�ץ������Ȥ���Ω���夬��ޤ���</P
+>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
+プロセスとして立ち上がります。</P
 ><P
->���Υ��ץ�������ꤷ������<CODE
+>このオプションを指定し、かつ<CODE
 CLASS="OPTION"
 >-L</CODE
->���ץ�������ꤷ�ʤ��ä�
-��硢������٥��debug�Ȥʤ�ޤ���</P
+>オプションを指定しなかった
+場合、ログレベルはdebugとなります。</P
 ></DD
 ><DT
 ><CODE
@@ -156,11 +156,11 @@ CLASS="OPTION"
 >-f</CODE
 > <CODE
 CLASS="PARAMETER"
->����ե�����</CODE
+>設定ファイル</CODE
 ></DT
 ><DD
 ><P
->��ư�����ɤ߹�������ե��������ꤷ�ޤ���</P
+>起動時に読み込む設定ファイルを指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -168,11 +168,11 @@ CLASS="OPTION"
 >-h</CODE
 > <CODE
 CLASS="PARAMETER"
->�ۥ���̾</CODE
+>ホスト名</CODE
 ></DT
 ><DD
 ><P
->���ۥ��ȤΥ��Υ˥���ʥۥ���̾����ꤷ�ޤ���</P
+>自ホストのカノニカルなホスト名を指定します．</P
 ></DD
 ><DT
 ><CODE
@@ -180,15 +180,15 @@ CLASS="OPTION"
 >-l</CODE
 > <CODE
 CLASS="PARAMETER"
->IP���ɥ쥹</CODE
+>IPアドレス</CODE
 ></DT
 ><DD
 ><P
->gfsd��TCP�����UDP���׵������դ���IP���ɥ쥹����ꤷ�ޤ���
-���ץ�����ά���ϡ����Υۥ��Ȥ����Ƥ�IP���ɥ쥹�Ǽ����դ��ޤ���
-���Υ��ץ����ϡ���ĤΥΡ��ɤ�ʣ���Υ��ס�����󶡤�����ˡ�
-���줾��Υ��ס��뤴�Ȥˡ��̡���IP���ɥ쥹��Ȥä�gfsd��ư����
-������Ѥ��ޤ���</P
+>gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。
+オプション省略時は、そのホストの全てのIPアドレスで受け付けます。
+このオプションは、一つのノードで複数のスプールを提供する場合に、
+それぞれのスプールごとに、別々のIPアドレスを使ってgfsdを起動する
+ために用います。</P
 ></DD
 ><DT
 ><CODE
@@ -196,11 +196,11 @@ CLASS="OPTION"
 >-r</CODE
 > <CODE
 CLASS="PARAMETER"
->���ס��롦�ǥ��쥯�ȥ�</CODE
+>スプール・ディレクトリ</CODE
 ></DT
 ><DD
 ><P
->gfsd�����ե�����μ��Τ��ݻ�����ǥ��쥯�ȥ�̾����ꤷ�ޤ���</P
+>gfsdが、ファイルの実体を保持するディレクトリ名を指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -208,12 +208,12 @@ CLASS="OPTION"
 >-s</CODE
 > <CODE
 CLASS="PARAMETER"
->syslog�ե�����ƥ�</CODE
+>syslogファシリティ</CODE
 ></DT
 ><DD
 ><P
->gfsd�����顼�����Ѥ���syslog�Υե�����ƥ�����ꤷ�ޤ�����ά
-�������ˤϡ�local0����Ѥ��ޤ���</P
+>gfsdがエラー報告に用いるsyslogのファシリティを指定します。省略
+した場合には、local0を使用します。</P
 ></DD
 ><DT
 ><CODE
@@ -222,8 +222,8 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->ǧ�ڽ����˴ؤ��������ܤ������Ϥ��ޤ���
-GSIǧ�ڤ�������褹�����ͭ�Ѥʥ��ץ����Ǥ���</P
+>認証処理に関するログを詳しく出力します。
+GSI認証の問題を解決する場合に有用なオプションです。</P
 ></DD
 ><DT
 ><CODE
@@ -232,7 +232,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������ץ�����ɽ�����ޤ���</P
+>引数オプションを表示します。</P
 ></DD
 ></DL
 ></DIV
@@ -256,7 +256,7 @@ CLASS="FILENAME"
 ></DT
 ><DD
 ><P
->gfsd�����Ȥ�������ե�����Ǥ���</P
+>gfsdが参照する設定ファイルです。</P
 ></DD
 ></DL
 ></DIV

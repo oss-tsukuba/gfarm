@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfs_pio_set_view_local&nbsp;--&nbsp;����ץ��������б����� fragment ñ�̤Υ���������Ԥ�</DIV
+>gfs_pio_set_view_local&nbsp;--&nbsp;並列プロセスに対応した fragment 単位のアクセスを行う</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -88,55 +88,55 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->�ե������ե饰����ñ�̤ǥ����������뤳�Ȥ���ꤷ�ޤ���</P
+>ファイルをフラグメント単位でアクセスすることを指定します。</P
 ><P
->������������ե饰���Ȥϡ�Gfarm����ץ������ΥΡ����ֹ���б�����
-��Τˤʤ�ޤ������ʤ�����ؿ� gfs_pio_set_local(3) ��
+>アクセスするフラグメントは、Gfarm並列プロセスのノード番号に対応した
+ものになります。すなわち、関数 gfs_pio_set_local(3) の
 <TT
 CLASS="PARAMETER"
 ><I
 >node</I
 ></TT
 >
-�����˻��ꤷ���ե饰���ȤǤ���</P
+引数に指定したフラグメントです。</P
 ><P
->�ե饰���Ȥ������ϡ�Gfarm����ץ������ΥΡ��ɤ����������ʤ�� 
-gfs_pio_set_local(3) ��
+>フラグメントの総数は、Gfarm並列プロセスのノードの総数、すなわち 
+gfs_pio_set_local(3) の
 <TT
 CLASS="PARAMETER"
 ><I
 >nnode</I
 ></TT
 >
-������Ʊ��ˤʤ�ޤ���
-�⤷����¸�Υե�����򳫤��Ȥ��ˡ��ե饰���Ȥ������ȥΡ��ɤ�������
-�ۤʤä����ˤϡ����δؿ��ϥ��顼�Ȥʤ�ޤ���</P
+引数と同一になります。
+もし、既存のファイルを開くときに、フラグメントの総数とノードの総数が
+異なった場合には、この関数はエラーとなります。</P
 ><P
->����
+>引数
 <TT
 CLASS="PARAMETER"
 ><I
 >flag</I
 ></TT
 >
-�ˤϡ�
+には、
 <TT
 CLASS="CONSTANT"
 >GFARM_FILE_SEQUENTIAL</TT
->��
+>、
 <TT
 CLASS="CONSTANT"
 >GFARM_FILE_REPLICATE</TT
->��
+>、
 <TT
 CLASS="CONSTANT"
 >GFARM_FILE_NOT_REPLICATE</TT
 >
-�������¤�����Ǥ��ޤ���
-�ͤΰ�̣�� gfs_pio_set_view_index(3) �β���򻲾Ȥ���������</P
+の論理和が指定できます。
+値の意味は gfs_pio_set_view_index(3) の解説を参照ください。</P
 ><P
->���δؿ���ƤФʤ����֤Ǥϡ�Gfarm�ե������ global view
-���֤ȤʤäƤ��ꡢ���ƤΥե饰���Ȥ���礵�줿ñ��ե�����˸����ޤ���</P
+>この関数を呼ばない状態では、Gfarmファイルは global view
+状態となっており、全てのフラグメントが結合された単一ファイルに見えます。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -157,7 +157,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ｪλ�򼨤��ޤ���</P
+>正常終了を示します。</P
 ></DD
 ><DT
 ><TT
@@ -166,7 +166,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->������­�Τ����������ߤ��ޤ�����</P
+>メモリ不足のため処理を中止しました。</P
 ></DD
 ><DT
 ><TT
@@ -175,7 +175,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤷ���ѥ�̾�����ե饰���Ȳ��ե�����ǤϤ���ޤ���</P
+>指定したパス名が、フラグメント化ファイルではありません。</P
 ></DD
 ><DT
 ><TT
@@ -184,13 +184,13 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�Ρ��ɿ��ȡ��ե饰������������Ŭ�礷�ޤ���</P
+>ノード数と、フラグメント総数が、適合しません。</P
 ></DD
 ><DT
->����¾</DT
+>その他</DT
 ><DD
 ><P
->�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</P
+>上記以外のエラーが生じたことを示します。</P
 ></DD
 ></DL
 ></DIV

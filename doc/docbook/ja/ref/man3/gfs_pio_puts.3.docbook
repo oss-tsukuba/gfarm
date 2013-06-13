@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_puts</refname>
-<refpurpose>ʸ����񤭹���</refpurpose>
+<refpurpose>文字列書き込み</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -33,11 +33,11 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>ʸ����
+<para>文字列
 <parameter>s</parameter>
-��ե�����
+をファイル
 <parameter>gf</parameter>
-�˽񤭹��ߤޤ���</para>
+に書き込みます。</para>
 
 </refsect1>
 
@@ -46,19 +46,19 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

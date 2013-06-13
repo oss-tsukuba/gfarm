@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfuser</refname>
-<refpurpose>Gfarm �桼���������ޥ��</refpurpose>
+<refpurpose>Gfarm ユーザ管理コマンド</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -52,12 +52,12 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para>Gfarm �ե����륷���ƥ�ˤ��������ѥ桼���δ�����Ԥ��ޤ���
-�ǥե���ȤǤ���Ͽ�桼����ɽ�����ޤ���
-�桼��̾�����ꤵ�줿�顤���ꤵ�줿�桼����ɽ�����ޤ���
-Gfarm�ե����륷���ƥ�δ����Ԥϡ�-c��-m��-d
-���ץ�������ꤹ�뤳�Ȥˤ�ꡤ���줾��桼������Ͽ��
-��Ͽ�����ѹ�����Ͽ�����Ԥ����Ȥ��Ǥ��ޤ���
+<para>Gfarm ファイルシステムにおける利用ユーザの管理を行います．
+デフォルトでは登録ユーザを表示します．
+ユーザ名が指定されたら，指定されたユーザを表示します．
+Gfarmファイルシステムの管理者は，-c，-m，-d
+オプションを指定することにより，それぞれユーザの登録，
+登録情報変更，登録削除を行うことができます．
 </para>
 
 </refsect1>
@@ -67,12 +67,12 @@ Gfarm�ե����륷���ƥ�δ����Ԥϡ�-c��-m��-d
 <variablelist>
 
 <varlistentry>
-  <term><option>-P</option> <parameter>�ѥ�̾</parameter></term>
+  <term><option>-P</option> <parameter>パス名</parameter></term>
   <listitem>
     <para>
-	���Υ��ޥ�ɤ�������������᥿�ǡ��������Ф����ꤹ�뤿���
-	�ѥ�̾�ޤ��� Gfarm URL ����ꤷ�ޤ���
-	��ά�������ϡ���/�פ���ꤷ���Τ�Ʊ����̣�ˤʤ�ޤ���
+	このコマンドがアクセスするメタデータサーバを特定するための
+	パス名または Gfarm URL を指定します。
+	省略した場合は、「/」を指定したのと同じ意味になります。
     </para>
   </listitem>
 </varlistentry>
@@ -80,7 +80,7 @@ Gfarm�ե����륷���ƥ�δ����Ԥϡ�-c��-m��-d
 <varlistentry>
 <term><option>-l</option></term>
 <listitem>
-<para>��Ͽ�桼���ξ����ܺ٤�ɽ�����ޤ���</para>
+<para>登録ユーザの情報を詳細に表示します．</para>
 </listitem>
 </varlistentry>
 
@@ -88,13 +88,13 @@ Gfarm�ե����륷���ƥ�δ����Ԥϡ�-c��-m��-d
 <term><option>-c</option></term>
 <listitem>
 <para>
-�桼������Ͽ��Ԥ��ޤ���
-��Ͽ�ˤ�Gfarm�ե����륷���ƥ���֤��륰�����Х�桼��̾��
-�¥桼��̾��Gfarm��Υۡ���ǥ��쥯�ȥꡤGSIǧ�ڤˤ�����
-�桼���������Subject DN����ꤷ�ޤ���
-�¥桼��̾��Subject DN�ʤɤ˶��򤬴ޤޤ����ϡ�
-���֥륯�����Ȥʤɤǳ��ɬ�פ�����ޤ���
-Gfarm�δ����Ԥ��¹Բ�ǽ�Ǥ���
+ユーザの登録を行います．
+登録にはGfarmファイルシステムに置けるグローバルユーザ名，
+実ユーザ名，Gfarm上のホームディレクトリ，GSI認証における
+ユーザ証明書のSubject DNを指定します．
+実ユーザ名，Subject DNなどに空白が含まれる場合は，
+ダブルクオートなどで括る必要があります．
+Gfarmの管理者が実行可能です．
 </para>
 </listitem>
 </varlistentry>
@@ -103,11 +103,11 @@ Gfarm�δ����Ԥ��¹Բ�ǽ�Ǥ���
 <term><option>-m</option></term>
 <listitem>
 <para>
-��Ͽ�桼���ξ�����ѹ���Ԥ��ޤ���
-�ѹ��������������Х�桼��̾��
-�¥桼��̾��Gfarm��Υۡ���ǥ��쥯�ȥꡤGSIǧ�ڤˤ�����
-�桼���������Subject DN����ꤷ�ޤ���
-Gfarm�δ����Ԥ��¹Բ�ǽ�Ǥ���
+登録ユーザの情報の変更を行います．
+変更したいグローバルユーザ名，
+実ユーザ名，Gfarm上のホームディレクトリ，GSI認証における
+ユーザ証明書のSubject DNを指定します．
+Gfarmの管理者が実行可能です．
 </para>
 </listitem>
 </varlistentry>
@@ -116,9 +116,9 @@ Gfarm�δ����Ԥ��¹Բ�ǽ�Ǥ���
 <term><option>-d</option></term>
 <listitem>
 <para>
-��Ͽ�桼���ξ����õ�ޤ���
-�õ�����������Х�桼��̾����ꤷ�ޤ���
-Gfarm�δ����Ԥ��¹Բ�ǽ�Ǥ���
+登録ユーザの情報を消去します．
+消去したいグローバルユーザ名を指定します．
+Gfarmの管理者が実行可能です．
 </para>
 </listitem>
 </varlistentry>
@@ -126,7 +126,7 @@ Gfarm�δ����Ԥ��¹Բ�ǽ�Ǥ���
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します．</para>
 </listitem>
 </varlistentry>
 

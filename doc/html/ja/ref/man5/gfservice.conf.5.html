@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfservice.conf&nbsp;--&nbsp;gfservice ������ե�����</DIV
+>gfservice.conf&nbsp;--&nbsp;gfservice の設定ファイル</DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
@@ -37,77 +37,77 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfservice</B
-> �ϡ������ե����뤫���ɤ߹��ߤޤ���
+> は、設定をファイルから読み込みます。
 (<B
 CLASS="COMMAND"
 >gfservice-agent</B
-> ������ե�������ɤߤޤ���)</P
+> は設定ファイルを読みません。)</P
 ><P
->����ե�����Ϥ��켫�Τ���Bourne �����륹����ץȤˤʤäƤ��ޤ���
-�ե�����ϡ�<B
+>設定ファイルはそれ自体が、Bourne シェルスクリプトになっています。
+ファイルは、<B
 CLASS="COMMAND"
 >gfservice</B
-> �ˤ�ä�
+> によって
 <SPAN
 CLASS="emphasis"
 ><I
 CLASS="EMPHASIS"
->������ץȤȤ���ɾ������ޤ���</I
+>スクリプトとして評価されます。</I
 ></SPAN
 >
-�ʲ��ˡ�����ե�����ε�����򼨤��ޤ���</P
+以下に、設定ファイルの記述例を示します。</P
 ><P
 CLASS="LITERALLAYOUT"
->	#&nbsp;gfmd&nbsp;�����С�<br>
+>	#&nbsp;gfmd&nbsp;サーバー<br>
 	gfmd1=db1.example.com<br>
 	gfmd2=db2.example.com</P
 ><P
->Bourne �������Ʊ�ͤˡ���#�פǻϤޤ�Ԥ���Ԥ�̵�뤵��ޤ���
-����ʳ��ιԤǤϡ��������ѿ���������ޤ���
-������Ǥϡ��ѿ� <TT
+>Bourne シェルと同様に、「#」で始まる行や空行は無視されます。
+それ以外の行では、シェル変数を宣言します。
+この例では、変数 <TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd1</I
 ></TT
-> ��
+> を
 <TT
 CLASS="REPLACEABLE"
 ><I
 >db1.example.com</I
 ></TT
-> �Ȥ����ͤ˥��åȤ���
-�ѿ� <TT
+> という値にセットし、
+変数 <TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd2</I
 ></TT
-> �ˤ�
+> には
 <TT
 CLASS="REPLACEABLE"
 ><I
 >db12.example.com</I
 ></TT
-> �Ȥ����ͤ򤽤줾�쥻�å�
-���Ƥ��ޤ���
-��=�פ�����˶���ʸ�����֤����ȤϤǤ��ʤ��Τǡ����դ��Ʋ�������</P
+> という値をそれぞれセット
+しています。
+「=」の前後に空白文字を置くことはできないので、注意して下さい。</P
 ><P
->�ѿ� <TT
+>変数 <TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd1</I
 ></TT
-> �� <TT
+> と <TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd2</I
 ></TT
 >
-�ϡ֥ۥ��� ID�פȤ��ƻ��Ѥ��ޤ���
+は「ホスト ID」として使用します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �Ǥϡ��ۥ��Ȥ���ꤹ��ݤ˥ۥ���̾�ǤϤʤ���
-�ۥ��� ID����Ѥ��ޤ���</P
+> では、ホストを指定する際にホスト名ではなく、
+ホスト IDを使用します。</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<B
@@ -125,64 +125,64 @@ CLASS="REPLACEABLE"
 ></B
 ></P
 ><P
->�嵭�Υ��ޥ�ɤ�¹Ԥ���ȡ�<B
+>上記のコマンドを実行すると、<B
 CLASS="COMMAND"
 >gfservice</B
-> �ϥ����С�
+> はサーバー
 <TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd2</I
 ></TT
-> ���Ĥޤ� metadb2.example.com ��� gfmd
-��ư���ޤ���
-�ۥ��� ID �������ο��� 1 ���顢Ϣ³���Ƴ�����Ƥʤ��ƤϤʤ�ޤ���</P
+> 、つまり metadb2.example.com 上の gfmd
+を起動します。
+ホスト ID の末尾の数は 1 から、連続して割り当てなくてはなりません。</P
 ><P
->gfsd �����С��ȥ��饤����ȥۥ��Ȥ���ꤹ��ˤϡ��ۥ��� ID 
-��gfs<TT
+>gfsd サーバーとクライアントホストを指定するには、ホスト ID 
+「gfs<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->�פȡ�client<TT
+>」と「client<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->��
-�򤽤줾����Ѥ��ޤ���</P
+>」
+をそれぞれ使用します。</P
 ><P
 CLASS="LITERALLAYOUT"
->	#&nbsp;gfsd&nbsp;�����С�<br>
+>	#&nbsp;gfsd&nbsp;サーバー<br>
 	gfsd1=fs1.example.com<br>
 <br>
-	#&nbsp;���饤�����<br>
+	#&nbsp;クライアント<br>
 	client1=pc1.example.com<br>
 	client2=pc2.example.com<br>
 	client3=pc2.example.com</P
 ><P
->�ۥ��� ID �ѿ��˲ä���<B
+>ホスト ID 変数に加え、<B
 CLASS="COMMAND"
 >gfservice</B
-> �ϥۥ��� ID �˴�Ϣ����
-�ѿ��򤤤��Ĥ�ǧ�����ޤ���</P
+> はホスト ID に関連する
+変数をいくつか認識します。</P
 ><P
 CLASS="LITERALLAYOUT"
->	#&nbsp;gfmd1&nbsp;�˴ؤ�������<br>
+>	#&nbsp;gfmd1&nbsp;に関する設定<br>
 	gfmd1_CONFIG_GFARM_OPTIONS="-X&nbsp;-A&nbsp;$LOGNAME"<br>
 	gfmd1_SSH="ssh&nbsp;-i&nbsp;$HOME/.ssh/id_rsa_gfservice"<br>
 	gfmd1_SUDO=/usr/local/bin/sudo</P
 ><P
->������Ǽ����Ƥ���褦�ˡ�����ʸ����ޤ��ͤ򥻥åȤ���ˤϡ�����������
-���ޤ���
+>この例で示しているように、空白文字を含む値をセットするには、引用符を使用
+します。
 <CODE
 CLASS="VARNAME"
 >$VARNAME</CODE
-> �ϡ��������ѿ��⤷���ϴĶ��ѿ� 
+> は、シェル変数もしくは環境変数 
 <CODE
 CLASS="VARNAME"
 >VARNAME</CODE
-> ���ͤ�Ÿ������ޤ���</P
+> の値に展開されます。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -192,36 +192,36 @@ NAME="GFMD-VARIABLES"
 ><H2
 >VARIABLES ABOUT GFMD</H2
 ><P
->�ѿ���gfmd<TT
+>変数「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->��(gfmd1, gfmd2, ...) �ϡ�gfmd
-�����С���������뤿����Ѥ��ޤ���
-̾������gfmd<TT
+>」(gfmd1, gfmd2, ...) は、gfmd
+サーバーを定義するために用います。
+名前が「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_�פǻϤޤ��ѿ� (���Ȥ���
+>_」で始まる変数 (たとえば
 <TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd1_SSH</I
 ></TT
->) �ϡ��б�����
-��gfmd<TT
+>) は、対応する
+「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->�ץ����С�������ѥ�᥿�򥻥åȤ��뤿��
-���Ѥ��ޤ���
+>」サーバーの設定パラメタをセットするため
+に用います。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �����ߤΤȤ���ǧ�������ѿ��ϡ��ʲ����̤�Ǥ���</P
+> が現在のところ認識する変数は、以下の通りです。</P
 ><P
 ></P
 ><DIV
@@ -239,8 +239,8 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->gfmd �����С�����Ͽ���ޤ���
-�ѿ����ͤϡ������С��ۥ��ȤΥۥ���̾ (�⤷���� IP ���ɥ쥹) ��ɽ���ޤ���</P
+>gfmd サーバーを登録します。
+変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。</P
 ></DD
 ><DT
 ><CODE
@@ -254,16 +254,16 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->gfmd �����С���� <B
+>gfmd サーバー上で <B
 CLASS="COMMAND"
 >gfservice-agent</B
-> ���ޥ�ɤ�
-���󥹥ȡ��뤵��Ƥ���ǥ��쥯�ȥ�ؤΥѥ�����ꤷ�ޤ���
-�����ѿ����������Ƥ���� <B
+> コマンドが
+インストールされているディレクトリへのパスを指定します。
+この変数が宣言されていると <B
 CLASS="COMMAND"
 >gfservice</B
-> �ϡ�
-��<B
+> は、
+「<B
 CLASS="COMMAND"
 ><CODE
 CLASS="VARNAME"
@@ -274,11 +274,11 @@ CLASS="REPLACEABLE"
 ></TT
 >_GFBINDIR</CODE
 >/gfservice-agent</B
->�פ�¹Ԥ��ޤ���
-�������Ƥ��ʤ����ϡ���<B
+>」を実行します。
+宣言されていない場合は、「<B
 CLASS="COMMAND"
 >gfservice-agent</B
->�פ�¹Ԥ��ޤ���</P
+>」を実行します。</P
 ></DD
 ><DT
 ><CODE
@@ -295,21 +295,21 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >config-gfarm</B
-> ���ޥ�ɤΥ��ץ�������ꤷ�ޤ���
-�ǥե�����ͤϡ���ʸ���� (���ץ����ʤ�) �Ǥ���
+> コマンドのオプションを指定します。
+デフォルト値は、空文字列 (オプションなし) です。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �� <B
+> は <B
 CLASS="COMMAND"
 >config-gfarm</B
-> ���֥��ޥ��
-����Ӥ���¾¿���Υ��֥��ޥ�ɤ�¹Ԥ���ݤˡ������ѿ��򻲾Ȥ��ޤ���
+> サブコマンド
+およびその他多くのサブコマンドを実行する際に、この変数を参照します。
 <B
 CLASS="COMMAND"
 >config-gfarm</B
-> ����λ������Ǥ��äƤ⡢�����ѿ��������
-��������ꡢ�Խ�������Ϥ��ʤ��ǲ�������</P
+> が完了した後であっても、この変数の宣言を
+削除したり、編集したりはしないで下さい。</P
 ></DD
 ><DT
 ><CODE
@@ -323,8 +323,8 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� gfmd ��ץ饤�١��ȥ⡼�ɤ�ư�������ϡ�����
-�ѿ��ˡ�true�פ򥻥åȤ��ޤ���</P
+>リモートホスト上の gfmd をプライベートモードで動作させる場合は、この
+変数に「true」をセットします。</P
 ></DD
 ><DT
 ><CODE
@@ -338,24 +338,24 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->ǧ�ڥ����� ("sharedsecret", "gsi", "gsi_auth" �Τ����줫) ����ꤷ�ޤ���
-�����ѿ����������Ƥ��ʤ����ϡ�gfmd1 ���
+>認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
 <B
 CLASS="COMMAND"
 >config-gfarm</B
-> ��¹Ԥ����Ȥ���
+> を実行したときの
 <CODE
 CLASS="VARNAME"
 >AUTH_TYPE</CODE
-> ���ͤ����Ѥ���ޤ���
-(�ѿ� <CODE
+> の値が採用されます。
+(変数 <CODE
 CLASS="VARNAME"
 >gfmd1_CONFIG_GFARM_OPTIONS</CODE
-> ���ͤˤ�äơ�����
-�Ȥ��� <CODE
+> の値によって、この
+ときの <CODE
 CLASS="VARNAME"
 >AUTH_TYPE</CODE
-> ���ͤ��Ѥ��Τǡ����դ��Ʋ�������)</P
+> の値は変わるので、注意して下さい。)</P
 ></DD
 ><DT
 ><CODE
@@ -369,12 +369,12 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->�����ѿ����ͤ��async�פ˥��åȤ���ȡ�
+>この変数の値を「async」にセットすると、
 <B
 CLASS="COMMAND"
 >gfservice config-gfarm-slave</B
-> �κݤˤ��� gfmd ��
-��Ʊ�� (async) ���졼�֤ˤʤ�ޤ���</P
+> の際にこの gfmd は
+非同期 (async) スレーブになります。</P
 ></DD
 ><DT
 ><CODE
@@ -388,13 +388,13 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->SSH ���饤����ȥ��ޥ�ɤΥѥ�����ӥ��ץ�������ꤷ�ޤ���
+>SSH クライアントコマンドのパスおよびオプションを指定します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �� gfmd �����С�����³���뤿���
-SSH ���饤����ȥ��ޥ�ɤ�¹Ԥ���ݡ������ѿ������Ѥ���ޤ���
-�ǥե���Ȥϡ�ssh�פǤ���</P
+> が gfmd サーバーに接続するために
+SSH クライアントコマンドを実行する際、この変数が利用されます。
+デフォルトは「ssh」です。</P
 ></DD
 ><DT
 ><CODE
@@ -408,13 +408,13 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Sudo ���ޥ�ɤΥѥ�����ӥ��ץ�������ꤷ�ޤ���
+>Sudo コマンドのパスおよびオプションを指定します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �� SSH ��𤷤� gfmd �����С���� Sudo
-���ޥ�ɤ�¹Ԥ���ݡ������ѿ������Ѥ���ޤ���
-�ǥե���Ȥϡ�sudo�פǤ���</P
+> が SSH を介して gfmd サーバー上で Sudo
+コマンドを実行する際、この変数が利用されます。
+デフォルトは「sudo」です。</P
 ></DD
 ></DL
 ></DIV
@@ -427,36 +427,36 @@ NAME="GFSD-VARIABLES"
 ><H2
 >VARIABLES ABOUT GFSD</H2
 ><P
->�ѿ���gfsd<TT
+>変数「gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->��(gfsd1, gfsd2, ...) �ϡ�gfsd
-�����С���������뤿����Ѥ��ޤ���
-̾������gfsd<TT
+>」(gfsd1, gfsd2, ...) は、gfsd
+サーバーを定義するために用います。
+名前が「gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_�פǻϤޤ��ѿ� (���Ȥ���
+>_」で始まる変数 (たとえば
 <TT
 CLASS="REPLACEABLE"
 ><I
 >gfsd1_SSH</I
 ></TT
->) �ϡ��б�����
-��gfsd<TT
+>) は、対応する
+「gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->�ץ����С�������ѥ�᥿�򥻥åȤ��뤿��
-���Ѥ��ޤ���
+>」サーバーの設定パラメタをセットするため
+に用います。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �����ߤΤȤ���ǧ�������ѿ��ϡ��ʲ����̤�Ǥ���</P
+> が現在のところ認識する変数は、以下の通りです。</P
 ><P
 ></P
 ><DIV
@@ -474,8 +474,8 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->gfsd �����С�����Ͽ���ޤ���
-�ѿ����ͤϡ������С��ۥ��ȤΥۥ���̾ (�⤷���� IP ���ɥ쥹) ��ɽ���ޤ���</P
+>gfsd サーバーを登録します。
+変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。</P
 ></DD
 ><DT
 ><CODE
@@ -489,16 +489,16 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->gfsd �����С���� <B
+>gfsd サーバー上で <B
 CLASS="COMMAND"
 >gfservice-agent</B
-> ���ޥ�ɤ�
-���󥹥ȡ��뤵��Ƥ���ǥ��쥯�ȥ�ؤΥѥ�����ꤷ�ޤ���
-�����ѿ����������Ƥ���� <B
+> コマンドが
+インストールされているディレクトリへのパスを指定します。
+この変数が宣言されていると <B
 CLASS="COMMAND"
 >gfservice</B
-> �ϡ�
-��<B
+> は、
+「<B
 CLASS="COMMAND"
 ><CODE
 CLASS="VARNAME"
@@ -509,11 +509,11 @@ CLASS="REPLACEABLE"
 ></TT
 >_GFBINDIR</CODE
 >/gfservice-agent</B
->�פ�¹Ԥ��ޤ���
-�������Ƥ��ʤ����ϡ���<B
+>」を実行します。
+宣言されていない場合は、「<B
 CLASS="COMMAND"
 >gfservice-agent</B
->�פ�¹Ԥ��ޤ���</P
+>」を実行します。</P
 ></DD
 ><DT
 ><CODE
@@ -530,21 +530,21 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >config-gfsd</B
-> ���ޥ�ɤΥ��ץ�������ꤷ�ޤ���
-�ǥե�����ͤϡ���ʸ���� (���ץ����ʤ�) �Ǥ���
+> コマンドのオプションを指定します。
+デフォルト値は、空文字列 (オプションなし) です。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �� <B
+> は <B
 CLASS="COMMAND"
 >config-gfsd</B
-> ���֥��ޥ��
-����Ӥ���¾¿���Υ��֥��ޥ�ɤ�¹Ԥ���ݤˡ������ѿ��򻲾Ȥ��ޤ���
+> サブコマンド
+およびその他多くのサブコマンドを実行する際に、この変数を参照します。
 <B
 CLASS="COMMAND"
 >config-gfsd</B
-> ����λ������Ǥ��äƤ⡢�����ѿ��������
-��������ꡢ�Խ�������Ϥ��ʤ��ǲ�������</P
+> が完了した後であっても、この変数の宣言を
+削除したり、編集したりはしないで下さい。</P
 ></DD
 ><DT
 ><CODE
@@ -558,8 +558,8 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� gfsd ��ץ饤�١��ȥ⡼�ɤ�ư�������ϡ�����
-�ѿ��ˡ�true�פ򥻥åȤ��ޤ���</P
+>リモートホスト上の gfsd をプライベートモードで動作させる場合は、この
+変数に「true」をセットします。</P
 ></DD
 ><DT
 ><CODE
@@ -573,24 +573,24 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->ǧ�ڥ����� ("sharedsecret", "gsi", "gsi_auth" �Τ����줫) ����ꤷ�ޤ���
-�����ѿ����������Ƥ��ʤ����ϡ�gfmd1 ���
+>認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
 <B
 CLASS="COMMAND"
 >config-gfarm</B
-> ��¹Ԥ����Ȥ���
+> を実行したときの
 <CODE
 CLASS="VARNAME"
 >AUTH_TYPE</CODE
-> ���ͤ����Ѥ���ޤ���
-(�ѿ� <CODE
+> の値が採用されます。
+(変数 <CODE
 CLASS="VARNAME"
 >gfmd1_CONFIG_GFARM_OPTIONS</CODE
-> ���ͤˤ�äơ�����
-�Ȥ��� <CODE
+> の値によって、この
+ときの <CODE
 CLASS="VARNAME"
 >AUTH_TYPE</CODE
-> ���ͤ��Ѥ��Τǡ����դ��Ʋ�������)</P
+> の値は変わるので、注意して下さい。)</P
 ></DD
 ><DT
 ><CODE
@@ -604,13 +604,13 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->SSH ���饤����ȥ��ޥ�ɤΥѥ�����ӥ��ץ�������ꤷ�ޤ���
+>SSH クライアントコマンドのパスおよびオプションを指定します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �� gfsd �����С�����³���뤿���
-SSH ���饤����ȥ��ޥ�ɼ¹Ԥ���ݡ������ѿ������Ѥ���ޤ���
-�ǥե���Ȥϡ�ssh�פǤ���</P
+> が gfsd サーバーに接続するために
+SSH クライアントコマンド実行する際、この変数が利用されます。
+デフォルトは「ssh」です。</P
 ></DD
 ><DT
 ><CODE
@@ -624,13 +624,13 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Sudo ���ޥ�ɤΥѥ�����ӥ��ץ�������ꤷ�ޤ���
+>Sudo コマンドのパスおよびオプションを指定します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �� SSH ��𤷤� gfsd �����С���� Sudo
-���ޥ�ɤ�¹Ԥ���ݡ������ѿ������Ѥ���ޤ���
-�ǥե���Ȥϡ�sudo�פǤ���</P
+> が SSH を介して gfsd サーバー上で Sudo
+コマンドを実行する際、この変数が利用されます。
+デフォルトは「sudo」です。</P
 ></DD
 ></DL
 ></DIV
@@ -643,36 +643,36 @@ NAME="CLIENT-VARIABLES"
 ><H2
 >VARIABLES ABOUT CLIENT</H2
 ><P
->�ѿ���client<TT
+>変数「client<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->��(client1, client2, ...) �ϡ�
-client �����С���������뤿����Ѥ��ޤ���
-̾������client<TT
+>」(client1, client2, ...) は、
+client サーバーを定義するために用います。
+名前が「client<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_�פǻϤޤ��ѿ� (���Ȥ���
+>_」で始まる変数 (たとえば
 <TT
 CLASS="REPLACEABLE"
 ><I
 >client1_SSH</I
 ></TT
->) �ϡ��б�����
-��client<TT
+>) は、対応する
+「client<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->�ץ����С�������ѥ�᥿�򥻥åȤ���
-������Ѥ��ޤ���
+>」サーバーの設定パラメタをセットする
+ために用います。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �����ߤΤȤ���ǧ�������ѿ��ϡ��ʲ����̤�Ǥ���</P
+> が現在のところ認識する変数は、以下の通りです。</P
 ><P
 ></P
 ><DIV
@@ -690,9 +690,9 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->���饤����ȥۥ��Ȥ���Ͽ���ޤ���
-�ѿ����ͤϡ����饤����ȥۥ��ȤΥۥ���̾ (�⤷���� IP ���ɥ쥹) ��
-ɽ���ޤ���</P
+>クライアントホストを登録します。
+変数の値は、クライアントホストのホスト名 (もしくは IP アドレス) を
+表します。</P
 ></DD
 ><DT
 ><CODE
@@ -706,16 +706,16 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->���饤����ȥۥ��Ⱦ�� <B
+>クライアントホスト上で <B
 CLASS="COMMAND"
 >gfservice-agent</B
-> ���ޥ�ɤ�
-���󥹥ȡ��뤵��Ƥ���ǥ��쥯�ȥ�ؤΥѥ�����ꤷ�ޤ���
-�����ѿ����������Ƥ���� <B
+> コマンドが
+インストールされているディレクトリへのパスを指定します。
+この変数が宣言されていると <B
 CLASS="COMMAND"
 >gfservice</B
-> �ϡ�
-��<B
+> は、
+「<B
 CLASS="COMMAND"
 ><CODE
 CLASS="VARNAME"
@@ -726,11 +726,11 @@ CLASS="REPLACEABLE"
 ></TT
 >_GFBINDIR</CODE
 >/gfservice-agent</B
->�פ�¹Ԥ��ޤ���
-�������Ƥ��ʤ����ϡ���<B
+>」を実行します。
+宣言されていない場合は、「<B
 CLASS="COMMAND"
 >gfservice-agent</B
->�פ�¹Ԥ��ޤ���</P
+>」を実行します。</P
 ></DD
 ><DT
 ><CODE
@@ -747,13 +747,13 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfarm2fs</B
-> ���ޥ�ɤΥѥ�����ӥ��ץ�������ꤷ�ޤ���
+> コマンドのパスおよびオプションを指定します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �����饤����ȥۥ��Ⱦ�� gfarm2fs ���ޥ��
-��¹Ԥ��ƥե����륷���ƥ��ޥ���Ȥ���ݡ������ѿ������Ѥ���ޤ���
-�ǥե���Ȥϡ�%%BINDIR%%/gfarm2fs�פǤ���</P
+> がクライアントホスト上で gfarm2fs コマンド
+を実行してファイルシステムをマウントする際、この変数が利用されます。
+デフォルトは「%%BINDIR%%/gfarm2fs」です。</P
 ></DD
 ><DT
 ><CODE
@@ -767,13 +767,13 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->SSH ���饤����ȥ��ޥ�ɤΥѥ�����ӥ��ץ�������ꤷ�ޤ���
+>SSH クライアントコマンドのパスおよびオプションを指定します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �����饤����ȥۥ��Ȥ���³���뤿���
-SSH ���饤����ȥ��ޥ�ɼ¹Ԥ���ݡ������ѿ������Ѥ���ޤ���
-�ǥե���Ȥϡ�ssh�פǤ���</P
+> がクライアントホストに接続するために
+SSH クライアントコマンド実行する際、この変数が利用されます。
+デフォルトは「ssh」です。</P
 ></DD
 ><DT
 ><CODE
@@ -787,13 +787,13 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Sudo ���ޥ�ɤΥѥ�����ӥ��ץ�������ꤷ�ޤ���
+>Sudo コマンドのパスおよびオプションを指定します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �� SSH ��𤷤ƥ��饤����ȥۥ��Ⱦ�� Sudo
-���ޥ�ɤ�¹Ԥ���ݡ������ѿ������Ѥ���ޤ���
-�ǥե���Ȥϡ�sudo�פǤ���</P
+> が SSH を介してクライアントホスト上で Sudo
+コマンドを実行する際、この変数が利用されます。
+デフォルトは「sudo」です。</P
 ></DD
 ><DT
 ><CODE
@@ -807,13 +807,13 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->gfarm2.conf�ե�����Υѥ������Хѥ��ǻ��ꤷ�ޤ���
-�����ͤ����ꤵ��Ƥ��ʤ���硢<B
+>gfarm2.confファイルのパスを絶対パスで指定します。
+この値が設定されていない場合、<B
 CLASS="COMMAND"
 >gfservice</B
->��gfmd1��
-gfarm2.conf�ե�����Υѥ���Ʊ���ѥ�����Ѥ��ޤ�(gfarm2.conf�ե������
-�ѥ��ϡ�gfmd1_CONFIG_GFARM_OPTIONS�ץ������ѿ����ͤ��˷��ꤵ��ޤ�)��</P
+>はgfmd1の
+gfarm2.confファイルのパスと同じパスを使用します(gfarm2.confファイルの
+パスは「gfmd1_CONFIG_GFARM_OPTIONS」シェル変数の値を基に決定されます)。</P
 ></DD
 ><DT
 ><CODE
@@ -827,15 +827,15 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->�����ѿ��ˡ�true�פ򥻥åȤ���ȡ�<B
+>この変数に「true」をセットすると、<B
 CLASS="COMMAND"
 >gfservice</B
-> ��
-���֥��ޥ�� <B
+> が
+サブコマンド <B
 CLASS="COMMAND"
 >config-client</B
-> ��¹Ԥ���ݡ����饤�����
-�ۥ���¦�ν����� root ���¤�������˹Ԥ��ޤ���</P
+> を実行する際、クライアント
+ホスト側の処理は root 権限を持たずに行います。</P
 ></DD
 ><DT
 ><CODE
@@ -849,24 +849,24 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->ǧ�ڥ����� ("sharedsecret", "gsi", "gsi_auth" �Τ����줫) ����ꤷ�ޤ���
-�����ѿ����������Ƥ��ʤ����ϡ�gfmd1 ���
+>認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+この変数が定義されていない場合は、gfmd1 上で
 <B
 CLASS="COMMAND"
 >config-gfarm</B
-> ��¹Ԥ����Ȥ���
+> を実行したときの
 <CODE
 CLASS="VARNAME"
 >AUTH_TYPE</CODE
-> ���ͤ����Ѥ���ޤ���
-(�ѿ� <CODE
+> の値が採用されます。
+(変数 <CODE
 CLASS="VARNAME"
 >gfmd1_CONFIG_GFARM_OPTIONS</CODE
-> ���ͤˤ�äơ�����
-�Ȥ��� <CODE
+> の値によって、この
+ときの <CODE
 CLASS="VARNAME"
 >AUTH_TYPE</CODE
-> ���ͤ��Ѥ��Τǡ����դ��Ʋ�������)</P
+> の値は変わるので、注意して下さい。)</P
 ></DD
 ></DL
 ></DIV

@@ -11,30 +11,30 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfperf-parallel-autoreplica</refname>
-<refpurpose>Gfarm ��ưʣ����ǽ����ǽ¬���Ԥ���</refpurpose>
+<refpurpose>Gfarm 自動複製機能の性能測定を行う。</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfperf-parallel-autoreplica</command>
-    <arg choice='opt'>-t, --testdir <replaceable>�ƥ��ȥǥ��쥯�ȥ�</replaceable></arg>
-    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fs�ޥ���ȥݥ����</replaceable></arg>
-    <arg choice='opt'>-l, --filesize <replaceable>�ե����륵����</replaceable></arg>
-    <arg choice='opt'>-f, --number <replaceable>�ե������</replaceable></arg>
-    <arg choice='opt'>-r, --replica <replaceable>ʣ����</replaceable></arg>
-    <arg choice='opt'>-s, --stop <replaceable>�Ԥ�����</replaceable></arg>
-    <arg choice='opt'>-n, --name <replaceable>���롼��̾</replaceable></arg>
-    <arg choice='opt'>-w, --wait <replaceable>���ϻ���</replaceable></arg>
+    <arg choice='opt'>-t, --testdir <replaceable>テストディレクトリ</replaceable></arg>
+    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fsマウントポイント</replaceable></arg>
+    <arg choice='opt'>-l, --filesize <replaceable>ファイルサイズ</replaceable></arg>
+    <arg choice='opt'>-f, --number <replaceable>ファイル数</replaceable></arg>
+    <arg choice='opt'>-r, --replica <replaceable>複製数</replaceable></arg>
+    <arg choice='opt'>-s, --stop <replaceable>待ち時間</replaceable></arg>
+    <arg choice='opt'>-n, --name <replaceable>グループ名</replaceable></arg>
+    <arg choice='opt'>-w, --wait <replaceable>開始時刻</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>���� <parameter>�ƥ��ȥǥ��쥯�ȥ�</parameter> �˻��ꤵ�줿�������Υե��������ꤵ�줿�������������κ�����ǽ��¬�ꤷ�ޤ������줾��Υե�����ϻ��ꤵ�줿ʣ�����Ǽ�ưʣ�����Ԥ��ޤ���
+<para>引数 <parameter>テストディレクトリ</parameter> に指定されたサイズのファイルを指定された数作成し、その作成性能を測定します。それぞれのファイルは指定された複製数で自動複製が行われます。
 </para>
 <para>
-�ܥ��ޥ�ɤ�gfperf.rb��������˸ƽФ���뤳�Ȥ���Ԥ��Ƥ��ޤ���
+本コマンドはgfperf.rbから並列に呼出されることを期待しています。
 </para>
 </refsect1>
 
@@ -42,81 +42,81 @@
 <variablelist>
 
 <varlistentry>
-<term><option>-t, --testdir</option> <parameter>�ƥ��ȥǥ��쥯�ȥ�</parameter></term>
+<term><option>-t, --testdir</option> <parameter>テストディレクトリ</parameter></term>
 <listitem>
 <para>
-�ƥ��Ȥ�»ܤ���ǥ��쥯�ȥ����ꤷ�ޤ���
-gfarm url (gfarm:///�ǻϤޤ���) ����ꤷ�ޤ���
-�ǥե���Ȥ�gfarm:///tmp�Ǥ���
+テストを実施するディレクトリを指定します。
+gfarm url (gfarm:///で始まるもの) を指定します。
+デフォルトはgfarm:///tmpです。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fs�ޥ���ȥݥ����</parameter></term>
+<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fsマウントポイント</parameter></term>
 <listitem>
 <para>
-gfarm2fs�Υޥ���ȥݥ���Ȥ���ꤷ�ޤ���
+gfarm2fsのマウントポイントを指定します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-l, --filesize</option> <parameter>�ե����륵����</parameter></term>
+<term><option>-l, --filesize</option> <parameter>ファイルサイズ</parameter></term>
 <listitem>
 <para>
-���Ѥ���ե����륵��������ꤷ�ޤ���
-�ǥե���Ȥ�1G�Ǥ���
+使用するファイルサイズを指定します。
+デフォルトは1Gです。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-f, --number</option> <parameter>�ե������</parameter></term>
+<term><option>-f, --number</option> <parameter>ファイル数</parameter></term>
 <listitem>
 <para>
-��������ե����������ꤷ�ޤ���
-�ǥե���Ȥ�10�Ǥ���
+生成するファイル数を指定します。
+デフォルトは10です。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-r, --replica</option> <parameter>ʣ����</parameter></term>
+<term><option>-r, --replica</option> <parameter>複製数</parameter></term>
 <listitem>
 <para>
-��ưʣ����ǽ��ʣ�����������ꤷ�ޤ���
-�ǥե���Ȥ�1�Ǥ���
+自動複製機能で複製する数を指定します。
+デフォルトは1です。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-s, --stop</option> <parameter>�Ԥ�����</parameter></term>
+<term><option>-s, --stop</option> <parameter>待ち時間</parameter></term>
 <listitem>
 <para>
-ʣ�������������Τ���粿���ԤĤΤ�����ꤷ�ޤ���
-�ǥե���Ȥ�60�Ǥ���
+複製が作成されるのを最大何秒待つのかを指定します。
+デフォルトは60です。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-n, --name</option> <parameter>���롼��̾</parameter></term>
+<term><option>-n, --name</option> <parameter>グループ名</parameter></term>
 <listitem>
 <para>
-ʣ����ư���줿�����ܰ��Ȥʤ륰�롼��̾����ꤷ�ޤ���
+複数起動された場合に目印となるグループ名を指定します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-w, --wait</option> <parameter>���ϻ���</parameter></term>
+<term><option>-w, --wait</option> <parameter>開始時刻</parameter></term>
 <listitem>
 <para>
-���ꤵ�줿����ˤʤ�ޤǥƥ��Ȥ򳫻Ϥ��ޤ���
-�̾gfperf.rb�ˤ����ꤵ��ޤ���
-�����UTC�ǻ��ꤵ�졢���߻������10�ðʾ���λ���ϻ���Ǥ��ޤ���
+指定された時刻になるまでテストを開始しません。
+通常、gfperf.rbにより指定されます。
+時刻はUTCで指定され、現在時刻よりも10秒以上先の時刻は指定できません。
 </para>
 </listitem>
 </varlistentry>

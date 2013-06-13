@@ -11,20 +11,20 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfimport_fixed</refname>
-<refpurpose>����Ĺ�ǡ�����ե饰���Ȥ�ʬ���Ƽ�����</refpurpose>
+<refpurpose>固定長データをフラグメントに分けて取り込む</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfimport_fixed</command>
-    <arg choice='opt'><replaceable>���ץ����</replaceable></arg>
-    <arg choice='plain'><replaceable>���ϥե�����</replaceable></arg>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+    <arg choice='plain'><replaceable>入力ファイル</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>�����˻��ꤷ������Ĺ�ǡ�������ʤ�ե�����򡢥ե饰���Ȥ�ʬ����
-Gfarm �ե����륷���ƥ�˼����ॵ��ץ롦�ץ������Ǥ���</para>
+<para>引数に指定した固定長データからなるファイルを、フラグメントに分けて
+Gfarm ファイルシステムに取り込むサンプル・プログラムです。</para>
 
 </refsect1>
 
@@ -32,56 +32,56 @@ Gfarm �ե����륷���ƥ�˼����ॵ��ץ롦�ץ������Ǥ���</para>
 <variablelist>
 
 <varlistentry>
-<term><option>-H</option> <parameter>�ۥ��Ȼ���ե�����</parameter>
+<term><option>-H</option> <parameter>ホスト指定ファイル</parameter>
 </term>
 <listitem>
-<para>�ե饰���Ȥ����֤���ۥ���̾�Υꥹ�Ȥ򵭺ܤ����ե�����̾����ꤷ�ޤ���
-�ۥ���̾�ϡ��ƹԤ˰�ۥ��Ȥ��ĵ��Ҥ��ޤ���
--l ���ץ������ά�������ϡ����ϥե�����ϡ����Υ��ץ�����
-���ꤷ���ۥ��Ȥˡ���ʬ�䤷���ե饰���ȤȤ������֤���ޤ���
+<para>フラグメントを配置するホスト名のリストを記載したファイル名を指定します。
+ホスト名は、各行に一ホストずつ記述します。
+-l オプションを省略した場合は、入力ファイルは、このオプションで
+指定したホストに、等分割したフラグメントとして配置されます。
 </para>
 <para>
-�ե�����̾�Ȥ��� ``-'' ����ꤷ����硢ɸ�����Ϥ���ۥ���̾�Υꥹ�Ȥ�
-�ɤ߹��ߤޤ���</para>
+ファイル名として ``-'' を指定した場合、標準入力からホスト名のリストを
+読み込みます。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-f</option> <parameter>�ե饰���ȹ����ե�����</parameter>
+<term><option>-f</option> <parameter>フラグメント構成ファイル</parameter>
 </term>
 <listitem>
-<para>�ƥե饰���ȤΤ����褽�Υ������ȡ����֤���ۥ��Ȥ򵭺ܤ����ե���
-��̾����ꤷ�ޤ���
+<para>各フラグメントのおおよそのサイズと、配置するホストを記載したファイ
+ル名を指定します。
 </para>
 <para>
-�����ե�����ϡ��ƹԤ�������Ƕ��ڤ�줿�������ȥۥ���̾����ʤ�����Ǥ���
+構成ファイルは、各行が、空白で区切られたサイズとホスト名からなる形式です。
 </para>
 <para>
-�ե�����̾�Ȥ��� ``-'' ����ꤷ����硢ɸ�����Ϥ���ե饰���ȹ�����
-�ɤ߹��ߤޤ���</para>
+ファイル名として ``-'' を指定した場合、標準入力からフラグメント構成を
+読み込みます。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-l</option> <parameter>�쥳����Ĺ</parameter></term>
+<term><option>-l</option> <parameter>レコード長</parameter></term>
 <listitem>
-<para>����Ĺ�ǡ����Υ쥳����Ĺ��Х��ȿ��ǻ��ꤷ�ޤ����ե饰����ʬ��ϡ�
-���Υ쥳����Ĺ�������ܤΰ��֤ǤΤߡ��Ԥ��ޤ�����ά���Υ쥳����Ĺ
-�� 1 �Х��ȤǤ���</para>
+<para>固定長データのレコード長をバイト数で指定します。フラグメント分割は、
+このレコード長の整数倍の位置でのみ、行われます。省略時のレコード長
+は 1 バイトです。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-o</option> <parameter>gfarm-URL</parameter></term>
 <listitem>
-<para>���� Gfarm �ե������ URL ����ꤷ�ޤ���</para>
+<para>出力 Gfarm ファイルの URL を指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
 
@@ -91,10 +91,10 @@ Gfarm �ե����륷���ƥ�˼����ॵ��ץ롦�ץ������Ǥ���</para>
 <refsect1 id='examples'><title>EXAMPLES</title>
 
 <example role="example">
-<title>���ꤷ���Ŀ���ʬ�䤷�Ƽ�����</title>
+<title>指定した個数に分割して取り込む</title>
 <para>
-�ʲ��ϡ��ե������8�ĤΥե饰���Ȥ�ʬ�䤷��
-�ե����� <replaceable>gfarm:file</replaceable> �Ȥ��Ƽ�������Ǥ���
+以下は、ファイルを8個のフラグメントに分割し、
+ファイル <replaceable>gfarm:file</replaceable> として取り込む例です。
 <screen>
 gfsched -N 8 | gfimport_fixed -H - -o gfarm:file source_file
 </screen>
@@ -102,11 +102,11 @@ gfsched -N 8 | gfimport_fixed -H - -o gfarm:file source_file
 </example>
 
 <example role="example">
-<title>��������ץ���������ꤷ������θĿ���ʬ�䤷�Ƽ�����</title>
+<title>処理するプログラムを指定し、特定の個数に分割して取り込む</title>
 <para>
-�ʲ��ϡ��ե������8�ĤΥե饰���Ȥ�ʬ�䤷��
-���ꤷ���ץ������ <replaceable>gfarm:prog</replaceable> ��¹Բ�ǽ�ʥۥ��Ȥˡ�
-�ե����� <replaceable>gfarm:file</replaceable> �Ȥ��Ƽ�������Ǥ���
+以下は、ファイルを8個のフラグメントに分割し、
+指定したプログラム <replaceable>gfarm:prog</replaceable> を実行可能なホストに、
+ファイル <replaceable>gfarm:file</replaceable> として取り込む例です。
 <screen>
 gfsched -N 8 -p gfarm:prog | gfimport_fixed -H - -o gfarm:file source_file
 </screen>
@@ -114,12 +114,12 @@ gfsched -N 8 -p gfarm:prog | gfimport_fixed -H - -o gfarm:file source_file
 </example>
 
 <example role="example">
-<title>��¸�� gfarm �ե������Ʊ�����֤Ǽ�����</title>
+<title>既存の gfarm ファイルと同じ配置で取り込む</title>
 <para>
-�ʲ��ϡ���¸�� gfarm �ե����� <replaceable>gfarm:template</replaceable> ��
-Ʊ���Ŀ��Υե饰���Ȥ�ʬ�䤷��
-<replaceable>gfarm:template</replaceable> ��¸�ߤ���Τ�Ʊ���ۥ��Ȥˡ�
-�ե����� <replaceable>gfarm:file</replaceable> �Ȥ��Ƽ�������Ǥ���
+以下は、既存の gfarm ファイル <replaceable>gfarm:template</replaceable> と
+同じ個数のフラグメントに分割し、
+<replaceable>gfarm:template</replaceable> が存在するのと同じホストに、
+ファイル <replaceable>gfarm:file</replaceable> として取り込む例です。
 <screen>
 gfsched gfarm:template | gfimport_fixed -H - -o gfarm:file source_file
 </screen>

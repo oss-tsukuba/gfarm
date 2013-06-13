@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_set_local</refname>
-<refpurpose>��������ե�����ӥ塼�ν����</refpurpose>
+<refpurpose>ローカルファイルビューの初期化</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -33,12 +33,12 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>��������ե�����ӥ塼�����Ѥ�������ץ������ϡ����ν����κǽ�ˡ�
-���ΥΡ��ɤΥΡ����ֹ��
+<para>ローカルファイルビューを利用する並列プロセスは、その処理の最初に、
+そのノードのノード番号を
 <parameter>node</parameter>
-�ˡ�����ץ����������������Ρ��ɿ���
+に、並列プロセスを構成する総ノード数を
 <parameter>nnode</parameter>
-��Ϳ���ơ����δؿ���ƤӽФ��ޤ���</para>
+に与えて、この関数を呼び出します。</para>
 
 </refsect1>
 
@@ -47,13 +47,13 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

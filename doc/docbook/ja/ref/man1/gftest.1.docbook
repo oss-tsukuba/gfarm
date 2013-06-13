@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gftest</refname>
-<refpurpose>Gfarm е╒ебедеыд▐д┐д╧е╟егеьепе╚еъд╬╛Ё╩єдЄ─┤д┘ды</refpurpose>
+<refpurpose>Gfarm уГХуВбуВдуГлуБ╛уБЯуБпуГЗуВгуГмуВпуГИуГкуБоцГЕха▒уВТшк┐уБ╣уВЛ</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -27,7 +27,7 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para>╗╪─ъд╖д┐е╒ебедеыдвдыддд╧е╟егеьепе╚еъд╬╛Ё╩єдЄ─┤д┘д▐д╣бе</para>
+<para>цМЗхоЪуБЧуБЯуГХуВбуВдуГлуБВуВЛуБДуБпуГЗуВгуГмуВпуГИуГкуБоцГЕха▒уВТшк┐уБ╣уБ╛уБЩя╝О</para>
 
 </refsect1>
 
@@ -38,56 +38,56 @@
 <varlistentry>
 <term><option>-d</option></term>
 <listitem>
-<para>е╟егеьепе╚еъд╟двдьд╨ 0 дЄ╩╓д╖д▐д╣</para>
+<para>уГЗуВгуГмуВпуГИуГкуБзуБВуВМуБ░ 0 уВТш┐ФуБЧуБ╛уБЩ</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-e</option></term>
 <listitem>
-<para>┬╕║▀д╣дьд╨ 0 дЄ╩╓д╖д▐д╣</para>
+<para>хнШхЬиуБЩуВМуБ░ 0 уВТш┐ФуБЧуБ╛уБЩ</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-f</option></term>
 <listitem>
-<para>─╠╛яе╒ебедеыд╟двдьд╨ 0 дЄ╩╓д╖д▐д╣</para>
+<para>щАЪх╕╕уГХуВбуВдуГлуБзуБВуВМуБ░ 0 уВТш┐ФуБЧуБ╛уБЩ</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-h</option></term>
 <listitem>
-<para>е╖еєе▄еъе├епеъеєепд╟двдьд╨ 0 дЄ╩╓д╖д▐д╣</para>
+<para>уВ╖уГ│уГЬуГкуГГуВпуГкуГ│уВпуБзуБВуВМуБ░ 0 уВТш┐ФуБЧуБ╛уБЩ</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-s</option></term>
 <listitem>
-<para>─╠╛яе╒ебедеыд╟бве╡еде║дм 0 дшдъ┬чднд▒дьд╨ 0 дЄ╩╓д╖д▐д╣</para>
+<para>щАЪх╕╕уГХуВбуВдуГлуБзуАБуВ╡уВдуВ║уБМ 0 уВИуВКхдзуБНуБСуВМуБ░ 0 уВТш┐ФуБЧуБ╛уБЩ</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-L</option></term>
 <listitem>
-<para>─╠╛яе╒ебедеыд╟бв╝┬е╒ебедеыдм╞▒░ье█е╣е╚д╦│╩╟╝д╡дьд╞дддьд╨ 0 дЄ╩╓д╖д▐д╣</para>
+<para>щАЪх╕╕уГХуВбуВдуГлуБзуАБхоЯуГХуВбуВдуГлуБМхРМф╕АуГЫуВ╣уГИуБлца╝ч┤НуБХуВМуБжуБДуВМуБ░ 0 уВТш┐ФуБЧуБ╛уБЩ</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-R</option></term>
 <listitem>
-<para>─╠╛яе╒ебедеыд╟бв╝┬е╒ебедеыдм╞▒░ье█е╣е╚д╦│╩╟╝д╡дьд╞ддд╩д▒дьд╨ 0 дЄ╩╓д╖д▐д╣</para>
+<para>щАЪх╕╕уГХуВбуВдуГлуБзуАБхоЯуГХуВбуВдуГлуБМхРМф╕АуГЫуВ╣уГИуБлца╝ч┤НуБХуВМуБжуБДуБкуБСуВМуБ░ 0 уВТш┐ФуБЧуБ╛уБЩ</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>░·┐Їеке╫е╖ечеєдЄ╔╜╝ид╖д▐д╣бе</para>
+<para>х╝ХцХ░уВкуГЧуВ╖уГзуГ│уВТшбичд║уБЧуБ╛уБЩя╝О</para>
 </listitem>
 </varlistentry>
 

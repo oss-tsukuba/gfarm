@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfchgrp</refname>
-<refpurpose>Gfarm ファイルの疥铜グル〖プを恃构する</refpurpose>
+<refpurpose>Gfarm 銉曘偂銈ゃ儷銇墍鏈夈偘銉兗銉椼倰澶夋洿銇欍倠</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -29,7 +29,7 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 
 <para>
-Gfarm ファイルの疥铜グル〖プを恃构しますˉ
+Gfarm 銉曘偂銈ゃ儷銇墍鏈夈偘銉兗銉椼倰澶夋洿銇椼伨銇欙紟
 </para>
 
 </refsect1>
@@ -42,8 +42,8 @@ Gfarm ファイルの疥铜グル〖プを恃构しますˉ
 <term><option>-h</option></term>
 <listitem>
 <para>
-シンボリックリンクの回すファイル】ディレクトリではなく·
-シンボリック极咳の疥铜グル〖プを恃构しますˉ
+銈枫兂銉溿儶銉冦偗銉兂銈伄鎸囥仚銉曘偂銈ゃ儷锛忋儑銈ｃ儸銈儓銉仹銇仾銇忥紝
+銈枫兂銉溿儶銉冦偗鑷韩銇墍鏈夈偘銉兗銉椼倰澶夋洿銇椼伨銇欙紟
 </para>
 </listitem>
 </varlistentry>
@@ -52,7 +52,7 @@ Gfarm ファイルの疥铜グル〖プを恃构しますˉ
 <term><option>-R</option></term>
 <listitem>
 <para>
-浩耽弄に疥铜グル〖プを恃构しますˉ
+鍐嶅赴鐨勩伀鎵�鏈夈偘銉兗銉椼倰澶夋洿銇椼伨銇欙紟
 </para>
 </listitem>
 </varlistentry>
@@ -60,7 +60,7 @@ Gfarm ファイルの疥铜グル〖プを恃构しますˉ
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>苞眶オプションを山绩しますˉ</para>
+<para>寮曟暟銈儣銈枫儳銉炽倰琛ㄧず銇椼伨銇欙紟</para>
 </listitem>
 </varlistentry>
 
