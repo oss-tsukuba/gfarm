@@ -1,93 +1,93 @@
-�� �ե�����Υ������塼���
+■ ファイルのスケジューリング
 
-���������ξ�硢GFM_PROTO_SCHEDULE_FILE ��Ǥ�դΥե����륷���ƥ�Ρ��ɤ��֤���
+新規作成の場合、GFM_PROTO_SCHEDULE_FILE は任意のファイルシステムノードを返す。
 
-��������Ʊ��ե������ʣ���Υץ�������Ʊ���˿����������褦�Ȥ�����硢
-�ۤʤ�ե����륷���ƥ�Ρ��ɤ򥹥����塼�뤷�Ƥ��ޤäƤϤޤ�����
-������ɤ�����ˡ�GFM_PROTO_REOPEN ���椫�� inode_schedule_confirm_for_write()
-��Ƥӡ����ˤ��Υե������񤭹��ߥ����ץ󤷤Ƥ���ץ�������¸�ߤ����硢
-�����Ʊ��Υե����륷���ƥ�Ρ��ɤ����򤷤Ƥ�����Τߡ������ץ�������
-�⤷�ۤʤ�ե����륷���ƥ�Ρ��ɤ����򤷤Ƥ�����ϡ�GFARM_ERR_FILE_MIGRATED
-���֤��ơ��������塼��󥰤�����ľ����
+しかし、同一ファイルを、複数のプロセスが同時に新規作成しようとした場合、
+異なるファイルシステムノードをスケジュールしてしまってはまずい。
+これを防ぐために、GFM_PROTO_REOPEN の中から inode_schedule_confirm_for_write()
+を呼び、既にそのファイルを書き込みオープンしているプロセスが存在する場合、
+それと同一のファイルシステムノードを選択している場合のみ、オープンを許す。
+もし異なるファイルシステムノードを選択している場合は、GFARM_ERR_FILE_MIGRATED
+を返して、スケジューリングからやり直す。
 
-�� �����ֹ������
+■ 世代番号の増加
 
-generation_updated �ꥯ�����Ȥϡ�gfsd ����� close_write ��˵����롣
-���ΤȤ������� client �ȤΥ��ͥ�������ڤ�Ƥ���ȡ�
-generation_updated �ǻ��Ȥ��Ƥ��� fd ���ʤ��Ƥޤ�����
-gfmd �ϡ�close_write() �η�̤Ȥ��� ��generation_updated ��ɬ�ספ�
-�֤������ˤϡ�generation updated �����Τ�����ޤǤϡ�close ���٤餻�Ƥ��롣
+generation_updated リクエストは、gfsd からの close_write 後に起きる。
+このとき、既に client とのコネクションが切れていると、
+generation_updated で参照している fd がなくてまずい。
+gfmd は、close_write() の結果として 「generation_updated が必要」と
+返した場合には、generation updated の通知があるまでは、close を遅らせている。
 
-read only �����ץ�Ǥ⡢GFARM_FILE_TRUNC �����ꤵ�줿��硢
-�����ֹ椬�����롣�̾����ϡ�gfsd �� (read only �����ץ�ˤ�ؤ�餺)
-close_write �ǥ����������뤳�Ȥˤ�ꡢȯ�����롣
+read only オープンでも、GFARM_FILE_TRUNC が指定された場合、
+世代番号が増える。通常、これは、gfsd が (read only オープンにも関わらず)
+close_write でクローズすることにより、発生する。
 
-��������GFARM_FILE_TRUNC �����ꤵ�줿����reopen() �ϸƤФ�ʤ���ǽ���⤢�롣
-����ˤĤ��Ƥϡ�inode_file_read() ���ˡ�GFARM_FILE_TRUNC_PENDING ��Ĵ�١�
-�ޤ� pending �Ǥ���С�inode_file_update() ��Ƥ�������ֹ�����䤷�Ƥ��롣
-���Τȡ�spool_host �� NULL �Ȥʤ�Τ������ա�
+しかし、GFARM_FILE_TRUNC が指定されたが、reopen() は呼ばれない可能性もある。
+これについては、inode_file_read() 時に、GFARM_FILE_TRUNC_PENDING を調べ、
+まだ pending であれば、inode_file_update() を呼んで世代番号を増やしている。
+このと、spool_host は NULL となるので要注意。
 
-�� ��񤭻��Υ������塼��󥰤ˤĤ���
+■ 上書き時のスケジューリングについて
 
 https://sourceforge.net/apps/trac/gfarm/ticket/68
 https://sourceforge.net/apps/trac/gfarm/ticket/127
-�Τ褦�����꤬���뤿�ᡢO_TRUNC�Ǿ�񤭤�����ˤϡ�
-����������Ʊ�͡���¸�Υ�ץꥫ�������ʤ��������塼��󥰤򤷤�����
+のような問題があるため、O_TRUNCで上書きする場合には、
+新規作成と同様、既存のレプリカに縛られないスケジューリングをしたい。
 
-FUSE �� atomic_o_trunc ���ץ���󤬻Ȥ�����Ǥ���С�r4595 �Τ褦�ˡ�
-O_TRUNC ���˿���������Ʊ�ͤʥ������塼��󥰤�Ԥʤ��С��к��Ǥ��롣
-��������r4595 �ˤϡ��ʲ������꤬���롣
-	Ʊ��Υե�����ˤĤ��ơ�Ʊ����ʣ���� O_TRUNC �⡼�ɤǥ����ץ󤷤ơ�
-	�񤭹��⤦�Ȥ�����硢�̡��ΥΡ��ɤ˥������塼��󥰤���Ƥ��ޤ�
-	��ǽ�������롣
-
-
-��������atomic_o_trunc ���ץ���󤬻����ǽ�ˤʤ�Τ� kernel 2.6.24 �ʹߤ�
-���ꡢRHEL5/CentOS5 �� kernel 2.6.18 �Ǥ����ѤǤ��ʤ���
-atomic_o_trunc �Ǥʤ���硢open �Υ���ȥ�� O_TRUNC ���ϤäƤ�����
-FUSE �� truncate() �� open() ���롣
-�� http://fuse.sourceforge.net/doxygen/structfuse__operations.html#14b98c3f7ab97cc2ef8f9b1d9dc0709d ���
-
-���� truncate()+open() ���Ф����к��Ȥ��ơ��ʲ���Ƥ������
-(1) �����������˥ե����륵������ 0 ���ä��顢�����ֹ�򤵤�ˤ⤦1�ľ夲��
-  ��ץꥫ��¸�ߤ��ʤ����֤ˤ��롣
-����	�����ֹ����û��� dead file copy �õ�����餻��ɬ�פ����ꡢ
-	����ϴ�¸������Ʊ���ʤΤǡ������ֹ��2�ľ夲��ɬ�פϤʤ���
-	(2) ���ɤ�������
-(2) �񤭹��ߥ����������ˡ����줬�Ǹ�Υ��������ǡ����ĥե����륵������
-  0���ä��顢���ƤΥ�ץꥫ��õ����ץꥫ��¸�ߤ��ʤ����֤ˤ��롩
-����	�桼������ץꥫ�ξ�������Ū�˻��ꤷ�Ƥ�����ˡ�
-	�ե����빹���ǥ�ץꥫ�ξ�꤬�ݻ������Ȥ������Ԥ�����롣
-	���ͤȤ��Ƥϵ�������ϰ���ΤȻפ��뤬���ɤ��餫�Ȥ�����
-	˾�ޤ����ʤ��褦�ʡ�
-(3) �ե�����񤭹��ߥ����ץ�����ʲ��ξ�郎������Ω������硢
-  ����������Ʊ�ͤ˥������塼��󥰤������Υե�����Ͽ����������롣
-	���ե����륷���ƥ�Ρ��ɤζ������̤���­���Ƥ���
-	���ǽ�ν񤭹��ߥ����ץ�Ǥ���
-	���ե����륵������ 0 �Ǥ��뤫�����뤤�� O_TRUNC �����ꤵ��Ƥ���
-  ���Τκ��������Ǥϡ��ޤ������ֹ�����䤵�ʤ���0�Х��ȤΥ�ץꥫ��
-  �����������Ǥ��ꡢ�֥ե������񤭹��ߥ����ץ���ϡ������ֹ椬Ʊ��
-  �Ǥ⡢���Ƥΰۤʤ�ե����뤬¸�ߤ���פȤ�������ޤǤξ������Ѥ��ʤ�
-  �Τǡ����������ʤ����ޤ���#68, #127 �Τ褦�� overwrite �ξ��Τ�
-  �ʤ餺����¸�� 0 �Х��ȤΥե����뤬���륱����(���ǤϤ���Ȼפ���)��
-  ���б��Ǥ��롣���äơ�(3) �����򤷤���
+FUSE の atomic_o_trunc オプションが使える場合であれば、r4595 のように、
+O_TRUNC 時に新規作成と同様なスケジューリングを行なえば、対策できる。
+ただし、r4595 には、以下の問題がある。
+	同一のファイルについて、同時に複数回 O_TRUNC モードでオープンして、
+	書き込もうとした場合、別々のノードにスケジューリングされてしまう
+	可能性がある。
 
 
-XXX �Х�
+しかし、atomic_o_trunc オプションが指定可能になるのは kernel 2.6.24 以降で
+あり、RHEL5/CentOS5 の kernel 2.6.18 では利用できない。
+atomic_o_trunc でない場合、open のエントリに O_TRUNC は渡ってこず、
+FUSE は truncate() 後 open() する。
+※ http://fuse.sourceforge.net/doxygen/structfuse__operations.html#14b98c3f7ab97cc2ef8f9b1d9dc0709d より
 
-r4595 (2.3.1��) �ˤϡ��ʲ������꤬���롣
-	Ʊ��Υե�����ˤĤ��ơ�Ʊ����ʣ���� O_TRUNC �⡼�ɤǥ����ץ󤷤ơ�
-	�񤭹��⤦�Ȥ�����硢�̡��ΥΡ��ɤ˥������塼��󥰤���Ƥ��ޤ�
-	��ǽ�������롣
-2.4.0 �ˤϡ���������Ϥʤ���
-Ʊ���˽񤭹��ޤʤ��������뤤��Ʊ���˽񤭹���ץ������� O_TRUNC �����
-���Ƥʤ���С�����ʤ���
+この truncate()+open() に対する対策として、以下を検討した。
+(1) クローズ時にファイルサイズが 0 だったら、世代番号をさらにもう1つ上げ、
+  レプリカの存在しない状態にする。
+　→	世代番号増加時に dead file copy 消去を走らせる必要があり、
+	これは既存処理と同じなので、世代番号を2つ上げる必要はなく、
+	(2) で良さそう。
+(2) 書き込みクローズ時に、これが最後のクローズで、かつファイルサイズが
+  0だったら、全てのレプリカを消去し、レプリカの存在しない状態にする？
+　→	ユーザがレプリカの場所を明示的に指定している場合に、
+	ファイル更新でレプリカの場所が維持されるという期待が崩れる。
+	仕様としては許される範囲内のと思われるが、どちらかというと
+	望ましくないような…
+(3) ファイル書き込みオープン時、以下の条件が全て成立した場合、
+  新規作成と同様にスケジューリングし、実体ファイルは新規作成する。
+	・ファイルシステムノードの空き容量が不足している
+	・最初の書き込みオープンである
+	・ファイルサイズが 0 であるか、あるいは O_TRUNC が指定されている
+  実体の作成時点では、まだ世代番号は増やさない。0バイトのレプリカが
+  増えただけであり、「ファイルを書き込みオープン中は、世代番号が同じ
+  でも、内容の異なるファイルが存在する」というこれまでの状況を変えない
+  ので、これで問題ない。また、#68, #127 のように overwrite の場合のみ
+  ならず、既存の 0 バイトのファイルがあるケース(稀ではあると思うが)に
+  も対応できる。従って、(3) を選択した。
 
-read open �����硢�������塼��󥰤κ���˥ե����륷���ƥ�Ρ��ɤ�
-��ߤ���ȡ��ץ��ȥ��������礬�������ǽ�������롣����ϡ���ץꥫ����
-������ host_is_up() �ȡ��ºݤ˥ۥ��Ȥ��֤� host_is_up() ����Ʊ���
-�ե����륷���ƥ�Ρ��ɤ��Ф��ơ��ۤʤ��̤��֤���ǽ�����Ϥ��ˤ��뤿�ᡣ
 
-���� read open ����Ƥ���ե�����˽񤭹��ߤ�Ԥʤ����Ȥ�����硢
-SCHEDULE_FILE ���֤��ۥ���̾�˽�ʣ���������ǽ�������롣
-���������������ǽ���㴳�㲼��������ǡ����������ˤϤʤ�ʤ���
+XXX バグ
+
+r4595 (2.3.1〜) には、以下の問題がある。
+	同一のファイルについて、同時に複数回 O_TRUNC モードでオープンして、
+	書き込もうとした場合、別々のノードにスケジューリングされてしまう
+	可能性がある。
+2.4.0 には、この問題はない。
+同時に書き込まないか、あるいは同時に書き込むプロセスが O_TRUNC を指定
+してなければ、問題ない。
+
+read open する場合、スケジューリングの最中にファイルシステムノードが
+停止すると、プロトコル不整合が生じる可能性がある。これは、レプリカ数を
+数える host_is_up() と、実際にホストを返す host_is_up() が、同一の
+ファイルシステムノードに対して、異なる結果を返す可能性が僅かにあるため。
+
+既に read open されているファイルに書き込みを行なおうとした場合、
+SCHEDULE_FILE が返すホスト名に重複が生じる可能性がある。
+ただし、これは性能が若干低下するだけで、重大な問題にはならない。

@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfmd(8)&nbsp;--&nbsp;Gfarm�᥿DB���ǡ����</DIV
+>gfmd(8)&nbsp;--&nbsp;GfarmメタDB・デーモン</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,7 +40,7 @@ CLASS="COMMAND"
 > [<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 >]</P
 ></DIV
@@ -52,20 +52,20 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->gfmd�ϡ�Gfarm�饤�֥��ȶ�Ĵ����ư���Gfarm�ե����륷����
-��Υ᥿�ǡ����ؤΥ����������󶡤���ǡ����ץ������Ǥ���
-gfmd��Gfarm�Υ᥿DB�����С����ۥ��Ⱦ�ǡ�
-���餫����Ω���夲�Ƥ���ɬ�פ�����ޤ���</P
+>gfmdは、Gfarmライブラリと協調して動作し、Gfarmファイルシステ
+ムのメタデータへのアクセスを提供するデーモンプログラムです。
+gfmdはGfarmのメタDBサーバー・ホスト上で、
+あらかじめ立ち上げておく必要があります。</P
 ><P
->gfmd�ϥ桼�����¤�ư����뤳�Ȥ��ǽ�Ǥ��������ξ��¾�Υ桼���Ϥ�
-��gfmd�����Ѥ��뤳�Ȥ��Ǥ��ޤ���
-�ܺ٤�SETUP.private.ja�򻲾Ȥ��Ƥ���������</P
+>gfmdはユーザ権限で動作させることも可能ですが、この場合他のユーザはこ
+のgfmdを利用することができません。
+詳細はSETUP.private.jaを参照してください。</P
 ><P
->gfmd�����Ѥ��뤿��ˤϡ�
-���饤����ȥΡ��ɤ�~/.gfarm2rc���뤤��%%SYSCONFDIR%%/gfarm2.conf��
-metadb_server_host�����Ѥ�����gfmd�Υۥ���̾��
-metadb_server_port�ǥݡ����ֹ����ꤹ��ɬ�פ������
-����</P
+>gfmdを利用するためには，
+クライアントノードの~/.gfarm2rcあるいは%%SYSCONFDIR%%/gfarm2.confの
+metadb_server_hostで利用したいgfmdのホスト名，
+metadb_server_portでポート番号を指定する必要がありま
+す．</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -86,13 +86,13 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->������٥�</I
+>ログレベル</I
 ></TT
 ></DT
 ><DD
 ><P
->���Υ��ץ����ǻ��ꤷ����٥�ʾ��ͥ���٤Υ�������Ϥ��ޤ���
-����Ǥ����ͤ�gfarm2.conf(5)��log_level�ι�򻲾Ȥ��Ƥ���������</P
+>このオプションで指定したレベル以上の優先度のログを出力します。
+指定できる値はgfarm2.conf(5)のlog_levelの項を参照してください。</P
 ></DD
 ><DT
 ><CODE
@@ -101,12 +101,12 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->PID�ե�����</I
+>PIDファイル</I
 ></TT
 ></DT
 ><DD
 ><P
->gfmd��process ID�򡢻��ꤷ���ե�����˵�Ͽ���ޤ���</P
+>gfmdのprocess IDを、指定したファイルに記録します。</P
 ></DD
 ><DT
 ><CODE
@@ -115,14 +115,14 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�ǥХå����ץ����Ǥ����ǡ����Ȥ��ƤǤϤʤ����ե������饦��ɡ�
-�ץ������Ȥ���Ω���夬��ޤ���</P
+>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
+プロセスとして立ち上がります。</P
 ><P
->���Υ��ץ�������ꤷ������<CODE
+>このオプションを指定し、かつ<CODE
 CLASS="OPTION"
 >-L</CODE
->���ץ�������ꤷ�ʤ��ä�
-��硢������٥��debug�Ȥʤ�ޤ���</P
+>オプションを指定しなかった
+場合、ログレベルはdebugとなります。</P
 ></DD
 ><DT
 ><CODE
@@ -131,12 +131,12 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->����ե�����</I
+>設定ファイル</I
 ></TT
 ></DT
 ><DD
 ><P
->��ư�����ɤ߹�������ե��������ꤷ�ޤ���</P
+>起動時に読み込む設定ファイルを指定します．</P
 ></DD
 ><DT
 ><CODE
@@ -145,12 +145,12 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->�ݡ����ֹ�</I
+>ポート番号</I
 ></TT
 ></DT
 ><DD
 ><P
->gfmd�����Ѥ���TCP�Υݡ����ֹ����ꤷ�ޤ���</P
+>gfmdが利用するTCPのポート番号を指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -159,13 +159,13 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->syslog�ե�����ƥ�</I
+>syslogファシリティ</I
 ></TT
 ></DT
 ><DD
 ><P
->gfmd�����顼�����Ѥ���syslog�Υե�����ƥ�����ꤷ�ޤ�����ά
-�������ˤϡ�local0����Ѥ��ޤ���</P
+>gfmdがエラー報告に用いるsyslogのファシリティを指定します。省略
+した場合には、local0を使用します。</P
 ></DD
 ><DT
 ><CODE
@@ -174,8 +174,8 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->ǧ�ڽ����˴ؤ��������ܤ������Ϥ��ޤ���
-GSIǧ�ڤ�������褹�����ͭ�Ѥʥ��ץ����Ǥ���</P
+>認証処理に関するログを詳しく出力します。
+GSI認証の問題を解決する場合に有用なオプションです。</P
 ></DD
 ><DT
 ><CODE
@@ -184,7 +184,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������ץ�����ɽ�����ޤ���</P
+>引数オプションを表示します。</P
 ></DD
 ></DL
 ></DIV
@@ -208,7 +208,7 @@ CLASS="FILENAME"
 ></DT
 ><DD
 ><P
->gfmd�����Ȥ�������ե�����Ǥ���</P
+>gfmdが参照する設定ファイルです。</P
 ></DD
 ></DL
 ></DIV

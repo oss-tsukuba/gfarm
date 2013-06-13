@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_stat</refname>
-<refpurpose>�ե�����°������</refpurpose>
+<refpurpose>ファイル属性取得</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -33,16 +33,16 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>����
+<para>引数
 <parameter>gfarm_url</parameter>
-�Υե�����°����
+のファイル属性を
 <parameter>status</parameter>
-�λؤ���˼������ޤ���
+の指す先に取得します。
 
 <parameter>status</parameter></para>
-<para>�ˤϡ�ưŪ�˳��ݤ��줿����ؤΥݥ��󥿤��ޤޤ��Τǡ�
-���θ塢gfs_stat_free(3) ��ȤäƤ��Υ�����������ɬ�פ�
-����ޤ���</para>
+<para>には、動的に確保されたメモリへのポインタが含まれるので、
+この後、gfs_stat_free(3) を使ってそのメモリを解放する必要が
+あります。</para>
 
 </refsect1>
 
@@ -51,44 +51,44 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
 <listitem>
-<para>gfmd(8) ���Ф���桼����ǧ�ڤ����Ԥ��ޤ�����</para>
+<para>gfmd(8) に対するユーザー認証が失敗しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
-<para>���ꤵ�줿�ѥ��إ����������븢�¤�������ޤ���</para>
+<para>指定されたパスへアクセスする権限が、ありません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
-<para>���ꤵ�줿�ѥ�̾��¸�ߤ��ޤ���</para>
+<para>指定されたパス名が存在しません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
 <listitem>
-<para>���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤϥǥ��쥯�ȥ�Ǥʤ��ä����Ȥ�
-�����ޤ���</para>
+<para>指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

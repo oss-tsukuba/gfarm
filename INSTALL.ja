@@ -1,126 +1,126 @@
 [This is written in Japanese, please look at INSTALL.en for English version.]
 
 ===============================
-�����������ɤ���� Gfarm �ι���
+ソースコードからの Gfarm の構築
 ===============================
 
-���ι�Ǥϡ�����������ι��ۤˤĤ����������ޤ���
-�Х��ʥ����ۤ����Ѥ���Ƥ������ϡ����Υե�������������ɤ����Ф��ƹ����ޤ���
+この項では，ソースからの構築について説明します．
+バイナリ配布を利用されている方は，このファイルの説明は読み飛ばして構いません．
 
-����Υ����ƥ�ϡ�Linux ��Ǽ¹ԥƥ��Ȥ���Ƥ��ޤ���
-���ۤ˴ؤ��Ƥ� NetBSD, Solaris ��ǥƥ��Ȥ���Ƥ��ޤ���
+今回のシステムは，Linux 上で実行テストされています．
+構築に関しては NetBSD, Solaris 上でテストされています．
 
-�����ƥ�ι��ۤΤ���ˤϡ�OpenLDAP �ʤ��� PostgreSQL �ξ��ʤ��Ȥ�ɤ���
-�������� OpenSSL �饤�֥�꤬ɬ�פǤ������ۤ�ɬ�פʥѥå������ˤĤ��Ƥ�
-�ʲ��Ρֹ��ۤ�ɬ�פʥѥå������פξϤ򻲾Ȳ�������
+システムの構築のためには，OpenLDAP ないし PostgreSQL の少なくともどちら
+か片方と OpenSSL ライブラリが必要です．構築に必要なパッケージについては
+以下の「構築に必要なパッケージ」の章を参照下さい．
 
-�����ƥ���ۤ���ˤϡ������Τ褦�ˤ��ޤ���
-Linux �� NetBSD �ʳ��� OS �Ǥϡ�GNU make ��ȤäƤ���������
+システムを構築するには，下記のようにします．
+Linux と NetBSD 以外の OS では，GNU make を使ってください．
 
-	% ./configure [���ץ����]
+	% ./configure [オプション]
 	% make
 	% su
 	Password:
 	# make install
 
-configure ���ޥ�ɤˤϡ������Υ��ץ���󤬤���ޤ���
+configure コマンドには，下記のオプションがあります．
 
-��--with-openldap=�ǥ��쥯�ȥ�
+・--with-openldap=ディレクトリ
 
-  OpenLDAP �Υ��󥹥ȡ��뤵��Ƥ���ǥ��쥯�ȥ����ꤷ�ޤ���
-  ���ץ�����ά���ϼ�ưŪ�˥��󥹥ȡ���ǥ��쥯�ȥ�θ�������ߤ���
-  ����
+  OpenLDAP のインストールされているディレクトリを指定します．
+  オプション省略時は自動的にインストールディレクトリの検索が試みられま
+  す．
 
-��--with-postgresql=�ǥ��쥯�ȥ�
+・--with-postgresql=ディレクトリ
 
-  PostgreSQL �Υ��󥹥ȡ��뤵��Ƥ���ǥ��쥯�ȥ����ꤷ�ޤ���
-  ���ץ�����ά���ϼ�ưŪ�˥��󥹥ȡ���ǥ��쥯�ȥ�θ�������ߤ���
-  ����
+  PostgreSQL のインストールされているディレクトリを指定します．
+  オプション省略時は自動的にインストールディレクトリの検索が試みられま
+  す．
 
-��--with-openssl=�ǥ��쥯�ȥ�
+・--with-openssl=ディレクトリ
 
-  OpenSSL �Υ��󥹥ȡ��뤵��Ƥ���ǥ��쥯�ȥ����ꤷ�ޤ���
-  ���ץ�����ά���� /usr �����ꤵ��ޤ���
+  OpenSSL のインストールされているディレクトリを指定します．
+  オプション省略時は /usr が指定されます．
 
-��--with-globus=�ǥ��쥯�ȥ�
+・--with-globus=ディレクトリ
 
-  ǧ�������Ȥ��� GSI ���ǽ�Ȥ��ޤ����ǥ��쥯�ȥ�� Globus toolkit ��
-  ���󥹥ȡ��뤵��Ƥ���ǥ��쥯�ȥ����ꤷ�ޤ����ǥ��쥯�ȥ����ꤷ
-  �ʤ��� pkg-config���Ķ��ѿ� GLOBUS_LOCATION �μ����ǥ��쥯�ȥ꤬���
-  ���ޤ���
-  Globus toolkit �Τ��� GSSAPI �饤�֥�꤬ɬ�פȤʤ�ޤ���
-  ���Υ��ץ����Ͼ�ά��ǽ�Ǥ���
-  �ǥե�����ȤǤϡ����󥹥ȡ��뤵��Ƥ��� flavor ��ưŪ�˸������ޤ�
-  ����--with-globus-flavor="gcc32dbg" �Τ褦�ˤ��� flavor ̾����ꤹ��
-  �Ȥ�Ǥ��ޤ���
+  認証方式として GSI を可能とします．ディレクトリは Globus toolkit の
+  インストールされているディレクトリを指定します．ディレクトリを指定し
+  ないと pkg-config、環境変数 GLOBUS_LOCATION の示すディレクトリが順に
+  試されます．
+  Globus toolkit のうち GSSAPI ライブラリが必要となります．
+  このオプションは省略可能です．
+  デフォールトでは，インストールされている flavor を自動的に検索します
+  が，--with-globus-flavor="gcc32dbg" のようにして flavor 名を指定する
+  ともできます．
 
-��--without-mtsafe-netdb
+・--without-mtsafe-netdb
 
-  �饤�֥��ؿ� getaddrinfo(3) ���뤤�� getnameinfo(3) �����ޥ������åɡ�
-  �����դǤϤʤ����ˡ����꤬ɬ�פǤ���
+  ライブラリ関数 getaddrinfo(3) あるいは getnameinfo(3) が，マルチスレッド・
+  セーフではない場合に，指定が必要です．
 
-��--prefix=�ǥ��쥯�ȥ�
+・--prefix=ディレクトリ
 
-  ���󥹥ȡ�����Υǥ��쥯�ȥ����ꤷ�ޤ������Υ��ץ������ά������
-  ��� /usr/local �ǥ��쥯�ȥ�β��˥��󥹥ȡ��뤷�ޤ���
-  ���Υ��ץ����Ͼ�ά��ǽ�Ǥ���
+  インストール先のディレクトリを指定します．このオプションを省略した場
+  合は /usr/local ディレクトリの下にインストールします．
+  このオプションは省略可能です．
 
-��--sysconfdir=�ǥ��쥯�ȥ�
+・--sysconfdir=ディレクトリ
 
-  ����ե������gfarm2.conf�פ��֤��ǥ��쥯�ȥ����ꤷ�ޤ������Υ��ץ���
-  ����ά�������Ͼ嵭�� --prefix ���ץ����ǻ��ꤷ���ǥ��쥯�ȥ��
-  ���Ρ�etc�ץǥ��쥯�ȥ꤬���ꤵ�줿��ΤȤߤʤ��ޤ�����ʸ��ϡ�����
-  ����� --sysconfdir=/etc �����ꤵ�줿��ΤȲ��ꤷ�Ƶ��Ҥ��Ƥ���ޤ���
-  ���Υ��ץ����Ͼ�ά��ǽ�Ǥ���
+  設定ファイル「gfarm2.conf」を置くディレクトリを指定します．このオプショ
+  ンを省略した場合は上記の --prefix オプションで指定したディレクトリの
+  下の「etc」ディレクトリが指定されたものとみなします．本文書は，オプ
+  ション --sysconfdir=/etc が指定されたものと仮定して記述してあります．
+  このオプションは省略可能です．
 
-��--enable-voms
+・--enable-voms
 
-  ���Υ��ץ�������ꤹ��ȡ�VOMS �� VO�����롼�ס�����Ϣ�Ȥ��� 
-  Gfarm �Υ��롼�פ�������뤿��Υ��ޥ�ɷ���ӥ�ɤ��ޤ����ܤ����� 
-  doc/voms-{install,man,dev}.ja �򻲾Ȥ��Ƥ���������
-  ���Υ��ץ����Ͼ�ά��ǽ�Ǥ���
+  このオプションを指定すると，VOMS の VO，グループ，役割と連携して 
+  Gfarm のグループを管理するためのコマンド群をビルドします．詳しくは 
+  doc/voms-{install,man,dev}.ja を参照してください．
+  このオプションは省略可能です．
 
-��--enable-xmlattr
+・--enable-xmlattr
 
-  XPath �ˤ�븡������ǽ�� XML ��ĥ°�������Ѥ���Ȥ��˻��ꤷ�ޤ�����
-  ������ doc/xattr-install.ja ����� gfxattr��gffindxmlattr �Υޥ˥奢
-  ��ڡ����򻲾Ȥ��Ƥ���������
-  �ܵ�ǽ�����Ѥ��뤿��ˤϡ�configure �� --with-libxml ���ץ������
-  ���ƹ��ۤ��줿 postgresql-8.3.x �ʹߤ�ɬ�פȤʤ�ޤ���
-  ��http://www.postgresql.org/docs/8.3/static/install-procedure.html��
-  �ޤ���config-gfarm ���� -X ���ץ����λ��꤬ɬ�פˤʤ�ޤ���
-  ���Υ��ץ����Ͼ�ά��ǽ�Ǥ���
+  XPath による検索が可能な XML 拡張属性を利用するときに指定します．詳
+  しくは doc/xattr-install.ja および gfxattr，gffindxmlattr のマニュア
+  ルページを参照してください．
+  本機能を利用するためには，configure に --with-libxml オプションをつ
+  けて構築された postgresql-8.3.x 以降が必要となります．
+  （http://www.postgresql.org/docs/8.3/static/install-procedure.html）
+  また，config-gfarm 時に -X オプションの指定が必要になります．
+  このオプションは省略可能です．
 
-���Ѥ��륳��ѥ�����������������ˤϡ��Ķ��ѿ� CC �ˡ�����ѥ���Υ�
-�ޥ��̾����ꤷ�� configure ��¹Ԥ��Ƥ����������ʲ��� gcc ����ꤹ��
-��Ǥ���
+利用するコンパイラを明示したい場合には，環境変数 CC に，コンパイラのコ
+マンド名を指定して configure を実行してください．以下は gcc を指定する
+例です．
 
 	% env CC=gcc ./configure [options]
 
-���ۤ�ɬ�פʥѥå�����
+構築に必要なパッケージ
 ----------------------
 
-* RPM �ѥå�����
+* RPM パッケージ
 
 openssl-devel
 openldap-devel
 postgresql-devel
-globus-gssapi-gsi-devel(*), pkgconfig	(--with-globus ���ץ�����ɬ��)
-postgresql, postgresql-server		(config-gfarm �μ¹Ԥ�ɬ��)
-fuse-devel				(gfarm2fs �ι��ۤ�ɬ��)
+globus-gssapi-gsi-devel(*), pkgconfig	(--with-globus オプションに必要)
+postgresql, postgresql-server		(config-gfarm の実行に必要)
+fuse-devel				(gfarm2fs の構築に必要)
 
 (*) http://www.globus.org/toolkit/downloads/latest-stable/
-    �򻲹ͤ� Globus configuration �ե������Ƴ������ɬ�פ�����ޤ���
-    �㤨�С�CentOS 6��Globus 5.2.2�ξ�硤�ʲ����ͤˤʤ�ޤ���
+    を参考に Globus configuration ファイルを導入する必要があります．
+    例えば，CentOS 6，Globus 5.2.2の場合，以下の様になります．
     # rpm -Uvh http://www.globus.org/ftppub/gt5/5.2/5.2.2/installers/repo/Globus-5.2.stable-config.centos-6-1.noarch.rpm
 
-* Debian �ѥå�����
+* Debian パッケージ
 
 libssl-dev
 libldap2-dev
 libpq-dev
-libglobus-gssapi-gsi-dev, pkg-config	(--with-globus ���ץ�����ɬ��)
-postgresql, postgresql-client		(config-gfarm �μ¹Ԥ�ɬ��)
-libfuse-dev				(gfarm2fs �ι��ۤ�ɬ��)
+libglobus-gssapi-gsi-dev, pkg-config	(--with-globus オプションに必要)
+postgresql, postgresql-client		(config-gfarm の実行に必要)
+libfuse-dev				(gfarm2fs の構築に必要)
 
 $Id$

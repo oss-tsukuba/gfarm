@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfarm_stringlist_elem</refname>
-<refpurpose>stringlist ¤ÎÍ×ÁÇÊ¸»ú¤òÊÖ¤¹</refpurpose>
+<refpurpose>stringlist ã®è¦ç´ æ–‡å­—ã‚’è¿”ã™</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -33,14 +33,14 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><parameter>listp</parameter>¤Î
+<para><parameter>listp</parameter>ã®
 <parameter>i</parameter>
-ÈÖÌÜ¤ÎÇÛÎóÍ×ÁÇ¤òÊÖ¤·¤Ş¤¹¡£</para>
+ç•ªç›®ã®é…åˆ—è¦ç´ ã‚’è¿”ã—ã¾ã™ã€‚</para>
 
 </refsect1>
 
 <refsect1 id='return-values'><title>RETURN VALUES</title>
-<para>Ê¸»úÎóÇÛÎó¤ÎÍ×ÁÇ¤Ç¤¹¡£</para>
+<para>æ–‡å­—åˆ—é…åˆ—ã®è¦ç´ ã§ã™ã€‚</para>
 
 </refsect1>
 

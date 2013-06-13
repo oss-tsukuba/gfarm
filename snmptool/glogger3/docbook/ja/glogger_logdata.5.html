@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->glogger_logdata&nbsp;--&nbsp;GLogger ���ϥǡ�������</DIV
+>glogger_logdata&nbsp;--&nbsp;GLogger 出力データ形式</DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
@@ -35,174 +35,174 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->GLogger �����Ϥ���ե�����Υǡ�����¤�Ǥ���</P
+>GLogger が出力するファイルのデータ構造です。</P
 ><P
 ></P
 ><DIV
 CLASS="VARIABLELIST"
 ><DL
 ><DT
->�ե�����Υǡ�����¤</DT
+>ファイルのデータ構造</DT
 ><DD
 ><P
->GLogger�δ�¬�����ǡ����ե�����ϡ��᥿�ǡ����֥��å���
-�ǡ����֥��å����롼�פ�Ϣ³�ǹ�������ޤ���</P
+>GLoggerの観測ログデータファイルは、メタデータブロックと
+データブロックグループの連続で構成されます。</P
 ><P
->�᥿�ǡ����֥��å��ϡ��ե��������Ƭ�� 1��¸�ߤ��ޤ���</P
+>メタデータブロックは、ファイルの先頭に 1つ存在します。</P
 ><P
->�ǡ����֥��å����롼�פϡ�ʣ���Υǡ����֥��å��ǹ�������ޤ���</P
+>データブロックグループは、複数のデータブロックで構成されます。</P
 ><P
->�ǡ����֥��å��ϡ�����Ȥ��λ���δ�¬�ǡ����ͤ���Ǥ���</P
+>データブロックは、時刻とその時刻の観測データ値の列です。</P
 ><P
->�ǡ����֥��å��νи�����ȡ���¬���ݤμ���Ȥδط��ϡ�
-�᥿�ǡ����֥��å�����б���������ޤ���</P
+>データブロックの出現順序と、観測事象の種類との関係は、
+メタデータブロック内で対応を定義します。</P
 ><P
->�ǡ����֥��å����롼�פΥ������ϡ�����Ĺ�Ǥ��ꡢ
-�᥿�ǡ����֥��å���������ޤ���</P
+>データブロックグループのサイズは、固定長であり、
+メタデータブロックで定義します。</P
 ><P
->���Ȥ��� 1����ñ�̤ǥե�������ڤ��ؤ��ʤ���Фʤ�ʤ��Ȥ��ä�
-����Ϥʤ������祵�����ϥե����륷���ƥ�˰�¸���ޤ���
-(GLogger �Ǥϡ�����ե����륵�����ǿ������ե�����ؽ��Ϥ���褦��
-�ڤ��ؤ��뤳�Ȥ���ǽ�Ǥ�)</P
+>たとえば 1時間単位でファイルを切り替えなければならないといった
+制約はなく、最大サイズはファイルシステムに依存します。
+(GLogger では、指定ファイルサイズで新しいファイルへ出力するように
+切り替えることが可能です)</P
 ><P
->���Υǡ�����¤�Υ����ե�������ɵ��ϤǤ��ޤ���</P
+>このデータ構造のログファイルに追記はできません。</P
 ></DD
 ><DT
->�᥿�ǡ����֥��å�</DT
+>メタデータブロック</DT
 ><DD
 ><P
->����Ĺ��ʬ�Ȳ���Ĺ��ʬ��ʬ���Ƥ��ޤ���</P
+>固定長部分と可変長部分に分けています。</P
 ><P
 ><P
 CLASS="LITERALLAYOUT"
->1:&nbsp;�᥿�ǡ����֥��å�&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[24bytes]<br>
-2:&nbsp;�᥿�ǡ����֥��å�&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;����Ĺ]</P
+>1:&nbsp;メタデータブロック&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[24bytes]<br>
+2:&nbsp;メタデータブロック&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;可変長]</P
 ></P
 ></DD
 ><DT
->�᥿�ǡ����֥��å� 1</DT
-><DD
-><P
-><P
-CLASS="LITERALLAYOUT"
->1:&nbsp;�᥿�ǡ����֥��å�&nbsp;1&nbsp;�Υ�����(�ʲ���bytes³����)&nbsp;&nbsp;&nbsp;[&nbsp;2bytes]<br>
-2:&nbsp;�С�������ֹ�&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;2bytes]<br>
-3:&nbsp;�ǡ����֥��å����롼�פΥ�����&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
-4:&nbsp;���Υե�����η�¬��������(UNIX&nbsp;time&nbsp;��)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
-5:&nbsp;���Υե�����η�¬��������(UNIX&nbsp;time&nbsp;�ޥ�������)&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
-6:&nbsp;�ǡ����֥��å����롼�פҤȤĤλ��ֳִ�(��)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
-7:&nbsp;�ǡ����֥��å����롼�פҤȤĤλ��ֳִ�(�ޥ�������)&nbsp;[&nbsp;4bytes]<br>
-8:&nbsp;ͽ���ΰ�</P
-></P
-></DD
-><DT
->�᥿�ǡ����֥��å� 2</DT
+>メタデータブロック 1</DT
 ><DD
 ><P
 ><P
 CLASS="LITERALLAYOUT"
->1:&nbsp;�᥿�ǡ����֥��å�&nbsp;2&nbsp;�Υ�����(�ʲ���bytes³����)&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
-2:&nbsp;��¬�оݥۥ��������ʬ<br>
-&nbsp;&nbsp;&nbsp;��¬�оݥۥ��Ȥ�&nbsp;IP&nbsp;���ɥ쥹�ꥹ�Ȥ�<br>
-&nbsp;&nbsp;&nbsp;�ۥ���̾&nbsp;(FQDN)��ά�ΤΥꥹ�Ȥȥ��ߥ�˥ƥ����ȥ��<br>
-&nbsp;&nbsp;&nbsp;���¤ӽ�˥���ǥå����ֹ�(1,2,...)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;����Ĺ]<br>
-3:&nbsp;OID&nbsp;�����ʬ<br>
-&nbsp;&nbsp;&nbsp;OID&nbsp;��&nbsp;OID&nbsp;̾��&nbsp;OID&nbsp;ά�Τ�<br>
-&nbsp;&nbsp;&nbsp;���¤ӽ��&nbsp;OID&nbsp;����ǥå����ֹ�(1,2,...)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;����Ĺ]<br>
-4:&nbsp;¬�ꥤ�󥿡��Х�ɽ<br>
-&nbsp;&nbsp;&nbsp;�����������ۥ��ȥ���ǥå����ֹ��<br>
-&nbsp;&nbsp;&nbsp;OID&nbsp;����ǥå����ֹ���ȹ礻���Ȥ�<br>
-&nbsp;&nbsp;&nbsp;¬�ꥤ�󥿡��Х�(��+�ޥ�������)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;����Ĺ]<br>
-5:&nbsp;�ǡ����֥��å����롼���б�ɽ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;����Ĺ]<br>
-6:&nbsp;ͽ���ΰ�&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;����Ĺ]&nbsp;</P
+>1:&nbsp;メタデータブロック&nbsp;1&nbsp;のサイズ(以下何bytes続くか)&nbsp;&nbsp;&nbsp;[&nbsp;2bytes]<br>
+2:&nbsp;バージョン番号&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;2bytes]<br>
+3:&nbsp;データブロックグループのサイズ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
+4:&nbsp;このファイルの計測開始日時(UNIX&nbsp;time&nbsp;秒)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
+5:&nbsp;このファイルの計測開始日時(UNIX&nbsp;time&nbsp;マイクロ秒)&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
+6:&nbsp;データブロックグループひとつの時間間隔(秒)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
+7:&nbsp;データブロックグループひとつの時間間隔(マイクロ秒)&nbsp;[&nbsp;4bytes]<br>
+8:&nbsp;予約領域</P
+></P
+></DD
+><DT
+>メタデータブロック 2</DT
+><DD
+><P
+><P
+CLASS="LITERALLAYOUT"
+>1:&nbsp;メタデータブロック&nbsp;2&nbsp;のサイズ(以下何bytes続くか)&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
+2:&nbsp;観測対象ホスト定義部分<br>
+&nbsp;&nbsp;&nbsp;計測対象ホストの&nbsp;IP&nbsp;アドレスリストと<br>
+&nbsp;&nbsp;&nbsp;ホスト名&nbsp;(FQDN)と略称のリストとコミュニティストリング<br>
+&nbsp;&nbsp;&nbsp;→並び順にインデックス番号(1,2,...)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;可変長]<br>
+3:&nbsp;OID&nbsp;定義部分<br>
+&nbsp;&nbsp;&nbsp;OID&nbsp;と&nbsp;OID&nbsp;名と&nbsp;OID&nbsp;略称と<br>
+&nbsp;&nbsp;&nbsp;→並び順に&nbsp;OID&nbsp;インデックス番号(1,2,...)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;可変長]<br>
+4:&nbsp;測定インターバル表<br>
+&nbsp;&nbsp;&nbsp;上で定義したホストインデックス番号と<br>
+&nbsp;&nbsp;&nbsp;OID&nbsp;インデックス番号の組合せごとの<br>
+&nbsp;&nbsp;&nbsp;測定インターバル(秒+マイクロ秒)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;可変長]<br>
+5:&nbsp;データブロックグループ対応表&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;可変長]<br>
+6:&nbsp;予約領域&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;可変長]&nbsp;</P
 ></P
 ><P
->[����Ĺ]�ϡ���������2bytes��ɽ������Ƭ���ղä����ʹ�Ǥ�եǡ�����³���ޤ���
-����2bytes���ȤΥ������ϴޤޤ�ޤ���</P
+>[可変長]は、サイズを2bytesで表して先頭に付加し、以降任意データが続きます。
+この2bytes自身のサイズは含まれません。</P
 ><P
 ><I
 CLASS="EMPHASIS"
->�ۥ��������ʬ:</I
+>ホスト定義部分:</I
 >
-{IP���ɥ쥹(ʸ����)}{NULL}{FQDN}{NULL}{ά��}{NULL}{community string}{NULL}
-�η����֤��Ǥ���IP���ɥ쥹��ʬ�� 192.168.0.1 �Τ褦��ɽ���Ǥ���</P
+{IPアドレス(文字列)}{NULL}{FQDN}{NULL}{略称}{NULL}{community string}{NULL}
+の繰り返しです。IPアドレス部分は 192.168.0.1 のような表記です。</P
 ><P
 ><I
 CLASS="EMPHASIS"
->OID�����ʬ:</I
+>OID定義部分:</I
 >
-{OID̾(����ե�����ǻ��ꤷ��ʸ����)}{NULL}{ά��}{NULL}
-�η����֤��Ǥ���</P
+{OID名(設定ファイルで指定した文字列)}{NULL}{略称}{NULL}
+の繰り返しです。</P
 ><P
 ><I
 CLASS="EMPHASIS"
->¬�ꥤ�󥿡��Х�ɽ:</I
+>測定インターバル表:</I
 >
-{�ۥ��ȥ���ǥå����ֹ�}{OID����ǥå����ֹ�}{����(8bytes)} �η����֤��Ǥ���
- ���֤��ä� 4bytes, �ޥ������ä� 4bytes�ν�ǹ�� 8bytes �Ǥ���</P
+{ホストインデックス番号}{OIDインデックス番号}{時間(8bytes)} の繰り返しです。
+ 時間は秒が 4bytes, マイクロ秒が 4bytesの順で合計 8bytes です。</P
 ><P
 ><I
 CLASS="EMPHASIS"
->�ǡ����֥��å����롼���б�ɽ:</I
+>データブロックグループ対応表:</I
 >
-{�Ŀ�(n��) 2bytes}{(�ۥ��ȥ���ǥå����ֹ� + OID����ǥå����ֹ�) * n}
-�η����֤��Ǥ���
-1�ĤΥǡ����֥��å����롼����Υǡ����֥��å��νи������
-�������ɽ�ˤʤäƤ��ޤ���
-�Ŀ��ϡ��б�����ǡ����֥��å���Υǡ����θĿ�(�ۥ��ȥ���ǥå����ֹ��
-OID����ǥå����ֹ���Ȥ��碌�θĿ�)�򼨤��ޤ���
-�Ŀ��� 0�ξ�硢���Υ����ߥ󥰤Ǥϥǡ����֥��å����и����ʤ�
-(����ǡ�������и����ʤ�)���Ȥ򼨤����б�����ǡ����֥��å���¸�ߤ��ޤ���</P
+{個数(n個) 2bytes}{(ホストインデックス番号 + OIDインデックス番号) * n}
+の繰り返しです。
+1つのデータブロックグループ内のデータブロックの出現順序を
+定義した表になっています。
+個数は、対応するデータブロック内のデータの個数(ホストインデックス番号と
+OIDインデックス番号の組あわせの個数)を示します。
+個数が 0の場合、そのタイミングではデータブロックが出現しない
+(時刻データすら出現しない)ことを示し、対応するデータブロックは存在しません。</P
 ><P
->����ǥå����ֹ�ϡ�2bytes = 0��65535 �Ǥ���</P
+>インデックス番号は、2bytes = 0〜65535 です。</P
 ></DD
 ><DT
->�ǡ����֥��å����롼��</DT
+>データブロックグループ</DT
 ><DD
 ><P
->�ǡ����֥��å����롼���б�ɽ�ν��֤ˡ��ǡ����֥��å���³���ޤ���
-���٤ƤΥǡ����֥��å��μ���νи��ѥ����� 1�����򼨤��ޤ���
-(�ǡ����֥��å��ˤϡ�Ʊ����η�¬�ǡ������ޤȤ���Ƥ��ޤ���)
-��������Ū�ˤޤȤ᤿ 1������ǡ����֥��å����롼�פȤ��Ƥ��ޤ���
-��äƥǡ����֥��å����롼�פȼ��Υǡ����֥��å����롼�פδ֤ˤϡ�
-���ڤ�Τ���Υǡ�����¸�ߤ��ޤ���</P
+>データブロックグループ対応表の順番に、データブロックが続きます。
+すべてのデータブロックの種類の出現パターン 1周期を示します。
+(データブロックには、同時刻の計測データがまとめられています。)
+この論理的にまとめた 1周期をデータブロックグループとしています。
+よってデータブロックグループと次のデータブロックグループの間には、
+区切りのためのデータは存在しません。</P
 ><P
 ><P
 CLASS="LITERALLAYOUT"
->1:&nbsp;�ǡ����֥��å�<br>
-2:&nbsp;�ʲ����ǡ����֥��å��η����֤�</P
+>1:&nbsp;データブロック<br>
+2:&nbsp;以下、データブロックの繰り返し</P
 ></P
 ></DD
 ><DT
->�ǡ����֥��å�</DT
+>データブロック</DT
 ><DD
 ><P
->Ʊ����γ�¬���ͤ���ĤˤޤȤޤä��ǡ������ȤˤʤäƤ��ޤ���
-��¬�ǡ�����̵������ˤϡ��ǡ����֥��å��Ͻи����ޤ���
-(����ǡ�����и����ޤ���)��</P
+>同時刻の各測定値が一つにまとまったデータの組になっています。
+計測データの無い時刻には、データブロックは出現しません
+(時刻データも出現しません)。</P
 ><P
->�ҤȤĤΥǡ����֥��å��ϲ���Ĺ�Ǥ������ǡ����֥��å����롼���б�ɽ���顢
-������������Ǥ��ޤ���
-�ҤȤĤΥǡ����֥��å������� = ����ǡ��� 8bytes + ��¬�ǡ����θĿ�(n��) * 5bytes �ȤʤäƤ��ޤ���
-��¬�ǡ�����̵������Υǡ����֥��å���¸�ߤ��ޤ���</P
+>ひとつのデータブロックは可変長ですが、データブロックグループ対応表から、
+サイズが決定できます。
+ひとつのデータブロックサイズ = 時刻データ 8bytes + 計測データの個数(n個) * 5bytes となっています。
+計測データが無い時刻のデータブロックは存在しません。</P
 ><P
 ><P
 CLASS="LITERALLAYOUT"
->1:&nbsp;���Υǡ����֥��å��η�¬����(UNIX&nbsp;time&nbsp;��)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
-2:&nbsp;���Υǡ����֥��å��η�¬����(UNIX&nbsp;time&nbsp;�ޥ�������)&nbsp;[&nbsp;4bytes]<br>
-3:&nbsp;1���ܤη�¬�ǡ����ե饰&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;1bytes]<br>
-4:&nbsp;1���ܤη�¬�ǡ���&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
-5:&nbsp;�ʲ�Ʊ�����η�¬�ǡ����ե饰���ǡ����η����֤�<br>
-n:&nbsp;ͽ���ΰ�</P
+>1:&nbsp;このデータブロックの計測時刻(UNIX&nbsp;time&nbsp;秒)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
+2:&nbsp;このデータブロックの計測時刻(UNIX&nbsp;time&nbsp;マイクロ秒)&nbsp;[&nbsp;4bytes]<br>
+3:&nbsp;1番目の計測データフラグ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;1bytes]<br>
+4:&nbsp;1番目の計測データ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
+5:&nbsp;以下同一時刻の計測データフラグ、データの繰り返し<br>
+n:&nbsp;予約領域</P
 ></P
 ><P
->�� ��: 256 �Ρ��ɤξ�硢��� 1288 �Х���</P
+>※ 例: 256 ノードの場合、合計 1288 バイト</P
 ><P
 ><P
 CLASS="LITERALLAYOUT"
->�ǡ����ե饰�γƥӥåȤΰ�̣(���̥ӥåȤ�����)<br>
-�ǡ���ͭ��&nbsp;1&nbsp;̵��&nbsp;0&nbsp;(�����ॢ���Ȥξ���ͭ��)<br>
-¬������&nbsp;&nbsp;&nbsp;1&nbsp;����&nbsp;0&nbsp;(�����ॢ���Ȥϼ���)</P
+>データフラグの各ビットの意味(下位ビットから順に)<br>
+データ有効&nbsp;1&nbsp;無効&nbsp;0&nbsp;(タイムアウトの場合も有効)<br>
+測定成功&nbsp;&nbsp;&nbsp;1&nbsp;失敗&nbsp;0&nbsp;(タイムアウトは失敗)</P
 ></P
 ></DD
 ></DL

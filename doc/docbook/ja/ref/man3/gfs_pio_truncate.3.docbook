@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_truncate</refname>
-<refpurpose>���ꤷ��Ĺ���˥ե������ڤ�ͤ�롣�⤷���ϳ�ĥ���롣</refpurpose>
+<refpurpose>指定した長さにファイル切り詰める。もしくは拡張する。</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -33,24 +33,24 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>
-�ե�����
+ファイル
 <parameter>gf</parameter>
-��Ĺ�����ѹ����ޤ���</para>
-<para>����
+の長さを変更します。</para>
+<para>引数
 <parameter>length</parameter>
-���ե�����
+がファイル
 <parameter>gf</parameter>
-����û��������ڤ�ͤ�ޤ���</para>
-<para>����
+よりも短かければ切り詰めます。</para>
+<para>引数
 <parameter>length</parameter>
-���ե�����
+がファイル
 <parameter>gf</parameter>
-����Ĺ����г�ĥ���ޤ�����ĥ���줿��ʬ���ɤ�����ϥ������֤��ޤ���
+よりも長ければ拡張します。拡張された部分を読んだ場合はゼロを返します。
 </para>
-<para>�ե�����ݥ��󥿤��ѹ����ޤ���</para>
-<para>�ե�����Ͻ񤭹����Ѥ˥����ץ󤵤�Ƥ��ʤ���Фʤ�ޤ���
-���Τ��ᡢ�����ץ���� <constant>GFS_FILE_MODE_WRITE</constant> 
-�ե饰����ꤹ��ɬ�פ�����ޤ���</para>
+<para>ファイルポインタは変更しません。</para>
+<para>ファイルは書き込み用にオープンされていなければなりません。
+このため、オープン時に <constant>GFS_FILE_MODE_WRITE</constant> 
+フラグを指定する必要があります。</para>
 </refsect1>
 
 <refsect1 id='return-values'><title>RETURN VALUES</title>
@@ -58,19 +58,19 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

@@ -6,29 +6,29 @@
 .TH "GFPERF-TREE" "1" "07 March 2012" "Gfarm" ""
 
 .SH NAME
-gfperf-tree \- Gfarm �ǥ��쥯�ȥ�ĥ꡼����ǽ¬���Ԥ���
+gfperf-tree \- Gfarm ディレクトリツリーの性能測定を行う。
 .SH SYNOPSIS
 
-\fBgfperf-tree\fR [ \fB-t, --testdir \fI�ƥ��ȥǥ��쥯�ȥ�\fB\fR ] [ \fB-w, --width \fI�ǥ��쥯�ȥ��\fB\fR ] [ \fB-d, --depth \fI�ǥ��쥯�ȥ곬��\fB\fR ] [ \fB-u, --unit \fI���Ϥ�ñ��\fB\fR ]
+\fBgfperf-tree\fR [ \fB-t, --testdir \fIテストディレクトリ\fB\fR ] [ \fB-w, --width \fIディレクトリ数\fB\fR ] [ \fB-d, --depth \fIディレクトリ階層\fB\fR ] [ \fB-u, --unit \fI出力の単位\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
-���� \fI�ƥ��ȥǥ��쥯�ȥ�\fR �˥ƥ����ѤΥǥ��쥯�ȥ�ĥ꡼�����������������μ¹���ǽ��¬�ꤷ�ޤ������������ǥ����ȥ�ο���width��depth��Ǥ���
+引数 \fIテストディレクトリ\fR にテスト用のディレクトリツリーを作成、削除し、その実行性能を測定します。生成されるディクトリの数はwidthのdepth乗です。
 .PP
-¬�ꤹ�����Ƥϻ��ꤵ�줿�ǥ��쥯�ȥ�ĥ꡼���������ڤӺ���ˤ����ä����֤�¬�ꤷ�����ꤵ�줿ñ�̤�ɽ�����ޤ���
+測定する内容は指定されたディレクトリツリーの生成、及び削除にかかった時間を測定し、指定された単位で表示します。
 .SH "OPTIONS"
 .TP
-\fB-t, --testdir \fI�ƥ��ȥǥ��쥯�ȥ�\fB\fR
-�ƥ��Ȥ�»ܤ���ǥ��쥯�ȥ����ꤷ�ޤ���
-gfarm url(gfarm:///�ǻϤޤ���)����ꤷ����硢������gfarm��Υǥ��쥯�ȥ���Ф���libgfarm�δؿ�����Ѥ���������ǽ��¬�ꤷ�ޤ���
-file url(file:///�ǻϤޤ���)����ꤷ����硢������unix�ե����륷���ƥ���posix�δؿ�����Ѥ���������ǽ��¬�ꤷ�ޤ���
-�ǥե���Ȥ�gfarm:///tmp�Ǥ���
+\fB-t, --testdir \fIテストディレクトリ\fB\fR
+テストを実施するディレクトリを指定します。
+gfarm url(gfarm:///で始まるもの)を指定した場合、該当のgfarm上のディレクトリに対してlibgfarmの関数を使用した場合の性能を測定します。
+file url(file:///で始まるもの)を指定した場合、該当のunixファイルシステム上にposixの関数を使用した場合の性能を測定します。
+デフォルトはgfarm:///tmpです。
 .TP
-\fB-w, --width \fI�ǥ��쥯�ȥ��\fB\fR
-���֥ǥ��쥯�ȥ��������������ꤷ�ޤ���
+\fB-w, --width \fIディレクトリ数\fB\fR
+サブディレクトリを作成する数を指定します。
 .TP
-\fB-d, --depth \fI�ǥ��쥯�ȥ곬��\fB\fR
-���֥ǥ��쥯�ȥ�򲿳��غ������뤫���ꤷ�ޤ���
+\fB-d, --depth \fIディレクトリ階層\fB\fR
+サブディレクトリを何階層作成するか指定します。
 .TP
-\fB-u, --uinit \fI���Ϥ�ñ��\fB\fR
-ops(operations per second)�ޤ���usec����ꤷ�ޤ������ꤷ��ñ�̤ǽ��Ϥ��֤��ޤ����ǥե���Ȥ�ops�Ǥ���
+\fB-u, --uinit \fI出力の単位\fB\fR
+ops(operations per second)またはusecを指定します。指定した単位で出力を返します。デフォルトはopsです。

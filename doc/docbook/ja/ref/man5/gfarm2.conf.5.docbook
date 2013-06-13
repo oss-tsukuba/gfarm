@@ -12,46 +12,46 @@
 
 <refnamediv id='name'>
 <refname>gfarm2.conf</refname>
-<refpurpose>Gfarm����ե�����</refpurpose>
+<refpurpose>Gfarm設定ファイル</refpurpose>
 </refnamediv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>
-gfarm2.conf�ե�����ϡ�gfarm�ץ�����������ե�����Ǥ���
-�����С����ץ������Ǥ���gfsd�ϡ��ǥե���ȤǤϡ�
-����%%SYSCONFDIR%%/gfarm2.conf������ե�����Ȥ��ƻ��Ȥ��ޤ���
-�᥿�ǡ��������С����ץ������Ǥ���gfmd�ϡ�%%SYSCONFDIR%%/gfmd.conf��
-�ɤ߹��ߤޤ���gfmd.conf�η����ϡ�gfarm2.conf��Ʊ��Ǥ���
-�ʤ����������Ƥ��ɤ߹��ޤ��Τϵ�ư�������ʤΤǡ�
-�������Ƥ��ѹ�������硢�����С���Ƶ�ư����ɬ�פ�����ޤ���
+gfarm2.confファイルは、gfarmプログラムの設定ファイルです。
+サーバー・プロセスであるgfsdは、デフォルトでは、
+この%%SYSCONFDIR%%/gfarm2.confを設定ファイルとして参照します。
+メタデータサーバー・プロセスであるgfmdは、%%SYSCONFDIR%%/gfmd.confを
+読み込みます。gfmd.confの形式は、gfarm2.confと同一です。
+なお、設定内容が読み込まれるのは起動時だけなので、
+設定内容を変更した場合、サーバーを再起動する必要があります。
 </para>
 
 <para>
-���ץꥱ�������ץ������ϡ��Ķ��ѿ�GFARM_CONFIG_FILE��
-���ꤷ���ե�����ȡ�%%SYSCONFDIR%%/gfarm2.conf������ե�����
-�Ȥ��ƻ��Ȥ��ޤ���������ĤΥե�����Ǥϡ��Ķ��ѿ�GFARM_CONFIG_FILE��
-���ꤷ���ե�������������������ɤ߹��ޤ�ޤ���
-�ɤ��������ե�����⡢Ʊ���ʸˡ�ǵ��Ҥ��ޤ���
-Ʊ��λ���ʸ��ʣ�����ä����ˤϡ���˻��ꤵ��Ƥ�������ͥ�褵��ޤ���
-�Ķ��ѿ�GFARM_CONFIG_FILE�����ꤵ��Ƥʤ���硢�����
-�桼���Υۡ���ǥ��쥯�ȥ�ˤ���.gfarm2rc�ե��������Ѥ��ޤ���
+アプリケーションプログラムは、環境変数GFARM_CONFIG_FILEで
+指定したファイルと、%%SYSCONFDIR%%/gfarm2.confを、設定ファイル
+として参照します。この二つのファイルでは、環境変数GFARM_CONFIG_FILEで
+指定したファイルの設定の方が先に読み込まれます。
+どちらの設定ファイルも、同一の文法で記述します。
+同一の指定文が複数あった場合には、先に指定されていた方が優先されます。
+環境変数GFARM_CONFIG_FILEが設定されてない場合、代わりに
+ユーザのホームディレクトリにある.gfarm2rcファイルを使用します。
 </para>
 
 <para>
-gfarm2.conf�ϡ���Ԥ˰�ʸ�η��������ꤷ�ޤ���
-��������������ʸ��``\''�򵭽Ҥ��뤳�Ȥˤ�äơ��Ԥ��³�����뤳�Ȥ�
-�Ǥ��ޤ����ޤ���ʸ��``#''��������ޤǤϡ������ȤȤ��ư���졢̵��
-����ޤ���
+gfarm2.confは、一行に一文の形式で設定します。
+ただし、行末に文字``\''を記述することによって、行を継続させることが
+できます。また、文字``#''から行末までは、コメントとして扱われ、無視
+されます。
 </para>
 
 </refsect1>
 
-<refsect1 id='hostspecification'><title>�ۥ��Ȼ���</title>
+<refsect1 id='hostspecification'><title>ホスト指定</title>
 <para>
-�����Ȥ��ơ�<parameter>�ۥ��Ȼ���</parameter>�򵭽ҤǤ���ʸ�������Ĥ�����ޤ�����
-���ξ�硢�ۥ��Ȼ���ˤϡ������Τ����줫�򵭽ҤǤ��ޤ���
+引数として、<parameter>ホスト指定</parameter>を記述できる文がいくつかありますが、
+この場合、ホスト指定には、下記のいずれかを記述できます。
 </para>
 <variablelist>
 
@@ -59,7 +59,7 @@ gfarm2.conf�ϡ���Ԥ˰�ʸ�η��������ꤷ�ޤ���
 <term><parameter>III.JJJ.KKK.LLL</parameter></term>
 <listitem>
 <para>
-"."�Ƕ��ڤ�줿0��255�ޤǤο���4�Ĥǡ�IP���ɥ쥹����ꤷ�ޤ���
+"."で区切られた0〜255までの数字4つで、IPアドレスを指定します。
 </para>
 </listitem>
 </varlistentry>
@@ -68,8 +68,8 @@ gfarm2.conf�ϡ���Ԥ˰�ʸ�η��������ꤷ�ޤ���
 <term><parameter>III.JJJ.KKK.LLL</parameter>/<parameter>MM</parameter></term>
 <listitem>
 <para>
-IP���ɥ쥹�ȡ�"/"�Ƕ��ڤ�줿0��31�ޤǤο����ǡ��ͥåȥ����
-���ꤷ�ޤ���"/"�ʹߤο�����netmask�Υӥå�Ĺ�Ǥ���
+IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワークを
+指定します。"/"以降の数字はnetmaskのビット長です。
 </para>
 </listitem>
 </varlistentry>
@@ -77,22 +77,22 @@ IP���ɥ쥹�ȡ�"/"�Ƕ��ڤ�줿0��31�ޤǤο����ǡ��ͥåȥ����
 <varlistentry>
 <term><parameter>domain.name</parameter></term>
 <listitem>
-<para>�ۥ���̾��ɥᥤ��̾�ǻ��ꤷ�ޤ���</para>
+<para>ホスト名をドメイン名で指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term> <emphasis>.</emphasis><parameter>domain.name</parameter></term>
 <listitem>
-<para>�ɥᥤ��̾����Ƭ��"."�ǤϤ��ޤ��硢���Υɥᥤ��̾�˽�°�������Ƥ�
-�ۥ��Ȥ��̣���ޤ���</para>
+<para>ドメイン名の先頭が"."ではじまる場合、このドメイン名に所属する全ての
+ホストを意味します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><emphasis>*</emphasis></term>
 <listitem>
-<para>"*"�ȵ��Ҥ���Ƥ����硢���ƤΥۥ��Ȥ��̣���ޤ���</para>
+<para>"*"と記述されている場合、全てのホストを意味します。</para>
 </listitem>
 </varlistentry>
 
@@ -100,8 +100,8 @@ IP���ɥ쥹�ȡ�"/"�Ƕ��ڤ�줿0��31�ޤǤο����ǡ��ͥåȥ����
 <term><emphasis>LISTENER</emphasis></term>
 <listitem>
 <para>
-������ʸ����"LISTENER"�ȵ��Ҥ���ȡ��̿��������˴ط��ʤ���
-�����С�¦(���¦)�Υ����åȤ��̣���ޤ���
+全て大文字で"LISTENER"と記述すると、通信する相手に関係なく、
+サーバー側(着呼側)のソケットを意味します。
 </para>
 </listitem>
 </varlistentry>
@@ -109,17 +109,17 @@ IP���ɥ쥹�ȡ�"/"�Ƕ��ڤ�줿0��31�ޤǤο����ǡ��ͥåȥ����
 </variablelist>
 </refsect1>
 
-<refsect1 id='statement'><title>ʸ</title>
-<para>ʸ�ˤϡ������μ��ब����ޤ���</para>
+<refsect1 id='statement'><title>文</title>
+<para>文には、下記の種類があります。</para>
 <variablelist>
 
 <varlistentry>
-<term><token>spool</token> <parameter>gfsd���ס��롦�ǥ��쥯�ȥ�</parameter></term>
+<term><token>spool</token> <parameter>gfsdスプール・ディレクトリ</parameter></term>
 <listitem>
-<para>gfsd����gfarm�ե�����μ��Τ��ݻ�����ǥ��쥯�ȥ�̾��
-���ꤷ�ޤ���
+<para>gfsdが、gfarmファイルの実体を保持するディレクトリ名を
+指定します。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	spool /var/spool/gfarm
 </literallayout>
@@ -127,15 +127,15 @@ IP���ɥ쥹�ȡ�"/"�Ƕ��ڤ�줿0��31�ޤǤο����ǡ��ͥåȥ����
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_server_listen_address</token> <parameter>IP���ɥ쥹</parameter></term>
+<term><token>spool_server_listen_address</token> <parameter>IPアドレス</parameter></term>
 <listitem>
-<para>gfsd��TCP�����UDP���׵������դ���IP���ɥ쥹����ꤷ�ޤ���
-��ά���ϡ����Υۥ��Ȥ����Ƥ�IP���ɥ쥹�Ǽ����դ��ޤ���
-���Υ��ץ����ϡ���ĤΥΡ��ɤ�ʣ���Υ��ס�����󶡤�����ˡ�
-���줾��Υ��ס��뤴�Ȥˡ��̡���IP���ɥ쥹��Ȥä�gfsd��ư����
-������Ѥ��ޤ���
+<para>gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。
+省略時は、そのホストの全てのIPアドレスで受け付けます。
+このオプションは、一つのノードで複数のスプールを提供する場合に、
+それぞれのスプールごとに、別々のIPアドレスを使ってgfsdを起動する
+ために用います。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	spool_server_listen_address 192.168.121.1
 </literallayout>
@@ -143,23 +143,23 @@ IP���ɥ쥹�ȡ�"/"�Ƕ��ڤ�줿0��31�ޤǤο����ǡ��ͥåȥ����
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_server_listen_backlog</token> <parameter>��</parameter></term>
+<term><token>spool_server_listen_backlog</token> <parameter>数</parameter></term>
 <listitem>
 <para>
-gfsd ��
+gfsd が
 <citerefentry>
 <refentrytitle>listen</refentrytitle><manvolnum>2</manvolnum>
 </citerefentry>
-�����ƥॳ���������������Ϥ��Хå��������ѥ�᡼���ο�����ꤷ�ޤ���
-�ǥե�����ͤϡ�&lt;sys/socket.h&gt; �� SOMAXCONN ������������Ƥ���OS�ǤϤ����� (OS�˰�¸���ޤ�����ŵ��Ū���ͤ� 128)���������Ƥʤ�OS�Ǥ� 5 �Ȥʤ�ޤ���
+システムコールの第二引数に渡すバックログ・パラメータの数を指定します。
+デフォルト値は、&lt;sys/socket.h&gt; に SOMAXCONN 定数が定義されているOSではその値 (OSに依存しますが、典型的な値は 128)、定義されてないOSでは 5 となります。
 </para>
 <para>
-���饤����ȿ���¿���Ķ��Ǥϡ������ƥ������ͤ�夲����ǡ������ͤ����䤷�Ƥ������Ȥ�侩���ޤ���
+クライアント数の多い環境では、システム制限値を上げた上で、この値を増やしておくことを推奨します。
 </para>
 <para>
-����ʸ��gfarm2.conf�Τߤ�ͭ���Ǥ��ꡢgfmd.conf�Ǥ�̵�뤵��ޤ���
+この文はgfarm2.confのみで有効であり、gfmd.confでは無視されます。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	spool_server_listen_backlog 128
 </literallayout>
@@ -170,43 +170,43 @@ gfsd ��
 <term><token>spool_server_cred_type</token> <parameter>cred_type</parameter></term>
 <listitem>
 <para>
-GSIǧ�ڤˤ����ơ�gfsd���Ѥ��������μ������ꤷ�ޤ���
-<token>sharedsecret</token>���ѻ��ˤϡ����λ����ñ��̵�뤵��ޤ���
+GSI認証において、gfsdが用いる証明書の種類を指定します。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
 </para>
 <para>
-������¦�Ǥ��λ�����ά������硢�����Ф�root���¤ǵ�ư��������
-�ۥ��Ⱦ�������Ѥ��ޤ����ޤ������Ф���̥桼�����¤ǵ�ư��������
-�桼����������Ѥ��ޤ���
+サーバ側でこの指定を省略した場合、サーバをroot権限で起動した場合は
+ホスト証明書を用います。またサーバを一般ユーザ権限で起動した場合は
+ユーザ証明書を用います。
 </para>
 <para>
-���饤�����¦�Ǥ��λ�����ά������硢�����Ф��ۥ��Ⱦ���������Ѥ��Ƥ���
-�Ȳ��ꤷ�ƥ�����ǧ�ڤ�Ԥ��ޤ������Τ��᥵���Ф򥯥饤����Ȥ�Ʊ���桼��
-���¤ǵ�ư���Ƥ����硢���饤�����¦�Ǥϡ������ΰ�Ԥ����ꤷ��
-����ɬ�פ�����ޤ���
+クライアント側でこの指定を省略した場合、サーバがホスト証明書を利用している
+と仮定してサーバ認証を行います。このためサーバをクライアントと同じユーザ
+権限で起動している場合、クライアント側では、下記の一行を設定して
+おく必要があります。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	spool_server_cred_type self
 </literallayout>
 <para>
-�����ǽ��<parameter>cred_type</parameter>�Ȥ��Ƥϡ�
-��<token>self</token>�ס�
-��<token>host</token>�ס���<token>user</token>�ס�
-��<token>mechanism-specific</token>�פ����ꡢ
-<token>spool_server_cred_service</token>�����
-<token>spool_server_cred_name</token>���Ȥ߹�碌��
-�����Τ褦���Ѥ��ޤ���
+指定可能な<parameter>cred_type</parameter>としては、
+「<token>self</token>」、
+「<token>host</token>」、「<token>user</token>」、
+「<token>mechanism-specific</token>」があり、
+<token>spool_server_cred_service</token>および
+<token>spool_server_cred_name</token>と組み合わせて
+下記のように用います。
 </para>
 <variablelist>
 <varlistentry>
 <term><token>self</token></term>
 <listitem>
 <para>
-���Υ桼�������߽�����Ƥ���桼����������Ѥ��뤳�Ȥ򼨤��ޤ���
-���λ�������Ѥ���ݤˤϡ�
-<token>spool_server_cred_service</token>�����
-<token>spool_server_cred_name</token>��
-�����ԤäƤϤ����ޤ���
+そのユーザが現在所持しているユーザ証明書を用いることを示します。
+この指定を利用する際には、
+<token>spool_server_cred_service</token>および
+<token>spool_server_cred_name</token>の
+指定を行ってはいけません。
 </para>
 </listitem>
 </varlistentry>
@@ -214,26 +214,26 @@ GSIǧ�ڤˤ����ơ�gfsd���Ѥ��������μ������ꤷ�ޤ���
 <term><token>host</token></term>
 <listitem>
 <para>
-�ۥ��Ⱦ����񤢤뤤�ϥ����ӥ���������Ѥ��뤳�Ȥ򼨤��ޤ���
-�����ӥ���������Ѥ����硢���Υ����ӥ���̾����
-<token>spool_server_cred_service</token>�ǻ��ꤷ�ޤ���
-�����ӥ�̾�ˡ�<token>host</token>�פ���ꤷ����硢
-�ե�����``<filename>/etc/grid-security/hostcert.pem</filename>''��
-����ۥ��Ⱦ�������Ѥ��ޤ���
-����ʳ��Υ����ӥ�̾����ꤷ����硢
-�ե�����``<filename>/etc/grid-security/�����ӥ�/�����ӥ�cert.pem</filename>''
-�ˤ��륵���ӥ���������Ѥ��ޤ���
-�����ӥ�̾���ά������硢��<token>host</token>�פ����ꤵ�줿�Ȥߤʤ��ޤ���
-�ۥ��Ⱦ����񤪤�ӥ����ӥ�������ξ�硢�������Common Name��Τߤ�
-��Ӥ��ޤ���Common Name�ϡ���CN=�����ӥ�̾/�ۥ���̾�פη����Ǥ���ɬ�פ�
-����ޤ����ޤ����ۥ���̾�ϡ�<command>gfhost</command>���ޥ�ɤǻ��ꤷ��
-����̾�����Τ˰��פ��Ƥ���ɬ�פ�����ޤ����ۥ�����̾�ϵ�����ޤ���
+ホスト証明書あるいはサービス証明書を用いることを示します。
+サービス証明書を用いる場合、そのサービスの名前を
+<token>spool_server_cred_service</token>で指定します。
+サービス名に「<token>host</token>」を指定した場合、
+ファイル``<filename>/etc/grid-security/hostcert.pem</filename>''に
+あるホスト証明書を用います。
+それ以外のサービス名を指定した場合、
+ファイル``<filename>/etc/grid-security/サービス/サービスcert.pem</filename>''
+にあるサービス証明書を用います。
+サービス名を省略した場合、「<token>host</token>」が指定されたとみなします。
+ホスト証明書およびサービス証明書の場合、証明書のCommon Name欄のみを
+比較します。Common Nameは、「CN=サービス名/ホスト名」の形式である必要が
+あります。また、ホスト名は、<command>gfhost</command>コマンドで指定した
+正式名と正確に一致している必要があります。ホスト別名は許されません。
 </para>
 <para>
-����ϡ�GSSAPI (RFC2743/RFC2744)��GSS_C_NT_HOSTBASED_SERVICE��
-�б����뵡ǽ�Ǥ���
+これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_HOSTBASED_SERVICEに
+対応する機能です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	spool_server_cred_type host
 	spool_server_cred_service host
@@ -244,22 +244,22 @@ GSIǧ�ڤˤ����ơ�gfsd���Ѥ��������μ������ꤷ�ޤ���
 <term><token>user</token></term>
 <listitem>
 <para>
-�桼����������Ѥ��뤳�Ȥ򼨤��ޤ���
-�桼���Υ��������̾��<token>spool_server_cred_name</token>�ǻ��ꤷ�ޤ���
-���������̾���ά�������ˤϡ����Υ��ޥ�ɤ�ư�����桼��̾���Ȥ��ޤ���
-���λ�������Ѥ���ݤˤϡ�<token>spool_server_cred_service</token>��
-�����ԤäƤϤ����ޤ���
+ユーザ証明書を用いることを示します。
+ユーザのアカウント名を<token>spool_server_cred_name</token>で指定します。
+アカウント名を省略した場合には、そのコマンドを起動したユーザ名が使われます。
+この指定を利用する際には、<token>spool_server_cred_service</token>の
+指定を行ってはいけません。
 </para>
 <para>
-�桼��̾�Ⱦ������Distinguished Name���б���Ȥ뤿�ᡢ
-``<filename>/etc/grid-security/grid-mapfile</filename>''���Ѥ��ޤ���
-���Τ��ᡢ���Υե����뤬¸�ߤ��ʤ��ä��ꡢ���뤤�Ϥ��Υե��������Ͽ
-����Ƥʤ��桼���ϡ����ε�ǽ���Ѥ��뤳�Ȥ��Ǥ��ޤ���
+ユーザ名と証明書のDistinguished Nameの対応をとるため、
+``<filename>/etc/grid-security/grid-mapfile</filename>''を用います。
+このため、このファイルが存在しなかったり、あるいはこのファイルに登録
+されてないユーザは、この機能を用いることができません。
 </para>
 <para>
-����ϡ�GSSAPI (RFC2743/RFC2744)��GSS_C_NT_USER_NAME���б����뵡ǽ�Ǥ���
+これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_USER_NAMEに対応する機能です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	spool_server_cred_type user
 	spool_server_cred_name guest
@@ -270,16 +270,16 @@ GSIǧ�ڤˤ����ơ�gfsd���Ѥ��������μ������ꤷ�ޤ���
 <term><token>mechanism-specific</token></term>
 <listitem>
 <para>
-�����Ф�X.509 Distinguished Name��<token>spool_server_cred_name</token>��
-ľ�ܻ��ꤷ�ޤ���
-���λ�������Ѥ���ݤˤϡ�<token>spool_server_cred_service</token>��
-�����ԤäƤϤ����ޤ���
+サーバのX.509 Distinguished Nameを<token>spool_server_cred_name</token>で
+直接指定します。
+この指定を利用する際には、<token>spool_server_cred_service</token>の
+指定を行ってはいけません。
 </para>
 <para>
-����ϡ�GSSAPI (RFC2743/RFC2744)��Name Type�Ȥ���GSS_C_NO_OID��
-���ꤷ�������б����뵡ǽ�Ǥ���
+これは、GSSAPI (RFC2743/RFC2744)でName TypeとしてGSS_C_NO_OIDを
+指定した場合に対応する機能です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	spool_server_cred_type mechanism-specific
 	spool_server_cred_name "/O=Grid/O=Globus/OU=example.com/CN=John Smith"
@@ -294,11 +294,11 @@ GSIǧ�ڤˤ����ơ�gfsd���Ѥ��������μ������ꤷ�ޤ���
 <term><token>spool_server_cred_service</token> <parameter>cred_service</parameter></term>
 <listitem>
 <para>
-GSIǧ�ڤˤ����ơ�<token>spool_server_cred_type</token>�Ȥ���
-��<token>host</token>�פ���ꤷ�Ƥ�����ˡ�gfsd���Ѥ��륵���ӥ��������
-�������ꤷ�ޤ���
-<token>sharedsecret</token>���ѻ��ˤϡ����λ����ñ��̵�뤵��ޤ���
-�ܤ�����<token>spool_server_cred_type</token>�ι�򻲾Ȥ��Ƥ���������
+GSI認証において、<token>spool_server_cred_type</token>として
+「<token>host</token>」を指定している場合に、gfsdが用いるサービス証明書の
+種類を指定します。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+詳しくは<token>spool_server_cred_type</token>の項を参照してください。
 </para>
 </listitem>
 </varlistentry>
@@ -307,20 +307,20 @@ GSIǧ�ڤˤ����ơ�<token>spool_server_cred_type</token>�Ȥ���
 <term><token>spool_server_cred_name</token> <parameter>cred_name</parameter></term>
 <listitem>
 <para>
-GSIǧ�ڤˤ����ơ�<token>spool_server_cred_type</token>�ǻ��ꤷ���ͤ�
-�����ơ�gfsd���Ѥ��������������Ԥ��ޤ���
-<token>sharedsecret</token>���ѻ��ˤϡ����λ����ñ��̵�뤵��ޤ���
-�ܤ�����<token>spool_server_cred_type</token>�ι�򻲾Ȥ��Ƥ���������
+GSI認証において、<token>spool_server_cred_type</token>で指定した値に
+応じて、gfsdが用いる証明書の設定を行います。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+詳しくは<token>spool_server_cred_type</token>の項を参照してください。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_host</token> <parameter>gfmd�ۥ���̾</parameter></term>
+<term><token>metadb_server_host</token> <parameter>gfmdホスト名</parameter></term>
 <listitem>
-<para>gfmd��ư��Ƥ���ۥ���̾����ꤷ�ޤ���</para>
-<para>���������ɬ�ܤǤ���</para>
-<para>��:</para>
+<para>gfmdが動作しているホスト名を指定します。</para>
+<para>この設定は必須です。</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_host ldap.example.com
 </literallayout>
@@ -328,11 +328,11 @@ GSIǧ�ڤˤ����ơ�<token>spool_server_cred_type</token>�ǻ��ꤷ���ͤ�
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_port</token> <parameter>gfmd�ݡ����ֹ�</parameter></term>
+<term><token>metadb_server_port</token> <parameter>gfmdポート番号</parameter></term>
 <listitem>
-<para>gfmd�����Ѥ���TCP�ݡ��Ȥ��ֹ����ꤷ�ޤ���
-��ά���Υǥե���ȡ��ݡ����ֹ��601�֤Ǥ���</para>
-<para>��:</para>
+<para>gfmdが利用するTCPポートの番号を指定します。
+省略時のデフォルト・ポート番号は601番です。</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_port 601
 </literallayout>
@@ -343,10 +343,10 @@ GSIǧ�ڤˤ����ơ�<token>spool_server_cred_type</token>�ǻ��ꤷ���ͤ�
 <term><token>metadb_server_cred_type</token> <parameter>cred_type</parameter></term>
 <listitem>
 <para>
-GSIǧ�ڤˤ����ơ�gfmd���Ѥ��������μ������ꤷ�ޤ���
-<token>sharedsecret</token>���ѻ��ˤϡ����λ����ñ��̵�뤵��ޤ���
-����ΰ�̣�ˤĤ��Ƥ�<token>spool_server_cred_type</token>�ι��
-���Ȥ��Ƥ���������
+GSI認証において、gfmdが用いる証明書の種類を指定します。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+設定の意味については<token>spool_server_cred_type</token>の項を
+参照してください。
 </para>
 </listitem>
 </varlistentry>
@@ -355,12 +355,12 @@ GSIǧ�ڤˤ����ơ�gfmd���Ѥ��������μ������ꤷ�ޤ���
 <term><token>metadb_server_cred_service</token> <parameter>cred_service</parameter></term>
 <listitem>
 <para>
-GSIǧ�ڤˤ����ơ�<token>metadb_server_cred_type</token>�Ȥ���
-��<token>host</token>�פ���ꤷ�Ƥ�����ˡ�gfmd���Ѥ��륵���ӥ��������
-�������ꤷ�ޤ���
-<token>sharedsecret</token>���ѻ��ˤϡ����λ����ñ��̵�뤵��ޤ���
-����ΰ�̣�ˤĤ��Ƥ�<token>spool_server_cred_type</token>�ι��
-���Ȥ��Ƥ���������
+GSI認証において、<token>metadb_server_cred_type</token>として
+「<token>host</token>」を指定している場合に、gfmdが用いるサービス証明書の
+種類を指定します。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+設定の意味については<token>spool_server_cred_type</token>の項を
+参照してください。
 </para>
 </listitem>
 </varlistentry>
@@ -369,30 +369,30 @@ GSIǧ�ڤˤ����ơ�<token>metadb_server_cred_type</token>�Ȥ���
 <term><token>metadb_server_cred_name</token> <parameter>cred_name</parameter></term>
 <listitem>
 <para>
-GSIǧ�ڤˤ����ơ�<token>metadb_server_cred_type</token>�ǻ��ꤷ���ͤ�
-�����ơ�gfmd���Ѥ��������������Ԥ��ޤ���
-<token>sharedsecret</token>���ѻ��ˤϡ����λ����ñ��̵�뤵��ޤ���
-����ΰ�̣�ˤĤ��Ƥ�<token>spool_server_cred_type</token>�ι��
-���Ȥ��Ƥ���������
+GSI認証において、<token>metadb_server_cred_type</token>で指定した値に
+応じて、gfmdが用いる証明書の設定を行います。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+設定の意味については<token>spool_server_cred_type</token>の項を
+参照してください。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_listen_backlog</token> <parameter>��</parameter></term>
+<term><token>metadb_server_listen_backlog</token> <parameter>数</parameter></term>
 <listitem>
 <para>
-gfmd ��
+gfmd が
 <citerefentry>
 <refentrytitle>listen</refentrytitle><manvolnum>2</manvolnum>
 </citerefentry>
-�����ƥॳ���������������Ϥ��Хå��������ѥ�᡼���ο�����ꤷ�ޤ���
-�ǥե�����ͤϡ�&lt;sys/socket.h&gt; �� SOMAXCONN ������������Ƥ���OS�ǤϤ����� (OS�˰�¸���ޤ�����ŵ��Ū���ͤ� 128)���������Ƥʤ�OS�Ǥ� 5 �Ȥʤ�ޤ���
+システムコールの第二引数に渡すバックログ・パラメータの数を指定します。
+デフォルト値は、&lt;sys/socket.h&gt; に SOMAXCONN 定数が定義されているOSではその値 (OSに依存しますが、典型的な値は 128)、定義されてないOSでは 5 となります。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ��ꡢgfarm2.conf�Ǥ�̵�뤵��ޤ���
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_listen_backlog 128
 </literallayout>
@@ -400,19 +400,19 @@ gfmd ��
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_max_descriptors</token> <parameter>��</parameter></term>
+<term><token>metadb_server_max_descriptors</token> <parameter>数</parameter></term>
 <listitem>
-<para>�᥿�ǡ���������gfmd�ѤΥǥ�������ץ�����ߥå��ͤ���ꤷ�ޤ���
-��ά���줿��硢OS�Υϡ��ɡ���ߥå��ͤȡ�131072 �Ρ������������ͤ�
-�Ȥ��ޤ���
-�絬�Ϥʹ����Ǥϡ������ͤ����䤹ɬ�פ�����ޤ�����
-�����Ϥʹ����Ǥϸ��餷�������ɤ��Ǥ��礦��
-�����ͤη׻���ˡ�ˤĤ��Ƥϡ�Gfarm FAQ ���������������
+<para>メタデータサーバgfmd用のディスクリプタ・リミット値を指定します。
+省略された場合、OSのハード・リミット値と、131072 の、小さい方の値が
+使われます。
+大規模な構成では、この値を増やす必要がありますし、
+小規模な構成では減らした方が良いでしょう。
+この値の計算方法については、Gfarm FAQ を御覧ください。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ��ꡢgfarm2.conf�Ǥ�̵�뤵��ޤ���
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_max_descriptors 262144
 </literallayout>
@@ -420,22 +420,22 @@ gfmd ��
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_stack_size</token> <parameter>�Х��ȿ�</parameter></term>
+<term><token>metadb_server_stack_size</token> <parameter>バイト数</parameter></term>
 <listitem>
-<para>�᥿�ǡ���������gfmd��γƥ���åɤ����Ѥ��륹���å��Υ�������
-���ꤷ�ޤ�����ά���줿���OS�Υǥե�����ͤ��Ȥ��ޤ���
-���Υѥ�᡼���ϡ�gfmd�ξ��񤹤벾�ۥ�����֤Υ����������󤹤뤿���
-�Ѥ��ޤ���
+<para>メタデータサーバgfmd内の各スレッドが利用するスタックのサイズを
+指定します。省略された場合OSのデフォルト値が使われます。
+このパラメータは、gfmdの消費する仮想メモリ空間のサイズを節約するために
+用います。
 </para>
 <para>
-���Ȥ��С�CentOS 5/i386�ξ�硢�ǥե���ȤΥ����å���������10MB�Ǥ�
-�Τǡ����Υѥ�᡼���ǥ����å���������256KB���ޤ���ȡ�gfmd�Υ����å�
-�����񤹤벾�ۥ�����֤Υ�������1/40�˸��餹���Ȥ��Ǥ��ޤ���
+たとえば、CentOS 5/i386の場合、デフォルトのスタックサイズは10MBです
+ので、このパラメータでスタックサイズを256KBに抑えると、gfmdのスタック
+が消費する仮想メモリ空間のサイズを、1/40に減らすことができます。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ��ꡢgfarm2.conf�Ǥ�̵�뤵��ޤ���
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_stack_size 262144
 </literallayout>
@@ -443,16 +443,16 @@ gfmd ��
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_thread_pool_size</token> <parameter>����åɿ�</parameter></term>
+<term><token>metadb_server_thread_pool_size</token> <parameter>スレッド数</parameter></term>
 <listitem>
-<para>�᥿�ǡ���������gfmd�Υ���åɥס���Υ���åɿ�����ꤷ�ޤ���
-�᥿�ǡ��������ХΡ��ɤΥ��������餤�����ꤹ��ȸ���Ū�Ǥ���
-�ǥե�����ͤ�16�Ǥ���
+<para>メタデータサーバgfmdのスレッドプールのスレッド数を指定します。
+メタデータサーバノードのコア数くらいに設定すると効果的です。
+デフォルト値は16です。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ��ꡢgfarm2.conf�Ǥ�̵�뤵��ޤ���
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_thread_pool_size 16
 </literallayout>
@@ -460,16 +460,16 @@ gfmd ��
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_job_queue_length</token> <parameter>���塼Ĺ</parameter></term>
+<term><token>metadb_server_job_queue_length</token> <parameter>キュー長</parameter></term>
 <listitem>
-<para>�᥿�ǡ���������gfmd�Υ���֥��塼�Υ��塼Ĺ����ꤷ�ޤ���
-���٤���³������祯�饤����Ȥο����餤�����ꤹ��ȸ���Ū�Ǥ���
-�ǥե�����ͤ�16000�Ǥ���
+<para>メタデータサーバgfmdのジョブキューのキュー長を指定します。
+一度に接続する最大クライアントの数くらいに設定すると効果的です。
+デフォルト値は16000です。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ��ꡢgfarm2.conf�Ǥ�̵�뤵��ޤ���
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_job_queue_length 160
 </literallayout>
@@ -477,19 +477,19 @@ gfmd ��
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_heartbeat_interval</token> <parameter>�ÿ�</parameter></term>
+<term><token>metadb_server_heartbeat_interval</token> <parameter>秒数</parameter></term>
 <listitem>
-<para>�᥿�ǡ���������gfmd���ƥե����륷���ƥॵ����gfsd
-���Ф�ư���ǧ��Ԥ��ϡ��ȥӡ��Ȥδֳ֤��ÿ��ǻ��ꤷ�ޤ���
-�ǥե�����ͤ�180�äǤ���
+<para>メタデータサーバgfmdが各ファイルシステムサーバgfsd
+に対し動作確認を行うハートビートの間隔を秒数で指定します。
+デフォルト値は180秒です。
 </para>
 <para>
-Gfarm-2.3.0�ޤǤϤ���ʸ��gfmd.conf�Τߤ�ͭ���Ǥ��ꡢgfarm2.conf�Ǥ�
-̵�뤵��Ƥ��ޤ�������Gfarm-2.4.0�ʹߤ�gfsd�⤳�Υѥ�᡼�������Ѥ�
-gfmd��ߤ��Τ��뤿�ᡢ
-gfarm2.conf��gfmd.conf��ξ���ǻ��ꤹ��ɬ�פ�����ޤ���
+Gfarm-2.3.0まではこの文はgfmd.confのみで有効であり、gfarm2.confでは
+無視されていましたが、Gfarm-2.4.0以降はgfsdもこのパラメータを利用し
+gfmd停止を検知するため、
+gfarm2.confとgfmd.confの両方で指定する必要があります。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_heartbeat_interval 180
 </literallayout>
@@ -497,17 +497,17 @@ gfarm2.conf��gfmd.conf��ξ���ǻ��ꤹ��ɬ�פ�����ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_dbq_size</token> <parameter>���塼Ĺ</parameter></term>
+<term><token>metadb_server_dbq_size</token> <parameter>キュー長</parameter></term>
 <listitem>
-<para>�᥿�ǡ���������gfmd�Ǥϥ᥿�ǡ������ѹ���Хå������DB��
-��Ʊ��Ū��ȿ�Ǥ��ޤ��������Υ��塼��Ĺ������ꤷ�ޤ���
-���塼Ĺ��Ĺ������ȡ��Хå������DB�ι���®�٤�Χ®����ˤ����ʤ�ޤ���
-�ǥե�����ͤ�65536�Ǥ���
+<para>メタデータサーバgfmdではメタデータの変更をバックエンドDBに
+非同期的に反映しますが，そのキューの長さを指定します。
+キュー長を長くすると，バックエンドDBの更新速度に律速されにくくなります。
+デフォルト値は65536です。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ��ꡢgfarm2.conf�Ǥ�̵�뤵��ޤ���
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_dbq_size 65536
 </literallayout>
@@ -515,16 +515,16 @@ gfarm2.conf��gfmd.conf��ξ���ǻ��ꤹ��ɬ�פ�����ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>ldap_server_host</token> <parameter>LDAP�����С����ۥ���̾</parameter></term>
+<term><token>ldap_server_host</token> <parameter>LDAPサーバー・ホスト名</parameter></term>
 <listitem>
 <para>
-gfmd�ΥХå�����ɡ��ǡ����١����Ȥ���
-LDAP�����Ф����򤹤��硢
-LDAP�����С���ư��Ƥ���ۥ���̾����ꤷ�ޤ���
-����ʸ��gfmd.conf���Ѥ���졢gfarm2.conf�Ǥ��Ѥ����ޤ���
+gfmdのバックエンド・データベースとして
+LDAPサーバを選択する場合、
+LDAPサーバーが動作しているホスト名を指定します。
+この文はgfmd.confで用いられ、gfarm2.confでは用いられません。
 </para>
 
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	ldap_server_host ldap.example.com
 </literallayout>
@@ -532,12 +532,12 @@ LDAP�����С���ư��Ƥ���ۥ���̾����ꤷ�ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>ldap_server_port</token> <parameter>LDAP�����С����ݡ����ֹ�</parameter></term>
+<term><token>ldap_server_port</token> <parameter>LDAPサーバー・ポート番号</parameter></term>
 <listitem>
-<para>LDAP�����С������Ѥ���TCP�ݡ��Ȥ��ֹ����ꤷ�ޤ���</para>
-<para><token>ldap_server_host</token>����ꤹ����ˤϡ�
-���������ɬ�ܤǤ���</para>
-<para>��:</para>
+<para>LDAPサーバーが利用するTCPポートの番号を指定します。</para>
+<para><token>ldap_server_host</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
 <literallayout>
 	ldap_server_port 602
 </literallayout>
@@ -547,11 +547,11 @@ LDAP�����С���ư��Ƥ���ۥ���̾����ꤷ�ޤ���
 <varlistentry>
 <term><token>ldap_base_dn</token> <parameter>LDAP_base_distinguished_name</parameter></term>
 <listitem>
-<para>LDAP�ǡ����١������ݻ�����ǡ����Υ����κ��Ȥʤ�Ρ��ɤ�
-̾�Ρ�base distinguished name����ꤷ�ޤ���</para>
-<para><token>ldap_server_host</token>����ꤹ����ˤϡ�
-���������ɬ�ܤǤ���</para>
-<para>��:</para>
+<para>LDAPデータベースで保持するデータのキーの根となるノードの
+名称、base distinguished nameを指定します。</para>
+<para><token>ldap_server_host</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
 <literallayout>
 	ldap_base_dn "dc=example, dc=com"
 </literallayout>
@@ -561,8 +561,8 @@ LDAP�����С���ư��Ƥ���ۥ���̾����ꤷ�ޤ���
 <varlistentry>
 <term><token>ldap_bind_dn</token> <parameter>LDAP_bind_distinguished_name</parameter></term>
 <listitem>
-<para>LDAP�ǡ����١�������³����ݤ�ǧ�ڤ��Ѥ���̾�Τ�distinguished name�ǻ��ꤷ�ޤ���</para>
-<para>��:</para>
+<para>LDAPデータベースに接続する際の認証に用いる名称を、distinguished nameで指定します。</para>
+<para>例:</para>
 <literallayout>
 	ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
 </literallayout>
@@ -572,8 +572,8 @@ LDAP�����С���ư��Ƥ���ۥ���̾����ꤷ�ޤ���
 <varlistentry>
 <term><token>ldap_bind_password</token> <parameter>password</parameter></term>
 <listitem>
-<para>LDAP�ǡ����١�������³����ݤ�ǧ�ڥѥ���ɤ���ꤷ�ޤ���</para>
-<para>��:</para>
+<para>LDAPデータベースに接続する際の認証パスワードを指定します。</para>
+<para>例:</para>
 <literallayout>
 	ldap_bind_password "secret-ldap-password"
 </literallayout>
@@ -581,16 +581,16 @@ LDAP�����С���ư��Ƥ���ۥ���̾����ꤷ�ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>postgresql_server_host</token> <parameter>PostgreSQL�����С����ۥ���̾</parameter></term>
+<term><token>postgresql_server_host</token> <parameter>PostgreSQLサーバー・ホスト名</parameter></term>
 <listitem>
 <para>
-gfmd�ΥХå�����ɡ��ǡ����١����Ȥ���
-PostgreSQL�����Ф����򤹤��硢
-PostgreSQL�����С���ư��Ƥ���ۥ���̾����ꤷ�ޤ���
-����ʸ��gfmd.conf���Ѥ���졢gfarm2.conf�Ǥ��Ѥ����ޤ���
+gfmdのバックエンド・データベースとして
+PostgreSQLサーバを選択する場合、
+PostgreSQLサーバーが動作しているホスト名を指定します。
+この文はgfmd.confで用いられ、gfarm2.confでは用いられません。
 </para>
 
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	postgresql_server_host postgresql.example.com
 </literallayout>
@@ -598,12 +598,12 @@ PostgreSQL�����С���ư��Ƥ���ۥ���̾����ꤷ�ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>postgresql_server_port</token> <parameter>PostgreSQL�����С����ݡ����ֹ�</parameter></term>
+<term><token>postgresql_server_port</token> <parameter>PostgreSQLサーバー・ポート番号</parameter></term>
 <listitem>
-<para>PostgreSQL�����С������Ѥ���TCP�ݡ��Ȥ��ֹ����ꤷ�ޤ���</para>
-<para><token>postgresql_server_host</token>����ꤹ����ˤϡ�
-���������ɬ�ܤǤ���</para>
-<para>��:</para>
+<para>PostgreSQLサーバーが利用するTCPポートの番号を指定します。</para>
+<para><token>postgresql_server_host</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
 <literallayout>
 	postgresql_server_port 602
 </literallayout>
@@ -613,10 +613,10 @@ PostgreSQL�����С���ư��Ƥ���ۥ���̾����ꤷ�ޤ���
 <varlistentry>
 <term><token>postgresql_dbname</token> <parameter>dbname</parameter></term>
 <listitem>
-<para>PostgreSQL�ǡ����١���̾����ꤷ�ޤ���</para>
-<para><token>postgresql_server_host</token>����ꤹ����ˤϡ�
-���������ɬ�ܤǤ���</para>
-<para>��:</para>
+<para>PostgreSQLデータベース名を指定します。</para>
+<para><token>postgresql_server_host</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
 <literallayout>
 	postgresql_dbname gfarm
 </literallayout>
@@ -626,8 +626,8 @@ PostgreSQL�����С���ư��Ƥ���ۥ���̾����ꤷ�ޤ���
 <varlistentry>
 <term><token>postgresql_user</token> <parameter>user</parameter></term>
 <listitem>
-<para>PostgreSQL�ǡ����١�������³����ǡ����١����������Υ桼��̾����ꤷ�ޤ���</para>
-<para>��:</para>
+<para>PostgreSQLデータベースに接続するデータベース管理下のユーザ名を指定します。</para>
+<para>例:</para>
 <literallayout>
 	postgresql_user gfarm
 </literallayout>
@@ -637,8 +637,8 @@ PostgreSQL�����С���ư��Ƥ���ۥ���̾����ꤷ�ޤ���
 <varlistentry>
 <term><token>postgresql_password</token> <parameter>password</parameter></term>
 <listitem>
-<para>PostgreSQL�ǡ����١�������³����ǡ����١����������Υ桼���Υѥ���ɤ���ꤷ�ޤ���</para>
-<para>��:</para>
+<para>PostgreSQLデータベースに接続するデータベース管理下のユーザのパスワードを指定します。</para>
+<para>例:</para>
 <literallayout>
 	postgresql_password "secret-postgresql-password"
 </literallayout>
@@ -648,8 +648,8 @@ PostgreSQL�����С���ư��Ƥ���ۥ���̾����ꤷ�ޤ���
 <varlistentry>
 <term><token>postgresql_conninfo</token> <parameter>connection_info</parameter></term>
 <listitem>
-<para>PostgreSQL�ǡ����١�������³����Ȥ�����³���ץ�������ꤷ�ޤ���</para>
-<para>��:</para>
+<para>PostgreSQLデータベースに接続するときの接続オプションを指定します。</para>
+<para>例:</para>
 <literallayout>
 	postgresql_conninfo "sslmode=require connect_timeout=30"
 </literallayout>
@@ -657,36 +657,36 @@ PostgreSQL�����С���ư��Ƥ���ۥ���̾����ꤷ�ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>auth</token> <parameter>ͭ����</parameter>&nbsp; <parameter>ǧ����ˡ</parameter>&nbsp; <parameter>�ۥ��Ȼ���</parameter></term>
+<term><token>auth</token> <parameter>有効性</parameter>&nbsp; <parameter>認証方法</parameter>&nbsp; <parameter>ホスト指定</parameter></term>
 <listitem>
-<para>����ʸ�ϡ���3�����ǻ��ꤷ���ۥ��ȤȤ��̿����Ѥ���ǧ����ˡ�����ꤷ�ޤ���</para>
+<para>この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。</para>
 
-<para>��1������<parameter>ͭ����</parameter>���ˤϡ�<token>enable</token>�ʤ���<token>disable</token>
-������ɤ���ꤷ�ޤ���
-��2������<parameter>ǧ����ˡ</parameter>���ˤϡ�<token>gsi</token>��
-<token>gsi_auth</token>�ʤ���<token>sharedsecret</token>
-������ɤ���ꤷ�ޤ���
-��3�����ˤϡ�<parameter>�ۥ��Ȼ���</parameter>�򵭽Ҥ��ޤ���</para>
+<para>第1引数の<parameter>有効性</parameter>部には、<token>enable</token>ないし<token>disable</token>
+キーワードを指定します。
+第2引数の<parameter>認証方法</parameter>部には、<token>gsi</token>、
+<token>gsi_auth</token>ないし<token>sharedsecret</token>
+キーワードを指定します。
+第3引数には、<parameter>ホスト指定</parameter>を記述します。</para>
 
-<para>����ʸ��ʣ�������ǽ�Ǥ�����ǧ����ˡ���Ȥˡ���Ƭ�����˥ۥ��Ȼ����
-Ŭ�礹�뤫�ɤ���Ĵ�١�ͭ���Ǥ���Ȥλ����Ŭ�礷����硢����ǧ����ˡ��
-���Ѹ���ˤʤ�ޤ���ͭ���Ǥ���Ȥλ����Ŭ�礷�ʤ����䡢���뤤��
-ͭ���Ǥ���Ȥλ����Ŭ�礹���������̵���Ǥ���Ȥλ����Ŭ�礷��
-��硢����ǧ����ˡ�ϡ�����ˤʤ�ޤ���</para>
+<para>この文は複数指定可能です。各認証方法ごとに、先頭から順にホスト指定に
+適合するかどうか調べ、有効であるとの指定に適合した場合、その認証方法が
+利用候補になります。有効であるとの指定に適合しない場合や、あるいは
+有効であるとの指定に適合するよりも前に無効であるとの指定に適合した
+場合、その認証方法は、候補になりません。</para>
 
-<para>���λ���ϡ������С�¦�ȥ��饤�����¦��ξ���ǲ�ᤵ�졢
-�����Ȥ��ͭ���ˤʤäƤ���ǧ����ˡ�Τߤ��Ѥ����ޤ���</para>
+<para>この指定は、サーバー側とクライアント側の両方で解釈され、
+双方ともで有効になっている認証方法のみが用いられます。</para>
 
-<para>ǧ����ˡ���ۤʤ��Τ˴ؤ��Ƥϡ�����ν���ϰ�̣������ޤ���
-ʣ����ǧ����ˡ������Ȥʤä���硢<token>sharedsecret</token>��
-<token>gsi_auth</token>��<token>gsi</token>ǧ�ڤν���ǻ�ߤޤ���</para>
+<para>認証方法が異なるものに関しては、指定の順序は意味がありません。
+複数の認証方法が候補となった場合、<token>sharedsecret</token>、
+<token>gsi_auth</token>、<token>gsi</token>認証の順序で試みます。</para>
 
-<para>Gfarm�Υ���ѥ������globus�ȤΥ�󥯤���ꤷ�ʤ��ä���硢
-GSI�����ѤǤ��ޤ��󡣤��ξ�硢<token>gsi</token>�����
-<token>gsi_auth</token>ǧ�ڤλ����ñ��̵�뤵��ޤ���</para>
+<para>Gfarmのコンパイル時にglobusとのリンクを指定しなかった場合、
+GSIは利用できません。この場合、<token>gsi</token>および
+<token>gsi_auth</token>認証の指定は単に無視されます。</para>
 
-<para>���������ɬ�ܤǤ���</para>
-<para>��:</para>
+<para>この設定は必須です。</para>
+<para>例:</para>
 <literallayout>
 	auth disable sharedsecret 192.168.0.100
 	auth disable sharedsecret 192.168.0.101
@@ -695,57 +695,57 @@ GSI�����ѤǤ��ޤ��󡣤��ξ�硢<token>gsi</token>�����
 	auth enable gsi *
 </literallayout>
 
-<para>������Ǥϡ��ۥ���192.168.0.100��192.168.0.101��2�ĤΥۥ��Ȥ�
-������192.168.0.0/24�ͥåȥ����°���ۥ��Ȥˤ�
-<token>sharedsecret</token>��<token>gsi</token>��ξ����
-10.0.0.0/8�ͥåȥ����°���ۥ��Ȥˤ�<token>gsi_auth</token>�����
-<token>gsi</token>��ξ����
-����ʳ������ƤΥۥ��Ȥˤ�<token>gsi</token>ǧ�ڤΤߤ��ߤޤ���
-���ʤ�����ۥ���192.168.0.100��192.168.0.101��2�ĤΥۥ��Ȥϡ�
-<token>gsi</token>ǧ�ڤΤߤ��ߤ뤳�Ȥˤʤ�ޤ���</para>
+<para>この例では、ホスト192.168.0.100と192.168.0.101の2つのホストを
+除いた192.168.0.0/24ネットワークに属すホストには
+<token>sharedsecret</token>と<token>gsi</token>の両方を、
+10.0.0.0/8ネットワークに属すホストには<token>gsi_auth</token>および
+<token>gsi</token>の両方を、
+それ以外の全てのホストには<token>gsi</token>認証のみを試みます。
+すなわち、ホスト192.168.0.100と192.168.0.101の2つのホストは、
+<token>gsi</token>認証のみを試みることになります。</para>
 
 </listitem>
 </varlistentry>
 
 <!--
 <varlistentry>
-<term><token>netparam</token> <parameter>�ѥ�᡼��</parameter><emphasis>=</emphasis><parameter>��</parameter> <emphasis>[</emphasis><parameter>�ۥ��Ȼ���</parameter><emphasis>]</emphasis></term>
+<term><token>netparam</token> <parameter>パラメータ</parameter><emphasis>=</emphasis><parameter>値</parameter> <emphasis>[</emphasis><parameter>ホスト指定</parameter><emphasis>]</emphasis></term>
 <listitem>
-<para>�ͥåȥ���̿����Ѥ���Ƽ�ѥ�᡼������ꤷ�ޤ���
-�ѥ�᡼���ˤϲ����Τ�Τ�����ޤ���</para>
+<para>ネットワーク通信に用いる各種パラメータを指定します。
+パラメータには下記のものがあります。</para>
 
-<para><token>parallel_streams</token>�����Υѥ�᡼���ϡ��̿������Ѥ���
-TCP�Υ��ȥ꡼�������ꤷ�ޤ�����ά����1�Ǥ���
-���Υѥ�᡼���ϡ�TCP���̿�������ɥ�����ʬ�ʥ�����
-�ޤǳ����ʤ��褦�ʱ����Ȥ��̿��κݤˡ�ͭ���ʤ��Ȥ�����ޤ���
-���ߡ����Υѥ�᡼���ϥե������ʣ����ǽ�ǤΤ�ͭ���Ǥ���
-���ߤμ����Ǥϡ�gfrep(1)���ޥ�ɤ�ư�����ۥ��ȤΥ桼������ե������
-���Ƥ��Ѥ����ޤ����ۥ��Ȼ������Ӥ����Τϡ�ʣ����Υۥ��ȤǤϤʤ���
-ʣ�����Υۥ��ȤǤ���</para>
+<para><token>parallel_streams</token>。このパラメータは、通信に利用する
+TCPのストリーム数を指定します。省略時は1です。
+このパラメータは、TCPの通信ウィンドウが十分なサイズ
+まで開かないような遠方との通信の際に、有効なことがあります。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、gfrep(1)コマンドを起動したホストのユーザ設定ファイルの
+内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
+複製元のホストです。</para>
 
-<para><token>stripe_unit_size</token>�����Υѥ�᡼���ϡ��̿���ʣ����TCP���ȥ꡼��
-�����Ѥ�����ˡ��ɤΤ褦��ž�����Ƥ�ʬ�䤹�뤫����ꤷ�ޤ���
-�⤷���λ��꤬�ʤ���硢ž�����Ƥ�ñ��<token>parallel_streams</token>�Ĥ�
-ʬ�䤷���������ޤ���
-������Ф���<token>stripe_unit_size</token>����ꤷ�����ϡ����Υѥ�᡼��
-�ǻ��ꤷ���Х��ȿ���ñ�̤Ȥ��ƥ��ȥ饤�ԥ󥰤����������ޤ���
-�̾ñ�ʤ�ʬ����⥹�ȥ饤�ԥ󥰤�������ǽŪ��ͭ���Ǥ���
+<para><token>stripe_unit_size</token>。このパラメータは、通信に複数のTCPストリーム
+を利用する場合に、どのように転送内容を分割するかを指定します。
+もしこの指定がない場合、転送内容を単に<token>parallel_streams</token>個に
+分割して送信します。
+これに対し、<token>stripe_unit_size</token>を指定した場合は、このパラメータ
+で指定したバイト数を単位としてストライピングして送信します。
+通常、単なる分割よりもストライピングの方が性能的に有利です。
 </para>
 <para>
-���Υѥ�᡼���ϡ��嵭��<token>parallel_streams</token>�Ȥ���1����礭����
-����ꤷ���̿��Τߤ�ͭ���Ǥ���
-���ߡ����Υѥ�᡼���ϥե������ʣ����ǽ�ǤΤ�ͭ���Ǥ���
-���ߤμ����Ǥϡ�gfrep(1)���ޥ�ɤ�ư�����ۥ��ȤΥ桼������ե������
-���Ƥ��Ѥ����ޤ����ۥ��Ȼ������Ӥ����Τϡ�ʣ����Υۥ��ȤǤϤʤ���
-ʣ�����Υۥ��ȤǤ���</para>
+このパラメータは、上記の<token>parallel_streams</token>として1より大きな値
+を指定した通信のみで有効です。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、gfrep(1)コマンドを起動したホストのユーザ設定ファイルの
+内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
+複製元のホストです。</para>
 
-<para><token>rate_limit</token>�����ͥ������1�ܤ�������̿��Х���������¤���
-�¸�Ū�ʵ�ǽ�Ǥ������ꤹ���ͤ�ñ�̤�bps (bit per second)�Ǥ���
-���ߡ����Υѥ�᡼���ϥե������ʣ����ǽ�ǤΤ�ͭ���Ǥ���
-���ߤμ����Ǥϡ�ʣ�����Υۥ��Ⱦ��gfsd������ե����뤬�Ѥ����ޤ���
-�ۥ��Ȼ������Ӥ����Τϡ�ʣ����Υۥ��ȤǤ���</para>
+<para><token>rate_limit</token>。コネクション1本あたりの通信バンド幅を制限する
+実験的な機能です。指定する値の単位はbps (bit per second)です。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、複製元のホスト上のgfsdの設定ファイルが用いられます。
+ホスト指定と比較されるのは、複製先のホストです。</para>
 
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	netparam parallel_streams=2	10.0.0.0/8
 	netparam stripe_unit_size=8192	10.0.0.0/8
@@ -756,43 +756,43 @@ TCP�Υ��ȥ꡼�������ꤷ�ޤ�����ά����1�Ǥ���
  -->
 
 <varlistentry>
-<term><token>sockopt </token><parameter>���ץ����</parameter><emphasis>[=</emphasis><parameter>��</parameter><emphasis>] [<token>LISTENER</token> | <parameter>�ۥ��Ȼ���</parameter>]</emphasis></term>
+<term><token>sockopt </token><parameter>オプション</parameter><emphasis>[=</emphasis><parameter>値</parameter><emphasis>] [<token>LISTENER</token> | <parameter>ホスト指定</parameter>]</emphasis></term>
 <listitem>
-<para>�̿�socket(2)���Ф��ơ�setsockopt(2)�����ƥॳ�����Ȥä�
-�����åȡ����ץ�������ꤷ�ޤ���</para>
+<para>通信socket(2)に対して、setsockopt(2)システムコールを使って
+ソケット・オプションを指定します。</para>
 
-<para>��2������������ʸ����<token>LISTENER</token>����ꤷ����硢
-�����С�¦(���¦)�Υ����åȤ˻��ꤹ�륪�ץ����ˤʤ�ޤ���
-���ξ�硢�̿��������˴ط��ʤ���
-��Χ�˥����åȡ����ץ�������ꤵ��ޤ���</para>
+<para>第2引数に全て大文字で<token>LISTENER</token>を指定した場合、
+サーバー側(着呼側)のソケットに指定するオプションになります。
+この場合、通信する相手に関係なく、
+一律にソケット・オプションが設定されます。</para>
 <para>
-��2�����˥ۥ��Ȼ���򵭽Ҥ�����硢���饤�����¦(ȯ��¦)��
-�����åȤ˻��ꤹ�륪�ץ����ˤʤ�ޤ������ξ�硢�̿�����������
-�����åȡ����ץ������Ѥ��뤳�Ȥ��Ǥ��ޤ���
-�ʤ�����2������"*"�ȵ��Ҥ���ȡ����饤�����¦(ȯ��¦)�����Ƥ�
-�ۥ��Ȥ��̣���뤳�Ȥˤʤꡢ�����С�¦(���¦)�ˤ�Ŭ�Ѥ���ޤ���
+第2引数にホスト指定を記述した場合、クライアント側(発呼側)の
+ソケットに指定するオプションになります。この場合、通信する相手毎に
+ソケット・オプションを変えることができます。
+なお、第2引数に"*"と記述すると、クライアント側(発呼側)の全ての
+ホストを意味することになり、サーバー側(着呼側)には適用されません。
 </para>
 <para>
-��2�������ά������硢�����С�¦�ȥ��饤�����¦��ξ���ǡ�
-���Ƥ��̿������Ф���Ʊ�������åȡ����ץ��������ꤷ�ޤ���</para>
+第2引数を省略した場合、サーバー側とクライアント側の両方で、
+全ての通信相手に対して同じソケット・オプションを設定します。</para>
 
-<para>�����ǽ�ʥ����åȡ����ץ����ˤϼ��Τ�Τ�����ޤ���</para>
+<para>指定可能なソケット・オプションには次のものがあります。</para>
 
-<para><token>debug</token>��setsockopt(2)�����ƥॳ����ǡ�<constant>SO_DEBUG</constant>�����åȡ����ץ�������ꤷ�ޤ����ͤ򵭽Ҥ���ɬ�פϤ���ޤ���</para>
+<para><token>debug</token>。setsockopt(2)システムコールで、<constant>SO_DEBUG</constant>ソケット・オプションを指定します。値を記述する必要はありません。</para>
 
-<para><token>keepalive</token>��setsockopt(2)�����ƥॳ����ǡ�<constant>SO_KEEPALIVE</constant>
-�����åȡ����ץ�������ꤷ�ޤ����ͤ򵭽Ҥ���ɬ�פϤ���ޤ���</para>
+<para><token>keepalive</token>。setsockopt(2)システムコールで、<constant>SO_KEEPALIVE</constant>
+ソケット・オプションを指定します。値を記述する必要はありません。</para>
 
-<para><token>sndbuf</token>��setsockopt(2)�����ƥॳ����ǡ�<constant>SO_SNDBUF</constant>
-�����åȡ����ץ�������ꤷ�ޤ����ͤλ��꤬ɬ�פǤ���</para>
+<para><token>sndbuf</token>。setsockopt(2)システムコールで、<constant>SO_SNDBUF</constant>
+ソケット・オプションを指定します。値の指定が必要です。</para>
 
-<para><token>rcvbuf</token>��setsockopt(2)�����ƥॳ����ǡ�<constant>SO_RCVBUF</constant>
-�����åȡ����ץ�������ꤷ�ޤ����ͤλ��꤬ɬ�פǤ���</para>
+<para><token>rcvbuf</token>。setsockopt(2)システムコールで、<constant>SO_RCVBUF</constant>
+ソケット・オプションを指定します。値の指定が必要です。</para>
 
-<para><token>tcp_nodelay</token>��setsockopt(2)�����ƥॳ����ǡ�<constant>TCP_NODELAY</constant>
-�����åȡ����ץ�������ꤷ�ޤ����ͤ򵭽Ҥ���ɬ�פϤ���ޤ���</para>
+<para><token>tcp_nodelay</token>。setsockopt(2)システムコールで、<constant>TCP_NODELAY</constant>
+ソケット・オプションを指定します。値を記述する必要はありません。</para>
 
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	sockopt tcp_nodelay 192.168.0.0/24
 	sockopt sndbuf=1048576 10.0.0.0/8
@@ -805,13 +805,13 @@ TCP�Υ��ȥ꡼�������ꤷ�ޤ�����ά����1�Ǥ���
 
 <!--
 <varlistentry>
-<term><token>address_use</token> <parameter>�ۥ��Ȼ���</parameter></term>
+<term><token>address_use</token> <parameter>ホスト指定</parameter></term>
 <listitem>
-<para>�ե����륷���ƥ�Ρ��ɤ�ʣ����IP���ɥ쥹�������硢������Τɤ�
-IP���ɥ쥹���̿����Ѥ��뤫����ꤷ�ޤ���
-����ʸ�ǻ��ꤷ�����ɥ쥹��Ŭ�礹��IP���ɥ쥹��ͥ�褷�ƻ��Ѥ��ޤ�����
-Ŭ�礹�륢�ɥ쥹���ʤ����Ǥ⡢�̿���Ԥ��ޤ���</para>
-<para>��:</para>
+<para>ファイルシステムノードに複数のIPアドレスがある場合、その中のどの
+IPアドレスを通信に用いるかを指定します。
+この文で指定したアドレスに適合するIPアドレスを優先して使用しますが、
+適合するアドレスがない場合でも、通信を行います。</para>
+<para>例:</para>
 <literallayout>
 	address_use 192.168.0.0/24
 </literallayout>
@@ -819,21 +819,21 @@ IP���ɥ쥹���̿����Ѥ��뤫����ꤷ�ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>client_architecture</token> <parameter>�������ƥ�����̾</parameter>&nbsp; <parameter>�ۥ��Ȼ���</parameter></term>
+<term><token>client_architecture</token> <parameter>アーキテクチャ名</parameter>&nbsp; <parameter>ホスト指定</parameter></term>
 <listitem>
 <para>
-���饤����ȥΡ��ɤ��¹ԥե�����˥�����������������򤹤�
-�ǥե���ȤΥ������ƥ�����̾����ꤷ�ޤ���
-���λ���ϡ����饤����ȥΡ��ɤˤĤ��ƤΤߺ��Ѥ��ޤ���
-�ե����륷���ƥ�Ρ��ɤˤĤ��Ƥϡ��᥿�ǡ��������Ф���Ͽ����Ƥ���
-�������ƥ�����̾���Ȥ��ޤ���
+クライアントノードが実行ファイルにアクセスする場合に選択する
+デフォルトのアーキテクチャ名を指定します。
+この指定は、クライアントノードについてのみ作用します。
+ファイルシステムノードについては、メタデータサーバに登録されている
+アーキテクチャ名が使われます。
 </para>
 <para>
-������Ф����Ķ��ѿ�GFARM_ARCHITECTURE��Ȥ��ȡ����饤����ȥΡ��ɤ��Ф��Ƥ�
-�ե����륷���ƥ�Ρ��ɤˤĤ��Ƥ⡢�¹ԥե�����Υǥե���ȤΥ������ƥ�����̾��
-���ꤹ�뤳�Ȥ��Ǥ��ޤ���
+これに対し、環境変数GFARM_ARCHITECTUREを使うと、クライアントノードに対しても
+ファイルシステムノードについても、実行ファイルのデフォルトのアーキテクチャ名を
+指定することができます。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	client_architecture i386-redhat8.0-linux linux-1.example.com
 	client_architecture i386-redhat8.0-linux linux-2.example.com
@@ -844,14 +844,14 @@ IP���ɥ쥹���̿����Ѥ��뤫����ꤷ�ޤ���
  -->
 
 <varlistentry>
-<term><token>known_network</token> <parameter>�ۥ��Ȼ���</parameter></term>
+<term><token>known_network</token> <parameter>ホスト指定</parameter></term>
 <listitem>
-<para>�ե����륷���ƥ�Ρ��ɤΥͥåȥ������ꤷ�ޤ���
-�ܥͥåȥ���ϡ�
-�ե����륷���ƥ�Ρ���������Υ��롼�ԥ󥰤����Ѥ���ޤ���
-����ʸ�ǻ��ꤷ�����ɥ쥹��Ŭ�礷�ʤ�IP���ɥ쥹�ξ�硢
-IPv4�Υ��饹C�ͥåȥ�������ꤵ��ޤ���</para>
-<para>ʣ���Υͥåȥ������ꤹ����ϡ��ʲ��Τ褦��ʣ������ꤷ�ޤ���</para>
+<para>ファイルシステムノードのネットワークを指定します。
+本ネットワークは、
+ファイルシステムノード選択時のグルーピングに利用されます。
+この文で指定したアドレスに適合しないIPアドレスの場合、
+IPv4のクラスCネットワークが仮定されます。</para>
+<para>複数のネットワークを指定する場合は、以下のように複数回指定します。</para>
 <literallayout>
 	known_network 192.168.0.0/25
 	known_network 192.168.0.128/25
@@ -860,30 +860,30 @@ IPv4�Υ��饹C�ͥåȥ�������ꤵ��ޤ���</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>network_receive_timeout</token> <parameter>�ÿ�</parameter></term>
+<term><token>network_receive_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
-<para>�ͥåȥ����𤷤��ǡ��������Υ����ॢ���Ȼ��֤���ñ�̤ǻ���
-���ޤ���
-�ǥե�����ͤ�60�äǤ���
-����ʸ�� gfarm2.conf ����� gfmd.conf �Τ�����ˤ����Ƥ�ͭ���Ǥ���
+<para>ネットワークを介したデータ受信のタイムアウト時間を秒単位で指定
+します。
+デフォルト値は60秒です。
+この文は gfarm2.conf および gfmd.conf のいずれにおいても有効です。
 </para>
-<para>Gfarm���饤����ȥץ�����ब���ꤷ�������Ԥä���Ρ�gfsd ����
-�Υǡ������ޤä����Ϥ��ʤ��ä����ϡ����� gfsd �Ȥ��̿�����ߤ�������
-���³������٤�¾�� gfsd �����ФȤ��̿����ߤޤ���
+<para>Gfarmクライアントプログラムが指定した時間待ったもの、gfsd から
+のデータがまったく届かなかった場合は、その gfsd との通信を中止し、処理
+を継続させるべく他の gfsd サーバとの通信を試みます。
 </para>
-<para>gfmd �����ꤷ�������Ԥä���Ρ�gfsd ����ǡ������ޤä���
-�Ϥ��ʤ��ä���硢���� gfsd �Ȥ��̿�����ߤ��ơ����� gfsd �ϥ����󤷤�
-��ΤȤߤʤ��ޤ���
+<para>gfmd が指定した時間待ったもの、gfsd からデータがまったく
+届かなかった場合、その gfsd との通信を中止して、その gfsd はダウンした
+ものとみなします。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>admin_user</token> <parameter>�桼��̾</parameter></term>
+<term><token>admin_user</token> <parameter>ユーザ名</parameter></term>
 <listitem>
 <para>
-gfmd.conf��Τ���ʸ�ǻ��ꤵ�줿�桼������
-�ǥե���Ȥ��ø��桼���Ȥʤ�ޤ���
+gfmd.conf内のこの文で指定されたユーザが、
+デフォルトの特権ユーザとなります。
 </para>
 </listitem>
 </varlistentry>
@@ -892,50 +892,50 @@ gfmd.conf��Τ���ʸ�ǻ��ꤵ�줿�桼������
 <term><token>admin_user_gsi_dn</token> <parameter>DN</parameter></term>
 <listitem>
 <para>
-gfmd.conf���admin_userʸ�ǻ��ꤵ�줿�ø��桼����Subject DN����ꤷ�ޤ���
+gfmd.conf内のadmin_user文で指定された特権ユーザのSubject DNを指定します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>local_user_map</token> <parameter>�桼���ޥåץե�����ѥ�̾</parameter> [<parameter>�ۥ���̾</parameter>:[<parameter>�ݡ����ֹ�</parameter>]] </term>
+<term><token>local_user_map</token> <parameter>ユーザマップファイルパス名</parameter> [<parameter>ホスト名</parameter>:[<parameter>ポート番号</parameter>]] </term>
 <listitem>
 <para>
-sharedsecretǧ�ڤˤ����ơ�
-�������Х�桼��̾�ȥ�������桼��̾���б��ط��򵭽Ҥ���
-�桼���ޥåץե�����ѥ�̾����ꤷ�ޤ���
-���������ɬ�ܤǤϤ���ޤ��󤬡�
-���ξ���������桼��̾���������Х�桼��̾���Ѵ�����ޤ���
+sharedsecret認証において、
+グローバルユーザ名とローカルユーザ名の対応関係を記述した
+ユーザマップファイルパス名を指定します。
+この設定は必須ではありませんが、
+その場合ローカルユーザ名がグローバルユーザ名に変換されます。
 </para>
 <para>
-Ʊ��桼�����Ф��ơ�
-�ۤʤ�������륢�������̾��Ϳ���Ƥ���ե����륷���ƥ�Ρ��ɤ�������䡢
-��������桼��̾�Ȥϰۤʤ륰�����Х�桼��̾�����Ѥ�������硢
-���Υե�����ǡ��ƥΡ��ɤΥ�������ʥ桼��̾���Ф��ơ�ñ���
-�������Х�桼��̾��������ޤ���</para>
-<para>��:</para>
+同一ユーザに対して、
+異なるローカルアカウント名を与えているファイルシステムノードがある場合や、
+ローカルユーザ名とは異なるグローバルユーザ名を利用したい場合、
+このファイルで、各ノードのローカルなユーザ名に対して、単一の
+グローバルユーザ名を定義します。</para>
+<para>例:</para>
 <literallayout>
 	local_user_map /etc/gfarm/gfarm-usermap
 </literallayout>
 
-<para>�桼���ޥåץե�����ϡ��������Х�桼��̾��
-��������桼��̾�򡢶���Ƕ��ڤäƳƹԤ˵��Ҥ��ޤ���</para>
-<para>�桼���ޥåץե������������:</para>	
+<para>ユーザマップファイルは、グローバルユーザ名と
+ローカルユーザ名を、空白で区切って各行に記述します。</para>
+<para>ユーザマップファイルの内容例:</para>	
 <literallayout>
 	foobar foo
 	quux baz
 </literallayout>
-<para>�������1���ܤλ���Ǥϡ����ΥΡ��ɤΥ�������桼��̾foo��
-�Ф��ƥ������Х�桼��̾foobar���������Ƥ��ޤ���</para>
+<para>この例の1行目の指定では、このノードのローカルユーザ名fooに
+対してグローバルユーザ名foobarが定義されています。</para>
 
 <para>
-�᥿�ǡ��������ФΥۥ���̾/�ݡ����ֹ����ꤹ��ȡ�
-��³��Υ����Ф��Ȥ˰ۤʤ�桼���ޥåץե������Ŭ�Ѥ��ޤ���
-�ݡ����ֹ���ά�������ϡ��ǥե���ȤΥݡ����ֹ�(601)����Ѥ��ޤ���
-local_user_map ��ʣ��������ǽ�Ǥ���
-��������桼��̾��Ʊ��������ʣ���Υե������¸�ߤ����硢�ǽ����������򤵤�ޤ���
+メタデータサーバのホスト名/ポート番号を指定すると、
+接続先のサーバごとに異なるユーザマップファイルを適用します。
+ポート番号を省略した場合は、デフォルトのポート番号(601)を使用します。
+local_user_map は複数回指定可能です。
+ローカルユーザ名が同一の定義が複数のファイルに存在する場合、最初の定義が選択されます。
 </para>
-<para>ʣ���Υ桼���ޥåץե��������:</para>
+<para>複数のユーザマップファイルの例:</para>
 <literallayout>
 	local_user_map /etc/gfarm/gfarm-usermap1-1
 	local_user_map /etc/gfarm/gfarm-usermap1-2
@@ -943,50 +943,50 @@ local_user_map ��ʣ��������ǽ�Ǥ���
 	local_user_map /etc/gfarm/gfarm-usermap2-2 server2
 </literallayout>
 <para>
-������Ǥ� server2 ����³����Ȥ��� gfarm-usermap2-1��gfarm-usermap2-2 �ν��֤�Ŭ�Ѥ��ޤ���
-server2 �ʳ�����³����Ȥ��� gfarm-usermap1-1��gfarm-usermap1-2 �ν��֤�Ŭ�Ѥ��ޤ���
+この例では server2 に接続するときは gfarm-usermap2-1、gfarm-usermap2-2 の順番に適用します。
+server2 以外に接続するときは gfarm-usermap1-1、gfarm-usermap1-2 の順番に適用します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>local_group_map</token> <parameter>���롼�ץޥåץե�����ѥ�̾</parameter> [<parameter>�ۥ���̾</parameter>:[<parameter>�ݡ����ֹ�</parameter>]]</term>
+<term><token>local_group_map</token> <parameter>グループマップファイルパス名</parameter> [<parameter>ホスト名</parameter>:[<parameter>ポート番号</parameter>]]</term>
 <listitem>
 <para>
-�������Х륰�롼��̾�ȥ������륰�롼��̾���б��ط��򵭽Ҥ���
-���롼�ץޥåץե�����ѥ�̾����ꤷ�ޤ���
-���Υޥåץե�����ϡ��������륷���ƥ�Υ��롼��ID�����Ѥ���gfarm2fs��
-Globus GridFTP��Gfarm DSI�ʤɤ����Ѥ���ޤ���
-���������ɬ�ܤǤϤ���ޤ��󤬡�
-���ξ��������륰�롼��̾�ϥ������Х륰�롼��̾���������Ȳ��ꤵ��ޤ���
+グローバルグループ名とローカルグループ名の対応関係を記述した
+グループマップファイルパス名を指定します。
+このマップファイルは，ローカルシステムのグループIDを利用するgfarm2fsや
+Globus GridFTPのGfarm DSIなどで利用されます。
+この設定は必須ではありませんが、
+その場合ローカルグループ名はグローバルグループ名と等しいと仮定されます。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	local_group_map /etc/gfarm/gfarm-groupmap
 </literallayout>
 
-<para>���롼�ץޥåץե�����ϡ��������Х륰�롼��̾��
-�������륰�롼��̾�򡢶���Ƕ��ڤäƳƹԤ˵��Ҥ��ޤ���</para>
+<para>グループマップファイルは、グローバルグループ名と
+ローカルグループ名を、空白で区切って各行に記述します。</para>
 
 <para>
-�᥿�ǡ��������ФΥۥ���̾/�ݡ����ֹ����ꤹ��ȡ�
-��³��Υ����Ф��Ȥ˰ۤʤ륰�롼�ץޥåץե������Ŭ�Ѥ��ޤ���
-������ˡ�� local_user_map ��Ʊ�ͤǤ���
+メタデータサーバのホスト名/ポート番号を指定すると、
+接続先のサーバごとに異なるグループマップファイルを適用します。
+指定方法は local_user_map と同様です。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_cache_timeout</token> <parameter>�ÿ�</parameter></term>
+<term><token>schedule_cache_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
-<para>gfarm�饤�֥�꤬����Ū���ݻ����Ƥ��롢�ե����륷���ƥ�Ρ���
-�Υ������塼��󥰽����˴ؤ����󡢤��ʤ�������ɥ��٥졼����
-�ǥ������������̡�ǧ�ڤ��̤뤫�ݤ����Υ���å����ͭ�����¤��ÿ��ǻ��ꤷ�ޤ���
-��ߤ��Ƥ����ե����륷���ƥ�Ρ��ɤ����褷���褦�ʾ�硢���δ��¤�
-�ڤ��ޤǤϡ����ΥΡ��ɤ��������塼��󥰤���ʤ����Ȥ�����ޤ���
-�ǥե���Ȥ�600�ä��ʤ��10ʬ�Ǥ���
+<para>gfarmライブラリが内部的に保持している、ファイルシステムノード
+のスケジューリング処理に関わる情報、すなわちロードアベレージ、
+ディスク空き容量、認証が通るか否か等のキャッシュの有効期限を秒数で指定します。
+停止していたファイルシステムノードが復活したような場合、この期限が
+切れるまでは、そのノードがスケジューリングされないことがあります。
+デフォルトは600秒すなわち10分です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	schedule_cache_timeout 60
 </literallayout>
@@ -994,15 +994,15 @@ Globus GridFTP��Gfarm DSI�ʤɤ����Ѥ���ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_concurrency</token> <parameter>������</parameter></term>
+<term><token>schedule_concurrency</token> <parameter>並列度</parameter></term>
 <listitem>
-<para>�ե����륷���ƥ�Ρ��ɤ򡢥������塼��󥰤Τ�������󸡺�����ݤ�
-�����٤���ꤷ�ޤ���
-���ο������䤹�������٤���ޤꡢ�������塼��󥰤��᤯����ޤ�����
-�ե����륷���ƥ�Ρ��ɤ���٤Ϲ⤯�ʤ�ޤ���
-�ǥե���Ȥ�10�Ǥ���
+<para>ファイルシステムノードを、スケジューリングのために並列検索する際の
+並列度を指定します。
+この数を増やすと並列度が高まり、スケジューリングが早く終りますが、
+ファイルシステムノードの負荷は高くなります。
+デフォルトは10です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	schedule_concurrency 10
 </literallayout>
@@ -1010,20 +1010,20 @@ Globus GridFTP��Gfarm DSI�ʤɤ����Ѥ���ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_concurrency_per_net</token> <parameter>������</parameter></term>
+<term><token>schedule_concurrency_per_net</token> <parameter>並列度</parameter></term>
 <listitem>
-<para>�ե����륷���ƥ�Ρ��ɤΥ������塼��󥰻��ˡ�
-�ե����륷���ƥ�Ρ��ɤ�°����ƥͥåȥ���ȡ����饤����ȤȤδ֤�
-�ͥåȥ���ٱ���¬���ޤ������Υѥ�᡼���ϡ��ƥͥåȥ�����
-���ĤΥե����륷���ƥ�Ρ��ɤ��оݤ˷�¬���뤫����ꤷ�ޤ���
-��ߤ��Ƥ���ե����륷���ƥ�Ρ��ɤ�¿�����䡢
-��٤ι⤤�ե����륷���ƥ�Ρ��ɤ�¿����¬�������礭�����ˤϡ�
-���Υѥ�᡼�������䤷�������ɤ����⤷��ޤ���
-���Υѥ�᡼�������䤷�����ˤϡ�
-����˱����� schedule_concurrency �ѥ�᡼���ˤĤ��Ƥ����䤹���Ȥ�侩���ޤ���
-�ǥե���Ȥ�3�Ǥ���
+<para>ファイルシステムノードのスケジューリング時に、
+ファイルシステムノードが属する各ネットワークと、クライアントとの間の
+ネットワーク遅延を計測します。このパラメータは、各ネットワーク毎に
+幾つのファイルシステムノードを対象に計測するかを指定します。
+停止しているファイルシステムノードが多い場合や、
+負荷の高いファイルシステムノードが多く計測誤差が大きい場合には、
+このパラメータを増やした方が良いかもしれません。
+このパラメータを増やした場合には、
+それに応じて schedule_concurrency パラメータについても増やすことを推奨します。
+デフォルトは3です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	schedule_concurrency_per_net 3
 </literallayout>
@@ -1031,15 +1031,15 @@ Globus GridFTP��Gfarm DSI�ʤɤ����Ѥ���ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_idle_load_thresh</token> <parameter>CPU���</parameter></term>
+<term><token>schedule_idle_load_thresh</token> <parameter>CPU負荷</parameter></term>
 <listitem>
-<para>�ե����륷���ƥ�Ρ��ɤΥ������塼��󥰻��ˡ�
-CPU��٤��㤤�Ȥߤʤ����CPU��٤���ꤷ�ޤ���
-�����ǻ��ꤵ���CPU��٤���㤤CPU��٤Υե����륷���ƥ�Ρ��ɤ�
-�ޤ��ϥ������塼���оݤȤʤ�ޤ���
-�ǥե�����ͤ�0.1�Ǥ���
+<para>ファイルシステムノードのスケジューリング時に、
+CPU負荷が低いとみなされるCPU負荷を指定します。
+ここで指定されるCPU負荷より低いCPU負荷のファイルシステムノードが
+まずはスケジュール対象となります。
+デフォルト値は0.1です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	schedule_idle_load_thresh 0.1
 </literallayout>
@@ -1047,15 +1047,15 @@ CPU��٤��㤤�Ȥߤʤ����CPU��٤���ꤷ�ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_busy_load_thresh</token> <parameter>CPU���</parameter></term>
+<term><token>schedule_busy_load_thresh</token> <parameter>CPU負荷</parameter></term>
 <listitem>
-<para>�ե����륷���ƥ�Ρ��ɤΥ������塼��󥰻��ˡ�
-CPU��٤��⤤�Ȥߤʤ����CPU��٤���ꤷ�ޤ���
-�����ǻ��ꤵ���CPU��٤��⤤CPU��٤Υե����륷���ƥ�Ρ��ɤ�
-���饹�����塼���оݤȤʤ�ޤ���
-�ǥե�����ͤ�0.5�Ǥ���
+<para>ファイルシステムノードのスケジューリング時に、
+CPU負荷が高いとみなされるCPU負荷を指定します。
+ここで指定されるCPU負荷より高いCPU負荷のファイルシステムノードは
+当初スケジュール対象となりません。
+デフォルト値は0.5です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	schedule_busy_load_thresh 0.5
 </literallayout>
@@ -1063,15 +1063,15 @@ CPU��٤��⤤�Ȥߤʤ����CPU��٤���ꤷ�ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_virtual_load</token> <parameter>CPU���</parameter></term>
+<term><token>schedule_virtual_load</token> <parameter>CPU負荷</parameter></term>
 <listitem>
-<para>�ե����륷���ƥ�Ρ��ɤ����򤵤줿�Ȥ���
-CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
-����ˤ�ꡢ
-���٥������塼�뤵�줿�ե����륷���ƥ�Ρ��ɤ����٤⥹�����塼�뤵��뤳�Ȥ��ɤ��Ǥ��ޤ���
-�ǥե�����ͤ�0.3�Ǥ���
+<para>ファイルシステムノードが選択されたとき、
+CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
+これにより、
+一度スケジュールされたファイルシステムノードが何度もスケジュールされることを防いでいます。
+デフォルト値は0.3です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	schedule_virtual_load 0.3
 </literallayout>
@@ -1079,17 +1079,17 @@ CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_candidates_ratio</token> <parameter>��Ψ</parameter></term>
+<term><token>schedule_candidates_ratio</token> <parameter>比率</parameter></term>
 <listitem>
-<para>�ե����륷���ƥ�Ρ��ɤΥ������塼��󥰻��ˡ�
-�����ɥ��٥졼���� schedule_busy_load_thresh �ʲ��ΥΡ��ɤ���
-�������塼����оݤΥΡ��ɿ��β��ܸ��Ĥ��ä��顢
-�������Ǥ��ڤ뤫����ꤷ�ޤ���
-�����ͤ��礭������ȡ����¿���ΥΡ��ɤ򸡺����뤿�ᡢ
-�������塼��󥰤����٤Ͼ夬��ޤ������������٤��ʤ�ޤ���
-�ǥե�����ͤ�4.0�Ǥ���
+<para>ファイルシステムノードのスケジューリング時に、
+ロードアベレージが schedule_busy_load_thresh 以下のノードが、
+スケジューリング対象のノード数の何倍見つかったら、
+検索を打ち切るかを指定します。
+この値を大きくすると、より多くのノードを検索するため、
+スケジューリングの精度は上がりますが、処理は遅くなります。
+デフォルト値は4.0です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	schedule_candidates_ratio 4.0
 </literallayout>
@@ -1097,15 +1097,15 @@ CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_rtt_thresh</token> <parameter>��Ψ</parameter></term>
+<term><token>schedule_rtt_thresh</token> <parameter>比率</parameter></term>
 <listitem>
-<para>�ե����륷���ƥ�Ρ��ɤΥ������塼��󥰻��ˡ�
-�ե����륷���ƥ�Ρ��ɤ�°����ƥͥåȥ���ȡ����饤����ȤȤδ֤�
-�ͥåȥ���ٱ䤬�����ܤˤʤä��顢���Υͥåȥ�����Ф���
-�������塼��󥰤�ͥ���٤��������ꤷ�ޤ���
-�ǥե�����ͤ�4.0�Ǥ���
+<para>ファイルシステムノードのスケジューリング時に、
+ファイルシステムノードが属する各ネットワークと、クライアントとの間の
+ネットワーク遅延が、何倍になったら、そのネットワークに対する
+スケジューリングの優先度を落すかを指定します。
+デフォルト値は4.0です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	schedule_rtt_thresh 4.0
 </literallayout>
@@ -1114,17 +1114,17 @@ CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
 
 <!--
 <varlistentry>
-<term><token>write_local_priority</token> <parameter>ͭ����</parameter></term>
+<term><token>write_local_priority</token> <parameter>有効性</parameter></term>
 <listitem>
-<para>gfarm�ϡ��ե������񤭹���Ρ��ɤ����ݡ��Ǥ���¤��������
-�ۥ��Ȥ�ͥ�褹��褦��ư��ޤ�������ʸ��disable�Ȼ��ꤹ�뤳�Ȥˤ�äơ�
-��������ۥ��Ȥ�¾�Υۥ��Ȥ�Ʊ�ͤ˰����褦���ѹ����뤳�Ȥ��Ǥ��ޤ���
-�Ķ��ѿ�GFARM_WRITE_LOCAL_PRIORITY��disable�����ꤷ�Ƥ⡢Ʊ����̣��
-�ʤ�ޤ���
-ξ�����ꤷ�����ϡ��Ķ��ѿ���ͥ�褵��ޤ���
-�ǥե���Ȥ�enable�Ǥ���
+<para>gfarmは、ファイルを書き込むノードを決める際、できる限りローカル
+ホストを優先するように動作します。この文でdisableと指定することによって、
+ローカルホストを他のホストと同様に扱うように変更することができます。
+環境変数GFARM_WRITE_LOCAL_PRIORITYにdisableと設定しても、同じ意味に
+なります。
+両方指定した場合は、環境変数が優先されます。
+デフォルトはenableです。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	write_local_priority disable
 </literallayout>
@@ -1132,19 +1132,19 @@ CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>write_target_domain</token> <parameter>�ɥᥤ��̾</parameter></term>
+<term><token>write_target_domain</token> <parameter>ドメイン名</parameter></term>
 <listitem>
-<para>gfarm���ե������񤭹���Ρ��ɤ����ݡ��Ǥ���¤ꤳ����
-���ꤷ���ɥᥤ���ͥ�褹��褦��ư��ޤ���
-�����ǻ��ꤷ���ɥᥤ��˥ե����������ǽ�ʥۥ��Ȥ�¸�ߤ��ʤ����䡢
-�äˤ��λ����Ԥʤ�ʤ��ä����ˤϡ����Ρ��ɤ��оݤȤʤ�ޤ���
-�Ķ��ѿ�GFARM_WRITE_TARGET_DOMAIN�Ǥ⡢Ʊ�ͤʻ��꤬�Ǥ��ޤ���
-ξ�����ꤷ�����ϡ��Ķ��ѿ���ͥ�褵��ޤ���
-�ʤ�ޤ���
-���λ����ʣ����ԤʤäƤ⡢�ǽ�λ���Τߤ����Ѥ��졢�����ܰʹߤ�
-ñ��̵�뤵���Τ����դ��Ƥ���������
+<para>gfarmがファイルを書き込むノードを決める際、できる限りここで
+指定したドメインを優先するように動作します。
+ここで指定したドメインにファイル作成可能なホストが存在しない場合や、
+特にこの指定を行なわなかった場合には、全ノードが対象となります。
+環境変数GFARM_WRITE_TARGET_DOMAINでも、同様な指定ができます。
+両方指定した場合は、環境変数が優先されます。
+なります。
+この指定を複数回行なっても、最初の指定のみが利用され、二番目以降は
+単に無視されるので注意してください。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	write_target_domain example.org
 </literallayout>
@@ -1153,21 +1153,21 @@ CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
  -->
 
 <varlistentry>
-<term><token>minimum_free_disk_space</token> <parameter>�Х��ȿ�</parameter></term>
+<term><token>minimum_free_disk_space</token> <parameter>バイト数</parameter></term>
 <listitem>
-<para>�ե����륷���ƥ�Ρ��ɤ�ɬ�פʺǾ����٤Υǥ������������̤����
-���ޤ������Υ������ʲ��ζ������̤����ʤ��ե����륷���ƥ�Ρ��ɤϡ�
-�ե�����񤭹��ߤ�Ԥ���ǽ���Τ�������Ԥ��ݤˡ����򤵤�ˤ����ʤ�ޤ���
-����ϥХ���ñ�̤ǹԤ��ޤ����������������˶���򳫤�����k/M/G/T�����
-���뤳�Ȥǡ����줾��1k�Х��ȡ�1M�Х��ȡ�1G�Х��ȡ�1T�Х��Ȥ�ñ�̤Ȥ���
-���Ȥ��Ǥ��ޤ���
-�ǥե���Ȥ�128M�Х��ȤǤ���
+<para>ファイルシステムノードで必要な最小限度のディスク空き容量を指定
+します。このサイズ以下の空き容量しかないファイルシステムノードは、
+ファイル書き込みを行う可能性のある操作を行う際に、選択されにくくなります。
+指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定
+することで、それぞれ1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする
+ことができます。
+デフォルトは128Mバイトです。
 </para>
 <para>
-���Υѥ�᡼���ϡ�gfarm2.conf��gfmd.conf��ξ���ǻ��ꤹ��ɬ�פ�����ޤ���
-ͭ���ˤ��뤿��ˤ� gfmd ����� Gfarm���饤����Ȥ�Ƶ�ư����ɬ�פ�����ޤ���
+このパラメータは、gfarm2.confとgfmd.confの両方で指定する必要があります。
+有効にするためには gfmd および Gfarmクライアントを再起動する必要があります。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	minimum_free_disk_space 1G
 </literallayout>
@@ -1175,13 +1175,13 @@ CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>simultaneous_replication_receivers</token> <parameter>Ʊ��������</parameter></term>
+<term><token>simultaneous_replication_receivers</token> <parameter>同時処理数</parameter></term>
 <listitem>
-<para>gfmd ��Ƴ��ʣ��������ñ��ʣ�������ۥ��Ȥ��Ф��ơ�
-Ʊ���ˤ����Ĥޤ��¹Ԥ��ƹԤʤ����Ȥ�����������ꤷ�ޤ���
-�ǥե���Ȥ� 20�Ǥ���
+<para>gfmd 主導の複製処理を、単一複製作成ホストに対して、
+同時にいくつまで並行して行なうことを許すかを設定します。
+デフォルトは 20です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	simultaneous_replication_receivers 40
 </literallayout>
@@ -1189,13 +1189,13 @@ CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>gfsd_connection_cache</token> <parameter>���ͥ�������</parameter></term>
+<term><token>gfsd_connection_cache</token> <parameter>コネクション数</parameter></term>
 <listitem>
-<para>gfarm�饤�֥�꤬gfsd�Ȥ��̿����Ѥ��륳�ͥ������򡢤�����
-�ޤǥ���å��夹�뤫����ꤷ�ޤ���
-�ǥե���Ȥ�16���ͥ������Ǥ���
+<para>gfarmライブラリがgfsdとの通信に用いるコネクションを、いくつ
+までキャッシュするかを指定します。
+デフォルトは16コネクションです。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	gfsd_connection_cache 32
 </literallayout>
@@ -1203,16 +1203,16 @@ CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>xmlattr_size_limit</token> <parameter>�Х��ȿ�</parameter></term>
+<term><token>xmlattr_size_limit</token> <parameter>バイト数</parameter></term>
 <listitem>
-<para>XML��ĥ°�����ͤȤ��ơ����Х��Ȥޤ������ǽ������ꤷ�ޤ���
-�ǥե���Ȥ�786432�Х��ȤǤ���
-983040�Х��Ȥ����礭���ͤ���ꤹ�뤳�ȤϤǤ��ޤ���
+<para>XML拡張属性の値として、何バイトまで設定可能かを指定します。
+デフォルトは786432バイトです。
+983040バイトよりも大きな値を指定することはできません。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ��ꡢgfarm2.conf�Ǥ�̵�뤵��ޤ���
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	xmlattr_size_limit 786432
 </literallayout>
@@ -1220,16 +1220,16 @@ CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>xattr_size_limit</token> <parameter>�Х��ȿ�</parameter></term>
+<term><token>xattr_size_limit</token> <parameter>バイト数</parameter></term>
 <listitem>
-<para>��ĥ°�����ͤȤ��ơ����Х��Ȥޤ������ǽ������ꤷ�ޤ���
-�ǥե���Ȥ�65536�Х��ȤǤ���
-983040�Х��Ȥ����礭���ͤ���ꤹ�뤳�ȤϤǤ��ޤ���
+<para>拡張属性の値として、何バイトまで設定可能かを指定します。
+デフォルトは65536バイトです。
+983040バイトよりも大きな値を指定することはできません。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ��ꡢgfarm2.conf�Ǥ�̵�뤵��ޤ���
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	xattr_size_limit 65536
 </literallayout>
@@ -1237,12 +1237,12 @@ CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>attr_cache_limit</token> <parameter>�Ŀ�</parameter></term>
+<term><token>attr_cache_limit</token> <parameter>個数</parameter></term>
 <listitem>
-<para>gfarm�饤�֥�꤬����å��夹��°���κ��������ꤷ�ޤ���
-�ǥե���Ȥ�40000�ĤǤ���
+<para>gfarmライブラリがキャッシュする属性の最大数を指定します。
+デフォルトは40000個です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	attr_cache_limit 100000
 </literallayout>
@@ -1250,12 +1250,12 @@ CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>attr_cache_timeout</token> <parameter>�ߥ��ÿ�</parameter></term>
+<term><token>attr_cache_timeout</token> <parameter>ミリ秒数</parameter></term>
 <listitem>
-<para>gfarm�饤�֥�꤬°���򥭥�å��夷�Ƥ�����֤򡢥ߥ���ñ�̤ǻ��ꤷ�ޤ���
-�ǥե���Ȥ� 1000�ߥ��ä��ʤ�� 1�äǤ���
+<para>gfarmライブラリが属性をキャッシュしている時間を、ミリ秒単位で指定します。
+デフォルトは 1000ミリ秒すなわち 1秒です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	attr_cache_timeout 3600000
 </literallayout>
@@ -1263,18 +1263,18 @@ CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>log_level</token> <parameter>ͥ���٥�٥�</parameter></term>
+<term><token>log_level</token> <parameter>優先度レベル</parameter></term>
 <listitem>
 <para>
-�ɤ�ͥ���٥�٥�ʾ�Υ�������Ϥ��뤫����ꤷ�ޤ���
-�����ǻ��ꤷ����٥�̤����ͥ���٤Υ����ϡ�syslog��ɸ�२�顼��
-�����ޤ���
-��٥�ϡ�ͥ���٤ι⤤���"emerg", "alert", "crit", "err", "warning",
-"notice", "info", "debug"�Ǥ���
-�ǥե���Ȥν��ϥ�٥��"info"�Ǥ���
-"crit"�ʾ��ͥ���٤���ꤹ�뤳�Ȥϡ�������Ǥ��ޤ���
+どの優先度レベル以上のログを出力するかを指定します。
+ここで指定したレベル未満の優先度のログは、syslogや標準エラーへ
+送られません。
+レベルは、優先度の高い順に"emerg", "alert", "crit", "err", "warning",
+"notice", "info", "debug"です。
+デフォルトの出力レベルは"info"です。
+"crit"以上の優先度を指定することは、お勧めできません。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	log_level debug
 </literallayout>
@@ -1282,15 +1282,15 @@ CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>log_message_verbose_level</token> <parameter>��٥�</parameter></term>
+<term><token>log_message_verbose_level</token> <parameter>レベル</parameter></term>
 <listitem>
 <para>
-������å������ξ�Ĺ�٤���ꤷ�ޤ���
-�ǥե���Ȥ�0�Ǥ�����٥�0�Ǥϡ�����ID�����Ϥ���ޤ���
-��٥�1�Ǥϡ���٥�0�˲ä������������ɤΥե�����̾�ȹ��ֹ椬���Ϥ���ޤ���
-��٥�2�Ǥϡ���٥�1�˲ä��ؿ�̾�����Ϥ���ޤ���
+ログメッセージの冗長度を指定します。
+デフォルトは0です。レベル0では、ログIDが出力されます。
+レベル1では、レベル0に加えソースコードのファイル名と行番号が出力されます。
+レベル2では、レベル1に加え関数名が出力されます。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	log_message_verbose_level 1
 </literallayout>
@@ -1298,12 +1298,12 @@ CPU��٤Υ��饤����ȥ���å���ˤ����ǻ��ꤵ���CPU��٤��ä����ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>log_auth_verbose</token> <parameter>ͭ����</parameter></term>
+<term><token>log_auth_verbose</token> <parameter>有効性</parameter></term>
 <listitem>
 <para>
-enable�Ȼ��ꤷ����硢ǧ�ڽ����˴ؤ���ܺ٤ʥ�����Ͽ���ޤ���
+enableと指定した場合、認証処理に関する詳細なログを記録します。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	log_auth_verbose enable
 </literallayout>
@@ -1311,16 +1311,16 @@ enable�Ȼ��ꤷ����硢ǧ�ڽ����˴ؤ���ܺ٤ʥ�����Ͽ���ޤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>file_trace</token> <parameter>ͭ����</parameter></term>
+<term><token>file_trace</token> <parameter>有効性</parameter></term>
 <listitem>
 <para>
-enable�Ȼ��ꤷ����硢�ե�����������ѹ�������˴ؤ���
-�ƺ������ν��ϵ�ǽ��ͭ���ˤ��ޤ���
+enableと指定した場合、ファイル作成・変更・削除に関する
+監査ログの出力機能を有効にします。
 </para>
 <para>
-���Υѥ�᡼���ϡ�gfarm2.conf��gfmd.conf��ξ����ͭ���Ǥ���
+このパラメータは、gfarm2.confとgfmd.confの両方で有効です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	file_trace enable
 </literallayout>
@@ -1328,33 +1328,33 @@ enable�Ȼ��ꤷ����硢�ե�����������ѹ�������˴ؤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>fatal_action</token> <parameter>ư��̾</parameter></term>
+<term><token>fatal_action</token> <parameter>動作名</parameter></term>
 <listitem>
 <para>
-���Υѥ�᡼���Ǥϡ���̿Ū�ʥ��顼��ȯ�������Ȥ���ư������ꤷ�ޤ���
-�ǥե���Ȥ� <replaceable>backtrace_and_abort</replaceable> �Ǥ���
+このパラメータでは、致命的なエラーが発生したときの動作を設定します。
+デフォルトは <replaceable>backtrace_and_abort</replaceable> です。
 </para>
 <para>
-<!-- ���ι�򲼤ˤ���<variablelist>�ι�θ���˽񤯤ȡ�
-     man page �ǤΥ���ǥ�Ȥ�̵��������ޤ��� -->
-��:
+<!-- この項を下にある<variablelist>の項の後ろに書くと、
+     man page でのインデントが無効化されます。 -->
+例:
 </para>
 <literallayout>
 	fatal_action backtrace_and_abort
 </literallayout>
 <para>
-�����ǽ��ư��̾�ϰʲ����̤�Ǥ�:
+指定可能な動作名は以下の通りです:
 </para>
 <variablelist>
 <varlistentry>
 <term><token>backtrace_and_abort</token></term>
 <listitem>
 <para>
-�Хå��ȥ졼������Ϥ����塢
+バックトレースを出力した後、
 <citerefentry>
 <refentrytitle>abort</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry>
-��ƤӤޤ���
+を呼びます。
 </para>
 </listitem>
 </varlistentry>
@@ -1362,11 +1362,11 @@ enable�Ȼ��ꤷ����硢�ե�����������ѹ�������˴ؤ���
 <term><token>backtrace_and_exit</token></term>
 <listitem>
 <para>
-�Хå��ȥ졼������Ϥ����塢
+バックトレースを出力した後、
 <citerefentry>
 <refentrytitle>exit</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry>
-��ƤӤޤ���
+を呼びます。
 </para>
 </listitem>
 </varlistentry>
@@ -1377,7 +1377,7 @@ enable�Ȼ��ꤷ����硢�ե�����������ѹ�������˴ؤ���
 <citerefentry>
 <refentrytitle>abort</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry>
-��ƤӤޤ���
+を呼びます。
 </para>
 </listitem>
 </varlistentry>
@@ -1388,7 +1388,7 @@ enable�Ȼ��ꤷ����硢�ե�����������ѹ�������˴ؤ���
 <citerefentry>
 <refentrytitle>exit</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry>
-��ƤӤޤ���
+を呼びます。
 </para>
 </listitem>
 </varlistentry>
@@ -1397,36 +1397,36 @@ enable�Ȼ��ꤷ����硢�ե�����������ѹ�������˴ؤ���
 </varlistentry>
 
 <varlistentry>
-<term><token>debug_command</token> <parameter>���ޥ�ɹ�</parameter></term>
+<term><token>debug_command</token> <parameter>コマンド行</parameter></term>
 <listitem>
 <para>
-Gfarm�Υ��ץꥱ�������ץ�����ब����å��夷���� (SIGSEGV, SIGBUG��
-����������������)�����Υѥ�᡼���˵������ǥХå����ޥ�ɤ��¹Ԥ���ޤ���
-������򼨤��ޤ���
+Gfarmのアプリケーションプログラムがクラッシュした際 (SIGSEGV, SIGBUGを
+受け取る等した場合)、このパラメータに記したデバッグコマンドが実行されます。
+記述例を示します。
 </para>
 <literallayout>
 	debug_command env DISPLAY=:0.0 xterm -e gdb %e %p
 </literallayout>
 <para>
-�����ǡ�"%e", "%p" �ϼºݤΥץ������̾���ץ�����ID�ˤ��줾��Ÿ������ޤ���
-"%" ʸ�����Τ򥳥ޥ�ɥ饤����˵��Ҥ��������ϡ�"%%" �Ƚ񤤤Ʋ�������
+ここで、"%e", "%p" は実際のプログラム名、プロセスIDにそれぞれ展開されます。
+"%" 文字自体をコマンドライン中に記述したい場合は、"%%" と書いて下さい。
 </para>
 <para>
-���Υѥ�᡼���ϡ�gfarm2.conf��gfmd.conf��ξ����ͭ���Ǥ���
-���Υѥ�᡼������ꤷ�ʤ��ä���硢�ǥХå����ޥ�ɤϼ¹Ԥ���ޤ���
+このパラメータは、gfarm2.confとgfmd.confの両方で有効です。
+このパラメータを指定しなかった場合、デバッグコマンドは実行されません。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>no_file_system_node_timeout</token> <parameter>�ÿ�</parameter></term>
+<term><token>no_file_system_node_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
-<para>���Ѳ�ǽ�ʥե����륷���ƥ�Ρ��ɤ�¸�ߤ��ʤ���硤
-Gfarm���饤����ȥ饤�֥��ϥե����륷���ƥ�Ρ��ɤ����Ѳ�ǽ�ˤʤ�ޤǻ�Ԥ򷫤��֤��ޤ�����
-���Υ����ॢ���Ȼ��֤���ñ�̤ǻ��ꤷ�ޤ���
-�ǥե���Ȥ� 30�äǤ���
+<para>利用可能なファイルシステムノードが存在しない場合，
+Gfarmクライアントライブラリはファイルシステムノードが利用可能になるまで試行を繰り返しますが、
+そのタイムアウト時間を秒単位で指定します。
+デフォルトは 30秒です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	no_file_system_node_timeout 30
 </literallayout>
@@ -1434,14 +1434,14 @@ Gfarm���饤����ȥ饤�֥��ϥե����륷���ƥ�Ρ��ɤ����Ѳ�ǽ�ˤʤ�ޤǻ�Ԥ򷫤
 </varlistentry>
 
 <varlistentry>
-<term><token>gfmd_reconnection_timeout</token> <parameter>�ÿ�</parameter></term>
+<term><token>gfmd_reconnection_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
-<para>�᥿�ǡ��������Фؤ���³�����Ǥ��줿��硤
-�᥿�ǡ��������Фؤκ���³�򷫤��֤��ޤ�����
-���Υ����ॢ���Ȼ��֤���ñ�̤ǻ��ꤷ�ޤ���
-�ǥե���Ȥ� 30�äǤ���
+<para>メタデータサーバへの接続が切断された場合，
+メタデータサーバへの再接続を繰り返しますが，
+そのタイムアウト時間を秒単位で指定します。
+デフォルトは 30秒です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	gfmd_reconnection_timeout 30
 </literallayout>
@@ -1450,16 +1450,16 @@ Gfarm���饤����ȥ饤�֥��ϥե����륷���ƥ�Ρ��ɤ����Ѳ�ǽ�ˤʤ�ޤǻ�Ԥ򷫤
 
 <!--
 <varlistentry>
-<term><token>record_atime</token> <parameter>ͭ����</parameter></term>
+<term><token>record_atime</token> <parameter>有効性</parameter></term>
 <listitem>
 <para>
-���Υ��ץ����enable�ξ�硢�ǽ�������������򤭤���ȵ�Ͽ���ޤ���
-disable�ξ��ˤϺǽ�������������ε�Ͽ�������Τˤʤ�ޤ�����
-�᥿�ǡ�����������٤������ꡢ��ǽ�����夹�뤳�Ȥ�����ޤ���
-disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
-�������ޤ���
+このオプションがenableの場合、最終アクセス時刻をきちんと記録します。
+disableの場合には最終アクセス時刻の記録は不正確になりますが、
+メタデータ更新の負荷が下がり、性能が向上することがあります。
+disable設定は、通常のファイルシステムにおける"noatime"オプションに
+相当します。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	record_atime disable
 </literallayout>
@@ -1468,15 +1468,15 @@ disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
  -->
 
 <varlistentry>
-<term><token>client_file_bufsize</token> <parameter>�Х��ȿ�</parameter></term>
+<term><token>client_file_bufsize</token> <parameter>バイト数</parameter></term>
 <listitem>
-<para>Gfarm���饤����ȥ饤�֥���libgfarm�ˤǻȤ���ե�����ΥХåե�
-  ��������Х���ñ�̤ǻ��ꤷ�ޤ����ǥե���Ȥ�1048568�Х��ȡ�= 1MiB -
-  8B�ˤǤ���Gfarm-2.5.0�����Ǥϡ��ե�����ΥХåե��������ϡ���֥ե���
-  �륢��������ǽ���ü���㲼�����ʤ�����ˤ⡢�ǥե�����Ͱʲ��Ǥ���ɬ
-  �פ�����ޤ���
+<para>Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ
+  サイズをバイト単位で指定します。デフォルトは1048568バイト（= 1MiB -
+  8B）です。Gfarm-2.5.0以前では、ファイルのバッファサイズは、遠隔ファイ
+  ルアクセス性能を極端に低下させないためにも、デフォルト値以下である必
+  要があります。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	client_file_bufsize 65536
 </literallayout>
@@ -1484,13 +1484,13 @@ disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
 </varlistentry>
 
 <varlistentry>
-<term><token>client_parallel_copy</token> <parameter>������</parameter></term>
+<term><token>client_parallel_copy</token> <parameter>並列度</parameter></term>
 <listitem>
-<para><command>gfprep</command>���ޥ�ɤ�<command>gfpcopy</command>����
-��ɤ������ư���ݤ������٤���ꤷ�ޤ������ꤷ�ʤ�����
-4�����ư��ޤ���
+<para><command>gfprep</command>コマンドと<command>gfpcopy</command>コマ
+ンドが並列で動作する際の並列度を指定します。指定しない場合は
+4並列で動作します。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	client_parallel_copy 10
 </literallayout>
@@ -1498,12 +1498,12 @@ disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
 </varlistentry>
 
 <varlistentry>
-<term><token>profile</token> <parameter>ͭ����</parameter></term>
+<term><token>profile</token> <parameter>有効性</parameter></term>
 <listitem>
 <para>
-���Υ��ץ����enable�ξ�硢�ץ��ե�����������Ϥ��ޤ���
+このオプションがenableの場合、プロファイル情報を出力します。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	profile enable
 </literallayout>
@@ -1511,15 +1511,15 @@ disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_list</token> <parameter>gfmd�ۥ���̾[:�ݡ����ֹ�]</parameter> <parameter>...</parameter></term>
+<term><token>metadb_server_list</token> <parameter>gfmdホスト名[:ポート番号]</parameter> <parameter>...</parameter></term>
 <listitem>
-<para>��Ĺ���᥿�ǡ��������Ф���³������򥹥ڡ������ڤ�ǻ��ꤷ�ޤ���
-�ݡ����ֹ���ά����ȥǥե���Ȥ�601����ꤷ�����Ȥˤʤ�ޤ���
+<para>冗長化メタデータサーバの接続先一覧をスペース区切りで指定します。
+ポート番号を省略するとデフォルトの601を指定したことになります。
 </para>
 <para>
-����ʸ��gfarm2.conf�Τߤ�ͭ���Ǥ��ꡢgfmd.conf�Ǥ�̵�뤵��ޤ���
+この文はgfarm2.confのみで有効であり、gfmd.confでは無視されます。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_list mds1 mds2:701
 </literallayout>
@@ -1527,14 +1527,14 @@ disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_replication</token> <parameter>ͭ����</parameter></term>
+<term><token>metadb_replication</token> <parameter>有効性</parameter></term>
 <listitem>
-<para>���Υ��ץ����enable�ξ�硢�᥿�ǡ�����Ĺ����ǽ��ͭ���ˤʤ�ޤ����ǥե���Ȥ� disable �Ǥ���
+<para>このオプションがenableの場合、メタデータ冗長化機能が有効になります。デフォルトは disable です。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ���
+この文はgfmd.confのみで有効です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	metadb_replication enable
 </literallayout>
@@ -1542,17 +1542,17 @@ disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
 </varlistentry>
 
 <varlistentry>
-<term><token>synchronous_replication_timeout</token> <parameter>�ÿ�</parameter></term>
+<term><token>synchronous_replication_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
-<para>�᥿�ǡ�����Ʊ����ץꥱ�������¹Ի��Υ����ॢ���Ȼ��֤���ñ�̤����ꤷ�ޤ���
-�����ॢ���Ȼ��֤�᤮����硢Ʊ����Υ��졼��gfmd�Ȥ�gfmd channel����³�����Ǥ���ޤ���
-��³�����Ǥ������졼��gfmd�ؤΥ�ץꥱ�������ϡ����졼��gfmd������³���Ƥ���ޤ����Ǥ��ޤ���
-�ǥե���Ȥ� 10 �Ǥ���
+<para>メタデータの同期レプリケーション実行時のタイムアウト時間を秒単位で設定します。
+タイムアウト時間を過ぎた場合、同期先のスレーブgfmdとのgfmd channelの接続は切断されます。
+接続が切断したスレーブgfmdへのレプリケーションは、スレーブgfmdが再接続してくるまで中断します。
+デフォルトは 10 です。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ���
+この文はgfmd.confのみで有効です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	synchronous_replication_timeout 30
 </literallayout>
@@ -1560,16 +1560,16 @@ disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
 </varlistentry>
 
 <varlistentry>
-<term><token>synchronous_journaling</token> <parameter>ͭ����</parameter></term>
+<term><token>synchronous_journaling</token> <parameter>有効性</parameter></term>
 <listitem>
-<para>���Υ��ץ����enable�ξ�硢���㡼�ʥ�ե�����ع����������¸�������fdatasync��¹Ԥ��ޤ���
-�¹Ԥ��륿���ߥ󥰤ϡ�1�ĤΥȥ�󥶥������γ��Ϥ��齪λ�ޤǤΥ쥳���ɤ�񤭹������Ǥ���
-�ǥե���Ȥ�enable�Ǥ���
+<para>このオプションがenableの場合、ジャーナルファイルへ更新情報を保存した後にfdatasyncを実行します。
+実行するタイミングは、1つのトランザクションの開始から終了までのレコードを書き込んだ後です。
+デフォルトはenableです。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ���
+この文はgfmd.confのみで有効です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	synchronous_journaling disable
 </literallayout>
@@ -1577,18 +1577,18 @@ disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_force_slave</token> <parameter>ͭ����</parameter></term>
+<term><token>metadb_server_force_slave</token> <parameter>有効性</parameter></term>
 <listitem>
-<para>enable �ΤȤ����ǥե���ȤΥޥ�����gfmd�Ȥ������ꤵ��Ƥ�����Ǥ⡢���졼��gfmd�Ȥ��Ƶ�ư���ޤ���
-�ǥե���Ȥ�disable�Ǥ���
+<para>enable のとき、デフォルトのマスターgfmdとして設定されている場合でも、スレーブgfmdとして起動します。
+デフォルトはdisableです。
 </para>
 <para>
-����: ���ε�ǽ�μ������Դ����Ǥ��Τǡ����ΤȤ��������Ѥ��ʤ��Ǥ���������
+注意: この機能の実装は不完全ですので、今のところ、利用しないでください。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ���
+この文はgfmd.confのみで有効です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_force_slave enable
 </literallayout>
@@ -1596,14 +1596,14 @@ disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_slave_max_size</token> <parameter>�Ρ��ɿ�</parameter></term>
+<term><token>metadb_server_slave_max_size</token> <parameter>ノード数</parameter></term>
 <listitem>
-<para>���졼��gfmd�κ���Ρ��ɿ�����ꤷ�ޤ����ǥե���Ȥ�16�Ǥ���
+<para>スレーブgfmdの最大ノード数を指定します。デフォルトは16です。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ���
+この文はgfmd.confのみで有効です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_slave_max_size 40
 </literallayout>
@@ -1611,16 +1611,16 @@ disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_journal_dir</token> <parameter>���㡼�ʥ�ǥ��쥯�ȥ�</parameter></term>
+<term><token>metadb_journal_dir</token> <parameter>ジャーナルディレクトリ</parameter></term>
 <listitem>
-<para>���㡼�ʥ�ե��������¸�ǥ��쥯�ȥ����ꤷ�ޤ���
-���Υ��ץ�����config-gfarm�ǻ��ꤷ�ޤ���
-���Υ��ץ���󤬻��ꤵ��Ƥ��ʤ���硢gfmd�ϵ�ư���ޤ���
+<para>ジャーナルファイルの保存ディレクトリを指定します。
+このオプションはconfig-gfarmで指定します。
+このオプションが指定されていない場合、gfmdは起動しません。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ���
+この文はgfmd.confのみで有効です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	metadb_journal_dir /var/gfarm-metadata/journal
 </literallayout>
@@ -1628,16 +1628,16 @@ disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_journal_max_size</token> <parameter>�ե����륵����</parameter></term>
+<term><token>metadb_journal_max_size</token> <parameter>ファイルサイズ</parameter></term>
 <listitem>
-<para>���㡼�ʥ�ե�����κ��祵��������ꤷ�ޤ���
-���������礭���ۤɡ�gfmd����ư��λ����ޤǤλ��֤�Ĺ���ʤ뤳�Ȥ����դ��Ƥ���������
-�ǥե���Ȥ� 33554432 (32 MBytes)�Ǥ���
+<para>ジャーナルファイルの最大サイズを指定します。
+サイズが大きいほど、gfmdが起動完了するまでの時間が長くなることに注意してください。
+デフォルトは 33554432 (32 MBytes)です。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ���
+この文はgfmd.confのみで有効です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	metadb_journal_max_size 8388608
 </literallayout>
@@ -1645,18 +1645,18 @@ disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_journal_recvq_size</token> <parameter>���塼Ĺ</parameter></term>
+<term><token>metadb_journal_recvq_size</token> <parameter>キュー長</parameter></term>
 <listitem>
-<para>���졼��gfmd�����ޥ�����gfmd���������른�㡼�ʥ�ǡ����˴ؤ��ơ�
-�������ݻ��������쥳���ɿ�����ꤷ�ޤ���
-���Υ�������ۤ����ݻ�����ɬ�פ����������ˤϡ��Хå�����ɡ��ǡ����١���
-�ؤ�ȿ�Ǥ��ٱ䤬�����Ƥ���ȸ��ʤ������졼�֤Ȥ��Ƥ�ư�������ƽ�λ���ޤ���
-�ǥե���Ȥ�100000�Ǥ���
+<para>スレーブgfmdが、マスターgfmdから受け取るジャーナルデータに関して、
+メモリ上に保持する最大レコード数を指定します。
+このサイズを越えて保持する必要が生じた場合には、バックエンド・データベース
+への反映に遅延が生じていると見なし、スレーブとしての動作を諦めて終了します。
+デフォルトは100000です。
 </para>
 <para>
-����ʸ��gfmd.conf�Τߤ�ͭ���Ǥ���
+この文はgfmd.confのみで有効です。
 </para>
-<para>��:</para>
+<para>例:</para>
 <literallayout>
 	metadb_journal_recvq_size 100000
 </literallayout>
@@ -1667,7 +1667,7 @@ disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
 </refsect1>
 
 <refsect1 id='grammar'><title>GRAMMAR</title>
-<para>gfarm2.conf��ʸˡ��BNF�ǵ��Ҥ���ȡ������Τ褦�ˤʤ�ޤ���</para>
+<para>gfarm2.confの文法をBNFで記述すると、下記のようになります。</para>
 <variablelist>
 <varlistentry>
 <term>&lt;statement&gt; ::=</term>
@@ -2329,7 +2329,7 @@ disable����ϡ��̾�Υե����륷���ƥ�ˤ�����"noatime"���ץ�����
 
 <refsect1 id='examples'><title>EXAMPLES</title>
 <para>
-�ʲ��� sharedsecretǧ�ڤ�Ȥ� gfarm2.conf ����Ǥ���
+以下は sharedsecret認証を使う gfarm2.conf の例です。
 </para>
 <literallayout>
 metadb_server_host metadb.example.org
@@ -2339,9 +2339,9 @@ sockopt keepalive
 </literallayout>
 
 <para>
-�᥿�ǡ�������¸��PostgreSQL��Ȥ���IP���ɥ쥹192.168.0.0/24��
-�ե����륷���ƥ�Ρ��ɤ䥯�饤����Ȥ��Ф��ơ�sharedsecretǧ�ڤ�
-�Ȥ� gfmd.conf ����Ǥ���
+メタデータの保存にPostgreSQLを使い、IPアドレス192.168.0.0/24の
+ファイルシステムノードやクライアントに対して、sharedsecret認証を
+使う gfmd.conf の例です。
 </para>
 <literallayout>
 metadb_server_host metadb.example.org
@@ -2357,9 +2357,9 @@ sockopt keepalive
 </literallayout>
 
 <para>
-�᥿�ǡ�������¸��LDAP��Ȥ���Ǥ�դ�IP���ɥ쥹��Ȥ�
-�ե����륷���ƥ�Ρ��ɤ䥯�饤����Ȥ��Ф��ơ�GSIǧ�ڤ�Ȥ�
-gfmd.conf ����Ǥ���
+メタデータの保存にLDAPを使い、任意のIPアドレスを使う
+ファイルシステムノードやクライアントに対して、GSI認証を使う
+gfmd.conf の例です。
 </para>
 <literallayout>
 metadb_server_host metadb.example.com

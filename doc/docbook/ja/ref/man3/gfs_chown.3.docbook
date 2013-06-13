@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_chown</refname>
-<refpurpose>��ͭ�ԡ����롼���ѹ�</refpurpose>
+<refpurpose>所有者、グループ変更</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -34,13 +34,13 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>����
+<para>引数
 <parameter>gfarm_url</parameter>
-�ν�ͭ�Ԥ�
+の所有者を
 <parameter>user</parameter>
-�ˡ����롼�פ�
+に、グループを
 <parameter>group</parameter>
-���ѹ����ޤ���</para>
+に変更します。</para>
 
 </refsect1>
 
@@ -49,59 +49,59 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
 <listitem>
-<para>gfmd(8) ���뤤�� gfsd(8) ���Ф���桼����ǧ�ڤ����Ԥ��ޤ�����</para>
+<para>gfmd(8) あるいは gfsd(8) に対するユーザー認証が失敗しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
-<para>���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ�ؤΥ����������븢�¤�����ޤ���</para>
+<para>指定したパス名の親ディレクトリへのアクセスする権限がありません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
 <listitem>
-<para>�ץ�������¹Ԥ��Ƥ���桼���������ե�����ν�ͭ�ԤǤ⡢�����ƥ������
-�Ǥ⤢��ޤ���</para>
+<para>プロセスを実行しているユーザーが、ファイルの所有者でも、システム管理者
+でもありません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
-<para>���ꤵ�줿�ѥ�̾��¸�ߤ��ޤ���</para>
+<para>指定されたパス名が存在しません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
 <listitem>
-<para>���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤϥǥ��쥯�ȥ�Ǥʤ��ä����Ȥ�
-�����ޤ���</para>
+<para>指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。</para>
 </listitem>
 </varlistentry>
 <!--
 <varlistentry>
 <term><constant>GFARM_ERR_READ_ONLY_FILE_SYSTEM</constant></term>
 <listitem>
-<para>���ꤷ���ѥ�̾���ɤ߹������ѥե����륷���ƥ��ˤ���ޤ���</para>
+<para>指定したパス名は読み込み専用ファイルシステム上にあります。</para>
 </listitem>
 </varlistentry>
 -->
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

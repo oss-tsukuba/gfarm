@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfs_pio_open&nbsp;--&nbsp;Gfarm�ե����륷���ƥ�Υե�����Υ����ץ�</DIV
+>gfs_pio_open&nbsp;--&nbsp;Gfarmファイルシステムのファイルのオープン</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -98,23 +98,23 @@ CLASS="PARAMETER"
 >gfarm_url</I
 ></TT
 >
-�ǻ��ꤷ���ե�����򥪡��ץ󤷡�GFS_File ��¤�Τ�
+で指定したファイルをオープンし、GFS_File 構造体を
 <TT
 CLASS="PARAMETER"
 ><I
 >gfp</I
 ></TT
 >
-�λؤ�����֤��ޤ���
+の指す先に返します。
 <TT
 CLASS="PARAMETER"
 ><I
 >gfarm_url</I
 ></TT
 >
-��Gfarm�ե����륷���ƥ�Υѥ�̾�����뤤��
+はGfarmファイルシステムのパス名、あるいは
 gfarm://metaserver:port/path/name
-������Gfarm URL�Ǥ���</P
+形式のGfarm URLです。</P
 ><P
 ><TT
 CLASS="PARAMETER"
@@ -122,8 +122,8 @@ CLASS="PARAMETER"
 >flags</I
 ></TT
 >
-�ϡ��ʲ��Υե饰�� bitwise-or �ǻ��ꤷ�ޤ���
-�Ϥ���λ��ĤΥե饰�Ϥɤ줫�����ꤵ��Ƥ���ɬ�פ�����ޤ���</P
+は、以下のフラグの bitwise-or で指定します。
+はじめの三つのフラグはどれかが指定されている必要があります。</P
 ><P
 ></P
 ><DIV
@@ -136,7 +136,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�ɹ��ߥ⡼�ɤǥե�����򥪡��ץ󤷤ޤ���</P
+>読込みモードでファイルをオープンします。</P
 ></DD
 ><DT
 ><CODE
@@ -145,7 +145,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->����ߥ⡼�ɤǥե�����򥪡��ץ󤷤ޤ���</P
+>書込みモードでファイルをオープンします。</P
 ></DD
 ><DT
 ><CODE
@@ -154,7 +154,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�ɤ߽񤭥⡼�ɤǥե�����򥪡��ץ󤷤ޤ���</P
+>読み書きモードでファイルをオープンします。</P
 ></DD
 ><DT
 ><CODE
@@ -163,7 +163,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�ե����뤬¸�ߤ����쥮��顼�ե�����ǽ���ߤ���������硢�ե����륵������0�ˤ��ޤ���</P
+>ファイルが存在し、レギュラーファイルで書込みが許される場合、ファイルサイズを0にします。</P
 ></DD
 ></DL
 ></DIV
@@ -187,7 +187,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ｪλ�򼨤��ޤ���</P
+>正常終了を示します。</P
 ></DD
 ><DT
 ><CODE
@@ -196,7 +196,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤵ�줿�ե�����ϥǥ��쥯�ȥ�Ǥ���</P
+>指定されたファイルはディレクトリです。</P
 ></DD
 ><DT
 ><CODE
@@ -205,7 +205,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤵ�줿�ե�����ϥ���ܥ�å���󥯤Ǥ���</P
+>指定されたファイルはシンボリックリンクです。</P
 ></DD
 ><DT
 ><CODE
@@ -214,7 +214,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤵ�줿�ե�����ϥե�����ǤϤ���ޤ���</P
+>指定されたファイルはファイルではありません。</P
 ></DD
 ><DT
 ><CODE
@@ -223,7 +223,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤵ�줿�ե����뤬¸�ߤ��ޤ���</P
+>指定されたファイルが存在しません。</P
 ></DD
 ><DT
 ><CODE
@@ -232,7 +232,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ǥ��쥯�ȥ�ǤϤ���ޤ���</P
+>指定したパス名の親ディレクトリが、ディレクトリではありません。</P
 ></DD
 ><DT
 ><CODE
@@ -241,15 +241,15 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤵ�줿�ե�������Ф���
+>指定されたファイルに対し、
 <TT
 CLASS="PARAMETER"
 ><I
 >flags</I
 ></TT
 >
-�ǻ��ꤵ�줿�⡼�ɤǥ����������븢�¤��ʤ�����
-�᥿�ǡ��������Фؤ�ǧ�ڤ˼��Ԥ��ޤ�����</P
+で指定されたモードでアクセスする権限がないか、
+メタデータサーバへの認証に失敗しました。</P
 ></DD
 ><DT
 ><CODE
@@ -258,7 +258,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->������­�Τ����������ߤ��ޤ�����</P
+>メモリ不足のため処理を中止しました。</P
 ></DD
 ><DT
 ><CODE
@@ -273,7 +273,7 @@ CLASS="PARAMETER"
 >flags</I
 ></TT
 >
-�λ��꤬�����Ǥ���</P
+の指定が不正です。</P
 ></DD
 ><DT
 ><CODE
@@ -288,8 +288,8 @@ CLASS="PARAMETER"
 >gfarm_url</I
 ></TT
 >
-�ǻ��ꤵ�줿Gfarm URL�ˤ����ơ�
-�᥿�ǡ��������Ф����ꤵ��Ƥ��ޤ���</P
+で指定されたGfarm URLにおいて、
+メタデータサーバが指定されていません。</P
 ></DD
 ><DT
 ><CODE
@@ -304,8 +304,8 @@ CLASS="PARAMETER"
 >gfarm_url</I
 ></TT
 >
-�ǻ��ꤵ�줿Gfarm URL�ˤ����ơ�
-�᥿�ǡ��������ФΥݡ����ֹ椬���ꤵ��Ƥ��ޤ���</P
+で指定されたGfarm URLにおいて、
+メタデータサーバのポート番号が指定されていません。</P
 ></DD
 ><DT
 ><CODE
@@ -314,7 +314,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤵ�줿�᥿�ǡ��������ФΥ��ɥ쥹��褬�Ǥ��ޤ���</P
+>指定されたメタデータサーバのアドレス解決ができません。</P
 ></DD
 ><DT
 ><CODE
@@ -323,7 +323,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�ץ������ˤ����륪���ץ��ǽ�ʥե�������θ³���ã���ޤ�����</P
+>プロセスにおけるオープン可能なファイル数の限界に達しました。</P
 ></DD
 ><DT
 ><CODE
@@ -332,7 +332,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�����ƥ�ˤ����륪���ץ�Ǥ���ե�������θ³���ã���ޤ�����</P
+>システムにおけるオープンできるファイル数の限界に達しました。</P
 ></DD
 ><DT
 ><CODE
@@ -341,7 +341,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�᥿�ǡ��������Ф���ã�Ǥ��ޤ���</P
+>メタデータサーバに到達できません。</P
 ></DD
 ><DT
 ><CODE
@@ -350,7 +350,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�᥿�ǡ��������Фؤ���³�������ॢ���Ȥ򤪤����ޤ�����</P
+>メタデータサーバへの接続がタイムアウトをおこしました。</P
 ></DD
 ><DT
 ><CODE
@@ -359,7 +359,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�᥿�ǡ��������ФȤ��̿��˥ץ��ȥ��륨�顼��ȯ�����ޤ�����</P
+>メタデータサーバとの通信にプロトコルエラーが発生しました。</P
 ></DD
 ><DT
 ><CODE
@@ -368,7 +368,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�᥿�ǡ��������ФȤ��̿������Ǥ��ޤ�����</P
+>メタデータサーバとの通信が切断しました。</P
 ></DD
 ><DT
 ><CODE
@@ -377,7 +377,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤵ�줿ǧ�ڥץ��ȥ���ϥ��ݡ��Ȥ��Ƥ��ޤ���</P
+>指定された認証プロトコルはサポートしていません。</P
 ></DD
 ><DT
 ><CODE
@@ -386,13 +386,13 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�᥿�ǡ��������Ф��Ф���ǧ�ڤ˼��Ԥ��ޤ�����</P
+>メタデータサーバに対する認証に失敗しました。</P
 ></DD
 ><DT
->����¾</DT
+>その他</DT
 ><DD
 ><P
->�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+>上記以外のエラーが生じたことを示します。
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
@@ -400,7 +400,7 @@ CLASS="REFENTRYTITLE"
 >gfarm_error_string</SPAN
 >(3)</SPAN
 >
-�ˤ�ꥨ�顼�θ�����ʸ������Ѵ����뤳�Ȥ��Ǥ��ޤ���</P
+によりエラーの原因を文字列に変換することができます。</P
 ></DD
 ></DL
 ></DIV

@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFARM_URL_PROGRAM_REGISTER" "3" "18 March 2003" "Gfarm" ""
 .SH NAME
-gfarm_url_program_register \- �ץ���������Ͽ����
+gfarm_url_program_register \- プログラムを登録する
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,33 +14,33 @@ char *gfarm_url_program_register (char *\fIgfarm_url\fB, char *\fIarchitecture\f
 \fR
 .SH "DESCRIPTION"
 .PP
-����
+引数
 \fIarchitecture\fR
-�ǻ��ꤷ����������μ¹Է����ե�����
+で指定した機種向けの実行形式ファイル
 \fIfilename\fR
-��
+を、
 \fIgfarm_url\fR
-�ǻ��ꤷ���ѥ�̾����Ͽ���ޤ���
-�ޤ���
+で指定したパス名に登録します。
+また、
 \fInreplicas\fR
-�ˡ����������ץꥫ�ο�����ꤷ�ޤ���
+に、作成するレプリカの数を指定します。
 .PP
-����
+引数
 \fInreplicas\fR
-�ϡ�����ΥС������Ǻ�������ͽ��Ǥ���
+は、将来のバージョンで削除される予定です。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
 \fBGFARM_ERR_OPERATION_NOT_PERMITTED\fR
-���ꤷ���ե�����ˡ��¹Բ�ǽ�ӥåȤ�Ω�äƤ��ޤ���Ǥ�����
+指定したファイルに、実行可能ビットが立っていませんでした。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "SEE ALSO"
 .PP
 \fBgfarm_url_program_deliver\fR(3)

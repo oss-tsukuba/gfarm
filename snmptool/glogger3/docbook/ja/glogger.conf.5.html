@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->glogger.conf&nbsp;--&nbsp;GLogger ����ե�����</DIV
+>glogger.conf&nbsp;--&nbsp;GLogger 設定ファイル</DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
@@ -35,51 +35,51 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->glogger.conf �ե�����ϡ�glogger �ץ�����������ե�����Ǥ���
+>glogger.conf ファイルは、glogger プログラムの設定ファイルです。
 
-�ʤ����������Ƥ��ѹ��������ϡ�glogger ��Ƶ�ư����ɬ�פ�����ޤ���</P
+なお、設定内容を変更した場合は、glogger を再起動する必要があります。</P
 ><P
->glogger �ϡ�����ե�����Ȥ��ơ�/etc/glogger/glogger.conf ���ɤ߹��ߤޤ���
--config ���ץ���������ե��������ꤹ��ȡ����줬ͥ�褵��ޤ���</P
+>glogger は、設定ファイルとして、/etc/glogger/glogger.conf を読み込みます。
+-config オプションで設定ファイルを指定すると、それが優先されます。</P
 ><P
->glogger ������ե�����ϡ��ʲ��ι�¤�ˤʤäƤ��ޤ���</P
+>glogger の設定ファイルは、以下の構造になっています。</P
 ><P
->* ����ե������ñ��ե�����Ȥ��롣</P
+>* 設定ファイルは単一ファイルとする。</P
 ><P
->* ��������ܤϡ�����̾�Ȥ����ͤ�Ⱦ�ѥ��ڡ�����İʾ�Ƕ��ڤꡢ���줾��ƹԤ˵��Ҥ��롣</P
+>* 各設定項目は、設定名とその値を半角スペース一つ以上で区切り、それぞれ各行に記述する。</P
 ><P
->* ���ڤ�ʳ���Ⱦ�ѥ��ڡ��������֤�̵�뤹�롣</P
+>* 区切り以外の半角スペース、タブは無視する。</P
 ><P
->* �ƹԤ� '#' �ʹߤϥ����ȤȤ��롣</P
+>* 各行の '#' 以降はコメントとする。</P
 ><P
->* �ƹԤ� 1024 ʸ���ޤǤȤ��롣</P
+>* 各行は 1024 文字までとする。</P
 ><P
->* �֥��å��� '�֥��å�̾ {' �ԤǤϤ��ޤꡢ'}' �Ԥǽ�λ���롣</P
+>* ブロックは 'ブロック名 {' 行ではじまり、'}' 行で終了する。</P
 ><P
->* �֥��å���ˤϡ����Υ֥��å��˵��Ҥ����Ĥ���Ƥ��롢������ܤȥ֥��å��򵭽ҤǤ��롣</P
+>* ブロック内には、そのブロックに記述が許可されている、設定項目とブロックを記述できる。</P
 ><P
->* �ե��������Ƭ����֥��å��ˤʤäƤ��ʤ���ʬ�� global default �֥��å��ȸƤ֡�</P
+>* ファイルの先頭からブロックになっていない部分を global default ブロックと呼ぶ。</P
 ><P
->* global default �֥��å��ʹߤˡ�requests �֥��å���ʣ�����ҤǤ��롣</P
+>* global default ブロック以降に、requests ブロックを複数記述できる。</P
 ><P
->* nodes �֥��å��� requests �֥��å���˰�ĵ��ҤǤ��롣</P
+>* nodes ブロックは requests ブロック内に一つ記述できる。</P
 ><P
->* mib �֥��å��� nodes �֥��å��θ�˵��Ҥ���requests �֥��å����ʣ�����ҤǤ��롣</P
+>* mib ブロックは nodes ブロックの後に記述し、requests ブロック内に複数記述できる。</P
 ><P
->* oids �֥��å��� mib �֥��å���˰�ĵ��ҤǤ��롣</P
+>* oids ブロックは mib ブロック内に一つ記述できる。</P
 ><P
->* �֥��å���˥֥��å���������ϡ�
-�֥��å�������������˹Ԥä�������ܤ�
-�ʹߥͥ��Ȥ����֥��å����������ܤȤ��ư����Ѥ���
-���Υ֥��å����Ʊ�� ����̾��������ϡ�
-���Υ֥��å���Ǥϡ�����������ܤ�ͥ�褵��롣</P
+>* ブロック内にブロックがある場合は、
+ブロックを定義する前に行った設定項目を、
+以降ネストしたブロック内の設定項目として引き継ぎ、
+そのブロック内に同じ 設定名がある場合は、
+そのブロック内では、その設定項目が優先される。</P
 ><P
->* ̤���������̾�������͡�����ɽ���ǵ��Ҥ�����硢���顼�Ȥʤ롣</P
+>* 未定義の設定名、設定値、記述表現で記述した場合、エラーとなる。</P
 ><P
->* 1�٤⵭�Ҥ���ʤ��ä�������ܤˤϡ��ǥե�����ͤ�Ŭ�Ѥ���롣
-���������ǥե�����ͤ�¸�ߤ��ʤ�������ܤ⤢�롣</P
+>* 1度も記述されなかった設定項目には、デフォルト値が適用される。
+しかし、デフォルト値が存在しない設定項目もある。</P
 ><P
->glogger ������ե�����ϡ��ʲ��Τ褦�ʹ�¤�ǵ��Ҥ��ޤ���</P
+>glogger の設定ファイルは、以下のような構造で記述します。</P
 ><P
 CLASS="LITERALLAYOUT"
 >&nbsp;interval&nbsp;[interval-spec]<br>
@@ -110,115 +110,115 @@ CLASS="LITERALLAYOUT"
 &nbsp;}<br>
 &nbsp;requests...</P
 ><P
->....�ϡ����ξ�˵��Ҥ��� [?-spec] ��������³���Ƥ��ɤ��Ǥ���
-mib... �� requests... �ϡ����줾��Υ֥��å���������³���Ƥ��ɤ��Ǥ���
-[?-spec] �ˤϡ����줾��ʲ��ο�����ʸ��������Ǥ��ޤ���</P
+>....は、その上に記述した [?-spec] がいくつ続いても良いです。
+mib... や requests... は、それぞれのブロックがいくつ続いても良いです。
+[?-spec] には、それぞれ以下の数字や文字列を指定できます。</P
 ><P
->[interval-spec] �ˤϾ����ͤ���ꤷ�ޤ����оݤ�¬��ֳ֤Ȥʤ�ޤ���
-�����������С������Ǥ� 0.1 ��̤�����ڼΤƤ��ޤ���
-(ex. interval 0.1, �ǥե�����ͤ� 10.0)</P
+>[interval-spec] には小数値を指定します。対象の測定間隔となります。
+ただし、現バージョンでは 0.1 秒未満は切捨てられます。
+(ex. interval 0.1, デフォルト値は 10.0)</P
 ><P
->[maxfilesize-spec] �ˤϽ��ϥե�����κ��祵������ KBñ��
-�������ͤǻ��ꤷ�ޤ������ꤷ����������Ķ���Ƥ��顢����ư����ߥ󥰤Υ�
-����ɤ��Ȥ����ǥե�������ڤ��ؤ��ޤ������ξ�硢path ����ǤΥե�����
-̾�����롼��ǥե�������ڤ��ؤ��ޤ���-mmap �⡼��ư����ϡ������ǻ�
-�ꤷ���ե����륵������Ķ�����Ȥ����ǽ�λ���ޤ���0(�ǥե������) ����ꤷ��
-����˥ե�����̾�����롼��Ǥ���������ʤ����ϡ���ߤ����ޤ�
-�ե�����ؽ��Ϥ��ĤŤ��ޤ���
-(ex. �� 1MB�ξ�� �� maxfilesize 1024, �ǥե�����ͤ� 0)</P
+>[maxfilesize-spec] には出力ファイルの最大サイズを KB単位
+の整数値で指定します。指定したサイズを超えてから、内部動作タイミングのキ
+リの良いところでファイルを切り替えます。この場合、path 設定でのファイル
+名生成ルールでファイルは切り替わりません。-mmap モード動作時は、ここで指
+定したファイルサイズを超えたところで終了します。0(デフォルト値) を指定し、
+さらにファイル名生成ルールでも時刻を入れない場合は、停止されるまで
+ファイルへ出力しつづけます。
+(ex. 約 1MBの場合 → maxfilesize 1024, デフォルト値は 0)</P
 ><P
->[defaultdir-spec] �ˤϴ��Ȥʤ������ǥ��쥯�ȥ��
-���Хѥ�����ꤷ�ޤ���
-path ��� %G �򵭽Ҥ����Ȥ����ִ�������ͤȤʤ�ޤ���
-global default ��ʬ�Τߤǻ���Ǥ��ޤ���
-(ex. defaultdir /home/glogger, �ǥե�����ͤ� /var/log/glogger)</P
+>[defaultdir-spec] には基準となる出力先ディレクトリの
+絶対パスを指定します。
+path 項で %G を記述したときに置換される値となります。
+global default 部分のみで指定できます。
+(ex. defaultdir /home/glogger, デフォルト値は /var/log/glogger)</P
 ><P
->[label-spec] �ˤ�Ǥ�դ�ʸ�������ꤷ�ޤ���
-��¬�ƥ���̾�䡢���饹��̾�ʤɤ��դ��ƻȤ����Ȥ����ꤷ�Ƥ��ޤ���
-path ��� %L �򵭽Ҥ��������ִ������ʸ����Ȥʤ�ޤ���
-(ex. label test01, �ǥե�����ͤ� glogger)</P
+>[label-spec] には任意の文字列を指定します。
+計測テスト名や、クラスタ名などを付けて使うことを想定しています。
+path 項で %L を記述した場合に置換される文字列となります。
+(ex. label test01, デフォルト値は glogger)</P
 ><P
->[overwrite-spec] �ˤϽ��ϥե�����ξ�񤭵���ʸ���� on �ޤ��� enable ����ꤷ�ޤ���
- on �ޤ��� enable �򵭽Ҥ���ȡ�GLogger �ε�ư�����ޤ��ϡ��ե������ڤ��ؤ����ˡ�
-���Ǥ�Ʊ��̾���Υե����뤬¸�ߤ��Ƥ�����˾�񤭤��ޤ�
-(�����Υǡ����Ϻ������ޤ�)��
-(ex. overwrite  enable, �ǥե���ȤϾ�񤭤��ʤ�)</P
+>[overwrite-spec] には出力ファイルの上書き許可文字列 on または enable を指定します。
+ on または enable を記述すると、GLogger の起動時、または、ファイル切り替え時に、
+すでに同じ名前のファイルが存在している場合に上書きします
+(以前のデータは削除されます)。
+(ex. overwrite  enable, デフォルトは上書きしない)</P
 ><P
->[fsync_interval-spec] �ˤ� fsync() ����ֳ֤��ÿ����ޤ��� on �ޤ��� enable ��
-���ꤷ�ޤ���
-GLogger �Ͻ��ϻ������ fflush() ���ޤ��������ꤷ���ֳ�(��)��Ķ���������ߥ󥰤�
-fsync() �⤹��褦�ˤʤ�ޤ���
-on �ޤ��� enable ����ꤷ�����ϡ�����ư��󥿡��Х�(����ե�����ε��Ҥˤ�äưۤʤ�)
-���Ȥˡ���� fsync() ���ޤ���
-�ޤ�������ư��󥿡��Х뤬�������ǻ��ꤷ���ÿ������礭���ֳ֤ξ�硢��� fsync()
-���ޤ���
-�ǥե���ȤǤϰ��� fsync() ���ޤ���
-(ex. fsync_interval  5,  �ǥե���Ȥ� fsync() ���ʤ�)</P
+>[fsync_interval-spec] には fsync() する間隔の秒数、または on または enable を
+指定します。
+GLogger は出力時に毎回 fflush() しますが、指定した間隔(秒)を超えたタイミングで
+fsync() もするようになります。
+on または enable を指定した場合は、内部動作インターバル(設定ファイルの記述によって異なる)
+ごとに、毎回 fsync() します。
+また、内部動作インターバルが、ここで指定した秒数よりも大きい間隔の場合、毎回 fsync()
+します。
+デフォルトでは一切 fsync() しません。
+(ex. fsync_interval  5,  デフォルトは fsync() しない)</P
 ><P
->[path-spec] �ˤϽ��ϥե���������Хѥ��ե�����̾����ꤹ��ʸ��������
-���ޤ����ʲ����ִ��롼�뤬Ŭ�ѤǤ��ޤ����ޤ�������ư��Υ�����ɤ�����
-�ߥ󥰤ǡ����Υ롼��ȸ��ߤλ��狼��ե�����̾��������������ޤǽ��Ϥ���
-�����ե�����̾����Ӥ��ޤ���������ִ�����롼�����Ѥ�����硢
-���狼���������줿�ե�����̾���ѹ������ä����ϡ����ο������ե������
-�ڤ��ؤ��������ؽ��Ϥ��ޤ�������ե������ maxfilesize �䡢
-��ư�����ץ��������ǡ��ե����륵�������¤�Ԥä����ϡ������Ȥä�
-�ե�����̾�ִ��롼���Ȥ鷺���ե����륵�������¤ǥե�������ڤ��ؤ��ޤ���
-�ޤ����ǥ��쥯�ȥ�ϼ�ưŪ�˺������ޤ���
+>[path-spec] には出力ファイルの絶対パスファイル名を指定する文字列を指定
+します。以下の置換ルールが適用できます。また、内部動作のキリの良いタイ
+ミングで、このルールと現在の時刻からファイル名を生成し、それまで出力して
+いたファイル名と比較します。時刻を置換するルールを使用した場合、
+時刻から生成されたファイル名に変更があった場合は、その新しいファイルに
+切り替え、そこへ出力します。設定ファイルの maxfilesize や、
+起動時オプション引数で、ファイルサイズ制限を行った場合は、時刻を使った
+ファイル名置換ルールを使わず、ファイルサイズ制限でファイルを切り替えます。
+また、ディレクトリは自動的に作成しません。
 <P
 CLASS="LITERALLAYOUT"
->%G&nbsp;&nbsp;defaultdir&nbsp;�Υǥ��쥯�ȥ����Хѥ�<br>
-%L&nbsp;&nbsp;��٥�(���饹��̾���¸�̾�ʤ�)<br>
-%n&nbsp;&nbsp;nodes&nbsp;�ǻ��ꤵ�줿&nbsp;FQDN<br>
-%N&nbsp;&nbsp;nodes&nbsp;�ǻ��ꤵ�줿�˥å��͡���<br>
-%o&nbsp;&nbsp;mibs&nbsp;�ǻ��ꤵ�줿&nbsp;OID̾<br>
-%O&nbsp;&nbsp;mibs&nbsp;�ǻ��ꤵ�줿&nbsp;OID�˥å��͡���</P
+>%G&nbsp;&nbsp;defaultdir&nbsp;のディレクトリ絶対パス<br>
+%L&nbsp;&nbsp;ラベル(クラスタ名、実験名など)<br>
+%n&nbsp;&nbsp;nodes&nbsp;で指定された&nbsp;FQDN<br>
+%N&nbsp;&nbsp;nodes&nbsp;で指定されたニックネーム<br>
+%o&nbsp;&nbsp;mibs&nbsp;で指定された&nbsp;OID名<br>
+%O&nbsp;&nbsp;mibs&nbsp;で指定された&nbsp;OIDニックネーム</P
 >
-����˴ؤ����ִ��ˤϡ�GLogger ��ư���������ޤ��ϥե����뤬�ڤ��ؤ�����
-������ͤ����Ѥ���ޤ���
+時刻に関する置換には、GLogger を起動した時、またはファイルが切り替わる時の
+時刻の値が利用されます。
 <P
 CLASS="LITERALLAYOUT"
->%t&nbsp;&nbsp;ǯ������ʬ�åߥ���<br>
+>%t&nbsp;&nbsp;年月日時分秒ミリ秒<br>
 &nbsp;&nbsp;&nbsp;&nbsp;(ex.&nbsp;20031231235959000)<br>
-%c&nbsp;&nbsp;�ޥ�������&nbsp;&nbsp;&nbsp;(000000..999999)<br>
-%s&nbsp;&nbsp;�ߥ���&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(000..999)<br>
-%S&nbsp;&nbsp;��&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(00..59)<br>
-%M&nbsp;&nbsp;ʬ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(00..59)<br>
-%h&nbsp;&nbsp;��&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(00..23)<br>
-%d&nbsp;&nbsp;�����̻�����&nbsp;(01..31)<br>
-%j&nbsp;&nbsp;ǯ���̻�����&nbsp;(001..366)<br>
-%m&nbsp;&nbsp;��&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(01..12)<br>
-%y&nbsp;&nbsp;ǯ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(1970...)</P
+%c&nbsp;&nbsp;マイクロ秒&nbsp;&nbsp;&nbsp;(000000..999999)<br>
+%s&nbsp;&nbsp;ミリ秒&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(000..999)<br>
+%S&nbsp;&nbsp;秒&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(00..59)<br>
+%M&nbsp;&nbsp;分&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(00..59)<br>
+%h&nbsp;&nbsp;時&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(00..23)<br>
+%d&nbsp;&nbsp;月内通算日数&nbsp;(01..31)<br>
+%j&nbsp;&nbsp;年内通算日数&nbsp;(001..366)<br>
+%m&nbsp;&nbsp;月&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(01..12)<br>
+%y&nbsp;&nbsp;年&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(1970...)</P
 >
-(ex. path %G/%H/%O/%y%m%h.glg, �ǥե�����ͤ� %G/%L_%y%m%d%h%M.glg)</P
+(ex. path %G/%H/%O/%y%m%h.glg, デフォルト値は %G/%L_%y%m%d%h%M.glg)</P
 ><P
->[community-spec] �ˤϥ��ߥ�˥ƥ����ȥ�󥰤���ꤷ�ޤ���
-(ex. community  private, �ǥե�����ͤ� public)</P
+>[community-spec] にはコミュニティストリングを指定します。
+(ex. community  private, デフォルト値は public)</P
 ><P
->[node-spec] �ˤϡ֥ۥ���̾ �˥å��͡���פ��Ȥ�ƹԤ˵��Ҥ��ޤ���
-�˥å��͡��ब̵����С�%H �� %h ��Ʊ���Ȥʤ�ޤ���
-nodes �֥��å���ˡ�ʣ���Ե��ҤǤ��ޤ����������̤����Ǥ���
-�ۥ���̾�ˤϡ�ñ��ۥ���̾��IP ���ɥ쥹��[?-?] �ˤ��Ϣ�ֿ������꤬
-���ѤǤ��ޤ���
+>[node-spec] には「ホスト名 ニックネーム」の組を各行に記述します。
+ニックネームが無ければ、%H は %h と同等となります。
+nodes ブロック内に、複数行記述できます。最大数は未定義です。
+ホスト名には、単純ホスト名、IP アドレス、[?-?] による連番数字指定が
+利用できます。
 
-Ϣ�ֿ������� [?-?] �� ? �ˤ� 0 �ʾ������(10�� or 16��)(16�ʤξ��� 
-0x �ǻϤޤ�ʸ����)����ꤷ�ޤ������˻��������˽����ο�����ꤷ�ޤ�����
-����꽪���Τۤ����礭�����Ǥʤ���Фʤ�ޤ���5��ޤǻ���Ǥ��ޤ���
-������ 0 ���ղä��Ʒ��碌�򤹤뤳�Ȥ��Ǥ��ޤ����������ͤ˶��դ��ˤ�
-�����äơ������ǻ��ꤷ����������礭���ʤ���ϡ������η��Ķ����Ÿ
-�����ޤ����ޤ�����������Ƭ���餤���Ĥ� 0 ���ղä��Ƥ⡢�������¿����
-�ꤷ���ꡢ���ʤ����ꤷ�Ƥ⡢�����Ǥ��碌����ˤʤ�ޤ���
+連番数字指定 [?-?] の ? には 0 以上の整数(10進 or 16進)(16進の場合は 
+0x で始まる文字列)を指定します。左に始点、右に終点の数を指定します。始
+点より終点のほうが大きい数でなければなりません。5桁まで指定できます。
+始点で 0 を付加して桁合わせをすることができます。終点の値に近付くにし
+たがって、始点で指定した桁数よりも大きくなる場合は、始点の桁を超えて展
+開します。また、終点に先頭からいくつか 0 を付加しても、始点より多く指
+定したり、少なく指定しても、始点であわせた桁になります。
 <P
 CLASS="LITERALLAYOUT"
->�㤨�С�<br>
-[1-9]&nbsp;��&nbsp;1&nbsp;����&nbsp;&nbsp;9&nbsp;��&nbsp;9�Ĥ�Ÿ������ޤ���<br>
-[0x1-0x10]&nbsp;��&nbsp;1&nbsp;����&nbsp;f&nbsp;��&nbsp;10&nbsp;��&nbsp;16�Ĥ�Ÿ������ޤ���<br>
-[000-20]&nbsp;��&nbsp;000&nbsp;����&nbsp;020&nbsp;��&nbsp;21�Ĥ�Ÿ������ޤ���<br>&#13;</P
+>例えば、<br>
+[1-9]&nbsp;は&nbsp;1&nbsp;から&nbsp;&nbsp;9&nbsp;の&nbsp;9個に展開されます。<br>
+[0x1-0x10]&nbsp;は&nbsp;1&nbsp;から&nbsp;f&nbsp;と&nbsp;10&nbsp;の&nbsp;16個に展開されます。<br>
+[000-20]&nbsp;は&nbsp;000&nbsp;から&nbsp;020&nbsp;の&nbsp;21個に展開されます。<br>&#13;</P
 >
-�˥å��͡���� $1, $2... �Ȥ��ƻ��ꤹ��ȡ�[?-?]������ꤷ�����֤��ִ�
-����ޤ���
-�㤨�С�abc[01-02]-[03-04].cdef.com  abc$1-$2 �Ȼ��ꤹ��ȡ��˥å��͡����
-abc01-03, abc01-04, abc02-03, abc02-04 �� 4�Ĥ�Ÿ������ޤ���
-Ÿ���������֤�̤����Ǥ���
+ニックネームに $1, $2... として指定すると、[?-?]部を指定した順番に置換
+されます。
+例えば、abc[01-02]-[03-04].cdef.com  abc$1-$2 と指定すると、ニックネームは
+abc01-03, abc01-04, abc02-03, abc02-04 の 4個に展開されます。
+展開される順番は未定義です。
 
 <DIV
 CLASS="WARNING"
@@ -241,7 +241,7 @@ ALT="Warning"></TD
 ALIGN="LEFT"
 VALIGN="CENTER"
 ><B
->����</B
+>注意</B
 ></TH
 ></TR
 ><TR
@@ -251,8 +251,8 @@ VALIGN="CENTER"
 ALIGN="LEFT"
 VALIGN="TOP"
 ><P
->�б����� $1, $2...����ꤷ�ʤ��Ƥ⥨�顼�Ȥʤ�ޤ���
-������ [?-?]���θĿ����¿�� $������ꤹ��ȥ��顼�Ȥʤ�ޤ���</P
+>対応する $1, $2...を指定しなくてもエラーとなりません。
+しかし [?-?]部の個数より多く $部を指定するとエラーとなります。</P
 ></TD
 ></TR
 ></TABLE
@@ -266,28 +266,28 @@ CLASS="LITERALLAYOUT"
 &nbsp;&nbsp;localhost<br>
 &nbsp;&nbsp;172.19.2.[0-255]&nbsp;&nbsp;private$1<br>
 &nbsp;&nbsp;a[0x00-0xff]-[000-100].b.com&nbsp;&nbsp;abc$2-$1<br>
-�ǥե�����ͤ�̵����</P
+デフォルト値は無し。</P
 ></P
 ><P
->[oids-spec] �ˤϡ�OID̾  �˥å��͡���פ��Ȥ�ƹԤ˵��Ҥ��ޤ���
-�˥å��͡���Ͼ�ά�Ǥ��ޤ���
-oids �֥��å���ˡ�ʣ���Ե��ҤǤ��ޤ���
-����Ǥ��� OID �ο��ϡ���Ĥη�¬�оݥΡ��ɤ��Ф��ơ�1�٤� SNMP �׵�
-������Ŀ��ޤǻ���Ǥ��ޤ���
+>[oids-spec] には「OID名  ニックネーム」の組を各行に記述します。
+ニックネームは省略できません。
+oids ブロック内に、複数行記述できます。
+指定できる OID の数は、一つの計測対象ノードに対して、1度の SNMP 要求
+に入る個数まで指定できます。
 <P
 CLASS="LITERALLAYOUT"
 >ex.<br>
-&nbsp;&nbsp;#&nbsp;�Ƕ�&nbsp;1ʬ�Υ����ɥ��٥졼��<br>
+&nbsp;&nbsp;#&nbsp;最近&nbsp;1分のロードアベレージ<br>
 &nbsp;&nbsp;enterprises.ucdavis.laTable.laEntry.laLoad.1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;loadavg<br>
-&nbsp;&nbsp;#&nbsp;2���ܤΥͥåȥ�����󥿡��ե�������&nbsp;TX<br>
+&nbsp;&nbsp;#&nbsp;2番目のネットワークインターフェースの&nbsp;TX<br>
 &nbsp;&nbsp;interfaces.ifTable.ifEntry.ifOutOctets.2&nbsp;&nbsp;eth0-out<br>
-&nbsp;&nbsp;#&nbsp;2���ܤΥͥåȥ�����󥿡��ե�������&nbsp;RX<br>
+&nbsp;&nbsp;#&nbsp;2番目のネットワークインターフェースの&nbsp;RX<br>
 &nbsp;&nbsp;interfaces.ifTable.ifEntry.ifInOctets.2&nbsp;eth0-in<br>
-&nbsp;&nbsp;#&nbsp;1���ܤΥѡ��ƥ������(snmpd.conf�����ꤷ����)�λ�����<br>
+&nbsp;&nbsp;#&nbsp;1番目のパーティション(snmpd.confで設定した順)の使用量<br>
 &nbsp;&nbsp;enterprises.ucdavis.dskTable.dskEntry.dskUsed.1&nbsp;used<br>
-&nbsp;&nbsp;#&nbsp;1���ܤΥѡ��ƥ������(snmpd.conf�����ꤷ����)�ζ�������<br>
+&nbsp;&nbsp;#&nbsp;1番目のパーティション(snmpd.confで設定した順)の空き容量<br>
 &nbsp;&nbsp;enterprises.ucdavis.dskTable.dskEntry.dskAvail.1&nbsp;available<br>
-&nbsp;&nbsp;�ǥե�����ͤ�̵����</P
+&nbsp;&nbsp;デフォルト値は無し。</P
 ></P
 ></DIV
 ><DIV

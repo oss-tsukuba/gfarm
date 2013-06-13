@@ -1,161 +1,161 @@
-		VOMS Ϣ��
-1. ����
-	VOMS �Υ��С����å׾����gfarm�Υ��롼�׾����Ʊ�������롣
+		VOMS 連携
+1. 概要
+	VOMS のメンバーシップ情報にgfarmのグループ情報を同期させる。
 
-	�����Ԥ�Ǥ�դ�Ʊ�����ޥ�ɤ�¹Ԥ������ꤵ�줿VOMS�˴ؤ��ơ�
-	gfarm �������VOMS�˴�Ϣ���륰�롼�׾���򹹿������桼����
-	���롼�׾���⹹�����롣
+	管理者が任意に同期コマンドを実行し、指定されたVOMSに関して、
+	gfarm 上の当該VOMSに関連するグループ情報を更新し、ユーザの
+	グループ情報も更新する。
 
-	gfarm ��Υ��롼��̾�ϡ�Ĺ�����¤�ʤ�����
-	VOMS �� vomsid, VO̾�����롼�ס����֥��롼��̾��������̾
-	�����������롣
-	Capability �ϴ��˿侩����Ƥ��ʤ��Τ��б����ʤ���
+	gfarm 上のグループ名は、長さ制限をなくし、
+	VOMS の vomsid, VO名、グループ、サブグループ名、ロール名
+	から生成する。
+	Capability は既に推奨されていないので対応しない。
 
-        �̾��³���Ǻ������줿���롼��̾��vomsid, VO̾�˰��פ�����硢
-        VOMSϢ�Ƚ����ǹ����оݥ��롼�פȴ������������줦��Τǥ桼������
-	���դ��פ��롣
+        通常手続きで作成されたグループ名がvomsid, VO名に一致した場合、
+        VOMS連携処理で更新対象グループと看做され削除されうるのでユーザーは
+	注意を要する。
 
-2. Ʊ�����ޥ��
+2. 同期コマンド
 	gfvoms-sync -s [-n] [-g group-list] [-a void-list] -V void -v voname 
 	gfvoms-sync -d [-a void-list] -V void -v voname 
 	
-	-s ��Ʊ���ؼ��򼨤���
-	-n ��gfarm �ι�����Ԥ鷺�б�ɽ����Ϥ��뤳�Ȥ�ؼ����롣
-	-g �ϥ��롼��̾ɽ����ꤷ�ƹ�����ؼ����롣
-	-a �� vomsid �ȥۥ���̾���б��ꥹ�Ȥ�ؼ����롣
-	-V ��vomsid ʸ�������ꤹ�롣
-	-v ��VO ̾����ꤹ�롣
-	-d ��vo �κ����ؼ����롣
+	-s は同期指示を示す。
+	-n はgfarm の更新を行わず対応表を出力することを指示する。
+	-g はグループ名表を指定して更新を指示する。
+	-a は vomsid とホスト名の対応リストを指示する。
+	-V はvomsid 文字列を指定する。
+	-v はVO 名を指定する。
+	-d はvo の削除を指示する。
 
-        1. gfarm�桼�����ơ��֥��gfarm�����Ԥ�
-           �桼����̾��DN�������real-name, home-dir ����ꤷ��
-           ���̤�(VOMSϢ�ȵ�ǽ�ǤϤʤ�����Ͽ�������Ԥ���ΤȤ���
-	   ��VOMSϢ�Ȥ��ϰϳ��Ȥ��롣
-	2. vomsid�б��ꥹ�Ȥϡ�ʣ��VOMS���б�����VO̾�����Ǥϥ�ˡ�����
-	   �ʤ�ʤ����Ȥ������ơ�VOMS���Ф���vomsid �򿶤뤿��Υե�����ǡ�
-	   �����Ԥ��������Ƥ�����
-	   �б��� "id �ۥ���fqn �ݡ���"�򵭽Ҥ��롣
-        3. ���롼�פ�Ʊ����gfarm�����Ԥ���
-           VO����ꤷ�ƹԤ�������VO�˴�Ϣ���륰�롼�ץ���ȥ꡼�򹹿����롣
-           VO��ˤʤ��ʤä�Gfarm��Υ��롼�פϺ�����롣
-        4. Ʊ���ϴ����ԥ��ޥ��(gfvoms-sync)�ǹԤ���VOMS�Υ��С����å׾����
-	�� ��Фȡ�gfarm �Υ��롼�ץơ��֥�ι��������ʳ��ǹԤ���
-        5. �������륰�롼��̾��gfarm�桼�����ơ��֥����Ͽ����Ƥ���桼������
-           �ؤ���Τ����Ȥ��롣������DN�Ǥ��롣
-        6. ���롼��̾�������Ǥϡ�Gfarm��Υ��롼�׾�����������
-           �ɲá������������Ƚ�Ǥ���
-           �ɲäˤĤ��Ƥ�¾�Ƚ�ʣ���ʤ�̾�����������롣
+        1. gfarmユーザーテーブルはgfarm管理者が
+           ユーザー名とDN、およびreal-name, home-dir を指定して
+           個別に(VOMS連携機能ではなく）登録、削除を行うものとし、
+	   本VOMS連携の範囲外とする。
+	2. vomsid対応リストは、複数VOMSに対応してVO名だけではユニークに
+	   ならないことに備えて、VOMSに対してvomsid を振るためのファイルで、
+	   管理者が作成しておく。
+	   対応は "id ホストfqn ポート"を記述する。
+        3. グループの同期はgfarm管理者が、
+           VOを指定して行い、当該VOに関連するグループエントリーを更新する。
+           VO上になくなったGfarm上のグループは削除する。
+        4. 同期は管理者コマンド(gfvoms-sync)で行い、VOMSのメンバーシップ情報の
+	　 抽出と、gfarm のグループテーブルの更新の二段階で行う。
+        5. 生成するグループ名はgfarmユーザーテーブルに登録されているユーザーに
+           関わるものだけとする。キーはDNである。
+        6. グループ名の生成では、Gfarm上のグループ情報を取得し、
+           追加、削除、更新を判断し、
+           追加については他と重複しない名前を生成する。
 
-3. Ʊ�����ޥ�ɾܺ�
-	Ʊ�����ޥ�ɤϤ���˲��̤�
-	VOMS������С����å׾������Ф����ޥ�ɤ�
-	����򸵤ˡ�gfarm �Υ��롼�ס��桼��������򹹿����륳�ޥ�ɤ�
-	��Ĥ���ġ�
+3. 同期コマンド詳細
+	同期コマンドはさらに下位に
+	VOMSからメンバーシップ情報を取り出すコマンドと
+	これを元に、gfarm のグループ、ユーザー情報を更新するコマンドの
+	二つを持つ。
 
-3.1. ���С����å׾���ꥹ�ȥ��ޥ��
+3.1. メンバーシップ情報リストコマンド
 	gfvoms-list [-a void-list] -V void -v vo 
 			[-f user-list-path] [-m membership-path]
 
-	VO ����ꤷ������VO�Υ��С����å׾������Ϥ��롣
-	user-list-path �����ꤵ��Ƥ���С����ꤵ�줿�桼������
-	��Ϣ�������Τߤ���Ϥ��롣�ʤ�������桼�����ˤĤ���
-	���Ϥ��롣
-	���Ϥϡ�membership-path �����ꤵ��Ƥ���Ф����ˡ��ʤ����
-	ɸ����ϤǤ��롣
+	VO を指定して当該VOのメンバーシップ情報を出力する。
+	user-list-path が指定されていれば、指定されたユーザーに
+	関連する情報のみを出力する。なければ全ユーザーについて
+	出力する。
+	出力は、membership-path が指定されていればそこに、なければ
+	標準出力である。
 
-	user-list-path �Υե����ޥåȤ�1�Ԥ˰ʲ��η����ǵ��Ҥ��롣
-	��Ƭ��#������Х����ȹԤǤ��롣
+	user-list-path のフォーマットは1行に以下の形式で記述する。
+	行頭に#があればコメント行である。
 
-		user=<�桼����DN>
+		user=<ユーザーDN>
 
-	�桼�������ۤʤ�ǧ�ڶɤ�Ʊ��DN����Ͽ���Ƥ��Ƥ⡢DN�Ǽ��̤���
-	�Τ�Ʊ���ȴ�������롣
-	�ºݤˤϰۤʤ�ǧ�ڶɤ��Ѥ��뤳�ȤϤʤ���
-	membership-path �Υե����ޥåȤ�1�Ԥ˰ʲ��η����ǵ��Ҥ��롣
+	ユーザーが異なる認証局で同じDNを登録していても、DNで識別する
+	ので同じと看做される。
+	実際には異なる認証局を用いることはない。
+	membership-path のフォーマットは1行に以下の形式で記述する。
 
 		void=<void>
-		vo=/<voms̾>
-		voms=/<group̾>[/<subgroup̾>..]
-		user=<�桼����DN>
-		user=<�桼����DN>
-		voms=/<group̾>[/<subgroup̾>..]/role=<role̾>
-		user=<�桼����DN>
-		user=<�桼����DN>
+		vo=/<voms名>
+		voms=/<group名>[/<subgroup名>..]
+		user=<ユーザーDN>
+		user=<ユーザーDN>
+		voms=/<group名>[/<subgroup名>..]/role=<role名>
+		user=<ユーザーDN>
+		user=<ユーザーDN>
 
-3.2. gfarm ���롼�׹������ޥ��
+3.2. gfarm グループ更新コマンド
 	gfvoms-update -V void -v vo -m membership-path
 	gfvoms-update -d -V void -v vo 
 
-	VOMS�Υ��С����å׾���򸵤ˡ�gfarm �γ�������vo��
-	���롼�ס��桼���ơ��֥�򹹿����롣
-	-d ������ VO�κ����ؼ����롣
+	VOMSのメンバーシップ情報を元に、gfarm の該当するvoの
+	グループ、ユーザテーブルを更新する。
+	-d は当該 VOの削除を指示する。
 
-4. Ʊ�����ޥ�ɼ���
-4.1. gfvoms-sync ��ư���
+4. 同期コマンド実装
+4.1. gfvoms-sync の動作概要
 
-		�������Ԥ�VO����ꤷ�Ƶ�ư���롣
+		・管理者がVOを指定して起動する。
 							+-----------+
 							|vomsid-list|
 							.....--......
 		+-----------+
 		|gfvoms-sync| 
 		+-----------+
-			��gfmd ����桼�����ꥹ�Ȥ���Ф���
+			・gfmd からユーザーリストを取り出す。
 							+---------+
 							|user-list|
 							...........
-			��gfvoms-list ��ư���롣
+			・gfvoms-list を起動する。
 			+-----------+
 			|gfvoms-list|
 			+-----------+
-				�����ꤵ�줿�桼�����˴�Ϣ������С����å�
-				���������Ϥ���
+				・指定されたユーザーに関連するメンバーシップ
+				　情報を出力する
 							+---------------+
 							|membership-list|
 							.................
-			��gfvoms-update ��ư���롣
+			・gfvoms-update を起動する。
 			+-------------+
 			|gfvoms-update|
 			+-------------+
-				�����ꤵ�줿VO�˴ؤ��륰�롼�׾���򹹿����롣
+				・指定されたVOに関するグループ情報を更新する。
 							+----------+
 							|group-list|
 							............
 			
-4.2. gfvoms-list ��ư���
-	1. voms ����桼�����ꥹ�Ȥ�������롣
-	2. -f user-list-path �����ꤵ��Ƥ���Хޥå�����桼�����˹ʤ���ࡣ
-	3. �ƥ桼�����ˤĤ���°���륰�롼�פ�ꥹ�ȥ��åפ��롣
-	4. �ƥ桼�����ˤĤ���°���륰�롼��/�������ꥹ�ȥ��åפ��롣
-           ���С����å�°���Υ��֥��롼�פؤηѾ����ϡ�voms �ν��Ϥ�Ǥ���롣
-	5. �����������롼����˥桼������ޤȤᡢ���Ϥ��롣
-	6. �����������롼��/��������˥桼������ޤȤᡢ���Ϥ��롣
+4.2. gfvoms-list の動作概要
+	1. voms からユーザーリストを取得する。
+	2. -f user-list-path が指定されていればマッチするユーザーに絞り込む。
+	3. 各ユーザーについて属するグループをリストアップする。
+	4. 各ユーザーについて属するグループ/ロールをリストアップする。
+           メンバーシップ属性のサブグループへの継承等は、voms の出力に任せる。
+	5. 取得したグループ毎にユーザーをまとめ、出力する。
+	6. 取得したグループ/ロール毎にユーザーをまとめ、出力する。
 
-	voms-list �� zsi �ѥå����������Ѥ��� python �ǵ��Ҥ��롣
+	voms-list は zsi パッケージを利用して python で記述する。
 		
-4.3. gfvoms-update ��ư���
-	1. gfarm ���������롼��̾��GFM_PROTO_GROUP_INFO_GET_ALL�Ǽ�������
-	   void, VO�˴�Ϣ���륰�롼�פ�ꥹ�ȥ��åפ��롣
-	2. ���ꤵ�줿���С����åץꥹ�Ȥ���Ф������롼�ץꥹ�Ȥ���١�
-	   �ʲ��ζ�ʬ��Ԥ���
-	     a)��¸���륰�롼�ס�
-	     b)gfarm ���������륰�롼��
-	     c)gfarm ���ɲä��륰�롼��
-	   ̾������ʸ����ʸ������̤��롣
-	3. gfarm ���ɲä��륰�롼�פˤĤ��ơ����롼��̾���������롣
-	  	<void>/<vo̾>/<groupu̾>[/<subgroupu̾>...]/role=<role̾>
-	4. gfarm ���������륰�롼�פˤĤ���GFM_PROTO_GROUP_INFO_REMOVE
-	  ��gfmd��ȯ�Ԥ��롣
-	   ENOENT �ʳ��Υ��顼��������н�λ���롣
-	5. gfarm ���� GFM_PROTO_USER_INFO_GET_ALL �ǥ桼�����������Ф���
-	6. ��¸���٤����롼�פȡ��ɲä��٤����롼�פˤĤ��ơ�
-	�� °����桼����dn �ǥޥå����ƥꥹ�ȥ��åפ��롣
-	7. ��¸���٤����롼�פˤĤ��� ��¸����ȰۤʤäƤ���С�
-	   GFM_PROTO_GROUP_INFO_MODIFY ��°����桼�������ѹ����롣
-	   ENOENT �ʳ��Υ��顼��������н�λ���롣
-	   ENOENT �Ͽ����ɲý�����Ԥ���
-	8. gfarm ���ɲä��٤����롼�פˤĤ��� GFM_PROTO_GROUP_INFO_SET ��
-	   gfmd �˰��ꤹ�롣
-	   ���顼��������н�λ���롣
-5. DB ��������
-	GfarmGroup ��group̾�� VARCHAR(64)����TEXT���ѹ����롣
+4.3. gfvoms-update の動作概要
+	1. gfarm から全グループ名をGFM_PROTO_GROUP_INFO_GET_ALLで取得し、
+	   void, VOに関連するグループをリストアップする。
+	2. 指定されたメンバーシップリストと抽出したグループリストを比べ、
+	   以下の区分を行う。
+	     a)保存するグループ、
+	     b)gfarm から削除するグループ
+	     c)gfarm に追加するグループ
+	   名前は大文字小文字を区別する。
+	3. gfarm に追加するグループについて、グループ名を生成する。
+	  	<void>/<vo名>/<groupu名>[/<subgroupu名>...]/role=<role名>
+	4. gfarm から削除するグループについてGFM_PROTO_GROUP_INFO_REMOVE
+	  をgfmdに発行する。
+	   ENOENT 以外のエラーが生じれば終了する。
+	5. gfarm から GFM_PROTO_USER_INFO_GET_ALL でユーザー情報を取り出す。
+	6. 保存すべきグループと、追加すべきグループについて、
+	　 属するユーザをdn でマッチしてリストアップする。
+	7. 保存すべきグループについて 既存情報と異なっていれば、
+	   GFM_PROTO_GROUP_INFO_MODIFY で属するユーザーを変更する。
+	   ENOENT 以外のエラーが生じれば終了する。
+	   ENOENT は新規追加処理を行う。
+	8. gfarm に追加すべきグループについて GFM_PROTO_GROUP_INFO_SET で
+	   gfmd に依頼する。
+	   エラーが生じれば終了する。
+5. DB スキーマ
+	GfarmGroup のgroup名を VARCHAR(64)からTEXTに変更する。

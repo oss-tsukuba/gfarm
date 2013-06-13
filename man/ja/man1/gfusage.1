@@ -6,31 +6,31 @@
 .TH "GFUSAGE" "1" "23 March 2011" "Gfarm" ""
 
 .SH NAME
-gfusage \- ���ߤλ����̤�ɽ������
+gfusage \- 現在の使用量を表示する
 .SH SYNOPSIS
 
-\fBgfusage\fR [ \fB���ץ����\fR ] [ \fB̾��\fR ]
+\fBgfusage\fR [ \fBオプション\fR ] [ \fB名前\fR ]
 
 .SH "DESCRIPTION"
 .PP
-\fBgfusage\fR �ϡ�Gfarm �ե����륷���ƥ�λ����̤�
-�桼�����Ȥ䥰�롼�פ��Ȥ�ɽ�����ޤ���
-\fI̾��\fR����ꤹ��ȡ����Υ桼���䥰�롼�פ�����ɽ��
-���ޤ���
-�ǥե���Ȥϥ桼���λ����̤�ɽ�����ޤ�����-g ���ץ�������ꤹ��ȡ���
-�롼�פλ����̤�ɽ�����ޤ���
-\fBgfedquota\fR �� \fBgfquotacheck\fR �ˤ��
-�ƻ����̥ơ��֥���ۤ���ȡ��桼���䥰�롼�פλ����̤����ѤǤ��ޤ���
+\fBgfusage\fR は、Gfarm ファイルシステムの使用量を
+ユーザごとやグループごとに表示します。
+\fI名前\fRを指定すると、そのユーザやグループだけを表示
+します。
+デフォルトはユーザの使用量を表示しますが、-g オプションを指定すると、グ
+ループの使用量を表示します。
+\fBgfedquota\fR と \fBgfquotacheck\fR によっ
+て使用量テーブルを構築すると、ユーザやグループの使用量を利用できます。
 .TP
 \fB-P NAME\fR
-���ꤷ���ѥ�̾�ˤ������Υ᥿�ǡ��������Ф���ꤷ�ޤ���
+指定したパス名により特定のメタデータサーバを指定します。
 .SH "OPTIONS"
 .TP
 \fB-g\fR
-���롼�פλ����̤�ɽ�����ޤ���
+グループの使用量を表示します。
 .TP
 \fB-?\fR
-�������ץ�����ɽ�����ޤ���
+引数オプションを表示します。
 .SH "SEE ALSO"
 .PP
 \fBgfdf\fR(1),

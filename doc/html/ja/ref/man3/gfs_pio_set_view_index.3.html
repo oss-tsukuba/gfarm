@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfs_pio_set_view_index&nbsp;--&nbsp;fragment ñ�̤Υ�����������ꤹ��</DIV
+>gfs_pio_set_view_index&nbsp;--&nbsp;fragment 単位のアクセスを指定する</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -103,72 +103,72 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->�ե������ե饰����ñ�̤ǥ����������뤳�Ȥ���ꤷ�ޤ���</P
+>ファイルをフラグメント単位でアクセスすることを指定します。</P
 ><P
->�������������ե�����ξ�硢ɬ������
+>新規作成したファイルの場合、必ず引数
 <TT
 CLASS="PARAMETER"
 ><I
 >fragment_number</I
 ></TT
 >
-�˥ե饰����
-����������ꤹ��ɬ�פ�����ޤ��������ͤϡ���������ե�����򳫤�����
-�ΥΡ��ɤǡ�Ʊ���ͤǤʤ��ƤϤʤ�ޤ��󡣴�¸�Υե�����ξ��ˤϡ�
-������
+にフラグメント
+の総数を指定する必要があります。この値は、この並列ファイルを開く全て
+のノードで、同じ値でなくてはなりません。既存のファイルの場合には、
+ここに
 <TT
 CLASS="CONSTANT"
 >GFARM_FILE_DONTCARE</TT
 >
-�Ƚ񤱤С�������ά�Ǥ��ޤ����⤷
-�⤷�ºݤȰۤʤ������ꤷ�����ˤϡ����δؿ��ϥ��顼�Ǽ��Ԥ��ޤ���</P
+と書けば、指定を省略できます。もし
+もし実際と異なる数を指定した場合には、この関数はエラーで失敗します。</P
 ><P
->����
+>引数
 <TT
 CLASS="PARAMETER"
 ><I
 >fragment_index</I
 ></TT
 >
-�ˤϡ� ������������ե饰���Ȥ��ֹ����ꤷ�ޤ���</P
+には、 アクセスするフラグメントの番号を指定します。</P
 ><P
->����
+>引数
 <TT
 CLASS="PARAMETER"
 ><I
 >host</I
 ></TT
 >
-�ϡ����������������ۥ��Ȥ�����Ū�˻��ꤷ�����������Ѥ��ޤ���
-���꤬���פʤ�
+は、アクセスしたいホストを明示的に指定したい時に利用します。
+指定が不要なら
 <SPAN
 CLASS="ACRONYM"
 >NULL</SPAN
 >
-���Ϥ��о�ά�Ǥ��ޤ���</P
+を渡せば省略できます。</P
 ><P
->����
+>引数
 <TT
 CLASS="PARAMETER"
 ><I
 >flag</I
 ></TT
 >
-�ˤϡ�
+には、
 <TT
 CLASS="CONSTANT"
 >GFARM_FILE_SEQUENTIAL</TT
-> ��
+> 、
 <TT
 CLASS="CONSTANT"
 >GFARM_FILE_REPLICATE</TT
-> ��
+> 、
 <TT
 CLASS="CONSTANT"
 >GFARM_FILE_NOT_REPLICATE</TT
 >
-�������¤�����Ǥ��ޤ���
-�����ϡ��������̣���ޤ���</P
+の論理和が指定できます。
+これらは、下記を意味します。</P
 ><P
 ></P
 ><DIV
@@ -181,8 +181,8 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���Υե饰���Ȥ˴ؤ��Ƥϥ������󥷥�롦���������Τߤ�Ԥʤ�����
-�򼨤��ޤ���</P
+>このフラグメントに関してはシーケンシャル・アクセスのみを行なうこと
+を示します。</P
 ></DD
 ><DT
 ><TT
@@ -191,8 +191,8 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���餫���ᡢ�������롦�Ρ��ɤ˥�ץꥫ���Ѱդ��Ƥ��饢���������뤳�Ȥ�
-���ꤷ�ޤ���GFARM_FILE_NOT_REPLICATE �Ȥ���¾Ū�ʥ��ץ����Ǥ���</P
+>あらかじめ、ローカル・ノードにレプリカを用意してからアクセスすることを
+指定します。GFARM_FILE_NOT_REPLICATE とは排他的なオプションです。</P
 ></DD
 ><DT
 ><TT
@@ -201,14 +201,14 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���˥�ץꥫ�����������������ΥΡ��ɤ˥�ץꥫ���Ѱդ��ʤ�����
-����ꤷ�ޤ���GFARM_FILE_REPLICATE �Ȥ���¾Ū�ʥ��ץ����Ǥ���</P
+>既にレプリカがある場合を除き、このノードにレプリカを用意しないこと
+を指定します。GFARM_FILE_REPLICATE とは排他的なオプションです。</P
 ></DD
 ></DL
 ></DIV
 ><P
->���δؿ���ƤФʤ����֤Ǥϡ�Gfarm �ե������ global view
-���֤ȤʤäƤ��ꡢ���ƤΥե饰���Ȥ���礵�줿ñ��ե�����˸����ޤ���</P
+>この関数を呼ばない状態では、Gfarm ファイルは global view
+状態となっており、全てのフラグメントが結合された単一ファイルに見えます。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -229,7 +229,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ｪλ�򼨤��ޤ���</P
+>正常終了を示します。</P
 ></DD
 ><DT
 ><TT
@@ -238,7 +238,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->������­�Τ����������ߤ��ޤ�����</P
+>メモリ不足のため処理を中止しました。</P
 ></DD
 ><DT
 ><TT
@@ -247,7 +247,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤷ���ѥ�̾�����ե饰���Ȳ��ե�����ǤϤ���ޤ���</P
+>指定したパス名が、フラグメント化ファイルではありません。</P
 ></DD
 ><DT
 ><TT
@@ -256,7 +256,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤷ���ե饰��������������Ŭ�ڤǤ���</P
+>指定したフラグメント総数が、不適切です。</P
 ></DD
 ><DT
 ><TT
@@ -265,19 +265,19 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->�ؿ���������Ŭ�ڤǤ������Ȥ��С��ե�����ο����������ˡ�
-�ե饰���������Ȥ���
+>関数引数が不適切です。たとえば、ファイルの新規作成時に、
+フラグメント総数として
 <TT
 CLASS="CONSTANT"
 >GFARM_FILE_DONTCARE</TT
 >
-����ꤹ��ȡ����Υ��顼�������ޤ���</P
+を指定すると、このエラーが生じます。</P
 ></DD
 ><DT
->����¾</DT
+>その他</DT
 ><DD
 ><P
->�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</P
+>上記以外のエラーが生じたことを示します。</P
 ></DD
 ></DL
 ></DIV

@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_PIO_SET_VIEW_INDEX" "3" "25 April 2003" "Gfarm" ""
 .SH NAME
-gfs_pio_set_view_index \- fragment ñ�̤Υ�����������ꤹ��
+gfs_pio_set_view_index \- fragment 単位のアクセスを指定する
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,74 +14,74 @@ char *gfs_pio_set_view_index (GFS_File \fIgf\fB, int \fIfragment_number\fB, int 
 \fR
 .SH "DESCRIPTION"
 .PP
-�ե������ե饰����ñ�̤ǥ����������뤳�Ȥ���ꤷ�ޤ���
+ファイルをフラグメント単位でアクセスすることを指定します。
 .PP
-�������������ե�����ξ�硢ɬ������
+新規作成したファイルの場合、必ず引数
 \fIfragment_number\fR
-�˥ե饰����
-����������ꤹ��ɬ�פ�����ޤ��������ͤϡ���������ե�����򳫤�����
-�ΥΡ��ɤǡ�Ʊ���ͤǤʤ��ƤϤʤ�ޤ��󡣴�¸�Υե�����ξ��ˤϡ�
-������
+にフラグメント
+の総数を指定する必要があります。この値は、この並列ファイルを開く全て
+のノードで、同じ値でなくてはなりません。既存のファイルの場合には、
+ここに
 GFARM_FILE_DONTCARE
-�Ƚ񤱤С�������ά�Ǥ��ޤ����⤷
-�⤷�ºݤȰۤʤ������ꤷ�����ˤϡ����δؿ��ϥ��顼�Ǽ��Ԥ��ޤ���
+と書けば、指定を省略できます。もし
+もし実際と異なる数を指定した場合には、この関数はエラーで失敗します。
 .PP
-����
+引数
 \fIfragment_index\fR
-�ˤϡ� ������������ե饰���Ȥ��ֹ����ꤷ�ޤ���
+には、 アクセスするフラグメントの番号を指定します。
 .PP
-����
+引数
 \fIhost\fR
-�ϡ����������������ۥ��Ȥ�����Ū�˻��ꤷ�����������Ѥ��ޤ���
-���꤬���פʤ�
+は、アクセスしたいホストを明示的に指定したい時に利用します。
+指定が不要なら
 NULL
-���Ϥ��о�ά�Ǥ��ޤ���
+を渡せば省略できます。
 .PP
-����
+引数
 \fIflag\fR
-�ˤϡ�
-GFARM_FILE_SEQUENTIAL ��
-GFARM_FILE_REPLICATE ��
+には、
+GFARM_FILE_SEQUENTIAL 、
+GFARM_FILE_REPLICATE 、
 GFARM_FILE_NOT_REPLICATE
-�������¤�����Ǥ��ޤ���
-�����ϡ��������̣���ޤ���
+の論理和が指定できます。
+これらは、下記を意味します。
 .TP
 \fBGFARM_FILE_SEQUENTIAL\fR
-���Υե饰���Ȥ˴ؤ��Ƥϥ������󥷥�롦���������Τߤ�Ԥʤ�����
-�򼨤��ޤ���
+このフラグメントに関してはシーケンシャル・アクセスのみを行なうこと
+を示します。
 .TP
 \fBGFARM_FILE_REPLICATE\fR
-���餫���ᡢ�������롦�Ρ��ɤ˥�ץꥫ���Ѱդ��Ƥ��饢���������뤳�Ȥ�
-���ꤷ�ޤ���GFARM_FILE_NOT_REPLICATE �Ȥ���¾Ū�ʥ��ץ����Ǥ���
+あらかじめ、ローカル・ノードにレプリカを用意してからアクセスすることを
+指定します。GFARM_FILE_NOT_REPLICATE とは排他的なオプションです。
 .TP
 \fBGFARM_FILE_NOT_REPLICATE\fR
-���˥�ץꥫ�����������������ΥΡ��ɤ˥�ץꥫ���Ѱդ��ʤ�����
-����ꤷ�ޤ���GFARM_FILE_REPLICATE �Ȥ���¾Ū�ʥ��ץ����Ǥ���
+既にレプリカがある場合を除き、このノードにレプリカを用意しないこと
+を指定します。GFARM_FILE_REPLICATE とは排他的なオプションです。
 .PP
-���δؿ���ƤФʤ����֤Ǥϡ�Gfarm �ե������ global view
-���֤ȤʤäƤ��ꡢ���ƤΥե饰���Ȥ���礵�줿ñ��ե�����˸����ޤ���
+この関数を呼ばない状態では、Gfarm ファイルは global view
+状態となっており、全てのフラグメントが結合された単一ファイルに見えます。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
 \fBGFARM_ERR_OPERATION_NOT_PERMITTED\fR
-���ꤷ���ѥ�̾�����ե饰���Ȳ��ե�����ǤϤ���ޤ���
+指定したパス名が、フラグメント化ファイルではありません。
 .TP
 \fBGFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH\fR
-���ꤷ���ե饰��������������Ŭ�ڤǤ���
+指定したフラグメント総数が、不適切です。
 .TP
 \fBGFARM_ERR_INVALID_ARGUMENT\fR
-�ؿ���������Ŭ�ڤǤ������Ȥ��С��ե�����ο����������ˡ�
-�ե饰���������Ȥ���
+関数引数が不適切です。たとえば、ファイルの新規作成時に、
+フラグメント総数として
 GFARM_FILE_DONTCARE
-����ꤹ��ȡ����Υ��顼�������ޤ���
+を指定すると、このエラーが生じます。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "SEE ALSO"
 .PP
 \fBgfs_pio_create\fR(3),

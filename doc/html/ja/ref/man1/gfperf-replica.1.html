@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfperf-replica&nbsp;--&nbsp;Gfarm �ե�����ʣ������ǽ¬���Ԥ���</DIV
+>gfperf-replica&nbsp;--&nbsp;Gfarm ファイル複製の性能測定を行う。</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,22 +40,22 @@ CLASS="COMMAND"
 >   -s, --src <TT
 CLASS="REPLACEABLE"
 ><I
->ʣ����gfsd̾</I
+>複製元gfsd名</I
 ></TT
 >   -s, --dst <TT
 CLASS="REPLACEABLE"
 ><I
->ʣ����gfsd̾</I
+>複製先gfsd名</I
 ></TT
 >  [-l, --filesize <TT
 CLASS="REPLACEABLE"
 ><I
->�ե����륵����</I
+>ファイルサイズ</I
 ></TT
 >] [-t, --testdir <TT
 CLASS="REPLACEABLE"
 ><I
->�ƥ��ȥǥ��쥯�ȥ�</I
+>テストディレクトリ</I
 ></TT
 >]</P
 ></DIV
@@ -67,10 +67,10 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->���� <CODE
+>引数 <CODE
 CLASS="PARAMETER"
->�ƥ��ȥǥ��쥯�ȥ�</CODE
-> �˥ƥ����ѤΥե�����������������ʣ����ǽ��¬�ꤷ�ޤ���</P
+>テストディレクトリ</CODE
+> にテスト用のファイルを作成し、その複製性能を測定します。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -90,11 +90,11 @@ CLASS="OPTION"
 >-s, --src</CODE
 > <CODE
 CLASS="PARAMETER"
->ʣ����gfsd̾</CODE
+>複製元gfsd名</CODE
 ></DT
 ><DD
 ><P
->ʣ����gfsd̾����ꤷ�ޤ���</P
+>複製元gfsd名を指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -102,11 +102,11 @@ CLASS="OPTION"
 >-d, --dst</CODE
 > <CODE
 CLASS="PARAMETER"
->ʣ����gfsd̾</CODE
+>複製先gfsd名</CODE
 ></DT
 ><DD
 ><P
->ʣ����gfsd̾����ꤷ�ޤ���</P
+>複製先gfsd名を指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -114,12 +114,12 @@ CLASS="OPTION"
 >-l, --filesize</CODE
 > <CODE
 CLASS="PARAMETER"
->�ե����륵����</CODE
+>ファイルサイズ</CODE
 ></DT
 ><DD
 ><P
->�ƥ��Ȥǻ��Ѥ���ե����륵��������ꤷ�ޤ���
-�ǥե���Ȥ�1M�Ǥ���</P
+>テストで使用するファイルサイズを指定します。
+デフォルトは1Mです。</P
 ></DD
 ><DT
 ><CODE
@@ -127,13 +127,13 @@ CLASS="OPTION"
 >-t, --testdir</CODE
 > <CODE
 CLASS="PARAMETER"
->�ƥ��ȥǥ��쥯�ȥ�</CODE
+>テストディレクトリ</CODE
 ></DT
 ><DD
 ><P
->�ƥ��Ȥ�»ܤ���ǥ��쥯�ȥ����ꤷ�ޤ���
-gfarm url (gfarm:///�ǻϤޤ���) ����ꤷ�ޤ���
-�ǥե���Ȥ�gfarm:///tmp�Ǥ���</P
+>テストを実施するディレクトリを指定します。
+gfarm url (gfarm:///で始まるもの) を指定します。
+デフォルトはgfarm:///tmpです。</P
 ></DD
 ></DL
 ></DIV

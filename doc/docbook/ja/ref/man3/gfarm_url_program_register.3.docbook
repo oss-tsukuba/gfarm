@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfarm_url_program_register</refname>
-<refpurpose>�ץ���������Ͽ����</refpurpose>
+<refpurpose>プログラムを登録する</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -35,20 +35,20 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>����
+<para>引数
 <parameter>architecture</parameter>
-�ǻ��ꤷ����������μ¹Է����ե�����
+で指定した機種向けの実行形式ファイル
 <parameter>filename</parameter>
-��
+を、
 <parameter>gfarm_url</parameter>
-�ǻ��ꤷ���ѥ�̾����Ͽ���ޤ���
-�ޤ���
+で指定したパス名に登録します。
+また、
 <parameter>nreplicas</parameter>
-�ˡ����������ץꥫ�ο�����ꤷ�ޤ���</para>
+に、作成するレプリカの数を指定します。</para>
 
-<para>����
+<para>引数
 <parameter>nreplicas</parameter>
-�ϡ�����ΥС������Ǻ�������ͽ��Ǥ���</para>
+は、将来のバージョンで削除される予定です。</para>
 
 </refsect1>
 
@@ -57,25 +57,25 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
 <listitem>
-<para>���ꤷ���ե�����ˡ��¹Բ�ǽ�ӥåȤ�Ω�äƤ��ޤ���Ǥ�����</para>
+<para>指定したファイルに、実行可能ビットが立っていませんでした。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

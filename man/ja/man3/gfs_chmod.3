@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_CHMOD" "3" "21 February 2005" "Gfarm" ""
 .SH NAME
-gfs_chmod \- �⡼���ѹ�
+gfs_chmod \- モード変更
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,46 +14,46 @@ char *gfs_chmod (char * \fIgfarm_url\fB, mode_t \fImode\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-����
+引数
 \fIgfarm_url\fR
-�˻��ꤷ��̾���Υե����롦�ǥ��쥯�ȥ�Υ⡼�ɤ�
+に指定した名前のファイル・ディレクトリのモードを、
 \fImode\fR
-���ѹ����ޤ�������
+に変更します。この
 \fImode\fR
-���ͤΰ�̣��
+の値の意味は
 \fBchmod(2)\fR
-��Ʊ�ͤǤ���������9�ӥåȤΤ�ͭ���Ǥ���
+と同様ですが、下位9ビットのみ有効です。
 .PP
-ʣ���Υե饰���Ȥ���ʤ�ե�����μ¹�°�����ѹ��ˤ�����
-����ޤ����¹�°����������ˤϼ¹�°���򤹤٤�����ȤϤǤ��ޤ���
-���ʤ��Ȥ��Ĥμ¹ԥӥåȤϻĤ��Ƥ���ɬ�פ�����ޤ���
-�դˡ��¹�°���������ʤ����˼¹�°����Ω�Ƥ뤳�ȤϤǤ��ޤ���
+複数のフラグメントからなるファイルの実行属性の変更には制約が
+あります。実行属性がある場合には実行属性をすべて落すことはできません。
+少なくとも一つの実行ビットは残しておく必要があります。
+逆に、実行属性が全くない場合に実行属性を立てることはできません。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
 \fBGFARM_ERR_AUTHENTICATION\fR
-gfmd(8) ���뤤�� gfsd(8) ���Ф���桼����ǧ�ڤ����Ԥ��ޤ�����
+gfmd(8) あるいは gfsd(8) に対するユーザー認証が失敗しました。
 .TP
 \fBGFARM_ERR_PERMISSION_DENIED\fR
-���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ�ؤΥ����������븢�¤�����ޤ���
+指定したパス名の親ディレクトリへのアクセスする権限がありません。
 .TP
 \fBGFARM_ERR_OPERATION_NOT_PERMITTED\fR
-�ץ�������¹Ԥ��Ƥ���桼���������ե�����ν�ͭ�ԤǤ⡢�����ƥ������
-�Ǥ⤢��ޤ��󡣤ޤ��ϡ�ʣ���Υե饰���Ȥ��ĥե�����μ¹ԥӥåȤ�
-���ʤ��Ȥ��ĤϤ�����֤��������ʤ����֤ˡ����뤤�Ϥ��εդ��ѹ����褦��
-���ޤ�����
+プロセスを実行しているユーザーが、ファイルの所有者でも、システム管理者
+でもありません。または、複数のフラグメントをもつファイルの実行ビットを
+少なくとも一つはある状態から全くない状態に、あるいはその逆に変更しようと
+しました。
 .TP
 \fBGFARM_ERR_NO_SUCH_OBJECT\fR
-���ꤵ�줿�ѥ�̾��¸�ߤ��ޤ���
+指定されたパス名が存在しません。
 .TP
 \fBGFARM_ERR_NOT_A_DIRECTORY\fR
-���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤϥǥ��쥯�ȥ�Ǥʤ��ä����Ȥ�
-�����ޤ���
+指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。

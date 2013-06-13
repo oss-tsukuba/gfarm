@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfsetfacl&nbsp;--&nbsp;Gfarm �ե�����Υ�����������ꥹ�Ȥ����ꤹ��</DIV
+>gfsetfacl&nbsp;--&nbsp;Gfarm ファイルのアクセス制御リストを設定する</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,7 +40,7 @@ CLASS="COMMAND"
 >  [<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 >] [<TT
 CLASS="REPLACEABLE"
@@ -60,8 +60,8 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfsetfacl</B
-> �� Gfarm �ե����륷���ƥ��ˤ���
-�ե������ǥ��쥯�ȥ�Υ�����������ȥ�����ꥹ�� (ACL) �����ꤷ�ޤ���</P
+> は Gfarm ファイルシステム上にある
+ファイルやディレクトリのアクセスコントロールリスト (ACL) を設定します．</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -82,8 +82,8 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->���٤Ƥγ�ĥ ACL ����ȥ�������ޤ���
-���� ACL (��ͭ�ԡ����롼�ס�����¾) �Ϻ������ޤ���</P
+>すべての拡張 ACL エントリを削除します．
+基本 ACL (所有者，グループ，その他) は削除されません．</P
 ></DD
 ><DT
 ><CODE
@@ -92,7 +92,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�ǥե���� ACL �����������ޤ���</P
+>デフォルト ACL だけを削除します．</P
 ></DD
 ><DT
 ><CODE
@@ -101,9 +101,9 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->ACL �ޥ�������ȥ��Ʒ׻����ޤ���gfsetfacl ���ޥ�ɥǥե����
-�ε�ư�ϡ��ޥ�������ȥ꤬���ꤵ��ʤ��ä��������ޥ�������ȥ��Ʒ�
-�����ޤ���</P
+>ACL マスクエントリを再計算しません．gfsetfacl コマンドデフォルト
+の挙動は，マスクエントリが指定されなかった場合だけマスクエントリを再計
+算します．</P
 ></DD
 ><DT
 ><CODE
@@ -112,8 +112,8 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->��� ACL �ޥ�������ȥ��Ʒ׻����ޤ����ޥ�������ȥ����ꤷ����
-���Ƥ�Ʒ׻����ޤ���(-n ���ץ����⻲�Ȥ��Ƥ���������)</P
+>常に ACL マスクエントリを再計算します．マスクエントリを指定したと
+しても再計算します．(-n オプションも参照してください．)</P
 ></DD
 ><DT
 ><CODE
@@ -122,8 +122,8 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�ƥ��ȥ⡼�ɤǤ����ե������ǥ��쥯�ȥ�� ACL ���ѹ���������ˡ�
-ACL ���Ϥ��ѹ�ͽ��ο����� ACL ��ʸ�����ɽ�����ޤ���</P
+>テストモードです．ファイルやディレクトリの ACL を変更する代わりに，
+ACL 入力と変更予定の新しい ACL を文字列で表示します．</P
 ></DD
 ><DT
 ><CODE
@@ -135,9 +135,9 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->�ե������ǥ��쥯�ȥ�� ACL ����ȥ���ɲäޤ����ִ����뤿��ˡ�
-ACL ����ȥ��ʸ����ɽ���򤳤Υ��ץ����ǻ��ꤷ�ޤ���
-ʣ���� ACL ����ȥ�򥳥��ʸ�� (`,') �Ƕ��ڤ�ޤ���</P
+>ファイルやディレクトリの ACL エントリを追加または置換するために，
+ACL エントリの文字列表現をこのオプションで指定します．
+複数の ACL エントリをコンマ文字 (`,') で区切ります．</P
 ></DD
 ><DT
 ><CODE
@@ -149,10 +149,10 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->�ե������ǥ��쥯�ȥ�� ACL ����ȥ���ɲäޤ����ִ����뤿��ˡ�
-ACL ʸ����ɽ�������Ҥ��줿�ե�����ޤ���ɸ������ (`-') 
-����ꤷ�ޤ���
-���� ACL �ե��������Ϥ� gfgetfacl ���ޥ�ɤν��Ϥ�����դ��ޤ���</P
+>ファイルやディレクトリの ACL エントリを追加または置換するために，
+ACL 文字列表現が記述されたファイルまたは標準入力 (`-') 
+を指定します．
+この ACL ファイル入力は gfgetfacl コマンドの出力を受け付けます．</P
 ></DD
 ><DT
 ><CODE
@@ -161,7 +161,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������ץ�����ɽ�����ޤ���</P
+>引数オプションを表示します．</P
 ></DD
 ></DL
 ></DIV
@@ -174,9 +174,9 @@ NAME="ACL-ENTRIES"
 ><H2
 >ACL ENTRIES</H2
 ><P
->gfsetfacl ���ޥ�ɤϰʲ��� ACL ����ȥ�񼰤�ǧ�����ޤ���
-perms �ե�����ɤϵ��Ĥ�ɽ��ʸ�����Ȥ߹�碌�Ǥ���
-�ǥե���� ACL ����ȥ�� d[efault:] ��Ƭ��������ޤ���</P
+>gfsetfacl コマンドは以下の ACL エントリ書式を認識します．
+perms フィールドは許可を表す文字を組み合わせです．
+デフォルト ACL エントリは d[efault:] 接頭辞を持ちます．</P
 ><P
 ></P
 ><DIV
@@ -185,27 +185,27 @@ CLASS="VARIABLELIST"
 ><DT
 >[d[efault:]u[ser]::perms</DT
 ><DD
->��ͭ�Ԥε���</DD
+>所有者の許可</DD
 ><DT
 >[d[efault:]u[ser]:username:perms</DT
 ><DD
->��̾�桼���ε���</DD
+>指名ユーザの許可</DD
 ><DT
 >[d[efault:]g[roup]::perms</DT
 ><DD
->�ե����륰�롼�פε���</DD
+>ファイルグループの許可</DD
 ><DT
 >[d[efault:]g[roup]:groupname:perms</DT
 ><DD
->��̾���롼�פε���</DD
+>指名グループの許可</DD
 ><DT
 >[d[efault:]m[ask]::perms</DT
 ><DD
->�¹Ը��Υޥ���(����ε���) (��ͭ�ԤȤ���¾���ʳ��˸���)</DD
+>実行権のマスク(最大の許可) (所有者とその他、以外に効果)</DD
 ><DT
 >[d[efault:]o[ther]::perms</DT
 ><DD
->����¾�ؤε���</DD
+>その他への許可</DD
 ></DL
 ></DIV
 ></DIV
@@ -222,15 +222,15 @@ NAME="EXAMPLES"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
->��̾�桼���ؤ��ɤ߹��ߥ�����������Ĥ��롥</DT
+>指名ユーザへの読み込みアクセスを許可する．</DT
 ><DD
 >gfsetfalc -m u:testuser:r filename</DD
 ><DT
->filename2 �� ACL ��filename1 �� ACL ���ִ����롥</DT
+>filename2 の ACL をfilename1 の ACL で置換する．</DT
 ><DD
 >gfgetfacl filename1 | gfsetfacl -b -M - filename2</DD
 ><DT
->Ĺ�������� ACL ʸ����ɽ��</DT
+>長い形式の ACL 文字列表現</DT
 ><DD
 ><P
 CLASS="LITERALLAYOUT"
@@ -246,7 +246,7 @@ default:group::r-x<br>
 default:other::r-x</P
 ></DD
 ><DT
->û�������� ACL ʸ����ɽ��</DT
+>短い形式の ACL 文字列表現</DT
 ><DD
 ><P
 CLASS="LITERALLAYOUT"

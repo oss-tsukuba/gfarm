@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_utimes</refname>
-<refpurpose>�ե����륢����������/���������ѹ�</refpurpose>
+<refpurpose>ファイルアクセス時刻/修正時刻変更</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -33,16 +33,16 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>����
+<para>引数
 <parameter>gfarm_url</parameter>
-�Υե����륢����������/���������
+のファイルアクセス時刻/修正時刻を
 <parameter>tsp</parameter>
-���ͤ��ѹ����ޤ���
-<parameter>tsp</parameter>[0] ���ͤ򥢥���������ˡ�
-<parameter>tsp</parameter>[1] ���ͤ�������˻��Ѥ��ޤ���
-��¤��
+の値に変更します。
+<parameter>tsp</parameter>[0] の値をアクセス時刻に、
+<parameter>tsp</parameter>[1] の値を修正時刻に使用します。
+構造体
 gfarm_timespec
-�ϰʲ��Τ褦�ˤʤäƤ��ޤ���
+は以下のようになっています。
 <screen>
 	struct gfarm_timespec {
 		unsigned int tv_sec;	/* seconds */
@@ -50,7 +50,7 @@ gfarm_timespec
 	};
 </screen></para>
 <para><parameter>tsp</parameter>
-�� NULL �ξ�硢���ߤλ�������ꤷ�ޤ���
+が NULL の場合、現在の時刻を設定します。
 </para>
 </refsect1>
 
@@ -59,43 +59,43 @@ gfarm_timespec
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING</constant></term>
 <listitem>
-<para>�ե�����̾�� Gfarm URL �� gfarm: ������ޤ���</para>
+<para>ファイル名に Gfarm URL の gfarm: がありません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
 <listitem>
-<para>gfmd(8) ���Ф���桼����ǧ�ڤ����Ԥ��ޤ�����</para>
+<para>gfmd(8) に対するユーザー認証が失敗しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
-<para>���ꤵ�줿�ѥ��إ����������븢�¤�������ޤ���</para>
+<para>指定されたパスへアクセスする権限が、ありません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
-<para>���ꤵ�줿�ѥ�̾��¸�ߤ��ޤ���</para>
+<para>指定されたパス名が存在しません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

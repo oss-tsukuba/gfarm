@@ -1,140 +1,140 @@
-�� ����
+■ 問題
 
-gfarm 2.3 �ޤǤϡ��ʲ��Υ��ʥꥪ�Τ褦�� race condition ���꤬���ä���
+gfarm 2.3 までは、以下のシナリオのような race condition 問題があった。
 
-(1) GFM_PROTO_CLOSE_WRITE �ǥ����������Τ� gfmd ���Ϥ���
+(1) GFM_PROTO_CLOSE_WRITE でクローズ通知が gfmd へ届く。
 
-(2) gfmd ����obsolete �ˤʤä����Ƥ�ʣ����ä��ˤ�����
-  ���Υ��ʥꥪ�Ǥϡ����Ρ��ä����Ť�ʣ������ĥۥ��Ȥ�
-  old_replica_host �ȸƤ֤��Ȥˤ��롣
+(2) gfmd が、obsolete になった全ての複製を消しにいく。
+  このシナリオでは、この、消される古い複製を持つホストを
+  old_replica_host と呼ぶことにする。
 
-(3) (2) ���¹Ԥ��ơ�Ʊ���ե�������Ф���ʣ���׵᤬��
-  old_replica_host ���Ϥ���
+(3) (2) と並行して、同じファイルに対する複製要求が、
+  old_replica_host に届く。
 
-(4) �ʤ�餫����ͳ (�̿��ٱ䡢gfsd ������ʤ�) �ǡ�(2) ��
-  ��λ�������� (3) �����Ϥ��롣
-  ���θ塢(2) �Τ����ʣ�����ä����ȡ�����¸�ߤ��ʤ���Ф��ʤ�ʣ������
-  �õ��Ƥ��ޤ���
+(4) なんらかの理由 (通信遅延、gfsd ダウンなど) で、(2) が
+  完了する前に (3) が開始する。
+  その後、(2) のために複製が消されると、本来存在しなければけない複製が、
+  消去されてしまう。
 
-�� ���
+■ 解決
 
-gfsd �� v2.4 �ʹߤξ�� (���ξ�硢gfmd �� v2.4 �ʹߤǤ���ɬ�פ����롣)
-�ʲ��Τ褦��ư���Ԥʤ���
+gfsd が v2.4 以降の場合 (この場合、gfmd も v2.4 以降である必要がある。)
+以下のような動作を行なう。
 
-���񤭹��ߤ�Ԥʤä���Υե����륯����������gfsd �ϡ��ʲ��Τ褦��
-  ư���Ԥʤ���
-  (1) GFM_PROTO_CLOSE_WRITE_V2_4 �ǥ����������Τ� gfmd ���Ϥ���
-  (2) (1) �������Ȥ��ơ�gfmd �ϡ��ʲ��� gfsd ���֤���
-    �������������ֹ�˲�̾����ɬ�פ����뤫�򼨤��ե饰
-    ����̾���θŤ������ֹ� (��ҤΥե饰�����äƤ�����Τ�ͭ��)
-    ����̾��ο����������ֹ� (��ҤΥե饰�����äƤ�����Τ�ͭ��)
-  (3) gfsd �ϡ�
-	rename("inode�ֹ�"+"inode�������ֹ�", "inode�ֹ�"+"inode�������ֹ�");
-      ��Ԥʤ���GFM_PROTO_GENERATION_UPDATED �ǡ���λ�� gfmd �����Τ��롣
+・書き込みを行なった後のファイルクローズ時、gfsd は、以下のような
+  動作を行なう。
+  (1) GFM_PROTO_CLOSE_WRITE_V2_4 でクローズ通知が gfmd へ届く。
+  (2) (1) の返答として、gfmd は、以下を gfsd へ返す。
+    ・新しい世代番号に改名する必要があるかを示すフラグ
+    ・改名前の古い世代番号 (上述のフラグがたっている場合のみ有効)
+    ・改名後の新しい世代番号 (上述のフラグがたっている場合のみ有効)
+  (3) gfsd は、
+	rename("inode番号"+"inode旧世代番号", "inode番号"+"inode新世代番号");
+      を行ない、GFM_PROTO_GENERATION_UPDATED で、完了を gfmd に通知する。
 
-��gfmd �ϡ�GFM_PROTO_CLOSE_WRITE_V2_4 �������ä���硢
-  ����� mtime �Ǵ���Ʊ�������ץ�� GFM_PROTO_CLOSE_WRITE_V2_4 ��
-  ������äƤ��ʤ����������롣����� mtime ������С���̾�ե饰�ʤ���
-����̾�ե饰��ɬ�פʾ��ϡ�GFM_PROTO_CLOSE_WRITE_V2_4 �η�̤Ȥ��ơ�
-  ��������Τ������ġ�inode �ˡ������ѹ���򼨤����֤�Ͽ���롣
-�������ѹ���ˡ��ʲ��Τ褦���׵᤬�������ˤϡ���������α���롣
-  * �����������ץ��׵᤬�������
-  * ��꿷��������˹������� GFM_PROTO_CLOSE_WRITE_V2_4 �������ä����
-�����幹������λ�����顢�ٱ䤷�Ƥ����������֤���
+・gfmd は、GFM_PROTO_CLOSE_WRITE_V2_4 を受け取った場合、
+  より後の mtime で既に同時オープンの GFM_PROTO_CLOSE_WRITE_V2_4 を
+  受け取っていないか検査する。より後の mtime があれば、改名フラグなし。
+・改名フラグが必要な場合は、GFM_PROTO_CLOSE_WRITE_V2_4 の結果として、
+  それを通知し、かつ、inode に、世代変更中を示す状態を記録する。
+・世代変更中に、以下のような要求がきた場合には、返答を保留する。
+  * 新しいオープン要求がきた場合
+  * より新しい世代に更新する GFM_PROTO_CLOSE_WRITE_V2_4 を受け取った場合
+・世代更新が完了したら、遅延していた返答を返す。
 
-�� �˴����줿��
+■ 破棄された案
 
-�ʲ��Τ褦�ʰƤ�ͤ��������Ȥ��᤿
+以下のような案も考えたが、とりやめた
 
-gfsd �� v2.4 �ʹߤξ�� (���ξ�硢gfmd �� v2.4 �ʹߤǤ���ɬ�פ����롣)
-�ʲ��Τ褦��ư���ͤ�����
+gfsd が v2.4 以降の場合 (この場合、gfmd も v2.4 以降である必要がある。)
+以下のような動作を考えた。
 
-���񤭹��ߥ⡼�ɤǤΥե����륪���ץ����gfsd �ϡ����ס���ե������
-  �Ф����ʲ���Ԥʤ���
-	link("inode�ֹ�"+"inode�����ֹ�", "inode�ֹ�");
-  ���Υ����ƥॳ���뤬 EEXIST ���֤������ˤϡ�����ư����Ȥ���
-  ���顼�������ʤ�������ϡ�Ʊ�����̤Υץ��������񤭹��ߥ����ץ��
-  �ԤʤäƤ����ǽ�������ꤤ�����ξ�硢�ɤ��餬��� link(2) ���뤫��
-  �����Ū�Ǥ��뤿�ᡣ
-���񤭹��ߤ�Ԥʤä���Υե����륯����������gfsd �ϡ��ʲ��Τ褦��
-  ư���Ԥʤ���
-  (1) GFM_PROTO_CLOSE_WRITE_V2_4 �ǥ����������Τ� gfmd ���Ϥ���
-  (2) (1) �������Ȥ��ơ�gfmd �ϡ��ʲ��� gfsd ���֤���
-    �������������ֹ�
-    ���Ǹ�ν񤭹��ߥ����ץ�Ǥ��뤫�ݤ��Υե饰
-  (3) gfsd �ϡ��Ǹ�ν񤭹��ߥ����ץ�Ǥ����
-	rename("inode�ֹ�", "inode�ֹ�"+"inode�������ֹ�");
-	unlink("inode�ֹ�"+"inode�������ֹ�");
-      ����ʤ���
-	link("inode�ֹ�", "inode�ֹ�"+"inode�������ֹ�");
-	unlink("inode�ֹ�"+"inode�������ֹ�");
+・書き込みモードでのファイルオープン時、gfsd は、スプールファイルに
+  対し、以下を行なう。
+	link("inode番号"+"inode世代番号", "inode番号");
+  このシステムコールが EEXIST を返した場合には、正常動作扱いとし、
+  エラー扱いしない。これは、同時に別のプロセスが書き込みオープンを
+  行なっている可能性がありい、その場合、どちらが先に link(2) するかは
+  非決定的であるため。
+・書き込みを行なった後のファイルクローズ時、gfsd は、以下のような
+  動作を行なう。
+  (1) GFM_PROTO_CLOSE_WRITE_V2_4 でクローズ通知が gfmd へ届く。
+  (2) (1) の返答として、gfmd は、以下を gfsd へ返す。
+    ・新しい世代番号
+    ・最後の書き込みオープンであるか否かのフラグ
+  (3) gfsd は、最後の書き込みオープンであれば
+	rename("inode番号", "inode番号"+"inode新世代番号");
+	unlink("inode番号"+"inode旧世代番号");
+      さもなくば
+	link("inode番号", "inode番号"+"inode新世代番号");
+	unlink("inode番号"+"inode旧世代番号");
 
-����ȡ�����Υ��ʥꥪ�ϰʲ��Τ褦�ˤʤ롣
+すると、問題のシナリオは以下のようになる。
 
-(1) GFM_PROTO_CLOSE_WRITE_V2_4 �ǥ����������Τ� gfmd ���Ϥ���
+(1) GFM_PROTO_CLOSE_WRITE_V2_4 でクローズ通知が gfmd へ届く。
 
-(2) ���������Ȥ��ơ�gfmd �������������ֹ�� gfsd ���֤���
+(2) その返答として、gfmd が新しい世代番号を gfsd に返す。
 
-(3) gfsd �ϡ��ʲ���Ԥʤ���
-	rename("inode�ֹ�", "inode�ֹ�"+"inode�������ֹ�");
-	unlink("inode�ֹ�"+"inode�������ֹ�");
+(3) gfsd は、以下を行なう。
+	rename("inode番号", "inode番号"+"inode新世代番号");
+	unlink("inode番号"+"inode旧世代番号");
 
-(4) (���ˤ�ꡢ�ʤ�餫�ν�����Ԥʤä����)  gfmd ����
-  obsolete �ˤʤä����Ƥ�ʣ����ä��ˤ�����
-  ���Υ��ʥꥪ�Ǥϡ����Ρ��ä����Ť�ʣ������ĥۥ��Ȥ�
-  old_replica_host �ȸƤ֤��Ȥˤ��롣
+(4) (場合により、なんらかの処理を行なった後で)  gfmd が、
+  obsolete になった全ての複製を消しにいく。
+  このシナリオでは、この、消される古い複製を持つホストを
+  old_replica_host と呼ぶことにする。
 
-(5) (4) ���¹Ԥ��ơ�Ʊ���ե�������Ф���ʣ���׵᤬��
-  old_replica_host ���Ϥ���
+(5) (4) と並行して、同じファイルに対する複製要求が、
+  old_replica_host に届く。
 
-(6) �ʤ�餫����ͳ (�̿��ٱ䡢gfsd ������ʤ�) �ǡ�(4) ��
-  ��λ�������� (5) �����Ϥ��롣
-  ���θ塢(4) �Τ����ʣ�����ä���롣
-  ��������(4) �ϵ������ֹ桢(5) �Ͽ������ֹ����ꤷ�ƹԤʤ���
-  �Τǡ�(5) �Ǻ��줿ʣ���������äƾä���뿴�ۤϤʤ���
+(6) なんらかの理由 (通信遅延、gfsd ダウンなど) で、(4) が
+  完了する前に (5) が開始する。
+  その後、(4) のために複製が消される。
+  しかし、(4) は旧世代番号、(5) は新世代番号を指定して行なわれる
+  ので、(5) で作られた複製が、誤って消される心配はない。
 
-������������ư��ˤϡ��ʲ��Τ褦�ʶ��礬���롣
+しかし、この動作には、以下のような競合がある。
 
-(a) �ۤ�Ʊ����¾�� gfsd ����Ʊ��ե�����򥪡��ץ󤹤롣
-   �� �����ֹ�ʤ���̾�Τؤ� link(2) �����礷�� EEXIST ���֤뤬��
-      EEXIST ��̵�뤵���Τ�����ʤ���
-(b) GFM_PROTO_CLOSE_WRITE_V2_4 �η�̤��Ѥ��� rename(2)+unlink(2) �ȡ�
-  ¾�Υץ������Υ����ץ󤬶��礹�롣
-  �� �񤭹�����ե�����ϡ������ֹ�ʤ���inode�ֹ�ΤߤΥե�����򡢥ϡ���
-     ��󥯤��줿��̾�Ȥ���ɬ�����ĤΤǡ������ץ󤷤褦�Ȥ����ե����뤬
-     ¸�ߤ��ʤ��ä���硢�����ץ�¦�ϡ������ֹ�ʤ���̾���ǤΥ����ץ��
-     ��ߤ롣����Ƕ��礬�����Ƥ�����ϲ���Ǥ��롣
-(c) GFM_PROTO_CLOSE_WRITE_V2_4 �η�̤��Ѥ��� rename(2)+unlink(2) 
-  �ʤ��� link(2)+unlink(2) �ȡ�¾�Υץ������� link(2)+unlink(2) ��
-  unlink(2) �����礹�롣
-  �� unlink(2) �Ǿä��Τϵ�����ΤߤʤΤǡ�ɬ�פʥե����뤬�ä����
-     ��ǽ���Ϥʤ������������ä��٤��ե����뤬 rename(2) ����Ƥ���
-     ��ǽ���Ϥ���Τǡ�unlink(2) �˼��Ԥ�����硢
-	(���������ֹ�) + 1
-     ���顢��
-        (link(2)���褦�Ȥ��Ƥ��뿷���������ֹ�) - 1
-     �ޤǤ� unlink(2) ���ߤ�ɬ�פϤ��롣
-     �ޤ����Ť� link(2)+unlink(2) ��ꡢ������ link(2)+unlink(2) ������
-     ��˼¹Ԥ���Ƥ��ޤä���硢�Ť������ֹ�ؤΥϡ��ɥ�󥯤��Ĥä�
-     ���ޤ��Ȥ������꤬���롣
-(d) GFM_PROTO_CLOSE_WRITE_V2_4 �η�̤��Ѥ��� link(2)+unlink(2) �Τ�����
-  link(2) �ȡ�¾�Υץ������� rename(2)+unlink(2) �Τ����� rename(2) ��
-  ���礹�롣
-  �� ���� rename(2) ����link(2) ���⿷������������ΤǤ����
-     ����ʤ���
-     ��������link(2) ����Ť�����ؤ� rename(2) ���ä����ˤ������ꡣXXX
-(e) GFM_PROTO_CLOSE_WRITE_V2_4 �η�̤��Ѥ��� rename(2)+unlink(2) �ȡ�
-  ¾�Υץ������� rename(2)+unlink(2) �� rename(2) �����礹�롣
-  �� �¹Ԥ��줿 rename(2) ������꿷������������ΤǤ��������ʤ���
-     ���������Ť�����ؤ� rename(2) ���ä����ˤ������ꡣXXX
-(f) GFM_PROTO_CLOSE_WRITE_V2_4 �η�̤���ã���� RPC reply ������줿
-  ���˺��롣
-  �� ���� XXX
+(a) ほぼ同時に他の gfsd が、同一ファイルをオープンする。
+   → 世代番号なしの名称への link(2) が競合して EEXIST が返るが、
+      EEXIST は無視されるので問題ない。
+(b) GFM_PROTO_CLOSE_WRITE_V2_4 の結果を用いた rename(2)+unlink(2) と、
+  他のプロセスのオープンが競合する。
+  → 書き込み中ファイルは、世代番号なし、inode番号のみのファイルを、ハード
+     リンクされた別名として必ず持つので、オープンしようとしたファイルが
+     存在しなかった場合、オープン側は、世代番号なしの名前でのオープンも
+     試みる。これで競合が起きても問題は回避できる。
+(c) GFM_PROTO_CLOSE_WRITE_V2_4 の結果を用いた rename(2)+unlink(2) 
+  ないし link(2)+unlink(2) と、他のプロセスの link(2)+unlink(2) の
+  unlink(2) が競合する。
+  → unlink(2) で消すのは旧世代のみなので、必要なファイルが消される
+     可能性はない。ただし、消すべきファイルが rename(2) されている
+     可能性はあるので、unlink(2) に失敗した場合、
+	(元の世代番号) + 1
+     から、〜
+        (link(2)しようとしている新しい世代番号) - 1
+     までの unlink(2) を試みる必要はある。
+     また、古い link(2)+unlink(2) より、新しい link(2)+unlink(2) の方が
+     先に実行されてしまった場合、古い世代番号へのハードリンクが残って
+     しまうという問題がある。
+(d) GFM_PROTO_CLOSE_WRITE_V2_4 の結果を用いた link(2)+unlink(2) のうちの
+  link(2) と、他のプロセスの rename(2)+unlink(2) のうちの rename(2) が
+  競合する。
+  → この rename(2) が、link(2) よりも新しい世代を作るものであれば
+     問題ない。
+     しかし、link(2) よりも古い世代への rename(2) だった場合には大問題。XXX
+(e) GFM_PROTO_CLOSE_WRITE_V2_4 の結果を用いた rename(2)+unlink(2) と、
+  他のプロセスの rename(2)+unlink(2) の rename(2) が競合する。
+  → 実行された rename(2) が、より新しい世代を作るものであれば問題ない。
+     しかし、古い世代への rename(2) だった場合には大問題。XXX
+(f) GFM_PROTO_CLOSE_WRITE_V2_4 の結果を伝達する RPC reply が失われた
+  場合に困る。
+  → 問題 XXX
 
-��ΰƤǤϡ������ֹ�ʤ��Υե�����򡢡ֽ񤭹��ߥ����ץ󤵤�Ƥ����
-���Ȥ򼨤��ե饰�Ȥ��ư��äƤ�����
+上の案では、世代番号なしのファイルを、「書き込みオープンされている」
+ことを示すフラグとして扱っていた。
 
-����ʳ��ˡ���������ֹ�ʤ��Υե������Ĥ��Ƥ������ͤ�������
-rename(2) �ζ���䡢RPC reply ��ʶ���ˤ������϶��̤��Ƥ��ꡢ
-���򤬺���
+これ以外に、常に世代番号なしのファイルを残しておく手も考えたが、
+rename(2) の競合や、RPC reply の紛失による問題は共通しており、
+回避が困難。
 

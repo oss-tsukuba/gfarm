@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFARM_IMPORT_FRAGMENT_SIZE_ALLOC" "3" "18 March 2003" "Gfarm" ""
 .SH NAME
-gfarm_import_fragment_size_alloc \- �ե饰���ȥ�����������������Ƥ�
+gfarm_import_fragment_size_alloc \- フラグメントサイズの配列を割り当てる
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,31 +14,31 @@ file_offset_t  *gfarm_import_fragment_size_alloc (file_offset_t \fItotal_size\fB
 \fR
 .SH "DESCRIPTION"
 .PP
-Gfarm�ե�����򥤥�ݡ��Ȥ��륢�ץꥱ��������Ѥ�����ؿ��ΰ�ĤǤ���
+Gfarmファイルをインポートするアプリケーション用の補助関数の一つです。
 .PP
-����ݡ��Ƚ����ˤϡ��ե�����򡢤ɤ줯�餤�Υ������Υե饰���Ȥ�
-ʬ�䤹�뤫�Ȥ�������ɬ�פǤ������ե�����Υ����������
+インポート処理には、ファイルを、どれくらいのサイズのフラグメントに
+分割するかという情報が必要です。元ファイルのサイズを引数
 \fItotal_size\fR
-�ˡ��ե饰���ȿ������
+に、フラグメント数を引数
 \fIn\fR
-��Ϳ����ȡ����δؿ��Ϸ�̤Ȥ��ơ��ƥե饰���Ȥ�ʬ�䥵�������ܰ¤�
-���ǿ�
+に与えると、この関数は結果として、各フラグメントの分割サイズの目安を、
+要素数
 \fIn\fR
-������Ȥ����֤��ޤ���
+の配列として返します。
 .PP
-���δؿ��� gfarm_hostlist_read(3) �ؿ��η�̤��Ȥ߹�碌�뤳�Ȥˤ�äơ�
-gfarm_import_fragment_config_read(3) �ؿ����֤��ե饰����ʬ�����
-��Ʊ�������ξ�������뤳�Ȥ��Ǥ��ޤ���
+この関数と gfarm_hostlist_read(3) 関数の結果を組み合わせることによって、
+gfarm_import_fragment_config_read(3) 関数が返すフラグメント分割情報
+と同じ形式の情報を得ることができます。
 .PP
-���δؿ������������ free(3) ���Ѥ��Ʋ�������ɬ�פ�����ޤ���
+この関数で得た配列は free(3) を用いて解放する必要があります。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
-\fB����¾\fR
-����������������硢
-file_offset_t �����������Ƭ���ǤؤΥݥ��󥿤��֤��ޤ���
+\fBその他\fR
+処理に成功した場合、
+file_offset_t 型の配列の先頭要素へのポインタを返します。
 .SH "SEE ALSO"
 .PP
 \fBgfarm_hostlist_read\fR(3),

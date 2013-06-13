@@ -1,11 +1,11 @@
-                gfperf���ޥ�ɥġ��륵�ݡ��ȥޥ˥奢��
+                gfperfコマンドツールサポートマニュアル
 
 
-* gfperf-autoreplica, gfperf-parallel-autoreplica��"time out!"��
-  ��å�������ɽ������롣
+* gfperf-autoreplica, gfperf-parallel-autoreplicaで"time out!"の
+  メッセージが表示される。
 
-  Ʊ��ʣ�������³����դˤʤ��ʣ�����������줺��ʣ���Ԥ�������
-  �����ॢ���Ȥ��ޤ���
-  gfmd.conf��simultaneous_replication_receivers���ͤ����䤷�Ƥ���������
+  同時複製数が限界一杯になると複製が作成されず、複製待ち処理が
+  タイムアウトします。
+  gfmd.confのsimultaneous_replication_receiversの値を増やしてください。
 
-�ʾ�
+以上

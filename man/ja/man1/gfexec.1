@@ -5,25 +5,25 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFEXEC" "1" "22 April 2004" "Gfarm" ""
 .SH NAME
-gfexec \- Gfarm �ե����륷���ƥ�Υץ�������¹Ԥ���
+gfexec \- Gfarm ファイルシステムのプログラムを実行する
 .SH SYNOPSIS
 
-\fBgfexec\fR [ \fB-N \fI�Ρ�������\fB\fR ] [ \fB-I \fI�Ρ����ֹ�\fB\fR ] [ \fB-s\fR ] \fB\fI�ץ������̾\fB\fR [ \fB\fI����\fB\fR\fI ...\fR ]
+\fBgfexec\fR [ \fB-N \fIノード総数\fB\fR ] [ \fB-I \fIノード番号\fB\fR ] [ \fB-s\fR ] \fB\fIプログラム名\fB\fR [ \fB\fI引数\fB\fR\fI ...\fR ]
 
 .SH "DESCRIPTION"
 .PP
-Gfarm �ե����륷���ƥ�Υץ�������¹Ԥ��ޤ����ܥ��ޥ�ɤϥե�
-���륷���ƥ�Ρ��ɾ�Ǽ¹Ԥ���ɬ�פ�����ޤ���
+Gfarm ファイルシステムのプログラムを実行します．本コマンドはファ
+イルシステムノード上で実行する必要があります．
 .SH "OPTIONS"
 .TP
-\fB-N \fI�Ρ��ɿ�\fB\fR
-�ƤӽФ��ץ������ΥΡ����������ѹ����ޤ���
+\fB-N \fIノード数\fB\fR
+呼び出すプログラムのノード総数を変更します．
 .TP
-\fB-I \fI�Ρ����ֹ�\fB\fR
-�ƤӽФ��ץ������ΥΡ����ֹ���ѹ����ޤ���
+\fB-I \fIノード番号\fB\fR
+呼び出すプログラムのノード番号を変更します．
 .TP
 \fB-s\fR
-��\fB-N\fR \fI1\fR \fB-I\fR \fI0\fR�פȻ��ꤷ���Τ������Ǥ���
+「\fB-N\fR \fI1\fR \fB-I\fR \fI0\fR」と指定したのと等価です．
 .TP
 \fB-?\fR
-�������ץ�����ɽ�����ޤ���
+引数オプションを表示します．

@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfperf.rb&nbsp;--&nbsp;Gfarm ��ǽ¬���Ԥ���</DIV
+>gfperf.rb&nbsp;--&nbsp;Gfarm 性能測定を行う。</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,7 +40,7 @@ CLASS="COMMAND"
 >  [-c, --check]  <TT
 CLASS="REPLACEABLE"
 ><I
->����ե�����</I
+>設定ファイル</I
 ></TT
 > </P
 ></DIV
@@ -52,12 +52,12 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->����<CODE
+>引数<CODE
 CLASS="PARAMETER"
->����ե�����</CODE
->���Ϥ��줿yaml�ե�����򸵤���ǽ¬���»ܤ��ޤ���</P
+>設定ファイル</CODE
+>で渡されたyamlファイルを元に性能測定を実施します。</P
 ><P
->����ե�������㤬(Gfarm���󥹥ȡ���ǥ��쥯�ȥ�)/share/gfarm/config/gfperf-[config|simple].yml�ˤ���ޤ���</P
+>設定ファイルの例が(Gfarmインストールディレクトリ)/share/gfarm/config/gfperf-[config|simple].ymlにあります。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -80,8 +80,8 @@ CLASS="OPTION"
 ><P
 ><CODE
 CLASS="PARAMETER"
->����ե�����</CODE
->��yamlʸˡ��θ��꤬���뤫�ɤ���������å����ޤ���</P
+>設定ファイル</CODE
+>にyaml文法上の誤りがあるかどうかをチェックします。</P
 ></DD
 ></DL
 ></DIV
@@ -94,7 +94,7 @@ NAME="EXAMPLES"
 ><H2
 >EXAMPLES</H2
 ><P
->����ե���������ʲ��˼����ޤ���</P
+>設定ファイルの例を以下に示します。</P
 ><P
 CLASS="LITERALLAYOUT"
 >database:&nbsp;{filename:&nbsp;"/var/www/database.db",&nbsp;check&nbsp;span:&nbsp;"10days",<br>
@@ -233,7 +233,7 @@ parallel-autoreplica:&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]&nbsp;&nbsp;&nbsp;&nbsp;<br>
 }</P
 ><P
->�ʲ��˳�������ܤξܺ٤�Ҥ٤ޤ���</P
+>以下に各設定項目の詳細を述べます。</P
 ><P
 ></P
 ><DIV
@@ -243,120 +243,120 @@ CLASS="VARIABLELIST"
 >database</DT
 ><DD
 ><P
->	filename:����ǽ¬��η�̤��ݻ�����ǡ����١�������ꤷ�ޤ���
-	backup:�ˤϼ�ư�Хå����å������ꤷ�ޤ���
-	check span:�ǻ��ꤵ�줿����ʬ��ʿ���͵ڤ�ɸ���к���׻����ޤ���
+>	filename:に性能測定の結果を保持するデータベースを指定します。
+	backup:には自動バックアップ先を指定します。
+	check span:で指定された時間分の平均値及び標準偏差を計算します。
       </P
 ></DD
 ><DT
 >errlog</DT
 ><DD
 ><P
->	���顼��ȯ�������Ȥ��Υ����ե�����ν��������ꤷ�ޤ���
-	�ܻ����̵ͭ�˹��餺�嵭�ǡ����١����ե�����˥��顼��å������ϳ�Ǽ����ޤ���WEB�򻲾Ȥ����˥��顼���ǧ���������˻��Ѥ��ޤ���
+>	エラーが発生したときのログファイルの出力先を指定します。
+	本指定の有無に拘らず上記データベースファイルにエラーメッセージは格納されます。WEBを参照せずにエラーを確認したい場合に使用します。
       </P
 ></DD
 ><DT
 >authentication</DT
 ><DD
 ><P
->	��ǽ¬���Ԥ��ݤ�ǧ����������ꤷ�ޤ���
-	sharedsecret, gsi_auth, gsi����ꤹ�뤳�Ȥ��Ǥ��ޤ���
-	�����ǻ��ꤷ��ǧ�����������ƤΥƥ��Ȥ�»ܤ��ޤ���
+>	性能測定を行う際の認証方式を指定します。
+	sharedsecret, gsi_auth, gsiを指定することができます。
+	ここで指定した認証方式で全てのテストを実施します。
       </P
 ></DD
 ><DT
 >gfarm2fs_mountpoint</DT
 ><DD
 ><P
->	��ǽ¬���Ԥ��ݤ˻��Ѥ���ޥ���ȥݥ���Ȥ���ꤷ�ޤ���
-	�嵭ǧ�������˽��ä��ܥ��ޥ�ɤ�gfarm2fs��ƽФ��ޤ���
-        �����ǻ��ꤷ���ޥ���ȥݥ���Ȥ���Ѥ��Ƴƥƥ��ȤΥƥ��ȥǥ��쥯�ȥ�Ȥ��Ƥ���������
+>	性能測定を行う際に使用するマウントポイントを指定します。
+	上記認証方式に従って本コマンドがgfarm2fsを呼出します。
+        ここで指定したマウントポイントを使用して各テストのテストディレクトリとしてください。
       </P
 ></DD
 ><DT
 >metadata</DT
 ><DD
 ><P
->	gfperf-metadata���Ѥ���¬�����Ƥ򵭽Ҥ��ޤ���
-	�ѥ�᡼���ϥ��󥰥��ץ����ǵ��Ҥ��ޤ���
+>	gfperf-metadataを用いた測定内容を記述します。
+	パラメータはロングオプションで記述します。
       </P
 ></DD
 ><DT
 >tree</DT
 ><DD
 ><P
->	gfperf-tree���Ѥ���¬�����Ƥ򵭽Ҥ��ޤ���
-	�ѥ�᡼���ϥ��󥰥��ץ����ǵ��Ҥ��ޤ���
+>	gfperf-treeを用いた測定内容を記述します。
+	パラメータはロングオプションで記述します。
       </P
 ></DD
 ><DT
 >copy</DT
 ><DD
 ><P
->	gfperf-copy���Ѥ���¬�����Ƥ򵭽Ҥ��ޤ���
-	�ѥ�᡼���ϥ��󥰥��ץ����ǵ��Ҥ��ޤ���
+>	gfperf-copyを用いた測定内容を記述します。
+	パラメータはロングオプションで記述します。
       </P
 ></DD
 ><DT
 >read</DT
 ><DD
 ><P
->	gfperf-read���Ѥ���¬�����Ƥ򵭽Ҥ��ޤ���
-	�ѥ�᡼���ϥ��󥰥��ץ����ǵ��Ҥ��ޤ���
-	random:���ץ����ϰ����˲����Ϥ��Ƥ�������ɹ�����ǽ¬��ˤʤ�ޤ���
-	�������󥷥���ɹ���¬���Ԥ���硢random:�������Ƥ���������
+>	gfperf-readを用いた測定内容を記述します。
+	パラメータはロングオプションで記述します。
+	random:オプションは引数に何を渡してもランダム読込の性能測定になります。
+	シーケンシャル読込の測定を行う場合、random:を削除してください。
       </P
 ></DD
 ><DT
 >write</DT
 ><DD
 ><P
->	gfperf-write���Ѥ���¬�����Ƥ򵭽Ҥ��ޤ���
-	�ѥ�᡼���ϥ��󥰥��ץ����ǵ��Ҥ��ޤ���
-	random:���ץ����ϰ����˲����Ϥ��Ƥ������������ǽ¬��ˤʤ�ޤ���
-	�������󥷥������¬���Ԥ���硢random:�������Ƥ���������
-	overwrite:���ץ����ϰ����˲����Ϥ��Ƥ��񤭤���ǽ¬��ˤʤ�ޤ���
-	�ɵ�����ߤ�¬���Ԥ���硢overwrite:�������Ƥ���������
+>	gfperf-writeを用いた測定内容を記述します。
+	パラメータはロングオプションで記述します。
+	random:オプションは引数に何を渡してもランダム書込の性能測定になります。
+	シーケンシャル書込の測定を行う場合、random:を削除してください。
+	overwrite:オプションは引数に何を渡しても上書きの性能測定になります。
+	追記書込みの測定を行う場合、overwrite:を削除してください。
       </P
 ></DD
 ><DT
 >replica</DT
 ><DD
 ><P
->	gfperf-replica���Ѥ���¬�����Ƥ򵭽Ҥ��ޤ���
-	�ѥ�᡼���ϥ��󥰥��ץ����ǵ��Ҥ��ޤ���
+>	gfperf-replicaを用いた測定内容を記述します。
+	パラメータはロングオプションで記述します。
       </P
 ></DD
 ><DT
 >autoreplica</DT
 ><DD
 ><P
->	gfperf-autoreplica���Ѥ���¬�����Ƥ򵭽Ҥ��ޤ���
-	�ѥ�᡼���ϥ��󥰥��ץ����ǵ��Ҥ��ޤ���
+>	gfperf-autoreplicaを用いた測定内容を記述します。
+	パラメータはロングオプションで記述します。
       </P
 ></DD
 ><DT
 >parallel</DT
 ><DD
 ><P
->	����ƥ��ȤΥƥ��ȥѥ�����򵭽Ҥ��ޤ���
-	���롼��̾�򥭡��˥ƥ������Ƥ�����ˤ��Ƶ��Ҥ��ޤ���
-	���롼��̾������ե�������ǰ�դǤʤ��ƤϤʤ�ޤ���
-	�ƥ������Ƥ�rhost:��ssh�ǸƽФ��¹������ꤷ��type:�ǸƽФ����ޥ�ɤ���ꤷ�ޤ���
-	type:�˻���Ǥ���Τ�read, write, replica��3�ĤǤ���
-	���줾��gfperf-parallel-read, gfperf-parallel-write, gfperf-parallel-replica���ƽФ���ޤ���
+>	並列テストのテストパターンを記述します。
+	グループ名をキーにテスト内容を配列にして記述します。
+	グループ名は設定ファイル内で一意でなくてはなりません。
+	テスト内容はrhost:でsshで呼出す実行先を指定し、type:で呼出すコマンドを指定します。
+	type:に指定できるのはread, write, replicaの3つです。
+	それぞれgfperf-parallel-read, gfperf-parallel-write, gfperf-parallel-replicaが呼出されます。
       </P
 ></DD
 ><DT
 >parallel-autoreplica</DT
 ><DD
 ><P
->	��ưʣ��������ƥ��ȤΥƥ��ȥѥ�����򵭽Ҥ��ޤ���
-	���롼��̾�򥭡��˥ƥ������Ƥ�����ˤ��Ƶ��Ҥ��ޤ���
-	���롼��̾������ե�������ǰ�դǤʤ��ƤϤʤ�ޤ���
-	�ƥ������Ƥ�gfperf-parallel-autoreplica�Υ��󥰥��ץ����򵭽Ҥ�����ΤǤ���
-	gfperf-parallel-autoreplica�򵭽Ҥ��줿��ʬ�ƤӽФ�������ʿ���ͤ�Ȥäƥƥ��ȷ�̤Ȥ��ޤ���
+>	自動複製の並列テストのテストパターンを記述します。
+	グループ名をキーにテスト内容を配列にして記述します。
+	グループ名は設定ファイル内で一意でなくてはなりません。
+	テスト内容はgfperf-parallel-autoreplicaのロングオプションを記述したものです。
+	gfperf-parallel-autoreplicaを記述された数分呼び出し、その平均値をとってテスト結果とします。
       </P
 ></DD
 ></DL
@@ -456,11 +456,11 @@ NAME="NOTES"
 ><H2
 >NOTES</H2
 ><P
->ssh�ǥ��ޥ�ɵ�ư��Ԥ���硢
-�����˥ѥ���ɤʤ��ǤΥ�������Ǥ���Ķ���������ɬ�פ�����ޤ���</P
+>sshでコマンド起動を行う場合、
+事前にパスワードなしでのログインできる環境を整える必要があります。</P
 ><P
->�ޤ���OS�ˤ�äƤ�.bashrc���ɤ߹��ޤ�ʤ����Ȥ�����ޤ��Τǡ�
-gfperf.rb��¹Ԥ������˳�ǧ���Ƥ���������</P
+>また、OSによっては.bashrcが読み込まれないことがありますので、
+gfperf.rbを実行する前に確認してください。</P
 ></DIV
 ></BODY
 ></HTML

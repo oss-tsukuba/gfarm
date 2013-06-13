@@ -13,35 +13,35 @@
 
 <refnamediv id='name'>
 <refname>gfmd(8)</refname>
-<refpurpose>Gfarm�᥿DB���ǡ����</refpurpose>
+<refpurpose>GfarmメタDB・デーモン</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfmd</command>
-    <arg choice='opt'><replaceable>���ץ����</replaceable></arg>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>gfmd�ϡ�Gfarm�饤�֥��ȶ�Ĵ����ư���Gfarm�ե����륷����
-��Υ᥿�ǡ����ؤΥ����������󶡤���ǡ����ץ������Ǥ���
-gfmd��Gfarm�Υ᥿DB�����С����ۥ��Ⱦ�ǡ�
-���餫����Ω���夲�Ƥ���ɬ�פ�����ޤ���</para>
+<para>gfmdは、Gfarmライブラリと協調して動作し、Gfarmファイルシステ
+ムのメタデータへのアクセスを提供するデーモンプログラムです。
+gfmdはGfarmのメタDBサーバー・ホスト上で、
+あらかじめ立ち上げておく必要があります。</para>
 
 <para>
-gfmd�ϥ桼�����¤�ư����뤳�Ȥ��ǽ�Ǥ��������ξ��¾�Υ桼���Ϥ�
-��gfmd�����Ѥ��뤳�Ȥ��Ǥ��ޤ���
-�ܺ٤�SETUP.private.ja�򻲾Ȥ��Ƥ���������
+gfmdはユーザ権限で動作させることも可能ですが、この場合他のユーザはこ
+のgfmdを利用することができません。
+詳細はSETUP.private.jaを参照してください。
 </para>
 
-<para>gfmd�����Ѥ��뤿��ˤϡ�
-���饤����ȥΡ��ɤ�~/.gfarm2rc���뤤��%%SYSCONFDIR%%/gfarm2.conf��
-metadb_server_host�����Ѥ�����gfmd�Υۥ���̾��
-metadb_server_port�ǥݡ����ֹ����ꤹ��ɬ�פ������
-����</para>
+<para>gfmdを利用するためには，
+クライアントノードの~/.gfarm2rcあるいは%%SYSCONFDIR%%/gfarm2.confの
+metadb_server_hostで利用したいgfmdのホスト名，
+metadb_server_portでポート番号を指定する必要がありま
+す．</para>
 
 </refsect1>
 
@@ -49,53 +49,53 @@ metadb_server_port�ǥݡ����ֹ����ꤹ��ɬ�פ������
 <variablelist>
 
 <varlistentry>
-<term><option>-L</option> <parameter>������٥�</parameter></term>
+<term><option>-L</option> <parameter>ログレベル</parameter></term>
 <listitem>
 <para>
-���Υ��ץ����ǻ��ꤷ����٥�ʾ��ͥ���٤Υ�������Ϥ��ޤ���
-����Ǥ����ͤ�gfarm2.conf(5)��log_level�ι�򻲾Ȥ��Ƥ���������
+このオプションで指定したレベル以上の優先度のログを出力します。
+指定できる値はgfarm2.conf(5)のlog_levelの項を参照してください。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-P</option> <parameter>PID�ե�����</parameter></term>
+<term><option>-P</option> <parameter>PIDファイル</parameter></term>
 <listitem>
-<para>gfmd��process ID�򡢻��ꤷ���ե�����˵�Ͽ���ޤ���</para>
+<para>gfmdのprocess IDを、指定したファイルに記録します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-d</option></term>
 <listitem>
-<para>�ǥХå����ץ����Ǥ����ǡ����Ȥ��ƤǤϤʤ����ե������饦��ɡ�
-�ץ������Ȥ���Ω���夬��ޤ���</para>
+<para>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
+プロセスとして立ち上がります。</para>
 <para>
-���Υ��ץ�������ꤷ������<option>-L</option>���ץ�������ꤷ�ʤ��ä�
-��硢������٥��debug�Ȥʤ�ޤ���
+このオプションを指定し、かつ<option>-L</option>オプションを指定しなかった
+場合、ログレベルはdebugとなります。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-f</option> <parameter>����ե�����</parameter></term>
+<term><option>-f</option> <parameter>設定ファイル</parameter></term>
 <listitem>
-<para>��ư�����ɤ߹�������ե��������ꤷ�ޤ���</para>
+<para>起動時に読み込む設定ファイルを指定します．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-p</option> <parameter>�ݡ����ֹ�</parameter></term>
+<term><option>-p</option> <parameter>ポート番号</parameter></term>
 <listitem>
-<para>gfmd�����Ѥ���TCP�Υݡ����ֹ����ꤷ�ޤ���</para>
+<para>gfmdが利用するTCPのポート番号を指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-s</option> <parameter>syslog�ե�����ƥ�</parameter></term>
+<term><option>-s</option> <parameter>syslogファシリティ</parameter></term>
 <listitem>
-<para>gfmd�����顼�����Ѥ���syslog�Υե�����ƥ�����ꤷ�ޤ�����ά
-�������ˤϡ�local0����Ѥ��ޤ���</para>
+<para>gfmdがエラー報告に用いるsyslogのファシリティを指定します。省略
+した場合には、local0を使用します。</para>
 </listitem>
 </varlistentry>
 
@@ -103,8 +103,8 @@ metadb_server_port�ǥݡ����ֹ����ꤹ��ɬ�פ������
 <term><option>-v</option></term>
 <listitem>
 <para>
-ǧ�ڽ����˴ؤ��������ܤ������Ϥ��ޤ���
-GSIǧ�ڤ�������褹�����ͭ�Ѥʥ��ץ����Ǥ���
+認証処理に関するログを詳しく出力します。
+GSI認証の問題を解決する場合に有用なオプションです。
 </para>
 </listitem>
 </varlistentry>
@@ -112,7 +112,7 @@ GSIǧ�ڤ�������褹�����ͭ�Ѥʥ��ץ����Ǥ���
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
 
@@ -124,7 +124,7 @@ GSIǧ�ڤ�������褹�����ͭ�Ѥʥ��ץ����Ǥ���
 <varlistentry>
 <term><filename>%%SYSCONFDIR%%/gfmd.conf</filename></term>
 <listitem>
-<para>gfmd�����Ȥ�������ե�����Ǥ���</para>
+<para>gfmdが参照する設定ファイルです。</para>
 </listitem>
 </varlistentry>
 </variablelist>

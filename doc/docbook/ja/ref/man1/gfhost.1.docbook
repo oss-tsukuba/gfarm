@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfhost</refname>
-<refpurpose>gfarm �ۥ��ȴ������ޥ��</refpurpose>
+<refpurpose>gfarm ホスト管理コマンド</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -25,38 +25,38 @@
     </group>
     <arg choice='opt'>-iLprUv</arg>
     <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='opt'>-a <replaceable>�������ƥ�����</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>�ɥᥤ��̾</replaceable></arg>
-    <arg choice='opt'>-j <replaceable>������</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>�ۥ���̾</replaceable></arg>
+    <arg choice='opt'>-a <replaceable>アーキテクチャ</replaceable></arg>
+    <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
+    <arg choice='opt'>-j <replaceable>並列度</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>ホスト名</replaceable></arg>
 </cmdsynopsis>
 
 <cmdsynopsis>
   <command>gfhost</command>
     <arg choice='plain'>-c</arg>
     <arg choice='opt'  >-P <replaceable>path</replaceable></arg>
-    <arg choice='plain'>-a<replaceable>�������ƥ�����</replaceable></arg>
-    <arg choice='plain'>-p<replaceable>�ݡ����ֹ�</replaceable></arg>
-    <arg choice='opt'  >-n<replaceable>CPU��</replaceable></arg>
-    <arg choice='plain'><replaceable>�ۥ���̾</replaceable></arg>
+    <arg choice='plain'>-a<replaceable>アーキテクチャ</replaceable></arg>
+    <arg choice='plain'>-p<replaceable>ポート番号</replaceable></arg>
+    <arg choice='opt'  >-n<replaceable>CPU数</replaceable></arg>
+    <arg choice='plain'><replaceable>ホスト名</replaceable></arg>
 </cmdsynopsis>
 
 <cmdsynopsis>
   <command>gfhost</command>
     <arg choice='plain'>-m</arg>
     <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='opt'>-a<replaceable>�������ƥ�����</replaceable></arg>
-    <arg choice='opt'>-p<replaceable>�ݡ����ֹ�</replaceable></arg>
-    <arg choice='opt'>-n<replaceable>CPU��</replaceable></arg>
+    <arg choice='opt'>-a<replaceable>アーキテクチャ</replaceable></arg>
+    <arg choice='opt'>-p<replaceable>ポート番号</replaceable></arg>
+    <arg choice='opt'>-n<replaceable>CPU数</replaceable></arg>
     <arg choice='opt'>-A</arg>
-    <arg choice='plain'><replaceable>�ۥ���̾</replaceable></arg>
+    <arg choice='plain'><replaceable>ホスト名</replaceable></arg>
 </cmdsynopsis>
 
 <cmdsynopsis>
   <command>gfhost</command>
     <arg choice='plain'>-d</arg>
     <arg choice='opt  '>-P <replaceable>path</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>�ۥ���̾</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>ホスト名</replaceable></arg>
 </cmdsynopsis>
 
 <cmdsynopsis>
@@ -91,69 +91,69 @@
 -->
 
 <!-- XXX NOTYET
-  �ۥ��ȼ���
-	- �ե�����ǡ������֤�����CPU �����С��Ȥ��ƤΤ�����
-	- CPU �����Ѥ������ե����륵���С��Ȥ��ƤΤ����ѡ�
-	  ����� ncpu==0 �Ȥ��뤫�����뤤�� arch==NIL �Ȥ��롩
-	- �ξ�����Τ���Ρ����Ū���Ի��ѥե饰��ʣ������Ȥ��Ƥλ��Ȥ�
-	  �Ĥ뤬�����������ϵ����ʤ���
-  ǽ��
-	- CPU ®�١������黻/��ư�������黻
-	- �ǥ����� I/O ®�� / �ޥ���ȡ��ݥ����
-	- �ǥ��������̡���������ͽ�� / �ޥ���ȡ��ݥ����
-	- �ͥåȥ�� I/O ®��
-	- �ͥåȥ�����ȥݥ������ɤ���äơ�
+  ホスト種別
+	- ファイルデータは置かず、CPU サーバーとしてのみ利用
+	- CPU は利用せず、ファイルサーバーとしてのみ利用。
+	  これは ncpu==0 とするか、あるいは arch==NIL とする？
+	- 故障時等のための、一時的な不使用フラグ。複製情報としての参照は
+	  残るが、アクセスは起きない。
+  能力
+	- CPU 速度。整数演算/浮動小数点演算
+	- ディスク I/O 速度 / マウント・ポイント
+	- ディスク容量、空き容量予約 / マウント・ポイント
+	- ネットワーク I/O 速度
+	- ネットワーク・トポロジ。どうやって？
 -->
 
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfhost</command> �ϡ�gfarm �Υե����륷���ƥ�Ρ��ɤ�
-�ؤ�������ɽ���������Ԥʤ��ޤ���<command>gfhost</command> ��
-�¹Ԥ��뵡ǽ�ϡ�-c, -d, -H, -l, -M, -m, -R �Υ��ץ����ǻ��ꤷ�ޤ���
-����鵡ǽ�λ������¾Ū�Ǥ��ꡢ�ɤ줫��Ĥ�������ꤹ�뤳�Ȥ��Ǥ��ޤ���
-�ޤ�����Ĥ���ꤷ�ʤ��ä����ˤϡ��ǥե�����Ȥε�ǽ�Ǥ���ۥ���̾
-ɽ�����Ԥʤ��ޤ���
+<para><command>gfhost</command> は、gfarm のファイルシステムノードに
+関する情報の表示や管理を行ないます。<command>gfhost</command> が
+実行する機能は、-c, -d, -H, -l, -M, -m, -R のオプションで指定します。
+これら機能の指定は排他的であり、どれか一つだけを指定することができます。
+また、一つも指定しなかった場合には、デフォールトの機能であるホスト名
+表示が行なわれます。
 </para>
 </refsect1>
 
 <refsect1 id='functions'><title>FUNCTIONS</title>
 <para>
-  ��ǽ����Τ�����-c, -d, -M, -m, -R �ϥ᥿�ǡ��������С��Τߤ�
-  ��������������Ͽ����Ƥ���ۥ��Ⱦ�����ɲá������ɽ�����ѹ���Ԥʤ��ޤ���
+  機能指定のうち、-c, -d, -M, -m, -R はメタデータサーバーのみを
+  アクセスし、登録されているホスト情報の追加、削除、表示、変更を行ないます。
 </para>
 <para>
-  ��ǽ����Τ�����-H, -l, -M, ������ä˵�ǽ����ꤷ�ʤ��ä����ϡ�
-  �ե����륷���ƥ�Ρ��ɤ˴ؤ�������ɽ�����ޤ���
-  ���Τ��� -M �ϥ᥿�ǡ��������С��Τߤ򥢥��������ޤ�����
-  ����ʳ��ε�ǽ�ϥե����륷���ƥ�Ρ��ɤ�ư��Ƥ���
-  <command>gfsd</command> �ˤ⥢���������ޤ���
-  <command>gfsd</command> �˥����������뵡ǽ�˴ؤ��Ƥϡ����Υ���������
-  �ؤ��륪�ץ����� -i, -j, -U, -v �ǻ���Ǥ��ޤ���
+  機能指定のうち、-H, -l, -M, および特に機能を指定しなかった場合は、
+  ファイルシステムノードに関する情報を表示します。
+  このうち -M はメタデータサーバーのみをアクセスしますが、
+  それ以外の機能はファイルシステムノードで動作している
+  <command>gfsd</command> にもアクセスします。
+  <command>gfsd</command> にアクセスする機能に関しては、そのアクセスに
+  関するオプションを -i, -j, -U, -v で指定できます。
 </para>
 <para>
-  ɽ����ǽ�˴ؤ��Ƥϡ��ۥ���̾�λ�����ά���뤳�Ȥ��Ǥ��ޤ������ξ�硢
-  �᥿�ǡ�������Ͽ����Ƥ������ƤΥۥ��Ȥ˴ؤ���ɽ�����ߤޤ���
-  �ޤ���-a ����� -D ���ץ�����ɽ������ۥ��Ȥμ�������
-  ���뤳�Ȥ�Ǥ��ޤ���
-  ɽ���ν���ϡ��ۥ���̾�Υ���ե��٥åȽ�Ǥ�����-L, -r, -u ���ץ�����
-  ������ѹ����뤳�Ȥ��Ǥ��ޤ�����������-M ��ǽ
-  <!-- XXX FIXME BEGIN --> �ȡ���ǽ����ꤷ�ʤ��ä���� <!-- FIXME END -->
-  �˴ؤ��Ƥ� -L ���ץ�����̵���Ǥ���
+  表示機能に関しては、ホスト名の指定を省略することができます。この場合、
+  メタデータに登録されている全てのホストに関する表示を試みます。
+  また、-a および -D オプションで表示するホストの種類を限定
+  することもできます。
+  表示の順序は、ホスト名のアルファベット順ですが、-L, -r, -u オプションで
+  順序を変更することができます。ただし、-M 機能
+  <!-- XXX FIXME BEGIN --> と、機能を指定しなかった場合 <!-- FIXME END -->
+  に関しては -L オプションは無効です。
 </para>
 <para>
-  �����ϡ�gfhost ���ޥ�ɤε�ǽ�����Ǥ�����İʾ�ε�ǽ��Ʊ����
-  ���ꤹ�뤳�ȤϤǤ��ޤ���
+  下記は、gfhost コマンドの機能一覧です。二つ以上の機能を同時に
+  指定することはできません。
 </para>
 <variablelist>
 
   <varlistentry>
-    <term>̵����</term>
+    <term>無指定</term>
     <listitem>
       <para>
-	��ǽ���ä˻��ꤷ�ʤ��ä���硢<command>gfsd</command> �ؤ�
-	�䤤��碌��Ԥʤ���ư��Ƥ���ۥ��ȤΥۥ���̾�Τߤ�ɽ�����ޤ���
-	�ǥե�����ȤǤϡ��ۥ���̾�Υ���ե��٥åȽ��ɽ�����ޤ���
+	機能を特に指定しなかった場合、<command>gfsd</command> への
+	問い合わせを行ない、動作しているホストのホスト名のみを表示します。
+	デフォールトでは、ホスト名のアルファベット順で表示します。
       </para>
     </listitem>
   </varlistentry>
@@ -162,11 +162,11 @@
     <term><option>-c</option></term>
     <listitem>
       <para>
-	�����ǻ��ꤷ���ۥ��Ȥ�᥿�ǡ�������Ͽ���ޤ���
-	���ץ���� -a �ǡ����Υۥ��ȤΥ������ƥ��������ꤹ��ɬ�פ�����ޤ���
-	Ʊ�ͤ˥��ץ���� -p �ǡ����Υۥ��ȤΥݡ����ֹ����ꤹ��ɬ�פ�����ޤ���
-	���ץ���� -n �ǡ����Υۥ��Ȥ� CPU ������ꤷ�ޤ�����ά�������ˤ�
-	1 CPU ���Ȥߤʤ��ޤ���
+	引数で指定したホストをメタデータへ登録します。
+	オプション -a で、そのホストのアーキテクチャを指定する必要があります。
+	同様にオプション -p で、そのホストのポート番号を指定する必要があります。
+	オプション -n で、そのホストの CPU 数を指定します。省略した場合には
+	1 CPU だとみなします。
       </para>
     </listitem>
   </varlistentry>
@@ -175,15 +175,15 @@
     <term><option>-d</option></term>
     <listitem>
       <para>
-	�����˻��ꤷ���ۥ��Ⱦ����᥿�ǡ������������ޤ���
-	<!-- XXX --> ���ߤΤȤ�����ʣ������Ȥ��ƻ��Ȥ���Ƥ���ۥ��Ȥ�
-	����Ǥ��Ƥ��ޤ��ޤ����������Ԥʤ���ʣ���ǡ����١�����������
-	���֤ȤʤäƤ��ޤ��ޤ��Τ����դ�ɬ�פǤ���
-	<!-- XXX??? ���Ȥ���Ƥ�����ϥ��顼�ǤϤ����褦�ˤ��� ???
-	  ���ξ�硢���� -f ���ץ������󶡤������Ȥ���Ƥ��Ƥ����Ǥ���
-	  �褦�ˤ��롣���ΤȤ���ʣ������˴ؤ��Ƥ������롣
-	  ʣ�������Ĥ����������ºݤΥ��������Ϥ��������ʤ����ˤϡ�
-	  ���Ū���Ի��ѥե饰���Ѥ��롣-->
+	引数に指定したホスト情報をメタデータから削除します。
+	<!-- XXX --> 現在のところ、複製情報として参照されているホストも
+	削除できてしまいますが、これを行なうと複製データベースが不整合
+	状態となってしまいますので注意が必要です。
+	<!-- XXX??? 参照されている場合はエラーではじくようにする ???
+	  その場合、別途 -f オプションを提供し、参照されていても削除できる
+	  ようにする。このとき、複製情報に関しても削除する。
+	  複製情報を残したいが、実際のアクセスはさせたくない場合には、
+	  一時的な不使用フラグを用いる。-->
       </para>
     </listitem>
   </varlistentry>
@@ -192,29 +192,29 @@
     <term><option>-H</option></term>
     <listitem>
       <para>
-	<command>gfsd</command> ���䤤��碌���������󡢤��ʤ��
-	�����ɥ��٥졼����ǧ�ڼ��ʤ�ɽ�����ޤ���
-	���ε�ǽ�˴ؤ��Ƥϡ������ǥۥ���̾����ꤷ����硢ɽ�������
-	�Τϡ���ͭ���̻ҤȤ����Ѥ����Ƥ���ۥ���̾�ǤϤʤ�������
-	�ǻ��ꤷ��̾���ˤʤ�ޤ���
-	�ޤ����ۥ���̾�θ�ˡ������������Ѥ���줿 IP ���ɥ쥹���̤�
-	�Ϥä�ɽ�����ޤ���
+	<command>gfsd</command> に問い合わせて得た情報、すなわち
+	ロードアベレージと認証手段を表示します。
+	この機能に関しては、引数でホスト名を指定した場合、表示される
+	のは、固有識別子として用いられているホスト名ではなく、引数
+	で指定した名前になります。
+	また、ホスト名の後に、アクセスに用いられた IP アドレスを括弧で
+	囲って表示します。
       </para>
       <para>
-	�ۥ��Ȥ���ߤ�ͥåȥ���㳲�Τ���˥��������Ǥ��ʤ��ä���硢
-	�����ɥ��٥졼������ʬ�� x.xx/x.xx/x.xx ��ɽ�����ޤ���
-	�ۥ��Ȥ�ư��Ƥ��뤬�����Υۥ��Ȥ� <command>gfsd</command> ��
-	���������Ǥ��ʤ��ä����ˤ� -.--/-.--/-.-- ��ɽ�����ޤ���
+	ホストが停止やネットワーク障害のためにアクセスできなかった場合、
+	ロードアベレージの部分に x.xx/x.xx/x.xx と表示します。
+	ホストが動作しているが、そのホストの <command>gfsd</command> へ
+	アクセスできなかった場合には -.--/-.--/-.-- と表示します。
       </para>
       <para>
-	���μ��ΰ������ǧ�ڼ��ʤǡ���G�פ� GSI ǧ�ڤ���ӰŹ沽��
-	��g�פ�ǧ�ڽ����Τ� GSI ��ǧ�ڸ���ݸ�Τʤ����ǡ��� (gsi_auth)��
-	��s�פ� sharedsecret ǧ�ڡ���x�פ�ǧ�ڼ��ԡ���-�פ�ǧ�ڤ�
-	��ߤʤ��ä����Ȥ򼨤��ޤ����ޤ�����-U�ץ��ץ���������ˤϡ�
-	����ǧ�ڼ��ʤ�ɽ����Ϥʤ��ʤ�ޤ���
+	その次の一桁の欄は認証手段で、「G」は GSI 認証および暗号化、
+	「g」は認証処理のみ GSI で認証後は保護のない生データ (gsi_auth)、
+	「s」は sharedsecret 認証、「x」は認証失敗、「-」は認証を
+	試みなかったことを示します。また、「-U」オプション指定時には、
+	この認証手段の表示欄はなくなります。
       </para>
       <para>
-	�ǥե�����ȤǤϡ��ۥ���̾�Υ���ե��٥åȽ��ɽ�����ޤ���
+	デフォールトでは、ホスト名のアルファベット順で表示します。
       </para>
     </listitem>
   </varlistentry>
@@ -223,28 +223,28 @@
     <term><option>-l</option></term>
     <listitem>
       <para>
-	<command>gfsd</command> ���䤤��碌����������
-	���ʤ�������ɥ��٥졼�������ǧ�ڼ��ʤȡ�
-	�᥿�ǡ����������С����䤤��碌����������
-	���ʤ���������ƥ�����̾��CPU����
-	����ɽ�����ޤ����ޤ������������Ѥ���줿�ۥ���̾�θ�ˡ�
-	IP ���ɥ쥹���̤ǰϤä�ɽ�����ޤ���
+	<command>gfsd</command> に問い合わせて得た情報、
+	すなわちロードアベレージおよび認証手段と、
+	メタデータ・サーバーに問い合わせて得た情報、
+	すなわちアーキテクチャ名、CPU数を
+	全て表示します。またアクセスに用いられたホスト名の後に、
+	IP アドレスを括弧で囲って表示します。
       </para>
       <para>
-	�ۥ��Ȥ���ߤ�ͥåȥ���㳲�Τ���˥��������Ǥ��ʤ��ä���硢
-	�����ɥ��٥졼������ʬ�� x.xx/x.xx/x.xx ��ɽ�����ޤ���
-	�ۥ��Ȥ�ư��Ƥ��뤬�����Υۥ��Ȥ� <command>gfsd</command> ��
-	���������Ǥ��ʤ��ä����ˤ� -.--/-.--/-.-- ��ɽ�����ޤ���
+	ホストが停止やネットワーク障害のためにアクセスできなかった場合、
+	ロードアベレージの部分に x.xx/x.xx/x.xx と表示します。
+	ホストが動作しているが、そのホストの <command>gfsd</command> へ
+	アクセスできなかった場合には -.--/-.--/-.-- と表示します。
       </para>
       <para>
-	���μ��ΰ������ǧ�ڼ��ʤǡ���G�פ� GSI ǧ�ڤ���ӰŹ沽��
-	��g�פ�ǧ�ڽ����Τ� GSI ��ǧ�ڸ���ݸ�Τʤ����ǡ��� (gsi_auth)��
-	��s�פ� sharedsecret ǧ�ڡ���x�פ�ǧ�ڼ��ԡ���-�פ�ǧ�ڤ�
-	��ߤʤ��ä����Ȥ򼨤��ޤ����ޤ�����-U�ץ��ץ���������ˤϡ�
-	����ǧ�ڼ��ʤ�ɽ����Ϥʤ��ʤ�ޤ���
+	その次の一桁の欄は認証手段で、「G」は GSI 認証および暗号化、
+	「g」は認証処理のみ GSI で認証後は保護のない生データ (gsi_auth)、
+	「s」は sharedsecret 認証、「x」は認証失敗、「-」は認証を
+	試みなかったことを示します。また、「-U」オプション指定時には、
+	この認証手段の表示欄はなくなります。
       </para>
       <para>
-	�ǥե�����ȤǤϡ��ۥ���̾�Υ���ե��٥åȽ��ɽ�����ޤ���
+	デフォールトでは、ホスト名のアルファベット順で表示します。
       </para>
     </listitem>
   </varlistentry>
@@ -253,8 +253,8 @@
     <term><option>-M</option></term>
     <listitem>
       <para>
-	�᥿�ǡ�������Ͽ����Ƥ���ۥ��Ⱦ����ɽ�����ޤ���
-	�ǥե�����ȤǤϡ��ۥ���̾�Υ���ե��٥åȽ��ɽ�����ޤ���
+	メタデータに登録されているホスト情報を表示します。
+	デフォールトでは、ホスト名のアルファベット順で表示します。
       </para>
     </listitem>
   </varlistentry>
@@ -263,9 +263,9 @@
     <term><option>-m</option></term>
     <listitem>
       <para>
-	��ͭ���̻ҤȤ����Ѥ����Ƥ���ۥ���̾����ꤷ���᥿�ǡ���
-	����Ͽ����Ƥ���ۥ��Ⱦ�����ѹ����ޤ���
-	-a ���ץ���󤪤�� -n ���ץ����ϡ����줾���¸���ͤ��֤������ޤ���
+	固有識別子として用いられているホスト名を指定し、メタデータ
+	に登録されているホスト情報を変更します。
+	-a オプションおよび -n オプションは、それぞれ既存の値を置き換えます。
       </para>
     </listitem>
   </varlistentry>
@@ -274,8 +274,8 @@
     <term><option>-R</option></term>
     <listitem>
       <para>
-	ɸ�����Ϥ���ۥ��Ȥ˴ؤ��������ɤ߹��ߡ��᥿�ǡ�����
-	�ɲä��ޤ���Ϳ�������η����ϡ�-M ��ǽ��ɽ��������Ʊ���Ǥ���
+	標準入力からホストに関する情報を読み込み、メタデータに
+	追加します。与える情報の形式は、-M 機能の表示形式と同じです。
       </para>
     </listitem>
   </varlistentry>
@@ -283,7 +283,7 @@
   <varlistentry>
     <term><option>-?</option></term>
     <listitem>
-      <para>�������ץ�����ɽ�����ޤ���</para>
+      <para>引数オプションを表示します。</para>
     </listitem>
   </varlistentry>
 
@@ -294,27 +294,27 @@
 <variablelist>
 
   <varlistentry>
-    <term><option>-a</option> <parameter>�������ƥ�����</parameter></term>
+    <term><option>-a</option> <parameter>アーキテクチャ</parameter></term>
     <listitem>
       <para>
-	CPU�������ƥ������sparc-sun-solaris8 �� i386-redhat8.0-linux ��
-	�褦�ʷ����ǻ��ꤷ�ޤ���
-	-c ����� -m ��ǽ�ξ��ˤϡ��ɲá��ѹ�����ۥ��ȤΥ������ƥ������
-	���ơ����Υ��ץ������Ѥ��ޤ���
-	-H, -l, -M ������ä˵�ǽ����ꤷ�ʤ��ä����ǡ�����
-	�ۥ���̾���ά�������ˤϡ����ꤷ���������ƥ�����Υۥ��Ȥ�
-	�ؤ��ƤΤ�ɽ����Ԥʤ��ޤ���
+	CPUアーキテクチャを、sparc-sun-solaris8 や i386-redhat8.0-linux の
+	ような形式で指定します。
+	-c および -m 機能の場合には、追加・変更するホストのアーキテクチャと
+	して、このオプションを用います。
+	-H, -l, -M および特に機能を指定しなかった場合で、かつ
+	ホスト名を省略した場合には、指定したアーキテクチャのホストに
+	関してのみ表示を行ないます。
       </para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-D</option> <parameter>�ɥᥤ��̾</parameter></term>
+    <term><option>-D</option> <parameter>ドメイン名</parameter></term>
     <listitem>
       <para>
-	-H, -l, -M ������ä˵�ǽ����ꤷ�ʤ��ä����ǡ�����
-	�ۥ���̾���ά�������ˡ����Υ��ץ����ǡ�ɽ������ɥᥤ��̾��
-	����Ǥ��ޤ���
+	-H, -l, -M および特に機能を指定しなかった場合で、かつ
+	ホスト名を省略した場合に、このオプションで、表示するドメイン名を
+	限定できます。
       </para>
     </listitem>
   </varlistentry>
@@ -323,21 +323,21 @@
     <term><option>-i</option></term>
     <listitem>
       <para>
-	%%SYSCONFDIR%%/gfarm2.conf �ʤ��� $HOME/.gfarm2rc ��ǡ�address_use�פ���ꤹ��ȡ�
-	�����������Ѥ���ͥåȥ�����ɥ쥹��ͥ���̤�Ĥ��뤳�Ȥ��Ǥ��ޤ���
-	gfhost ���ޥ�ɤ��Ф��Ƥ⡢����ͥ���̤ϱƶ����ޤ�����-i ���ץ�����
-	�Ĥ���ȡ����λ����̵�뤷�� <command>gfsd</command> �˥�������
-	����褦�ˤʤ�ޤ���
+	%%SYSCONFDIR%%/gfarm2.conf ないし $HOME/.gfarm2rc 中で「address_use」を指定すると、
+	アクセスに用いるネットワークアドレスに優先順位をつけることができます。
+	gfhost コマンドに対しても、この優先順位は影響しますが、-i オプションを
+	つけると、この指定を無視して <command>gfsd</command> にアクセス
+	するようになります。
       </para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-j</option> <parameter>������</parameter></term>
+    <term><option>-j</option> <parameter>並列度</parameter></term>
     <listitem>
       <para>
-	<command>gfsd</command> �˥�����������ݤ������٤���ꤷ�ޤ���
-	�ǥե�����Ȥ� 10 �Ǥ���
+	<command>gfsd</command> にアクセスする際の並列度を指定します。
+	デフォールトは 10 です。
       </para>
     </listitem>
   </varlistentry>
@@ -346,40 +346,40 @@
     <term><option>-L</option></term>
     <listitem>
       <para>
-	-H��-l ��ǽ�ξ��
-	<!-- XXX FIXME ����ӵ�ǽ����ꤷ�ʤ��ä���� -->�����Υ��ץ����ǡ�
-	ɽ������򡢥����ɥ��٥졼������ѹ����ޤ���
+	-H、-l 機能の場合
+	<!-- XXX FIXME および機能を指定しなかった場合 -->、このオプションで、
+	表示順序を、ロードアベレージ順に変更します。
       </para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-n</option> <parameter>CPU��</parameter></term>
+    <term><option>-n</option> <parameter>CPU数</parameter></term>
     <listitem>
       <para>
-	-c ����� -m ��ǽ�ǡ��ۥ��Ⱦ�����ɲá��ѹ�����ݤˡ�
-	���Υۥ��Ȥ����� CPU �ο�����ꤷ�ޤ���
+	-c および -m 機能で、ホスト情報を追加・変更する際に、
+	そのホストが持つ CPU の数を指定します。
       </para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-p</option> <parameter>�ݡ����ֹ�</parameter></term>
+    <term><option>-p</option> <parameter>ポート番号</parameter></term>
     <listitem>
       <para>
-	-c ����� -m ��ǽ�ǡ��ۥ��Ⱦ�����ɲá��ѹ�����ݤˡ�
-	���Υۥ��Ȥ� <command>gfsd</command> ���Ѥ���ݡ����ֹ����ꤷ�ޤ���
+	-c および -m 機能で、ホスト情報を追加・変更する際に、
+	そのホストの <command>gfsd</command> が用いるポート番号を指定します。
       </para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-P</option> <parameter>�ѥ�̾</parameter></term>
+    <term><option>-P</option> <parameter>パス名</parameter></term>
     <listitem>
       <para>
-	���Υ��ޥ�ɤ�������������᥿�ǡ��������Ф����ꤹ�뤿���
-	�ѥ�̾�ޤ��� Gfarm URL ����ꤷ�ޤ���
-	��ά�������ϡ���/�פ���ꤷ���Τ�Ʊ����̣�ˤʤ�ޤ���
+	このコマンドがアクセスするメタデータサーバを特定するための
+	パス名または Gfarm URL を指定します。
+	省略した場合は、「/」を指定したのと同じ意味になります。
       </para>
     </listitem>
   </varlistentry>
@@ -388,7 +388,7 @@
     <term><option>-r</option></term>
     <listitem>
       <para>
-	ɽ�������󤷤Ƥ����硢ɽ���ν����դˤ��ޤ���
+	表示を整列している場合、表示の順序を逆にします。
       </para>
     </listitem>
   </varlistentry>
@@ -397,14 +397,14 @@
     <term><option>-u</option></term>
     <listitem>
       <para>
-	-H, -l, -M ������ä˵�ǽ����ꤷ�ʤ��ä����ˡ�ɽ����������
-	����ե��٥åȽ�����󤹤�Τ�ߤ�ޤ���
+	-H, -l, -M および特に機能を指定しなかった場合に、表示する順序を
+	アルファベット順に整列するのを止めます。
 
-	-M ��ǽ�ξ�硢�����ǥۥ���̾����ꤷ�����ˤ�
-	���ν��������ʤ��Х᥿�ǡ�������������������ɽ�����ޤ���
+	-M 機能の場合、引数でホスト名を指定した場合には
+	その順序、さもなくばメタデータから取得した順序で表示します。
 	
-	-H, -l ��ǽ�ξ�礪����ä˵�ǽ����ꤷ�ʤ��ä���硢
-	�ۥ��Ȥ˽���䤤��碌��Ԥ����ֻ����֤äƤ��������ɽ�����ޤ���
+	-H, -l 機能の場合および特に機能を指定しなかった場合、
+	ホストに順に問い合わせを行い、返事の返ってきた順序で表示します。
       </para>
     </listitem>
   </varlistentry>
@@ -413,13 +413,13 @@
     <term><option>-U</option></term>
     <listitem>
       <para>
-	TCP �ˤ��ǧ�ڤ��ᡢ
-	UDP �ˤ������ɥ��٥졼�����䤤��碌�Τߤ�Ԥ��褦�ˤ��ޤ���
-	���Υ��ץ����ϡ�-H �ʤ��� -l ��ǽ����ꤷ����礪���
-	�ä˵�ǽ����ꤷ�ʤ��ä����˰�̣�Τ��륪�ץ����ǡ�
-	�¹�®�٤�®���ʤ���̤�����ޤ���
-	-H �ʤ��� -l ����ꤷ�Ƥ����硢���Υ��ץ�������ꤹ��ȡ�
-	ǧ��������ɽ���󤬤ʤ��ʤ�ޤ���
+	TCP による認証をやめ、
+	UDP によるロードアベレージの問い合わせのみを行うようにします。
+	このオプションは、-H ないし -l 機能を指定した場合および
+	特に機能を指定しなかった場合に意味のあるオプションで、
+	実行速度が速くなる効果があります。
+	-H ないし -l を指定している場合、このオプションを指定すると、
+	認証方式の表示欄がなくなります。
       </para>
     </listitem>
   </varlistentry>
@@ -428,10 +428,10 @@
     <term><option>-v</option></term>
     <listitem>
       <para>
-	-H �ʤ��� -l ��ǽ����ꤷ����礪����ä˵�ǽ����ꤷ�ʤ��ä���硢
-	�ǥե�����ȤǤϡ�gfsd ���Ф����䤤��碌�˴ؤ��륨�顼��å�����
-	��ɽ�����ޤ���-v ���ץ�������ꤹ��ȡ����Υ��顼��å�������
-	ɽ������褦�ˤʤ�ޤ���
+	-H ないし -l 機能を指定した場合および特に機能を指定しなかった場合、
+	デフォールトでは、gfsd に対する問い合わせに関するエラーメッセージ
+	を表示しません。-v オプションを指定すると、このエラーメッセージを
+	表示するようになります。
       </para>
     </listitem>
   </varlistentry>

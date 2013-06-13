@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_STAT" "3" "11 September 2003" "Gfarm" ""
 .SH NAME
-gfs_stat \- �ե�����°������
+gfs_stat \- ファイル属性取得
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,39 +14,39 @@ char *gfs_stat (const char * \fIgfarm_url\fB, struct gfs_stat * \fIstatus\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-����
+引数
 \fIgfarm_url\fR
-�Υե�����°����
+のファイル属性を
 \fIstatus\fR
-�λؤ���˼������ޤ���
+の指す先に取得します。
 \fIstatus\fR
 .PP
-�ˤϡ�ưŪ�˳��ݤ��줿����ؤΥݥ��󥿤��ޤޤ��Τǡ�
-���θ塢gfs_stat_free(3) ��ȤäƤ��Υ�����������ɬ�פ�
-����ޤ���
+には、動的に確保されたメモリへのポインタが含まれるので、
+この後、gfs_stat_free(3) を使ってそのメモリを解放する必要が
+あります。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
 \fBGFARM_ERR_AUTHENTICATION\fR
-gfmd(8) ���Ф���桼����ǧ�ڤ����Ԥ��ޤ�����
+gfmd(8) に対するユーザー認証が失敗しました。
 .TP
 \fBGFARM_ERR_PERMISSION_DENIED\fR
-���ꤵ�줿�ѥ��إ����������븢�¤�������ޤ���
+指定されたパスへアクセスする権限が、ありません。
 .TP
 \fBGFARM_ERR_NO_SUCH_OBJECT\fR
-���ꤵ�줿�ѥ�̾��¸�ߤ��ޤ���
+指定されたパス名が存在しません。
 .TP
 \fBGFARM_ERR_NOT_A_DIRECTORY\fR
-���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤϥǥ��쥯�ȥ�Ǥʤ��ä����Ȥ�
-�����ޤ���
+指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "SEE ALSO"
 .PP
 \fBgfs_stat_free\fR(3)

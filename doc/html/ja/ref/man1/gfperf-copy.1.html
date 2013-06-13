@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfperf-copy&nbsp;--&nbsp;Gfarm �ե�����ʣ������ǽ¬���Ԥ���</DIV
+>gfperf-copy&nbsp;--&nbsp;Gfarm ファイル複製の性能測定を行う。</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,32 +40,32 @@ CLASS="COMMAND"
 >   -s, --src <TT
 CLASS="REPLACEABLE"
 ><I
->���ԡ���url</I
+>コピー元url</I
 ></TT
 >   -d, --dst <TT
 CLASS="REPLACEABLE"
 ><I
->���ԡ���url</I
+>コピー先url</I
 ></TT
 >  [-l, --filesize <TT
 CLASS="REPLACEABLE"
 ><I
->�ե����륵����</I
+>ファイルサイズ</I
 ></TT
 >] [-b, --busize <TT
 CLASS="REPLACEABLE"
 ><I
->�Хåե�������</I
+>バッファサイズ</I
 ></TT
 >] [-g, --gfsd <TT
 CLASS="REPLACEABLE"
 ><I
->gfsd̾</I
+>gfsd名</I
 ></TT
 >] [-m, --gfarm2fs <TT
 CLASS="REPLACEABLE"
 ><I
->gfarm2fs�ޥ���ȥݥ����</I
+>gfarm2fsマウントポイント</I
 ></TT
 >]</P
 ></DIV
@@ -79,18 +79,18 @@ NAME="DESCRIPTION"
 ><P
 ><CODE
 CLASS="PARAMETER"
->���ԡ���url</CODE
->����<CODE
+>コピー元url</CODE
+>から<CODE
 CLASS="PARAMETER"
->���ԡ���url</CODE
->�˥ե�����򥳥ԡ������Υ��ԡ���ǽ��¬�ꤷ�ޤ���
+>コピー先url</CODE
+>にファイルをコピーしそのコピー性能を測定します。
 <CODE
 CLASS="PARAMETER"
->���ԡ���url</CODE
->��<CODE
+>コピー元url</CODE
+>と<CODE
 CLASS="PARAMETER"
->���ԡ���url</CODE
->�Ϥɤ��餫������gfarm url (gfarm:///�ǻϤޤ���) �Ǥʤ��ƤϤʤ�ޤ��󡣤����Ƥ⤦������file url (file:///�ǻϤޤ���) �Ǥʤ��ƤϤʤ�ޤ���</P
+>コピー先url</CODE
+>はどちらか一方がgfarm url (gfarm:///で始まるもの) でなくてはなりません。そしてもう片方はfile url (file:///で始まるもの) でなくてはなりません。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -110,11 +110,11 @@ CLASS="OPTION"
 >-s, --src</CODE
 > <CODE
 CLASS="PARAMETER"
->���ԡ���url</CODE
+>コピー元url</CODE
 ></DT
 ><DD
 ><P
->���ԡ���url����ꤷ�ޤ������ԡ���url��gfarm url����ꤷ����硢���ԡ���url��file url�Ǥʤ��ƤϤʤ�ޤ���</P
+>コピー元urlを指定します。コピー元urlにgfarm urlを指定した場合、コピー先urlはfile urlでなくてはなりません。</P
 ></DD
 ><DT
 ><CODE
@@ -122,11 +122,11 @@ CLASS="OPTION"
 >-d, --dst</CODE
 > <CODE
 CLASS="PARAMETER"
->���ԡ���url</CODE
+>コピー元url</CODE
 ></DT
 ><DD
 ><P
->���ԡ���url����ꤷ�ޤ������ԡ���url��gfarm url����ꤷ����硢���ԡ���url��file url�Ǥʤ��ƤϤʤ�ޤ���</P
+>コピー先urlを指定します。コピー先urlにgfarm urlを指定した場合、コピー元urlはfile urlでなくてはなりません。</P
 ></DD
 ><DT
 ><CODE
@@ -134,12 +134,12 @@ CLASS="OPTION"
 >-l, --filesize</CODE
 > <CODE
 CLASS="PARAMETER"
->�ե����륵����</CODE
+>ファイルサイズ</CODE
 ></DT
 ><DD
 ><P
->���Ѥ���ե����륵��������ꤷ�ޤ���
-�ǥե���Ȥ�1M�Ǥ���</P
+>使用するファイルサイズを指定します。
+デフォルトは1Mです。</P
 ></DD
 ><DT
 ><CODE
@@ -147,12 +147,12 @@ CLASS="OPTION"
 >-b, --bufsize</CODE
 > <CODE
 CLASS="PARAMETER"
->�Хåե�������</CODE
+>バッファサイズ</CODE
 ></DT
 ><DD
 ><P
->���Ѥ���Хåե�����������ꤷ�ޤ���
-�ǥե���Ȥ�4K�Ǥ���</P
+>使用するバッファサイズを指定します。
+デフォルトは4Kです。</P
 ></DD
 ><DT
 ><CODE
@@ -160,12 +160,12 @@ CLASS="OPTION"
 >-g, --gfsd</CODE
 > <CODE
 CLASS="PARAMETER"
->gfsd̾</CODE
+>gfsd名</CODE
 ></DT
 ><DD
 ><P
->�ե�������������gfsd����ꤷ�ޤ���
-�ܥ��ץ�������ꤷ�ʤ��ä�����gfarm����ưŪ�˳����Ƥ�gfsd����Ѥ��ޤ���</P
+>ファイルを作成するgfsdを指定します。
+本オプションを指定しなかった場合はgfarmが自動的に割当てたgfsdを使用します。</P
 ></DD
 ><DT
 ><CODE
@@ -173,12 +173,12 @@ CLASS="OPTION"
 >-m, --gfarm2fs</CODE
 > <CODE
 CLASS="PARAMETER"
->gfarm2fs�ޥ���ȥݥ����</CODE
+>gfarm2fsマウントポイント</CODE
 ></DT
 ><DD
 ><P
->gfarm2fs�Υޥ���ȥݥ���Ȥ���ꤷ�ޤ���
-gfarm url�����ꤵ�줿�����Ф�gfarm2fs��ͳ�ǤΥ���������Ԥ��ޤ���</P
+>gfarm2fsのマウントポイントを指定します。
+gfarm urlが指定された方に対しgfarm2fs経由でのアクセスを行います。</P
 ></DD
 ></DL
 ></DIV

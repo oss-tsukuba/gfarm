@@ -6,26 +6,26 @@
 .TH "GFQUOTACHECK" "1" "23 March 2011" "Gfarm" ""
 
 .SH NAME
-gfquotacheck \- ���ߤλ����̴���ɽ���ۤ���quota �����å���ͭ���ˤ���
+gfquotacheck \- 現在の使用量管理表を構築し、quota チェックを有効にする
 .SH SYNOPSIS
 
-\fBgfquotacheck\fR [ \fB\fI���ץ����\fB\fR ]
+\fBgfquotacheck\fR [ \fB\fIオプション\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
-\fBgfquotacheck\fR �ϡ����٤ƤΥ桼���Υե��������
-�ե����륵����������ʤ����ޤ���
-�����ơ��ޤ�ͭ���ˤʤäƤ��ʤ��桼���䥰�롼�פ��Ф��� quota �ˤ��ե�
-�������¤�ͭ���ˤ��ޤ���
+\fBgfquotacheck\fR は、すべてのユーザのファイル数と
+ファイルサイズを数えなおします。
+そして、まだ有効になっていないユーザやグループに対する quota によるファ
+イル制限を有効にします。
 .PP
-���Υ��ޥ�ɤ� gfarmadm ���롼�פ˽�°���Ƥ�������Ԥ��¹ԤǤ��ޤ���
+このコマンドは gfarmadm グループに所属している管理者が実行できます。
 .SH "OPTIONS"
 .TP
 \fB-P NAME\fR
-���ꤷ���ѥ�̾�ˤ������Υ᥿�ǡ��������Ф���ꤷ�ޤ���
+指定したパス名により特定のメタデータサーバを指定します。
 .TP
 \fB-?\fR
-�������ץ�����ɽ�����ޤ���
+引数オプションを表示します。
 .SH "SEE ALSO"
 .PP
 \fBgfedquota\fR(1),

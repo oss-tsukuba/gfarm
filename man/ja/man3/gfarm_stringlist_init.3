@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFARM_STRINGLIST_INIT" "3" "18 March 2003" "Gfarm" ""
 .SH NAME
-gfarm_stringlist_init \- stringlist ����������
+gfarm_stringlist_init \- stringlist を初期化する
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,26 +14,26 @@ char *gfarm_stringlist_init (gfarm_stringlist * \fIlistp\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-gfarm_stringlist �ϡ�ʸ���������ưŪ���ݤ�������뷿�Ǥ���
-ưŪ�˳��ݤ����Τϡ���������Ǥ��ꡢ�������ǤǤ����ʸ����ˤĤ��Ƥϡ�
-���η��δ������ˤʤ�ޤ���
+gfarm_stringlist は、文字列配列の動的確保を補助する型です。
+動的に確保されるのは、配列だけであり、配列要素である各文字列については、
+この型の管理外になります。
 .PP
-���δؿ��ϡ�
+この関数は、
 \fIlistp\fR
-�λؤ� gfarm_stringlist �����ѿ����������ޤ���
+の指す gfarm_stringlist 型の変数を初期化します。
 .PP
-���η������Ѥ򽪤������ˤϡ�gfarm_stringlist_free() ���Ѥ��ơ�
-ưŪ�˳��ݤ���������������ɬ�פ�����ޤ���
+この型の利用を終えた時には、gfarm_stringlist_free() を用いて、
+動的に確保したメモリを解放する必要があります。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "SEE ALSO"
 .PP
 \fBGFARM_STRINGLIST_ELEM\fR(3),

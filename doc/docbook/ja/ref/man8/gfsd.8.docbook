@@ -12,13 +12,13 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfsd(8)</refname>
-<refpurpose>Gfarm�ե����륷���ƥࡦ�ǡ����</refpurpose>
+<refpurpose>Gfarmファイルシステム・デーモン</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfsd</command>
-    <arg choice='opt'><replaceable>���ץ����</replaceable></arg>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -26,20 +26,20 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>
-gfsd�ϡ�Gfarm�饤�֥��ȶ�Ĵ����ư���Gfarm�ե����륷����
-���¸�����ǡ����ץ������Ǥ���
-gfsd�ϥե����륷���ƥ�Ρ��ɤ����ۥ��Ⱦ�ǡ�
-root���¤Ǥ��餫����Ω���夲�Ƥ���ɬ�פ�����ޤ���</para>
+gfsdは、Gfarmライブラリと協調して動作し、Gfarmファイルシステ
+ムを実現するデーモンプログラムです。
+gfsdはファイルシステムノードの全ホスト上で、
+root権限であらかじめ立ち上げておく必要があります。</para>
 
 <para>
-gfsd���󶡤���Τϡ��ե�����μ��ΤؤΥ��������Ǥ���
-gfsd �����Ѥ���ݡ����ֹ�ϡ�gfmd ����������᥿�ǡ�������������ޤ���
+gfsdが提供するのは、ファイルの実体へのアクセスです。
+gfsd が利用するポート番号は、gfmd が管理するメタデータから取得します。
 </para>
 
 <para>
-gfsd�ϥ桼�����¤�ư����뤳�Ȥ��ǽ�Ǥ��������ξ��¾�Υ桼���Ϥ�
-��gfsd�����Ѥ��뤳�Ȥ��Ǥ��ޤ���
-�ܺ٤�SETUP.private.ja�򻲾Ȥ��Ƥ���������
+gfsdはユーザ権限で動作させることも可能ですが，この場合他のユーザはこ
+のgfsdを利用することができません。
+詳細はSETUP.private.jaを参照してください。
 </para>
 
 </refsect1>
@@ -48,19 +48,19 @@ gfsd�ϥ桼�����¤�ư����뤳�Ȥ��ǽ�Ǥ��������ξ��¾�Υ桼���Ϥ�
 <variablelist>
 
 <varlistentry>
-<term><option>-L</option> <parameter>������٥�</parameter></term>
+<term><option>-L</option> <parameter>ログレベル</parameter></term>
 <listitem>
 <para>
-���Υ��ץ����ǻ��ꤷ����٥�ʾ��ͥ���٤Υ�������Ϥ��ޤ���
-����Ǥ����ͤ�gfarm2.conf(5)��log_level�ι�򻲾Ȥ��Ƥ���������
+このオプションで指定したレベル以上の優先度のログを出力します。
+指定できる値はgfarm2.conf(5)のlog_levelの項を参照してください。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-P</option> <parameter>PID�ե�����</parameter></term>
+<term><option>-P</option> <parameter>PIDファイル</parameter></term>
 <listitem>
-<para>gfsd��process ID�򡢻��ꤷ���ե�����˵�Ͽ���ޤ���</para>
+<para>gfsdのprocess IDを、指定したファイルに記録します。</para>
 </listitem>
 </varlistentry>
 
@@ -68,21 +68,21 @@ gfsd�ϥ桼�����¤�ư����뤳�Ȥ��ǽ�Ǥ��������ξ��¾�Υ桼���Ϥ�
 <term><option>-c</option></term>
 <listitem>
 <para>
-��ư���ˡ����ס���ǥ��쥯�ȥ�θ�����Ԥ��ޤ����ե����륷���ƥ�Ρ���
-�Υۥ���̾���Ѥ�ä��Ȥ������Ѥ���ȡ���������Ǽ����Ƥ���ե�������
-���ǡ��������Ф���Ͽ���뤳�Ȥ��Ǥ��ޤ���
+起動時に、スプールディレクトリの検査を行います。ファイルシステムノード
+のホスト名が変わったときに利用すると、正しく格納されているファイルをメ
+タデータサーバに登録することができます。
 </para>
 <para>
-<option>-c</option>���ץ�����2����ꤹ���(�ޤ���
-<option>-cc</option>���ץ����)���᥿�ǡ��������Ф���Ͽ����Ƥ��ʤ�̵��
-�ʥե������õ�뤳�Ȥ��Ǥ��ޤ���
+<option>-c</option>オプションを2回指定すると(または
+<option>-cc</option>オプション)、メタデータサーバに登録されていない無効
+なファイルを消去することができます。
 </para>
 <para>
-<option>-c</option>���ץ�����3����ꤹ���(�ޤ���
-<option>-ccc</option>���ץ����)���᥿�ǡ��������Ф���Ͽ����Ƥ��ʤ�̵
-���ʥե������Gfarm�ե����륷���ƥ��lost+found�ǥ����ȥ�˰�ư���뤳��
-���Ǥ��ޤ�������ˡ��ե����륷���ƥ�Ρ��ɾ��¸�ߤ��ʤ��ե������ؤ�
-�Ƥ��롢̵���ʥ᥿�ǡ����������ޤ���
+<option>-c</option>オプションを3回指定すると(または
+<option>-ccc</option>オプション)、メタデータサーバに登録されていない無
+効なファイルをGfarmファイルシステムのlost+foundディクトリに移動すること
+ができます。さらに、ファイルシステムノード上に存在しないファイルを指し
+ている、無効なメタデータを削除します。
 </para>
 </listitem>
 </varlistentry>
@@ -90,54 +90,54 @@ gfsd�ϥ桼�����¤�ư����뤳�Ȥ��ǽ�Ǥ��������ξ��¾�Υ桼���Ϥ�
 <varlistentry>
 <term><option>-d</option></term>
 <listitem>
-<para>�ǥХå����ץ����Ǥ����ǡ����Ȥ��ƤǤϤʤ����ե������饦��ɡ�
-�ץ������Ȥ���Ω���夬��ޤ���</para>
+<para>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
+プロセスとして立ち上がります。</para>
 <para>
-���Υ��ץ�������ꤷ������<option>-L</option>���ץ�������ꤷ�ʤ��ä�
-��硢������٥��debug�Ȥʤ�ޤ���
+このオプションを指定し、かつ<option>-L</option>オプションを指定しなかった
+場合、ログレベルはdebugとなります。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-f</option> <parameter>����ե�����</parameter></term>
+<term><option>-f</option> <parameter>設定ファイル</parameter></term>
 <listitem>
-<para>��ư�����ɤ߹�������ե��������ꤷ�ޤ���</para>
+<para>起動時に読み込む設定ファイルを指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-h</option> <parameter>�ۥ���̾</parameter></term>
+<term><option>-h</option> <parameter>ホスト名</parameter></term>
 <listitem>
-<para>���ۥ��ȤΥ��Υ˥���ʥۥ���̾����ꤷ�ޤ���</para>
+<para>自ホストのカノニカルなホスト名を指定します．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-l</option> <parameter>IP���ɥ쥹</parameter></term>
+<term><option>-l</option> <parameter>IPアドレス</parameter></term>
 <listitem>
-<para>gfsd��TCP�����UDP���׵������դ���IP���ɥ쥹����ꤷ�ޤ���
-���ץ�����ά���ϡ����Υۥ��Ȥ����Ƥ�IP���ɥ쥹�Ǽ����դ��ޤ���
-���Υ��ץ����ϡ���ĤΥΡ��ɤ�ʣ���Υ��ס�����󶡤�����ˡ�
-���줾��Υ��ס��뤴�Ȥˡ��̡���IP���ɥ쥹��Ȥä�gfsd��ư����
-������Ѥ��ޤ���
+<para>gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。
+オプション省略時は、そのホストの全てのIPアドレスで受け付けます。
+このオプションは、一つのノードで複数のスプールを提供する場合に、
+それぞれのスプールごとに、別々のIPアドレスを使ってgfsdを起動する
+ために用います。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-r</option> <parameter>���ס��롦�ǥ��쥯�ȥ�</parameter></term>
+<term><option>-r</option> <parameter>スプール・ディレクトリ</parameter></term>
 <listitem>
-<para>gfsd�����ե�����μ��Τ��ݻ�����ǥ��쥯�ȥ�̾����ꤷ�ޤ���
+<para>gfsdが、ファイルの実体を保持するディレクトリ名を指定します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-s</option> <parameter>syslog�ե�����ƥ�</parameter></term>
+<term><option>-s</option> <parameter>syslogファシリティ</parameter></term>
 <listitem>
-<para>gfsd�����顼�����Ѥ���syslog�Υե�����ƥ�����ꤷ�ޤ�����ά
-�������ˤϡ�local0����Ѥ��ޤ���</para>
+<para>gfsdがエラー報告に用いるsyslogのファシリティを指定します。省略
+した場合には、local0を使用します。</para>
 </listitem>
 </varlistentry>
 
@@ -145,8 +145,8 @@ gfsd�ϥ桼�����¤�ư����뤳�Ȥ��ǽ�Ǥ��������ξ��¾�Υ桼���Ϥ�
 <term><option>-v</option></term>
 <listitem>
 <para>
-ǧ�ڽ����˴ؤ��������ܤ������Ϥ��ޤ���
-GSIǧ�ڤ�������褹�����ͭ�Ѥʥ��ץ����Ǥ���
+認証処理に関するログを詳しく出力します。
+GSI認証の問題を解決する場合に有用なオプションです。
 </para>
 </listitem>
 </varlistentry>
@@ -154,7 +154,7 @@ GSIǧ�ڤ�������褹�����ͭ�Ѥʥ��ץ����Ǥ���
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
 
@@ -166,7 +166,7 @@ GSIǧ�ڤ�������褹�����ͭ�Ѥʥ��ץ����Ǥ���
 <varlistentry>
 <term><filename>%%SYSCONFDIR%%/gfarm2.conf</filename></term>
 <listitem>
-<para>gfsd�����Ȥ�������ե�����Ǥ���</para>
+<para>gfsdが参照する設定ファイルです。</para>
 </listitem>
 </varlistentry>
 </variablelist>

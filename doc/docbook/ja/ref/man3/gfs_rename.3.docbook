@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_rename</refname>
-<refpurpose>е╒ебедеыдЄ▓■╠╛д╣ды</refpurpose>
+<refpurpose>уГХуВбуВдуГлуВТцФ╣хРНуБЩуВЛ</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -33,26 +33,26 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>е╒ебедеыд▐д┐д╧е╟егеьепе╚еъ
+<para>уГХуВбуВдуГлуБ╛уБЯуБпуГЗуВгуГмуВпуГИуГк
 <parameter>gfarm_url_from</parameter>
-дЄ
+уВТ
 <parameter>gfarm_url_to</parameter>
-д╦▓■╠╛д╖д▐д╣бг</para>
+уБлцФ╣хРНуБЧуБ╛уБЩуАВ</para>
 
 <para><parameter>gfarm_url_to</parameter>
-дм┤√┬╕д╬╛ь╣чд╧║я╜№д╡дьд▐д╣бгд│д╬д╚дн
+уБМцЧвхнШуБоха┤хРИуБпхЙКщЩдуБХуВМуБ╛уБЩуАВуБУуБоуБиуБН
 <parameter>gfarm_url_from</parameter>
-дме╒ебедеыд╩дщд╨
+уБМуГХуВбуВдуГлуБкуВЙуБ░
 <parameter>gfarm_url_to</parameter>
-дте╒ебедеыбв
+уВВуГХуВбуВдуГлуАБ
 <parameter>gfarm_url_from</parameter>
-дме╟егеьепе╚еъд╩дщд╨
+уБМуГЗуВгуГмуВпуГИуГкуБкуВЙуБ░
 <parameter>gfarm_url_to</parameter>
-дте╟егеьепе╚еъд╟бвд╖длдт╢їд╟д╩д▒дьд╨д╩дъд▐д╗дєбг</para>
+уВВуГЗуВгуГмуВпуГИуГкуБзуАБуБЧуБЛуВВчй║уБзуБкуБСуВМуБ░уБкуВКуБ╛уБЫуВУуАВ</para>
 
-<para>е╟егеьепе╚еъ
+<para>уГЗуВгуГмуВпуГИуГк
 <parameter>gfarm_url_from</parameter>
-дЄд╜д╬е╡е╓е╟егеьепе╚еъд╦▓■╠╛д╣дыд│д╚д╧д╟днд▐д╗дєбг</para>
+уВТуБЭуБоуВ╡уГЦуГЗуВгуГмуВпуГИуГкуБлцФ╣хРНуБЩуВЛуБУуБиуБпуБзуБНуБ╛уБЫуВУуАВ</para>
 </refsect1>
 
 <refsect1 id='return-values'><title>RETURN VALUES</title>
@@ -60,41 +60,41 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>└╡╛я╜к╬╗дЄ╝ид╖д▐д╣бг</para>
+<para>цнгх╕╕ч╡Вф║ЖуВТчд║уБЧуБ╛уБЩуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>есетеъ╔╘┬нд╬д┐дс╜ш═¤дЄ├ц╗▀д╖д▐д╖д┐бг</para>
+<para>уГбуГвуГкф╕Нш╢│уБоуБЯуВБхЗжчРЖуВТф╕нцнвуБЧуБ╛уБЧуБЯуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
 <listitem>
-<para>gfmd(8) д╦┬╨д╣дыецб╝е╢б╝╟з╛┌дм╝║╟╘д╖д▐д╖д┐бг</para>
+<para>gfmd(8) уБлхп╛уБЩуВЛуГжуГ╝уВ╢уГ╝шкНши╝уБМхд▒цХЧуБЧуБ╛уБЧуБЯуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
-<para>┐╞е╟егеьепе╚еъд╪╜ёдн╣■д▀евепе╗е╣д╣ды╕в╕┬дмдвдъд▐д╗дєбг</para>
+<para>шжкуГЗуВгуГмуВпуГИуГкуБ╕цЫ╕уБНш╛╝уБ┐уВвуВпуВ╗уВ╣уБЩуВЛцийщЩРуБМуБВуВКуБ╛уБЫуВУуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
 <listitem>
-<para>е╟егеьепе╚еъ
+<para>уГЗуВгуГмуВпуГИуГк
 <parameter>gfarm_url_from</parameter>
-дЄбвд╜дь╝л┐╚д╬е╡е╓е╟егеьепе╚еъд╦╩╤╣╣д╖дшджд╚д╖д▐д╖д┐бг</para>
+уВТуАБуБЭуВМшЗкш║луБоуВ╡уГЦуГЗуВгуГмуВпуГИуГкуБлхдЙцЫ┤уБЧуВИуБЖуБиуБЧуБ╛уБЧуБЯуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
-<para>╗╪─ъд╡дьд┐е╤е╣
+<para>цМЗхоЪуБХуВМуБЯуГСуВ╣
 <parameter>gfarm_url_from</parameter>
-дм┬╕║▀д╖д▐д╗дєбг</para>
+уБМхнШхЬиуБЧуБ╛уБЫуВУуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
@@ -102,9 +102,9 @@
 <listitem>
 <para>
 <parameter>gfarm_url_from</parameter>
-дме╒ебедеыд╟двдыд╬д╦бв
+уБМуГХуВбуВдуГлуБзуБВуВЛуБоуБлуАБ
 <parameter>gfarm_url_to</parameter>
-д╧┤√┬╕д╬е╟егеьепе╚еъд╟д╣бг</para>
+уБпцЧвхнШуБоуГЗуВгуГмуВпуГИуГкуБзуБЩуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
@@ -112,23 +112,23 @@
 <listitem>
 <para>
 <parameter>gfarm_url_from</parameter>
-дме╟егеьепе╚еъд╟двдыд╬д╦бв
+уБМуГЗуВгуГмуВпуГИуГкуБзуБВуВЛуБоуБлуАБ
 <parameter>gfarm_url_to</parameter>
-д╧┤√┬╕д╬е╒ебедеыд╟д╣бг</para>
+уБпцЧвхнШуБоуГХуВбуВдуГлуБзуБЩуАВ</para>
 </listitem>
 </varlistentry>
 <!--
 <varlistentry>
 <term><constant>GFARM_ERR_READ_ONLY_FILE_SYSTEM</constant></term>
 <listitem>
-<para>╗╪─ъд╖д┐е╤е╣╠╛д╧╞╔д▀╣■д▀└ь═╤е╒ебедеые╖е╣е╞ер╛хд╦двдъд▐д╣бг</para>
+<para>цМЗхоЪуБЧуБЯуГСуВ╣хРНуБпшкнуБ┐ш╛╝уБ┐х░ВчФиуГХуВбуВдуГлуВ╖уВ╣уГЖуГаф╕КуБлуБВуВКуБ╛уБЩуАВ</para>
 </listitem>
 </varlistentry>
 -->
 <varlistentry>
-<term>д╜д╬┬╛</term>
+<term>уБЭуБоф╗Ц</term>
 <listitem>
-<para>╛х╡н░╩│░д╬еиещб╝дм└╕д╕д┐д│д╚дЄ╝ид╖д▐д╣бг</para>
+<para>ф╕КшиШф╗ехдЦуБоуВиуГйуГ╝уБМчФЯуБШуБЯуБУуБиуВТчд║уБЧуБ╛уБЩуАВ</para>
 </listitem>
 </varlistentry>
 </variablelist>
