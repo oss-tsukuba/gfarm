@@ -38,7 +38,7 @@ abort(void)
 {
 	BUG();
 }
-#define exit(n)	BUG()	/* conflicting types for built-in function ‘exit */
+#define exit(n)	BUG()	/* conflicting types for built-in function `exit' */
 
 #include <linux/sched.h>
 #include <linux/random.h>
