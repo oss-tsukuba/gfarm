@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "21 November 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "13 June 2013" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -881,6 +881,34 @@ For example,
 	schedule_rtt_thresh 4.0
 .fi
 .TP
+\fBwrite_local_priority \fIvalidity\fB\fR
+Gfarm nearly always chooses localhost, when it selects a filesystem
+node to write a file. By specifing the disable keyword in
+this directive, Gfarm handles localhost the same as other
+filesystem nodes.
+The default is enable\&.
+
+For example,
+
+.nf
+	write_local_priority disable
+.fi
+.TP
+\fBwrite_target_domain \fIdomain\fB\fR
+Gfarm tries to choose a filesystem node in the domain specified by
+this directive, when it selects a node to write a file.
+If there is no suitable node for writing in this domain, or if this
+directive is not specified, the filesystem node will be chosen from
+among all nodes.
+Note that if you specify this directive more than once, only the first one
+will be used and the others are ignored.
+
+For example,
+
+.nf
+	write_target_domain example.org
+.fi
+.TP
 \fBminimum_free_disk_space \fIbytes\fB\fR
 This directive specifies free disk space (in bytes) which is
 required on filesystem nodes. The Gfarm scheduler excludes filesystem nodes
@@ -1372,233 +1400,649 @@ Example:
 .fi
 .SH "GRAMMAR"
 .PP
-This is a grammar of gfarm2.conf described by the BNF
-notation.
-
+This is a grammar of gfarm2.conf described by the BNF notation.
+.TP
+\fB<statement> ::=\fR
 .nf
-	<statement> ::=
-		\~\~<spool_statement> |
-		\~\~<spool_server_listen_address_statement> |
-		\~\~<spool_server_listen_backlog_statement> |
-		\~\~<spool_server_cred_type_statement> |
-		\~\~<spool_server_cred_service_statement> |
-		\~\~<spool_server_cred_name_statement> |
-		\~\~<spool_check_level_statement> |
-		\~\~<metadb_server_host_statement> |
-		\~\~<metadb_server_port_statement> |
-		\~\~<metadb_server_cred_type_statement> |
-		\~\~<metadb_server_cred_service_statement> |
-		\~\~<metadb_server_cred_name_statement> |
-		\~\~<metadb_server_listen_backlog_statement> |
-		\~\~<metadb_server_max_descriptors_statement> |
-		\~\~<metadb_server_stack_size_statement> |
-		\~\~<metadb_server_thread_pool_size_statement> |
-		\~\~<metadb_server_job_queue_length_statement> |
-		\~\~<metadb_server_heartbeat_interval_statement> |
-		\~\~<metadb_server_dbq_size_statement> |
-		\~\~<ldap_server_host_statement> |
-		\~\~<ldap_server_port_statement> |
-		\~\~<ldap_base_dn_statement> |
-		\~\~<ldap_bind_dn_statement> |
-		\~\~<ldap_bind_password_statement> |
-		\~\~<postgresql_server_host_statement> |
-		\~\~<postgresql_server_port_statement> |
-		\~\~<postgresql_dbname_statement> |
-		\~\~<postgresql_user_statement> |
-		\~\~<postgresql_password_statement> |
-		\~\~<postgresql_conninfo_statement> |
-		\~\~<auth_statement> |
-		\~\~<sockopt_statement> |
-		\~\~<known_network_statement> |
-		\~\~<network_receive_timeout_statement> |
-		\~\~<admin_user_statement> |
-		\~\~<admin_user_gsi_dn_statement> |
-		\~\~<local_user_map_statement> |
-		\~\~<local_group_map_statement> |
-		\~\~<schedule_cache_timeout_statement> |
-		\~\~<schedule_concurrency_statement> |
-		\~\~<schedule_concurrency_per_net_statement> |
-		\~\~<schedule_idle_load_thresh_statement> |
-		\~\~<schedule_busy_load_thresh_statement> |
-		\~\~<schedule_virtual_load_statement> |
-		\~\~<schedule_candidates_ratio_statement> |
-		\~\~<schedule_rtt_thresh_diff_statement> |
-		\~\~<schedule_rtt_thresh_ratio_statement> |
-		\~\~<schedule_rtt_thresh_statement> |
-		\~\~<minimum_free_disk_space_statement> |
-		\~\~<gfs_proto_fhremove_request_window_statement> |
-		\~\~<gfs_proto_replication_request_statement> |
-		\~\~<simultaneous_replication_receivers_statement> |
-		\~\~<outstanding_file_replication_limit_statement> |
-		\~\~<gfsd_connection_cache_statement> |
-		\~\~<xmlattr_size_limit_statement> |
-		\~\~<xattr_size_limit_statement> |
-		\~\~<attr_cache_limit_statement> |
-		\~\~<attr_cache_timeout_statement> |
-		\~\~<log_level_statement> |
-		\~\~<log_message_verbose_level_statement> |
-		\~\~<log_auth_verbose_statement> |
-		\~\~<file_trace_statement> |
-		\~\~<fatal_action_statement> |
-		\~\~<debug_command_statement> |
-		\~\~<atime_statement> |
-		\~\~<client_file_bufsize_statement> |
-		\~\~<client_parallel_copy_statement> |
-		\~\~<profile_statement> |
-		\~\~<metadb_server_list_statement> |
-		\~\~<metadb_replication_statement> |
-		\~\~<synchronous_replication_timeout_statement> |
-		\~\~<synchronous_journaling_statement> |
-		\~\~<metadb_server_force_slave_statement> |
-		\~\~<metadb_server_slave_listen_statement> |
-		\~\~<metadb_server_slave_max_size_statement> |
-		\~\~<metadb_journal_dir_statement> |
-		\~\~<metadb_journal_max_size_statement> |
-		\~\~<metadb_journal_recvq_size_statement> |
-		\~\~<replica_check_statement> |
-		\~\~<replica_check_host_down_thresh_statement> |
-		\~\~<replica_check_sleep_time_statement> |
-		\~\~<replica_check_minimum_interval_statement>
-	<spool_statement> ::= "spool" <pathname>
-	<spool_server_listen_address_statement> ::=
-		\~\~"spool_server_listen_address" <ipv4_address>
-	<spool_server_listen_backlog_statement> ::=
-		\~\~"spool_server_listen_backlog" <number>
-	<spool_server_cred_type_statement> ::=
-		\~\~"spool_server_cred_type" <cred_type>
-	<spool_server_cred_service_statement> ::=
-		\~\~"spool_server_cred_service" <cred_service>
-	<spool_server_cred_name_statement> ::=
-		\~\~"spool_server_cred_name" <cred_name>
-	<spool_check_level_statement> ::= "spool_check_level" <spck_level>
-	<metadb_server_host_statement> ::= "metadb_server_host" <hostname>
-	<metadb_server_port_statement> ::= "metadb_server_port" <portnumber>
-	<metadb_server_cred_type_statement> ::=
-		\~\~"metadb_server_cred_type" <cred_type>
-	<metadb_server_cred_service_statement> ::=
-		\~\~"metadb_server_cred_service" <cred_service>
-	<metadb_server_cred_name_statement> ::=
-		\~\~"metadb_server_cred_name" <cred_name>
-	<metadb_server_listen_backlog_statement> ::=
-		\~\~"metadb_server_listen_backlog" <number>
-	<metadb_server_max_descriptors_statement> ::=
-		\~\~"metadb_server_max_descriptors" <number>
-	<metadb_server_stack_size_statement> ::=
-		\~\~"metadb_server_stack_size" <number>
-	<metadb_server_thread_pool_size_statement> ::=
-		\~\~"metadb_server_thread_pool_size" <number>
-	<metadb_server_job_queue_length_statement> ::=
-		\~\~"metadb_server_job_queue_length" <number>
-	<metadb_server_heartbeat_interval_statement> ::=
-		\~\~"metadb_server_heartbeat_interval" <number>
-	<metadb_server_dbq_size_statement> ::=
-		\~\~"metadb_server_dbq_size" <number>
-	<ldap_server_host_statement> ::= "ldap_server_host" <hostname>
-	<ldap_server_port_statement> ::= "ldap_server_port" <portnumber>
-	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>
-	<ldap_bind_dn_statement> ::= "ldap_bind_dn" <string>
-	<ldap_bind_password_statement> ::= "ldap_bind_password" <string>
-	<postgresql_server_host_statement> ::= "postgresql_server_host" <hostname>
-	<postgresql_server_port_statement> ::= "postgresql_server_port" <portnumber>
-	<postgresql_dbname_statement> ::= "postgresql_dbname" <string>
-	<postgresql_user_statement> ::= "postgresql_user" <string>
-	<postgresql_password_statement> ::= "postgresql_password" <string>
-	<postgresql_conninfo_statement> ::= "postgresql_conninfo" <string>
-	<auth_statement> ::=
-		\~\~"auth" <validity> <auth_method> <hostspec>
-	<auth_command> ::= "enable" | "disable"
-	<auth_method> ::= "gsi" | "gsi_auth" | "sharedsecret"
-	<sockopt_statement> ::=
-		\~\~"sockopt" <socket_option>[=<number>] [""LISTENER" | <hostspec>]
-	<socket_option> = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
-		\~\~"tcp_nodelay"
-	<known_network_statement> ::= "known_network" <hostspec>
-	<network_receive_timeout_statement> ::= "network_receive_timeout" <number>
-	<admin_user_statement> ::= "admin_user" <string>
-	<admin_user_gsi_dn_statement> ::= "admin_user_gsi_dn" <string>
-	<local_user_map_statement> ::= "local_user_map" <local_user_and_group_map_spec>
-	<local_group_map_statement> ::= "local_group_map" <local_user_and_group_map_spec>
-	<local_user_and_group_map_spec> ::=
-		<pathname> |
+<spool_statement> |
+	<spool_server_listen_address_statement> |
+	<spool_server_listen_backlog_statement> |
+	<spool_server_cred_type_statement> |
+	<spool_server_cred_service_statement> |
+	<spool_server_cred_name_statement> |
+	<spool_check_level_statement> |
+	<metadb_server_host_statement> |
+	<metadb_server_port_statement> |
+	<metadb_server_cred_type_statement> |
+	<metadb_server_cred_service_statement> |
+	<metadb_server_cred_name_statement> |
+	<metadb_server_listen_backlog_statement> |
+	<metadb_server_max_descriptors_statement> |
+	<metadb_server_stack_size_statement> |
+	<metadb_server_thread_pool_size_statement> |
+	<metadb_server_job_queue_length_statement> |
+	<metadb_server_heartbeat_interval_statement> |
+	<metadb_server_dbq_size_statement> |
+	<ldap_server_host_statement> |
+	<ldap_server_port_statement> |
+	<ldap_base_dn_statement> |
+	<ldap_bind_dn_statement> |
+	<ldap_bind_password_statement> |
+	<postgresql_server_host_statement> |
+	<postgresql_server_port_statement> |
+	<postgresql_dbname_statement> |
+	<postgresql_user_statement> |
+	<postgresql_password_statement> |
+	<postgresql_conninfo_statement> |
+	<auth_statement> |
+	<sockopt_statement> |
+	<known_network_statement> |
+	<network_receive_timeout_statement> |
+	<admin_user_statement> |
+	<admin_user_gsi_dn_statement> |
+	<local_user_map_statement> |
+	<local_group_map_statement> |
+	<schedule_cache_timeout_statement> |
+	<schedule_concurrency_statement> |
+	<schedule_concurrency_per_net_statement> |
+	<schedule_idle_load_thresh_statement> |
+	<schedule_busy_load_thresh_statement> |
+	<schedule_virtual_load_statement> |
+	<schedule_candidates_ratio_statement> |
+	<schedule_rtt_thresh_diff_statement> |
+	<schedule_rtt_thresh_ratio_statement> |
+	<schedule_rtt_thresh_statement> |
+	<write_local_priority_statement> |
+	<write_target_domain_statement> |
+	<minimum_free_disk_space_statement> |
+	<gfs_proto_fhremove_request_window_statement> |
+	<gfs_proto_replication_request_window_statement> |
+	<simultaneous_replication_receivers_statement> |
+	<outstanding_file_replication_limit_statement> |
+	<gfsd_connection_cache_statement> |
+	<xmlattr_size_limit_statement> |
+	<xattr_size_limit_statement> |
+	<attr_cache_limit_statement> |
+	<attr_cache_timeout_statement> |
+	<log_level_statement> |
+	<log_message_verbose_level_statement> |
+	<log_auth_verbose_statement> |
+	<file_trace_statement> |
+	<fatal_action_statement> |
+	<debug_command_statement> |
+	<atime_statement> |
+	<client_file_bufsize_statement> |
+	<client_parallel_copy_statement> |
+	<profile_statement> |
+	<metadb_server_list_statement> |
+	<metadb_replication_statement> |
+	<synchronous_replication_timeout_statement> |
+	<synchronous_journaling_statement> |
+	<metadb_server_force_slave_statement> |
+	<metadb_server_slave_listen_statement> |
+	<metadb_server_slave_max_size_statement> |
+	<metadb_journal_dir_statement> |
+	<metadb_journal_max_size_statement> |
+	<metadb_journal_recvq_size_statement> |
+	<replica_check_statement> |
+	<replica_check_host_down_thresh_statement> |
+	<replica_check_sleep_time_statement> |
+	<replica_check_minimum_interval_statement>
+.fi
+.TP
+\fB<spool_statement> ::=\fR
+.nf
+"spool" <pathname>
+.fi
+.TP
+\fB<spool_server_listen_address_statement> ::=\fR
+.nf
+"spool_server_listen_address" <ipv4_address>
+.fi
+.TP
+\fB<spool_server_listen_backlog_statement> ::=\fR
+.nf
+"spool_server_listen_backlog" <number>
+.fi
+.TP
+\fB<spool_server_cred_type_statement> ::=\fR
+.nf
+"spool_server_cred_type" <cred_type>
+.fi
+.TP
+\fB<spool_server_cred_service_statement> ::=\fR
+.nf
+"spool_server_cred_service" <cred_service>
+.fi
+.TP
+\fB<spool_server_cred_name_statement> ::=\fR
+.nf
+"spool_server_cred_name" <cred_name>
+.fi
+.TP
+\fB<spool_check_level_statement> ::=\fR
+.nf
+"spool_check_level" <spck_level>
+.fi
+.TP
+\fB<metadb_server_host_statement> ::=\fR
+.nf
+"metadb_server_host" <hostname>
+.fi
+.TP
+\fB<metadb_server_port_statement> ::=\fR
+.nf
+"metadb_server_port" <portnumber>
+.fi
+.TP
+\fB<metadb_server_cred_type_statement> ::=\fR
+.nf
+"metadb_server_cred_type" <cred_type>
+.fi
+.TP
+\fB<metadb_server_cred_service_statement> ::=\fR
+.nf
+"metadb_server_cred_service" <cred_service>
+.fi
+.TP
+\fB<metadb_server_cred_name_statement> ::=\fR
+.nf
+"metadb_server_cred_name" <cred_name>
+.fi
+.TP
+\fB<metadb_server_listen_backlog_statement> ::=\fR
+.nf
+"metadb_server_listen_backlog" <number>
+.fi
+.TP
+\fB<metadb_server_max_descriptors_statement> ::=\fR
+.nf
+"metadb_server_max_descriptors" <number>
+.fi
+.TP
+\fB<metadb_server_stack_size_statement> ::=\fR
+.nf
+"metadb_server_stack_size" <number>
+.fi
+.TP
+\fB<metadb_server_thread_pool_size_statement> ::=\fR
+.nf
+"metadb_server_thread_pool_size" <number>
+.fi
+.TP
+\fB<metadb_server_job_queue_length_statement> ::=\fR
+.nf
+"metadb_server_job_queue_length" <number>
+.fi
+.TP
+\fB<metadb_server_heartbeat_interval_statement> ::=\fR
+.nf
+"metadb_server_heartbeat_interval" <number>
+.fi
+.TP
+\fB<metadb_server_dbq_size_statement> ::=\fR
+.nf
+"metadb_server_dbq_size" <number>
+.fi
+.TP
+\fB<ldap_server_host_statement> ::=\fR
+.nf
+"ldap_server_host" <hostname>
+.fi
+.TP
+\fB<ldap_server_port_statement> ::=\fR
+.nf
+"ldap_server_port" <portnumber>
+.fi
+.TP
+\fB<ldap_base_dn_statement> ::=\fR
+.nf
+"ldap_base_dn" <string>
+.fi
+.TP
+\fB<ldap_bind_dn_statement> ::=\fR
+.nf
+"ldap_bind_dn" <string>
+.fi
+.TP
+\fB<ldap_bind_password_statement> ::=\fR
+.nf
+"ldap_bind_password" <string>
+.fi
+.TP
+\fB<postgresql_server_host_statement> ::=\fR
+.nf
+"postgresql_server_host" <hostname>
+.fi
+.TP
+\fB<postgresql_server_port_statement> ::=\fR
+.nf
+"postgresql_server_port" <portnumber>
+.fi
+.TP
+\fB<postgresql_dbname_statement> ::=\fR
+.nf
+"postgresql_dbname" <string>
+.fi
+.TP
+\fB<postgresql_user_statement> ::=\fR
+.nf
+"postgresql_user" <string>
+.fi
+.TP
+\fB<postgresql_password_statement> ::=\fR
+.nf
+"postgresql_password" <string>
+.fi
+.TP
+\fB<postgresql_conninfo_statement> ::=\fR
+.nf
+"postgresql_conninfo" <string>
+.fi
+.TP
+\fB<auth_statement> ::=\fR
+.nf
+"auth" <validity> <auth_method> <hostspec>
+.fi
+.TP
+\fB<auth_command> ::=\fR
+.nf
+"enable" | "disable"
+.fi
+.TP
+\fB<auth_method> ::=\fR
+.nf
+"gsi" | "gsi_auth" | "sharedsecret"
+.fi
+.TP
+\fB<sockopt_statement> ::=\fR
+.nf
+"sockopt" <socket_option>[=<number>] [""LISTENER" | <hostspec>]
+.fi
+.TP
+\fB<socket_option> ::=\fR
+.nf
+"debug" | "keepalive" | "sndbuf" | "rcvbuf" |
+	"tcp_nodelay"
+.fi
+.TP
+\fB<known_network_statement> ::=\fR
+.nf
+"known_network" <hostspec>
+.fi
+.TP
+\fB<network_receive_timeout_statement> ::=\fR
+.nf
+"network_receive_timeout" <number>
+.fi
+.TP
+\fB<admin_user_statement> ::=\fR
+.nf
+"admin_user" <string>
+.fi
+.TP
+\fB<admin_user_gsi_dn_statement> ::=\fR
+.nf
+"admin_user_gsi_dn" <string>
+.fi
+.TP
+\fB<local_user_map_statement> ::=\fR
+.nf
+"local_user_map" <local_user_and_group_map_spec>
+.fi
+.TP
+\fB<local_group_map_statement> ::=\fR
+.nf
+"local_group_map" <local_user_and_group_map_spec>
+.fi
+.TP
+\fB<local_user_and_group_map_spec> ::=\fR
+.nf
+<pathname> |
 		<pathname> <hostname>|
 		<pathname> <hostname> ":" <portnumber>
-	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
-	<schedule_concurrency_statement> ::= "schedule_concurrency" <number>
-	<schedule_concurrency_per_net_statement> ::= "schedule_concurrency_per_net" <number>
-	<schedule_idle_load_thresh_statement> ::= "schedule_idle_load_thresh" <load>
-	<schedule_busy_load_thresh_statement> ::= "schedule_busy_load_thresh" <load>
-	<schedule_virtual_load_statement> ::= "schedule_virtual_load" <load>
-	<schedule_candidates_ratio_statement> ::= "schedule_candidates_ratio" <floating_point_number>
-	<schedule_rtt_thresh_diff_statement> ::= "schedule_rtt_thresh_diff" <number>
-	<schedule_rtt_thresh_ratio_statement> ::= "schedule_rtt_thresh_ratio" <floating_point_number>
-	<schedule_rtt_thresh_statement> ::= "schedule_rtt_thresh" <floating_point_number>
-	<minimum_free_disk_space_statement> ::=
-		\~\~"minimum_free_disk_space" <size>
-	<gfs_proto_fhremove_request_window_statement> ::= "gfs_proto_fhremove_request_window" <number>
-	<gfs_proto_replication_request_window_statement> ::= "gfs_proto_replication_request_window" <number>
-	<simultaneous_replication_receivers_statement> ::= "simultaneous_replication_receivers" <number>
-	<outstanding_file_replication_limit_statement> ::= "outstanding_file_replication_limit" <number>
-	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
-	<xmlattr_size_limit_statement> ::= "xmlattr_size_limit" <size>
-	<xattr_size_limit_statement> ::= "xattr_size_limit" <size>
-	<attr_cache_limit_statement> ::= "attr_cache_limit" <number>
-	<attr_cache_timeout_statement> ::= "attr_cache_timeout" <number>
-	<log_level_statement> ::= "log_level" <log_priority>
-	<log_message_verbose_level_statement> ::= "log_message_verbose_level" <number>
-	<log_auth_verbose_statement> ::= "log_auth_verbose" <validity>
-	<file_trace_statement> ::= "file_trace" <validity>
-	<fatal_action_statement> ::= "fatal_action" <fatal_action_name>
-	<debug_command_statement> ::= "debug_command" <string_list>
-	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
-	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
-	<atime_statement> ::= "atime" <atime_type>
-	<client_file_bufsize_statement> ::= "client_file_bufsize" <size>
-	<client_parallel_copy_statement> ::= "client_parallel_copy" <number>
-	<profile_statement> ::= "profile" <validity>
-	<metadb_server_list_statement> ::= "metadb_server_list" <metadb_server_list_spec>
-	<metadb_server_list_spec> ::=
-		\~\~<hostname_port_spec> |
-		\~\~<hostname_port_spec> <metadb_server_list_spec>
-	<metadb_replication_statement> ::= "metadb_replication" <validity>
-	<synchronous_replication_timeout_statement> ::= "synchronous_replication_timeout" <number>
-	<synchronous_journaling_statement> ::= "synchronous_journaling" <validity>
-	<metadb_server_force_slave_statement> ::= "metadb_server_force_slave" <validity>
-	<metadb_server_slave_listen_statement> ::= "metadb_server_slave_listen" <validity>
-	<metadb_server_slave_max_size_statement> ::= "metadb_server_slave_max_size" <number>
-	<metadb_journal_dir_statement> ::= "metadb_journal_dir" <pathname>
-	<metadb_journal_max_size_statement> ::= "metadb_journal_max_size" <number>
-	<metadb_journal_recvq_size_statement> ::= "metadb_journal_recvq_size" <number>
-	<replica_check_statement> ::= "replica_check" <validity>
-	<replica_check_host_down_thresh_statement> ::= "replica_check_host_down_thresh" <number>
-	<replica_check_sleep_time_statement> ::= "replica_check_sleep_time" <number>
-	<replica_check_minimum_interval_statement> ::= "replica_check_minimum_interval" <number>
-	<string_list> ::= 
-		\~\~<string> |
-		\~\~<string> <string_list>
-	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
-		\~\~<hostname> | "." <domain_name> | "*"
-	<pathname> ::= <pathname_character> <pathname_character>*
-	<pathname_character> ::= <hostname_character> | "," | "/" | "_"
-	<hostname_port_spec> ::=
-		\~\~<hostname>|
-		\~\~<hostname> ":" <portnumber>
-	<hostname> ::= <hostname_character> <hostname_character>*
-	<hostname_character> ::= <alphabet> | <digit> | "-" | "."
-	<portnumber> ::= <number>
-	<size> ::= <number> [ "k" | "M" | "G" | "T" ]
-	<number> ::= <digit> [<digit>*]
-	<digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-	<string> ::= """ <double_quoted_character>* """
-	<double_quoted_character> ::=
-		\~\~<any_character_except_backslash_and_double_quotation> |
-		\~\~"\\\\" | "\\""
-	<validity> ::= "enable" | "disable"
-	<spck_level> ::= "disable" | "display" | "delete" | "lost_found"
-	<atime_type> ::= "disable" | "relative" | "strict"
-	<log_priority> ::= "emerg" | "alert" | "crit" | "err" | "warning" |
-		\~\~"notice" | "info" | "debug"
-	<fatal_action_name> ::= "backtrace_and_abort" | "backtrace_and_exit" |
-		\~\~"abort" | "exit"
+.fi
+.TP
+\fB<schedule_cache_timeout_statement> ::=\fR
+.nf
+"schedule_cache_timeout" <number>
+.fi
+.TP
+\fB<schedule_concurrency_statement> ::=\fR
+.nf
+"schedule_concurrency" <number>
+.fi
+.TP
+\fB<schedule_concurrency_per_net_statement> ::=\fR
+.nf
+"schedule_concurrency_per_net" <number>
+.fi
+.TP
+\fB<schedule_idle_load_thresh_statement> ::=\fR
+.nf
+"schedule_idle_load_thresh" <load>
+.fi
+.TP
+\fB<schedule_busy_load_thresh_statement> ::=\fR
+.nf
+"schedule_busy_load_thresh" <load>
+.fi
+.TP
+\fB<schedule_virtual_load_statement> ::=\fR
+.nf
+"schedule_virtual_load" <load>
+.fi
+.TP
+\fB<schedule_candidates_ratio_statement> ::=\fR
+.nf
+"schedule_candidates_ratio" <floating_point_number>
+.fi
+.TP
+\fB<schedule_rtt_thresh_diff_statement> ::=\fR
+.nf
+"schedule_rtt_thresh_diff" <number>
+.fi
+.TP
+\fB<schedule_rtt_thresh_ratio_statement> ::=\fR
+.nf
+"schedule_rtt_thresh_ratio" <floating_point_number>
+.fi
+.TP
+\fB<schedule_rtt_thresh_statement> ::=\fR
+.nf
+"schedule_rtt_thresh" <floating_point_number>
+.fi
+.TP
+\fB<write_local_priority_statement> ::=\fR
+.nf
+"write_local_priority" <validity>
+.fi
+.TP
+\fB<write_target_domain_statement> ::=\fR
+.nf
+"write_target_domain" <string>
+.fi
+.TP
+\fB<minimum_free_disk_space_statement> ::=\fR
+.nf
+"minimum_free_disk_space" <size>
+.fi
+.TP
+\fB<gfs_proto_fhremove_request_window_statement> ::=\fR
+.nf
+"gfs_proto_fhremove_request_window" <number>
+.fi
+.TP
+\fB<gfs_proto_replication_request_window_statement> ::=\fR
+.nf
+"gfs_proto_replication_request_window" <number>
+.fi
+.TP
+\fB<simultaneous_replication_receivers_statement> ::=\fR
+.nf
+"simultaneous_replication_receivers" <number>
+.fi
+.TP
+\fB<outstanding_file_replication_limit_statement> ::=\fR
+.nf
+"outstanding_file_replication_limit" <number>
+.fi
+.TP
+\fB<gfsd_connection_cache_statement> ::=\fR
+.nf
+"gfsd_connection_cache" <number>
+.fi
+.TP
+\fB<xmlattr_size_limit_statement> ::=\fR
+.nf
+"xmlattr_size_limit" <size>
+.fi
+.TP
+\fB<xattr_size_limit_statement> ::=\fR
+.nf
+"xattr_size_limit" <size>
+.fi
+.TP
+\fB<attr_cache_limit_statement> ::=\fR
+.nf
+"attr_cache_limit" <number>
+.fi
+.TP
+\fB<attr_cache_timeout_statement> ::=\fR
+.nf
+"attr_cache_timeout" <number>
+.fi
+.TP
+\fB<log_level_statement> ::=\fR
+.nf
+"log_level" <log_priority>
+.fi
+.TP
+\fB<log_message_verbose_level_statement> ::=\fR
+.nf
+"log_message_verbose_level" <number>
+.fi
+.TP
+\fB<log_auth_verbose_statement> ::=\fR
+.nf
+"log_auth_verbose" <validity>
+.fi
+.TP
+\fB<file_trace_statement> ::=\fR
+.nf
+"file_trace" <validity>
+.fi
+.TP
+\fB<fatal_action_statement> ::=\fR
+.nf
+"fatal_action" <fatal_action_name>
+.fi
+.TP
+\fB<debug_command_statement> ::=\fR
+.nf
+"debug_command" <string_list>
+.fi
+.TP
+\fB<no_file_system_node_timeout_statement> ::=\fR
+.nf
+"no_file_system_node_timeout" <number>
+.fi
+.TP
+\fB<gfmd_reconnection_timeout_statement> ::=\fR
+.nf
+"gfmd_reconnection_timeout" <number>
+.fi
+.TP
+\fB<atime_statement> ::=\fR
+.nf
+"atime" <atime_type>
+.fi
+.TP
+\fB<client_file_bufsize_statement> ::=\fR
+.nf
+"client_file_bufsize" <size>
+.fi
+.TP
+\fB<client_parallel_copy_statement> ::=\fR
+.nf
+"client_parallel_copy" <number>
+.fi
+.TP
+\fB<profile_statement> ::=\fR
+.nf
+"profile" <validity>
+.fi
+.TP
+\fB<metadb_server_list_statement> ::=\fR
+.nf
+"metadb_server_list" <metadb_server_list_spec>
+.fi
+.TP
+\fB<metadb_server_list_spec> ::=\fR
+.nf
+<hostname_port_spec> |
+	<hostname_port_spec> <metadb_server_list_spec>
+.fi
+.TP
+\fB<metadb_replication_statement> ::=\fR
+.nf
+"metadb_replication" <validity>
+.fi
+.TP
+\fB<synchronous_replication_timeout_statement> ::=\fR
+.nf
+"synchronous_replication_timeout" <number>
+.fi
+.TP
+\fB<synchronous_journaling_statement> ::=\fR
+.nf
+"synchronous_journaling" <validity>
+.fi
+.TP
+\fB<metadb_server_force_slave_statement> ::=\fR
+.nf
+"metadb_server_force_slave" <validity>
+.fi
+.TP
+\fB<metadb_server_slave_listen_statement> ::=\fR
+.nf
+"metadb_server_slave_listen" <validity>
+.fi
+.TP
+\fB<metadb_server_slave_max_size_statement> ::=\fR
+.nf
+"metadb_server_slave_max_size" <number>
+.fi
+.TP
+\fB<metadb_journal_dir_statement> ::=\fR
+.nf
+"metadb_journal_dir" <pathname>
+.fi
+.TP
+\fB<metadb_journal_max_size_statement> ::=\fR
+.nf
+"metadb_journal_max_size" <number>
+.fi
+.TP
+\fB<metadb_journal_recvq_size_statement> ::=\fR
+.nf
+"metadb_journal_recvq_size" <number>
+.fi
+.TP
+\fB<replica_check_statement> ::=\fR
+.nf
+"replica_check" <validity>
+.fi
+.TP
+\fB<replica_check_host_down_thresh_statement> ::=\fR
+.nf
+"replica_check_host_down_thresh" <number>
+.fi
+.TP
+\fB<replica_check_sleep_time_statement> ::=\fR
+.nf
+"replica_check_sleep_time" <number>
+.fi
+.TP
+\fB<replica_check_minimum_interval_statement> ::=\fR
+.nf
+"replica_check_minimum_interval" <number>
+.fi
+.TP
+\fB<string_list> ::=\fR
+.nf
+<string> |
+	<string> <string_list>
+.fi
+.TP
+\fB<hostspec> ::=\fR
+.nf
+<ipv4_address> | <ipv4_address> "/" <address_mask> |
+	<hostname> | "." <domain_name> | "*"
+.fi
+.TP
+\fB<pathname> ::=\fR
+.nf
+<pathname_character> <pathname_character>*
+.fi
+.TP
+\fB<pathname_character> ::=\fR
+.nf
+<hostname_character> | "," | "/" | "_"
+.fi
+.TP
+\fB<hostname_port_spec> ::=\fR
+.nf
+<hostname>|
+	<hostname> ":" <portnumber>
+.fi
+.TP
+\fB<hostname> ::=\fR
+.nf
+<hostname_character> <hostname_character>*
+.fi
+.TP
+\fB<hostname_character> ::=\fR
+.nf
+<alphabet> | <digit> | "-" | "."
+.fi
+.TP
+\fB<portnumber> ::=\fR
+.nf
+<number>
+.fi
+.TP
+\fB<size> ::=\fR
+.nf
+<number> [ "k" | "M" | "G" | "T" ]
+.fi
+.TP
+\fB<number> ::=\fR
+.nf
+<digit> [<digit>*]
+.fi
+.TP
+\fB<digit> ::=\fR
+.nf
+"0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+.fi
+.TP
+\fB<string> ::=\fR
+.nf
+""" <double_quoted_character>* """
+.fi
+.TP
+\fB<double_quoted_character> ::=\fR
+.nf
+<any_character_except_backslash_and_double_quotation> |
+	"\\\\" | "\\""
+.fi
+.TP
+\fB<validity> ::=\fR
+.nf
+"enable" | "disable"
+.fi
+.TP
+\fB<spck_level> ::=\fR
+.nf
+"disable" | "display" | "delete" | "lost_found"
+.fi
+.TP
+\fB<atime_type> ::=\fR
+.nf
+"disable" | "relative" | "strict"
+.fi
+.TP
+\fB<log_priority> ::=\fR
+.nf
+"emerg" | "alert" | "crit" | "err" | "warning" |
+	"notice" | "info" | "debug"
+.fi
+.TP
+\fB<fatal_action_name> ::=\fR
+.nf
+"backtrace_and_abort" | "backtrace_and_exit" |
+	"abort" | "exit"
 .fi
 .SH "EXAMPLES"
 .PP
