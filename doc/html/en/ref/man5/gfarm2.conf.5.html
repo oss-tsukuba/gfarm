@@ -2809,233 +2809,853 @@ NAME="GRAMMAR"
 ><H2
 >GRAMMAR</H2
 ><P
->This is a grammar of gfarm2.conf described by the BNF
-notation.</P
+>This is a grammar of gfarm2.conf described by the BNF notation.</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>&#60;statement&#62; ::=</DT
+><DD
 ><P
 CLASS="LITERALLAYOUT"
->	&#60;statement&#62;&nbsp;::=<br>
-		  &#60;spool_statement&#62;&nbsp;|<br>
-		  &#60;spool_server_listen_address_statement&#62;&nbsp;|<br>
-		  &#60;spool_server_listen_backlog_statement&#62;&nbsp;|<br>
-		  &#60;spool_server_cred_type_statement&#62;&nbsp;|<br>
-		  &#60;spool_server_cred_service_statement&#62;&nbsp;|<br>
-		  &#60;spool_server_cred_name_statement&#62;&nbsp;|<br>
-		  &#60;spool_check_level_statement&#62;&nbsp;|<br>
-		  &#60;spool_base_load_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_host_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_port_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_cred_type_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_cred_service_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_cred_name_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_listen_backlog_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_max_descriptors_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_stack_size_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_thread_pool_size_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_job_queue_length_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_heartbeat_interval_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_dbq_size_statement&#62;&nbsp;|<br>
-		  &#60;ldap_server_host_statement&#62;&nbsp;|<br>
-		  &#60;ldap_server_port_statement&#62;&nbsp;|<br>
-		  &#60;ldap_base_dn_statement&#62;&nbsp;|<br>
-		  &#60;ldap_bind_dn_statement&#62;&nbsp;|<br>
-		  &#60;ldap_bind_password_statement&#62;&nbsp;|<br>
-		  &#60;postgresql_server_host_statement&#62;&nbsp;|<br>
-		  &#60;postgresql_server_port_statement&#62;&nbsp;|<br>
-		  &#60;postgresql_dbname_statement&#62;&nbsp;|<br>
-		  &#60;postgresql_user_statement&#62;&nbsp;|<br>
-		  &#60;postgresql_password_statement&#62;&nbsp;|<br>
-		  &#60;postgresql_conninfo_statement&#62;&nbsp;|<br>
-		  &#60;auth_statement&#62;&nbsp;|<br>
-		  &#60;sockopt_statement&#62;&nbsp;|<br>
-		  &#60;known_network_statement&#62;&nbsp;|<br>
-		  &#60;network_receive_timeout_statement&#62;&nbsp;|<br>
-		  &#60;admin_user_statement&#62;&nbsp;|<br>
-		  &#60;admin_user_gsi_dn_statement&#62;&nbsp;|<br>
-		  &#60;local_user_map_statement&#62;&nbsp;|<br>
-		  &#60;local_group_map_statement&#62;&nbsp;|<br>
-		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
-		  &#60;schedule_concurrency_statement&#62;&nbsp;|<br>
-		  &#60;schedule_concurrency_per_net_statement&#62;&nbsp;|<br>
-		  &#60;schedule_idle_load_thresh_statement&#62;&nbsp;|<br>
-		  &#60;schedule_busy_load_thresh_statement&#62;&nbsp;|<br>
-		  &#60;schedule_virtual_load_statement&#62;&nbsp;|<br>
-		  &#60;schedule_candidates_ratio_statement&#62;&nbsp;|<br>
-		  &#60;schedule_rtt_thresh_diff_statement&#62;&nbsp;|<br>
-		  &#60;schedule_rtt_thresh_ratio_statement&#62;&nbsp;|<br>
-		  &#60;schedule_rtt_thresh_statement&#62;&nbsp;|<br>
-		  &#60;write_local_priority_statement&#62;&nbsp;|<br>
-		  &#60;write_target_domain_statement&#62;&nbsp;|<br>
-		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
-		  &#60;simultaneous_replication_receivers_statement&#62;&nbsp;|<br>
-		  &#60;outstanding_file_replication_limit_statement&#62;&nbsp;|<br>
-		  &#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
-		  &#60;xmlattr_size_limit_statement&#62;&nbsp;|<br>
-		  &#60;xattr_size_limit_statement&#62;&nbsp;|<br>
-		  &#60;attr_cache_limit_statement&#62;&nbsp;|<br>
-		  &#60;attr_cache_timeout_statement&#62;&nbsp;|<br>
-		  &#60;log_level_statement&#62;&nbsp;|<br>
-		  &#60;log_message_verbose_level_statement&#62;&nbsp;|<br>
-		  &#60;log_auth_verbose_statement&#62;&nbsp;|<br>
-		  &#60;file_trace_statement&#62;&nbsp;|<br>
-		  &#60;fatal_action_statement&#62;&nbsp;|<br>
-		  &#60;debug_command_statement&#62;&nbsp;|<br>
-		  &#60;atime_statement&#62;&nbsp;|<br>
-		  &#60;client_file_bufsize_statement&#62;&nbsp;|<br>
-		  &#60;client_parallel_copy_statement&#62;&nbsp;|<br>
-		  &#60;profile_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_list_statement&#62;&nbsp;|<br>
-		  &#60;metadb_replication_statement&#62;&nbsp;|<br>
-		  &#60;synchronous_replication_timeout_statement&#62;&nbsp;|<br>
-		  &#60;synchronous_journaling_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_force_slave_statement&#62;&nbsp;|<br>
-		  &#60;metadb_server_slave_max_size_statement&#62;&nbsp;|<br>
-		  &#60;metadb_journal_dir_statement&#62;&nbsp;|<br>
-		  &#60;metadb_journal_max_size_statement&#62;&nbsp;|<br>
-		  &#60;metadb_journal_recvq_size_statement&#62;&nbsp;|<br>
-		  &#60;replica_check_statement&#62;&nbsp;|<br>
-		  &#60;replica_check_host_down_thresh_statement&#62;&nbsp;|<br>
-		  &#60;replica_check_sleep_time_statement&#62;&nbsp;|<br>
-		  &#60;replica_check_minimum_interval_statement&#62;<br>
-	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
-	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
-		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
-	&#60;spool_server_listen_backlog_statement&#62;&nbsp;::=<br>
-		  "spool_server_listen_backlog"&nbsp;&#60;number&#62;<br>
-	&#60;spool_server_cred_type_statement&#62;&nbsp;::=<br>
-		  "spool_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
-	&#60;spool_server_cred_service_statement&#62;&nbsp;::=<br>
-		  "spool_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
-	&#60;spool_server_cred_name_statement&#62;&nbsp;::=<br>
-		  "spool_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
-	&#60;spool_check_level_statement&#62;&nbsp;::=&nbsp;"spool_check_level"&nbsp;&#60;spck_level&#62;<br>
-	&#60;spool_base_load_statement&#62;&nbsp;::=&nbsp;"spool_base_load"&nbsp;&#60;load&#62;<br>
-	&#60;metadb_server_host_statement&#62;&nbsp;::=&nbsp;"metadb_server_host"&nbsp;&#60;hostname&#62;<br>
-	&#60;metadb_server_port_statement&#62;&nbsp;::=&nbsp;"metadb_server_port"&nbsp;&#60;portnumber&#62;<br>
-	&#60;metadb_server_cred_type_statement&#62;&nbsp;::=<br>
-		  "metadb_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
-	&#60;metadb_server_cred_service_statement&#62;&nbsp;::=<br>
-		  "metadb_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
-	&#60;metadb_server_cred_name_statement&#62;&nbsp;::=<br>
-		  "metadb_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
-	&#60;metadb_server_listen_backlog_statement&#62;&nbsp;::=<br>
-		  "metadb_server_listen_backlog"&nbsp;&#60;number&#62;<br>
-	&#60;metadb_server_max_descriptors_statement&#62;&nbsp;::=<br>
-		  "metadb_server_max_descriptors"&nbsp;&#60;number&#62;<br>
-	&#60;metadb_server_stack_size_statement&#62;&nbsp;::=<br>
-		  "metadb_server_stack_size"&nbsp;&#60;number&#62;<br>
-	&#60;metadb_server_thread_pool_size_statement&#62;&nbsp;::=<br>
-		  "metadb_server_thread_pool_size"&nbsp;&#60;number&#62;<br>
-	&#60;metadb_server_job_queue_length_statement&#62;&nbsp;::=<br>
-		  "metadb_server_job_queue_length"&nbsp;&#60;number&#62;<br>
-	&#60;metadb_server_heartbeat_interval_statement&#62;&nbsp;::=<br>
-		  "metadb_server_heartbeat_interval"&nbsp;&#60;number&#62;<br>
-	&#60;metadb_server_dbq_size_statement&#62;&nbsp;::=<br>
-		  "metadb_server_dbq_size"&nbsp;&#60;number&#62;<br>
-	&#60;ldap_server_host_statement&#62;&nbsp;::=&nbsp;"ldap_server_host"&nbsp;&#60;hostname&#62;<br>
-	&#60;ldap_server_port_statement&#62;&nbsp;::=&nbsp;"ldap_server_port"&nbsp;&#60;portnumber&#62;<br>
-	&#60;ldap_base_dn_statement&#62;&nbsp;::=&nbsp;"ldap_base_dn"&nbsp;&#60;string&#62;<br>
-	&#60;ldap_bind_dn_statement&#62;&nbsp;::=&nbsp;"ldap_bind_dn"&nbsp;&#60;string&#62;<br>
-	&#60;ldap_bind_password_statement&#62;&nbsp;::=&nbsp;"ldap_bind_password"&nbsp;&#60;string&#62;<br>
-	&#60;postgresql_server_host_statement&#62;&nbsp;::=&nbsp;"postgresql_server_host"&nbsp;&#60;hostname&#62;<br>
-	&#60;postgresql_server_port_statement&#62;&nbsp;::=&nbsp;"postgresql_server_port"&nbsp;&#60;portnumber&#62;<br>
-	&#60;postgresql_dbname_statement&#62;&nbsp;::=&nbsp;"postgresql_dbname"&nbsp;&#60;string&#62;<br>
-	&#60;postgresql_user_statement&#62;&nbsp;::=&nbsp;"postgresql_user"&nbsp;&#60;string&#62;<br>
-	&#60;postgresql_password_statement&#62;&nbsp;::=&nbsp;"postgresql_password"&nbsp;&#60;string&#62;<br>
-	&#60;postgresql_conninfo_statement&#62;&nbsp;::=&nbsp;"postgresql_conninfo"&nbsp;&#60;string&#62;<br>
-	&#60;auth_statement&#62;&nbsp;::=<br>
-		  "auth"&nbsp;&#60;validity&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
-	&#60;auth_command&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
-	&#60;auth_method&#62;&nbsp;::=&nbsp;"gsi"&nbsp;|&nbsp;"gsi_auth"&nbsp;|&nbsp;"sharedsecret"<br>
-	&#60;sockopt_statement&#62;&nbsp;::=<br>
-		  "sockopt"&nbsp;&#60;socket_option&#62;[=&#60;number&#62;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&#60;hostspec&#62;]<br>
-	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|&nbsp;"rcvbuf"&nbsp;|<br>
-		  "tcp_nodelay"<br>
-	&#60;known_network_statement&#62;&nbsp;::=&nbsp;"known_network"&nbsp;&#60;hostspec&#62;<br>
-	&#60;network_receive_timeout_statement&#62;&nbsp;::=&nbsp;"network_receive_timeout"&nbsp;&#60;number&#62;<br>
-	&#60;admin_user_statement&#62;&nbsp;::=&nbsp;"admin_user"&nbsp;&#60;string&#62;<br>
-	&#60;admin_user_gsi_dn_statement&#62;&nbsp;::=&nbsp;"admin_user_gsi_dn"&nbsp;&#60;string&#62;<br>
-	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;"local_user_map"&nbsp;&#60;local_user_and_group_map_spec&#62;<br>
-	&#60;local_group_map_statement&#62;&nbsp;::=&nbsp;"local_group_map"&nbsp;&#60;local_user_and_group_map_spec&#62;<br>
-	&#60;local_user_and_group_map_spec&#62;&nbsp;::=<br>
-		&#60;pathname&#62;&nbsp;|<br>
+>&#60;spool_statement&#62;&nbsp;|<br>
+	&#60;spool_server_listen_address_statement&#62;&nbsp;|<br>
+	&#60;spool_server_listen_backlog_statement&#62;&nbsp;|<br>
+	&#60;spool_server_cred_type_statement&#62;&nbsp;|<br>
+	&#60;spool_server_cred_service_statement&#62;&nbsp;|<br>
+	&#60;spool_server_cred_name_statement&#62;&nbsp;|<br>
+	&#60;spool_check_level_statement&#62;&nbsp;|<br>
+	&#60;spool_base_load_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_host_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_port_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_cred_type_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_cred_service_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_cred_name_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_listen_backlog_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_max_descriptors_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_stack_size_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_thread_pool_size_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_job_queue_length_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_heartbeat_interval_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_dbq_size_statement&#62;&nbsp;|<br>
+	&#60;ldap_server_host_statement&#62;&nbsp;|<br>
+	&#60;ldap_server_port_statement&#62;&nbsp;|<br>
+	&#60;ldap_base_dn_statement&#62;&nbsp;|<br>
+	&#60;ldap_bind_dn_statement&#62;&nbsp;|<br>
+	&#60;ldap_bind_password_statement&#62;&nbsp;|<br>
+	&#60;postgresql_server_host_statement&#62;&nbsp;|<br>
+	&#60;postgresql_server_port_statement&#62;&nbsp;|<br>
+	&#60;postgresql_dbname_statement&#62;&nbsp;|<br>
+	&#60;postgresql_user_statement&#62;&nbsp;|<br>
+	&#60;postgresql_password_statement&#62;&nbsp;|<br>
+	&#60;postgresql_conninfo_statement&#62;&nbsp;|<br>
+	&#60;auth_statement&#62;&nbsp;|<br>
+	&#60;sockopt_statement&#62;&nbsp;|<br>
+	&#60;known_network_statement&#62;&nbsp;|<br>
+	&#60;network_receive_timeout_statement&#62;&nbsp;|<br>
+	&#60;admin_user_statement&#62;&nbsp;|<br>
+	&#60;admin_user_gsi_dn_statement&#62;&nbsp;|<br>
+	&#60;local_user_map_statement&#62;&nbsp;|<br>
+	&#60;local_group_map_statement&#62;&nbsp;|<br>
+	&#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
+	&#60;schedule_concurrency_statement&#62;&nbsp;|<br>
+	&#60;schedule_concurrency_per_net_statement&#62;&nbsp;|<br>
+	&#60;schedule_idle_load_thresh_statement&#62;&nbsp;|<br>
+	&#60;schedule_busy_load_thresh_statement&#62;&nbsp;|<br>
+	&#60;schedule_virtual_load_statement&#62;&nbsp;|<br>
+	&#60;schedule_candidates_ratio_statement&#62;&nbsp;|<br>
+	&#60;schedule_rtt_thresh_diff_statement&#62;&nbsp;|<br>
+	&#60;schedule_rtt_thresh_ratio_statement&#62;&nbsp;|<br>
+	&#60;schedule_rtt_thresh_statement&#62;&nbsp;|<br>
+	&#60;write_local_priority_statement&#62;&nbsp;|<br>
+	&#60;write_target_domain_statement&#62;&nbsp;|<br>
+	&#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
+	&#60;simultaneous_replication_receivers_statement&#62;&nbsp;|<br>
+	&#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
+	&#60;xmlattr_size_limit_statement&#62;&nbsp;|<br>
+	&#60;xattr_size_limit_statement&#62;&nbsp;|<br>
+	&#60;attr_cache_limit_statement&#62;&nbsp;|<br>
+	&#60;attr_cache_timeout_statement&#62;&nbsp;|<br>
+	&#60;log_level_statement&#62;&nbsp;|<br>
+	&#60;log_message_verbose_level_statement&#62;&nbsp;|<br>
+	&#60;log_auth_verbose_statement&#62;&nbsp;|<br>
+	&#60;file_trace_statement&#62;&nbsp;|<br>
+	&#60;fatal_action_statement&#62;&nbsp;|<br>
+	&#60;debug_command_statement&#62;&nbsp;|<br>
+	&#60;atime_statement&#62;&nbsp;|<br>
+	&#60;client_file_bufsize_statement&#62;&nbsp;|<br>
+	&#60;client_parallel_copy_statement&#62;&nbsp;|<br>
+	&#60;profile_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_list_statement&#62;&nbsp;|<br>
+	&#60;metadb_replication_statement&#62;&nbsp;|<br>
+	&#60;synchronous_replication_timeout_statement&#62;&nbsp;|<br>
+	&#60;synchronous_journaling_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_force_slave_statement&#62;&nbsp;|<br>
+	&#60;metadb_server_slave_max_size_statement&#62;&nbsp;|<br>
+	&#60;metadb_journal_dir_statement&#62;&nbsp;|<br>
+	&#60;metadb_journal_max_size_statement&#62;&nbsp;|<br>
+	&#60;metadb_journal_recvq_size_statement&#62;&nbsp;|<br>
+	&#60;replica_check_statement&#62;&nbsp;|<br>
+	&#60;replica_check_host_down_thresh_statement&#62;&nbsp;|<br>
+	&#60;replica_check_sleep_time_statement&#62;&nbsp;|<br>
+	&#60;replica_check_minimum_interval_statement&#62;</P
+></DD
+><DT
+>&#60;spool_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"spool"&nbsp;&#60;pathname&#62;</P
+></DD
+><DT
+>&#60;spool_server_listen_address_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;</P
+></DD
+><DT
+>&#60;spool_server_listen_backlog_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"spool_server_listen_backlog"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;spool_server_cred_type_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"spool_server_cred_type"&nbsp;&#60;cred_type&#62;</P
+></DD
+><DT
+>&#60;spool_server_cred_service_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"spool_server_cred_service"&nbsp;&#60;cred_service&#62;</P
+></DD
+><DT
+>&#60;spool_server_cred_name_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"spool_server_cred_name"&nbsp;&#60;cred_name&#62;</P
+></DD
+><DT
+>&#60;spool_check_level_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"spool_check_level"&nbsp;&#60;spck_level&#62;</P
+></DD
+><DT
+>&#60;spool_base_load_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"spool_base_load"&nbsp;&#60;load&#62;</P
+></DD
+><DT
+>&#60;metadb_server_host_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_host"&nbsp;&#60;hostname&#62;</P
+></DD
+><DT
+>&#60;metadb_server_port_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_port"&nbsp;&#60;portnumber&#62;</P
+></DD
+><DT
+>&#60;metadb_server_cred_type_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_cred_type"&nbsp;&#60;cred_type&#62;</P
+></DD
+><DT
+>&#60;metadb_server_cred_service_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_cred_service"&nbsp;&#60;cred_service&#62;</P
+></DD
+><DT
+>&#60;metadb_server_cred_name_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_cred_name"&nbsp;&#60;cred_name&#62;</P
+></DD
+><DT
+>&#60;metadb_server_listen_backlog_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_listen_backlog"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;metadb_server_max_descriptors_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_max_descriptors"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;metadb_server_stack_size_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_stack_size"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;metadb_server_thread_pool_size_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_thread_pool_size"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;metadb_server_job_queue_length_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_job_queue_length"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;metadb_server_heartbeat_interval_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_heartbeat_interval"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;metadb_server_dbq_size_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_dbq_size"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;ldap_server_host_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"ldap_server_host"&nbsp;&#60;hostname&#62;</P
+></DD
+><DT
+>&#60;ldap_server_port_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"ldap_server_port"&nbsp;&#60;portnumber&#62;</P
+></DD
+><DT
+>&#60;ldap_base_dn_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"ldap_base_dn"&nbsp;&#60;string&#62;</P
+></DD
+><DT
+>&#60;ldap_bind_dn_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"ldap_bind_dn"&nbsp;&#60;string&#62;</P
+></DD
+><DT
+>&#60;ldap_bind_password_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"ldap_bind_password"&nbsp;&#60;string&#62;</P
+></DD
+><DT
+>&#60;postgresql_server_host_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"postgresql_server_host"&nbsp;&#60;hostname&#62;</P
+></DD
+><DT
+>&#60;postgresql_server_port_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"postgresql_server_port"&nbsp;&#60;portnumber&#62;</P
+></DD
+><DT
+>&#60;postgresql_dbname_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"postgresql_dbname"&nbsp;&#60;string&#62;</P
+></DD
+><DT
+>&#60;postgresql_user_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"postgresql_user"&nbsp;&#60;string&#62;</P
+></DD
+><DT
+>&#60;postgresql_password_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"postgresql_password"&nbsp;&#60;string&#62;</P
+></DD
+><DT
+>&#60;postgresql_conninfo_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"postgresql_conninfo"&nbsp;&#60;string&#62;</P
+></DD
+><DT
+>&#60;auth_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"auth"&nbsp;&#60;validity&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;</P
+></DD
+><DT
+>&#60;auth_command&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"enable"&nbsp;|&nbsp;"disable"</P
+></DD
+><DT
+>&#60;auth_method&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"gsi"&nbsp;|&nbsp;"gsi_auth"&nbsp;|&nbsp;"sharedsecret"</P
+></DD
+><DT
+>&#60;sockopt_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"sockopt"&nbsp;&#60;socket_option&#62;[=&#60;number&#62;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&#60;hostspec&#62;]</P
+></DD
+><DT
+>&#60;socket_option&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|&nbsp;"rcvbuf"&nbsp;|<br>
+	"tcp_nodelay"</P
+></DD
+><DT
+>&#60;known_network_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"known_network"&nbsp;&#60;hostspec&#62;</P
+></DD
+><DT
+>&#60;network_receive_timeout_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"network_receive_timeout"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;admin_user_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"admin_user"&nbsp;&#60;string&#62;</P
+></DD
+><DT
+>&#60;admin_user_gsi_dn_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"admin_user_gsi_dn"&nbsp;&#60;string&#62;</P
+></DD
+><DT
+>&#60;local_user_map_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"local_user_map"&nbsp;&#60;local_user_and_group_map_spec&#62;</P
+></DD
+><DT
+>&#60;local_group_map_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"local_group_map"&nbsp;&#60;local_user_and_group_map_spec&#62;</P
+></DD
+><DT
+>&#60;local_user_and_group_map_spec&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>&#60;pathname&#62;&nbsp;|<br>
 		&#60;pathname&#62;&nbsp;&#60;hostname&#62;|<br>
-		&#60;pathname&#62;&nbsp;&#60;hostname&#62;&nbsp;":"&nbsp;&#60;portnumber&#62;<br>
-	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>
-	&#60;schedule_concurrency_statement&#62;&nbsp;::=&nbsp;"schedule_concurrency"&nbsp;&#60;number&#62;<br>
-	&#60;schedule_concurrency_per_net_statement&#62;&nbsp;::=&nbsp;"schedule_concurrency_per_net"&nbsp;&#60;number&#62;<br>
-	&#60;schedule_idle_load_thresh_statement&#62;&nbsp;::=&nbsp;"schedule_idle_load_thresh"&nbsp;&#60;load&#62;<br>
-	&#60;schedule_busy_load_thresh_statement&#62;&nbsp;::=&nbsp;"schedule_busy_load_thresh"&nbsp;&#60;load&#62;<br>
-	&#60;schedule_virtual_load_statement&#62;&nbsp;::=&nbsp;"schedule_virtual_load"&nbsp;&#60;load&#62;<br>
-	&#60;schedule_candidates_ratio_statement&#62;&nbsp;::=&nbsp;"schedule_candidates_ratio"&nbsp;&#60;floating_point_number&#62;<br>
-	&#60;schedule_rtt_thresh_diff_statement&#62;&nbsp;::=&nbsp;"schedule_rtt_thresh_diff"&nbsp;&#60;number&#62;<br>
-	&#60;schedule_rtt_thresh_ratio_statement&#62;&nbsp;::=&nbsp;"schedule_rtt_thresh_ratio"&nbsp;&#60;floating_point_number&#62;<br>
-	&#60;schedule_rtt_thresh_statement&#62;&nbsp;::=&nbsp;"schedule_rtt_thresh"&nbsp;&#60;floating_point_number&#62;<br>
-	&#60;write_local_priority_statement&#62;&nbsp;::=&nbsp;"write_local_priority"&nbsp;&#60;validity&#62;<br>
-	&#60;write_target_domain_statement&#62;&nbsp;::=&nbsp;"write_target_domain"&nbsp;&#60;string&#62;<br>
-	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
-		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
-	&#60;simultaneous_replication_receivers_statement&#62;&nbsp;::=&nbsp;"simultaneous_replication_receivers"&nbsp;&#60;number&#62;<br>
-	&#60;outstanding_file_replication_limit_statement&#62;&nbsp;::=&nbsp;"outstanding_file_replication_limit"&nbsp;&#60;number&#62;<br>
-	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>
-	&#60;xmlattr_size_limit_statement&#62;&nbsp;::=&nbsp;"xmlattr_size_limit"&nbsp;&#60;size&#62;<br>
-	&#60;xattr_size_limit_statement&#62;&nbsp;::=&nbsp;"xattr_size_limit"&nbsp;&#60;size&#62;<br>
-	&#60;attr_cache_limit_statement&#62;&nbsp;::=&nbsp;"attr_cache_limit"&nbsp;&#60;number&#62;<br>
-	&#60;attr_cache_timeout_statement&#62;&nbsp;::=&nbsp;"attr_cache_timeout"&nbsp;&#60;number&#62;<br>
-	&#60;log_level_statement&#62;&nbsp;::=&nbsp;"log_level"&nbsp;&#60;log_priority&#62;<br>
-	&#60;log_message_verbose_level_statement&#62;&nbsp;::=&nbsp;"log_message_verbose_level"&nbsp;&#60;number&#62;<br>
-	&#60;log_auth_verbose_statement&#62;&nbsp;::=&nbsp;"log_auth_verbose"&nbsp;&#60;validity&#62;<br>
-	&#60;file_trace_statement&#62;&nbsp;::=&nbsp;"file_trace"&nbsp;&#60;validity&#62;<br>
-	&#60;fatal_action_statement&#62;&nbsp;::=&nbsp;"fatal_action"&nbsp;&#60;fatal_action_name&#62;<br>
-	&#60;debug_command_statement&#62;&nbsp;::=&nbsp;"debug_command"&nbsp;&#60;string_list&#62;<br>
-	&#60;no_file_system_node_timeout_statement&#62;&nbsp;::=&nbsp;"no_file_system_node_timeout"&nbsp;&#60;number&#62;<br>
-	&#60;gfmd_reconnection_timeout_statement&#62;&nbsp;::=&nbsp;"gfmd_reconnection_timeout"&nbsp;&#60;number&#62;<br>
-	&#60;atime_statement&#62;&nbsp;::=&nbsp;"atime"&nbsp;&#60;atime_type&#62;<br>
-	&#60;client_file_bufsize_statement&#62;&nbsp;::=&nbsp;"client_file_bufsize"&nbsp;&#60;size&#62;<br>
-	&#60;client_parallel_copy_statement&#62;&nbsp;::=&nbsp;"client_parallel_copy"&nbsp;&#60;number&#62;<br>
-	&#60;profile_statement&#62;&nbsp;::=&nbsp;"profile"&nbsp;&#60;validity&#62;<br>
-	&#60;metadb_server_list_statement&#62;&nbsp;::=&nbsp;"metadb_server_list"&nbsp;&#60;metadb_server_list_spec&#62;<br>
-	&#60;metadb_server_list_spec&#62;&nbsp;::=<br>
-		  &#60;hostname_port_spec&#62;&nbsp;|<br>
-		  &#60;hostname_port_spec&#62;&nbsp;&#60;metadb_server_list_spec&#62;<br>
-	&#60;metadb_replication_statement&#62;&nbsp;::=&nbsp;"metadb_replication"&nbsp;&#60;validity&#62;<br>
-	&#60;synchronous_replication_timeout_statement&#62;&nbsp;::=&nbsp;"synchronous_replication_timeout"&nbsp;&#60;number&#62;<br>
-	&#60;synchronous_journaling_statement&#62;&nbsp;::=&nbsp;"synchronous_journaling"&nbsp;&#60;validity&#62;<br>
-	&#60;metadb_server_force_slave_statement&#62;&nbsp;::=&nbsp;"metadb_server_force_slave"&nbsp;&#60;validity&#62;<br>
-	&#60;metadb_server_slave_max_size_statement&#62;&nbsp;::=&nbsp;"metadb_server_slave_max_size"&nbsp;&#60;number&#62;<br>
-	&#60;metadb_journal_dir_statement&#62;&nbsp;::=&nbsp;"metadb_journal_dir"&nbsp;&#60;pathname&#62;<br>
-	&#60;metadb_journal_max_size_statement&#62;&nbsp;::=&nbsp;"metadb_journal_max_size"&nbsp;&#60;number&#62;<br>
-	&#60;metadb_journal_recvq_size_statement&#62;&nbsp;::=&nbsp;"metadb_journal_recvq_size"&nbsp;&#60;number&#62;<br>
-	&#60;replica_check_statement&#62;&nbsp;::=&nbsp;"replica_check"&nbsp;&#60;validity&#62;<br>
-	&#60;replica_check_host_down_thresh_statement&#62;&nbsp;::=&nbsp;"replica_check_host_down_thresh"&nbsp;&#60;number&#62;<br>
-	&#60;replica_check_sleep_time_statement&#62;&nbsp;::=&nbsp;"replica_check_sleep_time"&nbsp;&#60;number&#62;<br>
-	&#60;replica_check_minimum_interval_statement&#62;&nbsp;::=&nbsp;"replica_check_minimum_interval"&nbsp;&#60;number&#62;<br>
-	&#60;string_list&#62;&nbsp;::=&nbsp;<br>
-		  &#60;string&#62;&nbsp;|<br>
-		  &#60;string&#62;&nbsp;&#60;string_list&#62;<br>
-	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
-		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
-	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
-	&#60;pathname_character&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;|&nbsp;","&nbsp;|&nbsp;"/"&nbsp;|&nbsp;"_"<br>
-	&#60;hostname_port_spec&#62;&nbsp;::=<br>
-		  &#60;hostname&#62;|<br>
-		  &#60;hostname&#62;&nbsp;":"&nbsp;&#60;portnumber&#62;<br>
-	&#60;hostname&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;&#60;hostname_character&#62;*<br>
-	&#60;hostname_character&#62;&nbsp;::=&nbsp;&#60;alphabet&#62;&nbsp;|&nbsp;&#60;digit&#62;&nbsp;|&nbsp;"-"&nbsp;|&nbsp;"."<br>
-	&#60;portnumber&#62;&nbsp;::=&nbsp;&#60;number&#62;<br>
-	&#60;size&#62;&nbsp;::=&nbsp;&#60;number&#62;&nbsp;[&nbsp;"k"&nbsp;|&nbsp;"M"&nbsp;|&nbsp;"G"&nbsp;|&nbsp;"T"&nbsp;]<br>
-	&#60;number&#62;&nbsp;::=&nbsp;&#60;digit&#62;&nbsp;[&#60;digit&#62;*]<br>
-	&#60;digit&#62;&nbsp;::=&nbsp;"0"&nbsp;|&nbsp;"1"&nbsp;|&nbsp;"2"&nbsp;|&nbsp;"3"&nbsp;|&nbsp;"4"&nbsp;|&nbsp;"5"&nbsp;|&nbsp;"6"&nbsp;|&nbsp;"7"&nbsp;|&nbsp;"8"&nbsp;|&nbsp;"9"<br>
-	&#60;string&#62;&nbsp;::=&nbsp;"""&nbsp;&#60;double_quoted_character&#62;*&nbsp;"""<br>
-	&#60;double_quoted_character&#62;&nbsp;::=<br>
-		  &#60;any_character_except_backslash_and_double_quotation&#62;&nbsp;|<br>
-		  "\\"&nbsp;|&nbsp;"\""<br>
-	&#60;validity&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
-	&#60;spck_level&#62;&nbsp;::=&nbsp;"disable"&nbsp;|&nbsp;"display"&nbsp;|&nbsp;"delete"&nbsp;|&nbsp;"lost_found"<br>
-	&#60;atime_type&#62;&nbsp;::=&nbsp;"disable"&nbsp;|&nbsp;"relative"&nbsp;|&nbsp;"strict"<br>
-	&#60;log_priority&#62;&nbsp;::=&nbsp;"emerg"&nbsp;|&nbsp;"alert"&nbsp;|&nbsp;"crit"&nbsp;|&nbsp;"err"&nbsp;|&nbsp;"warning"&nbsp;|<br>
-		  "notice"&nbsp;|&nbsp;"info"&nbsp;|&nbsp;"debug"<br>
-	&#60;fatal_action_name&#62;&nbsp;::=&nbsp;"backtrace_and_abort"&nbsp;|&nbsp;"backtrace_and_exit"&nbsp;|<br>
-		  "abort"&nbsp;|&nbsp;"exit"</P
+		&#60;pathname&#62;&nbsp;&#60;hostname&#62;&nbsp;":"&nbsp;&#60;portnumber&#62;</P
+></DD
+><DT
+>&#60;schedule_cache_timeout_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"schedule_cache_timeout"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;schedule_concurrency_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"schedule_concurrency"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;schedule_concurrency_per_net_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"schedule_concurrency_per_net"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;schedule_idle_load_thresh_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"schedule_idle_load_thresh"&nbsp;&#60;load&#62;</P
+></DD
+><DT
+>&#60;schedule_busy_load_thresh_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"schedule_busy_load_thresh"&nbsp;&#60;load&#62;</P
+></DD
+><DT
+>&#60;schedule_virtual_load_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"schedule_virtual_load"&nbsp;&#60;load&#62;</P
+></DD
+><DT
+>&#60;schedule_candidates_ratio_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"schedule_candidates_ratio"&nbsp;&#60;floating_point_number&#62;</P
+></DD
+><DT
+>&#60;schedule_rtt_thresh_diff_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"schedule_rtt_thresh_diff"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;schedule_rtt_thresh_ratio_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"schedule_rtt_thresh_ratio"&nbsp;&#60;floating_point_number&#62;</P
+></DD
+><DT
+>&#60;schedule_rtt_thresh_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"schedule_rtt_thresh"&nbsp;&#60;floating_point_number&#62;</P
+></DD
+><DT
+>&#60;write_local_priority_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"write_local_priority"&nbsp;&#60;validity&#62;</P
+></DD
+><DT
+>&#60;write_target_domain_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"write_target_domain"&nbsp;&#60;string&#62;</P
+></DD
+><DT
+>&#60;minimum_free_disk_space_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"minimum_free_disk_space"&nbsp;&#60;size&#62;</P
+></DD
+><DT
+>&#60;simultaneous_replication_receivers_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"simultaneous_replication_receivers"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;gfsd_connection_cache_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"gfsd_connection_cache"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;xmlattr_size_limit_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"xmlattr_size_limit"&nbsp;&#60;size&#62;</P
+></DD
+><DT
+>&#60;xattr_size_limit_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"xattr_size_limit"&nbsp;&#60;size&#62;</P
+></DD
+><DT
+>&#60;attr_cache_limit_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"attr_cache_limit"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;attr_cache_timeout_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"attr_cache_timeout"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;log_level_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"log_level"&nbsp;&#60;log_priority&#62;</P
+></DD
+><DT
+>&#60;log_message_verbose_level_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"log_message_verbose_level"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;log_auth_verbose_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"log_auth_verbose"&nbsp;&#60;validity&#62;</P
+></DD
+><DT
+>&#60;file_trace_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"file_trace"&nbsp;&#60;validity&#62;</P
+></DD
+><DT
+>&#60;fatal_action_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"fatal_action"&nbsp;&#60;fatal_action_name&#62;</P
+></DD
+><DT
+>&#60;debug_command_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"debug_command"&nbsp;&#60;string_list&#62;</P
+></DD
+><DT
+>&#60;no_file_system_node_timeout_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"no_file_system_node_timeout"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;gfmd_reconnection_timeout_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"gfmd_reconnection_timeout"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;atime_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"atime"&nbsp;&#60;atime_type&#62;</P
+></DD
+><DT
+>&#60;client_file_bufsize_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"client_file_bufsize"&nbsp;&#60;size&#62;</P
+></DD
+><DT
+>&#60;client_parallel_copy_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"client_parallel_copy"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;profile_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"profile"&nbsp;&#60;validity&#62;</P
+></DD
+><DT
+>&#60;metadb_server_list_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_list"&nbsp;&#60;metadb_server_list_spec&#62;</P
+></DD
+><DT
+>&#60;metadb_server_list_spec&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>&#60;hostname_port_spec&#62;&nbsp;|<br>
+	&#60;hostname_port_spec&#62;&nbsp;&#60;metadb_server_list_spec&#62;</P
+></DD
+><DT
+>&#60;metadb_replication_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_replication"&nbsp;&#60;validity&#62;</P
+></DD
+><DT
+>&#60;synchronous_replication_timeout_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"synchronous_replication_timeout"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;synchronous_journaling_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"synchronous_journaling"&nbsp;&#60;validity&#62;</P
+></DD
+><DT
+>&#60;metadb_server_force_slave_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_force_slave"&nbsp;&#60;validity&#62;</P
+></DD
+><DT
+>&#60;metadb_server_slave_max_size_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_server_slave_max_size"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;metadb_journal_dir_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_journal_dir"&nbsp;&#60;pathname&#62;</P
+></DD
+><DT
+>&#60;metadb_journal_max_size_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_journal_max_size"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;metadb_journal_recvq_size_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"metadb_journal_recvq_size"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;replica_check_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"replica_check"&nbsp;&#60;validity&#62;</P
+></DD
+><DT
+>&#60;replica_check_host_down_thresh_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"replica_check_host_down_thresh"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;replica_check_sleep_time_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"replica_check_sleep_time"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;replica_check_minimum_interval_statement&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"replica_check_minimum_interval"&nbsp;&#60;number&#62;</P
+></DD
+><DT
+>&#60;string_list&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>&#60;string&#62;&nbsp;|<br>
+	&#60;string&#62;&nbsp;&#60;string_list&#62;</P
+></DD
+><DT
+>&#60;hostspec&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
+	&#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"</P
+></DD
+><DT
+>&#60;pathname&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*</P
+></DD
+><DT
+>&#60;pathname_character&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>&#60;hostname_character&#62;&nbsp;|&nbsp;","&nbsp;|&nbsp;"/"&nbsp;|&nbsp;"_"</P
+></DD
+><DT
+>&#60;hostname_port_spec&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>&#60;hostname&#62;|<br>
+	&#60;hostname&#62;&nbsp;":"&nbsp;&#60;portnumber&#62;</P
+></DD
+><DT
+>&#60;hostname&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>&#60;hostname_character&#62;&nbsp;&#60;hostname_character&#62;*</P
+></DD
+><DT
+>&#60;hostname_character&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>&#60;alphabet&#62;&nbsp;|&nbsp;&#60;digit&#62;&nbsp;|&nbsp;"-"&nbsp;|&nbsp;"."</P
+></DD
+><DT
+>&#60;portnumber&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>&#60;number&#62;</P
+></DD
+><DT
+>&#60;size&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>&#60;number&#62;&nbsp;[&nbsp;"k"&nbsp;|&nbsp;"M"&nbsp;|&nbsp;"G"&nbsp;|&nbsp;"T"&nbsp;]</P
+></DD
+><DT
+>&#60;number&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>&#60;digit&#62;&nbsp;[&#60;digit&#62;*]</P
+></DD
+><DT
+>&#60;digit&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"0"&nbsp;|&nbsp;"1"&nbsp;|&nbsp;"2"&nbsp;|&nbsp;"3"&nbsp;|&nbsp;"4"&nbsp;|&nbsp;"5"&nbsp;|&nbsp;"6"&nbsp;|&nbsp;"7"&nbsp;|&nbsp;"8"&nbsp;|&nbsp;"9"</P
+></DD
+><DT
+>&#60;string&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"""&nbsp;&#60;double_quoted_character&#62;*&nbsp;"""</P
+></DD
+><DT
+>&#60;double_quoted_character&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>&#60;any_character_except_backslash_and_double_quotation&#62;&nbsp;|<br>
+	"\\"&nbsp;|&nbsp;"\""</P
+></DD
+><DT
+>&#60;validity&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"enable"&nbsp;|&nbsp;"disable"</P
+></DD
+><DT
+>&#60;spck_level&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"disable"&nbsp;|&nbsp;"display"&nbsp;|&nbsp;"delete"&nbsp;|&nbsp;"lost_found"</P
+></DD
+><DT
+>&#60;atime_type&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"disable"&nbsp;|&nbsp;"relative"&nbsp;|&nbsp;"strict"</P
+></DD
+><DT
+>&#60;log_priority&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"emerg"&nbsp;|&nbsp;"alert"&nbsp;|&nbsp;"crit"&nbsp;|&nbsp;"err"&nbsp;|&nbsp;"warning"&nbsp;|<br>
+	"notice"&nbsp;|&nbsp;"info"&nbsp;|&nbsp;"debug"</P
+></DD
+><DT
+>&#60;fatal_action_name&#62; ::=</DT
+><DD
+><P
+CLASS="LITERALLAYOUT"
+>"backtrace_and_abort"&nbsp;|&nbsp;"backtrace_and_exit"&nbsp;|<br>
+	"abort"&nbsp;|&nbsp;"exit"</P
+></DD
+></DL
+></DIV
 ></DIV
 ><DIV
 CLASS="REFSECT1"
