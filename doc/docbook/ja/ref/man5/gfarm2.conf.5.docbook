@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>20 Nov 2012</date></refentryinfo>
+<refentryinfo><date>12 Nov 2013</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1883,258 +1883,740 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 
 <refsect1 id='grammar'><title>GRAMMAR</title>
 <para>gfarm2.confの文法をBNFで記述すると、下記のようになります。</para>
-<literallayout>
-	&lt;statement&gt; ::=
-		&nbsp;&nbsp;&lt;spool_statement&gt; |
-		&nbsp;&nbsp;&lt;spool_server_listen_address_statement&gt; |
-		&nbsp;&nbsp;&lt;spool_server_listen_backlog_statement&gt; |
-		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt; |
-		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt; |
-		&nbsp;&nbsp;&lt;spool_server_cred_name_statement&gt; |
-		&nbsp;&nbsp;&lt;spool_check_level_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_host_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_port_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_cred_service_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_cred_name_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_listen_backlog_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_max_descriptors_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_stack_size_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_thread_pool_size_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_job_queue_length_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_heartbeat_interval_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_dbq_size_statement&gt; |
-		&nbsp;&nbsp;&lt;ldap_server_host_statement&gt; |
-		&nbsp;&nbsp;&lt;ldap_server_port_statement&gt; |
-		&nbsp;&nbsp;&lt;ldap_base_dn_statement&gt; |
-		&nbsp;&nbsp;&lt;ldap_bind_dn_statement&gt; |
-		&nbsp;&nbsp;&lt;ldap_bind_password_statement&gt; |
-		&nbsp;&nbsp;&lt;postgresql_server_host_statement&gt; |
-		&nbsp;&nbsp;&lt;postgresql_server_port_statement&gt; |
-		&nbsp;&nbsp;&lt;postgresql_dbname_statement&gt; |
-		&nbsp;&nbsp;&lt;postgresql_user_statement&gt; |
-		&nbsp;&nbsp;&lt;postgresql_password_statement&gt; |
-		&nbsp;&nbsp;&lt;postgresql_conninfo_statement&gt; |
-		&nbsp;&nbsp;&lt;auth_statement&gt; |
-<!--		&nbsp;&nbsp;&lt;netparam_statement&gt; | -->
-		&nbsp;&nbsp;&lt;sockopt_statement&gt; |
-<!--		&nbsp;&nbsp;&lt;address_use_statement&gt; | -->
-<!--		&nbsp;&nbsp;&lt;client_architecture_statement&gt; | -->
-<!--		&nbsp;&nbsp;&lt;option_statement&gt; | -->
-		&nbsp;&nbsp;&lt;known_network_statement&gt; |
-		&nbsp;&nbsp;&lt;network_receive_timeout_statement&gt; |
-		&nbsp;&nbsp;&lt;admin_user_statement&gt; |
-		&nbsp;&nbsp;&lt;admin_user_gsi_dn_statement&gt; |
-		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
-		&nbsp;&nbsp;&lt;local_group_map_statement&gt; |
-		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
-		&nbsp;&nbsp;&lt;schedule_concurrency_statement&gt; |
-		&nbsp;&nbsp;&lt;schedule_concurrency_per_net_statement&gt; |
-		&nbsp;&nbsp;&lt;schedule_idle_load_thresh_statement&gt; |
-		&nbsp;&nbsp;&lt;schedule_busy_load_thresh_statement&gt; |
-		&nbsp;&nbsp;&lt;schedule_virtual_load_statement&gt; |
-		&nbsp;&nbsp;&lt;schedule_candidates_ratio_statement&gt; |
-		&nbsp;&nbsp;&lt;schedule_rtt_thresh_diff_statement&gt; |
-		&nbsp;&nbsp;&lt;schedule_rtt_thresh_ratio_statement&gt; |
-		&nbsp;&nbsp;&lt;schedule_rtt_thresh_statement&gt; |
-		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; |
-		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; |
-		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
-		&nbsp;&nbsp;&lt;gfs_proto_fhremove_request_window_statement&gt; |
-		&nbsp;&nbsp;&lt;gfs_proto_replication_request_window_statement&gt; |
-		&nbsp;&nbsp;&lt;simultaneous_replication_receivers_statement&gt; |
-		&nbsp;&nbsp;&lt;outstanding_file_replication_limit_statement&gt; |
-		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
-		&nbsp;&nbsp;&lt;xmlattr_size_limit_statement&gt; |
-		&nbsp;&nbsp;&lt;xattr_size_limit_statement&gt; |
-		&nbsp;&nbsp;&lt;attr_cache_limit_statement&gt; |
-		&nbsp;&nbsp;&lt;attr_cache_timeout_statement&gt; |
-		&nbsp;&nbsp;&lt;log_level_statement&gt; |
-		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt; |
-		&nbsp;&nbsp;&lt;log_auth_verbose_statement&gt; |
-		&nbsp;&nbsp;&lt;file_trace_statement&gt; |
-		&nbsp;&nbsp;&lt;fatal_action_statement&gt; |
-		&nbsp;&nbsp;&lt;debug_command_statement&gt; |
-<!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
-		&nbsp;&nbsp;&lt;atime_statement&gt; |
-		&nbsp;&nbsp;&lt;client_file_bufsize_statement&gt; |
-		&nbsp;&nbsp;&lt;client_parallel_copy_statement&gt; |
-		&nbsp;&nbsp;&lt;profile_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_list_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_replication_statement&gt; |
-		&nbsp;&nbsp;&lt;synchronous_replication_timeout_statement&gt; |
-		&nbsp;&nbsp;&lt;synchronous_journaling_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_force_slave_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_slave_listen_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_slave_max_size_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_journal_dir_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_journal_max_size_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_journal_recvq_size_statement&gt; |
-		&nbsp;&nbsp;&lt;replica_check_statement&gt; |
-		&nbsp;&nbsp;&lt;replica_check_host_down_thresh_statement&gt; |
-		&nbsp;&nbsp;&lt;replica_check_sleep_time_statement&gt; |
-		&nbsp;&nbsp;&lt;replica_check_minimum_interval_statement&gt;
-	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
-	&lt;spool_server_listen_address_statement&gt; ::=
-		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
-	&lt;spool_server_listen_backlog_statement&gt; ::=
-		&nbsp;&nbsp;"spool_server_listen_backlog" &lt;number&gt;
-	&lt;spool_server_cred_type_statement&gt; ::=
-		&nbsp;&nbsp;"spool_server_cred_type" &lt;cred_type&gt;
-	&lt;spool_server_cred_service_statement&gt; ::=
-		&nbsp;&nbsp;"spool_server_cred_service" &lt;cred_service&gt;
-	&lt;spool_server_cred_name_statement&gt; ::=
-		&nbsp;&nbsp;"spool_server_cred_name" &lt;cred_name&gt;
-	&lt;spool_check_level_statement&gt; ::= "spool_check_level" &lt;spck_level&gt;
-	&lt;metadb_server_host_statement&gt; ::= "metadb_server_host" &lt;hostname&gt;
-	&lt;metadb_server_port_statement&gt; ::= "metadb_server_port" &lt;portnumber&gt;
-	&lt;metadb_server_cred_type_statement&gt; ::=
-		&nbsp;&nbsp;"metadb_server_cred_type" &lt;cred_type&gt;
-	&lt;metadb_server_cred_service_statement&gt; ::=
-		&nbsp;&nbsp;"metadb_server_cred_service" &lt;cred_service&gt;
-	&lt;metadb_server_cred_name_statement&gt; ::=
-		&nbsp;&nbsp;"metadb_server_cred_name" &lt;cred_name&gt;
-	&lt;metadb_server_listen_backlog_statement&gt; ::=
-		&nbsp;&nbsp;"metadb_server_listen_backlog" &lt;number&gt;
-	&lt;metadb_server_max_descriptors_statement&gt; ::=
-		&nbsp;&nbsp;"metadb_server_max_descriptors" &lt;number&gt;
-	&lt;metadb_server_stack_size_statement&gt; ::=
-		&nbsp;&nbsp;"metadb_server_stack_size" &lt;number&gt;
-	&lt;metadb_server_thread_pool_size_statement&gt; ::=
-		&nbsp;&nbsp;"metadb_server_thread_pool_size" &lt;number&gt;
-	&lt;metadb_server_job_queue_length_statement&gt; ::=
-		&nbsp;&nbsp;"metadb_server_job_queue_length" &lt;number&gt;
-	&lt;metadb_server_heartbeat_interval_statement&gt; ::=
-		&nbsp;&nbsp;"metadb_server_heartbeat_interval" &lt;number&gt;
-	&lt;metadb_server_dbq_size_statement&gt; ::=
-		&nbsp;&nbsp;"metadb_server_dbq_size" &lt;number&gt;
-	&lt;ldap_server_host_statement&gt; ::= "ldap_server_host" &lt;hostname&gt;
-	&lt;ldap_server_port_statement&gt; ::= "ldap_server_port" &lt;portnumber&gt;
-	&lt;ldap_base_dn_statement&gt; ::= "ldap_base_dn" &lt;string&gt;
-	&lt;ldap_bind_dn_statement&gt; ::= "ldap_bind_dn" &lt;string&gt;
-	&lt;ldap_bind_password_statement&gt; ::= "ldap_bind_password" &lt;string&gt;
-	&lt;postgresql_server_host_statement&gt; ::= "postgresql_server_host" &lt;hostname&gt;
-	&lt;postgresql_server_port_statement&gt; ::= "postgresql_server_port" &lt;portnumber&gt;
-	&lt;postgresql_dbname_statement&gt; ::= "postgresql_dbname" &lt;string&gt;
-	&lt;postgresql_user_statement&gt; ::= "postgresql_user" &lt;string&gt;
-	&lt;postgresql_password_statement&gt; ::= "postgresql_password" &lt;string&gt;
-	&lt;postgresql_conninfo_statement&gt; ::= "postgresql_conninfo" &lt;string&gt;
-	&lt;auth_statement&gt; ::=
-		&nbsp;&nbsp;"auth" &lt;validity&gt; &lt;auth_method&gt; &lt;hostspec&gt;
-	&lt;auth_command&gt; ::= "enable" | "disable"
-	&lt;auth_method&gt; ::= "gsi" | "gsi_auth" | "sharedsecret"
-<!--	&lt;netparam_statement&gt; ::= -->
-<!--		&nbsp;&nbsp;"netparam" &lt;netparam_option&gt;=&lt;number&gt; [&lt;hostspec&gt;] -->
-<!--	&lt;netparam_option&gt; ::= "parallel_streams" | "stripe_unit_size" | -->
-<!--		&nbsp;&nbsp;"rate_limit" -->
-	&lt;sockopt_statement&gt; ::=
-		&nbsp;&nbsp;"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]
-	&lt;socket_option&gt; = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
-		&nbsp;&nbsp;"tcp_nodelay"
-<!--	&lt;address_use_statement&gt; ::= "address_use" &lt;hostspec&gt; -->
-<!--	&lt;client_architecture_statement&gt; ::= -->
-<!--		&nbsp;&nbsp;"client_architecture" &lt;architecture&gt; &lt;hostspec&gt; -->
-<!--	&lt;option_statement&gt; ::= "option" &lt;an_option&gt; -->
-<!--	&lt;an_option&gt; ::= "noatime" -->
-	&lt;known_network_statement&gt; ::= "known_network" &lt;hostspec&gt;
-	&lt;network_receive_timeout_statement&gt; ::= "network_receive_timeout" &lt;number&gt;
-	&lt;admin_user_statement&gt; ::= "admin_user" &lt;string&gt;
-	&lt;admin_user_gsi_dn_statement&gt; ::= "admin_user_gsi_dn" &lt;string&gt;
-	&lt;local_user_map_statement&gt; ::= "local_user_map" &lt;local_user_and_group_map_spec&gt;
-	&lt;local_group_map_statement&gt; ::= "local_group_map" &lt;local_user_and_group_map_spec&gt;
-	&lt;local_user_and_group_map_spec&gt; ::=
-		&lt;pathname&gt; |
+<variablelist>
+<varlistentry>
+<term>&lt;statement&gt; ::=</term>
+<listitem><literallayout>&lt;spool_statement&gt; |
+	&lt;spool_server_listen_address_statement&gt; |
+	&lt;spool_server_listen_backlog_statement&gt; |
+	&lt;spool_server_cred_type_statement&gt; |
+	&lt;spool_server_cred_service_statement&gt; |
+	&lt;spool_server_cred_name_statement&gt; |
+	&lt;spool_check_level_statement&gt; |
+	&lt;metadb_server_host_statement&gt; |
+	&lt;metadb_server_port_statement&gt; |
+	&lt;metadb_server_cred_type_statement&gt; |
+	&lt;metadb_server_cred_service_statement&gt; |
+	&lt;metadb_server_cred_name_statement&gt; |
+	&lt;metadb_server_listen_backlog_statement&gt; |
+	&lt;metadb_server_max_descriptors_statement&gt; |
+	&lt;metadb_server_stack_size_statement&gt; |
+	&lt;metadb_server_thread_pool_size_statement&gt; |
+	&lt;metadb_server_job_queue_length_statement&gt; |
+	&lt;metadb_server_heartbeat_interval_statement&gt; |
+	&lt;metadb_server_dbq_size_statement&gt; |
+	&lt;ldap_server_host_statement&gt; |
+	&lt;ldap_server_port_statement&gt; |
+	&lt;ldap_base_dn_statement&gt; |
+	&lt;ldap_bind_dn_statement&gt; |
+	&lt;ldap_bind_password_statement&gt; |
+	&lt;postgresql_server_host_statement&gt; |
+	&lt;postgresql_server_port_statement&gt; |
+	&lt;postgresql_dbname_statement&gt; |
+	&lt;postgresql_user_statement&gt; |
+	&lt;postgresql_password_statement&gt; |
+	&lt;postgresql_conninfo_statement&gt; |
+	&lt;auth_statement&gt; |
+<!--	&lt;netparam_statement&gt; | -->
+	&lt;sockopt_statement&gt; |
+<!--	&lt;address_use_statement&gt; | -->
+<!--	&lt;client_architecture_statement&gt; | -->
+<!--	&lt;option_statement&gt; | -->
+	&lt;known_network_statement&gt; |
+	&lt;network_receive_timeout_statement&gt; |
+	&lt;admin_user_statement&gt; |
+	&lt;admin_user_gsi_dn_statement&gt; |
+	&lt;local_user_map_statement&gt; |
+	&lt;local_group_map_statement&gt; |
+	&lt;schedule_cache_timeout_statement&gt; |
+	&lt;schedule_concurrency_statement&gt; |
+	&lt;schedule_concurrency_per_net_statement&gt; |
+	&lt;schedule_idle_load_thresh_statement&gt; |
+	&lt;schedule_busy_load_thresh_statement&gt; |
+	&lt;schedule_virtual_load_statement&gt; |
+	&lt;schedule_candidates_ratio_statement&gt; |
+	&lt;schedule_rtt_thresh_diff_statement&gt; |
+	&lt;schedule_rtt_thresh_ratio_statement&gt; |
+	&lt;schedule_rtt_thresh_statement&gt; |
+	&lt;write_local_priority_statement&gt; |
+	&lt;write_target_domain_statement&gt; |
+	&lt;minimum_free_disk_space_statement&gt; |
+	&lt;gfs_proto_fhremove_request_window_statement&gt; |
+	&lt;gfs_proto_replication_request_window_statement&gt; |
+	&lt;simultaneous_replication_receivers_statement&gt; |
+	&lt;outstanding_file_replication_limit_statement&gt; |
+	&lt;gfsd_connection_cache_statement&gt; |
+	&lt;xmlattr_size_limit_statement&gt; |
+	&lt;xattr_size_limit_statement&gt; |
+	&lt;attr_cache_limit_statement&gt; |
+	&lt;attr_cache_timeout_statement&gt; |
+	&lt;log_level_statement&gt; |
+	&lt;log_message_verbose_level_statement&gt; |
+	&lt;log_auth_verbose_statement&gt; |
+	&lt;file_trace_statement&gt; |
+	&lt;fatal_action_statement&gt; |
+	&lt;debug_command_statement&gt; |
+<!--	&lt;record_atime_statement&gt; | -->
+	&lt;atime_statement&gt; |
+	&lt;client_file_bufsize_statement&gt; |
+	&lt;client_parallel_copy_statement&gt; |
+	&lt;profile_statement&gt; |
+	&lt;metadb_server_list_statement&gt; |
+	&lt;metadb_replication_statement&gt; |
+	&lt;synchronous_replication_timeout_statement&gt; |
+	&lt;synchronous_journaling_statement&gt; |
+	&lt;metadb_server_force_slave_statement&gt; |
+	&lt;metadb_server_slave_listen_statement&gt; |
+	&lt;metadb_server_slave_max_size_statement&gt; |
+	&lt;metadb_journal_dir_statement&gt; |
+	&lt;metadb_journal_max_size_statement&gt; |
+	&lt;metadb_journal_recvq_size_statement&gt; |
+	&lt;replica_check_statement&gt; |
+	&lt;replica_check_host_down_thresh_statement&gt; |
+	&lt;replica_check_sleep_time_statement&gt; |
+	&lt;replica_check_minimum_interval_statement&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_statement&gt; ::=</term>
+<listitem><literallayout>"spool" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_server_listen_address_statement&gt; ::=</term>
+<listitem><literallayout>"spool_server_listen_address" &lt;ipv4_address&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_server_listen_backlog_statement&gt; ::=</term>
+<listitem><literallayout>"spool_server_listen_backlog" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_server_cred_type_statement&gt; ::=</term>
+<listitem><literallayout>"spool_server_cred_type" &lt;cred_type&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_server_cred_service_statement&gt; ::=</term>
+<listitem><literallayout>"spool_server_cred_service" &lt;cred_service&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_server_cred_name_statement&gt; ::=</term>
+<listitem><literallayout>"spool_server_cred_name" &lt;cred_name&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_level_statement&gt; ::=</term>
+<listitem><literallayout>"spool_check_level" &lt;spck_level&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_host_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_host" &lt;hostname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_port_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_port" &lt;portnumber&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_cred_type_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_cred_type" &lt;cred_type&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_cred_service_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_cred_service" &lt;cred_service&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_cred_name_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_cred_name" &lt;cred_name&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_listen_backlog_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_listen_backlog" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_max_descriptors_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_max_descriptors" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_stack_size_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_stack_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_thread_pool_size_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_thread_pool_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_job_queue_length_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_job_queue_length" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_heartbeat_interval_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_heartbeat_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_dbq_size_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_dbq_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;ldap_server_host_statement&gt; ::=</term>
+<listitem><literallayout>"ldap_server_host" &lt;hostname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;ldap_server_port_statement&gt; ::=</term>
+<listitem><literallayout>"ldap_server_port" &lt;portnumber&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;ldap_base_dn_statement&gt; ::=</term>
+<listitem><literallayout>"ldap_base_dn" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;ldap_bind_dn_statement&gt; ::=</term>
+<listitem><literallayout>"ldap_bind_dn" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;ldap_bind_password_statement&gt; ::=</term>
+<listitem><literallayout>"ldap_bind_password" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;postgresql_server_host_statement&gt; ::=</term>
+<listitem><literallayout>"postgresql_server_host" &lt;hostname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;postgresql_server_port_statement&gt; ::=</term>
+<listitem><literallayout>"postgresql_server_port" &lt;portnumber&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;postgresql_dbname_statement&gt; ::=</term>
+<listitem><literallayout>"postgresql_dbname" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;postgresql_user_statement&gt; ::=</term>
+<listitem><literallayout>"postgresql_user" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;postgresql_password_statement&gt; ::=</term>
+<listitem><literallayout>"postgresql_password" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;postgresql_conninfo_statement&gt; ::=</term>
+<listitem><literallayout>"postgresql_conninfo" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;auth_statement&gt; ::=</term>
+<listitem><literallayout>"auth" &lt;validity&gt; &lt;auth_method&gt; &lt;hostspec&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;auth_command&gt; ::=</term>
+<listitem><literallayout>"enable" | "disable"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;auth_method&gt; ::=</term>
+<listitem><literallayout>"gsi" | "gsi_auth" | "sharedsecret"</literallayout></listitem>
+</varlistentry>
+
+<!--
+<varlistentry>
+<term>&lt;netparam_statement&gt; ::=</term>
+>
+<listitem><literallayout>"netparam" &lt;netparam_option&gt;=&lt;number&gt; [&lt;hostspec&gt;]</literallayout></listitem>
+</varlistentry>
+-->
+
+<!--
+<varlistentry>
+<term>&lt;netparam_option&gt; ::=</term>
+<listitem><literallayout>"parallel_streams" | "stripe_unit_size" |
+	"rate_limit"</literallayout></listitem>
+</varlistentry>
+-->
+
+<varlistentry>
+<term>&lt;sockopt_statement&gt; ::=</term>
+<listitem><literallayout>"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;socket_option&gt; ::=</term>
+<listitem><literallayout>"debug" | "keepalive" | "sndbuf" | "rcvbuf" |
+	"tcp_nodelay"</literallayout></listitem>
+</varlistentry>
+
+<!--
+<varlistentry>
+<term>&lt;address_use_statement&gt; ::=</term>
+<listitem><literallayout>"address_use" &lt;hostspec&gt;</literallayout></listitem>
+</varlistentry>
+-->
+
+<!--
+<varlistentry>
+<term>&lt;client_architecture_statement&gt; ::=</term>
+<listitem><literallayout>"client_architecture" &lt;architecture&gt; &lt;hostspec&gt;</literallayout></listitem>
+</varlistentry>
+-->
+
+<!--
+<varlistentry>
+<term>&lt;option_statement&gt; ::=</term>
+<listitem><literallayout>"option" &lt;an_option&gt;</literallayout></listitem>
+</varlistentry>
+-->
+
+<!--
+<varlistentry>
+<term>&lt;an_option&gt; ::=</term>
+<listitem><literallayout>"noatime"</literallayout></listitem>
+</varlistentry>
+!-->
+
+<varlistentry>
+<term>&lt;known_network_statement&gt; ::=</term>
+<listitem><literallayout>"known_network" &lt;hostspec&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;network_receive_timeout_statement&gt; ::=</term>
+<listitem><literallayout>"network_receive_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;admin_user_statement&gt; ::=</term>
+<listitem><literallayout>"admin_user" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;admin_user_gsi_dn_statement&gt; ::=</term>
+<listitem><literallayout>"admin_user_gsi_dn" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;local_user_map_statement&gt; ::=</term>
+<listitem><literallayout>"local_user_map" &lt;local_user_and_group_map_spec&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;local_group_map_statement&gt; ::=</term>
+<listitem><literallayout>"local_group_map" &lt;local_user_and_group_map_spec&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;local_user_and_group_map_spec&gt; ::=</term>
+<listitem><literallayout>&lt;pathname&gt; |
 		&lt;pathname&gt; &lt;hostname&gt;|
-		&lt;pathname&gt; &lt;hostname&gt; ":" &lt;portnumber&gt;
-<!--	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt; -->
-<!--	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt; -->
-	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
-	&lt;schedule_concurrency_statement&gt; ::= "schedule_concurrency" &lt;number&gt;
-	&lt;schedule_concurrency_per_net_statement&gt; ::= "schedule_concurrency_per_net" &lt;number&gt;
-	&lt;schedule_idle_load_thresh_statement&gt; ::= "schedule_idle_load_thresh" &lt;load&gt;
-	&lt;schedule_busy_load_thresh_statement&gt; ::= "schedule_busy_load_thresh" &lt;load&gt;
-	&lt;schedule_virtual_load_statement&gt; ::= "schedule_virtual_load" &lt;load&gt;
-	&lt;schedule_candidates_ratio_statement&gt; ::= "schedule_candidates_ratio" &lt;floating_point_number&gt;
-	&lt;schedule_rtt_thresh_diff_statement&gt; ::= "schedule_rtt_thresh_diff" &lt;number&gt;
-	&lt;schedule_rtt_thresh_ratio_statement&gt; ::= "schedule_rtt_thresh_ratio" &lt;floating_point_number&gt;
-	&lt;schedule_rtt_thresh_statement&gt; ::= "schedule_rtt_thresh" &lt;floating_point_number&gt;
-	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt;
-	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt;
-	&lt;minimum_free_disk_space_statement&gt; ::=
-		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
-	&lt;gfs_proto_fhremove_request_window_statement&gt; ::= "gfs_proto_fhremove_request_window" &lt;number&gt;
-	&lt;gfs_proto_replication_request_window_statement&gt; ::= "gfs_proto_replication_request_window" &lt;number&gt;
-	&lt;simultaneous_replication_receivers_statement&gt; ::= "simultaneous_replication_receivers" &lt;number&gt;
-	&lt;outstanding_file_replication_limit_statement&gt; ::= "outstanding_file_replication_limit" &lt;number&gt;
-	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
-	&lt;xmlattr_size_limit_statement&gt; ::= "xmlattr_size_limit" &lt;size&gt;
-	&lt;xattr_size_limit_statement&gt; ::= "xattr_size_limit" &lt;size&gt;
-	&lt;attr_cache_limit_statement&gt; ::= "attr_cache_limit" &lt;number&gt;
-	&lt;attr_cache_timeout_statement&gt; ::= "attr_cache_timeout" &lt;number&gt;
-	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
-	&lt;log_message_verbose_level_statement&gt; ::= "log_message_verbose_level" &lt;number&gt;
-	&lt;log_auth_verbose_statement&gt; ::= "log_auth_verbose" &lt;validity&gt;
-	&lt;file_trace_statement&gt; ::= "file_trace" &lt;validity&gt;
-	&lt;fatal_action_statement&gt; ::= "fatal_action" &lt;fatal_action_name&gt;
-	&lt;debug_command_statement&gt; ::= "debug_command" &lt;string_list&gt;
-	&lt;no_file_system_node_timeout_statement&gt; ::= "no_file_system_node_timeout" &lt;number&gt;
-	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
-<!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
-	&lt;atime_statement&gt; ::= "atime" &lt;atime_type&gt;
-	&lt;client_file_bufsize_statement&gt; ::= "client_file_bufsize" &lt;size&gt;
-	&lt;client_parallel_copy_statement&gt; ::= "client_parallel_copy" &lt;number&gt;
-	&lt;profile_statement&gt; ::= "profile" &lt;validity&gt;
-	&lt;metadb_server_list_statement&gt; ::= "metadb_server_list" &lt;metadb_server_list_spec&gt;
-	&lt;metadb_server_list_spec&gt; ::=
-		&nbsp;&nbsp;&lt;hostname_port_spec&gt; |
-		&nbsp;&nbsp;&lt;hostname_port_spec&gt; &lt;metadb_server_list_spec&gt;
-	&lt;metadb_replication_statement&gt; ::= "metadb_replication" &lt;validity&gt;
-	&lt;synchronous_replication_timeout_statement&gt; ::= "synchronous_replication_timeout" &lt;number&gt;
-	&lt;synchronous_journaling_statement&gt; ::= "synchronous_journaling" &lt;validity&gt;
-	&lt;metadb_server_force_slave_statement&gt; ::= "metadb_server_force_slave" &lt;validity&gt;
-	&lt;metadb_server_slave_listen_statement&gt; ::= "metadb_server_slave_listen" &lt;validity&gt;
-	&lt;metadb_server_slave_max_size_statement&gt; ::= "metadb_server_slave_max_size" &lt;number&gt;
-	&lt;metadb_journal_dir_statement&gt; ::= "metadb_journal_dir" &lt;pathname&gt;
-	&lt;metadb_journal_max_size_statement&gt; ::= "metadb_journal_max_size" &lt;number&gt;
-	&lt;metadb_journal_recvq_size_statement&gt; ::= "metadb_journal_recvq_size" &lt;number&gt;
-	&lt;replica_check_statement&gt; ::= "replica_check" &lt;validity&gt;
-	&lt;replica_check_host_down_thresh_statement&gt; ::= "replica_check_host_down_thresh" &lt;number&gt;
-	&lt;replica_check_sleep_time_statement&gt; ::= "replica_check_sleep_time" &lt;number&gt;
-	&lt;replica_check_minimum_interval_statement&gt; ::= "replica_check_minimum_interval" &lt;number&gt;
-	&lt;string_list&gt; ::= 
-		&nbsp;&nbsp;&lt;string&gt; |
-		&nbsp;&nbsp;&lt;string&gt; &lt;string_list&gt;
-	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
-		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
-	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
-	&lt;pathname_character&gt; ::= &lt;hostname_character&gt; | "," | "/" | "_"
-	&lt;hostname_port_spec&gt; ::=
-		&nbsp;&nbsp;&lt;hostname&gt;|
-		&nbsp;&nbsp;&lt;hostname&gt; ":" &lt;portnumber&gt;
-	&lt;hostname&gt; ::= &lt;hostname_character&gt; &lt;hostname_character&gt;*
-	&lt;hostname_character&gt; ::= &lt;alphabet&gt; | &lt;digit&gt; | "-" | "."
-	&lt;portnumber&gt; ::= &lt;number&gt;
-	&lt;size&gt; ::= &lt;number&gt; [ "k" | "M" | "G" | "T" ]
-	&lt;number&gt; ::= &lt;digit&gt; [&lt;digit&gt;*]
-	&lt;digit&gt; ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-	&lt;string&gt; ::= """ &lt;double_quoted_character&gt;* """
-<!-- 	&lt;string&gt; ::= &lt;string_component&gt; &lt;string_component&gt;* -->
-<!-- 	&lt;string_component&gt; ::= &lt;pathname&gt; | -->
-<!-- 		&nbsp;&nbsp;"'" &lt;single_quoted_character&gt;* "'" | -->
-<!-- 		&nbsp;&nbsp;""" &lt;double_quoted_character&gt;* """ -->
-<!-- 	&lt;single_quoted_character&gt; ::= -->
-<!-- 		&nbsp;&nbsp;&lt;any_character_except_single_quotation&gt; -->
-	&lt;double_quoted_character&gt; ::=
-		&nbsp;&nbsp;&lt;any_character_except_backslash_and_double_quotation&gt; |
-		&nbsp;&nbsp;"\\" | "\""
-	&lt;validity&gt; ::= "enable" | "disable"
-	&lt;spck_level&gt; ::= "disable" | "display" | "delete" | "lost_found"
-	&lt;atime_type&gt; ::= "disable" | "relative" | "strict"
-	&lt;log_priority&gt; ::= "emerg" | "alert" | "crit" | "err" | "warning" |
-		&nbsp;&nbsp;"notice" | "info" | "debug"
-	&lt;fatal_action_name&gt; ::= "backtrace_and_abort" | "backtrace_and_exit" |
-		&nbsp;&nbsp;"abort" | "exit"
-</literallayout>
+		&lt;pathname&gt; &lt;hostname&gt; ":" &lt;portnumber&gt;</literallayout></listitem>
+</varlistentry>
+
+<!--
+<varlistentry>
+<term>&lt;dir_cache_timeout_statement&gt; ::=</term>
+<listitem><literallayout>"dir_cache_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+-->
+
+<!--
+<varlistentry>
+<term>&lt;host_cache_timeout_statement&gt; ::=</term>
+<listitem><literallayout>"host_cache_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+-->
+
+<varlistentry>
+<term>&lt;schedule_cache_timeout_statement&gt; ::=</term>
+<listitem><literallayout>"schedule_cache_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;schedule_concurrency_statement&gt; ::=</term>
+<listitem><literallayout>"schedule_concurrency" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;schedule_concurrency_per_net_statement&gt; ::=</term>
+<listitem><literallayout>"schedule_concurrency_per_net" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;schedule_idle_load_thresh_statement&gt; ::=</term>
+<listitem><literallayout>"schedule_idle_load_thresh" &lt;load&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;schedule_busy_load_thresh_statement&gt; ::=</term>
+<listitem><literallayout>"schedule_busy_load_thresh" &lt;load&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;schedule_virtual_load_statement&gt; ::=</term>
+<listitem><literallayout>"schedule_virtual_load" &lt;load&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;schedule_candidates_ratio_statement&gt; ::=</term>
+<listitem><literallayout>"schedule_candidates_ratio" &lt;floating_point_number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;schedule_rtt_thresh_diff_statement&gt; ::=</term>
+<listitem><literallayout>"schedule_rtt_thresh_diff" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;schedule_rtt_thresh_ratio_statement&gt; ::=</term>
+<listitem><literallayout>"schedule_rtt_thresh_ratio" &lt;floating_point_number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;schedule_rtt_thresh_statement&gt; ::=</term>
+<listitem><literallayout>"schedule_rtt_thresh" &lt;floating_point_number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_local_priority_statement&gt; ::=</term>
+<listitem><literallayout>"write_local_priority" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_target_domain_statement&gt; ::=</term>
+<listitem><literallayout>"write_target_domain" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;minimum_free_disk_space_statement&gt; ::=</term>
+<listitem><literallayout>"minimum_free_disk_space" &lt;size&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;gfs_proto_fhremove_request_window_statement&gt; ::=</term>
+<listitem><literallayout>"gfs_proto_fhremove_request_window" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;gfs_proto_replication_request_window_statement&gt; ::=</term>
+<listitem><literallayout>"gfs_proto_replication_request_window" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;simultaneous_replication_receivers_statement&gt; ::=</term>
+<listitem><literallayout>"simultaneous_replication_receivers" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;outstanding_file_replication_limit_statement&gt; ::=</term>
+<listitem><literallayout>"outstanding_file_replication_limit" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;gfsd_connection_cache_statement&gt; ::=</term>
+<listitem><literallayout>"gfsd_connection_cache" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;xmlattr_size_limit_statement&gt; ::=</term>
+<listitem><literallayout>"xmlattr_size_limit" &lt;size&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;xattr_size_limit_statement&gt; ::=</term>
+<listitem><literallayout>"xattr_size_limit" &lt;size&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;attr_cache_limit_statement&gt; ::=</term>
+<listitem><literallayout>"attr_cache_limit" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;attr_cache_timeout_statement&gt; ::=</term>
+<listitem><literallayout>"attr_cache_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;log_level_statement&gt; ::=</term>
+<listitem><literallayout>"log_level" &lt;log_priority&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;log_message_verbose_level_statement&gt; ::=</term>
+<listitem><literallayout>"log_message_verbose_level" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;log_auth_verbose_statement&gt; ::=</term>
+<listitem><literallayout>"log_auth_verbose" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;file_trace_statement&gt; ::=</term>
+<listitem><literallayout>"file_trace" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;fatal_action_statement&gt; ::=</term>
+<listitem><literallayout>"fatal_action" &lt;fatal_action_name&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;debug_command_statement&gt; ::=</term>
+<listitem><literallayout>"debug_command" &lt;string_list&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;no_file_system_node_timeout_statement&gt; ::=</term>
+<listitem><literallayout>"no_file_system_node_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;gfmd_reconnection_timeout_statement&gt; ::=</term>
+<listitem><literallayout>"gfmd_reconnection_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<!--
+<varlistentry>
+<term>&lt;record_atime_statement&gt; ::=</term>
+<listitem><literallayout>"record_atime" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+ -->
+
+<varlistentry>
+<term>&lt;atime_statement&gt; ::=</term>
+<listitem><literallayout>"atime" &lt;atime_type&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;client_file_bufsize_statement&gt; ::=</term>
+<listitem><literallayout>"client_file_bufsize" &lt;size&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;client_parallel_copy_statement&gt; ::=</term>
+<listitem><literallayout>"client_parallel_copy" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;profile_statement&gt; ::=</term>
+<listitem><literallayout>"profile" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_list_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_list" &lt;metadb_server_list_spec&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_list_spec&gt; ::=</term>
+<listitem><literallayout>&lt;hostname_port_spec&gt; |
+	&lt;hostname_port_spec&gt; &lt;metadb_server_list_spec&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_replication_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_replication" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;synchronous_replication_timeout_statement&gt; ::=</term>
+<listitem><literallayout>"synchronous_replication_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;synchronous_journaling_statement&gt; ::=</term>
+<listitem><literallayout>"synchronous_journaling" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_force_slave_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_force_slave" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_slave_listen_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_slave_listen" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_slave_max_size_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_server_slave_max_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_journal_dir_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_journal_dir" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_journal_max_size_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_journal_max_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_journal_recvq_size_statement&gt; ::=</term>
+<listitem><literallayout>"metadb_journal_recvq_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_statement&gt; ::=</term>
+<listitem><literallayout>"replica_check" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_host_down_thresh_statement&gt; ::=</term>
+<listitem><literallayout>"replica_check_host_down_thresh" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_sleep_time_statement&gt; ::=</term>
+<listitem><literallayout>"replica_check_sleep_time" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_minimum_interval_statement&gt; ::=</term>
+<listitem><literallayout>"replica_check_minimum_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;string_list&gt; ::=</term>
+<listitem><literallayout>&lt;string&gt; |
+	&lt;string&gt; &lt;string_list&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;hostspec&gt; ::=</term>
+<listitem><literallayout>&lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
+	&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;pathname&gt; ::=</term>
+<listitem><literallayout>&lt;pathname_character&gt; &lt;pathname_character&gt;*</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;pathname_character&gt; ::=</term>
+<listitem><literallayout>&lt;hostname_character&gt; | "," | "/" | "_"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;hostname_port_spec&gt; ::=</term>
+<listitem><literallayout>&lt;hostname&gt;|
+	&lt;hostname&gt; ":" &lt;portnumber&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;hostname&gt; ::=</term>
+<listitem><literallayout>&lt;hostname_character&gt; &lt;hostname_character&gt;*</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;hostname_character&gt; ::=</term>
+<listitem><literallayout>&lt;alphabet&gt; | &lt;digit&gt; | "-" | "."</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;portnumber&gt; ::=</term>
+<listitem><literallayout>&lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;size&gt; ::=</term>
+<listitem><literallayout>&lt;number&gt; [ "k" | "M" | "G" | "T" ]</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;number&gt; ::=</term>
+<listitem><literallayout>&lt;digit&gt; [&lt;digit&gt;*]</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;digit&gt; ::=</term>
+<listitem><literallayout>"0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;string&gt; ::=</term>
+<listitem><literallayout>""" &lt;double_quoted_character&gt;* """</literallayout></listitem>
+</varlistentry>
+
+<!--
+<varlistentry>
+<term>&lt;string&gt; ::=</term>
+<listitem><literallayout>&lt;string_component&gt; &lt;string_component&gt;*</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;string_component&gt; ::=</term>
+<listitem><literallayout>&lt;pathname&gt; |
+	"'" &lt;single_quoted_character&gt;* "'" |
+	""" &lt;double_quoted_character&gt;* """</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;single_quoted_character&gt; ::=</term>
+<listitem><literallayout>&lt;any_character_except_single_quotation&gt;</literallayout></listitem>
+</varlistentry>
+-->
+
+<varlistentry>
+<term>&lt;double_quoted_character&gt; ::=</term>
+<listitem><literallayout>&lt;any_character_except_backslash_and_double_quotation&gt; |
+	"\\" | "\""</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;validity&gt; ::=</term>
+<listitem><literallayout>"enable" | "disable"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spck_level&gt; ::=</term>
+<listitem><literallayout>"disable" | "display" | "delete" | "lost_found"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;atime_type&gt; ::=</term>
+<listitem><literallayout>"disable" | "relative" | "strict"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;log_priority&gt; ::=</term>
+<listitem><literallayout>"emerg" | "alert" | "crit" | "err" | "warning" |
+	"notice" | "info" | "debug"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;fatal_action_name&gt; ::=</term>
+<listitem><literallayout>"backtrace_and_abort" | "backtrace_and_exit" |
+	"abort" | "exit"</literallayout></listitem>
+</varlistentry>
+
+</variablelist>
 
 </refsect1>
 
