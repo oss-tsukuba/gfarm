@@ -1196,6 +1196,8 @@ transform_to_master(void)
 	/* this must be after db_journal_wait_for_apply_thread() */
 	dead_file_copy_init_load();
 
+	quota_check();
+
 	giant_unlock();
 
 	gfarm_cond_signal(&transform_cond, diag, TRANSFORM_COND_DIAG);
@@ -1751,6 +1753,7 @@ main(int argc, char **argv)
 		inode_remove_orphan(); /* should be before
 					  inode_check_and_repair() */
 		inode_check_and_repair();
+		quota_check();
 	}
 	if (gfarm_get_metadb_replication_enabled()) {
 		is_master = mdhost_self_is_master();
@@ -1768,7 +1771,6 @@ main(int argc, char **argv)
 
 	/* master */
 
-	quota_check();
 	replica_check_start();
 	accepting_loop(sock);
 
