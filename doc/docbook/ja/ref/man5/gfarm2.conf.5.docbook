@@ -1736,6 +1736,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;debug_command_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
 		&nbsp;&nbsp;&lt;client_file_bufsize_statement&gt; |
+		&nbsp;&nbsp;&lt;client_parallel_copy_statement&gt; |
 		&nbsp;&nbsp;&lt;profile_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_list_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_replication_statement&gt; |
@@ -1847,6 +1848,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
 <!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
 	&lt;client_file_bufsize_statement&gt; ::= "client_file_bufsize" &lt;size&gt;
+	&lt;client_parallel_copy_statement&gt; ::= "client_parallel_copy" &lt;number&gt;
 	&lt;profile_statement&gt; ::= "profile" &lt;validity&gt;
 	&lt;metadb_server_list_statement&gt; ::= "metadb_server_list" &lt;metadb_server_list_spec&gt;
 	&lt;metadb_server_list_spec&gt; ::=
