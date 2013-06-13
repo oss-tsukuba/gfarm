@@ -1635,6 +1635,8 @@ transform_to_master(void)
 	/* this must be after db_journal_wait_for_apply_thread() */
 	dead_file_copy_init_load();
 
+	quota_check();
+
 	giant_unlock();
 
 	gfarm_cond_signal(&transform_cond, diag, TRANSFORM_COND_DIAG);
@@ -1655,7 +1657,6 @@ transform_to_master(void)
 	 */
 	slave_clear_db_update_info();
 
-	quota_check();
 	replica_check_start();
 }
 
@@ -2203,6 +2204,7 @@ main(int argc, char **argv)
 		inode_remove_orphan(); /* should be before
 					  inode_check_and_repair() */
 		inode_check_and_repair();
+		quota_check();
 	}
 	if (gfarm_get_metadb_replication_enabled()) {
 		is_master = mdhost_self_is_master();
@@ -2213,7 +2215,6 @@ main(int argc, char **argv)
 		gfmd_startup_state_notify_ready();
 		if (is_master) {
 			sock = open_accepting_socket(gfmd_port);
-			quota_check();
 			replica_check_start();
 		} else if (gfarm_get_metadb_server_slave_listen()) {
 			sock = open_accepting_socket(gfmd_port);
@@ -2222,7 +2223,6 @@ main(int argc, char **argv)
 		}
 	} else {
 		sock = open_accepting_socket(gfmd_port);
-		quota_check();
 		replica_check_start();
 	}
 
