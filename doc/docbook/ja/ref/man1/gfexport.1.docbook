@@ -11,33 +11,33 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfexport</refname>
-<refpurpose>Gfarm е╒ебедеые╖е╣е╞ерд╬е╒ебедеыд╬╞т═╞дЄ╔╜╝ид╣ды</refpurpose>
+<refpurpose>Gfarm уГХуВбуВдуГлуВ╖уВ╣уГЖуГауБоуГХуВбуВдуГлуБохЖЕхо╣уВТшбичд║уБЩуВЛ</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfexport</command>
-    <arg choice='opt'>-h <replaceable>е╒ебедеые╖е╣е╞ере╬б╝е╔</replaceable></arg>
+    <arg choice='opt'>-h <replaceable>уГХуВбуВдуГлуВ╖уВ╣уГЖуГауГОуГ╝уГЙ</replaceable></arg>
     <arg choice='plain'><replaceable>Gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>Gfarm URL д╟╗╪─ъд╡дьд┐ Gfarm е╒ебедеые╖е╣е╞ер╛хд╬е╒ебедеыдЄ╔╕╜р╜╨╬╧д╦╜╨╬╧д╖д▐д╣бе</para>
+<para>Gfarm URL уБзцМЗхоЪуБХуВМуБЯ Gfarm уГХуВбуВдуГлуВ╖уВ╣уГЖуГаф╕КуБоуГХуВбуВдуГлуВТциЩц║ЦхЗ║хКЫуБлхЗ║хКЫуБЧуБ╛уБЩя╝О</para>
 
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
-<term><option>-h</option> <parameter>е╒ебедеые╖е╣е╞ере╬б╝е╔</parameter></term>
+<term><option>-h</option> <parameter>уГХуВбуВдуГлуВ╖уВ╣уГЖуГауГОуГ╝уГЙ</parameter></term>
 <listitem>
-<para>╗╪─ъд╖д┐е╒ебедеые╖е╣е╞ере╬б╝е╔д╦│╩╟╝д╡дьд╞дддые╒ебедеыдЄ╜╨╬╧д╖д▐д╣бе
+<para>цМЗхоЪуБЧуБЯуГХуВбуВдуГлуВ╖уВ╣уГЖуГауГОуГ╝уГЙуБлца╝ч┤НуБХуВМуБжуБДуВЛуГХуВбуВдуГлуВТхЗ║хКЫуБЧуБ╛уБЩя╝О
 </para>
 </listitem>
 <term><option>-?</option></term>
 <listitem>
-<para>░·┐Їеке╫е╖ечеєдЄ╔╜╝ид╖д▐д╣бг</para>
+<para>х╝ХцХ░уВкуГЧуВ╖уГзуГ│уВТшбичд║уБЧуБ╛уБЩуАВ</para>
 </listitem>
 </varlistentry>
 </variablelist>

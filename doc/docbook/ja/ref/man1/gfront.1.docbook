@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfront</refname>
-<refpurpose>Gfarm �ե���������롣</refpurpose>
+<refpurpose>Gfarm ファイルを操作する。</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -25,9 +25,9 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para> 
-GFront�ϡ�gfarm�ե����륷���ƥ������GUI���ץꥱ�������Ǥ��롣
-GFront�ϡ�gfarm�ե����륷���ƥ�����ѼԤ�����Ū�����뤳�Ȥ��ǽ�Ȥ��롣
-gfarm�ե����륷���ƥ���Ф���������Ϥ��Ǥ˥��ޥ�ɤȤ��Ƽ¸�����Ƥ��ꡢGFront�Ǥ�gfarm�Υ��ޥ�ɤ��������뵡ǽ��¹Ԥ��뤿��Υե���ȥ���ɵ�ǽ���󶡤��롣</para>
+GFrontは、gfarmファイルシステムを操作するGUIアプリケーションである。
+GFrontは、gfarmファイルシステムを利用者が対話的に操作することを可能とする。
+gfarmファイルシステムに対する基本操作はすでにコマンドとして実現されており、GFrontではgfarmのコマンドに相当する機能を実行するためのフロントエンド機能を提供する。</para>
 </refsect1>
 
 <refsect1 id='see-also'><title>SEE ALSO</title>

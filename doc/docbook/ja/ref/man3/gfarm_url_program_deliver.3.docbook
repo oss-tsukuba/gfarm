@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfarm_url_program_deliver</refname>
-<refpurpose>�ץ���������ꤷ���ۥ��Ȥ����ۤ���</refpurpose>
+<refpurpose>プログラムを指定したホストに配布する</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -35,21 +35,21 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><parameter>gfarm_url</parameter>�ǻ��ꤷ���ץ�������
+<para><parameter>gfarm_url</parameter>で指定したプログラムを、
 <parameter>nhosts</parameter>
-�Ĥ����Ǥ����ʸ��������
+個の要素を持つ文字列配列
 <parameter>hosts</parameter>
-�ǻ��ꤷ���ۥ��Ȥ����ۤ��ޤ���
-���ۤ��줿�ƥۥ��Ⱦ�ǤΥץ����������Хѥ���
+で指定したホストに配布します。
+配布された各ホスト上でのプログラムの絶対パスを、
 <parameter>nhosts</parameter>
-�Ĥ����Ǥ����ʸ��������˳�Ǽ������������Υ��ɥ쥹��
+個の要素を持つ文字列配列に格納し、その配列のアドレスを
 <parameter>delivered_paths</parameter>
-���ؤ�����֤��ޤ���
+が指す先に返します。
 
 <parameter>delivered_paths</parameter></para>
-<para>������ʸ��������ϡ����פˤʤä��� 
+<para>に得た文字列配列は、不要になったら 
 <citerefentry><refentrytitle>gfarm_strings_free_deeply</refentrytitle><manvolnum>3</manvolnum></citerefentry>
-�ǲ�������ɬ�פ�����ޤ���</para>
+で解放する必要があります。</para>
 
 </refsect1>
 
@@ -58,19 +58,19 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

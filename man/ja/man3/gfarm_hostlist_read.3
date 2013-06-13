@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFARM_HOSTLIST_READ" "3" "18 March 2003" "Gfarm" ""
 .SH NAME
-gfarm_hostlist_read \- �ۥ��ȹ����ե�������ɤ߹���
+gfarm_hostlist_read \- ホスト構成ファイルを読み込む
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,31 +14,31 @@ char *gfarm_hostlist_read (char *\fIfilename\fB, int *\fInp\fB, char ***\fIline_
 \fR
 .SH "DESCRIPTION"
 .PP
-Gfarm�ե�����򥤥�ݡ��Ȥ��륢�ץꥱ��������Ѥ�����ؿ��ΰ�ĤǤ���
+Gfarmファイルをインポートするアプリケーション用の補助関数の一つです。
 .PP
-�ۥ��ȹ����ե�����̾��
+ホスト構成ファイル名を
 \fIfilename\fR
-�˻��ꤹ��ȡ����Υե����뤫�顢
-�ۥ��Ȥ������
+に指定すると、そのファイルから、
+ホストの配列を
 \fIline_table_p\fR
-�λؤ���ˤ��֤��ޤ���
-�����ե�����˹�ʸ���顼�����������ˤϡ�
+の指す先にに返します。
+構成ファイルに構文エラーが生じた場合には、
 \fIerror_line_p\fR
-�λؤ���ˡ��ե�����ι��ֹ���֤��ޤ��������ͤ� -1 
-�ξ��ˤϡ���ʸ�ʳ��Υ��顼�����Ǥ���
+の指す先に、ファイルの行番号を返します。この値が -1 
+の場合には、構文以外のエラー原因です。
 .PP
-�����������ۥ��Ȥ������ gfarm_strings_free_deeply() ���Ѥ��Ʋ���
-����ɬ�פ�����ޤ���
+ここで得たホストの配列は gfarm_strings_free_deeply() を用いて解放
+する必要があります。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "SEE ALSO"
 .PP
 \fBgfarm_import_fragment_config_read\fR(3),

@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_PIO_ERROR" "3" "18 March 2003" "Gfarm" ""
 .SH NAME
-gfs_pio_error \- ���顼����
+gfs_pio_error \- エラー状況
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,16 +14,16 @@ char *gfs_pio_error (GFS_File \fIgf\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-�ե�����
+ファイル
 \fIgf\fR
-�Υ��顼�����򼨤��ޤ���
+のエラー状況を示します。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-�ä˥��顼�ϡ������Ƥ��ޤ���
+特にエラーは、生じていません。
 .TP
-\fB����¾\fR
-���顼�������Ƥ��ޤ������顼�򼨤�ʸ����ؤΥݥ��󥿤��֤��ޤ���
+\fBその他\fR
+エラーが生じています。エラーを示す文字列へのポインタを返します。
 .SH "SEE ALSO"
 .PP
 \fBgfs_pio_create\fR(3),

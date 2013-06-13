@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_close</refname>
-<refpurpose>Gfarmе╒ебедеые╖е╣е╞ерд╬е╒ебедеыд╬епеэб╝е║</refpurpose>
+<refpurpose>GfarmуГХуВбуВдуГлуВ╖уВ╣уГЖуГауБоуГХуВбуВдуГлуБоуВпуГнуГ╝уВ║</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -31,9 +31,9 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>е╒ебедеы
+<para>уГХуВбуВдуГл
 <parameter>gfp</parameter>
-дЄепеэб╝е║д╖д▐д╣бг</para>
+уВТуВпуГнуГ╝уВ║уБЧуБ╛уБЩуАВ</para>
 
 </refsect1>
 
@@ -42,28 +42,28 @@
 <varlistentry>
 <term><constant>GFARM_ERR_NO_ERROR</constant></term>
 <listitem>
-<para>└╡╛я╜к╬╗дЄ╝ид╖д▐д╣бг</para>
+<para>цнгх╕╕ч╡Вф║ЖуВТчд║уБЧуБ╛уБЩуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_BAD_FILE_DESCRIPTOR</constant></term>
 <listitem>
 <para><parameter>gfp</parameter>
-д╟╗╪─ъд╡дьдые╒ебедеые╟еге╣епеъе╫е┐дм╔╘└╡д╟д╣бг</para>
+уБзцМЗхоЪуБХуВМуВЛуГХуВбуВдуГлуГЗуВгуВ╣уВпуГкуГЧуВ┐уБМф╕НцнгуБзуБЩуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>есетеъ╔╘┬нд╬д┐дс╜ш═¤дЄ├ц╗▀д╖д▐д╖д┐бг</para>
+<para>уГбуГвуГкф╕Нш╢│уБоуБЯуВБхЗжчРЖуВТф╕нцнвуБЧуБ╛уБЧуБЯуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>д╜д╬┬╛</term>
+<term>уБЭуБоф╗Ц</term>
 <listitem>
-<para>╛х╡н░╩│░д╬еиещб╝дм└╕д╕д┐д│д╚дЄ╝ид╖д▐д╣бг
+<para>ф╕КшиШф╗ехдЦуБоуВиуГйуГ╝уБМчФЯуБШуБЯуБУуБиуВТчд║уБЧуБ╛уБЩуАВ
 <citerefentry><refentrytitle>gfarm_error_string</refentrytitle><manvolnum>3</manvolnum></citerefentry>
-д╦дшдъеиещб╝д╬╕╢░°дЄ╩╕╗·╬єд╦╩╤┤╣д╣дыд│д╚дмд╟днд▐д╣бг
+уБлуВИуВКуВиуГйуГ╝уБохОЯхЫауВТцЦЗхнЧхИЧуБлхдЙцПЫуБЩуВЛуБУуБиуБМуБзуБНуБ╛уБЩуАВ
 </para>
 </listitem>
 </varlistentry>

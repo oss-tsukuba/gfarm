@@ -13,40 +13,40 @@
 
 <refnamediv id='name'>
 <refname>gfrcmd(1)</refname>
-<refpurpose>Gfarm �׻��ס���Υۥ��Ȥǡ����ޥ�ɤ�¹Ԥ��롣</refpurpose>
+<refpurpose>Gfarm 計算プールのホストで、コマンドを実行する。</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv>
 <cmdsynopsis>
   <command>gfrcmd</command>
-    <arg choice='plain'><replaceable>�ۥ���̾</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>���ޥ��</replaceable></arg>
+    <arg choice='plain'><replaceable>ホスト名</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>コマンド</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>�������˻��ꤷ���׻��ס���Υۥ��Ȥǡ���������ʹߤΥ��ޥ�ɤ�¹Ԥ��ޤ���
-UNIX ɸ��� rsh �˻�����ǽ������ޤ����������������ۤʤ�ޤ���</para>
+<para>第一引数に指定した計算プールのホストで、第二引数以降のコマンドを実行します。
+UNIX 標準の rsh に似た機能を持ちますが、下記の点が異なります。</para>
 
-<para>�����С��ϡ�inetd ���鵯ư����ΤǤϤʤ���gfsd ���Ȥ߹��ޤ�Ƥ��롣</para>
+<para>サーバーは、inetd から起動するのではなく、gfsd に組み込まれている。</para>
 
-<para>gfarm ��ǧ�ڵ������Ѥ��롣rsh �Τ褦��TCP���ø��ݡ��Ȥ�ǧ�ڤ�
-�Ѥ��뤳�ȤϤʤ��Τǡ�Ʊ���¹Բ�ǽ�ʥ��ޥ�ɿ������ø��ݡ��Ȥο���
-���󤵤�ʤ���</para>
+<para>gfarm の認証機構を用いる。rsh のようにTCPの特権ポートを認証に
+用いることはないので、同時実行可能なコマンド数が、特権ポートの数に
+制約されない。</para>
 
-<para>rsh �Ȱۤʤꡣñ���TCP���ͥ��������ư���Τǡ�Ʊ����
-¿����ư�������Ρ������ͥ�ؤ���٤��㴳�ڤ���</para>
+<para>rsh と異なり。単一のTCPコネクション上で動作するので、同時に
+多数起動した場合の、カーネルへの負荷が若干軽い。</para>
 
-<para>�Ķ��ѿ�DISPLAY�������뤳�Ȥ��Ǥ��롣�ޤ������λ� X Window
-System ��ǧ�ھ�����Ϥ����Ȥ�����롣</para>
+<para>環境変数DISPLAYを伝えることができる。また、この時 X Window
+System の認証情報も渡すことが出来る。</para>
 
-<para>��֥ۥ��Ȥˤ����륫���ȡ��ǥ��쥯�ȥ�ϡ�NFS�Ƕ�ͭ����Ƥ�
-�뤳�Ȥ�¿���ۡ��ࡦ�ǥ��쥯�ȥ�ǤϤʤ���gfarm�Υ��ס��롦�ǥ���
-���ȥ�ˤʤ�Τǡ��ǥХå����ˡ��ۥ������core�ե������Ĥ����Ȥ�
-�ưס�</para>
+<para>遠隔ホストにおけるカレント・ディレクトリは、NFSで共有されてい
+ることの多いホーム・ディレクトリではなく、gfarmのスプール・ディレ
+クトリになるので、デバッグ時に、ホスト毎にcoreファイルを残すことが
+容易。</para>
 
-<para>gfarm�饤�֥��ȶ�Ĵ���ơ����ޥ�ɤ���̿Ū�ʥ����ʥ��ȯ����
-�������˥ǥХå���ƤӽФ���ǽ�������롣</para>
+<para>gfarmライブラリと協調して、コマンドが致命的なシグナルを発生さ
+せた場合にデバッガを呼び出す機能を備える。</para>
 
 </refsect1>
 
@@ -54,46 +54,46 @@ System ��ǧ�ھ�����Ϥ����Ȥ�����롣</para>
 <variablelist>
 
 <varlistentry>
-<term><option>-l</option> <parameter>�桼����̾</parameter></term>
+<term><option>-l</option> <parameter>ユーザー名</parameter></term>
 <listitem>
-<para>��֥ۥ��ȤǤΥ桼����̾����ꤷ�ޤ���</para>
+<para>遠隔ホストでのユーザー名を指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-n</option></term>
 <listitem>
-<para>ɸ�����Ϥ����Ƥ򡢱�֥ۥ��Ȥ�����ʤ����ޤ���</para>
+<para>標準入力の内容を、遠隔ホストに送らなくします。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-r</option></term>
 <listitem>
-<para>��֥ۥ��ȤΥ������󥷥�������Ѥ��ʤ��ǡ�
-���ꤵ�줿���ޥ�ɤ�ľ�ܼ¹Ԥ��ޤ���</para>
+<para>遠隔ホストのログインシェルを利用しないで，
+指定されたコマンドを直接実行します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-y</option></term>
 <listitem>
-<para>�Ķ��ѿ�DISPLAY���֥ۥ��Ȥ������ޤ���</para>
+<para>環境変数DISPLAYを遠隔ホストに伝えます。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-X</option></term>
 <listitem>
-<para>�Ķ��ѿ� X Window System ��ǧ�ھ���򡢱�֥ۥ��Ȥ������ޤ���
-�ۡ���ǥ��쥯�ȥ��ͭ���Ƥ��ʤ��褦�ʾ���ͭ�ѤǤ���</para>
+<para>環境変数 X Window System の認証情報を、遠隔ホストに伝えます。
+ホームディレクトリを共有していないような場合に有用です。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-v</option></term>
 <listitem>
-<para>�ܺ٤˥��顼��å�������ɽ�����ޤ���
+<para>詳細にエラーメッセージを表示します．
 </para>
 </listitem>
 </varlistentry>
@@ -101,7 +101,7 @@ System ��ǧ�ھ�����Ϥ����Ȥ�����롣</para>
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
 
@@ -113,20 +113,20 @@ System ��ǧ�ھ�����Ϥ����Ȥ�����롣</para>
 <varlistentry>
 <term><envar>GFARM_DEBUG_MODE</envar></term>
 <listitem>
-<para>���δĶ��ѿ����� gdb �����ꤹ��ȡ���֥ۥ��ȤΥ��ޥ�ɤ�
-�����ʥ�ǽ�λ����ݤˡ�xterm ����� ���ξ��ư��� GNU debugger 
-gdb �򡢥��ޥ�ɤ˴�Ϣ�Ť������֤ǡ���ư���ޤ���
+<para>この環境変数に値 gdb を設定すると、遠隔ホストのコマンドが
+シグナルで終了する際に、xterm および その上で動作する GNU debugger 
+gdb を、コマンドに関連づけた状態で、起動します。
 </para>
 <para>
-���ε�ǽ�����Ѥ���ˤϡ�X Window System ���� gfrcmd �����Ѥ���ɬ��
-������ޤ���</para>
+この機能を利用するには、X Window System 下で gfrcmd を利用する必要
+があります。</para>
 </listitem>
 </varlistentry>
 </variablelist>
 </refsect1>
 
 <refsect1 id='bugs'><title>BUGS</title>
-<para>-l ���ץ����Ϥޤ���������Ƥ��ޤ���
+<para>-l オプションはまだ実装されていません。
 </para>
 </refsect1>
 </refentry>

@@ -12,27 +12,27 @@
 
 <refnamediv id='name'>
 <refname>glogger</refname>
-<refpurpose>SNMP �� GET �ꥯ�����Ȥǳƥۥ��Ȥξ���򽸤��</refpurpose>
+<refpurpose>SNMP の GET リクエストで各ホストの情報を集める</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>glogger</command>
-    <arg choice='opt'><replaceable>���ץ����</replaceable></arg>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>�ץ������ glogger �ϡ�SNMP GET�ꥯ�����Ȥ�Ȥäơ��ͥåȥ����
-    �ˤ���ƥۥ��Ȥ������򽸤ᡢ��¬�ǡ����Ȥ��ƥե�����ؽ��Ϥ��ޤ���
-    ����ե�����ǻ��ꤷ����¬���󥿡��Х뤴�Ȥˡ��ƥۥ��Ȥ��Ф���
-    GET�ꥯ�����Ȥ���ȿ�����ᤫ�ä��ۥ��Ȥ�����֤˼��������Ͻ����򤷤ޤ���
-    ��ĤΥۥ��Ȥ��Ф��ơ�ʣ����OID���ĤΥѥ��åȤǥꥯ�����Ȥ�����Ĥ�
-    �ѥ��åȤ� MIB������ͤ�������ޤ���
-    ��¬�оݤΥۥ��ȡ������å��ʤɤϡ����줾�� SNMP����������Ȥ�ư���
-    ��¬���� MIB�ĥ꡼�� OID�� GLogger ��ư�����ۥ��Ȥ��黲�ȤǤ���褦��
-    ���Ƥ���ɬ�פ�����ޤ���
-    SNMP�ΥС������� SNMPv1 ����Ǥ���</para>
+<para>プログラム glogger は、SNMP GETリクエストを使って、ネットワーク上
+    にある各ホストから情報を集め、観測データとしてファイルへ出力します。
+    設定ファイルで指定した観測インターバルごとに、各ホストに対して
+    GETリクエストし、反応の早かったホストから順番に受信、出力処理をします。
+    一つのホストに対して、複数のOIDを一つのパケットでリクエストし、一つの
+    パケットで MIBからの値を受信します。
+    観測対象のホスト、スイッチなどは、それぞれ SNMPエージェントが動作し、
+    観測する MIBツリーの OIDを GLogger を動作させるホストから参照できるように
+    しておく必要があります。
+    SNMPのバージョンは SNMPv1 固定です。</para>
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
@@ -40,33 +40,33 @@
 <varlistentry>
 <term><option>-config [input configuration file name]</option></term>
 <listitem>
-<para>GLogger ������ե��������ꤷ�ޤ���
-        ����ե����뤬���Ĥ���ʤ����ϥ��顼��λ�Ǥ�������ե�����
-        �λ��꤬��ά���줿���� /etc/glogger/glogger.conf ���ɤ߹��ߤޤ���
-        �ե�����̾������˥ϥ��ե� "-" ����ꤹ��ȡ�ɸ�����Ϥ�������
-        �ե�����Ȥ����ɤ߹��ߤޤ���</para>
+<para>GLogger の設定ファイルを指定します。
+        設定ファイルが見つからない場合はエラー終了です。設定ファイル
+        の指定が省略された場合は /etc/glogger/glogger.conf を読み込みます。
+        ファイル名の代わりにハイフン "-" を指定すると、標準入力から設定
+        ファイルとして読み込みます。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><option> -daemon [output PID file name]</option></term>
 <listitem>
 <para>
-GLogger ��ǡ���󲽤��ޤ���PID����¸����ե��������ꤷ�ޤ���
-���Υ��ץ���󤬻��ꤵ��ʤ����ϡ��ƤӽФ��줿�����뤫���
-fork() ������ɸ����Ϥ�ư�������ɽ������ޤ���
-glogger ���ޥ�ɼ��Τ�Ʊ����ư��ǧ�ϹԤʤ��ޤ���</para>
+GLogger をデーモン化します。PIDを保存するファイルを指定します。
+このオプションが指定されない場合は、呼び出されたシェルからは
+fork() せず、標準出力に動作ログが表示されます。
+glogger コマンド自体で同時起動確認は行ないません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><option> -mmap [output filename]</option></term>
 <listitem>
 <para>
-mmap()�ؿ���Ȥ���-maxsize ���ץ����ǻ��ꤷ���ե����륵������
-�ե��������ݤ��Ƥ��顢���Υե�����ؽ��Ϥ��ޤ���
-����ե������ path ��(���)�������̵�뤵�졢������� output filename
-�� 1�ս�ؤޤȤ�ƽ��Ϥ����Τ����դ�ɬ�פǤ���
--maxsize ���ץ�������ꤷ�Ƥ��ʤ��Ȥ��ϡ��� 5KB �Υե��������ݤ���
-����˽��Ϥ��ƽ�λ���ޤ���</para>
+mmap()関数を使い、-maxsize オプションで指定したファイルサイズの
+ファイルを確保してから、そのファイルへ出力します。
+設定ファイルの path 項(後述)の設定は無視され、出力先は output filename
+の 1箇所へまとめて出力されるので注意が必要です。
+-maxsize オプションを指定していないときは、約 5KB のファイルを確保し、
+それに出力して終了します。</para>
 </listitem>
 </varlistentry>
 
@@ -74,14 +74,14 @@ mmap()�ؿ���Ȥ���-maxsize ���ץ����ǻ��ꤷ���ե����륵������
 <term><option>-maxsize [output file size]</option></term>
 <listitem>
 <para>
-output file size ���礭���˽��ϥե����륵���������¤��ޤ���
-����ե������ maxfilesize ����ͥ�褵��ޤ���
-���Υ�������Ķ����ȡ��������ե����������������Υե�����ؽ������
-�ڤ��ؤ��ơ����Ϥ�³���ޤ���
-����ե������ path ����Υ롼��ǻ�����Ѥ��Ƥ⡢���λ��老�Ȥ�
-�����ߥ󥰤ǤϤʤ���output file size ��Ķ�����Ȥ��Τߡ�������Υե�����
-���ڤ��ؤ���褦�ˤʤ�ޤ���
--mmap �⡼�ɤλ��ϡ������ǻ��ꤷ���������Υե����뤬��������ޤ���
+output file size の大きさに出力ファイルサイズを制限します。
+設定ファイルの maxfilesize よりも優先されます。
+このサイズを超えると、新しくファイルを作成し、そのファイルへ出力先を
+切り替えて、出力を続けます。
+設定ファイルの path 設定のルールで時刻を用いても、その時刻ごとの
+タイミングではなく、output file size を超えたときのみ、出力先のファイル
+を切り替えるようになります。
+-mmap モードの時は、ここで指定したサイズのファイルが作成されます。
 </para>
 </listitem>
 </varlistentry>
@@ -90,9 +90,9 @@ output file size ���礭���˽��ϥե����륵���������¤��ޤ���
 <term><option>-checkconf</option></term>
 <listitem>
 <para>
-����ե���������Ƥ�ƥ����Ȥ�ɸ����Ϥؽ��Ϥ��ޤ���
-����ե�����ε��Ҥ��ְ�äƤ���С����顼��å���������Ϥ�����λ
-���ޤ�������ե��������ꤹ����ϡ�-config ���ץ����ǻ��ꤷ�ޤ���
+設定ファイルの内容をテキストで標準出力へ出力します。
+設定ファイルの記述が間違っていれば、エラーメッセージを出力し、終了
+します。設定ファイルを指定する場合は、-config オプションで指定します。
 </para>
 </listitem>
 </varlistentry>
@@ -100,15 +100,15 @@ output file size ���礭���˽��ϥե����륵���������¤��ޤ���
 </refsect1>
 
 <refsect1 id='signal'><title>SIGNAL</title>
-<para>glogger�ץ������ϥ����ʥ���λ����ʲ��Τ褦��ư��ޤ���</para>
+<para>gloggerプロセスはシグナル受領時、以下のように動作します。</para>
 <variablelist>
 <varlistentry>
 <term><option>SIGHUP</option></term>
 <listitem>
 <para>
-�ޤ��������֤äƤ��Ƥ��ʤ���¬�оݥۥ��Ȥ˴ؤ��Ƥϡ����Υ�����
-�����������������Ǥ�(�����ॢ���Ȱ����ˤ�)����¬�ǡ�����ե�
-����ؽ��Ϥ��Ƥ��顢�Ƶ�ư���ޤ���
+まだ応答が返ってきていない計測対象ホストに関しては、このシグナ
+ルを受けた時点で中断し(タイムアウト扱いにし)、計測データをファ
+イルへ出力してから、再起動します。
 </para>
 </listitem>
 </varlistentry>
@@ -116,9 +116,9 @@ output file size ���礭���˽��ϥե����륵���������¤��ޤ���
 <term><option>SIGINT</option></term>
 <listitem>
 <para>
-�ޤ��������֤äƤ��Ƥ��ʤ���¬�оݥۥ��Ȥ˴ؤ��Ƥϡ����Υ�����
-�����������������Ǥ�(�����ॢ���Ȱ����ˤ�)����¬�ǡ�����ե�
-����ؽ��Ϥ��ƽ�λ���ޤ���
+まだ応答が返ってきていない計測対象ホストに関しては、このシグナ
+ルを受けた時点で中断し(タイムアウト扱いにし)、計測データをファ
+イルへ出力して終了します。
 </para>
 </listitem>
 </varlistentry>

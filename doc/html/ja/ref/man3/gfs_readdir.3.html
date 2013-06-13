@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfs_readdir&nbsp;--&nbsp;�ǥ��쥯�ȥ������ɤ߹���</DIV
+>gfs_readdir&nbsp;--&nbsp;ディレクトリ内容読み込み</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -88,36 +88,36 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->����
+>引数
 <TT
 CLASS="PARAMETER"
 ><I
 >dir</I
 ></TT
 >
-�ǻ��ꤷ���ǥ��쥯�ȥ꤫�顢1 �ĤΥǥ��쥯�ȥꡦ����ȥ�
-���ɤ߹��ߡ����Υݥ��󥿤�
+で指定したディレクトリから、1 つのディレクトリ・エントリ
+を読み込み、そのポインタを
 <TT
 CLASS="PARAMETER"
 ><I
 >entryp</I
 ></TT
 >
-�λؤ�����֤��ޤ���
+の指す先に返します。
 <TT
 CLASS="PARAMETER"
 ><I
 >entryp</I
 ></TT
 >
-�λؤ��ΰ�ϡ�����Ʊ��
+の指す領域は、次に同じ
 <TT
 CLASS="PARAMETER"
 ><I
 >dir</I
 ></TT
 >
-������ gfs_readdir() �ʤ��� gfs_closedir() ��ƤӽФ������˼����ޤ���</P
+引数で gfs_readdir() ないし gfs_closedir() を呼び出した時に失われます。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -138,13 +138,13 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ｪλ�򼨤��ޤ���</P
+>正常終了を示します。</P
 ></DD
 ><DT
->����¾</DT
+>その他</DT
 ><DD
 ><P
->�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</P
+>上記以外のエラーが生じたことを示します。</P
 ></DD
 ></DL
 ></DIV

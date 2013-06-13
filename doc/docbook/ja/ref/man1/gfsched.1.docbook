@@ -13,8 +13,8 @@
 <refnamediv id='name'>
 <refname>gfsched</refname>
 <refpurpose>
-<!-- �ե����롦���ե��˥ƥ����������塼��󥰤ˤ��ۥ��ȥꥹ�Ȥ���� -->
-�ե����륷���ƥ�Ρ��ɤ򥹥����塼��󥰤������Ѳ�ǽ�ʥΡ��ɤ�ɽ��
+<!-- ファイル・アフィニティ・スケジューリングによりホストリストを作成 -->
+ファイルシステムノードをスケジューリングし、利用可能なノードを表示
 </refpurpose>
 </refnamediv>
 
@@ -23,24 +23,24 @@
 <cmdsynopsis>
   <command>gfsched</command>
    <!--
-    <arg choice='opt'>-I <replaceable>�ե饰�����ֹ�</replaceable></arg>
-    <arg choice='opt'>-p <replaceable>�ץ������URL</replaceable></arg>
+    <arg choice='opt'>-I <replaceable>フラグメント番号</replaceable></arg>
+    <arg choice='opt'>-p <replaceable>プログラムURL</replaceable></arg>
    -->
     <arg choice='plain'>-f <replaceable>gfarm-URL</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>�ɥᥤ��̾</replaceable></arg>
-    <arg choice='opt'>-n <replaceable>�Ρ��ɿ�</replaceable></arg>
+    <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
+    <arg choice='opt'>-n <replaceable>ノード数</replaceable></arg>
     <arg choice='opt'>-LMclw</arg>
 </cmdsynopsis>
 
 <cmdsynopsis>
   <command>gfsched</command>
    <!--
-    <arg choice='plain'>-N <replaceable>�Ρ��ɿ�</replaceable></arg>
-    <arg choice='opt'>-p <replaceable>�ץ������URL</replaceable></arg>
+    <arg choice='plain'>-N <replaceable>ノード数</replaceable></arg>
+    <arg choice='opt'>-p <replaceable>プログラムURL</replaceable></arg>
    -->
     <arg choice='opt'>-P <replaceable>gfarm-URL</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>�ɥᥤ��̾</replaceable></arg>
-    <arg choice='opt'>-n <replaceable>�Ρ��ɿ�</replaceable></arg>
+    <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
+    <arg choice='opt'>-n <replaceable>ノード数</replaceable></arg>
     <arg choice='opt'>-LMlw</arg>
 </cmdsynopsis>
 
@@ -50,24 +50,24 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>
-  <command>gfsched</command> ��
-  <option>-f</option> <parameter>gfarm-URL</parameter> ���ץ�����
-  ���ꤷ����硢����gfarm�ե�������ݻ�����ե����륷���ƥ�Ρ��ɤ�
-  �����ǡ��������Ѳ�ǽ�ʤ��ɽ�����ޤ���
+  <command>gfsched</command> に
+  <option>-f</option> <parameter>gfarm-URL</parameter> オプションを
+  指定した場合、そのgfarmファイルを保持するファイルシステムノードの
+  うちで、現在利用可能なもの表示します。
 <!--
-  ����gfarm�ե�������Ф���
-  �ե����롦���ե��˥ƥ����������塼��󥰤ˤ��ۥ��ȥꥹ�Ȥ�ɽ�����ޤ���
-  ���ʤ��������gfarm�ե����롦�ե饰���Ȥ��ݻ�����ۥ��Ȥ�Ǥ���¤�
-  ͥ�褷�ơ��ե饰���ȿ������������Υۥ��Ȥ������ɽ�����ޤ���
+  そのgfarmファイルに対する
+  ファイル・アフィニティ・スケジューリングによりホストリストを表示します。
+  すなわち、そのgfarmファイル・フラグメントを保持するホストをできる限り
+  優先して、フラグメント数と等しい数のホストを選んで表示します。
 -->
 </para>
 
 <para>
-  <option>-f</option>���ץ�������ꤷ�ʤ��ä���硢���Ѳ�ǽ��
-  �ե����륷���ƥ�Ρ��ɤ�ɽ�����ޤ������ξ�硢
-  <option>-P</option> <parameter>gfarm-URL</parameter> ���ץ�����
-  �ѥ�̾�� gfarm URL ����ꤹ�뤳�Ȥˤ�ꡢɽ���оݤΥ᥿�ǡ��������Ф�
-  ���ؤ��뤳�Ȥ��Ǥ��ޤ���
+  <option>-f</option>オプションを指定しなかった場合、利用可能な
+  ファイルシステムノードを表示します。この場合、
+  <option>-P</option> <parameter>gfarm-URL</parameter> オプションで
+  パス名か gfarm URL を指定することにより、表示対象のメタデータサーバを
+  切替えることができます。
 </para>
 
 </refsect1>
@@ -77,32 +77,32 @@
 
 <!--
 <varlistentry>
-<term><option>-I</option> <parameter>�ե饰�����ֹ�</parameter></term>
+<term><option>-I</option> <parameter>フラグメント番号</parameter></term>
 <listitem>
-<para>����Υե��������ҤˤĤ��ƥۥ��Ȥ�1�����򤷤ޤ���
-�¹Է����Υե�����ξ��ˤϡ����Υ��ץ����Ǽ¹ԥ������ƥ�����
-(�� ��sparc-sun-solaris8��) ����ꤹ�뤳�Ȥˤ�äơ�
-���Υ������ƥ�����μ¹Է����ե�������ݻ�����ۥ��Ȥ�1�����򤷤ޤ���
+<para>特定のファイル断片についてホストを1つ選択します。
+実行形式のファイルの場合には、このオプションで実行アーキテクチャ
+(例 「sparc-sun-solaris8」) を指定することによって、
+そのアーキテクチャの実行形式ファイルを保持するホストを1つ選択します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-p</option> <parameter>�ץ������URL</parameter></term>
+<term><option>-p</option> <parameter>プログラムURL</parameter></term>
 <listitem>
-<para>���Υե�������������ץ������̾����ꤷ�ơ��ۥ��ȥꥹ�Ȥ�������ޤ���
-���ʤ�������򤵤��ۥ��Ȥ򡢤��Υ��ץ����ǻ��ꤷ���ץ�������¹Բ�ǽ��
-�������ƥ���������˸��ꤷ�ޤ���
+<para>そのファイルを処理するプログラム名を指定して、ホストリストを作成します。
+すなわち、選択されるホストを、このオプションで指定したプログラムを実行可能な
+アーキテクチャだけに限定します。
 </para>
 </listitem>
 </varlistentry>
 -->
 
 <varlistentry>
-<term><option>-D</option> <parameter>�ɥᥤ��̾</parameter></term>
+<term><option>-D</option> <parameter>ドメイン名</parameter></term>
 <listitem>
-<para>�ɥᥤ��̾�ʤ����ۥ���̾����ꤷ�������оݤΥե����륷���ƥ�Ρ��ɤ�
-�ʤ�ޤ���
+<para>ドメイン名ないしホスト名を指定し、検索対象のファイルシステムノードを
+絞ります。
 </para>
 </listitem>
 </varlistentry>
@@ -110,9 +110,9 @@
 <varlistentry>
 <term><option>-L</option></term>
 <listitem>
-<para>���Υۥ��Ȥ��Ф��ơ�ǧ�ڤ��������뤫�ݤ��γ�ǧ���ά���ޤ���
-��®�ˤʤ�ޤ�����ǧ����ǽ�ʥۥ��Ȥ��������塼��󥰤���Ƥ��ޤ�
-����������ޤ���
+<para>そのホストに対して、認証が成功するか否かの確認を省略します。
+高速になりますが、認証不能なホストがスケジューリングされてしまう
+危険があります。
 </para>
 </listitem>
 </varlistentry>
@@ -120,10 +120,10 @@
 <varlistentry>
 <term><option>-M</option></term>
 <listitem>
-<para>�᥿�ǡ��������Ф��䤤��碌����̤Τߤ�ɽ���������饤�����¦�Ǥ�
-�������塼��󥰽�����Ԥʤ��ޤ���
-���Υ��ץ�������ꤹ��ȡ�ư��Ϲ�®�ˤʤ�ޤ������ͥåȥ��Ū����
-ã��ǽ�ʥۥ��Ȥ䡢ǧ����ǽ�ʥۥ��Ȥ�ɽ����������������ޤ���
+<para>メタデータサーバに問い合わせた結果のみを表示し、クライアント側での
+スケジューリング処理を行ないません。
+このオプションを指定すると、動作は高速になりますが、ネットワーク的に到
+達不能なホストや、認証不能なホストが表示される危険があります。
 </para>
 </listitem>
 </varlistentry>
@@ -131,9 +131,9 @@
 <varlistentry>
 <term><option>-P</option> <parameter>gfarm-URL</parameter></term>
 <listitem>
-<para>�ե����륷���ƥ�Ρ��ɤ��������᥿�ǡ��������Ф����ꤹ��
-����ˡ�gfarm-URL �ʤ����ѥ�̾����ꤷ�ޤ���
-���Υ��ץ����ϡ�<option>-f</option> ���ץ�������¾Ū�Ǥ���
+<para>ファイルシステムノードを管理するメタデータサーバを特定する
+ために、gfarm-URL ないしパス名を指定します。
+このオプションは、<option>-f</option> オプションと排他的です。
 </para>
 </listitem>
 </varlistentry>
@@ -141,9 +141,9 @@
 <varlistentry>
 <term><option>-f</option> <parameter>gfarm-URL</parameter></term>
 <listitem>
-<para>���ꤷ���ե�����ˤĤ��ơ�����ʣ�����ݻ�����ե����륷���ƥ�Ρ��ɤ�
-�������ޤ���
-���Υ��ץ����ϡ�<option>-P</option> ���ץ�������¾Ū�Ǥ���
+<para>指定したファイルについて、その複製を保持するファイルシステムノードを
+検索します。
+このオプションは、<option>-P</option> オプションと排他的です。
 </para>
 </listitem>
 </varlistentry>
@@ -151,13 +151,13 @@
 <varlistentry>
 <term><option>-c</option></term>
 <listitem>
-<para>���ץ�����<option>-f</option>�פǻ��ꤷ���ե����뤬¸�ߤ��ʤ�
-���ǡ����ġ����Υ��ץ�������ꤷ����硢�ե�����򿷵���������
-���Υ������塼��󥰾����ɽ�����ޤ���
+<para>オプション「<option>-f</option>」で指定したファイルが存在しない
+場合で、かつ、このオプションを指定した場合、ファイルを新規作成した
+場合のスケジューリング情報を表示します。
 </para>
 <para>
-���ߡ����Υ��ץ��������Ѥ���ȡ����ꤷ���ե�����򿷵��������ޤ���
-���ε�ư�Ͼ����ѹ�������ǽ��������ΤǤ����դ���������
+現在、このオプションを利用すると、指定したファイルを新規作成します。
+この挙動は将来変更される可能性があるのでご注意ください。
 </para>
 </listitem>
 </varlistentry>
@@ -165,18 +165,18 @@
 <varlistentry>
 <term><option>-l</option></term>
 <listitem>
-<para>�ۥ���̾�Τߤʤ餺���ݡ����ֹ��ɽ�����ޤ���
-���Υ��ץ�����ɽ�������ϡ������ѹ�������ǽ��������ޤ��ΤǤ����դ���������
+<para>ホスト名のみならず、ポート番号も表示します。
+このオプションの表示形式は、将来変更される可能性がありますのでご注意ください。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-n</option> <parameter>�Ρ��ɿ�</parameter></term>
+<term><option>-n</option> <parameter>ノード数</parameter></term>
 <listitem>
-<para>���ꤷ������ե����륷���ƥ�Ρ��ɤ�ɽ�����ߤޤ���
-�Ρ��ɿ������ο��������ʤ����ˤϡ�������ɽ�����Ǥ��ڤ�ޤ���
-���Υ��ץ�������ꤷ�ʤ���硢�������������Ρ��ɤ�ɽ�����ޤ���
+<para>指定した数をファイルシステムノードの表示を試みます。
+ノード数がその数に満たない場合には、そこで表示を打ち切ります。
+このオプションを指定しない場合、条件を満たす全ノードを表示します。
 </para>
 </listitem>
 </varlistentry>
@@ -184,15 +184,15 @@
 <varlistentry>
 <term><option>-w</option></term>
 <listitem>
-<para>�ե�����ν񤭹��ߤ�Ԥʤ�����ǡ��������塼��󥰤�Ԥʤ��ޤ���
-���Υ��ץ�������ꤷ����硢�ǥ������ζ������̤�­��ʤ��ե����륷���ƥ�
-�Ρ��ɤϽ�������ޤ���
+<para>ファイルの書き込みを行なう前提で、スケジューリングを行ないます。
+このオプションを指定した場合、ディスクの空き容量が足りないファイルシステム
+ノードは除外されます。
 </para>
 <para>
-���Υ��ץ����ȡ�<option>-f</option> ���ץ�����Ʊ���˻��ꤷ��
-���ġ����Υե����뤬��¸�Υץ������ˤ�äƽ񤭹��ߥ����ץ󤵤�Ƥ�����ˤϡ�
-<option>-n</option> �λ���˴ؤ�餺�����ߤ��Υե�����ν񤭹����Ѥ�
-������Ƥ��Ƥ���ե����륷���ƥ�Ρ��� 1�ĤΤߤ�ɽ�����ޤ���
+このオプションと、<option>-f</option> オプションを同時に指定し、
+かつ、そのファイルが既存のプロセスによって書き込みオープンされている場合には、
+<option>-n</option> の指定に関わらず、現在このファイルの書き込み用に
+割り当てられているファイルシステムノード 1つのみを表示します。
 </para>
 </listitem>
 </varlistentry>
@@ -200,7 +200,7 @@
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
 
@@ -209,8 +209,8 @@
 
 <refsect1 id='examples'><title>EXAMPLES</title>
 <para>
-�ʲ��ϡ��᥿�ǡ��������Ф�ư����Ǥ�����İ����Ƥ��롢�ե����륷���ƥ�Ρ��ɤ�
-�䤤��碌����Ǥ���
+以下は、メタデータサーバが動作中であると把握している、ファイルシステムノードを
+問い合わせる例です。
 </para>
 <literallayout>
 $ gfsched -M

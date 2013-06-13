@@ -6,7 +6,7 @@
 .TH "GFS_PIO_WRITE" "3" "27 June 2010" "Gfarm" ""
 
 .SH NAME
-gfs_pio_write \- �ե�����ν񤭹���
+gfs_pio_write \- ファイルの書き込み
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -15,41 +15,41 @@ gfarm_error_t gfs_pio_write (GFS_File \fIgf\fB, const void * \fIbuffer\fB, int \
 \fR
 .SH "DESCRIPTION"
 .PP
-\fIbuffer\fR����
+\fIbuffer\fRから
 \fIsize\fR
-�Х��Ȥ������ե�����
+バイトだけ、ファイル
 \fIgf\fR
-�ؽ񤭹��ߤޤ���
-�ºݤ˽񤭹��ޤ줿�Х��ȿ���
+へ書き込みます。
+実際に書き込まれたバイト数は
 \fInp\fR
-�λؤ�����֤��ޤ���
+の指す先に返します。
 .SH "RETURN VALUES"
 .TP
 \fBGFARM_ERR_NO_ERROR\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_OPERATION_NOT_PERMITTED\fR
 \fIgf\fR
-�ǻ��ꤵ���ե����뤬�쥮��顼�ե�����ǤϤ���ޤ���
+で指定されるファイルがレギュラーファイルではありません。
 .TP
 \fBGFARM_ERR_BAD_FILE_DESCRIPTOR\fR
 \fIgf\fR
-�ǻ��ꤵ���ե�����ǥ�������ץ���������
-���뤤�Ͻ����ǽ�ǥ����ץ󤵤�Ƥ��ޤ���
+で指定されるファイルディスクリプタが不正、
+あるいは書込可能でオープンされていません。
 .TP
 \fBGFARM_ERR_NO_SPACE\fR
-�񤭹��ߥ��ڡ���������ޤ���
+書き込みスペースがありません。
 .TP
 \fBGFARM_ERR_NO_FILE_SYSTEM_NODE\fR
-���Ѳ�ǽ�ʥե����륷���ƥ�Ρ��ɤ�����ޤ���
+利用可能なファイルシステムノードがありません。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 \fBgfarm_error_string\fR(3)
-�ˤ�ꥨ�顼�θ�����ʸ������Ѵ����뤳�Ȥ��Ǥ��ޤ���
+によりエラーの原因を文字列に変換することができます。
 .SH "SEE ALSO"
 .PP
 \fBgfs_pio_create\fR(3),

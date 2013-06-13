@@ -12,33 +12,33 @@
 
 <refnamediv id='name'>
 <refname>gfusage</refname>
-<refpurpose>���ߤλ����̤�ɽ������</refpurpose>
+<refpurpose>現在の使用量を表示する</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfusage</command>
-    <arg choice='opt'>���ץ����</arg>
-    <arg choice='opt'>̾��</arg>
+    <arg choice='opt'>オプション</arg>
+    <arg choice='opt'>名前</arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfusage</command> �ϡ�Gfarm �ե����륷���ƥ�λ����̤�
-�桼�����Ȥ䥰�롼�פ��Ȥ�ɽ�����ޤ���
-<parameter>̾��</parameter>����ꤹ��ȡ����Υ桼���䥰�롼�פ�����ɽ��
-���ޤ���
-�ǥե���Ȥϥ桼���λ����̤�ɽ�����ޤ�����-g ���ץ�������ꤹ��ȡ���
-�롼�פλ����̤�ɽ�����ޤ���
-<command>gfedquota</command> �� <command>gfquotacheck</command> �ˤ��
-�ƻ����̥ơ��֥���ۤ���ȡ��桼���䥰�롼�פλ����̤����ѤǤ��ޤ���
+<para><command>gfusage</command> は、Gfarm ファイルシステムの使用量を
+ユーザごとやグループごとに表示します。
+<parameter>名前</parameter>を指定すると、そのユーザやグループだけを表示
+します。
+デフォルトはユーザの使用量を表示しますが、-g オプションを指定すると、グ
+ループの使用量を表示します。
+<command>gfedquota</command> と <command>gfquotacheck</command> によっ
+て使用量テーブルを構築すると、ユーザやグループの使用量を利用できます。
 </para>
 </refsect1>
 
 <varlistentry>
 <term><option>-P NAME</option></term>
 <listitem>
-<para>���ꤷ���ѥ�̾�ˤ������Υ᥿�ǡ��������Ф���ꤷ�ޤ���</para>
+<para>指定したパス名により特定のメタデータサーバを指定します。</para>
 </listitem>
 </varlistentry>
 
@@ -48,14 +48,14 @@
 <varlistentry>
 <term><option>-g</option></term>
 <listitem>
-<para>���롼�פλ����̤�ɽ�����ޤ���</para>
+<para>グループの使用量を表示します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
 

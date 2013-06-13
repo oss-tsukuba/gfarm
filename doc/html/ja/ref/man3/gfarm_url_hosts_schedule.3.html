@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfarm_url_hosts_schedule&nbsp;--&nbsp;gfarm �������򥹥����塼�뤹��</DIV
+>gfarm_url_hosts_schedule&nbsp;--&nbsp;gfarm タスクをスケジュールする</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -98,24 +98,24 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->���ꤷ�� Gfarm URL �򥢥��������륿������¹Ԥ���Τ�Ŭ����
-�ۥ��Ȥ������
+>指定した Gfarm URL をアクセスするタスクを実行するのに適した
+ホストの配列を
 <TT
 CLASS="PARAMETER"
 ><I
 >hostsp</I
 ></TT
 >
-�λؤ�����֤��ޤ����ۥ��ȿ���
+の指す先に返します。ホスト数は
 <TT
 CLASS="PARAMETER"
 ><I
 >nhostsp</I
 ></TT
 >
-�λؤ�����֤�ޤ���
-�����������ۥ��Ȥ������ gfarm_strings_free_deeply() ���Ѥ��Ʋ���
-����ɬ�פ�����ޤ���</P
+の指す先に返ります。
+ここで得たホストの配列は gfarm_strings_free_deeply() を用いて解放
+する必要があります。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -136,7 +136,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ｪλ�򼨤��ޤ���</P
+>正常終了を示します。</P
 ></DD
 ><DT
 ><TT
@@ -145,13 +145,13 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->������­�Τ����������ߤ��ޤ�����</P
+>メモリ不足のため処理を中止しました。</P
 ></DD
 ><DT
->����¾</DT
+>その他</DT
 ><DD
 ><P
->�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</P
+>上記以外のエラーが生じたことを示します。</P
 ></DD
 ></DL
 ></DIV
@@ -164,15 +164,15 @@ NAME="NOTES"
 ><H2
 >NOTES</H2
 ><P
->���� 
+>引数 
 <TT
 CLASS="PARAMETER"
 ><I
 >option</I
 ></TT
 >
-�ˤϡ��������塼��󥰤˴ؤ��륪�ץ�������ꤷ�ޤ�����
-���ߤμ����Ǥϡ����ΰ��������Ѥ���Ƥ��ޤ���</P
+には、スケジューリングに関するオプションを指定しますが、
+現在の実装では、この引数は利用されていません。</P
 ></DIV
 ></BODY
 ></HTML

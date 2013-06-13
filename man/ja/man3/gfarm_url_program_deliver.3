@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFARM_URL_PROGRAM_DELIVER" "3" "18 March 2003" "Gfarm" ""
 .SH NAME
-gfarm_url_program_deliver \- �ץ���������ꤷ���ۥ��Ȥ����ۤ���
+gfarm_url_program_deliver \- プログラムを指定したホストに配布する
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,31 +14,31 @@ char *gfarm_url_program_deliver (char *\fIgfarm_url\fB, int \fInhosts\fB, char *
 \fR
 .SH "DESCRIPTION"
 .PP
-\fIgfarm_url\fR�ǻ��ꤷ���ץ�������
+\fIgfarm_url\fRで指定したプログラムを、
 \fInhosts\fR
-�Ĥ����Ǥ����ʸ��������
+個の要素を持つ文字列配列
 \fIhosts\fR
-�ǻ��ꤷ���ۥ��Ȥ����ۤ��ޤ���
-���ۤ��줿�ƥۥ��Ⱦ�ǤΥץ����������Хѥ���
+で指定したホストに配布します。
+配布された各ホスト上でのプログラムの絶対パスを、
 \fInhosts\fR
-�Ĥ����Ǥ����ʸ��������˳�Ǽ������������Υ��ɥ쥹��
+個の要素を持つ文字列配列に格納し、その配列のアドレスを
 \fIdelivered_paths\fR
-���ؤ�����֤��ޤ���
+が指す先に返します。
 \fIdelivered_paths\fR
 .PP
-������ʸ��������ϡ����פˤʤä��� 
+に得た文字列配列は、不要になったら 
 \fBgfarm_strings_free_deeply\fR(3)
-�ǲ�������ɬ�פ�����ޤ���
+で解放する必要があります。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "SEE ALSO"
 .PP
 \fBgfarm_url_program_deliver\fR(3),

@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfperf-parallel-replica&nbsp;--&nbsp;Gfarm �ե�����ʣ������ǽ¬���Ԥ���</DIV
+>gfperf-parallel-replica&nbsp;--&nbsp;Gfarm ファイル複製の性能測定を行う。</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,32 +40,32 @@ CLASS="COMMAND"
 >   -s, --src <TT
 CLASS="REPLACEABLE"
 ><I
->ʣ����gfsd̾</I
+>複製元gfsd名</I
 ></TT
 >   -s, --dst <TT
 CLASS="REPLACEABLE"
 ><I
->ʣ����gfsd̾</I
+>複製先gfsd名</I
 ></TT
 >  [-l, --filesize <TT
 CLASS="REPLACEABLE"
 ><I
->�ե����륵����</I
+>ファイルサイズ</I
 ></TT
 >] [-t, --testdir <TT
 CLASS="REPLACEABLE"
 ><I
->�ƥ��ȥǥ��쥯�ȥ�</I
+>テストディレクトリ</I
 ></TT
 >] [-n, --name <TT
 CLASS="REPLACEABLE"
 ><I
->���롼��̾</I
+>グループ名</I
 ></TT
 >] [-w, --wait <TT
 CLASS="REPLACEABLE"
 ><I
->���ϻ���</I
+>開始時刻</I
 ></TT
 >]</P
 ></DIV
@@ -77,12 +77,12 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->���� <CODE
+>引数 <CODE
 CLASS="PARAMETER"
->�ƥ��ȥǥ��쥯�ȥ�</CODE
-> �˥ƥ����ѤΥե�����������������ʣ����ǽ��¬�ꤷ�ޤ���</P
+>テストディレクトリ</CODE
+> にテスト用のファイルを作成し、その複製性能を測定します。</P
 ><P
->�ܥ��ޥ�ɤ�gfperf.rb��������˸ƽФ���뤳�Ȥ���Ԥ��Ƥ��ޤ���</P
+>本コマンドはgfperf.rbから並列に呼出されることを期待しています。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -102,11 +102,11 @@ CLASS="OPTION"
 >-s, --src</CODE
 > <CODE
 CLASS="PARAMETER"
->ʣ����gfsd̾</CODE
+>複製元gfsd名</CODE
 ></DT
 ><DD
 ><P
->ʣ����gfsd̾����ꤷ�ޤ���</P
+>複製元gfsd名を指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -114,11 +114,11 @@ CLASS="OPTION"
 >-d, --dst</CODE
 > <CODE
 CLASS="PARAMETER"
->ʣ����gfsd̾</CODE
+>複製先gfsd名</CODE
 ></DT
 ><DD
 ><P
->ʣ����gfsd̾����ꤷ�ޤ���</P
+>複製先gfsd名を指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -126,12 +126,12 @@ CLASS="OPTION"
 >-l, --filesize</CODE
 > <CODE
 CLASS="PARAMETER"
->�ե����륵����</CODE
+>ファイルサイズ</CODE
 ></DT
 ><DD
 ><P
->�ƥ��Ȥǻ��Ѥ���ե����륵��������ꤷ�ޤ���
-�ǥե���Ȥ�1M�Ǥ���</P
+>テストで使用するファイルサイズを指定します。
+デフォルトは1Mです。</P
 ></DD
 ><DT
 ><CODE
@@ -139,13 +139,13 @@ CLASS="OPTION"
 >-t, --testdir</CODE
 > <CODE
 CLASS="PARAMETER"
->�ƥ��ȥǥ��쥯�ȥ�</CODE
+>テストディレクトリ</CODE
 ></DT
 ><DD
 ><P
->�ƥ��Ȥ�»ܤ���ǥ��쥯�ȥ����ꤷ�ޤ���
-gfarm url (gfarm:///�ǻϤޤ���) ����ꤷ�ޤ���
-�ǥե���Ȥ�gfarm:///tmp�Ǥ���</P
+>テストを実施するディレクトリを指定します。
+gfarm url (gfarm:///で始まるもの) を指定します。
+デフォルトはgfarm:///tmpです。</P
 ></DD
 ><DT
 ><CODE
@@ -153,11 +153,11 @@ CLASS="OPTION"
 >-n, --name</CODE
 > <CODE
 CLASS="PARAMETER"
->���롼��̾</CODE
+>グループ名</CODE
 ></DT
 ><DD
 ><P
->ʣ����ư���줿�����ܰ��Ȥʤ륰�롼��̾����ꤷ�ޤ���</P
+>複数起動された場合に目印となるグループ名を指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -165,13 +165,13 @@ CLASS="OPTION"
 >-w, --wait</CODE
 > <CODE
 CLASS="PARAMETER"
->���ϻ���</CODE
+>開始時刻</CODE
 ></DT
 ><DD
 ><P
->���ꤵ�줿����ˤʤ�ޤǥƥ��Ȥ򳫻Ϥ��ޤ���
-�̾gfperf.rb�ˤ����ꤵ��ޤ���
-�����UTC�ǻ��ꤵ�졢���߻������10�ðʾ���λ���ϻ���Ǥ��ޤ���</P
+>指定された時刻になるまでテストを開始しません。
+通常、gfperf.rbにより指定されます。
+時刻はUTCで指定され、現在時刻よりも10秒以上先の時刻は指定できません。</P
 ></DD
 ></DL
 ></DIV

@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_chdir</refname>
-<refpurpose>��ȥǥ��쥯�ȥ���ѹ�</refpurpose>
+<refpurpose>作業ディレクトリの変更</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -32,9 +32,9 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>��ȥǥ��쥯�ȥ�����
+<para>作業ディレクトリを引数
 <parameter>gfarm_url</parameter>
-�˻��ꤷ���ǥ��쥯�ȥ���ѹ����ޤ���</para>
+に指定したディレクトリに変更します。</para>
 
 </refsect1>
 
@@ -43,44 +43,44 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
 <listitem>
-<para>gfmd(8) ���Ф���桼����ǧ�ڤ����Ԥ��ޤ�����</para>
+<para>gfmd(8) に対するユーザー認証が失敗しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
-<para>���ꤷ���ǥ��쥯�ȥ���ѹ����븢�¤�����ޤ���</para>
+<para>指定したディレクトリに変更する権限がありません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
-<para>���ꤵ�줿�ǥ��쥯�ȥ꤬¸�ߤ��ޤ���</para>
+<para>指定されたディレクトリが存在しません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
 <listitem>
-<para>���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤϥǥ��쥯�ȥ�Ǥʤ��ä����Ȥ�
-�����ޤ���</para>
+<para>指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

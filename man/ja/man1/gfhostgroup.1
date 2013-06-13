@@ -6,7 +6,7 @@
 .TH "GFHOSTGROUP" "1" "14 June 2012" "Gfarm" ""
 
 .SH NAME
-gfhostgroup \- Gfarm �ۥ��ȥ��롼�״������ޥ��
+gfhostgroup \- Gfarm ホストグループ管理コマンド
 .SH SYNOPSIS
 
 \fBgfhostgroup\fR [ \fB-P \fIpath\fB\fR ] [ \fB\fIhost\fB\fR [ \fB\fIhost\fB\fR\fI ...\fR ] ]
@@ -19,28 +19,28 @@ gfhostgroup \- Gfarm �ۥ��ȥ��롼�״������ޥ��
 
 .SH "DESCRIPTION"
 .PP
-\fBgfhostgroup\fR ��Gfarm �ե����륷���ƥ�ˤ����� Gfarm �ۥ��ȥ��롼��
-�ʤ�����\fB�ե����륷���ƥ�Ρ��ɥ��롼��\fR ��ά���� \fBfsn ���롼��\fR
-�ȸƤФ���Ρˤδ�����Ԥ��ޤ����ۥ��ȥ��롼�פ�\fB��ץꥱ�������°�����ˤ���
-�ե������ץꥱ�������\fR�˻��Ѥ���ޤ���
+\fBgfhostgroup\fR はGfarm ファイルシステムにおける Gfarm ホストグループ
+（いわゆる\fBファイルシステムノードグループ\fR 、略して \fBfsn グループ\fR
+と呼ばれるもの）の管理を行います。ホストグループは\fBレプリケーション属性を基にした
+ファイルレプリケーション\fRに使用されます。
 .PP
-�ǥե���ȤǤ���Ͽ�ѤߤΥۥ��ȥ��롼�פ򤹤٤�ɽ�����ޤ���
-�ۥ��ȥ��롼�� ��ɽ���ϤɤΥ桼���Ǥ�¹ԤǤ��ޤ���
-\fB-s\fR ���ץ����ˤ��ۥ��ȥ��롼�פؤΥۥ����ɲäȡ�
-\fB-r\fR ���ץ����ˤ��ۥ��ȥ��롼�פ���Υۥ��Ȥκ����
-Gfarm �����ԤΤߤ��¹ԤǤ��ޤ���
+デフォルトでは登録済みのホストグループをすべて表示します。
+ホストグループ の表示はどのユーザでも実行できます。
+\fB-s\fR オプションによるホストグループへのホスト追加と、
+\fB-r\fR オプションによるホストグループからのホストの削除は
+Gfarm 管理者のみが実行できます。
 .SH "OPTIONS"
 .TP
 \fB-P path\fR
-���Υ��ޥ�ɤ�������������᥿�ǡ��������Ф����ꤹ�뤿��Υѥ�̾
-�ޤ��� Gfarm URL ����ꤷ�ޤ�����ά�������ϡ�
-��/�פ���ꤷ���Τ�Ʊ����̣�ˤʤ�ޤ��� 
+このコマンドがアクセスするメタデータサーバを特定するためのパス名
+または Gfarm URL を指定します。省略した場合は、
+「/」を指定したのと同じ意味になります。 
 .TP
 \fB-s\fR
-���ꤷ���ۥ��Ȥ�ۥ��ȥ��롼�פ��ɲä��ޤ���
+指定したホストをホストグループに追加します。
 .TP
 \fB-r\fR
-���ꤷ���ۥ��Ȥ�ۥ��ȥ��롼�פ��������ޤ��� 
+指定したホストをホストグループから削除します。 
 .SH "SEE ALSO"
 .PP
 \fBgfrepattr\fR(1)

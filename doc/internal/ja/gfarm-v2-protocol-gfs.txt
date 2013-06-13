@@ -1,97 +1,97 @@
-µ­¹æ¤Î°ÕÌ£:
-	i, l, s ¤Ï¡¢xxx_proto.c ¤Î°·¤¦¥Õ¥©¡¼¥Ş¥Ã¥ÈÊ¸»ú
+è¨˜å·ã®æ„å‘³:
+	i, l, s ã¯ã€xxx_proto.c ã®æ‰±ã†ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆæ–‡å­—
 
-	¥Õ¥©¡¼¥Ş¥Ã¥ÈÊ¸»ú[ÊÑ¿ô] ¤Ï¡¢
-		¡Ö¤½¤Î¥Õ¥©¡¼¥Ş¥Ã¥ÈÊ¸»ú¤ËÂĞ±ş¤¹¤ë·¿¡×¤Î¡ÖÊÑ¿ô¡×²ó¤Î·«¤êÊÖ¤·¡£
-	Îã: s[npaths] ¡Ä Ê¸»úÎó(s) ¤Î npaths ²ó¤Î·«¤êÊÖ¤·
+	ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆæ–‡å­—[å¤‰æ•°] ã¯ã€
+		ã€Œãã®ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆæ–‡å­—ã«å¯¾å¿œã™ã‚‹å‹ã€ã®ã€Œå¤‰æ•°ã€å›ã®ç¹°ã‚Šè¿”ã—ã€‚
+	ä¾‹: s[npaths] â€¦ æ–‡å­—åˆ—(s) ã® npaths å›ã®ç¹°ã‚Šè¿”ã—
 
 ------------------------------------------------------------------------
 
-gfsd ¥×¥í¥È¥³¥ë
+gfsd ãƒ—ãƒ­ãƒˆã‚³ãƒ«
 
-  ¥¯¥é¥¤¥¢¥ó¥È, gfsd ¤«¤é¤Î¥¢¥¯¥»¥¹
+  ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆ, gfsd ã‹ã‚‰ã®ã‚¢ã‚¯ã‚»ã‚¹
 	GFS_PROTO_PROCESS_SET,
-	  ÆşÎÏ: i:type, b:shared_key, l:pid
-	  ½ĞÎÏ: i:¥¨¥é¡¼
+	  å…¥åŠ›: i:type, b:shared_key, l:pid
+	  å‡ºåŠ›: i:ã‚¨ãƒ©ãƒ¼
 
 	GFS_PROTO_OPEN,
-	  ÆşÎÏ:	i:fd
-	  ½ĞÎÏ:	i:¥¨¥é¡¼
+	  å…¥åŠ›:	i:fd
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼
 	GFS_PROTO_OPEN_LOCAL,
-	  ÆşÎÏ:	i:fd
-	  ½ĞÎÏ:	i:¥¨¥é¡¼
-		¥¨¥é¡¼ == GFARM_ERR_NOERROR ¤Î¾ì¹ç:
-		¥Ç¥£¥¹¥¯¥ê¥×¥¿¥Ñ¥Ã¥·¥ó¥°¤òÍÑ¤¤¤Æ¡¢local fd ¤òÊÖ¤¹¡£
+	  å…¥åŠ›:	i:fd
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼
+		ã‚¨ãƒ©ãƒ¼ == GFARM_ERR_NOERROR ã®å ´åˆ:
+		ãƒ‡ã‚£ã‚¹ã‚¯ãƒªãƒ—ã‚¿ãƒ‘ãƒƒã‚·ãƒ³ã‚°ã‚’ç”¨ã„ã¦ã€local fd ã‚’è¿”ã™ã€‚
 	GFS_PROTO_CLOSE,
-	  ÆşÎÏ:	i:fd
-	  ½ĞÎÏ:	i:¥¨¥é¡¼
+	  å…¥åŠ›:	i:fd
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼
 	GFS_PROTO_PREAD,
-	  ÆşÎÏ: i:fd, i:size, l:offset
-	  ½ĞÎÏ:	i:¥¨¥é¡¼, b:data
+	  å…¥åŠ›: i:fd, i:size, l:offset
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼, b:data
 	GFS_PROTO_PWRITE,
-	  ÆşÎÏ: i:fd, b:buffer, l:offset
-	  ½ĞÎÏ:	i:¥¨¥é¡¼, i:length
+	  å…¥åŠ›: i:fd, b:buffer, l:offset
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼, i:length
 	GFS_PROTO_WRITE,
-	  ÆşÎÏ: i:fd, b:buffer
-	  ½ĞÎÏ:	i:¥¨¥é¡¼, i:length, l:offset, l:total_size
+	  å…¥åŠ›: i:fd, b:buffer
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼, i:length, l:offset, l:total_size
 	GFS_PROTO_FTRUNCATE
-	  ÆşÎÏ: i:fd, l:length,
-	  ½ĞÎÏ:	i:¥¨¥é¡¼
+	  å…¥åŠ›: i:fd, l:length,
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼
 	GFS_PROTO_FSYNC
-	  ÆşÎÏ: i:fd, i:operation,
-	  ½ĞÎÏ:	i:¥¨¥é¡¼
+	  å…¥åŠ›: i:fd, i:operation,
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼
 	GFS_PROTO_FSTAT,
-	  ÆşÎÏ: i:fd
-	  ½ĞÎÏ:	i:¥¨¥é¡¼
-		¥¨¥é¡¼ == GFARM_ERR_NOERROR ¤Î¾ì¹ç:
+	  å…¥åŠ›: i:fd
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼
+		ã‚¨ãƒ©ãƒ¼ == GFARM_ERR_NOERROR ã®å ´åˆ:
 		l:size,
 		l:atime_sec, i:atime_nsec
 		l:mtime_sec, i:mtime_nsec
 	GFS_PROTO_CKSUM_SET,
-	  ÆşÎÏ:	i:fd, s:cksum_type, b:cksum
-	  ½ĞÎÏ:	i:¥¨¥é¡¼
+	  å…¥åŠ›:	i:fd, s:cksum_type, b:cksum
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼
 
 	GFS_PROTO_LOCK,
-	  ÆşÎÏ: i:fd, l:start, l:len, i:type, i:whence
-	  ½ĞÎÏ: i:¥¨¥é¡¼
+	  å…¥åŠ›: i:fd, l:start, l:len, i:type, i:whence
+	  å‡ºåŠ›: i:ã‚¨ãƒ©ãƒ¼
 	GFS_PROTO_TRYLOCK,
-	  ÆşÎÏ: i:fd, l:start, l:len, i:type, i:whence
-	  ½ĞÎÏ:	i:¥¨¥é¡¼
+	  å…¥åŠ›: i:fd, l:start, l:len, i:type, i:whence
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼
 	GFS_PROTO_UNLOCK,
-	  ÆşÎÏ: i:fd, l:start, l:len, i:type, i:whence
-	  ½ĞÎÏ:	i:¥¨¥é¡¼
+	  å…¥åŠ›: i:fd, l:start, l:len, i:type, i:whence
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼
 	GFS_PROTO_LOCK_INFO,
-	  ÆşÎÏ: i:fd, l:start, l:len, i:type, i:whence
-	  ½ĞÎÏ:	i:¥¨¥é¡¼
-		¥¨¥é¡¼ == GFARM_ERR_NOERROR ¤Î¾ì¹ç:
+	  å…¥åŠ›: i:fd, l:start, l:len, i:type, i:whence
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼
+		ã‚¨ãƒ©ãƒ¼ == GFARM_ERR_NOERROR ã®å ´åˆ:
 		l:start, l:len, i:type, s:host, l:pid
 
 	GFS_PROTO_REPLICA_ADD,
-	  ÆşÎÏ: i:fd
-	  ½ĞÎÏ:	i:¥¨¥é¡¼
+	  å…¥åŠ›: i:fd
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼
 
 	GFS_PROTO_REPLICA_RECV,
 		XXX
-	  ½ĞÎÏ:	i:¥¨¥é¡¼
-			Â¾¤Î gfsd ¤«¤é¤Î¥¢¥¯¥»¥¹
-			replication manager ¤«¤é¤Î¥¢¥¯¥»¥¹?
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼
+			ä»–ã® gfsd ã‹ã‚‰ã®ã‚¢ã‚¯ã‚»ã‚¹
+			replication manager ã‹ã‚‰ã®ã‚¢ã‚¯ã‚»ã‚¹?
 
 	GFS_PROTO_COMMAND,
-		¤¤¤Ş¤Î¤È¤³¤í v1 ¤ÈÆ±¤¸
+		ã„ã¾ã®ã¨ã“ã‚ v1 ã¨åŒã˜
 
-  gfmd ¤«¤é¤Î back channel
+  gfmd ã‹ã‚‰ã® back channel
 	/* from gfmd */
 
 	GFS_PROTO_FHSTAT
-	  ÆşÎÏ	l:i_node_number, l:i_node_generation
-	  ½ĞÎÏ:	i:¥¨¥é¡¼
-		¥¨¥é¡¼ == GFARM_ERR_NOERROR ¤Î¾ì¹ç:
+	  å…¥åŠ›	l:i_node_number, l:i_node_generation
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼
+		ã‚¨ãƒ©ãƒ¼ == GFARM_ERR_NOERROR ã®å ´åˆ:
 		l:size
 		l:atime_sec, i:atime_nsec,
 		l:mtime_sec, i:mtime_nsec,
-			gfmd ¤«¤é gfsd ¤ËÂĞ¤·¤Æ¡¢i-node ÈÖ¹æ¤ò»ØÄê¤·¤Æ¡¢
-			struct gfs_stat ¤òÌä¤¤¹ç¤ï¤»¤ë¡£
+			gfmd ã‹ã‚‰ gfsd ã«å¯¾ã—ã¦ã€i-node ç•ªå·ã‚’æŒ‡å®šã—ã¦ã€
+			struct gfs_stat ã‚’å•ã„åˆã‚ã›ã‚‹ã€‚
 
 	GFS_PROTO_FHREMOVE
-	  ÆşÎÏ:	l:i_node_number, l:i_node_generation
-	  ½ĞÎÏ:	i:¥¨¥é¡¼
+	  å…¥åŠ›:	l:i_node_number, l:i_node_generation
+	  å‡ºåŠ›:	i:ã‚¨ãƒ©ãƒ¼

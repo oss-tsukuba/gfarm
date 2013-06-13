@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gmonitor3&nbsp;--&nbsp;GLogger 3.0 �Υե�����򥰥�դ�ɽ�����롣</DIV
+>gmonitor3&nbsp;--&nbsp;GLogger 3.0 のファイルをグラフで表示する。</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -41,7 +41,7 @@ CLASS="COMMAND"
 > [<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 >]</P
 ></DIV
@@ -53,9 +53,9 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->GLogger 3.0 �ǽ��Ϥ�����¬�ǡ����ե�����򥰥�դ�ɽ�����ޤ���
-JRE 1.4 �ʹߤδĶ���ɬ�פǤ���
-Linux ��� Java2 SDK 1.4.2 ��ư���ǧ���Ƥ��ޤ���</P
+>GLogger 3.0 で出力した観測データファイルをグラフで表示します。
+JRE 1.4 以降の環境が必要です。
+Linux 上の Java2 SDK 1.4.2 で動作確認しています。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -72,42 +72,42 @@ CLASS="VARIABLELIST"
 ><DT
 ><TT
 CLASS="OPTION"
->-d [�ǥ��쥯�ȥ�̾]</TT
+>-d [ディレクトリ名]</TT
 ></DT
 ><DD
 ><P
->���Υǥ��쥯�ȥ���Ф��ơ�AutoUpdate �⡼�ɤǵ�ư���ޤ���</P
+>このディレクトリに対して、AutoUpdate モードで起動します。</P
 ></DD
 ><DT
 ><TT
 CLASS="OPTION"
->-h [�ۥ���̾]</TT
+>-h [ホスト名]</TT
 ></DT
 ><DD
 ><P
->AutoUpdate ���ץ���������ˡ����Υۥ���̾�Υǡ�����ɽ�����ޤ���
-�����ۥ���̾��̵����С�̵�뤷�ޤ���</P
+>AutoUpdate オプション指定時に、このホスト名のデータを表示します。
+該当ホスト名が無ければ、無視します。</P
 ></DD
 ><DT
 ><TT
 CLASS="OPTION"
->-e [��¬���ݤΥ˥å��͡���]</TT
+>-e [観測事象のニックネーム]</TT
 ></DT
 ><DD
 ><P
->AutoUpdate ���ץ���������ˡ����δ�¬���ݤΥ˥å��͡���Υǡ�����ɽ�����ޤ���
-GLogger ������ǡ�OID ���Ф��ƤĤ����˥å��͡���Ǥ���
-�����˥å��͡��ब̵����С�̵�뤷�ޤ���</P
+>AutoUpdate オプション指定時に、この観測事象のニックネームのデータを表示します。
+GLogger の設定で、OID に対してつけたニックネームです。
+該当ニックネームが無ければ、無視します。</P
 ></DD
 ><DT
 ><TT
 CLASS="OPTION"
->-u [ñ��]</TT
+>-u [単位]</TT
 ></DT
 ><DD
 ><P
->����ñ�̤�ɽ�����ޤ���
-ñ�̤ˤ� bps, KB, Load ������Ǥ��ޤ���</P
+>この単位で表示します。
+単位には bps, KB, Load が指定できます。</P
 ></DD
 ><DT
 ><TT
@@ -116,7 +116,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�إ�פ�ɽ�����ޤ���</P
+>ヘルプを表示します。</P
 ></DD
 ><DT
 ><TT
@@ -125,7 +125,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->����դ�����ä��ޤ���</P
+>グラフの線を消します。</P
 ></DD
 ><DT
 ><TT
@@ -134,7 +134,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->����դ�����ä��ޤ���</P
+>グラフの棒を消します。</P
 ></DD
 ><DT
 ><TT
@@ -143,7 +143,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->����դ�����ä��ޤ���</P
+>グラフの点を消します。</P
 ></DD
 ><DT
 ><TT
@@ -152,7 +152,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->Information ��ʬ�򱣤��ޤ���</P
+>Information 部分を隠します。</P
 ></DD
 ><DT
 ><TT
@@ -161,7 +161,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->Graph Style ��ʬ�򱣤��ޤ���</P
+>Graph Style 部分を隠します。</P
 ></DD
 ><DT
 ><TT
@@ -170,7 +170,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->Unit ��ʬ�򱣤��ޤ���</P
+>Unit 部分を隠します。</P
 ></DD
 ><DT
 ><TT
@@ -179,7 +179,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->Controller ��ʬ�򱣤��ޤ���</P
+>Controller 部分を隠します。</P
 ></DD
 ></DL
 ></DIV

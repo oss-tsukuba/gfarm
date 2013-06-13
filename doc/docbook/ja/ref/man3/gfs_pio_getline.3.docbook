@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_getline</refname>
-<refpurpose>����ɤ߹���</refpurpose>
+<refpurpose>一行読み込み</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -35,24 +35,24 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>�ե�����
+<para>ファイル
 <parameter>gf</parameter>
-���顢ʸ����
+から、文字列
 <parameter>s</parameter>
-�ˡ�����ɤ߹��ߤޤ���
-����
+に、一行読み込みます。
+引数
 <parameter>size</parameter>
-��ʸ������
+に文字配列
 <parameter>s</parameter>
-���礭������ꤷ�ޤ����Ԥ�
+の大きさを指定します。行が
 <parameter>size</parameter>
-��ۤ������ȡ���Ԥ�Ĺ�������礦��
+を越えた場合と、一行の長さがちょうど
 <parameter>size</parameter>
-- 1 ���ä�������̤��뤳�ȤϤǤ��ޤ���
+- 1 だった場合を区別することはできません。
 <acronym>EOF</acronym>
-�ξ��ˤ�
+の場合には
 <parameter>eofp</parameter>
-�λؤ���� 1 ���֤�������ʤ��� 0 ���֤��ޤ���</para>
+の指す先に 1 を返し、さもなくば 0 を返します。</para>
 
 </refsect1>
 
@@ -61,19 +61,19 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

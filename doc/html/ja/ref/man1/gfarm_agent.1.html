@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfarm_agent&nbsp;--&nbsp;Gfarm �᥿�ǡ�������å��奵����</DIV
+>gfarm_agent&nbsp;--&nbsp;Gfarm メタデータキャッシュサーバ</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,7 +40,7 @@ CLASS="COMMAND"
 > [<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 >]</P
 ></DIV
@@ -55,23 +55,23 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfarm_agent</B
-> �ϡ�
-ʣ���Ρ��ɡ�ʣ���桼���Ƕ�ͭ��ǽ��
-Gfarm �ե����륷���ƥࡦ�᥿�ǡ����Υ���å��奵���ФǤ���
-����å��奵���Фˤ�ꡢ
-��֤Υ᥿�ǡ��������Ф��Ф���̵�̤ʥͥåȥ��ž�����������졢
-Gfarm �ե����륷���ƥ���Ф���쥹�ݥ󥹤������˲������ޤ���</P
+> は、
+複数ノード、複数ユーザで共有可能な
+Gfarm ファイルシステム・メタデータのキャッシュサーバです。
+キャッシュサーバにより、
+遠隔のメタデータサーバに対する無駄なネットワーク転送が抑制され、
+Gfarm ファイルシステムに対するレスポンスを大幅に改善します。</P
 ><P
 ><B
 CLASS="COMMAND"
 >gfarm_agent</B
-> �ϡ�
-Ʊ����ʣ���ΥΡ��ɤǼ¹Ԥ��뤳�Ȥ���ǽ�Ǥ���
-���ξ�硢ʣ���� <B
+> は、
+同時に複数のノードで実行することが可能です。
+その場合、複数の <B
 CLASS="COMMAND"
 >gfarm_agent</B
 >
-����� Gfarm �᥿�ǡ��������д֤ΰ�������ݾڤ���ޤ���</P
+および Gfarm メタデータサーバ間の一貫性は保証されます。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -92,13 +92,13 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->������٥�</I
+>ログレベル</I
 ></TT
 ></DT
 ><DD
 ><P
->���Υ��ץ����ǻ��ꤷ����٥�ʾ��ͥ���٤Υ�������Ϥ��ޤ���
-����Ǥ����ͤ� gfarm.conf(5) �� log_level �ι�򻲾Ȥ��Ƥ���������</P
+>このオプションで指定したレベル以上の優先度のログを出力します。
+指定できる値は gfarm.conf(5) の log_level の項を参照してください。</P
 ></DD
 ><DT
 ><CODE
@@ -107,7 +107,7 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->PID�ե�����</I
+>PIDファイル</I
 ></TT
 ></DT
 ><DD
@@ -115,8 +115,8 @@ CLASS="PARAMETER"
 ><B
 CLASS="COMMAND"
 >gfarm_agent</B
-> �� process ID ��
-���ꤷ���ե�����˵�Ͽ���ޤ���</P
+> の process ID を、
+指定したファイルに記録します。</P
 ></DD
 ><DT
 ><CODE
@@ -125,7 +125,7 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->syslog�ե�����ƥ�</I
+>syslogファシリティ</I
 ></TT
 ></DT
 ><DD
@@ -133,9 +133,9 @@ CLASS="PARAMETER"
 ><B
 CLASS="COMMAND"
 >gfarm_agent</B
-> �����顼�����Ѥ���
-syslog �Υե�����ƥ�����ꤷ�ޤ���
-��ά�������ˤϡ�local0 ����Ѥ��ޤ���</P
+> がエラー報告に用いる
+syslog のファシリティを指定します。
+省略した場合には、local0 を使用します。</P
 ></DD
 ><DT
 ><CODE
@@ -144,14 +144,14 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�ǥХå����ץ����Ǥ����ǡ����Ȥ��ƤǤϤʤ����ե������饦��ɡ�
-�ץ������Ȥ���Ω���夬��ޤ���</P
+>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
+プロセスとして立ち上がります。</P
 ><P
->���Υ��ץ�������ꤷ������ <CODE
+>このオプションを指定し、かつ <CODE
 CLASS="OPTION"
 >-L</CODE
-> ���ץ�������ꤷ�ʤ��ä�
-��硢������٥�� debug �Ȥʤ�ޤ���</P
+> オプションを指定しなかった
+場合、ログレベルは debug となります。</P
 ></DD
 ><DT
 ><CODE
@@ -160,12 +160,12 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->����ե�����</I
+>設定ファイル</I
 ></TT
 ></DT
 ><DD
 ><P
->��ư�����ɤ߹�������ե��������ꤷ�ޤ���</P
+>起動時に読み込む設定ファイルを指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -174,12 +174,12 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->ñ��� <B
+>単一の <B
 CLASS="COMMAND"
 >gfarm_agent</B
-> �����Ѥ���������Ѳ�ǽ�Ǥ���
-���Υ��ץ��������Ѥ���ȥѥ�����⥭��å��夹��褦�ˤʤ뤿�ᡢ
-�᥿�ǡ��������ФؤΥ��������������ꡢ��®�ˤʤ�ޤ���</P
+> を利用する場合に利用可能です。
+このオプションを利用するとパス情報もキャッシュするようになるため、
+メタデータサーバへのアクセス数が減り、高速になります。</P
 ></DD
 ><DT
 ><CODE
@@ -188,12 +188,12 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->�ݡ����ֹ�</I
+>ポート番号</I
 ></TT
 ></DT
 ><DD
 ><P
->gfarm_agent �����Ѥ��� TCP �Υݡ����ֹ����ꤷ�ޤ���</P
+>gfarm_agent が利用する TCP のポート番号を指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -202,7 +202,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->ǧ�ڻ��Υ��顼��å������ξܺ٤�ɽ�����ޤ���</P
+>認証時のエラーメッセージの詳細を表示します。</P
 ></DD
 ><DT
 ><CODE
@@ -211,7 +211,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������ץ�����ɽ�����ޤ���</P
+>引数オプションを表示します。</P
 ></DD
 ></DL
 ></DIV
@@ -235,7 +235,7 @@ CLASS="FILENAME"
 ></DT
 ><DD
 ><P
->gfarm_agent �����Ȥ�������ե�����Ǥ���</P
+>gfarm_agent が参照する設定ファイルです。</P
 ></DD
 ></DL
 ></DIV

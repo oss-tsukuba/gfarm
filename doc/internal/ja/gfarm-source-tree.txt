@@ -1,81 +1,81 @@
-¥½¡¼¥¹¥³¡¼¥É¤Î¹½À®¤Ï¡¢²¼µ­¤Î¤è¤¦¤Ë¤Ê¤Ã¤Æ¤¤¤Ş¤¹¡£
+ã‚½ãƒ¼ã‚¹ã‚³ãƒ¼ãƒ‰ã®æ§‹æˆã¯ã€ä¸‹è¨˜ã®ã‚ˆã†ã«ãªã£ã¦ã„ã¾ã™ã€‚
 
 	makes/
-		make ¤ËÍøÍÑ¤·¤Æ¤¤¤ë»ÅÁÈ¤ß
+		make ã«åˆ©ç”¨ã—ã¦ã„ã‚‹ä»•çµ„ã¿
 
-	include/gfarm ¤ª¤è¤Ó
-	 ¢ª À¸À®Êª ${prefix}/include/gfarm/*.h
-		gfarm ¥é¥¤¥Ö¥é¥ê¤Î¥æ¡¼¥¶¡¼ ¤Ø¤Î¸ø³«¥Ø¥Ã¥À
+	include/gfarm ãŠã‚ˆã³
+	 â†’ ç”Ÿæˆç‰© ${prefix}/include/gfarm/*.h
+		gfarm ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã®ãƒ¦ãƒ¼ã‚¶ãƒ¼ ã¸ã®å…¬é–‹ãƒ˜ãƒƒãƒ€
 
-	lib/libgfarm/ ¢ª À¸À®Êª ${prefix}/lib/libgfarm.a
-		gfarm ¥é¥¤¥Ö¥é¥ê
-		¥æ¡¼¥¶¡¼¤Ø¸ø³«¤·¤Ê¤¤´Ø¿ô¤Î prototype Àë¸À¤Ï¡¢
-		¤³¤Á¤é¤Î¥Ç¥£¥ì¥¯¥È¥ê°Ê²¼¤Î *.h ¤Ë¤¢¤ë¡£¤³¤Á¤é¤Î¥Ø¥Ã¥À
-		¤Ï¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Ê¤¤¡£
+	lib/libgfarm/ â†’ ç”Ÿæˆç‰© ${prefix}/lib/libgfarm.a
+		gfarm ãƒ©ã‚¤ãƒ–ãƒ©ãƒª
+		ãƒ¦ãƒ¼ã‚¶ãƒ¼ã¸å…¬é–‹ã—ãªã„é–¢æ•°ã® prototype å®£è¨€ã¯ã€
+		ã“ã¡ã‚‰ã®ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªä»¥ä¸‹ã® *.h ã«ã‚ã‚‹ã€‚ã“ã¡ã‚‰ã®ãƒ˜ãƒƒãƒ€
+		ã¯ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚Œãªã„ã€‚
 
 		gfutil/
-			gfarm ¤È GFSL ¤ÎÁĞÊı¤«¤éÍøÍÑ¤µ¤ì¤ëÉôÊ¬¤ò
-			ÀÚ¤ê½Ğ¤·¤¿¤â¤Î¡£
-				libgfarm/gfsl  ¢ª libgfarm/gfutil
-				libgfarm/gfarm ¢ª libgfarm/gfsl
-				libgfarm/gfarm ¢ª libgfarm/gfutil
-			¤È¤¤¤¦°ÍÂ¸´Ø·¸¤Ë¤Ê¤ë¡£
+			gfarm ã¨ GFSL ã®åŒæ–¹ã‹ã‚‰åˆ©ç”¨ã•ã‚Œã‚‹éƒ¨åˆ†ã‚’
+			åˆ‡ã‚Šå‡ºã—ãŸã‚‚ã®ã€‚
+				libgfarm/gfsl  â†’ libgfarm/gfutil
+				libgfarm/gfarm â†’ libgfarm/gfsl
+				libgfarm/gfarm â†’ libgfarm/gfutil
+			ã¨ã„ã†ä¾å­˜é–¢ä¿‚ã«ãªã‚‹ã€‚
 
 		gfsl/
-			GFSL - GFarm Security Layer¡£
-			globus ¤Î security layer ¤Ç¤¢¤ë GSI ¤È¤Î glue¡£
-			devtty@SourceForge ºîÀ®¡£
-			/usr/prj/etl/doc/GFSL/ »²¾È¡£
-			¤«¤Ä¤Æ¤Ï¡¢${prefix}/lib/libgfsl.a ¤È¤¤¤¦ÆÈÎ©¤·¤¿
-			¥é¥¤¥Ö¥é¥ê¤À¤Ã¤¿¡£
+			GFSL - GFarm Security Layerã€‚
+			globus ã® security layer ã§ã‚ã‚‹ GSI ã¨ã® glueã€‚
+			devtty@SourceForge ä½œæˆã€‚
+			/usr/prj/etl/doc/GFSL/ å‚ç…§ã€‚
+			ã‹ã¤ã¦ã¯ã€${prefix}/lib/libgfsl.a ã¨ã„ã†ç‹¬ç«‹ã—ãŸ
+			ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã ã£ãŸã€‚
 
 		gfarm/
-			gfarm ¥é¥¤¥Ö¥é¥ê¤ÎËÜÂÎ
+			gfarm ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã®æœ¬ä½“
 
-	lib/gfs_hook/ ¢ª À¸À®Êª ${prefix}/lib/{gfs_hook.o,gfs_hook_debug.o}
-		open(2) ¤ä read(2), write(2) ¤Ê¤É¡¢UNIX É¸½à¤Î
-		´Ø¿ô¤òÃÖ¤­´¹¤¨¡¢"gfarm:¡ß¡ß" ¤È¤¤¤¦¥Õ¥¡¥¤¥ë¤Ø¤Î
-		¥¢¥¯¥»¥¹¤Ï¡¢gfarm ¥é¥¤¥Ö¥é¥ê¤Ø¤Î¸Æ¤Ó¤À¤·¤ËÊÑ¹¹
-		¤¹¤ë»ÅÁÈ¤ß¡£
+	lib/gfs_hook/ â†’ ç”Ÿæˆç‰© ${prefix}/lib/{gfs_hook.o,gfs_hook_debug.o}
+		open(2) ã‚„ read(2), write(2) ãªã©ã€UNIX æ¨™æº–ã®
+		é–¢æ•°ã‚’ç½®ãæ›ãˆã€"gfarm:Ã—Ã—" ã¨ã„ã†ãƒ•ã‚¡ã‚¤ãƒ«ã¸ã®
+		ã‚¢ã‚¯ã‚»ã‚¹ã¯ã€gfarm ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã¸ã®å‘¼ã³ã ã—ã«å¤‰æ›´
+		ã™ã‚‹ä»•çµ„ã¿ã€‚
 		
-	server/gfmd/ ¢ª À¸À®Êª ${prefix}/sbin/gfmd
-		¥á¥¿¥Ç¡¼¥¿¡¦¥µ¡¼¥Ğ¡¼
+	server/gfmd/ â†’ ç”Ÿæˆç‰© ${prefix}/sbin/gfmd
+		ãƒ¡ã‚¿ãƒ‡ãƒ¼ã‚¿ãƒ»ã‚µãƒ¼ãƒãƒ¼
 
-	server/gfsd/ ¢ª À¸À®Êª ${prefix}/sbin/gfsd
-		³Æ¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤ÇÆ°ºî¤·¡¢¥Õ¥¡¥¤¥ëÆâÍÆ¤Ø¤Î¥¢¥¯¥»¥¹¤ò
-		Äó¶¡¤¹¤ë¥µ¡¼¥Ğ¡¼¡£
+	server/gfsd/ â†’ ç”Ÿæˆç‰© ${prefix}/sbin/gfsd
+		å„ãƒ•ã‚¡ã‚¤ãƒ«ã‚·ã‚¹ãƒ†ãƒ ãƒãƒ¼ãƒ‰ã§å‹•ä½œã—ã€ãƒ•ã‚¡ã‚¤ãƒ«å†…å®¹ã¸ã®ã‚¢ã‚¯ã‚»ã‚¹ã‚’
+		æä¾›ã™ã‚‹ã‚µãƒ¼ãƒãƒ¼ã€‚
 
-	gftools/ ¢ª ${prefix}/bin/*
-		gfarm ´Ø·¸¤Î³Æ¼ï¥³¥Ş¥ó¥É
-		¾Ü¤·¤¯¤Ï man1, man8 »²¾È
+	gftools/ â†’ ${prefix}/bin/*
+		gfarm é–¢ä¿‚ã®å„ç¨®ã‚³ãƒãƒ³ãƒ‰
+		è©³ã—ãã¯ man1, man8 å‚ç…§
 
-	gfptools/ ¢ª ${prefix}/bin/*
-		gfarm ¥¹¥×¡¼¥ë (gfarm:...) ¤Ë¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤ë¥Ğ¥¤¥Ê¥ê
+	gfptools/ â†’ ${prefix}/bin/*
+		gfarm ã‚¹ãƒ—ãƒ¼ãƒ« (gfarm:...) ã«ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚Œã‚‹ãƒã‚¤ãƒŠãƒª
 
-	bench/ ¢ª ${prefix}/bin/* (¥Ç¥Õ¥©¡¼¥ë¥È¤Ç¤ÏÀ¸À®¤·¤Ê¤¤)
-		gfarm ¤ÇÍøÍÑ¤·¤Æ¤¤¤ë¥Ù¥ó¥Á¥Ş¡¼¥¯¡¦¥×¥í¥°¥é¥à
+	bench/ â†’ ${prefix}/bin/* (ãƒ‡ãƒ•ã‚©ãƒ¼ãƒ«ãƒˆã§ã¯ç”Ÿæˆã—ãªã„)
+		gfarm ã§åˆ©ç”¨ã—ã¦ã„ã‚‹ãƒ™ãƒ³ãƒãƒãƒ¼ã‚¯ãƒ»ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
 
-	doc/ ¢ª À¸À®Êª ${prefix}/share/doc/
+	doc/ â†’ ç”Ÿæˆç‰© ${prefix}/share/doc/
 
-		doc/docbook/{en,ja}/ref/ ¢ª ¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Ê¤¤
-			¤Û¤È¤ó¤É¤Î man page ¤È HTML ¥Õ¥¡¥¤¥ë¤Ï¡¢¤³¤³¤Ë
-			¤¢¤ë DocBook ·Á¼°¤Î SGML ¥Õ¥¡¥¤¥ë¤«¤é¼«Æ°À¸À®
-			¤µ¤ì¤Æ¤¤¤ë¡£
-			ÊÑ¹¹¼ê½ç¤Ï¡¢²¼µ­¤ÎÄÌ¤ê¡£
-			1. doc/docbook/{en,ja}/ref/ ¤Î²¼¤ò½¤Àµ¡¢¥³¥ß¥Ã¥È
-			2. "make man" ¤ò¼Â¹Ô¤·¡¢man page ¤òºÆÀ¸À®¤¹¤ë¡£
-			3. "make html" ¤ò¼Â¹Ô¤·¡¢html ¥Õ¥¡¥¤¥ë¤òºÆÀ¸À®¤¹¤ë¡£
-			4. man page ¤È html ¥Õ¥¡¥¤¥ë¤ò¥³¥ß¥Ã¥È
+		doc/docbook/{en,ja}/ref/ â†’ ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚Œãªã„
+			ã»ã¨ã‚“ã©ã® man page ã¨ HTML ãƒ•ã‚¡ã‚¤ãƒ«ã¯ã€ã“ã“ã«
+			ã‚ã‚‹ DocBook å½¢å¼ã® SGML ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰è‡ªå‹•ç”Ÿæˆ
+			ã•ã‚Œã¦ã„ã‚‹ã€‚
+			å¤‰æ›´æ‰‹é †ã¯ã€ä¸‹è¨˜ã®é€šã‚Šã€‚
+			1. doc/docbook/{en,ja}/ref/ ã®ä¸‹ã‚’ä¿®æ­£ã€ã‚³ãƒŸãƒƒãƒˆ
+			2. "make man" ã‚’å®Ÿè¡Œã—ã€man page ã‚’å†ç”Ÿæˆã™ã‚‹ã€‚
+			3. "make html" ã‚’å®Ÿè¡Œã—ã€html ãƒ•ã‚¡ã‚¤ãƒ«ã‚’å†ç”Ÿæˆã™ã‚‹ã€‚
+			4. man page ã¨ html ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ã‚³ãƒŸãƒƒãƒˆ
 
-		doc/html/{en,ja}/ref/ ¢ª À¸À®Êª ${prefix}/share/doc/html/
-			¤³¤³¤Ë¤¢¤ë¥Õ¥¡¥¤¥ë¤Ï¡¢¤Û¤È¤ó¤ÉÁ´¤Æ
-			doc/docbook/{en,ja}/ref/ ¤«¤éÀ¸À®¤µ¤ì¤Æ¤¤¤ë¡£
-			½¾¤Ã¤Æ¡¢¥Ş¥Ë¥å¥¢¥ë¤Î¹¹¿·¤Ï¡¢Ä¾ÀÜ¤³¤³¤òÊÑ¹¹¤¹¤ë
-			¤Î¤Ç¤Ï¤Ê¤¯¡¢doc/docbook/{en,ja}/ref/ ¤òÊÑ¹¹¤¹¤ë
-			É¬Í×¤¬¤¢¤ë¡£
-			doc/docbook/{en,ja}/ref/ ¤ò»²¾È¡£
+		doc/html/{en,ja}/ref/ â†’ ç”Ÿæˆç‰© ${prefix}/share/doc/html/
+			ã“ã“ã«ã‚ã‚‹ãƒ•ã‚¡ã‚¤ãƒ«ã¯ã€ã»ã¨ã‚“ã©å…¨ã¦
+			doc/docbook/{en,ja}/ref/ ã‹ã‚‰ç”Ÿæˆã•ã‚Œã¦ã„ã‚‹ã€‚
+			å¾“ã£ã¦ã€ãƒãƒ‹ãƒ¥ã‚¢ãƒ«ã®æ›´æ–°ã¯ã€ç›´æ¥ã“ã“ã‚’å¤‰æ›´ã™ã‚‹
+			ã®ã§ã¯ãªãã€doc/docbook/{en,ja}/ref/ ã‚’å¤‰æ›´ã™ã‚‹
+			å¿…è¦ãŒã‚ã‚‹ã€‚
+			doc/docbook/{en,ja}/ref/ ã‚’å‚ç…§ã€‚
 
-			¤¿¤À¤·¡¢°Ê²¼¤Î¥Õ¥¡¥¤¥ë¤ÏÎã³°¤Ç¡¢ÊÌÅÓ¼ê¤ÇÊİ¼é¤¹¤ë¡£
+			ãŸã ã—ã€ä»¥ä¸‹ã®ãƒ•ã‚¡ã‚¤ãƒ«ã¯ä¾‹å¤–ã§ã€åˆ¥é€”æ‰‹ã§ä¿å®ˆã™ã‚‹ã€‚
 			doc/html/index.html
 			doc/html/pic/*
 			doc/html/en/ref/index.html
@@ -83,196 +83,196 @@
 			doc/html/en/user/*
 			doc/html/ja/user/*
 
-	man/ ¢ª À¸À®Êª ${prefix}/man/
-		¤³¤³¤Ë¤¢¤ë¥Õ¥¡¥¤¥ë¤Ï¡¢Á´¤Æ
-		doc/docbook/{en,ja}/ref/ ¤«¤éÀ¸À®¤µ¤ì¤Æ¤¤¤ë¡£
-		½¾¤Ã¤Æ¡¢¥Ş¥Ë¥å¥¢¥ë¤Î¹¹¿·¤Ï¡¢Ä¾ÀÜ¤³¤³¤òÊÑ¹¹¤¹¤ë¤Î¤Ç¤Ï¤Ê¤¯¡¢
-		doc/docbook/{en,ja}/ref/ ¤òÊÑ¹¹¤¹¤ëÉ¬Í×¤¬¤¢¤ë¡£
-		doc/docbook/{en,ja}/ref/ ¤ò»²¾È¡£
+	man/ â†’ ç”Ÿæˆç‰© ${prefix}/man/
+		ã“ã“ã«ã‚ã‚‹ãƒ•ã‚¡ã‚¤ãƒ«ã¯ã€å…¨ã¦
+		doc/docbook/{en,ja}/ref/ ã‹ã‚‰ç”Ÿæˆã•ã‚Œã¦ã„ã‚‹ã€‚
+		å¾“ã£ã¦ã€ãƒãƒ‹ãƒ¥ã‚¢ãƒ«ã®æ›´æ–°ã¯ã€ç›´æ¥ã“ã“ã‚’å¤‰æ›´ã™ã‚‹ã®ã§ã¯ãªãã€
+		doc/docbook/{en,ja}/ref/ ã‚’å¤‰æ›´ã™ã‚‹å¿…è¦ãŒã‚ã‚‹ã€‚
+		doc/docbook/{en,ja}/ref/ ã‚’å‚ç…§ã€‚
 
-³Æ¥½¡¼¥¹¡¦¥Õ¥¡¥¤¥ë¤Ï¡¢²¼µ­¤Î¤è¤¦¤Êµ¡Ç½Ê¬Ã´¤Ë¤Ê¤Ã¤Æ¤¤¤Ş¤¹¡£
+å„ã‚½ãƒ¼ã‚¹ãƒ»ãƒ•ã‚¡ã‚¤ãƒ«ã¯ã€ä¸‹è¨˜ã®ã‚ˆã†ãªæ©Ÿèƒ½åˆ†æ‹…ã«ãªã£ã¦ã„ã¾ã™ã€‚
 
-ChangeLog	ÊÑ¹¹¥í¥°¡£gfarm-cvs@apgrid.org ¤ËÎ®¤ì¤¿¥á¡¼¥ë¤ò¸µ¤Ë¡¢
-		·úÉô¤µ¤ó¤¬»ş¡¹À¸À®¡£
-INSTALL.en	¥¤¥ó¥¹¥È¡¼¥ë¡¦¥É¥­¥å¥á¥ó¥È ±Ñ¸ìÈÇ
-INSTALL.ja	¥¤¥ó¥¹¥È¡¼¥ë¡¦¥É¥­¥å¥á¥ó¥È ÆüËÜ¸ìÈÇ
+ChangeLog	å¤‰æ›´ãƒ­ã‚°ã€‚gfarm-cvs@apgrid.org ã«æµã‚ŒãŸãƒ¡ãƒ¼ãƒ«ã‚’å…ƒã«ã€
+		å»ºéƒ¨ã•ã‚“ãŒæ™‚ã€…ç”Ÿæˆã€‚
+INSTALL.en	ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ãƒ»ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆ è‹±èªç‰ˆ
+INSTALL.ja	ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ãƒ»ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆ æ—¥æœ¬èªç‰ˆ
 
-Makefile.in		Makefile ¤Î¥Æ¥ó¥×¥ì¡¼¥È
-			configure ¥³¥Ş¥ó¥É¤ò¼Â¹Ô¤¹¤ë¤È¡¢¤³¤ì¤ò¸µ¤Ë
-			Makefile ¤òºîÀ®¤¹¤ë¡£
-configure.ac		configure ¥¹¥¯¥ê¥×¥È¤Î¥½¡¼¥¹¥³¡¼¥É
-configure		autoconf ¥³¥Ş¥ó¥É¤ò¼Â¹Ô¤¹¤ë¤È¡¢
-			configure.in ¤ò¸µ¤Ë¼«Æ°À¸À®¤µ¤ì¤ë¡£
+Makefile.in		Makefile ã®ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆ
+			configure ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè¡Œã™ã‚‹ã¨ã€ã“ã‚Œã‚’å…ƒã«
+			Makefile ã‚’ä½œæˆã™ã‚‹ã€‚
+configure.ac		configure ã‚¹ã‚¯ãƒªãƒ—ãƒˆã®ã‚½ãƒ¼ã‚¹ã‚³ãƒ¼ãƒ‰
+configure		autoconf ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè¡Œã™ã‚‹ã¨ã€
+			configure.in ã‚’å…ƒã«è‡ªå‹•ç”Ÿæˆã•ã‚Œã‚‹ã€‚
 include/gfarm/gfarm_config.h.in
-			gfarm_config.h ¤Î¥Æ¥ó¥×¥ì¡¼¥È
-			autoheader ¥³¥Ş¥ó¥É¤ò¼Â¹Ô¤¹¤ë¤È¡¢
-			configure.ac ¤ò¸µ¤Ë¼«Æ°À¸À®¤µ¤ì¤ë¡£
+			gfarm_config.h ã®ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆ
+			autoheader ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè¡Œã™ã‚‹ã¨ã€
+			configure.ac ã‚’å…ƒã«è‡ªå‹•ç”Ÿæˆã•ã‚Œã‚‹ã€‚
 
 makes/
-	config.mk.in	config.mk ¤Î¥Æ¥ó¥×¥ì¡¼¥È
-			configure ¥³¥Ş¥ó¥É¤ò¼Â¹Ô¤¹¤ë¤È¡¢¤³¤ì¤ò¸µ¤Ë
-			config.mk ¤òºîÀ®¤¹¤ë¡£
-			ÄÌ¾ï¤Î Makefile ¤Ï¡¢var.mk ·ĞÍ³¤Ç¡¢´ÖÀÜÅª¤Ë
-			config.mk ¤òÆÉ¤ß¹ş¤à¡£
-	man.mk		man ¥Ç¥£¥ì¥¯¥È¥êÍÑ¤Î¶¦ÄÌ Makefile
-	prog.mk		¥×¥í¥°¥é¥à¡¦¥Ç¥£¥ì¥¯¥È¥êÍÑ¤Î¶¦ÄÌ Makefile
-	subdir.mk	¥µ¥Ö¥Ç¥£¥ì¥¯¥È¥ê¤ËÂĞ¤·¤Æ make ¤ò¸Æ¤Ó½Ğ¤¹¾ì¹çÍÑ¤Î
-			¶¦ÄÌ Makefile
-	var.mk		³Æ Makefile ¤Ë¶¦ÄÌ¤¹¤ë make ÊÑ¿ôÀßÄê
-			³Æ Makefile ¤Ï²¼µ­¤Î¹Ô¤ò´Ş¤à¡£
+	config.mk.in	config.mk ã®ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆ
+			configure ã‚³ãƒãƒ³ãƒ‰ã‚’å®Ÿè¡Œã™ã‚‹ã¨ã€ã“ã‚Œã‚’å…ƒã«
+			config.mk ã‚’ä½œæˆã™ã‚‹ã€‚
+			é€šå¸¸ã® Makefile ã¯ã€var.mk çµŒç”±ã§ã€é–“æ¥çš„ã«
+			config.mk ã‚’èª­ã¿è¾¼ã‚€ã€‚
+	man.mk		man ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªç”¨ã®å…±é€š Makefile
+	prog.mk		ãƒ—ãƒ­ã‚°ãƒ©ãƒ ãƒ»ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªç”¨ã®å…±é€š Makefile
+	subdir.mk	ã‚µãƒ–ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã«å¯¾ã—ã¦ make ã‚’å‘¼ã³å‡ºã™å ´åˆç”¨ã®
+			å…±é€š Makefile
+	var.mk		å„ Makefile ã«å…±é€šã™ã‚‹ make å¤‰æ•°è¨­å®š
+			å„ Makefile ã¯ä¸‹è¨˜ã®è¡Œã‚’å«ã‚€ã€‚
 				include $(top_srcdir)/makes/var.mk
-	install-sh	¥¤¥ó¥¹¥È¡¼¥ë¥³¥Ş¥ó¥É
-	config.guess	autoconf ¥Ñ¥Ã¥±¡¼¥¸¤Î°ìÉô¡£
-			configure ¤¬¸Æ¤Ó½Ğ¤¹¥µ¥Ö¡¦¥³¥Ş¥ó¥É¡£
-	config.sub	autoconf ¥Ñ¥Ã¥±¡¼¥¸¤Î°ìÉô¡£
-			configure ¤¬¸Æ¤Ó½Ğ¤¹¥µ¥Ö¡¦¥³¥Ş¥ó¥É¡£
+	install-sh	ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã‚³ãƒãƒ³ãƒ‰
+	config.guess	autoconf ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã®ä¸€éƒ¨ã€‚
+			configure ãŒå‘¼ã³å‡ºã™ã‚µãƒ–ãƒ»ã‚³ãƒãƒ³ãƒ‰ã€‚
+	config.sub	autoconf ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã®ä¸€éƒ¨ã€‚
+			configure ãŒå‘¼ã³å‡ºã™ã‚µãƒ–ãƒ»ã‚³ãƒãƒ³ãƒ‰ã€‚
 
 include/gfarm/
-	¤³¤³¤Î Makefile ¤Ï¡¢²¼µ­¤Î·Á¼°¤ÇÆÉ¤ß¹ş¤à¡£
-		#include <gfarm/¤Ê¤ó¤È¤«.h>
+	ã“ã“ã® Makefile ã¯ã€ä¸‹è¨˜ã®å½¢å¼ã§èª­ã¿è¾¼ã‚€ã€‚
+		#include <gfarm/ãªã‚“ã¨ã‹.h>
 
-	error.h		¥¨¥é¡¼¥³¡¼¥ÉÄêµÁ
-	gfs.h		gfarm ¥Õ¥¡¥¤¥ë¥¢¥¯¥»¥¹
-	gfarm_misc.h	¤½¤ÎÂ¾¤â¤í¤â¤í
-	gfarm.h		¾åµ­¤¹¤Ù¤Æ¤Î¥Ø¥Ã¥À¤ª¤è¤Ó <gfarm/gfarm_config.h> ¤ò
-			¤Ş¤È¤á¤ÆÆÉ¤ß¹ş¤à
+	error.h		ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰å®šç¾©
+	gfs.h		gfarm ãƒ•ã‚¡ã‚¤ãƒ«ã‚¢ã‚¯ã‚»ã‚¹
+	gfarm_misc.h	ãã®ä»–ã‚‚ã‚ã‚‚ã‚
+	gfarm.h		ä¸Šè¨˜ã™ã¹ã¦ã®ãƒ˜ãƒƒãƒ€ãŠã‚ˆã³ <gfarm/gfarm_config.h> ã‚’
+			ã¾ã¨ã‚ã¦èª­ã¿è¾¼ã‚€
 
 lib/Makefile
 
 lib/libgfarm/gfutil/
-	hash.h		¥Ï¥Ã¥·¥å´Ø¿ô
+	hash.h		ãƒãƒƒã‚·ãƒ¥é–¢æ•°
 	hash.c
 
-	gfevent.h	ÊÂÎó¥¢¥¯¥»¥¹ÍÑ select()/poll() wrapper
+	gfevent.h	ä¸¦åˆ—ã‚¢ã‚¯ã‚»ã‚¹ç”¨ select()/poll() wrapper
 	gfevent.c
 
 	gfutil.h	
-	logutil.c	¥Ç¡¼¥â¥óÍÑ¥í¥°´Ø¿ô
-	daemon.c	deamon(3) ¥æ¡¼¥Æ¥£¥ê¥Æ¥£´Ø¿ô¡£¥Ç¡¼¥â¥óÍÑ¡£
-	limit.c		limit ´Ø·¸ ¥æ¡¼¥Æ¥£¥ê¥Æ¥£´Ø¿ô¡£¥Ç¡¼¥â¥ó¤«¤é¸Æ¤Ğ¤ì¤ë¡£
+	logutil.c	ãƒ‡ãƒ¼ãƒ¢ãƒ³ç”¨ãƒ­ã‚°é–¢æ•°
+	daemon.c	deamon(3) ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£é–¢æ•°ã€‚ãƒ‡ãƒ¼ãƒ¢ãƒ³ç”¨ã€‚
+	limit.c		limit é–¢ä¿‚ ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£é–¢æ•°ã€‚ãƒ‡ãƒ¼ãƒ¢ãƒ³ã‹ã‚‰å‘¼ã°ã‚Œã‚‹ã€‚
 
 lib/libgfarm/gfarm/
 
 	Makefile.in
 
-	liberror.c	<gfarm/gfarm_error.h> ¤Î¥¨¥é¡¼¥³¡¼¥ÉÄêµÁ
+	liberror.c	<gfarm/gfarm_error.h> ã®ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰å®šç¾©
 
-	iobuffer.h	Æş½ĞÎÏÍÑ fifo ¥Ğ¥Ã¥Õ¥¡¡£gfp_xdr ¤Î²¼ÀÁ¤±¤À¤¬¡¢
-			gfp_xdr ¤ÎÍøÍÑ¼Ô¤«¤éÄ¾ÀÜ¸Æ¤Ó¤À¤µ¤ì¤ë¤³¤È¤â¤¢¤ë¡£
+	iobuffer.h	å…¥å‡ºåŠ›ç”¨ fifo ãƒãƒƒãƒ•ã‚¡ã€‚gfp_xdr ã®ä¸‹è«‹ã‘ã ãŒã€
+			gfp_xdr ã®åˆ©ç”¨è€…ã‹ã‚‰ç›´æ¥å‘¼ã³ã ã•ã‚Œã‚‹ã“ã¨ã‚‚ã‚ã‚‹ã€‚
 	iobuffer.c
 			
-	gfp_xdr.h	ÄÌ¿®¡¢RPC ¤Ë¤ª¤¤¤Æ XDR ¤ËÁêÅö¤¹¤ë½èÍı
+	gfp_xdr.h	é€šä¿¡ã€RPC ã«ãŠã„ã¦ XDR ã«ç›¸å½“ã™ã‚‹å‡¦ç†
 	gfp_xdr.c
-	io_fd.h		gfp_xdr ¤Î²¼ÀÁ¤±¡£file descriptor ·ĞÍ³¤Î I/O ¤òÄó¶¡
+	io_fd.h		gfp_xdr ã®ä¸‹è«‹ã‘ã€‚file descriptor çµŒç”±ã® I/O ã‚’æä¾›
 	io_fd.c
-	io_gfsl.c	gfp_xdr ¤Î²¼ÀÁ¤±¡£GFSL ·ĞÍ³¤Î I/O ¤òÄó¶¡
+	io_gfsl.c	gfp_xdr ã®ä¸‹è«‹ã‘ã€‚GFSL çµŒç”±ã® I/O ã‚’æä¾›
 	io_gfsl.h
 
-	hostspec.h	ÀßÄê¥Õ¥¡¥¤¥ëÃæ¤Î¥Û¥¹¥È¡¦¥Í¥Ã¥È¥ï¡¼¥¯¡¦¥¢¥É¥ì¥¹½èÍı
+	hostspec.h	è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ä¸­ã®ãƒ›ã‚¹ãƒˆãƒ»ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ãƒ»ã‚¢ãƒ‰ãƒ¬ã‚¹å‡¦ç†
 	hostspec.c
-	param.h		ÀßÄê¥Õ¥¡¥¤¥ëÃæ¤Î netparam ¥ª¥×¥·¥ç¥ó½èÍı
+	param.h		è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ä¸­ã® netparam ã‚ªãƒ—ã‚·ãƒ§ãƒ³å‡¦ç†
 	param.c
-	sockopt.c	ÀßÄê¥Õ¥¡¥¤¥ëÃæ¤Î sockopt ¥ª¥×¥·¥ç¥ó½èÍı
+	sockopt.c	è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ä¸­ã® sockopt ã‚ªãƒ—ã‚·ãƒ§ãƒ³å‡¦ç†
 	sockopt.h
-	config.c	ÀßÄê¥Õ¥¡¥¤¥ëÆÉ¤ß¹ş¤ß
+	config.c	è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«èª­ã¿è¾¼ã¿
 
-	host.h		host ¤Î¥¢¥É¥ì¥¹²ò·èÅù
+	host.h		host ã®ã‚¢ãƒ‰ãƒ¬ã‚¹è§£æ±ºç­‰
 	host.c
-		host.h ¤Î canonical_hostname ¤Ë´Ø¤¹¤ë½èÍı¤Ï¡¢¥á¥¿¥Ç¡¼¥¿¤Ø¤Î
-		¥¢¥¯¥»¥¹¤¬¤¢¤ë¤Î¤Ç¡¢Ãí°Õ¤¬É¬Í×¡£
-		¤½¤ì¤é¤Ë¤Ä¤¤¤Æ¤Ï¡¢gfs_client ¤ª¤è¤Ó gfsd/gfmd ¤«¤é¤Ï
-		¸Æ¤Ó½Ğ¤»¤Ê¤¤¡£
+		host.h ã® canonical_hostname ã«é–¢ã™ã‚‹å‡¦ç†ã¯ã€ãƒ¡ã‚¿ãƒ‡ãƒ¼ã‚¿ã¸ã®
+		ã‚¢ã‚¯ã‚»ã‚¹ãŒã‚ã‚‹ã®ã§ã€æ³¨æ„ãŒå¿…è¦ã€‚
+		ãã‚Œã‚‰ã«ã¤ã„ã¦ã¯ã€gfs_client ãŠã‚ˆã³ gfsd/gfmd ã‹ã‚‰ã¯
+		å‘¼ã³å‡ºã›ãªã„ã€‚
 
-	auth.h		Ç§¾Ú¥é¥¤¥Ö¥é¥ê
-	auth_common.c	Ç§¾ÚÍÑ¤Î¶¦ÄÌ´Ø¿ô
-	auth_client.c		Ç§¾Ú¡¢¥¯¥é¥¤¥¢¥ó¥ÈÂ¦
-	auth_client_gsi.c	GFSL/GSI Ç§¾Ú¡¢¥¯¥é¥¤¥¢¥ó¥ÈÂ¦
-	auth_server.c		Ç§¾Ú¡¢¥µ¡¼¥Ğ¡¼Â¦
-	auth_server_gsi.c	GFSL/GSI Ç§¾Ú¡¢¥µ¡¼¥Ğ¡¼Â¦
-	auth_config.c		Ç§¾Ú¤Ë´Ø¤¹¤ëÀßÄê¥Õ¥¡¥¤¥ë¤Î½èÍı
+	auth.h		èªè¨¼ãƒ©ã‚¤ãƒ–ãƒ©ãƒª
+	auth_common.c	èªè¨¼ç”¨ã®å…±é€šé–¢æ•°
+	auth_client.c		èªè¨¼ã€ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆå´
+	auth_client_gsi.c	GFSL/GSI èªè¨¼ã€ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆå´
+	auth_server.c		èªè¨¼ã€ã‚µãƒ¼ãƒãƒ¼å´
+	auth_server_gsi.c	GFSL/GSI èªè¨¼ã€ã‚µãƒ¼ãƒãƒ¼å´
+	auth_config.c		èªè¨¼ã«é–¢ã™ã‚‹è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ã®å‡¦ç†
 
-	gfm_proto.h	gfmd ¥×¥í¥È¥³¥ëÄêµÁ
-	gfm_client.c	gfmd ¥¯¥é¥¤¥¢¥ó¥ÈÂ¦ RPC stub
+	gfm_proto.h	gfmd ãƒ—ãƒ­ãƒˆã‚³ãƒ«å®šç¾©
+	gfm_client.c	gfmd ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆå´ RPC stub
 
-	gfs_proto.h	gfsd ¥×¥í¥È¥³¥ëÄêµÁ
-	gfs_proto.c	gfs ¥×¥í¥È¥³¥ë¶¦ÄÌ´Ø¿ô
-	gfs_client.h	gfs ¥¯¥é¥¤¥¢¥ó¥ÈÂ¦ RPC ´Ø¿ôÄêµÁ
-	gfs_client.c	gfs ¥¯¥é¥¤¥¢¥ó¥ÈÂ¦ RPC stub
+	gfs_proto.h	gfsd ãƒ—ãƒ­ãƒˆã‚³ãƒ«å®šç¾©
+	gfs_proto.c	gfs ãƒ—ãƒ­ãƒˆã‚³ãƒ«å…±é€šé–¢æ•°
+	gfs_client.h	gfs ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆå´ RPC é–¢æ•°å®šç¾©
+	gfs_client.c	gfs ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆå´ RPC stub
 
-	gfs_pio.h	<gfarm/gfs.h> ¤ÇÄêµÁ¤µ¤ì¤¿ gfarm ¥Õ¥¡¥¤¥ë¥¢¥¯¥»¥¹
-	gfs_pio.c	¼ç¥ë¡¼¥Á¥ó
-	gfs_pio_local.c		local file store ¤Ø¤Î¥¢¥¯¥»¥¹½èÍı
-	gfs_pio_remote.c	remote file store (gfsd) ¤Ø¤Î¥¢¥¯¥»¥¹½èÍı
-	gfs_pio_default.c	default view ¤Ë´Ø¤¹¤ë½èÍı
-	gfs_pio_global.c	global view ¤Ë´Ø¤¹¤ë½èÍı
-	gfs_pio_section.c	index view, section view ¤Ë´Ø¤¹¤ë½èÍı 
-	gfs_pio_misc.c		gfs_pio_*() °Ê³°¤Î <gfarm/gfs.h> ´Ø¿ô
+	gfs_pio.h	<gfarm/gfs.h> ã§å®šç¾©ã•ã‚ŒãŸ gfarm ãƒ•ã‚¡ã‚¤ãƒ«ã‚¢ã‚¯ã‚»ã‚¹
+	gfs_pio.c	ä¸»ãƒ«ãƒ¼ãƒãƒ³
+	gfs_pio_local.c		local file store ã¸ã®ã‚¢ã‚¯ã‚»ã‚¹å‡¦ç†
+	gfs_pio_remote.c	remote file store (gfsd) ã¸ã®ã‚¢ã‚¯ã‚»ã‚¹å‡¦ç†
+	gfs_pio_default.c	default view ã«é–¢ã™ã‚‹å‡¦ç†
+	gfs_pio_global.c	global view ã«é–¢ã™ã‚‹å‡¦ç†
+	gfs_pio_section.c	index view, section view ã«é–¢ã™ã‚‹å‡¦ç† 
+	gfs_pio_misc.c		gfs_pio_*() ä»¥å¤–ã® <gfarm/gfs.h> é–¢æ•°
 
-	crc32.c		crc32¤ò»»½Ğ¤¹¤ë´Ø¿ô
-	filesystem.c	gfarm_filesystem ¤Ë´Ø¤¹¤ë½èÍı
-	import_help.c	gfimport_{text,fixed} Åù¤Ø¤Î¥Ø¥ë¥Ñ´Ø¿ô
-	lookup.c	¥Ñ¥¹Ì¾²ò·è¤Î½èÍı
-	metadb_ldap.c	LDAP ¥¢¥¯¥»¥¹½èÍı¡£<gfarm/gfarm_metadb.h> ¤Î¼ÂÁõ
-	metadb_misc.c	metadb ´Ø·¸¤Î¤¤¤í¤¤¤í¤Ê½èÍı
-	metadb_server.c	gfarm_metadb_server ¤Ë´Ø¤¹¤ë½èÍı
-	schedule.c	¥ì¥×¥ê¥«¤ä·×»»¥Î¡¼¥É¤Ø¤Î¥¢¥¯¥»¥¹¤Î¥¹¥±¥¸¥å¡¼¥ê¥ó¥°
-	stringlist.c	Ê¸»úÎó¥ê¥¹¥È
-	url.c		gfarm ¥Õ¥¡¥¤¥ëÌ¾¤Î½èÍı
+	crc32.c		crc32ã‚’ç®—å‡ºã™ã‚‹é–¢æ•°
+	filesystem.c	gfarm_filesystem ã«é–¢ã™ã‚‹å‡¦ç†
+	import_help.c	gfimport_{text,fixed} ç­‰ã¸ã®ãƒ˜ãƒ«ãƒ‘é–¢æ•°
+	lookup.c	ãƒ‘ã‚¹åè§£æ±ºã®å‡¦ç†
+	metadb_ldap.c	LDAP ã‚¢ã‚¯ã‚»ã‚¹å‡¦ç†ã€‚<gfarm/gfarm_metadb.h> ã®å®Ÿè£…
+	metadb_misc.c	metadb é–¢ä¿‚ã®ã„ã‚ã„ã‚ãªå‡¦ç†
+	metadb_server.c	gfarm_metadb_server ã«é–¢ã™ã‚‹å‡¦ç†
+	schedule.c	ãƒ¬ãƒ—ãƒªã‚«ã‚„è¨ˆç®—ãƒãƒ¼ãƒ‰ã¸ã®ã‚¢ã‚¯ã‚»ã‚¹ã®ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒªãƒ³ã‚°
+	stringlist.c	æ–‡å­—åˆ—ãƒªã‚¹ãƒˆ
+	url.c		gfarm ãƒ•ã‚¡ã‚¤ãƒ«åã®å‡¦ç†
 
 lib/gfs_hook/
 	Makefile.in
-	hooks.c		gfs_hook ¤Î¼ç½èÍı
-	hooks_64.c	64bit API ¤Ë´Ø¤¹¤ë gfs_hook
-	hooks_common.c	hooks.c ¤È hooks_64.c ¤ÎÎ¾Êı¤«¤é#include¤µ¤ì¤ë
-	hooks_subr.h	gfs_hook ´Ø·¸¤Î¥µ¥Ö¥ë¡¼¥Á¥ó
+	hooks.c		gfs_hook ã®ä¸»å‡¦ç†
+	hooks_64.c	64bit API ã«é–¢ã™ã‚‹ gfs_hook
+	hooks_common.c	hooks.c ã¨ hooks_64.c ã®ä¸¡æ–¹ã‹ã‚‰#includeã•ã‚Œã‚‹
+	hooks_subr.h	gfs_hook é–¢ä¿‚ã®ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³
 	hooks_subr.c	
-	sysdep/linux/	gfs_hook ¤Î Linux °ÍÂ¸Éô
+	sysdep/linux/	gfs_hook ã® Linux ä¾å­˜éƒ¨
 
 server/gfsd/
 	Makefile
-	loadavg.c	¥í¡¼¥É¡¦¥¢¥Ù¥ì¡¼¥¸¤òÆÀ¤ë OS °ÍÂ¸½èÍı	
-	gfsd.c		gfsd ¤Î¥á¥¤¥ó¡¦¥×¥í¥°¥é¥à
+	loadavg.c	ãƒ­ãƒ¼ãƒ‰ãƒ»ã‚¢ãƒ™ãƒ¬ãƒ¼ã‚¸ã‚’å¾—ã‚‹ OS ä¾å­˜å‡¦ç†	
+	gfsd.c		gfsd ã®ãƒ¡ã‚¤ãƒ³ãƒ»ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
 
 server/gfmd/
 	Makefile
 
-	gfmd.c		gfmd ¤Î¥á¥¤¥ó¡¦¥×¥í¥°¥é¥à¡£
-	acl.c		acl ¤Î½èÍı
-	dir.c		DirEntry ¤Î½èÍı
-	fs.c		GFM_PROTO_* ¤Î¥×¥í¥È¥³¥ë½èÍı
-	inode.c		inode ¤Î½èÍı
-	peer.c		peer ¤Î½èÍı
-	process.c	process ¤Î½èÍı
-	quota.c		quota ¤Î½èÍı
-	user.c		user ¤Î½èÍı
-	group.c		group ¤Î½èÍı
-	xattr.c		xattr ¤Î½èÍı
+	gfmd.c		gfmd ã®ãƒ¡ã‚¤ãƒ³ãƒ»ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã€‚
+	acl.c		acl ã®å‡¦ç†
+	dir.c		DirEntry ã®å‡¦ç†
+	fs.c		GFM_PROTO_* ã®ãƒ—ãƒ­ãƒˆã‚³ãƒ«å‡¦ç†
+	inode.c		inode ã®å‡¦ç†
+	peer.c		peer ã®å‡¦ç†
+	process.c	process ã®å‡¦ç†
+	quota.c		quota ã®å‡¦ç†
+	user.c		user ã®å‡¦ç†
+	group.c		group ã®å‡¦ç†
+	xattr.c		xattr ã®å‡¦ç†
 	job.c
 
-	abstract_host.c	host, mdhost ¤Î¶¦ÄÌ½èÍı,
-			back channel, gfmd channel¤Î¶¦ÄÌ½èÍı
-	host.c		host (gfsd ¥Î¡¼¥É)¤Î½èÍı
-	back_channel.c	back channel (gfsd-gfmd ´ÖÄÌ¿®ÍÑ)¤Î½èÍı
-			GFS_PROTO_* ¤Î¥×¥í¥È¥³¥ë½èÍı
-	mdhost.c	mdhost (gfmd ¥Î¡¼¥É)¤Î½èÍı
-			GFM_PROTO_* ¤ÎÆâ¡¢gfmd channelÍÑ¥×¥í¥È¥³¥ë¤Î½èÍı
-	gfmd_channel.c	gfmd channel (gfmd-gfmd ´ÖÄÌ¿®ÍÑ)¤Î½èÍı
+	abstract_host.c	host, mdhost ã®å…±é€šå‡¦ç†,
+			back channel, gfmd channelã®å…±é€šå‡¦ç†
+	host.c		host (gfsd ãƒãƒ¼ãƒ‰)ã®å‡¦ç†
+	back_channel.c	back channel (gfsd-gfmd é–“é€šä¿¡ç”¨)ã®å‡¦ç†
+			GFS_PROTO_* ã®ãƒ—ãƒ­ãƒˆã‚³ãƒ«å‡¦ç†
+	mdhost.c	mdhost (gfmd ãƒãƒ¼ãƒ‰)ã®å‡¦ç†
+			GFM_PROTO_* ã®å†…ã€gfmd channelç”¨ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã®å‡¦ç†
+	gfmd_channel.c	gfmd channel (gfmd-gfmd é–“é€šä¿¡ç”¨)ã®å‡¦ç†
 
-	db_access.c	DBÃê¾İ²½ÁØ¤Î½èÍı
-	db_common.c	DB¥ª¥Ö¥¸¥§¥¯¥È¤ËÂĞ¤¹¤ëÊä½õÅª¤Ê½èÍı
-	db_none.c	db_ops ¤Î¼ÂÁõ¡¢¥¨¥é¡¼¤Î¤ß¤òÊÖ¤¹
-	db_pgsql.c	db_ops ¤Î¼ÂÁõ¡¢postgres ¤È¤ÎÄÌ¿®½èÍı
-	db_ldap.c	db_ops ¤Î¼ÂÁõ¡¢ldap ¤È¤ÎÄÌ¿®½èÍı
-	dead_file_copy.c	dead file copy ¤Î½èÍı
+	db_access.c	DBæŠ½è±¡åŒ–å±¤ã®å‡¦ç†
+	db_common.c	DBã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«å¯¾ã™ã‚‹è£œåŠ©çš„ãªå‡¦ç†
+	db_none.c	db_ops ã®å®Ÿè£…ã€ã‚¨ãƒ©ãƒ¼ã®ã¿ã‚’è¿”ã™
+	db_pgsql.c	db_ops ã®å®Ÿè£…ã€postgres ã¨ã®é€šä¿¡å‡¦ç†
+	db_ldap.c	db_ops ã®å®Ÿè£…ã€ldap ã¨ã®é€šä¿¡å‡¦ç†
+	dead_file_copy.c	dead file copy ã®å‡¦ç†
 
-	db_journal.c	¥¸¥ã¡¼¥Ê¥ë´ØÏ¢¤Î½èÍı
-	journal_file.c	¥¸¥ã¡¼¥Ê¥ë¥Õ¥¡¥¤¥ë¤ÎÄã¥ì¥Ù¥ëI/O¤Î½èÍı
-	db_journal_apply.c	db_ops ¤Î¼ÂÁõ¡¢slave gfmd ¤Ç¤Î¥¸¥ã¡¼¥Ê¥ëÈ¿±Ç½èÍı
+	db_journal.c	ã‚¸ãƒ£ãƒ¼ãƒŠãƒ«é–¢é€£ã®å‡¦ç†
+	journal_file.c	ã‚¸ãƒ£ãƒ¼ãƒŠãƒ«ãƒ•ã‚¡ã‚¤ãƒ«ã®ä½ãƒ¬ãƒ™ãƒ«I/Oã®å‡¦ç†
+	db_journal_apply.c	db_ops ã®å®Ÿè£…ã€slave gfmd ã§ã®ã‚¸ãƒ£ãƒ¼ãƒŠãƒ«åæ˜ å‡¦ç†
 
-	callout.c	call out¤Î½èÍı
-	subr.c		Â¾¤Î .o ¤Ë°ÍÂ¸¤·¤Ê¤¤¥æ¡¼¥Æ¥£¥ê¥Æ¥£´Ø¿ô
-	rpcsubr.c	rpc´ØÏ¢¤Î¥æ¡¼¥Æ¥£¥ê¥Æ¥£´Ø¿ô
-	thrpool.c	¥¹¥ì¥Ã¥É¥×¡¼¥ë¤Î½èÍı
+	callout.c	call outã®å‡¦ç†
+	subr.c		ä»–ã® .o ã«ä¾å­˜ã—ãªã„ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£é–¢æ•°
+	rpcsubr.c	rpcé–¢é€£ã®ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£é–¢æ•°
+	thrpool.c	ã‚¹ãƒ¬ãƒƒãƒ‰ãƒ—ãƒ¼ãƒ«ã®å‡¦ç†
 
 bench/
 	Makefile

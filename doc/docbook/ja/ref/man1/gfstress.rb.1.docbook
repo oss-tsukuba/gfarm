@@ -11,32 +11,32 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfstress.rb</refname>
-<refpurpose>Gfarm ��ٻ��Ԥ�</refpurpose>
+<refpurpose>Gfarm 負荷試験を行う</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfstress.rb</command>
-    <arg choice='opt'>-t, --testdir <replaceable>�ƥ��ȥǥ��쥯�ȥ�</replaceable></arg>
-    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fs�ޥ���ȥݥ����</replaceable></arg>
-    <arg choice='opt'>-n, --number <replaceable>�����桼����</replaceable></arg>
-    <arg choice='opt'>-T, --timeout <replaceable>���»���(��)</replaceable></arg>
+    <arg choice='opt'>-t, --testdir <replaceable>テストディレクトリ</replaceable></arg>
+    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fsマウントポイント</replaceable></arg>
+    <arg choice='opt'>-n, --number <replaceable>擬似ユーザ数</replaceable></arg>
+    <arg choice='opt'>-T, --timeout <replaceable>制限時間(秒)</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><parameter>�ƥ��ȥǥ��쥯�ȥ�</parameter>����Ѥ���gfperf-metadata, gfperf-tree, gfperf-read, gfperf-write, gfperf-replica��Ʊ������˵�ư��������پ��֤���Ф��ޤ���gfsched��ƤӽФ�����gfsd���Ф������gfperf-read, gfperf-write, gfperf-replica��¹Ԥ��ޤ���
+<para><parameter>テストディレクトリ</parameter>を使用してgfperf-metadata, gfperf-tree, gfperf-read, gfperf-write, gfperf-replicaを同時並列に起動し、高負荷状態を作り出します。gfschedを呼び出し、各gfsdに対し並列にgfperf-read, gfperf-write, gfperf-replicaを実行します。
 </para>
 <para>
-�ܥ��ޥ�ɤϡ�Ctrl-C�ޤ���TERM�����ʥ����ߤ����ʤ��¤ꡢ���顼�򸡽Ф���ޤǥǥե���ȤǤ�ư�³���ޤ���-T ���ץ��������»��֤����Ǥ��ޤ���
+本コマンドは、Ctrl-CまたはTERMシグナルで停止させない限り、エラーを検出するまでデフォルトでは動作し続けます。-T オプションで制限時間を指定できます。
 </para>
 <para>
-�����桼������gfperf-metadata, gfperf-read, gfperf-write, gfperf-replica��쥻�åȤȤ��������åȤ�Ʊ���¹Ԥ��뤫����ꤹ���ΤǤ����ܥ��ޥ�ɤ�Ʊ����ʣ���ĸƽФ����Τ�Ʊ���θ��̤������ޤ���
+擬似ユーザ数はgfperf-metadata, gfperf-read, gfperf-write, gfperf-replicaを一セットとし、何セットを同時実行するかを指定するものです。本コマンドを同時に複数個呼出したのと同等の効果が得られます。
 </para>
 <para>
-gfarm2fs�ޥ���ȥݥ���Ȥ�Ϳ����줿����libgfarm����Ѥ����̾����٤˲ä���gfarm2fs���ͳ������٤�Ʊ����Ϳ���ޤ���
+gfarm2fsマウントポイントが与えられた場合はlibgfarmを使用した通常の負荷に加えてgfarm2fsを経由した負荷も同時に与えます。
 </para>
 </refsect1>
 
@@ -44,38 +44,38 @@ gfarm2fs�ޥ���ȥݥ���Ȥ�Ϳ����줿����libgfarm����Ѥ����̾����٤˲ä���gf
 <variablelist>
 
 <varlistentry>
-<term><option>-t, --testdir</option> <parameter>�ƥ��ȥǥ��쥯�ȥ�</parameter></term>
+<term><option>-t, --testdir</option> <parameter>テストディレクトリ</parameter></term>
 <listitem>
 <para>
-����ٻ�˻��Ѥ���ǥ��쥯�ȥ����ꤷ�ޤ����ǥե���Ȥ�gfarm:///stress�Ǥ���
-�ƥ��Ƚ�λ��˥ƥ��ȥǡ����������ޤ���
+高負荷試験に使用するディレクトリを指定します。デフォルトはgfarm:///stressです。
+テスト終了後にテストデータを削除します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fs�ޥ���ȥݥ����</parameter></term>
+<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fsマウントポイント</parameter></term>
 <listitem>
 <para>
-gfarm2fs�Υޥ���ȥݥ���Ȥ���ꤷ�ޤ���
+gfarm2fsのマウントポイントを指定します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-n, --number</option> <parameter>�����桼����</parameter></term>
+<term><option>-n, --number</option> <parameter>擬似ユーザ数</parameter></term>
 <listitem>
 <para>
-�ܥ��ޥ�ɤ�ʣ����Ʊ���˸ƽФ����Τ�Ʊ�����̤������ޤ���
+本コマンドを複数個同時に呼出したのと同じ効果が得られます。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-T, --timeout</option> <parameter>�ÿ�</parameter></term>
+<term><option>-T, --timeout</option> <parameter>秒数</parameter></term>
 <listitem>
 <para>
-���»��֤���ꤷ�ޤ���
+制限時間を指定します。
 </para>
 </listitem>
 </varlistentry>

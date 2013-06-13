@@ -1,177 +1,177 @@
-�� �����ǥ��󥰡��������복��
+■ コーディング・スタイル概要
 
-2001ǯ������ NetBSD KNF (kernel normal form) �ˡ������褽���äƤ��ޤ���
+2001年当時の NetBSD KNF (kernel normal form) に、おおよそ従っています。
 
 NetBSD KNF:
 http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=text/x-cvsweb-markup
 
-���������ʲ��Τ褦�ʡ�NetBSD ��ͭ�ν����ˤϽ��äƤ��ޤ���
-��#ifndef _lint
-��__COPYRIGHT
-��__RCSID(
-��setprogname()/getprogname()
+ただし、以下のような、NetBSD 固有の習慣には従っていません。
+・#ifndef _lint
+・__COPYRIGHT
+・__RCSID(
+・setprogname()/getprogname()
 
-�ޤ����ʲ��Τ褦�������礭���㤤�ޤ���
+また、以下のような点が大きく違います。
 
-���ؿ�������ϡ��ƤФ��¦���衢�Ƥ�¦���塢���Τ��ᡢ��ߺƵ�����褦
-  �ʾ��������static �ʴؿ��δؿ��ץ��ȥ���������ϹԤʤ�ʤ���
+・関数の定義は、呼ばれる側が先、呼ぶ側が後、このため、相互再帰するよう
+  な場合を除き、static な関数の関数プロトタイプ宣言は行なわない。
 
-���إå�����ť��󥯥롼�ɤ�����ݸ�Ϥ��ʤ���
-  �إå��Υͥ��Ȥϴ���Ū�ϹԤʤ�ʤ����ᡣ(<gfarm/gfarm.h> �����㳰)
+・ヘッダの二重インクルードからの保護はしない。
+  ヘッダのネストは基本的は行なわないため。(<gfarm/gfarm.h> 等は例外)
 
-����¤�Τ� enum ���Ф��� typedef �ϹԤʤ鷺��struct XXX �� enum YYYY �Ƚ񤯡�
-  ����ϥإå��Υͥ��Ȥ��򤱤뤿�ᡣ
-  ������� gfs_client.h ����Ƭ�� struct �� enum ������򻲾ȡ�
+・構造体や enum に対する typedef は行なわず、struct XXX や enum YYYY と書く。
+  これはヘッダのネストを避けるため。
+  利用例は gfs_client.h の先頭の struct や enum の宣言を参照。
 
-�� ����ѥ��餫��ηٹ�ˤĤ���
+■ コンパイラからの警告について
 
-	���ߥåȤ������ˡ�����ѥ��餫��ηٹ𤬤ʤ����Ȥ��ǧ���Ƥ���������
+	コミットする前に、コンパイラからの警告がないことを確認してください。
 
-	���������ʲ��� OpenMP �˴ؤ���ٹ�Τߤ����ꤢ��ޤ���
-		warning: ignoring #pragma omp ��
+	ただし、以下の OpenMP に関する警告のみは問題ありません。
+		warning: ignoring #pragma omp 〜
 
-�� ̿̾����ˤĤ���
+■ 命名規約について
 
-	�饤�֥����θ�������Ƥ��륷��ܥ�ϡ�ɬ�� gfarm_ �Τ褦��
-	�ץ�ե��å�����Ĥ����桼���������ץꥱ�������Υ���ܥ��
-	�Ťʤ�ʤ��褦�ˤ��ޤ���
+	ライブラリ中の公開されているシンボルは、必ず gfarm_ のような
+	プリフィックスをつけ、ユーザー・アプリケーションのシンボルと
+	重ならないようにします。
 
-�� ���顼�����ɤˤĤ���
+■ エラーコードについて
 
-	������Ϥäơ��褷�ƥ��顼���֤��ʤ����Ȥ����ꤷ�Ƥ���
-	�������㳰��������ۤ����Ƥδؿ��ϡ�����ͤȤ��ƥ��顼
-	�����ɤ��֤���ΤȤ��ޤ���
+	将来に渡って、決してエラーを返さないことが確定している
+	一部の例外を除き、ほぼ全ての関数は、戻り値としてエラー
+	コードを返すものとします。
 
-	���顼�����ɤϰʲ����Ѥ��ޤ���
-	��lib/libgfarm/gfutil/ �Ǥ� OS �� errno ����
-	��lib/libgfarm/gfsl/ �Ǥ� OM_uint32 majorStatus, minorStatus
-	������ʳ��Ǥ� gfarm_error_t ��
+	エラーコードは以下を用います。
+	・lib/libgfarm/gfutil/ では OS の errno の値
+	・lib/libgfarm/gfsl/ では OM_uint32 majorStatus, minorStatus
+	・それ以外では gfarm_error_t 型
 
-	gfarm_error_t �ϰʲ���2�ս�Υإå������������Ƥ��ޤ�����
+	gfarm_error_t は以下の2箇所のヘッダで定数定義していますが、
 		include/gfarm/error.h
 		lib/libgfarm/gfarm/liberror.h
-	���Τ����ͥåȥ�����ή�����ɤ��ͤ� include/gfarm/error.h
-	�ˤ����ΤΤߤǤ���liberror.h �����ϡ�libgfarm �������ǤΤ�
-	���Ѥ��뤳�Ȥ�տޤ��Ƥ��ޤ���
+	このうちネットワーク上を流して良い値は include/gfarm/error.h
+	にあるもののみです。liberror.h の方は、libgfarm の内部でのみ
+	使用することを意図しています。
 
-	�⤷ lib/libgfarm/gfarm/liberror.h ��������Ƥ����ͤ��ͥå�
-	������ή����ǽ�������������ˤϡ������
-	include/gfarm/error.h �˰ܤ��ޤ������ΰ�ư����������硢
-	���顼�ֹ椬�Ѥ�뤳�Ȥˤʤ�ޤ�����
-	liberror.h �� enum gfarm_errmsg ������ˤ�
+	もし lib/libgfarm/gfarm/liberror.h で定義している値がネット
+	ワーク上を流れる可能性が生じた場合には、定義を
+	include/gfarm/error.h に移します。この移動が生じた場合、
+	エラー番号が変わることになりますが、
+	liberror.h の enum gfarm_errmsg の定義には
 		GFARM_ERRMSG_UNKNOWN_HOST_DEPRECATED
-	�Τ褦�˸���̾���ˡ�_DEPRECATED�פ��ղä�������ȥ��Ĥ���
-	liberror.c �� errmsg_string[] ������ˤ�
+	のように元の名前に「_DEPRECATED」を付加したエントリを残し、
+	liberror.c の errmsg_string[] の定義には
 		"unknown host (deprecated)"
-	�Τ褦�˸���ʸ����ˡ� (deprecated)�פ��ղä�������ȥ��Ĥ���
-	������ͤ��Ѳ����ʤ��褦�ˤ��ޤ���
+	のように元の文字列に「 (deprecated)」を付加したエントリを残し、
+	前後の値が変化しないようにします。
 
-�� ���顼���ˤĤ���
+■ エラー報告について
 
-	libgfarm ���������Ƥ���ؿ��Ǥϡ���§�Ȥ��ơ�stderr ��
-	syslog �ʤɤ˥��顼���򾡼�˽��Ϥ��ޤ��󡣥��顼�ϡ��ƤӽФ�
-	¦������ͤȤ����֤����Ȥǡ���𤷤ޤ���
+	libgfarm で定義されている関数では、原則として、stderr や
+	syslog などにエラー等を勝手に出力しません。エラーは、呼び出し
+	側に戻り値として返すことで、報告します。
 
-	����ϡ����Ȥ��� GUI �ץ�����फ�� libgfarm ��Ƥ�Ǥ���ΤǤ�
-	��С�stderr �Ǥ� syslog �Ǥ�ʤ�����������������������ɥ���
-	���顼����𤷤������⤷��ʤ�����Ǥ���
+	これは、たとえば GUI プログラムから libgfarm を呼んでいるのであ
+	れば、stderr でも syslog でもなく、ダイアローグ・ウィンドウで
+	エラーを報告したいかもしれないからです。
 
-	�����������θ�§�ˤϡ����ߤΤȤ����ʲ����㳰������ޤ���
-	��gfarm_initialize() �Ǥϡ�����ե�����ط��ʤɡ��ƤӽФ�¦��
-	���֤�����ͤ����Ǥ�����Ǥ��ʤ��ۤ������μ���Υ��顼�Ф�
-	����ǽ�������뤿�ᡢ��������ͤ��ơ��㳰�Ȥ��Ƥ��ޤ���
-	��gfmd �� failover �� gfsd �κ���³�塢non-idemopotent �� RPC ��
-	����ȯ�Ԥ������ᡢ���������������ˤ�ؤ�餺�����顼�η�̤��֤�
-	���Ƥ����ǽ����������˴ؤ��Ƥ⡢gflog_warning() �Ƿٹ�����
-	�����Ƥ��ޤ�������ϡ��饤�֥��¦�Ǥ�Ŭ�ڤ��н褬�¸��Ǥ��Ƥ��ʤ�
-	������Ǥ���
-	����Ū�ˤϤ������㳰��ű�Ѥ������ȹͤ��Ƥ��ޤ���
-	(��������Ū��ͽ��Ϥ���ޤ���)
+	ただし、この原則には、現在のところ以下の例外があります。
+	・gfarm_initialize() では、設定ファイル関係など、呼び出し側へ
+	　返す戻り値だけでは特定できないほど沢山の種類のエラー出る
+	　可能性があるため、利便性を考えて、例外としています。
+	・gfmd の failover や gfsd の再接続後、non-idemopotent な RPC を
+	　再発行したため、処理に成功したにも関わらず、エラーの結果を返し
+	　ている可能性がある場合に関しても、gflog_warning() で警告を出力
+	　しています。これは、ライブラリ側では適切な対処が実現できていない
+	　ためです。
+	将来的にはこれらの例外も撤廃したいと考えています。
+	(が、具体的な予定はありません。)
 
-	gfmd �� gfsd, gftool �ˤĤ��Ƥϡ����ѥ饤�֥��Ǥ�
-	����ޤ��󤫤顢���Τ褦������Ϥ���ޤ���
+	gfmd や gfsd, gftool については、汎用ライブラリでは
+	ありませんから、このような制約はありません。
 
 	https://sourceforge.net/apps/trac/gfarm/changeset/4418
-	�ǡ��ۤ����ƤΥ��顼���������ˤĤ��ơ�gflog_debug() ��
-	�ǥХå�����������Ϥ���ˤʤ�ޤ�����
-	����ϡ��±��ѴĶ�����ξ㳲������Ū�Ȥ����ѹ��Ǥ���
-	��������r4418 ���ѹ��ˤϲ�����������ޤ���
-	���Ȥ��� gfmd �ˤ� gfm_server_get_request(), gfm_server_put_reply()
-	�ʤɤΤ褦�ˡ�diag ��å�����������ˤȤꡢ�ؿ������ǡ����顼ȯ������
-	��������Ϥ���ؿ���¸�ߤ��ޤ��������ˤĤ��Ƥϡ��ƤӽФ�¦��
-	��Ĺ�ʥ�������Ϥ��ƤϤ����ޤ��� (����r4418 �ǤϽ��Ϥ���褦��
-	�ѹ����Ƥ����ޤäƤ��ޤ���)��������󡢸ƤФ줿¦�Υ��顼�����ˤ�
-	�ޤޤ�Ƥ��ʤ�����򡢸ƤӽФ�¦�ǤĤ��ä�����ˤϡ���Ĺ�Ǥ�
-	����ޤ���Τǽ��Ϥ��Ƥ����ꤢ��ޤ���
+	で、ほぼ全てのエラー・ケースについて、gflog_debug() で
+	デバッグ・ログを出力するになりました。
+	これは、実運用環境からの障害報告を目的とした変更です。
+	ただし、r4418 の変更には過剰な点があります。
+	たとえば gfmd には gfm_server_get_request(), gfm_server_put_reply()
+	などのように、diag メッセージを引数にとり、関数内部で、エラー発生時に
+	ログを出力する関数が存在します。これらについては、呼び出し側で
+	冗長なログを出力してはいけません (が、r4418 では出力するように
+	変更していしまっています…)。もちろん、呼ばれた側のエラーログには
+	含まれていない情報を、呼び出し側でつけ加える場合には、冗長では
+	ありませんので出力しても問題ありません。
 
-�� �������ˤĤ���
+■ 定数定義について
 
-	�ͥåȥ�����ή���ץ��ȥ��������ե饰�ϡ����Ȥ�ñ���
-	C�������ե��������Ǥ������Ȥ��ʤ����Ǥ��äƤ⡢�ʲ��Υإå�
-	��������ޤ���
+	ネットワーク上を流れるプロトコル定数やフラグは、たとえ単一の
+	Cソースファイルの中でしか参照しない場合であっても、以下のヘッダ
+	で定義します。
 		include/gfarm/error.h
 		include/gfarm/gfs.h
-		lib/libgfarm/gfarm/gfm_proto.h (gfmd �ץ��ȥ���ξ��)
-		lib/libgfarm/gfarm/gfs_proto.h (gfsd �ץ��ȥ���ξ��)
+		lib/libgfarm/gfarm/gfm_proto.h (gfmd プロトコルの場合)
+		lib/libgfarm/gfarm/gfs_proto.h (gfsd プロトコルの場合)
 
-	����ϡ�����������ͤ��Ѥ��ƤϤ����ʤ����Ȥ����Τˤ��뤿��Ǥ���
+	これは、これらの定数値を変えてはいけないことを明確にするためです。
 
-	�ʤ���lib/libgfarm/gfarm/liberror.h ��������Ƥ����ͤϥͥåȥ��
-	��ή���ƤϤ����ޤ���
+	なお、lib/libgfarm/gfarm/liberror.h で定義している値はネットワーク
+	に流してはいけません。
 
-�� �黻�����Хե����ط��Υ������ƥ��к�
+■ 演算オーバフロー関係のセキュリティ対策
 
-	��§�Ȥ��ơ����� malloc �ϻȤ鷺��GFARM_MALLOC, GFARM_MALLOC_ARRAY, 
-	GFARM_CALLOC_ARRAY, GFARM_REALLOC_ARAY ���Ѥ��ޤ���
-	(���Τ�����GFARM_MALLOC �Τߤϡ��黻�����Хե�����̵�ط��Ǥ�)
+	原則として、生の malloc は使わず、GFARM_MALLOC, GFARM_MALLOC_ARRAY, 
+	GFARM_CALLOC_ARRAY, GFARM_REALLOC_ARAY を用います。
+	(このうち、GFARM_MALLOC のみは、演算オーバフローと無関係です)
 
-	���������ƥ������˴ؤ��ơ�GFARM_MALLOC_ARRAY �Ǥ��б��Ǥ��ʤ�
-	�褦��ʣ���ʷ׻��򤹤���ˤϡ�gfarm_size_add() �� gfarm_size_mul()
-	��ľ���Ѥ��ơ������С��ե���������Ŭ�ڤ˹Ԥʤ�ɬ�פ�����ޤ���
+	メモリ割り当てサイズに関して、GFARM_MALLOC_ARRAY では対応できない
+	ような複雑な計算をする場合には、gfarm_size_add() や gfarm_size_mul()
+	を直接用いて、オーバーフロー検査を適切に行なう必要があります。
 
-	�������׻��Υ����С��ե������������פ���ͳ�ϡ��ͥåȥ����ͳ��
-	�Ϥ��줿�ͤ򸵤ˤ������ꥵ�����׻��Υ����С��ե�������
-	�������ƥ�Ū�˽���ʥꥹ���ˤʤ뤳�Ȥ��ɤ��Τ��Ƥ��뤫��Ǥ���
+	サイズ計算のオーバーフロー検査が重要な理由は、ネットワーク経由で
+	渡された値を元にしたメモリサイズ計算のオーバーフローが、
+	セキュリティ的に重大なリスクになることが良く知られているからです。
 
-�� �إå��ե������ #include �򵭽Ҥ������θ�§�ϡ��������̤�Ǥ���
+■ ヘッダファイルの #include を記述する順序の原則は、下記の通りです。
 
-- OS��°�Υإå��ե����뷲
+- OS付属のヘッダファイル群
 
-- �����ɥѡ��ƥ������Υ��եȥ������Υإå��ե����뷲
-	ʣ���Υ����ɥѡ��ƥ��������եȥ����������Ѥ��Ƥ����硢
-	�������ɥѡ��ƥ��������եȥ������֤˻��ȴط���������ˤϡ�
-	  ���Ȥ����¦(���եȥ��������ؤȤ��Ʋ��˰��֤�����)�Υ��եȥ�������
-	  ��˽񤯡�
-	  ���Ȥ���¦(���եȥ��������ؤȤ��ƾ�˰��֤�����)�Υ��եȥ�������
-	  ��˽񤯡�
-	��Ʊ��Υ��եȥ���������°����إå��ϡ��ޤȤ�ƽ񤯡�
+- サードパーティー製のソフトウェアのヘッダファイル群
+	複数のサードパーティー製ソフトウェアを利用している場合、
+	・サードパーティー製ソフトウェア間に参照関係がある場合には、
+	  参照される側(ソフトウェア階層として下に位置する方)のソフトウェアを
+	  先に書く。
+	  参照する側(ソフトウェア階層として上に位置する方)のソフトウェアを
+	  後に書く。
+	・同一のソフトウェアに付属するヘッダは、まとめて書く。
 
-- gfarm �θ����إå� (<gfarm/�ߡ�.h>)
-	libgfarm �����ѼԤؤθ�������
-	���������˴ؤ������Ϥ����ˤ��֤��ʤ���
-	�ޤ��ե�����̾�ϰʲ��Τ褦��(��"��"�פǤϤʤ�)��<��>�פǵ��Ҥ��롣
+- gfarm の公開ヘッダ (<gfarm/××.h>)
+	libgfarm の利用者への公開情報。
+	内部実装に関する情報はここには置かない。
+	またファイル名は以下のように(「"〜"」ではなく)「<〜>」で記述する。
 		#include <gfarm/gfarm_misc.h>
 		#include <gfarm/gfarm_gfs.h>
-	����ϡ�������إå��ϡ�#include "��"�ס������إå��ϡ�#include <��>��
-	�Ƚ񤯽����ˤ��Ƥ��뤿�ᡣ
+	これは、非公開ヘッダは「#include "〜"」、公開ヘッダは「#include <〜>」
+	と書く習慣にしているため。
 
-- gfarm ��������إå� ("�ߡ�.h")
-	���إå��֤ν���ϡ�
-	  ���Ȥ����¦(���եȥ��������ؤȤ��Ʋ��˰��֤�����)�Υ��եȥ�������
-	  ��˽񤯡�
-	  ���Ȥ���¦(���եȥ��������ؤȤ��ƾ�˰��֤�����)�Υ��եȥ�������
-	  ��˽񤯡�
-	��libgfarm/gfutil, libgfarm/gfsl, libgfarm/gfarm �λ��ԤˤĤ��Ƥϡ�
-	  Ʊ��Υǥ��쥯�ȥ�˽�°����إå��ϤޤȤ�ƽ񤯡�
-	  #include �������ϡ�
+- gfarm の非公開ヘッダ ("××.h")
+	・ヘッダ間の順序は、
+	  参照される側(ソフトウェア階層として下に位置する方)のソフトウェアを
+	  先に書く。
+	  参照する側(ソフトウェア階層として上に位置する方)のソフトウェアを
+	  後に書く。
+	・libgfarm/gfutil, libgfarm/gfsl, libgfarm/gfarm の三者については、
+	  同一のディレクトリに所属するヘッダはまとめて書く。
+	  #include する順序は、
 		1. libgfarm/gfutil
 		2. libgfarm/gfsl
 		3. libgfarm/gfarm
-	  �ν��֤Ȥ��롣(���եȥ��������ؤ������ν�ǲ�����ȤʤäƤ��뤿��)
-	  ���եȥ������γ��شط��Ȥ��Ƥϡ�gfutil ���������ء�gfsl �����ξ塢
-	  libgfarm/gfarm �ϰ��־��ؤȤʤ롣gfutil �� gfsl �Ǥϡ�libgfarm/gfarm/
-	  �ε�ǽ�����Ѥ��ʤ������Ȥ��� gfarm_error_t ��Ȥ�ʤ���
-	������Ū�ˤϲ������̤ꡣ
+	  の順番とする。(ソフトウェア階層が、この順で下→上となっているため)
+	  ソフトウェアの階層関係としては、gfutil が一番低層、gfsl がその上、
+	  libgfarm/gfarm は一番上層となる。gfutil や gfsl では、libgfarm/gfarm/
+	  の機能は利用しない。たとえば gfarm_error_t も使わない。
+	・具体的には下記の通り。
 	  /* gfutil */
 		#include "hash.h"
 		#include "gfevent.h"
@@ -207,33 +207,33 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 
 		#include "config.h"
 
-�� ����¾�κ�§
+■ その他の細則
 
-	��free(NULL) �ϡ�C���쵬��Ū�˹�ˡ�Ǥ���
-	  ���Τ��ᡢ
+	・free(NULL) は、C言語規格的に合法です。
+	  このため、
 		if (ptr != NULL)
 			free(ptr);
-	  �ȤϽ񤫤���ñ�˰ʲ��Τ褦�˽񤯤褦�ˤ��ޤ���
+	  とは書かず、単に以下のように書くようにします。
 		free(ptr);
 
-	��libgfarm �Ǥϡ�auto �ѿ������Ѥ��륵������Ƶ��ƤӽФ��ο�����
-	���礭���ʤ�᤮�ʤ��褦��α�դ��ƥ����ǥ��󥰤��ޤ��������
-	��libgfarm �Υ����������ɤ�Linux �Υ����ͥ�⥸�塼��Ǥ�
-	��ή�Ѥ��Ƥ��뤫��Ǥ���Linux �Υ����ͥ륹���å��� 8KB �ʤ���
-	��4KB ���٤�������ޤ���Τǡ������å���˳��ݤ��뤳�Ȥ�������
-	���륵�����ϡ��������������Х������٤ޤǤȤ��ޤ���
+	・libgfarm では、auto 変数が利用するサイズや再帰呼び出しの深さ、
+	　大きくなり過ぎないように留意してコーディングします。これは
+	　libgfarm のソースコードを、Linux のカーネルモジュールでも
+	　流用しているからです。Linux のカーネルスタックは 8KB ないし
+	　4KB 程度しかありませんので、スタック上に確保することが許され
+	　るサイズは、せいぜい数十バイト程度までとします。
 
-	��alloca() �ϻȤ��ޤ��󡣰����ǻ��ꤷ�����������礭�᤮�����
-	������� NULL �Ǹ��ΤǤ��뤫�ɤ����������˰�¸�������ΤǤ��ʤ�
-	��OS ��ޥ������åɴĶ���¸�ߤ��뤫��Ǥ����ޤ���C����ɸ���
-	��POSIXɸ��˴ޤޤ�Ƥ��餺���ܿ������ݾڤ��ʤ��Τ�����Ǥ���
-	��Ʊ�ͤˡ�C99 ��Ƴ�����줿ưŪ����⡢������ƥ��顼�θ�����
-	���Ǥ��ʤ��������Ū�ˤ����Ѥ��ޤ��󡣤�������������������
-	���������ʤ��������������Х������٤ޤǡˤ��Ȥ��μ¤��ݾڤǤ���
-	�����ϡ��㳰�Ȥ��ޤ���
+	・alloca() は使いません。引数で指定したサイズが大き過ぎる場合に
+	　戻り値 NULL で検知できるかどうかが実装に依存し、検知できない
+	　OS やマルチスレッド環境が存在するからです。また、C言語標準や
+	　POSIX標準に含まれておらず、移植性の保証がないのも問題です。
+	　同様に、C99 で導入された動的配列も、割り当てエラーの検査が
+	　できないため基本的には利用しません。ただし、サイズがごく
+	　小さい（せい　ぜい数十バイト程度まで）ことが確実に保証できる
+	　場合は、例外とします。
 
-	��ʸ������������������ˤϡ��ʲ����Ѥ��ޤ���
-		�� static const char diag[] = "constant string";
-	  �ʲ��ϻȤ��ޤ���
-		�� static const char *diag = "constant string";
-	  ��Ԥ��� diag �ݥ����ѿ����ΤϽ񤭴�����ǽ�Ȥʤ뤫��Ǥ���
+	・文字列定数を定義する場合には、以下を用います。
+		○ static const char diag[] = "constant string";
+	  以下は使いません。
+		× static const char *diag = "constant string";
+	  後者だと diag ポインタ変数自体は書き換え可能となるからです。

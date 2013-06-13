@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfarm_stringlist_init&nbsp;--&nbsp;stringlist ����������</DIV
+>gfarm_stringlist_init&nbsp;--&nbsp;stringlist を初期化する</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -83,21 +83,21 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->gfarm_stringlist �ϡ�ʸ���������ưŪ���ݤ�������뷿�Ǥ���
-ưŪ�˳��ݤ����Τϡ���������Ǥ��ꡢ�������ǤǤ����ʸ����ˤĤ��Ƥϡ�
-���η��δ������ˤʤ�ޤ���</P
+>gfarm_stringlist は、文字列配列の動的確保を補助する型です。
+動的に確保されるのは、配列だけであり、配列要素である各文字列については、
+この型の管理外になります。</P
 ><P
->���δؿ��ϡ�
+>この関数は、
 <TT
 CLASS="PARAMETER"
 ><I
 >listp</I
 ></TT
 >
-�λؤ� gfarm_stringlist �����ѿ����������ޤ���</P
+の指す gfarm_stringlist 型の変数を初期化します。</P
 ><P
->���η������Ѥ򽪤������ˤϡ�gfarm_stringlist_free() ���Ѥ��ơ�
-ưŪ�˳��ݤ���������������ɬ�פ�����ޤ���</P
+>この型の利用を終えた時には、gfarm_stringlist_free() を用いて、
+動的に確保したメモリを解放する必要があります。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -118,7 +118,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ｪλ�򼨤��ޤ���</P
+>正常終了を示します。</P
 ></DD
 ><DT
 ><TT
@@ -127,13 +127,13 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->������­�Τ����������ߤ��ޤ�����</P
+>メモリ不足のため処理を中止しました。</P
 ></DD
 ><DT
->����¾</DT
+>その他</DT
 ><DD
 ><P
->�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</P
+>上記以外のエラーが生じたことを示します。</P
 ></DD
 ></DL
 ></DIV

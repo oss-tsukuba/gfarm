@@ -1,17 +1,17 @@
-	��ĥ°���Υ��ݡ���
+	拡張属性のサポート
 
-1. ����
-	gfarmV2 �˳�ĥ°���������XML��ĥ°���ε�ǽ���ɲä��롣
-	API��linux ��setxattr �˽स��XML��ĥ°���ˤĤ��Ƥϡ�
-	XML ����API���Ѱդ��롣
-	�ʤ�����ĥ°����XML��ĥ°���ϸߤ�����Ω�Ǥ��롣
+1. 概要
+	gfarmV2 に拡張属性、およびXML拡張属性の機能を追加する。
+	APIはlinux のsetxattr に準じ、XML拡張属性については、
+	XML 検索APIを用意する。
+	なお、拡張属性とXML拡張属性は互いに独立である。
 
-	��ĥ°���ϥ᥿�ǡ����Ȥ��Ƴ�Ǽ���롣
-	XML��ĥ°���ǡ����γ�Ǽ�������ϡ�PostgreSQL��XML�ǡ�����������
-	���Ѥ��롣
+	拡張属性はメタデータとして格納する。
+	XML拡張属性データの格納・検索は、PostgreSQLのXMLデータ型処理を
+	利用する。
 
 2.API
-2.1 �ؿ����
+2.1 関数宣言
 	gfarm_error_t gfs_setxattr(const char *path, const char *name,
 		const void *value, size_t size, int flags);
 	gfarm_error_t gfs_getxattr(const char *path, const char *name,
@@ -34,72 +34,72 @@
 			char **fpathp, char **namep);
         gfarm_error_t gfs_closexmlattr(struct gfs_xmlattr_ctx *ctxp);
 
-2.2 ���Ͳ���
-	setxattr, getxattr, listxattr, removexattr ��linux ��API�˽ऺ�롣
+2.2 仕様解説
+	setxattr, getxattr, listxattr, removexattr はlinux のAPIに準ずる。
 
-	getxattr, listxattr�ϡ��ƤӽФ�¦�����ݤ����Хåե��Ȥ��Υ�������
-	�����Ȥ����Ϥ�����̤����ΥХåե��˼��ޤ�ʤ��ä�����ERANGE���顼��
-	�ʤꡢɬ�פʥ�������size�����ꤵ�����롣
-	linux��xattr�ˤ����Ƥϡ���Ĥγ�ĥ°���ǡ����Υ���������ĤΥե������
-	����Ǥ����ĥ°��̾�����ι�ץ������ϡ����줾��64KB�����¤���Ƥ��롣
-	libgfarm��ͳ�Ǥ�64KB��Ķ�����ĥ°��������Ǥ��뤬��fuse��ͳ�Ǽ�������
-	����64KB�ޤǤ��������Ǥ��ʤ����Ȥ����ա�
+	getxattr, listxattrは、呼び出し側が確保したバッファとそのサイズを
+	引数として渡す。結果がそのバッファに収まらなかった場合はERANGEエラーと
+	なり、必要なサイズがsizeに設定されて戻る。
+	linuxのxattrにおいては、一つの拡張属性データのサイズ、一つのファイルに
+	設定できる拡張属性名一覧の合計サイズは、それぞれ64KBに制限されている。
+	libgfarm経由では64KBを超える拡張属性を設定できるが、fuse経由で取得する
+	場合は64KBまでしか取得できないことに注意。
 
-	xml��ĥ°���ϡ��᥿DB��XML���򥵥ݡ��Ȥ��Ƥ���(����PostgreSQL�Τ�)���
-	���ݡ��Ȥ��롣�����Ǥʤ����xmlattr �ϤΥ��󥿥ե�������ENOTSUP���֤��� 
+	xml拡張属性は、メタDBがXML型をサポートしている(当面PostgreSQLのみ)場合
+	サポートする。そうでない場合xmlattr 系のインタフェースはENOTSUPを返す。 
 
-	xml��ĥ°���ϴ���Ū�˳�ĥ°�����󥿥ե�����������������
-	gfs_setxmlattr �Ǥϡ��Ϥ��줿buf ��XML����������ʸ��Ǥ��뤫��
-	�����å����Ԥ��롣�������ʤ��Ȥ���EINVAL���֤���롣
+	xml拡張属性は基本的に拡張属性インタフェースに等しいが、
+	gfs_setxmlattr では、渡されたbuf がXMLの整形式の文書であるかの
+	チェックが行われる。正しくないときはEINVALが返される。
 
-	���ꤹ��XML����Ƭ��<?xml version="1.0" encoding="UTF-8"?>��
-	�����褦��XML���ʸ�Ϥ��äƤ�ʤ��Ƥ��ɤ��������������������
-	ɬ�����ιԤϾä��롣�����PostgreSQL�˻��ͤˤ���Τǡ�XML
-	��ĥ°���λ��ͤȤ��롣
+	設定するXMLの先頭に<?xml version="1.0" encoding="UTF-8"?>と
+	いうようなXML宣言文はあってもなくても良い。ただし、取得すると
+	必ずその行は消える。これはPostgreSQLに仕様によるもので、XML
+	拡張属性の仕様とする。
 
-	�ޤ���xml��ĥ°���ˤ�XML������Ԥ����󥿥ե����������롣
-	path ���ǥ��쥯�ȥ�Ǥʤ���С������ѥ��ˤĤ��ơ�
-	path ���ǥ��쥯�ȥ�Ǥ���С�����path���餽���۲���depth�ޤǤ�
-	�ե�����(0��path �Τ�) �ˤĤ��ơ�
-	�оݥե����뤬XML��ĥ°������äƤ���С�expr �Ǽ���������
-	XML������Ԥ����ޥå������������ĥ°���Υѥ���̾�����֤���
+	また、xml拡張属性にはXML検索を行うインタフェースがある。
+	path がディレクトリでなければ、当該パスについて、
+	path がディレクトリであれば、当該pathからその配下のdepthまでの
+	ファイル(0はpath のみ) について、
+	対象ファイルがXML拡張属性を持っていれば、expr で示される条件で
+	XML検索を行い、マッチすれば当該拡張属性のパスと名前を返す。
 
-        gfs_findxmlattr() �ϸ����������ꤷ�ơ���������ƥ����Ȥ��ֵѤ���롣
-	���θ�ϡ���������ƥ����Ȥ��Ϥ��� gfs_getxmlent() �ǥ���ȥ꡼������
-	���򷫤��֤���NULL ���֤äƤ����EOF�Ǥ���Τǡ�
-        gfs_closexmlattr()�Ǹ�������ƥ����Ȥβ�����Ԥ���
+        gfs_findxmlattr() は検索条件を設定して、検索コンテクストを返却される。
+	その後は、検索コンテクストを渡して gfs_getxmlent() でエントリーを得る
+	操作を繰り返し、NULL が返ってくるとEOFであるので、
+        gfs_closexmlattr()で検索コンテクストの解放を行う。
 
-	expr �ϥ̥륿���ߥ͡��Ȥ���ʸ����ǡ�XPATH �����ϤȤʤ롣
-	expr �˥ե�����̾���ĥ°��̾��񤯤��ȤϤǤ��ʤ���
+	expr はヌルターミネートした文字列で、XPATH の入力となる。
+	expr にファイル名や拡張属性名を書くことはできない。
 
-	depth ��path ���ǥ��쥯�ȥ�λ��˲��̤Υǥ��쥯�ȥ��Ƶ�Ū��
-	����������ο����ǡ�0�ϼ��ȤΤߡ�1��ľ���Υե������ؼ����롣
-	�ǥ��쥯�ȥ�Ǥʤ�����depth ��̵�뤵��롣
-	�ǥ��쥯�ȥ�򲼹ߤ�����ν���˵�§���ϴ��Ԥ���ʤ���
+	depth はpath がディレクトリの時に下位のディレクトリを再帰的に
+	検索する場合の深さで、0は自身のみ、1は直下のファイルを指示する。
+	ディレクトリでない場合はdepth は無視される。
+	ディレクトリを下降する場合の順序に規則性は期待されない。
 
-	gfs_getxmlent() ��XML �����˹��פ����ե�����Ρ�path��ޤ����Хѥ���
-	��ĥ°��̾���֤���롣
-	eof �ξ��� �ѥ�̾��°��̾�Ȥ���NULL���֤롣
-	gfs_getxmlent() �ϥꥨ��ȥ��ȤǤϤʤ���
-	�֤���� fpath, name ���ΰ�ϼ��θƤӽФ��䡢gfs_closexmlattr()��
-	�ƤӽФ���������ݾڤ���ʤ���
+	gfs_getxmlent() はXML 検索に合致したファイルの、pathを含む相対パスと
+	拡張属性名が返される。
+	eof の場合は パス名と属性名としてNULLが返る。
+	gfs_getxmlent() はリエントラントではない。
+	返される fpath, name の領域は次の呼び出しや、gfs_closexmlattr()の
+	呼び出しがあれば保証されない。
 
-	�����γ�ĥ°���ѥ��ϱ�������¸�ߤ��ݾڤ����ΤǤϤʤ���
-	�ޤ�����������rename ���������礷����硢�Ĥ�θ�������³����뤫��
-	�ݾڤ���ʤ���
+	応答の拡張属性パスは応答時の存在を保証するものではない。
+	また、検索時にrename や削除が競合した場合、残りの検索が継続されるかは
+	保証されない。
 
 
-2.3 XML��������
-	�ʲ��Τ褦�ʥե�����ĥ꡼�����äơ���ʸ���Υե�����Ϥ��줾�졢
-	n1,n2��XML��ĥ°������äƤ��ơ�n1���ޥå����븡����ȯ�Ԥ�������
-        ���Ϥϼ��Τ褦�ˤʤ롣
-	�ե�����ĥ꡼ ------------------------------------------------
+2.3 XML検索の例
+	以下のようなファイルツリーがあって、小文字のファイルはそれぞれ、
+	n1,n2のXML拡張属性を持っていて、n1がマッチする検索を発行した場合の
+        出力は次のようになる。
+	ファイルツリー ------------------------------------------------
 			/a0/b0/c0/d0
 			      /C1/d1
 			      /C1/D2
 			      /c2
 
-	�ץ������ ----------------------------------------------------
+	プログラム ----------------------------------------------------
 	struct gfs_xmlattr_ctx *ctxp;
 	char *path, *name;
 	
@@ -110,18 +110,18 @@
 		}
 		gfs_closexmlattr(ctx);
 	}
-	���� -----------------------------------------------------------
+	出力 -----------------------------------------------------------
 			/a0/b0:n1
 			/a0/b0/c0:n1
 			/a0/b0/c0/d0:n1
 			/a0/b0/C1/d1:n1
 			/a0/b0/c2:n1
 
-3. �᥿�ǡ���
-3.1. �᥿DB
-	��ĥ°����inode �Ȥ��̤Υơ��֥�˳�Ǽ���롣
-	��ĥ°���Υơ��֥�����ϰʲ��Τ褦�ˤʤ롣
-	XmlAttr�ϡ�XML��ĥ°���򥵥ݡ��Ȥ�������λ��Τߺ������롣
+3. メタデータ
+3.1. メタDB
+	拡張属性はinode とは別のテーブルに格納する。
+	拡張属性のテーブル作成は以下のようになる。
+	XmlAttrは、XML拡張属性をサポートする設定の時のみ作成する。
 	CREATE TABLE XAttr (
         	inumber         INT8
 			REFERENCES INode(inumber) ON DELETE CASCADE,
@@ -137,20 +137,20 @@
 		PRIMARY KEY(inumber, attrname)
 	);
 
-3.2. stat ����
-	��ĥ°���ǡ����Υ������ϡ�st_size �� st_blocks �˱ƶ����ʤ���
-	setxattr(), removexattr() ��st_ctime �򹹿����뤬��
-	st_mtime �Ϲ������ʤ���
-	getxattr(), listxattr() �� st_atime �򹹿����ʤ���
+3.2. stat 情報
+	拡張属性データのサイズは、st_size や st_blocks に影響しない。
+	setxattr(), removexattr() はst_ctime を更新するが、
+	st_mtime は更新しない。
+	getxattr(), listxattr() は st_atime を更新しない。
 	
-	�����������ϥǡ�����IO��Ʊ���ǡ�WRITE��������С�setxattr, removexattr
-	���Ǥ���READ���������getxattr, listxattr���Ǥ��롣
+	アクセス権はデータのIOに同じで、WRITE権があれば、setxattr, removexattr
+	ができ、READ権があればgetxattr, listxattrができる。
 
-	�������������å��򤤤Ĥɤ��ǹԤ����ϴؿ��ˤ�äưۤʤ롣
+	アクセスチェックをいつどこで行うかは関数によって異なる。
 
-3.3. ����ɽ��
-	�����ˤϳ�ĥ°��̾��inode ��°���Ȥ��Ƴ�Ǽ������ĥ°���ǡ�����
-	DB�ˤΤ��ݻ����롣
+3.3. メモリ表現
+	メモリ上には拡張属性名をinode の属性として格納し、拡張属性データは
+	DBにのみ保持する。
 
 	struct xattr_entry {
 		struct xattr_entry *prev, *next;
@@ -166,96 +166,96 @@
 		...
 		struct xattrs xattrs, xmlattrs;
 	};
-	��ĤΥե�����γ�ĥ°���Ϥ��ޤ�¿���ʤ��ȴ��Ԥ����Τǡ�
-	�����ꥹ�ȤǴ������롣�ꥹ�ȤؤΥ��������ϡ�lock����¾���롣
+	一つのファイルの拡張属性はあまり多くないと期待されるので、
+	線形リストで管理する。リストへのアクセスは、lockで排他する。
 
-	DB �ؤΥ���������¾�Υ᥿�ǡ�����Ʊ������dbq ��𤷤ƹԤ���
-	����������������Ԥ��򤹤롣
+	DB へのアクセスは他のメタデータと同じく、dbq を介して行う。
+	ただし、処理結果待ちをする。
 
-4. gfmd ���󥿥ե�����
+4. gfmd インタフェース
 	GFM_PROTO_XATTR_SET, GFM_PROTO_XMLATTR_SET
-	    �׵�
+	    要求
 		s : name
 		B : value
 		i : flags
-	    ����
-		i : ���顼
+	    応答
+		i : エラー
 
 	GFM_PROTO_XATTR_GET, GFM_PROTO_XMLATTR_GET
-	    �׵�
+	    要求
 		s : name
-	    ����
-		i : ���顼
+	    応答
+		i : エラー
 		b : value
-	    �������䤤��碌�Ϥʤ���
+	    サイズ問い合わせはない。
 
 	GFM_PROTO_XATTR_REMOVE, GFM_PROTO_XMLATTR_REMOVE
-	    �׵�
+	    要求
 		s : name
-	    ����
-		i : ���顼
+	    応答
+		i : エラー
 
 	GFM_PROTO_XATTR_LIST, GFM_PROTO_XMLATTR_LIST
-	    �׵�
-	    ����
-		i : ���顼
+	    要求
+	    応答
+		i : エラー
 		b : value
-	    value �� NULL�����ߥ͡��Ȥ���ʸ����ν���Ǥ��롣
+	    value は NULLターミネートした文字列の集合である。
 
 	GFM_PROTO_XMLATTR_FIND
-	    �׵�
+	    要求
 		s : expr
 		i : depth
 		i : nentry
 		cookie
 			s : path
 			s : name
-	    ����
-		i : ���顼
+	    応答
+		i : エラー
 		i : eof
 		i : nentry
 		entry[nent]
 			s : path
 			s : name
-	    �������䤤��碌�Ϥʤ���
-	    �׵᥵�����˶ᤤŬ���ʶ��ڤ��̾���ޤǤ��֤���
-	    entry �� ��ĥ°������ĥե���������Хѥ��ȳ�ĥ°��̾�������롣
-	    �׵�ե����뼫�Ȥγ�ĥ°���λ��ˤϥѥ���"."�Ȥ��롣
-	    �׵��cookie��entry�ǡ������׵�Ǥϳ�ĥ°��̾��NULL�򤷤᤹��
-	    ��³�׵�ξ��ϡ��Ǹ���֤��줿entry��cookie�Ȥ����Ϥ���
-	    eof �ξ��� eof �ե饰��1�Ǥ��롣
+	    サイズ問い合わせはない。
+	    要求サイズに近い適当な区切りの名前までを返す。
+	    entry は 拡張属性を持つファイルの相対パスと拡張属性名から成る。
+	    要求ファイル自身の拡張属性の時にはパスは"."とする。
+	    要求のcookieはentryで、初回の要求では拡張属性名がNULLをしめす。
+	    継続要求の場合は、最後に返されたentryをcookieとして渡す。
+	    eof の場合は eof フラグが1である。
 
-5. gfmd ����
-	�᥿����	db_access.c, db_pgsql.c, db_ldap.c�ʤ�
-		��ĥ°�������ɲáʥ������ޡ���������PBSQL��LDAP��
-		dbq�ν�����λ�Ԥ�����
+5. gfmd 実装
+	メタ管理	db_access.c, db_pgsql.c, db_ldap.cなど
+		拡張属性管理追加（スキーマ、共通部、PBSQL、LDAP）
+		dbqの処理完了待ち処理
 
-	inode����	inode.c
-		��ĥ°�������ɲáʥ����ץ�����ɤ߹��ߡ��ɲá������������
-		inode����κݤ�����ĥ°�����
-		�����ॹ����׹�������
+	inode管理	inode.c
+		拡張属性管理追加（オープン時の読み込み、追加・削除・一覧）
+		inode削除の際の全拡張属性削除
+		タイムスタンプ更新処理
 
-	�ץ��ȥ������	xattr.c�����ɲ�
-		��ĥ°�������ꡦ���������������
-		gfm_server_fchmod()��gfm_serevr_fstat()����ä�
-		gfm_server_xxx()��������롣
-		�������Τ�giant_lock()/unlock()�ǥ��å����롣
+	プロトコル処理	xattr.c新規追加
+		拡張属性の設定・取得・削除・一覧
+		gfm_server_fchmod()やgfm_serevr_fstat()に倣って
+		gfm_server_xxx()を作成する。
+		処理全体をgiant_lock()/unlock()でロックする。
 
-		XML����
-		�����������Τϡ�PostgreSQL��XML������Ǥ���롣
-		���˥ѥ���°��̾���ä��Ƥ����顢�����åפ���ʥ��顼�Ȥ��ʤ��ˡ�
-		�ѥ���°��̾�������Ƥ��Ƥ�̵�뤵��롣
-		cookie�ǻ��ꤵ�줿�ѥ���°��̾��̵���ʤäƤ����顢
-		EOF�������֤���
+		XML検索
+		検索処理自体は、PostgreSQLのXML処理に任せる。
+		既にパス・属性名が消えていたら、スキップする（エラーとしない）。
+		パス・属性名が増えていても無視される。
+		cookieで指定されたパス・属性名が無くなっていたら、
+		EOF応答を返す。
 
-6. ��Ϣ�饤�֥�����
+6. 関連ライブラリ実装
 	libgfarm
-		gfs_setxattr()�ʤɤ򿷵�������
-		gfm_client_xxx_request/result()���ɲá�
+		gfs_setxattr()などを新規作成。
+		gfm_client_xxx_request/result()を追加。
 
 	gfs_hook
-		gfarm v2�Ǥ��󥵥ݡ��ȤʤΤǡ��ѹ����ʤ���
+		gfarm v2では非サポートなので、変更しない。
 
 	gfarm2fs (fuse)
-		setxattr, getxattr, listxattr, removexattr���ɲá�
-		xml��ĥ°���ؤΥ��������ϹԤ�ʤ���
+		setxattr, getxattr, listxattr, removexattrを追加。
+		xml拡張属性へのアクセスは行わない。

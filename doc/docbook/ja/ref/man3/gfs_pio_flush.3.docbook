@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_flush</refname>
-<refpurpose>�񤭹��ߤ�ե�å��夹�롣</refpurpose>
+<refpurpose>書き込みをフラッシュする。</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -32,9 +32,9 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>�񤭹����Ѥ˥����ץ󤷤Ƥ���ե�����
+<para>書き込み用にオープンしているファイル
 <parameter>gf</parameter>
-�Ρ��񤭹��ߥХåե���ί�ޤäƤ���ǡ�����ºݤ˥ǥ������˽񤭹��ߤޤ���</para>
+の、書き込みバッファに溜まっているデータを実際にディスクに書き込みます。</para>
 
 </refsect1>
 
@@ -43,19 +43,19 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

@@ -1,70 +1,70 @@
-		 ��ǽ��˥���󥰥����ƥ�Υ��󥹥ȡ���
+		 性能モニタリングシステムのインストール
 
--- �ܼ� --
-	0. �Ϥ����
-	1. ganglia �Υ��󥹥ȡ���
+-- 目次 --
+	0. はじめに
+	1. ganglia のインストール
 	1.1 python
-	1.1.1 python �γ�ǧ
-	1.1.2 CentOS 5 �ξ��� python 2.6 �Υ��󥹥ȡ��� ���
+	1.1.1 python の確認
+	1.1.2 CentOS 5 の場合の python 2.6 のインストール 手順
 	1.2 ganglia
-	1.2.1 ganglia���Υ��󥹥ȡ���
-	1.2.1.1 ���ץΡ���
-	1.2.1.2 �ƻ�Ρ���
-	1.2.2 ganglia�Υ���ѥ���
-	1.2.3 ganglia plugin �Υ��󥹥ȡ���
-	1.3 ganglia �Υ��åȥ��å�
-	1.3.1 ���ץΡ���
-	1.3.2 �ƻ�Ρ���
-	2. gfarm �Υ��åȥ��å�
+	1.2.1 ganglia　のインストール
+	1.2.1.1 集計ノード
+	1.2.1.2 監視ノード
+	1.2.2 gangliaのコンパイル
+	1.2.3 ganglia plugin のインストール
+	1.3 ganglia のセットアップ
+	1.3.1 集計ノード
+	1.3.2 監視ノード
+	2. gfarm のセットアップ
 	2.1 gfmd
 	2.1.1 config-gfmd-iostat 
 	2.2 gfsd
 	2.2.1 config-gfsd-iostat
-	3. ganglia �����
-	3.1 ��ǽ¬��δƻ�
-	3.2 rrd �ե�����
-	3.3 ���饹��ɽ��
-	3.4 �������륹�ȥ졼����ǽ
+	3. ganglia の操作
+	3.1 性能測定の監視
+	3.2 rrd ファイル
+	3.3 クラスタ表示
+	3.4 ローカルストレージ性能
 
-0. �Ϥ����
-	�����Ǥϡ�gfarm ����ǽ��˥���󥰵�ǽ���ɲä��뤿��μ��򵭽Ҥ��롣
+0. はじめに
+	ここでは、gfarm に性能モニタリング機能を追加するための手順を記述する。
 
-	gfarm ��ǽ��˥���󥰥����ƥ� �� ganglia �� python plugin �Ȥ���
-	��������Ƥ���Τǡ�ganglia �Υ��󥹥ȡ��롢���åȥ��åפ��褺�Ԥ�
-	ɬ�פ����롣
+	gfarm 性能モニタリングシステム は ganglia の python plugin として
+	実装されているので、ganglia のインストール、セットアップを先ず行う
+	必要がある。
 
-	gfarm�����С��ȡ�plugin����ǽ�����󥿥ե������𤷤���ǽ�����ͭ����
-	������ǽ�����󥿥ե������¸�ߤ���ǥ��쥯�ȥ�ϡ�
-	gfarm �� ���åȥ��å׻��˸ߤ���configuration �ե�����˵��Ҥ���롣
+	gfarmサーバーと、pluginは性能カウンタファイルを介して性能情報を共有し、
+	その性能カウンタファイルの存在するディレクトリは、
+	gfarm の セットアップ時に互いのconfiguration ファイルに記述される。
 
-1. ganglia �Υ��󥹥ȡ���
+1. ganglia のインストール
 
 1.1 python
-	�ܥ����ƥ��ganglia plugin �ϡ�python 2.5 �ʾ�ε�ǽ��ɬ�פȤ���Τǡ�
-	python �ΥС�������Τ��ᡢ2,5 ���Ť����Ͽ�����python��
-	���󥹥ȡ��뤹�롣
+	本システムのganglia plugin は、python 2.5 以上の機能を必要とするので、
+	python のバージョンを確かめ、2,5 より古い場合は新しいpythonを
+	インストールする。
 
-1.1.1 python �γ�ǧ
-	python �ΥС��������ǧ���롣
+1.1.1 python の確認
+	python のバージョンを確認する。
 	+--------------------------------------------------------------------+
 	% python -V
 	Python 2.4.3
 	+--------------------------------------------------------------------+
 
-	�ǥե���ȤΥС�����󤬸Ť��Ȥ��ˤϡ��������С�����󤬤ʤ�����ǧ���롣
+	デフォルトのバージョンが古いときには、新しいバージョンがないか確認する。
 	+--------------------------------------------------------------------+
 	% python26 -V
 	Python 2.6.8
 	+--------------------------------------------------------------------+
 
-1.1.2 CentOS 5 �ξ��� python 2.6 �Υ��󥹥ȡ��� ���
-	�������С�����󤬤ʤ�����python 2.6 �򥤥󥹥ȡ��뤹�롣
+1.1.2 CentOS 5 の場合の python 2.6 のインストール 手順
+	新しいバージョンがない時はpython 2.6 をインストールする。
 	+--------------------------------------------------------------------+
 	# yum install python26 python26-devel python26-distribute 
 	# yum install python26-mod_python mod_python26
 	+--------------------------------------------------------------------+
 
-	�ʲ��Τ褦�˥��󥹥ȡ��뤵��Ƥ��롣
+	以下のようにインストールされている。
 	+--------------------------------------------------------------------+
 	% ls -l /usr/pyth*
 	-rwxr-xr-x 2 root root 8304 Jun 18 21:56 /usr/bin/python
@@ -75,52 +75,52 @@
 	+--------------------------------------------------------------------+
 
 1.2 ganglia
-	ganglia �ϡ��ƥΡ��ɤǥǡ������������ gmond ��
-	gmond ����Υǡ����򽸤� rrd �ե�����Ȥ�����¸����gmetad��
-	����� web ��� rrd �ե�����򥰥�ղ�����ɽ������ gweb2 
-	�������롣
+	ganglia は、各ノードでデータを収集する gmond と
+	gmond からのデータを集め rrd ファイルとして保存するgmetad、
+	および web 上で rrd ファイルをグラフ化して表示する gweb2 
+	から成る。
 
-	ganglia �Ǥϥ���åɡ����饹���Ȥ�����ǰ�����ꡢ
-	gmond �Ϥ��륯�饹����°����gmetad �Ϥ��륰��åɤ�°����
+	ganglia ではグリッド、クラスタという概念があり、
+	gmond はあるクラスタに属し、gmetad はあるグリッドに属す。
 
-	gmond �ϼ��Ȥǥǡ������������¾��gmond �����ä��ꡢ
-	¾��gmond ��������줿�ǡ��������ᡢgmetad ���䤤��碌�˱�����
-	�����ǡ�������𤹤롣
+	gmond は自身でデータを収集して他のgmond に送ったり、
+	他のgmond から送られたデータを貯め、gmetad の問い合わせに応じて
+	収集データを報告する。
 
-	gmetad �� ���饹���䥰��åɤʤɼ����оݤ���ɽ�Ρ��ɤ���ǡ����򽸤ᡢ
-	rrd �ե�����˵�Ͽ�����ޤ���¾��gmetad ������䤤��碌�������
-	��𤹤롣
+	gmetad は クラスタやグリッドなど収集対象の代表ノードからデータを集め、
+	rrd ファイルに記録し、また、他のgmetad からの問い合わせがあれば
+	報告する。
 
-	��ɽ�Ρ��ɤȤϤ�������оݤΥǡ����������ݻ����Ƥ���Ρ��ɤǡ�
-	gmetad.conf �� data_source �Ԥ˵��Ҥ��졢��Ĺ���Τ���ʣ�����Ƥ褤��
+	代表ノードとはある収集対象のデータを全て保持しているノードで、
+	gmetad.conf の data_source 行に記述され、冗長化のため複数いてよい。
 
-	ganglia �� ����Ū�ʹ����ϰʲ����̤�Ǥ��롣
+	ganglia の 基本的な構成は以下の通りである。
 
-		���饹���ƥΡ������	gmond
+		クラスタ各ノード毎に	gmond
 					gmond.conf
-		����åɤ� 		gmetad
+		グリッドに 		gmetad
 					gmetad.conf
-		                        rrdtool �ǡ����١���
-		                        PHP ������ץ� (gweb2)
-		                        http ������
+		                        rrdtool データベース
+		                        PHP スクリプト (gweb2)
+		                        http サーバ
 
-1.2.1 ganglia���Υ��󥹥ȡ���
-1.2.1.1 ���ץΡ���
+1.2.1 ganglia　のインストール
+1.2.1.1 集計ノード
 	+--------------------------------------------------------------------+
 	# yum -y install --enablerepo=epel ganglia ganglia-gmetad ganglia-web
 	+--------------------------------------------------------------------+
 
-	web2 ������ɽ����ǽ��˭�٤ʤΤǡ�ganglia-web2 �򼡤򻲹ͤ�
-	���󥹥ȡ��뤹�롣
+	web2 の方が表示機能が豊富なので、ganglia-web2 を次を参考に
+	インストールする。
 	http://sourceforge.net/apps/trac/ganglia/wiki/ganglia-web-2
 	
-1.2.1.2 �ƻ�Ρ���
+1.2.1.2 監視ノード
 	+--------------------------------------------------------------------+
 	# yum install ganglia-gmond-python
 	+--------------------------------------------------------------------+
 
-	gfarm ��ǽ��˥���� ���åȥ��å׻��˵��Ҥ��� ganglia ��
-	configuration �ǥ��쥯�ȥ��Ĵ�١��������롣
+	gfarm 性能モニタリング セットアップ時に記述する ganglia の
+	configuration ディレクトリを調べ、記憶する。
 	+--------------------------------------------------------------------+
 	% whereis gmond
 	/usr/sbin/gmond
@@ -133,10 +133,10 @@
 	conf.d  gmond.conf
 	% set GCONFDIR=/etc/ganglia
 	+--------------------------------------------------------------------+
-	configuration �ǥ��쥯�ȥ�� /etc/ganglia �Ǥ��ä���
+	configuration ディレクトリは /etc/ganglia であった。
 	
 	
-	gmond �ΥХ���ɤ��Ƥ���python ���ǧ���롣
+	gmond のバインドしているpython を確認する。
 	+--------------------------------------------------------------------+
 	% grep -r python_module $GCONFDIR
 	/etc/ganglia/conf.d/modpython.conf:    name = "python_module"
@@ -155,15 +155,15 @@
 	% ldd /usr/lib64/ganglia/modpython.so | grep python
 	libpython2.4.so.1.0 => /usr/lib64/libpython2.4.so.1.0 
 	+--------------------------------------------------------------------+
-	gmond �ΥХ���ɤ��Ƥ��� python �� 2.5 ���Ť����� 1.2.2 ��˽���
-	ganglia�򥤥󥹥ȡ��뤹��ɬ�פ����롣
+	gmond のバインドしている python が 2.5 より古い場合は 1.2.2 節に従い
+	gangliaをインストールする必要がある。
 
-1.2.2 ganglia�Υ���ѥ���
-	ganglia �����������ꤷ�ƥ���ѥ��뤹�롣
-	���κݡ�������python ��ؼ�����Τ�˺��ʤ����ȡ�
+1.2.2 gangliaのコンパイル
+	ganglia ソースを入手してコンパイルする。
+	その際、新しいpython を指示するのを忘れないこと。
 
 	http://sourceforge.net/apps/trac/ganglia/wiki/ganglia_configuration
-	�˽��ä�ɬ�פʥѥå������򥤥󥹥ȡ��뤷�Ƥ�����
+	に従って必要なパッケージをインストールしておく。
 
 	+--------------------------------------------------------------------+
 	% tar xvf ganglia-3.4.0.tar.gz
@@ -173,8 +173,8 @@
 	# make install 
 	+--------------------------------------------------------------------+
 
-	1.2.1.2 �ƻ�Ρ��ɤ� ���� ganglia �� configuration �ǥ��쥯�ȥ��
-	Ĵ�١��������롣
+	1.2.1.2 監視ノードの 手順で ganglia の configuration ディレクトリを
+	調べ、記憶する。
 	+--------------------------------------------------------------------+
 	% whereis gmond
 	/usr/local/sbin/gmond
@@ -183,10 +183,10 @@
 				(default='/usr/local/etc/gmond.conf')
 	% set GCONFDIR=/usr/local/etc
 	+--------------------------------------------------------------------+
-	configuration �ǥ��쥯�ȥ�� /usr/local/etc��
+	configuration ディレクトリは /usr/local/etc。
 
-	�⤷��ganglia �Υ饤�֥���۲��� python_modules �ǥ��쥯�ȥ꤬�ʤ�����
-	��ư�Ǻ������롣
+	もし、ganglia のライブラリ配下に python_modules ディレクトリがない時は
+	手動で作成する。
 	+--------------------------------------------------------------------+
 	% find /usr/lib* /usr/local/lib* -name ganglia
 	/usr/local/lib64/ganglia
@@ -194,12 +194,12 @@
 	# mkdir /usr/local/lib64/ganglia/python_modules
 	+--------------------------------------------------------------------+
 
-1.2.3 ganglia plugin �Υ��󥹥ȡ���
-	ganglia �� python plugin �����󥹥ȡ��뤵��Ƥ��뤫�Τ���롣
+1.2.3 ganglia plugin のインストール
+	ganglia の python plugin がインストールされているか確かめる。
 
-	1.2.1.2 �ƻ�Ρ��� �ǳ�ǧ����
-	ganglia �� configuration �ǥ��쥯�ȥ� GCONFDIR ��
-	python_modules �Υǥ��쥯�ȥ� GLIBDIR ������å����롣
+	1.2.1.2 監視ノード で確認した
+	ganglia の configuration ディレクトリ GCONFDIR と
+	python_modules のディレクトリ GLIBDIR をチェックする。
 
 	+--------------------------------------------------------------------+
 	% ls $GCONFDIR/conf.d
@@ -214,94 +214,94 @@
 	procstat.pyconf
 	+--------------------------------------------------------------------+
 
-	diskstat.pyconf ���ʤ���Х��󥹥ȡ��뤹�롣
+	diskstat.pyconf がなければインストールする。
 
-	ganglia �Υ����������ꤷ�Ƥ����硢
-	�������ǥ��쥯�ȥ�ǰʲ��μ��ǥ��ԡ����ޤ���
+	ganglia のソースを入手している場合、
+	ソースディレクトリで以下の手順でコピーします。
 	+--------------------------------------------------------------------+
         # cp gmond/python_modules/conf.d/diskstat.pyconf $GCONFDIR
         # find gmond/python_modules -name '*.py' | xargs -I {} cp {} $GLIBDIR
 	+--------------------------------------------------------------------+
 
-	gmond/python_modules/conf.d/ �β��ˤ�¾��plugin �⤢��Τǡ�
-	ɬ�פ�pyconf �ե������Ʊ�ͤ˥��ԡ����롣
-	�ǥե���ȤǤϡ�conf.d �β��� xxx.pyconf �ե����뤬��
-	xxx.pyconf.disable �ˤʤäƤ����礬����Τǡ����ξ��ϡ�
-	xxx.pyconf �Ȥ��ƥ��ԡ����롣
+	gmond/python_modules/conf.d/ の下には他のplugin もあるので、
+	必要なpyconf ファイルを同様にコピーする。
+	デフォルトでは、conf.d の下の xxx.pyconf ファイルが、
+	xxx.pyconf.disable になっている場合があるので、その場合は、
+	xxx.pyconf としてコピーする。
 
-	�ͥåȤ������ꤹ����ϡ�
+	ネットから入手する場合は、
 	https://github.com/ganglia/gmond_python_modules
-	�ʤɤ������롣
-	�ʲ��ι�¤�ǳƼ�plugin ����Ͽ����Ƥ���Τǡ�ɬ�פʥ⥸�塼��ˤĤ���
-	Ʊ�ͤ����֤��롣
-		�⥸�塼��̾/
+	などから得る。
+	以下の構造で各種plugin が登録されているので、必要なモジュールについて
+	同様に配置する。
+		モジュール名/
 			conf.d/*.conf
 			graph.d/*.php
 			python_modules/*.py
 
-1.3 ganglia �Υ��åȥ��å�
-	ganglia �˴ƻ뤹�륯�饹������Ͽ���롣
+1.3 ganglia のセットアップ
+	ganglia に監視するクラスタを登録する。
 
-	��������Ǥϥ��饹���ϰ�Ĥǡ��ƻ�Ρ��ɴ֤�multicast �Ǽ����ǡ�����
-	�����������ΤȤ��롣
+	ここの例ではクラスタは一つで、監視ノード間はmulticast で収集データを
+	送受信するものとする。
 
-	�ƻ�Ρ��ɤ�multicast ����������������Ƥδƻ�Ρ��ɤ���ɽ�Ρ��ɤ�
-	�ʤꤦ�롣
+	監視ノードがmulticast で送受信すると全ての監視ノードが代表ノードに
+	なりうる。
 
 
-1.3.1 ���ץΡ���
+1.3.1 集計ノード
 	+--------------------------------------------------------------------+
 	# yum -y install --enablerepo=epel ganglia ganglia-gmetad ganglia-web
 	# vi /etc/ganglia/gmetad.conf
-	data_source "���饹��̾" ��ɽ�Ρ���1 ��ɽ�Ρ���2 ...
+	data_source "クラスタ名" 代表ノード1 代表ノード2 ...
 	+--------------------------------------------------------------------+
 	
-1.3.2 �ƻ�Ρ���
+1.3.2 監視ノード
 	+--------------------------------------------------------------------+
 	# yum install ganglia-gmond-python
 	# vi /etc/ganglia/gmond.conf
 	cluster {
-	  name = "���饹��̾"
+	  name = "クラスタ名"
 	+--------------------------------------------------------------------+
  
-	unicast �ǹԤ����ˤϡ���ɽ�Ρ��ɤ򤤤��Ĥ���ᡢ���Ƥδƻ�Ρ��ɤ�
-	���Ƥ���ɽ�Ρ��ɤ˥ǡ���������褦�� udp_send_channel ��
-	���Ҥ��ʤ���Фʤ�ʤ���
+	unicast で行う場合には、代表ノードをいくつか決め、全ての監視ノードは
+	全ての代表ノードにデータを送るように udp_send_channel に
+	記述しなければならない。
 	
-2. gfarm �Υ��åȥ��å�
-	gfarm �Υ��󥹥ȡ���˴ؤ��ơ���ǽ¬��Τ���˹Ԥ��٤����ȤϤʤ���
+2. gfarm のセットアップ
+	gfarm のインストールに関して、性能測定のために行うべきことはない。
 
-	gfarm �Υ��åȥ��åפǤϡ��̾�Υ��åȥ��åפ˲ä��ơ�
-	��ǽ¬��Τ���Υ��åȥ��åפ�Ԥ���
+	gfarm のセットアップでは、通常のセットアップに加えて、
+	性能測定のためのセットアップを行う。
 
-	���åȥ��åפ���Ω����
-	ganglia �� configuration �ǥ��쥯�ȥ�ȡ�
-	��ǽ¬��ե�������������ǥ��쥯�ȥ����Ƥ����ʤ����
-	�ʤ�ʤ���
-	Ʊ��Ρ��ɤǡ�ʣ���ΰۤʤ�gfarm �����ƥ��ư�������ϡ�
-	���饹����٥�̾����Ƥ����ʤ���Фʤ�ʤ���
+	セットアップに先立ち、
+	ganglia の configuration ディレクトリと、
+	性能測定ファイルを作成するディレクトリを決めておかなければ
+	ならない。
+	同一ノードで、複数の異なるgfarm システムを動作させる場合は、
+	クラスタラベル名も決めておかなければならない。
 
-	�����ǡ� �Ķ��ѿ���ʲ��Τ褦���Ѥ��뤳�Ȥˤ��롣
-	GCONFDIR : ganglia �� configuration �ǥ��쥯�ȥ�
-	IOSTATDIR : ��ǽ¬��ե�������������ǥ��쥯�ȥ�
-	IOLABEL : ���饹����٥�̾
+	ここで、 環境変数を以下のように用いることにする。
+	GCONFDIR : ganglia の configuration ディレクトリ
+	IOSTATDIR : 性能測定ファイルを作成するディレクトリ
+	IOLABEL : クラスタラベル名
 
 2.1 gfmd
-	�᥿�ǡ��������С���ư�����Ρ��ɤǤϡ��ʲ��μ��ǥ��åȥ��åפ�Ԥ���
+	メタデータサーバーを動かすノードでは、以下の手順でセットアップを行う。
 
 	1. config-gfarm
-		gfmd.conf �κ�������˹Ԥ���ɬ�פ����롣
+		gfmd.conf の作成が先に行われる必要がある。
 	2. config-gfmd-iostat
-		gfmd.conf ���ѹ��ȡ�plugin �����֤�Ԥ���
-	3. �ޥ������Ρ��ɤξ��
+		gfmd.conf の変更と、plugin の配置を行う。
+	3. マスターノードの場合
 		gfmd restart
-	   ���졼�֥Ρ��ɤξ��
+	   スレーブノードの場合
 		gfdump.postgresql -r 
 	4. gmond restart
-		��������ȥ�å����ɲä��줿�Τǡ��Ƶ�ư���롣
+		新しいメトリックが追加されたので、再起動する。
 
 2.1.1 config-gfmd-iostat 
-	gfmd.conf ���ѹ��ȡ�plugin �����֤�Ԥ���
+	gfmd.conf の変更と、plugin の配置を行う。
 
 	+--------------------------------------------------------------------+
 	% config-gfmd-iostat -h
@@ -312,52 +312,52 @@
 	[--iostat-ganglia-confdir ganglia_sysconf_directory (currently /etc/ganglia)]
 	+--------------------------------------------------------------------+
 	
-	--prefix , -t, -T, -f �� config-gfarm �ΰ�̣����������
-	--iostat-enable ����ǽ¬���Ԥ����ݤ�����ꤹ�롣
-		yes ����ꤹ����������Ƥ˱�äơ�
-		gfmd.conf ���ѹ��ȡ�plugin �����֤��Ԥ�졢
-		no ����ꤹ��ȡ��������Ƥ˱�äơ�
-		gfmd.conf ���ѹ��ȡ�plugin �κ�����Ԥ��롣
+	--prefix , -t, -T, -f は config-gfarm の意味に等しい。
+	--iostat-enable は性能測定を行うか否かを指定する。
+		yes を指定すると設定内容に沿って、
+		gfmd.conf の変更と、plugin の配置が行われ、
+		no を指定すると、設定内容に沿って、
+		gfmd.conf の変更と、plugin の削除が行われる。
 
-	--iostat-label �� ʣ��gfarm ��Ω�Ƥ���˥��饹��̾����ꤹ�롣
-	--iostat-counter-dir ����ǽ¬��ե�������������ǥ��쥯�ȥ�Ǥ��롣
-	--iostat-ganglia-confdir �� ganglia �� gmond.conf ��¸�ߤ���
-	                        �ǥ��쥯�ȥ����ꤹ�롣
+	--iostat-label は 複数gfarm を立てる場合にクラスタ名を指定する。
+	--iostat-counter-dir は性能測定ファイルを作成するディレクトリである。
+	--iostat-ganglia-confdir は ganglia の gmond.conf が存在する
+	                        ディレクトリを指定する。
 
-	--iostat-enable yes �����������Ȥ����ʲ��Υե����뤬��������������롣
-		--iostat-counter-dir �ǻ��ꤵ�줿�ǥ��쥯�ȥ꤬��������롣
-		--iostat-ganglia-confdir�ǻ��ꤵ�줿�ǥ��쥯�ȥ�Ρ�conf.d ��
-		���� gfarm_gfmd{,_��٥�}.pyconf �ե����뤬��������롣
-		ganglia �饤�֥��� python_modules/ ����ǽ¬��� plugin ����
-		������롣
+	--iostat-enable yes で成功したとき、以下のファイルが修正、作成される。
+		--iostat-counter-dir で指定されたディレクトリが作成される。
+		--iostat-ganglia-confdirで指定されたディレクトリの　conf.d の
+		下に gfarm_gfmd{,_ラベル}.pyconf ファイルが作成される。
+		ganglia ライブラリの python_modules/ に性能測定の plugin が作
+		成される。
 
-	config-gfmd-iostat �Ǥϰʲ��Τ��Ȥ��Ԥ��롣
-	�� --iostat-ganglia-confdir�ǻ��ꤵ�줿�ǥ��쥯�ȥ�ˡ�
-	   python_modules �ε��Ҥ����뤫�Τ���롣
-	�� ��ǽ¬��� plugin �����֤��롣
-	�� --iostat-counter-dir �� iostat-gfmd �ǥ��쥯�ȥ��������롣
-	�� gfmd.conf ����ǽ¬���ɬ�פʾ����񤭹��ࡣ
+	config-gfmd-iostat では以下のことが行われる。
+	・ --iostat-ganglia-confdirで指定されたディレクトリに、
+	   python_modules の記述があるか確かめる。
+	・ 性能測定の plugin を配置する。
+	・ --iostat-counter-dir に iostat-gfmd ディレクトリを作成する。
+	・ gfmd.conf に性能測定に必要な情報を書き込む。
 
-	�����Ρ��ɤ� �᥿�ǡ��������Ф�ư�����ʤ��ʤä����ϡ�
-	Ʊ������ǡ�--iostat-enable no ����ꤹ�롣
+	当該ノードで メタデータサーバを動かさなくなった場合は、
+	同じ設定で、--iostat-enable no を指定する。
 
 2.2 gfsd
-	���ס���ǡ��������С���ư�����Ρ��ɤǤϡ��ʲ��μ��ǥ��åȥ��å�
-	��Ԥ���
+	スプールデータサーバーを動かすノードでは、以下の手順でセットアップ
+	を行う。
 
 	1. config-gfsd
-		gfarm2.conf �κ�������˹Ԥ���ɬ�פ����롣
+		gfarm2.conf の作成が先に行われる必要がある。
 	2. config-gfsd-iostat
-		gfarm2.conf ���ѹ��ȡ�plugin �����֤�Ԥ���
+		gfarm2.conf の変更と、plugin の配置を行う。
 	3. config-gfsd
-		ʣ�����ס����Ω�Ƥ��硢
+		複数スプールを立てる場合、
 	4. /etc/init.d/gfsd.* start
-		��ǽ�ǥ��쥯�ȥ�Υ��֥ǥ��쥯�ȥ꤬�����ɬ�פ����롣
+		性能ディレクトリのサブディレクトリが出来る必要がある。
 	5. gmond restart
-		��������ȥ�å����ɲä��줿�Τǡ��Ƶ�ư���롣
+		新しいメトリックが追加されたので、再起動する。
 
 2.2.1 config-gfsd-iostat
-	gfarm2.conf ���ѹ��ȡ�plugin �����֤�Ԥ���
+	gfarm2.conf の変更と、plugin の配置を行う。
 
 	+--------------------------------------------------------------------+
 	# config-gfsd-iostat -h
@@ -369,49 +369,49 @@
 	[--iostat-max-client iostat_max_client (currentry 1024)]
 	+--------------------------------------------------------------------+
 
-	--prefix , -t, -T, -f -S �� config-gfsd �ΰ�̣����������
+	--prefix , -t, -T, -f -S は config-gfsd の意味に等しい。
 	--iostat-enable, --iostat-label, --iostat-counter-dir, 
-	--iostat-ganglia-confdir �� config-gfmd-iostat ����������
-	--iostat-max-client �� ���ס��륵���ФΥ��饤����Ⱥ������
+	--iostat-ganglia-confdir は config-gfmd-iostat に等しい。
+	--iostat-max-client は スプールサーバのクライアント最大数。
 	
-3. ganglia �����
-	gmond �� ��������� iostat_counterdir ��
-	���Ҥ��줿�ǥ��쥯�ȥ�� �����Хǥ��쥯�ȥ������å�����Τǡ�
-	gfarm �Υ����Ф��ɲá������������ gmond ��Ƶ�ư����ɬ�פ����롣
+3. ganglia の操作
+	gmond は 初期化時に iostat_counterdir に
+	記述されたディレクトリの サーバディレクトリをチェックするので、
+	gfarm のサーバを追加、削除した場合は gmond を再起動する必要がある。
 
-3.1 ��ǽ¬��δƻ�
-	ganglia gmetad ��ư�����Ƥ���Ρ��ɤ���³���ƾ���򸫤롣
-		http://���ץΡ���/ganglia/
+3.1 性能測定の監視
+	ganglia gmetad を動かしているノードに接続して情報を見る。
+		http://集計ノード/ganglia/
 
-	����դ� "gfarm metrics"�ǥ��롼�ײ�����ưʲ���ɽ�����Ԥ��롣
+	グラフは "gfarm metrics"でグループ化されて以下の表示が行われる。
 
-	iostat-gfmd-601_ntran			�᥿�����ФΥȥ�󥶥�������
-	iostat-gfsd-10.1.3.98-600_rbytes	���ס��륵���Ф��ɤ߹��ߥХ��ȿ�
-	iostat-gfsd-10.1.3.98-600_rcount	���ס��륵���Ф��ɤ߹��߲��
-	iostat-gfsd-10.1.3.98-600_wbytes	���ס��륵���Фν񤭹��ߥХ��ȿ�
-	iostat-gfsd-10.1.3.98-600_wcount	���ס��륵���Фν񤭹��߲��
-	iostat-gfsd-10.1.3.99-600_rbytes	�����Ρ��ɤΰۤʤ륹�ס��륵����
+	iostat-gfmd-601_ntran			メタサーバのトランザクション数
+	iostat-gfsd-10.1.3.98-600_rbytes	スプールサーバの読み込みバイト数
+	iostat-gfsd-10.1.3.98-600_rcount	スプールサーバの読み込み回数
+	iostat-gfsd-10.1.3.98-600_wbytes	スプールサーバの書き込みバイト数
+	iostat-gfsd-10.1.3.98-600_wcount	スプールサーバの書き込み回数
+	iostat-gfsd-10.1.3.99-600_rbytes	当該ノードの異なるスプールサーバ
 	iostat-gfsd-10.1.3.99-600_rcount
 	iostat-gfsd-10.1.3.99-600_wbytes
 	iostat-gfsd-10.1.3.99-600_wcount
-	iostat-gfsd-XYZ_rbytes			�����Ρ��ɤΥ��ס��륵���Фι��
+	iostat-gfsd-XYZ_rbytes			当該ノードのスプールサーバの合計
 	iostat-gfsd-XYZ_rcount
 	iostat-gfsd-XYZ_wbytes
 	iostat-gfsd-XYZ_wcount
 	
-3.2 rrd �ե�����
-	rrd �ե������ ganglia gmetad ��ư�����Ƥ���Ρ��ɤ�
-	/var/lib/ganglia/rrds/���饹��̾/�Ρ���̾/�۲��˾嵭
-	metric ̾����¸����Ƥ��롣
-	rrdtool dump ��xml�ե�������Ѵ�����ʤɤǤ��롣
+3.2 rrd ファイル
+	rrd ファイルは ganglia gmetad を動かしているノードの
+	/var/lib/ganglia/rrds/クラスタ名/ノード名/配下に上記
+	metric 名で保存されている。
+	rrdtool dump でxmlファイルに変換するなどできる。
 
-3.3 ���饹��ɽ��
-	ganglia web2 �Ǹ����硢view ��������ɲä��ơ����ߤ�
-	�ڡ������뤳�Ȥ�����롣
+3.3 クラスタ表示
+	ganglia web2 で見る場合、view の定義を追加して、好みの
+	ページを作ることが出来る。
 	http://sourceforge.net/apps/trac/ganglia/wiki/ganglia-web-2
 
-	���ΤȤ���metric ������ɽ���䡢group ̾�Ǥε��ҤϤǤ��ʤ��褦������
-	�㤨�С�
+	今のところmetric の正規表現や、group 名での記述はできないようだが、
+	例えば、
 	+--------------------------------------------------------------------+
 	% cat /var/lib/ganglia/conf/view_XYZ.json
 	{
@@ -437,18 +437,18 @@
 	}
 	+--------------------------------------------------------------------+
 
-	�Τ褦��������ɲä���С�view ���֤� XYZ ����ꤹ��а����Ǥ��롣
+	のような定義を追加すれば、view タブで XYZ を指定すれば一覧できる。
 
-3.4 �������륹�ȥ졼����ǽ
-	gfarm �ˤϡ����饤����ȥ��ץꥱ�������Ʊ��Ρ��ɾ��
-	���ס���ˤ���ե�����˥�����������ݤϡ����ס��륵���� gfsd ��
-	��ͳ���ʤ���ľ�ܥ������륹�ȥ졼������IO���뵡ǽ�����롣
+3.4 ローカルストレージ性能
+	gfarm には、クライアントアプリケーションが同一ノード上の
+	スプールにあるファイルにアクセスする際は、スプールサーバ gfsd を
+	経由しないで直接ローカルストレージからIOする機能がある。
 
-	������ǽ¬���ͤ� istat-gfsd-xxx �ˤϴޤޤ�Ƥ��ʤ���
-	ganglia �δ�¸�� disk ��ǽ��������ǿ���Ǥ��롣
+	この性能測定値は istat-gfsd-xxx には含まれていない。
+	ganglia の既存の disk 性能収集情報で推定できる。
 
-	disk ��ǽ����ϡ����̤ˤ� diskstat_�ǥ�����_��ȥ�å� ��
-	��������Ƥ��롣
+	disk 性能情報は、一般には diskstat_ディスク_メトリック で
+	収集されている。
 		diskstat_sda_io_time
 		diskstat_sda_percent_io_time
 		diskstat_sda_read_bytes_per_sec
@@ -461,9 +461,9 @@
 		diskstat_sda_writes
 		diskstat_sda_write_time
 
-	���ξ���������ǥ�����������������ʤΤǡ�gfarm_iostat ��
-	�ڡ�������å�����̤�������ͤȤ��礭���ۤʤäƤ��롣
+	この情報は当該ディスクアクセス情報なので、gfarm_iostat の
+	ページキャッシュ効果を除いた値とは大きく異なっている。
 
-	diskstat ���������ʤ����ϡ�1.2.3 ganglia plugin �Υ��󥹥ȡ���
-	�μ��� diskstat �⥸�塼��򥤥󥹥ȡ��뤹�롣
-							-- �ʾ� --
+	diskstat 情報が得られない場合は、1.2.3 ganglia plugin のインストール
+	の手順で diskstat モジュールをインストールする。
+							-- 以上 --

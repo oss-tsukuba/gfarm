@@ -1,34 +1,34 @@
-			VOMS Ϣ�ȥ��ޥ��
+			VOMS 連携コマンド
 
-VOMS �Υ��롼�ס��������Ϣ�Ȥ���Gfarm �Υ��롼�פΥ��Ф򹹿���
-�뤿��Υ��ޥ�ɷ��Ǥ���VOMS �ǥ��롼�״�����Ԥ������Υ��롼��ñ
-�̤� Gfarm �Υ������������Ԥ������������Ѥ��ޤ���
+VOMS のグループ，ロールと連携し，Gfarm のグループのメンバを更新す
+るためのコマンド群です．VOMS でグループ管理を行い，そのグループ単
+位で Gfarm のアクセス制御を行いたい場合に利用します．
 
-*** ����
+*** 準備
 
-�ʲ��Υ��եȥ������������˥��󥹥ȡ��뤵��Ƥ���ɬ�פ�����ޤ���
+以下のソフトウェアが事前にインストールされている必要があります．
 
-��Python (2.X �ϡ�2.3 �ʹ�)
+・Python (2.X 系，2.3 以降)
   http://www.python.org/
 
-��ZSI (2.0 �ʹߤ�ư���ǧ��)
+・ZSI (2.0 以降で動作確認済)
   http://pywebsvcs.sourceforge.net/
-  ���󥹥ȡ�����ˡ
+  インストール方法
   % sudo python setup.py install
 
-*** ���󥹥ȡ�����ˡ
+*** インストール方法
 
-�̾�� Gfarm �Υ��󥹥ȡ�����ˡ��Ʊ���Ǥ�����configure ���ޥ�ɤ�
-���ץ����� --enable-voms ����ꤷ�ޤ���
+通常の Gfarm のインストール方法と同じですが，configure コマンドの
+オプションで --enable-voms を指定します．
 
-configure ���ޥ�ɤν��Ϥǡ��ʲ��Τ褦�� VOMS synchronization
-available �� yes �ȤʤäƤ��뤳�Ȥ��ǧ���Ƥ���������
+configure コマンドの出力で，以下のように VOMS synchronization
+available が yes となっていることを確認してください．
 
 	checking VOMS synchronization available... yes
 
-*** ���󥹥ȡ���ե�����
+*** インストールファイル
 
-�ʲ��Υե����뤬���󥹥ȡ��뤵��ޤ���
+以下のファイルがインストールされます．
 
   <prefix>/bin/gfvoms-list
   <prefix>/bin/gfvoms-update
@@ -38,5 +38,5 @@ available �� yes �ȤʤäƤ��뤳�Ȥ��ǧ���Ƥ���������
   <prefix>/share/gfarm/voms/hostid.py
   <prefix>/share/gfarm/voms/zsi_def
 
-���ޥ�ɡ�����ե�����ξܺ٤� voms-man.ja, voms-dev.ja �򻲾Ȥ�
-��������
+コマンド，設定ファイルの詳細は voms-man.ja, voms-dev.ja を参照く
+ださい．

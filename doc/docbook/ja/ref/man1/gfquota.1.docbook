@@ -12,27 +12,27 @@
 
 <refnamediv id='name'>
 <refname>gfquota</refname>
-<refpurpose>���ߤλ����̤������ͤ�ɽ��</refpurpose>
+<refpurpose>現在の使用量と制限値を表示</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfquota</command>
-    <arg choice='opt'><replaceable>���ץ����</replaceable></arg>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para><command>gfquota</command> �ϡ����ߤλ����̤������ͤ�ɽ�����ޤ���
-gfarmadm ���롼�פ˽�°���Ƥ�������Ԥϡ��桼��̾�䥰�롼��̾����ꤹ��
-���Ȥ��Ǥ��ޤ���
-���̥桼���ξ��ϡ����Υ桼������°���륰�롼��̾����ꤹ�뤳�Ȥ��Ǥ�
-�ޤ���
+<para><command>gfquota</command> は、現在の使用量と制限値を表示します。
+gfarmadm グループに所属している管理者は、ユーザ名やグループ名を指定する
+ことができます。
+一般ユーザの場合は、そのユーザが所属するグループ名を指定することができ
+ます。
 </para>
-<para><command>gfedquota</command> �� <command>gfquotacheck</command> ��
-�¹Ԥ���Ȼ����̤Υ�����Ȥ������ͤ�ͭ���ˤʤꡢ
-<command>gfquota</command> ��ɽ���Ǥ���褦�ˤʤ�ޤ���</para>
+<para><command>gfedquota</command> と <command>gfquotacheck</command> を
+実行すると使用量のカウントと制限値が有効になり、
+<command>gfquota</command> で表示できるようになります。</para>
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
@@ -41,36 +41,36 @@ gfarmadm ���롼�פ˽�°���Ƥ�������Ԥϡ��桼��̾�䥰�롼��̾����ꤹ��
 <varlistentry>
 <term><option>-P NAME</option></term>
 <listitem>
-<para>���ꤷ���ѥ�̾�ˤ������Υ᥿�ǡ��������Ф���ꤷ�ޤ���</para>
+<para>指定したパス名により特定のメタデータサーバを指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-q</option></term>
 <listitem>
-<para>�����̤�ɽ�����ޤ���
-�����ͤ�Ķ���Ƥ������˷ٹ������ɽ�����ޤ���</para>
+<para>使用量を表示しません。
+制限値を超えていた場合に警告だけを表示します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-u NAME</option></term>
 <listitem>
-<para>���ꤷ���桼��̾�λ����̤������ͤ�ɽ�����ޤ���</para>
+<para>指定したユーザ名の使用量と制限値を表示します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-g NAME</option></term>
 <listitem>
-<para>���ꤷ�����롼��̾�λ����̤������ͤ�ɽ�����ޤ���</para>
+<para>指定したグループ名の使用量と制限値を表示します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
 

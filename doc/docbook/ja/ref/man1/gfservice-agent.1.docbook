@@ -12,16 +12,16 @@
 
 <refnamediv id='name'>
 <refname>gfservice-agent</refname>
-<refpurpose><command>gfservice</command> �Υ����������</refpurpose>
+<refpurpose><command>gfservice</command> のエージェント</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfservice-agent</command>
-    <arg choice='opt'><replaceable>���ץ����</replaceable></arg>
-    <arg choice='plain'>�ۥ��� ID</arg>
-    <arg choice='plain'>���֥��ޥ��</arg>
-    <arg choice='opt'><replaceable>���� ...</replaceable></arg>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+    <arg choice='plain'>ホスト ID</arg>
+    <arg choice='plain'>サブコマンド</arg>
+    <arg choice='opt'><replaceable>引数 ...</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -30,34 +30,34 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 
 <para>
-<command>gfservice-agent</command> �ϡ�<command>gfservice</command> ��
-����������ȤǤ���
-<command>gfservice</command> ���Ѥ����������ۥ��Ȥ��٤Ƥˡ�����
-����������Ȥ򥤥󥹥ȡ��뤹��ɬ�פ�����ޤ���
-<command>gfservice</command> �Ȱۤʤꡢ����ե�������ɤ߹��ߤޤ���
+<command>gfservice-agent</command> は、<command>gfservice</command> の
+エージェントです。
+<command>gfservice</command> を用いて操作したいホストすべてに、この
+エージェントをインストールする必要があります。
+<command>gfservice</command> と異なり、設定ファイルは読み込みません。
 </para>
 
 <para>
-<command>gfservice-agent</command> �ϡ��桼����ľ�ܼ¹Ԥ��뤳�Ȥ�տ�
-���ƺ������줿��ΤǤϤ���ޤ���
-��������ѤǤϡ�SSH �� Sudo ��𤷤� <command>gfservice</command> ���ޥ��
-�ˤ�äƼ¹Ԥ��������Ǥ���
+<command>gfservice-agent</command> は、ユーザが直接実行することを意図
+して作成されたものではありません。
+日常の利用では、SSH と Sudo を介して <command>gfservice</command> コマンド
+によって実行されるだけです。
 </para>
 
 <para>
-�ۥ��� ID ������ <command>gfservice</command> �Τ�Τ�Ʊ���Ǥ�����
-<command>gfservice-agent</command> �Ǥϥۥ��� ID ��ۥ��Ȥμ���
-("gfmd", "gfsd", "client" �Τ����줫) ����̤��뤿�ᡢ�����
-�ǥХå���å������Τ���ˤ����ȤäƤ��ޤ���
+ホスト ID 引数は <command>gfservice</command> のものと同じですが、
+<command>gfservice-agent</command> ではホスト ID をホストの種別
+("gfmd", "gfsd", "client" のいずれか) を区別するため、および
+デバッグメッセージのためにしか使っていません。
 </para>
 
 <para>
-<command>gfservice-agent</command> �Υ��֥��ޥ��̾�� 
-<command>gfservice</command> �Τ�Τ˻��Ƥ��ޤ����������ϰۤʤ�ޤ���
-���Ȥ��С�<command>gfservice-agent</command> �� <command>unmount</command>
-���֥��ޥ�ɤϡ�
-��<parameter>directory</parameter>=<replaceable>�ǥ��쥯�ȥ�</replaceable>��
-�Ȥ���������Ȥ�ޤ���
+<command>gfservice-agent</command> のサブコマンド名は 
+<command>gfservice</command> のものに似ていますが、引数は異なります。
+たとえば、<command>gfservice-agent</command> の <command>unmount</command>
+サブコマンドは、
+「<parameter>directory</parameter>=<replaceable>ディレクトリ</replaceable>」
+という引数をとります。
 </para>
 
 <literallayout>
@@ -65,8 +65,8 @@
 </literallayout>
 
 <para>
-������Ф��ơ�<command>gfservice</command> �Ǥϡ�
-��<replaceable>�ǥ��쥯�ȥ�</replaceable>�פȤ���������Ȥ�ޤ���
+これに対して、<command>gfservice</command> では、
+「<replaceable>ディレクトリ</replaceable>」という引数をとります。
 </para>
 
 <literallayout>
@@ -74,10 +74,10 @@
 </literallayout>
 
 <para>
-<command>gfservice-agent</command> �ΰ����ϤۤȤ�ɤ��٤ơ��֥���=�͡�
-�Ȥ������ˤʤäƤ��ޤ���
-ʣ���ΰ�����Ȥ��硢�����ν����Ǥ�դǤ���
-<command>gfservice-agent</command> �ϡ�̤�ΤΥ�����̵�뤷�ޤ���
+<command>gfservice-agent</command> の引数はほとんどすべて、「キー=値」
+という形になっています。
+複数の引数をとる場合、引数の順序は任意です。
+<command>gfservice-agent</command> は、未知のキーを無視します。
 </para>
 
 </refsect1>
@@ -90,7 +90,7 @@
 <term><option>-d</option></term>
 <listitem>
 <para>
-�ǥХå��������Ϥ��ޤ���
+デバッグ情報を出力します。
 </para>
 </listitem>
 </varlistentry>
@@ -102,8 +102,8 @@
 <refsect1 id='sub-commands'><title>SUB-COMMANDS</title>
 
 <para>
-<command>gfservice-agent</command> �ϸ��ߤΤȤ��������Υ��֥��ޥ�ɤ�
-ǧ�����ޤ���
+<command>gfservice-agent</command> は現在のところ、次のサブコマンドを
+認識します。
 </para>
 
 <variablelist>
@@ -111,16 +111,16 @@
 <varlistentry>
 <term>
 <command>get-config-gfarm-param</command>
-<parameter>param</parameter>=<replaceable>�ѥ�᥿̾</replaceable>
-<parameter>config-gfarm-options</parameter>=<replaceable>���ץ����</replaceable>
+<parameter>param</parameter>=<replaceable>パラメタ名</replaceable>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
 </term>
 <listitem>
 <para>
-��<command>config-gfarm -T</command>�ץ��ޥ�ɤ�¹Ԥ��ơ�
-��<replaceable>�ѥ�᥿̾</replaceable> �פ��ͤ�ɸ����Ϥ˽��Ϥ��ޤ���
-������<parameter>param</parameter>=<replaceable>�ѥ�᥿̾</replaceable>��
-����ά���줿���ϡ���<command>config-gfarm -T</command>�ץ��ޥ�ɤ�
-��̤��٤Ƥ���Ϥ��ޤ���
+「<command>config-gfarm -T</command>」コマンドを実行して、
+「<replaceable>パラメタ名</replaceable> 」の値を標準出力に出力します。
+引数「<parameter>param</parameter>=<replaceable>パラメタ名</replaceable>」
+が省略された場合は、「<command>config-gfarm -T</command>」コマンドの
+結果すべてを出力します。
 </para>
 </listitem>
 </varlistentry>
@@ -128,17 +128,17 @@
 <varlistentry>
 <term>
 <command>get-config-gfsd-param</command>
-<parameter>param</parameter>=<replaceable>�ѥ�᥿̾</replaceable>
-<parameter>config-gfsd-options</parameter>=<replaceable>���ץ����</replaceable>
+<parameter>param</parameter>=<replaceable>パラメタ名</replaceable>
+<parameter>config-gfsd-options</parameter>=<replaceable>オプション</replaceable>
 </term>
 <listitem>
 <para>
-��<command>config-gfsd -T</command>�ץ��ޥ�ɤ�¹Ԥ��ơ�
-��<replaceable>�ѥ�᥿̾</replaceable>�פ��ͤ�ɸ����Ϥ�
-���Ϥ��ޤ���
-������<parameter>param</parameter>=<replaceable>�ѥ�᥿̾</replaceable>��
-����ά���줿���ϡ���<command>config-gfsd -T</command>�ץ��ޥ�ɤ�
-��̤��٤Ƥ���Ϥ��ޤ���
+「<command>config-gfsd -T</command>」コマンドを実行して、
+「<replaceable>パラメタ名</replaceable>」の値を標準出力に
+出力します。
+引数「<parameter>param</parameter>=<replaceable>パラメタ名</replaceable>」
+が省略された場合は、「<command>config-gfsd -T</command>」コマンドの
+結果すべてを出力します。
 </para>
 </listitem>
 </varlistentry>
@@ -146,12 +146,12 @@
 <varlistentry>
 <term>
 <command>backend-db-status</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>���ץ����</replaceable>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
 </term>
 <listitem>
 <para>
-�Хå�����ɥǡ����١�����ư����Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���
+バックエンドデータベースが動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。
 </para>
 </listitem>
 </varlistentry>
@@ -159,12 +159,12 @@
 <varlistentry>
 <term>
 <command>gfmd-status</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>���ץ����</replaceable>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
 </term>
 <listitem>
 <para>
-gfmd ��ư����Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���
+gfmd が動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。
 </para>
 </listitem>
 </varlistentry>
@@ -172,12 +172,12 @@ gfmd ��ư����Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
 <varlistentry>
 <term>
 <command>gfsd-status</command>
-<parameter>config-gfsd-options</parameter>=<replaceable>���ץ����</replaceable>
+<parameter>config-gfsd-options</parameter>=<replaceable>オプション</replaceable>
 </term>
 <listitem>
 <para>
-gfsd ��ư����Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���
+gfsd が動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。
 </para>
 </listitem>
 </varlistentry>
@@ -185,12 +185,12 @@ gfsd ��ư����Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
 <varlistentry>
 <term>
 <command>start-backend-db</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>���ץ����</replaceable>
-<parameter>timeout</parameter>=<replaceable>����</replaceable>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
+<parameter>timeout</parameter>=<replaceable>時間</replaceable>
 </term>
 <listitem>
 <para>
-�Хå�����ɥǡ����١������¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
+バックエンドデータベースが実行中でなければ、実行を開始します。
 </para>
 </listitem>
 </varlistentry>
@@ -198,12 +198,12 @@ gfsd ��ư����Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
 <varlistentry>
 <term>
 <command>start-gfmd</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>���ץ����</replaceable>
-<parameter>timeout</parameter>=<replaceable>����</replaceable>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
+<parameter>timeout</parameter>=<replaceable>時間</replaceable>
 </term>
 <listitem>
 <para>
-gfmd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
+gfmd が実行中でなければ、実行を開始します。
 </para>
 </listitem>
 </varlistentry>
@@ -211,12 +211,12 @@ gfmd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
 <varlistentry>
 <term>
 <command>start-gfsd</command>
-<parameter>config-gfsd-options</parameter>=<replaceable>���ץ����</replaceable>
-<parameter>timeout</parameter>=<replaceable>����</replaceable>
+<parameter>config-gfsd-options</parameter>=<replaceable>オプション</replaceable>
+<parameter>timeout</parameter>=<replaceable>時間</replaceable>
 </term>
 <listitem>
 <para>
-gfsd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
+gfsd が実行中でなければ、実行を開始します。
 </para>
 </listitem>
 </varlistentry>
@@ -224,11 +224,11 @@ gfsd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
 <varlistentry>
 <term>
 <command>config-gfarm</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>���ץ����</replaceable>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
 </term>
 <listitem>
 <para>
-��<command>config-gfarm</command>�ץ��ޥ�ɤ�¹Ԥ��ޤ���
+「<command>config-gfarm</command>」コマンドを実行します。
 </para>
 </listitem>
 </varlistentry>
@@ -236,12 +236,12 @@ gfsd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
 <varlistentry>
 <term>
 <command>config-gfarm-master</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>���ץ����</replaceable>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
 </term>
 <listitem>
 <para>
-��<command>config-gfarm</command> <parameter>-r</parameter>�ץ��ޥ�ɤ�¹�
-���ޤ���
+「<command>config-gfarm</command> <parameter>-r</parameter>」コマンドを実行
+します。
 </para>
 </listitem>
 </varlistentry>
@@ -249,11 +249,11 @@ gfsd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
 <varlistentry>
 <term>
 <command>config-gfsd</command>
-<parameter>config-gfsd-options</parameter>=<replaceable>���ץ����</replaceable>
+<parameter>config-gfsd-options</parameter>=<replaceable>オプション</replaceable>
 </term>
 <listitem>
 <para>
-��<command>config-gfsd</command>�ץ��ޥ�ɤ�¹Ԥ��ޤ���
+「<command>config-gfsd</command>」コマンドを実行します。
 </para>
 </listitem>
 </varlistentry>
@@ -261,12 +261,12 @@ gfsd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
 <varlistentry>
 <term>
 <command>unconfig-gfarm</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>���ץ����</replaceable>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
 </term>
 <listitem>
 <para>
-<command>stop-gfarm</command> ���֥��ޥ�ɤ�¹Ԥ��ơ����θ� gfmd ��
-�Хå�����ɥǡ����١��������������ե������ǥ��쥯�ȥ�򤹤٤ƺ�����ޤ���
+<command>stop-gfarm</command> サブコマンドを実行して、その後 gfmd と
+バックエンドデータベースが作成したファイルやディレクトリをすべて削除します。
 </para>
 </listitem>
 </varlistentry>
@@ -274,12 +274,12 @@ gfsd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
 <varlistentry>
 <term>
 <command>unconfig-gfsd</command>
-<parameter>config-gfsd-options</parameter>=<replaceable>���ץ����</replaceable>
+<parameter>config-gfsd-options</parameter>=<replaceable>オプション</replaceable>
 </term>
 <listitem>
 <para>
-���֥��ޥ�� <command>stop-gfsd</command> ��¹Ԥ������θ� gfsd ����������
-�ե������ǥ��쥯�ȥ�򤹤٤ƺ�����ޤ���
+サブコマンド <command>stop-gfsd</command> を実行し、その後 gfsd が作成した
+ファイルやディレクトリをすべて削除します。
 </para>
 </listitem>
 </varlistentry>
@@ -287,11 +287,11 @@ gfsd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
 <varlistentry>
 <term>
 <command>unconfig-client</command>
-<parameter>config-gfsd-options</parameter>=<replaceable>���ץ����</replaceable>
+<parameter>config-gfsd-options</parameter>=<replaceable>オプション</replaceable>
 </term>
 <listitem>
 <para>
-<filename>gfarm2.conf</filename> �ե�����ȶ�ͭ��̩���ե�����������ޤ���
+<filename>gfarm2.conf</filename> ファイルと共有秘密鍵ファイルを削除します。
 </para>
 </listitem>
 </varlistentry>
@@ -299,11 +299,11 @@ gfsd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
 <varlistentry>
 <term>
 <command>promote</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>���ץ����</replaceable>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
 </term>
 <listitem>
 <para>
-<command>gfmd</command> �򥹥졼�֤���ޥ������ؾ��ʤ����ޤ���
+<command>gfmd</command> をスレーブからマスターへ昇格させます。
 </para>
 </listitem>
 </varlistentry>
@@ -311,11 +311,11 @@ gfsd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
 <varlistentry>
 <term>
 <command>promote-gfmd</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>���ץ����</replaceable>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
 </term>
 <listitem>
 <para>
-���֥��ޥ�� <command>promote</command> ����̾�Ǥ���
+サブコマンド <command>promote</command> の別名です。
 </para>
 </listitem>
 </varlistentry>
@@ -323,13 +323,13 @@ gfsd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
 <varlistentry>
 <term>
 <command>mount</command>
-<parameter>directory</parameter>=<replaceable>�ǥ��쥯�ȥ�</replaceable>
-<parameter>options</parameter>=<replaceable>���ץ����</replaceable>
+<parameter>directory</parameter>=<replaceable>ディレクトリ</replaceable>
+<parameter>options</parameter>=<replaceable>オプション</replaceable>
 </term>
 <listitem>
 <para>
-Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
-�ޥ���Ȥ��ޤ���
+Gfarm2 ファイルシステムを「<replaceable>ディレクトリ</replaceable>」に
+マウントします。
 </para>
 </listitem>
 </varlistentry>
@@ -337,12 +337,12 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 <varlistentry>
 <term>
 <command>unmount</command>
-<parameter>directory</parameter>=<replaceable>�ǥ��쥯�ȥ�</replaceable>
+<parameter>directory</parameter>=<replaceable>ディレクトリ</replaceable>
 </term>
 <listitem>
 <para>
-��<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ˥ޥ���Ȥ��줿 Gfarm2
-�ե����륷���ƥ�򥢥�ޥ���Ȥ��ޤ���
+「<replaceable>ディレクトリ</replaceable>」にマウントされた Gfarm2
+ファイルシステムをアンマウントします。
 </para>
 </listitem>
 </varlistentry>
@@ -350,11 +350,11 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 <varlistentry>
 <term>
 <command>umount</command>
-<parameter>directory</parameter>=<replaceable>�ǥ��쥯�ȥ�</replaceable>
+<parameter>directory</parameter>=<replaceable>ディレクトリ</replaceable>
 </term>
 <listitem>
 <para>
-���֥��ޥ�� <command>unmount</command> ����̾�Ǥ���
+サブコマンド <command>unmount</command> の別名です。
 </para>
 </listitem>
 </varlistentry>
@@ -362,20 +362,20 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 <varlistentry>
 <term>
 <command>set-gfmd-conf</command>
-<parameter>directive</parameter>=<replaceable>����̾��</replaceable>
-<parameter>value</parameter>=<replaceable>��</replaceable>
+<parameter>directive</parameter>=<replaceable>設定名称</replaceable>
+<parameter>value</parameter>=<replaceable>値</replaceable>
 </term>
 <listitem>
 <para>
-<filename>gfmd.conf</filename> �ե�����ˡ�
+<filename>gfmd.conf</filename> ファイルに、
 </para>
 
 <literallayout>
-	<replaceable>����̾��</replaceable> <replaceable>��</replaceable>
+	<replaceable>設定名称</replaceable> <replaceable>値</replaceable>
 </literallayout>
 
 <para>
-�Ȥ����Ԥ��ɲä��ޤ���
+という行を追加します。
 </para>
 </listitem>
 </varlistentry>
@@ -383,20 +383,20 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 <varlistentry>
 <term>
 <command>set-gfarm-conf</command>
-<parameter>directive</parameter>=<replaceable>����̾��</replaceable>
-<parameter>value</parameter>=<replaceable>��</replaceable>
+<parameter>directive</parameter>=<replaceable>設定名称</replaceable>
+<parameter>value</parameter>=<replaceable>値</replaceable>
 </term>
 <listitem>
 <para>
-<filename>gfarm2.conf</filename> �ե�����ˡ�
+<filename>gfarm2.conf</filename> ファイルに、
 </para>
 
 <literallayout>
-	<replaceable>����̾��</replaceable> <replaceable>��</replaceable>
+	<replaceable>設定名称</replaceable> <replaceable>値</replaceable>
 </literallayout>
 
 <para>
-�Ȥ����Ԥ��ɲä��ޤ���
+という行を追加します。
 </para>
 </listitem>
 </varlistentry>
@@ -404,20 +404,20 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 <varlistentry>
 <term>
 <command>set-gfsd-conf</command>
-<parameter>directive</parameter>=<replaceable>����̾��</replaceable>
-<parameter>value</parameter>=<replaceable>��</replaceable>
+<parameter>directive</parameter>=<replaceable>設定名称</replaceable>
+<parameter>value</parameter>=<replaceable>値</replaceable>
 </term>
 <listitem>
 <para>
-<filename>gfsd.conf</filename> �ե�����ˡ�
+<filename>gfsd.conf</filename> ファイルに、
 </para>
 
 <literallayout>
-	<replaceable>����̾��</replaceable> <replaceable>��</replaceable>
+	<replaceable>設定名称</replaceable> <replaceable>値</replaceable>
 </literallayout>
 
 <para>
-�Ȥ����Ԥ��ɲä��ޤ���
+という行を追加します。
 </para>
 </listitem>
 </varlistentry>
@@ -425,12 +425,12 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 <varlistentry>
 <term>
 <command>unset-gfmd-conf</command>
-<parameter>directive</parameter>=<replaceable>����̾��</replaceable>
+<parameter>directive</parameter>=<replaceable>設定名称</replaceable>
 </term>
 <listitem>
 <para>
-��<replaceable>����̾��</replaceable>�׹Ԥ� <filename>gfmd.conf</filename>
-�ե����뤫�������ޤ���
+「<replaceable>設定名称</replaceable>」行を <filename>gfmd.conf</filename>
+ファイルから削除します。
 </para>
 </listitem>
 </varlistentry>
@@ -438,12 +438,12 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 <varlistentry>
 <term>
 <command>unset-gfarm-conf</command>
-<parameter>directive</parameter>=<replaceable>����̾��</replaceable>
+<parameter>directive</parameter>=<replaceable>設定名称</replaceable>
 </term>
 <listitem>
 <para>
-��<replaceable>����̾��</replaceable>�׹Ԥ� <filename>gfarm.conf</filename>
-�ե����뤫�������ޤ���
+「<replaceable>設定名称</replaceable>」行を <filename>gfarm.conf</filename>
+ファイルから削除します。
 </para>
 </listitem>
 </varlistentry>
@@ -451,12 +451,12 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 <varlistentry>
 <term>
 <command>unset-gfsd-conf</command>
-<parameter>directive</parameter>=<replaceable>����̾��</replaceable>
+<parameter>directive</parameter>=<replaceable>設定名称</replaceable>
 </term>
 <listitem>
 <para>
-��<replaceable>����̾��</replaceable>�׹Ԥ� <filename>gfsd.conf</filename>
-�ե����뤫�������ޤ���
+「<replaceable>設定名称</replaceable>」行を <filename>gfsd.conf</filename>
+ファイルから削除します。
 </para>
 </listitem>
 </varlistentry>
@@ -467,8 +467,8 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 </term>
 <listitem>
 <para>
-�Хå�����ɥǡ����١����ΥХå����åפ�Ԥ����Хå����åץǡ�����ɸ�����
-�ؽ��Ϥ��ޤ���
+バックエンドデータベースのバックアップを行い、バックアップデータを標準出力
+へ出力します。
 </para>
 </listitem>
 </varlistentry>
@@ -479,7 +479,7 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 </term>
 <listitem>
 <para>
-<filename>gfmd.conf</filename> �ե������ɸ����Ϥ˽��Ϥ��ޤ���
+<filename>gfmd.conf</filename> ファイルを標準出力に出力します。
 </para>
 </listitem>
 </varlistentry>
@@ -490,7 +490,7 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 </term>
 <listitem>
 <para>
-<filename>gfarm2.conf</filename> �ե������ɸ����Ϥ˽��Ϥ��ޤ���
+<filename>gfarm2.conf</filename> ファイルを標準出力に出力します。
 </para>
 </listitem>
 </varlistentry>
@@ -501,7 +501,7 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 </term>
 <listitem>
 <para>
-<filename>gfsd.conf</filename> �ե������ɸ����Ϥ˽��Ϥ��ޤ���
+<filename>gfsd.conf</filename> ファイルを標準出力に出力します。
 </para>
 </listitem>
 </varlistentry>
@@ -512,7 +512,7 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 </term>
 <listitem>
 <para>
-<filename>usermap</filename> �ե������ɸ����Ϥ˽��Ϥ��ޤ���
+<filename>usermap</filename> ファイルを標準出力に出力します。
 </para>
 </listitem>
 </varlistentry>
@@ -523,8 +523,8 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 </term>
 <listitem>
 <para>
-<filename>$HOME/.gfarm_shared_key</filename> �ե������ɸ����Ϥ�
-���Ϥ��ޤ���
+<filename>$HOME/.gfarm_shared_key</filename> ファイルを標準出力に
+出力します。
 </para>
 </listitem>
 </varlistentry>
@@ -535,8 +535,8 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 </term>
 <listitem>
 <para>
-�Хå�����ɥǡ����١�����ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���
+バックエンドデータベースをリストアします。
+バックアップデータは、標準入力から読み込みます。
 </para>
 </listitem>
 </varlistentry>
@@ -547,8 +547,8 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 </term>
 <listitem>
 <para>
-<filename>gfmd.conf</filename> �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���
+<filename>gfmd.conf</filename> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
 </para>
 </listitem>
 </varlistentry>
@@ -559,8 +559,8 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 </term>
 <listitem>
 <para>
-<filename>gfarm2.conf</filename> �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���
+<filename>gfarm2.conf</filename> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
 </para>
 </listitem>
 </varlistentry>
@@ -571,8 +571,8 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 </term>
 <listitem>
 <para>
-<filename>gfsd.conf</filename> �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���
+<filename>gfsd.conf</filename> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
 </para>
 </listitem>
 </varlistentry>
@@ -583,8 +583,8 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 </term>
 <listitem>
 <para>
-<filename>usermap</filename> �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���
+<filename>usermap</filename> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
 </para>
 </listitem>
 </varlistentry>
@@ -595,8 +595,8 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 </term>
 <listitem>
 <para>
-<filename>$HOME/.gfarm_shared_key</filename> �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���
+<filename>$HOME/.gfarm_shared_key</filename> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
 </para>
 </listitem>
 </varlistentry>
@@ -604,12 +604,12 @@ Gfarm2 �ե����륷���ƥ���<replaceable>�ǥ��쥯�ȥ�</replaceable>�פ�
 <varlistentry>
 <term>
 <command>gfcmd</command>
-<parameter>cmd</parameter>=<replaceable>���ޥ��̾</replaceable>
-<parameter>args</parameter>="<replaceable>���ޥ�ɤΰ��� ...</replaceable>"
+<parameter>cmd</parameter>=<replaceable>コマンド名</replaceable>
+<parameter>args</parameter>="<replaceable>コマンドの引数 ...</replaceable>"
 </term>
 <listitem>
 <para>
-Gfarm ���ޥ�ɤ�¹Ԥ��ޤ���
+Gfarm コマンドを実行します。
 </para>
 </listitem>
 </varlistentry>

@@ -6,18 +6,18 @@
 .TH "GFPERF-WRAPPER.SH" "1" "07 March 2012" "Gfarm" ""
 
 .SH NAME
-gfperf-wrapper.sh \- Gfarm ���ꤵ�줿ǧ�������ǥ��ޥ�ɵ�ư��Ԥ���
+gfperf-wrapper.sh \- Gfarm 指定された認証方式でコマンド起動を行う。
 .SH SYNOPSIS
 
-\fBgfperf-wrapper.sh\fR \fBsharedsecret | gsi_auth | gsi \fR \fB\fI���ޥ��\fB\fR
+\fBgfperf-wrapper.sh\fR \fBsharedsecret | gsi_auth | gsi \fR \fB\fIコマンド\fB\fR
 
 .SH "DESCRIPTION"
 .PP
-sharedsecret��gsi_auth�ޤ��ϡ�gsiǧ�ڤΤ����줫��\fI���ޥ��\fR��ư���ޤ���
-ͽ��gfmd�ڤ�gfsd�˳���ǧ�������������������꤬�ʤ���Ƥ���ɬ�פ�����ޤ���
+sharedsecret、gsi_authまたは、gsi認証のいずれかで\fIコマンド\fRを起動します。
+予めgfmd及びgfsdに該当認証方式を受け入れる設定がなされている必要があります。
 .PP
-�ܥ��ޥ�ɤ�������GFARM_CONFIG_FILE�Ķ��ѿ�����Ѥ��ޤ������˥��åȤ���Ƥ�������ܥ��ޥ�ɤˤ���񤭤���ޤ���
+本コマンドは内部でGFARM_CONFIG_FILE環境変数を使用します。既にセットされている場合は本コマンドにより上書きされます。
 .SH "OPTIONS"
 .TP
 \fBsharedsecret | gsi_auth | gsi\fR
-ǧ����������ꤷ�ޤ���
+認証方式を指定します。

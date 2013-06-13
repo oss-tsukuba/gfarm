@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_readdir</refname>
-<refpurpose>�ǥ��쥯�ȥ������ɤ߹���</refpurpose>
+<refpurpose>ディレクトリ内容読み込み</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -33,16 +33,16 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>����
+<para>引数
 <parameter>dir</parameter>
-�ǻ��ꤷ���ǥ��쥯�ȥ꤫�顢1 �ĤΥǥ��쥯�ȥꡦ����ȥ�
-���ɤ߹��ߡ����Υݥ��󥿤�
+で指定したディレクトリから、1 つのディレクトリ・エントリ
+を読み込み、そのポインタを
 <parameter>entryp</parameter>
-�λؤ�����֤��ޤ���
+の指す先に返します。
 <parameter>entryp</parameter>
-�λؤ��ΰ�ϡ�����Ʊ��
+の指す領域は、次に同じ
 <parameter>dir</parameter>
-������ gfs_readdir() �ʤ��� gfs_closedir() ��ƤӽФ������˼����ޤ���</para>
+引数で gfs_readdir() ないし gfs_closedir() を呼び出した時に失われます。</para>
 
 </refsect1>
 
@@ -51,13 +51,13 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

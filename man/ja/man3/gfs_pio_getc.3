@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_PIO_GETC" "3" "18 March 2003" "Gfarm" ""
 .SH NAME
-gfs_pio_getc \- ��ʸ���ɤ߹���
+gfs_pio_getc \- 一文字読み込み
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,19 +14,19 @@ int gfs_pio_getc (GFS_File \fIgf\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-�ե�����
+ファイル
 \fIgf\fR
-�����ʸ���ɤ߹��ߤޤ���
+から一文字読み込みます。
 .SH "RETURN VALUES"
 .TP
 \fBEOF\fR
-�ե������������ã������硢���뤤�ϥ��顼����������硢<stdio.h> ��
-�������Ƥ������ EOF ���֤��ޤ���
-�ե����������ʤΤ������顼�ʤΤ��ϡ��ؿ� gfs_pio_error(3) ���Τ�
-���Ȥ��Ǥ��ޤ���
+ファイルの末尾に達した場合、あるいはエラーが生じた場合、<stdio.h> で
+定義されている定数 EOF を返します。
+ファイル末尾なのか、エラーなのかは、関数 gfs_pio_error(3) で知る
+ことができます。
 .TP
-\fB����¾\fR
-�ե����뤫���ɤ߹����ʸ�����֤��ޤ���
+\fBその他\fR
+ファイルから読み込んだ文字を返します。
 .SH "SEE ALSO"
 .PP
 \fBgfs_pio_create\fR(3),

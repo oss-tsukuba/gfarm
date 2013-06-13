@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_set_view_index</refname>
-<refpurpose>fragment ñ�̤Υ�����������ꤹ��</refpurpose>
+<refpurpose>fragment 単位のアクセスを指定する</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -36,64 +36,64 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>�ե������ե饰����ñ�̤ǥ����������뤳�Ȥ���ꤷ�ޤ���</para>
+<para>ファイルをフラグメント単位でアクセスすることを指定します。</para>
 
-<para>�������������ե�����ξ�硢ɬ������
+<para>新規作成したファイルの場合、必ず引数
 <parameter>fragment_number</parameter>
-�˥ե饰����
-����������ꤹ��ɬ�פ�����ޤ��������ͤϡ���������ե�����򳫤�����
-�ΥΡ��ɤǡ�Ʊ���ͤǤʤ��ƤϤʤ�ޤ��󡣴�¸�Υե�����ξ��ˤϡ�
-������
+にフラグメント
+の総数を指定する必要があります。この値は、この並列ファイルを開く全て
+のノードで、同じ値でなくてはなりません。既存のファイルの場合には、
+ここに
 <constant>GFARM_FILE_DONTCARE</constant>
-�Ƚ񤱤С�������ά�Ǥ��ޤ����⤷
-�⤷�ºݤȰۤʤ������ꤷ�����ˤϡ����δؿ��ϥ��顼�Ǽ��Ԥ��ޤ���</para>
+と書けば、指定を省略できます。もし
+もし実際と異なる数を指定した場合には、この関数はエラーで失敗します。</para>
 
-<para>����
+<para>引数
 <parameter>fragment_index</parameter>
-�ˤϡ� ������������ե饰���Ȥ��ֹ����ꤷ�ޤ���</para> 
+には、 アクセスするフラグメントの番号を指定します。</para> 
 
-<para>����
+<para>引数
 <parameter>host</parameter>
-�ϡ����������������ۥ��Ȥ�����Ū�˻��ꤷ�����������Ѥ��ޤ���
-���꤬���פʤ�
+は、アクセスしたいホストを明示的に指定したい時に利用します。
+指定が不要なら
 <acronym>NULL</acronym>
-���Ϥ��о�ά�Ǥ��ޤ���</para>
+を渡せば省略できます。</para>
 
-<para>����
+<para>引数
 <parameter>flag</parameter>
-�ˤϡ�
-<constant>GFARM_FILE_SEQUENTIAL</constant> ��
-<constant>GFARM_FILE_REPLICATE</constant> ��
+には、
+<constant>GFARM_FILE_SEQUENTIAL</constant> 、
+<constant>GFARM_FILE_REPLICATE</constant> 、
 <constant>GFARM_FILE_NOT_REPLICATE</constant>
-�������¤�����Ǥ��ޤ���
-�����ϡ��������̣���ޤ���</para>
+の論理和が指定できます。
+これらは、下記を意味します。</para>
 <variablelist>
 <varlistentry>
 <term><constant>GFARM_FILE_SEQUENTIAL</constant></term>
 <listitem>
-<para>���Υե饰���Ȥ˴ؤ��Ƥϥ������󥷥�롦���������Τߤ�Ԥʤ�����
-�򼨤��ޤ���</para>
+<para>このフラグメントに関してはシーケンシャル・アクセスのみを行なうこと
+を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_FILE_REPLICATE</constant></term>
 <listitem>
-<para>���餫���ᡢ�������롦�Ρ��ɤ˥�ץꥫ���Ѱդ��Ƥ��饢���������뤳�Ȥ�
-���ꤷ�ޤ���GFARM_FILE_NOT_REPLICATE �Ȥ���¾Ū�ʥ��ץ����Ǥ���</para>
+<para>あらかじめ、ローカル・ノードにレプリカを用意してからアクセスすることを
+指定します。GFARM_FILE_NOT_REPLICATE とは排他的なオプションです。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_FILE_NOT_REPLICATE</constant></term>
 <listitem>
-<para>���˥�ץꥫ�����������������ΥΡ��ɤ˥�ץꥫ���Ѱդ��ʤ�����
-����ꤷ�ޤ���GFARM_FILE_REPLICATE �Ȥ���¾Ū�ʥ��ץ����Ǥ���</para>
+<para>既にレプリカがある場合を除き、このノードにレプリカを用意しないこと
+を指定します。GFARM_FILE_REPLICATE とは排他的なオプションです。</para>
 
 </listitem>
 </varlistentry>
 </variablelist>
 
-<para>���δؿ���ƤФʤ����֤Ǥϡ�Gfarm �ե������ global view
-���֤ȤʤäƤ��ꡢ���ƤΥե饰���Ȥ���礵�줿ñ��ե�����˸����ޤ���</para>
+<para>この関数を呼ばない状態では、Gfarm ファイルは global view
+状態となっており、全てのフラグメントが結合された単一ファイルに見えます。</para>
 
 </refsect1>
 
@@ -102,40 +102,40 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
 <listitem>
-<para>���ꤷ���ѥ�̾�����ե饰���Ȳ��ե�����ǤϤ���ޤ���</para>
+<para>指定したパス名が、フラグメント化ファイルではありません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH</constant></term>
 <listitem>
-<para>���ꤷ���ե饰��������������Ŭ�ڤǤ���</para>
+<para>指定したフラグメント総数が、不適切です。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
 <listitem>
-<para>�ؿ���������Ŭ�ڤǤ������Ȥ��С��ե�����ο����������ˡ�
-�ե饰���������Ȥ���
+<para>関数引数が不適切です。たとえば、ファイルの新規作成時に、
+フラグメント総数として
 <constant>GFARM_FILE_DONTCARE</constant>
-����ꤹ��ȡ����Υ��顼�������ޤ���</para>
+を指定すると、このエラーが生じます。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>
