@@ -1,173 +1,173 @@
-�� �ե�����Υ������塼���
+■ ファイルのスケジューリング
 
-���������ξ�硢GFM_PROTO_SCHEDULE_FILE ��Ǥ�դΥե����륷���ƥ�Ρ��ɤ��֤���
+新規作成の場合、GFM_PROTO_SCHEDULE_FILE は任意のファイルシステムノードを返す。
 
-��������Ʊ��ե������ʣ���Υץ�������Ʊ���˿����������褦�Ȥ�����硢
-�ۤʤ�ե����륷���ƥ�Ρ��ɤ򥹥����塼�뤷�Ƥ��ޤäƤϤޤ�����
-������ɤ�����ˡ�GFM_PROTO_REOPEN ���椫�� inode_schedule_confirm_for_write()
-��Ƥӡ����ˤ��Υե������񤭹��ߥ����ץ󤷤Ƥ���ץ�������¸�ߤ����硢
-�����Ʊ��Υե����륷���ƥ�Ρ��ɤ����򤷤Ƥ�����Τߡ������ץ�������
-�⤷�ۤʤ�ե����륷���ƥ�Ρ��ɤ����򤷤Ƥ�����ϡ�GFARM_ERR_FILE_MIGRATED
-���֤��ơ��������塼��󥰤�����ľ����
+しかし、同一ファイルを、複数のプロセスが同時に新規作成しようとした場合、
+異なるファイルシステムノードをスケジュールしてしまってはまずい。
+これを防ぐために、GFM_PROTO_REOPEN の中から inode_schedule_confirm_for_write()
+を呼び、既にそのファイルを書き込みオープンしているプロセスが存在する場合、
+それと同一のファイルシステムノードを選択している場合のみ、オープンを許す。
+もし異なるファイルシステムノードを選択している場合は、GFARM_ERR_FILE_MIGRATED
+を返して、スケジューリングからやり直す。
 
-�� �����ֹ������
+■ 世代番号の増加
 
-generation_updated �ꥯ�����Ȥϡ�gfsd ����� close_write ��˵����롣
-���ΤȤ������� client �ȤΥ��ͥ�������ڤ�Ƥ���ȡ�
-generation_updated �ǻ��Ȥ��Ƥ��� fd ���ʤ��Ƥޤ�����
-gfmd �ϡ�close_write() �η�̤Ȥ��� ��generation_updated ��ɬ�ספ�
-�֤������ˤϡ�generation updated �����Τ�����ޤǤϡ�close ���٤餻�Ƥ��롣
+generation_updated リクエストは、gfsd からの close_write 後に起きる。
+このとき、既に client とのコネクションが切れていると、
+generation_updated で参照している fd がなくてまずい。
+gfmd は、close_write() の結果として 「generation_updated が必要」と
+返した場合には、generation updated の通知があるまでは、close を遅らせている。
 
-read only �����ץ�Ǥ⡢GFARM_FILE_TRUNC �����ꤵ�줿��硢
-�����ֹ椬�����롣�̾����ϡ�gfsd �� (read only �����ץ�ˤ�ؤ�餺)
-close_write �ǥ����������뤳�Ȥˤ�ꡢȯ�����롣
+read only オープンでも、GFARM_FILE_TRUNC が指定された場合、
+世代番号が増える。通常、これは、gfsd が (read only オープンにも関わらず)
+close_write でクローズすることにより、発生する。
 
-��������GFARM_FILE_TRUNC �����ꤵ�줿����reopen() �ϸƤФ�ʤ���ǽ���⤢�롣
-����ˤĤ��Ƥϡ�inode_file_read() ���ˡ�GFARM_FILE_TRUNC_PENDING ��Ĵ�١�
-�ޤ� pending �Ǥ���С�inode_file_update() ��Ƥ�������ֹ�����䤷�Ƥ��롣
-���λ���spool_host �� NULL �Ȥʤꡢ�ե�������Τ�¸�ߤ��ʤ��Τ������ա�
+しかし、GFARM_FILE_TRUNC が指定されたが、reopen() は呼ばれない可能性もある。
+これについては、inode_file_read() 時に、GFARM_FILE_TRUNC_PENDING を調べ、
+まだ pending であれば、inode_file_update() を呼んで世代番号を増やしている。
+この時、spool_host は NULL となり、ファイル実体は存在しないので要注意。
 
-���������ֹ�����äˤϡ�gfsd ����������ե�������Τβ�̾��ɬ�פȤʤ롣
-���β�̾������ϡ����ΤؤΥ����������Բ�ǽ�ˤʤ롣
-�ޤ���ʣ���� gfsd ��Ʊ���������ֹ��ԤʤäƤ⤤���ʤ���
-gfsd �ϡ�
-��GFM_PROTO_CLOSE_WRITE_V2_4�η�̼�������Ϥޤ�
-��GFM_PROTO_GENERATION_UPDATED�η�������ޤ�
-��GFM_PROTO_FHCLOSE_WRITE�η�̼�������Ϥޤ�
-��GFM_PROTO_GENERATION_UPDATED_BY_COOKIE�η�������ޤ�
-�δ֡����β�̾������Ԥʤ���
-gfmd �� GFM_PROTO_GENERATION_UPDATED{,_BY_COOKIE}�η�̼����ˤ�ꡢ
-���β�̾������λ���Τ롣
-���β�̾������ˡ��ե�������ΤؤΥ���������Ԥʤ�������¾�����ϡ�
-�ʲ����̤ꡣ
-��GFM_PROTO_REOPEN: ����(a)��Ȥ�
-��GFM_PROTO_CLOSE_WRITE_V2_4: ����(a)��Ȥ�
-��GFM_PROTO_REPLICA_ADDING: ����(a)��Ȥ�
-��GFM_PROTO_REMOVE: ����(b)��Ȥ�
-��GFM_PROTO_REPLICATE_FILE_FROM_TO/GFS_PROTO_REPLICATION_REQUEST: 
-  ̤�к�������back_channel �������塼�����ޤǤϡ����줬����
-��gfmd ��Ƴ�Υե����빹������ưʣ����ǽ:
-  ̤�к����Х�: https://sourceforge.net/apps/trac/gfarm/ticket/184
-��GFS_PROTO_FHSTAT
-  ̤�к��������������Ȥ��Ƥ��ʤ���
-��GFS_PROTO_FHREMOVE
-  ����(b)���ȡ�
-��GFS_PROTO_OPEN_LOCAL/GFS_PROTO_OPEN
-  GFM_PROTO_REOPEN �θƤӽФ����Ԥ���碌�롣
-  ����Ǥ�ޤ�������֤�ȯ�����뤬�����ξ���GFARM_ERR_FILE_MIGRATED���֤���
-   ���饤����Ȥ���ȥ饤���롣
-��GFS_PROTO_REPLICA_RECV
-  ̤�к���GFS_PROTO_REPLICA_ADD_FROM���ȡ�
-��GFS_PROTO_REPLICA_ADD
-  ��������Ƥ��ʤ������줿���Ȥ��ʤ���ǽ��
-��GFS_PROTO_REPLICA_ADD_FROM
-  �ޤ�GFM_PROTO_REPLICA_ADDING��ƤӽФ�����ҤΤ褦���Ԥ���碌�롣
-  ���θ塢GFS_PROTO_REPLICA_ADD_FROM��ƤӽФ��Ȥ����Ǥⶥ���郎¸�ߤ��뤬��
-  �ä��к�����Ƥ��ʤ��������å�ȯ�Ԥ��٤���
-�ʤ���
-���줾�졢�ΤäƤ�����ˡ�ϲ������̤ꡣ
-(a) inode_new_generation_is_pending() �Ǹ�������
-  inode_new_generation_wait() ���Ԥġ�
-  �Ƴ����ν����� *_resume()���������Ϥ������� struct *_resume_arg��
-(b) inode_new_generation_is_pending() �δ֤ϡ�inode->u.c.activity != NULL
-  ������Ω�Ĥ��ᡢ���Τκ����Ԥʤ�ʤ���
-  ���ʤ�� GFS_PROTO_FHREMOVE ��ȯ�Ԥ��ٱ䤹�롣
-  �ʤ����ե����빹���η�̡��Ť����Υե�����������륱�����ˤĤ��Ƥϡ�
-  GFM_PROTO_CLOSE_WRITE_V2_4 �Υ���������������Τǡ�������򻲾ȡ�
+この世代番号の増加には、gfsd が管理するファイル実体の改名が必要となる。
+この改名処理中は、実体へのアクセスが不可能になる。
+また、複数の gfsd が同時に世代番号を行なってもいけない。
+gfsd は、
+・GFM_PROTO_CLOSE_WRITE_V2_4の結果受信から始まり
+　GFM_PROTO_GENERATION_UPDATEDの結果送信まで
+・GFM_PROTO_FHCLOSE_WRITEの結果受信から始まり
+　GFM_PROTO_GENERATION_UPDATED_BY_COOKIEの結果送信まで
+の間、この改名処理を行なう。
+gfmd は GFM_PROTO_GENERATION_UPDATED{,_BY_COOKIE}の結果受信により、
+この改名処理完了を知る。
+この改名処理中に、ファイル実体へのアクセスを行なう場合の排他処理は、
+以下の通り。
+・GFM_PROTO_REOPEN: 下記(a)を使う
+・GFM_PROTO_CLOSE_WRITE_V2_4: 下記(a)を使う
+・GFM_PROTO_REPLICA_ADDING: 下記(a)を使う
+・GFM_PROTO_REMOVE: 下記(b)を使う
+・GFM_PROTO_REPLICATE_FILE_FROM_TO/GFS_PROTO_REPLICATION_REQUEST: 
+  未対策だが、back_channel 送信キュー実装までは、それが仕様
+・gfmd 主導のファイル更新時自動複製機能:
+  未対策→バグ: https://sourceforge.net/apps/trac/gfarm/ticket/184
+・GFS_PROTO_FHSTAT
+  未対策だが、現状、使われていない。
+・GFS_PROTO_FHREMOVE
+  下記(b)参照。
+・GFS_PROTO_OPEN_LOCAL/GFS_PROTO_OPEN
+  GFM_PROTO_REOPEN の呼び出しで待ち合わせる。
+  それでもまだ競合状態は発生するが、その場合はGFARM_ERR_FILE_MIGRATEDを返し、
+   クライアントがリトライする。
+・GFS_PROTO_REPLICA_RECV
+  未対策。GFS_PROTO_REPLICA_ADD_FROM参照。
+・GFS_PROTO_REPLICA_ADD
+  実装されていない／されたことがない機能。
+・GFS_PROTO_REPLICA_ADD_FROM
+  まずGFM_PROTO_REPLICA_ADDINGを呼び出し、上述のように待ち合わせる。
+  その後、GFS_PROTO_REPLICA_ADD_FROMを呼び出すところでも競合条件が存在するが、
+  特に対策されていない→チケット発行すべき？
+なお、
+それぞれ、採っている方法は下記の通り。
+(a) inode_new_generation_is_pending() で検査し、
+  inode_new_generation_wait() で待つ。
+  再開時の処理は *_resume()、処理に渡す引数は struct *_resume_arg。
+(b) inode_new_generation_is_pending() の間は、inode->u.c.activity != NULL
+  が成り立つため、実体の削除を行なわない。
+  すなわち GFS_PROTO_FHREMOVE の発行を遅延する。
+  なお、ファイル更新の結果、古い実体ファイルを削除するケースについては、
+  GFM_PROTO_CLOSE_WRITE_V2_4 のケースが該当するので、そちらを参照。
 
-inode_new_generation_is_pending() ���֤ϡ�inode ��°���Ȥ��ơ�
-struct inode::u.c.activity.event_source ���ݻ����Ƥ��롣
-�ޤ���*_resume() ��Ȥä��Ԥ����֤ˤ�������Υꥹ�Ȥϡ�
-struct inode::u.c.activity.event_waiters ���ݻ����Ƥ��롣
-GFM_PROTO_CLOSE_WRITE_V2_4��GFM_PROTO_GENERATION_UPDATED�ξ��ϡ�
-�ե����륪���ץ��氷���ˤʤ뤿�ᡢɬ�� struct inode::u.c.activity ��
-���ꤵ��Ƥ��롣
-GFM_PROTO_FHCLOSE_WRITE��GFM_PROTO_GENERATION_UPDATED_BY_COOKIE�ξ��ϡ�
-�ե����륪���ץ��氷���Ȥʤ�ʤ������Τ��ᡢ�����ϥ����ץ���Τ߳��ݤ���Ƥ���
-struct inode::u.c.state �� struct inode::u.c.activity �Ȳ�̾����
-GFM_PROTO_FHCLOSE_WRITE��GFM_PROTO_GENERATION_UPDATED_BY_COOKIE�δ֤�
-���ݤ���褦�ˤ������ޤ���struct inode_replicating_state ��
-������ inode ��°�����ä���������򵡤� struct inode::u.c.activity ��
-°���˰ܤ�����ץꥱ���������� struct inode::u.c.activity ����ݤ���
-�褦�ˤ�����
+inode_new_generation_is_pending() 状態は、inode の属性として、
+struct inode::u.c.activity.event_source に保持している。
+また、*_resume() を使った待ち状態にある処理のリストは、
+struct inode::u.c.activity.event_waiters に保持している。
+GFM_PROTO_CLOSE_WRITE_V2_4〜GFM_PROTO_GENERATION_UPDATEDの場合は、
+ファイルオープン中扱いになるため、必ず struct inode::u.c.activity は
+設定されている。
+GFM_PROTO_FHCLOSE_WRITE〜GFM_PROTO_GENERATION_UPDATED_BY_COOKIEの場合は、
+ファイルオープン中扱いとならない。このため、以前はオープン中のみ確保されていた
+struct inode::u.c.state を struct inode::u.c.activity と改名し、
+GFM_PROTO_FHCLOSE_WRITE〜GFM_PROTO_GENERATION_UPDATED_BY_COOKIEの間も
+確保するようにした。また、struct inode_replicating_state は
+以前は inode の属性だったが、これを機に struct inode::u.c.activity の
+属性に移し、レプリケーション中も struct inode::u.c.activity を確保する
+ようにした。
 
-����˴�Ϣ���ơ�r6030 �ޤǤ�
-inode_close_read() �� 
-�� inode_new_generation_done(inode, NULL, GFARM_ERR_PROTOCOL);
-�� peer_reset_pending_new_generation(NULL)
-��NULL�ݥ��� (+���ե��åȤǼºݤˤ� 0xb8 ���϶���)����������gfmd������å���
-�Ȥ����ѥ������ä����⤷�����˸ƤФ줿�顢gfmd������å��夷�Ƥ���Ȧ��
-�������������餯 peer_unset_process() �� process_detach_peer() ��������
-peer_unset_pending_new_generation() ���Ƥ��뤻���⤢�äơ��ºݤˤϡ���������
-�ѥ����̤뤳�ȤϤʤ��ä��ΤǤϤʤ����Ȼפ��롣
+これに関連して、r6030 までは
+inode_close_read() が 
+→ inode_new_generation_done(inode, NULL, GFARM_ERR_PROTOCOL);
+→ peer_reset_pending_new_generation(NULL)
+→NULLポインタ (+オフセットで実際には 0xb8 番地近辺)アクセスでgfmdがクラッシュ
+というパスがあった。もし本当に呼ばれたら、gfmdがクラッシュしていた筈。
+ただし、おそらく peer_unset_process() で process_detach_peer() する前に
+peer_unset_pending_new_generation() しているせいもあって、実際には、そういう
+パスを通ることはなかったのではないかと思われる。
 
-�ʤ���r6067 �ޤǤϡ�resuming_thread() �μ����ˤ����� gfp_xdr_flush() ��
-local_peer_watch_readable() ���礱�Ƥ��뤿���ᡢCOMPOUND �ǤϤʤ�
-�ץ��ȥ���� *_resume() �����塢�ϥ󥰤���Ȥ������꤬���ä�����
-FHCLOSE_WRITE ������ϡ����٤� COMPOUND ���ä����ᡢȯ�Ф��ʤ��ä���
-��������� r6067 �ǽ������줿��
+なお、r6067 までは、resuming_thread() の実装において gfp_xdr_flush() と
+local_peer_watch_readable() が欠けているたため、COMPOUND ではない
+プロトコルの *_resume() 処理後、ハングするという問題があったが、
+FHCLOSE_WRITE より前は、すべて COMPOUND だったため、発覚しなかった。
+この問題は r6067 で修正された。
 
-�� ��񤭻��Υ������塼��󥰤ˤĤ���
+■ 上書き時のスケジューリングについて
 
 https://sourceforge.net/apps/trac/gfarm/ticket/68
 https://sourceforge.net/apps/trac/gfarm/ticket/127
-�Τ褦�����꤬���뤿�ᡢO_TRUNC�Ǿ�񤭤�����ˤϡ�
-����������Ʊ�͡���¸�Υ�ץꥫ�������ʤ��������塼��󥰤򤷤�����
+のような問題があるため、O_TRUNCで上書きする場合には、
+新規作成と同様、既存のレプリカに縛られないスケジューリングをしたい。
 
-FUSE �� atomic_o_trunc ���ץ���󤬻Ȥ�����Ǥ���С�r4595 �Τ褦�ˡ�
-O_TRUNC ���˿���������Ʊ�ͤʥ������塼��󥰤�Ԥʤ��С��к��Ǥ��롣
-��������r4595 �ˤϡ��ʲ������꤬���롣
-	Ʊ��Υե�����ˤĤ��ơ�Ʊ����ʣ���� O_TRUNC �⡼�ɤǥ����ץ󤷤ơ�
-	�񤭹��⤦�Ȥ�����硢�̡��ΥΡ��ɤ˥������塼��󥰤���Ƥ��ޤ�
-	��ǽ�������롣
-
-
-��������atomic_o_trunc ���ץ���󤬻����ǽ�ˤʤ�Τ� kernel 2.6.24 �ʹߤ�
-���ꡢRHEL5/CentOS5 �� kernel 2.6.18 �Ǥ����ѤǤ��ʤ���
-atomic_o_trunc �Ǥʤ���硢open �Υ���ȥ�� O_TRUNC ���ϤäƤ�����
-FUSE �� truncate() �� open() ���롣
-�� http://fuse.sourceforge.net/doxygen/structfuse__operations.html#14b98c3f7ab97cc2ef8f9b1d9dc0709d ���
-
-���� truncate()+open() ���Ф����к��Ȥ��ơ��ʲ���Ƥ������
-(1) �����������˥ե����륵������ 0 ���ä��顢�����ֹ�򤵤�ˤ⤦1�ľ夲��
-  ��ץꥫ��¸�ߤ��ʤ����֤ˤ��롣
-����	�����ֹ����û��� dead file copy �õ�����餻��ɬ�פ����ꡢ
-	����ϴ�¸������Ʊ���ʤΤǡ������ֹ��2�ľ夲��ɬ�פϤʤ���
-	(2) ���ɤ�������
-(2) �񤭹��ߥ����������ˡ����줬�Ǹ�Υ��������ǡ����ĥե����륵������
-  0���ä��顢���ƤΥ�ץꥫ��õ����ץꥫ��¸�ߤ��ʤ����֤ˤ��롩
-����	�桼������ץꥫ�ξ�������Ū�˻��ꤷ�Ƥ�����ˡ�
-	�ե����빹���ǥ�ץꥫ�ξ�꤬�ݻ������Ȥ������Ԥ�����롣
-	���ͤȤ��Ƥϵ�������ϰ���ΤȻפ��뤬���ɤ��餫�Ȥ�����
-	˾�ޤ����ʤ��褦�ʡ�
-(3) �ե�����񤭹��ߥ����ץ�����ʲ��ξ�郎������Ω������硢
-  ����������Ʊ�ͤ˥������塼��󥰤������Υե�����Ͽ����������롣
-	���ե����륷���ƥ�Ρ��ɤζ������̤���­���Ƥ���
-	���ǽ�ν񤭹��ߥ����ץ�Ǥ���
-	���ե����륵������ 0 �Ǥ��뤫�����뤤�� O_TRUNC �����ꤵ��Ƥ���
-  ���Τκ��������Ǥϡ��ޤ������ֹ�����䤵�ʤ���0�Х��ȤΥ�ץꥫ��
-  �����������Ǥ��ꡢ�֥ե������񤭹��ߥ����ץ���ϡ������ֹ椬Ʊ��
-  �Ǥ⡢���Ƥΰۤʤ�ե����뤬¸�ߤ���פȤ�������ޤǤξ������Ѥ��ʤ�
-  �Τǡ����������ʤ����ޤ���#68, #127 �Τ褦�� overwrite �ξ��Τ�
-  �ʤ餺����¸�� 0 �Х��ȤΥե����뤬���륱����(���ǤϤ���Ȼפ���)��
-  ���б��Ǥ��롣���äơ�(3) �����򤷤���
+FUSE の atomic_o_trunc オプションが使える場合であれば、r4595 のように、
+O_TRUNC 時に新規作成と同様なスケジューリングを行なえば、対策できる。
+ただし、r4595 には、以下の問題がある。
+	同一のファイルについて、同時に複数回 O_TRUNC モードでオープンして、
+	書き込もうとした場合、別々のノードにスケジューリングされてしまう
+	可能性がある。
 
 
-XXX �Х�
+しかし、atomic_o_trunc オプションが指定可能になるのは kernel 2.6.24 以降で
+あり、RHEL5/CentOS5 の kernel 2.6.18 では利用できない。
+atomic_o_trunc でない場合、open のエントリに O_TRUNC は渡ってこず、
+FUSE は truncate() 後 open() する。
+※ http://fuse.sourceforge.net/doxygen/structfuse__operations.html#14b98c3f7ab97cc2ef8f9b1d9dc0709d より
 
-r4595 (2.3.1��) �ˤϡ��ʲ������꤬���롣
-	Ʊ��Υե�����ˤĤ��ơ�Ʊ����ʣ���� O_TRUNC �⡼�ɤǥ����ץ󤷤ơ�
-	�񤭹��⤦�Ȥ�����硢�̡��ΥΡ��ɤ˥������塼��󥰤���Ƥ��ޤ�
-	��ǽ�������롣
-2.4.0 �ˤϡ���������Ϥʤ���
-Ʊ���˽񤭹��ޤʤ��������뤤��Ʊ���˽񤭹���ץ������� O_TRUNC �����
-���Ƥʤ���С�����ʤ���
+この truncate()+open() に対する対策として、以下を検討した。
+(1) クローズ時にファイルサイズが 0 だったら、世代番号をさらにもう1つ上げ、
+  レプリカの存在しない状態にする。
+　→	世代番号増加時に dead file copy 消去を走らせる必要があり、
+	これは既存処理と同じなので、世代番号を2つ上げる必要はなく、
+	(2) で良さそう。
+(2) 書き込みクローズ時に、これが最後のクローズで、かつファイルサイズが
+  0だったら、全てのレプリカを消去し、レプリカの存在しない状態にする？
+　→	ユーザがレプリカの場所を明示的に指定している場合に、
+	ファイル更新でレプリカの場所が維持されるという期待が崩れる。
+	仕様としては許される範囲内のと思われるが、どちらかというと
+	望ましくないような…
+(3) ファイル書き込みオープン時、以下の条件が全て成立した場合、
+  新規作成と同様にスケジューリングし、実体ファイルは新規作成する。
+	・ファイルシステムノードの空き容量が不足している
+	・最初の書き込みオープンである
+	・ファイルサイズが 0 であるか、あるいは O_TRUNC が指定されている
+  実体の作成時点では、まだ世代番号は増やさない。0バイトのレプリカが
+  増えただけであり、「ファイルを書き込みオープン中は、世代番号が同じ
+  でも、内容の異なるファイルが存在する」というこれまでの状況を変えない
+  ので、これで問題ない。また、#68, #127 のように overwrite の場合のみ
+  ならず、既存の 0 バイトのファイルがあるケース(稀ではあると思うが)に
+  も対応できる。従って、(3) を選択した。
 
-read open �����硢�������塼��󥰤κ���˥ե����륷���ƥ�Ρ��ɤ�
-��ߤ���ȡ��ץ��ȥ��������礬�������ǽ�������롣����ϡ���ץꥫ����
-������ host_is_up() �ȡ��ºݤ˥ۥ��Ȥ��֤� host_is_up() ����Ʊ���
-�ե����륷���ƥ�Ρ��ɤ��Ф��ơ��ۤʤ��̤��֤���ǽ�����Ϥ��ˤ��뤿�ᡣ
 
-���� read open ����Ƥ���ե�����˽񤭹��ߤ�Ԥʤ����Ȥ�����硢
-SCHEDULE_FILE ���֤��ۥ���̾�˽�ʣ���������ǽ�������롣
-���������������ǽ���㴳�㲼��������ǡ����������ˤϤʤ�ʤ���
+XXX バグ
+
+r4595 (2.3.1〜) には、以下の問題がある。
+	同一のファイルについて、同時に複数回 O_TRUNC モードでオープンして、
+	書き込もうとした場合、別々のノードにスケジューリングされてしまう
+	可能性がある。
+2.4.0 には、この問題はない。
+同時に書き込まないか、あるいは同時に書き込むプロセスが O_TRUNC を指定
+してなければ、問題ない。
+
+read open する場合、スケジューリングの最中にファイルシステムノードが
+停止すると、プロトコル不整合が生じる可能性がある。これは、レプリカ数を
+数える host_is_up() と、実際にホストを返す host_is_up() が、同一の
+ファイルシステムノードに対して、異なる結果を返す可能性が僅かにあるため。
+
+既に read open されているファイルに書き込みを行なおうとした場合、
+SCHEDULE_FILE が返すホスト名に重複が生じる可能性がある。
+ただし、これは性能が若干低下するだけで、重大な問題にはならない。

@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfarm&nbsp;--&nbsp;Gfarm �ե����륷���ƥ� API �饤�֥��</DIV
+>gfarm&nbsp;--&nbsp;Gfarm ファイルシステム API ライブラリ</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -45,17 +45,17 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->Gfarm �饤�֥��ϡ�Gfarm �ե����륷���ƥ�䡤�������塼���
-��ǽ���Ф��륤�󥿡��ե��������󶡤��ޤ������Υޥ˥奢��ϥ饤�֥��
-�γ��פ򵭽Ҥ��ޤ����ƴؿ��ξܺ٤ϡ��ؿ�ñ�̤Υޥ˥奢��򻲾Ȥ���
-����������</P
+>Gfarm ライブラリは，Gfarm ファイルシステムや，スケジューリング
+機能に対するインターフェースを提供します．このマニュアルはライブラリ
+の概要を記述します．各関数の詳細は，関数単位のマニュアルを参照して
+ください．</P
 ><DIV
 CLASS="REFSECT2"
 ><A
 NAME="AEN16"
 ></A
 ><H3
->���������λ����</H3
+>初期化／終了処理</H3
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -63,14 +63,14 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfarm_initialize</SPAN
 >(3)</SPAN
-> �ؿ��� Gfarm �饤�֥��ν�����ˡ�
+> 関数は Gfarm ライブラリの初期化に，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfarm_terminate</SPAN
 >(3)</SPAN
-> �ؿ��� Gfarm �饤�֥��ν�λ�������Ѥ��ޤ���</P
+> 関数は Gfarm ライブラリの終了処理に用います．</P
 ></DIV
 ><DIV
 CLASS="REFSECT2"
@@ -78,32 +78,32 @@ CLASS="REFSECT2"
 NAME="AEN25"
 ></A
 ><H3
->�ե����������Ͻ���</H3
+>ファイル入出力処理</H3
 ><P
->��¸�Υե�����򥹥ȥ꡼��Ȥ��ƥ����ץ󤹤�ˤ�
+>既存のファイルをストリームとしてオープンするには
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_open</SPAN
 >(3)</SPAN
-> �ؿ���
-�����ե������������ƥ��ȥ꡼��Ȥ��ƥ����ץ󤹤�ˤ�
+> 関数を，
+新規ファイルを作成してストリームとしてオープンするには
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_create</SPAN
 >(3)</SPAN
-> �ؿ����Ѥ��ޤ���
-�ե�����Υ���������
+> 関数を用います．
+ファイルのクローズは
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_close</SPAN
 >(3)</SPAN
-> �ؿ���Ȥ��ޤ���</P
+> 関数を使います．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -111,23 +111,23 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_pio_error</SPAN
 >(3)</SPAN
-> �ؿ��ϥ����ץ󤷤Ƥ��륹�ȥ꡼��˴ؤ��ƥ��顼�������Ƥ��뤫
-��Ƚ�̤���
+> 関数はオープンしているストリームに関してエラーが生じているか
+を判別し，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_eof</SPAN
 >(3)</SPAN
-> �ؿ����ɤ߹��ߥ����ץ󤷤Ƥ��륹�ȥ꡼�ब�ե�����
-������ã���Ƥ��뤫��Ƚ�̤��ޤ���
+> 関数は読み込みオープンしているストリームがファイル
+末尾に達しているかを判別します．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_seek</SPAN
 >(3)</SPAN
-> �ؿ��ϡ����ȥ꡼����θ��߰��֤��ѹ����ޤ���</P
+> 関数は，ストリーム中の現在位置を変更します．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -135,49 +135,49 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_pio_getc</SPAN
 >(3)</SPAN
-> �ؿ��ϥ��ȥ꡼�फ���ʸ���ɤ߹��ߡ�
+> 関数はストリームから一文字読み込み，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_ungetc</SPAN
 >(3)</SPAN
-> �ؿ��ϵդ��ɤ߹������ʸ���򥹥ȥ꡼����ᤷ�ޤ���
+> 関数は逆に読み込んだ一文字をストリームに戻します．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_getline</SPAN
 >(3)</SPAN
-> �ؿ���
+> 関数や
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_gets</SPAN
 >(3)</SPAN
-> �ؿ���
+> 関数，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_readline</SPAN
 >(3)</SPAN
-> �ؿ��ϡ����ȥ꡼�फ���Ԥ��ɤ߹��ߡ�
+> 関数は，ストリームから一行を読み込み，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_readdelim</SPAN
 >(3)</SPAN
-> �ؿ��ϡ����ȥ꡼�फ����ꤷ���ǥ�ߥ��ޤǤ��ɤ߹��ߤޤ���
+> 関数は，ストリームから指定したデリミタまでを読み込みます．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_read</SPAN
 >(3)</SPAN
-> �ؿ��ϡ����ȥ꡼�फ����ꤷ���Х��ȿ������ɤ߹��ߤޤ���</P
+> 関数は，ストリームから指定したバイト数だけ読み込みます．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -185,49 +185,49 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_pio_putc</SPAN
 >(3)</SPAN
-> �ؿ��ϥ��ȥ꡼��ذ�ʸ���񤭤�����
+> 関数はストリームへ一文字書きだし，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_putline</SPAN
 >(3)</SPAN
-> �ؿ���
+> 関数や
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_puts</SPAN
 >(3)</SPAN
-> �ؿ��ϥ��ȥ꡼��ذ�Խ񤭤����ޤ���
+> 関数はストリームへ一行書きだします．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_write</SPAN
 >(3)</SPAN
-> �ؿ��ϡ����ȥ꡼��ػ��ꤷ���Х��ȿ������񤭹��ߤޤ���
+> 関数は，ストリームへ指定したバイト数だけ書き込みます．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_flush</SPAN
 >(3)</SPAN
-> �ؿ��䡤
+> 関数や，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_sync</SPAN
 >(3)</SPAN
-> �ؿ���
+> 関数，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_datasync</SPAN
 >(3)</SPAN
-> �ؿ��ϡ��Хåե���󥰤��Ƥ���ǡ����򵭲����֤˽񤭽Ф��ޤ���
+> 関数は，バッファリングしているデータを記憶装置に書き出します．
 
 <SPAN
 CLASS="CITEREFENTRY"
@@ -235,7 +235,7 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_pio_truncate</SPAN
 >(3)</SPAN
-> �ؿ��ϡ��ե�����Υ��������ѹ����ޤ���</P
+> 関数は，ファイルのサイズを変更します．</P
 ></DIV
 ><DIV
 CLASS="REFSECT2"
@@ -243,7 +243,7 @@ CLASS="REFSECT2"
 NAME="AEN94"
 ></A
 ><H3
->�ǥ��쥯�ȥꥢ������</H3
+>ディレクトリアクセス</H3
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -251,22 +251,22 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_opendir</SPAN
 >(3)</SPAN
-> �ؿ��ǥǥ��쥯�ȥ�򥪡��ץ󤹤�ȡ�
+> 関数でディレクトリをオープンすると，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_readdir</SPAN
 >(3)</SPAN
-> �ؿ��ǡ����Υǥ��쥯�ȥ�������륨��ȥ�����뤳�Ȥ�
-�Ǥ��ޤ��������ץ󤷤��ǥ��쥯�ȥ�ؤΥ��������ϡ�
+> 関数で，そのディレクトリを構成するエントリを得ることが
+できます．オープンしたディレクトリへのアクセスは，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_closedir</SPAN
 >(3)</SPAN
-> �ؿ��ǽ�λ���ޤ���</P
+> 関数で終了します．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -274,30 +274,30 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_glob_init</SPAN
 >(3)</SPAN
-> �ؿ��ǽ�������� gfs_glob_t ��
+> 関数で初期化した gfs_glob_t を
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_glob</SPAN
 >(3)</SPAN
-> �ؿ����Ϥ����Ȥǡ��磻��ɥ����ɤ�Ÿ����Ԥ����Ȥ�
-�Ǥ��ޤ���
-���Ѥ�����ä��顤�����ΰ��
+> 関数に渡すことで，ワイルドカードの展開を行うことが
+できます．
+利用が終わったら，この領域は
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_glob_free</SPAN
 >(3)</SPAN
-> �ؿ��ǳ������ޤ���
+> 関数で開放します．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_glob_add</SPAN
 >(3)</SPAN
-> �ؿ��ϡ�gfs_glob_t �˥���ȥ���ɲä���Τ��Ѥ��ޤ���</P
+> 関数は，gfs_glob_t にエントリを追加するのに用います．</P
 ></DIV
 ><DIV
 CLASS="REFSECT2"
@@ -305,7 +305,7 @@ CLASS="REFSECT2"
 NAME="AEN119"
 ></A
 ><H3
->�ե����롿�ǥ��쥯�ȥ����</H3
+>ファイル／ディレクトリ操作</H3
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -313,21 +313,21 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_chmod</SPAN
 >(3)</SPAN
-> �ؿ��ǥե�����Υ⡼�ɤ��ѹ�����
+> 関数でファイルのモードを変更し，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_chown</SPAN
 >(3)</SPAN
-> �ؿ��ǥե�����ν�ͭ�Ԥ��ѹ�����
+> 関数でファイルの所有者を変更し，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_utimes</SPAN
 >(3)</SPAN
-> �ؿ��ǥե�����ι�������ȥ�������������ѹ����ޤ���</P
+> 関数でファイルの更新時刻とアクセス時刻を変更します．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -335,28 +335,28 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_mkdir</SPAN
 >(3)</SPAN
-> �ؿ��ϥǥ��쥯�ȥ���������
+> 関数はディレクトリを作成し，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_rmdir</SPAN
 >(3)</SPAN
-> �ؿ��ϥǥ��쥯�ȥ�������ޤ���
+> 関数はディレクトリを削除します．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_unlink</SPAN
 >(3)</SPAN
-> �ؿ��ϥե������������
+> 関数はファイルを削除し，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_rename</SPAN
 >(3)</SPAN
-> �ؿ��ϥǥ��쥯�ȥ��ե�������̾���ޤ���</P
+> 関数はディレクトリやファイルを改名します．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -364,16 +364,16 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_stat</SPAN
 >(3)</SPAN
-> �ؿ��ϻ��ꤷ���ե����뤢�뤤�ϥǥ��쥯�ȥ�Υ�������
-��������ʤɤξ�����֤��ޤ���
-���δؿ����֤��� gfs_stat ��¤�Τ�
+> 関数は指定したファイルあるいはディレクトリのサイズや
+更新時刻などの情報を返します．
+この関数が返した gfs_stat 構造体は
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_stat_free</SPAN
 >(3)</SPAN
-> �ؿ����Ѥ��Ʋ�������ɬ�פ�����ޤ���</P
+> 関数を用いて解放する必要があります．</P
 ></DIV
 ><DIV
 CLASS="REFSECT2"
@@ -381,7 +381,7 @@ CLASS="REFSECT2"
 NAME="AEN151"
 ></A
 ><H3
->������������ȥ�����ꥹ�� (ACL) ���</H3
+>アクセスコントロールリスト (ACL) 操作</H3
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -389,21 +389,21 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_init</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ��¤�� (gfarm_acl_t) ����������
+> 関数は ACL 構造体 (gfarm_acl_t) を初期化し，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_acl_free</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ��¤�Τ������ޤ���
+> 関数で ACL 構造体を開放します．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_acl_dup</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ��¤�Τ�ʣ�����ޤ���</P
+> 関数は ACL 構造体を複製します．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -411,22 +411,22 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_create_entry</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ��¤�Τ� ACL ����ȥ� (gfarm_acl_entry_t)
-��ҤȤ����������ɲä���
+> 関数は ACL 構造体の ACL エントリ (gfarm_acl_entry_t)
+をひとつ生成して追加し，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_acl_get_entry</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ��¤�Τ� ACL ����ȥ��ҤȤļ�������
+> 関数で ACL 構造体の ACL エントリをひとつ取得し，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_acl_delete_entry</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ��¤�Τ� ACL ����ȥ��ҤȤĺ�����ޤ���</P
+> 関数で ACL 構造体の ACL エントリをひとつ削除します．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -434,8 +434,8 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_valid</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ��¤�Τ�ͭ���ʷ������ɤ�����ǧ���ޤ���
-gfs_acl_check(3) �ؿ��ʤ�Ф��ܤ�����ǧ�Ǥ��ޤ���</P
+> 関数は ACL 構造体が有効な形式かどうか確認します．
+gfs_acl_check(3) 関数ならばより詳しく確認できます．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -443,8 +443,8 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_calc_mask</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ��¤�Τ� GFARM_ACL_MASK �����Υ���ȥ��׻�
-���ơ�GFARM_ACL_MASK ������¸�ߤ���о�񤭤���¸�ߤ��ʤ���к������ޤ���</P
+> 関数は ACL 構造体の GFARM_ACL_MASK タグのエントリを計算
+して，GFARM_ACL_MASK が既に存在すれば上書きし，存在しなければ作成します．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -452,15 +452,15 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_get_tag_type</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ����ȥ꤫�� ACL ���� (gfarm_acl_tag_t)
-(ACL ����ȥ�μ���) ��������ޤ���
+> 関数は ACL エントリから ACL タグ (gfarm_acl_tag_t)
+(ACL エントリの種類) を取得します．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_acl_set_tag_type</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ����ȥ�� ACL �����򺹤��ؤ��ޤ���</P
+> 関数は ACL エントリの ACL タグを差し替えます．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -468,15 +468,15 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_get_permset</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ����ȥ꤫�� ACL �ѡ��ߥå���󥻥å� 
-(gfarm_acl_permset_t) ����Ф��ޤ���
+> 関数は ACL エントリから ACL パーミッションセット 
+(gfarm_acl_permset_t) を取り出します．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_acl_set_permset</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ����ȥ�� ACL �ѡ��ߥå���󥻥åȤ򺹤��ؤ��ޤ���</P
+> 関数は ACL エントリへ ACL パーミッションセットを差し替えます．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -484,24 +484,24 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_add_perm</SPAN
 >(3)</SPAN
-> �ؿ��� ACL �ѡ��ߥå���󥻥åȤ� ACL �ѡ��ߥå������ 
-(gfarm_acl_perm_t) ���ɲä��ޤ���
+> 関数は ACL パーミッションセットに ACL パーミッション値 
+(gfarm_acl_perm_t) を追加します．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_acl_clear_perms</SPAN
 >(3)</SPAN
-> �ؿ��� ACL �ѡ��ߥå���󥻥åȤ��餹�٤Ƥ� 
-ACL �ѡ��ߥå�����ͤ򥯥ꥢ���ޤ���
+> 関数は ACL パーミッションセットからすべての 
+ACL パーミッション値をクリアします．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_acl_delete_perm</SPAN
 >(3)</SPAN
-> �ؿ��� ACL �ѡ��ߥå���󥻥åȤ��� 
-ACL �ѡ��ߥå�����ͤ�ҤȤĺ�����ޤ���</P
+> 関数は ACL パーミッションセットから 
+ACL パーミッション値をひとつ削除します．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -509,16 +509,16 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_get_qualifier</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ����ȥ꤫�顤�桼��̾�ޤ��ϥ��롼��̾��������ޤ���
-GFARM_ACL_USER �ޤ��� GFARM_ACL_GROUP ������ ACL ����ȥ꤫������Ǥ��ޤ���
+> 関数は ACL エントリから，ユーザ名またはグループ名を取得します．
+GFARM_ACL_USER または GFARM_ACL_GROUP タグの ACL エントリから取得できます．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_acl_set_qualifier</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ����ȥ���Ф��ơ����ꤷ���桼��̾�ޤ��ϥ��롼��̾��
-�����ؤ��ޤ���</P
+> 関数は ACL エントリに対して，指定したユーザ名またはグループ名を
+差し替えます．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -526,22 +526,22 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_delete_def_file</SPAN
 >(3)</SPAN
-> �ؿ��ϡ��ե������ǥ��쥯�ȥ꤫��ǥե���� ACL �������ޤ���
+> 関数は，ファイルやディレクトリからデフォルト ACL を削除します．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_acl_get_file</SPAN
 >(3)</SPAN
-> �ؿ��ϡ��ե������ǥ��쥯�ȥ꤫�� ACL ��¤�Τ�������ޤ���
+> 関数は，ファイルやディレクトリから ACL 構造体を取得します．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_acl_set_file</SPAN
 >(3)</SPAN
-> �ؿ��ϡ��ե������ǥ��쥯�ȥ�� ACL ��¤�Τ򺹤��ؤ��ޤ���
-������ gfs_acl_sort(3) �ؿ��ǥ����Ȥ��Ƥ���������</P
+> 関数は，ファイルやディレクトリの ACL 構造体を差し替えます．
+事前に gfs_acl_sort(3) 関数でソートしてください．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -549,15 +549,15 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_to_text</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ��¤�Τ� ACL ʸ����������Ѵ����ޤ���
-gfs_acl_to_any_text(3) �ؿ��Τۤ������ⵡǽ�Ǥ���
+> 関数は ACL 構造体を ACL 文字列形式に変換します．
+gfs_acl_to_any_text(3) 関数のほうがより高機能です．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_acl_from_text</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ʸ����������� ACL ��¤�Τ��Ѵ����ޤ���</P
+> 関数は ACL 文字列形式から ACL 構造体に変換します．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -565,8 +565,8 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_get_perm</SPAN
 >(3)</SPAN
-> �ؿ��� ACL �ѡ��ߥå���󥻥åȤ��椫��
-�ҤȤĤΥѡ��ߥå�����ƥ��Ȥ��ޤ���</P
+> 関数は ACL パーミッションセットの中から
+ひとつのパーミッションをテストします．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -574,17 +574,17 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_check</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ��¤�Τ�ͭ���ʷ������ɤ�����ǧ���ޤ���
-�ޤ������顼�ξ��ȥ��顼�μ��ब�狼��ޤ���
-gfs_acl_valid(3) �ؿ�����ⵡǽ�Ǥ���
+> 関数は ACL 構造体が有効な形式かどうか確認します．
+また，エラーの場所とエラーの種類がわかります．
+gfs_acl_valid(3) 関数よりも高機能です．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_acl_error</SPAN
 >(3)</SPAN
-> �ؿ��� gfs_acl_check(3) 
-�ؿ��Υ��顼��ʸ������Ѵ����ޤ���</P
+> 関数は gfs_acl_check(3) 
+関数のエラーを文字列に変換します．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -592,7 +592,7 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_entries</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ����ȥ�ο�������ޤ���</P
+> 関数は ACL エントリの数を数えます．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -600,9 +600,9 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_equiv_mode</SPAN
 >(3)</SPAN
-> �ؿ��ϡ�ACL ��¤�Τ����� ACL (GFARM_ACL_USER_OBJ,
-GFARM_ACL_GROUP_OBJ, GFARM_ACL_OTHER) �����ǹ�������Ƥ��뤫�ɤ�����ǧ���ޤ���
-�ޤ������� ACL ��ʬ���� gfarm_mode_t ���Ѵ��Ǥ��ޤ���</P
+> 関数は，ACL 構造体が基本 ACL (GFARM_ACL_USER_OBJ,
+GFARM_ACL_GROUP_OBJ, GFARM_ACL_OTHER) だけで構成されているかどうか確認します．
+また，基本 ACL 部分から gfarm_mode_t に変換できます．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -610,7 +610,7 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_cmp</SPAN
 >(3)</SPAN
-> �ؿ�����Ĥ� ACL ��¤�Τ���Ӥ��ޤ���</P
+> 関数は二つの ACL 構造体を比較します．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -618,7 +618,7 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_from_mode</SPAN
 >(3)</SPAN
-> �ؿ��� gfarm_mode_t ���� ACL ��¤�Τ��������ޤ���</P
+> 関数は gfarm_mode_t から ACL 構造体を生成します．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -626,9 +626,9 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_to_any_text</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ��¤�Τ� ACL ʸ����������Ѵ����ޤ���
-���Ϸ����򥪥ץ����ʤɤ��ѹ��Ǥ��ޤ���
-gfs_acl_to_text(3) �ؿ�����٤ƹⵡǽ�Ǥ���</P
+> 関数は ACL 構造体を ACL 文字列形式に変換します．
+出力形式をオプションなどで変更できます．
+gfs_acl_to_text(3) 関数と比べて高機能です．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -636,17 +636,17 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_to_xattr_value</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ��¤�Τ��ĥ°���˳�Ǽ���뤿��� 
-ACL �Х��ʥ�ǡ������Ѵ����ޤ���
-������ gfs_acl_sort(3) �ؿ��ǥ����Ȥ��Ƥ���������
+> 関数は ACL 構造体を拡張属性に格納するための 
+ACL バイナリデータに変換します．
+事前に gfs_acl_sort(3) 関数でソートしてください．
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_acl_from_xattr_value</SPAN
 >(3)</SPAN
-> �ؿ��ϳ�ĥ°��������Ф��� ACL �Х��ʥ�ǡ����� 
-ACL ��¤�Τ��Ѵ����ޤ���</P
+> 関数は拡張属性から取り出した ACL バイナリデータを 
+ACL 構造体に変換します．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -654,7 +654,7 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_sort</SPAN
 >(3)</SPAN
-> �ؿ��� ACL ��¤�Τ�ͭ���ʷ����Ȥʤ���֤˥����Ȥ��ޤ���</P
+> 関数は ACL 構造体を有効な形式となる順番にソートします．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -662,8 +662,8 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_acl_from_text_with_default</SPAN
 >(3)</SPAN
-> �ؿ��� "default:" �ǻϤޤ� ACL ����ȥ����� ACL 
-ʸ������ᤷ���������� ACL ��¤�Τȥǥե���� ACL ��¤�Τ� 2 ���������ޤ���</P
+> 関数は "default:" で始まる ACL エントリを持つ ACL 
+文字列を解釈し，アクセス ACL 構造体とデフォルト ACL 構造体を 2 個生成します．</P
 ></DIV
 ><DIV
 CLASS="REFSECT2"
@@ -671,31 +671,31 @@ CLASS="REFSECT2"
 NAME="AEN282"
 ></A
 ><H3
->���顼������</H3
+>エラーコード</H3
 ><P
->�ۤȤ�ɤ� Gfarm �饤�֥��δؿ��� gfarm_error_t ���� Gfarm ���顼����
-�ɤ��֤��ޤ���
+>ほとんどの Gfarm ライブラリの関数は gfarm_error_t 型の Gfarm エラーコー
+ドを返します。
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfarm_error_string</SPAN
 >(3)</SPAN
-> �ؿ��� Gfarm ���顼�����ɤ�ɽ��ʸ������֤��ޤ���
+> 関数は Gfarm エラーコードを表す文字列を返します。
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfarm_errno_to_error</SPAN
 >(3)</SPAN
-> �ؿ��� errno �� Gfarm ���顼�����ɤ��Ѵ����ޤ���
+> 関数は errno を Gfarm エラーコードに変換します。
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfarm_error_to_errno</SPAN
 >(3)</SPAN
-> �ؿ��� Gfarm ���顼�����ɤ� errno ���Ѵ����ޤ���</P
+> 関数は Gfarm エラーコードを errno に変換します。</P
 ></DIV
 ><DIV
 CLASS="REFSECT2"
@@ -703,54 +703,54 @@ CLASS="REFSECT2"
 NAME="AEN294"
 ></A
 ><H3
->ʸ�����������桼�ƥ���ƥ�</H3
+>文字列配列操作ユーティリティ</H3
 ><P
->ʸ���������ɽ�� gfarm_stringlist �����ѿ��ϡ�
+>文字列配列を表す gfarm_stringlist 型の変数は，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfarm_stringlist_init</SPAN
 >(3)</SPAN
-> �ؿ��ǽ��������
+> 関数で初期化し，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfarm_stringlist_add</SPAN
 >(3)</SPAN
-> �ؿ���ʸ��������ɲä���
+> 関数で文字列を一つ追加し，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfarm_stringlist_cat</SPAN
 >(3)</SPAN
-> �ؿ���ʸ�����ʣ���ɲä���
+> 関数で文字列を複数追加し，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfarm_stringlist_free</SPAN
 >(3)</SPAN
-> �ؿ��ǲ������뤳�Ȥ��Ǥ��ޤ���
-ʸ��������γ�����ʸ����ˤ�
+> 関数で解放することができます．
+文字列配列の各要素文字列には
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfarm_stringlist_elem</SPAN
 >(3)</SPAN
-> �ؿ����뤤��
-GFARM_STRINGLIST_ELEM() �ޥ����ǥ����������뤳�Ȥ��Ǥ��ޤ���
-�ޤ���ʸ���������������ʸ����ο���
+> 関数あるいは
+GFARM_STRINGLIST_ELEM() マクロでアクセスすることができます．
+また，文字列配列を構成する文字列の数は
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfarm_stringlist_length</SPAN
 >(3)</SPAN
-> �ؿ������뤳�Ȥ��Ǥ��ޤ���</P
+> 関数で得ることができます．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -758,8 +758,8 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfarm_strings_free_deeply</SPAN
 >(3)</SPAN
-> �ؿ��ϡ�ʸ�������󤪤�Ӥ�����������ʸ������Ф���
-ɸ��饤�֥��ؿ��� free() ��ƤӽФ��Ʋ������ޤ���</P
+> 関数は，文字列配列およびそれを構成する各文字列に対して
+標準ライブラリ関数の free() を呼び出して解放します．</P
 ></DIV
 ><DIV
 CLASS="REFSECT2"
@@ -767,7 +767,7 @@ CLASS="REFSECT2"
 NAME="AEN319"
 ></A
 ><H3
->ʸ�����������桼�ƥ���ƥ��ޥ���</H3
+>文字列配列操作ユーティリティマクロ</H3
 ><P
 ></P
 ><DIV
@@ -777,34 +777,34 @@ CLASS="VARIABLELIST"
 >GFARM_STRINGLIST_ELEM(list, i)</DT
 ><DD
 ><P
->gfarm_stringlist ���� <CODE
+>gfarm_stringlist 型の <CODE
 CLASS="PARAMETER"
 >list</CODE
-> ������ɽ��ʸ���������
+> 引数が表す文字列配列の
 <CODE
 CLASS="PARAMETER"
 >i</CODE
-> ���ܤ����Ǥ�
-ɽ���ޥ����Ǥ������Υޥ����Ϻ����ͤȤ��ƻȤ��ޤ���
-�ͤȤ���ɾ���������ˤ�
+> 番目の要素を
+表すマクロです．このマクロは左辺値として使えます．
+値として評価した場合には
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfarm_stringlist_elem</SPAN
 >(3)</SPAN
-> �ؿ���Ʊ��η�̤��֤��ޤ���</P
+> 関数と同一の結果を返します．</P
 ></DD
 ><DT
 >GFARM_STRINGLIST_STRARRAY(list)</DT
 ><DD
 ><P
->gfarm_stringlist ���� <CODE
+>gfarm_stringlist 型の <CODE
 CLASS="PARAMETER"
 >list</CODE
-> ������
-ɽ��ʸ�����������Ƭ���ǤؤΥݥ��󥿤��֤��ޤ���
-�֤��ͤϡ�ʸ���ؤΥݥ��󥿤ؤΥݥ��󥿤Ȥʤ�ޤ���</P
+> 引数が
+表す文字列配列の先頭要素へのポインタを返します．
+返り値は，文字へのポインタへのポインタとなります．</P
 ></DD
 ></DL
 ></DIV

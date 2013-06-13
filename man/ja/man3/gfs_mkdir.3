@@ -6,7 +6,7 @@
 .TH "GFS_MKDIR" "3" "17 April 2004" "Gfarm" ""
 
 .SH NAME
-gfs_mkdir \- �ǥ��쥯�ȥ����
+gfs_mkdir \- ディレクトリ作成
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -15,28 +15,28 @@ char *gfs_mkdir (char * \fIgfarm_url\fB, gfarm_mode_t \fImode\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-����
+引数
 \fIgfarm_url\fR
-�˻��ꤷ��̾���Υǥ��쥯�ȥ�򡢥⡼��
+に指定した名前のディレクトリを、モード
 \fImode\fR
-�Ǻ������ޤ���
+で作成します。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
 \fBGFARM_ERR_ALREADY_EXISTS\fR
-���ꤷ���ǥ��쥯�ȥ꤬����¸�ߤ��ޤ���
+指定したディレクトリが既に存在します。
 .TP
 \fBGFARM_ERR_NO_SUCH_OBJECT\fR
-���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤ�¸�ߤ��ʤ��ä����Ȥ򼨤��ޤ���
+指定したパス名の親ディレクトリが、実際には存在しなかったことを示します。
 .TP
 \fBGFARM_ERR_NOT_A_DIRECTORY\fR
-���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤϥǥ��쥯�ȥ�Ǥʤ��ä����Ȥ�
-�����ޤ���
+指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。

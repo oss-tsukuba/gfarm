@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfexec&nbsp;--&nbsp;Gfarm �ե����륷���ƥ�Υץ�������¹Ԥ���</DIV
+>gfexec&nbsp;--&nbsp;Gfarm ファイルシステムのプログラムを実行する</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -41,22 +41,22 @@ CLASS="COMMAND"
 > [-N <TT
 CLASS="REPLACEABLE"
 ><I
->�Ρ�������</I
+>ノード総数</I
 ></TT
 >] [-I <TT
 CLASS="REPLACEABLE"
 ><I
->�Ρ����ֹ�</I
+>ノード番号</I
 ></TT
 >] [-s]  <TT
 CLASS="REPLACEABLE"
 ><I
->�ץ������̾</I
+>プログラム名</I
 ></TT
 >  [<TT
 CLASS="REPLACEABLE"
 ><I
->����</I
+>引数</I
 ></TT
 >...]</P
 ></DIV
@@ -68,8 +68,8 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->Gfarm �ե����륷���ƥ�Υץ�������¹Ԥ��ޤ����ܥ��ޥ�ɤϥե�
-���륷���ƥ�Ρ��ɾ�Ǽ¹Ԥ���ɬ�פ�����ޤ���</P
+>Gfarm ファイルシステムのプログラムを実行します．本コマンドはファ
+イルシステムノード上で実行する必要があります．</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -90,12 +90,12 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->�Ρ��ɿ�</I
+>ノード数</I
 ></TT
 ></DT
 ><DD
 ><P
->�ƤӽФ��ץ������ΥΡ����������ѹ����ޤ���</P
+>呼び出すプログラムのノード総数を変更します．</P
 ></DD
 ><DT
 ><TT
@@ -104,12 +104,12 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->�Ρ����ֹ�</I
+>ノード番号</I
 ></TT
 ></DT
 ><DD
 ><P
->�ƤӽФ��ץ������ΥΡ����ֹ���ѹ����ޤ���</P
+>呼び出すプログラムのノード番号を変更します．</P
 ></DD
 ><DT
 ><TT
@@ -118,7 +118,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->��<TT
+>「<TT
 CLASS="OPTION"
 >-N</TT
 > <TT
@@ -134,7 +134,7 @@ CLASS="PARAMETER"
 ><I
 >0</I
 ></TT
->�פȻ��ꤷ���Τ������Ǥ���</P
+>」と指定したのと等価です．</P
 ></DD
 ><DT
 ><TT
@@ -143,7 +143,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������ץ�����ɽ�����ޤ���</P
+>引数オプションを表示します．</P
 ></DD
 ></DL
 ></DIV

@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_getc</refname>
-<refpurpose>��ʸ���ɤ߹���</refpurpose>
+<refpurpose>一文字読み込み</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -32,9 +32,9 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>�ե�����
+<para>ファイル
 <parameter>gf</parameter>
-�����ʸ���ɤ߹��ߤޤ���</para>
+から一文字読み込みます。</para>
 
 </refsect1>
 
@@ -43,16 +43,16 @@
 <varlistentry>
 <term><constant>EOF</constant></term>
 <listitem>
-<para>�ե������������ã������硢���뤤�ϥ��顼����������硢&lt;stdio.h&gt; ��
-�������Ƥ������ EOF ���֤��ޤ���
-�ե����������ʤΤ������顼�ʤΤ��ϡ��ؿ� gfs_pio_error(3) ���Τ�
-���Ȥ��Ǥ��ޤ���</para>
+<para>ファイルの末尾に達した場合、あるいはエラーが生じた場合、&lt;stdio.h&gt; で
+定義されている定数 EOF を返します。
+ファイル末尾なのか、エラーなのかは、関数 gfs_pio_error(3) で知る
+ことができます。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�ե����뤫���ɤ߹����ʸ�����֤��ޤ���</para>
+<para>ファイルから読み込んだ文字を返します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

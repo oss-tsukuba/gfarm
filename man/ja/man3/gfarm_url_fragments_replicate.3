@@ -6,7 +6,7 @@
 .TH "GFARM_URL_FRAGMENTS_REPLICATE" "3" "06 September 2005" "Gfarm" ""
 
 .SH NAME
-gfarm_url_fragments_replicate \- �ե�����Υ�ץꥫ���������
+gfarm_url_fragments_replicate \- ファイルのレプリカを作成する
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -15,32 +15,32 @@ char *gfarm_url_fragments_replicate (const char *\fIgfarm_url\fB, int \fIndsthos
 \fR
 .SH "DESCRIPTION"
 .PP
-�ե�����
+ファイル
 \fIgfarm_url\fR
-��ʣ����Ĺ��
+の複製を、長さ
 \fIndsthosts\fR
-��ʸ��������
+の文字列配列
 \fIdsthosts\fR
-�ǻ��ꤷ���ۥ��Ȥ˺������ޤ���
-���δؿ��Ǥϡ��¹Է����Υե������ʣ���ˤ����ѤǤ��ޤ���
+で指定したホストに作成します。
+この関数では、実行形式のファイルの複製には利用できません。
 .PP
-�ե�����Υե����륤��ǥå�����������ꡢ���ꤵ�줿�ۥ��Ȥ�����
+ファイルのファイルインデックスの総数より、指定されたホストの総数
 \fIndsthosts\fR
-�����ʤ����ϡ����ꤵ�줿�ۥ��Ȥ��饦��ɥ��ӥ�ǳ�����Ƥ��ޤ���
+が少ない場合は、指定されたホストがラウンドロビンで割り当てられます。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
 \fBGFARM_ERR_OPERATION_NOT_PERMITTED\fR
-�����Ȥ��ơ��¹Է����Υե����롢
-�ǥ��쥯�ȥ�ʤ��̾�ե�����ʳ��Υե��������ꤷ�ޤ�����
+引数として、実行形式のファイル、
+ディレクトリなど通常ファイル以外のファイルを指定しました。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "SEE ALSO"
 .PP
 \fBgfarm_url_section_replicate_from_to\fR(3),

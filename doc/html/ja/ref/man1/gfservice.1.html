@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfservice&nbsp;--&nbsp;��⡼�ȥۥ��Ȥ��� Gfarm �Υ����С������椹�롣</DIV
+>gfservice&nbsp;--&nbsp;リモートホストから Gfarm のサーバーを制御する。</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,12 +40,12 @@ CLASS="COMMAND"
 >  [<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
->]  ���֥��ޥ��  [�ۥ���ID] [<TT
+>]  サブコマンド  [ホストID] [<TT
 CLASS="REPLACEABLE"
 ><I
->���� ...</I
+>引数 ...</I
 ></TT
 >]</P
 ></DIV
@@ -60,30 +60,30 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfservice</B
-> �ϡ�Gfarm �δ����Ԥ���⡼�ȥۥ��Ⱦ��
-�����С� (<B
+> は、Gfarm の管理者がリモートホスト上の
+サーバー (<B
 CLASS="COMMAND"
 >gfmd</B
->��<B
+>、<B
 CLASS="COMMAND"
 >gfsd</B
->��PostgreSQL)
-�����뤿��Υġ���Ǥ���
-���ΤȤ�����OpenLDAP �ˤ��б����Ƥ��ޤ���
-�����С��μ¹Գ��ϡ���ߡ����åȥ��å� 
+>、PostgreSQL)
+を操作するためのツールです。
+今のところ、OpenLDAP には対応していません。
+サーバーの実行開始、停止、セットアップ 
 (<B
 CLASS="COMMAND"
 >config-gfarm</B
-> �� <B
+> や <B
 CLASS="COMMAND"
 >config-gfsd</B
-> �μ¹�)��
-�����С��ѻߤθ�����Ȥ��ä����Ȥ��Ǥ��ޤ���</P
+> の実行)、
+サーバー廃止の後始末といったことができます。</P
 ><P
 ><B
 CLASS="COMMAND"
 >gfservice</B
-> �Υ��ޥ�ɹԤϡ����Ȥ��м��Τ褦�ˤʤ�ޤ���</P
+> のコマンド行は、たとえば次のようになります。</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<B
@@ -101,51 +101,51 @@ CLASS="REPLACEABLE"
 ></B
 ></P
 ><P
->�����ǡ���<TT
+>ここで、「<TT
 CLASS="REPLACEABLE"
 ><I
 >start-gfmd</I
 ></TT
->�פϥ��֥��ޥ�ɡ�
-��<TT
+>」はサブコマンド、
+「<TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd2</I
 ></TT
->�� �ϥۥ���ID �򤽤줾��ɽ���Ƥ��ޤ���
-���Υ��ޥ�ɹԤ�¹Ԥ���ȡ�<B
+>」 はホストID をそれぞれ表しています。
+このコマンド行を実行すると、<B
 CLASS="COMMAND"
 >gfservice</B
-> ��
-��<TT
+> は
+「<TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd2</I
 ></TT
->�פ�̾�դ���줿�ۥ��Ⱦ�� gfmd ��
-�¹Գ��Ϥ��ߤޤ���
-��⡼�ȤΥ����С��ۥ��Ȥ���ꤹ��ݡ�<B
+>」と名付けられたホスト上の gfmd の
+実行開始を試みます。
+リモートのサーバーホストを指定する際、<B
 CLASS="COMMAND"
 >gfservice</B
-> �Ǥ�
-�ۥ���̾������˥ۥ���ID  ���Ѥ��ޤ���
-�ۥ���ID (<TT
+> では
+ホスト名の代わりにホストID  を用います。
+ホストID (<TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd1</I
 ></TT
->��
+>、
 <TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd2</I
 ></TT
->��...) �� <B
+>、...) は <B
 CLASS="COMMAND"
 >gfservice</B
-> ��
-������ե������������ޤ���
-�ʲ��ˡ�����ե�����ε������ܤ��ޤ���</P
+> 用
+の設定ファイルで定義します。
+以下に、設定ファイルの記述例を載せます。</P
 ><P
 CLASS="LITERALLAYOUT"
 >	gfmd1=metadb1.example.com<br>
@@ -159,83 +159,83 @@ CLASS="LITERALLAYOUT"
 ><B
 CLASS="COMMAND"
 >gfservice</B
-> �ϡ��ɤ߹���٤�����ե�����Υѥ��򼡤�����
-�Ƿ��ꤷ�ޤ���</P
+> は、読み込むべき設定ファイルのパスを次の要領
+で決定します。</P
 ><P
 ></P
 ><OL
 TYPE="1"
 ><LI
 ><P
->��<CODE
+>「<CODE
 CLASS="OPTION"
 >-f</CODE
 > <CODE
 CLASS="PARAMETER"
->�ե�����</CODE
->�ץ��ץ���󤬻���
-����Ƥ���С�����<CODE
+>ファイル</CODE
+>」オプションが指定
+されていれば、その<CODE
 CLASS="PARAMETER"
->�ե�����</CODE
->���ɤ߹��ߤޤ���</P
+>ファイル</CODE
+>を読み込みます。</P
 ></LI
 ><LI
 ><P
->�嵭�ʳ��ξ��ǡ��Ķ��ѿ� <CODE
+>上記以外の場合で、環境変数 <CODE
 CLASS="VARNAME"
 >GFSERVICE_CONF</CODE
-> ��������졢
-�����ͤ���ʸ����Ǥʤ���С��ͤȤ��Ƶ����줿�ե�������ɤ߹��ߤޤ���</P
+> が定義され、
+かつ値が空文字列でなければ、値として記されたファイルを読み込みます。</P
 ></LI
 ><LI
 ><P
->�嵭�ʳ��ξ��ϡ�<TT
+>上記以外の場合は、<TT
 CLASS="FILENAME"
 >$HOME/.gfservice</TT
-> ���ɤ߹��ߤޤ���</P
+> を読み込みます。</P
 ></LI
 ></OL
 ><P
 ><B
 CLASS="COMMAND"
 >gfservice</B
-> ������ե�������ɤ߹��ߤ˼��Ԥ���ȡ�
-���顼��å���������Ϥ��ơ��������˽�λ���ޤ���
-����ե����뤽�켫�Τ� Bourne �����륹����ץȤǡ�<B
+> は設定ファイルの読み込みに失敗すると、
+エラーメッセージを出力して、ただちに終了します。
+設定ファイルそれ自体は Bourne シェルスクリプトで、<B
 CLASS="COMMAND"
 >gfservice</B
 >
-�Ϥ��Υե�����򼫿Ȥΰ����Ȥ��Ƽ����ߤޤ� (���Τ˸����С�������ץ�
-�Ȥ���ɾ�����ޤ�)��
-����ե�����ˤĤ��Ƥξܤ��������ϡ�gfservice.conf(5) �򻲾Ȥ��Ʋ�������</P
+はそのファイルを自身の一部として取り込みます (正確に言えば、スクリプト
+として評価します)。
+設定ファイルについての詳しい説明は、gfservice.conf(5) を参照して下さい。</P
 ><P
 ><B
 CLASS="COMMAND"
 >gfservice</B
-> �ϡ���⡼�ȥۥ��Ȥ���³���뤿��ˡ�SSH
-(Secure Shell) ����Ѥ��ޤ���
-���֥��ޥ�� 1 �Ĥν������Ԥ���֡����٤� <B
+> は、リモートホストと接続するために、SSH
+(Secure Shell) を使用します。
+サブコマンド 1 個の処理を遂行する間、何度も <B
 CLASS="COMMAND"
 >ssh</B
 >
-��¹Ԥ��뤳�Ȥ�����Τǡ�SSH ����������� (OpenSSH ��
+を実行することがあるので、SSH エージェント (OpenSSH の
 <B
 CLASS="COMMAND"
 >ssh-agent</B
-> �ʤ�) ���Ѥ��뤫���ѥ��ե졼��������
-ǧ�ڥ������Ѥ���ʤɤ��ơ��ѥ��ե졼����������Ϥ��ʤ��ƺѤ�褦��
-���뤳�Ȥ����ᤷ�ޤ���</P
+> など) を用いるか、パスフレーズが空の
+認証キーを用いるなどして、パスフレーズを毎回入力しなくて済むように
+することをお薦めします。</P
 ><P
->SSH �˲ä��ơ�<B
+>SSH に加えて、<B
 CLASS="COMMAND"
 >gfservice</B
-> �ϥ�⡼�ȥۥ��Ⱦ�� root
-���¤����뤿��� Sudo ���ޥ�ɤ���Ѥ��ޤ���
-�ƥ�⡼�ȥۥ��Ȥ� <TT
+> はリモートホスト上で root
+権限を得るために Sudo コマンドを使用します。
+各リモートホストの <TT
 CLASS="FILENAME"
 >sudoers</TT
-> �ե����� (Sudo ������
-�ե�����) �˰ʲ��Τ褦�ʹԤ�­���Ʋ�������</P
+> ファイル (Sudo の設定
+ファイル) に以下のような行を足して下さい。</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<TT
@@ -245,42 +245,42 @@ CLASS="REPLACEABLE"
 ></TT
 >&nbsp;ALL=(root,&nbsp;_gfarmfs,&nbsp;_gfarmmd)&nbsp;NOPASSWD:&nbsp;gfservice-agent</P
 ><P
->�����ǡ�<TT
+>ここで、<TT
 CLASS="REPLACEABLE"
 ><I
 >user</I
 ></TT
-> �� <B
+> は <B
 CLASS="COMMAND"
 >gfservice</B
 >
-��¹Ԥ���桼����̾���Ǥ���
-NOPASSWD ��ɬ�ܤǤϤ���ޤ��󤬡��ʤ��� <B
+を実行するユーザの名前です。
+NOPASSWD は必須ではありませんが、省くと <B
 CLASS="COMMAND"
 >sudo</B
-> �ϲ��٤�
-�ѥ���ɤ�֤��Ƥ��뤳�Ȥ�����ޤ���</P
+> は何度も
+パスワードを訊いてくることがあります。</P
 ><P
->gfservice �� SSH �� Sudo ���Ѥ��ơ���⡼�ȥۥ��Ⱦ�ˤ���
+>gfservice は SSH と Sudo を用いて、リモートホスト上にある
 <B
 CLASS="COMMAND"
 >gfservice-agent</B
-> �Ȥ�������������ȥ��ޥ�ɤ�¹Ԥ��ޤ�
-�Τǡ�<B
+> というエージェントコマンドを実行します
+ので、<B
 CLASS="COMMAND"
 >gfservice</B
-> ���ޥ�ɤ��������ۥ��Ȥ��٤Ƥˡ�
+> コマンドで操作したいホストすべてに、
 <B
 CLASS="COMMAND"
 >gfservice-agent</B
-> �򥤥󥹥ȡ��뤷�Ƥ���ɬ�פ�����ޤ���</P
+> をインストールしておく必要があります。</P
 ><P
 ><B
 CLASS="COMMAND"
 >gfservice</B
->�ϥ桼�������������֥��ޥ�ɤ��ɲäǤ����
-���ˡ��ץ饰���󥷥��ƥ����Ѥ��Ƥ��ޤ���
-�ܤ��������� "PLUG-IN SYSTEM" ����򻲾Ȥ��Ʋ�������</P
+>はユーザが新しくサブコマンドを追加できるよ
+うに、プラグインシステムを採用しています。
+詳しい説明は "PLUG-IN SYSTEM" の節を参照して下さい。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -301,19 +301,19 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�ǥХå��������Ϥ��ޤ���
+>デバッグ情報を出力します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �ϡ����Υ��ץ�����
+> は、このオプションを
 <B
 CLASS="COMMAND"
 >gfservice-agent</B
-> ���Ϥ��ޤ��Τǡ�
+> に渡しますので、
 <B
 CLASS="COMMAND"
 >gfservice-agent</B
-> �����ǥХå����󤬽��Ϥ���ޤ���</P
+> からもデバッグ情報が出力されます。</P
 ></DD
 ><DT
 ><CODE
@@ -321,15 +321,15 @@ CLASS="OPTION"
 >-f</CODE
 > <CODE
 CLASS="PARAMETER"
->�ե�����</CODE
+>ファイル</CODE
 ></DT
 ><DD
 ><P
->�ǥե���Ȥ�����ե����������ˡ���<CODE
+>デフォルトの設定ファイルの代わりに、「<CODE
 CLASS="PARAMETER"
->�ե�����</CODE
->�פ�
-�ɤ߹��ߤޤ���</P
+>ファイル</CODE
+>」を
+読み込みます。</P
 ></DD
 ><DT
 ><CODE
@@ -337,29 +337,29 @@ CLASS="OPTION"
 >-t</CODE
 > <CODE
 CLASS="PARAMETER"
->����</CODE
+>時間</CODE
 ></DT
 ><DD
 ><P
->���Υ����ॢ���Ȥ򡢡�<CODE
+>操作のタイムアウトを、「<CODE
 CLASS="PARAMETER"
->����</CODE
->���äȤ��ޤ���
+>時間</CODE
+>」秒とします。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �������С��ץ������ (gfmd��gfsd���Хå������
-�ǡ����١���) �μ¹Գ��Ϥʤ�����λ���ߤ�ݡ���������λ���뤫���⤷����
+> がサーバープログラム (gfmd、gfsd、バックエンド
+データベース) の実行開始ないし終了を試みる際、処理が完了するか、もしくは
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �λ�����֤��в᤹�뤫�ޤ��Ԥ��ޤ���
-��<CODE
+> の指定時間が経過するかまで待ちます。
+「<CODE
 CLASS="PARAMETER"
->����</CODE
->�פȤ��� ��no�פ���ꤹ��ȡ������ॢ���Ȥ�
-�����ʤ��ʤ�ޤ���
-�ǥե�����ͤϡ���no�פǤ���</P
+>時間</CODE
+>」として 「no」を指定すると、タイムアウトは
+起きなくなります。
+デフォルト値は、「no」です。</P
 ></DD
 ><DT
 ><CODE
@@ -368,22 +368,22 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->���Υ��ץ����<B
+>このオプションが<B
 CLASS="COMMAND"
 >config-gfarm</B
-> ���֥��ޥ�ɤ⤷����
+> サブコマンドもしくは
 <B
 CLASS="COMMAND"
 >config-gfarm-master</B
-> ���֥��ޥ�ɤȶ��˻��ꤵ�줿��硢
+> サブコマンドと共に指定された場合、
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �� <B
+> は <B
 CLASS="COMMAND"
 >gfkey</B
-> ���ޥ�ɤ��Ѥ���
-��ͭ��̩���ե������������ޤ��� </P
+> コマンドを用いて
+共有秘密鍵ファイルを作成します。 </P
 ></DD
 ></DL
 ></DIV
@@ -396,22 +396,22 @@ NAME="GFMD-SUB-COMMANDS"
 ><H2
 >SUB-COMMANDS FOR GFMD</H2
 ><P
->�ʲ��˵󤲤Ƥ���Τϡ�<B
+>以下に挙げているのは、<B
 CLASS="COMMAND"
 >gfmd</B
-> �����륵�֥��ޥ�ɤǤ���
-���ޥ�ɹԤ�Ϳ����ۥ���ID �ϡ���gfmd<TT
+> を操作するサブコマンドです。
+コマンド行に与えるホストID は、「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->��
-(gfmd1, gfmd2, ...) �Ǥʤ��ƤϤʤ�ޤ���
-����ʳ��ξ�硢<B
+>」
+(gfmd1, gfmd2, ...) でなくてはなりません。
+それ以外の場合、<B
 CLASS="COMMAND"
 >gfservice</B
-> �ϥ��顼�����Τ��Ƥ�������
-��λ���ޤ���</P
+> はエラーを通知してただちに
+終了します。</P
 ><P
 ></P
 ><DIV
@@ -424,12 +424,12 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->�Хå�����ɥǡ����١������¹���Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���</P
+>バックエンドデータベースが実行中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。</P
 ></DD
 ><DT
 ><B
@@ -438,12 +438,12 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->gfmd ���¹���Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���</P
+>gfmd が実行中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。</P
 ></DD
 ><DT
 ><B
@@ -452,11 +452,11 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->�Хå�����ɥǡ����١������¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���</P
+>バックエンドデータベースが実行中でなければ、実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -465,14 +465,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
 ><B
 CLASS="COMMAND"
 >gfmd</B
-> ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���</P
+> が実行中でなければ、実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -481,14 +481,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >start-gfmd</B
-> ����̾�Ǥ���</P
+> の別名です。</P
 ></DD
 ><DT
 ><B
@@ -497,18 +497,18 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >start-gfmd</B
-> ��Ʊ���Ǥ�����gfmd �ˤ�
+> と同じですが、gfmd には
 <CODE
 CLASS="OPTION"
 >-S</CODE
-> ���ץ������Ϳ����ޤ���</P
+> オプションが付与されます。</P
 ></DD
 ><DT
 ><B
@@ -517,15 +517,15 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->�Хå�����ɥǡ����١�������� <B
+>バックエンドデータベースおよび <B
 CLASS="COMMAND"
 >gfmd</B
-> ���¹���Ǥʤ���С�
-�¹Ԥ򳫻Ϥ��ޤ���</P
+> が実行中でなければ、
+実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -534,14 +534,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >start-gfarm</B
-> ����̾�Ǥ���</P
+> の別名です。</P
 ></DD
 ><DT
 ><B
@@ -550,18 +550,18 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >start-gfarm</B
-> ��Ʊ���Ǥ�����gfmd �ˤ�
+> と同じですが、gfmd には
 <CODE
 CLASS="OPTION"
 >-S</CODE
-> ���ץ������Ϳ����ޤ���</P
+> オプションが付与されます。</P
 ></DD
 ><DT
 ><B
@@ -570,11 +570,11 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->�Хå�����ɥǡ����١������¹���ʤ顢�¹Ԥ���ߤ��ޤ���</P
+>バックエンドデータベースが実行中なら、実行を停止します。</P
 ></DD
 ><DT
 ><B
@@ -583,14 +583,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
 ><B
 CLASS="COMMAND"
 >gfmd</B
-> ���¹���ʤ顢�¹Ԥ���ߤ��ޤ���</P
+> が実行中なら、実行を停止します。</P
 ></DD
 ><DT
 ><B
@@ -599,15 +599,15 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->�Хå�����ɥǡ����١�������� <B
+>バックエンドデータベースおよび <B
 CLASS="COMMAND"
 >gfmd</B
-> ���¹���ʤ顢
-�¹Ԥ���ߤ��ޤ���</P
+> が実行中なら、
+実行を停止します。</P
 ></DD
 ><DT
 ><B
@@ -616,14 +616,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
 ><B
 CLASS="COMMAND"
 >gfmd</B
-> ���¹���ʤ顢������� (SIGKILL ������) ���ޤ���</P
+> が実行中なら、強制停止 (SIGKILL を送付) します。</P
 ></DD
 ><DT
 ><B
@@ -632,18 +632,18 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-backend-db</B
-> ��
+> と
 <B
 CLASS="COMMAND"
 >start-backend-db</B
-> ��³���Ƽ¹Ԥ��ޤ���</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -652,18 +652,18 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfmd</B
->�פ�
-��<B
+>」と
+「<B
 CLASS="COMMAND"
 >start-gfmd</B
-> ��³���Ƽ¹Ԥ��ޤ���</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -672,14 +672,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >restart-gfmd</B
-> ����̾�Ǥ���</P
+> の別名です。</P
 ></DD
 ><DT
 ><B
@@ -688,18 +688,18 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfmd</B
-> ��
+> と
 <B
 CLASS="COMMAND"
 >start-gfmd-slave</B
-> ��³���Ƽ¹Ԥ��ޤ���</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -708,18 +708,18 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfarm</B
-> ��
+> と
 <B
 CLASS="COMMAND"
 >start-gfarm</B
-> ��³���Ƽ¹Ԥ��ޤ���</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -728,14 +728,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >restart-gfarm</B
-> ����̾�Ǥ���</P
+> の別名です。</P
 ></DD
 ><DT
 ><B
@@ -744,18 +744,18 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfarm</B
-> ��
+> と
 <B
 CLASS="COMMAND"
 >start-gfarm-slave</B
-> ��³���Ƽ¹Ԥ��ޤ���</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -764,14 +764,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
 ><B
 CLASS="COMMAND"
 >gfmd</B
-> �򥹥졼�֤���ޥ������ؾ��ʤ����ޤ���</P
+> をスレーブからマスターへ昇格させます。</P
 ></DD
 ><DT
 ><B
@@ -780,14 +780,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >promote</B
-> ����̾�Ǥ���</P
+> の別名です。</P
 ></DD
 ><DT
 ><B
@@ -796,45 +796,45 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 >
 <CODE
 CLASS="PARAMETER"
->����̾��</CODE
+>設定名称</CODE
 >
 <CODE
 CLASS="PARAMETER"
->��</CODE
+>値</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> �ե������</P
+> ファイルに</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<CODE
 CLASS="PARAMETER"
->����̾��</CODE
+>設定名称</CODE
 >&nbsp;<CODE
 CLASS="PARAMETER"
->��</CODE
+>値</CODE
 ></P
 ><P
->�Ȥ����Ԥ�ä��ޤ���
-���� <TT
+>という行を加えます。
+既に <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> ��
-��<CODE
+> に
+「<CODE
 CLASS="PARAMETER"
->����̾��</CODE
->�פȤ����Ԥ�¸�ߤ��Ƥ����硢
+>設定名称</CODE
+>」という行が存在している場合、
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �Ϥ���������Ƥ��顢�����˹Ԥ��ɲä��ޤ���</P
+> はそれを削除してから、新たに行を追加します。</P
 ></DD
 ><DT
 ><B
@@ -843,45 +843,45 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 >
 <CODE
 CLASS="PARAMETER"
->����̾��</CODE
+>設定名称</CODE
 >
 <CODE
 CLASS="PARAMETER"
->��</CODE
+>値</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfsd.conf</TT
-> �ե������</P
+> ファイルに</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<CODE
 CLASS="PARAMETER"
->����̾��</CODE
+>設定名称</CODE
 >&nbsp;<CODE
 CLASS="PARAMETER"
->��</CODE
+>値</CODE
 ></P
 ><P
->�Ȥ����Ԥ�ä��ޤ���
-���� <TT
+>という行を加えます。
+既に <TT
 CLASS="FILENAME"
 >gfsd.conf</TT
-> ��
-��<CODE
+> に
+「<CODE
 CLASS="PARAMETER"
->����̾��</CODE
->�פȤ����Ԥ�¸�ߤ��Ƥ����硢
+>設定名称</CODE
+>」という行が存在している場合、
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �Ϥ���������Ƥ��顢�����˹Ԥ��ɲä��ޤ���</P
+> はそれを削除してから、新たに行を追加します。</P
 ></DD
 ><DT
 ><B
@@ -890,30 +890,30 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 >
 <CODE
 CLASS="PARAMETER"
->����̾��</CODE
+>設定名称</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> �ե����뤫��
-��<CODE
+> ファイルから
+「<CODE
 CLASS="PARAMETER"
->����̾��</CODE
->�׹Ԥ������ޤ���
+>設定名称</CODE
+>」行を削除します。
 <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> �ե�����ˡ�<CODE
+> ファイルに「<CODE
 CLASS="PARAMETER"
->����̾��</CODE
->��
-�Ԥ��ʤ���硢�ե�����Ϲ�������ޤ���</P
+>設定名称</CODE
+>」
+行がない場合、ファイルは更新されません。</P
 ></DD
 ><DT
 ><B
@@ -922,30 +922,30 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 >
 <CODE
 CLASS="PARAMETER"
->����̾��</CODE
+>設定名称</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfsd.conf</TT
-> �ե����뤫��
-��<CODE
+> ファイルから
+「<CODE
 CLASS="PARAMETER"
->����̾��</CODE
->�׹Ԥ������ޤ���
+>設定名称</CODE
+>」行を削除します。
 <TT
 CLASS="FILENAME"
 >gfsd.conf</TT
-> �ե�����ˡ�<CODE
+> ファイルに「<CODE
 CLASS="PARAMETER"
->����̾��</CODE
->��
-�Ԥ��ʤ���硢�ե�����Ϲ�������ޤ���</P
+>設定名称</CODE
+>」
+行がない場合、ファイルは更新されません。</P
 ></DD
 ><DT
 ><B
@@ -954,12 +954,12 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�ΥХå�����ɥǡ����١����ΥХå����åפ�Ԥ���
-�Хå����åץǡ�����ɸ����Ϥؽ��Ϥ��ޤ���</P
+>リモートホスト上のバックエンドデータベースのバックアップを行い、
+バックアップデータを標準出力へ出力します。</P
 ></DD
 ><DT
 ><B
@@ -968,15 +968,15 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> �ե������ɸ�����
-�ؽ��Ϥ��ޤ���</P
+> ファイルを、標準出力
+へ出力します。</P
 ></DD
 ><DT
 ><B
@@ -985,15 +985,15 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfsd.conf</TT
-> �ե������ɸ�����
-�ؽ��Ϥ��ޤ���</P
+> ファイルを、標準出力
+へ出力します。</P
 ></DD
 ><DT
 ><B
@@ -1002,15 +1002,15 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >usermap</TT
-> �ե������ɸ�����
-�ؽ��Ϥ��ޤ���</P
+> ファイルを、標準出力
+へ出力します。</P
 ></DD
 ><DT
 ><B
@@ -1019,12 +1019,12 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�ΥХå�����ɥǡ����١����Υǡ��������줷�ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���</P
+>リモートホスト上のバックエンドデータベースのデータを復旧します。
+バックアップデータは、標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -1033,22 +1033,22 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> �ե���������줷�ޤ���
+> ファイルを復旧します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �ϡ�<TT
+> は、<TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> ��
-�Хå����åץǡ�����ɸ�����Ϥ����ɤ߹��ߤޤ���</P
+> の
+バックアップデータを標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -1057,22 +1057,22 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfsd.conf</TT
-> �ե���������줷�ޤ���
+> ファイルを復旧します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �ϡ�<TT
+> は、<TT
 CLASS="FILENAME"
 >gfsd.conf</TT
-> ��
-�Хå����åץǡ�����ɸ�����Ϥ����ɤ߹��ߤޤ���</P
+> の
+バックアップデータを標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -1081,22 +1081,22 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >usermap</TT
-> �ե���������줷�ޤ���
+> ファイルを復旧します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �ϡ�<TT
+> は、<TT
 CLASS="FILENAME"
 >usermap</TT
-> ��
-�Хå����åץǡ�����ɸ�����Ϥ����ɤ߹��ߤޤ���</P
+> の
+バックアップデータを標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -1105,46 +1105,46 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <B
+>リモートホスト上で <B
 CLASS="COMMAND"
 >config-gfarm</B
-> ���ޥ�ɤ�¹Ԥ��ޤ���
-���ΤȤ�������ե�������ѿ�
-��gfmd<TT
+> コマンドを実行します。
+このとき、設定ファイルで変数
+「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_CONFIG_GFARM_OPTIONS�פ��������Ƥ���С�
-�����ͤ� <B
+>_CONFIG_GFARM_OPTIONS」が宣言されていれば、
+その値が <B
 CLASS="COMMAND"
 >config-gfarm</B
-> �˥��ץ����Ȥ�����Ϳ����ޤ���
-��ץꥱ�������ǽ��ͭ���ˤ���Ȥ��ϡ����Υ��֥��ޥ�ɤϻ��Ѥ����������
+> にオプションとして付与されます。
+レプリケーション機能を有効にするときは、このサブコマンドは使用せず、代わりに
 <B
 CLASS="COMMAND"
 >config-gfarm-master</B
-> �ʤ���
+> ないし
 <B
 CLASS="COMMAND"
 >config-gfarm-slave</B
-> ��ȤäƲ�������
+> を使って下さい。
 <CODE
 CLASS="OPTION"
 >-k</CODE
->���ץ���󤬻��ꤵ��Ƥ����硢
+>オプションが指定されている場合、
 <B
 CLASS="COMMAND"
 >gfservice</B
->�� <B
+>は <B
 CLASS="COMMAND"
 >gfkey</B
-> ���ޥ�ɤ��Ѥ���
-gfmd �ۥ��Ⱦ�˶�ͭ��̩���ե������������ޤ���</P
+> コマンドを用いて
+gfmd ホスト上に共有秘密鍵ファイルを作成します。</P
 ></DD
 ><DT
 ><B
@@ -1153,15 +1153,15 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���Υ��֥��ޥ�ɤ� <B
+>このサブコマンドは <B
 CLASS="COMMAND"
 >config-gfarm</B
-> �ȴ���Ū��Ʊ���Ǥ�����
-gfmd �Υ�ץꥱ������󤬼�ưŪ��ͭ���ˤʤ�ޤ���</P
+> と基本的に同じですが、
+gfmd のレプリケーションが自動的に有効になります。</P
 ></DD
 ><DT
 ><B
@@ -1170,60 +1170,60 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 >
 <CODE
 CLASS="PARAMETER"
->�ޥ������ۥ���ID</CODE
+>マスターホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >config-gfarm</B
-> �ȴ���Ū��Ʊ���Ǥ�����
-��ץꥱ�������ǽ����ưŪ��ͭ���ˤʤꡢ
-��<CODE
+> と基本的に同じですが、
+レプリケーション機能が自動的に有効になり、
+「<CODE
 CLASS="PARAMETER"
->�ޥ������ۥ���ID</CODE
->�׾��ư��� gfmd �Υ��졼��
-�Ȥ���ư��ޤ���
+>マスターホストID</CODE
+>」上で動作する gfmd のスレーブ
+として動作します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �� <B
+> は <B
 CLASS="COMMAND"
 >gfmdhost</B
-> ���ޥ�ɤ�
-�Ѥ��Ƥ��Υ��졼�֥ۥ��Ȥ򥵡��С��ꥹ�Ȥ˲ä��ޤ���
-�ޤ����ޥ����� gfmd �ۥ��Ⱦ�� <TT
+> コマンドを
+用いてこのスレーブホストをサーバーリストに加えます。
+また、マスター gfmd ホスト上の <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> �ե�����
-�򹹿����ơ�<CODE
+> ファイル
+を更新して、<CODE
 CLASS="VARNAME"
 >metadb_server_list</CODE
-> �ˤ��Υ��졼�֥ۥ��Ȥ�
-�ä�������ե�������������Ƥ��뤹�٤ƤΥۥ��Ȥ����ۤ��ޤ���
-�ѿ���gfmd<TT
+> にこのスレーブホストを
+加え、設定ファイルで定義されているすべてのホストに配布します。
+変数「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_PRIVATE_MODE�פ��ͤ���true�פ�
-���åȤ���Ƥ�����ϡ�Ʊ�ͤ� <TT
+>_PRIVATE_MODE」の値が「true」に
+セットされている場合は、同様に <TT
 CLASS="FILENAME"
 >gfsd.conf</TT
-> �ե�����
-�򹹿��������٤Ƥ� gfmd �ۥ��Ȥ� gfsd �ۥ��Ȥ����ۤ��ޤ���
-�ѿ���gfmd<TT
+> ファイル
+を更新し、すべての gfmd ホストと gfsd ホストに配布します。
+変数「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_AUTH_TYPE�פ��ͤ���sharedsecret��
-�ξ�硢��ͭ��̩���ե������ޥ����� gfmd �ۥ��Ȥ��餳�Υ��졼�� gfmd
-�ۥ��Ȥإ��ԡ����ޤ���</P
+>_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルをマスター gfmd ホストからこのスレーブ gfmd
+ホストへコピーします。</P
 ></DD
 ><DT
 ><B
@@ -1232,20 +1232,20 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfsd</B
-> ��¹Ԥ��ơ����θ� gfmd ��
-�Хå�����ɥǡ����١��������������ե������ǥ��쥯�ȥ�򤹤٤ƺ�����ޤ���
-���졼�� gfmd ���ѻߤ�����ϡ�����˥��֥��ޥ��
+> を実行して、その後 gfmd や
+バックエンドデータベースが作成したファイルやディレクトリをすべて削除します。
+スレーブ gfmd を廃止する場合は、代わりにサブコマンド
 <B
 CLASS="COMMAND"
 >unconfig-gfarm-slave</B
-> ����Ѥ��Ʋ�������</P
+> を使用して下さい。</P
 ></DD
 ><DT
 ><B
@@ -1254,14 +1254,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >unconfig-gfarm</B
-> ����̾�Ǥ���</P
+> の別名です。</P
 ></DD
 ><DT
 ><B
@@ -1270,45 +1270,45 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 >
 <CODE
 CLASS="PARAMETER"
->�ޥ������ۥ���ID</CODE
+>マスターホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >unonfig-gfarm</B
-> �ȴ���Ū��Ʊ���Ǥ�����
-�ʲ����ɲý�����Ԥ��ޤ���
+> と基本的に同じですが、
+以下の追加処理を行います。
 <B
 CLASS="COMMAND"
 >gfmdhost</B
-> ���ޥ�ɤ��Ѥ��ƥ����С��ꥹ�Ȥ��顢����
-���졼�֥ۥ��Ȥ������ޤ���
-�ޤ�������ե�������������Ƥ��뤹�٤ƤΥۥ��Ȥ�
+> コマンドを用いてサーバーリストから、その
+スレーブホストを削除します。
+また、設定ファイルで定義されているすべてのホストの
 <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> �򹹿�����
+> を更新し、
 <CODE
 CLASS="VARNAME"
 >metadb_server_list</CODE
-> �����ꤵ�줿�����С��ꥹ�Ȥ��顢
-���Υ��졼�֥ۥ��Ȥ������ޤ���
-�ѿ���gfmd<TT
+> に設定されたサーバーリストから、
+そのスレーブホストを削除します。
+変数「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_PRIVATE_MODE�פ��ͤ���true�פ�
-���åȤ���Ƥ�����ϡ�Ʊ�ͤ� <TT
+>_PRIVATE_MODE」の値が「true」に
+セットされている場合は、同様に <TT
 CLASS="FILENAME"
 >gfsd.conf</TT
-> �ե�����
-�򹹿��������٤Ƥ� gfmd �ۥ��Ȥ� gfsd �ۥ��Ȥ����ۤ��ޤ���</P
+> ファイル
+を更新し、すべての gfmd ホストと gfsd ホストに配布します。</P
 ></DD
 ></DL
 ></DIV
@@ -1321,22 +1321,22 @@ NAME="GFSD-SUB-COMMANDS"
 ><H2
 >SUB-COMMANDS FOR GFSD</H2
 ><P
->�ʲ��˵󤲤Ƥ���Τϡ�<B
+>以下に挙げているのは、<B
 CLASS="COMMAND"
 >gfsd</B
-> �����륵�֥��ޥ�ɤǤ���
-���ޥ�ɹԤ�Ϳ����ۥ���ID �ϡ���gfsd<TT
+> を操作するサブコマンドです。
+コマンド行に与えるホストID は、「gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->��
-(gfsd1, gfsd2, ...) �Ǥʤ��ƤϤʤ�ޤ���
-����ʳ��ξ�硢<B
+>」
+(gfsd1, gfsd2, ...) でなくてはなりません。
+それ以外の場合、<B
 CLASS="COMMAND"
 >gfservice</B
-> �ϥ��顼�����Τ��Ƥ�������
-��λ���ޤ���</P
+> はエラーを通知してただちに
+終了します。</P
 ><P
 ></P
 ><DIV
@@ -1349,12 +1349,12 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->gfsd ���¹���Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���</P
+>gfsd が実行中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。</P
 ></DD
 ><DT
 ><B
@@ -1363,14 +1363,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
 ><B
 CLASS="COMMAND"
 >gfsd</B
-> ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���</P
+> が実行中でなければ、実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -1379,14 +1379,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
 ><B
 CLASS="COMMAND"
 >gfsd</B
-> ���¹���ʤ顢�¹Ԥ���ߤ��ޤ���</P
+> が実行中なら、実行を停止します。</P
 ></DD
 ><DT
 ><B
@@ -1395,18 +1395,18 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ��<B
+>サブコマンド<B
 CLASS="COMMAND"
 >stop-gfsd</B
-> ��
+> と
 <B
 CLASS="COMMAND"
 >start-gfsd</B
-> ��³���Ƽ¹Ԥ��ޤ���</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -1415,22 +1415,22 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 >
 <CODE
 CLASS="PARAMETER"
->����̾��</CODE
+>設定名称</CODE
 >
 <CODE
 CLASS="PARAMETER"
->��</CODE
+>値</CODE
 ></DT
 ><DD
 ><P
->gfmd �Ѥ� <B
+>gfmd 用の <B
 CLASS="COMMAND"
 >set-gfsd-conf</B
-> ���֥��ޥ�ɤ�Ʊ���Ǥ���</P
+> サブコマンドと同じです。</P
 ></DD
 ><DT
 ><B
@@ -1439,18 +1439,18 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 >
 <CODE
 CLASS="PARAMETER"
->����̾��</CODE
+>設定名称</CODE
 ></DT
 ><DD
 ><P
->gfmd �Ѥ� <B
+>gfmd 用の <B
 CLASS="COMMAND"
 >unset-gfsd-conf</B
-> ���֥��ޥ�ɤ�Ʊ���Ǥ���</P
+> サブコマンドと同じです。</P
 ></DD
 ><DT
 ><B
@@ -1459,14 +1459,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->gfmd �Ѥ� <B
+>gfmd 用の <B
 CLASS="COMMAND"
 >backup-gfsd-conf</B
-> ���֥��ޥ�ɤ�Ʊ���Ǥ���</P
+> サブコマンドと同じです。</P
 ></DD
 ><DT
 ><B
@@ -1475,14 +1475,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->gfmd �Ѥ� <B
+>gfmd 用の <B
 CLASS="COMMAND"
 >backup-usermap</B
-> ���֥��ޥ�ɤ�Ʊ���Ǥ���</P
+> サブコマンドと同じです。</P
 ></DD
 ><DT
 ><B
@@ -1491,14 +1491,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->gfmd �Ѥ� <B
+>gfmd 用の <B
 CLASS="COMMAND"
 >restore-gfsd-conf</B
-> ���֥��ޥ�ɤ�Ʊ���Ǥ���</P
+> サブコマンドと同じです。</P
 ></DD
 ><DT
 ><B
@@ -1507,14 +1507,14 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->gfmd �Ѥ� <B
+>gfmd 用の <B
 CLASS="COMMAND"
 >restore-usermap</B
-> ���֥��ޥ�ɤ�Ʊ���Ǥ���</P
+> サブコマンドと同じです。</P
 ></DD
 ><DT
 ><B
@@ -1523,40 +1523,40 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <B
+>リモートホスト上で <B
 CLASS="COMMAND"
 >config-gfsd</B
-> ���ޥ�ɤ�¹Ԥ��ޤ���
-���ΤȤ�������ե�������ѿ�
-��gfsd<TT
+> コマンドを実行します。
+このとき、設定ファイルで変数
+「gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_CONFIG_GFARM_OPTIONS�פ��������Ƥ���С�
-�����ͤ� <B
+>_CONFIG_GFARM_OPTIONS」が宣言されていれば、
+その値が <B
 CLASS="COMMAND"
 >config-gfsd</B
-> �˥��ץ����Ȥ�����Ϳ����ޤ���
-�ޤ���<B
+> にオプションとして付与されます。
+また、<B
 CLASS="COMMAND"
 >gfservice</B
-> �� <B
+> は <B
 CLASS="COMMAND"
 >gfhost</B
-> ���ޥ��
-���Ѥ��ơ���⡼�ȥۥ��Ȥ�ե����륷���ƥ�Ρ��ɤȤ�����Ͽ���ޤ���
-�ѿ���gfsd<TT
+> コマンド
+を用いて、リモートホストをファイルシステムノードとして登録します。
+変数「gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_AUTH_TYPE�פ��ͤ���sharedsecret��
-�ξ�硢��ͭ��̩���ե������ gfmd1 ���� gfsd �ۥ��Ȥإ��ԡ����ޤ���</P
+>_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルを gfmd1 から gfsd ホストへコピーします。</P
 ></DD
 ><DT
 ><B
@@ -1565,15 +1565,15 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfsd</B
-> ��¹Ԥ��ơ����θ� gfsd ��
-���������ե������ǥ��쥯�ȥ�򤹤٤ƺ�����ޤ���</P
+> を実行して、その後 gfsd が
+作成したファイルやディレクトリをすべて削除します。</P
 ></DD
 ></DL
 ></DIV
@@ -1586,31 +1586,31 @@ NAME="CLIENT-SUB-COMMANDS"
 ><H2
 >SUB-COMMANDS FOR CLIENT</H2
 ><P
->�ʲ��˵󤲤Ƥ���Τϡ����饤����Ȥ����륵�֥��ޥ�ɤǤ���
-���ޥ�ɹԤ�Ϳ����ۥ���ID �ϡ���gfmd<TT
+>以下に挙げているのは、クライアントを操作するサブコマンドです。
+コマンド行に与えるホストID は、「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->��
-(gfmd1, gfmd2, ...)����gfsd<TT
+>」
+(gfmd1, gfmd2, ...)、「gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->��(gfsd1, gfsd2, ...)��
-��client<TT
+>」(gfsd1, gfsd2, ...)、
+「client<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->��(client1, client2, ...) �Τ����줫
-�Ǥʤ��ƤϤʤ�ޤ���
-����ʳ��ξ�硢<B
+>」(client1, client2, ...) のいずれか
+でなくてはなりません。
+それ以外の場合、<B
 CLASS="COMMAND"
 >gfservice</B
-> �ϥ��顼�����Τ��Ƥ�������
-��λ���ޤ���</P
+> はエラーを通知してただちに
+終了します。</P
 ><P
 ></P
 ><DIV
@@ -1623,31 +1623,31 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 >
 <CODE
 CLASS="PARAMETER"
->�ǥ��쥯�ȥ�</CODE
+>ディレクトリ</CODE
 >
 <CODE
 CLASS="PARAMETER"
->���ץ����...</CODE
+>オプション...</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�Ρ�<CODE
+>リモートホスト上の「<CODE
 CLASS="PARAMETER"
->�ǥ��쥯�ȥ�</CODE
->�פˡ�Gfarm2
-�ե����륷���ƥ��ޥ���Ȥ��ޤ���
-������<CODE
+>ディレクトリ</CODE
+>」に、Gfarm2
+ファイルシステムをマウントします。
+引数「<CODE
 CLASS="PARAMETER"
->���ץ����</CODE
->�פ� <B
+>オプション</CODE
+>」は <B
 CLASS="COMMAND"
 >gfarm2fs</B
 >
-���ޥ�ɤؤΰ����Ȥߤʤ���ޤ���</P
+コマンドへの引数とみなされます。</P
 ></DD
 ><DT
 ><B
@@ -1656,19 +1656,19 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 >
 <CODE
 CLASS="PARAMETER"
->�ǥ��쥯�ȥ�</CODE
+>ディレクトリ</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�Ρ�<CODE
+>リモートホスト上の「<CODE
 CLASS="PARAMETER"
->�ǥ��쥯�ȥ�</CODE
->�פ˥ޥ���Ȥ��줿
-Gfarm2 �ե����륷���ƥ�򥢥�ޥ���Ȥ��ޤ���</P
+>ディレクトリ</CODE
+>」にマウントされた
+Gfarm2 ファイルシステムをアンマウントします。</P
 ></DD
 ><DT
 ><B
@@ -1677,18 +1677,18 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 >
 <CODE
 CLASS="PARAMETER"
->�ǥ��쥯�ȥ�</CODE
+>ディレクトリ</CODE
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >unmount</B
-> ����̾�Ǥ���</P
+> の別名です。</P
 ></DD
 ><DT
 ><B
@@ -1697,45 +1697,45 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 >
 <CODE
 CLASS="PARAMETER"
->����̾��</CODE
+>設定名称</CODE
 >
 <CODE
 CLASS="PARAMETER"
->��</CODE
+>値</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> �ե������</P
+> ファイルに</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<CODE
 CLASS="PARAMETER"
->����̾��</CODE
+>設定名称</CODE
 >&nbsp;<CODE
 CLASS="PARAMETER"
->��</CODE
+>値</CODE
 ></P
 ><P
->�Ȥ����Ԥ�ä��ޤ���
-���� <TT
+>という行を加えます。
+既に <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> ��
-��<CODE
+> に
+「<CODE
 CLASS="PARAMETER"
->����̾��</CODE
->�פȤ����Ԥ�¸�ߤ��Ƥ����硢
+>設定名称</CODE
+>」という行が存在している場合、
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �Ϥ���������Ƥ��顢�����˹Ԥ��ɲä��ޤ���</P
+> はそれを削除してから、新たに行を追加します。</P
 ></DD
 ><DT
 ><B
@@ -1744,30 +1744,30 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 >
 <CODE
 CLASS="PARAMETER"
->����̾��</CODE
+>設定名称</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> �ե����뤫��
-��<CODE
+> ファイルから
+「<CODE
 CLASS="PARAMETER"
->����̾��</CODE
->�׹Ԥ������ޤ���
+>設定名称</CODE
+>」行を削除します。
 <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> �ե�����ˡ�<CODE
+> ファイルに「<CODE
 CLASS="PARAMETER"
->����̾��</CODE
->��
-�Ԥ��ʤ���硢�ե�����Ϲ�������ޤ���</P
+>設定名称</CODE
+>」
+行がない場合、ファイルは更新されません。</P
 ></DD
 ><DT
 ><B
@@ -1776,15 +1776,15 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> �ե������ɸ�����
-�ؽ��Ϥ��ޤ���</P
+> ファイルを、標準出力
+へ出力します。</P
 ></DD
 ><DT
 ><B
@@ -1793,11 +1793,11 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�ζ�ͭ��̩���ե������ɸ����Ϥؽ��Ϥ��ޤ���</P
+>リモートホスト上の共有秘密鍵ファイルを、標準出力へ出力します。</P
 ></DD
 ><DT
 ><B
@@ -1806,22 +1806,22 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> �ե���������줷�ޤ���
+> ファイルを復旧します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �ϡ�<TT
+> は、<TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> ��
-�Хå����åץǡ�����ɸ�����Ϥ����ɤ߹��ߤޤ���</P
+> の
+バックアップデータを標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -1830,16 +1830,16 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�ζ�ͭ��̩���ե���������줷�ޤ���
+>リモートホスト上の共有秘密鍵ファイルを復旧します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �ϡ���ͭ��̩���ΥХå����åץǡ�����ɸ������
-�����ɤ߹��ߤޤ���</P
+> は、共有秘密鍵のバックアップデータを標準入力
+から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -1848,17 +1848,17 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->�ѿ���client<TT
+>変数「client<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_AUTH_TYPE�פ��ͤ���sharedsecret��
-�ξ�硢��ͭ��̩���ե������ gfmd1 ���饯�饤����ȥۥ��Ȥإ��ԡ����ޤ���</P
+>_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルを gfmd1 からクライアントホストへコピーします。</P
 ></DD
 ><DT
 ><B
@@ -1867,15 +1867,15 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> �ե����뤪���
-��ͭ��̩���ե�����������ޤ���</P
+> ファイルおよび
+共有秘密鍵ファイルを削除します。</P
 ></DD
 ><DT
 ><B
@@ -1884,7 +1884,7 @@ CLASS="COMMAND"
 >
 <CODE
 CLASS="PARAMETER"
->�ۥ���ID</CODE
+>ホストID</CODE
 >
 <CODE
 CLASS="PARAMETER"
@@ -1896,7 +1896,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->��⡼�ȥۥ��Ⱦ�� Gfarm ���ޥ�ɤ�¹Ԥ��ޤ���</P
+>リモートホスト上で Gfarm コマンドを実行します。</P
 ></DD
 ></DL
 ></DIV
@@ -1909,8 +1909,8 @@ NAME="MULTI-HOST-SUB-COMMANDS"
 ><H2
 >SUB-COMMANDS FOR MULTIPLE HOSTS</H2
 ><P
->�ʲ��˵󤲤Ƥ���Τϡ�ʣ���Υۥ��Ȥ����륵�֥��ޥ�ɤǤ���
-���ޥ�ɹԤǡ��ۥ���ID ����ꤹ�뤳�ȤϤǤ��ޤ���</P
+>以下に挙げているのは、複数のホストを操作するサブコマンドです。
+コマンド行で、ホストID を指定することはできません。</P
 ><P
 ></P
 ><DIV
@@ -1923,7 +1923,7 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->���٤ƤΥХå�����ɥǡ����١�����gfmd��gfsd ��ư���ޤ���</P
+>すべてのバックエンドデータベース、gfmd、gfsd を起動します。</P
 ></DD
 ><DT
 ><B
@@ -1932,7 +1932,7 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->���٤Ƥ� gfsd��gfmd���Хå�����ɥǡ����١�������ߤ��ޤ���</P
+>すべての gfsd、gfmd、バックエンドデータベースを停止します。</P
 ></DD
 ><DT
 ><B
@@ -1941,14 +1941,14 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-all</B
-> ��
+> と
 <B
 CLASS="COMMAND"
 >start-all</B
-> ��³���Ƽ¹Ԥ��ޤ���</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -1962,24 +1962,24 @@ CLASS="REPLACEABLE"
 ><I
 >gfmd1</I
 ></TT
-> ���Ф���
+> に対して
 "<B
 CLASS="COMMAND"
 >config-gfarm-master</B
->" ��¹Ԥ�������ʳ��Τ��٤Ƥ� gfmd
-���Ф��� "<B
+>" を実行し、それ以外のすべての gfmd
+に対して "<B
 CLASS="COMMAND"
 >config-gfarm-slave</B
->" ��¹Ԥ��ޤ���
-���ˤ��٤Ƥ� gfsd ���Ф��� "<B
+>" を実行します。
+次にすべての gfsd に対して "<B
 CLASS="COMMAND"
 >config-gfsd</B
->" ��¹Ԥ��ޤ���
-�Ǹ�ˤ��٤ƤΥ��饤����Ȥ��Ф��ơ�"<B
+>" を実行します。
+最後にすべてのクライアントに対して、"<B
 CLASS="COMMAND"
 >config-client</B
->" ��
-�¹Ԥ��ޤ���</P
+>" を
+実行します。</P
 ></DD
 ><DT
 ><B
@@ -1988,20 +1988,20 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->���٤ƤΥ��饤����Ȥ��Ф��ơ�"<B
+>すべてのクライアントに対して、"<B
 CLASS="COMMAND"
 >unconfig-client</B
->" ��¹�
-���ޤ���
-���ˤ��٤Ƥ� gfsd ���Ф��� "<B
+>" を実行
+します。
+次にすべての gfsd に対して "<B
 CLASS="COMMAND"
 >unconfig-gfsd</B
->" ��¹Ԥ��ޤ���
-�Ǹ�ˤ��٤Ƥ� gfmd ���Ф��� "<B
+>" を実行します。
+最後にすべての gfmd に対して "<B
 CLASS="COMMAND"
 >unconfig-gfarm</B
->" ��
-�¹Ԥ��ޤ���</P
+>" を
+実行します。</P
 ></DD
 ></DL
 ></DIV
@@ -2017,29 +2017,29 @@ NAME="PLUGIN"
 ><B
 CLASS="COMMAND"
 >gfservice</B
->�ϥ桼�������������֥��ޥ�ɤ��ɲäǤ����
-���ˡ��ץ饰���󥷥��ƥ����Ѥ��Ƥ��ޤ������ꤵ�줿���֥��ޥ�ɤ�
+>はユーザが新しくサブコマンドが追加できるよ
+うに、プラグインシステムを採用しています。指定されたサブコマンドを
 <B
 CLASS="COMMAND"
 >gfservice</B
->���󶡤��Ƥ��ʤ���硢
+>が提供していない場合、
 <B
 CLASS="COMMAND"
 >gfservice</B
->���ޥ�ɤ� %%DATADIR%%/gfarm/gfservice ��
-���Υ��֥��ޥ��̾�Υե�����򻲾Ȥ��ޤ���</P
+>コマンドは %%DATADIR%%/gfarm/gfservice 以
+下のサブコマンド名のファイルを参照します。</P
 ><P
->���֥��ޥ�ɤΥե������ Bourne�����륹����ץȤǽ񤭤ޤ���
-���֥��ޥ�� "<TT
+>サブコマンドのファイルは Bourneシェルスクリプトで書きます。
+サブコマンド "<TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
->" �Υ��֥��ޥ�ɥե�����
-�ϡ�<B
+>" のサブコマンドファイル
+は、<B
 CLASS="COMMAND"
 >gfservice</B
->����¹Ԥ����
+>から実行される
 "<CODE
 CLASS="FUNCTION"
 >subcmd_<TT
@@ -2048,11 +2048,11 @@ CLASS="REPLACEABLE"
 >name</I
 ></TT
 ></CODE
->"�Ȥ���̾
-���Υ�����ؿ��� <B
+>"という名
+前のシェル関数、 <B
 CLASS="COMMAND"
 >gfservice-agent</B
->����¹Ԥ����
+>から実行される
 "<CODE
 CLASS="FUNCTION"
 >subcmd_<TT
@@ -2062,16 +2062,16 @@ CLASS="REPLACEABLE"
 ></TT
 >_agent</CODE
 >"
-�Ȥ���̾���Υ�����ؿ�����������Ƥ���ɬ�פ�����ޤ���</P
+という名前のシェル関数が実装されている必要があります。</P
 ><P
->���֥��ޥ�ɤ��桼�����ɲä����̤Υ��֥��ޥ�ɤ˰�¸���Ƥ�����Τ���ˡ�
-���֥��ޥ�� "<TT
+>サブコマンドがユーザが追加した別のサブコマンドに依存している時のために、
+サブコマンド "<TT
 CLASS="REPLACEABLE"
 ><I
 >name</I
 ></TT
->" �Υ��֥��ޥ�ɥե�����
-�ϡ� "<CODE
+>" のサブコマンドファイル
+は、 "<CODE
 CLASS="FUNCTION"
 ><TT
 CLASS="REPLACEABLE"
@@ -2079,11 +2079,11 @@ CLASS="REPLACEABLE"
 >name</I
 ></TT
 >_depends</CODE
->" ��
-����̾���Υ�����ؿ��ǡ����Υ��֥��ޥ�ɤ���¸���Ƥ���¾�Υ��֥��ޥ��
-�Υꥹ�Ȥ��֤�ɬ�פ�����ޤ������֥��ޥ�ɤΥꥹ�Ȥϥ��ڡ����Ƕ��ڤ��
-�����֥��ޥ�ɤ�ʸ����Ǥ�����¸���Ƥ���¾�Υ��֥��ޥ�ɤ��ʤ����϶�ʸ������֤���
-��������Ʊ�ͤˡ����֥��ޥ�ɥե������
+>" と
+いう名前のシェル関数で、そのサブコマンドが依存している他のサブコマンド
+のリストを返す必要があります．サブコマンドのリストはスペースで区切られ
+たサブコマンドの文字列です．依存している他のサブコマンドがない場合は空文字列を返して
+下さい。同様に、サブコマンドファイルは
 "<CODE
 CLASS="FUNCTION"
 ><TT
@@ -2093,8 +2093,8 @@ CLASS="REPLACEABLE"
 ></TT
 >_agent_depends</CODE
 >"
-�Ȥ���̾���Υ�����ؿ��ǡ����Υ��֥��ޥ�ɤΥ���������Ȥ���¸���Ƥ���
-¾�Υ��֥��ޥ�ɤΥꥹ�Ȥ��֤�ɬ�פ�����ޤ���</P
+という名前のシェル関数で、そのサブコマンドのエージェントが依存している
+他のサブコマンドのリストを返す必要があります。</P
 ></DIV
 ></BODY
 ></HTML

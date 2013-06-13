@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_GLOB_ADD" "3" "11 September 2003" "Gfarm" ""
 .SH NAME
-gfs_glob_add \- �ѥ��Υ����פ�ꥹ�Ȥ��ɲä���
+gfs_glob_add \- パスのタイプをリストに追加する
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,18 +14,18 @@ char *gfs_glob_add (gfs_glob_t * \fIlistp\fB, int  \fIdtype\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-����
+引数
 \fIlistp\fR
-�˰���
+に引数
 \fIdtype\fR
-��ѥ��Υ����פȤ����ɲä��ޤ���
+をパスのタイプとして追加します。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .SH "SEE ALSO"
 .PP
 \fBgfs_glob_init\fR(3)

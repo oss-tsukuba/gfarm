@@ -6,216 +6,216 @@
 .TH "GFSERVICE-AGENT" "1" "07 June 2013" "Gfarm" ""
 
 .SH NAME
-gfservice-agent \- gfservice �Υ����������
+gfservice-agent \- gfservice のエージェント
 .SH SYNOPSIS
 
-\fBgfservice-agent\fR [ \fB\fI���ץ����\fB\fR ] \fB�ۥ��� ID\fR \fB���֥��ޥ��\fR [ \fB\fI���� ...\fB\fR ]
+\fBgfservice-agent\fR [ \fB\fIオプション\fB\fR ] \fBホスト ID\fR \fBサブコマンド\fR [ \fB\fI引数 ...\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
-\fBgfservice-agent\fR �ϡ�\fBgfservice\fR ��
-����������ȤǤ���
-\fBgfservice\fR ���Ѥ����������ۥ��Ȥ��٤Ƥˡ�����
-����������Ȥ򥤥󥹥ȡ��뤹��ɬ�פ�����ޤ���
-\fBgfservice\fR �Ȱۤʤꡢ����ե�������ɤ߹��ߤޤ���
+\fBgfservice-agent\fR は、\fBgfservice\fR の
+エージェントです。
+\fBgfservice\fR を用いて操作したいホストすべてに、この
+エージェントをインストールする必要があります。
+\fBgfservice\fR と異なり、設定ファイルは読み込みません。
 .PP
-\fBgfservice-agent\fR �ϡ��桼����ľ�ܼ¹Ԥ��뤳�Ȥ�տ�
-���ƺ������줿��ΤǤϤ���ޤ���
-��������ѤǤϡ�SSH �� Sudo ��𤷤� \fBgfservice\fR ���ޥ��
-�ˤ�äƼ¹Ԥ��������Ǥ���
+\fBgfservice-agent\fR は、ユーザが直接実行することを意図
+して作成されたものではありません。
+日常の利用では、SSH と Sudo を介して \fBgfservice\fR コマンド
+によって実行されるだけです。
 .PP
-�ۥ��� ID ������ \fBgfservice\fR �Τ�Τ�Ʊ���Ǥ�����
-\fBgfservice-agent\fR �Ǥϥۥ��� ID ��ۥ��Ȥμ���
-("gfmd", "gfsd", "client" �Τ����줫) ����̤��뤿�ᡢ�����
-�ǥХå���å������Τ���ˤ����ȤäƤ��ޤ���
+ホスト ID 引数は \fBgfservice\fR のものと同じですが、
+\fBgfservice-agent\fR ではホスト ID をホストの種別
+("gfmd", "gfsd", "client" のいずれか) を区別するため、および
+デバッグメッセージのためにしか使っていません。
 .PP
-\fBgfservice-agent\fR �Υ��֥��ޥ��̾�� 
-\fBgfservice\fR �Τ�Τ˻��Ƥ��ޤ����������ϰۤʤ�ޤ���
-���Ȥ��С�\fBgfservice-agent\fR �� \fBunmount\fR
-���֥��ޥ�ɤϡ�
-��\fIdirectory\fR=\fI�ǥ��쥯�ȥ�\fR��
-�Ȥ���������Ȥ�ޤ���
+\fBgfservice-agent\fR のサブコマンド名は 
+\fBgfservice\fR のものに似ていますが、引数は異なります。
+たとえば、\fBgfservice-agent\fR の \fBunmount\fR
+サブコマンドは、
+「\fIdirectory\fR=\fIディレクトリ\fR」
+という引数をとります。
 
 .nf
 	gfservice-agent client3 unmount directory=/somewhere
 .fi
 .PP
-������Ф��ơ�\fBgfservice\fR �Ǥϡ�
-��\fI�ǥ��쥯�ȥ�\fR�פȤ���������Ȥ�ޤ���
+これに対して、\fBgfservice\fR では、
+「\fIディレクトリ\fR」という引数をとります。
 
 .nf
 	gfservice unmount client3 /somewhere
 .fi
 .PP
-\fBgfservice-agent\fR �ΰ����ϤۤȤ�ɤ��٤ơ��֥���=�͡�
-�Ȥ������ˤʤäƤ��ޤ���
-ʣ���ΰ�����Ȥ��硢�����ν����Ǥ�դǤ���
-\fBgfservice-agent\fR �ϡ�̤�ΤΥ�����̵�뤷�ޤ���
+\fBgfservice-agent\fR の引数はほとんどすべて、「キー=値」
+という形になっています。
+複数の引数をとる場合、引数の順序は任意です。
+\fBgfservice-agent\fR は、未知のキーを無視します。
 .SH "OPTIONS"
 .TP
 \fB-d\fR
-�ǥХå��������Ϥ��ޤ���
+デバッグ情報を出力します。
 .SH "SUB-COMMANDS"
 .PP
-\fBgfservice-agent\fR �ϸ��ߤΤȤ��������Υ��֥��ޥ�ɤ�
-ǧ�����ޤ���
+\fBgfservice-agent\fR は現在のところ、次のサブコマンドを
+認識します。
 .TP
-\fBget-config-gfarm-param \fIparam\fB=\fI�ѥ�᥿̾\fB \fIconfig-gfarm-options\fB=\fI���ץ����\fB\fR
-��\fBconfig-gfarm -T\fR�ץ��ޥ�ɤ�¹Ԥ��ơ�
-��\fI�ѥ�᥿̾\fR �פ��ͤ�ɸ����Ϥ˽��Ϥ��ޤ���
-������\fIparam\fR=\fI�ѥ�᥿̾\fR��
-����ά���줿���ϡ���\fBconfig-gfarm -T\fR�ץ��ޥ�ɤ�
-��̤��٤Ƥ���Ϥ��ޤ���
+\fBget-config-gfarm-param \fIparam\fB=\fIパラメタ名\fB \fIconfig-gfarm-options\fB=\fIオプション\fB\fR
+「\fBconfig-gfarm -T\fR」コマンドを実行して、
+「\fIパラメタ名\fR 」の値を標準出力に出力します。
+引数「\fIparam\fR=\fIパラメタ名\fR」
+が省略された場合は、「\fBconfig-gfarm -T\fR」コマンドの
+結果すべてを出力します。
 .TP
-\fBget-config-gfsd-param \fIparam\fB=\fI�ѥ�᥿̾\fB \fIconfig-gfsd-options\fB=\fI���ץ����\fB\fR
-��\fBconfig-gfsd -T\fR�ץ��ޥ�ɤ�¹Ԥ��ơ�
-��\fI�ѥ�᥿̾\fR�פ��ͤ�ɸ����Ϥ�
-���Ϥ��ޤ���
-������\fIparam\fR=\fI�ѥ�᥿̾\fR��
-����ά���줿���ϡ���\fBconfig-gfsd -T\fR�ץ��ޥ�ɤ�
-��̤��٤Ƥ���Ϥ��ޤ���
+\fBget-config-gfsd-param \fIparam\fB=\fIパラメタ名\fB \fIconfig-gfsd-options\fB=\fIオプション\fB\fR
+「\fBconfig-gfsd -T\fR」コマンドを実行して、
+「\fIパラメタ名\fR」の値を標準出力に
+出力します。
+引数「\fIparam\fR=\fIパラメタ名\fR」
+が省略された場合は、「\fBconfig-gfsd -T\fR」コマンドの
+結果すべてを出力します。
 .TP
-\fBbackend-db-status \fIconfig-gfarm-options\fB=\fI���ץ����\fB\fR
-�Хå�����ɥǡ����١�����ư����Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���
+\fBbackend-db-status \fIconfig-gfarm-options\fB=\fIオプション\fB\fR
+バックエンドデータベースが動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。
 .TP
-\fBgfmd-status \fIconfig-gfarm-options\fB=\fI���ץ����\fB\fR
-gfmd ��ư����Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���
+\fBgfmd-status \fIconfig-gfarm-options\fB=\fIオプション\fB\fR
+gfmd が動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。
 .TP
-\fBgfsd-status \fIconfig-gfsd-options\fB=\fI���ץ����\fB\fR
-gfsd ��ư����Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���
+\fBgfsd-status \fIconfig-gfsd-options\fB=\fIオプション\fB\fR
+gfsd が動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。
 .TP
-\fBstart-backend-db \fIconfig-gfarm-options\fB=\fI���ץ����\fB \fItimeout\fB=\fI����\fB\fR
-�Хå�����ɥǡ����١������¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
+\fBstart-backend-db \fIconfig-gfarm-options\fB=\fIオプション\fB \fItimeout\fB=\fI時間\fB\fR
+バックエンドデータベースが実行中でなければ、実行を開始します。
 .TP
-\fBstart-gfmd \fIconfig-gfarm-options\fB=\fI���ץ����\fB \fItimeout\fB=\fI����\fB\fR
-gfmd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
+\fBstart-gfmd \fIconfig-gfarm-options\fB=\fIオプション\fB \fItimeout\fB=\fI時間\fB\fR
+gfmd が実行中でなければ、実行を開始します。
 .TP
-\fBstart-gfsd \fIconfig-gfsd-options\fB=\fI���ץ����\fB \fItimeout\fB=\fI����\fB\fR
-gfsd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
+\fBstart-gfsd \fIconfig-gfsd-options\fB=\fIオプション\fB \fItimeout\fB=\fI時間\fB\fR
+gfsd が実行中でなければ、実行を開始します。
 .TP
-\fBconfig-gfarm \fIconfig-gfarm-options\fB=\fI���ץ����\fB\fR
-��\fBconfig-gfarm\fR�ץ��ޥ�ɤ�¹Ԥ��ޤ���
+\fBconfig-gfarm \fIconfig-gfarm-options\fB=\fIオプション\fB\fR
+「\fBconfig-gfarm\fR」コマンドを実行します。
 .TP
-\fBconfig-gfarm-master \fIconfig-gfarm-options\fB=\fI���ץ����\fB\fR
-��\fBconfig-gfarm\fR \fI-r\fR�ץ��ޥ�ɤ�¹�
-���ޤ���
+\fBconfig-gfarm-master \fIconfig-gfarm-options\fB=\fIオプション\fB\fR
+「\fBconfig-gfarm\fR \fI-r\fR」コマンドを実行
+します。
 .TP
-\fBconfig-gfsd \fIconfig-gfsd-options\fB=\fI���ץ����\fB\fR
-��\fBconfig-gfsd\fR�ץ��ޥ�ɤ�¹Ԥ��ޤ���
+\fBconfig-gfsd \fIconfig-gfsd-options\fB=\fIオプション\fB\fR
+「\fBconfig-gfsd\fR」コマンドを実行します。
 .TP
-\fBunconfig-gfarm \fIconfig-gfarm-options\fB=\fI���ץ����\fB\fR
-\fBstop-gfarm\fR ���֥��ޥ�ɤ�¹Ԥ��ơ����θ� gfmd ��
-�Хå�����ɥǡ����١��������������ե������ǥ��쥯�ȥ�򤹤٤ƺ�����ޤ���
+\fBunconfig-gfarm \fIconfig-gfarm-options\fB=\fIオプション\fB\fR
+\fBstop-gfarm\fR サブコマンドを実行して、その後 gfmd と
+バックエンドデータベースが作成したファイルやディレクトリをすべて削除します。
 .TP
-\fBunconfig-gfsd \fIconfig-gfsd-options\fB=\fI���ץ����\fB\fR
-���֥��ޥ�� \fBstop-gfsd\fR ��¹Ԥ������θ� gfsd ����������
-�ե������ǥ��쥯�ȥ�򤹤٤ƺ�����ޤ���
+\fBunconfig-gfsd \fIconfig-gfsd-options\fB=\fIオプション\fB\fR
+サブコマンド \fBstop-gfsd\fR を実行し、その後 gfsd が作成した
+ファイルやディレクトリをすべて削除します。
 .TP
-\fBunconfig-client \fIconfig-gfsd-options\fB=\fI���ץ����\fB\fR
-\fIgfarm2.conf\fR �ե�����ȶ�ͭ��̩���ե�����������ޤ���
+\fBunconfig-client \fIconfig-gfsd-options\fB=\fIオプション\fB\fR
+\fIgfarm2.conf\fR ファイルと共有秘密鍵ファイルを削除します。
 .TP
-\fBpromote \fIconfig-gfarm-options\fB=\fI���ץ����\fB\fR
-\fBgfmd\fR �򥹥졼�֤���ޥ������ؾ��ʤ����ޤ���
+\fBpromote \fIconfig-gfarm-options\fB=\fIオプション\fB\fR
+\fBgfmd\fR をスレーブからマスターへ昇格させます。
 .TP
-\fBpromote-gfmd \fIconfig-gfarm-options\fB=\fI���ץ����\fB\fR
-���֥��ޥ�� \fBpromote\fR ����̾�Ǥ���
+\fBpromote-gfmd \fIconfig-gfarm-options\fB=\fIオプション\fB\fR
+サブコマンド \fBpromote\fR の別名です。
 .TP
-\fBmount \fIdirectory\fB=\fI�ǥ��쥯�ȥ�\fB \fIoptions\fB=\fI���ץ����\fB\fR
-Gfarm2 �ե����륷���ƥ���\fI�ǥ��쥯�ȥ�\fR�פ�
-�ޥ���Ȥ��ޤ���
+\fBmount \fIdirectory\fB=\fIディレクトリ\fB \fIoptions\fB=\fIオプション\fB\fR
+Gfarm2 ファイルシステムを「\fIディレクトリ\fR」に
+マウントします。
 .TP
-\fBunmount \fIdirectory\fB=\fI�ǥ��쥯�ȥ�\fB\fR
-��\fI�ǥ��쥯�ȥ�\fR�פ˥ޥ���Ȥ��줿 Gfarm2
-�ե����륷���ƥ�򥢥�ޥ���Ȥ��ޤ���
+\fBunmount \fIdirectory\fB=\fIディレクトリ\fB\fR
+「\fIディレクトリ\fR」にマウントされた Gfarm2
+ファイルシステムをアンマウントします。
 .TP
-\fBumount \fIdirectory\fB=\fI�ǥ��쥯�ȥ�\fB\fR
-���֥��ޥ�� \fBunmount\fR ����̾�Ǥ���
+\fBumount \fIdirectory\fB=\fIディレクトリ\fB\fR
+サブコマンド \fBunmount\fR の別名です。
 .TP
-\fBset-gfmd-conf \fIdirective\fB=\fI����̾��\fB \fIvalue\fB=\fI��\fB\fR
-\fIgfmd.conf\fR �ե�����ˡ�
+\fBset-gfmd-conf \fIdirective\fB=\fI設定名称\fB \fIvalue\fB=\fI値\fB\fR
+\fIgfmd.conf\fR ファイルに、
 
 .nf
-	\fI����̾��\fR \fI��\fR
+	\fI設定名称\fR \fI値\fR
 .fi
 
-�Ȥ����Ԥ��ɲä��ޤ���
+という行を追加します。
 .TP
-\fBset-gfarm-conf \fIdirective\fB=\fI����̾��\fB \fIvalue\fB=\fI��\fB\fR
-\fIgfarm2.conf\fR �ե�����ˡ�
+\fBset-gfarm-conf \fIdirective\fB=\fI設定名称\fB \fIvalue\fB=\fI値\fB\fR
+\fIgfarm2.conf\fR ファイルに、
 
 .nf
-	\fI����̾��\fR \fI��\fR
+	\fI設定名称\fR \fI値\fR
 .fi
 
-�Ȥ����Ԥ��ɲä��ޤ���
+という行を追加します。
 .TP
-\fBset-gfsd-conf \fIdirective\fB=\fI����̾��\fB \fIvalue\fB=\fI��\fB\fR
-\fIgfsd.conf\fR �ե�����ˡ�
+\fBset-gfsd-conf \fIdirective\fB=\fI設定名称\fB \fIvalue\fB=\fI値\fB\fR
+\fIgfsd.conf\fR ファイルに、
 
 .nf
-	\fI����̾��\fR \fI��\fR
+	\fI設定名称\fR \fI値\fR
 .fi
 
-�Ȥ����Ԥ��ɲä��ޤ���
+という行を追加します。
 .TP
-\fBunset-gfmd-conf \fIdirective\fB=\fI����̾��\fB\fR
-��\fI����̾��\fR�׹Ԥ� \fIgfmd.conf\fR
-�ե����뤫�������ޤ���
+\fBunset-gfmd-conf \fIdirective\fB=\fI設定名称\fB\fR
+「\fI設定名称\fR」行を \fIgfmd.conf\fR
+ファイルから削除します。
 .TP
-\fBunset-gfarm-conf \fIdirective\fB=\fI����̾��\fB\fR
-��\fI����̾��\fR�׹Ԥ� \fIgfarm.conf\fR
-�ե����뤫�������ޤ���
+\fBunset-gfarm-conf \fIdirective\fB=\fI設定名称\fB\fR
+「\fI設定名称\fR」行を \fIgfarm.conf\fR
+ファイルから削除します。
 .TP
-\fBunset-gfsd-conf \fIdirective\fB=\fI����̾��\fB\fR
-��\fI����̾��\fR�׹Ԥ� \fIgfsd.conf\fR
-�ե����뤫�������ޤ���
+\fBunset-gfsd-conf \fIdirective\fB=\fI設定名称\fB\fR
+「\fI設定名称\fR」行を \fIgfsd.conf\fR
+ファイルから削除します。
 .TP
 \fBbackup-backend-db\fR
-�Хå�����ɥǡ����١����ΥХå����åפ�Ԥ����Хå����åץǡ�����ɸ�����
-�ؽ��Ϥ��ޤ���
+バックエンドデータベースのバックアップを行い、バックアップデータを標準出力
+へ出力します。
 .TP
 \fBbackup-gfmd-conf\fR
-\fIgfmd.conf\fR �ե������ɸ����Ϥ˽��Ϥ��ޤ���
+\fIgfmd.conf\fR ファイルを標準出力に出力します。
 .TP
 \fBbackup-gfarm-conf\fR
-\fIgfarm2.conf\fR �ե������ɸ����Ϥ˽��Ϥ��ޤ���
+\fIgfarm2.conf\fR ファイルを標準出力に出力します。
 .TP
 \fBbackup-gfsd-conf\fR
-\fIgfsd.conf\fR �ե������ɸ����Ϥ˽��Ϥ��ޤ���
+\fIgfsd.conf\fR ファイルを標準出力に出力します。
 .TP
 \fBbackup-usermap\fR
-\fIusermap\fR �ե������ɸ����Ϥ˽��Ϥ��ޤ���
+\fIusermap\fR ファイルを標準出力に出力します。
 .TP
 \fBbackup-shared-key\fR
-\fI$HOME/.gfarm_shared_key\fR �ե������ɸ����Ϥ�
-���Ϥ��ޤ���
+\fI$HOME/.gfarm_shared_key\fR ファイルを標準出力に
+出力します。
 .TP
 \fBrestore-backend-db\fR
-�Хå�����ɥǡ����١�����ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���
+バックエンドデータベースをリストアします。
+バックアップデータは、標準入力から読み込みます。
 .TP
 \fBrestore-gfmd-conf\fR
-\fIgfmd.conf\fR �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���
+\fIgfmd.conf\fR ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
 .TP
 \fBrestore-gfarm-conf\fR
-\fIgfarm2.conf\fR �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���
+\fIgfarm2.conf\fR ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
 .TP
 \fBrestore-gfsd-conf\fR
-\fIgfsd.conf\fR �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���
+\fIgfsd.conf\fR ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
 .TP
 \fBrestore-usermap\fR
-\fIusermap\fR �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���
+\fIusermap\fR ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
 .TP
 \fBrestore-shared-key\fR
-\fI$HOME/.gfarm_shared_key\fR �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���
+\fI$HOME/.gfarm_shared_key\fR ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
 .TP
-\fBgfcmd \fIcmd\fB=\fI���ޥ��̾\fB \fIargs\fB="\fI���ޥ�ɤΰ��� ...\fB"\fR
-Gfarm ���ޥ�ɤ�¹Ԥ��ޤ���
+\fBgfcmd \fIcmd\fB=\fIコマンド名\fB \fIargs\fB="\fIコマンドの引数 ...\fB"\fR
+Gfarm コマンドを実行します。

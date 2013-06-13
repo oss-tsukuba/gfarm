@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfperf-parallel-read&nbsp;--&nbsp;Gfarm �ե������ɹ�����ǽ¬���Ԥ���</DIV
+>gfperf-parallel-read&nbsp;--&nbsp;Gfarm ファイル読込の性能測定を行う。</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,47 +40,47 @@ CLASS="COMMAND"
 >  [-t, --testdir <TT
 CLASS="REPLACEABLE"
 ><I
->�ƥ��ȥǥ��쥯�ȥ�</I
+>テストディレクトリ</I
 ></TT
 >] [-m, --gfarm2fs <TT
 CLASS="REPLACEABLE"
 ><I
->gfarm2fs�ޥ���ȥݥ����</I
+>gfarm2fsマウントポイント</I
 ></TT
 >] [-l, --filesize <TT
 CLASS="REPLACEABLE"
 ><I
->�ե����륵����</I
+>ファイルサイズ</I
 ></TT
 >] [-b, --bufsize <TT
 CLASS="REPLACEABLE"
 ><I
->�Хåե�������</I
+>バッファサイズ</I
 ></TT
 >] [-r, --random <TT
 CLASS="REPLACEABLE"
 ><I
->������</I
+>ランダム</I
 ></TT
 >] [-g, --gfsd <TT
 CLASS="REPLACEABLE"
 ><I
->gfsd̾</I
+>gfsd名</I
 ></TT
 >] [-k, --timeout <TT
 CLASS="REPLACEABLE"
 ><I
->timeout�ÿ�</I
+>timeout秒数</I
 ></TT
 >] [-n, --name <TT
 CLASS="REPLACEABLE"
 ><I
->���롼��̾</I
+>グループ名</I
 ></TT
 >] [-w, --wait <TT
 CLASS="REPLACEABLE"
 ><I
->���ϻ���</I
+>開始時刻</I
 ></TT
 >]</P
 ></DIV
@@ -92,12 +92,12 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->���� <CODE
+>引数 <CODE
 CLASS="PARAMETER"
->�ƥ��ȥǥ��쥯�ȥ�</CODE
-> �˥ƥ����ѤΥե������������������ɹ���ǽ��¬�ꤷ�ޤ������ٺ��������ƥ��ȥե�����Ϻ�����줺��Ʊ���ѥ�᡼���Ǽ���ư�����Ȥ��˺����Ѥ���ޤ���</P
+>テストディレクトリ</CODE
+> にテスト用のファイルを作成し、その読込性能を測定します。一度作成したテストファイルは削除されずに同じパラメータで次回起動したときに再利用されます。</P
 ><P
->�ܥ��ޥ�ɤ�gfperf.rb��������˸ƽФ���뤳�Ȥ���Ԥ��Ƥ��ޤ���</P
+>本コマンドはgfperf.rbから並列に呼出されることを期待しています。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -117,13 +117,13 @@ CLASS="OPTION"
 >-t, --testdir</CODE
 > <CODE
 CLASS="PARAMETER"
->�ƥ��ȥǥ��쥯�ȥ�</CODE
+>テストディレクトリ</CODE
 ></DT
 ><DD
 ><P
->�ƥ��Ȥ�»ܤ���ǥ��쥯�ȥ����ꤷ�ޤ���
-gfarm url (gfarm:///�ǻϤޤ���) ����ꤷ�ޤ���
-�ǥե���Ȥ�gfarm:///tmp�Ǥ���</P
+>テストを実施するディレクトリを指定します。
+gfarm url (gfarm:///で始まるもの) を指定します。
+デフォルトはgfarm:///tmpです。</P
 ></DD
 ><DT
 ><CODE
@@ -131,11 +131,11 @@ CLASS="OPTION"
 >-m, --gfarm2fs</CODE
 > <CODE
 CLASS="PARAMETER"
->gfarm2fs�ޥ���ȥݥ����</CODE
+>gfarm2fsマウントポイント</CODE
 ></DT
 ><DD
 ><P
->gfarm2fs�Υޥ���ȥݥ���Ȥ���ꤷ�ޤ���</P
+>gfarm2fsのマウントポイントを指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -143,12 +143,12 @@ CLASS="OPTION"
 >-l, --filesize</CODE
 > <CODE
 CLASS="PARAMETER"
->�ե����륵����</CODE
+>ファイルサイズ</CODE
 ></DT
 ><DD
 ><P
->�ƥ��Ȥǻ��Ѥ���ե����륵��������ꤷ�ޤ���
-�ǥե���Ȥ�1M�Ǥ���</P
+>テストで使用するファイルサイズを指定します。
+デフォルトは1Mです。</P
 ></DD
 ><DT
 ><CODE
@@ -156,12 +156,12 @@ CLASS="OPTION"
 >-b, --bufsize</CODE
 > <CODE
 CLASS="PARAMETER"
->�Хåե�������</CODE
+>バッファサイズ</CODE
 ></DT
 ><DD
 ><P
->�ƥ��Ȥǻ��Ѥ���Хåե�����������ꤷ�ޤ���
-�ǥե���Ȥ�4K�Ǥ���</P
+>テストで使用するバッファサイズを指定します。
+デフォルトは4Kです。</P
 ></DD
 ><DT
 ><CODE
@@ -169,13 +169,13 @@ CLASS="OPTION"
 >-r, --random</CODE
 > <CODE
 CLASS="PARAMETER"
->������</CODE
+>ランダム</CODE
 ></DT
 ><DD
 ><P
->������ǥե�������ɤ߹��ߤޤ���
-���ץ����ΰ����ˤϲ����Ϥ��Ƥ⤫�ޤ��ޤ���
-�ܥ��ץ�������ꤷ�ʤ��ä���硢�������󥷥���ɹ��ˤʤ�ޤ���</P
+>ランダムでファイルを読み込みます。
+オプションの引数には何を渡してもかまいません。
+本オプションを指定しなかった場合、シーケンシャル読込になります。</P
 ></DD
 ><DT
 ><CODE
@@ -183,12 +183,12 @@ CLASS="OPTION"
 >-g, --gfsd</CODE
 > <CODE
 CLASS="PARAMETER"
->gfsd̾</CODE
+>gfsd名</CODE
 ></DT
 ><DD
 ><P
->�ե�������������gfsd����ꤷ�ޤ���
-�ܥ��ץ�������ꤷ�ʤ��ä�����gfarm����ưŪ�˳����Ƥ�gfsd����Ѥ��ޤ���</P
+>ファイルを作成するgfsdを指定します。
+本オプションを指定しなかった場合はgfarmが自動的に割当てたgfsdを使用します。</P
 ></DD
 ><DT
 ><CODE
@@ -196,12 +196,12 @@ CLASS="OPTION"
 >-k, --timeout</CODE
 > <CODE
 CLASS="PARAMETER"
->timeout�ÿ�</CODE
+>timeout秒数</CODE
 ></DT
 ><DD
 ><P
->�ɹ��κ�����֤���ꤷ�ޤ����ǥե���Ȥ�60�äǤ���
-���λ�������ɤ߹��᤿�Х��ȿ����ɤ߹��ߤˤ����ä����֤ǳ�ä��ͤ���ǽ�ͤȤ��ޤ���</P
+>読込の最大時間を指定します。デフォルトは60秒です。
+この時間内に読み込めたバイト数を読み込みにかかった時間で割った値を性能値とします。</P
 ></DD
 ><DT
 ><CODE
@@ -209,11 +209,11 @@ CLASS="OPTION"
 >-n, --name</CODE
 > <CODE
 CLASS="PARAMETER"
->���롼��̾</CODE
+>グループ名</CODE
 ></DT
 ><DD
 ><P
->ʣ����ư���줿�����ܰ��Ȥʤ륰�롼��̾����ꤷ�ޤ���</P
+>複数起動された場合に目印となるグループ名を指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -221,13 +221,13 @@ CLASS="OPTION"
 >-w, --wait</CODE
 > <CODE
 CLASS="PARAMETER"
->���ϻ���</CODE
+>開始時刻</CODE
 ></DT
 ><DD
 ><P
->���ꤵ�줿����ˤʤ�ޤǥƥ��Ȥ򳫻Ϥ��ޤ���
-�̾gfperf.rb�ˤ����ꤵ��ޤ���
-�����UTC�ǻ��ꤵ�졢���߻������10�ðʾ���λ���ϻ���Ǥ��ޤ���</P
+>指定された時刻になるまでテストを開始しません。
+通常、gfperf.rbにより指定されます。
+時刻はUTCで指定され、現在時刻よりも10秒以上先の時刻は指定できません。</P
 ></DD
 ></DL
 ></DIV

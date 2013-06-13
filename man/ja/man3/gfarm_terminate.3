@@ -6,7 +6,7 @@
 .TH "GFARM_TERMINATE" "3" "26 June 2010" "Gfarm" ""
 
 .SH NAME
-gfarm_terminate \- gfarm �饤�֥��˴ؤ��뽪λ�����򤹤�
+gfarm_terminate \- gfarm ライブラリに関する終了処理をする
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -15,14 +15,14 @@ gfarm_error_t gfarm_terminate (\fIvoid\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-Gfarm �饤�֥��ˤĤ��ơ���λ������Ԥ��ޤ���
+Gfarm ライブラリについて、終了処理を行います。
 .SH "RETURN VALUES"
 .TP
 \fBGFARM_ERR_NO_ERROR\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "SEE ALSO"
 .PP
 \fBgfarm_initialize\fR(3)

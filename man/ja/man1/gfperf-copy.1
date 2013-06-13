@@ -6,35 +6,35 @@
 .TH "GFPERF-COPY" "1" "07 March 2012" "Gfarm" ""
 
 .SH NAME
-gfperf-copy \- Gfarm �ե�����ʣ������ǽ¬���Ԥ���
+gfperf-copy \- Gfarm ファイル複製の性能測定を行う。
 .SH SYNOPSIS
 
-\fBgfperf-copy\fR \fB-s, --src \fI���ԡ���url\fB\fR \fB-d, --dst \fI���ԡ���url\fB\fR [ \fB-l, --filesize \fI�ե����륵����\fB\fR ] [ \fB-b, --busize \fI�Хåե�������\fB\fR ] [ \fB-g, --gfsd \fIgfsd̾\fB\fR ] [ \fB-m, --gfarm2fs \fIgfarm2fs�ޥ���ȥݥ����\fB\fR ]
+\fBgfperf-copy\fR \fB-s, --src \fIコピー元url\fB\fR \fB-d, --dst \fIコピー先url\fB\fR [ \fB-l, --filesize \fIファイルサイズ\fB\fR ] [ \fB-b, --busize \fIバッファサイズ\fB\fR ] [ \fB-g, --gfsd \fIgfsd名\fB\fR ] [ \fB-m, --gfarm2fs \fIgfarm2fsマウントポイント\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
-\fI���ԡ���url\fR����\fI���ԡ���url\fR�˥ե�����򥳥ԡ������Υ��ԡ���ǽ��¬�ꤷ�ޤ���
-\fI���ԡ���url\fR��\fI���ԡ���url\fR�Ϥɤ��餫������gfarm url (gfarm:///�ǻϤޤ���) �Ǥʤ��ƤϤʤ�ޤ��󡣤����Ƥ⤦������file url (file:///�ǻϤޤ���) �Ǥʤ��ƤϤʤ�ޤ���
+\fIコピー元url\fRから\fIコピー先url\fRにファイルをコピーしそのコピー性能を測定します。
+\fIコピー元url\fRと\fIコピー先url\fRはどちらか一方がgfarm url (gfarm:///で始まるもの) でなくてはなりません。そしてもう片方はfile url (file:///で始まるもの) でなくてはなりません。
 .SH "OPTIONS"
 .TP
-\fB-s, --src \fI���ԡ���url\fB\fR
-���ԡ���url����ꤷ�ޤ������ԡ���url��gfarm url����ꤷ����硢���ԡ���url��file url�Ǥʤ��ƤϤʤ�ޤ���
+\fB-s, --src \fIコピー元url\fB\fR
+コピー元urlを指定します。コピー元urlにgfarm urlを指定した場合、コピー先urlはfile urlでなくてはなりません。
 .TP
-\fB-d, --dst \fI���ԡ���url\fB\fR
-���ԡ���url����ꤷ�ޤ������ԡ���url��gfarm url����ꤷ����硢���ԡ���url��file url�Ǥʤ��ƤϤʤ�ޤ���
+\fB-d, --dst \fIコピー元url\fB\fR
+コピー先urlを指定します。コピー先urlにgfarm urlを指定した場合、コピー元urlはfile urlでなくてはなりません。
 .TP
-\fB-l, --filesize \fI�ե����륵����\fB\fR
-���Ѥ���ե����륵��������ꤷ�ޤ���
-�ǥե���Ȥ�1M�Ǥ���
+\fB-l, --filesize \fIファイルサイズ\fB\fR
+使用するファイルサイズを指定します。
+デフォルトは1Mです。
 .TP
-\fB-b, --bufsize \fI�Хåե�������\fB\fR
-���Ѥ���Хåե�����������ꤷ�ޤ���
-�ǥե���Ȥ�4K�Ǥ���
+\fB-b, --bufsize \fIバッファサイズ\fB\fR
+使用するバッファサイズを指定します。
+デフォルトは4Kです。
 .TP
-\fB-g, --gfsd \fIgfsd̾\fB\fR
-�ե�������������gfsd����ꤷ�ޤ���
-�ܥ��ץ�������ꤷ�ʤ��ä�����gfarm����ưŪ�˳����Ƥ�gfsd����Ѥ��ޤ���
+\fB-g, --gfsd \fIgfsd名\fB\fR
+ファイルを作成するgfsdを指定します。
+本オプションを指定しなかった場合はgfarmが自動的に割当てたgfsdを使用します。
 .TP
-\fB-m, --gfarm2fs \fIgfarm2fs�ޥ���ȥݥ����\fB\fR
-gfarm2fs�Υޥ���ȥݥ���Ȥ���ꤷ�ޤ���
-gfarm url�����ꤵ�줿�����Ф�gfarm2fs��ͳ�ǤΥ���������Ԥ��ޤ���
+\fB-m, --gfarm2fs \fIgfarm2fsマウントポイント\fB\fR
+gfarm2fsのマウントポイントを指定します。
+gfarm urlが指定された方に対しgfarm2fs経由でのアクセスを行います。

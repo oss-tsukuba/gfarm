@@ -13,14 +13,14 @@
 
 <refnamediv id='name'>
 <refname>gfreg</refname>
-<refpurpose>Gfarm е╒ебедеые╖е╣е╞ерд╪д╬е╒ебедеыд╬е│е╘б╝</refpurpose>
+<refpurpose>Gfarm уГХуВбуВдуГлуВ╖уВ╣уГЖуГауБ╕уБоуГХуВбуВдуГлуБоуВ│уГФуГ╝</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfreg</command>
     <group choice='opt'>
-      <arg choice='plain'>-h <replaceable>е╒ебедеые╖е╣е╞ере╬б╝е╔</replaceable></arg>
+      <arg choice='plain'>-h <replaceable>уГХуВбуВдуГлуВ╖уВ╣уГЖуГауГОуГ╝уГЙ</replaceable></arg>
     </group>
     <arg choice='plain'><replaceable>localfile</replaceable></arg>
     <arg choice='plain'><replaceable>Gfarm-URL</replaceable></arg>
@@ -31,10 +31,10 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para>localfile д╟╗╪─ъд╡дьдые╒ебедеыдЄ Gfarmе╒ебедеые╖е╣е╞ер╛хд╬
-Gfarm-URL д╦е│е╘б╝д╖д▐д╣бе
-Gfarm-URL д╟д╧ Gfarmе╒ебедеые╖е╣е╞ер╛хд╬└ф┬╨е╤е╣╠╛д╬д█длбв
-gfarm://metaserver:port/path/name ╖┴╝░д╟д╬╗╪─ъдм▓─╟╜д╟д╣бг
+<para>localfile уБзцМЗхоЪуБХуВМуВЛуГХуВбуВдуГлуВТ GfarmуГХуВбуВдуГлуВ╖уВ╣уГЖуГаф╕КуБо
+Gfarm-URL уБлуВ│уГФуГ╝уБЧуБ╛уБЩя╝О
+Gfarm-URL уБзуБп GfarmуГХуВбуВдуГлуВ╖уВ╣уГЖуГаф╕КуБоч╡╢хп╛уГСуВ╣хРНуБоуБ╗уБЛуАБ
+gfarm://metaserver:port/path/name х╜вх╝ПуБзуБоцМЗхоЪуБМхПпшГ╜уБзуБЩуАВ
 </para>
 
 </refsect1>
@@ -42,15 +42,15 @@ gfarm://metaserver:port/path/name ╖┴╝░д╟д╬╗╪─ъдм▓─╟╜д╟д╣бг
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
-<term><option>-h</option> <parameter>е╒ебедеые╖е╣е╞ере╬б╝е╔</parameter></term>
+<term><option>-h</option> <parameter>уГХуВбуВдуГлуВ╖уВ╣уГЖуГауГОуГ╝уГЙ</parameter></term>
 <listitem>
-<para>╗╪─ъд╖д┐е╒ебедеые╖е╣е╞ере╬б╝е╔д╦е╒ебедеыдЄ║ю└од╖д▐д╣бе</para>
+<para>цМЗхоЪуБЧуБЯуГХуВбуВдуГлуВ╖уВ╣уГЖуГауГОуГ╝уГЙуБлуГХуВбуВдуГлуВТф╜ЬцИРуБЧуБ╛уБЩя╝О</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>░·┐Їеке╫е╖ечеєдЄ╔╜╝ид╖д▐д╣бе</para>
+<para>х╝ХцХ░уВкуГЧуВ╖уГзуГ│уВТшбичд║уБЧуБ╛уБЩя╝О</para>
 </listitem>
 </varlistentry>
 </variablelist>

@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfperf-metadata&nbsp;--&nbsp;Gfarm �᥿�ǡ�������ǽ¬���Ԥ���</DIV
+>gfperf-metadata&nbsp;--&nbsp;Gfarm メタデータの性能測定を行う。</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,17 +40,17 @@ CLASS="COMMAND"
 >  [-n, --number <TT
 CLASS="REPLACEABLE"
 ><I
->�ƥ��ȼ»ܿ�</I
+>テスト実施数</I
 ></TT
 >] [-t, --testdir <TT
 CLASS="REPLACEABLE"
 ><I
->�ƥ��ȥǥ��쥯�ȥ�</I
+>テストディレクトリ</I
 ></TT
 >] [-u, --unit <TT
 CLASS="REPLACEABLE"
 ><I
->���Ϥ�ñ��</I
+>出力の単位</I
 ></TT
 >]</P
 ></DIV
@@ -62,12 +62,12 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->���� <CODE
+>引数 <CODE
 CLASS="PARAMETER"
->�ƥ��ȥǥ��쥯�ȥ�</CODE
-> �˥ƥ����ѤΥե������ǥ��쥯�ȥ������������μ¹���ǽ��¬�ꤷ�ޤ���</P
+>テストディレクトリ</CODE
+> にテスト用のファイルやディレクトリを作成し、その実行性能を測定します。</P
 ><P
->¬�ꤹ����ܤϼ����̤�Ǥ���
+>測定する項目は次の通りです。
 <P
 ></P
 ><DIV
@@ -77,136 +77,136 @@ CLASS="VARIABLELIST"
 >create</DT
 ><DD
 ><P
->	gfs_pio_create()�ޤ���creat()����ǽ��¬�ꤷ�ޤ���
-	���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+>	gfs_pio_create()またはcreat()の性能を測定します。
+	出力結果は１回辺りの平均値です。
       </P
 ></DD
 ><DT
 >readdir</DT
 ><DD
 ><P
->	gfs_opendir_caching()����<CODE
+>	gfs_opendir_caching()から<CODE
 CLASS="PARAMETER"
->�ƥ��ȼ»ܿ�</CODE
->ʬgfs_readdir()��Ԥ���gfs_closedir()��¹Ԥ���ޤǤ���ǽ��¬�ꤷ�ޤ���
-	posix�ξ���opendir()����<CODE
+>テスト実施数</CODE
+>分gfs_readdir()を行い、gfs_closedir()を実行するまでの性能を測定します。
+	posixの場合はopendir()から<CODE
 CLASS="PARAMETER"
->�ƥ��ȼ»ܿ�</CODE
->ʬreaddir()��Ԥ���closedir()��¹Ԥ���ޤǤ���ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤Ͼ嵭¬��ˤ����ä����֤�<CODE
+>テスト実施数</CODE
+>分readdir()を行い、closedir()を実行するまでの性能を測定します。
+        出力結果は上記測定にかかった時間を<CODE
 CLASS="PARAMETER"
->�ƥ��ȼ»ܿ�</CODE
->�ǳ�ä�ʿ���ͤǤ���
+>テスト実施数</CODE
+>で割った平均値です，
       </P
 ></DD
 ><DT
 >readdir+stat</DT
 ><DD
 ><P
->	�嵭readdir��¬�����<CODE
+>	上記readdirの測定時に<CODE
 CLASS="PARAMETER"
->�ƥ��ȼ»ܿ�</CODE
->ʬgfs_lstat_cached()�ޤ���lstat()��¹Ԥ������֤�­����¬�ꤷ����ΤǤ���
-        ���Ϸ�̤�¬��ˤ����ä����֤�<CODE
+>テスト実施数</CODE
+>分gfs_lstat_cached()またはlstat()を実行した時間を足して測定したものです。
+        出力結果は測定にかかった時間を<CODE
 CLASS="PARAMETER"
->�ƥ��ȼ»ܿ�</CODE
->�ǳ�ä�ʿ���ͤǤ���
+>テスト実施数</CODE
+>で割った平均値です。
       </P
 ></DD
 ><DT
 >unlink</DT
 ><DD
 ><P
->	gfs_unlink()�ޤ���unlink()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+>	gfs_unlink()またはunlink()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </P
 ></DD
 ><DT
 >mkdir</DT
 ><DD
 ><P
->	gfs_mkdir()�ޤ���mkdir()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+>	gfs_mkdir()またはmkdir()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </P
 ></DD
 ><DT
 >stat</DT
 ><DD
 ><P
->	gfs_lstat()�ޤ���lstat()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+>	gfs_lstat()またはlstat()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </P
 ></DD
 ><DT
 >chmod</DT
 ><DD
 ><P
->	gfs_chmod()�ޤ���chmod()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+>	gfs_chmod()またはchmod()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </P
 ></DD
 ><DT
 >utimes</DT
 ><DD
 ><P
->	gfs_utimes()�ޤ���utimes()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+>	gfs_utimes()またはutimes()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </P
 ></DD
 ><DT
 >rename</DT
 ><DD
 ><P
->	gfs_rename()�ޤ���rename()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+>	gfs_rename()またはrename()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </P
 ></DD
 ><DT
 >symlink</DT
 ><DD
 ><P
->	gfs_symlink()�ޤ���symlink()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+>	gfs_symlink()またはsymlink()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </P
 ></DD
 ><DT
 >readlink</DT
 ><DD
 ><P
->	gfs_readlink()�ޤ���readlink()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+>	gfs_readlink()またはreadlink()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </P
 ></DD
 ><DT
 >setxattr</DT
 ><DD
 ><P
->	gfs_setxattr()�ޤ���setxattr()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+>	gfs_setxattr()またはsetxattr()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </P
 ></DD
 ><DT
 >getxattr</DT
 ><DD
 ><P
->	gfs_getxattr()�ޤ���getxattr()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+>	gfs_getxattr()またはgetxattr()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </P
 ></DD
 ><DT
 >removexattr</DT
 ><DD
 ><P
->	gfs_removexattr()�ޤ���removexattr()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+>	gfs_removexattr()またはremovexattr()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </P
 ></DD
 ><DT
 >rmdir</DT
 ><DD
 ><P
->	gfs_rmdir()�ޤ���rmdir()����ǽ��¬�ꤷ�ޤ���
-        ���Ϸ�̤ϣ����դ��ʿ���ͤǤ���
+>	gfs_rmdir()またはrmdir()の性能を測定します。
+        出力結果は１回辺りの平均値です。
       </P
 ></DD
 ></DL
@@ -231,11 +231,11 @@ CLASS="OPTION"
 >-n, --number</CODE
 > <CODE
 CLASS="PARAMETER"
->�ƥ��ȼ»ܿ�</CODE
+>テスト実施数</CODE
 ></DT
 ><DD
 ><P
->���줾���¬����ܤ��Ф��Ʋ���»ܤ��뤫����ꤷ�ޤ����ǥե���Ȥ�250�Ǥ���</P
+>それぞれの測定項目に対して何回実施するかを指定します。デフォルトは250です。</P
 ></DD
 ><DT
 ><CODE
@@ -243,14 +243,14 @@ CLASS="OPTION"
 >-t, --testdir</CODE
 > <CODE
 CLASS="PARAMETER"
->�ƥ��ȥǥ��쥯�ȥ�</CODE
+>テストディレクトリ</CODE
 ></DT
 ><DD
 ><P
->�ƥ��Ȥ�»ܤ���ǥ��쥯�ȥ����ꤷ�ޤ���
-gfarm url(gfarm:///�ǻϤޤ���)����ꤷ����硢������gfarm��Υǥ��쥯�ȥ���Ф���libgfarm�δؿ�����Ѥ���������ǽ��¬�ꤷ�ޤ���
-file url(file:///�ǻϤޤ���)����ꤷ����硢������unix�ե����륷���ƥ���posix�δؿ�����Ѥ���������ǽ��¬�ꤷ�ޤ���
-�ǥե���Ȥ�gfarm:///tmp�Ǥ���</P
+>テストを実施するディレクトリを指定します。
+gfarm url(gfarm:///で始まるもの)を指定した場合、該当のgfarm上のディレクトリに対してlibgfarmの関数を使用した場合の性能を測定します。
+file url(file:///で始まるもの)を指定した場合、該当のunixファイルシステム上にposixの関数を使用した場合の性能を測定します。
+デフォルトはgfarm:///tmpです。</P
 ></DD
 ><DT
 ><CODE
@@ -258,11 +258,11 @@ CLASS="OPTION"
 >-u, --uinit</CODE
 > <CODE
 CLASS="PARAMETER"
->���Ϥ�ñ��</CODE
+>出力の単位</CODE
 ></DT
 ><DD
 ><P
->ops(operations per second)�ޤ���usec����ꤷ�ޤ������ꤷ��ñ�̤ǽ��Ϥ��֤��ޤ����ǥե���Ȥ�ops�Ǥ���</P
+>ops(operations per second)またはusecを指定します。指定した単位で出力を返します。デフォルトはopsです。</P
 ></DD
 ></DL
 ></DIV

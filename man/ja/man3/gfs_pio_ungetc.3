@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_PIO_UNGETC" "3" "18 March 2003" "Gfarm" ""
 .SH NAME
-gfs_pio_ungetc \- �ɤ߹����ʸ�����᤹
+gfs_pio_ungetc \- 読み込んだ文字を戻す
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,21 +14,21 @@ int gfs_pio_ungetc (GFS_File \fIgf\fB, int \fIc\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-�ե�����
+ファイル
 \fIgf\fR
-�����ɤ߹����ʸ��
+から読み込んだ文字
 \fIc\fR
-���ɤ߹��ޤʤ��ä����Ȥˤ��ޤ���
+を、読み込まなかったことにします。
 .SH "RETURN VALUES"
 .TP
 \fBEOF\fR
-gfs_pio_ungetc() �ϡ��ؿ� gfs_pio_getc(3) �θƤӤ�����ľ��ˤ���
-�Ƥ֤��Ȥ��Ǥ��ޤ��󡣤��������ȿ������硢
+gfs_pio_ungetc() は、関数 gfs_pio_getc(3) の呼びだしの直後にしか
+呼ぶことができません。この制約に反した場合、
 EOF
-�򥨥顼�Ȥ����֤��ޤ���
+をエラーとして返します。
 .TP
-\fB����¾\fR
-����˽�������λ�������Ȥ򼨤��ޤ���
+\fBその他\fR
+正常に処理が完了したことを示します。
 .SH "SEE ALSO"
 .PP
 \fBgfs_pio_create\fR(3),

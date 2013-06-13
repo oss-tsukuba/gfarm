@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFARM_URL_HOSTS_SCHEDULE" "3" "18 March 2003" "Gfarm" ""
 .SH NAME
-gfarm_url_hosts_schedule \- gfarm �������򥹥����塼�뤹��
+gfarm_url_hosts_schedule \- gfarm タスクをスケジュールする
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,27 +14,27 @@ char *gfarm_url_hosts_schedule (char * \fIgfarm_url\fB, char * \fIoption\fB, int
 \fR
 .SH "DESCRIPTION"
 .PP
-���ꤷ�� Gfarm URL �򥢥��������륿������¹Ԥ���Τ�Ŭ����
-�ۥ��Ȥ������
+指定した Gfarm URL をアクセスするタスクを実行するのに適した
+ホストの配列を
 \fIhostsp\fR
-�λؤ�����֤��ޤ����ۥ��ȿ���
+の指す先に返します。ホスト数は
 \fInhostsp\fR
-�λؤ�����֤�ޤ���
-�����������ۥ��Ȥ������ gfarm_strings_free_deeply() ���Ѥ��Ʋ���
-����ɬ�פ�����ޤ���
+の指す先に返ります。
+ここで得たホストの配列は gfarm_strings_free_deeply() を用いて解放
+する必要があります。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "NOTES"
 .PP
-���� 
+引数 
 \fIoption\fR
-�ˤϡ��������塼��󥰤˴ؤ��륪�ץ�������ꤷ�ޤ�����
-���ߤμ����Ǥϡ����ΰ��������Ѥ���Ƥ��ޤ���
+には、スケジューリングに関するオプションを指定しますが、
+現在の実装では、この引数は利用されていません。

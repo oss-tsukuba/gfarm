@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_closedir</refname>
-<refpurpose>�ǥ��쥯�ȥ�򥯥���������</refpurpose>
+<refpurpose>ディレクトリをクローズする</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -32,9 +32,9 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>����
+<para>引数
 <parameter>dir</parameter>
-�ǻ��ꤷ���ǥ��쥯�ȥ�򥯥��������ޤ���</para>
+で指定したディレクトリをクローズします。</para>
 
 </refsect1>
 
@@ -43,13 +43,13 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

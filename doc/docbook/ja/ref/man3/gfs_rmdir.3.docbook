@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_rmdir</refname>
-<refpurpose>�ǥ��쥯�ȥ���</refpurpose>
+<refpurpose>ディレクトリ削除</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -32,9 +32,9 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>����
+<para>引数
 <parameter>gfarm_url</parameter>
-�˻��ꤷ��̾���Υǥ��쥯�ȥ�������ޤ���</para>
+に指定した名前のディレクトリを削除します。</para>
 
 </refsect1>
 
@@ -43,14 +43,14 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 
@@ -58,29 +58,29 @@
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
 <para><parameter>gfarm_url</parameter>
-�οƥǥ��쥯�ȥ�ؽ񤭹��ߥ����������븢�¤�����ޤ���</para>
+の親ディレクトリへ書き込みアクセスする権限がありません。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_DIRECTORY_NOT_EMPTY</constant></term>
 <listitem>
-<para>���ꤵ�줿�ǥ��쥯�ȥ꤬�����ǤϤ���ޤ���</para>
+<para>指定されたディレクトリが、空ではありません。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
-<para>���ꤵ�줿�ե����뤬¸�ߤ��ޤ���</para>
+<para>指定されたファイルが存在しません。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
 <listitem>
-<para>���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤϥǥ��쥯�ȥ�Ǥʤ��ä����Ȥ�
-�����ޤ���</para>
+<para>指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。</para>
 </listitem>
 </varlistentry>
 
@@ -88,15 +88,15 @@
 <varlistentry>
 <term><constant>GFARM_ERR_READ_ONLY_FILE_SYSTEM</constant></term>
 <listitem>
-<para>���ꤷ���ѥ�̾���ɤ߹������ѥե����륷���ƥ��ˤ���ޤ���</para>
+<para>指定したパス名は読み込み専用ファイルシステム上にあります。</para>
 </listitem>
 </varlistentry>
 -->
 
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

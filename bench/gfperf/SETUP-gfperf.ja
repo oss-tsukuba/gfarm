@@ -1,50 +1,50 @@
-                        ��ǽ¬��ġ���Ƴ������
+                        性能測定ツール導入手順書
 
-1. �Ϥ����
-   �ܥɥ�����ȤǤ���ǽ¬��ġ����Ƴ�����ˤĤ��ƽҤ٤ޤ���
+1. はじめに
+   本ドキュメントでは性能測定ツールの導入手順について述べます。
 
-1.1 ��������
-   ��ǽ¬��ġ���Ǥϰʲ��Υ��եȥ���������Ѥ��ޤ���
-   ͽ�ᥤ�󥹥ȡ��뤷�Ƥ����Ƥ���������
+1.1 事前準備
+   性能測定ツールでは以下のソフトウェアを使用します。
+   予めインストールしておいてください。
 
    ruby 1.8
-   ruby-sqlite3 (Redhat, CentOS�ξ��EPEL��ݥ��ȥ꤬ɬ��)
+   ruby-sqlite3 (Redhat, CentOSの場合EPELリポジトリが必要)
    apache 2.2
-   php 5.1�ʾ�
+   php 5.1以上
    php-pdo
    sqlite3
    gnuplot
 
-2. ���󥹥ȡ�����ˡ
-   Gfarm�Υ��󥹥ȡ�����ˡ�˽������Ȥ�gfperf�Υ��ޥ�ɰ켰��ɸ��ǥ��󥹥ȡ���
-   ����ޤ����⤷�����󥹥ȡ��뤵��ʤ����ˤ� bench/gfperf �Υǥ��쥯�ȥ��
-   make install��¹Ԥ��뤳�Ȥ�configure�ǻ��ꤷ�����󥹥ȡ�����إ��󥹥ȡ���
-   ����ޤ���
+2. インストール方法
+   Gfarmのインストール方法に従うことでgfperfのコマンド一式が標準でインストール
+   されます。もし、インストールされない場合には bench/gfperf のディレクトリで
+   make installを実行することでconfigureで指定したインストール先へインストール
+   されます。
 
-3. WEB UI�Υ��󥹥ȡ�����ˡ
-   <gfarm���󥹥ȡ���ǥ��쥯�ȥ�>/share/gfarm/gfperf-web ��
-   ���󥹥ȡ��뤵��Ƥ���php�ե�����켰��apache��DocumentRoot�ʲ���
-   Ŭ���ʥǥ��쥯�ȥ�˥��ԡ����ޤ���
-   ���ԡ����줿�ե�����ڤӤ��Υ��ԡ���ǥ��쥯�ȥ��apache��ͭ�Ȥ��ޤ���
+3. WEB UIのインストール方法
+   <gfarmインストールディレクトリ>/share/gfarm/gfperf-web に
+   インストールされているphpファイル一式をapacheのDocumentRoot以下の
+   適当なディレクトリにコピーします。
+   コピーされたファイル及びそのコピー先ディレクトリはapache所有とします。
 
-   ���ԡ���� config.php �򼡤��̤��Խ����ޤ���
+   コピー先の config.php を次の通り編集します。
 
-    GNUPLOT  : gnuplot�Υ��ޥ�ɥѥ��򵭺ܤ��ޤ���
-    DATABASE : gfperf.rb����̤�񤭽Ф�Database�ե�����Υѥ�̾�򵭺ܤ��ޤ���
-               ���Υե������WEB�����Фθ��¤��ɤ߹��ߤ��Ǥ��ʤ��Ƥ�
-               �ʤ�ޤ���
-    TIMEZONE : php�ץ������Υ����ॾ��������ꤷ�ޤ���
-               ���ܹ���ξ�硢Asia/Tokyo�ˤʤ�ޤ���
-               ����ʳ����ϰ�ξ�硢
-               ����URL�������ꤹ��٤��ͤ�Ĵ�٤Ƥ���������
+    GNUPLOT  : gnuplotのコマンドパスを記載します。
+    DATABASE : gfperf.rbが結果を書き出すDatabaseファイルのパス名を記載します。
+               このファイルはWEBサーバの権限で読み込みができなくては
+               なりません。
+    TIMEZONE : phpプログラムのタイムゾーンを設定します。
+               日本国内の場合、Asia/Tokyoになります。
+               それ以外の地域の場合、
+               次のURLから設定するべき値を調べてください。
                http://php.net/manual/ja/timezones.php
-    CONFIG_DB: WEB�����Ф�������Databse�Υե�����ѥ�����ꤷ�ޤ���
-               ���Υե�����ڤӥե�������Ǽ����ǥ��쥯�ȥ��WEB�����Ф�
-               ���¤ǽ񤭤��߲�ǽ�Ǥʤ��ƤϤʤ�ޤ���
-               �ޤ��������ǻ��ꤷ���ե�����Ϻǽ��index.php�˥������������ä�
-               ���˺�������ޤ���
+    CONFIG_DB: WEBサーバの設定用Databseのファイルパスを指定します。
+               このファイル及びファイルを格納するディレクトリはWEBサーバの
+               権限で書きこみ可能でなくてはなりません。
+               また、ここで指定したファイルは最初にindex.phpにアクセスがあった
+               時に作成されます。
 
-    �嵭���꤬���ä����Ȥ�index.php�˥����������뤳�Ȥ�WEB UI��������뤳�Ȥ�
-    �Ǥ��ޤ���
+    上記設定が終ったあとでindex.phpにアクセスすることでWEB UIを閲覧することが
+    できます。
 
-�ʾ�
+以上

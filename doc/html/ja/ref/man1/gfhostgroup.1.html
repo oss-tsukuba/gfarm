@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfhostgroup&nbsp;--&nbsp;Gfarm �ۥ��ȥ��롼�״������ޥ��</DIV
+>gfhostgroup&nbsp;--&nbsp;Gfarm ホストグループ管理コマンド</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -105,31 +105,31 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfhostgroup</B
-> ��Gfarm �ե����륷���ƥ�ˤ����� Gfarm �ۥ��ȥ��롼��
-�ʤ�����<B
+> はGfarm ファイルシステムにおける Gfarm ホストグループ
+（いわゆる<B
 CLASS="COMMAND"
->�ե����륷���ƥ�Ρ��ɥ��롼��</B
-> ��ά���� <B
+>ファイルシステムノードグループ</B
+> 、略して <B
 CLASS="COMMAND"
->fsn ���롼��</B
+>fsn グループ</B
 >
-�ȸƤФ���Ρˤδ�����Ԥ��ޤ����ۥ��ȥ��롼�פ�<B
+と呼ばれるもの）の管理を行います。ホストグループは<B
 CLASS="COMMAND"
->��ץꥱ�������°�����ˤ���
-�ե������ץꥱ�������</B
->�˻��Ѥ���ޤ���</P
+>レプリケーション属性を基にした
+ファイルレプリケーション</B
+>に使用されます。</P
 ><P
->�ǥե���ȤǤ���Ͽ�ѤߤΥۥ��ȥ��롼�פ򤹤٤�ɽ�����ޤ���
-�ۥ��ȥ��롼�� ��ɽ���ϤɤΥ桼���Ǥ�¹ԤǤ��ޤ���
+>デフォルトでは登録済みのホストグループをすべて表示します。
+ホストグループ の表示はどのユーザでも実行できます。
 <B
 CLASS="COMMAND"
 >-s</B
-> ���ץ����ˤ��ۥ��ȥ��롼�פؤΥۥ����ɲäȡ�
+> オプションによるホストグループへのホスト追加と、
 <B
 CLASS="COMMAND"
 >-r</B
-> ���ץ����ˤ��ۥ��ȥ��롼�פ���Υۥ��Ȥκ����
-Gfarm �����ԤΤߤ��¹ԤǤ��ޤ���</P
+> オプションによるホストグループからのホストの削除は
+Gfarm 管理者のみが実行できます。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -150,9 +150,9 @@ CLASS="OPTION"
 > path</DT
 ><DD
 ><P
->    ���Υ��ޥ�ɤ�������������᥿�ǡ��������Ф����ꤹ�뤿��Υѥ�̾
-    �ޤ��� Gfarm URL ����ꤷ�ޤ�����ά�������ϡ�
-    ��/�פ���ꤷ���Τ�Ʊ����̣�ˤʤ�ޤ��� 
+>    このコマンドがアクセスするメタデータサーバを特定するためのパス名
+    または Gfarm URL を指定します。省略した場合は、
+    「/」を指定したのと同じ意味になります。 
       </P
 ></DD
 ><DT
@@ -162,7 +162,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->    ���ꤷ���ۥ��Ȥ�ۥ��ȥ��롼�פ��ɲä��ޤ���
+>    指定したホストをホストグループに追加します。
       </P
 ></DD
 ><DT
@@ -172,7 +172,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->    ���ꤷ���ۥ��Ȥ�ۥ��ȥ��롼�פ��������ޤ��� 
+>    指定したホストをホストグループから削除します。 
       </P
 ></DD
 ></DL

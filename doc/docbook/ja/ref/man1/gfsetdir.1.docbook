@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfsetdir</refname>
-<refpurpose>Gfarm ��ȥǥ��쥯�ȥ���ѹ����륳�ޥ�������Ϥ��롣</refpurpose>
+<refpurpose>Gfarm 作業ディレクトリを変更するコマンド列を出力する。</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -22,38 +22,38 @@
       <arg choice='plain'>-s</arg>
       <arg choice='plain'>-c</arg>
     </group>
-    <arg choice='opt'><replaceable>�ǥ��쥯�ȥ�</replaceable></arg>
+    <arg choice='opt'><replaceable>ディレクトリ</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>Gfarm ��ȥǥ��쥯�ȥ�� ���ꤷ���ǥ��쥯�ȥ���ѹ����륷���륳
-�ޥ�ɤ�ɸ����Ϥ˽��Ϥ��ޤ����ǥ��쥯�ȥ����ꤷ�ʤ����ϡ��桼���� 
-Gfarm �ۡ���ǥ��쥯�ȥ�Ǥ���
-gfarm:/<replaceable>�������Х�桼��</replaceable> ���ѹ�����
-���ޥ�ɤ���Ϥ��ޤ���
+<para>Gfarm 作業ディレクトリを 指定したディレクトリに変更するシェルコ
+マンドを標準出力に出力します。ディレクトリを指定しない場合は、ユーザの 
+Gfarm ホームディレクトリである
+gfarm:/<replaceable>グローバルユーザ</replaceable> に変更する
+コマンドを出力します。
 </para>
 <para>
-�桼�������Ѥ��Ƥ��륷�����ưŪ��Ƚ�ꤷ�Ƥ��Υ����뤬�¹Բ�ǽ��
-���ޥ�ɤ���Ϥ��ޤ���
+ユーザが使用しているシェルを自動的に判定してそのシェルが実行可能な
+コマンドを出力します。
 </para>
 <para>
-���ϥ��ޥ�ɤ�¹Ԥ��� Gfarm ��ȥǥ��쥯�ȥ���ѹ�����
+出力コマンドを実行して Gfarm 作業ディレクトリを変更する
 <command>gfcd</command>
-�����Ѥ��뤿��ˡ��ƥ桼���Υ���������ե�����˰ʲ���������ɲä���
-����������
+を利用するために、各ユーザのシェル設定ファイルに以下の定義を追加して
+ください。
 </para>
 <variablelist>
   <varlistentry>
-    <term>Bourne shell �ϥ�����ξ��</term>
+    <term>Bourne shell 系シェルの場合</term>
     <listitem>
       <screen>gfcd() { eval "`gfsetdir $1`"; }</screen>
     </listitem>
   </varlistentry>
   <varlistentry>
-    <term>csh  �ϥ�����ξ��</term>
+    <term>csh  系シェルの場合</term>
     <listitem>
       <screen>alias gfcd 'eval `gfsetdir \!*`'</screen>
     </listitem>
@@ -66,19 +66,19 @@ gfarm:/<replaceable>�������Х�桼��</replaceable> ���ѹ�����
 <varlistentry>
 <term><option>-s</option></term>
 <listitem>
-<para>Bourne shell �ϥ������ѤΥ��ޥ�ɤ���Ϥ��ޤ���</para>
+<para>Bourne shell 系シェル用のコマンドを出力します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><option>-c</option></term>
 <listitem>
-<para>csh �ϥ������ѤΥ��ޥ�ɤ���Ϥ��ޤ���</para>
+<para>csh 系シェル用のコマンドを出力します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

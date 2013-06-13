@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfgroup</refname>
-<refpurpose>Gfarm ���롼�״������ޥ��</refpurpose>
+<refpurpose>Gfarm グループ管理コマンド</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -48,12 +48,12 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para>Gfarm �ե����륷���ƥ�ˤ����륰�롼�״�����Ԥ��ޤ���
-�ǥե���ȤǤ�����Ͽ���롼�פ�ɽ�����ޤ���
-���롼��̾�����ꤵ�줿�顤���ꤵ�줿���롼�פ�ɽ�����ޤ���
-Gfarm�ե����륷���ƥ�δ����Ԥϡ�-c��-m��-d
-���ץ�������ꤹ�뤳�Ȥˤ�ꡤ���줾�쥰�롼�׺�����
-���롼�ץ����ѹ������롼�׺����Ԥ����Ȥ��Ǥ��ޤ���
+<para>Gfarm ファイルシステムにおけるグループ管理を行います．
+デフォルトでは全登録グループを表示します．
+グループ名が指定されたら，指定されたグループを表示します．
+Gfarmファイルシステムの管理者は，-c，-m，-d
+オプションを指定することにより，それぞれグループ作成，
+グループメンバ変更，グループ削除を行うことができます．
 </para>
 
 </refsect1>
@@ -63,12 +63,12 @@ Gfarm�ե����륷���ƥ�δ����Ԥϡ�-c��-m��-d
 <variablelist>
 
 <varlistentry>
-  <term><option>-P</option> <parameter>�ѥ�̾</parameter></term>
+  <term><option>-P</option> <parameter>パス名</parameter></term>
   <listitem>
     <para>
-	���Υ��ޥ�ɤ�������������᥿�ǡ��������Ф����ꤹ�뤿���
-	�ѥ�̾�ޤ��� Gfarm URL ����ꤷ�ޤ���
-	��ά�������ϡ���/�פ���ꤷ���Τ�Ʊ����̣�ˤʤ�ޤ���
+	このコマンドがアクセスするメタデータサーバを特定するための
+	パス名または Gfarm URL を指定します。
+	省略した場合は、「/」を指定したのと同じ意味になります。
     </para>
   </listitem>
 </varlistentry>
@@ -76,7 +76,7 @@ Gfarm�ե����륷���ƥ�δ����Ԥϡ�-c��-m��-d
 <varlistentry>
 <term><option>-l</option></term>
 <listitem>
-<para>���롼��̾�ȥ��롼�ץ��Фξ����ɽ�����ޤ���</para>
+<para>グループ名とグループメンバの情報を表示します．</para>
 </listitem>
 </varlistentry>
 
@@ -84,9 +84,9 @@ Gfarm�ե����륷���ƥ�δ����Ԥϡ�-c��-m��-d
 <term><option>-c</option></term>
 <listitem>
 <para>
-���롼�פκ�����Ԥ��ޤ���
-��Ͽ�ˤϽ�����롼�ץ��Ф���ꤹ�뤳�Ȥ��Ǥ��ޤ���
-Gfarm�δ����Ԥ��¹Բ�ǽ�Ǥ���
+グループの作成を行います．
+登録には初期グループメンバも指定することができます．
+Gfarmの管理者が実行可能です．
 </para>
 </listitem>
 </varlistentry>
@@ -95,9 +95,9 @@ Gfarm�δ����Ԥ��¹Բ�ǽ�Ǥ���
 <term><option>-m</option></term>
 <listitem>
 <para>
-���롼�ץ��Ф��ѹ���Ԥ��ޤ���
-�ѹ����������롼��̾�ȥ��ФΥꥹ�Ȼ��ꤷ�ޤ���
-Gfarm�δ����Ԥ��¹Բ�ǽ�Ǥ���
+グループメンバの変更を行います．
+変更したいグループ名とメンバのリスト指定します．
+Gfarmの管理者が実行可能です．
 </para>
 </listitem>
 </varlistentry>
@@ -106,8 +106,8 @@ Gfarm�δ����Ԥ��¹Բ�ǽ�Ǥ���
 <term><option>-d</option></term>
 <listitem>
 <para>
-���롼�פ�õ�ޤ���
-Gfarm�δ����Ԥ��¹Բ�ǽ�Ǥ���
+グループを消去します．
+Gfarmの管理者が実行可能です．
 </para>
 </listitem>
 </varlistentry>
@@ -115,7 +115,7 @@ Gfarm�δ����Ԥ��¹Բ�ǽ�Ǥ���
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します．</para>
 </listitem>
 </varlistentry>
 

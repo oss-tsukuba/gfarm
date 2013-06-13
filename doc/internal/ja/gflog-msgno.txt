@@ -1,27 +1,27 @@
-�� gflog��å������ֹ�γ�꿶����
+■ gflogメッセージ番号の割り振り手順
 
-��å������ֹ�γ�꿶��ϡ�make msgno �Ǽ¹Ԥ���ޤ�����å������ֹ�
-�γ�꿶��ϥ���ѥ����оݥե�����ˤĤ��ƹԤ���Τǡ� configure ��
-��ǽ��ͭ���ˤʤäƤ��ʤ����ֹ�γ�꿶�꤬�Ԥ��ʤ��ե����뤬�Ǥ����
-�����դ�ɬ�פǤ���
+メッセージ番号の割り振りは、make msgno で実行されます。メッセージ番号
+の割り振りはコンパイル対象ファイルについて行われるので、 configure で
+機能が有効になっていないと番号の割り振りが行われないファイルができるの
+で注意が必要です。
 
-��å������ֹ�γ�꿶��ϰʲ��μ��Ǽ¹Ԥ��ޤ���
+メッセージ番号の割り振りは以下の手順で実行します。
 
-  + ��ݥ��ȥ�Υ���󥰥��ԡ��򥢥åץǡ��Ȥ���(svn update)��
-  + ����եꥯ�ȡ��ѹ����ʤ����Ȥ��ǧ����(svn status)��
-  + configure��¹Ԥ��롣
-    - globus, LDAP, postgreSQL��ͭ���ˤʤäƤ��뤳�Ȥ��ǧ���롣
-    - --with-private-srcdir�ϻ��ꤷ�ʤ��� 
-  + �������Υȥåץǥ��쥯�ȥ��make msgno���ޥ�ɤ�¹Ԥ��롣
-  + GFARM_MSG_UNFIXED��.msgno�Υե�����ʳ����ѹ�����Ƥ��ʤ����Ȥ��ǧ���롣
-  + �ѹ����줿�����ɤ�makes/.msgno�򥳥ߥåȤ��롣
+  + レポジトリのワーキングコピーをアップデートする(svn update)。
+  + コンフリクト、変更がないことを確認する(svn status)。
+  + configureを実行する。
+    - globus, LDAP, postgreSQLが有効になっていることを確認する。
+    - --with-private-srcdirは指定しない。 
+  + ソースのトップディレクトリでmake msgnoコマンドを実行する。
+  + GFARM_MSG_UNFIXEDと.msgnoのファイル以外が変更されていないことを確認する。
+  + 変更されたコードとmakes/.msgnoをコミットする。
 
-gfarm2fs�ˤĤ��Ƥ�Ʊ�ͤ˰ʲ��μ��Ǽ¹Ԥ��ޤ���
+gfarm2fsについても同様に以下の手順で実行します。
 
-  + ��ݥ��ȥ�Υ���󥰥��ԡ��򥢥åץǡ��Ȥ���(svn update)��
-  + ����եꥯ�ȡ��ѹ����ʤ����Ȥ��ǧ����(svn status)��
-  + configure��¹Ԥ��롣
-    - --with-private-srcdir�ϻ��ꤷ�ʤ��� 
-  + �������Υȥåץǥ��쥯�ȥ��make msgno���ޥ�ɤ�¹Ԥ��롣
-  + GFARM_MSG_UNFIXED��.msgno�Υե�����ʳ����ѹ�����Ƥ��ʤ����Ȥ��ǧ���롣
-  + �ѹ����줿�����ɤ�msgno/.msgno�򥳥ߥåȤ��롣
+  + レポジトリのワーキングコピーをアップデートする(svn update)。
+  + コンフリクト、変更がないことを確認する(svn status)。
+  + configureを実行する。
+    - --with-private-srcdirは指定しない。 
+  + ソースのトップディレクトリでmake msgnoコマンドを実行する。
+  + GFARM_MSG_UNFIXEDと.msgnoのファイル以外が変更されていないことを確認する。
+  + 変更されたコードとmsgno/.msgnoをコミットする。

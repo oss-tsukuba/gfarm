@@ -12,23 +12,23 @@
 
 <refnamediv id='name'>
 <refname>glogdump</refname>
-<refpurpose>GLogger ╓╛╫пно╓╥╓©╔у╔║╔╓╔К╓Р╡дфи╓к╓╧╓К</refpurpose>
+<refpurpose>GLogger Ц│▄Е┤╨Е┼⌡Ц│≈Ц│÷Ц┐∙Ц┌║Ц┌╓Ц┐╚Ц┌▓Е▐╞Х╙╜Ц│╚Ц│≥Ц┌▀</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>glogdump</command>
-    <arg choice='opt'><replaceable>╔у╔║╔╓╔К</replaceable></arg>
+    <arg choice='opt'><replaceable>Ц┐∙Ц┌║Ц┌╓Ц┐╚</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>GLogger ╓╛╫пно╓╥╓©╔у╔║╔╓╔К╓Рфи╓А╓К╓Х╓╕╓к╓╥╓фи╦╫Ю╫пно╓ь╫пно╓╥╓ч╓╧║ё</para>
+<para>GLogger Ц│▄Е┤╨Е┼⌡Ц│≈Ц│÷Ц┐∙Ц┌║Ц┌╓Ц┐╚Ц┌▓Х╙╜Ц┌│Ц┌▀Ц┌┬Ц│├Ц│╚Ц│≈Ц│╕Ф╗≥Ф╨√Е┤╨Е┼⌡Ц│╦Е┤╨Е┼⌡Ц│≈Ц│╬Ц│≥Ц─┌</para>
 
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
-<para>╓й╓╥</para>
+<para>Ц│╙Ц│≈</para>
 </refsect1>
 
 <refsect1 id='see-also'><title>SEE ALSO</title>

@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfhostgroup</refname>
-<refpurpose>Gfarm �ۥ��ȥ��롼�״������ޥ��</refpurpose>
+<refpurpose>Gfarm ホストグループ管理コマンド</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -47,18 +47,18 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 
 <para>
-<command>gfhostgroup</command> ��Gfarm �ե����륷���ƥ�ˤ����� Gfarm �ۥ��ȥ��롼��
-�ʤ�����<command>�ե����륷���ƥ�Ρ��ɥ��롼��</command> ��ά���� <command>fsn ���롼��</command>
-�ȸƤФ���Ρˤδ�����Ԥ��ޤ����ۥ��ȥ��롼�פ�<command>��ץꥱ�������°�����ˤ���
-�ե������ץꥱ�������</command>�˻��Ѥ���ޤ���
+<command>gfhostgroup</command> はGfarm ファイルシステムにおける Gfarm ホストグループ
+（いわゆる<command>ファイルシステムノードグループ</command> 、略して <command>fsn グループ</command>
+と呼ばれるもの）の管理を行います。ホストグループは<command>レプリケーション属性を基にした
+ファイルレプリケーション</command>に使用されます。
 </para>
 
 <para>
-�ǥե���ȤǤ���Ͽ�ѤߤΥۥ��ȥ��롼�פ򤹤٤�ɽ�����ޤ���
-�ۥ��ȥ��롼�� ��ɽ���ϤɤΥ桼���Ǥ�¹ԤǤ��ޤ���
-<command>-s</command> ���ץ����ˤ��ۥ��ȥ��롼�פؤΥۥ����ɲäȡ�
-<command>-r</command> ���ץ����ˤ��ۥ��ȥ��롼�פ���Υۥ��Ȥκ����
-Gfarm �����ԤΤߤ��¹ԤǤ��ޤ���
+デフォルトでは登録済みのホストグループをすべて表示します。
+ホストグループ の表示はどのユーザでも実行できます。
+<command>-s</command> オプションによるホストグループへのホスト追加と、
+<command>-r</command> オプションによるホストグループからのホストの削除は
+Gfarm 管理者のみが実行できます。
 </para>
 
 </refsect1>
@@ -70,9 +70,9 @@ Gfarm �����ԤΤߤ��¹ԤǤ��ޤ���
     <term><option>-P</option> path</term>
     <listitem>
       <para>
-    ���Υ��ޥ�ɤ�������������᥿�ǡ��������Ф����ꤹ�뤿��Υѥ�̾
-    �ޤ��� Gfarm URL ����ꤷ�ޤ�����ά�������ϡ�
-    ��/�פ���ꤷ���Τ�Ʊ����̣�ˤʤ�ޤ��� 
+    このコマンドがアクセスするメタデータサーバを特定するためのパス名
+    または Gfarm URL を指定します。省略した場合は、
+    「/」を指定したのと同じ意味になります。 
       </para>
     </listitem>
   </varlistentry>
@@ -81,7 +81,7 @@ Gfarm �����ԤΤߤ��¹ԤǤ��ޤ���
     <term><option>-s</option></term>
     <listitem>
       <para>
-    ���ꤷ���ۥ��Ȥ�ۥ��ȥ��롼�פ��ɲä��ޤ���
+    指定したホストをホストグループに追加します。
       </para>
     </listitem>
   </varlistentry>
@@ -90,7 +90,7 @@ Gfarm �����ԤΤߤ��¹ԤǤ��ޤ���
     <term><option>-r</option></term>
     <listitem>
       <para>
-    ���ꤷ���ۥ��Ȥ�ۥ��ȥ��롼�פ��������ޤ��� 
+    指定したホストをホストグループから削除します。 
       </para>
     </listitem>
   </varlistentry>

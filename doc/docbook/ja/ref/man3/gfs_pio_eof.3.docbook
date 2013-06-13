@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_eof</refname>
-<refpurpose>¥Õ¥¡¥¤¥ëËöÈøÈ½ÊÌ</refpurpose>
+<refpurpose>ãƒ•ã‚¡ã‚¤ãƒ«æœ«å°¾åˆ¤åˆ¥</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -32,9 +32,9 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>¥Õ¥¡¥¤¥ë
+<para>ãƒ•ã‚¡ã‚¤ãƒ«
 <parameter>gf</parameter>
-¤ÎÆÉ¤ß¹þ¤ß½èÍý¤¬¡¢¥Õ¥¡¥¤¥ëËöÈø¤ËÃ£¤·¤¿¤«ÈÝ¤«¤ò¼¨¤·¤Þ¤¹¡£</para>
+ã®èª­ã¿è¾¼ã¿å‡¦ç†ãŒã€ãƒ•ã‚¡ã‚¤ãƒ«æœ«å°¾ã«é”ã—ãŸã‹å¦ã‹ã‚’ç¤ºã—ã¾ã™ã€‚</para>
 
 </refsect1>
 
@@ -43,13 +43,13 @@
 <varlistentry>
 <term><constant>0</constant></term>
 <listitem>
-<para>¤Þ¤ÀËöÈø¤ËÃ£¤·¤Æ¤¤¤Þ¤»¤ó¡£</para>
+<para>ã¾ã æœ«å°¾ã«é”ã—ã¦ã„ã¾ã›ã‚“ã€‚</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>¤½¤ÎÂ¾</term>
+<term>ãã®ä»–</term>
 <listitem>
-<para>¥Õ¥¡¥¤¥ë¤ÎËöÈø¤ËÃ£¤·¤¿¤³¤È¤ò¼¨¤·¤Þ¤¹¡£</para>
+<para>ãƒ•ã‚¡ã‚¤ãƒ«ã®æœ«å°¾ã«é”ã—ãŸã“ã¨ã‚’ç¤ºã—ã¾ã™ã€‚</para>
 </listitem>
 </varlistentry>
 </variablelist>

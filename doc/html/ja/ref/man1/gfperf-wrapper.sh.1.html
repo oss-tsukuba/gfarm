@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfperf-wrapper.sh&nbsp;--&nbsp;Gfarm ���ꤵ�줿ǧ�������ǥ��ޥ�ɵ�ư��Ԥ���</DIV
+>gfperf-wrapper.sh&nbsp;--&nbsp;Gfarm 指定された認証方式でコマンド起動を行う。</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,7 +40,7 @@ CLASS="COMMAND"
 >   sharedsecret | gsi_auth | gsi    <TT
 CLASS="REPLACEABLE"
 ><I
->���ޥ��</I
+>コマンド</I
 ></TT
 > </P
 ></DIV
@@ -52,15 +52,15 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->sharedsecret��gsi_auth�ޤ��ϡ�gsiǧ�ڤΤ����줫��<TT
+>sharedsecret、gsi_authまたは、gsi認証のいずれかで<TT
 CLASS="REPLACEABLE"
 ><I
->���ޥ��</I
+>コマンド</I
 ></TT
->��ư���ޤ���
-ͽ��gfmd�ڤ�gfsd�˳���ǧ�������������������꤬�ʤ���Ƥ���ɬ�פ�����ޤ���</P
+>を起動します。
+予めgfmd及びgfsdに該当認証方式を受け入れる設定がなされている必要があります。</P
 ><P
->�ܥ��ޥ�ɤ�������GFARM_CONFIG_FILE�Ķ��ѿ�����Ѥ��ޤ������˥��åȤ���Ƥ�������ܥ��ޥ�ɤˤ���񤭤���ޤ���</P
+>本コマンドは内部でGFARM_CONFIG_FILE環境変数を使用します。既にセットされている場合は本コマンドにより上書きされます。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -81,7 +81,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->ǧ����������ꤷ�ޤ���</P
+>認証方式を指定します。</P
 ></DD
 ></DL
 ></DIV

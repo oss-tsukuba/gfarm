@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_GLOB_INIT" "3" "02 September 2003" "Gfarm" ""
 .SH NAME
-gfs_glob_init \- �ѥ��Υ����פ��Ǽ�����ΰ����ݤ���
+gfs_glob_init \- パスのタイプを格納する領域を確保する
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,21 +14,21 @@ char *gfs_glob_init (gfs_glob_t * \fIlistp\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-�ѥ�����˥ޥå�����ѥ�̾���������ؿ� gfs_glob(3)��
-�ѥ��Υ����פ��ɲä���ؿ� gfs_glob_add() ���ѥ��Υ����פ�
-��Ǽ���뤿��˻��Ѥ����ΰ��ưŪ�˳��ݤ������Υ��ɥ쥹�����
+パターンにマッチするパス名を取得する関数 gfs_glob(3)、
+パスのタイプを追加する関数 gfs_glob_add() がパスのタイプを
+格納するために使用する領域を動的に確保し、そのアドレスを引数
 \fIlistp\fR
-�����ꤷ�ޤ���
+に設定します。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "SEE ALSO"
 .PP
 \fBgfs_glob\fR(3)

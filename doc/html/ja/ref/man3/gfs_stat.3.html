@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfs_stat&nbsp;--&nbsp;�ե�����°������</DIV
+>gfs_stat&nbsp;--&nbsp;ファイル属性取得</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -88,21 +88,21 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->����
+>引数
 <TT
 CLASS="PARAMETER"
 ><I
 >gfarm_url</I
 ></TT
 >
-�Υե�����°����
+のファイル属性を
 <TT
 CLASS="PARAMETER"
 ><I
 >status</I
 ></TT
 >
-�λؤ���˼������ޤ���
+の指す先に取得します。
 
 <TT
 CLASS="PARAMETER"
@@ -111,9 +111,9 @@ CLASS="PARAMETER"
 ></TT
 ></P
 ><P
->�ˤϡ�ưŪ�˳��ݤ��줿����ؤΥݥ��󥿤��ޤޤ��Τǡ�
-���θ塢gfs_stat_free(3) ��ȤäƤ��Υ�����������ɬ�פ�
-����ޤ���</P
+>には、動的に確保されたメモリへのポインタが含まれるので、
+この後、gfs_stat_free(3) を使ってそのメモリを解放する必要が
+あります。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -134,7 +134,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ｪλ�򼨤��ޤ���</P
+>正常終了を示します。</P
 ></DD
 ><DT
 ><TT
@@ -143,7 +143,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->������­�Τ����������ߤ��ޤ�����</P
+>メモリ不足のため処理を中止しました。</P
 ></DD
 ><DT
 ><TT
@@ -152,7 +152,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->gfmd(8) ���Ф���桼����ǧ�ڤ����Ԥ��ޤ�����</P
+>gfmd(8) に対するユーザー認証が失敗しました。</P
 ></DD
 ><DT
 ><TT
@@ -161,7 +161,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤵ�줿�ѥ��إ����������븢�¤�������ޤ���</P
+>指定されたパスへアクセスする権限が、ありません。</P
 ></DD
 ><DT
 ><TT
@@ -170,7 +170,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤵ�줿�ѥ�̾��¸�ߤ��ޤ���</P
+>指定されたパス名が存在しません。</P
 ></DD
 ><DT
 ><TT
@@ -179,14 +179,14 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤϥǥ��쥯�ȥ�Ǥʤ��ä����Ȥ�
-�����ޤ���</P
+>指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。</P
 ></DD
 ><DT
->����¾</DT
+>その他</DT
 ><DD
 ><P
->�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</P
+>上記以外のエラーが生じたことを示します。</P
 ></DD
 ></DL
 ></DIV

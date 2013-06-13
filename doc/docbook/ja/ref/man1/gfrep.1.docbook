@@ -11,19 +11,19 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfrep</refname>
-<refpurpose>Gfarm �ե������ʣ����������롥</refpurpose>
+<refpurpose>Gfarm ファイルの複製を作成する．</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfrep</command>
     <arg choice='opt'>-mnqvx</arg>
-    <arg choice='opt'>-S <replaceable>ʣ�����ɥᥤ��̾</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>ʣ����ɥᥤ��̾</replaceable></arg>
-    <arg choice='opt'>-h <replaceable>ʣ�����ۥ��Ȼ���ե�����</replaceable></arg>
-    <arg choice='opt'>-H <replaceable>ʣ����ۥ��Ȼ���ե�����</replaceable></arg>
-    <arg choice='opt'>-N <replaceable>ʣ����</replaceable></arg>
-    <arg choice='opt'>-j <replaceable>�����</replaceable></arg>
+    <arg choice='opt'>-S <replaceable>複製元ドメイン名</replaceable></arg>
+    <arg choice='opt'>-D <replaceable>複製先ドメイン名</replaceable></arg>
+    <arg choice='opt'>-h <replaceable>複製元ホスト指定ファイル</replaceable></arg>
+    <arg choice='opt'>-H <replaceable>複製先ホスト指定ファイル</replaceable></arg>
+    <arg choice='opt'>-N <replaceable>複製数</replaceable></arg>
+    <arg choice='opt'>-j <replaceable>並列数</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -31,92 +31,92 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>���� <parameter>path</parameter> �ǻ��ꤷ���ե������ʣ����
-���ꤵ�줿�ۥ��ȷ��ˡ����ꤵ�줿ʣ���ο������������ޤ���
-ʣ���������Υۥ��ȷ������ꤵ�줿��硤
-���Υۥ��ȷ��˥ե������ʣ��������Ȥ��˸¤ꡤ
-ʣ������������ޤ���
-�ۥ��ȷ��ϡ��ɥᥤ��̾�ȥۥ��Ȼ���ե�����ˤ������ǽ�Ǥ�����
-ξ�������ꤵ�줿����ξ���ξ����������ۥ��ȷ������ꤵ�줿���Ȥˤʤ�ޤ���
+<para>引数 <parameter>path</parameter> で指定したファイルの複製を，
+指定されたホスト群に，指定された複製の数だけ作成します．
+複製作成元のホスト群が指定された場合，
+そのホスト群にファイルの複製があるときに限り，
+複製が作成されます．
+ホスト群は，ドメイン名とホスト指定ファイルにより指定可能ですが，
+両方が指定された場合は両方の条件を満たすホスト群が指定されたことになります．
 </para>
-<para><parameter>path</parameter> ���ǥ��쥯�ȥ�ξ�硤
-���Υǥ��쥯�ȥ�ʲ��Υե������ʣ����Ƶ�Ū�˺������ޤ���</para>
+<para><parameter>path</parameter> がディレクトリの場合，
+そのディレクトリ以下のファイルの複製を再帰的に作成します．</para>
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-S</option> <parameter>ʣ�����ɥᥤ��̾</parameter></term>
+<term><option>-S</option> <parameter>複製元ドメイン名</parameter></term>
 <listitem>
 <para>
-�ե�����ʣ�����Υۥ��ȤΥɥᥤ��̾����ꤷ�ޤ���
+ファイル複製元のホストのドメイン名を指定します．
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-D</option> <parameter>ʣ����ɥᥤ��̾</parameter></term>
+<term><option>-D</option> <parameter>複製先ドメイン名</parameter></term>
 <listitem>
 <para>
-�ե�����ʣ��������Υۥ��ȤΥɥᥤ��̾����ꤷ�ޤ���
+ファイル複製作成先のホストのドメイン名を指定します．
 </para>
-<para>���Υ��ץ����� <option>-H</option> ���ץ�������ꤷ�ʤ���硤
-���Ѳ�ǽ�����ۥ��ȷ����оݤȤ��ƥե�����ʣ����������ޤ���
+<para>このオプションも <option>-H</option> オプションも指定しない場合，
+利用可能な全ホスト群を対象としてファイル複製を作成します．
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-h</option> <parameter>ʣ�����ۥ��Ȼ���ե�����</parameter></term>
+<term><option>-h</option> <parameter>複製元ホスト指定ファイル</parameter></term>
 <listitem>
-<para>�ե�����ʣ�����Υۥ���̾�Υꥹ�Ȥ򵭽Ҥ���
-�ե�����̾����ꤷ�ޤ���
-�ۥ���̾�ϡ��ե�������γƹԤ˰�ۥ��Ȥ��ĵ��Ҥ��ޤ���
+<para>ファイル複製元のホスト名のリストを記述した
+ファイル名を指定します．
+ホスト名は，ファイル中の各行に一ホストずつ記述します．
 </para>
 <para>
-�ե�����̾�Ȥ��� ``-'' ����ꤷ����硤ɸ�����Ϥ���ۥ�
-��̾�Υꥹ�Ȥ��ɤ߹��ߤޤ���
+ファイル名として ``-'' を指定した場合，標準入力からホス
+ト名のリストを読み込みます．
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-H</option> <parameter>ʣ����ۥ��Ȼ���ե�����</parameter></term>
+<term><option>-H</option> <parameter>複製先ホスト指定ファイル</parameter></term>
 <listitem>
-<para>�ե������ʣ�����������ۥ���̾�Υꥹ�Ȥ򵭽Ҥ���
-�ե�����̾����ꤷ�ޤ���
-�ۥ���̾�ϡ��ե�������γƹԤ˰�ۥ��Ȥ��ĵ��Ҥ��ޤ���
+<para>ファイルの複製を作成するホスト名のリストを記述した
+ファイル名を指定します．
+ホスト名は，ファイル中の各行に一ホストずつ記述します．
 </para>
 <para>
-�ե�����̾�Ȥ��� ``-'' ����ꤷ����硤ɸ�����Ϥ���ۥ�
-��̾�Υꥹ�Ȥ��ɤ߹��ߤޤ���
+ファイル名として ``-'' を指定した場合，標準入力からホス
+ト名のリストを読み込みます．
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-N</option> <parameter>ʣ����</parameter></term>
+<term><option>-N</option> <parameter>複製数</parameter></term>
 <listitem>
 <para>
-ɬ�פ�ʣ���ο�����ꤷ�ޤ���
-ʣ����ˡ����ꤵ�줿���ʾ��ʣ��������¸�ߤ�����ϡ�
-ʣ���κ���������Ԥ��ޤ���
+必要な複製の数を指定します．
+複製先に，指定された数以上の複製が既に存在する場合は，
+複製の作成も削除も行いません．
 </para>
 <para>
-���Υ��ץ������ά����� <option>-N 1</option>
-�Ȼ��ꤵ�줿��ΤȤߤʤ���ޤ���
+このオプションを省略すると <option>-N 1</option>
+と指定されたものとみなされます．
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-j</option> <parameter>�����</parameter></term>
+<term><option>-j</option> <parameter>並列数</parameter></term>
 <listitem>
-<para>���ꤵ�줿������ǥե�����ʣ����������ޤ���
-���Υ��ץ����� OpenMP C ����ѥ���ǥ���ѥ��뤵�줿�Ȥ���
-�¤�ͭ���Ǥ����ǥե���ȤǤϡ����ꤵ�줿���ե��������
-ʣ�����ۥ��ȿ���ʣ����ۥ��ȿ��Τ����κǾ��Ȥʤ�ޤ���
+<para>指定された並列数でファイル複製を作成します．
+このオプションは OpenMP C コンパイラでコンパイルされたときに
+限り有効です．デフォルトでは，指定された総ファイル数，
+複製元ホスト数，複製先ホスト数のうちの最小となります．
 </para>
 </listitem>
 </varlistentry>
@@ -125,7 +125,7 @@
 <term><option>-m</option></term>
 <listitem>
 <para>
-ʣ���ǤϤʤ���ư��Ԥ��ޤ���
+複製ではなく移動を行います．
 </para>
 </listitem>
 </varlistentry>
@@ -134,8 +134,8 @@
 <term><option>-x</option></term>
 <listitem>
 <para>
-ʣ����ˡ����ꤵ�줿���ʾ��ʣ����¸�ߤ�����ϡ�
-ʣ����õ�����ꤵ�줿���ˤ��ޤ���
+複製先に，指定された数以上の複製が存在する場合は，
+複製を消去し，指定された数にします．
 </para>
 </listitem>
 </varlistentry>
@@ -144,8 +144,8 @@
 <term><option>-n</option></term>
 <listitem>
 <para>
-�ե�����ʣ�������������ե������ɽ�����ޤ���
-�ºݤˤϲ���¹Ԥ���ޤ���
+ファイル複製が作成されるファイルを表示します．
+実際には何も実行されません．
 </para>
 </listitem>
 </varlistentry>
@@ -154,7 +154,7 @@
 <term><option>-q</option></term>
 <listitem>
 <para>
-���顼�ǤϤʤ���å������ν��Ϥ�Ԥ��ޤ���
+エラーではないメッセージの出力を行いません．
 </para>
 </listitem>
 </varlistentry>
@@ -163,7 +163,7 @@
 <term><option>-v</option></term>
 <listitem>
 <para>
-ʣ�������˴ؤ��ơ���Ĺ��ɽ����Ԥ��ޤ���
+複製処理に関して，冗長な表示を行います，
 </para>
 </listitem>
 </varlistentry>
@@ -171,7 +171,7 @@
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します．</para>
 </listitem>
 </varlistentry>
 
@@ -180,8 +180,8 @@
 
 <refsect1 id='bugs'><title>BUGS</title>
 <para>
-ʣ���������Ȥʤ�ۥ��Ȥϡ�
-�ºݤˤ�ʣ���������Ȥ��ƻ��ꤵ�줿�ۥ��ȷ��������Ф��Ȥϸ¤�ޤ���
+複製作成元となるホストは，
+実際には複製作成元として指定されたホスト群から選ばれるとは限りません．
 </para>
 </refsect1>
 </refentry>

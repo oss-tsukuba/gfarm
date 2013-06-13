@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfarm_stringlist_init</refname>
-<refpurpose>stringlist ����������</refpurpose>
+<refpurpose>stringlist を初期化する</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -32,16 +32,16 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>gfarm_stringlist �ϡ�ʸ���������ưŪ���ݤ�������뷿�Ǥ���
-ưŪ�˳��ݤ����Τϡ���������Ǥ��ꡢ�������ǤǤ����ʸ����ˤĤ��Ƥϡ�
-���η��δ������ˤʤ�ޤ���</para>
+<para>gfarm_stringlist は、文字列配列の動的確保を補助する型です。
+動的に確保されるのは、配列だけであり、配列要素である各文字列については、
+この型の管理外になります。</para>
 
-<para>���δؿ��ϡ�
+<para>この関数は、
 <parameter>listp</parameter>
-�λؤ� gfarm_stringlist �����ѿ����������ޤ���</para>
+の指す gfarm_stringlist 型の変数を初期化します。</para>
 
-<para>���η������Ѥ򽪤������ˤϡ�gfarm_stringlist_free() ���Ѥ��ơ�
-ưŪ�˳��ݤ���������������ɬ�פ�����ޤ���</para>
+<para>この型の利用を終えた時には、gfarm_stringlist_free() を用いて、
+動的に確保したメモリを解放する必要があります。</para>
 
 </refsect1>
 
@@ -50,19 +50,19 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

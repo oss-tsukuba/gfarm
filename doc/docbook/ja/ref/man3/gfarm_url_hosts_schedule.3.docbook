@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfarm_url_hosts_schedule</refname>
-<refpurpose>gfarm �������򥹥����塼�뤹��</refpurpose>
+<refpurpose>gfarm タスクをスケジュールする</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -35,14 +35,14 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>���ꤷ�� Gfarm URL �򥢥��������륿������¹Ԥ���Τ�Ŭ����
-�ۥ��Ȥ������
+<para>指定した Gfarm URL をアクセスするタスクを実行するのに適した
+ホストの配列を
 <parameter>hostsp</parameter>
-�λؤ�����֤��ޤ����ۥ��ȿ���
+の指す先に返します。ホスト数は
 <parameter>nhostsp</parameter>
-�λؤ�����֤�ޤ���
-�����������ۥ��Ȥ������ gfarm_strings_free_deeply() ���Ѥ��Ʋ���
-����ɬ�פ�����ޤ���</para>
+の指す先に返ります。
+ここで得たホストの配列は gfarm_strings_free_deeply() を用いて解放
+する必要があります。</para>
 
 </refsect1>
 
@@ -51,29 +51,29 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>����¾</term>
+<term>その他</term>
 <listitem>
-<para>�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</para>
+<para>上記以外のエラーが生じたことを示します。</para>
 </listitem>
 </varlistentry>
 </variablelist>
 </refsect1>
 
 <refsect1 id='notes'><title>NOTES</title>
-<para>���� 
+<para>引数 
 <parameter>option</parameter>
-�ˤϡ��������塼��󥰤˴ؤ��륪�ץ�������ꤷ�ޤ�����
-���ߤμ����Ǥϡ����ΰ��������Ѥ���Ƥ��ޤ���</para>
+には、スケジューリングに関するオプションを指定しますが、
+現在の実装では、この引数は利用されていません。</para>
 </refsect1>
 </refentry>
 

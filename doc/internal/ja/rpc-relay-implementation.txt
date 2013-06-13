@@ -1,327 +1,327 @@
-���졼�� gfmd ����ޥ����� gfmd �ؤ� RPC ��졼��ǽ�μ����ؿˤˤĤ���
+スレーブ gfmd からマスター gfmd への RPC リレー機能の実装指針について
 =====================================================================
 
-�ܽ�ϡ����졼�� gfmd ����ޥ����� gfmd �ؤ� RPC ��졼��ǽ��¸�����
-�������ä�ɬ�פȤʤ롢�� GFM ���ޥ�� �ν����ؿ��Υ����������ɤν���
-�ˤĤ��ơ�����Ū�ʽ��������Τ򵭤�����ΤǤ��롣
+本書は、スレーブ gfmd からマスター gfmd への RPC リレー機能を実現する
+に当たって必要となる、各 GFM コマンド の処理関数のソースコードの修正
+について、具体的な修正の要領を記したものである。
 
 
-��ǽ�γ��פȼ����ѥ�����
+機能の概要と実装パターン
 ------------------------
-�� GFM ���ޥ�� �ν����ؿ��Ǥμ������б��ϡ��ʲ��� 3 �ѥ������ʬ����
-���줾��ۤʤ����ˤǽ�����Ԥ���
+各 GFM コマンド の処理関数での実装の対応は、以下の 3 パターンに分け、
+それぞれ異なる方針で修正を行う。
 
-  * �����ѥ����� 1
-    �оݥ��ޥ��: �ե����륷���ƥ�ʳ��ξ������ (GET) ���ޥ�ɡ�
-                  �ե����륷���ƥ�� stat �ϥ��ޥ�ɡ�
-                  �ե����륷���ƥ�� getdent �ϥ��ޥ��
+  * 処理パターン 1
+    対象コマンド: ファイルシステム以外の情報取得 (GET) コマンド、
+                  ファイルシステムの stat 系コマンド、
+                  ファイルシステムの getdent 系コマンド
 
-        ��������: ���졼�� gfmd ��Ǽ��Ϥǽ������ƥ��饤����Ȥ˥쥹�ݥ�
-                  ���֤���
+        処理方針: スレーブ gfmd 内で自力で処理してクライアントにレスポンス
+                  を返す。
 
-  * �����ѥ����� 2
-    �оݥ��ޥ��: �ѥ����� 1. �ʳ��Υ��ޥ�ɤΤ��������ޥ�ɰ��������
-                  �쥹�ݥ󥹤Τɤ���ˤ⡢����Ĺ�ǡ��� (���) ��ޤޤʤ�
-                  ��Ρ�
+  * 処理パターン 2
+    対象コマンド: パターン 1. 以外のコマンドのうち、コマンド引数および
+                  レスポンスのどちらにも、可変長データ (後述) を含まない
+                  もの。
 
-        ��������: �ꥯ�����Ȥ������ä����졼�� gfmd �ϡ��ޥ����� gfmd
-                  �˥ꥯ�����Ȥ�ž�������ޥ����� gfmd ����Υ쥹�ݥ󥹤�
-                  ���饤����Ȥ����롣
-                  GFM ���ޥ�ɤΰ�������ӥ쥹�ݥ󥹤˲���Ĺ�ǡ�����
-                  �ޤޤ��ʤ����ᡢ�񤭴���������ñ�㡣
+        処理方針: リクエストを受け取ったスレーブ gfmd は、マスター gfmd
+                  にリクエストを転送し、マスター gfmd からのレスポンスを
+                  クライアントへ送る。
+                  GFM コマンドの引数およびレスポンスに可変長データを
+                  含またないため、書き換え工程が単純。
 
-  * �����ѥ����� 3
-    �оݥ��ޥ��: �ѥ����� 1. �ʳ��Υ��ޥ�ɤΤ��������ޥ�ɰ������뤤��
-                  �쥹�ݥ󥹤ξ��ʤ��Ȥ�ɤ�������ˡ�����Ĺ�Υǡ��� (���)
-                  ��ޤ��Ρ�
+  * 処理パターン 3
+    対象コマンド: パターン 1. 以外のコマンドのうち、コマンド引数あるいは
+                  レスポンスの少なくともどちら一方に、可変長のデータ (後述)
+                  を含むもの。
 
-        ��������: �ѥ����� 2 Ʊ�͡��ꥯ�����Ȥ������ä����졼�� gfmd �ϡ�
-                  �ޥ����� gfmd�˥ꥯ�����Ȥ�ž�������ޥ����� gfmd �����
-                  �쥹�ݥ󥹤򥯥饤����Ȥ����롣
-                  ������ GFM ���ޥ�ɤΰ����ʤ����쥹�ݥ󥹤˲���Ĺ�ǡ���
-                  ��ޤि�ᡢ�����������ɤν񤭴���������ʣ����
+        処理方針: パターン 2 同様、リクエストを受け取ったスレーブ gfmd は、
+                  マスター gfmdにリクエストを転送し、マスター gfmd からの
+                  レスポンスをクライアントへ送る。
+                  ただし GFM コマンドの引数ないしレスポンスに可変長データ
+                  を含むため、ソースコードの書き換え工程が複雑。
 
-���ޥ�ɰ���������ֲ���Ĺ�Υǡ����פȤϡ����Ȥ��м��Τ褦�ʤ�ΤǤ���
-(gfarm-v2-protocol-gfm.txt ���)��
+コマンド引数おける「可変長のデータ」とは、たとえば次のようなものである
+(gfarm-v2-protocol-gfm.txt より)。
 
     GFM_PROTO_HOST_INFO_SET
-      ����: s:hostname,
+      入力: s:hostname,
             i:n_host_aliases, s[n_host_aliases]:host_aliases,
             s:architecture, i:ncpu, i:port, i:flags
-      ����: i:���顼
+      出力: i:エラー
 
-�����ǡ����� host_aliases ����Ԥ������ n_host_aliases �ˤ�äơ���ͭ����
-����������ư���뤿��ֲ���Ĺ�Υǡ����פǤ��롣Ʊ�ͤˡ�
+ここで、引数 host_aliases は先行する引数 n_host_aliases によって、占有する
+サイズが変動するため「可変長のデータ」である。同様に、
 
         GFM_PROTO_HOST_INFO_GET_ALL
-          ����: �ʤ�
-          ����: i:���顼
-                ���顼 == GFARM_ERR_NO_ERROR �ξ��:
+          入力: なし
+          出力: i:エラー
+                エラー == GFARM_ERR_NO_ERROR の場合:
                 i:n_hosts,
-                �����Ρ�n_hosts ��η����֤�:
+                下記の、n_hosts 回の繰り返し:
                         s:hostname,
                         i:n_host_aliases, s[n_host_aliases]:host_aliases,
                         s:architecture, i:ncpu, i:port, i:flags
 
-���Υ��ޥ�ɤϡ��쥹�ݥ� (= ����) �˲���Ĺ�����륿���פǤ��롣
-�ʲ������줾��Υѥ�����Ǥν�����ˡ�������ˡ�ˤĤ��ơ�����˾ܤ���������
+このコマンドは、レスポンス (= 出力) に可変長があるタイプである。
+以下、それぞれのパターンでの処理方法や実装方法について、さらに詳しく記す。
 
 
-�����ѥ����� 1 �ξܺ�
+処理パターン 1 の詳細
 ---------------------
-�ܥѥ�����Ǥϡ�������ä��ꥯ�����Ȥ򥹥졼�� gfmd ��ñ�Ȥǽ�������
-���饤����Ȥ˥쥹�ݥ󥹤��֤���
+本パターンでは、受け取ったリクエストをスレーブ gfmd は単独で処理して
+クライアントにレスポンスを返す。
 
-��������ľ���˥��饤����Ȥ�����򹹿�����ꥯ�����Ȥ�ȯ�Ԥ��Ƥ���ȡ�
-���ι����� DB �ˤϤޤ�ȿ�Ǥ���Ƥ��餺�����㡼�ʥ�ˤ����񤭹��ޤ�Ƥ���
-��ǽ�������롣���Τ��ᡢ���졼�֤ϺǸ�˥��㡼�ʥ�ι�����Ԥä���������
-���ֹ��Ф��Ƥ������������Ƥ� DB ��ȿ�Ǥ����Τ��ԤäƤ��顢DB �ؤ�
-�䤤��碌��Ԥ���
+ただし、直前にクライアントが情報を更新するリクエストを発行していると、
+その更新が DB にはまだ反映されておらず、ジャーナルにだけ書き込まれている
+可能性がある。そのため、スレーブは最後にジャーナルの更新を行ったシーケンス
+の番号を覚えておき、更新内容が DB に反映されるのを待ってから、DB への
+問い合わせを行う。
 
-���κݡ�������Ψ��夲�뤿��ֺǸ�˥��㡼�ʥ�ι�����Ԥä���������
-�ֹ�פϡ��ۥ��ȷ�/�桼����/���롼�׷ϤΥ��ޥ����˳Ф��Ƥ����褦�ˤ���
-DB �ؤν񤭹��ߴ�λ�Ԥ��ϡ����ޥ�ɤη����̤˹Ԥ���
+その際、処理効率を上げるため「最後にジャーナルの更新を行ったシーケンス
+番号」は、ホスト系/ユーザ系/グループ系のコマンド毎に覚えておくようにし、
+DB への書き込み完了待ちは、コマンドの系統別に行う。
 
-�Ĥޤꡢ���줫��桼���Ϥξ����������륳�ޥ�ɤ�¹Ԥ���ݤϡ��ֺǸ��
-���㡼�ʥ�ι�����Ԥä����桼���ϥ��ޥ�ɤΥ��������ֹ�פ��Ф��� DB
-�ν񤭹��ߴ�λ���ԤĤ褦�ˤ��롣
+つまり、これからユーザ系の情報を取得するコマンドを実行する際は、「最後に
+ジャーナルの更新を行った、ユーザ系コマンドのシーケンス番号」に対して DB
+の書き込み完了を待つようにする。
 
-�ƥ��ޥ�ɤˤ����������ˡ�ϡ������̤ꡣ
+各コマンドにおける実装方法は、次の通り。
 
-  1. ���ޥ�ɽ����ؿ��ˡ����� xid, sizep ��­����
-     [������]
-       �ѹ���:
+  1. コマンド処理関数に、引数 xid, sizep を足す。
+     [実装例]
+       変更前:
           gfarm_error_t
           gfm_xxx(struct peer *peer, int from_client, int skip)
-       �ѹ���:
+       変更後:
           gfarm_error_t
           gfm_xxx(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
               int from_client, int skip)
 
-  2. �쥹�ݥ󥹥ǡ��������Ѥξ����������������ľ���ǡ�
-     wait_db_update_info() ��Ƥӡ����㡼�ʥ뤫�� DB �ؤ�ȿ�Ǥ��Ԥġ�
+  2. レスポンスデータ生成用の情報を取得する処理の直前で、
+     wait_db_update_info() を呼び、ジャーナルから DB への反映を待つ。
 
-     [������]
+     [実装例]
           wait_db_update_info(mode);
-          �� mode �ϡ�GFM ���ޥ�ɤ˱����ưʲ��Τ����줫����ꡣ
-             - DBUPDATE_USER       (�桼���ξ��������Ԥ����ޥ�ɤξ��)
-             - DBUPDATE_GROUP      (���롼�פξ��������Ԥ����ޥ�ɤξ��)
-             - DBUPDATE_HOST       (�ۥ��Ȥξ��������Ԥ����ޥ�ɤξ��)
-             - DBUPDATE_GETDENT    (�ǥ��쥯�ȥꥨ��ȥ����ν�����Ԥ�
-                                    ���ޥ�ɤξ��)
-             - DBUPDATE_FSTAT      (�ե����륹�ơ���������ν�����Ԥ�
-                                    ���ޥ�ɤξ��)
+          ※ mode は、GFM コマンドに応じて以下のいずれかを指定。
+             - DBUPDATE_USER       (ユーザの情報所得を行うコマンドの場合)
+             - DBUPDATE_GROUP      (グループの情報所得を行うコマンドの場合)
+             - DBUPDATE_HOST       (ホストの情報所得を行うコマンドの場合)
+             - DBUPDATE_GETDENT    (ディレクトリエントリ情報の所得を行う
+                                    コマンドの場合)
+             - DBUPDATE_FSTAT      (ファイルステータス情報の所得を行う
+                                    コマンドの場合)
 
 
-�����ѥ����� 2 �ξܺ�
+処理パターン 2 の詳細
 ---------------------
-�ܥѥ�����Ǥϡ��ꥯ�����Ȥ������ä����졼�� gfmd �ϡ��ޥ����� gfmd ��
-�ꥯ�����Ȥ�ž�������ޥ����� gfmd ����Υ쥹�ݥ󥹤򥯥饤����Ȥ����롣
+本パターンでは、リクエストを受け取ったスレーブ gfmd は、マスター gfmd に
+リクエストを転送し、マスター gfmd からのレスポンスをクライアントへ送る。
 
-�ܥѥ������Ŭ�Ѥ��� GFM ���ޥ�ɤϡ����ޥ�ɤΰ�������ӥ쥹�ݥ󥹥ǡ���
-�Τ�����ˤ����Ĺ�Υǡ������ޤޤ�Ƥ��ʤ���Τ˸¤��롣����Ĺ�ǡ�����
-�ޤ���ϡ��ѥ����� 3 ��Ŭ�Ѥ��뤳�ȡ�
+本パターンを適用する GFM コマンドは、コマンドの引数およびレスポンスデータ
+のいずれにも可変長のデータが含まれていないものに限られる。可変長データを
+含む場合は、パターン 3 を適用すること。
 
-�ƥ��ޥ�ɤˤ����������ˡ�ϡ������̤ꡣ
+各コマンドにおける実装方法は、次の通り。
 
-  1. ���ޥ�ɽ����ؿ��ˡ����� xid, sizep ��­����
-     [������]
-       �ѹ���:
+  1. コマンド処理関数に、引数 xid, sizep を足す。
+     [実装例]
+       変更前:
           gfarm_error_t
           gfm_xxx(struct peer *peer, int from_client, int skip)
-       �ѹ���:
+       変更後:
           gfarm_error_t
           gfm_xxx(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
               int from_client, int skip)
 
-  2. �ꥯ�����Ȥμ��� API �� gfm_server_get_request() ����
-     gfm_server_get_request_with_relay() ���Ѥ��롣
+  2. リクエストの受信 API を gfm_server_get_request() から
+     gfm_server_get_request_with_relay() に変える。
 
-     [������]
-       �ѹ���:
+     [実装例]
+       変更前:
           gfm_server_get_request(peer, diag, "s", &hostname)
-       �ѹ���:
+       変更後:
           struct relayed_request *relay;
           gfm_server_get_request_with_relay(peer, sizep, skip, &relay,
               diag, GFM_PROTO_XXX, "s", &hostname)
 
-  3. �ѿ� relay �� NULL �ξ����������ޥ�ɤ��������褦�ˤ��롣
+  3. 変数 relay が NULL の場合だけ、コマンドを処理するようにする。
 
-     [������]
-       �ѹ���:
+     [実装例]
+       変更前:
           giant_lock();
-        �����ޥ�ɤν���;
+        　コマンドの処理;
           giant_unlock();
-       �ѹ���:
+       変更後:
           if (relay == NULL) {
               giant_lock();
-        ��    ���ޥ�ɤν���;
+        　    コマンドの処理;
               giant_unlock();
           }
 
-  4. �쥹�ݥ󥹤����� API �� gfm_server_put_reply() ����
-     gfm_server_put_reply_with_relay() ���Ѥ��롣
-     �ޤ���gfm_server_put_reply_with_relay() �Ǥϡ�gfarm_error_t ���Ϥ�
-     �ΤǤϤʤ���(gfarm_error_t *) ���Ϥ��褦���ѹ�����Ƥ���Τǡ�����
-     ���뤳�ȡ�
+  4. レスポンスの送信 API を gfm_server_put_reply() から
+     gfm_server_put_reply_with_relay() に変える。
+     また、gfm_server_put_reply_with_relay() では、gfarm_error_t を渡す
+     のではなく、(gfarm_error_t *) を渡すように変更されているので、注意
+     すること。
 
-     [������]
-       �ѹ���:
+     [実装例]
+       変更前:
           gfm_server_put_reply(peer, diag, e, "")
-       �ѹ���:
+       変更後:
           gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
               &e, "")
 
 
-�����ѥ����� 3 �ξܺ�
+処理パターン 3 の詳細
 ---------------------
-�ܥѥ�����ϥѥ����� 2 Ʊ�͡��ޥ����� gfmd �˥ꥯ�����Ȥ�ž�������ޥ�����
-gfmd ����Υ쥹�ݥ󥹤򥯥饤����Ȥ����롣���������ѥ����� 2 ����٤ơ�
-����Ĺ�ǡ����Υ������η׻���ʣ���ˤʤ��Թ�塢�񤭴����������������롣
+本パターンはパターン 2 同様、マスター gfmd にリクエストを転送し、マスター
+gfmd からのレスポンスをクライアントへ送る。ただし、パターン 2 に比べて、
+可変長データのサイズの計算が複雑になる都合上、書き換えが大幅に増える。
 
-��ޤ������ΤȤ��Ƥϡ������ؿ���ꥯ���������ȥ쥹�ݥ����� 2 ʬ�䤷��
-���줾�층�Ȥ��̤δؿ�̾��Ϳ����ɬ�פ����롣�ޤ���ʬ�����ν����ؿ���
-Ʊ̾�δؿ��ϡ������˽񤭵��������Ȥˤʤ롣
+大まかな要領としては、処理関数をリクエスト部とレスポンス部に 2 分割し、
+それぞれ元とは別の関数名を与える必要がある。また、分割前の処理関数と
+同名の関数は、新たに書き起こすことになる。
 
-�ꥯ������������ӥ쥹�ݥ�����ʬ�䤹��Τϡ��ʲ��Τ褦�ˤ��줾���
-��ʬ�� 2 �󤺤ļ¹Ԥ���褦�ˤ��Ƥ��뤿��Ǥ��롣
+リクエスト部およびレスポンス部を分割するのは、以下のようにそれぞれの
+部分を 2 回ずつ実行するようにしているためである。
 
-    [�ꥯ���������μ¹�]
-       1 ����: �ޥ�������ž������ꥯ�����ȤΥ������׻�����
-       2 ����: �ºݤ˥ޥ������إꥯ�����Ȥ�ž��
+    [リクエスト部の実行]
+       1 回目: マスターへ転送するリクエストのサイズ計算処理
+       2 回目: 実際にマスターへリクエストを転送
 
-    [�쥹�ݥ����μ¹�]
-       1 ����: ���饤����Ȥ�ž������쥹�ݥ󥹤Υ������׻�����
-       2 ����: �ºݤ˥��饤����Ȥإ쥹�ݥ󥹤�ž��
+    [レスポンス部の実行]
+       1 回目: クライアントへ転送するレスポンスのサイズ計算処理
+       2 回目: 実際にクライアントへレスポンスを転送
 
-����ˤ�ꡢ�������׻���ž���������̡��˵��Ҥ����֤�ʤ��Ƥ��롣
-�����ǡ�2 ��¹Ԥ����Ȥ������Ȥ�ռ����Ƶ��Ҥ���ɬ�פ����롣
-�ƥ��ޥ�ɤˤ����롢����˾ܺ٤ʼ�����ˡ�ϡ������̤ꡣ
+これにより、サイズ計算と転送処理を別々に記述する手間を省いている。
+一方で、2 回実行されるということを意識して記述する必要がある。
+各コマンドにおける、さらに詳細な実装方法は、次の通り。
 
-  1. �ꥯ�����Ƚ����ؿ��ȥ쥹�ݥ󥹽����ؿ��� 2 �󤺤ĸƤФ��Τǡ�
-     1 ��δؿ��ƤӽФ���ۤ��ơ����餫�Υǡ�����ͭ��������� 
-     (��: �ꥯ�����Ƚ����ؿ�����쥹�ݥ󥹽����ؿ��˥ǡ������Ϥ���
-     �쥹�ݥ󥹽����ؿ��θƤӽФ� 1 ���ܤ��� 2 ���ܤ˥ǡ�����ǡ�����
-     �Ϥ�) �����δؿ��� closure �������̤��Ƽ����Ϥ���Ԥ������� closure
-     �Ѥι�¤�Τ�������롣
+  1. リクエスト処理関数とレスポンス処理関数は 2 回ずつ呼ばれるので、
+     1 回の関数呼び出しを越えて、何らかのデータを共有したい場合 
+     (例: リクエスト処理関数からレスポンス処理関数にデータを渡す、
+     レスポンス処理関数の呼び出し 1 回目から 2 回目にデータをデータを
+     渡す) 双方の関数の closure 引数を通じて受け渡しを行う。この closure
+     用の構造体を定義する。
 
-     ��ͭ����ǡ�������ɽ�㤬���ꥯ�����Ȥ˴ޤޤ�����Ĺ���������Ƥ�
-     ���롣���Ȥ��Х��ޥ�ɤΰ�������
+     共有するデータの代表例が、リクエストに含まれる可変長引数の内容で
+     ある。たとえばコマンドの引数が、
 
           i: n_users, s[n_users]: users
 
-     �Ǥ���������Ϥ���硢��¤�ΤϤ��Ȥ��м��Τ褦��������롣
+     でこれらを受け渡す場合、構造体はたとえば次のように定義する。
 
           struct xxx_closure {
               gfarm_int32_t nusers;
               char **users;
           };
 
-  2. ���ޥ�ɽ����ؿ��Τ�����gfm_server_get_request() �θƤӽФ���ʬ
-     �ޤǤ�ꥯ�����Ƚ������Ȥ����̤δؿ��ˤ��롣�ؿ�̾�ϡ����δؿ�̾
-     �� _request() ��­������ΤȤ��롣
+  2. コマンド処理関数のうち、gfm_server_get_request() の呼び出し部分
+     までをリクエスト処理部として別の関数にする。関数名は、元の関数名
+     に _request() を足したものとする。
 
-     ���δؿ��� static �ؿ��ˤ���������ϰʲ��μ�������̤�ˤ��롣
+     この関数は static 関数にし、引数列は以下の実装例の通りにする。
 
-     [������]
-       �ѹ���:
+     [実装例]
+       変更前:
           gfarm_error_t
           gfm_xxx(struct peer *peer, int skip, void *closure, const char *diag)
-       �ѹ���:
+       変更後:
           static gfarm_error_t
           gfm_xxx_request(enum request_reply_mode mode, struct peer *peer,
               size_t *sizep, int skip, struct relayed_request *r,
               void *closure, const char *diag)
 
-  3. 2. ��ʬ�䤷���ꥯ�����ȴؿ����¤�����ꥯ�����Ȥμ��� API ��
-     gfm_server_get_request() ���� gfm_server_get_request_with_relay() 
-     ���Ѥ��롣
+  3. 2. で分割したリクエスト関数を改造し、リクエストの受信 API を
+     gfm_server_get_request() から gfm_server_get_request_with_relay() 
+     に変える。
 
-     [������]
-       �ѹ���:
+     [実装例]
+       変更前:
           gfm_server_get_request(peer, diag, "i", &n_users)
-       �ѹ���:
+       変更後:
           struct relayed_request *relay;
           gfm_server_get_request_with_relay(peer, sizep, skip, &relay,
               diag, GFM_PROTO_XXX, "s", &hostname)
 
-  4. 2. ��ʬ�䤷���ꥯ�����ȴؿ����¤�����쥹�ݥ󥹴ؿ����Ϥ������ǡ���
-     �� closure �˳�Ǽ����褦���ѹ����롣
+  4. 2. で分割したリクエスト関数を改造し、レスポンス関数に渡したいデータ
+     を closure に格納するように変更する。
 
-     ���������ꥯ�����ȴؿ��� 2 ��ƤФ��Τǡ�closure �ؤγ�Ǽ�����ϡ�
-     �������׻��� (= �ꥯ�����ȴؿ��� mode �������ͤ� MODE_TRANSFER �ʳ�
-     �λ�) �˹Ԥ����ȡ�
+     ただし、リクエスト関数は 2 回呼ばれるので、closure への格納処理は、
+     サイズ計算時 (= リクエスト関数の mode 引数の値が MODE_TRANSFER 以外
+     の時) に行うこと。
 
-     [������]
+     [実装例]
           if ((e = gfm_server_get_request_with_vrelay(peer, sizep, skip, r,
                diag, "i", &nusers)) != GFARM_ERR_NO_ERROR)
                 return (e);
           if (mode != MODE_TRANSFER)
                closure->nusers = nusers;
 
-  5. ����Υ��ޥ�ɽ����ؿ��Τ�������if (skip)�פθ�����ʬ������
-     ��쥹�ݥ󥹽������Ȥ����̤δؿ��ˤ���ʡ�if (skip)�פθ�����ʬ��
-     ��쥹�ݥ󥹽����ؿ�¦�������ˡ��ؿ�̾�ϡ����δؿ�̾�� _reply() ��
-     ­������ΤȤ��롣
+  5. 従来のコマンド処理関数のうち、「if (skip)」の検査部分よりも後ろ
+     をレスポンス処理部として別の関数にする（「if (skip)」の検査部分も
+     をレスポンス処理関数側に入れる）。関数名は、元の関数名に _reply() を
+     足したものとする。
 
-     ���δؿ��� static �ؿ��ˤ���������ϰʲ��μ�������̤�ˤ��롣
+     この関数は static 関数にし、引数列は以下の実装例の通りにする。
 
-     [������]
-       �ѹ���:
+     [実装例]
+       変更前:
           gfarm_error_t
           gfm_xxx(struct peer *peer, int skip, void *closure, const char *diag)
-       �ѹ���:
+       変更後:
           static gfarm_error_t
           gfm_xxx_reply(enum request_reply_mode mode, struct peer *peer,
               size_t *sizep, int skip, void *closure, const char *diag)
 
-  6. 5. ��ʬ�䤷���쥹�ݥ󥹴ؿ����¤�����쥹�ݥ󥹤����� API ��
-     gfm_server_put_reply() ���� gfm_server_put_reply_with_relay() ��
-     �Ѥ��롣
+  6. 5. で分割したレスポンス関数を改造し、レスポンスの送信 API を
+     gfm_server_put_reply() から gfm_server_put_reply_with_relay() に
+     変える。
 
-     [������]
-       �ѹ���:
+     [実装例]
+       変更前:
           gfm_server_put_reply(peer, diag, e, "i", n_users)
-       �ѹ���:
+       変更後:
           gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
               &e, "i", n_users)
 
-  7. 5. ��ʬ�䤷���쥹�ݥ󥹴ؿ����¤����closure �˳�Ǽ���줿���ޥ��
-     ������˱������쥹�ݥ󥹤��֤��褦�˲���롣
-     mode == RELAY_CALC_SIZE �κݤˤ� (�̾�Ǥ����) giant lock ���������
-     �������Ƥ�������ơ������ closure �˳�Ǽ���Ĥġ�
-     gfm_server_put_reply_with_relay() ��ƤӽФ���
-     mode == REALY_TRANSFER �κݤˤϡ�RELAY_CALC_SIZE �����������졢
-     closure �˳�Ǽ����Ƥ����̤� gfm_server_put_reply_with_relay()
-     ���Ϥ��Ƽºݤ����������롣
-     �� ������ closure �˳�Ǽ������2�Ĥ� mode ���줾��� giant lock ��
-        ����������������������Ȥ���������򤷤ƤϤ����ʤ����ʤ��ʤ顢
-        2�Ĥ� mode �ζ��֡�giant lock ��������Ƥ���֤ˡ��������Ƥ�
-        �Ѥ�äƤ��ޤ�ɬ�פ����뤫��Ǥ��롣�⤷�����ʤ�ȡ�
-        RELAY_CALC_SIZE ���˷׻������������Ȥϰۤ륵������������
-        REALY_TRANSFER �����뤳�Ȥˤʤꡢ�ץ��ȥ������������Ƥ��ޤ���
+  7. 5. で分割したレスポンス関数を改造し、closure に格納されたコマンド
+     引数列に応じたレスポンスを返すように改める。
+     mode == RELAY_CALC_SIZE の際には (通常であれば) giant lock を取得し、
+     返答内容を作成して、それを closure に格納しつつ、
+     gfm_server_put_reply_with_relay() を呼び出す。
+     mode == REALY_TRANSFER の際には、RELAY_CALC_SIZE 時に生成され、
+     closure に格納されている結果を gfm_server_put_reply_with_relay()
+     に渡して実際の返答を送る。
+     ※ 返答を closure に格納せず、2つの mode それぞれで giant lock を
+        取得し、返答を生成するというやり方をしてはいけない。なぜなら、
+        2つの mode の狭間、giant lock を手放している間に、返答内容が
+        変わってしまう必要があるからである。もしそうなると、
+        RELAY_CALC_SIZE 時に計算したサイズとは異るサイズの返答を
+        REALY_TRANSFER で送ることになり、プロトコル処理が壊れてしまう。
 
-     [������]
+     [実装例]
           if ((e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay,
                diag, &e, "i", closure->nusers)) != GFARM_ERR_NO_ERROR)
                 return (e);
 
-  8. ���ޥ�ɽ����ؿ��򡢽�ľ����
-     �����󤪤�ӽ������Ƥϡ��ʲ��μ�����򻲹ͤΤ��ȡ�
+  8. コマンド処理関数を、書き直す。
+     引数列および処理内容は、以下の実装例を参考のこと。
  
-���� [������]     
+　　 [実装例]     
           gfarm_error_t
           gfm_xxx(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
               int from_client, int skip)
           {
               struct xxx_closure c;
 
-              /* ������Ǽ�Ѥ��ѿ����������롣*/
+              /* 引数格納用の変数を初期化する。*/
               xxx_closure_init(&c);
 
-              /* gfm_server_request_reply_with_vrelaywait() ��ƤӽФ���
-               * GFM_PROTO_XXX �� GFM ���ޥ�� ID��mode �� 
-	       * wait_db_update_info() �ΰ��� mode ��Ʊ����̣��*/
+              /* gfm_server_request_reply_with_vrelaywait() を呼び出す。
+               * GFM_PROTO_XXX は GFM コマンド ID、mode は 
+	       * wait_db_update_info() の引数 mode と同じ意味。*/
               if ((e = gfm_server_request_reply_with_vrelaywait(peer, xid,
                   skip, gfm_xxx_request, gfm_xxx_reply, GFM_PROTO_XXX,
                   mode, &c, diag)) != GFARM_ERR_NO_ERROR) {
@@ -331,20 +331,20 @@ gfmd ����Υ쥹�ݥ󥹤򥯥饤����Ȥ����롣���������ѥ����� 2 ����٤ơ�
               return (e);
           }
 
-�ʾ夫��ʬ����褦�ˡ�ʬ���Υꥯ�����ȴؿ�����ץ饤�ؿ����������ϡ�
-enum request_reply_mode �� 'mode' �ˤʤäƤ��롣�ؿ����ƤӽФ��줿�ݤ�
-���åȤ���� 'mode' ���ͤϡ��ޤȤ��ȼ����̤�Ǥ��롣
+以上から分かるように、分割後のリクエスト関数、リプライ関数の第一引数は、
+enum request_reply_mode 型 'mode' になっている。関数が呼び出された際に
+セットされる 'mode' の値は、まとめると次の通りである。
 
-  * RPC ��졼ͭ����
-    ���졼�� gfmd �ǤΥꥯ�����ȴؿ��ƤӽФ� (1����):   RELAY_CALC_SIZE
-    ���졼�� gfmd �ǤΥꥯ�����ȴؿ��ƤӽФ� (2����):   RELAY_TRANSFER
-    �ޥ����� gfmd �ǤΥꥯ�����ȴؿ��ƤӽФ�:           NO_RELAY
-    �ޥ����� gfmd �ǤΥ쥹�ݥ󥹴ؿ��ƤӽФ� (1����):   RELAY_CALC_SIZE
-    �ޥ����� gfmd �ǤΥ쥹�ݥ󥹴ؿ��ƤӽФ� (2����):   RELAY_TRANSFER
+  * RPC リレー有効時
+    スレーブ gfmd でのリクエスト関数呼び出し (1回目):   RELAY_CALC_SIZE
+    スレーブ gfmd でのリクエスト関数呼び出し (2回目):   RELAY_TRANSFER
+    マスター gfmd でのリクエスト関数呼び出し:           NO_RELAY
+    マスター gfmd でのレスポンス関数呼び出し (1回目):   RELAY_CALC_SIZE
+    マスター gfmd でのレスポンス関数呼び出し (2回目):   RELAY_TRANSFER
 
-    �����졼�� gfmd �Ǥϥ쥹�ݥ󥹴ؿ���1���ƤӽФ��줺���ޥ����� gfmd
-      ���������ä��ǡ��������Τޤޥ��饤����Ȥ�ž������롣
+    ※スレーブ gfmd ではレスポンス関数は1回も呼び出されず、マスター gfmd
+      から受け取ったデータがそのままクライアントへ転送される。
 
-  * RPC ��졼ͭ����
-    �ޥ����� gfmd �ǤΥꥯ�����ȴؿ��ƤӽФ�:           NO_RELAY
-    �ޥ����� gfmd �ǤΥ쥹�ݥ󥹴ؿ��ƤӽФ�:           NO_RELAY
+  * RPC リレー有効時
+    マスター gfmd でのリクエスト関数呼び出し:           NO_RELAY
+    マスター gfmd でのレスポンス関数呼び出し:           NO_RELAY

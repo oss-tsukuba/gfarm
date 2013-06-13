@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfquota&nbsp;--&nbsp;���ߤλ����̤������ͤ�ɽ��</DIV
+>gfquota&nbsp;--&nbsp;現在の使用量と制限値を表示</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,7 +40,7 @@ CLASS="COMMAND"
 >  [<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 >]</P
 ></DIV
@@ -55,24 +55,24 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfquota</B
-> �ϡ����ߤλ����̤������ͤ�ɽ�����ޤ���
-gfarmadm ���롼�פ˽�°���Ƥ�������Ԥϡ��桼��̾�䥰�롼��̾����ꤹ��
-���Ȥ��Ǥ��ޤ���
-���̥桼���ξ��ϡ����Υ桼������°���륰�롼��̾����ꤹ�뤳�Ȥ��Ǥ�
-�ޤ���</P
+> は、現在の使用量と制限値を表示します。
+gfarmadm グループに所属している管理者は、ユーザ名やグループ名を指定する
+ことができます。
+一般ユーザの場合は、そのユーザが所属するグループ名を指定することができ
+ます。</P
 ><P
 ><B
 CLASS="COMMAND"
 >gfedquota</B
-> �� <B
+> と <B
 CLASS="COMMAND"
 >gfquotacheck</B
-> ��
-�¹Ԥ���Ȼ����̤Υ�����Ȥ������ͤ�ͭ���ˤʤꡢ
+> を
+実行すると使用量のカウントと制限値が有効になり、
 <B
 CLASS="COMMAND"
 >gfquota</B
-> ��ɽ���Ǥ���褦�ˤʤ�ޤ���</P
+> で表示できるようになります。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -93,7 +93,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->���ꤷ���ѥ�̾�ˤ������Υ᥿�ǡ��������Ф���ꤷ�ޤ���</P
+>指定したパス名により特定のメタデータサーバを指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -102,8 +102,8 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�����̤�ɽ�����ޤ���
-�����ͤ�Ķ���Ƥ������˷ٹ������ɽ�����ޤ���</P
+>使用量を表示しません。
+制限値を超えていた場合に警告だけを表示します。</P
 ></DD
 ><DT
 ><CODE
@@ -112,7 +112,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->���ꤷ���桼��̾�λ����̤������ͤ�ɽ�����ޤ���</P
+>指定したユーザ名の使用量と制限値を表示します。</P
 ></DD
 ><DT
 ><CODE
@@ -121,7 +121,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->���ꤷ�����롼��̾�λ����̤������ͤ�ɽ�����ޤ���</P
+>指定したグループ名の使用量と制限値を表示します。</P
 ></DD
 ><DT
 ><CODE
@@ -130,7 +130,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������ץ�����ɽ�����ޤ���</P
+>引数オプションを表示します。</P
 ></DD
 ></DL
 ></DIV

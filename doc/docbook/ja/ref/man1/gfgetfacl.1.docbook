@@ -12,13 +12,13 @@
 
 <refnamediv id='name'>
 <refname>gfgetfacl</refname>
-<refpurpose>Gfarm е╒ебедеыд╬евепе╗е╣└й╕цеъе╣е╚дЄ╔╜╝ид╣ды</refpurpose>
+<refpurpose>Gfarm уГХуВбуВдуГлуБоуВвуВпуВ╗уВ╣хИ╢х╛буГкуВ╣уГИуВТшбичд║уБЩуВЛ</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfgetfacl</command>
-	<arg choice='opt'><replaceable>еке╫е╖ечеє</replaceable></arg>
+	<arg choice='opt'><replaceable>уВкуГЧуВ╖уГзуГ│</replaceable></arg>
 	<arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -27,9 +27,9 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para><command>gfgetfacl</command> д╧ Gfarm е╒ебедеые╖е╣е╞ер╛хд╬
-е╒ебедеыдфе╟егеьепе╚еъд╬╠╛┴░бд╜ъ═н╝╘╠╛бде░еыб╝е╫╠╛бд
-евепе╗е╣е│еєе╚еэб╝еыеъе╣е╚ (ACL) дЄ╔╜╝ид╖д▐д╣бе</para>
+<para><command>gfgetfacl</command> уБп Gfarm уГХуВбуВдуГлуВ╖уВ╣уГЖуГаф╕КуБо
+уГХуВбуВдуГлуВДуГЗуВгуГмуВпуГИуГкуБохРНхЙНя╝МцЙАцЬЙшАЕхРНя╝МуВ░уГлуГ╝уГЧхРНя╝М
+уВвуВпуВ╗уВ╣уВ│уГ│уГИуГнуГ╝уГлуГкуВ╣уГИ (ACL) уВТшбичд║уБЧуБ╛уБЩя╝О</para>
 
 </refsect1>
 
@@ -40,7 +40,7 @@
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>░·┐Їеке╫е╖ечеєдЄ╔╜╝ид╖д▐д╣бе</para>
+<para>х╝ХцХ░уВкуГЧуВ╖уГзуГ│уВТшбичд║уБЧуБ╛уБЩя╝О</para>
 </listitem>
 </varlistentry>
 
@@ -49,8 +49,8 @@
 
 <refsect1 id='notes'><title>NOTES</title>
 <para>
-Gfarm е╒ебедеые╖е╣е╞ердлдщ Gfarm д╬ецб╝е╢дфе░еыб╝е╫дЄ║я╜№д╖д╞дтбвACL еи
-еєе╚еъд╦╗╪─ъд╖д┐ецб╝е╢╠╛дфе░еыб╝е╫╠╛д╧ ACL д╦╗─дъд▐д╣бе
+Gfarm уГХуВбуВдуГлуВ╖уВ╣уГЖуГауБЛуВЙ Gfarm уБоуГжуГ╝уВ╢уВДуВ░уГлуГ╝уГЧуВТхЙКщЩдуБЧуБжуВВуАБACL уВи
+уГ│уГИуГкуБлцМЗхоЪуБЧуБЯуГжуГ╝уВ╢хРНуВДуВ░уГлуГ╝уГЧхРНуБп ACL уБлцоЛуВКуБ╛уБЩя╝О
 </para>
 </refsect1>
 

@@ -5,60 +5,60 @@
 </HEAD>
 <BODY><A href="http://datafarm.apgrid.org/">
 <IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
-<A href="../../index.html">ʸ��</A> &gt;
-<A href="index.html">�桼�������ޥ˥奢��</A> &gt;
-�᥿�ǡ�����Ĺ�� - ���塼�ȥꥢ��
+<A href="../../index.html">文書集</A> &gt;
+<A href="index.html">ユーザーズマニュアル</A> &gt;
+メタデータ冗長化 - チュートリアル
 
-<H1>�᥿�ǡ�����Ĺ�� - ���塼�ȥꥢ��</H1>
-<A href="../../en/user/redundancy-tutorial.html">English</A> | ���ܸ� 
+<H1>メタデータ冗長化 - チュートリアル</H1>
+<A href="../../en/user/redundancy-tutorial.html">English</A> | 日本語 
 
 <BR><BR>
-����ʸ��Ǥϡ��᥿�ǡ��������Ф�1:1�����Ǿ�Ĺ��������ˡ���������ޤ���
+この文書では、メタデータサーバを1:1構成で冗長化する方法を説明します。
 <BR>
-<H2>1. ���󥹥ȡ���</H2>
-�����Ǥϥޥ�����gfmd��ư����ۥ��Ȥ�host-a�����졼��gfmd��ư����ۥ��Ȥ�host-b�Ȥ��ޤ���
-host-a / host-b�Τ��줾��ˤ����ơ�Gfarm�Υ��󥹥ȡ����Ԥ��ޤ���
-���󥹥ȡ����INSTALL�ɥ�����Ȥ򻲾Ȥ��Ƥ���������
+<H2>1. インストール</H2>
+ここではマスターgfmdを起動するホストをhost-a、スレーブgfmdを起動するホストをhost-bとします。
+host-a / host-bのそれぞれにおいて、Gfarmのインストールを行います。
+インストールはINSTALLドキュメントを参照してください。
 
-<H2>2. ���åȥ��å�</H2>
-<H3>2.1 �ޥ������᥿�ǡ��������Ф�����</H3>
-�᥿�ǡ��������д֤���³�����Ѥ����_gfarmmd�桼���ȶ�ͭ����������ޤ���
+<H2>2. セットアップ</H2>
+<H3>2.1 マスターメタデータサーバの設定</H3>
+メタデータサーバ間の接続で利用される_gfarmmdユーザと共有鍵を作成します。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # useradd -c "Gfarm gfmd" -m _gfarmmd
 # su _gfarmmd
 $ gfkey -f -p 31536000
 </PRE></TD></TR></TBODY></TABLE>
-<UL><LI>��­1<BR>
-�᥿�ǡ��������д֤�ǧ�ڤϡ���ͭ��ǧ�ڤΤߥ��ݡ��Ȥ��Ƥ��ޤ���
+<UL><LI>補足1<BR>
+メタデータサーバ間の認証は、共有鍵認証のみサポートしています。
 </UL>
 
-���˥᥿�ǡ��������ФΥ��åȥ��åפ�root�桼���ǹԤ��ޤ���
-�᥿�ǡ�����Ĺ����ͭ���ˤ��뤿�� config-gfarm��-r���ץ�����Ĥ��ޤ���
-config-gfarm�˴ؤ��Ƥϡ�SETUP�ɥ�����Ȥ򻲾Ȥ��Ƥ���������
+次にメタデータサーバのセットアップをrootユーザで行います。
+メタデータ冗長化を有効にするため config-gfarmに-rオプションをつけます。
+config-gfarmに関しては、SETUPドキュメントを参照してください。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # config-gfarm -r
 </PRE></TD></TR></TBODY></TABLE>
-<UL><LI>��­1<BR>
-�᥿�ǡ�����Ĺ���˻��Ѥ��른�㡼�ʥ�ե�����ϡ��ǥե���ȤǤ�/var/gfarm-metadata/journal�ǥ��쥯�ȥ����¸����ޤ����ѹ�������ϡ�config-gfarm��-j���ץ�������ꤷ�ޤ���</LI>
-<LI>��­2<BR>
-��¸�Υ᥿�ǡ��������Ф��Ф��᥿�ǡ�����Ĺ����ͭ���ˤ��뤿��ˤϡ�gfmd����ߤ�PostgreSQL��ư�����ޤޤξ��֤ǡ�-r���ץ�����Ĥ���config-gfarm-update��¹Ԥ��ޤ���</LI>
+<UL><LI>補足1<BR>
+メタデータ冗長化に使用するジャーナルファイルは、デフォルトでは/var/gfarm-metadata/journalディレクトリに保存されます。変更する場合は、config-gfarmに-jオプションを指定します。</LI>
+<LI>補足2<BR>
+既存のメタデータサーバに対しメタデータ冗長化を有効にするためには、gfmdを停止しPostgreSQLを起動したままの状態で、-rオプションをつけてconfig-gfarm-updateを実行します。</LI>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-Gfarm�ο������С������򥤥󥹥ȡ���
+Gfarmの新しいバージョンをインストール
 # /etc/init.d/gfmd stop
 # config-gfarm-update -r --update
 # /etc/init.d/gfmd start
 </PRE></TD></TR></TBODY></TABLE>
-<LI>��­3<BR>
-�᥿�ǡ�����Ĺ����ͭ���ˤ��뤿��ˤϡ��Хå�����ɡ��ǡ����١����Ȥ���PostgreSQL�����Ѥ���ɬ�פ�����ޤ���</LI>
+<LI>補足3<BR>
+メタデータ冗長化を有効にするためには、バックエンド・データベースとしてPostgreSQLを利用する必要があります。</LI>
 </UL>
 
-host-b�򥹥졼�֤Ȥ�����Ͽ���ޤ���<br>
-gfmdhost ���ޥ�ɤϡ�
-Gfarm �Υ����ƥ������ (gfarmadm ���롼�׸��¤���ĥ桼����) ���¹Ԥ��ޤ���
-config-gfarm �� -A ���ץ����ǻ��ꤷ���桼������
-�ǥե���Ȥ� Gfarm �����ƥ�����ԤǤ���
+host-bをスレーブとして登録します。<br>
+gfmdhost コマンドは、
+Gfarm のシステム管理者 (gfarmadm グループ権限を持つユーザー) が実行します。
+config-gfarm の -A オプションで指定したユーザが、
+デフォルトの Gfarm システム管理者です。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 $ gfmdhost -c host-b
@@ -67,73 +67,73 @@ $ gfmdhost -l
 - slave  sync  c (default)    host-b 601
 </PRE></TD></TR></TBODY></TABLE>
 
-gfarm2.conf��metadb_server_list���ɲä��ơ��᥿�ǡ��������ФΥۥ���̾�ȥݡ����ֹ�ΰ����򵭽Ҥ��ޤ���
+gfarm2.confにmetadb_server_listを追加して、メタデータサーバのホスト名とポート番号の一覧を記述します。
 <BR><BR>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 metadb_server_list host-a:601 host-b:601
 </PRE></TD></TR></TBODY></TABLE>
 
-root�桼���ǥ᥿�ǡ��������פ��ޤ���<BR>
-config-gfarm �κݤˡ�--prefix ���ץ����� -l ���ץ�������ꤷ�Ƥ������ϡ�
-gfdump.postgresql ���Ф��Ƥ�Ʊ�����ץ�����Ϳ���Ƥ���������
+rootユーザでメタデータをダンプします。<BR>
+config-gfarm の際に、--prefix オプションや -l オプションを指定していた場合は、
+gfdump.postgresql に対しても同じオプションを与えてください。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # gfdump.postgresql -d -f gfarm-pgsql.dmp
 </PRE></TD></TR></TBODY></TABLE>
 
-<H3>2.2 ���졼�֥᥿�ǡ��������Ф�����</H3>
+<H3>2.2 スレーブメタデータサーバの設定</H3>
 
-�᥿�ǡ��������д֤���³�����Ѥ����_gfarmmd�桼�����������
-�ޥ������᥿�ǡ��������Ф��鶦ͭ���򥳥ԡ����ޤ���
+メタデータサーバ間の接続で利用される_gfarmmdユーザを作成し、
+マスターメタデータサーバから共有鍵をコピーします。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # useradd -c "Gfarm gfmd" -m _gfarmmd
-�ޥ������᥿�ǡ��������Ф��鶦ͭ��(~_gfarmmd/.gfarm_shared_key)�򥳥ԡ�
+マスターメタデータサーバから共有鍵(~_gfarmmd/.gfarm_shared_key)をコピー
 </PRE></TD></TR></TBODY></TABLE>
 
-���˥��졼�֥᥿�ǡ��������ФΥ��åȥ��åפ�root�桼���ǹԤ��ޤ���
-�᥿�ǡ�����Ĺ����ͭ���ˤ��뤿�� config-gfarm��-r���ץ�����Ĥ��ޤ���
+次にスレーブメタデータサーバのセットアップをrootユーザで行います。
+メタデータ冗長化を有効にするため config-gfarmに-rオプションをつけます。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # config-gfarm -r
 </PRE></TD></TR></TBODY></TABLE>
 
-root�桼���ǥ᥿�ǡ�����ꥹ�ȥ����ޤ���<br>
-config-gfarm �κݤˡ�--prefix ���ץ����� -l ���ץ�������ꤷ�Ƥ������ϡ�
-gfdump.postgresql ���Ф��Ƥ�Ʊ�����ץ�����Ϳ���Ƥ���������
+rootユーザでメタデータをリストアします。<br>
+config-gfarm の際に、--prefix オプションや -l オプションを指定していた場合は、
+gfdump.postgresql に対しても同じオプションを与えてください。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # gfdump.postgresql -r -f gfarm-pgsql.dmp
 </PRE></TD></TR></TBODY></TABLE>
 
-<UL><LI>��­<BR>
-���ߤΤȤ�����ʣ���Υ��졼�֡������Ф����ꤹ���硢
-���졼�֤�Ʊ���� config-gfarm -r ��Ԥʤ����ȤϤǤ��ޤ���
-���ʤ餺�����줾��Υ��졼�֤� gfdump.postgresql -r �ˤ��ꥹ�ȥ��ޤ�
-��λ���Ƥ��顢���Υ��졼�֤� config-gfarm -r ��Ԥʤ��褦�ˤ��Ƥ���������</LI>
+<UL><LI>補足<BR>
+現在のところ、複数のスレーブ・サーバを設定する場合、
+スレーブで同時に config-gfarm -r を行なうことはできません。
+かならず、それぞれのスレーブで gfdump.postgresql -r によるリストアまで
+完了してから、次のスレーブの config-gfarm -r を行なうようにしてください。</LI>
 </UL>
 
 
-<H3>2.3 gfsd����ӥ��饤�����</H3>
+<H3>2.3 gfsdおよびクライアント</H3>
 
-�ޥ������᥿�ǡ��������Ф�metadb_server_list���ɲä���
-gfarm2.conf�򥳥ԡ����ޤ���
+マスターメタデータサーバでmetadb_server_listを追加した
+gfarm2.confをコピーします。
 <p>
-�ʹߤ������SETUP�ɥ�����Ȥ򻲾Ȥ��Ƥ���������
+以降の設定はSETUPドキュメントを参照してください。
 <p>
-�������ꤵ��Ƥ�����ϡ�gfsd��Ƶ�ư���ޤ���
-�Ƶ�ư�Τ���ˤ�root�桼���ǡ����Υ��ޥ�ɤ�¹Ԥ��ޤ���
+既に設定されている場合は、gfsdを再起動します。
+再起動のためにはrootユーザで、次のコマンドを実行します。
 <BR><BR>
-��gfsd�ۥ���:
+各gfsdホスト:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # /etc/init.d/gfsd restart
 </PRE></TD></TR></TBODY></TABLE>
 <p>
-�����ޤǤμ��ǥޥ��������졼�֤Ǿ�Ĺ�����줿�᥿�ǡ��������Фι�������λ���ޤ�����
+ここまでの手順でマスタースレーブで冗長化されたメタデータサーバの構成が完了しました。
 
-<H3>2.4 ư���ǧ</H3>
+<H3>2.4 動作確認</H3>
 
-gfmdhost -l�ǥ��졼�֥᥿�ǡ��������Ф���³����Ƥ��뤳�Ȥ��ǧ���Ƥ���������
+gfmdhost -lでスレーブメタデータサーバが接続されていることを確認してください。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 $ gfmdhost -l
@@ -141,8 +141,8 @@ $ gfmdhost -l
 <font color=red>+</font> slave  sync  c (default)    host-b 601
 </PRE></TD></TR></TBODY></TABLE>
 <p>
-root�桼����gfjournal��¹Ԥ���
-���졼�֥᥿�ǡ��������Ф˹�������ã����Ƥ��뤫��ǧ���Ƥ���������
+rootユーザでgfjournalを実行し、
+スレーブメタデータサーバに更新が伝達されているか確認してください。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # gfjournal /var/gfarm-metadata/journal/0000000000.gmj 
@@ -150,53 +150,53 @@ records  seqnum(min/max)            record length(min/max/ave)
      11            63/          <font color=red>73</font>          24/    118/     43
 </PRE></TD></TR></TBODY></TABLE>
 <p>
-��������Ԥ����ޥ���������ӥ��졼�֥᥿�ǡ��������Фǡ�
-seqnum��max����������й�������ã����Ƥ��ޤ���
+更新操作を行い、マスターおよびスレーブメタデータサーバで、
+seqnumのmaxが等しければ更新が伝達されています。
 
-<H2>3. ���졼��gfmd��ޥ�����gfmd�˾��ʤ���</H2>
+<H2>3. スレーブgfmdをマスターgfmdに昇格する</H2>
 
-���줫��ϡ��ޥ�����gfmd�˾㳲��ȯ������
-���졼��gfmd��ޥ�����gfmd�˾��ʤ�������������ޤ���
+これからは、マスターgfmdに障害が発生し、
+スレーブgfmdをマスターgfmdに昇格する手順を説明します。
 <p>
-���host-a��gfmd����ߤ��Ƥ��뤳�Ȥ��ǧ���ޤ���
-��ư���Ƥ�����ϡ�host-a�ˤ�����root�桼���ǡ����Υ��ޥ�ɤ���ߤ����ޤ���
+先にhost-aのgfmdを停止していることを確認します。
+起動している場合は、host-aにおいてrootユーザで、次のコマンドで停止させます。
 <BR><BR>
 host-a:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # /etc/init.d/gfmd stop
 </PRE></TD></TR></TBODY></TABLE>
-<UL><LI><FONT COLOR="red">����</FONT><BR>
-���졼��gfmd��ޥ�����gfmd�ؾ��ʤ���Ȥ��ϡ��ʲ��Τ����줫�ξ���������ɬ�פ���ޤ���
+<UL><LI><FONT COLOR="red">注意</FONT><BR>
+スレーブgfmdをマスターgfmdへ昇格するときは、以下のいずれかの条件を満たす必要あります。
   <UL>
-  <LI>���ߤΥޥ�����gfmd����ߤ��Ƥ��롣</LI>
-  <LI>���ߤΥޥ�����gfmd�������졼��gfmd / gfsd / ���饤����Ȥ��̿��Ǥ��ʤ���
+  <LI>現在のマスターgfmdが停止している。</LI>
+  <LI>現在のマスターgfmdが、スレーブgfmd / gfsd / クライアントと通信できない。
   </UL>
-�嵭�ξ����������ʤ���硢�ޥ�����gfmd / ���졼��gfmd�Υǡ����١����֤������礬�������ǽ��������ޤ���
+上記の条件を満たさない場合、マスターgfmd / スレーブgfmdのデータベース間で不整合が生じる可能性があります。
 </LI></UL>
-host-b�ˤ�����root�桼���ǡ����Υ��ޥ�ɤ�¹Ԥ��ޤ���
+host-bにおいてrootユーザで、次のコマンドを実行します。
 <BR><BR>
 host-b:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# kill -USR1 &lt;gfmd�Υץ�����ID&gt;
+# kill -USR1 &lt;gfmdのプロセスID&gt;
 </PRE></TD></TR></TBODY></TABLE>
 
-<H2>4. ���Υޥ�����gfmd��ư����</H2>
+<H2>4. 元のマスターgfmdを起動する</H2>
 
-���Υޥ�����gfmd���㳲�����������
-���졼��gfmd�Ȥ������褵��������������ޤ���
+元のマスターgfmdが障害から回復し、
+スレーブgfmdとして復活させる手順を説明します。
 
-<H3>4.1 ���졼�֤Ȥ��Ƥε�ư</H3>
+<H3>4.1 スレーブとしての起動</H3>
 
-host-a�ˤ�����root�桼���ǡ����Υ��ޥ�ɤ�¹Ԥ��ޤ���
+host-aにおいてrootユーザで、次のコマンドを実行します。
 <BR><BR>
 host-a:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # /etc/init.d/gfmd slavestart
 </PRE></TD></TR></TBODY></TABLE>
 
-<H3>4.2 ư���ǧ</H3>
+<H3>4.2 動作確認</H3>
 
-gfmdhost -l�ǥ��졼�֥᥿�ǡ��������ФȤ�����³����Ƥ��뤳�Ȥ��ǧ���Ƥ���������
+gfmdhost -lでスレーブメタデータサーバとして接続されていることを確認してください。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 $ gfmdhost -l
@@ -205,36 +205,36 @@ $ gfmdhost -l
 </PRE></TD></TR></TBODY></TABLE>
 <p>
 
-�����ǡ�<font color=red>+</font>�פ�ɽ������Ƥ�����ϡ�
-���졼�֥᥿�ǡ��������ФȤ���������ư��Ƥ��ꡢ��λ�Ǥ���
+ここで「<font color=red>+</font>」と表示されている場合は、
+スレーブメタデータサーバとして正しく動作しており、完了です。
 <p>
-�����ǡ�<font color=red>x</font>�פ�ɽ������Ƥ�����ϡ�
-��4.3 ��ư�Ǥ�Ʊ���פؿʤߤޤ���
+ここで「<font color=red>x</font>」と表示されている場合は、
+「4.3 手動での同期」へ進みます。
 
-<H3>4.3 ��ư�Ǥ�Ʊ��</H3>
+<H3>4.3 手動での同期</H3>
 
-��<font color=red>x</font>�פ�ɽ������Ƥ������ϡ�host-a ��������
-ȯ�������᥿�ǡ����ι����̤�¿�᤮�����ᡢ��ư�������Ǥ��ʤ��ä����Ȥ�
-��̣���ޤ���<BR>
-���ξ�硢�ʲ��μ��ǡ�host-b�Υǡ����١�����host-a�˥��ԡ�����ɬ�פ�
-����ޤ���
+「<font color=red>x</font>」と表示されていた場合は、host-a が停止中に
+発生したメタデータの更新量が多過ぎたため、自動更新ができなかったことを
+意味します。<BR>
+この場合、以下の手順で、host-bのデータベースをhost-aにコピーする必要が
+あります。
 
 <BR><BR>
-host-b �� root�桼���ǥ᥿�ǡ��������פ��ޤ���
+host-b の rootユーザでメタデータをダンプします。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # gfdump.postgresql -d -f gfarm-pgsql.dmp
 </PRE></TD></TR></TBODY></TABLE>
 
 <BR><BR>
-host-a �� root�桼���ǥ᥿�ǡ�����ꥹ�ȥ����ޤ���
+host-a の rootユーザでメタデータをリストアします。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # gfdump.postgresql -r -f gfarm-pgsql.dmp
 </PRE></TD></TR></TBODY></TABLE>
 
 <BR><BR>
-���ˡ�4.2 ư���ǧ�פ�����ľ���ޤ���
+次に「4.2 動作確認」からやり直します。
 
 <HR>
 

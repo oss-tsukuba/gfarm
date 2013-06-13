@@ -6,38 +6,38 @@
 .TH "GFSERVICE" "1" "07 June 2013" "Gfarm" ""
 
 .SH NAME
-gfservice \- ��⡼�ȥۥ��Ȥ��� Gfarm �Υ����С������椹�롣
+gfservice \- リモートホストから Gfarm のサーバーを制御する。
 .SH SYNOPSIS
 
-\fBgfservice\fR [ \fB\fI���ץ����\fB\fR ] \fB���֥��ޥ��\fR [ \fB�ۥ���ID\fR ] [ \fB\fI���� ...\fB\fR ]
+\fBgfservice\fR [ \fB\fIオプション\fB\fR ] \fBサブコマンド\fR [ \fBホストID\fR ] [ \fB\fI引数 ...\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
-\fBgfservice\fR �ϡ�Gfarm �δ����Ԥ���⡼�ȥۥ��Ⱦ��
-�����С� (\fBgfmd\fR��\fBgfsd\fR��PostgreSQL)
-�����뤿��Υġ���Ǥ���
-���ΤȤ�����OpenLDAP �ˤ��б����Ƥ��ޤ���
-�����С��μ¹Գ��ϡ���ߡ����åȥ��å� 
-(\fBconfig-gfarm\fR �� \fBconfig-gfsd\fR �μ¹�)��
-�����С��ѻߤθ�����Ȥ��ä����Ȥ��Ǥ��ޤ���
+\fBgfservice\fR は、Gfarm の管理者がリモートホスト上の
+サーバー (\fBgfmd\fR、\fBgfsd\fR、PostgreSQL)
+を操作するためのツールです。
+今のところ、OpenLDAP には対応していません。
+サーバーの実行開始、停止、セットアップ 
+(\fBconfig-gfarm\fR や \fBconfig-gfsd\fR の実行)、
+サーバー廃止の後始末といったことができます。
 .PP
-\fBgfservice\fR �Υ��ޥ�ɹԤϡ����Ȥ��м��Τ褦�ˤʤ�ޤ���
+\fBgfservice\fR のコマンド行は、たとえば次のようになります。
 
 .nf
 	\fBgfservice \fIstart-gfmd\fB \fIgfmd2\fB\fR
 .fi
 .PP
-�����ǡ���\fIstart-gfmd\fR�פϥ��֥��ޥ�ɡ�
-��\fIgfmd2\fR�� �ϥۥ���ID �򤽤줾��ɽ���Ƥ��ޤ���
-���Υ��ޥ�ɹԤ�¹Ԥ���ȡ�\fBgfservice\fR ��
-��\fIgfmd2\fR�פ�̾�դ���줿�ۥ��Ⱦ�� gfmd ��
-�¹Գ��Ϥ��ߤޤ���
-��⡼�ȤΥ����С��ۥ��Ȥ���ꤹ��ݡ�\fBgfservice\fR �Ǥ�
-�ۥ���̾������˥ۥ���ID  ���Ѥ��ޤ���
-�ۥ���ID (\fIgfmd1\fR��
-\fIgfmd2\fR��...) �� \fBgfservice\fR ��
-������ե������������ޤ���
-�ʲ��ˡ�����ե�����ε������ܤ��ޤ���
+ここで、「\fIstart-gfmd\fR」はサブコマンド、
+「\fIgfmd2\fR」 はホストID をそれぞれ表しています。
+このコマンド行を実行すると、\fBgfservice\fR は
+「\fIgfmd2\fR」と名付けられたホスト上の gfmd の
+実行開始を試みます。
+リモートのサーバーホストを指定する際、\fBgfservice\fR では
+ホスト名の代わりにホストID  を用います。
+ホストID (\fIgfmd1\fR、
+\fIgfmd2\fR、...) は \fBgfservice\fR 用
+の設定ファイルで定義します。
+以下に、設定ファイルの記述例を載せます。
 
 .nf
 	gfmd1=metadb1.example.com
@@ -49,466 +49,466 @@ gfservice \- ��⡼�ȥۥ��Ȥ��� Gfarm �Υ����С������椹�롣
 	gfsd2=spool2.example.com
 .fi
 .PP
-\fBgfservice\fR �ϡ��ɤ߹���٤�����ե�����Υѥ��򼡤�����
-�Ƿ��ꤷ�ޤ���
+\fBgfservice\fR は、読み込むべき設定ファイルのパスを次の要領
+で決定します。
 .TP 3
 1. 
-��\fB-f\fR \fI�ե�����\fR�ץ��ץ���󤬻���
-����Ƥ���С�����\fI�ե�����\fR���ɤ߹��ߤޤ���
+「\fB-f\fR \fIファイル\fR」オプションが指定
+されていれば、その\fIファイル\fRを読み込みます。
 .TP 3
 2. 
-�嵭�ʳ��ξ��ǡ��Ķ��ѿ� GFSERVICE_CONF ��������졢
-�����ͤ���ʸ����Ǥʤ���С��ͤȤ��Ƶ����줿�ե�������ɤ߹��ߤޤ���
+上記以外の場合で、環境変数 GFSERVICE_CONF が定義され、
+かつ値が空文字列でなければ、値として記されたファイルを読み込みます。
 .TP 3
 3. 
-�嵭�ʳ��ξ��ϡ�\fI$HOME/.gfservice\fR ���ɤ߹��ߤޤ���
+上記以外の場合は、\fI$HOME/.gfservice\fR を読み込みます。
 .PP
-\fBgfservice\fR ������ե�������ɤ߹��ߤ˼��Ԥ���ȡ�
-���顼��å���������Ϥ��ơ��������˽�λ���ޤ���
-����ե����뤽�켫�Τ� Bourne �����륹����ץȤǡ�\fBgfservice\fR
-�Ϥ��Υե�����򼫿Ȥΰ����Ȥ��Ƽ����ߤޤ� (���Τ˸����С�������ץ�
-�Ȥ���ɾ�����ޤ�)��
-����ե�����ˤĤ��Ƥξܤ��������ϡ�gfservice.conf(5) �򻲾Ȥ��Ʋ�������
+\fBgfservice\fR は設定ファイルの読み込みに失敗すると、
+エラーメッセージを出力して、ただちに終了します。
+設定ファイルそれ自体は Bourne シェルスクリプトで、\fBgfservice\fR
+はそのファイルを自身の一部として取り込みます (正確に言えば、スクリプト
+として評価します)。
+設定ファイルについての詳しい説明は、gfservice.conf(5) を参照して下さい。
 .PP
-\fBgfservice\fR �ϡ���⡼�ȥۥ��Ȥ���³���뤿��ˡ�SSH
-(Secure Shell) ����Ѥ��ޤ���
-���֥��ޥ�� 1 �Ĥν������Ԥ���֡����٤� \fBssh\fR
-��¹Ԥ��뤳�Ȥ�����Τǡ�SSH ����������� (OpenSSH ��
-\fBssh-agent\fR �ʤ�) ���Ѥ��뤫���ѥ��ե졼��������
-ǧ�ڥ������Ѥ���ʤɤ��ơ��ѥ��ե졼����������Ϥ��ʤ��ƺѤ�褦��
-���뤳�Ȥ����ᤷ�ޤ���
+\fBgfservice\fR は、リモートホストと接続するために、SSH
+(Secure Shell) を使用します。
+サブコマンド 1 個の処理を遂行する間、何度も \fBssh\fR
+を実行することがあるので、SSH エージェント (OpenSSH の
+\fBssh-agent\fR など) を用いるか、パスフレーズが空の
+認証キーを用いるなどして、パスフレーズを毎回入力しなくて済むように
+することをお薦めします。
 .PP
-SSH �˲ä��ơ�\fBgfservice\fR �ϥ�⡼�ȥۥ��Ⱦ�� root
-���¤����뤿��� Sudo ���ޥ�ɤ���Ѥ��ޤ���
-�ƥ�⡼�ȥۥ��Ȥ� \fIsudoers\fR �ե����� (Sudo ������
-�ե�����) �˰ʲ��Τ褦�ʹԤ�­���Ʋ�������
+SSH に加えて、\fBgfservice\fR はリモートホスト上で root
+権限を得るために Sudo コマンドを使用します。
+各リモートホストの \fIsudoers\fR ファイル (Sudo の設定
+ファイル) に以下のような行を足して下さい。
 
 .nf
 	\fIuser\fR ALL=(root, _gfarmfs, _gfarmmd) NOPASSWD: gfservice-agent
 .fi
 .PP
-�����ǡ�\fIuser\fR �� \fBgfservice\fR
-��¹Ԥ���桼����̾���Ǥ���
-NOPASSWD ��ɬ�ܤǤϤ���ޤ��󤬡��ʤ��� \fBsudo\fR �ϲ��٤�
-�ѥ���ɤ�֤��Ƥ��뤳�Ȥ�����ޤ���
+ここで、\fIuser\fR は \fBgfservice\fR
+を実行するユーザの名前です。
+NOPASSWD は必須ではありませんが、省くと \fBsudo\fR は何度も
+パスワードを訊いてくることがあります。
 .PP
-gfservice �� SSH �� Sudo ���Ѥ��ơ���⡼�ȥۥ��Ⱦ�ˤ���
-\fBgfservice-agent\fR �Ȥ�������������ȥ��ޥ�ɤ�¹Ԥ��ޤ�
-�Τǡ�\fBgfservice\fR ���ޥ�ɤ��������ۥ��Ȥ��٤Ƥˡ�
-\fBgfservice-agent\fR �򥤥󥹥ȡ��뤷�Ƥ���ɬ�פ�����ޤ���
+gfservice は SSH と Sudo を用いて、リモートホスト上にある
+\fBgfservice-agent\fR というエージェントコマンドを実行します
+ので、\fBgfservice\fR コマンドで操作したいホストすべてに、
+\fBgfservice-agent\fR をインストールしておく必要があります。
 .PP
-\fBgfservice\fR�ϥ桼�������������֥��ޥ�ɤ��ɲäǤ����
-���ˡ��ץ饰���󥷥��ƥ����Ѥ��Ƥ��ޤ���
-�ܤ��������� "PLUG-IN SYSTEM" ����򻲾Ȥ��Ʋ�������
+\fBgfservice\fRはユーザが新しくサブコマンドを追加できるよ
+うに、プラグインシステムを採用しています。
+詳しい説明は "PLUG-IN SYSTEM" の節を参照して下さい。
 .SH "OPTIONS"
 .TP
 \fB-d\fR
-�ǥХå��������Ϥ��ޤ���
-\fBgfservice\fR �ϡ����Υ��ץ�����
-\fBgfservice-agent\fR ���Ϥ��ޤ��Τǡ�
-\fBgfservice-agent\fR �����ǥХå����󤬽��Ϥ���ޤ���
+デバッグ情報を出力します。
+\fBgfservice\fR は、このオプションを
+\fBgfservice-agent\fR に渡しますので、
+\fBgfservice-agent\fR からもデバッグ情報が出力されます。
 .TP
-\fB-f \fI�ե�����\fB\fR
-�ǥե���Ȥ�����ե����������ˡ���\fI�ե�����\fR�פ�
-�ɤ߹��ߤޤ���
+\fB-f \fIファイル\fB\fR
+デフォルトの設定ファイルの代わりに、「\fIファイル\fR」を
+読み込みます。
 .TP
-\fB-t \fI����\fB\fR
-���Υ����ॢ���Ȥ򡢡�\fI����\fR���äȤ��ޤ���
-\fBgfservice\fR �������С��ץ������ (gfmd��gfsd���Хå������
-�ǡ����١���) �μ¹Գ��Ϥʤ�����λ���ߤ�ݡ���������λ���뤫���⤷����
-\fBgfservice\fR �λ�����֤��в᤹�뤫�ޤ��Ԥ��ޤ���
-��\fI����\fR�פȤ��� ��no�פ���ꤹ��ȡ������ॢ���Ȥ�
-�����ʤ��ʤ�ޤ���
-�ǥե�����ͤϡ���no�פǤ���
+\fB-t \fI時間\fB\fR
+操作のタイムアウトを、「\fI時間\fR」秒とします。
+\fBgfservice\fR がサーバープログラム (gfmd、gfsd、バックエンド
+データベース) の実行開始ないし終了を試みる際、処理が完了するか、もしくは
+\fBgfservice\fR の指定時間が経過するかまで待ちます。
+「\fI時間\fR」として 「no」を指定すると、タイムアウトは
+起きなくなります。
+デフォルト値は、「no」です。
 .TP
 \fB-k\fR
-���Υ��ץ����\fBconfig-gfarm\fR ���֥��ޥ�ɤ⤷����
-\fBconfig-gfarm-master\fR ���֥��ޥ�ɤȶ��˻��ꤵ�줿��硢
-\fBgfservice\fR �� \fBgfkey\fR ���ޥ�ɤ��Ѥ���
-��ͭ��̩���ե������������ޤ��� 
+このオプションが\fBconfig-gfarm\fR サブコマンドもしくは
+\fBconfig-gfarm-master\fR サブコマンドと共に指定された場合、
+\fBgfservice\fR は \fBgfkey\fR コマンドを用いて
+共有秘密鍵ファイルを作成します。 
 .SH "SUB-COMMANDS FOR GFMD"
 .PP
-�ʲ��˵󤲤Ƥ���Τϡ�\fBgfmd\fR �����륵�֥��ޥ�ɤǤ���
-���ޥ�ɹԤ�Ϳ����ۥ���ID �ϡ���gfmd\fIn\fR��
-(gfmd1, gfmd2, ...) �Ǥʤ��ƤϤʤ�ޤ���
-����ʳ��ξ�硢\fBgfservice\fR �ϥ��顼�����Τ��Ƥ�������
-��λ���ޤ���
+以下に挙げているのは、\fBgfmd\fR を操作するサブコマンドです。
+コマンド行に与えるホストID は、「gfmd\fIn\fR」
+(gfmd1, gfmd2, ...) でなくてはなりません。
+それ以外の場合、\fBgfservice\fR はエラーを通知してただちに
+終了します。
 .TP
-\fBbackend-db-status \fI�ۥ���ID\fB\fR
-�Хå�����ɥǡ����١������¹���Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���
+\fBbackend-db-status \fIホストID\fB\fR
+バックエンドデータベースが実行中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。
 .TP
-\fBgfmd-status \fI�ۥ���ID\fB\fR
-gfmd ���¹���Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���
+\fBgfmd-status \fIホストID\fB\fR
+gfmd が実行中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。
 .TP
-\fBstart-backend-db \fI�ۥ���ID\fB\fR
-�Хå�����ɥǡ����١������¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
+\fBstart-backend-db \fIホストID\fB\fR
+バックエンドデータベースが実行中でなければ、実行を開始します。
 .TP
-\fBstart-gfmd \fI�ۥ���ID\fB\fR
-\fBgfmd\fR ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
+\fBstart-gfmd \fIホストID\fB\fR
+\fBgfmd\fR が実行中でなければ、実行を開始します。
 .TP
-\fBstart-gfmd-master \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBstart-gfmd\fR ����̾�Ǥ���
+\fBstart-gfmd-master \fIホストID\fB\fR
+サブコマンド \fBstart-gfmd\fR の別名です。
 .TP
-\fBstart-gfmd-slave \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBstart-gfmd\fR ��Ʊ���Ǥ�����gfmd �ˤ�
-\fB-S\fR ���ץ������Ϳ����ޤ���
+\fBstart-gfmd-slave \fIホストID\fB\fR
+サブコマンド \fBstart-gfmd\fR と同じですが、gfmd には
+\fB-S\fR オプションが付与されます。
 .TP
-\fBstart-gfarm \fI�ۥ���ID\fB\fR
-�Хå�����ɥǡ����١�������� \fBgfmd\fR ���¹���Ǥʤ���С�
-�¹Ԥ򳫻Ϥ��ޤ���
+\fBstart-gfarm \fIホストID\fB\fR
+バックエンドデータベースおよび \fBgfmd\fR が実行中でなければ、
+実行を開始します。
 .TP
-\fBstart-gfarm-master \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBstart-gfarm\fR ����̾�Ǥ���
+\fBstart-gfarm-master \fIホストID\fB\fR
+サブコマンド \fBstart-gfarm\fR の別名です。
 .TP
-\fBstart-gfarm-slave \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBstart-gfarm\fR ��Ʊ���Ǥ�����gfmd �ˤ�
-\fB-S\fR ���ץ������Ϳ����ޤ���
+\fBstart-gfarm-slave \fIホストID\fB\fR
+サブコマンド \fBstart-gfarm\fR と同じですが、gfmd には
+\fB-S\fR オプションが付与されます。
 .TP
-\fBstop-backend-db \fI�ۥ���ID\fB\fR
-�Хå�����ɥǡ����١������¹���ʤ顢�¹Ԥ���ߤ��ޤ���
+\fBstop-backend-db \fIホストID\fB\fR
+バックエンドデータベースが実行中なら、実行を停止します。
 .TP
-\fBstop-gfmd \fI�ۥ���ID\fB\fR
-\fBgfmd\fR ���¹���ʤ顢�¹Ԥ���ߤ��ޤ���
+\fBstop-gfmd \fIホストID\fB\fR
+\fBgfmd\fR が実行中なら、実行を停止します。
 .TP
-\fBstop-gfarm \fI�ۥ���ID\fB\fR
-�Хå�����ɥǡ����١�������� \fBgfmd\fR ���¹���ʤ顢
-�¹Ԥ���ߤ��ޤ���
+\fBstop-gfarm \fIホストID\fB\fR
+バックエンドデータベースおよび \fBgfmd\fR が実行中なら、
+実行を停止します。
 .TP
-\fBkill-gfmd \fI�ۥ���ID\fB\fR
-\fBgfmd\fR ���¹���ʤ顢������� (SIGKILL ������) ���ޤ���
+\fBkill-gfmd \fIホストID\fB\fR
+\fBgfmd\fR が実行中なら、強制停止 (SIGKILL を送付) します。
 .TP
-\fBrestart-backend-db \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBstop-backend-db\fR ��
-\fBstart-backend-db\fR ��³���Ƽ¹Ԥ��ޤ���
+\fBrestart-backend-db \fIホストID\fB\fR
+サブコマンド \fBstop-backend-db\fR と
+\fBstart-backend-db\fR を続けて実行します。
 .TP
-\fBrestart-gfmd \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBstop-gfmd\fR�פ�
-��\fBstart-gfmd\fR ��³���Ƽ¹Ԥ��ޤ���
+\fBrestart-gfmd \fIホストID\fB\fR
+サブコマンド \fBstop-gfmd\fR」と
+「\fBstart-gfmd\fR を続けて実行します。
 .TP
-\fBrestart-gfmd-master \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBrestart-gfmd\fR ����̾�Ǥ���
+\fBrestart-gfmd-master \fIホストID\fB\fR
+サブコマンド \fBrestart-gfmd\fR の別名です。
 .TP
-\fBrestart-gfmd-slave \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBstop-gfmd\fR ��
-\fBstart-gfmd-slave\fR ��³���Ƽ¹Ԥ��ޤ���
+\fBrestart-gfmd-slave \fIホストID\fB\fR
+サブコマンド \fBstop-gfmd\fR と
+\fBstart-gfmd-slave\fR を続けて実行します。
 .TP
-\fBrestart-gfarm \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBstop-gfarm\fR ��
-\fBstart-gfarm\fR ��³���Ƽ¹Ԥ��ޤ���
+\fBrestart-gfarm \fIホストID\fB\fR
+サブコマンド \fBstop-gfarm\fR と
+\fBstart-gfarm\fR を続けて実行します。
 .TP
-\fBrestart-gfarm-master \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBrestart-gfarm\fR ����̾�Ǥ���
+\fBrestart-gfarm-master \fIホストID\fB\fR
+サブコマンド \fBrestart-gfarm\fR の別名です。
 .TP
-\fBrestart-gfarm-slave \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBstop-gfarm\fR ��
-\fBstart-gfarm-slave\fR ��³���Ƽ¹Ԥ��ޤ���
+\fBrestart-gfarm-slave \fIホストID\fB\fR
+サブコマンド \fBstop-gfarm\fR と
+\fBstart-gfarm-slave\fR を続けて実行します。
 .TP
-\fBpromote \fI�ۥ���ID\fB\fR
-\fBgfmd\fR �򥹥졼�֤���ޥ������ؾ��ʤ����ޤ���
+\fBpromote \fIホストID\fB\fR
+\fBgfmd\fR をスレーブからマスターへ昇格させます。
 .TP
-\fBpromote-gfmd \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBpromote\fR ����̾�Ǥ���
+\fBpromote-gfmd \fIホストID\fB\fR
+サブコマンド \fBpromote\fR の別名です。
 .TP
-\fBset-gfmd-conf \fI�ۥ���ID\fB \fI����̾��\fB \fI��\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIgfmd.conf\fR �ե������
+\fBset-gfmd-conf \fIホストID\fB \fI設定名称\fB \fI値\fB\fR
+リモートホスト上の \fIgfmd.conf\fR ファイルに
 
 .nf
-	\fI����̾��\fR \fI��\fR
+	\fI設定名称\fR \fI値\fR
 .fi
 
-�Ȥ����Ԥ�ä��ޤ���
-���� \fIgfmd.conf\fR ��
-��\fI����̾��\fR�פȤ����Ԥ�¸�ߤ��Ƥ����硢
-\fBgfservice\fR �Ϥ���������Ƥ��顢�����˹Ԥ��ɲä��ޤ���
+という行を加えます。
+既に \fIgfmd.conf\fR に
+「\fI設定名称\fR」という行が存在している場合、
+\fBgfservice\fR はそれを削除してから、新たに行を追加します。
 .TP
-\fBset-gfsd-conf \fI�ۥ���ID\fB \fI����̾��\fB \fI��\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIgfsd.conf\fR �ե������
+\fBset-gfsd-conf \fIホストID\fB \fI設定名称\fB \fI値\fB\fR
+リモートホスト上の \fIgfsd.conf\fR ファイルに
 
 .nf
-	\fI����̾��\fR \fI��\fR
+	\fI設定名称\fR \fI値\fR
 .fi
 
-�Ȥ����Ԥ�ä��ޤ���
-���� \fIgfsd.conf\fR ��
-��\fI����̾��\fR�פȤ����Ԥ�¸�ߤ��Ƥ����硢
-\fBgfservice\fR �Ϥ���������Ƥ��顢�����˹Ԥ��ɲä��ޤ���
+という行を加えます。
+既に \fIgfsd.conf\fR に
+「\fI設定名称\fR」という行が存在している場合、
+\fBgfservice\fR はそれを削除してから、新たに行を追加します。
 .TP
-\fBunset-gfmd-conf \fI�ۥ���ID\fB \fI����̾��\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIgfmd.conf\fR �ե����뤫��
-��\fI����̾��\fR�׹Ԥ������ޤ���
-\fIgfmd.conf\fR �ե�����ˡ�\fI����̾��\fR��
-�Ԥ��ʤ���硢�ե�����Ϲ�������ޤ���
+\fBunset-gfmd-conf \fIホストID\fB \fI設定名称\fB\fR
+リモートホスト上の \fIgfmd.conf\fR ファイルから
+「\fI設定名称\fR」行を削除します。
+\fIgfmd.conf\fR ファイルに「\fI設定名称\fR」
+行がない場合、ファイルは更新されません。
 .TP
-\fBunset-gfsd-conf \fI�ۥ���ID\fB \fI����̾��\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIgfsd.conf\fR �ե����뤫��
-��\fI����̾��\fR�׹Ԥ������ޤ���
-\fIgfsd.conf\fR �ե�����ˡ�\fI����̾��\fR��
-�Ԥ��ʤ���硢�ե�����Ϲ�������ޤ���
+\fBunset-gfsd-conf \fIホストID\fB \fI設定名称\fB\fR
+リモートホスト上の \fIgfsd.conf\fR ファイルから
+「\fI設定名称\fR」行を削除します。
+\fIgfsd.conf\fR ファイルに「\fI設定名称\fR」
+行がない場合、ファイルは更新されません。
 .TP
-\fBbackup-backend-db \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�ΥХå�����ɥǡ����١����ΥХå����åפ�Ԥ���
-�Хå����åץǡ�����ɸ����Ϥؽ��Ϥ��ޤ���
+\fBbackup-backend-db \fIホストID\fB\fR
+リモートホスト上のバックエンドデータベースのバックアップを行い、
+バックアップデータを標準出力へ出力します。
 .TP
-\fBbackup-gfmd-conf \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIgfarm2.conf\fR �ե������ɸ�����
-�ؽ��Ϥ��ޤ���
+\fBbackup-gfmd-conf \fIホストID\fB\fR
+リモートホスト上の \fIgfarm2.conf\fR ファイルを、標準出力
+へ出力します。
 .TP
-\fBbackup-gfsd-conf \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIgfsd.conf\fR �ե������ɸ�����
-�ؽ��Ϥ��ޤ���
+\fBbackup-gfsd-conf \fIホストID\fB\fR
+リモートホスト上の \fIgfsd.conf\fR ファイルを、標準出力
+へ出力します。
 .TP
-\fBbackup-usermap \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIusermap\fR �ե������ɸ�����
-�ؽ��Ϥ��ޤ���
+\fBbackup-usermap \fIホストID\fB\fR
+リモートホスト上の \fIusermap\fR ファイルを、標準出力
+へ出力します。
 .TP
-\fBrestore-backend-db \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�ΥХå�����ɥǡ����١����Υǡ��������줷�ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���
+\fBrestore-backend-db \fIホストID\fB\fR
+リモートホスト上のバックエンドデータベースのデータを復旧します。
+バックアップデータは、標準入力から読み込みます。
 .TP
-\fBrestore-gfmd-conf \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIgfmd.conf\fR �ե���������줷�ޤ���
-\fBgfservice\fR �ϡ�\fIgfmd.conf\fR ��
-�Хå����åץǡ�����ɸ�����Ϥ����ɤ߹��ߤޤ���
+\fBrestore-gfmd-conf \fIホストID\fB\fR
+リモートホスト上の \fIgfmd.conf\fR ファイルを復旧します。
+\fBgfservice\fR は、\fIgfmd.conf\fR の
+バックアップデータを標準入力から読み込みます。
 .TP
-\fBrestore-gfsd-conf \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIgfsd.conf\fR �ե���������줷�ޤ���
-\fBgfservice\fR �ϡ�\fIgfsd.conf\fR ��
-�Хå����åץǡ�����ɸ�����Ϥ����ɤ߹��ߤޤ���
+\fBrestore-gfsd-conf \fIホストID\fB\fR
+リモートホスト上の \fIgfsd.conf\fR ファイルを復旧します。
+\fBgfservice\fR は、\fIgfsd.conf\fR の
+バックアップデータを標準入力から読み込みます。
 .TP
-\fBrestore-usermap \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIusermap\fR �ե���������줷�ޤ���
-\fBgfservice\fR �ϡ�\fIusermap\fR ��
-�Хå����åץǡ�����ɸ�����Ϥ����ɤ߹��ߤޤ���
+\fBrestore-usermap \fIホストID\fB\fR
+リモートホスト上の \fIusermap\fR ファイルを復旧します。
+\fBgfservice\fR は、\fIusermap\fR の
+バックアップデータを標準入力から読み込みます。
 .TP
-\fBconfig-gfarm \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fBconfig-gfarm\fR ���ޥ�ɤ�¹Ԥ��ޤ���
-���ΤȤ�������ե�������ѿ�
-��gfmd\fIn\fR_CONFIG_GFARM_OPTIONS�פ��������Ƥ���С�
-�����ͤ� \fBconfig-gfarm\fR �˥��ץ����Ȥ�����Ϳ����ޤ���
-��ץꥱ�������ǽ��ͭ���ˤ���Ȥ��ϡ����Υ��֥��ޥ�ɤϻ��Ѥ����������
-\fBconfig-gfarm-master\fR �ʤ���
-\fBconfig-gfarm-slave\fR ��ȤäƲ�������
-\fB-k\fR���ץ���󤬻��ꤵ��Ƥ����硢
-\fBgfservice\fR�� \fBgfkey\fR ���ޥ�ɤ��Ѥ���
-gfmd �ۥ��Ⱦ�˶�ͭ��̩���ե������������ޤ���
+\fBconfig-gfarm \fIホストID\fB\fR
+リモートホスト上で \fBconfig-gfarm\fR コマンドを実行します。
+このとき、設定ファイルで変数
+「gfmd\fIn\fR_CONFIG_GFARM_OPTIONS」が宣言されていれば、
+その値が \fBconfig-gfarm\fR にオプションとして付与されます。
+レプリケーション機能を有効にするときは、このサブコマンドは使用せず、代わりに
+\fBconfig-gfarm-master\fR ないし
+\fBconfig-gfarm-slave\fR を使って下さい。
+\fB-k\fRオプションが指定されている場合、
+\fBgfservice\fRは \fBgfkey\fR コマンドを用いて
+gfmd ホスト上に共有秘密鍵ファイルを作成します。
 .TP
-\fBconfig-gfarm-master \fI�ۥ���ID\fB\fR
-���Υ��֥��ޥ�ɤ� \fBconfig-gfarm\fR �ȴ���Ū��Ʊ���Ǥ�����
-gfmd �Υ�ץꥱ������󤬼�ưŪ��ͭ���ˤʤ�ޤ���
+\fBconfig-gfarm-master \fIホストID\fB\fR
+このサブコマンドは \fBconfig-gfarm\fR と基本的に同じですが、
+gfmd のレプリケーションが自動的に有効になります。
 .TP
-\fBconfig-gfarm-slave \fI�ۥ���ID\fB \fI�ޥ������ۥ���ID\fB\fR
-���֥��ޥ�� \fBconfig-gfarm\fR �ȴ���Ū��Ʊ���Ǥ�����
-��ץꥱ�������ǽ����ưŪ��ͭ���ˤʤꡢ
-��\fI�ޥ������ۥ���ID\fR�׾��ư��� gfmd �Υ��졼��
-�Ȥ���ư��ޤ���
-\fBgfservice\fR �� \fBgfmdhost\fR ���ޥ�ɤ�
-�Ѥ��Ƥ��Υ��졼�֥ۥ��Ȥ򥵡��С��ꥹ�Ȥ˲ä��ޤ���
-�ޤ����ޥ����� gfmd �ۥ��Ⱦ�� \fIgfarm2.conf\fR �ե�����
-�򹹿����ơ�metadb_server_list �ˤ��Υ��졼�֥ۥ��Ȥ�
-�ä�������ե�������������Ƥ��뤹�٤ƤΥۥ��Ȥ����ۤ��ޤ���
-�ѿ���gfmd\fIn\fR_PRIVATE_MODE�פ��ͤ���true�פ�
-���åȤ���Ƥ�����ϡ�Ʊ�ͤ� \fIgfsd.conf\fR �ե�����
-�򹹿��������٤Ƥ� gfmd �ۥ��Ȥ� gfsd �ۥ��Ȥ����ۤ��ޤ���
-�ѿ���gfmd\fIn\fR_AUTH_TYPE�פ��ͤ���sharedsecret��
-�ξ�硢��ͭ��̩���ե������ޥ����� gfmd �ۥ��Ȥ��餳�Υ��졼�� gfmd
-�ۥ��Ȥإ��ԡ����ޤ���
+\fBconfig-gfarm-slave \fIホストID\fB \fIマスターホストID\fB\fR
+サブコマンド \fBconfig-gfarm\fR と基本的に同じですが、
+レプリケーション機能が自動的に有効になり、
+「\fIマスターホストID\fR」上で動作する gfmd のスレーブ
+として動作します。
+\fBgfservice\fR は \fBgfmdhost\fR コマンドを
+用いてこのスレーブホストをサーバーリストに加えます。
+また、マスター gfmd ホスト上の \fIgfarm2.conf\fR ファイル
+を更新して、metadb_server_list にこのスレーブホストを
+加え、設定ファイルで定義されているすべてのホストに配布します。
+変数「gfmd\fIn\fR_PRIVATE_MODE」の値が「true」に
+セットされている場合は、同様に \fIgfsd.conf\fR ファイル
+を更新し、すべての gfmd ホストと gfsd ホストに配布します。
+変数「gfmd\fIn\fR_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルをマスター gfmd ホストからこのスレーブ gfmd
+ホストへコピーします。
 .TP
-\fBunconfig-gfarm \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBstop-gfsd\fR ��¹Ԥ��ơ����θ� gfmd ��
-�Хå�����ɥǡ����١��������������ե������ǥ��쥯�ȥ�򤹤٤ƺ�����ޤ���
-���졼�� gfmd ���ѻߤ�����ϡ�����˥��֥��ޥ��
-\fBunconfig-gfarm-slave\fR ����Ѥ��Ʋ�������
+\fBunconfig-gfarm \fIホストID\fB\fR
+サブコマンド \fBstop-gfsd\fR を実行して、その後 gfmd や
+バックエンドデータベースが作成したファイルやディレクトリをすべて削除します。
+スレーブ gfmd を廃止する場合は、代わりにサブコマンド
+\fBunconfig-gfarm-slave\fR を使用して下さい。
 .TP
-\fBunconfig-gfarm-master \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBunconfig-gfarm\fR ����̾�Ǥ���
+\fBunconfig-gfarm-master \fIホストID\fB\fR
+サブコマンド \fBunconfig-gfarm\fR の別名です。
 .TP
-\fBunconfig-gfarm-slave \fI�ۥ���ID\fB \fI�ޥ������ۥ���ID\fB\fR
-���֥��ޥ�� \fBunonfig-gfarm\fR �ȴ���Ū��Ʊ���Ǥ�����
-�ʲ����ɲý�����Ԥ��ޤ���
-\fBgfmdhost\fR ���ޥ�ɤ��Ѥ��ƥ����С��ꥹ�Ȥ��顢����
-���졼�֥ۥ��Ȥ������ޤ���
-�ޤ�������ե�������������Ƥ��뤹�٤ƤΥۥ��Ȥ�
-\fIgfarm2.conf\fR �򹹿�����
-metadb_server_list �����ꤵ�줿�����С��ꥹ�Ȥ��顢
-���Υ��졼�֥ۥ��Ȥ������ޤ���
-�ѿ���gfmd\fIn\fR_PRIVATE_MODE�פ��ͤ���true�פ�
-���åȤ���Ƥ�����ϡ�Ʊ�ͤ� \fIgfsd.conf\fR �ե�����
-�򹹿��������٤Ƥ� gfmd �ۥ��Ȥ� gfsd �ۥ��Ȥ����ۤ��ޤ���
+\fBunconfig-gfarm-slave \fIホストID\fB \fIマスターホストID\fB\fR
+サブコマンド \fBunonfig-gfarm\fR と基本的に同じですが、
+以下の追加処理を行います。
+\fBgfmdhost\fR コマンドを用いてサーバーリストから、その
+スレーブホストを削除します。
+また、設定ファイルで定義されているすべてのホストの
+\fIgfarm2.conf\fR を更新し、
+metadb_server_list に設定されたサーバーリストから、
+そのスレーブホストを削除します。
+変数「gfmd\fIn\fR_PRIVATE_MODE」の値が「true」に
+セットされている場合は、同様に \fIgfsd.conf\fR ファイル
+を更新し、すべての gfmd ホストと gfsd ホストに配布します。
 .SH "SUB-COMMANDS FOR GFSD"
 .PP
-�ʲ��˵󤲤Ƥ���Τϡ�\fBgfsd\fR �����륵�֥��ޥ�ɤǤ���
-���ޥ�ɹԤ�Ϳ����ۥ���ID �ϡ���gfsd\fIn\fR��
-(gfsd1, gfsd2, ...) �Ǥʤ��ƤϤʤ�ޤ���
-����ʳ��ξ�硢\fBgfservice\fR �ϥ��顼�����Τ��Ƥ�������
-��λ���ޤ���
+以下に挙げているのは、\fBgfsd\fR を操作するサブコマンドです。
+コマンド行に与えるホストID は、「gfsd\fIn\fR」
+(gfsd1, gfsd2, ...) でなくてはなりません。
+それ以外の場合、\fBgfservice\fR はエラーを通知してただちに
+終了します。
 .TP
-\fBgfsd-status \fI�ۥ���ID\fB\fR
-gfsd ���¹���Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���
+\fBgfsd-status \fIホストID\fB\fR
+gfsd が実行中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。
 .TP
-\fBstart-gfsd \fI�ۥ���ID\fB\fR
-\fBgfsd\fR ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���
+\fBstart-gfsd \fIホストID\fB\fR
+\fBgfsd\fR が実行中でなければ、実行を開始します。
 .TP
-\fBstop-gfsd \fI�ۥ���ID\fB\fR
-\fBgfsd\fR ���¹���ʤ顢�¹Ԥ���ߤ��ޤ���
+\fBstop-gfsd \fIホストID\fB\fR
+\fBgfsd\fR が実行中なら、実行を停止します。
 .TP
-\fBrestart-gfsd \fI�ۥ���ID\fB\fR
-���֥��ޥ��\fBstop-gfsd\fR ��
-\fBstart-gfsd\fR ��³���Ƽ¹Ԥ��ޤ���
+\fBrestart-gfsd \fIホストID\fB\fR
+サブコマンド\fBstop-gfsd\fR と
+\fBstart-gfsd\fR を続けて実行します。
 .TP
-\fBset-gfsd-conf \fI�ۥ���ID\fB \fI����̾��\fB \fI��\fB\fR
-gfmd �Ѥ� \fBset-gfsd-conf\fR ���֥��ޥ�ɤ�Ʊ���Ǥ���
+\fBset-gfsd-conf \fIホストID\fB \fI設定名称\fB \fI値\fB\fR
+gfmd 用の \fBset-gfsd-conf\fR サブコマンドと同じです。
 .TP
-\fBunset-gfsd-conf \fI�ۥ���ID\fB \fI����̾��\fB\fR
-gfmd �Ѥ� \fBunset-gfsd-conf\fR ���֥��ޥ�ɤ�Ʊ���Ǥ���
+\fBunset-gfsd-conf \fIホストID\fB \fI設定名称\fB\fR
+gfmd 用の \fBunset-gfsd-conf\fR サブコマンドと同じです。
 .TP
-\fBbackup-gfsd-conf \fI�ۥ���ID\fB\fR
-gfmd �Ѥ� \fBbackup-gfsd-conf\fR ���֥��ޥ�ɤ�Ʊ���Ǥ���
+\fBbackup-gfsd-conf \fIホストID\fB\fR
+gfmd 用の \fBbackup-gfsd-conf\fR サブコマンドと同じです。
 .TP
-\fBbackup-usermap \fI�ۥ���ID\fB\fR
-gfmd �Ѥ� \fBbackup-usermap\fR ���֥��ޥ�ɤ�Ʊ���Ǥ���
+\fBbackup-usermap \fIホストID\fB\fR
+gfmd 用の \fBbackup-usermap\fR サブコマンドと同じです。
 .TP
-\fBrestore-gfsd-conf \fI�ۥ���ID\fB\fR
-gfmd �Ѥ� \fBrestore-gfsd-conf\fR ���֥��ޥ�ɤ�Ʊ���Ǥ���
+\fBrestore-gfsd-conf \fIホストID\fB\fR
+gfmd 用の \fBrestore-gfsd-conf\fR サブコマンドと同じです。
 .TP
-\fBrestore-usermap \fI�ۥ���ID\fB\fR
-gfmd �Ѥ� \fBrestore-usermap\fR ���֥��ޥ�ɤ�Ʊ���Ǥ���
+\fBrestore-usermap \fIホストID\fB\fR
+gfmd 用の \fBrestore-usermap\fR サブコマンドと同じです。
 .TP
-\fBconfig-gfsd \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fBconfig-gfsd\fR ���ޥ�ɤ�¹Ԥ��ޤ���
-���ΤȤ�������ե�������ѿ�
-��gfsd\fIn\fR_CONFIG_GFARM_OPTIONS�פ��������Ƥ���С�
-�����ͤ� \fBconfig-gfsd\fR �˥��ץ����Ȥ�����Ϳ����ޤ���
-�ޤ���\fBgfservice\fR �� \fBgfhost\fR ���ޥ��
-���Ѥ��ơ���⡼�ȥۥ��Ȥ�ե����륷���ƥ�Ρ��ɤȤ�����Ͽ���ޤ���
-�ѿ���gfsd\fIn\fR_AUTH_TYPE�פ��ͤ���sharedsecret��
-�ξ�硢��ͭ��̩���ե������ gfmd1 ���� gfsd �ۥ��Ȥإ��ԡ����ޤ���
+\fBconfig-gfsd \fIホストID\fB\fR
+リモートホスト上で \fBconfig-gfsd\fR コマンドを実行します。
+このとき、設定ファイルで変数
+「gfsd\fIn\fR_CONFIG_GFARM_OPTIONS」が宣言されていれば、
+その値が \fBconfig-gfsd\fR にオプションとして付与されます。
+また、\fBgfservice\fR は \fBgfhost\fR コマンド
+を用いて、リモートホストをファイルシステムノードとして登録します。
+変数「gfsd\fIn\fR_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルを gfmd1 から gfsd ホストへコピーします。
 .TP
-\fBunconfig-gfsd \fI�ۥ���ID\fB\fR
-���֥��ޥ�� \fBstop-gfsd\fR ��¹Ԥ��ơ����θ� gfsd ��
-���������ե������ǥ��쥯�ȥ�򤹤٤ƺ�����ޤ���
+\fBunconfig-gfsd \fIホストID\fB\fR
+サブコマンド \fBstop-gfsd\fR を実行して、その後 gfsd が
+作成したファイルやディレクトリをすべて削除します。
 .SH "SUB-COMMANDS FOR CLIENT"
 .PP
-�ʲ��˵󤲤Ƥ���Τϡ����饤����Ȥ����륵�֥��ޥ�ɤǤ���
-���ޥ�ɹԤ�Ϳ����ۥ���ID �ϡ���gfmd\fIn\fR��
-(gfmd1, gfmd2, ...)����gfsd\fIn\fR��(gfsd1, gfsd2, ...)��
-��client\fIn\fR��(client1, client2, ...) �Τ����줫
-�Ǥʤ��ƤϤʤ�ޤ���
-����ʳ��ξ�硢\fBgfservice\fR �ϥ��顼�����Τ��Ƥ�������
-��λ���ޤ���
+以下に挙げているのは、クライアントを操作するサブコマンドです。
+コマンド行に与えるホストID は、「gfmd\fIn\fR」
+(gfmd1, gfmd2, ...)、「gfsd\fIn\fR」(gfsd1, gfsd2, ...)、
+「client\fIn\fR」(client1, client2, ...) のいずれか
+でなくてはなりません。
+それ以外の場合、\fBgfservice\fR はエラーを通知してただちに
+終了します。
 .TP
-\fBmount \fI�ۥ���ID\fB \fI�ǥ��쥯�ȥ�\fB \fI���ץ����...\fB\fR
-��⡼�ȥۥ��Ⱦ�Ρ�\fI�ǥ��쥯�ȥ�\fR�פˡ�Gfarm2
-�ե����륷���ƥ��ޥ���Ȥ��ޤ���
-������\fI���ץ����\fR�פ� \fBgfarm2fs\fR
-���ޥ�ɤؤΰ����Ȥߤʤ���ޤ���
+\fBmount \fIホストID\fB \fIディレクトリ\fB \fIオプション...\fB\fR
+リモートホスト上の「\fIディレクトリ\fR」に、Gfarm2
+ファイルシステムをマウントします。
+引数「\fIオプション\fR」は \fBgfarm2fs\fR
+コマンドへの引数とみなされます。
 .TP
-\fBunmount \fI�ۥ���ID\fB \fI�ǥ��쥯�ȥ�\fB\fR
-��⡼�ȥۥ��Ⱦ�Ρ�\fI�ǥ��쥯�ȥ�\fR�פ˥ޥ���Ȥ��줿
-Gfarm2 �ե����륷���ƥ�򥢥�ޥ���Ȥ��ޤ���
+\fBunmount \fIホストID\fB \fIディレクトリ\fB\fR
+リモートホスト上の「\fIディレクトリ\fR」にマウントされた
+Gfarm2 ファイルシステムをアンマウントします。
 .TP
-\fBumount \fI�ۥ���ID\fB \fI�ǥ��쥯�ȥ�\fB\fR
-���֥��ޥ�� \fBunmount\fR ����̾�Ǥ���
+\fBumount \fIホストID\fB \fIディレクトリ\fB\fR
+サブコマンド \fBunmount\fR の別名です。
 .TP
-\fBset-gfarm-conf \fI�ۥ���ID\fB \fI����̾��\fB \fI��\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIgfarm2.conf\fR �ե������
+\fBset-gfarm-conf \fIホストID\fB \fI設定名称\fB \fI値\fB\fR
+リモートホスト上の \fIgfarm2.conf\fR ファイルに
 
 .nf
-	\fI����̾��\fR \fI��\fR
+	\fI設定名称\fR \fI値\fR
 .fi
 
-�Ȥ����Ԥ�ä��ޤ���
-���� \fIgfarm2.conf\fR ��
-��\fI����̾��\fR�פȤ����Ԥ�¸�ߤ��Ƥ����硢
-\fBgfservice\fR �Ϥ���������Ƥ��顢�����˹Ԥ��ɲä��ޤ���
+という行を加えます。
+既に \fIgfarm2.conf\fR に
+「\fI設定名称\fR」という行が存在している場合、
+\fBgfservice\fR はそれを削除してから、新たに行を追加します。
 .TP
-\fBunset-gfarm-conf \fI�ۥ���ID\fB \fI����̾��\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIgfarm2.conf\fR �ե����뤫��
-��\fI����̾��\fR�׹Ԥ������ޤ���
-\fIgfarm2.conf\fR �ե�����ˡ�\fI����̾��\fR��
-�Ԥ��ʤ���硢�ե�����Ϲ�������ޤ���
+\fBunset-gfarm-conf \fIホストID\fB \fI設定名称\fB\fR
+リモートホスト上の \fIgfarm2.conf\fR ファイルから
+「\fI設定名称\fR」行を削除します。
+\fIgfarm2.conf\fR ファイルに「\fI設定名称\fR」
+行がない場合、ファイルは更新されません。
 .TP
-\fBbackup-gfarm-conf \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIgfarm2.conf\fR �ե������ɸ�����
-�ؽ��Ϥ��ޤ���
+\fBbackup-gfarm-conf \fIホストID\fB\fR
+リモートホスト上の \fIgfarm2.conf\fR ファイルを、標準出力
+へ出力します。
 .TP
-\fBbackup-shared-key \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�ζ�ͭ��̩���ե������ɸ����Ϥؽ��Ϥ��ޤ���
+\fBbackup-shared-key \fIホストID\fB\fR
+リモートホスト上の共有秘密鍵ファイルを、標準出力へ出力します。
 .TP
-\fBrestore-gfarm-conf \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIgfarm2.conf\fR �ե���������줷�ޤ���
-\fBgfservice\fR �ϡ�\fIgfarm2.conf\fR ��
-�Хå����åץǡ�����ɸ�����Ϥ����ɤ߹��ߤޤ���
+\fBrestore-gfarm-conf \fIホストID\fB\fR
+リモートホスト上の \fIgfarm2.conf\fR ファイルを復旧します。
+\fBgfservice\fR は、\fIgfarm2.conf\fR の
+バックアップデータを標準入力から読み込みます。
 .TP
-\fBrestore-shared-key \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�ζ�ͭ��̩���ե���������줷�ޤ���
-\fBgfservice\fR �ϡ���ͭ��̩���ΥХå����åץǡ�����ɸ������
-�����ɤ߹��ߤޤ���
+\fBrestore-shared-key \fIホストID\fB\fR
+リモートホスト上の共有秘密鍵ファイルを復旧します。
+\fBgfservice\fR は、共有秘密鍵のバックアップデータを標準入力
+から読み込みます。
 .TP
-\fBconfig-client \fI�ۥ���ID\fB\fR
-�ѿ���client\fIn\fR_AUTH_TYPE�פ��ͤ���sharedsecret��
-�ξ�硢��ͭ��̩���ե������ gfmd1 ���饯�饤����ȥۥ��Ȥإ��ԡ����ޤ���
+\fBconfig-client \fIホストID\fB\fR
+変数「client\fIn\fR_AUTH_TYPE」の値が「sharedsecret」
+の場合、共有秘密鍵ファイルを gfmd1 からクライアントホストへコピーします。
 .TP
-\fBunconfig-client \fI�ۥ���ID\fB\fR
-��⡼�ȥۥ��Ⱦ�� \fIgfarm2.conf\fR �ե����뤪���
-��ͭ��̩���ե�����������ޤ���
+\fBunconfig-client \fIホストID\fB\fR
+リモートホスト上の \fIgfarm2.conf\fR ファイルおよび
+共有秘密鍵ファイルを削除します。
 .TP
-\fBgfcmd \fI�ۥ���ID\fB \fIcommand-name\fB \fIcommand-argument ...\fB\fR
-��⡼�ȥۥ��Ⱦ�� Gfarm ���ޥ�ɤ�¹Ԥ��ޤ���
+\fBgfcmd \fIホストID\fB \fIcommand-name\fB \fIcommand-argument ...\fB\fR
+リモートホスト上で Gfarm コマンドを実行します。
 .SH "SUB-COMMANDS FOR MULTIPLE HOSTS"
 .PP
-�ʲ��˵󤲤Ƥ���Τϡ�ʣ���Υۥ��Ȥ����륵�֥��ޥ�ɤǤ���
-���ޥ�ɹԤǡ��ۥ���ID ����ꤹ�뤳�ȤϤǤ��ޤ���
+以下に挙げているのは、複数のホストを操作するサブコマンドです。
+コマンド行で、ホストID を指定することはできません。
 .TP
 \fBstart-all\fR
-���٤ƤΥХå�����ɥǡ����١�����gfmd��gfsd ��ư���ޤ���
+すべてのバックエンドデータベース、gfmd、gfsd を起動します。
 .TP
 \fBstop-all\fR
-���٤Ƥ� gfsd��gfmd���Хå�����ɥǡ����١�������ߤ��ޤ���
+すべての gfsd、gfmd、バックエンドデータベースを停止します。
 .TP
 \fBrestart-all\fR
-���֥��ޥ�� \fBstop-all\fR ��
-\fBstart-all\fR ��³���Ƽ¹Ԥ��ޤ���
+サブコマンド \fBstop-all\fR と
+\fBstart-all\fR を続けて実行します。
 .TP
 \fBconfig-all\fR
-\fIgfmd1\fR ���Ф���
-"\fBconfig-gfarm-master\fR" ��¹Ԥ�������ʳ��Τ��٤Ƥ� gfmd
-���Ф��� "\fBconfig-gfarm-slave\fR" ��¹Ԥ��ޤ���
-���ˤ��٤Ƥ� gfsd ���Ф��� "\fBconfig-gfsd\fR" ��¹Ԥ��ޤ���
-�Ǹ�ˤ��٤ƤΥ��饤����Ȥ��Ф��ơ�"\fBconfig-client\fR" ��
-�¹Ԥ��ޤ���
+\fIgfmd1\fR に対して
+"\fBconfig-gfarm-master\fR" を実行し、それ以外のすべての gfmd
+に対して "\fBconfig-gfarm-slave\fR" を実行します。
+次にすべての gfsd に対して "\fBconfig-gfsd\fR" を実行します。
+最後にすべてのクライアントに対して、"\fBconfig-client\fR" を
+実行します。
 .TP
 \fBunconfig-all\fR
-���٤ƤΥ��饤����Ȥ��Ф��ơ�"\fBunconfig-client\fR" ��¹�
-���ޤ���
-���ˤ��٤Ƥ� gfsd ���Ф��� "\fBunconfig-gfsd\fR" ��¹Ԥ��ޤ���
-�Ǹ�ˤ��٤Ƥ� gfmd ���Ф��� "\fBunconfig-gfarm\fR" ��
-�¹Ԥ��ޤ���
+すべてのクライアントに対して、"\fBunconfig-client\fR" を実行
+します。
+次にすべての gfsd に対して "\fBunconfig-gfsd\fR" を実行します。
+最後にすべての gfmd に対して "\fBunconfig-gfarm\fR" を
+実行します。
 .SH "PLUG-IN SYSTEM"
 .PP
-\fBgfservice\fR�ϥ桼�������������֥��ޥ�ɤ��ɲäǤ����
-���ˡ��ץ饰���󥷥��ƥ����Ѥ��Ƥ��ޤ������ꤵ�줿���֥��ޥ�ɤ�
-\fBgfservice\fR���󶡤��Ƥ��ʤ���硢
-\fBgfservice\fR���ޥ�ɤ� %%DATADIR%%/gfarm/gfservice ��
-���Υ��֥��ޥ��̾�Υե�����򻲾Ȥ��ޤ���
+\fBgfservice\fRはユーザが新しくサブコマンドが追加できるよ
+うに、プラグインシステムを採用しています。指定されたサブコマンドを
+\fBgfservice\fRが提供していない場合、
+\fBgfservice\fRコマンドは %%DATADIR%%/gfarm/gfservice 以
+下のサブコマンド名のファイルを参照します。
 .PP
-���֥��ޥ�ɤΥե������ Bourne�����륹����ץȤǽ񤭤ޤ���
-���֥��ޥ�� "\fIname\fR" �Υ��֥��ޥ�ɥե�����
-�ϡ�\fBgfservice\fR����¹Ԥ����
-"\fBsubcmd_\fIname\fB\fR"�Ȥ���̾
-���Υ�����ؿ��� \fBgfservice-agent\fR����¹Ԥ����
+サブコマンドのファイルは Bourneシェルスクリプトで書きます。
+サブコマンド "\fIname\fR" のサブコマンドファイル
+は、\fBgfservice\fRから実行される
+"\fBsubcmd_\fIname\fB\fR"という名
+前のシェル関数、 \fBgfservice-agent\fRから実行される
 "\fBsubcmd_\fIname\fB_agent\fR"
-�Ȥ���̾���Υ�����ؿ�����������Ƥ���ɬ�פ�����ޤ���
+という名前のシェル関数が実装されている必要があります。
 .PP
-���֥��ޥ�ɤ��桼�����ɲä����̤Υ��֥��ޥ�ɤ˰�¸���Ƥ�����Τ���ˡ�
-���֥��ޥ�� "\fIname\fR" �Υ��֥��ޥ�ɥե�����
-�ϡ� "\fB\fIname\fB_depends\fR" ��
-����̾���Υ�����ؿ��ǡ����Υ��֥��ޥ�ɤ���¸���Ƥ���¾�Υ��֥��ޥ��
-�Υꥹ�Ȥ��֤�ɬ�פ�����ޤ������֥��ޥ�ɤΥꥹ�Ȥϥ��ڡ����Ƕ��ڤ��
-�����֥��ޥ�ɤ�ʸ����Ǥ�����¸���Ƥ���¾�Υ��֥��ޥ�ɤ��ʤ����϶�ʸ������֤���
-��������Ʊ�ͤˡ����֥��ޥ�ɥե������
+サブコマンドがユーザが追加した別のサブコマンドに依存している時のために、
+サブコマンド "\fIname\fR" のサブコマンドファイル
+は、 "\fB\fIname\fB_depends\fR" と
+いう名前のシェル関数で、そのサブコマンドが依存している他のサブコマンド
+のリストを返す必要があります．サブコマンドのリストはスペースで区切られ
+たサブコマンドの文字列です．依存している他のサブコマンドがない場合は空文字列を返して
+下さい。同様に、サブコマンドファイルは
 "\fB\fIname\fB_agent_depends\fR"
-�Ȥ���̾���Υ�����ؿ��ǡ����Υ��֥��ޥ�ɤΥ���������Ȥ���¸���Ƥ���
-¾�Υ��֥��ޥ�ɤΥꥹ�Ȥ��֤�ɬ�פ�����ޤ���
+という名前のシェル関数で、そのサブコマンドのエージェントが依存している
+他のサブコマンドのリストを返す必要があります。

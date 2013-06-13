@@ -11,26 +11,26 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfperf-copy</refname>
-<refpurpose>Gfarm �ե�����ʣ������ǽ¬���Ԥ���</refpurpose>
+<refpurpose>Gfarm ファイル複製の性能測定を行う。</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfperf-copy</command>
-    <arg choice='plain'>-s, --src <replaceable>���ԡ���url</replaceable></arg>
-    <arg choice='plain'>-d, --dst <replaceable>���ԡ���url</replaceable></arg>
-    <arg choice='opt'>-l, --filesize <replaceable>�ե����륵����</replaceable></arg>
-    <arg choice='opt'>-b, --busize <replaceable>�Хåե�������</replaceable></arg>
-    <arg choice='opt'>-g, --gfsd <replaceable>gfsd̾</replaceable></arg>
-    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fs�ޥ���ȥݥ����</replaceable></arg>
+    <arg choice='plain'>-s, --src <replaceable>コピー元url</replaceable></arg>
+    <arg choice='plain'>-d, --dst <replaceable>コピー先url</replaceable></arg>
+    <arg choice='opt'>-l, --filesize <replaceable>ファイルサイズ</replaceable></arg>
+    <arg choice='opt'>-b, --busize <replaceable>バッファサイズ</replaceable></arg>
+    <arg choice='opt'>-g, --gfsd <replaceable>gfsd名</replaceable></arg>
+    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fsマウントポイント</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><parameter>���ԡ���url</parameter>����<parameter>���ԡ���url</parameter>�˥ե�����򥳥ԡ������Υ��ԡ���ǽ��¬�ꤷ�ޤ���
-<parameter>���ԡ���url</parameter>��<parameter>���ԡ���url</parameter>�Ϥɤ��餫������gfarm url (gfarm:///�ǻϤޤ���) �Ǥʤ��ƤϤʤ�ޤ��󡣤����Ƥ⤦������file url (file:///�ǻϤޤ���) �Ǥʤ��ƤϤʤ�ޤ���
+<para><parameter>コピー元url</parameter>から<parameter>コピー先url</parameter>にファイルをコピーしそのコピー性能を測定します。
+<parameter>コピー元url</parameter>と<parameter>コピー先url</parameter>はどちらか一方がgfarm url (gfarm:///で始まるもの) でなくてはなりません。そしてもう片方はfile url (file:///で始まるもの) でなくてはなりません。
 </para>
 </refsect1>
 
@@ -38,59 +38,59 @@
 <variablelist>
 
 <varlistentry>
-<term><option>-s, --src</option> <parameter>���ԡ���url</parameter></term>
+<term><option>-s, --src</option> <parameter>コピー元url</parameter></term>
 <listitem>
 <para>
-���ԡ���url����ꤷ�ޤ������ԡ���url��gfarm url����ꤷ����硢���ԡ���url��file url�Ǥʤ��ƤϤʤ�ޤ���
+コピー元urlを指定します。コピー元urlにgfarm urlを指定した場合、コピー先urlはfile urlでなくてはなりません。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-d, --dst</option> <parameter>���ԡ���url</parameter></term>
+<term><option>-d, --dst</option> <parameter>コピー元url</parameter></term>
 <listitem>
 <para>
-���ԡ���url����ꤷ�ޤ������ԡ���url��gfarm url����ꤷ����硢���ԡ���url��file url�Ǥʤ��ƤϤʤ�ޤ���
+コピー先urlを指定します。コピー先urlにgfarm urlを指定した場合、コピー元urlはfile urlでなくてはなりません。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-l, --filesize</option> <parameter>�ե����륵����</parameter></term>
+<term><option>-l, --filesize</option> <parameter>ファイルサイズ</parameter></term>
 <listitem>
 <para>
-���Ѥ���ե����륵��������ꤷ�ޤ���
-�ǥե���Ȥ�1M�Ǥ���
+使用するファイルサイズを指定します。
+デフォルトは1Mです。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-b, --bufsize</option> <parameter>�Хåե�������</parameter></term>
+<term><option>-b, --bufsize</option> <parameter>バッファサイズ</parameter></term>
 <listitem>
 <para>
-���Ѥ���Хåե�����������ꤷ�ޤ���
-�ǥե���Ȥ�4K�Ǥ���
+使用するバッファサイズを指定します。
+デフォルトは4Kです。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-g, --gfsd</option> <parameter>gfsd̾</parameter></term>
+<term><option>-g, --gfsd</option> <parameter>gfsd名</parameter></term>
 <listitem>
 <para>
-�ե�������������gfsd����ꤷ�ޤ���
-�ܥ��ץ�������ꤷ�ʤ��ä�����gfarm����ưŪ�˳����Ƥ�gfsd����Ѥ��ޤ���
+ファイルを作成するgfsdを指定します。
+本オプションを指定しなかった場合はgfarmが自動的に割当てたgfsdを使用します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fs�ޥ���ȥݥ����</parameter></term>
+<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fsマウントポイント</parameter></term>
 <listitem>
 <para>
-gfarm2fs�Υޥ���ȥݥ���Ȥ���ꤷ�ޤ���
-gfarm url�����ꤵ�줿�����Ф�gfarm2fs��ͳ�ǤΥ���������Ԥ��ޤ���
+gfarm2fsのマウントポイントを指定します。
+gfarm urlが指定された方に対しgfarm2fs経由でのアクセスを行います。
 </para>
 </listitem>
 </varlistentry>

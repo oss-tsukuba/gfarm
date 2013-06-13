@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_glob_add</refname>
-<refpurpose>�ѥ��Υ����פ�ꥹ�Ȥ��ɲä���</refpurpose>
+<refpurpose>パスのタイプをリストに追加する</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -32,11 +32,11 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>����
+<para>引数
 <parameter>listp</parameter>
-�˰���
+に引数
 <parameter>dtype</parameter>
-��ѥ��Υ����פȤ����ɲä��ޤ���</para>
+をパスのタイプとして追加します。</para>
 </refsect1>
 
 <refsect1 id='return-values'><title>RETURN VALUES</title>
@@ -44,13 +44,13 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>���ｪλ�򼨤��ޤ���</para>
+<para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>������­�Τ����������ߤ��ޤ�����</para>
+<para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
 </variablelist>

@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_CHDIR" "3" "11 September 2003" "Gfarm" ""
 .SH NAME
-gfs_chdir \- ��ȥǥ��쥯�ȥ���ѹ�
+gfs_chdir \- 作業ディレクトリの変更
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,29 +14,29 @@ char *gfs_chdir (const char * \fIgfarm_url\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-��ȥǥ��쥯�ȥ�����
+作業ディレクトリを引数
 \fIgfarm_url\fR
-�˻��ꤷ���ǥ��쥯�ȥ���ѹ����ޤ���
+に指定したディレクトリに変更します。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
 \fBGFARM_ERR_AUTHENTICATION\fR
-gfmd(8) ���Ф���桼����ǧ�ڤ����Ԥ��ޤ�����
+gfmd(8) に対するユーザー認証が失敗しました。
 .TP
 \fBGFARM_ERR_PERMISSION_DENIED\fR
-���ꤷ���ǥ��쥯�ȥ���ѹ����븢�¤�����ޤ���
+指定したディレクトリに変更する権限がありません。
 .TP
 \fBGFARM_ERR_NO_SUCH_OBJECT\fR
-���ꤵ�줿�ǥ��쥯�ȥ꤬¸�ߤ��ޤ���
+指定されたディレクトリが存在しません。
 .TP
 \fBGFARM_ERR_NOT_A_DIRECTORY\fR
-���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ºݤˤϥǥ��쥯�ȥ�Ǥʤ��ä����Ȥ�
-�����ޤ���
+指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。

@@ -28,7 +28,7 @@ NAME="NAME"
 >gfservice-agent&nbsp;--&nbsp;<B
 CLASS="COMMAND"
 >gfservice</B
-> �Υ����������</DIV
+> のエージェント</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -43,12 +43,12 @@ CLASS="COMMAND"
 >  [<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
->]  �ۥ��� ID   ���֥��ޥ��  [<TT
+>]  ホスト ID   サブコマンド  [<TT
 CLASS="REPLACEABLE"
 ><I
->���� ...</I
+>引数 ...</I
 ></TT
 >]</P
 ></DIV
@@ -63,83 +63,83 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfservice-agent</B
-> �ϡ�<B
+> は、<B
 CLASS="COMMAND"
 >gfservice</B
-> ��
-����������ȤǤ���
+> の
+エージェントです。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> ���Ѥ����������ۥ��Ȥ��٤Ƥˡ�����
-����������Ȥ򥤥󥹥ȡ��뤹��ɬ�פ�����ޤ���
+> を用いて操作したいホストすべてに、この
+エージェントをインストールする必要があります。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �Ȱۤʤꡢ����ե�������ɤ߹��ߤޤ���</P
+> と異なり、設定ファイルは読み込みません。</P
 ><P
 ><B
 CLASS="COMMAND"
 >gfservice-agent</B
-> �ϡ��桼����ľ�ܼ¹Ԥ��뤳�Ȥ�տ�
-���ƺ������줿��ΤǤϤ���ޤ���
-��������ѤǤϡ�SSH �� Sudo ��𤷤� <B
+> は、ユーザが直接実行することを意図
+して作成されたものではありません。
+日常の利用では、SSH と Sudo を介して <B
 CLASS="COMMAND"
 >gfservice</B
-> ���ޥ��
-�ˤ�äƼ¹Ԥ��������Ǥ���</P
+> コマンド
+によって実行されるだけです。</P
 ><P
->�ۥ��� ID ������ <B
+>ホスト ID 引数は <B
 CLASS="COMMAND"
 >gfservice</B
-> �Τ�Τ�Ʊ���Ǥ�����
+> のものと同じですが、
 <B
 CLASS="COMMAND"
 >gfservice-agent</B
-> �Ǥϥۥ��� ID ��ۥ��Ȥμ���
-("gfmd", "gfsd", "client" �Τ����줫) ����̤��뤿�ᡢ�����
-�ǥХå���å������Τ���ˤ����ȤäƤ��ޤ���</P
+> ではホスト ID をホストの種別
+("gfmd", "gfsd", "client" のいずれか) を区別するため、および
+デバッグメッセージのためにしか使っていません。</P
 ><P
 ><B
 CLASS="COMMAND"
 >gfservice-agent</B
-> �Υ��֥��ޥ��̾�� 
+> のサブコマンド名は 
 <B
 CLASS="COMMAND"
 >gfservice</B
-> �Τ�Τ˻��Ƥ��ޤ����������ϰۤʤ�ޤ���
-���Ȥ��С�<B
+> のものに似ていますが、引数は異なります。
+たとえば、<B
 CLASS="COMMAND"
 >gfservice-agent</B
-> �� <B
+> の <B
 CLASS="COMMAND"
 >unmount</B
 >
-���֥��ޥ�ɤϡ�
-��<CODE
+サブコマンドは、
+「<CODE
 CLASS="PARAMETER"
 >directory</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->�ǥ��쥯�ȥ�</I
+>ディレクトリ</I
 ></TT
->��
-�Ȥ���������Ȥ�ޤ���</P
+>」
+という引数をとります。</P
 ><P
 CLASS="LITERALLAYOUT"
 >	gfservice-agent&nbsp;client3&nbsp;unmount&nbsp;directory=/somewhere</P
 ><P
->������Ф��ơ�<B
+>これに対して、<B
 CLASS="COMMAND"
 >gfservice</B
-> �Ǥϡ�
-��<TT
+> では、
+「<TT
 CLASS="REPLACEABLE"
 ><I
->�ǥ��쥯�ȥ�</I
+>ディレクトリ</I
 ></TT
->�פȤ���������Ȥ�ޤ���</P
+>」という引数をとります。</P
 ><P
 CLASS="LITERALLAYOUT"
 >	gfservice&nbsp;unmount&nbsp;client3&nbsp;/somewhere</P
@@ -147,13 +147,13 @@ CLASS="LITERALLAYOUT"
 ><B
 CLASS="COMMAND"
 >gfservice-agent</B
-> �ΰ����ϤۤȤ�ɤ��٤ơ��֥���=�͡�
-�Ȥ������ˤʤäƤ��ޤ���
-ʣ���ΰ�����Ȥ��硢�����ν����Ǥ�դǤ���
+> の引数はほとんどすべて、「キー=値」
+という形になっています。
+複数の引数をとる場合、引数の順序は任意です。
 <B
 CLASS="COMMAND"
 >gfservice-agent</B
-> �ϡ�̤�ΤΥ�����̵�뤷�ޤ���</P
+> は、未知のキーを無視します。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -174,7 +174,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�ǥХå��������Ϥ��ޤ���</P
+>デバッグ情報を出力します。</P
 ></DD
 ></DL
 ></DIV
@@ -190,8 +190,8 @@ NAME="SUB-COMMANDS"
 ><B
 CLASS="COMMAND"
 >gfservice-agent</B
-> �ϸ��ߤΤȤ��������Υ��֥��ޥ�ɤ�
-ǧ�����ޤ���</P
+> は現在のところ、次のサブコマンドを
+認識します。</P
 ><P
 ></P
 ><DIV
@@ -208,7 +208,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->�ѥ�᥿̾</I
+>パラメタ名</I
 ></TT
 >
 <CODE
@@ -217,35 +217,35 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->��<B
+>「<B
 CLASS="COMMAND"
 >config-gfarm -T</B
->�ץ��ޥ�ɤ�¹Ԥ��ơ�
-��<TT
+>」コマンドを実行して、
+「<TT
 CLASS="REPLACEABLE"
 ><I
->�ѥ�᥿̾</I
+>パラメタ名</I
 ></TT
-> �פ��ͤ�ɸ����Ϥ˽��Ϥ��ޤ���
-������<CODE
+> 」の値を標準出力に出力します。
+引数「<CODE
 CLASS="PARAMETER"
 >param</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->�ѥ�᥿̾</I
+>パラメタ名</I
 ></TT
->��
-����ά���줿���ϡ���<B
+>」
+が省略された場合は、「<B
 CLASS="COMMAND"
 >config-gfarm -T</B
->�ץ��ޥ�ɤ�
-��̤��٤Ƥ���Ϥ��ޤ���</P
+>」コマンドの
+結果すべてを出力します。</P
 ></DD
 ><DT
 ><B
@@ -258,7 +258,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->�ѥ�᥿̾</I
+>パラメタ名</I
 ></TT
 >
 <CODE
@@ -267,36 +267,36 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->��<B
+>「<B
 CLASS="COMMAND"
 >config-gfsd -T</B
->�ץ��ޥ�ɤ�¹Ԥ��ơ�
-��<TT
+>」コマンドを実行して、
+「<TT
 CLASS="REPLACEABLE"
 ><I
->�ѥ�᥿̾</I
+>パラメタ名</I
 ></TT
->�פ��ͤ�ɸ����Ϥ�
-���Ϥ��ޤ���
-������<CODE
+>」の値を標準出力に
+出力します。
+引数「<CODE
 CLASS="PARAMETER"
 >param</CODE
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->�ѥ�᥿̾</I
+>パラメタ名</I
 ></TT
->��
-����ά���줿���ϡ���<B
+>」
+が省略された場合は、「<B
 CLASS="COMMAND"
 >config-gfsd -T</B
->�ץ��ޥ�ɤ�
-��̤��٤Ƥ���Ϥ��ޤ���</P
+>」コマンドの
+結果すべてを出力します。</P
 ></DD
 ><DT
 ><B
@@ -309,13 +309,13 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->�Хå�����ɥǡ����١�����ư����Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���</P
+>バックエンドデータベースが動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。</P
 ></DD
 ><DT
 ><B
@@ -328,13 +328,13 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->gfmd ��ư����Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���</P
+>gfmd が動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。</P
 ></DD
 ><DT
 ><B
@@ -347,13 +347,13 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->gfsd ��ư����Ǥ���С���λ������ 0 �ǽ�λ���ޤ���
-����ʳ��ξ��ϡ�1 �ǽ�λ���ޤ���</P
+>gfsd が動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。</P
 ></DD
 ><DT
 ><B
@@ -366,7 +366,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 >
 <CODE
@@ -375,12 +375,12 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->����</I
+>時間</I
 ></TT
 ></DT
 ><DD
 ><P
->�Хå�����ɥǡ����١������¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���</P
+>バックエンドデータベースが実行中でなければ、実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -393,7 +393,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 >
 <CODE
@@ -402,12 +402,12 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->����</I
+>時間</I
 ></TT
 ></DT
 ><DD
 ><P
->gfmd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���</P
+>gfmd が実行中でなければ、実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -420,7 +420,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 >
 <CODE
@@ -429,12 +429,12 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->����</I
+>時間</I
 ></TT
 ></DT
 ><DD
 ><P
->gfsd ���¹���Ǥʤ���С��¹Ԥ򳫻Ϥ��ޤ���</P
+>gfsd が実行中でなければ、実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -447,15 +447,15 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->��<B
+>「<B
 CLASS="COMMAND"
 >config-gfarm</B
->�ץ��ޥ�ɤ�¹Ԥ��ޤ���</P
+>」コマンドを実行します。</P
 ></DD
 ><DT
 ><B
@@ -468,19 +468,19 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->��<B
+>「<B
 CLASS="COMMAND"
 >config-gfarm</B
 > <CODE
 CLASS="PARAMETER"
 >-r</CODE
->�ץ��ޥ�ɤ�¹�
-���ޤ���</P
+>」コマンドを実行
+します。</P
 ></DD
 ><DT
 ><B
@@ -493,15 +493,15 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->��<B
+>「<B
 CLASS="COMMAND"
 >config-gfsd</B
->�ץ��ޥ�ɤ�¹Ԥ��ޤ���</P
+>」コマンドを実行します。</P
 ></DD
 ><DT
 ><B
@@ -514,7 +514,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 ></DT
 ><DD
@@ -522,8 +522,8 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >stop-gfarm</B
-> ���֥��ޥ�ɤ�¹Ԥ��ơ����θ� gfmd ��
-�Хå�����ɥǡ����١��������������ե������ǥ��쥯�ȥ�򤹤٤ƺ�����ޤ���</P
+> サブコマンドを実行して、その後 gfmd と
+バックエンドデータベースが作成したファイルやディレクトリをすべて削除します。</P
 ></DD
 ><DT
 ><B
@@ -536,16 +536,16 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfsd</B
-> ��¹Ԥ������θ� gfsd ����������
-�ե������ǥ��쥯�ȥ�򤹤٤ƺ�����ޤ���</P
+> を実行し、その後 gfsd が作成した
+ファイルやディレクトリをすべて削除します。</P
 ></DD
 ><DT
 ><B
@@ -558,7 +558,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 ></DT
 ><DD
@@ -566,7 +566,7 @@ CLASS="REPLACEABLE"
 ><TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> �ե�����ȶ�ͭ��̩���ե�����������ޤ���</P
+> ファイルと共有秘密鍵ファイルを削除します。</P
 ></DD
 ><DT
 ><B
@@ -579,7 +579,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 ></DT
 ><DD
@@ -587,7 +587,7 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfmd</B
-> �򥹥졼�֤���ޥ������ؾ��ʤ����ޤ���</P
+> をスレーブからマスターへ昇格させます。</P
 ></DD
 ><DT
 ><B
@@ -600,15 +600,15 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >promote</B
-> ����̾�Ǥ���</P
+> の別名です。</P
 ></DD
 ><DT
 ><B
@@ -621,7 +621,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->�ǥ��쥯�ȥ�</I
+>ディレクトリ</I
 ></TT
 >
 <CODE
@@ -630,18 +630,18 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->Gfarm2 �ե����륷���ƥ���<TT
+>Gfarm2 ファイルシステムを「<TT
 CLASS="REPLACEABLE"
 ><I
->�ǥ��쥯�ȥ�</I
+>ディレクトリ</I
 ></TT
->�פ�
-�ޥ���Ȥ��ޤ���</P
+>」に
+マウントします。</P
 ></DD
 ><DT
 ><B
@@ -654,18 +654,18 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->�ǥ��쥯�ȥ�</I
+>ディレクトリ</I
 ></TT
 ></DT
 ><DD
 ><P
->��<TT
+>「<TT
 CLASS="REPLACEABLE"
 ><I
->�ǥ��쥯�ȥ�</I
+>ディレクトリ</I
 ></TT
->�פ˥ޥ���Ȥ��줿 Gfarm2
-�ե����륷���ƥ�򥢥�ޥ���Ȥ��ޤ���</P
+>」にマウントされた Gfarm2
+ファイルシステムをアンマウントします。</P
 ></DD
 ><DT
 ><B
@@ -678,15 +678,15 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->�ǥ��쥯�ȥ�</I
+>ディレクトリ</I
 ></TT
 ></DT
 ><DD
 ><P
->���֥��ޥ�� <B
+>サブコマンド <B
 CLASS="COMMAND"
 >unmount</B
-> ����̾�Ǥ���</P
+> の別名です。</P
 ></DD
 ><DT
 ><B
@@ -699,7 +699,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->����̾��</I
+>設定名称</I
 ></TT
 >
 <CODE
@@ -708,7 +708,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->��</I
+>値</I
 ></TT
 ></DT
 ><DD
@@ -716,22 +716,22 @@ CLASS="REPLACEABLE"
 ><TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> �ե�����ˡ�</P
+> ファイルに、</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<TT
 CLASS="REPLACEABLE"
 ><I
->����̾��</I
+>設定名称</I
 ></TT
 >&nbsp;<TT
 CLASS="REPLACEABLE"
 ><I
->��</I
+>値</I
 ></TT
 ></P
 ><P
->�Ȥ����Ԥ��ɲä��ޤ���</P
+>という行を追加します。</P
 ></DD
 ><DT
 ><B
@@ -744,7 +744,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->����̾��</I
+>設定名称</I
 ></TT
 >
 <CODE
@@ -753,7 +753,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->��</I
+>値</I
 ></TT
 ></DT
 ><DD
@@ -761,22 +761,22 @@ CLASS="REPLACEABLE"
 ><TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> �ե�����ˡ�</P
+> ファイルに、</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<TT
 CLASS="REPLACEABLE"
 ><I
->����̾��</I
+>設定名称</I
 ></TT
 >&nbsp;<TT
 CLASS="REPLACEABLE"
 ><I
->��</I
+>値</I
 ></TT
 ></P
 ><P
->�Ȥ����Ԥ��ɲä��ޤ���</P
+>という行を追加します。</P
 ></DD
 ><DT
 ><B
@@ -789,7 +789,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->����̾��</I
+>設定名称</I
 ></TT
 >
 <CODE
@@ -798,7 +798,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->��</I
+>値</I
 ></TT
 ></DT
 ><DD
@@ -806,22 +806,22 @@ CLASS="REPLACEABLE"
 ><TT
 CLASS="FILENAME"
 >gfsd.conf</TT
-> �ե�����ˡ�</P
+> ファイルに、</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<TT
 CLASS="REPLACEABLE"
 ><I
->����̾��</I
+>設定名称</I
 ></TT
 >&nbsp;<TT
 CLASS="REPLACEABLE"
 ><I
->��</I
+>値</I
 ></TT
 ></P
 ><P
->�Ȥ����Ԥ��ɲä��ޤ���</P
+>という行を追加します。</P
 ></DD
 ><DT
 ><B
@@ -834,21 +834,21 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->����̾��</I
+>設定名称</I
 ></TT
 ></DT
 ><DD
 ><P
->��<TT
+>「<TT
 CLASS="REPLACEABLE"
 ><I
->����̾��</I
+>設定名称</I
 ></TT
->�׹Ԥ� <TT
+>」行を <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
 >
-�ե����뤫�������ޤ���</P
+ファイルから削除します。</P
 ></DD
 ><DT
 ><B
@@ -861,21 +861,21 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->����̾��</I
+>設定名称</I
 ></TT
 ></DT
 ><DD
 ><P
->��<TT
+>「<TT
 CLASS="REPLACEABLE"
 ><I
->����̾��</I
+>設定名称</I
 ></TT
->�׹Ԥ� <TT
+>」行を <TT
 CLASS="FILENAME"
 >gfarm.conf</TT
 >
-�ե����뤫�������ޤ���</P
+ファイルから削除します。</P
 ></DD
 ><DT
 ><B
@@ -888,21 +888,21 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->����̾��</I
+>設定名称</I
 ></TT
 ></DT
 ><DD
 ><P
->��<TT
+>「<TT
 CLASS="REPLACEABLE"
 ><I
->����̾��</I
+>設定名称</I
 ></TT
->�׹Ԥ� <TT
+>」行を <TT
 CLASS="FILENAME"
 >gfsd.conf</TT
 >
-�ե����뤫�������ޤ���</P
+ファイルから削除します。</P
 ></DD
 ><DT
 ><B
@@ -911,8 +911,8 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->�Хå�����ɥǡ����١����ΥХå����åפ�Ԥ����Хå����åץǡ�����ɸ�����
-�ؽ��Ϥ��ޤ���</P
+>バックエンドデータベースのバックアップを行い、バックアップデータを標準出力
+へ出力します。</P
 ></DD
 ><DT
 ><B
@@ -924,7 +924,7 @@ CLASS="COMMAND"
 ><TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> �ե������ɸ����Ϥ˽��Ϥ��ޤ���</P
+> ファイルを標準出力に出力します。</P
 ></DD
 ><DT
 ><B
@@ -936,7 +936,7 @@ CLASS="COMMAND"
 ><TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> �ե������ɸ����Ϥ˽��Ϥ��ޤ���</P
+> ファイルを標準出力に出力します。</P
 ></DD
 ><DT
 ><B
@@ -948,7 +948,7 @@ CLASS="COMMAND"
 ><TT
 CLASS="FILENAME"
 >gfsd.conf</TT
-> �ե������ɸ����Ϥ˽��Ϥ��ޤ���</P
+> ファイルを標準出力に出力します。</P
 ></DD
 ><DT
 ><B
@@ -960,7 +960,7 @@ CLASS="COMMAND"
 ><TT
 CLASS="FILENAME"
 >usermap</TT
-> �ե������ɸ����Ϥ˽��Ϥ��ޤ���</P
+> ファイルを標準出力に出力します。</P
 ></DD
 ><DT
 ><B
@@ -972,8 +972,8 @@ CLASS="COMMAND"
 ><TT
 CLASS="FILENAME"
 >$HOME/.gfarm_shared_key</TT
-> �ե������ɸ����Ϥ�
-���Ϥ��ޤ���</P
+> ファイルを標準出力に
+出力します。</P
 ></DD
 ><DT
 ><B
@@ -982,8 +982,8 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->�Хå�����ɥǡ����١�����ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���</P
+>バックエンドデータベースをリストアします。
+バックアップデータは、標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -995,8 +995,8 @@ CLASS="COMMAND"
 ><TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���</P
+> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -1008,8 +1008,8 @@ CLASS="COMMAND"
 ><TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���</P
+> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -1021,8 +1021,8 @@ CLASS="COMMAND"
 ><TT
 CLASS="FILENAME"
 >gfsd.conf</TT
-> �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���</P
+> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -1034,8 +1034,8 @@ CLASS="COMMAND"
 ><TT
 CLASS="FILENAME"
 >usermap</TT
-> �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���</P
+> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -1047,8 +1047,8 @@ CLASS="COMMAND"
 ><TT
 CLASS="FILENAME"
 >$HOME/.gfarm_shared_key</TT
-> �ե������ꥹ�ȥ����ޤ���
-�Хå����åץǡ����ϡ�ɸ�����Ϥ����ɤ߹��ߤޤ���</P
+> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -1061,7 +1061,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->���ޥ��̾</I
+>コマンド名</I
 ></TT
 >
 <CODE
@@ -1070,12 +1070,12 @@ CLASS="PARAMETER"
 >="<TT
 CLASS="REPLACEABLE"
 ><I
->���ޥ�ɤΰ��� ...</I
+>コマンドの引数 ...</I
 ></TT
 >"</DT
 ><DD
 ><P
->Gfarm ���ޥ�ɤ�¹Ԥ��ޤ���</P
+>Gfarm コマンドを実行します。</P
 ></DD
 ></DL
 ></DIV

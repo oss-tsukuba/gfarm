@@ -6,71 +6,71 @@
 .TH "GFEDQUOTA" "1" "23 March 2011" "Gfarm" ""
 
 .SH NAME
-gfedquota \- �ե���������¤��Խ�
+gfedquota \- ファイルの制限を編集
 .SH SYNOPSIS
 
-\fBgfedquota\fR [ \fB\fI���ץ����\fB\fR ]
+\fBgfedquota\fR [ \fB\fIオプション\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
-\fBgfedquota\fR �ϡ��桼���䥰�롼�פ��Ф���ե�����
-���¤��Խ��Ǥ��ޤ���
+\fBgfedquota\fR は、ユーザやグループに対するファイル
+制限を編集できます。
 .PP
-���¤μ���ˤϡ����եȥ�ߥåȤȥϡ��ɥ�ߥåȤ�����ޤ���
-���եȥ�ߥåȤˤ�ͱͽ���֤�����Ǥ��ޤ���
-���¤����оݤϡ��ե�������ι�פȥե����륵�����ι�ס���ץꥫ��ޤ�
-���¥ե�������ι�פȼ¥ե����륵�����ι�פǤ���
-�����ͤ� 'disable' �ޤ��� -1  ����ꤹ��ȡ�̵���¤ˤʤ�ޤ���
-���¤��뤿��Υ��ץ�������ꤷ�ʤ���С���������� (quota) ���Ѥ���
-����
+制限の種類には、ソフトリミットとハードリミットがあります。
+ソフトリミットには猶予期間を設定できます。
+制限する対象は、ファイル数の合計とファイルサイズの合計、レプリカを含め
+た実ファイル数の合計と実ファイルサイズの合計です。
+制限値に 'disable' または -1  を指定すると、無制限になります。
+制限するためのオプションを指定しなければ、割り当て量 (quota) は変わりま
+せん。
 .PP
-���Υ��ޥ�ɤ� gfarmadm ���롼�פ˽�°��������Ԥ������¹ԤǤ��ޤ���
+このコマンドは gfarmadm グループに所属する管理者だけが実行できます。
 .PP
-\fBgfedquota\fR ���ޥ�ɼ¹Ը�
-�� \fBgfquotacheck\fR ���ޥ�ɤ�¹Ԥ���� quota ��ͭ����
-�ʤ�ޤ���
+\fBgfedquota\fR コマンド実行後
+に \fBgfquotacheck\fR コマンドを実行すると quota が有効に
+なります。
 .SH "OPTIONS"
 .TP
 \fB-P NAME, --path=NAME\fR
-���ꤷ���ѥ�̾�ˤ������Υ᥿�ǡ��������Ф���ꤷ�ޤ���
+指定したパス名により特定のメタデータサーバを指定します。
 .TP
 \fB-u NAME, --user=NAME\fR
-���¤��Խ������оݤΥ桼��̾����ꤷ�ޤ���
+制限を編集する対象のユーザ名を指定します。
 .TP
 \fB-g NAME, --group=NAME\fR
-���¤��Խ������оݤΥ��롼��̾����ꤷ�ޤ���
+制限を編集する対象のグループ名を指定します。
 .TP
 \fB-G SECOND, --grace=SECOND\fR
-���եȥ�ߥåȤ�ͱͽ���֤��äǻ��ꤷ�ޤ���
+ソフトリミットの猶予時間を秒で指定します。
 .TP
 \fB-s BYTE, --softspc=BYTE\fR
-�ե���������̤Υ��եȥ�ߥåȤ�Х��ȿ��ǻ��ꤷ�ޤ���
+ファイル使用量のソフトリミットをバイト数で指定します。
 .TP
 \fB-h BYTE, --hardspc=BYTE\fR
-�ե���������̤Υϡ��ɥ�ߥåȤ�Х��ȿ��ǻ��ꤷ�ޤ���
+ファイル使用量のハードリミットをバイト数で指定します。
 .TP
 \fB-m NUM, --softnum=NUM\fR
-�ե�������Υ��եȥ�ߥåȤ���ͤǻ��ꤷ�ޤ���
+ファイル数のソフトリミットを数値で指定します。
 .TP
 \fB-n NUM, --hardnum=NUM\fR
-�ե�������Υϡ��ɥ�ߥåȤ���ͤǻ��ꤷ�ޤ���
+ファイル数のハードリミットを数値で指定します。
 .TP
 \fB-S BYTE, --physoftspc=BYTE\fR
-��ץꥫ��ޤ᤿�¥ե���������̤Υ��եȥ�ߥåȤ�
-�Х��ȿ��ǻ��ꤷ�ޤ���
+レプリカを含めた実ファイル使用量のソフトリミットを
+バイト数で指定します。
 .TP
 \fB-H BYTE, --phyhardspc=BYTE\fR
-��ץꥫ��ޤ᤿�¥ե���������̤Υϡ��ɥ�ߥåȤ�
-�Х��ȿ��ǻ��ꤷ�ޤ���
+レプリカを含めた実ファイル使用量のハードリミットを
+バイト数で指定します。
 .TP
 \fB-M NUM, --physoftnum=NUM\fR
-��ץꥫ��ޤ᤿�¥ե�������Υ��եȥ�ߥåȤ���ͤǻ��ꤷ�ޤ���
+レプリカを含めた実ファイル数のソフトリミットを数値で指定します。
 .TP
 \fB-N NUM, --phyhardnum=NUM\fR
-��ץꥫ��ޤ᤿�¥ե�������Υϡ��ɥ�ߥåȤ���ͤǻ��ꤷ�ޤ���
+レプリカを含めた実ファイル数のハードリミットを数値で指定します。
 .TP
 \fB-?\fR
-�������ץ�����ɽ�����ޤ���
+引数オプションを表示します。
 .SH "SEE ALSO"
 .PP
 \fBgfquota\fR(1),

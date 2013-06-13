@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfchown</refname>
-<refpurpose>Gfarm �ե�����ν�ͭ�ԡ���ͭ���롼�פ��ѹ�����</refpurpose>
+<refpurpose>Gfarm ファイルの所有者，所有グループを変更する</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -35,7 +35,7 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 
 <para>
-Gfarm �ե�����ν�ͭ�ԡ���ͭ���롼�פ��ѹ����ޤ���
+Gfarm ファイルの所有者，所有グループを変更します．
 </para>
 
 </refsect1>
@@ -48,8 +48,8 @@ Gfarm �ե�����ν�ͭ�ԡ���ͭ���롼�פ��ѹ����ޤ���
 <term><option>-h</option></term>
 <listitem>
 <para>
-����ܥ�å���󥯤λؤ��ե����롿�ǥ��쥯�ȥ�ǤϤʤ���
-����ܥ�å����Ȥν�ͭ�ԡ���ͭ���롼�פ��ѹ����ޤ���
+シンボリックリンクの指すファイル／ディレクトリではなく，
+シンボリック自身の所有者，所有グループを変更します．
 </para>
 </listitem>
 </varlistentry>
@@ -58,7 +58,7 @@ Gfarm �ե�����ν�ͭ�ԡ���ͭ���롼�פ��ѹ����ޤ���
 <term><option>-R</option></term>
 <listitem>
 <para>
-�Ƶ�Ū�˽�ͭ�ԡ���ͭ���롼�פ��ѹ����ޤ���
+再帰的に所有者，所有グループを変更します．
 </para>
 </listitem>
 </varlistentry>
@@ -66,7 +66,7 @@ Gfarm �ե�����ν�ͭ�ԡ���ͭ���롼�פ��ѹ����ޤ���
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します．</para>
 </listitem>
 </varlistentry>
 

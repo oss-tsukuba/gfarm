@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfs_pio_gets&nbsp;--&nbsp;����ɤ߹���</DIV
+>gfs_pio_gets&nbsp;--&nbsp;一行読み込み</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -93,48 +93,48 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->�ե�����
+>ファイル
 <TT
 CLASS="PARAMETER"
 ><I
 >gf</I
 ></TT
 >
-���顢ʸ����
+から、文字列
 <TT
 CLASS="PARAMETER"
 ><I
 >s</I
 ></TT
 >
-�ˡ�����ɤ߹��ߤޤ���
-����
+に、一行読み込みます。
+引数
 <TT
 CLASS="PARAMETER"
 ><I
 >size</I
 ></TT
 >
-��ʸ������
+に文字配列
 <TT
 CLASS="PARAMETER"
 ><I
 >s</I
 ></TT
 >
-���礭������ꤷ�ޤ���</P
+の大きさを指定します。</P
 ><P
->�ؿ� gfs_pio_getline(3) �Ȱۤʤꡢ���δؿ��Ϲ����β��Ե������
-���ޤ��󡣰�Ԥ����Ƥ�ʸ�������Ǽ�᤭��ʤ���硢���뤤�ϥե�����
-�����˲��Ե��椬¸�ߤ��ʤ���硢���Ϸ�̤�ʸ������������˲��Ե���
-���Ĥ��ޤ��󡣤�����ʸ����ν����򼨤� '\0' ʸ���ϡ��ɤ���ξ��
-�Ǥ��ղä���ޤ���</P
+>関数 gfs_pio_getline(3) と異なり、この関数は行末の改行記号を削除
+しません。一行の内容を文字配列に納めきれない場合、あるいはファイル
+末尾に改行記号が存在しない場合、入力結果の文字配列の末尾に改行記号
+がつきません。しかし文字列の終わりを示す '\0' 文字は、どちらの場合
+でも付加されます。</P
 ><P
 ><SPAN
 CLASS="ACRONYM"
 >EOF</SPAN
 >
-�ϡ����Ϸ�̤�ʸ�������Ĺ���� 0 ʸ���Ǥ��뤳�Ȥ�Ƚ�Ǥ��ޤ���</P
+は、入力結果の文字配列の長さが 0 文字であることで判断します。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -155,7 +155,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ｪλ�򼨤��ޤ���</P
+>正常終了を示します。</P
 ></DD
 ><DT
 ><TT
@@ -164,13 +164,13 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->������­�Τ����������ߤ��ޤ�����</P
+>メモリ不足のため処理を中止しました。</P
 ></DD
 ><DT
->����¾</DT
+>その他</DT
 ><DD
 ><P
->�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</P
+>上記以外のエラーが生じたことを示します。</P
 ></DD
 ></DL
 ></DIV
@@ -192,7 +192,7 @@ NAME="AEN53"
 >Example 1. <TT
 CLASS="FUNCTION"
 >gfs_pio_gets</TT
-> �ؿ��λ�����</B
+> 関数の使用例</B
 ></P
 ><P
 ><TABLE

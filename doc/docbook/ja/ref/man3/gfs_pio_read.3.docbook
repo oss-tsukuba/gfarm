@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_read</refname>
-<refpurpose>е╒ебедеыд╬╞╔д▀╣■д▀</refpurpose>
+<refpurpose>уГХуВбуВдуГлуБошкнуБ┐ш╛╝уБ┐</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -34,16 +34,16 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><parameter>buffer</parameter>длдщ
+<para><parameter>buffer</parameter>уБЛуВЙ
 <parameter>size</parameter>
-е╨еде╚д└д▒бве╒ебедеы
+уГРуВдуГИуБауБСуАБуГХуВбуВдуГл
 <parameter>gf</parameter>
-д╬╞т═╞дЄ╞╔д▀╣■д▀д▐д╣бг
-╞╔д▀╣■д▐дьд┐е╨еде╚┐Їд╧
+уБохЖЕхо╣уВТшкнуБ┐ш╛╝уБ┐уБ╛уБЩуАВ
+шкнуБ┐ш╛╝уБ╛уВМуБЯуГРуВдуГИцХ░уБп
 <parameter>np</parameter>
-д╬╗╪д╣└шд╦╩╓д╖д▐д╣бгд│д╬├═дм 0 д╬╛ь╣чд╦д╧ 
+уБоцМЗуБЩхЕИуБлш┐ФуБЧуБ╛уБЩуАВуБУуБохАдуБМ 0 уБоха┤хРИуБлуБп 
 <acronym>EOF</acronym>
-дЄ░╒╠гд╖д▐д╣бг</para>
+уВТцДПхС│уБЧуБ╛уБЩуАВ</para>
 
 </refsect1>
 
@@ -52,42 +52,42 @@
 <varlistentry>
 <term><constant>GFARM_ERR_NO_ERROR</constant></term>
 <listitem>
-<para>└╡╛я╜к╬╗дЄ╝ид╖д▐д╣бг</para>
+<para>цнгх╕╕ч╡Вф║ЖуВТчд║уБЧуБ╛уБЩуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
 <listitem>
 <para><parameter>gf</parameter>
-д╟╗╪─ъд╡дьдые╒ебедеыдмеьеоехещб╝е╒ебедеыд╟д╧двдъд▐д╗дєбг</para>
+уБзцМЗхоЪуБХуВМуВЛуГХуВбуВдуГлуБМуГмуВоуГеуГйуГ╝уГХуВбуВдуГлуБзуБпуБВуВКуБ╛уБЫуВУуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_BAD_FILE_DESCRIPTOR</constant></term>
 <listitem>
 <para><parameter>gf</parameter>
-д╟╗╪─ъд╡дьдые╒ебедеые╟еге╣епеъе╫е┐дм╔╘└╡бв
-двдыддд╧╞╔╣■▓─╟╜д╟екб╝е╫еєд╡дьд╞ддд▐д╗дєбг</para>
+уБзцМЗхоЪуБХуВМуВЛуГХуВбуВдуГлуГЗуВгуВ╣уВпуГкуГЧуВ┐уБМф╕НцнгуАБ
+уБВуВЛуБДуБпшкнш╛╝хПпшГ╜уБзуВкуГ╝уГЧуГ│уБХуВМуБжуБДуБ╛уБЫуВУуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_FILE_SYSTEM_NODE</constant></term>
 <listitem>
-<para>═°═╤▓─╟╜д╩е╒ебедеые╖е╣е╞ере╬б╝е╔дмдвдъд▐д╗дєбг</para>
+<para>хИйчФихПпшГ╜уБкуГХуВбуВдуГлуВ╖уВ╣уГЖуГауГОуГ╝уГЙуБМуБВуВКуБ╛уБЫуВУуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>есетеъ╔╘┬нд╬д┐дс╜ш═¤дЄ├ц╗▀д╖д▐д╖д┐бг</para>
+<para>уГбуГвуГкф╕Нш╢│уБоуБЯуВБхЗжчРЖуВТф╕нцнвуБЧуБ╛уБЧуБЯуАВ</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term>д╜д╬┬╛</term>
+<term>уБЭуБоф╗Ц</term>
 <listitem>
-<para>╛х╡н░╩│░д╬еиещб╝дм└╕д╕д┐д│д╚дЄ╝ид╖д▐д╣бг
+<para>ф╕КшиШф╗ехдЦуБоуВиуГйуГ╝уБМчФЯуБШуБЯуБУуБиуВТчд║уБЧуБ╛уБЩуАВ
 <citerefentry><refentrytitle>gfarm_error_string</refentrytitle><manvolnum>3</manvolnum></citerefentry>
-д╦дшдъеиещб╝д╬╕╢░°дЄ╩╕╗·╬єд╦╩╤┤╣д╣дыд│д╚дмд╟днд▐д╣бг
+уБлуВИуВКуВиуГйуГ╝уБохОЯхЫауВТцЦЗхнЧхИЧуБлхдЙцПЫуБЩуВЛуБУуБиуБМуБзуБНуБ╛уБЩуАВ
 </para>
 </listitem>
 </varlistentry>

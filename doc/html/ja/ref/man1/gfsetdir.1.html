@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfsetdir&nbsp;--&nbsp;Gfarm ��ȥǥ��쥯�ȥ���ѹ����륳�ޥ�������Ϥ��롣</DIV
+>gfsetdir&nbsp;--&nbsp;Gfarm 作業ディレクトリを変更するコマンド列を出力する。</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -41,7 +41,7 @@ CLASS="COMMAND"
 > [-s | -c] [<TT
 CLASS="REPLACEABLE"
 ><I
->�ǥ��쥯�ȥ�</I
+>ディレクトリ</I
 ></TT
 >]</P
 ></DIV
@@ -53,34 +53,34 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->Gfarm ��ȥǥ��쥯�ȥ�� ���ꤷ���ǥ��쥯�ȥ���ѹ����륷���륳
-�ޥ�ɤ�ɸ����Ϥ˽��Ϥ��ޤ����ǥ��쥯�ȥ����ꤷ�ʤ����ϡ��桼���� 
-Gfarm �ۡ���ǥ��쥯�ȥ�Ǥ���
+>Gfarm 作業ディレクトリを 指定したディレクトリに変更するシェルコ
+マンドを標準出力に出力します。ディレクトリを指定しない場合は、ユーザの 
+Gfarm ホームディレクトリである
 gfarm:/<TT
 CLASS="REPLACEABLE"
 ><I
->�������Х�桼��</I
+>グローバルユーザ</I
 ></TT
-> ���ѹ�����
-���ޥ�ɤ���Ϥ��ޤ���</P
+> に変更する
+コマンドを出力します。</P
 ><P
->�桼�������Ѥ��Ƥ��륷�����ưŪ��Ƚ�ꤷ�Ƥ��Υ����뤬�¹Բ�ǽ��
-���ޥ�ɤ���Ϥ��ޤ���</P
+>ユーザが使用しているシェルを自動的に判定してそのシェルが実行可能な
+コマンドを出力します。</P
 ><P
->���ϥ��ޥ�ɤ�¹Ԥ��� Gfarm ��ȥǥ��쥯�ȥ���ѹ�����
+>出力コマンドを実行して Gfarm 作業ディレクトリを変更する
 <B
 CLASS="COMMAND"
 >gfcd</B
 >
-�����Ѥ��뤿��ˡ��ƥ桼���Υ���������ե�����˰ʲ���������ɲä���
-����������</P
+を利用するために、各ユーザのシェル設定ファイルに以下の定義を追加して
+ください。</P
 ><P
 ></P
 ><DIV
 CLASS="VARIABLELIST"
 ><DL
 ><DT
->Bourne shell �ϥ�����ξ��</DT
+>Bourne shell 系シェルの場合</DT
 ><DD
 ><TABLE
 BORDER="0"
@@ -96,7 +96,7 @@ CLASS="SCREEN"
 ></TABLE
 ></DD
 ><DT
->csh  �ϥ�����ξ��</DT
+>csh  系シェルの場合</DT
 ><DD
 ><TABLE
 BORDER="0"
@@ -133,7 +133,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->Bourne shell �ϥ������ѤΥ��ޥ�ɤ���Ϥ��ޤ���</P
+>Bourne shell 系シェル用のコマンドを出力します。</P
 ></DD
 ><DT
 ><TT
@@ -142,7 +142,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->csh �ϥ������ѤΥ��ޥ�ɤ���Ϥ��ޤ���</P
+>csh 系シェル用のコマンドを出力します。</P
 ></DD
 ><DT
 ><TT
@@ -151,7 +151,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������ץ�����ɽ�����ޤ���</P
+>引数オプションを表示します。</P
 ></DD
 ></DL
 ></DIV

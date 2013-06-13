@@ -12,13 +12,13 @@
 
 <refnamediv id='name'>
 <refname>gfsetfacl</refname>
-<refpurpose>Gfarm �ե�����Υ�����������ꥹ�Ȥ����ꤹ��</refpurpose>
+<refpurpose>Gfarm ファイルのアクセス制御リストを設定する</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfsetfacl</command>
-	<arg choice='opt'><replaceable>���ץ����</replaceable></arg>
+	<arg choice='opt'><replaceable>オプション</replaceable></arg>
 	<arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -27,8 +27,8 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para><command>gfsetfacl</command> �� Gfarm �ե����륷���ƥ��ˤ���
-�ե������ǥ��쥯�ȥ�Υ�����������ȥ�����ꥹ�� (ACL) �����ꤷ�ޤ���
+<para><command>gfsetfacl</command> は Gfarm ファイルシステム上にある
+ファイルやディレクトリのアクセスコントロールリスト (ACL) を設定します．
 </para>
 
 </refsect1>
@@ -40,40 +40,40 @@
 <varlistentry>
 <term><option>-b</option></term>
 <listitem>
-<para>���٤Ƥγ�ĥ ACL ����ȥ�������ޤ���
-���� ACL (��ͭ�ԡ����롼�ס�����¾) �Ϻ������ޤ���</para>
+<para>すべての拡張 ACL エントリを削除します．
+基本 ACL (所有者，グループ，その他) は削除されません．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-k</option></term>
 <listitem>
-<para>�ǥե���� ACL �����������ޤ���</para>
+<para>デフォルト ACL だけを削除します．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-n</option></term>
 <listitem>
-<para>ACL �ޥ�������ȥ��Ʒ׻����ޤ���gfsetfacl ���ޥ�ɥǥե����
-�ε�ư�ϡ��ޥ�������ȥ꤬���ꤵ��ʤ��ä��������ޥ�������ȥ��Ʒ�
-�����ޤ���</para>
+<para>ACL マスクエントリを再計算しません．gfsetfacl コマンドデフォルト
+の挙動は，マスクエントリが指定されなかった場合だけマスクエントリを再計
+算します．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-r</option></term>
 <listitem>
-<para>��� ACL �ޥ�������ȥ��Ʒ׻����ޤ����ޥ�������ȥ����ꤷ����
-���Ƥ�Ʒ׻����ޤ���(-n ���ץ����⻲�Ȥ��Ƥ���������)</para>
+<para>常に ACL マスクエントリを再計算します．マスクエントリを指定したと
+しても再計算します．(-n オプションも参照してください．)</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-t</option></term>
 <listitem>
-<para>�ƥ��ȥ⡼�ɤǤ����ե������ǥ��쥯�ȥ�� ACL ���ѹ���������ˡ�
-ACL ���Ϥ��ѹ�ͽ��ο����� ACL ��ʸ�����ɽ�����ޤ���</para>
+<para>テストモードです．ファイルやディレクトリの ACL を変更する代わりに，
+ACL 入力と変更予定の新しい ACL を文字列で表示します．</para>
 </listitem>
 </varlistentry>
 
@@ -81,9 +81,9 @@ ACL ���Ϥ��ѹ�ͽ��ο����� ACL ��ʸ�����ɽ�����ޤ���</para>
 <term><option>-m</option> <parameter>acl_spec</parameter></term>
 <listitem>
 
-<para>�ե������ǥ��쥯�ȥ�� ACL ����ȥ���ɲäޤ����ִ����뤿��ˡ�
-ACL ����ȥ��ʸ����ɽ���򤳤Υ��ץ����ǻ��ꤷ�ޤ���
-ʣ���� ACL ����ȥ�򥳥��ʸ�� (`,') �Ƕ��ڤ�ޤ���
+<para>ファイルやディレクトリの ACL エントリを追加または置換するために，
+ACL エントリの文字列表現をこのオプションで指定します．
+複数の ACL エントリをコンマ文字 (`,') で区切ります．
 </para>
 </listitem>
 </varlistentry>
@@ -92,17 +92,17 @@ ACL ����ȥ��ʸ����ɽ���򤳤Υ��ץ����ǻ��ꤷ�ޤ���
 <term><option>-M</option> <parameter>acl_file</parameter></term>
 <listitem>
 <para>
-�ե������ǥ��쥯�ȥ�� ACL ����ȥ���ɲäޤ����ִ����뤿��ˡ�
-ACL ʸ����ɽ�������Ҥ��줿�ե�����ޤ���ɸ������ (`-') 
-����ꤷ�ޤ���
-���� ACL �ե��������Ϥ� gfgetfacl ���ޥ�ɤν��Ϥ�����դ��ޤ���</para>
+ファイルやディレクトリの ACL エントリを追加または置換するために，
+ACL 文字列表現が記述されたファイルまたは標準入力 (`-') 
+を指定します．
+この ACL ファイル入力は gfgetfacl コマンドの出力を受け付けます．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>�������ץ�����ɽ�����ޤ���</para>
+<para>引数オプションを表示します．</para>
 </listitem>
 </varlistentry>
 
@@ -111,45 +111,45 @@ ACL ʸ����ɽ�������Ҥ��줿�ե�����ޤ���ɸ������ (`-')
 
 <refsect1 id='acl-entries'><title>ACL ENTRIES</title>
 <para>
-gfsetfacl ���ޥ�ɤϰʲ��� ACL ����ȥ�񼰤�ǧ�����ޤ���
-perms �ե�����ɤϵ��Ĥ�ɽ��ʸ�����Ȥ߹�碌�Ǥ���
-�ǥե���� ACL ����ȥ�� d[efault:] ��Ƭ��������ޤ���
+gfsetfacl コマンドは以下の ACL エントリ書式を認識します．
+perms フィールドは許可を表す文字を組み合わせです．
+デフォルト ACL エントリは d[efault:] 接頭辞を持ちます．
 </para>
 
 <varlistentry>
 [d[efault:]u[ser]::perms
 <listitem>
-��ͭ�Ԥε���
+所有者の許可
 </listitem>
 </varlistentry>
 <varlistentry>
   [d[efault:]u[ser]:username:perms
 <listitem>
-��̾�桼���ε���
+指名ユーザの許可
 </listitem>
 </varlistentry>
 <varlistentry>
   [d[efault:]g[roup]::perms
 <listitem>
-�ե����륰�롼�פε���
+ファイルグループの許可
 </listitem>
 </varlistentry>
 <varlistentry>
   [d[efault:]g[roup]:groupname:perms
 <listitem>
-��̾���롼�פε���
+指名グループの許可
 </listitem>
 </varlistentry>
 <varlistentry>
   [d[efault:]m[ask]::perms
 <listitem>
-�¹Ը��Υޥ���(����ε���) (��ͭ�ԤȤ���¾���ʳ��˸���)
+実行権のマスク(最大の許可) (所有者とその他、以外に効果)
 </listitem>
 </varlistentry>
 <varlistentry>
   [d[efault:]o[ther]::perms
 <listitem>
-����¾�ؤε���
+その他への許可
 </listitem>
 </varlistentry>
 </refsect1>
@@ -157,21 +157,21 @@ perms �ե�����ɤϵ��Ĥ�ɽ��ʸ�����Ȥ߹�碌�Ǥ���
 <refsect1 id='examples'><title>EXAMPLES</title>
 
 <varlistentry>
-��̾�桼���ؤ��ɤ߹��ߥ�����������Ĥ��롥
+指名ユーザへの読み込みアクセスを許可する．
 <listitem>
 gfsetfalc -m u:testuser:r filename
 </listitem>
 </varlistentry>
 
 <varlistentry>
-filename2 �� ACL ��filename1 �� ACL ���ִ����롥
+filename2 の ACL をfilename1 の ACL で置換する．
 <listitem>
 gfgetfacl filename1 | gfsetfacl -b -M - filename2
 </listitem>
 </varlistentry>
 
 <varlistentry>
-Ĺ�������� ACL ʸ����ɽ��
+長い形式の ACL 文字列表現
 <listitem>
 <literallayout>
 # comment
@@ -189,7 +189,7 @@ default:other::r-x
 </varlistentry>
 
 <varlistentry>
-û�������� ACL ʸ����ɽ��
+短い形式の ACL 文字列表現
 <listitem>
 <literallayout>
 u::rw,u:user1:rw,g::r,g:group1:rw,m::r,o::r,d:u::rwx,d:g::rx,d:o::rx

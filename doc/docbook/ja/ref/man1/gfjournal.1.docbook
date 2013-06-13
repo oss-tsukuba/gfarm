@@ -12,14 +12,14 @@
 
 <refnamediv id='name'>
 <refname>gfjournal</refname>
-<refpurpose>е╕еуб╝е╩еые╒ебедеыд╬╛ї┬╓дЄ╜╨╬╧д╣дыбг</refpurpose>
+<refpurpose>уВ╕уГгуГ╝уГКуГлуГХуВбуВдуГлуБочК╢цЕЛуВТхЗ║хКЫуБЩуВЛуАВ</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfjournal</command>
-    <arg choice='opt'><replaceable>еке╫е╖ечеє</replaceable></arg>
-    <arg choice='plain'><replaceable>е╕еуб╝е╩еые╒ебедеы</replaceable></arg>
+    <arg choice='opt'><replaceable>уВкуГЧуВ╖уГзуГ│</replaceable></arg>
+    <arg choice='plain'><replaceable>уВ╕уГгуГ╝уГКуГлуГХуВбуВдуГл</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -28,10 +28,10 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 
 <para>
-<command>gfjournal</command> д╧е╕еуб╝е╩еые╒ебедеыдЄ╞╔д▀╣■д▀бв
-е╒ебедеыд╬╛ї┬╓д╦┤╪д╣ды╛Ё╩єдЄ╔╕╜р╜╨╬╧д╦╔╜╝ид╖д▐д╣бг
-еке╫е╖ечеєдЄ╗╪─ъд╖д╩длд├д┐╛ь╣чд╧бве╕еуб╝е╩еые╒ебедеыд╬╛ї┬╓д╬е╡е▐еъдЄ
-░╩▓╝д╬дшджд╩╖┴д╟╔╜╝ид╖д▐д╣бг
+<command>gfjournal</command> уБпуВ╕уГгуГ╝уГКуГлуГХуВбуВдуГлуВТшкнуБ┐ш╛╝уБ┐уАБ
+уГХуВбуВдуГлуБочК╢цЕЛуБлщЦвуБЩуВЛцГЕха▒уВТциЩц║ЦхЗ║хКЫуБлшбичд║уБЧуБ╛уБЩуАВ
+уВкуГЧуВ╖уГзуГ│уВТцМЗхоЪуБЧуБкуБЛуБгуБЯха┤хРИуБпуАБуВ╕уГгуГ╝уГКуГлуГХуВбуВдуГлуБочК╢цЕЛуБоуВ╡уГЮуГкуВТ
+ф╗еф╕ЛуБоуВИуБЖуБкх╜вуБзшбичд║уБЧуБ╛уБЩуАВ
 </para>
 
 <literallayout>
@@ -40,8 +40,8 @@
 </literallayout>
 
 <para>
-'-l' еке╫е╖ечеєдЄ╗╪─ъд╣дыд╚бвд│дьд╦▓├дид╞е╕еуб╝е╩еые╒ебедеы╞тд╬д╣д┘д╞д╬
-еье│б╝е╔дт╔╜╝ид╖д▐д╣бг
+'-l' уВкуГЧуВ╖уГзуГ│уВТцМЗхоЪуБЩуВЛуБиуАБуБУуВМуБлхКауБИуБжуВ╕уГгуГ╝уГКуГлуГХуВбуВдуГлхЖЕуБоуБЩуБ╣уБжуБо
+уГмуВ│уГ╝уГЙуВВшбичд║уБЧуБ╛уБЩуАВ
 </para>
 
 <literallayout>
@@ -52,7 +52,7 @@
 	        5 BEGIN                 24
 	        6 USER_ADD              68 username=gfarmadm
 	        7 END                   24
-	(├ц╬м)
+	(ф╕нчХе)
 	records  seqnum(min/max)          record length(min/max/ave)
 	     30             2/        31          24/    120/     37
 </literallayout>
@@ -65,7 +65,7 @@
 <term><option>-d</option></term>
 <listitem>
 <para>
-еэе░еье┘еыдЄ 'debug' д╦└▀─ъд╖д▐д╣бг
+уГнуВ░уГмуГЩуГлуВТ 'debug' уБлшинхоЪуБЧуБ╛уБЩуАВ
 </para>
 </listitem>
 </varlistentry>
@@ -74,7 +74,7 @@
 <term><option>-h</option></term>
 <listitem>
 <para>
-░·┐Їеке╫е╖ечеєдЄ╔╜╝ид╖д▐д╣бг
+х╝ХцХ░уВкуГЧуВ╖уГзуГ│уВТшбичд║уБЧуБ╛уБЩуАВ
 </para>
 </listitem>
 </varlistentry>
@@ -83,7 +83,7 @@
 <term><option>-?</option></term>
 <listitem>
 <para>
-<option>-h</option>д╚╞▒д╕д╟д╣бг
+<option>-h</option>уБихРМуБШуБзуБЩуАВ
 </para>
 </listitem>
 </varlistentry>
@@ -92,8 +92,8 @@
 <term><option>-l</option></term>
 <listitem>
 <para>
-е╕еуб╝е╩еые╒ебедеыд╬╛ї┬╓д╬е╡е▐еъд╦▓├дибве╕еуб╝е╩еые╒ебедеы╞тд╬д╣д┘д╞д╬
-еье│б╝е╔дт╔╜╝ид╖д▐д╣бг
+уВ╕уГгуГ╝уГКуГлуГХуВбуВдуГлуБочК╢цЕЛуБоуВ╡уГЮуГкуБлхКауБИуАБуВ╕уГгуГ╝уГКуГлуГХуВбуВдуГлхЖЕуБоуБЩуБ╣уБжуБо
+уГмуВ│уГ╝уГЙуВВшбичд║уБЧуБ╛уБЩуАВ
 </para>
 </listitem>
 </varlistentry>
@@ -102,7 +102,7 @@
 <term><option>-m</option></term>
 <listitem>
 <para>
-║╟┬чд╬е╖б╝е▒еєе╣╚╓╣цд└д▒дЄ╔╜╝ид╖д▐д╣бг
+цЬАхдзуБоуВ╖уГ╝уВ▒уГ│уВ╣чХкхП╖уБауБСуВТшбичд║уБЧуБ╛уБЩуАВ
 </para>
 </listitem>
 </varlistentry>
@@ -111,8 +111,8 @@
 <term><option>-r</option></term>
 <listitem>
 <para>
-╛ї┬╓д╬е╡е▐еъбвдкдшд╙еье│б╝е╔д╬еъе╣е╚д╬е╪е├е└╔╜╝идЄ═▐╗▀д╖д▐д╣бг
-<option>-l</option> д╚░ь╜яд╦╗╪─ъд╡дьд┐д╚днд└д▒бв═н╕·д╟д╣бг
+чК╢цЕЛуБоуВ╡уГЮуГкуАБуБКуВИуБ│уГмуВ│уГ╝уГЙуБоуГкуВ╣уГИуБоуГШуГГуГАшбичд║уВТцКСцнвуБЧуБ╛уБЩуАВ
+<option>-l</option> уБиф╕Ач╖ТуБлцМЗхоЪуБХуВМуБЯуБиуБНуБауБСуАБцЬЙхК╣уБзуБЩуАВ
 </para>
 </listitem>
 </varlistentry>
@@ -121,7 +121,7 @@
 <term><option>-v</option></term>
 <listitem>
 <para>
-╛щ─╣д╩╔╜╝идЄ╣╘ддд▐д╣бг
+хЖЧщХ╖уБкшбичд║уВТшбМуБДуБ╛уБЩуАВ
 </para>
 </listitem>
 </varlistentry>

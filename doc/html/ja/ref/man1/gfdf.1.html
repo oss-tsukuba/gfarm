@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfdf&nbsp;--&nbsp;�ǥ������������̼���</DIV
+>gfdf&nbsp;--&nbsp;ディスク空き容量取得</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,7 +40,7 @@ CLASS="COMMAND"
 > [<TT
 CLASS="REPLACEABLE"
 ><I
->���ץ����</I
+>オプション</I
 ></TT
 >]</P
 ></DIV
@@ -55,8 +55,8 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfdf</B
-> �ϡ�Gfarm�ե����륷���ƥ��
-�ǥ������������̤�ɽ�����ޤ���</P
+> は、Gfarmファイルシステムの
+ディスク空き容量を表示します。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -77,7 +77,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->Gfarm�ե����륷���ƥ����ΤΥǥ������������̤�ɽ�����ޤ���</P
+>Gfarmファイルシステム全体のディスク空き容量を表示します。</P
 ></DD
 ><DT
 ><CODE
@@ -86,8 +86,8 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������M(�ᥬ)�פΤ褦��ñ�̤Ĥ����ɤߤ䤹��ɽ�����ޤ���
-ñ�̤ˤ�2���߾���Ѥ��ޤ��Τǡ���M�פ� 1,048,576 ���̣���ޤ���</P
+>数字を「M(メガ)」のような単位つきで読みやすく表示します。
+単位には2の累乗を用いますので、「M」は 1,048,576 を意味します。</P
 ></DD
 ><DT
 ><CODE
@@ -96,8 +96,8 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������M(�ᥬ)�פΤ褦��ñ�̤Ĥ����ɤߤ䤹��ɽ�����ޤ���
-ñ�̤ˤ�10���߾���Ѥ��ޤ��Τǡ���M�פ� 1,000,000 ���̣���ޤ���</P
+>数字を「M(メガ)」のような単位つきで読みやすく表示します。
+単位には10の累乗を用いますので、「M」は 1,000,000 を意味します。</P
 ></DD
 ><DT
 ><CODE
@@ -106,7 +106,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->���Ѳ�ǽ�ʥե����륷���ƥ�Ρ��ɤΥۥ���̾��ɽ�����ޤ���</P
+>利用可能なファイルシステムノードのホスト名を表示します。</P
 ></DD
 ><DT
 ><CODE
@@ -115,7 +115,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�ս�����󤷤ƽ��Ϥ��ޤ���</P
+>逆順に整列して出力します。</P
 ></DD
 ><DT
 ><CODE
@@ -124,7 +124,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������̤ν�����󤷤ƽ��Ϥ��ޤ���</P
+>空き容量の順に整列して出力します。</P
 ></DD
 ><DT
 ><CODE
@@ -133,13 +133,13 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->�ѥ�̾</I
+>パス名</I
 ></TT
 ></DT
 ><DD
 ><P
->���ꤷ���ѥ�̾�ˤ������Υ᥿�ǡ��������Ф���ꤷ�ޤ���
-���Υ��ץ����� -a ���ץ�����Ʊ�������Ѥ����̵�뤵��ޤ���</P
+>指定したパス名により特定のメタデータサーバを指定します．
+このオプションは -a オプションと同時に利用すると無視されます．</P
 ></DD
 ><DT
 ><CODE
@@ -148,12 +148,12 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->�ɥᥤ��̾</I
+>ドメイン名</I
 ></TT
 ></DT
 ><DD
 ><P
->���ꤷ���ɥᥤ��̾�˴ޤޤ��ե����륷���ƥ�Ρ��ɤξ��֤�ɽ�����ޤ���</P
+>指定したドメイン名に含まれるファイルシステムノードの状態を表示します。</P
 ></DD
 ><DT
 ><CODE
@@ -162,7 +162,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->�������ץ�����ɽ�����ޤ���</P
+>引数オプションを表示します。</P
 ></DD
 ></DL
 ></DIV

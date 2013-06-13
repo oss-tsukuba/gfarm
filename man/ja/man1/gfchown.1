@@ -6,7 +6,7 @@
 .TH "GFCHOWN" "1" "06 December 2012" "Gfarm" ""
 
 .SH NAME
-gfchown \- Gfarm �ե�����ν�ͭ�ԡ���ͭ���롼�פ��ѹ�����
+gfchown \- Gfarm ファイルの所有者，所有グループを変更する
 .SH SYNOPSIS
 
 \fBgfchown\fR [ \fB\fIoptions\fB\fR ] \fBowner[:group]\fR [ \fB\fIpath\fB\fR\fI ...\fR ]
@@ -16,15 +16,15 @@ gfchown \- Gfarm �ե�����ν�ͭ�ԡ���ͭ���롼�פ��ѹ�����
 
 .SH "DESCRIPTION"
 .PP
-Gfarm �ե�����ν�ͭ�ԡ���ͭ���롼�פ��ѹ����ޤ���
+Gfarm ファイルの所有者，所有グループを変更します．
 .SH "OPTIONS"
 .TP
 \fB-h\fR
-����ܥ�å���󥯤λؤ��ե����롿�ǥ��쥯�ȥ�ǤϤʤ���
-����ܥ�å����Ȥν�ͭ�ԡ���ͭ���롼�פ��ѹ����ޤ���
+シンボリックリンクの指すファイル／ディレクトリではなく，
+シンボリック自身の所有者，所有グループを変更します．
 .TP
 \fB-R\fR
-�Ƶ�Ū�˽�ͭ�ԡ���ͭ���롼�פ��ѹ����ޤ���
+再帰的に所有者，所有グループを変更します．
 .TP
 \fB-?\fR
-�������ץ�����ɽ�����ޤ���
+引数オプションを表示します．

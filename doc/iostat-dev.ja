@@ -1,87 +1,87 @@
-		��ǽ��˥���󥰥����ƥ�μ���
+		性能モニタリングシステムの実装
 
-1. ����
-	gfarmV2 ����ǽ��˥���󥰤ε�ǽ���ɲä��롣
+1. 概要
+	gfarmV2 に性能モニタリングの機能を追加する。
 
-	��˥���󥰤ϰʲ��ι��ܤˤĤ��ƹԤ���
-	�᥿�ǡ���������:
-		�᥿�ǡ��������Фؤ��׵�ȥ�󥶥�������
-	���ȥ졼��������:
-		IO�β��
-		IO �ΥХ��ȿ�
+	モニタリングは以下の項目について行う。
+	メタデータサーバ:
+		メタデータサーバへの要求トランザクション数
+	ストレージサーバ:
+		IOの回数
+		IO のバイト数
 
-	�ǡ����μ�������ǽ��ݡ���ɽ���ϡ������ץ󥽡�������ǽ�ƻ�ġ���
-	ganglia ( http://ganglia.sourceforge.net/ ) �����Ѥ��롣
+	データの収集、性能レポート表示は、オープンソースの性能監視ツール
+	ganglia ( http://ganglia.sourceforge.net/ ) を利用する。
 
-	ganglia �ˤϴ��� �ͥåȥ����ǥ���������ǽ�ƻ�⥸�塼�뤬����Τǡ�
-	�ܥ����ƥ�Ǥϥ᥿�ǡ��������С����ȥ졼�������ФǤ���ǽ�ƻ��Ԥ���
+	ganglia には既に ネットワークやディスクの性能監視モジュールがあるので、
+	本システムではメタデータサーバ、ストレージサーバでの性能監視を行う。
 
-	���פʲ������ϰʲ��Ǥ��롣
-		gfmd �ǤΥȥ�󥶥�����󥫥����
-		gfsd �ǤΥե����륷���ƥ�ؤ� IO �β���ȥ������Υ������
-		ganglia �ץ饰����κ���
-		config-gfarm, config-gfsd �Ǥ���ǽ�ƻ�����
-	�ʤ������ε�ǽ�˴ؤ��ץ�ե������� "iostat" �Ǥ��롣
+	主要な改修点は以下である。
+		gfmd でのトランザクションカウント
+		gfsd でのファイルシステムへの IO の回数とサイズのカウント
+		ganglia プラグインの作成
+		config-gfarm, config-gfsd での性能監視設定
+	なお、この機能に関わるプレフィクスは "iostat" である。
 
-2. ��ǽ��ݡ���
-	��ǽ¬��ϳƥ����ФǹԤ����������ǽ¬��ե�����˽񤭽Ф���
-	�񤭹��ߤϡ������Ф���٤��򤱤뤿�ᡢ¬��ե������mmap ���ƹԤ���
+2. 性能レポート
+	性能測定は各サーバで行い、これを性能測定ファイルに書き出す。
+	書き込みは、サーバの負荷を避けるため、測定ファイルをmmap して行う。
 
-	ganglia plugin �⥸�塼������Ū�ˤ��Υե�������ɤ߹��ߡ�
-	ganglia������(gmetad) �����Τ��롣 
-	gmetad �Ϥ���� rrd �ե�����Ȥ�����¸����web �Ǥϳƥǡ�����
-	����դ򻲾ȤǤ��롣
+	ganglia plugin モジュールは定期的にこのファイルを読み込み、
+	gangliaサーバ(gmetad) に通知する。 
+	gmetad はこれを rrd ファイルとして保存し、web では各データの
+	グラフを参照できる。
 
-2.1 ��ǽ¬��ե�����
-	��ǽ¬��ե�����ϡ�����ǽ���ܤ˴ؤ��ơ�¬����Τ��ȤΥ�������ġ�
-	¬����ΤȤϡ��ƥץ������Υ���åɤʤɤǤ��롣
-	����ϡ���¬������¾����ʤɤ�Ԥ�ʤ�����ǡ����ȼԤϳƥ�����
-	��פ����ͤ�����ʤɤ��ʤ���Фʤ�ʤ���
+2.1 性能測定ファイル
+	性能測定ファイルは、各性能項目に関して、測定主体ごとのカラムを持つ。
+	測定主体とは、各プロセスのスレッドなどである。
+	これは、計測時に排他制御などを行わないためで、参照者は各カラムを
+	合計して値を得るなどしなければならない。
 
-	��ǽ¬��ե����������� include/gfarm/gfarm_iostat.h �ˤ��롣
+	性能測定ファイルの定義は include/gfarm/gfarm_iostat.h にある。
 
-	 * �ե���������
+	 * ファイル全体
 	+--------------+---------------------+----------------------------+
-	| iostat_head��| iostat_spec * nitem | (valid | val * nitem) * row|
+	| iostat_head　| iostat_spec * nitem | (valid | val * nitem) * row|
 	+--------------+---------------------+----------------------------+
 
 	struct gfarm_iostat_head {
 		unsigned int    s_magic;        /* GFARM_IOSTAT_MAGIC */
-			�����ե����뤬��ǽ¬��ե�����Ǥ��뤳�Ȥ򼨤���
+			当該ファイルが性能測定ファイルであることを示す。
 		unsigned int    s_nitem;
-			��ǽ¬����ܿ�
+			性能測定項目数
 		unsigned int    s_row;          /* row size */
-			����ǽ���ܤιԿ�(¬����ο�)
+			各性能項目の行数(測定主体数)
 		unsigned int    s_rowcur;       /* maximum valid # row */
-			��������������
+			サーバ内部使用
 		unsigned int    s_rowmax;       /* maximum # row */
-			��ǽ���ܤ��ͤ�ͭ���Ǥ��ä�����ι��ֹ�
+			性能項目の値が有効であった最大の行番号
 		unsigned int    s_item_size;
-			1�ԤΥ�����(�Х��ȿ�)
+			1行のサイズ(バイト数)
 		gfarm_uint64_t  s_start_sec;
-			¬�곫�ϻ���
+			測定開始時刻
 		gfarm_uint64_t  s_update_sec;
-			¬����ξ����Ѳ�����
+			測定主体状態変化時刻
 		gfarm_uint64_t  s_item_off;
-			¬��Ԥγ��ϰ���
+			測定行の開始位置
 		char s_name[GFARM_IOSTAT_NAME_MAX + 2];
-			¬��̾
+			測定名
 	};
 
-	 * ���ܥꥹ��
+	 * 項目リスト
           1                2                3    ||          nitem
 	+-----------.----+-----------.----+------||---.----+-----------.----+
 	| name      :type| name      :type| name ||   :type| name      :type|
 	+-----------.----+-----------.----+------||---.----+-----------.----+
 	struct gfarm_iostat_spec {
 		char s_name[GFARM_IOSTAT_NAME_MAX + 1];
-			¬�����̾
+			測定項目名
 		char s_type;    /* GFARM_IOSTAT_TYPE_xxx */
-			�ͤΥ����ס��ѻ��ͤ����ִ��ͤ�
-	}; s_nitem �� ³��
+			値のタイプ。積算値か、瞬間値か
+	}; s_nitem 個 続く
 
 
-	 * ���ܥꥹ��
+	 * 項目リスト
                   1          2          3           nitem
 	+-------+----------+----------+-----||---+----------+
 	| id  0 | value1   | value2   | valu||   | valuen   |
@@ -90,155 +90,155 @@
 	+-------+----------+----------+-----||---+----------+
 	struct gfarm_iostat_items {
 		gfarm_uint64_t  s_valid;
-			����¬�����¬�����ID
+			現在測定中の測定主体ID
 		gfarm_int64_t   s_vals[1];      /* [s_nitem] */
-			¬����
-	}; s_row �� ³��
+			測定値
+	}; s_row 行 続く
 
-	s_valid �ϸ��ߤ�¬����Τ�id ����Ǽ���졢¬����Ǥʤ��Ȥ���
-	�������ꤵ��롣s_vals �����¬����Τ��Ѥ�äƤ⥯�ꥢ���뤳�Ȥʤ���
-	������ͤ����ͤȤ��ƻϤ�롣
-	�����Ǥʤ��ȡ�����¦���ѻ��ͤ��Τ뤳�Ȥ��Ǥ��ʤ���
+	s_valid は現在の測定主体のid が格納され、測定中でないときは
+	０が設定される。s_vals 配列は測定主体が変わってもクリアすることなく、
+	前回の値を初期値として始める。
+	そうでないと、参照側で積算値を知ることができない。
 
-2.1.1 ��ǽ¬��ե����� ̿̾��§
-	��ǽ¬��ե�����ϡ����Υǥ��쥯�ȥ�ѥ�����ꤹ��ȡ�
-	gfmd, gfsd �ˤĤ��ưʲ��Τ褦�˥ѥ�̾����������롣
+2.1.1 性能測定ファイル 命名規則
+	性能測定ファイルは、そのディレクトリパスを指定すると、
+	gfmd, gfsd について以下のようにパス名が生成される。
 
-	gfmd: �ǥ��쥯�ȥ�ѥ�/iostat-gfmd-�ݡ���/gfmd
-	gfsd: �ǥ��쥯�ȥ�ѥ�/iostat-gfsd-�ݡ���/{gfsd,bcs}
-	      �ǥ��쥯�ȥ�ѥ�/iostat-gfsd-�ꥹ�󥢥ɥ쥹-�ݡ���/{gfsd,bcs}
+	gfmd: ディレクトリパス/iostat-gfmd-ポート/gfmd
+	gfsd: ディレクトリパス/iostat-gfsd-ポート/{gfsd,bcs}
+	      ディレクトリパス/iostat-gfsd-リスンアドレス-ポート/{gfsd,bcs}
 
-3. gfarm ��ǽ¬��
-3.1 �ѥ�᥿����
-	��ǽ¬��Τ���Υѥ�᥿�� config-gfmd-iostat,config-gfsd-iostat�ǹԤ���
+3. gfarm 性能測定
+3.1 パラメタ設定
+	性能測定のためのパラメタは config-gfmd-iostat,config-gfsd-iostatで行う。
 
 3.1.1. config-gfmd-iostat
-	config-gfarm �Ǥϡ��ʲ������꤬�Ԥ��롣
+	config-gfarm では、以下の設定が行われる。
 
-	--iostat-enable		��ǽ¬���Ԥ����ݤ�
-			no �������¾�λ����̵�뤵��롣
-        --iostat-counter-dir	��ǽ¬��ե������Ǽ�ǥ��쥯�ȥ�ѥ�
-			2.1.1 �ǵ󤲤��ǥ��쥯�ȥ�ѥ�����ꤹ�롣
-			���β��ˡ�iostat-gfmd, iostat-gfsd �ʤɤΥǥ��쥯�ȥ꤬
-			�������졢���β�����ǽ¬��ե����뤬����롣
-        --iostat-ganglia-confdir ganglia conf �ǥ��쥯�ȥ�
-			������ conf.d �۲��� modpython.conf ��¸�ߤ���С�
-			���� params �˵��ܤ��줿�ǥ��쥯�ȥ�� plugin ��
-			���֤���conf.d ��plugin ��conf �ե���������֤��롣
+	--iostat-enable		性能測定を行うか否か
+			no 設定だと他の指定も無視される。
+        --iostat-counter-dir	性能測定ファイル格納ディレクトリパス
+			2.1.1 で挙げたディレクトリパスを指定する。
+			この下に、iostat-gfmd, iostat-gfsd などのディレクトリが
+			作成され、その下に性能測定ファイルが作られる。
+        --iostat-ganglia-confdir ganglia conf ディレクトリ
+			ここの conf.d 配下に modpython.conf が存在すれば、
+			その params に記載されたディレクトリに plugin を
+			配置し、conf.d にplugin のconf ファイルを配置する。
 
 
-	--iostat-enable=yes �Ǥ���С�gfmd.conf �˰ʲ��Υ���ȥ꤬���ܤ���롣
+	--iostat-enable=yes であれば、gfmd.conf に以下のエントリが記載される。
 	
-	iostat_gfmd_path /�ǥ��쥯�ȥ�ѥ�/iostat-gfmd-�ݡ���/gfmd
+	iostat_gfmd_path /ディレクトリパス/iostat-gfmd-ポート/gfmd
 		
 
 3.1.2. config-gfsd-iostat
-	config-gfsd-iostat �ϡ�Gfarm ���饹����˥Ρ��ɤ�1���¤�Ԥ���
-	config-gfsd-iostat �Ǥϡ��ʲ������꤬�Ԥ��롣
+	config-gfsd-iostat は、Gfarm クラスタ毎にノードで1階限り行う。
+	config-gfsd-iostat では、以下の設定が行われる。
 
-	--iostat-enable		��ǽ¬���Ԥ����ݤ�
-			no �������¾�λ����̵�뤵��롣
-        --iostat-counter-dir	��ǽ¬��ե������Ǽ�ǥ��쥯�ȥ�ѥ�
-			2.1.1 �ǵ󤲤��ǥ��쥯�ȥ�ѥ�����ꤹ�롣
-			���β��ˡ�iostat-gfmd, iostat-gfsd �ʤɤΥǥ��쥯�ȥ꤬
-			�������졢���β�����ǽ¬��ե����뤬����롣
-        --iostat-ganglia-confdir ganglia conf �ǥ��쥯�ȥ�
-			������ conf.d �۲��� modpython.conf ��¸�ߤ���С�
-			���� params �˵��ܤ��줿�ǥ��쥯�ȥ�� plugin ��
-			���֤���conf.d ��plugin ��conf �ե���������֤��롣
-        --iostat-max-client	gfsd ��ǽ¬��ե����� ¬��Կ�
-			gfsd ����³��� fork ����ҥץ������˳�����Ƥ�
-			¬��Ԥκ�����ǡ����Υ�������truncate ����mmap����롣
+	--iostat-enable		性能測定を行うか否か
+			no 設定だと他の指定も無視される。
+        --iostat-counter-dir	性能測定ファイル格納ディレクトリパス
+			2.1.1 で挙げたディレクトリパスを指定する。
+			この下に、iostat-gfmd, iostat-gfsd などのディレクトリが
+			作成され、その下に性能測定ファイルが作られる。
+        --iostat-ganglia-confdir ganglia conf ディレクトリ
+			ここの conf.d 配下に modpython.conf が存在すれば、
+			その params に記載されたディレクトリに plugin を
+			配置し、conf.d にplugin のconf ファイルを配置する。
+        --iostat-max-client	gfsd 性能測定ファイル 測定行数
+			gfsd が接続毎に fork する子プロセスに割り当てる
+			測定行の最大数で、そのサイズにtruncate し、mmapされる。
 
 
-	--iostat-enable=yes �Ǥ���С�gfarm2.conf �˰ʲ��Υ���ȥ꤬���ܤ���롣
+	--iostat-enable=yes であれば、gfarm2.conf に以下のエントリが記載される。
 
-	iostat_max_client ���饤����ȿ�
-	iostat_gfsd_path /�ǥ��쥯�ȥ�ѥ�/iostat-gfsd
+	iostat_max_client クライアント数
+	iostat_gfsd_path /ディレクトリパス/iostat-gfsd
 3.2 gfmd
-	�᥿�ǡ��������С��Ǥϡ�gfarm �ץ��ȥ�����׵�򥫥���Ȥ��롣
-	����ѥ�����׵�Ȥ��ƤޤȤ��줿�׵�⤽�줾�쥫����Ȥ��롣
+	メタデータサーバーでは、gfarm プロトコルの要求をカウントする。
+	コンパウンド要求としてまとめられた要求もそれぞれカウントする。
 
-	gfmd ��ʣ������åɤǹ������졢�׵᤬�Ϥ��٤˥���åɤ��������󤵤�
-	������ԤäƤ��롣
-	¬����Τϥ���åɤǤϤʤ���rpc ����³(peer)�Ȥ��롣
-	gfarm_metadb_max_descriptors �� s_row �Ȥ���¬��ե�������������
-	��¬���롣
+	gfmd は複数スレッドで構成され、要求が届く度にスレッドがアサインされ
+	処理を行っている。
+	測定主体はスレッドではなく、rpc の接続(peer)とする。
+	gfarm_metadb_max_descriptors を s_row とした測定ファイルを作成し、
+	計測する。
 
-	��¬�� protocol_switch()��ǹԤ���
+	計測は protocol_switch()内で行う。
 
 3.3 gfsd
-	���ȥ졼�������С��Ǥϲ��̥ե����륷���ƥ�ؤ���������IO�򥫥���Ȥ��롣
+	ストレージサーバーでは下位ファイルシステムへの成功したIOをカウントする。
 	
-	gfsd �� �̾�Υ��饤����ȥ����ӥ���Ԥ��ץ������ȡ�
-	back channel service ��Ԥ��ץ������ǹ������졢
-	���줾��rpc ����³�׵���˥ץ���������������׵��������Ƥ��롣
+	gfsd は 通常のクライアントサービスを行うプロセスと、
+	back channel service を行うプロセスで構成され、
+	それぞれrpc の接続要求毎にプロセスを作成し、要求を処理している。
 
-	¬����Τϳƥץ������Ȥ��롣
-	main �ץ��������ꥹ�󥢥ɥ쥹�ȥݡ��Ȥ���ǥ��쥯�ȥ��������롣
-	��ǽ¬��ե�����ϡ�gfsd �� bcs ����Ĥ�������롣
-	���줾�졢accept ��Ԥ��ƥץ���������¬��Ԥ��������
-	�ҥץ������˳�����Ƥ롣
-	�ƥץ�������fork ���˻ҥץ������Τ���ζ���¬��Ԥ���ݤ���
-	fork �塢pid ��s_valid �˵��ܤ��롣
-	�ҥץ���������λ��������pid�򸰤˳����Ԥ�õ����s_valid �򥯥ꥢ���롣
+	測定主体は各プロセスとする。
+	main プロセスがリスンアドレスとポートからディレクトリを作成する。
+	性能測定ファイルは、gfsd と bcs の二つを作成する。
+	それぞれ、accept を行う親プロセスが、測定行を管理し、
+	子プロセスに割り当てる。
+	親プロセスはfork 前に子プロセスのための空き測定行を確保し、
+	fork 後、pid をs_valid に記載する。
+	子プロセスが終了した時はpidを鍵に該当行を探し、s_valid をクリアする。
 
-	��¬�ϰʲ��βս�ǹԤ���
+	計測は以下の箇所で行う。
 		gfs_server_pread, gfs_server_pwrite
 		gfs_server_replica_recv, gfs_client_replica_recv
 
-3.4��iostat
-	��ǽ¬��ե���������� lib/libgfarm/gfarm/iostat.c ��ǹԤäƤ��롣
+3.4　iostat
+	性能測定ファイルの操作は lib/libgfarm/gfarm/iostat.c 内で行っている。
 
-	�ʤ���branch 2.5 �Ǥϳ����ѿ����Ĥ����ὤ�����Ԥ��Ƥ��ʤ��Τǡ�
-	�ѿ��λ�����ˡ��ե���������ѹ����Ƥ��롣
+	なお、branch 2.5 では外部変数の閉じ込め修正が行われていないので、
+	変数の参照方法をファイル内で変更してある。
 
 4. ganglia plugin
-	ganglia python plugin �ϡ� gmond ��ưŪ�˥�󥯤���롣
-	plugin module �� module_init ����ȥ꡼��������뤳�Ȥ������롣
+	ganglia python plugin は、 gmond に動的にリンクされる。
+	plugin module は module_init エントリーを定義することが求められる。
 
-	gmond �� gmmond.conf �˵��Ҥ��줿plugin ������ɤ߹��ߡ�
-	���Ҥ��줿plugin �⥸�塼����󥯤��ơ�module_init ����ȥ꡼��
-	�ƤӽФ������λ����⥸�塼�����˵��Ҥ��줿�ѥ�᡼�����Ϥ��롣
-	module_init ����ȥ꡼�Ǥϡ������⥸�塼�뤬��𤹤�metric ���λ��ͤ�
-	�����Ȥ����֤���
-	metric �λ��ͤˤ�̾���䡢ñ�̡��ͤΥ����פʤɤ�¾�����Τ����
-	callback �ؿ��򵭽Ҥ��롣
+	gmond は gmmond.conf に記述されたplugin 情報を読み込み、
+	記述されたplugin モジュールをリンクして、module_init エントリーを
+	呼び出す。この時、モジュール情報に記述されたパラメータを渡せる。
+	module_init エントリーでは、当該モジュールが報告するmetric 群の仕様を
+	応答として返す。
+	metric の仕様には名前や、単位、値のタイプなどの他、報告のための
+	callback 関数を記述する。
 
-	gmond �� ���Ū��gmetad����𤹤륿���ߥ󥰤�metric ��callback �ؿ���
-	�ƤӽФ����ͤ����롣
+	gmond は 定期的にgmetadに報告するタイミングでmetric のcallback 関数を
+	呼び出し、値を得る。
 
-4.1 ��ǽ�ƻ� plugin
-	��ǽ����ϡ� �ʲ��Τ褦����ǽ¬��ե�������Ф��ơ��ǥ��쥯�ȥ�
-	'iostat-gf?d*' ��˰ۤʤ��ȥ�å��Ȥ�����𤵤�롣
+4.1 性能監視 plugin
+	性能情報は、 以下のような性能測定ファイルに対して、ディレクトリ
+	'iostat-gf?d*' 毎に異なるメトリックとして報告される。
 
-	gfmd: �ǥ��쥯�ȥ�ѥ�/iostat-gfmd-�ݡ���/gfmd
-	gfsd: �ǥ��쥯�ȥ�ѥ�/iostat-gfsd-�ݡ���/{gfsd,bcs}
-	      �ǥ��쥯�ȥ�ѥ�/iostat-gfsd-�ݡ���-�ꥹ�󥢥ɥ쥹/{gfsd,bcs}
+	gfmd: ディレクトリパス/iostat-gfmd-ポート/gfmd
+	gfsd: ディレクトリパス/iostat-gfsd-ポート/{gfsd,bcs}
+	      ディレクトリパス/iostat-gfsd-ポート-リスンアドレス/{gfsd,bcs}
 
-	�����ǥ��쥯�ȥ��۲���ʣ���Υե����� {gfsd, bcs} ��Ʊ���
-	��ȥ�å��Ȥ��ƹ绻����롣
+	当該ディレクトリ配下の複数のファイル {gfsd, bcs} は同一の
+	メトリックとして合算される。
 
-	���פϳƥե������Ʊ��¬��ԤˤĤ��ơ������ͤ��������ͤ����������
-	��¬��ԤˤĤ��ƹ绻�����ͤ򺣲��¬���ͤȤ��Ʒ׻����롣
+	集計は各ファイルの同一測定行について、今回値から前回値を引いた差を
+	全測定行について合算した値を今回の測定値として計算する。
 
 4.1.1. module_init
-	��ǽ�ƻ�plugin �ϡ�midule_init �� ���ץǥ��쥯�ȥ�ѥ��ȡ���٥�̾��
-	gfmd, gfsd ���Υ����С�̾�����롣
-	gfarm2.conf ����� ��ǽ¬��ե����� ��¸�ߤ���ǥ��쥯�ȥ�ѥ���
-	�������롣
-	�ǥ��쥯�ȥ�ѥ��Υǥ��쥯�ȥ꤫�饵���С�̾�˹��פ���ǥ��쥯�ȥ��
-	�ꥹ�ȥ��åפ����������ǽ��������оݥǥ��쥯�ȥ�Ȥ��롣
-	��Ĥ�ꥹ�ȥ��åפǤ��ʤ��ä��Ȥ��ϥ��顼�Ǥ��롣
-	ʣ���Υǥ��쥯�ȥ꤬¸�ߤ������ϡ���פΥ�ȥ�å����٥�̾��
-	�������롣
+	性能監視plugin は、midule_init で 集計ディレクトリパスと、ラベル名、
+	gfmd, gfsd かのサーバー名を得る。
+	gfarm2.conf からは 性能測定ファイル の存在するディレクトリパスを
+	取得する。
+	ディレクトリパスのディレクトリからサーバー名に合致するディレクトリを
+	リストアップし、これを性能情報取得対象ディレクトリとする。
+	一つもリストアップできなかったときはエラーである。
+	複数のディレクトリが存在した場合は、合計のメトリックをラベル名で
+	作成する。
 
-	�ꥹ�ȥ��å��оݤ��줾��ˤĤ��ơ������С���������μ������ܤ�
-	metric �Ȥ�����Ͽ���롣
+	リストアップ対象それぞれについて、サーバータイプ毎の収集項目を
+	metric として登録する。
 
 4.1.2. callback
-	callback �ǤϹ��ܿ����䤹���٤���ǽ¬��ե�������ɤ߹��ߡ�
-	����Ȥκ�ʬ�򽸷פ��롣
+	callback では項目数を一巡する度に性能測定ファイルを読み込み、
+	前回との差分を集計する。
 	
-	���ꤵ�줿metric ̾�ˤĤ��Ƥ��ͤ�ؿ��ͤȤ����֤���
-								-- �ʾ� --
+	指定されたmetric 名についての値を関数値として返す。
+								-- 以上 --

@@ -1,753 +1,753 @@
-�� �߷׻ؿ�
+■ 設計指針
 
-�� giant_lock �ݻ���ϵ�̲���ƤϤ����ʤ���XXX �ײ���
-������I/O ��ԤʤäƤϤ����ʤ���
-����μ����ǡ�ͣ����㳰�ϡ�dbq ���ե�ξ��ζ����Ԥ��ε�̲������ϻ����ʤ���
-gfmd�ξ�Ĺ���������ä����ˡ�Ʊ�����졼��gfmd�֤ؤΥ��㡼�ʥ�ž���⡢
-giant_lock �ݻ���˹Ԥʤ���褦�ˤʤä����ʤ���ϡ����ޤ�˾�ޤ����ʤ��ġ�
+○ giant_lock 保持中は休眠してはいけない。XXX 要解説
+当然、I/O も行なってはいけない。
+当初の実装で、唯一の例外は、dbq がフルの場合の空き待ちの休眠。これは仕方ない。
+gfmdの冗長構成が入った時に、同期スレーブgfmd間へのジャーナル転送も、
+giant_lock 保持中に行なわれるようになった。（これは、あまり望ましくない…）
 
-����μ����Ǥϡ�db_access.h �Υ��󥿡��ե������Ϸ褷�Ƽ��Ԥ��ʤ���Τ�
-���Ƥ��������ߤϡ����㡼�ʥ�ե�����ؤν񤭹������Ǽ��Ԥ����ǽ����
-���뤬�������к������äƤʤ��Τ����ꡣ
+当初の実装では、db_access.h のインターフェースは決して失敗しないものと
+していた。現在は、ジャーナルファイルへの書き込み等で失敗する可能性が
+あるが、その対策が入ってないのは問題。
 
-��ȴ���ǡ��ͥåȥ��������giant_lock ���ݻ������ޤޤ�äƤ���
-�Ȥ��������롣���Ϥ� nonblocking �⡼�ɤǹԤʤäƤ���(Ȧ?)�ʤΤǡ�
-�������Ƥ��Хåե����⾮������С���̲���ʤ�Ȧ��
-�����/* XXX FIXME too long giant lock */ �Ȥ��������Ȥǡ�
-���Ƥβս��ޡ������Ƥ���Ȧ������
+手抜きで、ネットワーク送信を、giant_lock を保持したままやっている
+ところがある。出力は nonblocking モードで行なっている(筈?)なので、
+出力内容がバッファよりも小さければ、休眠しない筈。
+一応、/* XXX FIXME too long giant lock */ というコメントで、
+全ての箇所をマークしてある筈だが…
 
-�� ���᥿�ǡ����򡢥���˥���å��夹�롣
-��ǽͥ��ܥ����ǥ��󥰤��ñ�ˤ���Τ���Ū��
-�ǡ����� gfmd��ư�������ƥ�����ɤ߹��ߡ������Τ��Ӥ� dbq ��ͳ�� DB ��
-�񤭽Ф��������������ȡ���ư��� DB �����ɤ߹��ߤ�Ԥʤ����ȤϤʤ���
+○ 全メタデータを、メモリにキャッシュする。
+性能優先＋コーディングを簡単にするのが目的。
+データは gfmd起動時に全てメモリに読み込み、更新のたびに dbq 経由で DB に
+書き出す。初期化を除くと、起動中に DB から読み込みを行なうことはない。
 
-��������xattr �������㳰��
-��ͳ�ϡ�
-��xattr �Ȥ��Ƥ��ʤ��礭�ʥǡ��������ꤷ�Ƥ���
-���߷׼Ԥ�¾����ʬ�Ȥ���
-�Ǥ��뤿�ᡣ
-�դˡ����Ȥ��ǡ������������������Ƥ⡢xattr �ؤΥ�����������������å���
-����Ƥ��餺�������٤��Ȥ������»��ब���ä������ߤϡ��桼�������ꤷ��
-xattr �ϥ���å���Ǥ��롣�ޤ���gfarm.ncopy �Ͼ�˥���å��夹�롣
+ただし、xattr だけは例外。
+理由は、
+・xattr としてかなり大きなデータを想定していた
+・設計者が他の部分とは別
+であるため。
+逆に、たとえデータサイズが小さくても、xattr へのアクセスは全くキャッシュ
+されておらず、非常に遅いという制限事項があった。現在は、ユーザが指定した
+xattr はキャッシュできる。また、gfarm.ncopy は常にキャッシュする。
 
-�� ̿̾��§
+■ 命名規則
 
-libgfarm �Ȥϰۤꡢ��Ω�����ץ������ʤΤǡ��ǤϤʤ��Τǡ��������Х�
-����ܥ�� gfarm_ �� gfs_ ��ץ�ե��å����Ȥ��ƤĤ���ɬ�פϤʤ���
+libgfarm とは異り、独立したプログラムなので、ではないので、グローバル
+シンボルに gfarm_ や gfs_ をプリフィックスとしてつける必要はない。
 
-(��§�Ȥ���) ��¤�Τ��Ȥ˥⥸�塼����ꡢ��¤�Τ������ *.c ��
-�񤤤ơ�¾�Υ⥸�塼�뤫��ϻ��ȤǤ��ʤ����롣
-�Ѿ��μ����Τ���ˡ�¾�Υ⥸�塼�뤫�黲�ȤǤ���ɬ�פ�������ˤϡ�
-��¤�Τ������ *_impl.h �˵��ܤ��롣
-���ι�¤�Τ˥�����������ؿ��ϡ��ؿ�̾�Υץ�ե��å����˹�¤�Τ�
-̾����Ĥ��롣
-���Ȥ��С�struct host ������� host.c �ˤ��ꡢ�⥸�塼����δؿ�̾��
-host_*() �ȤʤäƤ��롣
-���Ȥ��С�struct abstract_host �ϡ�struct host ����� struct mdhost ����
-�Ѿ����뤿�ᡢ��¤������� abstract_host_impl.h �ˤ��ꡢ�⥸�塼�����
-�ؿ�̾�� abstract_host_*() �ȤʤäƤ��롣
+(原則として) 構造体ごとにモジュールを作り、構造体の定義は *.c に
+書いて、他のモジュールからは参照できなくする。
+継承の実装のために、他のモジュールから参照できる必要がある場合には、
+構造体の定義を *_impl.h に記載する。
+その構造体にアクセスする関数は、関数名のプリフィックスに構造体の
+名前をつける。
+たとえば、struct host の定義は host.c にあり、モジュール内の関数名は
+host_*() となっている。
+たとえば、struct abstract_host は、struct host および struct mdhost から
+継承するため、構造体定義は abstract_host_impl.h にあり、モジュール内の
+関数名は abstract_host_*() となっている。
 
-�� �ƥ⥸�塼������
+■ 各モジュールの役割
 
-�� watcher.c
-  gfevent.c ���Ѥ��ơ������åȤδƻ� (select(2) �ʤ��� epoll(2)) ��Ԥʤ���
-  ���Υ⥸�塼���ô���������ϡ� 
-  epoll_wait()/EPOLL_CTL_ADD/EPOLL_CTL_DEL/close() �Ȥ��ä�������
-  �ƻ����Ѥ�ñ��Υ���åɤǤ��� watcher() ��Ǥ���뤳�Ȥˤ�ꡢ
-  ����ޤǵ����Ƥ����ʲ��Τ褦������򡢡ʥ�å���������������ΤǤϤʤ��ˡ�
-  ���顼���Τ�ȯ�����ʤ��褦�˲�褹�뤳�ȡ�
-    SF.net #80 - close(2) �Ȥζ���� epoll_ctl() �� EBADF �Ǽ��Ԥ���
-    SF.net #113 - close(2) ��˥ǥ�������ץ������ե����륢�������Ѥ�
-	�����Ѥ��줿���� EPOLL_CTL_DEL �� EPERM �Ǽ��Ԥ���
-  watcher() ����åɤؤ����Τϡ�socketpair(2) �ǹԤʤ������Τ���
-  watcher() ����åɤ� epoll_wait() �ǥǥ�������ץ��Τߴƻ뤷�Ƥ�����ɤ���
-  ���Τ� socketpair(2) �ǹԤʤ����Ȥˤ�ꡢSF.net #229 (���٥�ȴƻ�Τ����
-  ���Ū�ʥݡ���󥰤�ԤʤäƤ���) �Ȥ���������褷�Ƥ��롣
-  ���٥�������� socketpair(2) �δƻ������ watcher_control_callback()
-  �ˤ��롣
+○ watcher.c
+  gfevent.c を用いて、ソケットの監視 (select(2) ないし epoll(2)) を行なう。
+  このモジュールの担当する役割は、 
+  epoll_wait()/EPOLL_CTL_ADD/EPOLL_CTL_DEL/close() といった処理を、
+  監視専用の単一のスレッドである watcher() に任せることにより、
+  それまで起きていた以下のような問題を、（メッセージを抑制するのではなく）、
+  エラー自体が発生しないように解決すること。
+    SF.net #80 - close(2) との競合で epoll_ctl() が EBADF で失敗する
+    SF.net #113 - close(2) 後にディスクリプタが、ファイルアクセス用に
+	再利用されたため EPOLL_CTL_DEL が EPERM で失敗する
+  watcher() スレッドへの通知は、socketpair(2) で行なう。このため
+  watcher() スレッドは epoll_wait() でディスクリプタのみ監視していれば良い。
+  通知を socketpair(2) で行なうことにより、SF.net #229 (イベント監視のために
+  定期的なポーリングを行なっていた) という問題も解決している。
+  イベント通知用 socketpair(2) の監視処理は watcher_control_callback()
+  にある。
 
-�� �ǡ�����¤
+■ データ構造
 
-struct host, struct user, struct group �ؤΥݥ��󥿤ϡ�
-gfmd ��ư��Ƥ���֡����ͭ���Ǥ��ꡢ��³�������ѤǤ��롣
+struct host, struct user, struct group へのポインタは、
+gfmd が動作している間、常に有効であり、継続して利用できる。
 
-��������������줿�ۥ���/�桼����/���롼�פ�¸�ߤ���Τǡ�
-���ˤ�äƤ� host_is_valid()/user_is_valid()/group_is_valid() ��
-����ͭ���ʥ��롼�פ��ݤ��⸡������ɬ�פ����롣
-host_lookup()/user_lookup()/group_lookup() �ϡ�valid �ʤ�Τ����֤��ʤ�
-�Τǡ�*_lookup() �������ݥ��󥿤�giant_lock ���ݻ������ϰ�������Ѥ���
-����¤�ϡ�valid ���ݤ��򸡺�����ɬ�פ��ʤ���
+ただし、削除されたホスト/ユーザー/グループも存在するので、
+場合によっては host_is_valid()/user_is_valid()/group_is_valid() で
+現在有効なグループか否かも検査する必要がある。
+host_lookup()/user_lookup()/group_lookup() は、valid なものしか返さない
+ので、*_lookup() で得たポインタを、giant_lock を保持した範囲内で利用して
+いる限りは、valid か否かを検査する必要がない。
 
-�ۥ��Ȥ˴ؤ��Ƥϡ����Υۥ��Ȥ�ư���椫�ݤ��Ȥ������֤��̤ˤ��ꡢ
-host_is_up() �Ǹ����Ǥ��롣���� host_is_up() �ˤĤ��Ƥϡ�
-giant_lock �Ȥ��̤Υ��å����ݸ��Ƥ��뤿�ᡢgiant_lock �ݻ����
-���äƤ⡢host_is_up() ��ƤӽФ����Ӥ��̤η�̤��֤äƤ��뤳�Ȥ����ꡢ
-���Τ��Ȥ��θ���ƥ����ǥ��󥰤���ɬ�פ����롣
+ホストに関しては、そのホストが動作中か否かという状態が別にあり、
+host_is_up() で検査できる。この host_is_up() については、
+giant_lock とは別のロックで保護されているため、giant_lock 保持中で
+あっても、host_is_up() を呼び出すたびに別の結果が返ってくることがあり、
+そのことを考慮してコーディングする必要がある。
 
-�� struct inode �⡢���ߤμ����Ǥ� gfmd ��ư��Ƥ���֡����ͭ��������
-�� �����ǥ��󥰵���Ȥ��Ƥϡ�������ꤷ�Ƥ��ʤ���
-�� giant_lock ��������Ƥ����֤��ͳ���� inode �����Ѥ�����ϡ�
-   struct inode �ؤΥݥ��󥿤ǤϤʤ���i-node �ֹ���Ѥ���ɬ�פ����롣
+※ struct inode も、現在の実装では gfmd が動作している間、常に有効だが、
+　 コーディング規約としては、それを仮定していない。
+　 giant_lock を手放している区間を経由して inode を利用する場合は、
+   struct inode へのポインタではなく、i-node 番号を用いる必要がある。
 
-�� mutex ����
+■ mutex 一覧
 
-mutex �֤ΰ�¸�ط��˥롼�פ����äƤϤ����ʤ����ǥåɥ��å����롣�����ס�
+mutex 間の依存関係にループがあってはいけない。デッドロックする。★重要★
 
-Ʊ����ʣ���� mutex �γ�����Ԥʤ����γ�������ϡ����٤�ʸ�񲽤�ɬ�ס�
+同時に複数の mutex の獲得を行なう場合の獲得順序は、すべて文書化が必要。
 
-mutex ��������ϡ�server/gfmd/README ����
-XXX �ݼ餵��Ƥʤ����׹���
+mutex 獲得順序は、server/gfmd/README 参照
+XXX 保守されてない。要更新
 
-��giant_lock -> struct host::replication_mutex -> dbq.mutex
+・giant_lock -> struct host::replication_mutex -> dbq.mutex
 	cf. host_peer_set()
 
-��giant_lock -> dfc_allq.mutex
-��giant_lock -> busyq.mutex -> removeq.mutex -> host:back_channel_mutex
-	�ʲ��ξ���ʣ��ˤ�롣
+・giant_lock -> dfc_allq.mutex
+・giant_lock -> busyq.mutex -> removeq.mutex -> host:back_channel_mutex
+	以下の条件の複合による。
 	giant_lock -> removeq.mutex
 	busyq.mutex -> removeq.mutex
 	busyq.mutex -> host:back_channel_mutex (for host_is_up())
 
-�� giant_lock ���ݻ������ޤޡ���̲�����ɤ�����å�
+○ giant_lock を保持したまま、休眠して良いスレッド
 
-  �ʲ��Υ���åɤΤߡ�giant_lock ���ݻ������ޤ޵�̲���Ƥ��ɤ���
-  ����ʳ��Υ���åɤ���̲����Τϡ���¸�ط��Υ롼�פ���������������뤿��
-  �ػߡ�
+  以下のスレッドのみ、giant_lock を保持したまま休眠しては良い。
+  これ以外のスレッドが休眠するのは、依存関係のループを生じる危険があるため
+  禁止。
 
-  ��sync_protocol_thread_pool ��°���륹��å�
+  ・sync_protocol_thread_pool に属するスレッド
 
-�� leaf routine �Τߤǳ������Ƥ��� mutex
+○ leaf routine のみで獲得している mutex
 
-   ������ mutex ���ݻ������ޤޡ�¾�� mutex ��������뤳�ȤϤʤ�����
-   ���ƤϤ����ʤ���
+   これらの mutex を保持したまま、他の mutex を獲得することはないし、
+   してはいけない。
 
-  ��callout_module.mutex
+  ・callout_module.mutex
 
-�� ����åɰ���
+■ スレッド一覧
 
-����åɴ֤ΰ�¸�ط��˥롼�פ����äƤϤ����ʤ����ǥåɥ��å����롣�����ס�
+スレッド間の依存関係にループがあってはいけない。デッドロックする。★重要★
 
-thrpool_add_job() �����硢
-thrpool_add_job() ��ƤӽФ�����åɤϡ�
-thrpool_add_job() ����륹��åɥס���ˡ�
-��¸���Ƥ��ޤ���
-���ʤ����thrpool_add_job() ����륹��åɥס��뤬���դξ�硢
-thrpool_add_job() ���륹��åɤϵ�̲���롣
+thrpool_add_job() する場合、
+thrpool_add_job() を呼び出すスレッドは、
+thrpool_add_job() されるスレッドプールに、
+依存してしまう。
+すなわち、thrpool_add_job() されるスレッドプールが満杯の場合、
+thrpool_add_job() するスレッドは休眠する。
 
-����åɥס����°���륹��åɤ���
-���ȤΥ���åɥס�����Ф��� thrpool_add_job() ����Τ����ܡ������ס�
-���Υ���åɥס����������åɤ���
-���ޤ�������Ʊ���˼�����åɥס�����Ф��� thrpool_add_job() ����ȡ�
-�ס���˶������ʤ��Τǡ����Ƶ�̲�������Τޤ޿�������ˤʤ롣
-��äȤ��̾����٤Ǥ���С�gfarm_metadb_job_queue_length ��Ĺ��������
-���塼�ˤ�äƴ˾פ���뤿�ᡢ���Υǥåɥ��å���ȯ�����ʤ�������٤�
-���塼�����դλ��˾嵭�ξ�����ȯ������Ȥޤ�����
+スレッドプールに属するスレッドが、
+自身のスレッドプールに対して thrpool_add_job() するのも駄目。★重要★
+そのスレッドプールの全スレッドが、
+たまたま全て同時に自スレッドプールに対して thrpool_add_job() すると、
+プールに空きがないので、全て休眠し、そのまま寝たきりになる。
+もっとも通常の負荷であれば、gfarm_metadb_job_queue_length の長さがある
+キューによって緩衝されるため、このデッドロックは発生しない。高負荷で
+キューが一杯の時に上記の状況が発生するとまずい。
 
-����åɥס���֤ΰ�¸�ط��˥롼�פ�����Τ����ܡ������ס�
-back_channel_send_thread_pool �ϡ��̿���򤷤ưŤ�, 
-back_channel_recv_thread_pool �˰�¸���Ƥ���Τ������ա������ס�
+スレッドプール間の依存関係にループがあるのも駄目。★重要★
+back_channel_send_thread_pool は、通信を解して暗に, 
+back_channel_recv_thread_pool に依存しているので要注意。★重要★
 
-��¸�ط��οޤ�
+依存関係の図は
 doc/internal/png/gfmd-thread-dependency.png
-�ˤ��뤬�����οޤǡ�
-��������(����å�)��é�ä���������åɴ֤��롼�פˤʤäƤ��ƤϤ����ʤ���
-�������Ȣ(����åɥס���)��é�ä������ס���֤��롼�פˤʤäƤ��ƤϤ����ʤ���
-��Ʊ���Ȣ(Ʊ��Υ���åɥס���)����ˤ��륹��åɴ֤ˡ�
-  thrpool_add_job()������ط������äƤϤ����ʤ���
+にあるが、この図で、
+・矢印を丸(スレッド)を辿った時、スレッド間がループになっていてはいけない。
+・矢印で箱(スレッドプール)を辿った時、プール間がループになっていてはいけない。
+・同一の箱(同一のスレッドプール)の中にあるスレッド間に、
+  thrpool_add_job()の矢印関係があってはいけない。
 
-�� main ����å�: accepting_loop() 
+○ main スレッド: accepting_loop() 
 
-   TCP ��³�Ԥ���Ԥʤ��Τ���䡣
+   TCP 接続待ちを行なうのが役割。
 
-�� create_detached_thread() �Ǻ�������롢��Ω��������åɡ�
+○ create_detached_thread() で作成される、独立したスレッド。
 
-���������ʥ�ƻ��� sigs_handler()
+　・シグナル監視用 sigs_handler()
 
-����callout ����ƻ��� callout_main() �� CALLOUT_NTHREADS
+　・callout 時刻監視用 callout_main() × CALLOUT_NTHREADS
 
-    callout_main() �� thrpool_add_job() ���륹��åɥס���ο�����
-    callout_main() ����åɤ��Ѱդ��������ɤ�������ʤ��ȡ����륹��å�
-    �ס��뤬���դȤʤä��Ȥ����ط��ʤ�����åɤν����ޤ��ٱ䤷�Ƥ��ޤ���
-    ���ߤϡ�back_channel_send_thread_pool �ΤߤǤ��뤿�ᡢCALLOUT_NTHREADS == 1
+    callout_main() が thrpool_add_job() するスレッドプールの数だけ
+    callout_main() スレッドを用意した方が良い。さもないと、あるスレッド
+    プールが満杯となったとき、関係ないスレッドの処理まで遅延してしまう。
+    現在は、back_channel_send_thread_pool のみであるため、CALLOUT_NTHREADS == 1
 
-    callout_reset() ���Ƥ���Τϡ�back_channel_recv_thread_pool ��°����
-    gfs_async_client_status_result() ������callout_reset() ��
-    cond_signal() ���Ƥ�������ʤΤǡ�callout_reset() �Ǥϰ�¸�ϵ����ʤ���
+    callout_reset() しているのは、back_channel_recv_thread_pool に属する
+    gfs_async_client_status_result() だが、callout_reset() は
+    cond_signal() しているだけなので、callout_reset() では依存は起きない。
 
-  ��db_thread()
+  ・db_thread()
 
-    dbq �����Ǥ�������� db ��ȿ�Ǥ��륹��åɡ�
-    metadata-replication ��ͭ���ʾ�硢dbq ���ɲä�������Ǥϻ��ȷϤ�
-    ���˸¤��롣
+    dbq の要素を取得して db へ反映するスレッド。
+    metadata-replication が有効な場合、dbq に追加される要素は参照系の
+    操作に限られる。
 
-�����ͥåȥ�������ƻ��� peer_watcher() �� 1
+　・ネットワーク受信監視用 peer_watcher() × 1
 
-    peer_watcher() �� thrpool_add_job() ���륹��åɥס���ο�������
-    peer_watcher() ����åɤ��Ѱդ��������ɤ�������ʤ��ȡ����륹��å�
-    �ס��뤬���դȤʤä��Ȥ����ط��ʤ�����åɤν����ޤ��ٱ䤷�Ƥ��ޤ���
-    ���ߡ�sync_protocol_thread_pool �� back_channel_recv_thread_pool �� 2��
-    ���뤿�� peer_watcher() ����åɤ� 2�Ĥˤ������������Ԥ� peer_watcher() ��
-    ���������������Ƥʤ������ʤ��ᡢ1�ĤΤޤޡ�
-	�� peer_watcher() �� 2����åɤ�ư������褦���ѹ�����ͽ�ꡣXXX
+    peer_watcher() が thrpool_add_job() するスレッドプールの数だけ、
+    peer_watcher() スレッドを用意した方が良い。さもないと、あるスレッド
+    プールが満杯となったとき、関係ないスレッドの処理まで遅延してしまう。
+    現在、sync_protocol_thread_pool と back_channel_recv_thread_pool の 2つ
+    あるため peer_watcher() スレッドも 2つにしたいが、現行の peer_watcher() の
+    実装がそれを許してなさそうなため、1つのまま。
+	→ peer_watcher() を 2スレッドで動かせるように変更する予定。XXX
 
     XXX DEADLOCK
-    �������ʲ�����ͳ�ǡ�deadlock �δ��������롣
+    現状、以下の理由で、deadlock の危険がある。
 
-    peer_watcher() ���ƤӽФ� 2�ĤΥ���åɥס��롢sync_protocol_thread_pool
-    ����� back_channel_recv_thread_pool �ϡ�back_channel_send_thread_pool ��
-    �褦�ˡ���Ʊ�������̤���������٤˹ԤʤäƵͤޤ뿴�ۤϤʤ�����������
-    sync_protocol_thread_pool �� back_channel_send_thread_pool �˰�¸��
-    �Ƥ��뤿�ᡢback_channel_send_thread_pool ��¦������ǡ�peer_watcher() ��
-    ��� sync_protocol_thread_pool ���Ф��� thrpool_add_job() ���ͤޤ�
-    ��ǽ���ϻĤ롣
-    peer_watcher() �� 1����åɤΤߤ��ȡ�peer_watcher() ���Τ��ߤޤä�
-    ���ޤ����ᡢback_channel_recv_thread_pool �⴬��ź���򤯤äơ��ߤޤ롣
-    ���η�̡�back_channel_recv_thread_pool �˰�¸���Ƥ���
-    back_channel_send_thread_pool ��ư���ʤ��ʤꡢ��¸�ط��Υ롼�פȤʤäơ�
-    deadlock ���롣
+    peer_watcher() が呼び出す 2つのスレッドプール、sync_protocol_thread_pool
+    および back_channel_recv_thread_pool は、back_channel_send_thread_pool の
+    ように、非同期に大量の送信を一度に行なって詰まる心配はない。しかし、
+    sync_protocol_thread_pool は back_channel_send_thread_pool に依存し
+    ているため、back_channel_send_thread_pool の側の問題で、peer_watcher() に
+    よる sync_protocol_thread_pool に対する thrpool_add_job() が詰まる
+    可能性は残る。
+    peer_watcher() が 1スレッドのみだと、peer_watcher() 自体が止まって
+    しまうため、back_channel_recv_thread_pool も巻き添えをくって、止まる。
+    その結果、back_channel_recv_thread_pool に依存している
+    back_channel_send_thread_pool も動かなくなり、依存関係のループとなって、
+    deadlock する。
 
-  ��peer_closer()
+  ・peer_closer()
 
-  ����backend_protocol�ξ�硢��filesystem node���Ф� remover() �� ����
+  ・旧backend_protocolの場合、各filesystem nodeに対し remover() × 大量
 
-    �ѻߤ��ơ�back_channel_recv_thread_pool ��Ȥ��褦�ˤ���ͽ�ꡣ
+    廃止して、back_channel_recv_thread_pool を使うようにする予定。
 
-  �� metadata-replication��ͭ���ʾ��
+  − metadata-replicationが有効な場合
 
-    <master gfmd �ˤ�����>
+    <master gfmd において>
 
-    ��gfmdc_journal_asyncsend_thread()
-      (synchronous_replication=disable �ξ��Τ�)
+    ・gfmdc_journal_asyncsend_thread()
+      (synchronous_replication=disable の場合のみ)
 
-      journal record �� slave gfmd ���������륹��åɡ�ʣ���� slave gfmd ��
-      ¸�ߤ�����ϡ����֤���������(������������ʤ�)��
-      synchronous_replication �ϥǥե���Ȥ� enable �Ǥ��롣
-      ���Υ���åɤ� slave gfmd �� master gfmd �˾��ʤ���Ȥ��ˤ���������롣
+      journal record を slave gfmd へ送信するスレッド。複数の slave gfmd が
+      存在する場合は、順番に送信する(並列に送信しない)。
+      synchronous_replication はデフォルトで enable である。
+      このスレッドは slave gfmd が master gfmd に昇格するときにも生成される。
 
-    ��db_journal_store_thread()
+    ・db_journal_store_thread()
 
-      journal file ���� journal record ���ɤ߹���ǡ�DB ��ȿ�Ǥ��륹��åɡ�
-      metadata-replication ��ͭ���ξ�硢�ѹ����ˤĤ��Ƥ� db_access ��
-      �ؿ��Ǥ� dbq ����Ѥ����� journal file �ع��������񤭽Ф���
-      ���Υ���åɤ� slave gfmd �� master gfmd �˾��ʤ���Ȥ��ˤ���������롣
+      journal file から journal record を読み込んで、DB へ反映するスレッド。
+      metadata-replication が有効の場合、変更操作についての db_access の
+      関数では dbq を使用せずに journal file へ更新情報を書き出す。
+      このスレッドは slave gfmd が master gfmd に昇格するときにも生成される。
 
-    <slave gfmd �ˤ�����>
+    <slave gfmd において>
 
-    ��gfmdc_connect_thread()
+    ・gfmdc_connect_thread()
 
-      gfmd channel ����³���륹��åɡ�master gfmd ����³����ޤǺƻ�Ԥ���
-      ��³������Ǥ���ȡ�����³���ߤ롣
-      master gfmd �ؾ��ʤ���Ȥ���ߤ��롣
+      gfmd channel を接続するスレッド。master gfmd へ接続するまで再試行し、
+      接続後に切断すると、再接続を試みる。
+      master gfmd へ昇格するとき停止する。
 
-    ��db_journal_recvq_thread()
+    ・db_journal_recvq_thread()
 
-      master gfmd ���������ä� journal record ���ݻ����Ƥ���ꥹ�Ȥ��� journal
-      record ����Ф��ơ�journal file �ؽ񤭽Ф�����åɡ�
-      gfmd channel �� async protocol �ʤΤǡ�master gfmd �� journal record ��
-      �����������֤� slave gfmd ����������Ȥϸ¤�ʤ������Τ��ᡢslave gfmd ��
-      �������� journal record ����٥����Υꥹ�Ȥ���α���롣
-      �Ȥ����ǡ�journal record ��ꥹ�Ȥ��ɲä��륹��åɤϡ�
-      gfmdc_recv_thread_pool �� gfmdc_server_journal_send() �Ǥ��롣
-      �ꥹ�Ȥ����ǿ��������ͤ�Ķ����journal file reader ���ɤ߹����Ԥ����֤Ǥʤ�
-      (���ʤ�� db_journal_apply_thread() �� journal record ��ȿ����) �Ǥ�����
-      �ϡ�gfmdc_server_journal_send() �ϥꥹ�Ȥ����ǿ��������Ͱʲ��ˤʤ�ޤ��Ե�
-      ���롣���Υ���åɤϡ�gfmdc_server_journal_send() �Υ���åɤ�Ƴ��������
-      �����롣
-      ���Υ���åɤ� master gfmd �ؾ��ʤ���Ȥ���journal file �ؽ񤭽Ф����Ȥ�
-      ��ǽ�� journal reocrd �����ƽ񤭽Ф��Ƥ��顢��ߤ��롣
+      master gfmd から受け取った journal record を保持しているリストから journal
+      record を取り出して、journal file へ書き出すスレッド。
+      gfmd channel は async protocol なので、master gfmd が journal record を
+      送信した順番に slave gfmd が受信するとは限らない。そのため、slave gfmd は
+      受信した journal record を一度メモリ上のリストへ保留する。
+      ところで、journal record をリストへ追加するスレッドは、
+      gfmdc_recv_thread_pool の gfmdc_server_journal_send() である。
+      リストの要素数が一定値を超え、journal file reader が読み込み待ち状態でない
+      (すなわち db_journal_apply_thread() が journal record を反映中) である場合
+      は、gfmdc_server_journal_send() はリストの要素数が一定値以下になるまで待機
+      する。このスレッドは、gfmdc_server_journal_send() のスレッドを再開する役割
+      がある。
+      このスレッドは master gfmd へ昇格するとき、journal file へ書き出すことが
+      可能な journal reocrd を全て書き出してから、停止する。
 
-    ��db_journal_apply_thread()
+    ・db_journal_apply_thread()
 
-      journal file �����ɤ߹������������� DB ��ȿ�Ǥ��륹��åɡ�
-      master gfmd �ؾ��ʤ���Ȥ���ߤ��롣
+      journal file から読み込んだ情報をメモリと DB へ反映するスレッド。
+      master gfmd へ昇格するとき停止する。
 
-�� ����åɥס���
+○ スレッドプール
 
-�ס�����γƥ���åɤμ��Τϡ�thrpool_worker()��
+プール中の各スレッドの実体は、thrpool_worker()。
 
-���� authentication_thread_pool
+　− authentication_thread_pool
 
-    ���Υס�����Ѥ��Ƶ�ư�����Τϡ��ʲ��Υ���åɡ�
+    このプールを用いて起動されるのは、以下のスレッド。
 
-    ��try_auth()
-      accepting_loop() �� thrpool_add_job() ���롣
+    ・try_auth()
+      accepting_loop() が thrpool_add_job() する。
 
-���� sync_protocol_thread_pool
+　− sync_protocol_thread_pool
 
-    ���Υס�����Ѥ��Ƶ�ư�����Τϡ��ʲ��Υ���åɡ�
+    このプールを用いて起動されるのは、以下のスレッド。
 
-    ��protocol_main()
-      - try_auth() ����peer_authorized() ��ͳ�ǡ�thrpool_add_job() ���롣
-      - peer_watcher() ����thrpool_add_job() ���롣
+    ・protocol_main()
+      - try_auth() が、peer_authorized() 経由で、thrpool_add_job() する。
+      - peer_watcher() が、thrpool_add_job() する。
 
-���� back_channel_send_thread_pool
+　− back_channel_send_thread_pool
   
-    ���Υס�����Ѥ��Ƶ�ư�����Τϡ��ʲ��Υ���åɡ�
+    このプールを用いて起動されるのは、以下のスレッド。
 
-    ��gfs_async_client_status_request()
-      - protocol_main() ����gfm_server_switch_async_back_channel() ��ͳ�ǡ�
-        thrpool_add_job() ���롣
-      - callout_main() ����thrpool_add_job() ���롣
-	callout �˵�������ꤷ�Ƥ���Τϡ�back_channel_recv_thread_pool ��°����
-	gfs_async_client_status_result() ������callout_reset() ��ȤäƤ���Τ�
-	��¸�ϵ����ʤ���
+    ・gfs_async_client_status_request()
+      - protocol_main() が、gfm_server_switch_async_back_channel() 経由で、
+        thrpool_add_job() する。
+      - callout_main() が、thrpool_add_job() する。
+	callout に起床を依頼しているのは、back_channel_recv_thread_pool に属する
+	gfs_async_client_status_result() だが、callout_reset() を使っているので
+	依存は起きない。
 
-    ��gfs_async_client_replication_request_request()
-      - protocol_main() ����async_back_channel_replication_request() ��ͳ�ǡ�
-        thrpool_add_job() ���롣
+    ・gfs_async_client_replication_request_request()
+      - protocol_main() が、async_back_channel_replication_request() 経由で、
+        thrpool_add_job() する。
 
-���� back_channel_recv_thread_pool
+　− back_channel_recv_thread_pool
 
-    ���Υס�����Ѥ��Ƶ�ư�����Τϡ��ʲ��Υ���åɡ�
+    このプールを用いて起動されるのは、以下のスレッド。
 
-    ��back_channel_main()
-      - protocol_main() ����gfm_server_switch_async_back_channel() ��ͳ�ǡ�
-        thrpool_add_job() ���롣
-      - peer_watcher() ����thrpool_add_job() ���롣
-	���줬ȯ������Τϡ�gfsd ����� async RPC request �������뤤�ϡ�
-	gfmd ����� async RPC request ���Ф��� gfsd �� reply ������硣
-	��Ԥ� gfmd��gfsd �� async RPC request �ϡ�back_channel_send_thread_pool
-	���Ѥ��ƹԤʤ��롣���Τ��ᡢasync_back_channel_main() �ν�����
-	�ͤޤ�ȡ���̤Ȥ��ơ�back_channel_send_thread_pool �ޤǤ�ͤޤ�
-	��ǽ�������롣
-	���Τ��ᡢback_channel_recv_thread_pool ��°���륹��åɤϡ�
-	�ʲ��Υס����°����񸻤��ԤäƤϤ����ʤ��������ס�
+    ・back_channel_main()
+      - protocol_main() が、gfm_server_switch_async_back_channel() 経由で、
+        thrpool_add_job() する。
+      - peer_watcher() が、thrpool_add_job() する。
+	これが発生するのは、gfsd からの async RPC request か、あるいは、
+	gfmd からの async RPC request に対して gfsd が reply した場合。
+	後者の gfmd→gfsd の async RPC request は、back_channel_send_thread_pool
+	を用いて行なわれる。このため、async_back_channel_main() の処理が
+	詰まると、結果として、back_channel_send_thread_pool までも詰まる
+	可能性がある。
+	このため、back_channel_recv_thread_pool に属するスレッドは、
+	以下のプールに属する資源を待ってはいけない。★重要★
 	 * authentication_thread_pool
 	 * sync_protocol_thread_pool
 	 * back_channel_send_thread_pool
-	�⤷�Ԥʤ��ȡ���¸�ط����롼�פ�������deadlock �δ����������롣
-	�������嵭�Υס���� thrpool_add_job() ���Ƥ⤤���ʤ���
-	�ޤ����嵭�Υס����°������Ԥ��� mutex ���ԤäƤ⤤���ʤ���
-	�������äơ�giant_lock() ��ԤʤäƤ����ܡ�
-	���������嵭�Υס���ȶ��礹�뤬�����켫�ȤǤ� cond_wait() ����
-	�Ԥʤ�ʤ����꡼�դ� mutex ���ԤĤ����ʤ�����ʤ���
-	�ޤ���gfm_async_server_replication_result() �ϡ�ľ�ܡ��ʲ���
-	�ԤʤäƤϤ����ʤ���
-		����̤ν����Τ���� host_replicated()
-		����̤����� peer_sender_lock() ���ԤĤ��Ȥ����롣
-				�� ����¦���ԤĤ��Ȥ����롣XXX DEADLOCK
+	もし行なうと、依存関係がループを構成し、deadlock の危険が生じる。
+	当然、上記のプールに thrpool_add_job() してもいけない。
+	また、上記のプールに属する資源待ちの mutex を待ってもいけない。
+	したがって、giant_lock() を行なっても駄目。
+	ただし、上記のプールと競合するが、それ自身では cond_wait() 等を
+	行なわない、リーフの mutex を待つだけなら問題ない。
+	また、gfm_async_server_replication_result() は、直接、以下を
+	行なってはいけない。
+		・結果の処理のための host_replicated()
+		・結果の送信 peer_sender_lock() を待つことがある。
+				→ 送信側を待つことがある。XXX DEADLOCK
 
- �� metadata-replication��ͭ���ʾ��
+ − metadata-replicationが有効な場合
 
-   �� gfmdc_recv_thread_pool
+   − gfmdc_recv_thread_pool
 
-     ���Υס�����Ѥ��Ƶ�ư�����Τϡ��ʲ��Υ���åɡ�
+     このプールを用いて起動されるのは、以下のスレッド。
 
-     ��gfmdc_main()
+     ・gfmdc_main()
 
-       gfm_server_switch_gfmd_channel() �� peer �� protocl_handler �Ȥ���
-       ���ꤹ�롣db_journal_recvq_thread() �Ǥ�Ҥ٤Ƥ��뤬�����Υ���å�
-       �� gfmdc_server_journal_send() ��� journal record �������
-       �ꥹ�Ȥ��ɲä���ݤˡ��Ե����뤳�Ȥ����롣
+       gfm_server_switch_gfmd_channel() で peer の protocl_handler として
+       設定する。db_journal_recvq_thread() でも述べているが、このスレッド
+       は gfmdc_server_journal_send() 内で journal record をメモリ上の
+       リストへ追加する際に、待機することがある。
 
-   �� gfmdc_send_thread_pool
+   − gfmdc_send_thread_pool
 
-      r5204 �����ˤ����Ƥ�̤���ѡ�
-      gfmd channel ������¦����åɥס���Ȥ��ƻ��Ѥ���ͽ��Ǥ��뤬��
-      r5204 �����ǤϤޤ����Ѥ��Ƥ��ʤ���
+      r5204 時点においては未使用。
+      gfmd channel の送信側スレッドプールとして使用する予定であるが、
+      r5204 時点ではまだ使用していない。
 
-   �� journal_sync_thread_pool
-      (master gfmd, synchronous_replication=enable�ξ��Τ�)
+   − journal_sync_thread_pool
+      (master gfmd, synchronous_replication=enableの場合のみ)
 
-     ���Υס�����Ѥ��Ƶ�ư�����Τϡ��ʲ��Υ���åɡ�
+     このプールを用いて起動されるのは、以下のスレッド。
 
-     ��gfmdc_journal_send_thread()
+     ・gfmdc_journal_send_thread()
 
-       journal record �� slave gfmd ��Ʊ��Ū���������륹��åɡ�
-       async protocol ���ֿ������ޤ��Ե����롣
-       ���Υ���åɤ��ѹ����ȯ������ gfmd channel ����³��� slave gfmd ��
-       �����������ư��롣protocol_main() ����åɤ�
-       ���Ƥ� gfmdc_journal_send_thread() �ȡ�gfmdc_journal_file_sync_thread()
-       ����λ����ޤǡ��Ե����롣
-       protocol_main() �� giant_lock ������������֤��Ե����뤳�Ȥ����դ�
-       ɬ�פǤ��롣gfmdc_recv_thread_pool �Υ���åɤ� async protocol ��
-       ������Ԥ��ݡ�giant lock ��������ƤϤʤ�ʤ���
+       journal record を slave gfmd へ同期的に送信するスレッド。
+       async protocol の返信が戻るまで待機する。
+       このスレッドは変更操作発生時に gfmd channel で接続中の slave gfmd の
+       数だけ並列に動作する。protocol_main() スレッドは
+       全ての gfmdc_journal_send_thread() と、gfmdc_journal_file_sync_thread()
+       が終了するまで、待機する。
+       protocol_main() は giant_lock を取得した状態で待機することに注意が
+       必要である。gfmdc_recv_thread_pool のスレッドが async protocol の
+       受信を行う際、giant lock を取得してはならない。
 
-       [����åɤΰ�¸�ط��ˤĤ��Ƥ���­]
+       [スレッドの依存関係についての補足]
 
-         �� doc/internal/chart/gfmd-thread-dependency.png �Ǥϡ�
-         gfmdc_journal_send_thread -> gfmdc_main �ΰ�¸�ˤ�äơ���¸�ط���
-         �롼�פ��Ǥ��Ƥ���褦�˸����뤬��gfmdc_journal_send_thread ��
-         master gfmd �塢gfmdc_main �� slave gfmd ���ư��뤿�ᡢ
-	 �ºݤϥ롼�פˤʤäƤ��ʤ���
+         図 doc/internal/chart/gfmd-thread-dependency.png では、
+         gfmdc_journal_send_thread -> gfmdc_main の依存によって、依存関係の
+         ループができているように見えるが、gfmdc_journal_send_thread は
+         master gfmd 上、gfmdc_main は slave gfmd 上で動作するため、
+	 実際はループになっていない。
 
-     ��gfmdc_journal_file_sync_thread()
-       (synchronous_journaling=enable �ξ��Τ�)
+     ・gfmdc_journal_file_sync_thread()
+       (synchronous_journaling=enable の場合のみ)
 
-       journal file �� fdatasync ��¹Ԥ��륹��åɤǤ��롣
-       synchronous_journaling=disable �ΤȤ������Υ���åɤ���������ʤ���
-       �ǥե���Ȥ� synchronous_journaling=enable �Ǥ��롣
+       journal file へ fdatasync を実行するスレッドである。
+       synchronous_journaling=disable のとき、このスレッドは生成されない。
+       デフォルトで synchronous_journaling=enable である。
 
-     ��gfmdc_journal_first_sync_thread()
+     ・gfmdc_journal_first_sync_thread()
 
-       gfmd channel ��³ľ��� slave ����������٤� journal record ��¸��
-       �����硢���Υ���åɤ�Ϣ³Ū�� journal record ���������롣
-       ���Υ���åɤ�ư����ˡ�protocol_main() ����åɤ� db_access ����
-       �ѹ�����Ԥä���硢���Υ���åɤ��̿���� slave gfmd ������ơ�
-       gfmdc_journal_send_thread() �ˤ�� journal record ���������¹Ԥ���롣
+       gfmd channel 接続直後に slave へ送信するべき journal record が存在
+       する場合、このスレッドが連続的に journal record を送信する。
+       このスレッドの動作中に、protocol_main() スレッドが db_access から
+       変更操作を行った場合、このスレッドの通信先の slave gfmd を除いて、
+       gfmdc_journal_send_thread() による journal record の送信が実行される。
 
 
-�� �ե�����κ���ˤĤ���
+■ ファイルの削除について
 
-�ºݤ˥���夫���������inode_remove()��Ƥ֡ݤΤϡ�
-�ʲ��ξ�郎���٤�����Ω�ä�����
+実際にメモリ上から削除する−inode_remove()を呼ぶ−のは、
+以下の条件がすべて成り立った時。
 
-(1) nlink �� 0
-(2) �ե����뤬�����ץ󤵤�Ƥ��ʤ�
-(3) gfmd ��Ƴ�� replication ���¹���Ǥʤ�
+(1) nlink が 0
+(2) ファイルがオープンされていない
+(3) gfmd 主導の replication が実行中でない
 
-���ʤ��
+すなわち
 
 	if (inode->i_nlink == 0 && inode->u.c.state == NULL &&
 	    (!inode_is_file(inode) || inode->u.c.s.f.rstate == NULL))
 		inode_remove(inode);
 
 
-�� back_channel �˴ؤ����߷�
+■ back_channel に関する設計
 
-�� back_channel ��ɬ�פʻ� (callout �ʤ�) ��
-   (1) peer �˵�°�����뤫
-   (2) host �˵�°�����뤫
-   (3) back_channel �̿��Τ���ι�¤�Τ�������������˵�°�����뤫
-  �Ȥ�������褬���롣
-  back_channel �̿���λ����Ʊ��������ͤ���ȡ�������¸��֤� gfmd ��ư��
-  �Ǥ��� (1) �� (2) ���������ǡ�����¤���Τ��ä��Ƥ��ޤ�����Ʊ���Ѥ����ΰ�
-  �γ��ݤ�ɬ�פȤʤ� (3) ����ץ������κ�꤬��ñ�ˤʤ롣
-  �ޤ��ʲ��Τ褦�� peer ��������host �������¿��
-	(peer �ο� == ���饤����Ȥο��� 2 �� host �ο�)
-  �������Ū�ˤ� (2) ������ͭ���ʤΤǡ�host �˵�°�����뤳�Ȥˤ�����
-  ������ async �ˤĤ��Ƥϡ�conn ��Ʊ�ͤ��̿���������ɬ�פʥǡ����Ǥ��ꡢ
-  back_channel �����������ͥ��������ڤ��ؤ�äƤ��뤬��
-  �Ť����ͥ�������ޤ��ĤäƤ�����˻Ȥ����ǽ�����θ���� (1) �Ȥ��롣
+○ back_channel に必要な資源 (callout など) を、
+   (1) peer に帰属させるか
+   (2) host に帰属させるか
+   (3) back_channel 通信のための構造体を作成し、そこに帰属させるか
+  という選択肢がある。
+  back_channel 通信終了時の同期処理を考えると、その生存区間が gfmd 起動中
+  である (1) か (2) の方が、データ構造自体が消えてしまうため同期用に別領域
+  の確保が必要となる (3) よりもプログラムの作りが簡単になる。
+  また以下のように peer の方が、host よりも数が多く
+	(peer の数 == クライアントの数× 2 ＋ host の数)
+  メモリ消費的には (2) の方が有利なので、host に帰属させることにした。
+  ただし async については、conn と同様な通信処理時に必要なデータであり、
+  back_channel が新しいコネクションに切り替わっているが、
+  古いコネクションもまだ残っている場合に使われる可能性を考慮して (1) とする。
 
-��host_receiver_lock() ��ɬ�פ���ͳ
-  ������ peer_watch() ����ƤӽФ��졢Ʊ�� peer �ʤ�Ʊ�쥹��åɤ�ư��
-  ���뤿�ᡢpeer �֤μ��������ȯ�����ʤ���
-  host_receiver_lock() ���Ƥ�����ͳ�ϡ�peer_free_request() �Ȥζ������
-  �Τ��ᡣ
+・host_receiver_lock() が必要な理由
+  受信は peer_watch() から呼び出され、同一 peer なら同一スレッドで動作
+  するため、peer 間の受信競合は発生しない。
+  host_receiver_lock() している理由は、peer_free_request() との競合回避
+  のため。
 
-��host_sender_lock()/_trylock() ��ɬ�פ���ͳ
-  - host_receiver_lock() ��Ʊ�� peer_free_request() �Ȥζ������
-  - �����ξ���Ʊ�� peer �Ǥ�ʣ������åɤǶ��礹��ΤǤ��β���
-  - ����¦���ͤޤä����ˡ�Ʊ�� peer ���Υ���åɤǡ�����åɥס��뤬
-    ���Ԥ������Τ��ɤ������ host_sender_trylock() �ǻ����������롣
-    gfm_async_server_replication_result() �Τߤ� _trylock() �ǤϤʤ�
-    _lock() ��ȤäƤ���Τǡ�ʣ���Υ���åɥס������ͭ���Ƥ��ޤ�
-    ��ǽ�������뤬������������Ǥ��뤿�ᡢ�¼�Ū�ʴ������Ϥ��ʤ��㤤��
+・host_sender_lock()/_trylock() が必要な理由
+  - host_receiver_lock() と同様 peer_free_request() との競合回避
+  - 送信の場合は同一 peer でも複数スレッドで競合するのでその回避
+  - 送信側が詰まった場合に、同一 peer 宛のスレッドで、スレッドプールが
+    埋め尽くされるのを防ぐために host_sender_trylock() で事前検査する。
+    gfm_async_server_replication_result() のみは _trylock() ではなく
+    _lock() を使っているので、複数のスレッドプールを占有してしまう
+    可能性があるが、これは返答であるため、実質的な危険性はかなり低い。
 
-��host_disconnect_request() �θƤӽФ��ˤĤ���
-  ʣ���� back_channel ����åɤ���䡢�ե������饦��ɤ�
-  gfm_server_switch_back_channel_common() ����Ʊ���˸ƤӽФ����
-  ��ǽ�������롣
-  �äˡ��ե������饦��ɤ����Ǣ��ե������饦��ɤǺ���³���Ť� back_channel
-  ������������³������ �Ȥʤ�Ȥޤ�����
-  �����к��Ȥ��ơ��ʲ��Τ褦�ˤ��롣
-   - ������ peer ���Ϥ������줬�ۤʤäƤ����顢�ʤˤ⤷�ʤ���
-     �ե��������ɤ���ƤӽФ����� peer �Ȥ��� NULL ���Ϥ���
-     ���ξ��ˤϡ�̵ͭ�򤤤蘆�����Ǥ��롣
-   - ���� host->peer == NULL �ʤ顢�ʤˤ⤷�ʤ�
-  �ޤ���host_sender_unlock() �� host_receiver_unlock() ���ˤϡ�����
-  ���Ǥ���Ƥ����ǽ�������뤿�ᡢ������ peer ���Ϥ������줬�ۤʤäƤ�
-  ���顢�ʤˤ⤷�ʤ���
-  back_channel.c �Ǥϡ����å��򤫤����� host_get_peer() ���Ƥ��������Ȥ�
+・host_disconnect_request() の呼び出しについて
+  複数の back_channel スレッドからや、フォアグラウンドの
+  gfm_server_switch_back_channel_common() から同時に呼び出される
+  可能性がある。
+  特に、フォアグラウンドで切断→フォアグラウンドで再接続→古い back_channel
+  が、新しい接続を切断 となるとまずい。
+  この対策として、以下のようにする。
+   - 引数で peer を渡し、これが異なっていたら、なにもしない。
+     フォアグランドから呼び出す時は peer として NULL を渡す。
+     この場合には、有無をいわさず切断する。
+   - 既に host->peer == NULL なら、なにもしない
+  また、host_sender_unlock() や host_receiver_unlock() 時には、既に
+  切断されている可能性があるため、引数で peer を渡し、これが異なってい
+  たら、なにもしない。
+  back_channel.c では、ロックをかけずに host_get_peer() しておき、あとで
 		if (peer != NULL) /* to make the race condition harmless */
 			host_disconnect_request(host, peer);
-  �Ȥ��Ƥ�����ʬ�����뤬������� host_get_peer() �ʹߡ��ե��������ɤ�
-  host_peer_set() ���Ԥʤ�줿�����к������ξ�硢GFS_PROTO_STATUS ��
-  ���ֻ����ʤ��ˤ�ؤ�餺��host_disconnect_request() ������ if ����
-  ����˸ƤФ�ʤ���ǽ����鷺���ˤ��뤬������ϼ���� GFS_PROTO_STATUS ��
-  �ߺѤǤ��롣
+  としている部分があるが、これは host_get_peer() 以降、フォアグランドで
+  host_peer_set() が行なわれた場合の対策。この場合、GFS_PROTO_STATUS へ
+  の返事がないにも関わらず、host_disconnect_request() がこの if 条件の
+  ために呼ばれない可能性もわずかにあるが、それは次回の GFS_PROTO_STATUS で
+  救済できる。
 
-���ۥ��� down �к�
-  - ��gfs_client_status_request() �ǡ����󤫤�ޤ������ʤ��ä�
-    ��硢���ʤ�� host_status_reply_is_waiting() ������Ω�äƤ���
-    ���ˤϡ����ͥ����������Ǥ��롣(down ���֤Ȥʤ�)
-  - ���������λ��� host_sender_try_lock() ��������ǽ���ɤ�����
-    ��ǧ������������α���Ƥ������ˤϡ�host_peer_busy() ��
-    ���ͥ����������Ǥ���
+・ホスト down 対策
+  - ・gfs_client_status_request() で、前回からまだ答がなかった
+    場合、すなわち host_status_reply_is_waiting() が成り立っていた
+    時には、コネクションを切断する。(down 状態となる)
+  - 送信処理の時に host_sender_try_lock() で送信可能かどうかを
+    確認し、送信が滞留していた場合には、host_peer_busy() で
+    コネクションを切断する
 
-�� �ե�����ʣ������
+■ ファイル複製管理
 
-�� ����Ū�ˤϡ�Ʊ��������ֹ����ĥ�ץꥫ������Ʊ������Ƥ���ġ�
+○ 基本的には、同一の世代番号を持つレプリカは全て同一の内容を持つ。
 
-�㳰�ϰʲ���2���ࡣ
+例外は以下の2種類。
 
-- �����оݤȤ��ơ��񤭹����Ѥ˥����ץ󤵤�Ƥ����ץꥫ
-	����ϡ�����ץꥫ�桢��Ĥ���¸�ߤ����롣
-	gfmd Ū�ˤϡ�
+- 更新対象として、書き込み用にオープンされているレプリカ
+	これは、全レプリカ中、一つだけ存在しうる。
+	gfmd 的には、
 		(accmode_to_op(struct file_opening::flag) & GFS_W_OK) != 0
-	�Ȥ�����郎����Ω�äƤ������
+	という条件が成り立っている場合の
 		struct file_opening::u.f.spool_host
-	�������Υۥ��ȡ�
-	�����������ˡ����Υ�ץꥫ�������ֹ��夲�Ʋ�褹�롣
-- ��ץꥱ�����������Υե�����
-	��ץꥱ���������ϡ�ž��������Դ��������Ƥ���ġ�
-	���ξ�硢FILE_COPY_IS_VALID(struct file_copy *) �����Ȥʤ롣
+	が、そのホスト。
+	クローズ時に、このレプリカの世代番号を上げて解決する。
+- レプリケーション途中のファイル
+	レプリケーション先は、転送途中の不完全な内容を持つ。
+	この場合、FILE_COPY_IS_VALID(struct file_copy *) が偽となる。
 
-	FILE_COPY_IS_VALID(struct file_copy *) �����Ȥʤ�Τϡ�����ʳ��ˡ�
-	���Ƥϴ����������������Υ�ץꥫ���ʤ��
-	FILE_COPY_IS_BEING_REMOVED(struct file_copy *) �����Ȥʤ��ץꥫ
-	�����롣
+	FILE_COPY_IS_VALID(struct file_copy *) が偽となるのは、これ以外に、
+	内容は完全だが、削除途中のレプリカすなわち
+	FILE_COPY_IS_BEING_REMOVED(struct file_copy *) が真となるレプリカ
+	がある。
 
-	��ץꥱ�����������ˡ�������Ȥ�Τ�Ʊ����ץꥫ�κ������׵᤹��ȡ�
-	GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS ���֤���
-	�ǿ�����Υ�ץꥫ������ (FILE_COPY_IS_BEING_REMOVED()����) ��
-	���٤��Υ�ץꥫ�κ������׵᤹��ȡ�GFARM_ERR_DEVICE_BUSY ���֤���
+	レプリケーション途中に、作成中とものと同じレプリカの作成を要求すると、
+	GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS を返す。
+	最新世代のレプリカを削除中 (FILE_COPY_IS_BEING_REMOVED()が真) に
+	再度そのレプリカの作成を要求すると、GFARM_ERR_DEVICE_BUSY を返す。
 
-�� ����Ū�ˤϡ�����׵᤬�Ф� (dead_file_copy ���Ǥ���) �Τϡ�������Τ�
+○ 基本的には、削除要求が出る (dead_file_copy ができる) のは、旧世代のみ
 
-�㳰�ϰʲ���2����
+例外は以下の2種類
 
-- �ʤ�餫����ͳ�ǥ�ץꥱ������󤬼��Ԥ��ơ����κ�����׵᤹����
-- ��gfrm -h �Ρ��ɡפ��gfrep -x�פ��ʤ�� gfs_replica_remove_by_file() ��
-���׵ᤵ�줿���
+- なんらかの理由でレプリケーションが失敗して、その削除を要求する場合
+- 「gfrm -h ノード」や「gfrep -x」すなわち gfs_replica_remove_by_file() で
+　要求された場合
 
-����2������㳰�ˤĤ��Ƥϡ�dead_file_copy �˲ä��ơ�
-FILE_COPY_IS_BEING_REMOVED(struct file_copy *) �򿿤Ȥ��ơ�����/�ƻ뤹�롣
-dead_file_copy �� load ���ˤϡ����Τ���� struct file_copy �����ɬ�פȤʤ롣
+この2種類の例外については、dead_file_copy に加えて、
+FILE_COPY_IS_BEING_REMOVED(struct file_copy *) を真として、管理/監視する。
+dead_file_copy の load 時には、このための struct file_copy 設定も必要となる。
 
-�� �ե�����ʣ�������ξ���
+■ ファイル複製処理の状態
 
-�� ���Ԥ� gfmd ��Ƴ��ץꥱ�������γ���
+○ 現行の gfmd 主導リプリケーションの概要
 
-�� ����
+− 契機
 
-���桼�������ʣ���׵�
+・ユーザからの複製要求
 
-���ե�����ι���
-  �ե����뤬�������줿��硢����ޤ�ʣ�������ä��Ρ��ɤˡ��������ʣ�����ۤ롣
+・ファイルの更新
+  ファイルが更新された場合、それまで複製があったノードに、更新後の複製を配る。
 
-  ����Ū�ˤϡ�inode_remove_every_other_replicas() �ǡ�to_be_replicated ��
-  ������򽸤ᡢ
-	remove_replica_entity(��, &deferred_cleanup)
+  具体的には、inode_remove_every_other_replicas() で、to_be_replicated に
+  配布先を集め、
+	remove_replica_entity(〜, &deferred_cleanup)
 	file_replicating_new()
 	async_back_channel_replication_request()
-  �Ȥ��Ƥ���Ȥ����������졣
-  �����ǡ�dead_file_copy �Ϻ������Ƥ��뤬���ºݤ˺���׵�RPC�ϹԤʤäƤ��ʤ���
-  �������� dead_file_copy �� deferred_cleanup �Ȥ��Ƽ�����ꡢ
-  struct file_replicating ����¸����ʣ��������λ��ˡ�����׵��Ԥʤ���
-  ���δ֡����� dead_file_copy �� dead_file_copy_mark_kept() �ˤ��
-  �ݸ��Ƥ��롣
+  としているところが、それ。
+  ここで、dead_file_copy は作成しているが、実際に削除要求RPCは行なっていない。
+  作成した dead_file_copy は deferred_cleanup として受け取り、
+  struct file_replicating に保存し、複製処理完了後に、削除要求を行なう。
+  この間、この dead_file_copy は dead_file_copy_mark_kept() により
+  保護されている。
 
-  �ʤ��������� (���ʤ�� schedule_replication() ��)
-  FILE_COPY_IS_BEING_REMOVED(copy) �ʥΡ��ɤ⹹����̤������褫���������
-  ���뤬�����θ����Ϥʤ��Ƥ��ɤ���
-  �ʤ��ʤ顢�ۤ����Ȥ��Ƥ���ΤϿ���������Υ�ץꥫ�Ǥ��뤿�ᡢ�������
-  ��ץꥫ������������Ǥ⡢�¹Ԥ��������Ǥ��뤿�ᡣ
-  ���������ʲ��Τ褦����ͳ���顢���θ�����ԤʤäƤ��롣
-  - ľ����ʣ���˼��Ԥ��Ƥ���С�����⼺�Ԥ����ǽ�����⤤�������Ȼפ���
-  - ��gfrm -h �Ρ��ɡפ�����Ū�˺�����줿�ʤ顢�ۤ�٤��ǤϤʤ���
+  なお、ここで (すなわち schedule_replication() で)
+  FILE_COPY_IS_BEING_REMOVED(copy) なノードも更新結果の配布先から除外して
+  いるが、この検査はなくても良い。
+  なぜなら、配ろうとしているのは新しい世代のレプリカであるため、旧世代の
+  レプリカの配送が途中でも、並行して配送できるため。
+  ただし、以下のような理由から、この検査を行なっている。
+  - 直前に複製に失敗していれば、今回も失敗する可能性が高いだろうと思われる
+  - 「gfrm -h ノード」で明示的に削除されたなら、配るべきではない。
 
-�� �ǡ�����¤
+− データ構造
 
-ʣ�������¹���ϡ�!FILE_COPY_IS_VALID() �ȤʤäƤ��롣
-ʣ��������λ���� inode_replicated() ���顢inode_add_replica(inode, fr->dst, 1)
-��ƤӽФ���valid = 1 ���ѹ����Ƥ��롣
+複製処理実行中は、!FILE_COPY_IS_VALID() となっている。
+複製処理完了時に inode_replicated() から、inode_add_replica(inode, fr->dst, 1)
+を呼び出し、valid = 1 に変更している。
 
-ʣ�����������Ԥ˽��ä����ˤϡ�inode_replicated() ���顢
-inode_remove_replica_gen_deferred(��, &dfc) ��ƤӽФ���
-�֤äƤ��� dfc �� removal_pendingq_enqueue() ���Ϥ��ƺ���׵��Ф���
-removal_pendingq_enqueue() ¦�Ǥϡ��ʲ��ν�����ԤʤäƤ��롣
-���Ԥ���ʣ���������ǿ�������Ф����ΤǤ���С�
-	remove_replica_entity() �� dead_file_copy ��������롣(DB�ˤ��)
-	valid == 0 �Ǥ��ꡢ�ޤ� file_copy �� DB �˽񤫤�Ƥʤ��Τǡ�
-	DB ���Ф��� file_copy �κ���ϹԤʤ�ʤ���
-	file_copy �� free() ���롣
-	XXX FIXME �������λ����ޤǤϡ�file_copy �� free() ��ԤʤäƤ�
-	�����ʤ����Ǥʤ��ȡ��������λ�������ˡ�Ʊ�������ֹ�ǿ�����ʣ����
-	�������줿�ꡢ���뤤�� truncate �ξ��ˤϡ��񤭹����ѥ�ץꥫ��
-	�������򤵤�Ƥ��ޤ������ޤǤ��롣���ξ�硢�夫���Ϥ�������׵�
-	�ˤ�äơ����äƥե����뤬�ä���Ƥ��ޤ���
-	�ǿ�����κ���� gfrm -h ���ʤ�� gfs_replica_remove_by_file()
-	���ʤ�� GFM_PROTO_REPLICA_REMOVE_BY_FILE �� inode_remove_replica()
-	�Ǥ�ԤʤäƤ��롣
-	��������ϡ��ʲ���ǧ�����졢
+複製処理が失敗に終った時には、inode_replicated() から、
+inode_remove_replica_gen_deferred(〜, &dfc) を呼び出し、
+返ってきた dfc を removal_pendingq_enqueue() に渡して削除要求を出す。
+removal_pendingq_enqueue() 側では、以下の処理を行なっている。
+失敗した複製処理が最新世代に対するものであれば、
+	remove_replica_entity() で dead_file_copy を作成する。(DBにも書く)
+	valid == 0 であり、まだ file_copy は DB に書かれてないので、
+	DB に対する file_copy の削除は行なわない。
+	file_copy は free() する。
+	XXX FIXME 削除が完了するまでは、file_copy の free() を行なっては
+	いけない。でないと、削除が完了する前に、同一世代番号で新しい複製が
+	作成されたり、あるいは truncate の場合には、書き込み用レプリカと
+	して選択されてしまう危険まである。その場合、後から届いた削除要求
+	によって、誤ってファイルが消されてしまう！
+	最新世代の削除は gfrm -h すなわち gfs_replica_remove_by_file()
+	すなわち GFM_PROTO_REPLICA_REMOVE_BY_FILE → inode_remove_replica()
+	でも行なっている。
+	この問題は、以下で認識され、
 	    https://sourceforge.net/apps/trac/gfarm/ticket/88
 		#88 - race condition between a replication failure
 		and another replication
-	replication�˴ؤ��Ƥϡ�r4657, r4659 �� dead_file_copy_remove() ��
-	Ƴ�����뤳�Ȥˤ��(��Ψ�ϰ�����)������к����줿��
-	��������r4955 �ǡ���񤭻��ˤϡ�����ޤǥ�ץꥫ��¸�ߤ��ʤ��ä�
-	�Ρ��ɤˤ�Ʊ������Υե������������륱���������ޤ줿���ᡢ
-	��������ˤʤä���
-	�ޤ�����Ϣ����
+	replicationに関しては、r4657, r4659 で dead_file_copy_remove() を
+	導入することにより(効率は悪いが)、一応対策された。
+	しかし、r4955 で、上書き時には、それまでレプリカの存在しなかった
+	ノードにも同一世代のファイルを作成するケースが生まれたため、
+	再度問題になった。
+	また、関連して
 	    https://sourceforge.net/apps/trac/gfarm/ticket/78
 		#78 annoying pgsql error messages about deadfilecopy
 	    https://sourceforge.net/apps/trac/gfarm/ticket/144
 		#144 INode table in the PostgreSQL backend may not be
 		corectly updated
-���Ԥ���ʣ����������������Ф����ΤǤ���С�
-	ñ�� remove_replica_entity() �� dead_file_copy ��������롣(DB�ˤ��)
-	file_copy �ˤĤ��Ƥ�¸�ߤ��ʤ��Τǡ�����Ԥʤ�ʤ���
+失敗した複製処理が旧世代に対するものであれば、
+	単に remove_replica_entity() で dead_file_copy を作成する。(DBにも書く)
+	file_copy については存在しないので、何も行なわない。
 
-�⤷���ե�����ι��������ä����ˡ��Ť�����ˤĤ���ʣ���������¹����
-����С��Ť� struct file_copy �Ϻ������dead_file_copy ���������
-����׵��Ф�������� inode_remove_every_other_replicas() ��
-	remove_replica_entity(��, NULL)
-�ǹԤʤäƤ��롣remove_replica_entity() �Ϻǽ������� NULL �Ǥ���С�
-����׵��ȯ�Ԥ��롣
+もし、ファイルの更新があった時に、古い世代について複製処理が実行中で
+あれば、古い struct file_copy は削除し、dead_file_copy を作成し、
+削除要求も出す。これは inode_remove_every_other_replicas() の
+	remove_replica_entity(〜, NULL)
+で行なっている。remove_replica_entity() は最終引数が NULL であれば、
+削除要求も発行する。
 XXX FIXME: race condition
-�����ǡ�ʣ�������� gfsd ¦�ǥ��塼��ί��ΤǸŤ�ʣ���κ���׵᤬��
-�Ť�ʣ����ʣ���׵������˼¹Ԥ�����ǽ����������Ū�ˤϤ��ꤦ�롣
-�����������ξ�硢���ס���˥��ߤ��Ĥ�����ʤΤǡ��ե�����򼺤���
-���ä�����ϵ����ʤ���
+ここで、複製処理は gfsd 側でキューに溜るので古い複製の削除要求が、
+古い複製の複製要求よりも先に実行される可能性が、理論的にはありうる。
+ただし、この場合、スプールにゴミが残るだけなので、ファイルを失うと
+いった問題は起きない。
 
-�� 2.4.0 ��꡼���κ��ˡ������ͽ��Ȥ��ƹͤ��Ƥ������ (�Ť������Ϥ���˲���)
+○ 2.4.0 リリースの頃に、今後の予定として考えていたもの (古い。今はさらに改訂)
 
 replication_pendingq
 replication_confirmingq
 replication_finishedq
 replication_busyq
 
-requested	�������
-newgen_waiting	�����ֹ湹���Ԥ�
-pending		GFS_PROTO_REPLICATION_REQUEST�������Ԥ����塼
-in_flight	GFS_PROTO_REPLICATION_REQUEST�׵�����
-replicating	GFS_PROTO_REPLICATION_REQUEST����������
-		GFM_PROTO_REPLICATION_RESULT�׵�μ����Ԥ�
-replicated	GFS_PROTO_REPLICATION_REQUEST������̤�����ˤ�ؤ�餺��
-		GFM_PROTO_REPLICATION_RESULT�׵���������  race condition
-		GFS_PROTO_REPLICATION_REQUEST�����μ����Ԥ�
-confirming	GFS_PROTO_REPLICATION_REQUEST������
-		GFM_PROTO_REPLICATION_RESULT�׵��ξ�����������
-		GFM_PROTO_REPLICATION_RESULT�����������Ԥ����塼
-finished	GFM_PROTO_REPLICATION_RESULT�����������������
-		finalizing �Ԥ����塼
-finalizing	��λ������
-removal_waiting	ʣ�������˼��Ԥ����Դ����ʥ�ץꥫ�κ���Ԥ���
-		�����λ�ޤǤϡ�copy->valid == 0 �ʾ��֤ϰݻ����Ƥ��롣
+requested	初期状態
+newgen_waiting	世代番号更新待ち
+pending		GFS_PROTO_REPLICATION_REQUESTの送信待ちキュー
+in_flight	GFS_PROTO_REPLICATION_REQUEST要求送信
+replicating	GFS_PROTO_REPLICATION_REQUEST返答受信、
+		GFM_PROTO_REPLICATION_RESULT要求の受信待ち
+replicated	GFS_PROTO_REPLICATION_REQUEST返答は未受信にも関わらず、
+		GFM_PROTO_REPLICATION_RESULT要求を受信した  race condition
+		GFS_PROTO_REPLICATION_REQUEST返答の受信待ち
+confirming	GFS_PROTO_REPLICATION_REQUEST返答と
+		GFM_PROTO_REPLICATION_RESULT要求の両方を受信し、
+		GFM_PROTO_REPLICATION_RESULT返答の送信待ちキュー
+finished	GFM_PROTO_REPLICATION_RESULT返答を送信した後の
+		finalizing 待ちキュー
+finalizing	終了処理中
+removal_waiting	複製処理に失敗し、不完全なレプリカの削除待ち。
+		削除完了までは、copy->valid == 0 な状態は維持している。
 replication_waiting
-		����Ԥ���ˡ������ʥ�ץꥱ����������ꤵ�줿��
-		���ξ�硢ɬ����ȥ饤���롣
-busy		back_channel ������busy���֤Τ��ᡢ
-		GFS_PROTO_REPLICATION_REQUEST�������ʤ���
-		GFM_PROTO_REPLICATION_RESULT������������
-		��ǽ�ˤʤ�Τ��ԤäƤ���
+		削除待ち中に、新たなレプリケーションを依頼された。
+		この場合、必ずリトライする。
+busy		back_channel 送信がbusy状態のため、
+		GFS_PROTO_REPLICATION_REQUESTの送信ないし
+		GFM_PROTO_REPLICATION_RESULT返答の送信が
+		可能になるのを待っている
 
 XXX
-�� ����󥻥�μ��� 
-kill ������硢�ץ��ȥ����Ʊ����������Τǡ�
-gfsd connection cache �� purge ��ɬ�ס�
+○ キャンセルの実装 
+kill した場合、プロトコルの同期が失われるので、
+gfsd connection cache の purge が必要。
 
 XXX
-�� ���Ԥ�����硢��ǽ�ʤ��ȥ饤��������
+○ 失敗した場合、可能ならリトライしたい。
 
 XXX 
-�� inode:rstate �� on going replication ���ݻ�����Ƥ������
-  inode ����ࡼ�֤����ȡ�inode �� DB ����ä��뤬�������ˤϻĤ롣
-  ���ΤȤ���file_copy �� DB �������꤫���ä��Ƥʤ���
-  ���λ���gfmd ���������ȡ�file_copy �� orphan �ˤʤ롣
+○ inode:rstate に on going replication が保持されている時、
+  inode がリムーブされると、inode は DB から消えるが、メモリ上には残る。
+  このとき、file_copy は DB からもメモリからも消えてない。
+  この時、gfmd が殺されると、file_copy が orphan になる。
 
-�� �ե�����ʣ���˼��Ԥ�����硢����ۥ��Ȥ��Դ�����ʣ���ϡ�
-  gfmd �� dead_file_copy ��Ȥäƾä��������ɤ�����
-  ����Ȥ� gfsd ����ʬ�Ǿä��Ƥ��顢�ե�����ʣ��������̤���𤹤�
-  �Τ��ɤ�����
+○ ファイル複製に失敗した場合、宛先ホストの不完全な複製は、
+  gfmd が dead_file_copy を使って消した方が良いか？
+  それとも gfsd が自分で消してから、ファイル複製処理結果を報告する
+  のが良いか？
 
-race condition ���򤱤��̣�Ǥϡ�gfsd ���ä���������ñ��
-�����������ξ�硢gfsd ������å��夹��ȡ��Դ����ʥ�ץꥫ�Υ��ߤ�
-�ĤäƤ��ޤ����Ȥˤʤ롣
-����������̣�ǡ�gfmd ���ä��������ɤ���
+race condition を避ける意味では、gfsd が消した方が簡単。
+しかし、その場合、gfsd がクラッシュすると、不完全なレプリカのゴミが
+残ってしまうことになる。
+そういう意味で、gfmd が消した方が良い。
 
-��������gfmd �ϡ��õ��λ����ޤǴƻ뤷�����δ֤� incomplete ��
-��ץꥫ���֤�ݻ�����������򤱤�ɬ�פ����롣
-�ʤ������ξõλ�Ԥ��ϡ�ʣ���������Ԥλ������Ԥʤ����ɤ��櫓�ǤϤʤ���
-ñ�ʤ��ץꥫ����ξ��⡢incomplete ���֤ΰݻ���ɬ�ס�
-����ʤ��ȡ�������¹Ԥ���ʣ���������Ԥʤ����ǽ�������롣
+ただし、gfmd は、消去が完了するまで監視し、その間は incomplete な
+レプリカ状態を維持し、競合を避ける必要がある。
+なお、この消去完了待ちは、複製作成失敗の時だけ行なえば良いわけではない。
+単なるレプリカ削除の場合も、incomplete 状態の維持は必要。
+さもないと、それと並行して複製作成が行なわれる可能性がある。
 
-���ʤߤ� gfarm-2.3.0 �����Ǥ⡢gfmd ���ä��Ƥ�����
+ちなみに gfarm-2.3.0 以前でも、gfmd が消していた。
 
-���η郎
+この件が
 http://sourceforge.net/apps/trac/gfarm/ticket/88
 https://dev.chubu.sra.co.jp/trac/gfarm/nttcom/ticket/5
 https://xi.lab.sphere.ad.jp/trac/gfarm/ticket/62
-�Ȥ�������Ȥʤä���
+として問題となった。
 
-�� ʣ�������μ���
-	(a1) gfmd �� gfsd ��ʣ���׵��Ф�
-	(a2) ʣ�������˼��Ԥ���
-	(a3) gfmd ����ʣ����μ��Τ�ä��׵� (== dead_file_copy) ����
-	(a4) gfmd ���� gfsd ���׵᤬��ã���졢���Τ��ä���
-�� �⤦��Ĥ�ʣ������
-	(b1) Ʊ���ե�����˴ؤ���Ʊ���ʣ����ؤ�ʣ���������׵᤬�Ф�
-	(b2) gfsd ��ʣ�����������
-�Ȥ��� 2�Ĥν�������
-(a1) �� (a2) �� (a3) �� (a4) �� (b1) �� (b2)
-�Ȥ�������Ǽ¹Ԥ���������ʤ�����
-(a1) �� (a2) �� (a3) �� (b1) �� (b2) �� (a4)
-�Ȥ�������Ǽ¹Ԥ���롢ʣ�����줿���Τ����ä� a4 �Ǿä���Ƥ��ޤ��ΤǤޤ���
-�к��Ȥ��ơ�
-	ʣ���׵᤬�Ф�����Ʊ���ץꥫ���Ф���dead_file_copy�����ä��顢
-	���֤� kept/in_flight/finished/finalizing �ʤ�С�
-		������λ�ޤ��Ԥ�
-	����ʤ���
-		����dead_file_copy��ä�
-�Ȥ����꤬�ͤ����롣��������������λ�ޤ��ԤĤΤ�gfmd��������¤Ū��
-���ݤʤΤǡ��Ȥꤢ�����μ�Ȥ��ơ�
-	���֤� kept/in_flight/finished/finalizing �Υ������ˤĤ��Ƥϡ�
-		ñ�� BUSY ���֤�
-�Ȥ�����ˡ�⤢�롣
+○ 複製処理の失敗
+	(a1) gfmd が gfsd へ複製要求を出す
+	(a2) 複製処理に失敗する
+	(a3) gfmd が、複製先の実体を消す要求 (== dead_file_copy) を作る
+	(a4) gfmd から gfsd へ要求が伝達され、実体が消える
+○ もう一つの複製処理
+	(b1) 同じファイルに関し、同一の複製先への複製処理が要求が出る
+	(b2) gfsd が複製を作成する
+という 2つの処理が、
+(a1) → (a2) → (a3) → (a4) → (b1) → (b2)
+という順序で実行されれば問題ないが、
+(a1) → (a2) → (a3) → (b1) → (b2) → (a4)
+という順序で実行される、複製された実体が誤って a4 で消されてしまうのでまずい
+対策として、
+	複製要求が出た時、同一レプリカに対するdead_file_copyがあったら、
+	状態が kept/in_flight/finished/finalizing ならば、
+		処理完了まで待つ
+	さもなくば
+		そのdead_file_copyを消す
+という手が考えられる。しかし、処理完了まで待つのはgfmdの内部構造的に
+面倒なので、とりあえずの手として、
+	状態が kept/in_flight/finished/finalizing のケースについては、
+		単に BUSY を返す
+という方法もある。
 
-�� ���ջ���:
-  async_back_channel_replication_request() ��Ƥ����ˤϡ�
-  dead_file_copy_remove() == GFARM_ERR_NO_ERROR ���ǧ���Ƥ���ɬ�פ����롣
-  ����ʤ��ȡ��嵭 race condition ��ȯ�����롣
+☆ 注意事項:
+  async_back_channel_replication_request() を呼ぶ前には、
+  dead_file_copy_remove() == GFARM_ERR_NO_ERROR を確認しておく必要がある。
+  さもないと、上記 race condition が発生する。
 
-�� RPC �ץ��ȥ��롦�ϥ�ɥ顼�ˤĤ���
+■ RPC プロトコル・ハンドラーについて
 
-�� ���顼������
+○ エラーコード
 
-gfmd.c:protocol_switch() ����ƤӽФ���롢��RPC �Υץ��ȥ��롦�ϥ�ɥ顼��
-����� gfarm_error_t �ˤϡ������Τ褦�ʻ��ͤ����롣
+gfmd.c:protocol_switch() から呼び出される、各RPC のプロトコル・ハンドラーの
+戻り値 gfarm_error_t には、下記のような仕様がある。
 
-	���饤����ȤȤδ֤��̿����顼��ȯ��������硢
-	RPC �ץ��ȥ��롦�ϥ�ɥ顼�򤽤��̿����顼�����ɤ��֤���
-	�̿����顼�Ǥ��ꡢ���θ���̿���ǽ�Ȥʤ뤿�ᡢ
-	�ʻ����β������¨�¤˥ץ��ȥ��롦�ϥ�ɥ顼���鵢��Ф褤��
+	クライアントとの間で通信エラーが発生した場合、
+	RPC プロトコル・ハンドラーをその通信エラーコードを返す。
+	通信エラーであり、その後は通信不能となるため、
+	（資源等の解放後）即座にプロトコル・ハンドラーから帰ればよい。
 
-	���饤����ȤȤδ֤��̿����顼��ȯ�����ʤ��ä����ϡ�
-	�ץ��ȥ��롦�ϥ�ɥ顼�ϡ�RPC�׵�ν�����̤��֤���
-	���ξ�硢���饤����ȤȤ��̿������Ǥ��ƽ����ƤϤ����ʤ���
-	���Ȥ�������­�Τ褦�ʥ��顼�Ǥ��äƤ⡢�ץ��ȥ���������³
-	�Ǥ���褦���̿���Ǹ�ޤǹԤʤäƤ��顢�ץ��ȥ��롦�ϥ�ɥ顼
-	���鵢��褦�ˤ��롣�ʷ�³�������ˤ�ƺ���ʾ������Ӹ�Ƥ�����
+	クライアントとの間で通信エラーが発生しなかった場合は、
+	プロトコル・ハンドラーは、RPC要求の処理結果を返す。
+	この場合、クライアントとの通信を中断して終えてはいけない。
+	たとえメモリ不足のようなエラーであっても、プロトコル処理を継続
+	できるよう、通信を最後まで行なってから、プロトコル・ハンドラー
+	から帰るようにする。（継続処理が極めて困難な場合は別途検討する）
 
-	RPC�׵�ν�����̤Ȥ��ƥ��顼��ȯ�����������̿����顼�����������ϡ�
-	�̿����顼������ͥ�褷���֤���
+	RPC要求の処理結果としてエラーが発生し、かつ通信エラーも生じた場合は、
+	通信エラーの方を優先して返す。
 
-	�ʤ���gfm_server_put_reply() �ϡ�����Ū��
-	���̿����顼���������顢���Υ��顼�����ɤ��֤���
-	���̿����顼�������Ƥʤ���С�RPC�׵�ν�����̤��֤���
-	�Ȥ����������Ȥ߹��ޤ�Ƥ��뤿�ᡢ
-	RPC�ץ��ȥ��롦�ϥ�ɥ�κǸ�ν����� gfm_server_put_reply()
-	�Ǥ�����ˤϡ��ä˰ռ����ʤ��Ƥ⡢���λ��ͤ��¸�����롣
+	なお、gfm_server_put_reply() は、内部的に
+	・通信エラーが起きたら、そのエラーコードを返す。
+	・通信エラーが起きてなければ、RPC要求の処理結果を返す。
+	という処理が組み込まれているため、
+	RPCプロトコル・ハンドラの最後の処理が gfm_server_put_reply()
+	である場合には、特に意識しなくても、この仕様が実現される。
 
-�ץ��ȥ��롦�ϥ�ɥ顼����ǡ��̿����顼(�ʤ����ϥ�ɥ顼����������)��
-RPC�׵�ν������顼�Σ��Ĥ��̡����ѿ����ݻ���������硢���줾�졢
-�ʲ����ѿ��򡢺�����Ѥ��뤳�ȤȤ��롣
-	e_ret: �̿����顼(�ʤ����ϥ�ɥ顼����������)
-	e_rpc: RPC�׵�ν������顼
-���ξ�硢�⤷�ѿ� e �ϡ�����ѿ��Ȥ��ƻȤ���
-�ʤ�������e_ret �� e_rpc ����̤���ɬ�פ����뤳�Ȥϵ��Ǥ��뤷��
-���ޤ�����˲ä��ư���ѿ� e ��ɬ�פȤʤ뤳�Ȥϡ�����˵��Ǥ��뤬�ġ�
+プロトコル・ハンドラーの中で、通信エラー(ないしハンドラーからの戻り値)と
+RPC要求の処理エラーの２つを、別々の変数に保持したい場合、それぞれ、
+以下の変数を、今後は用いることとする。
+	e_ret: 通信エラー(ないしハンドラーからの戻り値)
+	e_rpc: RPC要求の処理エラー
+この場合、もし変数 e は、一時変数として使う。
+（ただし、e_ret と e_rpc を区別する必要があることは稀であるし、
+　またそれに加えて一時変数 e が必要となることは、さらに稀であるが…）
 
-�� RPC forwarding ���Ф���ץ��ȥ��뤴�Ȥν���
+○ RPC forwarding に対するプロトコルごとの処理
 
-�ƥץ��ȥ���ϥ�ɥ餬�����������ǹԤʤ� (���������ǹԤʤä����
-�ޥ�������ž��������⡢����˴ޤ�) �������뤤�ϥޥ�������ž������
-���ϡ�gfmd.c:protocol_type() �ؿ��˵��Ҥ��롣
-�ƥץ��ȥ���ϥ�ɥ����������硢���� protocol_type() �ε��Ҥ�
-��������������ɬ�פ����롣
+各プロトコルハンドラが、処理を自前で行なう (処理を自前で行なった上で
+マスターに転送する場合も、これに含む) か、あるいはマスターに転送する
+かは、gfmd.c:protocol_type() 関数に記述する。
+各プロトコルハンドラを修正した場合、この protocol_type() の記述も
+正しく更新する必要がある。
 
-�� gfmd channel �ץ��ȥ���ϥ�ɥ�˴ؤ����õ�����
+■ gfmd channel プロトコルハンドラに関する特記事項
 
-gfmd channel �ץ��ȥ���ϥ�ɥ�ϡ����Υ���åɼ��Ȥ�
-���㡼�ʥ�ե�����ؤν񤭹��ߤ򤷤ƤϤʤ�ʤ���
-�������äơ��Хå�����ɥǡ����١����ؤν񤭹��ߤ⤷�Ƥ�
-�����ʤ���
-�⤷����餬ɬ�פȤʤ���ϡ��̥���åɤ��ڤ�Υ���ƹԤʤ�ɬ�פ����롣
+gfmd channel プロトコルハンドラは、そのスレッド自身で
+ジャーナルファイルへの書き込みをしてはならない。
+したがって、バックエンドデータベースへの書き込みもしては
+いけない。
+もしこれらが必要となる場合は、別スレッドに切り離して行なう必要がある。
 
-����ʤ��ȡ�r6632 �ǽ������줿�ʲ��Τ褦�ʥǥåɥ��å�����
-Ʊ�����졼��gfmd ���Ф���ȯ������:
+さもないと、r6632 で修正された以下のようなデッドロックが、
+同期スレーブgfmd に対して発生する:
 
 [Switching to thread 17 (Thread 0x4a118940 (LWP 19639))]#0  0x00000038e9e0ad09 in pthread_cond_wait@@GLIBC_2.3.2 () from /lib64/libpthread.so.0
 (gdb) bt
@@ -803,9 +803,9 @@ gfmd channel �ץ��ȥ���ϥ�ɥ�ϡ����Υ���åɼ��Ȥ�
 #20 0x00000038e9e06617 in start_thread () from /lib64/libpthread.so.0
 #21 0x0000003026ed3c2d in clone () from /lib64/libc.so.6
 
-�� XXX ̤���� TO-DO
+■ XXX 未記載 TO-DO
 
-��protocol_main() �Ǽ����������� resuming_thread() �Ǥ������Ԥ��ˤʤ�
-  ��Τ����뤬��resume �� callback �Ǽ¸�����Ƥ��뤿�ᡢ����åɥס�
-  ����Ԥ��Υǥåɥ��å��ˤϤʤ�ʤ���
+・protocol_main() で受けた処理は resuming_thread() での返答待ちになる
+  ものがあるが、resume が callback で実現されているため、スレッドプー
+  ル資源待ちのデッドロックにはならない。
 

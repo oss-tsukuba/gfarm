@@ -1,62 +1,62 @@
-�� async RPC �ե����ޥåȤˤĤ���
+■ async RPC フォーマットについて
 
-��RPC �׵�
-  �إå��ϰʲ��η���
+・RPC 要求
+  ヘッダは以下の形式
 	(1) 32bit big endian integer
-		��� 2�ӥå�: 2��00 - �׵���̣���� (XID_TYPE_REQUEST)
-		����30�ӥå�: xid - RPC transaction ID
+		上位 2ビット: 2進00 - 要求を意味する (XID_TYPE_REQUEST)
+		下位30ビット: xid - RPC transaction ID
 	(2) 32bit big endian integer
-		32�ӥå�: xid - RPC transaction ID
-  ����˰�³�����ʲ���³��
+		32ビット: xid - RPC transaction ID
+  これに引続き、以下が続く
 	(3) 32bit big endian integer
-		�ץ��ȥ��롦���ޥ��
-	(4) �⤷����С��ץ��ȥ��롦���ޥ�ɤΰ���
+		プロトコル・コマンド
+	(4) もしあれば、プロトコル・コマンドの引数
 
-��RPC ����
-  �إå��ϰʲ��η���
+・RPC 返答
+  ヘッダは以下の形式
 	(1) 32bit big endian integer
-		��� 2�ӥå�: 2��10 - �������̣���� (XID_TYPE_RESULT)
-		����30�ӥå�: xid - RPC transaction ID
+		上位 2ビット: 2進10 - 返答を意味する (XID_TYPE_RESULT)
+		下位30ビット: xid - RPC transaction ID
 	(2) 32bit big endian integer
-		32�ӥå�: xid - RPC transaction ID
-  ����˰�³�����ʲ���³��
+		32ビット: xid - RPC transaction ID
+  これに引続き、以下が続く
 	(3) 32bit big endian integer
-		��̥��ơ����� (gfarm_error_t)
-	(4) �⤷����С���̰���
+		結果ステータス (gfarm_error_t)
+	(4) もしあれば、結果引数
 
 
-�� ������̤������ xid �ϥ����˵������줿�ޤ޻ĤäƤ�������Ѥ���ʤ��Τǡ�
-   30�ӥåȤ򥪡��С��ե������� xid ���ͤ� wrap around ���Ƥ�����ʤ���
+※ 返答を未受信の xid はメモリ上に記憶されたまま残っており再利用されないので、
+   30ビットをオーバーフローして xid の値が wrap around しても問題ない。
 
-�� xid ���ͤ� DEFAULT_ID_LIMIT=1000000000 ̤������������Ƥ��ʤ���
-   xid ���ͤȤ��� 0 �ϻȤäƤ��ʤ�������� DEFAULT_ID_BASE �� 1 �Ǥ��뤿�ᡣ
+※ xid の値は DEFAULT_ID_LIMIT=1000000000 未満しか割り当てられない。
+   xid の値として 0 は使っていない。これは DEFAULT_ID_BASE が 1 であるため。
 
-�� �إå�(1)�ǥӥåȥѥ������2��01�פ���ӡ�2��11�פϸ������Ѥ��Ƥ��ʤ���
-   ��2��01�פϡ�������б����������Τʤ�����Ū�����Ρ�
-   ��2��11�פϡ�����ʹߤ�30bit�ȹ�碌�ơ��ü�ʥ��ڥ졼�����
-   �Ȥ��ƻȤ��Ƥ�ͤ��������������Ƥ��ʤ��Τǡ�#define ���Ϥ��Ƥ��ʤ���
-   ñ�˾���γ�ĥ�������ƥꥶ���֤��Ƥ�����֡�
+※ ヘッダ(1)でビットパターン「2進01」および「2進11」は現在利用していない。
+   「2進01」は、それに対応する返答のない一方的な通知、
+   「2進11」は、それ以降の30bitと合わせて、特殊なオペレーション。
+   として使う案を考えたが、実装していないので、#define 等はしていない。
+   単に将来の拡張に備えてリザーブしてある状態。
 
-�� GFARM_FILE_RDONLY �ʤɤ� GFARM_FILE_* �ե饰�Υӥåȳ�����ƤˤĤ���
+■ GFARM_FILE_RDONLY などの GFARM_FILE_* フラグのビット割り当てについて
 
-GFARM_INTERNAL_USE �ˤϡ�2����Τ�Τ����롣
-���ӥå� 0xffff �˴ޤޤ����
-  ����ϥץ��ȥ�����ή��Ƥ��롣
-  GFARM_FILE_LOOKUP �Ȥ� GFARM_FILE_CREATE �Ȥ��� INTERNAL_USE �Ǥ�����
-  �ץ��ȥ����ή��Ƥ��뤿�ᡢ���¤ˤ��ѹ��Բ�ǽ�Ǥ��ꡢ�����˳������
-  ���Ƥ��롣
-���ӥå� 0x00ff0000 ������˴ޤޤ����
-  gfmd �� libgfarm �����ΤߤǻȤ����ץ��ȥ����ή��ʤ���Ρ�
-  GFARM_FILE_TRUNC_PENDING (gfmd �����ΤߤǻȤ�) ��
-  GFARM_FILE_SYMLINK_NO_FOLLOW (libgfarm �����ΤߤǻȤ�) �����롣
-  �����Ͻ�������Ū�˻Ȥ����ץ��ȥ����ή��ʤ��Τǡ����Ȥ��� gfmd
-  �� libgfarm �����ǤΥե饰 uint64_t �˳�ĥ����С���äȾ��
-  0xffffffff00000000 �Ȥ��ä��ӥåȤ��ѹ���ǽ��
-  0x00800000 ����Ϥ�ơ���˲��ΥӥåȤ������Ƥ�ͽ�ꡣ
-  �ʤ���GFARM_FILE_TRUNC_PENDING �� gfmd �����Τߡ�
-  GFARM_FILE_SYMLINK_NO_FOLLOW ����� GFARM_FILE_OPEN_LAST_COMPONENT ��
-  libgfarm �����Τߤ����ѤǤ��뤿�ᡢGFARM_FILE_TRUNC_PENDING ��
-  GFARM_FILE_OPEN_LAST_COMPONENT �ˤĤ��Ƥ�Ʊ��ӥåȤ�Ťͤ����Ѥ��Ƥ��롣
-  �� r6725 �� GFARM_FILE_REPLICA_SPEC �� 0x10000 ��������Ƥ��ƥ�꡼��
-     ���줿���ᡢ���λ����ǡ֥ץ��ȥ����ή��ʤ���Ρפ������ 0x00fe0000 
-     ���ѹ����줿�ȹͤ��������ɤ���
+GFARM_INTERNAL_USE には、2種類のものがある。
+・ビット 0xffff に含まれるもの
+  これはプロトコル上も流れている。
+  GFARM_FILE_LOOKUP とか GFARM_FILE_CREATE とかは INTERNAL_USE ですが、
+  プロトコルを流れているため、現実には変更不可能であり、公式に割り当て
+  られている。
+・ビット 0x00ff0000 あたりに含まれるもの
+  gfmd や libgfarm 内部のみで使い、プロトコルを流れないもの。
+  GFARM_FILE_TRUNC_PENDING (gfmd 内部のみで使う) や
+  GFARM_FILE_SYMLINK_NO_FOLLOW (libgfarm 内部のみで使う) がある。
+  これらは純粋に内部的に使い、プロトコルを流れないので、たとえば gfmd
+  や libgfarm 内部でのフラグ uint64_t に拡張すれば、もっと上の
+  0xffffffff00000000 といったビットに変更可能。
+  0x00800000 から始めて、順に下のビットを割り当てる予定。
+  なお、GFARM_FILE_TRUNC_PENDING は gfmd 内部のみ、
+  GFARM_FILE_SYMLINK_NO_FOLLOW および GFARM_FILE_OPEN_LAST_COMPONENT は
+  libgfarm 内部のみの利用であるため、GFARM_FILE_TRUNC_PENDING と
+  GFARM_FILE_OPEN_LAST_COMPONENT については同一ビットを重ねて利用している。
+  ※ r6725 で GFARM_FILE_REPLICA_SPEC に 0x10000 が割り当てられてリリース
+     されたため、その時点で「プロトコルを流れないもの」の定義は 0x00fe0000 
+     に変更されたと考えた方が良い。

@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_glob_free</refname>
-<refpurpose>�ѥ��Υ����פ��Ǽ���Ƥ����ΰ���������</refpurpose>
+<refpurpose>パスのタイプを格納している領域を解放する</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -31,7 +31,7 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>�ѥ��Υ����פ��Ǽ���뤿���ưŪ�˳��ݤ����ΰ��������ޤ���</para>
+<para>パスのタイプを格納するために動的に確保した領域を解放します。</para>
 </refsect1>
 
 <refsect1 id='see-also'><title>SEE ALSO</title>

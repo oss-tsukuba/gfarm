@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfs_pio_readdelim&nbsp;--&nbsp;��쥳�����ɤ߹���</DIV
+>gfs_pio_readdelim&nbsp;--&nbsp;一レコード読み込み</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -108,143 +108,143 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->���δؿ��ϡ�gfs_pio_readline(3) ��Ʊ�ͤ�Ư���ޤ�������������
-���ϤΥ��ѥ졼�������ʸ���˸¤餺������Ū�˻���Ǥ���褦��
-������ΤǤ���
-���δؿ��ϡ��ե����� <TT
+>この関数は、gfs_pio_readline(3) と同様に働きますが、ただし、
+入力のセパレータを改行文字に限らず、一般的に指定できるように
+したものです。
+この関数は、ファイル <TT
 CLASS="PARAMETER"
 ><I
 >gf</I
 ></TT
 >
-���顢
-���� <TT
+から、
+引数 <TT
 CLASS="PARAMETER"
 ><I
 >delimiter</I
 ></TT
 >
-�ǻ��ꤵ�줿�Х������쥳���ɴֶ��ڤ�Ȥ��ơ�1�쥳�����ɤߤȤ�
-�ޤ���
-���� <TT
+で指定されたバイト列をレコード間区切りとして、1レコード読みとり
+ます。
+引数 <TT
 CLASS="PARAMETER"
 ><I
 >delimiter</I
 ></TT
 >
-�ˤ�ʸ�� '\0' ��ޤळ�Ȥ�Ǥ��ޤ������Τ��ᡢ���ڤ��Ĺ����
-���� <TT
+には文字 '\0' を含むこともできます。このため、区切りの長さを
+引数 <TT
 CLASS="PARAMETER"
 ><I
 >delimlen</I
 ></TT
 >
-�ǻ��ꤷ�ޤ���
-�ʤ���
-���� <TT
+で指定します。
+なお、
+引数 <TT
 CLASS="PARAMETER"
 ><I
 >delimiter</I
 ></TT
 >
-�� NULL �ξ�硢�ե��������Τ�1�쥳���ɤȤ��ƥ������ɤ߹��ߤޤ���
-�����ǤϤʤ�������
-���� <TT
+が NULL の場合、ファイル全体を1レコードとしてメモリ上に読み込みます。
+そうではなく、かつ
+引数 <TT
 CLASS="PARAMETER"
 ><I
 >delimlen</I
 ></TT
 >
-�� 0 �ξ�硢��İʾ��Ϣ³������� (����ɽ���Ǥ� /\n\n+/) ��
-�쥳���ɶ��ڤ�ȸ��ʤ��ޤ������λ��ͤ� perl ����� INPUT_RECORD_SEPARATOR
-�򻲹ͤˤ��Ƥ��ޤ���</P
+が 0 の場合、一個以上の連続する空行 (正規表現では /\n\n+/) を
+レコード区切りと見なします。この仕様は perl 言語の INPUT_RECORD_SEPARATOR
+を参考にしています。</P
 ><P
->���� <TT
+>引数 <TT
 CLASS="PARAMETER"
 ><I
 >bufp</I
 ></TT
 >
-�ϡ��ǽ�� NULL �ǽ�������줿�ݥ����ѿ��Υ��ɥ쥹����ꤷ�ޤ���
-�ؿ� <TT
+は、最初は NULL で初期化されたポインタ変数のアドレスを指定します。
+関数 <TT
 CLASS="FUNCTION"
 >gfs_pio_readdelim()</TT
-> �ϡ������Ϥ��Ѥ���
-�Хåե���ưŪ�˳�����ơ����Υ��ɥ쥹�򤳤Υݥ����ѿ��˵�Ͽ���ޤ���
-���� <TT
+> は、入出力に用いる
+バッファを動的に割り当て、そのアドレスをこのポインタ変数に記録します。
+引数 <TT
 CLASS="PARAMETER"
 ><I
 >sizep</I
 ></TT
-> �ϡ�0 �ǽ�������� size_t �����ѿ�
-�Υ��ɥ쥹����ꤷ�ޤ��������ѿ��ϡ��Хåե��Υ�������Ͽ���뤿���
-�Ȥ��ޤ���
-���뤤�ϡ�malloc(3) �ǳ�����Ƥ��Хåե���ؤ��ݥ��󥿤Υ��ɥ쥹��
-���� <TT
+> は、0 で初期化した size_t 型の変数
+のアドレスを指定します。この変数は、バッファのサイズを記録するために
+使われます。
+あるいは、malloc(3) で割り当てたバッファを指すポインタのアドレスを
+引数 <TT
 CLASS="PARAMETER"
 ><I
 >bufp</I
 ></TT
 >
-�˻��ꤹ�뤳�Ȥ�Ǥ��ޤ������ξ�硢
-���� <TT
+に指定することもできます。この場合、
+引数 <TT
 CLASS="PARAMETER"
 ><I
 >sizep</I
 ></TT
 > 
-�ϡ�������Ƥ��Хåե��Υ������ǽ�������Ƥ����ޤ���
-�Ԥ�Ĺ�����Хåե��Υ�������ۤ�����ˤϡ��Хåե��ϼ�ưŪ��
-realloc(3) ���졢
-���� <TT
+は、割り当てたバッファのサイズで初期化しておきます。
+行の長さがバッファのサイズを越える場合には、バッファは自動的に
+realloc(3) され、
+引数 <TT
 CLASS="PARAMETER"
 ><I
 >bufp</I
 ></TT
 >
-�����
-���� <TT
+および
+引数 <TT
 CLASS="PARAMETER"
 ><I
 >sizep</I
 ></TT
 > 
-�ǻ��ꤵ�줿�ѿ��⤽��˽��äƹ�������ޤ���
-�ե�������ɤ߽���ä��顢���Υݥ��󥿤� free(3) �ǲ�������ɬ�פ�
-����ޤ���</P
+で指定された変数もそれに従って更新されます。
+ファイルを読み終わったら、このポインタを free(3) で解放する必要が
+あります。</P
 ><P
->���� <TT
+>引数 <TT
 CLASS="PARAMETER"
 ><I
 >lenp</I
 ></TT
 >
-�λؤ��ѿ��ˤϡ��ɤ߹�����쥳���ɤ�Ĺ�����֤��ޤ���
-����Ĺ���ˤϡ��쥳���ɶ��ڤ��ʬ��ޤߤޤ���</P
+の指す変数には、読み込んだレコードの長さを返します。
+この長さには、レコード区切りの分も含みます。</P
 ><P
->���δؿ��ϥ쥳�������ζ��ڤ�������ޤ���
-�ޤ���
-���� <TT
+>この関数はレコード末の区切りを削除しません。
+また、
+引数 <TT
 CLASS="PARAMETER"
 ><I
 >lenp</I
 ></TT
 >
-�λؤ��ѿ����֤ä��ͤ����Ѥ�����ɤ��ΤǾ�Ĺ�Ǥ�����
-�쥳�������� '\0' ʸ�����ղä��ޤ���</P
+の指す変数に返った値を利用すれば良いので冗長ですが、
+レコード末に '\0' 文字を付加します。</P
 ><P
 ><SPAN
 CLASS="ACRONYM"
 >EOF</SPAN
 >
-�ϡ����Ϥ�Ĺ���� 0 �Х��ȤǤ��뤳�Ȥ�Ƚ�Ǥ��ޤ���</P
+は、入力の長さが 0 バイトであることで判断します。</P
 ><P
->�����Ȥ��� gfs_pio_readdelim(f, bufp, sizep, lenp, "\n", 1)
-�Ȼ��ꤹ��ȡ��ؿ� <TT
+>引数として gfs_pio_readdelim(f, bufp, sizep, lenp, "\n", 1)
+と指定すると、関数 <TT
 CLASS="FUNCTION"
 >gfs_pio_readline()</TT
-> ��
-�����ˤʤ�ޤ���</P
+> と
+等価になります。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -265,7 +265,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->���ｪλ�򼨤��ޤ���</P
+>正常終了を示します。</P
 ></DD
 ><DT
 ><TT
@@ -274,21 +274,21 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->������­�Τ����������ߤ��ޤ�����</P
+>メモリ不足のため処理を中止しました。</P
 ><P
->���ξ��⡢<TT
+>この場合も、<TT
 CLASS="PARAMETER"
 ><I
 >bufp</I
 ></TT
-> �λؤ��ݥ����ѿ���
-�ؤ��ΰ�� free(3) ����ɬ�פ�����ޤ��������դ��Ƥ���������</P
+> の指すポインタ変数の
+指す領域を free(3) する必要がありますから注意してください。</P
 ></DD
 ><DT
->����¾</DT
+>その他</DT
 ><DD
 ><P
->�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���</P
+>上記以外のエラーが生じたことを示します。</P
 ></DD
 ></DL
 ></DIV
@@ -310,7 +310,7 @@ NAME="AEN76"
 >Example 1. <TT
 CLASS="FUNCTION"
 >gfs_pio_readdelim</TT
-> �ؿ��λ�����</B
+> 関数の使用例</B
 ></P
 ><P
 ><TABLE

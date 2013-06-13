@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_stat_free</refname>
-<refpurpose>¥Õ¥¡¥¤¥ëÂ°À­¾ðÊó²òÊü</refpurpose>
+<refpurpose>ãƒ•ã‚¡ã‚¤ãƒ«å±žæ€§æƒ…å ±è§£æ”¾</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -32,7 +32,7 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>gfs_stat(3) ¤Ç¼èÆÀ¤·¤¿Â°À­¾ðÊó¤ÎÊÝ»ý¤¹¤ë¥á¥â¥ê¤ò²òÊü¤·¤Þ¤¹¡£</para>
+<para>gfs_stat(3) ã§å–å¾—ã—ãŸå±žæ€§æƒ…å ±ã®ä¿æŒã™ã‚‹ãƒ¡ãƒ¢ãƒªã‚’è§£æ”¾ã—ã¾ã™ã€‚</para>
 
 </refsect1>
 

@@ -6,62 +6,62 @@
 .TH "GFARM_ATTR" "5" "02 April 2011" "Gfarm_attr" ""
 
 .SH NAME
-gfarm_attr \- Gfarm��ĥ°��
+gfarm_attr \- Gfarm拡張属性
 .SH "DESCRIPTION"
 .PP
-Gfarm�γƥե������ǥ��쥯�ȥ�ϡ���ĥ°����ʣ�����Ĥ��Ȥ��Ǥ��ޤ�����
-ĥ°���ϡ�̾�����Ф����ͤΥڥ��Ǥ���
-.SH "��ĥ°����̾������"
+Gfarmの各ファイルやディレクトリは，拡張属性を複数持つことができます．拡
+張属性は，名前に対する値のペアです．
+.SH "拡張属性の名前空間"
 .PP
-"gfarm."��"gfarm_root."�ǻϤޤ�̾���γ�ĥ°����Gfarm�����̤˰�����
-����"user."�ǻϤޤ�̾���γ�ĥ°���ϥ桼������ͳ���ͤ��Ǽ�Ǥ��ޤ���
-XML��ĥ°����̾���⼫ͳ�˻��ꤷ��XML���Ǽ�Ǥ��ޤ���
+"gfarm."と"gfarm_root."で始まる名前の拡張属性はGfarmが特別に扱いま
+す．"user."で始まる名前の拡張属性はユーザが自由に値を格納できます．
+XML拡張属性は名前も自由に指定してXMLを格納できます．
 .PP
-ï�Ǥ�"gfarm.*"�γ�ĥ°��������Ǥ��ޤ�����ͭ�ԡ��ޤ���gfarmroot���롼
-�פ˽�°����桼��������"gfarm.*"�γ�ĥ°�����ѹ��Ǥ��ޤ���
+誰でも"gfarm.*"の拡張属性を取得できます．所有者，またはgfarmrootグルー
+プに所属するユーザだけが"gfarm.*"の拡張属性を変更できます．
 .PP
-gfarmroot���롼�פ˽�°����桼�����ޤ���"gfarm_root.user"�˵��Ҥ��줿
-�桼�����ޤ���"gfarm_root.group"�˵��Ҥ��줿���롼�פ���"gfarm_root.*"
-��ĥ°����������ѹ��Ǥ��ޤ���
+gfarmrootグループに所属するユーザ、または"gfarm_root.user"に記述された
+ユーザ、または"gfarm_root.group"に記述されたグループが、"gfarm_root.*"
+拡張属性を取得と変更できます。
 .PP
-�ե�����ޤ��ϥǥ��쥯�ȥ�Υѡ��ߥå����ˤ�ä�"user.*"��ĥ°�����
-�����ѹ��Ǥ��ޤ���
+ファイルまたはディレクトリのパーミッションによって"user.*"拡張属性を取
+得と変更できます．
 .PP
-XML��ĥ°���ϡ��ե�����ޤ��ϥǥ��쥯�ȥ�Υѡ��ߥå����ˤ�ä��ɤ߽�
-���Ǥ��ޤ���
+XML拡張属性は，ファイルまたはディレクトリのパーミッションによって読み書
+きできます．
 .PP
-����ܥ�å���󥯤ϳ�ĥ°������Ĥ��Ȥ��Ǥ��ޤ���
-.SH "GFARM ��ĥ°��"
+シンボリックリンクは拡張属性を持つことができません．
+.SH "GFARM 拡張属性"
 .PP
-�ʲ���Gfarm�Υ����ƥब���Ѥ����ĥ°��̾�Ǥ���
+以下はGfarmのシステムが使用する拡張属性名です．
 .TP
 \fB\fIgfarm.ncopy\fB\fR
-gfmd �Ǽ�ưŪ�˥ե������ʣ������ݤ���ɸ�Ȥ���ʣ���ι�׿����Ǽ���ޤ���
+gfmd で自動的にファイルを複製する際に目標とする複製の合計数を格納します．
 .TP
 \fB\fIgfarm.acl_access\fB\fR
-ACL(������������ȥ�����ꥹ��)���Ǽ���ޤ���
+ACL(アクセスコントロールリスト)を格納します．
 .TP
 \fB\fIgfarm.acl_default\fB\fR
-�ǥե����ACL���Ǽ���ޤ����ǥ��쥯�ȥ���������γ�ĥ°�������Ѥ��ޤ���
+デフォルトACLを格納します．ディレクトリだけがこの拡張属性を利用します．
 .TP
 \fB\fIgfarm_root.user\fB\fR
-���Υե������ǥ��쥯�ȥ���ø���Ϳ����桼��̾�Υꥹ�Ȥ��Ǽ���ޤ���
-̾���ϲ��� (\\n) �Ƕ��ڤ��ޤ������γ�ĥ°�����ǥ��쥯�ȥ���դ��Ƥ���
-��硤�����������줿�ҥ���ȥ�ˤ⤳�γ�ĥ°�������ԡ�����ޤ���
+このファイルやディレクトリに特権を与えるユーザ名のリストを格納します．
+名前は改行 (\\n) で区切られます．この拡張属性がディレクトリに付いている
+場合，新規作成された子エントリにもこの拡張属性がコピーされます．
 .TP
 \fB\fIgfarm_root.group\fB\fR
-���Υե������ǥ��쥯�ȥ���ø���Ϳ���륰�롼��̾�Υꥹ�Ȥ��Ǽ����
-����̾���ϲ��� (\\n) �Ƕ��ڤ��ޤ������γ�ĥ°�����ǥ��쥯�ȥ���դ���
-�����硤�����������줿�ҥ���ȥ�ˤ⤳�γ�ĥ°�������ԡ�����ޤ���
+このファイルやディレクトリに特権を与えるグループ名のリストを格納しま
+す．名前は改行 (\\n) で区切られます．この拡張属性がディレクトリに付いて
+いる場合，新規作成された子エントリにもこの拡張属性がコピーされます．
 .SH "SECURITY NOTES"
 .PP
-Ǥ�դΥǥ��쥯�ȥ��ե������ gfarm_root.{user,group} ��ĥ°���ˡ�����
-���Ƥ��ʤ��桼������Ͽ���Ƥ����硤-o suid,allow_other ���ץ������
-�ꤷ�� root ���¤ǥޥ���Ȥ��Ƥ��� gfarm2fs �ˤ� (-o ro ���ץ����ޤ�
-�� -o default_permissions ���ץ������դ��Ƥ����Ȥ��Ƥ�) �������ƥ���
-�ۡ��뤬����ޤ������Τ��ᡤgfarm2fs �� -o suid,allow_other ���ץ����
-�� gfarm_root.{user,group} ��ĥ°����ξ����Ʊ�������Ѥ��٤��ǤϤ���ޤ�
-��
+任意のディレクトリやファイルの gfarm_root.{user,group} 拡張属性に，信頼
+していないユーザを登録している場合，-o suid,allow_other オプションを指
+定して root 権限でマウントしている gfarm2fs には (-o ro オプションまた
+は -o default_permissions オプションを付けていたとしても) セキュリティ・
+ホールがあります．このため，gfarm2fs の -o suid,allow_other オプション
+と gfarm_root.{user,group} 拡張属性の両方を同時に利用すべきではありませ
+ん．
 .SH "SEE ALSO"
 .PP
 \fBgfxattr\fR(1),

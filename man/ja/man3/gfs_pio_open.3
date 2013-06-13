@@ -6,7 +6,7 @@
 .TH "GFS_PIO_OPEN" "3" "27 June 2010" "Gfarm" ""
 
 .SH NAME
-gfs_pio_open \- Gfarm�ե����륷���ƥ�Υե�����Υ����ץ�
+gfs_pio_open \- Gfarmファイルシステムのファイルのオープン
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -16,103 +16,103 @@ gfarm_error_t gfs_pio_open (const char * \fIgfarm_url\fB, int \fIflags\fB, GFS_F
 .SH "DESCRIPTION"
 .PP
 \fIgfarm_url\fR
-�ǻ��ꤷ���ե�����򥪡��ץ󤷡�GFS_File ��¤�Τ�
+で指定したファイルをオープンし、GFS_File 構造体を
 \fIgfp\fR
-�λؤ�����֤��ޤ���
+の指す先に返します。
 \fIgfarm_url\fR
-��Gfarm�ե����륷���ƥ�Υѥ�̾�����뤤��
+はGfarmファイルシステムのパス名、あるいは
 gfarm://metaserver:port/path/name
-������Gfarm URL�Ǥ���
+形式のGfarm URLです。
 .PP
 \fIflags\fR
-�ϡ��ʲ��Υե饰�� bitwise-or �ǻ��ꤷ�ޤ���
-�Ϥ���λ��ĤΥե饰�Ϥɤ줫�����ꤵ��Ƥ���ɬ�פ�����ޤ���
+は、以下のフラグの bitwise-or で指定します。
+はじめの三つのフラグはどれかが指定されている必要があります。
 .TP
 \fBGFARM_FILE_RDONLY\fR
-�ɹ��ߥ⡼�ɤǥե�����򥪡��ץ󤷤ޤ���
+読込みモードでファイルをオープンします。
 .TP
 \fBGFARM_FILE_WRONLY\fR
-����ߥ⡼�ɤǥե�����򥪡��ץ󤷤ޤ���
+書込みモードでファイルをオープンします。
 .TP
 \fBGFARM_FILE_RDWR\fR
-�ɤ߽񤭥⡼�ɤǥե�����򥪡��ץ󤷤ޤ���
+読み書きモードでファイルをオープンします。
 .TP
 \fBGFARM_FILE_TRUNC\fR
-�ե����뤬¸�ߤ����쥮��顼�ե�����ǽ���ߤ���������硢�ե����륵������0�ˤ��ޤ���
+ファイルが存在し、レギュラーファイルで書込みが許される場合、ファイルサイズを0にします。
 .SH "RETURN VALUES"
 .TP
 \fBGFARM_ERR_NO_ERROR\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_IS_A_DIRECTORY\fR
-���ꤵ�줿�ե�����ϥǥ��쥯�ȥ�Ǥ���
+指定されたファイルはディレクトリです。
 .TP
 \fBGFARM_ERR_IS_A_SYMBOLIC_LINK\fR
-���ꤵ�줿�ե�����ϥ���ܥ�å���󥯤Ǥ���
+指定されたファイルはシンボリックリンクです。
 .TP
 \fBGFARM_ERR_OPERATION_NOT_PERMITTED\fR
-���ꤵ�줿�ե�����ϥե�����ǤϤ���ޤ���
+指定されたファイルはファイルではありません。
 .TP
 \fBGFARM_ERR_NO_SUCH_OBJECT\fR
-���ꤵ�줿�ե����뤬¸�ߤ��ޤ���
+指定されたファイルが存在しません。
 .TP
 \fBGFARM_ERR_NOT_A_DIRECTORY\fR
-���ꤷ���ѥ�̾�οƥǥ��쥯�ȥ꤬���ǥ��쥯�ȥ�ǤϤ���ޤ���
+指定したパス名の親ディレクトリが、ディレクトリではありません。
 .TP
 \fBGFARM_ERR_PERMISSION_DENIED\fR
-���ꤵ�줿�ե�������Ф���
+指定されたファイルに対し、
 \fIflags\fR
-�ǻ��ꤵ�줿�⡼�ɤǥ����������븢�¤��ʤ�����
-�᥿�ǡ��������Фؤ�ǧ�ڤ˼��Ԥ��ޤ�����
+で指定されたモードでアクセスする権限がないか、
+メタデータサーバへの認証に失敗しました。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
 \fBGFARM_ERR_INVALID_ARGUMENT\fR
 \fIflags\fR
-�λ��꤬�����Ǥ���
+の指定が不正です。
 .TP
 \fBGFARM_ERR_GFARM_URL_HOST_IS_MISSING\fR
 \fIgfarm_url\fR
-�ǻ��ꤵ�줿Gfarm URL�ˤ����ơ�
-�᥿�ǡ��������Ф����ꤵ��Ƥ��ޤ���
+で指定されたGfarm URLにおいて、
+メタデータサーバが指定されていません。
 .TP
 \fBGFARM_ERR_GFARM_URL_PORT_IS_MISSING\fR
 \fIgfarm_url\fR
-�ǻ��ꤵ�줿Gfarm URL�ˤ����ơ�
-�᥿�ǡ��������ФΥݡ����ֹ椬���ꤵ��Ƥ��ޤ���
+で指定されたGfarm URLにおいて、
+メタデータサーバのポート番号が指定されていません。
 .TP
 \fBGFARM_ERR_UNKNOWN_HOST\fR
-���ꤵ�줿�᥿�ǡ��������ФΥ��ɥ쥹��褬�Ǥ��ޤ���
+指定されたメタデータサーバのアドレス解決ができません。
 .TP
 \fBGFARM_ERR_TOO_MANY_OPEN_FILES\fR
-�ץ������ˤ����륪���ץ��ǽ�ʥե�������θ³���ã���ޤ�����
+プロセスにおけるオープン可能なファイル数の限界に達しました。
 .TP
 \fBGFARM_ERR_TOO_MANY_OPEN_FILES_IN_SYSTEM\fR
-�����ƥ�ˤ����륪���ץ�Ǥ���ե�������θ³���ã���ޤ�����
+システムにおけるオープンできるファイル数の限界に達しました。
 .TP
 \fBGFARM_ERR_NETWORK_IS_UNREACHABLE\fR
-�᥿�ǡ��������Ф���ã�Ǥ��ޤ���
+メタデータサーバに到達できません。
 .TP
 \fBGFARM_ERR_OPERATION_TIMED_OUT\fR
-�᥿�ǡ��������Фؤ���³�������ॢ���Ȥ򤪤����ޤ�����
+メタデータサーバへの接続がタイムアウトをおこしました。
 .TP
 \fBGFARM_ERR_PROTOCOL\fR
-�᥿�ǡ��������ФȤ��̿��˥ץ��ȥ��륨�顼��ȯ�����ޤ�����
+メタデータサーバとの通信にプロトコルエラーが発生しました。
 .TP
 \fBGFARM_ERR_BROKEN_PIPE\fR
-�᥿�ǡ��������ФȤ��̿������Ǥ��ޤ�����
+メタデータサーバとの通信が切断しました。
 .TP
 \fBGFARM_ERR_PROTOCOL_NOT_SUPPORTED\fR
-���ꤵ�줿ǧ�ڥץ��ȥ���ϥ��ݡ��Ȥ��Ƥ��ޤ���
+指定された認証プロトコルはサポートしていません。
 .TP
 \fBGFARM_ERR_AUTHENTICATION\fR
-�᥿�ǡ��������Ф��Ф���ǧ�ڤ˼��Ԥ��ޤ�����
+メタデータサーバに対する認証に失敗しました。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 \fBgfarm_error_string\fR(3)
-�ˤ�ꥨ�顼�θ�����ʸ������Ѵ����뤳�Ȥ��Ǥ��ޤ���
+によりエラーの原因を文字列に変換することができます。
 .SH "SEE ALSO"
 .PP
 \fBgfs_pio_close\fR(3),

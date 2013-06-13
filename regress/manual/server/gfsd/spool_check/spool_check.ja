@@ -1,33 +1,33 @@
-* spool_check_level �Υƥ���
+* spool_check_level のテスト
 
-  "spool_check_level lost_found" (gfsd -ccc ��Ʊ��, -ccc ̵���Ǥ�ͭ��)
-  ��ƥ��Ȥ��롣gfsd ��Ƶ�ư���ơ�spool check ��ǽ��ư����롣
+  "spool_check_level lost_found" (gfsd -ccc と同等, -ccc 無しでも有効)
+  をテストする。gfsd を再起動して、spool check 機能を動作させる。
 
-* ɬ�פʸ���
+* 必要な権限
 
-  - sudo ��ǽ (SETUP.private ���󥹥ȡ�����ˡ�ǤϤʤ����)
-    root ��������桼�����¤ǵ�ư������ץȤ�¹�
-    _gfarmfs ��������桼�����¤ǥ��ס���ǥ��쥯�ȥ���ե���������
-    (��¸�ե���������뤳�Ȥ�̵��)
+  - sudo 可能 (SETUP.private インストール方法ではない場合)
+    root ローカルユーザ権限で起動スクリプトを実行
+    _gfarmfs ローカルユーザ権限でスプールディレクトリ内ファイルを操作
+    (既存ファイルを操作することは無い)
 
-  - Gfarm �� gfarmroot ���롼�׽�°
-    Gfarm �� /lost+found �ǥ��쥯�ȥ�����
+  - Gfarm の gfarmroot グループ所属
+    Gfarm の /lost+found ディレクトリを操作
 
-* �ƥ��ȼ��
+* テスト手順
 
-  1. �ƥ����о� gfsd �ۥ��Ȥ˥�������
+  1. テスト対象 gfsd ホストにログイン
 
-  2. lost_found.sh ��Ʊ�ǥ��쥯�ȥ�� config.sh �����
-     (example-config.sh �򻲹�)
+  2. lost_found.sh と同ディレクトリに config.sh を準備
+     (example-config.sh を参考)
 
-     GFSD_HOST_NAME : gfhost ��ɽ�������ƥ����оݤ� gfsd �ۥ���̾
-     GFSD_START_SCRIPT : gfsd ��ư������ץȤΥѥ�
-     GFSD_SPOOL_DIR : ���ס���ǥ��쥯�ȥ�Υѥ�
-     GFSD_CONFIG_FILE : gfsd �� gfarm2.conf �Υѥ� (�������Ƴ�ǧ�Τ�)
-     USE_SUDO : sudo �����Ѥ��뤫�ɤ��� true �ޤ��� false
+     GFSD_HOST_NAME : gfhost で表示されるテスト対象の gfsd ホスト名
+     GFSD_START_SCRIPT : gfsd 起動スクリプトのパス
+     GFSD_SPOOL_DIR : スプールディレクトリのパス
+     GFSD_CONFIG_FILE : gfsd 用 gfarm2.conf のパス (設定内容確認のみ)
+     USE_SUDO : sudo を利用するかどうか true または false
 
-  3. "spool_check_level lost_found" �� gfsd �� gfarm2.conf ���ɲá�
-     �ޤ��� spool_check_level �ǻϤޤ�Ԥ򵭽Ҥ��ʤ��褦�ˤ���
+  3. "spool_check_level lost_found" を gfsd の gfarm2.conf に追加、
+     または spool_check_level で始まる行を記述しないようにする
 
-  4. regress �ǥ��쥯�ȥ�� cd ���Ƥ��� make �ޤ��� ./loop.sh �ޤ���
-     manual/server/gfsd/spool_check/lost_found.sh ��¹�
+  4. regress ディレクトリに cd してから make または ./loop.sh または
+     manual/server/gfsd/spool_check/lost_found.sh を実行

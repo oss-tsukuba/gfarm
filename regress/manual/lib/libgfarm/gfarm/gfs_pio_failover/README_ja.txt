@@ -1,117 +1,117 @@
 * Abstract
 
-  gfs.h/gfs_misc.h �θ����ؿ�����Ӹ����ؿ��ι������ǤȤʤ������ؿ��Τ�����
-  gfmd �ؤΥ���������ޤ�ؿ��ˤĤ��ơ� gfmd ���ե����륪���Ф�����Ǥ��³
-  ���Ƽ¹ԤǤ��뤳�Ȥ��ǧ���롣
+  gfs.h/gfs_misc.h の公開関数および公開関数の構成要素となる内部関数のうち、
+  gfmd へのアクセスを含む関数について、 gfmd がフェイルオーバした後でも継続
+  して実行できることを確認する。
 
 * Condition
 
-  - gfmd ����Ĺ�������Ǥ��롣
-  - gfsd �� 2 �İʾ幽������Ƥ��롣
-  - ��˻��Ѥ��� gfarm �桼���� /tmp ���Ф��ƽ񤭹��߸��¤���ġ�
+  - gfmd が冗長化構成である。
+  - gfsd が 2 つ以上構成されている。
+  - 試験に使用する gfarm ユーザが /tmp に対して書き込み権限を持つ。
 
 * Set up / Clean up
 
-  - ��ư�ƥ���(test-all.sh auto)��¹Ԥ�����ϡ�gfmd-failover-local.sh ��
-    gfmd ��ե����륪���Ф��륹����ץȤ򵭽Ҥ��뤳�ȡ�
+  - 自動テスト(test-all.sh auto)を実行する場合は、gfmd-failover-local.sh に
+    gfmd をフェイルオーバするスクリプトを記述すること。
 
-    # ����Ū�� gfmd �ե����륪���Ф��륹����ץȤϴĶ���¸�Ǥ��뤿�ᡢ
-    # �ƥ��ȥ������ˤϴޤޤ�Ƥ��ʤ����ƥ��ȴĶ����Ȥ˵��Ҥ��ʤ���Фʤ�ʤ���
+    # 具体的に gfmd フェイルオーバするスクリプトは環境依存であるため、
+    # テストケースには含まれていない。テスト環境ごとに記述しなければならない。
 
-    �ʰ�Ū�ʥƥ��Ȥ�Ԥ��ˤ� gfmd-failover-local.sample.sh �����Ƥ򻲹ͤ�
-    ���ơ���������� gfmd ��Ƶ�ư���륹����ץȤ򵭽Ҥ�����ɤ���
-    gfmd ��Ƶ�ư���뤳�Ȥǡ��ե����륪���Ф˶ᤤ���̤����뤳�Ȥ��Ǥ��롣
+    簡易的なテストを行うには gfmd-failover-local.sample.sh の内容を参考に
+    して、ローカルの gfmd を再起動するスクリプトを記述すれば良い。
+    gfmd を再起動することで、フェイルオーバに近い効果を得ることができる。
 
-    gfmd �ե����륪���Ф�ή��ϼ��ΤȤ��ꡣ
+    gfmd フェイルオーバの流れは次のとおり。
 
-    1. master gfmd �����
-    2. slave gfmd ���Ф��� SIGUSR1 ��ȯ�ԡ�
+    1. master gfmd を停止
+    2. slave gfmd に対して SIGUSR1 を発行。
 
-    �ʾ�ν��������Ǥϰ��٤Υե����륪���Фǽ���äƤ��ޤ����ᡢ�ƥ��ȹ��ܤ�Ϣ³
-    �¹Ԥ��뤿��ˤϡ�1. �����˸� master gfmd �� slave �Ȥ��Ƶ�ư���ʤ����
-    �ʤ�ʤ���
+    以上の処理だけでは一度のフェイルオーバで終わってしまうため、テスト項目を連続
+    実行するためには、1. の前に元 master gfmd を slave として起動しなければ
+    ならない。
 
-    ��ư���ϡ���ư��λ�ޤǤδ֤˥��饤�����(�ƥ��ȥ�����ץ�)��
-    �����������Ƥ��Ƥ⡢���饤�����¦�� connection resuse ���Τ���
-    ��ȥ饤����Τǡ�sleep���������ɬ�פϤʤ���
+    起動開始〜起動完了までの間にクライアント(テストスクリプト)が
+    アクセスしてきても、クライアント側は connection resuse を検知して
+    リトライするので、sleep等を入れる必要はない。
 
-    gfmd �� gfservice(1) ����Ѥ��ƥե����륪���Ф�����ˤ�
-    gfmd-failover-local-gfservice.sh �����ѤǤ��롣
+    gfmd を gfservice(1) を使用してフェイルオーバさせるには
+    gfmd-failover-local-gfservice.sh が利用できる。
 
-    gfservice ������ե�����Ǥ��� gfservice.conf ��ƥ��Ȥ��Ѥ���
-    Gfarm�Ķ��˹礻���Ѱդ���~/.gfservice�Ȥ�����¸���뤫���Ķ��ѿ�
-    GFSERVICE_CONF �� gfservice.conf �Υѥ������ꤷ�ơ��ƥ��Ȥ�¹Ԥ�
-    �롣gfservice ����� gfservice.conf �ˤĤ��ƤϤ��줾��man�򻲾Ȥ�
-    ���ȡ�
+    gfservice の設定ファイルである gfservice.conf をテストに用いる
+    Gfarm環境に合せて用意し、~/.gfserviceとして保存するか、環境変数
+    GFSERVICE_CONF に gfservice.conf のパスを設定して、テストを実行す
+    る。gfservice および gfservice.conf についてはそれぞれmanを参照の
+    こと。
 
-    gfmd-failover-local-gfservice.sh �Ǥ� master 1�桢slave 2���Gfarm
-    �Ķ������ۤ���Ƥ��뤳�Ȥ�����ˤ���gfmd1 �� gfmd2 ���ߤ˥ե���
-    �륪���Ф����롣 gfmd-failover-local-gfservice.sh �Ǥ�"master"����
-    ��"slave"�Ȥ����ե�����ˤ��줾�졢���ߤ� master gfmd�� slave
-    gfmd ����¸���롣 "master"�ե����뤬¸�ߤ��ʤ���硢gfmd1��ޥ���
-    �Ȥ��ƥե����륪���Ф�¹Ԥ��롣
+    gfmd-failover-local-gfservice.sh では master 1台、slave 2台でGfarm
+    環境が構築されていることを前提にし、gfmd1 と gfmd2 を交互にフェイ
+    ルオーバさせる。 gfmd-failover-local-gfservice.sh では"master"およ
+    び"slave"というファイルにそれぞれ、現在の master gfmdと slave
+    gfmd を保存する。 "master"ファイルが存在しない場合、gfmd1をマスタ
+    としてフェイルオーバを実行する。
 
-    ���졼�֤�������嵭�Ȥϰۤʤ��硢�᥿�ǡ����ΥХå����å�/�ꥹ
-    �ȥ�����������˹礻�� gfmd-failover-local-gfservice.sh��������
-    ɬ�פ����롣
+    スレーブの台数が上記とは異なる場合、メタデータのバックアップ/リス
+    トア処理を台数に合せて gfmd-failover-local-gfservice.shを修正する
+    必要がある。
 
-  - �ƥ����ѥǡ����� setup/cleanup �� test-all.sh ��Ǽ¹Ԥ���뤿�ᡢ
-    test-all.sh��¹Ԥ���ݤ� �ƤӽФ�ɬ�פϤʤ���
+  - テスト用データの setup/cleanup は test-all.sh 内で実行されるため、
+    test-all.shを実行する際は 呼び出す必要はない。
 
-  - ���̤˼�ư�Ǽ¹Ԥ�����ϡ��ʲ��Υ�����ץȤ�¹Ԥ��뤳�ȡ�
-    - ���: setup.sh ��¹Ԥ��롣
-    - ���: cleanup.sh ��¹Ԥ��롣
+  - 個別に手動で実行する場合は、以下のスクリプトを実行すること。
+    - 試験前: setup.sh を実行する。
+    - 試験後: cleanup.sh を実行する。
 
-* Procedure - ��ư�ƥ���
+* Procedure - 自動テスト
 
-  ���Υ��ޥ�ɤ�¹Ԥ��롣
+  次のコマンドを実行する。
 
   $ ./test-all.sh auto
 
-* Procedure - ��ư�ƥ���
+* Procedure - 手動テスト
 
-  ���Υ��ޥ�ɤ�¹Ԥ��롣
+  次のコマンドを実行する。
 
   $ ./test-all.sh
 
-  �ƥ��ޥ�ɼ¹����
+  各コマンド実行中に
 
     *** Push Enter Key ***
 
-  ��ɽ�����줿�顢�̤Υ�����Ǽ�ư�� gfmd ��ե����륪���Ф��롣
-  ³���Ƹ��Υ������ Enter Key �����Ϥ���ȥƥ��Ȥ���³���롣
+  と表示されたら、別のシェルで手動で gfmd をフェイルオーバする。
+  続いて元のシェルで Enter Key を入力するとテストが継続する。
 
 * Result
 
   - failed-list
 
-    ���Ԥ����ƥ��ȼ��̤ϥե����� failed-list ����¸����롣
+    失敗したテスト種別はファイル failed-list に保存される。
 
   - log
 
-    �ƥ��ȥץ������ν��Ϥ� log ����¸����롣(��ư�ƥ��Ȼ���stdout)
+    テストプログラムの出力は log に保存される。(手動テスト時はstdout)
 
 * Note
 
-  - �ƥ��ȼ��̤���ꤷ�Ƹ��̤˼¹Ԥ���ˤϡ�
-    test-all.sh �Τ����ˡ�"test-launch.sh [�ƥ��ȼ���]" ��¹Ԥ��롣
+  - テスト種別を指定して個別に実行するには、
+    test-all.sh のかわりに、"test-launch.sh [テスト種別]" を実行する。
 
-  - �ƥ��Ȥ��ɲä���Ȥ��ϡ�test-list �˿������ƥ��ȼ��̤��ɲä��롣
+  - テストを追加するときは、test-list に新しいテスト種別を追加する。
 
-  - test-all.sh �˴Ķ��ѿ� SLEEP ���Ϥ��ȡ��ƥƥ��ȼ¹Ը�� SLEEP �ô֤���
-    ��ߤ��롣����ϥե����륪���и�� gfsd �� gfmd ����³����ޤ��Ե�����
-    ������̤����뤬��gfm_client_connect() �Υ�ȥ饤�������������줿����
-    �ˤ�����פˤʤä���
+  - test-all.sh に環境変数 SLEEP を渡すと、各テスト実行後に SLEEP 秒間だけ
+    停止する。これはフェイルオーバ後に gfsd が gfmd へ接続するまで待機する
+    する効果があるが、gfm_client_connect() のリトライ処理が実装されたこと
+    により不要になった。
 
 * Test Items
 
-  test-launch.sh �ΰ������Ϥ��ƥ��ȼ��̤��ȤΥƥ����оݰ�����
+  test-launch.sh の引数に渡すテスト種別ごとのテスト対象一覧。
 
-  gfmd�إ���������������ؿ��Τ����������ǰʲ��Υƥ����оݴؿ��ˤ�äƤ���
-  gfmd�إ����������Ƥ����Ρ��ޤ��ϥƥ����оݴؿ�������ʬ�Υ����å���ͭ
-  ���Ƥ����ΤˤĤ��Ƥϡ��ƥ����оݤ���������Ƥ��롣
-  �������줿�����ؿ��ˤĤ��Ƥ� gfs_pio_failover_test.c �� test_infos �������
-  �˵��Ҥ��줿�����Ȥ򻲾ȤΤ��ȡ�
+  gfmdへアクセスする公開関数のうち、内部で以下のテスト対象関数によってだけ
+  gfmdへアクセスしているもの、またはテスト対象関数と大部分のロジックを共有
+  しているものについては、テスト対象から除外している。
+  除外された公開関数については gfs_pio_failover_test.c の test_infos の定義内
+  に記述されたコメントを参照のこと。
 
  - basic
 
@@ -141,46 +141,46 @@
   closedirplus       ... gfs_closedirplus() *1
   closedirplusxattr  ... gfs_closedirplusxattr()
   readdir            ... gfs_readdir()
-  readdir2           ... gfs_readdir(), ¾�����ˤ�ꤹ�Ǥ�failover�������Ԥ�
-                         ��Ƥ��ơ�GFS_Dir���Ť�gfm_connection����ͭ���Ƥ���
-                         ������
+  readdir2           ... gfs_readdir(), 他の操作によりすでにfailover処理が行わ
+                         れていて、GFS_Dirが古いgfm_connectionを保有している
+                         ケース
   readdirplus        ... gfs_readdirplus()
   readdirplusxattr   ... gfs_readdirplusxattr() *1
   seekdir            ... gfs_seekdir()
   seekdirplusxattr   ... gfs_seekdirplusxattr() *1
 
-  *1 gfs_*dirxattrplus() �ϸ����ؿ��ǤϤʤ�����gfs_opendir_caching() ��
-     �̤��� gfarm2fs ����ƤФ�뤿��ƥ����оݤȤ��Ƥ��롣
+  *1 gfs_*dirxattrplus() は公開関数ではないが、gfs_opendir_caching() を
+     通じて gfarm2fs から呼ばれるためテスト対象としている。
 
  - gfs_pio
 
-  sched-read         ... scheduling��, gfs_pio_read()
-  sched-create-write ... scheduling��, gfs_pio_create(), gfs_pio_write()
-  sched-open-write   ... scheduling��, gfs_pio_open(), gfs_pio_write()
-  close              ... scheduling��, gfs_pio_close()
-  close-open         ... gfm_connection error���close�ˤ��
-                         ʣ����GFS_File�˰ۤʤ�gfm_connection�����ꤵ��륱����,
-                         scheduling�夬����
-  close-open2        ... gfm_connection error���close�ˤ��
-                         ʣ����GFS_File�˰ۤʤ�gfm_connection�����ꤵ��륱����,
-                         scheduling��
-  read               ... scheduling��/��, gfs_pio_read()
-  read-stat          ... scheduling��/��, gfs_pio_read(), gfs_pio_stat()
-  getc               ... scheduling��/��, gfs_pio_getc(), gfs_pio_ungetc()
-  seek               ... scheduling��/��, buffer dirty�ǤϤʤ�����,
+  sched-read         ... scheduling前, gfs_pio_read()
+  sched-create-write ... scheduling前, gfs_pio_create(), gfs_pio_write()
+  sched-open-write   ... scheduling前, gfs_pio_open(), gfs_pio_write()
+  close              ... scheduling前, gfs_pio_close()
+  close-open         ... gfm_connection error後のcloseにより
+                         複数のGFS_Fileに異なるgfm_connectionが設定されるケース,
+                         scheduling後が混在
+  close-open2        ... gfm_connection error後のcloseにより
+                         複数のGFS_Fileに異なるgfm_connectionが設定されるケース,
+                         scheduling前
+  read               ... scheduling前/後, gfs_pio_read()
+  read-stat          ... scheduling前/後, gfs_pio_read(), gfs_pio_stat()
+  getc               ... scheduling前/後, gfs_pio_getc(), gfs_pio_ungetc()
+  seek               ... scheduling前/後, buffer dirtyではない状態,
                          gfs_pio_seek()
-  seek-dirty         ... scheduling��/��, buffer dirty�ξ���, gfs_pio_seek()
-  write              ... scheduling��/��, gfs_pio_write()
-  write-stat         ... scheduling��/��, gfs_pio_write(), gfs_pio_stat()
-  putc               ... scheduling��/��, gfs_pio_putc()
-  truncate           ... scheduling�� buffer dirty�ǤϤʤ�����,
-                         scheduling�� buffer dirty�ξ���, gfs_pio_truncate()
-  flush              ... scheduling�� buffer dirty�ǤϤʤ�����
-                         scheduling�� buffer dirty�ξ���, gfs_pio_flush()
-  sync               ... scheduling�� buffer dirty�ǤϤʤ�����
-                         scheduling�� buffer dirty�ξ���, gfs_pio_sync()
-  datasync           ... scheduling�� buffer dirty�ǤϤʤ�����
-                         scheduling�� buffer dirty�ξ���, gfs_pio_datasync()
+  seek-dirty         ... scheduling前/後, buffer dirtyの状態, gfs_pio_seek()
+  write              ... scheduling前/後, gfs_pio_write()
+  write-stat         ... scheduling前/後, gfs_pio_write(), gfs_pio_stat()
+  putc               ... scheduling前/後, gfs_pio_putc()
+  truncate           ... scheduling前 buffer dirtyではない状態,
+                         scheduling後 buffer dirtyの状態, gfs_pio_truncate()
+  flush              ... scheduling前 buffer dirtyではない状態
+                         scheduling後 buffer dirtyの状態, gfs_pio_flush()
+  sync               ... scheduling前 buffer dirtyではない状態
+                         scheduling後 buffer dirtyの状態, gfs_pio_sync()
+  datasync           ... scheduling前 buffer dirtyではない状態
+                         scheduling後 buffer dirtyの状態, gfs_pio_datasync()
  - xattr/xmlattr
 
   fsetxattr          ... gfs_fsetxattr()

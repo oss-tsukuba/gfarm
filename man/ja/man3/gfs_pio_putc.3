@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_PIO_PUTC" "3" "18 March 2003" "Gfarm" ""
 .SH NAME
-gfs_pio_putc \- ��ʸ���񤭹���
+gfs_pio_putc \- 一文字書き込み
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,21 +14,21 @@ char *gfs_pio_putc (GFS_File \fIgf\fB, int \fIc\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-�ե�����
+ファイル
 \fIgf\fR
-�� 1�Х��� (1ʸ��) ����
+に 1バイト (1文字) の値
 \fIc\fR
-��񤭹��ߤޤ���
+を書き込みます。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-���ｪλ�򼨤��ޤ���
+正常終了を示します。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-������­�Τ����������ߤ��ޤ�����
+メモリ不足のため処理を中止しました。
 .TP
-\fB����¾\fR
-�嵭�ʳ��Υ��顼�����������Ȥ򼨤��ޤ���
+\fBその他\fR
+上記以外のエラーが生じたことを示します。
 .SH "SEE ALSO"
 .PP
 \fBgfs_pio_create\fR(3),
