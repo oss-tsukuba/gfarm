@@ -1,5 +1,8 @@
 #! /bin/sh
 
+full_check=true
+[ $# -ge 1 ] && full_check=$1
+
 . ./regress.conf
 
 local_acl=$localtmp/acl
@@ -149,14 +152,16 @@ test_mM_0() {
     tq=$1
     entry=$2
 
-    test_mM_1 $tq --- $entry
-    test_mM_1 $tq r-- $entry
-    test_mM_1 $tq rw- $entry
+    if $full_check; then
+        test_mM_1 $tq --- $entry
+        test_mM_1 $tq r-- $entry
+        test_mM_1 $tq rw- $entry
+        test_mM_1 $tq rwx $entry
+        test_mM_1 $tq -w- $entry
+        test_mM_1 $tq -wx $entry
+        test_mM_1 $tq --x $entry
+    fi
     test_mM_1 $tq r-x $entry
-    test_mM_1 $tq rwx $entry
-    test_mM_1 $tq -w- $entry
-    test_mM_1 $tq -wx $entry
-    test_mM_1 $tq --x $entry
 }
 
 test_mM() {
