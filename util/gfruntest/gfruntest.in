@@ -3,8 +3,12 @@ PROGRAM=gfruntest
 GFSERVICE="@bindir@/gfservice"
 TEST_PREFIX="@datadir@/gfarm/systest"
 TESTCASES_DIR="$TEST_PREFIX/testcases"
-PARAMETERS_DIR="$TEST_PREFIX/parameters"
+SCENARIOS_DIR="$TEST_PREFIX/scenarios"
 COMMON_SCRIPTS_DIR="$TEST_PREFIX/common_scripts"
+PARAMETER_FILE=
+SCENARIO_FILE=
+LOG_FILE=gfruntest.log
+OPTIONS=
 
 #
 # Result codes
@@ -43,16 +47,18 @@ log_usage_error()
 {
 	echo "$PROGRAM: error: $@" 1>&2
 
-	echo "Usage: $PROGRAM [option...] testcase [<argument>...]"	1>&2
+	echo "Usage: $PROGRAM [option...] testcase"			1>&2
+	echo "    or $PROGRAM [option...] -s <scenario_file>"		1>&2
 	echo "Option:"							1>&2
 	echo "  -d                  debug mode"				1>&2
+	echo "  -f <config_file>    specify a gfservice configuration file" \
+		1>&2
+	echo "  -j <classname>      specify a classname and outputs xml file" \
+		1>&2
 	echo "  -k                  pass '-k' option to gfservice"      1>&2
-	echo "  -f <config_file>    specify the gfservice configuration file" \
-		1>&2
-	echo "  -p <parameter_file> specify the test parameter file"	1>&2
-	echo "  -j <classname>      specify the classname and outputs xml file" \
-		1>&2
-	
+	echo "  -l <log_file>       specify a log file"			1>&2
+	echo "  -p <parameter_file> specify a test parameter file (obsolete)"	1>&2
+	echo "  -s <scenario_file>  specify a scenario file"		1>&2
 	exit 1
 }
 
@@ -94,7 +100,7 @@ set_result()
 #
 # returns result message
 #
-result_message()
+get_result_string()
 {
 	case $1 in
 	$RESULT_PASS)
@@ -135,10 +141,123 @@ print_test_result()
 
 	printf -- "$TESTCASE_FMT_BEGIN" $1 $2 $4 >> $5
 	case $3 in
-		$RESULT_FAIL | $RESULT_XPASS | $RESULT_UNRESOLVED | $RESULT_FATAL)
-			printf -- "$FAILURE_FMT" "`result_message $3`" >> $5
+	$RESULT_FAIL | $RESULT_XPASS | $RESULT_UNRESOLVED | $RESULT_FATAL)
+			printf -- "$FAILURE_FMT" "`get_result_string $3`" >> $5
 	esac
 	printf -- "$TESTCASE_FMT_END" >> $5
+}
+
+#
+# Do a testcase.
+#
+do_testcase()
+{
+	TESTNAME="`echo $1 | sed -e 's|^.*::||g'`"
+	TESTFILE="`echo $1 | sed -e 's|::|/|g'`"
+
+	TEST_EXEC_ID="test_`hostname`_$$"
+
+	if [ -f "$TESTCASES_DIR/$TESTFILE" ]; then
+		. "$TESTCASES_DIR/$TESTFILE"
+	elif [ -f "$TESTCASES_DIR/gfarm_v2/$TESTFILE" ]; then
+		log_warn "use 'gfarm_v2::$TESTNAME' instead of '$TESTNAME'"
+		. "$TESTCASES_DIR/gfarm_v2/$TESTFILE"
+	elif [ -f "$TESTCASES_DIR/gfarm2fs/$TESTFILE" ]; then
+		log_warn "use 'gfarm2fs::$TESTNAME' instead of '$TESTNAME'"
+		. "$TESTCASES_DIR/gfarm2fs/$TESTFILE"
+	else
+		log_error "invalid test case: $TESTNAME"
+	fi
+
+	echo "start: $TESTNAME `date '+%Y-%m-%d %H:%M:%S'`" >> $LOG_FILE
+	echo -n "`printf %-60.60s $TESTNAME` ... "
+
+	if [ X$JENKINS_CLASSNAME != X ]; then
+		JENKINS_FILE=TEST-${JENKINS_CLASSNAME}-${TESTNAME}.xml
+		rm -f $JENKINS_FILE
+
+		echo "<testsuite>" >> $JENKINS_FILE
+
+		START_TIME=`date +%s`
+	fi
+
+	test_${TESTNAME} "$@" >> $LOG_FILE 2>&1
+	RESULT=$?
+	RESULT_STRING=`get_result_string $RESULT`
+
+	if [ X$JENKINS_CLASSNAME != X ]; then
+		ELAPSED_TIME=`expr \`date +%s\` - $START_TIME`
+		print_test_result $JENKINS_CLASSNAME $TESTNAME $RESULT \
+			$ELAPSED_TIME $JENKINS_FILE
+		echo "</testsuite>" >> $JENKINS_FILE
+	fi
+
+	echo "end:   $TESTNAME `date '+%Y-%m-%d %H:%M:%S'` $RESULT_STRING" \
+		>> $LOG_FILE
+	echo "$RESULT_STRING"
+
+	return $RESULT
+}
+
+#
+# print total result in plain text.
+#
+print_total_result()
+{
+	TOTAL_PASS=`grep -hc '^PASS$' $1`
+	TOTAL_FAIL=`grep -hc '^FAIL$' $1`
+	TOTAL_XPASS=`grep -hc '^XPASS$' $1`
+	TOTAL_XFAIL=`grep -hc '^XFAIL$' $1`
+	TOTAL_UNRESOLVED=`grep -hc '^UNRESOLVED$' $1`
+	TOTAL_FATAL=`grep -hc '^FATAL$' $1`
+	TOTAL_UNTESTED=`grep -hc '^UNTESTED$' $1`
+	TOTAL_UNSUPPORTED=`grep -hc '^UNSUPPORTED$' $1`
+
+	echo "Total test: `expr $TOTAL_PASS + $TOTAL_FAIL`"
+	echo "  success            : $TOTAL_PASS"
+	echo "  failure            : $TOTAL_FAIL"
+	
+	[ $TOTAL_XPASS -gt 0 ] \
+		&& echo "  unexpected success : $TOTAL_XPASS"
+	[ $TOTAL_XFAIL -gt 0 ]  \
+		&& echo "  expected failure   : $TOTAL_XFAIL"
+	[ $TOTAL_UNRESOLVED -gt 0 ] \
+		&& echo "  unresolved         : $TOTAL_UNRESOLVED"
+	[ $TOTAL_FATAL -gt 0 ] \
+		&& echo "  fatal error        : $TOTAL_FATAL"
+	[ $TOTAL_UNTESTED -gt 0 ] \
+		&& echo "  untested           : $TOTAL_UNTESTED"
+	[ $TOTAL_UNSUPPORTED -gt 0 ] \
+		&& echo "  unsupported        : $TOTAL_UNSUPPORTED"
+}
+
+#
+# Do testcases listed in a schenario file.
+#
+do_scenario()
+{
+
+	if [ -f "$SCENARIOS_DIR/$SCENARIO_FILE" ]; then
+		SCENARIO_FILE_PATH="$SCENARIOS_DIR/$SCENARIO_FILE"
+	else
+		log_error "failed to open the scenario file -- $SCENARIO_FILE"
+	fi
+
+	RESULT_COUNT_FILE="/tmp/gfruntest.$$"
+	rm -f $RESULT_COUNT_FILE
+	trap "rm -f $RESULT_COUNT_FILE; exit 1" 1 2 3 15
+
+	sed -e '/^#/d' -e '/^$/d' $SCENARIO_FILE_PATH | while read TESTNAME; do
+		$0 $OPTIONS -- $TESTNAME < /dev/null
+		RESULT=$?
+		RESULT_STRING=
+		echo "`get_result_string $RESULT`" >> $RESULT_COUNT_FILE
+	done
+
+	echo ""
+	print_total_result $RESULT_COUNT_FILE
+	rm -f $RESULT_COUNT_FILE
+	echo ""
 }
 
 #
@@ -152,48 +271,53 @@ while [ $# -ge 1 ]; do
 	-)	break
 		;;
 	-d)	GFSERVICE="$GFSERVICE -d"
+		OPTIONS="$OPTIONS -d"
 		shift
 		;;
-	-f)	shift
-		if [ $# -eq 0 ]; then
+	-f)	if [ $# -le 1 ]; then
 			log_usage_error "option requires an argument -- 'f'"
 		fi
-		if [ -f $1 ]; then
-			GFSERVICE="$GFSERVICE -f $1"
+		if [ -f $2 ]; then
+			GFSERVICE="$GFSERVICE -f $2"
 		else
-			log_error "failed to open configuration file \"$1\""
+			log_error "failed to open configuration file \"$2\""
 		fi
-		shift
+		OPTIONS="$OPTIONS -f $2"
+		shift 2
 		;;
-	-k)	GFSERVICE="$GFSERVICE -k"
-		shift
-		;;
-	-p)	shift
-		if [ $# -eq 0 ]; then
-			log_usage_error "option requires an argument -- 'p'"
-		fi
-		FILE="`echo $1 | sed -e 's|::|/|g'`"
-		if [ -f $PARAMETERS_DIR/$FILE ]; then
-			. $PARAMETERS_DIR/$FILE
-		elif [ -f $PARAMETERS_DIR/gfarm_v2/$FILE ]; then
-			log_warn "use 'gfarm_v2::$FILE' instead of '$FILE'"
-			. $PARAMETERS_DIR/gfarm_v2/$FILE
-		elif [ -f $PARAMETERS_DIR/gfarm2fs/$FILE ]; then
-			log_warn "use 'gfarm2fs::$FILE' instead of '$FILE'"
-			. $PARAMETERS_DIR/gfarm2fs/$FILE
-		else
-			log_error "failed to open parameter file \"$FILE\""
-		fi
-		shift
-		;;
-	-j)	shift
-		if [ $# -eq 0 ]; then
+	-j)	if [ $# -le 1 ]; then
 			log_usage_error "option requires an argument -- 'j'"
 		fi
-		JENKINS_CLASSNAME=$1
+		JENKINS_CLASSNAME=$2
+		OPTIONS="$OPTIONS -j $2"
+		shift 2
+		;;
+	-k)	GFSERVICE="$GFSERVICE -k"
+		OPTIONS="$OPTIONS -k"
 		shift
 		;;
-	-*)	echo "$0: invalid option -- '$1'" 1>&2
+	-l)	if [ $# -le 1 ]; then
+			log_usage_error "option requires an argument -- 'l'"
+		fi
+		LOG_FILE=$2
+		OPTIONS="$OPTIONS -l $2"
+		shift 2
+		;;
+	-p)	if [ $# -le 1 ]; then
+			log_usage_error "option requires an argument -- 'p'"
+		fi
+		PARAMETER_FILE="`echo $2 | sed -e 's|::|/|g'`"
+		# Do not add '-p' option to OPTIONS.
+		shift 2
+		;;
+	-s)	if [ $# -le 1 ]; then
+			log_usage_error "option requires an argument -- 's'"
+		fi
+		SCENARIO_FILE=$2
+		# Do not add '-s' option to OPTIONS.
+		shift 2
+		;;
+	-*)	log_error "$0: invalid option -- '$1'"
 		print_usage
 		;;
 	*)	break
@@ -201,52 +325,33 @@ while [ $# -ge 1 ]; do
 	esac
 done
 
-if [ $# -lt 1 ]; then
-	log_usage_error "test case is not specified"
-fi
-
-TESTNAME="`echo $1 | sed -e 's|^.*::||g'`"
-TESTFILE="`echo $1 | sed -e 's|::|/|g'`"
-shift 1
-TEST_EXEC_ID="test_`hostname`_$$"
-
-if [ -f "$TESTCASES_DIR/$TESTFILE" ]; then
-	. "$TESTCASES_DIR/$TESTFILE"
-elif [ -f "$TESTCASES_DIR/gfarm_v2/$TESTFILE" ]; then
-	log_warn "use 'gfarm_v2::$TESTNAME' instead of '$TESTNAME'"
-	. "$TESTCASES_DIR/gfarm_v2/$TESTFILE"
-elif [ -f "$TESTCASES_DIR/gfarm2fs/$TESTFILE" ]; then
-	log_warn "use 'gfarm2fs::$TESTNAME' instead of '$TESTNAME'"
-	. "$TESTCASES_DIR/gfarm2fs/$TESTFILE"
+EXITCODE=0
+if [ $# -eq 0 ]; then
+	if [ "X$SCENARIO_FILE" = X ]; then
+		log_error "$0: no scenario file specified"
+	fi
+	do_scenario
 else
-	log_error "invalid test case: $TESTNAME"
+	if [ "X$PARAMETER_FILE" = X ]; then
+		do_testcase "$1"
+		EXITCODE=$?
+	else
+		#
+		# If parameter file is specified, we ignore non-option
+		# arguments.
+		#
+		log_warn "use of parameter file is obsolete" 1>&2
+		if [ -f $TESTCASES_DIR/gfarm_v2/$PARAMETER_FILE ]; then
+			do_testcase "gfarm_v2::$PARAMETER_FILE"
+			EXITCODE=$?
+		elif [ -f $TESTCASES_DIR/gfarm2fs/$PARAMETER_FILE ]; then
+			do_testcase "gfarm2fs::$PARAMETER_FILE"
+			EXITCODE=$?
+		else
+			log_error "failed to open the parameter file --" \
+				"$PARAMETER_FILE"
+		fi
+	fi
 fi
 
-echo -n "start: $TESTNAME "
-date
-
-if [ X$JENKINS_CLASSNAME != X ]; then
-	JENKINS_FILE=TEST-${JENKINS_CLASSNAME}-${TESTNAME}.xml
-	rm -f $JENKINS_FILE
-
-	echo "<testsuite>" >> $JENKINS_FILE
-
-	START_TIME=`date +%s`
-fi
-
-test_${TESTNAME} "$@"
-RESULT=$?
-
-if [ X$JENKINS_CLASSNAME != X ]; then
-	ELAPSED_TIME=`expr \`date +%s\` - $START_TIME`
-
-	print_test_result $JENKINS_CLASSNAME $TESTNAME $RESULT $ELAPSED_TIME \
-		$JENKINS_FILE
-
-	echo "</testsuite>" >> $JENKINS_FILE
-fi
-
-echo -n "end: $TESTNAME `result_message $RESULT` "
-date
-
-exit $RESULT
+exit $EXITCODE
