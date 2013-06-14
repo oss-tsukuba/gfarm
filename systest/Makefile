@@ -4,6 +4,6 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SUBDIRS = testcases parameters common_scripts plugins
+SUBDIRS = testcases common_scripts plugins scenarios
 
 include $(top_srcdir)/makes/subdir.mk
