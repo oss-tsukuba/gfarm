@@ -727,8 +727,10 @@ gfm_server_close(struct peer *peer, int from_client, int skip)
 
 	giant_unlock();
 	e2 = gfm_server_put_reply(peer, diag, e, "");
-	if (gfarm_file_trace && trace_log != NULL)
+	if (gfarm_file_trace && trace_log != NULL) {
 		gflog_trace(GFARM_MSG_1003295, "%s", trace_log);
+		free(trace_log);
+	}
 	return (e2);
 }
 
