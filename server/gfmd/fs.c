@@ -944,9 +944,10 @@ gfm_server_close(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, &e, "");
-	if (gfarm_ctxp->file_trace && trace_log != NULL)
+	if (gfarm_ctxp->file_trace && trace_log != NULL) {
 		gflog_trace(GFARM_MSG_1003295, "%s", trace_log);
-	free(trace_log);
+		free(trace_log);
+	}
 	return (e2);
 }
 
