@@ -32,7 +32,7 @@ set_xattr(int xmlMode, int nofollow, char *path, char *xattrname,
 	size_t buf_sz, msg_sz = 0;
 	char *buf = NULL, *tbuf;
 	gfarm_error_t e;
-	int fd, need_close = 0;
+	int fd, need_close = 0, save_errno;
 	int overflow;
 
 #ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
@@ -42,13 +42,14 @@ set_xattr(int xmlMode, int nofollow, char *path, char *xattrname,
 	if (filename != NULL) {
 		fd = open(filename, O_RDONLY);
 		need_close = 1;
-	}
-	else
+	} else
 		fd = STDIN_FILENO;
 	if (fd == -1) {
+		save_errno = errno;
 		if (filename != NULL)
-			fprintf(stderr, "%s: %s\n", filename, strerror(errno));
-		return (gfarm_errno_to_error(errno));
+			fprintf(stderr, "%s: %s\n", filename,
+				strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 
 	buf_sz = count;
@@ -95,7 +96,7 @@ get_xattr_alloc(int xmlMode, int nofollow, char *path, char *xattrname,
 
 	value = malloc(*size);
 	if (value == NULL)
-		return GFARM_ERR_NO_ERROR;
+		return (GFARM_ERR_NO_MEMORY);
 
 	if (xmlMode)
 		e = (nofollow ? gfs_lgetxmlattr : gfs_getxmlattr)
@@ -108,7 +109,7 @@ get_xattr_alloc(int xmlMode, int nofollow, char *path, char *xattrname,
 		*valuep = value;
 	else
 		free(value);
-	return e;
+	return (e);
 }
 
 static gfarm_error_t
@@ -117,7 +118,7 @@ get_xattr(int xmlMode, int nofollow, char *path, char *xattrname,
 {
 	gfarm_error_t e;
 	FILE *f;
-	int need_close = 0;
+	int need_close = 0, save_errno;
 	void *value = NULL;
 	size_t size, wsize;
 
@@ -133,14 +134,15 @@ get_xattr(int xmlMode, int nofollow, char *path, char *xattrname,
 	if (filename != NULL) {
 		f = fopen(filename, "w");
 		need_close = 1;
-	}
-	else
+	} else
 		f = stdout;
 	if (f == NULL) {
+		save_errno = errno;
 		free(value);
 		if (filename != NULL)
-			fprintf(stderr, "%s: %s\n", filename, strerror(errno));
-		return (gfarm_errno_to_error(errno));
+			fprintf(stderr, "%s: %s\n", filename,
+				strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 
 	wsize = fwrite(value, 1, size, f);
@@ -178,7 +180,7 @@ list_xattr_alloc(int xmlMode, int nofollow, char *path, char **listp,
 
 	list = malloc(*size);
 	if (list == NULL)
-		return GFARM_ERR_NO_MEMORY;
+		return (GFARM_ERR_NO_MEMORY);
 
 	if (xmlMode)
 		e = (nofollow ? gfs_llistxmlattr : gfs_listxmlattr)
@@ -191,7 +193,7 @@ list_xattr_alloc(int xmlMode, int nofollow, char *path, char **listp,
 		*listp = list;
 	else
 		free(list);
-	return e;
+	return (e);
 }
 
 static gfarm_error_t
@@ -207,7 +209,7 @@ list_xattr(int xmlMode, int nofollow, char *path)
 		e = list_xattr_alloc(xmlMode, nofollow, path, &list, &size);
 	}
 	if (e != GFARM_ERR_NO_ERROR)
-		return e;
+		return (e);
 
 	base = list;
 	last = base + size;
@@ -235,9 +237,12 @@ usage(char *prog_name)
 #ifdef ENABLE_XMLATTR
 	fprintf(stderr, "\t-x\thandle XML extended attribute\n");
 #endif
-	fprintf(stderr, "\t-c\tfail if xattrname already exists (use with -s)\n");
-	fprintf(stderr, "\t-m\tfail if xattrname does not exist (use with -s)\n");
-	fprintf(stderr, "\t-h\tprocess symbolic link instead of any referenced file\n");
+	fprintf(stderr, "\t-c\tfail if xattrname already exists "
+		"(use with -s)\n");
+	fprintf(stderr, "\t-m\tfail if xattrname does not exist "
+		"(use with -s)\n");
+	fprintf(stderr, "\t-h\tprocess symbolic link instead of "
+		"any referenced file\n");
 	exit(2);
 }
 
