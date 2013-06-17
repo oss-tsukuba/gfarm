@@ -5462,7 +5462,7 @@ file_copy_add_one(void *closure, gfarm_ino_t inum, char *hostname)
 {
 	gfarm_error_t e;
 	struct inode *inode = inode_lookup(inum);
-	struct host *host = host_lookup(hostname);
+	struct host *host = host_lookup_at_loading(hostname);
 
 	if (inode == NULL) {
 		gflog_error(GFARM_MSG_1000343,
@@ -5477,15 +5477,17 @@ file_copy_add_one(void *closure, gfarm_ino_t inum, char *hostname)
 		file_copy_defer_db_removal(inum, hostname);
 		return;
 	} else if (host == NULL) {
-		gflog_error(GFARM_MSG_1000345,
-		    "file_copy_add_one: no host %s", hostname);
-		file_copy_defer_db_removal(inum, hostname);
-		return;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "file_copy_add_one(%s, %lld): no memory",
+		    hostname, (long long)inum);
 	} else if ((e = inode_add_replica_internal(inode, host,
 	    FILE_COPY_VALID, 0)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1000346,
 		    "file_copy_add_one: add_replica: %s",
 		    gfarm_error_string(e));
+	} else if (!host_is_valid(host)) {
+		file_copy_defer_db_removal(inum, hostname);
+		return;
 	}
 	free(hostname);
 }

@@ -20,6 +20,8 @@ struct host_status {
 struct abstract_host *host_to_abstract_host(struct host *);
 
 struct host *host_lookup(const char *);
+struct host *host_lookup_including_invalid(const char *hostname);
+struct host *host_lookup_at_loading(const char *);
 struct host *host_addr_lookup(const char *, struct sockaddr *);
 
 int host_status_callout_retry(struct host *);
