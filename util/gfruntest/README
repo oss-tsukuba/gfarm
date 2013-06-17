@@ -1,65 +1,67 @@
-How to run tests with gfruntest
+	How to run tests with gfruntest
 
-* requirements
+Requirements
+============
+In the following description we assume as Unix user named 'test_user'
+executes testcases with gfruntest.
 
-In following description we call an Unix user who executes gfruntest
-as 'test_user'.
+ * test_user must be registered as a Gfarm user.
+ * test_user should be able to log on to remote hosts by ssh with
+   no password (using ssh-agent is recommended).
+ * In some tests, test_user should be listed in /etc/sudoers with
+   NOPASSWD tag like follows:
 
-  + test_user must be registered as a Gfarm user.
-  + test_user should be able to log on to remote hosts by ssh with
-    no password (using ssh-agent is recommended).
-  + In some tests, test_user should be listed in /etc/sudoers with
-    NOPASSWD tag like follows:
 	test_user	ALL=(ALL)	NOPASSWD: ALL
-  + In some tests, test_user need to be in gfarmroot/gfarmadm Gfarm group.
 
-* create gfservice.conf file
+ * In some tests, test_user need to be in gfarmroot/gfarmadm Gfarm group.
 
-To run gfruntest, you have to create gfservice.conf file which
-specifies your Gfarm environment. Following variable definitions are
-essential.
+Create gfservice.conf file
+==========================
+Since gfruntest invokes gfservice command, the configuration file of
+gfservice, 'gfservice.conf', is required to execute testcases with
+'gfruntest'.  See gfservice.conf(5) for more details.
 
- + <host_id>_GFBINDIR
-   path to gfservice on each remote host.
-   <host_id> is something like gfmd1, gfmd2, gfsd1, gfsd2, client1, client2,...
+Execute gfruntest
+=================
+To execute a testcase with gfruntest, type:
 
- + gfmd*_CONFIG_GFARM_OPTIONS
-   command line option given to config-gfarm when gfmd is configured.
-   <gfmd*> is something like gfmd1, gfmd2, ...
+	% gfruntest <testcase name>
 
- + gfsd*_CONFIG_GFSD_OPTIONS
-   command line option given to config-gfsd when gfsd is configured.
-   <gfsd*> is something like gfsd1, gfsd2, ...
+where <testcase name> is a shell script under the following directory:
 
- + client*_GFARM_CONF
-   specify a gfarm2.conf file in absolute path.
-   <client*> is something like client1, client2, ...
+	$prefix/gfarm/systest/testcases/
 
-If Gfarm environment is configured with private mode, following
-variables should be set to "true"
+Note that each '::' in <testcase name> is replaced with '/'.
+For example, the testcase name 'aa::bb:cc' corresponds with the script
 
- + gfmd*_PRIVATE_MODE
- + gfsd*_PRIVATE_MODE
+	$prefix/gfarm/systest/testcases/aa/bb/cc
 
-see gfservice.conf(5) for details
+'-d' (debug), '-f' (specify configuration file) and '-k' (setup key)
+options are passed to 'gfservice'.
 
-* execute gfruntest
+	% gfruntest -f <gfservice.conf> -d -k ...
 
-gfruntest internally invokes a test script with (optional) parameters.
+gfruntest can also execute multiple testcases using a scenario file.
+In the scenario file, each testcase name is written in a line, line:
 
-To execute gfruntest:
-    % gfruntest -f <gfservice.conf> <testcase name>
+	gfarm_v2::failover_by_kill
+	gfarm_v2::failover_by_reboot
+	gfarm_v2::failover_by_stop
 
-    NOTE: <testcase name> is a filename under the following directory:
-                  $prefix/share/gfarm/systest/testcases 
+Note that lines beginning with '#' and empty lines are ignored.
+Then, invoke gfruntest with '-s' option:
 
-You can specify a parameter file with '-p' option.
+	% gfruntest -s <scenario file>
 
-    NOTE: <parameter file> is a filename under the following directory:
-                  $prefix/share/gfarm/systest/parameters
-          Most testcases don't need any parameter file though.
-          The correspondence between a testcase and a parameter file
-	  can be determined by their filenames.  i.e. A testcase name
-	  is prefixed to corresponding testcases.
+gfruntes' assumes <scenario file> exists under the directory:
 
-Debug log will be printed if you specify '-d' option.
+	$prefix/gfarm/systest/scenarios/
+
+It runs testcases specified in the scenario file successively.
+
+gfruntest records logs output by testcases to the log file 'gfruntest.log'
+at the current directory.  To alter the path of the log file, use '-l'
+option:
+
+	% gfruntest -l <log file>
+
