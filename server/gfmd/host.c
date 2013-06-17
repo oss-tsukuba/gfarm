@@ -137,18 +137,67 @@ host_is_valid(struct host *h)
 	return (abstract_host_is_valid(&h->ah, BACK_CHANNEL_DIAG));
 }
 
-static struct host *
-host_lookup_including_invalid(const char *hostname)
-{
-	return (host_hashtab_lookup(host_hashtab, hostname));
-}
-
+/*
+ * Search the host table for a host entry for 'hostname'.
+ * Return the found entry or NULL if missing.
+ */
 struct host *
 host_lookup(const char *hostname)
 {
 	struct host *h = host_lookup_including_invalid(hostname);
 
 	return ((h == NULL || host_is_invalid_unlocked(h)) ? NULL : h);
+}
+
+/*
+ * Same as host_lookup() but it also returns an invalidated entry.
+ */
+struct host *
+host_lookup_including_invalid(const char *hostname)
+{
+	return (host_hashtab_lookup(host_hashtab, hostname));
+}
+
+/*
+ * Same as host_lookup() but it adds a host entry to the host table
+ * and returns it when an entry for the host is missing.
+ */
+struct host *
+host_lookup_at_loading(const char *hostname)
+{
+	struct host *h = host_lookup_including_invalid(hostname);
+	struct gfarm_host_info hi;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	static const char diag[] = "host_lookup_at_loading";
+
+	if (h != NULL)
+		return (h);
+
+	hi.hostname = strdup(hostname);
+	hi.architecture = strdup("");  /* dummy */
+	hi.ncpu = 0;
+	hi.port = 0;
+	hi.flags = 0;
+	hi.nhostaliases = 0;
+	hi.hostaliases = NULL;
+	if (hi.hostname == NULL || hi.architecture == NULL)
+		e = GFARM_ERR_NO_MEMORY;
+	else {
+		giant_lock();
+		e = host_enter(&hi, &h);
+		if (e == GFARM_ERR_NO_ERROR)
+			host_invalidate(h);
+		giant_unlock();
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: failed to enter a host %s", diag, hostname);
+		free(hi.hostname);
+		free(hi.architecture);
+		return (NULL);
+	}
+
+	return (h);
 }
 
 struct host *

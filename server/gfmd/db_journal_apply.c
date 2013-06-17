@@ -501,7 +501,8 @@ db_journal_apply_filecopy_remove(gfarm_uint64_t seqnum,
 	if ((e = db_journal_inode_lookup(arg->inum, &n,
 	    "db_journal_apply_filecopy_remove")) != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
-	} else if ((host = host_lookup(arg->hostname)) == NULL) {
+	} else if ((host = host_lookup_including_invalid(arg->hostname))
+	    == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		gflog_error(GFARM_MSG_1003230,
 		    "inum=%llu hostname=%s : %s",
