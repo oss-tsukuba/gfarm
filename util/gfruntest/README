@@ -2,7 +2,7 @@
 
 Requirements
 ============
-In the following description we assume as Unix user named 'test_user'
+In the following description we assume an Unix user named 'test_user'
 executes testcases with gfruntest.
 
  * test_user must be registered as a Gfarm user.
@@ -18,8 +18,8 @@ executes testcases with gfruntest.
 Create gfservice.conf file
 ==========================
 Since gfruntest invokes gfservice command, the configuration file of
-gfservice, 'gfservice.conf', is required to execute testcases with
-'gfruntest'.  See gfservice.conf(5) for more details.
+gfservice ('$HOME/.gfservice' by default) is required to execute
+testcases with 'gfruntest'.  See gfservice.conf(5) for more details.
 
 Execute gfruntest
 =================
@@ -29,12 +29,12 @@ To execute a testcase with gfruntest, type:
 
 where <testcase name> is a shell script under the following directory:
 
-	$prefix/gfarm/systest/testcases/
+	$datadir/gfarm/systest/testcases/
 
 Note that each '::' in <testcase name> is replaced with '/'.
 For example, the testcase name 'aa::bb:cc' corresponds with the script
 
-	$prefix/gfarm/systest/testcases/aa/bb/cc
+	$datadir/gfarm/systest/testcases/aa/bb/cc
 
 '-d' (debug), '-f' (specify configuration file) and '-k' (setup key)
 options are passed to 'gfservice'.
@@ -42,7 +42,7 @@ options are passed to 'gfservice'.
 	% gfruntest -f <gfservice.conf> -d -k ...
 
 gfruntest can also execute multiple testcases using a scenario file.
-In the scenario file, each testcase name is written in a line, line:
+In the scenario file, testcase names are listed one per line, like:
 
 	gfarm_v2::failover_by_kill
 	gfarm_v2::failover_by_reboot
@@ -53,9 +53,9 @@ Then, invoke gfruntest with '-s' option:
 
 	% gfruntest -s <scenario file>
 
-gfruntes' assumes <scenario file> exists under the directory:
+gfruntest assumes <scenario file> exists under the directory:
 
-	$prefix/gfarm/systest/scenarios/
+	$datadir/gfarm/systest/scenarios/
 
 It runs testcases specified in the scenario file successively.
 
