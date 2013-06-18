@@ -2381,7 +2381,7 @@ gfcmd)
 	;;
 *)
 	SUBCMD="`echo $SUBCMD | sed -e 's|::|/|g'`"
-	SUBCMD_FUNC="`basename $SUBCMD`"
+	SUBCMD_FUNC="`basename $SUBCMD | sed -e 's|-|_|g'`"
 	if [ -f $GFSERVICE_PLUGIN_PATH/$SUBCMD ]; then
 		log_debug "loading plugin: $SUBCMD"
 		. $GFSERVICE_PLUGIN_PATH/$SUBCMD
