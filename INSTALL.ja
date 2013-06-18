@@ -91,6 +91,10 @@ configure コマンドには，下記のオプションがあります．
   また，config-gfarm 時に -X オプションの指定が必要になります．
   このオプションは省略可能です．
 
+・--enable-linuxkernel
+  linux kernel 2.6 上の Gfarmカーネルドライバーを作成することを指示します。
+  詳しくは linux/doc/manual.{pdf,doc} を参照してください。
+
 利用するコンパイラを明示したい場合には，環境変数 CC に，コンパイラのコ
 マンド名を指定して configure を実行してください．以下は gcc を指定する
 例です．

@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>12 Jun 2013</date></refentryinfo>
+<refentryinfo><date>12 Nov 2013</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -12,111 +12,130 @@
 
 <refnamediv id='name'>
 <refname>gfarm2.conf</refname>
-<refpurpose>Gfarm configuration file</refpurpose>
+<refpurpose>Gfarm設定ファイル</refpurpose>
 </refnamediv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>
-gfarm2.conf is a text file that contains a Gfarm configuration.  
-Gfarm server processes gfmd and gfsd refer to %%SYSCONFDIR%%/gfmd.conf
-and %%SYSCONFDIR%%/gfarm2.conf, respectively, by default.
-Since this configuration file is only read at startup, it is necessary
-to restart servers when the contents of the configuration file are
-updated.
+gfarm2.confファイルは、gfarmプログラムの設定ファイルです。
+サーバー・プロセスであるgfsdは、デフォルトでは、
+この%%SYSCONFDIR%%/gfarm2.confを設定ファイルとして参照します。
+メタデータサーバー・プロセスであるgfmdは、%%SYSCONFDIR%%/gfmd.confを
+読み込みます。gfmd.confの形式は、gfarm2.confと同一です。
+なお、設定内容が読み込まれるのは起動時だけなので、
+設定内容を変更した場合、サーバーを再起動する必要があります。
 </para>
 
 <para>
-Application programs, such as gfls and gfhost, refer to both
-%%SYSCONFDIR%%/gfarm2.conf, and a file specified by an environment variable,
-GFARM_CONFIG_FILE. If both configuration files exist, the file
-specified by the environment variable, GFARM_CONFIG_FILE, is read
-first. Both files have the same grammar.
-If the environment variable GFARM_CONFIG_FILE doesn't exist,
- ~/.gfarm2rc in a user's home directory is used instead.
+アプリケーションプログラムは、環境変数GFARM_CONFIG_FILEで
+指定したファイルと、%%SYSCONFDIR%%/gfarm2.confを、設定ファイル
+として参照します。この二つのファイルでは、環境変数GFARM_CONFIG_FILEで
+指定したファイルの設定の方が先に読み込まれます。
+どちらの設定ファイルも、同一の文法で記述します。
+同一の指定文が複数あった場合には、先に指定されていた方が優先されます。
+環境変数GFARM_CONFIG_FILEが設定されてない場合、代わりに
+ユーザのホームディレクトリにある.gfarm2rcファイルを使用します。
 </para>
 
 <para>
-Each line of gfarm2.conf consists of one statement.  When the
-line ends with the character ``\'', the line continues for the next
-line.  A word beginning with ``#'' causes that word and all remaining
-characters on that line to be ignored.
+gfarm2.confは、一行に一文の形式で設定します。
+ただし、行末に文字``\''を記述することによって、行を継続させることが
+できます。また、文字``#''から行末までは、コメントとして扱われ、無視
+されます。
 </para>
 
 </refsect1>
 
-<refsect1 id='hostspecification'><title>Host_specification</title>
-<para><parameter>Host_specification</parameter> has the following
-forms.</para>
+<refsect1 id='hostspecification'><title>ホスト指定</title>
+<para>
+引数として、<parameter>ホスト指定</parameter>を記述できる文がいくつかありますが、
+この場合、ホスト指定には、下記のいずれかを記述できます。
+</para>
 <variablelist>
 
 <varlistentry>
 <term><parameter>III.JJJ.KKK.LLL</parameter></term>
 <listitem>
-<para>Specifies an IP address with four octets from 0 to 255, separated
-by ".".</para>
+<para>
+"."で区切られた0〜255までの数字4つで、IPアドレスを指定します。
+</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><parameter>III.JJJ.KKK.LLL</parameter>/<parameter>MM</parameter></term>
 <listitem>
-<para>Specifies a network address with an IP address and a netmask
-from 0 to 31 separated by "/".</para>
+<para>
+IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワークを
+指定します。"/"以降の数字はnetmaskのビット長です。
+</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><parameter>domain.name</parameter></term>
 <listitem>
-<para>Specifies a host name.</para>
+<para>ホスト名をドメイン名で指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term> <parameter>.domain.name</parameter></term>
+<term> <emphasis>.</emphasis><parameter>domain.name</parameter></term>
 <listitem>
-<para>Specifies all hosts which belong to the domain.name.</para>
+<para>ドメイン名の先頭が"."ではじまる場合、このドメイン名に所属する全ての
+ホストを意味します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><emphasis>*</emphasis></term>
 <listitem>
-<para>Specifies all hosts.</para>
+<para>"*"と記述されている場合、全てのホストを意味します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><emphasis>LISTENER</emphasis></term>
+<listitem>
+<para>
+全て大文字で"LISTENER"と記述すると、通信する相手に関係なく、
+サーバー側(着呼側)のソケットを意味します。
+</para>
 </listitem>
 </varlistentry>
 
 </variablelist>
 </refsect1>
 
-<refsect1 id='statement'><title>Statement</title>
-<para>The following statements are supported.</para>
+<refsect1 id='statement'><title>文</title>
+<para>文には、下記の種類があります。</para>
 <variablelist>
 
 <varlistentry>
-<term><token>spool</token> <parameter>directory</parameter></term>
+<term><token>spool</token> <parameter>gfsdスプール・ディレクトリ</parameter></term>
 <listitem>
-<para>The <token>spool</token> statement specifies a spool directory
-for a Gfarm filesystem on this filesystem node.</para>
-<para>For example,</para>
+<para>gfsdが、gfarmファイルの実体を保持するディレクトリ名を
+指定します。
+</para>
+<para>例:</para>
 <literallayout>
 	spool /var/spool/gfarm
 </literallayout>
 </listitem>
 </varlistentry>
-  
-  <varlistentry>
-<term><token>spool_server_listen_address</token> <parameter>IP-address</parameter></term>
+
+<varlistentry>
+<term><token>spool_server_listen_address</token> <parameter>IPアドレス</parameter></term>
 <listitem>
-<para>The <token>spool_server_listen_address</token> statement specifies
-the IP address at which the gfsd accepts TCP and UDP requests.
-The default address is all IP addresses of the host.
-This option is useful when one wants to invoke multiple gfsd
-to provide multiple spool directories on the host.
+<para>gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。
+省略時は、そのホストの全てのIPアドレスで受け付けます。
+このオプションは、一つのノードで複数のスプールを提供する場合に、
+それぞれのスプールごとに、別々のIPアドレスを使ってgfsdを起動する
+ために用います。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	spool_server_listen_address 192.168.121.1
 </literallayout>
@@ -124,23 +143,23 @@ to provide multiple spool directories on the host.
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_server_listen_backlog</token> <parameter>number</parameter></term>
+<term><token>spool_server_listen_backlog</token> <parameter>数</parameter></term>
 <listitem>
 <para>
-This statement specifies the second parameter of the
+gfsd が
 <citerefentry>
 <refentrytitle>listen</refentrytitle><manvolnum>2</manvolnum>
 </citerefentry>
-system call that gfsd invokes.
-The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes which define this symbol in &lt;sys/socket.h&gt;, or 5 if it's undefined.
+システムコールの第二引数に渡すバックログ・パラメータの数を指定します。
+デフォルト値は、&lt;sys/socket.h&gt; に SOMAXCONN 定数が定義されているOSではその値 (OSに依存しますが、典型的な値は 128)、定義されてないOSでは 5 となります。
 </para>
 <para>
-On an environment which has many gfarm clients, it's recommened to increase this value after increasing system limit.
+クライアント数の多い環境では、システム制限値を上げた上で、この値を増やしておくことを推奨します。
 </para>
 <para>
-This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
+この文はgfarm2.confのみで有効であり、gfmd.confでは無視されます。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	spool_server_listen_backlog 128
 </literallayout>
@@ -151,48 +170,43 @@ This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
 <term><token>spool_server_cred_type</token> <parameter>cred_type</parameter></term>
 <listitem>
 <para>
-This statement specifies the type of credential used by gfsd for GSI
-authentication.
-This is ignored when you are using <token>sharedsecret</token> 
-authentication.
+GSI認証において、gfsdが用いる証明書の種類を指定します。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
 </para>
 <para>
-If this statement isn't used on the server side, the server uses
-a host certificate, if the server is invoked with root privileges.
-Or, if the server is invoked as a non-privileged user, the server
-uses the user's certificate.
+サーバ側でこの指定を省略した場合、サーバをroot権限で起動した場合は
+ホスト証明書を用います。またサーバを一般ユーザ権限で起動した場合は
+ユーザ証明書を用います。
 </para>
 <para>
-If this statement isn't used on the client side, the client assumes
-that the server that the client is going to connect is using
-a host certificate of the server host. Thus, if the server is not
-invoked with root privileges, but invoked with user privileges where
-the user is the same as the user who invoked the client, the client
-side needs to specify the following one line.
+クライアント側でこの指定を省略した場合、サーバがホスト証明書を利用している
+と仮定してサーバ認証を行います。このためサーバをクライアントと同じユーザ
+権限で起動している場合、クライアント側では、下記の一行を設定して
+おく必要があります。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	spool_server_cred_type self
 </literallayout>
 <para>
-The possible types of <parameter>cred_type</parameter> are
-``<token>self</token>'', 
-``<token>host</token>'', ``<token>user</token>'' and 
-``<token>mechanism-specific</token>''.
-And those are used with the <token>spool_server_cred_service</token>
-and <token>spool_server_cred_name</token> statements as follows:
+指定可能な<parameter>cred_type</parameter>としては、
+「<token>self</token>」、
+「<token>host</token>」、「<token>user</token>」、
+「<token>mechanism-specific</token>」があり、
+<token>spool_server_cred_service</token>および
+<token>spool_server_cred_name</token>と組み合わせて
+下記のように用います。
 </para>
 <variablelist>
 <varlistentry>
 <term><token>self</token></term>
 <listitem>
 <para>
-This keyword specifies that the certificate that the user currently
-has is used.
-You must not use either the 
-<token>spool_server_cred_service</token> or
-<token>spool_server_cred_name</token> statement,
-if you are using this type.
+そのユーザが現在所持しているユーザ証明書を用いることを示します。
+この指定を利用する際には、
+<token>spool_server_cred_service</token>および
+<token>spool_server_cred_name</token>の
+指定を行ってはいけません。
 </para>
 </listitem>
 </varlistentry>
@@ -200,30 +214,26 @@ if you are using this type.
 <term><token>host</token></term>
 <listitem>
 <para>
-This keyword specifies that a host certificate or a service certificate
-is used.
-To choose a service certificate, the name of the service may be specified
-by the <token>spool_server_cred_service</token> statement.
-If ``<token>host</token>'' is specified as the service name, a host certificate
-in the file ``<filename>/etc/grid-security/hostcert.pem</filename>'' will
-be used.
-If any server name other than ``<token>host</token>'' is specified,
-a service certificate in the file
-``<filename>/etc/grid-security/SERVICE/SERVICEcert.pem</filename>''
-will be used.
-If the service name is omitted, ``<token>host</token>'' will be used as
-the service name by default.
-Only the Common Name field of a certificate will be used to check
-the server's identity for both a host certificate and a service certificate.
-And the Common Name field must be in the ``CN=SERVERNAME/HOSTNAME'' format.
-Also, the hostname must match the canonical name configured by
-the <command>gfhost</command> command exactly.  Alias hostnames are not allowed.
+ホスト証明書あるいはサービス証明書を用いることを示します。
+サービス証明書を用いる場合、そのサービスの名前を
+<token>spool_server_cred_service</token>で指定します。
+サービス名に「<token>host</token>」を指定した場合、
+ファイル``<filename>/etc/grid-security/hostcert.pem</filename>''に
+あるホスト証明書を用います。
+それ以外のサービス名を指定した場合、
+ファイル``<filename>/etc/grid-security/サービス/サービスcert.pem</filename>''
+にあるサービス証明書を用います。
+サービス名を省略した場合、「<token>host</token>」が指定されたとみなします。
+ホスト証明書およびサービス証明書の場合、証明書のCommon Name欄のみを
+比較します。Common Nameは、「CN=サービス名/ホスト名」の形式である必要が
+あります。また、ホスト名は、<command>gfhost</command>コマンドで指定した
+正式名と正確に一致している必要があります。ホスト別名は許されません。
 </para>
 <para>
-This feature corresponds to the GSS_C_NT_HOSTBASED_SERVICE feature in GSSAPI
-(RFC2743/RFC2744).
+これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_HOSTBASED_SERVICEに
+対応する機能です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	spool_server_cred_type host
 	spool_server_cred_service host
@@ -234,26 +244,22 @@ This feature corresponds to the GSS_C_NT_HOSTBASED_SERVICE feature in GSSAPI
 <term><token>user</token></term>
 <listitem>
 <para>
-This keyword specifies that a user certificate is used.
-The account name of the user may be specified by the
-<token>spool_server_cred_name</token> statement.
-If the account name is omitted, the user who invoked the command
-will be used by default.
-You must not specify a service name using
-the <token>spool_server_cred_service</token> statement, if you are using
-a user certificate.
+ユーザ証明書を用いることを示します。
+ユーザのアカウント名を<token>spool_server_cred_name</token>で指定します。
+アカウント名を省略した場合には、そのコマンドを起動したユーザ名が使われます。
+この指定を利用する際には、<token>spool_server_cred_service</token>の
+指定を行ってはいけません。
 </para>
 <para>
-To map from the account name to a Distinguished Name of a certificate,
-file ``<filename>/etc/grid-security/grid-mapfile</filename>'' is used.
-Thus, if there isn't such a file, or if the user isn't specified in this file,
-this feature cannot be used.
+ユーザ名と証明書のDistinguished Nameの対応をとるため、
+``<filename>/etc/grid-security/grid-mapfile</filename>''を用います。
+このため、このファイルが存在しなかったり、あるいはこのファイルに登録
+されてないユーザは、この機能を用いることができません。
 </para>
 <para>
-This feature corresponds to the GSS_C_NT_USER_NAME feature in GSSAPI
-(RFC2743/RFC2744).
+これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_USER_NAMEに対応する機能です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	spool_server_cred_type user
 	spool_server_cred_name guest
@@ -264,18 +270,16 @@ This feature corresponds to the GSS_C_NT_USER_NAME feature in GSSAPI
 <term><token>mechanism-specific</token></term>
 <listitem>
 <para>
-This keyword specifies that <token>spool_server_cred_name</token>
-is treated as a raw X.509 Distinguished Name serving as a server's
-certificate.
-You must not specify a service name using a
-<token>spool_server_cred_service</token> statement, if you are using
-this type.
+サーバのX.509 Distinguished Nameを<token>spool_server_cred_name</token>で
+直接指定します。
+この指定を利用する際には、<token>spool_server_cred_service</token>の
+指定を行ってはいけません。
 </para>
 <para>
-This feature corresponds to a case where GSS_C_NO_OID is specified
-as a Name Type in GSSAPI (RFC2743/RFC2744).
+これは、GSSAPI (RFC2743/RFC2744)でName TypeとしてGSS_C_NO_OIDを
+指定した場合に対応する機能です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	spool_server_cred_type mechanism-specific
 	spool_server_cred_name "/O=Grid/O=Globus/OU=example.com/CN=John Smith"
@@ -290,13 +294,11 @@ as a Name Type in GSSAPI (RFC2743/RFC2744).
 <term><token>spool_server_cred_service</token> <parameter>cred_service</parameter></term>
 <listitem>
 <para>
-This statement specifies the service name of a service certificate
-used by gfsd for GSI authentication, when ``<token>host</token>'' is specified
-in <token>spool_server_cred_type</token> statement.
-This is ignored when you are using <token>sharedsecret</token> 
-authentication.
-Please read the description of the <token>spool_server_cred_type</token> 
-statement for details.
+GSI認証において、<token>spool_server_cred_type</token>として
+「<token>host</token>」を指定している場合に、gfsdが用いるサービス証明書の
+種類を指定します。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+詳しくは<token>spool_server_cred_type</token>の項を参照してください。
 </para>
 </listitem>
 </varlistentry>
@@ -305,30 +307,26 @@ statement for details.
 <term><token>spool_server_cred_name</token> <parameter>cred_name</parameter></term>
 <listitem>
 <para>
-This statement specifies the setting of a certificate used by gfsd
-for GSI authentication. What this setting means depends on the type
-specified in the <token>spool_server_cred_type</token> statement.
-This is ignored when you are using <token>sharedsecret</token> 
-authentication.
-Please read the description of the <token>spool_server_cred_type</token> 
-statement for details.
+GSI認証において、<token>spool_server_cred_type</token>で指定した値に
+応じて、gfsdが用いる証明書の設定を行います。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+詳しくは<token>spool_server_cred_type</token>の項を参照してください。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_check_level</token> <parameter>level</parameter></term>
+<term><token>spool_check_level</token> <parameter>レベル</parameter></term>
 <listitem>
 <para>
-This statement enables the consistency check of files stored in the
-spool directory at start-up of gfsd.  The <parameter>level</parameter>
-name corresponds how many -c command-line options are specified to
-gfsd, i.e. the level "display" means the -c option, "delete" means the
--cc option, and "lost_found" means the -ccc option, which is the
-default.  For detail about the -c option, refer to the manual page of
-gfsd(8).  The level "disable" disables the consistency check.
+gfsd起動時のスプールチェックを有効にします。スプールチェックでは、
+メタデータに登録されている情報との一貫性を検査します。レベルはgfsdの-c
+オプションを指定する数に相当し、"display"は-cオプション、"delete"は-cc
+オプション、"lost_found"は-cccオプションと同等です。詳細はgfsdの
+マニュアルページを参照ください。レベル"disable"にすると、スプールチェックを
+行いません。デフォルト値は"lost_found"です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	spool_check_level disable
 </literallayout>
@@ -336,12 +334,11 @@ gfsd(8).  The level "disable" disables the consistency check.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_host</token> <parameter>hostname</parameter></term>
+<term><token>metadb_server_host</token> <parameter>gfmdホスト名</parameter></term>
 <listitem>
-<para>The <token>metadb_server_host</token> statement specifies the
-host name on which gfmd is running.</para>
-<para>This statement cannot be omitted.</para>
-<para>For example,</para>
+<para>gfmdが動作しているホスト名を指定します。</para>
+<para>この設定は必須です。</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_host ldap.example.com
 </literallayout>
@@ -349,12 +346,11 @@ host name on which gfmd is running.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_port</token> <parameter>port</parameter></term>
+<term><token>metadb_server_port</token> <parameter>gfmdポート番号</parameter></term>
 <listitem>
-<para>The <token>metadb_server_port</token> statement specifies the tcp
-port number the gfmd is listening on.  The default port number is
-601.</para>
-<para>For example,</para>
+<para>gfmdが利用するTCPポートの番号を指定します。
+省略時のデフォルト・ポート番号は601番です。</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_port 601
 </literallayout>
@@ -365,12 +361,10 @@ port number the gfmd is listening on.  The default port number is
 <term><token>metadb_server_cred_type</token> <parameter>cred_type</parameter></term>
 <listitem>
 <para>
-This statement specifies the type of credential used by gfmd
-for GSI authentication.
-This is ignored when you are using <token>sharedsecret</token> 
-authentication.
-Please read the description of the <token>spool_server_cred_type</token> 
-statement on the configuration of this statement.
+GSI認証において、gfmdが用いる証明書の種類を指定します。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+設定の意味については<token>spool_server_cred_type</token>の項を
+参照してください。
 </para>
 </listitem>
 </varlistentry>
@@ -379,13 +373,12 @@ statement on the configuration of this statement.
 <term><token>metadb_server_cred_service</token> <parameter>cred_service</parameter></term>
 <listitem>
 <para>
-This statement specifies the service name of a service certificate
-used by gfmd for GSI authentication, when ``<token>host</token>'' is specified
-in <token>metadb_server_cred_type</token> statement.
-This is ignored when you are using <token>sharedsecret</token> 
-authentication.
-Please read the description of the <token>spool_server_cred_type</token> 
-statement on the configuration of this statement.
+GSI認証において、<token>metadb_server_cred_type</token>として
+「<token>host</token>」を指定している場合に、gfmdが用いるサービス証明書の
+種類を指定します。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+設定の意味については<token>spool_server_cred_type</token>の項を
+参照してください。
 </para>
 </listitem>
 </varlistentry>
@@ -394,32 +387,30 @@ statement on the configuration of this statement.
 <term><token>metadb_server_cred_name</token> <parameter>cred_name</parameter></term>
 <listitem>
 <para>
-This statement specifies the setting of a certificate used by gfmd
-for GSI authentication. What this setting means depends on the type
-specified in the <token>metadb_server_cred_type</token> statement.
-This is ignored when you are using <token>sharedsecret</token> 
-authentication.
-Please read the description of the <token>spool_server_cred_type</token> 
-statement on the configuration of this statement.
+GSI認証において、<token>metadb_server_cred_type</token>で指定した値に
+応じて、gfmdが用いる証明書の設定を行います。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+設定の意味については<token>spool_server_cred_type</token>の項を
+参照してください。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_listen_backlog</token> <parameter>number</parameter></term>
+<term><token>metadb_server_listen_backlog</token> <parameter>数</parameter></term>
 <listitem>
 <para>
-This statement specifies the second parameter of the
+gfmd が
 <citerefentry>
 <refentrytitle>listen</refentrytitle><manvolnum>2</manvolnum>
 </citerefentry>
-system call that gfmd invokes.
-The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes which define this symbol in &lt;sys/socket.h&gt;, or 5 if it's undefined.
+システムコールの第二引数に渡すバックログ・パラメータの数を指定します。
+デフォルト値は、&lt;sys/socket.h&gt; に SOMAXCONN 定数が定義されているOSではその値 (OSに依存しますが、典型的な値は 128)、定義されてないOSでは 5 となります。
 </para>
 <para>
-This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_listen_backlog 128
 </literallayout>
@@ -427,18 +418,19 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_max_descriptors</token> <parameter>number</parameter></term>
+<term><token>metadb_server_max_descriptors</token> <parameter>数</parameter></term>
 <listitem>
-<para>This directive specifies the number of file descriptor limit
-for the gfmd metadata server process.  If not specified, the default
-limit is min(OS's hard limit, 131072).  You may have to increase
-this value on a larger configuration, or decrease on a smaller
-configuration.  See Gfarm FAQ to see how to calculate this value.
+<para>メタデータサーバgfmd用のディスクリプタ・リミット値を指定します。
+省略された場合、OSのハード・リミット値と、131072 の、小さい方の値が
+使われます。
+大規模な構成では、この値を増やす必要がありますし、
+小規模な構成では減らした方が良いでしょう。
+この値の計算方法については、Gfarm FAQ を御覧ください。
 </para>
 <para>
-This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_max_descriptors 262144
 </literallayout>
@@ -446,23 +438,22 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_stack_size</token> <parameter>bytes</parameter></term>
+<term><token>metadb_server_stack_size</token> <parameter>バイト数</parameter></term>
 <listitem>
-<para>This directive specifies the size of each thread in the gfmd 
-metadata server process.  If not specified, the default size of the OS
-is used.
-This parameter is used to cut down the size of virtual memory space
-used by gfmd.
+<para>メタデータサーバgfmd内の各スレッドが利用するスタックのサイズを
+指定します。省略された場合OSのデフォルト値が使われます。
+このパラメータは、gfmdの消費する仮想メモリ空間のサイズを節約するために
+用います。
 </para>
 <para>
-For example, the default stack size on CentOS 5/i386 is 10MB, thus,
-you can decrease the size of the virtual memory space of gfmd to 1/40,
-by specifying 256KB as this parameter.
+たとえば、CentOS 5/i386の場合、デフォルトのスタックサイズは10MBです
+ので、このパラメータでスタックサイズを256KBに抑えると、gfmdのスタック
+が消費する仮想メモリ空間のサイズを、1/40に減らすことができます。
 </para>
 <para>
-This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_stack_size 262144
 </literallayout>
@@ -470,16 +461,16 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_thread_pool_size</token> <parameter>size</parameter></term>
+<term><token>metadb_server_thread_pool_size</token> <parameter>スレッド数</parameter></term>
 <listitem>
-<para>This directive specifies the maximum number of threads in a
-thread pool in the gfmd.  It is effective to specify around the
-number of CPU cores of the metadata server node.  Default is 16.
+<para>メタデータサーバgfmdのスレッドプールのスレッド数を指定します。
+メタデータサーバノードのコア数くらいに設定すると効果的です。
+デフォルト値は16です。
 </para>
 <para>
-This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_thread_pool_size 16
 </literallayout>
@@ -487,16 +478,16 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_job_queue_length</token> <parameter>length</parameter></term>
+<term><token>metadb_server_job_queue_length</token> <parameter>キュー長</parameter></term>
 <listitem>
-<para>This directive specifies the length of job queue in the gfmd.
-It is effective to specify around the maximum number of clients that
-access the Gfarm file system at the same time.  Default is 16000.
+<para>メタデータサーバgfmdのジョブキューのキュー長を指定します。
+一度に接続する最大クライアントの数くらいに設定すると効果的です。
+デフォルト値は16000です。
 </para>
 <para>
-This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_job_queue_length 160
 </literallayout>
@@ -504,18 +495,19 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_heartbeat_interval</token> <parameter>seconds</parameter></term>
+<term><token>metadb_server_heartbeat_interval</token> <parameter>秒数</parameter></term>
 <listitem>
-<para>This directive specifies the interval of heartbeat in seconds
-for gfmd to check availability of each gfsd.  Default is 180 seconds.
+<para>メタデータサーバgfmdが各ファイルシステムサーバgfsd
+に対し動作確認を行うハートビートの間隔を秒数で指定します。
+デフォルト値は180秒です。
 </para>
 <para>
-Until gfarm-2.3.0, this parameter was only available in gfmd.conf, 
-and ignored in gfarm2.conf. But since gfarm-2.4.0, gfsd also uses
-this parameter to detect whether gfmd is down or not, this parameter
-has to be specified in both gfarm2.conf and gfmd.conf.
+Gfarm-2.3.0まではこの文はgfmd.confのみで有効であり、gfarm2.confでは
+無視されていましたが、Gfarm-2.4.0以降はgfsdもこのパラメータを利用し
+gfmd停止を検知するため、
+gfarm2.confとgfmd.confの両方で指定する必要があります。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_heartbeat_interval 180
 </literallayout>
@@ -523,18 +515,17 @@ has to be specified in both gfarm2.conf and gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_dbq_size</token> <parameter>size</parameter></term>
+<term><token>metadb_server_dbq_size</token> <parameter>キュー長</parameter></term>
 <listitem>
-<para>This directive specifies the queue length of metadata updates
-for a backend database in gfmd.  Longer queue length may avoid slow
-down due to waiting backend database updates in case of frequent
-metadata operations.
-Default is 65536.
+<para>メタデータサーバgfmdではメタデータの変更をバックエンドDBに
+非同期的に反映しますが，そのキューの長さを指定します。
+キュー長を長くすると，バックエンドDBの更新速度に律速されにくくなります。
+デフォルト値は65536です。
 </para>
 <para>
-This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_dbq_size 65536
 </literallayout>
@@ -542,14 +533,16 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>ldap_server_host</token> <parameter>hostname</parameter></term>
+<term><token>ldap_server_host</token> <parameter>LDAPサーバー・ホスト名</parameter></term>
 <listitem>
-<para>The <token>ldap_server_host</token> statement specifies the host
-name on which an LDAP server is running.  This statement is required
-when the LDAP server is used for a backend database of gfmd.  This
-statement is used in gfmd.conf not gfarm2.conf.</para>
+<para>
+gfmdのバックエンド・データベースとして
+LDAPサーバを選択する場合、
+LDAPサーバーが動作しているホスト名を指定します。
+この文はgfmd.confで用いられ、gfarm2.confでは用いられません。
+</para>
 
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	ldap_server_host ldap.example.com
 </literallayout>
@@ -557,13 +550,12 @@ statement is used in gfmd.conf not gfarm2.conf.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>ldap_server_port</token> <parameter>port</parameter></term>
+<term><token>ldap_server_port</token> <parameter>LDAPサーバー・ポート番号</parameter></term>
 <listitem>
-<para>The <token>ldap_server_port</token> statement specifies the tcp
-port number of the LDAP server.</para>
-<para>This statement cannot be omitted
-  if <token>ldap_server_host</token> is specified.</para>
-<para>For example,</para>
+<para>LDAPサーバーが利用するTCPポートの番号を指定します。</para>
+<para><token>ldap_server_host</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
 <literallayout>
 	ldap_server_port 602
 </literallayout>
@@ -573,11 +565,11 @@ port number of the LDAP server.</para>
 <varlistentry>
 <term><token>ldap_base_dn</token> <parameter>LDAP_base_distinguished_name</parameter></term>
 <listitem>
-<para>The <token>ldap_base_dn</token> statement specifies the
-base-distinguished name of the LDAP database.</para>
-<para>This statement cannot be omitted
-  if <token>ldap_server_host</token> is specified.</para>
-<para>For example,</para>
+<para>LDAPデータベースで保持するデータのキーの根となるノードの
+名称、base distinguished nameを指定します。</para>
+<para><token>ldap_server_host</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
 <literallayout>
 	ldap_base_dn "dc=example, dc=com"
 </literallayout>
@@ -587,10 +579,8 @@ base-distinguished name of the LDAP database.</para>
 <varlistentry>
 <term><token>ldap_bind_dn</token> <parameter>LDAP_bind_distinguished_name</parameter></term>
 <listitem>
-<para>The <token>ldap_bind_dn</token> statement specifies the
-distinguished name for the bind operation which is used for authentication
-to the LDAP database.</para>
-<para>For example,</para>
+<para>LDAPデータベースに接続する際の認証に用いる名称を、distinguished nameで指定します。</para>
+<para>例:</para>
 <literallayout>
 	ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
 </literallayout>
@@ -600,10 +590,8 @@ to the LDAP database.</para>
 <varlistentry>
 <term><token>ldap_bind_password</token> <parameter>password</parameter></term>
 <listitem>
-<para>The <token>ldap_bind_password</token> statement specifies the
-password for the bind operation which is used for authentication
-to the LDAP database.</para>
-<para>For example,</para>
+<para>LDAPデータベースに接続する際の認証パスワードを指定します。</para>
+<para>例:</para>
 <literallayout>
 	ldap_bind_password "secret-ldap-password"
 </literallayout>
@@ -611,14 +599,16 @@ to the LDAP database.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>postgresql_server_host</token> <parameter>hostname</parameter></term>
+<term><token>postgresql_server_host</token> <parameter>PostgreSQLサーバー・ホスト名</parameter></term>
 <listitem>
-<para>The <token>postgresql_server_host</token> statement specifies the host
-name on which a PostgreSQL server is running.  This statement is required
-when the PostgreSQL server is used for a backend database of gfmd.  This
-statement is used in gfmd.conf not gfarm2.conf.</para>
+<para>
+gfmdのバックエンド・データベースとして
+PostgreSQLサーバを選択する場合、
+PostgreSQLサーバーが動作しているホスト名を指定します。
+この文はgfmd.confで用いられ、gfarm2.confでは用いられません。
+</para>
 
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	postgresql_server_host postgresql.example.com
 </literallayout>
@@ -626,13 +616,12 @@ statement is used in gfmd.conf not gfarm2.conf.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>postgresql_server_port</token> <parameter>port</parameter></term>
+<term><token>postgresql_server_port</token> <parameter>PostgreSQLサーバー・ポート番号</parameter></term>
 <listitem>
-<para>The <token>postgresql_server_port</token> statement specifies the tcp
-port number of the PostgreSQL server.</para>
-<para>This statement cannot be omitted
-  if <token>postgresql_server_host</token> is specified.</para>
-<para>For example,</para>
+<para>PostgreSQLサーバーが利用するTCPポートの番号を指定します。</para>
+<para><token>postgresql_server_host</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
 <literallayout>
 	postgresql_server_port 602
 </literallayout>
@@ -642,11 +631,10 @@ port number of the PostgreSQL server.</para>
 <varlistentry>
 <term><token>postgresql_dbname</token> <parameter>dbname</parameter></term>
 <listitem>
-<para>The <token>postgresql_dbname</token> statement specifies the
-  database name of the PostgreSQL database.</para>
-<para>This statement cannot be omitted
-  if <token>postgresql_server_host</token> is specified.</para>
-<para>For example,</para>
+<para>PostgreSQLデータベース名を指定します。</para>
+<para><token>postgresql_server_host</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
 <literallayout>
 	postgresql_dbname gfarm
 </literallayout>
@@ -656,9 +644,8 @@ port number of the PostgreSQL server.</para>
 <varlistentry>
 <term><token>postgresql_user</token> <parameter>user</parameter></term>
 <listitem>
-<para>The <token>postgresql_user</token> statement specifies the
-  username used to connect the PostgreSQL database.</para>
-<para>For example,</para>
+<para>PostgreSQLデータベースに接続するデータベース管理下のユーザ名を指定します。</para>
+<para>例:</para>
 <literallayout>
 	postgresql_user gfarm
 </literallayout>
@@ -668,11 +655,10 @@ port number of the PostgreSQL server.</para>
 <varlistentry>
 <term><token>postgresql_password</token> <parameter>password</parameter></term>
 <listitem>
-<para>The <token>postgresql_password</token> statement specifies the
-  password used to connect the PostgreSQL database.</para>
-<para>For example,</para>
+<para>PostgreSQLデータベースに接続するデータベース管理下のユーザのパスワードを指定します。</para>
+<para>例:</para>
 <literallayout>
-	postgresql_password gfarm
+	postgresql_password "secret-postgresql-password"
 </literallayout>
 </listitem>
 </varlistentry>
@@ -680,9 +666,8 @@ port number of the PostgreSQL server.</para>
 <varlistentry>
 <term><token>postgresql_conninfo</token> <parameter>connection_info</parameter></term>
 <listitem>
-<para>The <token>postgresql_conninfo</token> statement specifies the
-  connection option used to connect the PostgreSQL database.</para>
-<para>For example,</para>
+<para>PostgreSQLデータベースに接続するときの接続オプションを指定します。</para>
+<para>例:</para>
 <literallayout>
 	postgresql_conninfo "sslmode=require connect_timeout=30"
 </literallayout>
@@ -690,46 +675,36 @@ port number of the PostgreSQL server.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>auth</token> <parameter>validity</parameter>
-<parameter>method</parameter> <parameter>Host_specification</parameter></term>
+<term><token>auth</token> <parameter>有効性</parameter>&nbsp; <parameter>認証方法</parameter>&nbsp; <parameter>ホスト指定</parameter></term>
 <listitem>
-<para>This statement specifies the authentication method when
-communicating with the host(s) specified by the third argument.</para>
+<para>この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。</para>
 
-<para>The first argument should be either the <token>enable</token> or
-<token>disable</token> keyword.
-The second argument, <parameter>auth method</parameter>, should be
-the <token>gsi</token>, <token>gsi_auth</token>, or <token>sharedsecret</token>
-keyword.
-The third argument specifies the host(s) by using <parameter>Host
-specification</parameter>.</para>
+<para>第1引数の<parameter>有効性</parameter>部には、<token>enable</token>ないし<token>disable</token>
+キーワードを指定します。
+第2引数の<parameter>認証方法</parameter>部には、<token>gsi</token>、
+<token>gsi_auth</token>ないし<token>sharedsecret</token>
+キーワードを指定します。
+第3引数には、<parameter>ホスト指定</parameter>を記述します。</para>
 
-<para>The <token>auth</token> statement may be specified any number of
-times.  For each authentication method, it becomes a candidate when
-the first entry whose host_specification matches the target host has
-the <token>enable</token> keyword.  When there is no corresponding
-entry, or when the first corresponding entry has the
-<token>disable</token> keyword, the authentication method does not
-become a candidate.</para>
+<para>この文は複数指定可能です。各認証方法ごとに、先頭から順にホスト指定に
+適合するかどうか調べ、有効であるとの指定に適合した場合、その認証方法が
+利用候補になります。有効であるとの指定に適合しない場合や、あるいは
+有効であるとの指定に適合するよりも前に無効であるとの指定に適合した
+場合、その認証方法は、候補になりません。</para>
 
-<para>This process takes place on both client and server sides.
-Candidates for authentication method on both sides will be
-tried.</para>
+<para>この指定は、サーバー側とクライアント側の両方で解釈され、
+双方ともで有効になっている認証方法のみが用いられます。</para>
 
-<para>The order of statements with different authentication methods is
-not relevant.  When there are several candidates for the authentication
-method for the host, the order of the authentication trial is
-<token>sharedsecret</token>, <token>gsi_auth</token>,
-and then <token>gsi</token>.
-</para>
+<para>認証方法が異なるものに関しては、指定の順序は意味がありません。
+複数の認証方法が候補となった場合、<token>sharedsecret</token>、
+<token>gsi_auth</token>、<token>gsi</token>認証の順序で試みます。</para>
 
-<para>The GSI methods are available if and only if the
---with-globus option is specified at configuration.  When the methods are
-not available, an <token>auth</token> statement with
-<token>gsi</token> or <token>gsi_auth</token> will be ignored.</para>
+<para>Gfarmのコンパイル時にglobusとのリンクを指定しなかった場合、
+GSIは利用できません。この場合、<token>gsi</token>および
+<token>gsi_auth</token>認証の指定は単に無視されます。</para>
 
-<para>This statement cannot be omitted.</para>
-<para>For example,</para>
+<para>この設定は必須です。</para>
+<para>例:</para>
 <literallayout>
 	auth disable sharedsecret 192.168.0.100
 	auth disable sharedsecret 192.168.0.101
@@ -738,62 +713,57 @@ not available, an <token>auth</token> statement with
 	auth enable gsi *
 </literallayout>
 
-<para>In this example, all hosts which belong to the network address
-192.168.0.0/24, except for two hosts, 192.168.0.100 and 192.168.0.101,
-will be tested for authenticated by both <token>sharedsecret</token>
-and <token>gsi</token>;
-all hosts which belong to the network address 10.0.0.0/8 will be
-tested for authentication by both
-<token>gsi_auth</token> and <token>gsi</token>;
-and all other hosts will be authenticated by
-<token>gsi</token>.  Note that two hosts, 192.168.0.100 and
-192.168.0.101, will be tested for authentication by gsi only.</para>
+<para>この例では、ホスト192.168.0.100と192.168.0.101の2つのホストを
+除いた192.168.0.0/24ネットワークに属すホストには
+<token>sharedsecret</token>と<token>gsi</token>の両方を、
+10.0.0.0/8ネットワークに属すホストには<token>gsi_auth</token>および
+<token>gsi</token>の両方を、
+それ以外の全てのホストには<token>gsi</token>認証のみを試みます。
+すなわち、ホスト192.168.0.100と192.168.0.101の2つのホストは、
+<token>gsi</token>認証のみを試みることになります。</para>
 
 </listitem>
 </varlistentry>
 
 <!--
 <varlistentry>
-<term><token>netparam</token> <parameter>parameter</parameter><emphasis>=</emphasis><parameter>value</parameter> <emphasis>[</emphasis><parameter>Host_specification</parameter><emphasis>]</emphasis></term>
+<term><token>netparam</token> <parameter>パラメータ</parameter><emphasis>=</emphasis><parameter>値</parameter> <emphasis>[</emphasis><parameter>ホスト指定</parameter><emphasis>]</emphasis></term>
 <listitem>
-<para>The <token>netparam</token> statement specifies several
-communication parameters listed below.</para>
+<para>ネットワーク通信に用いる各種パラメータを指定します。
+パラメータには下記のものがあります。</para>
 
-<para><token>parallel_streams</token>.  This parameter specifies the
-number of tcp streams.  The default is a single stream.  The
-<token>parallel_streams</token> parameter may improve the file
-transfer performance, especially when connecting to a distant site
-(i.e., a high bandwidth-delay product network) such that the tcp congestion
-window size will not increase sufficiently.  This parameter is only
-effective on a client node where the gfrep(1) command is executed.
-<parameter>Host_specification</parameter> specifies the source host(s)
-for file replication instead of the destination host(s).</para>
+<para><token>parallel_streams</token>。このパラメータは、通信に利用する
+TCPのストリーム数を指定します。省略時は1です。
+このパラメータは、TCPの通信ウィンドウが十分なサイズ
+まで開かないような遠方との通信の際に、有効なことがあります。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、gfrep(1)コマンドを起動したホストのユーザ設定ファイルの
+内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
+複製元のホストです。</para>
 
-<para><token>stripe_unit_size</token>.  This parameter specifies how
-to divide the data when utilizing multiple tcp streams.  Without this
-parameter, the data will be divided into
-<token>parallel_streams</token> of contiguous blocks with almost even
-size.  When this parameter is specified, the data is divided in
-round-robin fashion with the specified block size in bytes.  Generally
-speaking, the performance of file transfer is improved using this
-parameter.</para>
+<para><token>stripe_unit_size</token>。このパラメータは、通信に複数のTCPストリーム
+を利用する場合に、どのように転送内容を分割するかを指定します。
+もしこの指定がない場合、転送内容を単に<token>parallel_streams</token>個に
+分割して送信します。
+これに対し、<token>stripe_unit_size</token>を指定した場合は、このパラメータ
+で指定したバイト数を単位としてストライピングして送信します。
+通常、単なる分割よりもストライピングの方が性能的に有利です。
+</para>
+<para>
+このパラメータは、上記の<token>parallel_streams</token>として1より大きな値
+を指定した通信のみで有効です。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、gfrep(1)コマンドを起動したホストのユーザ設定ファイルの
+内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
+複製元のホストです。</para>
 
-<para>This parameter is effective only when two or more is specified
-as the <token>parallel_streams</token> parameter.  This parameter is
-only effective on a client node where the gfrep(1) command is executed.
-<parameter>Host_specification</parameter> specifies the source host(s)
-for file replication instead of the destination host(s).</para>
+<para><token>rate_limit</token>。コネクション1本あたりの通信バンド幅を制限する
+実験的な機能です。指定する値の単位はbps (bit per second)です。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、複製元のホスト上のgfsdの設定ファイルが用いられます。
+ホスト指定と比較されるのは、複製先のホストです。</para>
 
-<para><token>rate_limit</token>.  This parameter specifies the maximum
-transfer rate (bps; bit per second) for a single connection, and is
-introduced experimentally.  The parameter on a source filesystem node
-is effective during parallel file replication.  <parameter>Host
-specification</parameter> specifies the destination host(s) for file
-replication.  Note that this parameter has to be specified on a
-source filesystem node, not on a client host, unlike the other
-parameters.</para>
-
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	netparam parallel_streams=2	10.0.0.0/8
 	netparam stripe_unit_size=8192	10.0.0.0/8
@@ -804,45 +774,43 @@ parameters.</para>
  -->
 
 <varlistentry>
-<term><token>sockopt </token><parameter>option</parameter><emphasis>[=</emphasis><parameter>value</parameter><emphasis>] [<token>LISTENER</token> | <parameter>Host_specification</parameter>]</emphasis></term>
+<term><token>sockopt </token><parameter>オプション</parameter><emphasis>[=</emphasis><parameter>値</parameter><emphasis>] [<token>LISTENER</token> | <parameter>ホスト指定</parameter>]</emphasis></term>
 <listitem>
-<para>The <token>sockopt</token> parameter specifies the socket option
-<parameter>option</parameter> via the setsockopt(2) system call.</para>
+<para>通信socket(2)に対して、setsockopt(2)システムコールを使って
+ソケット・オプションを指定します。</para>
 
-<para>When <token>LISTENER</token> (all capital letters) is specified
-by the second argument, the socket option is applied to any socket
-on the server side (accepting side).</para>
-
-<para>When the host_specification is specified by the second argument,
-the socket option is applied to sockets that connect to the specified host(s).
-If the second argument is "*", the socket option is applied to any
-hosts on the client side (connecting side).
+<para>第2引数に全て大文字で<token>LISTENER</token>を指定した場合、
+サーバー側(着呼側)のソケットに指定するオプションになります。
+この場合、通信する相手に関係なく、
+一律にソケット・オプションが設定されます。</para>
+<para>
+第2引数にホスト指定を記述した場合、クライアント側(発呼側)の
+ソケットに指定するオプションになります。この場合、通信する相手毎に
+ソケット・オプションを変えることができます。
+なお、第2引数に"*"と記述すると、クライアント側(発呼側)の全ての
+ホストを意味することになり、サーバー側(着呼側)には適用されません。
 </para>
+<para>
+第2引数を省略した場合、サーバー側とクライアント側の両方で、
+全ての通信相手に対して同じソケット・オプションを設定します。</para>
 
-<para>If the second argument is omitted, the socket option is applied
-to every socket.</para>
+<para>指定可能なソケット・オプションには次のものがあります。</para>
 
-<para>The following socket options can be specified.</para>
+<para><token>debug</token>。setsockopt(2)システムコールで、<constant>SO_DEBUG</constant>ソケット・オプションを指定します。値を記述する必要はありません。</para>
 
-<para><token>debug</token>.  The <constant>SO_DEBUG</constant> socket
-option is specified.  A <parameter>value</parameter> is not
-necessary.</para>
+<para><token>keepalive</token>。setsockopt(2)システムコールで、<constant>SO_KEEPALIVE</constant>
+ソケット・オプションを指定します。値を記述する必要はありません。</para>
 
-<para><token>keepalive</token>.  The <constant>SO_KEEPALIVE</constant>
-socket option is specified.  A <parameter>value</parameter> is not
-necessary.</para>
+<para><token>sndbuf</token>。setsockopt(2)システムコールで、<constant>SO_SNDBUF</constant>
+ソケット・オプションを指定します。値の指定が必要です。</para>
 
-<para><token>sndbuf</token>.  The <constant>SO_SNDBUF</constant> socket
-option is specified with a <parameter>value</parameter>.</para>
+<para><token>rcvbuf</token>。setsockopt(2)システムコールで、<constant>SO_RCVBUF</constant>
+ソケット・オプションを指定します。値の指定が必要です。</para>
 
-<para><token>rcvbuf</token>.  The <constant>SO_RCVBUF</constant> socket
-option is specified with a <parameter>value</parameter>.</para>
+<para><token>tcp_nodelay</token>。setsockopt(2)システムコールで、<constant>TCP_NODELAY</constant>
+ソケット・オプションを指定します。値を記述する必要はありません。</para>
 
-<para><token>tcp_nodelay</token>.  The <constant>TCP_NODELAY</constant>
-socket option is specified.  A <parameter>value</parameter> is not
-necessary.</para>
-
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	sockopt tcp_nodelay 192.168.0.0/24
 	sockopt sndbuf=1048576 10.0.0.0/8
@@ -855,12 +823,13 @@ necessary.</para>
 
 <!--
 <varlistentry>
-<term><token>address_use</token> <parameter>Host_specification</parameter></term>
+<term><token>address_use</token> <parameter>ホスト指定</parameter></term>
 <listitem>
-<para>The <token>address_use</token> statement specifies an IP address
-or a network address that is given preference for connection when the
-target host has several IP addresses.</para>
-<para>For example,</para>
+<para>ファイルシステムノードに複数のIPアドレスがある場合、その中のどの
+IPアドレスを通信に用いるかを指定します。
+この文で指定したアドレスに適合するIPアドレスを優先して使用しますが、
+適合するアドレスがない場合でも、通信を行います。</para>
+<para>例:</para>
 <literallayout>
 	address_use 192.168.0.0/24
 </literallayout>
@@ -868,20 +837,21 @@ target host has several IP addresses.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>client_architecture</token> <parameter>architecture</parameter> <parameter>Host_specification</parameter></term>
+<term><token>client_architecture</token> <parameter>アーキテクチャ名</parameter>&nbsp; <parameter>ホスト指定</parameter></term>
 <listitem>
-<para>This directive specifies the default architecture name that may be used
-when a client node accesses an executable file.
-This directive only affects client nodes.
-For filesystem nodes, architecture names registered in
-the metadata server are used.
+<para>
+クライアントノードが実行ファイルにアクセスする場合に選択する
+デフォルトのアーキテクチャ名を指定します。
+この指定は、クライアントノードについてのみ作用します。
+ファイルシステムノードについては、メタデータサーバに登録されている
+アーキテクチャ名が使われます。
 </para>
 <para>
-On the other hand, the environment variable, GFARM_ARCHITECTURE,
-which specifies the default architecture name, just as in this directive,
-affects both client nodes and filesystem nodes.
+これに対し、環境変数GFARM_ARCHITECTUREを使うと、クライアントノードに対しても
+ファイルシステムノードについても、実行ファイルのデフォルトのアーキテクチャ名を
+指定することができます。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	client_architecture i386-redhat8.0-linux linux-1.example.com
 	client_architecture i386-redhat8.0-linux linux-2.example.com
@@ -892,14 +862,14 @@ affects both client nodes and filesystem nodes.
  -->
 
 <varlistentry>
-<term><token>known_network</token> <parameter>Host_specification</parameter></term>
+<term><token>known_network</token> <parameter>ホスト指定</parameter></term>
 <listitem>
-<para>The <token>known_network</token> statement specifies a network
-address for file system nodes.  It is used to group file system nodes
-at file systen node scheduling.
-File system nodes that are not specified in this directive are assumed
-to be in an IPv4 class C network.</para>
-<para>Multiple networks can be specified as follows.</para>
+<para>ファイルシステムノードのネットワークを指定します。
+本ネットワークは、
+ファイルシステムノード選択時のグルーピングに利用されます。
+この文で指定したアドレスに適合しないIPアドレスの場合、
+IPv4のクラスCネットワークが仮定されます。</para>
+<para>複数のネットワークを指定する場合は、以下のように複数回指定します。</para>
 <literallayout>
 	known_network 192.168.0.0/25
 	known_network 192.168.0.128/25
@@ -908,86 +878,82 @@ to be in an IPv4 class C network.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>network_receive_timeout</token> <parameter>seconds</parameter></term>
+<term><token>network_receive_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
-<para>The <token>network_receive_timeout</token> directive specifies
-the time, in seconds, to wait for data reception via network.
-The default value is 60 seconds.
-This directive is effective in both gfarm2.conf and gfmd.conf.
+<para>ネットワークを介したデータ受信のタイムアウト時間を秒単位で指定
+します。
+デフォルト値は60秒です。
+この文は gfarm2.conf および gfmd.conf のいずれにおいても有効です。
 </para>
-<para>When a Gfarm application program receives no data from a gfsd 
-filesystem server during the timeout period, it aborts the communication
-with the server, and then it tries to communicate with another server
-to continue the operation.</para>
-<para>When a gfmd metadata server receives no data from a gfsd filesystem
-server during the timeout period, it aborts the communication with
-the gfsd server and gfmd considers the gfsd server is down.</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><token>admin_user</token> <parameter>user</parameter></term>
-<listitem>
-<para>
-This directive specifies an administrator user name, which is
-specified in gfmd.conf.
+<para>Gfarmクライアントプログラムが指定した時間待ったもの、gfsd から
+のデータがまったく届かなかった場合は、その gfsd との通信を中止し、処理
+を継続させるべく他の gfsd サーバとの通信を試みます。
+</para>
+<para>gfmd が指定した時間待ったもの、gfsd からデータがまったく
+届かなかった場合、その gfsd との通信を中止して、その gfsd はダウンした
+ものとみなします。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>admin_user_gsi_dn</token> <parameter>user_gsi_dn</parameter></term>
+<term><token>admin_user</token> <parameter>ユーザ名</parameter></term>
 <listitem>
 <para>
-This directive specifies a subject DN of an administrator, which is
-specified in gfmd.conf.
+gfmd.conf内のこの文で指定されたユーザが、
+デフォルトの特権ユーザとなります。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>local_user_map</token> <parameter>user-map-file</parameter> [<parameter>hostname</parameter>:[<parameter>port</parameter>]]</term>
+<term><token>admin_user_gsi_dn</token> <parameter>DN</parameter></term>
 <listitem>
-<para>This directive specifies a file name
-<parameter>user-map-file</parameter> for mapping local user names to
-global user names.  This map file is used only for sharedsecret
-authentication.  When this file is not specified, a global user name
-is assumed to be same as the local user name.</para>
-
 <para>
-<parameter>user-map-file</parameter> is needed when you have to use
-the sharedsecret authentication method in the case where you have
-different unix account names on different filesystem nodes.  In such a
-case, the <parameter>user-map-file</parameter> on each filesystem node
-should have an entry from each local user name to a unique global user
-name.
+gfmd.conf内のadmin_user文で指定された特権ユーザのSubject DNを指定します。
 </para>
-<para>Example:</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>local_user_map</token> <parameter>ユーザマップファイルパス名</parameter> [<parameter>ホスト名</parameter>:[<parameter>ポート番号</parameter>]] </term>
+<listitem>
+<para>
+sharedsecret認証において、
+グローバルユーザ名とローカルユーザ名の対応関係を記述した
+ユーザマップファイルパス名を指定します。
+この設定は必須ではありませんが、
+その場合ローカルユーザ名がグローバルユーザ名に変換されます。
+</para>
+<para>
+同一ユーザに対して、
+異なるローカルアカウント名を与えているファイルシステムノードがある場合や、
+ローカルユーザ名とは異なるグローバルユーザ名を利用したい場合、
+このファイルで、各ノードのローカルなユーザ名に対して、単一の
+グローバルユーザ名を定義します。</para>
+<para>例:</para>
 <literallayout>
 	local_user_map /etc/gfarm/gfarm-usermap
 </literallayout>
 
-<para>Each line of the <parameter>user-map-file</parameter> consists
-of two fields separated by spaces; the first field is a global user
-name, and the second field is a local user name.</para>
-
-<para>Example of the user mapping file:</para>
+<para>ユーザマップファイルは、グローバルユーザ名と
+ローカルユーザ名を、空白で区切って各行に記述します。</para>
+<para>ユーザマップファイルの内容例:</para>	
 <literallayout>
 	foobar foo
 	quux baz
 </literallayout>
-<para>According to the first line of this mapping file, a global user
-name, "foobar", is mapped to a local user name,  "foo", on this node.
-</para>
+<para>この例の1行目の指定では、このノードのローカルユーザ名fooに
+対してグローバルユーザ名foobarが定義されています。</para>
+
 <para>
-When hostname/port of the meta data server is specified,
-user mapping files different in each server are applied.
-When the port is omitted, default port (601) is used.
-local_user_map can be specified two or more times.
-When the same definitions of local user name exist,
-the first definition is selected.
+メタデータサーバのホスト名/ポート番号を指定すると、
+接続先のサーバごとに異なるユーザマップファイルを適用します。
+ポート番号を省略した場合は、デフォルトのポート番号(601)を使用します。
+local_user_map は複数回指定可能です。
+ローカルユーザ名が同一の定義が複数のファイルに存在する場合、最初の定義が選択されます。
 </para>
-<para>Example of multiple user mapping file:</para>
+<para>複数のユーザマップファイルの例:</para>
 <literallayout>
 	local_user_map /etc/gfarm/gfarm-usermap1-1
 	local_user_map /etc/gfarm/gfarm-usermap1-2
@@ -995,51 +961,50 @@ the first definition is selected.
 	local_user_map /etc/gfarm/gfarm-usermap2-2 server2
 </literallayout>
 <para>
-In this example, when connecting to server2,
-it applies in order of gfarm-usermap2-1 and gfarm-usermap2-2.
-When connecting to excluding server2,
-it applies in order of gfarm-usermap1-1 and gfarm-usermap1-2.
+この例では server2 に接続するときは gfarm-usermap2-1、gfarm-usermap2-2 の順番に適用します。
+server2 以外に接続するときは gfarm-usermap1-1、gfarm-usermap1-2 の順番に適用します。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>local_group_map</token> <parameter>group-map-file</parameter> [<parameter>hostname</parameter>:[<parameter>port</parameter>]]</term>
+<term><token>local_group_map</token> <parameter>グループマップファイルパス名</parameter> [<parameter>ホスト名</parameter>:[<parameter>ポート番号</parameter>]]</term>
 <listitem>
-<para>This directive specifies a file name
-<parameter>group-map-file</parameter> for mapping global group names to
-local group names.  This map file is used by legacy clients that use
-local group id such as gfarm2fs and gfarm dsi for Globus GridFTP to
-display mapped local groups.  When this file is not specified, a
-local group name is assumed to be same as the global group
-name.</para>
-
-<para>Example:</para>
+<para>
+グローバルグループ名とローカルグループ名の対応関係を記述した
+グループマップファイルパス名を指定します。
+このマップファイルは，ローカルシステムのグループIDを利用するgfarm2fsや
+Globus GridFTPのGfarm DSIなどで利用されます。
+この設定は必須ではありませんが、
+その場合ローカルグループ名はグローバルグループ名と等しいと仮定されます。
+</para>
+<para>例:</para>
 <literallayout>
 	local_group_map /etc/gfarm/gfarm-groupmap
 </literallayout>
 
-<para>Each line of the <parameter>group-map-file</parameter> consists
-of two fields separated by spaces; the first field is a global group
-name, and the second field is a local group name.</para>
+<para>グループマップファイルは、グローバルグループ名と
+ローカルグループ名を、空白で区切って各行に記述します。</para>
+
 <para>
-When hostname/port of the meta data server is specified,
-group mapping files different in each server are applied.
-The specification method is similar to local_user_map.
+メタデータサーバのホスト名/ポート番号を指定すると、
+接続先のサーバごとに異なるグループマップファイルを適用します。
+指定方法は local_user_map と同様です。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_cache_timeout</token> <parameter>seconds</parameter></term>
+<term><token>schedule_cache_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
-<para>This directive specifies the time (in seconds) until the cache used for
-filesystem node scheduling expires.
-The cache holds information on each filesystem node, e.g. load average,
-disk free space, and whether authentication succeeds or not.
-The default time is 600 seconds, i.e. ten minutes.
+<para>gfarmライブラリが内部的に保持している、ファイルシステムノード
+のスケジューリング処理に関わる情報、すなわちロードアベレージ、
+ディスク空き容量、認証が通るか否か等のキャッシュの有効期限を秒数で指定します。
+停止していたファイルシステムノードが復活したような場合、この期限が
+切れるまでは、そのノードがスケジューリングされないことがあります。
+デフォルトは600秒すなわち10分です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	schedule_cache_timeout 60
 </literallayout>
@@ -1047,16 +1012,15 @@ The default time is 600 seconds, i.e. ten minutes.
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_concurrency</token> <parameter>number</parameter></term>
+<term><token>schedule_concurrency</token> <parameter>並列度</parameter></term>
 <listitem>
-<para>
-This directive specifies the number how many filesystem nodes will be
-searched concurrently at filesystem scheduling.
-If this parameter is increased, the scheduling will finish quicker,
-but the load to filesystem nodes will increase.
-The default number is 10 nodes.
+<para>ファイルシステムノードを、スケジューリングのために並列検索する際の
+並列度を指定します。
+この数を増やすと並列度が高まり、スケジューリングが早く終りますが、
+ファイルシステムノードの負荷は高くなります。
+デフォルトは10です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	schedule_concurrency 10
 </literallayout>
@@ -1064,20 +1028,20 @@ The default number is 10 nodes.
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_concurrency_per_net</token> <parameter>number</parameter></term>
+<term><token>schedule_concurrency_per_net</token> <parameter>並列度</parameter></term>
 <listitem>
-<para>
-This directive specifies the number how many filesystem nodes will
-be used in same network at measuring network latency
-for each network of filesystem nodes.
-It may be better to increase this parameter,
-if many filesystem nodes are stopping,
-or many filesystem nodes are under higher load.
-If this parameter is increased,
-it's recommened to increase schedule_concurrency parameter too.
-The default number is 3.
+<para>ファイルシステムノードのスケジューリング時に、
+ファイルシステムノードが属する各ネットワークと、クライアントとの間の
+ネットワーク遅延を計測します。このパラメータは、各ネットワーク毎に
+幾つのファイルシステムノードを対象に計測するかを指定します。
+停止しているファイルシステムノードが多い場合や、
+負荷の高いファイルシステムノードが多く計測誤差が大きい場合には、
+このパラメータを増やした方が良いかもしれません。
+このパラメータを増やした場合には、
+それに応じて schedule_concurrency パラメータについても増やすことを推奨します。
+デフォルトは3です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	schedule_concurrency_per_net 3
 </literallayout>
@@ -1085,15 +1049,15 @@ The default number is 3.
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_idle_load_thresh</token> <parameter>load-average</parameter></term>
+<term><token>schedule_idle_load_thresh</token> <parameter>CPU負荷</parameter></term>
 <listitem>
-<para>This directive specifies the threshold of CPU load average to be
-considered idle.  The file system nodes whose CPU load average
-is equal to or below the specified CPU load average are to be
-scheduled at first.
-The default load average is 0.1.
+<para>ファイルシステムノードのスケジューリング時に、
+CPU負荷が低いとみなされるCPU負荷を指定します。
+ここで指定されるCPU負荷より低いCPU負荷のファイルシステムノードが
+まずはスケジュール対象となります。
+デフォルト値は0.1です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	schedule_idle_load_thresh 0.1
 </literallayout>
@@ -1101,14 +1065,15 @@ The default load average is 0.1.
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_busy_load_thresh</token> <parameter>load-average</parameter></term>
+<term><token>schedule_busy_load_thresh</token> <parameter>CPU負荷</parameter></term>
 <listitem>
-<para>This directive specifies the threshold of CPU load average to be
-considered busy.  The file system nodes whose CPU load average
-is above the specified CPU load average are to be scheduled lastly.
-The default load average is 0.5.
+<para>ファイルシステムノードのスケジューリング時に、
+CPU負荷が高いとみなされるCPU負荷を指定します。
+ここで指定されるCPU負荷より高いCPU負荷のファイルシステムノードは
+当初スケジュール対象となりません。
+デフォルト値は0.5です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	schedule_busy_load_thresh 0.5
 </literallayout>
@@ -1116,14 +1081,15 @@ The default load average is 0.5.
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_virtual_load</token> <parameter>load-average</parameter></term>
+<term><token>schedule_virtual_load</token> <parameter>CPU負荷</parameter></term>
 <listitem>
-<para>This directive specifies the virtual CPU load average.  The
-virtual CPU load is added when the host is scheduled to avoid
-scheduling the same host multiple times.  The default load average is
-0.3.
+<para>ファイルシステムノードが選択されたとき、
+CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
+これにより、
+一度スケジュールされたファイルシステムノードが何度もスケジュールされることを防いでいます。
+デフォルト値は0.3です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	schedule_virtual_load 0.3
 </literallayout>
@@ -1131,20 +1097,17 @@ scheduling the same host multiple times.  The default load average is
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_candidates_ratio</token> <parameter>ratio</parameter></term>
+<term><token>schedule_candidates_ratio</token> <parameter>比率</parameter></term>
 <listitem>
-<para>
-This parameter specifies the threshold ratio of number of filesystem nodes
-from number of scheduling nodes,
-to decide to discontinue to search more filesystem nodes
-which load averages are less or equal to
-the schedule_busy_load_thresh parameter.
-If this parameter is increased,
-the accuracy of scheduling will be increased,
-but scheduling process will become slower.
-The default ratio is 4.0.
+<para>ファイルシステムノードのスケジューリング時に、
+ロードアベレージが schedule_busy_load_thresh 以下のノードが、
+スケジューリング対象のノード数の何倍見つかったら、
+検索を打ち切るかを指定します。
+この値を大きくすると、より多くのノードを検索するため、
+スケジューリングの精度は上がりますが、処理は遅くなります。
+デフォルト値は4.0です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	schedule_candidates_ratio 4.0
 </literallayout>
@@ -1152,19 +1115,17 @@ The default ratio is 4.0.
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_rtt_thresh_diff</token> <parameter>microseconds</parameter></term>
+<term><token>schedule_rtt_thresh_diff</token> <parameter>マイクロ秒</parameter></term>
 <listitem>
-<para>
-This parameter specifies the threshold time of network latency
-which divides the domains of scheduling priority.
-If a network latency difference from nearer network is larger than this value,
-the network's scheduling priority is lowered.
-There is a similar parameter schedule_rtt_thresh_ratio,
-and the scheduling priority is lowered if the network latency exceeds
-one of the parameters.
-The default is 1000 microseconds. i.e. 1 millisecond.
+<para>ファイルシステムノードのスケジューリング時に、
+ファイルシステムノードが属する各ネットワークと、クライアントとの間の
+ネットワーク遅延が、何マイクロ秒増えたら、そのネットワークに対する
+スケジューリングの優先度を落すかを指定します。
+同様なパラメータに schedule_rtt_thresh_ratio があり、
+この2つパラメータによる計算のいずれかに当てはまると優先度が落ちます。
+デフォルト値は1000マイクロ秒、すなわち 1ミリ秒です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	schedule_rtt_thresh_diff 1000
 </literallayout>
@@ -1172,19 +1133,17 @@ The default is 1000 microseconds. i.e. 1 millisecond.
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_rtt_thresh_ratio</token> <parameter>ratio</parameter></term>
+<term><token>schedule_rtt_thresh_ratio</token> <parameter>比率</parameter></term>
 <listitem>
-<para>
-This parameter specifies the threshold ratio of network latency
-which divides the domains of scheduling priority.
-If a network latency is larger than this ratio from nearer network,
-the network's scheduling priority is lowered.
-There is a similar parameter schedule_rtt_thresh_diff,
-and the scheduling priority is lowered if the network latency exceeds
-one of the parameters.
-The default ratio is 4.0.
+<para>ファイルシステムノードのスケジューリング時に、
+ファイルシステムノードが属する各ネットワークと、クライアントとの間の
+ネットワーク遅延が、何倍になったら、そのネットワークに対する
+スケジューリングの優先度を落すかを指定します。
+同様なパラメータに schedule_rtt_thresh_diff があり、
+この2つパラメータによる計算のいずれかに当てはまると優先度が落ちます。
+デフォルト値は4.0です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	schedule_rtt_thresh_ratio 4.0
 </literallayout>
@@ -1192,16 +1151,15 @@ The default ratio is 4.0.
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_rtt_thresh</token> <parameter>ratio</parameter></term>
+<term><token>schedule_rtt_thresh</token> <parameter>比率</parameter></term>
 <listitem>
 <para>
-This directive is just an alias of
-the schedule_rtt_thresh_ratio directive since gfarm-2.5.8.
-Please use that directive instead.
-This directive remains for compatibility with older versions.
-The default ratio is 4.0.
+このパラメータは schedule_rtt_thresh_ratio と同じ意味となりますので、
+そちらを利用してください。
+このパラメータは以前のバージョンとの互換性のために残されています。
+デフォルト値は4.0です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	schedule_rtt_thresh 4.0
 </literallayout>
@@ -1209,21 +1167,19 @@ The default ratio is 4.0.
 </varlistentry>
 
 <varlistentry>
-<term><token>write_local_priority</token> <parameter>validity</parameter></term>
+<term><token>write_local_priority</token> <parameter>有効性</parameter></term>
 <listitem>
-<para>Gfarm nearly always chooses localhost, when it selects a filesystem
-node to write a file. By specifing the <token>disable</token> keyword in
-this directive, Gfarm handles localhost the same as other
-filesystem nodes.
+<para>gfarmは、ファイルを書き込むノードを決める際、できる限りローカル
+ホストを優先するように動作します。この文でdisableと指定することによって、
+ローカルホストを他のホストと同様に扱うように変更することができます。
 <!--
-The same thing can be achieved by specifying <token>disable</token>
-as the value of the GFARM_WRITE_LOCAL_PRIORITY environment variable.
-When both this directive and the environment variable are specified,
-the value specified by the environment variable will be used.
+環境変数GFARM_WRITE_LOCAL_PRIORITYにdisableと設定しても、同じ意味に
+なります。
+両方指定した場合は、環境変数が優先されます。
  -->
-The default is <token>enable</token>.
+デフォルトはenableです。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	write_local_priority disable
 </literallayout>
@@ -1231,23 +1187,21 @@ The default is <token>enable</token>.
 </varlistentry>
 
 <varlistentry>
-<term><token>write_target_domain</token> <parameter>domain</parameter></term>
+<term><token>write_target_domain</token> <parameter>ドメイン名</parameter></term>
 <listitem>
-<para>Gfarm tries to choose a filesystem node in the domain specified by
-this directive, when it selects a node to write a file.
-If there is no suitable node for writing in this domain, or if this
-directive is not specified, the filesystem node will be chosen from
-among all nodes.
+<para>gfarmがファイルを書き込むノードを決める際、できる限りここで
+指定したドメインを優先するように動作します。
+ここで指定したドメインにファイル作成可能なホストが存在しない場合や、
+特にこの指定を行なわなかった場合には、全ノードが対象となります。
 <!--
-You can specify this domain with the GFARM_WRITE_TARGET_DOMAIN environment
-variable too.
-When both this directive and the environment variable are specified,
-the value specified by the environment variable will be used.
+環境変数GFARM_WRITE_TARGET_DOMAINでも、同様な指定ができます。
+両方指定した場合は、環境変数が優先されます。
+なります。
  -->
-Note that if you specify this directive more than once, only the first one
-will be used and the others are ignored.
+この指定を複数回行なっても、最初の指定のみが利用され、二番目以降は
+単に無視されるので注意してください。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	write_target_domain example.org
 </literallayout>
@@ -1255,21 +1209,21 @@ will be used and the others are ignored.
 </varlistentry>
 
 <varlistentry>
-<term><token>minimum_free_disk_space</token> <parameter>bytes</parameter></term>
+<term><token>minimum_free_disk_space</token> <parameter>バイト数</parameter></term>
 <listitem>
-<para>This directive specifies free disk space (in bytes) which is
-required on filesystem nodes. The Gfarm scheduler excludes filesystem nodes
-which have less free space than this parameter, when it
-schedules nodes for jobs which may write files.
-The free space value may have a suffix like ``k'' (kilo bytes), 
-``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
-The default size is 128M bytes.
+<para>ファイルシステムノードで必要な最小限度のディスク空き容量を指定
+します。このサイズ以下の空き容量しかないファイルシステムノードは、
+ファイル書き込みを行う可能性のある操作を行う際に、選択されにくくなります。
+指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定
+することで、それぞれ1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする
+ことができます。
+デフォルトは128Mバイトです。
 </para>
 <para>
-This directive has to be specified in both gfarm2.conf and gfmd.conf.
-After restarting the gfmd and the Gfarm client, it is effective.
+このパラメータは、gfarm2.confとgfmd.confの両方で指定する必要があります。
+有効にするためには gfmd および Gfarmクライアントを再起動する必要があります。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	minimum_free_disk_space 1G
 </literallayout>
@@ -1277,13 +1231,13 @@ After restarting the gfmd and the Gfarm client, it is effective.
 </varlistentry>
 
 <varlistentry>
-<term><token>gfs_proto_fhremove_request_window</token> <parameter>number</parameter></term>
+<term><token>gfs_proto_fhremove_request_window</token> <parameter>同時処理数</parameter></term>
 <listitem>
-<para>This directive specifies maximum number of
-outstanding replica removal requests from gfmd to gfsd.
-The default is 50.
+<para>gfmd から gfsd に対する複製ファイル削除を、
+同時にいくつまで並行して要求できるかを設定します。
+デフォルトは 50 です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	gfs_proto_fhremove_request_window 50
 </literallayout>
@@ -1291,14 +1245,13 @@ The default is 50.
 </varlistentry>
 
 <varlistentry>
-<term><token>gfs_proto_replication_request_window</token> <parameter>number</parameter></term>
+<term><token>gfs_proto_replication_request_window</token> <parameter>同時処理数</parameter></term>
 <listitem>
-<para>This directive specifies maximum number of
-outstanding gfmd-initiated replication requests
-from gfmd to destination-side gfsd.
-The default is 20.
+<para>gfmd 主導の複製処理を、gfmd から複製作成側の gfsd に対して、
+同時にいくつまで並行して要求できるかを設定します。
+デフォルトは 20 です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	gfs_proto_replication_request_window 20
 </literallayout>
@@ -1306,15 +1259,15 @@ The default is 20.
 </varlistentry>
 
 <varlistentry>
-<term><token>simultaneous_replication_receivers</token> <parameter>number</parameter></term>
+<term><token>simultaneous_replication_receivers</token> <parameter>同時処理数</parameter></term>
 <listitem>
-<para>This directive is just an alias of
-the gfs_proto_replication_request_window directive since gfarm-2.6.
-Please use that directive instead.
-This directive remains for compatibility with older versions.
-The default is 20.
+<para>gfarm-2.6 以降では、
+このパラメータは gfs_proto_replication_request_window と同じ意味となりますので、
+そちらを利用してください。
+このパラメータは以前のバージョンとの互換性のために残されています。
+デフォルトは 20です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	simultaneous_replication_receivers 20
 </literallayout>
@@ -1322,14 +1275,14 @@ The default is 20.
 </varlistentry>
 
 <varlistentry>
-<term><token>outstanding_file_replication_limit</token> <parameter>number</parameter></term>
+<term><token>outstanding_file_replication_limit</token> <parameter>同時処理数</parameter></term>
 <listitem>
-<para>This directive specifies maximum number of
-outstanding gfmd-initiated replication requests in whole system.
-This exists to prevent memory shortage of gfmd.
-The default is 4194304 and this value corresponds to approximately 512MB memory.
+<para>gfmd 主導の複製処理要求を、システム全体で、
+同時にいくつまで未了のまま保持しておけるかを設定します。
+このパラメータは、大量の複製要求によるメモリ不足を防ぐために存在します。
+デフォルトは 4194304 であり、これはおよそ 512MB のメモリに対応します。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	outstanding_file_replication_limit 4194304
 </literallayout>
@@ -1337,12 +1290,13 @@ The default is 4194304 and this value corresponds to approximately 512MB memory.
 </varlistentry>
 
 <varlistentry>
-<term><token>gfsd_connection_cache</token> <parameter>number</parameter></term>
+<term><token>gfsd_connection_cache</token> <parameter>コネクション数</parameter></term>
 <listitem>
-<para>This directive specifies maximum number of cached gfsd connections.
-The default is 16.
+<para>gfarmライブラリがgfsdとの通信に用いるコネクションを、いくつ
+までキャッシュするかを指定します。
+デフォルトは16コネクションです。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	gfsd_connection_cache 32
 </literallayout>
@@ -1350,15 +1304,16 @@ The default is 16.
 </varlistentry>
 
 <varlistentry>
-<term><token>xmlattr_size_limit</token> <parameter>bytes</parameter></term>
+<term><token>xmlattr_size_limit</token> <parameter>バイト数</parameter></term>
 <listitem>
-<para>This directive specifies maximum size of XML extended attributes.
-The default is 786432, and numbers greater than 983040 are not allowed.
+<para>XML拡張属性の値として、何バイトまで設定可能かを指定します。
+デフォルトは786432バイトです。
+983040バイトよりも大きな値を指定することはできません。
 </para>
 <para>
-This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	xmlattr_size_limit 786432
 </literallayout>
@@ -1366,15 +1321,16 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>xattr_size_limit</token> <parameter>bytes</parameter></term>
+<term><token>xattr_size_limit</token> <parameter>バイト数</parameter></term>
 <listitem>
-<para>This directive specifies maximum size of extended attributes.
-The default is 65536, and numbers greater than 983040 are not allowed.
+<para>拡張属性の値として、何バイトまで設定可能かを指定します。
+デフォルトは65536バイトです。
+983040バイトよりも大きな値を指定することはできません。
 </para>
 <para>
-This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	xattr_size_limit 65536
 </literallayout>
@@ -1382,13 +1338,12 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>attr_cache_limit</token> <parameter>number</parameter></term>
+<term><token>attr_cache_limit</token> <parameter>個数</parameter></term>
 <listitem>
-<para>This directive specifies maximum number of cached attributes in
-gfarm library.
-The default is 40000.
+<para>gfarmライブラリがキャッシュする属性の最大数を指定します。
+デフォルトは40000個です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	attr_cache_limit 100000
 </literallayout>
@@ -1396,13 +1351,12 @@ The default is 40000.
 </varlistentry>
 
 <varlistentry>
-<term><token>attr_cache_timeout</token> <parameter>milliseconds</parameter></term>
+<term><token>attr_cache_timeout</token> <parameter>ミリ秒数</parameter></term>
 <listitem>
-<para>This directive specifies maximum time until cached attributes expire
-in milliseconds.
-The default is 1000, i.e. 1 second.
+<para>gfarmライブラリが属性をキャッシュしている時間を、ミリ秒単位で指定します。
+デフォルトは 1000ミリ秒すなわち 1秒です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	attr_cache_timeout 3600000
 </literallayout>
@@ -1410,17 +1364,32 @@ The default is 1000, i.e. 1 second.
 </varlistentry>
 
 <varlistentry>
-<term><token>log_level</token> <parameter>priority_level</parameter></term>
+<term><token>page_cache_timeout</token> <parameter>ミリ秒数</parameter></term>
 <listitem>
-<para>This directive specifies a level of log priority.
-The log output, which priority is inferior to this level, will not be
-sent to syslog or standard error.
-The priority levels are "emerg", "alert", "crit", "err", "warning", "notice",
-"info" and "debug" in highest first order.
-The default level is "info".
-It's not recommended to specify a level higher or equal to "crit".
+<para>gfarmカーネルドライバにのみ関連する値で、ファイルデータを
+キャッシュしている時間を、ミリ秒単位で指定します。
+デフォルトは 1000ミリ秒すなわち 1秒です。
 </para>
-<para>For example,</para>
+<para>例:</para>
+<literallayout>
+	page_cache_timeout 3600000
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>log_level</token> <parameter>優先度レベル</parameter></term>
+<listitem>
+<para>
+どの優先度レベル以上のログを出力するかを指定します。
+ここで指定したレベル未満の優先度のログは、syslogや標準エラーへ
+送られません。
+レベルは、優先度の高い順に"emerg", "alert", "crit", "err", "warning",
+"notice", "info", "debug"です。
+デフォルトの出力レベルは"info"です。
+"crit"以上の優先度を指定することは、お勧めできません。
+</para>
+<para>例:</para>
 <literallayout>
 	log_level debug
 </literallayout>
@@ -1428,14 +1397,15 @@ It's not recommended to specify a level higher or equal to "crit".
 </varlistentry>
 
 <varlistentry>
-<term><token>log_message_verbose_level</token> <parameter>level</parameter></term>
+<term><token>log_message_verbose_level</token> <parameter>レベル</parameter></term>
 <listitem>
-<para>This directive specifies how verbose the log message is.
-The default value is 0, which outputs the log message id.  The level 1
-additionally outputs the file name and the line of source code.  The
-level 2 additionally outputs the function name.
+<para>
+ログメッセージの冗長度を指定します。
+デフォルトは0です。レベル0では、ログIDが出力されます。
+レベル1では、レベル0に加えソースコードのファイル名と行番号が出力されます。
+レベル2では、レベル1に加え関数名が出力されます。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	log_message_verbose_level 1
 </literallayout>
@@ -1443,12 +1413,12 @@ level 2 additionally outputs the function name.
 </varlistentry>
 
 <varlistentry>
-<term><token>log_auth_verbose</token> <parameter>validity</parameter></term>
+<term><token>log_auth_verbose</token> <parameter>有効性</parameter></term>
 <listitem>
 <para>
-When "enable" is specified, verbose messages about authentication are logged.
+enableと指定した場合、認証処理に関する詳細なログを記録します。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	log_auth_verbose enable
 </literallayout>
@@ -1456,16 +1426,16 @@ When "enable" is specified, verbose messages about authentication are logged.
 </varlistentry>
 
 <varlistentry>
-<term><token>file_trace</token> <parameter>validity</parameter></term>
+<term><token>file_trace</token> <parameter>有効性</parameter></term>
 <listitem>
 <para>
-When "enable" is specified, an audit log feature for file creation,
-modification and removal is enabled.
+enableと指定した場合、ファイル作成・変更・削除に関する
+監査ログの出力機能を有効にします。
 </para>
 <para>
-This directive is available in both gfarm2.conf and gfmd.conf.
+このパラメータは、gfarm2.confとgfmd.confの両方で有効です。
 </para>
-<para>Here is an example:</para>
+<para>例:</para>
 <literallayout>
 	file_trace enable
 </literallayout>
@@ -1473,33 +1443,33 @@ This directive is available in both gfarm2.conf and gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>fatal_action</token> <parameter>action_name</parameter></term>
+<term><token>fatal_action</token> <parameter>動作名</parameter></term>
 <listitem>
 <para>
-This parameter specifies the behavior at a fatal error.
-The default action is <replaceable>backtrace_and_abort</replaceable>.
+このパラメータでは、致命的なエラーが発生したときの動作を設定します。
+デフォルトは <replaceable>backtrace_and_abort</replaceable> です。
 </para>
 <para>
-<!-- If you write this paragraph after a below <variablelist>,
-     a indent of this section in a man page will be disabled. -->
-For example,
+<!-- この項を下にある<variablelist>の項の後ろに書くと、
+     man page でのインデントが無効化されます。-->
+例:
 </para>
 <literallayout>
 	fatal_action backtrace_and_abort
 </literallayout>
 <para>
-The following actions are supported:
+指定可能な動作名は以下の通りです:
 </para>
 <variablelist>
 <varlistentry>
 <term><token>backtrace_and_abort</token></term>
 <listitem>
 <para>
-Print a backtrace, and then call
+バックトレースを出力した後、
 <citerefentry>
 <refentrytitle>abort</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry>
-.
+を呼びます。
 </para>
 </listitem>
 </varlistentry>
@@ -1507,11 +1477,11 @@ Print a backtrace, and then call
 <term><token>backtrace_and_exit</token></term>
 <listitem>
 <para>
-Print a backtrace, and then call
+バックトレースを出力した後、
 <citerefentry>
 <refentrytitle>exit</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry>
-.
+を呼びます。
 </para>
 </listitem>
 </varlistentry>
@@ -1519,11 +1489,10 @@ Print a backtrace, and then call
 <term><token>abort</token></term>
 <listitem>
 <para>
-Call
 <citerefentry>
 <refentrytitle>abort</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry>
-.
+を呼びます。
 </para>
 </listitem>
 </varlistentry>
@@ -1531,11 +1500,10 @@ Call
 <term><token>exit</token></term>
 <listitem>
 <para>
-Call
 <citerefentry>
 <refentrytitle>exit</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry>
-.
+を呼びます。
 </para>
 </listitem>
 </varlistentry>
@@ -1544,38 +1512,36 @@ Call
 </varlistentry>
 
 <varlistentry>
-<term><token>debug_command</token> <parameter>command_line</parameter></term>
+<term><token>debug_command</token> <parameter>コマンド行</parameter></term>
 <listitem>
 <para>
-When a Gfarm application program crashes (received SIGSEGV, SIGBUG, etc.),
-a debug command specified in this directive is executed.
-For example,
+Gfarmのアプリケーションプログラムがクラッシュした際 (SIGSEGV, SIGBUGを
+受け取る等した場合)、このパラメータに記したデバッグコマンドが実行されます。
+記述例を示します。
 </para>
 <literallayout>
 	debug_command env DISPLAY=:0.0 xterm -e gdb %e %p
 </literallayout>
 <para>
-"%e" and "%p" are expanded to an actual program name and a process ID,
-respectively.
-If you'd like to use "%" character itself in the command line,
-type "%%".
+ここで、"%e", "%p" は実際のプログラム名、プロセスIDにそれぞれ展開されます。
+"%" 文字自体をコマンドライン中に記述したい場合は、"%%" と書いて下さい。
 </para>
 <para>
-This directive is available in both gfarm2.conf and gfmd.conf.
-If this directive is omitted, no debug command is executed.
+このパラメータは、gfarm2.confとgfmd.confの両方で有効です。
+このパラメータを指定しなかった場合、デバッグコマンドは実行されません。
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>no_file_system_node_timeout</token> <parameter>seconds</parameter></term>
+<term><token>no_file_system_node_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
-<para>If there is no file system node available,
-Gfarm client library periodically tries to find a file system node.
-This directive specifies the timeout to try in seconds.
-The default is 30 seconds.
+<para>利用可能なファイルシステムノードが存在しない場合，
+Gfarmクライアントライブラリはファイルシステムノードが利用可能になるまで試行を繰り返しますが、
+そのタイムアウト時間を秒単位で指定します。
+デフォルトは 30秒です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	no_file_system_node_timeout 30
 </literallayout>
@@ -1583,14 +1549,14 @@ The default is 30 seconds.
 </varlistentry>
 
 <varlistentry>
-<term><token>gfmd_reconnection_timeout</token> <parameter>seconds</parameter></term>
+<term><token>gfmd_reconnection_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
-<para>If the connection to the metadata server is disconnected,
-Gfarm client library periodically tries to reconnect.
-This directive specifies the timeout to try in seconds.
-The default is 30 seconds.
+<para>メタデータサーバへの接続が切断された場合，
+メタデータサーバへの再接続を繰り返しますが，
+そのタイムアウト時間を秒単位で指定します。
+デフォルトは 30秒です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	gfmd_reconnection_timeout 30
 </literallayout>
@@ -1599,16 +1565,16 @@ The default is 30 seconds.
 
 <!--
 <varlistentry>
-<term><token>record_atime </token><parameter>validity</parameter></term>
+<term><token>record_atime</token> <parameter>有効性</parameter></term>
 <listitem>
-<para>When "enable" is specified, Gfarm records last access time strictly.
-When "disabled" is specified, the access time becomes inaccurate, but
-such setting reduces the load of metadata updates, and may improve
-performance.
-The "disable" setting corresponds to "noatime" setting in usual filesystem.
+<para>
+このオプションがenableの場合、最終アクセス時刻をきちんと記録します。
+disableの場合には最終アクセス時刻の記録は不正確になりますが、
+メタデータ更新の負荷が下がり、性能が向上することがあります。
+disable設定は、通常のファイルシステムにおける"noatime"オプションに
+相当します。
 </para>
-
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	record_atime disable
 </literallayout>
@@ -1617,20 +1583,19 @@ The "disable" setting corresponds to "noatime" setting in usual filesystem.
  -->
 
 <varlistentry>
-<term><token>atime</token> <parameter>type</parameter></term>
+<term><token>atime</token> <parameter>タイプ</parameter></term>
 <listitem>
 <para>
-When "disable" is specified, atime (access time) is not updated.  When
-"relative" is specified, atime is only updated if the previous atime
-is earlier than the current mtime (modify time) or ctime (change
-time), or if the previous atime is more than 1 day old.  When "strict"
-is specified, atime is always updated.  The default setting is
-"relative".
+このオプションがdisableの場合、atime(ファイルアクセス時刻)は更新されま
+せん。relativeの場合、mtime(ファイル修正時刻)またはctime(ファイル変更時
+刻)よりも、既にセットされているatimeが早い時刻のとき、またはatimeが1日
+以上更新されていないときだけ、atimeが更新されます。strictの場合、atime
+は常に更新されます。標準設定はrelativeです。
 </para>
 <para>
-This parameter is only available in gfmd.conf.
+この文はgfmd.confのみで有効です。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	atime disable
 </literallayout>
@@ -1638,15 +1603,15 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>client_file_bufsize</token> <parameter>bytes</parameter></term>
+<term><token>client_file_bufsize</token> <parameter>バイト数</parameter></term>
 <listitem>
-<para>This directive specifies the file buffer size in bytes used in
-  the Gfarm client library (libgfarm).  The default size is 1048568
-  bytes (= 1MiB - 8B).  The file buffer size should be less than the
-  default value not for deterioration of remote access performance for
-  version 2.5.0 or earlier.
+<para>Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ
+  サイズをバイト単位で指定します。デフォルトは1048568バイト（= 1MiB -
+  8B）です。Gfarm-2.5.0以前では、ファイルのバッファサイズは、遠隔ファイ
+  ルアクセス性能を極端に低下させないためにも、デフォルト値以下である必
+  要があります。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
 	client_file_bufsize 65536
 </literallayout>
@@ -1654,25 +1619,26 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>client_parallel_copy</token> <parameter>num-of-parallel</parameter></term>
+<term><token>client_parallel_copy</token> <parameter>並列度</parameter></term>
 <listitem>
-<para>This directive specifies the number of parallel for <command>gfprep</command> and <command>gfpcopy</command> to work in parallel.
-When this number is not specified, the default number of parallel is 4.
+<para><command>gfprep</command>コマンドと<command>gfpcopy</command>コマ
+ンドが並列で動作する際の並列度を指定します。指定しない場合は
+4並列で動作します。
 </para>
-<para>For example,</para>
+<para>例:</para>
 <literallayout>
-	client_palallel_copy 10
+	client_parallel_copy 10
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>profile </token><parameter>validity</parameter></term>
+<term><token>profile</token> <parameter>有効性</parameter></term>
 <listitem>
-<para>When "enable" is specified, Gfarm outputs the profile information.
+<para>
+このオプションがenableの場合、プロファイル情報を出力します。
 </para>
-
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	profile enable
 </literallayout>
@@ -1680,15 +1646,15 @@ When this number is not specified, the default number of parallel is 4.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_list</token> <parameter>gfmd-hostname[:port]</parameter> <parameter>...</parameter></term>
+<term><token>metadb_server_list</token> <parameter>gfmdホスト名[:ポート番号]</parameter> <parameter>...</parameter></term>
 <listitem>
-<para>This parameter specifies connection destinations of redundant metadata servers delimited by space.
-If port is not specified, port will be 601 which is the default value.
+<para>冗長化メタデータサーバの接続先一覧をスペース区切りで指定します。
+ポート番号を省略するとデフォルトの601を指定したことになります。
 </para>
 <para>
-This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
+この文はgfarm2.confのみで有効であり、gfmd.confでは無視されます。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_list mds1 mds2:701
 </literallayout>
@@ -1696,15 +1662,14 @@ This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_replication</token> <parameter>validity</parameter></term>
+<term><token>metadb_replication</token> <parameter>有効性</parameter></term>
 <listitem>
-<para>When "enable" is specified, the redundant metadata feature is enabled.
-The default value is disable.
+<para>このオプションがenableの場合、メタデータ冗長化機能が有効になります。デフォルトは disable です。
 </para>
 <para>
-This parameter is only available in gfmd.conf.
+この文はgfmd.confのみで有効です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	metadb_replication enable
 </literallayout>
@@ -1712,19 +1677,17 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>synchronous_replication_timeout</token> <parameter>seconds</parameter></term>
+<term><token>synchronous_replication_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
-<para>This parameter specifies timeout for executing synchronous replication in seconds.
-If the timeout period passed, the connection to the slave gfmd where replicates to
-will disconnect.
-The replication process in the master gfmd for the disconnected slave gfmd stops until
-the slave gfmd connects.
-The default is 10.
+<para>メタデータの同期レプリケーション実行時のタイムアウト時間を秒単位で設定します。
+タイムアウト時間を過ぎた場合、同期先のスレーブgfmdとのgfmd channelの接続は切断されます。
+接続が切断したスレーブgfmdへのレプリケーションは、スレーブgfmdが再接続してくるまで中断します。
+デフォルトは 10 です。
 </para>
 <para>
-This parameter is only available in gfmd.conf.
+この文はgfmd.confのみで有効です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	synchronous_replication_timeout 30
 </literallayout>
@@ -1732,18 +1695,16 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>synchronous_journaling</token> <parameter>validity</parameter></term>
+<term><token>synchronous_journaling</token> <parameter>有効性</parameter></term>
 <listitem>
-<para>When "enable" is specified, fdatasync is called
-after update information is saved to the journal file.
-The timing of calling fdatasync is after writing the records from transaction-begin
-to transaction-end in one transaction.
-The default is "enable".
+<para>このオプションがenableの場合、ジャーナルファイルへ更新情報を保存した後にfdatasyncを実行します。
+実行するタイミングは、1つのトランザクションの開始から終了までのレコードを書き込んだ後です。
+デフォルトはenableです。
 </para>
 <para>
-This parameter is only available in gfmd.conf.
+この文はgfmd.confのみで有効です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	synchronous_journaling disable
 </literallayout>
@@ -1751,20 +1712,18 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_force_slave</token> <parameter>validity</parameter></term>
+<term><token>metadb_server_force_slave</token> <parameter>有効性</parameter></term>
 <listitem>
-<para>When "enable" is specified, even if the gfmd is set to default master,
-it run as slave gfmd forcedly.
-The default is "disable".
+<para>enable のとき、デフォルトのマスターgfmdとして設定されている場合でも、スレーブgfmdとして起動します。
+デフォルトはdisableです。
 </para>
 <para>
-NOTE: Please do not use this feature for now,
-because this implementation is not complete.
+注意: この機能の実装は不完全ですので、今のところ、利用しないでください。
 </para>
 <para>
-This parameter is only available in gfmd.conf.
+この文はgfmd.confのみで有効です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_force_slave enable
 </literallayout>
@@ -1772,20 +1731,18 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_slave_listen</token> <parameter>validity</parameter></term>
+<term><token>metadb_server_slave_listen</token> <parameter>有効性</parameter></term>
 <listitem>
-<para>When "enable" is specified, even if the gfmd is set to slave,
-it receives requests from clients.
-The default is "disable".
+<para>enable のとき、スレーブgfmdとして設定されている場合でも、クライアントからの要求を受け付けます。
+デフォルトはdisableです。
 </para>
 <para>
-NOTE: Please do not set this directive for ordinary use,
-because this feature is only for development.
+注意: この機能は開発用に用意されていますので、通常の用途では設定しないでください。
 </para>
 <para>
-This parameter is only available in gfmd.conf.
+この文はgfmd.confのみで有効です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_slave_listen enable
 </literallayout>
@@ -1793,15 +1750,14 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_slave_max_size</token> <parameter>number</parameter></term>
+<term><token>metadb_server_slave_max_size</token> <parameter>ノード数</parameter></term>
 <listitem>
-<para>This parameter specifies the maximum number of slave gfmds.
-The default is "32".
+<para>スレーブgfmdの最大ノード数を指定します。デフォルトは16です。
 </para>
 <para>
-This parameter is only available in gfmd.conf.
+この文はgfmd.confのみで有効です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	metadb_server_slave_max_size 40
 </literallayout>
@@ -1809,16 +1765,16 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_journal_dir</token> <parameter>directory</parameter></term>
+<term><token>metadb_journal_dir</token> <parameter>ジャーナルディレクトリ</parameter></term>
 <listitem>
-<para>This parameter specifies the directory for the journal file.
-The value of this parameter is specified at config-gfarm execution .
-When this parameter is not specified, the gfmd does not start.
+<para>ジャーナルファイルの保存ディレクトリを指定します。
+このオプションはconfig-gfarmで指定します。
+このオプションが指定されていない場合、gfmdは起動しません。
 </para>
 <para>
-This parameter is only available in gfmd.conf.
+この文はgfmd.confのみで有効です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	metadb_journal_dir /var/gfarm-metadata/journal
 </literallayout>
@@ -1826,16 +1782,16 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_journal_max_size</token> <parameter>file_size</parameter></term>
+<term><token>metadb_journal_max_size</token> <parameter>ファイルサイズ</parameter></term>
 <listitem>
-<para>This parameter specifies the max size of the journal file in bytes.
-Beware that the larger the size is, the longer it takes time for the gfmd to complete starting.
-The default is 33554432 (32 MBytes).
+<para>ジャーナルファイルの最大サイズを指定します。
+サイズが大きいほど、gfmdが起動完了するまでの時間が長くなることに注意してください。
+デフォルトは 33554432 (32 MBytes)です。
 </para>
 <para>
-This parameter is only available in gfmd.conf.
+この文はgfmd.confのみで有効です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	metadb_journal_max_size 8388608
 </literallayout>
@@ -1843,19 +1799,18 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_journal_recvq_size</token> <parameter>size</parameter></term>
+<term><token>metadb_journal_recvq_size</token> <parameter>キュー長</parameter></term>
 <listitem>
-<para>This parameter specifies the maximum number of on-memory records of
-the journal data that the slave gfmd receives from the master gfmd.
-If it reaches this value, the slave gfmd gives up and exits,
-because the gfmd thinks that it's too slow to apply the journal data
-to the backend database.
-The default value is 100000.
+<para>スレーブgfmdが、マスターgfmdから受け取るジャーナルデータに関して、
+メモリ上に保持する最大レコード数を指定します。
+このサイズを越えて保持する必要が生じた場合には、バックエンド・データベース
+への反映に遅延が生じていると見なし、スレーブとしての動作を諦めて終了します。
+デフォルトは100000です。
 </para>
 <para>
-This parameter is only available in gfmd.conf.
+この文はgfmd.confのみで有効です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	metadb_journal_recvq_size 100000
 </literallayout>
@@ -1863,18 +1818,18 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>replica_check</token> <parameter>validity</parameter></term>
+<term><token>replica_check</token> <parameter>有効性</parameter></term>
 <listitem>
 <para>
-When "enable" is specified, the replica_check system in gfmd can check
-and fix the number and placement of file replicas automatically.  The
-replica_check works only when necessary.  The default value is
-"enable".
+enableと指定した場合、gfmd内のreplica_check機能が自動的に、
+ファイル複製の数と配置をチェックし、修復します。
+replica_checkは必要なときにしか動作しません。
+デフォルトはenableです。
 </para>
 <para>
-This parameter is only available in gfmd.conf.
+この文はgfmd.confのみで有効です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	replica_check disable
 </literallayout>
@@ -1882,17 +1837,17 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>replica_check_host_down_thresh</token> <parameter>seconds</parameter></term>
+<term><token>replica_check_host_down_thresh</token> <parameter>秒数</parameter></term>
 <listitem>
 <para>
-If a gfsd is down, the replica_check assumes that the gfsd is not down
-until the specified seconds.  This is useful to maintain a gfsd.  The
-default value is 10800 seconds (3 hours).
+gfsdが停止した場合、replica_checkは指定した秒数までそのgfsdが停止してい
+ないとみなします。これはgfsdを保守するために有用です。
+デフォルトは10800秒(3時間)です。
 </para>
 <para>
-This parameter is only available in gfmd.conf.
+この文はgfmd.confのみで有効です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	replica_check_host_down_thresh 3600
 </literallayout>
@@ -1900,20 +1855,19 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>replica_check_sleep_time</token> <parameter>nanoseconds</parameter></term>
+<term><token>replica_check_sleep_time</token> <parameter>ナノ秒</parameter></term>
 <listitem>
 <para>
-If this value is increased, the replica_check works more slowly only
-when the gfmd is busy.  When the gfmd is not busy, the replica_check
-works at full speed.  This directive specifies the nanoseconds to
-sleep in the replica_check.  The default value is 100000 nanoseconds
-(0.1 millisecond).  The maximum value is 1000000000 nanoseconds (1
-second).
+この値を増やすと、replica_checkはgfmdが忙しい場合に限り、ゆっくり動作します。
+gfmdが忙しくない場合、replica_checkは全力で動作します。
+replica_check内でスリープする時間をナノ秒で指定します。
+デフォルトは100000ナノ秒(0.1ミリ秒)です。
+最大値は1000000000ナノ秒(1秒)です。
 </para>
 <para>
-This parameter is only available in gfmd.conf.
+この文はgfmd.confのみで有効です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	replica_check_sleep_time 0
 </literallayout>
@@ -1921,17 +1875,17 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>replica_check_minimum_interval</token> <parameter>seconds</parameter></term>
+<term><token>replica_check_minimum_interval</token> <parameter>秒</parameter></term>
 <listitem>
 <para>
-This directive specifies the minimum interval in seconds, for the
-replica_check to work.  The default value is 10 seconds, i.e. the
-replica_check can work up to one time every 10 seconds.
+replica_checkが動作するための最小間隔(秒)を指定します。
+デフォルトは10秒です。
+つまり、replica_checkは10秒間に最大1回動作することができます。
 </para>
 <para>
-This parameter is only available in gfmd.conf.
+この文はgfmd.confのみで有効です。
 </para>
-<para>Example:</para>
+<para>例:</para>
 <literallayout>
 	replica_check_minimum_interval 5
 </literallayout>
@@ -1942,7 +1896,7 @@ This parameter is only available in gfmd.conf.
 </refsect1>
 
 <refsect1 id='grammar'><title>GRAMMAR</title>
-<para>This is a grammar of gfarm2.conf described by the BNF notation.</para>
+<para>gfarm2.confの文法をBNFで記述すると、下記のようになります。</para>
 <variablelist>
 <varlistentry>
 <term>&lt;statement&gt; ::=</term>
@@ -2010,6 +1964,7 @@ This parameter is only available in gfmd.conf.
 	&lt;xattr_size_limit_statement&gt; |
 	&lt;attr_cache_limit_statement&gt; |
 	&lt;attr_cache_timeout_statement&gt; |
+	&lt;page_cache_timeout_statement&gt; |
 	&lt;log_level_statement&gt; |
 	&lt;log_message_verbose_level_statement&gt; |
 	&lt;log_auth_verbose_statement&gt; |
@@ -2419,6 +2374,12 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<varlistentry>
+<term>&lt;page_cache_timeout_statement&gt; ::=</term>
+<listitem><literallayout>"page_cache_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
 <term>&lt;log_level_statement&gt; ::=</term>
 <listitem><literallayout>"log_level" &lt;log_priority&gt;</literallayout></listitem>
 </varlistentry>
@@ -2682,7 +2643,7 @@ This parameter is only available in gfmd.conf.
 
 <refsect1 id='examples'><title>EXAMPLES</title>
 <para>
-The following is an example of gfarm2.conf to use sharedsecret authentication.
+以下は sharedsecret認証を使う gfarm2.conf の例です。
 </para>
 <literallayout>
 metadb_server_host metadb.example.org
@@ -2692,10 +2653,9 @@ sockopt keepalive
 </literallayout>
 
 <para>
-The following is an example of gfmd.conf
-to use PostgreSQL to store the metadata,
-and to allow access from filesystem nodes and clients at IP address
-192.168.0.0/24, via sharedsecret authentication.
+メタデータの保存にPostgreSQLを使い、IPアドレス192.168.0.0/24の
+ファイルシステムノードやクライアントに対して、sharedsecret認証を
+使う gfmd.conf の例です。
 </para>
 <literallayout>
 metadb_server_host metadb.example.org
@@ -2711,9 +2671,9 @@ sockopt keepalive
 </literallayout>
 
 <para>
-The following is an example of gfmd.conf to use LDAP to store the metadata,
-and to allow access from filesystem nodes and clients at any IP address,
-via GSI authentication.
+メタデータの保存にLDAPを使い、任意のIPアドレスを使う
+ファイルシステムノードやクライアントに対して、GSI認証を使う
+gfmd.conf の例です。
 </para>
 <literallayout>
 metadb_server_host metadb.example.com
