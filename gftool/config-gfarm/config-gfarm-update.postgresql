@@ -60,7 +60,9 @@ update_first_set_param_postgresql()
 	: ${DB_NAME:=`getvalue postgresql_dbname`}
 	: ${BACKEND_USER:=`getvalue postgresql_user`}
 	: ${SUPPORT_XML_TYPE:=no}
-	unset PGHOST # force UNIX domain socket access
+	: ${PGHOST:=localhost}
+	: ${PGPORT:=$BACKEND_PORT}
+	export PGHOST PGPORT
 	psql=${PGSQL_BINDIR}/psql
 }
 
@@ -88,7 +90,7 @@ update_sanity_postgresql()
 create_table()
 {
 	table=$1
-	count=`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "\\dt ${table}" | wc -l`
+	count=`$psql -q -t -A -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "\\dt ${table}" | wc -l`
 	[ X"$count" = X ] && return
 	if [ $count -eq 0 ]; then
 		echo "${PROGNAME}: adding ${table} table"
@@ -99,7 +101,7 @@ create_table()
 GRANT SELECT, INSERT, UPDATE, DELETE ON ${table} TO $BACKEND_USER;
 __EOF__
 		) |
-			$psql -q -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+			$psql -q -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
 	fi
 }
 
@@ -112,14 +114,14 @@ update_postgresql()
 	create_table SeqNum
 	create_table MdHost
 
-	seqnum_count=`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "select count(*) from SeqNum"`
+	seqnum_count=`$psql -q -t -A -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "select count(*) from SeqNum"`
 	if [ X"$seqnum_count" = X"0" ]; then
 		echo "INSERT INTO SeqNum (name, value) VALUES ('', '1')" \
-			| $psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+			| $psql -q -t -A -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
 	fi
 
 	if [ X"$SUPPORT_XML_TYPE" = Xyes -a \
-		"`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c '\dt XmlAttr' | wc -l`" -eq 0 ]; then
+		"`$psql -q -t -A -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c '\dt XmlAttr' | wc -l`" -eq 0 ]; then
 		echo "${PROGNAME}: adding XmlAttr table"
 
 		(
@@ -128,7 +130,7 @@ update_postgresql()
 GRANT SELECT, INSERT, UPDATE, DELETE ON XmlAttr TO $BACKEND_USER;
 __EOF__
 		) |
-			$psql -q -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+			$psql -q -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
 	fi
 }
 
@@ -136,5 +138,5 @@ update_access_db_postgresql()
 {
 	OPTIONS="$*"
 
-	$psql -p $BACKEND_PORT $OPTIONS $DB_NAME $BACKEND_ADMIN_USER
+	$psql $OPTIONS $DB_NAME $BACKEND_ADMIN_USER
 }
