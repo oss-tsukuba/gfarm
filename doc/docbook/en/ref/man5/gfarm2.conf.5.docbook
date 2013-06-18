@@ -1364,6 +1364,20 @@ The default is 1000, i.e. 1 second.
 </varlistentry>
 
 <varlistentry>
+<term><token>page_cache_timeout</token> <parameter>milliseconds</parameter></term>
+<listitem>
+<para>This directive specifies maximum time until cached pages expire
+in milliseconds only related to linux kernel driver.
+The default is 1000, i.e. 1 second.
+</para>
+<para>For example,</para>
+<literallayout>
+	page_cache_timeout 3600000
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>log_level</token> <parameter>priority_level</parameter></term>
 <listitem>
 <para>This directive specifies a level of log priority.
