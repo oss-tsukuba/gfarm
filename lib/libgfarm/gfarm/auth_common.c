@@ -20,11 +20,13 @@
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+#include <gfarm/gfs.h>
 
 #include "gfutil.h"
 #include "thrsubr.h"
 
 #include "context.h"
+#include "config.h"
 #include "liberror.h"
 #include "auth.h"
 
@@ -210,9 +212,10 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 #ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
 	o_uid = o_gid = 0;
 #endif
-#ifdef __KERNEL__	/* keyfilename :: multi user */
-	if (!(keyfilename = getenv("GFARM_SHARED_KEY"))) {
-#endif /* __KERNEL__ */
+	keyfilename = getenv("GFARM_SHARED_KEY");
+	if (keyfilename == NULL)
+		keyfilename = gfarm_get_shared_key_file();
+	if (keyfilename == NULL) {
 		GFARM_MALLOC_ARRAY(keyfilename,
 			strlen(home) + sizeof(keyfile_basename));
 		if (keyfilename == NULL) {
@@ -224,9 +227,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 		strcpy(keyfilename, home);
 		strcat(keyfilename, keyfile_basename);
 		allocbuf = keyfilename;
-#ifdef __KERNEL__
 	}
-#endif /* __KERNEL__ */
 
 	if (pwd != NULL) {
 		gfarm_auth_privilege_lock(diag);

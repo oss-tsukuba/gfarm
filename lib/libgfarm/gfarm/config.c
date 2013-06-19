@@ -65,6 +65,9 @@
 struct gfarm_config_static {
 	char *config_file;
 
+	/* security */
+	char *shared_key_file;
+
 	/* xattr cache handling */
 	gfarm_stringlist xattr_cache_list;
 
@@ -93,6 +96,7 @@ gfarm_config_static_init(struct gfarm_context *ctxp)
 		return (GFARM_ERR_NO_MEMORY);
 
 	s->config_file = GFARM_CONFIG;
+	s->shared_key_file = NULL;
 	/* xattr_cache_list is initialized in gfarm_init_config() */
 	s->local_ug_maps_tab = NULL;
 	s->local_username = NULL;
@@ -114,6 +118,8 @@ gfarm_config_static_term(struct gfarm_context *ctxp)
 
 	if (s == NULL)
 		return;
+
+	free(s->shared_key_file);
 	/*
 	 * The following gfarm_stringlist_free_deeply() call also is
 	 * performed by gfarm_free_config(), but the repeated call of
@@ -1235,6 +1241,12 @@ void
 gfarm_set_metadb_server_force_slave(int slave)
 {
 	metadb_server_force_slave = slave;
+}
+
+char *
+gfarm_get_shared_key_file()
+{
+	return (staticp->shared_key_file);
 }
 
 enum gfarm_spool_check_level
@@ -2836,6 +2848,8 @@ parse_one_line(char *s, char *p, char **op)
 		if (e == GFARM_ERR_NO_ERROR)
 			e = set_backend_db_type_localfs();
 
+	} else if (strcmp(s, o = "shared_key_file") == 0) {
+		e = parse_set_var(p, &staticp->shared_key_file);
 	} else if (strcmp(s, o = "auth") == 0) {
 		e = parse_auth_arguments(p, &o);
 #if 0 /* not yet in gfarm v2 */

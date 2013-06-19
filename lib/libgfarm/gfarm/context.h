@@ -4,6 +4,7 @@ struct gfarm_context {
 	int metadb_server_port;
 	char *metadb_admin_user;
 	char *metadb_admin_user_gsi_dn;
+	char *shared_key_file;
 
 	int log_level;
 	int no_file_system_node_timeout;
