@@ -538,6 +538,9 @@ gfs_server_get_request(struct gfp_xdr *client, const char *diag,
 		    diag, gfarm_error_string(e));
 }
 
+#define IS_IO_ERROR(e) \
+	((e) == GFARM_ERR_INPUT_OUTPUT || (e) == GFARM_ERR_STALE_FILE_HANDLE)
+
 void
 gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 	gfp_xdr_xid_t xid,
@@ -557,7 +560,7 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 		    diag, gfarm_error_string(e));
 
 	/* if input/output error occurs, die */
-	if (ecode == GFARM_ERR_INPUT_OUTPUT) {
+	if (IS_IO_ERROR(ecode)) {
 		kill_master_gfsd = 1;
 		fatal(GFARM_MSG_1002513, "%s: %s, die", diag,
 		    gfarm_error_string(ecode));
@@ -634,6 +637,13 @@ gfs_async_server_put_reply_common(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1002382, "%s put reply: %s",
 		    diag, gfarm_error_string(e));
+
+	/* if input/output error occurs, die */
+	if (IS_IO_ERROR(ecode)) {
+		kill_master_gfsd = 1;
+		fatal(GFARM_MSG_UNFIXED, "%s: %s, die", diag,
+		    gfarm_error_string(ecode));
+	}
 	return (e);
 }
 
@@ -2597,6 +2607,7 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
 	gfarm_off_t used = 0, avail = 0;
+	static const char diag[] = "gfs_server_status";
 
 	/* just check that size == 0 */
 	e = gfs_async_server_get_request(conn, size, "status", "");
@@ -2606,7 +2617,7 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	if (getloadavg(loadavg, GFARM_ARRAY_LENGTH(loadavg)) == -1) {
 		save_errno = EPERM; /* XXX */
 		gflog_warning(GFARM_MSG_1000520,
-		    "gfs_server_status: cannot get load average");
+		    "%s: cannot get load average", diag);
 	} else {
 		save_errno = gfsd_statfs(gfarm_spool_root, &bsize,
 			&blocks, &bfree, &bavail, &files, &ffree, &favail);
@@ -2621,9 +2632,16 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 			avail = bavail * bsize / 1024;
 		}
 	}
-	return (gfs_async_server_put_reply_with_errno(conn, xid,
+	e = gfs_async_server_put_reply_with_errno(conn, xid,
 	    "status", save_errno,
-	    "fffll", loadavg[0], loadavg[1], loadavg[2], used, avail));
+	    "fffll", loadavg[0], loadavg[1], loadavg[2], used, avail);
+	/* die if save_errno != 0 since the gfmd disconnects the connection */
+	if (save_errno != 0) {
+		kill_master_gfsd = 1;
+		fatal(GFARM_MSG_UNFIXED, "%s: %s, die", diag,
+		    strerror(save_errno));
+	}
+	return (e);
 }
 
 static struct gfarm_hash_table *replication_queue_set = NULL;
