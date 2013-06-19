@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "13 June 2013" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "18 June 2013" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -992,6 +992,17 @@ For example,
 
 .nf
 	attr_cache_timeout 3600000
+.fi
+.TP
+\fBpage_cache_timeout \fImilliseconds\fB\fR
+This directive specifies maximum time until cached pages expire
+in milliseconds only related to linux kernel driver.
+The default is 1000, i.e. 1 second.
+
+For example,
+
+.nf
+	page_cache_timeout 3600000
 .fi
 .TP
 \fBlog_level \fIpriority_level\fB\fR
