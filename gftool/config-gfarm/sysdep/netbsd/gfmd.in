@@ -21,9 +21,15 @@ command="@config_gfarm_prefix@/sbin/${name}"
 pidfile="@config_gfarm_gfmd_pid_file@"
 required_files="$CONF"
 
-case $1 in
-    slavestart)
+CMD=$1
+case X$CMD in
+    Xslavestart)
 	OPTIONS="-S $OPTIONS"
+	CMD=start
+	;;
+    Xkill)
+	sig_stop=SIGKILL
+	CMD=stop
 	;;
 esac
 
@@ -32,7 +38,7 @@ command_args="-P $pidfile $OPTIONS"
 
 if [ -f /etc/rc.subr ]; then
 	load_rc_config ${FILE}
-	run_rc_command "$1"
+	run_rc_command "$CMD"
 else
 	echo -n " ${name}"
 	${command} ${gfmd_flags} ${command_args}

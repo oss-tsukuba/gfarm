@@ -18,6 +18,9 @@ export PATH
 test -f $DAEMON || exit 0
 test -f $CONF || exit 0
 
+# status_of_proc
+. /lib/lsb/init-functions
+
 case "$1" in
   start)
 	echo -n "Starting gfarm server: $FILE"
@@ -37,12 +40,21 @@ case "$1" in
 		--retry TERM/forever/-0/1 --exec $DAEMON
 	echo "."
 	;;
+  kill)
+	echo -n "Stopping gfarm server: $FILE"
+	start-stop-daemon --stop --quiet --pidfile $PIDFILE \
+		--retry TERM/5/KILL/1 --exec $DAEMON
+	echo "."
+	;;
+  status)
+	status_of_proc -p $PIDFILE $DAEMON $NAME && exit 0 || exit $?
+	;;
   restart|force-reload)
 	$0 stop
 	$0 start
 	;;
   *)
-	echo "Usage: /etc/init.d/$FILE {start|stop|restart}"
+	echo "Usage: /etc/init.d/$FILE {start|slavestart|stop|kill|status|restart|force-reload}"
 	exit 1
 	;;
 esac
