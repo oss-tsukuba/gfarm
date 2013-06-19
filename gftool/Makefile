@@ -40,6 +40,7 @@ SUBDIRS = \
 	gfspoolpath \
 	gfstat \
 	gfstatus \
+	gftest \
 	gfuser \
 	gfusage \
 	$(gfvoms_sync_targets) \
