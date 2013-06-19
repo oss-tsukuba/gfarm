@@ -19,7 +19,7 @@
 <cmdsynopsis>
   <command>gfstat</command>
 	<arg choice='opt'><replaceable>options</replaceable></arg>
-	<arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+	<arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
