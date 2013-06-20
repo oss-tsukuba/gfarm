@@ -490,6 +490,21 @@ gfarm_is_url(const char *gfarm_url)
 	    == 0);
 }
 
+const char *
+gfarm_url_prefix_hostname_port_skip(const char *url)
+{
+	if (gfarm_is_url(url)) {
+		url += GFARM_URL_PREFIX_LENGTH;
+		if (url[0] == '/' && url[1] == '/') {
+			url += 2; /* skip "//" */
+			/* skip hostname:port */
+			while (url[0] != '\0' && url[0] != '/')
+				url++;
+		}
+	}
+	return (url);
+}
+
 /*
  * Skip directory in the pathname.
  * We want traditional basename(3) here, rather than weird XPG one.
@@ -507,20 +522,9 @@ gfarm_path_dir_skip(const char *path)
 }
 
 const char *
-gfarm_url_dir_skip(const char *gfarm_url)
+gfarm_url_dir_skip(const char *url)
 {
-	const char *dir = gfarm_url;
-
-	if (gfarm_is_url(dir)) {
-		dir += GFARM_URL_PREFIX_LENGTH;
-		if (dir[0] == '/' && dir[1] == '/') {
-			dir += 2; /* skip "//" */
-			/* skip hostname:port */
-			while (dir[0] != '\0' && dir[0] != '/')
-				dir++;
-		}
-	}
-	return (gfarm_path_dir_skip(dir));
+	return (gfarm_path_dir_skip(gfarm_url_prefix_hostname_port_skip(url)));
 }
 
 /* similar to dirname(3) in libc, but returns the result by malloc'ed memory */
