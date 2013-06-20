@@ -17,6 +17,7 @@ gfarm_foreach_directory_hierarchy_internal(
 	char *file, void *arg, struct gfs_stat *st)
 {
 	char *path, *slash;
+	const char *f;
 	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	int file_len;
 	GFS_DirPlus dir;
@@ -24,7 +25,8 @@ gfarm_foreach_directory_hierarchy_internal(
 	struct gfs_stat *stent;
 
 	/* add '/' if necessary */
-	if (*gfarm_url_dir_skip(file))
+	f = gfarm_url_prefix_hostname_port_skip(file);
+	if (*f == '\0' || *gfarm_path_dir_skip(f))
 		slash = "/";
 	else
 		slash = "";
