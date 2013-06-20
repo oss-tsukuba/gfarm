@@ -365,6 +365,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 {
 	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	char *s, *path;
+	const char *p;
 	gfarm_stringlist names;
 	gfs_glob_t types;
 	GFS_Dir dir;
@@ -418,7 +419,8 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 		e_save = e;
 	}
 	gfs_closedir(dir);
-	if (*gfarm_url_dir_skip(path) != '\0') {
+	p = gfarm_url_prefix_hostname_port_skip(path);
+	if (*p == '\0' || *gfarm_url_dir_skip(p) != '\0') {
 		path[len] = '/';
 		path[len + 1] = '\0';
 	}
