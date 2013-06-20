@@ -18,6 +18,7 @@ enum gfarm_spool_check_level gfarm_spool_check_level_get(void);
 const char *gfarm_spool_check_level_get_by_name(void);
 gfarm_error_t gfarm_spool_check_level_set(enum gfarm_spool_check_level);
 gfarm_error_t gfarm_spool_check_level_set_by_name(const char *);
+extern float gfarm_spool_base_load;
 
 /* GFM dependent */
 enum gfarm_atime_type {

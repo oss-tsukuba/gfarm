@@ -2632,6 +2632,11 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 			avail = bavail * bsize / 1024;
 		}
 	}
+	/* add base load */
+	loadavg[0] += gfarm_spool_base_load;
+	loadavg[1] += gfarm_spool_base_load;
+	loadavg[2] += gfarm_spool_base_load;
+
 	e = gfs_async_server_put_reply_with_errno(conn, xid,
 	    "status", save_errno,
 	    "fffll", loadavg[0], loadavg[1], loadavg[2], used, avail);
@@ -3812,6 +3817,10 @@ datagram_server(int sock)
 		    "datagram_server: cannot get load average");
 		return;
 	}
+	/* add base load */
+	loadavg[0] += gfarm_spool_base_load;
+	loadavg[1] += gfarm_spool_base_load;
+	loadavg[2] += gfarm_spool_base_load;
 #ifndef WORDS_BIGENDIAN
 	swab(&loadavg[0], &nloadavg[0], sizeof(nloadavg[0]));
 	swab(&loadavg[1], &nloadavg[1], sizeof(nloadavg[1]));
