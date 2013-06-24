@@ -41,8 +41,7 @@ Gfarm では各種認証機構をサポートしているが、カーネル内�
 \begin{itemize}
 \item	接続要求	\par
 	カーネルドライバが、メタデータサーバとの接続を依頼する
-	インタフェースには、
-	fuse モジュールがエクスポートしているインタフェースを利用する。
+	インタフェースには、character device を利用する。
 
 	これは、アプリケーションが /dev/gfarm をオープンし、
 	このファイルを読み込むことによって、カーネルモジュールの
@@ -217,7 +216,7 @@ mountシステムコールを発行するので、接続するユーザーを指
 			\end{itemize}
 		\item	register_filesystem(file_system_type) で
 			get_sb, kill_sb 関数を登録する。
-		\item	fuse 利用 のための登録を行う。
+		\item	/dev/gfarm の登録を行う。
 		\item	ug_idmapd のための登録を行う。
 		\end{enumerate}
 	\item	mount 時
@@ -346,7 +345,7 @@ mountシステムコールを発行するので、接続するユーザーを指
 		\item	struct gfsk_fdstruct    *gf_fdstructp	\par
 			ファイルデスクリプタを struct file ではなく、
 			int で受け渡すための管理データ。
-		\item	struct fuse_conn        *gf_fc	\par
+		\item	struct gfskdev_conn        *gf_dc	\par
 			mount.gfarm に依頼するためのインタフェースコンテクスト。
 		\end{itemize}
 
@@ -707,6 +706,6 @@ local_group_map	& グローバル/ローカルグループのマップファイ�
 
 	\item	既存の実装、ツールに重なる開発は避ける。
 
-		ユーザー空間とのインタフェースに fuse やsunrpcキャッシュ機構を
+		ユーザー空間とのインタフェースに sunrpcキャッシュ機構を
 		利用した。
 	\end{itemize}
