@@ -42,6 +42,22 @@ struct gfsk_mount_data {
 #define GFSK_OPTLEN_MAX (GFSK_BUF_SIZE - sizeof(struct gfsk_mount_data))
 
 /* request data ---------------------------------------------------*/
+struct gfskdev_in_header {
+	unsigned int	len;
+	unsigned int	opcode;
+	unsigned long	unique;
+	unsigned long	nodeid;
+	unsigned int	uid;
+	unsigned int	gid;
+	unsigned int	pid;
+	unsigned int	padding;
+};
+
+struct gfskdev_out_header {
+	unsigned int	len;
+	int	error;
+	unsigned long	unique;
+};
 
 enum gfsk_opcode {
 	GFSK_OP_CONNECT_GFMD	= 1000,	/* connect to meta server */

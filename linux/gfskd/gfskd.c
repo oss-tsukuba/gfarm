@@ -1,4 +1,5 @@
 #include <sys/param.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -788,7 +789,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	if (params.use_syslog) /* just before fuse_main */
+	if (params.use_syslog)
 		gflog_syslog_open(LOG_PID, syslog_facility);
 
 	e = gfskd_mount(mdatap, &params);

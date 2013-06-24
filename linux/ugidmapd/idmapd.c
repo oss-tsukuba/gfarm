@@ -244,7 +244,7 @@ static int
 idmapdopen(void)
 {
 	int i;
-	for( i = 0; i < IC_ENTMAX; i++)
+	for (i = 0; i < IC_ENTMAX; i++)
 		if (idmapdopenone(&idmapd_ic[i]))
 			return (-1);
 	return (0);
@@ -709,7 +709,7 @@ hostaddrcb(int fd, short which, void *data)
 
 	if ((err = gethostbyname_r(name, &ent, buf, sizeof(buf), &entp, &herr))
 		|| !entp){
-		idmapd_warnx("hostaddr:gethostbyname(%s) %s\n", name, 
+		idmapd_warnx("hostaddr:gethostbyname(%s) %s\n", name,
 			strerror(err));
 		goto err_out;
 	}
@@ -720,7 +720,7 @@ hostaddrcb(int fd, short which, void *data)
 	addfield(&bp, &bsiz, name);
 
 	/* addr */
-	for ( i = 0; entp->h_addr_list[i] && i < IDMAP_HOSTADDR_MAX; i++) {
+	for (i = 0; entp->h_addr_list[i] && i < IDMAP_HOSTADDR_MAX; i++) {
 		inet_ntop(AF_INET, entp->h_addr_list[i], name, sizeof(name));
 		addfield(&bp, &bsiz, name);
 	}
@@ -732,7 +732,7 @@ hostaddrcb(int fd, short which, void *data)
 	else
 		addfield(&bp, &bsiz, entp->h_name);
 
-	for ( i = 0; entp->h_aliases[i] && i < IDMAP_HOSTNAME_MAX -1; i++) {
+	for (i = 0; entp->h_aliases[i] && i < IDMAP_HOSTNAME_MAX - 1; i++) {
 		addfield(&bp, &bsiz, entp->h_aliases[i]);
 	}
 

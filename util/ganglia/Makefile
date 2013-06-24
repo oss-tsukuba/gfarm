@@ -10,7 +10,7 @@ datadir=$(default_datadir)/gfarm/ganglia
 
 DATA =	$(srcdir)/gfarm_iostat.py \
 	$(srcdir)/gfarm_gfmd.pyconf \
-	$(srcdir)/gfarm_gfsd.pyconf 
+	$(srcdir)/gfarm_gfsd.pyconf
 
 include $(top_srcdir)/makes/data.mk
 

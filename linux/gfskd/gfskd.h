@@ -5,7 +5,7 @@
 
 struct gfskd_req_t {
 	int	r_fd;
-	struct fuse_in_header *r_in;
+	struct gfskdev_in_header *r_in;
 	ssize_t	r_len;
 	int	r_alloc;
 };

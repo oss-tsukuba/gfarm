@@ -50,7 +50,7 @@ struct gfsk_file_private {
 	} f_u;
 	struct {
 		void *entry;
-	}dirinfo;
+	} dirinfo;
 	struct file *f_file;
 	struct list_head f_openlist;
 	struct mutex f_lock;

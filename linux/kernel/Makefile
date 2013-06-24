@@ -114,6 +114,7 @@ gfarm2-y += ug_idmap.o
 gfarm2-y += ug_proc.o
 
 gfarm2-y += gfsk_dev.o
+gfarm2-y += gfsk_devif.o
 gfarm2-y += gfsk_netdb.o
 gfarm2-y += gfsk_stdlib.o
 gfarm2-y += gfsk_fd.o

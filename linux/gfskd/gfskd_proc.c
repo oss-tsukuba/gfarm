@@ -4,7 +4,6 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/param.h>
-#include <linux/fuse.h>
 #include <gfarm/gfarm.h>
 #include <gfarm/gflog.h>
 #include "context.h"
@@ -27,7 +26,7 @@ gfskd_send_iov(struct gfskd_req_t *req, gfarm_error_t error,
 			struct iovec *iov, int count)
 {
 	int	err;
-	struct fuse_out_header	out;
+	struct gfskdev_out_header	out;
 	struct iovec iovec[1];
 	ssize_t len;
 
@@ -39,10 +38,10 @@ gfskd_send_iov(struct gfskd_req_t *req, gfarm_error_t error,
 	/* NOTE: out.error must be <= 0 */
 	out.error = -gfarm_error_to_errno(error);
 	iov[0].iov_base = &out;
-	iov[0].iov_len = sizeof(struct fuse_out_header);
+	iov[0].iov_len = sizeof(struct gfskdev_out_header);
 	out.len = iov_length((const struct iovec *)iov, count);
-	gflog_debug(GFARM_MSG_UNFIXED, "unique=%llu, gfarm_error=%d, out.error=%d, len=%d",
-		out.unique, error, out.error, out.len);
+	gflog_debug(GFARM_MSG_UNFIXED, "unique=%llu, gfarm_error=%d, "
+		"out.error=%d, len=%d", out.unique, error, out.error, out.len);
 
 	error = GFARM_ERR_NO_ERROR;
 	len = writev(req->r_fd, iov, count);
@@ -89,7 +88,7 @@ gfskd_recv_req(int fd, const char *buf, size_t len)
 {
 	gfarm_error_t error;
 	struct gfskd_req_t req, *reqp;
-	struct fuse_in_header *in = (struct fuse_in_header *) buf;
+	struct gfskdev_in_header *in = (struct gfskdev_in_header *) buf;
 	void *inarg;
 	int	async = 0;
 	const char *bufp = NULL;
@@ -120,11 +119,11 @@ gfskd_recv_req(int fd, const char *buf, size_t len)
 		bufp = buf;
 	}
 	memset(reqp, 0, sizeof(*reqp));
-	reqp->r_in = (struct fuse_in_header *) bufp;
+	reqp->r_in = (struct gfskdev_in_header *) bufp;
 	reqp->r_len = len;
 	reqp->r_alloc = async;
 	reqp->r_fd = fd;
-	inarg = (void *)(bufp + sizeof(struct fuse_in_header));
+	inarg = (void *)(bufp + sizeof(struct gfskdev_in_header));
 
 	switch (in->opcode) {
 	case GFSK_OP_CONNECT_GFMD:
@@ -179,7 +178,7 @@ gfskd_loop(int fd, int bufsize)
 			}
 			break;
 		}
-		if (len < sizeof(struct fuse_in_header)) {
+		if (len < sizeof(struct gfskdev_in_header)) {
 			error = GFARM_ERR_INPUT_OUTPUT;
 			gflog_error(GFARM_MSG_UNFIXED, "len:%ld, %s", len,
 				gfarm_error_string(error));
