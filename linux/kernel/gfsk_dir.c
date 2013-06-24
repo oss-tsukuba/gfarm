@@ -197,7 +197,7 @@ gfsk_unlink(struct inode *dir, struct dentry *dentry)
 	GFSK_CTX_UNSET();
 	return (retval);
 }
-int 
+int
 gfsk_dirperm(struct inode *inode, int mask)
 {
 	int err;
@@ -210,7 +210,7 @@ gfsk_dirperm(struct inode *inode, int mask)
 		__func__, __LINE__, mask, inode->i_ino, inode->i_flags,
 			inode->i_mode, -err);
 
-	return err;
+	return (err);
 }
 const struct inode_operations gfarm_dir_inode_operations = {
 	.create		= gfsk_create,
@@ -326,7 +326,7 @@ gfsk_full_readpage(struct file *dir, struct page **reqpage)
 			}
 			if (reqpage && (*reqpage)->index == pgindex)
 				page = *reqpage;
-			else 
+			else
 				page = find_or_create_page(dir->f_mapping,
 					pgindex, GFP_TEMPORARY);
 			if (page == NULL)
@@ -454,7 +454,7 @@ gfsk_dir_readpage(struct file *dir, struct page *page)
 
 	GFSK_CTX_SET();
 
-	gflog_error(GFARM_MSG_UNFIXED, "%s:called!! size=%lld pos=%lld", 
+	gflog_error(GFARM_MSG_UNFIXED, "%s:called!! size=%lld pos=%lld",
 		__func__, gi->i_direntsize, pos);
 
 	retval = gfsk_full_readpage(dir, &page);

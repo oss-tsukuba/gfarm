@@ -28,13 +28,13 @@ gfsk_inode_eq(struct inode *inode, void *data)
 	&& ((inode->i_mode & S_IFMT) == (idata->mode & S_IFMT))) {
 		if (gi->i_gen == idata->gen)
 			return (1);
-	 	if (!gi->i_gen || !idata->new) {
+		if (!gi->i_gen || !idata->new) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"%s:ino=%lld gen=%lld:%lld"
 				", but asume same. new=%d\n", __func__,
 				 idata->ino, gi->i_gen, idata->gen, idata->new);
 			return (1);
-		} else 
+		} else
 			gflog_info(GFARM_MSG_UNFIXED,
 				"%s:ino=%lld gen=%lld:%lld"
 				", so different. new=%d\n", __func__,

@@ -13,6 +13,7 @@
 
 #include "gfsk.h"
 #include "gfsk_fs.h"
+#include "gfsk_devif.h"
 #include "ug_idmap.h"
 #include "gfsk_libgfarm.h"
 
@@ -63,6 +64,7 @@ gfsk_statfs(struct dentry *dentry, struct kstatfs *buf)
 	return (ret);
 }
 
+#if 0
 static void
 gfsk_umount_begin(struct super_block *sb)
 {
@@ -70,9 +72,10 @@ gfsk_umount_begin(struct super_block *sb)
 
 	GFSK_CTX_SET();
 	gflog_debug(GFARM_MSG_UNFIXED, "gfsk_umount_begin() called");
-	gfsk_client_unmount();
+	gfskdev_abort_conn(gfsk_fsp->gf_dc);
 	GFSK_CTX_UNSET();
 }
+#endif
 
 static void
 gfsk_put_super(struct super_block *sb)
@@ -86,7 +89,6 @@ static const struct super_operations gfarm_ops = {
 	.clear_inode	= gfsk_clear_inode,
 	.drop_inode	= generic_delete_inode,
 	.statfs = gfsk_statfs,
-	.umount_begin = gfsk_umount_begin,
 	.put_super = gfsk_put_super,
 	.show_options = generic_show_options
 };
@@ -179,7 +181,7 @@ init_gfarm_fs(void)
 	gflog_set_priority_level(gflog_level);
 	gflog_info(GFARM_MSG_UNFIXED, "init_gfarm_fs() start");
 
-	ret = gfsk_dev_init();
+	ret = gfskdev_init();
 
 	if (ret) {
 		gflog_error(GFARM_MSG_UNFIXED,
@@ -214,7 +216,7 @@ quit3:
 quit2:
 	ug_idmap_exit();
 quit1:
-	gfsk_dev_fini();
+	gfskdev_fini();
 	return (ret);
 }
 
@@ -226,7 +228,7 @@ exit_gfarm_fs(void)
 		kmem_cache_destroy(gfarm_inode_cachep);
 	unregister_filesystem(&gfarm_fs_type);
 	ug_idmap_exit();
-	gfsk_dev_fini();
+	gfskdev_fini();
 	gflog_info(GFARM_MSG_UNFIXED, "exit_gfarm_fs() end");
 }
 

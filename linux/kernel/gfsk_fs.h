@@ -6,7 +6,7 @@
 
 struct gfarm_context;
 struct gfsk_fdstruct;
-struct fuse_conn;
+struct gfskdev_conn;
 struct semaphore;
 
 struct gfsk_fs_context{
@@ -16,7 +16,7 @@ struct gfsk_fs_context{
 	int	gf_pctime;	/* jiffies: page cache timeout period */
 	struct gfarm_context	*gf_gfarm_ctxp;
 	struct gfsk_fdstruct	*gf_fdstructp;
-	struct fuse_conn	*gf_fc;
+	struct gfskdev_conn	*gf_dc;
 	struct mutex		gf_lock;
 	struct list_head	gf_locallist;	/* mmaped local file list */
 };

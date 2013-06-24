@@ -25,7 +25,7 @@ int ug_idmap_init(void);
 void ug_idmap_exit(void);
 struct in_addr;
 int ug_map_hostaddr_get(char *name, int (*cb)(void*, char*,
-                struct in_addr *, char **), void *arg);
+		struct in_addr *, char **), void *arg);
 
 
 extern int ug_idmap_proc_init(void);
