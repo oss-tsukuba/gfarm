@@ -1,0 +1,105 @@
+This is a test suite for Gfarm named 'systest'.  It does the following
+tests which are not examined by the regression tests of Gfarm.
+
+    * disable a network interface suddenly
+    * gfmd failover
+    * stop PosgreSQL
+    * stress tests
+    * perform 'config-gfarm'
+    * perform 'config-gfsd'
+
+Preparation
+===========
+Most of all testcases in 'systest' assume that a Gfarm system is already
+running on your hosts.  The minimum configuration of the system is:
+
+    * two gfmd servers (gfmd1, gfmd2)
+    * four gfsd servers (gfsd1, gfsd2, gfsd3, gfsd4)
+    * one client host (client1)
+
+Since 'systest' uses 'gfservice' command internally, you need to
+prepare a configuration file of 'gfservice' (the default path is
+"$HOME/.gfservice") for those hosts, like as follows:
+
+	gfmd1=mds1.example.com
+	gfmd1_IFUP_CMD="/sbin/ifup eth2"
+	gfmd1_IFDOWN_CMD="/sbin/ifdown eth2"
+	gfmd1_LOG_FILE_PATHS=/var/log/syslog
+
+	gfmd2=mds2.example.com
+	gfmd2_REPLICATION_MODE=async
+	gfmd2_IFUP_CMD="/sbin/ifup eth2"
+	gfmd2_IFDOWN_CMD="/sbin/ifdown eth2"
+	gfmd2_LOG_FILE_PATHS=/var/log/syslog
+
+	gfsd1=fsn1.example.com
+	gfsd1_IFUP_CMD="/sbin/ifup eth1"
+	gfsd1_IFDOWN_CMD="/sbin/ifdown eth1"
+	gfsd1_LOG_FILE_PATHS=/var/log/syslog
+
+	gfsd2=fsn2.example.com
+	gfsd2_IFUP_CMD="/sbin/ifup eth1"
+	gfsd2_IFDOWN_CMD="/sbin/ifdown eth1"
+	gfsd2_LOG_FILE_PATHS=/var/log/syslog
+
+	gfsd3=fsn3.example.com
+	gfsd3_IFUP_CMD="/sbin/ifup eth1"
+	gfsd3_IFDOWN_CMD="/sbin/ifdown eth1"
+	gfsd3_LOG_FILE_PATHS=/var/log/syslog
+
+	gfsd4=fsn4.example.com
+	gfsd4_IFUP_CMD="/sbin/ifup eth1"
+	gfsd4_IFDOWN_CMD="/sbin/ifdown eth1"
+	gfsd4_LOG_FILE_PATHS=/var/log/syslog
+
+	client1=pc1.example.com
+
+The example above declares variables not explained in gfservice.conf(5).
+They are not interpreted by 'gfservice' but 'systest':
+
+    gfmd<n>_IFDOWN_CMD
+    gfsd<n>_IFDOWN_CMD
+    client<n>_IFDOWN_CMD
+	Those variables specify how to disable a network interface
+	used by gfmd, gfsd or a client to communicate with other
+	servers and clients.  The default value is "/sbin/ifdown eth0".
+
+    gfmd<n>_IFUP_CMD
+    gfsd<n>_IFUP_CMD
+    client<n>_IFUP_CMD
+	Those variables specify how to enable a network interface.
+	The default value is "/sbin/ifup eth0".
+
+    gfmd<n>_LOG_FILE_PATHS
+    gfsd<n>_LOG_FILE_PATHS
+	The absolute paths to log files on which log messages of gfmd
+	(or gfsd) are recorded.  If you'd like to specify two or more
+	files, list paths separated by a whitespace:
+
+	    gfmd1_LOG_FILE_PATH="/var/log/messages /var/log/gfarm"
+
+	The default value is "/var/log/messages".
+
+Read gfservice.conf(5) for more details about the configuration file.
+
+How to run a test case
+======================
+To run a test case, execute 'gfruntest' command:
+
+	gfruntest <test case>
+
+The example below runs the test case 'failover_by_kill':
+
+	gfruntest gfarm_v2::failover_by_kill
+
+You can run multiple test cases using a scenario file:
+
+	gfruntest <scenario file>
+
+The example below runs the scenario 'gfarm_v2' which runs all test
+cases.
+
+	gfruntest -s gfarm_v2
+
+Details about the test cases are described in 'testcases.xls' (written
+in Japanese).
