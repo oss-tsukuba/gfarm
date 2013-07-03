@@ -317,8 +317,7 @@ while [ $# -ge 1 ]; do
 		# Do not add '-s' option to OPTIONS.
 		shift 2
 		;;
-	-*)	log_error "$0: invalid option -- '$1'"
-		print_usage
+	-*)	log_usage_error "$0: invalid option -- '$1'"
 		;;
 	*)	break
 		;;
