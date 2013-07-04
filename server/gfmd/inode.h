@@ -236,6 +236,7 @@ int inode_has_desired_number(struct inode *, int *);
 int inode_traverse_desired_replica_number(struct inode *, int *);
 
 void inode_remove_orphan(void);
+void inode_free_orphan(void);
 void inode_check_and_repair(void);
 
 gfarm_error_t inode_create_file_in_lost_found(
