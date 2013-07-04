@@ -4794,6 +4794,18 @@ inum_list_add(struct inum_list_entry **listp, gfarm_ino_t inum)
 }
 
 static void
+inum_list_free(struct inum_list_entry **listp)
+{
+	struct inum_list_entry *entry, *next;
+
+	for (entry = *listp; entry != NULL; entry = next) {
+		next = entry->next;
+		free(entry);
+	}
+	*listp = NULL;
+}
+
+static void
 inum_list_foreach(struct inum_list_entry *list,
 	gfarm_error_t (*op)(gfarm_ino_t), const char *name)
 {
@@ -4808,7 +4820,6 @@ inum_list_foreach(struct inum_list_entry *list,
 			    "orphan %s %llu removal: %s",
 			    name, (unsigned long long)entry->inum,
 			    gfarm_error_string(e));
-		free(entry);
 	}
 }
 
@@ -4840,6 +4851,11 @@ inode_cksum_db_remove_orphan(void)
 	    db_inode_cksum_remove, "inode_cksum");
 }
 
+static void
+inode_cksum_free_orphan(void)
+{
+	inum_list_free(&inode_cksum_removal_list);
+}
 
 static struct inum_list_entry *symlink_removal_list = NULL;
 
@@ -4862,6 +4878,11 @@ symlink_db_remove_orphan(void)
 	inum_list_foreach(symlink_removal_list, db_symlink_remove, "symlink");
 }
 
+static void
+symlink_free_orphan(void)
+{
+	inum_list_free(&symlink_removal_list);
+}
 
 struct inum_string_list_entry {
 	struct inum_string_list_entry *next;
@@ -4889,6 +4910,23 @@ inum_string_list_add(struct inum_string_list_entry **listp,
 }
 
 static void
+inum_string_list_free(struct inum_string_list_entry **listp)
+{
+	struct inum_string_list_entry *entry, *next;
+
+	for (entry = *listp; entry != NULL; entry = next) {
+		next = entry->next;
+		free(entry->string);
+		free(entry);
+	}
+	*listp = NULL;
+}
+
+#define INUM_STRING_LIST_FIRST(list)  (list)
+#define INUM_STRING_LIST_NEXT(list)   ((list) == NULL ? NULL : (list)->next)
+#define INUM_STRING_LIST_IS_END(list) ((list) == NULL)
+
+static void
 inum_string_list_foreach(struct inum_string_list_entry *list,
 	gfarm_error_t (*op)(gfarm_ino_t, const char *),
 	const char *name, const char *label)
@@ -4904,8 +4942,6 @@ inum_string_list_foreach(struct inum_string_list_entry *list,
 			    "orphan %s %llu %s:%s removal: %s",
 			    name, (unsigned long long)entry->inum,
 			    label, entry->string, gfarm_error_string(e));
-		free(entry->string);
-		free(entry);
 	}
 }
 
@@ -4929,8 +4965,36 @@ file_copy_defer_db_removal(gfarm_ino_t inum, char *hostname)
 static void
 file_copy_db_remove_orphan(void)
 {
-	inum_string_list_foreach(file_copy_removal_list,
-	    db_filecopy_remove, "file_copy", "hostname");
+	gfarm_error_t e;
+	struct inode *inode;
+	gfarm_int64_t gen;
+	struct host *spool_host;
+	struct inum_string_list_entry *entry, *next;
+
+	entry = INUM_STRING_LIST_FIRST(file_copy_removal_list);
+	while (!INUM_STRING_LIST_IS_END(entry)) {
+		next = INUM_STRING_LIST_NEXT(entry);
+		inode = inode_lookup(entry->inum);
+		assert(inode != NULL);
+		gen = inode_get_gen(inode);
+		spool_host = host_lookup_including_invalid(entry->string);
+		assert(spool_host != NULL);
+		e = inode_remove_replica_internal(inode, spool_host,
+		    gen, NULL, 1, 1, NULL);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "cannot remove a replica (%s, %lld:%lld): %s",
+			    entry->string, (long long)entry->inum,
+			    (long long)gen, gfarm_error_string(e));
+		}
+		entry = next;
+	}
+}
+
+static void
+file_copy_free_orphan(void)
+{
+	inum_string_list_free(&file_copy_removal_list);
 }
 
 static struct dir_entry_removal_todo {
@@ -4940,6 +5004,19 @@ static struct dir_entry_removal_todo {
 	char *entry_name;
 	int entry_len;
 } *dir_entry_removal_list = NULL;
+
+static void
+dir_entry_free_orphan(void)
+{
+	struct dir_entry_removal_todo *entry, *next;
+
+	for (entry = dir_entry_removal_list; entry != NULL; entry = next) {
+		next = entry->next;
+		free(entry->entry_name);
+		free(entry);
+	}
+	dir_entry_removal_list = NULL;
+}
 
 static void
 dir_entry_defer_db_removal(gfarm_ino_t dir_inum,
@@ -4992,8 +5069,6 @@ dir_entry_db_remove_orphan(void)
 			    entry->entry_len, entry->entry_name,
 			    gfarm_error_string(e));
 		}
-		free(entry->entry_name);
-		free(entry);
 	}
 }
 
@@ -5057,10 +5132,22 @@ xattr_db_remove_orphan(void)
 }
 
 static void
+xattr_free_orphan(void)
+{
+	inum_string_list_free(&xattr_removal_list);
+}
+
+static void
 xml_db_remove_orphan(void)
 {
 	inum_string_list_foreach(xml_removal_list, db_xml_remove_wrapper,
 	    "xml", "attrname");
+}
+
+static void
+xml_free_orphan(void)
+{
+	inum_string_list_free(&xml_removal_list);
 }
 
 void
@@ -5072,6 +5159,17 @@ inode_remove_orphan(void)
 	dir_entry_db_remove_orphan();
 	xattr_db_remove_orphan();
 	xml_db_remove_orphan();
+}
+
+void
+inode_free_orphan(void)
+{
+	inode_cksum_free_orphan();
+	symlink_free_orphan();
+	file_copy_free_orphan();
+	dir_entry_free_orphan();
+	xattr_free_orphan();
+	xml_free_orphan();
 }
 
 /*
