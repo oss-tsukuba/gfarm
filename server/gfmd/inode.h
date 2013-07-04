@@ -246,6 +246,7 @@ int inode_get_replica_spec(struct inode *, char **, int *);
 int inode_search_replica_spec(struct inode *, char **, int *);
 
 void inode_remove_orphan(void);
+void inode_free_orphan(void);
 void inode_check_and_repair(void);
 
 gfarm_error_t inode_create_file_in_lost_found(

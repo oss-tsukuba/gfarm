@@ -2206,6 +2206,7 @@ main(int argc, char **argv)
 		inode_check_and_repair();
 		quota_check();
 	}
+	inode_free_orphan();
 	if (gfarm_get_metadb_replication_enabled()) {
 		is_master = mdhost_self_is_master();
 		gflog_info(GFARM_MSG_1002737,
