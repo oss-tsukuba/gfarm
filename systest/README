@@ -96,10 +96,10 @@ You can run multiple test cases using a scenario file:
 
 	gfruntest <scenario file>
 
-The example below runs the scenario 'gfarm_v2' which runs all test
-cases.
+The example below runs the scenario 'gfarm_v2/gfarm_v2' which runs all
+test cases.
 
-	gfruntest -s gfarm_v2
+	gfruntest -s gfarm_v2/gfarm_v2
 
 Details about the test cases are described in 'testcases.xls' (written
 in Japanese).
