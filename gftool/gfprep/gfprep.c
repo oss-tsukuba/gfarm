@@ -51,7 +51,7 @@ struct gfprep_option {
 	int debug;	/* -d */
 	int performance;/* -p */
 	int performance_each;/* -P */
-	int max_rw;	/* -M */
+	int max_rw;	/* -c */
 	int check_disk_avail;	/* not -U */
 	int openfile_cost;	/* -C */
 };
@@ -172,6 +172,7 @@ gfprep_usage_common(int error)
 "\t[-p (report total performance) | -P (report each and total performance)]"
 "\t[-n (not execute)] [-s <#KB/s(simulate)>]\n"
 "\t[-U (disable checking disk_avail)(fast)]\n"
+"\t[-M <#byte(maximum total size of copied file)>(default: unlimited)]\n"
 /* "\t[-R <#ratio (throughput: local=remote*ratio)(for -w greedy)>]\n" */
 /* "\t[-J <#parallel(read dirents)>]\n" */
 "\t[-F <#dirents(readahead)>]\n",
@@ -1546,6 +1547,23 @@ gfprep_count_ng_file(gfarm_off_t filesize)
 	gfarm_mutex_unlock(&cb_mutex, "gfprep_count_ng_file", CB_MUTEX_DIAG);
 }
 
+static int
+copied_size_is_over(gfarm_int64_t limit, gfarm_int64_t total_requested)
+{
+	static const char diag[] = "copied_size_is_over";
+	int over = 0;
+
+	if (limit < 0)
+		return (0);
+
+	gfarm_mutex_lock(&cb_mutex, diag, CB_MUTEX_DIAG);
+	if (total_requested - total_ng_filesize > limit)
+		over = 1;
+	gfarm_mutex_unlock(&cb_mutex, diag, CB_MUTEX_DIAG);
+
+	return (over);
+}
+
 static void
 gfprep_url_realloc(char **url_p, int *url_size_p,
 		   const char *dir, const char *subpath)
@@ -2809,6 +2827,7 @@ main(int argc, char *argv[])
 	enum way way = WAY_NOPLAN;
 	gfarm_list list_to_schedule;
 	struct timeval time_start, time_end;
+	static gfarm_uint64_t total_requested_filesize = 0;
 	/* options */
 	const char *opt_src_hostfile = NULL; /* -h */
 	const char *opt_dst_hostfile = NULL; /* -H */
@@ -2822,6 +2841,7 @@ main(int argc, char *argv[])
 	int opt_force_copy = 0; /* -f */
 	int opt_n_desire = 1;  /* -N */
 	int opt_migrate = 0; /* -m */
+	gfarm_int64_t opt_max_copy_size = -1; /* -M */
 	int opt_remove = 0;  /* -x */
 	int opt_ratio = 1; /* -R */
 	int opt_limited_src = 0; /* -L */
@@ -2836,7 +2856,7 @@ main(int argc, char *argv[])
 
 	while ((ch = getopt(
 			argc, argv,
-			"N:h:j:w:W:s:S:D:H:R:M:b:J:F:C:LxmnpPqvdfUZl?"))
+			"N:h:j:w:W:s:S:D:H:R:M:b:J:F:C:c:LxmnpPqvdfUZl?"))
 	       != -1) {
 		switch (ch) {
 		case 'w':
@@ -2906,7 +2926,8 @@ main(int argc, char *argv[])
 			if (opt.openfile_cost < 0)
 				opt.openfile_cost = 0;
 			break;
-		case 'M': /* hidden option */
+		case 'c': /* hidden option */
+			/* concurrency per gfsd instead of ncpu */
 			opt.max_rw = strtol(optarg, NULL, 0);
 			break;
 		case 'N': /* gfprep */
@@ -2918,6 +2939,9 @@ main(int argc, char *argv[])
 		case 'm': /* gfprep */
 			opt_migrate = 1;
 			opt_limited_src = 1;
+			break;
+		case 'M':
+			opt_max_copy_size = strtoll(optarg, NULL, 0);
 			break;
 		case 'f': /* gfpcopy */
 			opt_force_copy = 1;
@@ -3370,6 +3394,10 @@ main(int argc, char *argv[])
 		int n_desire;
 		int n_src_select, n_dst_select, n_dst_exist;
 
+		if (copied_size_is_over(
+		    opt_max_copy_size, total_requested_filesize))
+			break; /* stop */
+
 		if (src_base_name &&
 		    strcmp(src_base_name, entry->subpath) != 0)
 			goto next_entry;
@@ -3819,6 +3847,8 @@ main(int argc, char *argv[])
 				gfprep_do_replicate(pfunc_handle,
 				    NULL, opt_migrate, entry->src_size,
 				    src_url, src_hi, dst_url, dst_hi);
+
+			total_requested_filesize += entry->src_size;
 		}
 next_entry_with_free:
 		free(src_select_array);
