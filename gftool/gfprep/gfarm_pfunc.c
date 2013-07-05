@@ -192,16 +192,10 @@ pfunc_replicate_main(gfarm_pfunc_t *handle, int pfunc_mode,
 		e = gfs_replica_remove_by_file(url, src_host);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr,
-				"ERROR: cannot migrate: %s (%s:%d): %s\n",
-				url, src_host, src_port,
-				gfarm_error_string(e));
-			e = gfs_replica_remove_by_file(url, dst_host);
-			if (e != GFARM_ERR_NO_ERROR)
-				fprintf(stderr,
-					"ERROR: cannot remove useless "
-					"replica: %s (%s:%d): %s\n",
-					url, dst_host, dst_port,
-					gfarm_error_string(e));
+			    "ERROR: cannot remove a replica: %s (%s:%d): %s\n",
+			    url, src_host, src_port, gfarm_error_string(e));
+			gfpara_send_int(to_parent, PFUNC_RESULT_NG);
+			goto free_mem;
 		}
 	}
 end:
