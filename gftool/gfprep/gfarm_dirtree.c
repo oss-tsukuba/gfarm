@@ -727,6 +727,10 @@ dirtree_send(FILE *child_in, gfpara_proc_t *proc, void *param, int interrupt)
 
 	if (interrupt) {
 		gfpara_send_int(child_in, DIRTREE_CMD_TERMINATE);
+		gfarm_mutex_lock(&handle->mutex, diag, "mutex");
+		handle->n_free_procs = handle->n_parallel; /* terminate */
+		gfarm_cond_broadcast(&handle->free_procs, diag, "free_procs");
+		gfarm_mutex_unlock(&handle->mutex, diag, "mutex");
 		return (GFPARA_NEXT);
 	}
 	gfarm_mutex_lock(&handle->mutex, diag, "mutex");
@@ -811,6 +815,10 @@ dirtree_recv_dents(FILE *child_out, gfpara_proc_t *proc, void *param)
 				gfpara_recv_purge(child_out);
 				return (GFPARA_FATAL);
 			}
+			/* initialize */
+			ent->src_ncopy = 0;
+			ent->dst_ncopy = 0;
+
 			ent->subpath = subpath;
 			gfpara_recv_int64(child_out, &ent->src_m_sec); /* 2 */
 			gfpara_recv_int(child_out, &ent->src_m_nsec); /* 3 */
@@ -1177,10 +1185,25 @@ gfarm_dirtree_close(gfarm_dirtree_t *handle)
 {
 	gfarm_error_t e;
 	static const char diag[] = "gfarm_dirtree_close";
+	void *p;
+	gfarm_dirtree_entry_t *ent;
+	char *subdir;
 
 	gfpara_interrupt(handle->gfpara_handle, 10000); /* fifo: quitting */
+
 	while (gfarm_dirtree_delete(handle) == GFARM_ERR_NO_ERROR)
 		;
+	while (gfarm_fifo_simple_next(handle->fifo_ents, &p)
+	    == GFARM_ERR_NO_ERROR) {
+		ent = p;
+		gfarm_dirtree_entry_free(ent);
+	}
+	while (gfarm_fifo_simple_next(handle->fifo_dirs, &p)
+	    == GFARM_ERR_NO_ERROR) {
+		subdir = p;
+		free(subdir);
+	}
+
 	/* fifo: quitted */
 	e = gfpara_join(handle->gfpara_handle);
 	gfarm_fifo_free(handle->fifo_handle);
