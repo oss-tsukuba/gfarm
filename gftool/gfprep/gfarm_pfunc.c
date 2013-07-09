@@ -188,16 +188,6 @@ pfunc_replicate_main(gfarm_pfunc_t *handle, int pfunc_mode,
 		gfpara_send_int(to_parent, PFUNC_RESULT_NG);
 		goto free_mem;
 	}
-	if (pfunc_mode == PFUNC_MODE_MIGRATE) {
-		e = gfs_replica_remove_by_file(url, src_host);
-		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr,
-			    "ERROR: cannot remove a replica: %s (%s:%d): %s\n",
-			    url, src_host, src_port, gfarm_error_string(e));
-			gfpara_send_int(to_parent, PFUNC_RESULT_NG);
-			goto free_mem;
-		}
-	}
 end:
 	gfpara_send_int(to_parent, PFUNC_RESULT_OK);
 free_mem:

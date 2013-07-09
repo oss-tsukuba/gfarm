@@ -1071,6 +1071,69 @@ gfprep_chmod(int is_gfarm, const char *url, int mode)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+struct remove_replica_deferred {
+	GFARM_HCIRCLEQ_ENTRY(remove_replica_deferred) list;
+	char *url;
+	char *hostname;
+};
+
+static GFARM_HCIRCLEQ_HEAD(remove_replica_deferred) \
+    remove_replica_deferred_head;
+
+static void
+gfprep_remove_replica_deferred_init(void)
+{
+	GFARM_HCIRCLEQ_INIT(remove_replica_deferred_head, list);
+}
+
+static void
+gfprep_remove_replica_deferred_add(const char *url, const char *hostname)
+{
+	char *url2, *hostname2;
+	struct remove_replica_deferred *rrd;
+
+	GFARM_MALLOC(rrd);
+	url2 = strdup(url);
+	hostname2 = strdup(hostname);
+	if (rrd == NULL || url2 == NULL || hostname2 == NULL) {
+		free(rrd);
+		free(url2);
+		free(hostname2);
+		gfprep_error("cannot remove a replica: %s (%s)",
+		     url, hostname);
+	} else {
+		rrd->url = url2;
+		rrd->hostname = hostname2;
+		GFARM_HCIRCLEQ_INSERT_HEAD(
+		    remove_replica_deferred_head, rrd, list);
+	}
+}
+
+static void
+gfprep_remove_replica_deferred_final(void)
+{
+	gfarm_error_t e;
+	struct remove_replica_deferred *rrd;
+
+	while (!GFARM_HCIRCLEQ_EMPTY(remove_replica_deferred_head, list)) {
+		rrd = GFARM_HCIRCLEQ_FIRST(remove_replica_deferred_head, list);
+		GFARM_HCIRCLEQ_REMOVE(rrd, list);
+
+		e = gfs_replica_remove_by_file(rrd->url, rrd->hostname);
+		if (e != GFARM_ERR_NO_ERROR)
+			gfprep_error(
+			    "cannot remove a replica: %s (%s): %s",
+			    rrd->url, rrd->hostname, gfarm_error_string(e));
+		else
+			gfprep_verbose("remove a replica: %s (%s)",
+			    rrd->url, rrd->hostname);
+
+		free(rrd->url);
+		free(rrd->hostname);
+		free(rrd);
+	}
+}
+
 struct dirstat {
 	GFARM_HCIRCLEQ_ENTRY(dirstat) list;
 	int is_gfarm;
@@ -1104,7 +1167,7 @@ gfprep_dirstat_add(int is_gfarm, const char *url, int orig_mode, int tmp_mode,
 	if (ds == NULL || url2 == NULL) {
 		free(ds);
 		free(url2);
-		gfprep_error("cannot copy mode and mtime (no memory): %s: ",
+		gfprep_error("cannot copy mode and mtime (no memory): %s",
 		    url);
 	} else {
 		ds->is_gfarm = is_gfarm;
@@ -1479,6 +1542,10 @@ pfunc_cb_update_default(struct pfunc_cb_data *cbd, int success)
 	}
 	if (cbd->done_p)
 		*cbd->done_p = 1;
+
+	if (cbd->migrate && success)
+		gfprep_remove_replica_deferred_add(
+		    cbd->src_url, cbd->src_hi->hostname);
 }
 
 static void
@@ -2217,7 +2284,7 @@ gfprep_do_replicate(
 	gfarm_pfunc_t *pfunc_handle, char *done_p,
 	int opt_migrate, gfarm_off_t size,
 	const char *src_url, struct gfprep_host_info *src_hi,
-	const char *dst_url, struct gfprep_host_info *dst_hi)
+	struct gfprep_host_info *dst_hi)
 {
 	gfarm_error_t e;
 	struct pfunc_cb_data *cbd;
@@ -2420,7 +2487,7 @@ next:
 				gfprep_do_replicate(
 				    pfunc_handle, &done[i], migrate,
 				    job.file->src_size,
-				    src_url, src_hi, tmp_url, dst_hi);
+				    src_url, src_hi, dst_hi);
 		}
 	}
 	if (n_end < n_conns) {
@@ -3128,6 +3195,8 @@ main(int argc, char *argv[])
 	}
 
 	gfprep_dirstat_init();
+	if (opt_migrate)
+		gfprep_remove_replica_deferred_init();
 
 	if (is_gfpcopy) { /* gfpcopy */
 		int create_dst_dir = 0, checked;
@@ -3846,7 +3915,7 @@ main(int argc, char *argv[])
 			else
 				gfprep_do_replicate(pfunc_handle,
 				    NULL, opt_migrate, entry->src_size,
-				    src_url, src_hi, dst_url, dst_hi);
+				    src_url, src_hi, dst_hi);
 
 			total_requested_filesize += entry->src_size;
 		}
@@ -3953,6 +4022,10 @@ next_entry:
 	/* set mode and mtime for directories */
 	gfprep_dirstat_final();
 
+	/* remove replicas to migrate */
+	if (opt_migrate)
+		gfprep_remove_replica_deferred_final();
+
 	if (opt.performance) {
 		char *prefix = is_gfpcopy ? "copied" : "replicated";
 		gettimeofday(&time_end, NULL);
@@ -3985,7 +4058,7 @@ next_entry:
 		printf("total_throughput: %.6f MB/s\n",
 		       (double)total_ok_filesize /
 		       ((double)time_end.tv_sec * GFARM_SECOND_BY_MICROSEC
-		        + time_end.tv_usec));
+		       + time_end.tv_usec));
 		printf("total_time: %lld.%06d sec.\n",
 		       (long long)time_end.tv_sec, (int)time_end.tv_usec);
 	}
