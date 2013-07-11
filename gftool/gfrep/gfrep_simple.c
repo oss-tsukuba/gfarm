@@ -9,9 +9,7 @@
 
 #include <gfarm/gfarm.h>
 
-#include "metadb_server.h"
-
-char *program_name = "gfrep";
+char *program_name = "gfrep_simple";
 
 static int
 usage()
@@ -25,7 +23,6 @@ int
 main(int argc, char *argv[])
 {
 	char *src = NULL, *dst = NULL, *f, c;
-	struct gfarm_host_info sinfo, dinfo;
 	gfarm_error_t e;
 
 	if (argc > 0)
@@ -57,29 +54,15 @@ main(int argc, char *argv[])
 	if (dst == NULL)
 		usage();
 
-	if (src != NULL) {
-		e = gfarm_host_info_get_by_name_alias(src, &sinfo);
-		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "%s: %s\n", src,
-				gfarm_error_string(e));
-			exit(EXIT_FAILURE);
-		}
-	}
-	e = gfarm_host_info_get_by_name_alias(dst, &dinfo);
-	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s: %s\n", dst, gfarm_error_string(e));
-		exit(EXIT_FAILURE);
-	}
-
 	f = *argv;
-	e = gfs_replicate_from_to(f, src, sinfo.port, dst, dinfo.port);
+	if (src == NULL)
+		e = gfs_replicate_file_to(f, dst, 0);
+	else
+		e = gfs_replicate_file_from_to(f, src, dst, 0);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", f, gfarm_error_string(e));
 		exit(EXIT_FAILURE);
 	}
-	if (src != NULL)
-		gfarm_host_info_free(&sinfo);
-	gfarm_host_info_free(&dinfo);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
