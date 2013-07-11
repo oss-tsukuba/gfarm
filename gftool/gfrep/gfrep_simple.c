@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 #include <gfarm/gfarm.h>
+#include "gfarm_path.h"
 
 char *program_name = "gfrep_simple";
 
@@ -22,7 +23,7 @@ usage()
 int
 main(int argc, char *argv[])
 {
-	char *src = NULL, *dst = NULL, *f, c;
+	char *src = NULL, *dst = NULL, *f, *rp = NULL, c;
 	gfarm_error_t e;
 
 	if (argc > 0)
@@ -55,6 +56,9 @@ main(int argc, char *argv[])
 		usage();
 
 	f = *argv;
+	e = gfarm_realpath_by_gfarm2fs(f, &rp);
+	if (e == GFARM_ERR_NO_ERROR)
+		f = rp;
 	if (src == NULL)
 		e = gfs_replicate_file_to(f, dst, 0);
 	else
@@ -63,6 +67,7 @@ main(int argc, char *argv[])
 		fprintf(stderr, "%s: %s\n", f, gfarm_error_string(e));
 		exit(EXIT_FAILURE);
 	}
+	free(rp);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
