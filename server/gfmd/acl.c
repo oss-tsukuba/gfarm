@@ -387,7 +387,8 @@ acl_access(struct inode *inode, struct user *user, int op)
 	e = inode_xattr_get_cache(inode, 0, GFARM_ACL_EA_ACCESS,
 				  &value, &size);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002870,
+		if (e != GFARM_ERR_NO_SUCH_OBJECT)
+			gflog_debug(GFARM_MSG_1002870,
 			    "inode_xattr_get_cache(%s) failed: %s",
 			    GFARM_ACL_EA_ACCESS, gfarm_error_string(e));
 		return (e);

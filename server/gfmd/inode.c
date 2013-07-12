@@ -514,9 +514,10 @@ remove_all_xattrs(struct inode *inode, int xmlMode)
 
 	e = db_xattr_removeall(xmlMode, inode->i_number);
 	if (e != GFARM_ERR_OPERATION_NOT_SUPPORTED) {
-		gflog_debug(GFARM_MSG_1001718,
-			"db_xattr_removeall() failed: %s",
-			gfarm_error_string(e));
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_1001718,
+			    "db_xattr_removeall() failed: %s",
+			    gfarm_error_string(e));
 		return;
 	}
 	entry = xattrs->head;
