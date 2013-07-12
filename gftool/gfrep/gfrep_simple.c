@@ -10,6 +10,7 @@
 
 #include <gfarm/gfarm.h>
 #include "gfarm_path.h"
+#include "gfarm_foreach.h"
 
 char *program_name = "gfrep_simple";
 
@@ -40,7 +41,7 @@ select_src_from_replica_info(char *file, char **srcp)
 }
 
 static gfarm_error_t
-replicate(char *f, char *src, char *dst, int flags)
+replicate_file(char *f, char *src, char *dst, int flags)
 {
 	gfarm_error_t e, e2;
 
@@ -59,11 +60,37 @@ replicate(char *f, char *src, char *dst, int flags)
 	return (e);
 }
 
+struct options {
+	char *src, *dst;
+	int flags;
+};
+
+static gfarm_error_t
+replicate(char *path, struct gfs_stat *st, void *arg)
+{
+	gfarm_error_t e;
+	struct options *opt = arg;
+	gfarm_mode_t mode;
+
+	mode = st->st_mode;
+	if (GFARM_S_ISLNK(mode))
+		e = GFARM_ERR_IS_A_SYMBOLIC_LINK;
+	else if (!GFARM_S_ISREG(mode))
+		e = GFARM_ERR_NOT_A_REGULAR_FILE;
+	else
+		e = replicate_file(path, opt->src, opt->dst, opt->flags);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "%s: %s\n", path, gfarm_error_string(e));
+	return (e);
+}
+
 int
 main(int argc, char *argv[])
 {
 	char *src = NULL, *dst = NULL, *f, *rp = NULL, c;
 	int flags = 0;
+	struct options opt;
 	gfarm_error_t e;
 
 	if (argc > 0)
@@ -99,11 +126,11 @@ main(int argc, char *argv[])
 	e = gfarm_realpath_by_gfarm2fs(f, &rp);
 	if (e == GFARM_ERR_NO_ERROR)
 		f = rp;
-	e = replicate(f, src, dst, flags);
-	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s: %s\n", f, gfarm_error_string(e));
-		exit(EXIT_FAILURE);
-	}
+	opt.src = src;
+	opt.dst = dst;
+	opt.flags = flags;
+	e = gfarm_foreach_directory_hierarchy(replicate, NULL, NULL, f, &opt);
+	(void)e; /* error message already displayed */
 	free(rp);
 
 	e = gfarm_terminate();
