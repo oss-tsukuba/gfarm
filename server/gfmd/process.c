@@ -309,50 +309,27 @@ process_get_file_opening(struct process *process, int fd,
 }
 
 gfarm_error_t
-process_record_desired_number(struct process *process, int fd,
-	int desired_number)
+process_record_replica_spec(struct process *process, int fd,
+	int desired_number, char *repattr)
 {
 	struct file_opening *fo;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	char *repattr_str = (repattr == NULL) ? "" : repattr;
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_1002475,
-		    "process_record_desired_number(%ld, %d, %d): %s",
-		    (long)process->pid, fd, desired_number,
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "process_record_replica_spec(%ld,%d,%d,'%s'): %s",
+		    (long)process->pid, fd, desired_number, repattr_str,
 		    gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) {
-		gflog_warning(GFARM_MSG_1002476,
-		    "process_record_desired_number(%ld, %d, %d): not a file",
-		    (long)process->pid, fd, desired_number);
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "process_record_replica_spec(%ld,%d,%d,'%s'): not a file",
+		    (long)process->pid, fd, desired_number, repattr_str);
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	fo->u.f.desired_replica_number = desired_number;
-	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
-process_record_repattr(struct process *process, int fd,
-	char *repattr)
-{
-	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
-
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
-			"process_record_repattr(%ld, %d, '%s'): %s",
-			(long)process->pid, fd, repattr,
-			gfarm_error_string(e));
-		return (e);
-	}
-	if (!inode_is_file(fo->inode)) {
-		gflog_warning(GFARM_MSG_UNFIXED,
-			"process_record_repattr(%ld, %d, '%s'): not a file",
-			(long)process->pid, fd, repattr);
-		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
-	}
-	
 	/*
 	 * The repattr must be malloc'd. It will be free'd in
 	 * file_opening_free().

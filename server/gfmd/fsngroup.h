@@ -13,7 +13,7 @@ struct file_copy;
 gfarm_error_t fsngroup_schedule_replication(
 	struct inode *, const char *, int, struct host **,
 	int *, struct host **, gfarm_time_t, int *, struct host **,
-	const char *);
+	const char *, int *, int *);
 
 /*
  * Server side RPC stubs:

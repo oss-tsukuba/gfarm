@@ -169,18 +169,11 @@ replica_check_fix(struct replication_info *info)
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
 
-	if (info->repattr != NULL)
-		e = fsngroup_schedule_replication(
-		    inode, info->repattr, n_srcs, srcs,
-		    &n_existing, existing,
-		    gfarm_replica_check_host_down_thresh,
-		    &n_being_removed, being_removed, diag);
-	else
-		e = inode_schedule_replication_from_all(
-		    inode, info->desired_number, n_srcs, srcs,
-		    &n_existing, existing,
-		    gfarm_replica_check_host_down_thresh,
-		    &n_being_removed, being_removed, diag);
+	e = inode_schedule_replication(
+	    inode, info->desired_number, info->repattr,
+	    n_srcs, srcs, &n_existing, existing,
+	    gfarm_replica_check_host_down_thresh,
+	    &n_being_removed, being_removed, diag);
 
 	free(existing);
 	free(being_removed);
@@ -198,13 +191,8 @@ replica_check_desired_set(
 
 	if (inode_get_replica_spec(file_ino, &repattr, &desired_number) ||
 	    inode_search_replica_spec(dir_ino, &repattr, &desired_number)) {
-		if (repattr != NULL) {
-			infop->desired_number = 0;
-			infop->repattr = repattr;
-		} else {
-			infop->desired_number = desired_number;
-			infop->repattr = NULL;
-		}
+		infop->desired_number = desired_number;
+		infop->repattr = repattr;
 	} else {
 		infop->desired_number = 0;
 		infop->repattr = NULL;

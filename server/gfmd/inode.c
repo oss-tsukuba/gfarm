@@ -720,17 +720,17 @@ static struct gflog_reduced_state rep_fixed_state =
  * srcs[] must be different from existing[].
  */
 gfarm_error_t
-inode_schedule_replication(
+inode_schedule_replication_within_scope(
 	struct inode *inode, int n_desired,
 	int n_srcs, struct host **srcs, int *next_src_indexp,
 	int *n_scopep, struct host **scope,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
 	int *n_being_removedp, struct host **being_removed,
-	const char *diag)
+	const char *diag, int *shortage_p)
 {
 	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
 	struct host **targets, *src, *dst;
-	int busy = 0, n_success = 0, n_targets, i, n_valid, shortage;
+	int busy = 0, n_success = 0, n_targets, i, n_valid;
 	struct file_replicating *fr;
 	gfarm_off_t necessary_space;
 
@@ -749,17 +749,17 @@ inode_schedule_replication(
 		    gfarm_error_string(e));
 		return (e);
 	}
-	if (n_valid >= n_desired)
-		return (GFARM_ERR_NO_ERROR); /* sufficient */
 
-	shortage = n_desired - n_valid;
+	*shortage_p = n_desired - n_valid;
+	if (*shortage_p <= 0)
+		return (GFARM_ERR_NO_ERROR); /* sufficient */
 
 	/*
 	 * #674 - automatic replication may fail when many replicas of
 	 * a file are being removed
 	 */
-	if (shortage > n_targets &&
-	    *n_being_removedp >= shortage - n_targets) {
+	if (*shortage_p > n_targets &&
+	    *n_being_removedp >= *shortage_p - n_targets) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: inode %lld:%lld: many replicas are being removed: "
 		    "desired=%d/scope=%d/existing=%d/being_removed=%d/"
@@ -822,7 +822,8 @@ inode_schedule_replication(
 	if (busy) /* retry immediately in replica_check */
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 
-	if (shortage > n_success)
+	if (*shortage_p > n_success) {
+		*shortage_p = *shortage_p - n_success;
 		gflog_reduced_notice(GFARM_MSG_UNFIXED, &rep_fewer_state,
 		    "%s: %lld:%lld:%s: fewer replicas, "
 		    "increase=%d/before=%d/desire=%d", diag,
@@ -830,12 +831,14 @@ inode_schedule_replication(
 		    (long long)inode_get_gen(inode),
 		    user_name(inode_get_user(inode)),
 		    n_success, n_valid, n_desired);
-	else
+	} else {
+		*shortage_p = 0;
 		gflog_reduced_debug(GFARM_MSG_UNFIXED, &rep_fixed_state,
 		    "%s: %lld:%lld:%s: will be fixed, increase=%d/desire=%d",
 		    diag, (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
 		    user_name(inode_get_user(inode)), n_success, n_desired);
+	}
 
 	return (save_e);
 }
@@ -843,6 +846,8 @@ inode_schedule_replication(
 /*
  * this function modifies *n_existingp, existing[], *n_being_removedp
  * and being_removed[] but they may be abled to be used later.
+ *
+ * srcs[] must be different from existing[].
  */
 gfarm_error_t
 inode_schedule_replication_from_all(
@@ -850,7 +855,7 @@ inode_schedule_replication_from_all(
 	int n_srcs, struct host **srcs,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
 	int *n_being_removedp, struct host **being_removed,
-	const char *diag)
+	const char *diag, int *shortage_p)
 {
 	gfarm_error_t e;
 	int nhosts, next_src_index = 0;
@@ -866,11 +871,114 @@ inode_schedule_replication_from_all(
 		    n_desired, *n_existingp, gfarm_error_string(e));
 		return (e);
 	}
-	e = inode_schedule_replication(
+	e = inode_schedule_replication_within_scope(
 	    inode, n_desired, n_srcs, srcs, &next_src_index,
 	    &nhosts, hosts, n_existingp, existing, grace,
-	    n_being_removedp, being_removed, diag);
+	    n_being_removedp, being_removed, diag, shortage_p);
 	free(hosts);
+	return (e);
+}
+
+/*
+ * this function modifies *n_existingp, existing[], *n_being_removedp
+ * and being_removed[] but they may be abled to be used later.
+ *
+ * srcs[] must be different from existing[].
+ */
+gfarm_error_t
+inode_schedule_replication(
+	struct inode *inode, int n_desired, const char *repattr,
+	int n_srcs, struct host **srcs,
+	int *n_existingp, struct host **existing, gfarm_time_t grace,
+	int *n_being_removedp, struct host **being_removed,
+	const char *diag)
+{
+	gfarm_error_t e;
+	int total_repattr, shortage;
+
+	if (repattr != NULL) {
+		if (debug_mode)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: about to schedule "
+			    "repattr-based replication for inode "
+			    "%lld:%lld@%s.", diag,
+			    (long long)inode_get_number(inode),
+			    (long long)inode_get_gen(inode),
+			    host_name(srcs[0]));
+		e = fsngroup_schedule_replication(
+		    inode, repattr, n_srcs, srcs,
+		    n_existingp, existing, grace,
+		    n_being_removedp, being_removed, diag,
+		    &total_repattr, &shortage);
+		if (shortage > 0 &&
+		    e != GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+			int n_existing2, n_being_removed2;
+			struct host **existing2, **being_removed2;
+
+			/*
+			 * count existings again,
+			 * because existings should have been changed.
+			 */
+			e = inode_replica_hosts(
+			    inode, &n_existing2, &existing2,
+			    &n_being_removed2, &being_removed2);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "%s: %lld:%lld:%s: replica_hosts: %s",
+				    diag,
+				    (long long)inode_get_number(inode),
+				    (long long)inode_get_gen(inode),
+				    user_name(inode_get_user(inode)),
+				    gfarm_error_string(e));
+				return (e);
+			}
+
+			/* gfarm.ncopy vs gfarm.replicainfo */
+			if (total_repattr > n_desired)
+				n_desired = total_repattr;
+
+			if (n_existing2 >= n_desired) {
+				free(existing2);
+				free(being_removed2);
+				return (GFARM_ERR_NO_ERROR);
+			}
+
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: about to schedule "
+			    "ncopy-based replication for inode %lld:%lld@%s. "
+			    "number = %d (= %d - %d + %d)", diag,
+			    (long long)inode_get_number(inode),
+			    (long long)inode_get_gen(inode),
+			    host_name(srcs[0]),
+			    n_desired - n_existing2,
+			    n_desired, n_existing2 + n_being_removed2,
+			    n_being_removed2);
+			e = inode_schedule_replication_from_all(
+			    inode, n_desired,
+			    n_srcs, srcs, &n_existing2, existing2, grace,
+			    &n_being_removed2, being_removed2, diag,
+			    &shortage);
+			free(existing2);
+			free(being_removed2);
+		}
+	} else if (n_desired > *n_existingp) {
+		gflog_debug(GFARM_MSG_1003648,
+		    "%s: about to schedule "
+		    "ncopy-based replication for inode %lld:%lld@%s. "
+		    "number = %d (= %d - %d + %d)", diag,
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    host_name(srcs[0]),
+		    n_desired - *n_existingp,
+		    n_desired, *n_existingp + *n_being_removedp,
+		    *n_being_removedp);
+		e = inode_schedule_replication_from_all(
+		    inode, n_desired,
+		    n_srcs, srcs, n_existingp, existing, grace,
+		    n_being_removedp, being_removed, diag, &shortage);
+	} else
+		e = GFARM_ERR_NO_ERROR;
+
 	return (e);
 }
 
@@ -933,35 +1041,10 @@ make_replicas_except(struct inode *inode, struct host *spool_host,
 	}
 
 	srcs[0] = spool_host;
-	if (repattr != NULL) {
-		gflog_debug(GFARM_MSG_1003648,
-		    "%s: about to schedule "
-		    "repattr-based replication for inode "
-		    "%lld:%lld@%s.", diag,
-		    (long long)inode_get_number(inode),
-		    (long long)inode_get_gen(inode),
-		    host_name(spool_host));
-		e = fsngroup_schedule_replication(
-		    inode, repattr, 1, srcs,
-		    &n_existing, existing, 0,
-		    &n_being_removed, being_removed, diag);
-	} else if (n_existing < desired_replica_number) {
-		gflog_debug(GFARM_MSG_1003648,
-		    "%s: about to schedule "
-		    "ncopy-based replication for inode %lld:%lld@%s. "
-		    "number = %d (= %d - %d + %d)", diag,
-		    (long long)inode_get_number(inode),
-		    (long long)inode_get_gen(inode),
-		    host_name(spool_host),
-		    desired_replica_number - n_existing,
-		    desired_replica_number, n_existing + n_being_removed,
-		    n_being_removed);
-		e = inode_schedule_replication_from_all(
-		    inode, desired_replica_number,
-		    1, srcs, &n_existing, existing, 0,
-		    &n_being_removed, being_removed, diag);
-	} else
-		e = GFARM_ERR_NO_ERROR;
+	e = inode_schedule_replication(
+	    inode, desired_replica_number, repattr,
+	    1, srcs, &n_existing, existing, 0,
+	    &n_being_removed, being_removed, diag);
 
 	free(existing);
 	free(being_removed);
@@ -4304,10 +4387,13 @@ check_removable_replicas(
 	if (n_valid <= 1)
 		return (GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA);
 
+	if (n_valid <= fo->u.f.desired_replica_number)
+		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
+
 	if (fo->u.f.repattr != NULL) {
 		int nhosts;
 		struct host **hosts;
-		int ncopy, n_desired;
+		int ncopy, n_desired, total, found;
 		size_t i, nreps = 0;
 		gfarm_repattr_t *reps = NULL;
 		char *fsng;
@@ -4322,13 +4408,26 @@ check_removable_replicas(
 
 		fsng = host_fsngroup(copy->host);
 		n_desired = 0;
+		total = 0;
+		found = 0;
 		for (i = 0; i < nreps; i++) {
-			if (strcmp(gfarm_repattr_group(reps[i]), fsng) == 0) {
-				n_desired = gfarm_repattr_amount(reps[i]);
-				break;
+			int num = gfarm_repattr_amount(reps[i]);
+
+			total += num;
+			if (found == 0 &&
+			    strcmp(gfarm_repattr_group(reps[i]), fsng) == 0) {
+				n_desired = num;
+				found = 1;
 			}
 		}
-		if (n_desired <= 0) { /* no desired number for the host */
+
+		if (n_valid <= total) {
+			gfarm_repattr_free_all(nreps, reps);
+			return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
+		}
+
+		/* no desired number for the host */
+		if (n_desired <= 0) {
 			gfarm_repattr_free_all(nreps, reps);
 			return (GFARM_ERR_NO_ERROR); /* removable */
 		}
@@ -4366,9 +4465,6 @@ check_removable_replicas(
 		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
 	}
 
-	if (fo->u.f.desired_replica_number >= 2 &&
-	    n_valid <= fo->u.f.desired_replica_number)
-		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
 	return (GFARM_ERR_NO_ERROR); /* removable */
 }
 
@@ -6345,15 +6441,19 @@ int
 inode_get_replica_spec(struct inode *inode,
 	char **repattrp, int *desired_numberp)
 {
-	if (inode_has_repattr(inode, repattrp)) {
-		*desired_numberp = 0;
-		return (1);
-	}
-	if (inode_has_desired_number(inode, desired_numberp)) {
+	int found = 0;
+
+	if (inode_has_repattr(inode, repattrp))
+		found = 1;
+	else
 		*repattrp = NULL;
-		return (1);
-	}
-	return (0);
+
+	if (inode_has_desired_number(inode, desired_numberp))
+		found = 1;
+	else
+		*desired_numberp = 0;
+
+	return (found);
 }
 
 /*
