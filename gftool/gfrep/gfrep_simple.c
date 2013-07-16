@@ -17,7 +17,7 @@ char *program_name = "gfrep_simple";
 static int
 usage()
 {
-	fprintf(stderr, "Usage: %s [-s srchost] -d dsthost file\n",
+	fprintf(stderr, "Usage: %s [-r] [-s srchost] -d dsthost file\n",
 		program_name);
 	exit(EXIT_FAILURE);
 }
@@ -45,18 +45,18 @@ replicate_file(char *f, char *src, char *dst, int flags)
 {
 	gfarm_error_t e, e2;
 
-	if (src == NULL) {
-		e = gfs_replicate_file_to(f, dst, flags);
-		if (e == GFARM_ERR_NO_ERROR)
-			return (e);
-		/* if src host scheduling fails, select it from replica info */
-		e2 = select_src_from_replica_info(f, &src);
-		if (e2 == GFARM_ERR_NO_ERROR && src != NULL) {
-			e = gfs_replicate_file_from_to(f, src, dst, flags);
-			free(src);
-		}
-	} else
+	if (src != NULL)
+		return (gfs_replicate_file_from_to(f, src, dst, flags));
+
+	e = gfs_replicate_file_to(f, dst, flags);
+	if (e == GFARM_ERR_NO_ERROR)
+		return (e);
+	/* if src host scheduling fails, select it from replica info */
+	e2 = select_src_from_replica_info(f, &src);
+	if (e2 == GFARM_ERR_NO_ERROR && src != NULL) {
 		e = gfs_replicate_file_from_to(f, src, dst, flags);
+		free(src);
+	}
 	return (e);
 }
 
@@ -85,12 +85,28 @@ replicate(char *path, struct gfs_stat *st, void *arg)
 	return (e);
 }
 
+static gfarm_error_t
+ok(char *path, struct gfs_stat *st, void *arg)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+ng(char *path, struct gfs_stat *st, void *arg)
+{
+	gfarm_error_t e = GFARM_ERR_IS_A_DIRECTORY;
+
+	fprintf(stderr, "%s: %s\n", path, gfarm_error_string(e));
+	return (e);
+}
+
 int
 main(int argc, char *argv[])
 {
 	char *src = NULL, *dst = NULL, *f, *rp = NULL, c;
 	int flags = 0;
 	struct options opt;
+	gfarm_error_t (*isdir)(char *, struct gfs_stat *, void *) = ng;
 	gfarm_error_t e;
 
 	if (argc > 0)
@@ -102,13 +118,16 @@ main(int argc, char *argv[])
 		    program_name, gfarm_error_string(e));
 		exit(EXIT_FAILURE);
 	}
-	while ((c = getopt(argc, argv, "d:s:h?")) != -1) {
+	while ((c = getopt(argc, argv, "d:s:hr?")) != -1) {
 		switch (c) {
 		case 'd':
 			dst = optarg;
 			break;
 		case 's':
 			src = optarg;
+			break;
+		case 'r':
+			isdir = ok;
 			break;
 		case 'h':
 		case '?':
@@ -119,17 +138,17 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if (dst == NULL)
+	f = *argv;
+	if (dst == NULL || f == NULL)
 		usage();
 
-	f = *argv;
 	e = gfarm_realpath_by_gfarm2fs(f, &rp);
 	if (e == GFARM_ERR_NO_ERROR)
 		f = rp;
 	opt.src = src;
 	opt.dst = dst;
 	opt.flags = flags;
-	e = gfarm_foreach_directory_hierarchy(replicate, NULL, NULL, f, &opt);
+	e = gfarm_foreach_directory_hierarchy(replicate, isdir, NULL, f, &opt);
 	(void)e; /* error message already displayed */
 	free(rp);
 
