@@ -488,14 +488,9 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	     (flag & GFARM_FILE_REPLICA_SPEC) != 0) && inode_is_file(inode)) {
 		if (inode_get_replica_spec(inode, &repattr, &desired_number) ||
 		    inode_search_replica_spec(base,
-		    &repattr, &desired_number)) {
-			if (repattr != NULL)
-				(void)process_record_repattr(
-				    process, fd, repattr);
-			else
-				(void)process_record_desired_number(
-				    process, fd, desired_number);
-		}
+		    &repattr, &desired_number))
+			(void)process_record_replica_spec(
+			    process, fd, desired_number, repattr);
 	}
 
 	/* set full path to file_opening */

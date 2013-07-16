@@ -139,19 +139,24 @@ gfarm_error_t inode_remove_replica_in_cache(struct inode *, struct host *);
 int inode_is_updated(struct inode *, struct gfarm_timespec *);
 gfarm_error_t dir_entry_add(gfarm_ino_t, char *, int, gfarm_ino_t);
 
-gfarm_error_t inode_schedule_replication(
+gfarm_error_t inode_schedule_replication_within_scope(
 	struct inode *, int,
 	int, struct host **, int *,
 	int *, struct host **,
 	int *, struct host **, gfarm_time_t,
-	int *, struct host **, int *,
-	const char *);
+	int *, struct host **,
+	const char *, int *, int *);
 gfarm_error_t inode_schedule_replication_from_all(
 	struct inode *, int,
 	int, struct host **,
 	int *, struct host **, gfarm_time_t,
-	int *, struct host **, int *,
-	const char *);
+	int *, struct host **,
+	const char *, int *, int *);
+gfarm_error_t inode_schedule_replication(
+	struct inode *, int, const char *,
+	int, struct host **,
+	int *, struct host **, gfarm_time_t,
+	int *, struct host **, const char *, int *);
 
 gfarm_error_t inode_open(struct file_opening *);
 void inode_close(struct file_opening *, char **);

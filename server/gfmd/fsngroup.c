@@ -111,20 +111,24 @@ fsngroup_schedule_replication(
 	int n_srcs, struct host **srcs,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
 	int *n_being_removedp, struct host **being_removed,
-	int *n_successp, const char *diag)
+	const char *diag, int *n_successp, int *total_p, int *shortage_p)
 {
 	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
-	int i, n_scope, next_src_index = 0;
+	int i, n_scope, next_src_index = 0, shortage, n_success;
 	size_t nreps = 0;
 	gfarm_repattr_t *reps = NULL;
 	struct host **scope;
 
 	assert(repattr != NULL && srcs != NULL);
 
-	gflog_debug(GFARM_MSG_UNFIXED,
-		"%s: replicate inode %lld:%lld to fsngroup '%s'.",
-		diag, (long long)inode_get_number(inode),
-		(long long)inode_get_gen(inode), repattr);
+	if (debug_mode)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: replicate inode %lld:%lld to fsngroup '%s'.",
+		    diag, (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode), repattr);
+
+	*total_p = 0;
+	*shortage_p = 0;
 
 	e = gfarm_repattr_parse(repattr, &reps, &nreps);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -140,27 +144,46 @@ fsngroup_schedule_replication(
 	}
 
 	for (i = 0; i < nreps; i++) {
-		e = fsngroup_get_hosts(gfarm_repattr_group(reps[i]),
-		    &n_scope, &scope);
+		int num;
+		const char *group = gfarm_repattr_group(reps[i]);
+
+		e = fsngroup_get_hosts(group, &n_scope, &scope);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_notice(GFARM_MSG_UNFIXED,
 			    "%s: fsngroup_get_hosts(%s): %s",
-			    diag, gfarm_repattr_group(reps[i]),
-			    gfarm_error_string(e));
+			    diag, group, gfarm_error_string(e));
 			if (save_e == GFARM_ERR_NO_ERROR ||
 			    e == GFARM_ERR_NO_MEMORY)
 				save_e = e;
 			continue;
 		}
-		e = inode_schedule_replication(
-		    inode, gfarm_repattr_amount(reps[i]),
-		    n_srcs, srcs, &next_src_index,
+		num = gfarm_repattr_amount(reps[i]);
+		*total_p = *total_p + num;
+		n_success = 0;
+		shortage = 0;
+		e = inode_schedule_replication_within_scope(
+		    inode, num, n_srcs, srcs, &next_src_index,
 		    &n_scope, scope, n_existingp, existing, grace,
-		    n_being_removedp, being_removed, n_successp, diag);
+		    n_being_removedp, being_removed, diag,
+		    &n_success, &shortage);
+		*n_successp += n_success;
 		if (e != GFARM_ERR_NO_ERROR &&
 		    (save_e == GFARM_ERR_NO_ERROR ||
 		     e == GFARM_ERR_NO_MEMORY))
 			save_e = e;
+		if (shortage > 0) {
+			*shortage_p += shortage;
+			if (e != GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE)
+				gflog_notice(
+				    GFARM_MSG_UNFIXED,
+				    "%s: %lld:%lld:%s: host group %s: "
+				    "insufficient replicas (%d/%d)",
+				    diag,
+				    (long long)inode_get_number(inode),
+				    (long long)inode_get_gen(inode),
+				    user_name(inode_get_user(inode)),
+				    group, num - shortage, num);
+		}
 		free(scope);
 	}
 
