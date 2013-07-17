@@ -21,33 +21,39 @@ Since 'systest' uses 'gfservice' command internally, you need to
 prepare a configuration file of 'gfservice' (the default path is
 "$HOME/.gfservice") for those hosts, like as follows:
 
-	gfmd1=mds1.example.com
+	gfmd1=mds1-ctl.example.com
+	gfmd1_CONFIG_GFARM_OPTIONS="-h mds1.example.com"
 	gfmd1_IFUP_CMD="/sbin/ifup eth2"
 	gfmd1_IFDOWN_CMD="/sbin/ifdown eth2"
 	gfmd1_LOG_FILE_PATHS=/var/log/syslog
 
-	gfmd2=mds2.example.com
+	gfmd2=mds2-ctl.example.com
+	gfmd2_CONFIG_GFARM_OPTIONS="-h mds2.example.com"
 	gfmd2_REPLICATION_MODE=async
 	gfmd2_IFUP_CMD="/sbin/ifup eth2"
 	gfmd2_IFDOWN_CMD="/sbin/ifdown eth2"
 	gfmd2_LOG_FILE_PATHS=/var/log/syslog
 
-	gfsd1=fsn1.example.com
+	gfsd1=fsn1-ctl.example.com
+	gfsd1_CONFIG_GFSD_OPTIONS="-h fsn1.example.com"
 	gfsd1_IFUP_CMD="/sbin/ifup eth1"
 	gfsd1_IFDOWN_CMD="/sbin/ifdown eth1"
 	gfsd1_LOG_FILE_PATHS=/var/log/syslog
 
-	gfsd2=fsn2.example.com
+	gfsd2=fsn2-ctl.example.com
+	gfsd2_CONFIG_GFSD_OPTIONS="-h fsn2.example.com"
 	gfsd2_IFUP_CMD="/sbin/ifup eth1"
 	gfsd2_IFDOWN_CMD="/sbin/ifdown eth1"
 	gfsd2_LOG_FILE_PATHS=/var/log/syslog
 
-	gfsd3=fsn3.example.com
+	gfsd3=fsn3-ctl.example.com
+	gfsd3_CONFIG_GFSD_OPTIONS="-h fsn3.example.com"
 	gfsd3_IFUP_CMD="/sbin/ifup eth1"
 	gfsd3_IFDOWN_CMD="/sbin/ifdown eth1"
 	gfsd3_LOG_FILE_PATHS=/var/log/syslog
 
-	gfsd4=fsn4.example.com
+	gfsd4=fsn4-ctl.example.com
+	gfsd4_CONFIG_GFSD_OPTIONS="-h fsn4.example.com"
 	gfsd4_IFUP_CMD="/sbin/ifup eth1"
 	gfsd4_IFDOWN_CMD="/sbin/ifdown eth1"
 	gfsd4_LOG_FILE_PATHS=/var/log/syslog
@@ -63,6 +69,20 @@ They are not interpreted by 'gfservice' but 'systest':
 	Those variables specify how to disable a network interface
 	used by gfmd, gfsd or a client to communicate with other
 	servers and clients.  The default value is "/sbin/ifdown eth0".
+
+	It is recommended that hostnames used by a Gfarm system (shown
+	by 'gfmdhost -l' and 'gfhost -l') and used by 'gfservice' ($gfmd<n>
+	and $gfsd<n>) differ.  For example,
+
+	    gfmd1=mds1-ctl.example.com
+	    gfmd1_CONFIG_GFARM_OPTIONS="-h mds1.example.com"
+
+	    gfsd1=fsn1-ctl.example.com
+	    gfsd1_CONFIG_GFSD_OPTIONS="-h fsn1.example.com"
+
+	In this case, specify an interface name associated with
+	'mds1.example.com' for 'gfmd1_IFDOWN_CMD' and an interface
+	name associated with 'fsn1.example.com' for 'gfsd1_IFDOWN_CMD'.
 
     gfmd<n>_IFUP_CMD
     gfsd<n>_IFUP_CMD
