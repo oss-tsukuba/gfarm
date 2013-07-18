@@ -68,7 +68,7 @@ exit_code=$exit_pass
 
 test_gfncopy " 1" $EXPECT_OK
 test_gfncopy "1 " $EXPECT_OK
-test_gfncopy "-1" $EXPECT_OK
+test_gfncopy "-1" $EXPECT_EINVAL
 test_gfncopy "2147483647" $EXPECT_OK
 test_gfncopy "2147483648" $EXPECT_ERANGE
 test_gfncopy "4294967295" $EXPECT_ERANGE

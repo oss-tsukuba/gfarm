@@ -2,7 +2,7 @@
 
 <refentry id='gfncopy.1'>
 
-<refentryinfo><date>23 Oct 2012</date></refentryinfo>
+<refentryinfo><date>18 Jul 2013</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfncopy</refentrytitle>
@@ -16,21 +16,69 @@
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
+
 <cmdsynopsis>
   <command>gfncopy</command>
-    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+    <arg choice='opt'>-vh</arg>
     <arg choice='plain'><replaceable>path</replaceable></arg>
 </cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfrepattr</command>
+    <arg choice='opt'>-vh</arg>
+    <group choice='opt'>
+      <arg choice='plain'>-C</arg>
+      <arg choice='plain'>-M</arg>
+    </group>
+    <arg choice='plain'>-s <replaceable>NCOPY</replaceable></arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfrepattr</command>
+    <arg choice='opt'>-vh</arg>
+    <group choice='opt'>
+      <arg choice='plain'>-C</arg>
+      <arg choice='plain'>-M</arg>
+    </group>
+    <arg choice='plain'>-S <replaceable>REPATTR</replaceable></arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfrepattr</command>
+    <arg choice='opt'>-vh</arg>
+    <arg choice='plain'>-r</arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfrepattr</command>
+    <arg choice='opt'>-vh</arg>
+    <arg choice='plain'>-c</arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfrepattr</command>
+    <arg choice='opt'>-v</arg>
+    <arg choice='plain'>-w</arg>
+    <arg choice='opt'>-t <replaceable>TIMEOUT</replaceable></arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>path に指定したファイルないしディレクトリに関する自動ファイル複製作成数を操作します。
-オプションを指定しない場合は、
-設定された自動複製作成数を表示します。
--vオプションを指定すると、自動複製作成数を設定している
-先祖のディレクトリまでのパス名も含めて表示します。
+<para>
+pathに指定したファイルないしディレクトリに関する自動ファイル複製作成数を操作します。
+オプションを指定しない場合は、設定された自動複製作成数を表示します。
+総自動複製作成数(NCOPY)とホストグループごとの自動複製作成数(REPATTR)の両方が指定されていたら、
+それぞれの値を2行で表示します。
+<option>-v</option>オプションを指定すると、自動複製作成数を設定している先祖のディレクトリまでのパス名も含めて表示します。
 </para>
-
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
@@ -39,14 +87,46 @@
 <varlistentry>
 <term><option>-s</option> <parameter>NCOPY</parameter></term>
 <listitem>
-<para>自動複製作成数を設定します。</para>
+<para>ファイルまたはディレクトリに、自動複製作成数を設定します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option> <parameter>REPATTR</parameter></term>
+<listitem>
+<para>ファイルまたはディレクトリに、ホストグループごとの自動複製作成数を設定します。</para>
+
+<para>
+<parameter>NCOPY</parameter>と<parameter>REPATTR</parameter>の両方が設定されている場合、
+<parameter>REPATTR</parameter>に設定された複製数の合計Nが<parameter>NCOPY</parameter>よりも大きければ、最低でもN個の複製が作成されます。
+そうでなければ、<parameter>REPATTR</parameter>従って複製を作成し、
+さらに、複製数の合計が<parameter>NCOPY</parameter>になるように複製を作成します。
+</para>
+
+<para>
+<parameter>REPATTR</parameter> の形式を以下の BNF で示します。
+</para>
+<literallayout>
+    &lt;repattr&gt; ::= &lt;an_attr&gt; | &lt;an_attr&gt; ',' &lt;repattr&gt;
+    &lt;an_attr&gt; ::= &lt;host_group&gt; ':' &lt;num_rep&gt;
+    &lt;host_group&gt; ::= &lt;string&gt;
+    &lt;num_rep&gt; ::= &lt;integer&gt;
+
+  例)
+    group0:2
+    group0:1,group1:2,group2:3
+</literallayout>
+
+</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-r</option></term>
 <listitem>
-<para>自動複製作成数の設定を消去します。</para>
+<para>自動複製作成数の設定を消去します。
+複数個のpathを指定できます。
+</para>
 </listitem>
 </varlistentry>
 
@@ -58,9 +138,35 @@
 </varlistentry>
 
 <varlistentry>
+<term><option>-w</option></term>
+<listitem>
+<para>設定に従った個数の複製が作成されているかどうか確認し、複製作成中であれば、複製作成が完了するまで待ちます。
+複数個のpathを指定できます。
+pathにディレクトリを指定すれば、そのディレクトリ以下すべてのファイルを確認します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-t</option> <parameter>TIMEOUT</parameter></term>
+<listitem>
+<para><option>-w</option>オプション使用時に、設定に従った個数の複製が作成開始されるまで待つ時間を秒で指定します。
+複製作成中であればタイムアウトしません。デフォルトは30秒です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>シンボリックリンクを辿らないようにします。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-v</option></term>
 <listitem>
-<para>自動複製作成数を設定している先祖のディレクトリまでのパス名も含めて表示します。</para>
+<para>詳細なメッセージを表示します。</para>
 </listitem>
 </varlistentry>
 
@@ -73,5 +179,13 @@
 
 </variablelist>
 </refsect1>
-</refentry>
 
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfhostgroup</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

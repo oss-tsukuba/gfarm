@@ -2,7 +2,7 @@
 
 <refentry id='gfncopy.1'>
 
-<refentryinfo><date>23 Oct 2012</date></refentryinfo>
+<refentryinfo><date>18 Jul 2013</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfncopy</refentrytitle>
@@ -18,15 +18,64 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfncopy</command>
-    <arg choice='opt'><replaceable>option</replaceable></arg>
+    <arg choice='opt'>-vh</arg>
     <arg choice='plain'><replaceable>path</replaceable></arg>
 </cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfrepattr</command>
+    <arg choice='opt'>-vh</arg>
+    <group choice='opt'>
+      <arg choice='plain'>-C</arg>
+      <arg choice='plain'>-M</arg>
+    </group>
+    <arg choice='plain'>-s <replaceable>NCOPY</replaceable></arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfrepattr</command>
+    <arg choice='opt'>-vh</arg>
+    <group choice='opt'>
+      <arg choice='plain'>-C</arg>
+      <arg choice='plain'>-M</arg>
+    </group>
+    <arg choice='plain'>-S <replaceable>REPATTR</replaceable></arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfrepattr</command>
+    <arg choice='opt'>-vh</arg>
+    <arg choice='plain'>-r</arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfrepattr</command>
+    <arg choice='opt'>-vh</arg>
+    <arg choice='plain'>-c</arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfrepattr</command>
+    <arg choice='opt'>-v</arg>
+    <arg choice='plain'>-w</arg>
+    <arg choice='opt'>-t <replaceable>TIMEOUT</replaceable></arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>gfncopy manipulates the number of file replicas automatically
 created.  When no option is specified, it displays the specified
-number of file replicas.  With the -v option, it also displays path
+number of file replicas.  When replication attributes of both NCOPY
+and REPATTR are set to a file, these attributes are displayed in two
+lines.  With the <option>-v</option> option, it also displays path
 names up to the ancient directory that specifies the number of file
 repilcas.
 </para>
@@ -39,14 +88,59 @@ repilcas.
 <varlistentry>
 <term><option>-s</option> <parameter>NCOPY</parameter></term>
 <listitem>
-<para>specifies the number of file replicas automatically created.</para>
+<para>specifies the attribute for automatic replication represented by
+the number of file replicas to a file or directory.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option> <parameter>REPATTR</parameter></term>
+<listitem>
+<para>specifies the attribute for automatic replication represented by
+host groups to a file or directory.</para>
+<para>
+a <parameter>REPATTR</parameter> is represented by the following BNF:
+</para>
+<literallayout>
+    &lt;repattr&gt; ::= &lt;an_attr&gt; | &lt;an_attr&gt; ',' &lt;repattr&gt;
+    &lt;an_attr&gt; ::= &lt;host_group&gt; ':' &lt;num_rep&gt;
+    &lt;host_group&gt; ::= &lt;string&gt;
+    &lt;num_rep&gt; ::= &lt;integer&gt;
+
+  e.g.)
+    group0:2
+    group0:1,group1:2,group2:3
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-C</option></term>
+<listitem>
+<para>
+If the replication attribute exists already on the
+file, <command>gfncopy</command> with the <option>-s</option>
+or <option>-S</option> options fails.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-M</option></term>
+<listitem>
+<para>
+If the replication attribute does not exist on the
+file, <command>gfncopy</command> with the <option>-s</option>
+or <option>-S</option> options fails.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-r</option></term>
 <listitem>
-<para>removes the specified number of file replicas automatically created.</para>
+<para>removes the specified replication attributes.</para>
+<para>
+The <replaceable>path</replaceable> can be specified multiple times.
+</para>
 </listitem>
 </varlistentry>
 
@@ -58,10 +152,44 @@ repilcas.
 </varlistentry>
 
 <varlistentry>
+<term><option>-w</option></term>
+<listitem>
+<para>checks whether or not the file replicas have been created
+according to the replication attributes (NCOPY or REPATTR), otherwise
+waits for the completion of the replication.</para>
+<para>
+The <replaceable>path</replaceable> can be specified multiple times.
+</para>
+<para>
+If the <replaceable>path</replaceable> is a directory, files in
+subdirectories are checked.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-t</option> <parameter>TIMEOUT</parameter></term>
+<listitem>
+<para>
+specifies the time in seconds for the <option>-w</option> option to
+wait until automatic replication starts.
+Timeout does not occur while the replication is running.
+Default is 30 seconds.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>processes symbolic link instead of any referenced files.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-v</option></term>
 <listitem>
-<para>displays path names up to the ancient directory that specifies
-the number of file repilcas.</para>
+<para>displays verbose messages.</para>
 </listitem>
 </varlistentry>
 
@@ -74,5 +202,14 @@ the number of file repilcas.</para>
 
 </variablelist>
 </refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfhostgroup</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
 </refentry>
 
