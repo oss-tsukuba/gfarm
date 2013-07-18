@@ -1,4 +1,3 @@
-gfarm_v2::configuration
 gfarm_v2::failover_by_kill
 gfarm_v2::failover_by_reboot
 gfarm_v2::failover_by_stop

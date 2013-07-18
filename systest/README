@@ -114,12 +114,15 @@ The example below runs the test case 'failover_by_kill':
 
 You can run multiple test cases using a scenario file:
 
-	gfruntest <scenario file>
+	gfruntest -s <scenario file>
 
-The example below runs the scenario 'gfarm_v2/gfarm_v2' which runs all
-test cases.
+The following scenario files are currently available:
 
-	gfruntest -s gfarm_v2/gfarm_v2
+	* gfarm_v2/configuration
+		config-gfarm and config-gfsd
+
+	* gfarm_v2/failover
+		gfmd failover
 
 Details about the test cases are described in 'testcases.xls' (written
 in Japanese).
