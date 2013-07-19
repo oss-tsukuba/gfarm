@@ -20,9 +20,9 @@ gfarm_foreach_directory_hierarchy_internal(
 	const char *f;
 	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	int file_len;
-	GFS_DirPlus dir;
+	GFS_Dir dir;
 	struct gfs_dirent *dent;
-	struct gfs_stat *stent;
+	struct gfs_stat stent;
 
 	/* add '/' if necessary */
 	f = gfarm_url_prefix_hostname_port_skip(file);
@@ -38,11 +38,11 @@ gfarm_foreach_directory_hierarchy_internal(
 			if (e != GFARM_ERR_NO_ERROR)
 				goto error;
 		}
-		e = gfs_opendirplus(file, &dir);
+		e = gfs_opendir_caching(file, &dir);
 		if (e != GFARM_ERR_NO_ERROR)
 			goto error;
 
-		while ((e = gfs_readdirplus(dir, &dent, &stent))
+		while ((e = gfs_readdir(dir, &dent))
 		    == GFARM_ERR_NO_ERROR && dent != NULL) {
 			char *d = dent->d_name;
 
@@ -59,13 +59,18 @@ gfarm_foreach_directory_hierarchy_internal(
 				continue;
 			}
 			sprintf(path, "%s%s%s", file, slash, d);
-			e = gfarm_foreach_directory_hierarchy_internal(
-			    op_file, op_dir1, op_dir2, path, arg, stent);
-			free(path);
+			e = gfs_lstat_cached(path, &stent);
+			if (e == GFARM_ERR_NO_ERROR) {
+				e = gfarm_foreach_directory_hierarchy_internal(
+				    op_file, op_dir1, op_dir2,
+				    path, arg, &stent);
+				gfs_stat_free(&stent);
+			}
 			if (e_save == GFARM_ERR_NO_ERROR)
 				e_save = e;
+			free(path);
 		}
-		e = gfs_closedirplus(dir);
+		e = gfs_closedir(dir);
 		if (e != GFARM_ERR_NO_ERROR)
 			goto error;
 		if (op_dir2 != NULL)
@@ -93,7 +98,7 @@ gfarm_foreach_directory_hierarchy(
 	char *file, void *arg)
 {
 	struct gfs_stat st;
-	gfarm_error_t e = gfs_lstat(file, &st);
+	gfarm_error_t e = gfs_lstat_cached(file, &st);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
