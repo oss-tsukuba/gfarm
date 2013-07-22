@@ -23,14 +23,21 @@ end
 
 $config = Hash.new
 $config[:testdir] = "gfarm:///stress"
+$config[:localdir] = "/tmp"
 $config[:number] = 1
-$config[:timeout] = -1
+$config[:timeout] = 300     # 5 minutes
 opts = OptionParser.new
 opts.on("-t",
-        "--testdir LOCAL_DIR",
+        "--testdir GFARM_URL",
         String,
-        "test gfarm url") {|v|
+        "test gfarm url (default: #{$config[:testdir]})") {|v|
   $config[:testdir] = v
+}
+opts.on("-l",
+        "--localdir LOCAL_URL",
+        String,
+        "test local directory (default: #{$config[:localdir]})") {|v|
+  $config[:localdir] = v
 }
 opts.on("-m",
         "--gfarm2fs GFARM_DIR",
@@ -47,7 +54,7 @@ opts.on("-n",
 opts.on("-T",
         "--timeout SECONDS",
         Integer,
-        "timeout (default: infinite)") {|v|
+        "timeout (default: #{$config[:timeout]} seconds)") {|v|
   $config[:timeout] = v
 }
 opts.parse!(ARGV)
@@ -62,6 +69,11 @@ r = system("gfmkdir -p #{$top_dir}");
 if (r == false)
   exit(1);
 end
+$local_dir = "#{$config[:localdir]}/gfstress-#{$pid}"
+r = system("mkdir -p #{$local_dir}");
+if (r == false)
+  exit(1);
+end
 r = system("gfncopy -s 1 #{$top_dir}")
 if (r == false)
   STDERR.print("gfncopy error!\n")
@@ -69,6 +81,14 @@ if (r == false)
 end
 
 $config[:number].times { |i|
+  r = system("gfmkdir -p #{$top_dir}/gfpcopy/#{i}");
+  if (r == false)
+    exit(1);
+  end
+  r = system("mkdir -p #{$local_dir}/gfpcopy/#{i}");
+  if (r == false)
+    exit(1);
+  end
   r = system("gfmkdir -p #{$top_dir}/metadata/#{i}");
   if (r == false)
     exit(1);
@@ -99,6 +119,7 @@ $config[:number].times { |i|
 $commands = Array.new
 
 $config[:number].times { |i|
+  $commands.push("gfpcopy-test.sh -g #{$top_dir}/gfpcopy/#{i} -l #{$local_dir}/gfpcopy/#{i}")
   $commands.push("gfperf-metadata -t #{$top_dir}/metadata/#{i} -n 500")
   $commands.push("gfperf-tree -t #{$top_dir}/tree/#{i} -w 3 -d 5")
   $gfsds.each {|g|
@@ -178,15 +199,22 @@ class Runner
           errstr += tmp
         end
       }
-      Process.waitpid(@pid)
+      pid2, status = Process.waitpid2(@pid, 0)
       t0.join
       t1.join
       @stdin.close
       @stdout.close
       @stderr.close
+      if (!@running)
+        prefix = "[INTERRUPTED] "
+      elsif (status.exitstatus == 0)
+        prefix = "[IGNORED] "
+      else
+        prefix = "[ERROR] "
+      end
       tmp = errstr.split("\n").map{|l|
         if (!l.include?("[1000058] connecting to gfmd"))
-          l
+          prefix + l
         end
       }.compact
       if (tmp.size > 0)
@@ -195,10 +223,14 @@ class Runner
         errstr = ""
       end
       if (errstr.length > 0)
-        print @command+"\n"
+        print "[COMMAND] " + @command + "\n"
         print errstr
-        @manager.intr
-        @running = false
+      end
+      if (!status.exitstatus.nil? && status.exitstatus != 0)
+        print "[COMMAND] " + @command + ", exitcode=#{status.exitstatus}\n"
+# do not stop
+#        @manager.intr
+#        @running = false
       end
     end
   end
@@ -234,7 +266,7 @@ class Manager
       print "timeout: #{$config[:timeout]} seconds\n"
       @timeout_thread = Thread.new {
         sleep $config[:timeout]
-        print "timeout...\n"
+        print "end of gfstress.rb (timeout)\n"
         @runners.each { |r|
           r.stop
         }
@@ -282,4 +314,5 @@ print "stop at #{Time.now.to_s}\n"
 
 print "clean up..."
 system("gfrm -rf #{$top_dir}");
+system("rm -rf #{$local_dir}");
 print "done.\n"
