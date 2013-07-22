@@ -14,6 +14,8 @@ lib/libgfarm/gfarm/gfs_pio_create/autoreplica.sh
 lib/libgfarm/gfarm/gfs_pio_create/autoreplica4.sh
 lib/libgfarm/gfarm/gfs_pio_create/autoreplica4_reader_last.sh
 lib/libgfarm/gfarm/gfs_pio_create/autoreplica-repattr0.sh
+lib/libgfarm/gfarm/gfs_pio_create/autoreplica-repattr-over-ncopy.sh
+lib/libgfarm/gfarm/gfs_pio_create/autoreplica-repattr-under-ncopy.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_append.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc_read.sh
