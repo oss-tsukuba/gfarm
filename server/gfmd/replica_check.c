@@ -172,7 +172,7 @@ replica_check_fix(struct replication_info *info)
 	}
 
 	e = inode_schedule_replication(
-	    inode, info->desired_number, info->repattr,
+	    inode, 1, info->desired_number, info->repattr,
 	    n_srcs, srcs, &n_existing, existing,
 	    gfarm_replica_check_host_down_thresh,
 	    &n_being_removed, being_removed, diag, &n_success);
