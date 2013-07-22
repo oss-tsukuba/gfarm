@@ -725,12 +725,11 @@ inode_schedule_replication_within_scope(
 	int n_srcs, struct host **srcs, int *next_src_indexp,
 	int *n_scopep, struct host **scope,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
-	int *n_being_removedp, struct host **being_removed,
-	const char *diag, int *shortage_p)
+	int *n_being_removedp, struct host **being_removed, const char *diag)
 {
 	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
 	struct host **targets, *src, *dst;
-	int busy = 0, n_success = 0, n_targets, i, n_valid;
+	int busy = 0, n_success = 0, n_targets, i, n_valid, shortage;
 	struct file_replicating *fr;
 	gfarm_off_t necessary_space;
 
@@ -750,16 +749,16 @@ inode_schedule_replication_within_scope(
 		return (e);
 	}
 
-	*shortage_p = n_desired - n_valid;
-	if (*shortage_p <= 0)
+	shortage = n_desired - n_valid;
+	if (shortage <= 0)
 		return (GFARM_ERR_NO_ERROR); /* sufficient */
 
 	/*
 	 * #674 - automatic replication may fail when many replicas of
 	 * a file are being removed
 	 */
-	if (*shortage_p > n_targets &&
-	    *n_being_removedp >= *shortage_p - n_targets) {
+	if (shortage > n_targets &&
+	    *n_being_removedp >= shortage - n_targets) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: inode %lld:%lld: many replicas are being removed: "
 		    "desired=%d/scope=%d/existing=%d/being_removed=%d/"
@@ -822,8 +821,7 @@ inode_schedule_replication_within_scope(
 	if (busy) /* retry immediately in replica_check */
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 
-	if (*shortage_p > n_success) {
-		*shortage_p = *shortage_p - n_success;
+	if (shortage > n_success)
 		gflog_reduced_notice(GFARM_MSG_UNFIXED, &rep_fewer_state,
 		    "%s: %lld:%lld:%s: fewer replicas, "
 		    "increase=%d/before=%d/desire=%d", diag,
@@ -831,14 +829,12 @@ inode_schedule_replication_within_scope(
 		    (long long)inode_get_gen(inode),
 		    user_name(inode_get_user(inode)),
 		    n_success, n_valid, n_desired);
-	} else {
-		*shortage_p = 0;
+	else
 		gflog_reduced_debug(GFARM_MSG_UNFIXED, &rep_fixed_state,
 		    "%s: %lld:%lld:%s: will be fixed, increase=%d/desire=%d",
 		    diag, (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
 		    user_name(inode_get_user(inode)), n_success, n_desired);
-	}
 
 	return (save_e);
 }
@@ -854,8 +850,7 @@ inode_schedule_replication_from_all(
 	struct inode *inode, int n_desired,
 	int n_srcs, struct host **srcs,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
-	int *n_being_removedp, struct host **being_removed,
-	const char *diag, int *shortage_p)
+	int *n_being_removedp, struct host **being_removed, const char *diag)
 {
 	gfarm_error_t e;
 	int nhosts, next_src_index = 0;
@@ -874,7 +869,7 @@ inode_schedule_replication_from_all(
 	e = inode_schedule_replication_within_scope(
 	    inode, n_desired, n_srcs, srcs, &next_src_index,
 	    &nhosts, hosts, n_existingp, existing, grace,
-	    n_being_removedp, being_removed, diag, shortage_p);
+	    n_being_removedp, being_removed, diag);
 	free(hosts);
 	return (e);
 }
@@ -887,14 +882,15 @@ inode_schedule_replication_from_all(
  */
 gfarm_error_t
 inode_schedule_replication(
-	struct inode *inode, int n_desired, const char *repattr,
+	struct inode *inode, int is_replica_check,
+	int n_desired, const char *repattr,
 	int n_srcs, struct host **srcs,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
 	int *n_being_removedp, struct host **being_removed,
 	const char *diag)
 {
 	gfarm_error_t e;
-	int total_repattr, shortage;
+	int total_repattr;
 
 	if (repattr != NULL) {
 		if (debug_mode)
@@ -908,10 +904,11 @@ inode_schedule_replication(
 		e = fsngroup_schedule_replication(
 		    inode, repattr, n_srcs, srcs,
 		    n_existingp, existing, grace,
-		    n_being_removedp, being_removed, diag,
-		    &total_repattr, &shortage);
-		if (shortage > 0 &&
-		    e != GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+		    n_being_removedp, being_removed, diag, &total_repattr);
+		if (is_replica_check &&
+		    e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+			/* retry in replica_check */
+		} else {
 			int n_existing2, n_being_removed2;
 			struct host **existing2, **being_removed2;
 
@@ -940,7 +937,7 @@ inode_schedule_replication(
 			if (n_existing2 >= n_desired) {
 				free(existing2);
 				free(being_removed2);
-				return (GFARM_ERR_NO_ERROR);
+				return (GFARM_ERR_NO_ERROR); /* OK */
 			}
 
 			gflog_debug(GFARM_MSG_UNFIXED,
@@ -956,8 +953,7 @@ inode_schedule_replication(
 			e = inode_schedule_replication_from_all(
 			    inode, n_desired,
 			    n_srcs, srcs, &n_existing2, existing2, grace,
-			    &n_being_removed2, being_removed2, diag,
-			    &shortage);
+			    &n_being_removed2, being_removed2, diag);
 			free(existing2);
 			free(being_removed2);
 		}
@@ -975,7 +971,7 @@ inode_schedule_replication(
 		e = inode_schedule_replication_from_all(
 		    inode, n_desired,
 		    n_srcs, srcs, n_existingp, existing, grace,
-		    n_being_removedp, being_removed, diag, &shortage);
+		    n_being_removedp, being_removed, diag);
 	} else
 		e = GFARM_ERR_NO_ERROR;
 
@@ -1042,7 +1038,7 @@ make_replicas_except(struct inode *inode, struct host *spool_host,
 
 	srcs[0] = spool_host;
 	e = inode_schedule_replication(
-	    inode, desired_replica_number, repattr,
+	    inode, 0, desired_replica_number, repattr,
 	    1, srcs, &n_existing, existing, 0,
 	    &n_being_removed, being_removed, diag);
 
