@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# XXX FIXME: runnig this script simultaneously is not safe
+
 . ./regress.conf
 
 #####################################################################
@@ -93,7 +95,10 @@ write_file() {
     shift
     val="${1+$@}"
     len=`echo -n ${val} | wc -c`
-    echo "${val}" | ${gfs_pio_test} -w -W${len} ${dst}
+#   pass "-t" option to ${gfs_pio_test} to avoid the following bug:
+#	https://sourceforge.net/apps/trac/gfarm/ticket/461
+#   echo "${val}" | ${gfs_pio_test} -w -W${len} ${dst}
+    echo "${val}" | ${gfs_pio_test} -wt -W${len} ${dst}
     ret=$?
     unset val len dst
     return ${ret}
