@@ -25,7 +25,7 @@ function test_clean() {
     remove_gfarm_files > /dev/null 2>&1
     dir="${LOCAL_DIR}${DIR_PATTERN2}"
     rm -rf "${dir}" > /dev/null 2>&1
-    rm ${TMP_FILE}
+    rm -f ${TMP_FILE}
 }
 
 function sig_handler() {
@@ -279,5 +279,5 @@ END {
 	print "preferred \"client_parallel_copy\" in gfarm2.conf is "int(avr+0.5)
 }
 __END__
-rm ${TMP_FILE}
+rm -f ${TMP_FILE}
 fi

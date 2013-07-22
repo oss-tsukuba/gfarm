@@ -424,16 +424,16 @@ do_libgfarm_rmdir(struct directory_names *names)
 	set_start(&r);
 	e = gfs_rmdir(names->names[0]);
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "rmdir: %s\n",
-			gfarm_error_string(e));
+		fprintf(stderr, "gfs_rmdir(%s): %s\n",
+		    names->names[0], gfarm_error_string(e));
 		return (e);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		e = gfs_rmdir(names->names[i]);
 		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "rmdir: %s\n",
-				gfarm_error_string(e));
+			fprintf(stderr, "gfs_rmdir(%s): %s\n",
+			    names->names[i], gfarm_error_string(e));
 			return (e);
 		}
 	}
