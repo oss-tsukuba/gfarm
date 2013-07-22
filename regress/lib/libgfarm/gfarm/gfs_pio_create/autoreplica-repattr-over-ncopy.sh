@@ -3,7 +3,7 @@
 basedir=`dirname $0`
 . ${basedir}/autoreplica-repattr-common.sh
 
-setup_repattr0() {
+setup_repattr_over_ncopy() {
     ret=127
 
     n=0
@@ -27,8 +27,11 @@ setup_repattr0() {
 	fi
     done
 
+    # gfarm.ncopy < gfarm.replicainfo
+    ncopy=`expr ${n} - 1`
+    ncopy_total=${n}
     repattr="g0:${g0}, g1:${g1}, g2:${g2}"
-    echo repattr=$repattr
+    echo ncopy=${ncopy}, repattr=${repattr}
 
     unset n g0 g1 g2 gidx __i
     return 0
@@ -40,21 +43,13 @@ cleanup
 setup
 if [ $? -ne 0 ]; then
     onexit
-    echo setup failed
+    echo setup1 failed
     exit $exit_fail
 fi
-setup_repattr0
+setup_repattr_over_ncopy
 if [ $? -ne 0 ]; then
     onexit
     echo setup2 failed
-    exit $exit_fail
-fi
-
-# set attr directly to the file.
-gfncopy -S "${repattr}" ${file}
-if [ $? -ne 0 ]; then
-    onexit
-    echo gfncopy -S failed
     exit $exit_fail
 fi
 
@@ -63,6 +58,20 @@ srchost=`gfwhere ${file}`
 if [ $? -ne 0 -o "X${srchost}" = "X" ]; then
     onexit
     echo gfwhere ${file} failed
+    exit $exit_fail
+fi
+
+# set repattr directly to the file.
+gfncopy -S "${repattr}" ${file}
+if [ $? -ne 0 ]; then
+    onexit
+    echo gfncopy -S failed
+    exit $exit_fail
+fi
+gfncopy -s ${ncopy} ${file}
+if [ $? -ne 0 ]; then
+    onexit
+    echo gfncopy -s failed
     exit $exit_fail
 fi
 
@@ -79,6 +88,18 @@ gfncopy -w ${file}
 if [ $? -ne 0 ]; then
     onexit
     echo gfncopy -w ${file} failed
+    exit $exit_fail
+fi
+
+num=`gfncopy -c ${file}`
+if [ $? -ne 0 ]; then
+    onexit
+    echo gfncopy -c failed
+    exit $exit_fail
+fi
+if [ ${ncopy_total} -ne ${num} ]; then
+    onexit
+    echo diffrent ncopy: ${num}/${ncopy}
     exit $exit_fail
 fi
 

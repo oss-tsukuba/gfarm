@@ -60,7 +60,7 @@ setup_test() {
   done
 
   if gfmkdir $gftmp &&
-    gfrepattr -s $gftmp test0:1 && # avoid looking parent gfarm.replicainfo
+    gfncopy -S test0:1 $gftmp && # avoid looking parent gfarm.replicainfo
     gfreg $data/1byte $tmpf; then
     :
   else
@@ -103,8 +103,15 @@ wait_replication() {
 clean_test
 setup_test
 
-gfrepattr -s $gftmp test0:$NCOPY
-wait_replication $NCOPY
+gfncopy -S test0:$NCOPY $gftmp
+
+#wait_replication $NCOPY
+gfncopy -w $tmpf
+if [ $? -eq 0 ]; then
+  exit_code=$exit_pass
+else
+  exit_code=$exit_fail
+fi
 
 restore_hostgroup
 clean_test
