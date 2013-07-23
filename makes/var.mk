@@ -63,8 +63,8 @@ GFMD_BUILDDIR = $(top_builddir)/server/gfmd
 
 # doc & man
 
-DOCBOOK2MAN = env LC_ALL=C jw -b man
-DOCBOOK2HTML = env LC_ALL=C jw -b html -u
+DOCBOOK2MAN = env LC_ALL=C SP_BCTF=utf-8 jw -b man
+DOCBOOK2HTML = env LC_ALL=C SP_ENCODING=utf-8 jw -b html -u
 srcsubst = dummy
 dstsubst = dummy
 

@@ -49,6 +49,7 @@ html-man:
 
 $(dstsubst): $(srcsubst)
 	$(DOCBOOK2HTML) $(srcsubst)
+	$(top_srcdir)/makes/http-equiv-add $(dstsubst)
 
 html-html:
 	for i in -- $(HTMLSRC); do \

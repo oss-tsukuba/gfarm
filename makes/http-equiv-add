@@ -1,0 +1,27 @@
+#! /bin/sh
+#
+# Usage:
+#     http-equiv-add HTML-FILE
+#
+# This scripts adds "meta http-equiv" tag to HTML-FILE if missing.
+# Please note that it overwrites HTML-FILE directly.
+#
+
+[ $# -eq 0 ] && { echo "Usage: $0 FILE" 1>&2; exit 1; }
+
+HTML_FILE="$1"
+trap "rm -f $HTML_FILE.tmp; exit 1" 1 2 3 15
+rm -f $HTML_FILE.tmp
+
+awk '
+{ if (NR == 1)
+	html = $0
+  else
+	html = html "\n" $0
+}
+END {
+	if (match(html, /[Hh][Tt][Tt][Pp]-[Ee][Qq][Uu][Ii][Vv]=/) == 0)
+		sub(/<[Hh][Ee][Aa][Dd][ \t\n]*>/, "<HEAD><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">", html)
+	  print html
+}' \
+	$HTML_FILE > $HTML_FILE.tmp && mv -f $HTML_FILE.tmp $HTML_FILE
