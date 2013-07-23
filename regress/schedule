@@ -118,6 +118,11 @@ gftool/gfxattr/gfxattr-long-value.sh
 gftool/gfxattr/gfxattr-xml-long-value.sh
 gftool/gfxattr/gfxattr-xml-non-utf8-value.sh
 gftool/gfncopy/gfncopy-s.sh
+gftool/gfncopy/gfncopy-S-repattr.sh
+gftool/gfncopy/gfncopy-C.sh
+gftool/gfncopy/gfncopy-M.sh
+gftool/gfncopy/gfncopy-h-symlink.sh
+gftool/gfncopy/gfncopy-many-attrs.sh
 
 # gftool/gfkey
 
