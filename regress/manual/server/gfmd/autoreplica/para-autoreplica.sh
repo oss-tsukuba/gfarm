@@ -90,7 +90,6 @@ test_overwrite() {
   F=$GFILE-$N
   req_ok=0
   size=17
-  tmp_gfwhere=${TMPFILE}-${N}-gfwhere
   tmp_data=${TMPFILE}-${N}-data
   tmp_data2=${TMPFILE}-${N}-data2
 
@@ -129,7 +128,7 @@ test_overwrite() {
     fi
 
     ### compare data
-    for h in `cat $tmp_gfwhere`; do
+    for h in `gfwhere $F`; do
       gfexport -s ${size} -o $offset -h $h $F > $tmp_data2
       cmp $tmp_data $tmp_data2 > /dev/null 2>&1
       if [ $? -ne 0 ]; then
