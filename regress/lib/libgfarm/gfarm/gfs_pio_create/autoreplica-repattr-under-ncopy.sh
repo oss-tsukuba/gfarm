@@ -30,7 +30,7 @@ setup_repattr_under_ncopy() {
     # gfarm.ncopy > gfarm.replicainfo
     g0=`expr ${g0} - 1`
     g1=`expr ${g1} - 1`
-    g2=`expr ${g2} - 1`
+    # g2=`expr ${g2} - 1`
     repattr="g0:${g0}, g1:${g1}, g2:${g2}"
     ncopy=${n}
     echo ncopy=${ncopy}, repattr=${repattr}
