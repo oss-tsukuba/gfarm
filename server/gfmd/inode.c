@@ -930,8 +930,7 @@ inode_schedule_replication(
 	int n_desired, const char *repattr,
 	int n_srcs, struct host **srcs,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
-	int *n_being_removedp, struct host **being_removed,
-	const char *diag)
+	int *n_being_removedp, struct host **being_removed, const char *diag)
 {
 	gfarm_error_t e;
 	int total_repattr;
@@ -953,12 +952,12 @@ inode_schedule_replication(
 		    e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 			/* retry in replica_check */
 		} else {
-			int n_existing2, n_being_removed2;
+			int n_existing2, n_being_removed2, n_existing_tmp;
 			struct host **existing2, **being_removed2;
 
 			/*
-			 * count existings again,
-			 * because existings should have been changed.
+			 * count inode->u.c.s.f.copies again,
+			 * because replicas may have been created.
 			 */
 			e = inode_replica_hosts(
 			    inode, &n_existing2, &existing2,
@@ -978,10 +977,80 @@ inode_schedule_replication(
 			if (total_repattr > n_desired)
 				n_desired = total_repattr;
 
-			if (n_existing2 >= n_desired) {
+			if (!is_replica_check) /* replication at close */
+				n_existing_tmp =
+				    *n_existingp - 1 + n_existing2;
+			else
+				n_existing_tmp = n_existing2;
+
+			if (n_existing_tmp >= n_desired) {
 				free(existing2);
 				free(being_removed2);
 				return (GFARM_ERR_NO_ERROR); /* OK */
+			}
+
+			if (!is_replica_check) { /* replication at close */
+				int n_existing3, n_being_removed3, i, j;
+				struct host **existing3, **being_removed3;
+
+				/*
+				 * existings[] are excepted from
+				 * inode->u.c.s.f.copies.
+				 */
+				if (*n_existingp > 0) {
+					n_existing3 =
+					    *n_existingp + n_existing2;
+					GFARM_MALLOC_ARRAY(
+					    existing3, n_existing3);
+					if (existing3 == NULL) {
+						gflog_debug(
+						    GFARM_MSG_UNFIXED,
+						    "no memory");
+						return (GFARM_ERR_NO_MEMORY);
+					}
+
+					/* same host is OK (host_unique()ed) */
+					j = 0;
+					for (i = 0; i < *n_existingp; i++, j++)
+						existing3[j] = existing[i];
+					for (i = 0; i < n_existing2; i++, j++)
+						existing3[j] = existing2[i];
+
+					free(existing2);
+					existing2 = existing3;
+					n_existing2 = n_existing3;
+				}
+
+				/*
+				 * being_removed[] are excepted from
+				 * inode->u.c.s.f.copies.
+				 */
+				if (*n_being_removedp > 0) {
+					n_being_removed3 =
+					    *n_being_removedp
+					    + n_being_removed2;
+					GFARM_MALLOC_ARRAY(
+					    being_removed3, n_being_removed3);
+					if (being_removed3 == NULL) {
+						gflog_debug(
+						    GFARM_MSG_UNFIXED,
+						    "no memory");
+						return (GFARM_ERR_NO_MEMORY);
+					}
+					j = 0;
+					for (i = 0; i < *n_being_removedp;
+					    i++, j++)
+						being_removed3[j] =
+						    being_removed[i];
+					for (i = 0; i < n_being_removed2;
+					    i++, j++)
+						being_removed3[j] =
+						    being_removed2[i];
+
+					free(being_removed2);
+					being_removed2 = being_removed3;
+					n_being_removed2 = n_being_removed3;
+				}
 			}
 
 			gflog_debug(GFARM_MSG_UNFIXED,
