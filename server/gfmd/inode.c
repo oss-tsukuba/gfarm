@@ -578,7 +578,7 @@ inode_activity_free(struct inode_activity *ia)
 }
 
 int
-inode_activity_free_check(struct inode *inode)
+inode_activity_free_try(struct inode *inode)
 {
 	struct inode_activity *ia = inode->u.c.activity;
 
@@ -1290,7 +1290,7 @@ inode_remove(struct inode *inode)
 }
 
 static int
-inode_remove_check(struct inode *inode)
+inode_remove_try(struct inode *inode)
 {
 	if (inode->i_nlink == 0 && inode->u.c.activity == NULL) {
 		/* this file is not currently used, i.e. removable */
@@ -2246,8 +2246,8 @@ inode_new_generation_by_cookie_finish(
 	}
 
 	inode_new_generation_finish_event_post(inode);
-	if (inode_activity_free_check(inode))
-		inode_remove_check(inode);
+	if (inode_activity_free_try(inode))
+		inode_remove_try(inode);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -3427,7 +3427,7 @@ inode_unlink(struct inode *base, char *name, struct process *process,
 		/*NOTREACHED*/
 		return (GFARM_ERR_UNKNOWN);
 	}
-	if (!inode_remove_check(inode)) {
+	if (!inode_remove_try(inode)) {
 		/* there are some processes which open this file */
 		/* leave this inode until closed */
 
@@ -3513,10 +3513,10 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 		 * peer_unset_pending_new_generation_for_process() called via
 		 * peer_free() or peer_unset_process()
 		 */
-		inode_activity_free_check(inode);
+		inode_activity_free_try(inode);
 	}
 
-	inode_remove_check(inode);
+	inode_remove_try(inode);
 }
 
 gfarm_error_t
@@ -4200,7 +4200,7 @@ file_replicating_new(struct inode *inode, struct host *dst,
 			(void)inode_remove_replica_in_cache(inode, dst);
 			/* abandon error */
 			if (ia != NULL && ia_alloc_tried)
-				inode_activity_free_check(inode);
+				inode_activity_free_try(inode);
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		/* make circular list `replicating_hosts' empty */
@@ -4241,8 +4241,8 @@ file_replicating_free(struct file_replicating *fr)
 	}
 	peer_replicating_free(fr);
 
-	if (inode_activity_free_check(inode))
-		inode_remove_check(inode);
+	if (inode_activity_free_try(inode))
+		inode_remove_try(inode);
 }
 
 /*
