@@ -2922,8 +2922,7 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 
 		if (e_rpc == GFARM_ERR_NO_ERROR) { /* permission ok */
 			e_rpc = peer_fdpair_close_current(peer);
-		} else if (e_rpc ==
-		    GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+		} else if (e_rpc == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 			if ((e_rpc = process_new_generation_wait(peer, arg->fd,
 			    close_write_v2_4_resume, arg)) ==
 			    GFARM_ERR_NO_ERROR) {
@@ -3000,7 +2999,6 @@ gfm_server_close_write_common(const char *diag,
 		e = process_close_file_write(process, peer, fd, size,
 		    atime, mtime,
 		    flagsp, inump, old_genp, new_genp, trace_logp);
-
 		if (transaction)
 			db_end(diag);
 
@@ -3155,19 +3153,123 @@ gfm_server_fhclose_read(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
+static gfarm_error_t
+fhclose_write(struct peer *peer, struct host *spool_host, struct inode *inode,
+	gfarm_off_t size,
+	struct gfarm_timespec *atimep, struct gfarm_timespec *mtimep,
+	gfarm_int32_t *flagsp,
+	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
+	gfarm_uint64_t *cookiep, char **trace_logp, const char *diag)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	int transaction = 0, generation_updated;
+	gfarm_int32_t flags = 0;
+	gfarm_uint64_t cookie;
+
+	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		transaction = 1;
+
+	/* closing must be done regardless of the result of db_begin(). */
+	e = inode_file_handle_update(inode, size, atimep, mtimep, spool_host,
+	    old_genp, new_genp, &generation_updated, trace_logp);
+	if (e == GFARM_ERR_NO_ERROR && generation_updated) {
+		flags = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
+		if ((e = peer_add_pending_new_generation_by_cookie(
+		    peer, inode, &cookie)) != GFARM_ERR_NO_ERROR) {
+			;
+		} else if ((e = inode_new_generation_by_cookie_start(
+		    inode, peer, cookie)) != GFARM_ERR_NO_ERROR) {
+			peer_remove_pending_new_generation_by_cookie(
+			    peer, cookie, NULL);
+		}
+	}
+	if (transaction)
+		db_end(diag);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	*flagsp = flags;
+	if ((flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0)
+		*cookiep = cookie;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+
+struct fhclose_write_resume_arg {
+	struct inode *inode;
+	gfarm_off_t size;
+	struct gfarm_timespec atime, mtime;
+	gfarm_int64_t old_gen; /* only for logging */
+};
+
 gfarm_error_t
-gfm_server_fhclose_write(struct peer *peer, int from_client, int skip)
+fhclose_write_resume(struct peer *peer, void *closure, int *suspendedp)
 {
 	gfarm_error_t e;
+	struct fhclose_write_resume_arg *arg = closure;
+	struct host *spool_host;
+	gfarm_int64_t old_gen = 0, new_gen = 0;
+	gfarm_int32_t flags = 0;
+	gfarm_uint64_t cookie = 0;
+	char *trace_log;
+	static const char diag[] = "fhclose_write_resume";
+
+	giant_lock();
+
+	if ((spool_host = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_1002263,
+		    "%s: peer_get_host() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (!inode_is_file(arg->inode)) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld:%lld: not a file",
+		    diag, (long long)inode_get_number(arg->inode),
+		    (long long)arg->old_gen);
+		e = GFARM_ERR_STALE_FILE_HANDLE;
+	} else if (inode_new_generation_is_pending(arg->inode)) {
+		if ((e = inode_new_generation_wait(arg->inode, peer,
+		    fhclose_write_resume, arg)) == GFARM_ERR_NO_ERROR) {
+			*suspendedp = 1;
+			giant_unlock();
+			return (GFARM_ERR_NO_ERROR);
+		}
+	} else {
+		e = fhclose_write(peer, spool_host, arg->inode, arg->size,
+		    &arg->atime, &arg->mtime,
+		    &flags, &old_gen, &new_gen, &cookie, &trace_log, diag);
+	}
+	free(arg);
+
+	giant_unlock();
+
+	if (e == GFARM_ERR_NO_ERROR && gfarm_ctxp->file_trace &&
+	    (flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0 &&
+	    trace_log != NULL) {
+		gflog_trace(GFARM_MSG_UNFIXED, "%s", trace_log);
+		free(trace_log);
+	}
+
+	return (gfm_server_put_reply(peer, diag, e, "illl",
+	    flags, old_gen, new_gen, cookie));
+}
+
+gfarm_error_t
+gfm_server_fhclose_write(struct peer *peer, int from_client, int skip,
+	int *suspendedp)
+{
+	gfarm_error_t e;
+	struct host *spool_host;
 	gfarm_ino_t inum;
+	gfarm_int64_t old_gen, new_gen = 0;
 	gfarm_off_t size;
 	struct gfarm_timespec atime, mtime;
 	gfarm_int32_t flags = 0;
-	int transaction = 0;
-	gfarm_int64_t old_gen, new_gen;
-	int generation_updated = 0;
 	gfarm_uint64_t cookie = 0;
 	struct inode *inode;
+	struct fhclose_write_resume_arg *arg;
+	char *trace_log;
 	static const char diag[] = "GFM_PROTO_FHCLOSE_WRITE";
 
 	e = gfm_server_get_request(peer, diag, "llllili",
@@ -3177,37 +3279,58 @@ gfm_server_fhclose_write(struct peer *peer, int from_client, int skip)
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-	new_gen = old_gen;
 	giant_lock();
 
 	if (from_client) { /* from gfsd only */
-		gflog_debug(GFARM_MSG_1003314, "operation is not permitted");
+		gflog_debug(GFARM_MSG_1003314,
+		    "operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (peer_get_host(peer) == NULL) {
-		gflog_debug(GFARM_MSG_1003315, "peer_get_host() failed");
+	} else if ((spool_host = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_1003315,
+	    "peer_get_host() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((inode = inode_lookup(inum)) == NULL) {
-		gflog_debug(GFARM_MSG_1003316, "inode_lookup() failed");
+		gflog_debug(GFARM_MSG_1003316,
+		     "inode_lookup() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else {
-		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
-			transaction = 1;
-
-		/*
-		 * closing must be done regardless of the result of db_begin().
-		 * because not closing may cause descriptor leak.
-		 */
-		e = inode_fhclose_write(inode, old_gen, size, &atime,
-		    &mtime, &new_gen, &generation_updated);
-		if (e == GFARM_ERR_NO_ERROR && generation_updated) {
-			cookie = peer_add_cookie(peer);
-			flags = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
+	} else if (!inode_is_file(inode)) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld:%lld: not a file",
+		    diag, (long long)inum, (long long)old_gen);
+		e = GFARM_ERR_STALE_FILE_HANDLE;
+	} else if (inode_new_generation_is_pending(inode)) {
+		GFARM_MALLOC(arg);
+		if (arg == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+		} else {
+			arg->inode = inode;
+			arg->size = size;
+			arg->atime = atime;
+			arg->mtime = mtime;
+			arg->old_gen = old_gen; /* for logging */
+			if ((e = inode_new_generation_wait(inode, peer,
+			    fhclose_write_resume, arg)) ==
+			    GFARM_ERR_NO_ERROR) {
+				*suspendedp = 1;
+				giant_unlock();
+				return (GFARM_ERR_NO_ERROR);
+			}
 		}
-		if (transaction)
-			db_end(diag);
+	} else {
+		e = fhclose_write(peer, spool_host, inode, size,
+		    &atime, &mtime,
+		    &flags, &old_gen, &new_gen, &cookie,
+		    &trace_log, diag);
 	}
 
 	giant_unlock();
+
+	if (e == GFARM_ERR_NO_ERROR && gfarm_ctxp->file_trace &&
+	    (flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0 &&
+	    trace_log != NULL) {
+		gflog_trace(GFARM_MSG_UNFIXED, "%s", trace_log);
+		free(trace_log);
+	}
 
 	return (gfm_server_put_reply(peer, diag, e, "illl",
 	    flags, old_gen, new_gen, cookie));
@@ -3283,6 +3406,7 @@ gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
 	gfarm_uint64_t cookie;
 	gfarm_int32_t result;
 	struct host *spool_host;
+	struct inode *inode;
 	static const char diag[] = "GFM_PROTO_GENERATION_UPDATED_BY_COOKIE";
 
 	e = gfm_server_get_request(peer, diag, "li", &cookie, &result);
@@ -3296,21 +3420,33 @@ gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
 	giant_lock();
 
 	if (from_client) { /* from gfsd only */
-		gflog_debug(GFARM_MSG_1003317, "%s: from client", diag);
+		gflog_debug(GFARM_MSG_1003317, "%s: from client",
+		    diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((spool_host = peer_get_host(peer)) == NULL) {
 		gflog_debug(GFARM_MSG_1003318,
 		    "%s: peer_get_host() failed", diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (!peer_delete_cookie(peer, cookie)) {
-		gflog_debug(GFARM_MSG_1003319,
-		    "%s: peer_delete_cookie() failed", diag);
+	} else if (!peer_remove_pending_new_generation_by_cookie(
+	    peer, cookie, &inode)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: unknown cookie %lld", diag, (long long)cookie);
 		e = GFARM_ERR_BAD_COOKIE;
-	} else if (result != GFARM_ERR_NO_ERROR) {
+	} else if ((e = inode_new_generation_by_cookie_finish(
+	    inode, cookie, peer, result)) != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_UNFIXED,
 		    "%s: host %s, cookie %lld: "
-		    "new generation rename: %s\n",
+		    "new generation wakeup(%s): %s\n",
 		    diag, host_name(spool_host), (long long)cookie,
+		    gfarm_error_string(result), gfarm_error_string(e));
+	} else if (result != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld:%lld on host %s, cookie %lld: "
+		    "new generation rename: %s\n",
+		    diag,
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    host_name(spool_host), (long long)cookie,
 		    gfarm_error_string(result));
 	}
 

@@ -25,7 +25,87 @@ close_write でクローズすることにより、発生する。
 しかし、GFARM_FILE_TRUNC が指定されたが、reopen() は呼ばれない可能性もある。
 これについては、inode_file_read() 時に、GFARM_FILE_TRUNC_PENDING を調べ、
 まだ pending であれば、inode_file_update() を呼んで世代番号を増やしている。
-このと、spool_host は NULL となるので要注意。
+この時、spool_host は NULL となり、ファイル実体は存在しないので要注意。
+ 
+この世代番号の増加には、gfsd が管理するファイル実体の改名が必要となる。
+この改名処理中は、実体へのアクセスが不可能になる。
+また、複数の gfsd が同時に世代番号を行なってもいけない。
+gfsd は、
+・GFM_PROTO_CLOSE_WRITE_V2_4の結果受信から始まり
+　GFM_PROTO_GENERATION_UPDATEDの結果送信まで
+・GFM_PROTO_FHCLOSE_WRITEの結果受信から始まり
+　GFM_PROTO_GENERATION_UPDATED_BY_COOKIEの結果送信まで
+の間、この改名処理を行なう。
+gfmd は GFM_PROTO_GENERATION_UPDATED{,_BY_COOKIE}の結果受信により、
+この改名処理完了を知る。
+この改名処理中に、ファイル実体へのアクセスを行なう場合の排他処理は、
+以下の通り。
+・GFM_PROTO_REOPEN: 下記(a)を使う
+・GFM_PROTO_CLOSE_WRITE_V2_4: 下記(a)を使う
+・GFM_PROTO_REPLICA_ADDING: 下記(a)を使う
+・GFM_PROTO_REMOVE: 下記(b)を使う
+・GFM_PROTO_REPLICATE_FILE_FROM_TO/GFS_PROTO_REPLICATION_REQUEST: 
+  未対策だが、back_channel 送信キュー実装までは、それが仕様
+・gfmd 主導のファイル更新時自動複製機能:
+  未対策→バグ: https://sourceforge.net/apps/trac/gfarm/ticket/184
+・GFS_PROTO_FHSTAT
+  未対策だが、現状、使われていない。
+・GFS_PROTO_FHREMOVE
+  下記(b)参照。
+・GFS_PROTO_OPEN_LOCAL/GFS_PROTO_OPEN
+  GFM_PROTO_REOPEN の呼び出しで待ち合わせる。
+  それでもまだ競合状態は発生するが、その場合はGFARM_ERR_FILE_MIGRATEDを返し、
+   クライアントがリトライする。
+・GFS_PROTO_REPLICA_RECV
+  未対策。GFS_PROTO_REPLICA_ADD_FROM参照。
+・GFS_PROTO_REPLICA_ADD
+  実装されていない／されたことがない機能。
+・GFS_PROTO_REPLICA_ADD_FROM
+  まずGFM_PROTO_REPLICA_ADDINGを呼び出し、上述のように待ち合わせる。
+  その後、GFS_PROTO_REPLICA_ADD_FROMを呼び出すところでも競合条件が存在するが、
+  特に対策されていない→チケット発行すべき？
+なお、
+それぞれ、採っている方法は下記の通り。
+(a) inode_new_generation_is_pending() で検査し、
+  inode_new_generation_wait() で待つ。
+  再開時の処理は *_resume()、処理に渡す引数は struct *_resume_arg。
+(b) inode_new_generation_is_pending() の間は、inode->u.c.activity != NULL
+  が成り立つため、実体の削除を行なわない。
+  すなわち GFS_PROTO_FHREMOVE の発行を遅延する。
+  なお、ファイル更新の結果、古い実体ファイルを削除するケースについては、
+  GFM_PROTO_CLOSE_WRITE_V2_4 のケースが該当するので、そちらを参照。
+
+inode_new_generation_is_pending() 状態は、inode の属性として、
+struct inode::u.c.activity.event_source に保持している。
+また、*_resume() を使った待ち状態にある処理のリストは、
+struct inode::u.c.activity.event_waiters に保持している。
+GFM_PROTO_CLOSE_WRITE_V2_4〜GFM_PROTO_GENERATION_UPDATEDの場合は、
+ファイルオープン中扱いになるため、必ず struct inode::u.c.activity は
+設定されている。
+GFM_PROTO_FHCLOSE_WRITE〜GFM_PROTO_GENERATION_UPDATED_BY_COOKIEの場合は、
+ファイルオープン中扱いとならない。このため、以前はオープン中のみ確保されていた
+struct inode::u.c.state を struct inode::u.c.activity と改名し、
+GFM_PROTO_FHCLOSE_WRITE〜GFM_PROTO_GENERATION_UPDATED_BY_COOKIEの間も
+確保するようにした。また、struct inode_replicating_state は
+以前は inode の属性だったが、これを機に struct inode::u.c.activity の
+属性に移し、レプリケーション中も struct inode::u.c.activity を確保する
+ようにした。
+
+これに関連して、r6030 までは
+inode_close_read() が 
+→ inode_new_generation_done(inode, NULL, GFARM_ERR_PROTOCOL);
+→ peer_reset_pending_new_generation(NULL)
+→NULLポインタ (+オフセットで実際には 0xb8 番地近辺)アクセスでgfmdがクラッシュ
+というパスがあった。もし本当に呼ばれたら、gfmdがクラッシュしていた筈。
+ただし、おそらく peer_unset_process() で process_detach_peer() する前に
+peer_unset_pending_new_generation() しているせいもあって、実際には、そういう
+パスを通ることはなかったのではないかと思われる。
+
+なお、r6067 までは、resuming_thread() の実装において gfp_xdr_flush() と
+local_peer_watch_readable() が欠けているたため、COMPOUND ではない
+プロトコルの *_resume() 処理後、ハングするという問題があったが、
+FHCLOSE_WRITE より前は、すべて COMPOUND だったため、発覚しなかった。
+この問題は r6067 で修正された。
 
 ■ 上書き時のスケジューリングについて
 

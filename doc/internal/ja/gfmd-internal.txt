@@ -2,7 +2,13 @@
 
 ○ giant_lock 保持中は休眠してはいけない。XXX 要解説
 当然、I/O も行なってはいけない。
-唯一の例外は、dbq 待ちの休眠。これは仕方ない。
+当初の実装で、唯一の例外は、dbq がフルの場合の空き待ちの休眠。これは仕方ない。
+gfmdの冗長構成が入った時に、同期スレーブgfmd間へのジャーナル転送も、
+giant_lock 保持中に行なわれるようになった。（これは、あまり望ましくない…）
+
+当初の実装では、db_access.h のインターフェースは決して失敗しないものと
+していた。現在は、ジャーナルファイルへの書き込み等で失敗する可能性が
+あるが、その対策が入ってないのは問題。
 
 手抜きで、ネットワーク送信を、giant_lock を保持したままやっている
 ところがある。出力は nonblocking モードで行なっている(筈?)なので、
@@ -464,12 +470,18 @@ doc/internal/png/gfmd-thread-dependency.png
 	FILE_COPY_IS_BEING_REMOVED(struct file_copy *) が真となるレプリカ
 	がある。
 
+	レプリケーション途中に、作成中とものと同じレプリカの作成を要求すると、
+	GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS を返す。
+	最新世代のレプリカを削除中 (FILE_COPY_IS_BEING_REMOVED()が真) に
+	再度そのレプリカの作成を要求すると、GFARM_ERR_DEVICE_BUSY を返す。
+
 ○ 基本的には、削除要求が出る (dead_file_copy ができる) のは、旧世代のみ
 
 例外は以下の2種類
 
 - なんらかの理由でレプリケーションが失敗して、その削除を要求する場合
-- 「gfrm -h ノード」すなわち gfs_replica_remove_by_file() で要求された場合
+- 「gfrm -h ノード」や「gfrep -x」すなわち gfs_replica_remove_by_file() で
+　要求された場合
 
 この2種類の例外については、dead_file_copy に加えて、
 FILE_COPY_IS_BEING_REMOVED(struct file_copy *) を真として、管理/監視する。

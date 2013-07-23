@@ -359,7 +359,7 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfm_server_fhclose_read(peer, from_client, skip);
 		break;
 	case GFM_PROTO_FHCLOSE_WRITE:
-		e = gfm_server_fhclose_write(peer, from_client, skip);
+		e = gfm_server_fhclose_write(peer, from_client, skip, suspendedp);
 		break;
 	case GFM_PROTO_GENERATION_UPDATED:
 		e = gfm_server_generation_updated(peer, from_client, skip);
@@ -816,14 +816,21 @@ resuming_dequeue(struct resuming_queue *q, const char *diag)
 void *
 resuming_thread(void *arg)
 {
+	gfarm_error_t e;
 	struct event_waiter *entry = arg;
 	struct peer *peer = entry->peer;
 	struct protocol_state *ps = peer_get_protocol_state(peer);
 	struct compound_state *cs = &ps->cs;
 	int suspended = 0;
-	gfarm_error_t e;
 
 	e = (*entry->action)(peer, entry->arg, &suspended);
+	e = gfp_xdr_flush(peer_get_conn(peer));
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED, "protocol flush: %s",
+		    gfarm_error_string(e));
+		peer_record_protocol_error(peer);
+	}
+
 	free(entry);
 	if (suspended)
 		return (NULL);
@@ -840,8 +847,11 @@ resuming_thread(void *arg)
 			cs->cause = e;
 		cs->skip = 1;
 	}
-	if (gfp_xdr_recv_is_ready(peer_get_conn(peer)))
+	if (gfp_xdr_recv_is_ready(peer_get_conn(peer))) {
 		protocol_main(peer);
+	} else {
+		peer_watch_access(peer);
+	}
 
 	/* this return value won't be used, because this thread is detached */
 	return (NULL);

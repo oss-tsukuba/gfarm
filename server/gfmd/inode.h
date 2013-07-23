@@ -81,9 +81,13 @@ struct inode *inode_alloc_num(gfarm_ino_t);
 
 struct peer;
 int inode_new_generation_is_pending(struct inode *);
-gfarm_error_t inode_new_generation_wait_start(struct inode *, struct peer *);
-gfarm_error_t inode_new_generation_done(struct inode *, struct peer *,
-	gfarm_int32_t);
+void inode_new_generation_by_fd_start(struct inode *, struct peer *);
+gfarm_error_t inode_new_generation_by_cookie_start(
+	struct inode *, struct peer *, gfarm_uint64_t);
+gfarm_error_t inode_new_generation_by_fd_finish(
+	struct inode *, struct peer *, gfarm_error_t);
+gfarm_error_t inode_new_generation_by_cookie_finish(
+	struct inode *, gfarm_uint64_t, struct peer *, gfarm_error_t);
 gfarm_error_t inode_new_generation_wait(struct inode *, struct peer *,
 	gfarm_error_t (*)(struct peer *, void *, int *), void *);
 
@@ -153,14 +157,15 @@ gfarm_error_t inode_open(struct file_opening *);
 void inode_close(struct file_opening *, char**);
 void inode_close_read(struct file_opening *, struct gfarm_timespec *, char**);
 gfarm_error_t inode_fhclose_read(struct inode *, struct gfarm_timespec *);
-gfarm_error_t inode_fhclose_write(struct inode *, gfarm_uint64_t, gfarm_off_t,
-    struct gfarm_timespec *, struct gfarm_timespec *, gfarm_int64_t *, int *);
 void inode_add_ref_spool_writers(struct inode *);
 void inode_del_ref_spool_writers(struct inode *);
 void inode_check_pending_replication(struct file_opening *);
 int inode_file_update(struct file_opening *,
 	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *,
 	gfarm_int64_t *, gfarm_int64_t *, char**);
+gfarm_error_t inode_file_handle_update(struct inode *,
+	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *,
+	struct host *, gfarm_int64_t *, gfarm_int64_t *, int *, char **);
 
 gfarm_error_t inode_cksum_set(struct file_opening *,
 	const char *, size_t, const char *,

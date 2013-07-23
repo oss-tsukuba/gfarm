@@ -612,10 +612,11 @@ process_new_generation_done(struct process *process, struct peer *peer, int fd,
 		    "%s: pid %lld descriptor %d: %s", diag,
 		    (long long)process->pid, fd, gfarm_error_string(e));
 		return (e);
-	} else if ((e = inode_new_generation_done(fo->inode, peer,
+	} else if ((e = inode_new_generation_by_fd_finish(fo->inode, peer,
 	    result)) == GFARM_ERR_NO_ERROR) {
 
 		/* resume deferred operaton: close the file */
+		peer_reset_pending_new_generation_by_fd(peer);
 
 		if (fo->opener != peer && fo->opener != NULL) {
 			/*
@@ -992,10 +993,8 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 
 	if ((flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0) {
 		/* defer file close for GFM_PROTO_GENERATION_UPDATED */
-		e = inode_new_generation_wait_start(fo->inode, peer);
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e); /* XXX FIXME: it's better to close fd */
-		peer_set_pending_new_generation(peer, fo->inode);
+		inode_new_generation_by_fd_start(fo->inode, peer);
+		peer_set_pending_new_generation_by_fd(peer, fo->inode);
 	} else if (fo->opener != peer && fo->opener != NULL) {
 		/* closing REOPENed file, but the client is still opening */
 		fo->u.f.spool_opener = NULL;

@@ -124,9 +124,10 @@ struct peer_closing_queue {
 	&peer_closing_queue.head
 };
 
-struct cookie {
+struct pending_new_generation_by_cookie {
+	struct inode *inode;
 	gfarm_uint64_t id;
-	GFARM_HCIRCLEQ_ENTRY(cookie) hcircleq;
+	GFARM_HCIRCLEQ_ENTRY(pending_new_generation_by_cookie) cookie_link;
 };
 
 struct peer {
@@ -174,7 +175,8 @@ struct peer {
 	/* only one pending GFM_PROTO_GENERATION_UPDATED per peer is allowed */
 	struct inode *pending_new_generation;
 	/* GFM_PROTO_GENERATION_UPDATED_BY_COOKIE */
-	GFARM_HCIRCLEQ_HEAD(cookie) cookies;
+	GFARM_HCIRCLEQ_HEAD(pending_new_generation_by_cookie)
+	    pending_new_generation_cookies;
 
 	union {
 		struct {
@@ -202,6 +204,9 @@ static struct peer *peer_table;
 static int peer_table_size, peer_initialized;
 static pthread_mutex_t peer_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 static const char peer_table_diag[] = "peer_table";
+
+static const char peer_seqno_diag[] = "peer_seqno_mutex";
+static pthread_mutex_t peer_seqno_mutex = PTHREAD_MUTEX_INITIALIZER;
 static gfarm_uint64_t cookie_seqno = 1;
 
 static void (*peer_async_free)(struct peer *, gfp_xdr_async_peer_t) = NULL;
@@ -647,6 +652,11 @@ peer_init(int max_peers)
 		peer->pending_new_generation = NULL;
 		peer->u.client.jobs = NULL;
 
+		/* generation update, or generation update by cookie */
+		peer->pending_new_generation = NULL;
+		GFARM_HCIRCLEQ_INIT(peer->pending_new_generation_cookies,
+		    cookie_link);
+
 		peer->iostatp = NULL;
 
 		/* gfsd back channel */
@@ -657,7 +667,6 @@ peer_init(int max_peers)
 		peer->replicating_inodes.prev_inode =
 		peer->replicating_inodes.next_inode =
 		    &peer->replicating_inodes;
-		GFARM_HCIRCLEQ_INIT(peer->cookies, hcircleq);
 
 		/* gfmd channel */
 		peer->gfmdc_record = NULL;
@@ -754,7 +763,10 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 	peer->flags = 0;
 	peer->findxmlattrctx = NULL;
 	peer->u.client.jobs = NULL;
-	GFARM_HCIRCLEQ_INIT(peer->cookies, hcircleq);
+
+	/* generation update, or generation update by cookie */
+	peer->pending_new_generation = NULL;
+	GFARM_HCIRCLEQ_INIT(peer->pending_new_generation_cookies, cookie_link);
 
 	if (peer->iostatp == NULL)
 		peer->iostatp = gfarm_iostat_get_ip(fd);
@@ -900,7 +912,6 @@ peer_free(struct peer *peer)
 	char *username;
 	const char *hostname;
 	static const char diag[] = "peer_free";
-	struct cookie *cookie;
 	char hostbuf[NI_MAXHOST];
 
 	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
@@ -961,14 +972,7 @@ peer_free(struct peer *peer)
 		    &peer->u.client.jobs);
 	peer->u.client.jobs = NULL;
 
-	while (!GFARM_HCIRCLEQ_EMPTY(peer->cookies, hcircleq)) {
-		cookie = GFARM_HCIRCLEQ_FIRST(peer->cookies, hcircleq);
-		GFARM_HCIRCLEQ_REMOVE(cookie, hcircleq);
-		free(cookie);
-	}
-	GFARM_HCIRCLEQ_INIT(peer->cookies, hcircleq);
-
-	peer_unset_pending_new_generation(peer);
+	peer_unset_pending_new_generation(peer, GFARM_ERR_CONNECTION_ABORTED);
 
 	peer->findxmlattrctx = NULL;
 
@@ -1030,9 +1034,8 @@ peer_shutdown_all(void)
 
 		gflog_notice(GFARM_MSG_1000287, "(%s@%s) shutting down",
 		    peer->username, peer->hostname);
-#if 0		/* we don't really have to do this at shutdown */
-		peer_unset_pending_new_generation(peer);
-#endif
+		peer_unset_pending_new_generation(peer,
+		    GFARM_ERR_GFMD_FAILED_OVER); /* we do this for logging */
 		process_detach_peer(peer->process, peer);
 		peer->process = NULL;
 	}
@@ -1225,25 +1228,112 @@ peer_get_mdhost(struct peer *peer)
 
 /* NOTE: caller of this function should acquire giant_lock as well */
 void
-peer_set_pending_new_generation(struct peer *peer, struct inode *inode)
+peer_set_pending_new_generation_by_fd(struct peer *peer, struct inode *inode)
 {
 	peer->pending_new_generation = inode;
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */
 void
-peer_reset_pending_new_generation(struct peer *peer)
+peer_reset_pending_new_generation_by_fd(struct peer *peer)
 {
 	peer->pending_new_generation = NULL;
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */
-void
-peer_unset_pending_new_generation(struct peer *peer)
+static void
+peer_unset_pending_new_generation_by_fd(
+	struct peer *peer, gfarm_error_t reason)
 {
-	if (peer->pending_new_generation != NULL)
-		inode_new_generation_done(peer->pending_new_generation, peer,
-		    GFARM_ERR_PROTOCOL);
+	if (peer->pending_new_generation != NULL) {
+		inode_new_generation_by_fd_finish(peer->pending_new_generation,
+		    peer, reason);
+		peer->pending_new_generation = NULL;
+	}
+}
+
+/* NOTE: caller of this function should acquire giant_lock as well */
+gfarm_error_t
+peer_add_pending_new_generation_by_cookie(
+	struct peer *peer, struct inode *inode, gfarm_uint64_t *cookiep)
+{
+	static const char *diag = "peer_add_cookie";
+	struct pending_new_generation_by_cookie *cookie;
+	gfarm_uint64_t result;
+
+	GFARM_MALLOC(cookie);
+	if (cookie == NULL) {
+		gflog_debug(GFARM_MSG_1003277, "%s: no memory", diag);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	gfarm_mutex_lock(&peer_seqno_mutex, diag, peer_seqno_diag);
+	result = cookie_seqno++;
+	gfarm_mutex_unlock(&peer_seqno_mutex, diag, peer_seqno_diag);
+
+	cookie->inode = inode;
+	*cookiep = cookie->id = result;
+	GFARM_HCIRCLEQ_INSERT_HEAD(peer->pending_new_generation_cookies,
+	    cookie, cookie_link);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/* NOTE: caller of this function should acquire giant_lock as well */
+int
+peer_remove_pending_new_generation_by_cookie(
+	struct peer *peer, gfarm_uint64_t cookie_id, struct inode **inodep)
+{
+	static const char *diag = "peer_delete_cookie";
+	struct pending_new_generation_by_cookie *cookie;
+	int found = 0;
+
+	GFARM_HCIRCLEQ_FOREACH(cookie, peer->pending_new_generation_cookies,
+	    cookie_link) {
+		if (cookie->id == cookie_id) {
+			if (inodep != NULL)
+				*inodep = cookie->inode;
+			GFARM_HCIRCLEQ_REMOVE(cookie, cookie_link);
+			free(cookie);
+			found = 1;
+			break;
+		}
+	}
+	if (!found)
+		gflog_warning(GFARM_MSG_1003278, "%s: bad cookie id %llu",
+		    diag, (unsigned long long)cookie_id);
+
+	return (found);
+}
+
+/* NOTE: caller of this function should acquire giant_lock as well */
+static void
+peer_unset_pending_new_generation_by_cookie(
+	struct peer *peer, gfarm_error_t reason)
+{
+	struct pending_new_generation_by_cookie *cookie;
+
+	while (!GFARM_HCIRCLEQ_EMPTY(peer->pending_new_generation_cookies,
+	    cookie_link)) {
+		cookie = GFARM_HCIRCLEQ_FIRST(
+		    peer->pending_new_generation_cookies, cookie_link);
+		inode_new_generation_by_cookie_finish(
+		    cookie->inode, cookie->id, peer, reason);
+		GFARM_HCIRCLEQ_REMOVE(cookie, cookie_link);
+		free(cookie);
+	}
+	GFARM_HCIRCLEQ_INIT(peer->pending_new_generation_cookies, cookie_link);
+}
+
+/* NOTE: caller of this function should acquire giant_lock as well */
+void
+peer_unset_pending_new_generation(struct peer *peer, gfarm_error_t reason)
+{
+	/* pending_new_generation (file descriptor) case */
+	peer_unset_pending_new_generation_by_fd(peer, reason);
+
+	/* pending_new_generation_by_cookie (file handle) case */
+	peer_unset_pending_new_generation_by_cookie(peer, reason);
 }
 
 struct process *
@@ -1271,7 +1361,8 @@ peer_unset_process(struct peer *peer)
 		gflog_fatal(GFARM_MSG_1000292,
 		    "peer_unset_process: already unset");
 
-	peer_unset_pending_new_generation(peer);
+	peer_unset_pending_new_generation_by_fd(
+	    peer, GFARM_ERR_NO_SUCH_PROCESS);
 
 	peer_fdpair_clear(peer);
 
@@ -1486,49 +1577,6 @@ void *
 peer_findxmlattrctx_get(struct peer *peer)
 {
 	return peer->findxmlattrctx;
-}
-
-gfarm_uint64_t
-peer_add_cookie(struct peer *peer)
-{
-	static const char *diag = "peer_add_cookie";
-	struct cookie *cookie;
-	gfarm_uint64_t result;
-
-	GFARM_MALLOC(cookie);
-	if (cookie == NULL)
-		gflog_fatal(GFARM_MSG_1003277, "%s: no memory", diag);
-
-	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
-	result = cookie->id = cookie_seqno++;
-	GFARM_HCIRCLEQ_INSERT_HEAD(peer->cookies, cookie, hcircleq);
-	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
-
-	return (result);
-}
-
-int
-peer_delete_cookie(struct peer *peer, gfarm_uint64_t cookie_id)
-{
-	static const char *diag = "peer_delete_cookie";
-	struct cookie *cookie;
-	int found = 0;
-
-	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
-	GFARM_HCIRCLEQ_FOREACH(cookie, peer->cookies, hcircleq) {
-		if (cookie->id == cookie_id) {
-			GFARM_HCIRCLEQ_REMOVE(cookie, hcircleq);
-			free(cookie);
-			found = 1;
-			break;
-		}
-	}
-	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
-	if (!found)
-		gflog_warning(GFARM_MSG_1003278, "%s: bad cookie id %llu",
-		    diag, (unsigned long long)cookie_id);
-
-	return (found);
 }
 
 gfarm_error_t
