@@ -1,21 +1,19 @@
 #!/bin/bash
 
 ##### parameters #####
-MAXRETRY=30 # sec.
 DEBUG=1
 
 ##### arguments #####
-if [ $# -lt 4 ]; then
+if [ $# -lt 3 ]; then
   name=`basename $0`
-  echo "usage: $name n_attempt size(MB) n_para gfarm.ncopy [hostname]"
+  echo "usage: $name n_attempt size(MB) n_para [hostname]"
   exit 1
 fi
 n_attempt=$1
 filesize=$2
 n_para=$3
-n_copy=$4
-if [ $# -ge 5 ]; then
-  host=$5
+if [ $# -ge 4 ]; then
+  host=$4
 else
   host=
 fi
@@ -90,7 +88,6 @@ test_overwrite() {
   F=$GFILE-$N
   req_ok=0
   size=17
-  tmp_gfwhere=${TMPFILE}-${N}-gfwhere
   tmp_data=${TMPFILE}-${N}-data
   tmp_data2=${TMPFILE}-${N}-data2
 
@@ -99,7 +96,7 @@ test_overwrite() {
   fi
   for ((i = 1; i <= $n_attempt && $intr == 0; i++)) {
     offset=$i
-    if ((`expr $i % 1000` == 0)); then
+    if (($(($i % 1000)) == 0)); then
       my_print [$N:$i] progress
     fi
     dd if=/dev/urandom bs=1 count=${size} 2> /dev/null > $tmp_data
@@ -129,7 +126,7 @@ test_overwrite() {
     fi
 
     ### compare data
-    for h in `cat $tmp_gfwhere`; do
+    for h in `gfwhere $F`; do
       gfexport -s ${size} -o $offset -h $h $F > $tmp_data2
       cmp $tmp_data $tmp_data2 > /dev/null 2>&1
       if [ $? -ne 0 ]; then
@@ -157,16 +154,6 @@ test_overwrite() {
     fi
   }
   exit 0
-}
-
-set_ncopy() {
-  if gfncopy -s $1 $2; then
-    :
-   else
-    echo failed gfncopy -s
-    clean_test
-    exit $exit_fail
-  fi
 }
 
 clean_exit() {
@@ -206,11 +193,19 @@ if [ $? -eq 0 ]; then
   exec 10>&-
 fi
 
-set_ncopy $n_copy $GDIR
+IFS_SAVE=$IFS
+IFS=$'\n'
+repattr=
+for l in `gfhostgroup | awk '{print $2}' | sort |  uniq -c`; do
+  repattr=`echo $l | awk '{print $2 ":" $1 ","}'`${repattr}
+done
+IFS=$IFS_SAVE
 
-printf '%s' "set gfarm.ncopy="
-gfxattr -g $GDIR gfarm.ncopy
-echo
+gfncopy -r $GDIR || clean_exit $exit_fail
+gfncopy -S $repattr $GDIR || clean_exit $exit_fail
+repattr2=`gfncopy $GDIR` || clean_exit $exit_fail
+
+echo gfarm.replicainfo=$repattr2
 
 echo "start overwrite test: $n_attempt times * $n_para parallels"
 trap 'echo interrupt; stop_childlen; clean_all; exit $exit_fail' $trap_sigs
