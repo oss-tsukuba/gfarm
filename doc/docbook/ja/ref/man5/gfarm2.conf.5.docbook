@@ -2374,7 +2374,6 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 </varlistentry>
 
 <varlistentry>
-<varlistentry>
 <term>&lt;page_cache_timeout_statement&gt; ::=</term>
 <listitem><literallayout>"page_cache_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>

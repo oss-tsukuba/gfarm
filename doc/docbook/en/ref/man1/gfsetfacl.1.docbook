@@ -114,62 +114,65 @@ permissions: read (r), write (w), execute (x).  A Default ACL entry
 has a d[efault:] prefix.
 </para>
 
+<variablelist>
 <varlistentry>
-[d[efault:]u[ser]::perms
+<term>[d[efault:]u[ser]::perms</term>
 <listitem>
-Permissions of owner.
+<para>Permissions of owner.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-  [d[efault:]u[ser]:username:perms
+<term>[d[efault:]u[ser]:username:perms</term>
 <listitem>
-Permissions of a named user.
+<para>Permissions of a named user.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-  [d[efault:]g[roup]::perms
+<term>[d[efault:]g[roup]::perms</term>
 <listitem>
-Permissions of a file group.
+<para>Permissions of a file group.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-  [d[efault:]g[roup]:groupname:perms
+<term>[d[efault:]g[roup]:groupname:perms</term>
 <listitem>
-Permissions of a named group.
+<para>Permissions of a named group.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-  [d[efault:]m[ask]::perms
+<term>[d[efault:]m[ask]::perms</term>
 <listitem>
-mask of effective rights
+<para>mask of effective rights</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-  [d[efault:]o[ther]::perms
+<term>[d[efault:]o[ther]::perms</term>
 <listitem>
-Permissions of others.
+<para>Permissions of others.</para>
 </listitem>
 </varlistentry>
+</variablelist>
 </refsect1>
 
 <refsect1 id='examples'><title>EXAMPLES</title>
 
+<variablelist>
 <varlistentry>
-Granting read access to a named user
+<term>Granting read access to a named user</term>
 <listitem>
-gfsetfalc -m u:testuser:r filename
+<para>gfsetfalc -m u:testuser:r filename</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-Replacing the ACL of filename2 by filename1
+<term>Replacing the ACL of filename2 by filename1</term>
 <listitem>
-gfgetfacl filename1 | gfsetfacl -b -M - filename2
+<para>gfgetfacl filename1 | gfsetfacl -b -M - filename2</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-ACL text of long form
+<term>ACL text of long form</term>
 <listitem>
 <literallayout>
 # comment
@@ -187,13 +190,14 @@ default:other::r-x
 </varlistentry>
 
 <varlistentry>
-ACL text of short form
+<term>ACL text of short form</term>
 <listitem>
 <literallayout>
 u::rw,u:user1:rw,g::r,g:group1:rw,m::r,o::r,d:u::rwx,d:g::rx,d:o::rx
 </literallayout>
 </listitem>
 </varlistentry>
+</variablelist>
 </refsect1>
 
 <refsect1 id='see-also'><title>SEE ALSO</title>

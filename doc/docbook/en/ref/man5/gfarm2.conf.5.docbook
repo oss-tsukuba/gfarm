@@ -2434,7 +2434,6 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<varlistentry>
 <term>&lt;page_cache_timeout_statement&gt; ::=</term>
 <listitem><literallayout>"page_cache_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
