@@ -77,7 +77,7 @@ this <parameter>separator</parameter> character.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='return-values'><title>OPTIONS</title>
+<refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>

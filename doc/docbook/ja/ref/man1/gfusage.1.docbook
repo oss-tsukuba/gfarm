@@ -35,15 +35,15 @@
 </para>
 </refsect1>
 
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
 <varlistentry>
 <term><option>-P NAME</option></term>
 <listitem>
 <para>指定したパス名により特定のメタデータサーバを指定します。</para>
 </listitem>
 </varlistentry>
-
-<refsect1 id='options'><title>OPTIONS</title>
-<variablelist>
 
 <varlistentry>
 <term><option>-g</option></term>
