@@ -105,6 +105,7 @@ source file.
 <command>gfpcopy</command> has the same options
 with <command>gfprep</command>.  (see man <command>gfprep</command>)
 </para>
+</refsect1>
 
 <refsect1 id='examples'><title>EXAMPLES</title>
 <para>

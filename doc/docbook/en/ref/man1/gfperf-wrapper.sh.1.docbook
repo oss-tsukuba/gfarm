@@ -26,7 +26,7 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>execute command on sharedsecret, gsi_auth or gsi authentication.
-The servers (gfmd & gfsd) may allow specified authentication.
+The servers (gfmd &amp; gfsd) may allow specified authentication.
 </para>
 <para>
 This command uses GFARM_CONFIG_FILE enviroment variable.

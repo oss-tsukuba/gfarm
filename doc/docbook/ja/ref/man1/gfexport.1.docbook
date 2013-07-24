@@ -35,6 +35,8 @@
 <para>指定したファイルシステムノードに格納されているファイルを出力します．
 </para>
 </listitem>
+</varlistentry>
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>引数オプションを表示します。</para>

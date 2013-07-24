@@ -116,62 +116,65 @@ perms フィールドは許可を表す文字を組み合わせです．
 デフォルト ACL エントリは d[efault:] 接頭辞を持ちます．
 </para>
 
+<variablelist>
 <varlistentry>
-[d[efault:]u[ser]::perms
+<term>[d[efault:]u[ser]::perms</term>
 <listitem>
-所有者の許可
+<para>所有者の許可</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-  [d[efault:]u[ser]:username:perms
+<term>[d[efault:]u[ser]:username:perms</term>
 <listitem>
-指名ユーザの許可
+<para>指名ユーザの許可</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-  [d[efault:]g[roup]::perms
+<term>[d[efault:]g[roup]::perms</term>
 <listitem>
-ファイルグループの許可
+<para>ファイルグループの許可</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-  [d[efault:]g[roup]:groupname:perms
+<term>[d[efault:]g[roup]:groupname:perms</term>
 <listitem>
-指名グループの許可
+<para>指名グループの許可</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-  [d[efault:]m[ask]::perms
+<term>[d[efault:]m[ask]::perms</term>
 <listitem>
-実行権のマスク(最大の許可) (所有者とその他、以外に効果)
+<para>実行権のマスク(最大の許可) (所有者とその他、以外に効果)</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-  [d[efault:]o[ther]::perms
+<term>[d[efault:]o[ther]::perms</term>
 <listitem>
-その他への許可
+<para>その他への許可</para>
 </listitem>
 </varlistentry>
+</variablelist>
 </refsect1>
 
 <refsect1 id='examples'><title>EXAMPLES</title>
 
+<variablelist>
 <varlistentry>
-指名ユーザへの読み込みアクセスを許可する．
+<term>指名ユーザへの読み込みアクセスを許可する．</term>
 <listitem>
-gfsetfalc -m u:testuser:r filename
+<para>gfsetfalc -m u:testuser:r filename</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-filename2 の ACL をfilename1 の ACL で置換する．
+<term>filename2 の ACL をfilename1 の ACL で置換する．</term>
 <listitem>
-gfgetfacl filename1 | gfsetfacl -b -M - filename2
+<para>gfgetfacl filename1 | gfsetfacl -b -M - filename2</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-長い形式の ACL 文字列表現
+<term>長い形式の ACL 文字列表現</term>
 <listitem>
 <literallayout>
 # comment
@@ -189,13 +192,14 @@ default:other::r-x
 </varlistentry>
 
 <varlistentry>
-短い形式の ACL 文字列表現
+<term>短い形式の ACL 文字列表現</term>
 <listitem>
 <literallayout>
 u::rw,u:user1:rw,g::r,g:group1:rw,m::r,o::r,d:u::rwx,d:g::rx,d:o::rx
 </literallayout>
 </listitem>
 </varlistentry>
+</variablelist>
 </refsect1>
 
 <refsect1 id='see-also'><title>SEE ALSO</title>
