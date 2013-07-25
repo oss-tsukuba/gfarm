@@ -716,7 +716,7 @@ term: /* -------------------------------------------------------- */
 }
 
 static int
-dirtree_send(FILE *child_in, gfpara_proc_t *proc, void *param, int interrupt)
+dirtree_send(FILE *child_in, gfpara_proc_t *proc, void *param, int stop)
 {
 	static const char diag[] = "dirtree_send";
 	gfarm_dirtree_t *handle = param;
@@ -725,7 +725,7 @@ dirtree_send(FILE *child_in, gfpara_proc_t *proc, void *param, int interrupt)
 	gfarm_dirtree_entry_t *ent;
 	void *p;
 
-	if (interrupt) {
+	if (stop) {
 		gfpara_send_int(child_in, DIRTREE_CMD_TERMINATE);
 		gfarm_mutex_lock(&handle->mutex, diag, "mutex");
 		handle->n_free_procs = handle->n_parallel; /* terminate */
@@ -1189,7 +1189,7 @@ gfarm_dirtree_close(gfarm_dirtree_t *handle)
 	gfarm_dirtree_entry_t *ent;
 	char *subdir;
 
-	gfpara_interrupt(handle->gfpara_handle, 10000); /* fifo: quitting */
+	gfpara_terminate(handle->gfpara_handle, 10000); /* fifo: quitting */
 
 	while (gfarm_dirtree_delete(handle) == GFARM_ERR_NO_ERROR)
 		;
