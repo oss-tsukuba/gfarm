@@ -192,7 +192,7 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 	    int (*func_child)(void *param, FILE *from_parent, FILE *to_parent),
 	    void *param_child,
 	    int (*func_send)(FILE *child_in, gfpara_proc_t *proc, void *param,
-			     int interrupt),
+			     int stop),
 	    void *param_send,
 	    int (*func_recv)(FILE *child_out, gfpara_proc_t *proc,
 			     void *param),
@@ -285,7 +285,7 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 	handle->param_recv = param_recv;
 	handle->func_end = func_end;
 	handle->param_end = param_end;
-	handle->interrupt = 0;
+	handle->interrupt = GFPARA_INTR_RUN;
 
 	*handlep = handle;
 
@@ -449,14 +449,14 @@ gfpara_thread(void *param)
 			gfpara_fatal("no child process: pid=%ld\n",
 				(long int) proc->pid);
 		retv = func_send(proc->in, proc, param_send,
-				handle->interrupt);
+		    handle->interrupt != GFPARA_INTR_RUN ? 1 : 0);
 		if (retv == GFPARA_END)
 			goto end;
 		else if (retv == GFPARA_FATAL)
 			gfpara_fatal("gfpara error in func_send");
 		assert(retv == GFPARA_NEXT);
 		for (;;) {
-			if (handle->interrupt) {
+			if (handle->interrupt == GFPARA_INTR_TERM) {
 				tv.tv_sec = handle->timeout_msec / 1000;
 				tv.tv_usec = (handle->timeout_msec % 1000)
 					* 1000;
@@ -469,7 +469,7 @@ gfpara_thread(void *param)
 			if (retv > 0)
 				break;  /* readable */
 			else if (retv == 0) { /* timeout */
-				if (handle->interrupt)
+				if (handle->interrupt == GFPARA_INTR_TERM)
 					goto end;
 			} else
 				gfpara_fatal("select error: %s\n",
@@ -522,8 +522,8 @@ gfpara_communicate(void *param)
 			gfarm_nanosleep(100LL * GFARM_MILLISEC_BY_NANOSEC);
 			if (waitpid(procs[i].pid, NULL, WNOHANG) <= 0) {
 				fprintf(stderr,
-					"kill pid=%ld (may be hangup)\n",
-					(long int) procs[i].pid);
+				    "pid=%ld: terminated\n",
+				    (long)procs[i].pid);
 				kill(procs[i].pid, SIGTERM);
 				kill(procs[i].pid, SIGKILL);
 			}
@@ -559,9 +559,16 @@ gfpara_join(gfpara_t *handle)
 }
 
 gfarm_error_t
-gfpara_interrupt(gfpara_t *handle, int timeout_msec)
+gfpara_terminate(gfpara_t *handle, int timeout_msec)
 {
 	handle->timeout_msec = timeout_msec;
-	handle->interrupt = 1;
+	handle->interrupt = GFPARA_INTR_TERM;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfpara_stop(gfpara_t *handle)
+{
+	handle->interrupt = GFPARA_INTR_STOP;
 	return (GFARM_ERR_NO_ERROR);
 }

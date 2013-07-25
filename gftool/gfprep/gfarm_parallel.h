@@ -11,6 +11,12 @@ enum gfpara_status {
 	GFPARA_FATAL
 };
 
+enum gfpara_interrupt {
+	GFPARA_INTR_RUN,
+	GFPARA_INTR_TERM,
+	GFPARA_INTR_STOP
+};
+
 gfarm_error_t gfpara_init(gfpara_t **, int,
 			  int (*)(void *, FILE *, FILE *), void *,
 			  int (*)(FILE *, gfpara_proc_t *, void *, int),
@@ -19,7 +25,8 @@ gfarm_error_t gfpara_init(gfpara_t **, int,
 			  void *(*)(void *), void *);
 gfarm_error_t gfpara_start(gfpara_t *);
 gfarm_error_t gfpara_join(gfpara_t *);
-gfarm_error_t gfpara_interrupt(gfpara_t *, int);
+gfarm_error_t gfpara_terminate(gfpara_t *, int);
+gfarm_error_t gfpara_stop(gfpara_t *);
 
 void gfpara_recv_int(FILE *, gfarm_int32_t *);
 void gfpara_recv_int64(FILE *, gfarm_int64_t *);

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <signal.h>
 #include <unistd.h>
 #include <libgen.h>
 #include <limits.h>
@@ -61,8 +62,8 @@ static struct gfprep_option opt = { .check_disk_avail = 1 };
 /* protection against callback from child process */
 static pthread_mutex_t cb_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cb_cond = PTHREAD_COND_INITIALIZER;
-#define CB_MUTEX_DIAG "cb_mutex"
-#define CB_COND_DIAG "cb_cond"
+static const char CB_MUTEX_DIAG[] = "cb_mutex";
+static const char CB_COND_DIAG[] = "cb_cond";
 
 /* locked by cb_mutex */
 static gfarm_uint64_t total_ok_filesize = 0;
@@ -1099,7 +1100,7 @@ gfprep_remove_replica_deferred_add(const char *url, const char *hostname)
 		free(rrd);
 		free(url2);
 		free(hostname2);
-		gfprep_error("cannot remove a replica: %s (%s)",
+		gfprep_error("cannot remove a replica: %s (%s): no memory",
 		     url, hostname);
 	} else {
 		rrd->url = url2;
@@ -1394,9 +1395,9 @@ struct pfunc_cb_data {
 	char *done_p;
 
 	void (*func_timer_begin)(struct pfunc_cb_data *);
-	void (*func_timer_end)(struct pfunc_cb_data *, int);
+	void (*func_timer_end)(struct pfunc_cb_data *, enum pfunc_result);
 	void (*func_start)(struct pfunc_cb_data *);
-	void (*func_update)(struct pfunc_cb_data *, int);
+	void (*func_update)(struct pfunc_cb_data *, enum pfunc_result);
 };
 
 static void (*pfunc_cb_start_copy)(struct pfunc_cb_data *) = NULL;
@@ -1460,11 +1461,12 @@ pfunc_cb_start(void *data)
 		cbd->func_timer_begin(cbd);
 }
 
-static void (*pfunc_cb_timer_end_copy)(struct pfunc_cb_data *, int) = NULL;
-static void (*pfunc_cb_timer_end_replicate)(struct pfunc_cb_data *, int)
-= NULL;
-static void (*pfunc_cb_timer_end_remove_replica)(struct pfunc_cb_data *, int)
-= NULL;
+static void (*pfunc_cb_timer_end_copy)(
+	struct pfunc_cb_data *, enum pfunc_result) = NULL;
+static void (*pfunc_cb_timer_end_replicate)(
+	struct pfunc_cb_data *, enum pfunc_result) = NULL;
+static void (*pfunc_cb_timer_end_remove_replica)(
+	struct pfunc_cb_data *, enum pfunc_result) = NULL;
 
 static const char pfunc_cb_ok[] = "OK";
 static const char pfunc_cb_ng[] = "NG";
@@ -1484,14 +1486,16 @@ timer_end(struct pfunc_cb_data *cbd, double *mbsp, double *secp)
 	*secp = usec / GFARM_SECOND_BY_MICROSEC;
 }
 
+#define IS_OK (result == PFUNC_RESULT_OK) ? pfunc_cb_ok : pfunc_cb_ng
+
 static void
-pfunc_cb_timer_end_copy_main(struct pfunc_cb_data *cbd, int success)
+pfunc_cb_timer_end_copy_main(
+	struct pfunc_cb_data *cbd, enum pfunc_result result)
 {
 	double mbs, sec;
 
 	timer_end(cbd, &mbs, &sec);
-	printf("[%s]COPY" PF_FMT "%s",
-	    success ? pfunc_cb_ok : pfunc_cb_ng, mbs, sec, cbd->src_url);
+	printf("[%s]COPY" PF_FMT "%s", IS_OK, mbs, sec, cbd->src_url);
 	if (cbd->src_hi)
 		printf("(%s:%d)",
 		    cbd->src_hi->hostname, cbd->src_hi->port);
@@ -1503,13 +1507,13 @@ pfunc_cb_timer_end_copy_main(struct pfunc_cb_data *cbd, int success)
 }
 
 static void
-pfunc_cb_timer_end_replicate_main(struct pfunc_cb_data *cbd, int success)
+pfunc_cb_timer_end_replicate_main(
+	struct pfunc_cb_data *cbd, enum pfunc_result result)
 {
 	double mbs, sec;
 
 	timer_end(cbd, &mbs, &sec);
-	printf("[%s]%s" PF_FMT "%s (%s:%d -> %s:%d)\n",
-	    success ? pfunc_cb_ok : pfunc_cb_ng,
+	printf("[%s]%s" PF_FMT "%s (%s:%d -> %s:%d)\n", IS_OK,
 	    cbd->migrate ? "MIGRATE" : "REPLICATE",
 	    mbs, sec, cbd->src_url,
 	    cbd->src_hi->hostname, cbd->src_hi->port,
@@ -1517,21 +1521,21 @@ pfunc_cb_timer_end_replicate_main(struct pfunc_cb_data *cbd, int success)
 }
 
 static void
-pfunc_cb_timer_end_remove_replica_main(struct pfunc_cb_data *cbd, int success)
+pfunc_cb_timer_end_remove_replica_main(
+	struct pfunc_cb_data *cbd, enum pfunc_result result)
 {
 	printf("[%s]REMOVE REPLICA: %s (%s:%d)\n",
-	    success ? pfunc_cb_ok : pfunc_cb_ng, cbd->src_url,
-	    cbd->src_hi->hostname, cbd->src_hi->port);
+	    IS_OK, cbd->src_url, cbd->src_hi->hostname, cbd->src_hi->port);
 }
 
 static void
-pfunc_cb_update_default(struct pfunc_cb_data *cbd, int success)
+pfunc_cb_update_default(struct pfunc_cb_data *cbd, enum pfunc_result result)
 {
 	if (cbd->src_hi)
 		cbd->src_hi->n_using--;
 	if (cbd->dst_hi)
 		cbd->dst_hi->n_using--;
-	if (success) {
+	if (result == PFUNC_RESULT_OK) {
 		total_ok_filesize += cbd->filesize;
 		total_ok_filenum++;
 	} else {
@@ -1543,15 +1547,16 @@ pfunc_cb_update_default(struct pfunc_cb_data *cbd, int success)
 	if (cbd->done_p)
 		*cbd->done_p = 1;
 
-	if (cbd->migrate && success)
+	if (cbd->migrate && result == PFUNC_RESULT_BUSY_REMOVE_REPLICA)
 		gfprep_remove_replica_deferred_add(
 		    cbd->src_url, cbd->src_hi->hostname);
 }
 
 static void
-pfunc_cb_update_remove_replica(struct pfunc_cb_data *cbd, int success)
+pfunc_cb_update_remove_replica(
+	struct pfunc_cb_data *cbd, enum pfunc_result result)
 {
-	if (success) {
+	if (result == PFUNC_RESULT_OK) {
 		removed_replica_ok_num++;
 		removed_replica_ok_filesize += cbd->filesize;
 	} else {
@@ -1562,7 +1567,7 @@ pfunc_cb_update_remove_replica(struct pfunc_cb_data *cbd, int success)
 }
 
 static void
-pfunc_cb_end(int success, void *data)
+pfunc_cb_end(enum pfunc_result result, void *data)
 {
 	static const char diag[] = "pfunc_cb_end";
 	struct pfunc_cb_data *cbd = data;
@@ -1573,12 +1578,21 @@ pfunc_cb_end(int success, void *data)
 	gfarm_mutex_lock(&cb_mutex, diag, CB_MUTEX_DIAG);
 
 	if (cbd->func_timer_end)
-		cbd->func_timer_end(cbd, success);
+		cbd->func_timer_end(cbd, result);
 
-	cbd->func_update(cbd, success);
+	cbd->func_update(cbd, result);
 
 	gfarm_cond_signal(&cb_cond, diag, CB_COND_DIAG);
 	gfarm_mutex_unlock(&cb_mutex, diag, CB_MUTEX_DIAG);
+}
+
+static void
+pfunc_cb_free(void *data)
+{
+	struct pfunc_cb_data *cbd = data;
+
+	if (cbd == NULL)
+		return;
 
 	free(cbd->src_url);
 	free(cbd->dst_url);
@@ -2208,9 +2222,9 @@ gfprep_cb_data_init(
 	const char *src_url, struct gfprep_host_info *src_hi,
 	const char *dst_url, struct gfprep_host_info *dst_hi,
 	void (*func_timer_begin)(struct pfunc_cb_data *),
-	void (*func_timer_end)(struct pfunc_cb_data *, int),
+	void (*func_timer_end)(struct pfunc_cb_data *, enum pfunc_result),
 	void (*func_start)(struct pfunc_cb_data *),
-	void (*func_update)(struct pfunc_cb_data *, int))
+	void (*func_update)(struct pfunc_cb_data *, enum pfunc_result))
 {
 	struct pfunc_cb_data *cbd;
 
@@ -2412,6 +2426,8 @@ skip:
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static int gfprep_is_term();
+
 static gfarm_error_t
 gfprep_connections_exec(gfarm_pfunc_t *pfunc_handle, int is_gfpcopy,
 			int migrate, const char *src_dir, const char *dst_dir,
@@ -2440,6 +2456,11 @@ gfprep_connections_exec(gfarm_pfunc_t *pfunc_handle, int is_gfpcopy,
 	n_end = 0;
 next:
 	for (i = 0; i < n_conns; i++) {
+		if (gfprep_is_term()) {
+			e = GFARM_ERR_NO_ERROR;
+			goto end;
+		}
+
 		gfarm_mutex_lock(&cb_mutex, diag, CB_MUTEX_DIAG);
 		is_done = done[i];
 		gfarm_mutex_unlock(&cb_mutex, diag, CB_MUTEX_DIAG);
@@ -2862,6 +2883,84 @@ gfprep_unlink_to_overwrite(gfarm_dirtree_entry_t *entry, int dst_is_gfarm,
 	if (e == GFARM_ERR_NO_ERROR)
 		entry->dst_exist = 0;
 	return (e);
+}
+
+static pthread_mutex_t sig_mutex = PTHREAD_MUTEX_INITIALIZER;
+static const char SIG_MUTEX_DIAG[] = "sig_mutex";
+
+static int is_term = 0; /* sig_mutex */
+
+static int
+gfprep_is_term()
+{
+	int i;
+	static const char diag[] = "gfprep_is_term";
+
+	gfarm_mutex_lock(&sig_mutex, diag, SIG_MUTEX_DIAG);
+	i = is_term;
+	gfarm_mutex_unlock(&sig_mutex, diag, SIG_MUTEX_DIAG);
+
+	return (i);
+}
+
+static void
+gfprep_sig_add(sigset_t *sigs, int sigid, const char *name)
+{
+	if (sigaddset(sigs, sigid) == -1)
+		gfprep_fatal("sigaddset(%s): %s", name, strerror(errno));
+}
+
+static void
+gfprep_sigs_set(sigset_t *sigs)
+{
+	if (sigemptyset(sigs) == -1)
+		gfprep_fatal("sigemptyset: %s", strerror(errno));
+
+	gfprep_sig_add(sigs, SIGHUP, "SIGHUP");
+	gfprep_sig_add(sigs, SIGTERM, "SIGTERM");
+	gfprep_sig_add(sigs, SIGINT, "SIGINT");
+}
+
+static void *
+gfprep_sigs_handler(void *p)
+{
+	sigset_t *sigs = p;
+	int rv, sig;
+	static const char diag[] = "gfprep_sigs_handler";
+
+	for (;;) {
+		if ((rv = sigwait(sigs, &sig)) != 0) {
+			gfprep_warn("sigs_handler: %s", strerror(rv));
+			continue;
+		}
+		switch (sig) {
+		case SIGHUP:
+		case SIGINT:
+		case SIGTERM:
+			gfarm_mutex_lock(&sig_mutex, diag, SIG_MUTEX_DIAG);
+			is_term = 1;
+			gfarm_mutex_unlock(&sig_mutex, diag, SIG_MUTEX_DIAG);
+		}
+	}
+	return (NULL);
+}
+
+static void
+gfprep_signal_init()
+{
+	sigset_t sigs;
+	pthread_t thread_id;
+	int err;
+
+	gfprep_sigs_set(&sigs);
+
+	if (pthread_sigmask(SIG_BLOCK, &sigs, NULL) == -1) /* for sigwait() */
+		gfprep_fatal("pthread_sigmask(SIG_BLOCK): %s",
+		    strerror(errno));
+
+	err = pthread_create(&thread_id, NULL, gfprep_sigs_handler, &sigs);
+	if (err != 0)
+		gfprep_fatal("pthread_create: %s", strerror(err));
 }
 
 int
@@ -3310,13 +3409,15 @@ main(int argc, char *argv[])
 	gfprep_fatal_e(e, "gfarm_terminate");
 	gfprep_debug("validate options...done");
 
+	gfprep_signal_init();
+
 	/* not gfarm initialized ------------------------- */
 	if (opt.performance)
 		gettimeofday(&time_start, NULL);
 
 	/* create child-processes before gfarm_initialize() */
 	e = gfarm_pfunc_start(&pfunc_handle, opt_n_para, 1, opt_simulate_KBs,
-			      opt_copy_bufsize, pfunc_cb_start, pfunc_cb_end);
+	    opt_copy_bufsize, pfunc_cb_start, pfunc_cb_end, pfunc_cb_free);
 	gfprep_fatal_e(e, "gfarm_pfunc_start");
 	gfprep_debug("pfunc_start...done");
 	pfunc_cb_func_init();
@@ -3456,7 +3557,7 @@ main(int argc, char *argv[])
 	n_entry = 0;
 	n_target = 0;
 	while ((e = gfarm_dirtree_checknext(dirtree_handle, &entry))
-	       == GFARM_ERR_NO_ERROR) {
+	       == GFARM_ERR_NO_ERROR && !gfprep_is_term()) {
 		struct gfprep_host_info *src_hi, *dst_hi;
 		struct gfprep_host_info **src_select_array;
 		struct gfprep_host_info **dst_select_array, **dst_exist_array;
@@ -3928,9 +4029,10 @@ next_entry:
 	}
 	/* GFARM_ERR_NO_SUCH_OBJECT: end */
 	if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_SUCH_OBJECT) {
-		gfarm_pfunc_interrupt(pfunc_handle);
+		gfarm_pfunc_terminate(pfunc_handle);
 		gfprep_fatal_e(e, "gfarm_dirtree_checknext");
 	}
+
 	e = gfarm_dirtree_close(dirtree_handle);
 	gfprep_warn_e(e, "gfarm_dirtree_close");
 
@@ -4016,6 +4118,12 @@ next_entry:
 		gfprep_hash_host_to_nodes_free(hash_host_to_nodes);
 		gfarm_dirtree_array_free(n_ents, ents);
 	}
+
+	if (gfprep_is_term()) {
+		gfprep_warn("interrupted");
+		gfarm_pfunc_terminate(pfunc_handle);
+	}
+
 	e = gfarm_pfunc_join(pfunc_handle);
 	gfprep_error_e(e, "gfarm_pfunc_join");
 

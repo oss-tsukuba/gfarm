@@ -35,8 +35,9 @@ static mode_t mask;
 struct gfarm_pfunc {
 	gfpara_t *gfpara_handle;
 	gfarm_fifo_t *fifo_handle;
-	void (*cb_start)(void *data);
-	void (*cb_end)(int success, void *data);
+	void (*cb_start)(void *);
+	void (*cb_end)(enum pfunc_result, void *);
+	void (*cb_free)(void *);
 	gfarm_int64_t simulate_KBs;
 	char *copy_buf;
 	int copy_bufsize;
@@ -65,14 +66,6 @@ enum pfunc_cmdnum {
 	PFUNC_CMD_MOVE,
 	PFUNC_CMD_REMOVE_REPLICA,
 	PFUNC_CMD_TERMINATE
-};
-
-enum pfunc_result {
-	PFUNC_RESULT_OK,
-	PFUNC_RESULT_NG,
-	PFUNC_RESULT_WAIT_OK,
-	PFUNC_RESULT_END,
-	PFUNC_RESULT_FATAL
 };
 
 enum pfunc_mode {
@@ -187,6 +180,20 @@ pfunc_replicate_main(gfarm_pfunc_t *handle, int pfunc_mode,
 			gfarm_error_string(e));
 		gfpara_send_int(to_parent, PFUNC_RESULT_NG);
 		goto free_mem;
+	}
+	if (pfunc_mode == PFUNC_MODE_MIGRATE) {
+		e = gfs_replica_remove_by_file(url, src_host);
+		if (e == GFARM_ERR_FILE_BUSY) {
+			gfpara_send_int(to_parent,
+			    PFUNC_RESULT_BUSY_REMOVE_REPLICA);
+			goto free_mem;
+		} else if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr,
+			    "ERROR: cannot remove a replica: %s (%s:%d): %s\n",
+			    url, src_host, src_port, gfarm_error_string(e));
+			gfpara_send_int(to_parent, PFUNC_RESULT_NG);
+			goto free_mem;
+		}
 	}
 end:
 	gfpara_send_int(to_parent, PFUNC_RESULT_OK);
@@ -709,18 +716,18 @@ pfunc_set_end(gfarm_pfunc_t *handle)
 }
 
 static int
-pfunc_send(FILE *child_in, gfpara_proc_t *proc, void *param, int interrupt)
+pfunc_send(FILE *child_in, gfpara_proc_t *proc, void *param, int stop)
 {
 	gfarm_pfunc_t *handle = param;
 	gfarm_error_t e;
-	gfarm_pfunc_cmd_t ent;
+	gfarm_pfunc_cmd_t cmd;
 
-	if (interrupt || pfunc_is_end(handle)) {
+	if (stop || pfunc_is_end(handle)) {
 		gfpara_data_set(proc, NULL);
 		gfpara_send_int(child_in, PFUNC_CMD_TERMINATE);
 		return (GFPARA_NEXT);
 	}
-	e = gfarm_fifo_delete(handle->fifo_handle, &ent); /* block */
+	e = gfarm_fifo_delete(handle->fifo_handle, &cmd); /* block */
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) { /* finish and empty */
 		gfpara_data_set(proc, NULL);
 		gfpara_send_int(child_in, PFUNC_CMD_TERMINATE);
@@ -733,61 +740,62 @@ pfunc_send(FILE *child_in, gfpara_proc_t *proc, void *param, int interrupt)
 		pfunc_set_end(handle);
 		return (GFPARA_NEXT);
 	}
-	gfpara_send_int(child_in, ent.command);
-	switch (ent.command) {
+	gfpara_send_int(child_in, cmd.command);
+	switch (cmd.command) {
 	case PFUNC_CMD_REPLICATE:
 	case PFUNC_CMD_REPLICATE_MIGRATE:
-		gfpara_send_string(child_in, "%s", ent.src_url);
-		gfpara_send_int64(child_in, ent.src_size);
-		gfpara_send_string(child_in, "%s", ent.src_host);
-		gfpara_send_int(child_in, ent.src_port);
-		gfpara_send_string(child_in, "%s", ent.dst_host);
-		gfpara_send_int(child_in, ent.dst_port);
-		gfpara_send_int(child_in, ent.check_disk_avail);
+		gfpara_send_string(child_in, "%s", cmd.src_url);
+		gfpara_send_int64(child_in, cmd.src_size);
+		gfpara_send_string(child_in, "%s", cmd.src_host);
+		gfpara_send_int(child_in, cmd.src_port);
+		gfpara_send_string(child_in, "%s", cmd.dst_host);
+		gfpara_send_int(child_in, cmd.dst_port);
+		gfpara_send_int(child_in, cmd.check_disk_avail);
 		break;
 	case PFUNC_CMD_COPY:
 	case PFUNC_CMD_MOVE:
-		gfpara_send_string(child_in, "%s", ent.src_url);
-		gfpara_send_int64(child_in, ent.src_size);
-		gfpara_send_string(child_in, "%s", ent.src_host);
-		gfpara_send_int(child_in, ent.src_port);
-		gfpara_send_string(child_in, "%s", ent.dst_url);
-		gfpara_send_string(child_in, "%s", ent.dst_host);
-		gfpara_send_int(child_in, ent.dst_port);
-		gfpara_send_int(child_in, ent.check_disk_avail);
+		gfpara_send_string(child_in, "%s", cmd.src_url);
+		gfpara_send_int64(child_in, cmd.src_size);
+		gfpara_send_string(child_in, "%s", cmd.src_host);
+		gfpara_send_int(child_in, cmd.src_port);
+		gfpara_send_string(child_in, "%s", cmd.dst_url);
+		gfpara_send_string(child_in, "%s", cmd.dst_host);
+		gfpara_send_int(child_in, cmd.dst_port);
+		gfpara_send_int(child_in, cmd.check_disk_avail);
 		break;
 	case PFUNC_CMD_REMOVE_REPLICA:
-		gfpara_send_string(child_in, "%s", ent.src_url);
-		gfpara_send_string(child_in, "%s", ent.src_host);
-		gfpara_send_int(child_in, ent.src_port);
+		gfpara_send_string(child_in, "%s", cmd.src_url);
+		gfpara_send_string(child_in, "%s", cmd.src_host);
+		gfpara_send_int(child_in, cmd.src_port);
 		break;
 	default:
 		fprintf(stderr,
-			"ERROR: unexpected command: %d\n", ent.command);
+			"ERROR: unexpected command: %d\n", cmd.command);
 		gfpara_send_int(child_in, PFUNC_CMD_TERMINATE);
 	}
-	gfpara_data_set(proc, ent.cb_data);
-	if (handle->cb_start && ent.cb_data)
-		handle->cb_start(ent.cb_data); /* success */
-	pfunc_entry_free(&ent);
+	gfpara_data_set(proc, cmd.cb_data);
+	if (handle->cb_start != NULL && cmd.cb_data != NULL)
+		handle->cb_start(cmd.cb_data); /* success */
+	pfunc_entry_free(&cmd);
 	return (GFPARA_NEXT);
 }
 
 static int
 pfunc_recv(FILE *child_out, gfpara_proc_t *proc, void *param)
 {
-	int status;
+	int result;
 	gfarm_pfunc_t *handle = param;
 	void *data = gfpara_data_get(proc);
 
-	gfpara_recv_int(child_out, &status);
-	switch (status) {
+	gfpara_recv_int(child_out, &result);
+	switch (result) {
 	case PFUNC_RESULT_OK:
 	case PFUNC_RESULT_NG:
-		if (handle->cb_end && data)
-			handle->cb_end(status == PFUNC_RESULT_OK, data);
-		return (GFPARA_NEXT);
-	case PFUNC_RESULT_WAIT_OK:
+	case PFUNC_RESULT_BUSY_REMOVE_REPLICA:
+		if (handle->cb_end != NULL && data != NULL) {
+			handle->cb_end(result, data);
+			handle->cb_free(data);
+		}
 		return (GFPARA_NEXT);
 	case PFUNC_RESULT_END:
 		return (GFPARA_END);
@@ -798,11 +806,34 @@ pfunc_recv(FILE *child_out, gfpara_proc_t *proc, void *param)
 	}
 }
 
+static void
+pfunc_cmd_clear(gfarm_pfunc_t *handle)
+{
+	gfarm_pfunc_cmd_t cmd;
+
+	while (gfarm_fifo_delete(handle->fifo_handle, &cmd)
+	    == GFARM_ERR_NO_ERROR) {
+		handle->cb_free(cmd.cb_data);
+		pfunc_entry_free(&cmd);
+	}
+}
+
+static void *
+pfunc_end(void *param)
+{
+	gfarm_pfunc_t *handle = param;
+
+	pfunc_cmd_clear(handle);
+	return (NULL);
+}
+
 /* Do not call this function after gfarm_initialize() */
 gfarm_error_t
-gfarm_pfunc_start(gfarm_pfunc_t **handlep, int n_parallel, int queue_size,
-		  gfarm_int64_t simulate_KBs, int copy_bufsize,
-		  void (*cb_start)(void *), void (*cb_end)(int, void *))
+gfarm_pfunc_start(
+	gfarm_pfunc_t **handlep, int n_parallel, int queue_size,
+	gfarm_int64_t simulate_KBs, int copy_bufsize,
+	void (*cb_start)(void *), void (*cb_end)(enum pfunc_result, void *),
+	void (*cb_free)(void *))
 {
 	gfarm_error_t e;
 	gfarm_pfunc_t *handle;
@@ -817,12 +848,13 @@ gfarm_pfunc_start(gfarm_pfunc_t **handlep, int n_parallel, int queue_size,
 	handle->copy_bufsize = copy_bufsize;
 	handle->cb_start = cb_start;
 	handle->cb_end = cb_end;
+	handle->cb_free = cb_free;
 	handle->is_end = 0;
 	gfarm_mutex_init(&handle->is_end_mutex, "gfarm_pfunc_start",
 			 "is_end_mutex");
 	e = gfpara_init(&handle->gfpara_handle, n_parallel,
-			pfunc_child, handle,
-			pfunc_send, handle, pfunc_recv, handle, NULL, NULL);
+	    pfunc_child, handle,
+	    pfunc_send, handle, pfunc_recv, handle, pfunc_end, handle);
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(handle);
 		return (e);
@@ -856,10 +888,18 @@ gfarm_pfunc_cmd_add(gfarm_pfunc_t *handle, gfarm_pfunc_cmd_t *cmd)
 	return (gfarm_fifo_enter(handle->fifo_handle, cmd));
 }
 
+/* not wait */
 gfarm_error_t
-gfarm_pfunc_interrupt(gfarm_pfunc_t *handle)
+gfarm_pfunc_terminate(gfarm_pfunc_t *handle)
 {
-	return (gfpara_interrupt(handle->gfpara_handle, 5000));
+	return (gfpara_terminate(handle->gfpara_handle, 5000));
+}
+
+/* exit after the current working function have finished */
+gfarm_error_t
+gfarm_pfunc_stop(gfarm_pfunc_t *handle)
+{
+	return (gfpara_stop(handle->gfpara_handle));
 }
 
 gfarm_error_t
