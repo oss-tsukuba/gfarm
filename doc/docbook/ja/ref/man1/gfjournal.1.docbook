@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfjournaladmin.1'>
+
+<refentry id="gfjournaladmin.1">
 
 <refentryinfo><date>2 Jul 2012</date></refentryinfo>
 
@@ -10,31 +13,31 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfjournal</refname>
 <refpurpose>ジャーナルファイルの状態を出力する。</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfjournal</command>
-    <arg choice='opt'><replaceable>オプション</replaceable></arg>
-    <arg choice='plain'><replaceable>ジャーナルファイル</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfjournal</command>
+    <arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>ジャーナルファイル</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command>gfjournal</command> はジャーナルファイルを読み込み、
+<command moreinfo="none">gfjournal</command> はジャーナルファイルを読み込み、
 ファイルの状態に関する情報を標準出力に表示します。
 オプションを指定しなかった場合は、ジャーナルファイルの状態のサマリを
 以下のような形で表示します。
 </para>
 
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	records  seqnum(min/max)          record length(min/max/ave)
 	     30           2/          31          24/    120/     37
 </literallayout>
@@ -44,7 +47,7 @@
 レコードも表示します。
 </para>
 
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	seqnum    operation        length  argument
 	        2 BEGIN                 24
 	        3 MDHOST_ADD            56 name=gfmd1.example.com
@@ -59,7 +62,7 @@
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
 

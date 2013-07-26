@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfsetdir.1'>
+
+<refentry id="gfsetdir.1">
 
 <refentryinfo><date>2 Jul 2003</date></refentryinfo>
 
@@ -10,25 +13,25 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfsetdir</refname>
 <refpurpose>Gfarm 作業ディレクトリを変更するコマンド列を出力する。</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfsetdir</command>
-    <group choice='opt'>
-      <arg choice='plain'>-s</arg>
-      <arg choice='plain'>-c</arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfsetdir</command>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-s</arg>
+      <arg choice="plain" rep="norepeat">-c</arg>
     </group>
-    <arg choice='opt'><replaceable>ディレクトリ</replaceable></arg>
+    <arg choice="opt" rep="norepeat"><replaceable>ディレクトリ</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>Gfarm 作業ディレクトリを 指定したディレクトリに変更するシェルコ
 マンドを標準出力に出力します。ディレクトリを指定しない場合は、ユーザの 
 Gfarm ホームディレクトリである
@@ -41,7 +44,7 @@ gfarm:/<replaceable>グローバルユーザ</replaceable> に変更する
 </para>
 <para>
 出力コマンドを実行して Gfarm 作業ディレクトリを変更する
-<command>gfcd</command>
+<command moreinfo="none">gfcd</command>
 を利用するために、各ユーザのシェル設定ファイルに以下の定義を追加して
 ください。
 </para>
@@ -49,19 +52,19 @@ gfarm:/<replaceable>グローバルユーザ</replaceable> に変更する
   <varlistentry>
     <term>Bourne shell 系シェルの場合</term>
     <listitem>
-      <screen>gfcd() { eval "`gfsetdir $1`"; }</screen>
+      <screen format="linespecific">gfcd() { eval "`gfsetdir $1`"; }</screen>
     </listitem>
   </varlistentry>
   <varlistentry>
     <term>csh  系シェルの場合</term>
     <listitem>
-      <screen>alias gfcd 'eval `gfsetdir \!*`'</screen>
+      <screen format="linespecific">alias gfcd 'eval `gfsetdir \!*`'</screen>
     </listitem>
   </varlistentry>
 </variablelist>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
 <term><option>-s</option></term>
@@ -84,7 +87,7 @@ gfarm:/<replaceable>グローバルユーザ</replaceable> に変更する
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfcd</refentrytitle><manvolnum>1</manvolnum>

@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfjournaladmin.1'>
+
+<refentry id="gfjournaladmin.1">
 
 <refentryinfo><date>21 Jun 2012</date></refentryinfo>
 
@@ -10,26 +13,26 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfjournaladmin</refname>
 <refpurpose>erase a particular record in a journal file</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfjournaladmin</command>
-    <arg choice='opt'><replaceable>options</replaceable></arg>
-    <arg choice='plain'><replaceable>journal-file</replaceable></arg>
-    <arg choice='plain'><replaceable>sequence-number</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfjournaladmin</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>journal-file</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>sequence-number</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command>gfjournaladmin</command> erases a record with 
+<command moreinfo="none">gfjournaladmin</command> erases a record with 
 <replaceable>sequence-number</replaceable> in a journal file.
 Since the record is replaced by A NOP (no operation) record with the
 same length, other records in the journal file are not moved or modified.
@@ -40,7 +43,7 @@ When gfmd detects a conflict of metadata, it reports a log message like
 as the following and aborts immediately.
 </para>
 
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	db_journal_store_thread : seqnum=938 ope=FILECOPY_ADD : \
 	    already exists
 </literallayout>
@@ -50,24 +53,24 @@ Such a conflict should not happen, but once it has been caused by a bug
 of gfmd, restarting gfmd never succeeds.
 Since gfmd applies journal data at boot time, it finds the conflict
 and aborts again.
-<command>gfjournaladmin</command> command is used for getting out from
+<command moreinfo="none">gfjournaladmin</command> command is used for getting out from
 the situation.  The log message shown above suggests a record with the 
 sequence number 938 causes a conflict.
 You can delete the record by executing:
 </para>
 
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	gfjournaladmin /var/gfarm-metadata/journal/0000000000.gmj 938
 </literallayout>
 
 <para>
-Note that <command>gfjournaladmin</command> cannot erase a journal
+Note that <command moreinfo="none">gfjournaladmin</command> cannot erase a journal
 record of BEGIN (operation ID 1) or END (operation ID 2).
 </para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
 

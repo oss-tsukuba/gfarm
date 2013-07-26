@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfs-pio-write.3'>
+<refentry id="gfs-pio-write.3">
 
 <refentryinfo><date>27 Jun 2010</date></refentryinfo>
 
@@ -11,22 +14,22 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_write</refname>
 <refpurpose>write to a file</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfs_pio_write</function></funcdef>
-    <paramdef>GFS_File <parameter>gf</parameter></paramdef>
-    <paramdef>const void * <parameter>buffer</parameter></paramdef>
-    <paramdef>int <parameter>size</parameter></paramdef>
-    <paramdef>int * <parameter>np</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfs_pio_write</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">gf</parameter></paramdef>
+    <paramdef>const void * <parameter moreinfo="none">buffer</parameter></paramdef>
+    <paramdef>int <parameter moreinfo="none">size</parameter></paramdef>
+    <paramdef>int * <parameter moreinfo="none">np</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -34,14 +37,14 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><function>gfs_pio_write()</function> writes up to <parameter>size</parameter> bytes to the file <parameter>gf</parameter>
-from the buffer starting at <parameter>buffer</parameter>.  It returns the number of
-bytes written to the address pointed by <parameter>np</parameter>.</para>
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><function moreinfo="none">gfs_pio_write()</function> writes up to <parameter moreinfo="none">size</parameter> bytes to the file <parameter moreinfo="none">gf</parameter>
+from the buffer starting at <parameter moreinfo="none">buffer</parameter>.  It returns the number of
+bytes written to the address pointed by <parameter moreinfo="none">np</parameter>.</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_ERROR</constant></term>
@@ -52,13 +55,13 @@ bytes written to the address pointed by <parameter>np</parameter>.</para>
 <varlistentry>
 <term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
 <listitem>
-<para><parameter>gf</parameter> does not specify a regular file.</para>
+<para><parameter moreinfo="none">gf</parameter> does not specify a regular file.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_BAD_FILE_DESCRIPTOR</constant></term>
 <listitem>
-<para>The file descripter specified by <parameter>gfp</parameter> is
+<para>The file descripter specified by <parameter moreinfo="none">gfp</parameter> is
 not a valid or is not open for writing.</para>
 </listitem>
 </varlistentry>
@@ -90,7 +93,7 @@ not a valid or is not open for writing.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_flush</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

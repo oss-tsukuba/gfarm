@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfs-pio-readdelim.3'>
+
+<refentry id="gfs-pio-readdelim.3">
 
 <refentryinfo><date>13 May 2004</date></refentryinfo>
 
@@ -10,24 +13,24 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_readdelim</refname>
 <refpurpose>一レコード読み込み</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_readdelim</function></funcdef>
-    <paramdef>GFS_File <parameter>f</parameter></paramdef>
-    <paramdef>char **<parameter>bufp</parameter></paramdef>
-    <paramdef>size_t *<parameter>sizep</parameter></paramdef>
-    <paramdef>size_t *<parameter>lenp</parameter></paramdef>
-    <paramdef>char *<parameter>delimiter</parameter></paramdef>
-    <paramdef>size_t <parameter>delimlen</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_pio_readdelim</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">f</parameter></paramdef>
+    <paramdef>char **<parameter moreinfo="none">bufp</parameter></paramdef>
+    <paramdef>size_t *<parameter moreinfo="none">sizep</parameter></paramdef>
+    <paramdef>size_t *<parameter moreinfo="none">lenp</parameter></paramdef>
+    <paramdef>char *<parameter moreinfo="none">delimiter</parameter></paramdef>
+    <paramdef>size_t <parameter moreinfo="none">delimlen</parameter></paramdef>
 </funcprototype>
 
 
@@ -36,55 +39,55 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>
 この関数は、gfs_pio_readline(3) と同様に働きますが、ただし、
 入力のセパレータを改行文字に限らず、一般的に指定できるように
 したものです。
-この関数は、ファイル <parameter>gf</parameter>
+この関数は、ファイル <parameter moreinfo="none">gf</parameter>
 から、
-引数 <parameter>delimiter</parameter>
+引数 <parameter moreinfo="none">delimiter</parameter>
 で指定されたバイト列をレコード間区切りとして、1レコード読みとり
 ます。
-引数 <parameter>delimiter</parameter>
+引数 <parameter moreinfo="none">delimiter</parameter>
 には文字 '\0' を含むこともできます。このため、区切りの長さを
-引数 <parameter>delimlen</parameter>
+引数 <parameter moreinfo="none">delimlen</parameter>
 で指定します。
 なお、
-引数 <parameter>delimiter</parameter>
+引数 <parameter moreinfo="none">delimiter</parameter>
 が NULL の場合、ファイル全体を1レコードとしてメモリ上に読み込みます。
 そうではなく、かつ
-引数 <parameter>delimlen</parameter>
+引数 <parameter moreinfo="none">delimlen</parameter>
 が 0 の場合、一個以上の連続する空行 (正規表現では /\n\n+/) を
 レコード区切りと見なします。この仕様は perl 言語の INPUT_RECORD_SEPARATOR
 を参考にしています。
 </para>
 
 <para>
-引数 <parameter>bufp</parameter>
+引数 <parameter moreinfo="none">bufp</parameter>
 は、最初は NULL で初期化されたポインタ変数のアドレスを指定します。
-関数 <function>gfs_pio_readdelim()</function> は、入出力に用いる
+関数 <function moreinfo="none">gfs_pio_readdelim()</function> は、入出力に用いる
 バッファを動的に割り当て、そのアドレスをこのポインタ変数に記録します。
-引数 <parameter>sizep</parameter> は、0 で初期化した size_t 型の変数
+引数 <parameter moreinfo="none">sizep</parameter> は、0 で初期化した size_t 型の変数
 のアドレスを指定します。この変数は、バッファのサイズを記録するために
 使われます。
 あるいは、malloc(3) で割り当てたバッファを指すポインタのアドレスを
-引数 <parameter>bufp</parameter>
+引数 <parameter moreinfo="none">bufp</parameter>
 に指定することもできます。この場合、
-引数 <parameter>sizep</parameter> 
+引数 <parameter moreinfo="none">sizep</parameter> 
 は、割り当てたバッファのサイズで初期化しておきます。
 行の長さがバッファのサイズを越える場合には、バッファは自動的に
 realloc(3) され、
-引数 <parameter>bufp</parameter>
+引数 <parameter moreinfo="none">bufp</parameter>
 および
-引数 <parameter>sizep</parameter> 
+引数 <parameter moreinfo="none">sizep</parameter> 
 で指定された変数もそれに従って更新されます。
 ファイルを読み終わったら、このポインタを free(3) で解放する必要が
 あります。
 </para>
 
 <para>
-引数 <parameter>lenp</parameter>
+引数 <parameter moreinfo="none">lenp</parameter>
 の指す変数には、読み込んだレコードの長さを返します。
 この長さには、レコード区切りの分も含みます。
 </para>
@@ -92,7 +95,7 @@ realloc(3) され、
 <para>
 この関数はレコード末の区切りを削除しません。
 また、
-引数 <parameter>lenp</parameter>
+引数 <parameter moreinfo="none">lenp</parameter>
 の指す変数に返った値を利用すれば良いので冗長ですが、
 レコード末に '\0' 文字を付加します。
 </para>
@@ -104,13 +107,13 @@ realloc(3) され、
 
 <para>
 引数として gfs_pio_readdelim(f, bufp, sizep, lenp, "\n", 1)
-と指定すると、関数 <function>gfs_pio_readline()</function> と
+と指定すると、関数 <function moreinfo="none">gfs_pio_readline()</function> と
 等価になります。
 </para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -122,7 +125,7 @@ realloc(3) され、
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
 <para>メモリ不足のため処理を中止しました。</para>
-<para>この場合も、<parameter>bufp</parameter> の指すポインタ変数の
+<para>この場合も、<parameter moreinfo="none">bufp</parameter> の指すポインタ変数の
 指す領域を free(3) する必要がありますから注意してください。</para>
 </listitem>
 </varlistentry>
@@ -135,11 +138,11 @@ realloc(3) され、
 </variablelist>
 </refsect1>
 
-<refsect1 id='examples'><title>EXAMPLES</title>
+<refsect1 id="examples"><title>EXAMPLES</title>
 
 <example role="example">
-<title><function>gfs_pio_readdelim</function> 関数の使用例</title>
-<para><programlisting>
+<title><function moreinfo="none">gfs_pio_readdelim</function> 関数の使用例</title>
+<para><programlisting format="linespecific">
 #include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 #include &lt;string.h&gt;
@@ -218,7 +221,7 @@ main(int argc, char **argv)
 </refsect1>
 
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_getline</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

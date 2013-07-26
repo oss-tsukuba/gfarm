@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfusage.1'>
+
+<refentry id="gfusage.1">
 
 <refentryinfo><date>23 Mar 2011</date></refentryinfo>
 
@@ -10,32 +13,32 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfusage</refname>
 <refpurpose>現在の使用量を表示する</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfusage</command>
-    <arg choice='opt'>オプション</arg>
-    <arg choice='opt'>名前</arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfusage</command>
+    <arg choice="opt" rep="norepeat">オプション</arg>
+    <arg choice="opt" rep="norepeat">名前</arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfusage</command> は、Gfarm ファイルシステムの使用量を
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfusage</command> は、Gfarm ファイルシステムの使用量を
 ユーザごとやグループごとに表示します。
-<parameter>名前</parameter>を指定すると、そのユーザやグループだけを表示
+<parameter moreinfo="none">名前</parameter>を指定すると、そのユーザやグループだけを表示
 します。
 デフォルトはユーザの使用量を表示しますが、-g オプションを指定すると、グ
 ループの使用量を表示します。
-<command>gfedquota</command> と <command>gfquotacheck</command> によっ
+<command moreinfo="none">gfedquota</command> と <command moreinfo="none">gfquotacheck</command> によっ
 て使用量テーブルを構築すると、ユーザやグループの使用量を利用できます。
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
@@ -62,7 +65,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfdf</refentrytitle><manvolnum>1</manvolnum>

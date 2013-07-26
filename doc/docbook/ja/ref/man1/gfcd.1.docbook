@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfcd.1'>
+
+<refentry id="gfcd.1">
 
 <refentryinfo><date>2 Jul 2003</date></refentryinfo>
 
@@ -10,21 +13,21 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfcd</refname>
 <refpurpose>Gfarm 作業ディレクトリを変更する。</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfcd</command>
-    <arg choice='opt'><replaceable>ディレクトリ</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfcd</command>
+    <arg choice="opt" rep="norepeat"><replaceable>ディレクトリ</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>Gfarm 作業ディレクトリを 指定したディレクトリに変更します。
 ディレクトリを指定しない場合は、ユーザの Gfarm ホームディレクトリである
 gfarm:/<replaceable>グローバルユーザ</replaceable> に変更します。
@@ -37,19 +40,19 @@ gfarm:/<replaceable>グローバルユーザ</replaceable> に変更します。
   <varlistentry>
     <term>Bourne shell 系シェルの場合</term>
     <listitem>
-      <screen>gfcd() { eval "`gfsetdir $1`"; }</screen>
+      <screen format="linespecific">gfcd() { eval "`gfsetdir $1`"; }</screen>
     </listitem>
   </varlistentry>
   <varlistentry>
     <term>csh  系シェルの場合</term>
     <listitem>
-      <screen>alias gfcd 'eval `gfsetdir \!*`'</screen>
+      <screen format="linespecific">alias gfcd 'eval `gfsetdir \!*`'</screen>
     </listitem>
   </varlistentry>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfpwd</refentrytitle><manvolnum>1</manvolnum>

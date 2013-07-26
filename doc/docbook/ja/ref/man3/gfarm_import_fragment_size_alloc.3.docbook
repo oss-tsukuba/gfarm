@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfarm-import-fragment-size-alloc.3'>
+
+<refentry id="gfarm-import-fragment-size-alloc.3">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -10,20 +13,20 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfarm_import_fragment_size_alloc</refname>
 <refpurpose>フラグメントサイズの配列を割り当てる</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>file_offset_t  *</returnvalue>gfarm_import_fragment_size_alloc</function></funcdef>
-    <paramdef>file_offset_t <parameter>total_size</parameter></paramdef>
-    <paramdef>int <parameter>n</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>file_offset_t  *</returnvalue>gfarm_import_fragment_size_alloc</function></funcdef>
+    <paramdef>file_offset_t <parameter moreinfo="none">total_size</parameter></paramdef>
+    <paramdef>int <parameter moreinfo="none">n</parameter></paramdef>
 </funcprototype>
 
 
@@ -32,17 +35,17 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>Gfarmファイルをインポートするアプリケーション用の補助関数の一つです。</para>
 
 <para>インポート処理には、ファイルを、どれくらいのサイズのフラグメントに
 分割するかという情報が必要です。元ファイルのサイズを引数
-<parameter>total_size</parameter>
+<parameter moreinfo="none">total_size</parameter>
 に、フラグメント数を引数
-<parameter>n</parameter>
+<parameter moreinfo="none">n</parameter>
 に与えると、この関数は結果として、各フラグメントの分割サイズの目安を、
 要素数
-<parameter>n</parameter>
+<parameter moreinfo="none">n</parameter>
 の配列として返します。</para>
 
 <para>この関数と gfarm_hostlist_read(3) 関数の結果を組み合わせることによって、
@@ -53,7 +56,7 @@ gfarm_import_fragment_config_read(3) 関数が返すフラグメント分割情�
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -71,7 +74,7 @@ file_offset_t 型の配列の先頭要素へのポインタを返します。</p
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfarm_hostlist_read</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfarm_import_fragment_config_read</refentrytitle><manvolnum>3</manvolnum></citerefentry>

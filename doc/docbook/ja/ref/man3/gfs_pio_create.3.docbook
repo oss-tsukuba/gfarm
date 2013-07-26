@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfs-pio-create.3'>
+
+<refentry id="gfs-pio-create.3">
 
 <refentryinfo><date>27 Jun 2010</date></refentryinfo>
 
@@ -10,22 +13,22 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_create</refname>
 <refpurpose>Gfarmファイルシステムのファイルの作成</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfs_pio_create</function></funcdef>
-    <paramdef>const char * <parameter>gfarm_url</parameter></paramdef>
-    <paramdef>int <parameter>flags</parameter></paramdef>
-    <paramdef>gfarm_mode_t <parameter>mode</parameter></paramdef>
-    <paramdef>GFS_File * <parameter>gfp</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfs_pio_create</function></funcdef>
+    <paramdef>const char * <parameter moreinfo="none">gfarm_url</parameter></paramdef>
+    <paramdef>int <parameter moreinfo="none">flags</parameter></paramdef>
+    <paramdef>gfarm_mode_t <parameter moreinfo="none">mode</parameter></paramdef>
+    <paramdef>GFS_File * <parameter moreinfo="none">gfp</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -33,47 +36,47 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>指定した
-<parameter>gfarm_url</parameter>
+<parameter moreinfo="none">gfarm_url</parameter>
 に、モード
-<parameter>mode</parameter>
+<parameter moreinfo="none">mode</parameter>
 でファイルを新規作成し、
-<parameter>GFS_File</parameter>
+<parameter moreinfo="none">GFS_File</parameter>
 構造体を
-<parameter>gfp</parameter>
+<parameter moreinfo="none">gfp</parameter>
 の指す先に返します。</para>
 
 <para>
 引数
-<parameter>flags</parameter>
+<parameter moreinfo="none">flags</parameter>
 は、
-<function>gfs_pio_open()</function>
+<function moreinfo="none">gfs_pio_open()</function>
 の第二引数と同じ意味を持ちます。
-<parameter>GFARM_FILE_RDONLY</parameter>、
-<parameter>GFARM_FILE_WRONLY</parameter>、
-<parameter>GFARM_FILE_RDWR</parameter>
+<parameter moreinfo="none">GFARM_FILE_RDONLY</parameter>、
+<parameter moreinfo="none">GFARM_FILE_WRONLY</parameter>、
+<parameter moreinfo="none">GFARM_FILE_RDWR</parameter>
 のいずれか一つのフラグを必ず指定しなければならない点も同じです。
 <!--
 ただし、
-<function>gfs_pio_create()</function>
+<function moreinfo="none">gfs_pio_create()</function>
 に特有のフラグとして、
-<parameter>GFARM_FILE_EXCLUSIVE</parameter>
+<parameter moreinfo="none">GFARM_FILE_EXCLUSIVE</parameter>
 を指定することができます。この指定を行なった場合、
 ファイルが既に存在する場合は、ファイルのオープンに失敗します。
  -->
 </para>
 <para>
 引数
-<parameter>flags</parameter>
+<parameter moreinfo="none">flags</parameter>
 の値として
-<parameter>GFARM_FILE_TRUNC</parameter>
+<parameter moreinfo="none">GFARM_FILE_TRUNC</parameter>
 が必要な場合は、
 明示的に指定する必要がありますので、ご注意ください。
 </para>
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_ERROR</constant></term>
@@ -109,7 +112,7 @@
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
 <para>指定されたファイルに対し、
-<parameter>flags</parameter>
+<parameter moreinfo="none">flags</parameter>
 で指定されたモードでアクセスする権限がないか、その親ディレクトリへの
 書き込み権限がありません。
 あるいは、メタデータサーバへの認証に失敗しました。
@@ -125,14 +128,14 @@
 <varlistentry>
 <term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
 <listitem>
-<para><parameter>flags</parameter>
+<para><parameter moreinfo="none">flags</parameter>
 の指定が不正です。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_GFARM_URL_HOST_IS_MISSING</constant></term>
 <listitem>
-<para><parameter>gfarm_url</parameter>
+<para><parameter moreinfo="none">gfarm_url</parameter>
 で指定されたGfarm URLにおいて、
 メタデータサーバが指定されていません。</para>
 </listitem>
@@ -140,7 +143,7 @@
 <varlistentry>
 <term><constant>GFARM_ERR_GFARM_URL_PORT_IS_MISSING</constant></term>
 <listitem>
-<para><parameter>gfarm_url</parameter>
+<para><parameter moreinfo="none">gfarm_url</parameter>
 で指定されたGfarm URLにおいて、
 メタデータサーバのポート番号が指定されていません。</para>
 </listitem>
@@ -203,7 +206,7 @@
 <varlistentry>
 <term><constant>GFARM_ERR_ALREADY_EXISTS</constant></term>
 <listitem>
-<para><parameter>flags</parameter>引数に
+<para><parameter moreinfo="none">flags</parameter>引数に
 <constant>GFARM_FILE_EXCLUSIVE</constant>フラグが指定されたが、
 ファイルが既に存在しました。
 </para>
@@ -232,7 +235,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_close</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

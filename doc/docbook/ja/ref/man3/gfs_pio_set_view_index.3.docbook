@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfs-pio-set-view-index.3'>
+
+<refentry id="gfs-pio-set-view-index.3">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -10,23 +13,23 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_set_view_index</refname>
 <refpurpose>fragment 単位のアクセスを指定する</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_set_view_index</function></funcdef>
-    <paramdef>GFS_File <parameter>gf</parameter></paramdef>
-    <paramdef>int <parameter>fragment_number</parameter></paramdef>
-    <paramdef>int <parameter>fragment_index</parameter></paramdef>
-    <paramdef>char *<parameter>host</parameter></paramdef>
-    <paramdef>int <parameter>flags</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_pio_set_view_index</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">gf</parameter></paramdef>
+    <paramdef>int <parameter moreinfo="none">fragment_number</parameter></paramdef>
+    <paramdef>int <parameter moreinfo="none">fragment_index</parameter></paramdef>
+    <paramdef>char *<parameter moreinfo="none">host</parameter></paramdef>
+    <paramdef>int <parameter moreinfo="none">flags</parameter></paramdef>
 </funcprototype>
 
 
@@ -35,11 +38,11 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>ファイルをフラグメント単位でアクセスすることを指定します。</para>
 
 <para>新規作成したファイルの場合、必ず引数
-<parameter>fragment_number</parameter>
+<parameter moreinfo="none">fragment_number</parameter>
 にフラグメント
 の総数を指定する必要があります。この値は、この並列ファイルを開く全て
 のノードで、同じ値でなくてはなりません。既存のファイルの場合には、
@@ -49,18 +52,18 @@
 もし実際と異なる数を指定した場合には、この関数はエラーで失敗します。</para>
 
 <para>引数
-<parameter>fragment_index</parameter>
+<parameter moreinfo="none">fragment_index</parameter>
 には、 アクセスするフラグメントの番号を指定します。</para> 
 
 <para>引数
-<parameter>host</parameter>
+<parameter moreinfo="none">host</parameter>
 は、アクセスしたいホストを明示的に指定したい時に利用します。
 指定が不要なら
 <acronym>NULL</acronym>
 を渡せば省略できます。</para>
 
 <para>引数
-<parameter>flag</parameter>
+<parameter moreinfo="none">flag</parameter>
 には、
 <constant>GFARM_FILE_SEQUENTIAL</constant> 、
 <constant>GFARM_FILE_REPLICATE</constant> 、
@@ -97,7 +100,7 @@
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -141,7 +144,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

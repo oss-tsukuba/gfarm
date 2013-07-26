@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfrmdir.1'>
+
+<refentry id="gfrmdir.1">
 
 <refentryinfo><date>15 May 2008</date></refentryinfo>
 
@@ -10,27 +13,27 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfrmdir</refname>
 <refpurpose>remove Gfarm directories</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfrmdir</command>
-    <arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrmdir</command>
+    <arg choice="plain" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfrmdir</command> removes directories specified
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfrmdir</command> removes directories specified
 in the arguments.</para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
 <term><option>-?</option></term>
@@ -41,7 +44,7 @@ in the arguments.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfmkdir</refentrytitle><manvolnum>1</manvolnum>

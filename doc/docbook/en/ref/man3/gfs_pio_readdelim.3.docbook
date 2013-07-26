@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfs-pio-readdelim.3'>
+
+<refentry id="gfs-pio-readdelim.3">
 
 <refentryinfo><date>13 May 2004</date></refentryinfo>
 
@@ -10,24 +13,24 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_readdelim</refname>
 <refpurpose>read one record</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_readdelim</function></funcdef>
-    <paramdef>GFS_File <parameter>f</parameter></paramdef>
-    <paramdef>char **<parameter>bufp</parameter></paramdef>
-    <paramdef>size_t *<parameter>sizep</parameter></paramdef>
-    <paramdef>size_t *<parameter>lenp</parameter></paramdef>
-    <paramdef>char *<parameter>delimiter</parameter></paramdef>
-    <paramdef>size_t <parameter>delimlen</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_pio_readdelim</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">f</parameter></paramdef>
+    <paramdef>char **<parameter moreinfo="none">bufp</parameter></paramdef>
+    <paramdef>size_t *<parameter moreinfo="none">sizep</parameter></paramdef>
+    <paramdef>size_t *<parameter moreinfo="none">lenp</parameter></paramdef>
+    <paramdef>char *<parameter moreinfo="none">delimiter</parameter></paramdef>
+    <paramdef>size_t <parameter moreinfo="none">delimlen</parameter></paramdef>
 </funcprototype>
 
 
@@ -36,52 +39,52 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>
-<function>gfs_pio_readdelim()</function> works like 
-<function>gfs_pio_readline()</function>, except a delimiter of
+<function moreinfo="none">gfs_pio_readdelim()</function> works like 
+<function moreinfo="none">gfs_pio_readline()</function>, except a delimiter of
 input records is not always newline, and can be specified.
 
 This function reads one record from
-the file specified by the parameter <parameter>gf</parameter>,
-by using the parameter <parameter>delimiter</parameter>
+the file specified by the parameter <parameter moreinfo="none">gf</parameter>,
+by using the parameter <parameter moreinfo="none">delimiter</parameter>
 as the delimiter of the input records.
-You can include '\0' character in the  <parameter>delimiter</parameter>,
-So, you have to specify the length of the <parameter>delimiter</parameter>
-by the parameter <parameter>delimlen</parameter>.
-If parameter <parameter>delimiter</parameter> is NULL,
+You can include '\0' character in the  <parameter moreinfo="none">delimiter</parameter>,
+So, you have to specify the length of the <parameter moreinfo="none">delimiter</parameter>
+by the parameter <parameter moreinfo="none">delimlen</parameter>.
+If parameter <parameter moreinfo="none">delimiter</parameter> is NULL,
 this function reads entire file as one record.
-Otherwise, and if the parameter <parameter>delimlen</parameter> is 0,
+Otherwise, and if the parameter <parameter moreinfo="none">delimlen</parameter> is 0,
 this function treats two or more consecutive empty lines (/\n\n+/ in
 a regular expression) as the input delimiter. This feature is derived
 from INPUT_RECORD_SEPARATOR in perl language.
 </para>
 
 <para>
-Parameter <parameter>bufp</parameter>
+Parameter <parameter moreinfo="none">bufp</parameter>
 specifies an address of a pointer variable initialzed by NULL
 at first.
-<function>gfs_pio_readdelim()</function> allocates a buffer for
+<function moreinfo="none">gfs_pio_readdelim()</function> allocates a buffer for
 I/O dynamically, and stores the address of the buffer to this
-variable pointed by <parameter>bufp</parameter>.
-Parameter <parameter>sizep</parameter> specifies an address of
+variable pointed by <parameter moreinfo="none">bufp</parameter>.
+Parameter <parameter moreinfo="none">sizep</parameter> specifies an address of
 a size_t variable initialized by 0.
 This size_t variable is used to record the size of the buffer.
 Or, you can specify a buffer allocated by malloc(3) in the
-variable pointed by the parameter <parameter>bufp</parameter>.
+variable pointed by the parameter <parameter moreinfo="none">bufp</parameter>.
 In this case, you have to specify the size of the allocated
-buffer by the parameter <parameter>sizep</parameter>.
+buffer by the parameter <parameter moreinfo="none">sizep</parameter>.
 If the length of the record exceeds the size of the buffer, 
 the buffer will be automatically realloc(3)ed, and the variable
-pointed by <parameter>bufp</parameter> and 
-<parameter>sizep</parameter> will be updated respectively.
+pointed by <parameter moreinfo="none">bufp</parameter> and 
+<parameter moreinfo="none">sizep</parameter> will be updated respectively.
 
 Note that you are responsible to free(3) this buffer.
 </para>
 
 <para>
 This function returns the length of the record to a variable
-pointed by the parameter <parameter>lenp</parameter>.
+pointed by the parameter <parameter moreinfo="none">lenp</parameter>.
 This length includes the length of the record delimiter.
 </para>
 
@@ -89,7 +92,7 @@ This length includes the length of the record delimiter.
 This function doesn't remove the delimiter at the end of
 records.
 Also, despite that you can use the value returned by the
-variable pointed by <parameter>lenp</parameter>,
+variable pointed by <parameter moreinfo="none">lenp</parameter>,
 this function always appends \0' character at the end of
 records.
 </para>
@@ -100,12 +103,12 @@ If the file reaches its end, the length of the result record becomes 0.
 
 <para>
 gfs_pio_readdelim(f, bufp, sizep, lenp, "\n", 1)
-is equivalent to <function>gfs_pio_readline()</function> function.
+is equivalent to <function moreinfo="none">gfs_pio_readline()</function> function.
 </para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -118,7 +121,7 @@ is equivalent to <function>gfs_pio_readline()</function> function.
 <listitem>
 <para>Insufficient memory was available.</para>
 <para>Note that you need to free(3) the buffer pointed by the
-parameter <parameter>bufp</parameter></para>
+parameter <parameter moreinfo="none">bufp</parameter></para>
 </listitem>
 </varlistentry>
 <varlistentry>
@@ -131,11 +134,11 @@ pointed strings.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='examples'><title>EXAMPLES</title>
+<refsect1 id="examples"><title>EXAMPLES</title>
 
 <example role="example">
-<title>Example of <function>gfs_pio_readdelim</function> function</title>
-<para><programlisting>
+<title>Example of <function moreinfo="none">gfs_pio_readdelim</function> function</title>
+<para><programlisting format="linespecific">
 #include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 #include &lt;string.h&gt;
@@ -214,7 +217,7 @@ main(int argc, char **argv)
 </refsect1>
 
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_getline</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

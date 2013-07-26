@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfarm-attr.5'>
+
+<refentry id="gfarm-attr.5">
 
 <refentryinfo><date>1 Apr 2011</date></refentryinfo>
 
@@ -10,14 +13,14 @@
 <refmiscinfo>Gfarm_attr</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfarm_attr</refname>
 <refpurpose>Gfarm拡張属性</refpurpose>
 </refnamediv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
 Gfarmの各ファイルやディレクトリは，拡張属性を複数持つことができます．拡
@@ -26,7 +29,7 @@ Gfarmの各ファイルやディレクトリは，拡張属性を複数持つこ
 
 </refsect1>
 
-<refsect1 id='xattrnamespace'>
+<refsect1 id="xattrnamespace">
 <title>拡張属性の名前空間</title>
 
 <para>
@@ -62,7 +65,7 @@ XML拡張属性は，ファイルまたはディレクトリのパーミッシ�
 
 </refsect1>
 
-<refsect1 id='gfarm-xattr'>
+<refsect1 id="gfarm-xattr">
 <title>Gfarm 拡張属性</title>
 <para>
 以下はGfarmのシステムが使用する拡張属性名です．
@@ -70,7 +73,7 @@ XML拡張属性は，ファイルまたはディレクトリのパーミッシ�
 <variablelist>
 
 <varlistentry>
-<term><parameter>gfarm.ncopy</parameter></term>
+<term><parameter moreinfo="none">gfarm.ncopy</parameter></term>
 <listitem>
 <para>
 gfmd で自動的にファイルを複製する際に目標とする複製の合計数を格納します．
@@ -79,7 +82,7 @@ gfmd で自動的にファイルを複製する際に目標とする複製の合
 </varlistentry>
 
 <varlistentry>
-<term><parameter>gfarm.acl_access</parameter></term>
+<term><parameter moreinfo="none">gfarm.acl_access</parameter></term>
 <listitem>
 <para>
 ACL(アクセスコントロールリスト)を格納します．
@@ -88,7 +91,7 @@ ACL(アクセスコントロールリスト)を格納します．
 </varlistentry>
 
 <varlistentry>
-<term><parameter>gfarm.acl_default</parameter></term>
+<term><parameter moreinfo="none">gfarm.acl_default</parameter></term>
 <listitem>
 <para>
 デフォルトACLを格納します．ディレクトリだけがこの拡張属性を利用します．
@@ -97,7 +100,7 @@ ACL(アクセスコントロールリスト)を格納します．
 </varlistentry>
 
 <varlistentry>
-<term><parameter>gfarm_root.user</parameter></term>
+<term><parameter moreinfo="none">gfarm_root.user</parameter></term>
 <listitem>
 <para>
 このファイルやディレクトリに特権を与えるユーザ名のリストを格納します．
@@ -108,7 +111,7 @@ ACL(アクセスコントロールリスト)を格納します．
 </varlistentry>
 
 <varlistentry>
-<term><parameter>gfarm_root.group</parameter></term>
+<term><parameter moreinfo="none">gfarm_root.group</parameter></term>
 <listitem>
 <para>
 このファイルやディレクトリに特権を与えるグループ名のリストを格納しま
@@ -121,7 +124,7 @@ ACL(アクセスコントロールリスト)を格納します．
 </variablelist>
 </refsect1>
 
-<refsect1 id='security'>
+<refsect1 id="security">
 <title>SECURITY NOTES</title>
 <para>
 任意のディレクトリやファイルの gfarm_root.{user,group} 拡張属性に，信頼
@@ -134,7 +137,7 @@ ACL(アクセスコントロールリスト)を格納します．
 </para>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry><refentrytitle>gfxattr</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
   <citerefentry><refentrytitle>gfgetfacl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,

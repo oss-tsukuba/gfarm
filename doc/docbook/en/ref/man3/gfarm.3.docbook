@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfarm.3'>
+
+<refentry id="gfarm.3">
 
 <refentryinfo><date>26 Jun 2010</date></refentryinfo>
 
@@ -10,12 +13,12 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfarm</refname>
 <refpurpose>Gfarm file system API library</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
-<synopsis>
+<refsynopsisdiv id="synopsis">
+<synopsis format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 
 </synopsis>
@@ -23,7 +26,7 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>The Gfarm library provides an interface layer to
 the Gfarm file system.  This manual gives an overview of the
 library.  For details, refer to a manual page of each function.
@@ -451,8 +454,8 @@ array by calling standard library function free().
 <term>GFARM_STRINGLIST_ELEM(list, i)</term>
 <listitem>
 <para>
-represents <parameter>i</parameter>-th element of
-the <parameter>list</parameter> argument which type is gfarm_stringlist.
+represents <parameter moreinfo="none">i</parameter>-th element of
+the <parameter moreinfo="none">list</parameter> argument which type is gfarm_stringlist.
 This macro can be used as a L-value.
 If this macro is used as a value, it returns same result with
 <citerefentry>
@@ -466,7 +469,7 @@ If this macro is used as a value, it returns same result with
 <term>GFARM_STRINGLIST_STRARRAY(list)</term>
 <listitem>
 <para>
-returns pointer to first element of the <parameter>list</parameter> argument
+returns pointer to first element of the <parameter moreinfo="none">list</parameter> argument
 which type is gfarm_stringlist.
 The type of the return value is a pointer to pointer to a character.
 </para>

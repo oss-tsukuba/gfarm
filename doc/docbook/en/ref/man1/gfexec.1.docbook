@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfexec.1'>
+
+<refentry id="gfexec.1">
 
 <refentryinfo><date>12 Nov 2006</date></refentryinfo>
 
@@ -10,37 +13,37 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfexec</refname>
 <refpurpose>execute other commands in the Gfarm filesystem</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfexec</command>
-	<arg choice='opt'>-N <replaceable>number-of-nodes</replaceable></arg>
-	<arg choice='opt'>-I <replaceable>node-index</replaceable></arg>
-	<arg choice='opt'>-s</arg>
-	<arg choice='plain'><replaceable>command</replaceable></arg>
-	<arg choice='opt' rep='repeat'><replaceable>args</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfexec</command>
+	<arg choice="opt" rep="norepeat">-N <replaceable>number-of-nodes</replaceable></arg>
+	<arg choice="opt" rep="norepeat">-I <replaceable>node-index</replaceable></arg>
+	<arg choice="opt" rep="norepeat">-s</arg>
+	<arg choice="plain" rep="norepeat"><replaceable>command</replaceable></arg>
+	<arg choice="opt" rep="repeat"><replaceable>args</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
-<para><command>gfexec</command> executes the specified command in Gfarm
-filesystem.  <command>gfexec</command> has to be executed on a
+<para><command moreinfo="none">gfexec</command> executes the specified command in Gfarm
+filesystem.  <command moreinfo="none">gfexec</command> has to be executed on a
 filesystem node.</para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-N</option> <parameter>number-of-nodes</parameter></term>
+<term><option>-N</option> <parameter moreinfo="none">number-of-nodes</parameter></term>
 <listitem>
 <para>Changes the number of nodes for the invoked program to the argument.
 </para>
@@ -48,7 +51,7 @@ filesystem node.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-I</option> <parameter>node-index</parameter></term>
+<term><option>-I</option> <parameter moreinfo="none">node-index</parameter></term>
 <listitem>
 <para>Changes the index of the node for the invoked program to the argument.
 </para>
@@ -60,7 +63,7 @@ filesystem node.</para>
 <listitem>
 <para>
 This option is equivalent to the
-``<option>-N</option> <parameter>1</parameter> <option>-I</option> <parameter>0</parameter>'' option.
+``<option>-N</option> <parameter moreinfo="none">1</parameter> <option>-I</option> <parameter moreinfo="none">0</parameter>'' option.
 </para>
 </listitem>
 </varlistentry>

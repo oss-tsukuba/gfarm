@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfhost.1'>
+
+<refentry id="gfhost.1">
 
 <refentryinfo><date>20 Jan 2010</date></refentryinfo>
 
@@ -10,80 +13,80 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfhost</refname>
 <refpurpose>gfarm ホスト管理コマンド</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfhost</command>
-    <group choice='opt'>
-      <arg choice='plain'>-H</arg>
-      <arg choice='plain'>-l</arg>
-      <arg choice='plain'>-M</arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfhost</command>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-H</arg>
+      <arg choice="plain" rep="norepeat">-l</arg>
+      <arg choice="plain" rep="norepeat">-M</arg>
     </group>
-    <arg choice='opt'>-iLprUv</arg>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='opt'>-a <replaceable>アーキテクチャ</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
-    <arg choice='opt'>-j <replaceable>並列度</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>ホスト名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-iLprUv</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-a <replaceable>アーキテクチャ</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>ドメイン名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-j <replaceable>並列度</replaceable></arg>
+    <arg choice="opt" rep="repeat"><replaceable>ホスト名</replaceable></arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfhost</command>
-    <arg choice='plain'>-c</arg>
-    <arg choice='opt'  >-P <replaceable>path</replaceable></arg>
-    <arg choice='plain'>-a<replaceable>アーキテクチャ</replaceable></arg>
-    <arg choice='plain'>-p<replaceable>ポート番号</replaceable></arg>
-    <arg choice='opt'  >-n<replaceable>CPU数</replaceable></arg>
-    <arg choice='plain'><replaceable>ホスト名</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfhost</command>
+    <arg choice="plain" rep="norepeat">-c</arg>
+    <arg choice="opt"  >-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-a<replaceable>アーキテクチャ</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-p<replaceable>ポート番号</replaceable></arg>
+    <arg choice="opt"  >-n<replaceable>CPU数</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>ホスト名</replaceable></arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfhost</command>
-    <arg choice='plain'>-m</arg>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='opt'>-a<replaceable>アーキテクチャ</replaceable></arg>
-    <arg choice='opt'>-p<replaceable>ポート番号</replaceable></arg>
-    <arg choice='opt'>-n<replaceable>CPU数</replaceable></arg>
-    <arg choice='opt'>-A</arg>
-    <arg choice='plain'><replaceable>ホスト名</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfhost</command>
+    <arg choice="plain" rep="norepeat">-m</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-a<replaceable>アーキテクチャ</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-p<replaceable>ポート番号</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-n<replaceable>CPU数</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-A</arg>
+    <arg choice="plain" rep="norepeat"><replaceable>ホスト名</replaceable></arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfhost</command>
-    <arg choice='plain'>-d</arg>
-    <arg choice='opt  '>-P <replaceable>path</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>ホスト名</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfhost</command>
+    <arg choice="plain" rep="norepeat">-d</arg>
+    <arg choice="opt  " rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="repeat"><replaceable>ホスト名</replaceable></arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfhost</command>
-    <arg choice='plain'>-R</arg>
-    <arg choice='opt  '>-P <replaceable>path</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfhost</command>
+    <arg choice="plain" rep="norepeat">-R</arg>
+    <arg choice="opt  " rep="norepeat">-P <replaceable>path</replaceable></arg>
 </cmdsynopsis>
 
 <!-- Options sorted by alphabetical order
-    (default)	<function> display hostname only
+    (default)	<function moreinfo="none"> display hostname only
     -A		alter hostname, for -m
     -a <arch>	CPU architecture, for (default)/-c/-H/-l/-M/-m
-    -c		<function> create a host in MetaDB
+    -c		<function moreinfo="none"> create a host in MetaDB
     -D <domain>	only display specified domain, for (default)/-H/-l/-M
-    -d		<function> delete a host from MetaDB
+    -d		<function moreinfo="none"> delete a host from MetaDB
     -f		XXX NOTYET ??? force ???, for -d
-    -H		<function> display information replied from the hosts
+    -H		<function moreinfo="none"> display information replied from the hosts
     -i		ignore "address_use" directive, for (default)/-H/-l
     -j <number>	concurrency, for (default)/-H/-l
     -L		display by load average order, for (default)/-H/-l
-    -l		<function> display with long format
-    -M		<function> display hosts in MetaDB
-    -m		<function> modify a host in MetaDB
+    -l		<function moreinfo="none"> display with long format
+    -M		<function moreinfo="none"> display hosts in MetaDB
+    -m		<function moreinfo="none"> modify a host in MetaDB
     -n <number>	number of CPUs, for -c/-m
     -p <port>	gfsd port number, for -c
     -P <path>   pathname or Gfarm URL to identify MetaDB
-    -R		<function> restore hosts to MetaDB
+    -R		<function moreinfo="none"> restore hosts to MetaDB
     -r		display by reverse order, for (default)/-H/-l/-M
     -U		UDP only, do not try authentication, for (default)/-H/-l
     -u		display by plain order (don't sort), for (default)/-H/-l/-M
@@ -107,9 +110,9 @@
 
 </refsynopsisdiv>
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfhost</command> は、gfarm のファイルシステムノードに
-関する情報の表示や管理を行ないます。<command>gfhost</command> が
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfhost</command> は、gfarm のファイルシステムノードに
+関する情報の表示や管理を行ないます。<command moreinfo="none">gfhost</command> が
 実行する機能は、-c, -d, -H, -l, -M, -m, -R のオプションで指定します。
 これら機能の指定は排他的であり、どれか一つだけを指定することができます。
 また、一つも指定しなかった場合には、デフォールトの機能であるホスト名
@@ -117,7 +120,7 @@
 </para>
 </refsect1>
 
-<refsect1 id='functions'><title>FUNCTIONS</title>
+<refsect1 id="functions"><title>FUNCTIONS</title>
 <para>
   機能指定のうち、-c, -d, -M, -m, -R はメタデータサーバーのみを
   アクセスし、登録されているホスト情報の追加、削除、表示、変更を行ないます。
@@ -127,8 +130,8 @@
   ファイルシステムノードに関する情報を表示します。
   このうち -M はメタデータサーバーのみをアクセスしますが、
   それ以外の機能はファイルシステムノードで動作している
-  <command>gfsd</command> にもアクセスします。
-  <command>gfsd</command> にアクセスする機能に関しては、そのアクセスに
+  <command moreinfo="none">gfsd</command> にもアクセスします。
+  <command moreinfo="none">gfsd</command> にアクセスする機能に関しては、そのアクセスに
   関するオプションを -i, -j, -U, -v で指定できます。
 </para>
 <para>
@@ -151,7 +154,7 @@
     <term>無指定</term>
     <listitem>
       <para>
-	機能を特に指定しなかった場合、<command>gfsd</command> への
+	機能を特に指定しなかった場合、<command moreinfo="none">gfsd</command> への
 	問い合わせを行ない、動作しているホストのホスト名のみを表示します。
 	デフォールトでは、ホスト名のアルファベット順で表示します。
       </para>
@@ -192,7 +195,7 @@
     <term><option>-H</option></term>
     <listitem>
       <para>
-	<command>gfsd</command> に問い合わせて得た情報、すなわち
+	<command moreinfo="none">gfsd</command> に問い合わせて得た情報、すなわち
 	ロードアベレージと認証手段を表示します。
 	この機能に関しては、引数でホスト名を指定した場合、表示される
 	のは、固有識別子として用いられているホスト名ではなく、引数
@@ -203,7 +206,7 @@
       <para>
 	ホストが停止やネットワーク障害のためにアクセスできなかった場合、
 	ロードアベレージの部分に x.xx/x.xx/x.xx と表示します。
-	ホストが動作しているが、そのホストの <command>gfsd</command> へ
+	ホストが動作しているが、そのホストの <command moreinfo="none">gfsd</command> へ
 	アクセスできなかった場合には -.--/-.--/-.-- と表示します。
       </para>
       <para>
@@ -223,7 +226,7 @@
     <term><option>-l</option></term>
     <listitem>
       <para>
-	<command>gfsd</command> に問い合わせて得た情報、
+	<command moreinfo="none">gfsd</command> に問い合わせて得た情報、
 	すなわちロードアベレージおよび認証手段と、
 	メタデータ・サーバーに問い合わせて得た情報、
 	すなわちアーキテクチャ名、CPU数を
@@ -233,7 +236,7 @@
       <para>
 	ホストが停止やネットワーク障害のためにアクセスできなかった場合、
 	ロードアベレージの部分に x.xx/x.xx/x.xx と表示します。
-	ホストが動作しているが、そのホストの <command>gfsd</command> へ
+	ホストが動作しているが、そのホストの <command moreinfo="none">gfsd</command> へ
 	アクセスできなかった場合には -.--/-.--/-.-- と表示します。
       </para>
       <para>
@@ -290,11 +293,11 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
   <varlistentry>
-    <term><option>-a</option> <parameter>アーキテクチャ</parameter></term>
+    <term><option>-a</option> <parameter moreinfo="none">アーキテクチャ</parameter></term>
     <listitem>
       <para>
 	CPUアーキテクチャを、sparc-sun-solaris8 や i386-redhat8.0-linux の
@@ -309,7 +312,7 @@
   </varlistentry>
 
   <varlistentry>
-    <term><option>-D</option> <parameter>ドメイン名</parameter></term>
+    <term><option>-D</option> <parameter moreinfo="none">ドメイン名</parameter></term>
     <listitem>
       <para>
 	-H, -l, -M および特に機能を指定しなかった場合で、かつ
@@ -326,17 +329,17 @@
 	%%SYSCONFDIR%%/gfarm2.conf ないし $HOME/.gfarm2rc 中で「address_use」を指定すると、
 	アクセスに用いるネットワークアドレスに優先順位をつけることができます。
 	gfhost コマンドに対しても、この優先順位は影響しますが、-i オプションを
-	つけると、この指定を無視して <command>gfsd</command> にアクセス
+	つけると、この指定を無視して <command moreinfo="none">gfsd</command> にアクセス
 	するようになります。
       </para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-j</option> <parameter>並列度</parameter></term>
+    <term><option>-j</option> <parameter moreinfo="none">並列度</parameter></term>
     <listitem>
       <para>
-	<command>gfsd</command> にアクセスする際の並列度を指定します。
+	<command moreinfo="none">gfsd</command> にアクセスする際の並列度を指定します。
 	デフォールトは 10 です。
       </para>
     </listitem>
@@ -354,7 +357,7 @@
   </varlistentry>
 
   <varlistentry>
-    <term><option>-n</option> <parameter>CPU数</parameter></term>
+    <term><option>-n</option> <parameter moreinfo="none">CPU数</parameter></term>
     <listitem>
       <para>
 	-c および -m 機能で、ホスト情報を追加・変更する際に、
@@ -364,17 +367,17 @@
   </varlistentry>
 
   <varlistentry>
-    <term><option>-p</option> <parameter>ポート番号</parameter></term>
+    <term><option>-p</option> <parameter moreinfo="none">ポート番号</parameter></term>
     <listitem>
       <para>
 	-c および -m 機能で、ホスト情報を追加・変更する際に、
-	そのホストの <command>gfsd</command> が用いるポート番号を指定します。
+	そのホストの <command moreinfo="none">gfsd</command> が用いるポート番号を指定します。
       </para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-P</option> <parameter>パス名</parameter></term>
+    <term><option>-P</option> <parameter moreinfo="none">パス名</parameter></term>
     <listitem>
       <para>
 	このコマンドがアクセスするメタデータサーバを特定するための
@@ -439,7 +442,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum>

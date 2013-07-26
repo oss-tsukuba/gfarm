@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfrepattr.1'>
+
+<refentry id="gfrepattr.1">
 
 <refentryinfo><date>14 Jun 2012</date></refentryinfo>
 
@@ -10,62 +13,62 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfrepattr</refname>
 <refpurpose>Manipulate information for replication in Gfarm file system</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfrepattr</command>
-    <group choice='opt'>
-      <arg choice='plain'>-s</arg>
-      <arg choice='plain'>-r</arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrepattr</command>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-s</arg>
+      <arg choice="plain" rep="norepeat">-r</arg>
     </group>
-    <group choice='opt'>
-      <arg choice='plain'>-c</arg>
-      <arg choice='plain'>-m</arg>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-c</arg>
+      <arg choice="plain" rep="norepeat">-m</arg>
     </group>
-    <arg choice='opt'>-h</arg>
-    <arg choice='plain'><replaceable>ARG</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>ARG</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-h</arg>
+    <arg choice="plain" rep="norepeat"><replaceable>ARG</replaceable></arg>
+    <arg choice="opt" rep="repeat"><replaceable>ARG</replaceable></arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfrepattr</command>
-    <arg choice='plain'>-s</arg>
-    <group choice='opt'>
-      <arg choice='plain'>-c</arg>
-      <arg choice='plain'>-m</arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrepattr</command>
+    <arg choice="plain" rep="norepeat">-s</arg>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-c</arg>
+      <arg choice="plain" rep="norepeat">-m</arg>
     </group>
-    <arg choice='opt'>-h</arg>
-    <arg choice='plain'><replaceable>path</replaceable></arg>
-    <arg choice='plain'><replaceable>attr</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-h</arg>
+    <arg choice="plain" rep="norepeat"><replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>attr</replaceable></arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfrepattr</command>
-    <arg choice='plain'>-r</arg>
-    <arg choice='opt'>-h</arg>
-    <arg choice='plain'><replaceable>path</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrepattr</command>
+    <arg choice="plain" rep="norepeat">-r</arg>
+    <arg choice="opt" rep="norepeat">-h</arg>
+    <arg choice="plain" rep="norepeat"><replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfrepattr</command>
-    <arg choice='opt'>-h</arg>
-    <arg choice='plain'><replaceable>path</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrepattr</command>
+    <arg choice="opt" rep="norepeat">-h</arg>
+    <arg choice="plain" rep="norepeat"><replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command>gfrepattr</command> manipulates replication attributes of a specified file or a directory.
-Replication attributes is used by the <command>Replication-Attribute-based File Replication</command>.
+<command moreinfo="none">gfrepattr</command> manipulates replication attributes of a specified file or a directory.
+Replication attributes is used by the <command moreinfo="none">Replication-Attribute-based File Replication</command>.
 A replication attribute consists of a hostgroup name and a maximum number of file replica that can create in an hostgroup.
 </para>
 
@@ -75,7 +78,7 @@ Default action displays all replication attributes about specified files or dire
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
   <varlistentry>
@@ -92,14 +95,14 @@ Default action displays all replication attributes about specified files or dire
       <para>
     an attr is represented by the following BNF:
       </para>
-      <literallayout>
+      <literallayout format="linespecific" class="normal">
         attr := | anattr ',' attr
         anattr := string ':' integer
       </literallayout>
       <para>
     e.g.)
       </para>
-      <literallayout>
+      <literallayout format="linespecific" class="normal">
         'group0:2'
         'group0:1,group1:3'
       </literallayout>
@@ -148,7 +151,7 @@ Default action displays all replication attributes about specified files or dire
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
     <refentrytitle>gfhostgroup</refentrytitle><manvolnum>1</manvolnum>

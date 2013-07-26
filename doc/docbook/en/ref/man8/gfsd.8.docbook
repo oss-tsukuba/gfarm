@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfsd.8'>
+<refentry id="gfsd.8">
 
 <refentryinfo><date>08 Nov 2012</date></refentryinfo>
 
@@ -11,40 +14,40 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfsd</refname>
 <refpurpose>Gfarm filesystem daemon</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfsd</command>
-    <arg choice='opt'><replaceable>options</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfsd</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfsd</command> is a filesystem daemon for the Gfarm filesystem, which runs on every filesystem node, usually, with root privileges.</para>
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfsd</command> is a filesystem daemon for the Gfarm filesystem, which runs on every filesystem node, usually, with root privileges.</para>
 
-<para><command>gfsd</command> provides remote file operations with access control in the
+<para><command moreinfo="none">gfsd</command> provides remote file operations with access control in the
 Gfarm filesystem as well as user authentication, file replication,
 and node resource status monitoring.</para>
 
-<para>It is possible for <command>gfsd</command> to be executed as a non-privileged user
-process, although only the user that executes the <command>gfsd</command> can be authenticated.
+<para>It is possible for <command moreinfo="none">gfsd</command> to be executed as a non-privileged user
+process, although only the user that executes the <command moreinfo="none">gfsd</command> can be authenticated.
 Other users cannot use it.
 For details, see SETUP.private.en document.
 </para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-L</option> <parameter>log-level</parameter></term>
+<term><option>-L</option> <parameter moreinfo="none">log-level</parameter></term>
 <listitem>
 <para>Specifies a log priority level.  The log output, which priority
 is higher or equal to this level, will be sent to syslog or standard error.
@@ -55,7 +58,7 @@ by this option.
 </varlistentry>
 
 <varlistentry>
-<term><option>-P</option> <parameter>pid-file</parameter></term>
+<term><option>-P</option> <parameter moreinfo="none">pid-file</parameter></term>
 <listitem>
 <para>Specifies a file name which records the process ID of gfsd.</para>
 </listitem>
@@ -99,7 +102,7 @@ the log level is set to "debug".
 </varlistentry>
 
 <varlistentry>
-<term><option>-f</option> <parameter>config-file</parameter></term>
+<term><option>-f</option> <parameter moreinfo="none">config-file</parameter></term>
 <listitem>
 <para>Specifies a configuration file that is read instead of the default
 configuration file.</para>
@@ -107,14 +110,14 @@ configuration file.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-h</option> <parameter>hostname</parameter></term>
+<term><option>-h</option> <parameter moreinfo="none">hostname</parameter></term>
 <listitem>
 <para>Specifies my own canonical host name.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-l</option> <parameter>IP-address</parameter></term>
+<term><option>-l</option> <parameter moreinfo="none">IP-address</parameter></term>
 <listitem>
 <para>Specifies the IP address from which the gfsd accepts TCP and UDP
 requests.
@@ -126,7 +129,7 @@ to provide multiple spool directories on the host.
 </varlistentry>
 
 <varlistentry>
-<term><option>-r</option> <parameter>directory</parameter></term>
+<term><option>-r</option> <parameter moreinfo="none">directory</parameter></term>
 <listitem>
 <para>Specifies a spool directory
 for a Gfarm filesystem on this filesystem node.
@@ -135,7 +138,7 @@ for a Gfarm filesystem on this filesystem node.
 </varlistentry>
 
 <varlistentry>
-<term><option>-s</option> <parameter>syslog-facility</parameter></term>
+<term><option>-s</option> <parameter moreinfo="none">syslog-facility</parameter></term>
 <listitem>
 <para>Specifies a syslog facility to report errors by gfsd.  By default,
 local0 is used.</para>
@@ -160,10 +163,10 @@ This is useful, when one has to resolve an issue about GSI authenticaion.
 </variablelist>
 </refsect1>
 
-<refsect1 id='files'><title>FILES</title>
+<refsect1 id="files"><title>FILES</title>
 <variablelist>
 <varlistentry>
-<term><filename>%%SYSCONFDIR%%/gfarm2.conf</filename></term>
+<term><filename moreinfo="none">%%SYSCONFDIR%%/gfarm2.conf</filename></term>
 <listitem>
 <para>configuration file</para>
 </listitem>
@@ -171,7 +174,7 @@ This is useful, when one has to resolve an issue about GSI authenticaion.
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
 </para>

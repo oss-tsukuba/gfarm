@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfservice.conf.5'>
+
+<refentry id="gfservice.conf.5">
 
 <refentryinfo><date>6 Jun 2013</date></refentryinfo>
 
@@ -10,28 +13,28 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfservice.conf</refname>
 <refpurpose>configuration file of gfservice</refpurpose>
 </refnamediv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command>gfservice</command> reads configuration data from the file.
-(<command>gfservice-agent</command> doesn't read a configuration file.)
+<command moreinfo="none">gfservice</command> reads configuration data from the file.
+(<command moreinfo="none">gfservice-agent</command> doesn't read a configuration file.)
 </para>
 
 <para>
 The configuration file itself is a Bourne-shell script.
 It is <emphasis>evaluated as a script</emphasis> by
-<command>gfservice</command>.
+<command moreinfo="none">gfservice</command>.
 Here is an example of the configuration file:
 </para>
 
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	# gfmd entries.
 	gfmd1=db1.example.com
 	gfmd2=db2.example.com
@@ -51,16 +54,16 @@ Whitespaces <emphasis>must not</emphasis> be inserted around '='.
 <para>
 The variables named <replaceable>gfmd1</replaceable> and
 <replaceable>gfmd2</replaceable> are used as "host-id".
-To specify a remote host, <command>gfservice</command> uses host-id
+To specify a remote host, <command moreinfo="none">gfservice</command> uses host-id
 instead of hostname:
 </para>
 
-<literallayout>
-	<command>gfservice <replaceable>start-gfmd</replaceable> <replaceable>gfmd2</replaceable></command>
+<literallayout format="linespecific" class="normal">
+	<command moreinfo="none">gfservice <replaceable>start-gfmd</replaceable> <replaceable>gfmd2</replaceable></command>
 </literallayout>
 
 <para>
-Executing the command, <command>gfservice</command> starts gfmd on
+Executing the command, <command moreinfo="none">gfservice</command> starts gfmd on
 <replaceable>gfmd2</replaceable> server, metadb2.example.com.
 Note that the numbers at the tails of host-ids must be beginning with 1
 and must be assigned successively.
@@ -72,7 +75,7 @@ For specifying gfsd servers and client hosts, use host-ids
 respectively:
 </para>
 
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	# gfsd entries.
 	gfsd1=fs1.example.com
 
@@ -83,11 +86,11 @@ respectively:
 </literallayout>
 
 <para>
-In addition with host-id variables, <command>gfservice</command> recognizes
+In addition with host-id variables, <command moreinfo="none">gfservice</command> recognizes
 some variables related to host-id.
 </para>
 
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	# Configuration about gfmd1.
 	gfmd1_CONFIG_GFARM_OPTIONS="-X -A $LOGNAME"
 	gfmd1_SSH="ssh -i $HOME/.ssh/id_rsa_gfservice"
@@ -103,7 +106,7 @@ environment variable <varname>VARNAME</varname>.
 
 </refsect1>
 
-<refsect1 id='gfmd-variables'><title>VARIABLES ABOUT GFMD</title>
+<refsect1 id="gfmd-variables"><title>VARIABLES ABOUT GFMD</title>
 
 <para>
 Variables named "gfmd<replaceable>n</replaceable>" (gfmd1, gfmd2, ...)
@@ -111,7 +114,7 @@ define gfmd servers.
 Variable names beginning with "gfmd<replaceable>n</replaceable>_"  such
 as <replaceable>gfmd1_SSH</replaceable> set configuration parameters of
 the corresponding "gfmd<replaceable>n</replaceable>" server.
-<command>gfservice</command> currently the following variables:
+<command moreinfo="none">gfservice</command> currently the following variables:
 </para>
 
 <variablelist>
@@ -130,11 +133,11 @@ Its value represents a hostname (or an IP address) of the server.
 <term><varname>gfmd<replaceable>n</replaceable>_GFBINDIR</varname></term>
 <listitem>
 <para>
-Specify a path to a directory where <command>gfservice-agent</command>
+Specify a path to a directory where <command moreinfo="none">gfservice-agent</command>
 command is installed on the gfmd server.
-If the variable is declared, <command>gfservice</command> executes
-<command>"<varname>$gfmd<replaceable>n</replaceable>_GFBINDIR</varname>/gfservice-agent"</command>.
-Otherwise it executes <command>"gfservice-agent"</command>.
+If the variable is declared, <command moreinfo="none">gfservice</command> executes
+<command moreinfo="none">"<varname>$gfmd<replaceable>n</replaceable>_GFBINDIR</varname>/gfservice-agent"</command>.
+Otherwise it executes <command moreinfo="none">"gfservice-agent"</command>.
 </para>
 </listitem>
 </varlistentry>
@@ -143,12 +146,12 @@ Otherwise it executes <command>"gfservice-agent"</command>.
 <term><varname>gfmd<replaceable>n</replaceable>_CONFIG_GFARM_OPTIONS</varname></term>
 <listitem>
 <para>
-Specify options of <command>config-gfarm</command> command.
+Specify options of <command moreinfo="none">config-gfarm</command> command.
 The default value is empty (no option).
-<command>gfservice</command> refers this variable to perform
-<command>config-gfarm</command> and many other sub-commands.
+<command moreinfo="none">gfservice</command> refers this variable to perform
+<command moreinfo="none">config-gfarm</command> and many other sub-commands.
 Do not delete or edit the declaration even after
-<command>config-gfarm</command> has been complete.
+<command moreinfo="none">config-gfarm</command> has been complete.
 </para>
 </listitem>
 </varlistentry>
@@ -170,7 +173,7 @@ in private mode.
 Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
 If the variable is not declared, its value is chosen from
 <varname>AUTH_TYPE</varname> value output by
-<command>config-gfarm -T</command> command executed on gfmd1.
+<command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.
 (Note that the value <varname>AUTH_TYPE</varname> above is affected by
 the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
 </para>
@@ -182,7 +185,7 @@ the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
 <listitem>
 <para>
 Setting this variable to "async",
-<command>gfservice config-gfarm-slave</command> configures the gfmd
+<command moreinfo="none">gfservice config-gfarm-slave</command> configures the gfmd
 host as an async slave.
 </para>
 </listitem>
@@ -193,7 +196,7 @@ host as an async slave.
 <listitem>
 <para>
 Specify a path to an SSH client command and its options.
-The variable is used when <command>gfservice</command> executes an SSH
+The variable is used when <command moreinfo="none">gfservice</command> executes an SSH
 client command to connect with the gfsd server.
 The default value is "ssh".
 </para>
@@ -205,7 +208,7 @@ The default value is "ssh".
 <listitem>
 <para>
 Specify a path to a Sudo command and options.
-The variable is used when <command>gfservice</command> executes a Sudo
+The variable is used when <command moreinfo="none">gfservice</command> executes a Sudo
 command on the gfsd server via SSH.
 The default value is "sudo".
 </para>
@@ -216,7 +219,7 @@ The default value is "sudo".
 
 </refsect1>
 
-<refsect1 id='gfsd-variables'><title>VARIABLES ABOUT GFSD</title>
+<refsect1 id="gfsd-variables"><title>VARIABLES ABOUT GFSD</title>
 
 <para>
 Variables named "gfsd<replaceable>n</replaceable>" (gfsd1, gfsd2, ...)
@@ -224,7 +227,7 @@ define gfsd servers.
 Variable names beginning with "gfsd<replaceable>n</replaceable>_" such as
 <replaceable>gfsd1_SSH</replaceable> set configuration parameters of the
 corresponding "gfsd<replaceable>n</replaceable>" server.
-<command>gfservice</command> currently recognizes the following variables:
+<command moreinfo="none">gfservice</command> currently recognizes the following variables:
 </para>
 
 <variablelist>
@@ -243,11 +246,11 @@ Its value represents a hostname (or an IP address) of the server.
 <term><varname>gfsd<replaceable>n</replaceable>_GFBINDIR</varname></term>
 <listitem>
 <para>
-Specify a path to a directory where <command>gfservice-agent</command>
+Specify a path to a directory where <command moreinfo="none">gfservice-agent</command>
 command is installed on the gfsd server.
-If the variable is declared, <command>gfservice</command> executes
-<command>"<varname>$gfsd<replaceable>n</replaceable>_GFBINDIR</varname>/gfservice-agent"</command>.
-Otherwise it executes <command>"gfservice-agent"</command>.
+If the variable is declared, <command moreinfo="none">gfservice</command> executes
+<command moreinfo="none">"<varname>$gfsd<replaceable>n</replaceable>_GFBINDIR</varname>/gfservice-agent"</command>.
+Otherwise it executes <command moreinfo="none">"gfservice-agent"</command>.
 </para>
 </listitem>
 </varlistentry>
@@ -256,12 +259,12 @@ Otherwise it executes <command>"gfservice-agent"</command>.
 <term><varname>gfsd<replaceable>n</replaceable>_CONFIG_GFSD_OPTIONS</varname></term>
 <listitem>
 <para>
-Specify options of <command>config-gfsd</command> command.
+Specify options of <command moreinfo="none">config-gfsd</command> command.
 The default value is empty (no option).
-<command>gfservice</command> refers this variable to perform
-<command>config-gfsd</command> and many other sub-commands.
+<command moreinfo="none">gfservice</command> refers this variable to perform
+<command moreinfo="none">config-gfsd</command> and many other sub-commands.
 Do not delete or edit the declaration even after
-<command>config-gfsd</command> has been complete.
+<command moreinfo="none">config-gfsd</command> has been complete.
 </para>
 </listitem>
 </varlistentry>
@@ -283,7 +286,7 @@ in private mode.
 Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
 If the variable is not declared, its value is chosen from
 <varname>AUTH_TYPE</varname> value output by
-<command>config-gfarm -T</command> command executed on gfmd1.
+<command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.
 (Note that the value <varname>AUTH_TYPE</varname> above is affected by
 the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
 </para>
@@ -295,7 +298,7 @@ the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
 <listitem>
 <para>
 Specify a path to an SSH client command and its options.
-The variable is used when <command>gfservice</command> executes an SSH
+The variable is used when <command moreinfo="none">gfservice</command> executes an SSH
 client command to connect with the gfsd server.
 The default value is "ssh".
 </para>
@@ -307,7 +310,7 @@ The default value is "ssh".
 <listitem>
 <para>
 Specify a path to a Sudo command and options.
-The variable is used when <command>gfservice</command> executes a Sudo
+The variable is used when <command moreinfo="none">gfservice</command> executes a Sudo
 command on the gfsd server via SSH.
 The default value is "sudo".
 </para>
@@ -318,7 +321,7 @@ The default value is "sudo".
 
 </refsect1>
 
-<refsect1 id='client-variables'><title>VARIABLES ABOUT CLIENT</title>
+<refsect1 id="client-variables"><title>VARIABLES ABOUT CLIENT</title>
 
 <para>
 Variables named "client<replaceable>n</replaceable>" (client1, client2, ...)
@@ -327,7 +330,7 @@ Their values are hostnames (or IP addresses).
 Variable names beginning with "client<replaceable>n</replaceable>_" 
 such as <replaceable>client1_SUDO</replaceable> set configuration parameters
 of the corresponding "client<replaceable>n</replaceable>" host.
-<command>gfservice</command> currently recognizes the following variables:
+<command moreinfo="none">gfservice</command> currently recognizes the following variables:
 </para>
 
 <variablelist>
@@ -346,11 +349,11 @@ Its value represents a hostname (or an IP address) of the host.
 <term><varname>client<replaceable>n</replaceable>_GFBINDIR</varname></term>
 <listitem>
 <para>
-Specify a path to a directory where <command>gfservice-agent</command>
+Specify a path to a directory where <command moreinfo="none">gfservice-agent</command>
 command is installed on the client host.
-If the variable is declared, <command>gfservice</command> executes
-<command>"<varname>$client<replaceable>n</replaceable>_GFBINDIR</varname>/gfservice-agent"</command>.
-Otherwise it executes <command>"gfservice-agent"</command>.
+If the variable is declared, <command moreinfo="none">gfservice</command> executes
+<command moreinfo="none">"<varname>$client<replaceable>n</replaceable>_GFBINDIR</varname>/gfservice-agent"</command>.
+Otherwise it executes <command moreinfo="none">"gfservice-agent"</command>.
 </para>
 </listitem>
 </varlistentry>
@@ -359,9 +362,9 @@ Otherwise it executes <command>"gfservice-agent"</command>.
 <term><varname>client<replaceable>n</replaceable>_GFARM2FS</varname></term>
 <listitem>
 <para>
-Specify a path to <command>gfarm2fs</command> command and its options.
-The variable is used when <command>gfservice</command> executes
-<command>gfarm2fs</command> command to mount a file system.
+Specify a path to <command moreinfo="none">gfarm2fs</command> command and its options.
+The variable is used when <command moreinfo="none">gfservice</command> executes
+<command moreinfo="none">gfarm2fs</command> command to mount a file system.
 The default value is "%%BINDIR%%/gfarm2fs".
 </para>
 </listitem>
@@ -372,7 +375,7 @@ The default value is "%%BINDIR%%/gfarm2fs".
 <listitem>
 <para>
 Specify a path to an SSH client command and its options.
-The variable is used when <command>gfservice</command> executes an SSH
+The variable is used when <command moreinfo="none">gfservice</command> executes an SSH
 client command to connect with the client host.
 The default value is "ssh".
 </para>
@@ -384,7 +387,7 @@ The default value is "ssh".
 <listitem>
 <para>
 Specify a path to a Sudo command and options.
-The variable is used when <command>gfservice</command> executes a Sudo
+The variable is used when <command moreinfo="none">gfservice</command> executes a Sudo
 command on the client host via SSH.
 The default value is "sudo".
 </para>
@@ -396,7 +399,7 @@ The default value is "sudo".
 <listitem>
 <para>
 Specify a gfarm2.conf file in absolute path.
-If a value is not set, <command>gfservice</command> uses a same path as
+If a value is not set, <command moreinfo="none">gfservice</command> uses a same path as
 the path of gfarm2.conf in gfmd1(determined from the 'gfmd1_CONFIG_GFARM_OPTIONS'
 shell variable).
 </para>
@@ -407,8 +410,8 @@ shell variable).
 <term><varname>client<replaceable>n</replaceable>_PRIVATE_MODE</varname></term>
 <listitem>
 <para>
-If this variable is set to "true", <command>gfservice</command> processes
-the sub-command <command>config-client</command> without root privilege.
+If this variable is set to "true", <command moreinfo="none">gfservice</command> processes
+the sub-command <command moreinfo="none">config-client</command> without root privilege.
 </para>
 </listitem>
 </varlistentry>
@@ -420,7 +423,7 @@ the sub-command <command>config-client</command> without root privilege.
 Specify authentication type ("sharedsecret", "gsi" or "gsi_auth").
 If the variable is not declared, its value is chosen from
 <varname>AUTH_TYPE</varname> value output by
-<command>config-gfarm -T</command> command executed on gfmd1.
+<command moreinfo="none">config-gfarm -T</command> command executed on gfmd1.
 (Note that the value <varname>AUTH_TYPE</varname> above is affected by
 the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
 </para>

@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfperf-parallel-write.1'>
+
+<refentry id="gfperf-parallel-write.1">
 
 <refentryinfo><date>19 May 2012</date></refentryinfo>
 
@@ -9,31 +12,31 @@
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfperf-parallel-write</refname>
 <refpurpose>Gfarm measure file write performance</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfperf-parallel-write</command>
-    <arg choice='opt'>-t, --testdir <replaceable>test directory</replaceable></arg>
-    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fs mount point</replaceable></arg>
-    <arg choice='opt'>-l, --filesize <replaceable>file size</replaceable></arg>
-    <arg choice='opt'>-b, --bufsize <replaceable>buffer size</replaceable></arg>
-    <arg choice='opt'>-r, --random <replaceable>random</replaceable></arg>
-    <arg choice='opt'>-g, --gfsd <replaceable>gfsd name</replaceable></arg>
-    <arg choice='opt'>-o, --overwrite <replaceable>overwrite flag</replaceable></arg>
-    <arg choice='opt'>-k, --timeout <replaceable>timeout seconds</replaceable></arg>
-    <arg choice='opt'>-n, --name <replaceable>group name</replaceable></arg>
-    <arg choice='opt'>-w, --wait <replaceable>start time</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfperf-parallel-write</command>
+    <arg choice="opt" rep="norepeat">-t, --testdir <replaceable>test directory</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-m, --gfarm2fs <replaceable>gfarm2fs mount point</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-l, --filesize <replaceable>file size</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-b, --bufsize <replaceable>buffer size</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-r, --random <replaceable>random</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-g, --gfsd <replaceable>gfsd name</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-o, --overwrite <replaceable>overwrite flag</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-k, --timeout <replaceable>timeout seconds</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-n, --name <replaceable>group name</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-w, --wait <replaceable>start time</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para>This command mesures file write performance of specified size of file in <parameter>test directory</parameter>.
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>This command mesures file write performance of specified size of file in <parameter moreinfo="none">test directory</parameter>.
 The test file is automatically created and removed. 
 If overwrite flag is on, test file is not removed to be reused again.
 </para>
@@ -42,14 +45,14 @@ This command is expected to be called by gfperf.rb in parallel.
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-t, --testdir</option> <parameter>test directory</parameter></term>
+<term><option>-t, --testdir</option> <parameter moreinfo="none">test directory</parameter></term>
 <listitem>
 <para>
-Test file is created in <parameter>test directory</parameter>.
+Test file is created in <parameter moreinfo="none">test directory</parameter>.
 Specify only gfarm url (that begins with gfarm:///) .
 The default is gfarm:///tmp .
 </para>
@@ -57,7 +60,7 @@ The default is gfarm:///tmp .
 </varlistentry>
 
 <varlistentry>
-<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fs mount point</parameter></term>
+<term><option>-m, --gfarm2fs</option> <parameter moreinfo="none">gfarm2fs mount point</parameter></term>
 <listitem>
 <para>
 Specify gfarm2fs mount point.
@@ -66,7 +69,7 @@ Specify gfarm2fs mount point.
 </varlistentry>
 
 <varlistentry>
-<term><option>-l, --filesize</option> <parameter>file size</parameter></term>
+<term><option>-l, --filesize</option> <parameter moreinfo="none">file size</parameter></term>
 <listitem>
 <para>
 File size to be created.
@@ -76,7 +79,7 @@ The default is 1M. (1G=2^20)
 </varlistentry>
 
 <varlistentry>
-<term><option>-b, --bufsize</option> <parameter>buffer size</parameter></term>
+<term><option>-b, --bufsize</option> <parameter moreinfo="none">buffer size</parameter></term>
 <listitem>
 <para>
 Buffer size to write test file.
@@ -86,7 +89,7 @@ The default is 4K. (1K=2^10)
 </varlistentry>
 
 <varlistentry>
-<term><option>-r, --random</option> <parameter>random</parameter></term>
+<term><option>-r, --random</option> <parameter moreinfo="none">random</parameter></term>
 <listitem>
 <para>
 Only if this option is specified, Writes test file randomly.
@@ -97,7 +100,7 @@ If this option is omitted, this command writes test file sequentially.
 </varlistentry>
 
 <varlistentry>
-<term><option>-g, --gfsd</option> <parameter>gfsd name</parameter></term>
+<term><option>-g, --gfsd</option> <parameter moreinfo="none">gfsd name</parameter></term>
 <listitem>
 <para>
 Specify gfsd name on which test file is created.
@@ -107,7 +110,7 @@ If this option is omitted, gfmd determines automatically.
 </varlistentry>
 
 <varlistentry>
-<term><option>-o, --overwrite</option> <parameter>overwrite flag</parameter></term>
+<term><option>-o, --overwrite</option> <parameter moreinfo="none">overwrite flag</parameter></term>
 <listitem>
 <para>
 Only if this option is specified, Overwrite test file.
@@ -118,7 +121,7 @@ If this option is omitted, this command appends test data on 1 byte file.
 </varlistentry>
 
 <varlistentry>
-<term><option>-k, --timeout</option> <parameter>timeout seconds</parameter></term>
+<term><option>-k, --timeout</option> <parameter moreinfo="none">timeout seconds</parameter></term>
 <listitem>
 <para>
 Maximum write time in seconds.
@@ -128,7 +131,7 @@ This comannd measures how much data to be written in this seconds.
 </varlistentry>
 
 <varlistentry>
-<term><option>-n, --name</option> <parameter>group name</parameter></term>
+<term><option>-n, --name</option> <parameter moreinfo="none">group name</parameter></term>
 <listitem>
 <para>
 Group name in parallel execution.
@@ -137,7 +140,7 @@ Group name in parallel execution.
 </varlistentry>
 
 <varlistentry>
-<term><option>-w, --wait</option> <parameter>start time</parameter></term>
+<term><option>-w, --wait</option> <parameter moreinfo="none">start time</parameter></term>
 <listitem>
 <para>
 Start time specified by gfperf.rb.

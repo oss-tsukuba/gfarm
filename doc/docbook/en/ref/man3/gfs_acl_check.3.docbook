@@ -1,5 +1,8 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
-<refentry id='gfs-acl-check.3'>
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<refentry id="gfs-acl-check.3">
 
 <refentryinfo><date>14 Feb 2011</date></refentryinfo>
 
@@ -9,23 +12,23 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_acl_check</refname>
 
 
 <refpurpose>check a Gfarm ACL for validity</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfs_acl_check</function></funcdef>
-    <paramdef>gfarm_acl_t <parameter>acl</parameter></paramdef>
-    <paramdef>int *<parameter>last_p</parameter></paramdef>
-    <paramdef>int *<parameter>acl_check_err_code_p</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfs_acl_check</function></funcdef>
+    <paramdef>gfarm_acl_t <parameter moreinfo="none">acl</parameter></paramdef>
+    <paramdef>int *<parameter moreinfo="none">last_p</parameter></paramdef>
+    <paramdef>int *<parameter moreinfo="none">acl_check_err_code_p</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -33,11 +36,11 @@
 
 <!-- body begins here -->
 
-<refsect1 id='input-arguments'><title>INPUT ARGUMENTS</title>
+<refsect1 id="input-arguments"><title>INPUT ARGUMENTS</title>
 <variablelist>
 
 <varlistentry>
-<term><parameter>acl</parameter></term>
+<term><parameter moreinfo="none">acl</parameter></term>
 <listitem>
 <para>An ACL structure type which is sorted.
 </para>
@@ -45,7 +48,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><parameter>last_p</parameter></term>
+<term><parameter moreinfo="none">last_p</parameter></term>
 <listitem>
 <para>If this last_p is not NULL,
  the <citerefentry><refentrytitle>gfs_acl_check</refentrytitle><manvolnum>3</manvolnum></citerefentry> function assigns the number of the ACL entry
@@ -55,9 +58,9 @@
 </varlistentry>
 
 <varlistentry>
-<term><parameter>acl_check_err_code</parameter></term>
+<term><parameter moreinfo="none">acl_check_err_code</parameter></term>
 <listitem>
-<para><parameter>GFARM_ACL_MULTI_ERROR</parameter> or <parameter>GFARM_ACL_DUPLICATE_ERROR</parameter> or <parameter>GFARM_ACL_MISS_ERROR</parameter> or <parameter>GFARM_ACL_ENTRY_ERROR</parameter>.
+<para><parameter moreinfo="none">GFARM_ACL_MULTI_ERROR</parameter> or <parameter moreinfo="none">GFARM_ACL_DUPLICATE_ERROR</parameter> or <parameter moreinfo="none">GFARM_ACL_MISS_ERROR</parameter> or <parameter moreinfo="none">GFARM_ACL_ENTRY_ERROR</parameter>.
 </para>
 </listitem>
 </varlistentry>
@@ -65,7 +68,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 
 <varlistentry>
@@ -86,7 +89,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_acl_error</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_acl_sort</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

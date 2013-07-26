@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfimport-text.1'>
+<refentry id="gfimport-text.1">
 
 <refentryinfo><date>5 Jun 2003</date></refentryinfo>
 
@@ -11,34 +14,34 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfimport_text</refname>
 <refpurpose>divide and register a text file</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfimport_text</command>
-    <arg choice='opt'><replaceable>options</replaceable></arg>
-    <arg choice='plain'><replaceable>file</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfimport_text</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>file</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfimport_text</command> is a sample program for dividing a text file to
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfimport_text</command> is a sample program for dividing a text file to
 file fragments by the line and registering it to the Gfarm filesystem.</para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-H</option> <parameter>hostfile</parameter></term>
+<term><option>-H</option> <parameter moreinfo="none">hostfile</parameter></term>
 <listitem>
-<para>specifies a list of filesystem nodes.  The <parameter>hostfile</parameter> consists of
+<para>specifies a list of filesystem nodes.  The <parameter moreinfo="none">hostfile</parameter> consists of
 a hostname of a filesystem node in each line.  The file is almost
 uniformly divided into file fragments.
 </para>
@@ -48,9 +51,9 @@ if ``-'' is specified, standard input is used to read the host list.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-f</option> <parameter>fragment-file</parameter></term>
+<term><option>-f</option> <parameter moreinfo="none">fragment-file</parameter></term>
 <listitem>
-<para>specifies a <parameter>fragment-file</parameter> that consists of a fragment size in
+<para>specifies a <parameter moreinfo="none">fragment-file</parameter> that consists of a fragment size in
 byte and a filesystem node separated by a white space in each line.
 </para>
 <para>
@@ -59,7 +62,7 @@ if ``-'' is specified, standard input is used.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-o</option> <parameter>gfarm-URL</parameter></term>
+<term><option>-o</option> <parameter moreinfo="none">gfarm-URL</parameter></term>
 <listitem>
 <para>specifies an output file.</para>
 </listitem>
@@ -74,16 +77,16 @@ if ``-'' is specified, standard input is used.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='examples'><title>EXAMPLES</title>
+<refsect1 id="examples"><title>EXAMPLES</title>
 
 <example role="example">
 <title>Importing by splitting to specified number of fragments</title>
 <para>
-The following is an example using <command>gfimport_text</command> 
+The following is an example using <command moreinfo="none">gfimport_text</command> 
 to import a <replaceable>source_file</replaceable> 
 as <replaceable>gfarm:file</replaceable> 
 by splitting to 8 fragments.
-<screen>
+<screen format="linespecific">
 gfsched -N 8 | gfimport_text -H - -o gfarm:file source_file
 </screen>
 </para>
@@ -94,12 +97,12 @@ gfsched -N 8 | gfimport_text -H - -o gfarm:file source_file
   for particular program
 </title>
 <para>
-The following is an example using <command>gfimport_text</command> 
+The following is an example using <command moreinfo="none">gfimport_text</command> 
 to import a <replaceable>source_file</replaceable> 
 as <replaceable>gfarm:file</replaceable> 
 by splitting to 8 fragments
 to be processed by <replaceable>gfarm:prog</replaceable> program.
-<screen>
+<screen format="linespecific">
 gfsched -N 8 -p gfarm:prog | gfimport_text -H - -o gfarm:file source_file
 </screen>
 </para>
@@ -108,12 +111,12 @@ gfsched -N 8 -p gfarm:prog | gfimport_text -H - -o gfarm:file source_file
 <example role="example">
 <title>Importing into same disposition with an existing gfarm file</title>
 <para>
-The following is an example using <command>gfimport_text</command>
+The following is an example using <command moreinfo="none">gfimport_text</command>
 to import a <replaceable>source_file</replaceable> 
 as <replaceable>gfarm:file</replaceable> 
 into same disposition with existing file
 <replaceable>gfarm:template</replaceable>.
-<screen>
+<screen format="linespecific">
 gfsched gfarm:template | gfimport_text -H - -o gfarm:file source_file
 </screen>
 </para>
@@ -122,7 +125,7 @@ gfsched gfarm:template | gfimport_text -H - -o gfarm:file source_file
 </refsect1>
 
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfimport_fixed</refentrytitle><manvolnum>1</manvolnum>

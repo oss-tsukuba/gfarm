@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfperf-tree.1'>
+
+<refentry id="gfperf-tree.1">
 
 <refentryinfo><date>19 May 2012</date></refentryinfo>
 
@@ -9,35 +12,35 @@
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfperf-tree</refname>
 <refpurpose>Gfarm ディレクトリツリーの性能測定を行う。</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfperf-tree</command>
-    <arg choice='opt'>-t, --testdir <replaceable>テストディレクトリ</replaceable></arg>
-    <arg choice='opt'>-w, --width <replaceable>ディレクトリ数</replaceable></arg>
-    <arg choice='opt'>-d, --depth <replaceable>ディレクトリ階層</replaceable></arg>
-    <arg choice='opt'>-u, --unit <replaceable>出力の単位</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfperf-tree</command>
+    <arg choice="opt" rep="norepeat">-t, --testdir <replaceable>テストディレクトリ</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-w, --width <replaceable>ディレクトリ数</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-d, --depth <replaceable>ディレクトリ階層</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-u, --unit <replaceable>出力の単位</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para>引数 <parameter>テストディレクトリ</parameter> にテスト用のディレクトリツリーを作成、削除し、その実行性能を測定します。生成されるディクトリの数はwidthのdepth乗です。
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>引数 <parameter moreinfo="none">テストディレクトリ</parameter> にテスト用のディレクトリツリーを作成、削除し、その実行性能を測定します。生成されるディクトリの数はwidthのdepth乗です。
 </para>
 <para>測定する内容は指定されたディレクトリツリーの生成、及び削除にかかった時間を測定し、指定された単位で表示します。
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-t, --testdir</option> <parameter>テストディレクトリ</parameter></term>
+<term><option>-t, --testdir</option> <parameter moreinfo="none">テストディレクトリ</parameter></term>
 <listitem>
 <para>
 テストを実施するディレクトリを指定します。
@@ -49,7 +52,7 @@ file url(file:///で始まるもの)を指定した場合、該当のunixファ�
 </varlistentry>
 
 <varlistentry>
-<term><option>-w, --width</option> <parameter>ディレクトリ数</parameter></term>
+<term><option>-w, --width</option> <parameter moreinfo="none">ディレクトリ数</parameter></term>
 <listitem>
 <para>
 サブディレクトリを作成する数を指定します。
@@ -58,7 +61,7 @@ file url(file:///で始まるもの)を指定した場合、該当のunixファ�
 </varlistentry>
 
 <varlistentry>
-<term><option>-d, --depth</option> <parameter>ディレクトリ階層</parameter></term>
+<term><option>-d, --depth</option> <parameter moreinfo="none">ディレクトリ階層</parameter></term>
 <listitem>
 <para>
 サブディレクトリを何階層作成するか指定します。
@@ -67,7 +70,7 @@ file url(file:///で始まるもの)を指定した場合、該当のunixファ�
 </varlistentry>
 
 <varlistentry>
-<term><option>-u, --uinit</option> <parameter>出力の単位</parameter></term>
+<term><option>-u, --uinit</option> <parameter moreinfo="none">出力の単位</parameter></term>
 <listitem>
 <para>ops(operations per second)またはusecを指定します。指定した単位で出力を返します。デフォルトはopsです。
 </para>

@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfarm-initialize.3'>
+
+<refentry id="gfarm-initialize.3">
 
 <refentryinfo><date>26 Jun 2010</date></refentryinfo>
 
@@ -10,20 +13,20 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfarm_initialize</refname>
 <refpurpose>Gfarm ライブラリを初期化する</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfarm_initialize</function></funcdef>
-    <paramdef>int * <parameter>argcp</parameter></paramdef>
-    <paramdef>char *** <parameter>argvp</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfarm_initialize</function></funcdef>
+    <paramdef>int * <parameter moreinfo="none">argcp</parameter></paramdef>
+    <paramdef>char *** <parameter moreinfo="none">argvp</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -31,18 +34,18 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>Gfarm ライブラリを初期化します。
 Gfarm ライブラリ API を利用する前に必ず呼ぶ必要があります。
 引数には、プログラムの main 関数の
-<parameter>argc</parameter>
+<parameter moreinfo="none">argc</parameter>
 引数へのポインタと、
-<parameter>argv</parameter>
+<parameter moreinfo="none">argv</parameter>
 引数へのポインタを渡します。</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_ERROR</constant></term>
@@ -122,7 +125,7 @@ Gfarm ライブラリ API を利用する前に必ず呼ぶ必要があります
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfarm_terminate</refentrytitle><manvolnum>3</manvolnum></citerefentry>
 </para>

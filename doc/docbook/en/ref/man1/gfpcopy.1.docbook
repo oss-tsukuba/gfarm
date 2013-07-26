@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfpcopy.1'>
+<refentry id="gfpcopy.1">
 
 <refentryinfo><date>28 Feb 2013</date></refentryinfo>
 
@@ -11,40 +14,40 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfpcopy</refname>
 <refpurpose>copy Gfarm files in parallel</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfpcopy</command>
-  <arg choice='opt'>-nqvdpPU</arg>
-  <arg choice='opt'>-f</arg>
-  <arg choice='opt'>-S <replaceable>source-domainname</replaceable></arg>
-  <arg choice='opt'>-h <replaceable>source-hostfile</replaceable></arg>
-  <arg choice='opt'>-D <replaceable>destination-domainname</replaceable></arg>
-  <arg choice='opt'>-H <replaceable>destination-hostfile</replaceable></arg>
-  <arg choice='opt'>-j <replaceable>num-of-processes</replaceable></arg>
-  <arg choice='opt'>-w <replaceable>way-of-scheduling</replaceable></arg>
-  <arg choice='opt'>-W <replaceable>kilobytes-for-threshold</replaceable></arg>
-  <arg choice='opt'>-s <replaceable>KB/s-to-simulate</replaceable></arg>
-  <arg choice='opt'>-F <replaceable>num-for-readahead</replaceable></arg>
-  <arg choice='opt'>-b <replaceable>bufsize</replaceable></arg>
-  <arg choice='plain'><replaceable>source-url</replaceable></arg>
-  <arg choice='plain'><replaceable>destination-url</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfpcopy</command>
+  <arg choice="opt" rep="norepeat">-nqvdpPU</arg>
+  <arg choice="opt" rep="norepeat">-f</arg>
+  <arg choice="opt" rep="norepeat">-S <replaceable>source-domainname</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-h <replaceable>source-hostfile</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-D <replaceable>destination-domainname</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-H <replaceable>destination-hostfile</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-j <replaceable>num-of-processes</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-w <replaceable>way-of-scheduling</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-W <replaceable>kilobytes-for-threshold</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-s <replaceable>KB/s-to-simulate</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-F <replaceable>num-for-readahead</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-b <replaceable>bufsize</replaceable></arg>
+  <arg choice="plain" rep="norepeat"><replaceable>source-url</replaceable></arg>
+  <arg choice="plain" rep="norepeat"><replaceable>destination-url</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command>gfpcopy</command> copies files and directries specified by
-the <parameter>source-url</parameter>(gfarm:///... or file:///...) to a
+<command moreinfo="none">gfpcopy</command> copies files and directries specified by
+the <parameter moreinfo="none">source-url</parameter>(gfarm:///... or file:///...) to a
 directory specified by
-the <parameter>destination-url</parameter>(gfarm:///... or file:///...) in
+the <parameter moreinfo="none">destination-url</parameter>(gfarm:///... or file:///...) in
 parallel.
 </para>
 <para>
@@ -54,23 +57,23 @@ domain name and/or a host file.  When both a domain name and a host
 file are specified, a set of hosts is determined by both conditions.
 </para>
 <para>
-If the <parameter>source-url</parameter> parameter is a directory,
+If the <parameter moreinfo="none">source-url</parameter> parameter is a directory,
 files under the directory will be copied recursively.
 </para>
 <para>
-<command>gfpcopy</command> can also read the directory and get
+<command moreinfo="none">gfpcopy</command> can also read the directory and get
 informations of the entries in parallel.
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>GFPCOPY OPTIONS</title>
+<refsect1 id="options"><title>GFPCOPY OPTIONS</title>
 <para>
-These are the options only for <command>gfpcopy</command>.
+These are the options only for <command moreinfo="none">gfpcopy</command>.
 </para>
 <variablelist>
 
 <varlistentry>
-<term><option>-b</option> <parameter>bufsize</parameter></term>
+<term><option>-b</option> <parameter moreinfo="none">bufsize</parameter></term>
 <listitem>
 <para>
 Specifies the buffer size to copy.
@@ -100,18 +103,18 @@ source file.
 </variablelist>
 </refsect1>
 
-<refsect1 id='common-options'><title>COMMON OPTIONS</title>
+<refsect1 id="common-options"><title>COMMON OPTIONS</title>
 <para>
-<command>gfpcopy</command> has the same options
-with <command>gfprep</command>.  (see man <command>gfprep</command>)
+<command moreinfo="none">gfpcopy</command> has the same options
+with <command moreinfo="none">gfprep</command>.  (see man <command moreinfo="none">gfprep</command>)
 </para>
 </refsect1>
 
-<refsect1 id='examples'><title>EXAMPLES</title>
+<refsect1 id="examples"><title>EXAMPLES</title>
 <para>
 To copy files under the directory recursively.
 </para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 $ gfpcopy gfarm:///dir file:///tmp/dir
 $ gfpcopy file:///tmp/dir gfarm:///dir
 $ gfpcopy gfarm:///dir1 gfarm:///dir2
@@ -120,21 +123,21 @@ $ gfpcopy gfarm:///dir1 gfarm:///dir2
  <para>
 To copy a file.
 </para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 $ gfpcopy gfarm:///dir/file file:///dir
 </literallayout>
 </refsect1>
 
-<refsect1 id='notes'><title>NOTES</title>
+<refsect1 id="notes"><title>NOTES</title>
 <para>
-If the gfmd and <command>gfpcopy</command> are far apart,
-the <command>gfpcopy</command> operation is slow.  Specifying a large
+If the gfmd and <command moreinfo="none">gfpcopy</command> are far apart,
+the <command moreinfo="none">gfpcopy</command> operation is slow.  Specifying a large
 value by the -j option or client_parallel_copy in gfarm2.conf may be
 effective in such a case.
 </para>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfprep</refentrytitle><manvolnum>1</manvolnum>

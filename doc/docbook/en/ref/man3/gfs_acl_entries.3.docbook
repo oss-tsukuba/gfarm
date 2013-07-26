@@ -1,5 +1,8 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
-<refentry id='gfs-acl-entries.3'>
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<refentry id="gfs-acl-entries.3">
 
 <refentryinfo><date>14 Feb 2011</date></refentryinfo>
 
@@ -9,19 +12,19 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_acl_entries</refname>
 <refpurpose>return the number of entries in a Gfarm ACL</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>int</returnvalue> gfs_acl_entries</function></funcdef>
-    <paramdef>gfarm_acl_t <parameter>acl</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>int</returnvalue> gfs_acl_entries</function></funcdef>
+    <paramdef>gfarm_acl_t <parameter moreinfo="none">acl</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -29,11 +32,11 @@
 
 <!-- body begins here -->
 
-<refsect1 id='input-arguments'><title>INPUT ARGUMENTS</title>
+<refsect1 id="input-arguments"><title>INPUT ARGUMENTS</title>
 <variablelist>
 
 <varlistentry>
-<term><parameter>acl</parameter></term>
+<term><parameter moreinfo="none">acl</parameter></term>
 <listitem>
 <para>An ACL structure type.</para>
 </listitem>
@@ -42,13 +45,13 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <para>
-This function returns the number of entries in <parameter>acl</parameter>.
+This function returns the number of entries in <parameter moreinfo="none">acl</parameter>.
 </para>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_acl_from_text</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_acl_get_file</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
