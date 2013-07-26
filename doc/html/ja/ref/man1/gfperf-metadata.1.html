@@ -1,271 +1,124 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD><META http-equiv="Content-Type" content="text/html; charset=UTF-8"><TITLE
->gfperf-metadata</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFPERF-METADATA.1"
-></A
->gfperf-metadata</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfperf-metadata&nbsp;--&nbsp;Gfarm メタデータの性能測定を行う。</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfperf-metadata</B
->  [-n, --number <TT
-CLASS="REPLACEABLE"
-><I
->テスト実施数</I
-></TT
->] [-t, --testdir <TT
-CLASS="REPLACEABLE"
-><I
->テストディレクトリ</I
-></TT
->] [-u, --unit <TT
-CLASS="REPLACEABLE"
-><I
->出力の単位</I
-></TT
->]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->引数 <CODE
-CLASS="PARAMETER"
->テストディレクトリ</CODE
-> にテスト用のファイルやディレクトリを作成し、その実行性能を測定します。</P
-><P
->測定する項目は次の通りです。
-<P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
->create</DT
-><DD
-><P
->	gfs_pio_create()またはcreat()の性能を測定します。
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfperf-metadata</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfperf-metadata">
+<a name="gfperf-metadata.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfperf-metadata — Gfarm メタデータの性能測定を行う。</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfperf-metadata</code>  [-n, --number <em class="replaceable"><code>テスト実施数</code></em>] [-t, --testdir <em class="replaceable"><code>テストディレクトリ</code></em>] [-u, --unit <em class="replaceable"><code>出力の単位</code></em>]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>引数 <em class="parameter"><code>テストディレクトリ</code></em> にテスト用のファイルやディレクトリを作成し、その実行性能を測定します。
+</p>
+<p>測定する項目は次の通りです。
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term">create</span></dt>
+<dd><p>
+	gfs_pio_create()またはcreat()の性能を測定します。
 	出力結果は１回辺りの平均値です。
-      </P
-></DD
-><DT
->readdir</DT
-><DD
-><P
->	gfs_opendir_caching()から<CODE
-CLASS="PARAMETER"
->テスト実施数</CODE
->分gfs_readdir()を行い、gfs_closedir()を実行するまでの性能を測定します。
-	posixの場合はopendir()から<CODE
-CLASS="PARAMETER"
->テスト実施数</CODE
->分readdir()を行い、closedir()を実行するまでの性能を測定します。
-        出力結果は上記測定にかかった時間を<CODE
-CLASS="PARAMETER"
->テスト実施数</CODE
->で割った平均値です，
-      </P
-></DD
-><DT
->readdir+stat</DT
-><DD
-><P
->	上記readdirの測定時に<CODE
-CLASS="PARAMETER"
->テスト実施数</CODE
->分gfs_lstat_cached()またはlstat()を実行した時間を足して測定したものです。
-        出力結果は測定にかかった時間を<CODE
-CLASS="PARAMETER"
->テスト実施数</CODE
->で割った平均値です。
-      </P
-></DD
-><DT
->unlink</DT
-><DD
-><P
->	gfs_unlink()またはunlink()の性能を測定します。
+      </p></dd>
+<dt><span class="term">readdir</span></dt>
+<dd><p>
+	gfs_opendir_caching()から<em class="parameter"><code>テスト実施数</code></em>分gfs_readdir()を行い、gfs_closedir()を実行するまでの性能を測定します。
+	posixの場合はopendir()から<em class="parameter"><code>テスト実施数</code></em>分readdir()を行い、closedir()を実行するまでの性能を測定します。
+        出力結果は上記測定にかかった時間を<em class="parameter"><code>テスト実施数</code></em>で割った平均値です，
+      </p></dd>
+<dt><span class="term">readdir+stat</span></dt>
+<dd><p>
+	上記readdirの測定時に<em class="parameter"><code>テスト実施数</code></em>分gfs_lstat_cached()またはlstat()を実行した時間を足して測定したものです。
+        出力結果は測定にかかった時間を<em class="parameter"><code>テスト実施数</code></em>で割った平均値です。
+      </p></dd>
+<dt><span class="term">unlink</span></dt>
+<dd><p>
+	gfs_unlink()またはunlink()の性能を測定します。
         出力結果は１回辺りの平均値です。
-      </P
-></DD
-><DT
->mkdir</DT
-><DD
-><P
->	gfs_mkdir()またはmkdir()の性能を測定します。
+      </p></dd>
+<dt><span class="term">mkdir</span></dt>
+<dd><p>
+	gfs_mkdir()またはmkdir()の性能を測定します。
         出力結果は１回辺りの平均値です。
-      </P
-></DD
-><DT
->stat</DT
-><DD
-><P
->	gfs_lstat()またはlstat()の性能を測定します。
+      </p></dd>
+<dt><span class="term">stat</span></dt>
+<dd><p>
+	gfs_lstat()またはlstat()の性能を測定します。
         出力結果は１回辺りの平均値です。
-      </P
-></DD
-><DT
->chmod</DT
-><DD
-><P
->	gfs_chmod()またはchmod()の性能を測定します。
+      </p></dd>
+<dt><span class="term">chmod</span></dt>
+<dd><p>
+	gfs_chmod()またはchmod()の性能を測定します。
         出力結果は１回辺りの平均値です。
-      </P
-></DD
-><DT
->utimes</DT
-><DD
-><P
->	gfs_utimes()またはutimes()の性能を測定します。
+      </p></dd>
+<dt><span class="term">utimes</span></dt>
+<dd><p>
+	gfs_utimes()またはutimes()の性能を測定します。
         出力結果は１回辺りの平均値です。
-      </P
-></DD
-><DT
->rename</DT
-><DD
-><P
->	gfs_rename()またはrename()の性能を測定します。
+      </p></dd>
+<dt><span class="term">rename</span></dt>
+<dd><p>
+	gfs_rename()またはrename()の性能を測定します。
         出力結果は１回辺りの平均値です。
-      </P
-></DD
-><DT
->symlink</DT
-><DD
-><P
->	gfs_symlink()またはsymlink()の性能を測定します。
+      </p></dd>
+<dt><span class="term">symlink</span></dt>
+<dd><p>
+	gfs_symlink()またはsymlink()の性能を測定します。
         出力結果は１回辺りの平均値です。
-      </P
-></DD
-><DT
->readlink</DT
-><DD
-><P
->	gfs_readlink()またはreadlink()の性能を測定します。
+      </p></dd>
+<dt><span class="term">readlink</span></dt>
+<dd><p>
+	gfs_readlink()またはreadlink()の性能を測定します。
         出力結果は１回辺りの平均値です。
-      </P
-></DD
-><DT
->setxattr</DT
-><DD
-><P
->	gfs_setxattr()またはsetxattr()の性能を測定します。
+      </p></dd>
+<dt><span class="term">setxattr</span></dt>
+<dd><p>
+	gfs_setxattr()またはsetxattr()の性能を測定します。
         出力結果は１回辺りの平均値です。
-      </P
-></DD
-><DT
->getxattr</DT
-><DD
-><P
->	gfs_getxattr()またはgetxattr()の性能を測定します。
+      </p></dd>
+<dt><span class="term">getxattr</span></dt>
+<dd><p>
+	gfs_getxattr()またはgetxattr()の性能を測定します。
         出力結果は１回辺りの平均値です。
-      </P
-></DD
-><DT
->removexattr</DT
-><DD
-><P
->	gfs_removexattr()またはremovexattr()の性能を測定します。
+      </p></dd>
+<dt><span class="term">removexattr</span></dt>
+<dd><p>
+	gfs_removexattr()またはremovexattr()の性能を測定します。
         出力結果は１回辺りの平均値です。
-      </P
-></DD
-><DT
->rmdir</DT
-><DD
-><P
->	gfs_rmdir()またはrmdir()の性能を測定します。
+      </p></dd>
+<dt><span class="term">rmdir</span></dt>
+<dd><p>
+	gfs_rmdir()またはrmdir()の性能を測定します。
         出力結果は１回辺りの平均値です。
-      </P
-></DD
-></DL
-></DIV
-></P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-n, --number</CODE
-> <CODE
-CLASS="PARAMETER"
->テスト実施数</CODE
-></DT
-><DD
-><P
->それぞれの測定項目に対して何回実施するかを指定します。デフォルトは250です。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-t, --testdir</CODE
-> <CODE
-CLASS="PARAMETER"
->テストディレクトリ</CODE
-></DT
-><DD
-><P
->テストを実施するディレクトリを指定します。
+      </p></dd>
+</dl></div>
+<p>
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-n, --number</code> <em class="parameter"><code>テスト実施数</code></em></span></dt>
+<dd><p>
+それぞれの測定項目に対して何回実施するかを指定します。デフォルトは250です。
+</p></dd>
+<dt><span class="term"><code class="option">-t, --testdir</code> <em class="parameter"><code>テストディレクトリ</code></em></span></dt>
+<dd><p>
+テストを実施するディレクトリを指定します。
 gfarm url(gfarm:///で始まるもの)を指定した場合、該当のgfarm上のディレクトリに対してlibgfarmの関数を使用した場合の性能を測定します。
 file url(file:///で始まるもの)を指定した場合、該当のunixファイルシステム上にposixの関数を使用した場合の性能を測定します。
-デフォルトはgfarm:///tmpです。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-u, --uinit</CODE
-> <CODE
-CLASS="PARAMETER"
->出力の単位</CODE
-></DT
-><DD
-><P
->ops(operations per second)またはusecを指定します。指定した単位で出力を返します。デフォルトはopsです。</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+デフォルトはgfarm:///tmpです。
+</p></dd>
+<dt><span class="term"><code class="option">-u, --uinit</code> <em class="parameter"><code>出力の単位</code></em></span></dt>
+<dd><p>ops(operations per second)またはusecを指定します。指定した単位で出力を返します。デフォルトはopsです。
+</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

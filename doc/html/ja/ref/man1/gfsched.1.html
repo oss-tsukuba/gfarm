@@ -1,298 +1,114 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD><META http-equiv="Content-Type" content="text/html; charset=UTF-8"><TITLE
->gfsched</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFSCHED.1"
-></A
->gfsched</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfsched&nbsp;--&nbsp;ファイルシステムノードをスケジューリングし、利用可能なノードを表示</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfsched</B
->  -f <TT
-CLASS="REPLACEABLE"
-><I
->gfarm-URL</I
-></TT
->  [-D <TT
-CLASS="REPLACEABLE"
-><I
->ドメイン名</I
-></TT
->] [-n <TT
-CLASS="REPLACEABLE"
-><I
->ノード数</I
-></TT
->] [-LMclw]</P
-><P
-><B
-CLASS="COMMAND"
->gfsched</B
-> [-P <TT
-CLASS="REPLACEABLE"
-><I
->gfarm-URL</I
-></TT
->] [-D <TT
-CLASS="REPLACEABLE"
-><I
->ドメイン名</I
-></TT
->] [-n <TT
-CLASS="REPLACEABLE"
-><I
->ノード数</I
-></TT
->] [-LMlw]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->  <B
-CLASS="COMMAND"
->gfsched</B
-> に
-  <CODE
-CLASS="OPTION"
->-f</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-> オプションを
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfsched</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfsched">
+<a name="gfsched.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfsched — 
+
+ファイルシステムノードをスケジューリングし、利用可能なノードを表示
+</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfsched</code>   -f <em class="replaceable"><code>gfarm-URL</code></em>  [-D <em class="replaceable"><code>ドメイン名</code></em>] [-n <em class="replaceable"><code>ノード数</code></em>] [-LMclw]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfsched</code>  [-P <em class="replaceable"><code>gfarm-URL</code></em>] [-D <em class="replaceable"><code>ドメイン名</code></em>] [-n <em class="replaceable"><code>ノード数</code></em>] [-LMlw]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+  <span class="command"><strong>gfsched</strong></span> に
+  <code class="option">-f</code> <em class="parameter"><code>gfarm-URL</code></em> オプションを
   指定した場合、そのgfarmファイルを保持するファイルシステムノードの
-  うちで、現在利用可能なもの表示します。</P
-><P
->  <CODE
-CLASS="OPTION"
->-f</CODE
->オプションを指定しなかった場合、利用可能な
+  うちで、現在利用可能なもの表示します。
+
+</p>
+<p>
+  <code class="option">-f</code>オプションを指定しなかった場合、利用可能な
   ファイルシステムノードを表示します。この場合、
-  <CODE
-CLASS="OPTION"
->-P</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-> オプションで
+  <code class="option">-P</code> <em class="parameter"><code>gfarm-URL</code></em> オプションで
   パス名か gfarm URL を指定することにより、表示対象のメタデータサーバを
-  切替えることができます。</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-D</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->ドメイン名</I
-></TT
-></DT
-><DD
-><P
->ドメイン名ないしホスト名を指定し、検索対象のファイルシステムノードを
-絞ります。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-L</CODE
-></DT
-><DD
-><P
->そのホストに対して、認証が成功するか否かの確認を省略します。
+  切替えることができます。
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-D</code> <em class="parameter"><code>ドメイン名</code></em></span></dt>
+<dd><p>ドメイン名ないしホスト名を指定し、検索対象のファイルシステムノードを
+絞ります。
+</p></dd>
+<dt><span class="term"><code class="option">-L</code></span></dt>
+<dd><p>そのホストに対して、認証が成功するか否かの確認を省略します。
 高速になりますが、認証不能なホストがスケジューリングされてしまう
-危険があります。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-M</CODE
-></DT
-><DD
-><P
->メタデータサーバに問い合わせた結果のみを表示し、クライアント側での
+危険があります。
+</p></dd>
+<dt><span class="term"><code class="option">-M</code></span></dt>
+<dd><p>メタデータサーバに問い合わせた結果のみを表示し、クライアント側での
 スケジューリング処理を行ないません。
 このオプションを指定すると、動作は高速になりますが、ネットワーク的に到
-達不能なホストや、認証不能なホストが表示される危険があります。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-P</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-></DT
-><DD
-><P
->ファイルシステムノードを管理するメタデータサーバを特定する
+達不能なホストや、認証不能なホストが表示される危険があります。
+</p></dd>
+<dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>gfarm-URL</code></em></span></dt>
+<dd><p>ファイルシステムノードを管理するメタデータサーバを特定する
 ために、gfarm-URL ないしパス名を指定します。
-このオプションは、<CODE
-CLASS="OPTION"
->-f</CODE
-> オプションと排他的です。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-f</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-></DT
-><DD
-><P
->指定したファイルについて、その複製を保持するファイルシステムノードを
+このオプションは、<code class="option">-f</code> オプションと排他的です。
+</p></dd>
+<dt><span class="term"><code class="option">-f</code> <em class="parameter"><code>gfarm-URL</code></em></span></dt>
+<dd><p>指定したファイルについて、その複製を保持するファイルシステムノードを
 検索します。
-このオプションは、<CODE
-CLASS="OPTION"
->-P</CODE
-> オプションと排他的です。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-c</CODE
-></DT
-><DD
-><P
->オプション「<CODE
-CLASS="OPTION"
->-f</CODE
->」で指定したファイルが存在しない
+このオプションは、<code class="option">-P</code> オプションと排他的です。
+</p></dd>
+<dt><span class="term"><code class="option">-c</code></span></dt>
+<dd>
+<p>オプション「<code class="option">-f</code>」で指定したファイルが存在しない
 場合で、かつ、このオプションを指定した場合、ファイルを新規作成した
-場合のスケジューリング情報を表示します。</P
-><P
->現在、このオプションを利用すると、指定したファイルを新規作成します。
-この挙動は将来変更される可能性があるのでご注意ください。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-l</CODE
-></DT
-><DD
-><P
->ホスト名のみならず、ポート番号も表示します。
-このオプションの表示形式は、将来変更される可能性がありますのでご注意ください。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-n</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->ノード数</I
-></TT
-></DT
-><DD
-><P
->指定した数をファイルシステムノードの表示を試みます。
+場合のスケジューリング情報を表示します。
+</p>
+<p>
+現在、このオプションを利用すると、指定したファイルを新規作成します。
+この挙動は将来変更される可能性があるのでご注意ください。
+</p>
+</dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd><p>ホスト名のみならず、ポート番号も表示します。
+このオプションの表示形式は、将来変更される可能性がありますのでご注意ください。
+</p></dd>
+<dt><span class="term"><code class="option">-n</code> <em class="parameter"><code>ノード数</code></em></span></dt>
+<dd><p>指定した数をファイルシステムノードの表示を試みます。
 ノード数がその数に満たない場合には、そこで表示を打ち切ります。
-このオプションを指定しない場合、条件を満たす全ノードを表示します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-w</CODE
-></DT
-><DD
-><P
->ファイルの書き込みを行なう前提で、スケジューリングを行ないます。
+このオプションを指定しない場合、条件を満たす全ノードを表示します。
+</p></dd>
+<dt><span class="term"><code class="option">-w</code></span></dt>
+<dd>
+<p>ファイルの書き込みを行なう前提で、スケジューリングを行ないます。
 このオプションを指定した場合、ディスクの空き容量が足りないファイルシステム
-ノードは除外されます。</P
-><P
->このオプションと、<CODE
-CLASS="OPTION"
->-f</CODE
-> オプションを同時に指定し、
+ノードは除外されます。
+</p>
+<p>
+このオプションと、<code class="option">-f</code> オプションを同時に指定し、
 かつ、そのファイルが既存のプロセスによって書き込みオープンされている場合には、
-<CODE
-CLASS="OPTION"
->-n</CODE
-> の指定に関わらず、現在このファイルの書き込み用に
-割り当てられているファイルシステムノード 1つのみを表示します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->引数オプションを表示します。</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="EXAMPLES"
-></A
-><H2
->EXAMPLES</H2
-><P
->以下は、メタデータサーバが動作中であると把握している、ファイルシステムノードを
-問い合わせる例です。</P
-><P
-CLASS="LITERALLAYOUT"
->$&nbsp;gfsched&nbsp;-M</P
-></DIV
-></BODY
-></HTML
->
+<code class="option">-n</code> の指定に関わらず、現在このファイルの書き込み用に
+割り当てられているファイルシステムノード 1つのみを表示します。
+</p>
+</dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>引数オプションを表示します。</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="EXAMPLES">
+<a name="examples"></a><h2>EXAMPLES</h2>
+<p>
+以下は、メタデータサーバが動作中であると把握している、ファイルシステムノードを
+問い合わせる例です。
+</p>
+<div class="literallayout"><p><br>
+$ gfsched -M<br>
+</p></div>
+</div>
+</div></body>
+</html>

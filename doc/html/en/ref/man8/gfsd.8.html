@@ -1,299 +1,112 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfsd</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFSD.8"
-></A
->gfsd</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfsd(8)&nbsp;--&nbsp;Gfarm filesystem daemon</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfsd</B
->  [<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
->]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfsd</B
-> is a filesystem daemon for the Gfarm filesystem, which runs on every filesystem node, usually, with root privileges.</P
-><P
-><B
-CLASS="COMMAND"
->gfsd</B
-> provides remote file operations with access control in the
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfsd</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfsd">
+<a name="gfsd.8"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfsd — Gfarm filesystem daemon</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfsd</code>  [<em class="replaceable"><code>options</code></em>]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><span class="command"><strong>gfsd</strong></span> is a filesystem daemon for the Gfarm filesystem, which runs on every filesystem node, usually, with root privileges.</p>
+<p><span class="command"><strong>gfsd</strong></span> provides remote file operations with access control in the
 Gfarm filesystem as well as user authentication, file replication,
-and node resource status monitoring.</P
-><P
->It is possible for <B
-CLASS="COMMAND"
->gfsd</B
-> to be executed as a non-privileged user
-process, although only the user that executes the <B
-CLASS="COMMAND"
->gfsd</B
-> can be authenticated.
+and node resource status monitoring.</p>
+<p>It is possible for <span class="command"><strong>gfsd</strong></span> to be executed as a non-privileged user
+process, although only the user that executes the <span class="command"><strong>gfsd</strong></span> can be authenticated.
 Other users cannot use it.
-For details, see SETUP.private.en document.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-L</CODE
-> <CODE
-CLASS="PARAMETER"
->log-level</CODE
-></DT
-><DD
-><P
->Specifies a log priority level.  The log output, which priority
+For details, see SETUP.private.en document.
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-L</code> <em class="parameter"><code>log-level</code></em></span></dt>
+<dd><p>Specifies a log priority level.  The log output, which priority
 is higher or equal to this level, will be sent to syslog or standard error.
 Please refer gfarm2.conf(5) for the priority levels which can be specified
-by this option.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-P</CODE
-> <CODE
-CLASS="PARAMETER"
->pid-file</CODE
-></DT
-><DD
-><P
->Specifies a file name which records the process ID of gfsd.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-c</CODE
-></DT
-><DD
-><P
->When starting up, gfsd investigates all files stored in a spool
+by this option.
+</p></dd>
+<dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>pid-file</code></em></span></dt>
+<dd><p>Specifies a file name which records the process ID of gfsd.</p></dd>
+<dt><span class="term"><code class="option">-c</code></span></dt>
+<dd>
+<p>
+When starting up, gfsd investigates all files stored in a spool
 directory.  This option is useful when a hostname of a file system
 node is changed.   Valid file copies will be registered to the
-metadata server.</P
-><P
->When the <CODE
-CLASS="OPTION"
->-c</CODE
-> option is specified twice (or
-the <CODE
-CLASS="OPTION"
->-cc</CODE
-> option), invalid file copies that are not
-registered in the metadata server are deleted.</P
-><P
->When the <CODE
-CLASS="OPTION"
->-c</CODE
-> option is specified three times (or
-the <CODE
-CLASS="OPTION"
->-ccc</CODE
-> option), invalid file copies that are not
+metadata server.
+</p>
+<p>
+When the <code class="option">-c</code> option is specified twice (or
+the <code class="option">-cc</code> option), invalid file copies that are not
+registered in the metadata server are deleted.
+</p>
+<p>
+When the <code class="option">-c</code> option is specified three times (or
+the <code class="option">-ccc</code> option), invalid file copies that are not
 registered in the metadata server are moved to the lost+found
 directory in the Gfarm file system.  Furthermore, invalid metadata
 pointing to a missing file copy of the file system node are deleted.
-This is the default behavior.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-d</CODE
-></DT
-><DD
-><P
->Specifies the debug mode.  With the -d option, gfsd runs as a
-foreground process, not a daemon.</P
-><P
->If this option is specified and <CODE
-CLASS="OPTION"
->-L</CODE
-> is not specified,
-the log level is set to "debug".</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-f</CODE
-> <CODE
-CLASS="PARAMETER"
->config-file</CODE
-></DT
-><DD
-><P
->Specifies a configuration file that is read instead of the default
-configuration file.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-h</CODE
-> <CODE
-CLASS="PARAMETER"
->hostname</CODE
-></DT
-><DD
-><P
->Specifies my own canonical host name.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-l</CODE
-> <CODE
-CLASS="PARAMETER"
->IP-address</CODE
-></DT
-><DD
-><P
->Specifies the IP address from which the gfsd accepts TCP and UDP
+This is the default behavior.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd>
+<p>Specifies the debug mode.  With the -d option, gfsd runs as a
+foreground process, not a daemon.</p>
+<p>
+If this option is specified and <code class="option">-L</code> is not specified,
+the log level is set to "debug".
+</p>
+</dd>
+<dt><span class="term"><code class="option">-f</code> <em class="parameter"><code>config-file</code></em></span></dt>
+<dd><p>Specifies a configuration file that is read instead of the default
+configuration file.</p></dd>
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>hostname</code></em></span></dt>
+<dd><p>Specifies my own canonical host name.</p></dd>
+<dt><span class="term"><code class="option">-l</code> <em class="parameter"><code>IP-address</code></em></span></dt>
+<dd><p>Specifies the IP address from which the gfsd accepts TCP and UDP
 requests.
 The default address is all IP addresses of the host.
 This option is useful to invoke multiple instances of gfsd
-to provide multiple spool directories on the host.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-r</CODE
-> <CODE
-CLASS="PARAMETER"
->directory</CODE
-></DT
-><DD
-><P
->Specifies a spool directory
-for a Gfarm filesystem on this filesystem node.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-s</CODE
-> <CODE
-CLASS="PARAMETER"
->syslog-facility</CODE
-></DT
-><DD
-><P
->Specifies a syslog facility to report errors by gfsd.  By default,
-local0 is used.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-v</CODE
-></DT
-><DD
-><P
->Makes gfsd output verbose log message on authentication.
-This is useful, when one has to resolve an issue about GSI authenticaion.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->Displays a list of command options.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="FILES"
-></A
-><H2
->FILES</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><TT
-CLASS="FILENAME"
->%%SYSCONFDIR%%/gfarm2.conf</TT
-></DT
-><DD
-><P
->configuration file</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm2.conf</SPAN
->(5)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+to provide multiple spool directories on the host.
+</p></dd>
+<dt><span class="term"><code class="option">-r</code> <em class="parameter"><code>directory</code></em></span></dt>
+<dd><p>Specifies a spool directory
+for a Gfarm filesystem on this filesystem node.
+</p></dd>
+<dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>syslog-facility</code></em></span></dt>
+<dd><p>Specifies a syslog facility to report errors by gfsd.  By default,
+local0 is used.</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>Makes gfsd output verbose log message on authentication.
+This is useful, when one has to resolve an issue about GSI authenticaion.
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>Displays a list of command options.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="FILES">
+<a name="files"></a><h2>FILES</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code></span></dt>
+<dd><p>configuration file</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
+</p>
+</div>
+</div></body>
+</html>

@@ -1,144 +1,48 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD><META http-equiv="Content-Type" content="text/html; charset=UTF-8"><TITLE
->gfperf-tree</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFPERF-TREE.1"
-></A
->gfperf-tree</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfperf-tree&nbsp;--&nbsp;Gfarm ディレクトリツリーの性能測定を行う。</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfperf-tree</B
->  [-t, --testdir <TT
-CLASS="REPLACEABLE"
-><I
->テストディレクトリ</I
-></TT
->] [-w, --width <TT
-CLASS="REPLACEABLE"
-><I
->ディレクトリ数</I
-></TT
->] [-d, --depth <TT
-CLASS="REPLACEABLE"
-><I
->ディレクトリ階層</I
-></TT
->] [-u, --unit <TT
-CLASS="REPLACEABLE"
-><I
->出力の単位</I
-></TT
->]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->引数 <CODE
-CLASS="PARAMETER"
->テストディレクトリ</CODE
-> にテスト用のディレクトリツリーを作成、削除し、その実行性能を測定します。生成されるディクトリの数はwidthのdepth乗です。</P
-><P
->測定する内容は指定されたディレクトリツリーの生成、及び削除にかかった時間を測定し、指定された単位で表示します。</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-t, --testdir</CODE
-> <CODE
-CLASS="PARAMETER"
->テストディレクトリ</CODE
-></DT
-><DD
-><P
->テストを実施するディレクトリを指定します。
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfperf-tree</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfperf-tree">
+<a name="gfperf-tree.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfperf-tree — Gfarm ディレクトリツリーの性能測定を行う。</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfperf-tree</code>  [-t, --testdir <em class="replaceable"><code>テストディレクトリ</code></em>] [-w, --width <em class="replaceable"><code>ディレクトリ数</code></em>] [-d, --depth <em class="replaceable"><code>ディレクトリ階層</code></em>] [-u, --unit <em class="replaceable"><code>出力の単位</code></em>]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>引数 <em class="parameter"><code>テストディレクトリ</code></em> にテスト用のディレクトリツリーを作成、削除し、その実行性能を測定します。生成されるディクトリの数はwidthのdepth乗です。
+</p>
+<p>測定する内容は指定されたディレクトリツリーの生成、及び削除にかかった時間を測定し、指定された単位で表示します。
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-t, --testdir</code> <em class="parameter"><code>テストディレクトリ</code></em></span></dt>
+<dd><p>
+テストを実施するディレクトリを指定します。
 gfarm url(gfarm:///で始まるもの)を指定した場合、該当のgfarm上のディレクトリに対してlibgfarmの関数を使用した場合の性能を測定します。
 file url(file:///で始まるもの)を指定した場合、該当のunixファイルシステム上にposixの関数を使用した場合の性能を測定します。
-デフォルトはgfarm:///tmpです。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-w, --width</CODE
-> <CODE
-CLASS="PARAMETER"
->ディレクトリ数</CODE
-></DT
-><DD
-><P
->サブディレクトリを作成する数を指定します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-d, --depth</CODE
-> <CODE
-CLASS="PARAMETER"
->ディレクトリ階層</CODE
-></DT
-><DD
-><P
->サブディレクトリを何階層作成するか指定します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-u, --uinit</CODE
-> <CODE
-CLASS="PARAMETER"
->出力の単位</CODE
-></DT
-><DD
-><P
->ops(operations per second)またはusecを指定します。指定した単位で出力を返します。デフォルトはopsです。</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+デフォルトはgfarm:///tmpです。
+</p></dd>
+<dt><span class="term"><code class="option">-w, --width</code> <em class="parameter"><code>ディレクトリ数</code></em></span></dt>
+<dd><p>
+サブディレクトリを作成する数を指定します。
+</p></dd>
+<dt><span class="term"><code class="option">-d, --depth</code> <em class="parameter"><code>ディレクトリ階層</code></em></span></dt>
+<dd><p>
+サブディレクトリを何階層作成するか指定します。
+</p></dd>
+<dt><span class="term"><code class="option">-u, --uinit</code> <em class="parameter"><code>出力の単位</code></em></span></dt>
+<dd><p>ops(operations per second)またはusecを指定します。指定した単位で出力を返します。デフォルトはopsです。
+</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

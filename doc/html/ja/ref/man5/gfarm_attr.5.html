@@ -1,180 +1,100 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD><META http-equiv="Content-Type" content="text/html; charset=UTF-8"><TITLE
->gfarm_attr</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFARM-ATTR.5"
-></A
->gfarm_attr</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfarm_attr&nbsp;--&nbsp;Gfarm拡張属性</DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->Gfarmの各ファイルやディレクトリは，拡張属性を複数持つことができます．拡
-張属性は，名前に対する値のペアです．</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="XATTRNAMESPACE"
-></A
-><H2
->拡張属性の名前空間</H2
-><P
->"gfarm."と"gfarm_root."で始まる名前の拡張属性はGfarmが特別に扱いま
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfarm_attr</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm_attr">
+<a name="gfarm-attr.5"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfarm_attr — Gfarm拡張属性</p>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+Gfarmの各ファイルやディレクトリは，拡張属性を複数持つことができます．拡
+張属性は，名前に対する値のペアです．
+</p>
+</div>
+<div class="refsect1" title="拡張属性の名前空間">
+<a name="xattrnamespace"></a><h2>拡張属性の名前空間</h2>
+<p>
+"gfarm."と"gfarm_root."で始まる名前の拡張属性はGfarmが特別に扱いま
 す．"user."で始まる名前の拡張属性はユーザが自由に値を格納できます．
-XML拡張属性は名前も自由に指定してXMLを格納できます．</P
-><P
->誰でも"gfarm.*"の拡張属性を取得できます．所有者，またはgfarmrootグルー
-プに所属するユーザだけが"gfarm.*"の拡張属性を変更できます．</P
-><P
->gfarmrootグループに所属するユーザ、または"gfarm_root.user"に記述された
+XML拡張属性は名前も自由に指定してXMLを格納できます．
+</p>
+<p>
+誰でも"gfarm.*"の拡張属性を取得できます．所有者，またはgfarmrootグルー
+プに所属するユーザだけが"gfarm.*"の拡張属性を変更できます．
+</p>
+<p>
+gfarmrootグループに所属するユーザ、または"gfarm_root.user"に記述された
 ユーザ、または"gfarm_root.group"に記述されたグループが、"gfarm_root.*"
-拡張属性を取得と変更できます。</P
-><P
->ファイルまたはディレクトリのパーミッションによって"user.*"拡張属性を取
-得と変更できます．</P
-><P
->XML拡張属性は，ファイルまたはディレクトリのパーミッションによって読み書
-きできます．</P
-><P
->シンボリックリンクは拡張属性を持つことができません．</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="GFARM-XATTR"
-></A
-><H2
->Gfarm 拡張属性</H2
-><P
->以下はGfarmのシステムが使用する拡張属性名です．</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="PARAMETER"
->gfarm.ncopy</CODE
-></DT
-><DD
-><P
->gfmd で自動的にファイルを複製する際に目標とする複製の合計数を格納します．</P
-></DD
-><DT
-><CODE
-CLASS="PARAMETER"
->gfarm.acl_access</CODE
-></DT
-><DD
-><P
->ACL(アクセスコントロールリスト)を格納します．</P
-></DD
-><DT
-><CODE
-CLASS="PARAMETER"
->gfarm.acl_default</CODE
-></DT
-><DD
-><P
->デフォルトACLを格納します．ディレクトリだけがこの拡張属性を利用します．</P
-></DD
-><DT
-><CODE
-CLASS="PARAMETER"
->gfarm_root.user</CODE
-></DT
-><DD
-><P
->このファイルやディレクトリに特権を与えるユーザ名のリストを格納します．
+拡張属性を取得と変更できます。
+</p>
+<p>
+ファイルまたはディレクトリのパーミッションによって"user.*"拡張属性を取
+得と変更できます．
+</p>
+<p>
+XML拡張属性は，ファイルまたはディレクトリのパーミッションによって読み書
+きできます．
+</p>
+<p>
+シンボリックリンクは拡張属性を持つことができません．
+</p>
+</div>
+<div class="refsect1" title="Gfarm 拡張属性">
+<a name="gfarm-xattr"></a><h2>Gfarm 拡張属性</h2>
+<p>
+以下はGfarmのシステムが使用する拡張属性名です．
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><em class="parameter"><code>gfarm.ncopy</code></em></span></dt>
+<dd><p>
+gfmd で自動的にファイルを複製する際に目標とする複製の合計数を格納します．
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>gfarm.acl_access</code></em></span></dt>
+<dd><p>
+ACL(アクセスコントロールリスト)を格納します．
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>gfarm.acl_default</code></em></span></dt>
+<dd><p>
+デフォルトACLを格納します．ディレクトリだけがこの拡張属性を利用します．
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>gfarm_root.user</code></em></span></dt>
+<dd><p>
+このファイルやディレクトリに特権を与えるユーザ名のリストを格納します．
 名前は改行 (\n) で区切られます．この拡張属性がディレクトリに付いている
-場合，新規作成された子エントリにもこの拡張属性がコピーされます．</P
-></DD
-><DT
-><CODE
-CLASS="PARAMETER"
->gfarm_root.group</CODE
-></DT
-><DD
-><P
->このファイルやディレクトリに特権を与えるグループ名のリストを格納しま
+場合，新規作成された子エントリにもこの拡張属性がコピーされます．
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>gfarm_root.group</code></em></span></dt>
+<dd><p>
+このファイルやディレクトリに特権を与えるグループ名のリストを格納しま
 す．名前は改行 (\n) で区切られます．この拡張属性がディレクトリに付いて
-いる場合，新規作成された子エントリにもこの拡張属性がコピーされます．</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SECURITY"
-></A
-><H2
->SECURITY NOTES</H2
-><P
->任意のディレクトリやファイルの gfarm_root.{user,group} 拡張属性に，信頼
+いる場合，新規作成された子エントリにもこの拡張属性がコピーされます．
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SECURITY NOTES">
+<a name="security"></a><h2>SECURITY NOTES</h2>
+<p>
+任意のディレクトリやファイルの gfarm_root.{user,group} 拡張属性に，信頼
 していないユーザを登録している場合，-o suid,allow_other オプションを指
 定して root 権限でマウントしている gfarm2fs には (-o ro オプションまた
 は -o default_permissions オプションを付けていたとしても) セキュリティ・
 ホールがあります．このため，gfarm2fs の -o suid,allow_other オプション
 と gfarm_root.{user,group} 拡張属性の両方を同時に利用すべきではありませ
-ん．</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfxattr</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfgetfacl</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfsetfacl</SPAN
->(1)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+ん．
+</p>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfxattr</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfgetfacl</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfsetfacl</span>(1)</span></p>
+</div>
+</div></body>
+</html>

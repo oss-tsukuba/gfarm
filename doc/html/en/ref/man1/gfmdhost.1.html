@@ -1,161 +1,60 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfmdhost</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFMDHOST.1"
-></A
->gfmdhost</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfmdhost&nbsp;--&nbsp;Gfarm metadata server host maintenance command</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfmdhost</B
-> [-l] [-P <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->]</P
-><P
-><B
-CLASS="COMMAND"
->gfmdhost</B
-> {-c | -m} [-P <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->] [-p <TT
-CLASS="REPLACEABLE"
-><I
->port-number</I
-></TT
->] [-C <TT
-CLASS="REPLACEABLE"
-><I
->cluster-name</I
-></TT
->] [-t 
-     {m | c | s}
-  ] {<TT
-CLASS="REPLACEABLE"
-><I
->metadata-server-name</I
-></TT
->}</P
-><P
-><B
-CLASS="COMMAND"
->gfmdhost</B
-> {-d} [-P <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->] {<TT
-CLASS="REPLACEABLE"
-><I
->metadata-server-name</I
-></TT
->}</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfmdhost</B
-> is used to display and maintain
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfmdhost</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfmdhost">
+<a name="gfmdhost.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfmdhost — Gfarm metadata server host maintenance command</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  [-l] [-P <em class="replaceable"><code>path</code></em>]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  { -c  |   -m } [-P <em class="replaceable"><code>path</code></em>] [-p <em class="replaceable"><code>port-number</code></em>] [-C <em class="replaceable"><code>cluster-name</code></em>] [-t 
+    { m  |   c  |   s }
+  ] {<em class="replaceable"><code>metadata-server-name</code></em>}</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  {-d} [-P <em class="replaceable"><code>path</code></em>] {<em class="replaceable"><code>metadata-server-name</code></em>}</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><span class="command"><strong>gfmdhost</strong></span> is used to display and maintain
 the information about synchronous and asynchronous replicated metadata
 servers.
-<B
-CLASS="COMMAND"
->gfmdhost</B
-> has functions which can be selected by
+<span class="command"><strong>gfmdhost</strong></span> has functions which can be selected by
 -l, -c, -m and -d options.
 These functions are mutually exclusive, and only one option
 among them can be specified.
 If none of them is specified, registered metadata server (gfmd host)
-names will be listed.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="FUNCTIONS"
-></A
-><H2
->FUNCTIONS</H2
-><P
->  The functions of <B
-CLASS="COMMAND"
->gfmdhost</B
-> command are listed in following.</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
->&#60;none&#62;</DT
-><DD
-><P
->        If no function is specified,
+names will be listed.
+</p>
+</div>
+<div class="refsect1" title="FUNCTIONS">
+<a name="functions"></a><h2>FUNCTIONS</h2>
+<p>
+  The functions of <span class="command"><strong>gfmdhost</strong></span> command are listed in following.
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term">&lt;none&gt;</span></dt>
+<dd><p>
+        If no function is specified,
 	all the registered gfmd hosts are displayed
 	in alphabetical order.
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-l</CODE
-></DT
-><DD
-><P
->        All registered gfmd hosts are listed with detailed information.
+      </p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd>
+<p>
+        All registered gfmd hosts are listed with detailed information.
 	They are grouped by the clusters and ordered alphabetically.
-      </P
-><P
->        The detailed information is displayed in the following order.
-      </P
-><P
-><CODE
-CLASS="OPTION"
->Connection State (+|-|?|x|e)</CODE
-></P
-><P
->        "+" means that the gfmd is connected to the master gfmd.
+      </p>
+<p>
+        The detailed information is displayed in the following order.
+      </p>
+<p><code class="option">Connection State (+|-|?|x|e)</code></p>
+<p>
+        "+" means that the gfmd is connected to the master gfmd.
         "-" means that the gfmd is not connected to the master gfmd.
 	"?" means either the gfmd state is unknown because it's just
 	after the connection was established, or the master gfmd is
@@ -168,150 +67,77 @@ CLASS="OPTION"
 	In the case of "x" or "e", it may be displayed even when the
 	slave gfmd is down.
 	This column for the master gfmd is always "+".
-      </P
-><P
-><CODE
-CLASS="OPTION"
->Server Type (master|slave)</CODE
-></P
-><P
->        This represents whether the gfmd is master or slave.
-      </P
-><P
-><CODE
-CLASS="OPTION"
->Replication Type (sync|async|-)</CODE
-></P
-><P
->        "sync" means a synchronous replication.
+      </p>
+<p><code class="option">Server Type (master|slave)</code></p>
+<p>
+        This represents whether the gfmd is master or slave.
+      </p>
+<p><code class="option">Replication Type (sync|async|-)</code></p>
+<p>
+        "sync" means a synchronous replication.
         "async" means an asynchronous replication.
 	This column for the master is always "-".
-      </P
-><P
-><CODE
-CLASS="OPTION"
->Configration of Master Candidate (c|m|s)</CODE
-></P
-><P
->        "m" means the default master gfmd, "c" means a master
+      </p>
+<p><code class="option">Configration of Master Candidate (c|m|s)</code></p>
+<p>
+        "m" means the default master gfmd, "c" means a master
 	candidate that can be selected as a master gfmd,
 	and "s" means a gfmd that is not a master candidate and only
 	works for a slave gfmd.
-      </P
-><P
-><CODE
-CLASS="OPTION"
->Cluster Name</CODE
-></P
-><P
->        A cluster name where the gfmd belongs to.
+      </p>
+<p><code class="option">Cluster Name</code></p>
+<p>
+        A cluster name where the gfmd belongs to.
         "(default)" is displayed for the default cluster.
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-c</CODE
-></DT
-><DD
-><P
->        Registers the gfmd host that is specified in the argument.
+      </p>
+</dd>
+<dt><span class="term"><code class="option">-c</code></span></dt>
+<dd><p>
+        Registers the gfmd host that is specified in the argument.
 	-C, -p, -t can be optionally specified.
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-m</CODE
-></DT
-><DD
-><P
->        Modifies the gfmd host that is specified in the argument.
+      </p></dd>
+<dt><span class="term"><code class="option">-m</code></span></dt>
+<dd><p>
+        Modifies the gfmd host that is specified in the argument.
 	-C, -p, -t can be optionally specified.
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-d</CODE
-></DT
-><DD
-><P
->        Deletes the gfmd host that is specified in the argument.
+      </p></dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>
+        Deletes the gfmd host that is specified in the argument.
 	The master gfmd cannot be deleted.
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->Prints usage.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-C</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->cluster-name</I
-></TT
-></DT
-><DD
-><P
->	This option specifies a cluster name where the gfmd host
+      </p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>Prints usage.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-C</code> <em class="parameter"><code>cluster-name</code></em></span></dt>
+<dd>
+<p>
+	This option specifies a cluster name where the gfmd host
 	belongs to.  If it is not specified, the default cluster is
 	assumed.  This option is only available with -c or -m option.
-      </P
-><P
->	The cluster name means a group of synchronous replicated
+      </p>
+<p>
+	The cluster name means a group of synchronous replicated
 	metadata servers.  That is, slave metadata servers in the same
 	cluster with the master metadata server are synchronously
 	replicated servers that can be changed to a master metadata
 	server without any loss of metadata operations.  Other
 	metadata servers are asynchronously replicated servers.
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-p</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->port-number</I
-></TT
-></DT
-><DD
-><P
->        This option specifies a port number of the gfmd.
+      </p>
+</dd>
+<dt><span class="term"><code class="option">-p</code> <em class="parameter"><code>port-number</code></em></span></dt>
+<dd><p>
+        This option specifies a port number of the gfmd.
 	If it is not specified, 601 is assumed.
 	This option is only available with -c or -m option.
-      </P
-></DD
-><DT
->-t {m|c|s}</DT
-><DD
-><P
->        This option specifies a configuration of master candidate.
+      </p></dd>
+<dt><span class="term">-t {m|c|s}</span></dt>
+<dd><p>
+        This option specifies a configuration of master candidate.
         It is only available with -c or -m option.
 	"m" means the default master, "c" means a master candidate and
 	and "s" means a slave only gfmd.
@@ -321,44 +147,20 @@ CLASS="PARAMETER"
 	If the gfmd that is not the default master is changed to the
 	default master by "-t m", the original default master is
         changed to a master candidate at the same time.
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-P</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->path</I
-></TT
-></DT
-><DD
-><P
->	This option specifies a pathname or a Gfarm URL to identify
+      </p></dd>
+<dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>path</code></em></span></dt>
+<dd><p>
+	This option specifies a pathname or a Gfarm URL to identify
 	a metadata server which will be accessed by this command.
 	If not specified, "/" is used as the default value.
-      </P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm2.conf</SPAN
->(5)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+      </p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
+</p>
+</div>
+</div></body>
+</html>

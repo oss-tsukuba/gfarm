@@ -1,174 +1,82 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD><META http-equiv="Content-Type" content="text/html; charset=UTF-8"><TITLE
->gfjournal</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFJOURNALADMIN.1"
-></A
->gfjournal</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfjournal&nbsp;--&nbsp;ジャーナルファイルの状態を出力する。</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfjournal</B
->  [<TT
-CLASS="REPLACEABLE"
-><I
->オプション</I
-></TT
->]  <TT
-CLASS="REPLACEABLE"
-><I
->ジャーナルファイル</I
-></TT
-> </P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfjournal</B
-> はジャーナルファイルを読み込み、
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfjournal</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfjournal">
+<a name="gfjournaladmin.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfjournal — ジャーナルファイルの状態を出力する。</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfjournal</code>  [<em class="replaceable"><code>オプション</code></em>]  <em class="replaceable"><code>ジャーナルファイル</code></em> </p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<span class="command"><strong>gfjournal</strong></span> はジャーナルファイルを読み込み、
 ファイルの状態に関する情報を標準出力に表示します。
 オプションを指定しなかった場合は、ジャーナルファイルの状態のサマリを
-以下のような形で表示します。</P
-><P
-CLASS="LITERALLAYOUT"
->	records&nbsp;&nbsp;seqnum(min/max)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;record&nbsp;length(min/max/ave)<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;30&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;31&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;24/&nbsp;&nbsp;&nbsp;&nbsp;120/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;37</P
-><P
->'-l' オプションを指定すると、これに加えてジャーナルファイル内のすべての
-レコードも表示します。</P
-><P
-CLASS="LITERALLAYOUT"
->	seqnum&nbsp;&nbsp;&nbsp;&nbsp;operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;length&nbsp;&nbsp;argument<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2&nbsp;BEGIN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;24<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3&nbsp;MDHOST_ADD&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;56&nbsp;name=gfmd1.example.com<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4&nbsp;END&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;24<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5&nbsp;BEGIN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;24<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;6&nbsp;USER_ADD&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;68&nbsp;username=gfarmadm<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7&nbsp;END&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;24<br>
+以下のような形で表示します。
+</p>
+<div class="literallayout"><p><br>
+	records  seqnum(min/max)          record length(min/max/ave)<br>
+	     30           2/          31          24/    120/     37<br>
+</p></div>
+<p>
+'-l' オプションを指定すると、これに加えてジャーナルファイル内のすべての
+レコードも表示します。
+</p>
+<div class="literallayout"><p><br>
+	seqnum    operation        length  argument<br>
+	        2 BEGIN                 24<br>
+	        3 MDHOST_ADD            56 name=gfmd1.example.com<br>
+	        4 END                   24<br>
+	        5 BEGIN                 24<br>
+	        6 USER_ADD              68 username=gfarmadm<br>
+	        7 END                   24<br>
 	(中略)<br>
-	records&nbsp;&nbsp;seqnum(min/max)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;record&nbsp;length(min/max/ave)<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;30&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;31&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;24/&nbsp;&nbsp;&nbsp;&nbsp;120/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;37</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-d</CODE
-></DT
-><DD
-><P
->ログレベルを 'debug' に設定します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-h</CODE
-></DT
-><DD
-><P
->引数オプションを表示します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
-><CODE
-CLASS="OPTION"
->-h</CODE
->と同じです。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-l</CODE
-></DT
-><DD
-><P
->ジャーナルファイルの状態のサマリに加え、ジャーナルファイル内のすべての
-レコードも表示します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-m</CODE
-></DT
-><DD
-><P
->最大のシーケンス番号だけを表示します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-r</CODE
-></DT
-><DD
-><P
->状態のサマリ、およびレコードのリストのヘッダ表示を抑止します。
-<CODE
-CLASS="OPTION"
->-l</CODE
-> と一緒に指定されたときだけ、有効です。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-v</CODE
-></DT
-><DD
-><P
->冗長な表示を行います。</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+	records  seqnum(min/max)          record length(min/max/ave)<br>
+	     30             2/        31          24/    120/     37<br>
+</p></div>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>
+ログレベルを 'debug' に設定します。
+</p></dd>
+<dt><span class="term"><code class="option">-h</code></span></dt>
+<dd><p>
+引数オプションを表示します。
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>
+<code class="option">-h</code>と同じです。
+</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd><p>
+ジャーナルファイルの状態のサマリに加え、ジャーナルファイル内のすべての
+レコードも表示します。
+</p></dd>
+<dt><span class="term"><code class="option">-m</code></span></dt>
+<dd><p>
+最大のシーケンス番号だけを表示します。
+</p></dd>
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd><p>
+状態のサマリ、およびレコードのリストのヘッダ表示を抑止します。
+<code class="option">-l</code> と一緒に指定されたときだけ、有効です。
+</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>
+冗長な表示を行います。
+</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

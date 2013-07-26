@@ -1,134 +1,50 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD><META http-equiv="Content-Type" content="text/html; charset=UTF-8"><TITLE
->gfarm_terminate</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFARM-TERMINATE.3"
-></A
->gfarm_terminate</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfarm_terminate&nbsp;--&nbsp;gfarm ライブラリに関する終了処理をする</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><DIV
-CLASS="FUNCSYNOPSIS"
-><P
-></P
-><A
-NAME="AEN12"
-></A
-><TABLE
-BORDER="0"
-BGCOLOR="#E0E0E0"
-WIDTH="100%"
-><TR
-><TD
-><PRE
-CLASS="FUNCSYNOPSISINFO"
->#include &#60;gfarm/gfarm.h&#62;</PRE
-></TD
-></TR
-></TABLE
-><P
-><CODE
-><CODE
-CLASS="FUNCDEF"
-><TT
-CLASS="FUNCTION"
-><SPAN
-CLASS="RETURNVALUE"
->gfarm_error_t</SPAN
-> gfarm_terminate</TT
-></CODE
->(<TT
-CLASS="PARAMETER"
-><I
->void</I
-></TT
->);</CODE
-></P
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->Gfarm ライブラリについて、終了処理を行います。</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="RETURN-VALUES"
-></A
-><H2
->RETURN VALUES</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_ERROR</CODE
-></DT
-><DD
-><P
->正常終了を示します。</P
-></DD
-><DT
->その他</DT
-><DD
-><P
->上記以外のエラーが生じたことを示します。</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_initialize</SPAN
->(3)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfarm_terminate</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm_terminate">
+<a name="gfarm-terminate.3"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfarm_terminate — gfarm ライブラリに関する終了処理をする</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="funcsynopsis">
+<pre class="funcsynopsisinfo">
+#include &lt;gfarm/gfarm.h&gt;
+</pre>
+<table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" class="funcprototype-table"><tr>
+<td><code class="funcdef"><b class="fsfunc">gfarm_error_t gfarm_terminate</b>(</code></td>
+<td>
+<var class="pdparam">void</var><code>)</code>;</td>
+<td> </td>
+</tr></table>
+<div class="paramdef-list">
+<code><var class="pdparam">void</var></code>;</div>
+<div class="funcprototype-spacer"> </div>
+</div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>Gfarm ライブラリについて、終了処理を行います。</p>
+</div>
+<div class="refsect1" title="RETURN VALUES">
+<a name="return-values"></a><h2>RETURN VALUES</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_ERROR</code></span></dt>
+<dd><p>正常終了を示します。</p></dd>
+<dt><span class="term">その他</span></dt>
+<dd><p>上記以外のエラーが生じたことを示します。</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfarm_initialize</span>(3)</span>
+</p>
+</div>
+</div></body>
+</html>

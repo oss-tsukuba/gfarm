@@ -1,875 +1,292 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD><META http-equiv="Content-Type" content="text/html; charset=UTF-8"><TITLE
->gfservice.conf</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFSERVICE.CONF.5"
-></A
->gfservice.conf</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfservice.conf&nbsp;--&nbsp;gfservice の設定ファイル</DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfservice</B
-> は、設定をファイルから読み込みます。
-(<B
-CLASS="COMMAND"
->gfservice-agent</B
-> は設定ファイルを読みません。)</P
-><P
->設定ファイルはそれ自体が、Bourne シェルスクリプトになっています。
-ファイルは、<B
-CLASS="COMMAND"
->gfservice</B
-> によって
-<SPAN
-CLASS="emphasis"
-><I
-CLASS="EMPHASIS"
->スクリプトとして評価されます。</I
-></SPAN
->
-以下に、設定ファイルの記述例を示します。</P
-><P
-CLASS="LITERALLAYOUT"
->	#&nbsp;gfmd&nbsp;サーバー<br>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfservice.conf</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfservice.conf">
+<a name="gfservice.conf.5"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfservice.conf — gfservice の設定ファイル</p>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<span class="command"><strong>gfservice</strong></span> は、設定をファイルから読み込みます。
+(<span class="command"><strong>gfservice-agent</strong></span> は設定ファイルを読みません。)
+</p>
+<p>
+設定ファイルはそれ自体が、Bourne シェルスクリプトになっています。
+ファイルは、<span class="command"><strong>gfservice</strong></span> によって
+<span class="emphasis"><em>スクリプトとして評価されます。</em></span>
+以下に、設定ファイルの記述例を示します。
+</p>
+<div class="literallayout"><p><br>
+	# gfmd サーバー<br>
 	gfmd1=db1.example.com<br>
-	gfmd2=db2.example.com</P
-><P
->Bourne シェルと同様に、「#」で始まる行や空行は無視されます。
+	gfmd2=db2.example.com<br>
+</p></div>
+<p>
+Bourne シェルと同様に、「#」で始まる行や空行は無視されます。
 それ以外の行では、シェル変数を宣言します。
-この例では、変数 <TT
-CLASS="REPLACEABLE"
-><I
->gfmd1</I
-></TT
-> を
-<TT
-CLASS="REPLACEABLE"
-><I
->db1.example.com</I
-></TT
-> という値にセットし、
-変数 <TT
-CLASS="REPLACEABLE"
-><I
->gfmd2</I
-></TT
-> には
-<TT
-CLASS="REPLACEABLE"
-><I
->db12.example.com</I
-></TT
-> という値をそれぞれセット
+この例では、変数 <em class="replaceable"><code>gfmd1</code></em> を
+<em class="replaceable"><code>db1.example.com</code></em> という値にセットし、
+変数 <em class="replaceable"><code>gfmd2</code></em> には
+<em class="replaceable"><code>db12.example.com</code></em> という値をそれぞれセット
 しています。
-「=」の前後に空白文字を置くことはできないので、注意して下さい。</P
-><P
->変数 <TT
-CLASS="REPLACEABLE"
-><I
->gfmd1</I
-></TT
-> と <TT
-CLASS="REPLACEABLE"
-><I
->gfmd2</I
-></TT
->
+「=」の前後に空白文字を置くことはできないので、注意して下さい。
+</p>
+<p>
+変数 <em class="replaceable"><code>gfmd1</code></em> と <em class="replaceable"><code>gfmd2</code></em>
 は「ホスト ID」として使用します。
-<B
-CLASS="COMMAND"
->gfservice</B
-> では、ホストを指定する際にホスト名ではなく、
-ホスト IDを使用します。</P
-><P
-CLASS="LITERALLAYOUT"
->	<B
-CLASS="COMMAND"
->gfservice <TT
-CLASS="REPLACEABLE"
-><I
->start-gfmd</I
-></TT
-> <TT
-CLASS="REPLACEABLE"
-><I
->gfmd2</I
-></TT
-></B
-></P
-><P
->上記のコマンドを実行すると、<B
-CLASS="COMMAND"
->gfservice</B
-> はサーバー
-<TT
-CLASS="REPLACEABLE"
-><I
->gfmd2</I
-></TT
-> 、つまり metadb2.example.com 上の gfmd
+<span class="command"><strong>gfservice</strong></span> では、ホストを指定する際にホスト名ではなく、
+ホスト IDを使用します。
+</p>
+<div class="literallayout"><p><br>
+	<span class="command"><strong>gfservice <em class="replaceable"><code>start-gfmd</code></em> <em class="replaceable"><code>gfmd2</code></em></strong></span><br>
+</p></div>
+<p>
+上記のコマンドを実行すると、<span class="command"><strong>gfservice</strong></span> はサーバー
+<em class="replaceable"><code>gfmd2</code></em> 、つまり metadb2.example.com 上の gfmd
 を起動します。
-ホスト ID の末尾の数は 1 から、連続して割り当てなくてはなりません。</P
-><P
->gfsd サーバーとクライアントホストを指定するには、ホスト ID 
-「gfs<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->」と「client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->」
-をそれぞれ使用します。</P
-><P
-CLASS="LITERALLAYOUT"
->	#&nbsp;gfsd&nbsp;サーバー<br>
+ホスト ID の末尾の数は 1 から、連続して割り当てなくてはなりません。
+</p>
+<p>
+gfsd サーバーとクライアントホストを指定するには、ホスト ID 
+「gfs<em class="replaceable"><code>n</code></em>」と「client<em class="replaceable"><code>n</code></em>」
+をそれぞれ使用します。
+</p>
+<div class="literallayout"><p><br>
+	# gfsd サーバー<br>
 	gfsd1=fs1.example.com<br>
 <br>
-	#&nbsp;クライアント<br>
+	# クライアント<br>
 	client1=pc1.example.com<br>
 	client2=pc2.example.com<br>
-	client3=pc2.example.com</P
-><P
->ホスト ID 変数に加え、<B
-CLASS="COMMAND"
->gfservice</B
-> はホスト ID に関連する
-変数をいくつか認識します。</P
-><P
-CLASS="LITERALLAYOUT"
->	#&nbsp;gfmd1&nbsp;に関する設定<br>
-	gfmd1_CONFIG_GFARM_OPTIONS="-X&nbsp;-A&nbsp;$LOGNAME"<br>
-	gfmd1_SSH="ssh&nbsp;-i&nbsp;$HOME/.ssh/id_rsa_gfservice"<br>
-	gfmd1_SUDO=/usr/local/bin/sudo</P
-><P
->この例で示しているように、空白文字を含む値をセットするには、引用符を使用
+	client3=pc2.example.com<br>
+</p></div>
+<p>
+ホスト ID 変数に加え、<span class="command"><strong>gfservice</strong></span> はホスト ID に関連する
+変数をいくつか認識します。
+</p>
+<div class="literallayout"><p><br>
+	# gfmd1 に関する設定<br>
+	gfmd1_CONFIG_GFARM_OPTIONS="-X -A $LOGNAME"<br>
+	gfmd1_SSH="ssh -i $HOME/.ssh/id_rsa_gfservice"<br>
+	gfmd1_SUDO=/usr/local/bin/sudo<br>
+</p></div>
+<p>
+この例で示しているように、空白文字を含む値をセットするには、引用符を使用
 します。
-<CODE
-CLASS="VARNAME"
->$VARNAME</CODE
-> は、シェル変数もしくは環境変数 
-<CODE
-CLASS="VARNAME"
->VARNAME</CODE
-> の値に展開されます。</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="GFMD-VARIABLES"
-></A
-><H2
->VARIABLES ABOUT GFMD</H2
-><P
->変数「gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->」(gfmd1, gfmd2, ...) は、gfmd
+<code class="varname">$VARNAME</code> は、シェル変数もしくは環境変数 
+<code class="varname">VARNAME</code> の値に展開されます。
+</p>
+</div>
+<div class="refsect1" title="VARIABLES ABOUT GFMD">
+<a name="gfmd-variables"></a><h2>VARIABLES ABOUT GFMD</h2>
+<p>
+変数「gfmd<em class="replaceable"><code>n</code></em>」(gfmd1, gfmd2, ...) は、gfmd
 サーバーを定義するために用います。
-名前が「gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_」で始まる変数 (たとえば
-<TT
-CLASS="REPLACEABLE"
-><I
->gfmd1_SSH</I
-></TT
->) は、対応する
-「gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->」サーバーの設定パラメタをセットするため
+名前が「gfmd<em class="replaceable"><code>n</code></em>_」で始まる変数 (たとえば
+<em class="replaceable"><code>gfmd1_SSH</code></em>) は、対応する
+「gfmd<em class="replaceable"><code>n</code></em>」サーバーの設定パラメタをセットするため
 に用います。
-<B
-CLASS="COMMAND"
->gfservice</B
-> が現在のところ認識する変数は、以下の通りです。</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="VARNAME"
->gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
-></CODE
-></DT
-><DD
-><P
->gfmd サーバーを登録します。
-変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_GFBINDIR</CODE
-></DT
-><DD
-><P
->gfmd サーバー上で <B
-CLASS="COMMAND"
->gfservice-agent</B
-> コマンドが
+<span class="command"><strong>gfservice</strong></span> が現在のところ認識する変数は、以下の通りです。
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em></code></span></dt>
+<dd><p>
+gfmd サーバーを登録します。
+変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。
+</p></dd>
+<dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_GFBINDIR</code></span></dt>
+<dd><p>
+gfmd サーバー上で <span class="command"><strong>gfservice-agent</strong></span> コマンドが
 インストールされているディレクトリへのパスを指定します。
-この変数が宣言されていると <B
-CLASS="COMMAND"
->gfservice</B
-> は、
-「<B
-CLASS="COMMAND"
-><CODE
-CLASS="VARNAME"
->$gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_GFBINDIR</CODE
->/gfservice-agent</B
->」を実行します。
-宣言されていない場合は、「<B
-CLASS="COMMAND"
->gfservice-agent</B
->」を実行します。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_CONFIG_GFARM_OPTIONS</CODE
-></DT
-><DD
-><P
-><B
-CLASS="COMMAND"
->config-gfarm</B
-> コマンドのオプションを指定します。
+この変数が宣言されていると <span class="command"><strong>gfservice</strong></span> は、
+「<span class="command"><strong><code class="varname">$gfmd<em class="replaceable"><code>n</code></em>_GFBINDIR</code>/gfservice-agent</strong></span>」を実行します。
+宣言されていない場合は、「<span class="command"><strong>gfservice-agent</strong></span>」を実行します。
+</p></dd>
+<dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_CONFIG_GFARM_OPTIONS</code></span></dt>
+<dd><p>
+<span class="command"><strong>config-gfarm</strong></span> コマンドのオプションを指定します。
 デフォルト値は、空文字列 (オプションなし) です。
-<B
-CLASS="COMMAND"
->gfservice</B
-> は <B
-CLASS="COMMAND"
->config-gfarm</B
-> サブコマンド
+<span class="command"><strong>gfservice</strong></span> は <span class="command"><strong>config-gfarm</strong></span> サブコマンド
 およびその他多くのサブコマンドを実行する際に、この変数を参照します。
-<B
-CLASS="COMMAND"
->config-gfarm</B
-> が完了した後であっても、この変数の宣言を
-削除したり、編集したりはしないで下さい。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_PRIVATE_MODE</CODE
-></DT
-><DD
-><P
->リモートホスト上の gfmd をプライベートモードで動作させる場合は、この
-変数に「true」をセットします。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_AUTH_TYPE</CODE
-></DT
-><DD
-><P
->認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+<span class="command"><strong>config-gfarm</strong></span> が完了した後であっても、この変数の宣言を
+削除したり、編集したりはしないで下さい。
+</p></dd>
+<dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_PRIVATE_MODE</code></span></dt>
+<dd><p>
+リモートホスト上の gfmd をプライベートモードで動作させる場合は、この
+変数に「true」をセットします。
+</p></dd>
+<dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_AUTH_TYPE</code></span></dt>
+<dd><p>
+認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
 この変数が定義されていない場合は、gfmd1 上で
-<B
-CLASS="COMMAND"
->config-gfarm</B
-> を実行したときの
-<CODE
-CLASS="VARNAME"
->AUTH_TYPE</CODE
-> の値が採用されます。
-(変数 <CODE
-CLASS="VARNAME"
->gfmd1_CONFIG_GFARM_OPTIONS</CODE
-> の値によって、この
-ときの <CODE
-CLASS="VARNAME"
->AUTH_TYPE</CODE
-> の値は変わるので、注意して下さい。)</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_REPLICATION_MODE</CODE
-></DT
-><DD
-><P
->この変数の値を「async」にセットすると、
-<B
-CLASS="COMMAND"
->gfservice config-gfarm-slave</B
-> の際にこの gfmd は
-非同期 (async) スレーブになります。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_SSH</CODE
-></DT
-><DD
-><P
->SSH クライアントコマンドのパスおよびオプションを指定します。
-<B
-CLASS="COMMAND"
->gfservice</B
-> が gfmd サーバーに接続するために
+<span class="command"><strong>config-gfarm</strong></span> を実行したときの
+<code class="varname">AUTH_TYPE</code> の値が採用されます。
+(変数 <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code> の値によって、この
+ときの <code class="varname">AUTH_TYPE</code> の値は変わるので、注意して下さい。)
+</p></dd>
+<dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_REPLICATION_MODE</code></span></dt>
+<dd><p>
+この変数の値を「async」にセットすると、
+<span class="command"><strong>gfservice config-gfarm-slave</strong></span> の際にこの gfmd は
+非同期 (async) スレーブになります。
+</p></dd>
+<dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_SSH</code></span></dt>
+<dd><p>
+SSH クライアントコマンドのパスおよびオプションを指定します。
+<span class="command"><strong>gfservice</strong></span> が gfmd サーバーに接続するために
 SSH クライアントコマンドを実行する際、この変数が利用されます。
-デフォルトは「ssh」です。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_SUDO</CODE
-></DT
-><DD
-><P
->Sudo コマンドのパスおよびオプションを指定します。
-<B
-CLASS="COMMAND"
->gfservice</B
-> が SSH を介して gfmd サーバー上で Sudo
+デフォルトは「ssh」です。
+</p></dd>
+<dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_SUDO</code></span></dt>
+<dd><p>
+Sudo コマンドのパスおよびオプションを指定します。
+<span class="command"><strong>gfservice</strong></span> が SSH を介して gfmd サーバー上で Sudo
 コマンドを実行する際、この変数が利用されます。
-デフォルトは「sudo」です。</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="GFSD-VARIABLES"
-></A
-><H2
->VARIABLES ABOUT GFSD</H2
-><P
->変数「gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->」(gfsd1, gfsd2, ...) は、gfsd
+デフォルトは「sudo」です。
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="VARIABLES ABOUT GFSD">
+<a name="gfsd-variables"></a><h2>VARIABLES ABOUT GFSD</h2>
+<p>
+変数「gfsd<em class="replaceable"><code>n</code></em>」(gfsd1, gfsd2, ...) は、gfsd
 サーバーを定義するために用います。
-名前が「gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_」で始まる変数 (たとえば
-<TT
-CLASS="REPLACEABLE"
-><I
->gfsd1_SSH</I
-></TT
->) は、対応する
-「gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->」サーバーの設定パラメタをセットするため
+名前が「gfsd<em class="replaceable"><code>n</code></em>_」で始まる変数 (たとえば
+<em class="replaceable"><code>gfsd1_SSH</code></em>) は、対応する
+「gfsd<em class="replaceable"><code>n</code></em>」サーバーの設定パラメタをセットするため
 に用います。
-<B
-CLASS="COMMAND"
->gfservice</B
-> が現在のところ認識する変数は、以下の通りです。</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="VARNAME"
->gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
-></CODE
-></DT
-><DD
-><P
->gfsd サーバーを登録します。
-変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_GFBINDIR</CODE
-></DT
-><DD
-><P
->gfsd サーバー上で <B
-CLASS="COMMAND"
->gfservice-agent</B
-> コマンドが
+<span class="command"><strong>gfservice</strong></span> が現在のところ認識する変数は、以下の通りです。
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em></code></span></dt>
+<dd><p>
+gfsd サーバーを登録します。
+変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。
+</p></dd>
+<dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_GFBINDIR</code></span></dt>
+<dd><p>
+gfsd サーバー上で <span class="command"><strong>gfservice-agent</strong></span> コマンドが
 インストールされているディレクトリへのパスを指定します。
-この変数が宣言されていると <B
-CLASS="COMMAND"
->gfservice</B
-> は、
-「<B
-CLASS="COMMAND"
-><CODE
-CLASS="VARNAME"
->$gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_GFBINDIR</CODE
->/gfservice-agent</B
->」を実行します。
-宣言されていない場合は、「<B
-CLASS="COMMAND"
->gfservice-agent</B
->」を実行します。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_CONFIG_GFSD_OPTIONS</CODE
-></DT
-><DD
-><P
-><B
-CLASS="COMMAND"
->config-gfsd</B
-> コマンドのオプションを指定します。
+この変数が宣言されていると <span class="command"><strong>gfservice</strong></span> は、
+「<span class="command"><strong><code class="varname">$gfsd<em class="replaceable"><code>n</code></em>_GFBINDIR</code>/gfservice-agent</strong></span>」を実行します。
+宣言されていない場合は、「<span class="command"><strong>gfservice-agent</strong></span>」を実行します。
+</p></dd>
+<dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_CONFIG_GFSD_OPTIONS</code></span></dt>
+<dd><p>
+<span class="command"><strong>config-gfsd</strong></span> コマンドのオプションを指定します。
 デフォルト値は、空文字列 (オプションなし) です。
-<B
-CLASS="COMMAND"
->gfservice</B
-> は <B
-CLASS="COMMAND"
->config-gfsd</B
-> サブコマンド
+<span class="command"><strong>gfservice</strong></span> は <span class="command"><strong>config-gfsd</strong></span> サブコマンド
 およびその他多くのサブコマンドを実行する際に、この変数を参照します。
-<B
-CLASS="COMMAND"
->config-gfsd</B
-> が完了した後であっても、この変数の宣言を
-削除したり、編集したりはしないで下さい。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_PRIVATE_MODE</CODE
-></DT
-><DD
-><P
->リモートホスト上の gfsd をプライベートモードで動作させる場合は、この
-変数に「true」をセットします。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_AUTH_TYPE</CODE
-></DT
-><DD
-><P
->認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+<span class="command"><strong>config-gfsd</strong></span> が完了した後であっても、この変数の宣言を
+削除したり、編集したりはしないで下さい。
+</p></dd>
+<dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_PRIVATE_MODE</code></span></dt>
+<dd><p>
+リモートホスト上の gfsd をプライベートモードで動作させる場合は、この
+変数に「true」をセットします。
+</p></dd>
+<dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_AUTH_TYPE</code></span></dt>
+<dd><p>
+認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
 この変数が定義されていない場合は、gfmd1 上で
-<B
-CLASS="COMMAND"
->config-gfarm</B
-> を実行したときの
-<CODE
-CLASS="VARNAME"
->AUTH_TYPE</CODE
-> の値が採用されます。
-(変数 <CODE
-CLASS="VARNAME"
->gfmd1_CONFIG_GFARM_OPTIONS</CODE
-> の値によって、この
-ときの <CODE
-CLASS="VARNAME"
->AUTH_TYPE</CODE
-> の値は変わるので、注意して下さい。)</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_SSH</CODE
-></DT
-><DD
-><P
->SSH クライアントコマンドのパスおよびオプションを指定します。
-<B
-CLASS="COMMAND"
->gfservice</B
-> が gfsd サーバーに接続するために
+<span class="command"><strong>config-gfarm</strong></span> を実行したときの
+<code class="varname">AUTH_TYPE</code> の値が採用されます。
+(変数 <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code> の値によって、この
+ときの <code class="varname">AUTH_TYPE</code> の値は変わるので、注意して下さい。)
+</p></dd>
+<dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_SSH</code></span></dt>
+<dd><p>
+SSH クライアントコマンドのパスおよびオプションを指定します。
+<span class="command"><strong>gfservice</strong></span> が gfsd サーバーに接続するために
 SSH クライアントコマンド実行する際、この変数が利用されます。
-デフォルトは「ssh」です。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_SUDO</CODE
-></DT
-><DD
-><P
->Sudo コマンドのパスおよびオプションを指定します。
-<B
-CLASS="COMMAND"
->gfservice</B
-> が SSH を介して gfsd サーバー上で Sudo
+デフォルトは「ssh」です。
+</p></dd>
+<dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_SUDO</code></span></dt>
+<dd><p>
+Sudo コマンドのパスおよびオプションを指定します。
+<span class="command"><strong>gfservice</strong></span> が SSH を介して gfsd サーバー上で Sudo
 コマンドを実行する際、この変数が利用されます。
-デフォルトは「sudo」です。</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="CLIENT-VARIABLES"
-></A
-><H2
->VARIABLES ABOUT CLIENT</H2
-><P
->変数「client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->」(client1, client2, ...) は、
+デフォルトは「sudo」です。
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="VARIABLES ABOUT CLIENT">
+<a name="client-variables"></a><h2>VARIABLES ABOUT CLIENT</h2>
+<p>
+変数「client<em class="replaceable"><code>n</code></em>」(client1, client2, ...) は、
 client サーバーを定義するために用います。
-名前が「client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_」で始まる変数 (たとえば
-<TT
-CLASS="REPLACEABLE"
-><I
->client1_SSH</I
-></TT
->) は、対応する
-「client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->」サーバーの設定パラメタをセットする
+名前が「client<em class="replaceable"><code>n</code></em>_」で始まる変数 (たとえば
+<em class="replaceable"><code>client1_SSH</code></em>) は、対応する
+「client<em class="replaceable"><code>n</code></em>」サーバーの設定パラメタをセットする
 ために用います。
-<B
-CLASS="COMMAND"
->gfservice</B
-> が現在のところ認識する変数は、以下の通りです。</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="VARNAME"
->client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
-></CODE
-></DT
-><DD
-><P
->クライアントホストを登録します。
+<span class="command"><strong>gfservice</strong></span> が現在のところ認識する変数は、以下の通りです。
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em></code></span></dt>
+<dd><p>
+クライアントホストを登録します。
 変数の値は、クライアントホストのホスト名 (もしくは IP アドレス) を
-表します。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_GFBINDIR</CODE
-></DT
-><DD
-><P
->クライアントホスト上で <B
-CLASS="COMMAND"
->gfservice-agent</B
-> コマンドが
+表します。
+</p></dd>
+<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_GFBINDIR</code></span></dt>
+<dd><p>
+クライアントホスト上で <span class="command"><strong>gfservice-agent</strong></span> コマンドが
 インストールされているディレクトリへのパスを指定します。
-この変数が宣言されていると <B
-CLASS="COMMAND"
->gfservice</B
-> は、
-「<B
-CLASS="COMMAND"
-><CODE
-CLASS="VARNAME"
->$client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_GFBINDIR</CODE
->/gfservice-agent</B
->」を実行します。
-宣言されていない場合は、「<B
-CLASS="COMMAND"
->gfservice-agent</B
->」を実行します。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_GFARM2FS</CODE
-></DT
-><DD
-><P
-><B
-CLASS="COMMAND"
->gfarm2fs</B
-> コマンドのパスおよびオプションを指定します。
-<B
-CLASS="COMMAND"
->gfservice</B
-> がクライアントホスト上で gfarm2fs コマンド
+この変数が宣言されていると <span class="command"><strong>gfservice</strong></span> は、
+「<span class="command"><strong><code class="varname">$client<em class="replaceable"><code>n</code></em>_GFBINDIR</code>/gfservice-agent</strong></span>」を実行します。
+宣言されていない場合は、「<span class="command"><strong>gfservice-agent</strong></span>」を実行します。
+</p></dd>
+<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_GFARM2FS</code></span></dt>
+<dd><p>
+<span class="command"><strong>gfarm2fs</strong></span> コマンドのパスおよびオプションを指定します。
+<span class="command"><strong>gfservice</strong></span> がクライアントホスト上で gfarm2fs コマンド
 を実行してファイルシステムをマウントする際、この変数が利用されます。
-デフォルトは「%%BINDIR%%/gfarm2fs」です。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_SSH</CODE
-></DT
-><DD
-><P
->SSH クライアントコマンドのパスおよびオプションを指定します。
-<B
-CLASS="COMMAND"
->gfservice</B
-> がクライアントホストに接続するために
+デフォルトは「%%BINDIR%%/gfarm2fs」です。
+</p></dd>
+<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_SSH</code></span></dt>
+<dd><p>
+SSH クライアントコマンドのパスおよびオプションを指定します。
+<span class="command"><strong>gfservice</strong></span> がクライアントホストに接続するために
 SSH クライアントコマンド実行する際、この変数が利用されます。
-デフォルトは「ssh」です。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_SUDO</CODE
-></DT
-><DD
-><P
->Sudo コマンドのパスおよびオプションを指定します。
-<B
-CLASS="COMMAND"
->gfservice</B
-> が SSH を介してクライアントホスト上で Sudo
+デフォルトは「ssh」です。
+</p></dd>
+<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_SUDO</code></span></dt>
+<dd><p>
+Sudo コマンドのパスおよびオプションを指定します。
+<span class="command"><strong>gfservice</strong></span> が SSH を介してクライアントホスト上で Sudo
 コマンドを実行する際、この変数が利用されます。
-デフォルトは「sudo」です。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_GFARM_CONF</CODE
-></DT
-><DD
-><P
->gfarm2.confファイルのパスを絶対パスで指定します。
-この値が設定されていない場合、<B
-CLASS="COMMAND"
->gfservice</B
->はgfmd1の
+デフォルトは「sudo」です。
+</p></dd>
+<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_GFARM_CONF</code></span></dt>
+<dd><p>
+gfarm2.confファイルのパスを絶対パスで指定します。
+この値が設定されていない場合、<span class="command"><strong>gfservice</strong></span>はgfmd1の
 gfarm2.confファイルのパスと同じパスを使用します(gfarm2.confファイルの
-パスは「gfmd1_CONFIG_GFARM_OPTIONS」シェル変数の値を基に決定されます)。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_PRIVATE_MODE</CODE
-></DT
-><DD
-><P
->この変数に「true」をセットすると、<B
-CLASS="COMMAND"
->gfservice</B
-> が
-サブコマンド <B
-CLASS="COMMAND"
->config-client</B
-> を実行する際、クライアント
-ホスト側の処理は root 権限を持たずに行います。</P
-></DD
-><DT
-><CODE
-CLASS="VARNAME"
->client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->_AUTH_TYPE</CODE
-></DT
-><DD
-><P
->認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
+パスは「gfmd1_CONFIG_GFARM_OPTIONS」シェル変数の値を基に決定されます)。
+</p></dd>
+<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_PRIVATE_MODE</code></span></dt>
+<dd><p>
+この変数に「true」をセットすると、<span class="command"><strong>gfservice</strong></span> が
+サブコマンド <span class="command"><strong>config-client</strong></span> を実行する際、クライアント
+ホスト側の処理は root 権限を持たずに行います。
+</p></dd>
+<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_AUTH_TYPE</code></span></dt>
+<dd><p>
+認証タイプ ("sharedsecret", "gsi", "gsi_auth" のいずれか) を指定します。
 この変数が定義されていない場合は、gfmd1 上で
-<B
-CLASS="COMMAND"
->config-gfarm</B
-> を実行したときの
-<CODE
-CLASS="VARNAME"
->AUTH_TYPE</CODE
-> の値が採用されます。
-(変数 <CODE
-CLASS="VARNAME"
->gfmd1_CONFIG_GFARM_OPTIONS</CODE
-> の値によって、この
-ときの <CODE
-CLASS="VARNAME"
->AUTH_TYPE</CODE
-> の値は変わるので、注意して下さい。)</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+<span class="command"><strong>config-gfarm</strong></span> を実行したときの
+<code class="varname">AUTH_TYPE</code> の値が採用されます。
+(変数 <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code> の値によって、この
+ときの <code class="varname">AUTH_TYPE</code> の値は変わるので、注意して下さい。)
+</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

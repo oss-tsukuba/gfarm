@@ -1,161 +1,76 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD><META http-equiv="Content-Type" content="text/html; charset=UTF-8"><TITLE
->gfjournaladmin</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFJOURNALADMIN.1"
-></A
->gfjournaladmin</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfjournaladmin&nbsp;--&nbsp;ジャーナルファイルの特定レコードを消去する。</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfjournaladmin</B
->  [<TT
-CLASS="REPLACEABLE"
-><I
->オプション</I
-></TT
->]  <TT
-CLASS="REPLACEABLE"
-><I
->ジャーナルファイル</I
-></TT
->   <TT
-CLASS="REPLACEABLE"
-><I
->シーケンス番号</I
-></TT
-> </P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfjournaladmin</B
-> は、ジャーナルファイルの中から、
-シーケンス番号 <TT
-CLASS="REPLACEABLE"
-><I
->sequence-number</I
-></TT
-> を持った
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfjournaladmin</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfjournaladmin">
+<a name="gfjournaladmin.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfjournaladmin — ジャーナルファイルの特定レコードを消去する。</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfjournaladmin</code>  [<em class="replaceable"><code>オプション</code></em>]  <em class="replaceable"><code>ジャーナルファイル</code></em>   <em class="replaceable"><code>シーケンス番号</code></em> </p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<span class="command"><strong>gfjournaladmin</strong></span> は、ジャーナルファイルの中から、
+シーケンス番号 <em class="replaceable"><code>sequence-number</code></em> を持った
 レコードを消去します。
 レコードは、同じ長さの NOP (no operation) レコードで置き換えられるため、
 ジャーナルファイル内の他のレコードが移動したり、内容が変更されたりする
-ことはありません。</P
-><P
->gfmd はメタデータの不整合を検知すると、以下のようなログメッセージを出力
-し、ただちに終了します。</P
-><P
-CLASS="LITERALLAYOUT"
->	db_journal_store_thread&nbsp;:&nbsp;seqnum=938&nbsp;ope=FILECOPY_ADD&nbsp;:&nbsp;\<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;already&nbsp;exists</P
-><P
->このような不整合は発生してはならないものではありますが、gfmd のバグに
+ことはありません。
+</p>
+<p>
+gfmd はメタデータの不整合を検知すると、以下のようなログメッセージを出力
+し、ただちに終了します。
+</p>
+<div class="literallayout"><p><br>
+	db_journal_store_thread : seqnum=938 ope=FILECOPY_ADD : \<br>
+	    already exists<br>
+</p></div>
+<p>
+このような不整合は発生してはならないものではありますが、gfmd のバグに
 よって一旦生じてしまうと、gfmd を再起動できなくなります。
 起動時に gfmd はジャーナルデータの適用を行うため、再び不整合を検知して、
 終了してしまいます。
-<B
-CLASS="COMMAND"
->gfjournaladmin</B
-> コマンドは、このような状況から抜け出す
+<span class="command"><strong>gfjournaladmin</strong></span> コマンドは、このような状況から抜け出す
 ために使用します。
 上記のログメッセージでは、シーケンス番号 938 のレコードによって不整合が
 起きていることが示されています。
-このレコードを消すには、次のようにコマンドを実行します。</P
-><P
-CLASS="LITERALLAYOUT"
->	gfjournaladmin&nbsp;/var/gfarm-metadata/journal/0000000000.gmj&nbsp;938</P
-><P
->BEGIN (オペレーションID 1) および END (オペレーションID 2) の
-ジャーナルレコードは消すことができないので、注意して下さい。</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-h</CODE
-></DT
-><DD
-><P
->引数オプションを表示します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
-><CODE
-CLASS="OPTION"
->-h</CODE
-> と同じです。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-n</CODE
-></DT
-><DD
-><P
->ジャーナルファイルは読み込みますが、実際に書き出す処理は行いません。　</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-v</CODE
-></DT
-><DD
-><P
->冗長な表示を行います。</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+このレコードを消すには、次のようにコマンドを実行します。
+</p>
+<div class="literallayout"><p><br>
+	gfjournaladmin /var/gfarm-metadata/journal/0000000000.gmj 938<br>
+</p></div>
+<p>
+BEGIN (オペレーションID 1) および END (オペレーションID 2) の
+ジャーナルレコードは消すことができないので、注意して下さい。
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-h</code></span></dt>
+<dd><p>
+引数オプションを表示します。
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>
+<code class="option">-h</code> と同じです。
+</p></dd>
+<dt><span class="term"><code class="option">-n</code></span></dt>
+<dd><p>
+ジャーナルファイルは読み込みますが、実際に書き出す処理は行いません。　
+</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>
+冗長な表示を行います。
+</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

@@ -1,142 +1,47 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD><META http-equiv="Content-Type" content="text/html; charset=UTF-8"><TITLE
->gfperf-replica</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFPERF-REPLICA.1"
-></A
->gfperf-replica</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfperf-replica&nbsp;--&nbsp;Gfarm ファイル複製の性能測定を行う。</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfperf-replica</B
->   -s, --src <TT
-CLASS="REPLACEABLE"
-><I
->複製元gfsd名</I
-></TT
->   -s, --dst <TT
-CLASS="REPLACEABLE"
-><I
->複製先gfsd名</I
-></TT
->  [-l, --filesize <TT
-CLASS="REPLACEABLE"
-><I
->ファイルサイズ</I
-></TT
->] [-t, --testdir <TT
-CLASS="REPLACEABLE"
-><I
->テストディレクトリ</I
-></TT
->]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->引数 <CODE
-CLASS="PARAMETER"
->テストディレクトリ</CODE
-> にテスト用のファイルを作成し、その複製性能を測定します。</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-s, --src</CODE
-> <CODE
-CLASS="PARAMETER"
->複製元gfsd名</CODE
-></DT
-><DD
-><P
->複製元gfsd名を指定します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-d, --dst</CODE
-> <CODE
-CLASS="PARAMETER"
->複製先gfsd名</CODE
-></DT
-><DD
-><P
->複製先gfsd名を指定します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-l, --filesize</CODE
-> <CODE
-CLASS="PARAMETER"
->ファイルサイズ</CODE
-></DT
-><DD
-><P
->テストで使用するファイルサイズを指定します。
-デフォルトは1Mです。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-t, --testdir</CODE
-> <CODE
-CLASS="PARAMETER"
->テストディレクトリ</CODE
-></DT
-><DD
-><P
->テストを実施するディレクトリを指定します。
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfperf-replica</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfperf-replica">
+<a name="gfperf-replica.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfperf-replica — Gfarm ファイル複製の性能測定を行う。</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfperf-replica</code>   -s, --src <em class="replaceable"><code>複製元gfsd名</code></em>   -s, --dst <em class="replaceable"><code>複製先gfsd名</code></em>  [-l, --filesize <em class="replaceable"><code>ファイルサイズ</code></em>] [-t, --testdir <em class="replaceable"><code>テストディレクトリ</code></em>]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>引数 <em class="parameter"><code>テストディレクトリ</code></em> にテスト用のファイルを作成し、その複製性能を測定します。
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-s, --src</code> <em class="parameter"><code>複製元gfsd名</code></em></span></dt>
+<dd><p>
+複製元gfsd名を指定します。
+</p></dd>
+<dt><span class="term"><code class="option">-d, --dst</code> <em class="parameter"><code>複製先gfsd名</code></em></span></dt>
+<dd><p>
+複製先gfsd名を指定します。
+</p></dd>
+<dt><span class="term"><code class="option">-l, --filesize</code> <em class="parameter"><code>ファイルサイズ</code></em></span></dt>
+<dd><p>
+テストで使用するファイルサイズを指定します。
+デフォルトは1Mです。
+</p></dd>
+<dt><span class="term"><code class="option">-t, --testdir</code> <em class="parameter"><code>テストディレクトリ</code></em></span></dt>
+<dd><p>
+テストを実施するディレクトリを指定します。
 gfarm url (gfarm:///で始まるもの) を指定します。
-デフォルトはgfarm:///tmpです。</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+デフォルトはgfarm:///tmpです。
+</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

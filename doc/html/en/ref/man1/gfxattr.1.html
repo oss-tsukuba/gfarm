@@ -1,208 +1,89 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfxattr</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFXATTR.1"
-></A
->gfxattr</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfxattr&nbsp;--&nbsp;Manipulate extended attributes in Gfarm file system</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfxattr</B
-> [-s | -g | -l | -r] [-x] [-c | -m] [-f <TT
-CLASS="REPLACEABLE"
-><I
->xattrfile</I
-></TT
->]  <TT
-CLASS="REPLACEABLE"
-><I
->file</I
-></TT
->  [<TT
-CLASS="REPLACEABLE"
-><I
->xattrname</I
-></TT
->]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->gfxattr manipulates extended attributes and XML extended attributes of
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfxattr</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfxattr">
+<a name="gfxattr.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfxattr — Manipulate extended attributes in Gfarm file system</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfxattr</code>  [ -s  |   -g  |   -l  |   -r ] [-x] [ -c  |   -m ] [-f <em class="replaceable"><code>xattrfile</code></em>]  <em class="replaceable"><code>file</code></em>  [<em class="replaceable"><code>xattrname</code></em>]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+gfxattr manipulates extended attributes and XML extended attributes of
 a specified file.  An extended attribute consists of an attribute name
 and an attribute value, which are arbitrary strings.  An XML extended
 attribute is an extended attribute having an XML attribute value.
 Since XML extended attributes have a different name space from
-extended attributes, the same attribute name can be used.</P
-><P
->When the -x option is specified, XML extended attributes are
+extended attributes, the same attribute name can be used.
+</p>
+<p>
+When the -x option is specified, XML extended attributes are
 manipulated.  It is possible to search XML extended attributes by
-XPath query using gffindxmlattr command.</P
-><P
->All files and directories in Gfarm file system can keep extended
+XPath query using gffindxmlattr command.
+</p>
+<p>
+All files and directories in Gfarm file system can keep extended
 attributes.  When removing a file or directory, the associated
-extended attributes are also removed.</P
-><P
->Either -s, -g, -l, or -r option should be specified.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-s</CODE
-></DT
-><DD
-><P
->sets a new value with an extended attribute xattrname for a specified
+extended attributes are also removed.
+</p>
+<p>
+Either -s, -g, -l, or -r option should be specified.
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-s</code></span></dt>
+<dd><p>
+sets a new value with an extended attribute xattrname for a specified
 file.  With the -f option, the value can be specified by the file
 xattrfile instead of by the standard input.  When neither -c nor -m
 option is specified, the extended attribute is overwritten if it is
-already set.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-g</CODE
-></DT
-><DD
-><P
->reads a value with an extended attribute xattrname for a
-specified file.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-l</CODE
-></DT
-><DD
-><P
->display a list of extended attributes for a specified
-file.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-r</CODE
-></DT
-><DD
-><P
->removes a extended attribute xattrname for a specified
-file.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-x</CODE
-></DT
-><DD
-><P
->manipulates XML extended attributes.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-c</CODE
-></DT
-><DD
-><P
->sets a new extended attribute if it is not set.  This option is
-used with the -s option.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-m</CODE
-></DT
-><DD
-><P
->modifies the extended attribute if there it is.  This option is
-used with the -s option.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-f</CODE
-> xattrfile</DT
-><DD
-><P
->With the -s option, reads an extended attribute from the specified
+already set.
+</p></dd>
+<dt><span class="term"><code class="option">-g</code></span></dt>
+<dd><p>reads a value with an extended attribute xattrname for a
+specified file.</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd><p>display a list of extended attributes for a specified
+file.</p></dd>
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd><p>removes a extended attribute xattrname for a specified
+file.</p></dd>
+<dt><span class="term"><code class="option">-x</code></span></dt>
+<dd><p>manipulates XML extended attributes.</p></dd>
+<dt><span class="term"><code class="option">-c</code></span></dt>
+<dd><p>sets a new extended attribute if it is not set.  This option is
+used with the -s option.
+</p></dd>
+<dt><span class="term"><code class="option">-m</code></span></dt>
+<dd><p>modifies the extended attribute if there it is.  This option is
+used with the -s option.
+</p></dd>
+<dt><span class="term"><code class="option">-f</code> xattrfile</span></dt>
+<dd><p>
+With the -s option, reads an extended attribute from the specified
 xattrfile instead of from the standard input.  With the -g option,
 writes the extended attribute to the specified xattrfile instead of to
-the standard output.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->displays usage.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gffindxmlattr</SPAN
->(1)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+the standard output.
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>displays usage.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gffindxmlattr</span>(1)</span>
+</p>
+</div>
+</div></body>
+</html>

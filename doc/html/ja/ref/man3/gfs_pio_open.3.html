@@ -1,523 +1,151 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD><META http-equiv="Content-Type" content="text/html; charset=UTF-8"><TITLE
->gfs_pio_open</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFS-PIO-OPEN.3"
-></A
->gfs_pio_open</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfs_pio_open&nbsp;--&nbsp;Gfarmファイルシステムのファイルのオープン</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><DIV
-CLASS="FUNCSYNOPSIS"
-><P
-></P
-><A
-NAME="AEN12"
-></A
-><TABLE
-BORDER="0"
-BGCOLOR="#E0E0E0"
-WIDTH="100%"
-><TR
-><TD
-><PRE
-CLASS="FUNCSYNOPSISINFO"
->#include &#60;gfarm/gfarm.h&#62;</PRE
-></TD
-></TR
-></TABLE
-><P
-><CODE
-><CODE
-CLASS="FUNCDEF"
-><TT
-CLASS="FUNCTION"
-><SPAN
-CLASS="RETURNVALUE"
->gfarm_error_t</SPAN
-> gfs_pio_open</TT
-></CODE
->(const char * <TT
-CLASS="PARAMETER"
-><I
->gfarm_url</I
-></TT
->, int <TT
-CLASS="PARAMETER"
-><I
->flags</I
-></TT
->, GFS_File * <TT
-CLASS="PARAMETER"
-><I
->gfp</I
-></TT
->);</CODE
-></P
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><TT
-CLASS="PARAMETER"
-><I
->gfarm_url</I
-></TT
->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfs_pio_open</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfs_pio_open">
+<a name="gfs-pio-open.3"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfs_pio_open — Gfarmファイルシステムのファイルのオープン</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="funcsynopsis">
+<pre class="funcsynopsisinfo">
+#include &lt;gfarm/gfarm.h&gt;
+</pre>
+<table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" class="funcprototype-table">
+<tr>
+<td><code class="funcdef"><b class="fsfunc">gfarm_error_t gfs_pio_open</b>(</code></td>
+<td>
+<var class="pdparam">gfarm_url</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">flags</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">gfp</var><code>)</code>;</td>
+<td> </td>
+</tr>
+</table>
+<div class="paramdef-list">
+<code>const char * <var class="pdparam">gfarm_url</var></code>;<br><code>int <var class="pdparam">flags</var></code>;<br><code>GFS_File * <var class="pdparam">gfp</var></code>;</div>
+<div class="funcprototype-spacer"> </div>
+</div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<em class="parameter"><code>gfarm_url</code></em>
 で指定したファイルをオープンし、GFS_File 構造体を
-<TT
-CLASS="PARAMETER"
-><I
->gfp</I
-></TT
->
+<em class="parameter"><code>gfp</code></em>
 の指す先に返します。
-<TT
-CLASS="PARAMETER"
-><I
->gfarm_url</I
-></TT
->
+<em class="parameter"><code>gfarm_url</code></em>
 はGfarmファイルシステムのパス名、あるいは
 gfarm://metaserver:port/path/name
-形式のGfarm URLです。</P
-><P
-><TT
-CLASS="PARAMETER"
-><I
->flags</I
-></TT
->
+形式のGfarm URLです。
+</p>
+<p>
+<em class="parameter"><code>flags</code></em>
 は、以下のフラグの bitwise-or で指定します。
-はじめの三つのフラグはどれかが指定されている必要があります。</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_FILE_RDONLY</CODE
-></DT
-><DD
-><P
->読込みモードでファイルをオープンします。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_FILE_WRONLY</CODE
-></DT
-><DD
-><P
->書込みモードでファイルをオープンします。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_FILE_RDWR</CODE
-></DT
-><DD
-><P
->読み書きモードでファイルをオープンします。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_FILE_TRUNC</CODE
-></DT
-><DD
-><P
->ファイルが存在し、レギュラーファイルで書込みが許される場合、ファイルサイズを0にします。</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="RETURN-VALUES"
-></A
-><H2
->RETURN VALUES</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_ERROR</CODE
-></DT
-><DD
-><P
->正常終了を示します。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_IS_A_DIRECTORY</CODE
-></DT
-><DD
-><P
->指定されたファイルはディレクトリです。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_IS_A_SYMBOLIC_LINK</CODE
-></DT
-><DD
-><P
->指定されたファイルはシンボリックリンクです。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_OPERATION_NOT_PERMITTED</CODE
-></DT
-><DD
-><P
->指定されたファイルはファイルではありません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_SUCH_OBJECT</CODE
-></DT
-><DD
-><P
->指定されたファイルが存在しません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NOT_A_DIRECTORY</CODE
-></DT
-><DD
-><P
->指定したパス名の親ディレクトリが、ディレクトリではありません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_PERMISSION_DENIED</CODE
-></DT
-><DD
-><P
->指定されたファイルに対し、
-<TT
-CLASS="PARAMETER"
-><I
->flags</I
-></TT
->
+はじめの三つのフラグはどれかが指定されている必要があります。
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="constant">GFARM_FILE_RDONLY</code></span></dt>
+<dd><p>読込みモードでファイルをオープンします。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_FILE_WRONLY</code></span></dt>
+<dd><p>書込みモードでファイルをオープンします。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_FILE_RDWR</code></span></dt>
+<dd><p>読み書きモードでファイルをオープンします。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_FILE_TRUNC</code></span></dt>
+<dd><p>ファイルが存在し、レギュラーファイルで書込みが許される場合、ファイルサイズを0にします。</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="RETURN VALUES">
+<a name="return-values"></a><h2>RETURN VALUES</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_ERROR</code></span></dt>
+<dd><p>正常終了を示します。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_IS_A_DIRECTORY</code></span></dt>
+<dd><p>指定されたファイルはディレクトリです。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_IS_A_SYMBOLIC_LINK</code></span></dt>
+<dd><p>指定されたファイルはシンボリックリンクです。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_OPERATION_NOT_PERMITTED</code></span></dt>
+<dd><p>指定されたファイルはファイルではありません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_SUCH_OBJECT</code></span></dt>
+<dd><p>指定されたファイルが存在しません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NOT_A_DIRECTORY</code></span></dt>
+<dd><p>指定したパス名の親ディレクトリが、ディレクトリではありません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_PERMISSION_DENIED</code></span></dt>
+<dd><p>指定されたファイルに対し、
+<em class="parameter"><code>flags</code></em>
 で指定されたモードでアクセスする権限がないか、
-メタデータサーバへの認証に失敗しました。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_MEMORY</CODE
-></DT
-><DD
-><P
->メモリ不足のため処理を中止しました。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_INVALID_ARGUMENT</CODE
-></DT
-><DD
-><P
-><TT
-CLASS="PARAMETER"
-><I
->flags</I
-></TT
->
-の指定が不正です。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_GFARM_URL_HOST_IS_MISSING</CODE
-></DT
-><DD
-><P
-><TT
-CLASS="PARAMETER"
-><I
->gfarm_url</I
-></TT
->
+メタデータサーバへの認証に失敗しました。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_MEMORY</code></span></dt>
+<dd><p>メモリ不足のため処理を中止しました。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_INVALID_ARGUMENT</code></span></dt>
+<dd><p><em class="parameter"><code>flags</code></em>
+の指定が不正です。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_GFARM_URL_HOST_IS_MISSING</code></span></dt>
+<dd><p><em class="parameter"><code>gfarm_url</code></em>
 で指定されたGfarm URLにおいて、
-メタデータサーバが指定されていません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_GFARM_URL_PORT_IS_MISSING</CODE
-></DT
-><DD
-><P
-><TT
-CLASS="PARAMETER"
-><I
->gfarm_url</I
-></TT
->
+メタデータサーバが指定されていません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_GFARM_URL_PORT_IS_MISSING</code></span></dt>
+<dd><p><em class="parameter"><code>gfarm_url</code></em>
 で指定されたGfarm URLにおいて、
-メタデータサーバのポート番号が指定されていません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_UNKNOWN_HOST</CODE
-></DT
-><DD
-><P
->指定されたメタデータサーバのアドレス解決ができません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_TOO_MANY_OPEN_FILES</CODE
-></DT
-><DD
-><P
->プロセスにおけるオープン可能なファイル数の限界に達しました。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_TOO_MANY_OPEN_FILES_IN_SYSTEM</CODE
-></DT
-><DD
-><P
->システムにおけるオープンできるファイル数の限界に達しました。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NETWORK_IS_UNREACHABLE</CODE
-></DT
-><DD
-><P
->メタデータサーバに到達できません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_OPERATION_TIMED_OUT</CODE
-></DT
-><DD
-><P
->メタデータサーバへの接続がタイムアウトをおこしました。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_PROTOCOL</CODE
-></DT
-><DD
-><P
->メタデータサーバとの通信にプロトコルエラーが発生しました。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_BROKEN_PIPE</CODE
-></DT
-><DD
-><P
->メタデータサーバとの通信が切断しました。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_PROTOCOL_NOT_SUPPORTED</CODE
-></DT
-><DD
-><P
->指定された認証プロトコルはサポートしていません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_AUTHENTICATION</CODE
-></DT
-><DD
-><P
->メタデータサーバに対する認証に失敗しました。</P
-></DD
-><DT
->その他</DT
-><DD
-><P
->上記以外のエラーが生じたことを示します。
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_error_string</SPAN
->(3)</SPAN
->
-によりエラーの原因を文字列に変換することができます。</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_close</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_create</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_eof</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_error</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_flush</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_getc</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_getline</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_open</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_putc</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_putline</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_puts</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_read</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_seek</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_ungetc</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_write</SPAN
->(3)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+メタデータサーバのポート番号が指定されていません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_UNKNOWN_HOST</code></span></dt>
+<dd><p>指定されたメタデータサーバのアドレス解決ができません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_TOO_MANY_OPEN_FILES</code></span></dt>
+<dd><p>プロセスにおけるオープン可能なファイル数の限界に達しました。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_TOO_MANY_OPEN_FILES_IN_SYSTEM</code></span></dt>
+<dd><p>システムにおけるオープンできるファイル数の限界に達しました。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NETWORK_IS_UNREACHABLE</code></span></dt>
+<dd><p>メタデータサーバに到達できません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_OPERATION_TIMED_OUT</code></span></dt>
+<dd><p>メタデータサーバへの接続がタイムアウトをおこしました。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_PROTOCOL</code></span></dt>
+<dd><p>メタデータサーバとの通信にプロトコルエラーが発生しました。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_BROKEN_PIPE</code></span></dt>
+<dd><p>メタデータサーバとの通信が切断しました。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_PROTOCOL_NOT_SUPPORTED</code></span></dt>
+<dd><p>指定された認証プロトコルはサポートしていません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_AUTHENTICATION</code></span></dt>
+<dd><p>メタデータサーバに対する認証に失敗しました。</p></dd>
+<dt><span class="term">その他</span></dt>
+<dd><p>上記以外のエラーが生じたことを示します。
+<span class="citerefentry"><span class="refentrytitle">gfarm_error_string</span>(3)</span>
+によりエラーの原因を文字列に変換することができます。
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_close</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_create</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_eof</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_error</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_flush</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_getc</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_getline</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_open</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_putc</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_putline</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_puts</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_read</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_seek</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_ungetc</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_write</span>(3)</span>
+</p>
+</div>
+</div></body>
+</html>

@@ -1,71 +1,32 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfspoolpath</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFSPOOLPATH.1"
-></A
->gfspoolpath</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfspoolpath&nbsp;--&nbsp;display a pathname on a filesystem node about a Gfarm file</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfspoolpath</B
-> [<TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->...]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->This command displays a pathname of a concrete file on a filesystem node,
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfspoolpath</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfspoolpath">
+<a name="gfspoolpath.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfspoolpath — display a pathname on a filesystem node about a Gfarm file</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfspoolpath</code>  [<em class="replaceable"><code>path</code></em>...]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+This command displays a pathname of a concrete file on a filesystem node,
 which is corresponding to a Gfarm file specified in the command argument.
-The pathname is relative to the top directory of a spool directory of gfsd.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="BUGS"
-></A
-><H2
->BUGS</H2
-><P
->No error is reported, if the command argument refers a directory.</P
-></DIV
-></BODY
-></HTML
->
+The pathname is relative to the top directory of a spool directory of gfsd.
+</p>
+</div>
+<div class="refsect1" title="BUGS">
+<a name="bugs"></a><h2>BUGS</h2>
+<p>
+No error is reported, if the command argument refers a directory.
+</p>
+</div>
+</div></body>
+</html>

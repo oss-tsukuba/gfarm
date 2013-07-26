@@ -1,200 +1,81 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD><META http-equiv="Content-Type" content="text/html; charset=UTF-8"><TITLE
->gfxattr</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFXATTR.1"
-></A
->gfxattr</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfxattr&nbsp;--&nbsp;Gfarm ファイルシステムのファイルの拡張属性を操作する</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfxattr</B
-> [-s | -g | -l | -r] [-x] [-c | -m] [-f <TT
-CLASS="REPLACEABLE"
-><I
->xattrfile</I
-></TT
->]  <TT
-CLASS="REPLACEABLE"
-><I
->file</I
-></TT
->  [<TT
-CLASS="REPLACEABLE"
-><I
->xattrname</I
-></TT
->]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->指定したファイルの拡張属性およびXML拡張属性を操作します．
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfxattr</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfxattr">
+<a name="gfxattr.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfxattr — Gfarm ファイルシステムのファイルの拡張属性を操作する</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfxattr</code>  [ -s  |   -g  |   -l  |   -r ] [-x] [ -c  |   -m ] [-f <em class="replaceable"><code>xattrfile</code></em>]  <em class="replaceable"><code>file</code></em>  [<em class="replaceable"><code>xattrname</code></em>]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+指定したファイルの拡張属性およびXML拡張属性を操作します．
 拡張属性は属性名と属性値からなり，いずれも任意の文字列です．
 XML拡張属性は属性値がXML型である拡張属性です．
 XML拡張属性は通常の拡張属性とは独立に扱われるため，
-同一の属性名が利用可能です．</P
-><P
->XML拡張属性を操作する場合，-xオプションを指定します．
+同一の属性名が利用可能です．
+</p>
+<p>
+XML拡張属性を操作する場合，-xオプションを指定します．
 XML拡張属性はgffindxmlattrコマンドを利用することにより
-XPath検索の対象となります．</P
-><P
->拡張属性はGfarmの全てのファイル，ディレクトリに設定することができます．
-ファイルを削除すると，そのファイルに設定されていた拡張属性も全て削除されます．</P
-><P
->-s，-g，-l，-rオプションは必ず何れかが指定される必要があります．</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-s</CODE
-></DT
-><DD
-><P
->指定されたファイルに属性名xattrnameの拡張属性を設定します．
+XPath検索の対象となります．
+</p>
+<p>
+拡張属性はGfarmの全てのファイル，ディレクトリに設定することができます．
+ファイルを削除すると，そのファイルに設定されていた拡張属性も全て削除されます．
+</p>
+<p>
+-s，-g，-l，-rオプションは必ず何れかが指定される必要があります．
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-s</code></span></dt>
+<dd><p>指定されたファイルに属性名xattrnameの拡張属性を設定します．
 属性値は-fオプションで指定されたxattrfileの内容となります．
 -fオプションが指定されない場合は標準入力からの入力内容となります．
 -c，-mオプションが指定されない場合，
-すでに拡張属性が設定されていても上書きされます．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-g</CODE
-></DT
-><DD
-><P
->指定されたファイルの属性名xattrnameの拡張属性を表示します．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-l</CODE
-></DT
-><DD
-><P
->指定されたファイルの属性名の一覧を表示します．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-r</CODE
-></DT
-><DD
-><P
->指定されたファイルの属性名xattrnameの拡張属性を消去します．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-x</CODE
-></DT
-><DD
-><P
->XML拡張属性を処理します．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-c</CODE
-></DT
-><DD
-><P
->-sオプションと共に用いられ，拡張属性を新規に設定します．
-このとき既に拡張属性が設定済みであればエラーとなります．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-m</CODE
-></DT
-><DD
-><P
->-sオプションと共に用いられ，拡張属性の変更を行います．
-このとき拡張属性が設定されていなければエラーとなります．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-f</CODE
-> xattrfile</DT
-><DD
-><P
->-sオプションと共に用いると，指定されたファイルから拡張属性を読込みます．
--gオプションと共に用いると，指定されたファイルに拡張属性を書込みます．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->引数オプションを表示します．</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gffindxmlattr</SPAN
->(1)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+すでに拡張属性が設定されていても上書きされます．
+</p></dd>
+<dt><span class="term"><code class="option">-g</code></span></dt>
+<dd><p>指定されたファイルの属性名xattrnameの拡張属性を表示します．</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd><p>指定されたファイルの属性名の一覧を表示します．</p></dd>
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd><p>指定されたファイルの属性名xattrnameの拡張属性を消去します．</p></dd>
+<dt><span class="term"><code class="option">-x</code></span></dt>
+<dd><p>XML拡張属性を処理します．</p></dd>
+<dt><span class="term"><code class="option">-c</code></span></dt>
+<dd><p>-sオプションと共に用いられ，拡張属性を新規に設定します．
+このとき既に拡張属性が設定済みであればエラーとなります．
+</p></dd>
+<dt><span class="term"><code class="option">-m</code></span></dt>
+<dd><p>-sオプションと共に用いられ，拡張属性の変更を行います．
+このとき拡張属性が設定されていなければエラーとなります．
+</p></dd>
+<dt><span class="term"><code class="option">-f</code> xattrfile</span></dt>
+<dd><p>
+-sオプションと共に用いると，指定されたファイルから拡張属性を読込みます．
+-gオプションと共に用いると，指定されたファイルに拡張属性を書込みます．
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>引数オプションを表示します．</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gffindxmlattr</span>(1)</span>
+</p>
+</div>
+</div></body>
+</html>

@@ -1,190 +1,77 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfs_acl_from_xattr_value</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFS-ACL-FROM-XATTR-VALUE.3"
-></A
->gfs_acl_from_xattr_value</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfs_acl_from_xattr_value&nbsp;--&nbsp;convert an ACL binary data of Gfarm extended attribute to a Gfarm ACL</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><DIV
-CLASS="FUNCSYNOPSIS"
-><P
-></P
-><A
-NAME="AEN12"
-></A
-><PRE
-CLASS="FUNCSYNOPSISINFO"
->#include &lt;gfarm/gfarm.h&gt;</PRE
-><P
-><CODE
-><CODE
-CLASS="FUNCDEF"
-><SPAN
-CLASS="RETURNVALUE"
->gfarm_error_t</SPAN
-> gfs_acl_from_xattr_value</CODE
->(const void *xattr_value, size_t size, gfarm_acl_t *acl_p);</CODE
-></P
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="INPUT-ARGUMENTS"
-></A
-><H2
->INPUT ARGUMENTS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="PARAMETER"
->xattr_value</CODE
-></DT
-><DD
-><P
->An ACL binary data from Gfarm extended attribute.</P
-></DD
-><DT
-><CODE
-CLASS="PARAMETER"
->size</CODE
-></DT
-><DD
-><P
->The length of <CODE
-CLASS="PARAMETER"
->xattr_value</CODE
->.</P
-></DD
-><DT
-><CODE
-CLASS="PARAMETER"
->acl_p</CODE
-></DT
-><DD
-><P
->A pointer of a converted ACL.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="RETURN-VALUES"
-></A
-><H2
->RETURN VALUES</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_ERROR</CODE
-></DT
-><DD
-><P
->The function terminated successfully.</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_MEMORY</CODE
-></DT
-><DD
-><P
->Insufficient memory was available.</P
-></DD
-><DT
->Others</DT
-><DD
-><P
->An error except the above occurred.  The reason is shown by
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_error_string</SPAN
->(3)</SPAN
->.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_sort</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_get_file</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_getxattr</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_from_xattr_value</SPAN
->(3)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfs_acl_from_xattr_value</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfs_acl_from_xattr_value">
+<a name="gfs-acl-from-xattr-value.3"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfs_acl_from_xattr_value — convert an ACL binary data of Gfarm extended attribute to a Gfarm ACL</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="funcsynopsis">
+<pre class="funcsynopsisinfo">
+#include &lt;gfarm/gfarm.h&gt;
+</pre>
+<table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" class="funcprototype-table">
+<tr>
+<td><code class="funcdef"><b class="fsfunc">gfarm_error_t gfs_acl_from_xattr_value</b>(</code></td>
+<td>
+<var class="pdparam">xattr_value</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">size</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">acl_p</var><code>)</code>;</td>
+<td> </td>
+</tr>
+</table>
+<div class="paramdef-list">
+<code>const void *<var class="pdparam">xattr_value</var></code>;<br><code>size_t <var class="pdparam">size</var></code>;<br><code>gfarm_acl_t *<var class="pdparam">acl_p</var></code>;</div>
+<div class="funcprototype-spacer"> </div>
+</div>
+</div>
+<div class="refsect1" title="INPUT ARGUMENTS">
+<a name="input-arguments"></a><h2>INPUT ARGUMENTS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><em class="parameter"><code>xattr_value</code></em></span></dt>
+<dd><p>An ACL binary data from Gfarm extended attribute.</p></dd>
+<dt><span class="term"><em class="parameter"><code>size</code></em></span></dt>
+<dd><p>The length of <em class="parameter"><code>xattr_value</code></em>.</p></dd>
+<dt><span class="term"><em class="parameter"><code>acl_p</code></em></span></dt>
+<dd><p>A pointer of a converted ACL.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="RETURN VALUES">
+<a name="return-values"></a><h2>RETURN VALUES</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_ERROR</code></span></dt>
+<dd><p>The function terminated successfully.</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_MEMORY</code></span></dt>
+<dd><p>Insufficient memory was available.</p></dd>
+<dt><span class="term">Others</span></dt>
+<dd><p>An error except the above occurred.  The reason is shown by
+<span class="citerefentry"><span class="refentrytitle">gfarm_error_string</span>(3)</span>.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_sort</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_get_file</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_getxattr</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_from_xattr_value</span>(3)</span>
+</p>
+</div>
+</div></body>
+</html>

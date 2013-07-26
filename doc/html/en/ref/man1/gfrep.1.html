@@ -1,315 +1,120 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfrep</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFREP.1"
-></A
->gfrep</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfrep&nbsp;--&nbsp;replicate Gfarm files</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfrep</B
-> [-mnqvx] [-S <TT
-CLASS="REPLACEABLE"
-><I
->source-domainname</I
-></TT
->] [-D <TT
-CLASS="REPLACEABLE"
-><I
->destination-domainname</I
-></TT
->] [-h <TT
-CLASS="REPLACEABLE"
-><I
->source-hostfile</I
-></TT
->] [-H <TT
-CLASS="REPLACEABLE"
-><I
->destination-hostfile</I
-></TT
->] [-N <TT
-CLASS="REPLACEABLE"
-><I
->num-of-replicas</I
-></TT
->] [-j <TT
-CLASS="REPLACEABLE"
-><I
->num-of-threads</I
-></TT
->]  <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->... </P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfrep</B
-> creates specified number of replicas of
-Gfarm files specified by the <TT
-CLASS="PARAMETER"
-><I
->path</I
-></TT
-> to specified
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfrep</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfrep">
+<a name="gfrep.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfrep — replicate Gfarm files</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfrep</code>  [-mnqvx] [-S <em class="replaceable"><code>source-domainname</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-N <em class="replaceable"><code>num-of-replicas</code></em>] [-j <em class="replaceable"><code>num-of-threads</code></em>]  <em class="replaceable"><code>path</code></em>... </p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<span class="command"><strong>gfrep</strong></span> creates specified number of replicas of
+Gfarm files specified by the <em class="parameter"><code>path</code></em> to specified
 set of destination hosts.  When set of source hosts are specified,
 only files stored on the set of source hosts are replicated.  A set of
 hosts can be specified by a domain name and/or a host file.  When both
 a domain name and a host file are specified, a set of hosts is
-determined by both conditions.</P
-><P
->If the <TT
-CLASS="PARAMETER"
-><I
->path</I
-></TT
-> parameter is a directory,
-files under the directory will be copied recursively.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-S</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->source-domainname</I
-></TT
-></DT
-><DD
-><P
->Specifies the domain name of source filesystem nodes from which
-replicas will be copied.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-D</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->destination-domainname</I
-></TT
-></DT
-><DD
-><P
->Specifies the domain name of destination filesystem nodes to which
-replicas will be copied.</P
-><P
->If neither this nor the <CODE
-CLASS="OPTION"
->-H</CODE
-> option is specified, 
-replicas may be copied to any available host.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-h</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->source-hostfile</I
-></TT
-></DT
-><DD
-><P
->Specifies a file which describes hostnames of
+determined by both conditions.
+</p>
+<p>
+If the <em class="parameter"><code>path</code></em> parameter is a directory,
+files under the directory will be copied recursively.
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-S</code> <em class="parameter"><code>source-domainname</code></em></span></dt>
+<dd><p>
+Specifies the domain name of source filesystem nodes from which
+replicas will be copied.
+</p></dd>
+<dt><span class="term"><code class="option">-D</code> <em class="parameter"><code>destination-domainname</code></em></span></dt>
+<dd>
+<p>
+Specifies the domain name of destination filesystem nodes to which
+replicas will be copied.
+</p>
+<p>If neither this nor the <code class="option">-H</code> option is specified, 
+replicas may be copied to any available host.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>source-hostfile</code></em></span></dt>
+<dd>
+<p>Specifies a file which describes hostnames of
 source filesystem nodes from which the replica will be made.
-The <TT
-CLASS="PARAMETER"
-><I
->source-hostfile</I
-></TT
-> consists of a filesystem
-node name on each line.</P
-><P
->if ``-'' is specified, standard input is used to read the host list.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-H</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->destination-hostfile</I
-></TT
-></DT
-><DD
-><P
->Specifies a file which describes hostnames of
+The <em class="parameter"><code>source-hostfile</code></em> consists of a filesystem
+node name on each line.
+</p>
+<p>
+if ``-'' is specified, standard input is used to read the host list.</p>
+</dd>
+<dt><span class="term"><code class="option">-H</code> <em class="parameter"><code>destination-hostfile</code></em></span></dt>
+<dd>
+<p>Specifies a file which describes hostnames of
 destination filesystem nodes on which the replica will be made.
-The <TT
-CLASS="PARAMETER"
-><I
->destination-hostfile</I
-></TT
-> consists of a
-filesystem node name on each line.</P
-><P
->if ``-'' is specified, standard input is used to read the host list.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-N</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->num-of-replicas</I
-></TT
-></DT
-><DD
-><P
->Specifies the required number of file replicas, counting already
+The <em class="parameter"><code>destination-hostfile</code></em> consists of a
+filesystem node name on each line.
+</p>
+<p>
+if ``-'' is specified, standard input is used to read the host list.</p>
+</dd>
+<dt><span class="term"><code class="option">-N</code> <em class="parameter"><code>num-of-replicas</code></em></span></dt>
+<dd>
+<p>
+Specifies the required number of file replicas, counting already
 existing ones.
 If there are a sufficient number of replicas in the destination hosts,
-neither any copying nor any removal will be done.</P
-><P
->If this option is not specified, <CODE
-CLASS="OPTION"
->-N 1</CODE
-> is assumed.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-j</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->num-of-threads</I
-></TT
-></DT
-><DD
-><P
->Specifies the number of threads to create file replicas
+neither any copying nor any removal will be done.
+</p>
+<p>If this option is not specified, <code class="option">-N 1</code> is assumed.</p>
+</dd>
+<dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>num-of-threads</code></em></span></dt>
+<dd><p>
+Specifies the number of threads to create file replicas
 simultaneously.  This option is only available when
 compiled by an OpenMP C compiler.  By default, it will be the smallest
 among the number of total files, the number of source hosts, and the
-number of destination hosts.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-m</CODE
-></DT
-><DD
-><P
->Lets gfrep command do a migrate/move, instead of doing replication.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-x</CODE
-></DT
-><DD
-><P
->Removes file replicas when a set of destination nodes has more file
-replicas than specified.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-n</CODE
-></DT
-><DD
-><P
->Displays files to be replicated, but does nothing.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-q</CODE
-></DT
-><DD
-><P
->Suppresses non-error messages.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-v</CODE
-></DT
-><DD
-><P
->Displays verbose output.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->Displays a list of command options.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="BUGS"
-></A
-><H2
->BUGS</H2
-><P
->A source host is not always selected within a set of source hosts.</P
-></DIV
-></BODY
-></HTML
->
+number of destination hosts.
+</p></dd>
+<dt><span class="term"><code class="option">-m</code></span></dt>
+<dd><p>
+Lets gfrep command do a migrate/move, instead of doing replication.
+</p></dd>
+<dt><span class="term"><code class="option">-x</code></span></dt>
+<dd><p>
+Removes file replicas when a set of destination nodes has more file
+replicas than specified.
+</p></dd>
+<dt><span class="term"><code class="option">-n</code></span></dt>
+<dd><p>
+Displays files to be replicated, but does nothing.
+</p></dd>
+<dt><span class="term"><code class="option">-q</code></span></dt>
+<dd><p>
+Suppresses non-error messages.
+</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>Displays verbose output.
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>Displays a list of command options.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="BUGS">
+<a name="bugs"></a><h2>BUGS</h2>
+<p>
+A source host is not always selected within a set of source hosts.
+</p>
+</div>
+</div></body>
+</html>

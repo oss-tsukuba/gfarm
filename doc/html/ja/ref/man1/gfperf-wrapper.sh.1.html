@@ -1,90 +1,36 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD><META http-equiv="Content-Type" content="text/html; charset=UTF-8"><TITLE
->gfperf-wrapper.sh</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFPERF-WRAPPER.SH.1"
-></A
->gfperf-wrapper.sh</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfperf-wrapper.sh&nbsp;--&nbsp;Gfarm 指定された認証方式でコマンド起動を行う。</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfperf-wrapper.sh</B
->   sharedsecret | gsi_auth | gsi    <TT
-CLASS="REPLACEABLE"
-><I
->コマンド</I
-></TT
-> </P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->sharedsecret、gsi_authまたは、gsi認証のいずれかで<TT
-CLASS="REPLACEABLE"
-><I
->コマンド</I
-></TT
->を起動します。
-予めgfmd及びgfsdに該当認証方式を受け入れる設定がなされている必要があります。</P
-><P
->本コマンドは内部でGFARM_CONFIG_FILE環境変数を使用します。既にセットされている場合は本コマンドにより上書きされます。</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->sharedsecret | gsi_auth | gsi</CODE
-></DT
-><DD
-><P
->認証方式を指定します。</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfperf-wrapper.sh</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfperf-wrapper.sh">
+<a name="gfperf-wrapper.sh.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfperf-wrapper.sh — Gfarm 指定された認証方式でコマンド起動を行う。</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfperf-wrapper.sh</code>   sharedsecret | gsi_auth | gsi    <em class="replaceable"><code>コマンド</code></em> </p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>sharedsecret、gsi_authまたは、gsi認証のいずれかで<em class="replaceable"><code>コマンド</code></em>を起動します。
+予めgfmd及びgfsdに該当認証方式を受け入れる設定がなされている必要があります。
+</p>
+<p>
+本コマンドは内部でGFARM_CONFIG_FILE環境変数を使用します。既にセットされている場合は本コマンドにより上書きされます。
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">sharedsecret | gsi_auth | gsi</code></span></dt>
+<dd><p>
+認証方式を指定します。
+</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>
