@@ -1,134 +1,111 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfncopy</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFNCOPY.1"
-></A
->gfncopy</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfncopy&nbsp;--&nbsp;Manipulate number of file replicas automatically created</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfncopy</B
-> [<TT
-CLASS="REPLACEABLE"
-><I
->option</I
-></TT
->]  <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
-> </P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->gfncopy manipulates the number of file replicas automatically
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfncopy</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfncopy">
+<a name="gfncopy.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfncopy — Manipulate number of file replicas automatically created</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfncopy</code>  [-vh]  <em class="replaceable"><code>path</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfrepattr</code>  [-vh] [ -C  |   -M ]  -s <em class="replaceable"><code>NCOPY</code></em>   <em class="replaceable"><code>path</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfrepattr</code>  [-vh] [ -C  |   -M ]  -S <em class="replaceable"><code>REPATTR</code></em>   <em class="replaceable"><code>path</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfrepattr</code>  [-vh]  -r   <em class="replaceable"><code>path</code></em>  [<em class="replaceable"><code>path</code></em>...]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfrepattr</code>  [-vh]  -c   <em class="replaceable"><code>path</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfrepattr</code>  [-v]  -w  [-t <em class="replaceable"><code>TIMEOUT</code></em>]  <em class="replaceable"><code>path</code></em>  [<em class="replaceable"><code>path</code></em>...]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>gfncopy manipulates the number of file replicas automatically
 created.  When no option is specified, it displays the specified
-number of file replicas.  With the -v option, it also displays path
+number of file replicas.  When replication attributes of both NCOPY
+and REPATTR are set to a file, these attributes are displayed in two
+lines.  With the <code class="option">-v</code> option, it also displays path
 names up to the ancient directory that specifies the number of file
-repilcas.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-s</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->NCOPY</I
-></TT
-></DT
-><DD
-><P
->specifies the number of file replicas automatically created.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-r</CODE
-></DT
-><DD
-><P
->removes the specified number of file replicas automatically created.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-c</CODE
-></DT
-><DD
-><P
->displays the number of file repicas the file really has.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-v</CODE
-></DT
-><DD
-><P
->displays path names up to the ancient directory that specifies
-the number of file repilcas.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->displays a list of command options.</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+repilcas.
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>NCOPY</code></em></span></dt>
+<dd><p>specifies the attribute for automatic replication represented by
+the number of file replicas to a file or directory.</p></dd>
+<dt><span class="term"><code class="option">-S</code> <em class="parameter"><code>REPATTR</code></em></span></dt>
+<dd>
+<p>specifies the attribute for automatic replication represented by
+host groups to a file or directory.</p>
+<p>
+a <em class="parameter"><code>REPATTR</code></em> is represented by the following BNF:
+</p>
+<div class="literallayout"><p><br>
+    &lt;repattr&gt; ::= &lt;an_attr&gt; | &lt;an_attr&gt; ',' &lt;repattr&gt;<br>
+    &lt;an_attr&gt; ::= &lt;host_group&gt; ':' &lt;num_rep&gt;<br>
+    &lt;host_group&gt; ::= &lt;string&gt;<br>
+    &lt;num_rep&gt; ::= &lt;integer&gt;<br>
+<br>
+  e.g.)<br>
+    group0:2<br>
+    group0:1,group1:2,group2:3<br>
+</p></div>
+</dd>
+<dt><span class="term"><code class="option">-C</code></span></dt>
+<dd><p>
+If the replication attribute exists already on the
+file, <span class="command"><strong>gfncopy</strong></span> with the <code class="option">-s</code>
+or <code class="option">-S</code> options fails.</p></dd>
+<dt><span class="term"><code class="option">-M</code></span></dt>
+<dd><p>
+If the replication attribute does not exist on the
+file, <span class="command"><strong>gfncopy</strong></span> with the <code class="option">-s</code>
+or <code class="option">-S</code> options fails.</p></dd>
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd>
+<p>removes the specified replication attributes.</p>
+<p>
+The <em class="replaceable"><code>path</code></em> can be specified multiple times.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-c</code></span></dt>
+<dd><p>displays the number of file repicas the file really has.</p></dd>
+<dt><span class="term"><code class="option">-w</code></span></dt>
+<dd>
+<p>checks whether or not the file replicas have been created
+according to the replication attributes (NCOPY or REPATTR), otherwise
+waits for the completion of the replication.</p>
+<p>
+The <em class="replaceable"><code>path</code></em> can be specified multiple times.
+</p>
+<p>
+If the <em class="replaceable"><code>path</code></em> is a directory, files in
+subdirectories are checked.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-t</code> <em class="parameter"><code>TIMEOUT</code></em></span></dt>
+<dd><p>
+specifies the time in seconds for the <code class="option">-w</code> option to
+wait until automatic replication starts.
+Timeout does not occur while the replication is running.
+Default is 30 seconds.
+</p></dd>
+<dt><span class="term"><code class="option">-h</code></span></dt>
+<dd><p>processes symbolic link instead of any referenced files.</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>displays verbose messages.</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>displays a list of command options.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfhostgroup</span>(1)</span>
+</p>
+</div>
+</div></body>
+</html>

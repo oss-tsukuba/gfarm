@@ -1,87 +1,37 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfperf-wrapper.sh</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFPERF-WRAPPER.SH.1"
-></A
->gfperf-wrapper.sh</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfperf-wrapper.sh&nbsp;--&nbsp;Gfarm execute command on specified authentication</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfperf-wrapper.sh</B
->   sharedsecret | gsi_auth | gsi    <TT
-CLASS="REPLACEABLE"
-><I
->command</I
-></TT
-> </P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->execute command on sharedsecret, gsi_auth or gsi authentication.
-The servers (gfmd &#38; gfsd) may allow specified authentication.</P
-><P
->This command uses GFARM_CONFIG_FILE enviroment variable.
-If GFARM_CONFIG_FILE is set, the variable is overwritten by this command.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->sharedsecret | gsi_auth | gsi</CODE
-></DT
-><DD
-><P
->Specify authenticaion.</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfperf-wrapper.sh</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfperf-wrapper.sh">
+<a name="gfperf-wrapper.sh.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfperf-wrapper.sh — Gfarm execute command on specified authentication</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfperf-wrapper.sh</code>   sharedsecret | gsi_auth | gsi    <em class="replaceable"><code>command</code></em> </p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>execute command on sharedsecret, gsi_auth or gsi authentication.
+The servers (gfmd &amp; gfsd) may allow specified authentication.
+</p>
+<p>
+This command uses GFARM_CONFIG_FILE enviroment variable.
+If GFARM_CONFIG_FILE is set, the variable is overwritten by this command.
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">sharedsecret | gsi_auth | gsi</code></span></dt>
+<dd><p>
+Specify authenticaion.
+</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

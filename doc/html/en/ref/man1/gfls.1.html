@@ -1,230 +1,62 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfls</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFLS.1"
-></A
->gfls</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfls&nbsp;--&nbsp;list contents of Gfarm directory</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfls</B
-> [<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
->] [<TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->...]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->List information of files or contents of directories specified by
-<TT
-CLASS="PARAMETER"
-><I
->path</I
-></TT
->.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-a</CODE
-></DT
-><DD
-><P
->Do not hide entries starting with ``.''.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-A</CODE
-></DT
-><DD
-><P
->Do not list ``.'' and ``..''.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-C</CODE
-></DT
-><DD
-><P
->Multi-column output.  This is the default output format.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-d</CODE
-></DT
-><DD
-><P
->List directory entries instead of the contents.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-E</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->seconds</I
-></TT
-></DT
-><DD
-><P
->Specifies seconds to hold attribute cache.
-If 0 is specified, attributes won't be cached.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-F</CODE
-></DT
-><DD
-><P
->Append indicator (one of */=@|) to entries.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-i</CODE
-></DT
-><DD
-><P
->Display inode number.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-l</CODE
-></DT
-><DD
-><P
->List in long format, including mode, owner, group, size in bytes, time
-of last modification for each file.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-r</CODE
-></DT
-><DD
-><P
->Reverse the order while sorting.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-R</CODE
-></DT
-><DD
-><P
->Recursively lists subdirectories encountered.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-S</CODE
-></DT
-><DD
-><P
->Sort by file size.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-t</CODE
-></DT
-><DD
-><P
->Sort by time stamp instead of by name.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-T</CODE
-></DT
-><DD
-><P
->With the <CODE
-CLASS="OPTION"
->-l</CODE
-> option, show complete date format.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-1</CODE
-></DT
-><DD
-><P
->Prints one entry per line of output.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->displays a list of command options.</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfls</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfls">
+<a name="gfls.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfls — list contents of Gfarm directory</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfls</code>  [<em class="replaceable"><code>options</code></em>] [<em class="replaceable"><code>path</code></em>...]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>List information of files or contents of directories specified by
+<em class="parameter"><code>path</code></em>.</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-a</code></span></dt>
+<dd><p>Do not hide entries starting with ``.''.</p></dd>
+<dt><span class="term"><code class="option">-A</code></span></dt>
+<dd><p>Do not list ``.'' and ``..''.</p></dd>
+<dt><span class="term"><code class="option">-C</code></span></dt>
+<dd><p>Multi-column output.  This is the default output format.</p></dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>List directory entries instead of the contents.</p></dd>
+<dt><span class="term"><code class="option">-E</code> <em class="parameter"><code>seconds</code></em></span></dt>
+<dd><p>
+Specifies seconds to hold attribute cache.
+If 0 is specified, attributes won't be cached.
+</p></dd>
+<dt><span class="term"><code class="option">-F</code></span></dt>
+<dd><p>Append indicator (one of */=@|) to entries.</p></dd>
+<dt><span class="term"><code class="option">-i</code></span></dt>
+<dd><p>Display inode number.</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd><p>List in long format, including mode, owner, group, size in bytes, time
+of last modification for each file.</p></dd>
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd><p>Reverse the order while sorting.</p></dd>
+<dt><span class="term"><code class="option">-R</code></span></dt>
+<dd><p>Recursively lists subdirectories encountered.</p></dd>
+<dt><span class="term"><code class="option">-S</code></span></dt>
+<dd><p>Sort by file size.</p></dd>
+<dt><span class="term"><code class="option">-t</code></span></dt>
+<dd><p>Sort by time stamp instead of by name.</p></dd>
+<dt><span class="term"><code class="option">-T</code></span></dt>
+<dd><p>With the <code class="option">-l</code> option, show complete date format.</p></dd>
+<dt><span class="term"><code class="option">-1</code></span></dt>
+<dd><p>Prints one entry per line of output.</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>displays a list of command options.</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

@@ -1,172 +1,56 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfquota</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFQUOTA.1"
-></A
->gfquota</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfquota&nbsp;--&nbsp;display the current usage and limits</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfquota</B
->  [<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
->]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfquota</B
-> displays your current usage and
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfquota</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfquota">
+<a name="gfquota.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfquota — display the current usage and limits</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfquota</code>  [<em class="replaceable"><code>options</code></em>]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><span class="command"><strong>gfquota</strong></span> displays your current usage and
 limits.  An administrator in the gfarmadm group can specify a user or
 a group to display.  If you are a general user, you can specify a
-group which you belong to.</P
-><P
->The count of usage and the check of quota are enabled after
-executing <B
-CLASS="COMMAND"
->gfedquota</B
->
-and <B
-CLASS="COMMAND"
->gfquotacheck</B
-> command.
-And, <B
-CLASS="COMMAND"
->gfquota</B
-> can display the current usage and
-limits.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-P NAME</CODE
-></DT
-><DD
-><P
->Specifies a path name to specify a metadata server instead of
-the root metadata server.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-q</CODE
-></DT
-><DD
-><P
->Do not display the current usage and limits.  Warning messages
-are displayed only if the current usage exceeds the limits.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-u NAME</CODE
-></DT
-><DD
-><P
->Specifies a user name to display the current usage and limits.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-g NAME</CODE
-></DT
-><DD
-><P
->Specifies a group name to display the current usage and limits.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->Displays a list of command options.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfedquota</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfquotacheck</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfusage</SPAN
->(1)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+group which you belong to.</p>
+<p>The count of usage and the check of quota are enabled after
+executing <span class="command"><strong>gfedquota</strong></span>
+and <span class="command"><strong>gfquotacheck</strong></span> command.
+And, <span class="command"><strong>gfquota</strong></span> can display the current usage and
+limits.</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-P NAME</code></span></dt>
+<dd><p>Specifies a path name to specify a metadata server instead of
+the root metadata server.</p></dd>
+<dt><span class="term"><code class="option">-q</code></span></dt>
+<dd><p>Do not display the current usage and limits.  Warning messages
+are displayed only if the current usage exceeds the limits.
+</p></dd>
+<dt><span class="term"><code class="option">-u NAME</code></span></dt>
+<dd><p>Specifies a user name to display the current usage and limits.</p></dd>
+<dt><span class="term"><code class="option">-g NAME</code></span></dt>
+<dd><p>Specifies a group name to display the current usage and limits.</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>Displays a list of command options.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfedquota</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfquotacheck</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfusage</span>(1)</span>
+</p>
+</div>
+</div></body>
+</html>

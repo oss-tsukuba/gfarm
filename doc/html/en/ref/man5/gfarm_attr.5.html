@@ -1,186 +1,104 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfarm_attr</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFARM-ATTR.5"
-></A
->gfarm_attr</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfarm_attr&nbsp;--&nbsp;Gfarm Extended Attributes</DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->Every files and directories in Gfarm filesystem can have extended
-attributes.  Extended attributes are name:value pairs.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="XATTRNAMESPACE"
-></A
-><H2
->EXTENDED ATTRIBUTE NAMESPACES</H2
-><P
->The extended attributes which have "gfarm." or "gfarm_root." prefix
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfarm_attr</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm_attr">
+<a name="gfarm-attr.5"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfarm_attr — Gfarm Extended Attributes</p>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+Every files and directories in Gfarm filesystem can have extended
+attributes.  Extended attributes are name:value pairs.
+</p>
+</div>
+<div class="refsect1" title="EXTENDED ATTRIBUTE NAMESPACES">
+<a name="xattrnamespace"></a><h2>EXTENDED ATTRIBUTE NAMESPACES</h2>
+<p>
+The extended attributes which have "gfarm." or "gfarm_root." prefix
 name are specially treated in Gfarm filesystem.  General Gfarm users
 can freely use the extended attributes which have "user." prefix name.
-XML extended attributes can have any names.</P
-><P
->Everyone can get the "gfarm.*" extended attributes.  Owner or
-gfarmroot group can modify the "gfarm.*" extended attributes.</P
-><P
->The users in gfarmroot group or the users in "gfarm_root.uesr" of the
+XML extended attributes can have any names.
+</p>
+<p>
+Everyone can get the "gfarm.*" extended attributes.  Owner or
+gfarmroot group can modify the "gfarm.*" extended attributes.
+</p>
+<p>
+The users in gfarmroot group or the users in "gfarm_root.uesr" of the
 entry or the groups in "gfarm_root.group" of the entry can get/modify
-the "gfarm_root.*" extended attributes.</P
-><P
->The "user.*" extended attributes can be gotten/modified on the entry
-(file or directory) permission.</P
-><P
->Symbolic links cannot have any extended attributes.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="GFARM-XATTR"
-></A
-><H2
->GFARM EXTENDED ATTRIBUTES</H2
-><P
->The following is a list of the extended attribute names used in Gfarm
-filesystem.</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="PARAMETER"
->gfarm.ncopy</CODE
-></DT
-><DD
-><P
->This is the number of file replicas to be created automatically in
-gfmd.</P
-></DD
-><DT
-><CODE
-CLASS="PARAMETER"
->gfarm.acl_access</CODE
-></DT
-><DD
-><P
->This is Access ACL (Access Control List).</P
-></DD
-><DT
-><CODE
-CLASS="PARAMETER"
->gfarm.acl_default</CODE
-></DT
-><DD
-><P
->This is Default ACL. Only directories can have/use this extended
-attribute.</P
-></DD
-><DT
-><CODE
-CLASS="PARAMETER"
->gfarm_root.user</CODE
-></DT
-><DD
-><P
->This is the list of user names who can have the privilege for the
+the "gfarm_root.*" extended attributes.
+</p>
+<p>
+The "user.*" extended attributes can be gotten/modified on the entry
+(file or directory) permission.
+</p>
+<p>
+Symbolic links cannot have any extended attributes.
+</p>
+</div>
+<div class="refsect1" title="GFARM EXTENDED ATTRIBUTES">
+<a name="gfarm-xattr"></a><h2>GFARM EXTENDED ATTRIBUTES</h2>
+<p>
+The following is a list of the extended attribute names used in Gfarm
+filesystem.
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><em class="parameter"><code>gfarm.ncopy</code></em></span></dt>
+<dd><p>
+This is the number of file replicas to be created automatically in
+gfmd.
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>gfarm.acl_access</code></em></span></dt>
+<dd><p>
+This is Access ACL (Access Control List).
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>gfarm.acl_default</code></em></span></dt>
+<dd><p>
+This is Default ACL. Only directories can have/use this extended
+attribute.
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>gfarm_root.user</code></em></span></dt>
+<dd><p>
+This is the list of user names who can have the privilege for the
 entry (file or directory).  The names are separated by a new line
 (\n).  This extended attribute is copied to a new entry (file or
 directory) from the parent directory (when the parent directory has
-this extended attribute).</P
-></DD
-><DT
-><CODE
-CLASS="PARAMETER"
->gfarm_root.group</CODE
-></DT
-><DD
-><P
->This is the list of group names who can have the privilege for the
+this extended attribute).
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>gfarm_root.group</code></em></span></dt>
+<dd><p>
+This is the list of group names who can have the privilege for the
 entry (file or directory).  The names are separated by a new line
 (\n).  This extended attribute is copied to a new entry (file or
 directory) from the parent directory (when the parent directory has
-this extended attribute).</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SECURITY"
-></A
-><H2
->SECURITY NOTES</H2
-><P
->When untrusted users are registered in the gfarm_root.{user,group}
+this extended attribute).
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SECURITY NOTES">
+<a name="security"></a><h2>SECURITY NOTES</h2>
+<p>
+When untrusted users are registered in the gfarm_root.{user,group}
 extended attributes of any files or directories,
 a Security Hole exists on the mount point of gfarm2fs with
 "-o suid,allow_other" option executed by root (even if either
 "-o ro" option or "-o default_permissions" option is also specified).
 Therefore both "-o suid,allow_other" option and
-gfarm_root.{user,group} extended attributes should not be used.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfxattr</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfgetfacl</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfsetfacl</SPAN
->(1)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+gfarm_root.{user,group} extended attributes should not be used.
+</p>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfxattr</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfgetfacl</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfsetfacl</span>(1)</span></p>
+</div>
+</div></body>
+</html>

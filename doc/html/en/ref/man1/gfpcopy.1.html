@@ -1,289 +1,114 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfpcopy</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFPCOPY.1"
-></A
->gfpcopy</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfpcopy&nbsp;--&nbsp;copy Gfarm files in parallel</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfpcopy</B
->  [-nqvdpPU] [-f] [-S <TT
-CLASS="REPLACEABLE"
-><I
->source-domainname</I
-></TT
->] [-h <TT
-CLASS="REPLACEABLE"
-><I
->source-hostfile</I
-></TT
->] [-D <TT
-CLASS="REPLACEABLE"
-><I
->destination-domainname</I
-></TT
->] [-H <TT
-CLASS="REPLACEABLE"
-><I
->destination-hostfile</I
-></TT
->] [-j <TT
-CLASS="REPLACEABLE"
-><I
->num-of-processes</I
-></TT
->] [-w <TT
-CLASS="REPLACEABLE"
-><I
->way-of-scheduling</I
-></TT
->] [-W <TT
-CLASS="REPLACEABLE"
-><I
->kilobytes-for-threshold</I
-></TT
->] [-s <TT
-CLASS="REPLACEABLE"
-><I
->KB/s-to-simulate</I
-></TT
->] [-F <TT
-CLASS="REPLACEABLE"
-><I
->num-for-readahead</I
-></TT
->] [-b <TT
-CLASS="REPLACEABLE"
-><I
->bufsize</I
-></TT
->]  <TT
-CLASS="REPLACEABLE"
-><I
->source-url</I
-></TT
->   <TT
-CLASS="REPLACEABLE"
-><I
->destination-url</I
-></TT
-> </P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfpcopy</B
-> copies files and directries specified by
-the <CODE
-CLASS="PARAMETER"
->source-url</CODE
->(gfarm:///... or file:///...) to a
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfpcopy</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfpcopy">
+<a name="gfpcopy.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfpcopy — copy Gfarm files in parallel</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfpcopy</code>  [-nqvdpPU] [-f] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-b <em class="replaceable"><code>bufsize</code></em>]  <em class="replaceable"><code>source-url</code></em>   <em class="replaceable"><code>destination-url</code></em> </p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<span class="command"><strong>gfpcopy</strong></span> copies files and directries specified by
+the <em class="parameter"><code>source-url</code></em>(gfarm:///... or file:///...) to a
 directory specified by
-the <CODE
-CLASS="PARAMETER"
->destination-url</CODE
->(gfarm:///... or file:///...) in
-parallel.</P
-><P
->When a set of source hosts are specified, only files stored on the set
+the <em class="parameter"><code>destination-url</code></em>(gfarm:///... or file:///...) in
+parallel.
+</p>
+<p>
+When a set of source hosts are specified, only files stored on the set
 of source hosts are copied.  A set of hosts can be specified by a
 domain name and/or a host file.  When both a domain name and a host
-file are specified, a set of hosts is determined by both conditions.</P
-><P
->If the <CODE
-CLASS="PARAMETER"
->source-url</CODE
-> parameter is a directory,
-files under the directory will be copied recursively.</P
-><P
-><B
-CLASS="COMMAND"
->gfpcopy</B
-> can also read the directory and get
-informations of the entries in parallel.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->GFPCOPY OPTIONS</H2
-><P
->These are the options only for <B
-CLASS="COMMAND"
->gfpcopy</B
->.</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-b</CODE
-> <CODE
-CLASS="PARAMETER"
->bufsize</CODE
-></DT
-><DD
-><P
->Specifies the buffer size to copy.</P
-><P
->The default value is 64KiB (64 * 1024).</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-f</CODE
-></DT
-><DD
-><P
->With -f option, existing destination files will be overwritten when
+file are specified, a set of hosts is determined by both conditions.
+</p>
+<p>
+If the <em class="parameter"><code>source-url</code></em> parameter is a directory,
+files under the directory will be copied recursively.
+</p>
+<p>
+<span class="command"><strong>gfpcopy</strong></span> can also read the directory and get
+informations of the entries in parallel.
+</p>
+</div>
+<div class="refsect1" title="GFPCOPY OPTIONS">
+<a name="options"></a><h2>GFPCOPY OPTIONS</h2>
+<p>
+These are the options only for <span class="command"><strong>gfpcopy</strong></span>.
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-b</code> <em class="parameter"><code>bufsize</code></em></span></dt>
+<dd>
+<p>
+Specifies the buffer size to copy.
+</p>
+<p>
+The default value is 64KiB (64 * 1024).
+</p>
+</dd>
+<dt><span class="term"><code class="option">-f</code></span></dt>
+<dd>
+<p>
+With -f option, existing destination files will be overwritten when
 the size is different or the modification time is different from the
-source file.</P
-><P
->Without -f option, existing destination files will be overwritten when
+source file.
+</p>
+<p>
+Without -f option, existing destination files will be overwritten when
 the size is different or the modification time is older than the
-source file.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="COMMON-OPTIONS"
-></A
-><H2
->COMMON OPTIONS</H2
-><P
-><B
-CLASS="COMMAND"
->gfpcopy</B
-> has the same options
-with <B
-CLASS="COMMAND"
->gfprep</B
->.  (see man <B
-CLASS="COMMAND"
->gfprep</B
->)</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="EXAMPLES"
-></A
-><H2
->EXAMPLES</H2
-><P
->To copy files under the directory recursively.</P
-><P
-CLASS="LITERALLAYOUT"
->$&nbsp;gfpcopy&nbsp;gfarm:///dir&nbsp;file:///tmp/dir<br>
-$&nbsp;gfpcopy&nbsp;file:///tmp/dir&nbsp;gfarm:///dir<br>
-$&nbsp;gfpcopy&nbsp;gfarm:///dir1&nbsp;gfarm:///dir2</P
-><P
->To copy a file.</P
-><P
-CLASS="LITERALLAYOUT"
->$&nbsp;gfpcopy&nbsp;gfarm:///dir/file&nbsp;file:///dir</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="NOTES"
-></A
-><H2
->NOTES</H2
-><P
->If the gfmd and <B
-CLASS="COMMAND"
->gfpcopy</B
-> are far apart,
-the <B
-CLASS="COMMAND"
->gfpcopy</B
-> operation is slow.  Specifying a large
+source file.
+</p>
+</dd>
+</dl></div>
+</div>
+<div class="refsect1" title="COMMON OPTIONS">
+<a name="common-options"></a><h2>COMMON OPTIONS</h2>
+<p>
+<span class="command"><strong>gfpcopy</strong></span> has the same options
+with <span class="command"><strong>gfprep</strong></span>.  (see man <span class="command"><strong>gfprep</strong></span>)
+</p>
+</div>
+<div class="refsect1" title="EXAMPLES">
+<a name="examples"></a><h2>EXAMPLES</h2>
+<p>
+To copy files under the directory recursively.
+</p>
+<div class="literallayout"><p><br>
+$ gfpcopy gfarm:///dir file:///tmp/dir<br>
+$ gfpcopy file:///tmp/dir gfarm:///dir<br>
+$ gfpcopy gfarm:///dir1 gfarm:///dir2<br>
+</p></div>
+<p>
+To copy a file.
+</p>
+<div class="literallayout"><p><br>
+$ gfpcopy gfarm:///dir/file file:///dir<br>
+</p></div>
+</div>
+<div class="refsect1" title="NOTES">
+<a name="notes"></a><h2>NOTES</h2>
+<p>
+If the gfmd and <span class="command"><strong>gfpcopy</strong></span> are far apart,
+the <span class="command"><strong>gfpcopy</strong></span> operation is slow.  Specifying a large
 value by the -j option or client_parallel_copy in gfarm2.conf may be
-effective in such a case.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfprep</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfreg</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfexport</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm2.conf</SPAN
->(5)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+effective in such a case.
+</p>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfprep</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfreg</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfexport</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
+</p>
+</div>
+</div></body>
+</html>

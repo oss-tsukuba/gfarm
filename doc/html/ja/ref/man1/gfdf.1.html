@@ -1,195 +1,61 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfdf</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFDF.1"
-></A
->gfdf</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfdf&nbsp;--&nbsp;ディスク空き容量取得</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfdf</B
-> [<TT
-CLASS="REPLACEABLE"
-><I
->オプション</I
-></TT
->]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfdf</B
-> は、Gfarmファイルシステムの
-ディスク空き容量を表示します。</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-a</CODE
-></DT
-><DD
-><P
->Gfarmファイルシステム全体のディスク空き容量を表示します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-h</CODE
-></DT
-><DD
-><P
->数字を「M(メガ)」のような単位つきで読みやすく表示します。
-単位には2の累乗を用いますので、「M」は 1,048,576 を意味します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-H</CODE
-></DT
-><DD
-><P
->数字を「M(メガ)」のような単位つきで読みやすく表示します。
-単位には10の累乗を用いますので、「M」は 1,000,000 を意味します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-n</CODE
-></DT
-><DD
-><P
->利用可能なファイルシステムノードのホスト名を表示します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-r</CODE
-></DT
-><DD
-><P
->逆順に整列して出力します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-S</CODE
-></DT
-><DD
-><P
->空き容量の順に整列して出力します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-P</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->パス名</I
-></TT
-></DT
-><DD
-><P
->指定したパス名により特定のメタデータサーバを指定します．
-このオプションは -a オプションと同時に利用すると無視されます．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-D</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->ドメイン名</I
-></TT
-></DT
-><DD
-><P
->指定したドメイン名に含まれるファイルシステムノードの状態を表示します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->引数オプションを表示します。</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfhost</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm2.conf</SPAN
->(5)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfdf</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfdf">
+<a name="gfdf.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfdf — ディスク空き容量取得</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfdf</code>  [<em class="replaceable"><code>オプション</code></em>]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><span class="command"><strong>gfdf</strong></span> は、Gfarmファイルシステムの
+ディスク空き容量を表示します。
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-a</code></span></dt>
+<dd><p>Gfarmファイルシステム全体のディスク空き容量を表示します。</p></dd>
+<dt><span class="term"><code class="option">-h</code></span></dt>
+<dd><p>数字を「M(メガ)」のような単位つきで読みやすく表示します。
+単位には2の累乗を用いますので、「M」は 1,048,576 を意味します。</p></dd>
+<dt><span class="term"><code class="option">-H</code></span></dt>
+<dd><p>数字を「M(メガ)」のような単位つきで読みやすく表示します。
+単位には10の累乗を用いますので、「M」は 1,000,000 を意味します。</p></dd>
+<dt><span class="term"><code class="option">-n</code></span></dt>
+<dd><p>利用可能なファイルシステムノードのホスト名を表示します。</p></dd>
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd><p>逆順に整列して出力します。</p></dd>
+<dt><span class="term"><code class="option">-S</code></span></dt>
+<dd><p>空き容量の順に整列して出力します。</p></dd>
+<dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>パス名</code></em></span></dt>
+<dd><p>
+指定したパス名により特定のメタデータサーバを指定します．
+このオプションは -a オプションと同時に利用すると無視されます．
+</p></dd>
+<dt><span class="term"><code class="option">-D</code> <em class="parameter"><code>ドメイン名</code></em></span></dt>
+<dd><p>
+指定したドメイン名に含まれるファイルシステムノードの状態を表示します。
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>引数オプションを表示します。</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfhost</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
+</p>
+</div>
+</div></body>
+</html>

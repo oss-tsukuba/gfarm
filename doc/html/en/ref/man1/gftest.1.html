@@ -1,186 +1,43 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gftest</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFTEST.1"
-></A
->gftest</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gftest&nbsp;--&nbsp;check entry type</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gftest</B
->  <TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
->   <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
-> </P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->Check file or directory information.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-d</CODE
-></DT
-><DD
-><P
->returns 0 if an entry specified by <TT
-CLASS="PARAMETER"
-><I
->path</I
-></TT
-> is a directory.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-e</CODE
-></DT
-><DD
-><P
->returns 0 if an entry specified by <TT
-CLASS="PARAMETER"
-><I
->path</I
-></TT
-> exists.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-f</CODE
-></DT
-><DD
-><P
->returns 0 if an entry specified by <TT
-CLASS="PARAMETER"
-><I
->path</I
-></TT
-> is a regular file.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-h</CODE
-></DT
-><DD
-><P
->returns 0 if an entry specified by <TT
-CLASS="PARAMETER"
-><I
->path</I
-></TT
-> is a symbolic link.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-s</CODE
-></DT
-><DD
-><P
->returns 0 if an entry specified by <TT
-CLASS="PARAMETER"
-><I
->path</I
-></TT
-> is a regular file whose size is greater than 0.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-L</CODE
-></DT
-><DD
-><P
->returns 0 if an entry specified by <TT
-CLASS="PARAMETER"
-><I
->path</I
-></TT
-> is a regular file and stored in the same host.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-R</CODE
-></DT
-><DD
-><P
->returns 0 if an entry specified by <TT
-CLASS="PARAMETER"
-><I
->path</I
-></TT
-> is a regular file and stored in a remote host.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->displays a list of command options.</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gftest</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gftest">
+<a name="gftest.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gftest — check entry type</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gftest</code>   <em class="replaceable"><code>options</code></em>   <em class="replaceable"><code>path</code></em> </p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>Check file or directory information.</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>returns 0 if an entry specified by <em class="parameter"><code>path</code></em> is a directory.</p></dd>
+<dt><span class="term"><code class="option">-e</code></span></dt>
+<dd><p>returns 0 if an entry specified by <em class="parameter"><code>path</code></em> exists.</p></dd>
+<dt><span class="term"><code class="option">-f</code></span></dt>
+<dd><p>returns 0 if an entry specified by <em class="parameter"><code>path</code></em> is a regular file.</p></dd>
+<dt><span class="term"><code class="option">-h</code></span></dt>
+<dd><p>returns 0 if an entry specified by <em class="parameter"><code>path</code></em> is a symbolic link.</p></dd>
+<dt><span class="term"><code class="option">-s</code></span></dt>
+<dd><p>returns 0 if an entry specified by <em class="parameter"><code>path</code></em> is a regular file whose size is greater than 0.</p></dd>
+<dt><span class="term"><code class="option">-L</code></span></dt>
+<dd><p>returns 0 if an entry specified by <em class="parameter"><code>path</code></em> is a regular file and stored in the same host.</p></dd>
+<dt><span class="term"><code class="option">-R</code></span></dt>
+<dd><p>returns 0 if an entry specified by <em class="parameter"><code>path</code></em> is a regular file and stored in a remote host.</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>displays a list of command options.</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

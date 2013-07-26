@@ -1,138 +1,48 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfusage</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFUSAGE.1"
-></A
->gfusage</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfusage&nbsp;--&nbsp;現在の使用量を表示する</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfusage</B
->  [オプション] [名前]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfusage</B
-> は、Gfarm ファイルシステムの使用量を
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfusage</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfusage">
+<a name="gfusage.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfusage — 現在の使用量を表示する</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfusage</code>  [オプション] [名前]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><span class="command"><strong>gfusage</strong></span> は、Gfarm ファイルシステムの使用量を
 ユーザごとやグループごとに表示します。
-<CODE
-CLASS="PARAMETER"
->名前</CODE
->を指定すると、そのユーザやグループだけを表示
+<em class="parameter"><code>名前</code></em>を指定すると、そのユーザやグループだけを表示
 します。
 デフォルトはユーザの使用量を表示しますが、-g オプションを指定すると、グ
 ループの使用量を表示します。
-<B
-CLASS="COMMAND"
->gfedquota</B
-> と <B
-CLASS="COMMAND"
->gfquotacheck</B
-> によっ
-て使用量テーブルを構築すると、ユーザやグループの使用量を利用できます。</P
-></DIV
-><DT
-><CODE
-CLASS="OPTION"
->-P NAME</CODE
-></DT
-><DD
-><P
->指定したパス名により特定のメタデータサーバを指定します。</P
-></DD
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-g</CODE
-></DT
-><DD
-><P
->グループの使用量を表示します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->引数オプションを表示します。</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfdf</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfquota</SPAN
->(1)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+<span class="command"><strong>gfedquota</strong></span> と <span class="command"><strong>gfquotacheck</strong></span> によっ
+て使用量テーブルを構築すると、ユーザやグループの使用量を利用できます。
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-P NAME</code></span></dt>
+<dd><p>指定したパス名により特定のメタデータサーバを指定します。</p></dd>
+<dt><span class="term"><code class="option">-g</code></span></dt>
+<dd><p>グループの使用量を表示します。</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>引数オプションを表示します。</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfdf</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfquota</span>(1)</span>
+</p>
+</div>
+</div></body>
+</html>

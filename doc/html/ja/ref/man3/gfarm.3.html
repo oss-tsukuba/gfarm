@@ -1,815 +1,259 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfarm</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFARM.3"
-></A
->gfarm</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfarm&nbsp;--&nbsp;Gfarm ファイルシステム API ライブラリ</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><PRE
-CLASS="SYNOPSIS"
->#include &lt;gfarm/gfarm.h&gt;&#13;</PRE
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->Gfarm ライブラリは，Gfarm ファイルシステムや，スケジューリング
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfarm</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm">
+<a name="gfarm.3"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfarm — Gfarm ファイルシステム API ライブラリ</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<pre class="synopsis">
+#include &lt;gfarm/gfarm.h&gt;
+
+</pre>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>Gfarm ライブラリは，Gfarm ファイルシステムや，スケジューリング
 機能に対するインターフェースを提供します．このマニュアルはライブラリ
 の概要を記述します．各関数の詳細は，関数単位のマニュアルを参照して
-ください．</P
-><DIV
-CLASS="REFSECT2"
-><A
-NAME="AEN16"
-></A
-><H3
->初期化／終了処理</H3
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_initialize</SPAN
->(3)</SPAN
-> 関数は Gfarm ライブラリの初期化に，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_terminate</SPAN
->(3)</SPAN
-> 関数は Gfarm ライブラリの終了処理に用います．</P
-></DIV
-><DIV
-CLASS="REFSECT2"
-><A
-NAME="AEN25"
-></A
-><H3
->ファイル入出力処理</H3
-><P
->既存のファイルをストリームとしてオープンするには
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_open</SPAN
->(3)</SPAN
-> 関数を，
+ください．</p>
+<div class="refsect2" title="初期化／終了処理">
+<a name="idp53961664"></a><h3>初期化／終了処理</h3>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfarm_initialize</span></span> 関数は Gfarm ライブラリの初期化に，
+<span class="citerefentry"><span class="refentrytitle">gfarm_terminate</span></span> 関数は Gfarm ライブラリの終了処理に用います．
+</p>
+</div>
+<div class="refsect2" title="ファイル入出力処理">
+<a name="idp53159568"></a><h3>ファイル入出力処理</h3>
+<p>
+既存のファイルをストリームとしてオープンするには
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_open</span></span> 関数を，
 新規ファイルを作成してストリームとしてオープンするには
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_create</SPAN
->(3)</SPAN
-> 関数を用います．
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_create</span></span> 関数を用います．
 ファイルのクローズは
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_close</SPAN
->(3)</SPAN
-> 関数を使います．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_error</SPAN
->(3)</SPAN
-> 関数はオープンしているストリームに関してエラーが生じているか
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_close</span></span> 関数を使います．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_error</span></span> 関数はオープンしているストリームに関してエラーが生じているか
 を判別し，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_eof</SPAN
->(3)</SPAN
-> 関数は読み込みオープンしているストリームがファイル
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_eof</span></span> 関数は読み込みオープンしているストリームがファイル
 末尾に達しているかを判別します．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_seek</SPAN
->(3)</SPAN
-> 関数は，ストリーム中の現在位置を変更します．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_getc</SPAN
->(3)</SPAN
-> 関数はストリームから一文字読み込み，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_ungetc</SPAN
->(3)</SPAN
-> 関数は逆に読み込んだ一文字をストリームに戻します．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_getline</SPAN
->(3)</SPAN
-> 関数や
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_gets</SPAN
->(3)</SPAN
-> 関数，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_readline</SPAN
->(3)</SPAN
-> 関数は，ストリームから一行を読み込み，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_readdelim</SPAN
->(3)</SPAN
-> 関数は，ストリームから指定したデリミタまでを読み込みます．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_read</SPAN
->(3)</SPAN
-> 関数は，ストリームから指定したバイト数だけ読み込みます．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_putc</SPAN
->(3)</SPAN
-> 関数はストリームへ一文字書きだし，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_putline</SPAN
->(3)</SPAN
-> 関数や
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_puts</SPAN
->(3)</SPAN
-> 関数はストリームへ一行書きだします．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_write</SPAN
->(3)</SPAN
-> 関数は，ストリームへ指定したバイト数だけ書き込みます．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_flush</SPAN
->(3)</SPAN
-> 関数や，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_sync</SPAN
->(3)</SPAN
-> 関数，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_datasync</SPAN
->(3)</SPAN
-> 関数は，バッファリングしているデータを記憶装置に書き出します．
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_seek</span></span> 関数は，ストリーム中の現在位置を変更します．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_getc</span></span> 関数はストリームから一文字読み込み，
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_ungetc</span></span> 関数は逆に読み込んだ一文字をストリームに戻します．
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_getline</span></span> 関数や
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_gets</span></span> 関数，
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_readline</span></span> 関数は，ストリームから一行を読み込み，
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_readdelim</span></span> 関数は，ストリームから指定したデリミタまでを読み込みます．
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_read</span></span> 関数は，ストリームから指定したバイト数だけ読み込みます．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_putc</span></span> 関数はストリームへ一文字書きだし，
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_putline</span></span> 関数や
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_puts</span></span> 関数はストリームへ一行書きだします．
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_write</span></span> 関数は，ストリームへ指定したバイト数だけ書き込みます．
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_flush</span></span> 関数や，
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_sync</span></span> 関数，
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_datasync</span></span> 関数は，バッファリングしているデータを記憶装置に書き出します．
 
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_truncate</SPAN
->(3)</SPAN
-> 関数は，ファイルのサイズを変更します．</P
-></DIV
-><DIV
-CLASS="REFSECT2"
-><A
-NAME="AEN94"
-></A
-><H3
->ディレクトリアクセス</H3
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_opendir</SPAN
->(3)</SPAN
-> 関数でディレクトリをオープンすると，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_readdir</SPAN
->(3)</SPAN
-> 関数で，そのディレクトリを構成するエントリを得ることが
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_truncate</span></span> 関数は，ファイルのサイズを変更します．
+</p>
+</div>
+<div class="refsect2" title="ディレクトリアクセス">
+<a name="idp57299568"></a><h3>ディレクトリアクセス</h3>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_opendir</span></span> 関数でディレクトリをオープンすると，
+<span class="citerefentry"><span class="refentrytitle">gfs_readdir</span></span> 関数で，そのディレクトリを構成するエントリを得ることが
 できます．オープンしたディレクトリへのアクセスは，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_closedir</SPAN
->(3)</SPAN
-> 関数で終了します．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_glob_init</SPAN
->(3)</SPAN
-> 関数で初期化した gfs_glob_t を
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_glob</SPAN
->(3)</SPAN
-> 関数に渡すことで，ワイルドカードの展開を行うことが
+<span class="citerefentry"><span class="refentrytitle">gfs_closedir</span></span> 関数で終了します．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_glob_init</span></span> 関数で初期化した gfs_glob_t を
+<span class="citerefentry"><span class="refentrytitle">gfs_glob</span></span> 関数に渡すことで，ワイルドカードの展開を行うことが
 できます．
 利用が終わったら，この領域は
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_glob_free</SPAN
->(3)</SPAN
-> 関数で開放します．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_glob_add</SPAN
->(3)</SPAN
-> 関数は，gfs_glob_t にエントリを追加するのに用います．</P
-></DIV
-><DIV
-CLASS="REFSECT2"
-><A
-NAME="AEN119"
-></A
-><H3
->ファイル／ディレクトリ操作</H3
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_chmod</SPAN
->(3)</SPAN
-> 関数でファイルのモードを変更し，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_chown</SPAN
->(3)</SPAN
-> 関数でファイルの所有者を変更し，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_utimes</SPAN
->(3)</SPAN
-> 関数でファイルの更新時刻とアクセス時刻を変更します．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_mkdir</SPAN
->(3)</SPAN
-> 関数はディレクトリを作成し，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_rmdir</SPAN
->(3)</SPAN
-> 関数はディレクトリを削除します．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_unlink</SPAN
->(3)</SPAN
-> 関数はファイルを削除し，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_rename</SPAN
->(3)</SPAN
-> 関数はディレクトリやファイルを改名します．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_stat</SPAN
->(3)</SPAN
-> 関数は指定したファイルあるいはディレクトリのサイズや
+<span class="citerefentry"><span class="refentrytitle">gfs_glob_free</span></span> 関数で開放します．
+<span class="citerefentry"><span class="refentrytitle">gfs_glob_add</span></span> 関数は，gfs_glob_t にエントリを追加するのに用います．
+</p>
+</div>
+<div class="refsect2" title="ファイル／ディレクトリ操作">
+<a name="idp57308592"></a><h3>ファイル／ディレクトリ操作</h3>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_chmod</span></span> 関数でファイルのモードを変更し，
+<span class="citerefentry"><span class="refentrytitle">gfs_chown</span></span> 関数でファイルの所有者を変更し，
+<span class="citerefentry"><span class="refentrytitle">gfs_utimes</span></span> 関数でファイルの更新時刻とアクセス時刻を変更します．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_mkdir</span></span> 関数はディレクトリを作成し，
+<span class="citerefentry"><span class="refentrytitle">gfs_rmdir</span></span> 関数はディレクトリを削除します．
+<span class="citerefentry"><span class="refentrytitle">gfs_unlink</span></span> 関数はファイルを削除し，
+<span class="citerefentry"><span class="refentrytitle">gfs_rename</span></span> 関数はディレクトリやファイルを改名します．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_stat</span></span> 関数は指定したファイルあるいはディレクトリのサイズや
 更新時刻などの情報を返します．
 この関数が返した gfs_stat 構造体は
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_stat_free</SPAN
->(3)</SPAN
-> 関数を用いて解放する必要があります．</P
-></DIV
-><DIV
-CLASS="REFSECT2"
-><A
-NAME="AEN151"
-></A
-><H3
->アクセスコントロールリスト (ACL) 操作</H3
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_init</SPAN
->(3)</SPAN
-> 関数は ACL 構造体 (gfarm_acl_t) を初期化し，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_free</SPAN
->(3)</SPAN
-> 関数で ACL 構造体を開放します．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_dup</SPAN
->(3)</SPAN
-> 関数は ACL 構造体を複製します．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_create_entry</SPAN
->(3)</SPAN
-> 関数は ACL 構造体の ACL エントリ (gfarm_acl_entry_t)
+<span class="citerefentry"><span class="refentrytitle">gfs_stat_free</span></span> 関数を用いて解放する必要があります．
+</p>
+</div>
+<div class="refsect2" title="アクセスコントロールリスト (ACL) 操作">
+<a name="idp53136288"></a><h3>アクセスコントロールリスト (ACL) 操作</h3>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_init</span></span> 関数は ACL 構造体 (gfarm_acl_t) を初期化し，
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_free</span></span> 関数で ACL 構造体を開放します．
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_dup</span></span> 関数は ACL 構造体を複製します．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_create_entry</span></span> 関数は ACL 構造体の ACL エントリ (gfarm_acl_entry_t)
 をひとつ生成して追加し，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_get_entry</SPAN
->(3)</SPAN
-> 関数で ACL 構造体の ACL エントリをひとつ取得し，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_delete_entry</SPAN
->(3)</SPAN
-> 関数で ACL 構造体の ACL エントリをひとつ削除します．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_valid</SPAN
->(3)</SPAN
-> 関数は ACL 構造体が有効な形式かどうか確認します．
-gfs_acl_check(3) 関数ならばより詳しく確認できます．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_calc_mask</SPAN
->(3)</SPAN
-> 関数は ACL 構造体の GFARM_ACL_MASK タグのエントリを計算
-して，GFARM_ACL_MASK が既に存在すれば上書きし，存在しなければ作成します．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_get_tag_type</SPAN
->(3)</SPAN
-> 関数は ACL エントリから ACL タグ (gfarm_acl_tag_t)
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_get_entry</span></span> 関数で ACL 構造体の ACL エントリをひとつ取得し，
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_delete_entry</span></span> 関数で ACL 構造体の ACL エントリをひとつ削除します．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_valid</span></span> 関数は ACL 構造体が有効な形式かどうか確認します．
+gfs_acl_check 関数ならばより詳しく確認できます．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_calc_mask</span></span> 関数は ACL 構造体の GFARM_ACL_MASK タグのエントリを計算
+して，GFARM_ACL_MASK が既に存在すれば上書きし，存在しなければ作成します．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_get_tag_type</span></span> 関数は ACL エントリから ACL タグ (gfarm_acl_tag_t)
 (ACL エントリの種類) を取得します．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_set_tag_type</SPAN
->(3)</SPAN
-> 関数は ACL エントリの ACL タグを差し替えます．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_get_permset</SPAN
->(3)</SPAN
-> 関数は ACL エントリから ACL パーミッションセット 
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_set_tag_type</span></span> 関数は ACL エントリの ACL タグを差し替えます．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_get_permset</span></span> 関数は ACL エントリから ACL パーミッションセット 
 (gfarm_acl_permset_t) を取り出します．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_set_permset</SPAN
->(3)</SPAN
-> 関数は ACL エントリへ ACL パーミッションセットを差し替えます．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_add_perm</SPAN
->(3)</SPAN
-> 関数は ACL パーミッションセットに ACL パーミッション値 
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_set_permset</span></span> 関数は ACL エントリへ ACL パーミッションセットを差し替えます．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_add_perm</span></span> 関数は ACL パーミッションセットに ACL パーミッション値 
 (gfarm_acl_perm_t) を追加します．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_clear_perms</SPAN
->(3)</SPAN
-> 関数は ACL パーミッションセットからすべての 
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_clear_perms</span></span> 関数は ACL パーミッションセットからすべての 
 ACL パーミッション値をクリアします．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_delete_perm</SPAN
->(3)</SPAN
-> 関数は ACL パーミッションセットから 
-ACL パーミッション値をひとつ削除します．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_get_qualifier</SPAN
->(3)</SPAN
-> 関数は ACL エントリから，ユーザ名またはグループ名を取得します．
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_delete_perm</span></span> 関数は ACL パーミッションセットから 
+ACL パーミッション値をひとつ削除します．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_get_qualifier</span></span> 関数は ACL エントリから，ユーザ名またはグループ名を取得します．
 GFARM_ACL_USER または GFARM_ACL_GROUP タグの ACL エントリから取得できます．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_set_qualifier</SPAN
->(3)</SPAN
-> 関数は ACL エントリに対して，指定したユーザ名またはグループ名を
-差し替えます．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_delete_def_file</SPAN
->(3)</SPAN
-> 関数は，ファイルやディレクトリからデフォルト ACL を削除します．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_get_file</SPAN
->(3)</SPAN
-> 関数は，ファイルやディレクトリから ACL 構造体を取得します．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_set_file</SPAN
->(3)</SPAN
-> 関数は，ファイルやディレクトリの ACL 構造体を差し替えます．
-事前に gfs_acl_sort(3) 関数でソートしてください．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_to_text</SPAN
->(3)</SPAN
-> 関数は ACL 構造体を ACL 文字列形式に変換します．
-gfs_acl_to_any_text(3) 関数のほうがより高機能です．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_from_text</SPAN
->(3)</SPAN
-> 関数は ACL 文字列形式から ACL 構造体に変換します．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_get_perm</SPAN
->(3)</SPAN
-> 関数は ACL パーミッションセットの中から
-ひとつのパーミッションをテストします．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_check</SPAN
->(3)</SPAN
-> 関数は ACL 構造体が有効な形式かどうか確認します．
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_set_qualifier</span></span> 関数は ACL エントリに対して，指定したユーザ名またはグループ名を
+差し替えます．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_delete_def_file</span></span> 関数は，ファイルやディレクトリからデフォルト ACL を削除します．
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_get_file</span></span> 関数は，ファイルやディレクトリから ACL 構造体を取得します．
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_set_file</span></span> 関数は，ファイルやディレクトリの ACL 構造体を差し替えます．
+事前に gfs_acl_sort 関数でソートしてください．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_to_text</span></span> 関数は ACL 構造体を ACL 文字列形式に変換します．
+gfs_acl_to_any_text 関数のほうがより高機能です．
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_from_text</span></span> 関数は ACL 文字列形式から ACL 構造体に変換します．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_get_perm</span></span> 関数は ACL パーミッションセットの中から
+ひとつのパーミッションをテストします．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_check</span></span> 関数は ACL 構造体が有効な形式かどうか確認します．
 また，エラーの場所とエラーの種類がわかります．
-gfs_acl_valid(3) 関数よりも高機能です．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_error</SPAN
->(3)</SPAN
-> 関数は gfs_acl_check(3) 
-関数のエラーを文字列に変換します．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_entries</SPAN
->(3)</SPAN
-> 関数は ACL エントリの数を数えます．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_equiv_mode</SPAN
->(3)</SPAN
-> 関数は，ACL 構造体が基本 ACL (GFARM_ACL_USER_OBJ,
+gfs_acl_valid 関数よりも高機能です．
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_error</span></span> 関数は gfs_acl_check 
+関数のエラーを文字列に変換します．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_entries</span></span> 関数は ACL エントリの数を数えます．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_equiv_mode</span></span> 関数は，ACL 構造体が基本 ACL (GFARM_ACL_USER_OBJ,
 GFARM_ACL_GROUP_OBJ, GFARM_ACL_OTHER) だけで構成されているかどうか確認します．
-また，基本 ACL 部分から gfarm_mode_t に変換できます．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_cmp</SPAN
->(3)</SPAN
-> 関数は二つの ACL 構造体を比較します．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_from_mode</SPAN
->(3)</SPAN
-> 関数は gfarm_mode_t から ACL 構造体を生成します．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_to_any_text</SPAN
->(3)</SPAN
-> 関数は ACL 構造体を ACL 文字列形式に変換します．
+また，基本 ACL 部分から gfarm_mode_t に変換できます．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_cmp</span></span> 関数は二つの ACL 構造体を比較します．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_from_mode</span></span> 関数は gfarm_mode_t から ACL 構造体を生成します．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_to_any_text</span></span> 関数は ACL 構造体を ACL 文字列形式に変換します．
 出力形式をオプションなどで変更できます．
-gfs_acl_to_text(3) 関数と比べて高機能です．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_to_xattr_value</SPAN
->(3)</SPAN
-> 関数は ACL 構造体を拡張属性に格納するための 
+gfs_acl_to_text 関数と比べて高機能です．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_to_xattr_value</span></span> 関数は ACL 構造体を拡張属性に格納するための 
 ACL バイナリデータに変換します．
-事前に gfs_acl_sort(3) 関数でソートしてください．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_from_xattr_value</SPAN
->(3)</SPAN
-> 関数は拡張属性から取り出した ACL バイナリデータを 
-ACL 構造体に変換します．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_sort</SPAN
->(3)</SPAN
-> 関数は ACL 構造体を有効な形式となる順番にソートします．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_from_text_with_default</SPAN
->(3)</SPAN
-> 関数は "default:" で始まる ACL エントリを持つ ACL 
-文字列を解釈し，アクセス ACL 構造体とデフォルト ACL 構造体を 2 個生成します．</P
-></DIV
-><DIV
-CLASS="REFSECT2"
-><A
-NAME="AEN282"
-></A
-><H3
->エラーコード</H3
-><P
->ほとんどの Gfarm ライブラリの関数は gfarm_error_t 型の Gfarm エラーコー
+事前に gfs_acl_sort 関数でソートしてください．
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_from_xattr_value</span></span> 関数は拡張属性から取り出した ACL バイナリデータを 
+ACL 構造体に変換します．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_sort</span></span> 関数は ACL 構造体を有効な形式となる順番にソートします．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_from_text_with_default</span></span> 関数は "default:" で始まる ACL エントリを持つ ACL 
+文字列を解釈し，アクセス ACL 構造体とデフォルト ACL 構造体を 2 個生成します．
+</p>
+</div>
+<div class="refsect2" title="エラーコード">
+<a name="idp58352048"></a><h3>エラーコード</h3>
+<p>
+ほとんどの Gfarm ライブラリの関数は gfarm_error_t 型の Gfarm エラーコー
 ドを返します。
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_error_string</SPAN
->(3)</SPAN
-> 関数は Gfarm エラーコードを表す文字列を返します。
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_errno_to_error</SPAN
->(3)</SPAN
-> 関数は errno を Gfarm エラーコードに変換します。
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_error_to_errno</SPAN
->(3)</SPAN
-> 関数は Gfarm エラーコードを errno に変換します。</P
-></DIV
-><DIV
-CLASS="REFSECT2"
-><A
-NAME="AEN294"
-></A
-><H3
->文字列配列操作ユーティリティ</H3
-><P
->文字列配列を表す gfarm_stringlist 型の変数は，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_stringlist_init</SPAN
->(3)</SPAN
-> 関数で初期化し，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_stringlist_add</SPAN
->(3)</SPAN
-> 関数で文字列を一つ追加し，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_stringlist_cat</SPAN
->(3)</SPAN
-> 関数で文字列を複数追加し，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_stringlist_free</SPAN
->(3)</SPAN
-> 関数で解放することができます．
+<span class="citerefentry"><span class="refentrytitle">gfarm_error_string</span></span> 関数は Gfarm エラーコードを表す文字列を返します。
+<span class="citerefentry"><span class="refentrytitle">gfarm_errno_to_error</span></span> 関数は errno を Gfarm エラーコードに変換します。
+<span class="citerefentry"><span class="refentrytitle">gfarm_error_to_errno</span></span> 関数は Gfarm エラーコードを errno に変換します。
+</p>
+</div>
+<div class="refsect2" title="文字列配列操作ユーティリティ">
+<a name="idp58356208"></a><h3>文字列配列操作ユーティリティ</h3>
+<p>
+文字列配列を表す gfarm_stringlist 型の変数は，
+<span class="citerefentry"><span class="refentrytitle">gfarm_stringlist_init</span></span> 関数で初期化し，
+<span class="citerefentry"><span class="refentrytitle">gfarm_stringlist_add</span></span> 関数で文字列を一つ追加し，
+<span class="citerefentry"><span class="refentrytitle">gfarm_stringlist_cat</span></span> 関数で文字列を複数追加し，
+<span class="citerefentry"><span class="refentrytitle">gfarm_stringlist_free</span></span> 関数で解放することができます．
 文字列配列の各要素文字列には
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_stringlist_elem</SPAN
->(3)</SPAN
-> 関数あるいは
+<span class="citerefentry"><span class="refentrytitle">gfarm_stringlist_elem</span></span> 関数あるいは
 GFARM_STRINGLIST_ELEM() マクロでアクセスすることができます．
 また，文字列配列を構成する文字列の数は
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_stringlist_length</SPAN
->(3)</SPAN
-> 関数で得ることができます．</P
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_strings_free_deeply</SPAN
->(3)</SPAN
-> 関数は，文字列配列およびそれを構成する各文字列に対して
-標準ライブラリ関数の free() を呼び出して解放します．</P
-></DIV
-><DIV
-CLASS="REFSECT2"
-><A
-NAME="AEN319"
-></A
-><H3
->文字列配列操作ユーティリティマクロ</H3
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
->GFARM_STRINGLIST_ELEM(list, i)</DT
-><DD
-><P
->gfarm_stringlist 型の <CODE
-CLASS="PARAMETER"
->list</CODE
-> 引数が表す文字列配列の
-<CODE
-CLASS="PARAMETER"
->i</CODE
-> 番目の要素を
+<span class="citerefentry"><span class="refentrytitle">gfarm_stringlist_length</span></span> 関数で得ることができます．
+</p>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfarm_strings_free_deeply</span></span> 関数は，文字列配列およびそれを構成する各文字列に対して
+標準ライブラリ関数の free() を呼び出して解放します．
+</p>
+</div>
+<div class="refsect2" title="文字列配列操作ユーティリティマクロ">
+<a name="idp58364128"></a><h3>文字列配列操作ユーティリティマクロ</h3>
+<div class="variablelist"><dl>
+<dt><span class="term">GFARM_STRINGLIST_ELEM(list, i)</span></dt>
+<dd><p>
+gfarm_stringlist 型の <em class="parameter"><code>list</code></em> 引数が表す文字列配列の
+<em class="parameter"><code>i</code></em> 番目の要素を
 表すマクロです．このマクロは左辺値として使えます．
 値として評価した場合には
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_stringlist_elem</SPAN
->(3)</SPAN
-> 関数と同一の結果を返します．</P
-></DD
-><DT
->GFARM_STRINGLIST_STRARRAY(list)</DT
-><DD
-><P
->gfarm_stringlist 型の <CODE
-CLASS="PARAMETER"
->list</CODE
-> 引数が
+<span class="citerefentry"><span class="refentrytitle">gfarm_stringlist_elem</span></span> 関数と同一の結果を返します．
+</p></dd>
+<dt><span class="term">GFARM_STRINGLIST_STRARRAY(list)</span></dt>
+<dd><p>
+gfarm_stringlist 型の <em class="parameter"><code>list</code></em> 引数が
 表す文字列配列の先頭要素へのポインタを返します．
-返り値は，文字へのポインタへのポインタとなります．</P
-></DD
-></DL
-></DIV
-></DIV
-></DIV
-></BODY
-></HTML
->
+返り値は，文字へのポインタへのポインタとなります．
+</p></dd>
+</dl></div>
+</div>
+</div>
+</div></body>
+</html>

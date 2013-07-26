@@ -1,145 +1,60 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfs_acl_error</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFS-ACL-ERROR.3"
-></A
->gfs_acl_error</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfs_acl_error&nbsp;--&nbsp;convert a Gfarm ACL error code to a text message</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><DIV
-CLASS="FUNCSYNOPSIS"
-><P
-></P
-><A
-NAME="AEN12"
-></A
-><PRE
-CLASS="FUNCSYNOPSISINFO"
->#include &lt;gfarm/gfarm.h&gt;</PRE
-><P
-><CODE
-><CODE
-CLASS="FUNCDEF"
-><SPAN
-CLASS="RETURNVALUE"
->const char *</SPAN
-> gfs_acl_error</CODE
->(int acl_check_err_code);</CODE
-></P
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="INPUT-ARGUMENTS"
-></A
-><H2
->INPUT ARGUMENTS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="PARAMETER"
->acl_check_err_code</CODE
-></DT
-><DD
-><P
->A error code returned by <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_check</SPAN
->(3)</SPAN
->.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="RETURN-VALUES"
-></A
-><H2
->RETURN VALUE</H2
-><P
->If the acl_check_err_code is <CODE
-CLASS="PARAMETER"
->GFARM_ACL_MULTI_ERROR</CODE
->,
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfs_acl_error</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfs_acl_error">
+<a name="gfs-acl-error.3"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfs_acl_error — convert a Gfarm ACL error code to a text message</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="funcsynopsis">
+<pre class="funcsynopsisinfo">
+#include &lt;gfarm/gfarm.h&gt;
+</pre>
+<table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" class="funcprototype-table"><tr>
+<td><code class="funcdef"><b class="fsfunc">const char * gfs_acl_error</b>(</code></td>
+<td>
+<var class="pdparam">acl_check_err_code</var><code>)</code>;</td>
+<td> </td>
+</tr></table>
+<div class="paramdef-list">
+<code>int <var class="pdparam">acl_check_err_code</var></code>;</div>
+<div class="funcprototype-spacer"> </div>
+</div>
+</div>
+<div class="refsect1" title="INPUT ARGUMENTS">
+<a name="input-arguments"></a><h2>INPUT ARGUMENTS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><em class="parameter"><code>acl_check_err_code</code></em></span></dt>
+<dd><p>A error code returned by <span class="citerefentry"><span class="refentrytitle">gfs_acl_check</span>(3)</span>.
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="RETURN VALUE">
+<a name="return-values"></a><h2>RETURN VALUE</h2>
+<p>
+If the acl_check_err_code is <em class="parameter"><code>GFARM_ACL_MULTI_ERROR</code></em>,
  "Multiple entries" is returned.
-If the acl_check_err_code is <CODE
-CLASS="PARAMETER"
->GFARM_ACL_DUPLICATE_ERROR</CODE
->,
+If the acl_check_err_code is <em class="parameter"><code>GFARM_ACL_DUPLICATE_ERROR</code></em>,
  "Duplicate entries" is returned.
-If the acl_check_err_code is <CODE
-CLASS="PARAMETER"
->GFARM_ACL_MISS_ERROR</CODE
->,
+If the acl_check_err_code is <em class="parameter"><code>GFARM_ACL_MISS_ERROR</code></em>,
  "Missing or wrong entry" is returned.
-If the acl_check_err_code is <CODE
-CLASS="PARAMETER"
->GFARM_ACL_ENTRY_ERROR</CODE
->,
+If the acl_check_err_code is <em class="parameter"><code>GFARM_ACL_ENTRY_ERROR</code></em>,
  "Invalid entry type" is returned.
- "No error" is returned  otherwise.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_check</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_acl_valid</SPAN
->(3)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+ "No error" is returned  otherwise.
+</p>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_check</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_acl_valid</span>(3)</span>
+</p>
+</div>
+</div></body>
+</html>

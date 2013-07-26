@@ -1,160 +1,59 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfmdhost</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFMDHOST.1"
-></A
->gfmdhost</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfmdhost&nbsp;--&nbsp;gfarm メタデータサーバ管理コマンド</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfmdhost</B
->  [-l] [-P <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->]</P
-><P
-><B
-CLASS="COMMAND"
->gfmdhost</B
->  {-c | -m} [-P <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->] [-p <TT
-CLASS="REPLACEABLE"
-><I
->ポート番号</I
-></TT
->] [-C <TT
-CLASS="REPLACEABLE"
-><I
->クラスタ名</I
-></TT
->] [-t 
-     {m | c | s}
-  ] {<TT
-CLASS="REPLACEABLE"
-><I
->メタデータサーバ名</I
-></TT
->}</P
-><P
-><B
-CLASS="COMMAND"
->gfmdhost</B
->  {-d} [-P <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->] {<TT
-CLASS="REPLACEABLE"
-><I
->メタデータサーバ名</I
-></TT
->}</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfmdhost</B
-> は
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfmdhost</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfmdhost">
+<a name="gfmdhost.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfmdhost — gfarm メタデータサーバ管理コマンド</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  [-l] [-P <em class="replaceable"><code>path</code></em>]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  { -c  |   -m } [-P <em class="replaceable"><code>path</code></em>] [-p <em class="replaceable"><code>ポート番号</code></em>] [-C <em class="replaceable"><code>クラスタ名</code></em>] [-t 
+    { m  |   c  |   s }
+  ] {<em class="replaceable"><code>メタデータサーバ名</code></em>}</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  {-d} [-P <em class="replaceable"><code>path</code></em>] {<em class="replaceable"><code>メタデータサーバ名</code></em>}</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><span class="command"><strong>gfmdhost</strong></span> は
 gfarm のメタデータサーバの冗長化機能に関連する情報の表示や管理を行います。
-<B
-CLASS="COMMAND"
->gfmdhost</B
-> が実行する機能は
+<span class="command"><strong>gfmdhost</strong></span> が実行する機能は
 -l, -c, -m, -d のオプションで選択します。
 これら機能の指定は排他的であり、どれか一つだけを指定することができます。
 また、一つも指定しなかった場合には、
-デフォルトの機能である gfmd ホスト名の一覧表示が行われます。</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="FUNCTIONS"
-></A
-><H2
->FUNCTIONS</H2
-><P
->  下記は、<B
-CLASS="COMMAND"
->gfmdhost</B
->コマンドの機能一覧です。二つ以上の機能を同時に
-  指定することはできません。</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
->無指定</DT
-><DD
-><P
->	登録されているgfmdホストのホスト名一覧を、
+デフォルトの機能である gfmd ホスト名の一覧表示が行われます。
+</p>
+</div>
+<div class="refsect1" title="FUNCTIONS">
+<a name="functions"></a><h2>FUNCTIONS</h2>
+<p>
+  下記は、<span class="command"><strong>gfmdhost</strong></span>コマンドの機能一覧です。二つ以上の機能を同時に
+  指定することはできません。
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term">無指定</span></dt>
+<dd><p>
+	登録されているgfmdホストのホスト名一覧を、
 	アルファベット順で表示します。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-l</CODE
-></DT
-><DD
-><P
->        登録されている gfmd ホストのホスト名一覧を、
+      </p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd>
+<p>
+        登録されている gfmd ホストのホスト名一覧を、
         詳細情報と共に表示します。クラスタ名ごとにホスト名を
         アルファベット順で表示します。
-      </P
-><P
->        詳細情報は次の順に表示されます。
-      </P
-><P
-><CODE
-CLASS="OPTION"
->接続状態 (+|-|?|x|e)</CODE
-></P
-><P
->        "+" はマスター gfmd と正常に接続していることを表します。
+      </p>
+<p>
+        詳細情報は次の順に表示されます。
+      </p>
+<p><code class="option">接続状態 (+|-|?|x|e)</code></p>
+<p>
+        "+" はマスター gfmd と正常に接続していることを表します。
         "-" は接続していないことを表します。
 	"?" は、マスター gfmd と接続直後でまだ状態が判明してないか、あるいは
 	Gfarm-2.5.0 の gfmd に対して、Gfarm-2.5.1 以降の gfmdhost コマンド
@@ -166,141 +65,72 @@ CLASS="OPTION"
 	"x" および "e" については、そのスレーブgfmdが停止した後でも、
 	表示が続きます。
         マスター gfmd は常に "+" です。
-      </P
-><P
-><CODE
-CLASS="OPTION"
->サーバ種別 (master|slave)</CODE
-></P
-><P
->        マスターであるか、スレーブであるかを表します。
-      </P
-><P
-><CODE
-CLASS="OPTION"
->レプリケーション種別 (sync|async|-)</CODE
-></P
-><P
->        sync は同期レプリケーション、
+      </p>
+<p><code class="option">サーバ種別 (master|slave)</code></p>
+<p>
+        マスターであるか、スレーブであるかを表します。
+      </p>
+<p><code class="option">レプリケーション種別 (sync|async|-)</code></p>
+<p>
+        sync は同期レプリケーション、
         async は非同期レプリケーションを表します。
 	マスター gfmd には "-" が表示されます。
-      </P
-><P
-><CODE
-CLASS="OPTION"
->マスター候補の設定 (c|m|s)</CODE
-></P
-><P
->        m はデフォルトのマスター、c はマスター候補、
+      </p>
+<p><code class="option">マスター候補の設定 (c|m|s)</code></p>
+<p>
+        m はデフォルトのマスター、c はマスター候補、
         s はスレーブ専用の gfmd を表します。
-      </P
-><P
-><CODE
-CLASS="OPTION"
->クラスタ名</CODE
-></P
-><P
->        gfmd が属するクラスタ名です。
+      </p>
+<p><code class="option">クラスタ名</code></p>
+<p>
+        gfmd が属するクラスタ名です。
         デフォルトのクラスタは "(default)" と表示されます。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-c</CODE
-></DT
-><DD
-><P
->	引数で指定した gfmd ホストを登録します。
+      </p>
+</dd>
+<dt><span class="term"><code class="option">-c</code></span></dt>
+<dd><p>
+	引数で指定した gfmd ホストを登録します。
 	任意でオプション -C、-p、-t を指定します。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-m</CODE
-></DT
-><DD
-><P
->	引数で指定した gfmd ホストを変更します。
+      </p></dd>
+<dt><span class="term"><code class="option">-m</code></span></dt>
+<dd><p>
+	引数で指定した gfmd ホストを変更します。
 	任意でオプション -C、-p、-t を指定します。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-d</CODE
-></DT
-><DD
-><P
->	引数で指定した gfmd ホストを削除します。
+      </p></dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>
+	引数で指定した gfmd ホストを削除します。
 	マスター gfmd を削除することはできません。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->引数オプションを表示します。</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-C</CODE
-> <CODE
-CLASS="PARAMETER"
->クラスタ名</CODE
-></DT
-><DD
-><P
->        -c, -m 機能で gfmd ホストが属するクラスタ名を指定します。
+      </p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>引数オプションを表示します。</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-C</code> <em class="parameter"><code>クラスタ名</code></em></span></dt>
+<dd>
+<p>
+        -c, -m 機能で gfmd ホストが属するクラスタ名を指定します。
 	省略した場合、デフォルトのクラスタに属します。
-      </P
-><P
->	クラスタ名は同期レプリケーションのグループを表します。
+      </p>
+<p>
+	クラスタ名は同期レプリケーションのグループを表します。
 	マスター gfmd と同一のクラスタに所属する gfmd 間は同期レプリケー
 	ションとなり、それ以外の gfmd は非同期レプリケーションとなります。
 	同期レプリケーションが行われているスレーブ gfmd は、
 	メタデータ操作を失うことなくマスター gfmd に昇格することが可能です。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-p</CODE
-> <CODE
-CLASS="PARAMETER"
->ポート番号</CODE
-></DT
-><DD
-><P
->        -c, -m 機能で gfmd のポート番号を指定します。
+      </p>
+</dd>
+<dt><span class="term"><code class="option">-p</code> <em class="parameter"><code>ポート番号</code></em></span></dt>
+<dd><p>
+        -c, -m 機能で gfmd のポート番号を指定します。
 	省略した場合、デフォルトのポート番号 601 を指定したことになります。
-      </P
-></DD
-><DT
->-t {m|c|s}</DT
-><DD
-><P
->	-c, -m 機能でマスター候補の設定を指定します。
+      </p></dd>
+<dt><span class="term">-t {m|c|s}</span></dt>
+<dd><p>
+	-c, -m 機能でマスター候補の設定を指定します。
         m はデフォルトのマスター、c はマスター候補、
         s はスレーブ専用を表します。
 	省略した場合、c を指定したことになります。
@@ -309,42 +139,20 @@ CLASS="PARAMETER"
 	デフォルトのマスター以外の gfmd を -t m
 	によりデフォルトのマスターに変更すると、
 	以前のデフォルトのマスターがマスター候補に変更されます。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-P</CODE
-> <CODE
-CLASS="PARAMETER"
->path</CODE
-></DT
-><DD
-><P
->	このコマンドがアクセスするメタデータサーバを特定するための
+      </p></dd>
+<dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>path</code></em></span></dt>
+<dd><p>
+	このコマンドがアクセスするメタデータサーバを特定するための
 	パス名または Gfarm URL を指定します。
 	省略した場合は、"/" を指定したのと同じ意味になります。
-      </P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm2.conf</SPAN
->(5)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+      </p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
+</p>
+</div>
+</div></body>
+</html>

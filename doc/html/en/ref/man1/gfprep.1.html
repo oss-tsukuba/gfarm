@@ -1,548 +1,259 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfprep</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFPREP.1"
-></A
->gfprep</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfprep&nbsp;--&nbsp;replicate Gfarm files in parallel</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfprep</B
->  [-nqvdpPU] [-mx] [-S <TT
-CLASS="REPLACEABLE"
-><I
->source-domainname</I
-></TT
->] [-h <TT
-CLASS="REPLACEABLE"
-><I
->source-hostfile</I
-></TT
->] [-D <TT
-CLASS="REPLACEABLE"
-><I
->destination-domainname</I
-></TT
->] [-H <TT
-CLASS="REPLACEABLE"
-><I
->destination-hostfile</I
-></TT
->] [-j <TT
-CLASS="REPLACEABLE"
-><I
->num-of-processes</I
-></TT
->] [-w <TT
-CLASS="REPLACEABLE"
-><I
->way-of-scheduling</I
-></TT
->] [-W <TT
-CLASS="REPLACEABLE"
-><I
->kilobytes-for-threshold</I
-></TT
->] [-s <TT
-CLASS="REPLACEABLE"
-><I
->KB/s-to-simulate</I
-></TT
->] [-F <TT
-CLASS="REPLACEABLE"
-><I
->num-for-readahead</I
-></TT
->] [-N <TT
-CLASS="REPLACEABLE"
-><I
->num-of-replicas</I
-></TT
->]  <TT
-CLASS="REPLACEABLE"
-><I
->gfarm-url</I
-></TT
-> </P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfprep</B
-> creates replicas of Gfarm files specified by
-the <CODE
-CLASS="PARAMETER"
->gfarm-url</CODE
->(gfarm:///...) in parallel.</P
-><P
->When a set of source hosts are specified, only files stored on the set
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfprep</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfprep">
+<a name="gfprep.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfprep — replicate Gfarm files in parallel</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfprep</code>  [-nqvdpPU] [-mx] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-N <em class="replaceable"><code>num-of-replicas</code></em>]  <em class="replaceable"><code>gfarm-url</code></em> </p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<span class="command"><strong>gfprep</strong></span> creates replicas of Gfarm files specified by
+the <em class="parameter"><code>gfarm-url</code></em>(gfarm:///...) in parallel.
+</p>
+<p>
+When a set of source hosts are specified, only files stored on the set
 of source hosts are replicated.  A set of hosts can be specified by a
 domain name and/or a host file.  When both a domain name and a host
-file are specified, a set of hosts is determined by both conditions.</P
-><P
->If the <CODE
-CLASS="PARAMETER"
->gfarm-url</CODE
-> parameter is a directory,
-files under the directory will be replicated recursively.</P
-><P
-><B
-CLASS="COMMAND"
->gfprep</B
-> can also read the directory and get
-informations of the entries in parallel.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->GFPREP OPTIONS</H2
-><P
->These are the options only for <B
-CLASS="COMMAND"
->gfprep</B
->.</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-N</CODE
-> <CODE
-CLASS="PARAMETER"
->num-of-replicas</CODE
-></DT
-><DD
-><P
->Specifies the required number of file replicas.  If there are a
+file are specified, a set of hosts is determined by both conditions.
+</p>
+<p>
+If the <em class="parameter"><code>gfarm-url</code></em> parameter is a directory,
+files under the directory will be replicated recursively.
+</p>
+<p>
+<span class="command"><strong>gfprep</strong></span> can also read the directory and get
+informations of the entries in parallel.
+</p>
+</div>
+<div class="refsect1" title="GFPREP OPTIONS">
+<a name="options"></a><h2>GFPREP OPTIONS</h2>
+<p>
+These are the options only for <span class="command"><strong>gfprep</strong></span>.
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-N</code> <em class="parameter"><code>num-of-replicas</code></em></span></dt>
+<dd>
+<p>
+Specifies the required number of file replicas.  If there are a
 sufficient number of replicas in the destination hosts, neither any
-copying nor any removal will be done.</P
-><P
->If this option is not specified, -N 1 is assumed.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-x</CODE
-></DT
-><DD
-><P
->Removes file replicas when a set of destination nodes has more file
-replicas than specified by -N option.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-m</CODE
-></DT
-><DD
-><P
->Migrates replicas within a set of source nodes to destination nodes.</P
-><P
->This option requires -S or -h or -D or -H options.</P
-><P
->This option and -N option are mutually exclusive.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="COMMON-OPTIONS"
-></A
-><H2
->COMMON OPTIONS</H2
-><P
-><B
-CLASS="COMMAND"
->gfprep</B
-> has the same options with <B
-CLASS="COMMAND"
->gfpcopy</B
->.</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-S</CODE
-> <CODE
-CLASS="PARAMETER"
->source-domainname</CODE
-></DT
-><DD
-><P
->Specifies the domain name of source filesystem nodes from which
-replicas will be copied.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-h</CODE
-> <CODE
-CLASS="PARAMETER"
->source-hostfile</CODE
-></DT
-><DD
-><P
->Specifies a file which describes hostnames of
+copying nor any removal will be done.
+</p>
+<p>
+If this option is not specified, -N 1 is assumed.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-x</code></span></dt>
+<dd><p>
+Removes file replicas when a set of destination nodes has more file
+replicas than specified by -N option.
+</p></dd>
+<dt><span class="term"><code class="option">-m</code></span></dt>
+<dd>
+<p>
+Migrates replicas within a set of source nodes to destination nodes.
+</p>
+<p>
+This option requires -S or -h or -D or -H options.
+</p>
+<p>
+This option and -N option are mutually exclusive.
+</p>
+</dd>
+</dl></div>
+</div>
+<div class="refsect1" title="COMMON OPTIONS">
+<a name="common-options"></a><h2>COMMON OPTIONS</h2>
+<p>
+<span class="command"><strong>gfprep</strong></span> has the same options with <span class="command"><strong>gfpcopy</strong></span>.
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-S</code> <em class="parameter"><code>source-domainname</code></em></span></dt>
+<dd><p>
+Specifies the domain name of source filesystem nodes from which
+replicas will be copied.
+</p></dd>
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>source-hostfile</code></em></span></dt>
+<dd>
+<p>Specifies a file which describes hostnames of
 source filesystem nodes from which the replica will be copied.
-The <CODE
-CLASS="PARAMETER"
->source-hostfile</CODE
-> consists of a filesystem
-node name on each line.</P
-><P
->If ``-'' is specified, standard input is used to read the host list.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-L</CODE
-></DT
-><DD
-><P
->Selects source filesystem nodes within a set of specified source nodes.</P
-><P
-></P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-D</CODE
-> <CODE
-CLASS="PARAMETER"
->destination-domainname</CODE
-></DT
-><DD
-><P
->Specifies the domain name of destination filesystem nodes to which
-replicas will be copied.</P
-><P
->If neither this nor the <CODE
-CLASS="OPTION"
->-H</CODE
-> option is specified,
-replicas may be copied to any available host.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-H</CODE
-> <CODE
-CLASS="PARAMETER"
->destination-hostfile</CODE
-></DT
-><DD
-><P
->Specifies a file which describes hostnames of
+The <em class="parameter"><code>source-hostfile</code></em> consists of a filesystem
+node name on each line.
+</p>
+<p>
+If ``-'' is specified, standard input is used to read the host list.</p>
+</dd>
+<dt><span class="term"><code class="option">-L</code></span></dt>
+<dd>
+<p>
+Selects source filesystem nodes within a set of specified source nodes.
+</p>
+<p>
+</p>
+</dd>
+<dt><span class="term"><code class="option">-D</code> <em class="parameter"><code>destination-domainname</code></em></span></dt>
+<dd>
+<p>
+Specifies the domain name of destination filesystem nodes to which
+replicas will be copied.
+</p>
+<p>If neither this nor the <code class="option">-H</code> option is specified,
+replicas may be copied to any available host.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-H</code> <em class="parameter"><code>destination-hostfile</code></em></span></dt>
+<dd>
+<p>Specifies a file which describes hostnames of
 destination filesystem nodes on which the replica will be copied.
-The <CODE
-CLASS="PARAMETER"
->destination-hostfile</CODE
-> consists of a
-filesystem node name on each line.</P
-><P
->If ``-'' is specified, standard input is used to read the host list.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-j</CODE
-> <CODE
-CLASS="PARAMETER"
->num-of-processes</CODE
-></DT
-><DD
-><P
->Specifies the number of processes to create file replicas (or copy
+The <em class="parameter"><code>destination-hostfile</code></em> consists of a
+filesystem node name on each line.
+</p>
+<p>
+If ``-'' is specified, standard input is used to read the host list.</p>
+</dd>
+<dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>num-of-processes</code></em></span></dt>
+<dd>
+<p>
+Specifies the number of processes to create file replicas (or copy
 files) simultaneously and to read the directory in parallel.  Child
-processes are created of <CODE
-CLASS="PARAMETER"
->num-of-processes</CODE
-> * 2
-processes.</P
-><P
->The default value is the parameter of client_parallel_copy in gfarm2.conf.
-(see man gfarm2.conf)</P
-><P
->The source nodes and the destination nodes are selected/scheduled and
+processes are created of <em class="parameter"><code>num-of-processes</code></em> * 2
+processes.
+</p>
+<p>
+The default value is the parameter of client_parallel_copy in gfarm2.conf.
+(see man gfarm2.conf)
+</p>
+<p>
+The source nodes and the destination nodes are selected/scheduled and
 used(read/written) up to the number of CPUs (see
-man <B
-CLASS="COMMAND"
->gfhost</B
->) at the same time.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-w</CODE
-> <CODE
-CLASS="PARAMETER"
->way-of-scheduling</CODE
-></DT
-><DD
-><P
->Specifies the name of scheduling way.
+man <span class="command"><strong>gfhost</strong></span>) at the same time.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-w</code> <em class="parameter"><code>way-of-scheduling</code></em></span></dt>
+<dd>
+<p>
+Specifies the name of scheduling way.
 ``noplan'' replicates/copies in order that the files are found.
-``greedy'' schedules greedily the order of replication/copy beforehand.</P
-><P
->The default behavior is ``noplan''.</P
-><P
->``greedy'' scheduling cannot use the -N option or -m option.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-W</CODE
-> <CODE
-CLASS="PARAMETER"
->kibibytes</CODE
-></DT
-><DD
-><P
->Specifies a threshold size/cost(KiB) to flat costs of Connections.
+``greedy'' schedules greedily the order of replication/copy beforehand.
+</p>
+<p>
+The default behavior is ``noplan''.
+</p>
+<p>
+``greedy'' scheduling cannot use the -N option or -m option.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-W</code> <em class="parameter"><code>kibibytes</code></em></span></dt>
+<dd>
+<p>
+Specifies a threshold size/cost(KiB) to flat costs of Connections.
 A Connection means a scheduling information (assgined files) per a
-child-process.</P
-><P
->This option is effective with -w greedy.</P
-><P
->The default value is 50*1024 KiB (50MiB).</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-U</CODE
-></DT
-><DD
-><P
->Disables checking the available disk space of the selected node every
-time.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-F</CODE
-> <CODE
-CLASS="PARAMETER"
->num-of-dirents</CODE
-></DT
-><DD
-><P
->Specifies a number of entries to perform the directory readahead.</P
-><P
->The default value is 10000.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-s</CODE
-> <CODE
-CLASS="PARAMETER"
->kilobytes-per-sec.</CODE
-></DT
-><DD
-><P
->Specifies a throughput(KB/s) to simulate the replication/copy, and
-does nothing (gets file informations only).</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-n</CODE
-></DT
-><DD
-><P
->Does nothing.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-p</CODE
-></DT
-><DD
-><P
->Reports the total performance and various results.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-P</CODE
-></DT
-><DD
-><P
->Reports the each and total performance and various results.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-q</CODE
-></DT
-><DD
-><P
->Suppresses non-error messages.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-v</CODE
-></DT
-><DD
-><P
->Displays verbose output.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-d</CODE
-></DT
-><DD
-><P
->Displays debug output.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->Displays a list of command options.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="EXAMPLES"
-></A
-><H2
->EXAMPLES</H2
-><P
->To replicate files under the directory recursively.</P
-><P
-CLASS="LITERALLAYOUT"
->$&nbsp;gfprep&nbsp;-N&nbsp;3&nbsp;gfarm:///dir</P
-><P
->To replicate a file or reduce surplus replicas of the file.</P
-><P
-CLASS="LITERALLAYOUT"
->$&nbsp;gfprep&nbsp;-N&nbsp;3&nbsp;-x&nbsp;gfarm:///dir/file</P
-><P
->To migrate replicas from gfsd1.example.com to other nodes.</P
-><P
-CLASS="LITERALLAYOUT"
->$&nbsp;gfprep&nbsp;-m&nbsp;-S&nbsp;gfsd1.example.com&nbsp;gfarm:///</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="NOTES"
-></A
-><H2
->NOTES</H2
-><P
->If the -L or -m option is not specified, a source node is not always
-selected within a set of specified source nodes.</P
-><P
-><B
-CLASS="COMMAND"
->gfprep</B
-> command should be executed at the same host
-of gfmd.  If the gfmd and <B
-CLASS="COMMAND"
->gfprep</B
-> are far apart,
-the <B
-CLASS="COMMAND"
->gfprep</B
-> operation is slow.  Specifying a large
+child-process.
+</p>
+<p>
+This option is effective with -w greedy.
+</p>
+<p>
+The default value is 50*1024 KiB (50MiB).
+</p>
+</dd>
+<dt><span class="term"><code class="option">-U</code></span></dt>
+<dd><p>
+Disables checking the available disk space of the selected node every
+time.
+</p></dd>
+<dt><span class="term"><code class="option">-F</code> <em class="parameter"><code>num-of-dirents</code></em></span></dt>
+<dd>
+<p>
+Specifies a number of entries to perform the directory readahead.
+</p>
+<p>
+The default value is 10000.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>kilobytes-per-sec.</code></em></span></dt>
+<dd><p>
+Specifies a throughput(KB/s) to simulate the replication/copy, and
+does nothing (gets file informations only).
+</p></dd>
+<dt><span class="term"><code class="option">-n</code></span></dt>
+<dd><p>
+Does nothing.
+</p></dd>
+<dt><span class="term"><code class="option">-p</code></span></dt>
+<dd><p>
+Reports the total performance and various results.
+</p></dd>
+<dt><span class="term"><code class="option">-P</code></span></dt>
+<dd><p>
+Reports the each and total performance and various results.
+</p></dd>
+<dt><span class="term"><code class="option">-q</code></span></dt>
+<dd><p>
+Suppresses non-error messages.
+</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>Displays verbose output.
+</p></dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>Displays debug output.
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>Displays a list of command options.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="EXAMPLES">
+<a name="examples"></a><h2>EXAMPLES</h2>
+<p>
+To replicate files under the directory recursively.
+</p>
+<div class="literallayout"><p><br>
+$ gfprep -N 3 gfarm:///dir<br>
+</p></div>
+<p>
+To replicate a file or reduce surplus replicas of the file.
+</p>
+<div class="literallayout"><p><br>
+$ gfprep -N 3 -x gfarm:///dir/file<br>
+</p></div>
+<p>
+To migrate replicas from gfsd1.example.com to other nodes.
+</p>
+<div class="literallayout"><p><br>
+$ gfprep -m -S gfsd1.example.com gfarm:///<br>
+</p></div>
+</div>
+<div class="refsect1" title="NOTES">
+<a name="notes"></a><h2>NOTES</h2>
+<p>
+If the -L or -m option is not specified, a source node is not always
+selected within a set of specified source nodes.
+</p>
+<p>
+<span class="command"><strong>gfprep</strong></span> command should be executed at the same host
+of gfmd.  If the gfmd and <span class="command"><strong>gfprep</strong></span> are far apart,
+the <span class="command"><strong>gfprep</strong></span> operation is slow.  Specifying a large
 value by the -j option or client_parallel_copy in gfarm2.conf may be
-effective in such a case.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfrep</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfpcopy</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfhost</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm2.conf</SPAN
->(5)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+effective in such a case.
+</p>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfrep</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfpcopy</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfhost</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
+</p>
+</div>
+</div></body>
+</html>

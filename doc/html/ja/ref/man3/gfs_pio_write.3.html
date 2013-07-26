@@ -1,257 +1,95 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfs_pio_write</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFS-PIO-WRITE.3"
-></A
->gfs_pio_write</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfs_pio_write&nbsp;--&nbsp;ファイルの書き込み</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><DIV
-CLASS="FUNCSYNOPSIS"
-><P
-></P
-><A
-NAME="AEN12"
-></A
-><TABLE
-BORDER="0"
-BGCOLOR="#E0E0E0"
-WIDTH="100%"
-><TR
-><TD
-><PRE
-CLASS="FUNCSYNOPSISINFO"
->#include &#60;gfarm/gfarm.h&#62;</PRE
-></TD
-></TR
-></TABLE
-><P
-><CODE
-><CODE
-CLASS="FUNCDEF"
-><TT
-CLASS="FUNCTION"
-><SPAN
-CLASS="RETURNVALUE"
->gfarm_error_t</SPAN
-> gfs_pio_write</TT
-></CODE
->(GFS_File <TT
-CLASS="PARAMETER"
-><I
->gf</I
-></TT
->, const void * <TT
-CLASS="PARAMETER"
-><I
->buffer</I
-></TT
->, int <TT
-CLASS="PARAMETER"
-><I
->size</I
-></TT
->, int * <TT
-CLASS="PARAMETER"
-><I
->np</I
-></TT
->);</CODE
-></P
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><TT
-CLASS="PARAMETER"
-><I
->buffer</I
-></TT
->から
-<TT
-CLASS="PARAMETER"
-><I
->size</I
-></TT
->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfs_pio_write</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfs_pio_write">
+<a name="gfs-pio-write.3"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfs_pio_write — ファイルの書き込み</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="funcsynopsis">
+<pre class="funcsynopsisinfo">
+#include &lt;gfarm/gfarm.h&gt;
+</pre>
+<table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" class="funcprototype-table">
+<tr>
+<td><code class="funcdef"><b class="fsfunc">gfarm_error_t gfs_pio_write</b>(</code></td>
+<td>
+<var class="pdparam">gf</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">buffer</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">size</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">np</var><code>)</code>;</td>
+<td> </td>
+</tr>
+</table>
+<div class="paramdef-list">
+<code>GFS_File <var class="pdparam">gf</var></code>;<br><code>const void * <var class="pdparam">buffer</var></code>;<br><code>int <var class="pdparam">size</var></code>;<br><code>int * <var class="pdparam">np</var></code>;</div>
+<div class="funcprototype-spacer"> </div>
+</div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><em class="parameter"><code>buffer</code></em>から
+<em class="parameter"><code>size</code></em>
 バイトだけ、ファイル
-<TT
-CLASS="PARAMETER"
-><I
->gf</I
-></TT
->
+<em class="parameter"><code>gf</code></em>
 へ書き込みます。
 実際に書き込まれたバイト数は
-<TT
-CLASS="PARAMETER"
-><I
->np</I
-></TT
->
-の指す先に返します。</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="RETURN-VALUES"
-></A
-><H2
->RETURN VALUES</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_ERROR</CODE
-></DT
-><DD
-><P
->正常終了を示します。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_OPERATION_NOT_PERMITTED</CODE
-></DT
-><DD
-><P
-><TT
-CLASS="PARAMETER"
-><I
->gf</I
-></TT
->
-で指定されるファイルがレギュラーファイルではありません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_BAD_FILE_DESCRIPTOR</CODE
-></DT
-><DD
-><P
-><TT
-CLASS="PARAMETER"
-><I
->gf</I
-></TT
->
+<em class="parameter"><code>np</code></em>
+の指す先に返します。</p>
+</div>
+<div class="refsect1" title="RETURN VALUES">
+<a name="return-values"></a><h2>RETURN VALUES</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_ERROR</code></span></dt>
+<dd><p>正常終了を示します。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_OPERATION_NOT_PERMITTED</code></span></dt>
+<dd><p><em class="parameter"><code>gf</code></em>
+で指定されるファイルがレギュラーファイルではありません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_BAD_FILE_DESCRIPTOR</code></span></dt>
+<dd><p><em class="parameter"><code>gf</code></em>
 で指定されるファイルディスクリプタが不正、
-あるいは書込可能でオープンされていません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_SPACE</CODE
-></DT
-><DD
-><P
->書き込みスペースがありません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_FILE_SYSTEM_NODE</CODE
-></DT
-><DD
-><P
->利用可能なファイルシステムノードがありません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_MEMORY</CODE
-></DT
-><DD
-><P
->メモリ不足のため処理を中止しました。</P
-></DD
-><DT
->その他</DT
-><DD
-><P
->上記以外のエラーが生じたことを示します。
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_error_string</SPAN
->(3)</SPAN
->
-によりエラーの原因を文字列に変換することができます。</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_create</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_flush</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_open</SPAN
->(3)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+あるいは書込可能でオープンされていません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_SPACE</code></span></dt>
+<dd><p>書き込みスペースがありません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_FILE_SYSTEM_NODE</code></span></dt>
+<dd><p>利用可能なファイルシステムノードがありません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_MEMORY</code></span></dt>
+<dd><p>メモリ不足のため処理を中止しました。</p></dd>
+<dt><span class="term">その他</span></dt>
+<dd><p>上記以外のエラーが生じたことを示します。
+<span class="citerefentry"><span class="refentrytitle">gfarm_error_string</span>(3)</span>
+によりエラーの原因を文字列に変換することができます。
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_create</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_flush</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_open</span>(3)</span>
+</p>
+</div>
+</div></body>
+</html>

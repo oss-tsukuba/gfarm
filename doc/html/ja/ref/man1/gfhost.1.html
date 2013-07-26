@@ -1,533 +1,221 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfhost</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFHOST.1"
-></A
->gfhost</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfhost&nbsp;--&nbsp;gfarm ホスト管理コマンド</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfhost</B
->  [-H | -l | -M] [-iLprUv] [-P <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->] [-a <TT
-CLASS="REPLACEABLE"
-><I
->アーキテクチャ</I
-></TT
->] [-D <TT
-CLASS="REPLACEABLE"
-><I
->ドメイン名</I
-></TT
->] [-j <TT
-CLASS="REPLACEABLE"
-><I
->並列度</I
-></TT
->] [<TT
-CLASS="REPLACEABLE"
-><I
->ホスト名</I
-></TT
->...]</P
-><P
-><B
-CLASS="COMMAND"
->gfhost</B
->   -c  [-P <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->]  -a<TT
-CLASS="REPLACEABLE"
-><I
->アーキテクチャ</I
-></TT
->   -p<TT
-CLASS="REPLACEABLE"
-><I
->ポート番号</I
-></TT
->  [-n<TT
-CLASS="REPLACEABLE"
-><I
->CPU数</I
-></TT
->]  <TT
-CLASS="REPLACEABLE"
-><I
->ホスト名</I
-></TT
-> </P
-><P
-><B
-CLASS="COMMAND"
->gfhost</B
->   -m  [-P <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->] [-a<TT
-CLASS="REPLACEABLE"
-><I
->アーキテクチャ</I
-></TT
->] [-p<TT
-CLASS="REPLACEABLE"
-><I
->ポート番号</I
-></TT
->] [-n<TT
-CLASS="REPLACEABLE"
-><I
->CPU数</I
-></TT
->] [-A]  <TT
-CLASS="REPLACEABLE"
-><I
->ホスト名</I
-></TT
-> </P
-><P
-><B
-CLASS="COMMAND"
->gfhost</B
->   -d  [-P <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->]  <TT
-CLASS="REPLACEABLE"
-><I
->ホスト名</I
-></TT
->... </P
-><P
-><B
-CLASS="COMMAND"
->gfhost</B
->   -R  [-P <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfhost</B
-> は、gfarm のファイルシステムノードに
-関する情報の表示や管理を行ないます。<B
-CLASS="COMMAND"
->gfhost</B
-> が
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfhost</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfhost">
+<a name="gfhost.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfhost — gfarm ホスト管理コマンド</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfhost</code>  [ -H  |   -l  |   -M ] [-iLprUv] [-P <em class="replaceable"><code>path</code></em>] [-a <em class="replaceable"><code>アーキテクチャ</code></em>] [-D <em class="replaceable"><code>ドメイン名</code></em>] [-j <em class="replaceable"><code>並列度</code></em>] [<em class="replaceable"><code>ホスト名</code></em>...]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfhost</code>   -c  [-P <em class="replaceable"><code>path</code></em>]  -a<em class="replaceable"><code>アーキテクチャ</code></em>   -p<em class="replaceable"><code>ポート番号</code></em>  [-n<em class="replaceable"><code>CPU数</code></em>]  <em class="replaceable"><code>ホスト名</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfhost</code>   -m  [-P <em class="replaceable"><code>path</code></em>] [-a<em class="replaceable"><code>アーキテクチャ</code></em>] [-p<em class="replaceable"><code>ポート番号</code></em>] [-n<em class="replaceable"><code>CPU数</code></em>] [-A]  <em class="replaceable"><code>ホスト名</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfhost</code>   -d  [-P <em class="replaceable"><code>path</code></em>]  <em class="replaceable"><code>ホスト名</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfhost</code>   -R  [-P <em class="replaceable"><code>path</code></em>]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><span class="command"><strong>gfhost</strong></span> は、gfarm のファイルシステムノードに
+関する情報の表示や管理を行ないます。<span class="command"><strong>gfhost</strong></span> が
 実行する機能は、-c, -d, -H, -l, -M, -m, -R のオプションで指定します。
 これら機能の指定は排他的であり、どれか一つだけを指定することができます。
 また、一つも指定しなかった場合には、デフォールトの機能であるホスト名
-表示が行なわれます。</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="FUNCTIONS"
-></A
-><H2
->FUNCTIONS</H2
-><P
->  機能指定のうち、-c, -d, -M, -m, -R はメタデータサーバーのみを
-  アクセスし、登録されているホスト情報の追加、削除、表示、変更を行ないます。</P
-><P
->  機能指定のうち、-H, -l, -M, および特に機能を指定しなかった場合は、
+表示が行なわれます。
+</p>
+</div>
+<div class="refsect1" title="FUNCTIONS">
+<a name="functions"></a><h2>FUNCTIONS</h2>
+<p>
+  機能指定のうち、-c, -d, -M, -m, -R はメタデータサーバーのみを
+  アクセスし、登録されているホスト情報の追加、削除、表示、変更を行ないます。
+</p>
+<p>
+  機能指定のうち、-H, -l, -M, および特に機能を指定しなかった場合は、
   ファイルシステムノードに関する情報を表示します。
   このうち -M はメタデータサーバーのみをアクセスしますが、
   それ以外の機能はファイルシステムノードで動作している
-  <B
-CLASS="COMMAND"
->gfsd</B
-> にもアクセスします。
-  <B
-CLASS="COMMAND"
->gfsd</B
-> にアクセスする機能に関しては、そのアクセスに
-  関するオプションを -i, -j, -U, -v で指定できます。</P
-><P
->  表示機能に関しては、ホスト名の指定を省略することができます。この場合、
+  <span class="command"><strong>gfsd</strong></span> にもアクセスします。
+  <span class="command"><strong>gfsd</strong></span> にアクセスする機能に関しては、そのアクセスに
+  関するオプションを -i, -j, -U, -v で指定できます。
+</p>
+<p>
+  表示機能に関しては、ホスト名の指定を省略することができます。この場合、
   メタデータに登録されている全てのホストに関する表示を試みます。
   また、-a および -D オプションで表示するホストの種類を限定
   することもできます。
   表示の順序は、ホスト名のアルファベット順ですが、-L, -r, -u オプションで
   順序を変更することができます。ただし、-M 機能
    と、機能を指定しなかった場合 
-  に関しては -L オプションは無効です。</P
-><P
->  下記は、gfhost コマンドの機能一覧です。二つ以上の機能を同時に
-  指定することはできません。</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
->無指定</DT
-><DD
-><P
->	機能を特に指定しなかった場合、<B
-CLASS="COMMAND"
->gfsd</B
-> への
+  に関しては -L オプションは無効です。
+</p>
+<p>
+  下記は、gfhost コマンドの機能一覧です。二つ以上の機能を同時に
+  指定することはできません。
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term">無指定</span></dt>
+<dd><p>
+	機能を特に指定しなかった場合、<span class="command"><strong>gfsd</strong></span> への
 	問い合わせを行ない、動作しているホストのホスト名のみを表示します。
 	デフォールトでは、ホスト名のアルファベット順で表示します。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-c</CODE
-></DT
-><DD
-><P
->	引数で指定したホストをメタデータへ登録します。
+      </p></dd>
+<dt><span class="term"><code class="option">-c</code></span></dt>
+<dd><p>
+	引数で指定したホストをメタデータへ登録します。
 	オプション -a で、そのホストのアーキテクチャを指定する必要があります。
 	同様にオプション -p で、そのホストのポート番号を指定する必要があります。
 	オプション -n で、そのホストの CPU 数を指定します。省略した場合には
 	1 CPU だとみなします。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-d</CODE
-></DT
-><DD
-><P
->	引数に指定したホスト情報をメタデータから削除します。
+      </p></dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>
+	引数に指定したホスト情報をメタデータから削除します。
 	 現在のところ、複製情報として参照されているホストも
 	削除できてしまいますが、これを行なうと複製データベースが不整合
 	状態となってしまいますので注意が必要です。
 	
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-H</CODE
-></DT
-><DD
-><P
->	<B
-CLASS="COMMAND"
->gfsd</B
-> に問い合わせて得た情報、すなわち
+      </p></dd>
+<dt><span class="term"><code class="option">-H</code></span></dt>
+<dd>
+<p>
+	<span class="command"><strong>gfsd</strong></span> に問い合わせて得た情報、すなわち
 	ロードアベレージと認証手段を表示します。
 	この機能に関しては、引数でホスト名を指定した場合、表示される
 	のは、固有識別子として用いられているホスト名ではなく、引数
 	で指定した名前になります。
 	また、ホスト名の後に、アクセスに用いられた IP アドレスを括弧で
 	囲って表示します。
-      </P
-><P
->	ホストが停止やネットワーク障害のためにアクセスできなかった場合、
+      </p>
+<p>
+	ホストが停止やネットワーク障害のためにアクセスできなかった場合、
 	ロードアベレージの部分に x.xx/x.xx/x.xx と表示します。
-	ホストが動作しているが、そのホストの <B
-CLASS="COMMAND"
->gfsd</B
-> へ
+	ホストが動作しているが、そのホストの <span class="command"><strong>gfsd</strong></span> へ
 	アクセスできなかった場合には -.--/-.--/-.-- と表示します。
-      </P
-><P
->	その次の一桁の欄は認証手段で、「G」は GSI 認証および暗号化、
+      </p>
+<p>
+	その次の一桁の欄は認証手段で、「G」は GSI 認証および暗号化、
 	「g」は認証処理のみ GSI で認証後は保護のない生データ (gsi_auth)、
 	「s」は sharedsecret 認証、「x」は認証失敗、「-」は認証を
 	試みなかったことを示します。また、「-U」オプション指定時には、
 	この認証手段の表示欄はなくなります。
-      </P
-><P
->	デフォールトでは、ホスト名のアルファベット順で表示します。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-l</CODE
-></DT
-><DD
-><P
->	<B
-CLASS="COMMAND"
->gfsd</B
-> に問い合わせて得た情報、
+      </p>
+<p>
+	デフォールトでは、ホスト名のアルファベット順で表示します。
+      </p>
+</dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd>
+<p>
+	<span class="command"><strong>gfsd</strong></span> に問い合わせて得た情報、
 	すなわちロードアベレージおよび認証手段と、
 	メタデータ・サーバーに問い合わせて得た情報、
 	すなわちアーキテクチャ名、CPU数を
 	全て表示します。またアクセスに用いられたホスト名の後に、
 	IP アドレスを括弧で囲って表示します。
-      </P
-><P
->	ホストが停止やネットワーク障害のためにアクセスできなかった場合、
+      </p>
+<p>
+	ホストが停止やネットワーク障害のためにアクセスできなかった場合、
 	ロードアベレージの部分に x.xx/x.xx/x.xx と表示します。
-	ホストが動作しているが、そのホストの <B
-CLASS="COMMAND"
->gfsd</B
-> へ
+	ホストが動作しているが、そのホストの <span class="command"><strong>gfsd</strong></span> へ
 	アクセスできなかった場合には -.--/-.--/-.-- と表示します。
-      </P
-><P
->	その次の一桁の欄は認証手段で、「G」は GSI 認証および暗号化、
+      </p>
+<p>
+	その次の一桁の欄は認証手段で、「G」は GSI 認証および暗号化、
 	「g」は認証処理のみ GSI で認証後は保護のない生データ (gsi_auth)、
 	「s」は sharedsecret 認証、「x」は認証失敗、「-」は認証を
 	試みなかったことを示します。また、「-U」オプション指定時には、
 	この認証手段の表示欄はなくなります。
-      </P
-><P
->	デフォールトでは、ホスト名のアルファベット順で表示します。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-M</CODE
-></DT
-><DD
-><P
->	メタデータに登録されているホスト情報を表示します。
+      </p>
+<p>
 	デフォールトでは、ホスト名のアルファベット順で表示します。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-m</CODE
-></DT
-><DD
-><P
->	固有識別子として用いられているホスト名を指定し、メタデータ
+      </p>
+</dd>
+<dt><span class="term"><code class="option">-M</code></span></dt>
+<dd><p>
+	メタデータに登録されているホスト情報を表示します。
+	デフォールトでは、ホスト名のアルファベット順で表示します。
+      </p></dd>
+<dt><span class="term"><code class="option">-m</code></span></dt>
+<dd><p>
+	固有識別子として用いられているホスト名を指定し、メタデータ
 	に登録されているホスト情報を変更します。
 	-a オプションおよび -n オプションは、それぞれ既存の値を置き換えます。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-R</CODE
-></DT
-><DD
-><P
->	標準入力からホストに関する情報を読み込み、メタデータに
+      </p></dd>
+<dt><span class="term"><code class="option">-R</code></span></dt>
+<dd><p>
+	標準入力からホストに関する情報を読み込み、メタデータに
 	追加します。与える情報の形式は、-M 機能の表示形式と同じです。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->引数オプションを表示します。</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-a</CODE
-> <CODE
-CLASS="PARAMETER"
->アーキテクチャ</CODE
-></DT
-><DD
-><P
->	CPUアーキテクチャを、sparc-sun-solaris8 や i386-redhat8.0-linux の
+      </p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>引数オプションを表示します。</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-a</code> <em class="parameter"><code>アーキテクチャ</code></em></span></dt>
+<dd><p>
+	CPUアーキテクチャを、sparc-sun-solaris8 や i386-redhat8.0-linux の
 	ような形式で指定します。
 	-c および -m 機能の場合には、追加・変更するホストのアーキテクチャと
 	して、このオプションを用います。
 	-H, -l, -M および特に機能を指定しなかった場合で、かつ
 	ホスト名を省略した場合には、指定したアーキテクチャのホストに
 	関してのみ表示を行ないます。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-D</CODE
-> <CODE
-CLASS="PARAMETER"
->ドメイン名</CODE
-></DT
-><DD
-><P
->	-H, -l, -M および特に機能を指定しなかった場合で、かつ
+      </p></dd>
+<dt><span class="term"><code class="option">-D</code> <em class="parameter"><code>ドメイン名</code></em></span></dt>
+<dd><p>
+	-H, -l, -M および特に機能を指定しなかった場合で、かつ
 	ホスト名を省略した場合に、このオプションで、表示するドメイン名を
 	限定できます。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-i</CODE
-></DT
-><DD
-><P
->	%%SYSCONFDIR%%/gfarm2.conf ないし $HOME/.gfarm2rc 中で「address_use」を指定すると、
+      </p></dd>
+<dt><span class="term"><code class="option">-i</code></span></dt>
+<dd><p>
+	%%SYSCONFDIR%%/gfarm2.conf ないし $HOME/.gfarm2rc 中で「address_use」を指定すると、
 	アクセスに用いるネットワークアドレスに優先順位をつけることができます。
 	gfhost コマンドに対しても、この優先順位は影響しますが、-i オプションを
-	つけると、この指定を無視して <B
-CLASS="COMMAND"
->gfsd</B
-> にアクセス
+	つけると、この指定を無視して <span class="command"><strong>gfsd</strong></span> にアクセス
 	するようになります。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-j</CODE
-> <CODE
-CLASS="PARAMETER"
->並列度</CODE
-></DT
-><DD
-><P
->	<B
-CLASS="COMMAND"
->gfsd</B
-> にアクセスする際の並列度を指定します。
+      </p></dd>
+<dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>並列度</code></em></span></dt>
+<dd><p>
+	<span class="command"><strong>gfsd</strong></span> にアクセスする際の並列度を指定します。
 	デフォールトは 10 です。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-L</CODE
-></DT
-><DD
-><P
->	-H、-l 機能の場合
+      </p></dd>
+<dt><span class="term"><code class="option">-L</code></span></dt>
+<dd><p>
+	-H、-l 機能の場合
 	、このオプションで、
 	表示順序を、ロードアベレージ順に変更します。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-n</CODE
-> <CODE
-CLASS="PARAMETER"
->CPU数</CODE
-></DT
-><DD
-><P
->	-c および -m 機能で、ホスト情報を追加・変更する際に、
+      </p></dd>
+<dt><span class="term"><code class="option">-n</code> <em class="parameter"><code>CPU数</code></em></span></dt>
+<dd><p>
+	-c および -m 機能で、ホスト情報を追加・変更する際に、
 	そのホストが持つ CPU の数を指定します。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-p</CODE
-> <CODE
-CLASS="PARAMETER"
->ポート番号</CODE
-></DT
-><DD
-><P
->	-c および -m 機能で、ホスト情報を追加・変更する際に、
-	そのホストの <B
-CLASS="COMMAND"
->gfsd</B
-> が用いるポート番号を指定します。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-P</CODE
-> <CODE
-CLASS="PARAMETER"
->パス名</CODE
-></DT
-><DD
-><P
->	このコマンドがアクセスするメタデータサーバを特定するための
+      </p></dd>
+<dt><span class="term"><code class="option">-p</code> <em class="parameter"><code>ポート番号</code></em></span></dt>
+<dd><p>
+	-c および -m 機能で、ホスト情報を追加・変更する際に、
+	そのホストの <span class="command"><strong>gfsd</strong></span> が用いるポート番号を指定します。
+      </p></dd>
+<dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>パス名</code></em></span></dt>
+<dd><p>
+	このコマンドがアクセスするメタデータサーバを特定するための
 	パス名または Gfarm URL を指定します。
 	省略した場合は、「/」を指定したのと同じ意味になります。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-r</CODE
-></DT
-><DD
-><P
->	表示を整列している場合、表示の順序を逆にします。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-u</CODE
-></DT
-><DD
-><P
->	-H, -l, -M および特に機能を指定しなかった場合に、表示する順序を
+      </p></dd>
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd><p>
+	表示を整列している場合、表示の順序を逆にします。
+      </p></dd>
+<dt><span class="term"><code class="option">-u</code></span></dt>
+<dd><p>
+	-H, -l, -M および特に機能を指定しなかった場合に、表示する順序を
 	アルファベット順に整列するのを止めます。
 
 	-M 機能の場合、引数でホスト名を指定した場合には
@@ -535,63 +223,32 @@ CLASS="OPTION"
 	
 	-H, -l 機能の場合および特に機能を指定しなかった場合、
 	ホストに順に問い合わせを行い、返事の返ってきた順序で表示します。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-U</CODE
-></DT
-><DD
-><P
->	TCP による認証をやめ、
+      </p></dd>
+<dt><span class="term"><code class="option">-U</code></span></dt>
+<dd><p>
+	TCP による認証をやめ、
 	UDP によるロードアベレージの問い合わせのみを行うようにします。
 	このオプションは、-H ないし -l 機能を指定した場合および
 	特に機能を指定しなかった場合に意味のあるオプションで、
 	実行速度が速くなる効果があります。
 	-H ないし -l を指定している場合、このオプションを指定すると、
 	認証方式の表示欄がなくなります。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-v</CODE
-></DT
-><DD
-><P
->	-H ないし -l 機能を指定した場合および特に機能を指定しなかった場合、
+      </p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>
+	-H ないし -l 機能を指定した場合および特に機能を指定しなかった場合、
 	デフォールトでは、gfsd に対する問い合わせに関するエラーメッセージ
 	を表示しません。-v オプションを指定すると、このエラーメッセージを
 	表示するようになります。
-      </P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm2.conf</SPAN
->(5)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfsd</SPAN
->(8)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+      </p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfsd</span>(8)</span>
+</p>
+</div>
+</div></body>
+</html>
