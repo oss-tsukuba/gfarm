@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfdf.1'>
+
+<refentry id="gfdf.1">
 
 <refentryinfo><date>30 Dec 2010</date></refentryinfo>
 
@@ -10,26 +13,26 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfdf</refname>
 <refpurpose>display disk free space of Gfarm file system</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfdf</command>
-    <arg choice='opt'><replaceable>options</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfdf</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>
-<command>gfdf</command> displays disk usage and free space of
+<command moreinfo="none">gfdf</command> displays disk usage and free space of
 Gfarm file system.
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
 <term><option>-a</option></term>
@@ -78,7 +81,7 @@ symbol like "M" (mega).  Since this option uses powers of 1000,
 </varlistentry>
 
 <varlistentry>
-<term><option>-P</option> <parameter>path</parameter></term>
+<term><option>-P</option> <parameter moreinfo="none">path</parameter></term>
 <listitem>
 <para>
 Specifies a path name to specify a metadata server instead of the root
@@ -89,7 +92,7 @@ option.
 </varlistentry>
 
 <varlistentry>
-<term><option>-D</option> <parameter>domainname</parameter></term>
+<term><option>-D</option> <parameter moreinfo="none">domainname</parameter></term>
 <listitem>
 <para>
 Specifies a domain name of filesystem nodes to list the status
@@ -107,7 +110,7 @@ of disk free space.
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfhost</refentrytitle><manvolnum>1</manvolnum>

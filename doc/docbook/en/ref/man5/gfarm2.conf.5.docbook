@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfarm2.conf.5'>
+
+<refentry id="gfarm2.conf.5">
 
 <refentryinfo><date>20 Nov 2012</date></refentryinfo>
 
@@ -10,14 +13,14 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfarm2.conf</refname>
 <refpurpose>Gfarm configuration file</refpurpose>
 </refnamediv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>
 gfarm2.conf is a text file that contains a Gfarm configuration.  
 Gfarm server processes gfmd and gfsd refer to %%SYSCONFDIR%%/gfmd.conf
@@ -46,13 +49,13 @@ characters on that line to be ignored.
 
 </refsect1>
 
-<refsect1 id='hostspecification'><title>Host_specification</title>
-<para><parameter>Host_specification</parameter> has the following
+<refsect1 id="hostspecification"><title>Host_specification</title>
+<para><parameter moreinfo="none">Host_specification</parameter> has the following
 forms.</para>
 <variablelist>
 
 <varlistentry>
-<term><parameter>III.JJJ.KKK.LLL</parameter></term>
+<term><parameter moreinfo="none">III.JJJ.KKK.LLL</parameter></term>
 <listitem>
 <para>Specifies an IP address with four octets from 0 to 255, separated
 by ".".</para>
@@ -60,7 +63,7 @@ by ".".</para>
 </varlistentry>
 
 <varlistentry>
-<term><parameter>III.JJJ.KKK.LLL</parameter>/<parameter>MM</parameter></term>
+<term><parameter moreinfo="none">III.JJJ.KKK.LLL</parameter>/<parameter moreinfo="none">MM</parameter></term>
 <listitem>
 <para>Specifies a network address with an IP address and a netmask
 from 0 to 31 separated by "/".</para>
@@ -68,14 +71,14 @@ from 0 to 31 separated by "/".</para>
 </varlistentry>
 
 <varlistentry>
-<term><parameter>domain.name</parameter></term>
+<term><parameter moreinfo="none">domain.name</parameter></term>
 <listitem>
 <para>Specifies a host name.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term> <parameter>.domain.name</parameter></term>
+<term> <parameter moreinfo="none">.domain.name</parameter></term>
 <listitem>
 <para>Specifies all hosts which belong to the domain.name.</para>
 </listitem>
@@ -91,24 +94,24 @@ from 0 to 31 separated by "/".</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='statement'><title>Statement</title>
+<refsect1 id="statement"><title>Statement</title>
 <para>The following statements are supported.</para>
 <variablelist>
 
 <varlistentry>
-<term><token>spool</token> <parameter>directory</parameter></term>
+<term><token>spool</token> <parameter moreinfo="none">directory</parameter></term>
 <listitem>
 <para>The <token>spool</token> statement specifies a spool directory
 for a Gfarm filesystem on this filesystem node.</para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	spool /var/spool/gfarm
 </literallayout>
 </listitem>
 </varlistentry>
   
   <varlistentry>
-<term><token>spool_server_listen_address</token> <parameter>IP-address</parameter></term>
+<term><token>spool_server_listen_address</token> <parameter moreinfo="none">IP-address</parameter></term>
 <listitem>
 <para>The <token>spool_server_listen_address</token> statement specifies
 the IP address at which the gfsd accepts TCP and UDP requests.
@@ -117,14 +120,14 @@ This option is useful when one wants to invoke multiple gfsd
 to provide multiple spool directories on the host.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	spool_server_listen_address 192.168.121.1
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_server_listen_backlog</token> <parameter>number</parameter></term>
+<term><token>spool_server_listen_backlog</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>
 This statement specifies the second parameter of the
@@ -141,14 +144,14 @@ On an environment which has many gfarm clients, it's recommened to increase this
 This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	spool_server_listen_backlog 128
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_server_cred_type</token> <parameter>cred_type</parameter></term>
+<term><token>spool_server_cred_type</token> <parameter moreinfo="none">cred_type</parameter></term>
 <listitem>
 <para>
 This statement specifies the type of credential used by gfsd for GSI
@@ -171,11 +174,11 @@ the user is the same as the user who invoked the client, the client
 side needs to specify the following one line.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	spool_server_cred_type self
 </literallayout>
 <para>
-The possible types of <parameter>cred_type</parameter> are
+The possible types of <parameter moreinfo="none">cred_type</parameter> are
 ``<token>self</token>'', 
 ``<token>host</token>'', ``<token>user</token>'' and 
 ``<token>mechanism-specific</token>''.
@@ -205,11 +208,11 @@ is used.
 To choose a service certificate, the name of the service may be specified
 by the <token>spool_server_cred_service</token> statement.
 If ``<token>host</token>'' is specified as the service name, a host certificate
-in the file ``<filename>/etc/grid-security/hostcert.pem</filename>'' will
+in the file ``<filename moreinfo="none">/etc/grid-security/hostcert.pem</filename>'' will
 be used.
 If any server name other than ``<token>host</token>'' is specified,
 a service certificate in the file
-``<filename>/etc/grid-security/SERVICE/SERVICEcert.pem</filename>''
+``<filename moreinfo="none">/etc/grid-security/SERVICE/SERVICEcert.pem</filename>''
 will be used.
 If the service name is omitted, ``<token>host</token>'' will be used as
 the service name by default.
@@ -217,14 +220,14 @@ Only the Common Name field of a certificate will be used to check
 the server's identity for both a host certificate and a service certificate.
 And the Common Name field must be in the ``CN=SERVERNAME/HOSTNAME'' format.
 Also, the hostname must match the canonical name configured by
-the <command>gfhost</command> command exactly.  Alias hostnames are not allowed.
+the <command moreinfo="none">gfhost</command> command exactly.  Alias hostnames are not allowed.
 </para>
 <para>
 This feature corresponds to the GSS_C_NT_HOSTBASED_SERVICE feature in GSSAPI
 (RFC2743/RFC2744).
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	spool_server_cred_type host
 	spool_server_cred_service host
 </literallayout>
@@ -245,7 +248,7 @@ a user certificate.
 </para>
 <para>
 To map from the account name to a Distinguished Name of a certificate,
-file ``<filename>/etc/grid-security/grid-mapfile</filename>'' is used.
+file ``<filename moreinfo="none">/etc/grid-security/grid-mapfile</filename>'' is used.
 Thus, if there isn't such a file, or if the user isn't specified in this file,
 this feature cannot be used.
 </para>
@@ -254,7 +257,7 @@ This feature corresponds to the GSS_C_NT_USER_NAME feature in GSSAPI
 (RFC2743/RFC2744).
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	spool_server_cred_type user
 	spool_server_cred_name guest
 </literallayout>
@@ -276,7 +279,7 @@ This feature corresponds to a case where GSS_C_NO_OID is specified
 as a Name Type in GSSAPI (RFC2743/RFC2744).
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	spool_server_cred_type mechanism-specific
 	spool_server_cred_name "/O=Grid/O=Globus/OU=example.com/CN=John Smith"
 </literallayout>
@@ -287,7 +290,7 @@ as a Name Type in GSSAPI (RFC2743/RFC2744).
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_server_cred_service</token> <parameter>cred_service</parameter></term>
+<term><token>spool_server_cred_service</token> <parameter moreinfo="none">cred_service</parameter></term>
 <listitem>
 <para>
 This statement specifies the service name of a service certificate
@@ -302,7 +305,7 @@ statement for details.
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_server_cred_name</token> <parameter>cred_name</parameter></term>
+<term><token>spool_server_cred_name</token> <parameter moreinfo="none">cred_name</parameter></term>
 <listitem>
 <para>
 This statement specifies the setting of a certificate used by gfsd
@@ -317,11 +320,11 @@ statement for details.
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_check_level</token> <parameter>level</parameter></term>
+<term><token>spool_check_level</token> <parameter moreinfo="none">level</parameter></term>
 <listitem>
 <para>
 This statement enables the consistency check of files stored in the
-spool directory at start-up of gfsd.  The <parameter>level</parameter>
+spool directory at start-up of gfsd.  The <parameter moreinfo="none">level</parameter>
 name corresponds how many -c command-line options are specified to
 gfsd, i.e. the level "display" means the -c option, "delete" means the
 -cc option, and "lost_found" means the -ccc option, which is the
@@ -329,14 +332,14 @@ default.  For detail about the -c option, refer to the manual page of
 gfsd(8).  The level "disable" disables the consistency check.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	spool_check_level disable
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_base_load</token> <parameter>load-average</parameter></term>
+<term><token>spool_base_load</token> <parameter moreinfo="none">load-average</parameter></term>
 <listitem>
 <para>
 This statement specifies the CPU load adding to the real CPU load.
@@ -345,40 +348,40 @@ The default base load is 0.0.  This option can be used to pretend to
 be busy or idle to change the scheduling priority.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	spool_base_load 1.0
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_host</token> <parameter>hostname</parameter></term>
+<term><token>metadb_server_host</token> <parameter moreinfo="none">hostname</parameter></term>
 <listitem>
 <para>The <token>metadb_server_host</token> statement specifies the
 host name on which gfmd is running.</para>
 <para>This statement cannot be omitted.</para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_server_host ldap.example.com
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_port</token> <parameter>port</parameter></term>
+<term><token>metadb_server_port</token> <parameter moreinfo="none">port</parameter></term>
 <listitem>
 <para>The <token>metadb_server_port</token> statement specifies the tcp
 port number the gfmd is listening on.  The default port number is
 601.</para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_server_port 601
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_cred_type</token> <parameter>cred_type</parameter></term>
+<term><token>metadb_server_cred_type</token> <parameter moreinfo="none">cred_type</parameter></term>
 <listitem>
 <para>
 This statement specifies the type of credential used by gfmd
@@ -392,7 +395,7 @@ statement on the configuration of this statement.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_cred_service</token> <parameter>cred_service</parameter></term>
+<term><token>metadb_server_cred_service</token> <parameter moreinfo="none">cred_service</parameter></term>
 <listitem>
 <para>
 This statement specifies the service name of a service certificate
@@ -407,7 +410,7 @@ statement on the configuration of this statement.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_cred_name</token> <parameter>cred_name</parameter></term>
+<term><token>metadb_server_cred_name</token> <parameter moreinfo="none">cred_name</parameter></term>
 <listitem>
 <para>
 This statement specifies the setting of a certificate used by gfmd
@@ -422,7 +425,7 @@ statement on the configuration of this statement.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_listen_backlog</token> <parameter>number</parameter></term>
+<term><token>metadb_server_listen_backlog</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>
 This statement specifies the second parameter of the
@@ -436,14 +439,14 @@ The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes wh
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_server_listen_backlog 128
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_max_descriptors</token> <parameter>number</parameter></term>
+<term><token>metadb_server_max_descriptors</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>This directive specifies the number of file descriptor limit
 for the gfmd metadata server process.  If not specified, the default
@@ -455,14 +458,14 @@ configuration.  See Gfarm FAQ to see how to calculate this value.
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_server_max_descriptors 262144
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_stack_size</token> <parameter>bytes</parameter></term>
+<term><token>metadb_server_stack_size</token> <parameter moreinfo="none">bytes</parameter></term>
 <listitem>
 <para>This directive specifies the size of each thread in the gfmd 
 metadata server process.  If not specified, the default size of the OS
@@ -479,14 +482,14 @@ by specifying 256KB as this parameter.
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_server_stack_size 262144
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_thread_pool_size</token> <parameter>size</parameter></term>
+<term><token>metadb_server_thread_pool_size</token> <parameter moreinfo="none">size</parameter></term>
 <listitem>
 <para>This directive specifies the maximum number of threads in a
 thread pool in the gfmd.  It is effective to specify around the
@@ -496,14 +499,14 @@ number of CPU cores of the metadata server node.  Default is 16.
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_server_thread_pool_size 16
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_job_queue_length</token> <parameter>length</parameter></term>
+<term><token>metadb_server_job_queue_length</token> <parameter moreinfo="none">length</parameter></term>
 <listitem>
 <para>This directive specifies the length of job queue in the gfmd.
 It is effective to specify around the maximum number of clients that
@@ -513,14 +516,14 @@ access the Gfarm file system at the same time.  Default is 16000.
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_server_job_queue_length 160
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_heartbeat_interval</token> <parameter>seconds</parameter></term>
+<term><token>metadb_server_heartbeat_interval</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>This directive specifies the interval of heartbeat in seconds
 for gfmd to check availability of each gfsd.  Default is 180 seconds.
@@ -532,14 +535,14 @@ this parameter to detect whether gfmd is down or not, this parameter
 has to be specified in both gfarm2.conf and gfmd.conf.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_server_heartbeat_interval 180
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_dbq_size</token> <parameter>size</parameter></term>
+<term><token>metadb_server_dbq_size</token> <parameter moreinfo="none">size</parameter></term>
 <listitem>
 <para>This directive specifies the queue length of metadata updates
 for a backend database in gfmd.  Longer queue length may avoid slow
@@ -551,14 +554,14 @@ Default is 65536.
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_server_dbq_size 65536
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>ldap_server_host</token> <parameter>hostname</parameter></term>
+<term><token>ldap_server_host</token> <parameter moreinfo="none">hostname</parameter></term>
 <listitem>
 <para>The <token>ldap_server_host</token> statement specifies the host
 name on which an LDAP server is running.  This statement is required
@@ -566,68 +569,68 @@ when the LDAP server is used for a backend database of gfmd.  This
 statement is used in gfmd.conf not gfarm2.conf.</para>
 
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	ldap_server_host ldap.example.com
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>ldap_server_port</token> <parameter>port</parameter></term>
+<term><token>ldap_server_port</token> <parameter moreinfo="none">port</parameter></term>
 <listitem>
 <para>The <token>ldap_server_port</token> statement specifies the tcp
 port number of the LDAP server.</para>
 <para>This statement cannot be omitted
   if <token>ldap_server_host</token> is specified.</para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	ldap_server_port 602
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>ldap_base_dn</token> <parameter>LDAP_base_distinguished_name</parameter></term>
+<term><token>ldap_base_dn</token> <parameter moreinfo="none">LDAP_base_distinguished_name</parameter></term>
 <listitem>
 <para>The <token>ldap_base_dn</token> statement specifies the
 base-distinguished name of the LDAP database.</para>
 <para>This statement cannot be omitted
   if <token>ldap_server_host</token> is specified.</para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	ldap_base_dn "dc=example, dc=com"
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>ldap_bind_dn</token> <parameter>LDAP_bind_distinguished_name</parameter></term>
+<term><token>ldap_bind_dn</token> <parameter moreinfo="none">LDAP_bind_distinguished_name</parameter></term>
 <listitem>
 <para>The <token>ldap_bind_dn</token> statement specifies the
 distinguished name for the bind operation which is used for authentication
 to the LDAP database.</para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>ldap_bind_password</token> <parameter>password</parameter></term>
+<term><token>ldap_bind_password</token> <parameter moreinfo="none">password</parameter></term>
 <listitem>
 <para>The <token>ldap_bind_password</token> statement specifies the
 password for the bind operation which is used for authentication
 to the LDAP database.</para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	ldap_bind_password "secret-ldap-password"
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>postgresql_server_host</token> <parameter>hostname</parameter></term>
+<term><token>postgresql_server_host</token> <parameter moreinfo="none">hostname</parameter></term>
 <listitem>
 <para>The <token>postgresql_server_host</token> statement specifies the host
 name on which a PostgreSQL server is running.  This statement is required
@@ -635,89 +638,89 @@ when the PostgreSQL server is used for a backend database of gfmd.  This
 statement is used in gfmd.conf not gfarm2.conf.</para>
 
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	postgresql_server_host postgresql.example.com
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>postgresql_server_port</token> <parameter>port</parameter></term>
+<term><token>postgresql_server_port</token> <parameter moreinfo="none">port</parameter></term>
 <listitem>
 <para>The <token>postgresql_server_port</token> statement specifies the tcp
 port number of the PostgreSQL server.</para>
 <para>This statement cannot be omitted
   if <token>postgresql_server_host</token> is specified.</para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	postgresql_server_port 602
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>postgresql_dbname</token> <parameter>dbname</parameter></term>
+<term><token>postgresql_dbname</token> <parameter moreinfo="none">dbname</parameter></term>
 <listitem>
 <para>The <token>postgresql_dbname</token> statement specifies the
   database name of the PostgreSQL database.</para>
 <para>This statement cannot be omitted
   if <token>postgresql_server_host</token> is specified.</para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	postgresql_dbname gfarm
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>postgresql_user</token> <parameter>user</parameter></term>
+<term><token>postgresql_user</token> <parameter moreinfo="none">user</parameter></term>
 <listitem>
 <para>The <token>postgresql_user</token> statement specifies the
   username used to connect the PostgreSQL database.</para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	postgresql_user gfarm
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>postgresql_password</token> <parameter>password</parameter></term>
+<term><token>postgresql_password</token> <parameter moreinfo="none">password</parameter></term>
 <listitem>
 <para>The <token>postgresql_password</token> statement specifies the
   password used to connect the PostgreSQL database.</para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	postgresql_password gfarm
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>postgresql_conninfo</token> <parameter>connection_info</parameter></term>
+<term><token>postgresql_conninfo</token> <parameter moreinfo="none">connection_info</parameter></term>
 <listitem>
 <para>The <token>postgresql_conninfo</token> statement specifies the
   connection option used to connect the PostgreSQL database.</para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	postgresql_conninfo "sslmode=require connect_timeout=30"
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>auth</token> <parameter>validity</parameter>
-<parameter>method</parameter> <parameter>Host_specification</parameter></term>
+<term><token>auth</token> <parameter moreinfo="none">validity</parameter>
+<parameter moreinfo="none">method</parameter> <parameter moreinfo="none">Host_specification</parameter></term>
 <listitem>
 <para>This statement specifies the authentication method when
 communicating with the host(s) specified by the third argument.</para>
 
 <para>The first argument should be either the <token>enable</token> or
 <token>disable</token> keyword.
-The second argument, <parameter>auth method</parameter>, should be
+The second argument, <parameter moreinfo="none">auth method</parameter>, should be
 the <token>gsi</token>, <token>gsi_auth</token>, or <token>sharedsecret</token>
 keyword.
-The third argument specifies the host(s) by using <parameter>Host
+The third argument specifies the host(s) by using <parameter moreinfo="none">Host
 specification</parameter>.</para>
 
 <para>The <token>auth</token> statement may be specified any number of
@@ -746,7 +749,7 @@ not available, an <token>auth</token> statement with
 
 <para>This statement cannot be omitted.</para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	auth disable sharedsecret 192.168.0.100
 	auth disable sharedsecret 192.168.0.101
 	auth enable sharedsecret 192.168.0.0/24
@@ -770,7 +773,7 @@ and all other hosts will be authenticated by
 
 <!--
 <varlistentry>
-<term><token>netparam</token> <parameter>parameter</parameter><emphasis>=</emphasis><parameter>value</parameter> <emphasis>[</emphasis><parameter>Host_specification</parameter><emphasis>]</emphasis></term>
+<term><token>netparam</token> <parameter moreinfo="none">parameter</parameter><emphasis>=</emphasis><parameter moreinfo="none">value</parameter> <emphasis>[</emphasis><parameter moreinfo="none">Host_specification</parameter><emphasis>]</emphasis></term>
 <listitem>
 <para>The <token>netparam</token> statement specifies several
 communication parameters listed below.</para>
@@ -782,7 +785,7 @@ transfer performance, especially when connecting to a distant site
 (i.e., a high bandwidth-delay product network) such that the tcp congestion
 window size will not increase sufficiently.  This parameter is only
 effective on a client node where the gfrep(1) command is executed.
-<parameter>Host_specification</parameter> specifies the source host(s)
+<parameter moreinfo="none">Host_specification</parameter> specifies the source host(s)
 for file replication instead of the destination host(s).</para>
 
 <para><token>stripe_unit_size</token>.  This parameter specifies how
@@ -797,20 +800,20 @@ parameter.</para>
 <para>This parameter is effective only when two or more is specified
 as the <token>parallel_streams</token> parameter.  This parameter is
 only effective on a client node where the gfrep(1) command is executed.
-<parameter>Host_specification</parameter> specifies the source host(s)
+<parameter moreinfo="none">Host_specification</parameter> specifies the source host(s)
 for file replication instead of the destination host(s).</para>
 
 <para><token>rate_limit</token>.  This parameter specifies the maximum
 transfer rate (bps; bit per second) for a single connection, and is
 introduced experimentally.  The parameter on a source filesystem node
-is effective during parallel file replication.  <parameter>Host
+is effective during parallel file replication.  <parameter moreinfo="none">Host
 specification</parameter> specifies the destination host(s) for file
 replication.  Note that this parameter has to be specified on a
 source filesystem node, not on a client host, unlike the other
 parameters.</para>
 
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	netparam parallel_streams=2	10.0.0.0/8
 	netparam stripe_unit_size=8192	10.0.0.0/8
 	netparam rate_limit=750000	192.168.0.0/24
@@ -820,10 +823,10 @@ parameters.</para>
  -->
 
 <varlistentry>
-<term><token>sockopt </token><parameter>option</parameter><emphasis>[=</emphasis><parameter>value</parameter><emphasis>] [<token>LISTENER</token> | <parameter>Host_specification</parameter>]</emphasis></term>
+<term><token>sockopt </token><parameter moreinfo="none">option</parameter><emphasis>[=</emphasis><parameter moreinfo="none">value</parameter><emphasis>] [<token>LISTENER</token> | <parameter moreinfo="none">Host_specification</parameter>]</emphasis></term>
 <listitem>
 <para>The <token>sockopt</token> parameter specifies the socket option
-<parameter>option</parameter> via the setsockopt(2) system call.</para>
+<parameter moreinfo="none">option</parameter> via the setsockopt(2) system call.</para>
 
 <para>When <token>LISTENER</token> (all capital letters) is specified
 by the second argument, the socket option is applied to any socket
@@ -841,25 +844,25 @@ to every socket.</para>
 <para>The following socket options can be specified.</para>
 
 <para><token>debug</token>.  The <constant>SO_DEBUG</constant> socket
-option is specified.  A <parameter>value</parameter> is not
+option is specified.  A <parameter moreinfo="none">value</parameter> is not
 necessary.</para>
 
 <para><token>keepalive</token>.  The <constant>SO_KEEPALIVE</constant>
-socket option is specified.  A <parameter>value</parameter> is not
+socket option is specified.  A <parameter moreinfo="none">value</parameter> is not
 necessary.</para>
 
 <para><token>sndbuf</token>.  The <constant>SO_SNDBUF</constant> socket
-option is specified with a <parameter>value</parameter>.</para>
+option is specified with a <parameter moreinfo="none">value</parameter>.</para>
 
 <para><token>rcvbuf</token>.  The <constant>SO_RCVBUF</constant> socket
-option is specified with a <parameter>value</parameter>.</para>
+option is specified with a <parameter moreinfo="none">value</parameter>.</para>
 
 <para><token>tcp_nodelay</token>.  The <constant>TCP_NODELAY</constant>
-socket option is specified.  A <parameter>value</parameter> is not
+socket option is specified.  A <parameter moreinfo="none">value</parameter> is not
 necessary.</para>
 
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	sockopt tcp_nodelay 192.168.0.0/24
 	sockopt sndbuf=1048576 10.0.0.0/8
 	sockopt sndbuf=1048576 LISTENER
@@ -871,20 +874,20 @@ necessary.</para>
 
 <!--
 <varlistentry>
-<term><token>address_use</token> <parameter>Host_specification</parameter></term>
+<term><token>address_use</token> <parameter moreinfo="none">Host_specification</parameter></term>
 <listitem>
 <para>The <token>address_use</token> statement specifies an IP address
 or a network address that is given preference for connection when the
 target host has several IP addresses.</para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	address_use 192.168.0.0/24
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>client_architecture</token> <parameter>architecture</parameter> <parameter>Host_specification</parameter></term>
+<term><token>client_architecture</token> <parameter moreinfo="none">architecture</parameter> <parameter moreinfo="none">Host_specification</parameter></term>
 <listitem>
 <para>This directive specifies the default architecture name that may be used
 when a client node accesses an executable file.
@@ -898,7 +901,7 @@ which specifies the default architecture name, just as in this directive,
 affects both client nodes and filesystem nodes.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	client_architecture i386-redhat8.0-linux linux-1.example.com
 	client_architecture i386-redhat8.0-linux linux-2.example.com
 	client_architecture sparc-sun-solaris8 solaris-1.example.com
@@ -908,7 +911,7 @@ affects both client nodes and filesystem nodes.
  -->
 
 <varlistentry>
-<term><token>known_network</token> <parameter>Host_specification</parameter></term>
+<term><token>known_network</token> <parameter moreinfo="none">Host_specification</parameter></term>
 <listitem>
 <para>The <token>known_network</token> statement specifies a network
 address for file system nodes.  It is used to group file system nodes
@@ -916,7 +919,7 @@ at file systen node scheduling.
 File system nodes that are not specified in this directive are assumed
 to be in an IPv4 class C network.</para>
 <para>Multiple networks can be specified as follows.</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	known_network 192.168.0.0/25
 	known_network 192.168.0.128/25
 </literallayout>
@@ -924,7 +927,7 @@ to be in an IPv4 class C network.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>network_receive_timeout</token> <parameter>seconds</parameter></term>
+<term><token>network_receive_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>The <token>network_receive_timeout</token> directive specifies
 the time, in seconds, to wait for data reception via network.
@@ -942,7 +945,7 @@ the gfsd server and gfmd considers the gfsd server is down.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>admin_user</token> <parameter>user</parameter></term>
+<term><token>admin_user</token> <parameter moreinfo="none">user</parameter></term>
 <listitem>
 <para>
 This directive specifies an administrator user name, which is
@@ -952,7 +955,7 @@ specified in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>admin_user_gsi_dn</token> <parameter>user_gsi_dn</parameter></term>
+<term><token>admin_user_gsi_dn</token> <parameter moreinfo="none">user_gsi_dn</parameter></term>
 <listitem>
 <para>
 This directive specifies a subject DN of an administrator, which is
@@ -962,33 +965,33 @@ specified in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>local_user_map</token> <parameter>user-map-file</parameter> [<parameter>hostname</parameter>:[<parameter>port</parameter>]]</term>
+<term><token>local_user_map</token> <parameter moreinfo="none">user-map-file</parameter> [<parameter moreinfo="none">hostname</parameter>:[<parameter moreinfo="none">port</parameter>]]</term>
 <listitem>
 <para>This directive specifies a file name
-<parameter>user-map-file</parameter> for mapping local user names to
+<parameter moreinfo="none">user-map-file</parameter> for mapping local user names to
 global user names.  This map file is used only for sharedsecret
 authentication.  When this file is not specified, a global user name
 is assumed to be same as the local user name.</para>
 
 <para>
-<parameter>user-map-file</parameter> is needed when you have to use
+<parameter moreinfo="none">user-map-file</parameter> is needed when you have to use
 the sharedsecret authentication method in the case where you have
 different unix account names on different filesystem nodes.  In such a
-case, the <parameter>user-map-file</parameter> on each filesystem node
+case, the <parameter moreinfo="none">user-map-file</parameter> on each filesystem node
 should have an entry from each local user name to a unique global user
 name.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	local_user_map /etc/gfarm/gfarm-usermap
 </literallayout>
 
-<para>Each line of the <parameter>user-map-file</parameter> consists
+<para>Each line of the <parameter moreinfo="none">user-map-file</parameter> consists
 of two fields separated by spaces; the first field is a global user
 name, and the second field is a local user name.</para>
 
 <para>Example of the user mapping file:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	foobar foo
 	quux baz
 </literallayout>
@@ -1004,7 +1007,7 @@ When the same definitions of local user name exist,
 the first definition is selected.
 </para>
 <para>Example of multiple user mapping file:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	local_user_map /etc/gfarm/gfarm-usermap1-1
 	local_user_map /etc/gfarm/gfarm-usermap1-2
 	local_user_map /etc/gfarm/gfarm-usermap2-1 server2
@@ -1020,10 +1023,10 @@ it applies in order of gfarm-usermap1-1 and gfarm-usermap1-2.
 </varlistentry>
 
 <varlistentry>
-<term><token>local_group_map</token> <parameter>group-map-file</parameter> [<parameter>hostname</parameter>:[<parameter>port</parameter>]]</term>
+<term><token>local_group_map</token> <parameter moreinfo="none">group-map-file</parameter> [<parameter moreinfo="none">hostname</parameter>:[<parameter moreinfo="none">port</parameter>]]</term>
 <listitem>
 <para>This directive specifies a file name
-<parameter>group-map-file</parameter> for mapping global group names to
+<parameter moreinfo="none">group-map-file</parameter> for mapping global group names to
 local group names.  This map file is used by legacy clients that use
 local group id such as gfarm2fs and gfarm dsi for Globus GridFTP to
 display mapped local groups.  When this file is not specified, a
@@ -1031,11 +1034,11 @@ local group name is assumed to be same as the global group
 name.</para>
 
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	local_group_map /etc/gfarm/gfarm-groupmap
 </literallayout>
 
-<para>Each line of the <parameter>group-map-file</parameter> consists
+<para>Each line of the <parameter moreinfo="none">group-map-file</parameter> consists
 of two fields separated by spaces; the first field is a global group
 name, and the second field is a local group name.</para>
 <para>
@@ -1047,7 +1050,7 @@ The specification method is similar to local_user_map.
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_cache_timeout</token> <parameter>seconds</parameter></term>
+<term><token>schedule_cache_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>This directive specifies the time (in seconds) until the cache used for
 filesystem node scheduling expires.
@@ -1056,14 +1059,14 @@ disk free space, and whether authentication succeeds or not.
 The default time is 600 seconds, i.e. ten minutes.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	schedule_cache_timeout 60
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_concurrency</token> <parameter>number</parameter></term>
+<term><token>schedule_concurrency</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>
 This directive specifies the number how many filesystem nodes will be
@@ -1073,14 +1076,14 @@ but the load to filesystem nodes will increase.
 The default number is 10 nodes.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	schedule_concurrency 10
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_concurrency_per_net</token> <parameter>number</parameter></term>
+<term><token>schedule_concurrency_per_net</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>
 This directive specifies the number how many filesystem nodes will
@@ -1094,14 +1097,14 @@ it's recommened to increase schedule_concurrency parameter too.
 The default number is 3.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	schedule_concurrency_per_net 3
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_idle_load_thresh</token> <parameter>load-average</parameter></term>
+<term><token>schedule_idle_load_thresh</token> <parameter moreinfo="none">load-average</parameter></term>
 <listitem>
 <para>This directive specifies the threshold of CPU load average to be
 considered idle.  The file system nodes whose CPU load average
@@ -1110,14 +1113,14 @@ scheduled at first.
 The default load average is 0.1.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	schedule_idle_load_thresh 0.1
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_busy_load_thresh</token> <parameter>load-average</parameter></term>
+<term><token>schedule_busy_load_thresh</token> <parameter moreinfo="none">load-average</parameter></term>
 <listitem>
 <para>This directive specifies the threshold of CPU load average to be
 considered busy.  The file system nodes whose CPU load average
@@ -1125,14 +1128,14 @@ is above the specified CPU load average are to be scheduled lastly.
 The default load average is 0.5.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	schedule_busy_load_thresh 0.5
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_virtual_load</token> <parameter>load-average</parameter></term>
+<term><token>schedule_virtual_load</token> <parameter moreinfo="none">load-average</parameter></term>
 <listitem>
 <para>This directive specifies the virtual CPU load average.  The
 virtual CPU load is added when the host is scheduled to avoid
@@ -1140,14 +1143,14 @@ scheduling the same host multiple times.  The default load average is
 0.3.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	schedule_virtual_load 0.3
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_candidates_ratio</token> <parameter>ratio</parameter></term>
+<term><token>schedule_candidates_ratio</token> <parameter moreinfo="none">ratio</parameter></term>
 <listitem>
 <para>
 This parameter specifies the threshold ratio of number of filesystem nodes
@@ -1161,14 +1164,14 @@ but scheduling process will become slower.
 The default ratio is 4.0.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	schedule_candidates_ratio 4.0
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_rtt_thresh_diff</token> <parameter>microseconds</parameter></term>
+<term><token>schedule_rtt_thresh_diff</token> <parameter moreinfo="none">microseconds</parameter></term>
 <listitem>
 <para>
 This parameter specifies the threshold time of network latency
@@ -1181,14 +1184,14 @@ one of the parameters.
 The default is 1000 microseconds. i.e. 1 millisecond.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	schedule_rtt_thresh_diff 1000
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_rtt_thresh_ratio</token> <parameter>ratio</parameter></term>
+<term><token>schedule_rtt_thresh_ratio</token> <parameter moreinfo="none">ratio</parameter></term>
 <listitem>
 <para>
 This parameter specifies the threshold ratio of network latency
@@ -1201,14 +1204,14 @@ one of the parameters.
 The default ratio is 4.0.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	schedule_rtt_thresh_ratio 4.0
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_rtt_thresh</token> <parameter>ratio</parameter></term>
+<term><token>schedule_rtt_thresh</token> <parameter moreinfo="none">ratio</parameter></term>
 <listitem>
 <para>
 This directive is just an alias of
@@ -1218,14 +1221,14 @@ This directive remains for compatibility with older versions.
 The default ratio is 4.0.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	schedule_rtt_thresh 4.0
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>write_local_priority</token> <parameter>validity</parameter></term>
+<term><token>write_local_priority</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>Gfarm nearly always chooses localhost, when it selects a filesystem
 node to write a file. By specifing the <token>disable</token> keyword in
@@ -1240,14 +1243,14 @@ the value specified by the environment variable will be used.
 The default is <token>enable</token>.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	write_local_priority disable
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>write_target_domain</token> <parameter>domain</parameter></term>
+<term><token>write_target_domain</token> <parameter moreinfo="none">domain</parameter></term>
 <listitem>
 <para>Gfarm tries to choose a filesystem node in the domain specified by
 this directive, when it selects a node to write a file.
@@ -1264,14 +1267,14 @@ Note that if you specify this directive more than once, only the first one
 will be used and the others are ignored.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	write_target_domain example.org
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>minimum_free_disk_space</token> <parameter>bytes</parameter></term>
+<term><token>minimum_free_disk_space</token> <parameter moreinfo="none">bytes</parameter></term>
 <listitem>
 <para>This directive specifies free disk space (in bytes) which is
 required on filesystem nodes. The Gfarm scheduler excludes filesystem nodes
@@ -1286,41 +1289,41 @@ This directive has to be specified in both gfarm2.conf and gfmd.conf.
 After restarting the gfmd and the Gfarm client, it is effective.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	minimum_free_disk_space 1G
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>simultaneous_replication_receivers</token> <parameter>number</parameter></term>
+<term><token>simultaneous_replication_receivers</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>This directive specifies maximum number of simultaneous
 gfmd-initiated replications to same host.
 The default is 20.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	simultaneous_replication_receivers 40
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>gfsd_connection_cache</token> <parameter>number</parameter></term>
+<term><token>gfsd_connection_cache</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>This directive specifies maximum number of cached gfsd connections.
 The default is 16.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	gfsd_connection_cache 32
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>xmlattr_size_limit</token> <parameter>bytes</parameter></term>
+<term><token>xmlattr_size_limit</token> <parameter moreinfo="none">bytes</parameter></term>
 <listitem>
 <para>This directive specifies maximum size of XML extended attributes.
 The default is 786432, and numbers greater than 983040 are not allowed.
@@ -1329,14 +1332,14 @@ The default is 786432, and numbers greater than 983040 are not allowed.
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	xmlattr_size_limit 786432
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>xattr_size_limit</token> <parameter>bytes</parameter></term>
+<term><token>xattr_size_limit</token> <parameter moreinfo="none">bytes</parameter></term>
 <listitem>
 <para>This directive specifies maximum size of extended attributes.
 The default is 65536, and numbers greater than 983040 are not allowed.
@@ -1345,42 +1348,42 @@ The default is 65536, and numbers greater than 983040 are not allowed.
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	xattr_size_limit 65536
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>attr_cache_limit</token> <parameter>number</parameter></term>
+<term><token>attr_cache_limit</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>This directive specifies maximum number of cached attributes in
 gfarm library.
 The default is 40000.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	attr_cache_limit 100000
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>attr_cache_timeout</token> <parameter>milliseconds</parameter></term>
+<term><token>attr_cache_timeout</token> <parameter moreinfo="none">milliseconds</parameter></term>
 <listitem>
 <para>This directive specifies maximum time until cached attributes expire
 in milliseconds.
 The default is 1000, i.e. 1 second.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	attr_cache_timeout 3600000
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>log_level</token> <parameter>priority_level</parameter></term>
+<term><token>log_level</token> <parameter moreinfo="none">priority_level</parameter></term>
 <listitem>
 <para>This directive specifies a level of log priority.
 The log output, which priority is inferior to this level, will not be
@@ -1391,14 +1394,14 @@ The default level is "info".
 It's not recommended to specify a level higher or equal to "crit".
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	log_level debug
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>log_message_verbose_level</token> <parameter>level</parameter></term>
+<term><token>log_message_verbose_level</token> <parameter moreinfo="none">level</parameter></term>
 <listitem>
 <para>This directive specifies how verbose the log message is.
 The default value is 0, which outputs the log message id.  The level 1
@@ -1406,27 +1409,27 @@ additionally outputs the file name and the line of source code.  The
 level 2 additionally outputs the function name.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	log_message_verbose_level 1
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>log_auth_verbose</token> <parameter>validity</parameter></term>
+<term><token>log_auth_verbose</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>
 When "enable" is specified, verbose messages about authentication are logged.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	log_auth_verbose enable
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>file_trace</token> <parameter>validity</parameter></term>
+<term><token>file_trace</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>
 When "enable" is specified, an audit log feature for file creation,
@@ -1436,14 +1439,14 @@ modification and removal is enabled.
 This directive is available in both gfarm2.conf and gfmd.conf.
 </para>
 <para>Here is an example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	file_trace enable
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>fatal_action</token> <parameter>action_name</parameter></term>
+<term><token>fatal_action</token> <parameter moreinfo="none">action_name</parameter></term>
 <listitem>
 <para>
 This parameter specifies the behavior at a fatal error.
@@ -1454,7 +1457,7 @@ The default action is <replaceable>backtrace_and_abort</replaceable>.
      a indent of this section in a man page will be disabled. -->
 For example,
 </para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	fatal_action backtrace_and_abort
 </literallayout>
 <para>
@@ -1514,14 +1517,14 @@ Call
 </varlistentry>
 
 <varlistentry>
-<term><token>debug_command</token> <parameter>command_line</parameter></term>
+<term><token>debug_command</token> <parameter moreinfo="none">command_line</parameter></term>
 <listitem>
 <para>
 When a Gfarm application program crashes (received SIGSEGV, SIGBUG, etc.),
 a debug command specified in this directive is executed.
 For example,
 </para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	debug_command env DISPLAY=:0.0 xterm -e gdb %e %p
 </literallayout>
 <para>
@@ -1538,7 +1541,7 @@ If this directive is omitted, no debug command is executed.
 </varlistentry>
 
 <varlistentry>
-<term><token>no_file_system_node_timeout</token> <parameter>seconds</parameter></term>
+<term><token>no_file_system_node_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>If there is no file system node available,
 Gfarm client library periodically tries to find a file system node.
@@ -1546,14 +1549,14 @@ This directive specifies the timeout to try in seconds.
 The default is 30 seconds.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	no_file_system_node_timeout 30
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>gfmd_reconnection_timeout</token> <parameter>seconds</parameter></term>
+<term><token>gfmd_reconnection_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>If the connection to the metadata server is disconnected,
 Gfarm client library periodically tries to reconnect.
@@ -1561,7 +1564,7 @@ This directive specifies the timeout to try in seconds.
 The default is 30 seconds.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	gfmd_reconnection_timeout 30
 </literallayout>
 </listitem>
@@ -1569,7 +1572,7 @@ The default is 30 seconds.
 
 <!--
 <varlistentry>
-<term><token>record_atime </token><parameter>validity</parameter></term>
+<term><token>record_atime </token><parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>When "enable" is specified, Gfarm records last access time strictly.
 When "disabled" is specified, the access time becomes inaccurate, but
@@ -1579,7 +1582,7 @@ The "disable" setting corresponds to "noatime" setting in usual filesystem.
 </para>
 
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	record_atime disable
 </literallayout>
 </listitem>
@@ -1587,7 +1590,7 @@ The "disable" setting corresponds to "noatime" setting in usual filesystem.
  -->
 
 <varlistentry>
-<term><token>atime</token> <parameter>type</parameter></term>
+<term><token>atime</token> <parameter moreinfo="none">type</parameter></term>
 <listitem>
 <para>
 When "disable" is specified, atime (access time) is not updated.  When
@@ -1601,14 +1604,14 @@ is specified, atime is always updated.  The default setting is
 This parameter is only available in gfmd.conf.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	atime disable
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>client_file_bufsize</token> <parameter>bytes</parameter></term>
+<term><token>client_file_bufsize</token> <parameter moreinfo="none">bytes</parameter></term>
 <listitem>
 <para>This directive specifies the file buffer size in bytes used in
   the Gfarm client library (libgfarm).  The default size is 1048568
@@ -1617,40 +1620,40 @@ This parameter is only available in gfmd.conf.
   version 2.5.0 or earlier.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	client_file_bufsize 65536
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>client_parallel_copy</token> <parameter>num-of-parallel</parameter></term>
+<term><token>client_parallel_copy</token> <parameter moreinfo="none">num-of-parallel</parameter></term>
 <listitem>
-<para>This directive specifies the number of parallel for <command>gfprep</command> and <command>gfpcopy</command> to work in parallel.
+<para>This directive specifies the number of parallel for <command moreinfo="none">gfprep</command> and <command moreinfo="none">gfpcopy</command> to work in parallel.
 When this number is not specified, the default number of parallel is 4.
 </para>
 <para>For example,</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	client_palallel_copy 10
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>profile </token><parameter>validity</parameter></term>
+<term><token>profile </token><parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>When "enable" is specified, Gfarm outputs the profile information.
 </para>
 
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	profile enable
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_list</token> <parameter>gfmd-hostname[:port]</parameter> <parameter>...</parameter></term>
+<term><token>metadb_server_list</token> <parameter moreinfo="none">gfmd-hostname[:port]</parameter> <parameter moreinfo="none">...</parameter></term>
 <listitem>
 <para>This parameter specifies connection destinations of redundant metadata servers delimited by space.
 If port is not specified, port will be 601 which is the default value.
@@ -1659,14 +1662,14 @@ If port is not specified, port will be 601 which is the default value.
 This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_server_list mds1 mds2:701
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_replication</token> <parameter>validity</parameter></term>
+<term><token>metadb_replication</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>When "enable" is specified, the redundant metadata feature is enabled.
 The default value is disable.
@@ -1675,14 +1678,14 @@ The default value is disable.
 This parameter is only available in gfmd.conf.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_replication enable
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>synchronous_replication_timeout</token> <parameter>seconds</parameter></term>
+<term><token>synchronous_replication_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>This parameter specifies timeout for executing synchronous replication in seconds.
 If the timeout period passed, the connection to the slave gfmd where replicates to
@@ -1695,14 +1698,14 @@ The default is 10.
 This parameter is only available in gfmd.conf.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	synchronous_replication_timeout 30
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>synchronous_journaling</token> <parameter>validity</parameter></term>
+<term><token>synchronous_journaling</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>When "enable" is specified, fdatasync is called
 after update information is saved to the journal file.
@@ -1714,14 +1717,14 @@ The default is "enable".
 This parameter is only available in gfmd.conf.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	synchronous_journaling disable
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_force_slave</token> <parameter>validity</parameter></term>
+<term><token>metadb_server_force_slave</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>When "enable" is specified, even if the gfmd is set to default master,
 it run as slave gfmd forcedly.
@@ -1735,14 +1738,14 @@ because this implementation is not complete.
 This parameter is only available in gfmd.conf.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_server_force_slave enable
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_slave_max_size</token> <parameter>number</parameter></term>
+<term><token>metadb_server_slave_max_size</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>This parameter specifies the maximum number of slave gfmds.
 The default is "32".
@@ -1751,14 +1754,14 @@ The default is "32".
 This parameter is only available in gfmd.conf.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_server_slave_max_size 40
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_journal_dir</token> <parameter>directory</parameter></term>
+<term><token>metadb_journal_dir</token> <parameter moreinfo="none">directory</parameter></term>
 <listitem>
 <para>This parameter specifies the directory for the journal file.
 The value of this parameter is specified at config-gfarm execution .
@@ -1768,14 +1771,14 @@ When this parameter is not specified, the gfmd does not start.
 This parameter is only available in gfmd.conf.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_journal_dir /var/gfarm-metadata/journal
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_journal_max_size</token> <parameter>file_size</parameter></term>
+<term><token>metadb_journal_max_size</token> <parameter moreinfo="none">file_size</parameter></term>
 <listitem>
 <para>This parameter specifies the max size of the journal file in bytes.
 Beware that the larger the size is, the longer it takes time for the gfmd to complete starting.
@@ -1785,14 +1788,14 @@ The default is 33554432 (32 MBytes).
 This parameter is only available in gfmd.conf.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_journal_max_size 8388608
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_journal_recvq_size</token> <parameter>size</parameter></term>
+<term><token>metadb_journal_recvq_size</token> <parameter moreinfo="none">size</parameter></term>
 <listitem>
 <para>This parameter specifies the maximum number of on-memory records of
 the journal data that the slave gfmd receives from the master gfmd.
@@ -1805,14 +1808,14 @@ The default value is 100000.
 This parameter is only available in gfmd.conf.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	metadb_journal_recvq_size 100000
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>replica_check</token> <parameter>validity</parameter></term>
+<term><token>replica_check</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>
 When "enable" is specified, the replica_check system in gfmd can check
@@ -1824,14 +1827,14 @@ replica_check works only when necessary.  The default value is
 This parameter is only available in gfmd.conf.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	replica_check disable
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>replica_check_host_down_thresh</token> <parameter>seconds</parameter></term>
+<term><token>replica_check_host_down_thresh</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>
 This statement specifies an interval to start replica check after a
@@ -1841,14 +1844,14 @@ gfsd is down.  The default value is 10800 seconds (3 hours).
 This parameter is only available in gfmd.conf.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	replica_check_host_down_thresh 3600
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>replica_check_sleep_time</token> <parameter>nanoseconds</parameter></term>
+<term><token>replica_check_sleep_time</token> <parameter moreinfo="none">nanoseconds</parameter></term>
 <listitem>
 <para>
 This statement specifies the sleep time in nanoseconds during the
@@ -1860,14 +1863,14 @@ nanoseconds (1 second).
 This parameter is only available in gfmd.conf.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	replica_check_sleep_time 0
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>replica_check_minimum_interval</token> <parameter>seconds</parameter></term>
+<term><token>replica_check_minimum_interval</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>
 This statement specifies the minimum interval in seconds, to start the
@@ -1877,7 +1880,7 @@ next replica check.  The default value is 10 seconds.
 This parameter is only available in gfmd.conf.
 </para>
 <para>Example:</para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	replica_check_minimum_interval 5
 </literallayout>
 </listitem>
@@ -1886,12 +1889,12 @@ This parameter is only available in gfmd.conf.
 </variablelist>
 </refsect1>
 
-<refsect1 id='grammar'><title>GRAMMAR</title>
+<refsect1 id="grammar"><title>GRAMMAR</title>
 <para>This is a grammar of gfarm2.conf described by the BNF notation.</para>
 <variablelist>
 <varlistentry>
 <term>&lt;statement&gt; ::=</term>
-<listitem><literallayout>&lt;spool_statement&gt; |
+<listitem><literallayout format="linespecific" class="normal">&lt;spool_statement&gt; |
 	&lt;spool_server_listen_address_statement&gt; |
 	&lt;spool_server_listen_backlog_statement&gt; |
 	&lt;spool_server_cred_type_statement&gt; |
@@ -1981,262 +1984,262 @@ This parameter is only available in gfmd.conf.
 
 <varlistentry>
 <term>&lt;spool_statement&gt; ::=</term>
-<listitem><literallayout>"spool" &lt;pathname&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"spool" &lt;pathname&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;spool_server_listen_address_statement&gt; ::=</term>
-<listitem><literallayout>"spool_server_listen_address" &lt;ipv4_address&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"spool_server_listen_address" &lt;ipv4_address&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;spool_server_listen_backlog_statement&gt; ::=</term>
-<listitem><literallayout>"spool_server_listen_backlog" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"spool_server_listen_backlog" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;spool_server_cred_type_statement&gt; ::=</term>
-<listitem><literallayout>"spool_server_cred_type" &lt;cred_type&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"spool_server_cred_type" &lt;cred_type&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;spool_server_cred_service_statement&gt; ::=</term>
-<listitem><literallayout>"spool_server_cred_service" &lt;cred_service&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"spool_server_cred_service" &lt;cred_service&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;spool_server_cred_name_statement&gt; ::=</term>
-<listitem><literallayout>"spool_server_cred_name" &lt;cred_name&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"spool_server_cred_name" &lt;cred_name&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;spool_check_level_statement&gt; ::=</term>
-<listitem><literallayout>"spool_check_level" &lt;spck_level&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_level" &lt;spck_level&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;spool_base_load_statement&gt; ::=</term>
-<listitem><literallayout>"spool_base_load" &lt;load&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"spool_base_load" &lt;load&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_host_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_host" &lt;hostname&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_host" &lt;hostname&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_port_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_port" &lt;portnumber&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_port" &lt;portnumber&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_cred_type_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_cred_type" &lt;cred_type&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_cred_type" &lt;cred_type&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_cred_service_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_cred_service" &lt;cred_service&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_cred_service" &lt;cred_service&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_cred_name_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_cred_name" &lt;cred_name&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_cred_name" &lt;cred_name&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_listen_backlog_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_listen_backlog" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_listen_backlog" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_max_descriptors_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_max_descriptors" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_max_descriptors" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_stack_size_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_stack_size" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_stack_size" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_thread_pool_size_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_thread_pool_size" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_thread_pool_size" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_job_queue_length_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_job_queue_length" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_job_queue_length" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_heartbeat_interval_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_heartbeat_interval" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_heartbeat_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_dbq_size_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_dbq_size" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_dbq_size" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;ldap_server_host_statement&gt; ::=</term>
-<listitem><literallayout>"ldap_server_host" &lt;hostname&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"ldap_server_host" &lt;hostname&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;ldap_server_port_statement&gt; ::=</term>
-<listitem><literallayout>"ldap_server_port" &lt;portnumber&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"ldap_server_port" &lt;portnumber&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;ldap_base_dn_statement&gt; ::=</term>
-<listitem><literallayout>"ldap_base_dn" &lt;string&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"ldap_base_dn" &lt;string&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;ldap_bind_dn_statement&gt; ::=</term>
-<listitem><literallayout>"ldap_bind_dn" &lt;string&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"ldap_bind_dn" &lt;string&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;ldap_bind_password_statement&gt; ::=</term>
-<listitem><literallayout>"ldap_bind_password" &lt;string&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"ldap_bind_password" &lt;string&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;postgresql_server_host_statement&gt; ::=</term>
-<listitem><literallayout>"postgresql_server_host" &lt;hostname&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"postgresql_server_host" &lt;hostname&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;postgresql_server_port_statement&gt; ::=</term>
-<listitem><literallayout>"postgresql_server_port" &lt;portnumber&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"postgresql_server_port" &lt;portnumber&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;postgresql_dbname_statement&gt; ::=</term>
-<listitem><literallayout>"postgresql_dbname" &lt;string&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"postgresql_dbname" &lt;string&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;postgresql_user_statement&gt; ::=</term>
-<listitem><literallayout>"postgresql_user" &lt;string&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"postgresql_user" &lt;string&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;postgresql_password_statement&gt; ::=</term>
-<listitem><literallayout>"postgresql_password" &lt;string&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"postgresql_password" &lt;string&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;postgresql_conninfo_statement&gt; ::=</term>
-<listitem><literallayout>"postgresql_conninfo" &lt;string&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"postgresql_conninfo" &lt;string&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;auth_statement&gt; ::=</term>
-<listitem><literallayout>"auth" &lt;validity&gt; &lt;auth_method&gt; &lt;hostspec&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"auth" &lt;validity&gt; &lt;auth_method&gt; &lt;hostspec&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;auth_command&gt; ::=</term>
-<listitem><literallayout>"enable" | "disable"</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"enable" | "disable"</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;auth_method&gt; ::=</term>
-<listitem><literallayout>"gsi" | "gsi_auth" | "sharedsecret"</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"gsi" | "gsi_auth" | "sharedsecret"</literallayout></listitem>
 </varlistentry>
 
 <!--
 <varlistentry>
 <term>&lt;netparam_statement&gt; ::=</term>
 >
-<listitem><literallayout>"netparam" &lt;netparam_option&gt;=&lt;number&gt; [&lt;hostspec&gt;]</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"netparam" &lt;netparam_option&gt;=&lt;number&gt; [&lt;hostspec&gt;]</literallayout></listitem>
 </varlistentry>
 -->
 
 <!--
 <varlistentry>
 <term>&lt;netparam_option&gt; ::=</term>
-<listitem><literallayout>"parallel_streams" | "stripe_unit_size" |
+<listitem><literallayout format="linespecific" class="normal">"parallel_streams" | "stripe_unit_size" |
 	"rate_limit"</literallayout></listitem>
 </varlistentry>
 -->
 
 <varlistentry>
 <term>&lt;sockopt_statement&gt; ::=</term>
-<listitem><literallayout>"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;socket_option&gt; ::=</term>
-<listitem><literallayout>"debug" | "keepalive" | "sndbuf" | "rcvbuf" |
+<listitem><literallayout format="linespecific" class="normal">"debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 	"tcp_nodelay"</literallayout></listitem>
 </varlistentry>
 
 <!--
 <varlistentry>
 <term>&lt;address_use_statement&gt; ::=</term>
-<listitem><literallayout>"address_use" &lt;hostspec&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"address_use" &lt;hostspec&gt;</literallayout></listitem>
 </varlistentry>
 -->
 
 <!--
 <varlistentry>
 <term>&lt;client_architecture_statement&gt; ::=</term>
-<listitem><literallayout>"client_architecture" &lt;architecture&gt; &lt;hostspec&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"client_architecture" &lt;architecture&gt; &lt;hostspec&gt;</literallayout></listitem>
 </varlistentry>
 -->
 
 <!--
 <varlistentry>
 <term>&lt;option_statement&gt; ::=</term>
-<listitem><literallayout>"option" &lt;an_option&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"option" &lt;an_option&gt;</literallayout></listitem>
 </varlistentry>
 -->
 
 <!--
 <varlistentry>
 <term>&lt;an_option&gt; ::=</term>
-<listitem><literallayout>"noatime"</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"noatime"</literallayout></listitem>
 </varlistentry>
 !-->
 
 <varlistentry>
 <term>&lt;known_network_statement&gt; ::=</term>
-<listitem><literallayout>"known_network" &lt;hostspec&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"known_network" &lt;hostspec&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;network_receive_timeout_statement&gt; ::=</term>
-<listitem><literallayout>"network_receive_timeout" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"network_receive_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;admin_user_statement&gt; ::=</term>
-<listitem><literallayout>"admin_user" &lt;string&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"admin_user" &lt;string&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;admin_user_gsi_dn_statement&gt; ::=</term>
-<listitem><literallayout>"admin_user_gsi_dn" &lt;string&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"admin_user_gsi_dn" &lt;string&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;local_user_map_statement&gt; ::=</term>
-<listitem><literallayout>"local_user_map" &lt;local_user_and_group_map_spec&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"local_user_map" &lt;local_user_and_group_map_spec&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;local_group_map_statement&gt; ::=</term>
-<listitem><literallayout>"local_group_map" &lt;local_user_and_group_map_spec&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"local_group_map" &lt;local_user_and_group_map_spec&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;local_user_and_group_map_spec&gt; ::=</term>
-<listitem><literallayout>&lt;pathname&gt; |
+<listitem><literallayout format="linespecific" class="normal">&lt;pathname&gt; |
 		&lt;pathname&gt; &lt;hostname&gt;|
 		&lt;pathname&gt; &lt;hostname&gt; ":" &lt;portnumber&gt;</literallayout></listitem>
 </varlistentry>
@@ -2244,362 +2247,362 @@ This parameter is only available in gfmd.conf.
 <!--
 <varlistentry>
 <term>&lt;dir_cache_timeout_statement&gt; ::=</term>
-<listitem><literallayout>"dir_cache_timeout" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"dir_cache_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 -->
 
 <!--
 <varlistentry>
 <term>&lt;host_cache_timeout_statement&gt; ::=</term>
-<listitem><literallayout>"host_cache_timeout" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"host_cache_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 -->
 
 <varlistentry>
 <term>&lt;schedule_cache_timeout_statement&gt; ::=</term>
-<listitem><literallayout>"schedule_cache_timeout" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"schedule_cache_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;schedule_concurrency_statement&gt; ::=</term>
-<listitem><literallayout>"schedule_concurrency" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"schedule_concurrency" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;schedule_concurrency_per_net_statement&gt; ::=</term>
-<listitem><literallayout>"schedule_concurrency_per_net" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"schedule_concurrency_per_net" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;schedule_idle_load_thresh_statement&gt; ::=</term>
-<listitem><literallayout>"schedule_idle_load_thresh" &lt;load&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"schedule_idle_load_thresh" &lt;load&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;schedule_busy_load_thresh_statement&gt; ::=</term>
-<listitem><literallayout>"schedule_busy_load_thresh" &lt;load&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"schedule_busy_load_thresh" &lt;load&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;schedule_virtual_load_statement&gt; ::=</term>
-<listitem><literallayout>"schedule_virtual_load" &lt;load&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"schedule_virtual_load" &lt;load&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;schedule_candidates_ratio_statement&gt; ::=</term>
-<listitem><literallayout>"schedule_candidates_ratio" &lt;floating_point_number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"schedule_candidates_ratio" &lt;floating_point_number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;schedule_rtt_thresh_diff_statement&gt; ::=</term>
-<listitem><literallayout>"schedule_rtt_thresh_diff" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"schedule_rtt_thresh_diff" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;schedule_rtt_thresh_ratio_statement&gt; ::=</term>
-<listitem><literallayout>"schedule_rtt_thresh_ratio" &lt;floating_point_number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"schedule_rtt_thresh_ratio" &lt;floating_point_number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;schedule_rtt_thresh_statement&gt; ::=</term>
-<listitem><literallayout>"schedule_rtt_thresh" &lt;floating_point_number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"schedule_rtt_thresh" &lt;floating_point_number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;write_local_priority_statement&gt; ::=</term>
-<listitem><literallayout>"write_local_priority" &lt;validity&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"write_local_priority" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;write_target_domain_statement&gt; ::=</term>
-<listitem><literallayout>"write_target_domain" &lt;string&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"write_target_domain" &lt;string&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;minimum_free_disk_space_statement&gt; ::=</term>
-<listitem><literallayout>"minimum_free_disk_space" &lt;size&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"minimum_free_disk_space" &lt;size&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;simultaneous_replication_receivers_statement&gt; ::=</term>
-<listitem><literallayout>"simultaneous_replication_receivers" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"simultaneous_replication_receivers" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;gfsd_connection_cache_statement&gt; ::=</term>
-<listitem><literallayout>"gfsd_connection_cache" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"gfsd_connection_cache" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;xmlattr_size_limit_statement&gt; ::=</term>
-<listitem><literallayout>"xmlattr_size_limit" &lt;size&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"xmlattr_size_limit" &lt;size&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;xattr_size_limit_statement&gt; ::=</term>
-<listitem><literallayout>"xattr_size_limit" &lt;size&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"xattr_size_limit" &lt;size&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;attr_cache_limit_statement&gt; ::=</term>
-<listitem><literallayout>"attr_cache_limit" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"attr_cache_limit" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;attr_cache_timeout_statement&gt; ::=</term>
-<listitem><literallayout>"attr_cache_timeout" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"attr_cache_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;log_level_statement&gt; ::=</term>
-<listitem><literallayout>"log_level" &lt;log_priority&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"log_level" &lt;log_priority&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;log_message_verbose_level_statement&gt; ::=</term>
-<listitem><literallayout>"log_message_verbose_level" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"log_message_verbose_level" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;log_auth_verbose_statement&gt; ::=</term>
-<listitem><literallayout>"log_auth_verbose" &lt;validity&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"log_auth_verbose" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;file_trace_statement&gt; ::=</term>
-<listitem><literallayout>"file_trace" &lt;validity&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"file_trace" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;fatal_action_statement&gt; ::=</term>
-<listitem><literallayout>"fatal_action" &lt;fatal_action_name&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"fatal_action" &lt;fatal_action_name&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;debug_command_statement&gt; ::=</term>
-<listitem><literallayout>"debug_command" &lt;string_list&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"debug_command" &lt;string_list&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;no_file_system_node_timeout_statement&gt; ::=</term>
-<listitem><literallayout>"no_file_system_node_timeout" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"no_file_system_node_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;gfmd_reconnection_timeout_statement&gt; ::=</term>
-<listitem><literallayout>"gfmd_reconnection_timeout" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"gfmd_reconnection_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--
 <varlistentry>
 <term>&lt;record_atime_statement&gt; ::=</term>
-<listitem><literallayout>"record_atime" &lt;validity&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"record_atime" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
  -->
 
 <varlistentry>
 <term>&lt;atime_statement&gt; ::=</term>
-<listitem><literallayout>"atime" &lt;atime_type&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"atime" &lt;atime_type&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;client_file_bufsize_statement&gt; ::=</term>
-<listitem><literallayout>"client_file_bufsize" &lt;size&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"client_file_bufsize" &lt;size&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;client_parallel_copy_statement&gt; ::=</term>
-<listitem><literallayout>"client_parallel_copy" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"client_parallel_copy" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;profile_statement&gt; ::=</term>
-<listitem><literallayout>"profile" &lt;validity&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"profile" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_list_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_list" &lt;metadb_server_list_spec&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_list" &lt;metadb_server_list_spec&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_list_spec&gt; ::=</term>
-<listitem><literallayout>&lt;hostname_port_spec&gt; |
+<listitem><literallayout format="linespecific" class="normal">&lt;hostname_port_spec&gt; |
 	&lt;hostname_port_spec&gt; &lt;metadb_server_list_spec&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_replication_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_replication" &lt;validity&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_replication" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;synchronous_replication_timeout_statement&gt; ::=</term>
-<listitem><literallayout>"synchronous_replication_timeout" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"synchronous_replication_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;synchronous_journaling_statement&gt; ::=</term>
-<listitem><literallayout>"synchronous_journaling" &lt;validity&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"synchronous_journaling" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_force_slave_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_force_slave" &lt;validity&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_force_slave" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_server_slave_max_size_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_server_slave_max_size" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_slave_max_size" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_journal_dir_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_journal_dir" &lt;pathname&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_journal_dir" &lt;pathname&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_journal_max_size_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_journal_max_size" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_journal_max_size" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;metadb_journal_recvq_size_statement&gt; ::=</term>
-<listitem><literallayout>"metadb_journal_recvq_size" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_journal_recvq_size" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;replica_check_statement&gt; ::=</term>
-<listitem><literallayout>"replica_check" &lt;validity&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"replica_check" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;replica_check_host_down_thresh_statement&gt; ::=</term>
-<listitem><literallayout>"replica_check_host_down_thresh" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_host_down_thresh" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;replica_check_sleep_time_statement&gt; ::=</term>
-<listitem><literallayout>"replica_check_sleep_time" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_sleep_time" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;replica_check_minimum_interval_statement&gt; ::=</term>
-<listitem><literallayout>"replica_check_minimum_interval" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_minimum_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;string_list&gt; ::=</term>
-<listitem><literallayout>&lt;string&gt; |
+<listitem><literallayout format="linespecific" class="normal">&lt;string&gt; |
 	&lt;string&gt; &lt;string_list&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;hostspec&gt; ::=</term>
-<listitem><literallayout>&lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
+<listitem><literallayout format="linespecific" class="normal">&lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 	&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;pathname&gt; ::=</term>
-<listitem><literallayout>&lt;pathname_character&gt; &lt;pathname_character&gt;*</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">&lt;pathname_character&gt; &lt;pathname_character&gt;*</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;pathname_character&gt; ::=</term>
-<listitem><literallayout>&lt;hostname_character&gt; | "," | "/" | "_"</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">&lt;hostname_character&gt; | "," | "/" | "_"</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;hostname_port_spec&gt; ::=</term>
-<listitem><literallayout>&lt;hostname&gt;|
+<listitem><literallayout format="linespecific" class="normal">&lt;hostname&gt;|
 	&lt;hostname&gt; ":" &lt;portnumber&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;hostname&gt; ::=</term>
-<listitem><literallayout>&lt;hostname_character&gt; &lt;hostname_character&gt;*</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">&lt;hostname_character&gt; &lt;hostname_character&gt;*</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;hostname_character&gt; ::=</term>
-<listitem><literallayout>&lt;alphabet&gt; | &lt;digit&gt; | "-" | "."</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">&lt;alphabet&gt; | &lt;digit&gt; | "-" | "."</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;portnumber&gt; ::=</term>
-<listitem><literallayout>&lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">&lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;size&gt; ::=</term>
-<listitem><literallayout>&lt;number&gt; [ "k" | "M" | "G" | "T" ]</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">&lt;number&gt; [ "k" | "M" | "G" | "T" ]</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;number&gt; ::=</term>
-<listitem><literallayout>&lt;digit&gt; [&lt;digit&gt;*]</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">&lt;digit&gt; [&lt;digit&gt;*]</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;digit&gt; ::=</term>
-<listitem><literallayout>"0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;string&gt; ::=</term>
-<listitem><literallayout>""" &lt;double_quoted_character&gt;* """</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">""" &lt;double_quoted_character&gt;* """</literallayout></listitem>
 </varlistentry>
 
 <!--
 <varlistentry>
 <term>&lt;string&gt; ::=</term>
-<listitem><literallayout>&lt;string_component&gt; &lt;string_component&gt;*</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">&lt;string_component&gt; &lt;string_component&gt;*</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;string_component&gt; ::=</term>
-<listitem><literallayout>&lt;pathname&gt; |
+<listitem><literallayout format="linespecific" class="normal">&lt;pathname&gt; |
 	"'" &lt;single_quoted_character&gt;* "'" |
 	""" &lt;double_quoted_character&gt;* """</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;single_quoted_character&gt; ::=</term>
-<listitem><literallayout>&lt;any_character_except_single_quotation&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">&lt;any_character_except_single_quotation&gt;</literallayout></listitem>
 </varlistentry>
 -->
 
 <varlistentry>
 <term>&lt;double_quoted_character&gt; ::=</term>
-<listitem><literallayout>&lt;any_character_except_backslash_and_double_quotation&gt; |
+<listitem><literallayout format="linespecific" class="normal">&lt;any_character_except_backslash_and_double_quotation&gt; |
 	"\\" | "\""</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;validity&gt; ::=</term>
-<listitem><literallayout>"enable" | "disable"</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"enable" | "disable"</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;spck_level&gt; ::=</term>
-<listitem><literallayout>"disable" | "display" | "delete" | "lost_found"</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"disable" | "display" | "delete" | "lost_found"</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;atime_type&gt; ::=</term>
-<listitem><literallayout>"disable" | "relative" | "strict"</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"disable" | "relative" | "strict"</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;log_priority&gt; ::=</term>
-<listitem><literallayout>"emerg" | "alert" | "crit" | "err" | "warning" |
+<listitem><literallayout format="linespecific" class="normal">"emerg" | "alert" | "crit" | "err" | "warning" |
 	"notice" | "info" | "debug"</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
 <term>&lt;fatal_action_name&gt; ::=</term>
-<listitem><literallayout>"backtrace_and_abort" | "backtrace_and_exit" |
+<listitem><literallayout format="linespecific" class="normal">"backtrace_and_abort" | "backtrace_and_exit" |
 	"abort" | "exit"</literallayout></listitem>
 </varlistentry>
 
@@ -2607,11 +2610,11 @@ This parameter is only available in gfmd.conf.
 
 </refsect1>
 
-<refsect1 id='examples'><title>EXAMPLES</title>
+<refsect1 id="examples"><title>EXAMPLES</title>
 <para>
 The following is an example of gfarm2.conf to use sharedsecret authentication.
 </para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 metadb_server_host metadb.example.org
 metadb_server_port 601
 auth enable sharedsecret *
@@ -2624,7 +2627,7 @@ to use PostgreSQL to store the metadata,
 and to allow access from filesystem nodes and clients at IP address
 192.168.0.0/24, via sharedsecret authentication.
 </para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 metadb_server_host metadb.example.org
 metadb_server_port 601
 postgresql_server_host metadb.example.org
@@ -2642,7 +2645,7 @@ The following is an example of gfmd.conf to use LDAP to store the metadata,
 and to allow access from filesystem nodes and clients at any IP address,
 via GSI authentication.
 </para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 metadb_server_host metadb.example.com
 metadb_server_port 601
 ldap_server_host metadb.example.com
@@ -2661,23 +2664,23 @@ sockopt keepalive
 
 </refsect1>
 
-<refsect1 id='files'><title>FILES</title>
+<refsect1 id="files"><title>FILES</title>
 <variablelist>
 
 <varlistentry>
-<term><filename>%%SYSCONFDIR%%/gfarm2.conf</filename></term>
+<term><filename moreinfo="none">%%SYSCONFDIR%%/gfarm2.conf</filename></term>
 <listitem><para></para></listitem>
 </varlistentry>
 
 <varlistentry>
-<term><filename>$HOME/.gfarm2rc</filename></term>
+<term><filename moreinfo="none">$HOME/.gfarm2rc</filename></term>
 <listitem><para></para></listitem>
 </varlistentry>
 
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry><refentrytitle>gfmd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
   <citerefentry><refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,

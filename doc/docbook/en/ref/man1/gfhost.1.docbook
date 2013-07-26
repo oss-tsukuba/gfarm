@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfhost.1'>
+
+<refentry id="gfhost.1">
 
 <refentryinfo><date>20 Jan 2010</date></refentryinfo>
 
@@ -10,79 +13,79 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfhost</refname>
 <refpurpose>Gfarm host maintenance command</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfhost</command>
-    <group choice='opt'>
-      <arg choice='plain'>-H</arg>
-      <arg choice='plain'>-l</arg>
-      <arg choice='plain'>-M</arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfhost</command>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-H</arg>
+      <arg choice="plain" rep="norepeat">-l</arg>
+      <arg choice="plain" rep="norepeat">-M</arg>
     </group>
-    <arg choice='opt'>-iLprUv</arg>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>domain-name</replaceable></arg>
-    <arg choice='opt'>-j <replaceable>concurrency</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>hostname</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-iLprUv</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-a <replaceable>architecture</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>domain-name</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-j <replaceable>concurrency</replaceable></arg>
+    <arg choice="opt" rep="repeat"><replaceable>hostname</replaceable></arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfhost</command>
-    <arg choice='plain'>-c</arg>
-    <arg choice='opt'  >-P <replaceable>path</replaceable></arg>
-    <arg choice='plain'>-a <replaceable>architecture</replaceable></arg>
-    <arg choice='plain'>-p <replaceable>port-number</replaceable></arg>
-    <arg choice='opt'  >-n <replaceable>number-of-CPUs</replaceable></arg>
-    <arg choice='plain'><replaceable>hostname</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfhost</command>
+    <arg choice="plain" rep="norepeat">-c</arg>
+    <arg choice="opt"  >-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-a <replaceable>architecture</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-p <replaceable>port-number</replaceable></arg>
+    <arg choice="opt"  >-n <replaceable>number-of-CPUs</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>hostname</replaceable></arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfhost</command>
-    <arg choice='plain'>-m</arg>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
-    <arg choice='opt'>-p <replaceable>port-number</replaceable></arg>
-    <arg choice='opt'>-n <replaceable>number-of-CPUs</replaceable></arg>
-    <arg choice='opt'>-A</arg>
-    <arg choice='plain'><replaceable>hostname</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfhost</command>
+    <arg choice="plain" rep="norepeat">-m</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-a <replaceable>architecture</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-p <replaceable>port-number</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-n <replaceable>number-of-CPUs</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-A</arg>
+    <arg choice="plain" rep="norepeat"><replaceable>hostname</replaceable></arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfhost</command>
-    <arg choice='plain'>-d</arg>
-    <arg choice='opt  '>-P <replaceable>path</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>hostname</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfhost</command>
+    <arg choice="plain" rep="norepeat">-d</arg>
+    <arg choice="opt  " rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="repeat"><replaceable>hostname</replaceable></arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfhost</command>
-    <arg choice='plain'>-R</arg>
-    <arg choice='opt  '>-P <replaceable>path</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfhost</command>
+    <arg choice="plain" rep="norepeat">-R</arg>
+    <arg choice="opt  " rep="norepeat">-P <replaceable>path</replaceable></arg>
 </cmdsynopsis>
 
 <!-- Options sorted by alphabetical order
-    (default)	<function> display hostname only
+    (default)	<function moreinfo="none"> display hostname only
     -A		alter hostname, for -m
     -a <arch>	CPU architecture, for (default)/-c/-H/-l/-M/-m
-    -c		<function> create a host in MetaDB
+    -c		<function moreinfo="none"> create a host in MetaDB
     -D <domain>	only display specified domain, for (default)/-H/-l/-M
-    -d		<function> delete a host from MetaDB
+    -d		<function moreinfo="none"> delete a host from MetaDB
     -f		XXX NOTYET ??? force ???, for -d
-    -H		<function> display information replied from the hosts
+    -H		<function moreinfo="none"> display information replied from the hosts
     -i		ignore "address_use" directive, for (default)/-H/-l
     -j <number>	concurrency, for (default)/-H/-l
     -L		display by load average order, for (default)/-H/-l
-    -l		<function> display with long format
-    -M		<function> display hosts in MetaDB
-    -m		<function> modify a host in MetaDB
+    -l		<function moreinfo="none"> display with long format
+    -M		<function moreinfo="none"> display hosts in MetaDB
+    -m		<function moreinfo="none"> modify a host in MetaDB
     -n <number>	number of CPUs, for -c/-m
     -P <path>   pathname or Gfarm URL to identify MetaDB
-    -R		<function> restore hosts to MetaDB
+    -R		<function moreinfo="none"> restore hosts to MetaDB
     -r		display by reverse order, for (default)/-H/-l/-M
     -U		UDP only, do not try authentication, for (default)/-H/-l
     -u		display by plain order (don't sort), for (default)/-H/-l/-M
@@ -107,19 +110,19 @@
 
 </refsynopsisdiv>
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfhost</command> is used to display and maintain
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfhost</command> is used to display and maintain
 information about filesystem nodes. The function that 
-<command>gfhost</command> performs is determined by an option, -c, -d,
+<command moreinfo="none">gfhost</command> performs is determined by an option, -c, -d,
 -H, -l, -M, -m, -R.
 These functions are mutually exclusive, and only one option
 among them can be specified.
 If none of them is specified, host name will be displayed as
-the default function of <command>gfhost</command>.
+the default function of <command moreinfo="none">gfhost</command>.
 </para>
 </refsect1>
 
-<refsect1 id='functions'><title>FUNCTIONS</title>
+<refsect1 id="functions"><title>FUNCTIONS</title>
 <para>
   Metadata in the metadata server will be accessed by function -c, -d,
   -M, -m or
@@ -128,11 +131,11 @@ the default function of <command>gfhost</command>.
 </para>
 <para>
   If -H, -l or -M is specified, or none of the functions are specified,
-  <command>gfhost</command> displays filesystem node information.
+  <command moreinfo="none">gfhost</command> displays filesystem node information.
   The -M function only accesses information in the metadata server.
-  Display functions other than -M also access <command>gfsd</command>,
+  Display functions other than -M also access <command moreinfo="none">gfsd</command>,
   which is running on filesystem nodes. For functions which access
-  <command>gfhost</command>, the access option can be specified
+  <command moreinfo="none">gfhost</command>, the access option can be specified
   by options -i, -j, -U and -v.
 </para>
 <para>
@@ -146,7 +149,7 @@ the default function of <command>gfhost</command>.
   <!-- FIXME END -->.
 </para>
 <para>
-  The following is a list of the functions of the <command>gfhost</command>
+  The following is a list of the functions of the <command moreinfo="none">gfhost</command>
   command. You shouldn't specify more than one functions at a time.
 </para>
 <variablelist>
@@ -156,7 +159,7 @@ the default function of <command>gfhost</command>.
     <listitem>
       <para>
 	If you don't specify any of the functions,
-	<command>gfhost</command> accesses <command>gfsd</command>,
+	<command moreinfo="none">gfhost</command> accesses <command moreinfo="none">gfsd</command>,
 	and displays the names of hosts which are currently available
 	as its default function.
 	Hostnames are displayed in alphabetical order, by default.
@@ -173,7 +176,7 @@ the default function of <command>gfhost</command>.
 	Option -a is mandatory for this function, this option specifies
 	the architecture of the host.
 	Option -p is mandatory in this function too, this option specifies
-	the port number of <command>gfsd</command> on the host.
+	the port number of <command moreinfo="none">gfsd</command> on the host.
 	Option -n may be used to specify the number of CPUs of the host,
 	and 1 CPU is assumed, if -n is omitted.
       </para>
@@ -212,13 +215,13 @@ the default function of <command>gfhost</command>.
 	With this function, the exact hostname passed by the gfhost command
 	arguments will be displayed instead of the canonical host identifier.
 	Also, this function displays the IP address used to
-	access <command>gfsd</command> in parentheses just after the hostname.
+	access <command moreinfo="none">gfsd</command> in parentheses just after the hostname.
       </para>
       <para>
 	If the host cannot be accessed due to a machine down or
 	network problem, etc., x.xx/x.xx/x.xx will be displayed in
 	the load average field.
-	If the host is up, but <command>gfsd</command> on the host
+	If the host is up, but <command moreinfo="none">gfsd</command> on the host
 	cannot be accessed, -.--/-.--/-.-- will be displayed.
       </para>
       <para>
@@ -250,13 +253,13 @@ the default function of <command>gfhost</command>.
 	And the types of information retrieved from the metadata server are
 	architecture name, number of CPUs and host identifier.
 	IP address will be displayed in parentheses just after the
-	hostname used for the access to <command>gfsd</command>.
+	hostname used for the access to <command moreinfo="none">gfsd</command>.
       </para>
       <para>
 	If the host cannot be accessed due to a machine down or
 	network problem, etc., x.xx/x.xx/x.xx will be displayed in
 	the load average field.
-	If the host is up, but <command>gfsd</command> on the host
+	If the host is up, but <command moreinfo="none">gfsd</command> on the host
 	cannot be accessed , -.--/-.--/-.-- will be displayed.
       </para>
       <para>
@@ -318,11 +321,11 @@ the default function of <command>gfhost</command>.
 </variablelist>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
   <varlistentry>
-    <term><option>-a</option> <parameter>architecture</parameter></term>
+    <term><option>-a</option> <parameter moreinfo="none">architecture</parameter></term>
     <listitem>
       <para>
 	This option specifies the CPU architecture using a format like
@@ -336,7 +339,7 @@ the default function of <command>gfhost</command>.
   </varlistentry>
 
   <varlistentry>
-    <term><option>-D</option> <parameter>domain-name</parameter></term>
+    <term><option>-D</option> <parameter moreinfo="none">domain-name</parameter></term>
     <listitem>
       <para>
 	This option is used with the -H, -l, -M function or the default
@@ -352,19 +355,19 @@ the default function of <command>gfhost</command>.
 	There is an "address_use" directive in %%SYSCONFDIR%%/gfarm2.conf and
 	$HOME/.gfarm2rc to give priorities of network addresses
 	for gfarm access.
-	This directive works with the <command>gfhost</command> command,
+	This directive works with the <command moreinfo="none">gfhost</command> command,
 	but will be ignored, if you specified the -i option with
-	<command>gfhost</command>.
+	<command moreinfo="none">gfhost</command>.
       </para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-j</option> <parameter>concurrency</parameter></term>
+    <term><option>-j</option> <parameter moreinfo="none">concurrency</parameter></term>
     <listitem>
       <para>
 	This option specifies the concurrency used for access to
-	<command>gfsd</command>.
+	<command moreinfo="none">gfsd</command>.
 	The default value is 10.
       </para>
     </listitem>
@@ -381,7 +384,7 @@ the default function of <command>gfhost</command>.
   </varlistentry>
 
   <varlistentry>
-    <term><option>-n</option> <parameter>number-of-CPUs</parameter></term>
+    <term><option>-n</option> <parameter moreinfo="none">number-of-CPUs</parameter></term>
     <listitem>
       <para>
 	This option is used with the -c or -m function, and specifies the
@@ -391,17 +394,17 @@ the default function of <command>gfhost</command>.
   </varlistentry>
 
   <varlistentry>
-    <term><option>-p</option> <parameter>port-number</parameter></term>
+    <term><option>-p</option> <parameter moreinfo="none">port-number</parameter></term>
     <listitem>
       <para>
 	This option is used with -c or -m function, and specifies
-	the port number of <command>gfsd</command> on the host.
+	the port number of <command moreinfo="none">gfsd</command> on the host.
       </para>
     </listitem>
   </varlistentry>
 
   <varlistentry>
-    <term><option>-P</option> <parameter>path</parameter></term>
+    <term><option>-P</option> <parameter moreinfo="none">path</parameter></term>
     <listitem>
       <para>
 	This option specifies a pathname or a Gfarm URL to identify
@@ -431,7 +434,7 @@ the default function of <command>gfhost</command>.
 	the order that the metadata server answers is used for display.
 
 	With the -H, -l function or the default function, the result
-	is displayed in the order that each <command>gfsd</command> answers.
+	is displayed in the order that each <command moreinfo="none">gfsd</command> answers.
       </para>
     </listitem>
   </varlistentry>
@@ -456,7 +459,7 @@ the default function of <command>gfhost</command>.
     <listitem>
       <para>
 	The -H, -l function and the default function don't produce error
-	reports on <command>gfsd</command> accesses;
+	reports on <command moreinfo="none">gfsd</command> accesses;
 	these error reports will be produced by this option.
       </para>
     </listitem>
@@ -465,7 +468,7 @@ the default function of <command>gfhost</command>.
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum>

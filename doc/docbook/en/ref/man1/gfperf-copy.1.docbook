@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfperf-copy.1'>
+
+<refentry id="gfperf-copy.1">
 
 <refentryinfo><date>19 May 2012</date></refentryinfo>
 
@@ -9,26 +12,26 @@
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfperf-copy</refname>
 <refpurpose>Gfarm measure file copy performance</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfperf-copy</command>
-    <arg choice='plain'>-s, --src <replaceable>source url</replaceable></arg>
-    <arg choice='plain'>-d, --dst <replaceable>destination url</replaceable></arg>
-    <arg choice='opt'>-l, --filesize <replaceable>file size</replaceable></arg>
-    <arg choice='opt'>-b, --busize <replaceable>buffer size</replaceable></arg>
-    <arg choice='opt'>-g, --gfsd <replaceable>gfsd name</replaceable></arg>
-    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fs mount point</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfperf-copy</command>
+    <arg choice="plain" rep="norepeat">-s, --src <replaceable>source url</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-d, --dst <replaceable>destination url</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-l, --filesize <replaceable>file size</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-b, --busize <replaceable>buffer size</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-g, --gfsd <replaceable>gfsd name</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-m, --gfarm2fs <replaceable>gfarm2fs mount point</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>This command measures file copy performance from source directory to destination directory. One of source and destination url must be gfarm url (that begins with gfarm:///). Other must be file url (that begins with file:///).
 </para>
 <para>
@@ -36,29 +39,29 @@ Test file is automatically created but source file is not removed. When this com
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-s, --src</option> <parameter>source url</parameter></term>
+<term><option>-s, --src</option> <parameter moreinfo="none">source url</parameter></term>
 <listitem>
 <para>
-Test file is created automatically in source url. If <parameter>source url</parameter> is gfarm url, <parameter>destination url</parameter> must be file url.
+Test file is created automatically in source url. If <parameter moreinfo="none">source url</parameter> is gfarm url, <parameter moreinfo="none">destination url</parameter> must be file url.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-d, --dst</option> <parameter>destination url</parameter></term>
+<term><option>-d, --dst</option> <parameter moreinfo="none">destination url</parameter></term>
 <listitem>
 <para>
-Test file is copied to <parameter>destination url</parameter>. If <parameter>destinatiln url</parameter> is gfarm url, <parameter>source url</parameter> must be file url.
+Test file is copied to <parameter moreinfo="none">destination url</parameter>. If <parameter moreinfo="none">destinatiln url</parameter> is gfarm url, <parameter moreinfo="none">source url</parameter> must be file url.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-l, --filesize</option> <parameter>file size</parameter></term>
+<term><option>-l, --filesize</option> <parameter moreinfo="none">file size</parameter></term>
 <listitem>
 <para>
 File size to be created.
@@ -68,7 +71,7 @@ The default is 1M. (1M=2^20)
 </varlistentry>
 
 <varlistentry>
-<term><option>-b, --bufsize</option> <parameter>buffer size</parameter></term>
+<term><option>-b, --bufsize</option> <parameter moreinfo="none">buffer size</parameter></term>
 <listitem>
 <para>
 Copy buffer size.
@@ -78,7 +81,7 @@ The default is 4K. (1K=2^10)
 </varlistentry>
 
 <varlistentry>
-<term><option>-g, --gfsd</option> <parameter>gfsd name</parameter></term>
+<term><option>-g, --gfsd</option> <parameter moreinfo="none">gfsd name</parameter></term>
 <listitem>
 <para>
 Target gfsd name. Test file is created or copied on this gfsd.
@@ -88,7 +91,7 @@ If no gfsd is specified, gfmd determines automatically.
 </varlistentry>
 
 <varlistentry>
-<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fs mount point</parameter></term>
+<term><option>-m, --gfarm2fs</option> <parameter moreinfo="none">gfarm2fs mount point</parameter></term>
 <listitem>
 <para>
 Specify gfarm2fs mount point.

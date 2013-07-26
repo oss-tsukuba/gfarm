@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfrcmd.1'>
+<refentry id="gfrcmd.1">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -11,20 +14,20 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfrcmd(1)</refname>
 <refpurpose>Gfarm 計算プールのホストで、コマンドを実行する。</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv>
-<cmdsynopsis>
-  <command>gfrcmd</command>
-    <arg choice='plain'><replaceable>ホスト名</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>コマンド</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrcmd</command>
+    <arg choice="plain" rep="norepeat"><replaceable>ホスト名</replaceable></arg>
+    <arg choice="plain" rep="repeat"><replaceable>コマンド</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>第一引数に指定した計算プールのホストで、第二引数以降のコマンドを実行します。
 UNIX 標準の rsh に似た機能を持ちますが、下記の点が異なります。</para>
 
@@ -50,11 +53,11 @@ System の認証情報も渡すことが出来る。</para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-l</option> <parameter>ユーザー名</parameter></term>
+<term><option>-l</option> <parameter moreinfo="none">ユーザー名</parameter></term>
 <listitem>
 <para>遠隔ホストでのユーザー名を指定します。</para>
 </listitem>
@@ -108,7 +111,7 @@ System の認証情報も渡すことが出来る。</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='environment-variable'><title>ENVIRONMENT</title>
+<refsect1 id="environment-variable"><title>ENVIRONMENT</title>
 <variablelist>
 <varlistentry>
 <term><envar>GFARM_DEBUG_MODE</envar></term>
@@ -125,7 +128,7 @@ gdb を、コマンドに関連づけた状態で、起動します。
 </variablelist>
 </refsect1>
 
-<refsect1 id='bugs'><title>BUGS</title>
+<refsect1 id="bugs"><title>BUGS</title>
 <para>-l オプションはまだ実装されていません。
 </para>
 </refsect1>

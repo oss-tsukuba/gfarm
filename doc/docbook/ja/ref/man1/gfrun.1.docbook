@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfrun.1'>
+
+<refentry id="gfrun.1">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -9,37 +12,37 @@
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfrun</refname>
 <refname>gfrsh</refname>
 <refname>gfssh</refname>
 <refpurpose>ファイルシステムノードで gfarm 並列コマンドを実行する</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfrun</command>
-    <arg choice='opt'><replaceable>オプション</replaceable></arg>
-    <arg choice='plain'><replaceable>プログラム名</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>引数</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrun</command>
+    <arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>プログラム名</replaceable></arg>
+    <arg choice="plain" rep="repeat"><replaceable>引数</replaceable></arg>
 </cmdsynopsis>
-<cmdsynopsis>
-  <command>gfrsh</command>
-    <arg choice='opt'><replaceable>オプション</replaceable></arg>
-    <arg choice='plain'><replaceable>プログラム名</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>引数</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrsh</command>
+    <arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>プログラム名</replaceable></arg>
+    <arg choice="plain" rep="repeat"><replaceable>引数</replaceable></arg>
 </cmdsynopsis>
-<cmdsynopsis>
-  <command>gfssh</command>
-    <arg choice='opt'><replaceable>オプション</replaceable></arg>
-    <arg choice='plain'><replaceable>プログラム名</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>引数</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfssh</command>
+    <arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>プログラム名</replaceable></arg>
+    <arg choice="plain" rep="repeat"><replaceable>引数</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>
 並列プログラムを実行します．実行されるファイルシステムノードは，
 -G オプション，-H オプションあるいは -N オプションにより決定されます．
@@ -47,16 +50,16 @@
 
 <para>
 -G オプションはファイル・アフィニティ・スケジューリングのための
-Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
+Gfarm ファイル <parameter moreinfo="none">gfarm-URL</parameter> を指定します．
 ファイル・アフィニティ・スケジューリングでは，指定された Gfarm
 ファイルのそれぞれのファイル断片に対し，複製が格納されている
 ノードのうち一ノードが選ばれます．つまり，ファイル断片の数と
 同数のプロセスが，ファイル断片を格納しているノードで実行され
 るということになります．
--H オプションは <parameter>ホスト指定ファイル</parameter> を指定します．
+-H オプションは <parameter moreinfo="none">ホスト指定ファイル</parameter> を指定します．
 この場合，そのファイルに記述されたノードで並列プログラムを実行します．
 -N オプションは実行されるファイルシステムノードの
-<parameter>ノード数</parameter> を指定します．
+<parameter moreinfo="none">ノード数</parameter> を指定します．
 </para>
 
 <para>
@@ -76,10 +79,10 @@ Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
-<term><option>-G</option> <parameter>gfarm-URL</parameter></term>
+<term><option>-G</option> <parameter moreinfo="none">gfarm-URL</parameter></term>
 <listitem>
 <para>gfarm-URL のファイル・アフィニティ・スケジューリングにより
 並列プログラムを実行します．
@@ -89,7 +92,7 @@ Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><option>-H</option> <parameter>ホスト指定ファイル</parameter></term>
+<term><option>-H</option> <parameter moreinfo="none">ホスト指定ファイル</parameter></term>
 <listitem>
 <para>並列プログラムを実行するファイルシステムノード群を記載したファイル名を
 指定します．
@@ -101,7 +104,7 @@ Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><option>-N</option> <parameter>ノード数</parameter></term>
+<term><option>-N</option> <parameter moreinfo="none">ノード数</parameter></term>
 <listitem>
 <para>並列プログラムを実行するファイルシステムノードのノード数を指定します．
 ファイルシステムノードは負荷の小さいノードから順にノード数分選ばれます．
@@ -117,20 +120,20 @@ Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><option>-o</option> <parameter>gfarm-URL</parameter></term>
+<term><option>-o</option> <parameter moreinfo="none">gfarm-URL</parameter></term>
 <listitem>
 <para>実行される並列プログラムの標準出力を gfarm-URL に書き出します．</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><option>-e</option> <parameter>gfarm-URL</parameter></term>
+<term><option>-e</option> <parameter moreinfo="none">gfarm-URL</parameter></term>
 <listitem>
 <para>実行される並列プログラムの標準エラー出力を gfarm-URL に書き出します．
 </para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><option>-I</option> <parameter>フラグメント番号</parameter></term>
+<term><option>-I</option> <parameter moreinfo="none">フラグメント番号</parameter></term>
 <listitem>
 <para>指定されたフラグメント番号のプロセスだけが実行されます．
 このオプションは，<option>-G</option> オプションあるいは引数に与えた Gfarm
@@ -190,7 +193,7 @@ Gfarm システムコール・フック・ライブラリを利用して実行�
 </variablelist>
 </refsect1>
 
-<refsect1 id='enviromnent-variables'><title>ENVIROMNENT VARIABLES</title>
+<refsect1 id="enviromnent-variables"><title>ENVIROMNENT VARIABLES</title>
 <variablelist>
 <varlistentry>
 <term><envar>GFRUN_CMD</envar></term>

@@ -1,5 +1,8 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
-<refentry id='gfs-acl-to-xattr-value.3'>
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<refentry id="gfs-acl-to-xattr-value.3">
 
 <refentryinfo><date>14 Feb 2011</date></refentryinfo>
 
@@ -9,21 +12,21 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_acl_to_xattr_value</refname>
 <refpurpose>convert a Gfarm ACL to binary data for Gfarm extended attribute</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfs_acl_to_xattr_value</function></funcdef>
-    <paramdef>gfarm_acl_t <parameter>acl</parameter></paramdef>
-    <paramdef>void **<parameter>xattr_value_p</parameter></paramdef>
-    <paramdef>size_t *<parameter>size_p</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfs_acl_to_xattr_value</function></funcdef>
+    <paramdef>gfarm_acl_t <parameter moreinfo="none">acl</parameter></paramdef>
+    <paramdef>void **<parameter moreinfo="none">xattr_value_p</parameter></paramdef>
+    <paramdef>size_t *<parameter moreinfo="none">size_p</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -31,27 +34,27 @@
 
 <!-- body begins here -->
 
-<refsect1 id='input-arguments'><title>INPUT ARGUMENTS</title>
+<refsect1 id="input-arguments"><title>INPUT ARGUMENTS</title>
 <variablelist>
 
 <varlistentry>
-<term><parameter>acl</parameter></term>
+<term><parameter moreinfo="none">acl</parameter></term>
 <listitem>
 <para>An ACL structure type which is sorted.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><parameter>xattr_value_p</parameter></term>
+<term><parameter moreinfo="none">xattr_value_p</parameter></term>
 <listitem>
 <para>A pointer to the converted binary data.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><parameter>size_p</parameter></term>
+<term><parameter moreinfo="none">size_p</parameter></term>
 <listitem>
-<para>A value pointed to by <parameter>size_p</parameter> is set to
+<para>A value pointed to by <parameter moreinfo="none">size_p</parameter> is set to
 the length of the converted binary data.</para>
 </listitem>
 </varlistentry>
@@ -59,7 +62,7 @@ the length of the converted binary data.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_ERROR</constant></term>
@@ -86,7 +89,7 @@ the length of the converted binary data.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_acl_sort</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_acl_set_file</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

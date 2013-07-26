@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfsched.1'>
+<refentry id="gfsched.1">
 
 <refentryinfo><date>28 Dec 2010</date></refentryinfo>
 
@@ -11,7 +14,7 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfsched</refname>
 <refpurpose>
 <!-- create a host file using file-affinity scheduling -->
@@ -19,71 +22,71 @@ schedule and display available file system nodes
 </refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 
-<cmdsynopsis>
-  <command>gfsched</command>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfsched</command>
    <!--
-    <arg choice='opt'>-I <replaceable>fragment-index</replaceable></arg>
-    <arg choice='opt'>-p <replaceable>gfarm-program-URL</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-I <replaceable>fragment-index</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-p <replaceable>gfarm-program-URL</replaceable></arg>
    -->
-    <arg choice='plain'>-f <replaceable>gfarm-URL</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>domain-name</replaceable></arg>
-    <arg choice='opt'>-n <replaceable>number</replaceable></arg>
-    <arg choice='opt'>-LMclw</arg>
+    <arg choice="plain" rep="norepeat">-f <replaceable>gfarm-URL</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>domain-name</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-n <replaceable>number</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-LMclw</arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfsched</command>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfsched</command>
    <!--
-    <arg choice='plain'>-N <replaceable>number</replaceable></arg>
-    <arg choice='opt'>-p <replaceable>gfarm-program-URL</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-N <replaceable>number</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-p <replaceable>gfarm-program-URL</replaceable></arg>
    -->
-    <arg choice='opt'>-P <replaceable>gfarm-URL</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>domain-name</replaceable></arg>
-    <arg choice='opt'>-n <replaceable>number</replaceable></arg>
-    <arg choice='opt'>-LMlw</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>gfarm-URL</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>domain-name</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-n <replaceable>number</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-LMlw</arg>
 </cmdsynopsis>
 
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>
-  The <command>gfsched</command> command
-  with the <option>-f</option> <parameter>gfarm-URL</parameter> option
+  The <command moreinfo="none">gfsched</command> command
+  with the <option>-f</option> <parameter moreinfo="none">gfarm-URL</parameter> option
   displays available file system nodes which have a file replica of the
   specified gfarm-URL.
 <!--
-  The <command>gfsched</command> command displays a host list
-  using the file-affinity scheduling of <parameter>gfarm-URL</parameter>.
-  In other words, the <command>gfsched</command> command chooses and displays
+  The <command moreinfo="none">gfsched</command> command displays a host list
+  using the file-affinity scheduling of <parameter moreinfo="none">gfarm-URL</parameter>.
+  In other words, the <command moreinfo="none">gfsched</command> command chooses and displays
   hostnames, matching the number with the fragments of
-  the <parameter>gfarm-URL</parameter>, giving priority, as far as possible to
+  the <parameter moreinfo="none">gfarm-URL</parameter>, giving priority, as far as possible to
   the host which has the fragment.
 -->
 </para>
 
 <para>
-  When the <option>-f</option> <parameter>gfarm-URL</parameter> option
-  is not specified, the <command>gfsched</command> command just displays
+  When the <option>-f</option> <parameter moreinfo="none">gfarm-URL</parameter> option
+  is not specified, the <command moreinfo="none">gfsched</command> command just displays
   available file system nodes.  In this case, you can specify a metadata
-  server by the <option>-P</option> <parameter>gfarm-URL</parameter> option,
+  server by the <option>-P</option> <parameter moreinfo="none">gfarm-URL</parameter> option,
   if necessary.
 </para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <!--
 <varlistentry>
-<term><option>-I</option> <parameter>fragment-index</parameter></term>
+<term><option>-I</option> <parameter moreinfo="none">fragment-index</parameter></term>
 <listitem>
 <para>Specifies the fragment index to be scheduled.
-If the <parameter>gfarm-URL</parameter> is an executable file,
+If the <parameter moreinfo="none">gfarm-URL</parameter> is an executable file,
 an architecture name, for example, sparc-sun-solaris8,
 can be used to select a host which holds the executable file
 for the architecture.
@@ -92,11 +95,11 @@ for the architecture.
 </varlistentry>
 
 <varlistentry>
-<term><option>-p</option> <parameter>program-URL</parameter></term>
+<term><option>-p</option> <parameter moreinfo="none">program-URL</parameter></term>
 <listitem>
 <para>Creates a host file with a program name which will be used
-to process the <parameter>gfarm-URL</parameter>.
-In other words, only hosts which can run the <parameter>program-URL</parameter>
+to process the <parameter moreinfo="none">gfarm-URL</parameter>.
+In other words, only hosts which can run the <parameter moreinfo="none">program-URL</parameter>
 will be selected, if this option is specified.
 </para>
 </listitem>
@@ -104,7 +107,7 @@ will be selected, if this option is specified.
 -->
 
 <varlistentry>
-<term><option>-D</option> <parameter>domain-name</parameter></term>
+<term><option>-D</option> <parameter moreinfo="none">domain-name</parameter></term>
 <listitem>
 <para>Limits file system node by specifying a domain name or a hostname.
 </para>
@@ -150,9 +153,9 @@ fails authentication with the user may be scheduled.
 </varlistentry>
 
 <varlistentry>
-<term><option>-P</option> <parameter>gfarm-URL</parameter></term>
+<term><option>-P</option> <parameter moreinfo="none">gfarm-URL</parameter></term>
 <listitem>
-<para>Specifies a <parameter>gfarm-URL</parameter> or a pathname
+<para>Specifies a <parameter moreinfo="none">gfarm-URL</parameter> or a pathname
 to identify a metadata server which is used for the scheduling.
 This option conflicts with the <option>-f</option> option.
 </para>
@@ -160,9 +163,9 @@ This option conflicts with the <option>-f</option> option.
 </varlistentry>
 
 <varlistentry>
-<term><option>-f</option> <parameter>gfarm-URL</parameter></term>
+<term><option>-f</option> <parameter moreinfo="none">gfarm-URL</parameter></term>
 <listitem>
-<para>The <command>gfsched</command> command schedules file system nodes
+<para>The <command moreinfo="none">gfsched</command> command schedules file system nodes
 which have a replica of a file specified by this option.
 This option conflicts with the <option>-P</option> option.
 </para>
@@ -180,7 +183,7 @@ Note that the display format of this option may be changed in future.
 </varlistentry>
 
 <varlistentry>
-<term><option>-n</option> <parameter>number</parameter></term>
+<term><option>-n</option> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>Displays specified number of file system nodes at most.
 If this option is not specified, it displays all available nodes.
@@ -198,7 +201,7 @@ enough free space won't be displayed.
 <para>
 When both this option and the <option>-f</option> are specified,
 and if the file is already opened by an existing process with write-mode,
-the <command>gfsched</command> command only displays one file system node
+the <command moreinfo="none">gfsched</command> command only displays one file system node
 which is assigned for writing to the file.
 </para>
 </listitem>
@@ -214,12 +217,12 @@ which is assigned for writing to the file.
 </variablelist>
 </refsect1>
 
-<refsect1 id='examples'><title>EXAMPLES</title>
+<refsect1 id="examples"><title>EXAMPLES</title>
 <para>
 The following is an example to inquire file system nodes that the metadata
 server thinks they are currently working.
 </para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 $ gfsched -M
 </literallayout>
 </refsect1>

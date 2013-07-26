@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfmdhost.1'>
+
+<refentry id="gfmdhost.1">
 
 <refentryinfo><date>30 June 2011</date></refentryinfo>
 
@@ -10,49 +13,49 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfmdhost</refname>
 <refpurpose>gfarm メタデータサーバ管理コマンド</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfmdhost</command>
-  <arg choice='opt'>-l</arg>
-  <arg choice='opt'>-P <replaceable>path</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfmdhost</command>
+  <arg choice="opt" rep="norepeat">-l</arg>
+  <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfmdhost</command>
-  <group choice='req'>
-    <arg choice='plain'>-c</arg>
-    <arg choice='plain'>-m</arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfmdhost</command>
+  <group choice="req" rep="norepeat">
+    <arg choice="plain" rep="norepeat">-c</arg>
+    <arg choice="plain" rep="norepeat">-m</arg>
   </group>
-  <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-  <arg choice='opt'>-p <replaceable>ポート番号</replaceable></arg>
-  <arg choice='opt'>-C <replaceable>クラスタ名</replaceable></arg>
-  <arg choice='opt'>-t 
-    <group choice='req'>
-      <arg choice='plain'>m</arg>
-      <arg choice='plain'>c</arg>
-      <arg choice='plain'>s</arg>
+  <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-p <replaceable>ポート番号</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-C <replaceable>クラスタ名</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-t 
+    <group choice="req" rep="norepeat">
+      <arg choice="plain" rep="norepeat">m</arg>
+      <arg choice="plain" rep="norepeat">c</arg>
+      <arg choice="plain" rep="norepeat">s</arg>
     </group>
   </arg>
-  <arg choice='req'><replaceable>メタデータサーバ名</replaceable></arg>
+  <arg choice="req" rep="norepeat"><replaceable>メタデータサーバ名</replaceable></arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfmdhost</command>
-  <arg choice='req'>-d</arg>
-  <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-  <arg choice='req'><replaceable>メタデータサーバ名</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfmdhost</command>
+  <arg choice="req" rep="norepeat">-d</arg>
+  <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+  <arg choice="req" rep="norepeat"><replaceable>メタデータサーバ名</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfmdhost</command> は
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfmdhost</command> は
 gfarm のメタデータサーバの冗長化機能に関連する情報の表示や管理を行います。
-<command>gfmdhost</command> が実行する機能は
+<command moreinfo="none">gfmdhost</command> が実行する機能は
 -l, -c, -m, -d のオプションで選択します。
 これら機能の指定は排他的であり、どれか一つだけを指定することができます。
 また、一つも指定しなかった場合には、
@@ -60,9 +63,9 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
 </para>
 </refsect1>
 
-<refsect1 id='functions'><title>FUNCTIONS</title>
+<refsect1 id="functions"><title>FUNCTIONS</title>
 <para>
-  下記は、<command>gfmdhost</command>コマンドの機能一覧です。二つ以上の機能を同時に
+  下記は、<command moreinfo="none">gfmdhost</command>コマンドの機能一覧です。二つ以上の機能を同時に
   指定することはできません。
 </para>
 <variablelist>
@@ -166,11 +169,11 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
 </variablelist>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
   <varlistentry>
-    <term><option>-C</option> <parameter>クラスタ名</parameter></term>
+    <term><option>-C</option> <parameter moreinfo="none">クラスタ名</parameter></term>
     <listitem>
       <para>
         -c, -m 機能で gfmd ホストが属するクラスタ名を指定します。
@@ -187,7 +190,7 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
   </varlistentry>
 
   <varlistentry>
-    <term><option>-p</option> <parameter>ポート番号</parameter></term>
+    <term><option>-p</option> <parameter moreinfo="none">ポート番号</parameter></term>
     <listitem>
       <para>
         -c, -m 機能で gfmd のポート番号を指定します。
@@ -214,7 +217,7 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
   </varlistentry>
 
   <varlistentry>
-    <term><option>-P</option> <parameter>path</parameter></term>
+    <term><option>-P</option> <parameter moreinfo="none">path</parameter></term>
     <listitem>
       <para>
 	このコマンドがアクセスするメタデータサーバを特定するための
@@ -227,7 +230,7 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum>

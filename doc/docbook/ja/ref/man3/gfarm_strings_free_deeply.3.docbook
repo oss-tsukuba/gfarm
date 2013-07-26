@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfarm-strings-free-deeply.3'>
+
+<refentry id="gfarm-strings-free-deeply.3">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -10,20 +13,20 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfarm_strings_free_deeply</refname>
 <refpurpose>文字列を解放する</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>void </returnvalue>gfarm_strings_free_deeply</function></funcdef>
-    <paramdef>int <parameter>n</parameter></paramdef>
-    <paramdef>char ** <parameter>strings</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>void </returnvalue>gfarm_strings_free_deeply</function></funcdef>
+    <paramdef>int <parameter moreinfo="none">n</parameter></paramdef>
+    <paramdef>char ** <parameter moreinfo="none">strings</parameter></paramdef>
 </funcprototype>
 
 
@@ -32,11 +35,11 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>要素数 
-<parameter>n</parameter>
+<parameter moreinfo="none">n</parameter>
 の文字列配列
-<parameter>strings</parameter>
+<parameter moreinfo="none">strings</parameter>
 を解放します。
 また、配列要素の各文字列も、解放します。</para>
 </refsect1>

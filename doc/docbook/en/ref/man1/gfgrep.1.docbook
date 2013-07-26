@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfgrep.1'>
+
+<refentry id="gfgrep.1">
 <!-- $Id$ -->
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
@@ -11,57 +14,57 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfgrep</refname>
 <refpurpose>search a file for a pattern</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfrun</command>
-    <arg choice='req'>gfarm:gfgrep</arg>
-    <arg choice='plain'>-o <replaceable>output-gfarm-URL</replaceable></arg>
-    <arg choice='plain'><replaceable>pattern</replaceable></arg>
-    <arg choice='plain' rep=repeat><replaceable>input-gfarm-URL</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrun</command>
+    <arg choice="req" rep="norepeat">gfarm:gfgrep</arg>
+    <arg choice="plain" rep="norepeat">-o <replaceable>output-gfarm-URL</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>pattern</replaceable></arg>
+    <arg choice="plain" rep=repeat><replaceable>input-gfarm-URL</replaceable></arg>
 </cmdsynopsis>
-<cmdsynopsis>
-  <command>gfrun</command>
-    <arg choice='req'>gfarm:gfgrep</arg>
-    <arg choice='plain'>-o <replaceable>output-gfarm-URL</replaceable></arg>
-    <arg choice='plain'>-e <replaceable>pattern</replaceable></arg>
-    <arg choice='plain' rep=repeat><replaceable>input-gfarm-URL</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrun</command>
+    <arg choice="req" rep="norepeat">gfarm:gfgrep</arg>
+    <arg choice="plain" rep="norepeat">-o <replaceable>output-gfarm-URL</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-e <replaceable>pattern</replaceable></arg>
+    <arg choice="plain" rep=repeat><replaceable>input-gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfgrep</command> is a sample program of parallel applications executed by
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfgrep</command> is a sample program of parallel applications executed by
 gfrun(1) as well as an example to create a Gfarm file in the local
 file view.</para>
 
-<para><command>gfgrep</command> searches a <parameter>pattern</parameter> from <parameter>input-gfarm-URL</parameter>, and
-outputs to <parameter>output-gfarm-URL</parameter>.</para>
+<para><command moreinfo="none">gfgrep</command> searches a <parameter moreinfo="none">pattern</parameter> from <parameter moreinfo="none">input-gfarm-URL</parameter>, and
+outputs to <parameter moreinfo="none">output-gfarm-URL</parameter>.</para>
 
-<para>Every parallel application executed by <command>gfrun(1)</command> should interpret the
+<para>Every parallel application executed by <command moreinfo="none">gfrun(1)</command> should interpret the
 <option>-I</option> and <option>-N</option> options that show the rank and
 the size of the parallel program, respectively, and
-call <function>gfs_pio_set_local()</function>.</para>
+call <function moreinfo="none">gfs_pio_set_local()</function>.</para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-e</option> <parameter>pattern</parameter></term>
+<term><option>-e</option> <parameter moreinfo="none">pattern</parameter></term>
 <listitem>
 <para>is useful to protect patterns beginning with -.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-o</option> <parameter>gfarm-URL</parameter></term>
+<term><option>-o</option> <parameter moreinfo="none">gfarm-URL</parameter></term>
 <listitem>
 <para>specifies an output Gfarm file.</para>
 </listitem>

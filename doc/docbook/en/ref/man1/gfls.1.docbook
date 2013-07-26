@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfls.1'>
+<refentry id="gfls.1">
 
 <refentryinfo><date>27 Apr 2007</date></refentryinfo>
 
@@ -11,28 +14,28 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfls</refname>
 <refpurpose>list contents of Gfarm directory</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfls</command>
-    <arg choice='opt'><replaceable>options</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfls</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="opt" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>List information of files or contents of directories specified by
-<parameter>path</parameter>.</para>
+<parameter moreinfo="none">path</parameter>.</para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
 
@@ -74,7 +77,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-E</option> <parameter>seconds</parameter></term>
+<term><option>-E</option> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>
 Specifies seconds to hold attribute cache.

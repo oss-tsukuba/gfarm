@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfexport.1'>
+
+<refentry id="gfexport.1">
 
 <refentryinfo><date>4 Apr 2011</date></refentryinfo>
 
@@ -9,28 +12,28 @@
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfexport</refname>
 <refpurpose>Gfarm ファイルシステムのファイルの内容を表示する</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfexport</command>
-    <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
-    <arg choice='plain'><replaceable>Gfarm-URL</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfexport</command>
+    <arg choice="opt" rep="norepeat">-h <replaceable>ファイルシステムノード</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>Gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>Gfarm URL で指定された Gfarm ファイルシステム上のファイルを標準出力に出力します．</para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
-<term><option>-h</option> <parameter>ファイルシステムノード</parameter></term>
+<term><option>-h</option> <parameter moreinfo="none">ファイルシステムノード</parameter></term>
 <listitem>
 <para>指定したファイルシステムノードに格納されているファイルを出力します．
 </para>

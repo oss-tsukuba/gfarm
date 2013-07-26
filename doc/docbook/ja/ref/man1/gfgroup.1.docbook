@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfgroup.1'>
+
+<refentry id="gfgroup.1">
 
 <refentryinfo><date>20 Jan 2010</date></refentryinfo>
 
@@ -10,43 +13,43 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfgroup</refname>
 <refpurpose>Gfarm グループ管理コマンド</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfgroup</command>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='opt'>-l</arg>
-    <arg choice='opt' rep='repeat'><replaceable>group</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfgroup</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-l</arg>
+    <arg choice="opt" rep="repeat"><replaceable>group</replaceable></arg>
 </cmdsynopsis>
-<cmdsynopsis>
-  <command>gfgroup</command>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='plain'>-c</arg>
-    <arg choice='plain'>groupname</arg>
-    <arg choice='opt' rep='repeat'><replaceable>user</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfgroup</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-c</arg>
+    <arg choice="plain" rep="norepeat">groupname</arg>
+    <arg choice="opt" rep="repeat"><replaceable>user</replaceable></arg>
 </cmdsynopsis>
-<cmdsynopsis>
-  <command>gfgroup</command>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='plain'>-m</arg>
-    <arg choice='plain'>groupname</arg>
-    <arg choice='opt' rep='repeat'><replaceable>user</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfgroup</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-m</arg>
+    <arg choice="plain" rep="norepeat">groupname</arg>
+    <arg choice="opt" rep="repeat"><replaceable>user</replaceable></arg>
 </cmdsynopsis>
-<cmdsynopsis>
-  <command>gfgroup</command>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='plain'>-d</arg>
-    <arg choice='plain'>groupname</arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfgroup</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-d</arg>
+    <arg choice="plain" rep="norepeat">groupname</arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>Gfarm ファイルシステムにおけるグループ管理を行います．
 デフォルトでは全登録グループを表示します．
@@ -58,12 +61,12 @@ Gfarmファイルシステムの管理者は，-c，-m，-d
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
 
 <varlistentry>
-  <term><option>-P</option> <parameter>パス名</parameter></term>
+  <term><option>-P</option> <parameter moreinfo="none">パス名</parameter></term>
   <listitem>
     <para>
 	このコマンドがアクセスするメタデータサーバを特定するための
@@ -123,7 +126,7 @@ Gfarmの管理者が実行可能です．
 
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfuser</refentrytitle><manvolnum>1</manvolnum>

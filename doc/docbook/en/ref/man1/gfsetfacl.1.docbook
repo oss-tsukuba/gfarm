@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfsetfacl.1'>
+
+<refentry id="gfsetfacl.1">
 
 <refentryinfo><date>4 Feb 2011</date></refentryinfo>
 
@@ -10,30 +13,30 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfsetfacl</refname>
 <refpurpose>set Gfarm file access control lists</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfsetfacl</command>
-	<arg choice='opt'><replaceable>options</replaceable></arg>
-	<arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfsetfacl</command>
+	<arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+	<arg choice="opt" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
-<para><command>gfsetfacl</command> changes the Access Control List (ACL)
+<para><command moreinfo="none">gfsetfacl</command> changes the Access Control List (ACL)
 of files or directories in the Gfarm filesystem.
 </para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
 
@@ -79,7 +82,7 @@ displayed.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-m</option> <parameter>acl_spec</parameter></term>
+<term><option>-m</option> <parameter moreinfo="none">acl_spec</parameter></term>
 <listitem>
 <para>This option specifies the ACL entries text to add/replace the
 ACL entries of a Gfarm files or directories. Multiple ACL entries are
@@ -88,7 +91,7 @@ separated by comma characters (`,').</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-M</option> <parameter>acl_file</parameter></term>
+<term><option>-M</option> <parameter moreinfo="none">acl_file</parameter></term>
 <listitem>
 <para>This option specifies the file or standard input (`-') to
 add/replace the ACL entries of a Gfarm files or directories. This
@@ -106,7 +109,7 @@ input of ACL file accepts the output of gfgetfacl command.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='acl-entries'><title>ACL ENTRIES</title>
+<refsect1 id="acl-entries"><title>ACL ENTRIES</title>
 <para>
 The gfsetfacl command recognizes the following ACL entry formats.  The
 perms field is a combination of characters that indicate the
@@ -154,7 +157,7 @@ has a d[efault:] prefix.
 </variablelist>
 </refsect1>
 
-<refsect1 id='examples'><title>EXAMPLES</title>
+<refsect1 id="examples"><title>EXAMPLES</title>
 
 <variablelist>
 <varlistentry>
@@ -174,7 +177,7 @@ has a d[efault:] prefix.
 <varlistentry>
 <term>ACL text of long form</term>
 <listitem>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 # comment
 user::rw-
 user:testuser:rw-       #effective:r--
@@ -192,7 +195,7 @@ default:other::r-x
 <varlistentry>
 <term>ACL text of short form</term>
 <listitem>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 u::rw,u:user1:rw,g::r,g:group1:rw,m::r,o::r,d:u::rwx,d:g::rx,d:o::rx
 </literallayout>
 </listitem>
@@ -200,7 +203,7 @@ u::rw,u:user1:rw,g::r,g:group1:rw,m::r,o::r,d:u::rwx,d:g::rx,d:o::rx
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfgetfacl</refentrytitle><manvolnum>1</manvolnum>

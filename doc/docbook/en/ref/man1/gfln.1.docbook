@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfln.1'>
+
+<refentry id="gfln.1">
 
 <refentryinfo><date>19 Mar 2009</date></refentryinfo>
 
@@ -10,34 +13,34 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfln</refname>
 <refpurpose>create a hardlink or a symbolic link</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfln</command>
-    <arg choice='opt'><replaceable>options</replaceable></arg>
-    <arg choice='plain'>target</arg>
-    <arg choice='plain'>link_name</arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfln</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="plain" rep="norepeat">target</arg>
+    <arg choice="plain" rep="norepeat">link_name</arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command>gfln</command> creates a hardlink
-<parameter>link_name</parameter> linked to
-<parameter>target</parameter>.  When the -s option is specified, it
+<command moreinfo="none">gfln</command> creates a hardlink
+<parameter moreinfo="none">link_name</parameter> linked to
+<parameter moreinfo="none">target</parameter>.  When the -s option is specified, it
 creates a symbolic link.
 </para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
 

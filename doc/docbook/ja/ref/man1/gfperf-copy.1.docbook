@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfperf-copy.1'>
+
+<refentry id="gfperf-copy.1">
 
 <refentryinfo><date>19 May 2012</date></refentryinfo>
 
@@ -9,36 +12,36 @@
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfperf-copy</refname>
 <refpurpose>Gfarm ファイル複製の性能測定を行う。</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfperf-copy</command>
-    <arg choice='plain'>-s, --src <replaceable>コピー元url</replaceable></arg>
-    <arg choice='plain'>-d, --dst <replaceable>コピー先url</replaceable></arg>
-    <arg choice='opt'>-l, --filesize <replaceable>ファイルサイズ</replaceable></arg>
-    <arg choice='opt'>-b, --busize <replaceable>バッファサイズ</replaceable></arg>
-    <arg choice='opt'>-g, --gfsd <replaceable>gfsd名</replaceable></arg>
-    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fsマウントポイント</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfperf-copy</command>
+    <arg choice="plain" rep="norepeat">-s, --src <replaceable>コピー元url</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-d, --dst <replaceable>コピー先url</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-l, --filesize <replaceable>ファイルサイズ</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-b, --busize <replaceable>バッファサイズ</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-g, --gfsd <replaceable>gfsd名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-m, --gfarm2fs <replaceable>gfarm2fsマウントポイント</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><parameter>コピー元url</parameter>から<parameter>コピー先url</parameter>にファイルをコピーしそのコピー性能を測定します。
-<parameter>コピー元url</parameter>と<parameter>コピー先url</parameter>はどちらか一方がgfarm url (gfarm:///で始まるもの) でなくてはなりません。そしてもう片方はfile url (file:///で始まるもの) でなくてはなりません。
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><parameter moreinfo="none">コピー元url</parameter>から<parameter moreinfo="none">コピー先url</parameter>にファイルをコピーしそのコピー性能を測定します。
+<parameter moreinfo="none">コピー元url</parameter>と<parameter moreinfo="none">コピー先url</parameter>はどちらか一方がgfarm url (gfarm:///で始まるもの) でなくてはなりません。そしてもう片方はfile url (file:///で始まるもの) でなくてはなりません。
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-s, --src</option> <parameter>コピー元url</parameter></term>
+<term><option>-s, --src</option> <parameter moreinfo="none">コピー元url</parameter></term>
 <listitem>
 <para>
 コピー元urlを指定します。コピー元urlにgfarm urlを指定した場合、コピー先urlはfile urlでなくてはなりません。
@@ -47,7 +50,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-d, --dst</option> <parameter>コピー元url</parameter></term>
+<term><option>-d, --dst</option> <parameter moreinfo="none">コピー元url</parameter></term>
 <listitem>
 <para>
 コピー先urlを指定します。コピー先urlにgfarm urlを指定した場合、コピー元urlはfile urlでなくてはなりません。
@@ -56,7 +59,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-l, --filesize</option> <parameter>ファイルサイズ</parameter></term>
+<term><option>-l, --filesize</option> <parameter moreinfo="none">ファイルサイズ</parameter></term>
 <listitem>
 <para>
 使用するファイルサイズを指定します。
@@ -66,7 +69,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-b, --bufsize</option> <parameter>バッファサイズ</parameter></term>
+<term><option>-b, --bufsize</option> <parameter moreinfo="none">バッファサイズ</parameter></term>
 <listitem>
 <para>
 使用するバッファサイズを指定します。
@@ -76,7 +79,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-g, --gfsd</option> <parameter>gfsd名</parameter></term>
+<term><option>-g, --gfsd</option> <parameter moreinfo="none">gfsd名</parameter></term>
 <listitem>
 <para>
 ファイルを作成するgfsdを指定します。
@@ -86,7 +89,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fsマウントポイント</parameter></term>
+<term><option>-m, --gfarm2fs</option> <parameter moreinfo="none">gfarm2fsマウントポイント</parameter></term>
 <listitem>
 <para>
 gfarm2fsのマウントポイントを指定します。

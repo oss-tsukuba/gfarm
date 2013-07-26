@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfmv.1'>
+
+<refentry id="gfmv.1">
 
 <refentryinfo><date>21 Dec 2008</date></refentryinfo>
 
@@ -10,32 +13,32 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfmv</refname>
 <refpurpose>move (rename) Gfarm file</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfmv</command>
-    <arg choice='opt'><replaceable>options</replaceable></arg>
-    <arg choice='plain'>src</arg>
-    <arg choice='plain'>dest</arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfmv</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="plain" rep="norepeat">src</arg>
+    <arg choice="plain" rep="norepeat">dest</arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command>gfmv</command> moves or renames a Gfarm file from
-<parameter>src</parameter> to <parameter>dest</parameter>.
+<command moreinfo="none">gfmv</command> moves or renames a Gfarm file from
+<parameter moreinfo="none">src</parameter> to <parameter moreinfo="none">dest</parameter>.
 </para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
 

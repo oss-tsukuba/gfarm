@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfsched.1'>
+<refentry id="gfsched.1">
 
 <refentryinfo><date>28 Dec 2010</date></refentryinfo>
 
@@ -10,7 +13,7 @@
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfsched</refname>
 <refpurpose>
 <!-- ファイル・アフィニティ・スケジューリングによりホストリストを作成 -->
@@ -18,40 +21,40 @@
 </refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 
-<cmdsynopsis>
-  <command>gfsched</command>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfsched</command>
    <!--
-    <arg choice='opt'>-I <replaceable>フラグメント番号</replaceable></arg>
-    <arg choice='opt'>-p <replaceable>プログラムURL</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-I <replaceable>フラグメント番号</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-p <replaceable>プログラムURL</replaceable></arg>
    -->
-    <arg choice='plain'>-f <replaceable>gfarm-URL</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
-    <arg choice='opt'>-n <replaceable>ノード数</replaceable></arg>
-    <arg choice='opt'>-LMclw</arg>
+    <arg choice="plain" rep="norepeat">-f <replaceable>gfarm-URL</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>ドメイン名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-n <replaceable>ノード数</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-LMclw</arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfsched</command>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfsched</command>
    <!--
-    <arg choice='plain'>-N <replaceable>ノード数</replaceable></arg>
-    <arg choice='opt'>-p <replaceable>プログラムURL</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-N <replaceable>ノード数</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-p <replaceable>プログラムURL</replaceable></arg>
    -->
-    <arg choice='opt'>-P <replaceable>gfarm-URL</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
-    <arg choice='opt'>-n <replaceable>ノード数</replaceable></arg>
-    <arg choice='opt'>-LMlw</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>gfarm-URL</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>ドメイン名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-n <replaceable>ノード数</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-LMlw</arg>
 </cmdsynopsis>
 
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>
-  <command>gfsched</command> に
-  <option>-f</option> <parameter>gfarm-URL</parameter> オプションを
+  <command moreinfo="none">gfsched</command> に
+  <option>-f</option> <parameter moreinfo="none">gfarm-URL</parameter> オプションを
   指定した場合、そのgfarmファイルを保持するファイルシステムノードの
   うちで、現在利用可能なもの表示します。
 <!--
@@ -65,19 +68,19 @@
 <para>
   <option>-f</option>オプションを指定しなかった場合、利用可能な
   ファイルシステムノードを表示します。この場合、
-  <option>-P</option> <parameter>gfarm-URL</parameter> オプションで
+  <option>-P</option> <parameter moreinfo="none">gfarm-URL</parameter> オプションで
   パス名か gfarm URL を指定することにより、表示対象のメタデータサーバを
   切替えることができます。
 </para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <!--
 <varlistentry>
-<term><option>-I</option> <parameter>フラグメント番号</parameter></term>
+<term><option>-I</option> <parameter moreinfo="none">フラグメント番号</parameter></term>
 <listitem>
 <para>特定のファイル断片についてホストを1つ選択します。
 実行形式のファイルの場合には、このオプションで実行アーキテクチャ
@@ -88,7 +91,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-p</option> <parameter>プログラムURL</parameter></term>
+<term><option>-p</option> <parameter moreinfo="none">プログラムURL</parameter></term>
 <listitem>
 <para>そのファイルを処理するプログラム名を指定して、ホストリストを作成します。
 すなわち、選択されるホストを、このオプションで指定したプログラムを実行可能な
@@ -99,7 +102,7 @@
 -->
 
 <varlistentry>
-<term><option>-D</option> <parameter>ドメイン名</parameter></term>
+<term><option>-D</option> <parameter moreinfo="none">ドメイン名</parameter></term>
 <listitem>
 <para>ドメイン名ないしホスト名を指定し、検索対象のファイルシステムノードを
 絞ります。
@@ -129,7 +132,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-P</option> <parameter>gfarm-URL</parameter></term>
+<term><option>-P</option> <parameter moreinfo="none">gfarm-URL</parameter></term>
 <listitem>
 <para>ファイルシステムノードを管理するメタデータサーバを特定する
 ために、gfarm-URL ないしパス名を指定します。
@@ -139,7 +142,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-f</option> <parameter>gfarm-URL</parameter></term>
+<term><option>-f</option> <parameter moreinfo="none">gfarm-URL</parameter></term>
 <listitem>
 <para>指定したファイルについて、その複製を保持するファイルシステムノードを
 検索します。
@@ -172,7 +175,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-n</option> <parameter>ノード数</parameter></term>
+<term><option>-n</option> <parameter moreinfo="none">ノード数</parameter></term>
 <listitem>
 <para>指定した数をファイルシステムノードの表示を試みます。
 ノード数がその数に満たない場合には、そこで表示を打ち切ります。
@@ -207,12 +210,12 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='examples'><title>EXAMPLES</title>
+<refsect1 id="examples"><title>EXAMPLES</title>
 <para>
 以下は、メタデータサーバが動作中であると把握している、ファイルシステムノードを
 問い合わせる例です。
 </para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 $ gfsched -M
 </literallayout>
 </refsect1>

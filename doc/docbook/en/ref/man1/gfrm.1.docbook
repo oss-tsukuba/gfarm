@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfrm.1'>
+<refentry id="gfrm.1">
 
 <refentryinfo><date>12 Nov 2006</date></refentryinfo>
 
@@ -11,43 +14,43 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfrm</refname>
 <refpurpose>remove Gfarm files, directories, or file replicas</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfrm</command>
-    <arg choice='opt'>-frRnqv</arg>
-    <arg choice='opt'>-I <replaceable>file-section</replaceable></arg>
-    <arg choice='opt'>-h <replaceable>filesystem-node</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>domain-name</replaceable></arg>
-    <arg choice='opt'>-H <replaceable>hostfile</replaceable></arg>
-    <arg choice='opt'>-N <replaceable>num-of-replicas</replaceable></arg>
-    <arg choice='opt'>-j <replaceable>num-of-threads</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrm</command>
+    <arg choice="opt" rep="norepeat">-frRnqv</arg>
+    <arg choice="opt" rep="norepeat">-I <replaceable>file-section</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-h <replaceable>filesystem-node</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>domain-name</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-H <replaceable>hostfile</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-N <replaceable>num-of-replicas</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-j <replaceable>num-of-threads</replaceable></arg>
+    <arg choice="plain" rep="repeat"><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfrm</command> removes each specified file.  It does
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfrm</command> removes each specified file.  It does
 not remove directories unless the <option>-r</option> or
 <option>-R</option> option is specified.
 '.' or '..' cannot be removed.
 </para>
 
 <para>
-When the <option>-I</option> option is specified, <command>gfrm</command>
+When the <option>-I</option> option is specified, <command moreinfo="none">gfrm</command>
 removes the specified file section.  File section is an architecture
 name for executable files, or a fragment index for a regular file.
 </para>
 
 <para>
 With the <option>-h</option>, <option>-D</option>, or
-<option>-H</option> option, <command>gfrm</command> removes
+<option>-H</option> option, <command moreinfo="none">gfrm</command> removes
 file replicas of each specified file or file section on the specified
 filesystem node(s).  All file replicas of a file cannot be removed,
 unless the <option>-f</option> option is specified.
@@ -55,7 +58,7 @@ unless the <option>-f</option> option is specified.
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
@@ -69,11 +72,11 @@ this case, the specified file will be deleted.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-j</option> <parameter>num-of-threads</parameter></term>
+<term><option>-j</option> <parameter moreinfo="none">num-of-threads</parameter></term>
 <listitem>
 <para>Specifies the number of threads to delete file replicas
 simultaneously.  This option is only available when
-<command>gfrm</command> is compiled by an OpenMP C compiler.
+<command moreinfo="none">gfrm</command> is compiled by an OpenMP C compiler.
 </para>
 </listitem>
 </varlistentry>
@@ -110,7 +113,7 @@ command-line argument recursively.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-h</option> <parameter>filesystem-node</parameter></term>
+<term><option>-h</option> <parameter moreinfo="none">filesystem-node</parameter></term>
 <listitem>
 <para>Specifies a filesystem node from which file replicas will be removed.
 With the <option>-I</option> option, a file replica of the specified
@@ -120,7 +123,7 @@ file section will be removed.
 </varlistentry>
 
 <varlistentry>
-<term><option>-D</option> <parameter>domain-name</parameter></term>
+<term><option>-D</option> <parameter moreinfo="none">domain-name</parameter></term>
 <listitem>
 <para>Specifies a domain name of filesystem nodes on which file
 replicas will be removed.  With the <option>-I</option> option, a file
@@ -130,9 +133,9 @@ replica of the specified file section will be removed.
 </varlistentry>
 
 <varlistentry>
-<term><option>-H</option> <parameter>hostfile</parameter></term>
+<term><option>-H</option> <parameter moreinfo="none">hostfile</parameter></term>
 <listitem>
-<para>Specifies a <parameter>hostfile</parameter> that lists
+<para>Specifies a <parameter moreinfo="none">hostfile</parameter> that lists
 filesystem nodes on which file replicas will be removed.  With the
 <option>-I</option> option, a file replica of the specified file
 section will be removed.
@@ -144,7 +147,7 @@ if ``-'' is specified, standard input is used to read the host list.
 </varlistentry>
 
 <varlistentry>
-<term><option>-I</option> <parameter>file-section</parameter></term>
+<term><option>-I</option> <parameter moreinfo="none">file-section</parameter></term>
 <listitem>
 <para>Specifies the file section to be removed.  File section is an
 architecture name, such as sparc-sun-solaris8, for executable files, and
@@ -153,7 +156,7 @@ a fragment index for regular files.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-N</option> <parameter>num-of-replicas</parameter></term>
+<term><option>-N</option> <parameter moreinfo="none">num-of-replicas</parameter></term>
 <listitem>
 <para>Specifies the maximum number of file replicas.  If files has more
 number of file replicas than specified, reduce the number of file

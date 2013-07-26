@@ -1,5 +1,8 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
-<refentry id='gfs-acl-from-xattr-value.3'>
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<refentry id="gfs-acl-from-xattr-value.3">
 
 <refentryinfo><date>14 Feb 2011</date></refentryinfo>
 
@@ -9,21 +12,21 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_acl_from_xattr_value</refname>
 <refpurpose>convert an ACL binary data of Gfarm extended attribute to a Gfarm ACL</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfs_acl_from_xattr_value</function></funcdef>
-    <paramdef>const void *<parameter>xattr_value</parameter></paramdef>
-    <paramdef>size_t <parameter>size</parameter></paramdef>
-    <paramdef>gfarm_acl_t *<parameter>acl_p</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfs_acl_from_xattr_value</function></funcdef>
+    <paramdef>const void *<parameter moreinfo="none">xattr_value</parameter></paramdef>
+    <paramdef>size_t <parameter moreinfo="none">size</parameter></paramdef>
+    <paramdef>gfarm_acl_t *<parameter moreinfo="none">acl_p</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -31,25 +34,25 @@
 
 <!-- body begins here -->
 
-<refsect1 id='input-arguments'><title>INPUT ARGUMENTS</title>
+<refsect1 id="input-arguments"><title>INPUT ARGUMENTS</title>
 <variablelist>
 
 <varlistentry>
-<term><parameter>xattr_value</parameter></term>
+<term><parameter moreinfo="none">xattr_value</parameter></term>
 <listitem>
 <para>An ACL binary data from Gfarm extended attribute.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><parameter>size</parameter></term>
+<term><parameter moreinfo="none">size</parameter></term>
 <listitem>
-<para>The length of <parameter>xattr_value</parameter>.</para>
+<para>The length of <parameter moreinfo="none">xattr_value</parameter>.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><parameter>acl_p</parameter></term>
+<term><parameter moreinfo="none">acl_p</parameter></term>
 <listitem>
 <para>A pointer of a converted ACL.</para>
 </listitem>
@@ -58,7 +61,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_ERROR</constant></term>
@@ -85,7 +88,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_acl_sort</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_acl_get_file</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

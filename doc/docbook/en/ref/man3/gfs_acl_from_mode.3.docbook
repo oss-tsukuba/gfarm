@@ -1,5 +1,8 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
-<refentry id='gfs-acl-from-mode.3'>
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<refentry id="gfs-acl-from-mode.3">
 
 <refentryinfo><date>14 Feb 2011</date></refentryinfo>
 
@@ -9,20 +12,20 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_acl_from_mode</refname>
 <refpurpose>create a Gfarm ACL from file permission bits</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfs_acl_from_mode</function></funcdef>
-    <paramdef>gfarm_mode_t <parameter>mode</parameter></paramdef>
-    <paramdef>gfarm_acl_t *<parameter>acl_p</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfs_acl_from_mode</function></funcdef>
+    <paramdef>gfarm_mode_t <parameter moreinfo="none">mode</parameter></paramdef>
+    <paramdef>gfarm_acl_t *<parameter moreinfo="none">acl_p</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -30,18 +33,18 @@
 
 <!-- body begins here -->
 
-<refsect1 id='input-arguments'><title>INPUT ARGUMENTS</title>
+<refsect1 id="input-arguments"><title>INPUT ARGUMENTS</title>
 <variablelist>
 
 <varlistentry>
-<term><parameter>mode</parameter></term>
+<term><parameter moreinfo="none">mode</parameter></term>
 <listitem>
 <para>Permission bits.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><parameter>acl_p</parameter></term>
+<term><parameter moreinfo="none">acl_p</parameter></term>
 <listitem>
 <para>A pointer of an ACL structure type.</para>
 </listitem>
@@ -50,7 +53,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_ERROR</constant></term>
@@ -70,7 +73,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_acl_from_mode</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_acl_from_text</refentrytitle><manvolnum>3</manvolnum></citerefentry>

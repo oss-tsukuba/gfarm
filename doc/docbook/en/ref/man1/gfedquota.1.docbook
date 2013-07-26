@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfedquota.1'>
+
+<refentry id="gfedquota.1">
 
 <refentryinfo><date>23 Mar 2011</date></refentryinfo>
 
@@ -10,21 +13,21 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfedquota</refname>
 <refpurpose>edit the limits</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfedquota</command>
-    <arg choice='opt'><replaceable>options</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfedquota</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
-<para><command>gfedquota</command> is a editor of limits (quotas) for
+<para><command moreinfo="none">gfedquota</command> is a editor of limits (quotas) for
 users and groups.</para>
 
 <para>There are two kinds of limits which are "soft limit" and "hard
@@ -42,11 +45,11 @@ group.
 </para>
 <para>
 The count of usage and the check of quota are enabled after executiing
-<command>gfedquota</command> and <command>gfquotacheck </command>command.
+<command moreinfo="none">gfedquota</command> and <command moreinfo="none">gfquotacheck </command>command.
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
@@ -145,7 +148,7 @@ the root metadata server.
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfquota</refentrytitle><manvolnum>1</manvolnum>

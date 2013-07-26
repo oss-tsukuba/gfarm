@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfperf-replica.1'>
+
+<refentry id="gfperf-replica.1">
 
 <refentryinfo><date>19 May 2012</date></refentryinfo>
 
@@ -9,33 +12,33 @@
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfperf-replica</refname>
 <refpurpose>Gfarm measure file replicate performance</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfperf-replica</command>
-    <arg choice='plain'>-s, --src <replaceable>source gfsd name</replaceable></arg>
-    <arg choice='plain'>-s, --dst <replaceable>destinatiln gfsd name</replaceable></arg>
-    <arg choice='opt'>-l, --filesize <replaceable>file size</replaceable></arg>
-    <arg choice='opt'>-t, --testdir <replaceable>test directory</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfperf-replica</command>
+    <arg choice="plain" rep="norepeat">-s, --src <replaceable>source gfsd name</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-s, --dst <replaceable>destinatiln gfsd name</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-l, --filesize <replaceable>file size</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-t, --testdir <replaceable>test directory</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para>This command creates test file in <parameter>test directory</parameter> and measures replication performance.
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>This command creates test file in <parameter moreinfo="none">test directory</parameter> and measures replication performance.
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-s, --src</option> <parameter>source gfsd name</parameter></term>
+<term><option>-s, --src</option> <parameter moreinfo="none">source gfsd name</parameter></term>
 <listitem>
 <para>
 Specify source gfsd name.
@@ -44,7 +47,7 @@ Specify source gfsd name.
 </varlistentry>
 
 <varlistentry>
-<term><option>-d, --dst</option> <parameter>destination gfsd name</parameter></term>
+<term><option>-d, --dst</option> <parameter moreinfo="none">destination gfsd name</parameter></term>
 <listitem>
 <para>
 Specify destination gfsd name.
@@ -53,7 +56,7 @@ Specify destination gfsd name.
 </varlistentry>
 
 <varlistentry>
-<term><option>-l, --filesize</option> <parameter>file size</parameter></term>
+<term><option>-l, --filesize</option> <parameter moreinfo="none">file size</parameter></term>
 <listitem>
 <para>
 File size to be created.
@@ -63,10 +66,10 @@ The default is 1M. (1M=2^20)
 </varlistentry>
 
 <varlistentry>
-<term><option>-t, --testdir</option> <parameter>test directory</parameter></term>
+<term><option>-t, --testdir</option> <parameter moreinfo="none">test directory</parameter></term>
 <listitem>
 <para>
-Test file is created in <parameter>test directory</parameter>.
+Test file is created in <parameter moreinfo="none">test directory</parameter>.
 Specify only gfarm url (that begins with gfarm:///) .
 The default is gfarm:///tmp .
 </para>

@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfs-opendir.3'>
+<refentry id="gfs-opendir.3">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -11,20 +14,20 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_opendir</refname>
 <refpurpose>open a directory</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_opendir</function></funcdef>
-    <paramdef>const char * <parameter>gfarm_url</parameter></paramdef>
-    <paramdef>GFS_Dir * <parameter>dirp</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_opendir</function></funcdef>
+    <paramdef>const char * <parameter moreinfo="none">gfarm_url</parameter></paramdef>
+    <paramdef>GFS_Dir * <parameter moreinfo="none">dirp</parameter></paramdef>
 </funcprototype>
 
 
@@ -33,16 +36,16 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
-<para>The <function>gfs_opendir()</function> function opens a directory stream
-corresponding to the directory <parameter>gfarm_url</parameter>, and returns the
-directory stream to the address pointed by <parameter>dirp</parameter>.  The stream is
+<para>The <function moreinfo="none">gfs_opendir()</function> function opens a directory stream
+corresponding to the directory <parameter moreinfo="none">gfarm_url</parameter>, and returns the
+directory stream to the address pointed by <parameter moreinfo="none">dirp</parameter>.  The stream is
 positioned at the first entry in the directory.</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -65,7 +68,7 @@ positioned at the first entry in the directory.</para>
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
-<para><parameter>gfarm_url</parameter>
+<para><parameter moreinfo="none">gfarm_url</parameter>
 points outside your accessible address space.</para>
 </listitem>
 </varlistentry>
@@ -85,7 +88,7 @@ pointed strings.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_closedir</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_readdir</refentrytitle><manvolnum>3</manvolnum></citerefentry>

@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfs-pio-readline.3'>
+
+<refentry id="gfs-pio-readline.3">
 
 <refentryinfo><date>13 May 2004</date></refentryinfo>
 
@@ -10,22 +13,22 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_readline</refname>
 <refpurpose>read one line</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_readline</function></funcdef>
-    <paramdef>GFS_File <parameter>f</parameter></paramdef>
-    <paramdef>char **<parameter>bufp</parameter></paramdef>
-    <paramdef>size_t *<parameter>sizep</parameter></paramdef>
-    <paramdef>size_t *<parameter>lenp</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_pio_readline</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">f</parameter></paramdef>
+    <paramdef>char **<parameter moreinfo="none">bufp</parameter></paramdef>
+    <paramdef>size_t *<parameter moreinfo="none">sizep</parameter></paramdef>
+    <paramdef>size_t *<parameter moreinfo="none">lenp</parameter></paramdef>
 </funcprototype>
 
 
@@ -34,37 +37,37 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>
-<function>gfs_pio_readline()</function> reads one line from
-the file specified by the parameter <parameter>gf</parameter>.
+<function moreinfo="none">gfs_pio_readline()</function> reads one line from
+the file specified by the parameter <parameter moreinfo="none">gf</parameter>.
 </para>
 
 <para>
-Parameter <parameter>bufp</parameter>
+Parameter <parameter moreinfo="none">bufp</parameter>
 specifies an address of a pointer variable initialzed by NULL
 at first.
-<function>gfs_pio_readline()</function> allocates a buffer for
+<function moreinfo="none">gfs_pio_readline()</function> allocates a buffer for
 I/O dynamically, and stores the address of the buffer to this
-variable pointed by <parameter>bufp</parameter>.
-Parameter <parameter>sizep</parameter> specifies an address of
+variable pointed by <parameter moreinfo="none">bufp</parameter>.
+Parameter <parameter moreinfo="none">sizep</parameter> specifies an address of
 a size_t variable initialized by 0.
 This size_t variable is used to record the size of the buffer.
 Or, you can specify a buffer allocated by malloc(3) in the
-variable pointed by the parameter <parameter>bufp</parameter>.
+variable pointed by the parameter <parameter moreinfo="none">bufp</parameter>.
 In this case, you have to specify the size of the allocated
-buffer by the parameter <parameter>sizep</parameter>.
+buffer by the parameter <parameter moreinfo="none">sizep</parameter>.
 If the length of the line exceeds the size of the buffer, 
 the buffer will be automatically realloc(3)ed, and the variable
-pointed by <parameter>bufp</parameter> and 
-<parameter>sizep</parameter> will be updated respectively.
+pointed by <parameter moreinfo="none">bufp</parameter> and 
+<parameter moreinfo="none">sizep</parameter> will be updated respectively.
 
 Note that you are responsible to free(3) this buffer.
 </para>
 
 <para>
 This function returns the length of the line to a variable
-pointed by the parameter <parameter>lenp</parameter>.
+pointed by the parameter <parameter moreinfo="none">lenp</parameter>.
 This length includes newline character.
 </para>
 
@@ -73,7 +76,7 @@ Just like gfs_pio_gets(3), this function doesn't remove newline
 character at the end of lines. Also, this function always
 appends '\0' at the end of strings.
 You can deal with lines which include '\0' character by
-using the variable pointed by the parameter <parameter>lenp</parameter>.
+using the variable pointed by the parameter <parameter moreinfo="none">lenp</parameter>.
 </para>
 
 <para>
@@ -87,7 +90,7 @@ gfs_pio_readdelim(f, bufp, sizep, lenp, "\n", 1).
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -100,7 +103,7 @@ gfs_pio_readdelim(f, bufp, sizep, lenp, "\n", 1).
 <listitem>
 <para>Insufficient memory was available.</para>
 <para>Note that you need to free(3) the buffer pointed by the
-parameter <parameter>bufp</parameter></para>
+parameter <parameter moreinfo="none">bufp</parameter></para>
 </listitem>
 </varlistentry>
 <varlistentry>
@@ -113,11 +116,11 @@ pointed strings.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='examples'><title>EXAMPLES</title>
+<refsect1 id="examples"><title>EXAMPLES</title>
 
 <example role="example">
-<title>Example of <function>gfs_pio_readline</function> function</title>
-<para><programlisting>
+<title>Example of <function moreinfo="none">gfs_pio_readline</function> function</title>
+<para><programlisting format="linespecific">
 #include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 #include &lt;gfarm/gfarm.h&gt;
@@ -179,7 +182,7 @@ main(int argc, char **argv)
 </refsect1>
 
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_getline</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

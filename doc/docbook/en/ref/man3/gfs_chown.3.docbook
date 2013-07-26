@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfs-chown.3'>
+<refentry id="gfs-chown.3">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -11,21 +14,21 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_chown</refname>
 <refpurpose>change ownership of a file</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_chown</function></funcdef>
-    <paramdef>char * <parameter>gfarm_url</parameter></paramdef>
-    <paramdef>char * <parameter>user</parameter></paramdef>
-    <paramdef>char * <parameter>group</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_chown</function></funcdef>
+    <paramdef>char * <parameter moreinfo="none">gfarm_url</parameter></paramdef>
+    <paramdef>char * <parameter moreinfo="none">user</parameter></paramdef>
+    <paramdef>char * <parameter moreinfo="none">group</parameter></paramdef>
 </funcprototype>
 
 
@@ -34,14 +37,14 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>The owner of the file specified by
-<parameter>gfarm_url</parameter>
+<parameter moreinfo="none">gfarm_url</parameter>
 is changed.</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 
 <varlistentry>
@@ -68,7 +71,7 @@ is changed.</para>
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
-<para><parameter>gfarm_url</parameter>
+<para><parameter moreinfo="none">gfarm_url</parameter>
 points outside your accessible address space.</para>
 </listitem>
 </varlistentry>

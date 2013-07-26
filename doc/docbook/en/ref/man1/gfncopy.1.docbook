@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfncopy.1'>
+
+<refentry id="gfncopy.1">
 
 <refentryinfo><date>23 Oct 2012</date></refentryinfo>
 
@@ -10,20 +13,20 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfncopy</refname>
 <refpurpose>Manipulate number of file replicas automatically created</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfncopy</command>
-    <arg choice='opt'><replaceable>option</replaceable></arg>
-    <arg choice='plain'><replaceable>path</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfncopy</command>
+    <arg choice="opt" rep="norepeat"><replaceable>option</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>gfncopy manipulates the number of file replicas automatically
 created.  When no option is specified, it displays the specified
 number of file replicas.  With the -v option, it also displays path
@@ -33,11 +36,11 @@ repilcas.
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-s</option> <parameter>NCOPY</parameter></term>
+<term><option>-s</option> <parameter moreinfo="none">NCOPY</parameter></term>
 <listitem>
 <para>specifies the number of file replicas automatically created.</para>
 </listitem>

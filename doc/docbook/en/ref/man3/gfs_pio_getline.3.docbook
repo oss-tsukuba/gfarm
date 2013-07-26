@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfs-pio-getline.3'>
+<refentry id="gfs-pio-getline.3">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -11,22 +14,22 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_getline</refname>
 <refpurpose>read a line</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_getline</function></funcdef>
-    <paramdef>GFS_File <parameter>f</parameter></paramdef>
-    <paramdef>char * <parameter>s</parameter></paramdef>
-    <paramdef>size_t <parameter>size</parameter></paramdef>
-    <paramdef>int * <parameter>eofp</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_pio_getline</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">f</parameter></paramdef>
+    <paramdef>char * <parameter moreinfo="none">s</parameter></paramdef>
+    <paramdef>size_t <parameter moreinfo="none">size</parameter></paramdef>
+    <paramdef>int * <parameter moreinfo="none">eofp</parameter></paramdef>
 </funcprototype>
 
 
@@ -35,16 +38,16 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><function>gfs_pio_getline()</function> reads a line from the file <parameter>gf</parameter>, and
-stores to the buffer starting at <parameter>s</parameter> at most <parameter>size</parameter> - 1
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><function moreinfo="none">gfs_pio_getline()</function> reads a line from the file <parameter moreinfo="none">gf</parameter>, and
+stores to the buffer starting at <parameter moreinfo="none">s</parameter> at most <parameter moreinfo="none">size</parameter> - 1
 bytes.  It is indistinguishable whether the length of a line is more
-than <parameter>size</parameter> or equal to <parameter>size</parameter> - 1.  It sets 1 into the
-address pointed by <parameter>eofp</parameter> on end of file, otherwise it sets 0.</para>
+than <parameter moreinfo="none">size</parameter> or equal to <parameter moreinfo="none">size</parameter> - 1.  It sets 1 into the
+address pointed by <parameter moreinfo="none">eofp</parameter> on end of file, otherwise it sets 0.</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -68,7 +71,7 @@ pointed strings.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>

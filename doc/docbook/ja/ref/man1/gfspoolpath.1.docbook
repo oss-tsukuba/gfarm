@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfspoolpath.1'>
+
+<refentry id="gfspoolpath.1">
 
 <refentryinfo><date>17 Oct 2011</date></refentryinfo>
 
@@ -10,21 +13,21 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfspoolpath</refname>
 <refpurpose>Gfarm ファイルの、ファイルシステムノード上でのパス名を表示する</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfspoolpath</command>
-	<arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfspoolpath</command>
+	<arg choice="opt" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>指定したファイルに対応する，ファイルシステムノードでの
 実体ファイルのパス名を，gfsd のスプール・ディレクトリのトップからの
@@ -32,7 +35,7 @@
 
 </refsect1>
 
-<refsect1 id='bugs'><title>BUGS</title>
+<refsect1 id="bugs"><title>BUGS</title>
 <para>
 ディレクトリを指定した場合もエラーとなりません．
 </para>

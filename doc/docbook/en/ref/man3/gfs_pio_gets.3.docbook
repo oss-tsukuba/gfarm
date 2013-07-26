@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfs-pio-gets.3'>
+
+<refentry id="gfs-pio-gets.3">
 
 <refentryinfo><date>13 May 2004</date></refentryinfo>
 
@@ -10,21 +13,21 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_gets</refname>
 <refpurpose>read one line</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_gets</function></funcdef>
-    <paramdef>GFS_File <parameter>f</parameter></paramdef>
-    <paramdef>char * <parameter>s</parameter></paramdef>
-    <paramdef>size_t <parameter>size</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_pio_gets</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">f</parameter></paramdef>
+    <paramdef>char * <parameter moreinfo="none">s</parameter></paramdef>
+    <paramdef>size_t <parameter moreinfo="none">size</parameter></paramdef>
 </funcprototype>
 
 
@@ -33,14 +36,14 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><function>gfs_pio_gets()</function> reads one line from
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><function moreinfo="none">gfs_pio_gets()</function> reads one line from
 the file specified by the parameter
-<parameter>gf</parameter>
+<parameter moreinfo="none">gf</parameter>
 to the buffer specified by the parameter
-<parameter>s</parameter>.
+<parameter moreinfo="none">s</parameter>.
 You need to specify the size of the buffer by the parameter
-<parameter>size</parameter>.
+<parameter moreinfo="none">size</parameter>.
 </para>
 
 <para>
@@ -59,7 +62,7 @@ becomes 0.
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -83,11 +86,11 @@ pointed strings.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='examples'><title>EXAMPLES</title>
+<refsect1 id="examples"><title>EXAMPLES</title>
 
 <example role="example">
-<title>Example of <function>gfs_pio_gets</function> function</title>
-<para><programlisting>
+<title>Example of <function moreinfo="none">gfs_pio_gets</function> function</title>
+<para><programlisting format="linespecific">
 #include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 #include &lt;gfarm/gfarm.h&gt;
@@ -146,7 +149,7 @@ main(int argc, char **argv)
 </refsect1>
 
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_getline</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

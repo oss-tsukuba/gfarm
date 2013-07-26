@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfs-closedir.3'>
+<refentry id="gfs-closedir.3">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -11,19 +14,19 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_closedir</refname>
 <refpurpose>close a directory</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char * </returnvalue>gfs_closedir</function></funcdef>
-    <paramdef>GFS_Dir <parameter>dir</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char * </returnvalue>gfs_closedir</function></funcdef>
+    <paramdef>GFS_Dir <parameter moreinfo="none">dir</parameter></paramdef>
 </funcprototype>
 
 
@@ -32,15 +35,15 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
-<para>The <function>gfs_closedir()</function> function closes the directory stream
-associated with <parameter>dir</parameter>.  The directory stream descriptor <parameter>dir</parameter>
+<para>The <function moreinfo="none">gfs_closedir()</function> function closes the directory stream
+associated with <parameter moreinfo="none">dir</parameter>.  The directory stream descriptor <parameter moreinfo="none">dir</parameter>
 is not available after this call.</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 
 <varlistentry>
@@ -61,7 +64,7 @@ pointed strings.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_opendir</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_readdir</refentrytitle><manvolnum>3</manvolnum></citerefentry>

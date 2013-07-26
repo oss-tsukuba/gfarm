@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfs-pio-sync.3'>
+<refentry id="gfs-pio-sync.3">
 
 <refentryinfo><date>1 Jun 2005</date></refentryinfo>
 
@@ -11,19 +14,19 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_sync</refname>
 <refpurpose>output a file's data on memroy to disk</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_sync</function></funcdef>
-    <paramdef>GFS_File <parameter>gf</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_pio_sync</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">gf</parameter></paramdef>
 </funcprototype>
 
 
@@ -32,16 +35,16 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para>The function <function>gfs_pio_sync</function> copies data on
-memory of the <parameter>gf</parameter>, and waits for the I/O
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>The function <function moreinfo="none">gfs_pio_sync</function> copies data on
+memory of the <parameter moreinfo="none">gf</parameter>, and waits for the I/O
  to complete before returning.  It also updates metadtata stat
 information, while another function
-<function>gfs_pio_datasync</function> does not update the
+<function moreinfo="none">gfs_pio_datasync</function> does not update the
 metadata.</para>
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -65,7 +68,7 @@ pointed strings.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_datasync</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

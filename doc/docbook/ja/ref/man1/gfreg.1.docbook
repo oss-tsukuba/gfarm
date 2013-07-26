@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfreg.1'>
+<refentry id="gfreg.1">
 
 <refentryinfo><date>4 Apr 2011</date></refentryinfo>
 
@@ -11,25 +14,25 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfreg</refname>
 <refpurpose>Gfarm ファイルシステムへのファイルのコピー</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfreg</command>
-    <group choice='opt'>
-      <arg choice='plain'>-h <replaceable>ファイルシステムノード</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfreg</command>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-h <replaceable>ファイルシステムノード</replaceable></arg>
     </group>
-    <arg choice='plain'><replaceable>localfile</replaceable></arg>
-    <arg choice='plain'><replaceable>Gfarm-URL</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>localfile</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>Gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>localfile で指定されるファイルを Gfarmファイルシステム上の
 Gfarm-URL にコピーします．
@@ -39,10 +42,10 @@ gfarm://metaserver:port/path/name 形式での指定が可能です。
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
-<term><option>-h</option> <parameter>ファイルシステムノード</parameter></term>
+<term><option>-h</option> <parameter moreinfo="none">ファイルシステムノード</parameter></term>
 <listitem>
 <para>指定したファイルシステムノードにファイルを作成します．</para>
 </listitem>

@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfstress.rb.1'>
+
+<refentry id="gfstress.rb.1">
 
 <refentryinfo><date>7 Mar 2013</date></refentryinfo>
 
@@ -9,25 +12,25 @@
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfstress.rb</refname>
 <refpurpose>Gfarm 負荷試験を行う</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfstress.rb</command>
-    <arg choice='opt'>-t, --testdir <replaceable>テストディレクトリ</replaceable></arg>
-    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fsマウントポイント</replaceable></arg>
-    <arg choice='opt'>-n, --number <replaceable>擬似ユーザ数</replaceable></arg>
-    <arg choice='opt'>-T, --timeout <replaceable>制限時間(秒)</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfstress.rb</command>
+    <arg choice="opt" rep="norepeat">-t, --testdir <replaceable>テストディレクトリ</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-m, --gfarm2fs <replaceable>gfarm2fsマウントポイント</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-n, --number <replaceable>擬似ユーザ数</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-T, --timeout <replaceable>制限時間(秒)</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><parameter>テストディレクトリ</parameter>を使用してgfperf-metadata, gfperf-tree, gfperf-read, gfperf-write, gfperf-replicaを同時並列に起動し、高負荷状態を作り出します。gfschedを呼び出し、各gfsdに対し並列にgfperf-read, gfperf-write, gfperf-replicaを実行します。
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><parameter moreinfo="none">テストディレクトリ</parameter>を使用してgfperf-metadata, gfperf-tree, gfperf-read, gfperf-write, gfperf-replicaを同時並列に起動し、高負荷状態を作り出します。gfschedを呼び出し、各gfsdに対し並列にgfperf-read, gfperf-write, gfperf-replicaを実行します。
 </para>
 <para>
 本コマンドは、Ctrl-CまたはTERMシグナルで停止させない限り、エラーを検出するまでデフォルトでは動作し続けます。-T オプションで制限時間を指定できます。
@@ -40,11 +43,11 @@ gfarm2fsマウントポイントが与えられた場合はlibgfarmを使用し�
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-t, --testdir</option> <parameter>テストディレクトリ</parameter></term>
+<term><option>-t, --testdir</option> <parameter moreinfo="none">テストディレクトリ</parameter></term>
 <listitem>
 <para>
 高負荷試験に使用するディレクトリを指定します。デフォルトはgfarm:///stressです。
@@ -54,7 +57,7 @@ gfarm2fsマウントポイントが与えられた場合はlibgfarmを使用し�
 </varlistentry>
 
 <varlistentry>
-<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fsマウントポイント</parameter></term>
+<term><option>-m, --gfarm2fs</option> <parameter moreinfo="none">gfarm2fsマウントポイント</parameter></term>
 <listitem>
 <para>
 gfarm2fsのマウントポイントを指定します。
@@ -63,7 +66,7 @@ gfarm2fsのマウントポイントを指定します。
 </varlistentry>
 
 <varlistentry>
-<term><option>-n, --number</option> <parameter>擬似ユーザ数</parameter></term>
+<term><option>-n, --number</option> <parameter moreinfo="none">擬似ユーザ数</parameter></term>
 <listitem>
 <para>
 本コマンドを複数個同時に呼出したのと同じ効果が得られます。
@@ -72,7 +75,7 @@ gfarm2fsのマウントポイントを指定します。
 </varlistentry>
 
 <varlistentry>
-<term><option>-T, --timeout</option> <parameter>秒数</parameter></term>
+<term><option>-T, --timeout</option> <parameter moreinfo="none">秒数</parameter></term>
 <listitem>
 <para>
 制限時間を指定します。

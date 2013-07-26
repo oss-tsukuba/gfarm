@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfarm-url-program-deliver.3'>
+
+<refentry id="gfarm-url-program-deliver.3">
 
 <refentryinfo><date>10 Sep 2002</date></refentryinfo>
 
@@ -10,22 +13,22 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfarm_url_program_deliver</refname>
 <refpurpose>プログラムを指定したホストに配布する</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfarm_url_program_deliver</function></funcdef>
-    <paramdef>char *<parameter>gfarm_url</parameter></paramdef>
-    <paramdef>int <parameter>nhosts</parameter></paramdef>
-    <paramdef>char **<parameter>hosts</parameter></paramdef>
-    <paramdef>char ***<parameter>delivered_paths</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfarm_url_program_deliver</function></funcdef>
+    <paramdef>char *<parameter moreinfo="none">gfarm_url</parameter></paramdef>
+    <paramdef>int <parameter moreinfo="none">nhosts</parameter></paramdef>
+    <paramdef>char **<parameter moreinfo="none">hosts</parameter></paramdef>
+    <paramdef>char ***<parameter moreinfo="none">delivered_paths</parameter></paramdef>
 </funcprototype>
 
 
@@ -34,26 +37,26 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><parameter>gfarm_url</parameter>で指定したプログラムを、
-<parameter>nhosts</parameter>
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><parameter moreinfo="none">gfarm_url</parameter>で指定したプログラムを、
+<parameter moreinfo="none">nhosts</parameter>
 個の要素を持つ文字列配列
-<parameter>hosts</parameter>
+<parameter moreinfo="none">hosts</parameter>
 で指定したホストに配布します。
 配布された各ホスト上でのプログラムの絶対パスを、
-<parameter>nhosts</parameter>
+<parameter moreinfo="none">nhosts</parameter>
 個の要素を持つ文字列配列に格納し、その配列のアドレスを
-<parameter>delivered_paths</parameter>
+<parameter moreinfo="none">delivered_paths</parameter>
 が指す先に返します。
 
-<parameter>delivered_paths</parameter></para>
+<parameter moreinfo="none">delivered_paths</parameter></para>
 <para>に得た文字列配列は、不要になったら 
 <citerefentry><refentrytitle>gfarm_strings_free_deeply</refentrytitle><manvolnum>3</manvolnum></citerefentry>
 で解放する必要があります。</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -76,7 +79,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfarm_url_program_deliver</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfarm_strings_free_deeply</refentrytitle><manvolnum>3</manvolnum></citerefentry>
