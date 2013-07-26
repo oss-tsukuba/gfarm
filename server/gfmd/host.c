@@ -1829,13 +1829,19 @@ host_info_remove_default(const char *hostname, const char *diag)
 	    "back_channel(%s): disconnecting: host info removed", hostname);
 	host_disconnect_request(host, NULL);
 
-	if ((e = host_remove(hostname)) == GFARM_ERR_NO_ERROR) {
-		e2 = db_host_remove(hostname);
-		if (e2 != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_1000272,
-			    "%s: db_host_remove: %s",
-			    diag, gfarm_error_string(e2));
+	if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: db_begin: %s",
+		    diag, gfarm_error_string(e));
+	} else if ((e = host_remove(hostname)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: host_remove: %s",
+		    diag, gfarm_error_string(e));
+	} else if ((e2 = db_host_remove(hostname)) != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_1000272,
+		    "%s: db_host_remove: %s",
+		    diag, gfarm_error_string(e2));
 	}
+	db_end(diag);
+
 	return (e);
 }
 
