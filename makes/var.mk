@@ -65,8 +65,15 @@ GFMD_BUILDDIR = $(top_builddir)/server/gfmd
 
 # doc & man
 
-DOCBOOK2MAN = env LC_ALL=C jw -b man
-DOCBOOK2HTML = env LC_ALL=C jw -b html -u
+XSLTPROC = xsltproc
+DOCBOOK_XSLDIRS= \
+	/usr/share/xml/docbook/stylesheet/docbook-xsl \
+	/usr/share/xml/docbook/stylesheet/docbook-xsl-ns \
+	/usr/share/sgml/docbook/xsl-stylesheets \
+	/usr/local/share/xsl/docbook \
+	/usr/local/share/xsl/docbook-ns \
+	/usr/pkg/share/xsl/docbook
+
 srcsubst = dummy
 dstsubst = dummy
 

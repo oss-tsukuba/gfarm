@@ -31,6 +31,7 @@ man-install:
 	done
 
 man-clean:
+	-test -z "$(DOCBOOK2MAN_XSL)" || $(RM) -f $(DOCBOOK2MAN_XSL)
 	-test -z "$(EXTRA_CLEAN_TARGETS)" || $(RM) -f $(EXTRA_CLEAN_TARGETS)
 
 man-veryclean: clean
@@ -41,10 +42,20 @@ man-distclean: veryclean
 
 man-gfregister:
 
-$(dstsubst): $(srcsubst)
-	$(DOCBOOK2MAN) $(srcsubst)
+$(DOCBOOK2MAN_XSL): $(srcdir)/$(DOCBOOK2MAN_XSL).in
+	for i in -- $(DOCBOOK_XSLDIRS); do \
+		case $$i in --) continue;; esac; \
+		test -d $$i \
+			&& sed -e "s|@DOCBOOK_XSLDIR@|$$i|" $? > $@ \
+			&& exit 0; \
+	done; \
+	echo "No DocBook XSL directory found."; \
+	exit 1
 
-man-man:
+$(dstsubst): $(srcsubst)
+	$(XSLTPROC) $(DOCBOOK2MAN_XSL) $(srcsubst) > $(dstsubst)
+
+man-man: $(DOCBOOK2MAN_XSL)
 	for i in $(DOCBOOK); do \
 		$(MAKE) srcsubst=$(DOCBOOK_DIR)/$${i}.docbook \
 			dstsubst=$$i $$i; \
