@@ -1,276 +1,111 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfsetfacl</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFSETFACL.1"
-></A
->gfsetfacl</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfsetfacl&nbsp;--&nbsp;Gfarm ファイルのアクセス制御リストを設定する</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfsetfacl</B
->  [<TT
-CLASS="REPLACEABLE"
-><I
->オプション</I
-></TT
->] [<TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
->...]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfsetfacl</B
-> は Gfarm ファイルシステム上にある
-ファイルやディレクトリのアクセスコントロールリスト (ACL) を設定します．</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-b</CODE
-></DT
-><DD
-><P
->すべての拡張 ACL エントリを削除します．
-基本 ACL (所有者，グループ，その他) は削除されません．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-k</CODE
-></DT
-><DD
-><P
->デフォルト ACL だけを削除します．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-n</CODE
-></DT
-><DD
-><P
->ACL マスクエントリを再計算しません．gfsetfacl コマンドデフォルト
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfsetfacl</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfsetfacl">
+<a name="gfsetfacl.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfsetfacl — Gfarm ファイルのアクセス制御リストを設定する</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfsetfacl</code>  [<em class="replaceable"><code>オプション</code></em>] [<em class="replaceable"><code>path</code></em>...]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><span class="command"><strong>gfsetfacl</strong></span> は Gfarm ファイルシステム上にある
+ファイルやディレクトリのアクセスコントロールリスト (ACL) を設定します．
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-b</code></span></dt>
+<dd><p>すべての拡張 ACL エントリを削除します．
+基本 ACL (所有者，グループ，その他) は削除されません．</p></dd>
+<dt><span class="term"><code class="option">-k</code></span></dt>
+<dd><p>デフォルト ACL だけを削除します．</p></dd>
+<dt><span class="term"><code class="option">-n</code></span></dt>
+<dd><p>ACL マスクエントリを再計算しません．gfsetfacl コマンドデフォルト
 の挙動は，マスクエントリが指定されなかった場合だけマスクエントリを再計
-算します．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-r</CODE
-></DT
-><DD
-><P
->常に ACL マスクエントリを再計算します．マスクエントリを指定したと
-しても再計算します．(-n オプションも参照してください．)</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-t</CODE
-></DT
-><DD
-><P
->テストモードです．ファイルやディレクトリの ACL を変更する代わりに，
-ACL 入力と変更予定の新しい ACL を文字列で表示します．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-m</CODE
-> <CODE
-CLASS="PARAMETER"
->acl_spec</CODE
-></DT
-><DD
-><P
->ファイルやディレクトリの ACL エントリを追加または置換するために，
+算します．</p></dd>
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd><p>常に ACL マスクエントリを再計算します．マスクエントリを指定したと
+しても再計算します．(-n オプションも参照してください．)</p></dd>
+<dt><span class="term"><code class="option">-t</code></span></dt>
+<dd><p>テストモードです．ファイルやディレクトリの ACL を変更する代わりに，
+ACL 入力と変更予定の新しい ACL を文字列で表示します．</p></dd>
+<dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>acl_spec</code></em></span></dt>
+<dd><p>ファイルやディレクトリの ACL エントリを追加または置換するために，
 ACL エントリの文字列表現をこのオプションで指定します．
-複数の ACL エントリをコンマ文字 (`,') で区切ります．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-M</CODE
-> <CODE
-CLASS="PARAMETER"
->acl_file</CODE
-></DT
-><DD
-><P
->ファイルやディレクトリの ACL エントリを追加または置換するために，
+複数の ACL エントリをコンマ文字 (`,') で区切ります．
+</p></dd>
+<dt><span class="term"><code class="option">-M</code> <em class="parameter"><code>acl_file</code></em></span></dt>
+<dd><p>
+ファイルやディレクトリの ACL エントリを追加または置換するために，
 ACL 文字列表現が記述されたファイルまたは標準入力 (`-') 
 を指定します．
-この ACL ファイル入力は gfgetfacl コマンドの出力を受け付けます．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->引数オプションを表示します．</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="ACL-ENTRIES"
-></A
-><H2
->ACL ENTRIES</H2
-><P
->gfsetfacl コマンドは以下の ACL エントリ書式を認識します．
+この ACL ファイル入力は gfgetfacl コマンドの出力を受け付けます．</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>引数オプションを表示します．</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="ACL ENTRIES">
+<a name="acl-entries"></a><h2>ACL ENTRIES</h2>
+<p>
+gfsetfacl コマンドは以下の ACL エントリ書式を認識します．
 perms フィールドは許可を表す文字を組み合わせです．
-デフォルト ACL エントリは d[efault:] 接頭辞を持ちます．</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
->[d[efault:]u[ser]::perms</DT
-><DD
->所有者の許可</DD
-><DT
->[d[efault:]u[ser]:username:perms</DT
-><DD
->指名ユーザの許可</DD
-><DT
->[d[efault:]g[roup]::perms</DT
-><DD
->ファイルグループの許可</DD
-><DT
->[d[efault:]g[roup]:groupname:perms</DT
-><DD
->指名グループの許可</DD
-><DT
->[d[efault:]m[ask]::perms</DT
-><DD
->実行権のマスク(最大の許可) (所有者とその他、以外に効果)</DD
-><DT
->[d[efault:]o[ther]::perms</DT
-><DD
->その他への許可</DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="EXAMPLES"
-></A
-><H2
->EXAMPLES</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
->指名ユーザへの読み込みアクセスを許可する．</DT
-><DD
->gfsetfalc -m u:testuser:r filename</DD
-><DT
->filename2 の ACL をfilename1 の ACL で置換する．</DT
-><DD
->gfgetfacl filename1 | gfsetfacl -b -M - filename2</DD
-><DT
->長い形式の ACL 文字列表現</DT
-><DD
-><P
-CLASS="LITERALLAYOUT"
->#&nbsp;comment<br>
+デフォルト ACL エントリは d[efault:] 接頭辞を持ちます．
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term">[d[efault:]u[ser]::perms</span></dt>
+<dd><p>所有者の許可</p></dd>
+<dt><span class="term">[d[efault:]u[ser]:username:perms</span></dt>
+<dd><p>指名ユーザの許可</p></dd>
+<dt><span class="term">[d[efault:]g[roup]::perms</span></dt>
+<dd><p>ファイルグループの許可</p></dd>
+<dt><span class="term">[d[efault:]g[roup]:groupname:perms</span></dt>
+<dd><p>指名グループの許可</p></dd>
+<dt><span class="term">[d[efault:]m[ask]::perms</span></dt>
+<dd><p>実行権のマスク(最大の許可) (所有者とその他、以外に効果)</p></dd>
+<dt><span class="term">[d[efault:]o[ther]::perms</span></dt>
+<dd><p>その他への許可</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="EXAMPLES">
+<a name="examples"></a><h2>EXAMPLES</h2>
+<div class="variablelist"><dl>
+<dt><span class="term">指名ユーザへの読み込みアクセスを許可する．</span></dt>
+<dd><p>gfsetfalc -m u:testuser:r filename</p></dd>
+<dt><span class="term">filename2 の ACL をfilename1 の ACL で置換する．</span></dt>
+<dd><p>gfgetfacl filename1 | gfsetfacl -b -M - filename2</p></dd>
+<dt><span class="term">長い形式の ACL 文字列表現</span></dt>
+<dd><div class="literallayout"><p><br>
+# comment<br>
 user::rw-<br>
-user:testuser:rw-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#effective:r--<br>
+user:testuser:rw-       #effective:r--<br>
 group::r--<br>
-group:testgroup:rw-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#effective:r--<br>
+group:testgroup:rw-     #effective:r--<br>
 mask::r--<br>
 other::r--<br>
 default:user::rwx<br>
 default:group::r-x<br>
-default:other::r-x</P
-></DD
-><DT
->短い形式の ACL 文字列表現</DT
-><DD
-><P
-CLASS="LITERALLAYOUT"
->u::rw,u:user1:rw,g::r,g:group1:rw,m::r,o::r,d:u::rwx,d:g::rx,d:o::rx</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfgetfacl</SPAN
->(1)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+default:other::r-x<br>
+</p></div></dd>
+<dt><span class="term">短い形式の ACL 文字列表現</span></dt>
+<dd><div class="literallayout"><p><br>
+u::rw,u:user1:rw,g::r,g:group1:rw,m::r,o::r,d:u::rwx,d:g::rx,d:o::rx<br>
+</p></div></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfgetfacl</span>(1)</span>
+</p>
+</div>
+</div></body>
+</html>

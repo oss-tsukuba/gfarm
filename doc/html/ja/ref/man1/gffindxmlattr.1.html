@@ -1,158 +1,58 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gffindxmlattr</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFFINDXMLATTR.1"
-></A
->gffindxmlattr</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gffindxmlattr&nbsp;--&nbsp;ファイルのXML拡張属性をXPathにより検索する</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gffindxmlattr</B
-> [-d <TT
-CLASS="REPLACEABLE"
-><I
->depth</I
-></TT
->] [-F <TT
-CLASS="REPLACEABLE"
-><I
->delim</I
-></TT
->] [<TT
-CLASS="REPLACEABLE"
-><I
->XPath</I
-></TT
-> | -f <TT
-CLASS="REPLACEABLE"
-><I
->XPath-file</I
-></TT
->]  <TT
-CLASS="REPLACEABLE"
-><I
->path</I
-></TT
-> </P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->指定されたXPath式に一致するXML拡張属性を検索し，
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gffindxmlattr</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gffindxmlattr">
+<a name="gffindxmlattr.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gffindxmlattr — ファイルのXML拡張属性をXPathにより検索する</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gffindxmlattr</code>  [-d <em class="replaceable"><code>depth</code></em>] [-F <em class="replaceable"><code>delim</code></em>] [ <em class="replaceable"><code>XPath</code></em>  |  [-f <em class="replaceable"><code>XPath-file</code></em>]]  <em class="replaceable"><code>path</code></em> </p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+指定されたXPath式に一致するXML拡張属性を検索し，
 一致したパス名とXML拡張属性名を表示します．
 指定されたpathがファイルの場合，そのファイルのXML拡張属性を検索します．
-読み込み権限のないファイルは無視されます．</P
-><P
->指定されたpathがディレクトリの場合，depthで指定された深さまで再帰的に検索します．
+読み込み権限のないファイルは無視されます．
+</p>
+<p>
+指定されたpathがディレクトリの場合，depthで指定された深さまで再帰的に検索します．
 0の場合，指定されたディレクトリを検索します．
 depthが指定されない場合，無制限に検索します．
 負の値が指定された場合はエラーとなります．
-また，実行権限のないディレクトリは検索されません．</P
-><P
->出力結果は，一致したパス名とXML属性名が区切り文字delimで区切って表示されます．</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-d</CODE
-> depth</DT
-><DD
-><P
->depthで指定された深さまで再帰的に検索します．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-F</CODE
-> delim</DT
-><DD
-><P
->一致したパス名とXML拡張属性名の区切り文字を指定します．
--Fオプションが指定されない場合はタブとなります．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-f</CODE
-> XPath-file</DT
-><DD
-><P
->検索するXPath式を読み込むファイルを指定します．</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->引数オプションを表示します．</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfxattr</SPAN
->(1)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+また，実行権限のないディレクトリは検索されません．
+</p>
+<p>
+出力結果は，一致したパス名とXML属性名が区切り文字delimで区切って表示されます．
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-d</code> depth</span></dt>
+<dd><p>depthで指定された深さまで再帰的に検索します．
+</p></dd>
+<dt><span class="term"><code class="option">-F</code> delim</span></dt>
+<dd><p>一致したパス名とXML拡張属性名の区切り文字を指定します．
+-Fオプションが指定されない場合はタブとなります．</p></dd>
+<dt><span class="term"><code class="option">-f</code> XPath-file</span></dt>
+<dd><p>検索するXPath式を読み込むファイルを指定します．</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>引数オプションを表示します．</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfxattr</span>(1)</span>
+</p>
+</div>
+</div></body>
+</html>

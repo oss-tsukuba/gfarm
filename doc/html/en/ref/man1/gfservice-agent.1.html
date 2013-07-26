@@ -1,1086 +1,393 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfservice-agent</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFSERVICE-AGENT.1"
-></A
->gfservice-agent</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfservice-agent&nbsp;--&nbsp;agent of <B
-CLASS="COMMAND"
->gfservice</B
-></DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfservice-agent</B
->  [<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
->]  host-id   sub-command  [<TT
-CLASS="REPLACEABLE"
-><I
->argument ...</I
-></TT
->]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfservice-agent</B
-> is an agent of
-<B
-CLASS="COMMAND"
->gfservice</B
->.
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfservice-agent</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfservice-agent">
+<a name="gfservice-agent.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfservice-agent — agent of <span class="command"><strong>gfservice</strong></span></p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfservice-agent</code>  [<em class="replaceable"><code>options</code></em>]  host-id   sub-command  [<em class="replaceable"><code>argument ...</code></em>]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<span class="command"><strong>gfservice-agent</strong></span> is an agent of
+<span class="command"><strong>gfservice</strong></span>.
 It must be installed on all hosts you want to operate using
-<B
-CLASS="COMMAND"
->gfservice</B
->.
-Unlike <B
-CLASS="COMMAND"
->gfservice</B
->, it doesn't read a configuration file.</P
-><P
-><B
-CLASS="COMMAND"
->gfservice-agent</B
-> is not designed to be executed
+<span class="command"><strong>gfservice</strong></span>.
+Unlike <span class="command"><strong>gfservice</strong></span>, it doesn't read a configuration file.
+</p>
+<p>
+<span class="command"><strong>gfservice-agent</strong></span> is not designed to be executed
 directly by an user.
-In daily use, it is executed only by <B
-CLASS="COMMAND"
->gfservice</B
-> via SSH
-and Sudo.</P
-><P
->Host-id argument is the same as that of <B
-CLASS="COMMAND"
->gfservice</B
->, but
-<B
-CLASS="COMMAND"
->gfservice-agent</B
-> uses host-id for recognizing type of
-host ("gfmd", "gfsd" or "client") and debug messages only.</P
-><P
->Sub-command names of <B
-CLASS="COMMAND"
->gfservice-agent</B
-> are similar to
-those of <B
-CLASS="COMMAND"
->gfservice</B
->, but their arguments are different.
-For example, <B
-CLASS="COMMAND"
->"unmount"</B
-> sub-command of
-<B
-CLASS="COMMAND"
->gfservice-agent</B
-> takes
-<CODE
-CLASS="PARAMETER"
->"directory=<TT
-CLASS="REPLACEABLE"
-><I
->directory</I
-></TT
->"</CODE
->
-argument:</P
-><P
-CLASS="LITERALLAYOUT"
->	gfservice-agent&nbsp;client3&nbsp;unmount&nbsp;directory=/somewhere</P
-><P
->while <B
-CLASS="COMMAND"
->"unmount"</B
-> sub-command of <B
-CLASS="COMMAND"
->gfservice</B
->
-takes <TT
-CLASS="REPLACEABLE"
-><I
->"directory"</I
-></TT
-> argument:</P
-><P
-CLASS="LITERALLAYOUT"
->	gfservice&nbsp;unmount&nbsp;client3&nbsp;/somewhere</P
-><P
->Almost all arguments of <B
-CLASS="COMMAND"
->gfservice-agent</B
-> have "key=value"
+In daily use, it is executed only by <span class="command"><strong>gfservice</strong></span> via SSH
+and Sudo.
+</p>
+<p>
+Host-id argument is the same as that of <span class="command"><strong>gfservice</strong></span>, but
+<span class="command"><strong>gfservice-agent</strong></span> uses host-id for recognizing type of
+host ("gfmd", "gfsd" or "client") and debug messages only.
+</p>
+<p>
+Sub-command names of <span class="command"><strong>gfservice-agent</strong></span> are similar to
+those of <span class="command"><strong>gfservice</strong></span>, but their arguments are different.
+For example, <span class="command"><strong>"unmount"</strong></span> sub-command of
+<span class="command"><strong>gfservice-agent</strong></span> takes
+<em class="parameter"><code>"directory=<em class="replaceable"><code>directory</code></em>"</code></em>
+argument:
+</p>
+<div class="literallayout"><p><br>
+	gfservice-agent client3 unmount directory=/somewhere<br>
+</p></div>
+<p>
+while <span class="command"><strong>"unmount"</strong></span> sub-command of <span class="command"><strong>gfservice</strong></span>
+takes <em class="replaceable"><code>"directory"</code></em> argument:
+</p>
+<div class="literallayout"><p><br>
+	gfservice unmount client3 /somewhere<br>
+</p></div>
+<p>
+Almost all arguments of <span class="command"><strong>gfservice-agent</strong></span> have "key=value"
 form.
-When two or more arguments are given, <B
-CLASS="COMMAND"
->gfservice-agent</B
->
+When two or more arguments are given, <span class="command"><strong>gfservice-agent</strong></span>
 doesn't care about the order of arguments.
-<B
-CLASS="COMMAND"
->gfservice-agent</B
-> ignores arguments with unknown keys.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-d</CODE
-></DT
-><DD
-><P
->Print debug information.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SUB-COMMANDS"
-></A
-><H2
->SUB-COMMANDS</H2
-><P
-><B
-CLASS="COMMAND"
->gfservice-agent</B
-> currently recognizes the following
-sub-commands.</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><B
-CLASS="COMMAND"
->get-config-gfarm-param</B
->
-<CODE
-CLASS="PARAMETER"
->param</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->name</I
-></TT
->
-<CODE
-CLASS="PARAMETER"
->config-gfarm-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
-></DT
-><DD
-><P
->Execute <B
-CLASS="COMMAND"
->config-gfarm -T</B
-> command and output a value of
-the parameter <TT
-CLASS="REPLACEABLE"
-><I
->name</I
-></TT
-> to standard out.
-If the "<CODE
-CLASS="PARAMETER"
->param</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->name</I
-></TT
->"
+<span class="command"><strong>gfservice-agent</strong></span> ignores arguments with unknown keys.
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>
+Print debug information.
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SUB-COMMANDS">
+<a name="sub-commands"></a><h2>SUB-COMMANDS</h2>
+<p>
+<span class="command"><strong>gfservice-agent</strong></span> currently recognizes the following
+sub-commands.
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term">
+<span class="command"><strong>get-config-gfarm-param</strong></span>
+<em class="parameter"><code>param</code></em>=<em class="replaceable"><code>name</code></em>
+<em class="parameter"><code>config-gfarm-options</code></em>=<em class="replaceable"><code>options</code></em>
+</span></dt>
+<dd><p>
+Execute <span class="command"><strong>config-gfarm -T</strong></span> command and output a value of
+the parameter <em class="replaceable"><code>name</code></em> to standard out.
+If the "<em class="parameter"><code>param</code></em>=<em class="replaceable"><code>name</code></em>"
 argument is not specified, it outputs entire
-<B
-CLASS="COMMAND"
->config-gfarm -T</B
-> results.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->get-config-gfsd-param</B
->
-<CODE
-CLASS="PARAMETER"
->param</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->name</I
-></TT
->
-<CODE
-CLASS="PARAMETER"
->config-gfsd-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
-></DT
-><DD
-><P
->Execute <B
-CLASS="COMMAND"
->config-gfsd -T</B
-> command and output a value of
-the parameter <TT
-CLASS="REPLACEABLE"
-><I
->name</I
-></TT
-> to standard out.
-If the "<CODE
-CLASS="PARAMETER"
->param</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->name</I
-></TT
->"
+<span class="command"><strong>config-gfarm -T</strong></span> results.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>get-config-gfsd-param</strong></span>
+<em class="parameter"><code>param</code></em>=<em class="replaceable"><code>name</code></em>
+<em class="parameter"><code>config-gfsd-options</code></em>=<em class="replaceable"><code>options</code></em>
+</span></dt>
+<dd><p>
+Execute <span class="command"><strong>config-gfsd -T</strong></span> command and output a value of
+the parameter <em class="replaceable"><code>name</code></em> to standard out.
+If the "<em class="parameter"><code>param</code></em>=<em class="replaceable"><code>name</code></em>"
 argument is not specified, it outputs entire
-<B
-CLASS="COMMAND"
->config-gfsd -T</B
-> results.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->backend-db-status</B
->
-<CODE
-CLASS="PARAMETER"
->config-gfarm-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
-></DT
-><DD
-><P
->Exit with an exit code 0, if a backend database is currently running.
-Otherwise exits with 1.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->gfmd-status</B
->
-<CODE
-CLASS="PARAMETER"
->config-gfarm-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
-></DT
-><DD
-><P
->Exit with an exit code 0, if gfmd is currently running.
-Otherwise exits with 1.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->gfsd-status</B
->
-<CODE
-CLASS="PARAMETER"
->config-gfsd-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
-></DT
-><DD
-><P
->Exit with an exit code 0, if gfsd is currently running.
-Otherwise exits with 1.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->start-backend-db</B
->
-<CODE
-CLASS="PARAMETER"
->config-gfarm-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
->
-<CODE
-CLASS="PARAMETER"
->timeout</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->time</I
-></TT
-></DT
-><DD
-><P
->Start a backend database if it is not running currently.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->start-gfmd</B
->
-<CODE
-CLASS="PARAMETER"
->config-gfarm-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
->
-<CODE
-CLASS="PARAMETER"
->timeout</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->time</I
-></TT
-></DT
-><DD
-><P
->Start gfmd if it is not running currently.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->start-gfsd</B
->
-<CODE
-CLASS="PARAMETER"
->config-gfsd-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
->
-<CODE
-CLASS="PARAMETER"
->timeout</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->time</I
-></TT
-></DT
-><DD
-><P
->Start gfsd if it is not running currently.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->config-gfarm</B
->
-<CODE
-CLASS="PARAMETER"
->config-gfarm-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
-></DT
-><DD
-><P
->Execute <B
-CLASS="COMMAND"
->config-gfarm</B
-> command.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->config-gfarm-master</B
->
-<CODE
-CLASS="PARAMETER"
->config-gfarm-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
-></DT
-><DD
-><P
->Execute <B
-CLASS="COMMAND"
->config-gfarm</B
-> <CODE
-CLASS="PARAMETER"
->-r</CODE
-> command.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->config-gfsd</B
->
-<CODE
-CLASS="PARAMETER"
->config-gfsd-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
-></DT
-><DD
-><P
->Execute <B
-CLASS="COMMAND"
->config-gfsd</B
-> command.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->unconfig-gfarm</B
->
-<CODE
-CLASS="PARAMETER"
->config-gfarm-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
-></DT
-><DD
-><P
->Execute <B
-CLASS="COMMAND"
->stop-gfarm</B
-> sub-command and then delete all
-files and directories created by gfmd and a backend database.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->unconfig-gfsd</B
->
-<CODE
-CLASS="PARAMETER"
->config-gfsd-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
-></DT
-><DD
-><P
->Execute <B
-CLASS="COMMAND"
->stop-gfsd</B
-> sub-command and then delete all
-files and directories created by gfsd.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->unconfig-client</B
->
-<CODE
-CLASS="PARAMETER"
->config-gfsd-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
-></DT
-><DD
-><P
->Delete <TT
-CLASS="FILENAME"
->gfarm2.conf</TT
-> file.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->promote</B
->
-<CODE
-CLASS="PARAMETER"
->config-gfarm-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
-></DT
-><DD
-><P
->Promote <B
-CLASS="COMMAND"
->gfmd</B
-> from a slave to a master.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->promote-gfmd</B
->
-<CODE
-CLASS="PARAMETER"
->config-gfarm-options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
-></DT
-><DD
-><P
->An alias of <B
-CLASS="COMMAND"
->promote</B
-> sub-command.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->mount</B
->
-<CODE
-CLASS="PARAMETER"
->directory</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->directory</I
-></TT
->
-<CODE
-CLASS="PARAMETER"
->options</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
-></DT
-><DD
-><P
->Mount a Gfarm2 filesystem on <TT
-CLASS="REPLACEABLE"
-><I
->directory</I
-></TT
->.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->unmount</B
->
-<CODE
-CLASS="PARAMETER"
->directory</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->directory</I
-></TT
-></DT
-><DD
-><P
->Unmount a Gfarm2 filesystem currently mounted on
-<TT
-CLASS="REPLACEABLE"
-><I
->directory</I
-></TT
->.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->umount</B
->
-<CODE
-CLASS="PARAMETER"
->directory</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->directory</I
-></TT
-></DT
-><DD
-><P
->An alias of <B
-CLASS="COMMAND"
->unmount</B
-> sub-command.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->set-gfmd-conf</B
->
-<CODE
-CLASS="PARAMETER"
->directive</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->name</I
-></TT
->
-<CODE
-CLASS="PARAMETER"
->value</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->value</I
-></TT
-></DT
-><DD
-><P
->Add</P
-><P
-CLASS="LITERALLAYOUT"
->	<TT
-CLASS="REPLACEABLE"
-><I
->directive</I
-></TT
->&nbsp;<TT
-CLASS="REPLACEABLE"
-><I
->value</I
-></TT
-></P
-><P
->line to <TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> file.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->set-gfarm-conf</B
->
-<CODE
-CLASS="PARAMETER"
->directive</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->name</I
-></TT
->
-<CODE
-CLASS="PARAMETER"
->value</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->value</I
-></TT
-></DT
-><DD
-><P
->Add</P
-><P
-CLASS="LITERALLAYOUT"
->	<TT
-CLASS="REPLACEABLE"
-><I
->directive</I
-></TT
->&nbsp;<TT
-CLASS="REPLACEABLE"
-><I
->value</I
-></TT
-></P
-><P
->line to <TT
-CLASS="FILENAME"
->gfarm2.conf</TT
-> file.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->set-gfsd-conf</B
->
-<CODE
-CLASS="PARAMETER"
->directive</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->name</I
-></TT
->
-<CODE
-CLASS="PARAMETER"
->value</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->value</I
-></TT
-></DT
-><DD
-><P
->Add</P
-><P
-CLASS="LITERALLAYOUT"
->	<TT
-CLASS="REPLACEABLE"
-><I
->directive</I
-></TT
->&nbsp;<TT
-CLASS="REPLACEABLE"
-><I
->value</I
-></TT
-></P
-><P
->line to <TT
-CLASS="FILENAME"
->gfsd.conf</TT
-> file.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->unset-gfmd-conf</B
->
-<CODE
-CLASS="PARAMETER"
->directive</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->name</I
-></TT
-></DT
-><DD
-><P
->Delete a <TT
-CLASS="REPLACEABLE"
-><I
->directive</I
-></TT
-> line in
-<TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> file.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->unset-gfarm-conf</B
->
-<CODE
-CLASS="PARAMETER"
->directive</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->name</I
-></TT
-></DT
-><DD
-><P
->Delete a <TT
-CLASS="REPLACEABLE"
-><I
->directive</I
-></TT
-> line in
-<TT
-CLASS="FILENAME"
->gfarm2.conf</TT
-> file.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->unset-gfsd-conf</B
->
-<CODE
-CLASS="PARAMETER"
->directive</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->name</I
-></TT
-></DT
-><DD
-><P
->Delete a <TT
-CLASS="REPLACEABLE"
-><I
->directive</I
-></TT
-> line in
-<TT
-CLASS="FILENAME"
->gfsd.conf</TT
-> file.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->backup-backend-db</B
-></DT
-><DD
-><P
->Backup a backend database and output the backup data to standard out.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->backup-gfmd-conf</B
-></DT
-><DD
-><P
->Output <TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> file to standard out.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->backup-gfarm-conf</B
-></DT
-><DD
-><P
->Output <TT
-CLASS="FILENAME"
->gfarm2.conf</TT
-> file to standard out.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->backup-gfsd-conf</B
-></DT
-><DD
-><P
->Output <TT
-CLASS="FILENAME"
->gfsd.conf</TT
-> file to standard out.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->backup-usermap</B
-></DT
-><DD
-><P
->Output <TT
-CLASS="FILENAME"
->usermap</TT
-> file to standard out.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->backup-shared-key</B
-></DT
-><DD
-><P
->Output <TT
-CLASS="FILENAME"
->$HOME/.gfarm_shared_key</TT
-> file to standard out.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->restore-backend-db</B
-></DT
-><DD
-><P
->Restore a backend database.
-The backup data are read from standard in.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->restore-gfmd-conf</B
-></DT
-><DD
-><P
->Restore <TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> file.
-The backup data are read from standard in.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->restore-gfarm-conf</B
-></DT
-><DD
-><P
->Restore <TT
-CLASS="FILENAME"
->gfarm2.conf</TT
-> file.
-The backup data are read from standard in.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->restore-gfsd-conf</B
-></DT
-><DD
-><P
->Restore <TT
-CLASS="FILENAME"
->gfsd.conf</TT
-> file.
-The backup data are read from standard in.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->restore-usermap</B
-></DT
-><DD
-><P
->Restore <TT
-CLASS="FILENAME"
->usermap</TT
-> file.
-The backup data are read from standard in.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->restore-shared-key</B
-></DT
-><DD
-><P
->Restore <TT
-CLASS="FILENAME"
->$HOME/.gfarm_shared_key</TT
-> file.
-The backup data are read from standard in.</P
-></DD
-><DT
-><B
-CLASS="COMMAND"
->gfcmd</B
->
-<CODE
-CLASS="PARAMETER"
->cmd</CODE
->=<TT
-CLASS="REPLACEABLE"
-><I
->command-name</I
-></TT
->
-<CODE
-CLASS="PARAMETER"
->args</CODE
->="<TT
-CLASS="REPLACEABLE"
-><I
->command-argument ...</I
-></TT
->"</DT
-><DD
-><P
->Execute a Gfarm command.</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+<span class="command"><strong>config-gfsd -T</strong></span> results.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>backend-db-status</strong></span>
+<em class="parameter"><code>config-gfarm-options</code></em>=<em class="replaceable"><code>options</code></em>
+</span></dt>
+<dd><p>
+Exit with an exit code 0, if a backend database is currently running.
+Otherwise exits with 1.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>gfmd-status</strong></span>
+<em class="parameter"><code>config-gfarm-options</code></em>=<em class="replaceable"><code>options</code></em>
+</span></dt>
+<dd><p>
+Exit with an exit code 0, if gfmd is currently running.
+Otherwise exits with 1.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>gfsd-status</strong></span>
+<em class="parameter"><code>config-gfsd-options</code></em>=<em class="replaceable"><code>options</code></em>
+</span></dt>
+<dd><p>
+Exit with an exit code 0, if gfsd is currently running.
+Otherwise exits with 1.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>start-backend-db</strong></span>
+<em class="parameter"><code>config-gfarm-options</code></em>=<em class="replaceable"><code>options</code></em>
+<em class="parameter"><code>timeout</code></em>=<em class="replaceable"><code>time</code></em>
+</span></dt>
+<dd><p>
+Start a backend database if it is not running currently.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>start-gfmd</strong></span>
+<em class="parameter"><code>config-gfarm-options</code></em>=<em class="replaceable"><code>options</code></em>
+<em class="parameter"><code>timeout</code></em>=<em class="replaceable"><code>time</code></em>
+</span></dt>
+<dd><p>
+Start gfmd if it is not running currently.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>start-gfsd</strong></span>
+<em class="parameter"><code>config-gfsd-options</code></em>=<em class="replaceable"><code>options</code></em>
+<em class="parameter"><code>timeout</code></em>=<em class="replaceable"><code>time</code></em>
+</span></dt>
+<dd><p>
+Start gfsd if it is not running currently.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>config-gfarm</strong></span>
+<em class="parameter"><code>config-gfarm-options</code></em>=<em class="replaceable"><code>options</code></em>
+</span></dt>
+<dd><p>
+Execute <span class="command"><strong>config-gfarm</strong></span> command.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>config-gfarm-master</strong></span>
+<em class="parameter"><code>config-gfarm-options</code></em>=<em class="replaceable"><code>options</code></em>
+</span></dt>
+<dd><p>
+Execute <span class="command"><strong>config-gfarm</strong></span> <em class="parameter"><code>-r</code></em> command.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>config-gfsd</strong></span>
+<em class="parameter"><code>config-gfsd-options</code></em>=<em class="replaceable"><code>options</code></em>
+</span></dt>
+<dd><p>
+Execute <span class="command"><strong>config-gfsd</strong></span> command.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>unconfig-gfarm</strong></span>
+<em class="parameter"><code>config-gfarm-options</code></em>=<em class="replaceable"><code>options</code></em>
+</span></dt>
+<dd><p>
+Execute <span class="command"><strong>stop-gfarm</strong></span> sub-command and then delete all
+files and directories created by gfmd and a backend database.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>unconfig-gfsd</strong></span>
+<em class="parameter"><code>config-gfsd-options</code></em>=<em class="replaceable"><code>options</code></em>
+</span></dt>
+<dd><p>
+Execute <span class="command"><strong>stop-gfsd</strong></span> sub-command and then delete all
+files and directories created by gfsd.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>unconfig-client</strong></span>
+<em class="parameter"><code>config-gfsd-options</code></em>=<em class="replaceable"><code>options</code></em>
+</span></dt>
+<dd><p>
+Delete <code class="filename">gfarm2.conf</code> file.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>promote</strong></span>
+<em class="parameter"><code>config-gfarm-options</code></em>=<em class="replaceable"><code>options</code></em>
+</span></dt>
+<dd><p>
+Promote <span class="command"><strong>gfmd</strong></span> from a slave to a master.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>promote-gfmd</strong></span>
+<em class="parameter"><code>config-gfarm-options</code></em>=<em class="replaceable"><code>options</code></em>
+</span></dt>
+<dd><p>
+An alias of <span class="command"><strong>promote</strong></span> sub-command.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>mount</strong></span>
+<em class="parameter"><code>directory</code></em>=<em class="replaceable"><code>directory</code></em>
+<em class="parameter"><code>options</code></em>=<em class="replaceable"><code>options</code></em>
+</span></dt>
+<dd><p>
+Mount a Gfarm2 filesystem on <em class="replaceable"><code>directory</code></em>.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>unmount</strong></span>
+<em class="parameter"><code>directory</code></em>=<em class="replaceable"><code>directory</code></em>
+</span></dt>
+<dd><p>
+Unmount a Gfarm2 filesystem currently mounted on
+<em class="replaceable"><code>directory</code></em>.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>umount</strong></span>
+<em class="parameter"><code>directory</code></em>=<em class="replaceable"><code>directory</code></em>
+</span></dt>
+<dd><p>
+An alias of <span class="command"><strong>unmount</strong></span> sub-command.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>set-gfmd-conf</strong></span>
+<em class="parameter"><code>directive</code></em>=<em class="replaceable"><code>name</code></em>
+<em class="parameter"><code>value</code></em>=<em class="replaceable"><code>value</code></em>
+</span></dt>
+<dd>
+<p>
+Add
+</p>
+<div class="literallayout"><p><br>
+	<em class="replaceable"><code>directive</code></em> <em class="replaceable"><code>value</code></em><br>
+</p></div>
+<p>
+line to <code class="filename">gfmd.conf</code> file.
+</p>
+</dd>
+<dt><span class="term">
+<span class="command"><strong>set-gfarm-conf</strong></span>
+<em class="parameter"><code>directive</code></em>=<em class="replaceable"><code>name</code></em>
+<em class="parameter"><code>value</code></em>=<em class="replaceable"><code>value</code></em>
+</span></dt>
+<dd>
+<p>
+Add
+</p>
+<div class="literallayout"><p><br>
+	<em class="replaceable"><code>directive</code></em> <em class="replaceable"><code>value</code></em><br>
+</p></div>
+<p>
+line to <code class="filename">gfarm2.conf</code> file.
+</p>
+</dd>
+<dt><span class="term">
+<span class="command"><strong>set-gfsd-conf</strong></span>
+<em class="parameter"><code>directive</code></em>=<em class="replaceable"><code>name</code></em>
+<em class="parameter"><code>value</code></em>=<em class="replaceable"><code>value</code></em>
+</span></dt>
+<dd>
+<p>
+Add
+</p>
+<div class="literallayout"><p><br>
+	<em class="replaceable"><code>directive</code></em> <em class="replaceable"><code>value</code></em><br>
+</p></div>
+<p>
+line to <code class="filename">gfsd.conf</code> file.
+</p>
+</dd>
+<dt><span class="term">
+<span class="command"><strong>unset-gfmd-conf</strong></span>
+<em class="parameter"><code>directive</code></em>=<em class="replaceable"><code>name</code></em>
+</span></dt>
+<dd><p>
+Delete a <em class="replaceable"><code>directive</code></em> line in
+<code class="filename">gfmd.conf</code> file.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>unset-gfarm-conf</strong></span>
+<em class="parameter"><code>directive</code></em>=<em class="replaceable"><code>name</code></em>
+</span></dt>
+<dd><p>
+Delete a <em class="replaceable"><code>directive</code></em> line in
+<code class="filename">gfarm2.conf</code> file.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>unset-gfsd-conf</strong></span>
+<em class="parameter"><code>directive</code></em>=<em class="replaceable"><code>name</code></em>
+</span></dt>
+<dd><p>
+Delete a <em class="replaceable"><code>directive</code></em> line in
+<code class="filename">gfsd.conf</code> file.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>backup-backend-db</strong></span>
+</span></dt>
+<dd><p>
+Backup a backend database and output the backup data to standard out.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>backup-gfmd-conf</strong></span>
+</span></dt>
+<dd><p>
+Output <code class="filename">gfmd.conf</code> file to standard out.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>backup-gfarm-conf</strong></span>
+</span></dt>
+<dd><p>
+Output <code class="filename">gfarm2.conf</code> file to standard out.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>backup-gfsd-conf</strong></span>
+</span></dt>
+<dd><p>
+Output <code class="filename">gfsd.conf</code> file to standard out.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>backup-usermap</strong></span>
+</span></dt>
+<dd><p>
+Output <code class="filename">usermap</code> file to standard out.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>backup-shared-key</strong></span>
+</span></dt>
+<dd><p>
+Output <code class="filename">$HOME/.gfarm_shared_key</code> file to standard out.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>restore-backend-db</strong></span>
+</span></dt>
+<dd><p>
+Restore a backend database.
+The backup data are read from standard in.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>restore-gfmd-conf</strong></span>
+</span></dt>
+<dd><p>
+Restore <code class="filename">gfmd.conf</code> file.
+The backup data are read from standard in.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>restore-gfarm-conf</strong></span>
+</span></dt>
+<dd><p>
+Restore <code class="filename">gfarm2.conf</code> file.
+The backup data are read from standard in.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>restore-gfsd-conf</strong></span>
+</span></dt>
+<dd><p>
+Restore <code class="filename">gfsd.conf</code> file.
+The backup data are read from standard in.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>restore-usermap</strong></span>
+</span></dt>
+<dd><p>
+Restore <code class="filename">usermap</code> file.
+The backup data are read from standard in.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>restore-shared-key</strong></span>
+</span></dt>
+<dd><p>
+Restore <code class="filename">$HOME/.gfarm_shared_key</code> file.
+The backup data are read from standard in.
+</p></dd>
+<dt><span class="term">
+<span class="command"><strong>gfcmd</strong></span>
+<em class="parameter"><code>cmd</code></em>=<em class="replaceable"><code>command-name</code></em>
+<em class="parameter"><code>args</code></em>="<em class="replaceable"><code>command-argument ...</code></em>"
+</span></dt>
+<dd><p>
+Execute a Gfarm command.
+</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

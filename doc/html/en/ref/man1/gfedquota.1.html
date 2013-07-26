@@ -1,247 +1,81 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfedquota</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFEDQUOTA.1"
-></A
->gfedquota</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfedquota&nbsp;--&nbsp;edit the limits</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfedquota</B
->  [<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
->]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfedquota</B
-> is a editor of limits (quotas) for
-users and groups.</P
-><P
->There are two kinds of limits which are "soft limit" and "hard
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfedquota</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfedquota">
+<a name="gfedquota.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfedquota — edit the limits</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfedquota</code>  [<em class="replaceable"><code>options</code></em>]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><span class="command"><strong>gfedquota</strong></span> is a editor of limits (quotas) for
+users and groups.</p>
+<p>There are two kinds of limits which are "soft limit" and "hard
 limit".  Soft limits have a grace period.
 
 Types of limits are the total number of files, the total space of
 files, the total number of files include replicas and the total space
 of files include replicas.
 Setting 'disable' or -1 indicates unlimited.
-If no option for limits is specified, no quota is imposed.</P
-><P
->This command can be executed by an administrator in the gfarmadm
-group.</P
-><P
->The count of usage and the check of quota are enabled after executiing
-<B
-CLASS="COMMAND"
->gfedquota</B
-> and <B
-CLASS="COMMAND"
->gfquotacheck </B
->command.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-P NAME, --path=NAME</CODE
-></DT
-><DD
-><P
->Specifies a path name to specify a metadata server instead of
-the root metadata server.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-u NAME, --user=NAME</CODE
-></DT
-><DD
-><P
->Specifies a user name to display the current usage and limits.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-g NAME, --group=NAME</CODE
-></DT
-><DD
-><P
->Specifies a group name to display the current usage and limits.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-G SECOND, --grace=SECOND</CODE
-></DT
-><DD
-><P
->Specifies a grace period in second for soft limits.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-s BYTE, --softspc=BYTE</CODE
-></DT
-><DD
-><P
->Specifies a soft limit of file space in byte.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-h BYTE, --hardspc=BYTE</CODE
-></DT
-><DD
-><P
->Specifies a hard limit of file space in byte.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-m NUM, --softnum=NUM</CODE
-></DT
-><DD
-><P
->Specifies a soft limit of file number.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-n NUM, --hardnum=NUM</CODE
-></DT
-><DD
-><P
->Specifies a hard limit of file number.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-S BYTE, --physoftspc=BYTE</CODE
-></DT
-><DD
-><P
->Specifies a soft limit of physical space in byte include replicas.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-H BYTE, --phyhardspc=BYTE</CODE
-></DT
-><DD
-><P
->Specifies a hard limit of physical space in byte include replicas.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-M NUM, --physoftnum=NUM</CODE
-></DT
-><DD
-><P
->Specifies a soft limit of physical number include replicas.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-N NUM, --phyhardnum=NUM</CODE
-></DT
-><DD
-><P
->Specifies a hard limit of physical number include replicas.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->Displays a list of command options.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfquota</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfquotacheck</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfusage</SPAN
->(1)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+If no option for limits is specified, no quota is imposed.
+</p>
+<p>
+This command can be executed by an administrator in the gfarmadm
+group.
+</p>
+<p>
+The count of usage and the check of quota are enabled after executiing
+<span class="command"><strong>gfedquota</strong></span> and <span class="command"><strong>gfquotacheck </strong></span>command.
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-P NAME, --path=NAME</code></span></dt>
+<dd><p>Specifies a path name to specify a metadata server instead of
+the root metadata server.
+</p></dd>
+<dt><span class="term"><code class="option">-u NAME, --user=NAME</code></span></dt>
+<dd><p>Specifies a user name to display the current usage and limits.</p></dd>
+<dt><span class="term"><code class="option">-g NAME, --group=NAME</code></span></dt>
+<dd><p>Specifies a group name to display the current usage and limits.</p></dd>
+<dt><span class="term"><code class="option">-G SECOND, --grace=SECOND</code></span></dt>
+<dd><p>Specifies a grace period in second for soft limits.</p></dd>
+<dt><span class="term"><code class="option">-s BYTE, --softspc=BYTE</code></span></dt>
+<dd><p>Specifies a soft limit of file space in byte.</p></dd>
+<dt><span class="term"><code class="option">-h BYTE, --hardspc=BYTE</code></span></dt>
+<dd><p>Specifies a hard limit of file space in byte.</p></dd>
+<dt><span class="term"><code class="option">-m NUM, --softnum=NUM</code></span></dt>
+<dd><p>Specifies a soft limit of file number.</p></dd>
+<dt><span class="term"><code class="option">-n NUM, --hardnum=NUM</code></span></dt>
+<dd><p>Specifies a hard limit of file number.</p></dd>
+<dt><span class="term"><code class="option">-S BYTE, --physoftspc=BYTE</code></span></dt>
+<dd><p>Specifies a soft limit of physical space in byte include replicas.</p></dd>
+<dt><span class="term"><code class="option">-H BYTE, --phyhardspc=BYTE</code></span></dt>
+<dd><p>Specifies a hard limit of physical space in byte include replicas.</p></dd>
+<dt><span class="term"><code class="option">-M NUM, --physoftnum=NUM</code></span></dt>
+<dd><p>Specifies a soft limit of physical number include replicas.</p></dd>
+<dt><span class="term"><code class="option">-N NUM, --phyhardnum=NUM</code></span></dt>
+<dd><p>Specifies a hard limit of physical number include replicas.</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>Displays a list of command options.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfquota</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfquotacheck</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfusage</span>(1)</span>
+</p>
+</div>
+</div></body>
+</html>

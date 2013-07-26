@@ -1,188 +1,57 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfperf-copy</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFPERF-COPY.1"
-></A
->gfperf-copy</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfperf-copy&nbsp;--&nbsp;Gfarm ファイル複製の性能測定を行う。</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfperf-copy</B
->   -s, --src <TT
-CLASS="REPLACEABLE"
-><I
->コピー元url</I
-></TT
->   -d, --dst <TT
-CLASS="REPLACEABLE"
-><I
->コピー先url</I
-></TT
->  [-l, --filesize <TT
-CLASS="REPLACEABLE"
-><I
->ファイルサイズ</I
-></TT
->] [-b, --busize <TT
-CLASS="REPLACEABLE"
-><I
->バッファサイズ</I
-></TT
->] [-g, --gfsd <TT
-CLASS="REPLACEABLE"
-><I
->gfsd名</I
-></TT
->] [-m, --gfarm2fs <TT
-CLASS="REPLACEABLE"
-><I
->gfarm2fsマウントポイント</I
-></TT
->]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><CODE
-CLASS="PARAMETER"
->コピー元url</CODE
->から<CODE
-CLASS="PARAMETER"
->コピー先url</CODE
->にファイルをコピーしそのコピー性能を測定します。
-<CODE
-CLASS="PARAMETER"
->コピー元url</CODE
->と<CODE
-CLASS="PARAMETER"
->コピー先url</CODE
->はどちらか一方がgfarm url (gfarm:///で始まるもの) でなくてはなりません。そしてもう片方はfile url (file:///で始まるもの) でなくてはなりません。</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-s, --src</CODE
-> <CODE
-CLASS="PARAMETER"
->コピー元url</CODE
-></DT
-><DD
-><P
->コピー元urlを指定します。コピー元urlにgfarm urlを指定した場合、コピー先urlはfile urlでなくてはなりません。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-d, --dst</CODE
-> <CODE
-CLASS="PARAMETER"
->コピー元url</CODE
-></DT
-><DD
-><P
->コピー先urlを指定します。コピー先urlにgfarm urlを指定した場合、コピー元urlはfile urlでなくてはなりません。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-l, --filesize</CODE
-> <CODE
-CLASS="PARAMETER"
->ファイルサイズ</CODE
-></DT
-><DD
-><P
->使用するファイルサイズを指定します。
-デフォルトは1Mです。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-b, --bufsize</CODE
-> <CODE
-CLASS="PARAMETER"
->バッファサイズ</CODE
-></DT
-><DD
-><P
->使用するバッファサイズを指定します。
-デフォルトは4Kです。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-g, --gfsd</CODE
-> <CODE
-CLASS="PARAMETER"
->gfsd名</CODE
-></DT
-><DD
-><P
->ファイルを作成するgfsdを指定します。
-本オプションを指定しなかった場合はgfarmが自動的に割当てたgfsdを使用します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-m, --gfarm2fs</CODE
-> <CODE
-CLASS="PARAMETER"
->gfarm2fsマウントポイント</CODE
-></DT
-><DD
-><P
->gfarm2fsのマウントポイントを指定します。
-gfarm urlが指定された方に対しgfarm2fs経由でのアクセスを行います。</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfperf-copy</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfperf-copy">
+<a name="gfperf-copy.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfperf-copy — Gfarm ファイル複製の性能測定を行う。</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfperf-copy</code>   -s, --src <em class="replaceable"><code>コピー元url</code></em>   -d, --dst <em class="replaceable"><code>コピー先url</code></em>  [-l, --filesize <em class="replaceable"><code>ファイルサイズ</code></em>] [-b, --busize <em class="replaceable"><code>バッファサイズ</code></em>] [-g, --gfsd <em class="replaceable"><code>gfsd名</code></em>] [-m, --gfarm2fs <em class="replaceable"><code>gfarm2fsマウントポイント</code></em>]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><em class="parameter"><code>コピー元url</code></em>から<em class="parameter"><code>コピー先url</code></em>にファイルをコピーしそのコピー性能を測定します。
+<em class="parameter"><code>コピー元url</code></em>と<em class="parameter"><code>コピー先url</code></em>はどちらか一方がgfarm url (gfarm:///で始まるもの) でなくてはなりません。そしてもう片方はfile url (file:///で始まるもの) でなくてはなりません。
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-s, --src</code> <em class="parameter"><code>コピー元url</code></em></span></dt>
+<dd><p>
+コピー元urlを指定します。コピー元urlにgfarm urlを指定した場合、コピー先urlはfile urlでなくてはなりません。
+</p></dd>
+<dt><span class="term"><code class="option">-d, --dst</code> <em class="parameter"><code>コピー元url</code></em></span></dt>
+<dd><p>
+コピー先urlを指定します。コピー先urlにgfarm urlを指定した場合、コピー元urlはfile urlでなくてはなりません。
+</p></dd>
+<dt><span class="term"><code class="option">-l, --filesize</code> <em class="parameter"><code>ファイルサイズ</code></em></span></dt>
+<dd><p>
+使用するファイルサイズを指定します。
+デフォルトは1Mです。
+</p></dd>
+<dt><span class="term"><code class="option">-b, --bufsize</code> <em class="parameter"><code>バッファサイズ</code></em></span></dt>
+<dd><p>
+使用するバッファサイズを指定します。
+デフォルトは4Kです。
+</p></dd>
+<dt><span class="term"><code class="option">-g, --gfsd</code> <em class="parameter"><code>gfsd名</code></em></span></dt>
+<dd><p>
+ファイルを作成するgfsdを指定します。
+本オプションを指定しなかった場合はgfarmが自動的に割当てたgfsdを使用します。
+</p></dd>
+<dt><span class="term"><code class="option">-m, --gfarm2fs</code> <em class="parameter"><code>gfarm2fsマウントポイント</code></em></span></dt>
+<dd><p>
+gfarm2fsのマウントポイントを指定します。
+gfarm urlが指定された方に対しgfarm2fs経由でのアクセスを行います。
+</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

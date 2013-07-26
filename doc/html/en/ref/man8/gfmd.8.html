@@ -1,257 +1,85 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfmd</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFMD.8"
-></A
->gfmd</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfmd(8)&nbsp;--&nbsp;Gfarm metadata server</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfmd</B
-> [<TT
-CLASS="REPLACEABLE"
-><I
->options</I
-></TT
->]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><B
-CLASS="COMMAND"
->gfmd</B
-> is a Gfarm filesystem metadata server for accessing
-the filesystem metadata of the Gfarm filesystem.  <B
-CLASS="COMMAND"
->gfmd</B
-> must
-be running on a metadata server node in advance.</P
-><P
->It is possible for <B
-CLASS="COMMAND"
->gfmd</B
-> to be executed as a non-privileged user
-process, although only the user that executes the <B
-CLASS="COMMAND"
->gfmd</B
-> can be authenticated.
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfmd</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfmd">
+<a name="gfmd.8"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfmd — Gfarm metadata server</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfmd</code>  [<em class="replaceable"><code>options</code></em>]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><span class="command"><strong>gfmd</strong></span> is a Gfarm filesystem metadata server for accessing
+the filesystem metadata of the Gfarm filesystem.  <span class="command"><strong>gfmd</strong></span> must
+be running on a metadata server node in advance.</p>
+<p>It is possible for <span class="command"><strong>gfmd</strong></span> to be executed as a non-privileged user
+process, although only the user that executes the <span class="command"><strong>gfmd</strong></span> can be authenticated.
 Other users cannot use it.
-For details, see SETUP.private.en document</P
-><P
->To access gfmd, 
+For details, see SETUP.private.en document
+</p>
+<p>To access gfmd, 
 the hostname and the port number should be
 specified by the metadb_server_host and metadb_server_port statements,
-respectively, in <TT
-CLASS="FILENAME"
->~/.gfarm2rc</TT
->
-or in <TT
-CLASS="FILENAME"
->%%SYSCONFDIR%%/gfarm2.conf</TT
->
-on a client node.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-L</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->log-level</I
-></TT
-></DT
-><DD
-><P
->Specifies a log priority level.  The log output, which priority
+respectively, in <code class="filename">~/.gfarm2rc</code>
+or in <code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code>
+on a client node.</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-L</code> <em class="parameter"><code>log-level</code></em></span></dt>
+<dd><p>Specifies a log priority level.  The log output, which priority
 is higher or equal to this level, will be sent to syslog or standard error.
 Please refer gfarm2.conf(5) for the priority levels which can be specified
-by this option.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-P</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->pid-file</I
-></TT
-></DT
-><DD
-><P
->Specifies a file name to be used to record the process ID of gfmd.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-d</CODE
-></DT
-><DD
-><P
->Specifies the debug mode.  With the -d option, gfmd runs as a
-foreground process, not a daemon.</P
-><P
->If this option is specified and <CODE
-CLASS="OPTION"
->-L</CODE
-> is not specified,
-the log level is set to "debug".</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-f</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->config-file</I
-></TT
-></DT
-><DD
-><P
->Specifies a configuration file that is read instead of the default
-configuration file.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-p</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->port</I
-></TT
-></DT
-><DD
-><P
->Specifies a port number to be used by gfmd.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-s</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->syslog-facility</I
-></TT
-></DT
-><DD
-><P
->Specifies a syslog facility to report errors encountered by gfmd.
+by this option.
+</p></dd>
+<dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>pid-file</code></em></span></dt>
+<dd><p>Specifies a file name to be used to record the process ID of gfmd.</p></dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd>
+<p>Specifies the debug mode.  With the -d option, gfmd runs as a
+foreground process, not a daemon.</p>
+<p>
+If this option is specified and <code class="option">-L</code> is not specified,
+the log level is set to "debug".
+</p>
+</dd>
+<dt><span class="term"><code class="option">-f</code> <em class="parameter"><code>config-file</code></em></span></dt>
+<dd><p>Specifies a configuration file that is read instead of the default
+configuration file.</p></dd>
+<dt><span class="term"><code class="option">-p</code> <em class="parameter"><code>port</code></em></span></dt>
+<dd><p>Specifies a port number to be used by gfmd.</p></dd>
+<dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>syslog-facility</code></em></span></dt>
+<dd><p>Specifies a syslog facility to report errors encountered by gfmd.
 By default,
-local0 is used.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-v</CODE
-></DT
-><DD
-><P
->Makes gfmd output verbose log message on authentication.
-This is useful, when one has to resolve an issue about GSI authenticaion.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->Displays a list of command options.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="FILES"
-></A
-><H2
->FILES</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><TT
-CLASS="FILENAME"
->%%SYSCONFDIR%%/gfmd.conf</TT
-></DT
-><DD
-><P
->configuration file</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm2.conf</SPAN
->(5)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+local0 is used.</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>Makes gfmd output verbose log message on authentication.
+This is useful, when one has to resolve an issue about GSI authenticaion.
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>Displays a list of command options.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="FILES">
+<a name="files"></a><h2>FILES</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfmd.conf</code></span></dt>
+<dd><p>configuration file</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
+</p>
+</div>
+</div></body>
+</html>

@@ -1,317 +1,116 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfsched</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFSCHED.1"
-></A
->gfsched</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfsched&nbsp;--&nbsp;schedule and display available file system nodes</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfsched</B
->  -f <TT
-CLASS="REPLACEABLE"
-><I
->gfarm-URL</I
-></TT
->  [-D <TT
-CLASS="REPLACEABLE"
-><I
->domain-name</I
-></TT
->] [-n <TT
-CLASS="REPLACEABLE"
-><I
->number</I
-></TT
->] [-LMclw]</P
-><P
-><B
-CLASS="COMMAND"
->gfsched</B
-> [-P <TT
-CLASS="REPLACEABLE"
-><I
->gfarm-URL</I
-></TT
->] [-D <TT
-CLASS="REPLACEABLE"
-><I
->domain-name</I
-></TT
->] [-n <TT
-CLASS="REPLACEABLE"
-><I
->number</I
-></TT
->] [-LMlw]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->  The <B
-CLASS="COMMAND"
->gfsched</B
-> command
-  with the <CODE
-CLASS="OPTION"
->-f</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-> option
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfsched</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfsched">
+<a name="gfsched.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfsched — 
+
+schedule and display available file system nodes
+</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfsched</code>   -f <em class="replaceable"><code>gfarm-URL</code></em>  [-D <em class="replaceable"><code>domain-name</code></em>] [-n <em class="replaceable"><code>number</code></em>] [-LMclw]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfsched</code>  [-P <em class="replaceable"><code>gfarm-URL</code></em>] [-D <em class="replaceable"><code>domain-name</code></em>] [-n <em class="replaceable"><code>number</code></em>] [-LMlw]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+  The <span class="command"><strong>gfsched</strong></span> command
+  with the <code class="option">-f</code> <em class="parameter"><code>gfarm-URL</code></em> option
   displays available file system nodes which have a file replica of the
-  specified gfarm-URL.</P
-><P
->  When the <CODE
-CLASS="OPTION"
->-f</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-> option
-  is not specified, the <B
-CLASS="COMMAND"
->gfsched</B
-> command just displays
+  specified gfarm-URL.
+
+</p>
+<p>
+  When the <code class="option">-f</code> <em class="parameter"><code>gfarm-URL</code></em> option
+  is not specified, the <span class="command"><strong>gfsched</strong></span> command just displays
   available file system nodes.  In this case, you can specify a metadata
-  server by the <CODE
-CLASS="OPTION"
->-P</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-> option,
-  if necessary.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-D</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->domain-name</I
-></TT
-></DT
-><DD
-><P
->Limits file system node by specifying a domain name or a hostname.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-c</CODE
-></DT
-><DD
-><P
->Displays scheduling information for a file creation,
-if the file specified by <CODE
-CLASS="OPTION"
->-f</CODE
-> doesn't exist.</P
-><P
->Currently, this option creates the specified file.
-But please note that this behavior may be changed in future.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-L</CODE
-></DT
-><DD
-><P
->Suppresses authentication check.
+  server by the <code class="option">-P</code> <em class="parameter"><code>gfarm-URL</code></em> option,
+  if necessary.
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-D</code> <em class="parameter"><code>domain-name</code></em></span></dt>
+<dd><p>Limits file system node by specifying a domain name or a hostname.
+</p></dd>
+<dt><span class="term"><code class="option">-c</code></span></dt>
+<dd>
+<p>Displays scheduling information for a file creation,
+if the file specified by <code class="option">-f</code> doesn't exist.
+</p>
+<p>
+Currently, this option creates the specified file.
+But please note that this behavior may be changed in future.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-L</code></span></dt>
+<dd><p>Suppresses authentication check.
 Without this option, the scheduler checks whether the user will be 
 successfully authenticated with the hosts or not.
 This option omits the check to make scheduling faster,
 but that creates a risk that hosts which fail authentication with
-the user may be scheduled.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-M</CODE
-></DT
-><DD
-><P
->Suppresses client-side scheduling and only performs metadata-server-side
+the user may be scheduled.
+</p></dd>
+<dt><span class="term"><code class="option">-M</code></span></dt>
+<dd><p>Suppresses client-side scheduling and only performs metadata-server-side
 scheduling.
 This option makes scheduling faster,
 but also creates a risk that hosts which is network-unreachable or
-fails authentication with the user may be scheduled.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-P</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-></DT
-><DD
-><P
->Specifies a <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-> or a pathname
+fails authentication with the user may be scheduled.
+</p></dd>
+<dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>gfarm-URL</code></em></span></dt>
+<dd><p>Specifies a <em class="parameter"><code>gfarm-URL</code></em> or a pathname
 to identify a metadata server which is used for the scheduling.
-This option conflicts with the <CODE
-CLASS="OPTION"
->-f</CODE
-> option.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-f</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-></DT
-><DD
-><P
->The <B
-CLASS="COMMAND"
->gfsched</B
-> command schedules file system nodes
+This option conflicts with the <code class="option">-f</code> option.
+</p></dd>
+<dt><span class="term"><code class="option">-f</code> <em class="parameter"><code>gfarm-URL</code></em></span></dt>
+<dd><p>The <span class="command"><strong>gfsched</strong></span> command schedules file system nodes
 which have a replica of a file specified by this option.
-This option conflicts with the <CODE
-CLASS="OPTION"
->-P</CODE
-> option.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-l</CODE
-></DT
-><DD
-><P
->Long format.
+This option conflicts with the <code class="option">-P</code> option.
+</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd><p>Long format.
 This option displays port numbers as well as hostnames.
-Note that the display format of this option may be changed in future.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-n</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->number</I
-></TT
-></DT
-><DD
-><P
->Displays specified number of file system nodes at most.
-If this option is not specified, it displays all available nodes.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-w</CODE
-></DT
-><DD
-><P
->Schedules with write-mode.
+Note that the display format of this option may be changed in future.
+</p></dd>
+<dt><span class="term"><code class="option">-n</code> <em class="parameter"><code>number</code></em></span></dt>
+<dd><p>Displays specified number of file system nodes at most.
+If this option is not specified, it displays all available nodes.
+</p></dd>
+<dt><span class="term"><code class="option">-w</code></span></dt>
+<dd>
+<p>Schedules with write-mode.
 When this option is specified, file system nodes which don't have
-enough free space won't be displayed.</P
-><P
->When both this option and the <CODE
-CLASS="OPTION"
->-f</CODE
-> are specified,
+enough free space won't be displayed.
+</p>
+<p>
+When both this option and the <code class="option">-f</code> are specified,
 and if the file is already opened by an existing process with write-mode,
-the <B
-CLASS="COMMAND"
->gfsched</B
-> command only displays one file system node
-which is assigned for writing to the file.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-?</CODE
-></DT
-><DD
-><P
->Displays a list of command options.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="EXAMPLES"
-></A
-><H2
->EXAMPLES</H2
-><P
->The following is an example to inquire file system nodes that the metadata
-server thinks they are currently working.</P
-><P
-CLASS="LITERALLAYOUT"
->$&nbsp;gfsched&nbsp;-M</P
-></DIV
-></BODY
-></HTML
->
+the <span class="command"><strong>gfsched</strong></span> command only displays one file system node
+which is assigned for writing to the file.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>Displays a list of command options.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="EXAMPLES">
+<a name="examples"></a><h2>EXAMPLES</h2>
+<p>
+The following is an example to inquire file system nodes that the metadata
+server thinks they are currently working.
+</p>
+<div class="literallayout"><p><br>
+$ gfsched -M<br>
+</p></div>
+</div>
+</div></body>
+</html>

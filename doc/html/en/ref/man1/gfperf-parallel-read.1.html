@@ -1,242 +1,79 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfperf-parallel-read</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFPERF-PARALLEL-READ.1"
-></A
->gfperf-parallel-read</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfperf-parallel-read&nbsp;--&nbsp;Gfarm measure file read performance</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfperf-parallel-read</B
->  [-t, --testdir <TT
-CLASS="REPLACEABLE"
-><I
->test directory</I
-></TT
->] [-m, --gfarm2fs <TT
-CLASS="REPLACEABLE"
-><I
->gfarm2fs mount point</I
-></TT
->] [-l, --filesize <TT
-CLASS="REPLACEABLE"
-><I
->file size</I
-></TT
->] [-b, --bufsize <TT
-CLASS="REPLACEABLE"
-><I
->buffer size</I
-></TT
->] [-r, --random <TT
-CLASS="REPLACEABLE"
-><I
->random</I
-></TT
->] [-g, --gfsd <TT
-CLASS="REPLACEABLE"
-><I
->gfsd name</I
-></TT
->] [-k, --timeout <TT
-CLASS="REPLACEABLE"
-><I
->timeout seconds</I
-></TT
->] [-n, --name <TT
-CLASS="REPLACEABLE"
-><I
->group name</I
-></TT
->] [-w, --wait <TT
-CLASS="REPLACEABLE"
-><I
->start time</I
-></TT
->]</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->This command mesures file read performance of specified size of file in <CODE
-CLASS="PARAMETER"
->test directory</CODE
->.
-The test file is automatically created and not removed to be reused again.</P
-><P
->This command is expected to be called by gfperf.rb in parallel.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-t, --testdir</CODE
-> <CODE
-CLASS="PARAMETER"
->test directory</CODE
-></DT
-><DD
-><P
->Test file is created in <CODE
-CLASS="PARAMETER"
->test directory</CODE
->.
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfperf-parallel-read</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfperf-parallel-read">
+<a name="gfperf-parallel-read.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfperf-parallel-read — Gfarm measure file read performance</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfperf-parallel-read</code>  [-t, --testdir <em class="replaceable"><code>test directory</code></em>] [-m, --gfarm2fs <em class="replaceable"><code>gfarm2fs mount point</code></em>] [-l, --filesize <em class="replaceable"><code>file size</code></em>] [-b, --bufsize <em class="replaceable"><code>buffer size</code></em>] [-r, --random <em class="replaceable"><code>random</code></em>] [-g, --gfsd <em class="replaceable"><code>gfsd name</code></em>] [-k, --timeout <em class="replaceable"><code>timeout seconds</code></em>] [-n, --name <em class="replaceable"><code>group name</code></em>] [-w, --wait <em class="replaceable"><code>start time</code></em>]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>This command mesures file read performance of specified size of file in <em class="parameter"><code>test directory</code></em>.
+The test file is automatically created and not removed to be reused again.
+</p>
+<p>
+This command is expected to be called by gfperf.rb in parallel.
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-t, --testdir</code> <em class="parameter"><code>test directory</code></em></span></dt>
+<dd><p>
+Test file is created in <em class="parameter"><code>test directory</code></em>.
 Specify only gfarm url (that begins with gfarm:///) .
-The default is gfarm:///tmp .</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-m, --gfarm2fs</CODE
-> <CODE
-CLASS="PARAMETER"
->gfarm2fs mount point</CODE
-></DT
-><DD
-><P
->Specify gfarm2fs mount point.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-l, --filesize</CODE
-> <CODE
-CLASS="PARAMETER"
->file size</CODE
-></DT
-><DD
-><P
->File size to be created.
-The default is 1M. (1G=2^20)</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-b, --bufsize</CODE
-> <CODE
-CLASS="PARAMETER"
->buffer size</CODE
-></DT
-><DD
-><P
->Buffer size to read test file.
-The default is 4K. (1K=2^10)</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-r, --random</CODE
-> <CODE
-CLASS="PARAMETER"
->random</CODE
-></DT
-><DD
-><P
->Only if this option is specified, Reads test file randomly.
+The default is gfarm:///tmp .
+</p></dd>
+<dt><span class="term"><code class="option">-m, --gfarm2fs</code> <em class="parameter"><code>gfarm2fs mount point</code></em></span></dt>
+<dd><p>
+Specify gfarm2fs mount point.
+</p></dd>
+<dt><span class="term"><code class="option">-l, --filesize</code> <em class="parameter"><code>file size</code></em></span></dt>
+<dd><p>
+File size to be created.
+The default is 1M. (1G=2^20)
+</p></dd>
+<dt><span class="term"><code class="option">-b, --bufsize</code> <em class="parameter"><code>buffer size</code></em></span></dt>
+<dd><p>
+Buffer size to read test file.
+The default is 4K. (1K=2^10)
+</p></dd>
+<dt><span class="term"><code class="option">-r, --random</code> <em class="parameter"><code>random</code></em></span></dt>
+<dd><p>
+Only if this option is specified, Reads test file randomly.
 Option parameter is free. 
-If this option is omitted, this command reads test file sequentially.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-g, --gfsd</CODE
-> <CODE
-CLASS="PARAMETER"
->gfsd name</CODE
-></DT
-><DD
-><P
->Specify gfsd name on which test file is created.
-If this option is omitted, gfmd determines automatically.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-k, --timeout</CODE
-> <CODE
-CLASS="PARAMETER"
->timeout seconds</CODE
-></DT
-><DD
-><P
->Maximum read time in seconds.
-This comannd measures how much data to be read in this seconds.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-n, --name</CODE
-> <CODE
-CLASS="PARAMETER"
->group name</CODE
-></DT
-><DD
-><P
->Group name in parallel execution.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-w, --wait</CODE
-> <CODE
-CLASS="PARAMETER"
->start time</CODE
-></DT
-><DD
-><P
->Start time specified by gfperf.rb.
+If this option is omitted, this command reads test file sequentially.
+</p></dd>
+<dt><span class="term"><code class="option">-g, --gfsd</code> <em class="parameter"><code>gfsd name</code></em></span></dt>
+<dd><p>
+Specify gfsd name on which test file is created.
+If this option is omitted, gfmd determines automatically.
+</p></dd>
+<dt><span class="term"><code class="option">-k, --timeout</code> <em class="parameter"><code>timeout seconds</code></em></span></dt>
+<dd><p>
+Maximum read time in seconds.
+This comannd measures how much data to be read in this seconds.
+</p></dd>
+<dt><span class="term"><code class="option">-n, --name</code> <em class="parameter"><code>group name</code></em></span></dt>
+<dd><p>
+Group name in parallel execution.
+</p></dd>
+<dt><span class="term"><code class="option">-w, --wait</code> <em class="parameter"><code>start time</code></em></span></dt>
+<dd><p>
+Start time specified by gfperf.rb.
 This command waits until start time.
 Start time is written in UTC (YYYY-MM-DDThh:mm:ssZ) and
-must be in 10 seconds from current time.</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+must be in 10 seconds from current time.
+</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

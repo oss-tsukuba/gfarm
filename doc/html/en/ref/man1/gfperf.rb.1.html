@@ -1,467 +1,289 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfperf.rb</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFPERF.RB.1"
-></A
->gfperf.rb</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfperf.rb&nbsp;--&nbsp;Gfarm measure performance</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->gfperf.rb</B
->  [-c, --check]  <TT
-CLASS="REPLACEABLE"
-><I
->config file</I
-></TT
-> </P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->This command measure peformance of gfarm file system according to <CODE
-CLASS="PARAMETER"
->config file</CODE
->.
-<CODE
-CLASS="PARAMETER"
->config file</CODE
-> is written in YAML.</P
-><P
->Example config files are (gfarm install directory)/share/gfarm/config/gfperf-[config|simple].yml .</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="OPTIONS"
-></A
-><H2
->OPTIONS</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="OPTION"
->-c, --check</CODE
-></DT
-><DD
-><P
->Check <CODE
-CLASS="PARAMETER"
->config file</CODE
-> syntax.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="EXAMPLES"
-></A
-><H2
->EXAMPLES</H2
-><P
->Config file example is following.</P
-><P
-CLASS="LITERALLAYOUT"
->database:&nbsp;{filename:&nbsp;"/var/www/database.db",&nbsp;check&nbsp;span:&nbsp;"10days",<br>
-	&nbsp;&nbsp;&nbsp;backup:&nbsp;"/var/www/databse.db.bak"&nbsp;}<br>
-errlog:&nbsp;"/tmp/gfperf.err.log"<br>
-authentication:&nbsp;["sharedsecret",&nbsp;"gsi_auth",&nbsp;"gsi"]<br>
-gfarm2fs_mountpoint:&nbsp;["/mnt/gfarm2fs"]<br>
-metadata:&nbsp;[&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;number:&nbsp;"250"},<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"file:///mnt/gfarm2fs/tmp",&nbsp;number:&nbsp;"250"}&nbsp;]<br>
-tree:&nbsp;[&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;width:&nbsp;"5",&nbsp;depth:&nbsp;"3"},<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"file:///mnt/gfarm2fs/tmp",&nbsp;width:&nbsp;"5",&nbsp;depth:&nbsp;"3"}&nbsp;]<br>
-copy:&nbsp;[<br>
-&nbsp;&nbsp;&nbsp;{src:&nbsp;"file:///tmp",&nbsp;dst:&nbsp;"gfarm:///tmp",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{src:&nbsp;"gfarm:///tmp",&nbsp;dst:&nbsp;"file:///tmp",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{src:&nbsp;"file:///tmp",&nbsp;dst:&nbsp;"gfarm:///tmp",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd1.local"},<br>
-&nbsp;&nbsp;&nbsp;{src:&nbsp;"gfarm:///tmp",&nbsp;dst:&nbsp;"file:///tmp",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd1.local"},<br>
-&nbsp;&nbsp;&nbsp;{src:&nbsp;"file:///tmp",&nbsp;dst:&nbsp;"gfarm:///tmp",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd0.local",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs"},<br>
-&nbsp;&nbsp;&nbsp;{src:&nbsp;"gfarm:///tmp",&nbsp;dst:&nbsp;"file:///tmp",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd0.local",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs"},<br>
-&nbsp;&nbsp;&nbsp;{src:&nbsp;"file:///tmp",&nbsp;dst:&nbsp;"gfarm:///tmp",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd1.local",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs"},<br>
-&nbsp;&nbsp;&nbsp;{src:&nbsp;"gfarm:///tmp",&nbsp;dst:&nbsp;"file:///tmp",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd1.local",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs"}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]<br>
-read:&nbsp;[<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gfsd:&nbsp;"gfsd1.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;random:&nbsp;"true",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;random:&nbsp;"true",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd1.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd1.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",&nbsp;random:&nbsp;"true",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",&nbsp;random:&nbsp;"true",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd1.local"}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]<br>
-write:&nbsp;[<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;gfsd:&nbsp;"gfsd1.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;random:&nbsp;"true",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;random:&nbsp;"true",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd1.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;overwrite:&nbsp;"true",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;overwrite:&nbsp;"true",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd1.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;overwrite:&nbsp;"true",&nbsp;random:&nbsp;"true",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;overwrite:&nbsp;"true",&nbsp;random:&nbsp;"true",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd1.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd1.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",&nbsp;random:&nbsp;"true",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",&nbsp;random:&nbsp;"true",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd1.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;overwrite:&nbsp;"true",&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;overwrite:&nbsp;"true",&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;gfsd:&nbsp;"gfsd1.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;overwrite:&nbsp;"true",&nbsp;random:&nbsp;"true",&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;overwrite:&nbsp;"true",&nbsp;random:&nbsp;"true",&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;gfsd:&nbsp;"gfsd1.local"}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]<br>
-replica:&nbsp;[<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;src:&nbsp;"gfsd0.local",&nbsp;dst:&nbsp;"gfsd1.local",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;filesize:&nbsp;"1M"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;src:&nbsp;"gfsd1.local",&nbsp;dst:&nbsp;"gfsd0.local",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;filesize:&nbsp;"1M"}<br>
-	&nbsp;]<br>
-autoreplica:&nbsp;[<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;filesize:&nbsp;"1M",&nbsp;number:&nbsp;"3",&nbsp;replica:&nbsp;"1"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;number:&nbsp;"3",&nbsp;replica:&nbsp;"1"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;filesize:&nbsp;"1M",&nbsp;number:&nbsp;"3",&nbsp;replica:&nbsp;"2"},<br>
-&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",&nbsp;filesize:&nbsp;"1M",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;number:&nbsp;"3",&nbsp;replica:&nbsp;"2"}<br>
-	&nbsp;]<br>
-parallel:&nbsp;{<br>
-&nbsp;&nbsp;group1:&nbsp;[<br>
-&nbsp;&nbsp;&nbsp;{rhost:&nbsp;"gfsd0.local",&nbsp;type:&nbsp;"read",&nbsp;testdir:&nbsp;"gfarm:///tmp",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{rhost:&nbsp;"gfsd0.local",&nbsp;type:&nbsp;"read",&nbsp;testdir:&nbsp;"gfarm:///tmp",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd1.local"}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;],<br>
-&nbsp;&nbsp;group2:&nbsp;[<br>
-&nbsp;&nbsp;&nbsp;{rhost:&nbsp;"gfsd0.local",&nbsp;type:&nbsp;"write",&nbsp;testdir:&nbsp;"gfarm:///tmp",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd0.local"},<br>
-&nbsp;&nbsp;&nbsp;{rhost:&nbsp;"gfsd0.local",&nbsp;type:&nbsp;"write",&nbsp;testdir:&nbsp;"gfarm:///tmp",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;filesize:&nbsp;"1M",&nbsp;bufsize:&nbsp;"4K",&nbsp;gfsd:&nbsp;"gfsd1.local"}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;],<br>
-&nbsp;&nbsp;group3:&nbsp;[<br>
-&nbsp;&nbsp;&nbsp;{type:&nbsp;"replica",&nbsp;testdir:&nbsp;"gfarm:///tmp",&nbsp;src:&nbsp;"gfsd0.local",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dst:&nbsp;"gfsd1.local",&nbsp;filesize:&nbsp;"1M"},<br>
-&nbsp;&nbsp;&nbsp;{type:&nbsp;"replica",&nbsp;testdir:&nbsp;"gfarm:///tmp",&nbsp;src:&nbsp;"gfsd1.local",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dst:&nbsp;"gfsd0.local",&nbsp;filesize:&nbsp;"1M"}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]<br>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfperf.rb</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfperf.rb">
+<a name="gfperf.rb.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfperf.rb — Gfarm measure performance</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfperf.rb</code>  [-c, --check]  <em class="replaceable"><code>config file</code></em> </p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+This command measure peformance of gfarm file system according to <em class="parameter"><code>config file</code></em>.
+<em class="parameter"><code>config file</code></em> is written in YAML.
+</p>
+<p>
+Example config files are (gfarm install directory)/share/gfarm/config/gfperf-[config|simple].yml .
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-c, --check</code></span></dt>
+<dd><p>
+Check <em class="parameter"><code>config file</code></em> syntax.
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="EXAMPLES">
+<a name="examples"></a><h2>EXAMPLES</h2>
+<p>
+Config file example is following.
+</p>
+<div class="literallayout"><p><br>
+database: {filename: "/var/www/database.db", check span: "10days",<br>
+	   backup: "/var/www/databse.db.bak" }<br>
+errlog: "/tmp/gfperf.err.log"<br>
+authentication: ["sharedsecret", "gsi_auth", "gsi"]<br>
+gfarm2fs_mountpoint: ["/mnt/gfarm2fs"]<br>
+metadata: [ {testdir: "gfarm:///tmp", number: "250"},<br>
+            {testdir: "file:///mnt/gfarm2fs/tmp", number: "250"} ]<br>
+tree: [ {testdir: "gfarm:///tmp", width: "5", depth: "3"},<br>
+        {testdir: "file:///mnt/gfarm2fs/tmp", width: "5", depth: "3"} ]<br>
+copy: [<br>
+   {src: "file:///tmp", dst: "gfarm:///tmp", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd0.local"},<br>
+   {src: "gfarm:///tmp", dst: "file:///tmp", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd0.local"},<br>
+   {src: "file:///tmp", dst: "gfarm:///tmp", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd1.local"},<br>
+   {src: "gfarm:///tmp", dst: "file:///tmp", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd1.local"},<br>
+   {src: "file:///tmp", dst: "gfarm:///tmp", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd0.local", gfarm2fs: "/mnt/gfarm2fs"},<br>
+   {src: "gfarm:///tmp", dst: "file:///tmp", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd0.local", gfarm2fs: "/mnt/gfarm2fs"},<br>
+   {src: "file:///tmp", dst: "gfarm:///tmp", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd1.local", gfarm2fs: "/mnt/gfarm2fs"},<br>
+   {src: "gfarm:///tmp", dst: "file:///tmp", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd1.local", gfarm2fs: "/mnt/gfarm2fs"}<br>
+      ]<br>
+read: [<br>
+   {testdir: "gfarm:///tmp", filesize: "1M", bufsize: "4K",<br>
+    gfsd: "gfsd0.local"},<br>
+   {testdir: "gfarm:///tmp", filesize: "1M", bufsize: "4K",<br>
+     gfsd: "gfsd1.local"},<br>
+   {testdir: "gfarm:///tmp", random: "true", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd0.local"},<br>
+   {testdir: "gfarm:///tmp", random: "true", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd1.local"},<br>
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd0.local"},<br>
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd1.local"},<br>
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", random: "true",<br>
+    filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},<br>
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", random: "true",<br>
+    filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"}<br>
+      ]<br>
+write: [<br>
+   {testdir: "gfarm:///tmp", filesize: "1M", bufsize: "4K",<br>
+    gfsd: "gfsd0.local"},<br>
+   {testdir: "gfarm:///tmp", filesize: "1M", bufsize: "4K",<br>
+    gfsd: "gfsd1.local"},<br>
+   {testdir: "gfarm:///tmp", random: "true", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd0.local"},<br>
+   {testdir: "gfarm:///tmp", random: "true", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd1.local"},<br>
+   {testdir: "gfarm:///tmp", overwrite: "true", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd0.local"},<br>
+   {testdir: "gfarm:///tmp", overwrite: "true", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd1.local"},<br>
+   {testdir: "gfarm:///tmp", overwrite: "true", random: "true",<br>
+    filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},<br>
+   {testdir: "gfarm:///tmp", overwrite: "true", random: "true",<br>
+    filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},<br>
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd0.local"},<br>
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M",<br>
+    bufsize: "4K", gfsd: "gfsd1.local"},<br>
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", random: "true",<br>
+    filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},<br>
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", random: "true",<br>
+    filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},<br>
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs",<br>
+    overwrite: "true", filesize: "1M", bufsize: "4K",<br>
+    gfsd: "gfsd0.local"},<br>
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs",<br>
+    overwrite: "true", filesize: "1M", bufsize: "4K",<br>
+    gfsd: "gfsd1.local"},<br>
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs",<br>
+    overwrite: "true", random: "true", filesize: "1M", bufsize: "4K",<br>
+    gfsd: "gfsd0.local"},<br>
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs",<br>
+    overwrite: "true", random: "true", filesize: "1M", bufsize: "4K",<br>
+    gfsd: "gfsd1.local"}<br>
+      ]<br>
+replica: [<br>
+   {testdir: "gfarm:///tmp", src: "gfsd0.local", dst: "gfsd1.local",<br>
+    filesize: "1M"},<br>
+   {testdir: "gfarm:///tmp", src: "gfsd1.local", dst: "gfsd0.local",<br>
+    filesize: "1M"}<br>
+	 ]<br>
+autoreplica: [<br>
+   {testdir: "gfarm:///tmp", filesize: "1M", number: "3", replica: "1"},<br>
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M",<br>
+    number: "3", replica: "1"},<br>
+   {testdir: "gfarm:///tmp", filesize: "1M", number: "3", replica: "2"},<br>
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M",<br>
+    number: "3", replica: "2"}<br>
+	 ]<br>
+parallel: {<br>
+  group1: [<br>
+   {rhost: "gfsd0.local", type: "read", testdir: "gfarm:///tmp",<br>
+    filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},<br>
+   {rhost: "gfsd0.local", type: "read", testdir: "gfarm:///tmp",<br>
+    filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"}<br>
+        ],<br>
+  group2: [<br>
+   {rhost: "gfsd0.local", type: "write", testdir: "gfarm:///tmp",<br>
+    filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},<br>
+   {rhost: "gfsd0.local", type: "write", testdir: "gfarm:///tmp",<br>
+    filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"}<br>
+       ],<br>
+  group3: [<br>
+   {type: "replica", testdir: "gfarm:///tmp", src: "gfsd0.local",<br>
+    dst: "gfsd1.local", filesize: "1M"},<br>
+   {type: "replica", testdir: "gfarm:///tmp", src: "gfsd1.local",<br>
+    dst: "gfsd0.local", filesize: "1M"}<br>
+       ]<br>
 }<br>
-parallel-autoreplica:&nbsp;{<br>
-&nbsp;&nbsp;group4:&nbsp;[<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp1",&nbsp;filesize:&nbsp;"1M",&nbsp;number:&nbsp;"3",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;replica:&nbsp;"2"},<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp2",&nbsp;filesize:&nbsp;"1M",&nbsp;number:&nbsp;"3",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;replica:&nbsp;"2"},<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp3",&nbsp;filesize:&nbsp;"1M",&nbsp;number:&nbsp;"3",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;replica:&nbsp;"2"},<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp4",&nbsp;filesize:&nbsp;"1M",&nbsp;number:&nbsp;"3",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;replica:&nbsp;"2"}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;],<br>
-&nbsp;&nbsp;group5:&nbsp;[<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp1",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;filesize:&nbsp;"1M",&nbsp;number:&nbsp;"3",&nbsp;replica:&nbsp;"2"},<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{testdir:&nbsp;"gfarm:///tmp2",&nbsp;gfarm2fs:&nbsp;"/mnt/gfarm2fs",<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;filesize:&nbsp;"1M",&nbsp;number:&nbsp;"3",&nbsp;replica:&nbsp;"2"}<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]&nbsp;&nbsp;&nbsp;&nbsp;<br>
-}</P
-><P
->Following sentences explain keywords of the YAML.</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
->database</DT
-><DD
-><P
->	Specify databse filename in filename: .
+parallel-autoreplica: {<br>
+  group4: [<br>
+     {testdir: "gfarm:///tmp1", filesize: "1M", number: "3",<br>
+      replica: "2"},<br>
+     {testdir: "gfarm:///tmp2", filesize: "1M", number: "3",<br>
+      replica: "2"},<br>
+     {testdir: "gfarm:///tmp3", filesize: "1M", number: "3",<br>
+      replica: "2"},<br>
+     {testdir: "gfarm:///tmp4", filesize: "1M", number: "3",<br>
+      replica: "2"}<br>
+       ],<br>
+  group5: [<br>
+     {testdir: "gfarm:///tmp1", gfarm2fs: "/mnt/gfarm2fs",<br>
+      filesize: "1M", number: "3", replica: "2"},<br>
+     {testdir: "gfarm:///tmp2", gfarm2fs: "/mnt/gfarm2fs",<br>
+      filesize: "1M", number: "3", replica: "2"}<br>
+       ]    <br>
+}<br>
+</p></div>
+<p>
+Following sentences explain keywords of the YAML.
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term">database</span></dt>
+<dd><p>
+	Specify databse filename in filename: .
 	Specify backup of database file in backup: .
 	check span: specifies time span of calculating average and standard deviation.
-      </P
-></DD
-><DT
->errlog</DT
-><DD
-><P
->	This commands prints error messsages in the file specified by errlog: .
+      </p></dd>
+<dt><span class="term">errlog</span></dt>
+<dd><p>
+	This commands prints error messsages in the file specified by errlog: .
 	All error messages are also written in the database.
 	If you don't need to error log file, this parameter can be omitted.
-      </P
-></DD
-><DT
->authentication</DT
-><DD
-><P
->	Specify authentication types of performance measuring.
+      </p></dd>
+<dt><span class="term">authentication</span></dt>
+<dd><p>
+	Specify authentication types of performance measuring.
 	Authentication types are sharedsecret, gsi_auth and gsi.
 	Performance test is executed on all specified types.
-      </P
-></DD
-><DT
->gfarm2fs_mountpoint</DT
-><DD
-><P
->	Specify gfarm2fs mount point.
+      </p></dd>
+<dt><span class="term">gfarm2fs_mountpoint</span></dt>
+<dd><p>
+	Specify gfarm2fs mount point.
 	When start testing, this command mounts all gfarm2fs mount point automatically. At the end of testing, unmounted automatically.
 	When changing authenticaion type, remounted automatically.
-      </P
-></DD
-><DT
->metadata</DT
-><DD
-><P
->	Perfomance measuring using gfperf-metadata.
+      </p></dd>
+<dt><span class="term">metadata</span></dt>
+<dd><p>
+	Perfomance measuring using gfperf-metadata.
 	Parameters are gfperf-metadata long options.
-      </P
-></DD
-><DT
->tree</DT
-><DD
-><P
->	Perfomance measuring using gfperf-tree.
+      </p></dd>
+<dt><span class="term">tree</span></dt>
+<dd><p>
+	Perfomance measuring using gfperf-tree.
 	Parameters are gfperf-tree long options.
-      </P
-></DD
-><DT
->copy</DT
-><DD
-><P
->	Perfomance measuring using gfperf-copy.
+      </p></dd>
+<dt><span class="term">copy</span></dt>
+<dd><p>
+	Perfomance measuring using gfperf-copy.
 	Parameters are gfperf-copy long options.
-      </P
-></DD
-><DT
->read</DT
-><DD
-><P
->	Perfomance measuring using gfperf-read.
+      </p></dd>
+<dt><span class="term">read</span></dt>
+<dd><p>
+	Perfomance measuring using gfperf-read.
 	Parameters are gfperf-read long options.
 	If you need to test sequentially read, remove random option.
-      </P
-></DD
-><DT
->write</DT
-><DD
-><P
->	Perfomance measuring using gfperf-write.
+      </p></dd>
+<dt><span class="term">write</span></dt>
+<dd><p>
+	Perfomance measuring using gfperf-write.
 	Parameters are gfperf-write long options.
 	If you need to test sequentially write, remove random option.
 	If you need to test append write, remove overwrite option.
-      </P
-></DD
-><DT
->replica</DT
-><DD
-><P
->	Perfomance measuring using gfperf-replica.
+      </p></dd>
+<dt><span class="term">replica</span></dt>
+<dd><p>
+	Perfomance measuring using gfperf-replica.
 	Parameters are gfperf-replica long options.
-      </P
-></DD
-><DT
->autoreplica</DT
-><DD
-><P
->	Perfomance measuring using gfperf-autoreplica.
+      </p></dd>
+<dt><span class="term">autoreplica</span></dt>
+<dd><p>
+	Perfomance measuring using gfperf-autoreplica.
 	Parameters are gfperf-autoreplica long options.
-      </P
-></DD
-><DT
->parallel</DT
-><DD
-><P
->	Specify parallel test patterns.
+      </p></dd>
+<dt><span class="term">parallel</span></dt>
+<dd><p>
+	Specify parallel test patterns.
 	At first, specify group name that is a sinbol of parallel testing.
 	Group name must be uniq in all parallel testing (includes parallel-autoreplica).
 	Specify remote host in rhost: . This command uses ssh for executing command.
 	type: specifies one of read, write, replica. These types corresponds to gfperf-parallel-read, gfperf-parallel-write, gfperf-parallel-replica.
-      </P
-></DD
-><DT
->parallel-autoreplica</DT
-><DD
-><P
->	Specify auto replication test in parallel.
+      </p></dd>
+<dt><span class="term">parallel-autoreplica</span></dt>
+<dd><p>
+	Specify auto replication test in parallel.
 	At first, specify group name that is a sinbol of parallel testing.
 	Group name must be uniq in all parallel testing (includes parallel).
 	Test parameters are gfperf-parallel-autoreplica long options.
 	The result is average of gfperf-parallel-autoreplica outputs.
-      </P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfperf-metadata</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfperf-tree</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfperf-copy</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfperf-read</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfperf-write</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfperf-replica</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfperf-autoreplica</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfperf-parallel-read</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfperf-parallel-write</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfperf-parallel-replica</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfperf-parallel-autoreplica</SPAN
->(1)</SPAN
->,</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="NOTES"
-></A
-><H2
->NOTES</H2
-><P
->Using ssh command execution, no password is recommended.</P
-><P
->Bash doesn't read ~/.bashrc in some envronment.
-Please check before running gfperf.rb.</P
-></DIV
-></BODY
-></HTML
->
+      </p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfperf-metadata</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfperf-tree</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfperf-copy</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfperf-read</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfperf-write</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfperf-replica</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfperf-autoreplica</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfperf-parallel-read</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfperf-parallel-write</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfperf-parallel-replica</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfperf-parallel-autoreplica</span>(1)</span>,
+</p>
+</div>
+<div class="refsect1" title="NOTES">
+<a name="notes"></a><h2>NOTES</h2>
+<p>
+Using ssh command execution, no password is recommended.
+</p>
+<p>
+Bash doesn't read ~/.bashrc in some envronment.
+Please check before running gfperf.rb.
+</p>
+</div>
+</div></body>
+</html>

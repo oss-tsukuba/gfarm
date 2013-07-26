@@ -1,254 +1,87 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfarm_initialize</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFARM-INITIALIZE.3"
-></A
->gfarm_initialize</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfarm_initialize&nbsp;--&nbsp;Gfarm ライブラリを初期化する</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><DIV
-CLASS="FUNCSYNOPSIS"
-><P
-></P
-><A
-NAME="AEN12"
-></A
-><TABLE
-BORDER="0"
-BGCOLOR="#E0E0E0"
-WIDTH="100%"
-><TR
-><TD
-><PRE
-CLASS="FUNCSYNOPSISINFO"
->#include &#60;gfarm/gfarm.h&#62;</PRE
-></TD
-></TR
-></TABLE
-><P
-><CODE
-><CODE
-CLASS="FUNCDEF"
-><TT
-CLASS="FUNCTION"
-><SPAN
-CLASS="RETURNVALUE"
->gfarm_error_t</SPAN
-> gfarm_initialize</TT
-></CODE
->(int * <TT
-CLASS="PARAMETER"
-><I
->argcp</I
-></TT
->, char *** <TT
-CLASS="PARAMETER"
-><I
->argvp</I
-></TT
->);</CODE
-></P
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->Gfarm ライブラリを初期化します。
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfarm_initialize</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm_initialize">
+<a name="gfarm-initialize.3"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfarm_initialize — Gfarm ライブラリを初期化する</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="funcsynopsis">
+<pre class="funcsynopsisinfo">
+#include &lt;gfarm/gfarm.h&gt;
+</pre>
+<table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" class="funcprototype-table">
+<tr>
+<td><code class="funcdef"><b class="fsfunc">gfarm_error_t gfarm_initialize</b>(</code></td>
+<td>
+<var class="pdparam">argcp</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">argvp</var><code>)</code>;</td>
+<td> </td>
+</tr>
+</table>
+<div class="paramdef-list">
+<code>int * <var class="pdparam">argcp</var></code>;<br><code>char *** <var class="pdparam">argvp</var></code>;</div>
+<div class="funcprototype-spacer"> </div>
+</div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>Gfarm ライブラリを初期化します。
 Gfarm ライブラリ API を利用する前に必ず呼ぶ必要があります。
 引数には、プログラムの main 関数の
-<TT
-CLASS="PARAMETER"
-><I
->argc</I
-></TT
->
+<em class="parameter"><code>argc</code></em>
 引数へのポインタと、
-<TT
-CLASS="PARAMETER"
-><I
->argv</I
-></TT
->
-引数へのポインタを渡します。</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="RETURN-VALUES"
-></A
-><H2
->RETURN VALUES</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_ERROR</CODE
-></DT
-><DD
-><P
->正常終了を示します。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_MEMORY</CODE
-></DT
-><DD
-><P
->メモリ不足のため処理を中止しました。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_UNKNOWN_HOST</CODE
-></DT
-><DD
-><P
->指定されたメタデータサーバのアドレス解決ができません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NETWORK_IS_UNREACHABLE</CODE
-></DT
-><DD
-><P
->メタデータサーバに到達できません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_OPERATION_TIMED_OUT</CODE
-></DT
-><DD
-><P
->メタデータサーバへの接続がタイムアウトをおこしました。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_PROTOCOL</CODE
-></DT
-><DD
-><P
->メタデータサーバとの通信にプロトコルエラーが発生しました。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_BROKEN_PIPE</CODE
-></DT
-><DD
-><P
->メタデータサーバとの通信が切断しました。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_PERMISSION_DENIED</CODE
-></DT
-><DD
-><P
->メタデータサーバへの認証に失敗しました。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_PROTOCOL_NOT_SUPPORTED</CODE
-></DT
-><DD
-><P
->指定された認証プロトコルはサポートしていません。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_AUTHENTICATION</CODE
-></DT
-><DD
-><P
->メタデータサーバに対する認証に失敗しました。</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_MEMORY</CODE
-></DT
-><DD
-><P
->メモリ不足のため処理を中止しました。</P
-></DD
-><DT
->その他</DT
-><DD
-><P
->上記以外のエラーが生じたことを示します。
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_error_string</SPAN
->(3)</SPAN
->
-によりエラーの原因を文字列に変換することができます。</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_terminate</SPAN
->(3)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+<em class="parameter"><code>argv</code></em>
+引数へのポインタを渡します。</p>
+</div>
+<div class="refsect1" title="RETURN VALUES">
+<a name="return-values"></a><h2>RETURN VALUES</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_ERROR</code></span></dt>
+<dd><p>正常終了を示します。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_MEMORY</code></span></dt>
+<dd><p>メモリ不足のため処理を中止しました。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_UNKNOWN_HOST</code></span></dt>
+<dd><p>指定されたメタデータサーバのアドレス解決ができません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NETWORK_IS_UNREACHABLE</code></span></dt>
+<dd><p>メタデータサーバに到達できません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_OPERATION_TIMED_OUT</code></span></dt>
+<dd><p>メタデータサーバへの接続がタイムアウトをおこしました。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_PROTOCOL</code></span></dt>
+<dd><p>メタデータサーバとの通信にプロトコルエラーが発生しました。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_BROKEN_PIPE</code></span></dt>
+<dd><p>メタデータサーバとの通信が切断しました。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_PERMISSION_DENIED</code></span></dt>
+<dd><p>メタデータサーバへの認証に失敗しました。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_PROTOCOL_NOT_SUPPORTED</code></span></dt>
+<dd><p>指定された認証プロトコルはサポートしていません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_AUTHENTICATION</code></span></dt>
+<dd><p>メタデータサーバに対する認証に失敗しました。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_MEMORY</code></span></dt>
+<dd><p>メモリ不足のため処理を中止しました。</p></dd>
+<dt><span class="term">その他</span></dt>
+<dd><p>上記以外のエラーが生じたことを示します。
+<span class="citerefentry"><span class="refentrytitle">gfarm_error_string</span>(3)</span>
+によりエラーの原因を文字列に変換することができます。
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfarm_terminate</span>(3)</span>
+</p>
+</div>
+</div></body>
+</html>
