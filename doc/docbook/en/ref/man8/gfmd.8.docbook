@@ -12,7 +12,7 @@
 </refmeta>
 
 <refnamediv id='name'>
-<refname>gfmd(8)</refname>
+<refname>gfmd</refname>
 <refpurpose>Gfarm metadata server</refpurpose>
 </refnamediv>
 
