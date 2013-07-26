@@ -1,0 +1,156 @@
+'\" t
+.\"     Title: gfncopy
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 18 Jul 2013
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFNCOPY" "1" "18 Jul 2013" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfncopy \- Manipulate number of file replicas automatically created
+.SH "SYNOPSIS"
+.HP \w'\fBgfncopy\fR\ 'u
+\fBgfncopy\fR [\-vh] \fIpath\fR
+.HP \w'\fBgfrepattr\fR\ 'u
+\fBgfrepattr\fR [\-vh] [\-C | \-M] \-s\ \fINCOPY\fR \fIpath\fR
+.HP \w'\fBgfrepattr\fR\ 'u
+\fBgfrepattr\fR [\-vh] [\-C | \-M] \-S\ \fIREPATTR\fR \fIpath\fR
+.HP \w'\fBgfrepattr\fR\ 'u
+\fBgfrepattr\fR [\-vh] \-r \fIpath\fR [\fIpath\fR...]
+.HP \w'\fBgfrepattr\fR\ 'u
+\fBgfrepattr\fR [\-vh] \-c \fIpath\fR
+.HP \w'\fBgfrepattr\fR\ 'u
+\fBgfrepattr\fR [\-v] \-w [\-t\ \fITIMEOUT\fR] \fIpath\fR [\fIpath\fR...]
+.SH "DESCRIPTION"
+.PP
+gfncopy manipulates the number of file replicas automatically created\&. When no option is specified, it displays the specified number of file replicas\&. When replication attributes of both NCOPY and REPATTR are set to a file, these attributes are displayed in two lines\&. With the
+\fB\-v\fR
+option, it also displays path names up to the ancient directory that specifies the number of file repilcas\&.
+.SH "OPTIONS"
+.PP
+\fB\-s\fR \fINCOPY\fR
+.RS 4
+specifies the attribute for automatic replication represented by the number of file replicas to a file or directory\&.
+.RE
+.PP
+\fB\-S\fR \fIREPATTR\fR
+.RS 4
+specifies the attribute for automatic replication represented by host groups to a file or directory\&.
+.sp
+a
+\fIREPATTR\fR
+is represented by the following BNF:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    <repattr> ::= <an_attr> | <an_attr> \*(Aq,\*(Aq <repattr>
+    <an_attr> ::= <host_group> \*(Aq:\*(Aq <num_rep>
+    <host_group> ::= <string>
+    <num_rep> ::= <integer>
+
+  e\&.g\&.)
+    group0:2
+    group0:1,group1:2,group2:3
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fB\-C\fR
+.RS 4
+If the replication attribute exists already on the file,
+\fBgfncopy\fR
+with the
+\fB\-s\fR
+or
+\fB\-S\fR
+options fails\&.
+.RE
+.PP
+\fB\-M\fR
+.RS 4
+If the replication attribute does not exist on the file,
+\fBgfncopy\fR
+with the
+\fB\-s\fR
+or
+\fB\-S\fR
+options fails\&.
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+removes the specified replication attributes\&.
+.sp
+The
+\fIpath\fR
+can be specified multiple times\&.
+.RE
+.PP
+\fB\-c\fR
+.RS 4
+displays the number of file repicas the file really has\&.
+.RE
+.PP
+\fB\-w\fR
+.RS 4
+checks whether or not the file replicas have been created according to the replication attributes (NCOPY or REPATTR), otherwise waits for the completion of the replication\&.
+.sp
+The
+\fIpath\fR
+can be specified multiple times\&.
+.sp
+If the
+\fIpath\fR
+is a directory, files in subdirectories are checked\&.
+.RE
+.PP
+\fB\-t\fR \fITIMEOUT\fR
+.RS 4
+specifies the time in seconds for the
+\fB\-w\fR
+option to wait until automatic replication starts\&. Timeout does not occur while the replication is running\&. Default is 30 seconds\&.
+.RE
+.PP
+\fB\-h\fR
+.RS 4
+processes symbolic link instead of any referenced files\&.
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+displays verbose messages\&.
+.RE
+.PP
+\fB\-?\fR
+.RS 4
+displays a list of command options\&.
+.RE
+.SH "SEE ALSO"
+.PP
+
+\fBgfhostgroup\fR(1)

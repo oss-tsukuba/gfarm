@@ -1,0 +1,123 @@
+'\" t
+.\"     Title: gfncopy
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 18 Jul 2013
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFNCOPY" "1" "18 Jul 2013" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfncopy \- 自動ファイル複製作成数を操作する。
+.SH "SYNOPSIS"
+.HP \w'\fBgfncopy\fR\ 'u
+\fBgfncopy\fR [\-vh] \fIpath\fR
+.HP \w'\fBgfrepattr\fR\ 'u
+\fBgfrepattr\fR [\-vh] [\-C | \-M] \-s\ \fINCOPY\fR \fIpath\fR
+.HP \w'\fBgfrepattr\fR\ 'u
+\fBgfrepattr\fR [\-vh] [\-C | \-M] \-S\ \fIREPATTR\fR \fIpath\fR
+.HP \w'\fBgfrepattr\fR\ 'u
+\fBgfrepattr\fR [\-vh] \-r \fIpath\fR [\fIpath\fR...]
+.HP \w'\fBgfrepattr\fR\ 'u
+\fBgfrepattr\fR [\-vh] \-c \fIpath\fR
+.HP \w'\fBgfrepattr\fR\ 'u
+\fBgfrepattr\fR [\-v] \-w [\-t\ \fITIMEOUT\fR] \fIpath\fR [\fIpath\fR...]
+.SH "DESCRIPTION"
+.PP
+pathに指定したファイルないしディレクトリに関する自動ファイル複製作成数を操作します。 オプションを指定しない場合は、設定された自動複製作成数を表示します。 総自動複製作成数(NCOPY)とホストグループごとの自動複製作成数(REPATTR)の両方が指定されていたら、 それぞれの値を2行で表示します。
+\fB\-v\fRオプションを指定すると、自動複製作成数を設定している先祖のディレクトリまでのパス名も含めて表示します。
+.SH "OPTIONS"
+.PP
+\fB\-s\fR \fINCOPY\fR
+.RS 4
+ファイルまたはディレクトリに、自動複製作成数を設定します。
+.RE
+.PP
+\fB\-S\fR \fIREPATTR\fR
+.RS 4
+ファイルまたはディレクトリに、ホストグループごとの自動複製作成数を設定します。
+.sp
+
+\fINCOPY\fRと\fIREPATTR\fRの両方が設定されている場合、
+\fIREPATTR\fRに設定された複製数の合計Nが\fINCOPY\fRよりも大きければ、最低でもN個の複製が作成されます。 そうでなければ、\fIREPATTR\fR従って複製を作成し、 さらに、複製数の合計が\fINCOPY\fRになるように複製を作成します。
+.sp
+
+\fIREPATTR\fR
+の形式を以下の BNF で示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    <repattr> ::= <an_attr> | <an_attr> \*(Aq,\*(Aq <repattr>
+    <an_attr> ::= <host_group> \*(Aq:\*(Aq <num_rep>
+    <host_group> ::= <string>
+    <num_rep> ::= <integer>
+
+  例)
+    group0:2
+    group0:1,group1:2,group2:3
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+自動複製作成数の設定を消去します。 複数個のpathを指定できます。
+.RE
+.PP
+\fB\-c\fR
+.RS 4
+実際のファイル複製数を表示します。
+.RE
+.PP
+\fB\-w\fR
+.RS 4
+設定に従った個数の複製が作成されているかどうか確認し、複製作成中であれば、複製作成が完了するまで待ちます。 複数個のpathを指定できます。 pathにディレクトリを指定すれば、そのディレクトリ以下すべてのファイルを確認します。
+.RE
+.PP
+\fB\-t\fR \fITIMEOUT\fR
+.RS 4
+\fB\-w\fRオプション使用時に、設定に従った個数の複製が作成開始されるまで待つ時間を秒で指定します。 複製作成中であればタイムアウトしません。デフォルトは30秒です。
+.RE
+.PP
+\fB\-h\fR
+.RS 4
+シンボリックリンクを辿らないようにします。
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+詳細なメッセージを表示します。
+.RE
+.PP
+\fB\-?\fR
+.RS 4
+引数オプションを表示します。
+.RE
+.SH "SEE ALSO"
+.PP
+
+\fBgfhostgroup\fR(1)
