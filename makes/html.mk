@@ -36,6 +36,7 @@ html-install:
 	done
 
 html-clean:
+	-test -z "$(DOCBOOK2HTML_XSL)" || $(RM) -f $(DOCBOOK2HTML_XSL)
 	-test -z "$(EXTRA_CLEAN_TARGETS)" || $(RM) -f $(EXTRA_CLEAN_TARGETS)
 
 html-veryclean: clean
@@ -47,10 +48,20 @@ html-distclean: veryclean
 html-gfregister:
 html-man:
 
-$(dstsubst): $(srcsubst)
-	$(DOCBOOK2HTML) $(srcsubst)
+$(DOCBOOK2HTML_XSL): $(srcdir)/$(DOCBOOK2HTML_XSL).in
+	for i in -- $(DOCBOOK_XSLDIRS); do \
+		case $$i in --) continue;; esac; \
+		test -d $$i \
+			&& sed -e "s|@DOCBOOK_XSLDIR@|$$i|" $? > $@ \
+			&& exit 0; \
+	done; \
+	echo "No DocBook XSL directory found."; \
+	exit 1
 
-html-html:
+$(dstsubst): $(srcsubst)
+	$(XSLTPROC) $(DOCBOOK2HTML_XSL) $(srcsubst) > $(dstsubst)
+
+html-html: $(DOCBOOK2HTML_XSL)
 	for i in -- $(HTMLSRC); do \
 		case $$i in --) continue;; esac; \
 		$(MAKE) srcsubst=$(DOCBOOK_DIR)/$${i}.docbook \

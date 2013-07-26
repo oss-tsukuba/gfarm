@@ -11,5 +11,6 @@ htmldir=$(default_htmldir)/en/ref/man5
 DOCBOOK_DIR=$(top_srcdir)/doc/docbook/en/ref/man5
 include $(DOCBOOK_DIR)/Makefile.inc
 HTMLSRC=$(DOCBOOK)
+DOCBOOK2HTML_XSL=$(srcdir)/../docbook2html.xsl
 
 include $(top_srcdir)/makes/html.mk
