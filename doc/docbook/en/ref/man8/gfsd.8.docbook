@@ -12,7 +12,7 @@
 </refmeta>
 
 <refnamediv id='name'>
-<refname>gfsd(8)</refname>
+<refname>gfsd</refname>
 <refpurpose>Gfarm filesystem daemon</refpurpose>
 </refnamediv>
 

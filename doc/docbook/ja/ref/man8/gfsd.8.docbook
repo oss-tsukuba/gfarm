@@ -11,7 +11,7 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 <refnamediv id='name'>
-<refname>gfsd(8)</refname>
+<refname>gfsd</refname>
 <refpurpose>Gfarmファイルシステム・デーモン</refpurpose>
 </refnamediv>
 
