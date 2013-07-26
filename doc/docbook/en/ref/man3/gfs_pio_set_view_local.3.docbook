@@ -1,7 +1,10 @@
- <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+ <?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfs-pio-set-view-local.3'>
+<refentry id="gfs-pio-set-view-local.3">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -11,20 +14,20 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_set_view_local</refname>
 <refpurpose>change file view to the corresponding fragment</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_set_view_local</function></funcdef>
-    <paramdef>GFS_File <parameter>gf</parameter></paramdef>
-    <paramdef>int <parameter>flags</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_pio_set_view_local</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">gf</parameter></paramdef>
+    <paramdef>int <parameter moreinfo="none">flags</parameter></paramdef>
 </funcprototype>
 
 
@@ -33,33 +36,33 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><function>gfs_pio_set_view_local()</function> changes the process's view of the data
-in the file specified by <parameter>gf</parameter> to a file fragment in the local file
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><function moreinfo="none">gfs_pio_set_view_local()</function> changes the process's view of the data
+in the file specified by <parameter moreinfo="none">gf</parameter> to a file fragment in the local file
 view.  The local file view model assumes each process has its own file
-fragment which is specified by the argument <parameter>node</parameter> of
-<function>gfs_pio_set_local(3)</function>.</para>
+fragment which is specified by the argument <parameter moreinfo="none">node</parameter> of
+<function moreinfo="none">gfs_pio_set_local(3)</function>.</para>
 
 <para>The total number of file fragments is also specified by the argument
-<parameter>nnode</parameter> of <function>gfs_pio_set_local(3)</function>.  If it is different from
+<parameter moreinfo="none">nnode</parameter> of <function moreinfo="none">gfs_pio_set_local(3)</function>.  If it is different from
 the total fragment number of the existent file, it is erroneous.</para>
 
 <para>Before changing to the local file view, it is necessary to call
-<function>gfs_pio_set_local(3)</function> in advance.</para>
+<function moreinfo="none">gfs_pio_set_local(3)</function> in advance.</para>
 
-<para>Values of <parameter>flag</parameter> are constructed by a bitwise-inclusive-OR of
+<para>Values of <parameter moreinfo="none">flag</parameter> are constructed by a bitwise-inclusive-OR of
 <constant>GFARM_FILE_SEQUENTIAL</constant>,
 <constant>GFARM_FILE_REPLICATE</constant>,
 and
 <constant>GFARM_FILE_NOT_REPLICATE</constant>.
-For details, refer to <function>gfs_pio_set_view_index(3)</function>.</para>
+For details, refer to <function moreinfo="none">gfs_pio_set_view_index(3)</function>.</para>
 
 <para>By default, Gfarm files are accessed as a whole file in global file
 view where each fragment can be seamlessly accessed.</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -96,7 +99,7 @@ pointed strings.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

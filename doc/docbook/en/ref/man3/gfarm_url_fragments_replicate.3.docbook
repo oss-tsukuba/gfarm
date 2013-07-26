@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfarm-url-fragments-replicate.3'>
+<refentry id="gfarm-url-fragments-replicate.3">
 
 <refentryinfo><date>6 Sep 2005</date></refentryinfo>
 
@@ -11,21 +14,21 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfarm_url_fragments_replicate</refname>
 <refpurpose>Create a file replica of a file</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfarm_url_fragments_replicate</function></funcdef>
-    <paramdef>const char *<parameter>gfarm_url</parameter></paramdef>
-    <paramdef>int <parameter>ndsthosts</parameter></paramdef>
-    <paramdef>char **<parameter>dsthosts</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfarm_url_fragments_replicate</function></funcdef>
+    <paramdef>const char *<parameter moreinfo="none">gfarm_url</parameter></paramdef>
+    <paramdef>int <parameter moreinfo="none">ndsthosts</parameter></paramdef>
+    <paramdef>char **<parameter moreinfo="none">dsthosts</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -33,21 +36,21 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
-<para> <function>gfarm_url_fragments_replicate()</function> creates a
-file replica of a file <parameter>gfarm_url</parameter> to destination
-hosts specified by a string array <parameter>dsthosts</parameter> with
-a length <parameter>ndsthosts</parameter>.  It cannot replicate an
+<para> <function moreinfo="none">gfarm_url_fragments_replicate()</function> creates a
+file replica of a file <parameter moreinfo="none">gfarm_url</parameter> to destination
+hosts specified by a string array <parameter moreinfo="none">dsthosts</parameter> with
+a length <parameter moreinfo="none">ndsthosts</parameter>.  It cannot replicate an
 executable file.</para>
 
 <para> When the total number of file fragments is greater than the
-specified total number of hosts <parameter>ndsthosts</parameter>,
+specified total number of hosts <parameter moreinfo="none">ndsthosts</parameter>,
 destination hosts are allocated in round robin.  </para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -80,7 +83,7 @@ pointed strings.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfarm_url_section_replicate_from_to</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfarm_url_section_replicate_from_to</refentrytitle><manvolnum>3</manvolnum></citerefentry>

@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfs-glob-init.3'>
+
+<refentry id="gfs-glob-init.3">
 
 <refentryinfo><date>11 Sep 2003</date></refentryinfo>
 
@@ -10,19 +13,19 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_glob_init</refname>
 <refpurpose>allocates memory for types of path names</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_glob_init</function></funcdef>
-    <paramdef>gfs_glob_t * <parameter>listp</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_glob_init</function></funcdef>
+    <paramdef>gfs_glob_t * <parameter moreinfo="none">listp</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -30,14 +33,14 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
-<para><function>gfs_glob_init()</function> allocates memory space for
-<function>gfs_glob(3)</function> and
-<function>gfs_glob_add(3)</function>.  The memory space is stored to
-<parameter>listp</parameter>.</para> </refsect1>
+<para><function moreinfo="none">gfs_glob_init()</function> allocates memory space for
+<function moreinfo="none">gfs_glob(3)</function> and
+<function moreinfo="none">gfs_glob_add(3)</function>.  The memory space is stored to
+<parameter moreinfo="none">listp</parameter>.</para> </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -62,7 +65,7 @@ pointed strings.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_glob</refentrytitle><manvolnum>3</manvolnum></citerefentry>
 <citerefentry><refentrytitle>gfs_glob_add</refentrytitle><manvolnum>3</manvolnum></citerefentry>

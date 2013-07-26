@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfperf-autoreplica.1'>
+
+<refentry id="gfperf-autoreplica.1">
 
 <refentryinfo><date>19 May 2012</date></refentryinfo>
 
@@ -9,35 +12,35 @@
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfperf-autoreplica</refname>
 <refpurpose>Gfarm 自動複製機能の性能測定を行う。</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfperf-autoreplica</command>
-    <arg choice='opt'>-t, --testdir <replaceable>テストディレクトリ</replaceable></arg>
-    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fsマウントポイント</replaceable></arg>
-    <arg choice='opt'>-l, --filesize <replaceable>ファイルサイズ</replaceable></arg>
-    <arg choice='opt'>-f, --number <replaceable>ファイル数</replaceable></arg>
-    <arg choice='opt'>-r, --replica <replaceable>複製数</replaceable></arg>
-    <arg choice='opt'>-s, --stop <replaceable>待ち時間</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfperf-autoreplica</command>
+    <arg choice="opt" rep="norepeat">-t, --testdir <replaceable>テストディレクトリ</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-m, --gfarm2fs <replaceable>gfarm2fsマウントポイント</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-l, --filesize <replaceable>ファイルサイズ</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-f, --number <replaceable>ファイル数</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-r, --replica <replaceable>複製数</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-s, --stop <replaceable>待ち時間</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para>引数 <parameter>テストディレクトリ</parameter> に指定されたサイズのファイルを指定された数作成し、その作成性能を測定します。それぞれのファイルは指定された複製数で自動複製が行われます。
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>引数 <parameter moreinfo="none">テストディレクトリ</parameter> に指定されたサイズのファイルを指定された数作成し、その作成性能を測定します。それぞれのファイルは指定された複製数で自動複製が行われます。
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-t, --testdir</option> <parameter>テストディレクトリ</parameter></term>
+<term><option>-t, --testdir</option> <parameter moreinfo="none">テストディレクトリ</parameter></term>
 <listitem>
 <para>
 テストを実施するディレクトリを指定します。
@@ -48,7 +51,7 @@ gfarm url (gfarm:///で始まるもの) を指定します。
 </varlistentry>
 
 <varlistentry>
-<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fsマウントポイント</parameter></term>
+<term><option>-m, --gfarm2fs</option> <parameter moreinfo="none">gfarm2fsマウントポイント</parameter></term>
 <listitem>
 <para>
 gfarm2fsのマウントポイントを指定します。
@@ -57,7 +60,7 @@ gfarm2fsのマウントポイントを指定します。
 </varlistentry>
 
 <varlistentry>
-<term><option>-l, --filesize</option> <parameter>ファイルサイズ</parameter></term>
+<term><option>-l, --filesize</option> <parameter moreinfo="none">ファイルサイズ</parameter></term>
 <listitem>
 <para>
 使用するファイルサイズを指定します。
@@ -67,7 +70,7 @@ gfarm2fsのマウントポイントを指定します。
 </varlistentry>
 
 <varlistentry>
-<term><option>-f, --number</option> <parameter>ファイル数</parameter></term>
+<term><option>-f, --number</option> <parameter moreinfo="none">ファイル数</parameter></term>
 <listitem>
 <para>
 生成するファイル数を指定します。
@@ -77,7 +80,7 @@ gfarm2fsのマウントポイントを指定します。
 </varlistentry>
 
 <varlistentry>
-<term><option>-r, --replica</option> <parameter>複製数</parameter></term>
+<term><option>-r, --replica</option> <parameter moreinfo="none">複製数</parameter></term>
 <listitem>
 <para>
 自動複製機能で複製する数を指定します。
@@ -87,7 +90,7 @@ gfarm2fsのマウントポイントを指定します。
 </varlistentry>
 
 <varlistentry>
-<term><option>-s, --stop</option> <parameter>待ち時間</parameter></term>
+<term><option>-s, --stop</option> <parameter moreinfo="none">待ち時間</parameter></term>
 <listitem>
 <para>
 複製が作成されるのを最大何秒待つのかを指定します。

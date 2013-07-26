@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gffindxmlattr.1'>
+
+<refentry id="gffindxmlattr.1">
 
 <refentryinfo><date>18 Aug 2008</date></refentryinfo>
 
@@ -10,27 +13,27 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gffindxmlattr</refname>
 <refpurpose>Find XML extended attributes by XPath query</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gffindxmlattr</command>
-    <arg choice='opt'>-d <replaceable>depth</replaceable></arg>
-    <arg choice='opt'>-F <replaceable>delim</replaceable></arg>
-    <group choice='opt'>
-      <arg choice='plain'><replaceable>XPath</replaceable></arg>
-      <arg choice='opt'>-f <replaceable>XPath-file</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gffindxmlattr</command>
+    <arg choice="opt" rep="norepeat">-d <replaceable>depth</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-F <replaceable>delim</replaceable></arg>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat"><replaceable>XPath</replaceable></arg>
+      <arg choice="opt" rep="norepeat">-f <replaceable>XPath-file</replaceable></arg>
     </group>
-    <arg choice='plain'><replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
 gffindxmlattr finds XML extended attributes by a specified XPath
@@ -54,7 +57,7 @@ attribute separated by the delim.
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
 <term><option>-d</option> depth</term>
@@ -85,7 +88,7 @@ extended attribute name.  By detault, the delimiter is TAB.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfxattr</refentrytitle><manvolnum>1</manvolnum>

@@ -1,7 +1,10 @@
- <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+ <?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfs-pio-getc.3'>
+<refentry id="gfs-pio-getc.3">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -11,19 +14,19 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_getc</refname>
 <refpurpose>input of a charactor</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>int </returnvalue>gfs_pio_getc</function></funcdef>
-    <paramdef>GFS_File <parameter>gf</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>int </returnvalue>gfs_pio_getc</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">gf</parameter></paramdef>
 </funcprototype>
 
 
@@ -32,31 +35,31 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><function>gfs_pio_getc()</function> reads the next character from <parameter>gf</parameter>.</para>
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><function moreinfo="none">gfs_pio_getc()</function> reads the next character from <parameter moreinfo="none">gf</parameter>.</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>EOF</constant></term>
 <listitem>
-<para><function>gfs_pio_getc()</function> encountered end of file or error.  <constant>EOF</constant> is
-defined in &lt;stdio.h&gt;.  <function>gfs_pio_error(3)</function> is used to know end of
+<para><function moreinfo="none">gfs_pio_getc()</function> encountered end of file or error.  <constant>EOF</constant> is
+defined in &lt;stdio.h&gt;.  <function moreinfo="none">gfs_pio_error(3)</function> is used to know end of
 file or error.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term>Others</term>
 <listitem>
-<para><function>gfs_pio_getc()</function> returns the next character from the file.</para>
+<para><function moreinfo="none">gfs_pio_getc()</function> returns the next character from the file.</para>
 </listitem>
 </varlistentry>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_eof</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

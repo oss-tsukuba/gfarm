@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfhostgroup.1'>
+
+<refentry id="gfhostgroup.1">
 
 <refentryinfo><date>14 Jun 2012</date></refentryinfo>
 
@@ -10,60 +13,60 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfhostgroup</refname>
 <refpurpose>Gfarm ホストグループ管理コマンド</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfhostgroup</command>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <group choice='opt'>
-      <arg choice='plain'><replaceable>host</replaceable></arg>
-      <group choice='opt'>
-        <arg choice='opt' rep='repeat'><replaceable>host</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfhostgroup</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat"><replaceable>host</replaceable></arg>
+      <group choice="opt" rep="norepeat">
+        <arg choice="opt" rep="repeat"><replaceable>host</replaceable></arg>
       </group>
     </group>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfhostgroup</command>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='plain'>-s <replaceable>host</replaceable></arg>
-    <arg choice='plain'><replaceable>groupname</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfhostgroup</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-s <replaceable>host</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>groupname</replaceable></arg>
 </cmdsynopsis>
 
-<cmdsynopsis>
-  <command>gfhostgroup</command>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='plain'>-r <replaceable>host</replaceable></arg>
-      <group choice='opt'>
-        <arg choice='opt' rep='repeat'><replaceable>host</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfhostgroup</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-r <replaceable>host</replaceable></arg>
+      <group choice="opt" rep="norepeat">
+        <arg choice="opt" rep="repeat"><replaceable>host</replaceable></arg>
       </group>
 </cmdsynopsis>
 </refsynopsisdiv>
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command>gfhostgroup</command> はGfarm ファイルシステムにおける Gfarm ホストグループ
-（いわゆる<command>ファイルシステムノードグループ</command> 、略して <command>fsn グループ</command>
-と呼ばれるもの）の管理を行います。ホストグループは<command>レプリケーション属性を基にした
+<command moreinfo="none">gfhostgroup</command> はGfarm ファイルシステムにおける Gfarm ホストグループ
+（いわゆる<command moreinfo="none">ファイルシステムノードグループ</command> 、略して <command moreinfo="none">fsn グループ</command>
+と呼ばれるもの）の管理を行います。ホストグループは<command moreinfo="none">レプリケーション属性を基にした
 ファイルレプリケーション</command>に使用されます。
 </para>
 
 <para>
 デフォルトでは登録済みのホストグループをすべて表示します。
 ホストグループ の表示はどのユーザでも実行できます。
-<command>-s</command> オプションによるホストグループへのホスト追加と、
-<command>-r</command> オプションによるホストグループからのホストの削除は
+<command moreinfo="none">-s</command> オプションによるホストグループへのホスト追加と、
+<command moreinfo="none">-r</command> オプションによるホストグループからのホストの削除は
 Gfarm 管理者のみが実行できます。
 </para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
   <varlistentry>
@@ -98,7 +101,7 @@ Gfarm 管理者のみが実行できます。
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfrepattr</refentrytitle><manvolnum>1</manvolnum>

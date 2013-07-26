@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfkey.1'>
+<refentry id="gfkey.1">
 
 <refentryinfo><date>25 Feb 2010</date></refentryinfo>
 
@@ -11,23 +14,23 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfkey</refname>
 <refpurpose>management of Gfarm session keys</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfkey</command>
-    <arg choice='opt'><replaceable>options</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfkey</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfkey</command> manages the session key file,
-<filename>$HOME/.gfarm_shared_key</filename>,
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfkey</command> manages the session key file,
+<filename moreinfo="none">$HOME/.gfarm_shared_key</filename>,
 that is used for user authentication by a shared secret key
 in a trusted environment when
 connecting to gfsd and/or gfmd.</para>
@@ -40,7 +43,7 @@ the -c or -f option to every filesystem node, in advance.
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
@@ -60,7 +63,7 @@ key already exists.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-p</option> <parameter>period</parameter></term>
+<term><option>-p</option> <parameter moreinfo="none">period</parameter></term>
 <listitem>
 <para>Specifies the term of validity in seconds.  This option has to be
 used with the -c or -f option.</para>
@@ -82,7 +85,7 @@ used with the -c or -f option.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-L</option> <parameter>message-priority-level</parameter></term>
+<term><option>-L</option> <parameter moreinfo="none">message-priority-level</parameter></term>
 <listitem>
 <para>Specifies a level of the log priority.  The log messages that
 have higher or the same priority than the specified priority are
@@ -103,11 +106,11 @@ this option.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='files'><title>FILES</title>
+<refsect1 id="files"><title>FILES</title>
 
 <variablelist>
 <varlistentry>
-<term><filename>$HOME/.gfarm_shared_key</filename></term>
+<term><filename moreinfo="none">$HOME/.gfarm_shared_key</filename></term>
 <listitem>
 <para>a file for a session key</para>
 </listitem>

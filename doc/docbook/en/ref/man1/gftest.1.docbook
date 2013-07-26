@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id: gfls.1.docbook 4078 2009-03-11 08:44:56Z n-soda $ -->
 
-<refentry id='gftest.1'>
+<refentry id="gftest.1">
 
 <refentryinfo><date>7 Apr 2013</date></refentryinfo>
 
@@ -11,76 +14,76 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gftest</refname>
 <refpurpose>check entry type</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gftest</command>
-    <arg choice='plain'><replaceable>options</replaceable></arg>
-    <arg choice='plain'><replaceable>path</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gftest</command>
+    <arg choice="plain" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>Check file or directory information.</para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
 
 <varlistentry>
 <term><option>-d</option></term>
 <listitem>
-<para>returns 0 if an entry specified by <parameter>path</parameter> is a directory.</para>
+<para>returns 0 if an entry specified by <parameter moreinfo="none">path</parameter> is a directory.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-e</option></term>
 <listitem>
-<para>returns 0 if an entry specified by <parameter>path</parameter> exists.</para>
+<para>returns 0 if an entry specified by <parameter moreinfo="none">path</parameter> exists.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-f</option></term>
 <listitem>
-<para>returns 0 if an entry specified by <parameter>path</parameter> is a regular file.</para>
+<para>returns 0 if an entry specified by <parameter moreinfo="none">path</parameter> is a regular file.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-h</option></term>
 <listitem>
-<para>returns 0 if an entry specified by <parameter>path</parameter> is a symbolic link.</para>
+<para>returns 0 if an entry specified by <parameter moreinfo="none">path</parameter> is a symbolic link.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-s</option></term>
 <listitem>
-<para>returns 0 if an entry specified by <parameter>path</parameter> is a regular file whose size is greater than 0.</para>
+<para>returns 0 if an entry specified by <parameter moreinfo="none">path</parameter> is a regular file whose size is greater than 0.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-L</option></term>
 <listitem>
-<para>returns 0 if an entry specified by <parameter>path</parameter> is a regular file and stored in the same host.</para>
+<para>returns 0 if an entry specified by <parameter moreinfo="none">path</parameter> is a regular file and stored in the same host.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-R</option></term>
 <listitem>
-<para>returns 0 if an entry specified by <parameter>path</parameter> is a regular file and stored in a remote host.</para>
+<para>returns 0 if an entry specified by <parameter moreinfo="none">path</parameter> is a regular file and stored in a remote host.</para>
 </listitem>
 </varlistentry>
 

@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfrep.1'>
+
+<refentry id="gfrep.1">
 
 <refentryinfo><date>31 May 2008</date></refentryinfo>
 
@@ -9,29 +12,29 @@
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfrep</refname>
 <refpurpose>Gfarm ファイルの複製を作成する．</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfrep</command>
-    <arg choice='opt'>-mnqvx</arg>
-    <arg choice='opt'>-S <replaceable>複製元ドメイン名</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>複製先ドメイン名</replaceable></arg>
-    <arg choice='opt'>-h <replaceable>複製元ホスト指定ファイル</replaceable></arg>
-    <arg choice='opt'>-H <replaceable>複製先ホスト指定ファイル</replaceable></arg>
-    <arg choice='opt'>-N <replaceable>複製数</replaceable></arg>
-    <arg choice='opt'>-j <replaceable>並列数</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrep</command>
+    <arg choice="opt" rep="norepeat">-mnqvx</arg>
+    <arg choice="opt" rep="norepeat">-S <replaceable>複製元ドメイン名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>複製先ドメイン名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-h <replaceable>複製元ホスト指定ファイル</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-H <replaceable>複製先ホスト指定ファイル</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-N <replaceable>複製数</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-j <replaceable>並列数</replaceable></arg>
+    <arg choice="plain" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para>引数 <parameter>path</parameter> で指定したファイルの複製を，
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>引数 <parameter moreinfo="none">path</parameter> で指定したファイルの複製を，
 指定されたホスト群に，指定された複製の数だけ作成します．
 複製作成元のホスト群が指定された場合，
 そのホスト群にファイルの複製があるときに限り，
@@ -39,15 +42,15 @@
 ホスト群は，ドメイン名とホスト指定ファイルにより指定可能ですが，
 両方が指定された場合は両方の条件を満たすホスト群が指定されたことになります．
 </para>
-<para><parameter>path</parameter> がディレクトリの場合，
+<para><parameter moreinfo="none">path</parameter> がディレクトリの場合，
 そのディレクトリ以下のファイルの複製を再帰的に作成します．</para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-S</option> <parameter>複製元ドメイン名</parameter></term>
+<term><option>-S</option> <parameter moreinfo="none">複製元ドメイン名</parameter></term>
 <listitem>
 <para>
 ファイル複製元のホストのドメイン名を指定します．
@@ -56,7 +59,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-D</option> <parameter>複製先ドメイン名</parameter></term>
+<term><option>-D</option> <parameter moreinfo="none">複製先ドメイン名</parameter></term>
 <listitem>
 <para>
 ファイル複製作成先のホストのドメイン名を指定します．
@@ -68,7 +71,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-h</option> <parameter>複製元ホスト指定ファイル</parameter></term>
+<term><option>-h</option> <parameter moreinfo="none">複製元ホスト指定ファイル</parameter></term>
 <listitem>
 <para>ファイル複製元のホスト名のリストを記述した
 ファイル名を指定します．
@@ -82,7 +85,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-H</option> <parameter>複製先ホスト指定ファイル</parameter></term>
+<term><option>-H</option> <parameter moreinfo="none">複製先ホスト指定ファイル</parameter></term>
 <listitem>
 <para>ファイルの複製を作成するホスト名のリストを記述した
 ファイル名を指定します．
@@ -96,7 +99,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-N</option> <parameter>複製数</parameter></term>
+<term><option>-N</option> <parameter moreinfo="none">複製数</parameter></term>
 <listitem>
 <para>
 必要な複製の数を指定します．
@@ -111,7 +114,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-j</option> <parameter>並列数</parameter></term>
+<term><option>-j</option> <parameter moreinfo="none">並列数</parameter></term>
 <listitem>
 <para>指定された並列数でファイル複製を作成します．
 このオプションは OpenMP C コンパイラでコンパイルされたときに
@@ -178,7 +181,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='bugs'><title>BUGS</title>
+<refsect1 id="bugs"><title>BUGS</title>
 <para>
 複製作成元となるホストは，
 実際には複製作成元として指定されたホスト群から選ばれるとは限りません．

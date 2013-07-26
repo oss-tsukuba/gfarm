@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfs-rename.3'>
+<refentry id="gfs-rename.3">
 
 <refentryinfo><date>21 Feb 2005</date></refentryinfo>
 
@@ -11,20 +14,20 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_rename</refname>
 <refpurpose>change the name or location of a file</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_rename</function></funcdef>
-    <paramdef>char * <parameter>gfarm_url_from</parameter></paramdef>
-    <paramdef>char * <parameter>gfarm_url_to</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_rename</function></funcdef>
+    <paramdef>char * <parameter moreinfo="none">gfarm_url_from</parameter></paramdef>
+    <paramdef>char * <parameter moreinfo="none">gfarm_url_to</parameter></paramdef>
 </funcprototype>
 
 
@@ -33,22 +36,22 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><function>gfs_rename</function> renames a file or directory
-<parameter>gfarm_url_from</parameter> to 
-<parameter>gfarm_url_to</parameter>.</para>
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><function moreinfo="none">gfs_rename</function> renames a file or directory
+<parameter moreinfo="none">gfarm_url_from</parameter> to 
+<parameter moreinfo="none">gfarm_url_to</parameter>.</para>
 
-<para>If <parameter>gfarm_url_to</parameter> already exists,
-it will be replaced.  In this case, when <parameter>gfarm_url_from</parameter>
-is a file <parameter>gfarm_url_to</parameter> also must be a file, when
-<parameter>gfarm_url_from</parameter> is a directory,
-<parameter>gfarm_url_to</parameter> must be a empty directory.</para>
+<para>If <parameter moreinfo="none">gfarm_url_to</parameter> already exists,
+it will be replaced.  In this case, when <parameter moreinfo="none">gfarm_url_from</parameter>
+is a file <parameter moreinfo="none">gfarm_url_to</parameter> also must be a file, when
+<parameter moreinfo="none">gfarm_url_from</parameter> is a directory,
+<parameter moreinfo="none">gfarm_url_to</parameter> must be a empty directory.</para>
 
-<para><function>Gfs_rename()</function> can't rename a directory
+<para><function moreinfo="none">Gfs_rename()</function> can't rename a directory
 to a subdirectory of itself.</para>
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -71,8 +74,8 @@ to a subdirectory of itself.</para>
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
-<para>The parent directory of <parameter>gfarm_url_from</parameter> or
-<parameter>gfarm_url_to</parameter> did not allow write permission.
+<para>The parent directory of <parameter moreinfo="none">gfarm_url_from</parameter> or
+<parameter moreinfo="none">gfarm_url_to</parameter> did not allow write permission.
 </para>
 </listitem>
 </varlistentry>
@@ -80,27 +83,27 @@ to a subdirectory of itself.</para>
 <term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
 <listitem>
 <para>A attempt was made to rename the directory
-<parameter>gfarm_url_from</parameter> to a subdirectory of itself.</para>
+<parameter moreinfo="none">gfarm_url_from</parameter> to a subdirectory of itself.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
-<para><parameter>gfarm_url_from</parameter> does not exist.</para>
+<para><parameter moreinfo="none">gfarm_url_from</parameter> does not exist.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_IS_A_DIRECTORY</constant></term>
 <listitem>
-<para><parameter>gfarm_url_to</parameter> is a existing directory,
-though <parameter>gfarm_url_from</parameter> is not a directory.</para>
+<para><parameter moreinfo="none">gfarm_url_to</parameter> is a existing directory,
+though <parameter moreinfo="none">gfarm_url_from</parameter> is not a directory.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_NOT_IS_A_DIRECTORY</constant></term>
 <listitem>
-<para><parameter>gfarm_url_to</parameter> is not a directory.
-though <parameter>gfarm_url_from</parameter> is a directory.</para>
+<para><parameter moreinfo="none">gfarm_url_to</parameter> is not a directory.
+though <parameter moreinfo="none">gfarm_url_from</parameter> is a directory.</para>
 </listitem>
 </varlistentry>
 

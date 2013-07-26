@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfls.1'>
+
+<refentry id="gfls.1">
 
 <refentryinfo><date>27 Apr 2007</date></refentryinfo>
 
@@ -10,26 +13,26 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfls</refname>
 <refpurpose>Gfarm ディレクトリの内容を表示する。</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfls</command>
-    <arg choice='opt'><replaceable>オプション</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfls</command>
+    <arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+    <arg choice="opt" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>path に指定したファイルないしディレクトリの名前と
 関連する情報を表示します。</para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
@@ -71,7 +74,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-E</option> <parameter>秒数</parameter></term>
+<term><option>-E</option> <parameter moreinfo="none">秒数</parameter></term>
 <listitem>
 <para>
 属性キャッシュを保持する秒数を指定します。

@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfps.1'>
+<refentry id="gfps.1">
 
 <refentryinfo><date>12 Nov 2006</date></refentryinfo>
 
@@ -11,29 +14,29 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfps</refname>
 <refpurpose>report process status</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfps</command>
-    <arg choice='opt'><replaceable>options</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>jobID</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfps</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="opt" rep="repeat"><replaceable>jobID</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfps</command> prints information about processes
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfps</command> prints information about processes
 specified by the arguments.  If the argments are missing, it prints
 information about all processes that have the same effective user
 ID.</para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>

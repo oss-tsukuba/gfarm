@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfwhere.1'>
+<refentry id="gfwhere.1">
 
 <refentryinfo><date>12 Mov 2006</date></refentryinfo>
 
@@ -11,28 +14,28 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfwhere</refname>
 <refpurpose>print replica locations</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfwhere</command>
-    <arg choice='opt'>-r, -R</arg>
-    <arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfwhere</command>
+    <arg choice="opt" rep="norepeat">-r, -R</arg>
+    <arg choice="plain" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfwhere</command> prints replica locations of specified
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfwhere</command> prints replica locations of specified
 files.  When -r or -R option is specified, prints replica locations of
 subentries in specified directories recursively.</para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>

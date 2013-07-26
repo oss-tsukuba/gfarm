@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfmkdir.1'>
+
+<refentry id="gfmkdir.1">
 
 <refentryinfo><date>15 May 2008</date></refentryinfo>
 
@@ -10,28 +13,28 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfmkdir</refname>
 <refpurpose>make Gfarm directories</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfmkdir</command>
-    <arg choice='opt'><replaceable>options</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfmkdir</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="plain" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfmkdir</command> makes directories specified in
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfmkdir</command> makes directories specified in
 the arguments. The arguments must be a pathname in Gfarm file system.</para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
 <term><option>-p</option></term>
@@ -49,7 +52,7 @@ Create parent directories if needed.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfrmdir</refentrytitle><manvolnum>1</manvolnum>

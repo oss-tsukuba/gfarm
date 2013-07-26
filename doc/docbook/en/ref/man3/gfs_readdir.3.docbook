@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfs-readdir.3'>
+<refentry id="gfs-readdir.3">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -11,20 +14,20 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_readdir</refname>
 <refpurpose>read directory entry</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_readdir</function></funcdef>
-    <paramdef>GFS_Dir <parameter>dir</parameter></paramdef>
-    <paramdef>struct gfs_dirent ** <parameter>entryp</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_readdir</function></funcdef>
+    <paramdef>GFS_Dir <parameter moreinfo="none">dir</parameter></paramdef>
+    <paramdef>struct gfs_dirent ** <parameter moreinfo="none">entryp</parameter></paramdef>
 </funcprototype>
 
 
@@ -33,20 +36,20 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
-<para>The <function>gfs_readdir()</function> function reads a
-directory entry from <parameter>dir</parameter>, and returns the
+<para>The <function moreinfo="none">gfs_readdir()</function> function reads a
+directory entry from <parameter moreinfo="none">dir</parameter>, and returns the
 pointer of the entry to the address pointed to by
-<parameter>entryp</parameter>.  The buffer pointed to by
-<parameter>entryp</parameter> is destroyed when calling succeeding
-<function>gfs_readdir()</function> or
-<function>gfs_closedir()</function> with the same argument
-<parameter>dir</parameter>.</para>
+<parameter moreinfo="none">entryp</parameter>.  The buffer pointed to by
+<parameter moreinfo="none">entryp</parameter> is destroyed when calling succeeding
+<function moreinfo="none">gfs_readdir()</function> or
+<function moreinfo="none">gfs_closedir()</function> with the same argument
+<parameter moreinfo="none">dir</parameter>.</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -64,7 +67,7 @@ pointed strings.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_closedir</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_opendir</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

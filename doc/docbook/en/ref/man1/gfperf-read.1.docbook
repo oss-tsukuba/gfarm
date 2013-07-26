@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfperf-read.1'>
+
+<refentry id="gfperf-read.1">
 
 <refentryinfo><date>19 May 2012</date></refentryinfo>
 
@@ -9,40 +12,40 @@
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfperf-read</refname>
 <refpurpose>Gfarm measure file read performance</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfperf-read</command>
-    <arg choice='opt'>-t, --testdir <replaceable>test directory</replaceable></arg>
-    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fs mount point</replaceable></arg>
-    <arg choice='opt'>-l, --filesize <replaceable>file size</replaceable></arg>
-    <arg choice='opt'>-b, --bufsize <replaceable>buffer size</replaceable></arg>
-    <arg choice='opt'>-r, --random <replaceable>random </replaceable></arg>
-    <arg choice='opt'>-g, --gfsd <replaceable>gfsd name</replaceable></arg>
-    <arg choice='opt'>-k, --timeout <replaceable>timeout seconds</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfperf-read</command>
+    <arg choice="opt" rep="norepeat">-t, --testdir <replaceable>test directory</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-m, --gfarm2fs <replaceable>gfarm2fs mount point</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-l, --filesize <replaceable>file size</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-b, --bufsize <replaceable>buffer size</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-r, --random <replaceable>random </replaceable></arg>
+    <arg choice="opt" rep="norepeat">-g, --gfsd <replaceable>gfsd name</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-k, --timeout <replaceable>timeout seconds</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para>This command mesures file read performance of specified size of file in <parameter>test directory</parameter>.
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>This command mesures file read performance of specified size of file in <parameter moreinfo="none">test directory</parameter>.
 The test file is automatically created and not removed to be reused again.
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-t, --testdir</option> <parameter>test directory</parameter></term>
+<term><option>-t, --testdir</option> <parameter moreinfo="none">test directory</parameter></term>
 <listitem>
 <para>
-Test file is created in <parameter>test directory</parameter>.
+Test file is created in <parameter moreinfo="none">test directory</parameter>.
 Specify only gfarm url (that begins with gfarm:///) .
 The default is gfarm:///tmp .
 </para>
@@ -50,7 +53,7 @@ The default is gfarm:///tmp .
 </varlistentry>
 
 <varlistentry>
-<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fs mount point</parameter></term>
+<term><option>-m, --gfarm2fs</option> <parameter moreinfo="none">gfarm2fs mount point</parameter></term>
 <listitem>
 <para>
 Specify gfarm2fs mount point.
@@ -59,7 +62,7 @@ Specify gfarm2fs mount point.
 </varlistentry>
 
 <varlistentry>
-<term><option>-l, --filesize</option> <parameter>file size</parameter></term>
+<term><option>-l, --filesize</option> <parameter moreinfo="none">file size</parameter></term>
 <listitem>
 <para>
 File size to be created.
@@ -69,7 +72,7 @@ The default is 1M. (1G=2^20)
 </varlistentry>
 
 <varlistentry>
-<term><option>-b, --bufsize</option> <parameter>buffer size</parameter></term>
+<term><option>-b, --bufsize</option> <parameter moreinfo="none">buffer size</parameter></term>
 <listitem>
 <para>
 Buffer size to read test file.
@@ -79,7 +82,7 @@ The default is 4K. (1K=2^10)
 </varlistentry>
 
 <varlistentry>
-<term><option>-r, --random</option> <parameter>random</parameter></term>
+<term><option>-r, --random</option> <parameter moreinfo="none">random</parameter></term>
 <listitem>
 <para>
 Only if this option is specified, Reads test file randomly.
@@ -90,7 +93,7 @@ If this option is omitted, this command reads test file sequentially.
 </varlistentry>
 
 <varlistentry>
-<term><option>-g, --gfsd</option> <parameter>gfsd name</parameter></term>
+<term><option>-g, --gfsd</option> <parameter moreinfo="none">gfsd name</parameter></term>
 <listitem>
 <para>
 Specify gfsd name on which test file is created.
@@ -100,7 +103,7 @@ If this option is omitted, gfmd determines automatically.
 </varlistentry>
 
 <varlistentry>
-<term><option>-k, --timeout</option> <parameter>timeout seconds</parameter></term>
+<term><option>-k, --timeout</option> <parameter moreinfo="none">timeout seconds</parameter></term>
 <listitem>
 <para>
 Maximum read time in seconds.

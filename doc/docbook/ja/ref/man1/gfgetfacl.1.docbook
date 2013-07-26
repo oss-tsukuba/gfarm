@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfgetfacl.1'>
+
+<refentry id="gfgetfacl.1">
 
 <refentryinfo><date>4 Feb 2011</date></refentryinfo>
 
@@ -10,30 +13,30 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfgetfacl</refname>
 <refpurpose>Gfarm ファイルのアクセス制御リストを表示する</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfgetfacl</command>
-	<arg choice='opt'><replaceable>オプション</replaceable></arg>
-	<arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfgetfacl</command>
+	<arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+	<arg choice="opt" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
-<para><command>gfgetfacl</command> は Gfarm ファイルシステム上の
+<para><command moreinfo="none">gfgetfacl</command> は Gfarm ファイルシステム上の
 ファイルやディレクトリの名前，所有者名，グループ名，
 アクセスコントロールリスト (ACL) を表示します．</para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
 
@@ -47,14 +50,14 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='notes'><title>NOTES</title>
+<refsect1 id="notes"><title>NOTES</title>
 <para>
 Gfarm ファイルシステムから Gfarm のユーザやグループを削除しても、ACL エ
 ントリに指定したユーザ名やグループ名は ACL に残ります．
 </para>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfsetfacl</refentrytitle><manvolnum>1</manvolnum>

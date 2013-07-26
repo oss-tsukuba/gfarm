@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfwc.1'>
+<refentry id="gfwc.1">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -11,25 +14,25 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfwc</refname>
 <refpurpose>print the number of bytes, words, and lines in Gfarm files</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfmpirun_p4</command>
-    <arg choice='req'>gfarm:gfwc</arg>
-    <arg choice='plain'><replaceable>input-gfarm-URL</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfmpirun_p4</command>
+    <arg choice="req" rep="norepeat">gfarm:gfwc</arg>
+    <arg choice="plain" rep="norepeat"><replaceable>input-gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>This is a sample application invoked with gfmpirun_p4(1).</para>
 
-<para><command>gfwc</command> reads from <parameter>input-gfarm-URL</parameter> and prints the numbers of
+<para><command moreinfo="none">gfwc</command> reads from <parameter moreinfo="none">input-gfarm-URL</parameter> and prints the numbers of
 bytes, words, and lines to the standard output.</para>
 </refsect1>
 </refentry>

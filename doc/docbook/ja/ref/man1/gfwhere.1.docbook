@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfwhere.1'>
+
+<refentry id="gfwhere.1">
 
 <refentryinfo><date>14 May 2008</date></refentryinfo>
 
@@ -9,29 +12,29 @@
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfwhere</refname>
 <refpurpose>Gfarm ファイルのレプリカの所在を表示する。</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfwhere</command>
-    <arg choice='opt'>-r, -R</arg>
-    <arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfwhere</command>
+    <arg choice="opt" rep="norepeat">-r, -R</arg>
+    <arg choice="plain" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>指定したファイルについて、レプリカの所在を表示します。
 -r あるいは -R オプションを付けると、
 指定されたディレクトリに含まれるファイルのレプリカの所在を
 再帰的に表示します。</para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
 <term><option>-r, -R</option></term>

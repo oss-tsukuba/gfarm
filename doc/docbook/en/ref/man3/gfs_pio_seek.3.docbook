@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfs-pio-seek.3'>
+<refentry id="gfs-pio-seek.3">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -11,22 +14,22 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_seek</refname>
 <refpurpose>reposition a stream</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_seek</function></funcdef>
-    <paramdef>GFS_File <parameter>gf</parameter></paramdef>
-    <paramdef>file_offset_t <parameter>offset</parameter></paramdef>
-    <paramdef>int <parameter>whence</parameter></paramdef>
-    <paramdef>file_offset_t * <parameter>result</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_pio_seek</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">gf</parameter></paramdef>
+    <paramdef>file_offset_t <parameter moreinfo="none">offset</parameter></paramdef>
+    <paramdef>int <parameter moreinfo="none">whence</parameter></paramdef>
+    <paramdef>file_offset_t * <parameter moreinfo="none">result</parameter></paramdef>
 </funcprototype>
 
 
@@ -35,18 +38,18 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para>The <function>gfs_pio_seek()</function> function sets the file position indicator for
-the file <parameter>gf</parameter>.  The new position, measured in bytes, is obtained
-by adding <parameter>offset</parameter> bytes to the position specified by
-<parameter>whence</parameter>.  If <parameter>whence</parameter> is set to 0, 1, or 2, the offset is
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>The <function moreinfo="none">gfs_pio_seek()</function> function sets the file position indicator for
+the file <parameter moreinfo="none">gf</parameter>.  The new position, measured in bytes, is obtained
+by adding <parameter moreinfo="none">offset</parameter> bytes to the position specified by
+<parameter moreinfo="none">whence</parameter>.  If <parameter moreinfo="none">whence</parameter> is set to 0, 1, or 2, the offset is
 relative to the start of the file, the current position indicator, or
-end-of-file, respectively.  When <parameter>result</parameter> is not NULL, the new
-position returns to the address pointed by <parameter>result</parameter>.</para>
+end-of-file, respectively.  When <parameter moreinfo="none">result</parameter> is not NULL, the new
+position returns to the address pointed by <parameter moreinfo="none">result</parameter>.</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -70,7 +73,7 @@ pointed strings.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>

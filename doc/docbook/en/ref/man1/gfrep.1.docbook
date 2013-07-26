@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfrep.1'>
+<refentry id="gfrep.1">
 
 <refentryinfo><date>31 May 2008</date></refentryinfo>
 
@@ -11,32 +14,32 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfrep</refname>
 <refpurpose>replicate Gfarm files</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfrep</command>
-    <arg choice='opt'>-mnqvx</arg>
-    <arg choice='opt'>-S <replaceable>source-domainname</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>destination-domainname</replaceable></arg>
-    <arg choice='opt'>-h <replaceable>source-hostfile</replaceable></arg>
-    <arg choice='opt'>-H <replaceable>destination-hostfile</replaceable></arg>
-    <arg choice='opt'>-N <replaceable>num-of-replicas</replaceable></arg>
-    <arg choice='opt'>-j <replaceable>num-of-threads</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrep</command>
+    <arg choice="opt" rep="norepeat">-mnqvx</arg>
+    <arg choice="opt" rep="norepeat">-S <replaceable>source-domainname</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>destination-domainname</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-h <replaceable>source-hostfile</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-H <replaceable>destination-hostfile</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-N <replaceable>num-of-replicas</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-j <replaceable>num-of-threads</replaceable></arg>
+    <arg choice="plain" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command>gfrep</command> creates specified number of replicas of
-Gfarm files specified by the <parameter>path</parameter> to specified
+<command moreinfo="none">gfrep</command> creates specified number of replicas of
+Gfarm files specified by the <parameter moreinfo="none">path</parameter> to specified
 set of destination hosts.  When set of source hosts are specified,
 only files stored on the set of source hosts are replicated.  A set of
 hosts can be specified by a domain name and/or a host file.  When both
@@ -44,17 +47,17 @@ a domain name and a host file are specified, a set of hosts is
 determined by both conditions.
 </para>
 <para>
-If the <parameter>path</parameter> parameter is a directory,
+If the <parameter moreinfo="none">path</parameter> parameter is a directory,
 files under the directory will be copied recursively.
 </para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-S</option> <parameter>source-domainname</parameter></term>
+<term><option>-S</option> <parameter moreinfo="none">source-domainname</parameter></term>
 <listitem>
 <para>
 Specifies the domain name of source filesystem nodes from which
@@ -64,7 +67,7 @@ replicas will be copied.
 </varlistentry>
 
 <varlistentry>
-<term><option>-D</option> <parameter>destination-domainname</parameter></term>
+<term><option>-D</option> <parameter moreinfo="none">destination-domainname</parameter></term>
 <listitem>
 <para>
 Specifies the domain name of destination filesystem nodes to which
@@ -77,11 +80,11 @@ replicas may be copied to any available host.
 </varlistentry>
 
 <varlistentry>
-<term><option>-h</option> <parameter>source-hostfile</parameter></term>
+<term><option>-h</option> <parameter moreinfo="none">source-hostfile</parameter></term>
 <listitem>
 <para>Specifies a file which describes hostnames of
 source filesystem nodes from which the replica will be made.
-The <parameter>source-hostfile</parameter> consists of a filesystem
+The <parameter moreinfo="none">source-hostfile</parameter> consists of a filesystem
 node name on each line.
 </para>
 <para>
@@ -90,11 +93,11 @@ if ``-'' is specified, standard input is used to read the host list.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-H</option> <parameter>destination-hostfile</parameter></term>
+<term><option>-H</option> <parameter moreinfo="none">destination-hostfile</parameter></term>
 <listitem>
 <para>Specifies a file which describes hostnames of
 destination filesystem nodes on which the replica will be made.
-The <parameter>destination-hostfile</parameter> consists of a
+The <parameter moreinfo="none">destination-hostfile</parameter> consists of a
 filesystem node name on each line.
 </para>
 <para>
@@ -103,7 +106,7 @@ if ``-'' is specified, standard input is used to read the host list.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-N</option> <parameter>num-of-replicas</parameter></term>
+<term><option>-N</option> <parameter moreinfo="none">num-of-replicas</parameter></term>
 <listitem>
 <para>
 Specifies the required number of file replicas, counting already
@@ -116,7 +119,7 @@ neither any copying nor any removal will be done.
 </varlistentry>
 
 <varlistentry>
-<term><option>-j</option> <parameter>num-of-threads</parameter></term>
+<term><option>-j</option> <parameter moreinfo="none">num-of-threads</parameter></term>
 <listitem>
 <para>
 Specifies the number of threads to create file replicas
@@ -183,7 +186,7 @@ Suppresses non-error messages.
 </variablelist>
 </refsect1>
 
-<refsect1 id='bugs'><title>BUGS</title>
+<refsect1 id="bugs"><title>BUGS</title>
 <para>
 A source host is not always selected within a set of source hosts.
 </para>

@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfarm-attr.5'>
+
+<refentry id="gfarm-attr.5">
 
 <refentryinfo><date>1 Apr 2011</date></refentryinfo>
 
@@ -10,14 +13,14 @@
 <refmiscinfo>Gfarm_attr</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfarm_attr</refname>
 <refpurpose>Gfarm Extended Attributes</refpurpose>
 </refnamediv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
 Every files and directories in Gfarm filesystem can have extended
@@ -26,7 +29,7 @@ attributes.  Extended attributes are name:value pairs.
 
 </refsect1>
 
-<refsect1 id='xattrnamespace'>
+<refsect1 id="xattrnamespace">
 <title>EXTENDED ATTRIBUTE NAMESPACES</title>
 
 <para>
@@ -58,7 +61,7 @@ Symbolic links cannot have any extended attributes.
 
 </refsect1>
 
-<refsect1 id='gfarm-xattr'>
+<refsect1 id="gfarm-xattr">
 <title>GFARM EXTENDED ATTRIBUTES</title>
 
 <para>
@@ -69,7 +72,7 @@ filesystem.
 <variablelist>
 
 <varlistentry>
-<term><parameter>gfarm.ncopy</parameter></term>
+<term><parameter moreinfo="none">gfarm.ncopy</parameter></term>
 <listitem>
 <para>
 This is the number of file replicas to be created automatically in
@@ -79,7 +82,7 @@ gfmd.
 </varlistentry>
 
 <varlistentry>
-<term><parameter>gfarm.acl_access</parameter></term>
+<term><parameter moreinfo="none">gfarm.acl_access</parameter></term>
 <listitem>
 <para>
 This is Access ACL (Access Control List).
@@ -88,7 +91,7 @@ This is Access ACL (Access Control List).
 </varlistentry>
 
 <varlistentry>
-<term><parameter>gfarm.acl_default</parameter></term>
+<term><parameter moreinfo="none">gfarm.acl_default</parameter></term>
 <listitem>
 <para>
 This is Default ACL. Only directories can have/use this extended
@@ -98,7 +101,7 @@ attribute.
 </varlistentry>
 
 <varlistentry>
-<term><parameter>gfarm_root.user</parameter></term>
+<term><parameter moreinfo="none">gfarm_root.user</parameter></term>
 <listitem>
 <para>
 This is the list of user names who can have the privilege for the
@@ -111,7 +114,7 @@ this extended attribute).
 </varlistentry>
 
 <varlistentry>
-<term><parameter>gfarm_root.group</parameter></term>
+<term><parameter moreinfo="none">gfarm_root.group</parameter></term>
 <listitem>
 <para>
 This is the list of group names who can have the privilege for the
@@ -126,7 +129,7 @@ this extended attribute).
 </variablelist>
 </refsect1>
 
-<refsect1 id='security'>
+<refsect1 id="security">
 <title>SECURITY NOTES</title>
 <para>
 When untrusted users are registered in the gfarm_root.{user,group}
@@ -139,7 +142,7 @@ gfarm_root.{user,group} extended attributes should not be used.
 </para>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry><refentrytitle>gfxattr</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
   <citerefentry><refentrytitle>gfgetfacl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,

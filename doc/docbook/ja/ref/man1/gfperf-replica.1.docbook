@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfperf-replica.1'>
+
+<refentry id="gfperf-replica.1">
 
 <refentryinfo><date>19 May 2012</date></refentryinfo>
 
@@ -9,33 +12,33 @@
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfperf-replica</refname>
 <refpurpose>Gfarm ファイル複製の性能測定を行う。</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfperf-replica</command>
-    <arg choice='plain'>-s, --src <replaceable>複製元gfsd名</replaceable></arg>
-    <arg choice='plain'>-s, --dst <replaceable>複製先gfsd名</replaceable></arg>
-    <arg choice='opt'>-l, --filesize <replaceable>ファイルサイズ</replaceable></arg>
-    <arg choice='opt'>-t, --testdir <replaceable>テストディレクトリ</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfperf-replica</command>
+    <arg choice="plain" rep="norepeat">-s, --src <replaceable>複製元gfsd名</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-s, --dst <replaceable>複製先gfsd名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-l, --filesize <replaceable>ファイルサイズ</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-t, --testdir <replaceable>テストディレクトリ</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para>引数 <parameter>テストディレクトリ</parameter> にテスト用のファイルを作成し、その複製性能を測定します。
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>引数 <parameter moreinfo="none">テストディレクトリ</parameter> にテスト用のファイルを作成し、その複製性能を測定します。
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-s, --src</option> <parameter>複製元gfsd名</parameter></term>
+<term><option>-s, --src</option> <parameter moreinfo="none">複製元gfsd名</parameter></term>
 <listitem>
 <para>
 複製元gfsd名を指定します。
@@ -44,7 +47,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-d, --dst</option> <parameter>複製先gfsd名</parameter></term>
+<term><option>-d, --dst</option> <parameter moreinfo="none">複製先gfsd名</parameter></term>
 <listitem>
 <para>
 複製先gfsd名を指定します。
@@ -53,7 +56,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-l, --filesize</option> <parameter>ファイルサイズ</parameter></term>
+<term><option>-l, --filesize</option> <parameter moreinfo="none">ファイルサイズ</parameter></term>
 <listitem>
 <para>
 テストで使用するファイルサイズを指定します。
@@ -63,7 +66,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-t, --testdir</option> <parameter>テストディレクトリ</parameter></term>
+<term><option>-t, --testdir</option> <parameter moreinfo="none">テストディレクトリ</parameter></term>
 <listitem>
 <para>
 テストを実施するディレクトリを指定します。

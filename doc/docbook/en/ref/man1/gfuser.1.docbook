@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfuser.1'>
+
+<refentry id="gfuser.1">
 
 <refentryinfo><date>20 Jan 2010</date></refentryinfo>
 
@@ -10,50 +13,50 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfuser</refname>
 <refpurpose>Gfarm user maintenance command</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfuser</command>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='opt'>-l</arg>
-    <arg choice='opt' rep='repeat'><replaceable>user</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfuser</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-l</arg>
+    <arg choice="opt" rep="repeat"><replaceable>user</replaceable></arg>
 </cmdsynopsis>
-<cmdsynopsis>
-  <command>gfuser</command>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='plain'>-c</arg>
-    <arg choice='plain'>username</arg>
-    <arg choice='plain'>realname</arg>
-    <arg choice='plain'>homedir</arg>
-    <arg choice='plain'>gsi_dn</arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfuser</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-c</arg>
+    <arg choice="plain" rep="norepeat">username</arg>
+    <arg choice="plain" rep="norepeat">realname</arg>
+    <arg choice="plain" rep="norepeat">homedir</arg>
+    <arg choice="plain" rep="norepeat">gsi_dn</arg>
 </cmdsynopsis>
-<cmdsynopsis>
-  <command>gfuser</command>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='plain'>-m</arg>
-    <arg choice='plain'>username</arg>
-    <arg choice='plain'>realname</arg>
-    <arg choice='plain'>homedir</arg>
-    <arg choice='plain'>gsi_dn</arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfuser</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-m</arg>
+    <arg choice="plain" rep="norepeat">username</arg>
+    <arg choice="plain" rep="norepeat">realname</arg>
+    <arg choice="plain" rep="norepeat">homedir</arg>
+    <arg choice="plain" rep="norepeat">gsi_dn</arg>
 </cmdsynopsis>
-<cmdsynopsis>
-  <command>gfuser</command>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='plain'>-d</arg>
-    <arg choice='plain'>username</arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfuser</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-d</arg>
+    <arg choice="plain" rep="norepeat">username</arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command>gfuser</command> manages Gfarm global users in Gfarm file
+<command moreinfo="none">gfuser</command> manages Gfarm global users in Gfarm file
 system.  Default action displays all registered users.  When user
 names are specified, specified users are displayed.  Gfarm
 administrator can creates, modifies, and deletes a Gfarm user by -c,
@@ -62,12 +65,12 @@ administrator can creates, modifies, and deletes a Gfarm user by -c,
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
 
 <varlistentry>
-  <term><option>-P</option> <parameter>path</parameter></term>
+  <term><option>-P</option> <parameter moreinfo="none">path</parameter></term>
   <listitem>
     <para>
 	This option specifies a pathname or a Gfarm URL to identify
@@ -128,7 +131,7 @@ administrators.
 
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfgroup</refentrytitle><manvolnum>1</manvolnum>

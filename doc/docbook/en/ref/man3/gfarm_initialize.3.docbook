@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfarm-initialize.3'>
+<refentry id="gfarm-initialize.3">
 
 <refentryinfo><date>26 Jun 2010</date></refentryinfo>
 
@@ -11,20 +14,20 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfarm_initialize</refname>
 <refpurpose>initialize the Gfarm execution environment for client</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfarm_initialize</function></funcdef>
-    <paramdef>int *<parameter>argcp</parameter></paramdef>
-    <paramdef>char *** <parameter>argvp</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfarm_initialize</function></funcdef>
+    <paramdef>int *<parameter moreinfo="none">argcp</parameter></paramdef>
+    <paramdef>char *** <parameter moreinfo="none">argvp</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -32,16 +35,16 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><function>gfarm_initialize()</function> initializes the Gfarm
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><function moreinfo="none">gfarm_initialize()</function> initializes the Gfarm
 execution environment for client application.
 This function should be called before any Gfarm library API.
-<parameter>argcp</parameter> is a pointer to the number of
-arguments and <parameter>argvp</parameter> is a pointer to the argument vector.</para>
+<parameter moreinfo="none">argcp</parameter> is a pointer to the number of
+arguments and <parameter moreinfo="none">argvp</parameter> is a pointer to the argument vector.</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 
 <varlistentry>
@@ -90,7 +93,7 @@ arguments and <parameter>argvp</parameter> is a pointer to the argument vector.<
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
 <para>The requested access to the file is not allowed, or one of the
-directories in <parameter>gfarm_url</parameter> did not allow search (execute)
+directories in <parameter moreinfo="none">gfarm_url</parameter> did not allow search (execute)
 permission.  Or, the authentication to the metadata server fails.</para>
 </listitem>
 </varlistentry>
@@ -117,7 +120,7 @@ permission.  Or, the authentication to the metadata server fails.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfarm_terminate</refentrytitle><manvolnum>3</manvolnum></citerefentry>
 </para>

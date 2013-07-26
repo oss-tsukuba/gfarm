@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfs-pio-truncate.3'>
+
+<refentry id="gfs-pio-truncate.3">
 
 <refentryinfo><date>12 Jan 2005</date></refentryinfo>
 
@@ -10,20 +13,20 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_truncate</refname>
 <refpurpose>truncate a file to a specified length</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_truncate</function></funcdef>
-    <paramdef>GFS_File <parameter>gf</parameter></paramdef>
-    <paramdef>file_offset_t <parameter>length</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_pio_truncate</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">gf</parameter></paramdef>
+    <paramdef>file_offset_t <parameter moreinfo="none">length</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -31,9 +34,9 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para>The <function>gfs_pio_truncate()</function> function truncates the
-regular file <parameter>gf</parameter> to the <parameter>length</parameter>
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>The <function moreinfo="none">gfs_pio_truncate()</function> function truncates the
+regular file <parameter moreinfo="none">gf</parameter> to the <parameter moreinfo="none">length</parameter>
 bytes.</para>
 <para>If the file was previously shorter than the length, it is extended,
 and the extended part is filled by zero bytes.</para>
@@ -43,7 +46,7 @@ the file, because it must be open for writing.
 </para>
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -67,7 +70,7 @@ pointed strings.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>

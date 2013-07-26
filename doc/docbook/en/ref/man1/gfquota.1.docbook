@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfquota.1'>
+
+<refentry id="gfquota.1">
 
 <refentryinfo><date>23 Mar 2011</date></refentryinfo>
 
@@ -10,34 +13,34 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfquota</refname>
 <refpurpose>display the current usage and limits</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfquota</command>
-    <arg choice='opt'><replaceable>options</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfquota</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
-<para><command>gfquota</command> displays your current usage and
+<para><command moreinfo="none">gfquota</command> displays your current usage and
 limits.  An administrator in the gfarmadm group can specify a user or
 a group to display.  If you are a general user, you can specify a
 group which you belong to.</para>
 
 <para>The count of usage and the check of quota are enabled after
-executing <command>gfedquota</command>
-and <command>gfquotacheck</command> command.
-And, <command>gfquota</command> can display the current usage and
+executing <command moreinfo="none">gfedquota</command>
+and <command moreinfo="none">gfquotacheck</command> command.
+And, <command moreinfo="none">gfquota</command> can display the current usage and
 limits.</para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
@@ -81,7 +84,7 @@ are displayed only if the current usage exceeds the limits.
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfedquota</refentrytitle><manvolnum>1</manvolnum>

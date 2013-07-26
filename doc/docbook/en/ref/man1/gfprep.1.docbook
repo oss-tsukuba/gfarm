@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfprep.1'>
+<refentry id="gfprep.1">
 
 <refentryinfo><date>19 October 2012</date></refentryinfo>
 
@@ -11,37 +14,37 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfprep</refname>
 <refpurpose>replicate Gfarm files in parallel</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfprep</command>
-  <arg choice='opt'>-nqvdpPU</arg>
-  <arg choice='opt'>-mx</arg>
-  <arg choice='opt'>-S <replaceable>source-domainname</replaceable></arg>
-  <arg choice='opt'>-h <replaceable>source-hostfile</replaceable></arg>
-  <arg choice='opt'>-D <replaceable>destination-domainname</replaceable></arg>
-  <arg choice='opt'>-H <replaceable>destination-hostfile</replaceable></arg>
-  <arg choice='opt'>-j <replaceable>num-of-processes</replaceable></arg>
-  <arg choice='opt'>-w <replaceable>way-of-scheduling</replaceable></arg>
-  <arg choice='opt'>-W <replaceable>kilobytes-for-threshold</replaceable></arg>
-  <arg choice='opt'>-s <replaceable>KB/s-to-simulate</replaceable></arg>
-  <arg choice='opt'>-F <replaceable>num-for-readahead</replaceable></arg>
-  <arg choice='opt'>-N <replaceable>num-of-replicas</replaceable></arg>
-  <arg choice='plain'><replaceable>gfarm-url</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfprep</command>
+  <arg choice="opt" rep="norepeat">-nqvdpPU</arg>
+  <arg choice="opt" rep="norepeat">-mx</arg>
+  <arg choice="opt" rep="norepeat">-S <replaceable>source-domainname</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-h <replaceable>source-hostfile</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-D <replaceable>destination-domainname</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-H <replaceable>destination-hostfile</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-j <replaceable>num-of-processes</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-w <replaceable>way-of-scheduling</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-W <replaceable>kilobytes-for-threshold</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-s <replaceable>KB/s-to-simulate</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-F <replaceable>num-for-readahead</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-N <replaceable>num-of-replicas</replaceable></arg>
+  <arg choice="plain" rep="norepeat"><replaceable>gfarm-url</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command>gfprep</command> creates replicas of Gfarm files specified by
-the <parameter>gfarm-url</parameter>(gfarm:///...) in parallel.
+<command moreinfo="none">gfprep</command> creates replicas of Gfarm files specified by
+the <parameter moreinfo="none">gfarm-url</parameter>(gfarm:///...) in parallel.
 </para>
 <para>
 When a set of source hosts are specified, only files stored on the set
@@ -50,23 +53,23 @@ domain name and/or a host file.  When both a domain name and a host
 file are specified, a set of hosts is determined by both conditions.
 </para>
 <para>
-If the <parameter>gfarm-url</parameter> parameter is a directory,
+If the <parameter moreinfo="none">gfarm-url</parameter> parameter is a directory,
 files under the directory will be replicated recursively.
 </para>
 <para>
-<command>gfprep</command> can also read the directory and get
+<command moreinfo="none">gfprep</command> can also read the directory and get
 informations of the entries in parallel.
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>GFPREP OPTIONS</title>
+<refsect1 id="options"><title>GFPREP OPTIONS</title>
 <para>
-These are the options only for <command>gfprep</command>.
+These are the options only for <command moreinfo="none">gfprep</command>.
 </para>
 <variablelist>
 
 <varlistentry>
-<term><option>-N</option> <parameter>num-of-replicas</parameter></term>
+<term><option>-N</option> <parameter moreinfo="none">num-of-replicas</parameter></term>
 <listitem>
 <para>
 Specifies the required number of file replicas.  If there are a
@@ -107,14 +110,14 @@ This option and -N option are mutually exclusive.
 </variablelist>
 </refsect1>
 
-<refsect1 id='common-options'><title>COMMON OPTIONS</title>
+<refsect1 id="common-options"><title>COMMON OPTIONS</title>
 <para>
-<command>gfprep</command> has the same options with <command>gfpcopy</command>.
+<command moreinfo="none">gfprep</command> has the same options with <command moreinfo="none">gfpcopy</command>.
 </para>
 
 <variablelist>
 <varlistentry>
-<term><option>-S</option> <parameter>source-domainname</parameter></term>
+<term><option>-S</option> <parameter moreinfo="none">source-domainname</parameter></term>
 <listitem>
 <para>
 Specifies the domain name of source filesystem nodes from which
@@ -124,11 +127,11 @@ replicas will be copied.
 </varlistentry>
 
 <varlistentry>
-<term><option>-h</option> <parameter>source-hostfile</parameter></term>
+<term><option>-h</option> <parameter moreinfo="none">source-hostfile</parameter></term>
 <listitem>
 <para>Specifies a file which describes hostnames of
 source filesystem nodes from which the replica will be copied.
-The <parameter>source-hostfile</parameter> consists of a filesystem
+The <parameter moreinfo="none">source-hostfile</parameter> consists of a filesystem
 node name on each line.
 </para>
 <para>
@@ -148,7 +151,7 @@ Selects source filesystem nodes within a set of specified source nodes.
 </varlistentry>
 
 <varlistentry>
-<term><option>-D</option> <parameter>destination-domainname</parameter></term>
+<term><option>-D</option> <parameter moreinfo="none">destination-domainname</parameter></term>
 <listitem>
 <para>
 Specifies the domain name of destination filesystem nodes to which
@@ -161,11 +164,11 @@ replicas may be copied to any available host.
 </varlistentry>
 
 <varlistentry>
-<term><option>-H</option> <parameter>destination-hostfile</parameter></term>
+<term><option>-H</option> <parameter moreinfo="none">destination-hostfile</parameter></term>
 <listitem>
 <para>Specifies a file which describes hostnames of
 destination filesystem nodes on which the replica will be copied.
-The <parameter>destination-hostfile</parameter> consists of a
+The <parameter moreinfo="none">destination-hostfile</parameter> consists of a
 filesystem node name on each line.
 </para>
 <para>
@@ -174,12 +177,12 @@ If ``-'' is specified, standard input is used to read the host list.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-j</option> <parameter>num-of-processes</parameter></term>
+<term><option>-j</option> <parameter moreinfo="none">num-of-processes</parameter></term>
 <listitem>
 <para>
 Specifies the number of processes to create file replicas (or copy
 files) simultaneously and to read the directory in parallel.  Child
-processes are created of <parameter>num-of-processes</parameter> * 2
+processes are created of <parameter moreinfo="none">num-of-processes</parameter> * 2
 processes.
 </para>
 <para>
@@ -189,13 +192,13 @@ The default value is the parameter of client_parallel_copy in gfarm2.conf.
 <para>
 The source nodes and the destination nodes are selected/scheduled and
 used(read/written) up to the number of CPUs (see
-man <command>gfhost</command>) at the same time.
+man <command moreinfo="none">gfhost</command>) at the same time.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-w</option> <parameter>way-of-scheduling</parameter></term>
+<term><option>-w</option> <parameter moreinfo="none">way-of-scheduling</parameter></term>
 <listitem>
 <para>
 Specifies the name of scheduling way.
@@ -212,7 +215,7 @@ The default behavior is ``noplan''.
 </varlistentry>
 
 <varlistentry>
-<term><option>-W</option> <parameter>kibibytes</parameter></term>
+<term><option>-W</option> <parameter moreinfo="none">kibibytes</parameter></term>
 <listitem>
 <para>
 Specifies a threshold size/cost(KiB) to flat costs of Connections.
@@ -239,7 +242,7 @@ time.
 </varlistentry>
 
 <varlistentry>
-<term><option>-F</option> <parameter>num-of-dirents</parameter></term>
+<term><option>-F</option> <parameter moreinfo="none">num-of-dirents</parameter></term>
 <listitem>
 <para>
 Specifies a number of entries to perform the directory readahead.
@@ -251,7 +254,7 @@ The default value is 10000.
 </varlistentry>
 
 <varlistentry>
-<term><option>-s</option> <parameter>kilobytes-per-sec.</parameter></term>
+<term><option>-s</option> <parameter moreinfo="none">kilobytes-per-sec.</parameter></term>
 <listitem>
 <para>
 Specifies a throughput(KB/s) to simulate the replication/copy, and
@@ -322,44 +325,44 @@ Suppresses non-error messages.
 </variablelist>
 </refsect1>
 
-<refsect1 id='examples'><title>EXAMPLES</title>
+<refsect1 id="examples"><title>EXAMPLES</title>
 <para>
 To replicate files under the directory recursively.
 </para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 $ gfprep -N 3 gfarm:///dir
 </literallayout>
 
 <para>
 To replicate a file or reduce surplus replicas of the file.
 </para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 $ gfprep -N 3 -x gfarm:///dir/file
 </literallayout>
 
 <para>
 To migrate replicas from gfsd1.example.com to other nodes.
 </para>
-<literallayout>
+<literallayout format="linespecific" class="normal">
 $ gfprep -m -S gfsd1.example.com gfarm:///
 </literallayout>
 </refsect1>
 
-<refsect1 id='notes'><title>NOTES</title>
+<refsect1 id="notes"><title>NOTES</title>
 <para>
 If the -L or -m option is not specified, a source node is not always
 selected within a set of specified source nodes.
 </para>
 <para>
-<command>gfprep</command> command should be executed at the same host
-of gfmd.  If the gfmd and <command>gfprep</command> are far apart,
-the <command>gfprep</command> operation is slow.  Specifying a large
+<command moreinfo="none">gfprep</command> command should be executed at the same host
+of gfmd.  If the gfmd and <command moreinfo="none">gfprep</command> are far apart,
+the <command moreinfo="none">gfprep</command> operation is slow.  Specifying a large
 value by the -j option or client_parallel_copy in gfarm2.conf may be
 effective in such a case.
 </para>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gfrep</refentrytitle><manvolnum>1</manvolnum>

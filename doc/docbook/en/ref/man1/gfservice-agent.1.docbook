@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfservice-agent.1'>
+
+<refentry id="gfservice-agent.1">
 
 <refentryinfo><date>6 Jun 2013</date></refentryinfo>
 
@@ -10,79 +13,79 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfservice-agent</refname>
-<refpurpose>agent of <command>gfservice</command></refpurpose>
+<refpurpose>agent of <command moreinfo="none">gfservice</command></refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfservice-agent</command>
-    <arg choice='opt'><replaceable>options</replaceable></arg>
-    <arg choice='plain'>host-id</arg>
-    <arg choice='plain'>sub-command</arg>
-    <arg choice='opt'><replaceable>argument ...</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfservice-agent</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="plain" rep="norepeat">host-id</arg>
+    <arg choice="plain" rep="norepeat">sub-command</arg>
+    <arg choice="opt" rep="norepeat"><replaceable>argument ...</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command>gfservice-agent</command> is an agent of
-<command>gfservice</command>.
+<command moreinfo="none">gfservice-agent</command> is an agent of
+<command moreinfo="none">gfservice</command>.
 It must be installed on all hosts you want to operate using
-<command>gfservice</command>.
-Unlike <command>gfservice</command>, it doesn't read a configuration file.
+<command moreinfo="none">gfservice</command>.
+Unlike <command moreinfo="none">gfservice</command>, it doesn't read a configuration file.
 </para>
 
 <para>
-<command>gfservice-agent</command> is not designed to be executed
+<command moreinfo="none">gfservice-agent</command> is not designed to be executed
 directly by an user.
-In daily use, it is executed only by <command>gfservice</command> via SSH
+In daily use, it is executed only by <command moreinfo="none">gfservice</command> via SSH
 and Sudo.
 </para>
 
 <para>
-Host-id argument is the same as that of <command>gfservice</command>, but
-<command>gfservice-agent</command> uses host-id for recognizing type of
+Host-id argument is the same as that of <command moreinfo="none">gfservice</command>, but
+<command moreinfo="none">gfservice-agent</command> uses host-id for recognizing type of
 host ("gfmd", "gfsd" or "client") and debug messages only.
 </para>
 
 <para>
-Sub-command names of <command>gfservice-agent</command> are similar to
-those of <command>gfservice</command>, but their arguments are different.
-For example, <command>"unmount"</command> sub-command of
-<command>gfservice-agent</command> takes
-<parameter>"directory=<replaceable>directory</replaceable>"</parameter>
+Sub-command names of <command moreinfo="none">gfservice-agent</command> are similar to
+those of <command moreinfo="none">gfservice</command>, but their arguments are different.
+For example, <command moreinfo="none">"unmount"</command> sub-command of
+<command moreinfo="none">gfservice-agent</command> takes
+<parameter moreinfo="none">"directory=<replaceable>directory</replaceable>"</parameter>
 argument:
 </para>
 
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	gfservice-agent client3 unmount directory=/somewhere
 </literallayout>
 
 <para>
-while <command>"unmount"</command> sub-command of <command>gfservice</command>
+while <command moreinfo="none">"unmount"</command> sub-command of <command moreinfo="none">gfservice</command>
 takes <replaceable>"directory"</replaceable> argument:
 </para>
 
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	gfservice unmount client3 /somewhere
 </literallayout>
 
 <para>
-Almost all arguments of <command>gfservice-agent</command> have "key=value"
+Almost all arguments of <command moreinfo="none">gfservice-agent</command> have "key=value"
 form.
-When two or more arguments are given, <command>gfservice-agent</command>
+When two or more arguments are given, <command moreinfo="none">gfservice-agent</command>
 doesn't care about the order of arguments.
-<command>gfservice-agent</command> ignores arguments with unknown keys.
+<command moreinfo="none">gfservice-agent</command> ignores arguments with unknown keys.
 </para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
 
@@ -99,10 +102,10 @@ Print debug information.
 
 </refsect1>
 
-<refsect1 id='sub-commands'><title>SUB-COMMANDS</title>
+<refsect1 id="sub-commands"><title>SUB-COMMANDS</title>
 
 <para>
-<command>gfservice-agent</command> currently recognizes the following
+<command moreinfo="none">gfservice-agent</command> currently recognizes the following
 sub-commands.
 </para>
 
@@ -110,42 +113,42 @@ sub-commands.
 
 <varlistentry>
 <term>
-<command>get-config-gfarm-param</command>
-<parameter>param</parameter>=<replaceable>name</replaceable>
-<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+<command moreinfo="none">get-config-gfarm-param</command>
+<parameter moreinfo="none">param</parameter>=<replaceable>name</replaceable>
+<parameter moreinfo="none">config-gfarm-options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
-Execute <command>config-gfarm -T</command> command and output a value of
+Execute <command moreinfo="none">config-gfarm -T</command> command and output a value of
 the parameter <replaceable>name</replaceable> to standard out.
-If the "<parameter>param</parameter>=<replaceable>name</replaceable>"
+If the "<parameter moreinfo="none">param</parameter>=<replaceable>name</replaceable>"
 argument is not specified, it outputs entire
-<command>config-gfarm -T</command> results.
+<command moreinfo="none">config-gfarm -T</command> results.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>get-config-gfsd-param</command>
-<parameter>param</parameter>=<replaceable>name</replaceable>
-<parameter>config-gfsd-options</parameter>=<replaceable>options</replaceable>
+<command moreinfo="none">get-config-gfsd-param</command>
+<parameter moreinfo="none">param</parameter>=<replaceable>name</replaceable>
+<parameter moreinfo="none">config-gfsd-options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
-Execute <command>config-gfsd -T</command> command and output a value of
+Execute <command moreinfo="none">config-gfsd -T</command> command and output a value of
 the parameter <replaceable>name</replaceable> to standard out.
-If the "<parameter>param</parameter>=<replaceable>name</replaceable>"
+If the "<parameter moreinfo="none">param</parameter>=<replaceable>name</replaceable>"
 argument is not specified, it outputs entire
-<command>config-gfsd -T</command> results.
+<command moreinfo="none">config-gfsd -T</command> results.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>backend-db-status</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+<command moreinfo="none">backend-db-status</command>
+<parameter moreinfo="none">config-gfarm-options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
@@ -157,8 +160,8 @@ Otherwise exits with 1.
 
 <varlistentry>
 <term>
-<command>gfmd-status</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+<command moreinfo="none">gfmd-status</command>
+<parameter moreinfo="none">config-gfarm-options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
@@ -170,8 +173,8 @@ Otherwise exits with 1.
 
 <varlistentry>
 <term>
-<command>gfsd-status</command>
-<parameter>config-gfsd-options</parameter>=<replaceable>options</replaceable>
+<command moreinfo="none">gfsd-status</command>
+<parameter moreinfo="none">config-gfsd-options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
@@ -183,9 +186,9 @@ Otherwise exits with 1.
 
 <varlistentry>
 <term>
-<command>start-backend-db</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
-<parameter>timeout</parameter>=<replaceable>time</replaceable>
+<command moreinfo="none">start-backend-db</command>
+<parameter moreinfo="none">config-gfarm-options</parameter>=<replaceable>options</replaceable>
+<parameter moreinfo="none">timeout</parameter>=<replaceable>time</replaceable>
 </term>
 <listitem>
 <para>
@@ -196,9 +199,9 @@ Start a backend database if it is not running currently.
 
 <varlistentry>
 <term>
-<command>start-gfmd</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
-<parameter>timeout</parameter>=<replaceable>time</replaceable>
+<command moreinfo="none">start-gfmd</command>
+<parameter moreinfo="none">config-gfarm-options</parameter>=<replaceable>options</replaceable>
+<parameter moreinfo="none">timeout</parameter>=<replaceable>time</replaceable>
 </term>
 <listitem>
 <para>
@@ -209,9 +212,9 @@ Start gfmd if it is not running currently.
 
 <varlistentry>
 <term>
-<command>start-gfsd</command>
-<parameter>config-gfsd-options</parameter>=<replaceable>options</replaceable>
-<parameter>timeout</parameter>=<replaceable>time</replaceable>
+<command moreinfo="none">start-gfsd</command>
+<parameter moreinfo="none">config-gfsd-options</parameter>=<replaceable>options</replaceable>
+<parameter moreinfo="none">timeout</parameter>=<replaceable>time</replaceable>
 </term>
 <listitem>
 <para>
@@ -222,48 +225,48 @@ Start gfsd if it is not running currently.
 
 <varlistentry>
 <term>
-<command>config-gfarm</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+<command moreinfo="none">config-gfarm</command>
+<parameter moreinfo="none">config-gfarm-options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
-Execute <command>config-gfarm</command> command.
+Execute <command moreinfo="none">config-gfarm</command> command.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>config-gfarm-master</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+<command moreinfo="none">config-gfarm-master</command>
+<parameter moreinfo="none">config-gfarm-options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
-Execute <command>config-gfarm</command> <parameter>-r</parameter> command.
+Execute <command moreinfo="none">config-gfarm</command> <parameter moreinfo="none">-r</parameter> command.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>config-gfsd</command>
-<parameter>config-gfsd-options</parameter>=<replaceable>options</replaceable>
+<command moreinfo="none">config-gfsd</command>
+<parameter moreinfo="none">config-gfsd-options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
-Execute <command>config-gfsd</command> command.
+Execute <command moreinfo="none">config-gfsd</command> command.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>unconfig-gfarm</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+<command moreinfo="none">unconfig-gfarm</command>
+<parameter moreinfo="none">config-gfarm-options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
-Execute <command>stop-gfarm</command> sub-command and then delete all
+Execute <command moreinfo="none">stop-gfarm</command> sub-command and then delete all
 files and directories created by gfmd and a backend database.
 </para>
 </listitem>
@@ -271,12 +274,12 @@ files and directories created by gfmd and a backend database.
 
 <varlistentry>
 <term>
-<command>unconfig-gfsd</command>
-<parameter>config-gfsd-options</parameter>=<replaceable>options</replaceable>
+<command moreinfo="none">unconfig-gfsd</command>
+<parameter moreinfo="none">config-gfsd-options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
-Execute <command>stop-gfsd</command> sub-command and then delete all
+Execute <command moreinfo="none">stop-gfsd</command> sub-command and then delete all
 files and directories created by gfsd.
 </para>
 </listitem>
@@ -284,45 +287,45 @@ files and directories created by gfsd.
 
 <varlistentry>
 <term>
-<command>unconfig-client</command>
-<parameter>config-gfsd-options</parameter>=<replaceable>options</replaceable>
+<command moreinfo="none">unconfig-client</command>
+<parameter moreinfo="none">config-gfsd-options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
-Delete <filename>gfarm2.conf</filename> file.
+Delete <filename moreinfo="none">gfarm2.conf</filename> file.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>promote</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+<command moreinfo="none">promote</command>
+<parameter moreinfo="none">config-gfarm-options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
-Promote <command>gfmd</command> from a slave to a master.
+Promote <command moreinfo="none">gfmd</command> from a slave to a master.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>promote-gfmd</command>
-<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+<command moreinfo="none">promote-gfmd</command>
+<parameter moreinfo="none">config-gfarm-options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
-An alias of <command>promote</command> sub-command.
+An alias of <command moreinfo="none">promote</command> sub-command.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>mount</command>
-<parameter>directory</parameter>=<replaceable>directory</replaceable>
-<parameter>options</parameter>=<replaceable>options</replaceable>
+<command moreinfo="none">mount</command>
+<parameter moreinfo="none">directory</parameter>=<replaceable>directory</replaceable>
+<parameter moreinfo="none">options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
@@ -333,8 +336,8 @@ Mount a Gfarm2 filesystem on <replaceable>directory</replaceable>.
 
 <varlistentry>
 <term>
-<command>unmount</command>
-<parameter>directory</parameter>=<replaceable>directory</replaceable>
+<command moreinfo="none">unmount</command>
+<parameter moreinfo="none">directory</parameter>=<replaceable>directory</replaceable>
 </term>
 <listitem>
 <para>
@@ -346,121 +349,121 @@ Unmount a Gfarm2 filesystem currently mounted on
 
 <varlistentry>
 <term>
-<command>umount</command>
-<parameter>directory</parameter>=<replaceable>directory</replaceable>
+<command moreinfo="none">umount</command>
+<parameter moreinfo="none">directory</parameter>=<replaceable>directory</replaceable>
 </term>
 <listitem>
 <para>
-An alias of <command>unmount</command> sub-command.
+An alias of <command moreinfo="none">unmount</command> sub-command.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>set-gfmd-conf</command>
-<parameter>directive</parameter>=<replaceable>name</replaceable>
-<parameter>value</parameter>=<replaceable>value</replaceable>
-</term>
-<listitem>
-<para>
-Add
-</para>
-
-<literallayout>
-	<replaceable>directive</replaceable> <replaceable>value</replaceable>
-</literallayout>
-
-<para>
-line to <filename>gfmd.conf</filename> file.
-</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term>
-<command>set-gfarm-conf</command>
-<parameter>directive</parameter>=<replaceable>name</replaceable>
-<parameter>value</parameter>=<replaceable>value</replaceable>
+<command moreinfo="none">set-gfmd-conf</command>
+<parameter moreinfo="none">directive</parameter>=<replaceable>name</replaceable>
+<parameter moreinfo="none">value</parameter>=<replaceable>value</replaceable>
 </term>
 <listitem>
 <para>
 Add
 </para>
 
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	<replaceable>directive</replaceable> <replaceable>value</replaceable>
 </literallayout>
 
 <para>
-line to <filename>gfarm2.conf</filename> file.
+line to <filename moreinfo="none">gfmd.conf</filename> file.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>set-gfsd-conf</command>
-<parameter>directive</parameter>=<replaceable>name</replaceable>
-<parameter>value</parameter>=<replaceable>value</replaceable>
+<command moreinfo="none">set-gfarm-conf</command>
+<parameter moreinfo="none">directive</parameter>=<replaceable>name</replaceable>
+<parameter moreinfo="none">value</parameter>=<replaceable>value</replaceable>
 </term>
 <listitem>
 <para>
 Add
 </para>
 
-<literallayout>
+<literallayout format="linespecific" class="normal">
 	<replaceable>directive</replaceable> <replaceable>value</replaceable>
 </literallayout>
 
 <para>
-line to <filename>gfsd.conf</filename> file.
+line to <filename moreinfo="none">gfarm2.conf</filename> file.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>unset-gfmd-conf</command>
-<parameter>directive</parameter>=<replaceable>name</replaceable>
+<command moreinfo="none">set-gfsd-conf</command>
+<parameter moreinfo="none">directive</parameter>=<replaceable>name</replaceable>
+<parameter moreinfo="none">value</parameter>=<replaceable>value</replaceable>
+</term>
+<listitem>
+<para>
+Add
+</para>
+
+<literallayout format="linespecific" class="normal">
+	<replaceable>directive</replaceable> <replaceable>value</replaceable>
+</literallayout>
+
+<para>
+line to <filename moreinfo="none">gfsd.conf</filename> file.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command moreinfo="none">unset-gfmd-conf</command>
+<parameter moreinfo="none">directive</parameter>=<replaceable>name</replaceable>
 </term>
 <listitem>
 <para>
 Delete a <replaceable>directive</replaceable> line in
-<filename>gfmd.conf</filename> file.
+<filename moreinfo="none">gfmd.conf</filename> file.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>unset-gfarm-conf</command>
-<parameter>directive</parameter>=<replaceable>name</replaceable>
+<command moreinfo="none">unset-gfarm-conf</command>
+<parameter moreinfo="none">directive</parameter>=<replaceable>name</replaceable>
 </term>
 <listitem>
 <para>
 Delete a <replaceable>directive</replaceable> line in
-<filename>gfarm2.conf</filename> file.
+<filename moreinfo="none">gfarm2.conf</filename> file.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>unset-gfsd-conf</command>
-<parameter>directive</parameter>=<replaceable>name</replaceable>
+<command moreinfo="none">unset-gfsd-conf</command>
+<parameter moreinfo="none">directive</parameter>=<replaceable>name</replaceable>
 </term>
 <listitem>
 <para>
 Delete a <replaceable>directive</replaceable> line in
-<filename>gfsd.conf</filename> file.
+<filename moreinfo="none">gfsd.conf</filename> file.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>backup-backend-db</command>
+<command moreinfo="none">backup-backend-db</command>
 </term>
 <listitem>
 <para>
@@ -471,62 +474,62 @@ Backup a backend database and output the backup data to standard out.
 
 <varlistentry>
 <term>
-<command>backup-gfmd-conf</command>
+<command moreinfo="none">backup-gfmd-conf</command>
 </term>
 <listitem>
 <para>
-Output <filename>gfmd.conf</filename> file to standard out.
+Output <filename moreinfo="none">gfmd.conf</filename> file to standard out.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>backup-gfarm-conf</command>
+<command moreinfo="none">backup-gfarm-conf</command>
 </term>
 <listitem>
 <para>
-Output <filename>gfarm2.conf</filename> file to standard out.
+Output <filename moreinfo="none">gfarm2.conf</filename> file to standard out.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>backup-gfsd-conf</command>
+<command moreinfo="none">backup-gfsd-conf</command>
 </term>
 <listitem>
 <para>
-Output <filename>gfsd.conf</filename> file to standard out.
+Output <filename moreinfo="none">gfsd.conf</filename> file to standard out.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>backup-usermap</command>
+<command moreinfo="none">backup-usermap</command>
 </term>
 <listitem>
 <para>
-Output <filename>usermap</filename> file to standard out.
+Output <filename moreinfo="none">usermap</filename> file to standard out.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>backup-shared-key</command>
+<command moreinfo="none">backup-shared-key</command>
 </term>
 <listitem>
 <para>
-Output <filename>$HOME/.gfarm_shared_key</filename> file to standard out.
+Output <filename moreinfo="none">$HOME/.gfarm_shared_key</filename> file to standard out.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term>
-<command>restore-backend-db</command>
+<command moreinfo="none">restore-backend-db</command>
 </term>
 <listitem>
 <para>
@@ -538,11 +541,11 @@ The backup data are read from standard in.
 
 <varlistentry>
 <term>
-<command>restore-gfmd-conf</command>
+<command moreinfo="none">restore-gfmd-conf</command>
 </term>
 <listitem>
 <para>
-Restore <filename>gfmd.conf</filename> file.
+Restore <filename moreinfo="none">gfmd.conf</filename> file.
 The backup data are read from standard in.
 </para>
 </listitem>
@@ -550,11 +553,11 @@ The backup data are read from standard in.
 
 <varlistentry>
 <term>
-<command>restore-gfarm-conf</command>
+<command moreinfo="none">restore-gfarm-conf</command>
 </term>
 <listitem>
 <para>
-Restore <filename>gfarm2.conf</filename> file.
+Restore <filename moreinfo="none">gfarm2.conf</filename> file.
 The backup data are read from standard in.
 </para>
 </listitem>
@@ -562,11 +565,11 @@ The backup data are read from standard in.
 
 <varlistentry>
 <term>
-<command>restore-gfsd-conf</command>
+<command moreinfo="none">restore-gfsd-conf</command>
 </term>
 <listitem>
 <para>
-Restore <filename>gfsd.conf</filename> file.
+Restore <filename moreinfo="none">gfsd.conf</filename> file.
 The backup data are read from standard in.
 </para>
 </listitem>
@@ -574,11 +577,11 @@ The backup data are read from standard in.
 
 <varlistentry>
 <term>
-<command>restore-usermap</command>
+<command moreinfo="none">restore-usermap</command>
 </term>
 <listitem>
 <para>
-Restore <filename>usermap</filename> file.
+Restore <filename moreinfo="none">usermap</filename> file.
 The backup data are read from standard in.
 </para>
 </listitem>
@@ -586,11 +589,11 @@ The backup data are read from standard in.
 
 <varlistentry>
 <term>
-<command>restore-shared-key</command>
+<command moreinfo="none">restore-shared-key</command>
 </term>
 <listitem>
 <para>
-Restore <filename>$HOME/.gfarm_shared_key</filename> file.
+Restore <filename moreinfo="none">$HOME/.gfarm_shared_key</filename> file.
 The backup data are read from standard in.
 </para>
 </listitem>
@@ -598,9 +601,9 @@ The backup data are read from standard in.
 
 <varlistentry>
 <term>
-<command>gfcmd</command>
-<parameter>cmd</parameter>=<replaceable>command-name</replaceable>
-<parameter>args</parameter>="<replaceable>command-argument ...</replaceable>"
+<command moreinfo="none">gfcmd</command>
+<parameter moreinfo="none">cmd</parameter>=<replaceable>command-name</replaceable>
+<parameter moreinfo="none">args</parameter>="<replaceable>command-argument ...</replaceable>"
 </term>
 <listitem>
 <para>

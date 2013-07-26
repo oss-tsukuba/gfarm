@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfarm.3'>
+
+<refentry id="gfarm.3">
 
 <refentryinfo><date>26 Jun 2010</date></refentryinfo>
 
@@ -10,12 +13,12 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfarm</refname>
 <refpurpose>Gfarm ファイルシステム API ライブラリ</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
-<synopsis>
+<refsynopsisdiv id="synopsis">
+<synopsis format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 
 </synopsis>
@@ -23,7 +26,7 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>Gfarm ライブラリは，Gfarm ファイルシステムや，スケジューリング
 機能に対するインターフェースを提供します．このマニュアルはライブラリ
 の概要を記述します．各関数の詳細は，関数単位のマニュアルを参照して
@@ -440,8 +443,8 @@ GFARM_STRINGLIST_ELEM() マクロでアクセスすることができます．
 <term>GFARM_STRINGLIST_ELEM(list, i)</term>
 <listitem>
 <para>
-gfarm_stringlist 型の <parameter>list</parameter> 引数が表す文字列配列の
-<parameter>i</parameter> 番目の要素を
+gfarm_stringlist 型の <parameter moreinfo="none">list</parameter> 引数が表す文字列配列の
+<parameter moreinfo="none">i</parameter> 番目の要素を
 表すマクロです．このマクロは左辺値として使えます．
 値として評価した場合には
 <citerefentry>
@@ -455,7 +458,7 @@ gfarm_stringlist 型の <parameter>list</parameter> 引数が表す文字列配�
 <term>GFARM_STRINGLIST_STRARRAY(list)</term>
 <listitem>
 <para>
-gfarm_stringlist 型の <parameter>list</parameter> 引数が
+gfarm_stringlist 型の <parameter moreinfo="none">list</parameter> 引数が
 表す文字列配列の先頭要素へのポインタを返します．
 返り値は，文字へのポインタへのポインタとなります．
 </para>

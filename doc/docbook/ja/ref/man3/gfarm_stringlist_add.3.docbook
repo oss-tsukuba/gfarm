@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfarm-stringlist-add.3'>
+
+<refentry id="gfarm-stringlist-add.3">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -10,20 +13,20 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfarm_stringlist_add</refname>
 <refpurpose>stringlist に文字列を追加する</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfarm_stringlist_add</function></funcdef>
-    <paramdef>gfarm_stringlist * <parameter>listp</parameter></paramdef>
-    <paramdef>char * <parameter>s</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfarm_stringlist_add</function></funcdef>
+    <paramdef>gfarm_stringlist * <parameter moreinfo="none">listp</parameter></paramdef>
+    <paramdef>char * <parameter moreinfo="none">s</parameter></paramdef>
 </funcprototype>
 
 
@@ -32,14 +35,14 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><parameter>listp</parameter>の表す文字列配列の末尾に、文字列
-<parameter>s</parameter>
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><parameter moreinfo="none">listp</parameter>の表す文字列配列の末尾に、文字列
+<parameter moreinfo="none">s</parameter>
 を追加します。</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -62,7 +65,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>GFARM_STRINGLIST_ELEM</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>GFARM_STRINGLIST_STRARRAY</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

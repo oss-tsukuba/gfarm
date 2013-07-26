@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfexec.1'>
+
+<refentry id="gfexec.1">
 
 <refentryinfo><date>22 Apr 2004</date></refentryinfo>
 
@@ -10,25 +13,25 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfexec</refname>
 <refpurpose>Gfarm ファイルシステムのプログラムを実行する</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfexec</command>
-	<arg choice='opt'>-N <replaceable>ノード総数</replaceable></arg>
-	<arg choice='opt'>-I <replaceable>ノード番号</replaceable></arg>
-	<arg choice='opt'>-s</arg>
-	<arg choice='plain'><replaceable>プログラム名</replaceable></arg>
-	<arg choice='opt' rep='repeat'><replaceable>引数</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfexec</command>
+	<arg choice="opt" rep="norepeat">-N <replaceable>ノード総数</replaceable></arg>
+	<arg choice="opt" rep="norepeat">-I <replaceable>ノード番号</replaceable></arg>
+	<arg choice="opt" rep="norepeat">-s</arg>
+	<arg choice="plain" rep="norepeat"><replaceable>プログラム名</replaceable></arg>
+	<arg choice="opt" rep="repeat"><replaceable>引数</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>Gfarm ファイルシステムのプログラムを実行します．本コマンドはファ
 イルシステムノード上で実行する必要があります．
@@ -36,11 +39,11 @@
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-N</option> <parameter>ノード数</parameter></term>
+<term><option>-N</option> <parameter moreinfo="none">ノード数</parameter></term>
 <listitem>
 <para>呼び出すプログラムのノード総数を変更します．
 </para>
@@ -48,7 +51,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-I</option> <parameter>ノード番号</parameter></term>
+<term><option>-I</option> <parameter moreinfo="none">ノード番号</parameter></term>
 <listitem>
 <para>呼び出すプログラムのノード番号を変更します．
 </para>
@@ -59,7 +62,7 @@
 <term><option>-s</option></term>
 <listitem>
 <para>
-「<option>-N</option> <parameter>1</parameter> <option>-I</option> <parameter>0</parameter>」と指定したのと等価です．
+「<option>-N</option> <parameter moreinfo="none">1</parameter> <option>-I</option> <parameter moreinfo="none">0</parameter>」と指定したのと等価です．
 </para>
 </listitem>
 </varlistentry>

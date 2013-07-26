@@ -1,5 +1,8 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
-<refentry id='gfs-acl-get-entry.3'>
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<refentry id="gfs-acl-get-entry.3">
 
 <refentryinfo><date>14 Feb 2011</date></refentryinfo>
 
@@ -9,21 +12,21 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_acl_get_entry</refname>
 <refpurpose>get a Gfarm ACL entry</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfs_acl_get_entry</function></funcdef>
-    <paramdef>gfarm_acl_t <parameter>acl</parameter></paramdef>
-    <paramdef>int <parameter>entry_id</parameter></paramdef>
-    <paramdef>gfarm_acl_entry_t *<parameter>entry_p</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfs_acl_get_entry</function></funcdef>
+    <paramdef>gfarm_acl_t <parameter moreinfo="none">acl</parameter></paramdef>
+    <paramdef>int <parameter moreinfo="none">entry_id</parameter></paramdef>
+    <paramdef>gfarm_acl_entry_t *<parameter moreinfo="none">entry_p</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -31,18 +34,18 @@
 
 <!-- body begins here -->
 
-<refsect1 id='input-arguments'><title>INPUT ARGUMENTS</title>
+<refsect1 id="input-arguments"><title>INPUT ARGUMENTS</title>
 <variablelist>
 
 <varlistentry>
-<term><parameter>acl</parameter></term>
+<term><parameter moreinfo="none">acl</parameter></term>
 <listitem>
 <para>An ACL structure type.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><parameter>entry_id</parameter></term>
+<term><parameter moreinfo="none">entry_id</parameter></term>
 <listitem>
 <para>GFARM_ACL_FIRST_ENTRY (to get first ACL entry) or
 GFARM_ACL_NEXT_ENTRY (to get next ACL entry).</para>
@@ -50,7 +53,7 @@ GFARM_ACL_NEXT_ENTRY (to get next ACL entry).</para>
 </varlistentry>
 
 <varlistentry>
-<term><parameter>entry_p</parameter></term>
+<term><parameter moreinfo="none">entry_p</parameter></term>
 <listitem>
 <para>Pointer to get the ACL entry.</para>
 </listitem>
@@ -59,7 +62,7 @@ GFARM_ACL_NEXT_ENTRY (to get next ACL entry).</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_ERROR</constant></term>
@@ -86,7 +89,7 @@ GFARM_ACL_NEXT_ENTRY (to get next ACL entry).</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_acl_calc_mask</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_acl_create_entry</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

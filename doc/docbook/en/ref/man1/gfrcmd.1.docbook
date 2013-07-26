@@ -1,4 +1,7 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
 <refentry>
@@ -17,18 +20,18 @@
 </refnamediv>
 
 <refsynopsisdiv>
-<cmdsynopsis>
-  <command>gfrcmd</command>
-    <arg choice='plain'><replaceable>host</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>command</replaceable></arg>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrcmd</command>
+    <arg choice="plain" rep="norepeat"><replaceable>host</replaceable></arg>
+    <arg choice="plain" rep="repeat"><replaceable>command</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfrcmd</command> logs into a filesystem node <parameter>host</parameter> and executes
-<parameter>command</parameter>s on the filesystem node.  It provides a similar
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><command moreinfo="none">gfrcmd</command> logs into a filesystem node <parameter moreinfo="none">host</parameter> and executes
+<parameter moreinfo="none">command</parameter>s on the filesystem node.  It provides a similar
 functionality to rsh.  The following is a list of differences, however.</para>
 
 <para>A remote server is not executed by inetd, but is incorporated with
@@ -39,11 +42,11 @@ mechanism.  Since this does not rely on privileged TCP ports  for
 authentication like rsh, the maximum number of remote executions is
 not limited by the number of privileged ports.</para>
 
-<para>Unlike rsh, <command>gfrcmd</command> utilizes a single TCP connection to a
+<para>Unlike rsh, <command moreinfo="none">gfrcmd</command> utilizes a single TCP connection to a
 filesystem node.  It requires less kernel resources than rsh when
 several processes are executed.</para>
 
-<para><command>gfrcmd</command> inherits the environment variable DISPLAY and the
+<para><command moreinfo="none">gfrcmd</command> inherits the environment variable DISPLAY and the
 authentication information of the X Window System.</para>
 
 <para>On the filesystem node, the current working directory is not the home
@@ -56,12 +59,12 @@ occurs.</para>
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
 
 <varlistentry>
-<term><option>-l</option><parameter>username</parameter></term>
+<term><option>-l</option><parameter moreinfo="none">username</parameter></term>
 <listitem>
 <para>Specifies a username on a remote host.</para>
 </listitem>
@@ -116,7 +119,7 @@ shared.</para>
 
 </refsect1>
 
-<refsect1 id='environment-variables'><title>ENVIRONMENT VARIABLES</title>
+<refsect1 id="environment-variables"><title>ENVIRONMENT VARIABLES</title>
 
 <variablelist>
 <varlistentry>
@@ -125,14 +128,14 @@ shared.</para>
 <para>Specifies the debugger command that is invoked when a remotely
 executed command aborts with a fatal signal.  When gdb is specified,
 xterm and the GNU debugger gdb are executed.
-To utilize this functionality, it is necessary to invoke <command>gfrcmd</command>
+To utilize this functionality, it is necessary to invoke <command moreinfo="none">gfrcmd</command>
 on the X Window System.</para>
 </listitem>
 </varlistentry>
 </variablelist>
 </refsect1>
 
-<refsect1 id='bugs'><title>BUGS</title>
+<refsect1 id="bugs"><title>BUGS</title>
 <para>The -l option is not implemented yet.
 </para>
 </refsect1>

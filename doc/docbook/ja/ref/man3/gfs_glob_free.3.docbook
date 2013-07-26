@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfs-glob-free.3'>
+
+<refentry id="gfs-glob-free.3">
 
 <refentryinfo><date>2 Sep 2003</date></refentryinfo>
 
@@ -10,19 +13,19 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_glob_free</refname>
 <refpurpose>パスのタイプを格納している領域を解放する</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_glob_free</function></funcdef>
-    <paramdef>gfs_glob_t * <parameter>listp</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_glob_free</function></funcdef>
+    <paramdef>gfs_glob_t * <parameter moreinfo="none">listp</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -30,11 +33,11 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>パスのタイプを格納するために動的に確保した領域を解放します。</para>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_glob_init</refentrytitle><manvolnum>3</manvolnum></citerefentry>
 <citerefentry><refentrytitle>gfs_glob</refentrytitle><manvolnum>3</manvolnum></citerefentry>

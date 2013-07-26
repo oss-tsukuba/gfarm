@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfs-pio-write.3'>
+
+<refentry id="gfs-pio-write.3">
 
 <refentryinfo><date>27 Jun 2010</date></refentryinfo>
 
@@ -10,22 +13,22 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_write</refname>
 <refpurpose>ファイルの書き込み</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfs_pio_write</function></funcdef>
-    <paramdef>GFS_File <parameter>gf</parameter></paramdef>
-    <paramdef>const void * <parameter>buffer</parameter></paramdef>
-    <paramdef>int <parameter>size</parameter></paramdef>
-    <paramdef>int * <parameter>np</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfs_pio_write</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">gf</parameter></paramdef>
+    <paramdef>const void * <parameter moreinfo="none">buffer</parameter></paramdef>
+    <paramdef>int <parameter moreinfo="none">size</parameter></paramdef>
+    <paramdef>int * <parameter moreinfo="none">np</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -33,19 +36,19 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><parameter>buffer</parameter>から
-<parameter>size</parameter>
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><parameter moreinfo="none">buffer</parameter>から
+<parameter moreinfo="none">size</parameter>
 バイトだけ、ファイル
-<parameter>gf</parameter>
+<parameter moreinfo="none">gf</parameter>
 へ書き込みます。
 実際に書き込まれたバイト数は
-<parameter>np</parameter>
+<parameter moreinfo="none">np</parameter>
 の指す先に返します。</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_ERROR</constant></term>
@@ -56,14 +59,14 @@
 <varlistentry>
 <term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
 <listitem>
-<para><parameter>gf</parameter>
+<para><parameter moreinfo="none">gf</parameter>
 で指定されるファイルがレギュラーファイルではありません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_BAD_FILE_DESCRIPTOR</constant></term>
 <listitem>
-<para><parameter>gf</parameter>
+<para><parameter moreinfo="none">gf</parameter>
 で指定されるファイルディスクリプタが不正、
 あるいは書込可能でオープンされていません。</para>
 </listitem>
@@ -98,7 +101,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_flush</refentrytitle><manvolnum>3</manvolnum></citerefentry>,

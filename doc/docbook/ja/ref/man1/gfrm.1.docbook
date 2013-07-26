@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfrm.1'>
+<refentry id="gfrm.1">
 
 <refentryinfo><date>3 Nov 2006</date></refentryinfo>
 
@@ -11,28 +14,28 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfrm</refname>
 <refpurpose>Gfarm ファイル，ディレクトリ，ファイル複製を削除する．</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfrm</command>
-    <arg choice='opt'>-frRnqv</arg>
-    <arg choice='opt'>-I <replaceable>ファイルセクション</replaceable></arg>
-    <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
-    <arg choice='opt'>-H <replaceable>ホスト指定ファイル</replaceable></arg>
-    <arg choice='opt'>-N <replaceable>複製数</replaceable></arg>
-    <arg choice='opt'>-j <replaceable>スレッド数</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfrm</command>
+    <arg choice="opt" rep="norepeat">-frRnqv</arg>
+    <arg choice="opt" rep="norepeat">-I <replaceable>ファイルセクション</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-h <replaceable>ファイルシステムノード</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>ドメイン名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-H <replaceable>ホスト指定ファイル</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-N <replaceable>複製数</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-j <replaceable>スレッド数</replaceable></arg>
+    <arg choice="plain" rep="repeat"><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>Gfarm-URL に指定されたファイルを削除します．
 デフォルトではディレクトリの削除は行いませんが，
 <option>-r</option>あるいは<option>-R</option>
@@ -59,7 +62,7 @@
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
@@ -76,7 +79,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-j</option> <parameter>スレッド数</parameter></term>
+<term><option>-j</option> <parameter moreinfo="none">スレッド数</parameter></term>
 <listitem>
 <para>指定されたスレッド数で並列にファイル／ファイル複製を削除します．
 このオプションは gfrm が OpenMP C コンパイラでコンパイルされたときに
@@ -118,7 +121,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-h</option> <parameter>ファイルシステムノード</parameter></term>
+<term><option>-h</option> <parameter moreinfo="none">ファイルシステムノード</parameter></term>
 <listitem>
 <para>複製を削除するファイルシステムノード名を指定します．
 <option>-I</option>オプションと共に用いることにより，
@@ -128,7 +131,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-D</option> <parameter>ドメイン名</parameter></term>
+<term><option>-D</option> <parameter moreinfo="none">ドメイン名</parameter></term>
 <listitem>
 <para>複製を削除するファイルシステムノードのドメイン名を指定します．
 </para>
@@ -136,7 +139,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-H</option> <parameter>ホスト指定ファイル</parameter></term>
+<term><option>-H</option> <parameter moreinfo="none">ホスト指定ファイル</parameter></term>
 <listitem>
 <para>複製を削除するファイルシステムノード群を記載したファイル名を指定します．
 ホスト名は，各行に一ホストずつ記述します．
@@ -148,7 +151,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-I</option> <parameter>ファイルセクション</parameter></term>
+<term><option>-I</option> <parameter moreinfo="none">ファイルセクション</parameter></term>
 <listitem>
 <para>削除するファイルセクションを指定します．
 ファイルセクションとは，
@@ -158,7 +161,7 @@
 </varlistentry>
 
 <varlistentry>
-<term><option>-N</option> <parameter>複製数</parameter></term>
+<term><option>-N</option> <parameter moreinfo="none">複製数</parameter></term>
 <listitem>
 <para>指定された複製数より多くの複製をもつファイルに対し，
 複製を消去し指定された複製数にします．</para>

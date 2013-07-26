@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfxattr.1'>
+
+<refentry id="gfxattr.1">
 
 <refentryinfo><date>18 Aug 2008</date></refentryinfo>
 
@@ -10,34 +13,34 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfxattr</refname>
 <refpurpose>Gfarm ファイルシステムのファイルの拡張属性を操作する</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
-<cmdsynopsis>
-  <command>gfxattr</command>
-    <group choice='opt'>
-      <arg choice='plain'>-s</arg>
-      <arg choice='plain'>-g</arg>
-      <arg choice='plain'>-l</arg>
-      <arg choice='plain'>-r</arg>
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfxattr</command>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-s</arg>
+      <arg choice="plain" rep="norepeat">-g</arg>
+      <arg choice="plain" rep="norepeat">-l</arg>
+      <arg choice="plain" rep="norepeat">-r</arg>
     </group>
-    <arg choice='opt'>-x</arg>
-    <group choice='opt'>
-      <arg choice='plain'>-c</arg>
-      <arg choice='plain'>-m</arg>
+    <arg choice="opt" rep="norepeat">-x</arg>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-c</arg>
+      <arg choice="plain" rep="norepeat">-m</arg>
     </group>
-    <arg choice='opt'>-f <replaceable>xattrfile</replaceable></arg>
-    <arg choice='plain'><replaceable>file</replaceable></arg>
-    <arg choice='opt'><replaceable>xattrname</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-f <replaceable>xattrfile</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>file</replaceable></arg>
+    <arg choice="opt" rep="norepeat"><replaceable>xattrname</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
 指定したファイルの拡張属性およびXML拡張属性を操作します．
@@ -64,7 +67,7 @@ XPath検索の対象となります．
 
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
+<refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
 <term><option>-s</option></term>
@@ -135,7 +138,7 @@ XPath検索の対象となります．
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
   <refentrytitle>gffindxmlattr</refentrytitle><manvolnum>1</manvolnum>

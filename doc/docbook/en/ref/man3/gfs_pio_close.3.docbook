@@ -1,7 +1,10 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
 <!-- $Id$ -->
 
-<refentry id='gfs-pio-close.3'>
+<refentry id="gfs-pio-close.3">
 
 <refentryinfo><date>27 Jun 2010</date></refentryinfo>
 
@@ -11,19 +14,19 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_pio_close</refname>
 <refpurpose>close a file in the Gfarm file system</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfs_pio_close</function></funcdef>
-    <paramdef>GFS_File <parameter>gfp</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfs_pio_close</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">gfp</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -31,13 +34,13 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
-<para><function>gfs_pio_close()</function> closes a file <parameter>gfp</parameter>, so that it no longer
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para><function moreinfo="none">gfs_pio_close()</function> closes a file <parameter moreinfo="none">gfp</parameter>, so that it no longer
 refers to any file and may be reused.</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_ERROR</constant></term>
@@ -48,7 +51,7 @@ refers to any file and may be reused.</para>
 <varlistentry>
 <term><constant>GFARM_ERR_BAD_FILE_DESCRIPTOR</constant></term>
 <listitem>
-<para>The file descripter specified by <parameter>gfp</parameter> is
+<para>The file descripter specified by <parameter moreinfo="none">gfp</parameter> is
 not a valid open file descriptor.</para>
 </listitem>
 </varlistentry>
@@ -68,7 +71,7 @@ not a valid open file descriptor.</para>
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>

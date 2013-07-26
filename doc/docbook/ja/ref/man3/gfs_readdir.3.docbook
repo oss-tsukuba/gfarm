@@ -1,6 +1,9 @@
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
-<refentry id='gfs-readdir.3'>
+
+<refentry id="gfs-readdir.3">
 
 <refentryinfo><date>1 May 2002</date></refentryinfo>
 
@@ -10,20 +13,20 @@
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv id="name">
 <refname>gfs_readdir</refname>
 <refpurpose>ディレクトリ内容読み込み</refpurpose>
 </refnamediv>
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv id="synopsis">
 <funcsynopsis>
-<funcsynopsisinfo>
+<funcsynopsisinfo format="linespecific">
 #include &lt;gfarm/gfarm.h&gt;
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_readdir</function></funcdef>
-    <paramdef>GFS_Dir <parameter>dir</parameter></paramdef>
-    <paramdef>struct gfs_dirent ** <parameter>entryp</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_readdir</function></funcdef>
+    <paramdef>GFS_Dir <parameter moreinfo="none">dir</parameter></paramdef>
+    <paramdef>struct gfs_dirent ** <parameter moreinfo="none">entryp</parameter></paramdef>
 </funcprototype>
 
 
@@ -32,21 +35,21 @@
 
 <!-- body begins here -->
 
-<refsect1 id='description'><title>DESCRIPTION</title>
+<refsect1 id="description"><title>DESCRIPTION</title>
 <para>引数
-<parameter>dir</parameter>
+<parameter moreinfo="none">dir</parameter>
 で指定したディレクトリから、1 つのディレクトリ・エントリ
 を読み込み、そのポインタを
-<parameter>entryp</parameter>
+<parameter moreinfo="none">entryp</parameter>
 の指す先に返します。
-<parameter>entryp</parameter>
+<parameter moreinfo="none">entryp</parameter>
 の指す領域は、次に同じ
-<parameter>dir</parameter>
+<parameter moreinfo="none">dir</parameter>
 引数で gfs_readdir() ないし gfs_closedir() を呼び出した時に失われます。</para>
 
 </refsect1>
 
-<refsect1 id='return-values'><title>RETURN VALUES</title>
+<refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
@@ -63,7 +66,7 @@
 </variablelist>
 </refsect1>
 
-<refsect1 id='see-also'><title>SEE ALSO</title>
+<refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfs_closedir</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_opendir</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
