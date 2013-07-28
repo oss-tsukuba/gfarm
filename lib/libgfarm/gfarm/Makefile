@@ -204,7 +204,7 @@ auth_server.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h hostspec.h auth.h gfp_xdr.h
 auth_server_gsi.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h $(GFUTIL_SRCDIR)/gfutil.h io_fd.h io_gfsl.h auth.h auth_gsi.h
 auth_server_uid.lo: $(GFUTIL_SRCDIR)/gfutil.h auth.h gfm_client.h
 auth_server_uid_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h auth.h gfm_client.h
-config.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h patmatch.h hostspec.h param.h sockopt.h host.h auth.h gfpath.h config.h gfm_proto.h gfs_proto.h $(top_builddir)/makes/config.mk metadb_server.h filesystem.h # $(GFARM_CONFIG) -> $(sysconfdir)
+config.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h patmatch.h hostspec.h param.h sockopt.h host.h auth.h gfpath.h config.h gfm_proto.h gfs_proto.h $(top_builddir)/makes/config.mk metadb_server.h filesystem.h conn_cache.h conn_hash.h humanize_number.h # $(GFARM_CONFIG) -> $(sysconfdir)
 conn_hash.lo: $(GFUTIL_SRCDIR)/hash.h conn_hash.h
 error.lo: $(GFUTIL_SRCDIR)/hash.h
 conn_cache.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/lru_cache.h conn_hash.h conn_cache.h

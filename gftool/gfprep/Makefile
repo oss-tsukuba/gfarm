@@ -48,6 +48,7 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/host.h \
 	$(GFARMLIB_SRCDIR)/lookup.h \
 	$(GFARMLIB_SRCDIR)/gfs_pio.h \
+	$(GFARMLIB_SRCDIR)/humanize_number.h \
 	$(GFREP_SRCDIR)/gfarm_list.h \
 	gfprep.h \
 	gfarm_parallel.h \
