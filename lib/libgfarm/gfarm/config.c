@@ -51,6 +51,7 @@
 #include "filesystem.h"
 #include "conn_hash.h"
 #include "conn_cache.h"
+#include "humanize_number.h"
 
 #ifdef SOMAXCONN
 #define LISTEN_BACKLOG_DEFAULT	SOMAXCONN
@@ -2069,8 +2070,8 @@ static gfarm_error_t
 parse_set_misc_offset(char *p, gfarm_off_t *vp)
 {
 	gfarm_error_t e;
-	char *ep, *s;
-	gfarm_off_t v;
+	char *s;
+	gfarm_int64_t v;
 
 	e = get_one_argument(p, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -2084,40 +2085,7 @@ parse_set_misc_offset(char *p, gfarm_off_t *vp)
 	if (*vp != GFARM_CONFIG_MISC_DEFAULT) /* first line has precedence */
 		return (GFARM_ERR_NO_ERROR);
 	errno = 0;
-	v = gfarm_strtoi64(s, &ep);
-	if (errno != 0) {
-		int save_errno = errno;
-		gflog_debug(GFARM_MSG_1000966,
-			"conversion to int64 failed "
-			"when parsing misc offset (%s): %s",
-			p, strerror(save_errno));
-		return (gfarm_errno_to_error(save_errno));
-	}
-	if (ep == s) {
-		gflog_debug(GFARM_MSG_1000967,
-			"Integer expected when parsing misc offset but (%s)",
-			s);
-		return (GFARM_ERRMSG_INTEGER_EXPECTED);
-	}
-	if (*ep != '\0') {
-		switch (*ep) {
-		case 'k': case 'K':
-			ep++; v *= 1024; break;
-		case 'm': case 'M':
-			ep++; v *= 1024 * 1024; break;
-		case 'g': case 'G':
-			ep++; v *= 1024 * 1024 * 1024; break;
-		case 't': case 'T':
-			ep++; v *= 1024 * 1024; v *= 1024 * 1024; break;
-		}
-		if (*ep != '\0') {
-			gflog_debug(GFARM_MSG_1000968,
-				"Invalid character found "
-				"when parsing misc offset (%s)",
-				s);
-			return (GFARM_ERRMSG_INVALID_CHARACTER);
-		}
-	}
+	e = gfarm_humanize_number_to_int64(&v, s);
 	*vp = v;
 	return (GFARM_ERR_NO_ERROR);
 }
