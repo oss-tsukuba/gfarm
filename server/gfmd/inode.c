@@ -2303,15 +2303,23 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			"inode_alloc() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	switch (expected_type) {
-	case GFS_DT_DIR: e = inode_init_dir(n, parent); break;
-	case GFS_DT_REG:
-		e = quota_check_limits(user, parent->i_group, 1, 0);
-		if (e == GFARM_ERR_NO_ERROR)
+	e = quota_check_limits(user, parent->i_group, 1, 0);
+	if (e == GFARM_ERR_NO_ERROR) {
+		switch (expected_type) {
+		case GFS_DT_DIR:
+			e = inode_init_dir(n, parent);
+			break;
+		case GFS_DT_REG:
 			e = inode_init_file(n);
-		break;
-	case GFS_DT_LNK: e = inode_init_symlink(n, symlink_src); break;
-	default: assert(0); e = GFARM_ERR_UNKNOWN; break;
+			break;
+		case GFS_DT_LNK:
+			e = inode_init_symlink(n, symlink_src);
+			break;
+		default:
+			assert(0);
+			e = GFARM_ERR_UNKNOWN;
+			break;
+		}
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001736,
