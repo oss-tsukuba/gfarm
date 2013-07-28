@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/time.h>
+#include <assert.h>
 
 #include <gfarm/gfarm.h>
 
@@ -350,10 +351,18 @@ int64_add(gfarm_int64_t orig, gfarm_int64_t diff)
 void
 quota_update_file_add(struct inode *inode)
 {
-	gfarm_off_t size = inode_get_size(inode);
-	gfarm_int64_t ncopy = inode_get_ncopy_with_dead_host(inode);
+	gfarm_off_t size;
+	gfarm_int64_t ncopy;
 	struct user *u = inode_get_user(inode);
 	struct group *g = inode_get_group(inode);
+
+	if (inode_is_file(inode)) {
+		size = inode_get_size(inode);
+		ncopy = inode_get_ncopy_with_dead_host(inode);
+	} else {
+		size = 0;
+		ncopy = 0;
+	}
 
 	if (u) {
 		struct quota *uq = user_quota(u);
@@ -390,8 +399,7 @@ quota_update_file_add(struct inode *inode)
 static void
 quota_update_file_add_for_quotacheck(void *closure, struct inode *inode)
 {
-	if (inode_is_file(inode)) /* all inodes by inode_lookup_all() */
-		quota_update_file_add(inode);
+	quota_update_file_add(inode);
 }
 
 #define update_file_resize(q, old_size, new_size, ncopy)		\
@@ -408,6 +416,8 @@ quota_update_file_resize(struct inode *inode, gfarm_off_t new_size)
 	gfarm_int64_t ncopy = inode_get_ncopy_with_dead_host(inode);
 	struct user *u = inode_get_user(inode);
 	struct group *g = inode_get_group(inode);
+
+	assert(inode_is_file(inode));
 
 	if (u) {
 		struct quota *uq = user_quota(u);
@@ -477,10 +487,18 @@ quota_update_replica_remove(struct inode *inode)
 void
 quota_update_file_remove(struct inode *inode)
 {
-	gfarm_off_t size = inode_get_size(inode);
-	gfarm_int64_t ncopy = inode_get_ncopy_with_dead_host(inode);
+	gfarm_off_t size;
+	gfarm_int64_t ncopy;
 	struct user *u = inode_get_user(inode);
 	struct group *g = inode_get_group(inode);
+
+	if (inode_is_file(inode)) {
+		size = inode_get_size(inode);
+		ncopy = inode_get_ncopy_with_dead_host(inode);
+	} else {
+		size = 0;
+		ncopy = 0;
+	}
 
 	if (u) {
 		struct quota *uq = user_quota(u);
