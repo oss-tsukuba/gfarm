@@ -4376,12 +4376,13 @@ inode_replicated(struct file_replicating *fr,
 			    (long long)inode_get_number(inode),
 			    (long long)fr->igen,
 			    host_name(fr->dst), src_errcode, dst_errcode);
-		if (debug_mode && (size != inode_get_size(inode) ||
-		    fr->igen != inode_get_gen(inode)))
-			gflog_debug(GFARM_MSG_1001763,
-			    "invalid replica: "
-			    "(gen:%lld, size:%lld) "
-			    "should be (gen:%lld, size:%lld)",
+		if (size != inode_get_size(inode) ||
+		    fr->igen != inode_get_gen(inode))
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "replication failed. invalid replica (inum=%lld): "
+			    "(gen=%lld, size=%lld) "
+			    "should be (gen=%lld, size=%lld)",
+			    (long long)inode_get_number(inode),
 			    (long long)fr->igen, (long long)size,
 			    (long long)inode_get_gen(inode),
 			    (long long)inode_get_size(inode));
