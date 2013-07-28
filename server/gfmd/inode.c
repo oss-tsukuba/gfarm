@@ -1325,6 +1325,8 @@ inode_remove(struct inode *inode)
 
 	if (inode->u.c.activity != NULL)
 		gflog_fatal(GFARM_MSG_1000302, "inode_remove: still opened");
+
+	quota_update_file_remove(inode);
 	if (inode_is_file(inode)) {
 		struct file_copy *copy, *cn;
 
@@ -1340,7 +1342,6 @@ inode_remove(struct inode *inode)
 		}
 		inode->u.c.s.f.copies = NULL; /* ncopy == 0 */
 		inode_cksum_remove(inode);
-		quota_update_file_remove(inode);
 		dfc_needs_free = 1;
 	} else if (inode_is_dir(inode)) {
 		dir_free(inode->u.c.s.d.entries);
@@ -1913,8 +1914,7 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 	if (user == NULL && group == NULL)
 		return (GFARM_ERR_NO_ERROR);
 
-	if (inode_is_file(inode))
-		quota_update_file_remove(inode);
+	quota_update_file_remove(inode);
 	if (user != NULL) {
 		inode->i_user = user;
 
@@ -1935,8 +1935,7 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 			    (unsigned long long)inode->i_number,
 			    gfarm_error_string(e));
 	}
-	if (inode_is_file(inode))
-		quota_update_file_add(inode);
+	quota_update_file_add(inode);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -2656,8 +2655,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	}
 
 	inode_db_init(n);
-	if (inode_is_file(n))  /* after setting i_user and i_group */
-		quota_update_file_add(n);
+	quota_update_file_add(n);
 
 	if (acl_def != NULL) {
 		assert(inode_is_dir(n));
@@ -3207,7 +3205,6 @@ inode_create_file_in_lost_found(
 		    gfarm_error_string(e));
 	/* abandon `e' */
 
-	/* assert(inode_is_file(n)); */
 	quota_update_file_add(n);
 
 	*inodep = n;
