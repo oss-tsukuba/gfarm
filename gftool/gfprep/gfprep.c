@@ -31,6 +31,7 @@
 #include "gfm_client.h"
 #include "host.h"
 #include "lookup.h"
+#include "humanize_number.h"
 
 #include "gfarm_list.h"
 
@@ -3107,7 +3108,13 @@ main(int argc, char *argv[])
 			opt_limited_src = 1;
 			break;
 		case 'M':
-			opt_max_copy_size = strtoll(optarg, NULL, 0);
+			e = gfarm_humanize_number_to_int64(
+			    &opt_max_copy_size, optarg);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gfprep_error("-M %s: invalid number",
+				    optarg);
+				exit(EXIT_FAILURE);
+			}
 			break;
 		case 'f': /* gfpcopy */
 			opt_force_copy = 1;
