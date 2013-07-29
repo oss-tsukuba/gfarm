@@ -393,7 +393,7 @@ gfarm_repattr_parse(const char *s, gfarm_repattr_t **retp, size_t *n_retp)
 		if (n_tokens == 2) {
 			if (!parse_int32(tokens2[1], &spec_n))
 				continue;
-			if (spec_n < 1)
+			if (spec_n < 0)
 				continue;
 			rep = allocate_repattr(tokens2[0], spec_n);
 			if (rep != NULL)
