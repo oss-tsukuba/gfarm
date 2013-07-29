@@ -57,7 +57,8 @@ $(dstsubst): $(srcsubst)
 
 man-man: $(DOCBOOK2MAN_XSL)
 	for i in $(DOCBOOK); do \
-		$(MAKE) srcsubst=$(DOCBOOK_DIR)/$${i}.docbook \
+		$(MAKE) -f $(srcdir)/Makefile \
+			srcsubst=$(DOCBOOK_DIR)/$${i}.docbook \
 			dstsubst=$$i $$i; \
 	done
 

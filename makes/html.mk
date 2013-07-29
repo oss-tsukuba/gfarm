@@ -64,7 +64,8 @@ $(dstsubst): $(srcsubst)
 html-html: $(DOCBOOK2HTML_XSL)
 	for i in -- $(HTMLSRC); do \
 		case $$i in --) continue;; esac; \
-		$(MAKE) srcsubst=$(DOCBOOK_DIR)/$${i}.docbook \
+		$(MAKE) -f $(srcdir)/Makefile \
+			srcsubst=$(DOCBOOK_DIR)/$${i}.docbook \
 			dstsubst=$${i}.html $${i}.html; \
 	done
 
