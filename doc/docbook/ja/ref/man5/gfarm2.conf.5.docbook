@@ -744,6 +744,13 @@ GSIは利用できません。この場合、<token>gsi</token>および
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>shared_key_file</token> <parameter moreinfo="none">パス名</parameter></term>
+<listitem>
+<para>sharedsecret認証に用いる秘密鍵ファイルのパス名を指定します。</para>
+</listitem>
+</varlistentry>
+
 <!--
 <varlistentry>
 <term><token>netparam</token> <parameter moreinfo="none">パラメータ</parameter><emphasis>=</emphasis><parameter moreinfo="none">値</parameter> <emphasis>[</emphasis><parameter moreinfo="none">ホスト指定</parameter><emphasis>]</emphasis></term>
@@ -1873,6 +1880,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;postgresql_password_statement&gt; |
 	&lt;postgresql_conninfo_statement&gt; |
 	&lt;auth_statement&gt; |
+	&lt;shared_key_file_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
 <!--	&lt;address_use_statement&gt; | -->
@@ -2097,6 +2105,11 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <varlistentry>
 <term>&lt;auth_method&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"gsi" | "gsi_auth" | "sharedsecret"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;shared_key_file_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"shared_key_file" &lt;pathname&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--
