@@ -1148,10 +1148,7 @@ fi
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/config-gfarm.iostat
-%dir %{share_prefix}/ganglia
-%{share_prefix}/ganglia/gfarm_gfmd.pyconf
-%{share_prefix}/ganglia/gfarm_gfsd.pyconf
-%{share_prefix}/ganglia/gfarm_iostat.py
+%{share_prefix}/ganglia
 
 %files server
 %defattr(-,root,root)
