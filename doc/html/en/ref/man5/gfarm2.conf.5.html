@@ -602,6 +602,10 @@ and all other hosts will be authenticated by
 <span class="token">gsi</span>.  Note that two hosts, 192.168.0.100 and
 192.168.0.101, will be tested for authentication by gsi only.</p>
 </dd>
+<dt><span class="term"><span class="token">shared_key_file</span> <em class="parameter"><code>pathname</code></em></span></dt>
+<dd><p>The <span class="token">shared_key_file</span> statement specifies a
+  pathname of the shared secret key file in sharedsecret
+  authentication.</p></dd>
 <dt><span class="term"><span class="token">sockopt </span><em class="parameter"><code>option</code></em><span class="emphasis"><em>[=</em></span><em class="parameter"><code>value</code></em><span class="emphasis"><em>] [<span class="token">LISTENER</span> | <em class="parameter"><code>Host_specification</code></em>]</em></span></span></dt>
 <dd>
 <p>The <span class="token">sockopt</span> parameter specifies the socket option
@@ -1440,6 +1444,7 @@ This parameter is only available in gfmd.conf.
 	&lt;postgresql_password_statement&gt; |<br>
 	&lt;postgresql_conninfo_statement&gt; |<br>
 	&lt;auth_statement&gt; |<br>
+	&lt;shared_key_file_statement&gt; |<br>
 <br>
 	&lt;sockopt_statement&gt; |<br>
 <br>
@@ -1562,6 +1567,8 @@ This parameter is only available in gfmd.conf.
 <dd><div class="literallayout"><p>"enable" | "disable"</p></div></dd>
 <dt><span class="term">&lt;auth_method&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"gsi" | "gsi_auth" | "sharedsecret"</p></div></dd>
+<dt><span class="term">&lt;shared_key_file_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"shared_key_file" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;sockopt_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]</p></div></dd>
 <dt><span class="term">&lt;socket_option&gt; ::=</span></dt>

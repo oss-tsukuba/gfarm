@@ -570,6 +570,8 @@ GSIは利用できません。この場合、<span class="token">gsi</span>お�
 すなわち、ホスト192.168.0.100と192.168.0.101の2つのホストは、
 <span class="token">gsi</span>認証のみを試みることになります。</p>
 </dd>
+<dt><span class="term"><span class="token">shared_key_file</span> <em class="parameter"><code>パス名</code></em></span></dt>
+<dd><p>sharedsecret認証に用いる秘密鍵ファイルのパス名を指定します。</p></dd>
 <dt><span class="term"><span class="token">sockopt </span><em class="parameter"><code>オプション</code></em><span class="emphasis"><em>[=</em></span><em class="parameter"><code>値</code></em><span class="emphasis"><em>] [<span class="token">LISTENER</span> | <em class="parameter"><code>ホスト指定</code></em>]</em></span></span></dt>
 <dd>
 <p>通信socket(2)に対して、setsockopt(2)システムコールを使って
@@ -1389,6 +1391,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;postgresql_password_statement&gt; |<br>
 	&lt;postgresql_conninfo_statement&gt; |<br>
 	&lt;auth_statement&gt; |<br>
+	&lt;shared_key_file_statement&gt; |<br>
 <br>
 	&lt;sockopt_statement&gt; |<br>
 <br>
@@ -1511,6 +1514,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <dd><div class="literallayout"><p>"enable" | "disable"</p></div></dd>
 <dt><span class="term">&lt;auth_method&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"gsi" | "gsi_auth" | "sharedsecret"</p></div></dd>
+<dt><span class="term">&lt;shared_key_file_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"shared_key_file" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;sockopt_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]</p></div></dd>
 <dt><span class="term">&lt;socket_option&gt; ::=</span></dt>
