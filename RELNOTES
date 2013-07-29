@@ -1,3 +1,32 @@
+Release note for Gfarm 2.5.8.2
+==============================
+
+[2013.7.29]
+
+New configuration directive
+* spool_base_load - additional CPU load for gfsd to pretend to be busy
+* shared_key_file - specify a pathname of the shared key file
+
+Updated feature
+* Japanese documents including manual pages and HTML documents are
+  encoded in UTF-8 [sf.net trac #698]
+* all entries are included in FileNum in quota [sf.net trac #717]
+* gfprep, gfpcopy - -M option to limit the total file size to be
+  copied [sf.net trac #707]
+
+Bug fix
+* slave gfmd fails to restart after gfhost -d [sf.net trac #697]
+* gfprep -m cannot migrate replicas when two or more source nodes are
+  specified [sf.net trac #709]
+* gfprep -m removes a new valid replica when the source replica cannot
+  be removed [sf.net trac #708]
+* recursive operations for gfarm:// and gfarm://host:port do not work
+* gfdump -r and config-gfarm-update do not work in private mode in
+  debian
+* plug memory leak when file trace enabled [sf.net trac #703]
+* 0-byte file can be created when using gfarm2fs 1.2.8 or later
+  [sf.net trac #702]
+
 Release note for Gfarm 2.5.8.1
 ==============================
 
