@@ -22,6 +22,9 @@ export X509_USER_KEY=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdkey.pem
 test -f $DAEMON || exit 0
 test -f $CONF || exit 0
 
+# status_of_proc
+. /lib/lsb/init-functions
+
 case "$1" in
   start)
 	echo -n "Starting gfarm server: $FILE"
@@ -34,12 +37,15 @@ case "$1" in
 	start-stop-daemon --stop --quiet --pidfile $PIDFILE --exec $DAEMON
 	echo "."
 	;;
+  status)
+	status_of_proc -p $PIDFILE $DAEMON $NAME && exit 0 || exit $?
+	;;
   restart|force-reload)
 	$0 stop
 	$0 start
 	;;
   *)
-	echo "Usage: $0 {start|stop|restart}"
+	echo "Usage: $0 {start|stop|status|restart}"
 	exit 1
 	;;
 esac

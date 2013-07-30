@@ -60,6 +60,8 @@ start()
 
 stop()
 {
+	SIGNAL=$1
+	[ X$SIGNAL = X ] && SIGNAL=TERM
 	echo -n "Stopping $FILE:"
 	checkstatus > /dev/null
 	if [ $? -eq 3 ]; then
@@ -70,7 +72,7 @@ stop()
 
 	if [ -f "$PIDFILE" ]; then
 		pid=`cat "$PIDFILE"`
-		kill -TERM $pid && success || failure
+		kill -$SIGNAL $pid && success || failure
 		RETVAL=$?
 		if [ $RETVAL -eq 0 ]; then
 			while kill -0 $pid 2>/dev/null; do
@@ -112,7 +114,7 @@ checkstatus()
 
 usage()
 {
-	echo $"Usage: $0 {start|stop|restart|status}"
+	echo $"Usage: $0 {start|slavestart|stop|kill|restart|reload|status}"
 	exit 1
 }
 
@@ -133,6 +135,10 @@ case "$SUB_COMMAND" in
 	;;
   stop)
 	stop
+	RETVAL=$?
+	;;
+  kill)
+	stop KILL
 	RETVAL=$?
 	;;
   restart|reload)
