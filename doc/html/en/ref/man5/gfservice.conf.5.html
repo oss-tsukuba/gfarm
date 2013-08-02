@@ -95,10 +95,22 @@ the corresponding "gfmd<em class="replaceable"><code>n</code></em>" server.
 </p>
 <div class="variablelist"><dl>
 <dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em></code></span></dt>
-<dd><p>
+<dd>
+<p>
 Register a gfmd server.
 Its value represents a hostname (or an IP address) of the server.
-</p></dd>
+Note that <span class="command"><strong>gfservice</strong></span> uses the values for destination
+hosts of SSH connections only.
+To specify host names used in the Gfarm system,
+use <code class="option">-h</code> option in
+<code class="varname">gfmd<em class="replaceable"><code>n</code></em>_CONFIG_GFARM_OPTOINS</code>
+variable instead:
+</p>
+<div class="literallayout"><p><br>
+	gfmd1=md1-ctl.example.org<br>
+	gfmd1_CONFIG_GFARM_OPTIONS="-h md1.example.org"<br>
+</p></div>
+</dd>
 <dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_GFBINDIR</code></span></dt>
 <dd><p>
 Specify a path to a directory where <span class="command"><strong>gfservice-agent</strong></span>
@@ -164,10 +176,22 @@ corresponding "gfsd<em class="replaceable"><code>n</code></em>" server.
 </p>
 <div class="variablelist"><dl>
 <dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em></code></span></dt>
-<dd><p>
+<dd>
+<p>
 Register a gfsd server.
 Its value represents a hostname (or an IP address) of the server.
-</p></dd>
+Note that <span class="command"><strong>gfservice</strong></span> uses the values for destination
+hosts of SSH connections only.
+To specify host names used in the Gfarm system,
+use <code class="option">-h</code> option in
+<code class="varname">gfsd<em class="replaceable"><code>n</code></em>_CONFIG_GFSD_OPTOINS</code>
+variable instead:
+</p>
+<div class="literallayout"><p><br>
+	gfsd1=fs2-ctl.example.org<br>
+	gfsd1_CONFIG_GFSD_OPTIONS="-h fs2.example.org"<br>
+</p></div>
+</dd>
 <dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_GFBINDIR</code></span></dt>
 <dd><p>
 Specify a path to a directory where <span class="command"><strong>gfservice-agent</strong></span>

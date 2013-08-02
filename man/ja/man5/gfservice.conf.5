@@ -135,6 +135,22 @@ gfsd サーバーとクライアントホストを指定するには、ホスト
 \fIgfmd\fR\fI\fIn\fR\fR
 .RS 4
 gfmd サーバーを登録します。 変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。
+\fBgfservice\fR
+は、この値を SSH 接続先ホストとしてしか 使用しないので注意して下さい。 Gfarm システム内で使用されるホスト名を指定するには、代わりに
+\fIgfmd\fR\fI\fIn\fR\fR\fI_CONFIG_GFARM_OPTOINS\fR
+という変数の中で、\fB\-h\fR
+オプションを使用して下さい。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	gfmd1=md1\-ctl\&.example\&.org
+	gfmd1_CONFIG_GFARM_OPTIONS="\-h md1\&.example\&.org"
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .PP
 \fIgfmd\fR\fI\fIn\fR\fR\fI_GFBINDIR\fR
@@ -207,6 +223,22 @@ Sudo コマンドのパスおよびオプションを指定します。
 \fIgfsd\fR\fI\fIn\fR\fR
 .RS 4
 gfsd サーバーを登録します。 変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。
+\fBgfservice\fR
+は、この値を SSH 接続先ホストとしてしか 使用しないので注意して下さい。 Gfarm システム内で使用されるホスト名を指定するには、代わりに
+\fIgfsd\fR\fI\fIn\fR\fR\fI_CONFIG_GFSD_OPTOINS\fR
+という変数の中で、\fB\-h\fR
+オプションを使用して下さい。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	gfsd1=fs2\-ctl\&.example\&.org
+	gfsd1_CONFIG_GFSD_OPTIONS="\-h fs2\&.example\&.org"
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .PP
 \fIgfsd\fR\fI\fIn\fR\fR\fI_GFBINDIR\fR
