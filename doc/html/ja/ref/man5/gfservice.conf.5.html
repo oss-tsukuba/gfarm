@@ -96,10 +96,21 @@ gfsd サーバーとクライアントホストを指定するには、ホスト
 </p>
 <div class="variablelist"><dl>
 <dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em></code></span></dt>
-<dd><p>
+<dd>
+<p>
 gfmd サーバーを登録します。
 変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。
-</p></dd>
+<span class="command"><strong>gfservice</strong></span> は、この値を SSH 接続先ホストとしてしか
+使用しないので注意して下さい。
+Gfarm システム内で使用されるホスト名を指定するには、代わりに 
+<code class="varname">gfmd<em class="replaceable"><code>n</code></em>_CONFIG_GFARM_OPTOINS</code>
+という変数の中で、<code class="option">-h</code> オプションを使用して下さい。
+</p>
+<div class="literallayout"><p><br>
+	gfmd1=md1-ctl.example.org<br>
+	gfmd1_CONFIG_GFARM_OPTIONS="-h md1.example.org"<br>
+</p></div>
+</dd>
 <dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_GFBINDIR</code></span></dt>
 <dd><p>
 gfmd サーバー上で <span class="command"><strong>gfservice-agent</strong></span> コマンドが
@@ -166,10 +177,21 @@ Sudo コマンドのパスおよびオプションを指定します。
 </p>
 <div class="variablelist"><dl>
 <dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em></code></span></dt>
-<dd><p>
+<dd>
+<p>
 gfsd サーバーを登録します。
 変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。
-</p></dd>
+<span class="command"><strong>gfservice</strong></span> は、この値を SSH 接続先ホストとしてしか
+使用しないので注意して下さい。
+Gfarm システム内で使用されるホスト名を指定するには、代わりに 
+<code class="varname">gfsd<em class="replaceable"><code>n</code></em>_CONFIG_GFSD_OPTOINS</code>
+という変数の中で、<code class="option">-h</code> オプションを使用して下さい。
+</p>
+<div class="literallayout"><p><br>
+	gfsd1=fs2-ctl.example.org<br>
+	gfsd1_CONFIG_GFSD_OPTIONS="-h fs2.example.org"<br>
+</p></div>
+</dd>
 <dt><span class="term"><code class="varname">gfsd<em class="replaceable"><code>n</code></em>_GFBINDIR</code></span></dt>
 <dd><p>
 gfsd サーバー上で <span class="command"><strong>gfservice-agent</strong></span> コマンドが

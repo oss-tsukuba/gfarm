@@ -138,7 +138,24 @@ currently the following variables:
 .PP
 \fIgfmd\fR\fI\fIn\fR\fR
 .RS 4
-Register a gfmd server\&. Its value represents a hostname (or an IP address) of the server\&.
+Register a gfmd server\&. Its value represents a hostname (or an IP address) of the server\&. Note that
+\fBgfservice\fR
+uses the values for destination hosts of SSH connections only\&. To specify host names used in the Gfarm system, use
+\fB\-h\fR
+option in
+\fIgfmd\fR\fI\fIn\fR\fR\fI_CONFIG_GFARM_OPTOINS\fR
+variable instead:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	gfmd1=md1\-ctl\&.example\&.org
+	gfmd1_CONFIG_GFARM_OPTIONS="\-h md1\&.example\&.org"
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .PP
 \fIgfmd\fR\fI\fIn\fR\fR\fI_GFBINDIR\fR
@@ -212,7 +229,24 @@ currently recognizes the following variables:
 .PP
 \fIgfsd\fR\fI\fIn\fR\fR
 .RS 4
-Register a gfsd server\&. Its value represents a hostname (or an IP address) of the server\&.
+Register a gfsd server\&. Its value represents a hostname (or an IP address) of the server\&. Note that
+\fBgfservice\fR
+uses the values for destination hosts of SSH connections only\&. To specify host names used in the Gfarm system, use
+\fB\-h\fR
+option in
+\fIgfsd\fR\fI\fIn\fR\fR\fI_CONFIG_GFSD_OPTOINS\fR
+variable instead:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	gfsd1=fs2\-ctl\&.example\&.org
+	gfsd1_CONFIG_GFSD_OPTIONS="\-h fs2\&.example\&.org"
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .PP
 \fIgfsd\fR\fI\fIn\fR\fR\fI_GFBINDIR\fR
