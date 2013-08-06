@@ -12,6 +12,11 @@
 
 #include <gfarm/gfarm.h>
 
+#ifdef XATTR_NOFOLLOW /* Mac OS X */
+#define lgetxattr(path, name, value, size) \
+	getxattr(path, name, value, size, 0, XATTR_NOFOLLOW)
+#endif
+
 gfarm_error_t
 gfarm_realpath_by_gfarm2fs(const char *path, char **pathp)
 {
@@ -24,21 +29,12 @@ gfarm_realpath_by_gfarm2fs(const char *path, char **pathp)
 #ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
 	base = NULL;
 #endif
-
-#ifdef XATTR_NOFOLLOW /* Mac OS X */
-	s = getxattr(path, gfarm2fs_url, NULL, 0, 0, XATTR_NOFOLLOW);
-#else
 	s = lgetxattr(path, gfarm2fs_url, NULL, 0);
-#endif
 	if (s == -1) {
 		parent = gfarm_url_dir(path);
 		if (parent == NULL)
 			return (GFARM_ERR_NO_MEMORY);
-#ifdef XATTR_NOFOLLOW /* Mac OS X */
-		s = getxattr(parent, gfarm2fs_url, NULL, 0, 0, XATTR_NOFOLLOW);
-#else
 		s = lgetxattr(parent, gfarm2fs_url, NULL, 0);
-#endif
 		if (s == -1) {
 			free(parent);
 			return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -54,11 +50,7 @@ gfarm_realpath_by_gfarm2fs(const char *path, char **pathp)
 	GFARM_MALLOC_ARRAY(p, s + base_len + 1); /* 1 for '\0' */
 	if (p == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-#ifdef XATTR_NOFOLLOW /* Mac OS X */
-	if (getxattr(path, gfarm2fs_url, p, s, 0, XATTR_NOFOLLOW) == -1) {
-#else
 	if (lgetxattr(path, gfarm2fs_url, p, s) == -1) {
-#endif
 		saved_errno = errno;
 		free(p);
 		return (gfarm_errno_to_error(saved_errno));
