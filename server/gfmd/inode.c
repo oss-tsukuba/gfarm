@@ -3714,7 +3714,9 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 		/* XXX provide an option not to start replication here? */
 
 		/* if there is no other writing process */
-		if (ia == NULL || ia->u.f.writers == 1) {
+		if (ia == NULL) {
+			start_replication = 1;
+		} else if (ia->u.f.spool_writers == 0) {
 			start_replication = 1;
 			ia->u.f.replication_pending = 0;
 		} else {
