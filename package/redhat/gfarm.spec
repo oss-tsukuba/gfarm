@@ -1,10 +1,10 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.5.8-rc3
+%define ver	2.5.8
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
-%define pkgver	2.5.8rc3
+%define pkgver	%{ver}
 
 %define prefix		%{_prefix}
 %define lib_prefix	%{_libdir}
@@ -145,6 +145,9 @@ Gfarm performance monitoring plugin for Ganglia
 Development header files and libraries for Gfarm file system
 
 %changelog
+* Mon Apr 22 2013 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.8-1
+- Gfarm version 2.5.8 released
+
 * Thu Jan 15 2013 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.8rc2-1
 - Gfarm version 2.5.8 released candidate 2
 - gfruntest, gfservice and systest are included in the client package
