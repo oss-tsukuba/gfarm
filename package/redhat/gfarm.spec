@@ -375,6 +375,7 @@ fi
 %{man_prefix}/man1/gfspoolpath.1.gz
 %{man_prefix}/man1/gfstat.1.gz
 %{man_prefix}/man1/gfstatus.1.gz
+%{man_prefix}/man1/gftest.1.gz
 %{man_prefix}/man1/gfusage.1.gz
 %{man_prefix}/man1/gfuser.1.gz
 %if %{gfarm_v2_not_yet}
@@ -547,6 +548,7 @@ fi
 %{man_prefix}/ja/man1/gfspoolpath.1.gz
 %{man_prefix}/ja/man1/gfstat.1.gz
 %{man_prefix}/ja/man1/gfstatus.1.gz
+%{man_prefix}/ja/man1/gftest.1.gz
 %{man_prefix}/ja/man1/gfusage.1.gz
 %{man_prefix}/ja/man1/gfuser.1.gz
 %if %{gfarm_v2_not_yet}
@@ -698,6 +700,7 @@ fi
 %{html_prefix}/en/ref/man1/gfspoolpath.1.html
 %{html_prefix}/en/ref/man1/gfstat.1.html
 %{html_prefix}/en/ref/man1/gfstatus.1.html
+%{html_prefix}/en/ref/man1/gftest.1.html
 %{html_prefix}/en/ref/man1/gfusage.1.html
 %{html_prefix}/en/ref/man1/gfuser.1.html
 %if %{gfarm_v2_not_yet}
@@ -875,6 +878,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfspoolpath.1.html
 %{html_prefix}/ja/ref/man1/gfstat.1.html
 %{html_prefix}/ja/ref/man1/gfstatus.1.html
+%{html_prefix}/ja/ref/man1/gftest.1.html
 %{html_prefix}/ja/ref/man1/gfusage.1.html
 %{html_prefix}/ja/ref/man1/gfuser.1.html
 %if %{gfarm_v2_not_yet}
@@ -1078,9 +1082,7 @@ fi
 %{prefix}/bin/gfservice-agent
 %{prefix}/bin/gfstat
 %{prefix}/bin/gfstatus
-%if %{gfarm_v2_not_yet}
 %{prefix}/bin/gftest
-%endif
 %{prefix}/bin/gfwhere
 %{prefix}/bin/gfwhoami
 %{prefix}/bin/gfxattr
