@@ -317,9 +317,10 @@ gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *fs,
 	for (i = 0; i < fs->nservers; ++i) {
 		ms = fs->servers[i];
 		if (gfarm_metadb_server_is_removed(ms)) {
-			gfarm_metadb_server_free(ms);
-			if (gfarm_metadb_server_is_memory_owned_by_fs(ms))
+			if (gfarm_metadb_server_is_memory_owned_by_fs(ms)) {
+				gfarm_metadb_server_free(ms);
 				free(ms);
+			}
 		}
 	}
 	free(fs->servers);
