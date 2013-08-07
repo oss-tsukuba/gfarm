@@ -4385,7 +4385,7 @@ inode_replicated(struct file_replicating *fr,
 			    host_name(fr->dst), src_errcode, dst_errcode);
 		if (size != inode_get_size(inode) ||
 		    fr->igen != inode_get_gen(inode))
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1003709,
 			    "replication failed. invalid replica (inum=%lld): "
 			    "(gen=%lld, size=%lld) "
 			    "should be (gen=%lld, size=%lld)",
@@ -5303,7 +5303,7 @@ file_copy_db_remove_orphan(void)
 		e = inode_remove_replica_internal(inode, spool_host,
 		    gen, NULL, 1, 1, NULL);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003710,
 			    "cannot remove a replica (%s, %lld:%lld): %s",
 			    entry->string, (long long)entry->inum,
 			    (long long)gen, gfarm_error_string(e));
@@ -5700,7 +5700,7 @@ file_copy_add_one(void *closure, gfarm_ino_t inum, char *hostname)
 		file_copy_defer_db_removal(inum, hostname);
 		return;
 	} else if (host == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003711,
 		    "file_copy_add_one(%s, %lld): no memory",
 		    hostname, (long long)inum);
 	} else if ((e = inode_add_replica_internal(inode, host,

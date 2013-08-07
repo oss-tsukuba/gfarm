@@ -199,7 +199,7 @@ host_lookup_at_loading(const char *hostname)
 		giant_unlock();
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003708,
 		    "%s: failed to enter a host %s", diag, hostname);
 		free(hi.hostname);
 		free(hi.architecture);
