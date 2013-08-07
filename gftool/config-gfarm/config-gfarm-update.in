@@ -16,7 +16,6 @@ datadir="@datadir@"
 config_dir="${datadir}/gfarm/config"
 
 PRIVATE_MODE=false
-PRIVATE_MODE_FOR_DEBIAN=false
 
 PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
 export PATH

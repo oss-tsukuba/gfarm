@@ -30,7 +30,6 @@ fi
 BACKEND_TYPE=$backend_default
 
 PRIVATE_MODE=false
-PRIVATE_MODE_FOR_DEBIAN=false
 
 #
 #
