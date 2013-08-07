@@ -715,7 +715,7 @@ mdhost_modify_in_cache(struct mdhost *mh, struct gfarm_metadb_server *ms)
 	mh->ms.clustername = strdup(ms->clustername);
 	if (mh->ms.clustername == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED, "%s", gfarm_error_string(e));
+		gflog_error(GFARM_MSG_1003682, "%s", gfarm_error_string(e));
 		return (e);
 	}
 	mh->ms.port = ms->port;
