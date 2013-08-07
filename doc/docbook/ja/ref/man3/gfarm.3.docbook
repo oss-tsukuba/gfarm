@@ -32,7 +32,7 @@
 の概要を記述します．各関数の詳細は，関数単位のマニュアルを参照して
 ください．</para>
 
-<refsect2>
+<refsect2 id="initialize-finalize">
 <title>初期化／終了処理</title>
 <para>
 <citerefentry>
@@ -44,7 +44,7 @@
 </para>
 </refsect2>
 
-<refsect2>
+<refsect2 id="input-output-operations">
 <title>ファイル入出力処理</title>
 <para>
 既存のファイルをストリームとしてオープンするには
@@ -128,7 +128,7 @@
 </para>
 </refsect2>
 
-<refsect2>
+<refsect2 id="directory-access">
 <title>ディレクトリアクセス</title>
 <!--
 <para>
@@ -171,7 +171,7 @@
 </para>
 </refsect2>
 
-<refsect2>
+<refsect2 id="file-directory-manipulation">
 <title>ファイル／ディレクトリ操作</title>
 <para>
 <citerefentry>
@@ -212,7 +212,7 @@
 </para>
 </refsect2>
 
-<refsect2>
+<refsect2 id="acl-operations">
 <title>アクセスコントロールリスト (ACL) 操作</title>
 <para>
 <citerefentry>
@@ -382,7 +382,7 @@ ACL 構造体に変換します．
 </para>
 </refsect2>
 
-<refsect2>
+<refsect2 id="error-handling">
 <title>エラーコード</title>
 <para>
 ほとんどの Gfarm ライブラリの関数は gfarm_error_t 型の Gfarm エラーコー
@@ -399,7 +399,7 @@ ACL 構造体に変換します．
 </para>
 </refsect2>
 
-<refsect2>
+<refsect2 id="string-array-manipulation-utilities">
 <title>文字列配列操作ユーティリティ</title>
 <para>
 文字列配列を表す gfarm_stringlist 型の変数は，
@@ -435,7 +435,7 @@ GFARM_STRINGLIST_ELEM() マクロでアクセスすることができます．
 
 </refsect2>
 
-<refsect2>
+<refsect2 id="string-array-manipulation-macros">
 <title>文字列配列操作ユーティリティマクロ</title>
 <variablelist>
 
