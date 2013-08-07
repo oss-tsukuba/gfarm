@@ -53,26 +53,7 @@
 	を参照してください。
 	    http://www.jp.redhat.com/support/errata/RHBA/RHBA-2009-0241J.html
 
-- gfmd 主導の複製処理 (拡張属性 gfarm.ncopy の設定による自動複製や、あるいは
-  gfs_replicate_file_to_request()/gfs_replicate_file_from_to_request() に
-  よって要求された複製処理) は、高負荷時などにキャンセルされることがあります。
-	https://sourceforge.net/apps/trac/gfarm/ticket/245
-
-  対処予定:
-	2011年12月までには対処する予定です。
-
 - gfs_pio_sync() は、現在のところメタデータの更新を行なっていません。
-
-  対処予定:
-	未定です。
-
-- ファイルアクセスに使われている最中に、gfsd が予期せぬ終了をした場合、
-  そのファイルへの以降のアクセスはエラーとなります。
-
-  ファイルをオープンし直せばアクセス可能になります。
-
-  これは、たとえばその gfsd を動かしているファイルシステムノードを
-  リブートした場合などに起きます。
 
   対処予定:
 	未定です。
@@ -80,7 +61,7 @@
 - ファイルビュー機能はサポートされていません。
 
   対処予定:
-	未定です。
+	サポート予定はありません。
 
 - stat API は、ファイルをクローズするまで、正確なファイルサイズを返しません。
 
@@ -217,7 +198,6 @@
   対処予定:
 	未定です。
 
-
 - バックエンド・データベースとして LDAP を用いた場合、quota 機能は
 　サポートされていません。
 	https://sourceforge.net/apps/trac/gfarm/ticket/26
@@ -230,7 +210,7 @@
 
 - 下記のコマンドが存在しません。
 
-  gfdump, gfcd, gfpwd, gfsck, gftest
+  gfdump, gfcd, gfpwd
 
   対処予定:
 	未定です。

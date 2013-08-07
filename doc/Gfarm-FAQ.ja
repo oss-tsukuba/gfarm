@@ -3,7 +3,7 @@ Gfarm FAQ - Gfarm に関するよくある質問
 Copyright (c) 2003-2008 National Institute of Advanced Industrial
 Science and Technology (AIST).  All Rights Reserved.
 
-Copyright (c) 2006-2012 Osamu Tatebe.  All Rights Reserved.
+Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 
 目次:
 *****
@@ -292,13 +292,29 @@ Copyright (c) 2006-2012 Osamu Tatebe.  All Rights Reserved.
   2.3 ファイルシステムノードのディスクがクラッシュしてしまいました．ど
      うすればいいでしょうか？
 
-	ファイルシステムノードが落ちている間は，そのファイルシステムノー
-	ドは利用されませんので，複製が他のノードに存在していれば問題な
-	くアクセスすることができます．
+	gfncopy コマンドでファイル複製数を2以上に設定している場合は，
+	他のファイルシステムノードに複製が存在するので問題はありません．
 
-	ただし，ファイルが失われてしまったファイルシステムノードを
-	Gfarm ファイルシステムに接続すると問題が生じます．このための管
-	理コマンドは今後提供される予定です．
+	たまたまクラッシュしたノードのファイルを読み込みアクセスしてい
+	た場合は，自動的に network_receive_timeout 秒後に他のファイル
+	システムノードの複製の読み込みに切り替わり，アプリケーションに
+	もエラーは通知されません．network_receive_timeout はデフォルト
+	では60秒です．
+
+	ただし，クラッシュしたノードのファイルを書き込みアクセスしてい
+	た場合は，そのアプリケーションに対し，書き込みエラーが返り，更
+	新は失われます．
+
+	クラッシュすると replica_check_host_down_thresh 秒後に，自動的
+	に指定した複製数の複製が作成されます．デフォルトでは3時間です．
+
+	ファイル複製数を2以上に設定していない場合は，クラッシュしたファ
+	イルシステムノードにしかない複製はアクセスできなくなります．た
+	だし，truncate は可能です．
+
+	ファイルシステムノードを復旧すると，起動時にメタデータとスプー
+	ルディレクトリの一貫性チェックが行われ，一貫していない場合は，
+	/lost+found ディレクトリに移動されます．
 
   2.4 無通信状態で止まっている gfarm クライアントや gfsd が残ることが
      あるのですが？
@@ -382,7 +398,7 @@ Copyright (c) 2006-2012 Osamu Tatebe.  All Rights Reserved.
 ***************
   3.1 Gfarm は firewall に守られていない環境で安全に運用できますか？
 
-	Gfarm-2.x は，sharedsecret 認証，gsi_auth 手法，gsi 認証の
+	Gfarm は，sharedsecret 認証，gsi_auth 手法，gsi 認証の
 	3 種類の認証方法をサポートしていますが，
 	Internet 環境では，sharedsecret 認証や gsi_auth 手法では
 	安全とは言えません．gsi 認証の利用を推奨します．

@@ -3,7 +3,7 @@ Gfarm FAQ - Frequently Asked Questions about Gfarm
 Copyright (c) 2003-2008 National Institute of Advanced Industrial
 Science and Technology (AIST).  All Rights Reserved.
 
-Copyright (c) 2006-2012 Osamu Tatebe.  All Rights Reserved.
+Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 
 Table of Contents:
 ******************
@@ -303,18 +303,34 @@ Table of Contents:
 	provided by Globus fails to authenticate these properly when
 	the time difference is more than five minutes.
 
-  2.3 Due to a disk crash, all files in a filesystem node are lost.
+  2.3 Due to a disk crash, all files in a file system node are lost.
      What do we have to do?
 
-	When a filesystem node is down, there is nothing you have to
-	do when there is at least one file copy, since the unavailable
-	filesystem node is not used.
+	When setting two or more file replicas by the gfncopy command,
+	there is no problem.
 
-	However, when you re-join the filesystem node that loses files
-	to the Gfarm file system, a problem occurs since invalid
-	metadata of lost file replicas remains in a metadata database.
-	We have a plan to provide an administration command to re-join
-	the filesystem node.
+	Even if an application is accessing a file replica stored in a
+	crashed file system node in read mode, it can continue the
+	execution since it changes the accessed file system node
+	automatically after an interval specified by
+	network_receive_timeout directive in gfarm2.conf.
+
+	If an application is accessing a file replica stored in a
+	crashed file system node in write mode, it fails to execution
+	due to the write error.
+
+	After replica_check_host_down_thresh seconds from the crash,
+	specified number of file replicas by gfncopy are automatically
+	created.  Default interval is 3 hours.
+
+	When not setting two or more file replicas, files only stored
+	in a crashed file system node cannot be accessed except
+	truncating files.
+
+	When the crashed file system node is recovered, the
+	consistency check between the spool directory and the file
+	system metadata is done at the start up time.  Inconsistent
+	files are moved to /lost+found directory.
 
   2.4 Sometimes a gfarm client or gfsd stops without doing anything.
 
@@ -398,7 +414,7 @@ Table of Contents:
   3.1 It is safe to use Gfarm in an environment that is NOT protected by
      a firewall?
 
-	Gfarm-2.x supports three authentication methods, namely,
+	Gfarm supports three authentication methods, namely,
 	sharedsecret authentication, the gsi_auth method,
 	and gsi authentication.
 	The sharedsecret authentication and gsi_auth methods are
