@@ -1,3 +1,75 @@
+Release note for Gfarm 2.5.8-rc1
+================================
+
+[2012.12.3]
+
+New feature
+* replica_check - automatic replica creation in case of file system
+  node failure, changing gfarm.ncopy and moving a directory 
+* ganglia plugin to monitor performance
+* gfncopy - set and display NCOPY of file [sf.net trac #497]
+* gfchmod, gfchown, gfchgrp - -R option to operate recursively
+* libgfarm - select near filesystem nodes more reliably [sf.net trac
+  #535]
+* gfspoolpath - show a physical pathname in a spool directory on a
+  filesystem node [st.net trac #493]
+* gfservice - control Gfarm servers from a remote host
+* config-gfmd-iostat, config-gfsd-iostat - set up performance
+  monitoring environment
+
+New configuration directive
+* atime - specify access time update type.  default is relative.
+  [sf.net trac #523]
+* write_local_priority - enables or disables local host affinity
+  scheduling [sf.net trac #125]
+* write_target_domain - specify a target domain for new files to
+  stored
+* spool_check_level - specify spool check level for gfsd [sf.net trac
+  #502]
+* replica_check_minimum_interval - specify the minimum interval for
+  replica_check [sf.net trac #453]
+* schedule_rtt_thresh_diff, schedule_rtt_thresh_ratio - scheduling
+  parameter to decide local networks [sf.net trac #535]
+
+Updated feature
+* support nanosecond for atime, mtime and ctime [sf.net trac #529]
+* gfarm clients - support relative path and multiple Gfarm file
+  systems when mounted by gfarm2fs
+* gfls, gfdf, gfstatus, gfsched - -V option to show Gfarm version
+* gfsd - spool directory consistency check at start-up
+* gfstat - print inum+gen in hex that will help to find files in
+  lost+found
+* gfrm -h, gfrep -x, gfprep -x - prevent to remove file replicas when
+  the total number is less than specified by gfarm.ncopy
+* log level adjustment to make ZABBIX alerts usable - steps 1 and 2
+  [sf.net trac #511, #542]
+* gfmd init script - slavestart to start in slave mode
+* support 1024 or greater number of filesystem nodes [sf.net trac
+  #477]
+
+Bug fix
+* invalid XML value causes gfmd crash [sf.net trac #549]
+* gfmd aborts in journal_file_read_serialized() to send journal to
+  asynchronous slave [sf.net trac #513]
+* cannot set an empty default ACL [sf.net trac #517]
+* incomplete replica is left [sf.net trac #408]
+* obsolete replicas remain existing [sf.net trac #406]
+* local replica may not be selected if there are replicas in the same
+  network [sf.net trac #141]
+* master gfmd incorrectly diagnoses "expired" state about slave gfmd
+  [sf.net trac #374]
+* async slave gfmd loses a connection with master gfmd [sf.net trac
+  #550]
+* unnecessary automatic replication when a file is opened for writing
+  multiple times simultaneously [sf.net trac #438]
+* gfsd stops to work with a message "<err> ![1000551] cannot set
+  canonical hostname of this node", when gfmd is overloaded [sf.net
+  trac #504] 
+* gfls - fix space padding in multicolumn format
+* overflow when parsing int value in the configuration file [sf.net
+  trac #546]
+* installation errors on Mac OS X [sf.net trac #552]
+
 Release note for Gfarm 2.5.7.2
 ==============================
 
@@ -39,7 +111,8 @@ Bug fix
   condition between creating and reading the same file [sf.net trac
   #455]
 * gfmd, gfsd - gfsd -ccc (or -c, -cc) cannot fix invalid files having
-  inconsistent file size on the spool, introduced in 2.5.6
+  inconsistent file size on the spool, introduced in 2.5.6 [sf.net
+  trac #439]
 * gfmd - potential gfmd memory corruption when scheduling file system
   nodes [sf.net trac #449]
 * libgfarm - log original errno if it is not known [sf.net trac #469]
