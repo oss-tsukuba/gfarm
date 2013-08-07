@@ -130,12 +130,18 @@ main(argc, argv)
 		    gfarm_error_string(e));
 		exit(1);
 	}
+	e = gfarm_config_read();
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
+		exit(1);
+	}
 	home = gfarm_get_local_homedir();
-
 	e = gfarm_auth_shared_key_get(&expire, shared_key, home, NULL,
 	    mode, period);
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s\n", gfarm_error_string(e));
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		exit(1);
 	}
 	if (do_list) {

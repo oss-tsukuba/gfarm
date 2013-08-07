@@ -92,6 +92,9 @@ extern char *gfarm_postgresql_conninfo;
 /* LocalFS dependent */
 extern char *gfarm_localfs_datadir;
 
+/* security */
+extern char *gfarm_get_shared_key_file(void);
+
 /* IO statistics */
 extern char *gfarm_iostat_gfmd_path;
 extern char *gfarm_iostat_gfsd_path;
