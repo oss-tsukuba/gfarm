@@ -24,14 +24,14 @@
 の概要を記述します．各関数の詳細は，関数単位のマニュアルを参照して
 ください．</p>
 <div class="refsect2" title="初期化／終了処理">
-<a name="idp52975456"></a><h3>初期化／終了処理</h3>
+<a name="initialize-finalize"></a><h3>初期化／終了処理</h3>
 <p>
 <span class="citerefentry"><span class="refentrytitle">gfarm_initialize</span></span> 関数は Gfarm ライブラリの初期化に，
 <span class="citerefentry"><span class="refentrytitle">gfarm_terminate</span></span> 関数は Gfarm ライブラリの終了処理に用います．
 </p>
 </div>
 <div class="refsect2" title="ファイル入出力処理">
-<a name="idp52047136"></a><h3>ファイル入出力処理</h3>
+<a name="input-output-operations"></a><h3>ファイル入出力処理</h3>
 <p>
 既存のファイルをストリームとしてオープンするには
 <span class="citerefentry"><span class="refentrytitle">gfs_pio_open</span></span> 関数を，
@@ -69,7 +69,7 @@
 </p>
 </div>
 <div class="refsect2" title="ディレクトリアクセス">
-<a name="idp55945344"></a><h3>ディレクトリアクセス</h3>
+<a name="directory-access"></a><h3>ディレクトリアクセス</h3>
 <p>
 <span class="citerefentry"><span class="refentrytitle">gfs_opendir</span></span> 関数でディレクトリをオープンすると，
 <span class="citerefentry"><span class="refentrytitle">gfs_readdir</span></span> 関数で，そのディレクトリを構成するエントリを得ることが
@@ -86,7 +86,7 @@
 </p>
 </div>
 <div class="refsect2" title="ファイル／ディレクトリ操作">
-<a name="idp55954416"></a><h3>ファイル／ディレクトリ操作</h3>
+<a name="file-directory-manipulation"></a><h3>ファイル／ディレクトリ操作</h3>
 <p>
 <span class="citerefentry"><span class="refentrytitle">gfs_chmod</span></span> 関数でファイルのモードを変更し，
 <span class="citerefentry"><span class="refentrytitle">gfs_chown</span></span> 関数でファイルの所有者を変更し，
@@ -106,7 +106,7 @@
 </p>
 </div>
 <div class="refsect2" title="アクセスコントロールリスト (ACL) 操作">
-<a name="idp52024432"></a><h3>アクセスコントロールリスト (ACL) 操作</h3>
+<a name="acl-operations"></a><h3>アクセスコントロールリスト (ACL) 操作</h3>
 <p>
 <span class="citerefentry"><span class="refentrytitle">gfs_acl_init</span></span> 関数は ACL 構造体 (gfarm_acl_t) を初期化し，
 <span class="citerefentry"><span class="refentrytitle">gfs_acl_free</span></span> 関数で ACL 構造体を開放します．
@@ -207,7 +207,7 @@ ACL 構造体に変換します．
 </p>
 </div>
 <div class="refsect2" title="エラーコード">
-<a name="idp56999408"></a><h3>エラーコード</h3>
+<a name="error-handling"></a><h3>エラーコード</h3>
 <p>
 ほとんどの Gfarm ライブラリの関数は gfarm_error_t 型の Gfarm エラーコー
 ドを返します。
@@ -217,7 +217,7 @@ ACL 構造体に変換します．
 </p>
 </div>
 <div class="refsect2" title="文字列配列操作ユーティリティ">
-<a name="idp57003568"></a><h3>文字列配列操作ユーティリティ</h3>
+<a name="string-array-manipulation-utilities"></a><h3>文字列配列操作ユーティリティ</h3>
 <p>
 文字列配列を表す gfarm_stringlist 型の変数は，
 <span class="citerefentry"><span class="refentrytitle">gfarm_stringlist_init</span></span> 関数で初期化し，
@@ -236,7 +236,7 @@ GFARM_STRINGLIST_ELEM() マクロでアクセスすることができます．
 </p>
 </div>
 <div class="refsect2" title="文字列配列操作ユーティリティマクロ">
-<a name="idp57011488"></a><h3>文字列配列操作ユーティリティマクロ</h3>
+<a name="string-array-manipulation-macros"></a><h3>文字列配列操作ユーティリティマクロ</h3>
 <div class="variablelist"><dl>
 <dt><span class="term">GFARM_STRINGLIST_ELEM(list, i)</span></dt>
 <dd><p>
