@@ -556,7 +556,7 @@ gfarm_schedule_file_cache(GFS_File gf, char **hostp, gfarm_int32_t *portp,
 		gfarm_schedule_host_cache_reset(gf->gfm_server, nhosts, infos);
 	gfarm_host_sched_info_free(nhosts, infos);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1001354, "schedule_select_host: %s",
+		gflog_debug(GFARM_MSG_1001354, "schedule_select_host: %s",
 		    gfarm_error_string(e));
 
 	/* on-demand replication */
@@ -635,7 +635,7 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 			/* reschedule another host */
 			if (e == GFARM_ERRMSG_NO_FILESYSTEM_NODE &&
 			    !gfarm_timeval_is_expired(&expiration_time)) {
-				gflog_warning(GFARM_MSG_1001359,
+				gflog_info(GFARM_MSG_1001359,
 				    "sleep %d sec: %s", sleep_interval,
 				    gfarm_error_string(e));
 				gfs_client_connection_cache_change(-nc);
@@ -675,7 +675,7 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 					    "file migrated");
 					continue;
 				}
-				gflog_warning(GFARM_MSG_1001360,
+				gflog_info(GFARM_MSG_1001360,
 				    "sleep %d sec: %s", sleep_interval,
 				    gfarm_error_string(e));
 				sleep(sleep_interval);
