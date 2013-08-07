@@ -32,7 +32,7 @@ the Gfarm file system.  This manual gives an overview of the
 library.  For details, refer to a manual page of each function.
 </para>
 
-<refsect2>
+<refsect2 id="initialize-finalize">
 <title>Initialize / Finalize</title>
 <para>
 <citerefentry>
@@ -45,7 +45,7 @@ library, and
 </para>
 </refsect2>
 
-<refsect2>
+<refsect2 id="input-output-operations">
 <title>File input/output operations</title>
 <para>
 To open an existing file as a stream,
@@ -129,7 +129,7 @@ specified by the function argument, appears.
 </para>
 </refsect2>
 
-<refsect2>
+<refsect2 id="directory-access">
 <title>Directory access</title>
 <!--
 <para>
@@ -173,7 +173,7 @@ The gfs_glob_t must be released by
 </para>
 </refsect2>
 
-<refsect2>
+<refsect2 id="file-directory-manipulation">
 <title>File / Directory manipulation</title>
 <para>
 <citerefentry>
@@ -214,7 +214,7 @@ The struct gfs_stat returned by gfs_stat function must be released by
 </para>
 </refsect2>
 
-<refsect2>
+<refsect2 id="acl-operations">
 <title>ACL (Access Control List) OPERATIONS</title>
 <para>
 <citerefentry>
@@ -393,7 +393,7 @@ Default ACL) from an ACL text which includes "default:" prefix.
 </refsect2>
 
 
-<refsect2>
+<refsect2 id="error-handling">
 <title>Error handling</title>
 <para>
 Most Gfarm API returns the Gfarm error code in gfarm_error_t.
@@ -410,7 +410,7 @@ error code.
 </para>
 </refsect2>
 
-<refsect2>
+<refsect2 id="string-array-manipulation-utilities">
 <title>String Array manipulation utilities</title>
 <para>
 A gfarm_stringlist type variable represents an array of strings,
@@ -446,7 +446,7 @@ array by calling standard library function free().
 
 </refsect2>
 
-<refsect2>
+<refsect2 id="string-array-manipulation-macros">
 <title>String Array manipulation macros</title>
 <variablelist>
 
