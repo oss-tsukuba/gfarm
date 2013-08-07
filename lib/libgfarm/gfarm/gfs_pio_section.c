@@ -267,7 +267,7 @@ gfs_pio_view_section_write(GFS_File gf,
 #endif
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003689,
 			"storage_write() failed: %s",
 			gfarm_error_string(e));
 	}

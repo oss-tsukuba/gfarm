@@ -1632,7 +1632,7 @@ gfs_client_write(struct gfs_connection *gfs_server,
 
 	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_WRITE, "ib/ill",
 	    fd, size, buffer, &n, offp, total_sizep)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003686,
 			"gfs_client_rpc() failed: %s",
 			gfarm_error_string(e));
 		return (e);

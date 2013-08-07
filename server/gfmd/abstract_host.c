@@ -356,7 +356,7 @@ abstract_host_receiver_lock(struct abstract_host *host, struct peer **peerp,
 			break;
 		}
 		/* may happen at gfsd restart? */
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003691,
 		    "waiting for abstract_host_receiver_lock: "
 		    "maybe %s on %s restarted?",
 		    peer_get_service_name(peer0),

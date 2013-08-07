@@ -188,7 +188,7 @@ gfs_pio_local_storage_write(GFS_File gf,
 	rv = write(vc->fd, buffer, size);
 	if (rv == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003690,
 			"write() on view context file descriptor failed: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
