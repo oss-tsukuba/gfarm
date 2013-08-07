@@ -489,8 +489,7 @@ finish:
 	if (map != NULL)
 		fclose(map);
 	if (e != GFARM_ERR_NO_ERROR) {
-		if (*to_p != NULL)
-			free(*to_p);
+		free(*to_p);
 		gflog_error(GFARM_MSG_1000010,
 		    "%s line %d: %s", mapfile, lineno,
 		    gfarm_error_string(e));
@@ -903,7 +902,7 @@ char *gfarm_localfs_datadir = NULL;
 /* IO statistics */
 char *gfarm_iostat_gfmd_path;
 char *gfarm_iostat_gfsd_path;
-int	gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_IOSTAT_MAX_CLIENT 1024
 
 /* miscellaneous */
