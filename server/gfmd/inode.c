@@ -803,7 +803,7 @@ inode_schedule_replication_within_scope(
 	 */
 	if (shortage > n_targets &&
 	    *n_being_removedp >= shortage - n_targets) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003704,
 		    "%s: inode %lld:%lld: many replicas are being removed: "
 		    "desired=%d/scope=%d/existing=%d/being_removed=%d/"
 		    "target=%d",
@@ -833,7 +833,7 @@ inode_schedule_replication_within_scope(
 			    gfarm_error_string(e));
 		} else if (e != GFARM_ERR_NO_ERROR) {
 			gflog_reduced_warning(
-			    GFARM_MSG_UNFIXED, &rep_reqfailed_state,
+			    GFARM_MSG_1003705, &rep_reqfailed_state,
 			    "%s: %lld:%lld:%s@%s: replication failed:"
 			    " %s", diag,
 			    (long long)inode_get_number(inode),
@@ -4744,7 +4744,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 			} else if (FILE_COPY_IS_VALID(copy) &&
 				   num_incomplete > 0) {
 				/* the replica may be used for replication */
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003706,
 				    "remove_replica(%lld:%lld, %s): "
 				    "being replicated",
 				    (long long)inode->i_number, (long long)gen,
