@@ -212,23 +212,20 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 #ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
 	o_uid = o_gid = 0;
 #endif
-	keyfilename = getenv("GFARM_SHARED_KEY");
-	if (keyfilename == NULL)
-		keyfilename = gfarm_get_shared_key_file();
+	keyfilename = gfarm_get_shared_key_file();
 	if (keyfilename == NULL) {
 		GFARM_MALLOC_ARRAY(keyfilename,
-			strlen(home) + sizeof(keyfile_basename));
+		    strlen(home) + sizeof(keyfile_basename));
 		if (keyfilename == NULL) {
 			gflog_debug(GFARM_MSG_1001023,
-				"allocation of 'keyfilename' failed: %s",
-				gfarm_error_string(GFARM_ERR_NO_MEMORY));
+			    "allocation of 'keyfilename' failed: %s",
+			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		strcpy(keyfilename, home);
 		strcat(keyfilename, keyfile_basename);
 		allocbuf = keyfilename;
 	}
-
 	if (pwd != NULL) {
 		gfarm_auth_privilege_lock(diag);
 		o_gid = getegid();
