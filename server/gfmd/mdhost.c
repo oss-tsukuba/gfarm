@@ -1225,7 +1225,7 @@ gfm_server_metadb_server_modify(struct peer *peer, int from_client, int skip)
 		if (isdm) {
 			e = mdhost_db_modify_default_master(mh, &ms, diag);
 			if (e != GFARM_ERR_NO_ERROR)
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003681,
 				    "mdhost_db_modify_default_master: %s",
 				    gfarm_error_string(e));
 		} else {
