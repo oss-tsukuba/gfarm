@@ -1,10 +1,10 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.5.8-rc2
+%define ver	2.5.8-rc3
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
-%define pkgver	2.5.8rc2
+%define pkgver	2.5.8rc3
 
 %define prefix		%{_prefix}
 %define lib_prefix	%{_libdir}

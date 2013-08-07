@@ -1,3 +1,45 @@
+Release note for Gfarm 2.5.8-rc3
+================================
+
+[2013.3.27]
+
+New feature
+* support GFARM_FILE_APPEND
+* gfpcopy - copy missing or obsolete files when the target directory
+  exists [sf.net trac #632]
+* gfstress.rb - -T and --timeout option to specify the time for the
+  stress test in seconds.  Default is infinite.
+
+Updated feature
+* gfreg - performance improvement [sf.net trac #484]
+
+Bug fix
+* gfpcopy-test.sh does not report throughput [sf.net trac #628]
+* libgfarm - gfs_realpath() may crash [sf.net trac #591]
+* gfsd - terminates even when there are still opening files in write
+  mode if two or more files are opened in write mode
+* gfsd fails to start when the connection to gfmd is disconnected
+  during the spool check [sf.net trac #587]
+* gfsd - die when unexpected error happens in gfs_server_status since
+  gfmd disconnects the connection [sf.net trac #595]
+* number of replicas may increase when opened in the truncate mode,
+  which is introduced by Gfarm 2.5.7.1  [sf.net trac #583]
+* gfmd crashes when gfmd-initiated replication is invoked against a
+  filesystem node which is down, which is introduced by Gfarm
+  2.5.8-rc1 [sf.net trac #601]
+* potential deadlock in gfmd [sf.net trac #614]
+* gfmd may crash when gfsd is down [sf.net trac #589, #616]
+* fix gfmd slavestart in SuSE and default [sf.net trac #627]
+* failover does not work after accessed by a Gfarm URL [sf.net trac
+  #625]
+* gfmd executed by slavestart (force_slave) crashes when promoting to
+  the master [sf.net trac #635]
+* invalid free() in libgfarm at network interface down, which is
+  introduced by Gfarm 2.5.8-rc2 [sf.net trac #640]
+* replica check may fail by device busy or by already in progress
+  [sf.net trac #648]
+* gfmdhost command can make gfmd crash [sf.net trac #594]
+
 Release note for Gfarm 2.5.8-rc2
 ================================
 
