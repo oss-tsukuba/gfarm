@@ -231,12 +231,11 @@ group_lookup_or_enter_invalid(const char *groupname)
 	gfarm_error_t e;
 	struct group *g = group_lookup_including_invalid(groupname);
 	char *n;
-	static const char diag[] = "group_lookup_or_enter_invalid";
 
 	if (g != NULL)
 		return (g);
 
-	n = strdup_ck(groupname, diag);
+	n = strdup(groupname);
 	if (n == NULL) {
 		gflog_error(GFARM_MSG_1002758,
 		    "group_lookup_or_enter_invalid(%s): no memory", groupname);

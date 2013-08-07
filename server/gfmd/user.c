@@ -276,19 +276,22 @@ user_lookup_or_enter_invalid(const char *username)
 	gfarm_error_t e;
 	struct user *u = user_lookup_including_invalid(username);
 	struct gfarm_user_info ui;
-	static const char diag[] = "user_lookup_or_enter_invalid";
 
 	if (u != NULL)
 		return (u);
 
-	ui.username = strdup_ck(username, diag);
-	ui.realname = strdup_ck("", diag);
-	ui.homedir = strdup_ck("", diag);
-	ui.gsi_dn = strdup_ck("", diag);
+	ui.username = strdup(username);
+	ui.realname = strdup("");
+	ui.homedir = strdup("");
+	ui.gsi_dn = strdup("");
 	if (ui.username == NULL || ui.realname == NULL ||
 	    ui.homedir == NULL || ui.gsi_dn == NULL) {
 		gflog_error(GFARM_MSG_1002751,
 		    "user_lookup_or_enter_invalid(%s): no memory", username);
+		free(ui.username);
+		free(ui.realname);
+		free(ui.homedir);
+		free(ui.gsi_dn);
 		return (NULL);
 	}
 	e = user_enter(&ui, &u);
