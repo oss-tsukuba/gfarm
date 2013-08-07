@@ -13,6 +13,8 @@ Updated feature
 * gfmd init script - kill to immediately stop the gfmd
 * log level adjustment to make ZABBIX alerts usable - step 3 [sf.net
   trac #679]
+* gfpcopy - preserve the modification time of directories, and honor
+  umask [sf.net trac #662 and #663]
 
 Bug fix
 * no filesystem node happens when updating a file not stored in
@@ -26,6 +28,7 @@ Bug fix
   error [sf.net trac #658]
 * postgres server for gfarm may not correctly start up on Ubuntu 12.04
   [sf.net trac #652]
+* gfpcopy cannot copy read-only directories [sf.net trac #660]
 * gfrm -h can remove a replica that may be used for replication
   [sf.net trac #676]
 * write-mode open may fail due to inappropriate replica scheduling
