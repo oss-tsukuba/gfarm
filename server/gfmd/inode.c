@@ -2182,7 +2182,7 @@ inode_new_generation_is_pending(struct inode *inode)
 	static const char diag[] = "inode_new_generation_is_pending";
 
 	if (ia == NULL) {
-		gflog_error(GFARM_MSG_1002247, "%s: not opened", diag);
+		gflog_debug(GFARM_MSG_1002247, "%s: not opened", diag);
 		return (0);
 	}
 	return (ia->u.f.event_type != EVENT_NONE);
