@@ -1,3 +1,26 @@
+Release note for Gfarm 2.5.8-rc2
+================================
+
+[2013.1.8]
+
+Bug fix
+* libgfarm - gfm_host_is_local() may crash when gfmd connection is
+  disconnected [sf.net trac #580]
+* gfmd - segfault when executing gfwhere against a file including
+  unnecessary copies [sf.net trac #575]
+* gfmd - fix invalid strdup_ck() calls [sf.net trac #460]
+* search from all hosts when there is no candidate in the target
+  domain specified by "write_target_domain"
+* ls fails once after restart or failover of gfmd [sf.net trac #578]
+* master should log a message when a slave is expired [sf.net trac
+  #566]
+* any authenticated user can change metadata server configuration
+  [sf.net trac #572]
+* gfmdhost shows "?" (unknown) when an async slave reconnects [sf.net
+  trac #568]
+* gfprep stops when there there are less available destination hosts
+  than desired [sf.net trac #574]
+
 Release note for Gfarm 2.5.8-rc1
 ================================
 
