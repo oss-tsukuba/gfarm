@@ -13,15 +13,16 @@
 
 #include "gfutil.h"
 #include "timer.h"
+#include "queue.h"
 
 #include "context.h"
 #include "gfm_client.h"
 #include "lookup.h"
 #include "gfs_io.h"
 #include "gfs_misc.h"
+#include "gfs_pio.h"
 #include "gfs_profile.h"
 #include "gfs_failover.h"
-
 #include "xattr_info.h"
 
 #define staticp	(gfarm_ctxp->gfs_xattr_static)
@@ -316,8 +317,10 @@ gfs_getxattr0(int xmlMode, const char *path, GFS_File gf, int cflags,
 		e = gfs_fgetxattr_proccall(xmlMode, gf, name, &v, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001402,
-			"getxattr/fgetxattr_proccall() failed: %s",
-			gfarm_error_string(e));
+		    "%sgetxattr_proccall(%s, %s) failed: %s",
+		    path != NULL ? "" : "f",
+		    path != NULL ? path : gfs_pio_url(gf), name,
+		    gfarm_error_string(e));
 		return (e);
 	}
 
