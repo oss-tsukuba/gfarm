@@ -4770,7 +4770,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 			if (FILE_COPY_IS_VALID(copy)) {
 				e = remove_replica_metadata(inode, copy->host);
 				if (e != GFARM_ERR_NO_ERROR) {
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_error(GFARM_MSG_1003701,
 					    "remove_replica_metadata("
 					    "%lld, %lld, %s): %s",
 					    (unsigned long long)inode->i_number,

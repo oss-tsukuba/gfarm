@@ -3440,7 +3440,7 @@ gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
 		    diag, host_name(spool_host), (long long)cookie,
 		    gfarm_error_string(result), gfarm_error_string(e));
 	} else if (result != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1003702,
 		    "%s: inode %lld:%lld on host %s, cookie %lld: "
 		    "new generation rename: %s\n",
 		    diag,
