@@ -771,6 +771,15 @@ and all other hosts will be authenticated by
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>shared_key_file</token> <parameter moreinfo="none">pathname</parameter></term>
+<listitem>
+<para>The <token>shared_key_file</token> statement specifies a
+  pathname of the shared secret key file in sharedsecret
+  authentication.</para>
+</listitem>
+</varlistentry>
+
 <!--
 <varlistentry>
 <term><token>netparam</token> <parameter moreinfo="none">parameter</parameter><emphasis>=</emphasis><parameter moreinfo="none">value</parameter> <emphasis>[</emphasis><parameter moreinfo="none">Host_specification</parameter><emphasis>]</emphasis></term>
@@ -1941,6 +1950,7 @@ notation.</para>
 	&lt;postgresql_password_statement&gt; |
 	&lt;postgresql_conninfo_statement&gt; |
 	&lt;auth_statement&gt; |
+	&lt;shared_key_file_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
 <!--	&lt;address_use_statement&gt; | -->
@@ -2165,6 +2175,11 @@ notation.</para>
 <varlistentry>
 <term>&lt;auth_method&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"gsi" | "gsi_auth" | "sharedsecret"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;shared_key_file_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"shared_key_file" &lt;pathname&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--
