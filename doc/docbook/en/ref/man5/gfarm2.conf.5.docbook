@@ -339,6 +339,22 @@ gfsd(8).  The level "disable" disables the consistency check.
 </varlistentry>
 
 <varlistentry>
+<term><token>spool_base_load</token> <parameter moreinfo="none">load-average</parameter></term>
+<listitem>
+<para>
+This statement specifies the CPU load adding to the real CPU load.
+This option is only available for a gfsd node (or a file system node).
+The default base load is 0.0.  This option can be used to pretend to
+be busy or idle to change the scheduling priority.
+</para>
+<para>For example,</para>
+<literallayout>
+	spool_base_load 1.0
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>metadb_server_host</token> <parameter moreinfo="none">hostname</parameter></term>
 <listitem>
 <para>The <token>metadb_server_host</token> statement specifies the
@@ -1900,6 +1916,7 @@ notation.</para>
 	&lt;spool_server_cred_service_statement&gt; |
 	&lt;spool_server_cred_name_statement&gt; |
 	&lt;spool_check_level_statement&gt; |
+	&lt;spool_base_load_statement&gt; |
 	&lt;metadb_server_host_statement&gt; |
 	&lt;metadb_server_port_statement&gt; |
 	&lt;metadb_server_cred_type_statement&gt; |
@@ -2013,6 +2030,11 @@ notation.</para>
 <varlistentry>
 <term>&lt;spool_check_level_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"spool_check_level" &lt;spck_level&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_base_load_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_base_load" &lt;load&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
