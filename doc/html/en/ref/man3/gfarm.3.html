@@ -24,7 +24,7 @@ the Gfarm file system.  This manual gives an overview of the
 library.  For details, refer to a manual page of each function.
 </p>
 <div class="refsect2" title="Initialize / Finalize">
-<a name="idp52964496"></a><h3>Initialize / Finalize</h3>
+<a name="initialize-finalize"></a><h3>Initialize / Finalize</h3>
 <p>
 <span class="citerefentry"><span class="refentrytitle">gfarm_initialize</span></span> function is used for the initilization of the Gfarm
 library, and
@@ -32,7 +32,7 @@ library, and
 </p>
 </div>
 <div class="refsect2" title="File input/output operations">
-<a name="idp52041744"></a><h3>File input/output operations</h3>
+<a name="input-output-operations"></a><h3>File input/output operations</h3>
 <p>
 To open an existing file as a stream,
 <span class="citerefentry"><span class="refentrytitle">gfs_pio_open</span></span> function is used.
@@ -70,7 +70,7 @@ specified by the function argument, appears.
 </p>
 </div>
 <div class="refsect2" title="Directory access">
-<a name="idp52080912"></a><h3>Directory access</h3>
+<a name="directory-access"></a><h3>Directory access</h3>
 <p>
 <span class="citerefentry"><span class="refentrytitle">gfs_opendir</span></span> function opens a directory, and
 <span class="citerefentry"><span class="refentrytitle">gfs_readdir</span></span> function retrieves entries of the directory.
@@ -88,7 +88,7 @@ The gfs_glob_t must be released by
 </p>
 </div>
 <div class="refsect2" title="File / Directory manipulation">
-<a name="idp55940864"></a><h3>File / Directory manipulation</h3>
+<a name="file-directory-manipulation"></a><h3>File / Directory manipulation</h3>
 <p>
 <span class="citerefentry"><span class="refentrytitle">gfs_chmod</span></span> function changes the mode of a file, and
 <span class="citerefentry"><span class="refentrytitle">gfs_chown</span></span> function changes the owner of a file, and
@@ -108,7 +108,7 @@ The struct gfs_stat returned by gfs_stat function must be released by
 </p>
 </div>
 <div class="refsect2" title="ACL (Access Control List) OPERATIONS">
-<a name="idp55950368"></a><h3>ACL (Access Control List) OPERATIONS</h3>
+<a name="acl-operations"></a><h3>ACL (Access Control List) OPERATIONS</h3>
 <p>
 <span class="citerefentry"><span class="refentrytitle">gfs_acl_init</span></span> function is used for the initilization of an ACL
 structure (gfarm_acl_t), and
@@ -217,7 +217,7 @@ Default ACL) from an ACL text which includes "default:" prefix.
 </p>
 </div>
 <div class="refsect2" title="Error handling">
-<a name="idp56977904"></a><h3>Error handling</h3>
+<a name="error-handling"></a><h3>Error handling</h3>
 <p>
 Most Gfarm API returns the Gfarm error code in gfarm_error_t.
 <span class="citerefentry"><span class="refentrytitle">gfarm_error_string</span></span> function returns a string describing the Gfarm error code.
@@ -227,7 +227,7 @@ error code.
 </p>
 </div>
 <div class="refsect2" title="String Array manipulation utilities">
-<a name="idp56981680"></a><h3>String Array manipulation utilities</h3>
+<a name="string-array-manipulation-utilities"></a><h3>String Array manipulation utilities</h3>
 <p>
 A gfarm_stringlist type variable represents an array of strings,
 and this type is initialized by
@@ -246,7 +246,7 @@ array by calling standard library function free().
 </p>
 </div>
 <div class="refsect2" title="String Array manipulation macros">
-<a name="idp56989184"></a><h3>String Array manipulation macros</h3>
+<a name="string-array-manipulation-macros"></a><h3>String Array manipulation macros</h3>
 <div class="variablelist"><dl>
 <dt><span class="term">GFARM_STRINGLIST_ELEM(list, i)</span></dt>
 <dd><p>
