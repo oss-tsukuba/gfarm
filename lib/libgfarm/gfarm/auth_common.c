@@ -159,8 +159,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	FILE *fp = NULL;
 	static char keyfile_basename[] = "/" GFARM_AUTH_SHARED_KEY_BASENAME;
-	char *keyfilename;
-	int free_required = 0;
+	char *keyfilename, *allocbuf = NULL;
 	unsigned int expire;
 
 	uid_t o_uid;
@@ -173,8 +172,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 #endif
 	keyfilename = gfarm_get_shared_key_file();
 	if (keyfilename == NULL) {
-		free_required = 1;
-		GFARM_MALLOC_ARRAY(keyfilename, 
+		GFARM_MALLOC_ARRAY(keyfilename,
 		    strlen(home) + sizeof(keyfile_basename));
 		if (keyfilename == NULL) {
 			gflog_debug(GFARM_MSG_1001023,
@@ -184,6 +182,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 		}
 		strcpy(keyfilename, home);
 		strcat(keyfilename, keyfile_basename);
+		allocbuf = keyfilename;
 	}
 	if (pwd != NULL) {
 		gfarm_auth_privilege_lock(diag);
@@ -275,8 +274,7 @@ create:
 		*expirep = expire;
 	}
 finish:
-	if (free_required)
-		free(keyfilename);
+	free(allocbuf);
 	if (pwd != NULL) {
 		if (seteuid(0) == -1 && is_root) /* recover root privilege */
 			gflog_error_errno(GFARM_MSG_1002342, "seteuid(0)");
