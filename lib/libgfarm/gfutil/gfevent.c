@@ -53,7 +53,12 @@ struct gfarm_event {
 	struct timeval timeout;
 	int timeout_specified;
 
-	enum { GFARM_FD_EVENT, GFARM_TIMER_EVENT, GFARM_KERN_EVENT } type;
+	enum { GFARM_FD_EVENT, GFARM_TIMER_EVENT
+#ifdef __KERNEL__
+		, GFARM_KERN_EVENT
+#endif /* __KERNEL__ */
+	} type;
+
 	union {
 		struct gfarm_fd_event {
 			void (*callback)(int, int, void *,
@@ -63,10 +68,12 @@ struct gfarm_event {
 		struct gfarm_timer_event {
 			void (*callback)(void *, const struct timeval *);
 		} timeout;
+#ifdef __KERNEL__
 		struct gfarm_kern_event {
 			void (*callback)(int, int, void *, void *);
 			void *kevp;
 		} kern;
+#endif /* __KERNEL__ */
 	} u;
 };
 
@@ -130,6 +137,7 @@ gfarm_timer_event_set_callback(struct gfarm_event *ev,
 	ev->closure = closure;
 	ev->u.timeout.callback = callback;
 }
+
 #ifdef __KERNEL__
 struct gfarm_event *
 gfarm_kern_event_alloc(void *kevp,
@@ -257,7 +265,6 @@ gfarm_eventqueue_free(struct gfarm_eventqueue *q)
 	free(q);
 }
 
-
 #ifdef __KERNEL__
 int
 gfarm_kern_eventqueue_getevfd(struct gfarm_eventqueue *q)
@@ -265,6 +272,7 @@ gfarm_kern_eventqueue_getevfd(struct gfarm_eventqueue *q)
 	return (q->evfd);
 }
 #endif /* __KERNEL__ */
+
 #ifndef HAVE_EPOLL
 /*
  * XXX This is not so portable,
@@ -458,11 +466,11 @@ gfarm_eventqueue_add_event(struct gfarm_eventqueue *q,
 			return (EINVAL); /* not allowed */
 		}
 		break;
-	case GFARM_KERN_EVENT:
 #ifdef __KERNEL__
+	case GFARM_KERN_EVENT:
 		q->n_kern++;
-#endif /* __KERNEL__ */
 		break;
+#endif /* __KERNEL__ */
 	}
 
 	/* enqueue - insert at the tail of the circular list */
@@ -505,11 +513,11 @@ gfarm_eventqueue_delete_event(struct gfarm_eventqueue *q,
 	case GFARM_TIMER_EVENT:
 		/* nothing to do */
 		break;
-	case GFARM_KERN_EVENT:
 #ifdef __KERNEL__
+	case GFARM_KERN_EVENT:
 		q->n_kern--;
-#endif /* __KERNEL__ */
 		break;
+#endif /* __KERNEL__ */
 	}
 
 	/* dequeue */
@@ -599,8 +607,10 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 			break;
 		case GFARM_TIMER_EVENT:
 			break;
+#ifdef __KERNEL__
 		case GFARM_KERN_EVENT:
 			break;
+#endif /* __KERNEL__ */
 		}
 	}
 #ifdef __KERNEL__
@@ -749,8 +759,8 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 				    ev->closure, &end_time);
 			}
 			break;
-		case GFARM_KERN_EVENT:
 #ifdef __KERNEL__
+		case GFARM_KERN_EVENT:
 			if (FD_ISSET(q->evfd, q->read_fd_set)) {
 				int fd;
 				if (gfsk_req_check_fd(ev->u.kern.kevp, &fd)) {
@@ -772,8 +782,8 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 				(*ev->u.kern.callback)(GFARM_EVENT_TIMEOUT,
 					-ETIME, kevp, ev->closure);
 			}
-#endif /* __KERNEL__ */
 			break;
+#endif /* __KERNEL__ */
 		case GFARM_TIMER_EVENT:
 			if (gfarm_timeval_cmp(&end_time, &ev->timeout) >= 0) {
 				gfarm_eventqueue_delete_event(q, ev);
