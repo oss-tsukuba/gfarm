@@ -173,6 +173,9 @@
 /* Define to 1 if you have the <shadow.h> header file. */
 #undef HAVE_SHADOW_H
 
+/* Define to 1 if you have the `sigtimedwait' function. */
+#undef HAVE_SIGTIMEDWAIT
+
 /* Define to 1 if you have the `snprintf' function. */
 #undef HAVE_SNPRINTF
 
