@@ -1,3 +1,4 @@
+struct watcher;
 struct peer_watcher;
 struct peer;
 struct thread_pool;
@@ -6,6 +7,7 @@ struct abstract_host;
 void peer_watcher_set_default_nfd(int);
 struct peer_watcher *peer_watcher_alloc(int, int, void *(*)(void *),
 	const char *);
+struct watcher *peer_watcher_get_watcher(struct peer_watcher *);
 struct thread_pool *peer_watcher_get_thrpool(struct peer_watcher *);
 
 #ifdef PEER_REFCOUNT_DEBUG

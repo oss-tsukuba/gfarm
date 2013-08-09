@@ -32,3 +32,8 @@ void gfmd_terminate(const char *);
 
 void gfmd_modules_init_default(int);
 extern void (*gfmd_modules_init)(int);
+
+/* faillover_notify.c */
+void failover_notify(void);
+
+  

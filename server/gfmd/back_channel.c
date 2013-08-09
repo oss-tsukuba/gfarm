@@ -707,6 +707,18 @@ gfm_server_switch_async_back_channel(struct peer *peer, int from_client,
 	return (e);
 }
 
+struct watcher *
+back_channel_watcher(void)
+{
+	return (peer_watcher_get_watcher(back_channel_recv_watcher));
+}
+
+struct thread_pool *
+back_channel_recv_thrpool(void)
+{
+	return (peer_watcher_get_thrpool(back_channel_recv_watcher));
+}
+
 void
 back_channel_init(void)
 {

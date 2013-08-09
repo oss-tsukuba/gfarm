@@ -36,7 +36,7 @@ SRCS =	gfmd.c thrpool.c callout.c subr.c rpcsubr.c watcher.c \
 	mdhost.c gfmd_channel.c mdcluster.c \
 	db_access.c db_common.c db_none.c quota.c xattr.c \
 	db_journal.c db_journal_apply.c internal_host_info.c \
-	fsngroup.c \
+	fsngroup.c failover_notify.c \
 	$(ldap_srcs) $(postgresql_srcs) $(optional_srcs)
 OBJS =	gfmd.o thrpool.o callout.o subr.o rpcsubr.o watcher.o \
 	user.o group.o host.o peer.o dead_file_copy.o \
@@ -45,7 +45,7 @@ OBJS =	gfmd.o thrpool.o callout.o subr.o rpcsubr.o watcher.o \
 	mdhost.o gfmd_channel.o mdcluster.o \
 	db_access.o db_common.o db_none.o quota.o xattr.o \
 	db_journal.o db_journal_apply.o internal_host_info.o \
-	fsngroup.o \
+	fsngroup.o failover_notify.o \
 	$(ldap_objs) $(postgresql_objs) $(optional_objs)
 
 all: $(PROGRAM)

@@ -1782,6 +1782,7 @@ main(int argc, char **argv)
 
 	/* master */
 
+	failover_notify();
 	replica_check_start();
 	accepting_loop(sock);
 
