@@ -171,7 +171,7 @@ gfprep_usage_common(int error)
 "\t[-j <#parallel(connections)>]\n"
 "\t[-w <scheduling way (noplan,greedy)(default:noplan)>]\n"
 "\t[-W <#KB> (threshold size to flat connections cost)(for -w greedy)]\n"
-"\t[-p (report total performance) | -P (report each and total performance)]"
+"\t[-p (report total performance) | -P (report each and total performance)]\n"
 "\t[-n (not execute)] [-s <#KB/s(simulate)>]\n"
 "\t[-U (disable checking disk_avail)(fast)]\n"
 "\t[-M <#byte(maximum total size of copied file)>(default: unlimited)]\n"
