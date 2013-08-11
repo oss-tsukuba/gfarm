@@ -134,7 +134,8 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server = gfs_pio_metadb(gf);
 	struct gfs_connection *gfs_server;
-	int nretry = 1, gfsd_retried = 0, failover_retried = 0;
+	int nretry = GFS_FAILOVER_RETRY_COUNT;
+	int gfsd_retried = 0, failover_retried = 0;
 
 retry:
 	gfm_server = gfs_pio_metadb(gf);

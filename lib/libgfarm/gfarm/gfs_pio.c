@@ -515,6 +515,7 @@ gfs_pio_fillbuf(GFS_File gf, size_t size)
 {
 	gfarm_error_t e;
 	size_t len;
+	int nretries = GFS_FAILOVER_RETRY_COUNT;
 
 	CHECK_READABLE(gf);
 
@@ -545,7 +546,12 @@ gfs_pio_fillbuf(GFS_File gf, size_t size)
 		gf->io_offset = gf->offset;
 	}
 
-	e = (*gf->ops->view_pread)(gf, gf->buffer, size, gf->io_offset, &len);
+	do {
+		e = (*gf->ops->view_pread)(gf, gf->buffer, size, gf->io_offset,
+		    &len);
+	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
+	    (e = gfs_pio_failover_check_and_try(gf, e))
+	    == GFARM_ERR_GFMD_FAILED_OVER);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gf->error = e;
 		gflog_debug(GFARM_MSG_1001302,
@@ -567,6 +573,7 @@ do_write(GFS_File gf, const char *buffer, size_t length,
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	size_t written, len;
+	int nretries;
 
 	if (length == 0) {
 		*writtenp = 0;
@@ -578,9 +585,16 @@ do_write(GFS_File gf, const char *buffer, size_t length,
 	}
 	for (written = 0; written < length; written += len) {
 		/* in case of GFARM_FILE_APPEND, io_offset is ignored */
-		e = (*gf->ops->view_pwrite)(
-			gf, buffer + written, length - written, gf->io_offset,
-			&len);
+		nretries = GFS_FAILOVER_RETRY_COUNT;
+		do {
+			e = (*gf->ops->view_pwrite)(gf,
+			    buffer + written, length - written, gf->io_offset,
+			    &len);
+			if (e == GFARM_ERR_NO_ERROR)
+				break;
+		} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
+		    (e = gfs_pio_failover_check_and_try(gf, e))
+		    == GFARM_ERR_GFMD_FAILED_OVER);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gf->error = e;
 			gflog_debug(GFARM_MSG_1001303,
@@ -733,6 +747,7 @@ gfs_pio_truncate(GFS_File gf, gfarm_off_t length)
 {
 	gfarm_error_t e;
 	gfarm_timerval_t t1, t2;
+	int nretries = GFS_FAILOVER_RETRY_COUNT;
 
 	GFARM_KERNEL_UNUSE2(t1, t2);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
@@ -763,7 +778,11 @@ gfs_pio_truncate(GFS_File gf, gfarm_off_t length)
 	gf->error = GFARM_ERR_NO_ERROR; /* purge EOF/error state */
 	gfs_pio_purge(gf);
 
-	e = (*gf->ops->view_ftruncate)(gf, length);
+	do {
+		e = (*gf->ops->view_ftruncate)(gf, length);
+	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
+	    (e = gfs_pio_failover_check_and_try(gf, e))
+	    == GFARM_ERR_GFMD_FAILED_OVER);
 	if (e != GFARM_ERR_NO_ERROR)
 		gf->error = e;
 finish:
@@ -780,6 +799,7 @@ gfs_pio_pread_unbuffer(GFS_File gf, void *buffer, int size,
 	char *p = buffer;
 	int n = 0;
 	size_t length;
+	int nretries;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_KERNEL_UNUSE2(t1, t2);
@@ -787,7 +807,13 @@ gfs_pio_pread_unbuffer(GFS_File gf, void *buffer, int size,
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	while (size > 0) {
-		e = (*gf->ops->view_pread)(gf, p, size, offset, &length);
+		nretries = GFS_FAILOVER_RETRY_COUNT;
+		do {
+			e = (*gf->ops->view_pread)(gf,
+			    p, size, offset, &length);
+		} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
+		    (e = gfs_pio_failover_check_and_try(gf, e))
+		    == GFARM_ERR_GFMD_FAILED_OVER);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"pread() failed: %s",
@@ -821,6 +847,7 @@ gfs_pio_pwrite_unbuffer(GFS_File gf, const void *buffer, int size,
 	const char *p = buffer;
 	int n = 0;
 	size_t length;
+	int nretries;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_KERNEL_UNUSE2(t1, t2);
@@ -828,7 +855,13 @@ gfs_pio_pwrite_unbuffer(GFS_File gf, const void *buffer, int size,
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	while (size > 0) {
-		e = (*gf->ops->view_pwrite)(gf, p, size, offset, &length);
+		nretries = GFS_FAILOVER_RETRY_COUNT;
+		do {
+			e = (*gf->ops->view_pwrite)(gf,
+			    p, size, offset, &length);
+		} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
+		    (e = gfs_pio_failover_check_and_try(gf, e))
+		    == GFARM_ERR_GFMD_FAILED_OVER);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"pwrite() failed: %s",
@@ -1072,6 +1105,7 @@ gfs_pio_append(GFS_File gf, void *buffer, int size, int *np,
 	gfarm_error_t e;
 	gfarm_timerval_t t1, t2;
 	size_t length;
+	int nretries = GFS_FAILOVER_RETRY_COUNT;
 
 	GFARM_KERNEL_UNUSE2(t1, t2);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
@@ -1087,7 +1121,12 @@ gfs_pio_append(GFS_File gf, void *buffer, int size, int *np,
 
 	CHECK_WRITABLE(gf);
 
-	e = (*gf->ops->view_write)(gf, buffer, size, &length, offp, fsizep);
+	do {
+		e = (*gf->ops->view_write)(gf,
+		    buffer, size, &length, offp, fsizep);
+	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
+	    (e = gfs_pio_failover_check_and_try(gf, e))
+	    == GFARM_ERR_GFMD_FAILED_OVER);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"view_write() failed: %s",
@@ -1121,6 +1160,7 @@ static gfarm_error_t
 sync_internal(GFS_File gf, int operation, double *time)
 {
 	gfarm_error_t e;
+	int nretries = GFS_FAILOVER_RETRY_COUNT;
 	gfarm_timerval_t t1, t2;
 
 #ifdef __KERNEL__	/* may called at exit, fd passing refers tsk->files */
@@ -1140,7 +1180,11 @@ sync_internal(GFS_File gf, int operation, double *time)
 		goto finish;
 	}
 
-	e = (*gf->ops->view_fsync)(gf, operation);
+	do {
+		e = (*gf->ops->view_fsync)(gf, operation);
+	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
+	    (e = gfs_pio_failover_check_and_try(gf, e))
+	    == GFARM_ERR_GFMD_FAILED_OVER);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gf->error = e;
 		gflog_debug(GFARM_MSG_1001319,
@@ -1693,6 +1737,20 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
  * fstat
  */
 
+static gfarm_error_t
+gfs_pio_view_fstat(GFS_File gf, struct gfs_stat *st)
+{
+	gfarm_error_t e;
+	int nretries = GFS_FAILOVER_RETRY_COUNT;
+
+	do {
+		e = (*gf->ops->view_fstat)(gf, st);
+	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
+	    (e = gfs_pio_failover_check_and_try(gf, e))
+	    == GFARM_ERR_GFMD_FAILED_OVER);
+	return (e);
+}
+
 gfarm_error_t
 gfs_pio_stat(GFS_File gf, struct gfs_stat *st)
 {
@@ -1715,19 +1773,19 @@ gfs_pio_stat(GFS_File gf, struct gfs_stat *st)
 				gflog_debug(GFARM_MSG_1002655,
 				    "gfs_pio_flush() failed: %s",
 				    gfarm_error_string(e));
-			} else if ((e = (*gf->ops->view_fstat)(gf, st))
+			} else if ((e = gfs_pio_view_fstat(gf, st))
 			    != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1002656,
 				    "view_fstat() failed: %s",
 				    gfarm_error_string(e));
 			}
-		} else if ((e = (*gf->ops->view_fstat)(gf, st))
+		} else if ((e = gfs_pio_view_fstat(gf, st))
 		     != GFARM_ERR_NO_ERROR && IS_CONNECTION_ERROR(e)) {
 			if ((e = gfs_pio_reconnect(gf)) != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1002657,
 				    "gfs_pio_reconnect() failed: %s",
 				    gfarm_error_string(e));
-			} else if ((e = (*gf->ops->view_fstat)(gf, st))
+			} else if ((e = gfs_pio_view_fstat(gf, st))
 				    != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1002658,
 				    "view_stat() failed: %s",

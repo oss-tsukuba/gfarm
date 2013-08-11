@@ -391,7 +391,7 @@ static gfarm_error_t
 gfs_pio_open_section(GFS_File gf, struct gfs_connection *gfs_server)
 {
 	gfarm_error_t e;
-	int nretry = 1;
+	int nretry = GFS_FAILOVER_RETRY_COUNT;
 	int is_local = gfs_client_connection_is_local(gfs_server);
 
 retry:

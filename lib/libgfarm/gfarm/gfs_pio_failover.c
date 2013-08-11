@@ -71,6 +71,24 @@ gfs_pio_should_failover(GFS_File gf, gfarm_error_t e)
 #endif /* __KERNEL__ */
 }
 
+/*
+ * if this function returns GFARM_ERR_GFMD_FAILED_OVER,
+ * the caller function should retry its operation.
+ */
+gfarm_error_t
+gfs_pio_failover_check_and_try(GFS_File gf, gfarm_error_t e)
+{
+	if (gfs_pio_should_failover(gf, e)) {
+		if ((e = gfs_pio_failover(gf)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_pio_failover: %s", gfarm_error_string(e));
+			return (e);
+		}
+		return (GFARM_ERR_GFMD_FAILED_OVER); /* caller should retry */
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
 static gfarm_error_t
 gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 {
