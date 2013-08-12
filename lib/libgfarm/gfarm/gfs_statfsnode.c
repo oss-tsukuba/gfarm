@@ -57,7 +57,7 @@ retry:
 				gfsd_retried = 1;
 				goto retry;
 			}
-			if (e == GFARM_ERR_GFMD_FAILED_OVER ) {
+			if (e == GFARM_ERR_GFMD_FAILED_OVER) {
 				if ((e = gfm_client_connection_failover(
 				    gfm_server)) != GFARM_ERR_NO_ERROR) {
 					gflog_debug(GFARM_MSG_UNFIXED,

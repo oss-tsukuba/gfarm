@@ -72,21 +72,23 @@ gfs_pio_should_failover(GFS_File gf, gfarm_error_t e)
 }
 
 /*
- * if this function returns GFARM_ERR_GFMD_FAILED_OVER,
- * the caller function should retry its operation.
+ * callers should retry their operation, if this function returns true.
  */
-gfarm_error_t
-gfs_pio_failover_check_and_try(GFS_File gf, gfarm_error_t e)
+int
+gfs_pio_failover_check_retry(GFS_File gf, gfarm_error_t *ep)
 {
-	if (gfs_pio_should_failover(gf, e)) {
+	gfarm_error_t e;
+
+	if (gfs_pio_should_failover(gf, *ep)) {
 		if ((e = gfs_pio_failover(gf)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "gfs_pio_failover: %s", gfarm_error_string(e));
-			return (e);
+			*ep = e;
+			return (0);
 		}
-		return (GFARM_ERR_GFMD_FAILED_OVER); /* caller should retry */
+		return (1); /* caller should retry */
 	}
-	return (GFARM_ERR_NO_ERROR);
+	return (0); /* DO NOT touch *ep */
 }
 
 static gfarm_error_t
