@@ -24,8 +24,10 @@ typedef struct gfarm_dirtree_entry {
 	unsigned char dst_exist;
 } gfarm_dirtree_entry_t;
 
-gfarm_error_t gfarm_dirtree_open(gfarm_dirtree_t **, const char *,
-				 const char *, int, int, int);
+gfarm_error_t gfarm_dirtree_init_fork(gfarm_dirtree_t **, const char *,
+	const char *, int, int, int);
+gfarm_error_t gfarm_dirtree_open(gfarm_dirtree_t *);
+
 gfarm_error_t gfarm_dirtree_checknext(gfarm_dirtree_t *,
 				       gfarm_dirtree_entry_t **);
 gfarm_error_t gfarm_dirtree_next(gfarm_dirtree_t *, gfarm_dirtree_entry_t **);
