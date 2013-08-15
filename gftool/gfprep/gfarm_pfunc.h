@@ -13,9 +13,10 @@ enum pfunc_result {
 	PFUNC_RESULT_FATAL
 };
 
-gfarm_error_t gfarm_pfunc_start(gfarm_pfunc_t **, int, int, gfarm_int64_t,
+gfarm_error_t gfarm_pfunc_init_fork(gfarm_pfunc_t **, int, int, gfarm_int64_t,
 	int, void (*)(void *), void (*)(enum pfunc_result, void *),
 	void (*)(void *));
+gfarm_error_t gfarm_pfunc_start(gfarm_pfunc_t *);
 gfarm_error_t gfarm_pfunc_cmd_add(gfarm_pfunc_t *, gfarm_pfunc_cmd_t *);
 gfarm_error_t gfarm_pfunc_terminate(gfarm_pfunc_t *);
 gfarm_error_t gfarm_pfunc_stop(gfarm_pfunc_t *);

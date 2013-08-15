@@ -60,6 +60,7 @@ struct gfpara {
 	void *param_recv;
 	void *(*func_end)(void *);
 	void *param_end;
+	int started;
 	int interrupt;
 	int timeout_msec;
 
@@ -166,11 +167,15 @@ gfpara_watch_stderr(void *arg)
 static void
 gfpara_watch_stderr_start(gfpara_t *handle)
 {
+	int eno;
+
 	gfarm_mutex_init(&handle->watch_stderr_mutex,
 			 "gfpara_watch_stderr_start", "watch_stderr_mutex");
 	handle->watch_stderr_end = 0;
-	pthread_create(&handle->watch_stderr, NULL,
-		       gfpara_watch_stderr, handle);
+	eno = pthread_create(&handle->watch_stderr, NULL,
+	    gfpara_watch_stderr, handle);
+	if (eno != 0)
+		gfpara_fatal("pthread_create: %s", strerror(eno));
 }
 
 static void
@@ -286,13 +291,12 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 	handle->func_end = func_end;
 	handle->param_end = param_end;
 	handle->interrupt = GFPARA_INTR_RUN;
+	handle->started = 0;
 
 	*handlep = handle;
 
 	is_parent = 1;
 	handle_list[n_handle_list++] = handle;
-
-	gfpara_watch_stderr_start(handle);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -496,6 +500,8 @@ gfpara_communicate(void *param)
 	int n_procs = handle->n_procs;
 	gfpara_proc_t *procs = handle->procs;
 
+	gfpara_watch_stderr_start(handle);
+
 	for (i = 0; i < n_procs; i++) {
 		int eno = pthread_create(&procs[i].thread, NULL,
 					 gfpara_thread, &procs[i]);
@@ -515,8 +521,35 @@ gfpara_communicate(void *param)
 
 	if (handle->func_end != NULL)
 		handle->func_end(handle->param_end);
+
+	return (NULL);
+}
+
+gfarm_error_t
+gfpara_start(gfpara_t *handle)
+{
+	int eno = pthread_create(&handle->thread, NULL,
+	    gfpara_communicate, handle); /* thread for func_end */
+
+	if (eno == 0)
+		handle->started = 1;
+	return (gfarm_errno_to_error(eno));
+}
+
+gfarm_error_t
+gfpara_join(gfpara_t *handle)
+{
+	int eno, i, n_procs = handle->n_procs;
+	gfpara_proc_t *procs = handle->procs;
+
+	if (handle->started)
+		eno = pthread_join(handle->thread, NULL);
+	else
+		eno = 0;
+
 	for (i = 0; i < n_procs; i++) {
 		int retv = waitpid(procs[i].pid, NULL, WNOHANG);
+
 		if (retv == 0) {
 			/* 100ms */
 			gfarm_nanosleep(100LL * GFARM_MILLISEC_BY_NANOSEC);
@@ -532,27 +565,11 @@ gfpara_communicate(void *param)
 				fprintf(stderr, "wait_pid(%ld): %s\n",
 					(long) procs[i].pid, strerror(errno));
 		}
-
 		fclose(procs[i].in);
 		fclose(procs[i].out);
 		fclose(procs[i].err);
 	}
 
-	return (NULL);
-}
-
-gfarm_error_t
-gfpara_start(gfpara_t *handle)
-{
-	int eno = pthread_create(&handle->thread, NULL,
-				 gfpara_communicate, handle);
-	return (gfarm_errno_to_error(eno));
-}
-
-gfarm_error_t
-gfpara_join(gfpara_t *handle)
-{
-	int eno = pthread_join(handle->thread, NULL);
 	free(handle->procs);
 	free(handle);
 	return (gfarm_errno_to_error(eno));
