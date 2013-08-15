@@ -14,10 +14,9 @@ load 	"gfarm_v2::check_gfsd_registered" \
 # GFARM_HOME:	A directory path of Gfarm which this test will be executed
 # RETRY_COUNT:	Retry number to check master/slave
 # FILE_SIZE:	File size of each file to be read
-test_configuration()
+#
+setup_configuration()
 {
-	RESULT=$RESULT_PASS
-
 	# default parameter
 	GFARM_HOME=${GFARM_HOME-"/"}
 	RETRY_COUNT=${RETRY_COUNT-"10"}
@@ -65,6 +64,14 @@ test_configuration()
 	#
 	# section: configure gfsd
 	#
+
+	return $RESULT_PASS
+}
+
+test_configuration()
+{
+	RESULT=$RESULT_PASS
+
 	# step: config-gfsd
 	$GFSERVICE config-gfsd gfsd2
 	if [ $? -ne 0 ]; then
@@ -256,6 +263,11 @@ test_configuration()
 
 	rm -f $TMP_FILE
 
+	return $RESULT
+}
+
+teardown_configuration()
+{
 	# cleanup: remove file
 	$GFSERVICE gfcmd client1 gfrm $GFARM_FILE $GFARM_FILE2
 
@@ -274,5 +286,5 @@ test_configuration()
 	# cleanup: unconfigure master gfmd
 	$GFSERVICE unconfig-gfarm gfmd1
 
-	return $RESULT
+	return $RESULT_PASS
 }
