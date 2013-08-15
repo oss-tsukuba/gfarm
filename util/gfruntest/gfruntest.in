@@ -181,8 +181,13 @@ do_testcase()
 		START_TIME=`date +%s`
 	fi
 
-	test_${TESTNAME} "$@" >> $LOG_FILE 2>&1
+	trap "teardown_${TESTNAME}; exit 1" 1 2 3 15
+	setup_${TESTNAME} "$@" >> $LOG_FILE 2>&1
 	RESULT=$?
+	if [ $RESULT -eq $RESULT_PASS ]; then
+		test_${TESTNAME} >> $LOG_FILE 2>&1
+		RESULT=$?
+	fi
 	RESULT_STRING=`get_result_string $RESULT`
 
 	if [ X$JENKINS_CLASSNAME != X ]; then
@@ -196,6 +201,8 @@ do_testcase()
 		>> $LOG_FILE
 	echo "$RESULT_STRING"
 
+	teardown_${TESTNAME} >> $LOG_FILE 2>&1
+	trap - 1 2 3 15
 	return $RESULT
 }
 
@@ -313,7 +320,7 @@ while [ $# -ge 1 ]; do
 	-s)	if [ $# -le 1 ]; then
 			log_usage_error "option requires an argument -- 's'"
 		fi
-		SCENARIO_FILE=$2
+		SCENARIO_FILE="`echo $2 | sed -e 's|::|/|g'`"
 		# Do not add '-s' option to OPTIONS.
 		shift 2
 		;;

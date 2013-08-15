@@ -13,10 +13,9 @@ load 	"gfarm_v2::check_gfmd_master" \
 # RETRY_COUNT:	  retry number to check master/slave
 # RETRY_INTERVAL: retry interval sec to check master/slave
 # TIMEOUT:	  timeout sec for starting/stopping gfmd
-test_failover_by_kill()
+#
+setup_failover_by_kill()
 {
-	RESULT=$RESULT_PASS
-
 	# default parameter
 	RETRY_COUNT=${RETRY_COUNT-"10"}
 	RETRY_INTERVAL=${RETRY_COUNT-"5"}
@@ -31,6 +30,13 @@ test_failover_by_kill()
 	if [ X$AUTH_TYPE = Xgsi ] || [ X$AUTH_TYPE = Xgsi_auth ]; then
 		$GFSERVICE systest::gfarm_v2::grid_proxy_init client1
 	fi
+
+	return $RESULT_PASS
+}
+
+test_failover_by_kill()
+{
+	RESULT=$RESULT_PASS
 
 	# step: kill gfmd on gfmd1
 	$GFSERVICE systest::gfarm_v2::kill_gfmd gfmd1
@@ -92,4 +98,9 @@ test_failover_by_kill()
 	fi
 
 	return $RESULT
+}
+
+teardown_failover_by_kill()
+{
+	return $RESULT_PASS
 }
