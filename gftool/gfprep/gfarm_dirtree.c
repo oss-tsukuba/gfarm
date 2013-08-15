@@ -108,6 +108,7 @@ struct gfarm_dirtree {
 	int n_parallel;
 	int n_free_procs;
 	unsigned int n_get_ents;
+	int started;
 	int is_recursive;
 	gfarm_fifo_simple_t *fifo_dirs;
 	gfarm_fifo_simple_t *fifo_ents;
@@ -1003,9 +1004,9 @@ convert_gfarm_url(const char *gfarm_url)
 
 /* Do not call this function after gfarm_initialize() */
 gfarm_error_t
-gfarm_dirtree_open(gfarm_dirtree_t **handlep,
-		   const char *src_url, const char *dst_url,
-		   int n_parallel, int fifo_size, int is_recursive)
+gfarm_dirtree_init_fork(
+	gfarm_dirtree_t **handlep, const char *src_url, const char *dst_url,
+	int n_parallel, int fifo_size, int is_recursive)
 {
 	static const char diag[] = "gfarm_dirtree_open";
 	gfarm_dirtree_t *handle;
@@ -1055,13 +1056,13 @@ gfarm_dirtree_open(gfarm_dirtree_t **handlep,
 
 	e = gfarm_fifo_simple_init(&handle->fifo_dirs);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gfarm_fifo_wait_to_finish(handle->fifo_handle);
+		gfarm_fifo_free(handle->fifo_handle);
 		free(handle);
 		return (e);
 	}
 	e = gfarm_fifo_simple_init(&handle->fifo_ents);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gfarm_fifo_wait_to_finish(handle->fifo_handle);
+		gfarm_fifo_free(handle->fifo_handle);
 		gfarm_fifo_simple_free(handle->fifo_dirs);
 		free(handle);
 		return (e);
@@ -1078,7 +1079,7 @@ gfarm_dirtree_open(gfarm_dirtree_t **handlep,
 			dirtree_recv, handle,
 			dirtree_end, handle);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gfarm_fifo_wait_to_finish(handle->fifo_handle);
+		gfarm_fifo_free(handle->fifo_handle);
 		gfarm_fifo_simple_free(handle->fifo_dirs);
 		gfarm_fifo_simple_free(handle->fifo_ents);
 		free(handle);
@@ -1088,7 +1089,7 @@ gfarm_dirtree_open(gfarm_dirtree_t **handlep,
 	startdir = strdup(dirtree_startdir);
 	if (startdir == NULL) {
 		gfpara_join(handle->gfpara_handle);
-		gfarm_fifo_wait_to_finish(handle->fifo_handle);
+		gfarm_fifo_free(handle->fifo_handle);
 		gfarm_fifo_simple_free(handle->fifo_dirs);
 		gfarm_fifo_simple_free(handle->fifo_ents);
 		free(handle);
@@ -1098,7 +1099,7 @@ gfarm_dirtree_open(gfarm_dirtree_t **handlep,
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(startdir);
 		gfpara_join(handle->gfpara_handle);
-		gfarm_fifo_wait_to_finish(handle->fifo_handle);
+		gfarm_fifo_free(handle->fifo_handle);
 		gfarm_fifo_simple_free(handle->fifo_dirs);
 		gfarm_fifo_simple_free(handle->fifo_ents);
 		free(handle);
@@ -1112,22 +1113,20 @@ gfarm_dirtree_open(gfarm_dirtree_t **handlep,
 	handle->n_free_procs = 0;
 	handle->n_get_ents = 0;
 	handle->is_recursive = is_recursive;
-	e = gfpara_start(handle->gfpara_handle);
-	if (e != GFARM_ERR_NO_ERROR) {
-		free(startdir);
-		gfpara_join(handle->gfpara_handle);
-		gfarm_fifo_wait_to_finish(handle->fifo_handle);
-		gfarm_fifo_simple_free(handle->fifo_dirs);
-		gfarm_fifo_simple_free(handle->fifo_ents);
-		gfarm_mutex_destroy(&handle->mutex, diag, "mutex");
-		gfarm_cond_destroy(&handle->free_procs, diag, "free_procs");
-		gfarm_cond_destroy(&handle->get_ents, diag, "get_ents");
-		free(handle);
-		return (e);
-	}
+	handle->started = 0;
 
 	*handlep = handle;
+	return (e);
+}
 
+gfarm_error_t
+gfarm_dirtree_open(gfarm_dirtree_t *handle)
+{
+	gfarm_error_t e;
+
+	e = gfpara_start(handle->gfpara_handle);
+	if (e == GFARM_ERR_NO_ERROR)
+		handle->started = 1;
 	return (e);
 }
 
@@ -1189,10 +1188,11 @@ gfarm_dirtree_close(gfarm_dirtree_t *handle)
 	gfarm_dirtree_entry_t *ent;
 	char *subdir;
 
-	gfpara_terminate(handle->gfpara_handle, 10000); /* fifo: quitting */
-
-	while (gfarm_dirtree_delete(handle) == GFARM_ERR_NO_ERROR)
-		;
+	if (handle->started) {
+		gfpara_terminate(handle->gfpara_handle, 10000);
+		while (gfarm_dirtree_delete(handle) == GFARM_ERR_NO_ERROR)
+			;
+	}
 	while (gfarm_fifo_simple_next(handle->fifo_ents, &p)
 	    == GFARM_ERR_NO_ERROR) {
 		ent = p;

@@ -2709,10 +2709,11 @@ gfprep_print_list(
 	char *src_url = NULL, *dst_url = NULL;
 	int i, src_url_size = 0, dst_url_size = 0;
 
-	e = gfarm_dirtree_open(
-		&dirtree_handle, src_dir, dst_dir,
-		n_para, n_fifo,
-		src_base_name ? 0 : 1);
+	e = gfarm_dirtree_init_fork(
+	    &dirtree_handle, src_dir, dst_dir, n_para, n_fifo,
+	    src_base_name ? 0 : 1);
+	gfprep_fatal_e(e, "gfarm_dirtree_init_forkx");
+	e = gfarm_dirtree_open(dirtree_handle);
 	gfprep_fatal_e(e, "gfarm_dirtree_open");
 	n_entry = 0;
 	while ((e = gfarm_dirtree_checknext(dirtree_handle, &entry))
@@ -3417,26 +3418,44 @@ main(int argc, char *argv[])
 
 	gfprep_signal_init();
 
-	/* not gfarm initialized ------------------------- */
 	if (opt.performance)
 		gettimeofday(&time_start, NULL);
 
-	/* create child-processes before gfarm_initialize() */
-	e = gfarm_pfunc_start(&pfunc_handle, opt_n_para, 1, opt_simulate_KBs,
-	    opt_copy_bufsize, pfunc_cb_start, pfunc_cb_end, pfunc_cb_free);
-	gfprep_fatal_e(e, "gfarm_pfunc_start");
-	gfprep_debug("pfunc_start...done");
+	/* after gfarm_terminate() --------------------------------- */
+
+	/* fork() before gfarm_initialize() and pthread_create() */
+	e = gfarm_pfunc_init_fork(
+	    &pfunc_handle, opt_n_para, 1, opt_simulate_KBs, opt_copy_bufsize,
+	    pfunc_cb_start, pfunc_cb_end, pfunc_cb_free);
+	gfprep_fatal_e(e, "gfarm_pfunc_init_fork");
+
+	e = gfarm_dirtree_init_fork(
+	    &dirtree_handle, src_dir, is_gfpcopy ? dst_dir : NULL,
+	    opt_dirtree_n_para, opt_dirtree_n_fifo, src_base_name ? 0 : 1);
+	gfprep_fatal_e(e, "gfarm_dirtree_init_fork");
+
 	pfunc_cb_func_init();
 
-	/* create child-processes before gfarm_initialize() */
-	e = gfarm_dirtree_open(&dirtree_handle, src_dir,
-			       is_gfpcopy ? dst_dir : NULL,
-			       opt_dirtree_n_para, opt_dirtree_n_fifo,
-			       src_base_name ? 0 : 1);
-	gfprep_fatal_e(e, "gfarm_dirtree");
+	/* create threads */
+	e = gfarm_pfunc_start(pfunc_handle);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfarm_pfunc_terminate(pfunc_handle);
+		gfarm_pfunc_join(pfunc_handle);
+		gfprep_fatal_e(e, "gfarm_pfunc_start");
+	}
+	gfprep_debug("pfunc_start...done");
+
+	e = gfarm_dirtree_open(dirtree_handle);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfarm_dirtree_close(dirtree_handle);
+		gfprep_fatal_e(e, "gfarm_dirtree_open");
+	}
 	gfprep_debug("dirtree_open...done");
 
-	/* access to gfarm ------------------------------------------ */
+	/* Do not fork below here */
+
+	/* before gfarm_initialize() -------------------------------- */
+
 	e = gfarm_initialize(&orig_argc, &orig_argv);
 	gfprep_fatal_e(e, "gfarm_initialize");
 	if (opt_src_hostfile) {

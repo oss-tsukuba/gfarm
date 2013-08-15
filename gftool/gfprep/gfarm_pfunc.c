@@ -38,8 +38,10 @@ struct gfarm_pfunc {
 	void (*cb_start)(void *);
 	void (*cb_end)(enum pfunc_result, void *);
 	void (*cb_free)(void *);
+	int queue_size;
 	gfarm_int64_t simulate_KBs;
 	char *copy_buf;
+	int started;
 	int copy_bufsize;
 	int is_end;
 	pthread_mutex_t is_end_mutex;
@@ -827,9 +829,9 @@ pfunc_end(void *param)
 	return (NULL);
 }
 
-/* Do not call this function after gfarm_initialize() */
+/* Do not call this function after gfarm_initialize() or pthread_create() */
 gfarm_error_t
-gfarm_pfunc_start(
+gfarm_pfunc_init_fork(
 	gfarm_pfunc_t **handlep, int n_parallel, int queue_size,
 	gfarm_int64_t simulate_KBs, int copy_bufsize,
 	void (*cb_start)(void *), void (*cb_end)(enum pfunc_result, void *),
@@ -841,43 +843,58 @@ gfarm_pfunc_start(
 
 	GFARM_MALLOC(handle);
 	GFARM_MALLOC_ARRAY(buf, copy_bufsize);
-	if (handle == NULL || buf == NULL)
+	if (handle == NULL || buf == NULL) {
+		free(handle);
+		free(buf);
 		return (GFARM_ERR_NO_MEMORY);
+	}
+	handle->queue_size = queue_size;
 	handle->simulate_KBs = simulate_KBs;
 	handle->copy_buf = buf;
 	handle->copy_bufsize = copy_bufsize;
 	handle->cb_start = cb_start;
 	handle->cb_end = cb_end;
 	handle->cb_free = cb_free;
+	handle->started = 0;
 	handle->is_end = 0;
 	gfarm_mutex_init(&handle->is_end_mutex, "gfarm_pfunc_start",
-			 "is_end_mutex");
+	    "is_end_mutex");
+
+	e = gfarm_fifo_init(&handle->fifo_handle,
+	    handle->queue_size, sizeof(gfarm_pfunc_cmd_t),
+	    pfunc_fifo_set, pfunc_fifo_get);
+	if (e != GFARM_ERR_NO_ERROR) {
+		free(handle->copy_buf);
+		free(handle);
+		return (e);
+	}
 	e = gfpara_init(&handle->gfpara_handle, n_parallel,
 	    pfunc_child, handle,
 	    pfunc_send, handle, pfunc_recv, handle, pfunc_end, handle);
 	if (e != GFARM_ERR_NO_ERROR) {
-		free(handle);
-		return (e);
-	}
-	e = gfarm_fifo_init(&handle->fifo_handle,
-			    queue_size, sizeof(gfarm_pfunc_cmd_t),
-			    pfunc_fifo_set, pfunc_fifo_get);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gfpara_join(handle->gfpara_handle);
-		free(handle);
-		return (e);
-	}
-	e = gfpara_start(handle->gfpara_handle);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gfarm_fifo_wait_to_finish(handle->fifo_handle);
-		gfpara_join(handle->gfpara_handle);
+		gfarm_fifo_free(handle->fifo_handle);
+		free(handle->copy_buf);
 		free(handle);
 		return (e);
 	}
 	*handlep = handle;
+	return (e);
+}
+
+/* starting pthread */
+gfarm_error_t
+gfarm_pfunc_start(gfarm_pfunc_t *handle)
+{
+	gfarm_error_t e;
 
 	mask = umask(0022);
 	umask(mask);
+
+	e = gfpara_start(handle->gfpara_handle);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	handle->started = 1;
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -907,7 +924,10 @@ gfarm_pfunc_join(gfarm_pfunc_t *handle)
 {
 	gfarm_error_t e, e2;
 
-	e = gfarm_fifo_wait_to_finish(handle->fifo_handle);
+	if (handle->started)
+		e = gfarm_fifo_wait_to_finish(handle->fifo_handle);
+	else
+		e = GFARM_ERR_NO_ERROR;
 	e2 = gfpara_join(handle->gfpara_handle);
 	gfarm_fifo_free(handle->fifo_handle);
 	free(handle->copy_buf);
