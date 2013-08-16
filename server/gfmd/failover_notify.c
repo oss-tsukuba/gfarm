@@ -12,7 +12,6 @@
 
 #include <gfarm/gfarm.h>
 
-#include "thrsubr.h"
 #include "gfnetdb.h"
 
 #include "gfs_proto.h"
@@ -22,14 +21,11 @@
 #include "hostspec.h" /* GFARM_SOCKADDR_STRLEN */
 
 #include "subr.h"
-#include "thrpool.h"
 #include "watcher.h"
 
 #include "host.h"
 #include "back_channel.h"
 #include "gfmd.h"
-
-static const char module_name[] = "failover_notify_module";
 
 static int
 gfs_client_failover_notify_request(int sock, int retry_count, const char *xid,
@@ -174,13 +170,9 @@ gfs_client_failover_notify_result(int sock, int retry_count, const char *xid,
 struct failover_notify_closure {
 	struct host *fsnode;
 	struct watcher_event *result_event;
-	struct watcher_event *timeout_event;
-	struct watcher_event *closing_event;
-	pthread_mutex_t mutex;
 
 	int socket;
 	int retry_count;
-	int closing_requested;
 	char xid[GFS_UDP_RPC_XID_SIZE];
 };
 
@@ -189,7 +181,6 @@ failover_notify_closure_alloc(struct host *h, int sock)
 {
 	gfarm_error_t e;
 	struct failover_notify_closure *fnc;
-	static const char diag[] = "failover_notify_closure_alloc";
 
 	GFARM_MALLOC(fnc);
 	if (fnc == NULL) {
@@ -198,153 +189,112 @@ failover_notify_closure_alloc(struct host *h, int sock)
 		return (NULL);
 	}
 
-	if ((e = watcher_fd_readable_event_alloc(sock,
+	if ((e = watcher_fd_readable_or_timeout_event_alloc(sock,
 	    &fnc->result_event)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "failover_notify(%s): watcher_fd_readable_event_alloc: %s",
+		    "failover_notify(%s): "
+		    "watcher_fd_readable_or_timeout_event_alloc: %s",
 		    host_name(h), gfarm_error_string(e));
 	} else {
-		if ((e = watcher_timeout_event_alloc(
-		    &fnc->timeout_event)) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "failover_notify(%s): "
-			    "watcher_timeout_event_alloc: %s",
-			    host_name(h), gfarm_error_string(e));
-		} else {
-			if ((e = watcher_closing_event_alloc(
-			    &fnc->closing_event)) != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_UNFIXED,
-				    "failover_notify(%s): "
-				    "watcher_closing_event_alloc: %s",
-				    host_name(h), gfarm_error_string(e));
-			} else {
-				gfarm_mutex_init(&fnc->mutex,
-				    module_name, diag);
-				watcher_fd_closing_event_add_relevant_event(
-				    fnc->closing_event, fnc->result_event);
-				watcher_fd_closing_event_add_relevant_event(
-				    fnc->closing_event, fnc->timeout_event);
+		fnc->fsnode = h;
+		fnc->socket = sock;
+		fnc->retry_count = 0;
+		/* use gfarm_auth_random() for security */
+		gfarm_auth_random(fnc->xid, sizeof(fnc->xid));
 
-				fnc->fsnode = h;
-				fnc->socket = sock;
-				fnc->retry_count = 0;
-				fnc->closing_requested = 0;
-				/* use gfarm_auth_random() for security */
-				gfarm_auth_random(fnc->xid, sizeof(fnc->xid));
-
-				return (fnc);
-			}
-			watcher_event_free(fnc->timeout_event);
-		}
-		watcher_event_free(fnc->result_event);
+		return (fnc);
 	}
 	free(fnc);
 	return (NULL);
 }
 
-static void *
-failover_notify_closing(void *arg)
-{
-	struct failover_notify_closure *fnc = arg;
-	static const char diag[] = "failover_notify_closing";
+static void *failover_notify_result(void *);
 
+static void
+failover_notify_finish(struct failover_notify_closure *fnc)
+{
 	if (debug_mode)
 		gflog_info(GFARM_MSG_UNFIXED,
-		    "failover notifiy: closing for %s",
+		    "failover notifiy: finish for %s",
 		    host_name(fnc->fsnode));
-	/* make sure that other event handlers finished their jobs */
-	gfarm_mutex_lock(&fnc->mutex, module_name, diag);
-	gfarm_mutex_unlock(&fnc->mutex, module_name, diag);
 
-	gfarm_mutex_destroy(&fnc->mutex, module_name, diag);
-	watcher_event_free(fnc->closing_event);
-	watcher_event_free(fnc->timeout_event);
 	watcher_event_free(fnc->result_event);
 	close(fnc->socket);
 	free(fnc);
+}
 
-	/* this return value won't be used, because this thread is detached */
-	return (NULL);
+static void
+failover_notify_got_reply(struct failover_notify_closure *fnc)
+{
+	gfarm_error_t e;
+
+	if (debug_mode)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "failover notifiy: result for %s", host_name(fnc->fsnode));
+
+	e = gfs_client_failover_notify_result(fnc->socket,
+	    fnc->retry_count, fnc->xid, host_name(fnc->fsnode));
+	if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE /*EWOULDBLOCK*/ ||
+	    e == GFARM_ERR_PROTOCOL_NOT_SUPPORTED /* forged packet? */) { 
+		/* wait again */
+		watcher_add_event_with_timeout(back_channel_watcher(),
+		    fnc->result_event,
+		    gfs_client_datagram_timeouts[fnc->retry_count],
+		    back_channel_recv_thrpool(),
+		    failover_notify_result, fnc);
+	} else {
+		failover_notify_finish(fnc);
+	}
+}
+
+static void
+failover_notify_timeout(struct failover_notify_closure *fnc)
+{
+	int error;
+
+	if (debug_mode)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "failover notifiy: timeout for %s",
+		     host_name(fnc->fsnode));
+
+	if (++fnc->retry_count >= gfs_client_datagram_ntimeouts) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "failover_notify(%s): "
+		    "retry_count exceeds %d times - timedout",
+		    host_name(fnc->fsnode), fnc->retry_count);
+
+		failover_notify_finish(fnc);
+	} else if ((error = gfs_client_failover_notify_request(
+	    fnc->socket, fnc->retry_count, fnc->xid,
+	    host_name(fnc->fsnode))) != 0 &&
+	    (error != EWOULDBLOCK ||
+	     fnc->retry_count >= gfs_client_datagram_ntimeouts - 1)) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "failover_notify(%s): %d time(s) retried, but failed: %s",
+		    host_name(fnc->fsnode), fnc->retry_count, strerror(error));
+
+		failover_notify_finish(fnc);
+	} else {
+		/* do retry in case of a retry or EWOULDBLOCK */
+		watcher_add_event_with_timeout(back_channel_watcher(),
+		    fnc->result_event,
+		    gfs_client_datagram_timeouts[fnc->retry_count],
+		    back_channel_recv_thrpool(),
+		    failover_notify_result, fnc);
+	}
 }
 
 static void *
 failover_notify_result(void *arg)
 {
 	struct failover_notify_closure *fnc = arg;
-	gfarm_error_t e;
-	static const char diag[] = "failover_notify_result";
-
-	if (debug_mode)
-		gflog_info(GFARM_MSG_UNFIXED,
-		    "failover notifiy: result for %s", host_name(fnc->fsnode));
-	gfarm_mutex_lock(&fnc->mutex, module_name, diag);
 
 	watcher_event_ack(fnc->result_event);
 
-	e = gfs_client_failover_notify_result(fnc->socket,
-	    fnc->retry_count, fnc->xid, host_name(fnc->fsnode));
-	if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE /*EWOULDBLOCK*/ ||
-	    e == GFARM_ERR_PROTOCOL_NOT_SUPPORTED /* forged packet? */) { 
-		watcher_add_event(back_channel_watcher(), fnc->result_event,
-		    back_channel_recv_thrpool(), failover_notify_result, fnc);
-	} else if (!fnc->closing_requested) {
-		fnc->closing_requested = 1;
-		watcher_add_event(back_channel_watcher(), fnc->closing_event,
-		    NULL, failover_notify_closing, fnc);
-	}
-
-	gfarm_mutex_unlock(&fnc->mutex, module_name, diag);
-
-	/* this return value won't be used, because this thread is detached */
-	return (NULL);
-}
-
-static void *
-failover_notify_timeout(void *arg)
-{
-	struct failover_notify_closure *fnc = arg;
-	int error;
-	static const char diag[] = "failover_notify_timeout";
-
-	if (debug_mode)
-		gflog_info(GFARM_MSG_UNFIXED,
-		    "failover notifiy: timeout for %s",
-		     host_name(fnc->fsnode));
-	gfarm_mutex_lock(&fnc->mutex, module_name, diag);
-
-	watcher_event_ack(fnc->timeout_event);
-
-	do {
-		if (++fnc->retry_count >= gfs_client_datagram_ntimeouts) {
-			gflog_notice(GFARM_MSG_UNFIXED,
-			    "failover_notify(%s): "
-			    "retry_count exceeds %d times - timedout",
-			    host_name(fnc->fsnode), fnc->retry_count);
-		} else if ((error = gfs_client_failover_notify_request(
-		    fnc->socket, fnc->retry_count, fnc->xid,
-		    host_name(fnc->fsnode))) != 0 &&
-		    (error != EWOULDBLOCK ||
-		     fnc->retry_count == gfs_client_datagram_ntimeouts - 1)) {
-			/* nothing to do */
-		} else {
-			/* do retry in EWOULDBLOCK case */
-			watcher_add_timeout_event(back_channel_watcher(),
-			    fnc->timeout_event,
-			    gfs_client_datagram_timeouts[fnc->retry_count],
-			    back_channel_recv_thrpool(),
-			    failover_notify_timeout, fnc);
-			break; /* i.e. DO NOT add closing_event */
-		}
-
-		if (!fnc->closing_requested) {
-			fnc->closing_requested = 1;
-			watcher_add_event(back_channel_watcher(),
-			    fnc->closing_event,
-			    NULL, failover_notify_closing, fnc);
-		}
-	} while (0);
-
-	gfarm_mutex_unlock(&fnc->mutex, module_name, diag);
+	if (watcher_event_is_readable(fnc->result_event))
+		failover_notify_got_reply(fnc);
+	else
+		failover_notify_timeout(fnc);
 
 	/* this return value won't be used, because this thread is detached */
 	return (NULL);
@@ -354,7 +304,6 @@ static void
 failover_notify_send(struct failover_notify_closure *fnc)
 {
 	int error;
-	static const char diag[] = "failover_notify_send";
 
 	/* do retry in EWOULDBLOCK case */
 	if ((error = gfs_client_failover_notify_request(fnc->socket,
@@ -364,17 +313,9 @@ failover_notify_send(struct failover_notify_closure *fnc)
 		return;
 	}
 
-	/*
-	 * this mutex is to avoid slight race condition that the closing
-	 * handler is called before the following watcher_add_event().
-	 */
-	gfarm_mutex_lock(&fnc->mutex, module_name, diag);
-	watcher_add_timeout_event(back_channel_watcher(), fnc->timeout_event,
-	    gfs_client_datagram_timeouts[fnc->retry_count],
-	    back_channel_recv_thrpool(), failover_notify_timeout, fnc);
-	watcher_add_event(back_channel_watcher(), fnc->result_event,
+	watcher_add_event_with_timeout(back_channel_watcher(),
+	    fnc->result_event, gfs_client_datagram_timeouts[fnc->retry_count],
 	    back_channel_recv_thrpool(), failover_notify_result, fnc);
-	gfarm_mutex_unlock(&fnc->mutex, module_name, diag);
 }
 
 static int
