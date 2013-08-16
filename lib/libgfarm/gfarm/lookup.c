@@ -135,7 +135,7 @@ gfarm_url_parse_metadb(const char **pathp,
 	struct gfarm_filesystem *fs;
 	char *hostname;
 	int port;
-	char *user;
+	char *user = NULL;
 
 	if ((e = gfarm_get_hostname_by_url0(pathp, &hostname, &port))
 	    != GFARM_ERR_NO_ERROR) {
