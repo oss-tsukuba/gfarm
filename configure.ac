@@ -67,6 +67,7 @@ AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
 AC_PATH_PROG([RUBY], [ruby], [/usr/bin/ruby])
+AC_PATH_PROG([PERL], [perl], [/usr/bin/perl])
 
 ######
 ###### parsing command line options

@@ -1201,6 +1201,17 @@ Gfarm2 ファイルシステムをアンマウントします。
 
 <varlistentry>
 <term>
+<command moreinfo="none">kill-gfmd-all</command>
+</term>
+<listitem>
+<para>
+すべての gfmd を強制停止 (SIGKILL を送付) します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
 <command moreinfo="none">restart-all</command>
 </term>
 <listitem>

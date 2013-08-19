@@ -1,0 +1,75 @@
+#! @PERL@ -w
+#
+# NAME:
+#     timeout - run a command with a time limit
+#
+# SYNOPSIS:
+#     timeout [-s SIGNAL] DURATION COMMAND [ARGUMENT...]
+#
+# DESCRIPTION:
+#     'timeout' executes COMMAND with ARGUMENTs if given, and kill it
+#      if still running after DURATION.
+#
+#      DURATION must be either:
+#
+#          * an integral number greater than or equal to 0 with an optional
+#            suffix 's' for seconds (default), 'm' for minites, 'h' for 
+#            hours or 'd' for days.
+#
+#          * 'no' (no timeout occurs).
+#
+#      If 'timeout' kills COMMAND, it returns an exitcode 124.  Otherwise
+#      it returns an exitcode of COMMAND.
+#
+# OPTIONS:
+#      -s SIGNAL    Signal (name or number) to kill COMMAND.
+#                   The default is TERM.
+#
+use Getopt::Std;
+use POSIX ":sys_wait_h";
+
+use constant EXITCODE_TIMEOUT  => 124;
+use constant EXITCODE_EXECFAIL => 127;
+
+my $signal = 'TERM';
+my %suffix_magnifications = (''  => 1, 's' => 1, 'm' => 60, 'h' => 3600,
+			     'd' => 86400);
+
+my %options = ();
+if (!getopts('s:', \%options) || @ARGV < 2) {
+    die("Usage $0 [-s SIGNAL] DURATION COMMAND [ARGUMENT...]\n");
+}
+($signal = uc($options{s})) =~ s/^SIG([A-Z].*)$/$1/ if (defined($options{s}));
+my $duration = shift;    
+
+my $duration_secs;
+if ($duration =~ /^(0|[1-9][0-9]*)(|s|m|h|d)$/) {
+    $duration_secs = $1 * $suffix_magnifications{$2};
+} elsif ($duration eq 'no') {
+    exec(@ARGV) or exit(EXITCODE_EXECFAIL);
+} else {
+    die("$0: invalid duration '$duration'\n");
+}
+
+my $exitcode = EXITCODE_TIMEOUT;
+my $pid = fork();
+die("$0: failed to fork\n") if ($pid < 0);
+
+if ($pid == 0) {
+    exec(@ARGV) or exit(EXITCODE_EXECFAIL);
+} else {
+    my $limit_time = time() + $duration_secs;
+    for (;;) {
+	if (waitpid($pid, WNOHANG) > 0) {
+	    $exitcode = $? >> 8;
+	    last;
+	} elsif (time() >= $limit_time) {
+	    kill($signal, $pid);
+	    waitpid($pid, 0);
+	    last;
+	}
+	sleep(1);
+    }
+}
+
+exit($exitcode);
