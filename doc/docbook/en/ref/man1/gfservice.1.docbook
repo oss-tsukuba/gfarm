@@ -1209,6 +1209,17 @@ and backend databases,
 
 <varlistentry>
 <term>
+<command moreinfo="none">kill-gfmd-all</command>
+</term>
+<listitem>
+<para>
+Kill (send SIGKILL) all <command moreinfo="none">gfmd</command> servers.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
 <command moreinfo="none">restart-all</command>
 </term>
 <listitem>
