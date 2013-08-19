@@ -35,7 +35,7 @@ SHARED_KEY_VALIDITY_PERIOD=31536000
 TIMEOUT=no
 
 # gfservice plugin directory
-GFSERVICE_PLUGIN_PATH="@datadir@/gfarm/gfservice"
+GFSERVICE_PLUGIN_DIR="@datadir@/gfarm/gfservice"
 
 # Temporary file.
 TMP_FILE="/tmp/gfservice.$$"
@@ -1308,6 +1308,22 @@ subcmd_kill_gfmd()
 }
 
 #
+# Sub-command: kill-gfmd-all
+#
+subcmd_kill_gfmd_all()
+{
+	log_debug "subcmd_kill_gfmd_all"
+
+	check_argc $# 0
+	get_gfmd_hostids | while read HOSTID; do
+		$GFSERVICE kill-gfmd $HOSTID "$@" < /dev/null \
+			|| log_warn "failed to kill-gfmd on $HOSTID"
+	done
+
+        log_debug "end subcmd_kill_gfmd_all"
+}
+
+#
 # Sub-command: config-gfarm
 #
 subcmd_config_gfarm()
@@ -2253,6 +2269,9 @@ stop-all-servers|stop-all)
 kill-gfmd)
 	subcmd_kill_gfmd "$@"
 	;;
+kill-gfmd-all)
+	subcmd_kill_gfmd_all "$@"
+	;;
 restart-backend-db)
 	subcmd_stop_backend_db "$@"
 	subcmd_start_backend_db "$@"
@@ -2382,14 +2401,14 @@ gfcmd)
 *)
 	SUBCMD="`echo $SUBCMD | sed -e 's|::|/|g'`"
 	SUBCMD_FUNC="`basename $SUBCMD | sed -e 's|-|_|g'`"
-	if [ -f $GFSERVICE_PLUGIN_PATH/$SUBCMD ]; then
+	if [ -f $GFSERVICE_PLUGIN_DIR/$SUBCMD ]; then
 		log_debug "loading plugin: $SUBCMD"
-		. $GFSERVICE_PLUGIN_PATH/$SUBCMD
+		. $GFSERVICE_PLUGIN_DIR/$SUBCMD
 
 		DEFPEND_FILES="`${SUBCMD_FUNC}_depends | sed -e 's|::|/|g'`"
 		for I in $DEFPEND_FILES; do
 			log_debug "loading plugin: $I"
-			. $GFSERVICE_PLUGIN_PATH/$I
+			. $GFSERVICE_PLUGIN_DIR/$I
 		done
 
 		subcmd_${SUBCMD_FUNC} "$@"
