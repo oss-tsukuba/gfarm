@@ -348,13 +348,16 @@ static void
 failover_handler(int signo)
 {
 	char dummy[1];
+	ssize_t rv;
 
 	if (my_type == type_listener || my_type == type_replication)
 		return; /* nothing to do */
 	if (failover_notify_send_fd == -1)
 		abort();
 	dummy[0] = 0;
-	write(failover_notify_send_fd, dummy, sizeof dummy);
+	rv = write(failover_notify_send_fd, dummy, sizeof dummy);
+	if (rv != sizeof dummy)
+		abort(); /* cannot call assert() from a signal handler */
 }
 
 static pid_t
@@ -3809,6 +3812,7 @@ wait_client(int client_fd)
 {
 	int nfound;
 	struct pollfd fds[2];
+	ssize_t rv;
 
 	do {
 		fds[0].fd = client_fd;
@@ -3822,7 +3826,16 @@ wait_client(int client_fd)
 			if (debug_mode)
 				gflog_info(GFARM_MSG_UNFIXED,
 				    "failover notified");
-			read(failover_notify_recv_fd, dummy, sizeof dummy);
+			rv = read(failover_notify_recv_fd,
+			    dummy, sizeof dummy);
+			if (rv == -1)
+				gflog_error_errno(GFARM_MSG_UNFIXED,
+				    "failover notified: read");
+			else if (rv != sizeof dummy)
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "failover notified: "
+				    "size expected %zd but %zd",
+				    sizeof dummy, rv);
 			reconnect_gfm_server_for_failover("failover signal");
 			continue;
 		}
@@ -4416,6 +4429,7 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 {
 	gfarm_error_t e;
 	int nfound;
+	ssize_t rv;
 	struct replication_request *rep;
 
 #ifdef HAVE_POLL
@@ -4470,7 +4484,7 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 		if (nfound == 0) {
 			gflog_error(GFARM_MSG_1003671,
 			    "back channel: gfmd is down");
-			return (0);
+			return (0); /* reconnect gfmd */
 		}
 		if (nfound < 0) {
 			if (errno == EINTR || errno == EAGAIN)
@@ -4487,7 +4501,7 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 				    "back channel: "
 				    "communication error: %s",
 				    gfarm_error_string(e));
-				return (0);
+				return (0); /* reconnect gfmd */
 			}
 			
 		}
@@ -4497,9 +4511,19 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 			if (debug_mode)
 				gflog_info(GFARM_MSG_UNFIXED,
 				    "back channel gfsd: failover notified");
-			gflog_info(GFARM_MSG_UNFIXED, "failover notified");
-			read(failover_notify_recv_fd, dummy, sizeof dummy);
-			return (0);
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "back channel: failover notified");
+			rv = read(failover_notify_recv_fd,
+			    dummy, sizeof dummy);
+			if (rv == -1)
+				gflog_error_errno(GFARM_MSG_UNFIXED,
+				    "back channel: failover notified: read");
+			else if (rv != sizeof dummy)
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "back channel: failover notified: "
+				    "size expected %zd but %zd",
+				    sizeof dummy, rv);
+			return (0); /* reconnect gfmd */
 		}
 		if (fds[0].revents != 0) /* check gfmd_fd */
 			return (1);
@@ -4529,7 +4553,7 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 		if (nfound == 0) {
 			gflog_error(GFARM_MSG_1002304,
 			    "back channel: gfmd is down");
-			return (0);
+			return (0); /* reconnect gfmd */
 		}
 		if (nfound < 0) {
 			if (errno == EINTR || errno == EAGAIN)
@@ -4563,7 +4587,7 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 					    "back channel: "
 					    "communication error: %s",
 					    gfarm_error_string(e));
-					return (0);
+					return (0); /* reconnect gfmd */
 				}
 			} else {
 				next = rep->ongoing_next;
@@ -4572,8 +4596,18 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 		if (FD_ISSET(failover_notify_recv_fd, &fds)) {
 			char dummy[1];
 
-			gflog_info(GFARM_MSG_UNFIXED, "failover notified");
-			read(failover_notify_recv_fd, dummy, sizeof dummy);
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "back channel: failover notified");
+			rv = read(failover_notify_recv_fd,
+			    dummy, sizeof dummy);
+			if (rv == -1)
+				gflog_error_errno(GFARM_MSG_UNFIXED,
+				    "back channel: failover notified: read");
+			else if (rv != sizeof dummy)
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "back channel: failover notified: "
+				    "size expected %zd but %zd",
+				    sizeof dummy, rv);
 			return (0);
 		}
 		if (FD_ISSET(gfp_xdr_fd(conn), &fds))
