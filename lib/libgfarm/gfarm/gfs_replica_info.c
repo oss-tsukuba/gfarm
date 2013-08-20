@@ -63,10 +63,6 @@ gfs_replica_info_by_name(const char *file, int flags,
 	struct gfs_replica_info *replica_info;
 	struct gfm_replica_info_get_closure closure;
 
-	GFARM_MALLOC(replica_info);
-	if (replica_info == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
 	closure.inflags = flags;
 	e = gfm_inode_op_readonly(file, GFARM_FILE_LOOKUP,
 	    gfm_replica_info_get_request,
@@ -77,6 +73,9 @@ gfs_replica_info_by_name(const char *file, int flags,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
+	GFARM_MALLOC(replica_info);
+	if (replica_info == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 	replica_info->n = closure.n;
 	replica_info->hosts = closure.hosts;
 	replica_info->gens = closure.gens;
