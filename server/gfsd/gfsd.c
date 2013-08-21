@@ -2640,7 +2640,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		gfs_client_connection_free(src_gfsd);
 		close(local_fd);
 #ifndef HAVE_POLL /* i.e. use select(2) */
-	} else if (fds[0] > FD_SETSIZE) { /* for select(2) */
+	} else if (fds[0] >= FD_SETSIZE) { /* for select(2) */
 		dst_err = GFARM_ERR_TOO_MANY_OPEN_FILES;
 		gflog_error(GFARM_MSG_1002186, "%s: cannot select %d: %s",
 		    diag, fds[0], gfarm_error_string(dst_err));
@@ -4702,7 +4702,7 @@ main(int argc, char **argv)
 		if (max_fd < accepting.udp_socks[i])
 			max_fd = accepting.udp_socks[i];
 	}
-	if (max_fd > FD_SETSIZE)
+	if (max_fd >= FD_SETSIZE)
 		accepting_fatal(GFARM_MSG_1000597,
 		    "too big socket file descriptor: %d", max_fd);
 
