@@ -694,8 +694,8 @@ subcmd_unconfig_gfarm()
 {
 	log_debug "subcmd_unconfig_gfarm"
 
-	stop_gfmd no
-	stop_pgsql no
+	[ -f $GFMD_RC ] && $GFMD_RC stop > /dev/null 2>&1
+	[ -f $BACKEND_RC ] && $BACKEND_RC stop > /dev/null 2>&1
 	rm -f $GFMD_PID_FILE
 	rm -f $GFARM_CONF
 	rm -f $GFMD_CONF
@@ -717,7 +717,7 @@ subcmd_unconfig_gfsd()
 {
 	log_debug "subcmd_unconfig_gfsd"
 
-	stop_gfsd no
+	[ -f $GFSD_RC ] && $GFSD_RC stop > /dev/null 2>&1
 	rm -f $GFSD_PID_FILE
 	rm -f $GFARM_CONF
 	rm -f $GFSD_RC
