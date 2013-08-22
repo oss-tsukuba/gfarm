@@ -1,11 +1,11 @@
 #
 # Test case for failover of gfmd by stopping process
 #
-load 	"gfarm_v2::check_gfmd_master" \
-	"gfarm_v2::check_gfmd_slave" \
-	"gfarm_v2::failback" \
-	"gfarm_v2::check_journal_seqnum_max" \
-	"gfarm_v2::check_gfmd_connected"
+load "gfarm_v2::check_gfmd_master"
+load "gfarm_v2::check_gfmd_slave"
+load "gfarm_v2::failback"
+load "gfarm_v2::check_journal_seqnum_max"
+load "gfarm_v2::check_gfmd_connected"
 
 #
 # Test parameters
