@@ -63,28 +63,38 @@ log_usage_error()
 }
 
 #
+# Internal function for 'load()'.
+#
+do_load()
+{
+	FILE=`echo $1 | sed -e 's|::|/|g'`
+	MODULE_VAR="LOADED_`echo $1 | sed -e 's|::|__|g'`"
+	[ "X`eval echo \\$$MODULE_VAR`" = Xtrue ] && continue
+
+	if [ -f $COMMON_SCRIPTS_DIR/$FILE ]; then
+		. $COMMON_SCRIPTS_DIR/$FILE
+	elif [ -f $COMMON_SCRIPTS_DIR/gfarm_v2/$FILE ]; then
+		log_warn "use 'gfarm_v2::$FILE' instead of '$FILE'"
+		. $COMMON_SCRIPTS_DIR/gfarm_v2/$FILE
+	elif [ -f $COMMON_SCRIPTS_DIR/gfarm2fs/$FILE ]; then
+		log_warn "use 'gfarm2fs::$FILE' instead of '$FILE'"
+		. $COMMON_SCRIPTS_DIR/gfarm2fs/$FILE
+	else
+		log_warn "failed to open script file \"$FILE\""
+	fi
+
+	# $MODULE_VAR may be changed by recursive calls of load().
+	log_debug "module loaded '$1'"
+	MODULE_VAR="LOADED_`echo $1 | sed -e 's|::|__|g'`"
+	eval "$MODULE_VAR=true"
+}
+
+#
 # Load script files from common_scripts directory.
 #
 load()
 {
-	if [ $# -lt 1 ]; then
-		return 1;
-	fi
-
-	for MODULE in $@; do
-		FILE=`echo $MODULE | sed -e 's|::|/|g'`
-		if [ -f $COMMON_SCRIPTS_DIR/$FILE ]; then
-			. $COMMON_SCRIPTS_DIR/$FILE
-		elif [ -f $COMMON_SCRIPTS_DIR/gfarm_v2/$FILE ]; then
-			log_warn "use 'gfarm_v2::$FILE' instead of '$FILE'"
-			. $COMMON_SCRIPTS_DIR/gfarm_v2/$FILE
-		elif [ -f $COMMON_SCRIPTS_DIR/gfarm2fs/$FILE ]; then
-			log_warn "use 'gfarm2fs::$FILE' instead of '$FILE'"
-			. $COMMON_SCRIPTS_DIR/gfarm2fs/$FILE
-		else
-			log_warn "failed to open script file \"$FILE\""
-		fi
-	done
+	do_load "$@" >> $LOG_FILE 2>&1
 }
 
 #

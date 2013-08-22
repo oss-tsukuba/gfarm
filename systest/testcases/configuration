@@ -1,12 +1,12 @@
 #
 # Test case for configuring gfarm
 #
-load 	"gfarm_v2::check_gfsd_registered" \
-	"gfarm_v2::check_gfmd_slave" \
-	"gfarm_v2::check_journal_seqnum_max" \
-	"gfarm_v2::generate_testdata" \
-	"gfarm_v2::check_file_location" \
-	"gfarm_v2::check_replica_num"
+load "gfarm_v2::check_gfsd_registered"
+load "gfarm_v2::check_gfmd_slave"
+load "gfarm_v2::check_journal_seqnum_max"
+load "gfarm_v2::generate_testdata"
+load "gfarm_v2::check_file_location"
+load "gfarm_v2::check_replica_num"
 
 #
 # Test parameters
