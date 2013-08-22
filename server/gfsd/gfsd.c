@@ -3830,6 +3830,7 @@ void
 wait_client(int client_fd)
 {
 	int nfound;
+#ifdef HAVE_POLL
 	struct pollfd fds[2];
 
 	for (;;) {
@@ -3855,6 +3856,40 @@ wait_client(int client_fd)
 		if (fds[0].revents != 0)
 			break;
 	}
+#else /* !HAVE_POLL */
+	fd_set fds;
+	int max_fd;
+
+	for (;;) {
+		FD_ZERO(&fds);
+		max_fd =
+		    client_fd >= failover_notify_recv_fd ?
+		    client_fd : failover_notify_recv_fd;
+		if (max_fd >= FD_SETSIZE)
+			fatal(GFARM_MSG_UNFIXED,
+			    "too big descriptor: client_fd:%d failover_fd:%d",
+			    client_fd, failover_notify_recv_fd);
+		FD_SET(client_fd, &fds);
+		FD_SET(failover_notify_recv_fd, &fds);
+		nfound = select(max_fd + 1, &fds, NULL, NULL, NULL);
+		if (nfound == 0)
+			fatal(GFARM_MSG_UNFIXED,
+			    "unexpected poll in wait_client()");
+		if (nfound == -1) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+			fatal_errno(GFARM_MSG_UNFIXED,
+			    "select in wait_client()");
+		}
+		assert(nfound > 0);
+		if (FD_ISSET(failover_notify_recv_fd, &fds)) {
+			failover_notified(debug_mode, "gfsd-for-client");
+			reconnect_gfm_server_for_failover("failover signal");
+		}
+		if (FD_ISSET(client_fd, &fds))
+			break;
+	}
+#endif /* !HAVE_POLL */
 }
 
 void
