@@ -360,6 +360,25 @@ failover_handler(int signo)
 		abort(); /* cannot call assert() from a signal handler */
 }
 
+static void
+failover_notified(int do_logging, const char *diag)
+{
+	ssize_t rv;
+	char dummy[1];
+
+	if (do_logging)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: failover notified", diag);
+	rv = read(failover_notify_recv_fd, dummy, sizeof dummy);
+	if (rv == -1)
+		gflog_error_errno(GFARM_MSG_UNFIXED,
+		    "%s: failover notified: read", diag);
+	else if (rv != sizeof dummy)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: failover notified: size expected %zd but %zd",
+		    diag, sizeof dummy, rv);
+}
+
 static pid_t
 do_fork(enum gfsd_type new_type)
 {
@@ -3812,39 +3831,30 @@ wait_client(int client_fd)
 {
 	int nfound;
 	struct pollfd fds[2];
-	ssize_t rv;
 
-	do {
+	for (;;) {
 		fds[0].fd = client_fd;
 		fds[0].events = POLLIN;
 		fds[1].fd = failover_notify_recv_fd;
 		fds[1].events = POLLIN;
 		nfound = poll(fds, GFARM_ARRAY_LENGTH(fds), INFTIM);
-		if (nfound > 0 && fds[1].revents != 0) {
-			char dummy[1];
-
-			if (debug_mode)
-				gflog_info(GFARM_MSG_UNFIXED,
-				    "failover notified");
-			rv = read(failover_notify_recv_fd,
-			    dummy, sizeof dummy);
-			if (rv == -1)
-				gflog_error_errno(GFARM_MSG_UNFIXED,
-				    "failover notified: read");
-			else if (rv != sizeof dummy)
-				gflog_error(GFARM_MSG_UNFIXED,
-				    "failover notified: "
-				    "size expected %zd but %zd",
-				    sizeof dummy, rv);
-			reconnect_gfm_server_for_failover("failover signal");
-			continue;
+		if (nfound == 0)
+			fatal(GFARM_MSG_UNFIXED,
+			    "unexpected poll in wait_client()");
+		if (nfound == -1) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+			fatal_errno(GFARM_MSG_UNFIXED,
+			    "poll in wait_client()");
 		}
-	} while (nfound == -1 && (errno == EINTR || errno == EAGAIN));
-	if (nfound == -1)
-		fatal(GFARM_MSG_UNFIXED, "poll in wait_client(): %s",
-		    strerror(errno));
-	if (nfound == 0)
-		fatal(GFARM_MSG_UNFIXED, "unexpected poll in wait_client()");
+		assert(nfound > 0);
+		if (fds[1].revents != 0) {
+			failover_notified(debug_mode, "gfsd-for-client");
+			reconnect_gfm_server_for_failover("failover signal");
+		}
+		if (fds[0].revents != 0)
+			break;
+	}
 }
 
 void
@@ -4429,7 +4439,6 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 {
 	gfarm_error_t e;
 	int nfound;
-	ssize_t rv;
 	struct replication_request *rep;
 
 #ifdef HAVE_POLL
@@ -4506,23 +4515,9 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 			
 		}
 		if (fds[1].revents != 0) { /* check failover_notify_recv_fd */
-			char dummy[1];
-
-			if (debug_mode)
-				gflog_info(GFARM_MSG_UNFIXED,
-				    "back channel gfsd: failover notified");
 			gflog_info(GFARM_MSG_UNFIXED,
 			    "back channel: failover notified");
-			rv = read(failover_notify_recv_fd,
-			    dummy, sizeof dummy);
-			if (rv == -1)
-				gflog_error_errno(GFARM_MSG_UNFIXED,
-				    "back channel: failover notified: read");
-			else if (rv != sizeof dummy)
-				gflog_error(GFARM_MSG_UNFIXED,
-				    "back channel: failover notified: "
-				    "size expected %zd but %zd",
-				    sizeof dummy, rv);
+			failover_notified(1, "back channel gfsd");
 			return (0); /* reconnect gfmd */
 		}
 		if (fds[0].revents != 0) /* check gfmd_fd */
@@ -4594,21 +4589,10 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 			}
 		}
 		if (FD_ISSET(failover_notify_recv_fd, &fds)) {
-			char dummy[1];
-
 			gflog_info(GFARM_MSG_UNFIXED,
 			    "back channel: failover notified");
-			rv = read(failover_notify_recv_fd,
-			    dummy, sizeof dummy);
-			if (rv == -1)
-				gflog_error_errno(GFARM_MSG_UNFIXED,
-				    "back channel: failover notified: read");
-			else if (rv != sizeof dummy)
-				gflog_error(GFARM_MSG_UNFIXED,
-				    "back channel: failover notified: "
-				    "size expected %zd but %zd",
-				    sizeof dummy, rv);
-			return (0);
+			failover_notified(1, "back channel gfsd");
+			return (0); /* reconnect gfmd */
 		}
 		if (FD_ISSET(gfp_xdr_fd(conn), &fds))
 			return (1);
