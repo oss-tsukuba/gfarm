@@ -5,10 +5,15 @@ TEST_PREFIX="@datadir@/gfarm/systest"
 TESTCASES_DIR="$TEST_PREFIX/testcases"
 SCENARIOS_DIR="$TEST_PREFIX/scenarios"
 COMMON_SCRIPTS_DIR="$TEST_PREFIX/common_scripts"
+TMP_FILE_DIR="/tmp/gfruntest.$$"
+CONFIG_FILE="$HOME/.gfservice"
 PARAMETER_FILE=
 SCENARIO_FILE=
 LOG_FILE=gfruntest.log
+DEBUG=false
 OPTIONS=
+
+PATH=@bindir@:@libexecdir@:${PATH}
 
 #
 # Result codes
@@ -21,6 +26,16 @@ RESULT_UNRESOLVED=4		# cannot determine whether (X)?PASS or (X)?FAIL
 RESULT_FATAL=5			# something fatal happend and cannot continue
 RESULT_UNTESTED=6		# not tested, this test haven't written yet.
 RESULT_UNSUPPORTED=7		# not tested, this environment can't test this.
+
+#
+# Output a debug message.
+#
+log_debug()
+{
+	[ "X$DEBUG" != Xtrue ] && return
+	echo "$PROGRAM: debug: $@" >&2
+	return 0
+}
 
 #
 # Output a warning message.
@@ -63,13 +78,23 @@ log_usage_error()
 }
 
 #
+# Cleanup temporary files.
+#
+cleanup()
+{
+	cd $TMP_FILE_DIR || return
+	rm -f *
+	cd .. && rmdir $TMP_FILE_DIR
+}
+
+#
 # Internal function for 'load()'.
 #
 do_load()
 {
 	FILE=`echo $1 | sed -e 's|::|/|g'`
 	MODULE_VAR="LOADED_`echo $1 | sed -e 's|::|__|g'`"
-	[ "X`eval echo \\$$MODULE_VAR`" = Xtrue ] && continue
+	[ "X`eval echo \\$$MODULE_VAR`" = Xtrue ] && return
 
 	if [ -f $COMMON_SCRIPTS_DIR/$FILE ]; then
 		. $COMMON_SCRIPTS_DIR/$FILE
@@ -152,7 +177,7 @@ print_test_result()
 	printf -- "$TESTCASE_FMT_BEGIN" $1 $2 $4 >> $5
 	case $3 in
 	$RESULT_FAIL | $RESULT_XPASS | $RESULT_UNRESOLVED | $RESULT_FATAL)
-			printf -- "$FAILURE_FMT" "`get_result_string $3`" >> $5
+		printf -- "$FAILURE_FMT" "`get_result_string $3`" >> $5
 	esac
 	printf -- "$TESTCASE_FMT_END" >> $5
 }
@@ -191,7 +216,7 @@ do_testcase()
 		START_TIME=`date +%s`
 	fi
 
-	trap "teardown_${TESTNAME}; exit 1" 1 2 3 15
+	trap "teardown_${TESTNAME}; cleanup; exit 1" 1 2 3 15
 	setup_${TESTNAME} "$@" >> $LOG_FILE 2>&1
 	RESULT=$?
 	if [ $RESULT -eq $RESULT_PASS ]; then
@@ -212,7 +237,7 @@ do_testcase()
 	echo "$RESULT_STRING"
 
 	teardown_${TESTNAME} >> $LOG_FILE 2>&1
-	trap - 1 2 3 15
+	trap "cleanup; exit 1" 1 2 3 15
 	return $RESULT
 }
 
@@ -287,7 +312,8 @@ while [ $# -ge 1 ]; do
 		;;
 	-)	break
 		;;
-	-d)	GFSERVICE="$GFSERVICE -d"
+	-d)	DEBUG=true
+		GFSERVICE="$GFSERVICE -d"
 		OPTIONS="$OPTIONS -d"
 		shift
 		;;
@@ -295,6 +321,7 @@ while [ $# -ge 1 ]; do
 			log_usage_error "option requires an argument -- 'f'"
 		fi
 		if [ -f $2 ]; then
+			CONFIG_FILE="$2"
 			GFSERVICE="$GFSERVICE -f $2"
 		else
 			log_error "failed to open configuration file \"$2\""
@@ -341,6 +368,12 @@ while [ $# -ge 1 ]; do
 	esac
 done
 
+. "$CONFIG_FILE"
+
+trap "cleanup; exit 1" 1 2 3 15
+mkdir -p $TMP_FILE_DIR
+[ $? -ne 0 ] && log_error "$0: failed to create a directory: $TMP_FILE_DIR"
+
 EXITCODE=0
 if [ $# -eq 0 ]; then
 	if [ "X$SCENARIO_FILE" = X ]; then
@@ -370,4 +403,5 @@ else
 	fi
 fi
 
+cleanup
 exit $EXITCODE

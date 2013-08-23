@@ -1,0 +1,109 @@
+#
+# Perform failover when multiple clients read data from the same file on
+# a Gfarm file system.
+#
+load "gfarm_v2::check_vars"
+load "gfarm_v2::import_config_gfarm_params"
+load "gfarm_v2::generate_testdata"
+load "gfarm_v2::failover"
+
+#
+# Test parameters
+#
+# TEST_FILE_DIR:  Directory path of a test file on localhost.
+# TEST_FILE_SIZE: Size of a test file.
+# NCLIENTS:       The number of clients.
+#
+setup_failover_in_write()
+{
+	# default parameter
+	TEST_FILE_DIR=${GFARM_TEST_FILE_DIR-"/tmp"}
+	TEST_FILE_SIZE=${TEST_FILE_SIZE-"500M"}
+	NCLIENTS=${NCLIENTS-"3"}
+
+	TEST_FILE_PATH="$TEST_FILE_DIR/failover_in_write"
+
+	# prepare: check whether required host is defined.
+	check_vars gfmd1 gfmd2 gfmd3 gfsd1 client1 \
+		|| return $RESULT_UNSUPPORTED
+
+	# prepare: try writing a small data, at first.
+	generate_testdata 1K | gfs_pio_test -O -c $TEST_FILE_PATH
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: failed to write a file $TEST_FILE_PATH"
+		return $RESULT_FAIL
+	fi
+}
+
+stop_jobs()
+{
+	[ "X$NCLIENTS" = X ] && return
+
+	I=0
+	while [ $I -lt $NCLIENTS ]; do
+		JOB_PID=`eval echo \\$JOB$I\_PID`
+		[ "X$JOB_PID" = X ] && break
+		kill $JOB_PID
+		log_debug "$TESTNAME: kill job #$I pid=$JOB_PID"
+		I=`expr $I + 1`
+	done
+}
+
+test_failover_in_write()
+{
+	FAILOVER_DONE=false
+	MAX_FAILOVER_RETRY_COUNT=5
+	RETRY_COUNT=0
+
+	while [ $RETRY_COUNT -lt $MAX_FAILOVER_RETRY_COUNT ]; do
+		# step: create jobs which registrer test files.
+		I=0
+		while [ $I -lt $NCLIENTS ]; do
+			generate_testdata $TEST_FILE_SIZE \
+				| gfs_pio_test -O -a $TEST_FILE_PATH &
+			eval JOB"$I"_PID=$!
+			log_debug "$TESTNAME: start job #$I pid=$JOB_PID"
+			I=`expr $I + 1`
+
+		done
+
+		# step: perform failover.
+		sleep 2
+		failover
+		case $? in
+		0)	FAILOVER_DONE=true
+			break
+			;;
+		1)	log_warn "$TESTNAME: failed to perform failover"
+			return $RESULT_FAIL
+			;;
+		2)	stop_jobs
+			sleep 5
+			cleanup_failover
+			log_warn "$TESTNAME: master gfmd is unchanged"
+			;;
+		esac
+	done
+
+	if [ $FAILOVER_DONE != true ]; then
+		log_warn "$TESTNAME: failover retry counter reaches" \
+			"the max value $MAX_FAILOVER_RETRY_COUNT, give up"
+		return $RESULT_FAIL
+	fi
+
+	return $RESULT_PASS
+}
+
+teardown_failover_in_write()
+{
+	# cleanup: stop jobs.
+	stop_jobs
+
+	# cleanup: start gfmds.
+	cleanup_failover
+
+	# cleanup: delete test files.
+	[ "X$TEST_FILE_PATH" != X ] && gfrm -f $TEST_FILE_PATH
+
+	return $RESULT_PASS
+}

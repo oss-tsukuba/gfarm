@@ -1,0 +1,50 @@
+load "gfarm_v2::get_hostids"
+
+#
+# Usage: import_config_gfsd_params HOSTID
+#
+#        HOSTID             host-ID of gfsd (gfsd1, gfsd2, ...)
+#
+# The function imports result of 'gfservice get-config-gfsd-param HOSTID'
+# as shell variables with the "<HOSTID>_" prefix (e.g. 'gfsd1_PORT' variable
+# for 'PORT' parameter).  If an error occurs, it returns 1.  Otherwise, it
+# returns 0.
+#
+import_config_gfsd_params()
+{
+	[ "X`eval echo \\$$1_GFSD_HOSTNAME`" != X ] && return 0
+
+	TMP_FILE="$TMP_FILE_DIR/import_config_gfsd_params_$1"
+	rm -f $TMP_FILE
+
+	$GFSERVICE get-config-gfsd-param $1 > $TMP_FILE
+	if [ $? -ne 0 ]; then
+		rm -f $TMP_FILE
+		return 1
+	fi
+
+	while read I; do
+		eval "$1_${I}"
+		log_debug "$1_${I}"
+	done < $TMP_FILE
+
+	rm -f $TMP_FILE
+	return 0
+}
+
+#
+# Usage: import_config_gfsd_params_all
+#
+# The function executes import_config_gfsd_params() for every gfsd servers.
+# If an error occurs on a import_config_gfsd_params() call, it returns 1.
+# Otherwise, it returns 0.
+#
+import_config_gfsd_params_all()
+{
+	for J in @ `get_gfsd_hostids`; do
+		[ "X$J" = X@ ] && continue
+		import_config_gfsd_params $J || return 1
+	done
+
+	return 0
+}

@@ -1,0 +1,56 @@
+load "gfarm_v2::get_hostids"
+load "gfarm_v2::import_config_gfarm_params"
+
+#
+# Usage: get_gfmd_hostid_by_name BACKEND_HOSTNAME
+#
+#        BACKEND_HOSTNAME   hostname of gfmd
+#
+# The function prints a gfmd host-ID ("gfmd1", "gfmd2", ...) matched with
+# BACKEND_HOSTNAME (shown in 'gfmdhost -l').  If no gfmd-ID is matched, it
+# prints nothing and returns 1.  Otherwise it returns 0.
+#
+get_gfmd_hostid_by_name()
+{
+	import_config_gfarm_params_all || return 1
+
+	(
+		for I in @ `get_gfmd_hostids`; do
+			[ "X$I" = X@ ] && continue
+			if [ "X`eval echo \\$$I\_BACKEND_HOSTNAME`" = "X$1" ];
+			then
+				echo $I
+				return 0
+			fi
+		done
+	) || return 1
+
+	return 0
+}
+
+#
+# Usage: get_gfsd_hostid_by_name GFSD_HOSTNAME
+#
+#        GFSD_HOSTNAME      hostname of gfsd
+#
+# The function prints a gfsd host-ID ("gfsd1", "gfsd2", ...) matched with
+# GFSD_HOSTNAME (shown in 'gfhost').  If no gfsd-ID is matched, it prints
+# nothing and returns 1.  Otherwise it returns 0.
+#
+get_gfsd_hostid_by_name()
+{
+	import_config_gfarm_params_all || return 1
+
+	(
+		for I in @ `get_gfsd_hostids`; do
+			[ "X$I" = X@ ] && continue
+			if [ "X`eval echo \\$$I\_GFSD_HOSTNAME`" = "X$1" ];
+			then
+				echo $I
+				return 0
+			fi
+		done
+	) || return 1
+
+	return 0
+}
