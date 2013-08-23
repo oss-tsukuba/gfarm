@@ -1,0 +1,237 @@
+load "gfarm_v2::get_hostids"
+load "gfarm_v2::import_config_gfarm_params"
+load "gfarm_v2::get_server_status"
+load "gfarm_v2::get_gfmd_server_type"
+load "gfarm_v2::get_seqnum"
+
+GFMD_START_TIMEOUT=${GFMD_START_TIMEOUT-"30"}
+GFMD_STOP_TIMEOUT=${GFMD_STOP_TIMEOUT-"30"}
+FAILOVER_TIMEOUT=${FAILOVER_TIMEOUT-"120"}
+
+#
+# Choose an argument from a list ($@) randomly.
+#
+# We use 'date %N' here to get a random number.  For Red Hat 5.x, we
+# discard digits smaller than a milli-second.
+#
+select_arg_random()
+{
+	RANDOM_NUMBER=`date +%N`
+	RANDOM_NUMBER=`expr $RANDOM_NUMBER / 1000 % $#`
+	shift $RANDOM_NUMBER
+
+	echo $1
+}
+
+#
+# Usage: failover
+#
+# The function does the following procedures in that order:
+#
+#     1. Stops the master gfmd.
+#     2. Chooses a master candidate gfmd and promote it.
+#     3. Start the old gfmd (stopped by the step 1.) as a slave.
+#
+# If the failover procedures are fully succeeded, the function returns 0.
+# At the step 2., no suitable master candidate gfmd exists, the function
+# starts the old master gfmd again, and returns 2.  Otherwise it returns 1.
+#
+# After failover() call, information provided by the following functions
+# comes to out of date:
+#
+#     get_gfmd_status
+#     get_gfmd_status_all
+#     get_gfmd_server_type
+#     get_gfmd_server_type_all
+#
+# Please call the functions again, if the latest information is required.
+#
+failover()
+{
+	#
+	# Get information of running gfmds.
+	#
+	import_config_gfarm_params_all || return 1
+	get_gfmd_status_all || return 1
+	get_gfmd_server_type_all || return 1
+
+	for I in @ `get_gfmd_hostids`; do
+		[ "X$I" = X@ ] && continue
+		if [ "X`eval echo \\$$I\_STATUS`" != Xrunning ]; then
+			clear_seqnum $I
+			clear_gfmd_status $I
+		fi
+	done
+
+	#
+	# Get the current master gfmd and master candidate gfmds.
+	#
+	MASTER_GFMD="`get_master_gfmd`"
+	if [ "X$MASTER_GFMD" = X ]; then
+		log_warn "failover: no master gfmd found"
+		return 1
+	fi
+
+	CANDIDATE_GFMDS="`get_master_candidate_gfmds`"
+	if [ "X$CANDIDATE_GFMDS" = X ]; then
+		log_warn "failover: no master candidate gfmd is running"
+		return 1
+	fi
+
+	log_debug "failover: master candidate gfmds are '$MASTER_GFMD'"
+
+	#
+	# Stop the master gfmd.
+	#
+	$GFSERVICE -t $GFMD_STOP_TIMEOUT stop-gfmd $MASTER_GFMD
+	if [ $? -ne 0 ]; then
+		log_warn "failover: failed to stop the master gfmd"
+		return 1
+	fi
+
+	log_debug "failover: stopped the master gfmd '$MASTER_GFMD'"
+
+	#
+	# Get sequence numbers of all gfmds.
+	# If failed, start the old master gfmd again.
+	#
+	get_seqnum_all
+	if [ $? -ne 0 ]; then
+		log_warn "failover: failed to get seqnums"
+		$GFSERVICE -t $GFMD_START_TIMEOUT start-gfmd $MASTER_GFMD
+		return 1
+	fi
+
+	#
+	# Determine the new master gfmd.
+	#
+	MAX_SEQNUM_GFMDS=`get_max_seqnum_gfmds_from_args $CANDIDATE_GFMDS`
+	log_debug "failover: master candidate gfmds with max seqnum are" \
+		"'$MAX_SEQNUM_GFMDS'"
+
+	if [ "X$MAX_SEQNUM_GFMDS" != X ]; then
+		NEW_MASTER_GFMD=`select_arg_random $MAX_SEQNUM_GFMDS`
+		log_debug "failover: choose new master gfmd '$NEW_MASTER_GFMD'"
+
+		MASTER_GFMD_SEQNUM=`eval echo \\$$MASTER_GFMD\_SEQNUM`
+		NEW_MASTER_GFMD_SEQNUM=`eval echo \\$$NEW_MASTER_GFMD\_SEQNUM`
+	fi
+
+	#
+	# If no suitable slave gfmd exists, start the old master gfmd again
+	# and returns 2.
+	#
+	if [ "X$MAX_SEQNUM_GFMDS" = X -o \
+		$NEW_MASTER_GFMD_SEQNUM -lt $MASTER_GFMD_SEQNUM ]; then
+		log_warn "failover: no suitable slave gfmd for new master"
+		$GFSERVICE -t $GFMD_START_TIMEOUT start-gfmd $MASTER_GFMD
+		if [ $? -ne 0 ]; then
+			log_warn "failover: failed to start the old master" \
+				"gfmd again"
+			return 1
+		fi
+		return 2
+	fi
+
+	#
+	# Promote the slave gfmd.
+	# If failed, start the old master gfmd again.
+	#
+	$GFSERVICE promote $NEW_MASTER_GFMD
+	if [ $? -ne 0 ]; then
+		log_warn "failover: failed to promote the slave gfmd:" \
+			"$NEW_MASTER_GFMD"
+		$GFSERVICE -t $GFMD_START_TIMEOUT start-gfmd $MASTER_GFMD
+		if [ $? -ne 0 ]; then
+			log_warn "failover: failed to start the old master" \
+				"gfmd again"
+		fi
+		return 1
+	fi
+
+	log_debug "failover: promoted the new master gfmd '$NEW_MASTER_GFMD'"
+
+	#
+	# Check if the new master gfmd accepts a connection from a client.
+	#
+	FAILOVER_START_TIME=`date +%s`
+	FAILOVER_TIMEOUT_TIME=`expr $FAILOVER_START_TIME + $FAILOVER_TIMEOUT`
+
+	while true; do
+		get_gfmd_server_type_all
+		[ $? -eq 0 ] && break
+		if [ `date +%s` -ge $FAILOVER_TIMEOUT_TIME ]; then
+			log_warn "failover: the new master cannot accept" \
+				"a connection from a client"
+			return 1
+		fi
+	done		
+
+	#
+	# Start the old master gfmd as a slave.
+	#
+	$GFSERVICE -t $GFMD_START_TIMEOUT start-gfmd-slave $MASTER_GFMD
+	if [ $? -ne 0 ]; then
+		log_warn "failover: failed to start the old master gfmd" \
+			"as a slave"
+		return 1
+	fi
+
+	return 0	
+}
+
+#
+# Usage: cleanup_failover
+#
+# When failover() fails, gfmd servers may be stopped.  This function tries
+# to start all gfmd servers for the next testcase.  Please call this
+# function in a teardown function of a testcase which calls failover().
+#
+cleanup_failover()
+{
+	get_gfmd_server_type_all
+	if [ $? -eq 0 ]; then
+		#
+		# The master gfmd is running.
+		#
+		log_debug "failover teardown: master gfmd is running"
+		for I in @ `get_gfmd_hostids`; do
+			[ "X$I" = X@ ] && continue
+			$GFSERVICE start-gfmd-slave $I
+			log_debug "failover teardown: start '$I' as a slave"
+		done
+	else
+		#
+		# The master gfmd is not running.
+		# Stop all slave servers.
+		#
+		log_debug "failover teardown: master gfmd is not running"
+		for I in @ `get_gfmd_hostids`; do
+			[ "X$I" = X@ ] && continue
+			$GFSERVICE -t $GFMD_STOP_TIMEOUT stop-gfmd $I
+			$GFSERVICE kill-gfmd $I
+			log_debug "failover teardown: stop '$I'"
+		done
+
+		#
+		# Start all gfmd servers.
+		# The gfmd server with highest sequence number becomes
+		# a master.
+		#
+		get_seqnum_all
+		MASTER_GFMD="`get_max_seqnum_gfmds | head -1`"
+		for I in @ `get_gfmd_hostids`; do
+			[ "X$I" = X@ ] && continue
+			[ "X$I" != "X$MASTER_GFMD" ] && continue
+			$GFSERVICE -t $GFMD_START_TIMEOUT start-gfmd-master $I
+			log_debug "failover teardown: start '$I' as a master"
+		done
+
+		for I in @ `get_gfmd_hostids`; do
+			[ "X$I" = X@ ] && continue
+			[ "X$I" = "X$MASTER_GFMD" ] && continue
+			$GFSERVICE -t $GFMD_START_TIMEOUT start-gfmd-slave $I
+			log_debug "failover teardown: start '$I' as a aslave"
+		done
+	fi
+}

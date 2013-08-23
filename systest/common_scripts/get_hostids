@@ -1,0 +1,75 @@
+#
+# Usage: get_gfmd_hostids
+#
+# The function prints all host-IDs of gfmds ('gfmd1', 'gfmd2', ...).
+#
+get_gfmd_hostids()
+{
+	(
+		I=1
+		while [ "X`eval echo \\$gfmd$I`" != X ]; do
+			echo "gfmd$I"
+			I=`expr $I + 1`
+		done
+	)
+}
+
+#
+# Usage: get_gfsd_hostids
+#
+# The function prints all host-IDs of gfsds ('gfsd1', 'gfsd2', ...).
+#
+get_gfsd_hostids()
+{
+	(
+		I=1
+		while [ "X`eval echo \\$gfsd$I`" != X ]; do
+			echo "gfsd$I"
+			I=`expr $I + 1`
+		done
+	)
+}
+
+#
+# Usage: get_client_hostids
+#
+# The function prints all host-IDs of clients ('client1', 'client2', ...).
+#
+get_client_hostids()
+{
+	(
+		I=1
+		while [ "X`eval echo \\$client$I`" != X ]; do
+			echo "client$I"
+			I=`expr $I + 1`
+		done
+	)
+}
+
+#
+# Usage: get_all_hostids
+#
+# The function prints all host-IDs of gfmd, gfsd and clients.
+#
+get_all_hostids()
+{
+	(
+		I=1
+		while [ "X`eval echo \\$gfmd$I`" != X ]; do
+			echo "gfmd$I"
+			I=`expr $I + 1`
+		done
+
+		I=1
+		while [ "X`eval echo \\$gfsd$I`" != X ]; do
+			echo "gfsd$I"
+			I=`expr $I + 1`
+		done
+
+		I=1
+		while [ "X`eval echo \\$client$I`" != X ]; do
+			echo "client$I"
+			I=`expr $I + 1`
+		done
+	)
+}

@@ -1,0 +1,129 @@
+load "gfarm_v2::get_hostids"
+load "gfarm_v2::import_config_gfarm_params"
+
+#
+# Usage: clear_seqnum HOSTID
+#
+#        HOSTID             host-ID of gfmd (gfmd1, gfmd2, ...)
+#
+# Unset variables defined by get_seqnum().
+#
+clear_seqnum()
+{
+	eval "$1_SEQNUM=0"
+	log_debug "$1_SEQNUM=0"
+}
+
+#
+# Usage: clear_seqnum_all
+#
+# Unset variables defined by get_seqnum_all().
+#
+clear_seqnum_all()
+{
+	for I in @ `get_gfmd_hostids`; do
+		[ "X$I" = X@ ] && continue
+		eval "$I"_SEQNUM=0
+		log_debug "$I"_SEQNUM=0
+	done
+}
+
+#
+# Usage: get_seqnum HOSTID
+#
+#        HOSTID             host-ID of gfmd (gfmd1, gfmd2, ...)
+#
+# This function gets the current sequence number of gfmd HOSTID by executing
+# 'gfjournal -m' command on the gfmd host.  The result value is stored in
+# the variable '<HOSTID>_SEQNUM' (e.g. gfmd1_SEQNUM).  If an error occurs,
+# it returns 1.  Otherwise, it returns 0.
+#
+get_seqnum()
+{
+	eval "$1_SEQNUM=0"
+	import_config_gfarm_params $1 || return 1
+
+	METADATA_JOURNAL_DIR="`eval echo \\$$1\_METADATA_JOURNAL_DIR`"
+	if [ "X$METADATA_JOURNAL_DIR" = X ]; then
+		log_warn "'$1_METADATA_JOURNAL_DIR' not defined"
+		return 1
+	fi
+
+	SEQNUM="`$GFSERVICE gfcmd-root $1 gfjournal -m \
+		$METADATA_JOURNAL_DIR/0000000000.gmj`"
+	if [ $? -ne 0 ]; then
+		log_warn "'gfservice gfcmd $1 gfjournal -m' failed"
+		return 1
+	fi
+
+	eval "$1_SEQNUM=$SEQNUM"
+	log_debug "$1_SEQNUM=$SEQNUM"
+	return 0
+}
+
+#
+# Usage: get_seqnum_all
+#
+# The function executes get_seqnum() for every gfmd servers.  If an error
+# occurs on a get_seqnum() call, it returns 1.  Otherwise, it returns 0.
+#
+get_seqnum_all()
+{
+	clear_seqnum_all
+
+	for I in @ `get_gfmd_hostids`; do
+		[ "X$I" = X@ ] && continue
+		get_seqnum $I > /dev/null || return 1
+	done
+
+	return 0
+}
+
+#
+# Usage: get_max_seqnum_gfmds
+#
+# The function prints host-IDs of gfmds which have highest sequence numbers.
+#
+# Note that it doesn't correct sequence numbers of gfmds.  It refers to
+# '<HOSTID>_SEQNUM' variables (e.g. gfmd1_SEQNUM) only.  Please call
+# get_seqnum_all() prior to this function.
+# 
+get_max_seqnum_gfmds()
+{
+	MAX_SEQNUM=0
+
+	for I in @ `get_gfmd_hostids`; do
+		[ "X$I" = X@ ] && continue
+		if [ `eval echo \\$$I\_SEQNUM` -gt $MAX_SEQNUM ]; then
+			MAX_SEQNUM=`eval echo \\$$I\_SEQNUM`
+		fi
+	done
+
+	for I in @ `get_gfmd_hostids`; do
+		[ "X$I" = X@ ] && continue
+		[ `eval echo \\$$I\_SEQNUM` -eq $MAX_SEQNUM ] && echo $I
+	done
+}
+
+#
+# Usage: get_max_seqnum_gfmds_from_args [HOSTID...]
+#
+# The function is similar to get_max_seqnum_gfmds() but it choose gfmds
+# from HOSTIDs.
+# 
+get_max_seqnum_gfmds_from_args()
+{
+	MAX_SEQNUM=0
+
+	for I in @ "$@"; do
+		[ "X$I" = X@ ] && continue
+		if [ `eval echo \\$$I\_SEQNUM` -gt $MAX_SEQNUM ]; then
+			MAX_SEQNUM=`eval echo \\$$I\_SEQNUM`
+		fi
+	done
+
+	for I in @ "$@"; do
+		[ "X$I" = X@ ] && continue
+		[ `eval echo \\$$I\_SEQNUM` -eq $MAX_SEQNUM ] && echo $I
+	done
+}

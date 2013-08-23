@@ -1,0 +1,17 @@
+#
+# Usage: check_vars VARIABLE...
+#
+# The function checks if each VARIABLE has non-empty value.  It returns 0
+# if all VARIABLEs are non-empty, 1 otherwise.
+#
+check_vars()
+{
+	for I in "$@"; do
+		if [ "X`eval echo \\$I`" = X ]; then
+			log_warn "variable '$I' not defined"
+			return 1
+		fi
+	done
+
+	return 0
+}

@@ -1169,6 +1169,21 @@ Execute a Gfarm command on the remote host.
 </para>
 </listitem>
 </varlistentry>
+
+<varlistentry>
+<term>
+<command moreinfo="none">gfcmd-root</command>
+<parameter moreinfo="none">host-id</parameter>
+<parameter moreinfo="none">command-name</parameter>
+<parameter moreinfo="none">command-argument ...</parameter>
+</term>
+<listitem>
+<para>
+Execute a Gfarm command on the remote host with root privilege.
+</para>
+</listitem>
+</varlistentry>
+
 </variablelist>
 
 </refsect1>

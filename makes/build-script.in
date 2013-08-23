@@ -11,6 +11,7 @@ dst=$2
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
 bindir="@bindir@"
+libexecdir="@libexecdir@"
 datarootdir="@datarootdir@"
 datadir="@datadir@"
 sysconfdir="@sysconfdir@"
@@ -33,6 +34,7 @@ trap 'rm -f $tmpfile; exit $status' 0 1 2 15
 
 sed	-e "s|[@]prefix[@]|$prefix|g" \
 	-e "s|[@]bindir[@]|$bindir|g" \
+	-e "s|[@]libexecdir[@]|$libexecdir|g" \
 	-e "s|[@]datadir[@]|$datadir|g" \
 	-e "s|[@]datarootdir[@]|$datarootdir|g" \
 	-e "s|[@]sysconfdir[@]|$sysconfdir|g" \

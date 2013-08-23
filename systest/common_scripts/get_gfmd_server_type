@@ -1,0 +1,194 @@
+load "gfarm_v2::get_hostids"
+load "gfarm_v2::import_config_gfarm_params"
+load "gfarm_v2::get_hostid_by_name"
+
+GFMDHOST_TIMEOUT=${GFMDHOST_TIMEOUT-"15"}
+
+#
+# Usage: clear_gfmd_server_type HOSTID
+#
+#        HOSTID             host-ID of gfmd (gfmd1, gfmd2, ...)
+#
+# Unset variables defined by get_gfmd_server_type().
+#
+clear_gfmd_server_type()
+{
+	eval "$1_SERVER_TYPE="
+	eval "$1_MASTER_CANDIDATE="
+	log_debug "$1_SERVER_TYPE="
+	log_debug "$1_MASTER_CANDIDATE="
+}
+
+#
+# Usage: clear_gfmd_server_type_all
+#
+# Unset variables defined by get_gfmd_server_type_all().
+#
+clear_gfmd_server_type_all()
+{
+	for I in @ `get_gfmd_hostids`; do
+		[ "X$I" = X@ ] && continue
+		eval "$I"_SERVER_TYPE=
+		eval "$I"_MASTER_CANDIDATE=
+		log_debug "$I"_SERVER_TYPE=
+		log_debug "$I"_MASTER_CANDIDATE=
+	done
+}
+
+#
+# Execute 'gfmdhost -l' on a gfmd host.
+#
+execute_gfmdhost_l()
+{
+	for I in @ `get_gfmd_hostids`; do
+		[ "X$I" = X@ ] && continue
+		gfservice-timeout $GFMDHOST_TIMEOUT $GFSERVICE gfcmd $I \
+			gfmdhost -l
+		[ $? -eq 0 ] && return 0
+		log_debug "'gfmdhost -l' failed on $I"
+	done
+
+	log_warn "'gfmdhost -l' failed (no gfmd available)"
+	return 1
+}
+
+#
+# Set the vairable '$1_SERVER_TYPE' to $2
+#
+set_gfmd_server_type()
+{
+	eval "$1_SERVER_TYPE=$2"
+	log_debug "$1_SERVER_TYPE=$2"
+}
+
+#
+# Set the vairable '$1_CANDIDATE_TYPE' to $2
+#
+set_gfmd_master_candidate()
+{
+	eval "$1_MASTER_CANDIDATE=$2"
+	log_debug "$1_MASTER_CANDIDATE=$2"
+}
+
+#
+# Usage: get_gfmd_status HOSTID
+#
+#        HOSTID             host-ID of gfmd (gfmd1, gfmd2, ...)
+#
+# This function gets the current server type of gfmd HOSTID by executing
+# 'gfmhost -l' on a gfmd host.  The result is stored in the following 
+# variables:
+#
+#     * '<HOSTID>_SERVER_TYPE' (e.g. gfmd1_SERVER_TYPE)
+#       Its value is 'master' or 'slave'.
+#     * '<HOSTID>_MASTER_CANDIDATE' (e.g. gfmd1_MASTER_CANDIDATE)
+#       Its value is 'm', 'c' or 's'.
+#
+# If an error occurs, it returns 1.  Otherwise, it returns 0.
+#
+get_gfmd_server_type()
+{
+	eval "$1_SERVER_TYPE="
+	eval "$1_MASTER_CANDIDATE="
+	import_config_gfarm_params $1 || return 1
+
+	TMP_FILE="$TMP_FILE_DIR/get_gfmd_server_type"
+	rm -f $TMP_FILE
+	execute_gfmdhost_l > $TMP_FILE
+	if [ $? -ne 0 ]; then
+		rm -f $TMP_FILE
+		return 1
+	fi	
+
+	BACKEND_HOSTNAME=`eval echo \\$$1_BACKEND_HOSTNAME`
+	set_gfmd_server_type $1 \
+		`awk '{if ($6 == "'$BACKEND_HOSTNAME'") print $2}' $TMP_FILE`
+	set_gfmd_master_candidate $1 \
+		`awk '{if ($6 == "'$BACKEND_HOSTNAME'") print $4}' $TMP_FILE`
+
+	rm -f $TMP_FILE
+	return 0
+}
+
+#
+# Usage: get_gfmd_server_type_all
+#
+# The function executes get_gfmd_server_type() for every gfmd servers.
+# If an error occurs on a get_gfmd_server_type() call, it returns 1.
+# Otherwise, it returns 0.
+#
+get_gfmd_server_type_all()
+{
+	clear_gfmd_server_type_all
+	import_config_gfarm_params_all || return 1
+
+	TMP_FILE="$TMP_FILE_DIR/get_gfmd_server_type_all"
+	rm -f $TMP_FILE
+	execute_gfmdhost_l > $TMP_FILE
+	if [ $? -ne 0 ]; then
+		rm -f $TMP_FILE
+		return 1
+	fi	
+
+	for I in @ `awk '{print $6}' $TMP_FILE`; do
+		[ "X$I" = X@ ] && continue
+		J=`get_gfmd_hostid_by_name $I` || continue
+		set_gfmd_server_type $J \
+			`awk '{if ($6 == "'$I'") print $2}' $TMP_FILE`
+		set_gfmd_master_candidate $J \
+			`awk '{if ($6 == "'$I'") print $4}' $TMP_FILE`
+	done
+
+	rm -f $TMP_FILE
+	return 0
+}
+
+#
+# Usage: get_master_gfmd
+#
+# The function prints a host-ID of the master gfmd.  Note that it doesn't
+# correct the current status of gfmds.  It checks '<HOSTID>_SERVER_TYPE'
+# variables (e.g. gfmd1_SERVER_TYPE) and prints a host-ID whose
+# '<HOSTID>_SERVER_TYPE' value is 'master'.  Please call
+# get_gfmd_server_type_all() prior to this function.
+# 
+# If no master gfmd is found, it returns 1.  Otherwise, it returns 0.
+#
+get_master_gfmd()
+{
+	for I in @ `get_gfmd_hostids`; do
+		[ "X$I" = X@ ] && continue
+		if [ "X`eval echo \\$$I\_SERVER_TYPE`" = Xmaster ]; then
+			echo $I
+			return 0
+		fi
+	done
+
+	return 1
+}
+
+#
+# Usage: get_master_candidate_gfmds
+#
+# The function prints a host-IDs of the master candidate gfmds.  Note that
+# it doesn't correct the current status of gfmds.  It checks the variables
+# '<HOSTID>_SERVER_TYPE' (e.g. gfmd1_SERVER_TYPE) and
+# '<HOSTID>_MASTER_CANDIDATE' (e.g. gfmd1_MASTER_CANDIDATE), and prints a
+# host-ID whose '<HOSTID>_SERVER_TYPE' is 'slave' and
+# '<HOSTID>_MASTER_CANDIDATE' is 'c'.  Please call get_gfmd_server_type_all()
+# prior to this function.
+# 
+# The function always returns 0 even when no master candidate exists.
+#
+get_master_candidate_gfmds()
+{
+	for I in @ `get_gfmd_hostids`; do
+		[ "X$I" = X@ ] && continue
+		if [ "X`eval echo \\$$I\_SERVER_TYPE`" = Xslave -a \
+			"X`eval echo \\$$I\_MASTER_CANDIDATE`" = Xc ]; then
+			echo $I
+		fi
+	done
+
+	return 0
+}
