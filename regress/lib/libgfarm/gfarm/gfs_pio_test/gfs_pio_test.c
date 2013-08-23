@@ -20,6 +20,8 @@ char *program_name = "gfs_pio";
 #define OP_FLUSH	'F'
 #define OP_SYNC		'M'
 #define OP_DATASYNC	'D'
+#define OP_READALL	'I'
+#define OP_WRITEALL	'O'
 
 struct op {
 	unsigned char op;
@@ -70,7 +72,8 @@ main(int argc, char **argv)
 		return (1);
 	}
 
-	while ((c = getopt(argc, argv, "acC:DeE:Fm:MnP:rR:S:tT:vwW:")) != -1) {
+	while ((c = getopt(argc, argv, "acC:DeE:FIm:MnOP:rR:S:tT:vwW:"))
+	    != -1) {
 		off = -1;
 		switch (c) {
 		case OP_READ:
@@ -85,6 +88,8 @@ main(int argc, char **argv)
 		case OP_FLUSH:
 		case OP_SYNC:
 		case OP_DATASYNC:
+		case OP_READALL:
+		case OP_WRITEALL:
 			if (nops >= MAX_OPS) {
 				fprintf(stderr,
 				    "%s: number of operations reaches "
@@ -273,6 +278,52 @@ main(int argc, char **argv)
 			}
 			if (verbose)
 				fprintf(stderr, "gfs_pio_datasync()\n");
+			break;
+		case OP_READALL:
+			roff = 0;
+			for (;;) {
+				e = gfs_pio_read(gf, buffer, sizeof buffer,
+				    &rv);
+				if (e != GFARM_ERR_NO_ERROR) {
+					fprintf(stderr, "gfs_pio_read: %s\n",
+					    gfarm_error_string(e));
+					return (c);
+				}
+				if (rv == 0)
+					break;
+				roff += (off_t) rv;
+				off = write(1, buffer, rv);
+				if (off == -1) {
+					perror("write");
+					return (10);
+				}
+			}
+			if (verbose)
+				fprintf(stderr, "write(%lld)\n",
+				    (long long)roff);
+			break;
+		case OP_WRITEALL:
+			roff = 0;
+			for (;;) {
+				rv = read(0, buffer, sizeof buffer);
+				if (rv == -1) {
+					perror("read");
+					return (11);
+				}
+				if (rv == 0)
+					break;
+				off = rv;
+				e = gfs_pio_write(gf, buffer, (int)off, &rv);
+				if (e != GFARM_ERR_NO_ERROR) {
+					fprintf(stderr, "gfs_pio_write: %s\n",
+					    gfarm_error_string(e));
+					return (c);
+				}
+				roff += (off_t) rv;
+			}
+			if (verbose)
+				fprintf(stderr, "read(%lld)\n",
+				    (long long)roff);
 			break;
 		default:
 			assert(0);
