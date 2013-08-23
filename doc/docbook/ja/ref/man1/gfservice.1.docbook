@@ -1163,6 +1163,20 @@ Gfarm2 ファイルシステムをアンマウントします。
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term>
+<command moreinfo="none">gfcmd-root</command>
+<parameter moreinfo="none">ホストID</parameter>
+<parameter moreinfo="none">command-name</parameter>
+<parameter moreinfo="none">command-argument ...</parameter>
+</term>
+<listitem>
+<para>
+リモートホスト上にて、root 権限で Gfarm コマンドを実行します。
+</para>
+</listitem>
+</varlistentry>
+
 </variablelist>
 
 </refsect1>

@@ -26,7 +26,13 @@ calc_numeric_size()
 }
 
 #
-# generate testdata to stdout
+# Usage: generate_testdata SIZE
+#
+# This function prints testdata with the specified size.  SIZE may have an
+# optional suffix: 'K' for kilobytes ('1K' = 1024), 'M' for megabytes ('1M'
+# = 1024 * 1024) or 'G' for gigabytes (1024 * 1024 * 1024).
+#
+# It returns 0 upon success, 1 otherwise.
 #
 generate_testdata()
 {

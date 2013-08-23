@@ -15,6 +15,15 @@ DATA =	$(srcdir)/check_gfmd_connected \
 	$(srcdir)/check_file_location \
 	$(srcdir)/check_gfsd_registered \
 	$(srcdir)/check_replica_num \
-	$(srcdir)/generate_testdata
+	$(srcdir)/generate_testdata \
+	$(srcdir)/check_vars \
+	$(srcdir)/import_config_gfarm_params \
+	$(srcdir)/import_config_gfsd_params \
+	$(srcdir)/get_hostids \
+	$(srcdir)/get_seqnum \
+	$(srcdir)/get_server_status \
+	$(srcdir)/get_gfmd_server_type \
+	$(srcdir)/get_hostid_by_name \
+	$(srcdir)/failover
 
 include $(top_srcdir)/makes/data.mk

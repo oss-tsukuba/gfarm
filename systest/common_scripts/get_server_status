@@ -1,0 +1,137 @@
+load "gfarm_v2::get_hostids"
+
+#
+# Usage: clear_gfmd_status HOSTID
+#
+#        HOSTID             host-ID of gfmd (gfmd1, gfmd2, ...).
+#
+# Unset variables defined by get_gfmd_status().
+#
+clear_gfmd_status()
+{
+	eval "$1_STATUS="
+	log_debug "$1_STATUS="
+}
+
+#
+# Usage: clear_status HOSTID
+#
+#        HOSTID             host-ID of gfsd (gfsd1, gfsd2, ...)
+#
+# Unset variables defined by get_gfsd_status().
+#
+clear_gfsd_status()
+{
+	eval "$1_STATUS="
+	log_debug "$1_STATUS="
+}
+
+#
+# Usage: clear_gfmd_status_all
+#
+# Unset variables defined by get_gfmd_status_all().
+#
+clear_gfmd_status_all()
+{
+	for I in @ `get_gfmd_hostids`; do
+		[ "X$I" = X@ ] && continue
+		eval "$I"_STATUS=
+		log_debug "$I"_STATUS=
+	done
+}
+
+#
+# Usage: clear_gfsd_status_all
+#
+# Unset variables defined by get_gfsd_status_all().
+#
+clear_gfsd_status_all()
+{
+	for I in @ `get_gfsd_hostids`; do
+		[ "X$I" = X@ ] && continue
+		eval "$I"_STATUS=
+		log_debug "$I"_STATUS=
+	done
+}
+
+#
+# Usage: get_gfmd_status HOSTID
+#
+#        HOSTID             host-ID of gfmd (gfmd1, gfmd2, ...)
+#
+# This function gets the current status of gfmd HOSTID by executing the rc
+# script 'gfmd status' on the gfmd host.  The result value ('running' or
+# 'stopped') is stored in the variable '<HOSTID>_STATUS' (e.g. gfmd1_STATUS).
+# If an error occurs, it returns 1.  Otherwise, it returns 0.
+#
+get_gfmd_status()
+{
+	$GFSERVICE gfmd-status $1
+	if [ $? -eq 0 ]; then
+		eval "$1_STATUS=running"
+		log_debug "$1_STATUS=running"
+	else
+		eval "$1_STATUS=stopped"
+		log_debug "$1_STATUS=stopped"
+	fi
+
+	return 0
+}
+
+#
+# Usage: get_gfmd_status_all
+#
+# The function executes get_gfmd_status() for every gfmd servers.  If an
+# error occurs on a get_gfmd_status() call, it returns 1.  Otherwise, it
+# returns 0.
+#
+get_gfmd_status_all()
+{
+	for I in @ `get_gfmd_hostids`; do
+		[ "X$I" = X@ ] && continue
+		get_gfmd_status $I
+	done
+
+	return 0
+}
+
+#
+# Usage: get_gfsd_status HOSTID
+#
+#        HOSTID             host-ID of gfsd (gfsd1, gfsd2, ...)
+#
+# This function gets the current status of gfsd HOSTID by executing the rc
+# script 'gfsd status' on the gfsd host.  The result value ('running' or
+# 'stopped') is stored in the variable '<HOSTID>_STATUS' (e.g. gfsd1_STATUS).
+# If an error occurs, it returns 1.  Otherwise, it returns 0.
+#
+get_gfsd_status()
+{
+	$GFSERVICE gfsd-status $1
+	if [ $? -eq 0 ]; then
+		eval "$1_STATUS=running"
+		log_debug "$1_STATUS=running"
+	else
+		eval "$1_STATUS=stopped"
+		log_debug "$1_STATUS=stopped"
+	fi
+
+	return 0
+}
+
+#
+# Usage: get_gfsd_status_all
+#
+# The function executes get_gfsd_status() for every gfsd servers.  If an
+# error occurs on a get_gfsd_status() call, it returns 1.  Otherwise, it
+# returns 0.
+#
+get_gfsd_status_all()
+{
+	for I in @ `get_gfsd_hostids`; do
+		[ "X$I" = X@ ] && continue
+		get_gfsd_status $I
+	done
+
+	return 0
+}

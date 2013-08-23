@@ -1071,7 +1071,7 @@ subcmd_get_config_gfarm_param()
 {
 	log_debug "subcmd_get_config_gfarm_param"
 
-	check_argc $# 1
+	check_argc $# 0 1
 	check_hostid gfmd $HOSTID
 	exec_remote_host_agent $HOSTID root get-config-gfarm-param "param=$1"
 	[ $? -ne 0 ] && log_error \
@@ -1087,7 +1087,7 @@ subcmd_get_config_gfsd_param()
 {
 	log_debug "subcmd_get_config_gfsd_param"
 
-	check_argc $# 1
+	check_argc $# 0 1
 	check_hostid gfsd $HOSTID
 	exec_remote_host_agent $HOSTID root get-config-gfsd-param "param=$1"
 	[ $? -ne 0 ] && log_error \
@@ -2083,6 +2083,24 @@ subcmd_gfcmd()
 	log_debug "end subcmd_gfcmd"
 }
 
+#
+# Sub-command: gfcmd-root
+#
+subcmd_gfcmd_root()
+{
+	log_debug "subcmd_gfcmd_root"
+
+	check_argc $# 1 +
+	check_hostid any $HOSTID
+	GFCMD=$1
+	shift
+
+	exec_remote_host_gfcmd $HOSTID root $GFCMD "$@"
+	[ $? -ne 0 ] && log_error "gfservice-agent gfcmd $GFCMD failed."
+
+	log_debug "end subcmd_gfcmd_root"
+}
+
 ######################################################################
 
 #
@@ -2397,6 +2415,9 @@ restore-backend-db)
 	;;
 gfcmd)
 	subcmd_gfcmd "$@"
+	;;
+gfcmd-root)
+	subcmd_gfcmd_root "$@"
 	;;
 *)
 	SUBCMD="`echo $SUBCMD | sed -e 's|::|/|g'`"
