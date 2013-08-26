@@ -1281,7 +1281,7 @@ gfm_server_process_alloc(struct peer *peer, int from_client, int skip)
 	size_t keylen;
 	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 	struct process *process;
-	gfarm_pid_t pid;
+	gfarm_pid_t pid = 0;
 	static const char diag[] = "GFM_PROTO_PROCESS_ALLOC";
 
 	e = gfm_server_get_request(peer, diag,
@@ -1322,7 +1322,7 @@ gfm_server_process_alloc_child(struct peer *peer, int from_client, int skip)
 	char parent_sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 	struct process *parent_process, *process;
-	gfarm_pid_t parent_pid, pid;
+	gfarm_pid_t parent_pid, pid = 0;
 	static const char diag[] = "GFM_PROTO_PROCESS_ALLOC_CHILD";
 
 	e = gfm_server_get_request(peer, diag, "iblib",
