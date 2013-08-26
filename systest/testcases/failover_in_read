@@ -27,6 +27,12 @@ setup_failover_in_read()
 	check_vars gfmd1 gfmd2 gfmd3 gfsd1 client1 \
 		|| return $RESULT_UNSUPPORTED
 
+	# prepare: execute 'grid-proxy-init'.
+	if [ "X$client1_AUTH_TYPE" = Xgsi -o \
+		"Xclient1_$AUTH_TYPE" = Xgsi_auth ]; then
+		$GFSERVICE systest::gfarm_v2::grid_proxy_init client1
+	fi
+
 	# prepare: create a test file.
 	generate_testdata $TEST_FILE_SIZE | gfs_pio_test -O -c $TEST_FILE_PATH
 	if [ $? -ne 0 ]; then
