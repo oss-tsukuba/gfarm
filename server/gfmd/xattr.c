@@ -562,7 +562,7 @@ gfm_server_listxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	gfarm_error_t e;
 	const char *diag =
 	    xmlMode ? "GFM_PROTO_XMLATTR_LIST" : "GFM_PROTO_XATTR_LIST";
-	size_t size;
+	size_t size = 0;
 	char *value = NULL;
 	struct process *process;
 	gfarm_int32_t fd;

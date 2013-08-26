@@ -92,7 +92,7 @@ gfarm_error_t
 gfm_server_get_fd(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
-	gfarm_int32_t fd;
+	gfarm_int32_t fd = 0;
 	struct process *process;
 	static const char diag[] = "GFM_PROTO_GET_FD";
 
@@ -1003,8 +1003,8 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 	struct process *process;
 	struct inode *inode;
 	struct gfs_stat st;
-	size_t nxattrs;
-	struct xattr_list *xattrs, *px;
+	size_t nxattrs = 0;
+	struct xattr_list *xattrs = NULL, *px;
 	struct db_waitctx waitctx;
 	static const char diag[] = "GFM_PROTO_FGETATTRPLUS";
 
@@ -1051,10 +1051,6 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 		needs_free = 1;
 		e_rpc = inode_xattr_list_get_cached_by_patterns(
 		    st.st_ino, attrpatterns, nattrpatterns, &xattrs, &nxattrs);
-		if (e_rpc != GFARM_ERR_NO_ERROR) {
-			xattrs = NULL;
-			nxattrs = 0;
-		}
 		for (j = 0; j < nxattrs; j++) {
 			px = &xattrs[j];
 			if (px->value != NULL) /* cached */
@@ -2094,7 +2090,7 @@ gfm_server_getdirpath(struct peer *peer, int from_client, int skip)
 	struct process *process;
 	gfarm_int32_t cfd;
 	struct inode *dir;
-	char *s;
+	char *s = NULL;
 	static const char diag[] = "GFM_PROTO_GETDIRPATH";
 
 	if (skip)
@@ -2668,9 +2664,9 @@ reopen_resume(struct peer *peer, void *closure, int *suspendedp)
 	struct reopen_resume_arg *arg = closure;
 	struct host *spool_host;
 	struct process *process;
-	gfarm_ino_t inum;
-	gfarm_uint64_t gen;
-	gfarm_int32_t mode, flags, to_create;
+	gfarm_ino_t inum = 0;
+	gfarm_uint64_t gen = 0;
+	gfarm_int32_t mode = 0, flags = 0, to_create = 0;
 	int transaction = 0;
 
 	/* for gfarm_file_trace */
@@ -2738,9 +2734,9 @@ gfm_server_reopen(struct peer *peer, int from_client, int skip,
 	gfarm_int32_t fd;
 	struct host *spool_host = NULL;
 	struct process *process;
-	gfarm_ino_t inum;
-	gfarm_uint64_t gen;
-	gfarm_int32_t mode, flags, to_create;
+	gfarm_ino_t inum = 0;
+	gfarm_uint64_t gen = 0;
+	gfarm_int32_t mode = 0, flags = 0, to_create = 0;
 	struct reopen_resume_arg *arg;
 	int transaction = 0;
 
@@ -2884,7 +2880,7 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 	struct host *spool_host;
 	struct process *process;
 	int transaction = 0;
-	gfarm_int32_t flags;
+	gfarm_int32_t flags = 0;
 	gfarm_ino_t inum = 0;
 	gfarm_int64_t old_gen = 0, new_gen = 0;
 	char *trace_log;
@@ -3503,7 +3499,7 @@ gfm_server_replica_list_by_name(struct peer *peer, int from_client, int skip)
 	struct host *spool_host;
 	struct process *process;
 	int fd, i;
-	gfarm_int32_t n;
+	gfarm_int32_t n = 0;
 	struct inode *inode;
 	char **hosts;
 	static const char diag[] = "GFM_PROTO_REPLICA_LIST_BY_NAME";
@@ -3678,7 +3674,7 @@ gfm_server_replica_info_get(struct peer *peer, int from_client, int skip)
 	struct host *spool_host;
 	struct process *process;
 	int fd, i;
-	gfarm_int32_t iflags, n;
+	gfarm_int32_t iflags, n = 0;
 	struct inode *inode;
 	char **hosts;
 	gfarm_int64_t *gens;
