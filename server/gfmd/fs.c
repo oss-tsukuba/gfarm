@@ -1251,7 +1251,7 @@ gfm_server_fgetattrplus(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct process *process;
 	struct inode *inode;
 	struct gfs_stat st;
-	size_t nxattrs;
+	size_t nxattrs = 0;
 	struct xattr_list *xattrs, *px;
 	struct db_waitctx waitctx;
 	static const char diag[] = "GFM_PROTO_FGETATTRPLUS";
@@ -3364,9 +3364,9 @@ reopen_resume(struct peer *peer, void *closure, int *suspendedp)
 	struct reopen_resume_arg *arg = closure;
 	struct host *spool_host;
 	struct process *process;
-	gfarm_ino_t inum;
-	gfarm_uint64_t gen;
-	gfarm_int32_t mode, flags, to_create;
+	gfarm_ino_t inum = 0;
+	gfarm_uint64_t gen = 0;
+	gfarm_int32_t mode = 0, flags = 0, to_create = 0;
 	gfp_xdr_xid_t xid;
 	size_t junk = 0, *sizep;
 	int transaction = 0;
@@ -3441,7 +3441,7 @@ gfm_server_reopen(
 	struct process *process;
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
-	gfarm_int32_t mode, flags, to_create;
+	gfarm_int32_t mode = 0, flags = 0, to_create = 0;
 	struct reopen_resume_arg *arg;
 	int transaction = 0;
 
@@ -3611,7 +3611,7 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 	struct host *spool_host;
 	struct process *process;
 	int transaction = 0;
-	gfarm_int32_t flags;
+	gfarm_int32_t flags = 0;
 	gfarm_ino_t inum = 0;
 	gfarm_int64_t old_gen = 0, new_gen = 0;
 	gfp_xdr_xid_t xid;
@@ -4476,7 +4476,7 @@ gfm_server_replica_list_by_name(struct peer *peer, gfp_xdr_xid_t xid,
 	struct host *spool_host;
 	struct process *process;
 	int fd, i;
-	gfarm_int32_t n;
+	gfarm_int32_t n = 0;
 	struct inode *inode;
 	char **hosts = NULL;
 	static const char diag[] = "GFM_PROTO_REPLICA_LIST_BY_NAME";
