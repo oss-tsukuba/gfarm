@@ -281,9 +281,14 @@ main(int argc, char *argv[])
 	}
 
 	if (posix_flag)
-		do_posix_test(dirs, files);
+		e = do_posix_test(dirs, files);
 	else
-		do_libgfarm_test(dirs, files);
+		e = do_libgfarm_test(dirs, files);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "test failed: %s\n", gfarm_error_string(e));
+		gfarm_terminate();
+		return (1);
+	}
 
 	free_directory_names(files);
 	free_directory_names(dirs);
