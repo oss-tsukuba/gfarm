@@ -3,6 +3,8 @@
 require "optparse"
 require "pp"
 
+$debug = false
+
 $running = true
 
 def make_path()
@@ -144,6 +146,8 @@ $config[:number].times { |i|
   end
 }
 
+$mutex_stdout = Mutex.new
+
 class Runner
   def init(manager, command)
     @manager = manager
@@ -169,6 +173,7 @@ class Runner
       @stderr = @pipe[2][0]
 
       break unless (@running)
+      $mutex_stdout.lock # avoid deadlock at STDOUT.reopen()
       @pid = fork {
         @pipe[0][1].close
         @pipe[1][0].close
@@ -178,6 +183,8 @@ class Runner
         STDERR.reopen(@pipe[2][1])
         exec("#{@command}");
       }
+      $mutex_stdout.unlock
+
       @pipe[0][0].close
       @pipe[1][1].close
       @pipe[2][1].close
@@ -199,9 +206,17 @@ class Runner
           errstr += tmp
         end
       }
+      if ($debug)
+        $mutex_stdout.lock
+        print "[COMMAND START] " + @command + "\n"
+        STDOUT.flush
+        $mutex_stdout.unlock
+      end
+
       pid2, status = Process.waitpid2(@pid, 0)
       t0.join
       t1.join
+
       @stdin.close
       @stdout.close
       @stderr.close
@@ -222,16 +237,17 @@ class Runner
       else
         errstr = ""
       end
+
+      $mutex_stdout.lock
       if (errstr.length > 0)
         print "[COMMAND] " + @command + "\n"
         print errstr
       end
       if (!status.exitstatus.nil? && status.exitstatus != 0)
-        print "[COMMAND] " + @command + ", exitcode=#{status.exitstatus}\n"
-# do not stop
-#        @manager.intr
-#        @running = false
+        print "[EXIT STATUS] #{status.exitstatus}\n"
       end
+      STDOUT.flush
+      $mutex_stdout.unlock
     end
   end
 
@@ -251,6 +267,7 @@ end
 
 class Manager
   def init()
+    @interrupted = false
     @runners = Array.new
     $commands.each { |com|
       @runners.push(Runner.new.init(self, com))
@@ -263,20 +280,27 @@ class Manager
       r.start
     }
     if ($config[:timeout] > 0)
+      $mutex_stdout.lock
       print "timeout: #{$config[:timeout]} seconds\n"
+      STDOUT.flush
+      $mutex_stdout.unlock
+
       @timeout_thread = Thread.new {
         sleep $config[:timeout]
-        print "end of gfstress.rb (timeout)\n"
         @runners.each { |r|
           r.stop
         }
+        $mutex_stdout.lock
+        print "end of gfstress.rb (timeout)\n"
+        STDOUT.flush
+        $mutex_stdout.unlock
       }
     end
     return self
   end
 
   def intr()
-    print "interrupted...\n"
+    @interrupted = true
     @stop_thread = Thread.new {
       @runners.each { |r|
         r.stop
@@ -289,6 +313,9 @@ class Manager
     @runners.each { |r|
       r.wait
     }
+    if (@interrupted)
+      print "interrupted\n"
+    end
     @stop_thread.join unless (@stop_thread.nil?)
     @timeout_thread.kill unless (@timeout_thread.nil?)
     return self
@@ -305,6 +332,10 @@ Signal.trap(:INT) {
 }
 
 Signal.trap(:TERM) {
+  $manager.intr
+}
+
+Signal.trap(:PIPE) {
   $manager.intr
 }
 
