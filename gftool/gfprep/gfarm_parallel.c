@@ -26,29 +26,10 @@
 #include "gfprep.h"
 #include "gfarm_parallel.h"
 
-#define GFPARA_HANDLE_LIST_MAX 1024
-static int is_parent;
+#define GFPARA_HANDLE_LIST_MAX 32
+static int is_parent = 1;
 static int n_handle_list = 0;
 static gfpara_t *handle_list[GFPARA_HANDLE_LIST_MAX];
-
-static void gfpara_watch_stderr_stop(gfpara_t *handle);
-static void gfpara_fatal(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
-static void
-gfpara_fatal(const char *format, ...)
-{
-	va_list ap;
-	int i;
-
-	if (is_parent)
-		for (i = 0; i < n_handle_list; i++)
-			gfpara_watch_stderr_stop(handle_list[i]);
-	fprintf(stderr, "fatal error: ");
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
-	fprintf(stderr, "\n");
-	exit(EXIT_FAILURE);
-}
 
 struct gfpara {
 	pthread_t thread;
@@ -68,6 +49,28 @@ struct gfpara {
 	int watch_stderr_end;
 	pthread_mutex_t watch_stderr_mutex;
 };
+
+
+static void gfpara_watch_stderr_stop(gfpara_t *handle);
+static void gfpara_fatal(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+static void
+gfpara_fatal(const char *format, ...)
+{
+	va_list ap;
+	int i;
+
+	if (is_parent)
+		for (i = 0; i < n_handle_list; i++)
+			if (handle_list[i] != NULL &&
+			    handle_list[i]->watch_stderr_end == 0)
+				gfpara_watch_stderr_stop(handle_list[i]);
+	fprintf(stderr, "fatal error: ");
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+	va_end(ap);
+	fprintf(stderr, "\n");
+	exit(EXIT_FAILURE);
+}
 
 gfpara_proc_t *
 gfpara_procs_get(gfpara_t *handle)
@@ -204,7 +207,7 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 	    void *param_recv,
 	    void *(*func_end)(void *param), void *param_end)
 {
-	int i = 0;
+	int i, j;
 	gfpara_proc_t *procs;
 	gfpara_t *handle;
 
@@ -217,6 +220,8 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 	GFARM_MALLOC_ARRAY(procs, n_procs);
 	if (handle == NULL || procs == NULL)
 		gfpara_fatal("no memory: n_procs=%d", n_procs);
+	handle->watch_stderr_end = 1;
+
 	fflush(stdout); /* Don't send buffer to child */
 	fflush(stderr); /* Don't send buffer to child */
 	gfarm_sigpipe_ignore();
@@ -240,6 +245,11 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 			FILE *from_parent;
 			FILE *to_parent;
 
+			for (j = 0; j < i; j++) {
+				fclose(procs[j].in);
+				fclose(procs[j].out);
+				fclose(procs[j].err);
+			}
 			free(handle);
 			free(procs);
 			is_parent = 0;
@@ -295,7 +305,6 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 
 	*handlep = handle;
 
-	is_parent = 1;
 	handle_list[n_handle_list++] = handle;
 
 	return (GFARM_ERR_NO_ERROR);
