@@ -12,7 +12,7 @@
 </div>
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfprep</code>  [-nqvdpPU] [-mx] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-N <em class="replaceable"><code>num-of-replicas</code></em>]  <em class="replaceable"><code>gfarm-url</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfprep</code>  [-nqvdpPU] [-mx] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>limit-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-N <em class="replaceable"><code>num-of-replicas</code></em>]  <em class="replaceable"><code>path</code></em> </p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
@@ -124,9 +124,7 @@ If ``-'' is specified, standard input is used to read the host list.</p>
 <dd>
 <p>
 Specifies the number of processes to create file replicas (or copy
-files) simultaneously and to read the directory in parallel.  Child
-processes are created of <em class="parameter"><code>num-of-processes</code></em> * 2
-processes.
+files) simultaneously.
 </p>
 <p>
 The default value is the parameter of client_parallel_copy in gfarm2.conf.
@@ -136,6 +134,24 @@ The default value is the parameter of client_parallel_copy in gfarm2.conf.
 The source nodes and the destination nodes are selected/scheduled and
 used(read/written) up to the number of CPUs (see
 man <span class="command"><strong>gfhost</strong></span>) at the same time.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-J</code> <em class="parameter"><code>num-of-processes</code></em></span></dt>
+<dd>
+<p>
+Specifies the number of processes to read directories in parallel.
+</p>
+<p>
+The default value is 8.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-M</code> <em class="parameter"><code>limit-byte</code></em></span></dt>
+<dd>
+<p>
+Specifies the bytes to limit the total copied size.
+</p>
+<p>
+The default value is unlimited.
 </p>
 </dd>
 <dt><span class="term"><code class="option">-w</code> <em class="parameter"><code>way-of-scheduling</code></em></span></dt>
@@ -239,11 +255,12 @@ If the -L or -m option is not specified, a source node is not always
 selected within a set of specified source nodes.
 </p>
 <p>
-<span class="command"><strong>gfprep</strong></span> command should be executed at the same host
-of gfmd.  If the gfmd and <span class="command"><strong>gfprep</strong></span> are far apart,
-the <span class="command"><strong>gfprep</strong></span> operation is slow.  Specifying a large
-value by the -j option or client_parallel_copy in gfarm2.conf may be
-effective in such a case.
+<span class="command"><strong>gfprep</strong></span> command should be executed
+at the same host of gfmd.  If the gfmd
+and <span class="command"><strong>gfprep</strong></span> are far apart,
+the <span class="command"><strong>gfprep</strong></span> operation is slow.
+Specifying a large value by -j or -J options may be effective in such
+a case.
 </p>
 </div>
 <div class="refsect1" title="SEE ALSO">
