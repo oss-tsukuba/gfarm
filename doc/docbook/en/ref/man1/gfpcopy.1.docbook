@@ -29,13 +29,15 @@
   <arg choice="opt" rep="norepeat">-D <replaceable>destination-domainname</replaceable></arg>
   <arg choice="opt" rep="norepeat">-H <replaceable>destination-hostfile</replaceable></arg>
   <arg choice="opt" rep="norepeat">-j <replaceable>num-of-processes</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-J <replaceable>num-of-processes</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-M <replaceable>limit-byte</replaceable></arg>
   <arg choice="opt" rep="norepeat">-w <replaceable>way-of-scheduling</replaceable></arg>
   <arg choice="opt" rep="norepeat">-W <replaceable>kilobytes-for-threshold</replaceable></arg>
   <arg choice="opt" rep="norepeat">-s <replaceable>KB/s-to-simulate</replaceable></arg>
   <arg choice="opt" rep="norepeat">-F <replaceable>num-for-readahead</replaceable></arg>
   <arg choice="opt" rep="norepeat">-b <replaceable>bufsize</replaceable></arg>
-  <arg choice="plain" rep="norepeat"><replaceable>source-url</replaceable></arg>
-  <arg choice="plain" rep="norepeat"><replaceable>destination-url</replaceable></arg>
+  <arg choice="plain" rep="norepeat"><replaceable>source-path</replaceable></arg>
+  <arg choice="plain" rep="norepeat"><replaceable>destination-path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -130,10 +132,10 @@ $ gfpcopy gfarm:///dir/file file:///dir
 
 <refsect1 id="notes"><title>NOTES</title>
 <para>
-If the gfmd and <command moreinfo="none">gfpcopy</command> are far apart,
-the <command moreinfo="none">gfpcopy</command> operation is slow.  Specifying a large
-value by the -j option or client_parallel_copy in gfarm2.conf may be
-effective in such a case.
+If the gfmd and <command moreinfo="none">gfpcopy</command> are far
+apart, the <command moreinfo="none">gfpcopy</command> operation is
+slow.  Specifying a large value by -j or -J options may be effective
+in such a case.
 </para>
 </refsect1>
 
