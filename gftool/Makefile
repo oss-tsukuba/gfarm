@@ -49,7 +49,6 @@ SUBDIRS = \
 	gfxattr \
 	config-gfarm \
 	gfhostgroup \
-	gfrepattr \
 	$(optional_targets)
 
 #	gfifo \
