@@ -2,12 +2,12 @@
 .\"     Title: gfpcopy
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 28 Feb 2013
+.\"      Date: 29 Aug 2013
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPCOPY" "1" "28 Feb 2013" "Gfarm" "Gfarm"
+.TH "GFPCOPY" "1" "29 Aug 2013" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 gfpcopy \- copy Gfarm files in parallel
 .SH "SYNOPSIS"
 .HP \w'\fBgfpcopy\fR\ 'u
-\fBgfpcopy\fR [\-nqvdpPU] [\-f] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-b\ \fIbufsize\fR] \fIsource\-url\fR \fIdestination\-url\fR
+\fBgfpcopy\fR [\-nqvdpPU] [\-f] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fIlimit\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-b\ \fIbufsize\fR] \fIsource\-path\fR \fIdestination\-path\fR
 .SH "DESCRIPTION"
 .PP
 
@@ -107,7 +107,7 @@ If the gfmd and
 \fBgfpcopy\fR
 are far apart, the
 \fBgfpcopy\fR
-operation is slow\&. Specifying a large value by the \-j option or client_parallel_copy in gfarm2\&.conf may be effective in such a case\&.
+operation is slow\&. Specifying a large value by \-j or \-J options may be effective in such a case\&.
 .SH "SEE ALSO"
 .PP
 
