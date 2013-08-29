@@ -29,12 +29,14 @@
   <arg choice="opt" rep="norepeat">-D <replaceable>destination-domainname</replaceable></arg>
   <arg choice="opt" rep="norepeat">-H <replaceable>destination-hostfile</replaceable></arg>
   <arg choice="opt" rep="norepeat">-j <replaceable>num-of-processes</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-J <replaceable>num-of-processes</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-M <replaceable>limit-byte</replaceable></arg>
   <arg choice="opt" rep="norepeat">-w <replaceable>way-of-scheduling</replaceable></arg>
   <arg choice="opt" rep="norepeat">-W <replaceable>kilobytes-for-threshold</replaceable></arg>
   <arg choice="opt" rep="norepeat">-s <replaceable>KB/s-to-simulate</replaceable></arg>
   <arg choice="opt" rep="norepeat">-F <replaceable>num-for-readahead</replaceable></arg>
   <arg choice="opt" rep="norepeat">-N <replaceable>num-of-replicas</replaceable></arg>
-  <arg choice="plain" rep="norepeat"><replaceable>gfarm-url</replaceable></arg>
+  <arg choice="plain" rep="norepeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -181,9 +183,7 @@ If ``-'' is specified, standard input is used to read the host list.</para>
 <listitem>
 <para>
 Specifies the number of processes to create file replicas (or copy
-files) simultaneously and to read the directory in parallel.  Child
-processes are created of <parameter moreinfo="none">num-of-processes</parameter> * 2
-processes.
+files) simultaneously.
 </para>
 <para>
 The default value is the parameter of client_parallel_copy in gfarm2.conf.
@@ -193,6 +193,30 @@ The default value is the parameter of client_parallel_copy in gfarm2.conf.
 The source nodes and the destination nodes are selected/scheduled and
 used(read/written) up to the number of CPUs (see
 man <command moreinfo="none">gfhost</command>) at the same time.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-J</option> <parameter moreinfo="none">num-of-processes</parameter></term>
+<listitem>
+<para>
+Specifies the number of processes to read directories in parallel.
+</para>
+<para>
+The default value is 8.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-M</option> <parameter moreinfo="none">limit-byte</parameter></term>
+<listitem>
+<para>
+Specifies the bytes to limit the total copied size.
+</para>
+<para>
+The default value is unlimited.
 </para>
 </listitem>
 </varlistentry>
@@ -354,11 +378,12 @@ If the -L or -m option is not specified, a source node is not always
 selected within a set of specified source nodes.
 </para>
 <para>
-<command moreinfo="none">gfprep</command> command should be executed at the same host
-of gfmd.  If the gfmd and <command moreinfo="none">gfprep</command> are far apart,
-the <command moreinfo="none">gfprep</command> operation is slow.  Specifying a large
-value by the -j option or client_parallel_copy in gfarm2.conf may be
-effective in such a case.
+<command moreinfo="none">gfprep</command> command should be executed
+at the same host of gfmd.  If the gfmd
+and <command moreinfo="none">gfprep</command> are far apart,
+the <command moreinfo="none">gfprep</command> operation is slow.
+Specifying a large value by -j or -J options may be effective in such
+a case.
 </para>
 </refsect1>
 
