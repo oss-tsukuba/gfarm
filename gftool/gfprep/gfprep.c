@@ -40,6 +40,8 @@
 #include "gfarm_dirtree.h"
 #include "gfarm_pfunc.h"
 
+#define GFPREP_PARALLEL_DIRTREE 8
+
 #define HOSTHASH_SIZE 101
 
 static const char name_gfprep[] = "gfprep";
@@ -168,17 +170,20 @@ gfprep_usage_common(int error)
 "\t[-D <destination domainname\n"
 "\t     ('' means all nodes even if write_target_domain is set)>]\n"
 "\t[-H <destination hostfile>]\n"
-"\t[-j <#parallel(connections)>]\n"
-"\t[-w <scheduling way (noplan,greedy)(default:noplan)>]\n"
+"\t[-j <#parallel(to copy files)(connections)(default: %d)>]\n"
+"\t[-J <#parallel(to read directories)(default: %d)>]\n"
+"\t[-w <scheduling way (noplan,greedy)(default: noplan)>]\n"
 "\t[-W <#KB> (threshold size to flat connections cost)(for -w greedy)]\n"
 "\t[-p (report total performance) | -P (report each and total performance)]\n"
 "\t[-n (not execute)] [-s <#KB/s(simulate)>]\n"
 "\t[-U (disable checking disk_avail)(fast)]\n"
-"\t[-M <#byte(maximum total size of copied file)>(default: unlimited)]\n"
+"\t[-M <#byte(K|M|G|T)(limit copied size)(default: unlimited)>]\n"
 /* "\t[-R <#ratio (throughput: local=remote*ratio)(for -w greedy)>]\n" */
-/* "\t[-J <#parallel(read dirents)>]\n" */
 "\t[-F <#dirents(readahead)>]\n",
-		program_name);
+		program_name,
+		gfarm_ctxp->client_parallel_copy,
+		GFPREP_PARALLEL_DIRTREE
+		);
 	if (strcmp(program_name, name_gfpcopy) == 0)
 		gfpcopy_usage();
 	else
@@ -3075,13 +3080,13 @@ main(int argc, char *argv[])
 			opt.debug = 1;
 			break;
 		case 'R': /* hidden option: function not implemented */
-			opt_ratio = strtol(optarg, NULL, 0);;
+			opt_ratio = strtol(optarg, NULL, 0);
 			break;
-		case 'J': /* hidden option */
-			opt_dirtree_n_para = strtol(optarg, NULL, 0);;
+		case 'J':
+			opt_dirtree_n_para = strtol(optarg, NULL, 0);
 			break;
 		case 'F':
-			opt_dirtree_n_fifo = strtol(optarg, NULL, 0);;
+			opt_dirtree_n_fifo = strtol(optarg, NULL, 0);
 			break;
 		case 'U':
 			opt.check_disk_avail = 0;
@@ -3090,7 +3095,7 @@ main(int argc, char *argv[])
 			opt_list_only = 1;
 			break;
 		case 'C': /* hidden option: for -w noplan */
-			opt.openfile_cost = strtol(optarg, NULL, 0);;
+			opt.openfile_cost = strtol(optarg, NULL, 0);
 			if (opt.openfile_cost < 0)
 				opt.openfile_cost = 0;
 			break;
@@ -3121,7 +3126,7 @@ main(int argc, char *argv[])
 			opt_force_copy = 1;
 			break;
 		case 'b': /* gfpcopy */
-			opt_copy_bufsize = strtol(optarg, NULL, 0);;
+			opt_copy_bufsize = strtol(optarg, NULL, 0);
 			break;
 		case '?':
 		default:
@@ -3268,9 +3273,15 @@ main(int argc, char *argv[])
 			     "a positive interger");
 		exit(EXIT_FAILURE);
 	}
-	gfprep_debug("number of parallel: %d", opt_n_para);
+	gfprep_debug("number of parallel to copy: %d", opt_n_para);
 	if (opt_dirtree_n_para <= 0)
-		opt_dirtree_n_para = opt_n_para;
+		opt_dirtree_n_para = GFPREP_PARALLEL_DIRTREE;
+	if (opt_dirtree_n_para <= 0) {
+		gfprep_error("-J must be a positive interger");
+		exit(EXIT_FAILURE);
+	}
+	gfprep_debug("number of parallel to read dirents: %d",
+	    opt_dirtree_n_para);
 	gfprep_debug("number of child-processes: %d",
 		     opt_n_para + opt_dirtree_n_para);
 	if (opt_simulate_KBs == 0)
