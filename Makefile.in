@@ -19,6 +19,7 @@ SUBDIRS = \
 	nls \
 	bench/gfperf \
 	bench/gfiops \
+	regress/lib/libgfarm/gfarm/gfs_pio_test \
 	@linuxkernel_targets@
 
 #	`[ -d $(srcdir)/ns ] && echo ns` \
