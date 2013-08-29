@@ -40,9 +40,9 @@ fi
 
 cleanup() {
     rm -f ${tmpfile}
-    gfrepattr -r ${file} > /dev/null 2>&1
+    gfncopy -r ${file} > /dev/null 2>&1
     gfrm -f ${file} > /dev/null 2>&1
-    gfrepattr -r ${dir} > /dev/null 2>&1
+    gfncopy -r ${dir} > /dev/null 2>&1
     gfrmdir ${dir} > /dev/null 2>&1
     for __i in ${hosts}; do
 	gfhostgroup -r ${__i} > /dev/null 2>&1

@@ -102,7 +102,7 @@ specified hosts by using <command moreinfo="none">-r</command> option.
 <refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
   <citerefentry>
-  <refentrytitle>gfrepattr</refentrytitle><manvolnum>1</manvolnum>
+  <refentrytitle>gfncopy</refentrytitle><manvolnum>1</manvolnum>
   </citerefentry>
 </para>
 </refsect1>
