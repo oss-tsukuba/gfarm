@@ -53,12 +53,6 @@ gftool/gfhostgroup/gfhostgroup-l.sh
 gftool/gfhostgroup/gfhostgroup-s.sh
 gftool/gfhostgroup/gfhostgroup-m.sh
 gftool/gfhostgroup/gfhostgroup-r.sh
-gftool/gfrepattr/gfrepattr-slm.sh
-gftool/gfrepattr/gfrepattr-c-slm.sh
-gftool/gfrepattr/gfrepattr-m-slm.sh
-gftool/gfrepattr/gfrepattr-syml-slm.sh
-gftool/gfrepattr/gfrepattr-syml2-slm.sh
-gftool/gfrepattr/gfrepattr-many-attrs.sh
 gftool/gfuser/gfuser-c.sh
 gftool/gfuser/gfuser-c.real.toolong.sh
 gftool/gfuser/gfuser-c.home.toolong.sh
