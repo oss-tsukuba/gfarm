@@ -2,12 +2,12 @@
 .\"     Title: gfprep
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 19 October 2012
+.\"      Date: 29 Aug 2013
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPREP" "1" "19 October 2012" "Gfarm" "Gfarm"
+.TH "GFPREP" "1" "29 Aug 2013" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 gfprep \- replicate Gfarm files in parallel
 .SH "SYNOPSIS"
 .HP \w'\fBgfprep\fR\ 'u
-\fBgfprep\fR [\-nqvdpPU] [\-mx] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-N\ \fInum\-of\-replicas\fR] \fIgfarm\-url\fR
+\fBgfprep\fR [\-nqvdpPU] [\-mx] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fIlimit\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
 .SH "DESCRIPTION"
 .PP
 
@@ -120,14 +120,26 @@ If ``\-\*(Aq\*(Aq is specified, standard input is used to read the host list\&.
 .PP
 \fB\-j\fR \fInum\-of\-processes\fR
 .RS 4
-Specifies the number of processes to create file replicas (or copy files) simultaneously and to read the directory in parallel\&. Child processes are created of
-\fInum\-of\-processes\fR
-* 2 processes\&.
+Specifies the number of processes to create file replicas (or copy files) simultaneously\&.
 .sp
 The default value is the parameter of client_parallel_copy in gfarm2\&.conf\&. (see man gfarm2\&.conf)
 .sp
 The source nodes and the destination nodes are selected/scheduled and used(read/written) up to the number of CPUs (see man
 \fBgfhost\fR) at the same time\&.
+.RE
+.PP
+\fB\-J\fR \fInum\-of\-processes\fR
+.RS 4
+Specifies the number of processes to read directories in parallel\&.
+.sp
+The default value is 8\&.
+.RE
+.PP
+\fB\-M\fR \fIlimit\-byte\fR
+.RS 4
+Specifies the bytes to limit the total copied size\&.
+.sp
+The default value is unlimited\&.
 .RE
 .PP
 \fB\-w\fR \fIway\-of\-scheduling\fR
@@ -246,7 +258,7 @@ command should be executed at the same host of gfmd\&. If the gfmd and
 \fBgfprep\fR
 are far apart, the
 \fBgfprep\fR
-operation is slow\&. Specifying a large value by the \-j option or client_parallel_copy in gfarm2\&.conf may be effective in such a case\&.
+operation is slow\&. Specifying a large value by \-j or \-J options may be effective in such a case\&.
 .SH "SEE ALSO"
 .PP
 
