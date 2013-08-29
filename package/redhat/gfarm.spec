@@ -8,6 +8,7 @@
 
 %define prefix		%{_prefix}
 %define lib_prefix	%{_libdir}
+%define libexec_prefix	%{_libexecdir}
 %define man_prefix	%{_mandir}
 %define share_prefix	%{prefix}/share/%{pkg}
 %define doc_prefix	%{prefix}/share/doc/%{name}-%{ver}
@@ -1069,6 +1070,7 @@ fi
 %{prefix}/bin/gfuser
 %{prefix}/bin/gfsched
 %{prefix}/bin/gfsetfacl
+%{libexec_prefix}/gfs_pio_test
 %if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfrsh
 %{prefix}/bin/gfrshl

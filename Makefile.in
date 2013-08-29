@@ -18,7 +18,8 @@ SUBDIRS = \
 	systest \
 	nls \
 	bench/gfperf \
-	bench/gfiops
+	bench/gfiops \
+	regress/lib/libgfarm/gfarm/gfs_pio_test
 
 #	`[ -d $(srcdir)/ns ] && echo ns` \
 #	gfptool \
