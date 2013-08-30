@@ -142,11 +142,11 @@ gfmd サーバー上で <span class="command"><strong>gfservice-agent</strong></
 (変数 <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code> の値によって、この
 ときの <code class="varname">AUTH_TYPE</code> の値は変わるので、注意して下さい。)
 </p></dd>
-<dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_REPLICATION_MODE</code></span></dt>
+<dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_CLUSTER_NAME</code></span></dt>
 <dd><p>
-この変数の値を「async」にセットすると、
-<span class="command"><strong>gfservice config-gfarm-slave</strong></span> の際にこの gfmd は
-非同期 (async) スレーブになります。
+gfmd サーバのクラスタ名を指定します。
+デフォルトは「」(空文字列) で、これはこのサーバがデフォルトのクラスタに
+属することを意味します。
 </p></dd>
 <dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_SSH</code></span></dt>
 <dd><p>
