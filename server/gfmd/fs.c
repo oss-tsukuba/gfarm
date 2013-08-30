@@ -3236,6 +3236,7 @@ fhclose_write_resume(struct peer *peer, void *closure, int *suspendedp)
 			return (GFARM_ERR_NO_ERROR);
 		}
 	} else {
+		old_gen = arg->old_gen;
 		e = fhclose_write(peer, spool_host, arg->inode, arg->size,
 		    &arg->atime, &arg->mtime,
 		    &flags, &old_gen, &new_gen, &cookie, &trace_log, diag);

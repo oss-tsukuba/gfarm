@@ -3761,12 +3761,29 @@ inode_file_handle_update(struct inode *inode, gfarm_off_t size,
 	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp, int *gen_updatedp,
 	char **trace_logp)
 {
+	struct host *writing_spool_host;
+
 	if (!inode_has_replica(inode, spool_host)) {
 		/* this replica became obsolete during gfmd failover */
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "inode_file_handle_update: inode %lld modification on %s "
-		     "is lost during gfmd failover",
-		    (long long)inode_get_number(inode), host_name(spool_host));
+		    "inode_file_handle_update: "
+		    "inode %lld:%lld modification on %s "
+		    "is lost during gfmd failover, current generation %lld",
+		    (long long)inode_get_number(inode), (long long)*old_genp,
+		    host_name(spool_host), (long long)inode_get_gen(inode));
+		return (GFARM_ERR_STALE_FILE_HANDLE);
+	}
+
+	if ((writing_spool_host = inode_writing_spool_host(inode)) != NULL &&
+	    spool_host != writing_spool_host) {
+		/* conflict. another replica was opened for writing */
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inode_file_handle_update: "
+		    "inode %lld:%lld modification on %s "
+		    "conflicts with current generation %lld on %s",
+		    (long long)inode_get_number(inode), (long long)*old_genp,
+		    host_name(spool_host), (long long)inode_get_gen(inode),
+		    host_name(writing_spool_host));
 		return (GFARM_ERR_STALE_FILE_HANDLE);
 	}
 
@@ -3969,22 +3986,22 @@ int
 inode_schedule_confirm_for_write(struct file_opening *opening,
 	struct host *spool_host, int *to_createp)
 {
-	struct inode_activity *ia = opening->inode->u.c.activity;
-	struct file_opening *fo;
+	struct inode *inode = opening->inode;
+	struct host *writing_spool_host;
 	struct file_copy *copy;
 
-	if (!inode_is_file(opening->inode))
+	if (!inode_is_file(inode))
 		gflog_fatal(GFARM_MSG_1000331,
 		    "inode_schedule_confirm_for_write: not a file");
 
-	if (inode_has_no_replica(opening->inode)) {
+	if (inode_has_no_replica(inode)) {
 		/*
 		 * the caller of this function already ensures the following
 		 * assertion.  If it was not true, the caller replied
 		 * GFARM_ERR_STALE_FILE_HANDLE to a client.
 		 */
 		assert((opening->flag & GFARM_FILE_TRUNC) != 0 ||
-		    inode_get_size(opening->inode) == 0);
+		    inode_get_size(inode) == 0);
 
 		if (!host_is_disk_available(spool_host, 0))
 			return (0);
@@ -3999,18 +4016,13 @@ inode_schedule_confirm_for_write(struct file_opening *opening,
 		return (1);
 	}
 
-	if (ia != NULL &&
-	    (fo = ia->openings.opening_next) != &ia->openings) {
-		for (; fo != &ia->openings; fo = fo->opening_next) {
-			if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 &&
-			    fo->u.f.spool_host != NULL) {
-				/* this replica must be valid */
-				return (fo->u.f.spool_host == spool_host);
-			}
-		}
+	if ((writing_spool_host = inode_writing_spool_host(inode)) != NULL) {
+		/* this replica must be valid */
+		return (spool_host == writing_spool_host);
 	}
+
 	/* not opened for writing */
-	copy = inode_get_file_copy(opening->inode, spool_host);
+	copy = inode_get_file_copy(inode, spool_host);
 	if (copy != NULL) {
 		/*
 		 * if a replication is ongoing, don't allow to create new one,
@@ -4020,7 +4032,7 @@ inode_schedule_confirm_for_write(struct file_opening *opening,
 		    && host_is_disk_available(spool_host, 0));
 	}
 	if (((opening->flag & GFARM_FILE_TRUNC) != 0 ||
-	     inode_get_size(opening->inode) == 0) &&
+	     inode_get_size(inode) == 0) &&
 	    host_is_disk_available(spool_host, 0)) {
 		/*
 		 * http://sourceforge.net/apps/trac/gfarm/ticket/68
