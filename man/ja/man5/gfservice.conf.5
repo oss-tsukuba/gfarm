@@ -193,11 +193,9 @@ gfmd サーバー上で
 の値は変わるので、注意して下さい。)
 .RE
 .PP
-\fIgfmd\fR\fI\fIn\fR\fR\fI_REPLICATION_MODE\fR
+\fIgfmd\fR\fI\fIn\fR\fR\fI_CLUSTER_NAME\fR
 .RS 4
-この変数の値を「async」にセットすると、
-\fBgfservice config\-gfarm\-slave\fR
-の際にこの gfmd は 非同期 (async) スレーブになります。
+gfmd サーバのクラスタ名を指定します。 デフォルトは「」(空文字列) で、これはこのサーバがデフォルトのクラスタに 属することを意味します。
 .RE
 .PP
 \fIgfmd\fR\fI\fIn\fR\fR\fI_SSH\fR

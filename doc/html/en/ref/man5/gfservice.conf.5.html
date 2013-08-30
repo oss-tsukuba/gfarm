@@ -142,11 +142,11 @@ If the variable is not declared, its value is chosen from
 (Note that the value <code class="varname">AUTH_TYPE</code> above is affected by
 the variable <code class="varname">gfmd1_CONFIG_GFARM_OPTIONS</code>.)
 </p></dd>
-<dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_REPLICATION_MODE</code></span></dt>
+<dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_CLUSTER_NAME</code></span></dt>
 <dd><p>
-Setting this variable to "async",
-<span class="command"><strong>gfservice config-gfarm-slave</strong></span> configures the gfmd
-host as an async slave.
+Specify a cluster name of the gfmd server.
+The default value is "" (empty) which means the server belongs to the
+default cluster.
 </p></dd>
 <dt><span class="term"><code class="varname">gfmd<em class="replaceable"><code>n</code></em>_SSH</code></span></dt>
 <dd><p>
