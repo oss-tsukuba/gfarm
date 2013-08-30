@@ -1102,10 +1102,32 @@ subcmd_gfcmd()
 	}
 	ARGS=`get_param args`
 	log_debug "subcmd_gfcmd: execute @bindir@/$CMD $ARGS"
-	eval GFARM_CONFIG_FILE=$GFARM_CONF "@bindir@/$CMD" $ARGS
-	[ $? -ne 0 ] && log_error "failed to execute $CMD"
+	env GFARM_CONFIG_FILE=$GFARM_CONF "@bindir@/$CMD" $ARGS
+	[ $? -ne 0 ] && log_error "command $CMD failed"
 
 	log_debug "end subcmd_gfcmd"
+}
+
+#
+# Sub-command: grid-proxy-init
+# Exec 'grid-proxy-init' command.
+#
+subcmd_grid_proxy_init()
+{
+	log_debug "subcmd_grid_proxy_init"
+
+	if [ "X$GLOBUS_LOCATION" = X ]; then
+		GRID_PROXY_INIT=grid-proxy-init
+	else
+		GRID_PROXY_INIT="$GLOBUS_LOCATION/grid-proxy-init"
+	fi
+
+	ARGS=`get_param args`
+	log_debug "subcmd_gfcmd: execute $GRID_PROXY_INIT $ARGS"
+	$GRID_PROXY_INIT $ARGS
+	[ $? -ne 0 ] && log_error "command $GRID_PROXY_INIT failed"
+
+	log_debug "end subcmd_grid_proxy_init"
 }
 
 ######################################################################
@@ -1293,6 +1315,9 @@ restore-usermap)
 	;;
 gfcmd)
 	subcmd_gfcmd "$@"
+	;;
+grid-proxy-init)
+	subcmd_grid_proxy_init "$@"
 	;;
 *)
 	SUBCMD="`echo $SUBCMD | sed -e 's|::|/|g'`"

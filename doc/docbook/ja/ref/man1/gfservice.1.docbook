@@ -1153,8 +1153,8 @@ Gfarm2 ファイルシステムをアンマウントします。
 <term>
 <command moreinfo="none">gfcmd</command>
 <parameter moreinfo="none">ホストID</parameter>
-<parameter moreinfo="none">command-name</parameter>
-<parameter moreinfo="none">command-argument ...</parameter>
+<parameter moreinfo="none">コマンド名</parameter>
+<parameter moreinfo="none">コマンド引数 ...</parameter>
 </term>
 <listitem>
 <para>
@@ -1167,12 +1167,26 @@ Gfarm2 ファイルシステムをアンマウントします。
 <term>
 <command moreinfo="none">gfcmd-root</command>
 <parameter moreinfo="none">ホストID</parameter>
-<parameter moreinfo="none">command-name</parameter>
-<parameter moreinfo="none">command-argument ...</parameter>
+<parameter moreinfo="none">コマンド名</parameter>
+<parameter moreinfo="none">コマンド引数 ...</parameter>
 </term>
 <listitem>
 <para>
 リモートホスト上にて、root 権限で Gfarm コマンドを実行します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command moreinfo="none">grid-proxy-init</command>
+<parameter moreinfo="none">host-id</parameter>
+<parameter moreinfo="none">コマンド引数 ...</parameter>
+</term>
+<listitem>
+<para>
+リモートホスト上で <command moreinfo="none">grid-proxy-init</command>
+コマンドを実行します。
 </para>
 </listitem>
 </varlistentry>

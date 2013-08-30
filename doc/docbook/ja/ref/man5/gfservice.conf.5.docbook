@@ -191,12 +191,12 @@ gfmd サーバー上で <command moreinfo="none">gfservice-agent</command> コ�
 </varlistentry>
 
 <varlistentry>
-<term><varname>gfmd<replaceable>n</replaceable>_REPLICATION_MODE</varname></term>
+<term><varname>gfmd<replaceable>n</replaceable>_CLUSTER_NAME</varname></term>
 <listitem>
 <para>
-この変数の値を「async」にセットすると、
-<command moreinfo="none">gfservice config-gfarm-slave</command> の際にこの gfmd は
-非同期 (async) スレーブになります。
+gfmd サーバのクラスタ名を指定します。
+デフォルトは「」(空文字列) で、これはこのサーバがデフォルトのクラスタに
+属することを意味します。
 </para>
 </listitem>
 </varlistentry>

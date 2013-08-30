@@ -1,10 +1,9 @@
 #!/bin/sh
 PROGRAM=gfruntest
 GFSERVICE="@bindir@/gfservice"
-TEST_PREFIX="@datadir@/gfarm/systest"
-TESTCASES_DIR="$TEST_PREFIX/testcases"
-SCENARIOS_DIR="$TEST_PREFIX/scenarios"
-COMMON_SCRIPTS_DIR="$TEST_PREFIX/common_scripts"
+TESTCASES_DIR="@datadir@/gfarm/systest/testcases"
+SCENARIOS_DIR="@datadir@/gfarm/systest/scenarios"
+COMMON_SCRIPTS_DIR="@datadir@/gfarm/systest/common_scripts"
 TMP_FILE_DIR="/tmp/gfruntest.$$"
 CONFIG_FILE="$HOME/.gfservice"
 PARAMETER_FILE=
@@ -217,11 +216,19 @@ do_testcase()
 	fi
 
 	trap "teardown_${TESTNAME}; cleanup; exit 1" 1 2 3 15
+
+	log_debug "start setup_${TESTNAME}"  >> $LOG_FILE 2>&1
 	setup_${TESTNAME} "$@" >> $LOG_FILE 2>&1
 	RESULT=$?
+	log_debug "end setup_${TESTNAME}: `get_result_string $RESULT`" \
+		>> $LOG_FILE 2>&1
+
 	if [ $RESULT -eq $RESULT_PASS ]; then
+		log_debug "start test_${TESTNAME}"  >> $LOG_FILE 2>&1
 		test_${TESTNAME} >> $LOG_FILE 2>&1
 		RESULT=$?
+		log_debug "end test_${TESTNAME}: `get_result_string $RESULT`" \
+			>> $LOG_FILE 2>&1
 	fi
 	RESULT_STRING=`get_result_string $RESULT`
 
@@ -236,7 +243,10 @@ do_testcase()
 		>> $LOG_FILE
 	echo "$RESULT_STRING"
 
+	log_debug "start teardown_${TESTNAME}"  >> $LOG_FILE 2>&1
 	teardown_${TESTNAME} >> $LOG_FILE 2>&1
+	log_debug "end teardown_${TESTNAME}"  >> $LOG_FILE 2>&1
+
 	trap "cleanup; exit 1" 1 2 3 15
 	return $RESULT
 }

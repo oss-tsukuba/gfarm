@@ -1184,6 +1184,20 @@ Execute a Gfarm command on the remote host with root privilege.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term>
+<command moreinfo="none">grid-proxy-init</command>
+<parameter moreinfo="none">host-id</parameter>
+<parameter moreinfo="none">command-argument ...</parameter>
+</term>
+<listitem>
+<para>
+Execute <command moreinfo="none">grid-proxy-init</command> command on
+the remote host.
+</para>
+</listitem>
+</varlistentry>
+
 </variablelist>
 
 </refsect1>
