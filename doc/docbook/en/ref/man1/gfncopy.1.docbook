@@ -26,7 +26,7 @@
 </cmdsynopsis>
 
 <cmdsynopsis sepchar=" ">
-  <command moreinfo="none">gfrepattr</command>
+  <command moreinfo="none">gfncopy</command>
     <arg choice="opt" rep="norepeat">-vh</arg>
     <group choice="opt" rep="norepeat">
       <arg choice="plain" rep="norepeat">-C</arg>
@@ -37,7 +37,7 @@
 </cmdsynopsis>
 
 <cmdsynopsis sepchar=" ">
-  <command moreinfo="none">gfrepattr</command>
+  <command moreinfo="none">gfncopy</command>
     <arg choice="opt" rep="norepeat">-vh</arg>
     <group choice="opt" rep="norepeat">
       <arg choice="plain" rep="norepeat">-C</arg>
@@ -48,7 +48,7 @@
 </cmdsynopsis>
 
 <cmdsynopsis sepchar=" ">
-  <command moreinfo="none">gfrepattr</command>
+  <command moreinfo="none">gfncopy</command>
     <arg choice="opt" rep="norepeat">-vh</arg>
     <arg choice="plain" rep="norepeat">-r</arg>
     <arg choice="plain" rep="norepeat"><replaceable>path</replaceable></arg>
@@ -56,14 +56,14 @@
 </cmdsynopsis>
 
 <cmdsynopsis sepchar=" ">
-  <command moreinfo="none">gfrepattr</command>
+  <command moreinfo="none">gfncopy</command>
     <arg choice="opt" rep="norepeat">-vh</arg>
     <arg choice="plain" rep="norepeat">-c</arg>
     <arg choice="plain" rep="norepeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 
 <cmdsynopsis sepchar=" ">
-  <command moreinfo="none">gfrepattr</command>
+  <command moreinfo="none">gfncopy</command>
     <arg choice="opt" rep="norepeat">-v</arg>
     <arg choice="plain" rep="norepeat">-w</arg>
     <arg choice="opt" rep="norepeat">-t <replaceable>TIMEOUT</replaceable></arg>
