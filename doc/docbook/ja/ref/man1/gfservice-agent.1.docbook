@@ -617,6 +617,18 @@ Gfarm コマンドを実行します。
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term>
+<command moreinfo="none">grid-proxy-init</command>
+<parameter moreinfo="none">args</parameter>="<replaceable>コマンドの引数 ...</replaceable>"
+</term>
+<listitem>
+<para>
+<command moreinfo="none">grid-proxy-init</command> コマンドを実行します。
+</para>
+</listitem>
+</varlistentry>
+
 </variablelist>
 
 </refsect1>

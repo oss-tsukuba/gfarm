@@ -191,12 +191,12 @@ the variable <varname>gfmd1_CONFIG_GFARM_OPTIONS</varname>.)
 </varlistentry>
 
 <varlistentry>
-<term><varname>gfmd<replaceable>n</replaceable>_REPLICATION_MODE</varname></term>
+<term><varname>gfmd<replaceable>n</replaceable>_CLUSTER_NAME</varname></term>
 <listitem>
 <para>
-Setting this variable to "async",
-<command moreinfo="none">gfservice config-gfarm-slave</command> configures the gfmd
-host as an async slave.
+Specify a cluster name of the gfmd server.
+The default value is "" (empty) which means the server belongs to the
+default cluster.
 </para>
 </listitem>
 </varlistentry>

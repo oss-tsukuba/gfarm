@@ -92,14 +92,6 @@ is_private_mode()
 }
 
 #
-# Return 0 if replication type of the target host is 'async'.
-#
-is_async_slave()
-{
-	[ "X`eval echo \\$$1_REPLICATION_TYPE`" = Xasync ]
-}
-
-#
 # Get ssh command path and its options corresponding with a host ID.
 #
 get_ssh()
@@ -1344,6 +1336,16 @@ subcmd_config_gfarm()
 	[ $? -ne 0 ] && log_error "gfservice-agent config-gfarm failed"
 
 	#
+	# Execute 'gfmdhost -m' on the gfmd host to set a cluster name.
+	#
+	CLUSTER_NAME="`eval echo \\$$HOSTID\_CLUSTER_NAME`"
+	if [ "X$CLUSTER_NAME" != X ]; then
+		exec_remote_host_gfcmd $MASTER_HOSTID - gfmdhost -m \
+			-C $CLUSTER_NAME
+		[ $? -ne 0 ] && log_error "gfmdhost -m failed"
+	fi
+
+	#
 	# Create a new shared secret key and distribute it.
 	#
 	if [ $SETUP_SHARED_KEY = true ]; then
@@ -1375,6 +1377,16 @@ subcmd_config_gfarm_master()
 	#
 	exec_remote_host_agent $HOSTID root config-gfarm-master
 	[ $? -ne 0 ] && log_error "gfservice-agent config-gfarm-master failed"
+
+	#
+	# Execute 'gfmdhost -m' on the gfmd host to set a cluster name.
+	#
+	CLUSTER_NAME="`eval echo \\$$HOSTID\_CLUSTER_NAME`"
+	if [ "X$CLUSTER_NAME" != X ]; then
+		exec_remote_host_gfcmd $MASTER_HOSTID - gfmdhost -m \
+			-C $CLUSTER_NAME
+		[ $? -ne 0 ] && log_error "gfmdhost -m failed"
+	fi
 
 	#
 	# Create a new shared secret key.
@@ -1460,14 +1472,15 @@ subcmd_config_gfarm_slave()
 	#
 	# Execute 'gfmdhost -c' on the master host.
 	#
-	if is_async_slave $HOSTID; then
-		exec_remote_host_gfcmd $MASTER_HOSTID - gfmdhost \
-			-c $BACKEND_HOSTNAME -p $GFMD_PORT -C $HOSTID
-		[ $? -ne 0 ] && log_error "gfmdhost -c (async) failed"
-	else
+	CLUSTER_NAME="`eval echo \\$$HOSTID\_CLUSTER_NAME`"
+	if [ "X$CLUSTER_NAME" = X ]; then
 		exec_remote_host_gfcmd $MASTER_HOSTID - gfmdhost \
 			-c $BACKEND_HOSTNAME -p $GFMD_PORT
 		[ $? -ne 0 ] && log_error "gfmdhost -c failed"
+	else
+		exec_remote_host_gfcmd $MASTER_HOSTID - gfmdhost \
+			-c $BACKEND_HOSTNAME -p $GFMD_PORT -C $CLUSTER_NAME
+		[ $? -ne 0 ] && log_error "gfmdhost -c (async) failed"
 	fi
 
 	#
@@ -2101,6 +2114,22 @@ subcmd_gfcmd_root()
 	log_debug "end subcmd_gfcmd_root"
 }
 
+#
+# Sub-command: grid-proxy-init
+#
+subcmd_grid_proxy_init()
+{
+	log_debug "subcmd_grid_proxy_init"
+
+	check_argc $# 0 +
+	check_hostid any $HOSTID
+
+	exec_remote_host_agent $HOSTID - grid-proxy-init "args=$*"
+	[ $? -ne 0 ] && log_error "gfservice-agent grid-proxy-init failed."
+
+	log_debug "end subcmd_grid_proxy_init"
+}
+
 ######################################################################
 
 #
@@ -2418,6 +2447,9 @@ gfcmd)
 	;;
 gfcmd-root)
 	subcmd_gfcmd_root "$@"
+	;;
+grid-proxy-init)
+	subcmd_grid_proxy_init "$@"
 	;;
 *)
 	SUBCMD="`echo $SUBCMD | sed -e 's|::|/|g'`"
