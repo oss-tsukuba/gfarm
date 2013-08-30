@@ -4268,12 +4268,13 @@ gfs_udp_server(int sock,
 	struct sockaddr *client_addr, socklen_t client_addr_size,
 	unsigned char *request, int reqlen)
 {
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e;
 	unsigned char *got_xid, *p = request;
 	gfarm_uint32_t u32, got_rpc_magic;
 	gfarm_uint32_t got_rpc_type, got_retry_count, got_request_type;
 	static int last_xid_available = 0;
 	static unsigned char last_xid[GFS_UDP_RPC_XID_SIZE];
+	static gfarm_error_t last_xid_result;
 
 	if (reqlen < GFS_UDP_RPC_HEADER_SIZE) {
 		/* XXX gfarm_sockaddr_to_name */
@@ -4333,16 +4334,14 @@ gfs_udp_server(int sock,
 		    "request=0x%08x", got_rpc_type, got_retry_count,
 		    got_xid[0], got_xid[1], got_xid[2], got_xid[3], got_xid[4],
 		    got_xid[5], got_xid[6], got_xid[7], got_request_type);
-		e = GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS;
+		e = last_xid_result;
 	} else {
-		last_xid_available = 1;
-		memcpy(last_xid, got_xid, GFS_UDP_RPC_XID_SIZE);
-
 		if (got_request_type == GFS_UDP_PROTO_FAILOVER_NOTIFY) {
 			gfs_udp_server_failover_notify(
 			    sock, client_addr, client_addr_size, 
 			    got_retry_count, got_xid,
 			    p, reqlen - (p - request));
+			e = GFARM_ERR_NO_ERROR;
 		} else {
 			/* XXX gfarm_sockaddr_to_name */
 			gflog_notice(GFARM_MSG_UNFIXED,
@@ -4358,6 +4357,10 @@ gfs_udp_server(int sock,
 			    got_request_type);
 			e = GFARM_ERR_PROTOCOL_NOT_SUPPORTED;
 		}
+
+		last_xid_available = 1;
+		memcpy(last_xid, got_xid, GFS_UDP_RPC_XID_SIZE);
+		last_xid_result = e;
 	}
 
 	if (e != GFARM_ERR_NO_ERROR) {
