@@ -612,6 +612,18 @@ Execute a Gfarm command.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term>
+<command moreinfo="none">grid-proxy-init</command>
+<parameter moreinfo="none">args</parameter>="<replaceable>command-argument ...</replaceable>"
+</term>
+<listitem>
+<para>
+Execute <command moreinfo="none">grid-proxy-init</command> command.
+</para>
+</listitem>
+</varlistentry>
+
 </variablelist>
 
 </refsect1>

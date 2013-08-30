@@ -28,10 +28,7 @@ setup_failover_in_write()
 		|| return $RESULT_UNSUPPORTED
 
 	# prepare: execute 'grid-proxy-init'.
-	if [ "X$client1_AUTH_TYPE" = Xgsi -o \
-		"Xclient1_$AUTH_TYPE" = Xgsi_auth ]; then
-		$GFSERVICE systest::gfarm_v2::grid_proxy_init client1
-	fi
+	grid_proxy_init gfmd1 gfmd2 gfmd3 client1 
 
 	# prepare: try writing a small data, at first.
 	generate_testdata 1K | gfs_pio_test -O -c $TEST_FILE_PATH
@@ -68,7 +65,8 @@ test_failover_in_write()
 			generate_testdata $TEST_FILE_SIZE \
 				| gfs_pio_test -O -a $TEST_FILE_PATH &
 			eval JOB"$I"_PID=$!
-			log_debug "$TESTNAME: start job #$I pid=$JOB_PID"
+			log_debug "$TESTNAME: start job #$I" \
+				"pid=`eval echo \\$JOB$I\_PID`"
 			I=`expr $I + 1`
 
 		done
