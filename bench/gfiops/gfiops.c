@@ -74,9 +74,6 @@ static struct function FUNC_UNLINK   = { .id = 9, .name = "unlink" };
 static struct function FUNC_LSTAT    = { .id = 10, .name = "lstat" };
 static struct function FUNC_UTIMES   = { .id = 11, .name = "utimes" };
 
-#define MAX_NAMELEN 37  /* /0/1/2/3/4/5/6/7/8/9/0/p100/c100000 */
-#define MAX_DIRLEN 22
-
 const static int ID_ERROR = -1;
 const static int ID_SKIP = -2;
 
@@ -99,6 +96,15 @@ send_id(struct function *func) {
 	printf("%d\n", func->id);
 }
 
+static int
+strlen_int(int i)
+{
+	/* strlen("INT_MAX:2147483647") == 10 */
+	char s[10];
+
+	return (snprintf(s, 10, "%d", i));
+}
+
 static void
 do_initialize(const char *dname, int ntimes, char ***namesp)
 {
@@ -106,10 +112,17 @@ do_initialize(const char *dname, int ntimes, char ***namesp)
 	int i, j;
 	char **names;
 
+	if (dname == NULL) {
+		send_error("no memory");
+		return;
+	}
+
 	GFARM_MALLOC_ARRAY(names, ntimes);
 	if (names) {
 		for (i = 0; i < ntimes; i++) {
-			GFARM_MALLOC_ARRAY(names[i], MAX_NAMELEN);
+			int len = strlen(dname) + strlen_int(i) + 3;
+
+			GFARM_MALLOC_ARRAY(names[i], len);
 			if (names[i] == NULL) {
 				for (j = 0; j < i; j++)
 					free(names[j]);
@@ -117,7 +130,7 @@ do_initialize(const char *dname, int ntimes, char ***namesp)
 				names = NULL;
 				break;
 			}
-			snprintf(names[i], MAX_NAMELEN, "%s/c%d", dname, i);
+			snprintf(names[i], len, "%s/c%d", dname, i);
 		}
 	}
 	if (names == NULL) {
@@ -262,6 +275,8 @@ do_create(char **names, int nnames, gfarm_off_t size)
 		nnames = 1;
 		size = 1;
 	}
+
+	memset(buf, 0, BUFSIZE);
 
 	for (i = 0; i < nnames; i++) {
 		len = size;
@@ -721,10 +736,6 @@ main(int argc, char **argv)
 	}
 #endif
 
-	if (strlen(dir) > MAX_DIRLEN) {
-		fprintf(stderr, "too long testdir: %s\n", dir);
-		exit(EXIT_FAILURE);
-	}
 	if (nprocs <= 0) {
 		fprintf(stderr, "invalid n_processes: %d\n", nprocs);
 		exit(EXIT_FAILURE);
@@ -755,8 +766,13 @@ main(int argc, char **argv)
 			perror("fork");
 			exit(EXIT_FAILURE);
 		} else if (pid == 0) {
-			char dname[MAX_NAMELEN];
-			snprintf(dname, MAX_NAMELEN, "%s/p%d", dir, i);
+			char *dname;
+			int len = strlen(dir) + strlen_int(i) + 3;
+
+			GFARM_MALLOC_ARRAY(dname, len);
+			if (dname != NULL)
+				snprintf(dname, len, "%s/p%d", dir, i);
+
 			close(procs[i].pipe_stdin[1]);
 			close(procs[i].pipe_stdout[0]);
 			close(procs[i].pipe_stderr[0]);
@@ -768,7 +784,10 @@ main(int argc, char **argv)
 			close(procs[i].pipe_stderr[1]);
 			setvbuf(stdout, (char *) NULL, _IOLBF, 0);
 			setvbuf(stderr, (char *) NULL, _IOLBF, 0);
+
 			child_main(dname, ntimes);
+
+			free(dname);
 			close(0);
 			close(1);
 			close(2);
