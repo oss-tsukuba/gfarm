@@ -95,6 +95,10 @@ set_gfmd_params()
 		| sed -ne '/^CONFIG_PREFIX=/s/^[^=]*=//p'`
 	log_debug "set_gfmd_params: set CONFIG_PREFIX=$CONFIG_PREFIX"
 
+	BACKEND_PREFIX=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne '/^BACKEND_PREFIX=/s/^[^=]*=//p'`
+	log_debug "set_gfmd_params: set CONFIG_PREFIX=$CONFIG_PREFIX"
+
 	BACKEND_TYPE=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne '/^BACKEND_TYPE=/s/^[^=]*=//p'`
 	if [ "X$BACKEND_TYPE" != Xpostgresql ]; then
@@ -993,10 +997,13 @@ subcmd_backup_backend_db()
 {
 	log_debug "subcmd_backup_backend_db"
 
-	if [ X$CONFIG_PREFIX != X ]; then
-		PREFIX_OPTION="--prefix $CONFIG_PREFIX"
+	if [ X$CONFIG_PREFIX = X ]; then
+		gfdump.postgresql -d -f - -P $BACKEND_PREFIX
+	else
+		gfdump.postgresql -d -f - -P $BACKEND_PREFIX \
+			--prefix $CONFIG_PREFIX
 	fi
-	gfdump.postgresql -d -f - $PREFIX_OPTION
+
 	[ $? -ne 0 ] && log_error "failed to dump database"
 
 	log_debug "end subcmd_backup_backend_db"
@@ -1079,9 +1086,10 @@ subcmd_restore_backend_db()
 	log_debug "subcmd_restore_backend_db"
 
 	if [ X$CONFIG_PREFIX = X ]; then
-		gfdump.postgresql -r -n -f -
+		gfdump.postgresql -r -n -f - -P $BACKEND_PREFIX
 	else
-		gfdump.postgresql -r -n -f - --prefix $CONFIG_PREFIX
+		gfdump.postgresql -r -n -f - -P $BACKEND_PREFIX \
+			--prefix $CONFIG_PREFIX
 	fi
 	[ $? -ne 0 ] && log_error "failed to restore database"
 
