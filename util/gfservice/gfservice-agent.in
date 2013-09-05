@@ -275,8 +275,12 @@ set_conf()
 {
 	log_debug "set_conf: FILE=$1, DIRECTIVE=$2, VALUE=$3"
 
+	[ -f $1 ] || log_error "file $1 not found"
 	trap "rm -f $1.tmp; exit 1" 1 2 3 15
 	rm -f $1.tmp
+	cp -f $1 $1.tmp
+	cat /dev/null > $1.tmp
+
 	(
 		sed -e "/^$2[ 	]/d" $1
 		echo
@@ -297,8 +301,12 @@ unset_conf()
 {
 	log_debug "unset_conf: FILE=$1, DIRECTIVE=$2"
 
+	[ -f $1 ] || log_error "file $1 not found"
 	trap "rm -f $1.tmp; exit 1" 1 2 3 15
 	rm -f $1.tmp
+	cp -f $1 $1.tmp
+	cat /dev/null > $1.tmp
+
 	sed -e "/^$2[ 	]/d" $1 > $1.tmp
 	[ $? -ne 0 ] && log_error "failed to create $1.tmp"
 	mv -f $1.tmp $1
@@ -318,6 +326,9 @@ restore_file()
 	mkdir -p `dirname $GFARM_CONF`
 	trap "rm -f $1.tmp; exit 1" 1 2 3 15
 	rm -f $1.tmp
+	cp -f $1 $1.tmp
+	cat /dev/null > $1.tmp
+
 	cat > $1.tmp && mv -f $1.tmp $1
 	[ $? -ne 0 ] && log_error "failed to replace $1"
 	rm -f $1.tmp
@@ -1017,6 +1028,7 @@ subcmd_restore_gfmd_conf()
 {
 	log_debug "subcmd_restore_gfmd_conf"
 
+	umask 077
 	restore_file $GFMD_CONF 
 
 	log_debug "end subcmd_restore_gfmd_conf"
@@ -1030,6 +1042,7 @@ subcmd_restore_gfarm_conf()
 {
 	log_debug "subcmd_restore_gfarm_conf"
 
+	umask 022
 	restore_file $GFARM_CONF 
 
 	log_debug "end subcmd_restore_gfarm_conf"
@@ -1044,6 +1057,7 @@ subcmd_restore_gfsd_conf()
 	log_debug "subcmd_restore_gfsd_conf"
 
 	[ "X$GFSD_CONF" = X ] && log_error "not private mode"
+	umask 022
 	restore_file $GFSD_CONF
 
 	log_debug "end subcmd_restore_gfsd_conf"
@@ -1058,6 +1072,7 @@ subcmd_restore_usermap()
 	log_debug "subcmd_restore_usermap"
 
 	[ "X$USERMAP_FILE" = X ] && log_error "not private mode"
+	umask 022
 	restore_file $USERMAP_FILE
 
 	log_debug "end subcmd_restore_usermap"
@@ -1071,8 +1086,8 @@ subcmd_restore_shared_key()
 {
 	log_debug "subcmd_restore_shared_key"
 
+	umask 077
 	restore_file $SHARED_KEY_FILE
-	chmod 600 $SHARED_KEY_FILE
 
 	log_debug "end subcmd_restore_shared_key"
 }
