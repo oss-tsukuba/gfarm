@@ -630,6 +630,7 @@ pfunc_child(void *param, FILE *from_parent, FILE *to_parent)
 	gfarm_error_t e;
 	int command;
 	gfarm_pfunc_t *handle = param;
+	enum pfunc_result result = PFUNC_RESULT_FATAL;
 
 	e = gfarm_initialize(NULL, NULL);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -663,13 +664,13 @@ pfunc_child(void *param, FILE *from_parent, FILE *to_parent)
 						  from_parent, to_parent);
 			continue;
 		case PFUNC_CMD_TERMINATE:
-			gfpara_send_int(to_parent, PFUNC_RESULT_END);
+			result = PFUNC_RESULT_END;
 			goto term;
 		default:
 			fprintf(stderr,
 				"ERROR: unexpected command = %d\n", command);
 			gfpara_recv_purge(from_parent);
-			gfpara_send_int(to_parent, PFUNC_RESULT_FATAL);
+			result = PFUNC_RESULT_FATAL;
 			goto term;
 		}
 	}
@@ -678,6 +679,8 @@ term:
 	if (e != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "ERROR: gfarm_terminate: %s\n",
 			gfarm_error_string(e));
+
+	gfpara_send_int(to_parent, result);
 
 	return (0);
 }

@@ -700,8 +700,12 @@ finfo_retry3:
 		goto next_command;
 		 /* ---------------------------------- */
 	case DIRTREE_CMD_TERMINATE:
+		e = gfarm_terminate();
+		if (e != GFARM_ERR_NO_ERROR)
+			fprintf(stderr, "ERROR: gfarm_terminate: %s\n",
+			    gfarm_error_string(e));
 		gfpara_send_int(to_parent, DIRTREE_STAT_END);
-		goto term;
+		return (0);
 		/* ---------------------------------- */
 	default:
 		fprintf(stderr, "ERROR: unexpected DIRTREE_CMD: %d\n",
