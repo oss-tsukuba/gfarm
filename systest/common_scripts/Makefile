@@ -24,7 +24,6 @@ DATA =	$(srcdir)/check_gfmd_connected \
 	$(srcdir)/get_server_status \
 	$(srcdir)/get_gfmd_server_type \
 	$(srcdir)/get_hostid_by_name \
-	$(srcdir)/grid_proxy_init \
 	$(srcdir)/failover
 
 include $(top_srcdir)/makes/data.mk

@@ -27,9 +27,6 @@ setup_failover_in_write()
 	check_vars gfmd1 gfmd2 gfmd3 gfsd1 client1 \
 		|| return $RESULT_UNSUPPORTED
 
-	# prepare: execute 'grid-proxy-init'.
-	grid_proxy_init gfmd1 gfmd2 gfmd3 client1 
-
 	# prepare: try writing a small data, at first.
 	generate_testdata 1K | gfs_pio_test -O -c $TEST_FILE_PATH
 	if [ $? -ne 0 ]; then
