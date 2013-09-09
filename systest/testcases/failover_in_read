@@ -4,7 +4,6 @@
 #
 load "gfarm_v2::check_vars"
 load "gfarm_v2::import_config_gfarm_params"
-load "gfarm_v2::grid_proxy_init"
 load "gfarm_v2::generate_testdata"
 load "gfarm_v2::failover"
 
@@ -27,9 +26,6 @@ setup_failover_in_read()
 	# prepare: check whether required host is defined.
 	check_vars gfmd1 gfmd2 gfmd3 gfsd1 client1 \
 		|| return $RESULT_UNSUPPORTED
-
-	# prepare: execute 'grid-proxy-init'.
-	grid_proxy_init gfmd1 gfmd2 gfmd3 client1 
 
 	# prepare: create a test file.
 	generate_testdata $TEST_FILE_SIZE | gfs_pio_test -O -c $TEST_FILE_PATH

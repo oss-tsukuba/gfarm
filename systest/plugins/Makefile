@@ -8,7 +8,6 @@ datadir=$(default_datadir)/gfarm/gfservice/systest/gfarm_v2
 
 DATA =	$(srcdir)/get_host \
 	$(srcdir)/gfjournal_m \
-	$(srcdir)/grid_proxy_init \
 	$(srcdir)/kill_gfmd \
 	$(srcdir)/reboot_host \
 	$(srcdir)/compare_spool_file \

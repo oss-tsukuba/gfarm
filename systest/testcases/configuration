@@ -27,31 +27,9 @@ setup_configuration()
 		"gfmd1 gfmd2 gfsd1 gfsd2 gfsd3 client1"
 	[ $? -ne 0 ] && return $RESULT_UNSUPPORTED
 
-	AUTH_TYPE=`$GFSERVICE get-config-gfarm-param gfmd1 AUTH_TYPE`
-	if [ X$AUTH_TYPE = Xgsi ] || [ X$AUTH_TYPE = Xgsi_auth ]; then
-		$GFSERVICE systest::gfarm_v2::grid_proxy_init gfmd1
-		$GFSERVICE systest::gfarm_v2::grid_proxy_init gfmd2
-		$GFSERVICE systest::gfarm_v2::grid_proxy_init gfsd1
-		$GFSERVICE systest::gfarm_v2::grid_proxy_init gfsd2
-		$GFSERVICE systest::gfarm_v2::grid_proxy_init gfsd3
-		$GFSERVICE systest::gfarm_v2::grid_proxy_init client1
-	fi
-
 	# prepare: configure master gfmd
 	$GFSERVICE config-gfarm gfmd1
 	[ $? -ne 0 ] && log_warn "$TESTNAME: config-gfarm on gfmd1 failed"
-
-	if [ X$AUTH_TYPE = Xgsi ] || [ X$AUTH_TYPE = Xgsi_auth ]; then
-		$GFSERVICE set-gfarm-conf gfmd1 \
-			"auth enable sharedsecret" "*"
-		$GFSERVICE set-gfmd-conf gfmd1 \
-			"auth enable sharedsecret" "*"
-		[ $? -ne 0 ] && log_warn "$TESTNAME: set-gfmd-conf on gfmd1" \
-			"failed"
-		$GFSERVICE restart-gfmd gfmd1
-		[ $? -ne 0 ] && log_warn "$TESTNAME: failed to restart gfmd" \
-			"on gfmd1"
-	fi
 
 	# prepare: config-gfsd
 	$GFSERVICE config-gfsd gfsd1
@@ -101,16 +79,6 @@ test_configuration()
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: config-gfarm-slave on gfsd1 failed"
 		set_result RESULT $RESULT_FAIL
-	fi
-
-	if [ X$AUTH_TYPE = Xgsi ] || [ X$AUTH_TYPE = Xgsi_auth ]; then
-		$GFSERVICE set-gfmd-conf gfmd2 \
-			"auth enable sharedsecret" "*"
-		[ $? -ne 0 ] && log_warn "$TESTNAME: set-gfmd-conf on gfmd2" \
-			"failed"
-		$GFSERVICE restart-gfmd gfmd2
-		[ $? -ne 0 ] && log_warn "$TESTNAME: failed to restart gfmd" \
-			"on gfmd2"
 	fi
 
 	# step: restart-gfsd
