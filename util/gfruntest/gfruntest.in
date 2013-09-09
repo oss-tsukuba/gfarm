@@ -295,7 +295,7 @@ do_scenario()
 		log_error "failed to open the scenario file -- $SCENARIO_FILE"
 	fi
 
-	RESULT_COUNT_FILE="/tmp/gfruntest.$$"
+	RESULT_COUNT_FILE="/tmp/gfruntest-scenario.$$"
 	rm -f $RESULT_COUNT_FILE
 	trap "rm -f $RESULT_COUNT_FILE; exit 1" 1 2 3 15
 
