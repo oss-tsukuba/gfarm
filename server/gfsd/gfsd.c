@@ -1733,28 +1733,64 @@ fhclose_request(struct file_entry *fe)
 
 gfarm_error_t
 update_local_file_generation(struct file_entry *fe, gfarm_int64_t old_gen,
-    gfarm_int64_t new_gen)
+    gfarm_int64_t new_gen, const char *conflict_message)
 {
+	gfarm_error_t e;
 	int save_errno;
 	char *old, *new;
+	struct stat old_st, new_st;
 
 	gfsd_local_path(fe->ino, old_gen, "close_write: old", &old);
 	gfsd_local_path(fe->ino, new_gen, "close_write: new", &new);
 	if (rename(old, new) == -1) {
 		save_errno = errno;
-		gflog_error(GFARM_MSG_1002300,
-		    "close_write: new generation: %llu -> %llu: %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "close_write: new generation: %llu:%llu -> %llu: %s",
+		    (unsigned long long)fe->ino,
 		    (unsigned long long)old_gen,
 		    (unsigned long long)new_gen,
 		    strerror(save_errno));
+		e = gfarm_errno_to_error(save_errno);
 	} else {
-		save_errno = 0;
-		fe->new_gen = new_gen;
+		if (stat(new, &new_st) == -1) {
+			save_errno = errno;
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "close_write(%llu:%llu -> %llu): stat(%s): %s",
+			    (unsigned long long)fe->ino,
+			    (unsigned long long)old_gen,
+			    (unsigned long long)new_gen,
+			    new, strerror(save_errno));
+			e = gfarm_errno_to_error(save_errno);
+		} else if (fstat(fe->local_fd, &old_st) == -1) {
+			save_errno = errno;
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "close_write(%llu:%llu -> %llu): fstat(%s): %s",
+			    (unsigned long long)fe->ino,
+			    (unsigned long long)old_gen,
+			    (unsigned long long)new_gen,
+			    new, strerror(save_errno));
+			e = gfarm_errno_to_error(save_errno);
+		} else if (new_st.st_ino != old_st.st_ino) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "close_write(%llu:%llu -> %llu): %s: "
+			    "st_ino old:%lld differs from new:%lld",
+			    (unsigned long long)fe->ino,
+			    (unsigned long long)old_gen,
+			    (unsigned long long)new_gen,
+			    conflict_message,
+			    (unsigned long long)old_st.st_ino,
+			    (unsigned long long)new_st.st_ino);
+			/* rename(2) and {f,}stat(2) never return this error */
+			e = GFARM_ERR_CONFLICT_DETECTED;
+		} else {
+			e = GFARM_ERR_NO_ERROR;
+		}
+		fe->new_gen = new_gen; /* rename(2) succeeded, at least */
 	}
 	free(old);
 	free(new);
 
-	return (gfarm_errno_to_error(save_errno));
+	return (e);
 }
 
 gfarm_error_t
@@ -1770,7 +1806,7 @@ close_result(struct file_entry *fe, gfarm_int32_t *gen_update_result_p)
 		if (e == GFARM_ERR_NO_ERROR &&
 		    (flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED))
 			*gen_update_result_p = update_local_file_generation(
-			    fe, old_gen, new_gen);
+			    fe, old_gen, new_gen, "unexpected inconsistency");
 		else
 			*gen_update_result_p = -1;
 		return (e);
@@ -1799,7 +1835,7 @@ fhclose_result(struct file_entry *fe, gfarm_uint64_t *cookie_p,
 		if (e == GFARM_ERR_NO_ERROR &&
 		    (flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED))
 			*gen_update_result_p = update_local_file_generation(
-			    fe, old_gen, new_gen);
+			    fe, old_gen, new_gen, "conflict during failover");
 		return (e);
 	} else if (fe->flags & FILE_FLAG_READ) {
 		return (gfm_client_fhclose_read_result(gfm_server));
@@ -1923,6 +1959,10 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 			    diag, gfarm_error_string(e2));
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
+#if 0 /* XXX not implemented yet */
+		if (gen_update_result == GFARM_ERR_CONFLICT_DETECTED)
+			register_to_lost_found(fe->local_fd);
+#endif
 	}
 
 	return (e);
@@ -1975,6 +2015,10 @@ fhclose_fd(struct file_entry *fe, const char *diag)
 			    diag, gfarm_error_string(e2));
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
+#if 0 /* XXX not implemented yet */
+		if (gen_update_result == GFARM_ERR_CONFLICT_DETECTED)
+			register_to_lost_found(fe->local_fd);
+#endif
 	}
 
 	return (e);
