@@ -1791,6 +1791,83 @@ gfs_pio_stat(GFS_File gf, struct gfs_stat *st)
 	return (e);
 }
 
+/*
+ * recvfile/sendfile
+ */
+
+gfarm_error_t
+gfs_pio_recvfile(GFS_File r_gf, gfarm_off_t r_off,
+	int w_fd, gfarm_off_t w_off,
+	gfarm_off_t len, gfarm_off_t *recvp)
+{
+	gfarm_error_t e;
+	int nretries = GFS_FAILOVER_RETRY_COUNT;
+	gfarm_timerval_t t1, t2;
+
+	GFARM_KERNEL_UNUSE2(t1, t2);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	e = gfs_pio_check_view_default(r_gf);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_pio_check_view_default() failed: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+
+	CHECK_READABLE(r_gf);
+
+	do {
+		e = (*r_gf->ops->view_recvfile)(r_gf, r_off, w_fd, w_off, len,
+		    recvp);
+	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
+	    gfs_pio_failover_check_retry(r_gf, &e));
+
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(staticp->read_time += gfarm_timerval_sub(&t2, &t1));
+
+	return (e);
+}
+
+gfarm_error_t gfs_pio_sendfile(GFS_File w_gf, gfarm_off_t w_off,
+	int r_fd, gfarm_off_t r_off,
+	gfarm_off_t len, gfarm_off_t *sentp)
+{
+	gfarm_error_t e;
+	int nretries = GFS_FAILOVER_RETRY_COUNT;
+	gfarm_timerval_t t1, t2;
+
+	GFARM_KERNEL_UNUSE2(t1, t2);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	e = gfs_pio_check_view_default(w_gf);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_check_view_default() failed: %s",
+			gfarm_error_string(e));
+		return (e);
+	}
+
+	CHECK_WRITABLE(w_gf);
+
+	do {
+		e = (*w_gf->ops->view_sendfile)(w_gf, w_off, r_fd, r_off, len,
+		    sentp);
+	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
+	    gfs_pio_failover_check_retry(w_gf, &e));
+
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(staticp->write_time += gfarm_timerval_sub(&t2, &t1));
+
+	return (e);
+}
+
+/*
+ * internal utility functions, mostly for failover handling
+ */
+
 #define GFS_FILE_LIST_MUTEX "gfs_file_list.mutex"
 
 struct gfs_file_list *

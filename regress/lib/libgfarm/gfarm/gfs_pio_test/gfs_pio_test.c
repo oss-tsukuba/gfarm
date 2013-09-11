@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <libgen.h>
 #include <unistd.h>
 
@@ -33,13 +34,16 @@ char *program_name = "gfs_pio_test";
 #define OP_FLUSH	'F'
 #define OP_SYNC		'M'
 #define OP_DATASYNC	'D'
-#define OP_READALL	'I'
-#define OP_WRITEALL	'O'
+#define OP_READALL	'I'		/* Input */
+#define OP_WRITEALL	'O'		/* Output */
+#define OP_RECVFILE	'A'		/* Acquire */
+#define OP_SENDFILE	'Y'		/* Yield */
+/* unused opcodes: BGHJKLNQUVXZ */
 
 struct op {
 	unsigned char op;
 	/* for OP_READ, OP_WRITE, OP_SEEK_*, OP_TRUNCATE, OP_PAUSE */
-	gfarm_off_t off;
+	gfarm_off_t off, off2, off3;
 };
 
 #define MAX_OPS	1024
@@ -58,7 +62,10 @@ usage(void)
 #ifdef GFARM_FILE_EXCLUSIVE
 		"e"
 #endif
-		"rtw] [-h <host>] [-m <mode>] <filename>\n",
+		"rtw] [-h <host>] [-m <mode>] "
+		"[-A r_off/w_off/len] "
+		"[-Y w_off/r_off/len] "
+		"<filename>\n",
 	    program_name);
 	exit(EXIT_GF_USAGE);
 }
@@ -71,7 +78,7 @@ main(int argc, char **argv)
 	int do_create = 0, verbose = 0, c, i, rv, m;
 	int flags = GFARM_FILE_RDWR;
 	gfarm_mode_t mode = 0666;
-	gfarm_off_t off, roff;
+	gfarm_off_t off, off2, off3, roff;
 	char buffer[BUFSIZ], *s, *host = NULL;
 
 	if (argc > 0)
@@ -84,10 +91,20 @@ main(int argc, char **argv)
 		return (EXIT_GF_INIT);
 	}
 
-	while ((c = getopt(argc, argv, "acC:DeE:Fh:Im:MnOP:rR:S:tT:vwW:"))
+	while ((c = getopt(argc, argv, "aA:cC:DeE:Fh:Im:MnOP:rR:S:tT:vwW:Y:"))
 	    != -1) {
-		off = -1;
+		off = off2 = off3 = -1;
 		switch (c) {
+		case OP_RECVFILE:
+		case OP_SENDFILE:
+			s = strchr(optarg, ',');
+			if (s != NULL) {
+				off2 = strtol(s + 1, NULL, 0);
+				s = strchr(s + 1, ',');
+				if (s != NULL)
+					off3 = strtol(s + 1, NULL, 0);
+			}
+			/*FALLTHROUGH*/
 		case OP_READ:
 		case OP_WRITE:
 		case OP_SEEK_SET:
@@ -110,6 +127,8 @@ main(int argc, char **argv)
 			}
 			ops[nops].op = c;
 			ops[nops].off = off;
+			ops[nops].off2 = off2;
+			ops[nops].off3 = off3;
 			++nops;
 			break;
 #ifdef GFARM_FILE_APPEND
@@ -187,6 +206,8 @@ main(int argc, char **argv)
 	for (i = 0; i < nops; i++) {
 		c = ops[i].op;
 		off = ops[i].off;
+		off2 = ops[i].off2;
+		off3 = ops[i].off3;
 		switch (c) {
 		case OP_READ:
 			if (off > sizeof buffer)
@@ -350,6 +371,42 @@ main(int argc, char **argv)
 			}
 			if (verbose)
 				fprintf(stderr, "read(%lld)\n",
+				    (long long)roff);
+			break;
+		case OP_RECVFILE:
+			e = gfs_pio_recvfile(gf, off,
+			    STDOUT_FILENO, off2, off3, &roff);
+			if (e != GFARM_ERR_NO_ERROR) {
+				fprintf(stderr, "gfs_pio_recvfile(, "
+				    "r_off:%lld, %d, w_off:%lld, len:%lld, ): "
+				    "%s\n", (long long)off, STDOUT_FILENO,
+				    (long long)off2, (long long)off3,
+				    gfarm_error_string(e));
+				return (c);
+			}
+			if (verbose)
+				fprintf(stderr, "gfs_pio_recvfile(, "
+				    "r_off:%lld, %d, w_off:%lld, len:%lld, ): "
+				    "%lld\n", (long long)off, STDOUT_FILENO,
+				    (long long)off2, (long long)off3,
+				    (long long)roff);
+			break;
+		case OP_SENDFILE:
+			e = gfs_pio_sendfile(gf, off,
+			    STDIN_FILENO, off2, off3, &roff);
+			if (e != GFARM_ERR_NO_ERROR) {
+				fprintf(stderr, "gfs_pio_sendfile(, "
+				    "w_off:%lld, %d, r_off:%lld, len:%lld, ): "
+				    "%s\n", (long long)off, STDIN_FILENO,
+				    (long long)off2, (long long)off3,
+				    gfarm_error_string(e));
+				return (c);
+			}
+			if (verbose)
+				fprintf(stderr, "gfs_pio_sendfile(, "
+				    "w_off:%lld, %d, r_off:%lld, len:%lld, ): "
+				    "%lld\n", (long long)off, STDIN_FILENO,
+				    (long long)off2, (long long)off3,
 				    (long long)roff);
 			break;
 		default:

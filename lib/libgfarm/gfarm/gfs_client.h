@@ -110,6 +110,13 @@ gfarm_error_t gfs_client_statfs_result_multiplexed(
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
 
+gfarm_error_t gfs_client_sendfile(struct gfs_connection *,
+	gfarm_int32_t, gfarm_off_t, int, gfarm_off_t, gfarm_off_t,
+	gfarm_off_t *);
+gfarm_error_t gfs_client_recvfile(struct gfs_connection *,
+	gfarm_int32_t, gfarm_off_t, int, gfarm_off_t, gfarm_off_t,
+	gfarm_off_t *);
+
 #define GFS_CLIENT_COMMAND_FLAG_STDIN_EOF	0x01
 #define GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND	0x02
 #define GFS_CLIENT_COMMAND_FLAG_XENVCOPY	0x10
@@ -133,6 +140,13 @@ int gfs_client_connection_cache_change(int);
 gfarm_error_t gfs_client_fhstat(struct gfs_connection *, gfarm_ino_t,
 	struct gfs_stat *);
 gfarm_error_t gfs_client_fhremove(struct gfs_connection *, gfarm_ino_t);
+
+/* commonly used by both clients and gfsd */
+struct gfp_xdr;
+gfarm_error_t gfs_sendfile_common(struct gfp_xdr *, int, gfarm_off_t,
+	gfarm_off_t, gfarm_off_t *);
+gfarm_error_t gfs_recvfile_common(struct gfp_xdr *, int, gfarm_off_t,
+	gfarm_off_t *);
 
 /*
  * gfsd service on UDP port.

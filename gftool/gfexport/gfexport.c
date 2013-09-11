@@ -18,48 +18,6 @@
 
 char *program_name = "gfexport";
 
-/* from GFS_FILE_BUFSIZE in lib/libgfarm/gfarm/gfs_pio.h */
-#define BUFFER_SIZE (1048576 - 8)
-static char buffer[BUFFER_SIZE];
-
-gfarm_error_t
-gfprint(GFS_File gf, FILE *ofp, gfarm_off_t size)
-{
-	gfarm_error_t e;
-	int n;
-
-	if (size > 0) {
-		for (;;) {
-			int req = sizeof buffer > size ? size : sizeof buffer;
-
-			if ((e = gfs_pio_read(gf, buffer, req, &n)) !=
-			    GFARM_ERR_NO_ERROR)
-				break;
-			if (n == 0) /* EOF */
-				break;
-			if (fwrite(buffer, 1, n, ofp) != n) {
-				e = GFARM_ERR_INPUT_OUTPUT;
-				break;
-			}
-			size -= n;
-			if (size <= 0)
-				break;
-		}
-		return (e);
-	}
-
-	while ((e = gfs_pio_read(gf, buffer, sizeof buffer, &n)) ==
-	       GFARM_ERR_NO_ERROR) {
-		if (n == 0) /* EOF */
-			break;
-		if (fwrite(buffer, 1, n, ofp) != n) {
-			e = GFARM_ERR_INPUT_OUTPUT;
-			break;
-		}
-	}
-	return (e);
-}
-
 gfarm_error_t
 gfexport(char *gfarm_url, char *host, FILE *ofp,
 	gfarm_off_t off, gfarm_off_t size)
@@ -72,16 +30,8 @@ gfexport(char *gfarm_url, char *host, FILE *ofp,
 		return (e);
 	/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 	e = gfs_pio_internal_set_view_section(gf, host);
-	if (e != GFARM_ERR_NO_ERROR)
-		goto close;
-	if (off > 0) {
-		e = gfs_pio_seek(gf, off, GFARM_SEEK_SET, NULL);
-		if (e != GFARM_ERR_NO_ERROR)
-			goto close;
-	}
-
-	e = gfprint(gf, ofp, size);
- close:
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfs_pio_recvfile(gf, off, STDOUT_FILENO, 0, size, NULL);
 	e2 = gfs_pio_close(gf);
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
@@ -106,7 +56,7 @@ main(int argc, char *argv[])
 	gfarm_error_t e;
 	char *url, *realpath = NULL, *hostname = NULL;
 	int ch;
-	gfarm_off_t off = -1, size = -1;
+	gfarm_off_t off = 0, size = -1;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);

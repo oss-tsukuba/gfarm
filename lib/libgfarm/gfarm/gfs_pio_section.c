@@ -298,6 +298,26 @@ gfs_pio_view_section_pread(GFS_File gf,
 }
 
 static gfarm_error_t
+gfs_pio_view_section_recvfile(GFS_File gf, gfarm_off_t r_off,
+	int w_fd, gfarm_off_t w_off, gfarm_off_t len, gfarm_off_t *recvp)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+
+	return ((*vc->ops->storage_recvfile)(gf, r_off, w_fd, w_off, len,
+	    recvp));
+}
+
+static gfarm_error_t
+gfs_pio_view_section_sendfile(GFS_File gf, gfarm_off_t w_off,
+	int r_fd, gfarm_off_t r_off, gfarm_off_t len, gfarm_off_t *sentp)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+
+	return ((*vc->ops->storage_sendfile)(gf, w_off, r_fd, r_off, len,
+	    sentp));
+}
+
+static gfarm_error_t
 gfs_pio_view_section_ftruncate(GFS_File gf, gfarm_off_t length)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
@@ -347,6 +367,8 @@ struct gfs_pio_ops gfs_pio_view_section_ops = {
 	gfs_pio_view_section_fstat,
 	gfs_pio_view_section_reopen,
 	gfs_pio_view_section_write,
+	gfs_pio_view_section_recvfile,
+	gfs_pio_view_section_sendfile,
 };
 
 

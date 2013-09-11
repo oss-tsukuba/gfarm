@@ -2318,6 +2318,101 @@ gfs_server_write(struct gfp_xdr *client)
 }
 
 void
+gfs_server_bulkread(struct gfp_xdr *client)
+{
+	gfarm_error_t e, e2;
+	gfarm_int32_t fd;
+	gfarm_int64_t len, offset, sent;
+	struct file_entry *fe;
+	gfarm_timerval_t t1, t2;
+	static const char diag[] = "GFS_PROTO_BULKREAD";
+
+	gfs_server_get_request(client, diag, "ill", &fd, &len, &offset);
+
+	if (!fd_usable_to_gfmd) {
+		gfs_server_put_reply(client, diag, GFARM_ERR_GFMD_FAILED_OVER,
+		    "");
+		return;
+	}
+	if ((fe = file_table_entry(fd)) == NULL)
+		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
+	else if (len < -1 || offset < 0)
+		e = GFARM_ERR_INVALID_ARGUMENT;
+	else
+		e = GFARM_ERR_NO_ERROR;
+	e2 = gfp_xdr_send(client, "i", (gfarm_int32_t)e);
+	if (e2 != GFARM_ERR_NO_ERROR)
+		fatal(GFARM_MSG_UNFIXED, "%s: put reply: %s",
+		    diag, gfarm_error_string(e2));
+	if (e == GFARM_ERR_NO_ERROR) {
+		GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+		gfs_profile(gfarm_gettimerval(&t1));
+
+		e = gfs_sendfile_common(client, fe->local_fd, offset, len,
+		    &sent);
+		if (IS_CONNECTION_ERROR(e))
+			fatal(GFARM_MSG_UNFIXED, "%s sendfile: %s",
+			    diag, gfarm_error_string(e));
+
+		gfs_profile(
+			gfarm_gettimerval(&t2);
+			fe->nread++;
+			fe->read_size += sent;
+			fe->read_time += gfarm_timerval_sub(&t2, &t1);
+		);
+
+		gfs_server_put_reply(client, diag, e, "");
+	} else if (debug_mode) {
+		gflog_debug(GFARM_MSG_UNFIXED, "reply: %s: %d (%s)",
+		    diag, (int)e, gfarm_error_string(e));
+	}
+}
+
+void
+gfs_server_bulkwrite(struct gfp_xdr *client)
+{
+	gfarm_error_t e;
+	gfarm_int32_t fd;
+	gfarm_int64_t offset;
+	gfarm_off_t written;
+	struct file_entry *fe;
+	gfarm_timerval_t t1, t2;
+	static const char diag[] = "GFS_PROTO_BULKWRITE";
+
+	gfs_server_get_request(client, diag, "il", &fd, &offset);
+
+	if (!fd_usable_to_gfmd) {
+		gfs_server_put_reply(client, diag, GFARM_ERR_GFMD_FAILED_OVER,
+		    "");
+		return;
+	}
+
+	if ((fe = file_table_entry(fd)) == NULL)
+		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
+	else if (offset < 0)
+		e = GFARM_ERR_INVALID_ARGUMENT;
+	else {
+		GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+		gfs_profile(gfarm_gettimerval(&t1));
+
+		e = gfs_recvfile_common(client, fe->local_fd, offset,
+		    &written);
+		if (IS_CONNECTION_ERROR(e))
+			fatal(GFARM_MSG_UNFIXED, "%s recvdfile: %s",
+			    diag, gfarm_error_string(e));
+
+		gfs_profile(
+			gfarm_gettimerval(&t2);
+			fe->nwrite++;
+			fe->write_size += written;
+			fe->write_time += gfarm_timerval_sub(&t2, &t1);
+		);
+	}
+
+	gfs_server_put_reply(client, diag, e, "l", (gfarm_int64_t)written);
+}
+
+void
 gfs_server_ftruncate(struct gfp_xdr *client)
 {
 	int fd;
@@ -2719,11 +2814,6 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	gfarm_error_t e, error = GFARM_ERR_NO_ERROR;
 	gfarm_ino_t ino;
 	gfarm_uint64_t gen;
-	ssize_t rv;
-	char buffer[GFS_PROTO_MAX_IOSIZE];
-#if 0 /* not yet in gfarm v2 */
-	struct gfs_client_rep_rate_info *rinfo = NULL;
-#endif
 	char *path;
 	int local_fd;
 	unsigned long long msl = 1, total_msl = 0; /* sleep millisec. */
@@ -2735,7 +2825,8 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1002179,
 			"operation is not permitted(peer_type)");
-		goto send_eof;
+		e = gfs_sendfile_common(client, -1, 0, 0, NULL); /* send EOF */
+		goto finish;
 	}
 	/*
 	 * We don't have to check fd_usable_to_gfmd here,
@@ -2754,7 +2845,9 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 			    (long long) ino, (long long) gen,
 			    gfarm_error_string(error));
 			free(path);
-			goto send_eof;
+			/* send EOF */
+			e = gfs_sendfile_common(client, -1, 0, 0, NULL);
+			goto finish;
 		}
 		/* ENOENT: wait generation-update, retry open_data() */
 		gfarm_nanosleep(
@@ -2768,62 +2861,17 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	free(path);
 
 	/* data transfer */
+#if 0 /* not yet in gfarm v2 */
 	if (file_read_size >= sizeof(buffer))
 		file_read_size = sizeof(buffer);
-#if 0 /* not yet in gfarm v2 */
-	if (rate_limit != 0) {
-		rinfo = gfs_client_rep_rate_info_alloc(rate_limit);
-		if (rinfo == NULL)
-			fatal("%s:rate_info_alloc: %s", diag,
-			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
-	}
+	/* XXX should pass `file_read_size' and `rate_limit' */
 #endif
-	do {
-		rv = read(local_fd, buffer, file_read_size);
-		if (rv <= 0) {
-			if (rv == -1)
-				error = gfarm_errno_to_error(errno);
-			break;
-		}
-		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RCOUNT, 1);
-		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RBYTES, rv);
-		e = gfp_xdr_send(client, "b", rv, buffer);
-		if (e != GFARM_ERR_NO_ERROR) {
-			error = e;
-			gflog_debug(GFARM_MSG_1002180,
-				"gfp_xdr_send() failed: %s",
-				gfarm_error_string(e));
-			break;
-		}
-		if (file_read_size < GFS_PROTO_MAX_IOSIZE) {
-			e = gfp_xdr_flush(client);
-			if (e != GFARM_ERR_NO_ERROR) {
-				error = e;
-				gflog_debug(GFARM_MSG_1002181,
-					"gfp_xdr_send() failed: %s",
-					gfarm_error_string(e));
-				break;
-			}
-		}
-#if 0 /* not yet in gfarm v2 */
-		if (rate_limit != 0)
-			gfs_client_rep_rate_control(rinfo, rv);
-#endif
-	} while (rv > 0);
+	error = gfs_sendfile_common(client, local_fd, 0, -1, NULL);
 
-#if 0 /* not yet in gfarm v2 */
-	if (rinfo != NULL)
-		gfs_client_rep_rate_info_free(rinfo);
-#endif
 	e = close(local_fd);
 	if (error == GFARM_ERR_NO_ERROR)
 		error = e;
- send_eof:
-	/* send EOF mark */
-	e = gfp_xdr_send(client, "b", 0, buffer);
-	if (error == GFARM_ERR_NO_ERROR)
-		error = e;
-
+finish:
 	gfs_server_put_reply(client, diag, error, "");
 }
 
@@ -4054,6 +4102,8 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		case GFS_PROTO_PREAD:	gfs_server_pread(client); break;
 		case GFS_PROTO_PWRITE:	gfs_server_pwrite(client); break;
 		case GFS_PROTO_WRITE:	gfs_server_write(client); break;
+		case GFS_PROTO_BULKREAD: gfs_server_bulkread(client); break;
+		case GFS_PROTO_BULKWRITE: gfs_server_bulkwrite(client); break;
 		case GFS_PROTO_FTRUNCATE: gfs_server_ftruncate(client); break;
 		case GFS_PROTO_FSYNC:	gfs_server_fsync(client); break;
 		case GFS_PROTO_FSTAT:	gfs_server_fstat(client); break;

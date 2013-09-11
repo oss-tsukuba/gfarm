@@ -53,8 +53,11 @@ enum gfs_proto_command {
 	GFS_PROTO_REPLICATION_CANCEL,
 
 	/* from client */
+
 	GFS_PROTO_PROCESS_RESET,
 	GFS_PROTO_WRITE,
+	GFS_PROTO_BULKREAD,
+	GFS_PROTO_BULKWRITE,
 };
 
 /*

@@ -1903,6 +1903,265 @@ gfs_client_statfs_result_multiplexed(struct gfs_client_statfs_state *state,
 	return (e);
 }
 
+/*
+ * commonly used by both clients and gfsd
+ *
+ * len: if -1, read until EOF.
+ * *sentp: set even if an error happens.
+ *
+ * XXX not yet in gfarm v2:
+ * XXX rate_limit parameter has to be passed to this function too.
+ * XXX should use "netparam file_read_size" setting as well.
+ */
+gfarm_error_t
+gfs_sendfile_common(struct gfp_xdr *conn, int r_fd, gfarm_off_t r_off,
+	gfarm_off_t len, gfarm_off_t *sentp)
+{
+	gfarm_error_t e, error = GFARM_ERR_NO_ERROR;
+	size_t to_read;
+	ssize_t rv;
+	off_t sent = 0;
+	int mode_unknown = 1, mode_thread_safe = 1, until_eof = len < 0;
+	char buffer[GFS_PROTO_MAX_IOSIZE];
+#if 0 /* not yet in gfarm v2 */
+	struct gfs_client_rep_rate_info *rinfo = NULL;
+
+	if (rate_limit != 0) {
+		rinfo = gfs_client_rep_rate_info_alloc(rate_limit);
+		if (rinfo == NULL)
+			fatal("%s: rate_info_alloc: no_memory", diag);
+	}
+#endif
+	if (until_eof || len > 0) {
+		for (;;) {
+			to_read = until_eof ? GFS_PROTO_MAX_IOSIZE :
+			    len < GFS_PROTO_MAX_IOSIZE ?
+			    len : GFS_PROTO_MAX_IOSIZE;
+			if (mode_unknown) {
+				mode_unknown = 0;
+				rv = pread(r_fd, buffer, to_read, r_off);
+				if (rv == -1 && errno == ESPIPE &&
+				    r_off <= 0) {
+					mode_thread_safe = 0;
+					rv = read(r_fd, buffer, to_read);
+				}
+			} else if (mode_thread_safe) {
+				rv = pread(r_fd, buffer, to_read, r_off);
+			} else {
+				rv = read(r_fd, buffer, to_read);
+			}
+			if (rv == 0)
+				break;
+			if (rv == -1) {
+				error = gfarm_errno_to_error(errno);
+				break;
+			}
+			r_off += rv;
+			if (!until_eof)
+				len -= rv;
+			gfarm_iostat_local_add(GFARM_IOSTAT_IO_RCOUNT, 1);
+			gfarm_iostat_local_add(GFARM_IOSTAT_IO_RBYTES, rv);
+			e = gfp_xdr_send(conn, "b", rv, buffer);
+			if (e != GFARM_ERR_NO_ERROR) {
+				error = e;
+				gflog_debug(GFARM_MSG_1002180,
+				    "gfp_xdr_send() failed: %s",
+				    gfarm_error_string(e));
+				break;
+			}
+			sent += rv;
+
+#if 0 /* not yet in gfarm v2 */
+			if (rate_limit != 0)
+				gfs_client_rep_rate_control(rinfo, rv);
+#endif
+		}
+	}
+#if 0 /* not yet in gfarm v2 */
+	if (rinfo != NULL)
+		gfs_client_rep_rate_info_free(rinfo);
+#endif
+
+	/* send EOF mark */
+	e = gfp_xdr_send(conn, "b", 0, buffer);
+	if (error == GFARM_ERR_NO_ERROR)
+		error = e;
+	if (sentp != NULL)
+		*sentp = sent;
+	return (error);
+}
+
+/*
+ * commonly used by both clients and gfsd
+ *
+ * *recvp: set even if an error happens.
+ */
+gfarm_error_t
+gfs_recvfile_common(struct gfp_xdr *conn, int w_fd, gfarm_off_t w_off,
+	gfarm_off_t *recvp)
+{
+	gfarm_error_t e, e_write = GFARM_ERR_NO_ERROR;
+	gfarm_off_t written = 0;
+	int mode_unknown = 1, mode_thread_safe = 1;
+
+	for (;;) {
+		gfarm_int32_t size;
+		int eof;
+
+		/* XXX - FIXME layering violation */
+		e = gfp_xdr_recv(conn, 0, &eof, "i", &size);
+		if (e != GFARM_ERR_NO_ERROR)
+			break;
+		if (eof) {
+			e = GFARM_ERR_PROTOCOL;
+			break;
+		}
+		if (size <= 0)
+			break;
+		do {
+			int i, partial;
+			ssize_t rv;
+			char buffer[GFS_PROTO_MAX_IOSIZE];
+
+			/* XXX - FIXME layering violation */
+			e = gfp_xdr_recv_partial(conn, 0,
+			    buffer, size, &partial);
+			if (e != GFARM_ERR_NO_ERROR)
+				break;
+			if (partial <= 0) {
+				e = GFARM_ERR_PROTOCOL;
+				break;
+			}
+			size -= partial;
+			if (e_write != GFARM_ERR_NO_ERROR) {
+				/*
+				 * write(2) returned an error.
+				 * We should receive rest of data
+				 * even in that case.
+				 */
+				continue;
+			}
+			for (i = 0; i < partial; i += rv) {
+				if (mode_unknown) {
+					mode_unknown = 0;
+					rv = pwrite(w_fd,
+					    buffer + i, partial - i, w_off);
+					if (rv == -1 && errno == ESPIPE &&
+					    w_off <= 0) {
+						mode_thread_safe = 0;
+						rv = write(w_fd,
+						    buffer + i, partial - i);
+					}
+				} else if (mode_thread_safe) {
+					rv = pwrite(w_fd,
+					    buffer + i, partial - i, w_off);
+				} else {
+					rv = write(w_fd,
+					    buffer + i, partial - i);
+				}
+				if (rv == 0) {
+					/*
+					 * pwrite(2) never returns 0,
+					 * so this is just warm fuzzy.
+					 */
+					e_write = GFARM_ERR_NO_SPACE;
+					break;
+				}
+				if (rv == -1) {
+					e_write = gfarm_errno_to_error(errno);
+					break;
+				}
+				w_off += rv;
+				written += rv;
+				gfarm_iostat_local_add(
+				    GFARM_IOSTAT_IO_WCOUNT, 1);
+				gfarm_iostat_local_add(
+				    GFARM_IOSTAT_IO_WBYTES, rv);
+			}
+		} while (size > 0);
+		if (e != GFARM_ERR_NO_ERROR)
+			break;
+	}
+	if (recvp != NULL)
+		*recvp = written;
+	return (e != GFARM_ERR_NO_ERROR ? e : e_write);
+}
+
+gfarm_error_t
+gfs_client_sendfile(struct gfs_connection *gfs_server,
+	gfarm_int32_t remote_w_fd, gfarm_off_t w_off,
+	int local_r_fd, gfarm_off_t r_off,
+	gfarm_off_t len, gfarm_off_t *sentp)
+{
+	gfarm_error_t e, e2;
+	gfarm_off_t written = 0;
+
+	if ((e = gfs_client_rpc_request(gfs_server, GFS_PROTO_BULKWRITE, "il",
+	    remote_w_fd, w_off)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_client_sendfile: GFS_PROTO_BULKWRITE(%d, %lld): %s",
+		    remote_w_fd, (long long)w_off, gfarm_error_string(e));
+	} else {
+		e = gfs_sendfile_common(gfs_server->conn, local_r_fd, r_off,
+		    len, NULL);
+		if (IS_CONNECTION_ERROR(e)) {
+			gfs_client_execute_hook_for_connection_error(
+			    gfs_server);
+			gfs_client_purge_from_cache(gfs_server);
+		} else { /* read the rest, even if a local error happens */
+			e2 = gfs_client_rpc_result(gfs_server, 0, "l",
+			    &written);
+			if (e == GFARM_ERR_NO_ERROR)
+				e = e2;
+		}
+	}
+	if (sentp != NULL)
+		*sentp = written;
+	return (e);
+}
+
+gfarm_error_t
+gfs_client_recvfile(struct gfs_connection *gfs_server,
+	gfarm_int32_t remote_r_fd, gfarm_off_t r_off,
+	int local_w_fd, gfarm_off_t w_off,
+	gfarm_off_t len, gfarm_off_t *recvp)
+{
+	gfarm_error_t e, e2;
+	gfarm_int32_t e_read;
+	gfarm_off_t written = 0;
+	int eof;
+
+	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_BULKREAD, "ill/",
+	    remote_r_fd, len, r_off)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_client_recvfile: "
+		    "GFS_PROTO_BULKREAD(%d, %lld, %lld): %s",
+		    remote_r_fd, (long long)len, (long long)r_off,
+		    gfarm_error_string(e));
+	} else {
+		e = gfs_recvfile_common(gfs_server->conn, local_w_fd, w_off,
+		    &written);
+		if (IS_CONNECTION_ERROR(e)) {
+			e2 = GFARM_ERR_NO_ERROR;
+		} else { /* read the rest, even if a local error happens */
+			e2 = gfp_xdr_recv(gfs_server->conn, 0, &eof, "i",
+			    &e_read);
+			if (e2 == GFARM_ERR_NO_ERROR && eof)
+				e2 = GFARM_ERR_PROTOCOL;
+			
+		}
+		if (IS_CONNECTION_ERROR(e) || IS_CONNECTION_ERROR(e2)) {
+			gfs_client_execute_hook_for_connection_error(
+			    gfs_server);
+			gfs_client_purge_from_cache(gfs_server);
+		}
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2 != GFARM_ERR_NO_ERROR ? e2 : e_read;
+	}
+	if (recvp != NULL)
+		*recvp = written;
+	return (e);
+}
 
 #ifndef __KERNEL__ /* gfsd only */
 /*
@@ -1914,9 +2173,7 @@ gfarm_error_t
 gfs_client_replica_recv(struct gfs_connection *gfs_server,
 	gfarm_ino_t ino, gfarm_uint64_t gen, gfarm_int32_t local_fd)
 {
-	gfarm_error_t e, e_write = GFARM_ERR_NO_ERROR, e_rpc;
-	int i, rv, eof;
-	char buffer[GFS_PROTO_MAX_IOSIZE];
+	gfarm_error_t e, e_rpc;
 
 	e = gfs_client_rpc_request(gfs_server, GFS_PROTO_REPLICA_RECV, "ll",
 	    ino, gen);
@@ -1933,88 +2190,19 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 		return (e);
 	}
 
-	for (;;) {
-		gfarm_int32_t size;
-		int skip = 0;
-
-		/* XXX - FIXME layering violation */
-		e = gfp_xdr_recv(gfs_server->conn, 0, &eof, "i", &size);
-		if (IS_CONNECTION_ERROR(e)) {
-			gfs_client_execute_hook_for_connection_error(
-			    gfs_server);
-			gfs_client_purge_from_cache(gfs_server);
-		}
-		if (e != GFARM_ERR_NO_ERROR)
-			break;
-		if (eof) {
-			e = GFARM_ERR_PROTOCOL;
-			break;
-		}
-		if (size <= 0)
-			break;
-		do {
-			/* XXX - FIXME layering violation */
-			int partial;
-
-			e = gfp_xdr_recv_partial(gfs_server->conn, 0,
-				buffer, size, &partial);
-			if (e == GFARM_ERR_NO_ERROR) {
-				/* OK */
-			} else if (IS_CONNECTION_ERROR(e)) {
-				gfs_client_execute_hook_for_connection_error(
-				    gfs_server);
-				gfs_client_purge_from_cache(gfs_server);
-				break;
-			} else {
-				break;
-			}
-			if (partial <= 0) {
-				e = GFARM_ERR_PROTOCOL;
-				break;
-			}
-			size -= partial;
-#ifdef __GNUC__ /* shut up stupid warning by gcc */
-			rv = 0;
-#endif
-			i = 0;
-			if (skip) /* write(2) returns error */
-				i = partial;
-			for (; i < partial; i += rv) {
-				rv = write(local_fd, buffer + i, partial - i);
-				if (rv <= 0)
-					break;
-				gfarm_iostat_local_add(GFARM_IOSTAT_IO_WCOUNT,
-						1);
-				gfarm_iostat_local_add(GFARM_IOSTAT_IO_WBYTES,
-						rv);
-			}
-			if (i < partial) {
-				/*
-				 * write(2) never returns 0,
-				 * so the following rv == 0 case is
-				 * just warm fuzzy.
-				 */
-				e_write = gfarm_errno_to_error(
-						rv == 0 ? ENOSPC : errno);
-				/*
-				 * we should receive rest of data,
-				 * even if write(2) fails.
-				 */
-				skip = 1;
-			}
-		} while (size > 0);
-		if (e != GFARM_ERR_NO_ERROR)
-			break;
+	e = gfs_recvfile_common(gfs_server->conn, local_fd, 0, NULL);
+	if (IS_CONNECTION_ERROR(e)) {
+		gfs_client_execute_hook_for_connection_error(gfs_server);
+		gfs_client_purge_from_cache(gfs_server);
+	} else { /* read the rest, even if a local error happens */
+		e_rpc = gfs_client_rpc_result(gfs_server, 0, "");
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e_rpc;
 	}
-	e_rpc = gfs_client_rpc_result(gfs_server, 0, "");
-	if (e == GFARM_ERR_NO_ERROR)
-		e = e_write;
-	if (e == GFARM_ERR_NO_ERROR)
-		e = e_rpc;
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001219,
-			"receiving client replica failed: %s",
-			gfarm_error_string(e));
+		    "receiving client replica failed: %s",
+		    gfarm_error_string(e));
 	}
 	return (e);
 }

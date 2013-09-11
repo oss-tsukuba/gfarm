@@ -8,8 +8,10 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <fcntl.h>
 #include <assert.h>
 
 #include <gfarm/gfarm.h>
@@ -30,59 +32,8 @@
 
 char *program_name = "gfreg";
 
-/* from GFS_FILE_BUFSIZE in lib/libgfarm/gfarm/gfs_pio.h */
-#define BUFFER_SIZE (1048576 - 8)
-static char buffer[BUFFER_SIZE];
-
 gfarm_error_t
-gfimport(FILE *ifp, GFS_File ogf, gfarm_off_t size)
-{
-	int nreq, nin, nout;
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-
-	/* when size is zero or below zero, copy entire content */
-	nreq = sizeof buffer;
-	while (1) {
-		if (size > 0 && nreq > size)
-			nreq = size;
-
-		nin = fread(buffer, 1, nreq, ifp);
-		if (nin > 0) {
-			e = gfs_pio_write(ogf, buffer, nin, &nout);
-			if (e != GFARM_ERR_NO_ERROR)
-				break;
-			assert(nin == nout);
-		}
-		size -= nin;
-		if (nin < nreq || size == 0)
-			break;
-	}
-	return (e != GFARM_ERR_NO_ERROR ? e : gfs_pio_error(ogf));
-}
-
-gfarm_error_t
-gfimport_byte(FILE *ifp, GFS_File ogf, gfarm_off_t size)
-{
-	gfarm_error_t e;
-	int c;
-
-	if (size > 0) {
-		while (size > 0 && (c = getc(ifp)) != EOF) {
-			e = gfs_pio_putc(ogf, c);
-			if (e != GFARM_ERR_NO_ERROR)
-				break;
-			size--;
-		}
-		return (gfs_pio_error(ogf));
-	}
-
-	while ((c = getc(ifp)) != EOF)
-		gfs_pio_putc(ogf, c);
-	return (gfs_pio_error(ogf));
-}
-
-gfarm_error_t
-gfimport_to(FILE *ifp, char *gfarm_url, int mode,
+gfimport_to(int ifd, char *gfarm_url, int mode,
 	char *host, gfarm_off_t off, gfarm_off_t size)
 {
 	gfarm_error_t e, e2;
@@ -115,15 +66,7 @@ gfimport_to(FILE *ifp, char *gfarm_url, int mode,
 	}
 	gfs_profile(gfarm_gettimerval(&t3));
 
-	if (off > 0) {
-		e = gfs_pio_seek(gf, off, GFARM_SEEK_SET, NULL);
-		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "seeking %s: %s\n",
-			    gfarm_url, gfarm_error_string(e));
-			goto close;
-		}
-	}
-	e = gfimport(ifp, gf, size);
+	e = gfs_pio_sendfile(gf, off, ifd, 0, size, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "writing to %s: %s\n", gfarm_url,
 		    gfarm_error_string(e));
@@ -149,31 +92,30 @@ gfimport_from_to(const char *ifile, char *gfarm_url,
 	char *host, gfarm_off_t off, gfarm_off_t size)
 {
 	gfarm_error_t e;
-	FILE *ifp;
+	int ifd;
 	struct stat st;
 	int rv, save_errno;
 
-	if (strcmp(ifile, "-") == 0)
-		ifp = stdin;
-	else
-		ifp = fopen(ifile, "r");
-	if (ifp == NULL) {
-		perror(ifile);
-		return (GFARM_ERR_CANT_OPEN);
-	}
-	if (ifp != stdin) {
-		rv = stat(ifile, &st);
+	if (strcmp(ifile, "-") == 0) {
+		ifd = STDIN_FILENO;
+		st.st_mode = 0600;
+	} else {
+		ifd  = open(ifile, O_RDONLY);
+		if (ifd == -1) {
+			perror(ifile);
+			return (GFARM_ERR_CANT_OPEN);
+		}
+		rv = fstat(ifd, &st);
 		if (rv == -1) {
 			save_errno = errno;
-			fclose(ifp);
-			perror("stat");
+			close(ifd);
+			perror("fstat");
 			return (gfarm_errno_to_error(save_errno));
 		}
-	} else
-		st.st_mode = 0600;
-	e = gfimport_to(ifp, gfarm_url, st.st_mode & 0777, host, off, size);
-	if (ifp != stdin)
-		fclose(ifp);
+	}
+	e = gfimport_to(ifd, gfarm_url, st.st_mode & 0777, host, off, size);
+	if (ifd != STDIN_FILENO)
+		close(ifd);
 	return (e);
 }
 
@@ -200,7 +142,7 @@ main(int argc, char **argv)
 	gfarm_error_t e;
 	int c, status = 0;
 	char *host = NULL, *path = NULL;
-	gfarm_off_t off = -1, size = -1;
+	gfarm_off_t off = 0, size = -1;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);

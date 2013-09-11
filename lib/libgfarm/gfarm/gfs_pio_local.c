@@ -230,6 +230,112 @@ gfs_pio_local_storage_pread(GFS_File gf,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* GFS_PROTO_MAX_IOSIZE is somewhat too large, and is not a power of 2 */
+#define COPYFILE_BUFSIZE	65536
+
+static gfarm_error_t
+gfs_pio_local_copyfile(int r_fd, gfarm_off_t r_off,
+	int w_fd, gfarm_off_t w_off, gfarm_off_t len, gfarm_off_t *writtenp)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	int until_eof = len < 0;
+	int read_mode_unknown = 1, read_mode_thread_safe = 1;
+	int write_mode_unknown = 1, write_mode_thread_safe = 1;
+	size_t to_read;
+	ssize_t rv, i, to_write;
+	gfarm_off_t written = 0;
+	char buffer[COPYFILE_BUFSIZE];
+
+	if (until_eof || len > 0) {
+		for (;;) {
+			to_read = until_eof ? sizeof buffer :
+			    len < sizeof buffer ?
+			    len : sizeof buffer;
+			if (read_mode_unknown) {
+				read_mode_unknown = 0;
+				rv = pread(r_fd, buffer, to_read, r_off);
+				if (rv == -1 && errno == ESPIPE &&
+				    r_off <= 0) {
+					read_mode_thread_safe = 0;
+					rv = read(r_fd, buffer, to_read);
+				}
+			} else if (read_mode_thread_safe) {
+				rv = pread(r_fd, buffer, to_read, r_off);
+			} else {
+				rv = read(r_fd, buffer, to_read);
+			}
+			if (rv == 0)
+				break;
+			if (rv == -1) {
+				e = gfarm_errno_to_error(errno);
+				break;
+			}
+			r_off += rv;
+			if (!until_eof)
+				len -= rv;
+
+			for (to_write = rv, i = 0; i < to_write; i += rv) {
+				if (write_mode_unknown) {
+					write_mode_unknown = 0;
+					rv = pwrite(w_fd,
+					    buffer + i, to_write - i, w_off);
+					if (rv == -1 && errno == ESPIPE &&
+					    w_off <= 0) {
+						write_mode_thread_safe = 0;
+						rv = write(w_fd,
+						    buffer + i, to_write - i);
+					}
+				} else if (write_mode_thread_safe) {
+					rv = pwrite(w_fd,
+					    buffer + i, to_write - i, w_off);
+				} else {
+					rv = write(w_fd,
+					    buffer + i, to_write - i);
+				}
+				if (rv == 0) {
+					/*
+					 * pwrite(2) never returns 0,
+					 * so this is just warm fuzzy.
+					 */
+					e = GFARM_ERR_NO_SPACE;
+					break;
+				}
+				if (rv == -1) {
+					e = gfarm_errno_to_error(errno);
+					break;
+				}
+				w_off += rv;
+				written += rv;
+			}
+			if (e != GFARM_ERR_NO_ERROR)
+				break;
+		}
+	}
+	if (writtenp != NULL)
+		*writtenp = written;
+	return (e);
+}
+
+static gfarm_error_t
+gfs_pio_local_storage_recvfile(GFS_File gf, gfarm_off_t r_off,
+	int w_fd, gfarm_off_t w_off, gfarm_off_t len, gfarm_off_t *recvp)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+
+	return (gfs_pio_local_copyfile(vc->fd, r_off, w_fd, w_off, len,
+	    recvp));
+}
+
+static gfarm_error_t
+gfs_pio_local_storage_sendfile(GFS_File gf, gfarm_off_t w_off,
+	int r_fd, gfarm_off_t r_off, gfarm_off_t len, gfarm_off_t *sentp)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+
+	return (gfs_pio_local_copyfile(r_fd, r_off, vc->fd, w_off, len,
+	    sentp));
+}
+
 static gfarm_error_t
 gfs_pio_local_storage_ftruncate(GFS_File gf, gfarm_off_t length)
 {
@@ -344,6 +450,8 @@ struct gfs_storage_ops gfs_pio_local_storage_ops = {
 	gfs_pio_local_storage_fstat,
 	gfs_pio_local_storage_reopen,
 	gfs_pio_local_storage_write,
+	gfs_pio_local_storage_recvfile,
+	gfs_pio_local_storage_sendfile,
 };
 
 gfarm_error_t

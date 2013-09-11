@@ -191,6 +191,11 @@ gfarm_error_t gfs_pio_readdelim(GFS_File, char **, size_t *, size_t *,
 
 gfarm_error_t gfs_pio_stat(GFS_File, struct gfs_stat *);
 
+gfarm_error_t gfs_pio_sendfile(GFS_File, gfarm_off_t, int, gfarm_off_t,
+	gfarm_off_t, gfarm_off_t *);
+gfarm_error_t gfs_pio_recvfile(GFS_File, gfarm_off_t, int, gfarm_off_t,
+	gfarm_off_t, gfarm_off_t *);
+
 /*
  * Directory operations
  */
