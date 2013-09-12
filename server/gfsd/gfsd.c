@@ -2353,6 +2353,8 @@ gfs_server_bulkread(struct gfp_xdr *client)
 		if (IS_CONNECTION_ERROR(e))
 			fatal(GFARM_MSG_UNFIXED, "%s sendfile: %s",
 			    diag, gfarm_error_string(e));
+		if (sent > 0)
+			file_table_set_read(fe->local_fd);
 
 		gfs_profile(
 			gfarm_gettimerval(&t2);
