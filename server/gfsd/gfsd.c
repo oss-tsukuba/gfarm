@@ -2400,6 +2400,8 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 		if (IS_CONNECTION_ERROR(e))
 			fatal(GFARM_MSG_UNFIXED, "%s recvdfile: %s",
 			    diag, gfarm_error_string(e));
+		if (written > 0)
+			file_table_set_written(fd);
 
 		gfs_profile(
 			gfarm_gettimerval(&t2);

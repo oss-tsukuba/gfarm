@@ -6,7 +6,7 @@ gfs_pio_test=`dirname $testbin`/gfs_pio_test/gfs_pio_test
 
 trap 'gfrm -f $gftmp; rm -f $localtmp; exit $exit_trap' $trap_sigs
 
-if gfreg $data/65byte $gftmp &&
+if gfreg $* $data/65byte $gftmp &&
 
    # output to a file
    $gfs_pio_test -r -A 0,0,-1 $* $gftmp >$localtmp &&
