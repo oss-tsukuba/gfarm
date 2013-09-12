@@ -424,6 +424,54 @@ pfunc_unlink(const char *url)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static gfarm_error_t
+pfunc_copy_io(
+	gfarm_pfunc_t *handle,
+	const char *src_url, struct pfunc_file *src_fp,
+	const char *dst_url, struct pfunc_file *dst_fp)
+{
+	gfarm_error_t e;
+	int rsize, wsize;
+
+	if (src_fp->gfarm != NULL && dst_fp->gfarm == NULL) {
+		/* gfarm -> local */
+		e = gfs_pio_recvfile(src_fp->gfarm, 0, dst_fp->fd, 0, -1, NULL);
+		if (e != GFARM_ERR_NO_ERROR)
+			fprintf(stderr, "ERROR: gfs_pio_recvfile(%s): %s\n",
+			    src_url, gfarm_error_string(e));
+		return (e);
+	} else if (src_fp->gfarm == NULL && dst_fp->gfarm != NULL) {
+		/* local -> gfarm */
+		e = gfs_pio_sendfile(dst_fp->gfarm, 0, src_fp->fd, 0, -1, NULL);
+		if (e != GFARM_ERR_NO_ERROR)
+			fprintf(stderr, "ERROR: gfs_pio_sendfile(%s): %s\n",
+			    dst_url, gfarm_error_string(e));
+		return (e);
+	}
+
+	/* 'gfarm -> gfarm' or 'local -> local' */
+	while ((e = pfunc_read(src_fp, handle->copy_buf,
+	    handle->copy_bufsize, &rsize)) == GFARM_ERR_NO_ERROR) {
+		if (rsize == 0) /* EOF */
+			return (GFARM_ERR_NO_ERROR);
+		e = pfunc_write(dst_fp, handle->copy_buf, rsize, &wsize);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "ERROR: write(%s): %s\n",
+			    dst_url, gfarm_error_string(e));
+			return (e);
+		}
+		if (rsize != wsize) {
+			fprintf(stderr, "ERROR: write(%s): rsize!=wsize\n",
+			    dst_url);
+			return (GFARM_ERR_INPUT_OUTPUT);
+		}
+	}
+	if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "ERROR: read(%s): %s\n",
+		    src_url, gfarm_error_string(e));
+	return (e);
+}
+
 static const char tmp_url_suffix[] = "__tmp_gfpcopy__";
 
 static void
@@ -434,7 +482,6 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 	int ng = 0, retv;
 	char *tmp_url, *src_url, *dst_url, *src_host, *dst_host;
 	int src_port, dst_port;
-	int rsize, wsize;
 	struct pfunc_file src_fp, dst_fp;
 	struct pfunc_stat st;
 	gfarm_off_t src_size;
@@ -519,28 +566,9 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 			goto close;
 		}
 	}
-	while ((e = pfunc_read(&src_fp, handle->copy_buf,
-			       handle->copy_bufsize, &rsize))
-	       == GFARM_ERR_NO_ERROR) {
-		if (rsize == 0) /* EOF */
-			break;
-		e = pfunc_write(&dst_fp, handle->copy_buf, rsize, &wsize);
-		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "ERROR: copy failed: write(%s): %s\n",
-				tmp_url, gfarm_error_string(e));
-			ng = 1;
-			goto close;
-		}
-		if (rsize != wsize) {
-			fprintf(stderr,
-				"ERROR: copy failed: write(%s): "
-				"rsize!=wsize\n", tmp_url);
-			ng = 1;
-			goto close;
-		}
-	}
+	e = pfunc_copy_io(handle, src_url, &src_fp, tmp_url, &dst_fp);
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "ERROR: copy failed: read(%s): %s\n",
+		fprintf(stderr, "ERROR: copy failed: %s: %s\n",
 			src_url, gfarm_error_string(e));
 		ng = 1;
 		goto close;
