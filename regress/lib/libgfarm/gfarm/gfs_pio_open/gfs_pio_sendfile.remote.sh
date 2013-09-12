@@ -11,4 +11,7 @@ if host=`gfsched -D $host 2>/dev/null`; then
 else
 	host=`gfsched | head -1`
 fi
+if [ -z "$host" ]; then
+	exit $exit_unsupported
+fi
 $testbase/gfs_pio_sendfile.sh -h $host
