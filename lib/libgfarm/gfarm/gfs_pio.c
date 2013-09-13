@@ -780,11 +780,6 @@ gfs_pio_pread_unbuffer(GFS_File gf, void *buffer, int size,
 	char *p = buffer;
 	int n = 0;
 	size_t length;
-	gfarm_timerval_t t1, t2;
-
-	GFARM_KERNEL_UNUSE2(t1, t2);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
-	gfs_profile(gfarm_gettimerval(&t1));
 
 	while (size > 0) {
 		e = (*gf->ops->view_pread)(gf, p, size, offset, &length);
@@ -807,9 +802,6 @@ gfs_pio_pread_unbuffer(GFS_File gf, void *buffer, int size,
 	*np = n;
 	e = GFARM_ERR_NO_ERROR;
  finish:
-	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(staticp->write_time += gfarm_timerval_sub(&t2, &t1));
-
 	return (e);
 }
 
@@ -821,11 +813,6 @@ gfs_pio_pwrite_unbuffer(GFS_File gf, const void *buffer, int size,
 	const char *p = buffer;
 	int n = 0;
 	size_t length;
-	gfarm_timerval_t t1, t2;
-
-	GFARM_KERNEL_UNUSE2(t1, t2);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
-	gfs_profile(gfarm_gettimerval(&t1));
 
 	while (size > 0) {
 		e = (*gf->ops->view_pwrite)(gf, p, size, offset, &length);
@@ -848,9 +835,6 @@ gfs_pio_pwrite_unbuffer(GFS_File gf, const void *buffer, int size,
 	*np = n;
 	e = GFARM_ERR_NO_ERROR;
  finish:
-	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(staticp->write_time += gfarm_timerval_sub(&t2, &t1));
-
 	return (e);
 }
 
@@ -1032,7 +1016,7 @@ gfs_pio_pread(GFS_File gf, void *buffer, int size, gfarm_off_t offset, int *np)
 	e = gfs_pio_pread_unbuffer(gf, buffer, size, offset, np);
 
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(staticp->write_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->read_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
 }
