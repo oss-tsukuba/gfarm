@@ -208,6 +208,50 @@ move_file_to_lost_found(const char *file, struct stat *stp,
 	return (e);
 }
 
+gfarm_error_t
+register_to_lost_found(int fd, gfarm_ino_t inum, gfarm_uint64_t gen)
+{
+	struct stat sb;
+	struct gfarm_timespec mtime;
+	char *newpath;
+	gfarm_ino_t inum_new;
+	gfarm_uint64_t gen_new;
+	gfarm_error_t e;
+
+	if (fstat(fd, &sb) == -1)
+		return (gfarm_errno_to_error(errno));
+
+	mtime.tv_sec = sb.st_mtime;
+	mtime.tv_nsec = gfarm_stat_mtime_nsec(&sb);
+	e = gfm_client_replica_create_file_in_lost_found(
+	    inum, gen, (gfarm_off_t)sb.st_size, &mtime, &inum_new, &gen_new);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inode %lld:%lld: replica_create_file_in_lost_found: %s",
+		    (unsigned long long)inum, (unsigned long long)gen,
+		    gfarm_error_string(e));
+		return (e);
+	}
+	gfsd_local_path(inum_new, gen_new, "register_to_lost_found", &newpath);
+	if ((e = gfsd_copy_file(fd, newpath)) != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inode %lld:%lld: cannot copy to %s: %s",
+		    (unsigned long long)inum, (unsigned long long)gen, newpath,
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_replica_add(inum_new, gen_new,
+	    (gfarm_off_t)sb.st_size)) != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: replica_add failed: %s", newpath,
+		    gfarm_error_string(e));
+	else
+		gflog_notice(GFARM_MSG_UNFIXED, "lost file due to write "
+		    "conflict is moved to /lost+found/%016llX%016llX-%s",
+		    (unsigned long long)inum, (unsigned long long)gen,
+		    canonical_self_name);
+	free(newpath);
+	return (e);
+}
+
 /*
  * File format should be consistent with gfsd_local_path() in gfsd.c
  */

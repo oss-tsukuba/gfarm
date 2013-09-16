@@ -1366,7 +1366,7 @@ gfsd_create_ancestor_dir(char *path)
 }
 
 /* with errno */
-int
+static int
 open_data(char *path, int flags)
 {
 	int fd = open(path, flags, DATA_FILE_MASK);
@@ -1378,6 +1378,42 @@ open_data(char *path, int flags)
 	if (gfsd_create_ancestor_dir(path))
 		return (-1);
 	return (open(path, flags, DATA_FILE_MASK));
+}
+
+gfarm_error_t
+gfsd_copy_file(int fd, char *path)
+{
+#define COPY_BLOCK_SIZE 65536
+	char buf[COPY_BLOCK_SIZE];
+	ssize_t sz, rv;
+	int dst, i;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	dst = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
+	if (dst < 0)
+		return (gfarm_errno_to_error(errno));
+	while ((sz = read(fd, buf, sizeof buf)) > 0
+	       || (sz == -1 && errno == EINTR)) {
+		for (i = 0; i < sz; i += rv) {
+			rv = write(dst, buf + i, sz - i);
+			if (rv > 0)
+				continue;
+			else if (rv == 0)
+				e = GFARM_ERR_NO_SPACE;
+			else if (errno == EINTR) {
+				rv = 0;
+				continue;
+			} else
+				e = gfarm_errno_to_error(errno);
+			break;
+		}
+		if (i < sz)
+			break;
+	}
+	if (sz == -1 && e == GFARM_ERR_NO_ERROR)
+		e = gfarm_errno_to_error(errno);
+	close(dst);
+	return (e);
 }
 
 static gfarm_error_t
@@ -1966,10 +2002,8 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 			    diag, gfarm_error_string(e2));
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
-#if 0 /* XXX not implemented yet */
 		if (gen_update_result == GFARM_ERR_CONFLICT_DETECTED)
 			register_to_lost_found(fe->local_fd, fe->ino, fe->gen);
-#endif
 	}
 
 	return (e);
@@ -2022,10 +2056,8 @@ fhclose_fd(struct file_entry *fe, const char *diag)
 			    diag, gfarm_error_string(e2));
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
-#if 0 /* XXX not implemented yet */
 		if (gen_update_result == GFARM_ERR_CONFLICT_DETECTED)
 			register_to_lost_found(fe->local_fd, fe->ino, fe->gen);
-#endif
 	}
 
 	return (e);
