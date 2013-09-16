@@ -197,15 +197,14 @@ gfpara_watch_stderr_stop(gfpara_t *handle)
 /* The func_send()/func_recv() must be multi-thread safe. */
 gfarm_error_t
 gfpara_init(gfpara_t **handlep, int n_procs,
-	    int (*func_child)(void *param, FILE *from_parent, FILE *to_parent),
-	    void *param_child,
-	    int (*func_send)(FILE *child_in, gfpara_proc_t *proc, void *param,
-			     int stop),
-	    void *param_send,
-	    int (*func_recv)(FILE *child_out, gfpara_proc_t *proc,
-			     void *param),
-	    void *param_recv,
-	    void *(*func_end)(void *param), void *param_end)
+	int (*func_child)(void *param, FILE *from_parent, FILE *to_parent),
+	void *param_child,
+	int (*func_send)(FILE *child_in, gfpara_proc_t *proc, void *param,
+			 int stop),
+	void *param_send,
+	int (*func_recv)(FILE *child_out, gfpara_proc_t *proc, void *param),
+	void *param_recv,
+	void *(*func_end)(void *param), void *param_end)
 {
 	int i, j;
 	gfpara_proc_t *procs;
@@ -545,6 +544,25 @@ gfpara_start(gfpara_t *handle)
 	return (gfarm_errno_to_error(eno));
 }
 
+static int
+waitpid_timeout(pid_t pid, int *status, int options, long long timeout_msec)
+{
+	int rv;
+	long long n = 0;
+#define SLEEP_MSEC 10 /* 10 msec. */
+
+	for (;;) {
+		rv = waitpid(pid, status, options | WNOHANG);
+		if (rv != 0) /* success or error */
+			return (rv);
+		if (n > timeout_msec)
+			return (0); /* timeout */
+		/* child is running */
+		gfarm_nanosleep(SLEEP_MSEC * GFARM_MILLISEC_BY_NANOSEC);
+		n += SLEEP_MSEC;
+	}
+}
+
 gfarm_error_t
 gfpara_join(gfpara_t *handle)
 {
@@ -557,22 +575,31 @@ gfpara_join(gfpara_t *handle)
 		eno = 0;
 
 	for (i = 0; i < n_procs; i++) {
-		int retv = waitpid(procs[i].pid, NULL, WNOHANG);
+		int rv = waitpid_timeout(procs[i].pid, NULL, WNOHANG, 10);
 
-		if (retv == 0) {
-			/* 100ms */
-			gfarm_nanosleep(100LL * GFARM_MILLISEC_BY_NANOSEC);
-			if (waitpid(procs[i].pid, NULL, WNOHANG) <= 0) {
-				fprintf(stderr,
-				    "pid=%ld: terminated\n",
-				    (long)procs[i].pid);
-				kill(procs[i].pid, SIGTERM);
-				kill(procs[i].pid, SIGKILL);
-			}
-		} else if (retv == -1) {
+		if (rv > 0) {
+			procs[i].pid = 0;
+			fclose(procs[i].in);
+			fclose(procs[i].out);
+			fclose(procs[i].err);
+		}
+	}
+
+	for (i = 0; i < n_procs; i++) {
+		int rv;
+
+		if (procs[i].pid == 0)
+			continue;
+
+		rv = waitpid_timeout(procs[i].pid, NULL, 0, 1000); /* 1 sec */
+		if (rv == 0) {
+			fprintf(stderr, "pid=%ld: terminated\n",
+			    (long)procs[i].pid);
+			kill(procs[i].pid, SIGKILL);
+		} else if (rv == -1) {
 			if (errno != ECHILD)
 				fprintf(stderr, "wait_pid(%ld): %s\n",
-					(long) procs[i].pid, strerror(errno));
+				    (long)procs[i].pid, strerror(errno));
 		}
 		fclose(procs[i].in);
 		fclose(procs[i].out);

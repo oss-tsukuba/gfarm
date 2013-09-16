@@ -2718,7 +2718,7 @@ gfprep_print_list(
 	e = gfarm_dirtree_init_fork(
 	    &dirtree_handle, src_dir, dst_dir, n_para, n_fifo,
 	    src_base_name ? 0 : 1);
-	gfprep_fatal_e(e, "gfarm_dirtree_init_forkx");
+	gfprep_fatal_e(e, "gfarm_dirtree_init_fork");
 	e = gfarm_dirtree_open(dirtree_handle);
 	gfprep_fatal_e(e, "gfarm_dirtree_open");
 	n_entry = 0;
