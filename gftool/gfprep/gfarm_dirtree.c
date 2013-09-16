@@ -1012,7 +1012,7 @@ gfarm_dirtree_init_fork(
 	gfarm_dirtree_t **handlep, const char *src_url, const char *dst_url,
 	int n_parallel, int fifo_size, int is_recursive)
 {
-	static const char diag[] = "gfarm_dirtree_open";
+	static const char diag[] = "gfarm_dirtree_init_fork";
 	gfarm_dirtree_t *handle;
 	gfarm_error_t e;
 	int src_type, dst_type;
