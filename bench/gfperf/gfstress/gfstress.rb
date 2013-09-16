@@ -200,12 +200,11 @@ class Runner
         end
       }
       t1 = Thread.new {
-        while (tmp = @stderr.read)
-          if (tmp == "")
-            break
-          end
-          errstr += tmp
-        end
+        @stderr.each { |line|
+          now = Time.now
+          msec = sprintf("%03d", (now.usec / 1000).round);
+          errstr += now.strftime("%H:%M:%S.") + msec + " " + line
+        }
       }
       if ($debug)
         $mutex_stdout.lock
@@ -222,11 +221,11 @@ class Runner
       @stdout.close
       @stderr.close
       if (!@running)
-        prefix = "[INTERRUPTED] "
+        prefix = "INTERRUPTED: "
       elsif (status.exitstatus == 0)
-        prefix = "[IGNORED] "
+        prefix = "IGNORED: "
       else
-        prefix = "[ERROR] "
+        prefix = "ERROR: "
       end
       tmp = errstr.split("\n").map{|l|
         if (!l.include?("[1000058] connecting to gfmd"))
@@ -240,12 +239,12 @@ class Runner
       end
 
       $mutex_stdout.lock
-      if (errstr.length > 0)
+      if (errstr.length > 0 ||
+          (!status.exitstatus.nil? && status.exitstatus != 0))
+        t = Time.now.strftime("%Y-%m-%d %H:%M:%S")
         print "[COMMAND] " + @command + "\n"
         print errstr
-      end
-      if (!status.exitstatus.nil? && status.exitstatus != 0)
-        print "[EXIT STATUS] #{status.exitstatus}\n"
+        print "EXIT: #{t}, STATUS=#{status.exitstatus}\n"
       end
       STDOUT.flush
       $mutex_stdout.unlock
@@ -292,7 +291,7 @@ class Manager
           r.stop
         }
         $mutex_stdout.lock
-        print "end of gfstress.rb (timeout)\n"
+        print "end of gfstress.rb\n"
         STDOUT.flush
         $mutex_stdout.unlock
       }
