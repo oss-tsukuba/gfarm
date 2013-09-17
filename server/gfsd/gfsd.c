@@ -1392,6 +1392,8 @@ gfsd_copy_file(int fd, char *path)
 	dst = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
 	if (dst < 0)
 		return (gfarm_errno_to_error(errno));
+	if (lseek(fd, 0, SEEK_SET) == -1)
+		return (gfarm_errno_to_error(errno));
 	while ((sz = read(fd, buf, sizeof buf)) > 0
 	       || (sz == -1 && errno == EINTR)) {
 		for (i = 0; i < sz; i += rv) {
