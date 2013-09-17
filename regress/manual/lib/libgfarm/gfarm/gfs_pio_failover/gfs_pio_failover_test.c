@@ -1561,7 +1561,7 @@ static void
 test_write_long_loop(const char **argv)
 {
 #define WRITE_LOOP_BUFSZ 512
-	gfarm_error_t e;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	const char *path_base = argv[0];
 	int tmlimit = atoi(argv[1]);
 	int files = atoi(argv[2]);
@@ -1569,7 +1569,7 @@ test_write_long_loop(const char **argv)
 	int filesz = blocks * WRITE_LOOP_BUFSZ;
 	char cmd[256];
 	GFS_File *gf;
-	size_t sz, *fsz;
+	size_t *fsz;
 	int loop = 0, wstatus, r, i, len, rest_files;
 	char **path;
 	char buf[WRITE_LOOP_BUFSZ];
@@ -1616,9 +1616,6 @@ test_write_long_loop(const char **argv)
 		memset(fsz, 0, files * sizeof(size_t));
 		while (rest_files > 0) {
 			for (i = 0; i < files; ++i) {
-				sz = fsz[i] + WRITE_LOOP_BUFSZ <=
-				    filesz ? WRITE_LOOP_BUFSZ :
-				    filesz - fsz[i];
 				e = gfs_pio_write(gf[i], buf,
 				    WRITE_LOOP_BUFSZ, &len);
 				if (e != GFARM_ERR_NO_ERROR) {
