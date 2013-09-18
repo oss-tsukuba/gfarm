@@ -211,7 +211,7 @@ move_file_to_lost_found(const char *file, struct stat *stp,
 gfarm_error_t
 register_to_lost_found(int fd, gfarm_ino_t inum, gfarm_uint64_t gen)
 {
-	struct stat sb;
+	struct stat sb, sb1;
 	struct gfarm_timespec mtime;
 	char *newpath;
 	gfarm_ino_t inum_new;
@@ -235,11 +235,24 @@ register_to_lost_found(int fd, gfarm_ino_t inum, gfarm_uint64_t gen)
 	gfsd_local_path(inum_new, gen_new, "register_to_lost_found", &newpath);
 	if ((e = gfsd_copy_file(fd, newpath)) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "inode %lld:%lld: cannot copy to %s: %s",
+		    "inode %lld:%lld: cannot copy to %s, invalid file may "
+		    "remain: %s",
 		    (unsigned long long)inum, (unsigned long long)gen, newpath,
 		    gfarm_error_string(e));
+	else if (stat(newpath, &sb1) == -1)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inode %lld:%lld: copied file does not exist",
+		    (unsigned long long)inum, (unsigned long long)gen);
+	else if (sb1.st_size != sb.st_size)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inode %lld:%lld: size mismatch: copied file has "
+		    "%lld byte that should be %lld byte.  invalid file "
+		    "remains at %s",
+		    (unsigned long long)inum, (unsigned long long)gen,
+		    (unsigned long long)sb1.st_size,
+		    (unsigned long long)sb.st_size, newpath);
 	else if ((e = gfm_client_replica_add(inum_new, gen_new,
-	    (gfarm_off_t)sb.st_size)) != GFARM_ERR_NO_ERROR)
+	    (gfarm_off_t)sb1.st_size)) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: replica_add failed: %s", newpath,
 		    gfarm_error_string(e));
