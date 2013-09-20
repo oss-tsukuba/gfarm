@@ -33,6 +33,10 @@
 #include "gfs_pio.h"
 #include "schedule.h"
 
+static double gfs_pio_set_view_section_time;
+static unsigned long long gfs_pio_open_local_count;
+static unsigned long long gfs_pio_open_remote_count;
+
 static gfarm_error_t
 gfs_pio_view_section_close(GFS_File gf)
 {
@@ -398,8 +402,13 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 			    gf->gfm_server, hostname, port,
 			    &gfs_server, NULL) == GFARM_ERR_NO_ERROR)
 				continue;
+		} else {
+			gfs_profile(
+				if (gfs_client_connection_is_local(gfs_server))
+					++gfs_pio_open_local_count;
+				else
+					++gfs_pio_open_remote_count;);
 		}
-
 		break;
 	}
 	gfs_profile(
@@ -604,8 +613,6 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 	}
 	return (e);
 }
-
-static double gfs_pio_set_view_section_time;
 
 gfarm_error_t
 gfs_pio_internal_set_view_section(GFS_File gf, char *host)
@@ -1065,6 +1072,10 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gfp)
 void
 gfs_pio_section_display_timers(void)
 {
-	gflog_info(GFARM_MSG_1000113, "gfs_pio_set_view_section : %f sec",
+	gflog_info(GFARM_MSG_1000113, "gfs_pio_set_view_section  : %f sec",
 		gfs_pio_set_view_section_time);
+	gflog_info(GFARM_MSG_UNFIXED, "gfs_pio_open_local_count  : %lld",
+		(unsigned long long)gfs_pio_open_local_count);
+	gflog_info(GFARM_MSG_UNFIXED, "gfs_pio_open_remote_count : %lld",
+		(unsigned long long)gfs_pio_open_remote_count);
 }
