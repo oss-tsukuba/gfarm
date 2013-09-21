@@ -40,6 +40,8 @@
 
 struct gfarm_gfs_pio_section_static {
 	double set_view_section_time;
+	unsigned long long open_local_count;
+	unsigned long long open_remote_count;
 };
 
 gfarm_error_t
@@ -52,6 +54,8 @@ gfarm_gfs_pio_section_static_init(struct gfarm_context *ctxp)
 		return (GFARM_ERR_NO_MEMORY);
 
 	s->set_view_section_time = 0;
+	s->open_local_count =
+	s->open_remote_count = 0;
 
 	ctxp->gfs_pio_section_static = s;
 	return (GFARM_ERR_NO_ERROR);
@@ -419,8 +423,15 @@ gfs_pio_open_section(GFS_File gf, struct gfs_connection *gfs_server)
 retry:
 	if ((e = is_local ?
 	    gfs_pio_open_local_section(gf, gfs_server) :
-	    gfs_pio_open_remote_section(gf, gfs_server)) == GFARM_ERR_NO_ERROR)
+	    gfs_pio_open_remote_section(gf, gfs_server))
+	    == GFARM_ERR_NO_ERROR) {
+		gfs_profile(
+			if (is_local)
+				++staticp->open_local_count;
+			else
+				++staticp->open_remote_count);
 		return (e);
+	}
 
 	gflog_debug(GFARM_MSG_UNFIXED,
 	    "gfs_pio_open_%s_section: %s",
@@ -1191,6 +1202,10 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gfp)
 void
 gfs_pio_section_display_timers(void)
 {
-	gflog_info(GFARM_MSG_1000113, "gfs_pio_set_view_section : %f sec",
+	gflog_info(GFARM_MSG_1000113, "gfs_pio_set_view_section  : %f sec",
 		staticp->set_view_section_time);
+	gflog_info(GFARM_MSG_UNFIXED, "gfs_pio_open_local_count  : %lld",
+		(unsigned long long)staticp->open_local_count);
+	gflog_info(GFARM_MSG_UNFIXED, "gfs_pio_open_remote_count : %lld",
+		(unsigned long long)staticp->open_remote_count);
 }
