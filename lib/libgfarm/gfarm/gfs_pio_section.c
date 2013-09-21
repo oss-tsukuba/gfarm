@@ -1204,8 +1204,8 @@ gfs_pio_section_display_timers(void)
 {
 	gflog_info(GFARM_MSG_1000113, "gfs_pio_set_view_section  : %f sec",
 		staticp->set_view_section_time);
-	gflog_info(GFARM_MSG_UNFIXED, "gfs_pio_open_local_count  : %lld",
+	gflog_info(GFARM_MSG_1003712, "gfs_pio_open_local_count  : %lld",
 		(unsigned long long)staticp->open_local_count);
-	gflog_info(GFARM_MSG_UNFIXED, "gfs_pio_open_remote_count : %lld",
+	gflog_info(GFARM_MSG_1003713, "gfs_pio_open_remote_count : %lld",
 		(unsigned long long)staticp->open_remote_count);
 }
