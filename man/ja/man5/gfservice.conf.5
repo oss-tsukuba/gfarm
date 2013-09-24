@@ -313,13 +313,26 @@ Sudo コマンドのパスおよびオプションを指定します。
 は、 「\fB\fI$client\fR\fI\fIn\fR\fR\fI_GFBINDIR\fR\fR\fB/gfservice\-agent\fR」を実行します。 宣言されていない場合は、「\fBgfservice\-agent\fR」を実行します。
 .RE
 .PP
-\fIclient\fR\fI\fIn\fR\fR\fI_GFARM2FS\fR
+\fIclient\fR\fI\fIn\fR\fR\fI_MOUNT_GFARM2FS\fR
 .RS 4
 
-\fBgfarm2fs\fR
-コマンドのパスおよびオプションを指定します。
+\fBmount\&.gfarm2fs\fR
+コマンドのパスおよび オプションを指定します。
 \fBgfservice\fR
-がクライアントホスト上で gfarm2fs コマンド を実行してファイルシステムをマウントする際、この変数が利用されます。 デフォルトは「%%BINDIR%%/gfarm2fs」です。
+がクライアントホスト上で
+\fBmount\&.gfarm2fs\fR
+コマンドを実行してファイルシステムを マウントする際、この変数が利用されます。 デフォルトは「%%BINDIR%%/mount\&.gfarm2fs」です。
+.RE
+.PP
+\fIclient\fR\fI\fIn\fR\fR\fI_UMOUNT_GFARM2FS\fR
+.RS 4
+
+\fBumount\&.gfarm2fs\fR
+コマンドのパスおよび オプションを指定します。
+\fBgfservice\fR
+がクライアントホスト上で
+\fBumount\&.gfarm2fs\fR
+コマンドを実行してファイルシステムを アンマウントする際、この変数が利用されます。 デフォルトは「%%BINDIR%%/umount\&.gfarm2fs」です。
 .RE
 .PP
 \fIclient\fR\fI\fIn\fR\fR\fI_SSH\fR
