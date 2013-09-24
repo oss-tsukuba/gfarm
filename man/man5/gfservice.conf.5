@@ -325,15 +325,26 @@ executes
 \fB"gfservice\-agent"\fR\&.
 .RE
 .PP
-\fIclient\fR\fI\fIn\fR\fR\fI_GFARM2FS\fR
+\fIclient\fR\fI\fIn\fR\fR\fI_MOUNT_GFARM2FS\fR
 .RS 4
 Specify a path to
-\fBgfarm2fs\fR
+\fBmount\&.gfarm2fs\fR
 command and its options\&. The variable is used when
 \fBgfservice\fR
 executes
-\fBgfarm2fs\fR
-command to mount a file system\&. The default value is "%%BINDIR%%/gfarm2fs"\&.
+\fBmount\&.gfarm2fs\fR
+command to mount a file system\&. The default value is "%%BINDIR%%/mount\&.gfarm2fs"\&.
+.RE
+.PP
+\fIclient\fR\fI\fIn\fR\fR\fI_UMOUNT_GFARM2FS\fR
+.RS 4
+Specify a path to
+\fBumount\&.gfarm2fs\fR
+command and its options\&. The variable is used when
+\fBgfservice\fR
+executes
+\fBumount\&.gfarm2fs\fR
+command to unmount a file system\&. The default value is "%%BINDIR%%/umount\&.gfarm2fs"\&.
 .RE
 .PP
 \fIclient\fR\fI\fIn\fR\fR\fI_SSH\fR
