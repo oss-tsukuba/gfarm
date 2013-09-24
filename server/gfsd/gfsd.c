@@ -1002,13 +1002,15 @@ struct file_entry {
 	time_t mtime, atime;
 	unsigned long mtimensec, atimensec;
 	gfarm_ino_t ino;
-	int flags, local_fd;
+	gfarm_uint64_t gen, new_gen;
+	int local_fd;
+	int local_fd_rdonly; /* only for register_to_lost_found() */
+	int flags;
 #define FILE_FLAG_LOCAL		0x01
 #define FILE_FLAG_CREATED	0x02
 #define FILE_FLAG_WRITABLE	0x04
 #define FILE_FLAG_WRITTEN	0x08
 #define FILE_FLAG_READ		0x10
-	gfarm_uint64_t gen, new_gen;
 /*
  * performance data (only available in profile mode)
  */
@@ -1052,8 +1054,10 @@ file_table_init(int table_size)
 	if (file_table == NULL) {
 		errno = ENOMEM; fatal_errno(GFARM_MSG_1000462, "file table");
 	}
-	for (i = 0; i < table_size; i++)
+	for (i = 0; i < table_size; i++) {
 		file_table[i].local_fd = -1;
+		file_table[i].local_fd_rdonly = -1;
+	}
 	file_table_size = table_size;
 }
 
@@ -1067,8 +1071,8 @@ file_table_is_available(gfarm_int32_t net_fd)
 }
 
 void
-file_table_add(gfarm_int32_t net_fd, int local_fd, int flags, gfarm_ino_t ino,
-	gfarm_uint64_t gen, struct timeval *start)
+file_table_add(gfarm_int32_t net_fd, int local_fd, int local_fd_rdonly,
+	int flags, gfarm_ino_t ino, gfarm_uint64_t gen, struct timeval *start)
 {
 	struct file_entry *fe;
 	struct stat st;
@@ -1077,6 +1081,7 @@ file_table_add(gfarm_int32_t net_fd, int local_fd, int flags, gfarm_ino_t ino,
 		fatal_errno(GFARM_MSG_1000463, "file_table_add: fstat failed");
 	fe = &file_table[net_fd];
 	fe->local_fd = local_fd;
+	fe->local_fd_rdonly = local_fd_rdonly;
 	fe->flags = 0;
 	fe->ino = ino;
 	if (flags & O_CREAT)
@@ -1133,11 +1138,21 @@ file_table_close(gfarm_int32_t net_fd)
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
-	if (close(fe->local_fd) < 0)
+
+	if (close(fe->local_fd) == -1)
 		e = gfarm_errno_to_error(errno);
 	else
 		e = GFARM_ERR_NO_ERROR;
 	fe->local_fd = -1;
+
+	if (fe->local_fd_rdonly != -1) {
+		if (close(fe->local_fd_rdonly) == -1)
+			gflog_warning_errno(GFARM_MSG_UNFIXED,
+			    "read-only fd close(%d) for inode %lld:%lld",
+			    fe->local_fd_rdonly,
+			    (long long)fe->ino, (long long)fe->gen);
+		fe->local_fd_rdonly = -1;
+	}
 
 	gfs_profile(
 		gettimeofday(&end_time, NULL);
@@ -1477,14 +1492,14 @@ gfm_client_compound_end(const char *diag)
 
 static gfarm_error_t
 gfs_server_reopen(const char *diag, gfarm_int32_t net_fd, char **pathp,
-	int *flagsp, gfarm_ino_t *inop, gfarm_uint64_t *genp)
+	int *net_flagsp, int *to_createp,
+	gfarm_ino_t *inop, gfarm_uint64_t *genp)
 {
 	gfarm_error_t e;
 	gfarm_ino_t ino;
 	gfarm_uint64_t gen;
 	gfarm_int32_t mode, net_flags, to_create;
 	char *path;
-	int local_flags;
 
 	if ((e = gfm_client_compound_put_fd_request(net_fd, diag))
 	    != GFARM_ERR_NO_ERROR)
@@ -1512,20 +1527,18 @@ gfs_server_reopen(const char *diag, gfarm_int32_t net_fd, char **pathp,
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: compound_end fd=%d: %s",
 		    diag, net_fd, gfarm_error_string(e));
-	} else if (!GFARM_S_ISREG(mode) ||
-	    (local_flags = gfs_open_flags_localize(net_flags)) == -1) {
+	} else if (!GFARM_S_ISREG(mode)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		/* this shouldn't happen */
 		gflog_error(GFARM_MSG_1003699, "ino=%lld gen=%lld: "
-		    "mode:0%o, flags:0x%0x, to_create:%d: shouldn't happen",
+		    "mode:0%o, flags:0x%0x, to_create:%d: bad mode",
 		    (long long)ino, (long long)gen,
 		    mode, net_flags, to_create);
 	} else {
 		gfsd_local_path(ino, gen, diag, &path);
-		if (to_create)
-			local_flags |= O_CREAT;
 		*pathp = path;
-		*flagsp = local_flags;
+		*net_flagsp = net_flags;
+		*to_createp = to_create;
 		*inop = ino;
 		*genp = gen;
 	}
@@ -1607,7 +1620,9 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 	char *path = NULL;
 	gfarm_ino_t ino = 0;
 	gfarm_uint64_t gen = 0;
-	int net_fd, local_fd, save_errno, local_flags = 0;
+	gfarm_int32_t net_flags = 0;
+	int to_create = 0;
+	int net_fd, local_fd, local_fd_rdonly, local_flags, save_errno;
 	struct timeval start;
 
 	gettimeofday(&start, NULL);
@@ -1623,18 +1638,46 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 	} else {
 		for (;;) {
 			if ((e = gfs_server_reopen(diag, net_fd,
-			    &path, &local_flags, &ino, &gen)) !=
+			    &path, &net_flags, &to_create, &ino, &gen)) !=
 			    GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1002172,
 					"gfs_server_reopen() failed: %s",
 					gfarm_error_string(e));
 				break;
 			}
+
+			if ((local_flags = gfs_open_flags_localize(net_flags))
+			    == -1) {
+				/* this shouldn't happen */
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "ino=%lld gen=%lld: "
+				    "flags:0x%0x, to_create:%d: bad flags",
+				    (long long)ino, (long long)gen,
+				    net_flags, to_create);
+				e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+				break;
+			}
+			if (to_create)
+				local_flags |= O_CREAT;
 			local_fd = open_data(path, local_flags);
 			save_errno = errno;
+			if (local_fd == -1 ||
+			    (net_flags & GFARM_FILE_ACCMODE) !=
+			    GFARM_FILE_WRONLY) {
+				local_fd_rdonly = -1;
+			} else if ((local_fd_rdonly = open_data(path,
+			    gfs_open_flags_localize(
+			    (net_flags & ~GFARM_FILE_ACCMODE) |
+			    GFARM_FILE_RDONLY))) == -1) {
+				save_errno = errno;
+				close(local_fd);
+				local_fd = -1;
+			}
+
 			free(path);
-			if (local_fd >= 0) {
-				file_table_add(net_fd, local_fd, local_flags,
+			if (local_fd != -1) {
+				file_table_add(net_fd,
+				    local_fd, local_fd_rdonly, local_flags,
 				    ino, gen, &start);
 				*net_fdp = net_fd;
 				*local_fdp = local_fd;
@@ -1929,6 +1972,14 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 	}
 }
 
+void
+add_to_lost_found(struct file_entry *fe)
+{
+	(void) register_to_lost_found(
+	    fe->local_fd_rdonly != -1 ? fe->local_fd_rdonly : fe->local_fd,
+	    fe->ino, fe->gen);
+}
+
 gfarm_error_t
 close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 {
@@ -2005,7 +2056,7 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
 		if (gen_update_result == GFARM_ERR_CONFLICT_DETECTED)
-			register_to_lost_found(fe->local_fd, fe->ino, fe->gen);
+			add_to_lost_found(fe);
 	}
 
 	return (e);
@@ -2059,7 +2110,7 @@ fhclose_fd(struct file_entry *fe, const char *diag)
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
 		if (gen_update_result == GFARM_ERR_CONFLICT_DETECTED)
-			register_to_lost_found(fe->local_fd, fe->ino, fe->gen);
+			add_to_lost_found(fe);
 	}
 
 	return (e);
@@ -2802,7 +2853,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	gfsd_local_path(ino, gen, diag, &path);
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
 	free(path);
-	if (local_fd < 0) {
+	if (local_fd == -1) {
 		e = gfarm_errno_to_error(errno);
 		/* invalidate the creating file replica */
 		mtime_sec = mtime_nsec = 0;
@@ -3114,7 +3165,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	gfsd_local_path(rep->ino, rep->gen, diag, &path);
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
 	free(path);
-	if (local_fd < 0) {
+	if (local_fd == -1) {
 		dst_err = gfarm_errno_to_error(errno);
 		gflog_notice(GFARM_MSG_1002182,
 		    "%s: cannot open local file for %lld:%lld: %s", diag,

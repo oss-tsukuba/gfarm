@@ -217,9 +217,15 @@ register_to_lost_found(int fd, gfarm_ino_t inum, gfarm_uint64_t gen)
 	gfarm_ino_t inum_new;
 	gfarm_uint64_t gen_new;
 	gfarm_error_t e;
+	int save_errno;
 
-	if (fstat(fd, &sb) == -1)
-		return (gfarm_errno_to_error(errno));
+	if (fstat(fd, &sb) == -1) {
+		save_errno = errno;
+		gflog_warning_errno(GFARM_MSG_UNFIXED,
+		    "inode %lld:%lld: fstat()",
+		    (unsigned long long)inum, (unsigned long long)gen);
+		return (gfarm_errno_to_error(save_errno));
+	}
 
 	mtime.tv_sec = sb.st_mtime;
 	mtime.tv_nsec = gfarm_stat_mtime_nsec(&sb);
