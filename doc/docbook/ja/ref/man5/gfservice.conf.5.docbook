@@ -380,13 +380,29 @@ client サーバーを定義するために用います。
 </varlistentry>
 
 <varlistentry>
-<term><varname>client<replaceable>n</replaceable>_GFARM2FS</varname></term>
+<term><varname>client<replaceable>n</replaceable>_MOUNT_GFARM2FS</varname></term>
 <listitem>
 <para>
-<command moreinfo="none">gfarm2fs</command> コマンドのパスおよびオプションを指定します。
-<command moreinfo="none">gfservice</command> がクライアントホスト上で gfarm2fs コマンド
-を実行してファイルシステムをマウントする際、この変数が利用されます。
-デフォルトは「%%BINDIR%%/gfarm2fs」です。
+<command moreinfo="none">mount.gfarm2fs</command> コマンドのパスおよび
+オプションを指定します。
+<command moreinfo="none">gfservice</command> がクライアントホスト上で
+<command>mount.gfarm2fs</command> コマンドを実行してファイルシステムを
+マウントする際、この変数が利用されます。
+デフォルトは「%%BINDIR%%/mount.gfarm2fs」です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_UMOUNT_GFARM2FS</varname></term>
+<listitem>
+<para>
+<command moreinfo="none">umount.gfarm2fs</command> コマンドのパスおよび
+オプションを指定します。
+<command moreinfo="none">gfservice</command> がクライアントホスト上で
+<command>umount.gfarm2fs</command> コマンドを実行してファイルシステムを
+アンマウントする際、この変数が利用されます。
+デフォルトは「%%BINDIR%%/umount.gfarm2fs」です。
 </para>
 </listitem>
 </varlistentry>
