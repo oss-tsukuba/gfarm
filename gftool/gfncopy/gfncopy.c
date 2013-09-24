@@ -606,7 +606,7 @@ count_replicas(
 static int
 is_number(const char *str)
 {
-	const char *p = str;
+	const unsigned char *p = (unsigned char *)str;
 
 	if (*p == '-')
 		p++;
@@ -618,7 +618,7 @@ is_number(const char *str)
 static void
 translate_digit(char *out, int size, const char *in)
 {
-	const char *p = in;
+	const unsigned char *p = (unsigned char *)in;
 
 	while (isblank(*p))
 		p++;
