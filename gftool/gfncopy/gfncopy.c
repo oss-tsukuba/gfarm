@@ -10,7 +10,6 @@
 #include <libgen.h>
 #include <limits.h>
 #include <sys/types.h>
-#include <attr/xattr.h>
 #include <errno.h>
 #include <assert.h>
 #include <ctype.h>
