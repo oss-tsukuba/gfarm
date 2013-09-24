@@ -265,12 +265,23 @@ client サーバーを定義するために用います。
 「<span class="command"><strong><code class="varname">$client<em class="replaceable"><code>n</code></em>_GFBINDIR</code>/gfservice-agent</strong></span>」を実行します。
 宣言されていない場合は、「<span class="command"><strong>gfservice-agent</strong></span>」を実行します。
 </p></dd>
-<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_GFARM2FS</code></span></dt>
+<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_MOUNT_GFARM2FS</code></span></dt>
 <dd><p>
-<span class="command"><strong>gfarm2fs</strong></span> コマンドのパスおよびオプションを指定します。
-<span class="command"><strong>gfservice</strong></span> がクライアントホスト上で gfarm2fs コマンド
-を実行してファイルシステムをマウントする際、この変数が利用されます。
-デフォルトは「%%BINDIR%%/gfarm2fs」です。
+<span class="command"><strong>mount.gfarm2fs</strong></span> コマンドのパスおよび
+オプションを指定します。
+<span class="command"><strong>gfservice</strong></span> がクライアントホスト上で
+<span class="command"><strong>mount.gfarm2fs</strong></span> コマンドを実行してファイルシステムを
+マウントする際、この変数が利用されます。
+デフォルトは「%%BINDIR%%/mount.gfarm2fs」です。
+</p></dd>
+<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_UMOUNT_GFARM2FS</code></span></dt>
+<dd><p>
+<span class="command"><strong>umount.gfarm2fs</strong></span> コマンドのパスおよび
+オプションを指定します。
+<span class="command"><strong>gfservice</strong></span> がクライアントホスト上で
+<span class="command"><strong>umount.gfarm2fs</strong></span> コマンドを実行してファイルシステムを
+アンマウントする際、この変数が利用されます。
+デフォルトは「%%BINDIR%%/umount.gfarm2fs」です。
 </p></dd>
 <dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_SSH</code></span></dt>
 <dd><p>

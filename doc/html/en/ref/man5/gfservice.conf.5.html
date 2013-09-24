@@ -264,12 +264,23 @@ If the variable is declared, <span class="command"><strong>gfservice</strong></s
 <span class="command"><strong>"<code class="varname">$client<em class="replaceable"><code>n</code></em>_GFBINDIR</code>/gfservice-agent"</strong></span>.
 Otherwise it executes <span class="command"><strong>"gfservice-agent"</strong></span>.
 </p></dd>
-<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_GFARM2FS</code></span></dt>
+<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_MOUNT_GFARM2FS</code></span></dt>
 <dd><p>
-Specify a path to <span class="command"><strong>gfarm2fs</strong></span> command and its options.
-The variable is used when <span class="command"><strong>gfservice</strong></span> executes
-<span class="command"><strong>gfarm2fs</strong></span> command to mount a file system.
-The default value is "%%BINDIR%%/gfarm2fs".
+Specify a path to <span class="command"><strong>mount.gfarm2fs</strong></span> command
+and its options.
+The variable is used when <span class="command"><strong>gfservice</strong></span>
+executes <span class="command"><strong>mount.gfarm2fs</strong></span> command to
+mount a file system.
+The default value is "%%BINDIR%%/mount.gfarm2fs".
+</p></dd>
+<dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_UMOUNT_GFARM2FS</code></span></dt>
+<dd><p>
+Specify a path to <span class="command"><strong>umount.gfarm2fs</strong></span> command
+and its options.
+The variable is used when <span class="command"><strong>gfservice</strong></span>
+executes <span class="command"><strong>umount.gfarm2fs</strong></span> command to
+unmount a file system.
+The default value is "%%BINDIR%%/umount.gfarm2fs".
 </p></dd>
 <dt><span class="term"><code class="varname">client<em class="replaceable"><code>n</code></em>_SSH</code></span></dt>
 <dd><p>
