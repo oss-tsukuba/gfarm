@@ -288,8 +288,10 @@ netsendq で管理されてない送信処理は、流量制限なしで行な�
 
 ■ 外部インターフェース
 
+▼ 外部インターフェース一覧
+
 モジュール初期化	netsendq_manager_new
-キュー初期化		netsendq_newq
+キュー初期化		netsendq_new
 queue entry初期化	netsendq_entry_init
 queue entry送信完了通知	netsendq_entry_was_sent		※ エラーでも呼ぶこと
 送信後・受信完了通知	netsendq_remove_entry		※ エラーでも呼ぶこと
@@ -299,3 +301,122 @@ queue entry解放		netsendq_entry_destroy
 ホスト削除通知		netsendq_host_remove
 ホストdown通知		netsendq_host_becomes_down
 ホストup通知		netsendq_host_becomes_up
+
+▼ 利用例
+
+○ netsendq_manager_new()
+
+gfmd プロセスは、2 つの struct netsendq_manager を保持する。
+一つは、back_channel_send_manager、
+もう一つは gfmd_channel_send_manager（ただし、こちらは未実装）。
+
+struct netsendq_manager は、以下を指定して生成する。
+・送信キューに繋ぐエントリの種別を表す配列の長さ。
+  以下の例では、NETSENDQ_TYPE_GFS_PROTO_NUM_TYPES。
+・送信キューに繋ぐエントリの種別を表す配列。
+  以下の例では、back_channel_queue_types。
+  配列の要素は、送信キューに繋ぐ RPC の種類ごとの、以下の要素
+	- 送信処理関数
+	- 送信完了コールバック関数
+	- 同時に送信して良いキュー・エントリ数 (window size)
+	- NETSENDQ_FLAG_*
+	- 種別を表す整数値
+・送信処理に用いるスレッドプールの最大スレッド数。
+  以下の例では、gfarm_metadb_thread_pool_size。
+・送信処理に用いるスレッドプールのスレッド投入待ちキューの最大長。
+  以下の例では、gfarm_metadb_thread_queue_length。
+・diag 文字列
+  以下の例では、"send queue to gfsd"。
+
+例:
+#define NETSENDQ_TYPE_GFS_PROTO_STATUS			0
+#define NETSENDQ_TYPE_GFS_PROTO_FHREMOVE		1
+#define NETSENDQ_TYPE_GFS_PROTO_REPLICATION_REQUEST	2
+#define NETSENDQ_TYPE_GFS_PROTO_NUM_TYPES		3
+
+static void *gfs_client_status_request(void *arg);
+static void gfs_client_status_finalize(struct netsendq_entry *qentryp);
+
+struct netsendq_type gfs_proto_status_queue = {
+	gfs_client_status_request,
+	gfs_client_status_finalize,
+	1,
+	NETSENDQ_FLAG_PRIOR_ONE_SHOT,
+	NETSENDQ_TYPE_GFS_PROTO_STATUS
+};
+
+static void *gfs_client_fhremove_request(void *arg);
+static void handle_removal_result(struct netsendq_entry *qentryp);
+
+struct netsendq_type gfs_proto_fhremove_queue = {
+	gfs_client_fhremove_request,
+	handle_removal_result,
+	gfs_proto_fhremove_request_window,
+	0,
+	NETSENDQ_TYPE_GFS_PROTO_FHREMOVE
+};
+
+static void *gfs_client_replication_request_request(void *arg);
+static void handle_file_replication_result(struct netsendq_entry *qentryp);
+
+struct netsendq_type gfs_proto_replication_request_queue = {
+	gfs_client_replication_request_request,
+	handle_file_replication_result,
+	gfs_proto_replication_request_window,
+	0,
+	NETSENDQ_TYPE_GFS_PROTO_REPLICATION_REQUEST
+};
+
+const struct netsendq_type *back_channel_queue_types[NETSENDQ_TYPE_GFS_PROTO_NUM_TYPES] = {
+	&gfs_proto_status_queue,
+	&gfs_proto_fhremove_queue,
+	&gfs_proto_replication_request_queue,
+};
+
+	back_channel_send_manager = netsendq_manager_new(
+	    NETSENDQ_TYPE_GFS_PROTO_NUM_TYPES, back_channel_queue_types,
+	    gfarm_metadb_thread_pool_size, gfarm_metadb_job_queue_length,
+	    "send queue to gfsd");
+
+○ netsendq_new()
+
+abstract_host_init() で、その通信相手毎にキューを作成しているので、
+通常は意識する必要はない。
+
+○ netsendq を用いる、具体的なデータ構造の例
+
+struct dead_file_copy {
+	struct netsendq_entry qentry; /* must be first member */
+
+	gfarm_ino_t inum;
+	gfarm_uint64_t igen;
+};
+… 構造体の先頭に netsendq_entry を置く
+
+static struct dead_file_copy *
+dead_file_copy_alloc(gfarm_ino_t inum, gfarm_uint64_t igen, struct host *host)
+{
+	struct dead_file_copy *dfc;
+
+	GFARM_MALLOC(dfc);
+	netsendq_entry_init(&dfc->qentry, &gfs_proto_fhremove_queue);
+
+	dfc->qentry.abhost = host_to_abstract_host(host);
+	dfc->inum = inum;
+	dfc->igen = igen;
+
+	return (dfc);
+}
+… netsendq_entry_init() で初期化する
+
+void
+dead_file_copy_schedule_removal(struct dead_file_copy *dfc)
+{
+	struct netsendq *qhost =
+	    abstract_host_get_sendq(dfc->qentry.abhost);
+	static const char diag[] = "dead_file_copy_schedule_removal";
+
+	/* should success always, because of NETSENDQ_FLAG_QUEUEABLE_IF_DOWN */
+	(void)netsendq_add_entry(qhost, &dfc->qentry, 0);
+}
+… netsendq_add_entry で netsendq に enqueue する

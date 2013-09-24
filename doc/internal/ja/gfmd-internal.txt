@@ -68,7 +68,7 @@ host_*() となっている。
 
 ■ データ構造
 
-struct host, struct user, struct group へのポインタは、
+struct mdhost, struct host, struct user, struct group へのポインタは、
 gfmd が動作している間、常に有効であり、継続して利用できる。
 
 ただし、削除されたホスト/ユーザー/グループも存在するので、
@@ -88,6 +88,39 @@ giant_lock とは別のロックで保護されているため、giant_lock 保�
 　 コーディング規約としては、それを仮定していない。
 　 giant_lock を手放している区間を経由して inode を利用する場合は、
    struct inode へのポインタではなく、i-node 番号を用いる必要がある。
+
+○ データ寿命管理
+
+永続的に使えるもの
+	上述の通り user, group, host, mdhost は、寿命を気にせず利用できる
+
+inode
+	現在の実装では、struct inode へのポインタは決して解放されないが、
+	それに依存したコードを書いてはならない。
+	以下の条件がすべて成立した場合、inode は論理的には削除される。
+	(1) オープンされていない
+	(2) レプリケーション処理の途中ではない
+	(3) nlink が 0
+	ただし、このうち条件 (3) は削除される可能性がある。
+	(すなわち、現在はすべての inode 情報をメモリに保持しているが、
+	 将来的に、(1)+(2)+キャッシュしか保持しないようになる可能性がある)
+	このため、(3) に依存して良いのは inode.c と dir.c のみとする。
+	条件 (1), (2) は当面の間、仮定していて良い。	
+	現在 struct process や struct peer には struct inode へのポインタが
+	存在するが、このポインタは (1), (2) の条件に基づいている。
+
+peer
+	foreground プロトコルは、制御構造で寿命管理している。
+
+	background プロトコル (gfsd back_channel および gfmd channel) は、
+	peer_addref()/peer_delref() で寿命管理している。
+	host_sender_lock()/host_receiver_lock() している間は、
+	これらが内部で peer_addref() しているため、安全にアクセスできる。
+	原則として、struct peer * へのポインタは、struct に格納しては
+	ならない。さもないと、以下のようなメモリリークが発生する。
+	https://sourceforge.net/apps/trac/gfarm/ticket/479
+	struct abstruct_host は例外で、この構造体に保持されている間は、
+	peer_addref() されている。
 
 ■ mutex 一覧
 

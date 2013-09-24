@@ -1,0 +1,27 @@
+digraph libgfarm_state_chart {
+
+gfm_init -> gfm_connected
+	[label = "gfm_client_connection_and_process_acquire", fontcolor = blue, color = blue];
+
+gfm_failover_in_progress -> gfm_connected
+	[label = "gfm_client_connection_and_process_acquire", fontcolor = blue, color = blue];
+
+gfm_connected -> gfm_failover_in_progress
+	[label = "gfm_connection_failure_in_gfarm_api", fontcolor = blue, color = blue];
+
+gfm_connected -> gfm_failover_in_progress
+	[label = "failover_notified_by_gfsd", fontcolor = blue, color = blue];
+
+gfm_failover_is_pending -> gfm_failover_in_progress
+	[label = "gfm_failover_detection_check", fontcolor = blue, color = blue];
+
+gfm_connected -> gfm_failover_is_pending
+	[label = "gfm_connection_failure_in_rpc", fontcolor = blue, color = blue];
+
+gfm_connected -> gfm_failover_is_pending
+	[label = "failover_notified_by_gfsd_at_close", fontcolor = blue, color = blue];
+
+gfm_failover_in_progress -> gfm_failover_is_pending
+	[label = "gfm_reconnection_failure", fontcolor = blue, color = blue];
+
+}

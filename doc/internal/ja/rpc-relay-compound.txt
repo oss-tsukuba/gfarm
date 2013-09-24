@@ -1,0 +1,158 @@
+■ 処理戦略の大枠
+
+compound の内側かどうかはスレーブ側でも監視する。
+
+compound の外側では、単純に
+	スレーブ側で処理できるものはスレーブ側で処理する。
+	スレーブ側で処理できないものはマスター側に転送して処理する。
+
+compound の内側では、
+	スレーブ側で処理できるうちは、スレーブ側で処理する。
+	スレーブ側で処理できるない要求があったら、それ以降、
+		compound が終了するまでは、すべてマスター側で処理する。
+	具体的には、マスター側でしか処理できない
+
+以下のようなプロトコルについては、スレーブ側で処理しきれる限りは、
+スレーブ側のみで処理し、そうでなくなれば、マスター側に転送する。
+	GFM_PROTO_COMPOUND_BEGIN
+	GFM_PROTO_COMPOUND_ON_ERROR
+	GFM_PROTO_COMPOUND_END
+	GFM_PROTO_GET_FD
+	GFM_PROTO_PUT_FD
+	GFM_PROTO_SAVE_FD
+	GFM_PROTO_RESTORE_FD
+このうち、
+	GFM_PROTO_COMPOUND_ON_ERROR
+	GFM_PROTO_COMPOUND_END
+については、マスター側に転送しても、スレーブ側での処理を続ける。
+
+以下のようなプロトコル
+	GFM_PROTO_PROCESS_ALLOC
+	GFM_PROTO_PROCESS_SET
+	GFM_PROTO_PROCESS_FREE
+についてはマスター側で処理するが、
+スレーブ側でもその内容を盗み見るので注意が必要。
+これらは、COMPOUND に対応するため、引数および戻り値をキャプチャして、
+スレーブ側の専用の処理関数を呼ぶ。
+
+スレーブ側で処理するもの:
+パス名の解釈はスレーブで行なう。
+以下のプロトコルもスレーブで処理する。
+なお、常にスレーブ側で処理するわけではなく、
+COMPOUND 内部で、マスター側で処理するフェーズに移った場合には、
+マスター側で処理する。
+	GFM_PROTO_SEEK
+	GFM_PROTO_FGETATTRPLUS
+	GFM_PROTO_GETDIRENTS
+	GFM_PROTO_GETDIRENTSPLUS
+	GFM_PROTO_GETDIRENTSPLUSXATTR
+	GFM_PROTO_REPLICA_LIST_BY_NAME マスターがup/down情報を把握する必要あり
+	GFM_PROTO_REPLICA_GET_MY_ENTRIES
+	GFM_PROTO_REPLICA_GET_MY_ENTRIES2
+	GFM_PROTO_FSNGROUP_GET_ALL
+	GFM_PROTO_GROUP_INFO_GET_ALL
+	GFM_PROTO_GROUP_INFO_GET_BY_NAMES
+	GFM_PROTO_HOST_INFO_GET_ALL
+	GFM_PROTO_HOST_INFO_GET_BY_ARCHITECTURE
+	GFM_PROTO_HOST_INFO_GET_BY_NAMES
+	GFM_PROTO_HOST_INFO_GET_BY_NAMEALIASES
+	GFM_PROTO_METADB_SERVER_GET
+	GFM_PROTO_METADB_SERVER_GET_ALL
+	GFM_PROTO_USER_INFO_GET_ALL
+	GFM_PROTO_USER_INFO_GET_BY_NAMES
+	GFM_PROTO_XMLATTR_LIST
+	GFM_PROTO_XATTR_LIST
+
+■ master 側で動く処理を、peer ごとにシリアライズする
+
+通常のプロトコルは、要求→返答の繰り返しだから問題ないが、
+COMPOUND内部では、要求1・要求2・要求3・要求4→返答1・返答2・返答3・返答4 の
+ような通信シーケンスとなる。これをマスターに転送して処理した場合に、
+処理の実行や結果の返答の順序が入れ替わらないことを保証する必要がある。
+
+RPC relay がない状況であれば、gfmd.c:protocol_main() で、
+「現在実行中の処理が完了するまでは local_peer_watch_readable() を行なわない」
+ことによって、実行中の処理がある状況で、同一クライアントからの
+(COMPOUND を構成する) 別の要求に対応するスレッドが、現在実行中のスレッドと
+並列実行されることを防いでいる。（そのような要求はソケットバッファに溜る）
+※ resumer_thread() まで遅延する処理が、COMPOUND ブロック中に存在する場合は、
+   実行中の処理が完了する前に protocol_main() から抜けてしまうが、
+   この場合は protocol_service() が 1 を返すため、やはり
+   local_peer_watch_readable() を行なわれないので問題ない。
+
+RPC relay がある状況で、特別な手当てなしに slave gfmd が master gfmd へ
+async RPC で処理を投げ、master gfmd 側でも特に手当てを行なわないと、
+どの順序で処理が実行されるか不定となる。
+※ master gfmd が要求をソケットから読みとる部分はシリアライズされるが、
+   その後、受信した要求を別スレッドで実行する部分については、シリアライズの
+   保証はない。COMPOUND 中の各要求の処理を別スレッドに割り振った場合、
+   receiver_lock を手放した後、giant_lock を取得するまでのところで
+   競合し、どの順序で giant_lock を取得して実行を開始するかは運次第となる。
+
+では、どのように手当するか？
+
+○ slave gfmd 側で行なう方法。
+COMPOUND を構成する RPC を、slave 側でまとめて単一の GFM_PROTO_REMOTE_RPC に
+くるみ、それを master gfmd に送る。
+master gfmd 側は、GFM_PROTO_REMOTE_RPC 全体をまとめて実行し、
+結果をまとめて、slave に返す。
+利点:
+・要求処理は slave 側でまとめるので master 側のコード量的な負担が軽い。
+  （裏返すと slave 側のコード量的な負担は重い）
+欠点:
+・返答処理は master 側でまとめるので master 側のコード量的な負担が重い。
+  （裏返すと client 側のコード量的な負担は軽い）
+・クライアントが COMPOUND 以外でも async RPC を利用するようになった場合には
+  これでは対処できない。
+・GFM_PROTO_REMOTE_RPC のサイズが大きくなるので、master gfmd のメモリ負荷的
+  には微妙に嫌らしくなる。
+・要求処理についても、返答処理についても、不定長の要求や返答を集積した
+  一つのメモリ領域に加工する必要があり、そこが面倒。
+・現行の GFM_PROTO_REMOTE_RPC ハンドラのように、receiver lock を保持した
+  まま要求を読み終るまで待つ方式にすると、同一 slave gfmd から届く要求に
+  対する並列度が低い。（xattr のように長い時間がかかる処理が含まれる
+  場合に、他のクライアントからの処理を割り込ませることができない）
+
+○ master gfmd 側で行なう方法
+・master gfmd では、GFM_PROTO_REMOTE_RPC の要求をまず動的確保した
+  メモリに保持し、remote_peer にFIFOで繋ぐ。各 remote_peer につき、
+  実行スレッドは最大でも一つしか割り当てず、remote_peer に繋がれている
+  要求FIFOを順次取り出して実行する。
+・slave gfmd でも、GFM_PROTO_REMOTE_RPC の返答を動的確保したメモリに保持し、
+  peer に FIFO で繋いで逐次実行する。
+利点:
+・クライアントが COMPOUND 以外でも async RPC を利用するようになった場合など
+  でも対処できる。
+・要求処理は master 側で対応するので master 側のコード量的な負担が重い。
+  （裏返すと client 側のコード量的な負担は軽い）
+・メモリの動的確保は行なうが、連続領域にまとめるのではなく、各RPC別に
+  個別に確保してリストに繋ぐので、サイズ計算等するよりは楽。
+・receiver lock を保持している時間が短いので、xattr のように長い時間が
+  かかる処理が含まれている場合でも、同一 slave からの別の処理を走らせ
+  ることができる。
+欠点:
+・スレッド実行制御系に、もう一つ仕組みが増える。
+  スレーブ側のコーディング量は減るので、総コード量的には大差なしか？
+・返答処理は slave 側で対応するで master 側のコード量的な負担が軽い。
+  （裏返すと slave 側のコード量的な負担は重い）
+
+将来的な汎用性と、実装の容易性から、今回は master gfmd 側で行なう方法
+を選択する。
+
+■ master から slave への返答の処理を、slave 側でシリアライズする
+
+async RPC に対する返答は、現在は gfmdc_recv_watcher の保持する
+スレッドプール上で行なわれる。
+async_server_main() を見ると分かるように、このスレッドプール中のスレッドは、
+peer ごとに割り当てられ、同一 peer を対象に複数のスレッドが立ち上がる
+ことはない。
+したがって、async_server_main() から呼び出される応答ハンドラの中で
+直接処理すれば、自動的にシリアライズが行なわれる。
+
+r6632 の件とは異なり slave 側の話なので、dead lock の問題はないかもしれない。
+
+ただし、ジャーナル書き込みと同じスレッド
+起きてしまう。
+r6632 と同様に、
+
+r6632 #287

@@ -6,7 +6,7 @@
 		上位 2ビット: 2進00 - 要求を意味する (XID_TYPE_REQUEST)
 		下位30ビット: xid - RPC transaction ID
 	(2) 32bit big endian integer
-		32ビット: xid - RPC transaction ID
+		32ビット: RPC payload size
   これに引続き、以下が続く
 	(3) 32bit big endian integer
 		プロトコル・コマンド
@@ -18,7 +18,7 @@
 		上位 2ビット: 2進10 - 返答を意味する (XID_TYPE_RESULT)
 		下位30ビット: xid - RPC transaction ID
 	(2) 32bit big endian integer
-		32ビット: xid - RPC transaction ID
+		32ビット: RPC payload size
   これに引続き、以下が続く
 	(3) 32bit big endian integer
 		結果ステータス (gfarm_error_t)
@@ -42,9 +42,8 @@
 GFARM_INTERNAL_USE には、2種類のものがある。
 ・ビット 0xffff に含まれるもの
   これはプロトコル上も流れている。
-  GFARM_FILE_LOOKUP とか GFARM_FILE_CREATE とかは INTERNAL_USE ですが、
-  プロトコルを流れているため、現実には変更不可能であり、公式に割り当て
-  られている。
+  GFARM_FILE_LOOKUP や GFARM_FILE_CREATE は INTERNAL_USE だが、
+  プロトコルを流れているおり、公式に割り当てられた変更不可能なビット。
 ・ビット 0x00ff0000 あたりに含まれるもの
   gfmd や libgfarm 内部のみで使い、プロトコルを流れないもの。
   GFARM_FILE_TRUNC_PENDING (gfmd 内部のみで使う) や
@@ -60,3 +59,177 @@ GFARM_INTERNAL_USE には、2種類のものがある。
   ※ r6725 で GFARM_FILE_REPLICA_SPEC に 0x10000 が割り当てられてリリース
      されたため、その時点で「プロトコルを流れないもの」の定義は 0x00fe0000 
      に変更されたと考えた方が良い。
+
+■ race condition 対策
+
+gfarm のメタデータと実データには、以下のような、「不変条件のようなもの」
+がある。
+(1) backend データベースにメタデータ FileCopy が存在する場合、
+  すなわち、メモリ上に FILE_COPY_IS_VALID() な file_copy メタデータがある場合、
+  最新の世代番号に対応する実ファイルが、そのファイルシステムノードに存在する。
+(2) メモリ上に FILE_COPY_IS_BEING_REMOVED() な file_copy メタデータがある場合、
+  最新世代に対する削除を実行中である。
+  このノードに複製を作成してはならないし、再度複製削除を実行してはならない。
+(3) メモリ上に !FILE_COPY_IS_BEING_REMOVED() かつ !FILE_COPY_IS_VALID() な
+  file_copy メタデータがある場合、このノードに対して gfmd主導複製作成処理を
+  実行中である。
+  このノードに重ねて複製作成をしてはならないし、複製削除を実行してはならない。
+  (世代更新時は、複製完了時に旧世代であるか検査して、自動的に削除が行なわれる)
+(4) 条件 (1)〜(3) が成立しない場合、そのファイルシステムノードに、
+  新たに複製を作成して良い。
+
+これらの条件は、およそ保たれているが、メタデータサーバとファイルシステム
+ノードが分散している関係上、正確には不変条件ではなく、一時的に条件が
+破れる状況がある。そのような状況を保護するための仕組みをこの項では解説する。
+
+(1) の条件は、以下の状況で破れる。
+(1.1) gfmd が GFM_PROTO_REOPEN に to_create:真 で返答してから、
+   gfsd が、実際にその実体を作成するまでの間
+(1.2) gfmd が GFM_PROTO_CLOSE_WRITE_V2_4 に返答してから、
+   gfsd が GFM_PROTO_GENERATION_UPDATED を発行するまでの間
+
+メタデータに基づいて、ファイルにアクセスする処理としては、以下がある。
+- GFS_PROTO_OPEN (ファイル作成およびオープン)
+- GFS_PROTO_OPEN_LOCAL (ファイル作成およびオープン)
+- GFS_PROTO_REPLICA_ADD_FROM (クライアント主導複製要求)
+- GFS_PROTO_REPLICATION_REQUEST (gfmd 主導複製要求の裏方)
+- GFS_PROTO_FHREMOVE (複製削除)
+- GFS_PROTO_FHOPEN (gfarm-3.X で利用。複製ソース側のオープン)
+- GFS_PROTO_REPLICA_RECV (gfarm-2.X で利用。複製ソース側のオープン)
+- GFM_PROTO_REPLICATE_FILE_FROM_TO (gfmd 主導複製要求)
+- GFM_PROTO_CLOSE_WRITE_V2_4 (複製の改名)
+このうち、GFS_PROTO_REPLICA_ADD_FROM および GFS_PROTO_REPLICATION_REQUEST は、
+GFS_PROTO_FHOPEN ないし GFS_PROTO_REPLICA_RECV を用いて依頼することによって、
+ソース側の複製にアクセスする。
+また、GFM_PROTO_REPLICATE_FILE_FROM_TO は、GFS_PROTO_REPLICATION_REQUEST を
+用いて依頼することによって、複製にアクセスする。
+
+GFS_PROTO_OPEN / GFS_PROTO_OPEN_LOCAL は、(1.1) の状況下では、
+GFM_PROTO_REPLICA_LOST で、そのメタデータを削除しようとする。
+gfmd は、inode_is_opened_on() でこの状況を検査し (すなわち、その複製が
+現在オープンされている場合は、新規作成されている最中である可能性がある
+と判断し)、その場合は GFARM_ERR_FILE_BUSY を返す。
+この場合 gfsd はクライアントに GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE を
+返し、クライアントはスケジューリングからやり直す。
+この race condition は SF.net #666 で最終的に修正されたため、それより
+以前のバージョンでは、この処理に問題がある。
+SF.net #455 では一度この問題に対処しようとしたが、inode_is_opened_for_writing()
+で判断していたため、0バイトのファイルを read-only オープンする場合に
+問題があった。
+
+GFS_PROTO_OPEN / GFS_PROTO_OPEN_LOCAL は、(1.2) の race condition の
+影響を受けない。これは、GFS_PROTO_OPEN / GFS_PROTO_OPEN_LOCAL が内部的
+に発行する GFM_PROTO_REOPEN が、世代番号更新処理中は返答を返さずに
+待つためである。(これは SF.net #34 で世代番号更新時の実体ファイルの改名が
+導入された際に実装された)
+
+GFS_PROTO_REPLICA_ADD_FROM は、(1.2) の待ち合わせを行なっている。
+
+GFM_PROTO_REPLICATE_FILE_FROM_TO は、(1.2) の待ち合わせを行なっていない
+が、改名中はエラー GFARM_ERR_FILE_BUSY を返すため、race condition はない。
+(改名前の書き込みオープン中も GFARM_ERR_FILE_BUSY を返すので、
+ GFARM_ERR_FILE_BUSY 返す期間がわずかに伸びても実害があるとまでは言えない)
+
+(4) の条件は、以下の状況で破れる。
+(4.1) GFM_PROTO_REPLICA_REMOVE_BY_FILE (gfrm -h) で、その複製の削除
+  要求を出してから、実際にその複製が削除されるまでの間
+(4.2) そのホストに、新たに複製を作成している最中
+
+また、クライアントが、これらの情報を取得してから、実際にファイル
+アクセスを行なうまでの間に、これらの状況が変化してしまうことがある。
+それによる問題を防ぐために、以下のような処理をしている。
+
+
+■ RPC で利用する関数
+
+クライアント側RPCスタブが、_request() と _result() に分かれているもの
+については、将来、スレッド対応とともに全面的に async 化した場合に備え、
+引数に xid リストをとる。
+
+○ gfsd クライアント側スタブから利用するもの
+　※ ただし GFS_PROTO_REPLICA_RECV を除く
+
+sync 側 (クライアントおよび gfsd 内)
+
+　可変長引数をとるプロトコルはない。
+　このため、gfs_client_rpc{,_request,_result}() のみ。
+
+async 側 (gfmd 内)
+
+○ gfsd サーバ側プロトコルハンドラから利用するもの
+　※ ただし GFS_PROTO_REPLICA_RECV を除く
+
+sync 側
+
+e = gfp_xdr_recv_notimeout(client, 0, &eof, "i", &request);
+の後、
+void
+gfs_server_get_request(struct gfp_xdr *client, const char *diag,
+	const char *format, ...)
+
+void
+gfs_server_put_reply(struct gfp_xdr *client, const char *diag,
+	int ecode, char *format, ...)
+void
+gfs_server_put_reply_with_errno(struct gfp_xdr *client, const char *diag,
+	int eno, char *format, ...)
+
+async 側
+
+○ gfmd クライアント側スタブから利用するもの
+
+　可変長引数をとるプロトコルがある。
+　このため、固定引数の gfm_client_rpc{,_request,_result}() と、
+  可変引数用の gfm_client_rpc_{request,result}_{begin,end}() からなる。
+
+sync 側 (クライアントおよび gfsd 内)
+
+async 側 (gfsd 内)
+
+gfarm_error_t
+gfm_async_client_send_request(struct gfp_xdr *bc_conn,
+	gfp_xdr_async_peer_t async, const char *diag,
+	gfarm_int32_t (*result_callback)(void *, void *, size_t),
+	void (*disconnect_callback)(void *, void *),
+	void *closure,
+	gfarm_int32_t command, const char *format, ...)
+ →
+	e = gfp_xdr_vsend_async_request(bc_conn, async,
+	    result_callback, disconnect_callback, closure,
+	    command, format, &ap);
+
+○ gfmd サーバ側プロトコルハンドラから利用するもの
+
+sync 側
+
+async 側
+
+○ gfsd/gfmd 共通クライアント側下請け関数
+
+　固定引数の gfp_xdr_vrpc{,_request,_result}() と、
+  可変引数用の gfp_xdr_vrpc_{request,result}_{begin,end}() および
+  引数そのものの送受信に使う gfp_xdr_{send,recv}() を提供する。
+
+ (gfsd 内)
+
+○ gfsd/gfmd 共通サーバ側下請け関数
+
+リクエスト受信
+
+gfarm_error_t
+gfp_xdr_recv_request_command(struct gfp_xdr *client, int just, size_t *sizep,
+	gfarm_int32_t *commandp)
+
+gfarm_error_t
+gfp_xdr_vrecv_request_parameters(struct gfp_xdr *client, int just,
+	size_t *sizep, const char *format, va_list *app)
+
+gfarm_error_t
+gfp_xdr_recv_async_header(struct gfp_xdr *conn, int just,
+	enum gfp_xdr_msg_type *typep, gfp_xdr_xid_t *xidp, size_t *sizep)
+
+リプライ送信
+
+
+○ gfsd/gfmd 共通下請け関数
+

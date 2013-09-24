@@ -1021,9 +1021,12 @@
 
 	GFM_PROTO_REMOTE_RPC … クライアントおよびgfsdからの要求のリレー
 	  入力: l:peer_id
-		これ以降、リレーする gfm protocol の
+		これ以降、リレーされた gfm protocol の
 			プロトコルID、入力引数が続く
-	  出力: リレーされた gfm protocol の出力
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:seqnum, l:db_update_flags
+		これ以降、リレーされた gfm protocol のエラーおよび出力が続く
 
 	GFM_PROTO_REMOTE_GFS_RPC … gfsd back channel への要求のリレー
 	  入力: l:peer_id
