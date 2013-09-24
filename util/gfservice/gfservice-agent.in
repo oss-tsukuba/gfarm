@@ -782,14 +782,17 @@ subcmd_mount()
 {
 	log_debug "subcmd_mount"
 
-	GFARM2FS=`get_param gfarm2fs`
+	MOUNT_GFARM2FS=`get_param mount-gfarm2fs`
+	[ "X$MOUNT_GFARM2FS" = X ] && MOUNT_GFARM2FS="mount.gfarm2fs"
 	DIRECTORY=`get_param directory` || {
 		log_error "missing mandatory argument 'directory'"
 	}
 	log_debug "subcmd_mount: directory=$DIRECTORY"
 	OPTIONS=`get_param options || echo ''`
 	log_debug "subcmd_mount: options=$OPTIONS"
-	GFARM_CONFIG_FILE=$GFARM_CONF $GFARM2FS $DIRECTORY $OPTIONS
+	log_debug "subcmd_mount:" \
+		"execute $MOUNT_GFARM2FS $GFARM_CONF $DIRECTORY $OPTIONS"
+	$MOUNT_GFARM2FS $GFARM_CONF $DIRECTORY $OPTIONS
 	[ $? -ne 0 ] && log_error "failed to mount Gfarm2 filesystem"
 
 	log_debug "end subcmd_mount"
@@ -803,11 +806,14 @@ subcmd_unmount()
 {
 	log_debug "subcmd_unmount"
 
+	UMOUNT_GFARM2FS=`get_param umount-gfarm2fs`
+	[ "X$UMOUNT_GFARM2FS" = X ] && UMOUNT_GFARM2FS="umount.gfarm2fs"
 	DIRECTORY=`get_param directory` || {
 		log_error "missing mandatory argument 'directory'"
 	}
 	log_debug "subcmd_unmount: directory=$DIRECTORY"
-	fusermount -u $DIRECTORY
+	log_debug "subcmd_mount: execute $UMOUNT_GFARM2FS $DIRECTORY"
+	$UMOUNT_GFARM2FS $DIRECTORY
 	[ $? -ne 0 ] && log_error "failed to unmount Gfarm2 filesystem"
 
 	log_debug "end subcmd_unmount"

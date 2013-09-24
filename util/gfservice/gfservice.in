@@ -13,7 +13,8 @@ PROGRAM=gfservice
 DEFAULT_CONF="$HOME/.gfservice"
 DEFAULT_SUDO=sudo
 DEFAULT_SSH=ssh
-DEFAULT_GFARM2FS="@bindir@/gfarm2fs"
+DEFAULT_MOUNT_GFARM2FS="@bindir@/mount.gfarm2fs"
+DEFAULT_UMOUNT_GFARM2FS="@bindir@/umount.gfarm2fs"
 DEFAULT_GFARM_CONF="@sysconfdir@/gfarm2.conf"
 
 # Myself, used for execute 'gfservice' as a child.
@@ -202,29 +203,48 @@ get_agent()
 }
 
 #
-# Get 'gfarm2fs' command corresponding with a host ID.
+# Get 'mount.gfarm2fs' command corresponding with a host ID.
 #
-get_gfarm2fs()
+get_mount_gfarm2fs()
 {
-	log_debug "get_gfarm2fs: HOSTID=$1"
+	log_debug "get_mount_gfarm2fs: HOSTID=$1"
 
-	GFARM2FS=`eval echo \\$$1_GFARM2FS`
-	GFARM2FS_BIN_PATH=`eval echo \\$$1_GFARM2FS_BIN_PATH`
+	MOUNT_GFARM2FS=`eval echo \\$$1_MOUNT_GFARM2FS`
 
-	if [ "X$GFARM2FS" != X ]; then
-		echo $GFARM2FS
-		log_debug "get_gfarm2fs: GFARM2FS=$GFARM2FS"
-	elif [ "X$GFARM2FS_BIN_PATH" != X ]; then
-		echo $GFARM2FS_BIN_PATH/gfarm2fs
-		log_warn "Use '${HOSTID}_GFARM2FS' instead of" \
-			"'${HOSTID}_GFARM2FS_BIN_PATH'"
-		log_debug "get_gfarm2fs: GFARM2FS=$GFARM2FS_BIN_PATH/gfarm2fs"
+	if [ "X$MOUNT_GFARM2FS" != X ]; then
+		echo $MOUNT_GFARM2FS
+		log_debug "get_mount_gfarm2fs:" \
+			"MOUNT_GFARM2FS=$MOUNT_GFARM2FS"
 	else
-		echo $DEFAULT_GFARM2FS
-		log_debug "get_gfarm2fs: GFARM2FS=$DEFAULT_GFARM2FS"
+		echo $DEFAULT_MOUNT_GFARM2FS
+		log_debug "get_mount_gfarm2fs:" \
+			"MOUNT_GFARM2FS=$DEFAULT_MOUNT_GFARM2FS"
 	fi
 
-	log_debug "end get_gfarm2fs"
+	log_debug "end get_mount_gfarm2fs"
+	return 0
+}
+
+#
+# Get 'umount.gfarm2fs' command corresponding with a host ID.
+#
+get_umount_gfarm2fs()
+{
+	log_debug "get_umount_gfarm2fs: HOSTID=$1"
+
+	UMOUNT_GFARM2FS=`eval echo \\$$1_UMOUNT_GFARM2FS`
+
+	if [ "X$UMOUNT_GFARM2FS" != X ]; then
+		echo $UMOUNT_GFARM2FS
+		log_debug "get_umount_gfarm2fs:" \
+			"UMOUNT_GFARM2FS=$MOUNT_GFARM2FS"
+	else
+		echo $DEFAULT_UMOUNT_GFARM2FS
+		log_debug "get_umount_gfarm2fs:" \
+			"UMOUNT_GFARM2FS=$DEFAULT_UMOUNT_GFARM2FS"
+	fi
+
+	log_debug "end get_umount_gfarm2fs"
 	return 0
 }
 
@@ -1797,7 +1817,7 @@ subcmd_mount()
 	check_hostid any $HOSTID
 	DIR="$1"
 	shift
-	GFARM2FS=`get_gfarm2fs $HOSTID`
+	MOUNT_GFARM2FS=`get_mount_gfarm2fs $HOSTID`
 	OPTIONS=
 	for I in "$@"; do
 		if [ "X$OPTIONS" = X ]; then
@@ -1807,7 +1827,7 @@ subcmd_mount()
 		fi
 	done
 	exec_remote_host_agent $HOSTID - mount "directory=$DIR" \
-		"gfarm2fs=$GFARM2FS" "options=$OPTIONS"
+		"mount-gfarm2fs=$MOUNT_GFARM2FS" "options=$OPTIONS"
 	[ $? -ne 0 ] && log_error "gfservice-agent mount failed"
 
 	log_debug "end subcmd_mount"
@@ -1822,7 +1842,9 @@ subcmd_unmount()
 
 	check_argc $# 1
 	check_hostid any $HOSTID
-	exec_remote_host_agent $HOSTID - unmount "directory=$1"
+	UMOUNT_GFARM2FS=`get_umount_gfarm2fs $HOSTID`
+	exec_remote_host_agent $HOSTID - unmount "directory=$1" \
+		"umount-gfarm2fs=$UMOUNT_GFARM2FS"
 	[ $? -ne 0 ] && log_error "gfservice-agent unmount failed"
 
 	log_debug "end subcmd_unmount"

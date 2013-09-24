@@ -379,13 +379,29 @@ Otherwise it executes <command moreinfo="none">"gfservice-agent"</command>.
 </varlistentry>
 
 <varlistentry>
-<term><varname>client<replaceable>n</replaceable>_GFARM2FS</varname></term>
+<term><varname>client<replaceable>n</replaceable>_MOUNT_GFARM2FS</varname></term>
 <listitem>
 <para>
-Specify a path to <command moreinfo="none">gfarm2fs</command> command and its options.
-The variable is used when <command moreinfo="none">gfservice</command> executes
-<command moreinfo="none">gfarm2fs</command> command to mount a file system.
-The default value is "%%BINDIR%%/gfarm2fs".
+Specify a path to <command moreinfo="none">mount.gfarm2fs</command> command
+and its options.
+The variable is used when <command moreinfo="none">gfservice</command>
+executes <command moreinfo="none">mount.gfarm2fs</command> command to
+mount a file system.
+The default value is "%%BINDIR%%/mount.gfarm2fs".
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_UMOUNT_GFARM2FS</varname></term>
+<listitem>
+<para>
+Specify a path to <command moreinfo="none">umount.gfarm2fs</command> command
+and its options.
+The variable is used when <command moreinfo="none">gfservice</command>
+executes <command moreinfo="none">umount.gfarm2fs</command> command to
+unmount a file system.
+The default value is "%%BINDIR%%/umount.gfarm2fs".
 </para>
 </listitem>
 </varlistentry>
