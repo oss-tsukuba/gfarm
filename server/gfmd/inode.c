@@ -1317,7 +1317,6 @@ inode_remove(struct inode *inode)
 	if (inode->u.c.activity != NULL)
 		gflog_fatal(GFARM_MSG_1000302, "inode_remove: still opened");
 
-	quota_update_file_remove(inode);
 	if (inode_is_file(inode)) {
 		struct file_copy *copy, *cn;
 
@@ -1344,6 +1343,7 @@ inode_remove(struct inode *inode)
 		    (unsigned long long)inode->i_number, inode->i_mode);
 		/*NOTREACHED*/
 	}
+	quota_update_file_remove(inode);
 	inode_free(inode);
 
 	if (dfc_needs_free && inode->dead_copies != NULL)
