@@ -83,6 +83,8 @@
 
 #define COMPAT_OLD_GFS_PROTOCOL
 
+#define FAILOVER_SIGNAL	SIGUSR1
+
 #define LOCAL_SOCKDIR_MODE	0755
 #define LOCAL_SOCKET_MODE	0777
 #define PERMISSION_MASK		0777
@@ -335,120 +337,6 @@ accepting_fatal_errno_full(int msg_no, const char *file, int line_no,
 }
 
 
-#define FAILOVER_SIGNAL	SIGUSR1
-
-static enum gfsd_type {
-	type_listener, type_client, type_back_channel, type_replication
-} my_type = type_listener;
-
-static int failover_notify_recv_fd = -1;
-static int failover_notify_send_fd = -1;
-
-static void
-failover_handler(int signo)
-{
-	char dummy[1];
-	ssize_t rv;
-
-	if (my_type == type_listener || my_type == type_replication)
-		return; /* nothing to do */
-	if (failover_notify_send_fd == -1)
-		abort();
-	dummy[0] = 0;
-	rv = write(failover_notify_send_fd, dummy, sizeof dummy);
-	if (rv != sizeof dummy)
-		abort(); /* cannot call assert() from a signal handler */
-}
-
-static void
-failover_notified(int do_logging, const char *diag)
-{
-	ssize_t rv;
-	char dummy[1];
-
-	if (do_logging)
-		gflog_info(GFARM_MSG_UNFIXED,
-		    "%s: failover notified", diag);
-	rv = read(failover_notify_recv_fd, dummy, sizeof dummy);
-	if (rv == -1)
-		gflog_error_errno(GFARM_MSG_UNFIXED,
-		    "%s: failover notified: read", diag);
-	else if (rv != sizeof dummy)
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s: failover notified: size expected %zd but %zd",
-		    diag, sizeof dummy, rv);
-}
-
-static pid_t
-do_fork(enum gfsd_type new_type)
-{
-	sigset_t old, new;
-	pid_t rv;
-	int save_errno;
-	int pipefds[2];
-
-	assert((my_type == type_listener &&
-		(new_type == type_client || new_type == type_back_channel)) ||
-	       (my_type == type_back_channel && new_type == type_replication));
-
-	/* block FAILOVER_SIGNAL to prevent race condition */
-	if (sigemptyset(&new) == -1)
-		fatal(GFARM_MSG_UNFIXED, "sigemptyset(): %s", strerror(errno));
-	if (sigaddset(&new, FAILOVER_SIGNAL) == -1)
-		fatal(GFARM_MSG_UNFIXED, "sigaddset(FAILOVER_SIGNAL): %s",
-		    strerror(errno));
-	if (sigprocmask(SIG_BLOCK, &new, &old) == -1)
-		fatal(GFARM_MSG_UNFIXED, "sigprocmask: block failover: %s",
-		    strerror(errno));
-
-	rv = fork();
-	save_errno = errno;
-	if (rv == -1) {
-		/* nothing to do */
-	} else if (rv != 0) { /* parent process */
-		if (my_type == type_listener && new_type == type_back_channel)
-			back_channel_gfsd_pid = rv;
-	} else { /* child process */
-		gfm_server = NULL; /* to make sure to avoid race */
-		switch (my_type) {
-		case type_listener:
-			switch (new_type) {
-			case type_client:
-				break;
-			case type_back_channel:
-				/* this should be set before fatal() */
-				back_channel_gfsd_pid = getpid();
-				break;
-			default:
-				assert(0);
-			}
-			my_type = new_type;
-			if (pipe(pipefds) == -1)
-				fatal(GFARM_MSG_UNFIXED, "pipe after fork: %s",
-				    strerror(errno));
-			failover_notify_recv_fd = pipefds[0];
-			failover_notify_send_fd = pipefds[1];
-			break;
-		case type_back_channel:
-			assert(new_type == type_replication);
-			my_type = new_type;
-			close(failover_notify_recv_fd);
-			close(failover_notify_send_fd);
-			failover_notify_recv_fd = failover_notify_send_fd = -1;
-			break;
-		default:
-			assert(0);
-			break;
-		}
-	}
-	if (sigprocmask(SIG_SETMASK, &old, NULL) == -1)
-		fatal(GFARM_MSG_UNFIXED, "sigprocmask: unblock failover: %s",
-		    strerror(errno));
-	errno = save_errno;
-	return (rv);
-}
-
-
 static int
 sleep_or_wait_signal(int seconds, int signo)
 {
@@ -619,6 +507,119 @@ reconnect_gfm_server_for_failover(const char *diag)
 	}
 	fd_usable_to_gfmd = 0;
 }
+
+
+static enum gfsd_type {
+	type_listener, type_client, type_back_channel, type_replication
+} my_type = type_listener;
+
+static int failover_notify_recv_fd = -1;
+static int failover_notify_send_fd = -1;
+
+static void
+failover_handler(int signo)
+{
+	char dummy[1];
+	ssize_t rv;
+
+	if (my_type == type_listener || my_type == type_replication)
+		return; /* nothing to do */
+	if (failover_notify_send_fd == -1)
+		abort();
+	dummy[0] = 0;
+	rv = write(failover_notify_send_fd, dummy, sizeof dummy);
+	if (rv != sizeof dummy)
+		abort(); /* cannot call assert() from a signal handler */
+}
+
+static void
+failover_notified(int do_logging, const char *diag)
+{
+	ssize_t rv;
+	char dummy[1];
+
+	if (do_logging)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: failover notified", diag);
+	rv = read(failover_notify_recv_fd, dummy, sizeof dummy);
+	if (rv == -1)
+		gflog_error_errno(GFARM_MSG_UNFIXED,
+		    "%s: failover notified: read", diag);
+	else if (rv != sizeof dummy)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: failover notified: size expected %zd but %zd",
+		    diag, sizeof dummy, rv);
+}
+
+static pid_t
+do_fork(enum gfsd_type new_type)
+{
+	sigset_t old, new;
+	pid_t rv;
+	int save_errno;
+	int pipefds[2];
+
+	assert((my_type == type_listener &&
+		(new_type == type_client || new_type == type_back_channel)) ||
+	       (my_type == type_back_channel && new_type == type_replication));
+
+	/* block FAILOVER_SIGNAL to prevent race condition */
+	if (sigemptyset(&new) == -1)
+		fatal(GFARM_MSG_UNFIXED, "sigemptyset(): %s", strerror(errno));
+	if (sigaddset(&new, FAILOVER_SIGNAL) == -1)
+		fatal(GFARM_MSG_UNFIXED, "sigaddset(FAILOVER_SIGNAL): %s",
+		    strerror(errno));
+	if (sigprocmask(SIG_BLOCK, &new, &old) == -1)
+		fatal(GFARM_MSG_UNFIXED, "sigprocmask: block failover: %s",
+		    strerror(errno));
+
+	rv = fork();
+	save_errno = errno;
+	if (rv == -1) {
+		/* nothing to do */
+	} else if (rv != 0) { /* parent process */
+		if (my_type == type_listener && new_type == type_back_channel)
+			back_channel_gfsd_pid = rv;
+	} else { /* child process */
+		free_gfm_server(); /* to make sure to avoid race */
+		switch (my_type) {
+		case type_listener:
+			switch (new_type) {
+			case type_client:
+				break;
+			case type_back_channel:
+				/* this should be set before fatal() */
+				back_channel_gfsd_pid = getpid();
+				break;
+			default:
+				assert(0);
+			}
+			my_type = new_type;
+			if (pipe(pipefds) == -1)
+				fatal(GFARM_MSG_UNFIXED, "pipe after fork: %s",
+				    strerror(errno));
+			failover_notify_recv_fd = pipefds[0];
+			failover_notify_send_fd = pipefds[1];
+			break;
+		case type_back_channel:
+			assert(new_type == type_replication);
+			my_type = new_type;
+			close(failover_notify_recv_fd);
+			close(failover_notify_send_fd);
+			failover_notify_recv_fd = failover_notify_send_fd = -1;
+			break;
+		default:
+			assert(0);
+			break;
+		}
+	}
+	if (sigprocmask(SIG_SETMASK, &old, NULL) == -1)
+		fatal(GFARM_MSG_UNFIXED, "sigprocmask: unblock failover: %s",
+		    strerror(errno));
+	errno = save_errno;
+	return (rv);
+}
+
 
 static int
 fd_send_message(int fd, void *buf, size_t size, int fdc, int *fdv)
