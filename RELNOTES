@@ -1,3 +1,16 @@
+Release note for Gfarm 2.5.8.3
+==============================
+
+[2013.10.2]
+
+Updated feature
+* gfprep, gfocpy - -J option to specify the number of processes to
+  read directories [sf.net trac #726]
+
+Bug fix
+* PhysicalSpace and PhysicalNum in quota are incorrect when removing
+  files, which is introduced by Gfarm 2.5.8.2 [sf.net trac #730]
+
 Release note for Gfarm 2.5.8.2
 ==============================
 
