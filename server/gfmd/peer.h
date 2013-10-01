@@ -70,9 +70,9 @@ struct inode;
 void peer_set_pending_new_generation_by_fd(struct peer *, struct inode *);
 void peer_reset_pending_new_generation_by_fd(struct peer *);
 gfarm_error_t peer_add_pending_new_generation_by_cookie(
-	struct peer *, struct inode *, gfarm_uint64_t *);
+	struct peer *, struct inode *, gfarm_off_t, gfarm_uint64_t *);
 int peer_remove_pending_new_generation_by_cookie(struct peer *, gfarm_uint64_t,
-	struct inode **);
+	struct inode **, gfarm_off_t *);
 void peer_unset_pending_new_generation(struct peer *, gfarm_error_t);
 gfarm_uint64_t peer_add_cookie(struct peer *);
 int peer_delete_cookie(struct peer *, gfarm_uint64_t);

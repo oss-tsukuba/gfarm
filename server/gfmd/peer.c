@@ -133,6 +133,7 @@ struct peer_closing_queue {
 struct pending_new_generation_by_cookie {
 	struct inode *inode;
 	gfarm_uint64_t id;
+	gfarm_off_t old_size;
 	GFARM_HCIRCLEQ_ENTRY(pending_new_generation_by_cookie) cookie_link;
 };
 
@@ -1251,9 +1252,16 @@ static void
 peer_unset_pending_new_generation_by_fd(
 	struct peer *peer, gfarm_error_t reason)
 {
-	if (peer->pending_new_generation != NULL) {
-		inode_new_generation_by_fd_finish(peer->pending_new_generation,
-		    peer, reason);
+	struct inode *inode = peer->pending_new_generation;
+
+	if (inode != NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "gfsd connection is lost during GFM_PROTO_CLOSE_WRITE: "
+		    "inode %lld:%lld may be lost. (new size:%lld)",
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    (long long)inode_get_size(inode));
+		inode_new_generation_by_fd_finish(inode, peer, reason);
 		peer->pending_new_generation = NULL;
 	}
 }
@@ -1261,7 +1269,8 @@ peer_unset_pending_new_generation_by_fd(
 /* NOTE: caller of this function should acquire giant_lock as well */
 gfarm_error_t
 peer_add_pending_new_generation_by_cookie(
-	struct peer *peer, struct inode *inode, gfarm_uint64_t *cookiep)
+	struct peer *peer, struct inode *inode, gfarm_off_t old_size,
+	gfarm_uint64_t *cookiep)
 {
 	static const char *diag = "peer_add_cookie";
 	struct pending_new_generation_by_cookie *cookie;
@@ -1278,6 +1287,7 @@ peer_add_pending_new_generation_by_cookie(
 	gfarm_mutex_unlock(&peer_seqno_mutex, diag, peer_seqno_diag);
 
 	cookie->inode = inode;
+	cookie->old_size = old_size;
 	*cookiep = cookie->id = result;
 	GFARM_HCIRCLEQ_INSERT_HEAD(peer->pending_new_generation_cookies,
 	    cookie, cookie_link);
@@ -1288,7 +1298,8 @@ peer_add_pending_new_generation_by_cookie(
 /* NOTE: caller of this function should acquire giant_lock as well */
 int
 peer_remove_pending_new_generation_by_cookie(
-	struct peer *peer, gfarm_uint64_t cookie_id, struct inode **inodep)
+	struct peer *peer, gfarm_uint64_t cookie_id,
+	struct inode **inodep, gfarm_off_t *old_sizep)
 {
 	static const char *diag = "peer_delete_cookie";
 	struct pending_new_generation_by_cookie *cookie;
@@ -1299,6 +1310,8 @@ peer_remove_pending_new_generation_by_cookie(
 		if (cookie->id == cookie_id) {
 			if (inodep != NULL)
 				*inodep = cookie->inode;
+			if (old_sizep != NULL)
+				*old_sizep = cookie->old_size;
 			GFARM_HCIRCLEQ_REMOVE(cookie, cookie_link);
 			free(cookie);
 			found = 1;
@@ -1318,13 +1331,29 @@ peer_unset_pending_new_generation_by_cookie(
 	struct peer *peer, gfarm_error_t reason)
 {
 	struct pending_new_generation_by_cookie *cookie;
+	struct inode *inode;
 
 	while (!GFARM_HCIRCLEQ_EMPTY(peer->pending_new_generation_cookies,
 	    cookie_link)) {
 		cookie = GFARM_HCIRCLEQ_FIRST(
 		    peer->pending_new_generation_cookies, cookie_link);
+		inode = cookie->inode;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "gfsd connection is lost during GFM_PROTO_FHCLOSE_WRITE: "
+		    "inode %lld:%lld may be lost. "
+		    "(new size:%lld, old size:%lld)",
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    (long long)inode_get_size(inode),
+		    (long long)cookie->old_size);
+		/*
+		 * We don't know actual size in this case,
+		 * but assume new size here, just because the generation
+		 * is incremented in metadata.
+		 * Perhaps cookie->old_size is right, though.
+		 */
 		inode_new_generation_by_cookie_finish(
-		    cookie->inode, cookie->id, peer, reason);
+		    inode, inode_get_size(inode), cookie->id, peer, reason);
 		GFARM_HCIRCLEQ_REMOVE(cookie, cookie_link);
 		free(cookie);
 	}

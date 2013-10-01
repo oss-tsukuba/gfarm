@@ -86,8 +86,8 @@ gfarm_error_t inode_new_generation_by_cookie_start(
 	struct inode *, struct peer *, gfarm_uint64_t);
 gfarm_error_t inode_new_generation_by_fd_finish(
 	struct inode *, struct peer *, gfarm_error_t);
-gfarm_error_t inode_new_generation_by_cookie_finish(
-	struct inode *, gfarm_uint64_t, struct peer *, gfarm_error_t);
+gfarm_error_t inode_new_generation_by_cookie_finish(struct inode *,
+	gfarm_off_t, gfarm_uint64_t, struct peer *, gfarm_error_t);
 gfarm_error_t inode_new_generation_wait(struct inode *, struct peer *,
 	gfarm_error_t (*)(struct peer *, void *, int *), void *);
 
