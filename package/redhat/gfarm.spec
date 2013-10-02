@@ -1082,6 +1082,7 @@ fi
 %endif
 %{prefix}/bin/gfservice
 %{prefix}/bin/gfservice-agent
+%{prefix}/bin/gfservice-timeout
 %{prefix}/bin/gfstat
 %{prefix}/bin/gfstatus
 %{prefix}/bin/gftest
