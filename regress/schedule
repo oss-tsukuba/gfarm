@@ -121,6 +121,10 @@ gftool/gfncopy/gfncopy-C.sh
 gftool/gfncopy/gfncopy-M.sh
 gftool/gfncopy/gfncopy-h-symlink.sh
 gftool/gfncopy/gfncopy-many-attrs.sh
+gftool/gfusage/gfusage-file.sh
+gftool/gfusage/gfusage-dir.sh
+gftool/gfusage/gfusage-sym.sh
+gftool/gfusage/gfusage-chown.sh
 
 # gftool/gfkey
 
