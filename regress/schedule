@@ -103,6 +103,10 @@ gftool/gfxattr/gfxattr-long-value.sh
 gftool/gfxattr/gfxattr-xml-long-value.sh
 gftool/gfxattr/gfxattr-xml-non-utf8-value.sh
 gftool/gfncopy/gfncopy-s.sh
+gftool/gfusage/gfusage-file.sh
+gftool/gfusage/gfusage-dir.sh
+gftool/gfusage/gfusage-sym.sh
+gftool/gfusage/gfusage-chown.sh
 
 # gftool/gfchown
 # gftool/gfuser
