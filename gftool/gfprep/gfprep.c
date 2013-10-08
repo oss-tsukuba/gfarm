@@ -3027,6 +3027,9 @@ main(int argc, char *argv[])
 		gfprep_fatal("no argument");
 	program_name = basename(argv[0]);
 
+	e = gfarm_initialize(&orig_argc, &orig_argv);
+	gfprep_fatal_e(e, "gfarm_initialize");
+
 	while ((ch = getopt(
 			argc, argv,
 			"N:h:j:w:W:s:S:D:H:R:M:b:J:F:C:c:LxmnpPqvdfUZl?"))
@@ -3139,9 +3142,6 @@ main(int argc, char *argv[])
 	/* line buffered */
 	setvbuf(stdout, (char *) NULL, _IOLBF, 0);
 	setvbuf(stderr, (char *) NULL, _IOLBF, 0);
-
-	e = gfarm_initialize(&orig_argc, &orig_argv);
-	gfprep_fatal_e(e, "gfarm_initialize");
 
 	if (opt.debug) {
 		opt.quiet = 0;
