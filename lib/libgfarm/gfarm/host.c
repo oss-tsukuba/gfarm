@@ -37,6 +37,7 @@
 #include "hostspec.h"
 #include "gfm_client.h"
 #include "host.h"
+#include "gfs_failover.h"
 
 #ifndef __KERNEL__
 #define free_gethost_buff(buf)
@@ -110,9 +111,22 @@ host_info_get_by_name_alias(struct gfm_connection *gfm_server,
 	const char *hostname, struct gfarm_host_info *info)
 {
 	gfarm_error_t e, e2;
+	int failover_nretries = GFS_FAILOVER_RETRY_COUNT;
 
-	e = gfm_client_host_info_get_by_namealiases(gfm_server,
-	    1, &hostname, &e2, info);
+	for (;;) {
+		e = gfm_client_host_info_get_by_namealiases(gfm_server,
+		    1, &hostname, &e2, info);
+		if (!gfm_client_is_connection_error(e) ||
+		    --failover_nretries < 0)
+			break;
+		if ((e = gfm_client_connection_failover(gfm_server)) !=
+		    GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfm_client_connection_failover: "
+			    "%s", gfarm_error_string(e));
+			break;
+		}
+	}
 	if (e != GFARM_ERR_NO_ERROR || e2 != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1000866,
 			"gfm_client_host_info_get_by_namealiases(%s) failed: "
