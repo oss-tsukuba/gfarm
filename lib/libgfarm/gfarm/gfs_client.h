@@ -2,6 +2,8 @@
  * $Id$
  */
 
+#define GFS_CONN_RETRY_COUNT	1	/* retry for gfsd connection error */
+
 struct sockaddr;
 struct timeval;
 struct gfarm_eventqueue;

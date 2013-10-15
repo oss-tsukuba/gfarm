@@ -134,8 +134,8 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server = gfs_pio_metadb(gf);
 	struct gfs_connection *gfs_server;
-	int nretry = GFS_FAILOVER_RETRY_COUNT;
-	int gfsd_retried = 0, failover_retried = 0;
+	int gfsd_nretries = GFS_CONN_RETRY_COUNT;
+	int failover_nretries = GFS_FAILOVER_RETRY_COUNT;
 
 retry:
 	gfm_server = gfs_pio_metadb(gf);
@@ -155,35 +155,31 @@ retry:
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfs_client_replica_add_from: %s",
 		    gfarm_error_string(e));
-		if (nretry-- > 0) {
-			if (gfs_client_is_connection_error(e)) {
-				gfsd_retried = 1;
+		if (gfs_client_is_connection_error(e) &&
+		    --gfsd_nretries >= 0)
+			goto retry;
+		if (gfs_pio_should_failover(gf, e) &&
+		    --failover_nretries >= 0) {
+			if ((e = gfs_pio_failover(gf)) == GFARM_ERR_NO_ERROR)
 				goto retry;
-			}
-			if (gfs_pio_should_failover(gf, e)) {
-				if ((e = gfs_pio_failover(gf))
-				    != GFARM_ERR_NO_ERROR) {
-					gflog_debug(GFARM_MSG_UNFIXED,
-					    "gfs_pio_failover: %s",
-					    gfarm_error_string(e));
-				} else {
-					failover_retried = 1;
-					goto retry;
-				}
-			}
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_pio_failover: %s",
+			    gfarm_error_string(e));
 		}
 	}
 	if ((e == GFARM_ERR_ALREADY_EXISTS || e == GFARM_ERR_FILE_BUSY) &&
-	    (gfsd_retried || failover_retried)) {
+	    (gfsd_nretries != GFS_CONN_RETRY_COUNT ||
+	     failover_nretries != GFS_FAILOVER_RETRY_COUNT)) {
 		gflog_warning(GFARM_MSG_1003453,
 		    "error ocurred at retry for the operation after "
 		    "connection to %s, "
 		    "so the operation possibly succeeded in the server."
 		    " error='%s'",
-		    gfsd_retried && failover_retried ?
+		    (gfsd_nretries != GFS_CONN_RETRY_COUNT &&
+		     failover_nretries != GFS_FAILOVER_RETRY_COUNT) ?
 		    "gfsd was disconnected and connection to "
 		    "gfmd was failed over" :
-		    gfsd_retried ?
+		    gfsd_nretries != GFS_CONN_RETRY_COUNT ?
 		    "gfsd was disconnected" :
 		    "gfmd was failed over" ,
 		    gfarm_error_string(e));
