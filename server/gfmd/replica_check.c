@@ -32,6 +32,7 @@
 #include "subr.h"
 #include "user.h"
 #include "back_channel.h"
+#include "gflog_reduced.h"
 
 /* for debug */
 /* #define DEBUG_REPLICA_CHECK or CPPFLAGS='-DDEBUG_REPLICA_CHECK' */
@@ -44,49 +45,17 @@
 #define RC_LOG_INFO gflog_info
 #endif
 
-struct suppress_log {
-	char *type;
-	int level, count, suppressed, max;
-};
+#define SAME_WARNING_TRIGGER	10	/* check reduced mode */
+#define SAME_WARNING_THRESHOLD	30	/* more than this -> reduced mode */
+#define SAME_WARNING_DURATION	600	/* seconds to measure the limit */
+#define SAME_WARNING_INTERVAL	60	/* seconds: interval of reduced log */
 
-static struct suppress_log log_hosts_down
-= { .type = "hosts are down", .level = LOG_INFO, .max = 20 };
-
-static int log_is_suppressed(struct suppress_log *log)
-{
-	if (log->count < log->max) {
-		log->count++;
-		return (0);
-	}
-	if (log->suppressed)
-		return (1);
-
-	log->suppressed = 1;
-	switch (log->level) {
-	case LOG_DEBUG:
-		gflog_debug(GFARM_MSG_1003615,
-		    "replica_check: suppress many `%s' debug messages",
-		    log->type);
-		break;
-	case LOG_INFO:
-		gflog_info(GFARM_MSG_1003616,
-		    "replica_check: suppress many `%s' info messages",
-		     log->type);
-		break;
-	default:
-		break;
-	}
-	return (1);
-}
-
-static void suppress_log_reset(struct suppress_log *log)
-{
-	log->count = log->suppressed = 0;
-}
-static void suppress_log_reset_all()
-{
-	suppress_log_reset(&log_hosts_down);
-}
+static struct gflog_reduced_state hosts_down_state =
+	GFLOG_REDUCED_STATE_INITIALIZER(
+		SAME_WARNING_TRIGGER,
+		SAME_WARNING_THRESHOLD,
+		SAME_WARNING_DURATION,
+		SAME_WARNING_INTERVAL);
 
 struct replication_info {
 	gfarm_ino_t inum;
@@ -135,7 +104,7 @@ replica_check_fix(struct replication_info *info)
 		free(being_removed);
 		if (inode_get_size(inode) == 0)
 			return (GFARM_ERR_NO_ERROR); /* normally */
-		gflog_warning(GFARM_MSG_1003624,
+		gflog_error(GFARM_MSG_1003624,
 		    "replica_check: %lld:%lld:%s: lost all replicas",
 		    (long long)info->inum, (long long)info->gen,
 		    user_name(inode_get_user(inode)));
@@ -158,11 +127,10 @@ replica_check_fix(struct replication_info *info)
 		free(existing);
 		free(being_removed);
 		free(srcs);
-		if (!log_is_suppressed(&log_hosts_down))
-			gflog_info(GFARM_MSG_1003629,
-			    "replica_check: %lld:%lld:%s: hosts are down",
-			    (long long)info->inum, (long long)info->gen,
-			    user_name(inode_get_user(inode)));
+		gflog_reduced_warning(GFARM_MSG_1003629, &hosts_down_state,
+		    "replica_check: %lld:%lld:%s: hosts are down",
+		    (long long)info->inum, (long long)info->gen,
+		    user_name(inode_get_user(inode)));
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
 
@@ -636,7 +604,6 @@ replica_check_thread(void *arg)
 		time_t t = time(NULL) + gfarm_replica_check_minimum_interval;
 
 		replica_check_wait();
-		suppress_log_reset_all();
 
 		if (replica_check_main()) /* error occured, retry */
 			replica_check_targets_add(wait_time);
