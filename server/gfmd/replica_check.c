@@ -79,8 +79,6 @@ replica_check_fix(struct replication_info *info)
 		    (long long)info->inum, (long long)info->gen);
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
-	if (info->desired_number <= 0) /* disabled */
-		return (GFARM_ERR_NO_ERROR); /* OK */
 	if (inode_is_opened_for_writing(inode)) {
 		gflog_debug(GFARM_MSG_1003627,
 		    "replica_check: %lld:%lld:%s: "
@@ -134,12 +132,18 @@ replica_check_fix(struct replication_info *info)
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
 
-	/* indent for diff */
-		e = inode_schedule_replication_from_all(
-		    inode, info->desired_number, n_srcs, srcs,
-		    &n_existing, existing,
-		    gfarm_replica_check_host_down_thresh,
-		    &n_being_removed, being_removed, diag);
+	if (info->desired_number <= 0) { /* disabled */
+		free(existing);
+		free(being_removed);
+		free(srcs);
+		return (GFARM_ERR_NO_ERROR); /* skip */
+	}
+
+	e = inode_schedule_replication_from_all(
+	    inode, info->desired_number, n_srcs, srcs,
+	    &n_existing, existing,
+	    gfarm_replica_check_host_down_thresh,
+	    &n_being_removed, being_removed, diag);
 
 	free(existing);
 	free(being_removed);
