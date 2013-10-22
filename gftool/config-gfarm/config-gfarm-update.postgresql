@@ -4,54 +4,10 @@ update_usage_postgresql()
 	return 0 # backend-specific option(s) exist(s)
 }
 
-update_pgpass_postgresql()
-{
-	PGPASS=$HOME/.pgpass
-	if [ -f ${PGPASS} ]; then
-		if=${PGPASS}
-		of=${PGPASS}.new
-	else
-		if=/dev/null
-		of=${PGPASS}
-	fi
-	if [ ! -f ${of} ]; then
-		touch ${of} || ABORT "${of}: cannot create"
-		chmod 0600 ${of} || ABORT "${of}: cannot change mode"
-	fi
-
-	$awk -F: 'BEGIN {
-		host="'$1'"
-		port='$2'
-		db="'$3'"
-		user="'$4'"
-		passwd="'$5'"
-		done = 0
-	}
-	{
-		if ($1 != host || $2 != port || $3 != db || $4 != user) {
-			print $0
-		} else {
-			printf "%s:%s:%s:%s:%s\n", host, port, db, user, passwd
-			done = 1
-		}
-	}
-	END {
-		if (!done)
-			printf "%s:%s:%s:%s:%s\n", host, port, db, user, passwd
-	}' ${if} >${of}
-	if [ X"$if" != X"/dev/null" ]; then
-		if cmp -s ${if} ${of}; then
-			rm -f ${PGPASS}.new
-		else
-			mv ${PGPASS} ${PGPASS}.bak
-			mv ${PGPASS}.new ${PGPASS}
-		fi
-	fi
-}
-
 update_postprocess_postgresql()
 {
-	update_pgpass_postgresql localhost ${BACKEND_PORT} "${DB_NAME}" "${BACKEND_ADMIN_USER}" "${BACKEND_ADMIN_PASSWD}"
+	PGPASSWORD=$BACKEND_ADMIN_PASSWD
+	export PGPASSWORD
 }
 
 update_first_set_param_postgresql()
