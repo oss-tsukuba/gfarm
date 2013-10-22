@@ -82,8 +82,6 @@ replica_check_fix(struct replication_info *info)
 		    (long long)info->inum, (long long)info->gen);
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
-	if (info->repattr == NULL && info->desired_number <= 0) /* disabled */
-		return (GFARM_ERR_NO_ERROR); /* OK */
 	if (inode_is_opened_for_writing(inode)) {
 		gflog_debug(GFARM_MSG_1003627,
 		    "replica_check: %lld:%lld:%s: "
@@ -135,6 +133,13 @@ replica_check_fix(struct replication_info *info)
 		    (long long)info->inum, (long long)info->gen,
 		    user_name(inode_get_user(inode)));
 		return (GFARM_ERR_NO_ERROR); /* ignore */
+	}
+
+	if (info->repattr == NULL && info->desired_number <= 0) {/* disabled */
+		free(existing);
+		free(being_removed);
+		free(srcs);
+		return (GFARM_ERR_NO_ERROR); /* skip */
 	}
 
 	e = inode_schedule_replication(
