@@ -376,6 +376,8 @@ gfarm_error_t gfm_client_replicate_file_from_request(
 	struct gfm_connection *, const char *, const char *, gfarm_int32_t);
 gfarm_error_t gfm_client_replicate_file_from_result(
 	struct gfm_connection *);
+gfarm_error_t gfm_client_replica_check_ctrl_start(struct gfm_connection *);
+gfarm_error_t gfm_client_replica_check_ctrl_stop(struct gfm_connection *);
 
 /* replica management from gfsd */
 gfarm_error_t gfm_client_replica_adding_request(struct gfm_connection *,

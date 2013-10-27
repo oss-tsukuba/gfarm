@@ -3475,6 +3475,27 @@ gfm_client_replicate_file_to_result(struct gfm_connection *gfm_server)
 	return (gfm_client_rpc_result(gfm_server, 0, ""));
 }
 
+static gfarm_error_t
+gfm_client_replica_check_ctrl(struct gfm_connection *gfm_server, int ctrl)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+	    GFM_PROTO_REPLICA_CHECK_CTRL, "i/", ctrl));
+}
+
+gfarm_error_t
+gfm_client_replica_check_ctrl_start(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_replica_check_ctrl(gfm_server,
+	    GFM_PROTO_REPLICA_CHECK_CTRL_START));
+}
+
+gfarm_error_t
+gfm_client_replica_check_ctrl_stop(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_replica_check_ctrl(gfm_server,
+	    GFM_PROTO_REPLICA_CHECK_CTRL_STOP));
+}
+
 /*
  * replica management from gfsd
  */

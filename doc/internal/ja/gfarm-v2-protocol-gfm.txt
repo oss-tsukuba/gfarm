@@ -620,6 +620,10 @@
 	  入力: s:srchost, s:dsthost, i:flags
 	  出力: i:エラー
 
+	GFM_PROTO_REPLICA_CHECK_CTRL
+	  入力: i:ctrl
+	  出力: i:エラー
+
   gfs 系 / クライアントと gfsd の両方からのアクセス
 
 	GFM_PROTO_CLOSE
