@@ -1874,7 +1874,7 @@ test_fgetxattr(const char **argv)
 	const char *path = argv[0];
 	GFS_File gf;
 	char val[STR_BUFSIZE];
-	size_t sz;
+	size_t sz = sizeof(val);
 	struct gfm_connection *con = cache_gfm_connection(&gf, path);
 
 	wait_for_failover();
