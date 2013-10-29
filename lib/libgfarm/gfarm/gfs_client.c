@@ -829,6 +829,8 @@ retry:
 		 * invalidated and pid must be reallocated.
 		 */
 		if (e == GFARM_ERR_NO_SUCH_PROCESS) {
+			struct gfm_connection *gfm_server_new;
+
 			gfmd_host = strdup(gfm_client_hostname(gfm_server));
 			gfmd_port = gfm_client_port(gfm_server);
 			gfmd_user = strdup(gfm_client_username(gfm_server));
@@ -850,7 +852,7 @@ retry:
 				return (e);
 			}
 			e = gfm_client_connection_and_process_acquire(
-			    gfmd_host, gfmd_port, gfmd_user, &gfm_server);
+			    gfmd_host, gfmd_port, gfmd_user, &gfm_server_new);
 			free(gfmd_host);
 			free(gfmd_user);
 			if (e != GFARM_ERR_NO_ERROR) {
@@ -865,8 +867,8 @@ retry:
 			 * if gfm_server is related to GFS_File,
 			 * gfm_serverp is set to new gfm_conntion.
 			 */
-			if (*gfm_serverp != gfm_server)
-				*gfm_serverp = gfm_server;
+			if (gfm_server_new != gfm_server)
+				*gfm_serverp = gfm_server = gfm_server_new;
 		} else if (!gfs_client_is_connection_error(e))
 			return (e);
 		goto retry;

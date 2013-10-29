@@ -644,6 +644,7 @@ end:
 	free(pfds);
 	return (e);
 }
+
 /*
  * gfm_client_connection_acquire - create or lookup a cached connection
  */
