@@ -623,7 +623,7 @@ check_status()
 
 	gfarm_mutex_lock(&replica_check_status_mutex, diag, name);
 	while (replica_check_status == GFM_PROTO_REPLICA_CHECK_CTRL_STOP) {
-		gflog_debug(GFARM_MSG_UNFIXED, "replica_check: stopped");
+		gflog_info(GFARM_MSG_UNFIXED, "replica_check: stopped");
 		gfarm_cond_wait(&replica_check_status_cond,
 		    &replica_check_status_mutex, diag, name);
 	}
@@ -691,17 +691,15 @@ replica_check_thread(void *arg)
 	replica_check_targets_add(DFC_SCAN_INTERVAL);
 
 	for (;;) {
-		time_t t;
+		time_t t = time(NULL) + gfarm_replica_check_minimum_interval;
 
+		replica_check_wait();
 		/* if the status is stop, wait here */
 		check_status();
-
-		t = time(NULL) + gfarm_replica_check_minimum_interval;
-		replica_check_wait();
-
 		if (replica_check_main()) /* error occured, retry */
 			replica_check_targets_add(wait_time);
 
+		/* call dead_file_copy_scan_deferred_all */
 		if (time(NULL) >= dfc_scan_time) {
 			replica_check_giant_lock();
 			dead_file_copy_scan_deferred_all();
@@ -713,7 +711,6 @@ replica_check_thread(void *arg)
 			    "replica_check: dead_file_copy_scan_deferred_all,"
 			    " next=%ld", (long)dfc_scan_time);
 		}
-
 		t = t - time(NULL);
 		if (t > 0)
 			gfarm_sleep(t);
