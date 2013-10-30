@@ -50,7 +50,9 @@
 #include "metadb_server.h"
 #include "filesystem.h"
 #include "liberror.h"
+#ifdef __KERNEL__
 #include "nanosec.h"
+#endif /* __KERNEL__ */
 
 struct gfm_connection {
 	struct gfp_cached_connection *cache_entry;
@@ -659,7 +661,9 @@ gfm_client_connection_acquire(const char *hostname, int port,
 	unsigned int sleep_max_interval = 512;	/* about 8.5 min */
 	struct timeval expiration_time;
 
+#ifdef __KERNEL__
 retry:
+#endif /* __KERNEL__ */
 	e = gfp_cached_connection_acquire(&staticp->server_cache,
 	    hostname, port, user, &cache_entry, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -670,6 +674,7 @@ retry:
 	}
 	if (!created) {
 		*gfm_serverp = gfp_cached_connection_get_data(cache_entry);
+#ifdef __KERNEL__	/* workaround for race condition in MT */
 		if (!*gfm_serverp) {
 			gflog_warning(GFARM_MSG_UNFIXED,
 				"gfm_client_connection_acquire:"
@@ -679,6 +684,7 @@ retry:
 			gfarm_nanosleep(10 * 1000 * 1000);
 			goto retry;
 		}
+#endif /* __KERNEL__ */
 		return (GFARM_ERR_NO_ERROR);
 	}
 	e = gfm_client_connection0(cache_entry, gfm_serverp, NULL, NULL,

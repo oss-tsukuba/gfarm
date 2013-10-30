@@ -57,9 +57,9 @@
 #include "gfm_client.h"
 #include "filesystem.h"
 #include "gfs_failover.h"
-#include "nanosec.h"
 #include "iostat.h"
 #ifdef __KERNEL__
+#include "nanosec.h"
 #include "gfsk_fs.h"
 #endif /* __KERNEL__ */
 
@@ -649,7 +649,9 @@ gfs_client_connection_acquire(const char *canonical_hostname, const char *user,
 	struct gfp_cached_connection *cache_entry;
 	int created;
 
+#ifdef __KERNEL__
 retry:
+#endif
 	e = gfp_cached_connection_acquire(&staticp->server_cache,
 	    canonical_hostname,
 	    ntohs(((struct sockaddr_in *)peer_addr)->sin_port),
@@ -663,6 +665,7 @@ retry:
 	}
 	if (!created) {
 		*gfs_serverp = gfp_cached_connection_get_data(cache_entry);
+#ifdef __KERNEL__	/* workaround for race condition in MT */
 		if (!*gfs_serverp) {
 			gflog_warning(GFARM_MSG_UNFIXED,
 				"gfs_client_connection_acquire:"
@@ -672,6 +675,7 @@ retry:
 			gfarm_nanosleep(10 * 1000 * 1000);
 			goto retry;
 		}
+#endif /* __KERNEL__ */
 		return (GFARM_ERR_NO_ERROR);
 	}
 	e = gfs_client_connection_alloc_and_auth(canonical_hostname, user,
@@ -698,7 +702,9 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 	struct sockaddr peer_addr;
 	const char *user = gfm_client_username(gfm_server);
 
+#ifdef __KERNEL__
 retry:
+#endif /* __KERNEL__ */
 	/*
 	 * lookup gfs_server_cache first,
 	 * to eliminate hostname -> IP-address conversion in a cached case.
@@ -714,6 +720,7 @@ retry:
 	}
 	if (!created) {
 		*gfs_serverp = gfp_cached_connection_get_data(cache_entry);
+#ifdef __KERNEL__	/* workaround for race condition in MT */
 		if (!*gfs_serverp) {
 			gflog_warning(GFARM_MSG_UNFIXED,
 				"gfs_client_connection_acquire_by_host:"
@@ -723,6 +730,7 @@ retry:
 			gfarm_nanosleep(10 * 1000 * 1000);
 			goto retry;
 		}
+#endif /* __KERNEL__ */
 		return (GFARM_ERR_NO_ERROR);
 	}
 	e = gfm_host_address_get(gfm_server, canonical_hostname, port,
