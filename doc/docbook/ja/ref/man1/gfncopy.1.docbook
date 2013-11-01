@@ -61,6 +61,13 @@
 </varlistentry>
 
 <varlistentry>
+<term><option>-w</option></term>
+<listitem>
+<para>ファイル複製が作成されるのを待ちます。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-v</option></term>
 <listitem>
 <para>自動複製作成数を設定している先祖のディレクトリまでのパス名も含めて表示します。</para>

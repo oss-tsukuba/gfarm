@@ -61,6 +61,13 @@ repilcas.
 </varlistentry>
 
 <varlistentry>
+<term><option>-w</option></term>
+<listitem>
+<para>waits until the file replicas are created.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-v</option></term>
 <listitem>
 <para>displays path names up to the ancient directory that specifies
