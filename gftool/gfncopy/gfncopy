@@ -98,8 +98,8 @@ COUNT)
 	[ $? -eq 0 ] && echo $out | wc -w
 	;;
 WAIT)
-	if gftest -f $URL; then
-		ncopy=`gfncopy $URL`
+	ncopy=`gfncopy $URL`
+	if [ X$ncopy != X ] && gftest -f $URL; then
 		count=`gfstat -c $URL`
 		while [ $count -lt $ncopy ]; do
 			sleep 1
