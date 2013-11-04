@@ -100,11 +100,24 @@ COUNT)
 WAIT)
 	ncopy=`gfncopy $URL`
 	if [ X$ncopy != X ] && gftest -f $URL; then
+		ngfsd=$ncopy
 		count=`gfstat -c $URL`
-		while [ $count -lt $ncopy ]; do
-			sleep 1
+		timeout=10
+		while [ $count -lt $ncopy -a $ngfsd -ge $ncopy \
+			-a $timeout -gt 0 ]; do
+			ngfsd=`gfsched -w | wc -l`
+			[ X"$ngfsd" = X ] && ngfsd=0
 			count=`gfstat -c $URL`
+			timeout=`expr $timeout - 1`
 		done
+		if [ $ngfsd -lt $ncopy ]; then
+			echo >&2 "not enough number of file system nodes"
+			exit 1
+		elif [ $timeout -le 0 ]; then
+			echo >&2 "timeout"
+			exit 1
+		fi
 	fi
+	exit 0
 	;;
 esac
