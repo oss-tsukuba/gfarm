@@ -104,14 +104,6 @@ To enable replicated metadata servers, execute config-gfarm with the
 # config-gfarm -r
 </PRE></TD></TR></TBODY></TABLE>
 
-Before restoring the metadata, stop gfmd and remove the journal file
-by the root user.
-<p>
-<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# /etc/init.d/gfmd stop
-# rm /var/gfarm-metadata/journal/0000000000.gmj
-</PRE></TD></TR></TBODY></TABLE>
-
 Restore the metadata by the root user.<br>
 If you specified --prefix or --l option to the config-gfarm command,
 you have to specify same options to the gfdump.postgresql command too.
