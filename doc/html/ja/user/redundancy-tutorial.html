@@ -68,7 +68,7 @@ $ gfmdhost -l
 - slave  sync  c (default)    host-b 601
 </PRE></TD></TR></TBODY></TABLE>
 
-gfarm2.confにmetadb_server_listを追加して、メタデータサーバのホスト名とポート番号の一覧を記述します。
+gfarm2.confにmetadb_server_listを追加して、全てのメタデータサーバのホスト名とポート番号の一覧を記述します。
 <BR><BR>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 metadb_server_list host-a:601 host-b:601
@@ -114,11 +114,15 @@ gfdump.postgresql に対しても同じオプションを与えてください�
 完了してから、次のスレーブの config-gfarm -r を行なうようにしてください。</LI>
 </UL>
 
+マスターメタデータサーバでmetadb_server_listを追加した
+gfarm2.confを、スレーブメタデータサーバにコピーします。
+これは、スレーブメタデータサーバ上で gfmdhost コマンドのような
+Gfarm クライアントを利用することがあるためです。
 
 <H3>2.3 gfsdおよびクライアント</H3>
 
 マスターメタデータサーバでmetadb_server_listを追加した
-gfarm2.confをコピーします。
+gfarm2.confを、ファイルシステムノードやクライアントノードにコピーします。
 <p>
 以降の設定はSETUPドキュメントを参照してください。
 <p>
@@ -180,6 +184,11 @@ host-b:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # kill -USR1 &lt;gfmdのプロセスID&gt;
 </PRE></TD></TR></TBODY></TABLE>
+
+なお、別途配布している gfarm_zabbix パッケージには、
+マスターgfmdの障害を検知し、自動的にスレーブを昇格させる機能が
+含まれています。
+
 
 <H2>4. 元のマスターgfmdを起動する</H2>
 

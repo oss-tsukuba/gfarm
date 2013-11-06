@@ -71,7 +71,7 @@ $ gfmdhost -l
 - slave  sync  c (default)    host-b 601
 </PRE></TD></TR></TBODY></TABLE>
 
-Insert a metadb_server_list directive to list metadata hostnames and
+Insert a metadb_server_list directive to list all metadata hostnames and
 ports in gfarm2.conf.
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
@@ -127,9 +127,14 @@ simultaneously, even if you'd like to configure multiple slave gfmd at once.
 Instead, you have to do "config-gfarm -r" and then "gfdump.postgresql -r" on
 each slave server, and then you can proceed to next server.
 
+Copy gfarm2.conf from the master metadata server in which the
+metadb_server_list directive is inserted.
+This is because some gfarm client commands like gfmdhost may be
+invoked on slave metadata servers as well.
+
 <H3>2.3 gfsd and client</H3>
 
-Copy gfarm2.conf from the metadata server in which the
+Copy gfarm2.conf from the master metadata server in which the
 metadb_server_list directive is inserted.
 <p>
 See SETUP document for further configuration.
@@ -197,6 +202,10 @@ host-b:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # kill -USR1 &lt;process id of gfmd&gt;
 </PRE></TD></TR></TBODY></TABLE>
+
+By the way, there is a gfarm_zabbix package which has a feature
+to automatically upgrade a slave gfmd to a master gfmd, when
+a fault is detected on a master gfmd.
 
 <H2>4. Restore the original master gfmd</H2>
 
