@@ -155,6 +155,7 @@ gfm_client_username(struct gfm_connection *gfm_server)
 	return (gfp_cached_connection_username(gfm_server->cache_entry));
 }
 
+#ifdef HAVE_GSI
 gfarm_error_t
 gfm_client_set_username_for_gsi(struct gfm_connection *gfm_server,
 	const char *username)
@@ -162,6 +163,7 @@ gfm_client_set_username_for_gsi(struct gfm_connection *gfm_server,
 	return (gfp_cached_connection_set_username(gfm_server->cache_entry,
 		username));
 }
+#endif
 
 int
 gfm_client_port(struct gfm_connection *gfm_server)
@@ -469,7 +471,7 @@ gfarm_set_global_user_by_gsi(struct gfm_connection *gfm_server)
 	}
 	return (e);
 }
-#endif
+#endif /* HAVE_GSI */
 
 static gfarm_error_t
 gfm_client_connection0(struct gfp_cached_connection *cache_entry,
@@ -761,8 +763,11 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 			break;
 		}
 
-		if (gfm_server->pid != 0)
+		if (gfm_server->pid != 0) {
+			/* user must be already set when the pid was set */
+			assert(gfm_client_username(gfm_server) != NULL);
 			break;
+		}
 		gfarm_auth_random(gfm_server->pid_key,
 		    GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET);
 		/*
@@ -774,12 +779,25 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 		    gfm_server->pid_key,
 		    GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET,
 		    &gfm_server->pid);
-		if (e == GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_1000060,
+			    "failed to allocate gfarm PID: %s",
+			    gfarm_error_string(e));
+		} else {
+#ifndef HAVE_GSI
 			break;
-
-		gflog_error(GFARM_MSG_1000060,
-		    "failed to allocate gfarm PID: %s",
-		    gfarm_error_string(e));
+#else /* HAVE_GSI */
+			if (!GFARM_IS_AUTH_GSI(gfm_server->auth_method) ||
+			    /* obtain global username */
+			    (e = gfarm_set_global_user_by_gsi(gfm_server)) ==
+			    GFARM_ERR_NO_ERROR) {
+				break;
+			}
+			gflog_error(GFARM_MSG_1003450,
+			    "cannot set global username: %s",
+			    gfarm_error_string(e));
+#endif /* HAVE_GSI */
+		}
 
 		gfm_client_connection_free(gfm_server);
 		if (IS_CONNECTION_ERROR(e) == 0)
@@ -792,22 +810,8 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 		sleep_interval *= 2;
 	}
 
-	if (e == GFARM_ERR_NO_ERROR) {
-#ifdef HAVE_GSI
-		/* obtain global username */
-		if (GFARM_IS_AUTH_GSI(gfm_server->auth_method)) {
-			e = gfarm_set_global_user_by_gsi(gfm_server);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_1003450,
-				    "cannot set global username: %s",
-				    gfarm_error_string(e));
-				gfm_client_connection_free(gfm_server);
-				return (e);
-			}
-		}
-#endif
+	if (e == GFARM_ERR_NO_ERROR)
 		*gfm_serverp = gfm_server;
-	}
 	return (e);
 }
 

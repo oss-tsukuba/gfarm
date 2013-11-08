@@ -39,8 +39,10 @@ const char *gfm_client_hostname(struct gfm_connection *);
 const char *gfm_client_username(struct gfm_connection *);
 int gfm_client_port(struct gfm_connection *);
 gfarm_error_t gfm_client_source_port(struct gfm_connection *gfm_server, int *);
+#ifdef HAVE_GSI
 gfarm_error_t gfm_client_set_username_for_gsi(struct gfm_connection *,
 	const char *);
+#endif
 struct gfarm_metadb_server *gfm_client_connection_get_real_server(
 	struct gfm_connection *);
 int gfm_client_connection_failover_count(struct gfm_connection *);
