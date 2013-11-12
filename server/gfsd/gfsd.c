@@ -990,8 +990,10 @@ gfs_server_process_reset(struct gfp_xdr *client)
 			failedover = 1;
 		}
 	}
+#if 0 /* currently, no need to tell the failedover flag to the client */
 	if (failedover && e == GFARM_ERR_NO_ERROR)
-		e = GFARM_ERR_GFMD_FAILED_OVER;
+		e = some other code, instead of GFARM_ERR_GFMD_FAILED_OVER;
+#endif
 
 	gfs_server_put_reply(client, diag, e, "");
 }

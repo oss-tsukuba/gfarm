@@ -1471,11 +1471,6 @@ gfs_client_process_reset(struct gfs_connection *gfs_server,
 	gfs_client_connection_lock(gfs_server);
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PROCESS_RESET,
 		"ibli/", type, size, key, pid, gfs_server->failover_count);
-	if (e == GFARM_ERR_GFMD_FAILED_OVER) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "ignore error: %s", gfarm_error_string(e));
-		e = GFARM_ERR_NO_ERROR;
-	}
 	if (e == GFARM_ERR_NO_ERROR)
 		gfs_server->pid = pid;
 	else {
