@@ -15,7 +15,7 @@
 char *program_name = "gfrm";
 
 struct options {
-	char *host;
+	char *host, *domain;
 	int force;
 	int noexecute;
 	int recursive;
@@ -28,8 +28,8 @@ struct files {
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-r] [-n] [-f] [-h hostname] file...\n",
-	    program_name);
+	fprintf(stderr, "Usage: %s [-r] [-n] [-f] [-h hostname] "
+	    "[-D domainname] file...\n", program_name);
 	exit(EXIT_FAILURE);
 }
 
@@ -76,6 +76,29 @@ add_dir(char *file, struct gfs_stat *st, void *arg)
 }
 
 static gfarm_error_t
+gfs_replica_remove_by_domain(const char *path, const char *domain)
+{
+	const char *host;
+	int i, flags = 0;
+	struct gfs_replica_info *ri;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
+
+	e = gfs_replica_info_by_name(path, flags, &ri);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	for (i = 0; i < gfs_replica_info_number(ri); ++i) {
+		host = gfs_replica_info_nth_host(ri, i);
+		if (gfarm_host_is_in_domain(host, domain)) {
+			e = gfs_replica_remove_by_file(path, host);
+			if (e_save == GFARM_ERR_NO_ERROR)
+				e_save = e;
+		}
+	}
+	gfs_replica_info_free(ri);
+	return (e_save);
+}
+
+static gfarm_error_t
 remove_files(gfarm_stringlist *files, gfarm_stringlist *dirs,
 	struct options *options)
 {
@@ -87,10 +110,12 @@ remove_files(gfarm_stringlist *files, gfarm_stringlist *dirs,
 
 		if (options->noexecute)
 			printf("%s\n", file);
-		else if (options->host == NULL)
-			e = gfs_unlink(file);
-		else
+		else if (options->host != NULL)
 			e = gfs_replica_remove_by_file(file, options->host);
+		else if (options->domain != NULL)
+			e = gfs_replica_remove_by_domain(file, options->domain);
+		else
+			e = gfs_unlink(file);
 
 		if (e != GFARM_ERR_NO_ERROR &&
 		    (!options->force ||
@@ -104,7 +129,7 @@ remove_files(gfarm_stringlist *files, gfarm_stringlist *dirs,
 		}
 	}
 
-	if (options->host != NULL)
+	if (options->host != NULL || options->domain != NULL)
 		goto skip_directory_remove;
 	/* remove directories only if the -h option is not specified */
 	for (i = 0; i < gfarm_stringlist_length(dirs); i++) {
@@ -150,7 +175,8 @@ main(int argc, char **argv)
 	struct options options;
 	gfarm_error_t (*op_dir_before)(char *, struct gfs_stat *, void *);
 
-	options.host = NULL;
+	options.host =
+	options.domain = NULL;
 	options.force = options.noexecute = options.recursive = 0;
 
 	if (argc > 0)
@@ -158,8 +184,11 @@ main(int argc, char **argv)
 	e = gfarm_initialize(&argc, &argv);
 	error_check(e);
 
-	while ((c = getopt(argc, argv, "fh:nr?")) != -1) {
+	while ((c = getopt(argc, argv, "D:fh:nr?")) != -1) {
 		switch (c) {
+		case 'D':
+			options.domain = optarg;
+			break;
 		case 'f':
 			options.force = 1;
 			break;
