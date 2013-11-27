@@ -601,6 +601,28 @@ protocol_state_init(struct protocol_state *ps)
 	ps->nesting_level = 0;
 }
 
+/*
+ * finish foreground protocol handling.
+ *
+ * PREREQUISITE: giant_lock
+ */
+void
+protocol_finish(struct peer *peer, const char *diag)
+{
+	if (db_begin(diag) == GFARM_ERR_NO_ERROR) {
+		/*
+		 * the following internally calls
+		 * inode_close*() and closing must be
+		 * done regardless of the result of db_begin().
+		 * because not closing may cause
+		 * descriptor leak.
+		 */
+		peer_free(peer);
+
+		db_end(diag);
+	}
+}
+
 /* this interface is exported for a use from a private extension */
 int
 protocol_service(struct peer *peer)
@@ -611,7 +633,6 @@ protocol_service(struct peer *peer)
 	gfarm_int32_t request;
 	int from_client;
 	int suspended = 0;
-	int transaction = 0;
 	static const char diag[] = "protocol_service";
 
 	from_client = peer_get_auth_id_type(peer) == GFARM_AUTH_ID_TYPE_USER;
@@ -623,8 +644,6 @@ protocol_service(struct peer *peer)
 		giant_lock();
 		peer_fdpair_clear(peer);
 		if (peer_had_protocol_error(peer)) {
-			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
-				transaction = 1;
 			/*
 			 * gfmd_channel and back_channel will be
 			 * freed by their own thread
@@ -634,18 +653,8 @@ protocol_service(struct peer *peer)
 #ifdef COMPAT_GFARM_2_3
 			     request != GFM_PROTO_SWITCH_BACK_CHANNEL &&
 #endif
-			     request != GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL)) {
-				/*
-				 * the following internally calls
-				 * inode_close*() and closing must be
-				 * done regardless of the result of db_begin().
-				 * because not closing may cause
-				 * descriptor leak.
-				 */
-				peer_free(peer);
-			}
-			if (transaction)
-				db_end(diag);
+			     request != GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL))
+				protocol_finish(peer, diag);
 			giant_unlock();
 			return (1); /* finish */
 		}
@@ -658,8 +667,6 @@ protocol_service(struct peer *peer)
 		if (peer_had_protocol_error(peer)) {
 			giant_lock();
 			peer_fdpair_clear(peer);
-			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
-				transaction = 1;
 			/*
 			 * gfmd_channel and back_channel will be
 			 * freed by their own thread
@@ -669,19 +676,8 @@ protocol_service(struct peer *peer)
 #ifdef COMPAT_GFARM_2_3
 			     request != GFM_PROTO_SWITCH_BACK_CHANNEL &&
 #endif
-			     request != GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL)) {
-				/*
-				 * the following internally calls
-				 * inode_close*() and closing must be
-				 * done regardless of the result of db_begin().
-				 * because not closing may cause
-				 * descriptor leak.
-				 */
-
-				peer_free(peer);
-			}
-			if (transaction)
-				db_end(diag);
+			     request != GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL))
+				protocol_finish(peer, diag);
 			giant_unlock();
 			return (1); /* finish */
 		}
@@ -716,17 +712,7 @@ protocol_service(struct peer *peer)
 				"failed to process GFM_PROTO_SWITCH_BACK_"
 				"CHANNEL request: %s", gfarm_error_string(e));
 			giant_lock();
-			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
-				transaction = 1;
-			/*
-			 * the following internally calls inode_close*() and
-			 * closing must be done regardless of the result of
-			 * db_begin().  because not closing may cause
-			 * descriptor leak.
-			 */
-			peer_free(peer);
-			if (transaction)
-				db_end(diag);
+			protocol_finish(peer, diag);
 			giant_unlock();
 		}
 		return (1); /* finish */
@@ -825,15 +811,9 @@ resuming_thread(void *arg)
 	struct protocol_state *ps = peer_get_protocol_state(peer);
 	struct compound_state *cs = &ps->cs;
 	int suspended = 0;
+	static const char diag[] = "resuming_thread";
 
 	e = (*entry->action)(peer, entry->arg, &suspended);
-	e = gfp_xdr_flush(peer_get_conn(peer));
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED, "protocol flush: %s",
-		    gfarm_error_string(e));
-		peer_record_protocol_error(peer);
-	}
-
 	free(entry);
 	if (suspended)
 		return (NULL);
@@ -850,9 +830,23 @@ resuming_thread(void *arg)
 			cs->cause = e;
 		cs->skip = 1;
 	}
-	if (gfp_xdr_recv_is_ready(peer_get_conn(peer))) {
+
+	if (gfp_xdr_recv_is_ready(peer_get_conn(peer))) { /* inside COMPOUND */
 		protocol_main(peer);
-	} else {
+	} else { /* maybe inside COMPOUND, maybe not */
+		e = gfp_xdr_flush(peer_get_conn(peer));
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_warning(GFARM_MSG_UNFIXED, "protocol flush: %s",
+			    gfarm_error_string(e));
+			peer_record_protocol_error(peer);
+
+			giant_lock();
+			peer_fdpair_clear(peer);
+			protocol_finish(peer, diag);
+			giant_unlock();
+			return (NULL);
+		}
+
 		peer_watch_access(peer);
 	}
 
