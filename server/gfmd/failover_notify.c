@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <inttypes.h>	/* more portable than <stdint.h> on UNIX variants */
+#include <sys/socket.h>
 #include <netinet/in.h> /* ntoh[ls]()/hton[ls]() on glibc */
 #include <netdb.h>
 
