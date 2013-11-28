@@ -998,18 +998,22 @@ compound_state_init(struct compound_state *cs)
 void
 protocol_finish(struct peer *peer, const char *diag)
 {
-	if (db_begin(diag) == GFARM_ERR_NO_ERROR) {
-		/*
-		 * the following internally calls
-		 * inode_close*() and closing must be
-		 * done regardless of the result of db_begin().
-		 * because not closing may cause
-		 * descriptor leak.
-		 */
-		peer_free(peer);
+	int transaction = 0;
 
+	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		transaction = 1;
+
+	/*
+	 * the following internally calls
+	 * inode_close*() and closing must be
+	 * done regardless of the result of db_begin().
+	 * because not closing may cause
+	 * descriptor leak.
+	 */
+	peer_free(peer);
+
+	if (transaction)
 		db_end(diag);
-	}
 }
 
 /*
