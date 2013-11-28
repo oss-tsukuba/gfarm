@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.5.8.2
+%define ver	2.5.8.3
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
@@ -1082,6 +1082,7 @@ fi
 %endif
 %{prefix}/bin/gfservice
 %{prefix}/bin/gfservice-agent
+%{prefix}/bin/gfservice-timeout
 %{prefix}/bin/gfstat
 %{prefix}/bin/gfstatus
 %{prefix}/bin/gftest
