@@ -437,7 +437,23 @@ retry:
 	    "gfs_pio_open_%s_section: %s",
 	    is_local ? "local" : "remote", gfarm_error_string(e));
 
-	if (gfs_pio_should_failover(gf, e) && nretry-- > 0) {
+	/*
+	 * We use gfs_pio_should_failover_at_gfs_open() instead of
+	 * gfs_pio_should_failover() here to avoid the following case:
+	 * (1) gfs_pio_open(..., &gf1) is called.
+	 * (2) gfs_pio_open(..., &gf2) is called.
+	 * (3) gfs_pio_read(gf1, ...) is called and
+	 *    this client connects gfsd-1.
+	 * (4) gfs_pio_read(gf2, ...) is called and gfsd-1 is scheduled.
+	 * (5) for some reason, the connection between this client and gfmd
+	 *    is lost (e.g. TCP ACK packets from this client are all lost),
+	 *    but the connection between gfsd-1 and gfmd is kept.
+	 * (6) To deal with (4), this function requests of gfsd-1 that
+	 *   it should open gf2->fd, but because gf2->fd is closed
+	 *   in the gfmd side due to (5), gfs_pio_open_{local,remote}_section()
+	 *   call above fails with GFARM_ERR_BAD_FILE_DESCRIPTOR.
+	 */
+	if (gfs_pio_should_failover_at_gfs_open(gf, e) && nretry-- > 0) {
 		if ((e = gfs_pio_failover(gf)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "gfs_pio_failover: %s", gfarm_error_string(e));

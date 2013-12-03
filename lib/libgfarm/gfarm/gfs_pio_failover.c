@@ -71,6 +71,23 @@ gfs_pio_should_failover(GFS_File gf, gfarm_error_t e)
 #endif /* __KERNEL__ */
 }
 
+int
+gfs_pio_should_failover_at_gfs_open(GFS_File gf, gfarm_error_t e)
+{
+#ifndef __KERNEL__	/* failover */
+	struct gfarm_filesystem *fs;
+
+	fs = gfarm_filesystem_get_by_connection(gfs_pio_metadb(gf));
+	if (gfarm_filesystem_in_failover_process(fs))
+		return (0);
+	return (gfarm_filesystem_failover_detected(fs) ||
+	    e == GFARM_ERR_GFMD_FAILED_OVER ||
+	    e == GFARM_ERR_BAD_FILE_DESCRIPTOR);
+#else /* __KERNEL__ */
+	return (0);
+#endif /* __KERNEL__ */
+}
+
 /*
  * callers should retry their operation, if this function returns true.
  */
