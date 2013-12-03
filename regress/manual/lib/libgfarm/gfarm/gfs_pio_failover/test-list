@@ -52,6 +52,7 @@ truncate
 flush
 sync
 datasync
+read-close-read
 write-long-loop
 
 # xattr/xmlattr

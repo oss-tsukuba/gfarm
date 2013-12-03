@@ -1558,6 +1558,51 @@ test_datasync(const char **argv)
 }
 
 static void
+test_read_close_read(const char **argv)
+{
+	const char *path = argv[0];
+	GFS_File gf0, gf1;
+	struct gfm_connection *con0, *con1;
+	char buf[STR_BUFSIZE];
+	size_t sz = 10;
+	int len;
+
+	msg("gf[%d]: open %s\n", 0, path);
+	chkerr_n(gfs_pio_open(path, GFARM_FILE_RDONLY, &gf0), "open0", 0);
+	msg("gf[%d]: open ok\n", 0);
+
+	msg("gf[%d]: open %s\n", 1, path);
+	chkerr_n(gfs_pio_open(path, GFARM_FILE_RDONLY, &gf1), "open1", 1);
+	msg("gf[%d]: open ok\n", 1);
+
+	msg("gf[%d]: read %d bytes\n", 1, sz);
+	chkerr_n(gfs_pio_read(gf1, buf, sz, &len), "read1", 1);
+	msg("gf[%d]: read %d bytes ok\n", 1, len);
+	match_memory(TEXT1, buf, len, "match_memory1");
+
+	wait_for_failover();
+
+	con0 = gfs_pio_metadb(gf0);
+	con1 = gfs_pio_metadb(gf1);
+	assert(con0 == con1);
+
+	/* gfm_connection in gf0 will be purged */
+	msg("gf[%d]: close\n", 1);
+	/* no faileover */
+	chkerr_n(gfs_pio_close(gf1), "close", 1);
+	msg("gf[%d]: close ok\n", 1);
+
+	msg("gf[%d]: read %d bytes\n", 0, sz);
+	chkerr_n(gfs_pio_read(gf0, buf, sz, &len), "read0", 1);
+	msg("gf[%d]: read %d bytes ok\n", 0, len);
+	match_memory(TEXT1, buf, len, "match_memory0");
+
+	msg("gf[%d]: close\n", 0);
+	chkerr_n(gfs_pio_close(gf0), "close", 0);
+	msg("gf[%d]: close ok\n", 0);
+}
+
+static void
 test_write_long_loop(const char **argv)
 {
 #define WRITE_LOOP_BUFSZ 512
@@ -2410,6 +2455,7 @@ struct type_info {
 	{ "flush",		1, test_flush },
 	{ "sync",		1, test_sync },
 	{ "datasync",		1, test_datasync },
+	{ "read-close-read",	1, test_read_close_read },
 	{ "write-long-loop",	4, test_write_long_loop },
 
 	/* xattr/xmlattr */
