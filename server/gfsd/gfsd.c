@@ -159,12 +159,6 @@ static int client_failover_count; /* may be use in the future implement */
 
 static int shutting_down; /* set 1 at shutting down */
 
-/*
- * if the connection to the client is down,
- * the client may already issued GFM_PROTO_REVOKE_GFSD_ACCESS
- */
-static int fd_may_be_revoked = 0;
-
 struct local_socket {
 	int sock;
 	char *dir, *name;
@@ -250,6 +244,35 @@ cleanup_handler(int signo)
 		_exit(2);
 	}
 }
+
+/*
+ * if the connection to the client is down,
+ * the client may already issued GFM_PROTO_REVOKE_GFSD_ACCESS
+ */
+static int fd_may_be_revoked = 0;
+
+static void
+gflog_closing_problem_full(int, const char *, int, const char *,
+	gfarm_error_t, const char *, ...) GFLOG_PRINTF_ARG(6, 7);
+
+static void
+gflog_closing_problem_full(int msg_no,
+	const char *file, int line_no, const char *func,
+	gfarm_error_t e, const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	gflog_vmessage(msg_no,
+	    e == GFARM_ERR_BAD_FILE_DESCRIPTOR && fd_may_be_revoked ?
+	    LOG_INFO : LOG_ERR, file, line_no, func, format, ap);
+	va_end(ap);
+}
+
+#define gflog_closing_problem(msg_no, e, ...) \
+	gflog_closing_problem_full(msg_no, __FILE__, __LINE__, __func__, \
+	    e, __VA_ARGS__)
+
 
 static int kill_master_gfsd;
 
@@ -714,7 +737,7 @@ gfs_server_get_request(struct gfp_xdr *client, const char *diag,
 
 	/* XXX FIXME: should handle GFARM_ERR_NO_MEMORY gracefully */
 	if (e != GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_UNEXPECTED_EOF)
+		if (IS_CONNECTION_ERROR(e))
 			fd_may_be_revoked = 1;
 		fatal(GFARM_MSG_1000455, "%s get request: %s",
 		    diag, gfarm_error_string(e));
@@ -739,7 +762,7 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(client);
 	if (e != GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_BROKEN_PIPE)
+		if (IS_CONNECTION_ERROR(e))
 			fd_may_be_revoked = 1;
 		fatal(GFARM_MSG_1000459, "%s put reply: %s",
 		    diag, gfarm_error_string(e));
@@ -1483,16 +1506,10 @@ gfm_client_compound_put_fd_result(const char *diag)
 		    "gfmd protocol: compound_begin result error on %s: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_put_fd_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_BAD_FILE_DESCRIPTOR && fd_may_be_revoked)
-			gflog_info(GFARM_MSG_1002295,
-			    "gfmd protocol: put_fd result error on %s: %s",
-			    diag, gfarm_error_string(e));
-		else
-			gflog_error(GFARM_MSG_1002295,
-			    "gfmd protocol: put_fd result error on %s: %s",
-			    diag, gfarm_error_string(e));
-	}
+	    != GFARM_ERR_NO_ERROR)
+		gflog_closing_problem(GFARM_MSG_1002295, e,
+		    "gfmd protocol: put_fd result error on %s: %s",
+		    diag, gfarm_error_string(e));
 
 	return (e);
 }
@@ -2016,16 +2033,11 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 		gflog_error(GFARM_MSG_1000488,
 		    "%s close request: %s", diag, gfarm_error_string(e));
 	else if ((e = gfm_client_compound_put_fd_result(diag))
-	    != GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_BAD_FILE_DESCRIPTOR && fd_may_be_revoked)
-			gflog_info(GFARM_MSG_UNFIXED,
-			    "%s compound_put_fd_result: %s",
-			    diag, gfarm_error_string(e));
-		else
-			gflog_error(GFARM_MSG_1003338,
-			    "%s compound_put_fd_result: %s",
-			    diag, gfarm_error_string(e));
-	} else if ((e = close_result(fe, &gen_update_result))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_closing_problem(GFARM_MSG_1003338, e,
+		    "%s compound_put_fd_result: %s",
+		    diag, gfarm_error_string(e));
+	else if ((e = close_result(fe, &gen_update_result))
 	    != GFARM_ERR_NO_ERROR) {
 		if (debug_mode)
 			gflog_info(GFARM_MSG_1000492,
@@ -2174,15 +2186,8 @@ close_fd_somehow(gfarm_int32_t fd, const char *diag)
 				    "close_fd_somehow/close_fd");
 				failedover = 1;
 			} else if (e != GFARM_ERR_NO_ERROR) {
-				if (e == GFARM_ERR_BAD_FILE_DESCRIPTOR &&
-				    fd_may_be_revoked)
-					gflog_info(GFARM_MSG_UNFIXED,
-					    "close_fd: %s",
-					    gfarm_error_string(e));
-				else
-					gflog_error(GFARM_MSG_UNFIXED,
-					    "close_fd: %s",
-					    gfarm_error_string(e));
+				gflog_closing_problem(GFARM_MSG_UNFIXED, e,
+				    "close_fd: %s", gfarm_error_string(e));
 			}
 		}
 
@@ -2460,7 +2465,7 @@ gfs_server_bulkread(struct gfp_xdr *client)
 		e = GFARM_ERR_NO_ERROR;
 	e2 = gfp_xdr_send(client, "i", (gfarm_int32_t)e);
 	if (e2 != GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_BROKEN_PIPE)
+		if (IS_CONNECTION_ERROR(e))
 			fd_may_be_revoked = 1;
 		fatal(GFARM_MSG_UNFIXED, "%s: put reply: %s",
 		    diag, gfarm_error_string(e2));
@@ -4208,9 +4213,12 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	for (;;) {
 		wait_client(gfp_xdr_fd(client));
 		e = gfp_xdr_recv_notimeout(client, 0, &eof, "i", &request);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			if (IS_CONNECTION_ERROR(e))
+				fd_may_be_revoked = 1;
 			fatal(GFARM_MSG_1000557, "request number: %s",
 			    gfarm_error_string(e));
+		}
 		if (eof) {
 			/*
 			 * XXX FIXME update metadata of all opened
