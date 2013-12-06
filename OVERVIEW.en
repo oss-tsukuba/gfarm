@@ -26,7 +26,6 @@ Gfarm file system, refer to the following papers.
     Proceedings of the 2nd IEEE/ACM International Symposium on Cluster
     Computing and the Grid (CCGrid 2002),
     IEEE, pp.102-110, 2002
-    http://datafarm.apgrid.org/
 
 [2] Osamu Tatebe, Kohei Hiraga, Noriyuki Soda,
     "Gfarm Grid File System,"

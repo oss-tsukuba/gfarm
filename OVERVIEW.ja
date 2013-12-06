@@ -27,7 +27,6 @@ Gfarm ファイルシステムの詳細は，以下の論文を参照してく�
      Grid Datafarm アーキテクチャ」，
     情報処理学会論文誌：ハイパフォーマンスコンピューティングシステム，
     情報処理学会，Vol.43，No.SIG 6 (HPS 5)，pp.184-195，2002 年
-    http://datafarm.apgrid.org/
 
 [2] Osamu Tatebe, Kohei Hiraga, Noriyuki Soda,
    「Gfarm Grid File System」，

@@ -45,7 +45,7 @@ Table of Contents:
 
 	Please refer to the following URL:
 
-		http://datafarm.apgrid.org/
+		http://sourceforge.net/projects/gfarm/
 
   1.2 Where can I download Gfarm?
 
@@ -55,7 +55,13 @@ Table of Contents:
 
 	Current source code can be obtained by
 
+	Gfarm 2.5.8.X
+		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm_v2/branches/2.5 gfarm_v2
+	Gfarm 2.6.X
+		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm_v2/branches/2.6 gfarm_v2
+	Development version
 		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm_v2/trunk gfarm_v2
+	Gfarm2fs
 		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm2fs/trunk gfarm2fs
 
   1.3 How much memory does gfmd require?
@@ -83,7 +89,6 @@ Table of Contents:
 		  align(24 + OH)
 		= 32
 
-
 	Thus, bytes per file, directory, and symbolic link requires
 	the following size, if the number of xattr is small enough:	
 
@@ -107,7 +112,6 @@ Table of Contents:
 		  + 32 * number_of_replicas
 		= 240 + align(strlen(basename(pathname)) + OH)
 		  + 32 * number_of_replicas
-
 
 	Under an assumption that the length of last component of pathname
 	is 14 characters, and the number of file replica is 3, and the length
@@ -408,6 +412,9 @@ Table of Contents:
 	to know which directory will be prelinked.  See prelink(8) for
 	further information.
 
+	(4) When the abrt package is introduced, the core dump of gfmd
+	or gfsd may be failed.  Set up abrt properly, or stop the abrt
+	service.
 
 3. Security
 ***********
