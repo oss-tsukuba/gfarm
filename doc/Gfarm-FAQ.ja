@@ -45,7 +45,7 @@ Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 
 	下記の URL をご覧ください．
 
-		http://datafarm.apgrid.org/
+		http://sourceforge.net/projects/gfarm/
 
   1.2 Gfarm はどこからダウンロードできますか？
 
@@ -53,9 +53,14 @@ Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 
 		http://sourceforge.net/projects/gfarm/
 
-	なお，開発版のソースコードは以下のコマンドで入手できます．
-
+	なお，最新のソースコードは以下のコマンドで入手できます．
+	Gfarm 2.5.8系
+		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm_v2/branches/2.5 gfarm_v2
+	Gfarm 2.6系
+		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm_v2/branches/2.6 gfarm_v2
+	開発版
 		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm_v2/trunk gfarm_v2
+	Gfarm2fs
 		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm2fs/trunk gfarm2fs
 
   1.3 gfmd は，どの程度のメモリを消費しますか？
@@ -82,7 +87,6 @@ Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 		  align(24 + OH)
 		= 32
 
-
 	拡張属性の数が十分少ない場合，ファイル・ディレクトリ・シンボリック
 	リンクそれぞれに必要なバイト数は，以下の通りとなります．
 
@@ -106,7 +110,6 @@ Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 		= 176 + 64 + align(strlen(basename(パス名)) + OH)
 		  + 32 × 複製数
 		= 240 + align(strlen(basename(パス名)) + OH) + 32 × 複製数
-
 
 	さらに，仮に，パス名の最後のコンポーネント部の長さが 14文字程度，
 	ファイルの複製数が3，シンボリックリンクの指す先が55文字と仮定して，
@@ -393,6 +396,9 @@ Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 	/etc/prelink.conf を参照してください．また prelink については
 	man ページを参照してください．
 
+	(4) abrt が導入されている場合はコアファイルの出力に失敗するこ
+	とがあります。abrt の設定を適切に行うか、abrt の起動を停止して
+	ください．
 
 3. セキュリティ
 ***************

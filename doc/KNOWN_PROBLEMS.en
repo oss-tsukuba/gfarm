@@ -107,8 +107,7 @@ call
 - There is no way to stop a replication process.
 
   Even if you kill a gfrep command, a network copy process cannot be
-  stopped until the copy completes for the ongoing file fragment.
-  The metadata for the replica won't be updated, though.
+  stopped until the ongoing copy completes.
 
   Plans for fixes:
 	Not determined yet.
