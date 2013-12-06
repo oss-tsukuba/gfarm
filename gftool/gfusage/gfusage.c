@@ -17,7 +17,9 @@
 
 char *program_name = "gfusage";
 
-struct gfm_connection *gfm_server;
+static struct gfm_connection *gfm_server;
+static int opt_format_flags = 0;
+static int opt_humanize_number = 0;
 
 static void
 usage(void)
@@ -34,6 +36,15 @@ static const char head_phy_space[] = "PhysicalSpace";
 static const char head_phy_num[] = "PhysicalNum";
 
 static const char header_format[] = "#  %s : %15s %11s %15s %11s\n";
+
+static char *
+humanize(long long num, int flags)
+{
+	static char buf[GFARM_INT64STRLEN];
+
+	gfarm_humanize_number(buf, sizeof buf, num, flags);
+	return (buf);
+}
 
 static gfarm_error_t
 print_usage_common(const char *name, int opt_group)
@@ -54,14 +65,19 @@ print_usage_common(const char *name, int opt_group)
 		fprintf(stderr, "%s: %s : %s\n",
 			program_name, name, gfarm_error_string(e));
 		return (e);
-	} else {
-		printf("%12s :"
-		       " %15"GFARM_PRId64" %11"GFARM_PRId64
-		       " %15"GFARM_PRId64" %11"GFARM_PRId64"\n"
-		       , name, qi.space, qi.num, qi.phy_space, qi.phy_num);
-		gfarm_quota_get_info_free(&qi);
-		return (GFARM_ERR_NO_ERROR);
 	}
+	printf("%12s : ", name);
+	if (opt_humanize_number) {
+		printf("%15s ", humanize(qi.space, opt_format_flags));
+		printf("%11s ", humanize(qi.num, opt_format_flags));
+		printf("%15s ", humanize(qi.phy_space, opt_format_flags));
+		printf("%11s\n", humanize(qi.phy_num, opt_format_flags));
+	} else
+		printf("%15"GFARM_PRId64" %11"GFARM_PRId64
+		       " %15"GFARM_PRId64" %11"GFARM_PRId64"\n",
+		       qi.space, qi.num, qi.phy_space, qi.phy_num);
+	gfarm_quota_get_info_free(&qi);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static void
@@ -194,7 +210,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "P:gh?")) != -1) {
+	while ((c = getopt(argc, argv, "P:gHh?")) != -1) {
 		switch (c) {
 		case 'P':
 			path = optarg;
@@ -202,7 +218,14 @@ main(int argc, char **argv)
 		case 'g':
 			opt_group = 1;
 			break;
+		case 'H':
+			opt_humanize_number = 1;
+			opt_format_flags = 0;
+			break;
 		case 'h':
+			opt_humanize_number = 1;
+			opt_format_flags = GFARM_HUMANIZE_BINARY;
+			break;
 		case '?':
 		default:
 			usage();
