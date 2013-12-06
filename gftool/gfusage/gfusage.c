@@ -24,7 +24,7 @@ static int opt_humanize_number = 0;
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage:\t%s [-P <path>] [-g] [name]\n", program_name);
+	fprintf(stderr, "Usage: %s [-P <path>] [-gHh] [name]\n", program_name);
 	exit(1);
 }
 
