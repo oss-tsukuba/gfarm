@@ -38,11 +38,11 @@ static const char head_phy_num[] = "PhysicalNum";
 static const char header_format[] = "#  %s : %15s %11s %15s %11s\n";
 
 static char *
-humanize(long long num, int flags)
+humanize(long long num)
 {
 	static char buf[GFARM_INT64STRLEN];
 
-	gfarm_humanize_number(buf, sizeof buf, num, flags);
+	gfarm_humanize_number(buf, sizeof buf, num, opt_format_flags);
 	return (buf);
 }
 
@@ -68,10 +68,10 @@ print_usage_common(const char *name, int opt_group)
 	}
 	printf("%12s : ", name);
 	if (opt_humanize_number) {
-		printf("%15s ", humanize(qi.space, opt_format_flags));
-		printf("%11s ", humanize(qi.num, opt_format_flags));
-		printf("%15s ", humanize(qi.phy_space, opt_format_flags));
-		printf("%11s\n", humanize(qi.phy_num, opt_format_flags));
+		printf("%15s ", humanize(qi.space));
+		printf("%11s ", humanize(qi.num));
+		printf("%15s ", humanize(qi.phy_space));
+		printf("%11s\n", humanize(qi.phy_num));
 	} else
 		printf("%15"GFARM_PRId64" %11"GFARM_PRId64
 		       " %15"GFARM_PRId64" %11"GFARM_PRId64"\n",
