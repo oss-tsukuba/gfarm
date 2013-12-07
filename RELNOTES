@@ -7,7 +7,7 @@ Updated feature
 * gfrm - -D option to specify a domain name of file replicas to be
   deleted
 * gfncopy - -w option to wait until replicas are created
-* gfusage - -h and -H options to display in human readable format
+* gfusage, gfquota - -h and -H options to display in human readable format
 * replica check also checks files whose gfarm.ncopy is not set [sf.net
   trac #733]
 * increase error level when all replicas are lost and when all hosts
