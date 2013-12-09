@@ -36,45 +36,48 @@ gfpcopy \- copy Gfarm files in parallel
 .PP
 
 \fBgfpcopy\fR
-copies files and directries in parallel\&.
+は、ファイルやディレクトリを 並列にコピーします。
 .PP
-A set of source/destination hosts can be specified by a domain name and/or a hostlist file\&. When both a domain name and a hostlist file are specified, a set of hosts is determined by both conditions\&. When a set of source hosts is specified, only files stored on the source hosts are replicated\&. When a set of source hosts are specified, only files stored on the set of source hosts are copied\&. A set of hosts can be specified by a domain name and/or a host file\&. When both a domain name and a host file are specified, a set of hosts is determined by both conditions\&.
+転送先や転送元のホスト群を指定するには、 ドメイン名で指定するか、ホスト名を行ごとに記述したホストリストファイルを指定します。 ドメイン名とホストリストファイルを両方指定した場合は、 両方の条件に合うホスト群を決定します。 転送元ホスト群を指定した場合、そのホストに存在するファイルのみ複製が作成されます。
 .PP
-If the
-\fIsource\-url\fR
-parameter is a directory, files under the directory will be copied recursively\&.
+
+\fIsource\-path\fR
+がディレクトリの場合、 それ以下にあるすべてのファイルをコピーします。
 .PP
 
 \fBgfpcopy\fR
-can also read the directory and get informations of the entries in parallel\&.
+は、ディレクトリを辿る際に、 ディレクトリエントリ情報も並列に取得します。
 .SH "GFPCOPY OPTIONS"
 .PP
-These are the options only for
-\fBgfpcopy\fR\&.
+以下は
+\fBgfpcopy\fR
+専用のオプションです。
 .PP
 \fB\-b\fR \fIbufsize\fR
 .RS 4
-Specifies the buffer size to copy\&. This option is obsolete in Gfarm version 2\&.6 or later\&.
+コピー時に使用するバッファサイズを指定します。
 .sp
-The default value is 64KiB (64 * 1024)\&.
+標準は 64 キビバイト (64 * 1024) です。
 .RE
 .PP
 \fB\-f\fR
 .RS 4
-With \-f option, existing destination files will be overwritten when the size is different or the modification time (mtime) is different from the source file\&.
+\-f オプションを指定する場合、コピー先のファイルとコピー元のファイルが、 サイズまたは mtime が異なる場合に上書きします。
 .sp
-Without \-f option, existing destination files will be overwritten when the size is different or the modification time (mtime) is older than the source file\&.
+\-f オプションを指定しない場合、コピー先のファイルとコピー元のファイルが、 サイズが異なるか、コピー先のほうが mtime が古い場合に、上書きします。
 .RE
 .SH "COMMON OPTIONS"
 .PP
 
 \fBgfpcopy\fR
-has the same options with
-\fBgfprep\fR\&. (see man
-\fBgfprep\fR)
+には
+\fBgfprep\fR
+と共通のオプションがあります。
+\fBgfprep\fR
+のマニュアルを参照してください。
 .SH "EXAMPLES"
 .PP
-To copy files under the directory recursively\&.
+ディレクトリ以下すべてをコピーします。
 .sp
 .if n \{\
 .RS 4
@@ -117,7 +120,7 @@ $ gfpcopy dir /tmp/dir
 .RE
 .\}
 .PP
-To copy a file\&.
+一つのファイルをコピーします。
 .sp
 .if n \{\
 .RS 4
@@ -141,11 +144,13 @@ $ gfpcopy file /tmp/dir
 .\}
 .SH "NOTES"
 .PP
-If the gfmd and
+
+\fBgfmd\fR
+と
 \fBgfpcopy\fR
-are far apart, the
+が距離的に離れている場合には、
 \fBgfpcopy\fR
-operation is slow\&. Specifying a large value by \-j or \-J options may be effective in such a case\&.
+の動作が遅くなります。 そのような場合には、\-j または \-J オプションに大きな値を指定すると、 性能が改善するかもしれません。
 .SH "SEE ALSO"
 .PP
 

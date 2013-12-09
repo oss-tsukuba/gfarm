@@ -1,0 +1,279 @@
+'\" t
+.\"     Title: gfprep
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 9 Dec 2013
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFPREP" "1" "9 Dec 2013" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfprep \- Gfarm ファイル複製を並列に作成する
+.SH "SYNOPSIS"
+.HP \w'\fBgfprep\fR\ 'u
+\fBgfprep\fR [\-nqvdpPU] [\-mx] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fIlimit\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
+.SH "DESCRIPTION"
+.PP
+
+\fBgfprep\fR
+は、 Gfarm ファイルの複製を並列に作成します。
+.PP
+転送先や転送元のホスト群を指定するには、 ドメイン名で指定するか、ホスト名を行ごとに記述したホストリストファイルを指定します。 ドメイン名とホストリストファイルを両方指定した場合は、 両方の条件に合うホスト群を決定します。 転送元ホスト群を指定した場合、そのホストに存在するファイルのみ複製が作成されます。
+.PP
+なるべく転送中ではないホストを選択して転送開始します。 転送元や転送先 1 ホストあたりの最大並列転送数は、ホストごとの CPU 数です。 CPU 数については、gfhost コマンドのマニュアルを参照してください。
+.PP
+
+\fIpath\fR
+がディレクトリの場合、 それ以下にあるすべてのファイルの複製を作成します。
+.PP
+
+\fBgfprep\fR
+は、ディレクトリを辿る際に、 ディレクトリエントリ情報も並列に取得します。
+.SH "GFPREP OPTIONS"
+.PP
+以下は
+\fBgfprep\fR
+専用のオプションです。
+.PP
+\fB\-N\fR \fInum\-of\-replicas\fR
+.RS 4
+ファイル複製数を指定します。 転送先ファイルに十分な数の複製が存在する場合、 複製作成も複製削除も、どちらもしません。
+.sp
+このオプションを指定しない場合は、\-N 1 を指定したことになります。
+.RE
+.PP
+\fB\-x\fR
+.RS 4
+\-N オプションで指定された数よりも多くのファイル複製が転送先に存在する場合は、 余分なファイル複製を削除します。
+.RE
+.PP
+\fB\-m\fR
+.RS 4
+転送元から転送先にファイル複製を移動します。
+.sp
+\-S または \-h または \-D または \-H いずれかのオプションが必要です。
+.sp
+このオプションと \-N オプションは、どちらか一方を使用できます。
+.RE
+.SH "COMMON OPTIONS"
+.PP
+
+\fBgfprep\fR
+と
+\fBgfpcopy\fR
+には、 共通で利用できるオプションがあります。
+.PP
+\fB\-S\fR \fIsource\-domainname\fR
+.RS 4
+転送対象ファイルを選ぶためのドメイン名を指定します。 そのドメイン名の範囲に、 ファイル複製の実体が存在するファイルだけを転送対象にします。
+.RE
+.PP
+\fB\-h\fR \fIsource\-hostfile\fR
+.RS 4
+転送対象ファイルを選ぶためのホスト名が記述されたリストを指定します。 そのホスト名の範囲に実体が存在するファイルだけを転送対象にします。 そのホスト名のリストには、ファイルシステムノードを一行ずつに記述します。
+.sp
+``\-\*(Aq\*(Aq を指定すると、ホスト名のリストを標準入力から読み込みます。
+.RE
+.PP
+\fB\-L\fR
+.RS 4
+\-S または \-h で指定した範囲のみから転送元を選択します。
+.RE
+.PP
+\fB\-D\fR \fIdestination\-domainname\fR
+.RS 4
+転送先範囲とするドメイン名を指定します。
+.sp
+このオプションも \-H オプションも指定しない場合、利用可能なホストに転送します。
+.RE
+.PP
+\fB\-H\fR \fIdestination\-hostfile\fR
+.RS 4
+転送先範囲を示すホスト名が記述されたファイルを指定します。 そのホスト名のリストには、ファイルシステムノードを一行ずつ記述します。
+.sp
+``\-\*(Aq\*(Aq を指定すると、ホスト名のリストを標準入力から読み込みます。
+.RE
+.PP
+\fB\-j\fR \fInum\-of\-processes\fR
+.RS 4
+同時に複製作成やコピーをする際の最大並列数を指定します。
+.sp
+デフォルト値は gfarm2\&.conf の client_parallel_copy パラメータです。 詳細は gfarm2\&.conf のマニュアルを参照してください。
+.sp
+転送元または転送先のファイルシステムノードごとの最大並列数は、 その CPU 数までです。 CPU 数については、\fBgfhost\fR
+のマニュアルを参照してください。
+.RE
+.PP
+\fB\-J\fR \fInum\-of\-processes\fR
+.RS 4
+並列にディレクトリを辿るための並列数を指定します。
+.sp
+デフォルト値は 8 です。
+.RE
+.PP
+\fB\-M\fR \fIlimit\-byte\fR
+.RS 4
+コピーする際に制限する合計サイズをバイト数で指定します。
+.sp
+デフォルトでは制限しません。
+.RE
+.PP
+\fB\-w\fR \fIway\-of\-scheduling\fR
+.RS 4
+スケジューリング方法を指定します。 noplan にすると、ファイルを見つけながら、複製作成またはコピーします。 greedy にすると、複製作成やコピーする前に、貪欲法によってスケジューリングします。
+.sp
+デフォルトは noplan です。
+.sp
+greedy にすると、\-N や \-m オプションを使用することができません。
+.RE
+.PP
+\fB\-W\fR \fIkibibytes\fR
+.RS 4
+各 Connection のコスト(合計ファイルサイズ)を 平均とみなすまでの閾値をキビバイトで指定します。 Connection とは、子プロセスごとにファイルを割り当てるための、計画情報です。
+.sp
+\-w greedy オプションを使用した場合のみ効果があります。
+.sp
+デフォルトは 50 * 1024 キビバイト (50 メビバイト) です。
+.RE
+.PP
+\fB\-U\fR
+.RS 4
+ファイルシステムノードのディスク空き容量を毎回チェックしなくなります。
+.RE
+.PP
+\fB\-F\fR \fInum\-of\-dirents\fR
+.RS 4
+ディレクトリエントリの情報を先読みする数を指定します。
+.sp
+デフォルトは 1000 です。
+.RE
+.PP
+\fB\-s\fR \fIkilobytes\-per\-sec\&.\fR
+.RS 4
+シミュレーションする際の転送速度を KB/s で指定します。 実際にはコピーせず、ファイル情報を取得するのみになります。
+.RE
+.PP
+\fB\-n\fR
+.RS 4
+何もしません。 ディレクトリを辿るだけです。
+.RE
+.PP
+\fB\-p\fR
+.RS 4
+性能の総合結果を報告します。
+.RE
+.PP
+\fB\-P\fR
+.RS 4
+性能に関してファイルごとの結果と総合結果を報告します。
+.RE
+.PP
+\fB\-q\fR
+.RS 4
+警告を表示しません。
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+冗長な情報を出力します。
+.RE
+.PP
+\fB\-d\fR
+.RS 4
+デバッグ情報を出力します。
+.RE
+.PP
+\fB\-?\fR
+.RS 4
+コマンドオプションを出力します。
+.RE
+.SH "EXAMPLES"
+.PP
+ディレクトリ以下すべてのファイルを複製作成します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ gfprep \-N 3 gfarm:///dir
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cd /mnt/gfarm2fs
+$ gfprep \-N 3 dir
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+足りなければ複製を増やし、余分な複製があれば削除します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ gfprep \-N 3 \-x gfarm:///dir/file
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+gfsd1\&.example\&.com にある複製を別のノードに移動します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ gfprep \-m \-S gfsd1\&.example\&.com gfarm:///
+.fi
+.if n \{\
+.RE
+.\}
+.SH "NOTES"
+.PP
+\-L または \-m オプションを使用しない場合は、指定した転送元範囲の中から ファイルシステムノードが選ばれるとは限りません。
+.PP
+
+\fBgfprep\fR
+コマンドは、
+\fBgfmd\fR
+と同じホストで実行するほうがよいです。
+\fBgfmd\fR
+と
+\fBgfprep\fR
+が距離的に離れている場合には、
+\fBgfprep\fR
+の動作が遅くなります。 そのような場合には、\-j または \-J オプションに大きな値を指定すると、 性能が改善するかもしれません。
+.SH "SEE ALSO"
+.PP
+
+\fBgfrep\fR(1),
+\fBgfpcopy\fR(1),
+\fBgfhost\fR(1),
+\fBgfarm2.conf\fR(5)
