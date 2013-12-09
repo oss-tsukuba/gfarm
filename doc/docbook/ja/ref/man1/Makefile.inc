@@ -17,6 +17,8 @@ DOCBOOK = \
 	gfmkdir.1 \
 	gfmv.1 \
 	gfncopy.1 \
+	gfpcopy.1 \
+	gfprep.1 \
 	gfquota.1 \
 	gfquotacheck.1 \
 	gfreg.1 \
