@@ -16,7 +16,7 @@
 
 <refnamediv id="name">
 <refname>gfprep</refname>
-<refpurpose>replicate Gfarm files in parallel</refpurpose>
+<refpurpose>Gfarm ファイル複製を並列に作成する</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id="synopsis">
@@ -45,36 +45,34 @@
 <refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command moreinfo="none">gfprep</command> creates replicas of Gfarm
-files win parallel.
+<command moreinfo="none">gfprep</command> は、
+Gfarm ファイルの複製を並列に作成します。
 </para>
 <para>
-A set of source/destination hosts can be specified by a domain name
-and/or a hostlist file.  When both a domain name and a hostlist file
-are specified, a set of hosts is determined by both conditions.  When
-a set of source hosts is specified, only files stored on the source
-hosts are replicated.
+転送先や転送元のホスト群を指定するには、
+ドメイン名で指定するか、ホスト名を行ごとに記述したホストリストファイルを指定します。
+ドメイン名とホストリストファイルを両方指定した場合は、
+両方の条件に合うホスト群を決定します。
+転送元ホスト群を指定した場合、そのホストに存在するファイルのみ複製が作成されます。
 </para>
 <para>
-Idler filesystem nodes will be selected for source or destination.
-The maximum number of parallel to send or receive per host is the
-number of CPUs.  Please see the manual page
-of <command moreinfo="none">gfhost</command> for information about the
-number of CPUs.
+なるべく転送中ではないホストを選択して転送開始します。
+転送元や転送先 1 ホストあたりの最大並列転送数は、ホストごとの CPU 数です。
+CPU 数については、gfhost コマンドのマニュアルを参照してください。
 </para>
 <para>
-If the <parameter moreinfo="none">path</parameter> parameter is a
-directory, files under the directory will be replicated recursively.
+<parameter moreinfo="none">path</parameter> がディレクトリの場合、
+それ以下にあるすべてのファイルの複製を作成します。
 </para>
 <para>
-<command moreinfo="none">gfprep</command> can also read the directory and get
-informations of the entries in parallel.
+<command moreinfo="none">gfprep</command> は、ディレクトリを辿る際に、
+ディレクトリエントリ情報も並列に取得します。
 </para>
 </refsect1>
 
 <refsect1 id="options"><title>GFPREP OPTIONS</title>
 <para>
-These are the options only for <command moreinfo="none">gfprep</command>.
+以下は <command moreinfo="none">gfprep</command> 専用のオプションです。
 </para>
 <variablelist>
 
@@ -82,12 +80,12 @@ These are the options only for <command moreinfo="none">gfprep</command>.
 <term><option>-N</option> <parameter moreinfo="none">num-of-replicas</parameter></term>
 <listitem>
 <para>
-Specifies the required number of file replicas.  If there are a
-sufficient number of replicas in the destination hosts, neither any
-copying nor any removal will be done.
+ファイル複製数を指定します。
+転送先ファイルに十分な数の複製が存在する場合、
+複製作成も複製削除も、どちらもしません。
 </para>
 <para>
-If this option is not specified, -N 1 is assumed.
+このオプションを指定しない場合は、-N 1 を指定したことになります。
 </para>
 </listitem>
 </varlistentry>
@@ -96,8 +94,8 @@ If this option is not specified, -N 1 is assumed.
 <term><option>-x</option></term>
 <listitem>
 <para>
-Removes extra file replicas when a set of destination nodes has more
-file replicas than specified by -N option.
+-N オプションで指定された数よりも多くのファイル複製が転送先に存在する場合は、
+余分なファイル複製を削除します。
 </para>
 </listitem>
 </varlistentry>
@@ -106,14 +104,13 @@ file replicas than specified by -N option.
 <term><option>-m</option></term>
 <listitem>
 <para>
-Migrates file replicas within a set of source nodes to destination
-nodes.
+転送元から転送先にファイル複製を移動します。
 </para>
 <para>
-This option requires -S or -h or -D or -H options.
+-S または -h または -D または -H いずれかのオプションが必要です。
 </para>
 <para>
-This option and -N option are mutually exclusive.
+このオプションと -N オプションは、どちらか一方を使用できます。
 </para>
 </listitem>
 </varlistentry>
@@ -123,8 +120,9 @@ This option and -N option are mutually exclusive.
 
 <refsect1 id="common-options"><title>COMMON OPTIONS</title>
 <para>
-<command moreinfo="none">gfprep</command> has the same options
-with <command moreinfo="none">gfpcopy</command>.
+<command moreinfo="none">gfprep</command>
+と <command moreinfo="none">gfpcopy</command> には、
+共通で利用できるオプションがあります。
 </para>
 
 <variablelist>
@@ -132,8 +130,9 @@ with <command moreinfo="none">gfpcopy</command>.
 <term><option>-S</option> <parameter moreinfo="none">source-domainname</parameter></term>
 <listitem>
 <para>
-Specifies a domain name to select files.
-Only files which have the real file on the domain will be sended.
+転送対象ファイルを選ぶためのドメイン名を指定します。
+そのドメイン名の範囲に、
+ファイル複製の実体が存在するファイルだけを転送対象にします。
 </para>
 </listitem>
 </varlistentry>
@@ -142,14 +141,13 @@ Only files which have the real file on the domain will be sended.
 <term><option>-h</option> <parameter moreinfo="none">source-hostfile</parameter></term>
 <listitem>
 <para>
-Specifies a file of which describes hostnames of file system nodes to
-replicate or copy files.  Only files which have the real file on the
-host names will be selected.
-The <parameter moreinfo="none">source-hostfile</parameter> consists of
-a filesystem node name on each line.
+転送対象ファイルを選ぶためのホスト名が記述されたリストを指定します。
+そのホスト名の範囲に実体が存在するファイルだけを転送対象にします。
+そのホスト名のリストには、ファイルシステムノードを一行ずつに記述します。
 </para>
 <para>
-If ``-'' is specified, standard input is used to read the host list.</para>
+``-'' を指定すると、ホスト名のリストを標準入力から読み込みます。
+</para>
 </listitem>
 </varlistentry>
 
@@ -157,8 +155,7 @@ If ``-'' is specified, standard input is used to read the host list.</para>
 <term><option>-L</option></term>
 <listitem>
 <para>
-Filesystem nodes selected by -S or -h are only used to send for the
-source.
+-S または -h で指定した範囲のみから転送元を選択します。
 </para>
 </listitem>
 </varlistentry>
@@ -167,11 +164,10 @@ source.
 <term><option>-D</option> <parameter moreinfo="none">destination-domainname</parameter></term>
 <listitem>
 <para>
-Specifies the domain name for destination.
+転送先範囲とするドメイン名を指定します。
 </para>
 <para>
-If neither this nor the <option>-H</option> option is specified,
-replicas may be copied to any available host.
+このオプションも -H オプションも指定しない場合、利用可能なホストに転送します。
 </para>
 </listitem>
 </varlistentry>
@@ -180,13 +176,11 @@ replicas may be copied to any available host.
 <term><option>-H</option> <parameter moreinfo="none">destination-hostfile</parameter></term>
 <listitem>
 <para>
-
-Specifies a file which describes hostnames for destination.
-The <parameter moreinfo="none">destination-hostfile</parameter>
-consists of a filesystem node name on each line.
+転送先範囲を示すホスト名が記述されたファイルを指定します。
+そのホスト名のリストには、ファイルシステムノードを一行ずつ記述します。
 </para>
 <para>
-If ``-'' is specified, standard input is used to read the host list.
+``-'' を指定すると、ホスト名のリストを標準入力から読み込みます。
 </para>
 </listitem>
 </varlistentry>
@@ -195,16 +189,17 @@ If ``-'' is specified, standard input is used to read the host list.
 <term><option>-j</option> <parameter moreinfo="none">num-of-processes</parameter></term>
 <listitem>
 <para>
-Specifies the maximum number of processes to create file replicas (or
-copy files) simultaneously.
+同時に複製作成やコピーをする際の最大並列数を指定します。
 </para>
 <para>
-The default value is the parameter of client_parallel_copy in gfarm2.conf.
-(see man gfarm2.conf)
+デフォルト値は gfarm2.conf の client_parallel_copy パラメータです。
+詳細は gfarm2.conf のマニュアルを参照してください。
 </para>
 <para>
-The maximum number of process per filesystem node for source or destination
-is the number of CPUs (see man <command moreinfo="none">gfhost</command>).
+転送元または転送先のファイルシステムノードごとの最大並列数は、
+その CPU 数までです。
+CPU 数については、<command moreinfo="none">gfhost</command>
+のマニュアルを参照してください。
 </para>
 </listitem>
 </varlistentry>
@@ -213,10 +208,10 @@ is the number of CPUs (see man <command moreinfo="none">gfhost</command>).
 <term><option>-J</option> <parameter moreinfo="none">num-of-processes</parameter></term>
 <listitem>
 <para>
-Specifies the number of processes to read directories in parallel.
+並列にディレクトリを辿るための並列数を指定します。
 </para>
 <para>
-The default value is 8.
+デフォルト値は 8 です。
 </para>
 </listitem>
 </varlistentry>
@@ -225,10 +220,10 @@ The default value is 8.
 <term><option>-M</option> <parameter moreinfo="none">limit-byte</parameter></term>
 <listitem>
 <para>
-Specifies the bytes to limit the total copied size.
+コピーする際に制限する合計サイズをバイト数で指定します。
 </para>
 <para>
-The default value is unlimited.
+デフォルトでは制限しません。
 </para>
 </listitem>
 </varlistentry>
@@ -237,15 +232,15 @@ The default value is unlimited.
 <term><option>-w</option> <parameter moreinfo="none">way-of-scheduling</parameter></term>
 <listitem>
 <para>
-Specifies the name of scheduling way.
-``noplan'' replicates/copies while files are found.
-``greedy'' schedules greedily the order of replication/copy beforehand.
+スケジューリング方法を指定します。
+noplan にすると、ファイルを見つけながら、複製作成またはコピーします。
+greedy にすると、複製作成やコピーする前に、貪欲法によってスケジューリングします。
 </para>
 <para>
-The default behavior is ``noplan''.
+デフォルトは noplan です。
 </para>
 <para>
-``greedy'' scheduling cannot use the -N option or -m option.
+greedy にすると、-N や -m オプションを使用することができません。
 </para>
 </listitem>
 </varlistentry>
@@ -254,15 +249,15 @@ The default behavior is ``noplan''.
 <term><option>-W</option> <parameter moreinfo="none">kibibytes</parameter></term>
 <listitem>
 <para>
-Specifies a threshold size/cost(KiB) to flat costs of Connections.
-A Connection means a scheduling information (assgined files) per a
-child-process.
+各 Connection のコスト(合計ファイルサイズ)を
+平均とみなすまでの閾値をキビバイトで指定します。
+Connection とは、子プロセスごとにファイルを割り当てるための、計画情報です。
 </para>
 <para>
-This option is effective with -w greedy.
+-w greedy オプションを使用した場合のみ効果があります。
 </para>
 <para>
-The default value is 50*1024 KiB (50MiB).
+デフォルトは 50 * 1024 キビバイト (50 メビバイト) です。
 </para>
 </listitem>
 </varlistentry>
@@ -271,8 +266,7 @@ The default value is 50*1024 KiB (50MiB).
 <term><option>-U</option></term>
 <listitem>
 <para>
-Disables checking the available disk space of the selected node every
-time.
+ファイルシステムノードのディスク空き容量を毎回チェックしなくなります。
 </para>
 </listitem>
 </varlistentry>
@@ -281,10 +275,10 @@ time.
 <term><option>-F</option> <parameter moreinfo="none">num-of-dirents</parameter></term>
 <listitem>
 <para>
-Specifies the number of entries to perform the directory readahead.
+ディレクトリエントリの情報を先読みする数を指定します。
 </para>
 <para>
-The default value is 10000.
+デフォルトは 1000 です。
 </para>
 </listitem>
 </varlistentry>
@@ -293,8 +287,8 @@ The default value is 10000.
 <term><option>-s</option> <parameter moreinfo="none">kilobytes-per-sec.</parameter></term>
 <listitem>
 <para>
-Specifies a throughput(KB/s) to simulate the replication/copy, and
-does nothing (gets file informations only).
+シミュレーションする際の転送速度を KB/s で指定します。
+実際にはコピーせず、ファイル情報を取得するのみになります。
 </para>
 </listitem>
 </varlistentry>
@@ -303,7 +297,8 @@ does nothing (gets file informations only).
 <term><option>-n</option></term>
 <listitem>
 <para>
-Does nothing.
+何もしません。
+ディレクトリを辿るだけです。
 </para>
 </listitem>
 </varlistentry>
@@ -312,7 +307,7 @@ Does nothing.
 <term><option>-p</option></term>
 <listitem>
 <para>
-Reports the total performance and various results.
+性能の総合結果を報告します。
 </para>
 </listitem>
 </varlistentry>
@@ -321,7 +316,7 @@ Reports the total performance and various results.
 <term><option>-P</option></term>
 <listitem>
 <para>
-Reports the each and total performance and various results.
+性能に関してファイルごとの結果と総合結果を報告します。
 </para>
 </listitem>
 </varlistentry>
@@ -330,7 +325,7 @@ Reports the each and total performance and various results.
 <term><option>-q</option></term>
 <listitem>
 <para>
-Suppresses non-error messages.
+警告を表示しません。
 </para>
 </listitem>
 </varlistentry>
@@ -338,7 +333,8 @@ Suppresses non-error messages.
 <varlistentry>
 <term><option>-v</option></term>
 <listitem>
-<para>Displays verbose output.
+<para>
+冗長な情報を出力します。
 </para>
 </listitem>
 </varlistentry>
@@ -346,7 +342,8 @@ Suppresses non-error messages.
 <varlistentry>
 <term><option>-d</option></term>
 <listitem>
-<para>Displays debug output.
+<para>
+デバッグ情報を出力します。
 </para>
 </listitem>
 </varlistentry>
@@ -354,7 +351,9 @@ Suppresses non-error messages.
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>Displays a list of command options.</para>
+<para>
+コマンドオプションを出力します。
+</para>
 </listitem>
 </varlistentry>
 
@@ -363,7 +362,7 @@ Suppresses non-error messages.
 
 <refsect1 id="examples"><title>EXAMPLES</title>
 <para>
-To replicate files under the directory recursively.
+ディレクトリ以下すべてのファイルを複製作成します。
 </para>
 <literallayout format="linespecific" class="normal">
 $ gfprep -N 3 gfarm:///dir
@@ -374,14 +373,14 @@ $ gfprep -N 3 dir
 </literallayout>
 
 <para>
-To replicate a file or reduce surplus replicas of the file.
+足りなければ複製を増やし、余分な複製があれば削除します。
 </para>
 <literallayout format="linespecific" class="normal">
 $ gfprep -N 3 -x gfarm:///dir/file
 </literallayout>
 
 <para>
-To migrate replicas from gfsd1.example.com to other nodes.
+gfsd1.example.com にある複製を別のノードに移動します。
 </para>
 <literallayout format="linespecific" class="normal">
 $ gfprep -m -S gfsd1.example.com gfarm:///
@@ -390,16 +389,17 @@ $ gfprep -m -S gfsd1.example.com gfarm:///
 
 <refsect1 id="notes"><title>NOTES</title>
 <para>
-When the -L or -m option is not specified, a source node is not always
-selected within a set of specified source filesystem nodes.
+-L または -m オプションを使用しない場合は、指定した転送元範囲の中から
+ファイルシステムノードが選ばれるとは限りません。
 </para>
 <para>
-<command moreinfo="none">gfprep</command> command should be executed
-at the same host of gfmd.  If the gfmd
-and <command moreinfo="none">gfprep</command> are far apart,
-the <command moreinfo="none">gfprep</command> operation is slow.
-Specifying a large value by -j or -J options may be effective in such
-a case.
+<command moreinfo="none">gfprep</command> コマンドは、
+<command moreinfo="none">gfmd</command> と同じホストで実行するほうがよいです。
+<command moreinfo="none">gfmd</command> と
+<command moreinfo="none">gfprep</command> が距離的に離れている場合には、
+<command moreinfo="none">gfprep</command> の動作が遅くなります。
+そのような場合には、-j または -J オプションに大きな値を指定すると、
+性能が改善するかもしれません。
 </para>
 </refsect1>
 
