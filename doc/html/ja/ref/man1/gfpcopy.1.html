@@ -17,58 +17,49 @@
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
-<span class="command"><strong>gfpcopy</strong></span> copies files and directries
-in parallel.
+<span class="command"><strong>gfpcopy</strong></span> は、ファイルやディレクトリを
+並列にコピーします。
 </p>
 <p>
-A set of source/destination hosts can be specified by a domain name
-and/or a hostlist file. When both a domain name and a hostlist file
-are specified, a set of hosts is determined by both conditions. When a
-set of source hosts is specified, only files stored on the source
-hosts are replicated.
-
-
-When a set of source hosts are specified, only files stored on the set
-of source hosts are copied.  A set of hosts can be specified by a
-domain name and/or a host file.  When both a domain name and a host
-file are specified, a set of hosts is determined by both conditions.
+転送先や転送元のホスト群を指定するには、
+ドメイン名で指定するか、ホスト名を行ごとに記述したホストリストファイルを指定します。
+ドメイン名とホストリストファイルを両方指定した場合は、
+両方の条件に合うホスト群を決定します。
+転送元ホスト群を指定した場合、そのホストに存在するファイルのみ複製が作成されます。
 </p>
 <p>
-If the <em class="parameter"><code>source-url</code></em> parameter is a directory,
-files under the directory will be copied recursively.
+<em class="parameter"><code>source-path</code></em> がディレクトリの場合、
+それ以下にあるすべてのファイルをコピーします。
 </p>
 <p>
-<span class="command"><strong>gfpcopy</strong></span> can also read the directory and get
-informations of the entries in parallel.
+<span class="command"><strong>gfpcopy</strong></span> は、ディレクトリを辿る際に、
+ディレクトリエントリ情報も並列に取得します。
 </p>
 </div>
 <div class="refsect1" title="GFPCOPY OPTIONS">
 <a name="options"></a><h2>GFPCOPY OPTIONS</h2>
 <p>
-These are the options only for <span class="command"><strong>gfpcopy</strong></span>.
+以下は <span class="command"><strong>gfpcopy</strong></span> 専用のオプションです。
 </p>
 <div class="variablelist"><dl>
 <dt><span class="term"><code class="option">-b</code> <em class="parameter"><code>bufsize</code></em></span></dt>
 <dd>
 <p>
-Specifies the buffer size to copy.
-This option is obsolete in Gfarm version 2.6 or later.
+コピー時に使用するバッファサイズを指定します。
 </p>
 <p>
-The default value is 64KiB (64 * 1024).
+標準は 64 キビバイト (64 * 1024) です。
 </p>
 </dd>
 <dt><span class="term"><code class="option">-f</code></span></dt>
 <dd>
 <p>
-With -f option, existing destination files will be overwritten when
-the size is different or the modification time (mtime) is different from the
-source file.
+-f オプションを指定する場合、コピー先のファイルとコピー元のファイルが、
+サイズまたは mtime が異なる場合に上書きします。
 </p>
 <p>
-Without -f option, existing destination files will be overwritten when
-the size is different or the modification time (mtime) is older than the
-source file.
+-f オプションを指定しない場合、コピー先のファイルとコピー元のファイルが、
+サイズが異なるか、コピー先のほうが mtime が古い場合に、上書きします。
 </p>
 </dd>
 </dl></div>
@@ -76,14 +67,16 @@ source file.
 <div class="refsect1" title="COMMON OPTIONS">
 <a name="common-options"></a><h2>COMMON OPTIONS</h2>
 <p>
-<span class="command"><strong>gfpcopy</strong></span> has the same options
-with <span class="command"><strong>gfprep</strong></span>.  (see man <span class="command"><strong>gfprep</strong></span>)
+
+<span class="command"><strong>gfpcopy</strong></span> には
+<span class="command"><strong>gfprep</strong></span> と共通のオプションがあります。
+<span class="command"><strong>gfprep</strong></span> のマニュアルを参照してください。
 </p>
 </div>
 <div class="refsect1" title="EXAMPLES">
 <a name="examples"></a><h2>EXAMPLES</h2>
 <p>
-To copy files under the directory recursively.
+ディレクトリ以下すべてをコピーします。
 </p>
 <div class="literallayout"><p><br>
 $ gfpcopy gfarm:///dir file:///tmp/dir<br>
@@ -99,7 +92,7 @@ $ cd /mnt/gfarm2fs<br>
 $ gfpcopy dir /tmp/dir<br>
 </p></div>
 <p>
-To copy a file.
+一つのファイルをコピーします。
 </p>
 <div class="literallayout"><p><br>
 $ gfpcopy gfarm:///dir/file file:///dir<br>
@@ -112,10 +105,11 @@ $ gfpcopy file /tmp/dir<br>
 <div class="refsect1" title="NOTES">
 <a name="notes"></a><h2>NOTES</h2>
 <p>
-If the gfmd and <span class="command"><strong>gfpcopy</strong></span> are far
-apart, the <span class="command"><strong>gfpcopy</strong></span> operation is
-slow.  Specifying a large value by -j or -J options may be effective
-in such a case.
+<span class="command"><strong>gfmd</strong></span> と
+<span class="command"><strong>gfpcopy</strong></span> が距離的に離れている場合には、
+<span class="command"><strong>gfpcopy</strong></span> の動作が遅くなります。
+そのような場合には、-j または -J オプションに大きな値を指定すると、
+性能が改善するかもしれません。
 </p>
 </div>
 <div class="refsect1" title="SEE ALSO">

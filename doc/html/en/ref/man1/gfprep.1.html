@@ -17,18 +17,26 @@
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
-<span class="command"><strong>gfprep</strong></span> creates replicas of Gfarm files specified by
-the <em class="parameter"><code>gfarm-url</code></em>(gfarm:///...) in parallel.
+<span class="command"><strong>gfprep</strong></span> creates replicas of Gfarm
+files win parallel.
 </p>
 <p>
-When a set of source hosts are specified, only files stored on the set
-of source hosts are replicated.  A set of hosts can be specified by a
-domain name and/or a host file.  When both a domain name and a host
-file are specified, a set of hosts is determined by both conditions.
+A set of source/destination hosts can be specified by a domain name
+and/or a hostlist file.  When both a domain name and a hostlist file
+are specified, a set of hosts is determined by both conditions.  When
+a set of source hosts is specified, only files stored on the source
+hosts are replicated.
 </p>
 <p>
-If the <em class="parameter"><code>gfarm-url</code></em> parameter is a directory,
-files under the directory will be replicated recursively.
+Idler filesystem nodes will be selected for source or destination.
+The maximum number of parallel to send or receive per host is the
+number of CPUs.  Please see the manual page
+of <span class="command"><strong>gfhost</strong></span> for information about the
+number of CPUs.
+</p>
+<p>
+If the <em class="parameter"><code>path</code></em> parameter is a
+directory, files under the directory will be replicated recursively.
 </p>
 <p>
 <span class="command"><strong>gfprep</strong></span> can also read the directory and get
@@ -54,13 +62,14 @@ If this option is not specified, -N 1 is assumed.
 </dd>
 <dt><span class="term"><code class="option">-x</code></span></dt>
 <dd><p>
-Removes file replicas when a set of destination nodes has more file
-replicas than specified by -N option.
+Removes extra file replicas when a set of destination nodes has more
+file replicas than specified by -N option.
 </p></dd>
 <dt><span class="term"><code class="option">-m</code></span></dt>
 <dd>
 <p>
-Migrates replicas within a set of source nodes to destination nodes.
+Migrates file replicas within a set of source nodes to destination
+nodes.
 </p>
 <p>
 This option requires -S or -h or -D or -H options.
@@ -74,66 +83,67 @@ This option and -N option are mutually exclusive.
 <div class="refsect1" title="COMMON OPTIONS">
 <a name="common-options"></a><h2>COMMON OPTIONS</h2>
 <p>
-<span class="command"><strong>gfprep</strong></span> has the same options with <span class="command"><strong>gfpcopy</strong></span>.
+<span class="command"><strong>gfprep</strong></span> has the same options
+with <span class="command"><strong>gfpcopy</strong></span>.
 </p>
 <div class="variablelist"><dl>
 <dt><span class="term"><code class="option">-S</code> <em class="parameter"><code>source-domainname</code></em></span></dt>
 <dd><p>
-Specifies the domain name of source filesystem nodes from which
-replicas will be copied.
+Specifies a domain name to select files.
+Only files which have the real file on the domain will be sended.
 </p></dd>
 <dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>source-hostfile</code></em></span></dt>
 <dd>
-<p>Specifies a file which describes hostnames of
-source filesystem nodes from which the replica will be copied.
-The <em class="parameter"><code>source-hostfile</code></em> consists of a filesystem
-node name on each line.
+<p>
+Specifies a file of which describes hostnames of file system nodes to
+replicate or copy files.  Only files which have the real file on the
+host names will be selected.
+The <em class="parameter"><code>source-hostfile</code></em> consists of
+a filesystem node name on each line.
 </p>
 <p>
 If ``-'' is specified, standard input is used to read the host list.</p>
 </dd>
 <dt><span class="term"><code class="option">-L</code></span></dt>
-<dd>
-<p>
-Selects source filesystem nodes within a set of specified source nodes.
-</p>
-<p>
-</p>
-</dd>
+<dd><p>
+Filesystem nodes selected by -S or -h are only used to send for the
+source.
+</p></dd>
 <dt><span class="term"><code class="option">-D</code> <em class="parameter"><code>destination-domainname</code></em></span></dt>
 <dd>
 <p>
-Specifies the domain name of destination filesystem nodes to which
-replicas will be copied.
+Specifies the domain name for destination.
 </p>
-<p>If neither this nor the <code class="option">-H</code> option is specified,
+<p>
+If neither this nor the <code class="option">-H</code> option is specified,
 replicas may be copied to any available host.
 </p>
 </dd>
 <dt><span class="term"><code class="option">-H</code> <em class="parameter"><code>destination-hostfile</code></em></span></dt>
 <dd>
-<p>Specifies a file which describes hostnames of
-destination filesystem nodes on which the replica will be copied.
-The <em class="parameter"><code>destination-hostfile</code></em> consists of a
-filesystem node name on each line.
+<p>
+
+Specifies a file which describes hostnames for destination.
+The <em class="parameter"><code>destination-hostfile</code></em>
+consists of a filesystem node name on each line.
 </p>
 <p>
-If ``-'' is specified, standard input is used to read the host list.</p>
+If ``-'' is specified, standard input is used to read the host list.
+</p>
 </dd>
 <dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>num-of-processes</code></em></span></dt>
 <dd>
 <p>
-Specifies the number of processes to create file replicas (or copy
-files) simultaneously.
+Specifies the maximum number of processes to create file replicas (or
+copy files) simultaneously.
 </p>
 <p>
 The default value is the parameter of client_parallel_copy in gfarm2.conf.
 (see man gfarm2.conf)
 </p>
 <p>
-The source nodes and the destination nodes are selected/scheduled and
-used(read/written) up to the number of CPUs (see
-man <span class="command"><strong>gfhost</strong></span>) at the same time.
+The maximum number of process per filesystem node for source or destination
+is the number of CPUs (see man <span class="command"><strong>gfhost</strong></span>).
 </p>
 </dd>
 <dt><span class="term"><code class="option">-J</code> <em class="parameter"><code>num-of-processes</code></em></span></dt>
@@ -158,7 +168,7 @@ The default value is unlimited.
 <dd>
 <p>
 Specifies the name of scheduling way.
-``noplan'' replicates/copies in order that the files are found.
+``noplan'' replicates/copies while files are found.
 ``greedy'' schedules greedily the order of replication/copy beforehand.
 </p>
 <p>
@@ -190,7 +200,7 @@ time.
 <dt><span class="term"><code class="option">-F</code> <em class="parameter"><code>num-of-dirents</code></em></span></dt>
 <dd>
 <p>
-Specifies a number of entries to perform the directory readahead.
+Specifies the number of entries to perform the directory readahead.
 </p>
 <p>
 The default value is 10000.
@@ -235,6 +245,10 @@ To replicate files under the directory recursively.
 <div class="literallayout"><p><br>
 $ gfprep -N 3 gfarm:///dir<br>
 </p></div>
+<div class="literallayout"><p><br>
+$ cd /mnt/gfarm2fs<br>
+$ gfprep -N 3 dir<br>
+</p></div>
 <p>
 To replicate a file or reduce surplus replicas of the file.
 </p>
@@ -251,8 +265,8 @@ $ gfprep -m -S gfsd1.example.com gfarm:///<br>
 <div class="refsect1" title="NOTES">
 <a name="notes"></a><h2>NOTES</h2>
 <p>
-If the -L or -m option is not specified, a source node is not always
-selected within a set of specified source nodes.
+When the -L or -m option is not specified, a source node is not always
+selected within a set of specified source filesystem nodes.
 </p>
 <p>
 <span class="command"><strong>gfprep</strong></span> command should be executed

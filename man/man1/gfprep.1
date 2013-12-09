@@ -2,12 +2,12 @@
 .\"     Title: gfprep
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 29 Aug 2013
+.\"      Date: 9 Dec 2013
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPREP" "1" "29 Aug 2013" "Gfarm" "Gfarm"
+.TH "GFPREP" "1" "9 Dec 2013" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,13 +36,16 @@ gfprep \- replicate Gfarm files in parallel
 .PP
 
 \fBgfprep\fR
-creates replicas of Gfarm files specified by the
-\fIgfarm\-url\fR(gfarm:///\&.\&.\&.) in parallel\&.
+creates replicas of Gfarm files win parallel\&.
 .PP
-When a set of source hosts are specified, only files stored on the set of source hosts are replicated\&. A set of hosts can be specified by a domain name and/or a host file\&. When both a domain name and a host file are specified, a set of hosts is determined by both conditions\&.
+A set of source/destination hosts can be specified by a domain name and/or a hostlist file\&. When both a domain name and a hostlist file are specified, a set of hosts is determined by both conditions\&. When a set of source hosts is specified, only files stored on the source hosts are replicated\&.
+.PP
+Idler filesystem nodes will be selected for source or destination\&. The maximum number of parallel to send or receive per host is the number of CPUs\&. Please see the manual page of
+\fBgfhost\fR
+for information about the number of CPUs\&.
 .PP
 If the
-\fIgfarm\-url\fR
+\fIpath\fR
 parameter is a directory, files under the directory will be replicated recursively\&.
 .PP
 
@@ -62,12 +65,12 @@ If this option is not specified, \-N 1 is assumed\&.
 .PP
 \fB\-x\fR
 .RS 4
-Removes file replicas when a set of destination nodes has more file replicas than specified by \-N option\&.
+Removes extra file replicas when a set of destination nodes has more file replicas than specified by \-N option\&.
 .RE
 .PP
 \fB\-m\fR
 .RS 4
-Migrates replicas within a set of source nodes to destination nodes\&.
+Migrates file replicas within a set of source nodes to destination nodes\&.
 .sp
 This option requires \-S or \-h or \-D or \-H options\&.
 .sp
@@ -82,12 +85,12 @@ has the same options with
 .PP
 \fB\-S\fR \fIsource\-domainname\fR
 .RS 4
-Specifies the domain name of source filesystem nodes from which replicas will be copied\&.
+Specifies a domain name to select files\&. Only files which have the real file on the domain will be sended\&.
 .RE
 .PP
 \fB\-h\fR \fIsource\-hostfile\fR
 .RS 4
-Specifies a file which describes hostnames of source filesystem nodes from which the replica will be copied\&. The
+Specifies a file of which describes hostnames of file system nodes to replicate or copy files\&. Only files which have the real file on the host names will be selected\&. The
 \fIsource\-hostfile\fR
 consists of a filesystem node name on each line\&.
 .sp
@@ -96,13 +99,12 @@ If ``\-\*(Aq\*(Aq is specified, standard input is used to read the host list\&.
 .PP
 \fB\-L\fR
 .RS 4
-Selects source filesystem nodes within a set of specified source nodes\&.
-.sp
+Filesystem nodes selected by \-S or \-h are only used to send for the source\&.
 .RE
 .PP
 \fB\-D\fR \fIdestination\-domainname\fR
 .RS 4
-Specifies the domain name of destination filesystem nodes to which replicas will be copied\&.
+Specifies the domain name for destination\&.
 .sp
 If neither this nor the
 \fB\-H\fR
@@ -111,7 +113,7 @@ option is specified, replicas may be copied to any available host\&.
 .PP
 \fB\-H\fR \fIdestination\-hostfile\fR
 .RS 4
-Specifies a file which describes hostnames of destination filesystem nodes on which the replica will be copied\&. The
+Specifies a file which describes hostnames for destination\&. The
 \fIdestination\-hostfile\fR
 consists of a filesystem node name on each line\&.
 .sp
@@ -120,12 +122,12 @@ If ``\-\*(Aq\*(Aq is specified, standard input is used to read the host list\&.
 .PP
 \fB\-j\fR \fInum\-of\-processes\fR
 .RS 4
-Specifies the number of processes to create file replicas (or copy files) simultaneously\&.
+Specifies the maximum number of processes to create file replicas (or copy files) simultaneously\&.
 .sp
 The default value is the parameter of client_parallel_copy in gfarm2\&.conf\&. (see man gfarm2\&.conf)
 .sp
-The source nodes and the destination nodes are selected/scheduled and used(read/written) up to the number of CPUs (see man
-\fBgfhost\fR) at the same time\&.
+The maximum number of process per filesystem node for source or destination is the number of CPUs (see man
+\fBgfhost\fR)\&.
 .RE
 .PP
 \fB\-J\fR \fInum\-of\-processes\fR
@@ -144,7 +146,7 @@ The default value is unlimited\&.
 .PP
 \fB\-w\fR \fIway\-of\-scheduling\fR
 .RS 4
-Specifies the name of scheduling way\&. ``noplan\*(Aq\*(Aq replicates/copies in order that the files are found\&. ``greedy\*(Aq\*(Aq schedules greedily the order of replication/copy beforehand\&.
+Specifies the name of scheduling way\&. ``noplan\*(Aq\*(Aq replicates/copies while files are found\&. ``greedy\*(Aq\*(Aq schedules greedily the order of replication/copy beforehand\&.
 .sp
 The default behavior is ``noplan\*(Aq\*(Aq\&.
 .sp
@@ -167,7 +169,7 @@ Disables checking the available disk space of the selected node every time\&.
 .PP
 \fB\-F\fR \fInum\-of\-dirents\fR
 .RS 4
-Specifies a number of entries to perform the directory readahead\&.
+Specifies the number of entries to perform the directory readahead\&.
 .sp
 The default value is 10000\&.
 .RE
@@ -224,6 +226,17 @@ $ gfprep \-N 3 gfarm:///dir
 .if n \{\
 .RE
 .\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cd /mnt/gfarm2fs
+$ gfprep \-N 3 dir
+.fi
+.if n \{\
+.RE
+.\}
 .PP
 To replicate a file or reduce surplus replicas of the file\&.
 .sp
@@ -250,7 +263,7 @@ $ gfprep \-m \-S gfsd1\&.example\&.com gfarm:///
 .\}
 .SH "NOTES"
 .PP
-If the \-L or \-m option is not specified, a source node is not always selected within a set of specified source nodes\&.
+When the \-L or \-m option is not specified, a source node is not always selected within a set of specified source filesystem nodes\&.
 .PP
 
 \fBgfprep\fR
