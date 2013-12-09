@@ -285,6 +285,23 @@ For example,
 .\}
 .RE
 .PP
+spool_base_load \fIload\-average\fR
+.RS 4
+This statement specifies the CPU load adding to the real CPU load\&. This option is only available for a gfsd node (or a file system node)\&. The default base load is 0\&.0\&. This option can be used to pretend to be busy or idle to change the scheduling priority\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_base_load 1\&.0
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 metadb_server_host \fIhostname\fR
 .RS 4
 The
@@ -783,6 +800,13 @@ gsi_auth
 and
 gsi; and all other hosts will be authenticated by
 gsi\&. Note that two hosts, 192\&.168\&.0\&.100 and 192\&.168\&.0\&.101, will be tested for authentication by gsi only\&.
+.RE
+.PP
+shared_key_file \fIpathname\fR
+.RS 4
+The
+shared_key_file
+statement specifies a pathname of the shared secret key file in sharedsecret authentication\&.
 .RE
 .PP
 sockopt \fIoption\fR\fI[=\fR\fIvalue\fR\fI] [\fR\fILISTENER\fR\fI | \fR\fI\fIHost_specification\fR\fR\fI]\fR
@@ -1768,7 +1792,7 @@ Example:
 .PP
 replica_check_host_down_thresh \fIseconds\fR
 .RS 4
-If a gfsd is down, the replica_check assumes that the gfsd is not down until the specified seconds\&. This is useful to maintain a gfsd\&. The default value is 10800 seconds (3 hours)\&.
+This statement specifies an interval to start replica check after a gfsd is down\&. The default value is 10800 seconds (3 hours)\&.
 .sp
 This parameter is only available in gfmd\&.conf\&.
 .sp
@@ -1787,7 +1811,7 @@ Example:
 .PP
 replica_check_sleep_time \fInanoseconds\fR
 .RS 4
-If this value is increased, the replica_check works more slowly only when the gfmd is busy\&. When the gfmd is not busy, the replica_check works at full speed\&. This directive specifies the nanoseconds to sleep in the replica_check\&. The default value is 100000 nanoseconds (0\&.1 millisecond)\&. The maximum value is 1000000000 nanoseconds (1 second)\&.
+This statement specifies the sleep time in nanoseconds during the replica check when gfmd is busy\&. The default value is 100000 nanoseconds (0\&.1 millisecond)\&. The maximum value is 1000000000 nanoseconds (1 second)\&.
 .sp
 This parameter is only available in gfmd\&.conf\&.
 .sp
@@ -1806,7 +1830,7 @@ Example:
 .PP
 replica_check_minimum_interval \fIseconds\fR
 .RS 4
-This directive specifies the minimum interval in seconds, for the replica_check to work\&. The default value is 10 seconds, i\&.e\&. the replica_check can work up to one time every 10 seconds\&.
+This statement specifies the minimum interval in seconds, to start the next replica check\&. The default value is 10 seconds\&.
 .sp
 This parameter is only available in gfmd\&.conf\&.
 .sp
@@ -1840,6 +1864,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<spool_server_cred_service_statement> |
 	<spool_server_cred_name_statement> |
 	<spool_check_level_statement> |
+	<spool_base_load_statement> |
 	<metadb_server_host_statement> |
 	<metadb_server_port_statement> |
 	<metadb_server_cred_type_statement> |
@@ -1864,6 +1889,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<postgresql_password_statement> |
 	<postgresql_conninfo_statement> |
 	<auth_statement> |
+	<shared_key_file_statement> |
 
 	<sockopt_statement> |
 
@@ -2016,6 +2042,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "spool_check_level" <spck_level>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<spool_base_load_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"spool_base_load" <load>
 .fi
 .if n \{\
 .RE
@@ -2380,6 +2420,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "gsi" | "gsi_auth" | "sharedsecret"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<shared_key_file_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"shared_key_file" <pathname>
 .fi
 .if n \{\
 .RE

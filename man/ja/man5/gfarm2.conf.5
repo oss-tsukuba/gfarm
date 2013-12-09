@@ -255,6 +255,23 @@ gfsd起動時のスプールチェックを有効にします。スプールチ�
 .\}
 .RE
 .PP
+spool_base_load \fICPU負荷\fR
+.RS 4
+指定されたCPU負荷をgfsdのCPU負荷に加えます。 このオプションはgfsdノード（ファイルシステムノード）でのみ有効です。 デフォルトは0\&.0です。 このオプションにより、スケジューリングの優先度を変更することができます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_base_load 1\&.0
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 metadb_server_host \fIgfmdホスト名\fR
 .RS 4
 gfmdが動作しているホスト名を指定します。
@@ -682,6 +699,11 @@ gsi_auth認証の指定は単に無視されます。
 sharedsecretとgsiの両方を、 10\&.0\&.0\&.0/8ネットワークに属すホストにはgsi_authおよび
 gsiの両方を、 それ以外の全てのホストにはgsi認証のみを試みます。 すなわち、ホスト192\&.168\&.0\&.100と192\&.168\&.0\&.101の2つのホストは、
 gsi認証のみを試みることになります。
+.RE
+.PP
+shared_key_file \fIパス名\fR
+.RS 4
+sharedsecret認証に用いる秘密鍵ファイルのパス名を指定します。
 .RE
 .PP
 sockopt \fIオプション\fR\fI[=\fR\fI値\fR\fI] [\fR\fILISTENER\fR\fI | \fR\fI\fIホスト指定\fR\fR\fI]\fR
@@ -1697,6 +1719,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<spool_server_cred_service_statement> |
 	<spool_server_cred_name_statement> |
 	<spool_check_level_statement> |
+	<spool_base_load_statement> |
 	<metadb_server_host_statement> |
 	<metadb_server_port_statement> |
 	<metadb_server_cred_type_statement> |
@@ -1721,6 +1744,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<postgresql_password_statement> |
 	<postgresql_conninfo_statement> |
 	<auth_statement> |
+	<shared_key_file_statement> |
 
 	<sockopt_statement> |
 
@@ -1874,6 +1898,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "spool_check_level" <spck_level>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<spool_base_load_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"spool_base_load" <load>
 .fi
 .if n \{\
 .RE
@@ -2238,6 +2276,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "gsi" | "gsi_auth" | "sharedsecret"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<shared_key_file_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"shared_key_file" <pathname>
 .fi
 .if n \{\
 .RE

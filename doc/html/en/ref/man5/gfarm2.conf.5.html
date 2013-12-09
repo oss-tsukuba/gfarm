@@ -262,6 +262,19 @@ gfsd(8).  The level "disable" disables the consistency check.
 	spool_check_level disable<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">spool_base_load</span> <em class="parameter"><code>load-average</code></em></span></dt>
+<dd>
+<p>
+This statement specifies the CPU load adding to the real CPU load.
+This option is only available for a gfsd node (or a file system node).
+The default base load is 0.0.  This option can be used to pretend to
+be busy or idle to change the scheduling priority.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	spool_base_load 1.0<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">metadb_server_host</span> <em class="parameter"><code>hostname</code></em></span></dt>
 <dd>
 <p>The <span class="token">metadb_server_host</span> statement specifies the
@@ -589,6 +602,10 @@ and all other hosts will be authenticated by
 <span class="token">gsi</span>.  Note that two hosts, 192.168.0.100 and
 192.168.0.101, will be tested for authentication by gsi only.</p>
 </dd>
+<dt><span class="term"><span class="token">shared_key_file</span> <em class="parameter"><code>pathname</code></em></span></dt>
+<dd><p>The <span class="token">shared_key_file</span> statement specifies a
+  pathname of the shared secret key file in sharedsecret
+  authentication.</p></dd>
 <dt><span class="term"><span class="token">sockopt </span><em class="parameter"><code>option</code></em><span class="emphasis"><em>[=</em></span><em class="parameter"><code>value</code></em><span class="emphasis"><em>] [<span class="token">LISTENER</span> | <em class="parameter"><code>Host_specification</code></em>]</em></span></span></dt>
 <dd>
 <p>The <span class="token">sockopt</span> parameter specifies the socket option
@@ -1358,9 +1375,8 @@ This parameter is only available in gfmd.conf.
 <dt><span class="term"><span class="token">replica_check_host_down_thresh</span> <em class="parameter"><code>seconds</code></em></span></dt>
 <dd>
 <p>
-If a gfsd is down, the replica_check assumes that the gfsd is not down
-until the specified seconds.  This is useful to maintain a gfsd.  The
-default value is 10800 seconds (3 hours).
+This statement specifies an interval to start replica check after a
+gfsd is down.  The default value is 10800 seconds (3 hours).
 </p>
 <p>
 This parameter is only available in gfmd.conf.
@@ -1373,12 +1389,10 @@ This parameter is only available in gfmd.conf.
 <dt><span class="term"><span class="token">replica_check_sleep_time</span> <em class="parameter"><code>nanoseconds</code></em></span></dt>
 <dd>
 <p>
-If this value is increased, the replica_check works more slowly only
-when the gfmd is busy.  When the gfmd is not busy, the replica_check
-works at full speed.  This directive specifies the nanoseconds to
-sleep in the replica_check.  The default value is 100000 nanoseconds
-(0.1 millisecond).  The maximum value is 1000000000 nanoseconds (1
-second).
+This statement specifies the sleep time in nanoseconds during the
+replica check when gfmd is busy.  The default value is 100000
+nanoseconds (0.1 millisecond).  The maximum value is 1000000000
+nanoseconds (1 second).
 </p>
 <p>
 This parameter is only available in gfmd.conf.
@@ -1391,9 +1405,8 @@ This parameter is only available in gfmd.conf.
 <dt><span class="term"><span class="token">replica_check_minimum_interval</span> <em class="parameter"><code>seconds</code></em></span></dt>
 <dd>
 <p>
-This directive specifies the minimum interval in seconds, for the
-replica_check to work.  The default value is 10 seconds, i.e. the
-replica_check can work up to one time every 10 seconds.
+This statement specifies the minimum interval in seconds, to start the
+next replica check.  The default value is 10 seconds.
 </p>
 <p>
 This parameter is only available in gfmd.conf.
@@ -1418,6 +1431,7 @@ notation.</p>
 	&lt;spool_server_cred_service_statement&gt; |<br>
 	&lt;spool_server_cred_name_statement&gt; |<br>
 	&lt;spool_check_level_statement&gt; |<br>
+	&lt;spool_base_load_statement&gt; |<br>
 	&lt;metadb_server_host_statement&gt; |<br>
 	&lt;metadb_server_port_statement&gt; |<br>
 	&lt;metadb_server_cred_type_statement&gt; |<br>
@@ -1442,6 +1456,7 @@ notation.</p>
 	&lt;postgresql_password_statement&gt; |<br>
 	&lt;postgresql_conninfo_statement&gt; |<br>
 	&lt;auth_statement&gt; |<br>
+	&lt;shared_key_file_statement&gt; |<br>
 <br>
 	&lt;sockopt_statement&gt; |<br>
 <br>
@@ -1510,6 +1525,8 @@ notation.</p>
 <dd><div class="literallayout"><p>"spool_server_cred_name" &lt;cred_name&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_check_level_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool_check_level" &lt;spck_level&gt;</p></div></dd>
+<dt><span class="term">&lt;spool_base_load_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"spool_base_load" &lt;load&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_host_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_server_host" &lt;hostname&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_port_statement&gt; ::=</span></dt>
@@ -1562,6 +1579,8 @@ notation.</p>
 <dd><div class="literallayout"><p>"enable" | "disable"</p></div></dd>
 <dt><span class="term">&lt;auth_method&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"gsi" | "gsi_auth" | "sharedsecret"</p></div></dd>
+<dt><span class="term">&lt;shared_key_file_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"shared_key_file" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;sockopt_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]</p></div></dd>
 <dt><span class="term">&lt;socket_option&gt; ::=</span></dt>
