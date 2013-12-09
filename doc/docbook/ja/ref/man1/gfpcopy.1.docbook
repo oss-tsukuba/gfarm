@@ -46,35 +46,29 @@
 <refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command moreinfo="none">gfpcopy</command> copies files and directries
-in parallel.
+<command moreinfo="none">gfpcopy</command> は、ファイルやディレクトリを
+並列にコピーします。
 </para>
 <para>
-A set of source/destination hosts can be specified by a domain name
-and/or a hostlist file. When both a domain name and a hostlist file
-are specified, a set of hosts is determined by both conditions. When a
-set of source hosts is specified, only files stored on the source
-hosts are replicated.
-
-
-When a set of source hosts are specified, only files stored on the set
-of source hosts are copied.  A set of hosts can be specified by a
-domain name and/or a host file.  When both a domain name and a host
-file are specified, a set of hosts is determined by both conditions.
+転送先や転送元のホスト群を指定するには、
+ドメイン名で指定するか、ホスト名を行ごとに記述したホストリストファイルを指定します。
+ドメイン名とホストリストファイルを両方指定した場合は、
+両方の条件に合うホスト群を決定します。
+転送元ホスト群を指定した場合、そのホストに存在するファイルのみ複製が作成されます。
 </para>
 <para>
-If the <parameter moreinfo="none">source-url</parameter> parameter is a directory,
-files under the directory will be copied recursively.
+<parameter moreinfo="none">source-path</parameter> がディレクトリの場合、
+それ以下にあるすべてのファイルをコピーします。
 </para>
 <para>
-<command moreinfo="none">gfpcopy</command> can also read the directory and get
-informations of the entries in parallel.
+<command moreinfo="none">gfpcopy</command> は、ディレクトリを辿る際に、
+ディレクトリエントリ情報も並列に取得します。
 </para>
 </refsect1>
 
 <refsect1 id="options"><title>GFPCOPY OPTIONS</title>
 <para>
-These are the options only for <command moreinfo="none">gfpcopy</command>.
+以下は <command moreinfo="none">gfpcopy</command> 専用のオプションです。
 </para>
 <variablelist>
 
@@ -82,11 +76,10 @@ These are the options only for <command moreinfo="none">gfpcopy</command>.
 <term><option>-b</option> <parameter moreinfo="none">bufsize</parameter></term>
 <listitem>
 <para>
-Specifies the buffer size to copy.
-This option is obsolete in Gfarm version 2.6 or later.
+コピー時に使用するバッファサイズを指定します。
 </para>
 <para>
-The default value is 64KiB (64 * 1024).
+標準は 64 キビバイト (64 * 1024) です。
 </para>
 </listitem>
 </varlistentry>
@@ -95,14 +88,12 @@ The default value is 64KiB (64 * 1024).
 <term><option>-f</option></term>
 <listitem>
 <para>
-With -f option, existing destination files will be overwritten when
-the size is different or the modification time (mtime) is different from the
-source file.
+-f オプションを指定する場合、コピー先のファイルとコピー元のファイルが、
+サイズまたは mtime が異なる場合に上書きします。
 </para>
 <para>
-Without -f option, existing destination files will be overwritten when
-the size is different or the modification time (mtime) is older than the
-source file.
+-f オプションを指定しない場合、コピー先のファイルとコピー元のファイルが、
+サイズが異なるか、コピー先のほうが mtime が古い場合に、上書きします。
 </para>
 </listitem>
 </varlistentry>
@@ -112,14 +103,16 @@ source file.
 
 <refsect1 id="common-options"><title>COMMON OPTIONS</title>
 <para>
-<command moreinfo="none">gfpcopy</command> has the same options
-with <command moreinfo="none">gfprep</command>.  (see man <command moreinfo="none">gfprep</command>)
+
+<command moreinfo="none">gfpcopy</command> には
+<command moreinfo="none">gfprep</command> と共通のオプションがあります。
+<command moreinfo="none">gfprep</command> のマニュアルを参照してください。
 </para>
 </refsect1>
 
 <refsect1 id="examples"><title>EXAMPLES</title>
 <para>
-To copy files under the directory recursively.
+ディレクトリ以下すべてをコピーします。
 </para>
 <literallayout format="linespecific" class="normal">
 $ gfpcopy gfarm:///dir file:///tmp/dir
@@ -136,7 +129,7 @@ $ gfpcopy dir /tmp/dir
 </literallayout>
 
  <para>
-To copy a file.
+一つのファイルをコピーします。
 </para>
 <literallayout format="linespecific" class="normal">
 $ gfpcopy gfarm:///dir/file file:///dir
@@ -149,10 +142,11 @@ $ gfpcopy file /tmp/dir
 
 <refsect1 id="notes"><title>NOTES</title>
 <para>
-If the gfmd and <command moreinfo="none">gfpcopy</command> are far
-apart, the <command moreinfo="none">gfpcopy</command> operation is
-slow.  Specifying a large value by -j or -J options may be effective
-in such a case.
+<command moreinfo="none">gfmd</command> と
+<command moreinfo="none">gfpcopy</command> が距離的に離れている場合には、
+<command moreinfo="none">gfpcopy</command> の動作が遅くなります。
+そのような場合には、-j または -J オプションに大きな値を指定すると、
+性能が改善するかもしれません。
 </para>
 </refsect1>
 
