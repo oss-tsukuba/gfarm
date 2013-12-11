@@ -1475,6 +1475,13 @@ usage(void)
 	exit(1);
 }
 
+static void
+db_journal_store_failure(void)
+{
+	gflog_fatal(GFARM_MSG_1003397,
+	    "gfmd is shutting down for unrecoverable error");
+}
+
 /* this interface is exported for a use from a private extension */
 void
 gfmd_modules_init_default(int table_size)
@@ -1495,6 +1502,7 @@ gfmd_modules_init_default(int table_size)
 	callout_module_init(CALLOUT_NTHREADS);
 
 	if (gfarm_get_metadb_replication_enabled()) {
+		db_journal_set_fail_store_op(db_journal_store_failure);
 		db_journal_apply_init();
 		db_journal_init();
 		boot_apply_db_journal();
