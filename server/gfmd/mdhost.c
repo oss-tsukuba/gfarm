@@ -1296,13 +1296,6 @@ gfm_server_metadb_server_remove(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
-static void
-mdhost_fail(void)
-{
-	gflog_fatal(GFARM_MSG_1003397,
-	    "gfmd is shutting down for unrecoverable error");
-}
-
 /* no need to lock here */
 void
 mdhost_init(void)
@@ -1363,7 +1356,6 @@ mdhost_init(void)
 				break;
 			}
 		}
-		db_journal_set_fail_store_op(mdhost_fail);
 		if ((e = mdhost_updated()) != GFARM_ERR_NO_ERROR)
 			gflog_fatal(GFARM_MSG_1002975,
 			    "Failed to update mdhost: %s",
