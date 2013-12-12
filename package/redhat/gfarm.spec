@@ -522,6 +522,8 @@ fi
 %{man_prefix}/ja/man1/gfmkdir.1.gz
 %{man_prefix}/ja/man1/gfmv.1.gz
 %{man_prefix}/ja/man1/gfncopy.1.gz
+%{man_prefix}/ja/man1/gfpcopy.1.gz
+%{man_prefix}/ja/man1/gfprep.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfps.1.gz
 %{man_prefix}/ja/man1/gfpwd.1.gz
@@ -854,6 +856,8 @@ fi
 %{html_prefix}/ja/ref/man1/gfmkdir.1.html
 %{html_prefix}/ja/ref/man1/gfmv.1.html
 %{html_prefix}/ja/ref/man1/gfncopy.1.html
+%{html_prefix}/ja/ref/man1/gfpcopy.1.html
+%{html_prefix}/ja/ref/man1/gfprep.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfps.1.html
 %{html_prefix}/ja/ref/man1/gfpwd.1.html
