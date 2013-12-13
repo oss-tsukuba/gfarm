@@ -35,7 +35,7 @@ gfgroup \- Gfarm group maintenance command
 .HP \w'\fBgfgroup\fR\ 'u
 \fBgfgroup\fR [\-P\ \fIpath\fR] \-c groupname [\fIuser\fR...]
 .HP \w'\fBgfgroup\fR\ 'u
-\fBgfgroup\fR [\-P\ \fIpath\fR] \-m groupname [\fIuser\fR...]
+\fBgfgroup\fR [\-P\ \fIpath\fR] [\-a] [\-r] \-m groupname [\fIuser\fR...]
 .HP \w'\fBgfgroup\fR\ 'u
 \fBgfgroup\fR [\-P\ \fIpath\fR] \-d groupname
 .SH "DESCRIPTION"
@@ -62,7 +62,21 @@ Creates a group in Gfarm file system by specifying a group name and initial grou
 .PP
 \fB\-m\fR
 .RS 4
-Replaces group members of the group with new group members\&. This option can be used by Gfarm administrators\&.
+Replaces all group members of the existing group\&. This option can be used by Gfarm administrators\&.
+.RE
+.PP
+\fB\-a\fR
+.RS 4
+Adds group members to the existing group\&. This option is only available with
+\fB\-m\fR
+option\&. This option can be used by Gfarm administrators\&.
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+Removes group members from the existing group\&. This option is only available with
+\fB\-m\fR
+option\&. This option can be used by Gfarm administrators\&.
 .RE
 .PP
 \fB\-d\fR
