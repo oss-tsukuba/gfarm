@@ -39,12 +39,14 @@ enum option_all_kind {
 } option_all = OA_NONE;			/* -a/-A */
 #define is_option_all		(option_all == OA_ALL)
 #define is_option_almost_all	(option_all == OA_ALMOST_ALL)
-int option_type_suffix = 0;		/* -F */
-int option_recursive = 0;		/* -R */
-int option_complete_time = 0;		/* -T */
-int option_directory_itself = 0;	/* -d */
-int option_inumber = 0;			/* -i */
-int option_reverse_sort = 0;		/* -r */
+static int option_type_suffix = 0;		/* -F */
+static int option_recursive = 0;		/* -R */
+static int option_complete_time = 0;		/* -T */
+static int option_directory_itself = 0;		/* -d */
+static int option_inumber = 0;			/* -i */
+static int option_reverse_sort = 0;		/* -r */
+static int option_format_flags = 0;
+static int option_humanize_number = 0;		/* -h */
 
 #define CACHE_EXPIRATION_NOT_SPECIFIED	-1.0
 double option_cache_expiration = CACHE_EXPIRATION_NOT_SPECIFIED; /* -E */
@@ -244,6 +246,15 @@ put_time(struct gfarm_timespec *ts)
 	fputs(buffer, stdout);
 }
 
+static char *
+humanize(long long num)
+{
+	static char buf[GFARM_INT64STRLEN];
+
+	gfarm_humanize_number(buf, sizeof buf, num, option_format_flags);
+	return (buf);
+}
+
 void
 put_stat(struct gfs_stat *st)
 {
@@ -257,7 +268,10 @@ put_stat(struct gfs_stat *st)
 	put_perm(st->st_mode >> 3);
 	put_perm(st->st_mode);
 	printf(" %d %-8s %-8s ", (int)st->st_nlink, st->st_user, st->st_group);
-	printf("%10" GFARM_PRId64 " ", st->st_size);
+	if (option_humanize_number)
+		printf("%6s ", humanize(st->st_size));
+	else
+		printf("%10" GFARM_PRId64 " ", st->st_size);
 	put_time(&st->st_mtimespec);
 	putchar(' ');
 }
@@ -549,7 +563,7 @@ list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-1ACFRSTVadilrt] [-E <sec>] <path>...\n",
+	fprintf(stderr, "Usage: %s [-1ACFRSTVadhilrt] [-E <sec>] <path>...\n",
 		program_name);
 	exit(EXIT_FAILURE);
 }
@@ -591,7 +605,7 @@ main(int argc, char **argv)
 	} else {
 		option_output_format = OF_ONE_PER_LINE;
 	}
-	while ((c = getopt(argc, argv, "1ACE:FRSTVadilrt?")) != -1) {
+	while ((c = getopt(argc, argv, "1ACE:FRSTVadhilrt?")) != -1) {
 		switch (c) {
 		case '1': option_output_format = OF_ONE_PER_LINE; break;
 		case 'A': option_all = OA_ALMOST_ALL; break;
@@ -618,6 +632,7 @@ main(int argc, char **argv)
 			exit(0);
 		case 'a': option_all = OA_ALL; break;
 		case 'd': option_directory_itself = 1; break;
+		case 'h': option_humanize_number = 1; break;
 		case 'i': option_inumber = 1; break;
 		case 'l': option_output_format = OF_LONG; break;
 		case 'r': option_reverse_sort = 1; break;
