@@ -1,0 +1,16 @@
+#!/bin/sh
+# execute command in gfarmroot privilege
+# usage: gfsudo cmd arg ...
+
+ABORT()
+{
+	echo $* >&2
+	exit 1
+}
+
+user=`gfwhoami 2>/dev/null`
+[ X"$user" = X ] && ABORT "Who are you?"
+
+gfgroup -ma gfarmroot $user || ABORT "You are not gfarmadm or already gfarmroot"
+trap 'gfgroup -mr gfarmroot $user' 0 1 2 15
+$*

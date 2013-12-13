@@ -39,6 +39,7 @@ SUBDIRS = \
 	gfspoolpath \
 	gfstat \
 	gfstatus \
+	gfsudo \
 	gftest \
 	gfuser \
 	gfusage \
