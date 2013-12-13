@@ -35,6 +35,8 @@
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfgroup</command>
     <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-a</arg>
+    <arg choice="opt" rep="norepeat">-r</arg>
     <arg choice="plain" rep="norepeat">-m</arg>
     <arg choice="plain" rep="norepeat">groupname</arg>
     <arg choice="opt" rep="repeat"><replaceable>user</replaceable></arg>
@@ -98,7 +100,29 @@ This option can be used by Gfarm administrators.
 <term><option>-m</option></term>
 <listitem>
 <para>
-Replaces group members of the group with new group members.
+Replaces all group members of the existing group.
+This option can be used by Gfarm administrators.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-a</option></term>
+<listitem>
+<para>
+Adds group members to the existing group.  This option is only
+available with <option>-m</option> option.
+This option can be used by Gfarm administrators.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>
+Removes group members from the existing group.  This option is only
+available with <option>-m</option> option.
 This option can be used by Gfarm administrators.
 </para>
 </listitem>
