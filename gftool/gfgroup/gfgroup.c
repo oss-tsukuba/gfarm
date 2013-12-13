@@ -96,6 +96,8 @@ modify_entry(int flag, const char *name, int nusers, char **users)
 	e = gfm_client_group_info_get_by_names(gfm_server, 1, &name, errs, gr);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (errs[0] != GFARM_ERR_NO_ERROR)
+		return (errs[0]);
 	for (i = 0; i < nusers; ++i) {
 		switch (flag) {
 		case OP_ADD_ENTRY:
