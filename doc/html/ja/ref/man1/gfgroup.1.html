@@ -14,7 +14,7 @@
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfgroup</code>  [-P <em class="replaceable"><code>path</code></em>] [-l] [<em class="replaceable"><code>group</code></em>...]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfgroup</code>  [-P <em class="replaceable"><code>path</code></em>]  -c   groupname  [<em class="replaceable"><code>user</code></em>...]</p></div>
-<div class="cmdsynopsis"><p><code class="command">gfgroup</code>  [-P <em class="replaceable"><code>path</code></em>]  -m   groupname  [<em class="replaceable"><code>user</code></em>...]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfgroup</code>  [-P <em class="replaceable"><code>path</code></em>] [-a] [-r]  -m   groupname  [<em class="replaceable"><code>user</code></em>...]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfgroup</code>  [-P <em class="replaceable"><code>path</code></em>]  -d   groupname </p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
@@ -48,6 +48,20 @@ Gfarmの管理者が実行可能です．
 <dd><p>
 グループメンバの変更を行います．
 変更したいグループ名とメンバのリスト指定します．
+Gfarmの管理者が実行可能です．
+</p></dd>
+<dt><span class="term"><code class="option">-a</code></span></dt>
+<dd><p>
+このオプションは<code class="option">-m</code>と一緒に用いることにより
+グループメンバの追加を行います．
+変更したいグループ名と追加メンバのリストを指定します．
+Gfarmの管理者が実行可能です．
+</p></dd>
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd><p>
+このオプションは<code class="option">-m</code>と一緒に用いることにより
+グループメンバの削除を行います．
+変更したいグループ名と削除メンバのリストを指定します．
 Gfarmの管理者が実行可能です．
 </p></dd>
 <dt><span class="term"><code class="option">-d</code></span></dt>
