@@ -118,7 +118,6 @@ int debug_mode = 0;
 pid_t master_gfsd_pid;
 pid_t back_channel_gfsd_pid;
 uid_t gfsd_uid = -1;
-static int readonly_mode = 0;
 
 struct gfm_connection *gfm_server;
 char *canonical_self_name;
@@ -517,10 +516,20 @@ gfs_server_get_request(struct gfp_xdr *client, const char *diag,
 }
 
 #define IS_IO_ERROR(e) \
-	((e) == GFARM_ERR_INPUT_OUTPUT || (e) == GFARM_ERR_STALE_FILE_HANDLE)
+	((e) == GFARM_ERR_INPUT_OUTPUT || \
+	 (e) == GFARM_ERR_STALE_FILE_HANDLE ||\
+	 (e) == GFARM_ERR_READ_ONLY_FILE_SYSTEM)
 
-#define IS_READ_ONLY_ERROR(e) \
-	((e) == GFARM_ERR_READ_ONLY_FILE_SYSTEM)
+static void
+io_error_check(gfarm_error_t ecode, const char *diag)
+{
+	/* if input/output error occurs, die */
+	if (IS_IO_ERROR(ecode)) {
+		kill_master_gfsd = 1;
+		fatal(GFARM_MSG_1002513, "%s: %s, die", diag,
+		    gfarm_error_string(ecode));
+	}
+}
 
 void
 gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
@@ -540,17 +549,7 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 		fatal(GFARM_MSG_1000459, "%s put reply: %s",
 		    diag, gfarm_error_string(e));
 
-	/* if input/output error occurs, die */
-	if (IS_IO_ERROR(ecode)) {
-		kill_master_gfsd = 1;
-		fatal(GFARM_MSG_1002513, "%s: %s, die", diag,
-		    gfarm_error_string(ecode));
-	}
-	if (IS_READ_ONLY_ERROR(ecode)) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: %s", diag,
-		    gfarm_error_string(ecode));
-		readonly_mode = 1;
-	}
+	io_error_check(ecode, diag);
 }
 
 void
@@ -624,17 +623,7 @@ gfs_async_server_put_reply_common(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 		gflog_error(GFARM_MSG_1002382, "%s put reply: %s",
 		    diag, gfarm_error_string(e));
 
-	/* if input/output error occurs, die */
-	if (IS_IO_ERROR(ecode)) {
-		kill_master_gfsd = 1;
-		fatal(GFARM_MSG_1003683, "%s: %s, die", diag,
-		    gfarm_error_string(ecode));
-	}
-	if (IS_READ_ONLY_ERROR(ecode)) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: %s", diag,
-		    gfarm_error_string(ecode));
-		readonly_mode = 1;
-	}
+	io_error_check(ecode, diag);
 	return (e);
 }
 
@@ -1084,7 +1073,7 @@ gfsd_local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
 int
 gfsd_create_ancestor_dir(char *path)
 {
-	int i, j, tail, slashpos[DIRLEVEL];
+	int i, j, tail, slashpos[DIRLEVEL], save_errno;
 	struct stat st;
 
 	/* errno == ENOENT, so, maybe we don't have an ancestor directory */
@@ -1110,6 +1099,7 @@ gfsd_create_ancestor_dir(char *path)
 			errno = ENOENT;
 			return (-1);
 		} else if (mkdir(path, DATA_DIR_MASK) < 0) {
+			save_errno = errno;
 			if (errno == ENOENT)
 				continue;
 			if (errno == EEXIST) {
@@ -1118,7 +1108,7 @@ gfsd_create_ancestor_dir(char *path)
 				gflog_error(GFARM_MSG_1000467,
 				    "mkdir(`%s') failed: %s", path,
 				    strerror(errno));
-				errno = ENOENT;
+				errno = save_errno;
 				return (-1);
 			}
 		}
@@ -1128,12 +1118,13 @@ gfsd_create_ancestor_dir(char *path)
 			if (j <= 0)
 				break;
 			if (mkdir(path, DATA_DIR_MASK) < 0) {
+				save_errno = errno;
 				if (errno == EEXIST) /* maybe race */
 					continue;
 				gflog_warning(GFARM_MSG_1000468,
 				    "unexpected mkdir(`%s') failure: %s",
 				    path, strerror(errno));
-				errno = ENOENT;
+				errno = save_errno;
 				return (-1);
 			}
 		}
@@ -2139,7 +2130,7 @@ is_readonly_mode(void)
 		snprintf(p, length, "%s/%s", gfarm_spool_root,
 			 READONLY_CONFIG_FILE);
 	}		
-	return (readonly_mode || stat(p, &st) == 0);
+	return (stat(p, &st) == 0);
 }
 
 void
