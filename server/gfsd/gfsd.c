@@ -118,6 +118,7 @@ int debug_mode = 0;
 pid_t master_gfsd_pid;
 pid_t back_channel_gfsd_pid;
 uid_t gfsd_uid = -1;
+static int readonly_mode = 0;
 
 struct gfm_connection *gfm_server;
 char *canonical_self_name;
@@ -518,6 +519,9 @@ gfs_server_get_request(struct gfp_xdr *client, const char *diag,
 #define IS_IO_ERROR(e) \
 	((e) == GFARM_ERR_INPUT_OUTPUT || (e) == GFARM_ERR_STALE_FILE_HANDLE)
 
+#define IS_READ_ONLY_ERROR(e) \
+	((e) == GFARM_ERR_READ_ONLY_FILE_SYSTEM)
+
 void
 gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 	gfp_xdr_xid_t xid,
@@ -541,6 +545,11 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 		kill_master_gfsd = 1;
 		fatal(GFARM_MSG_1002513, "%s: %s, die", diag,
 		    gfarm_error_string(ecode));
+	}
+	if (IS_READ_ONLY_ERROR(ecode)) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %s", diag,
+		    gfarm_error_string(ecode));
+		readonly_mode = 1;
 	}
 }
 
@@ -620,6 +629,11 @@ gfs_async_server_put_reply_common(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 		kill_master_gfsd = 1;
 		fatal(GFARM_MSG_1003683, "%s: %s, die", diag,
 		    gfarm_error_string(ecode));
+	}
+	if (IS_READ_ONLY_ERROR(ecode)) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %s", diag,
+		    gfarm_error_string(ecode));
+		readonly_mode = 1;
 	}
 	return (e);
 }
@@ -2125,7 +2139,7 @@ is_readonly_mode(void)
 		snprintf(p, length, "%s/%s", gfarm_spool_root,
 			 READONLY_CONFIG_FILE);
 	}		
-	return (stat(p, &st) == 0);
+	return (readonly_mode || stat(p, &st) == 0);
 }
 
 void
