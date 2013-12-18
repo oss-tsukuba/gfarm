@@ -49,16 +49,20 @@ is_readonly(char *path)
 	int fd, ret = 0;
 
 	GFARM_MALLOC_ARRAY(testfile, strlen(path) + 3);
-	if (testfile == NULL)
-		return (ret);	/* XXX */
+	if (testfile == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED, "is_readonly: no memory");
+		return (ret);
+	}
 	strcpy(testfile, path);
 	strcat(testfile, "/a");
 	if ((fd = creat(testfile, 0400)) != -1) {
 		close(fd);
 		unlink(testfile);
-		ret = 0;
 	} else if (errno == EROFS)
 		ret = 1;
+	else
+		gflog_warning(GFARM_MSG_UNFIXED, "is_readonly: %s",
+		    strerror(errno));
 	free(testfile);
 	return (ret);
 }
