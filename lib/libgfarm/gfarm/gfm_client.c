@@ -717,7 +717,7 @@ retry:
 }
 
 gfarm_error_t
-gfm_client_connection_addref(struct gfm_connection *gfm_server)
+gfm_client_connection_try_addref(struct gfm_connection *gfm_server)
 {
 	gfarm_error_t e;
 	struct gfp_cached_connection *cache_entry;
@@ -891,6 +891,19 @@ gfm_client_connection_free(struct gfm_connection *gfm_server)
 {
 	gfp_cached_or_uncached_connection_free(&staticp->server_cache,
 	    gfm_server->cache_entry);
+}
+
+void
+gfm_client_connection_addref(struct gfm_connection *gfm_server)
+{
+	gfp_cached_connection_addref(&staticp->server_cache,
+	    gfm_server->cache_entry);
+}
+
+void
+gfm_client_connection_delref(struct gfm_connection *gfm_server)
+{
+	gfm_client_connection_free(gfm_server);
 }
 
 /*

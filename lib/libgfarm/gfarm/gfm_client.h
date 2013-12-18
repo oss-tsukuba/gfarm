@@ -54,7 +54,7 @@ int gfm_cached_connection_had_connection_error(struct gfm_connection *);
 
 gfarm_error_t gfm_client_connection_acquire(const char *, int, const char *,
 	struct gfm_connection **);
-gfarm_error_t gfm_client_connection_addref(struct gfm_connection *);
+gfarm_error_t gfm_client_connection_try_addref(struct gfm_connection *);
 gfarm_error_t gfm_client_connection_and_process_acquire(const char *, int,
 	const char *, struct gfm_connection **);
 gfarm_error_t gfm_client_connect(const char *, int, const char *,
@@ -63,6 +63,8 @@ struct passwd;
 gfarm_error_t gfm_client_connect_with_seteuid(const char *, int, const char *,
 	struct gfm_connection **, const char *, struct passwd *, int);
 void gfm_client_connection_free(struct gfm_connection *);
+void gfm_client_connection_addref(struct gfm_connection *);
+void gfm_client_connection_delref(struct gfm_connection *);
 struct gfp_xdr *gfm_client_connection_convert_to_xdr(struct gfm_connection *);
 void gfm_client_terminate(void);
 

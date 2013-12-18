@@ -498,8 +498,11 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 retry:
-	if ((e = gfs_client_connection_and_process_acquire(&gf->gfm_server,
-	    hostname, port, &gfs_server, NULL)) != GFARM_ERR_NO_ERROR) {
+	gfm_client_connection_addref(gf->gfm_server);
+	e = gfs_client_connection_and_process_acquire(&gf->gfm_server,
+	    hostname, port, &gfs_server, NULL);
+	gfm_client_connection_delref(gf->gfm_server);
+	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001350,
 		    "acquirement of client connection failed: %s",
 		    gfarm_error_string(e));

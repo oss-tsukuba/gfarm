@@ -455,6 +455,16 @@ gfm_client_connection_failover_pre_connect(const char *host, int port,
 	return (failover0(NULL, host, port, user));
 }
 
+/*
+ * Callers of this function should
+ * either
+ * - acquire (or addref) gfm_server before calling this,
+ *   and free (or delref) after calling this.
+ * or
+ * - should not access gfm_server after calling this,
+ *   because it may be abandoned in this function,
+ *   if it's pointed by gf->gfm_server (gf is a GFS_File).
+ */
 gfarm_error_t
 gfm_client_connection_failover(struct gfm_connection *gfm_server)
 {

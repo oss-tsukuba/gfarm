@@ -139,9 +139,11 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 
 retry:
 	gfm_server = gfs_pio_metadb(gf);
-	if ((e = gfs_client_connection_and_process_acquire(
-	    &gfm_server, dsthost, dstport, &gfs_server, NULL))
-		!= GFARM_ERR_NO_ERROR) {
+	gfm_client_connection_addref(gfm_server);
+	e = gfs_client_connection_and_process_acquire(
+	    &gfm_server, dsthost, dstport, &gfs_server, NULL);
+	gfm_client_connection_delref(gfm_server);
+	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001388,
 			"acquirement of client connection failed: %s",
 			gfarm_error_string(e));

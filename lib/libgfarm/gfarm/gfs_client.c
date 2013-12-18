@@ -841,6 +841,11 @@ gfs_client_check_failovercount_or_reset_process(
 	return (e);
 }
 
+/*
+ * Callers of this function should
+ * acquire (or addref) gfm_server before calling this,
+ * and free (or delref) after calling this.
+ */
 gfarm_error_t
 gfs_client_connection_and_process_acquire(
 	struct gfm_connection **gfm_serverp,

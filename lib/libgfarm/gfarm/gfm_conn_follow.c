@@ -22,7 +22,7 @@ gfm_conn_follow_result(struct gfm_connection *gfm_server, void *closure)
 	struct gfm_conn_follow_closure *c = closure;
 	gfarm_error_t e;
 
-	e = gfm_client_connection_addref(gfm_server);
+	e = gfm_client_connection_try_addref(gfm_server);
 	if (e == GFARM_ERR_NO_ERROR)
 		c->gfm_server = gfm_server;
 	return (e);

@@ -469,6 +469,18 @@ gfp_cached_or_uncached_connection_free(struct gfp_conn_cache *cache,
 		gfp_cached_connection_gc_internal(cache, *cache->num_cachep);
 }
 
+void
+gfp_cached_connection_addref(struct gfp_conn_cache *cache,
+	struct gfp_cached_connection *connection)
+{
+	static const char diag[] = "gfp_cached_connection_addref";
+
+	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
+	gfarm_lru_cache_addref_entry(&cache->lru_list,
+	    &connection->lru_entry);
+	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
+}
+
 /*
  * this function frees all cached connections, including in-use ones.
  *
