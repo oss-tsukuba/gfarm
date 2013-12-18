@@ -516,9 +516,7 @@ gfs_server_get_request(struct gfp_xdr *client, const char *diag,
 }
 
 #define IS_IO_ERROR(e) \
-	((e) == GFARM_ERR_INPUT_OUTPUT || \
-	 (e) == GFARM_ERR_STALE_FILE_HANDLE ||\
-	 (e) == GFARM_ERR_READ_ONLY_FILE_SYSTEM)
+	((e) == GFARM_ERR_INPUT_OUTPUT || (e) == GFARM_ERR_STALE_FILE_HANDLE)
 
 static void
 io_error_check(gfarm_error_t ecode, const char *diag)
@@ -2140,6 +2138,7 @@ gfs_server_statfs(struct gfp_xdr *client)
 	int save_errno = 0;
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
+	int readonly;
 
 	/*
 	 * do not use dir since there is no way to know gfarm_spool_root.
@@ -2149,10 +2148,14 @@ gfs_server_statfs(struct gfp_xdr *client)
 
 	save_errno = gfsd_statfs(gfarm_spool_root, &bsize,
 	    &blocks, &bfree, &bavail,
-	    &files, &ffree, &favail);
+	    &files, &ffree, &favail,
+	    &readonly);
 	free(dir);
 
-	if (save_errno == 0 && is_readonly_mode()) {
+	if (readonly)
+		gflog_error(GFARM_MSG_UNFIXED, "%s: read only file system",
+		    gfarm_spool_root);
+	if (save_errno == 0 && (readonly || is_readonly_mode())) {
 		/* pretend to be disk full, to make this gfsd read-only */
 		bavail -= bfree;
 		bfree = 0;
@@ -2488,7 +2491,7 @@ gfarm_error_t
 gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 {
 	gfarm_error_t e;
-	int save_errno = 0;
+	int save_errno = 0, readonly;
 	double loadavg[3];
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
@@ -2505,11 +2508,14 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 		gflog_warning(GFARM_MSG_1000520,
 		    "%s: cannot get load average", diag);
 	} else {
-		save_errno = gfsd_statfs(gfarm_spool_root, &bsize,
-			&blocks, &bfree, &bavail, &files, &ffree, &favail);
+		save_errno = gfsd_statfs(gfarm_spool_root, &bsize, &blocks,
+		    &bfree, &bavail, &files, &ffree, &favail, &readonly);
 
+		if (readonly)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: read only file system", gfarm_spool_root);
 		/* pretend to be disk full, to make this gfsd read-only */
-		if (save_errno == 0 && is_readonly_mode()) {
+		if (save_errno == 0 && (readonly || is_readonly_mode())) {
 			bavail -= bfree;
 			bfree = 0;
 		}
