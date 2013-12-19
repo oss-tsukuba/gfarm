@@ -73,9 +73,7 @@ int gfs_desc_fileno(GFS_Desc);
 #endif
 #define GFARM_FILE_TRUNC		0x00000400
 #define GFARM_FILE_APPEND		0x00000800
-#if 0 /* not yet on Gfarm v2 */
 #define GFARM_FILE_EXCLUSIVE		0x00001000
-#endif
 #ifdef GFARM_INTERNAL_USE /* internal use only, but passed via protocol */
 #define GFARM_FILE_REPLICA_SPEC		0x00010000
 #endif
@@ -104,7 +102,7 @@ int gfs_desc_fileno(GFS_Desc);
 		GFARM_FILE_UNBUFFERED)
 #else
 #define GFARM_FILE_USER_MODE	(GFARM_FILE_ACCMODE|GFARM_FILE_TRUNC| \
-	GFARM_FILE_APPEND| \
+	GFARM_FILE_APPEND|GFARM_FILE_EXCLUSIVE| \
 	GFARM_FILE_UNBUFFERED|GFARM_FILE_CREATE_REPLICA| \
 	GFARM_FILE_REPLICA_SPEC)
 #endif /* not yet on Gfarm v2 */

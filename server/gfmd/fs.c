@@ -298,8 +298,8 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 			return (e);
 		}
 		transaction = 1;
-		e = inode_create_file(base, name, process, op, mode, &inode,
-		    &created);
+		e = inode_create_file(base, name, process, op, mode,
+		    flag & GFARM_FILE_EXCLUSIVE, &inode, &created);
 
 		if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR) {
 			trace_seq_num = trace_log_get_sequence_number();
@@ -328,6 +328,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 			}
 		}
 	} else {
+		flag &= ~GFARM_FILE_EXCLUSIVE;
 		e = inode_lookup_by_name(base, name, process, op, &inode);
 		created = 0;
 	}
