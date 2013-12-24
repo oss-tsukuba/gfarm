@@ -1868,23 +1868,20 @@ sigs_handler(void *p)
 void
 gfmd_terminate(const char *diag)
 {
-	int transaction = 0;
-
 	/* we never release the giant lock until exit */
 	/* so, it's safe to modify the state of all peers */
 	giant_lock();
 
 	gflog_info(GFARM_MSG_1000201, "detaching all peers");
-	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
-		transaction = 1;
 	/*
 	 * the following internally calls inode_close*() and
 	 * closing must be done regardless of the result of db_begin().
 	 * because not closing may cause descriptor leak.
+	 *
+	 * NOTE:
+	 * We do not call db_begin(diag)/db_end() here to avoid SF.net #736.
 	 */
 	local_peer_detach_all();
-	if (transaction)
-		db_end(diag);
 
 	/* save all pending transactions */
 	/* db_terminate() needs giant_lock(), see comment in dbq_enter() */

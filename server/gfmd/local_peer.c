@@ -22,6 +22,7 @@
 #include "gfnetdb.h"
 
 #include "thrstatewait.h"
+#include "db_access.h"
 #include "user.h"
 #include "host.h"
 #include "mdhost.h"
@@ -307,6 +308,7 @@ local_peer_detach_all(void)
 {
 	int i;
 	struct peer *peer;
+	int needs_cleanup = 0, transaction = 0;
 	static const char diag[] = "local_peer_deatch_all";
 
 	/* We never unlock this mutex any more */
@@ -319,6 +321,26 @@ local_peer_detach_all(void)
 		return;
 	}
 
+	/*
+	 * check whether we need to close some peer or not at first,
+	 * to avoid unnecessary db_begin()/db_end().
+	 */
+	for (i = 0; i < local_peer_table_size; i++) {
+		peer = &local_peer_table[i].super;
+		if (peer->process != NULL) {
+			needs_cleanup = 1;
+			break;
+		}
+	}
+	if (!needs_cleanup)
+		return;
+
+	/*
+	 * We do db_begin()/db_end() here instead of the caller of
+	 * this function, to avoid SF.net #736
+	 */
+	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		transaction = 1;
 	for (i = 0; i < local_peer_table_size; i++) {
 		peer = &local_peer_table[i].super;
 		if (peer->process == NULL)
@@ -331,6 +353,8 @@ local_peer_detach_all(void)
 		process_detach_peer(peer->process, peer);
 		peer->process = NULL;
 	}
+	if (transaction)
+		db_end(diag);
 }
 
 static void
