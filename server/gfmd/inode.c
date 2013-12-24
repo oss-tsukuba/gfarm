@@ -2766,7 +2766,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		    gfarm_error_string(e));
 
 	*inp = n;
-	if (op == INODE_CREATE)
+	if (expected_type == GFS_DT_REG)
 		*createdp = 1;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -2938,14 +2938,15 @@ inode_lookup_lost_found(void)
 
 gfarm_error_t
 inode_create_file(struct inode *base, char *name,
-	struct process *process, int op, gfarm_mode_t mode,
+	struct process *process, int op, gfarm_mode_t mode, int exclusive,
 	struct inode **inp, int *createdp)
 {
 	struct inode *inode;
 	int created;
 	struct user *user = process_get_user(process);
 	gfarm_error_t e = inode_lookup_relative(base, name, GFS_DT_REG,
-	    INODE_CREATE, user, mode, NULL, &inode, &created);
+	    exclusive ? INODE_CREATE_EXCLUSIVE : INODE_CREATE,
+	    user, mode, NULL, &inode, &created);
 
 	if (e == GFARM_ERR_NO_ERROR) {
 		if (!created)

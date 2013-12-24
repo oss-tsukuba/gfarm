@@ -108,7 +108,7 @@ gfarm_error_t inode_lookup_by_name(struct inode *, char *,
 	struct process *, int,
 	struct inode **);
 gfarm_error_t inode_create_file(struct inode *, char *,
-	struct process *, int, gfarm_mode_t,
+	struct process *, int, gfarm_mode_t, int,
 	struct inode **, int *);
 gfarm_error_t inode_create_dir(struct inode *, char *,
 	struct process *, gfarm_mode_t);

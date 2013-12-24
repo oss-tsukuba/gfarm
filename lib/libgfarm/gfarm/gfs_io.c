@@ -111,11 +111,6 @@ gfm_create_fd(const char *path, int flags, gfarm_mode_t mode,
 	gfarm_error_t e;
 	struct gfm_create_fd_closure closure;
 
-#if 0 /* not yet in gfarm v2 */
-	/* GFARM_FILE_EXCLUSIVE is a NOP with gfm_open_fd(). */
-	flags &= ~GFARM_FILE_EXCLUSIVE;
-#endif /* not yet in gfarm v2 */
-
 	if ((e = gfm_open_flag_check(flags)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001268,
 			"gfm_open_flag_check(%d) failed: %s",
@@ -205,10 +200,8 @@ gfm_open_fd_with_ino(const char *path, int flags,
 	gfarm_error_t e;
 	struct gfm_open_fd_closure closure;
 
-#if 0 /* not yet in gfarm v2 */
-	/* GFARM_FILE_EXCLUSIVE is a NOP with gfm_open_fd(). */
+	/* GFARM_FILE_EXCLUSIVE is ignored by gfmd again. */
 	flags &= ~GFARM_FILE_EXCLUSIVE;
-#endif /* not yet in gfarm v2 */
 
 	if ((e = gfm_open_flag_check(flags)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001269,
