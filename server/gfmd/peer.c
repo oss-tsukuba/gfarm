@@ -37,6 +37,7 @@
 #include "subr.h"
 #include "thrpool.h"
 #include "watcher.h"
+#include "db_access.h"
 #include "user.h"
 #include "abstract_host.h"
 #include "host.h"
@@ -1011,6 +1012,7 @@ peer_shutdown_all(void)
 {
 	int i;
 	struct peer *peer;
+	int needs_cleanup = 0, transaction = 0;
 	static const char diag[] = "peer_shutdown_all";
 
 	/* We never unlock this mutex any more */
@@ -1023,6 +1025,26 @@ peer_shutdown_all(void)
 		return;
 	}
 
+	/*
+	 * check whether we need to close some peer or not at first,
+	 * to avoid unnecessary db_begin()/db_end().
+	 */
+	for (i = 0; i < peer_table_size; i++) {
+		peer = &peer_table[i];
+		if (peer->process != NULL) {
+			needs_cleanup = 1;
+			break;
+		}
+	}
+	if (!needs_cleanup)
+		return;
+
+	/*
+	 * We do db_begin()/db_end() here instead of the caller of
+	 * this function, to avoid SF.net #736
+	 */
+	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		transaction = 1;
 	for (i = 0; i < peer_table_size; i++) {
 		peer = &peer_table[i];
 		if (peer->process == NULL)
@@ -1036,6 +1058,8 @@ peer_shutdown_all(void)
 		process_detach_peer(peer->process, peer);
 		peer->process = NULL;
 	}
+	if (transaction)
+		db_end(diag);
 }
 
 /* XXX FIXME - rename this to peer_readable_invoked() */
