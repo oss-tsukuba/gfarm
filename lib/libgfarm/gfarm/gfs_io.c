@@ -196,6 +196,9 @@ gfm_open_fd_with_ino(const char *path, int flags,
 	gfarm_error_t e;
 	struct gfm_open_fd_closure closure;
 
+	/* GFARM_FILE_EXCLUSIVE is ignored by gfmd again. */
+	flags &= ~GFARM_FILE_EXCLUSIVE;
+
 	if ((e = gfm_open_flag_check(flags)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001269,
 			"gfm_open_flag_check(0x%x) failed: %s",
