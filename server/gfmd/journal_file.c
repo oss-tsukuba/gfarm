@@ -1538,12 +1538,13 @@ journal_file_close(struct journal_file *jf)
 	if (jf == NULL)
 		return;
 	journal_file_mutex_lock(jf, diag);
-	journal_file_reader_close_unlocked(journal_file_main_reader(jf));
 #if 0	/*
 	 * We don't have to do this, because storage for jf is never freed.
 	 * We shouldn't do this, because doing so makes
-	 * journal_file_mutex_lock(reader->file, ) dump core.
+	 * journal_file_mutex_lock(reader->file, ) dump core,
+	 * or db_journal_store_thread() dump core (see SF.net #737).
 	 */
+	journal_file_reader_close_unlocked(journal_file_main_reader(jf));
 	GFARM_HCIRCLEQ_FOREACH_SAFE(reader, jf->reader_list, readers, reader2)
 		journal_file_reader_detach(reader);
 #endif
