@@ -71,6 +71,8 @@ static const char CB_COND_DIAG[] = "cb_cond";
 /* locked by cb_mutex */
 static gfarm_uint64_t total_ok_filesize = 0;
 static gfarm_uint64_t total_ok_filenum = 0;
+static gfarm_uint64_t total_skip_filesize = 0;
+static gfarm_uint64_t total_skip_filenum = 0;
 static gfarm_uint64_t total_ng_filesize = 0;
 static gfarm_uint64_t total_ng_filenum = 0;
 static gfarm_uint64_t removed_replica_ok_num = 0;
@@ -155,6 +157,8 @@ gfpcopy_usage()
 {
 	fprintf(stderr,
 "\t[-f (force copy)(overwrite)] [-b <#bufsize to copy>]\n"
+"\t[-e (skip existing files\n"
+"\t     in order to execute multiple gfpcopy simultaneously)]\n"
 "\t<src_url(gfarm:///... or file:///...) or relative-path>\n"
 "\t<dst_dir(gfarm:///... or file:///...) or relative-path>\n");
 }
@@ -1227,8 +1231,9 @@ gfprep_set_tmp_mode_and_mtime(int is_gfarm, const char *url, int mode,
 }
 
 static gfarm_error_t
-gfprep_mkdir(int is_gfarm, const char *url, int restore, int mode,
-	struct gfarm_timespec *mtimep)
+gfprep_mkdir(
+	int is_gfarm, const char *url, int restore, int mode,
+	struct gfarm_timespec *mtimep, int skip_existing)
 {
 	gfarm_error_t e;
 	int tmp_mode;
@@ -1237,8 +1242,10 @@ gfprep_mkdir(int is_gfarm, const char *url, int restore, int mode,
 	tmp_mode = mode | 0700; /* to create files in any st_mode and mask */
 	if (is_gfarm) {
 		e = gfs_mkdir(url, (gfarm_mode_t)tmp_mode);
+		if (skip_existing && e == GFARM_ERR_ALREADY_EXISTS)
+			e = GFARM_ERR_NO_ERROR;
 		if (e != GFARM_ERR_NO_ERROR) {
-			gfprep_error_e(e, "gfs_mkdir(%s)", url);
+			gfprep_debug("gfs_mkdir(%s) failed", url);
 			return (e);
 		}
 	} else { /* to local */
@@ -1247,9 +1254,11 @@ gfprep_mkdir(int is_gfarm, const char *url, int restore, int mode,
 
 		path += GFPREP_FILE_URL_PREFIX_LENGTH;
 		retv = mkdir(path, (mode_t)tmp_mode);
+		if (skip_existing && retv == -1 && errno == ENOENT)
+			retv = 0;
 		if (retv == -1) {
 			e = gfarm_errno_to_error(errno);
-			gfprep_error_e(e, "mkdir(%s)", url);
+			gfprep_debug("mkdir(%s) failed", url);
 			return (e);
 		}
 	}
@@ -1372,8 +1381,9 @@ gfprep_symlink(int is_gfarm, const char *url, char *target)
 }
 
 static gfarm_error_t
-gfprep_copy_symlink(int src_is_gfarm, const char *src_url,
-		    int dst_is_gfarm, const char *dst_url)
+gfprep_copy_symlink(
+	int src_is_gfarm, const char *src_url,
+	int dst_is_gfarm, const char *dst_url, int skip_existing)
 {
 	gfarm_error_t e;
 	char *target;
@@ -1382,6 +1392,8 @@ gfprep_copy_symlink(int src_is_gfarm, const char *src_url,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfprep_symlink(dst_is_gfarm, dst_url, target);
+	if (skip_existing && e == GFARM_ERR_ALREADY_EXISTS)
+		e = GFARM_ERR_NO_ERROR;
 	if (e == GFARM_ERR_NO_ERROR)
 		gfprep_verbose("symlink: %s -> %s", dst_url, target);
 	free(target);
@@ -1476,6 +1488,7 @@ static void (*pfunc_cb_timer_end_remove_replica)(
 
 static const char pfunc_cb_ok[] = "OK";
 static const char pfunc_cb_ng[] = "NG";
+static const char pfunc_cb_skip[] = "SKIP";
 #define PF_FMT ", %.3gMB/s(%.3gs): " /* performance */
 
 static void
@@ -1492,7 +1505,8 @@ timer_end(struct pfunc_cb_data *cbd, double *mbsp, double *secp)
 	*secp = usec / GFARM_SECOND_BY_MICROSEC;
 }
 
-#define IS_OK (result == PFUNC_RESULT_OK) ? pfunc_cb_ok : pfunc_cb_ng
+#define RESULT (result == PFUNC_RESULT_OK) ? pfunc_cb_ok : \
+	(result == PFUNC_RESULT_SKIP) ? pfunc_cb_skip : pfunc_cb_ng
 
 static void
 pfunc_cb_timer_end_copy_main(
@@ -1501,7 +1515,7 @@ pfunc_cb_timer_end_copy_main(
 	double mbs, sec;
 
 	timer_end(cbd, &mbs, &sec);
-	printf("[%s]COPY" PF_FMT "%s", IS_OK, mbs, sec, cbd->src_url);
+	printf("[%s]COPY" PF_FMT "%s", RESULT, mbs, sec, cbd->src_url);
 	if (cbd->src_hi)
 		printf("(%s:%d)",
 		    cbd->src_hi->hostname, cbd->src_hi->port);
@@ -1519,7 +1533,7 @@ pfunc_cb_timer_end_replicate_main(
 	double mbs, sec;
 
 	timer_end(cbd, &mbs, &sec);
-	printf("[%s]%s" PF_FMT "%s (%s:%d -> %s:%d)\n", IS_OK,
+	printf("[%s]%s" PF_FMT "%s (%s:%d -> %s:%d)\n", RESULT,
 	    cbd->migrate ? "MIGRATE" : "REPLICATE",
 	    mbs, sec, cbd->src_url,
 	    cbd->src_hi->hostname, cbd->src_hi->port,
@@ -1531,7 +1545,7 @@ pfunc_cb_timer_end_remove_replica_main(
 	struct pfunc_cb_data *cbd, enum pfunc_result result)
 {
 	printf("[%s]REMOVE REPLICA: %s (%s:%d)\n",
-	    IS_OK, cbd->src_url, cbd->src_hi->hostname, cbd->src_hi->port);
+	    RESULT, cbd->src_url, cbd->src_hi->hostname, cbd->src_hi->port);
 }
 
 static void
@@ -1544,6 +1558,9 @@ pfunc_cb_update_default(struct pfunc_cb_data *cbd, enum pfunc_result result)
 	if (result == PFUNC_RESULT_OK) {
 		total_ok_filesize += cbd->filesize;
 		total_ok_filenum++;
+	} else if (result == PFUNC_RESULT_SKIP) {
+		total_skip_filesize += cbd->filesize;
+		total_skip_filenum++;
 	} else {
 		total_ng_filesize += cbd->filesize;
 		total_ng_filenum++;
@@ -2987,7 +3004,7 @@ main(int argc, char *argv[])
 	gfarm_pfunc_t *pfunc_handle;
 	gfarm_dirtree_t *dirtree_handle;
 	gfarm_dirtree_entry_t *entry;
-	gfarm_uint64_t n_entry;
+	gfarm_uint64_t n_entry, n_file;
 	int n_target; /* use gfarm_list */
 	struct gfarm_hash_table *hash_srcname = NULL, *hash_dstname = NULL;
 	struct gfarm_hash_table *hash_all_src, *hash_all_dst;
@@ -3012,6 +3029,7 @@ main(int argc, char *argv[])
 	int opt_n_para = -1; /* -j */
 	gfarm_int64_t opt_simulate_KBs = -1; /* -s and -n */
 	int opt_force_copy = 0; /* -f */
+	int opt_skip_existing = 0; /* -e */
 	int opt_n_desire = 1;  /* -N */
 	int opt_migrate = 0; /* -m */
 	gfarm_int64_t opt_max_copy_size = -1; /* -M */
@@ -3032,7 +3050,7 @@ main(int argc, char *argv[])
 
 	while ((ch = getopt(
 			argc, argv,
-			"N:h:j:w:W:s:S:D:H:R:M:b:J:F:C:c:LxmnpPqvdfUZl?"))
+			"N:h:j:w:W:s:S:D:H:R:M:b:J:F:C:c:LexmnpPqvdfUZl?"))
 	       != -1) {
 		switch (ch) {
 		case 'w':
@@ -3131,6 +3149,9 @@ main(int argc, char *argv[])
 		case 'b': /* gfpcopy */
 			opt_copy_bufsize = strtol(optarg, NULL, 0);
 			break;
+		case 'e': /* gfpcopy */
+			opt_skip_existing = 1;
+			break;
 		case '?':
 		default:
 			gfprep_usage_common(0);
@@ -3210,7 +3231,7 @@ main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 	} else { /* gfprep */
-		if (opt_force_copy) /* -f */
+		if (opt_force_copy || opt_skip_existing) /* -f or -e */
 			gfprep_usage_common(1);
 		if (opt_migrate) {
 			if (opt_n_desire > 1) { /* -m and -N */
@@ -3402,9 +3423,11 @@ main(int argc, char *argv[])
 				    dst_dir, src_dir_mode, &src_dir_mtime);
 		} else if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
 			e = gfprep_mkdir(dst_is_gfarm, dst_dir, should_restore,
-			    src_dir_mode, &src_dir_mtime);
-			if (e != GFARM_ERR_NO_ERROR)
+			    src_dir_mode, &src_dir_mtime, opt_skip_existing);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gfprep_error_e(e, "mkdir(%s)", dst_dir);
 				exit(EXIT_FAILURE);
+			}
 			create_dst_dir = 1;
 		} else if (e != GFARM_ERR_NO_ERROR) {
 			gfprep_error_e(e, "dst_dir(%s)", dst_dir);
@@ -3438,7 +3461,7 @@ main(int argc, char *argv[])
 	/* fork() before gfarm_initialize() and pthread_create() */
 	e = gfarm_pfunc_init_fork(
 	    &pfunc_handle, opt_n_para, 1, opt_simulate_KBs, opt_copy_bufsize,
-	    pfunc_cb_start, pfunc_cb_end, pfunc_cb_free);
+	    opt_skip_existing, pfunc_cb_start, pfunc_cb_end, pfunc_cb_free);
 	gfprep_fatal_e(e, "gfarm_pfunc_init_fork");
 
 	e = gfarm_dirtree_init_fork(
@@ -3591,7 +3614,7 @@ main(int argc, char *argv[])
 	}
 	gfprep_verbose("way = %s", way == WAY_NOPLAN ? "noplan" : "greedy");
 
-	n_entry = 0;
+	n_entry = n_file = 0;
 	n_target = 0;
 	while ((e = gfarm_dirtree_checknext(dirtree_handle, &entry))
 	       == GFARM_ERR_NO_ERROR && !gfprep_is_term()) {
@@ -3608,8 +3631,11 @@ main(int argc, char *argv[])
 		if (src_base_name &&
 		    strcmp(src_base_name, entry->subpath) != 0)
 			goto next_entry;
-		if (entry->n_pending == 0) /* new entry (not pending) */
+		if (entry->n_pending == 0) { /* new entry (not pending) */
 			n_entry++;
+			if (entry->src_d_type == GFS_DT_REG) /* a file */
+				n_file++;
+		}
 		gfprep_url_realloc(&src_url, &src_url_size, src_dir,
 				   entry->subpath);
 		if (opt.debug) {
@@ -3656,7 +3682,7 @@ main(int argc, char *argv[])
 						   entry, dst_is_gfarm,
 						   dst_url);
 						if (e != GFARM_ERR_NO_ERROR) {
-							gfprep_error(
+							gfprep_error_e(e,
 							    "cannot overwrite:"
 							    " %s", dst_url);
 							goto next_entry;
@@ -3698,7 +3724,7 @@ main(int argc, char *argv[])
 						   entry, dst_is_gfarm,
 						   dst_url);
 						if (e != GFARM_ERR_NO_ERROR) {
-							gfprep_error(
+							gfprep_error_e(e,
 							    "cannot overwrite:"
 							    " %s", dst_url);
 							goto next_entry;
@@ -3709,7 +3735,7 @@ main(int argc, char *argv[])
 					goto next_entry;
 				e = gfprep_copy_symlink(
 				    src_is_gfarm, src_url,
-				    dst_is_gfarm, dst_url);
+				    dst_is_gfarm, dst_url, opt_skip_existing);
 				if (e == GFARM_ERR_NO_ERROR) {
 					struct gfarm_timespec mtime;
 
@@ -3717,7 +3743,10 @@ main(int argc, char *argv[])
 					mtime.tv_nsec = entry->src_m_nsec;
 					(void)gfprep_set_mtime(
 					    dst_is_gfarm, dst_url, &mtime);
-				}
+				} else if (e != GFARM_ERR_NO_ERROR)
+					gfprep_error_e(e,
+					    "cannot create a symlink: %s",
+					    dst_url);
 				goto next_entry;
 			} else if (entry->src_d_type == GFS_DT_DIR) {
 				struct gfarm_timespec mtime;
@@ -3743,10 +3772,12 @@ main(int argc, char *argv[])
 							    " %s", dst_url);
 							goto next_entry;
 						}
+						/* deleted */
 					}
 				}
 				e = gfprep_mkdir(dst_is_gfarm, dst_url, 1,
-				    entry->src_mode, &mtime);
+				    entry->src_mode, &mtime,
+				    opt_skip_existing);
 				if (e != GFARM_ERR_NO_ERROR)
 					gfprep_error(
 					   "cannot make a directory: %s",
@@ -4176,10 +4207,17 @@ next_entry:
 		gettimeofday(&time_end, NULL);
 		gfarm_timeval_sub(&time_end, &time_start);
 		printf("all_entries_num: %"GFARM_PRId64"\n", n_entry);
+		printf("all_files_num: %"GFARM_PRId64"\n", n_file);
 		printf("%s_file_num: %"GFARM_PRId64"\n",
 		       prefix, total_ok_filenum);
 		printf("%s_file_size: %"GFARM_PRId64"\n",
 		       prefix, total_ok_filesize);
+		if (total_skip_filenum > 0) {
+			printf("skipped_file_num: %"GFARM_PRId64"\n",
+			       total_skip_filenum);
+			printf("skipped_file_size: %"GFARM_PRId64"\n",
+			       total_skip_filesize);
+		}
 		if (total_ng_filenum > 0) {
 			printf("failed_file_num: %"GFARM_PRId64"\n",
 			       total_ng_filenum);
