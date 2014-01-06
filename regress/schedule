@@ -9,6 +9,7 @@ lib/libgfarm/gfarm/gfs_dir_test/gfs_dir_test.sh
 lib/libgfarm/gfarm/gfs_pio_create/normal.sh
 lib/libgfarm/gfarm/gfs_pio_create/not_writable.sh
 lib/libgfarm/gfarm/gfs_pio_create/not_writable_rdonly.sh
+lib/libgfarm/gfarm/gfs_pio_create/file_exclusive.sh
 lib/libgfarm/gfarm/gfs_pio_create/autoreplica0.sh
 lib/libgfarm/gfarm/gfs_pio_create/autoreplica.sh
 lib/libgfarm/gfarm/gfs_pio_create/autoreplica4.sh
