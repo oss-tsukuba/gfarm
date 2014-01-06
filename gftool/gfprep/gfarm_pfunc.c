@@ -43,6 +43,7 @@ struct gfarm_pfunc {
 	char *copy_buf;
 	int started;
 	int copy_bufsize;
+	int skip_existing;
 	int is_end;
 	pthread_mutex_t is_end_mutex;
 };
@@ -232,6 +233,8 @@ pfunc_open(const char *url, int flags, int mode, struct pfunc_file *fp)
 			gflags |= GFARM_FILE_WRONLY;
 		if (flags & O_TRUNC)
 			gflags |= GFARM_FILE_TRUNC;
+		if (flags & O_EXCL)
+			gflags |= GFARM_FILE_EXCLUSIVE;
 		if (flags & O_CREAT)
 			e = gfs_pio_create(url, gflags, mode, &gf);
 		else
@@ -255,16 +258,31 @@ struct pfunc_stat {
 };
 
 static gfarm_error_t
-pfunc_fstat(struct pfunc_file *fp, struct pfunc_stat *stp)
+pfunc_lstat(const char *url, struct pfunc_stat *stp)
 {
 #ifdef __GNUC__ /* to shut up gcc warning "may be used uninitialized" */
 	stp->mode = stp->size = 0;
 	stp->mtime_sec = stp->atime_sec = 0;
 	stp->mtime_nsec = stp->atime_nsec = 0;
 #endif
-	if (fp->gfarm) {
+	if (gfprep_url_is_local(url)) {
+		int retv;
+		struct stat st;
+		char *path = (char *)url;
+
+		path += GFPREP_FILE_URL_PREFIX_LENGTH;
+		retv = lstat(path, &st);
+		if (retv == -1)
+			return (gfarm_errno_to_error(errno));
+		stp->mode = st.st_mode;
+		stp->size = st.st_size;
+		stp->atime_sec = st.st_atime;
+		stp->atime_nsec = gfarm_stat_atime_nsec(&st);
+		stp->mtime_sec = st.st_mtime;
+		stp->mtime_nsec = gfarm_stat_mtime_nsec(&st);
+	} else if (gfprep_url_is_gfarm(url)) {
 		struct gfs_stat gst;
-		gfarm_error_t e = gfs_pio_stat(fp->gfarm, &gst);
+		gfarm_error_t e = gfs_lstat(url, &gst);
 
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
@@ -275,20 +293,8 @@ pfunc_fstat(struct pfunc_file *fp, struct pfunc_stat *stp)
 		stp->mtime_sec = gst.st_mtimespec.tv_sec;
 		stp->mtime_nsec = gst.st_mtimespec.tv_nsec;
 		gfs_stat_free(&gst);
-	} else {
-		int retv;
-		struct stat st;
-
-		retv = fstat(fp->fd, &st);
-		if (retv == -1)
-			return (gfarm_errno_to_error(errno));
-		stp->mode = st.st_mode;
-		stp->size = st.st_size;
-		stp->atime_sec = st.st_atime;
-		stp->atime_nsec = gfarm_stat_atime_nsec(&st);
-		stp->mtime_sec = st.st_mtime;
-		stp->mtime_nsec = gfarm_stat_mtime_nsec(&st);
-	}
+	} else
+		return (GFARM_ERR_INVALID_ARGUMENT);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -479,13 +485,13 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 		FILE *from_parent, FILE *to_parent)
 {
 	gfarm_error_t e;
-	int ng = 0, retv;
+	int result = PFUNC_RESULT_OK, retv;
 	char *tmp_url, *src_url, *dst_url, *src_host, *dst_host;
 	int src_port, dst_port;
 	struct pfunc_file src_fp, dst_fp;
-	struct pfunc_stat st;
+	struct pfunc_stat src_st;
 	gfarm_off_t src_size;
-	int check_disk_avail;
+	int flags, check_disk_avail;
 
 	gfpara_recv_string(from_parent, &src_url);
 	gfpara_recv_int64(from_parent, &src_size);
@@ -501,10 +507,12 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 		fprintf(stderr, "ERROR: copy failed (no memory): %s\n",
 			src_url);
 		tmp_url = NULL;
+		result = PFUNC_RESULT_NG;
 		goto end;
 	}
 	if (handle->simulate_KBs > 0) {
 		pfunc_simulate(src_url, handle->simulate_KBs);
+		/* OK */
 		goto end;
 	}
 	if (check_disk_avail && dst_port > 0) { /* dst is gfarm */
@@ -516,7 +524,7 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 				"%s (%s:%d, %s:%d): %s\n",
 				src_url, src_host, src_port,
 				dst_host, dst_port, gfarm_error_string(e));
-			ng = 1;
+			result = PFUNC_RESULT_NG;
 			goto end;
 		}
 	}
@@ -524,45 +532,76 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "ERROR: copy failed: open(%s): %s\n",
 			src_url, gfarm_error_string(e));
-		ng = 1;
+		result = PFUNC_RESULT_NG;
 		goto end;
 	}
-	e = pfunc_fstat(&src_fp, &st);
+	e = pfunc_lstat(src_url, &src_st);
 	if (e != GFARM_ERR_NO_ERROR) {
-		(void) pfunc_close(&src_fp);
+		(void)pfunc_close(&src_fp);
 		fprintf(stderr, "ERROR: copy failed: lstat(%s): %s\n",
-			src_url, gfarm_error_string(e));
-		ng = 1;
+		    src_url, gfarm_error_string(e));
+		result = PFUNC_RESULT_NG;
 		goto end;
 	}
-	e = pfunc_open(tmp_url, O_CREAT | O_WRONLY | O_TRUNC,
-	    st.mode & 0777 & ~mask, &dst_fp);
+
+	flags = O_CREAT | O_WRONLY | O_TRUNC;
+	if (handle->skip_existing) {
+		/* in order to execute multiple gfpcopy simultaneously */
+		struct pfunc_stat dst_st;
+
+		flags |= O_EXCL;
+		e = pfunc_lstat(dst_url, &dst_st);
+		if (e == GFARM_ERR_NO_ERROR) {
+			if (src_st.size == dst_st.size &&
+			    src_st.mtime_sec == dst_st.mtime_sec) {
+				/* already created */
+				result = PFUNC_RESULT_SKIP;
+				(void)pfunc_close(&src_fp);
+				goto end;
+			}
+			/* different file: overwrite */
+		} else if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
+			fprintf(stderr, "ERROR: copy failed: lstat(%s): %s\n",
+			    dst_url, gfarm_error_string(e));
+			result = PFUNC_RESULT_NG;
+			(void)pfunc_close(&src_fp);
+			goto end;
+		} /* else: GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY */
+
+		/* There is race condition here. (especially small file) */
+	}
+	e = pfunc_open(tmp_url, flags, src_st.mode & 0777 & ~mask, &dst_fp);
 	if (e != GFARM_ERR_NO_ERROR) {
-		(void) pfunc_close(&src_fp);
-		fprintf(stderr, "ERROR: copy failed: open(%s): %s\n",
-			tmp_url, gfarm_error_string(e));
-		ng = 1;
+		(void)pfunc_close(&src_fp);
+		if (handle->skip_existing && e == GFARM_ERR_ALREADY_EXISTS) {
+			result = PFUNC_RESULT_SKIP;
+		} else {
+			fprintf(stderr, "ERROR: copy failed: open(%s): %s\n",
+			    tmp_url, gfarm_error_string(e));
+			result = PFUNC_RESULT_NG;
+		}
 		goto end;
 	}
-	if (st.size > 0 && src_fp.gfarm && strcmp(src_host, "") != 0) {
+
+	if (src_st.size > 0 && src_fp.gfarm && strcmp(src_host, "") != 0) {
 		/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 		e = gfs_pio_internal_set_view_section(src_fp.gfarm, src_host);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr,
 				"ERROR: copy failed: set_view(%s, %s): %s\n",
 				src_url, src_host, gfarm_error_string(e));
-			ng = 1;
+			result = PFUNC_RESULT_NG;
 			goto close;
 		}
 	}
-	if (st.size > 0 && dst_fp.gfarm && strcmp(dst_host, "") != 0) {
+	if (src_st.size > 0 && dst_fp.gfarm && strcmp(dst_host, "") != 0) {
 		/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 		e = gfs_pio_internal_set_view_section(dst_fp.gfarm, dst_host);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr,
 				"ERROR: copy failed: set_view(%s, %s): %s\n",
 				tmp_url, dst_host, gfarm_error_string(e));
-			ng = 1;
+			result = PFUNC_RESULT_NG;
 			goto close;
 		}
 	}
@@ -570,7 +609,7 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "ERROR: copy failed: %s: %s\n",
 			src_url, gfarm_error_string(e));
-		ng = 1;
+		result = PFUNC_RESULT_NG;
 		goto close;
 	}
 close:
@@ -578,42 +617,40 @@ close:
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "ERROR: copy failed: close(%s): %s\n",
 			tmp_url, gfarm_error_string(e));
-		ng = 1;
-		goto end;
+		result = PFUNC_RESULT_NG;
 	}
 	e = pfunc_close(&dst_fp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "ERROR: copy failed: close(%s): %s\n",
 			tmp_url, gfarm_error_string(e));
-		ng = 1;
-		goto end;
+		result = PFUNC_RESULT_NG;
 	}
-	e = pfunc_lutimens(tmp_url, &st);
+
+	/* handle->skip_existing: This is race condition here. */
+
+	e = pfunc_lutimens(tmp_url, &src_st);
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "ERROR: copy failed: utimes(%s): %s\n",
+		fprintf(stderr, "ERROR: copy failed: utime(%s): %s\n",
 			tmp_url, gfarm_error_string(e));
-		ng = 1;
-		goto end;
+		result = PFUNC_RESULT_NG;
 	}
 	e = pfunc_rename(tmp_url, dst_url);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "ERROR: copy failed: rename(%s -> %s): %s\n",
 			tmp_url, dst_url, gfarm_error_string(e));
-		ng = 1;
-		goto end;
+		result = PFUNC_RESULT_NG;
 	}
 	/* XXX pfunc_mode == PFUNC_MODE_MIGRATE : unlink src_url */
 end:
-	if (ng) {
-		gfpara_send_int(to_parent, PFUNC_RESULT_NG);
+	if (result == PFUNC_RESULT_NG) {
 		e = pfunc_unlink(tmp_url);
 		if (e != GFARM_ERR_NO_ERROR &&
 		    e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
 			fprintf(stderr,
 				"ERROR: cannot remove tmp-file: %s: %s\n",
 			tmp_url, gfarm_error_string(e));
-	} else
-		gfpara_send_int(to_parent, PFUNC_RESULT_OK);
+	}
+	gfpara_send_int(to_parent, result);
 	free(tmp_url);
 	free(src_url);
 	free(dst_url);
@@ -824,6 +861,7 @@ pfunc_recv(FILE *child_out, gfpara_proc_t *proc, void *param)
 	switch (result) {
 	case PFUNC_RESULT_OK:
 	case PFUNC_RESULT_NG:
+	case PFUNC_RESULT_SKIP:
 	case PFUNC_RESULT_BUSY_REMOVE_REPLICA:
 		if (handle->cb_end != NULL && data != NULL) {
 			handle->cb_end(result, data);
@@ -864,7 +902,7 @@ pfunc_end(void *param)
 gfarm_error_t
 gfarm_pfunc_init_fork(
 	gfarm_pfunc_t **handlep, int n_parallel, int queue_size,
-	gfarm_int64_t simulate_KBs, int copy_bufsize,
+	gfarm_int64_t simulate_KBs, int copy_bufsize, int skip_existing,
 	void (*cb_start)(void *), void (*cb_end)(enum pfunc_result, void *),
 	void (*cb_free)(void *))
 {
@@ -883,6 +921,7 @@ gfarm_pfunc_init_fork(
 	handle->simulate_KBs = simulate_KBs;
 	handle->copy_buf = buf;
 	handle->copy_bufsize = copy_bufsize;
+	handle->skip_existing = skip_existing;
 	handle->cb_start = cb_start;
 	handle->cb_end = cb_end;
 	handle->cb_free = cb_free;
