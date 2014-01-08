@@ -2285,7 +2285,11 @@ inode_new_generation_by_fd_finish(struct inode *inode, struct peer *peer,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* NOTE: this function uses backend DB transaction */
+/*
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function SHOULD call db_begin()/db_end() around this
+ */
 gfarm_error_t
 inode_new_generation_by_cookie_finish(
 	struct inode *inode, gfarm_off_t size, gfarm_uint64_t cookie,
@@ -2293,7 +2297,6 @@ inode_new_generation_by_cookie_finish(
 {
 	gfarm_error_t e;
 	struct inode_activity *ia;
-	int transaction = 0;
 	static const char diag[] = "inode_new_generation_by_cookie_finish";
 
 	if ((e = inode_new_generation_finish_precondition(inode, diag)) !=
@@ -2318,14 +2321,10 @@ inode_new_generation_by_cookie_finish(
 	/* giant_lock should prevent resuming threads from running */
 	inode_new_generation_finish_event_post(inode);
 
-	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
-		transaction = 1;
 	if (size != inode_get_size(inode))
 		inode_set_size(inode, size);
 	if (inode_activity_free_try(inode))
 		inode_remove_try(inode);
-	if (transaction)
-		db_end(diag);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -4368,6 +4367,11 @@ file_replicating_get_gen(struct file_replicating *fr)
 	return (fr->igen);
 }
 
+/*
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function should NOT call db_begin()/db_end() around this
+ */
 gfarm_error_t
 inode_replicated(struct file_replicating *fr,
 	gfarm_int32_t src_errcode, gfarm_int32_t dst_errcode, gfarm_off_t size)
