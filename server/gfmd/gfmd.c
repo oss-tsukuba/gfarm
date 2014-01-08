@@ -609,22 +609,8 @@ protocol_state_init(struct protocol_state *ps)
 void
 protocol_finish(struct peer *peer, const char *diag)
 {
-	int transaction = 0;
-
-	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
-		transaction = 1;
-
-	/*
-	 * the following internally calls
-	 * inode_close*() and closing must be
-	 * done regardless of the result of db_begin().
-	 * because not closing may cause
-	 * descriptor leak.
-	 */
+	/* peer_free() internally calls db_begin()/db_end() */
 	peer_free(peer);
-
-	if (transaction)
-		db_end(diag);
 }
 
 /* this interface is exported for a use from a private extension */
@@ -981,7 +967,7 @@ try_auth(void *arg)
 	if ((e = peer_authorize(peer)) != GFARM_ERR_NO_ERROR) {
 		/* peer_authorize() itself records the error log */
 		giant_lock();
-		/* db_begin()/db_end() is not necessary in this case */
+		/* db_begin()/db_end() is not necessary in this case anyway */
 		peer_free(peer);
 		giant_unlock();
 	}

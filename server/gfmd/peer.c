@@ -360,6 +360,10 @@ peer_replicated(struct peer *peer,
  * this frees file_replicating structures with the following condition:
  * GFS_PROTO_REPLICATION_REQUEST is successfully done,
  * but gfmd hasn't received GFM_PROTO_REPLICATION_RESULT.
+ *
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function should NOT call db_begin()/db_end() around this
  */
 static void
 peer_replicating_free_all_waiting_result(struct peer *peer)
@@ -401,6 +405,11 @@ peer_replicating_free_all_waiting_result(struct peer *peer)
 	}
 }
 
+/*
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function should NOT call db_begin()/db_end() around this
+ */
 static void
 peer_replicating_free_all(struct peer *peer)
 {
@@ -912,13 +921,18 @@ peer_get_numeric_name(struct peer *peer, char *hostbuf, size_t hostlen)
 	    hostbuf, hostlen, NULL, 0, NI_NUMERICHOST | NI_NUMERICSERV));
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function should NOT call db_begin()/db_end() around this
+ */
 void
 peer_free(struct peer *peer)
 {
 	int err;
 	char *username;
 	const char *hostname;
+	int transaction = 0;
 	static const char diag[] = "peer_free";
 	char hostbuf[NI_MAXHOST];
 
@@ -980,6 +994,9 @@ peer_free(struct peer *peer)
 		    &peer->u.client.jobs);
 	peer->u.client.jobs = NULL;
 
+	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		transaction = 1;
+
 	peer_unset_pending_new_generation(peer, GFARM_ERR_CONNECTION_ABORTED);
 
 	peer->findxmlattrctx = NULL;
@@ -989,6 +1006,9 @@ peer_free(struct peer *peer)
 		process_detach_peer(peer->process, peer);
 		peer->process = NULL;
 	}
+
+	if (transaction)
+		db_end(diag);
 
 	/*
 	 * free common resources
@@ -1271,7 +1291,11 @@ peer_reset_pending_new_generation_by_fd(struct peer *peer)
 	peer->pending_new_generation = NULL;
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function should NOT call db_begin()/db_end() around this
+ */
 static void
 peer_unset_pending_new_generation_by_fd(
 	struct peer *peer, gfarm_error_t reason)
@@ -1349,7 +1373,6 @@ peer_remove_pending_new_generation_by_cookie(
 	return (found);
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
 static void
 peer_unset_pending_new_generation_by_cookie(
 	struct peer *peer, gfarm_error_t reason)
@@ -1384,7 +1407,11 @@ peer_unset_pending_new_generation_by_cookie(
 	GFARM_HCIRCLEQ_INIT(peer->pending_new_generation_cookies, cookie_link);
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function SHOULD call db_begin()/db_end() around this
+ */
 void
 peer_unset_pending_new_generation(struct peer *peer, gfarm_error_t reason)
 {
@@ -1412,7 +1439,11 @@ peer_set_process(struct peer *peer, struct process *process)
 	process_attach_peer(process, peer);
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function SHOULD call db_begin()/db_end() around this
+ */
 void
 peer_unset_process(struct peer *peer)
 {

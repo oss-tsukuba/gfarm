@@ -243,7 +243,11 @@ process_attach_peer(struct process *process, struct peer *peer)
 	/* We are currently not using peer here */
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function SHOULD call db_begin()/db_end() around this
+ */
 void
 process_detach_peer(struct process *process, struct peer *peer)
 {
