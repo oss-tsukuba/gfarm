@@ -1379,7 +1379,9 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 					    ": ino %lld, gen %lld: %s",
 					    (long long)ino, (long long)gen,
 					    gfarm_error_string(e));
-			}
+			} else
+				gflog_error(GFARM_MSG_UNFIXED, "%s: %s", diag,
+				    strerror(save_errno));
 			e = gfarm_errno_to_error(save_errno);
 			break;
 		}
@@ -2633,7 +2635,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	free(path);
 	if (local_fd < 0) {
 		dst_err = gfarm_errno_to_error(errno);
-		gflog_notice(GFARM_MSG_1002182,
+		gflog_error(GFARM_MSG_1002182,
 		    "%s: cannot open local file for %lld:%lld: %s", diag,
 		    (long long)rep->ino, (long long)rep->gen, strerror(errno));
 	} else if ((conn_err = gfs_client_connection_acquire_by_host(gfm_server,
