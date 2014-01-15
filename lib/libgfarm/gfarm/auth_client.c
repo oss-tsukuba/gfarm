@@ -150,10 +150,9 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 		}
 		if (eof) {
 			gflog_debug(GFARM_MSG_1001028,
-				"Unexpected EOF when receiving "
-				"auth shared secret md5 response: %s",
-				gfarm_error_string(GFARM_ERR_PROTOCOL));
-			return (GFARM_ERR_PROTOCOL);
+			    "receiving auth shared secret md5 response: %s",
+			    gfarm_error_string(GFARM_ERR_UNEXPECTED_EOF));
+			return (GFARM_ERR_UNEXPECTED_EOF);
 		}
 		if (error != GFARM_AUTH_ERROR_NO_ERROR)
 			break;
@@ -168,10 +167,9 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 		}
 		if (eof) {
 			gflog_debug(GFARM_MSG_1001030,
-				"Unexpected EOF when receiving "
-				"challenge response: %s",
-				gfarm_error_string(GFARM_ERR_PROTOCOL));
-			return (GFARM_ERR_PROTOCOL);
+			    "receiving challenge response: %s",
+			    gfarm_error_string(GFARM_ERR_UNEXPECTED_EOF));
+			return (GFARM_ERR_UNEXPECTED_EOF);
 		}
 		gfarm_auth_sharedsecret_response_data(shared_key, challenge,
 		    response);
@@ -195,9 +193,9 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 		}
 		if (eof) {
 			gflog_debug(GFARM_MSG_1001033,
-			    "Unexpected EOF when receiving expire response: %s",
-				gfarm_error_string(GFARM_ERR_PROTOCOL));
-			return (GFARM_ERR_PROTOCOL);
+			    "receiving expire response: %s",
+			    gfarm_error_string(GFARM_ERR_UNEXPECTED_EOF));
+			return (GFARM_ERR_UNEXPECTED_EOF);
 		}
 		if (error == GFARM_AUTH_ERROR_NO_ERROR)
 			return (GFARM_ERR_NO_ERROR); /* success */
@@ -222,9 +220,9 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 	}
 	if (eof) {
 		gflog_debug(GFARM_MSG_1001036,
-			"Unexpected EOF when receiving giveup response: %s",
-			gfarm_error_string(GFARM_ERR_PROTOCOL));
-		return (GFARM_ERR_PROTOCOL);
+		    "receiving giveup response: %s",
+		    gfarm_error_string(GFARM_ERR_UNEXPECTED_EOF));
+		return (GFARM_ERR_UNEXPECTED_EOF);
 	}
 
 	if (e_save != GFARM_ERR_NO_ERROR) {
@@ -290,9 +288,9 @@ gfarm_auth_request(struct gfp_xdr *conn,
 	}
 	if (eof) {
 		gflog_debug(GFARM_MSG_1001044,
-			"Unexpected EOF when receiving methods response: %s",
-			gfarm_error_string(GFARM_ERR_PROTOCOL));
-		return (GFARM_ERR_PROTOCOL);
+		    "receiving methods response: %s",
+		    gfarm_error_string(GFARM_ERR_UNEXPECTED_EOF));
+		return (GFARM_ERR_UNEXPECTED_EOF);
 	}
 
 	server_methods = 0;
@@ -328,11 +326,14 @@ gfarm_auth_request(struct gfp_xdr *conn,
 		}
 		if (eof || error != GFARM_AUTH_ERROR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001047,
-				"Unexpected EOF when receiving "
-				"method (%d) response (error = %u): %s",
-				method, error,
-				gfarm_error_string(GFARM_ERR_PROTOCOL));
-			return (GFARM_ERR_PROTOCOL); /* shouldn't happen */
+			    "receiving method (%d) response (error = %u): %s",
+			    method, error,
+			    eof ?
+			    gfarm_error_string(GFARM_ERR_UNEXPECTED_EOF) :
+			    gfarm_error_string(GFARM_ERR_PROTOCOL));
+			/* GFARM_ERR_PROTOCOL shouldn't happen */
+			return (eof ?
+			    GFARM_ERR_UNEXPECTED_EOF : GFARM_ERR_PROTOCOL);
 		}
 		if (method == GFARM_AUTH_METHOD_NONE) {
 			/* give up */
@@ -424,10 +425,10 @@ gfarm_auth_request_sharedsecret_receive_fin(int events, int fd,
 	state->error = gfp_xdr_recv(state->conn, 0, &eof, "i",
 	    &error_ignore);
 	if (state->error == GFARM_ERR_NO_ERROR && eof) {
-		state->error = GFARM_ERR_PROTOCOL;
+		state->error = GFARM_ERR_UNEXPECTED_EOF;
 		gflog_debug(GFARM_MSG_1001054,
-			"Unexpected EOF when receiving fin %s",
-			gfarm_error_string(GFARM_ERR_PROTOCOL));
+			"receiving fin %s",
+			gfarm_error_string(GFARM_ERR_UNEXPECTED_EOF));
 	}
 	if (state->error != GFARM_ERR_NO_ERROR)
 		;
@@ -507,7 +508,7 @@ gfarm_auth_request_sharedsecret_receive_result(int events, int fd,
 	state->error = gfp_xdr_recv(state->conn, 1, &eof, "i",
 	    &state->proto_error);
 	if (state->error == GFARM_ERR_NO_ERROR && eof)
-		state->error = GFARM_ERR_PROTOCOL;
+		state->error = GFARM_ERR_UNEXPECTED_EOF;
 	if (state->error == GFARM_ERR_NO_ERROR) {
 		if (state->proto_error != GFARM_AUTH_ERROR_NO_ERROR) {
 			gfarm_fd_event_set_callback(state->writable,
@@ -552,7 +553,7 @@ gfarm_auth_request_sharedsecret_receive_challenge(int events, int fd,
 	state->error = gfp_xdr_recv(state->conn, 0, &eof, "b",
 	    sizeof(challenge), &len, challenge);
 	if (state->error == GFARM_ERR_NO_ERROR && eof)
-		state->error = GFARM_ERR_PROTOCOL;
+		state->error = GFARM_ERR_UNEXPECTED_EOF;
 	if (state->error == GFARM_ERR_NO_ERROR) {
 		/* XXX It's better to check writable event here */
 		gfarm_auth_sharedsecret_response_data(
@@ -603,7 +604,7 @@ gfarm_auth_request_sharedsecret_receive_keytype(int events, int fd,
 	state->error = gfp_xdr_recv(state->conn, 1, &eof, "i",
 	    &state->proto_error);
 	if (state->error == GFARM_ERR_NO_ERROR && eof)
-		state->error = GFARM_ERR_PROTOCOL;
+		state->error = GFARM_ERR_UNEXPECTED_EOF;
 	if (state->error == GFARM_ERR_NO_ERROR) {
 		if (state->proto_error != GFARM_AUTH_ERROR_NO_ERROR) {
 			gfarm_fd_event_set_callback(state->writable,
@@ -859,7 +860,7 @@ gfarm_auth_request_dispatch_method(int events, int fd, void *closure,
 	assert(events == GFARM_EVENT_READ);
 	state->error = gfp_xdr_recv(state->conn, 1, &eof, "i", &error);
 	if (state->error == GFARM_ERR_NO_ERROR && eof)
-		state->error = GFARM_ERR_PROTOCOL;
+		state->error = GFARM_ERR_UNEXPECTED_EOF;
 	if (state->error == GFARM_ERR_NO_ERROR &&
 	    error != GFARM_AUTH_ERROR_NO_ERROR)
 		state->error = GFARM_ERR_PROTOCOL;
@@ -953,7 +954,7 @@ gfarm_auth_request_receive_server_methods(int events, int fd, void *closure,
 	state->error = gfp_xdr_recv(state->conn, 0, &eof, "b",
 	    sizeof(methods_buffer), &nmethods, methods_buffer);
 	if (state->error == GFARM_ERR_NO_ERROR && eof)
-		state->error = GFARM_ERR_PROTOCOL;
+		state->error = GFARM_ERR_UNEXPECTED_EOF;
 	if (state->error == GFARM_ERR_NO_ERROR) {
 		state->server_methods = 0;
 		for (i = 0; i < nmethods; i++) {
