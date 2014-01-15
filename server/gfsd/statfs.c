@@ -9,19 +9,21 @@
 #include <gfarm/gfarm.h>
 #include "gfsd_subr.h"
 
+const char TEST_FILE[] = "/.test";
+
 static int
 is_readonly(char *path)
 {
 	char *testfile;
 	int fd, ret = 0;
 
-	GFARM_MALLOC_ARRAY(testfile, strlen(path) + 3);
+	GFARM_MALLOC_ARRAY(testfile, strlen(path) + sizeof(TEST_FILE));
 	if (testfile == NULL) {
 		gflog_error(GFARM_MSG_UNFIXED, "is_readonly: no memory");
 		return (ret);
 	}
 	strcpy(testfile, path);
-	strcat(testfile, "/a");
+	strcat(testfile, TEST_FILE);
 	if ((fd = creat(testfile, 0400)) != -1) {
 		close(fd);
 		unlink(testfile);
