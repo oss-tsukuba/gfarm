@@ -1,0 +1,31 @@
+#!/bin/sh
+# execute a command in gfarmroot privilege
+# usage: gfsudo cmd arg ...
+
+PROG=`basename $0`
+
+ABORT()
+{
+	echo "Error:" $* >&2
+	exit 1
+}
+
+USAGE()
+{
+	exec >&2
+	echo "Usage: $PROG cmd arg ..."
+	exit 2
+}
+
+[ $# -eq 0 ] && USAGE
+
+user=`gfwhoami 2>/dev/null`
+[ X"$user" = X ] && ABORT "Who are you?"
+
+# check Gfarm availability
+gfstatus > /dev/null || ABORT "Cannot access Gfarm file system"
+
+trap '' 1 2 15	# block SIGINT
+gfgroup -ma gfarmroot $user || ABORT "You are not gfarmadm or already gfarmroot"
+trap 'gfgroup -mr gfarmroot $user' 0 1 2 15
+"$@"

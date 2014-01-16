@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+
+<refentry id="gfsudo.1">
+
+<refentryinfo><date>17 Dec 2013</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfsudo</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>gfsudo</refname>
+<refpurpose>Gfarmroot 権限でコマンドを実行する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfsudo</command>
+    <arg choice="plain" rep="norepeat"><replaceable>コマンド</replaceable></arg>
+    <arg choice="plain" rep="repeat"><replaceable>引数</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>Gfarmroot 権限で指定されたコマンドを実行します。
+このコマンドを実行するためには gfarmadm グループに所属している必要があります。
+</para>
+
+</refsect1>
+
+</refentry>
+
