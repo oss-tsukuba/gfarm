@@ -12,7 +12,8 @@ int getloadavg(double *, int);
 
 int gfsd_statfs(char *, gfarm_int32_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,
-	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
+	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,
+	int *);
 
 gfarm_error_t register_to_lost_found(int, gfarm_ino_t, gfarm_uint64_t);
 void gfsd_spool_check();

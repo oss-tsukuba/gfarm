@@ -747,6 +747,17 @@ gfs_server_get_request(struct gfp_xdr *client, const char *diag,
 #define IS_IO_ERROR(e) \
 	((e) == GFARM_ERR_INPUT_OUTPUT || (e) == GFARM_ERR_STALE_FILE_HANDLE)
 
+static void
+io_error_check(gfarm_error_t ecode, const char *diag)
+{
+	/* if input/output error occurs, die */
+	if (IS_IO_ERROR(ecode)) {
+		kill_master_gfsd = 1;
+		fatal(GFARM_MSG_1002513, "%s: %s, die", diag,
+		    gfarm_error_string(ecode));
+	}
+}
+
 void
 gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 	gfp_xdr_xid_t xid,
@@ -768,12 +779,7 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 		    diag, gfarm_error_string(e));
 	}
 
-	/* if input/output error occurs, die */
-	if (IS_IO_ERROR(ecode)) {
-		kill_master_gfsd = 1;
-		fatal(GFARM_MSG_1002513, "%s: %s, die", diag,
-		    gfarm_error_string(ecode));
-	}
+	io_error_check(ecode, diag);
 }
 
 void
@@ -847,12 +853,7 @@ gfs_async_server_put_reply_common(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 		gflog_error(GFARM_MSG_1002382, "%s put reply: %s",
 		    diag, gfarm_error_string(e));
 
-	/* if input/output error occurs, die */
-	if (IS_IO_ERROR(ecode)) {
-		kill_master_gfsd = 1;
-		fatal(GFARM_MSG_1003683, "%s: %s, die", diag,
-		    gfarm_error_string(ecode));
-	}
+	io_error_check(ecode, diag);
 	return (e);
 }
 
@@ -1357,7 +1358,7 @@ gfsd_local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
 int
 gfsd_create_ancestor_dir(char *path)
 {
-	int i, j, tail, slashpos[DIRLEVEL];
+	int i, j, tail, slashpos[DIRLEVEL], save_errno;
 	struct stat st;
 
 	/* errno == ENOENT, so, maybe we don't have an ancestor directory */
@@ -1383,6 +1384,7 @@ gfsd_create_ancestor_dir(char *path)
 			errno = ENOENT;
 			return (-1);
 		} else if (mkdir(path, DATA_DIR_MASK) < 0) {
+			save_errno = errno;
 			if (errno == ENOENT)
 				continue;
 			if (errno == EEXIST) {
@@ -1391,7 +1393,7 @@ gfsd_create_ancestor_dir(char *path)
 				gflog_error(GFARM_MSG_1000467,
 				    "mkdir(`%s') failed: %s", path,
 				    strerror(errno));
-				errno = ENOENT;
+				errno = save_errno;
 				return (-1);
 			}
 		}
@@ -1401,12 +1403,13 @@ gfsd_create_ancestor_dir(char *path)
 			if (j <= 0)
 				break;
 			if (mkdir(path, DATA_DIR_MASK) < 0) {
+				save_errno = errno;
 				if (errno == EEXIST) /* maybe race */
 					continue;
 				gflog_warning(GFARM_MSG_1000468,
 				    "unexpected mkdir(`%s') failure: %s",
 				    path, strerror(errno));
-				errno = ENOENT;
+				errno = save_errno;
 				return (-1);
 			}
 		}
@@ -1767,7 +1770,9 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 					    ": ino %lld, gen %lld: %s",
 					    (long long)ino, (long long)gen,
 					    gfarm_error_string(e));
-			}
+			} else
+				gflog_error(GFARM_MSG_UNFIXED, "%s: %s", diag,
+				    strerror(save_errno));
 			e = gfarm_errno_to_error(save_errno);
 			break;
 		}
@@ -2743,6 +2748,7 @@ gfs_server_statfs(struct gfp_xdr *client)
 	int save_errno = 0;
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
+	int readonly;
 
 	/*
 	 * do not use dir since there is no way to know gfarm_spool_root.
@@ -2752,10 +2758,14 @@ gfs_server_statfs(struct gfp_xdr *client)
 
 	save_errno = gfsd_statfs(gfarm_spool_root, &bsize,
 	    &blocks, &bfree, &bavail,
-	    &files, &ffree, &favail);
+	    &files, &ffree, &favail,
+	    &readonly);
 	free(dir);
 
-	if (save_errno == 0 && is_readonly_mode()) {
+	if (readonly)
+		gflog_error(GFARM_MSG_UNFIXED, "%s: read only file system",
+		    gfarm_spool_root);
+	if (save_errno == 0 && (readonly || is_readonly_mode())) {
 		/* pretend to be disk full, to make this gfsd read-only */
 		bavail -= bfree;
 		bfree = 0;
@@ -3073,7 +3083,7 @@ gfarm_error_t
 gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 {
 	gfarm_error_t e;
-	int save_errno = 0;
+	int save_errno = 0, readonly;
 	double loadavg[3];
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
@@ -3090,11 +3100,14 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 		gflog_warning(GFARM_MSG_1000520,
 		    "%s: cannot get load average", diag);
 	} else {
-		save_errno = gfsd_statfs(gfarm_spool_root, &bsize,
-			&blocks, &bfree, &bavail, &files, &ffree, &favail);
+		save_errno = gfsd_statfs(gfarm_spool_root, &bsize, &blocks,
+		    &bfree, &bavail, &files, &ffree, &favail, &readonly);
 
+		if (readonly)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: read only file system", gfarm_spool_root);
 		/* pretend to be disk full, to make this gfsd read-only */
-		if (save_errno == 0 && is_readonly_mode()) {
+		if (save_errno == 0 && (readonly || is_readonly_mode())) {
 			bavail -= bfree;
 			bfree = 0;
 		}
@@ -3212,7 +3225,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	free(path);
 	if (local_fd == -1) {
 		dst_err = gfarm_errno_to_error(errno);
-		gflog_notice(GFARM_MSG_1002182,
+		gflog_error(GFARM_MSG_1002182,
 		    "%s: cannot open local file for %lld:%lld: %s", diag,
 		    (long long)rep->ino, (long long)rep->gen, strerror(errno));
 	} else if ((conn_err = gfs_client_connection_acquire_by_host(gfm_server,
