@@ -1,17 +1,33 @@
 Release note for Gfarm 2.5.8.4
 ==============================
 
-[2013.12.6]
+[2014.1.17]
+
+New command
+* gfsudo - execute a command in gfarmroot privilege
 
 Updated feature
+* support GFARM_FILE_EXCLUSIVE
 * gfrm - -D option to specify a domain name of file replicas to be
   deleted
-* gfncopy - -w option to wait until replicas are created
+* gfls - -h option to display in human readable format
 * gfusage, gfquota - -h and -H options to display in human readable format
+* gfpcopy - -e option to enable multiple gfpcopy executions for the
+  same target directory
+* gfncopy - -w option to wait until replicas are created
+* gfgroup - -a and -r options to add and remove group members
 * replica check also checks files whose gfarm.ncopy is not set [sf.net
   trac #733]
 * increase error level when all replicas are lost and when all hosts
   are down [sf.net trac #732]
+* gfsd - tolerate read-only file system error and no space left on
+  device error
+
+Bug fix
+* gfmd crash when gfmd is stopped during the startup process [sf.net
+  trac #736, #737]
+* gfmd may crash when a write error happens in the startup process
+  [sf.net trac #734]
 
 Release note for Gfarm 2.5.8.3
 ==============================
