@@ -1771,7 +1771,7 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 					    (long long)ino, (long long)gen,
 					    gfarm_error_string(e));
 			} else
-				gflog_error(GFARM_MSG_UNFIXED, "%s: %s", diag,
+				gflog_error(GFARM_MSG_1003714, "%s: %s", diag,
 				    strerror(save_errno));
 			e = gfarm_errno_to_error(save_errno);
 			break;
@@ -2763,7 +2763,7 @@ gfs_server_statfs(struct gfp_xdr *client)
 	free(dir);
 
 	if (readonly)
-		gflog_error(GFARM_MSG_UNFIXED, "%s: read only file system",
+		gflog_error(GFARM_MSG_1003715, "%s: read only file system",
 		    gfarm_spool_root);
 	if (save_errno == 0 && (readonly || is_readonly_mode())) {
 		/* pretend to be disk full, to make this gfsd read-only */
@@ -3104,7 +3104,7 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 		    &bfree, &bavail, &files, &ffree, &favail, &readonly);
 
 		if (readonly)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003716,
 			    "%s: read only file system", gfarm_spool_root);
 		/* pretend to be disk full, to make this gfsd read-only */
 		if (save_errno == 0 && (readonly || is_readonly_mode())) {

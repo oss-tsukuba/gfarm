@@ -19,7 +19,7 @@ is_readonly(char *path)
 
 	GFARM_MALLOC_ARRAY(testfile, strlen(path) + sizeof(TEST_FILE));
 	if (testfile == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "is_readonly: no memory");
+		gflog_error(GFARM_MSG_1003717, "is_readonly: no memory");
 		return (ret);
 	}
 	strcpy(testfile, path);
@@ -30,7 +30,7 @@ is_readonly(char *path)
 	} else if (errno == EROFS || errno == ENOSPC)
 		ret = 1;
 	else
-		gflog_warning(GFARM_MSG_UNFIXED, "is_readonly: %s",
+		gflog_warning(GFARM_MSG_1003718, "is_readonly: %s",
 		    strerror(errno));
 	free(testfile);
 	return (ret);
