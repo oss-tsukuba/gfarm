@@ -376,6 +376,7 @@ fi
 %{man_prefix}/man1/gfspoolpath.1.gz
 %{man_prefix}/man1/gfstat.1.gz
 %{man_prefix}/man1/gfstatus.1.gz
+%{man_prefix}/man1/gfsudo.1.gz
 %{man_prefix}/man1/gftest.1.gz
 %{man_prefix}/man1/gfusage.1.gz
 %{man_prefix}/man1/gfuser.1.gz
@@ -551,6 +552,7 @@ fi
 %{man_prefix}/ja/man1/gfspoolpath.1.gz
 %{man_prefix}/ja/man1/gfstat.1.gz
 %{man_prefix}/ja/man1/gfstatus.1.gz
+%{man_prefix}/ja/man1/gfsudo.1.gz
 %{man_prefix}/ja/man1/gftest.1.gz
 %{man_prefix}/ja/man1/gfusage.1.gz
 %{man_prefix}/ja/man1/gfuser.1.gz
@@ -703,6 +705,7 @@ fi
 %{html_prefix}/en/ref/man1/gfspoolpath.1.html
 %{html_prefix}/en/ref/man1/gfstat.1.html
 %{html_prefix}/en/ref/man1/gfstatus.1.html
+%{html_prefix}/en/ref/man1/gfsudo.1.html
 %{html_prefix}/en/ref/man1/gftest.1.html
 %{html_prefix}/en/ref/man1/gfusage.1.html
 %{html_prefix}/en/ref/man1/gfuser.1.html
@@ -883,6 +886,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfspoolpath.1.html
 %{html_prefix}/ja/ref/man1/gfstat.1.html
 %{html_prefix}/ja/ref/man1/gfstatus.1.html
+%{html_prefix}/ja/ref/man1/gfsudo.1.html
 %{html_prefix}/ja/ref/man1/gftest.1.html
 %{html_prefix}/ja/ref/man1/gfusage.1.html
 %{html_prefix}/ja/ref/man1/gfuser.1.html
@@ -1089,6 +1093,7 @@ fi
 %{prefix}/bin/gfservice-timeout
 %{prefix}/bin/gfstat
 %{prefix}/bin/gfstatus
+%{prefix}/bin/gfsudo
 %{prefix}/bin/gftest
 %{prefix}/bin/gfwhere
 %{prefix}/bin/gfwhoami
