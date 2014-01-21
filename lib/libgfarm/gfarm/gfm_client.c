@@ -623,7 +623,7 @@ gfm_client_connection_acquire(const char *hostname, int port,
 	expiration_time.tv_sec += gfarm_gfmd_reconnection_timeout;
 	while (IS_CONNECTION_ERROR(e) &&
 	       !gfarm_timeval_is_expired(&expiration_time)) {
-		gflog_warning(GFARM_MSG_1000058,
+		gflog_notice(GFARM_MSG_1000058,
 		    "connecting to gfmd at %s:%d failed, "
 		    "sleep %d sec: %s", hostname, port, sleep_interval,
 		    gfarm_error_string(e));
