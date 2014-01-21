@@ -450,7 +450,7 @@ connect_gfm_server0(int use_timeout, const char *diag)
 				    gfarm_error_string(e));
 				return (e);
 			}
-			gflog_reduced_warning(GFARM_MSG_UNFIXED, &connlog,
+			gflog_reduced_notice(GFARM_MSG_UNFIXED, &connlog,
 			    "%s: connecting to gfmd at %s:%d failed, "
 			    "sleep %d sec: %s", diag,
 			    gfarm_ctxp->metadb_server_name,
@@ -484,7 +484,7 @@ connect_gfm_server0(int use_timeout, const char *diag)
 				    gfarm_error_string(e));
 				return (e);
 			}
-			gflog_reduced_error(GFARM_MSG_1003669, &hnamelog,
+			gflog_reduced_notice(GFARM_MSG_1003669, &hnamelog,
 			    "cannot set canonical hostname of this node (%s), "
 			    "sleep %d sec: %s", canonical_self_name,
 			    sleep_interval, gfarm_error_string(e));

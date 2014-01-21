@@ -947,7 +947,7 @@ gfmdc_connect(void)
 		    "gfmd_channel(%s) : %s",
 		    hostname, gfarm_error_string(e));
 		if (sleep_interval < sleep_max_interval)
-			gflog_error(GFARM_MSG_1002994,
+			gflog_notice(GFARM_MSG_1002994,
 			    "connecting to the master gfmd failed, "
 			    "sleep %d sec: %s", sleep_interval,
 			    gfarm_error_string(e));
