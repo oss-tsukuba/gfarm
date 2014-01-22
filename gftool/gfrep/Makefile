@@ -6,10 +6,8 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-#SRCS = gfrep.c gfarm_list.c
-#OBJS = gfrep.o gfarm_list.o
-SRCS = gfrep_simple.c
-OBJS = gfrep_simple.o
+SRCS = gfrep.c gfarm_list.c
+OBJS = gfrep.o gfarm_list.o
 PROGRAM = gfrep
 #CC = omcc
 #OMPFLAGS = -fopenmp

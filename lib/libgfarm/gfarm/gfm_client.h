@@ -27,7 +27,6 @@ struct gfarm_host_sched_info {
 };
 void gfarm_host_sched_info_free(int, struct gfarm_host_sched_info *);
 
-int gfm_client_connection_empty(struct gfm_connection *);
 int gfm_client_is_connection_error(gfarm_error_t);
 struct gfp_xdr *gfm_client_connection_conn(struct gfm_connection *);
 int gfm_client_connection_fd(struct gfm_connection *);

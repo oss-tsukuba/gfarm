@@ -1239,7 +1239,7 @@ process_replica_added(struct process *process,
 	    mtime_nsec != mtime->tv_nsec ||
 	    (size != -1 && size != inode_get_size(fo->inode)) ||
 	    fo->u.f.replica_source->gen != inode_get_gen(fo->inode)) {
-		gflog_notice(GFARM_MSG_1002244,
+		gflog_warning(GFARM_MSG_1002244,
 		    "inode(%lld) updated during replication: "
 		    "mtime %lld.%09lld/%lld.%09lld, "
 		    "size: %lld/%lld, gen:%lld/%lld",

@@ -82,12 +82,6 @@ gfm_client_is_connection_error(gfarm_error_t e)
 	return (IS_CONNECTION_ERROR(e));
 }
 
-int
-gfm_client_connection_empty(struct gfm_connection *gfm_server)
-{
-	return (gfp_xdr_is_empty(gfm_server->conn));
-}
-
 struct gfp_xdr *
 gfm_client_connection_conn(struct gfm_connection *gfm_server)
 {
