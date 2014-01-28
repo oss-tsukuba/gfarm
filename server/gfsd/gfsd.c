@@ -1368,7 +1368,7 @@ gfsd_create_ancestor_dir(char *path)
 			;
 		if (tail <= 0) {
 			gflog_warning(GFARM_MSG_1000465,
-			    "something wrong in local_path(): %s\n", path);
+			    "something wrong in local_path(): %s", path);
 			errno = ENOENT;
 			return (-1);
 		}
@@ -1416,7 +1416,7 @@ gfsd_create_ancestor_dir(char *path)
 		return (0);
 	}
 	gflog_warning(GFARM_MSG_1000469,
-	    "gfsd spool_root doesn't exist?: %s\n", path);
+	    "gfsd spool_root doesn't exist?: %s", path);
 	errno = ENOENT;
 	return (-1);
 }
@@ -4208,7 +4208,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	}
 	GFARM_MALLOC_ARRAY(aux, strlen(username)+1 + strlen(client_name)+1);
 	if (aux == NULL)
-		fatal(GFARM_MSG_1000556, "%s: no memory\n", client_name);
+		fatal(GFARM_MSG_1000556, "%s: no memory", client_name);
 	sprintf(aux, "%s@%s", username, client_name);
 	gflog_set_auxiliary_info(aux);
 
@@ -5606,7 +5606,7 @@ main(int argc, char **argv)
 	    &canonical_self_name, &p)) != GFARM_ERR_NO_ERROR) {
 		gflog_fatal(GFARM_MSG_1000591,
 		    "cannot get canonical hostname of %s, ask admin to "
-		    "register this node in Gfarm metadata server, died: %s\n",
+		    "register this node in Gfarm metadata server, died: %s",
 		    gfarm_host_get_self_name(), gfarm_error_string(e));
 	}
 	/* avoid gcc warning "passing arg 3 from incompatible pointer type" */
@@ -5621,7 +5621,7 @@ main(int argc, char **argv)
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_fatal(GFARM_MSG_1000592,
 		    "cannot get canonical hostname of %s, ask admin to "
-		    "register this node in Gfarm metadata server, died: %s\n",
+		    "register this node in Gfarm metadata server, died: %s",
 		    canonical_self_name, gfarm_error_string(e));
 	}
 
