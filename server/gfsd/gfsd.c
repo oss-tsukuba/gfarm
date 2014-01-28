@@ -3549,7 +3549,6 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		    client_name, gfarm_error_string(e));
 		cleanup(0);
 		exit(1);
-
 	}
 	GFARM_MALLOC_ARRAY(aux, strlen(username)+1 + strlen(client_name)+1);
 	if (aux == NULL)
