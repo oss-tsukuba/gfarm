@@ -4200,9 +4200,12 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	    client_name, client_addr,
 	    gfarm_auth_uid_to_global_username, gfm_server,
 	    &peer_type, &username, &auth_method);
-	if (e != GFARM_ERR_NO_ERROR)
-		fatal(GFARM_MSG_1000555, "%s: gfarm_authorize: %s",
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_notice(GFARM_MSG_1000555, "%s: gfarm_authorize: %s",
 		    client_name, gfarm_error_string(e));
+		cleanup(0);
+		exit(1);
+	}
 	GFARM_MALLOC_ARRAY(aux, strlen(username)+1 + strlen(client_name)+1);
 	if (aux == NULL)
 		fatal(GFARM_MSG_1000556, "%s: no memory\n", client_name);
