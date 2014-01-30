@@ -155,7 +155,7 @@ int	gfarmGssAcceptSecurityContext(int fd,
 	以下が返る。
 	失敗した場合、gsiErrNoPtr が 0 でなければ そこに UNIX errno が入り、
 	さもなくば *majStatPtr, *minStatPtr に、それぞれ GSSAPI呼び出しの
-	major status, minor status が返る。
+	major status, minor status が返る。(注2)
 
 int	gfarmGssInitiateSecurityContext(int fd,
 					const gss_name_t acceptorName,
@@ -181,7 +181,7 @@ int	gfarmGssInitiateSecurityContext(int fd,
 	失敗した場合には -1 以下が返る。
 	失敗した場合、*gsiErrNoPtr が 0 でなければ そこに UNIX errno が入り、
 	さもなくば *majStatPtr, *minStatPtr に、それぞれ GSSAPI呼び出しの
-	major status, minor status が返る。
+	major status, minor status が返る。(注2)
 
 void	gfarmGssDeleteSecurityContext(gss_ctx_id_t *scPtr);
 	*scPtr で示される secure context を破棄する。
@@ -338,7 +338,7 @@ gfarmSecSession *	gfarmSecSessionAccept(int fd,
 	NULL を使用する。session の accept に成功すると session を返す。
 	それ以外の場合には NULL を返し、*gsiErrNoPtr が 0 でなければ
 	そこに UNIX errno が入り、さもなくば *majStatPtr, *minStatPtr に、
-	それぞれ GSSAPI	呼び出しの major status, minor status が返る。
+	それぞれ GSSAPI	呼び出しの major status, minor status が返る。(注2)
 	cred に GSS_C_NO_CREDENTIAL を使用した場合、
 		a. getuid() == 0 の場合
 			host certificate から生成された credential
@@ -361,7 +361,7 @@ gfarmSecSession *	gfarmSecSessionInitiate(int fd,
 	常 NULL を使用する。
 	失敗した場合、関数は NULL を返し、*gsiErrNoPtr が 0 でなければ
 	そこに UNIX errno が入り、さもなくば *majStatPtr, *minStatPtr に、
-	それぞれ GSSAPI	呼び出しの major status, minor status が返る。
+	それぞれ GSSAPI	呼び出しの major status, minor status が返る。(注2)
 	cred に GSS_C_NO_CREDENTIAL を使用した場合、user
 	certificate から生成された credential が使用される。
 	gfarmSecSessionInitializeBoth() で初期化された session 生成環
@@ -509,4 +509,15 @@ gfarmGssImportName() で利用できる、((nameValue, nameLength), nameType) �
 	GSS_C_NT_MACHINE_UID_NAME	uid_t へのポインタ (ホストバイトオーダ)
 (Globus はこの値を受け付けるが、内部的には特に処理を行っておらず、
  GCC_C_NO_OID と同じ扱いになる。)
+
+注2.
+
+現在の実装では、*gsiErrNoPtr が 0 の場合も、*majStatPtr, *minStatPtr に値を
+設定している場合がある。これは r8830 より前の実装との差異を最小化するための
+事情であり、将来的には *gsiErrNoPtr が 0 なら *majStatPtr, *minStatPtr は
+変更しないようにしたい。
+呼び出し側は、
+この *gsiErrNoPtr が 0 の場合にも *majStatPtr, *minStatPtr に値が設定されて
+いるという実装上の事実に、関数呼び出し側は依存してはならない。
+
 ------------------------------------------------------------------------
