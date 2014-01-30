@@ -486,13 +486,18 @@ int
 gfarmGssSendToken(int fd, gss_buffer_t gsBuf)
 {
     gfarm_int32_t iLen = gsBuf->length;
+    int save_errno;
 
     if (gfarmWriteInt32(fd, &iLen, 1) != 1) {
+	save_errno = errno;
 	gflog_debug(GFARM_MSG_1000792, "gfarmWriteInt32() failed");
+	errno = save_errno;
 	return -1;
     }
     if (gfarmWriteInt8(fd, gsBuf->value, iLen) != iLen) {
+	save_errno = errno;
 	gflog_debug(GFARM_MSG_1000793, "gfarmWriteInt8() failed");
+	errno = save_errno;
 	return -1;
     }
     return iLen;
@@ -504,12 +509,15 @@ gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf, int timeoutMsec)
 {
     gfarm_int32_t iLen;
     gfarm_int8_t *buf;
+    int save_errno;
 
     gsBuf->length = 0;
     gsBuf->value = NULL;
 
     if (gfarmReadInt32(fd, &iLen, 1, timeoutMsec) != 1) {
+	save_errno = errno;
 	gflog_debug(GFARM_MSG_1000794, "gfarmReadInt32() failed");
+	errno = save_errno;
 	return -1;
     }
 
@@ -521,11 +529,14 @@ gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf, int timeoutMsec)
     GFARM_MALLOC_ARRAY(buf, iLen);
     if (buf == NULL) {
 	gflog_debug(GFARM_MSG_1000795, "allocation of buffer failed");
+	errno = ENOMEM;
 	return -1;
     }
     if (gfarmReadInt8(fd, buf, iLen, timeoutMsec) != iLen) {
+	save_errno = errno;
 	free(buf);
 	gflog_debug(GFARM_MSG_1000796, "gfarmReadInt8() failed");
+	errno = save_errno;
 	return -1;
     }
 
@@ -537,9 +548,10 @@ gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf, int timeoutMsec)
 
 int
 gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
-    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr, gss_name_t *remoteNamePtr,
-    gss_cred_id_t *remoteCredPtr)
+    int *gsiErrNoPtr, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr,
+    gss_name_t *remoteNamePtr, gss_cred_id_t *remoteCredPtr)
 {
+    int gsiErrNo = 0;
     OM_uint32 majStat;
     OM_uint32 minStat, minStat2;
     OM_uint32 retFlag = GFARM_GSS_DEFAULT_SECURITY_ACCEPT_FLAG;
@@ -564,8 +576,10 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
     do {
 	tknStat = gfarmGssReceiveToken(fd, itPtr, GFARM_GSS_TIMEOUT_INFINITE);
 	if (tknStat <= 0) {
-	    gflog_auth_info(GFARM_MSG_1000616,
-		"gfarmGssAcceptSecurityContext(): failed to receive response");
+	    gsiErrNo = errno;
+	    gflog_auth_info(GFARM_MSG_UNFIXED,
+		"gfarmGssAcceptSecurityContext(): failed to receive response"
+		"%s", strerror(gsiErrNo));
 	    majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    break;
@@ -590,48 +604,57 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 
 	if (otPtr->length > 0) {
 	    tknStat = gfarmGssSendToken(fd, otPtr);
+	    gsiErrNo = errno;
 	    gss_release_buffer(&minStat2, otPtr);
-	    if (tknStat <= 0) {
-		gflog_auth_info(GFARM_MSG_1000617,
-		    "gfarmGssAcceptSecurityContext(): failed to send response");
+	    if (tknStat > 0) {
+		gsiErrNo = 0;
+	    } else {
+		gflog_auth_info(GFARM_MSG_UNFIXED,
+		    "gfarmGssAcceptSecurityContext(): failed to send response"
+		    "%s", strerror(gsiErrNo));
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
 		minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    }
 	}
 
-	if (GSS_ERROR(majStat)) {
+	if (gsiErrNo != 0 || GSS_ERROR(majStat)) {
 	    break;
 	}
 
     } while (majStat & GSS_S_CONTINUE_NEEDED);
 
+    if (gsiErrNoPtr != NULL)
+	*gsiErrNoPtr = gsiErrNo;
     if (majStatPtr != NULL)
 	*majStatPtr = majStat;
     if (minStatPtr != NULL)
 	*minStatPtr = minStat;
 
-    if (majStat == GSS_S_COMPLETE && remoteNamePtr != NULL)
+    if (gsiErrNo == 0 && majStat == GSS_S_COMPLETE && remoteNamePtr != NULL)
 	*remoteNamePtr = initiatorName;
     else if (initiatorName != GSS_C_NO_NAME)
 	gss_release_name(&minStat2, &initiatorName);
 
-    if (majStat == GSS_S_COMPLETE && remoteCredPtr != NULL)
+    if (gsiErrNo == 0 && majStat == GSS_S_COMPLETE && remoteCredPtr != NULL)
 	*remoteCredPtr = remCred;
     else if (remCred != GSS_C_NO_CREDENTIAL)
 	gss_release_cred(&minStat2, &remCred);
     
-    if (majStat != GSS_S_COMPLETE && *scPtr != GSS_C_NO_CONTEXT)
+    if ((gsiErrNo != 0 || majStat != GSS_S_COMPLETE) &&
+	*scPtr != GSS_C_NO_CONTEXT)
 	gss_delete_sec_context(&minStat2, scPtr, GSS_C_NO_BUFFER);
 
-    return majStat == GSS_S_COMPLETE ? 1 : -1;
+    return (gsiErrNo == 0 && majStat == GSS_S_COMPLETE) ? 1 : -1;
 }
 
 
 int
 gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
     gss_cred_id_t cred, OM_uint32 reqFlag, gss_ctx_id_t *scPtr,
-    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr, gss_name_t *remoteNamePtr)
+    int *gsiErrNoPtr, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr,
+    gss_name_t *remoteNamePtr)
 {
+    int gsiErrNo = 0;
     OM_uint32 majStat;
     OM_uint32 minStat, minStat2;
     OM_uint32 retFlag = 0;
@@ -660,6 +683,7 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 	gflog_auth_error(GFARM_MSG_1000618,
 	    "gfarmGssInitiateSecurityContext(): "
 	    "GSS_C_ANON_FLAG is not allowed");
+	gsiErrNo = EINVAL;
 	majStat = GSS_S_UNAVAILABLE;
 	minStat = GFSL_DEFAULT_MINOR_ERROR;
 	goto Done;
@@ -687,17 +711,20 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 
 	if (otPtr->length > 0) {
 	    tknStat = gfarmGssSendToken(fd, otPtr);
+	    gsiErrNo = errno;
 	    gss_release_buffer(&minStat2, otPtr);
-	    if (tknStat <= 0) {
-		gflog_auth_error(GFARM_MSG_1000619,
+	    if (tknStat > 0) {
+		gsiErrNo = 0;
+	    } else {
+		gflog_auth_error(GFARM_MSG_UNFIXED,
 		    "gfarmGssInitiateSecurityContext(): "
-				 "failed to send response");
+		    "failed to send response: %s", strerror(gsiErrNo));
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
 		minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    }
 	}
 
-	if (GSS_ERROR(majStat)) {
+	if (gsiErrNo != 0 || GSS_ERROR(majStat)) {
 	    break;
 	}
     
@@ -705,9 +732,10 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 	    tknStat = gfarmGssReceiveToken(fd, itPtr,
 					   GFARM_GSS_TIMEOUT_INFINITE);
 	    if (tknStat <= 0) {
-		gflog_auth_error(GFARM_MSG_1000620,
+		gsiErrNo = errno;
+		gflog_auth_error(GFARM_MSG_UNFIXED,
 		    "gfarmGssInitiateSecurityContext(): "
-				 "failed to receive response");
+		    "failed to receive response: %s", strerror(gsiErrNo));
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
 		minStat = GFSL_DEFAULT_MINOR_ERROR;
 		break;
@@ -720,7 +748,7 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
     if (itPtr->length > 0)
 	gss_release_buffer(&minStat2, itPtr);
 
-    if (majStat == GSS_S_COMPLETE && remoteNamePtr != NULL) {
+    if (gsiErrNo == 0 && majStat == GSS_S_COMPLETE && remoteNamePtr != NULL) {
 	majStat = gss_inquire_context(&minStat,
 				      *scPtr,
 				      NULL,
@@ -733,12 +761,15 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
     }
 
     Done:
+    if (gsiErrNoPtr != NULL)
+	*gsiErrNoPtr = gsiErrNo;
     if (majStatPtr != NULL)
 	*majStatPtr = majStat;
     if (minStatPtr != NULL)
 	*minStatPtr = minStat;
 
-    if (majStat != GSS_S_COMPLETE && *scPtr != GSS_C_NO_CONTEXT)
+    if ((gsiErrNo != 0 || majStat != GSS_S_COMPLETE) &&
+	*scPtr != GSS_C_NO_CONTEXT)
 	gss_delete_sec_context(&minStat2, scPtr, GSS_C_NO_BUFFER);
 
     return majStat == GSS_S_COMPLETE ? 1 : -1;

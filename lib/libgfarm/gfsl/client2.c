@@ -9,6 +9,7 @@
 #include <limits.h>
 
 #include <gfarm/error.h>
+#include <gfarm/gflog.h>
 
 #include "gfutil.h"
 
@@ -62,6 +63,7 @@ ParseArgs(int argc, char *argv[])
 int
 main(int argc, char *argv[])
 {
+    int gsiErrNo;
     OM_uint32 majStat;
     OM_uint32 minStat;
     gfarmSecSession *ss0 = NULL;
@@ -98,22 +100,30 @@ main(int argc, char *argv[])
 					GSS_C_NO_CREDENTIAL,
 					GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG,
 					NULL,
-					&majStat, &minStat);
+					&gsiErrNo, &majStat, &minStat);
     if (ss0 == NULL) {
 	fprintf(stderr, "Can't initiate session 0 because of:\n");
-	gfarmGssPrintMajorStatus(majStat);
-	gfarmGssPrintMinorStatus(minStat);
+	if (gsiErrNo != 0) {
+	    fprintf(stderr, "%s\n", strerror(gsiErrNo));
+	} else {
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
+	}
 	goto Done;
     }
     ss1 = gfarmSecSessionInitiateByName(hostname, port, acceptorName,
 					GSS_C_NO_CREDENTIAL,
 					GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG,
 					NULL,
-					&majStat, &minStat);
+					&gsiErrNo, &majStat, &minStat);
     if (ss1 == NULL) {
 	fprintf(stderr, "Can't initiate session 1 because of:\n");
-	gfarmGssPrintMajorStatus(majStat);
-	gfarmGssPrintMinorStatus(minStat);
+	if (gsiErrNo != 0) {
+	    fprintf(stderr, "%s\n", strerror(gsiErrNo));
+	} else {
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
+	}
 	goto Done;
     }
 

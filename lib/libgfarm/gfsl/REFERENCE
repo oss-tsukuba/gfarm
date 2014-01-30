@@ -136,6 +136,7 @@ int	gfarmGssDeleteCredential(gss_cred_id_t cred,
 int	gfarmGssAcceptSecurityContext(int fd,
 				      gss_cred_id_t cred,
 				      gss_ctx_id_t *scPtr,
+				      int *gsiErrNoPtr,
 				      OM_uint32 *majStatPtr,
 				      OM_uint32 *minStatPtr,
 				      gss_name_t *remoteNamePtr,
@@ -150,8 +151,10 @@ int	gfarmGssAcceptSecurityContext(int fd,
 	が返る。
 	*remoteCredPtr は、gfarmGssDeleteCredential() を用いて解放しなければ
 	ならない。
-	secure context の生成に成功した場合には 1 が返り、その他の場合には -1 
-	以下が返る。*majStatPtr, *minStatPtr には、それぞれ GSSAPI呼び出しの
+	secure context の生成に成功した場合には 1 が返り、失敗した場合には -1 
+	以下が返る。
+	失敗した場合、gsiErrNoPtr が 0 でなければ そこに UNIX errno が入り、
+	さもなくば *majStatPtr, *minStatPtr に、それぞれ GSSAPI呼び出しの
 	major status, minor status が返る。
 
 int	gfarmGssInitiateSecurityContext(int fd,
@@ -159,6 +162,7 @@ int	gfarmGssInitiateSecurityContext(int fd,
 					gss_cred_id_t cred,
 					OM_uint32 reqFlag,
 					gss_ctx_id_t *scPtr,
+					int *gsiErrNoPtr,
 				  	OM_uint32 *majStatPtr,
 				  	OM_uint32 *minStatPtr,
 					gss_name_t *remoteNamePtr);
@@ -174,8 +178,9 @@ int	gfarmGssInitiateSecurityContext(int fd,
 	*remoteNamePtr は gfarmGssDeleteName() を用いて解放しなければ
 	ならない。
 	secure context の生成に成功した場合には 1 が返り、
-	その他の場合には -1 以下が返る。
-	*majStatPtr, *minStatPtr には、それぞれ GSSAPI 呼び出しの
+	失敗した場合には -1 以下が返る。
+	失敗した場合、*gsiErrNoPtr が 0 でなければ そこに UNIX errno が入り、
+	さもなくば *majStatPtr, *minStatPtr に、それぞれ GSSAPI呼び出しの
 	major status, minor status が返る。
 
 void	gfarmGssDeleteSecurityContext(gss_ctx_id_t *scPtr);
@@ -331,7 +336,8 @@ gfarmSecSession *	gfarmSecSessionAccept(int fd,
 					      OM_uint32 *minStatPtr);
 	fd, cred を使用して、session を accept する。*ssOptPtr は通常 
 	NULL を使用する。session の accept に成功すると session を返す。
-	それ以外の場合には NULL を返す。*majStatPtr, *minStatPtr には、
+	それ以外の場合には NULL を返し、*gsiErrNoPtr が 0 でなければ
+	そこに UNIX errno が入り、さもなくば *majStatPtr, *minStatPtr に、
 	それぞれ GSSAPI	呼び出しの major status, minor status が返る。
 	cred に GSS_C_NO_CREDENTIAL を使用した場合、
 		a. getuid() == 0 の場合
@@ -348,11 +354,14 @@ gfarmSecSession *	gfarmSecSessionInitiate(int fd,
 						gss_cred_id_t cred,
 						OM_uint32 reqFlag,
 						gfarmSecSessionOption *ssOptPtr,
+						int *gsiErrNoPtr,
 						OM_uint32 *majStatPtr,
 						OM_uint32 *minStatPtr);
 	fd, cred を利用して、session を initiate する。*ssOptPtr は通
-	常 NULL を使用する。*majStatPtr, *minStatPtr には、それぞれ GSSAPI
-	呼び出しの major status, minor status が返る。
+	常 NULL を使用する。
+	失敗した場合、関数は NULL を返し、*gsiErrNoPtr が 0 でなければ
+	そこに UNIX errno が入り、さもなくば *majStatPtr, *minStatPtr に、
+	それぞれ GSSAPI	呼び出しの major status, minor status が返る。
 	cred に GSS_C_NO_CREDENTIAL を使用した場合、user
 	certificate から生成された credential が使用される。
 	gfarmSecSessionInitializeBoth() で初期化された session 生成環
@@ -367,6 +376,7 @@ gfarmSecSession *	gfarmSecSessionInitiateByName(
 						gss_cred_id_t cred,
 						OM_uint32 reqFlag,
 						gfarmSecSessionOption *ssOptPtr,
+						int *gsiErrNo,
 						OM_uint32 *majStatPtr,
 						OM_uint32 *minStatPtr);
 	ホスト名 hostname, port 番号 port を利用して、hostname:port に 

@@ -14,8 +14,9 @@
 #include <netdb.h>
 #include <limits.h>
 
-#include <gfarm/error.h>
 #include <gfarm/gfarm_config.h>
+#include <gfarm/error.h>
+#include <gfarm/gflog.h>
 
 #include "gfutil.h"
 
@@ -57,6 +58,7 @@ main(int argc, char **argv)
     socklen_t remLen = sizeof(struct sockaddr_in);
     int fd0 = -1;
     int fd1 = -1;
+    int gsiErrNo;
     OM_uint32 majStat, minStat;
     gss_cred_id_t myCred;
     gfarmSecSession *ss0 = NULL;
@@ -118,11 +120,16 @@ main(int argc, char **argv)
 	perror("accept");
 	goto Done;
     }
-    ss0 = gfarmSecSessionAccept(fd0, myCred, NULL, &majStat, &minStat);
+    ss0 = gfarmSecSessionAccept(fd0, myCred, NULL,
+				&gsiErrNo, &majStat, &minStat);
     if (ss0 == NULL) {
 	fprintf(stderr, "Can't create acceptor session because of:\n");
-	gfarmGssPrintMajorStatus(majStat);
-	gfarmGssPrintMinorStatus(minStat);
+	if (gsiErrNo != 0) {
+	    fprintf(stderr, "%s\n", strerror(gsiErrNo));
+	} else {
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
+	}
 	goto Done;
     }
 
@@ -131,11 +138,16 @@ main(int argc, char **argv)
 	perror("accept");
 	goto Done;
     }
-    ss1 = gfarmSecSessionAccept(fd1, myCred, NULL, &majStat, &minStat);
+    ss1 = gfarmSecSessionAccept(fd1, myCred, NULL,
+				&gsiErrNo, &majStat, &minStat);
     if (ss1 == NULL) {
 	fprintf(stderr, "Can't create acceptor session because of:\n");
-	gfarmGssPrintMajorStatus(majStat);
-	gfarmGssPrintMinorStatus(minStat);
+	if (gsiErrNo != 0) {
+	    fprintf(stderr, "%s\n", strerror(gsiErrNo));
+	} else {
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
+	}
 	goto Done;
     }
 

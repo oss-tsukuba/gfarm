@@ -53,7 +53,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	OM_uint32 e_minor;
 	gfarmSecSession *session;
 	gfarm_int32_t error; /* enum gfarm_auth_error */
-	int eof, cred_acquired = 0;
+	int eof, gsi_errno = 0, cred_acquired = 0;
 
 	e = gfarm_gsi_client_initialize();
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -149,15 +149,21 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	}
 	/* XXX NOTYET deal with self_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
 	session = gfarmSecSessionInitiate(fd, acceptor_name, cred,
-	    GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG, NULL, &e_major, &e_minor);
+	    GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG, NULL,
+	    &gsi_errno, &e_major, &e_minor);
 	if (acceptor_name != GSS_C_NO_NAME)
 		gfarmGssDeleteName(&acceptor_name, NULL, NULL);
 	if (session == NULL) {
 		if (gflog_auth_get_verbose()) {
 			gflog_notice(GFARM_MSG_1000700,
 			    "Can't initiate session because of:");
-			gfarmGssPrintMajorStatus(e_major);
-			gfarmGssPrintMinorStatus(e_minor);
+			if (gsi_errno != 0) {
+				gflog_info(GFARM_MSG_UNFIXED, "%s",
+				    strerror(gsi_errno));
+			} else {
+				gfarmGssPrintMajorStatus(e_major);
+				gfarmGssPrintMinorStatus(e_minor);
+			}
 		}
 		if (cred_acquired &&
 		    gfarmGssDeleteCredential(&cred, &e_major, &e_minor) < 0 &&
@@ -167,6 +173,8 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
+		if (gsi_errno != 0)
+			return (gfarm_errno_to_error(gsi_errno));
 #if 0
 		/* XXX e_major/e_minor should be used */
 		return (GFARM_ERR_AUTHENTICATION);

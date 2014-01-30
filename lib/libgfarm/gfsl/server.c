@@ -16,6 +16,7 @@
 
 #include <gfarm/gfarm_config.h>
 #include <gfarm/error.h>
+#include <gfarm/gflog.h>
 
 #include "gfnetdb.h"
 #include "gfutil.h"
