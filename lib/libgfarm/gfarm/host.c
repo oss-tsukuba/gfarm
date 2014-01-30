@@ -123,6 +123,7 @@ host_info_get_by_name_alias(struct gfm_connection *gfm_server,
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
 
+/* NOTE: the caller should check gfmd failover */
 gfarm_error_t
 gfm_host_info_get_by_name_alias(struct gfm_connection *gfm_server,
 	const char *if_hostname, struct gfarm_host_info *info)
@@ -167,6 +168,8 @@ gfm_host_info_get_by_name_alias(struct gfm_connection *gfm_server,
 
 /*
  * The value returned to `*canonical_hostnamep' should be freed.
+ *
+ * NOTE: the caller should check gfmd failover
  */
 gfarm_error_t
 gfm_host_get_canonical_name(struct gfm_connection *gfm_server,
@@ -218,8 +221,11 @@ gfarm_host_get_self_name(void)
 /*
  * shouldn't free the return value of this function.
  *
+ * XXX this assumes all metadata servers agree with this canonical hostname.
+ *
  * NOTE: gfarm_error_initialize() and gfarm_metadb_initialize()
  *	should be called before this function.
+ * NOTE: the caller should check gfmd failover
  */
 gfarm_error_t
 gfm_host_get_canonical_self_name(struct gfm_connection *gfm_server,
@@ -383,7 +389,8 @@ gfarm_host_get_self_architecture(char **architecture)
 
 #endif /* not yet in gfarm v2 */
 
-static int
+/* NOTE: this may cause gfmd failover */
+int
 gfm_canonical_hostname_is_local(struct gfm_connection *gfm_server,
 	const char *canonical_hostname)
 {
@@ -397,6 +404,7 @@ gfm_canonical_hostname_is_local(struct gfm_connection *gfm_server,
 	return (strcasecmp(canonical_hostname, self_name) == 0);
 }
 
+/* NOTE: this may cause gfmd failover */
 int
 gfm_host_is_local(struct gfm_connection *gfm_server, const char *hostname)
 {
@@ -830,6 +838,7 @@ address_get(struct gfm_connection *gfm_server, const char *name,
 	    peer_addr, if_hostnamep));
 }
 
+/* NOTE: the caller should check gfmd failover */
 gfarm_error_t
 gfm_host_info_address_get(struct gfm_connection *gfm_server,
 	const char *host, int port,
@@ -844,6 +853,7 @@ gfm_host_info_address_get(struct gfm_connection *gfm_server,
 	    if_hostnamep));
 }
 
+/* NOTE: the caller should check gfmd failover */
 gfarm_error_t
 gfm_host_address_get(struct gfm_connection *gfm_server,
 	const char *host, int port,

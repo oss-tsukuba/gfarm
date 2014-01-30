@@ -614,10 +614,16 @@ gfarm_schedule_file_cache(GFS_File gf, char **hostp, gfarm_int32_t *portp,
 	/* on-demand replication */
 	if (gfarm_ctxp->on_demand_replication &&
 	    e == GFARM_ERR_NO_ERROR &&
-	    !gfm_host_is_local(gf->gfm_server, host)) {
+	    !gfm_canonical_hostname_is_local(gf->gfm_server, host)) {
 		e = gfs_replicate_to_local(gf, host, port);
 		if (e == GFARM_ERR_NO_ERROR) {
 			free(host);
+			/*
+			 * We don't have to check gfmd failover here.
+			 * because gfs_replicate_to_local() already called
+			 * gfm_host_get_canonical_self_nam(), and the result
+			 * was internally cached.
+			 */
 			e = gfm_host_get_canonical_self_name(
 			    gf->gfm_server, &host, &port);
 			host = strdup(host);
@@ -784,17 +790,31 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 
 	if (host != NULL) { /* this is slow, but not usually used */
 		struct gfarm_host_info hinfo;
+		int nretries = GFS_FAILOVER_RETRY_COUNT;
 
-		e = gfm_host_info_get_by_name_alias(gf->gfm_server, host,
-		    &hinfo);
-		if (e != GFARM_ERR_NO_ERROR) {
+		for (;;) {
+			e = gfm_host_info_get_by_name_alias(gf->gfm_server,
+			    host, &hinfo);
+			if (e == GFARM_ERR_NO_ERROR) {
+				port = hinfo.port;
+				gfarm_host_info_free(&hinfo);
+				break;
+			}
+			if (gfm_client_connection_should_failover(
+			    gf->gfm_server, e) && nretries-- > 0) {
+				if ((e = gfs_pio_failover(gf))
+				    == GFARM_ERR_NO_ERROR)
+					continue;
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfs_pio_failover: %s",
+				    gfarm_error_string(e));
+				goto finish;
+			}
 			gflog_debug(GFARM_MSG_1001357,
 				"gfm_host_info_get_by_name_alias() failed: %s",
 				gfarm_error_string(e));
 			goto finish;
 		}
-		port = hinfo.port;
-		gfarm_host_info_free(&hinfo);
 	}
 
 	vc = gfs_file_section_context_alloc();

@@ -38,7 +38,7 @@ retry:
 	if ((e = gfs_client_connection_and_process_acquire(&gfm_server,
 	    host, port, &gfs_server, NULL)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "gfs_client_connection_acquire_by_host: %s",
+		    "gfs_client_connection_and_process_acquire: %s",
 		    gfarm_error_string(e));
 		gfm_client_connection_free(gfm_server);
 		return (e);

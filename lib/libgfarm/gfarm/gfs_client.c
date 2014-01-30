@@ -691,6 +691,7 @@ retry:
 	return (e);
 }
 
+/* NOTE: the caller should check gfmd failover */
 gfarm_error_t
 gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 	const char *canonical_hostname, int port,
@@ -758,7 +759,7 @@ retry:
  * invalidated and pid must be reallocated.
  */
 static gfarm_error_t
-gfs_client_gfmd_failover_at_process_set(
+gfs_client_gfmd_failover_at_connect(
 	struct gfm_connection **gfm_serverp)
 {
 	gfarm_error_t e;
@@ -843,8 +844,11 @@ gfs_client_check_failovercount_or_reset_process(
 
 /*
  * Callers of this function should
- * acquire (or addref) gfm_server before calling this,
- * and free (or delref) after calling this.
+ * acquire (or addref) *gfm_serverp
+ *	before calling this,
+ * and free (or delref) against returned *gfm_serverp
+ * 	(this may be different with the value which was acquired/addref-ed)
+ * 	after calling this.
  */
 gfarm_error_t
 gfs_client_connection_and_process_acquire(
@@ -854,25 +858,33 @@ gfs_client_connection_and_process_acquire(
 {
 	gfarm_error_t e;
 	struct gfs_connection *gfs_server;
-	struct gfm_connection *gfm_server = *gfm_serverp;
 	int gfsd_nretries = GFS_CONN_RETRY_COUNT;
 	int failover_nretries = GFS_FAILOVER_RETRY_COUNT;
 
 	for (;;) {
-		if ((e = gfs_client_connection_acquire_by_host(*gfm_serverp,
-		    canonical_hostname, port, &gfs_server, source_ip))
-		    != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
-			    "gfs_client_connection_acquire_by_host: %s",
-			    gfarm_error_string(e));
-			return (e);
+		for (;;) {
+			e = gfs_client_connection_acquire_by_host(
+			    *gfm_serverp, canonical_hostname, port,
+			    &gfs_server, source_ip);
+			if (e == GFARM_ERR_NO_ERROR)
+				break;
+			if (!gfm_client_connection_should_failover(
+			    *gfm_serverp, e) || --failover_nretries < 0) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfs_client_connection_acquire_by_host: "
+				    "%s", gfarm_error_string(e));
+				return (e);
+			}
+			e = gfs_client_gfmd_failover_at_connect(gfm_serverp);
+			if (e != GFARM_ERR_NO_ERROR)
+				return (e);
 		}
 
 		if (gfs_client_pid(gfs_server) == 0) /* new connection */
-			e = gfarm_client_process_set(gfs_server, gfm_server);
+			e = gfarm_client_process_set(gfs_server, *gfm_serverp);
 		else /* cached connection */
 			e = gfs_client_check_failovercount_or_reset_process(
-			    gfs_server, gfm_server);
+			    gfs_server, *gfm_serverp);
 
 		if (e == GFARM_ERR_NO_ERROR) {
 			*gfs_serverp = gfs_server;
@@ -884,11 +896,9 @@ gfs_client_connection_and_process_acquire(
 
 		if (e == GFARM_ERR_NO_SUCH_PROCESS &&
 		    --failover_nretries >= 0) {
-			e = gfs_client_gfmd_failover_at_process_set(
-			    &gfm_server);
+			e = gfs_client_gfmd_failover_at_connect(gfm_serverp);
 			if (e != GFARM_ERR_NO_ERROR)
 				return (e);
-			*gfm_serverp = gfm_server;
 			continue;
 		} else if (gfs_client_is_connection_error(e) &&
 		    --gfsd_nretries >= 0) {

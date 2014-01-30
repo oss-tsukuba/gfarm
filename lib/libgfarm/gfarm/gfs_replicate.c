@@ -238,9 +238,21 @@ gfs_replicate_to_local(GFS_File gf, char *srchost, int srcport)
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server = gfs_pio_metadb(gf);
 	char *self;
-	int port;
+	int port, nretries = GFS_FAILOVER_RETRY_COUNT;
 
-	e = gfm_host_get_canonical_self_name(gfm_server, &self, &port);
+	for (;;) {
+		e = gfm_host_get_canonical_self_name(gfm_server, &self, &port);
+		if (e == GFARM_ERR_NO_ERROR)
+			break;
+		if (!gfm_client_connection_should_failover(
+		    gfs_pio_metadb(gf), e) || nretries-- <= 0)
+			break;
+		if ((e = gfs_pio_failover(gf)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_pio_failover: %s", gfarm_error_string(e));
+			break;
+		}
+	}
 	if (e == GFARM_ERR_NO_ERROR) {
 		e = gfs_replicate_from_to_internal(gf, srchost, srcport,
 		    self, port);

@@ -4196,6 +4196,7 @@ gfarm_user_job_register(struct gfm_connection *gfm_server,
 	job_info.total_nodes = nusers;
 	job_info.user = gfm_client_username(gfm_server);
 	job_info.job_type = job_type;
+	/* XXX FIXME should check gfm failover */
 	e = gfm_host_get_canonical_self_name(gfm_server,
 	    &job_info.originate_host, &p);
 	if (e == GFARM_ERR_UNKNOWN_HOST) {
@@ -4213,6 +4214,7 @@ gfarm_user_job_register(struct gfm_connection *gfm_server,
 	if (job_info.nodes == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < nusers; i++) {
+		/* XXX FIXME should check gfm failover */
 		e = gfm_host_get_canonical_name(gfm_server, users[i],
 		    &job_info.nodes[i].hostname, &p);
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -4228,4 +4230,4 @@ gfarm_user_job_register(struct gfm_connection *gfm_server,
 	free(job_info.nodes);
 	return (e);
 }
-#endif
+#endif /* not used in gfarm v2 */

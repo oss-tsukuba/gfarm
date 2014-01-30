@@ -15,10 +15,7 @@ gfarm_error_t gfarm_host_get_self_architecture(struct gfm_connection *,
 	char **);
 #endif /* for now */
 
-#if 0 /* XXX for now */
 int gfm_canonical_hostname_is_local(struct gfm_connection *, const char *);
-#endif
-
 int gfm_host_is_local(struct gfm_connection *, const char *);
 
 
