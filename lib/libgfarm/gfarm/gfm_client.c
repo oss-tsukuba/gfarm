@@ -2592,6 +2592,17 @@ gfm_client_setxattr_result(struct gfm_connection *gfm_server)
 }
 
 gfarm_error_t
+gfm_client_setxattr_by_inode(struct gfm_connection *gfm_server,
+	int xmlMode, gfarm_ino_t inum, gfarm_uint64_t gen,
+	const char *name, const void *value, size_t size, int flags)
+{
+	int command = xmlMode ?
+	    GFM_PROTO_XMLATTR_INODE_SET : GFM_PROTO_XATTR_INODE_SET;
+	return (gfm_client_rpc(gfm_server, 0, command, "llsbi/",
+	    inum, gen, name, size, value, flags));
+}
+
+gfarm_error_t
 gfm_client_getxattr_request(struct gfm_connection *gfm_server,
 		int xmlMode, const char *name)
 {
@@ -2614,6 +2625,22 @@ gfm_client_getxattr_result(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
+gfm_client_getxattr_by_inode(struct gfm_connection *gfm_server,
+	int xmlMode, gfarm_ino_t inum, gfarm_uint64_t gen,
+	const char *name, void **valuep, size_t *sizep)
+{
+	int command = xmlMode ?
+	    GFM_PROTO_XMLATTR_INODE_GET : GFM_PROTO_XATTR_INODE_GET;
+	gfarm_error_t e;
+
+	e = gfm_client_rpc(gfm_server, 0, command, "lls/B",
+	    inum, gen, name, sizep, valuep);
+	if (e == GFARM_ERR_NO_ERROR && xmlMode)
+		(*sizep)--; /* remove the last additional '\0' in XML mode */
+	return (e);
+}
+
+gfarm_error_t
 gfm_client_listxattr_request(struct gfm_connection *gfm_server, int xmlMode)
 {
 	int command = xmlMode ? GFM_PROTO_XMLATTR_LIST : GFM_PROTO_XATTR_LIST;
@@ -2631,7 +2658,8 @@ gfarm_error_t
 gfm_client_removexattr_request(struct gfm_connection *gfm_server,
 		int xmlMode, const char *name)
 {
-	int command = xmlMode ? GFM_PROTO_XMLATTR_REMOVE : GFM_PROTO_XATTR_REMOVE;
+	int command = xmlMode ?
+	    GFM_PROTO_XMLATTR_REMOVE : GFM_PROTO_XATTR_REMOVE;
 	return (gfm_client_rpc_request(gfm_server, command, "s", name));
 }
 
@@ -2639,6 +2667,16 @@ gfarm_error_t
 gfm_client_removexattr_result(struct gfm_connection *gfm_server)
 {
 	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
+gfarm_error_t
+gfm_client_removexattr_by_inode(struct gfm_connection *gfm_server,
+	int xmlMode, gfarm_ino_t inum, gfarm_uint64_t gen, const char *name)
+{
+	int command = xmlMode ?
+	    GFM_PROTO_XMLATTR_INODE_REMOVE : GFM_PROTO_XATTR_INODE_REMOVE;
+	return (gfm_client_rpc(
+		    gfm_server, 0, command, "lls/", inum, gen, name));
 }
 
 gfarm_error_t

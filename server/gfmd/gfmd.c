@@ -512,6 +512,24 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_XMLATTR_FIND:
 		e = gfm_server_findxmlattr(peer, from_client, skip);
 		break;
+	case GFM_PROTO_XATTR_INODE_SET:
+		e = gfm_server_setxattr_by_inode(peer, from_client, skip, 0);
+		break;
+	case GFM_PROTO_XMLATTR_INODE_SET:
+		e = gfm_server_setxattr_by_inode(peer, from_client, skip, 1);
+		break;
+	case GFM_PROTO_XATTR_INODE_GET:
+		e = gfm_server_getxattr_by_inode(peer, from_client, skip, 0);
+		break;
+	case GFM_PROTO_XMLATTR_INODE_GET:
+		e = gfm_server_getxattr_by_inode(peer, from_client, skip, 1);
+		break;
+	case GFM_PROTO_XATTR_INODE_REMOVE:
+		e = gfm_server_removexattr_by_inode(peer, from_client, skip, 0);
+		break;
+	case GFM_PROTO_XMLATTR_INODE_REMOVE:
+		e = gfm_server_removexattr_by_inode(peer, from_client, skip, 1);
+		break;
 	case GFM_PROTO_QUOTA_USER_GET:
 		e = gfm_server_quota_user_get(peer, from_client, skip);
 		break;
