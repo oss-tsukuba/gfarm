@@ -22,13 +22,11 @@ check_md5()
 
 	md5_file=`md5sum $file | awk '{ print $1 }'`
 	[ $? -ne 0 ] && return
+	echo -n $md5_file | gfxattr -Isc -G $gen $inum gfarm.md5 >/dev/null 2>&1
+	[ $? -eq 0 ] && return
 	md5_mds=`gfxattr -Ig -G $gen $inum gfarm.md5 2>&1`
 	if [ $? -ne 0 ]; then
-		if [ "$md5_mds" = "no such object" ]; then
-			echo -n $md5_file | gfxattr -Is -G $gen $inum gfarm.md5
-		else
-			echo >&2 $file: $md5_mds
-		fi
+		echo >&2 $file: $md5_mds
 	elif [ "$md5_file" != "$md5_mds" ]; then
 		echo >&2 $file: md5 digest differs: file $md5_file mds $md5_mds
 	fi
