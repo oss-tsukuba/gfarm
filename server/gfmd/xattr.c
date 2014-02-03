@@ -135,6 +135,7 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 	if (strncmp("gfarm.", attrname, 6) == 0) {
 		const char *type = attrname + 6;
 		if (strcmp("ncopy", type) != 0 &&
+		    strcmp("md5", type) != 0 &&
 		    strcmp("acl_access", type) != 0 &&
 		    strcmp("acl_default", type) != 0)
 			goto not_supp;

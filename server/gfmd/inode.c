@@ -5852,6 +5852,8 @@ xattr_init(void)
 
 	if (!gfarm_xattr_caching("gfarm.ncopy"))
 		gfarm_xattr_caching_pattern_add("gfarm.ncopy");
+	if (!gfarm_xattr_caching("gfarm.md5"))
+		gfarm_xattr_caching_pattern_add("gfarm.md5");
 
 	xmlMode = 0;
 	e = db_xattr_load(&xmlMode, xattr_add_one);
