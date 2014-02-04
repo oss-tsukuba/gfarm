@@ -2,7 +2,7 @@
 #
 # gfspoolmd5 - calculate and check md5 message digest of files in a spool
 #
-# Usage: gfspoolmd5 [spool_root]
+# Usage: gfspoolmd5 [spool_root] 2> log
 
 PROG=`basename $0`
 
@@ -35,7 +35,7 @@ check_md5()
 ABORT()
 {
 	[ $# -gt 0 ] && echo >&2 $PROG: $*
-	echo >&2 Usage: $PROG [spool_root]
+	echo >&2 "Usage: $PROG [spool_root] 2> log"
 	exit 1
 }
 
@@ -75,6 +75,6 @@ do
 	s=`expr $s + $fs`
 	abw=`echo "$s / 1000 / ($etime - $itime)" | bc -l | sed 's/^\(.*\...\).*/\1/'`
 	bw=`echo "$fs / 1000 / ($etime - $stime)" | bc -l | sed 's/^\(.*\...\).*/\1/'`
-	echo -ne file: $c/$count size: $s/$size bw: $bw KB/s ave: $abw KB/s'\r'
+	echo -ne file: $c/$count size: $s/$size ave: $abw KB/s bw: $bw KB/s   '\r'
 done
 echo
