@@ -53,7 +53,28 @@ fi
 [ X"$spool_root" = X ] && ABORT specify spool root
 cd $spool_root || ABORT
 
+# file counts and total size
+countsize=`find . -type f -printf '%s\n' | awk '{ s+=$1 } END { print NR, s }'`
+count=`echo $countsize | awk '{ print $1 }'`
+size=`echo $countsize | awk '{ print $2 }'`
+
+echo "$PROG: start (spool_root: $spool_root)"
+date
+
+c=0
+s=0
+itime=`date +%s.%N`
 find . -type f | while read f
 do
+	stime=`date +%s.%N`
 	check_md5 $f
+	etime=`date +%s.%N`
+
+	c=`expr $c + 1`
+	fs=`stat $f --printf='%s'`
+	s=`expr $s + $fs`
+	abw=`echo "$s / 1000 / ($etime - $itime)" | bc -l | sed 's/^\(.*\...\).*/\1/'`
+	bw=`echo "$fs / 1000 / ($etime - $stime)" | bc -l | sed 's/^\(.*\...\).*/\1/'`
+	echo -ne file: $c/$count size: $s/$size bw: $bw KB/s ave: $abw KB/s'\r'
 done
+echo
