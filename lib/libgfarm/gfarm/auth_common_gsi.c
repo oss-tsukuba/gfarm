@@ -26,6 +26,18 @@ static int gsi_initialized;
 static int gsi_server_initialized;
 static const char gsi_initialize_diag[] = "gsi_initialize_mutex";
 
+void
+gfarm_gsi_initialize_mutex_lock(const char *diag)
+{
+	gfarm_mutex_lock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
+}
+
+void
+gfarm_gsi_initialize_mutex_unlock(const char *diag)
+{
+	gfarm_mutex_unlock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
+}
+
 static void
 gfarm_gsi_client_finalize_unlocked(void)
 {
@@ -38,10 +50,10 @@ gfarm_gsi_client_finalize(void)
 {
 	static const char diag[] = "gfarm_gsi_client_finalize";
 
-	gfarm_mutex_lock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
+	gfarm_gsi_initialize_mutex_lock(diag);
 	if (gsi_initialized)
 		gfarm_gsi_client_finalize_unlocked();
-	gfarm_mutex_unlock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
+	gfarm_gsi_initialize_mutex_unlock(diag);
 }
 
 gfarm_error_t
@@ -52,10 +64,9 @@ gfarm_gsi_client_initialize(void)
 	int rv;
 	static const char diag[] = "gfarm_gsi_client_initialize";
 
-	gfarm_mutex_lock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
+	gfarm_gsi_initialize_mutex_lock(diag);
 	if (gsi_initialized) {
-		gfarm_mutex_unlock(&gsi_initialize_mutex,
-		    diag, gsi_initialize_diag);
+		gfarm_gsi_initialize_mutex_unlock(diag);
 		return (GFARM_ERR_NO_ERROR);
 	}
 
@@ -69,14 +80,13 @@ gfarm_gsi_client_initialize(void)
 			gfarmGssPrintMinorStatus(e_minor);
 		}
 		gfarm_gsi_client_finalize_unlocked();
-		gfarm_mutex_unlock(&gsi_initialize_mutex,
-		    diag, gsi_initialize_diag);
+		gfarm_gsi_initialize_mutex_unlock(diag);
 
 		return (GFARM_ERRMSG_GSI_CREDENTIAL_INITIALIZATION_FAILED);
 	}
 	gsi_initialized = 1;
 	gsi_server_initialized = 0;
-	gfarm_mutex_unlock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
+	gfarm_gsi_initialize_mutex_unlock(diag);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -149,21 +159,19 @@ gfarm_gsi_server_finalize(void)
 {
 	static const char diag[] = "gfarm_gsi_server_finalize";
 
-	gfarm_mutex_lock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
+	gfarm_gsi_initialize_mutex_lock(diag);
 	if (gsi_initialized && gsi_server_initialized)
 		gfarm_gsi_server_finalize_unlocked();
-	gfarm_mutex_unlock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
+	gfarm_gsi_initialize_mutex_unlock(diag);
 }
 
 gfarm_error_t
-gfarm_gsi_server_initialize(void)
+gfarm_gsi_server_initialize_unlocked(void)
 {
 	OM_uint32 e_major;
 	OM_uint32 e_minor;
 	int rv;
-	static const char diag[] = "gfarm_gsi_server_initialize";
 
-	gfarm_mutex_lock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
 	if (gsi_initialized) {
 		if (gsi_server_initialized) {
 			/*
@@ -175,9 +183,6 @@ gfarm_gsi_server_initialize(void)
 			if (gfarmSecSessionAcceptorCredIsValid(
 				&e_major, &e_minor)) {
 				/* already initialized */
-				gfarm_mutex_unlock(&gsi_initialize_mutex,
-				    diag, gsi_initialize_diag);
-
 				return (GFARM_ERR_NO_ERROR);
 			}
 			if (gflog_auth_get_verbose() &&
@@ -203,14 +208,23 @@ gfarm_gsi_server_initialize(void)
 			gfarmGssPrintMinorStatus(e_minor);
 		}
 		gfarm_gsi_server_finalize_unlocked();
-		gfarm_mutex_unlock(&gsi_initialize_mutex,
-		    diag, gsi_initialize_diag);
 		return (GFARM_ERRMSG_GSI_INITIALIZATION_FAILED);
 	}
 	gsi_initialized = 1;
 	gsi_server_initialized = 1;
-	gfarm_mutex_unlock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_gsi_server_initialize(void)
+{
+	static const char diag[] = "gfarm_gsi_server_initialize";
+	gfarm_error_t e;
+
+	gfarm_gsi_initialize_mutex_lock(diag);
+	e = gfarm_gsi_server_initialize_unlocked();
+	gfarm_gsi_initialize_mutex_unlock(diag);
+	return (e);
 }
 
 /*
