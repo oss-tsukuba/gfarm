@@ -66,15 +66,20 @@ s=0
 itime=`date +%s.%N`
 find . -type f | while read f
 do
-	stime=`date +%s.%N`
 	check_md5 $f
 	etime=`date +%s.%N`
 
 	c=`expr $c + 1`
-	fs=`stat $f --printf='%s'`
+	fs=`stat --printf='%s' $f`
 	s=`expr $s + $fs`
-	abw=`echo "$s / 1000 / ($etime - $itime)" | bc -l | sed 's/^\(.*\...\).*/\1/'`
-	bw=`echo "$fs / 1000 / ($etime - $stime)" | bc -l | sed 's/^\(.*\...\).*/\1/'`
-	echo -ne file: $c/$count size: $s/$size ave: $abw KB/s bw: $bw KB/s   '\r'
+	p=`expr $s \* 100 / $size`
+	bw=`echo "$s / 1000 / ($etime - $itime)" | bc -l | sed 's/^\(.*\...\).*/\1/'`
+	sec=`echo "($size - $s) / 1000 / $bw" | bc`
+	hour=`expr $sec / 3600`
+	min=`expr \( $sec - $hour \* 3600 \) / 60`
+	min=`printf '%02d' $min`
+	sec=`expr $sec - $hour \* 3600 - $min \* 60`
+	sec=`printf '%02d' $sec`
+	echo -ne "file: $c/$count size: $s/$size ($p%) ave: $bw KB/s Est: $hour:$min:$sec "'\r'
 done
 echo
