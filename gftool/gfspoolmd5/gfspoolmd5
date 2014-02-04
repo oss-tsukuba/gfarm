@@ -54,7 +54,7 @@ fi
 cd $spool_root || ABORT
 
 # file counts and total size
-countsize=`find . -type f -printf '%s\n' | awk '{ s+=$1 } END { print NR, s }'`
+countsize=`find . -type f -printf '%s\n' | awk '{ s+=$1 } END { printf "%d %d", NR, s }'`
 count=`echo $countsize | awk '{ print $1 }'`
 size=`echo $countsize | awk '{ print $2 }'`
 
@@ -70,7 +70,7 @@ do
 	etime=`date +%s.%N`
 
 	c=`expr $c + 1`
-	fs=`stat --printf='%s' $f`
+	fs=`stat --format='%s' $f`
 	s=`expr $s + $fs`
 	p=`expr $s \* 100 / $size`
 	bw=`echo "$s / 1000 / ($etime - $itime)" | bc -l | sed 's/^\(.*\...\).*/\1/'`
