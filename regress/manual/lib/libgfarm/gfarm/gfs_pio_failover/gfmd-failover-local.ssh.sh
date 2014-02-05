@@ -27,8 +27,13 @@ choose_sync_slave()
 	sync_slaves | head -1
 }
 
-old_master=`get_master`
-new_master=`choose_sync_slave`
+while	old_master=`get_master`
+	new_master=`choose_sync_slave`
+	[ -z "$old_master" -o -z "$new_master" ]
+do
+	echo "--- cannot find current/next master ($old_master/$new_master) ---"
+	sleep 1
+done
 
 echo "*** switching from $old_master to $new_master ***"
 
