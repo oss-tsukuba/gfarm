@@ -523,12 +523,12 @@ gfm_server_setxattr_by_inode(
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag,
 		    (long long)inum, (long long)gen, gfarm_error_string(e));
-	} else if (!inode_is_file(inode)) {
-		e = GFARM_ERR_NOT_A_REGULAR_FILE;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag,
-		    (long long)inum, (long long)gen, gfarm_error_string(e));
 	} else if (!user_is_root(inode, user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag,
+		    (long long)inum, (long long)gen, gfarm_error_string(e));
+	} else if (!inode_is_file(inode)) {
+		e = GFARM_ERR_NOT_A_REGULAR_FILE;
 		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag,
 		    (long long)inum, (long long)gen, gfarm_error_string(e));
 	} else if (inode_is_opened_for_writing(inode)) {
@@ -721,12 +721,12 @@ gfm_server_getxattr_by_inode(
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag,
 		    (long long)inum, (long long)gen, gfarm_error_string(e));
-	} else if (!inode_is_file(inode)) {
-		e = GFARM_ERR_NOT_A_REGULAR_FILE;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag,
-		    (long long)inum, (long long)gen, gfarm_error_string(e));
 	} else if (!user_is_root(inode, user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag,
+		    (long long)inum, (long long)gen, gfarm_error_string(e));
+	} else if (!inode_is_file(inode)) {
+		e = GFARM_ERR_NOT_A_REGULAR_FILE;
 		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag,
 		    (long long)inum, (long long)gen, gfarm_error_string(e));
 	} else if (inode_is_opened_for_writing(inode)) {
@@ -973,12 +973,12 @@ gfm_server_removexattr_by_inode(struct peer *peer, int from_client, int skip,
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag,
 		    (long long)inum, (long long)gen, gfarm_error_string(e));
-	} else if (!inode_is_file(inode)) {
-		e = GFARM_ERR_NOT_A_REGULAR_FILE;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag,
-		    (long long)inum, (long long)gen, gfarm_error_string(e));
 	} else if (!user_is_root(inode, user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag,
+		    (long long)inum, (long long)gen, gfarm_error_string(e));
+	} else if (!inode_is_file(inode)) {
+		e = GFARM_ERR_NOT_A_REGULAR_FILE;
 		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag,
 		    (long long)inum, (long long)gen, gfarm_error_string(e));
 	} else if (inode_is_opened_for_writing(inode)) {
