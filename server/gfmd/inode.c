@@ -82,6 +82,9 @@ struct file_copy {
  *	}
  */
 
+static const char xattr_md5[] = "gfarm.md5";
+static const char xattr_ncopy[] = "gfarm.ncopy";
+
 struct xattr_entry {
 	struct xattr_entry *prev, *next;
 	char *name;
@@ -1318,6 +1321,7 @@ void
 inode_increment_gen(struct inode *inode)
 {
 	gfarm_error_t e;
+	int xmlmode;
 
 	++inode->i_gen;
 
@@ -1328,6 +1332,12 @@ inode_increment_gen(struct inode *inode)
 		    (unsigned long long)inode->i_number,
 		    (unsigned long long)inode->i_gen,
 		    gfarm_error_string(e));
+
+	/* remove gfarm.md5 */
+	xmlmode = 0;
+	e = inode_xattr_remove(inode, xmlmode, xattr_md5);
+	if (e == GFARM_ERR_NO_ERROR)
+		db_xattr_remove(xmlmode, inode_get_number(inode), xattr_md5);
 }
 
 gfarm_int64_t
@@ -5850,10 +5860,10 @@ xattr_init(void)
 	if (!gfarm_xattr_caching(GFARM_ROOT_EA_GROUP))
 		gfarm_xattr_caching_pattern_add(GFARM_ROOT_EA_GROUP);
 
-	if (!gfarm_xattr_caching("gfarm.ncopy"))
-		gfarm_xattr_caching_pattern_add("gfarm.ncopy");
-	if (!gfarm_xattr_caching("gfarm.md5"))
-		gfarm_xattr_caching_pattern_add("gfarm.md5");
+	if (!gfarm_xattr_caching(xattr_ncopy))
+		gfarm_xattr_caching_pattern_add(xattr_ncopy);
+	if (!gfarm_xattr_caching(xattr_md5))
+		gfarm_xattr_caching_pattern_add(xattr_md5);
 
 	xmlMode = 0;
 	e = db_xattr_load(&xmlMode, xattr_add_one);
@@ -6202,7 +6212,7 @@ inode_xattr_convert_desired_number(
 int
 inode_has_desired_number(struct inode *inode, int *desired_numberp)
 {
-	struct xattr_entry *ent = xattr_find(&inode->i_xattrs, "gfarm.ncopy");
+	struct xattr_entry *ent = xattr_find(&inode->i_xattrs, xattr_ncopy);
 
 	if (ent == NULL || ent->cached_attrvalue == NULL)
 		return (0);
