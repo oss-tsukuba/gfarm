@@ -187,7 +187,7 @@ check_file(char *file, struct stat *stp, void *arg)
 	    xattr_md5, md5, md5_size, GFS_XATTR_CREATE);
 	if (e == GFARM_ERR_NO_ERROR)
 		goto progress;	/* set gfarm.md5 */
-	if (e == GFARM_ERR_OPERATION_NOT_PERMITTED)
+	if (e != GFARM_ERR_ALREADY_EXISTS)
 		return (e);
 
 	e = gfm_client_getxattr_by_inode(gfm_server, xmlmode, inum, gen,
@@ -206,6 +206,12 @@ progress:
 	return (e);
 }
 
+static void
+check_spool(char *dir)
+{
+	(void)dir_foreach(check_file, NULL, NULL, dir, NULL);
+}
+
 static gfarm_error_t
 file_size(char *file, struct stat *stp, void *arg)
 {
@@ -218,12 +224,6 @@ static void
 count_size(char *dir)
 {
 	(void)dir_foreach(file_size, NULL, NULL, dir, NULL);
-}
-
-static void
-check_spool(char *dir)
-{
-	(void)dir_foreach(check_file, NULL, NULL, dir, NULL);
 }
 
 static int
