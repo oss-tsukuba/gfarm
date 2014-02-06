@@ -164,6 +164,7 @@ show_progress(void)
 	       "ave: %.2f KB/s Est: %d:%02d:%02d \r",
 	       count, total_count, size, total_size, size * 100 / total_size,
 	       bw, hour, min, sec);
+	fflush(stdout);
 }
 
 static const char xattr_md5[] = "gfarm.md5";
@@ -199,8 +200,8 @@ check_file(char *file, struct stat *stp, void *arg)
 		return (e);
 	if (memcmp(md5, md5_mds, md5_size) != 0) {
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
-		fprintf(stderr, "%s: md5 digest differs: file %32s mds %32s\n",
-		    file, md5, (char *)md5_mds);
+		fprintf(stderr, "%s: md5 digest differs: "
+		    "file %.32s mds %.32s\n", file, md5, (char *)md5_mds);
 	}
 progress:
 	count += 1;
