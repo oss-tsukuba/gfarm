@@ -105,6 +105,9 @@ dir_foreach(
 			strcat(dir1, "/");
 		strcat(dir1, dp->d_name);
 		e = dir_foreach(op_file, op_dir1, op_dir2, dir1, arg);
+		if (e != GFARM_ERR_NO_ERROR)
+			fprintf(stderr, "%s: %s\n", dir1,
+			    gfarm_error_string(e));
 		free(dir1);
 	}
 	if (closedir(dirp))
@@ -209,7 +212,11 @@ progress:
 static void
 check_spool(char *dir)
 {
-	(void)dir_foreach(check_file, NULL, NULL, dir, NULL);
+	gfarm_error_t e;
+
+	e = dir_foreach(check_file, NULL, NULL, dir, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "%s: %s\n", dir, gfarm_error_string(e));
 }
 
 static gfarm_error_t
