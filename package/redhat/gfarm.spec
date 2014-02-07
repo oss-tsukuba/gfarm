@@ -1038,6 +1038,7 @@ fi
 %{prefix}/bin/gfpcopy
 %{prefix}/bin/gfprep
 %{prefix}/bin/gfpcopy-test.sh
+%{prefix}/bin/gfpcopy-stress
 %{prefix}/bin/gfpath
 %if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfps

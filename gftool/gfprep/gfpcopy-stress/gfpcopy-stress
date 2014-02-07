@@ -1,0 +1,224 @@
+#!/bin/bash
+
+# $Id$
+
+DEBUG=0
+
+# default values
+LOCAL_DIR=/tmp
+GFARM_DIR=/tmp
+N_DIR=10
+N_FILE=10
+SIZE=64K
+N_PARA=3
+N_LOOP=10
+
+usage() {
+    echo "usage: $program [ -G gfarm_dir($GFARM_DIR) ] [ -L local_dir($LOCAL_DIR) ] [ -d num_dir($N_DIR) ] [ -f num_file($N_FILE) ] [ -s size($SIZE) ] [ -p num_parallel($N_PARA) ] [ -l num_loop($N_LOOP) ]"
+    exit 1
+}
+
+while [ $# -gt 0 ]; do
+    case $1 in
+    -G) shift; GFARM_DIR=$1 ;;
+    -L) shift; LOCAL_DIR=$1 ;;
+    -d) shift; N_DIR=$1 ;;
+    -f) shift; N_FILE=$1 ;;
+    -s) shift; SIZE=$1 ;;
+    -p) shift; N_PARA=$1 ;;
+    -l) shift; N_LOOP=$1 ;;
+    -*) echo "unknown option: $1"
+        usage ;;
+    *) break ;;
+    esac
+    shift
+done
+
+exit_pass=0
+exit_fail=1
+exit_xpass=2                    # passed, but it's unexpected. fixed recently?
+exit_xfail=3                    # failed, but it's expected. i.e. known bug.
+exit_unresolved=4               # cannot determine whether (X)?PASS or (X)?FAIL
+exit_untested=5                 # not tested, this test haven't written yet.
+exit_unsupported=6              # not tested, this environment can't test this.
+exit_trap=7                     # killed by Control-C or something
+
+trap_sigs='1 2 15'
+
+localtmp=${LOCAL_DIR}/RT$$
+gftmp=${GFARM_DIR}/`hostname`."`echo $0 | sed s:/:_:g`".$$
+case $gftmp in
+   gfarm://*) ;;
+   *) gftmp=gfarm://${gftmp} ;;
+esac
+
+test_dirname=ORIG
+orig_dir=$localtmp/$test_dirname
+
+pids=()
+
+DEBUG() {
+    [ $DEBUG -ne 0 ] && echo $@
+}
+
+stop=0
+
+trap_stop() {
+    stop=1
+}
+
+gfrm_rf_retry() {
+    trap 'trap_stop' $trap_sigs
+
+    n_retry=0
+    while :; do
+        if [ $stop -eq 1 ]; then
+            echo >&2 "stop gfrm: pid=$$"
+            return
+        elif gfrm -rf "$1"; then
+            return  # OK
+        fi
+
+        echo >&2 "RETRY[$n_retry]: gfrm -rf $1"
+        n_retry=$(($n_retry + 1))
+    done
+}
+
+gfmkdir_retry() {
+    trap 'trap_stop' $trap_sigs
+
+    n_retry=0
+    while :; do
+        if [ $stop -eq 1 ]; then
+            echo >&2 "stop mkdir: pid=$$"
+            return
+        elif gfmkdir "$1"; then
+            return  # OK
+        fi
+
+        echo >&2 "RETRY[$n_retry] gfmkdir $1"
+        n_retry=$(($n_retry + 1))
+    done
+}
+
+clean_all() {
+    for p in "${pids[@]}"; do
+        echo >&2 kill pid=$p
+        kill $p
+    done
+
+    rm -rf $localtmp
+    gfrm_rf_retry $gftmp
+}
+
+ABORT() {
+    echo >&2 $1
+    clean_all
+    exit $exit_fail
+}
+
+trap 'clean_all; exit $exit_trap' $trap_sigs
+
+create_tmpfiles() {
+    ndir=$1
+    nfile=$2
+
+    m=0
+    while [ $m -lt $ndir ]; do
+        n=0
+        mkdir -p $orig_dir/$m || ABORT "mkdir -p $orig_dir/$m"
+        while [ $n -lt $nfile ]; do
+            out=$orig_dir/$m/$n
+            echo create file: $out
+            dd if=/dev/urandom of=$out bs=$SIZE count=1 2>&1 || ABORT "dd failed"
+            n=$(($n + 1))
+        done
+        m=$(($m + 1))
+    done
+}
+
+gfpcopy_retry() {
+    trap 'trap_stop' $trap_sigs
+
+    n_retry=0
+    while :; do
+        if [ $stop -eq 1 ]; then
+            echo >&2 "stop gfpcopy: pid=$$"
+            return
+        elif gfpcopy "$1" "$2"; then
+            return  # OK
+        fi
+
+        echo >&2 "RETRY[$n_retry]: gfpcopy $1 $2"
+        n_retry=$(($n_retry + 1))
+    done
+}
+
+main_loop() {
+    echo "-------------- LOOP $1 ---------------"
+
+    n=0
+    while [ $n -lt $N_PARA ]; do
+        gfmkdir_retry $gftmp/$n
+        mkdir $localtmp/$n || ABORT "mkdir $localtmp/$n"
+        n=$(($n + 1))
+    done
+
+    pids=()
+    n=0
+    while [ $n -lt $N_PARA ]; do
+        DEBUG [background] gfpcopy $orig_dir $gftmp/$n
+        gfpcopy_retry $orig_dir $gftmp/$n &
+        pids+=($!)
+        n=$(($n + 1))
+    done
+    wait
+
+    pids=()
+    n=0
+    while [ $n -lt $N_PARA ]; do
+        DEBUG [background] gfpcopy $gftmp/$n/$test_dirname $localtmp/$n
+        gfpcopy_retry $gftmp/$n/$test_dirname $localtmp/$n &
+        pids+=($!)
+        n=$(($n + 1))
+    done
+    wait
+
+    pids=()
+    n=0
+    while [ $n -lt $N_PARA ]; do
+        gfrm_rf_retry $gftmp/$n &
+        n=$(($n + 1))
+    done
+    wait
+
+    n=0
+    while [ $n -lt $N_PARA ]; do
+        diff -r $orig_dir $localtmp/$n/$test_dirname || \
+            ABORT "different $localtmp/$n"
+        n=$(($n + 1))
+    done
+
+    n=0
+    while [ $n -lt $N_PARA ]; do
+        rm -rf $localtmp/$n
+        n=$(($n + 1))
+    done
+}
+
+create_tmpfiles $N_DIR $N_FILE
+
+gfmkdir_retry $gftmp
+
+m=1
+while [ $m -le $N_LOOP ]; do
+    main_loop $m
+    m=$(($m + 1))
+done
+
+#find $localtmp
+
+clean_all
+
+echo ...PASS
+exit $exit_pass
