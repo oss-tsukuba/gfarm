@@ -6,7 +6,7 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SUBDIRS = gfpcopy-test
+SUBDIRS = gfpcopy-test gfpcopy-stress
 
 GFREP_SRCDIR = $(srcdir)/../gfrep
 

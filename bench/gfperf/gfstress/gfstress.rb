@@ -122,7 +122,7 @@ $config[:number].times { |i|
 $commands = Array.new
 
 $config[:number].times { |i|
-  $commands.push("gfpcopy-test.sh -g #{$top_dir}/gfpcopy/#{i} -l #{$local_dir}/gfpcopy/#{i}")
+  $commands.push("gfpcopy-stress -G #{$top_dir}/gfpcopy/#{i} -L #{$local_dir}/gfpcopy/#{i} -d 100 -f 10 -s 1K -p 1 -l 1000")
   $commands.push("gfperf-metadata -t #{$top_dir}/metadata/#{i} -n 500")
   $commands.push("gfperf-tree -t #{$top_dir}/tree/#{i} -w 3 -d 5")
   $gfsds.each {|g|
