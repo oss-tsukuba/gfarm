@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# $Id$
+
 DEBUG=0
 
 # default values
