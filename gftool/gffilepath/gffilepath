@@ -1,0 +1,50 @@
+#!/bin/sh
+
+${DEBUG:="false"} && set -xu
+PROGNAME=`basename $0`
+
+usage()
+{
+	echo >&2 "usage: $PROGNAME [--prefix prefix] inum ..."
+	exit 1
+}
+
+filepath()
+{
+	inum=$1
+	out=`echo "select inumber, igen, entryname from inode, direntry where inode.inumber = direntry.dirinumber and direntry.entryinumber = $inum" | config-gfarm-update -o '-tAF/' $options`
+	if [ X"$out" = X ]; then
+		echo >&2 "$inum: no such object"
+	else
+		inum=`echo $out | awk -F/ '{ printf $1 }'`
+		gen=`echo $out | awk -F/ '{ printf $2 }'`
+		name=`echo $out | awk -F/ '{ printf $3 }'`
+
+		echo `gfdirpath $inum $gen`/$name
+	fi
+}
+
+# is gfarmroot?
+if ! gfdirpath 2 0 >/dev/null 2>&1; then
+	echo >&2 "You are not gfarmroot"
+	exit 1
+fi
+
+while [ $# -gt 0 ]; do
+	case $1 in
+	--prefix) [ $# -ge 2 ] || usage
+		options="$options $1 $2"
+		shift
+		;;
+	-*)	usage
+		;;
+	*)	break
+		;;
+	esac
+	shift
+done
+
+while [ $# -gt 0 ]; do
+	filepath $1
+	shift
+done

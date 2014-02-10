@@ -15,6 +15,7 @@ SUBDIRS = \
 	gfdump \
 	gfexport \
 	gfdirpath \
+	gffilepath \
 	gffindxmlattr \
 	gfgetfacl \
 	gfgroup \
