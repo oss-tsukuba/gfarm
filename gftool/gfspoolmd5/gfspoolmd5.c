@@ -185,9 +185,11 @@ check_file(char *file, struct stat *stp, void *arg)
 	if (get_inum_gen(file, &inum, &gen))
 		return (GFARM_ERR_INVALID_FILE_REPLICA);
 
-	if (count < start_count)
-		goto progress;
-
+	if (count < start_count) {
+		count += 1;
+		size += stp->st_size;
+		return (GFARM_ERR_NO_ERROR);
+	}
 	e = calc_md5(file, md5);
 	if (e != GFARM_ERR_NO_ERROR)
 		goto progress;
@@ -263,17 +265,17 @@ mmap_progress_file(const char *file)
 
 	if ((fd = open(file, O_RDWR)) == -1) {
 		if ((fd = open(file, O_RDWR|O_CREAT|O_TRUNC, 0644)) == -1) {
-			fprintf(stderr, "%s: %s\n", file, strerror(errno));
+			perror(file);
 			exit(1);
 		}
 		if (ftruncate(fd, size) == -1) {
-			fprintf(stderr, "ftruncate: %s\n", strerror(errno));
+			perror("ftruncate");
 			exit(1);
 		}
 	}
 	if ((addr = mmap(NULL, 8, PROT_WRITE|PROT_READ, MAP_SHARED, fd, 0))
 	    == MAP_FAILED) {
-		fprintf(stderr, "mmap: %s\n", strerror(errno));
+		perror("mmap");
 		exit(1);
 	}
 	close(fd);
@@ -333,7 +335,7 @@ main(int argc, char *argv[])
 		usage();
 
 	if (chdir(spool_root) == -1) {
-		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
+		perror(spool_root);
 		exit(1);
 	}
 	e = gfarm_initialize(&argc, &argv);
@@ -343,10 +345,6 @@ main(int argc, char *argv[])
 		GFARM_PATH_ROOT, &gfm_server);
 	error_check(progname, e);
 
-	if (chdir(spool_root) == -1) {
-		fprintf(stderr, "%s: %s\n", progname, strerror(errno));
-		exit(1);
-	}
 	if (!is_gfarmroot()) {
 		fprintf(stderr, "You are not gfarmroot\n");
 		exit(1);
@@ -365,6 +363,8 @@ main(int argc, char *argv[])
 	}
 	puts("");
 	munmap_progress_file(progress_addr);
+	if (unlink(PROGRESS_FILE) == -1)
+		perror(PROGRESS_FILE);
 
 	gfm_client_connection_free(gfm_server);
 	e = gfarm_terminate();
