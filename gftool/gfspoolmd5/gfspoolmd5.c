@@ -235,15 +235,14 @@ static int
 is_gfarmroot(void)
 {
 	const int root_inum = 2, root_gen = 0;
-	GFS_File gf;
+	GFS_Dir dir;
 	gfarm_error_t e;
 
-	e = gfs_pio_fhopen(root_inum, root_gen, GFARM_FILE_RDONLY, &gf);
+	e = gfs_fhopendir(root_inum, root_gen, &dir);
 	if (e == GFARM_ERR_NO_ERROR) {
-		gfs_pio_close(gf);
+		gfs_closedir(dir);
 		return (1);
-	} else if (e == GFARM_ERR_IS_A_DIRECTORY)
-		return (1);
+	}
 	return (0);
 }
 
