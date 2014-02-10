@@ -101,7 +101,7 @@ dir_foreach(
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		strcpy(dir1, dir);
-		if (strcmp(dir, ""))
+		if (strcmp(dir, "") != 0 && dir[strlen(dir) - 1] != '/')
 			strcat(dir1, "/");
 		strcat(dir1, dp->d_name);
 		e = dir_foreach(op_file, op_dir1, op_dir2, dir1, arg);
@@ -174,11 +174,10 @@ check_file(char *file, struct stat *stp, void *arg)
 {
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
+	GFS_File gf;
 	gfarm_error_t e;
-	int xmlmode;
 	size_t md5_size = MD5_SIZE * 2;
-	char md5[MD5_SIZE * 2 + 1];
-	void *md5_mds;
+	char md5[MD5_SIZE * 2 + 1], md5_mds[MD5_SIZE * 2 + 1];
 
 	if (get_inum_gen(file, &inum, &gen))
 		return (GFARM_ERR_INVALID_FILE_REPLICA);
@@ -186,24 +185,22 @@ check_file(char *file, struct stat *stp, void *arg)
 	e = calc_md5(file, md5);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	xmlmode = 0;
-	e = gfm_client_setxattr_by_inode(gfm_server, xmlmode, inum, gen,
-	    xattr_md5, md5, md5_size, GFS_XATTR_CREATE);
-	if (e == GFARM_ERR_NO_ERROR)
-		goto progress;	/* set gfarm.md5 */
-	if (e != GFARM_ERR_ALREADY_EXISTS)
-		return (e);
-
-	e = gfm_client_getxattr_by_inode(gfm_server, xmlmode, inum, gen,
-	    xattr_md5, &md5_mds, &md5_size);
+	e = gfs_pio_fhopen(inum, gen, GFARM_FILE_RDONLY, &gf);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	e = gfs_fsetxattr(gf, xattr_md5, md5, md5_size, GFS_XATTR_CREATE);
+	if (e == GFARM_ERR_NO_ERROR || e != GFARM_ERR_ALREADY_EXISTS)
+		goto progress;
+	e = gfs_fgetxattr(gf, xattr_md5, md5_mds, &md5_size);
+	if (e != GFARM_ERR_NO_ERROR)
+		goto progress;
 	if (memcmp(md5, md5_mds, md5_size) != 0) {
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
 		fprintf(stderr, "%s: md5 digest differs: "
-		    "file %.32s mds %.32s\n", file, md5, (char *)md5_mds);
+		    "file %.32s mds %.*s\n", file, md5, (int)md5_size, md5_mds);
 	}
 progress:
+	gfs_pio_close(gf);
 	count += 1;
 	size += stp->st_size;
 	show_progress();
@@ -237,19 +234,15 @@ count_size(char *dir)
 static int
 is_gfarmroot(void)
 {
-	const int root_inum = 2, root_gen = 0, xmlmode = 0;
-	const char attr[] = "gfarm.ncopy";
+	const int root_inum = 2, root_gen = 0;
+	GFS_File gf;
 	gfarm_error_t e;
-	void *val;
-	size_t size;
 
-	e = gfm_client_getxattr_by_inode(gfm_server,
-	    xmlmode, root_inum, root_gen, attr, &val, &size);
+	e = gfs_pio_fhopen(root_inum, root_gen, GFARM_FILE_RDONLY, &gf);
 	if (e == GFARM_ERR_NO_ERROR) {
-		free(val);
+		gfs_pio_close(gf);
 		return (1);
-	} else if (e == GFARM_ERR_NOT_A_REGULAR_FILE ||
-		   e == GFARM_ERR_NO_SUCH_OBJECT)
+	} else if (e == GFARM_ERR_IS_A_DIRECTORY)
 		return (1);
 	return (0);
 }
