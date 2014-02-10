@@ -267,7 +267,7 @@ gfm_fhopen_fd(gfarm_ino_t inum, gfarm_uint64_t gen, int flags,
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_fhopen_result(gfm_server, &mode))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "fhopen result: %s",
+		gflog_debug(GFARM_MSG_UNFIXED, "fhopen result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_get_fd_result(gfm_server, &fd))
 	    != GFARM_ERR_NO_ERROR)
