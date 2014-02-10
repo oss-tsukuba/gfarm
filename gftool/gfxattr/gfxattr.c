@@ -26,33 +26,27 @@
 #define DEFAULT_ALLOC_SIZE (64 * 1024)
 
 static gfarm_error_t
-set_xattr(int xmlMode, int nofollow, char *path, char *xattrname,
-	char *filename, int flags)
+alloc_buf(const char *filename, char **bufp, size_t *szp)
 {
 	const size_t count = 65536;
 	ssize_t sz;
 	size_t buf_sz, msg_sz = 0;
 	char *buf = NULL, *tbuf;
-	gfarm_error_t e;
-	int fd, need_close = 0, save_errno;
+	int fd, save_errno;
 	int overflow;
 
 #ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
 	tbuf = NULL;
 #endif
-
 	if (filename != NULL) {
-		fd = open(filename, O_RDONLY);
-		need_close = 1;
+		if ((fd = open(filename, O_RDONLY)) == -1) {
+			save_errno = errno;
+			fprintf(stderr, "%s: %s\n", filename,
+			    strerror(save_errno));
+			return (gfarm_errno_to_error(save_errno));
+		}
 	} else
 		fd = STDIN_FILENO;
-	if (fd == -1) {
-		save_errno = errno;
-		if (filename != NULL)
-			fprintf(stderr, "%s: %s\n", filename,
-				strerror(save_errno));
-		return (gfarm_errno_to_error(save_errno));
-	}
 
 	buf_sz = count;
 	overflow = 0;
@@ -68,23 +62,59 @@ set_xattr(int xmlMode, int nofollow, char *path, char *xattrname,
 		if (!overflow)
 			tbuf = realloc(buf, buf_sz);
 		if (overflow || (tbuf == NULL)) {
-			e = GFARM_ERR_NO_MEMORY;
-			goto free_buf;
+			free(buf);
+			return (GFARM_ERR_NO_MEMORY);
 		}
 		buf = tbuf;
 	}
 	buf[msg_sz] = '\0';
-	if (need_close)
+	if (filename != NULL)
 		close(fd);
 
-	if (xmlMode) {
+	if (bufp != NULL)
+		*bufp = buf;
+	if (szp != NULL)
+		*szp = msg_sz;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+set_xattr(int xmlMode, int nofollow, char *path, char *xattrname,
+	char *filename, int flags)
+{
+	size_t msg_sz;
+	char *buf;
+	gfarm_error_t e;
+
+	e = alloc_buf(filename, &buf, &msg_sz);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (xmlMode)
 		e = (nofollow ? gfs_lsetxmlattr : gfs_setxmlattr)
 			(path, xattrname, buf, msg_sz + 1, flags);
-	} else {
+	else
 		e = (nofollow ? gfs_lsetxattr : gfs_setxattr)
 			(path, xattrname, buf, msg_sz, flags);
+	free(buf);
+	return (e);
+}
+
+static gfarm_error_t
+set_xattr_by_inode(gfarm_ino_t inum, gfarm_uint64_t gen,
+	char *xattrname, char *filename, int flags)
+{
+	size_t msg_sz;
+	char *buf;
+	gfarm_error_t e;
+	GFS_File gf;
+
+	if ((e = alloc_buf(filename, &buf, &msg_sz)) != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = gfs_pio_fhopen(inum, gen, GFARM_FILE_RDONLY, &gf);
+	if (e == GFARM_ERR_NO_ERROR) {
+		e = gfs_fsetxattr(gf, xattrname, buf, msg_sz, flags);
+		gfs_pio_close(gf);
 	}
-free_buf:
 	free(buf);
 	return (e);
 }
@@ -115,45 +145,90 @@ get_xattr_alloc(int xmlMode, int nofollow, char *path, char *xattrname,
 }
 
 static gfarm_error_t
+get_fxattr_alloc(GFS_File gf, char *xattrname, void **valuep, size_t *size)
+{
+	gfarm_error_t e;
+	void *value;
+
+	value = malloc(*size);
+	if (value == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	e = gfs_fgetxattr(gf, xattrname, value, size);
+	if (e == GFARM_ERR_NO_ERROR)
+		*valuep = value;
+	else
+		free(value);
+	return (e);
+}
+
+static gfarm_error_t
+write_buf(const char *filename, void *value, size_t size)
+{
+	FILE *f;
+	int save_errno;
+	size_t wsize;
+
+	if (filename != NULL) {
+		f = fopen(filename, "w");
+		if (f == NULL) {
+			save_errno = errno;
+			fprintf(stderr, "%s: %s\n", filename,
+				strerror(save_errno));
+			return (gfarm_errno_to_error(save_errno));
+		}
+	} else
+		f = stdout;
+
+	wsize = fwrite(value, 1, size, f);
+	if (wsize != size)
+		perror("fwrite");
+	fflush(f);
+	if (filename != NULL)
+		fclose(f);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 get_xattr(int xmlMode, int nofollow, char *path, char *xattrname,
 	char *filename)
 {
 	gfarm_error_t e;
-	FILE *f;
-	int need_close = 0, save_errno;
 	void *value = NULL;
-	size_t size, wsize;
+	size_t size;
 
 	size = DEFAULT_ALLOC_SIZE;
 	e = get_xattr_alloc(xmlMode, nofollow, path, xattrname, &value, &size);
-	if (e == GFARM_ERR_RESULT_OUT_OF_RANGE) {
+	if (e == GFARM_ERR_RESULT_OUT_OF_RANGE)
 		e = get_xattr_alloc(xmlMode, nofollow, path, xattrname, &value,
 			&size);
-	}
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	if (filename != NULL) {
-		f = fopen(filename, "w");
-		need_close = 1;
-	} else
-		f = stdout;
-	if (f == NULL) {
-		save_errno = errno;
-		free(value);
-		if (filename != NULL)
-			fprintf(stderr, "%s: %s\n", filename,
-				strerror(save_errno));
-		return (gfarm_errno_to_error(save_errno));
-	}
+	e = write_buf(filename, value, size);
+	free(value);
+	return (e);
+}
 
-	wsize = fwrite(value, 1, size, f);
-	if (wsize != size) {
-		perror("fwrite");
-	}
-	fflush(f);
-	if (need_close)
-		fclose(f);
+static gfarm_error_t
+get_xattr_by_inode(gfarm_ino_t inum, gfarm_uint64_t gen,
+	char *xattrname, char *filename)
+{
+	GFS_File gf;
+	void *value;
+	size_t size = DEFAULT_ALLOC_SIZE;
+	gfarm_error_t e;
+
+	e = gfs_pio_fhopen(inum, gen, GFARM_FILE_RDONLY, &gf);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = get_fxattr_alloc(gf, xattrname, &value, &size);
+	if (e == GFARM_ERR_RESULT_OUT_OF_RANGE)
+		e = get_fxattr_alloc(gf, xattrname, &value, &size);
+	gfs_pio_close(gf);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = write_buf(filename, value, size);
 	free(value);
 	return (e);
 }
@@ -169,6 +244,21 @@ remove_xattr(int xmlMode, int nofollow, char *path, char *xattrname)
 	} else {
 		e = (nofollow ? gfs_lremovexattr : gfs_removexattr)
 			(path, xattrname);
+	}
+	return (e);
+}
+
+static gfarm_error_t
+remove_xattr_by_inode(gfarm_ino_t inum, gfarm_uint64_t gen,
+	char *xattrname)
+{
+	gfarm_error_t e;
+	GFS_File gf;
+
+	e = gfs_pio_fhopen(inum, gen, GFARM_FILE_RDONLY, &gf);
+	if (e == GFARM_ERR_NO_ERROR) {
+		e = gfs_fremovexattr(gf, xattrname);
+		gfs_pio_close(gf);
 	}
 	return (e);
 }
@@ -232,6 +322,12 @@ usage(char *prog_name)
 #endif
 		" [ -c | -m ]"
 		" [ -f xattrfile ] [ -h ] file [xattrname]\n", prog_name);
+	fprintf(stderr, "       %s [ -s | -g | -r | -l ]"
+#ifdef ENABLE_XMLATTR
+		" [ -x ]"
+#endif
+		" [ -c | -m ] [ -G gen ]"
+		" [ -f xattrfile ] -I inum [xattrname]\n", prog_name);
 	fprintf(stderr, "\t-s\tset extended attribute\n");
 	fprintf(stderr, "\t-g\tget extended attribute\n");
 	fprintf(stderr, "\t-r\tremove extended attribute\n");
@@ -258,13 +354,19 @@ main(int argc, char *argv[])
 	char *prog_name = basename(argv[0]);
 	char *filename = NULL, *c_path, *c_realpath = NULL, *xattrname = NULL;
 	enum { NONE, SET_MODE, GET_MODE, REMOVE_MODE, LIST_MODE } mode = NONE;
+	enum { REGULAR, INUM } file_mode = REGULAR;
 	int c, xmlMode = 0, nofollow = 0, flags = 0;
+	gfarm_ino_t inum = 0;
+	gfarm_uint64_t gen = 0;
 	gfarm_error_t e;
-	const char *opts = "f:gsrlcmh?"
+	const char *opts = "f:G:gIsrlcmh?"
 #ifdef ENABLE_XMLATTR
 		"x"
 #endif
 		;
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	c_path = NULL;
+#endif
 
 	while ((c = getopt(argc, argv, opts)) != -1) {
 		switch (c) {
@@ -303,6 +405,12 @@ main(int argc, char *argv[])
 		case 'h':
 			nofollow = 1;
 			break;
+		case 'G':
+			gen = atoll(optarg);
+			break;
+		case 'I':
+			file_mode = INUM;
+			break;
 		case '?':
 		default:
 			usage(prog_name);
@@ -320,36 +428,52 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	e = gfarm_realpath_by_gfarm2fs(argv[0], &c_realpath);
-	if (e == GFARM_ERR_NO_ERROR)
-		c_path = c_realpath;
-	else
-		c_path = argv[0];
-	if (argc > 1) {
+	if (file_mode == REGULAR) {
+		e = gfarm_realpath_by_gfarm2fs(argv[0], &c_realpath);
+		if (e == GFARM_ERR_NO_ERROR)
+			c_path = c_realpath;
+		else
+			c_path = argv[0];
+	} else
+		inum = atoll(argv[0]);
+	if (argc > 1)
 		xattrname = argv[1];
-	}
 
 	switch (mode) {
 	case SET_MODE:
 		if (argc != 2)
 			usage(prog_name);
-		e = set_xattr(xmlMode, nofollow, c_path, xattrname, filename,
-			flags);
+		if (file_mode == REGULAR)
+			e = set_xattr(xmlMode, nofollow, c_path, xattrname,
+			    filename, flags);
+		else
+			e = set_xattr_by_inode(inum, gen, xattrname,
+			    filename, flags);
 		break;
 	case GET_MODE:
 		if (argc != 2)
 			usage(prog_name);
-		e = get_xattr(xmlMode, nofollow, c_path, xattrname, filename);
+		if (file_mode == REGULAR)
+			e = get_xattr(xmlMode, nofollow, c_path, xattrname,
+			    filename);
+		else
+			e = get_xattr_by_inode(inum, gen, xattrname, filename);
 		break;
 	case REMOVE_MODE:
 		if (argc != 2)
 			usage(prog_name);
-		e = remove_xattr(xmlMode, nofollow, c_path, xattrname);
+		if (file_mode == REGULAR)
+			e = remove_xattr(xmlMode, nofollow, c_path, xattrname);
+		else
+			e = remove_xattr_by_inode(inum, gen, xattrname);
 		break;
 	case LIST_MODE:
 		if (argc != 1)
 			usage(prog_name);
-		e = list_xattr(xmlMode, nofollow, c_path);
+		if (file_mode == REGULAR)
+			e = list_xattr(xmlMode, nofollow, c_path);
+		else
+			e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		break;
 	default:
 		usage(prog_name);
