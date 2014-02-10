@@ -13,7 +13,3 @@ gfarm_error_t gfm_server_listxattr(struct peer *, int, int, int);
 gfarm_error_t gfm_server_removexattr(struct peer *, int, int, int);
 
 gfarm_error_t gfm_server_findxmlattr(struct peer *, int, int);
-
-gfarm_error_t gfm_server_setxattr_by_inode(struct peer *peer, int, int, int);
-gfarm_error_t gfm_server_getxattr_by_inode(struct peer *peer, int, int, int);
-gfarm_error_t gfm_server_removexattr_by_inode(struct peer *peer, int, int, int);
