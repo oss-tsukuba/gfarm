@@ -229,6 +229,65 @@ gfm_open_fd(const char *path, int flags,
 		typep, NULL, NULL));
 }
 
+gfarm_error_t
+gfm_fhopen_fd(gfarm_ino_t inum, gfarm_uint64_t gen, int flags,
+      struct gfm_connection **gfm_serverp, int *fdp, int *typep)
+{
+	struct gfm_connection *gfm_server;
+	gfarm_error_t e;
+	gfarm_mode_t mode;
+	int fd;
+
+	if ((e = gfm_client_connection_and_process_acquire_by_path(
+		     GFARM_PATH_ROOT, &gfm_server)) != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED, "process_acquire: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+	if ((e = gfm_client_compound_begin_request(gfm_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "compound_begin request: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_fhopen_request(gfm_server, inum, gen, flags))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "fhopen request: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_get_fd_request(gfm_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "get_fd request: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_compound_end_request(gfm_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "compound_end request: %s",
+		    gfarm_error_string(e));
+
+	else if ((e = gfm_client_compound_begin_result(gfm_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "compound_begin result: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_fhopen_result(gfm_server, &mode))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "fhopen result: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_get_fd_result(gfm_server, &fd))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "get_fd result: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_compound_end_result(gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED, "compound_end result: %s",
+		    gfarm_error_string(e));
+	}
+	if (e == GFARM_ERR_NO_ERROR) {
+		*fdp = fd;
+		*typep = gfs_mode_to_type(mode);
+		*gfm_serverp = gfm_server;
+	} else
+		gfm_client_connection_free(gfm_server);
+
+	return (e);
+}
+
 static gfarm_error_t
 gfm_close_request(struct gfm_connection *gfm_server, void *closure)
 {

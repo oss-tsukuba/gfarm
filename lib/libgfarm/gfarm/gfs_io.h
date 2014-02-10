@@ -6,4 +6,6 @@ gfarm_error_t gfm_open_fd(const char *, int,
 	struct gfm_connection **, int *, int *);
 gfarm_error_t gfm_open_fd_with_ino(const char *, int,
 	struct gfm_connection **, int *, int *, char **, gfarm_ino_t *);
+gfarm_error_t gfm_fhopen_fd(gfarm_ino_t, gfarm_uint64_t, int,
+	struct gfm_connection **, int *, int *);
 gfarm_error_t gfm_close_fd(struct gfm_connection *, int);

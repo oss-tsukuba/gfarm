@@ -15,6 +15,7 @@ gfarm_error_t gfm_server_create(struct peer *, int, int);
 gfarm_error_t gfm_server_open(struct peer *, int, int);
 gfarm_error_t gfm_server_open_root(struct peer *, int, int);
 gfarm_error_t gfm_server_open_parent(struct peer *, int, int);
+gfarm_error_t gfm_server_fhopen(struct peer *, int, int);
 gfarm_error_t gfm_server_close(struct peer *, int, int);
 gfarm_error_t gfm_server_close_read(struct peer *, int, int);
 gfarm_error_t gfm_server_close_write(struct peer *, int, int);
