@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -25,8 +26,10 @@ char *progname = "gfspoolmd5";
 
 static struct gfm_connection *gfm_server;
 static long long total_count, total_size;
-static long long count, size;
+static long long count, size, start_count;
 static struct timeval stime;
+const char PROGRESS_FILE[] = ".md5.count";
+long long *progress_addr;
 
 /*
  * File format should be consistent with gfsd_local_path() in gfsd.c
@@ -182,28 +185,33 @@ check_file(char *file, struct stat *stp, void *arg)
 	if (get_inum_gen(file, &inum, &gen))
 		return (GFARM_ERR_INVALID_FILE_REPLICA);
 
+	if (count < start_count)
+		goto progress;
+
 	e = calc_md5(file, md5);
 	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
+		goto progress;
 	e = gfs_pio_fhopen(inum, gen, GFARM_FILE_RDONLY, &gf);
 	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
+		goto progress;
 	e = gfs_fsetxattr(gf, xattr_md5, md5, md5_size, GFS_XATTR_CREATE);
 	if (e == GFARM_ERR_NO_ERROR || e != GFARM_ERR_ALREADY_EXISTS)
-		goto progress;
+		goto close_progress;
 	e = gfs_fgetxattr(gf, xattr_md5, md5_mds, &md5_size);
 	if (e != GFARM_ERR_NO_ERROR)
-		goto progress;
+		goto close_progress;
 	if (memcmp(md5, md5_mds, md5_size) != 0) {
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
 		fprintf(stderr, "%s: md5 digest differs: "
 		    "file %.32s mds %.*s\n", file, md5, (int)md5_size, md5_mds);
 	}
-progress:
+close_progress:
 	gfs_pio_close(gf);
+progress:
 	count += 1;
 	size += stp->st_size;
 	show_progress();
+	*progress_addr = count;
 	return (e);
 }
 
@@ -244,6 +252,40 @@ is_gfarmroot(void)
 		return (1);
 	}
 	return (0);
+}
+
+static long long *
+mmap_progress_file(const char *file)
+{
+	int fd;
+	int size = sizeof(long long);
+	void *addr;
+
+	if ((fd = open(file, O_RDWR)) == -1) {
+		if ((fd = open(file, O_RDWR|O_CREAT|O_TRUNC, 0644)) == -1) {
+			fprintf(stderr, "%s: %s\n", file, strerror(errno));
+			exit(1);
+		}
+		if (ftruncate(fd, size) == -1) {
+			fprintf(stderr, "ftruncate: %s\n", strerror(errno));
+			exit(1);
+		}
+	}
+	if ((addr = mmap(NULL, 8, PROT_WRITE|PROT_READ, MAP_SHARED, fd, 0))
+	    == MAP_FAILED) {
+		fprintf(stderr, "mmap: %s\n", strerror(errno));
+		exit(1);
+	}
+	close(fd);
+	return (addr);
+}
+
+static int
+munmap_progress_file(void *addr)
+{
+	int size = sizeof(long long);
+
+	return (munmap(addr, size));
 }
 
 static void
@@ -309,6 +351,8 @@ main(int argc, char *argv[])
 		fprintf(stderr, "You are not gfarmroot\n");
 		exit(1);
 	}
+	progress_addr = mmap_progress_file(PROGRESS_FILE);
+	start_count = *progress_addr;
 	for (i = 0; i < argc; ++i)
 		count_size(argv[i]);
 	gettimeofday(&stime, NULL);
@@ -320,6 +364,7 @@ main(int argc, char *argv[])
 		check_spool(".");
 	}
 	puts("");
+	munmap_progress_file(progress_addr);
 
 	gfm_client_connection_free(gfm_server);
 	e = gfarm_terminate();
