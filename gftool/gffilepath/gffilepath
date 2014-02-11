@@ -9,26 +9,40 @@ usage()
 	exit 1
 }
 
+dirpath()
+{
+	inum=$1
+	if [ X"$inum" = X2 ]; then
+		fullpath="/$fullpath"
+		return
+	fi
+	pinum=`echo "select entryinumber from direntry where dirinumber = $inum and entryname = '..'" | config-gfarm-update -o '-tAF/' $options`
+	if [ X"$pinum" = X ]; then
+		echo >&2 "$pinum: no such object"
+	else
+		name=`echo "select entryname from direntry where dirinumber = $pinum and entryinumber = $inum" | config-gfarm-update -o '-tAF/' $options`
+		if [ X"$name" = X ]; then
+			echo >&2 "$name: no such object"
+		else
+			fullpath="$name/$fullpath"
+			dirpath $pinum
+		fi
+	fi
+}
+
 filepath()
 {
 	inum=$1
-	out=`echo "select inumber, igen, entryname from inode, direntry where inode.inumber = direntry.dirinumber and direntry.entryinumber = $inum" | config-gfarm-update -o '-tAF/' $options`
+	out=`echo "select dirinumber, entryname from direntry where entryinumber = $inum and entryname != '.' and entryname != '..'" | config-gfarm-update -o '-tAF/' $options`
 	if [ X"$out" = X ]; then
 		echo >&2 "$inum: no such object"
 	else
 		inum=`echo $out | awk -F/ '{ printf $1 }'`
-		gen=`echo $out | awk -F/ '{ printf $2 }'`
-		name=`echo $out | awk -F/ '{ printf $3 }'`
-
-		echo `gfdirpath $inum $gen`/$name
+		name=`echo $out | awk -F/ '{ printf $2 }'`
+		fullpath="$name"
+		dirpath $inum
 	fi
 }
-
-# is gfarmroot?
-if ! gfdirpath 2 0 >/dev/null 2>&1; then
-	echo >&2 "You are not gfarmroot"
-	exit 1
-fi
 
 while [ $# -gt 0 ]; do
 	case $1 in
@@ -46,5 +60,7 @@ done
 
 while [ $# -gt 0 ]; do
 	filepath $1
+	echo $fullpath
+	fullpath=
 	shift
 done
