@@ -38,6 +38,8 @@ SUBDIRS = \
 	gfrmdir \
 	gfsched \
 	gfsetfacl \
+	gfspoolgen \
+	gfspoolinum \
 	gfspoolmd5 \
 	gfspoolpath \
 	gfstat \
