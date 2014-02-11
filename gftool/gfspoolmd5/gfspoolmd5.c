@@ -27,7 +27,7 @@ char *progname = "gfspoolmd5";
 static struct gfm_connection *gfm_server;
 static long long total_count, total_size;
 static long long count, size, start_count;
-static struct timeval stime;
+static struct timeval itime, stime;
 const char PROGRESS_FILE[] = ".md5.count";
 long long *progress_addr;
 int mtime_day = -1;
@@ -60,7 +60,7 @@ get_inum_gen(const char *path, gfarm_ino_t *inump, gfarm_uint64_t *genp)
 static int
 mtime_filter(struct stat *stp)
 {
-	return (mtime_day < 0 || stime.tv_sec - stp->st_mtime < mtime_day);
+	return (mtime_day < 0 || itime.tv_sec - stp->st_mtime < mtime_day);
 }
 
 static gfarm_error_t
@@ -371,6 +371,7 @@ main(int argc, char *argv[])
 	}
 	progress_addr = mmap_progress_file(PROGRESS_FILE);
 	start_count = *progress_addr;
+	gettimeofday(&itime, NULL);
 	for (i = 0; i < argc; ++i)
 		count_size(argv[i]);
 	gettimeofday(&stime, NULL);
