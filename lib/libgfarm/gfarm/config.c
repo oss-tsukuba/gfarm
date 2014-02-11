@@ -2861,7 +2861,7 @@ parse_one_line(char *s, char *p, char **op)
 		if (e == GFARM_ERR_NO_ERROR)
 			gflog_set_message_verbose(staticp->log_message_verbose);
 	} else if (strcmp(s, o = "log_auth_verbose") == 0) {
-		int tmp;
+		int tmp = MISC_DEFAULT;
 		e = parse_set_misc_enabled(p, &tmp);
 		if (e == GFARM_ERR_NO_ERROR)
 			gflog_auth_set_verbose(tmp);
