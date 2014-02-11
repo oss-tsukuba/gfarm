@@ -30,6 +30,7 @@ static long long count, size, start_count;
 static struct timeval stime;
 const char PROGRESS_FILE[] = ".md5.count";
 long long *progress_addr;
+int mtime_day = -1;
 
 /*
  * File format should be consistent with gfsd_local_path() in gfsd.c
@@ -54,6 +55,12 @@ get_inum_gen(const char *path, gfarm_ino_t *inump, gfarm_uint64_t *genp)
 	*genp = gen;
 
 	return (0);
+}
+
+static int
+mtime_filter(struct stat *stp)
+{
+	return (mtime_day < 0 || stime.tv_sec - stp->st_mtime < mtime_day);
 }
 
 static gfarm_error_t
@@ -182,8 +189,10 @@ check_file(char *file, struct stat *stp, void *arg)
 	size_t md5_size = MD5_SIZE * 2;
 	char md5[MD5_SIZE * 2 + 1], md5_mds[MD5_SIZE * 2 + 1];
 
+	if (!mtime_filter(stp))
+		return (GFARM_ERR_NO_ERROR);
 	if (get_inum_gen(file, &inum, &gen))
-		return (GFARM_ERR_INVALID_FILE_REPLICA);
+		return (GFARM_ERR_NO_ERROR);
 
 	if (count < start_count) {
 		count += 1;
@@ -230,6 +239,14 @@ check_spool(char *dir)
 static gfarm_error_t
 file_size(char *file, struct stat *stp, void *arg)
 {
+	gfarm_ino_t inum;
+	gfarm_uint64_t gen;
+
+	if (!mtime_filter(stp))
+		return (GFARM_ERR_NO_ERROR);
+	if (get_inum_gen(file, &inum, &gen))
+		return (GFARM_ERR_NO_ERROR);
+
 	total_count += 1;
 	total_size += stp->st_size;
 	return (GFARM_ERR_NO_ERROR);
@@ -302,8 +319,8 @@ error_check(char *msg, gfarm_error_t e)
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s -r spool_root [ dir ... ] 2> log\n",
-	    progname);
+	fprintf(stderr, "Usage: %s [ -m mtime_day ] -r spool_root [ dir ... ] "
+	    "2> log\n", progname);
 	exit(2);
 }
 
@@ -317,8 +334,11 @@ main(int argc, char *argv[])
 	if (argc > 0)
 		progname = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "hr:?")) != -1) {
+	while ((c = getopt(argc, argv, "hm:r:?")) != -1) {
 		switch (c) {
+		case 'm':
+			mtime_day = atoi(optarg) * 3600 * 24;
+			break;
 		case 'r':
 			spool_root = optarg;
 			break;
