@@ -288,6 +288,9 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 	return (need_to_retry);
 }
 
+static gfarm_ino_t info_inum, info_table_size;
+static time_t info_time_start;
+
 static int
 replica_check_main()
 {
@@ -296,17 +299,23 @@ replica_check_main()
 	int need_to_retry = 0;
 
 	replica_check_giant_lock();
-	table_size = inode_table_current_size();
+	info_table_size = table_size = inode_table_current_size();
+	info_time_start = time(NULL);
 	replica_check_giant_unlock();
 
 	RC_LOG_INFO(GFARM_MSG_1003632, "replica_check: start");
 	for (inum = root_inum;;) {
+		replica_check_giant_lock();
+		info_inum = inum;
+		replica_check_giant_unlock();
+
 		if (replica_check_main_dir(inum, &count))
 			need_to_retry = 1;
 		inum++; /* a next directory */
 		if (inum >= table_size) {
 			replica_check_giant_lock();
-			table_size = inode_table_current_size();
+			info_table_size = table_size
+				= inode_table_current_size();
 			replica_check_giant_unlock();
 			if (inum >= table_size)
 				break;
@@ -314,7 +323,47 @@ replica_check_main()
 	}
 	RC_LOG_INFO(GFARM_MSG_1003633,
 	    "replica_check: finished, files=%llu", (unsigned long long)count);
+
+	replica_check_giant_lock();
+	info_time_start = 0;
+	replica_check_giant_unlock();
+
 	return (need_to_retry);
+}
+
+void
+replica_check_info()
+{
+	gfarm_ino_t inum, table_size;
+	time_t time_start, elapse;
+	float progress;
+	long long estimate;
+
+	replica_check_giant_lock();
+	table_size = info_table_size;
+	inum = info_inum;
+	time_start = info_time_start;
+	replica_check_giant_unlock();
+
+	if (!gfarm_replica_check) {
+		RC_LOG_INFO(GFARM_MSG_UNFIXED, "replica_check is disabled");
+		return;
+	}
+	if (time_start == 0 || table_size == 0) {
+		RC_LOG_INFO(GFARM_MSG_UNFIXED, "replica_check: standby");
+		return;
+	}
+
+	elapse = time(NULL) - time_start;
+	progress = (float)inum / (float)table_size;
+	/* elapse / estimate_all = progress */
+	estimate = (long long)((float)elapse / progress - (float)elapse);
+
+	RC_LOG_INFO(GFARM_MSG_UNFIXED,
+	    "replica_check: progress=%lld/%lld (%.2f%%),"
+	    " elapse:estimate=%lld:%lld sec.",
+	    (long long)inum, (long long)table_size, progress * 100,
+	    (long long)elapse, estimate);
 }
 
 #define REPLICA_CHECK_DIAG "replica_check"
