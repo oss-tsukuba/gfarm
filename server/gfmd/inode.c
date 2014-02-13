@@ -256,10 +256,8 @@ inode_cksum_clear(struct inode *inode)
 	assert(inode_is_file(inode));
 	if (ios != NULL && ios->u.f.cksum_owner != NULL)
 		ios->u.f.cksum_owner = NULL;
-	if (inode->u.c.s.f.cksum != NULL) {
-		free(inode->u.c.s.f.cksum);
-		inode->u.c.s.f.cksum = NULL;
-	}
+	free(inode->u.c.s.f.cksum);
+	inode->u.c.s.f.cksum = NULL;
 }
 
 void

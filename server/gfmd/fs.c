@@ -1505,9 +1505,8 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 		    cksum_type, cksum_len, cksum, flags, &mtime);
 		db_end(diag);
 	}
-
-	free(cksum_type);
 	giant_unlock();
+	free(cksum_type);
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 

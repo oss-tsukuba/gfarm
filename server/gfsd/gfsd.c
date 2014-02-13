@@ -57,6 +57,7 @@
 #include "hash.h"
 #include "nanosec.h"
 #include "timer.h"
+#include "md5.h"
 
 #include "gfp_xdr.h"
 #include "io_fd.h"
@@ -124,6 +125,7 @@ char *canonical_self_name;
 char *username; /* gfarm global user name */
 
 int gfarm_spool_root_len;
+int gfarm_spool_digest_enabled = 0;
 
 struct gfp_xdr *credential_exported = NULL;
 
@@ -775,7 +777,15 @@ struct file_entry {
 #define FILE_FLAG_WRITABLE	0x04
 #define FILE_FLAG_WRITTEN	0x08
 #define FILE_FLAG_READ		0x10
+#define FILE_FLAG_DIGEST	0x20
 	gfarm_uint64_t gen, new_gen;
+/*
+ * digest
+ */
+#define MD5_SIZE	16
+	md5_state_t md5_state;
+	off_t md5_offset;
+	char md5[MD5_SIZE * 2 + 1];
 /*
  * performance data (only available in profile mode)
  */
@@ -860,6 +870,12 @@ file_table_add(gfarm_int32_t net_fd, int local_fd, int flags, gfarm_ino_t ino,
 	fe->mtimensec = gfarm_stat_mtime_nsec(&st);
 	fe->size = st.st_size;
 	fe->gen = fe->new_gen = gen;
+
+	/* checksum */
+	if (gfarm_spool_digest_enabled)
+		fe->flags |= FILE_FLAG_DIGEST;
+	fe->md5_offset = 0;
+	md5_init(&fe->md5_state);
 
 	/* performance data (only available in profile mode) */
 	fe->start_time = *start;
@@ -955,6 +971,15 @@ file_table_set_flag(gfarm_int32_t net_fd, int flags)
 
 	if (fe != NULL)
 		fe->flags |= flags;
+}
+
+static void
+file_table_unset_flag(gfarm_int32_t net_fd, int flags)
+{
+	struct file_entry *fe = file_table_entry(net_fd);
+
+	if (fe != NULL)
+		fe->flags &= ~flags;
 }
 
 static void
@@ -1429,6 +1454,7 @@ gfs_server_open_local(struct gfp_xdr *client)
 		    "open_local: send_message: %s", strerror(rv));
 
 	file_table_set_flag(net_fd, FILE_FLAG_LOCAL);
+	file_table_unset_flag(net_fd, FILE_FLAG_DIGEST);
 }
 
 gfarm_error_t
@@ -1545,8 +1571,9 @@ void
 update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 {
 	struct stat st;
-	int stat_is_done = 0;
+	int stat_is_done = 0, i;
 	unsigned long atimensec, mtimensec;
+	md5_byte_t digest[MD5_SIZE];
 
 	if ((fe->flags & FILE_FLAG_LOCAL) == 0) { /* remote? */
 		;
@@ -1578,6 +1605,14 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 			    fd, strerror(errno));
 		else
 			fe->size = st.st_size;
+	}
+	if ((fe->flags & FILE_FLAG_DIGEST) != 0) {
+		if (fe->md5_offset == fe->size) {
+			md5_finish(&fe->md5_state, digest);
+			for (i = 0; i < MD5_SIZE; ++i)
+				sprintf(&fe->md5[2 * i], "%02x", digest[i]);
+		} else
+			fe->flags &= ~FILE_FLAG_DIGEST;
 	}
 }
 
@@ -1649,6 +1684,13 @@ close_fd(gfarm_int32_t fd, const char *diag)
 			gflog_error(GFARM_MSG_1002301,
 			    "%s generation_updated request: %s",
 			    diag, gfarm_error_string(e2));
+		else if ((fe->flags & FILE_FLAG_DIGEST) != 0 &&
+		    (e2 = gfm_client_cksum_set_request(gfm_server,
+		    gfarm_spool_digest, sizeof(fe->md5), fe->md5, 0, 0, 0))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s cksum_set request: %s",
+			    diag, gfarm_error_string(e2));
 		else if ((e2 = gfm_client_compound_put_fd_result(diag))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1003341,
@@ -1658,6 +1700,12 @@ close_fd(gfarm_int32_t fd, const char *diag)
 		    gfm_server)) != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1002302,
 			    "%s generation_updated result: %s", 
+			    diag, gfarm_error_string(e2));
+		else if ((fe->flags & FILE_FLAG_DIGEST) != 0 &&
+		    (e2 = gfm_client_cksum_set_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s cksum_set result: %s",
 			    diag, gfarm_error_string(e2));
 		else if ((e2 = gfm_client_compound_end(diag))
 		    != GFARM_ERR_NO_ERROR)
@@ -1835,14 +1883,7 @@ gfs_server_pread(struct gfp_xdr *client)
 	/* We truncatef i/o size bigger than GFS_PROTO_MAX_IOSIZE. */
 	if (size > GFS_PROTO_MAX_IOSIZE)
 		size = GFS_PROTO_MAX_IOSIZE;
-#if 0 /* XXX FIXME: pread(2) on NetBSD-3.0_BETA is broken */
 	if ((rv = pread(file_table_get(fd), buffer, size, offset)) == -1)
-#else
-	rv = 0;
-	if (lseek(file_table_get(fd), offset, SEEK_SET) == -1)
-		save_errno = errno;
-	else if ((rv = read(file_table_get(fd), buffer, size)) == -1)
-#endif
 		save_errno = errno;
 	else
 		file_table_set_read(fd);
@@ -1871,15 +1912,19 @@ gfs_server_pwrite(struct gfp_xdr *client)
 	gfarm_int32_t fd;
 	size_t size;
 	gfarm_int64_t offset;
-	ssize_t rv;
+	ssize_t rv = 0;
 	int save_errno = 0;
-	char buffer[GFS_PROTO_MAX_IOSIZE];
+	unsigned char buffer[GFS_PROTO_MAX_IOSIZE];
 	struct file_entry *fe;
 	gfarm_timerval_t t1, t2;
 
 	gfs_server_get_request(client, "pwrite", "ibl",
 	    &fd, sizeof(buffer), &size, buffer, &offset);
 
+	if ((fe = file_table_entry(fd)) == NULL) {
+		save_errno = EBADF;
+		goto reply;
+	}
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 	/*
@@ -1889,31 +1934,29 @@ gfs_server_pwrite(struct gfp_xdr *client)
 	 */
 	if (size > GFS_PROTO_MAX_IOSIZE)
 		size = GFS_PROTO_MAX_IOSIZE;
-#if 0 /* XXX FIXME: pwrite(2) on NetBSD-3.0_BETA is broken */
 	if ((rv = pwrite(file_table_get(fd), buffer, size, offset)) == -1)
-#else
-	rv = 0;
-	if (lseek(file_table_get(fd), offset, SEEK_SET) == -1)
 		save_errno = errno;
-	else if ((rv = write(file_table_get(fd), buffer, size)) == -1)
-#endif
-		save_errno = errno;
-	else
+	else {
 		file_table_set_written(fd);
-
+		/* update checksum */
+		if ((fe->flags & FILE_FLAG_DIGEST) != 0) {
+			if (fe->md5_offset == offset) {
+				md5_append(&fe->md5_state, buffer, size);
+				fe->md5_offset += rv;
+			} else
+				fe->flags &= ~FILE_FLAG_DIGEST;
+		}
+	}
 	if (rv > 0) {
 		gfarm_iostat_local_add(GFARM_IOSTAT_IO_WCOUNT, 1);
 		gfarm_iostat_local_add(GFARM_IOSTAT_IO_WBYTES, rv);
 	}
 	gfs_profile(
 		gfarm_gettimerval(&t2);
-		fe = file_table_entry(fd);
-		if (fe != NULL) {
-			fe->nwrite++;
-			fe->write_size += rv;
-			fe->write_time += gfarm_timerval_sub(&t2, &t1);
-		});
-
+		fe->nwrite++;
+		fe->write_size += rv;
+		fe->write_time += gfarm_timerval_sub(&t2, &t1));
+reply:
 	gfs_server_put_reply_with_errno(client, "pwrite", save_errno,
 	    "i", (gfarm_int32_t)rv);
 }
@@ -4521,7 +4564,15 @@ main(int argc, char **argv)
 	argv += optind;
 
 	gfarm_spool_root_len = strlen(gfarm_spool_root);
-
+	if (gfarm_spool_digest != NULL) {
+		if (strcmp(gfarm_spool_digest, "md5") == 0)
+			gfarm_spool_digest_enabled = 1;
+		else {
+			fprintf(stderr, "unsupported digest: %s\n",
+			    gfarm_spool_digest);
+			exit(1);
+		}
+	}
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);
 

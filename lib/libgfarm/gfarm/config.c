@@ -783,6 +783,7 @@ static enum gfarm_spool_check_level gfarm_spool_check_level =
 static const char *gfarm_spool_check_level_name = NULL;
 #define GFARM_SPOOL_BASE_LOAD_DEFAULT	0.0F
 float gfarm_spool_base_load = MISC_DEFAULT;
+char *gfarm_spool_digest = NULL;
 
 /* GFM dependent */
 char *gfarm_metadb_server_name = NULL;
@@ -2611,6 +2612,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_spool_check_level(p);
 	} else if (strcmp(s, o = "spool_base_load") == 0) {
 		e = parse_set_misc_float(p, &gfarm_spool_base_load);
+	} else if (strcmp(s, o = "spool_digest") == 0) {
+		e = parse_set_var(p, &gfarm_spool_digest);
 
 	} else if (strcmp(s, o = "metadb_server_host") == 0) {
 		e = parse_set_var(p, &gfarm_metadb_server_name);

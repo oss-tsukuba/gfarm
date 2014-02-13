@@ -1023,11 +1023,6 @@ process_cksum_set(struct process *process, struct peer *peer, int fd,
 			"inode is not file");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
-	if (fo->u.f.spool_opener != peer) {
-		gflog_debug(GFARM_MSG_1001646,
-			"operation is not permitted");
-		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	}
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) == 0) {
 		gflog_debug(GFARM_MSG_1001647,
 			"bad file descriptor");
