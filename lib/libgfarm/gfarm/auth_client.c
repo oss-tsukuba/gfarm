@@ -241,9 +241,17 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 		gflog_debug(GFARM_MSG_1001039,
 			"Authentication token expired");
 		return (GFARM_ERR_EXPIRED);
+	case GFARM_AUTH_ERROR_TEMPORARY_FAILURE:
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_auth_request_sharedsecre: temporary failure");
+		/*
+		 * an error which satisfies IS_CONNECTION_ERROR(),
+		 * to make the caller retry
+		 */
+		return (GFARM_ERR_CONNECTION_ABORTED);
 	default:
-		gflog_debug(GFARM_MSG_1001040,
-			"Authentication failed");
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "Authentication failed: %d", (int)error);
 		return (GFARM_ERR_AUTHENTICATION);
 	}
 }
@@ -446,10 +454,21 @@ gfarm_auth_request_sharedsecret_receive_fin(int events, int fd,
 			gflog_debug(GFARM_MSG_1001056,
 				"Authentication token expired");
 			break;
+		case GFARM_AUTH_ERROR_TEMPORARY_FAILURE:
+			/*
+			 * an error which satisfies IS_CONNECTION_ERROR(),
+			 * to make the caller retry
+			 */
+			state->error = GFARM_ERR_CONNECTION_ABORTED;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfarm_auth_request_sharedsecret_multiplexed: "
+			    "temporary failure");
+			break;
 		default:
 			state->error = GFARM_ERR_AUTHENTICATION;
-			gflog_debug(GFARM_MSG_1001057,
-				"Authentication failed");
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "Authentication failed: %d",
+			    (int)state->proto_error);
 			break;
 		}
 	}
