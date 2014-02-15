@@ -1941,7 +1941,7 @@ gfs_server_pwrite(struct gfp_xdr *client)
 		/* update checksum */
 		if ((fe->flags & FILE_FLAG_DIGEST) != 0) {
 			if (fe->md5_offset == offset) {
-				md5_append(&fe->md5_state, buffer, size);
+				md5_append(&fe->md5_state, buffer, rv);
 				fe->md5_offset += rv;
 			} else
 				fe->flags &= ~FILE_FLAG_DIGEST;
