@@ -777,7 +777,8 @@ struct file_entry {
 #define FILE_FLAG_WRITABLE	0x04
 #define FILE_FLAG_WRITTEN	0x08
 #define FILE_FLAG_READ		0x10
-#define FILE_FLAG_DIGEST	0x20
+#define FILE_FLAG_DIGEST_CALC	0x20
+#define FILE_FLAG_DIGEST_AVAIL	0x40
 	gfarm_uint64_t gen, new_gen;
 /*
  * digest
@@ -786,6 +787,7 @@ struct file_entry {
 	md5_state_t md5_state;
 	off_t md5_offset;
 	char md5[MD5_SIZE * 2 + 1];
+	size_t md5_len;
 /*
  * performance data (only available in profile mode)
  */
@@ -845,13 +847,15 @@ file_table_is_available(gfarm_int32_t net_fd)
 
 void
 file_table_add(gfarm_int32_t net_fd, int local_fd, int flags, gfarm_ino_t ino,
-	gfarm_uint64_t gen, struct timeval *start)
+	gfarm_uint64_t gen, char *cksum_type, size_t cksum_len, char *cksum,
+	int cksum_flags, struct timeval *start)
 {
 	struct file_entry *fe;
 	struct stat st;
+	static const char diag[] = "file_table_add";
 
 	if (fstat(local_fd, &st) < 0)
-		fatal_errno(GFARM_MSG_1000463, "file_table_add: fstat failed");
+		fatal_errno(GFARM_MSG_1000463, "%s: fstat failed", diag);
 	fe = &file_table[net_fd];
 	fe->local_fd = local_fd;
 	fe->flags = 0;
@@ -872,11 +876,26 @@ file_table_add(gfarm_int32_t net_fd, int local_fd, int flags, gfarm_ino_t ino,
 	fe->gen = fe->new_gen = gen;
 
 	/* checksum */
-	if (gfarm_spool_digest_enabled)
-		fe->flags |= FILE_FLAG_DIGEST;
-	fe->md5_offset = 0;
-	md5_init(&fe->md5_state);
-
+	if (gfarm_spool_digest_enabled) {
+		fe->flags |= FILE_FLAG_DIGEST_CALC;
+		if (cksum_type == NULL || cksum_len == 0)
+			;
+		else if (strcmp(cksum_type, "md5") == 0) {
+			if (cksum_flags != 0)
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "%lld:%lld checksum may be expired",
+				    (long long)fe->ino, (long long)fe->gen);
+			else {
+				fe->flags |= FILE_FLAG_DIGEST_AVAIL;
+				memcpy(fe->md5, cksum, cksum_len);
+				fe->md5_len = cksum_len;
+			}
+		} else
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s: %s: unsupported digest", diag, cksum_type);
+		fe->md5_offset = 0;
+		md5_init(&fe->md5_state);
+	}
 	/* performance data (only available in profile mode) */
 	fe->start_time = *start;
 	fe->nwrite = fe-> nread = 0;
@@ -1233,14 +1252,17 @@ gfm_client_compound_end(const char *diag)
 
 static gfarm_error_t
 gfs_server_reopen(char *diag, gfarm_int32_t net_fd, char **pathp, int *flagsp,
-	gfarm_ino_t *inop, gfarm_uint64_t *genp)
+	gfarm_ino_t *inop, gfarm_uint64_t *genp, char **cksum_typep,
+	size_t *cksum_lenp, char cksum[], int *cksum_flagsp)
 {
 	gfarm_error_t e;
 	gfarm_ino_t ino;
 	gfarm_uint64_t gen;
 	gfarm_int32_t mode, net_flags, to_create;
 	char *path;
-	int local_flags;
+	int local_flags, cksum_flags;
+	char *cksum_type, tmp_cksum[GFM_PROTO_CKSUM_MAXLEN];
+	size_t cksum_len;
 
 	if ((e = gfm_client_compound_put_fd_request(net_fd, diag))
 	    != GFARM_ERR_NO_ERROR)
@@ -1250,6 +1272,12 @@ gfs_server_reopen(char *diag, gfarm_int32_t net_fd, char **pathp, int *flagsp,
 	    != GFARM_ERR_NO_ERROR)
 		fatal_metadb_proto(GFARM_MSG_1000472,
 		    "reopen request", diag, e);
+	else if (gfarm_spool_digest_enabled &&
+	    (e = gfm_client_cksum_get_request(gfm_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s cksum_get request: %s",
+		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_compound_put_fd_result(diag))
 	    != GFARM_ERR_NO_ERROR)
 		fatal_metadb_proto(GFARM_MSG_1003332,
@@ -1261,7 +1289,14 @@ gfs_server_reopen(char *diag, gfarm_int32_t net_fd, char **pathp, int *flagsp,
 			gflog_info(GFARM_MSG_1000476,
 			    "reopen(%s) result: %s", diag,
 			    gfarm_error_string(e));
-	} else if ((e = gfm_client_compound_end(diag))
+	} else if (gfarm_spool_digest_enabled &&
+	    (e = gfm_client_cksum_get_result(gfm_server, &cksum_type,
+	     sizeof tmp_cksum, &cksum_len, tmp_cksum, &cksum_flags))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s cksum_get result: %s",
+		    diag, gfarm_error_string(e));
+	else if ((e = gfm_client_compound_end(diag))
 	    != GFARM_ERR_NO_ERROR) {
 		fatal_metadb_proto(GFARM_MSG_1003333,
 		    "compound_end", diag, e);
@@ -1281,6 +1316,12 @@ gfs_server_reopen(char *diag, gfarm_int32_t net_fd, char **pathp, int *flagsp,
 		*flagsp = local_flags;
 		*inop = ino;
 		*genp = gen;
+		if (gfarm_spool_digest_enabled) {
+			*cksum_typep = cksum_type;
+			*cksum_lenp = cksum_len;
+			memcpy(cksum, tmp_cksum, cksum_len);
+			*cksum_flagsp = cksum_flags;
+		}
 	}
 	return (e);
 }
@@ -1313,6 +1354,9 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 	gfarm_ino_t ino = 0;
 	gfarm_uint64_t gen = 0;
 	int net_fd, local_fd, save_errno, local_flags = 0;
+	char *cksum_type = NULL, cksum[GFM_PROTO_CKSUM_MAXLEN];
+	size_t cksum_len = 0;
+	int cksum_flags = 0;
 	struct timeval start;
 
 	gettimeofday(&start, NULL);
@@ -1326,7 +1370,8 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 	} else {
 		for (;;) {
 			if ((e = gfs_server_reopen(diag, net_fd,
-			    &path, &local_flags, &ino, &gen)) !=
+			    &path, &local_flags, &ino, &gen,
+			    &cksum_type, &cksum_len, cksum, &cksum_flags)) !=
 			    GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1002172,
 					"gfs_server_reopen() failed: %s",
@@ -1338,11 +1383,14 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 			free(path);
 			if (local_fd >= 0) {
 				file_table_add(net_fd, local_fd, local_flags,
-				    ino, gen, &start);
+				    ino, gen, cksum_type, cksum_len, cksum,
+				    cksum_flags, &start);
+				free(cksum_type);
 				*net_fdp = net_fd;
 				*local_fdp = local_fd;
 				break;
 			}
+			free(cksum_type);
 
 			if ((e = gfm_client_compound_put_fd_request(net_fd,
 			   diag)) != GFARM_ERR_NO_ERROR)
@@ -1454,7 +1502,7 @@ gfs_server_open_local(struct gfp_xdr *client)
 		    "open_local: send_message: %s", strerror(rv));
 
 	file_table_set_flag(net_fd, FILE_FLAG_LOCAL);
-	file_table_unset_flag(net_fd, FILE_FLAG_DIGEST);
+	file_table_unset_flag(net_fd, FILE_FLAG_DIGEST_CALC);
 }
 
 gfarm_error_t
@@ -1574,6 +1622,7 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 	int stat_is_done = 0, i;
 	unsigned long atimensec, mtimensec;
 	md5_byte_t digest[MD5_SIZE];
+	char md5[MD5_SIZE * 2 + 1];
 
 	if ((fe->flags & FILE_FLAG_LOCAL) == 0) { /* remote? */
 		;
@@ -1606,13 +1655,22 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 		else
 			fe->size = st.st_size;
 	}
-	if ((fe->flags & FILE_FLAG_DIGEST) != 0) {
+	if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0) {
 		if (fe->md5_offset == fe->size) {
 			md5_finish(&fe->md5_state, digest);
 			for (i = 0; i < MD5_SIZE; ++i)
-				sprintf(&fe->md5[2 * i], "%02x", digest[i]);
+				sprintf(&md5[2 * i], "%02x", digest[i]);
+			if ((fe->flags & FILE_FLAG_WRITTEN) != 0)
+				memcpy(fe->md5, md5, MD5_SIZE * 2 + 1);
+			else if ((fe->flags & FILE_FLAG_DIGEST_AVAIL) != 0) {
+				if (memcmp(md5, fe->md5, fe->md5_len) != 0)
+					gflog_error(GFARM_MSG_UNFIXED,
+					    "%lld:%lld checksum mismatch",
+					    (long long)fe->ino,
+					    (long long)fe->gen);
+			}
 		} else
-			fe->flags &= ~FILE_FLAG_DIGEST;
+			fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 	}
 }
 
@@ -1684,7 +1742,7 @@ close_fd(gfarm_int32_t fd, const char *diag)
 			gflog_error(GFARM_MSG_1002301,
 			    "%s generation_updated request: %s",
 			    diag, gfarm_error_string(e2));
-		else if ((fe->flags & FILE_FLAG_DIGEST) != 0 &&
+		else if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0 &&
 		    (e2 = gfm_client_cksum_set_request(gfm_server,
 		    gfarm_spool_digest, sizeof(fe->md5), fe->md5, 0, 0, 0))
 		    != GFARM_ERR_NO_ERROR)
@@ -1701,7 +1759,7 @@ close_fd(gfarm_int32_t fd, const char *diag)
 			gflog_error(GFARM_MSG_1002302,
 			    "%s generation_updated result: %s", 
 			    diag, gfarm_error_string(e2));
-		else if ((fe->flags & FILE_FLAG_DIGEST) != 0 &&
+		else if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0 &&
 		    (e2 = gfm_client_cksum_set_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_UNFIXED,
@@ -1869,14 +1927,18 @@ gfs_server_pread(struct gfp_xdr *client)
 {
 	gfarm_int32_t fd, size;
 	gfarm_int64_t offset;
-	ssize_t rv;
+	ssize_t rv = 0;
 	int save_errno = 0;
-	char buffer[GFS_PROTO_MAX_IOSIZE];
+	unsigned char buffer[GFS_PROTO_MAX_IOSIZE];
 	struct file_entry *fe;
 	gfarm_timerval_t t1, t2;
 
 	gfs_server_get_request(client, "pread", "iil", &fd, &size, &offset);
 
+	if ((fe = file_table_entry(fd)) == NULL) {
+		save_errno = EBADF;
+		goto reply;
+	}
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
@@ -1885,23 +1947,27 @@ gfs_server_pread(struct gfp_xdr *client)
 		size = GFS_PROTO_MAX_IOSIZE;
 	if ((rv = pread(file_table_get(fd), buffer, size, offset)) == -1)
 		save_errno = errno;
-	else
+	else {
 		file_table_set_read(fd);
-
+		/* update checksum */
+		if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0) {
+			if (fe->md5_offset == offset) {
+				md5_append(&fe->md5_state, buffer, rv);
+				fe->md5_offset += rv;
+			} else
+				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
+		}
+	}
 	if (rv > 0) {
 		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RCOUNT, 1);
 		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RBYTES, rv);
 	}
-
 	gfs_profile(
 		gfarm_gettimerval(&t2);
-		fe = file_table_entry(fd);
-		if (fe != NULL) {
-			fe->nread++;
-			fe->read_size += rv;
-			fe->read_time += gfarm_timerval_sub(&t2, &t1);
-		});
-
+		fe->nread++;
+		fe->read_size += rv;
+		fe->read_time += gfarm_timerval_sub(&t2, &t1));
+reply:
 	gfs_server_put_reply_with_errno(client, "pread", save_errno,
 	    "b", rv, buffer);
 }
@@ -1939,12 +2005,12 @@ gfs_server_pwrite(struct gfp_xdr *client)
 	else {
 		file_table_set_written(fd);
 		/* update checksum */
-		if ((fe->flags & FILE_FLAG_DIGEST) != 0) {
+		if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0) {
 			if (fe->md5_offset == offset) {
 				md5_append(&fe->md5_state, buffer, rv);
 				fe->md5_offset += rv;
 			} else
-				fe->flags &= ~FILE_FLAG_DIGEST;
+				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 		}
 	}
 	if (rv > 0) {

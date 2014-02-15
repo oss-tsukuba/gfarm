@@ -1421,6 +1421,7 @@ gfm_server_cksum_get(struct peer *peer, int from_client, int skip)
 		cksum_len = 0;
 		cksumbuf = "";
 	} else if ((cksum_type = strdup_log(cksum_type, diag)) == NULL) {
+		free(cksum_type);
 		e = GFARM_ERR_NO_MEMORY;
 	} else {
 		GFARM_MALLOC_ARRAY(cksumbuf, cksum_len);
@@ -1438,7 +1439,7 @@ gfm_server_cksum_get(struct peer *peer, int from_client, int skip)
 
 	giant_unlock();
 	e2 = gfm_server_put_reply(peer, diag, e, "sbi",
-	    cksum_type, cksum_len, cksumbuf,  flags);
+	    cksum_type, cksum_len, cksumbuf, flags);
 	if (alloced) {
 		free(cksum_type);
 		free(cksumbuf);
