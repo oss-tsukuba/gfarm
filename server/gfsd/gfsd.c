@@ -3669,6 +3669,12 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 			cleanup(0);
 			exit(1);
 		}
+		if (!gfm_client_connection_empty(gfm_server)) {
+			gflog_warning(GFARM_MSG_UNFIXED, "protocol mismatch, "
+			    "iobufer not empty: request = %d", request);
+			cleanup(0);
+			exit(1);
+		}
 		if (gfm_client_is_connection_error(
 		    gfp_xdr_flush(gfm_client_connection_conn(gfm_server)))) {
 			free_gfm_server();
