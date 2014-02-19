@@ -882,7 +882,7 @@ file_table_add(gfarm_int32_t net_fd, int local_fd, int flags, gfarm_ino_t ino,
 			;
 		else if (strcmp(cksum_type, "md5") == 0) {
 			if (cksum_flags != 0)
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_UNFIXED,
 				    "%lld:%lld checksum may be expired",
 				    (long long)fe->ino, (long long)fe->gen);
 			else {
@@ -1615,7 +1615,31 @@ fhclose_result(struct file_entry *fe, gfarm_uint64_t *cookie_p,
 	}
 }
 
-void
+static gfarm_error_t
+md5(int fd, char md5[MD5_SIZE * 2 + 1])
+{
+#define bufsize	65536
+	md5_state_t state;
+	md5_byte_t digest[MD5_SIZE], buf[bufsize];
+	int di, sz;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	if (lseek(fd, 0, SEEK_SET) == -1)
+		return (gfarm_errno_to_error(errno));
+	md5_init(&state);
+	while ((sz = read(fd, buf, sizeof buf)) > 0)
+		md5_append(&state, buf, sz);
+	if (sz == -1)
+		e = gfarm_errno_to_error(errno);
+	else {
+		md5_finish(&state, digest);
+		for (di = 0; di < MD5_SIZE; ++di)
+			sprintf(&md5[di * 2], "%02x", digest[di]);
+	}
+	return (e);
+}
+
+static gfarm_error_t
 update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 {
 	struct stat st;
@@ -1623,10 +1647,12 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 	unsigned long atimensec, mtimensec;
 	md5_byte_t digest[MD5_SIZE];
 	char md5[MD5_SIZE * 2 + 1];
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
 	if ((fe->flags & FILE_FLAG_LOCAL) == 0) { /* remote? */
 		;
 	} else if (fstat(fe->local_fd, &st) == -1) {
+		e = gfarm_errno_to_error(errno);
 		gflog_warning(GFARM_MSG_1000484,
 		    "fd %d: stat failed at close: %s",
 		    fd, strerror(errno));
@@ -1648,11 +1674,12 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 		}
 	}
 	if ((fe->flags & FILE_FLAG_WRITTEN) != 0 && !stat_is_done) {
-		if (fstat(fe->local_fd, &st) == -1)
+		if (fstat(fe->local_fd, &st) == -1) {
+			e = gfarm_errno_to_error(errno);
 			gflog_warning(GFARM_MSG_1000485,
 			    "fd %d: stat failed at close: %s",
 			    fd, strerror(errno));
-		else
+		} else
 			fe->size = st.st_size;
 	}
 	if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0) {
@@ -1663,21 +1690,25 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 			if ((fe->flags & FILE_FLAG_WRITTEN) != 0)
 				memcpy(fe->md5, md5, MD5_SIZE * 2 + 1);
 			else if ((fe->flags & FILE_FLAG_DIGEST_AVAIL) != 0) {
-				if (memcmp(md5, fe->md5, fe->md5_len) != 0)
+				if (memcmp(md5, fe->md5, fe->md5_len) != 0) {
+					e = GFARM_ERR_CHECKSUM_MISMATCH;
 					gflog_error(GFARM_MSG_UNFIXED,
-					    "%lld:%lld checksum mismatch",
+					    "%lld:%lld: %s",
 					    (long long)fe->ino,
-					    (long long)fe->gen);
+					    (long long)fe->gen,
+					    gfarm_error_string(e));
+				}
 			}
 		} else
 			fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 	}
+	return (e);
 }
 
 gfarm_error_t
 close_fd(gfarm_int32_t fd, const char *diag)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e, e2, e3;
 	struct file_entry *fe;
 	gfarm_int32_t gen_update_result = -1;
 
@@ -1687,7 +1718,7 @@ close_fd(gfarm_int32_t fd, const char *diag)
 			"bad file descriptor");
 		return (e);
 	}
-	update_file_entry_for_close(fd, fe);
+	e3 = update_file_entry_for_close(fd, fe);
 
 	if ((e = gfm_client_compound_put_fd_request(fd, diag))
 	    != GFARM_ERR_NO_ERROR)
@@ -1772,7 +1803,8 @@ close_fd(gfarm_int32_t fd, const char *diag)
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
 	}
-
+	if (e == GFARM_ERR_NO_ERROR)
+		e = e3;
 	return (e);
 }
 
@@ -1863,7 +1895,7 @@ close_fd_somehow(gfarm_int32_t fd, const char *diag)
 	else
 		e = GFARM_ERR_NO_ERROR;
 
-	if (e == GFARM_ERR_NO_ERROR)
+	if (e == GFARM_ERR_NO_ERROR || e == GFARM_ERR_CHECKSUM_MISMATCH)
 		; /*FALLTHROUGH*/
 	else if (e == GFARM_ERR_BAD_FILE_DESCRIPTOR)
 		return (e);
@@ -2150,6 +2182,29 @@ gfs_server_fstat(struct gfp_xdr *client)
 
 	gfs_server_put_reply_with_errno(client, "fstat", save_errno,
 	    "llili", size, atime_sec, atime_nsec, mtime_sec, mtime_nsec);
+}
+
+void
+gfs_server_cksum(struct gfp_xdr *client)
+{
+	gfarm_int32_t fd;
+	struct file_entry *fe;
+	char *type = NULL, cksum[MD5_SIZE * 2 + 1];
+	size_t len;
+	gfarm_error_t e;
+
+	gfs_server_get_request(client, "cksum", "is", &fd, &type);
+
+	if ((fe = file_table_entry(fd)) == NULL)
+		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
+	else if (strcmp(type, "md5") != 0)
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+	else {
+		e = md5(file_table_get(fd), cksum);
+		len = sizeof cksum;
+	}
+	free(type);
+	gfs_server_put_reply(client, "cksum", e, "b", len, cksum);
 }
 
 void
@@ -3707,6 +3762,9 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		case GFS_PROTO_FTRUNCATE: gfs_server_ftruncate(client); break;
 		case GFS_PROTO_FSYNC:	gfs_server_fsync(client); break;
 		case GFS_PROTO_FSTAT:	gfs_server_fstat(client); break;
+		case GFS_PROTO_CKSUM:
+			gfs_server_cksum(client);
+			break;
 		case GFS_PROTO_CKSUM_SET: gfs_server_cksum_set(client); break;
 		case GFS_PROTO_STATFS:	gfs_server_statfs(client); break;
 #if 0 /* not yet in gfarm v2 */

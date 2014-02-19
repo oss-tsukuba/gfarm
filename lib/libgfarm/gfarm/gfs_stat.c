@@ -1,17 +1,22 @@
 #include <stddef.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <stdlib.h>
+#include <openssl/evp.h>
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
+#include "queue.h"
 #include "timer.h"
 
 #include "gfs_profile.h"
+#include "gfm_proto.h"
 #include "gfm_client.h"
 #include "config.h"
 #include "lookup.h"
+#include "gfs_pio.h"
 #include "gfs_misc.h"
 
 static double gfs_stat_time;
@@ -145,6 +150,93 @@ gfs_fstat(GFS_File gf, struct gfs_stat *s)
 	}
 
 	return (e);
+}
+
+struct gfm_stat_cksum_closure {
+	struct gfs_stat_cksum *st;
+};
+
+static gfarm_error_t
+gfm_stat_cksum_request(struct gfm_connection *gfm_server, void *closure)
+{
+	gfarm_error_t e = gfm_client_cksum_get_request(gfm_server);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "cksum_get request: %s", gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_stat_cksum_result(struct gfm_connection *gfm_server, void *closure)
+{
+	struct gfm_stat_cksum_closure *c = closure;
+	struct gfs_stat_cksum *st = c->st;
+	size_t size;
+	gfarm_error_t e;
+
+	st->cksum = malloc(GFM_PROTO_CKSUM_MAXLEN);
+	if (st->cksum == NULL)
+		size = 0;
+	else
+		size = GFM_PROTO_CKSUM_MAXLEN;
+	e = gfm_client_cksum_get_result(gfm_server,
+		&st->type, size, &st->len, st->cksum, &st->flags);
+#if 0 /* DEBUG */
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "cksum_get result; %s", gfarm_error_string(e));
+#endif
+	return (e);
+}
+
+gfarm_error_t
+gfs_stat_cksum(const char *path, struct gfs_stat_cksum *s)
+{
+	struct gfm_stat_cksum_closure closure;
+	gfarm_error_t e;
+
+	closure.st = s;
+	e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	    gfm_stat_cksum_request,
+	    gfm_stat_cksum_result,
+	    gfm_inode_success_op_connection_free,
+	    NULL,
+	    &closure);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_stat_cksum(%s): %s", path, gfarm_error_string(e));
+
+	return (e);
+}
+
+gfarm_error_t
+gfs_fstat_cksum(GFS_File gf, struct gfs_stat_cksum *s)
+{
+	struct gfm_stat_cksum_closure closure;
+	gfarm_error_t e;
+
+	closure.st = s;
+	e = gfm_client_compound_fd_op(gfs_pio_metadb(gf), gfs_pio_fileno(gf),
+	    gfm_stat_cksum_request,
+	    gfm_stat_cksum_result,
+	    NULL,
+	    &closure);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED, "gfm_fstat_cksum(%s): %s",
+		    gfs_pio_url(gf), gfarm_error_string(e));
+
+	return (e);
+}
+
+gfarm_error_t
+gfs_stat_cksum_free(struct gfs_stat_cksum *s)
+{
+	if (s != NULL) {
+		free(s->type);
+		free(s->cksum);
+	}
+	return (GFARM_ERR_NO_ERROR);
 }
 
 void

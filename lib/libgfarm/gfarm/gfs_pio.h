@@ -26,6 +26,8 @@ struct gfs_pio_ops {
 	gfarm_error_t (*view_reopen)(GFS_File);
 	gfarm_error_t (*view_write)(GFS_File,
 		const char *, size_t, size_t *, gfarm_off_t *, gfarm_off_t *);
+	gfarm_error_t (*view_cksum)(GFS_File,
+		const char *, struct gfs_stat_cksum *);
 };
 
 struct gfm_connection;
@@ -97,6 +99,8 @@ struct gfs_storage_ops {
 	gfarm_error_t (*storage_reopen)(GFS_File);
 	gfarm_error_t (*storage_write)(GFS_File,
 		const char *, size_t, size_t *, gfarm_off_t *, gfarm_off_t *);
+	gfarm_error_t (*storage_cksum)(GFS_File,
+		const char *, char *, size_t, size_t *);
 };
 
 #define GFS_DEFAULT_DIGEST_NAME	"md5"
