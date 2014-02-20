@@ -684,7 +684,7 @@ gfm_server_replica_check_ctrl(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	gfarm_int32_t ctrl;
-	struct user *user = peer_get_user(peer);
+	struct user *user;
 	static const char diag[] = "GFM_PROTO_REPLICA_CHECK_CTRL";
 
 	e = gfm_server_get_request(peer, diag, "i", &ctrl);
@@ -694,7 +694,8 @@ gfm_server_replica_check_ctrl(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_ERROR);
 
 	giant_lock();
-	if (!from_client || user == NULL || !user_is_admin(user)) {
+	if (!from_client || (user = peer_get_user(peer)) == NULL ||
+	    !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_UNFIXED, "%s", gfarm_error_string(e));
 	} else {
