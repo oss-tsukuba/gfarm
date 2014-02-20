@@ -31,6 +31,8 @@ struct gfarm_auth_common_gsi_static {
 	int gsi_initialized;
 	int gsi_server_initialized;
 	gss_cred_id_t delegated_cred;
+	pthread_cond_t gsi_server_init_count_cond;
+	int gsi_server_init_count;
 
 	/* gfarm_gsi_client_cred_name() */
 	pthread_mutex_t client_cred_init_mutex;
@@ -42,18 +44,21 @@ gfarm_error_t
 gfarm_auth_common_gsi_static_init(struct gfarm_context *ctxp)
 {
 	struct gfarm_auth_common_gsi_static *s;
+	static const char diag[] = "gfarm_auth_common_gsi_static_init";
 
 	GFARM_MALLOC(s);
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	gfarm_mutex_init(&s->gsi_init_mutex,
-	    "gfarm_host_static_init", "gsi_initialize");
+	gfarm_mutex_init(&s->gsi_init_mutex, diag, "gsi_initialize");
 	s->gsi_initialized = 0;
 	s->gsi_server_initialized = 0;
+	gfarm_cond_init(&s->gsi_server_init_count_cond,
+	    diag, "gsi_server_init_count");
+	s->gsi_server_init_count = 0;
 	s->delegated_cred = GSS_C_NO_CREDENTIAL;
 	gfarm_mutex_init(&s->client_cred_init_mutex,
-	    "gfarm_host_static_init", "client_cred_initialize");
+	    diag, "client_cred_initialize");
 	s->client_cred_initialized = 0;
 	s->client_dn = NULL;
 
@@ -65,14 +70,16 @@ void
 gfarm_auth_common_gsi_static_term(struct gfarm_context *ctxp)
 {
 	struct gfarm_auth_common_gsi_static *s = ctxp->auth_common_gsi_static;
+	static const char diag[] = "gfarm_auth_common_gsi_static_term";
 
 	if (s == NULL)
 		return;
 
-	gfarm_mutex_destroy(&s->gsi_init_mutex,
-	    "gfarm_host_static_term", "gsi_initialize");
+	gfarm_mutex_destroy(&s->gsi_init_mutex, diag, "gsi_initialize");
+	gfarm_cond_destroy(&s->gsi_server_init_count_cond,
+	    diag, "gsi_server_init_count");
 	gfarm_mutex_destroy(&s->client_cred_init_mutex,
-	    "gfarm_host_static_term", "client_cred_initialize");
+	    diag, "client_cred_initialize");
 	free(s->client_dn);
 	free(s);
 }
@@ -201,12 +208,46 @@ gfarm_gsi_server_finalize_unlocked(void)
 	staticp->gsi_server_initialized = 0;
 }
 
+static void
+gsi_server_init_count_add(int i, const char *diag)
+{
+	static const char name[] = "init_count";
+
+	gfarm_gsi_initialize_mutex_lock(diag);
+	staticp->gsi_server_init_count += i;
+	gfarm_cond_signal(&staticp->gsi_server_init_count_cond, diag, name);
+	gfarm_gsi_initialize_mutex_unlock(diag);
+}
+
+void
+gfarm_gsi_server_init_count_increment(void)
+{
+	static const char diag[] = "gsi_server_init_count_increment";
+
+	gsi_server_init_count_add(1, diag);
+}
+
+void
+gfarm_gsi_server_init_count_decrement(void)
+{
+	static const char diag[] = "gsi_server_init_count_decrement";
+
+	gsi_server_init_count_add(-1, diag);
+}
+
 void
 gfarm_gsi_server_finalize(void)
 {
 	static const char diag[] = "gfarm_gsi_server_finalize";
+	static const char name[] = "init_count";
 
 	gfarm_gsi_initialize_mutex_lock(diag);
+	while (staticp->gsi_server_init_count > 0) {
+		gflog_info(GFARM_MSG_UNFIXED, "%s: wait (%d)", diag,
+		    staticp->gsi_server_init_count);
+		gfarm_cond_wait(&staticp->gsi_server_init_count_cond,
+		    &staticp->gsi_init_mutex, diag, name);
+	}
 	if (staticp->gsi_initialized && staticp->gsi_server_initialized)
 		gfarm_gsi_server_finalize_unlocked();
 	gfarm_gsi_initialize_mutex_unlock(diag);

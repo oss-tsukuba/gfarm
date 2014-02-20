@@ -301,14 +301,13 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	    enum gfarm_auth_method, const char *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
-	static const char diag[] = "gfarm_authorize_gsi_common";
 	gfarm_error_t e;
 
-	gfarm_gsi_initialize_mutex_lock(diag);
+	gfarm_gsi_server_init_count_increment();
 	e = gfarm_authorize_gsi_common_unlocked(conn, switch_to,
 	    service_tag, hostname, auth_method, auth_uid_to_global_user,
 	    closure, peer_typep, global_usernamep);
-	gfarm_gsi_initialize_mutex_unlock(diag);
+	gfarm_gsi_server_init_count_decrement();
 	return (e);
 }
 
