@@ -35,6 +35,7 @@ SUBDIRS = \
 	gfquota \
 	gfreg \
 	gfrep \
+	gfrepcheck \
 	gfrm \
 	gfrmdir \
 	gfsched \

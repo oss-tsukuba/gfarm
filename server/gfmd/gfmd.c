@@ -431,6 +431,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_REPLICATE_FILE_FROM_TO:
 		e = gfm_server_replicate_file_from_to(peer, from_client, skip);
 		break;
+	case GFM_PROTO_REPLICA_CHECK_CTRL:
+		e = gfm_server_replica_check_ctrl(peer, from_client, skip);
+		break;
 	case GFM_PROTO_REPLICA_ADDING:
 		e = gfm_server_replica_adding(peer, from_client, skip,
 		    suspendedp);

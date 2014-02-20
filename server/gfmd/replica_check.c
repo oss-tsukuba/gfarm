@@ -23,7 +23,11 @@
 #include "thrsubr.h"
 
 #include "config.h"
+#include "auth.h"
+#include "gfm_proto.h"
 
+#include "rpcsubr.h"
+#include "peer.h"
 #include "gfmd.h"
 #include "inode.h"
 #include "dead_file_copy.h"
@@ -556,9 +560,6 @@ replica_check_wait()
 static void
 replica_check_signal_general(const char *diag, long sec)
 {
-	if (!gfarm_replica_check)
-		return;
-
 	gfarm_mutex_lock(&replica_check_mutex, diag, REPLICA_CHECK_DIAG);
 	if (replica_check_initialized) {
 #ifdef DEBUG_REPLICA_CHECK
@@ -625,6 +626,83 @@ replica_check_signal_rep_result_failed()
 	replica_check_signal_general(diag, 0);
 }
 
+static pthread_mutex_t replica_check_status_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t replica_check_status_cond = PTHREAD_COND_INITIALIZER;
+static int replica_check_status = GFM_PROTO_REPLICA_CHECK_CTRL_STOP;
+
+static void
+replica_check_set_status(int status)
+{
+	static const char diag[] = "replica_check_set_status";
+	static const char name[] = "status";
+
+	gfarm_mutex_lock(&replica_check_status_mutex, diag, name);
+	replica_check_status = status;
+	gfarm_cond_signal(&replica_check_status_cond, diag, name);
+	gfarm_mutex_unlock(&replica_check_status_mutex, diag, name);
+}
+
+void
+replica_check_set_status_start()
+{
+	replica_check_set_status(GFM_PROTO_REPLICA_CHECK_CTRL_START);
+}
+
+void
+replica_check_set_status_stop()
+{
+	replica_check_set_status(GFM_PROTO_REPLICA_CHECK_CTRL_STOP);
+}
+
+static void
+check_status()
+{
+	static const char diag[] = "check_status", name[] = "status";
+
+	gfarm_mutex_lock(&replica_check_status_mutex, diag, name);
+	while (replica_check_status == GFM_PROTO_REPLICA_CHECK_CTRL_STOP) {
+		gflog_info(GFARM_MSG_UNFIXED, "replica_check: stopped");
+		gfarm_cond_wait(&replica_check_status_cond,
+		    &replica_check_status_mutex, diag, name);
+	}
+	gfarm_mutex_unlock(&replica_check_status_mutex, diag, name);
+}
+
+gfarm_error_t
+gfm_server_replica_check_ctrl(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_int32_t ctrl;
+	struct user *user;
+	static const char diag[] = "GFM_PROTO_REPLICA_CHECK_CTRL";
+
+	e = gfm_server_get_request(peer, diag, "i", &ctrl);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	giant_lock();
+	if (!from_client || (user = peer_get_user(peer)) == NULL ||
+	    !user_is_admin(user)) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s", gfarm_error_string(e));
+	} else {
+		switch (ctrl) {
+		case GFM_PROTO_REPLICA_CHECK_CTRL_START:
+		case GFM_PROTO_REPLICA_CHECK_CTRL_STOP:
+			replica_check_set_status(ctrl);
+			break;
+		default:
+			e = GFARM_ERR_INVALID_ARGUMENT;
+			gflog_debug(GFARM_MSG_UNFIXED, "%s: %d",
+			    gfarm_error_string(e), ctrl);
+		}
+	}
+	giant_unlock();
+	return (gfm_server_put_reply(peer, diag, e, ""));
+}
+
 /* workaround for #406 - obsolete replicas remain existing */
 #define DFC_SCAN_INTERVAL 21600 /* 6 hours */
 
@@ -634,9 +712,7 @@ replica_check_thread(void *arg)
 	int wait_time;
 	time_t dfc_scan_time;
 
-	if (!replica_check_stack_init())
-		return (NULL);
-	if (!replica_check_targets_init())
+	if (!replica_check_stack_init() || !replica_check_targets_init())
 		return (NULL);
 
 	if (gfarm_replica_check_sleep_time > 0)
@@ -657,10 +733,12 @@ replica_check_thread(void *arg)
 		time_t t = time(NULL) + gfarm_replica_check_minimum_interval;
 
 		replica_check_wait();
-
+		/* if the status is stop, wait here */
+		check_status();
 		if (replica_check_main()) /* error occured, retry */
 			replica_check_targets_add(wait_time);
 
+		/* call dead_file_copy_scan_deferred_all */
 		if (time(NULL) >= dfc_scan_time) {
 			replica_check_giant_lock();
 			dead_file_copy_scan_deferred_all();
@@ -672,7 +750,6 @@ replica_check_thread(void *arg)
 			    "replica_check: dead_file_copy_scan_deferred_all,"
 			    " next=%ld", (long)dfc_scan_time);
 		}
-
 		t = t - time(NULL);
 		if (t > 0)
 			gfarm_sleep(t);
@@ -683,14 +760,10 @@ replica_check_thread(void *arg)
 void
 replica_check_start()
 {
-	static int started = 0;
+	if (gfarm_replica_check)
+		replica_check_set_status_start();
+	else
+		replica_check_set_status_stop();
 
-	if (!gfarm_replica_check) {
-		gflog_notice(GFARM_MSG_1003642, "replica_check is disabled");
-		return;
-	}
-	if (started)
-		return;
-	started = 1;
 	create_detached_thread(replica_check_thread, NULL);
 }
