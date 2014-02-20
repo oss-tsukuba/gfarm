@@ -73,11 +73,6 @@ void gfarm_gsi_server_finalize(void);
 gfarm_error_t gfarm_gsi_client_initialize(void);
 void gfarm_gsi_client_finalize(void);
 
-/* only for auth_server_gsi.c */
-void gfarm_gsi_initialize_mutex_lock(const char *);
-void gfarm_gsi_initialize_mutex_unlock(const char *);
-gfarm_error_t gfarm_gsi_server_initialize_unlocked(void);
-
 #define GFARM_IS_AUTH_GSI(auth) \
 	(((auth) == GFARM_AUTH_METHOD_GSI) || \
 	 ((auth) == GFARM_AUTH_METHOD_GSI_AUTH))

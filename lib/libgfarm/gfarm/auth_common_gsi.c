@@ -154,12 +154,49 @@ gfarm_gsi_server_finalize_unlocked(void)
 	gsi_server_initialized = 0;
 }
 
+static pthread_cond_t gsi_server_init_count_cond = PTHREAD_COND_INITIALIZER;
+static int gsi_server_init_count = 0;
+
+static void
+gsi_server_init_count_add(int i, const char *diag)
+{
+	static const char name[] = "init_count";
+
+	gfarm_gsi_initialize_mutex_lock(diag);
+	gsi_server_init_count += i;
+	gfarm_cond_signal(&gsi_server_init_count_cond, diag, name);
+	gfarm_gsi_initialize_mutex_unlock(diag);
+}
+
+void
+gfarm_gsi_server_init_count_increment(void)
+{
+	static const char diag[] = "gsi_server_init_count_increment";
+
+	gsi_server_init_count_add(1, diag);
+}
+
+void
+gfarm_gsi_server_init_count_decrement(void)
+{
+	static const char diag[] = "gsi_server_init_count_decrement";
+
+	gsi_server_init_count_add(-1, diag);
+}
+
 void
 gfarm_gsi_server_finalize(void)
 {
 	static const char diag[] = "gfarm_gsi_server_finalize";
+	static const char name[] = "init_count";
 
 	gfarm_gsi_initialize_mutex_lock(diag);
+	while (gsi_server_init_count > 0) {
+		gflog_info(GFARM_MSG_UNFIXED, "%s: wait (%d)", diag,
+		    gsi_server_init_count);
+		gfarm_cond_wait(&gsi_server_init_count_cond,
+		    &gsi_initialize_mutex, diag, name);
+	}
 	if (gsi_initialized && gsi_server_initialized)
 		gfarm_gsi_server_finalize_unlocked();
 	gfarm_gsi_initialize_mutex_unlock(diag);
