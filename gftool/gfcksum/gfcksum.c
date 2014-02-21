@@ -40,7 +40,7 @@ display_cksum(char *p, struct gfs_stat_cksum *c)
 	if (c == NULL || c->len == 0)
 		printf("%s: no checksum\n", b);
 	else
-		printf("%.*s (%s) %d %s\n", c->len, c->cksum, c->type,
+		printf("%.*s (%s) %d %s\n", (int)c->len, c->cksum, c->type,
 		    c->flags, b);
 }
 
