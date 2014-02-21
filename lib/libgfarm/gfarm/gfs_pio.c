@@ -873,8 +873,14 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 static gfarm_error_t
 sync_internal(GFS_File gf, int operation, double *time)
 {
-	gfarm_error_t e;
+	gfarm_error_t e = gfs_pio_check_view_default(gf);
 	gfarm_timerval_t t1, t2;
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_pio_cksum: %s", gfarm_error_string(e));
+		return (e);
+	}
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
@@ -1444,8 +1450,13 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
 gfarm_error_t
 gfs_pio_stat(GFS_File gf, struct gfs_stat *st)
 {
-	gfarm_error_t e;
+	gfarm_error_t e = gfs_pio_check_view_default(gf);
 
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_pio_stat: %s", gfarm_error_string(e));
+		return (e);
+	}
 	e = gfs_fstat(gf, st);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001344,
