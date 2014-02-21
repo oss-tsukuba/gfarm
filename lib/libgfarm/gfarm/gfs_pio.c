@@ -878,7 +878,8 @@ sync_internal(GFS_File gf, int operation, double *time)
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "gfs_pio_cksum: %s", gfarm_error_string(e));
+		    "gfs_pio_check_view_default() failed: %s",
+		    gfarm_error_string(e));
 		return (e);
 	}
 
