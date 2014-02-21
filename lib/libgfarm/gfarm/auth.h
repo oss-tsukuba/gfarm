@@ -78,10 +78,6 @@ void gfarm_gsi_client_finalize(void);
 	(((auth) == GFARM_AUTH_METHOD_GSI) || \
 	 ((auth) == GFARM_AUTH_METHOD_GSI_AUTH))
 
-/* privilege mutex */
-void gfarm_auth_privilege_lock(const char *);
-void gfarm_auth_privilege_unlock(const char *);
-
 /* auth_client */
 
 struct gfp_xdr;

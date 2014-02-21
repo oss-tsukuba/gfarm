@@ -22,6 +22,7 @@ SRCS =	alloc.c \
 	logutil.c \
 	lru_cache.c \
 	nanosec.c \
+	privlock.c \
 	random.c \
 	send_no_sigpipe.c \
 	sleep.c \
@@ -43,6 +44,7 @@ OBJS =	alloc.lo \
 	logutil.lo \
 	lru_cache.lo \
 	nanosec.lo \
+	privlock.lo \
 	random.lo \
 	send_no_sigpipe.lo \
 	sleep.lo \

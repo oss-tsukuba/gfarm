@@ -36,8 +36,6 @@
 #define staticp	(gfarm_ctxp->auth_common_static)
 
 struct gfarm_auth_common_static {
-	pthread_mutex_t privilege_mutex;
-
 	/* gfarm_auth_sharedsecret_response_data() */
 	pthread_mutex_t openssl_mutex;
 };
@@ -51,8 +49,6 @@ gfarm_auth_common_static_init(struct gfarm_context *ctxp)
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	gfarm_mutex_init(&s->privilege_mutex,
-	    "gfarm_auth_common_static_init", "privilege mutex");
 	gfarm_mutex_init(&s->openssl_mutex,
 	    "gfarm_auth_common_static_init", "openssl mutex");
 
@@ -68,8 +64,6 @@ gfarm_auth_common_static_term(struct gfarm_context *ctxp)
 	if (s == NULL)
 		return;
 
-	gfarm_mutex_destroy(&s->privilege_mutex,
-	    "gfarm_auth_common_static_term", "privilege mutex");
 	gfarm_mutex_destroy(&s->openssl_mutex,
 	    "gfarm_auth_common_static_term", "openssl mutex");
 	free(s);
@@ -163,26 +157,6 @@ gfarm_auth_random(void *buffer, size_t length)
 	}
 }
 
-static const char privilege_diag[] = "privilege_mutex";
-
-/*
- * Lock mutex for setuid(), setegid().
- */
-void
-gfarm_auth_privilege_lock(const char *diag)
-{
-	gfarm_mutex_lock(&staticp->privilege_mutex, diag, privilege_diag);
-}
-
-/*
- * Unlock mutex for setuid(), setegid().
- */
-void
-gfarm_auth_privilege_unlock(const char *diag)
-{
-	gfarm_mutex_unlock(&staticp->privilege_mutex, diag, privilege_diag);
-}
-
 /*
  * We switch the user's privilege to read ~/.gfarm_shared_key.
  *
@@ -227,7 +201,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 		allocbuf = keyfilename;
 	}
 	if (pwd != NULL) {
-		gfarm_auth_privilege_lock(diag);
+		gfarm_privilege_lock(diag);
 		o_gid = getegid();
 		o_uid = geteuid();
 		if (seteuid(0) == 0) /* recover root privilege */
@@ -331,7 +305,7 @@ finish:
 		if (seteuid(o_uid) == -1 && is_root)
 			gflog_error_errno(GFARM_MSG_1002345,
 			    "seteuid(%d)", (int)o_uid);
-		gfarm_auth_privilege_unlock(diag);
+		gfarm_privilege_unlock(diag);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001024,

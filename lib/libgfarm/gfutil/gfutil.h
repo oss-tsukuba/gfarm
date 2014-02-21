@@ -29,6 +29,11 @@ enum gflog_fatal_actions {
 void gflog_set_fatal_action(int);
 int gflog_fatal_action_name_to_number(const char *);
 
+/* privlock */
+
+void gfarm_privilege_lock(const char *);
+void gfarm_privilege_unlock(const char *);
+
 /* random */
 
 long gfarm_random(void);

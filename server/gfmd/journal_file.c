@@ -37,6 +37,7 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gflog.h>
 
+#include "gfutil.h"
 #include "queue.h"
 
 #include "crc32.h"
@@ -1299,10 +1300,10 @@ journal_file_open(const char *path, size_t max_size,
 		return (e);
 	}
 	memset(jf, 0, sizeof(*jf));
-	gfarm_auth_privilege_lock(diag);
+	gfarm_privilege_lock(diag);
 	rv = stat(path, &st);
 	save_errno = errno;
-	gfarm_auth_privilege_unlock(diag);
+	gfarm_privilege_unlock(diag);
 	if (rv == -1) {
 		if (save_errno != ENOENT) {
 			e = gfarm_errno_to_error(save_errno);
@@ -1318,10 +1319,10 @@ journal_file_open(const char *path, size_t max_size,
 			gflog_warning(GFARM_MSG_1002893,
 			    "invalid journal file size : %lu",
 			    (unsigned long)cur_size);
-			gfarm_auth_privilege_lock(diag);
+			gfarm_privilege_lock(diag);
 			rv = unlink(path);
 			save_errno = errno;
-			gfarm_auth_privilege_unlock(diag);
+			gfarm_privilege_unlock(diag);
 			if (rv == -1) {
 				e = gfarm_errno_to_error(save_errno);
 				gflog_warning(GFARM_MSG_1002894,
@@ -1354,10 +1355,10 @@ journal_file_open(const char *path, size_t max_size,
 		cur_size : max_size;
 
 	if ((flags & GFARM_JOURNAL_RDWR) != 0) {
-		gfarm_auth_privilege_lock(diag);
+		gfarm_privilege_lock(diag);
 		wfd = open(path, O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR);
 		save_errno = errno;
-		gfarm_auth_privilege_unlock(diag);
+		gfarm_privilege_unlock(diag);
 		if (wfd < 0) {
 			e = gfarm_errno_to_error(save_errno);
 			gflog_error(GFARM_MSG_1002897,
@@ -1367,10 +1368,10 @@ journal_file_open(const char *path, size_t max_size,
 		}
 		fsync(wfd);
 	}
-	gfarm_auth_privilege_lock(diag);
+	gfarm_privilege_lock(diag);
 	rfd = open(path, O_RDONLY);
 	save_errno = errno;
-	gfarm_auth_privilege_unlock(diag);
+	gfarm_privilege_unlock(diag);
 	if (rfd < 0) {
 		e = gfarm_errno_to_error(save_errno);
 		gflog_error(GFARM_MSG_1002898,
@@ -1473,10 +1474,10 @@ journal_file_reader_reopen_if_needed(struct journal_file *jf,
 
 	/* *readerp is invalidated or non-initialized */
 
-	gfarm_auth_privilege_lock(diag);
+	gfarm_privilege_lock(diag);
 	fd = open(jf->path, O_RDONLY);
 	save_errno = errno;
-	gfarm_auth_privilege_unlock(diag);
+	gfarm_privilege_unlock(diag);
 	if (fd == -1) {
 		e = gfarm_errno_to_error(errno);
 		gflog_debug(GFARM_MSG_1003422,
