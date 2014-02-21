@@ -15,7 +15,7 @@ usage() {
 spoolpath_to_inum()
 {
 	file=$1
-	inumgen=`echo $file | sed 's/.*data//' | sed 's|/||g'`
+	inumgen=`echo $file | sed 's/.*lost+found//;s/.*data//;s|/||g'`
 	[ $? -ne 0 ] && return
 	inum_hex=`echo $inumgen | sed 's/^\(.\{16\}\).*$/\1/'`
 	[ $? -ne 0 ] && return
