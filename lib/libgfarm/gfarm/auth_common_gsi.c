@@ -210,28 +210,9 @@ gfarm_gsi_server_initialize_unlocked(void)
 	int rv;
 
 	if (gsi_initialized) {
-		if (gsi_server_initialized) {
-			/*
-			 * check whether the initial acceptor
-			 * credential is valid or not.  Unfortunately,
-			 * this check cannot be used for the
-			 * expiration of CA and CRL.
-			 */
-			if (gfarmSecSessionAcceptorCredIsValid(
-				&e_major, &e_minor)) {
-				/* already initialized */
-				return (GFARM_ERR_NO_ERROR);
-			}
-			if (gflog_auth_get_verbose() &&
-				e_major != GSS_S_COMPLETE) {
-				gflog_info(GFARM_MSG_1002722,
-				    "initial acceptor certificate is not valid "
-				    "because of:");
-				gfarmGssPrintMajorStatus(e_major);
-				gfarmGssPrintMinorStatus(e_minor);
-			}
-			gfarm_gsi_server_finalize_unlocked();
-		} else
+		if (gsi_server_initialized)
+			return (GFARM_ERR_NO_ERROR);
+		else
 			gfarm_gsi_client_finalize_unlocked();
 	}
 
