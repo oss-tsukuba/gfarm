@@ -204,7 +204,11 @@ gfarmAuthInitialize(char *usermapFile)
 	    usermapFile = mapFile;
 	    (void)free(confDir);
 	}
-	if ((mFd = fopen(usermapFile, "r")) == NULL) {
+
+	gfarm_privilege_lock(diag);
+	mFd = fopen(usermapFile, "r");
+	gfarm_privilege_unlock(diag);
+	if (mFd == NULL) {
 	    gflog_auth_error(GFARM_MSG_1000646, "%s: cannot open: %s",
 		usermapFile, strerror(errno));
 	    ret = -1;

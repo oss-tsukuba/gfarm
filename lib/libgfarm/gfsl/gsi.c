@@ -303,11 +303,24 @@ gfarmGssNewCredentialName(gss_name_t *outputNamePtr, gss_cred_id_t cred,
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
+    static const char diag[] = "gfarmGssNewCredentialName";
 
+    /*
+     * gss_inquire_cred() may call gss_acquire_cred() internally
+     *
+     * NOTE: this code may be called from a client,
+     * and that means we access a static variable (i.e. privilege_lock mutex)
+     * instead of a per-kernel-module variable (i.e. gfarm_ctxp->...).
+     * But that's OK, because the in-kernel implementation doesn't support GSI
+     * for now, and libgfarm/gfsl/ itself has lots of such static variables.
+     */
+    gfarm_privilege_lock(diag);
     majStat = gss_inquire_cred(&minStat, cred, outputNamePtr,
 			       NULL,	/* lifetime */
 			       NULL,	/* usage */
 			       NULL	/* supported mech */);
+    gfarm_privilege_unlock(diag);
+
     if (majStatPtr != NULL) {
 	*majStatPtr = majStat;
     }
@@ -370,9 +383,11 @@ gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
     OM_uint32 minStat = 0;
     int ret = -1;
     gss_cred_id_t cred;
+    static const char diag[] = "gfarmGssAcquireCredential";
     
     *credPtr = GSS_C_NO_CREDENTIAL;
 
+    gfarm_privilege_lock(diag);
     majStat = gss_acquire_cred(&minStat,
 			       desiredName,
 			       GSS_C_INDEFINITE,
@@ -381,8 +396,12 @@ gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
 			       &cred,
 			       NULL,
 			       NULL);
-#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
-    if (majStat != GSS_S_COMPLETE) {
+#if !GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+    gfarm_privilege_unlock(diag);
+#else
+    if (majStat == GSS_S_COMPLETE) {
+	gfarm_privilege_unlock(diag);
+    } else {
 	OM_uint32 majStat2, majStat3;
 	OM_uint32 minStat2, minStat3;
 
@@ -399,6 +418,8 @@ gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
 				    &cred,
 				    NULL,
 				    NULL);
+	gfarm_privilege_unlock(diag);
+
 	if (majStat2 == GSS_S_COMPLETE) {
 	    gss_name_t credName;
 
@@ -586,6 +607,9 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 	}
 
 	gfarm_mutex_lock(&gss_mutex, diag, gssDiag);
+
+	/* gss_accept_sec_context() may call gss_acquire_cred() internally */
+	gfarm_privilege_lock(diag);
 	majStat = gss_accept_sec_context(&minStat,
 					 scPtr,
 					 cred,
@@ -597,6 +621,7 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 					 &retFlag,
 					 &timeRet,
 					 &remCred);
+	gfarm_privilege_unlock(diag);
 
 	gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
 	if (itPtr->length > 0)
@@ -691,6 +716,14 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 
     while (1) {
 	gfarm_mutex_lock(&gss_mutex, diag, gssDiag);
+
+	/*
+	 * gss_init_sec_context() may call gss_acquire_cred() internally
+	 *
+	 * NOTE: this code may be called from a client,
+	 * see the comment in gfarmGssNewCredentialName() about this issue.
+	 */
+	gfarm_privilege_lock(diag);
 	majStat = gss_init_sec_context(&minStat,
 				       cred,
 				       scPtr,
@@ -704,6 +737,8 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 				       otPtr,
 				       &retFlag,
 				       &timeRet);
+	gfarm_privilege_unlock(diag);
+
 	gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
 	
 	if (itPtr->length > 0)
@@ -1016,8 +1051,15 @@ gfarmGssExportCredential(gss_cred_id_t cred, OM_uint32 *statPtr)
     static char exported_name[] = "X509_USER_DELEG_PROXY=";
     static char env_name[] = "X509_USER_PROXY=";
     static char file_prefix[] = "FILE:";
+    static const char diag[] = "gfarmGssExportCredential";
 
+    /*
+     * NOTE: this code may be called from a client,
+     * see the comment in gfarmGssNewCredentialName() about this issue.
+     */
+    gfarm_privilege_lock(diag);
     majStat = gss_export_cred(&minStat, cred, GSS_C_NO_OID, 1, &buf);
+    gfarm_privilege_unlock(diag);
     if (GSS_ERROR(majStat))
 	goto Done;
 
@@ -1167,6 +1209,14 @@ gssInitiateSecurityContextNext(
     static const char diag[] = "gssInitiateSecurityContextNext()";
 
     gfarm_mutex_lock(&gss_mutex, diag, gssDiag);
+
+    /*
+     * gss_init_sec_context() may call gss_acquire_cred() internally
+     *
+     * NOTE: this code may be called from a client,
+     * see the comment in gfarmGssNewCredentialName() about this issue.
+     */
+    gfarm_privilege_lock(diag);
     state->majStat = gss_init_sec_context(&state->minStat,
 					  state->cred,
 					  &state->sc,
@@ -1180,6 +1230,8 @@ gssInitiateSecurityContextNext(
 					  state->otPtr,
 					  &state->retFlag,
 					  &state->timeRet);
+    gfarm_privilege_unlock(diag);
+
     gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
 
     if (state->itPtr->length > 0)

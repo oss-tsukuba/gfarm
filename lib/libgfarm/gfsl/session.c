@@ -196,6 +196,7 @@ secSessionReadConfigFile(char *configFile, gfarmSecSessionOption *ssOptPtr)
     int nToken;
     gfarmSecSessionOption ssTmp = GFARM_SS_DEFAULT_OPTION;
     int i;
+    static const char diag[] = "secSessionReadConfigFile";
 
     if (configFile == NULL || configFile[0] == '\0') {
 	gflog_auth_error(GFARM_MSG_1000659,
@@ -204,7 +205,10 @@ secSessionReadConfigFile(char *configFile, gfarmSecSessionOption *ssOptPtr)
 	return -1;
     }
 
-    if ((fd = fopen(configFile, "r")) == NULL) {
+    gfarm_privilege_lock(diag);
+    fd = fopen(configFile, "r");
+    gfarm_privilege_unlock(diag);
+    if (fd == NULL) {
 	/*
 	 * use default option.
 	 */
@@ -1084,8 +1088,13 @@ gfarmSecSessionAcceptorCredIsValid(OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
     static const char diag[] = "gfarmSecSessionAcceptorCredIsValid()";
 
     gfarm_mutex_lock(&acceptor_mutex, diag, acceptorDiag);
+
+    /* gss_inquire_cred() may call gss_acquire_cred() internally */
+    gfarm_privilege_lock(diag);
     majStat = gss_inquire_cred(
 	minStatPtr, acceptorInitialCred, NULL, NULL, NULL, NULL);
+    gfarm_privilege_unlock(diag);
+
     gfarm_mutex_unlock(&acceptor_mutex, diag, acceptorDiag);
     if (majStatPtr != NULL)
 	*majStatPtr = majStat;
