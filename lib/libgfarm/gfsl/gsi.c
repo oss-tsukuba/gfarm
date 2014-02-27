@@ -26,9 +26,6 @@
 #include "gfarm_auth.h"
 #endif
 
-static pthread_mutex_t gss_mutex = PTHREAD_MUTEX_INITIALIZER;
-static const char gssDiag[] = "gss_mutex";
-
 static char **gssCrackStatus(OM_uint32 statValue, int statType);
 
 static int gssInitiateSecurityContextSwitch(struct gfarmGssInitiateSecurityContextState *state);
@@ -606,8 +603,6 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 	    break;
 	}
 
-	gfarm_mutex_lock(&gss_mutex, diag, gssDiag);
-
 	/* gss_accept_sec_context() may call gss_acquire_cred() internally */
 	gfarm_privilege_lock(diag);
 	majStat = gss_accept_sec_context(&minStat,
@@ -623,7 +618,6 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 					 &remCred);
 	gfarm_privilege_unlock(diag);
 
-	gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
 	if (itPtr->length > 0)
 	    gss_release_buffer(&minStat2, itPtr);
 
@@ -715,8 +709,6 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
     }
 
     while (1) {
-	gfarm_mutex_lock(&gss_mutex, diag, gssDiag);
-
 	/*
 	 * gss_init_sec_context() may call gss_acquire_cred() internally
 	 *
@@ -739,8 +731,6 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 				       &timeRet);
 	gfarm_privilege_unlock(diag);
 
-	gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
-	
 	if (itPtr->length > 0)
 	    gss_release_buffer(&minStat2, itPtr);
 
@@ -1208,8 +1198,6 @@ gssInitiateSecurityContextNext(
     int rv;
     static const char diag[] = "gssInitiateSecurityContextNext()";
 
-    gfarm_mutex_lock(&gss_mutex, diag, gssDiag);
-
     /*
      * gss_init_sec_context() may call gss_acquire_cred() internally
      *
@@ -1231,8 +1219,6 @@ gssInitiateSecurityContextNext(
 					  &state->retFlag,
 					  &state->timeRet);
     gfarm_privilege_unlock(diag);
-
-    gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
 
     if (state->itPtr->length > 0)
 	gss_release_buffer(&minStat2, state->itPtr);
