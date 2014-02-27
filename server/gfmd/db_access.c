@@ -1087,7 +1087,8 @@ db_inode_cksum_arg_alloc(gfarm_ino_t inum,
 
 	arg->inum = inum;
 	strcpy(arg->type, type);
-	memcpy(arg->sum, sum, len + 1);
+	memcpy(arg->sum, sum, len);
+	arg->sum[len] = '\0';
 	return (arg);
 }
 
