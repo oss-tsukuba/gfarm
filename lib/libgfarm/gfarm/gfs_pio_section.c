@@ -306,7 +306,7 @@ gfs_pio_view_section_cksum(GFS_File gf, const char *type,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	tmp_type = strdup(type);
-	tmp_cksum = malloc(len);
+	tmp_cksum = malloc(len + 1);
 	if (tmp_type == NULL || tmp_cksum == NULL) {
 		free(tmp_type);
 		free(tmp_cksum);
@@ -317,6 +317,7 @@ gfs_pio_view_section_cksum(GFS_File gf, const char *type,
 	sum->cksum = tmp_cksum;
 	sum->flags = 0;
 	memcpy(sum->cksum, cksum, len);
+	sum->cksum[len] = '\0';
 	return (e);
 }
 
