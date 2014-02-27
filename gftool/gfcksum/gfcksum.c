@@ -127,8 +127,10 @@ calc_cksum(char *p, struct gfs_stat *st, void *arg)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfs_pio_open(p, GFARM_FILE_RDONLY, &gf);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfs_stat_cksum_free(&c2);
 		return (e);
+	}
 	/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 	if (host != NULL && (e = gfs_pio_internal_set_view_section(gf, host))
 	    != GFARM_ERR_NO_ERROR)
@@ -150,6 +152,7 @@ calc_cksum(char *p, struct gfs_stat *st, void *arg)
 		gfs_stat_cksum_free(&c);
 	}
 	e2 = gfs_pio_close(gf);
+	gfs_stat_cksum_free(&c2);
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
 
