@@ -588,7 +588,7 @@ close:
 	e = pfunc_close(&src_fp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "ERROR: copy failed: close(%s): %s\n",
-			tmp_url, gfarm_error_string(e));
+			src_url, gfarm_error_string(e));
 		result = PFUNC_RESULT_NG;
 	}
 	e = pfunc_close(&dst_fp);
@@ -597,6 +597,8 @@ close:
 			tmp_url, gfarm_error_string(e));
 		result = PFUNC_RESULT_NG;
 	}
+	if (result == PFUNC_RESULT_NG)
+		goto end;
 
 	/* handle->skip_existing: This is race condition here. */
 
@@ -605,12 +607,14 @@ close:
 		fprintf(stderr, "ERROR: copy failed: utime(%s): %s\n",
 			tmp_url, gfarm_error_string(e));
 		result = PFUNC_RESULT_NG;
+		goto end;
 	}
 	e = pfunc_rename(tmp_url, dst_url);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "ERROR: copy failed: rename(%s -> %s): %s\n",
 			tmp_url, dst_url, gfarm_error_string(e));
 		result = PFUNC_RESULT_NG;
+		goto end;
 	}
 	/* XXX pfunc_mode == PFUNC_MODE_MIGRATE : unlink src_url */
 end:
