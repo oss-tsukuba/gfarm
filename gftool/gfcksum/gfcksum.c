@@ -24,7 +24,7 @@ display_dir(char *p, struct gfs_stat *st, void *arg)
 {
 	static int print_ln = 0;
 
-	if (print_ln && !opt_verbose)
+	if (print_ln)
 		printf("\n");
 	else
 		print_ln = 1;
@@ -83,6 +83,8 @@ stat_cksum(char *p, struct gfs_stat *st, void *arg)
 	const char *b = gfarm_url_dir_skip(p);
 	gfarm_error_t e;
 
+	if (!GFARM_S_ISREG(st->st_mode))
+		return (GFARM_ERR_NO_ERROR);
 	if ((e = gfs_stat_cksum(p, &c)) != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "%s: %s\n", b, gfarm_error_string(e));
 	else {
@@ -123,6 +125,8 @@ calc_cksum(char *p, struct gfs_stat *st, void *arg)
 	gfarm_error_t e, e2;
 	GFS_File gf;
 
+	if (!GFARM_S_ISREG(st->st_mode))
+		return (GFARM_ERR_NO_ERROR);
 	e = gfs_stat_cksum(p, &c2);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
