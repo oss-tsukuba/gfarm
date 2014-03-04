@@ -353,6 +353,22 @@ gfsd起動時のスプールチェックを有効にします。スプールチ�
 </varlistentry>
 
 <varlistentry>
+<term><token>spool_digest</token> <parameter moreinfo="none">digestタイプ</parameter></term>
+<listitem>
+<para>
+チェックサム計算を有効にし、
+digestタイプで指定されたチェックサムを計算します。
+digestタイプとしては、現在のところ md5 がサポートされています。
+この文は gfsd に対して有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_digest md5
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>metadb_server_host</token> <parameter moreinfo="none">gfmdホスト名</parameter></term>
 <listitem>
 <para>gfmdが動作しているホスト名を指定します。</para>
@@ -1856,6 +1872,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;spool_server_cred_name_statement&gt; |
 	&lt;spool_check_level_statement&gt; |
 	&lt;spool_base_load_statement&gt; |
+	&lt;spool_digest_statement&gt; |
 	&lt;metadb_server_host_statement&gt; |
 	&lt;metadb_server_port_statement&gt; |
 	&lt;metadb_server_cred_type_statement&gt; |
@@ -1975,6 +1992,11 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <varlistentry>
 <term>&lt;spool_base_load_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"spool_base_load" &lt;load&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_digest_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_digest" &lt;digest_type&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

@@ -110,7 +110,7 @@ for a Gfarm filesystem on this filesystem node.</para>
 </listitem>
 </varlistentry>
   
-  <varlistentry>
+<varlistentry>
 <term><token>spool_server_listen_address</token> <parameter moreinfo="none">IP-address</parameter></term>
 <listitem>
 <para>The <token>spool_server_listen_address</token> statement specifies
@@ -350,6 +350,22 @@ be busy or idle to change the scheduling priority.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	spool_base_load 1.0
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_digest</token> <parameter moreinfo="none">digest_type</parameter></term>
+<listitem>
+<para>
+The <token>spool_digest</token> statement enables the checksum
+calculation, and specifies the digest type of the checksum.
+Currently, md5 is supported.  This directive is only effective for
+gfsd.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	spool_digest md5
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1911,6 +1927,7 @@ This parameter is only available in gfmd.conf.
 	&lt;spool_server_cred_name_statement&gt; |
 	&lt;spool_check_level_statement&gt; |
 	&lt;spool_base_load_statement&gt; |
+	&lt;spool_digest_statement&gt; |
 	&lt;metadb_server_host_statement&gt; |
 	&lt;metadb_server_port_statement&gt; |
 	&lt;metadb_server_cred_type_statement&gt; |
@@ -2030,6 +2047,11 @@ This parameter is only available in gfmd.conf.
 <varlistentry>
 <term>&lt;spool_base_load_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"spool_base_load" &lt;load&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_digest_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_digest" &lt;digest_type&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

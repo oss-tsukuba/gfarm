@@ -2,6 +2,7 @@ DOCBOOK = \
 	gfchgrp.1 \
 	gfchmod.1 \
 	gfchown.1 \
+	gfcksum.1 \
 	gfdf.1 \
 	gfedquota.1 \
 	gfexport.1 \
