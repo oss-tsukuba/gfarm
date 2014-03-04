@@ -268,6 +268,19 @@ gfsd起動時のスプールチェックを有効にします。スプールチ�
 	spool_base_load 1.0<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">spool_digest</span> <em class="parameter"><code>digestタイプ</code></em></span></dt>
+<dd>
+<p>
+チェックサム計算を有効にし、
+digestタイプで指定されたチェックサムを計算します。
+digestタイプとしては、現在のところ md5 がサポートされています。
+この文は gfsd に対して有効です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	spool_digest md5<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">metadb_server_host</span> <em class="parameter"><code>gfmdホスト名</code></em></span></dt>
 <dd>
 <p>gfmdが動作しているホスト名を指定します。</p>
@@ -1367,6 +1380,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;spool_server_cred_name_statement&gt; |<br>
 	&lt;spool_check_level_statement&gt; |<br>
 	&lt;spool_base_load_statement&gt; |<br>
+	&lt;spool_digest_statement&gt; |<br>
 	&lt;metadb_server_host_statement&gt; |<br>
 	&lt;metadb_server_port_statement&gt; |<br>
 	&lt;metadb_server_cred_type_statement&gt; |<br>
@@ -1462,6 +1476,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <dd><div class="literallayout"><p>"spool_check_level" &lt;spck_level&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_base_load_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool_base_load" &lt;load&gt;</p></div></dd>
+<dt><span class="term">&lt;spool_digest_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"spool_digest" &lt;digest_type&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_host_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_server_host" &lt;hostname&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_port_statement&gt; ::=</span></dt>

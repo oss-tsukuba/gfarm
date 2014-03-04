@@ -275,6 +275,19 @@ be busy or idle to change the scheduling priority.
 	spool_base_load 1.0<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">spool_digest</span> <em class="parameter"><code>digest_type</code></em></span></dt>
+<dd>
+<p>
+The <span class="token">spool_digest</span> statement enables the checksum
+calculation, and specifies the digest type of the checksum.
+Currently, md5 is supported.  This directive is only effective for
+gfsd.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	spool_digest md5<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">metadb_server_host</span> <em class="parameter"><code>hostname</code></em></span></dt>
 <dd>
 <p>The <span class="token">metadb_server_host</span> statement specifies the
@@ -1420,6 +1433,7 @@ This parameter is only available in gfmd.conf.
 	&lt;spool_server_cred_name_statement&gt; |<br>
 	&lt;spool_check_level_statement&gt; |<br>
 	&lt;spool_base_load_statement&gt; |<br>
+	&lt;spool_digest_statement&gt; |<br>
 	&lt;metadb_server_host_statement&gt; |<br>
 	&lt;metadb_server_port_statement&gt; |<br>
 	&lt;metadb_server_cred_type_statement&gt; |<br>
@@ -1515,6 +1529,8 @@ This parameter is only available in gfmd.conf.
 <dd><div class="literallayout"><p>"spool_check_level" &lt;spck_level&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_base_load_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool_base_load" &lt;load&gt;</p></div></dd>
+<dt><span class="term">&lt;spool_digest_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"spool_digest" &lt;digest_type&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_host_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_server_host" &lt;hostname&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_port_statement&gt; ::=</span></dt>

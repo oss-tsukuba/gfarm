@@ -272,6 +272,23 @@ spool_base_load \fICPU負荷\fR
 .\}
 .RE
 .PP
+spool_digest \fIdigestタイプ\fR
+.RS 4
+チェックサム計算を有効にし、 digestタイプで指定されたチェックサムを計算します。 digestタイプとしては、現在のところ md5 がサポートされています。 この文は gfsd に対して有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_digest md5
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 metadb_server_host \fIgfmdホスト名\fR
 .RS 4
 gfmdが動作しているホスト名を指定します。
@@ -1703,6 +1720,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<spool_server_cred_name_statement> |
 	<spool_check_level_statement> |
 	<spool_base_load_statement> |
+	<spool_digest_statement> |
 	<metadb_server_host_statement> |
 	<metadb_server_port_statement> |
 	<metadb_server_cred_type_statement> |
@@ -1894,6 +1912,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "spool_base_load" <load>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<spool_digest_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"spool_digest" <digest_type>
 .fi
 .if n \{\
 .RE
