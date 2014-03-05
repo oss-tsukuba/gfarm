@@ -1115,8 +1115,13 @@ void
 gfarmGssDeleteExportedCredential(gfarmExportedCredential *exportedCred,
     int sigHandler)
 {
-    if (exportedCred->filename != NULL)
+    static const char diag[] = "gfarmGssDeleteExportedCredential";
+
+    if (exportedCred->filename != NULL) {
+	gfarm_privilege_lock(diag);
 	unlink(exportedCred->filename);
+	gfarm_privilege_unlock(diag);
+    }
 
     if (sigHandler) /* It's not safe to do the following operation */
 	    return;
