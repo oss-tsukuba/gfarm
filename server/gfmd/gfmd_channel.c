@@ -673,6 +673,7 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 	e = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
 	if (mdhost_is_sync_replication(mh)) {
 		peer_add_ref(peer); /* increment refcount */
+		gfmdc_peer_set_is_in_first_sync(gfmdc_peer, 1);
 		thrpool_add_job(journal_sync_thread_pool,
 		    gfmdc_journal_first_sync_thread, peer);
 	}
@@ -1313,14 +1314,12 @@ gfmdc_journal_sync_multiple(gfarm_uint64_t seqnum)
 static void*
 gfmdc_journal_first_sync_thread(void *closure)
 {
-#define FIRST_SYNC_DELAY 1
 	gfarm_error_t e;
 	struct peer *peer = closure;
 	struct gfmdc_peer_record *gfmdc_peer = peer_get_gfmdc_record(peer);
 	int do_sync, exist_recs = 1;
 	struct mdhost *mh = peer_get_mdhost(peer);
 
-	sleep(FIRST_SYNC_DELAY);
 #ifdef DEBUG_JOURNAL
 	gflog_debug(GFARM_MSG_1003006,
 	    "%s : first sync start", mdhost_get_name(mh));
@@ -1330,8 +1329,7 @@ gfmdc_journal_first_sync_thread(void *closure)
 	if (gfmdc_peer_get_last_fetch_seqnum(gfmdc_peer) <
 	    db_journal_get_current_seqnum()) {
 		/* it's still unknown whether seqnum is ok or out_of_sync */
-		if (!gfmdc_peer_is_in_first_sync(gfmdc_peer) &&
-		    !gfmdc_peer_journal_file_reader_is_expired(gfmdc_peer))
+		if (!gfmdc_peer_journal_file_reader_is_expired(gfmdc_peer))
 			do_sync = 1;
 	} else {
 		mdhost_set_seqnum_ok(mh);
@@ -1342,8 +1340,6 @@ gfmdc_journal_first_sync_thread(void *closure)
 		peer_del_ref(peer); /* decrement refcount */
 		return (NULL);
 	}
-
-	gfmdc_peer_set_is_in_first_sync(gfmdc_peer, 1);
 
 	while (exist_recs) {
 		if ((e = gfmdc_journal_asyncsend(mh, peer, &exist_recs))
