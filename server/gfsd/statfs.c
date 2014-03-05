@@ -29,6 +29,9 @@ is_readonly(char *path)
 		unlink(testfile);
 	} else if (errno == EROFS || errno == ENOSPC)
 		ret = 1;
+	else if (errno == EPERM) /* this may happen */
+		gflog_info(GFARM_MSG_UNFIXED, "is_readonly: %s",
+		    strerror(errno));
 	else
 		gflog_warning(GFARM_MSG_1003718, "is_readonly: %s",
 		    strerror(errno));
