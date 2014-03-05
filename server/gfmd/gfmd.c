@@ -1434,6 +1434,11 @@ gfmd_terminate(const char *diag)
 	db_terminate();
 
 	if (iostat_dirbuf) {
+		/*
+		 * We don't have to call gfarm_privilege_lock() here,
+		 * because new peer won't arrive after peer_shutdown_all(),
+		 * so new setuid() call won't happen.
+		 */
 		unlink(iostat_dirbuf);
 		free(iostat_dirbuf);
 		iostat_dirbuf = NULL;
