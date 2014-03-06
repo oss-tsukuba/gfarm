@@ -426,7 +426,7 @@ inode_cksum_get(struct file_opening *fo,
 
 	cs = fo->inode->u.c.s.f.cksum;
 	if (cs == NULL) {
-		*cksum_typep = NULL;
+		*cksum_typep = gfarm_digest;
 		*cksum_lenp = 0;
 		*cksump = NULL;
 		*flagsp = flags;
