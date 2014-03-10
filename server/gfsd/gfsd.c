@@ -775,6 +775,7 @@ struct file_entry {
 #define FILE_FLAG_READ		0x10
 #define FILE_FLAG_DIGEST_CALC	0x20
 #define FILE_FLAG_DIGEST_AVAIL	0x40
+#define FILE_FLAG_DIGEST_FINISH	0x80
 	gfarm_uint64_t gen, new_gen;
 /*
  * digest
@@ -1639,13 +1640,38 @@ md5(int fd, char md5[MD5_SIZE * 2 + 1])
 }
 
 static gfarm_error_t
+digest_finish(struct file_entry *fe)
+{
+	md5_byte_t digest[MD5_SIZE];
+	char md5[MD5_SIZE * 2 + 1];
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	int i;
+
+	if ((fe->flags & FILE_FLAG_DIGEST_FINISH) != 0)
+		return (e);
+	md5_finish(&fe->md5_state, digest);
+	for (i = 0; i < MD5_SIZE; ++i)
+		sprintf(&md5[2 * i], "%02x", digest[i]);
+	if ((fe->flags & FILE_FLAG_WRITTEN) != 0)
+		memcpy(fe->md5, md5, fe->md5_len);
+	else if ((fe->flags & FILE_FLAG_DIGEST_AVAIL) != 0) {
+		if (memcmp(md5, fe->md5, fe->md5_len) != 0) {
+			e = GFARM_ERR_CHECKSUM_MISMATCH;
+			gflog_error(GFARM_MSG_UNFIXED, "%lld:%lld: %s",
+			    (long long)fe->ino, (long long)fe->gen,
+			    gfarm_error_string(e));
+		}
+	}
+	fe->flags |= FILE_FLAG_DIGEST_FINISH;
+	return (e);
+}
+
+static gfarm_error_t
 update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 {
 	struct stat st;
-	int stat_is_done = 0, i;
+	int stat_is_done = 0;
 	unsigned long atimensec, mtimensec;
-	md5_byte_t digest[MD5_SIZE];
-	char md5[MD5_SIZE * 2 + 1];
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
 	if ((fe->flags & FILE_FLAG_LOCAL) == 0) { /* remote? */
@@ -1682,23 +1708,9 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 			fe->size = st.st_size;
 	}
 	if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0) {
-		if (fe->md5_offset == fe->size) {
-			md5_finish(&fe->md5_state, digest);
-			for (i = 0; i < MD5_SIZE; ++i)
-				sprintf(&md5[2 * i], "%02x", digest[i]);
-			if ((fe->flags & FILE_FLAG_WRITTEN) != 0)
-				memcpy(fe->md5, md5, fe->md5_len);
-			else if ((fe->flags & FILE_FLAG_DIGEST_AVAIL) != 0) {
-				if (memcmp(md5, fe->md5, fe->md5_len) != 0) {
-					e = GFARM_ERR_CHECKSUM_MISMATCH;
-					gflog_error(GFARM_MSG_UNFIXED,
-					    "%lld:%lld: %s",
-					    (long long)fe->ino,
-					    (long long)fe->gen,
-					    gfarm_error_string(e));
-				}
-			}
-		} else
+		if (fe->md5_offset == fe->size)
+			e = digest_finish(fe);
+		else
 			fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 	}
 	return (e);
@@ -1959,15 +1971,15 @@ gfs_server_pread(struct gfp_xdr *client)
 	gfarm_int32_t fd, size;
 	gfarm_int64_t offset;
 	ssize_t rv = 0;
-	int save_errno = 0;
 	unsigned char buffer[GFS_PROTO_MAX_IOSIZE];
 	struct file_entry *fe;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	gfarm_timerval_t t1, t2;
 
 	gfs_server_get_request(client, "pread", "iil", &fd, &size, &offset);
 
 	if ((fe = file_table_entry(fd)) == NULL) {
-		save_errno = EBADF;
+		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
 		goto reply;
 	}
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
@@ -1977,7 +1989,7 @@ gfs_server_pread(struct gfp_xdr *client)
 	if (size > GFS_PROTO_MAX_IOSIZE)
 		size = GFS_PROTO_MAX_IOSIZE;
 	if ((rv = pread(file_table_get(fd), buffer, size, offset)) == -1)
-		save_errno = errno;
+		e = gfarm_errno_to_error(errno);
 	else {
 		file_table_set_read(fd);
 		/* update checksum */
@@ -1985,6 +1997,8 @@ gfs_server_pread(struct gfp_xdr *client)
 			if (fe->md5_offset == offset) {
 				md5_append(&fe->md5_state, buffer, rv);
 				fe->md5_offset += rv;
+				if (size > 0 && rv == 0)
+					e = digest_finish(fe);
 			} else
 				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 		}
@@ -1999,8 +2013,7 @@ gfs_server_pread(struct gfp_xdr *client)
 		fe->read_size += rv;
 		fe->read_time += gfarm_timerval_sub(&t2, &t1));
 reply:
-	gfs_server_put_reply_with_errno(client, "pread", save_errno,
-	    "b", rv, buffer);
+	gfs_server_put_reply(client, "pread", e, "b", rv, buffer);
 }
 
 void
