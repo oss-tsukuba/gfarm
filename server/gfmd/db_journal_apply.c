@@ -430,24 +430,37 @@ static gfarm_error_t
 db_journal_apply_inode_cksum_add(gfarm_uint64_t seqnum,
 	struct db_inode_cksum_arg *arg)
 {
-	/* XXX - NOT IMPLEMENTED */
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
-}
+	gfarm_error_t e;
+	struct inode *n;
 
-static gfarm_error_t
-db_journal_apply_inode_cksum_modify(gfarm_uint64_t seqnum,
-	struct db_inode_cksum_arg *arg)
-{
-	/* XXX - NOT IMPLEMENTED */
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	if ((e = db_journal_inode_lookup(arg->inum, &n,
+	    "db_journal_apply_inode_cksum_add")) != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inum=%llu : %s",
+		    (unsigned long long)arg->inum, gfarm_error_string(e));
+	else if ((e = inode_cksum_set_in_cache(n,
+	    arg->type, arg->len, arg->sum)) != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "seqnum=%llu inum=%llu : %s", (unsigned long long)seqnum,
+		    (unsigned long long)arg->inum, gfarm_error_string(e));
+	return (e);
 }
 
 static gfarm_error_t
 db_journal_apply_inode_cksum_remove(gfarm_uint64_t seqnum,
 	struct db_inode_inum_arg *arg)
 {
-	/* XXX - NOT IMPLEMENTED */
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	gfarm_error_t e;
+	struct inode *n;
+
+	if ((e = db_journal_inode_lookup(arg->inum, &n,
+	    "db_journal_apply_inode_cksum_remove")) != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inum=%llu : %s",
+		    (unsigned long long)arg->inum, gfarm_error_string(e));
+	else
+		inode_cksum_remove_in_cache(n);
+	return (e);
 }
 
 /**********************************************************/
@@ -838,7 +851,7 @@ const struct db_ops db_journal_apply_ops = {
 	NULL,
 
 	db_journal_apply_inode_cksum_add,
-	db_journal_apply_inode_cksum_modify,
+	db_journal_apply_inode_cksum_add, /* *_add() can be used for modify */
 	db_journal_apply_inode_cksum_remove,
 	NULL,
 
