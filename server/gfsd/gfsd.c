@@ -1997,7 +1997,7 @@ gfs_server_pread(struct gfp_xdr *client)
 			if (fe->md5_offset == offset) {
 				md5_append(&fe->md5_state, buffer, rv);
 				fe->md5_offset += rv;
-				if (size > 0 && rv == 0)
+				if (fe->md5_offset == fe->size)
 					e = digest_finish(fe);
 			} else
 				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
