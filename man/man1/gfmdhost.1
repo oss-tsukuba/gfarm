@@ -2,12 +2,12 @@
 .\"     Title: gfmdhost
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 30 June 2011
+.\"      Date: 11 March 2014
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFMDHOST" "1" "30 June 2011" "Gfarm" "Gfarm"
+.TH "GFMDHOST" "1" "11 March 2014" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -59,9 +59,9 @@ All registered gfmd hosts are listed with detailed information\&. They are group
 .sp
 The detailed information is displayed in the following order\&.
 .sp
-\fBConnection State (+|\-|?|x|e)\fR
+\fBConnection State (+|||\-|?|x|e|u)\fR
 .sp
-"+" means that the gfmd is connected to the master gfmd\&. "\-" means that the gfmd is not connected to the master gfmd\&. "?" means either the gfmd state is unknown because it\*(Aqs just after the connection was established, or the master gfmd is Gfarm\-2\&.5\&.0, but this gfmdhost command is 2\&.5\&.1 or later\&. "x" means that the connection with master gfmd was established, but automatic synchronization was impossible because of too many metadata changes, thus, manual synchronization via dump and restore of the backend database is necessary\&. "e" means an error happened, and log file must be checked manually\&. In the case of "x" or "e", it may be displayed even when the slave gfmd is down\&. This column for the master gfmd is always "+"\&.
+"+" means that the gfmd is connected to the master gfmd, and its metadata are synchronized\&. "|" means that the gfmd is connected to the master gfmd, but its metadata have not been synchronized yet\&. Note that this may happen even on a synchronous slave gfmd, when the slave is just connecting to the master, or in the middle of metadata taransfer even if it has been already synchronized\&. "\-" means that the gfmd is not connected to the master gfmd\&. "?" means either the gfmd state is unknown because it\*(Aqs just after the connection was established, or the master gfmd is Gfarm\-2\&.5\&.0, but this gfmdhost command is 2\&.5\&.1 or later\&. "x" means that the connection with master gfmd was established, but automatic synchronization was impossible because of too many metadata changes, thus, manual synchronization via dump and restore of the backend database is necessary\&. "e" means an error happened, and log file must be checked manually\&. In the case of "x" or "e", it may be displayed even when the slave gfmd is down\&. "u" means that the slave gfmd is connected to the master gfmd, but the state is not supported by this gfmdhost command\&. This column for the master gfmd is always "+"\&.
 .sp
 \fBServer Type (master|slave)\fR
 .sp

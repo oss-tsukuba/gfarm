@@ -52,9 +52,15 @@ names will be listed.
 <p>
         The detailed information is displayed in the following order.
       </p>
-<p><code class="option">Connection State (+|-|?|x|e)</code></p>
+<p><code class="option">Connection State (+|||-|?|x|e|u)</code></p>
 <p>
-        "+" means that the gfmd is connected to the master gfmd.
+        "+" means that the gfmd is connected to the master gfmd, and
+	its metadata are synchronized.
+	"|" means that the gfmd is connected to the master gfmd, but
+	its metadata have not been synchronized yet. Note that this
+	may happen even on a synchronous slave gfmd, when the slave
+	is just connecting to the master, or in the middle of metadata
+	taransfer even if it has been already synchronized.
         "-" means that the gfmd is not connected to the master gfmd.
 	"?" means either the gfmd state is unknown because it's just
 	after the connection was established, or the master gfmd is
@@ -66,6 +72,8 @@ names will be listed.
 	"e" means an error happened, and log file must be checked manually.
 	In the case of "x" or "e", it may be displayed even when the
 	slave gfmd is down.
+        "u" means that the slave gfmd is connected to the master gfmd, but
+	the state is not supported by this gfmdhost command.
 	This column for the master gfmd is always "+".
       </p>
 <p><code class="option">Server Type (master|slave)</code></p>
