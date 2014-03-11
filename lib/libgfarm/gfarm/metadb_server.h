@@ -40,6 +40,8 @@ void gfarm_metadb_server_set_seqnum_is_out_of_sync(
 	struct gfarm_metadb_server *);
 int gfarm_metadb_server_seqnum_is_error(struct gfarm_metadb_server *);
 void gfarm_metadb_server_set_seqnum_is_error(struct gfarm_metadb_server *);
+int gfarm_metadb_server_seqnum_is_behind(struct gfarm_metadb_server *);
+void gfarm_metadb_server_set_seqnum_is_behind(struct gfarm_metadb_server *);
 int gfarm_metadb_server_is_memory_owned_by_fs(struct gfarm_metadb_server *);
 void gfarm_metadb_server_set_is_memory_owned_by_fs(struct gfarm_metadb_server *,
 	int);

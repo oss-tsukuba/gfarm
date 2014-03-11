@@ -196,8 +196,12 @@ gfarm_metadb_server_get_state_symbol(struct gfarm_metadb_server *ms)
 		return ('-');
 	else if (gfarm_metadb_server_seqnum_is_ok(ms))
 		return ('+');
-	else /* if (gfarm_metadb_server_seqnum_is_unknown(ms)) */
+	else if (gfarm_metadb_server_seqnum_is_behind(ms))
+		return ('|');
+	else if (gfarm_metadb_server_seqnum_is_unknown(ms))
 		return ('?');
+	else
+		return ('u'); /* really unknown/unsupported value */
 }
 
 static gfarm_error_t

@@ -1006,7 +1006,7 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	    (min_seqnum == GFARM_UINT64_MAX || db_seqnum + 1 < min_seqnum ||
 	    max_seqnum < db_seqnum)) {
 		e = GFARM_ERR_EXPIRED;
-		gflog_debug(GFARM_MSG_1003421,
+		gflog_info(GFARM_MSG_1003421,
 		    "%s: seqnum=%llu min_seqnum=%llu max_seqnum=%llu",
 		    gfarm_error_string(e),
 		    (unsigned long long)db_seqnum,

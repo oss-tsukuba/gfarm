@@ -38,6 +38,7 @@ void mdhost_set_seqnum_unknown(struct mdhost *);
 void mdhost_set_seqnum_out_of_sync(struct mdhost *);
 void mdhost_set_seqnum_ok(struct mdhost *);
 void mdhost_set_seqnum_error(struct mdhost *);
+void mdhost_set_seqnum_behind(struct mdhost *);
 void mdhost_set_seqnum_state_by_error(struct mdhost *, gfarm_error_t);
 #ifdef PEER_REFCOUNT_DEBUG
 struct peer *mdhost_get_peer_impl(struct mdhost *,

@@ -5,7 +5,7 @@
 
 <refentry id="gfmdhost.1">
 
-<refentryinfo><date>30 June 2011</date></refentryinfo>
+<refentryinfo><date>11 March 2014</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfmdhost</refentrytitle>
@@ -91,9 +91,14 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
       <para>
         詳細情報は次の順に表示されます。
       </para>
-      <para><option>接続状態 (+|-|?|x|e)</option></para>
+      <para><option>接続状態 (+|||-|?|x|e|u)</option></para>
       <para>
-        "+" はマスター gfmd と正常に接続していることを表します。
+        "+" はマスター gfmd と正常に接続し、現在メタデータが同期している
+	ことを表します。
+        "|" はマスター gfmd と正常に接続しているが、メタデータの同期が
+        完了していないことを表します。これは、たとえ同期スレーブサーバで
+	あっても、接続開始時には起きますし、いったん同期が完了した後で
+	も、メタデータ転送の瞬間には起きることがあります。
         "-" は接続していないことを表します。
 	"?" は、マスター gfmd と接続直後でまだ状態が判明してないか、あるいは
 	Gfarm-2.5.0 の gfmd に対して、Gfarm-2.5.1 以降の gfmdhost コマンド
@@ -104,6 +109,10 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
 	"e" は何らかのエラーが生じ、ログの調査が必要なことを表します。
 	"x" および "e" については、そのスレーブgfmdが停止した後でも、
 	表示が続きます。
+	"u" は、マスター gfmd と接続しているが、この gfmdhost コマンドでは
+	サポートしていない状態にあることを示します。
+	Gfarm-2.5.0 の gfmd に対して、Gfarm-2.5.1 以降の gfmdhost コマンド
+	から接続した場合に表示されます。
         マスター gfmd は常に "+" です。
       </para>
       <para><option>サーバ種別 (master|slave)</option></para>

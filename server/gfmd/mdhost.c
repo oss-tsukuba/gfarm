@@ -52,7 +52,8 @@ struct mdhost {
 		seqnum_state_unknown,
 		seqnum_state_ok,
 		seqnum_state_out_of_sync,
-		seqnum_state_error
+		seqnum_state_error,
+		seqnum_state_behind
 	} seqnum_state;
 	struct mdcluster *cluster;
 };
@@ -355,6 +356,12 @@ void
 mdhost_set_seqnum_error(struct mdhost *m)
 {
 	mdhost_set_seqnum_state(m, seqnum_state_error);
+}
+
+void
+mdhost_set_seqnum_behind(struct mdhost *m)
+{
+	mdhost_set_seqnum_state(m, seqnum_state_behind);
 }
 
 void
@@ -778,6 +785,9 @@ metadb_server_reply(struct peer *peer, struct mdhost *m)
 		break;
 	case seqnum_state_error:
 		gfarm_metadb_server_set_seqnum_is_error(&tms);
+		break;
+	case seqnum_state_behind:
+		gfarm_metadb_server_set_seqnum_is_behind(&tms);
 		break;
 	}
 

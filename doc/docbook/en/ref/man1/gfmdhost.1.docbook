@@ -5,7 +5,7 @@
 
 <refentry id="gfmdhost.1">
 
-<refentryinfo><date>30 June 2011</date></refentryinfo>
+<refentryinfo><date>11 March 2014</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfmdhost</refentrytitle>
@@ -92,9 +92,15 @@ names will be listed.
       <para>
         The detailed information is displayed in the following order.
       </para>
-      <para><option>Connection State (+|-|?|x|e)</option></para>
+      <para><option>Connection State (+|||-|?|x|e|u)</option></para>
       <para>
-        "+" means that the gfmd is connected to the master gfmd.
+        "+" means that the gfmd is connected to the master gfmd, and
+	its metadata are synchronized.
+	"|" means that the gfmd is connected to the master gfmd, but
+	its metadata have not been synchronized yet. Note that this
+	may happen even on a synchronous slave gfmd, when the slave
+	is just connecting to the master, or in the middle of metadata
+	taransfer even if it has been already synchronized.
         "-" means that the gfmd is not connected to the master gfmd.
 	"?" means either the gfmd state is unknown because it's just
 	after the connection was established, or the master gfmd is
@@ -106,6 +112,8 @@ names will be listed.
 	"e" means an error happened, and log file must be checked manually.
 	In the case of "x" or "e", it may be displayed even when the
 	slave gfmd is down.
+        "u" means that the slave gfmd is connected to the master gfmd, but
+	the state is not supported by this gfmdhost command.
 	This column for the master gfmd is always "+".
       </para>
       <para><option>Server Type (master|slave)</option></para>
