@@ -1639,6 +1639,20 @@ md5(int fd, char md5[MD5_SIZE * 2 + 1])
 	return (e);
 }
 
+static int
+is_not_modified(struct file_entry *fe)
+{
+	struct stat st;
+
+	if (fstat(fe->local_fd, &st) == -1)
+		gflog_notice(GFARM_MSG_UNFIXED, "is_not_modified: %s",
+		    strerror(errno));
+	else if (st.st_size == fe->size && st.st_mtime == fe->mtime &&
+	    gfarm_stat_mtime_nsec(&st) == fe->mtimensec)
+		return (1);
+	return (0);
+}
+
 static gfarm_error_t
 digest_finish(struct file_entry *fe)
 {
@@ -1655,7 +1669,7 @@ digest_finish(struct file_entry *fe)
 	if ((fe->flags & FILE_FLAG_WRITTEN) != 0)
 		memcpy(fe->md5, md5, fe->md5_len);
 	else if ((fe->flags & FILE_FLAG_DIGEST_AVAIL) != 0) {
-		if (memcmp(md5, fe->md5, fe->md5_len) != 0) {
+		if (memcmp(md5, fe->md5, fe->md5_len) && is_not_modified(fe)) {
 			e = GFARM_ERR_CHECKSUM_MISMATCH;
 			gflog_error(GFARM_MSG_UNFIXED, "%lld:%lld: %s",
 			    (long long)fe->ino, (long long)fe->gen,
@@ -1785,6 +1799,7 @@ close_fd(gfarm_int32_t fd, const char *diag)
 			    "%s generation_updated request: %s",
 			    diag, gfarm_error_string(e2));
 		else if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0 &&
+		    fe->new_gen == fe->gen + 1 &&
 		    (e2 = gfm_client_cksum_set_request(gfm_server,
 		    fe->cksum_type, fe->md5_len, fe->md5, 0, 0, 0))
 		    != GFARM_ERR_NO_ERROR)
@@ -1802,6 +1817,7 @@ close_fd(gfarm_int32_t fd, const char *diag)
 			    "%s generation_updated result: %s", 
 			    diag, gfarm_error_string(e2));
 		else if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0 &&
+		    fe->new_gen == fe->gen + 1 &&
 		    (e2 = gfm_client_cksum_set_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_UNFIXED,
@@ -1988,7 +2004,7 @@ gfs_server_pread(struct gfp_xdr *client)
 	/* We truncatef i/o size bigger than GFS_PROTO_MAX_IOSIZE. */
 	if (size > GFS_PROTO_MAX_IOSIZE)
 		size = GFS_PROTO_MAX_IOSIZE;
-	if ((rv = pread(file_table_get(fd), buffer, size, offset)) == -1)
+	if ((rv = pread(fe->local_fd, buffer, size, offset)) == -1)
 		e = gfarm_errno_to_error(errno);
 	else {
 		file_table_set_read(fd);
