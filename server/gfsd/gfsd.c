@@ -1687,7 +1687,7 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 	struct stat st;
 	int stat_is_done = 0;
 	unsigned long atimensec, mtimensec;
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
 
 	if ((fe->flags & FILE_FLAG_LOCAL) == 0) { /* remote? */
 		;
@@ -1723,8 +1723,11 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 			fe->size = st.st_size;
 	}
 	if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0 &&
-	    fe->md5_offset == fe->size)
-		e = digest_finish(fe);
+	    fe->md5_offset == fe->size) {
+		e2 = digest_finish(fe);
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+	}
 	return (e);
 }
 
