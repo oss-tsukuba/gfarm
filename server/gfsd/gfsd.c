@@ -1676,6 +1676,7 @@ digest_finish(struct file_entry *fe)
 			    gfarm_error_string(e));
 		}
 	}
+	fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 	fe->flags |= FILE_FLAG_DIGEST_FINISH;
 	return (e);
 }
@@ -1721,12 +1722,9 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 		} else
 			fe->size = st.st_size;
 	}
-	if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0) {
-		if (fe->md5_offset == fe->size)
-			e = digest_finish(fe);
-		else
-			fe->flags &= ~FILE_FLAG_DIGEST_CALC;
-	}
+	if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0 &&
+	    fe->md5_offset == fe->size)
+		e = digest_finish(fe);
 	return (e);
 }
 
@@ -1798,7 +1796,7 @@ close_fd(gfarm_int32_t fd, const char *diag)
 			gflog_error(GFARM_MSG_1002301,
 			    "%s generation_updated request: %s",
 			    diag, gfarm_error_string(e2));
-		else if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0 &&
+		else if ((fe->flags & FILE_FLAG_DIGEST_FINISH) != 0 &&
 		    fe->new_gen == fe->gen + 1 &&
 		    (e2 = gfm_client_cksum_set_request(gfm_server,
 		    fe->cksum_type, fe->md5_len, fe->md5, 0, 0, 0))
@@ -1816,7 +1814,7 @@ close_fd(gfarm_int32_t fd, const char *diag)
 			gflog_error(GFARM_MSG_1002302,
 			    "%s generation_updated result: %s", 
 			    diag, gfarm_error_string(e2));
-		else if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0 &&
+		else if ((fe->flags & FILE_FLAG_DIGEST_FINISH) != 0 &&
 		    fe->new_gen == fe->gen + 1 &&
 		    (e2 = gfm_client_cksum_set_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR)
@@ -2013,7 +2011,8 @@ gfs_server_pread(struct gfp_xdr *client)
 			if (fe->md5_offset == offset) {
 				md5_append(&fe->md5_state, buffer, rv);
 				fe->md5_offset += rv;
-				if (fe->md5_offset == fe->size)
+				if (fe->md5_offset == fe->size &&
+				    (fe->flags & FILE_FLAG_WRITTEN) == 0)
 					e = digest_finish(fe);
 			} else
 				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
