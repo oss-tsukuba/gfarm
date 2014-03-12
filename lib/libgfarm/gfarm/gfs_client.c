@@ -203,8 +203,6 @@ sockaddr_is_local(struct sockaddr *peer_addr)
 	struct sockaddr_in *peer_in;
 	int i;
 
-	return (0);
-
 	if (!self_ip_asked) {
 		self_ip_asked = 1;
 		if (gfarm_get_ip_addresses(&self_ip_count, &self_ip_list) !=
