@@ -867,7 +867,10 @@ AC_C_BIGENDIAN
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(long long)
 
+# Solaris, Linux
 AC_CHECK_MEMBERS([struct stat.st_atim.tv_nsec, struct stat.st_mtim.tv_nsec])
+# *BSD, including MacOS X
+AC_CHECK_MEMBERS([struct stat.st_atimespec.tv_nsec, struct stat.st_mtimespec.tv_nsec])
 
 ### socklen_t is available?
 
