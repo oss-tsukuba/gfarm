@@ -49,6 +49,8 @@ protected:
     runChild() {
         const char * const argv[] = {
             "grid-proxy-init",
+	    "-bits",
+	    "1024",
             NULL
         };
         Process::unblockAllSignals();
