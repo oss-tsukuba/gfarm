@@ -13467,6 +13467,7 @@ _ACEOF
 
 
 
+# Solaris, Linux
 ac_fn_c_check_member "$LINENO" "struct stat" "st_atim.tv_nsec" "ac_cv_member_struct_stat_st_atim_tv_nsec" "$ac_includes_default"
 if test "x$ac_cv_member_struct_stat_st_atim_tv_nsec" = xyes; then :
 
@@ -13481,6 +13482,26 @@ if test "x$ac_cv_member_struct_stat_st_mtim_tv_nsec" = xyes; then :
 
 cat >>confdefs.h <<_ACEOF
 #define HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC 1
+_ACEOF
+
+
+fi
+
+# *BSD, including MacOS X
+ac_fn_c_check_member "$LINENO" "struct stat" "st_atimespec.tv_nsec" "ac_cv_member_struct_stat_st_atimespec_tv_nsec" "$ac_includes_default"
+if test "x$ac_cv_member_struct_stat_st_atimespec_tv_nsec" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STAT_ST_ATIMESPEC_TV_NSEC 1
+_ACEOF
+
+
+fi
+ac_fn_c_check_member "$LINENO" "struct stat" "st_mtimespec.tv_nsec" "ac_cv_member_struct_stat_st_mtimespec_tv_nsec" "$ac_includes_default"
+if test "x$ac_cv_member_struct_stat_st_mtimespec_tv_nsec" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC 1
 _ACEOF
 
 
