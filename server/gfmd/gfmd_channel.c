@@ -188,7 +188,7 @@ struct gfmdc_peer_record {
 	pthread_mutex_t mutex;
 	struct journal_file_reader *jreader;
 	gfarm_uint64_t last_fetch_seqnum;
-	int is_received_seqnum, is_in_first_sync;
+	int is_received_seqnum, first_sync_completed;
 
 	/* only used by synchronous slave */
 	struct gfmdc_journal_send_closure *journal_send_closure;
@@ -232,7 +232,7 @@ gfmdc_peer_record_alloc(const char *diag,
 	gfmdc_peer->jreader = NULL;
 	gfmdc_peer->last_fetch_seqnum = 0;
 	gfmdc_peer->is_received_seqnum = 0;
-	gfmdc_peer->is_in_first_sync = 0;
+	gfmdc_peer->first_sync_completed = 0;
 
 	*gfmdc_peerp = gfmdc_peer;
 	return (GFARM_ERR_NO_ERROR);
@@ -338,24 +338,25 @@ gfmdc_peer_set_is_received_seqnum(struct gfmdc_peer_record *gfmdc_peer,
 }
 
 int
-gfmdc_peer_is_in_first_sync(struct gfmdc_peer_record *gfmdc_peer)
+gfmdc_peer_is_first_sync_completed(struct gfmdc_peer_record *gfmdc_peer)
 {
 	int r;
-	static const char diag[] = "gfmdc_peer_is_in_first_sync";
+	static const char diag[] = "gfmdc_peer_is_first_sync_completed";
 
 	gfmdc_peer_mutex_lock(gfmdc_peer, diag);
-	r = gfmdc_peer->is_in_first_sync;
+	r = gfmdc_peer->first_sync_completed;
 	gfmdc_peer_mutex_unlock(gfmdc_peer, diag);
 	return (r);
 }
 
 void
-gfmdc_peer_set_is_in_first_sync(struct gfmdc_peer_record *gfmdc_peer, int flag)
+gfmdc_peer_set_first_sync_completed(struct gfmdc_peer_record *gfmdc_peer,
+	int flag)
 {
-	static const char diag[] = "gfmdc_peer_set_is_in_first_sync";
+	static const char diag[] = "gfmdc_peer_set_first_sync_completed";
 
 	gfmdc_peer_mutex_lock(gfmdc_peer, diag);
-	gfmdc_peer->is_in_first_sync = flag;
+	gfmdc_peer->first_sync_completed = flag;
 	gfmdc_peer_mutex_unlock(gfmdc_peer, diag);
 }
 
@@ -682,7 +683,6 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 	e = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
 	if (mdhost_is_sync_replication(mh)) {
 		peer_add_ref(peer); /* increment refcount */
-		gfmdc_peer_set_is_in_first_sync(gfmdc_peer, 1);
 		thrpool_add_job(journal_sync_thread_pool,
 		    gfmdc_journal_first_sync_thread, peer);
 	}
@@ -1057,7 +1057,7 @@ gfmdc_journal_asyncsend(struct mdhost *mh, struct peer *peer, int *exist_recsp)
 	struct gfmdc_journal_send_closure *c;
 
 	if ((mdhost_is_sync_replication(mh) &&
-	    !gfmdc_peer_is_in_first_sync(gfmdc_peer)) ||
+	    gfmdc_peer_is_first_sync_completed(gfmdc_peer)) ||
 	    !gfmdc_journal_mdhost_can_sync(mh, gfmdc_peer))
 		return (GFARM_ERR_NO_ERROR);
 	c = gfmdc_journal_asyncsend_alloc(mh);
@@ -1250,7 +1250,7 @@ gfmdc_is_sync_replication_target(struct mdhost *mh, struct peer *peer)
 	return ((mh != self) &&
 	    mdhost_is_sync_replication(mh) &&
 	    gfmdc_journal_mdhost_can_sync(mh, gfmdc_peer) &&
-	    !gfmdc_peer_is_in_first_sync(gfmdc_peer));
+	    gfmdc_peer_is_first_sync_completed(gfmdc_peer));
 }
 
 static int
@@ -1365,7 +1365,7 @@ gfmdc_journal_first_sync_thread(void *closure)
 	    "%s : first sync end", mdhost_get_name(mh));
 #endif
 
-	gfmdc_peer_set_is_in_first_sync(gfmdc_peer, 0);
+	gfmdc_peer_set_first_sync_completed(gfmdc_peer, 1);
 	peer_del_ref(peer); /* decrement refcount */
 	return (NULL);
 }
