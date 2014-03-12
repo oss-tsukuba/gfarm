@@ -24,7 +24,7 @@ is_readonly(char *path)
 	}
 	strcpy(testfile, path);
 	strcat(testfile, TEST_FILE);
-	if ((fd = creat(testfile, 0400)) != -1) {
+	if ((fd = creat(testfile, 0600)) != -1) {
 		close(fd);
 		unlink(testfile);
 	} else if (errno == EROFS || errno == ENOSPC)
