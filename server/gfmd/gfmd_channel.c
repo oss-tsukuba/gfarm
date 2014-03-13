@@ -1327,7 +1327,7 @@ gfmdc_journal_first_sync_thread(void *closure)
 	gfarm_error_t e;
 	struct peer *peer = closure;
 	struct gfmdc_peer_record *gfmdc_peer = peer_get_gfmdc_record(peer);
-	int do_sync, exist_recs = 1;
+	int exist_recs = 0;
 	struct mdhost *mh = peer_get_mdhost(peer);
 
 #ifdef DEBUG_JOURNAL
@@ -1335,21 +1335,15 @@ gfmdc_journal_first_sync_thread(void *closure)
 	    "%s : first sync start", mdhost_get_name(mh));
 #endif
 	giant_lock();
-	do_sync = 0;
 	if (gfmdc_peer_get_last_fetch_seqnum(gfmdc_peer) <
 	    db_journal_get_current_seqnum()) {
 		/* it's still unknown whether seqnum is ok or out_of_sync */
 		if (!gfmdc_peer_journal_file_reader_is_expired(gfmdc_peer))
-			do_sync = 1;
+			exist_recs = 1;
 	} else {
 		mdhost_set_seqnum_ok(mh);
 	}
 	giant_unlock();
-
-	if (!do_sync) {
-		peer_del_ref(peer); /* decrement refcount */
-		return (NULL);
-	}
 
 	while (exist_recs) {
 		if ((e = gfmdc_journal_asyncsend(mh, peer, &exist_recs))
