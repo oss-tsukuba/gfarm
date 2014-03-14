@@ -71,7 +71,7 @@ gfarm_authorize_panic(struct gfp_xdr *conn, int switch_to,
 static gfarm_error_t
 gfarm_auth_sharedsecret_giveup_response(struct gfp_xdr *conn,
 	const char *hostname, const char *global_username,
-	int try, gfarm_int32_t error)
+	int try, gfarm_int32_t error /* gfarm_auth_error */)
 {
 	gfarm_error_t e;
 
@@ -148,8 +148,10 @@ gfarm_auth_sharedsecret_md5_response(struct gfp_xdr *conn,
 	 * client (re)generated shared key may not be accessible.
 	 */
 	if (pwd == NULL) {
-		error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-		gflog_debug(GFARM_MSG_1001074, "Password is null");
+		/* *errorp should have a valid value only in this case */
+		error = *errorp;
+		gflog_debug(GFARM_MSG_UNFIXED, "Password is null (%d)",
+		    (int)error);
 		/* already logged at gfarm_authorize_sharedsecret() */
 	} else if ((e = gfarm_auth_shared_key_get(&expire_expected,
 	    shared_key_expected, pwd->pw_dir, pwd,
@@ -207,14 +209,15 @@ gfarm_auth_sharedsecret_md5_response(struct gfp_xdr *conn,
 
 static gfarm_error_t
 gfarm_auth_sharedsecret_response(struct gfp_xdr *conn,
-	const char *hostname, const char *global_username, struct passwd *pwd)
+	const char *hostname, const char *global_username, struct passwd *pwd,
+	enum gfarm_auth_error pwd_error)
 {
 	gfarm_error_t e;
 	gfarm_uint32_t request;
 	gfarm_int32_t error = GFARM_AUTH_ERROR_EXPIRED; /* gfarm_auth_error */
 	int eof, try = 0;
 
-	/* NOTE: `pwd' may be NULL, if invalid username is requested. */
+	/* NOTE: `pwd' may be NULL. pwd_error shows the reason in that case */
 
 	for (;;) {
 		++try;
@@ -252,6 +255,8 @@ gfarm_auth_sharedsecret_response(struct gfp_xdr *conn,
 			return (gfarm_auth_sharedsecret_giveup_response(
 			    conn, hostname, global_username, try, error));
 		case GFARM_AUTH_SHAREDSECRET_MD5:
+			if (pwd == NULL)
+				error = pwd_error;
 			e = gfarm_auth_sharedsecret_md5_response(
 			    conn, hostname, global_username, pwd, &error);
 			if (e != GFARM_ERRMSG_AUTH_SHAREDSECRET_MD5_CONTINUE)
@@ -297,6 +302,7 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	char *global_username, *local_username, *aux, *buf = NULL;
 	int eof;
 	enum gfarm_auth_id_type peer_type;
+	enum gfarm_auth_error error = GFARM_AUTH_ERROR_NO_ERROR;
 	struct passwd pwbuf, *pwd;
 	int is_root = 0;
 
@@ -326,25 +332,38 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		peer_type = GFARM_AUTH_ID_TYPE_USER;
 		e = (*auth_uid_to_global_user)(closure,
 		    GFARM_AUTH_METHOD_SHAREDSECRET, global_username, NULL);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_notice(GFARM_MSG_1000040,
 			    "(%s@%s) authorize_sharedsecret: "
 			    "the global username isn't registered in gfmd: %s",
 			    global_username, hostname, gfarm_error_string(e));
+			if (e == GFARM_ERR_NO_MEMORY)
+				error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
+			else if (e == GFARM_ERR_PROTOCOL)
+				error = GFARM_AUTH_ERROR_NOT_SUPPORTED;
+			else if (IS_CONNECTION_ERROR(e))
+				error = GFARM_AUTH_ERROR_TEMPORARY_FAILURE;
+			else
+				error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
+		}
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
 		e = gfarm_global_to_local_username_by_url(GFARM_PATH_ROOT,
 		    global_username, &local_username);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1000041,
 			    "(%s@%s) authorize_sharedsecret: "
 			    "cannot map global username into local username: "
 			    "%s",
 			    global_username, hostname, gfarm_error_string(e));
+			/* no memory, or configuration error */
+			error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
+		}
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		local_username = NULL;
 		pwd = NULL;
+		/* `error' must be already set */
 	} else {
 		pthread_once(&getpwnam_r_bufsz_initialized,
 		    getpwnam_r_bufsz_initialize);
@@ -355,21 +374,22 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 			    "(%s@%s) %s: authorize_sharedsecret: %s",
 			    global_username, hostname, local_username,
 			    gfarm_error_string(e));
-			free(local_username);
-			free(global_username);
-			return (e);
-		}
-		if (getpwnam_r(local_username, &pwbuf, buf, getpwnam_r_bufsz,
-		    &pwd) != 0)
+			pwd = NULL;
+			error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
+		} else if (getpwnam_r(local_username, &pwbuf, buf,
+		    getpwnam_r_bufsz, &pwd) != 0) {
 			gflog_notice(GFARM_MSG_1000043,
 			    "(%s@%s) %s: authorize_sharedsecret: "
 			    "local account doesn't exist",
 			    global_username, hostname, local_username);
+			pwd = NULL;
+			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
+		}
 	}
 
 	/* pwd may be NULL */
 	e = gfarm_auth_sharedsecret_response(conn,
-	    hostname, global_username, pwd);
+	    hostname, global_username, pwd, error);
 
 	/* if (pwd == NULL), must be (e != GFARM_ERR_NO_ERROR) here */
 	if (e != GFARM_ERR_NO_ERROR) {
