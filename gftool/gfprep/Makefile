@@ -17,7 +17,8 @@ OBJS = gfprep.o gfarm_list.o gfarm_parallel.o gfarm_dirtree.o gfarm_fifo.o \
 EXTRA_CLEAN_TARGETS = gfarm_list.c
 PROGRAM = gfprep
 GFPCOPY = gfpcopy
-CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
+CFLAGS = $(pthread_includes) $(COMMON_CFLAGS) \
+	-I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
 	-I$(GFREP_SRCDIR) -I$(srcdir) $(openssl_includes)
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
