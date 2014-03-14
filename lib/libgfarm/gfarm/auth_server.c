@@ -369,7 +369,6 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		    getpwnam_r_bufsz_initialize);
 		GFARM_MALLOC_ARRAY(buf, getpwnam_r_bufsz);
 		if (buf == NULL) {
-			e = GFARM_ERR_NO_MEMORY;
 			gflog_error(GFARM_MSG_1000042,
 			    "(%s@%s) %s: authorize_sharedsecret: %s",
 			    global_username, hostname, local_username,
