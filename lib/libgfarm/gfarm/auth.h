@@ -5,6 +5,7 @@ enum gfarm_auth_error {
 	GFARM_AUTH_ERROR_INVALID_CREDENTIAL,
 	GFARM_AUTH_ERROR_EXPIRED,
 	GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE,
+	GFARM_AUTH_ERROR_TEMPORARY_FAILURE, /* e.g. gfmd failover */
 };
 
 enum gfarm_auth_id_type {
