@@ -2257,7 +2257,7 @@ gfs_server_cksum(struct gfp_xdr *client)
 	gfarm_int32_t fd;
 	struct file_entry *fe;
 	char *type = NULL, cksum[MD5_SIZE * 2 + 1];
-	size_t len;
+	size_t len = 0;
 	gfarm_error_t e;
 
 	gfs_server_get_request(client, "cksum", "is", &fd, &type);

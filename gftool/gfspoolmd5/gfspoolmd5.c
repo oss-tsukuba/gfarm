@@ -27,7 +27,7 @@ char *progname = "gfspoolmd5";
 static struct gfm_connection *gfm_server;
 static long long total_count, total_size;
 static long long count, size, start_count;
-static struct timeval itime, stime;
+static struct timeval itime, start_time;
 const char PROGRESS_FILE[] = ".md5.count";
 long long *progress_addr;
 int mtime_day = -1;
@@ -163,7 +163,8 @@ show_progress(void)
 	double time, bw;
 
 	gettimeofday(&t, NULL);
-	time = t.tv_sec - stime.tv_sec + .000001 * (t.tv_usec - stime.tv_usec);
+	time = t.tv_sec - start_time.tv_sec +
+	    .000001 * (t.tv_usec - start_time.tv_usec);
 	bw = size / 1000 / time;
 	sec = (int)((total_size - size) / 1000 / bw);
 	hour = sec / 3600;
@@ -374,12 +375,12 @@ main(int argc, char *argv[])
 	gettimeofday(&itime, NULL);
 	for (i = 0; i < argc; ++i)
 		count_size(argv[i]);
-	gettimeofday(&stime, NULL);
+	gettimeofday(&start_time, NULL);
 	for (i = 0; i < argc; ++i)
 		check_spool(argv[i]);
 	if (i == 0) {
 		count_size(".");
-		gettimeofday(&stime, NULL);
+		gettimeofday(&start_time, NULL);
 		check_spool(".");
 	}
 	puts("");

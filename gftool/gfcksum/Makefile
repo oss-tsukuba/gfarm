@@ -9,7 +9,8 @@ include $(top_srcdir)/makes/var.mk
 SRCS = gfcksum.c
 OBJS = gfcksum.o
 PROGRAM = gfcksum
-CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR)
+CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
+	$(openssl_includes)
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
