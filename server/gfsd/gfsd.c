@@ -907,7 +907,8 @@ file_table_add(gfarm_int32_t net_fd, char *path, int flags, gfarm_ino_t ino,
 				memcpy(fe->md5, cksum, cksum_len);
 				fe->md5_len = cksum_len;
 			}
-			if (cksum_flags != 0)
+			if ((cksum_flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
+			    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0)
 				gflog_info(GFARM_MSG_UNFIXED,
 				    "%lld:%lld cksum flag %d, may be expired",
 				    (long long)fe->ino, (long long)fe->gen,
@@ -1647,6 +1648,7 @@ md5(int fd, char md5[MD5_SIZE * 2 + 1])
 static int
 is_not_modified(gfarm_int32_t fd, const char *diag)
 {
+	struct stat st;
 	struct file_entry *fe;
 	int cksum_flags, ret = 1;
 	char *cksum_type = NULL, tmp_cksum[GFM_PROTO_CKSUM_MAXLEN];
@@ -1656,6 +1658,12 @@ is_not_modified(gfarm_int32_t fd, const char *diag)
 	if ((fe = file_table_entry(fd)) == NULL)
 		gflog_error(GFARM_MSG_UNFIXED, "fd %d: %s", fd,
 		    gfarm_error_string(GFARM_ERR_BAD_FILE_DESCRIPTOR));
+	else if (fstat(fe->local_fd, &st) == -1)
+		gflog_notice(GFARM_MSG_UNFIXED, "is_not_modified: %s",
+		    strerror(errno));
+	else if (st.st_size != fe->size || st.st_mtime != fe->mtime ||
+	    gfarm_stat_mtime_nsec(&st) != fe->mtimensec)
+		return (0);
 	else if ((e = gfm_client_compound_put_fd_request(fd, diag))
 	    != GFARM_ERR_NO_ERROR)
 		fatal_metadb_proto(GFARM_MSG_UNFIXED,
@@ -1675,7 +1683,8 @@ is_not_modified(gfarm_int32_t fd, const char *diag)
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end(diag)) != GFARM_ERR_NO_ERROR)
 		fatal_metadb_proto(GFARM_MSG_UNFIXED, "compound_end", diag, e);
-	else if (cksum_flags != 0 || cksum_len == 0)
+	else if ((cksum_flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
+	    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0 || cksum_len == 0)
 		ret = 0;
 	free(cksum_type);
 	return (ret);
