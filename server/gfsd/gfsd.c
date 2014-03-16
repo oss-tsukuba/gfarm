@@ -4364,7 +4364,11 @@ failover_event(const char *new_master_name, int new_master_port)
 	e = gfm_client_host_info_get_by_names(gfm_server,
 	    1, &n, &e2, &self_info);
 	if (e == GFARM_ERR_NO_ERROR) {
-		gfarm_host_info_free(&self_info);
+		if (e2 == GFARM_ERR_NO_ERROR)
+			gfarm_host_info_free(&self_info);
+		else
+			gflog_info(GFARM_MSG_UNFIXED, "%s: host_info_get: %s",
+			    canonical_self_name, gfarm_error_string(e2));
 		gflog_notice(GFARM_MSG_UNFIXED,
 		    "failover notification is received, "
 		    "but current master gfmd is alive");
