@@ -2239,7 +2239,6 @@ main(int argc, char **argv)
 
 	/* master, or inter-gfmd RPC relay is enabled */
 
-	failover_notify();
 	accepting_loop(sock);
 
 	/*NOTREACHED*/

@@ -1014,18 +1014,6 @@ gfs_client_relay(struct abstract_host *abhost, struct peer *peer,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-struct watcher *
-back_channel_watcher(void)
-{
-	return (peer_watcher_get_watcher(back_channel_recv_watcher));
-}
-
-struct thread_pool *
-back_channel_recv_thrpool(void)
-{
-	return (peer_watcher_get_thrpool(back_channel_recv_watcher));
-}
-
 void
 back_channel_init(void)
 {

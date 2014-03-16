@@ -3,8 +3,6 @@
  */
 
 struct peer;
-struct watcher;
-struct thread_pool;
 
 gfarm_error_t gfm_async_server_get_request(struct peer *, size_t,
 	const char *, const char *, ...);
@@ -39,8 +37,5 @@ struct netsendq_type;
 extern struct netsendq_type gfs_proto_status_queue;
 extern struct netsendq_type gfm_async_server_reply_to_gfsd_queue;
 
-
-struct watcher *back_channel_watcher(void);
-struct thread_pool *back_channel_recv_thrpool(void);
 
 void back_channel_init(void);

@@ -2279,8 +2279,7 @@ gfarm_error_t
 gfs_client_get_load_request(int sock,
 	struct sockaddr *server_addr, int server_addr_size)
 {
-	int rv;
-	gfarm_int32_t command = GFS_UDP_PROTO_LOADAV_REQUEST;
+	int rv, command = 0;
 
 	if (server_addr == NULL || server_addr_size == 0) {
 		/* using connected UDP socket */
