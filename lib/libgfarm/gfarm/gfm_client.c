@@ -1575,12 +1575,14 @@ gfm_client_host_info_get_by_names_common(struct gfm_connection *gfm_server,
 	for (i = 0; i < nhosts; i++) {
 		e = gfm_client_xdr_recv(gfm_server, &size, "i", &errcode);
 		if (e != GFARM_ERR_NO_ERROR)
-			errors[i] = e;
+			goto out; /* XXX xid and hosts memory leak */
 		else if (errcode != GFARM_ERR_NO_ERROR)
 			errors[i] = errcode;
+		else if ((e = gfm_client_get_nhosts(gfm_server,
+		    &size, 1, &hosts[i])) != GFARM_ERR_NO_ERROR)
+			goto out; /* XXX xid hosts memory leak */
 		else
-			errors[i] = gfm_client_get_nhosts(gfm_server, &size, 1,
-			    &hosts[i]);
+			errors[i] = GFARM_ERR_NO_ERROR;
 	}
 	if ((e = gfm_client_rpc_raw_result_end(gfm_server, xidr, size)) !=
 	    GFARM_ERR_NO_ERROR) {
@@ -1591,7 +1593,7 @@ gfm_client_host_info_get_by_names_common(struct gfm_connection *gfm_server,
 	}
 out:
 	gfm_client_connection_unlock(gfm_server);
-	return (GFARM_ERR_NO_ERROR);
+	return (e);
 }
 
 gfarm_error_t
