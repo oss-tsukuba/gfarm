@@ -6,6 +6,10 @@
 #endif
 
 /*
+ * TCP protocol
+ */
+
+/*
  * 1: protocol until gfarm 2.3
  * 2: protocol since gfarm 2.4
  */
@@ -106,3 +110,32 @@ enum gfs_proto_fsync_operation {
 #define NFDESC		3
 
 extern char GFS_SERVICE_TAG[];
+
+/*
+ * UDP protocol
+ */
+
+#define GFS_UDP_RPC_SIZE_MAX		1472 /* 1500 -20(IP hdr) -8(UDP hdr) */
+#define GFS_UDP_RPC_HEADER_SIZE				24
+#define GFS_UDP_PROTO_OLD_LOADAV_REQUEST_SIZE		4
+#define GFS_UDP_PROTO_OLD_LOADAV_REPLY_SIZE		24
+/* the following values must be different from 4 and 24 */
+#define GFS_UDP_PROTO_FAILOVER_NOTIFY_REQUEST_MIN_SIZE	32
+#define GFS_UDP_PROTO_FAILOVER_NOTIFY_REPLY_SIZE	28
+
+/* this is chosen not to conflict with GFS_UDP_PROTO_LOADAV_REQUEST */
+#define GFS_UDP_RPC_MAGIC		0x4766726d	/* "Gfrm" */
+
+#define GFS_UDP_RPC_TYPE_BIT		0xc0000000 /* == XID_TYPE_BIT */
+#define GFS_UDP_RPC_TYPE_REQUEST	0x00000000 /* == XID_TYPE_REQUEST */
+#define GFS_UDP_RPC_TYPE_REPLY		0x80000000 /* == XID_TYPE_RESULT */
+
+/* this must be >= gfs_client_datagram_ntimeouts */
+#define GFS_UDP_RPC_RETRY_COUNT_SANITY	1000
+
+#define GFS_UDP_RPC_XID_SIZE		8
+
+#define GFS_UDP_PROTO_LOADAV_REQUEST	0x00000000 /*compat*/
+#define GFS_UDP_PROTO_FAILOVER_NOTIFY	0x00000001
+
+#define GFARM_MAXHOSTNAMELEN		256

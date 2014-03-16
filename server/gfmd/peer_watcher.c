@@ -56,6 +56,12 @@ peer_watcher_alloc(int thrpool_size, int thrqueue_length,
 	return (pw);
 }
 
+struct watcher *
+peer_watcher_get_watcher(struct peer_watcher *pw)
+{
+	return (pw->w);
+}
+
 /* XXX this interface should be removed when backchannel queue is merged */
 struct thread_pool *
 peer_watcher_get_thrpool(struct peer_watcher *pw)
