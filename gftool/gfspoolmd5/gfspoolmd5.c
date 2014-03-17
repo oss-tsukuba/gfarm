@@ -18,6 +18,7 @@
 #include <gfarm/gfarm.h>
 
 #include "lookup.h"
+#include "gfm_proto.h"
 #include "gfm_client.h"
 
 #include "md5.h"
@@ -178,17 +179,16 @@ show_progress(void)
 	fflush(stdout);
 }
 
-static const char xattr_md5[] = "gfarm.md5";
-
 static gfarm_error_t
 check_file(char *file, struct stat *stp, void *arg)
 {
+	struct gfs_stat_cksum c;
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
 	GFS_File gf;
 	gfarm_error_t e;
 	size_t md5_size = MD5_SIZE * 2;
-	char md5[MD5_SIZE * 2 + 1], md5_mds[MD5_SIZE * 2 + 1];
+	char md5[MD5_SIZE * 2 + 1];
 
 	if (!mtime_filter(stp))
 		return (GFARM_ERR_NO_ERROR);
@@ -200,23 +200,38 @@ check_file(char *file, struct stat *stp, void *arg)
 		size += stp->st_size;
 		return (GFARM_ERR_NO_ERROR);
 	}
-	e = calc_md5(file, md5);
-	if (e != GFARM_ERR_NO_ERROR)
-		goto progress;
 	e = gfs_pio_fhopen(inum, gen, GFARM_FILE_RDONLY, &gf);
 	if (e != GFARM_ERR_NO_ERROR)
 		goto progress;
-	e = gfs_fsetxattr(gf, xattr_md5, md5, md5_size, GFS_XATTR_CREATE);
-	if (e == GFARM_ERR_NO_ERROR || e != GFARM_ERR_ALREADY_EXISTS)
+	if ((e = gfs_fstat_cksum(gf, &c)) != GFARM_ERR_NO_ERROR)
 		goto close_progress;
-	e = gfs_fgetxattr(gf, xattr_md5, md5_mds, &md5_size);
-	if (e != GFARM_ERR_NO_ERROR)
-		goto close_progress;
-	if (memcmp(md5, md5_mds, md5_size) != 0) {
-		e = GFARM_ERR_INVALID_FILE_REPLICA;
-		fprintf(stderr, "%s: md5 digest differs: "
-		    "file %.32s mds %.*s\n", file, md5, (int)md5_size, md5_mds);
+	if (c.len > 0 && strcmp(c.type, "md5") != 0)
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+	else if ((c.flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
+	    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0) {
+		fprintf(stderr, "%s: cksum flag %d, skipped\n", file, c.flags);
+		e = GFARM_ERR_NO_ERROR;
+	} else if ((e = calc_md5(file, md5)) != GFARM_ERR_NO_ERROR)
+		;
+	else if (c.len > 0 && memcmp(md5, c.cksum, md5_size) != 0) {
+		gfs_stat_cksum_free(&c);
+		if ((e = gfs_fstat_cksum(gf, &c)) != GFARM_ERR_NO_ERROR)
+			goto close_progress;
+		if (c.len > 0 && (c.flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
+		    GFM_PROTO_CKSUM_GET_EXPIRED)) == 0) {
+			e = GFARM_ERR_CHECKSUM_MISMATCH;
+			fprintf(stderr, "%s: file %.*s mds %.*s\n",
+			    file, (int)md5_size, md5, (int)c.len, c.cksum);
+		}
+	} else {
+		struct gfs_stat_cksum ck;
+
+		ck.type = "md5";
+		ck.len = md5_size;
+		ck.cksum = md5;
+		e = gfs_fstat_cksum_set(gf, &ck);
 	}
+	gfs_stat_cksum_free(&c);
 close_progress:
 	gfs_pio_close(gf);
 progress:
