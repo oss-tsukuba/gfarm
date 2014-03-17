@@ -69,7 +69,6 @@ display_stat(GFS_File gf)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	display_time("Access", &st.st_atimespec);
 	display_time("Modify", &st.st_mtimespec);
 	printf("\n");
 	gfs_stat_free(&st);
@@ -139,7 +138,7 @@ calc_cksum(char *p, struct gfs_stat *st, void *arg)
 	if (host != NULL && (e = gfs_pio_internal_set_view_section(gf, host))
 	    != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "%s: %s\n", host, gfarm_error_string(e));
-	else if ((e = gfs_pio_cksum(gf, "md5", &c)) != GFARM_ERR_NO_ERROR)
+	else if ((e = gfs_pio_cksum(gf, c2.type, &c)) != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "%s: %s\n", b, gfarm_error_string(e));
 	else {
 		display_cksum(p, &c);
