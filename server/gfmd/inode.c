@@ -147,7 +147,6 @@ struct inode_open_state {
 
 	union inode_state_type_specific {
 		struct inode_state_file {
-			struct file_opening *cksum_owner;
 			struct event_waiter *event_waiters;
 			struct peer *event_source;
 			struct gfarm_timespec last_update;
@@ -251,11 +250,7 @@ inode_total_num(void)
 void
 inode_cksum_remove_in_cache(struct inode *inode)
 {
-	struct inode_open_state *ios = inode->u.c.state;
-
 	assert(inode_is_file(inode));
-	if (ios != NULL && ios->u.f.cksum_owner != NULL)
-		ios->u.f.cksum_owner = NULL;
 	free(inode->u.c.s.f.cksum);
 	inode->u.c.s.f.cksum = NULL;
 }
@@ -342,6 +337,14 @@ inode_cksum_set_in_cache(struct inode *inode,
 	return (e);
 }
 
+static int
+cmp_cksum(struct checksum *c1,
+	const char *cksum_type, size_t cksum_len, const char *cksum)
+{
+	return (strcmp(c1->type, cksum_type) != 0 || c1->len != cksum_len ||
+	    memcmp(c1->sum, cksum, c1->len) != 0);
+}
+
 gfarm_error_t
 inode_cksum_set(struct file_opening *fo,
 	const char *cksum_type, size_t cksum_len, const char *cksum,
@@ -351,6 +354,7 @@ inode_cksum_set(struct file_opening *fo,
 	struct inode *inode = fo->inode;
 	struct inode_open_state *ios = inode->u.c.state;
 	struct checksum *cs;
+	static const char diag[] = "inode_cksum_set";
 
 	assert(ios != NULL);
 
@@ -365,26 +369,38 @@ inode_cksum_set(struct file_opening *fo,
 		    cksum_type, (int)cksum_len);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
-	if (!inode_is_file(fo->inode)) {
-		gflog_debug(GFARM_MSG_1001713,
-			"inode type is not file");
-		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
-	}
 	if ((fo->flag & GFARM_FILE_CKSUM_INVALIDATED) != 0) {
 		gflog_debug(GFARM_MSG_1001714, "file checksum is invalidated");
 		return (GFARM_ERR_EXPIRED);
 	}
-	/* writable descriptor has precedence over read-only one */
-	if (ios->u.f.cksum_owner != NULL &&
-	    (accmode_to_op(ios->u.f.cksum_owner->flag) & GFS_W_OK) != 0 &&
-	    (accmode_to_op(fo->flag) & GFS_W_OK) == 0) {
-		gflog_debug(GFARM_MSG_1001715,
-			"writable descriptor has precedence over read-only "
-			"one");
-		return (GFARM_ERR_EXPIRED);
-	}
 	cs = inode->u.c.s.f.cksum;
-
+	if (cs != NULL) {
+		if (cmp_cksum(cs, cksum_type, cksum_len, cksum) != 0) {
+			e = GFARM_ERR_CHECKSUM_MISMATCH;
+			if (ios->u.f.writers >= 1) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				   "%s: (%llu:%llu) %s", diag,
+				   (unsigned long long)inode_get_number(inode),
+				   (unsigned long long)inode_get_gen(inode),
+				   gfarm_error_string(e));
+				return (GFARM_ERR_NO_ERROR);
+			} else {
+				gflog_error(GFARM_MSG_UNFIXED,
+				   "%s: (%llu:%llu) %s", diag,
+				   (unsigned long long)inode_get_number(inode),
+				   (unsigned long long)inode_get_gen(inode),
+				   gfarm_error_string(e));
+				return (e);
+			}
+		} else {
+			e = GFARM_ERR_ALREADY_EXISTS;
+			gflog_debug(GFARM_MSG_UNFIXED, "%s: (%llu:%llu) %s",
+			    diag, (unsigned long long)inode_get_number(inode),
+			    (unsigned long long)inode_get_gen(inode),
+			    gfarm_error_string(e));
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
 	if (cs == NULL) {
 		e = db_inode_cksum_add(inode->i_number,
 		    cksum_type, cksum_len, cksum);
@@ -403,8 +419,6 @@ inode_cksum_set(struct file_opening *fo,
 	e = inode_cksum_set_in_cache(inode, cksum_type, cksum_len, cksum);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e); /* inode_cksum_set_in_cache() calls gflog_debug */
-
-	ios->u.f.cksum_owner = fo;
 
 	if (flags & GFM_PROTO_CKSUM_SET_FILE_MODIFIED) {
 		inode_set_mtime(inode, mtime);
@@ -546,7 +560,6 @@ inode_open_state_alloc(void)
 	ios->u.f.event_source = NULL;
 	ios->u.f.last_update.tv_sec = 0;
 	ios->u.f.last_update.tv_nsec = 0;
-	ios->u.f.cksum_owner = NULL;
 	return (ios);
 }
 
@@ -3304,7 +3317,7 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 
 	if (inode->i_nlink == 0 && inode->u.c.state == NULL &&
 	    (!inode_is_file(inode) || inode->u.c.s.f.rstate == NULL)) {
-		inode_remove(inode); /* clears `ios->u.f.cksum_owner' too. */
+		inode_remove(inode);
 	}
 }
 
@@ -3420,8 +3433,7 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	char tmp_str[4096];
 
 	inode_cksum_invalidate(fo);
-	if (ios->u.f.cksum_owner == NULL || ios->u.f.cksum_owner != fo)
-		inode_cksum_remove(inode);
+	inode_cksum_remove(inode);
 
 	inode_set_size(inode, size);
 	inode_set_atime(inode, atime);

@@ -909,7 +909,7 @@ file_table_add(gfarm_int32_t net_fd, char *path, int flags, gfarm_ino_t ino,
 			}
 			if ((cksum_flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
 			    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0)
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_UNFIXED,
 				    "%lld:%lld cksum flag %d, may be expired",
 				    (long long)fe->ino, (long long)fe->gen,
 				    cksum_flags);
@@ -1706,16 +1706,15 @@ digest_finish(gfarm_int32_t fd, const char *diag)
 	md5_finish(&fe->md5_state, digest);
 	for (i = 0; i < MD5_SIZE; ++i)
 		sprintf(&md5[2 * i], "%02x", digest[i]);
-	if ((fe->flags & FILE_FLAG_WRITTEN) != 0)
+	if ((fe->flags & FILE_FLAG_WRITTEN) != 0 ||
+	    (fe->flags & FILE_FLAG_DIGEST_AVAIL) == 0)
 		memcpy(fe->md5, md5, fe->md5_len);
-	else if ((fe->flags & FILE_FLAG_DIGEST_AVAIL) != 0) {
-		if (memcmp(md5, fe->md5, fe->md5_len) &&
-		    is_not_modified(fd, diag)) {
-			e = GFARM_ERR_CHECKSUM_MISMATCH;
-			gflog_error(GFARM_MSG_UNFIXED, "%lld:%lld: %s",
-			    (long long)fe->ino, (long long)fe->gen,
-			    gfarm_error_string(e));
-		}
+	else if (memcmp(md5, fe->md5, fe->md5_len) &&
+	    is_not_modified(fd, diag)) {
+		e = GFARM_ERR_CHECKSUM_MISMATCH;
+		gflog_error(GFARM_MSG_UNFIXED, "%lld:%lld: %s",
+		    (long long)fe->ino, (long long)fe->gen,
+		    gfarm_error_string(e));
 	}
 	fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 	fe->flags |= FILE_FLAG_DIGEST_FINISH;
@@ -1795,6 +1794,13 @@ close_fd(gfarm_int32_t fd, const char *diag)
 		gflog_error(GFARM_MSG_1003337,
 		    "%s compound_put_fd_request: %s",
 		    diag, gfarm_error_string(e));
+	else if ((fe->flags & (FILE_FLAG_DIGEST_FINISH|FILE_FLAG_DIGEST_AVAIL|
+	    FILE_FLAG_WRITTEN)) == FILE_FLAG_DIGEST_FINISH &&
+	    (e = gfm_client_cksum_set_request(gfm_server,
+	    fe->cksum_type, fe->md5_len, fe->md5, 0, 0, 0))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED, "%s cksum_set request: %s",
+		    diag, gfarm_error_string(e));
 	else if ((e = close_request(fe)) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000488,
 		    "%s close request: %s", diag, gfarm_error_string(e));
@@ -1802,6 +1808,12 @@ close_fd(gfarm_int32_t fd, const char *diag)
 	    != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1003338,
 		    "%s compound_put_fd_result: %s",
+		    diag, gfarm_error_string(e));
+	else if ((fe->flags & (FILE_FLAG_DIGEST_FINISH|FILE_FLAG_DIGEST_AVAIL|
+	    FILE_FLAG_WRITTEN)) == FILE_FLAG_DIGEST_FINISH &&
+	    (e = gfm_client_cksum_set_result(gfm_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_info(GFARM_MSG_UNFIXED, "%s cksum_set result: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = close_result(fe, &gen_update_result))
 	    != GFARM_ERR_NO_ERROR) {
@@ -2281,75 +2293,6 @@ gfs_server_cksum(struct gfp_xdr *client)
 	}
 	free(type);
 	gfs_server_put_reply(client, "cksum", e, "b", len, cksum);
-}
-
-void
-gfs_server_cksum_set(struct gfp_xdr *client)
-{
-	gfarm_error_t e;
-	int fd;
-	gfarm_int32_t cksum_len;
-	char *cksum_type;
-	char cksum[GFM_PROTO_CKSUM_MAXLEN];
-	struct file_entry *fe;
-	int was_written;
-	time_t mtime;
-	struct stat st;
-	static const char diag[] = "GFS_PROTO_CKSUM_SET";
-
-	gfs_server_get_request(client, diag, "isb", &fd,
-	    &cksum_type, sizeof(cksum), &cksum_len, cksum);
-
-	if ((fe = file_table_entry(fd)) == NULL) {
-		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
-		gflog_debug(GFARM_MSG_1002175,
-			"bad file descriptor");
-	} else {
-		/* NOTE: local client could use remote operation as well */
-		was_written = (fe->flags & FILE_FLAG_WRITTEN) != 0;
-		mtime = fe->mtime;
-		if ((fe->flags & FILE_FLAG_LOCAL) == 0) { /* remote? */
-			;
-		} else if (fstat(fe->local_fd, &st) == -1) {
-			gflog_warning(GFARM_MSG_1000494,
-			    "fd %d: stat failed at cksum_set: %s",
-			    fd, strerror(errno));
-		} else {
-			if (st.st_mtime != fe->mtime) {
-				mtime = st.st_mtime;
-				was_written = 1;
-			}
-			/* XXX FIXME st_mtimespec.tv_nsec */
-		}
-
-		if ((e = gfm_client_compound_put_fd_request(fd, diag)) !=
-		    GFARM_ERR_NO_ERROR)
-			fatal_metadb_proto(GFARM_MSG_1003352,
-			    "compound_put_fd_request", diag, e);
-		if ((e = gfm_client_cksum_set_request(gfm_server,
-		    cksum_type, cksum_len, cksum,
-		    was_written, (gfarm_int64_t)mtime, (gfarm_int32_t)0)) !=
-		    GFARM_ERR_NO_ERROR)
-			fatal_metadb_proto(GFARM_MSG_1000497,
-			    "cksum_set request", diag, e);
-		if ((e = gfm_client_compound_put_fd_result(diag)) !=
-		    GFARM_ERR_NO_ERROR)
-			fatal_metadb_proto(GFARM_MSG_1003353,
-			    "compound_put_fd_result", diag, e);
-		if ((e = gfm_client_cksum_set_result(gfm_server)) !=
-		    GFARM_ERR_NO_ERROR) {
-			if (debug_mode)
-				gflog_info(GFARM_MSG_1000501,
-				    "cksum_set(%s) result: %s", diag,
-				    gfarm_error_string(e));
-		} else if ((e = gfm_client_compound_end(diag)) != 
-		    GFARM_ERR_NO_ERROR) {
-			fatal_metadb_proto(GFARM_MSG_1003354,
-			    "compound_end", diag, e);
-		}
-	}
-
-	gfs_server_put_reply(client, diag, e, "");
 }
 
 static int
@@ -3230,7 +3173,6 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		case GFS_PROTO_CKSUM:
 			gfs_server_cksum(client);
 			break;
-		case GFS_PROTO_CKSUM_SET: gfs_server_cksum_set(client); break;
 		case GFS_PROTO_STATFS:	gfs_server_statfs(client); break;
 		case GFS_PROTO_REPLICA_ADD_FROM:
 			gfs_server_replica_add_from(client); break;

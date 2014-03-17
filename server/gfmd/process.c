@@ -823,7 +823,7 @@ process_peer_is_the_spool_opener(struct process *process,
 		    diag, (long long)process->pid, (int)fd,
 		    (long long)inode_get_number(fo->inode),
 		    (long long)inode_get_gen(fo->inode),
-		    peer_get_hostname(peer), peer_get_username(peer),
+		    peer_get_username(peer), peer_get_hostname(peer),
 		    fo->u.f.spool_opener == NULL ? "closed already" :
 		    peer_get_hostname(fo->u.f.spool_opener));
 		return (0);
@@ -1026,6 +1026,7 @@ process_cksum_set(struct process *process, struct peer *peer, int fd,
 {
 	struct file_opening *fo;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	static const char diag[] = "process_cksum_set";
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001644,
@@ -1034,16 +1035,12 @@ process_cksum_set(struct process *process, struct peer *peer, int fd,
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) {
-		gflog_debug(GFARM_MSG_1001645,
-			"inode is not file");
-		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+		e = GFARM_ERR_NOT_A_REGULAR_FILE;
+		gflog_info(GFARM_MSG_UNFIXED, "%s: inode %lld: %s",
+		    diag, (long long)inode_get_number(fo->inode),
+		    gfarm_error_string(e));
+		return (e);
 	}
-	if ((accmode_to_op(fo->flag) & GFS_W_OK) == 0) {
-		gflog_debug(GFARM_MSG_1001647,
-			"bad file descriptor");
-		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
-	}
-
 	return (inode_cksum_set(fo, cksum_type, cksum_len, cksum,
 	    flags, mtime));
 }

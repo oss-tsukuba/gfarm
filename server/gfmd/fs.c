@@ -1440,9 +1440,7 @@ gfarm_error_t
 gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
-	gfarm_int32_t fd;
-	gfarm_int32_t cksum_len, flags;
-	struct host *spool_host = NULL;
+	gfarm_int32_t fd, cksum_len, flags;
 	struct process *process;
 	char *cksum_type;
 	char cksum[GFM_PROTO_CKSUM_MAXLEN];
@@ -1464,15 +1462,7 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 	}
 	giant_lock();
 
-	if (from_client) { /* from gfsd only */
-		gflog_debug(GFARM_MSG_1001851,
-			"operation is not permitted: from_client");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((spool_host = peer_get_host(peer)) == NULL) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_1001852,
-			"operation is not permitted: peer_get_host() failed");
-	} else if ((process = peer_get_process(peer)) == NULL) {
+	if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1001853,
 			"operation is not permitted: peer_get_process() "
