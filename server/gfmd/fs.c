@@ -696,6 +696,7 @@ gfm_server_fhopen(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t fd;
 	gfarm_int32_t mode = 0;
 	static const char diag[] = "GFM_PROTO_FHOPEN";
+	char *msg;
 
 	e = gfm_server_get_request(peer, diag, "lli", &inum, &gen, &flag);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -707,29 +708,35 @@ gfm_server_fhopen(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_ERROR);
 
 	giant_lock();
-	if (!from_client || (process = peer_get_process(peer)) == NULL)
+	if (!from_client || (process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((user = process_get_user(process)) == NULL)
+		msg = "no such process";
+	} else if ((user = process_get_user(process)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((inode = inode_lookup(inum)) == NULL)
+		msg = "no such user";
+	} else if ((inode = inode_lookup(inum)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-	else if (!user_is_root(inode, user))
+		msg = "no such inode";
+	} else if (!user_is_root(inode, user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if (inode_get_gen(inode) != gen)
+		msg = "not gfarmroot";
+	} else if (inode_get_gen(inode) != gen) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-	else if  (flag & ~GFARM_FILE_USER_MODE)
+		msg = "generation mismatch";
+	} else if  (flag & ~GFARM_FILE_USER_MODE) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
-	else if ((e = process_open_file(process, inode, flag, 0, peer,
+		msg = "invalid flag";
+	} else if ((e = process_open_file(process, inode, flag, 0, peer,
 		    NULL, &fd)) != GFARM_ERR_NO_ERROR)
-		;
+		msg = "process_open_file";
 	else {
 		peer_fdpair_set_current(peer, fd);
 		mode = inode_get_mode(inode);
 	}
 	giant_unlock();
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag,
-		    (long long)inum, (long long)gen, gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s: %s", diag,
+		  (long long)inum, (long long)gen, msg, gfarm_error_string(e));
 
 	return (gfm_server_put_reply(peer, diag, e, "i", mode));
 }
