@@ -1807,7 +1807,7 @@ This parameter is only available in gfmd.conf.
 <listitem>
 <para>This parameter specifies the max size of the journal file in bytes.
 Beware that the larger the size is, the longer it takes time for the gfmd to complete starting.
-The default is 268435456 (256 MBytes).
+The default is 33554432 (32 MBytes).
 </para>
 <para>
 This parameter is only available in gfmd.conf.
