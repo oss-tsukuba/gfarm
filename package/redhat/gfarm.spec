@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.5.8.4
+%define ver	2.5.8.5
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
@@ -322,6 +322,7 @@ fi
 %{man_prefix}/man1/gfchgrp.1.gz
 %{man_prefix}/man1/gfchmod.1.gz
 %{man_prefix}/man1/gfchown.1.gz
+%{man_prefix}/man1/gfcksum.1.gz
 %{man_prefix}/man1/gfdf.1.gz
 %{man_prefix}/man1/gfedquota.1.gz
 %if %{gfarm_v2_not_yet}
@@ -498,6 +499,7 @@ fi
 %{man_prefix}/ja/man1/gfchgrp.1.gz
 %{man_prefix}/ja/man1/gfchmod.1.gz
 %{man_prefix}/ja/man1/gfchown.1.gz
+%{man_prefix}/ja/man1/gfcksum.1.gz
 %{man_prefix}/ja/man1/gfdf.1.gz
 %{man_prefix}/ja/man1/gfedquota.1.gz
 %if %{gfarm_v2_not_yet}
@@ -653,6 +655,7 @@ fi
 %{html_prefix}/en/ref/man1/gfchgrp.1.html
 %{html_prefix}/en/ref/man1/gfchmod.1.html
 %{html_prefix}/en/ref/man1/gfchown.1.html
+%{html_prefix}/en/ref/man1/gfcksum.1.html
 %{html_prefix}/en/ref/man1/gfdf.1.html
 %{html_prefix}/en/ref/man1/gfedquota.1.html
 %if %{gfarm_v2_not_yet}
@@ -834,6 +837,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfchgrp.1.html
 %{html_prefix}/ja/ref/man1/gfchmod.1.html
 %{html_prefix}/ja/ref/man1/gfchown.1.html
+%{html_prefix}/ja/ref/man1/gfcksum.1.html
 %{html_prefix}/ja/ref/man1/gfdf.1.html
 %{html_prefix}/ja/ref/man1/gfedquota.1.html
 %if %{gfarm_v2_not_yet}
@@ -1037,8 +1041,11 @@ fi
 %{prefix}/bin/gfchgrp
 %{prefix}/bin/gfchmod
 %{prefix}/bin/gfchown
+%{prefix}/bin/gfcksum
+%{prefix}/bin/gfdirpath
 %{prefix}/bin/gfedquota
 %{prefix}/bin/gfexport
+%{prefix}/bin/gffilepath
 %{prefix}/bin/gffindxmlattr
 %{prefix}/bin/gfgetfacl
 %{prefix}/bin/gfgroup
@@ -1072,6 +1079,7 @@ fi
 %{prefix}/bin/gfquotacheck
 %{prefix}/bin/gfreg
 %{prefix}/bin/gfrep
+%{prefix}/bin/gfrepcheck
 %{prefix}/bin/gfrm
 %{prefix}/bin/gfrmdir
 %{prefix}/bin/gfruntest
@@ -1092,6 +1100,8 @@ fi
 %{prefix}/bin/gfservice
 %{prefix}/bin/gfservice-agent
 %{prefix}/bin/gfservice-timeout
+%{prefix}/bin/gfspoolgen
+%{prefix}/bin/gfspoolinum
 %{prefix}/bin/gfstat
 %{prefix}/bin/gfstatus
 %{prefix}/bin/gfsudo
@@ -1140,6 +1150,7 @@ fi
 %defattr(-,root,root)
 %{prefix}/bin/config-gfsd
 %{prefix}/bin/gfarm.arch.guess
+%{prefix}/bin/gfspoolmd5
 %{prefix}/bin/gfspoolpath
 %if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfexec

@@ -1,3 +1,47 @@
+Release note for Gfarm 2.5.8.5
+==============================
+
+[2014.3.23]
+
+New command
+* gfcksum - print and calculate checksum
+* gfrepcheck - start or suspend the replica check thread
+* gfspoolinum, gfspoolgen - obtain inode number or generation number
+  from the spool path or lost+found filename
+* gfdirpath - return path name in Gfarm from directory inode number
+* gffilepath - return path name in Gfarm from inode number
+* gfspoolmd5 - check md5 checksum of all files in spool directory
+
+New configuration directive
+* digest - enables data integrity check by checksum calculation and
+  specify the digest type
+
+New API
+* gfs_stat_cksum, gfs_fstat_cksum and gfs_stat_cksum_free - obtain
+  checksum
+* gfs_pio_cksum - calculate checksum
+* gfs_fstat_cksum_set - set checksum from client
+* gfs_pio_fhopen, gfs_pio_fhopendir - open a file or a directory from
+  inode number and generation number
+* gfs_fgetdirpath - return path name from GFS_Dir
+
+Updated feature
+* gfusage - optput total
+* return checksum mismatch error when reading entire file or closed
+* print the progress of replica_check when gfmd catches SIGUSR2
+* gfxattr - -I option to manipulate the extended attribute by inode
+  number
+* grid-proxy-agent - -bits option to specify the number of bits in key
+* adjust log level
+
+Bug fix
+* gfmd may crash when SIGHUP is caught
+* gfpcopy - invalid files may remain when close fails
+* clients may not retry to connect to gfmd in shared secret
+  authentication [sf.net ticket #740]
+* gfs_pio_stat() does not obtain file info in a file system node when
+  it is called just after gfs_pio_open()
+
 Release note for Gfarm 2.5.8.4
 ==============================
 
@@ -602,7 +646,7 @@ Updated feature
 * failover during reading files against the gfsd failure
 * config-gfarm, config-gfarm-update - -r option to support replicated
   metadata servers, and -j option to specify a journal directory
-* upgrading to a master gfmd by sinding SIGUSR1 signal to a slave gfmd
+* upgrading to a master gfmd by sending SIGUSR1 signal to a slave gfmd
 * initialize GSI environment by sending SIGHUP signal to a gfmd
 * Globus debian package support
 
