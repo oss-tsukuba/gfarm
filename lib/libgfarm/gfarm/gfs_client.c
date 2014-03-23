@@ -1277,12 +1277,12 @@ gfs_client_cksum(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 
 	if ((e = gfs_client_rpc_notimeout(gfs_server, 0, GFS_PROTO_CKSUM,
 	    "is/b", fd, type, size, np, cksum)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003724,
 		    "gfs_client_cksum: %s", gfarm_error_string(e));
 		return (e);
 	}
 	if (*np > size) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003725,
 		    "Internal protocol error (%llu)>(%llu)",
 		    (unsigned long long)*np, (unsigned long long)size);
 		return (GFARM_ERR_PROTOCOL);

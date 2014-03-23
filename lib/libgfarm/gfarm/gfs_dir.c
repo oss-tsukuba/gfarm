@@ -404,7 +404,7 @@ gfs_fhopendir(gfarm_ino_t inum, gfarm_uint64_t gen, GFS_Dir *dirp)
 		}
 	}
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003735,
 		    "gfs_pio_fhopen(%lld:%lld): %s",
 		    (long long)inum, (long long)gen, gfarm_error_string(e));
 	return (e);
@@ -486,7 +486,7 @@ gfm_getdirpath_request(struct gfm_connection *gfm_server, void *closure)
 	gfarm_error_t e = gfm_client_getdirpath_request(gfm_server);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1003736,
 		    "getdirpath request: %s", gfarm_error_string(e));
 	return (e);
 }
@@ -498,7 +498,7 @@ gfm_getdirpath_result(struct gfm_connection *gfm_server, void *closure)
 	gfarm_error_t e = gfm_client_getdirpath_result(gfm_server, c->pathp);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003737,
 		    "getdirpath result: %s", gfarm_error_string(e));
 	return (e);
 }
@@ -518,7 +518,7 @@ gfs_fgetdirpath(GFS_Dir super, char **pathp)
 	    &closure);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003738,
 		    "gfs_fgetdirpath: %s", gfarm_error_string(e));
 	return (e);
 }

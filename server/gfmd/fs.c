@@ -700,7 +700,7 @@ gfm_server_fhopen(struct peer *peer, int from_client, int skip)
 
 	e = gfm_server_get_request(peer, diag, "lli", &inum, &gen, &flag);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003764,
 		    "%s: %s", diag, gfarm_error_string(e));
 		return (e);
 	}
@@ -735,7 +735,7 @@ gfm_server_fhopen(struct peer *peer, int from_client, int skip)
 	}
 	giant_unlock();
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s: %s", diag,
+		gflog_debug(GFARM_MSG_1003765, "%s: %lld:%lld: %s: %s", diag,
 		  (long long)inum, (long long)gen, msg, gfarm_error_string(e));
 
 	return (gfm_server_put_reply(peer, diag, e, "i", mode));

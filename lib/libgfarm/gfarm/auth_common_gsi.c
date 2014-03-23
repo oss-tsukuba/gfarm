@@ -192,7 +192,7 @@ gfarm_gsi_server_finalize(void)
 
 	gfarm_gsi_initialize_mutex_lock(diag);
 	while (gsi_server_init_count > 0) {
-		gflog_info(GFARM_MSG_UNFIXED, "%s: wait (%d)", diag,
+		gflog_info(GFARM_MSG_1003751, "%s: wait (%d)", diag,
 		    gsi_server_init_count);
 		gfarm_cond_wait(&gsi_server_init_count_cond,
 		    &gsi_initialize_mutex, diag, name);

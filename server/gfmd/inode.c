@@ -378,14 +378,14 @@ inode_cksum_set(struct file_opening *fo,
 		if (cmp_cksum(cs, cksum_type, cksum_len, cksum) != 0) {
 			e = GFARM_ERR_CHECKSUM_MISMATCH;
 			if (ios->u.f.writers >= 1) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003761,
 				   "%s: (%llu:%llu) %s", diag,
 				   (unsigned long long)inode_get_number(inode),
 				   (unsigned long long)inode_get_gen(inode),
 				   gfarm_error_string(e));
 				return (GFARM_ERR_NO_ERROR);
 			} else {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003762,
 				   "%s: (%llu:%llu) %s", diag,
 				   (unsigned long long)inode_get_number(inode),
 				   (unsigned long long)inode_get_gen(inode),
@@ -394,7 +394,7 @@ inode_cksum_set(struct file_opening *fo,
 			}
 		} else {
 			e = GFARM_ERR_ALREADY_EXISTS;
-			gflog_debug(GFARM_MSG_UNFIXED, "%s: (%llu:%llu) %s",
+			gflog_debug(GFARM_MSG_1003763, "%s: (%llu:%llu) %s",
 			    diag, (unsigned long long)inode_get_number(inode),
 			    (unsigned long long)inode_get_gen(inode),
 			    gfarm_error_string(e));

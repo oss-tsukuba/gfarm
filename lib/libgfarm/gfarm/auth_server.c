@@ -150,7 +150,7 @@ gfarm_auth_sharedsecret_md5_response(struct gfp_xdr *conn,
 	if (pwd == NULL) {
 		/* *errorp should have a valid value only in this case */
 		error = *errorp;
-		gflog_debug(GFARM_MSG_UNFIXED, "Password is null (%d)",
+		gflog_debug(GFARM_MSG_1003723, "Password is null (%d)",
 		    (int)error);
 		/* already logged at gfarm_authorize_sharedsecret() */
 	} else if ((e = gfarm_auth_shared_key_get(&expire_expected,

@@ -117,7 +117,7 @@ dir_foreach(
 		strcat(dir1, dp->d_name);
 		e = dir_foreach(op_file, op_dir1, op_dir2, dir1, arg);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED, "%s: %s", dir1,
+			gflog_error(GFARM_MSG_1003787, "%s: %s", dir1,
 			    gfarm_error_string(e));
 		free(dir1);
 	}
@@ -207,7 +207,7 @@ check_file(char *file, struct stat *stp, void *arg)
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 	else if ((c.flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
 	    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0) {
-		gflog_warning(GFARM_MSG_UNFIXED, "%s: cksum flag %d, skipped",
+		gflog_warning(GFARM_MSG_1003788, "%s: cksum flag %d, skipped",
 		    file, c.flags);
 		e = GFARM_ERR_NO_ERROR;
 	} else if ((e = calc_md5(file, md5)) != GFARM_ERR_NO_ERROR)
@@ -219,7 +219,7 @@ check_file(char *file, struct stat *stp, void *arg)
 		if (c.len > 0 && (c.flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
 		    GFM_PROTO_CKSUM_GET_EXPIRED)) == 0) {
 			e = GFARM_ERR_CHECKSUM_MISMATCH;
-			gflog_error(GFARM_MSG_UNFIXED, "%s: file %.*s mds %.*s",
+			gflog_error(GFARM_MSG_1003789, "%s: file %.*s mds %.*s",
 			    file, (int)md5_size, md5, (int)c.len, c.cksum);
 		}
 	} else {
@@ -249,7 +249,7 @@ check_spool(char *dir)
 
 	e = dir_foreach(check_file, NULL, NULL, dir, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED, "%s: %s", dir,
+		gflog_error(GFARM_MSG_1003790, "%s: %s", dir,
 		    gfarm_error_string(e));
 }
 
@@ -299,13 +299,13 @@ mmap_progress_file(const char *file)
 
 	if ((fd = open(file, O_RDWR)) == -1) {
 		if ((fd = open(file, O_RDWR|O_CREAT|O_TRUNC, 0644)) == -1)
-			gflog_fatal_errno(GFARM_MSG_UNFIXED, file);
+			gflog_fatal_errno(GFARM_MSG_1003791, file);
 		if (ftruncate(fd, size) == -1)
-			gflog_fatal_errno(GFARM_MSG_UNFIXED, "ftruncate");
+			gflog_fatal_errno(GFARM_MSG_1003792, "ftruncate");
 	}
 	if ((addr = mmap(NULL, 8, PROT_WRITE|PROT_READ, MAP_SHARED, fd, 0))
 	    == MAP_FAILED)
-		gflog_fatal_errno(GFARM_MSG_UNFIXED, "mmap");
+		gflog_fatal_errno(GFARM_MSG_1003793, "mmap");
 	close(fd);
 	return (addr);
 }
@@ -323,7 +323,7 @@ error_check(char *msg, gfarm_error_t e)
 {
 	if (e == GFARM_ERR_NO_ERROR)
 		return;
-	gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s", msg, gfarm_error_string(e));
+	gflog_fatal(GFARM_MSG_1003794, "%s: %s", msg, gfarm_error_string(e));
 }
 
 void
@@ -388,8 +388,8 @@ main(int argc, char *argv[])
 	if (!foreground) {
 		gflog_syslog_open(LOG_PID, syslog_facility);
 		if (gfarm_daemon(1, 0) == -1)
-			gflog_warning_errno(GFARM_MSG_UNFIXED, "daemon");
-		gflog_info(GFARM_MSG_UNFIXED, "%s: start", progname);
+			gflog_warning_errno(GFARM_MSG_1003795, "daemon");
+		gflog_info(GFARM_MSG_1003796, "%s: start", progname);
 	}
 	progress_addr = mmap_progress_file(PROGRESS_FILE);
 	start_count = *progress_addr;
@@ -407,10 +407,10 @@ main(int argc, char *argv[])
 	if (foreground)
 		puts("");
 	else
-		gflog_info(GFARM_MSG_UNFIXED, "%s: finish", progname);
+		gflog_info(GFARM_MSG_1003797, "%s: finish", progname);
 	munmap_progress_file(progress_addr);
 	if (unlink(PROGRESS_FILE) == -1)
-		gflog_error_errno(GFARM_MSG_UNFIXED, PROGRESS_FILE);
+		gflog_error_errno(GFARM_MSG_1003798, PROGRESS_FILE);
 
 	gfm_client_connection_free(gfm_server);
 	e = gfarm_terminate();

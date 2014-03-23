@@ -350,11 +350,11 @@ replica_check_info()
 	replica_check_giant_unlock();
 
 	if (!gfarm_replica_check) {
-		RC_LOG_INFO(GFARM_MSG_UNFIXED, "replica_check is disabled");
+		RC_LOG_INFO(GFARM_MSG_1003755, "replica_check is disabled");
 		return;
 	}
 	if (time_start == 0 || table_size == 0) {
-		RC_LOG_INFO(GFARM_MSG_UNFIXED, "replica_check: standby");
+		RC_LOG_INFO(GFARM_MSG_1003756, "replica_check: standby");
 		return;
 	}
 
@@ -363,7 +363,7 @@ replica_check_info()
 	/* elapse / estimate_all = progress */
 	estimate = (long long)((float)elapse / progress - (float)elapse);
 
-	RC_LOG_INFO(GFARM_MSG_UNFIXED,
+	RC_LOG_INFO(GFARM_MSG_1003757,
 	    "replica_check: progress=%lld/%lld (%.2f%%),"
 	    " elapse:estimate=%lld:%lld sec.",
 	    (long long)inum, (long long)table_size, progress * 100,
@@ -661,7 +661,7 @@ check_status()
 
 	gfarm_mutex_lock(&replica_check_status_mutex, diag, name);
 	while (replica_check_status == GFM_PROTO_REPLICA_CHECK_CTRL_STOP) {
-		gflog_info(GFARM_MSG_UNFIXED, "replica_check: stopped");
+		gflog_info(GFARM_MSG_1003758, "replica_check: stopped");
 		gfarm_cond_wait(&replica_check_status_cond,
 		    &replica_check_status_mutex, diag, name);
 	}
@@ -686,7 +686,7 @@ gfm_server_replica_check_ctrl(struct peer *peer, int from_client, int skip)
 	if (!from_client || (user = peer_get_user(peer)) == NULL ||
 	    !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s", gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_1003759, "%s", gfarm_error_string(e));
 	} else {
 		switch (ctrl) {
 		case GFM_PROTO_REPLICA_CHECK_CTRL_START:
@@ -695,7 +695,7 @@ gfm_server_replica_check_ctrl(struct peer *peer, int from_client, int skip)
 			break;
 		default:
 			e = GFARM_ERR_INVALID_ARGUMENT;
-			gflog_debug(GFARM_MSG_UNFIXED, "%s: %d",
+			gflog_debug(GFARM_MSG_1003760, "%s: %d",
 			    gfarm_error_string(e), ctrl);
 		}
 	}

@@ -435,12 +435,12 @@ db_journal_apply_inode_cksum_add(gfarm_uint64_t seqnum,
 
 	if ((e = db_journal_inode_lookup(arg->inum, &n,
 	    "db_journal_apply_inode_cksum_add")) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003766,
 		    "inum=%llu : %s",
 		    (unsigned long long)arg->inum, gfarm_error_string(e));
 	else if ((e = inode_cksum_set_in_cache(n,
 	    arg->type, arg->len, arg->sum)) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003767,
 		    "seqnum=%llu inum=%llu : %s", (unsigned long long)seqnum,
 		    (unsigned long long)arg->inum, gfarm_error_string(e));
 	return (e);
@@ -455,7 +455,7 @@ db_journal_apply_inode_cksum_remove(gfarm_uint64_t seqnum,
 
 	if ((e = db_journal_inode_lookup(arg->inum, &n,
 	    "db_journal_apply_inode_cksum_remove")) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003768,
 		    "inum=%llu : %s",
 		    (unsigned long long)arg->inum, gfarm_error_string(e));
 	else
