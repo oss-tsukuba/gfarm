@@ -302,25 +302,6 @@ For example,
 .\}
 .RE
 .PP
-spool_digest \fIdigest_type\fR
-.RS 4
-The
-spool_digest
-statement enables the checksum calculation, and specifies the digest type of the checksum\&. Currently, md5 is supported\&. This directive is only effective for gfsd\&.
-.sp
-For example,
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-	spool_digest md5
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
 metadb_server_host \fIhostname\fR
 .RS 4
 The
@@ -828,6 +809,25 @@ shared_key_file
 statement specifies a pathname of the shared secret key file in sharedsecret authentication\&.
 .RE
 .PP
+digest \fIdigest_type\fR
+.RS 4
+The
+digest
+statement enables the checksum calculation, and specifies the digest type of the checksum\&. Currently, md5 is supported\&. This directive is only effective for gfmd\&.conf\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	digest md5
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 sockopt \fIoption\fR\fI[=\fR\fIvalue\fR\fI] [\fR\fILISTENER\fR\fI | \fR\fI\fIHost_specification\fR\fR\fI]\fR
 .RS 4
 The
@@ -1231,7 +1231,7 @@ For example,
 .PP
 minimum_free_disk_space \fIbytes\fR
 .RS 4
-This directive specifies free disk space (in bytes) which is required on filesystem nodes\&. The Gfarm scheduler excludes filesystem nodes which have less free space than this parameter, when it schedules nodes for jobs which may write files\&. The free space value may have a suffix like ``k\*(Aq\*(Aq (kilo bytes), ``M\*(Aq\*(Aq (mega bytes), ``G\*(Aq\*(Aq (giga bytes) and ``T\*(Aq\*(Aq (tera bytes)\&. The default size is 128M bytes\&.
+This directive specifies free disk space (in bytes) which is required on filesystem nodes\&. The Gfarm scheduler excludes filesystem nodes which have less free space than this parameter, when it schedules nodes for jobs which may write files\&. The free space value may have a suffix like ``k\*(Aq\*(Aq (kilo bytes), ``M\*(Aq\*(Aq (mega bytes), ``G\*(Aq\*(Aq (giga bytes) and ``T\*(Aq\*(Aq (tera bytes)\&. The default size is 512M bytes\&.
 .sp
 This directive has to be specified in both gfarm2\&.conf and gfmd\&.conf\&. After restarting the gfmd and the Gfarm client, it is effective\&.
 .sp
@@ -1859,7 +1859,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .RS 4
 .\}
 .nf
-<spool_statement> |
+	<spool_statement> |
 	<spool_server_listen_address_statement> |
 	<spool_server_listen_backlog_statement> |
 	<spool_server_cred_type_statement> |
@@ -1867,7 +1867,6 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<spool_server_cred_name_statement> |
 	<spool_check_level_statement> |
 	<spool_base_load_statement> |
-	<spool_digest_statement> |
 	<metadb_server_host_statement> |
 	<metadb_server_port_statement> |
 	<metadb_server_cred_type_statement> |
@@ -1893,6 +1892,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<postgresql_conninfo_statement> |
 	<auth_statement> |
 	<shared_key_file_statement> |
+	<digest_statement> |
 
 	<sockopt_statement> |
 
@@ -2059,20 +2059,6 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "spool_base_load" <load>
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-<spool_digest_statement> ::=
-.RS 4
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-"spool_digest" <digest_type>
 .fi
 .if n \{\
 .RE
@@ -2451,6 +2437,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "shared_key_file" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<digest_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"digest" <digest_type>
 .fi
 .if n \{\
 .RE
