@@ -19,4 +19,4 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC) $(GFUTIL_SRCDIR)/md5.h $(GFARMLIB_SRCDIR)/lookup.h $(GFARMLIB_SRCDIR)/gfm_client.h
+$(OBJS): $(DEPGFARMINC) $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/md5.h $(GFARMLIB_SRCDIR)/lookup.h $(GFARMLIB_SRCDIR)/gfm_proto.h $(GFARMLIB_SRCDIR)/gfm_client.h

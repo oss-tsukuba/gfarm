@@ -17,11 +17,12 @@
 
 #include <gfarm/gfarm.h>
 
+#include "gfutil.h"
+#include "md5.h"
+
 #include "lookup.h"
 #include "gfm_proto.h"
 #include "gfm_client.h"
-
-#include "md5.h"
 
 char *progname = "gfspoolmd5";
 
@@ -32,6 +33,7 @@ static struct timeval itime, start_time;
 const char PROGRESS_FILE[] = ".md5.count";
 long long *progress_addr;
 int mtime_day = -1;
+int foreground;
 
 /*
  * File format should be consistent with gfsd_local_path() in gfsd.c
@@ -85,8 +87,7 @@ dir_foreach(
 			return (op_file(dir, &st, arg));
 		else
 			return (GFARM_ERR_NO_ERROR);
-	}
-	if (!S_ISDIR(st.st_mode))
+	} else if (!S_ISDIR(st.st_mode))
 		return (GFARM_ERR_INVALID_ARGUMENT); /* XXX */
 
 	if (op_dir1 != NULL) {
@@ -94,8 +95,7 @@ dir_foreach(
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
-	dirp = opendir(dir);
-	if (dirp == NULL)
+	if ((dirp = opendir(dir)) == NULL)
 		return (gfarm_errno_to_error(errno));
 
 	/* if dir is '.', remove it */
@@ -117,7 +117,7 @@ dir_foreach(
 		strcat(dir1, dp->d_name);
 		e = dir_foreach(op_file, op_dir1, op_dir2, dir1, arg);
 		if (e != GFARM_ERR_NO_ERROR)
-			fprintf(stderr, "%s: %s\n", dir1,
+			gflog_error(GFARM_MSG_UNFIXED, "%s: %s", dir1,
 			    gfarm_error_string(e));
 		free(dir1);
 	}
@@ -139,10 +139,8 @@ calc_md5(char *file, char md5[MD5_SIZE * 2 + 1])
 	int di, fd, sz;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
-	fd = open(file, O_RDONLY);
-	if (fd == -1)
+	if ((fd = open(file, O_RDONLY)) == -1)
 		return (gfarm_errno_to_error(errno));
-
 	md5_init(&state);
 	while ((sz = read(fd, buf, sizeof buf)) > 0)
 		md5_append(&state, buf, sz);
@@ -209,7 +207,8 @@ check_file(char *file, struct stat *stp, void *arg)
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 	else if ((c.flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
 	    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0) {
-		fprintf(stderr, "%s: cksum flag %d, skipped\n", file, c.flags);
+		gflog_warning(GFARM_MSG_UNFIXED, "%s: cksum flag %d, skipped",
+		    file, c.flags);
 		e = GFARM_ERR_NO_ERROR;
 	} else if ((e = calc_md5(file, md5)) != GFARM_ERR_NO_ERROR)
 		;
@@ -220,7 +219,7 @@ check_file(char *file, struct stat *stp, void *arg)
 		if (c.len > 0 && (c.flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
 		    GFM_PROTO_CKSUM_GET_EXPIRED)) == 0) {
 			e = GFARM_ERR_CHECKSUM_MISMATCH;
-			fprintf(stderr, "%s: file %.*s mds %.*s\n",
+			gflog_error(GFARM_MSG_UNFIXED, "%s: file %.*s mds %.*s",
 			    file, (int)md5_size, md5, (int)c.len, c.cksum);
 		}
 	} else {
@@ -237,7 +236,8 @@ close_progress:
 progress:
 	count += 1;
 	size += stp->st_size;
-	show_progress();
+	if (foreground)
+		show_progress();
 	*progress_addr = count;
 	return (e);
 }
@@ -249,7 +249,8 @@ check_spool(char *dir)
 
 	e = dir_foreach(check_file, NULL, NULL, dir, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
-		fprintf(stderr, "%s: %s\n", dir, gfarm_error_string(e));
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %s", dir,
+		    gfarm_error_string(e));
 }
 
 static gfarm_error_t
@@ -297,20 +298,14 @@ mmap_progress_file(const char *file)
 	void *addr;
 
 	if ((fd = open(file, O_RDWR)) == -1) {
-		if ((fd = open(file, O_RDWR|O_CREAT|O_TRUNC, 0644)) == -1) {
-			perror(file);
-			exit(1);
-		}
-		if (ftruncate(fd, size) == -1) {
-			perror("ftruncate");
-			exit(1);
-		}
+		if ((fd = open(file, O_RDWR|O_CREAT|O_TRUNC, 0644)) == -1)
+			gflog_fatal_errno(GFARM_MSG_UNFIXED, file);
+		if (ftruncate(fd, size) == -1)
+			gflog_fatal_errno(GFARM_MSG_UNFIXED, "ftruncate");
 	}
 	if ((addr = mmap(NULL, 8, PROT_WRITE|PROT_READ, MAP_SHARED, fd, 0))
-	    == MAP_FAILED) {
-		perror("mmap");
-		exit(1);
-	}
+	    == MAP_FAILED)
+		gflog_fatal_errno(GFARM_MSG_UNFIXED, "mmap");
 	close(fd);
 	return (addr);
 }
@@ -328,15 +323,16 @@ error_check(char *msg, gfarm_error_t e)
 {
 	if (e == GFARM_ERR_NO_ERROR)
 		return;
-	fprintf(stderr, "%s: %s\n", msg, gfarm_error_string(e));
-	exit(1);
+	gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s", msg, gfarm_error_string(e));
 }
 
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [ -m mtime_day ] -r spool_root [ dir ... ] "
-	    "2> log\n", progname);
+	fprintf(stderr, "Usage: %s [ -m mtime_day ] ", progname);
+	fprintf(stderr, "-r spool_root [ dir ... ]\n");
+	fprintf(stderr, "       %s -f [ -m mtime_day ] ", progname);
+	fprintf(stderr, "-r spool_root [ dir ... ] 2> log\n");
 	exit(2);
 }
 
@@ -346,12 +342,16 @@ main(int argc, char *argv[])
 	gfarm_error_t e;
 	char *spool_root = NULL;
 	int c, i;
+	int syslog_facility = GFARM_DEFAULT_FACILITY;
 
 	if (argc > 0)
 		progname = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "hm:r:?")) != -1) {
+	while ((c = getopt(argc, argv, "fhm:r:?")) != -1) {
 		switch (c) {
+		case 'f':
+			foreground = 1;
+			break;
 		case 'm':
 			mtime_day = atoi(optarg) * 3600 * 24;
 			break;
@@ -385,6 +385,12 @@ main(int argc, char *argv[])
 		fprintf(stderr, "You are not gfarmroot\n");
 		exit(1);
 	}
+	if (!foreground) {
+		gflog_syslog_open(LOG_PID, syslog_facility);
+		if (gfarm_daemon(1, 0) == -1)
+			gflog_warning_errno(GFARM_MSG_UNFIXED, "daemon");
+		gflog_info(GFARM_MSG_UNFIXED, "%s: start", progname);
+	}
 	progress_addr = mmap_progress_file(PROGRESS_FILE);
 	start_count = *progress_addr;
 	gettimeofday(&itime, NULL);
@@ -398,10 +404,13 @@ main(int argc, char *argv[])
 		gettimeofday(&start_time, NULL);
 		check_spool(".");
 	}
-	puts("");
+	if (foreground)
+		puts("");
+	else
+		gflog_info(GFARM_MSG_UNFIXED, "%s: finish", progname);
 	munmap_progress_file(progress_addr);
 	if (unlink(PROGRESS_FILE) == -1)
-		perror(PROGRESS_FILE);
+		gflog_error_errno(GFARM_MSG_UNFIXED, PROGRESS_FILE);
 
 	gfm_client_connection_free(gfm_server);
 	e = gfarm_terminate();
