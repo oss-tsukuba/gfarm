@@ -1,3 +1,13 @@
+Release note for Gfarm 2.5.8.6
+==============================
+
+[2014.3.24]
+
+Bug fix
+* sharedsecret configuration allows unauthenticated access in a
+  certain case, which is introduced by Gfarm 2.5.8.5 [sf.net ticket
+  #754]
+
 Release note for Gfarm 2.5.8.5
 ==============================
 

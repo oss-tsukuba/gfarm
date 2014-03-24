@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([gfarm], [2.5.8.5])
+AC_INIT([gfarm], [2.5.8.6])
 AC_CONFIG_SRCDIR(RELNOTES)
 AC_CONFIG_AUX_DIR(makes)
 AC_CONFIG_HEADER(include/gfarm/gfarm_config.h)
