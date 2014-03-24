@@ -287,7 +287,7 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	char *global_username, *local_username, *aux, *buf = NULL;
 	int eof;
 	enum gfarm_auth_id_type peer_type;
-	enum gfarm_auth_error error = GFARM_AUTH_ERROR_NO_ERROR;
+	enum gfarm_auth_error error = GFARM_AUTH_ERROR_DENIED; /* to be safe */
 	struct passwd pwbuf, *pwd;
 	int is_root = 0;
 
@@ -359,7 +359,7 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 			pwd = NULL;
 			error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
 		} else if (getpwnam_r(local_username, &pwbuf, buf,
-		    gfarm_ctxp->getpw_r_bufsz, &pwd) != 0) {
+		    gfarm_ctxp->getpw_r_bufsz, &pwd) != 0 || pwd == NULL) {
 			gflog_notice(GFARM_MSG_1000043,
 			    "(%s@%s) %s: authorize_sharedsecret: "
 			    "local account doesn't exist",
