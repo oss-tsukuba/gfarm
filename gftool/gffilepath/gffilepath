@@ -1,4 +1,8 @@
 #!/bin/sh
+#
+# this program requires additional index on direntry table:
+#
+# create index direntrybyentryinode on direntry (entryinumber);
 
 ${DEBUG:="false"} && set -xu
 PROGNAME=`basename $0`
