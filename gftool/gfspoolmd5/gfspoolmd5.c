@@ -299,7 +299,7 @@ mmap_progress_file(const char *file)
 
 	if ((fd = open(file, O_RDWR)) == -1) {
 		if ((fd = open(file, O_RDWR|O_CREAT|O_TRUNC, 0644)) == -1)
-			gflog_fatal_errno(GFARM_MSG_1003791, file);
+			gflog_fatal_errno(GFARM_MSG_1003791, "%s", file);
 		if (ftruncate(fd, size) == -1)
 			gflog_fatal_errno(GFARM_MSG_1003792, "ftruncate");
 	}
