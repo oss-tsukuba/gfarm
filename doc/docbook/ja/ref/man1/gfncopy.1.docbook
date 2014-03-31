@@ -124,6 +124,28 @@ pathに指定したファイルないしディレクトリに関する自動フ�
 </varlistentry>
 
 <varlistentry>
+<term><option>-C</option></term>
+<listitem>
+<para>
+既に自動複製作成数が設定されている場合に、
+<command moreinfo="none">gfncopy</command> の <option>-s</option>
+または <option>-S</option> オプションは失敗します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-M</option></term>
+<listitem>
+<para>
+自動複製作成数が設定されていない場合に、
+<command moreinfo="none">gfncopy</command> の <option>-s</option>
+または <option>-S</option> オプションは失敗します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-r</option></term>
 <listitem>
 <para>自動複製作成数の設定を消去します。
