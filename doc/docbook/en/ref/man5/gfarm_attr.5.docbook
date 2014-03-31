@@ -75,8 +75,19 @@ filesystem.
 <term><parameter moreinfo="none">gfarm.ncopy</parameter></term>
 <listitem>
 <para>
-This is the number of file replicas to be created automatically in
-gfmd.
+This is the number of file replicas to be created automatically.
+See the manual page of gfncopy(1) for more details.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">gfarm.replicainfo</parameter></term>
+<listitem>
+<para>
+This is the attribute for automatic replication represented by host
+groups.
+See the manual page of gfncopy(1) for more details.
 </para>
 </listitem>
 </varlistentry>
@@ -146,6 +157,8 @@ gfarm_root.{user,group} extended attributes should not be used.
 <para>
   <citerefentry><refentrytitle>gfxattr</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
   <citerefentry><refentrytitle>gfgetfacl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
-  <citerefentry><refentrytitle>gfsetfacl</refentrytitle><manvolnum>1</manvolnum></citerefentry></para>
+  <citerefentry><refentrytitle>gfsetfacl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>gfncopy</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+</para>
 </refsect1>
 </refentry>
