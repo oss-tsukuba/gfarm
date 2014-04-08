@@ -53,7 +53,13 @@ XML拡張属性は，ファイルまたはディレクトリのパーミッシ�
 <div class="variablelist"><dl>
 <dt><span class="term"><em class="parameter"><code>gfarm.ncopy</code></em></span></dt>
 <dd><p>
-gfmd で自動的にファイルを複製する際に目標とする複製の合計数を格納します．
+自動ファイル複製作成数を格納します．
+詳細は gfncopy コマンドのマニュアルを参照してください．
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>gfarm.replicainfo</code></em></span></dt>
+<dd><p>
+ホストグループごとの自動ファイル複製作成数を格納します．
+詳細は gfncopy コマンドのマニュアルを参照してください．
 </p></dd>
 <dt><span class="term"><em class="parameter"><code>gfarm.acl_access</code></em></span></dt>
 <dd><p>
@@ -94,7 +100,9 @@ ACL(アクセスコントロールリスト)を格納します．
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfxattr</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfgetfacl</span>(1)</span>,
-  <span class="citerefentry"><span class="refentrytitle">gfsetfacl</span>(1)</span></p>
+  <span class="citerefentry"><span class="refentrytitle">gfsetfacl</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfncopy</span>(1)</span>
+</p>
 </div>
 </div></body>
 </html>

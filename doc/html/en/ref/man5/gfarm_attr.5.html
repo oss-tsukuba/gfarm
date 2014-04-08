@@ -51,8 +51,14 @@ filesystem.
 <div class="variablelist"><dl>
 <dt><span class="term"><em class="parameter"><code>gfarm.ncopy</code></em></span></dt>
 <dd><p>
-This is the number of file replicas to be created automatically in
-gfmd.
+This is the number of file replicas to be created automatically.
+See the manual page of gfncopy(1) for more details.
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>gfarm.replicainfo</code></em></span></dt>
+<dd><p>
+This is the attribute for automatic replication represented by host
+groups.
+See the manual page of gfncopy(1) for more details.
 </p></dd>
 <dt><span class="term"><em class="parameter"><code>gfarm.acl_access</code></em></span></dt>
 <dd><p>
@@ -98,7 +104,9 @@ gfarm_root.{user,group} extended attributes should not be used.
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfxattr</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfgetfacl</span>(1)</span>,
-  <span class="citerefentry"><span class="refentrytitle">gfsetfacl</span>(1)</span></p>
+  <span class="citerefentry"><span class="refentrytitle">gfsetfacl</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfncopy</span>(1)</span>
+</p>
 </div>
 </div></body>
 </html>

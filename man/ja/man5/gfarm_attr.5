@@ -2,12 +2,12 @@
 .\"     Title: gfarm_attr
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 1 Apr 2011
+.\"      Date: 31 Mar 2014
 .\"    Manual: Gfarm_attr
 .\"    Source: Gfarm_attr
 .\"  Language: English
 .\"
-.TH "GFARM_ATTR" "5" "1 Apr 2011" "Gfarm_attr" "Gfarm_attr"
+.TH "GFARM_ATTR" "5" "31 Mar 2014" "Gfarm_attr" "Gfarm_attr"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -51,7 +51,12 @@ XML拡張属性は，ファイルまたはディレクトリのパーミッシ�
 .PP
 \fIgfarm\&.ncopy\fR
 .RS 4
-gfmd で自動的にファイルを複製する際に目標とする複製の合計数を格納します．
+自動ファイル複製作成数を格納します． 詳細は gfncopy コマンドのマニュアルを参照してください．
+.RE
+.PP
+\fIgfarm\&.replicainfo\fR
+.RS 4
+ホストグループごとの自動ファイル複製作成数を格納します． 詳細は gfncopy コマンドのマニュアルを参照してください．
 .RE
 .PP
 \fIgfarm\&.acl_access\fR
@@ -81,4 +86,5 @@ ACL(アクセスコントロールリスト)を格納します．
 
 \fBgfxattr\fR(1),
 \fBgfgetfacl\fR(1),
-\fBgfsetfacl\fR(1)
+\fBgfsetfacl\fR(1),
+\fBgfncopy\fR(1)
