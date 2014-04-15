@@ -1051,8 +1051,11 @@ gfm_server_revoke_gfsd_access(
 {
 	gfarm_error_t e;
 	gfarm_int32_t fd;
-	struct file_opening *fo;
-	struct process *process;
+	struct file_opening *fo = NULL;
+	struct process *process = NULL;
+	gfarm_pid_t pid_for_logging;
+	gfarm_ino_t inum_for_logging;
+	gfarm_uint64_t igen_for_logging;
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_REVOKE_GFSD_ACCESS";
 
@@ -1087,7 +1090,26 @@ gfm_server_revoke_gfsd_access(
 			fo->u.f.spool_opener = NULL;
 			fo->u.f.spool_host = NULL;
 		}
+		if (process != NULL)
+			pid_for_logging = process_get_pid(process);
+		else
+			pid_for_logging = -1;
+		if (fo != NULL) {
+			inum_for_logging = inode_get_number(fo->inode);
+			igen_for_logging = inode_get_gen(fo->inode);
+		} else {
+			inum_for_logging = -1;
+			igen_for_logging = -1;
+		}
 		giant_unlock();
+
+		/* connection problem in client side. worth logging. */
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s:%s: pid:%lld fd:%d inode:%llu:%llu %s request: %s",
+		    peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)pid_for_logging, (int)fd,
+		    (long long)inum_for_logging, (long long)igen_for_logging,
+		    diag, gfarm_error_string(e));
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
 	    &e, ""));

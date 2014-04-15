@@ -26,6 +26,7 @@ gfarm_error_t process_new_generation_done(struct process *, struct peer *,
 void process_attach_peer(struct process *, struct peer *);
 void process_detach_peer(struct process *, struct peer *);
 
+gfarm_pid_t process_get_pid(struct process *);
 struct user *process_get_user(struct process *);
 
 gfarm_error_t process_verify_fd(struct process *, int);
