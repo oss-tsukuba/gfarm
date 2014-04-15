@@ -885,6 +885,38 @@ process_reopen_file(struct process *process,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static int
+process_peer_is_the_spool_opener(struct process *process,
+	struct peer *peer, int fd, struct file_opening *fo, gfarm_mode_t mode,
+	const char *diag)
+{
+	/* if this request is valid, peer must be gfsd */
+
+	if (!GFARM_S_ISREG(mode)) { /* non-opener only can open a file */
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: pid:%lld fd:%d inode:%llu:%llu "
+		    "not a file (0%o) by %s@%s",
+		    diag, (long long)process->pid, (int)fd,
+		    (long long)inode_get_number(fo->inode),
+		    (long long)inode_get_gen(fo->inode), (int)mode,
+		    peer_get_username(peer), peer_get_hostname(peer));
+		return (0);
+	}
+	if (peer != fo->u.f.spool_opener) { /* peer is not the spool opener */
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: pid:%lld fd:%d inode:%llu:%llu "
+		    "invalid request by %s@%s, should be %s",
+		    diag, (long long)process->pid, (int)fd,
+		    (long long)inode_get_number(fo->inode),
+		    (long long)inode_get_gen(fo->inode),
+		    peer_get_hostname(peer), peer_get_username(peer),
+		    fo->u.f.spool_opener == NULL ? "closed already" :
+		    peer_get_hostname(fo->u.f.spool_opener));
+		return (0);
+	}
+	return (1);
+}
+
 gfarm_error_t
 process_close_file(struct process *process, struct peer *peer, int fd,
 	char **trace_logp)
@@ -892,6 +924,7 @@ process_close_file(struct process *process, struct peer *peer, int fd,
 	struct file_opening *fo;
 	gfarm_mode_t mode;
 	gfarm_error_t e;
+	static const char diag[] = "process_close_file";
 
 	if (FD_IS_SLAVE_ONLY(fd))
 		e = process_get_slave_file_opening(process, fd, &fo);
@@ -908,16 +941,10 @@ process_close_file(struct process *process, struct peer *peer, int fd,
 
 	if (fo->opener != peer) {
 		assert(!FD_IS_SLAVE_ONLY(fd));
-		if (!GFARM_S_ISREG(mode)) {
-			gflog_debug(GFARM_MSG_1001635,
-				"inode is not file");
+		if (!process_peer_is_the_spool_opener(process, peer, fd, fo,
+		    mode, diag))
 			return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-		}
-		if (fo->u.f.spool_opener != peer) {
-			gflog_debug(GFARM_MSG_1001636,
-				"operation is not permitted");
-			return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-		}
+
 		/* i.e. REOPENed file, and I am a gfsd. */
 		if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0) {
 			inode_del_ref_spool_writers(fo->inode);
@@ -959,6 +986,7 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 	struct file_opening *fo;
 	gfarm_mode_t mode;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	static const char diag[] = "process_close_file_read";
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001637,
@@ -967,16 +995,9 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 		return (e);
 	}
 	mode = inode_get_mode(fo->inode);
-	if (!GFARM_S_ISREG(mode)) {
-		gflog_debug(GFARM_MSG_1001638,
-			"inode is not file");
+	if (!process_peer_is_the_spool_opener(process, peer, fd, fo,
+	    mode, diag))
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	}
-	if (fo->u.f.spool_opener != peer) {
-		gflog_debug(GFARM_MSG_1001639,
-			"operation is not permitted");
-		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	}
 
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0) {
 		inode_del_ref_spool_writers(fo->inode);
@@ -1028,16 +1049,10 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		return (e);
 	}
 	mode = inode_get_mode(fo->inode);
-	if (!GFARM_S_ISREG(mode)) {
-		gflog_debug(GFARM_MSG_1001641,
-			"inode is not file");
+	if (!process_peer_is_the_spool_opener(process, peer, fd, fo,
+	    mode, diag))
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	}
-	if (fo->u.f.spool_opener != peer) {
-		gflog_debug(GFARM_MSG_1001642,
-			"operation is not permitted");
-		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	}
+
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) == 0) {
 		gflog_debug(GFARM_MSG_1001643,
 			"bad file descriptor");
