@@ -116,6 +116,7 @@ extern float gfarm_schedule_virtual_load;
 extern float gfarm_schedule_candidates_ratio;
 extern float gfarm_schedule_rtt_thresh_ratio;
 extern int gfarm_schedule_rtt_thresh_diff;
+extern int gfarm_direct_local_access;
 extern int gfarm_simultaneous_replication_receivers;
 extern int gfarm_gfsd_connection_cache;
 extern int gfarm_record_atime;

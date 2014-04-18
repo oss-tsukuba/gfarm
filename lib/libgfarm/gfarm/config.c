@@ -857,6 +857,7 @@ char *gfarm_argv0 = NULL;
 #define GFARM_SCHEDULE_RTT_THRESH_DIFF_DEFAULT	1000 /* 1000 micro second */
 #define GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT 1 /* enable */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(512 * 1024 * 1024) /* 512MB */
+#define GFARM_DIRECT_LOCAL_ACCESS_DEFAULT 1 /* enable */
 #define GFARM_SIMULTANEOUS_REPLICATION_RECEIVERS_DEFAULT	20
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
@@ -897,6 +898,7 @@ int gfarm_schedule_rtt_thresh_diff = MISC_DEFAULT;
 static char *schedule_write_target_domain = NULL;
 static int schedule_write_local_priority = MISC_DEFAULT;
 static gfarm_int64_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
+int gfarm_direct_local_access = MISC_DEFAULT;
 int gfarm_simultaneous_replication_receivers = MISC_DEFAULT;
 int gfarm_gfsd_connection_cache = MISC_DEFAULT;
 int gfarm_gfmd_connection_cache = MISC_DEFAULT;
@@ -2775,6 +2777,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_var(p, &schedule_write_target_domain);
 	} else if (strcmp(s, o = "minimum_free_disk_space") == 0) {
 		e = parse_set_misc_offset(p, &gfarm_minimum_free_disk_space);
+	} else if (strcmp(s, o = "direct_local_access") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_direct_local_access);
 	} else if (strcmp(s, o = "simultaneous_replication_receivers") == 0) {
 		e = parse_set_misc_int(p,
 		    &gfarm_simultaneous_replication_receivers);
@@ -3028,6 +3032,8 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_minimum_free_disk_space == MISC_DEFAULT)
 		gfarm_minimum_free_disk_space =
 		    GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT;
+	if (gfarm_direct_local_access == MISC_DEFAULT)
+		gfarm_direct_local_access = GFARM_DIRECT_LOCAL_ACCESS_DEFAULT;
 	if (gfarm_simultaneous_replication_receivers == MISC_DEFAULT)
 		gfarm_simultaneous_replication_receivers =
 		    GFARM_SIMULTANEOUS_REPLICATION_RECEIVERS_DEFAULT;

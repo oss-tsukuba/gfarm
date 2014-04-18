@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>20 Nov 2012</date></refentryinfo>
+<refentryinfo><date>18 Apr 2014</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -789,6 +789,12 @@ calculation, and specifies the digest type of the checksum.
 Currently, md5 is supported.  This directive is only effective for
 gfmd.conf.
 </para>
+<para>
+The digest is not calculated when accessing local files since they are
+accessed directly bypassing the gfsd.  To calculate the digest of
+local files, disable this feature by
+the <token>direct_local_access</token> statement.
+</para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	digest md5
@@ -1316,6 +1322,23 @@ After restarting the gfmd and the Gfarm client, it is effective.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	minimum_free_disk_space 1G
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>direct_local_access</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+When a file is stored at the local host, a Gfarm client accesses the
+file directly bypassing the gfsd to reduce the overhead.  This
+directive is used to disable this feature.  It is useful when enabling
+the digest feature, since the digest is not calculated when accessing
+a file directly.  The default is <token>enable</token>.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	direct_local_access disable
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1978,6 +2001,7 @@ This parameter is only available in gfmd.conf.
 	&lt;write_local_priority_statement&gt; |
 	&lt;write_target_domain_statement&gt; |
 	&lt;minimum_free_disk_space_statement&gt; |
+	&lt;direct_local_access_statement&gt; |
 	&lt;simultaneous_replication_receivers_statement&gt; |
 	&lt;gfsd_connection_cache_statement&gt; |
 	&lt;xmlattr_size_limit_statement&gt; |
@@ -2359,6 +2383,11 @@ This parameter is only available in gfmd.conf.
 <varlistentry>
 <term>&lt;minimum_free_disk_space_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"minimum_free_disk_space" &lt;size&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;direct_local_access_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"direct_local_access" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

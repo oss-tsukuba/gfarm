@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>20 Nov 2012</date></refentryinfo>
+<refentryinfo><date>18 Apr 2014</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -760,6 +760,12 @@ digestタイプで指定されたチェックサムを計算します。
 digestタイプとしては、現在のところ md5 がサポートされています。
 この文は gfmd.conf に対して有効です。
 </para>
+<para>
+ただし、チェックサム計算を有効にしても、
+ローカルホストのファイルアクセスについてはチェックサム計算が行われません。
+ローカルアクセスについてもチェックサム計算を行うためには、
+<token>direct_local_access</token>文で<token>disable</token>を指定してください。
+</para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	digest md5
@@ -1268,6 +1274,25 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負�
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	minimum_free_disk_space 1G
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>direct_local_access</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+ローカルホストのファイルをアクセスする場合、
+オーバヘッドを削減するため、通常 gfsd をバイパスして直接アクセスします。
+この文で<token>disable</token>と指定することによって、
+このバイパスを無効化することができます。
+ローカルホストのファイルアクセスに対してもチェックサム計算を行うためには、
+このバイパスを無効化する必要があります。
+デフォルトはenableです。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	direct_local_access disable
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1923,6 +1948,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;write_local_priority_statement&gt; |
 	&lt;write_target_domain_statement&gt; |
 	&lt;minimum_free_disk_space_statement&gt; |
+	&lt;direct_local_access_statement&gt; |
 	&lt;simultaneous_replication_receivers_statement&gt; |
 	&lt;gfsd_connection_cache_statement&gt; |
 	&lt;xmlattr_size_limit_statement&gt; |
@@ -2304,6 +2330,11 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <varlistentry>
 <term>&lt;minimum_free_disk_space_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"minimum_free_disk_space" &lt;size&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;direct_local_access_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"direct_local_access" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
