@@ -2831,6 +2831,20 @@ gfm_client_fhclose_write_request(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
+gfm_client_fhclose_write_cksum_request(struct gfm_connection *gfm_server,
+	gfarm_ino_t inode, gfarm_uint64_t gen, gfarm_off_t size,
+	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec,
+	gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec,
+	char *cksum_type, size_t cksum_len, const char *cksum,
+	gfarm_int32_t cksum_flags)
+{
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_FHCLOSE_WRITE_CKSUM, "llllilisbi",
+	    inode, gen, size, atime_sec, atime_nsec, mtime_sec, mtime_nsec,
+	    cksum_type, cksum_len, cksum, cksum_flags));
+}
+
+gfarm_error_t
 gfm_client_fhclose_write_result(struct gfm_connection *gfm_server,
 	gfarm_int32_t *flagsp,
 	gfarm_int64_t *old_igenp, gfarm_int64_t *new_igenp,

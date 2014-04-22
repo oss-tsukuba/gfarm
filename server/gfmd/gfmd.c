@@ -348,6 +348,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_FHCLOSE_WRITE:
 		e = gfm_server_fhclose_write(peer, from_client, skip);
 		break;
+	case GFM_PROTO_FHCLOSE_WRITE_CKSUM:
+		e = gfm_server_fhclose_write_cksum(peer, from_client, skip);
+		break;
 	case GFM_PROTO_GENERATION_UPDATED:
 		e = gfm_server_generation_updated(peer, from_client, skip);
 		break;

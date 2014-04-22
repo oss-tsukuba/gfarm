@@ -185,6 +185,10 @@ gfarm_error_t gfm_client_fhclose_read_result(struct gfm_connection *);
 gfarm_error_t gfm_client_fhclose_write_request(struct gfm_connection *,
 	gfarm_ino_t, gfarm_uint64_t, gfarm_off_t, 
 	gfarm_int64_t, gfarm_int32_t, gfarm_int64_t, gfarm_int32_t);
+gfarm_error_t gfm_client_fhclose_write_cksum_request(struct gfm_connection *,
+	gfarm_ino_t, gfarm_uint64_t, gfarm_off_t,
+	gfarm_int64_t, gfarm_int32_t, gfarm_int64_t, gfarm_int32_t,
+	char *, size_t, const char *, gfarm_int32_t);
 gfarm_error_t gfm_client_fhclose_write_result(struct gfm_connection *,
 	gfarm_int32_t *, gfarm_int64_t *, gfarm_int64_t *, gfarm_uint64_t *);
 gfarm_error_t gfm_client_generation_updated_request(struct gfm_connection *,

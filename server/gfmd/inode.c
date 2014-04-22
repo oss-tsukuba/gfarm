@@ -346,18 +346,17 @@ cmp_cksum(struct checksum *c1,
 }
 
 gfarm_error_t
-inode_cksum_set(struct file_opening *fo,
+inode_fhclose_cksum_set(struct inode *inode,
 	const char *cksum_type, size_t cksum_len, const char *cksum,
 	gfarm_int32_t flags, struct gfarm_timespec *mtime)
 {
 	gfarm_error_t e;
-	struct inode *inode = fo->inode;
 	struct inode_open_state *ios = inode->u.c.state;
 	struct checksum *cs;
-	static const char diag[] = "inode_cksum_set";
+	static const char diag[] = "inode_fhclose_cksum_set";
 
-	assert(ios != NULL);
-
+	if (cksum_type == NULL)
+		return (GFARM_ERR_NO_ERROR);
 	if (strlen(cksum_type) > GFM_PROTO_CKSUM_TYPE_MAXLEN) {
 		gflog_debug(GFARM_MSG_1002429,
 		    "too long cksum type: \"%s\"", cksum_type);
@@ -369,15 +368,11 @@ inode_cksum_set(struct file_opening *fo,
 		    cksum_type, (int)cksum_len);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
-	if ((fo->flag & GFARM_FILE_CKSUM_INVALIDATED) != 0) {
-		gflog_debug(GFARM_MSG_1001714, "file checksum is invalidated");
-		return (GFARM_ERR_EXPIRED);
-	}
 	cs = inode->u.c.s.f.cksum;
 	if (cs != NULL) {
 		if (cmp_cksum(cs, cksum_type, cksum_len, cksum) != 0) {
 			e = GFARM_ERR_CHECKSUM_MISMATCH;
-			if (ios->u.f.writers >= 1) {
+			if (ios != NULL && ios->u.f.writers >= 1) {
 				gflog_debug(GFARM_MSG_1003761,
 				   "%s: (%llu:%llu) %s", diag,
 				   (unsigned long long)inode_get_number(inode),
@@ -420,12 +415,33 @@ inode_cksum_set(struct file_opening *fo,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e); /* inode_cksum_set_in_cache() calls gflog_debug */
 
-	if (flags & GFM_PROTO_CKSUM_SET_FILE_MODIFIED) {
+	if (flags & GFM_PROTO_CKSUM_SET_FILE_MODIFIED)
 		inode_set_mtime(inode, mtime);
-		inode_cksum_invalidate(fo);
-	}
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+inode_cksum_set(struct file_opening *fo,
+	const char *cksum_type, size_t cksum_len, const char *cksum,
+	gfarm_int32_t flags, struct gfarm_timespec *mtime)
+{
+	gfarm_error_t e;
+	struct inode *inode = fo->inode;
+	struct inode_open_state *ios = inode->u.c.state;
+
+	assert(ios != NULL);
+
+	if ((fo->flag & GFARM_FILE_CKSUM_INVALIDATED) != 0) {
+		gflog_debug(GFARM_MSG_1001714, "file checksum is invalidated");
+		return (GFARM_ERR_EXPIRED);
+	}
+	e = inode_fhclose_cksum_set(inode,
+	    cksum_type, cksum_len, cksum, flags, mtime);
+	if (e == GFARM_ERR_NO_ERROR)
+		if (flags & GFM_PROTO_CKSUM_SET_FILE_MODIFIED)
+			inode_cksum_invalidate(fo);
+	return (e);
 }
 
 gfarm_error_t
@@ -3339,22 +3355,29 @@ inode_fhclose_read(struct inode *inode, struct gfarm_timespec *atime)
 gfarm_error_t
 inode_fhclose_write(struct inode *inode, gfarm_uint64_t old_gen,
     gfarm_off_t size, struct gfarm_timespec *atime,
-    struct gfarm_timespec *mtime, gfarm_int64_t *new_genp,
-    int *generation_updatedp)
+    struct gfarm_timespec *mtime,
+    const char *cksum_type, size_t cksum_len, const char *cksum,
+    gfarm_int32_t flags, gfarm_int64_t *new_genp, int *generation_updatedp)
 {
 	static const char diag[] = "inode_fhclose_write";
+	gfarm_error_t e;
 
 	if (!inode_is_file(inode)) {
 		gflog_error(GFARM_MSG_1003284, "%s: not a file", diag);
 		return (GFARM_ERR_STALE_FILE_HANDLE);
 	}
-	
 	inode_set_atime(inode, atime);
 	inode_set_mtime(inode, mtime);
 	inode_set_ctime(inode, mtime);
 	inode_set_size(inode, size);
 
 	if (inode->i_gen == old_gen) {
+		inode_cksum_remove(inode);
+		e = inode_fhclose_cksum_set(inode,
+		    cksum_type, cksum_len, cksum, flags, mtime);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_info(GFARM_MSG_UNFIXED, "%s: cksum_set: %s",
+			    diag, gfarm_error_string(e));
 		/* update generation number */
 		inode_increment_gen(inode);
 		*generation_updatedp = 1;

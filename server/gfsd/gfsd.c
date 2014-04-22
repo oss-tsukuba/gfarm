@@ -1530,18 +1530,25 @@ close_request(struct file_entry *fe)
 gfarm_error_t
 fhclose_request(struct file_entry *fe)
 {
-	if (fe->flags & FILE_FLAG_WRITTEN) {
+	if ((fe->flags & (FILE_FLAG_WRITTEN|FILE_FLAG_DIGEST_FINISH|
+	    FILE_FLAG_DIGEST_AVAIL|FILE_FLAG_WRITTEN)) ==
+	    (FILE_FLAG_WRITTEN|FILE_FLAG_DIGEST_FINISH))
+		return (gfm_client_fhclose_write_cksum_request(gfm_server,
+		    fe->ino, fe->gen, fe->size,
+		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)fe->atimensec,
+		    (gfarm_int64_t)fe->mtime, (gfarm_int32_t)fe->mtimensec,
+		    fe->cksum_type, fe->md5_len, fe->md5, 0));
+	else if (fe->flags & FILE_FLAG_WRITTEN)
 		return (gfm_client_fhclose_write_request(gfm_server,
 		    fe->ino, fe->gen, fe->size,
 		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)fe->atimensec,
 		    (gfarm_int64_t)fe->mtime, (gfarm_int32_t)fe->mtimensec));
-	} else if (fe->flags & FILE_FLAG_READ) {
+	else if (fe->flags & FILE_FLAG_READ)
 		return (gfm_client_fhclose_read_request(gfm_server,
 		    fe->ino, fe->gen, 
 		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)fe->atimensec));
-	} else {
+	else
 		return (GFARM_ERR_NO_ERROR);
-	}
 }
 
 gfarm_error_t

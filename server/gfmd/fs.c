@@ -3193,31 +3193,20 @@ gfm_server_fhclose_read(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
-gfarm_error_t
-gfm_server_fhclose_write(struct peer *peer, int from_client, int skip)
+static gfarm_error_t
+gfm_server_fhclose_write_common(const char *diag, struct peer *peer,
+	int from_client, gfarm_ino_t inum, gfarm_int64_t old_gen,
+	gfarm_off_t size, struct gfarm_timespec *atime,
+	struct gfarm_timespec *mtime, const char *cksum_type, size_t cksum_len,
+	const char *cksum, gfarm_int32_t cksum_flags, gfarm_int32_t *flagp,
+	gfarm_int64_t *new_genp, gfarm_uint64_t *cookiep)
 {
 	gfarm_error_t e;
-	gfarm_ino_t inum;
-	gfarm_off_t size;
-	struct gfarm_timespec atime, mtime;
-	gfarm_int32_t flags = 0;
 	int transaction = 0;
-	gfarm_int64_t old_gen, new_gen;
 	int generation_updated = 0;
-	gfarm_uint64_t cookie = 0;
 	struct inode *inode;
-	static const char diag[] = "GFM_PROTO_FHCLOSE_WRITE";
 
-	e = gfm_server_get_request(peer, diag, "llllili",
-	    &inum, &old_gen, &size,
-	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (skip)
-		return (GFARM_ERR_NO_ERROR);
-	new_gen = old_gen;
 	giant_lock();
-
 	if (from_client) { /* from gfsd only */
 		gflog_debug(GFARM_MSG_1003314, "operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -3230,22 +3219,81 @@ gfm_server_fhclose_write(struct peer *peer, int from_client, int skip)
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
-
 		/*
 		 * closing must be done regardless of the result of db_begin().
 		 * because not closing may cause descriptor leak.
 		 */
-		e = inode_fhclose_write(inode, old_gen, size, &atime,
-		    &mtime, &new_gen, &generation_updated);
+		e = inode_fhclose_write(inode, old_gen, size, atime, mtime,
+		    cksum_type, cksum_len, cksum, cksum_flags,
+		    new_genp, &generation_updated);
 		if (e == GFARM_ERR_NO_ERROR && generation_updated) {
-			cookie = peer_add_cookie(peer);
-			flags = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
+			*flagp = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
+			*cookiep = peer_add_cookie(peer);
 		}
 		if (transaction)
 			db_end(diag);
 	}
-
 	giant_unlock();
+	return (e);
+}
+
+gfarm_error_t
+gfm_server_fhclose_write(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_ino_t inum;
+	gfarm_off_t size;
+	struct gfarm_timespec atime, mtime;
+	gfarm_int32_t flags = 0;
+	gfarm_int64_t old_gen, new_gen;
+	gfarm_uint64_t cookie = 0;
+	static const char diag[] = "GFM_PROTO_FHCLOSE_WRITE";
+
+	e = gfm_server_get_request(peer, diag, "llllili",
+	    &inum, &old_gen, &size,
+	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	new_gen = old_gen;
+	e = gfm_server_fhclose_write_common(diag, peer, from_client,
+	    inum, old_gen, size, &atime, &mtime, NULL, 0, NULL, 0,
+	    &flags, &new_gen, &cookie);
+
+	return (gfm_server_put_reply(peer, diag, e, "illl",
+	    flags, old_gen, new_gen, cookie));
+}
+
+gfarm_error_t
+gfm_server_fhclose_write_cksum(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_ino_t inum;
+	gfarm_off_t size;
+	struct gfarm_timespec atime, mtime;
+	gfarm_int32_t flags = 0;
+	gfarm_int64_t old_gen, new_gen;
+	gfarm_uint64_t cookie = 0;
+	gfarm_int32_t cksum_len, cksum_flags;
+	char *cksum_type, cksum[GFM_PROTO_CKSUM_MAXLEN];
+	static const char diag[] = "GFM_PROTO_FHCLOSE_WRITE_CKSUM";
+
+	e = gfm_server_get_request(peer, diag, "llllilisbi",
+	    &inum, &old_gen, &size,
+	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec,
+	    &cksum_type, sizeof(cksum), &cksum_len, cksum, &cksum_flags);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	new_gen = old_gen;
+	e = gfm_server_fhclose_write_common(diag, peer, from_client,
+	    inum, old_gen, size, &atime, &mtime,
+	    cksum_type, cksum_len, cksum, cksum_flags,
+	    &flags, &new_gen, &cookie);
 
 	return (gfm_server_put_reply(peer, diag, e, "illl",
 	    flags, old_gen, new_gen, cookie));
