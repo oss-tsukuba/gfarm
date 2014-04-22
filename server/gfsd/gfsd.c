@@ -1979,7 +1979,9 @@ close_fd_somehow(gfarm_int32_t fd, const char *diag)
 	else
 		e = GFARM_ERR_NO_ERROR;
 
-	if (e == GFARM_ERR_NO_ERROR || e == GFARM_ERR_CHECKSUM_MISMATCH)
+	if (e == GFARM_ERR_NO_ERROR || e == GFARM_ERR_CHECKSUM_MISMATCH ||
+	    e == GFARM_ERR_OPERATION_NOT_PERMITTED ||
+	    e == GFARM_ERR_INVALID_ARGUMENT)
 		; /*FALLTHROUGH*/
 	else if (e == GFARM_ERR_BAD_FILE_DESCRIPTOR)
 		return (e);
