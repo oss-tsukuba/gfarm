@@ -1449,6 +1449,8 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 	gfarm_int32_t fd, cksum_len, flags;
 	struct process *process;
+	struct inode *inode;
+	struct user *user;
 	char *cksum_type;
 	char cksum[GFM_PROTO_CKSUM_MAXLEN];
 	struct gfarm_timespec mtime;
@@ -1478,6 +1480,15 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 	    GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001854, "peer_fdpair_get_current() "
 			"failed: %s", gfarm_error_string(e));
+	} else if ((e = process_get_file_inode(process, fd, &inode))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "process_get_file_inode: %s",
+		    gfarm_error_string(e));
+	} else if ((user = process_get_user(process)) != NULL &&
+	    !user_is_root(inode, user)) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "user_is_root: %s",
+		    gfarm_error_string(e));
 	} else if (strlen(cksum_type) > GFM_PROTO_CKSUM_TYPE_MAXLEN ||
 	    cksum_len > GFM_PROTO_CKSUM_MAXLEN) {
 		gflog_debug(GFARM_MSG_1003480,
