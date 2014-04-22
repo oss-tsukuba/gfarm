@@ -1484,11 +1484,12 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED, "process_get_file_inode: %s",
 		    gfarm_error_string(e));
-	} else if ((user = process_get_user(process)) != NULL &&
-	    !user_is_root(inode, user)) {
+	} else if (from_client &&
+	    ((user = process_get_user(process)) == NULL ||
+	     !user_is_root(inode, user))) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "user_is_root: %s",
-		    gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED, "user_is_root: (%s) %s",
+		    user_name(user), gfarm_error_string(e));
 	} else if (strlen(cksum_type) > GFM_PROTO_CKSUM_TYPE_MAXLEN ||
 	    cksum_len > GFM_PROTO_CKSUM_MAXLEN) {
 		gflog_debug(GFARM_MSG_1003480,
