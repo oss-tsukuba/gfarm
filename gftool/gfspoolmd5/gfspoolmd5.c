@@ -33,7 +33,7 @@ static struct timeval itime, start_time;
 const char PROGRESS_FILE[] = ".md5.count";
 long long *progress_addr;
 int mtime_day = -1;
-int foreground;
+int foreground, cksum_check = 1;
 
 /*
  * File format should be consistent with gfsd_local_path() in gfsd.c
@@ -220,20 +220,22 @@ check_file(char *file, struct stat *stp, void *arg)
 		goto progress;
 	if ((e = gfs_fstat_cksum(gf, &c)) != GFARM_ERR_NO_ERROR)
 		goto close_progress;
-	if (c.len > 0 && strcmp(c.type, "md5") != 0)
+	if (c.len > 0 && strcmp(c.type, "md5") != 0) {
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-	else if ((c.flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
+	} else if ((c.flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
 	    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0) {
-		gflog_warning(GFARM_MSG_1003788, "%s: cksum flag %d, skipped",
+		gflog_info(GFARM_MSG_1003788, "%s: cksum flag %d, skipped",
 		    file, c.flags);
 		e = GFARM_ERR_NO_ERROR;
 	} else if ((e = check_file_size(gf, file)) != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_UNFIXED, "%s: size mismatch, maybe "
-		   "incomplete replica: %s", file, gfarm_error_string(e));
+		gflog_info(GFARM_MSG_UNFIXED, "%s: size mismatch, skipped: %s",
+		   file, gfarm_error_string(e));
 		e = GFARM_ERR_NO_ERROR;
-	} else if ((e = calc_md5(file, md5)) != GFARM_ERR_NO_ERROR)
+	} else if (c.len > 0 && !cksum_check) {
+		e = GFARM_ERR_NO_ERROR;
+	} else if ((e = calc_md5(file, md5)) != GFARM_ERR_NO_ERROR) {
 		;
-	else if (c.len > 0 && memcmp(md5, c.cksum, md5_size) != 0) {
+	} else if (c.len > 0 && memcmp(md5, c.cksum, md5_size) != 0) {
 		gfs_stat_cksum_free(&c);
 		if ((e = gfs_fstat_cksum(gf, &c)) != GFARM_ERR_NO_ERROR)
 			goto close_progress;
@@ -350,9 +352,9 @@ error_check(char *msg, gfarm_error_t e)
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [ -m mtime_day ] ", progname);
+	fprintf(stderr, "Usage: %s [ -n ] [ -m mtime_day ] ", progname);
 	fprintf(stderr, "-r spool_root [ dir ... ]\n");
-	fprintf(stderr, "       %s -f [ -m mtime_day ] ", progname);
+	fprintf(stderr, "       %s -f [ -n ] [ -m mtime_day ] ", progname);
 	fprintf(stderr, "-r spool_root [ dir ... ] 2> log\n");
 	exit(2);
 }
@@ -368,13 +370,16 @@ main(int argc, char *argv[])
 	if (argc > 0)
 		progname = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "fhm:r:?")) != -1) {
+	while ((c = getopt(argc, argv, "fhm:nr:?")) != -1) {
 		switch (c) {
 		case 'f':
 			foreground = 1;
 			break;
 		case 'm':
 			mtime_day = atoi(optarg) * 3600 * 24;
+			break;
+		case 'n':
+			cksum_check = 0;
 			break;
 		case 'r':
 			spool_root = optarg;
