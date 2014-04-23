@@ -178,6 +178,23 @@ show_progress(void)
 }
 
 static gfarm_error_t
+check_file_size(GFS_File gf, char *file)
+{
+	struct gfs_stat st;
+	struct stat sb;
+	gfarm_error_t e;
+	int r;
+
+	if (stat(file, &sb) == -1)
+		return (gfarm_errno_to_error(errno));
+	else if ((e = gfs_fstat(gf, &st)) != GFARM_ERR_NO_ERROR)
+		return (e);
+	r = sb.st_size == st.st_size;
+	gfs_stat_free(&st);
+	return (r ? GFARM_ERR_NO_ERROR : GFARM_ERR_INVALID_FILE_REPLICA);
+}
+
+static gfarm_error_t
 check_file(char *file, struct stat *stp, void *arg)
 {
 	struct gfs_stat_cksum c;
@@ -209,6 +226,10 @@ check_file(char *file, struct stat *stp, void *arg)
 	    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0) {
 		gflog_warning(GFARM_MSG_1003788, "%s: cksum flag %d, skipped",
 		    file, c.flags);
+		e = GFARM_ERR_NO_ERROR;
+	} else if ((e = check_file_size(gf, file)) != GFARM_ERR_NO_ERROR) {
+		gflog_info(GFARM_MSG_UNFIXED, "%s: size mismatch, maybe "
+		   "incomplete replica: %s", file, gfarm_error_string(e));
 		e = GFARM_ERR_NO_ERROR;
 	} else if ((e = calc_md5(file, md5)) != GFARM_ERR_NO_ERROR)
 		;
