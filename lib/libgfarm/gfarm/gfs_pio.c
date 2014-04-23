@@ -445,7 +445,7 @@ gfs_pio_close(GFS_File gf)
 			e_save = gfs_pio_flush(gf);
 		e = (*gf->ops->view_close)(gf);
 		if (e == GFARM_ERR_GFMD_FAILED_OVER) {
-			gflog_error(GFARM_MSG_1003268,
+			gflog_info(GFARM_MSG_1003268,
 			    "ignore %s error at pio close operation",
 			    gfarm_error_string(e));
 			gfarm_filesystem_set_failover_detected(fs, 1);
