@@ -844,6 +844,7 @@ char *gfarm_argv0 = NULL;
 #define GFARM_LOG_MESSAGE_VERBOSE_DEFAULT	0
 #define GFARM_NO_FILE_SYSTEM_NODE_TIMEOUT_DEFAULT 30 /* 30 seconds */
 #define GFARM_GFMD_RECONNECTION_TIMEOUT_DEFAULT 30 /* 30 seconds */
+#define GFARM_GFSD_CONNECTION_TIMEOUT_DEFAULT	30 /* 30 seconds */
 #define GFARM_ATTR_CACHE_LIMIT_DEFAULT		40000 /* 40,000 entries */
 #define GFARM_ATTR_CACHE_TIMEOUT_DEFAULT	1000 /* 1,000 milli second */
 #define GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
@@ -884,6 +885,7 @@ int gfarm_log_level = MISC_DEFAULT;
 int gfarm_log_message_verbose = MISC_DEFAULT;
 int gfarm_no_file_system_node_timeout = MISC_DEFAULT;
 int gfarm_gfmd_reconnection_timeout = MISC_DEFAULT;
+int gfarm_gfsd_connection_timeout = MISC_DEFAULT;
 int gfarm_attr_cache_limit = MISC_DEFAULT;
 int gfarm_attr_cache_timeout = MISC_DEFAULT;
 int gfarm_schedule_cache_timeout = MISC_DEFAULT;
@@ -2747,6 +2749,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_no_file_system_node_timeout);
 	} else if (strcmp(s, o = "gfmd_reconnection_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_gfmd_reconnection_timeout);
+	} else if (strcmp(s, o = "gfsd_connection_timeout") == 0) {
+		e = parse_set_misc_int(p, &gfarm_gfsd_connection_timeout);
 	} else if (strcmp(s, o = "attr_cache_limit") == 0) {
 		e = parse_set_misc_int(p, &gfarm_attr_cache_limit);
 	} else if (strcmp(s, o = "attr_cache_timeout") == 0) {
@@ -2998,6 +3002,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_gfmd_reconnection_timeout == MISC_DEFAULT)
 		gfarm_gfmd_reconnection_timeout =
 		    GFARM_GFMD_RECONNECTION_TIMEOUT_DEFAULT;
+	if (gfarm_gfsd_connection_timeout == MISC_DEFAULT)
+		gfarm_gfsd_connection_timeout =
+		    GFARM_GFSD_CONNECTION_TIMEOUT_DEFAULT;
 	if (gfarm_attr_cache_limit == MISC_DEFAULT)
 		gfarm_attr_cache_limit = GFARM_ATTR_CACHE_LIMIT_DEFAULT;
 	if (gfarm_attr_cache_timeout == MISC_DEFAULT)
