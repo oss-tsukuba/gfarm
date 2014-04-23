@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 20 Nov 2012
+.\"      Date: 23 Apr 2014
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "20 Nov 2012" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "23 Apr 2014" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -710,6 +710,9 @@ digest \fIdigestタイプ\fR
 .RS 4
 チェックサム計算を有効にし、 digestタイプで指定されたチェックサムを計算します。 digestタイプとしては、現在のところ md5 がサポートされています。 この文は gfmd\&.conf に対して有効です。
 .sp
+ただし、チェックサム計算を有効にしても、 ローカルホストのファイルアクセスについてはチェックサム計算が行われません。 ローカルアクセスについてもチェックサム計算を行うためには、
+direct_local_access文でdisableを指定してください。
+.sp
 例:
 .sp
 .if n \{\
@@ -1104,6 +1107,23 @@ minimum_free_disk_space \fIバイト数\fR
 .\}
 .RE
 .PP
+direct_local_access \fI有効性\fR
+.RS 4
+ローカルホストのファイルをアクセスする場合、 オーバヘッドを削減するため、通常 gfsd をバイパスして直接アクセスします。 この文でdisableと指定することによって、 このバイパスを無効化することができます。 ローカルホストのファイルアクセスに対してもチェックサム計算を行うためには、 このバイパスを無効化する必要があります。 デフォルトはenableです。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	direct_local_access disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 simultaneous_replication_receivers \fI同時処理数\fR
 .RS 4
 gfmd 主導の複製処理を、単一複製作成ホストに対して、 同時にいくつまで並行して行なうことを許すかを設定します。 デフォルトは 20です。
@@ -1377,6 +1397,23 @@ gfmd_reconnection_timeout \fI秒数\fR
 .\}
 .nf
 	gfmd_reconnection_timeout 30
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+gfsd_connection_timeout \fI秒数\fR
+.RS 4
+ファイルシステムノードへの接続タイムアウトを指定します。 デフォルトは 30秒です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	gfsd_connection_timeout 30
 .fi
 .if n \{\
 .RE
@@ -1770,6 +1807,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<write_local_priority_statement> |
 	<write_target_domain_statement> |
 	<minimum_free_disk_space_statement> |
+	<direct_local_access_statement> |
 	<simultaneous_replication_receivers_statement> |
 	<gfsd_connection_cache_statement> |
 	<xmlattr_size_limit_statement> |
@@ -2621,6 +2659,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
+<direct_local_access_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"direct_local_access" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <simultaneous_replication_receivers_statement> ::=
 .RS 4
 .sp
@@ -2811,6 +2863,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "gfmd_reconnection_timeout" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<gfsd_connection_timeout_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"gfsd_connection_timeout" <number>
 .fi
 .if n \{\
 .RE

@@ -275,19 +275,6 @@ be busy or idle to change the scheduling priority.
 	spool_base_load 1.0<br>
 </p></div>
 </dd>
-<dt><span class="term"><span class="token">spool_digest</span> <em class="parameter"><code>digest_type</code></em></span></dt>
-<dd>
-<p>
-The <span class="token">spool_digest</span> statement enables the checksum
-calculation, and specifies the digest type of the checksum.
-Currently, md5 is supported.  This directive is only effective for
-gfsd.
-</p>
-<p>For example,</p>
-<div class="literallayout"><p><br>
-	spool_digest md5<br>
-</p></div>
-</dd>
 <dt><span class="term"><span class="token">metadb_server_host</span> <em class="parameter"><code>hostname</code></em></span></dt>
 <dd>
 <p>The <span class="token">metadb_server_host</span> statement specifies the
@@ -619,6 +606,25 @@ and all other hosts will be authenticated by
 <dd><p>The <span class="token">shared_key_file</span> statement specifies a
   pathname of the shared secret key file in sharedsecret
   authentication.</p></dd>
+<dt><span class="term"><span class="token">digest</span> <em class="parameter"><code>digest_type</code></em></span></dt>
+<dd>
+<p>
+The <span class="token">digest</span> statement enables the checksum
+calculation, and specifies the digest type of the checksum.
+Currently, md5 is supported.  This directive is only effective for
+gfmd.conf.
+</p>
+<p>
+The digest is not calculated when accessing local files since they are
+accessed directly bypassing the gfsd.  To calculate the digest of
+local files, disable this feature by
+the <span class="token">direct_local_access</span> statement.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	digest md5<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">sockopt </span><em class="parameter"><code>option</code></em><span class="emphasis"><em>[=</em></span><em class="parameter"><code>value</code></em><span class="emphasis"><em>] [<span class="token">LISTENER</span> | <em class="parameter"><code>Host_specification</code></em>]</em></span></span></dt>
 <dd>
 <p>The <span class="token">sockopt</span> parameter specifies the socket option
@@ -954,7 +960,7 @@ which have less free space than this parameter, when it
 schedules nodes for jobs which may write files.
 The free space value may have a suffix like ``k'' (kilo bytes), 
 ``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
-The default size is 128M bytes.
+The default size is 512M bytes.
 </p>
 <p>
 This directive has to be specified in both gfarm2.conf and gfmd.conf.
@@ -963,6 +969,20 @@ After restarting the gfmd and the Gfarm client, it is effective.
 <p>For example,</p>
 <div class="literallayout"><p><br>
 	minimum_free_disk_space 1G<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">direct_local_access</span> <em class="parameter"><code>validity</code></em></span></dt>
+<dd>
+<p>
+When a file is stored at the local host, a Gfarm client accesses the
+file directly bypassing the gfsd to reduce the overhead.  This
+directive is used to disable this feature.  It is useful when enabling
+the digest feature, since the digest is not calculated when accessing
+a file directly.  The default is <span class="token">enable</span>.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	direct_local_access disable<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">simultaneous_replication_receivers</span> <em class="parameter"><code>number</code></em></span></dt>
@@ -1171,6 +1191,17 @@ The default is 30 seconds.
 <p>For example,</p>
 <div class="literallayout"><p><br>
 	gfmd_reconnection_timeout 30<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">gfsd_connection_timeout</span> <em class="parameter"><code>seconds</code></em></span></dt>
+<dd>
+<p>
+This directive specifies the timeout to connect to a gfsd.  The
+default is 30 seconds.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	gfsd_connection_timeout 30<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">atime</span> <em class="parameter"><code>type</code></em></span></dt>
@@ -1425,7 +1456,8 @@ This parameter is only available in gfmd.conf.
 <p>This is a grammar of gfarm2.conf described by the BNF notation.</p>
 <div class="variablelist"><dl>
 <dt><span class="term">&lt;statement&gt; ::=</span></dt>
-<dd><div class="literallayout"><p>&lt;spool_statement&gt; |<br>
+<dd><div class="literallayout"><p><br>
+	&lt;spool_statement&gt; |<br>
 	&lt;spool_server_listen_address_statement&gt; |<br>
 	&lt;spool_server_listen_backlog_statement&gt; |<br>
 	&lt;spool_server_cred_type_statement&gt; |<br>
@@ -1433,7 +1465,6 @@ This parameter is only available in gfmd.conf.
 	&lt;spool_server_cred_name_statement&gt; |<br>
 	&lt;spool_check_level_statement&gt; |<br>
 	&lt;spool_base_load_statement&gt; |<br>
-	&lt;spool_digest_statement&gt; |<br>
 	&lt;metadb_server_host_statement&gt; |<br>
 	&lt;metadb_server_port_statement&gt; |<br>
 	&lt;metadb_server_cred_type_statement&gt; |<br>
@@ -1459,6 +1490,7 @@ This parameter is only available in gfmd.conf.
 	&lt;postgresql_conninfo_statement&gt; |<br>
 	&lt;auth_statement&gt; |<br>
 	&lt;shared_key_file_statement&gt; |<br>
+	&lt;digest_statement&gt; |<br>
 <br>
 	&lt;sockopt_statement&gt; |<br>
 <br>
@@ -1483,6 +1515,7 @@ This parameter is only available in gfmd.conf.
 	&lt;write_local_priority_statement&gt; |<br>
 	&lt;write_target_domain_statement&gt; |<br>
 	&lt;minimum_free_disk_space_statement&gt; |<br>
+	&lt;direct_local_access_statement&gt; |<br>
 	&lt;simultaneous_replication_receivers_statement&gt; |<br>
 	&lt;gfsd_connection_cache_statement&gt; |<br>
 	&lt;xmlattr_size_limit_statement&gt; |<br>
@@ -1529,8 +1562,6 @@ This parameter is only available in gfmd.conf.
 <dd><div class="literallayout"><p>"spool_check_level" &lt;spck_level&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_base_load_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool_base_load" &lt;load&gt;</p></div></dd>
-<dt><span class="term">&lt;spool_digest_statement&gt; ::=</span></dt>
-<dd><div class="literallayout"><p>"spool_digest" &lt;digest_type&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_host_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_server_host" &lt;hostname&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_port_statement&gt; ::=</span></dt>
@@ -1585,6 +1616,8 @@ This parameter is only available in gfmd.conf.
 <dd><div class="literallayout"><p>"gsi" | "gsi_auth" | "sharedsecret"</p></div></dd>
 <dt><span class="term">&lt;shared_key_file_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"shared_key_file" &lt;pathname&gt;</p></div></dd>
+<dt><span class="term">&lt;digest_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"digest" &lt;digest_type&gt;</p></div></dd>
 <dt><span class="term">&lt;sockopt_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]</p></div></dd>
 <dt><span class="term">&lt;socket_option&gt; ::=</span></dt>
@@ -1632,6 +1665,8 @@ This parameter is only available in gfmd.conf.
 <dd><div class="literallayout"><p>"write_target_domain" &lt;string&gt;</p></div></dd>
 <dt><span class="term">&lt;minimum_free_disk_space_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"minimum_free_disk_space" &lt;size&gt;</p></div></dd>
+<dt><span class="term">&lt;direct_local_access_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"direct_local_access" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;simultaneous_replication_receivers_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"simultaneous_replication_receivers" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;gfsd_connection_cache_statement&gt; ::=</span></dt>
@@ -1660,6 +1695,8 @@ This parameter is only available in gfmd.conf.
 <dd><div class="literallayout"><p>"no_file_system_node_timeout" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;gfmd_reconnection_timeout_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"gfmd_reconnection_timeout" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;gfsd_connection_timeout_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"gfsd_connection_timeout" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;atime_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"atime" &lt;atime_type&gt;</p></div></dd>
 <dt><span class="term">&lt;client_file_bufsize_statement&gt; ::=</span></dt>
