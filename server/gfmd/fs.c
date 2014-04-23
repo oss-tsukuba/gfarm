@@ -3286,14 +3286,16 @@ gfm_server_fhclose_write_cksum(struct peer *peer, int from_client, int skip)
 	    &cksum_type, sizeof(cksum), &cksum_len, cksum, &cksum_flags);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (skip)
+	if (skip) {
+		free(cksum_type);
 		return (GFARM_ERR_NO_ERROR);
-
+	}
 	new_gen = old_gen;
 	e = gfm_server_fhclose_write_common(diag, peer, from_client,
 	    inum, old_gen, size, &atime, &mtime,
 	    cksum_type, cksum_len, cksum, cksum_flags,
 	    &flags, &new_gen, &cookie);
+	free(cksum_type);
 
 	return (gfm_server_put_reply(peer, diag, e, "illl",
 	    flags, old_gen, new_gen, cookie));
