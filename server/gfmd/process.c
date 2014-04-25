@@ -260,6 +260,12 @@ process_detach_peer(struct process *process, struct peer *peer)
 	}
 }
 
+gfarm_pid_t
+process_get_pid(struct process *process)
+{
+	return (process->pid);
+}
+
 struct user *
 process_get_user(struct process *process)
 {
