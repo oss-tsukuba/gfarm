@@ -937,7 +937,7 @@ gfm_server_revoke_gfsd_access(struct peer *peer, int from_client, int skip)
 	giant_unlock();
 
 	/* connection problem in client side. worth logging. */
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003800,
 	    "%s:%s: pid:%lld fd:%d inode:%llu:%llu %s request: %s",
 	    peer_get_username(peer), peer_get_hostname(peer),
 	    (long long)pid_for_logging, (int)fd,
@@ -1505,13 +1505,13 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 			"failed: %s", gfarm_error_string(e));
 	} else if ((e = process_get_file_inode(process, fd, &inode))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "process_get_file_inode: %s",
+		gflog_debug(GFARM_MSG_1003801, "process_get_file_inode: %s",
 		    gfarm_error_string(e));
 	} else if (from_client &&
 	    ((user = process_get_user(process)) == NULL ||
 	     !user_is_root(inode, user))) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "user_is_root: (%s) %s",
+		gflog_debug(GFARM_MSG_1003802, "user_is_root: (%s) %s",
 		    user_name(user), gfarm_error_string(e));
 	} else if (strlen(cksum_type) > GFM_PROTO_CKSUM_TYPE_MAXLEN ||
 	    cksum_len > GFM_PROTO_CKSUM_MAXLEN) {

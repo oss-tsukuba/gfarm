@@ -3376,7 +3376,7 @@ inode_fhclose_write(struct inode *inode, gfarm_uint64_t old_gen,
 		e = inode_fhclose_cksum_set(inode,
 		    cksum_type, cksum_len, cksum, flags, mtime);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_info(GFARM_MSG_UNFIXED, "%s: cksum_set: %s",
+			gflog_info(GFARM_MSG_1003799, "%s: cksum_set: %s",
 			    diag, gfarm_error_string(e));
 		/* update generation number */
 		inode_increment_gen(inode);

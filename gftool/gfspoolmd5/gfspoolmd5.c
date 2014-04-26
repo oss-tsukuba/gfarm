@@ -228,7 +228,7 @@ check_file(char *file, struct stat *stp, void *arg)
 		    file, c.flags);
 		e = GFARM_ERR_NO_ERROR;
 	} else if ((e = check_file_size(gf, file)) != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_UNFIXED, "%s: size mismatch, skipped: %s",
+		gflog_info(GFARM_MSG_1003803, "%s: size mismatch, skipped: %s",
 		   file, gfarm_error_string(e));
 		e = GFARM_ERR_NO_ERROR;
 	} else if (c.len > 0 && !cksum_check) {
