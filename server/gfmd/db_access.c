@@ -1591,7 +1591,7 @@ db_xattr_modify(int xmlMode, gfarm_ino_t inum, char *attrname,
 }
 
 gfarm_error_t
-db_xattr_remove(int xmlMode, gfarm_ino_t inum, char *attrname)
+db_xattr_remove(int xmlMode, gfarm_ino_t inum, const char *attrname)
 {
 	struct db_xattr_arg *arg = db_xattr_arg_alloc(xmlMode, inum,
 	    attrname, NULL, 0);
