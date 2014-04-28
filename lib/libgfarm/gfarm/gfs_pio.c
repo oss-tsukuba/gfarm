@@ -406,6 +406,41 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 	return (e);
 }
 
+gfarm_error_t
+gfs_pio_fhopen(gfarm_ino_t inum, gfarm_uint64_t gen, int flags, GFS_File *gfp)
+{
+	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
+	int fd, type;
+	gfarm_timerval_t t1, t2;
+
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	if ((e = gfm_fhopen_fd(inum, gen, flags, &gfm_server, &fd, &type))
+	    == GFARM_ERR_NO_ERROR) {
+		if (type != GFS_DT_REG) {
+			e = type == GFS_DT_DIR ? GFARM_ERR_IS_A_DIRECTORY :
+			    type == GFS_DT_LNK ? GFARM_ERR_IS_A_SYMBOLIC_LINK :
+			    GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else
+			e = gfs_file_alloc(gfm_server, fd, flags, NULL, inum,
+			    gfp);
+		if (e != GFARM_ERR_NO_ERROR) {
+			(void)gfm_close_fd(gfm_server, fd); /* ignore result */
+			gfm_client_connection_free(gfm_server);
+		}
+	}
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_pio_fhopen(%lld:%lld): %s",
+		    (long long)inum, (long long)gen, gfarm_error_string(e));
+
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(staticp->open_time += gfarm_timerval_sub(&t2, &t1));
+	return (e);
+}
+
 #if 0 /* not yet in gfarm v2 */
 
 gfarm_error_t

@@ -140,6 +140,7 @@ void gfs_client_connection_gc(void);
 typedef struct gfs_file *GFS_File;
 
 gfarm_error_t gfs_pio_open(const char *, int, GFS_File *);
+gfarm_error_t gfs_pio_fhopen(gfarm_ino_t, gfarm_uint64_t, int, GFS_File *);
 gfarm_error_t gfs_pio_create(const char *, int, gfarm_mode_t mode, GFS_File *);
 
 #if 0 /* not yet on Gfarm v2 */
@@ -217,10 +218,12 @@ int gfs_mode_to_type(gfarm_mode_t);
 typedef struct gfs_dir *GFS_Dir;
 
 gfarm_error_t gfs_opendir(const char *, GFS_Dir *);
+gfarm_error_t gfs_fhopendir(gfarm_ino_t, gfarm_uint64_t, GFS_Dir *);
 gfarm_error_t gfs_closedir(GFS_Dir);
 gfarm_error_t gfs_seekdir(GFS_Dir, gfarm_off_t);
 gfarm_error_t gfs_telldir(GFS_Dir, gfarm_off_t *);
 gfarm_error_t gfs_readdir(GFS_Dir, struct gfs_dirent **);
+gfarm_error_t gfs_fgetdirpath(GFS_Dir, char **);
 
 typedef struct gfs_dirplus *GFS_DirPlus;
 

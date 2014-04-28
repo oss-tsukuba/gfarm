@@ -260,6 +260,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_OPEN_PARENT:
 		e = gfm_server_open_parent(peer, from_client, skip);
 		break;
+	case GFM_PROTO_FHOPEN:
+		e = gfm_server_fhopen(peer, from_client, skip);
+		break;
 	case GFM_PROTO_CLOSE:
 		e = gfm_server_close(peer, from_client, skip);
 		break;

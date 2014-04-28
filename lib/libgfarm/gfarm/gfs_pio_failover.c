@@ -573,6 +573,8 @@ compound_fd_op_post_failover(struct gfm_connection *gfm_server, void *closure)
 	struct gfs_failover_file_ops *ops = ci->ops;
 	const char *url0 = ops->get_url(file);
 
+	if (url0 == NULL) /* XXX - try fhopen()? */
+		return (GFARM_ERR_STALE_FILE_HANDLE); /* XXX */
 	/* reopen */
 	if ((e = gfm_open_fd_with_ino(url0, GFARM_FILE_RDONLY,
 	    &gfm_server, &fd, &type, &url, &ino)) != GFARM_ERR_NO_ERROR) {

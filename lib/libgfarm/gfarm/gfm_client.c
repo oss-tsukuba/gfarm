@@ -2024,6 +2024,21 @@ gfm_client_open_parent_result(struct gfm_connection *gfm_server)
 }
 
 gfarm_error_t
+gfm_client_fhopen_request(struct gfm_connection *gfm_server,
+	gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_uint32_t flags)
+{
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_FHOPEN,
+	    "lli", inum, gen, flags));
+}
+
+gfarm_error_t
+gfm_client_fhopen_result(struct gfm_connection *gfm_server,
+	gfarm_mode_t *modep)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "i", modep));
+}
+
+gfarm_error_t
 gfm_client_close_request(struct gfm_connection *gfm_server)
 {
 	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_CLOSE, ""));
