@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# gfspoolinum - obtain inode number from the spool path
+#
+# Usage: gfspoolinum spool_files ...
+
+PROG=`basename $0`
+
+usage() {
+	exec >&2
+	echo "Usage: $PROG spool_file ..."
+	exit 2
+}
+
+spoolpath_to_inum()
+{
+	file=$1
+	inumgen=`echo $file | sed 's/.*lost+found//;s/.*data//;s|/||g'`
+	[ $? -ne 0 ] && return
+	inum_hex=`echo $inumgen | sed 's/^\(.\{16\}\).*$/\1/'`
+	[ $? -ne 0 ] && return
+	inum=`printf "%d" 0x$inum_hex`
+	[ $? -ne 0 ] && return
+
+	echo $inum
+}
+
+[ $# -eq 0 ] && usage
+
+while [ $# -gt 0 ]
+do
+	spoolpath_to_inum $1
+	shift
+done
