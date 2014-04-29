@@ -17,6 +17,7 @@
 #include "gfs_pio.h"
 
 char *program_name = "gfcksum";
+static int opt_verbose;
 
 static gfarm_error_t
 display_dir(char *p, struct gfs_stat *st, void *arg)
@@ -44,6 +45,36 @@ display_cksum(char *p, struct gfs_stat_cksum *c)
 		    c->flags, b);
 }
 
+static void
+display_time(const char *name, struct gfarm_timespec *ts)
+{
+#define BUFSIZE	64
+	char s[BUFSIZE];
+	time_t t = ts->tv_sec;
+	struct tm *tm = localtime(&t);
+
+	strftime(s, sizeof(s), "%Y-%m-%d %H:%M:%S", tm);
+	printf("%s: %s.%09d", name, s, ts->tv_nsec);
+	strftime(s, sizeof(s), "%z", tm);
+	printf(" %s\n", s);
+}
+
+static gfarm_error_t
+display_stat(GFS_File gf)
+{
+	gfarm_error_t e;
+	struct gfs_stat st;
+
+	e = gfs_pio_stat(gf, &st);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	display_time("Modify", &st.st_mtimespec);
+	printf("\n");
+	gfs_stat_free(&st);
+	return (e);
+}
+
 static gfarm_error_t
 stat_cksum(char *p, struct gfs_stat *st, void *arg)
 {
@@ -51,6 +82,8 @@ stat_cksum(char *p, struct gfs_stat *st, void *arg)
 	const char *b = gfarm_url_dir_skip(p);
 	gfarm_error_t e;
 
+	if (!GFARM_S_ISREG(st->st_mode))
+		return (GFARM_ERR_NO_ERROR);
 	if ((e = gfs_stat_cksum(p, &c)) != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "%s: %s\n", b, gfarm_error_string(e));
 	else {
@@ -60,29 +93,69 @@ stat_cksum(char *p, struct gfs_stat *st, void *arg)
 	return (e);
 }
 
+static int
+cmp_size(GFS_File gf, struct gfs_stat *st2)
+{
+	struct gfs_stat st1;
+	int r;
+
+	if (gfs_pio_stat(gf, &st1) != GFARM_ERR_NO_ERROR)
+		return (0);
+	r = st1.st_size == st2->st_size;
+	gfs_stat_free(&st1);
+	return (r);
+}
+
+static int
+cmp_cksum(struct gfs_stat_cksum *c1, struct gfs_stat_cksum *c2)
+{
+	if (c1->len == 0 || c2->len == 0)
+		return (1);
+	return (strcmp(c1->type, c2->type) == 0 && c1->len == c2->len &&
+	    memcmp(c1->cksum, c2->cksum, c1->len) == 0);
+}
+
 static gfarm_error_t
 calc_cksum(char *p, struct gfs_stat *st, void *arg)
 {
 	char *host = arg;
-	struct gfs_stat_cksum c;
+	struct gfs_stat_cksum c, c2;
 	const char *b = gfarm_url_dir_skip(p);
 	gfarm_error_t e, e2;
 	GFS_File gf;
 
-	e = gfs_pio_open(p, GFARM_FILE_RDONLY, &gf);
+	if (!GFARM_S_ISREG(st->st_mode))
+		return (GFARM_ERR_NO_ERROR);
+	e = gfs_stat_cksum(p, &c2);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	e = gfs_pio_open(p, GFARM_FILE_RDONLY, &gf);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfs_stat_cksum_free(&c2);
+		return (e);
+	}
 	/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 	if (host != NULL && (e = gfs_pio_internal_set_view_section(gf, host))
 	    != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "%s: %s\n", host, gfarm_error_string(e));
-	else if ((e = gfs_pio_cksum(gf, "md5", &c)) != GFARM_ERR_NO_ERROR)
+	else if ((e = gfs_pio_cksum(gf, c2.type, &c)) != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "%s: %s\n", b, gfarm_error_string(e));
 	else {
 		display_cksum(p, &c);
+		if (!cmp_cksum(&c, &c2)) {
+			fprintf(stderr, "%s: %s differs\n", p, c.type);
+			e = GFARM_ERR_INVALID_FILE_REPLICA;
+		}
+		if (!cmp_size(gf, st)) {
+			fprintf(stderr, "%s: size differs\n", p);
+			e = GFARM_ERR_INVALID_FILE_REPLICA;
+		}
+		if (opt_verbose)
+			display_stat(gf);
 		gfs_stat_cksum_free(&c);
 	}
 	e2 = gfs_pio_close(gf);
+	gfs_stat_cksum_free(&c2);
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
 
@@ -95,6 +168,7 @@ usage(void)
 	fprintf(stderr, "\t-c\tcompute checksum\n");
 	fprintf(stderr, "\t-h host\tspecify file system node\n");
 	fprintf(stderr, "\t-r\tdisplay subdirectories recursively\n");
+	fprintf(stderr, "\t-v\tverbose output\n");
 	exit(2);
 }
 
@@ -112,7 +186,7 @@ main(int argc, char **argv)
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "ch:r?")) != -1) {
+	while ((ch = getopt(argc, argv, "ch:rv?")) != -1) {
 		switch (ch) {
 		case 'c':
 			op = calc_cksum;
@@ -122,6 +196,9 @@ main(int argc, char **argv)
 			break;
 		case 'r':
 			opt_recursive = 1;
+			break;
+		case 'v':
+			opt_verbose = 1;
 			break;
 		case '?':
 		default:
