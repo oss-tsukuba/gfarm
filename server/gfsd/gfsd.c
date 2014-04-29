@@ -133,7 +133,6 @@ char *canonical_self_name;
 char *username; /* gfarm global user name */
 
 int gfarm_spool_root_len;
-int gfarm_spool_digest_enabled = 0;
 
 struct gfp_xdr *credential_exported = NULL;
 
@@ -1052,6 +1051,7 @@ struct file_entry {
 /*
  * digest
  */
+	char *cksum_type;
 #define MD5_SIZE	16
 	md5_state_t md5_state;
 	off_t md5_offset;
@@ -1116,6 +1116,8 @@ file_table_is_available(gfarm_int32_t net_fd)
 		return (0);
 }
 
+char cksum_type_md5[] = "md5";
+
 void
 file_table_add(gfarm_int32_t net_fd, int local_fd, int local_fd_rdonly,
 	int flags, gfarm_ino_t ino, gfarm_uint64_t gen, char *cksum_type,
@@ -1148,26 +1150,30 @@ file_table_add(gfarm_int32_t net_fd, int local_fd, int local_fd_rdonly,
 	fe->gen = fe->new_gen = gen;
 
 	/* checksum */
-	if (gfarm_spool_digest_enabled) {
-		fe->flags |= FILE_FLAG_DIGEST_CALC;
-		if (cksum_type == NULL || cksum_len == 0)
-			fe->md5_len = MD5_SIZE * 2;
-		else if (strcmp(cksum_type, "md5") == 0) {
-			if (cksum_flags != 0)
-				gflog_info(GFARM_MSG_UNFIXED,
-				    "%lld:%lld checksum may be expired",
-				    (long long)fe->ino, (long long)fe->gen);
+	if (cksum_type != NULL && cksum_type[0] != '\0') {
+		if (strcmp(cksum_type, cksum_type_md5) == 0) {
+			fe->cksum_type = cksum_type_md5;
+			fe->flags |= FILE_FLAG_DIGEST_CALC;
+			if (cksum_len == 0)
+				fe->md5_len = MD5_SIZE * 2;
 			else {
 				fe->flags |= FILE_FLAG_DIGEST_AVAIL;
 				memcpy(fe->md5, cksum, cksum_len);
 				fe->md5_len = cksum_len;
 			}
-		} else
+			if (cksum_flags != 0)
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "%lld:%lld checksum may be expired",
+				    (long long)fe->ino, (long long)fe->gen);
+			fe->md5_offset = 0;
+			md5_init(&fe->md5_state);
+		} else {
+			fe->cksum_type = NULL;
 			gflog_warning(GFARM_MSG_UNFIXED,
 			    "%s: %s: unsupported digest", diag, cksum_type);
-		fe->md5_offset = 0;
-		md5_init(&fe->md5_state);
-	}
+		}
+	} else
+		fe->cksum_type = NULL;
 	/* performance data (only available in profile mode) */
 	fe->start_time = *start;
 	fe->nwrite = fe-> nread = 0;
@@ -1595,8 +1601,7 @@ gfs_server_reopen(const char *diag, gfarm_int32_t net_fd, char **pathp,
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: reopen_request fd=%d: %s",
 		    diag, net_fd, gfarm_error_string(e));
-	else if (gfarm_spool_digest_enabled &&
-	    (e = gfm_client_cksum_get_request(gfm_server))
+	else if ((e = gfm_client_cksum_get_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s cksum_get request: %s",
@@ -1612,8 +1617,7 @@ gfs_server_reopen(const char *diag, gfarm_int32_t net_fd, char **pathp,
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: reopen_result fd=%d: %s",
 		    diag, net_fd, gfarm_error_string(e));
-	} else if (gfarm_spool_digest_enabled &&
-	    (e = gfm_client_cksum_get_result(gfm_server, &cksum_type,
+	} else if ((e = gfm_client_cksum_get_result(gfm_server, &cksum_type,
 	     sizeof tmp_cksum, &cksum_len, tmp_cksum, &cksum_flags))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_info(GFARM_MSG_UNFIXED,
@@ -1638,12 +1642,10 @@ gfs_server_reopen(const char *diag, gfarm_int32_t net_fd, char **pathp,
 		*to_createp = to_create;
 		*inop = ino;
 		*genp = gen;
-		if (gfarm_spool_digest_enabled) {
-			*cksum_typep = cksum_type;
-			*cksum_lenp = cksum_len;
-			memcpy(cksum, tmp_cksum, cksum_len);
-			*cksum_flagsp = cksum_flags;
-		}
+		*cksum_typep = cksum_type;
+		*cksum_lenp = cksum_len;
+		memcpy(cksum, tmp_cksum, cksum_len);
+		*cksum_flagsp = cksum_flags;
 	}
 
 	if (IS_CONNECTION_ERROR(e)) {
@@ -2204,7 +2206,7 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 			    diag, gfarm_error_string(e2));
 		else if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0 &&
 		    (e2 = gfm_client_cksum_set_request(gfm_server,
-		    gfarm_spool_digest, fe->md5_len, fe->md5, 0, 0, 0))
+		    fe->cksum_type, fe->md5_len, fe->md5, 0, 0, 0))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "%s cksum_set request: %s",
@@ -2795,7 +2797,7 @@ gfs_server_cksum(struct gfp_xdr *client)
 
 	if ((fe = file_table_entry(fd)) == NULL)
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
-	else if (strcmp(type, "md5") != 0)
+	else if (strcmp(type, cksum_type_md5) != 0)
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 	else {
 		e = md5(file_table_get(fd), cksum);
@@ -5062,15 +5064,6 @@ main(int argc, char **argv)
 	argv += optind;
 
 	gfarm_spool_root_len = strlen(gfarm_spool_root);
-	if (gfarm_spool_digest != NULL) {
-		if (strcmp(gfarm_spool_digest, "md5") == 0)
-			gfarm_spool_digest_enabled = 1;
-		else {
-			fprintf(stderr, "unsupported digest: %s\n",
-			    gfarm_spool_digest);
-			exit(1);
-		}
-	}
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);
 

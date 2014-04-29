@@ -860,7 +860,6 @@ static enum gfarm_spool_check_level gfarm_spool_check_level =
 static const char *gfarm_spool_check_level_name = NULL;
 #define GFARM_SPOOL_BASE_LOAD_DEFAULT	0.0F
 float gfarm_spool_base_load = GFARM_CONFIG_MISC_DEFAULT;
-char *gfarm_spool_digest = NULL;
 
 /* GFM dependent */
 enum gfarm_backend_db_type gfarm_backend_db_type =
@@ -946,6 +945,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_REPLICA_CHECK_SLEEP_TIME_DEFAULT 100000 /* nanosec. */
 #define GFARM_REPLICA_CHECK_MINIMUM_INTERVAL_DEFAULT 10 /* 10 sec. */
 
+char *gfarm_digest = NULL;
 int gfarm_simultaneous_replication_receivers = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xmlattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
@@ -2737,8 +2737,6 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_spool_check_level(p);
 	} else if (strcmp(s, o = "spool_base_load") == 0) {
 		e = parse_set_misc_float(p, &gfarm_spool_base_load);
-	} else if (strcmp(s, o = "spool_digest") == 0) {
-		e = parse_set_var(p, &gfarm_spool_digest);
 
 	} else if (strcmp(s, o = "metadb_server_host") == 0) {
 		e = parse_set_var(p, &gfarm_ctxp->metadb_server_name);
@@ -2857,6 +2855,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_client_architecture(p, &o);
 #endif
 
+	} else if (strcmp(s, o = "digest") == 0) {
+		e = parse_set_var(p, &gfarm_digest);
 	} else if (strcmp(s, o = "log_level") == 0) {
 		e = parse_log_level(p, &gfarm_ctxp->log_level);
 	} else if (strcmp(s, o = "log_message_verbose_level") == 0) {

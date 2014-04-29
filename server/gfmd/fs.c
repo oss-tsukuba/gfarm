@@ -1431,7 +1431,6 @@ gfm_server_cksum_get(struct peer *peer, int from_client, int skip)
 	struct host *spool_host = NULL;
 	struct process *process;
 	char *cksum_type = NULL, *cksumbuf = NULL, *cksum;
-	int alloced = 0;
 	static const char diag[] = "GFM_PROTO_CKSUM_GET";
 
 	if (skip)
@@ -1457,34 +1456,24 @@ gfm_server_cksum_get(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001849,
 			"process_cksum_get() failed: %s",
 			gfarm_error_string(e));
-	} else if (cksum_type == NULL) {
-		cksum_type = "";
+	} else if (cksum_type == NULL)
 		cksum_len = 0;
-		cksumbuf = "";
-	} else if ((cksum_type = strdup_log(cksum_type, diag)) == NULL) {
-		free(cksum_type);
+	else if ((cksum_type = strdup_log(cksum_type, diag)) == NULL)
 		e = GFARM_ERR_NO_MEMORY;
-	} else {
+	else if (cksum_len > 0) {
 		GFARM_MALLOC_ARRAY(cksumbuf, cksum_len);
-		if (cksumbuf == NULL) {
+		if (cksumbuf == NULL)
 			e = GFARM_ERR_NO_MEMORY;
-			free(cksum_type);
-#if 1 /* shut up warning by Fortify */
-			cksum_type = NULL;
-#endif
-		} else {
+		else
 			memcpy(cksumbuf, cksum, cksum_len);
-			alloced = 1;
-		}
 	}
 
 	giant_unlock();
 	e2 = gfm_server_put_reply(peer, diag, e, "sbi",
-	    cksum_type, cksum_len, cksumbuf, flags);
-	if (alloced) {
-		free(cksum_type);
-		free(cksumbuf);
-	}
+	    cksum_type == NULL ? "" : cksum_type, cksum_len,
+	    cksumbuf == NULL ? "" : cksumbuf, flags);
+	free(cksum_type);
+	free(cksumbuf);
 	return (e2);
 }
 
