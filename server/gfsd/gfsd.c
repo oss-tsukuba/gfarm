@@ -1151,7 +1151,7 @@ file_table_add(gfarm_int32_t net_fd, int local_fd, int local_fd_rdonly,
 	if (gfarm_spool_digest_enabled) {
 		fe->flags |= FILE_FLAG_DIGEST_CALC;
 		if (cksum_type == NULL || cksum_len == 0)
-			;
+			fe->md5_len = MD5_SIZE * 2;
 		else if (strcmp(cksum_type, "md5") == 0) {
 			if (cksum_flags != 0)
 				gflog_info(GFARM_MSG_UNFIXED,
@@ -2118,7 +2118,7 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 			for (i = 0; i < MD5_SIZE; ++i)
 				sprintf(&md5[2 * i], "%02x", digest[i]);
 			if ((fe->flags & FILE_FLAG_WRITTEN) != 0)
-				memcpy(fe->md5, md5, MD5_SIZE * 2 + 1);
+				memcpy(fe->md5, md5, fe->md5_len);
 			else if ((fe->flags & FILE_FLAG_DIGEST_AVAIL) != 0) {
 				if (memcmp(md5, fe->md5, fe->md5_len) != 0) {
 					e = GFARM_ERR_CHECKSUM_MISMATCH;
@@ -2204,7 +2204,7 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 			    diag, gfarm_error_string(e2));
 		else if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0 &&
 		    (e2 = gfm_client_cksum_set_request(gfm_server,
-		    gfarm_spool_digest, sizeof(fe->md5), fe->md5, 0, 0, 0))
+		    gfarm_spool_digest, fe->md5_len, fe->md5, 0, 0, 0))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "%s cksum_set request: %s",
@@ -2799,7 +2799,7 @@ gfs_server_cksum(struct gfp_xdr *client)
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 	else {
 		e = md5(file_table_get(fd), cksum);
-		len = sizeof cksum;
+		len = MD5_SIZE * 2;
 	}
 	free(type);
 	gfs_server_put_reply(client, "cksum", e, "b", len, cksum);

@@ -214,6 +214,8 @@ gfm_stat_cksum_result(struct gfm_connection *gfm_server, void *closure)
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "cksum_get result; %s", gfarm_error_string(e));
 #endif
+	if (size > st->len)
+		st->cksum[st->len] = '\0';
 	return (e);
 }
 

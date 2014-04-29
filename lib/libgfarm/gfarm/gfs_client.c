@@ -1714,6 +1714,8 @@ gfs_client_cksum(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 		    (unsigned long long)*np, (unsigned long long)size);
 		return (GFARM_ERR_PROTOCOL);
 	}
+	if (size > *np)
+		cksum[*np] = '\0';
 	return (GFARM_ERR_NO_ERROR);
 }
 
