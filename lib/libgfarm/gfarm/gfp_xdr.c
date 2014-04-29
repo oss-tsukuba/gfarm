@@ -190,6 +190,13 @@ gfp_xdr_recv_is_ready(struct gfp_xdr *conn)
 		gfarm_iobuffer_is_eof(conn->recvbuffer));
 }
 
+int
+gfp_xdr_is_empty(struct gfp_xdr *conn)
+{
+	return (gfarm_iobuffer_empty(conn->recvbuffer) &&
+		gfarm_iobuffer_empty(conn->sendbuffer));
+}
+
 gfarm_error_t
 gfp_xdr_flush(struct gfp_xdr *conn)
 {
