@@ -11,6 +11,7 @@ PUBLIC_TARGETS =
 SUBDIRS = \
 	gfchmod \
 	gfchown \
+	gfcksum \
 	gfdf \
 	gfdump \
 	gfexport \

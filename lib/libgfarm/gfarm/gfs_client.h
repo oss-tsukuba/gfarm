@@ -82,6 +82,8 @@ gfarm_error_t gfs_client_fstat(struct gfs_connection *, gfarm_int32_t,
 	gfarm_off_t *,
 	gfarm_int64_t *, gfarm_int32_t *,
 	gfarm_int64_t *, gfarm_int32_t *);
+gfarm_error_t gfs_client_cksum(struct gfs_connection *,
+	gfarm_int32_t, const char *, char *, size_t, size_t *);
 gfarm_error_t gfs_client_cksum_set(struct gfs_connection *, gfarm_int32_t,
 	const char *, size_t, const char *);
 gfarm_error_t gfs_client_lock(struct gfs_connection *, gfarm_int32_t,

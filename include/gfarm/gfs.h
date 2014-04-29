@@ -50,6 +50,12 @@ struct gfs_stat {
 	struct gfarm_timespec st_ctimespec;
 };
 
+struct gfs_stat_cksum {
+	char *type, *cksum;
+	size_t len;
+	int flags;
+};
+
 /*
  * File/Directory operations
  */
@@ -189,6 +195,7 @@ gfarm_error_t gfs_pio_readdelim(GFS_File, char **, size_t *, size_t *,
 	const char *, size_t);
 
 gfarm_error_t gfs_pio_stat(GFS_File, struct gfs_stat *);
+gfarm_error_t gfs_pio_cksum(GFS_File, const char *, struct gfs_stat_cksum *);
 
 gfarm_error_t gfs_pio_sendfile(GFS_File, gfarm_off_t, int, gfarm_off_t,
 	gfarm_off_t, gfarm_off_t *);
@@ -274,6 +281,9 @@ gfarm_error_t gfs_fstat(GFS_File, struct gfs_stat *);
 gfarm_error_t gfs_stat_section(const char *, const char *, struct gfs_stat *);
 gfarm_error_t gfs_stat_index(char *, int, struct gfs_stat *);
 #endif
+gfarm_error_t gfs_stat_cksum(const char *, struct gfs_stat_cksum *);
+gfarm_error_t gfs_fstat_cksum(GFS_File, struct gfs_stat_cksum *);
+gfarm_error_t gfs_stat_cksum_free(struct gfs_stat_cksum *);
 
 gfarm_error_t gfs_access(const char *, int);
 #define GFS_F_OK	0

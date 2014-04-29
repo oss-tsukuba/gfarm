@@ -1821,6 +1821,19 @@ gfs_pio_stat(GFS_File gf, struct gfs_stat *st)
 	return (e);
 }
 
+gfarm_error_t
+gfs_pio_cksum(GFS_File gf, const char *type, struct gfs_stat_cksum *cksum)
+{
+	gfarm_error_t e = gfs_pio_check_view_default(gf);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_pio_cksum: %s", gfarm_error_string(e));
+		return (e);
+	}
+	return (gf->ops->view_cksum(gf, type, cksum));
+}
+
 /*
  * recvfile/sendfile
  */

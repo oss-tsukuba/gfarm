@@ -162,6 +162,16 @@ gfs_pio_remote_storage_fstat(GFS_File gf, struct gfs_stat *st)
 }
 
 static gfarm_error_t
+gfs_pio_remote_storage_cksum(GFS_File gf, const char *type,
+	char *cksum, size_t size, size_t *lenp)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	struct gfs_connection *gfs_server = vc->storage_context;
+
+	return (gfs_client_cksum(gfs_server, gf->fd, type, cksum, size, lenp));
+}
+
+static gfarm_error_t
 gfs_pio_remote_storage_reopen(GFS_File gf)
 {
 	gfarm_error_t e;
@@ -194,6 +204,7 @@ struct gfs_storage_ops gfs_pio_remote_storage_ops = {
 	gfs_pio_remote_storage_fstat,
 	gfs_pio_remote_storage_reopen,
 	gfs_pio_remote_storage_write,
+	gfs_pio_remote_storage_cksum,
 	gfs_pio_remote_storage_recvfile,
 	gfs_pio_remote_storage_sendfile,
 };

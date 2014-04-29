@@ -26,6 +26,7 @@
 #include "gfs_profile.h"
 #include "host.h"
 #include "config.h"
+#include "gfm_proto.h"
 #include "gfm_client.h"
 #include "gfm_schedule.h"
 #include "gfs_client.h"
@@ -346,6 +347,33 @@ gfs_pio_view_section_fstat(GFS_File gf, struct gfs_stat *st)
 }
 
 static gfarm_error_t
+gfs_pio_view_section_cksum(GFS_File gf, const char *type,
+	struct gfs_stat_cksum *sum)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	char cksum[GFM_PROTO_CKSUM_MAXLEN], *tmp_type, *tmp_cksum;
+	size_t size = sizeof cksum, len;
+	gfarm_error_t e;
+
+	e = (*vc->ops->storage_cksum)(gf, type, cksum, size, &len);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	tmp_type = strdup(type);
+	tmp_cksum = malloc(len);
+	if (tmp_type == NULL || tmp_cksum == NULL) {
+		free(tmp_type);
+		free(tmp_cksum);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	sum->type = tmp_type;
+	sum->len = len;
+	sum->cksum = tmp_cksum;
+	sum->flags = 0;
+	memcpy(sum->cksum, cksum, len);
+	return (e);
+}
+
+static gfarm_error_t
 gfs_pio_view_section_reopen(GFS_File gf)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
@@ -371,6 +399,7 @@ struct gfs_pio_ops gfs_pio_view_section_ops = {
 	gfs_pio_view_section_fstat,
 	gfs_pio_view_section_reopen,
 	gfs_pio_view_section_write,
+	gfs_pio_view_section_cksum,
 	gfs_pio_view_section_recvfile,
 	gfs_pio_view_section_sendfile,
 };

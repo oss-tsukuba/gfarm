@@ -141,6 +141,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"bad inode number",
 	"bad cookie",
 	"insufficient number of file replicas",
+	"checksum mismatch",
 	"conflict detected",
 };
 
