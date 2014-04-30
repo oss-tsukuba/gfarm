@@ -466,7 +466,7 @@ gfarm_auth_request_sharedsecret_receive_fin(int events, int fd,
 			break;
 		default:
 			state->error = GFARM_ERR_AUTHENTICATION;
-			gflog_error(GFARM_MSG_1003722,
+			gflog_debug(GFARM_MSG_1003722,
 			    "Authentication failed: %d",
 			    (int)state->proto_error);
 			break;
