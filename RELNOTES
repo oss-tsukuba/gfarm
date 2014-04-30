@@ -1,3 +1,25 @@
+Release note for Gfarm 2.5.8.7
+==============================
+
+[2014.4.27]
+
+New configuration directive
+* direct_local_access - disables direct local access when accessing
+  the local files
+* gfsd_connection_timeout - specify timeout to connect gfsd.  The
+  default is 30 seconds.
+
+Updated feature
+* gfspoolmd5 - -n option to add checksum for files whose checksum is
+  not calculated yet.
+* set checksum when the gfmd failover happens
+* gfs_fstat_cksum_set() - only gfarmroot can set the checksum
+
+Bug fix
+* gfspoolmd5 - skip incomplete replicas
+* authentication faild error may be incorrectly displayed when using
+  two and more authentication method
+
 Release note for Gfarm 2.5.8.6
 ==============================
 
