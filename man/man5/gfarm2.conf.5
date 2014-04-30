@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 20 Nov 2012
+.\"      Date: 23 Apr 2014
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "20 Nov 2012" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "23 Apr 2014" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -809,6 +809,29 @@ shared_key_file
 statement specifies a pathname of the shared secret key file in sharedsecret authentication\&.
 .RE
 .PP
+digest \fIdigest_type\fR
+.RS 4
+The
+digest
+statement enables the checksum calculation, and specifies the digest type of the checksum\&. Currently, md5 is supported\&. This directive is only effective for gfmd\&.conf\&.
+.sp
+The digest is not calculated when accessing local files since they are accessed directly bypassing the gfsd\&. To calculate the digest of local files, disable this feature by the
+direct_local_access
+statement\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	digest md5
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 sockopt \fIoption\fR\fI[=\fR\fIvalue\fR\fI] [\fR\fILISTENER\fR\fI | \fR\fI\fIHost_specification\fR\fR\fI]\fR
 .RS 4
 The
@@ -1212,7 +1235,7 @@ For example,
 .PP
 minimum_free_disk_space \fIbytes\fR
 .RS 4
-This directive specifies free disk space (in bytes) which is required on filesystem nodes\&. The Gfarm scheduler excludes filesystem nodes which have less free space than this parameter, when it schedules nodes for jobs which may write files\&. The free space value may have a suffix like ``k\*(Aq\*(Aq (kilo bytes), ``M\*(Aq\*(Aq (mega bytes), ``G\*(Aq\*(Aq (giga bytes) and ``T\*(Aq\*(Aq (tera bytes)\&. The default size is 128M bytes\&.
+This directive specifies free disk space (in bytes) which is required on filesystem nodes\&. The Gfarm scheduler excludes filesystem nodes which have less free space than this parameter, when it schedules nodes for jobs which may write files\&. The free space value may have a suffix like ``k\*(Aq\*(Aq (kilo bytes), ``M\*(Aq\*(Aq (mega bytes), ``G\*(Aq\*(Aq (giga bytes) and ``T\*(Aq\*(Aq (tera bytes)\&. The default size is 512M bytes\&.
 .sp
 This directive has to be specified in both gfarm2\&.conf and gfmd\&.conf\&. After restarting the gfmd and the Gfarm client, it is effective\&.
 .sp
@@ -1223,6 +1246,24 @@ For example,
 .\}
 .nf
 	minimum_free_disk_space 1G
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+direct_local_access \fIvalidity\fR
+.RS 4
+When a file is stored at the local host, a Gfarm client accesses the file directly bypassing the gfsd to reduce the overhead\&. This directive is used to disable this feature\&. It is useful when enabling the digest feature, since the digest is not calculated when accessing a file directly\&. The default is
+enable\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	direct_local_access disable
 .fi
 .if n \{\
 .RE
@@ -1518,6 +1559,23 @@ For example,
 .\}
 .nf
 	gfmd_reconnection_timeout 30
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+gfsd_connection_timeout \fIseconds\fR
+.RS 4
+This directive specifies the timeout to connect to a gfsd\&. The default is 30 seconds\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	gfsd_connection_timeout 30
 .fi
 .if n \{\
 .RE
@@ -1857,7 +1915,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .RS 4
 .\}
 .nf
-<spool_statement> |
+	<spool_statement> |
 	<spool_server_listen_address_statement> |
 	<spool_server_listen_backlog_statement> |
 	<spool_server_cred_type_statement> |
@@ -1890,6 +1948,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<postgresql_conninfo_statement> |
 	<auth_statement> |
 	<shared_key_file_statement> |
+	<digest_statement> |
 
 	<sockopt_statement> |
 
@@ -1914,6 +1973,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<write_local_priority_statement> |
 	<write_target_domain_statement> |
 	<minimum_free_disk_space_statement> |
+	<direct_local_access_statement> |
 	<simultaneous_replication_receivers_statement> |
 	<gfsd_connection_cache_statement> |
 	<xmlattr_size_limit_statement> |
@@ -2440,6 +2500,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .RE
 .PP
+<digest_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"digest" <digest_type>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <sockopt_statement> ::=
 .RS 4
 .sp
@@ -2751,6 +2825,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .RE
 .PP
+<direct_local_access_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"direct_local_access" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <simultaneous_replication_receivers_statement> ::=
 .RS 4
 .sp
@@ -2941,6 +3029,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "gfmd_reconnection_timeout" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<gfsd_connection_timeout_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"gfsd_connection_timeout" <number>
 .fi
 .if n \{\
 .RE

@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 20 Nov 2012
+.\"      Date: 23 Apr 2014
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "20 Nov 2012" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "23 Apr 2014" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -706,6 +706,26 @@ shared_key_file \fIパス名\fR
 sharedsecret認証に用いる秘密鍵ファイルのパス名を指定します。
 .RE
 .PP
+digest \fIdigestタイプ\fR
+.RS 4
+チェックサム計算を有効にし、 digestタイプで指定されたチェックサムを計算します。 digestタイプとしては、現在のところ md5 がサポートされています。 この文は gfmd\&.conf に対して有効です。
+.sp
+ただし、チェックサム計算を有効にしても、 ローカルホストのファイルアクセスについてはチェックサム計算が行われません。 ローカルアクセスについてもチェックサム計算を行うためには、
+direct_local_access文でdisableを指定してください。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	digest md5
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 sockopt \fIオプション\fR\fI[=\fR\fI値\fR\fI] [\fR\fILISTENER\fR\fI | \fR\fI\fIホスト指定\fR\fR\fI]\fR
 .RS 4
 通信socket(2)に対して、setsockopt(2)システムコールを使って ソケット・オプションを指定します。
@@ -1070,7 +1090,7 @@ gfarmがファイルを書き込むノードを決める際、できる限りこ
 .PP
 minimum_free_disk_space \fIバイト数\fR
 .RS 4
-ファイルシステムノードで必要な最小限度のディスク空き容量を指定 します。このサイズ以下の空き容量しかないファイルシステムノードは、 ファイル書き込みを行う可能性のある操作を行う際に、選択されにくくなります。 指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定 することで、それぞれ1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする ことができます。 デフォルトは128Mバイトです。
+ファイルシステムノードで必要な最小限度のディスク空き容量を指定 します。このサイズ以下の空き容量しかないファイルシステムノードは、 ファイル書き込みを行う可能性のある操作を行う際に、選択されにくくなります。 指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定 することで、それぞれ1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする ことができます。 デフォルトは512Mバイトです。
 .sp
 このパラメータは、gfarm2\&.confとgfmd\&.confの両方で指定する必要があります。 有効にするためには gfmd および Gfarmクライアントを再起動する必要があります。
 .sp
@@ -1081,6 +1101,23 @@ minimum_free_disk_space \fIバイト数\fR
 .\}
 .nf
 	minimum_free_disk_space 1G
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+direct_local_access \fI有効性\fR
+.RS 4
+ローカルホストのファイルをアクセスする場合、 オーバヘッドを削減するため、通常 gfsd をバイパスして直接アクセスします。 この文でdisableと指定することによって、 このバイパスを無効化することができます。 ローカルホストのファイルアクセスに対してもチェックサム計算を行うためには、 このバイパスを無効化する必要があります。 デフォルトはenableです。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	direct_local_access disable
 .fi
 .if n \{\
 .RE
@@ -1377,6 +1414,23 @@ gfmd_reconnection_timeout \fI秒数\fR
 .\}
 .nf
 	gfmd_reconnection_timeout 30
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+gfsd_connection_timeout \fI秒数\fR
+.RS 4
+ファイルシステムノードへの接続タイムアウトを指定します。 デフォルトは 30秒です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	gfsd_connection_timeout 30
 .fi
 .if n \{\
 .RE
@@ -1712,7 +1766,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .RS 4
 .\}
 .nf
-<spool_statement> |
+	<spool_statement> |
 	<spool_server_listen_address_statement> |
 	<spool_server_listen_backlog_statement> |
 	<spool_server_cred_type_statement> |
@@ -1745,6 +1799,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<postgresql_conninfo_statement> |
 	<auth_statement> |
 	<shared_key_file_statement> |
+	<digest_statement> |
 
 	<sockopt_statement> |
 
@@ -1769,6 +1824,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<write_local_priority_statement> |
 	<write_target_domain_statement> |
 	<minimum_free_disk_space_statement> |
+	<direct_local_access_statement> |
 	<simultaneous_replication_receivers_statement> |
 	<gfsd_connection_cache_statement> |
 	<xmlattr_size_limit_statement> |
@@ -2296,6 +2352,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
+<digest_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"digest" <digest_type>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <sockopt_statement> ::=
 .RS 4
 .sp
@@ -2607,6 +2677,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
+<direct_local_access_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"direct_local_access" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <simultaneous_replication_receivers_statement> ::=
 .RS 4
 .sp
@@ -2811,6 +2895,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "gfmd_reconnection_timeout" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<gfsd_connection_timeout_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"gfsd_connection_timeout" <number>
 .fi
 .if n \{\
 .RE

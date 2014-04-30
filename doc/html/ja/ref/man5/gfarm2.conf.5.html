@@ -572,6 +572,25 @@ GSIは利用できません。この場合、<span class="token">gsi</span>お�
 </dd>
 <dt><span class="term"><span class="token">shared_key_file</span> <em class="parameter"><code>パス名</code></em></span></dt>
 <dd><p>sharedsecret認証に用いる秘密鍵ファイルのパス名を指定します。</p></dd>
+<dt><span class="term"><span class="token">digest</span> <em class="parameter"><code>digestタイプ</code></em></span></dt>
+<dd>
+<p>
+チェックサム計算を有効にし、
+digestタイプで指定されたチェックサムを計算します。
+digestタイプとしては、現在のところ md5 がサポートされています。
+この文は gfmd.conf に対して有効です。
+</p>
+<p>
+ただし、チェックサム計算を有効にしても、
+ローカルホストのファイルアクセスについてはチェックサム計算が行われません。
+ローカルアクセスについてもチェックサム計算を行うためには、
+<span class="token">direct_local_access</span>文で<span class="token">disable</span>を指定してください。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	digest md5<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">sockopt </span><em class="parameter"><code>オプション</code></em><span class="emphasis"><em>[=</em></span><em class="parameter"><code>値</code></em><span class="emphasis"><em>] [<span class="token">LISTENER</span> | <em class="parameter"><code>ホスト指定</code></em>]</em></span></span></dt>
 <dd>
 <p>通信socket(2)に対して、setsockopt(2)システムコールを使って
@@ -894,7 +913,7 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負�
 指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定
 することで、それぞれ1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする
 ことができます。
-デフォルトは128Mバイトです。
+デフォルトは512Mバイトです。
 </p>
 <p>
 このパラメータは、gfarm2.confとgfmd.confの両方で指定する必要があります。
@@ -903,6 +922,22 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負�
 <p>例:</p>
 <div class="literallayout"><p><br>
 	minimum_free_disk_space 1G<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">direct_local_access</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>
+ローカルホストのファイルをアクセスする場合、
+オーバヘッドを削減するため、通常 gfsd をバイパスして直接アクセスします。
+この文で<span class="token">disable</span>と指定することによって、
+このバイパスを無効化することができます。
+ローカルホストのファイルアクセスに対してもチェックサム計算を行うためには、
+このバイパスを無効化する必要があります。
+デフォルトはenableです。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	direct_local_access disable<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">simultaneous_replication_receivers</span> <em class="parameter"><code>同時処理数</code></em></span></dt>
@@ -1121,6 +1156,16 @@ Gfarmクライアントライブラリはファイルシステムノードが利
 <p>例:</p>
 <div class="literallayout"><p><br>
 	gfmd_reconnection_timeout 30<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">gfsd_connection_timeout</span> <em class="parameter"><code>秒数</code></em></span></dt>
+<dd>
+<p>ファイルシステムノードへの接続タイムアウトを指定します。
+デフォルトは 30秒です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	gfsd_connection_timeout 30<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">atime</span> <em class="parameter"><code>タイプ</code></em></span></dt>
@@ -1370,7 +1415,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <p>gfarm2.confの文法をBNFで記述すると、下記のようになります。</p>
 <div class="variablelist"><dl>
 <dt><span class="term">&lt;statement&gt; ::=</span></dt>
-<dd><div class="literallayout"><p>&lt;spool_statement&gt; |<br>
+<dd><div class="literallayout"><p><br>
+	&lt;spool_statement&gt; |<br>
 	&lt;spool_server_listen_address_statement&gt; |<br>
 	&lt;spool_server_listen_backlog_statement&gt; |<br>
 	&lt;spool_server_cred_type_statement&gt; |<br>
@@ -1403,6 +1449,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;postgresql_conninfo_statement&gt; |<br>
 	&lt;auth_statement&gt; |<br>
 	&lt;shared_key_file_statement&gt; |<br>
+	&lt;digest_statement&gt; |<br>
 <br>
 	&lt;sockopt_statement&gt; |<br>
 <br>
@@ -1427,6 +1474,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;write_local_priority_statement&gt; |<br>
 	&lt;write_target_domain_statement&gt; |<br>
 	&lt;minimum_free_disk_space_statement&gt; |<br>
+	&lt;direct_local_access_statement&gt; |<br>
 	&lt;simultaneous_replication_receivers_statement&gt; |<br>
 	&lt;gfsd_connection_cache_statement&gt; |<br>
 	&lt;xmlattr_size_limit_statement&gt; |<br>
@@ -1528,6 +1576,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <dd><div class="literallayout"><p>"gsi" | "gsi_auth" | "sharedsecret"</p></div></dd>
 <dt><span class="term">&lt;shared_key_file_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"shared_key_file" &lt;pathname&gt;</p></div></dd>
+<dt><span class="term">&lt;digest_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"digest" &lt;digest_type&gt;</p></div></dd>
 <dt><span class="term">&lt;sockopt_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]</p></div></dd>
 <dt><span class="term">&lt;socket_option&gt; ::=</span></dt>
@@ -1575,6 +1625,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <dd><div class="literallayout"><p>"write_target_domain" &lt;string&gt;</p></div></dd>
 <dt><span class="term">&lt;minimum_free_disk_space_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"minimum_free_disk_space" &lt;size&gt;</p></div></dd>
+<dt><span class="term">&lt;direct_local_access_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"direct_local_access" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;simultaneous_replication_receivers_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"simultaneous_replication_receivers" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;gfsd_connection_cache_statement&gt; ::=</span></dt>
@@ -1605,6 +1657,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <dd><div class="literallayout"><p>"no_file_system_node_timeout" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;gfmd_reconnection_timeout_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"gfmd_reconnection_timeout" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;gfsd_connection_timeout_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"gfsd_connection_timeout" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;atime_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"atime" &lt;atime_type&gt;</p></div></dd>
 <dt><span class="term">&lt;client_file_bufsize_statement&gt; ::=</span></dt>
