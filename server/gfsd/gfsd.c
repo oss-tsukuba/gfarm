@@ -5438,6 +5438,7 @@ main(int argc, char **argv)
 			if (nfound == 0 || save_errno == EINTR ||
 			    save_errno == EAGAIN)
 				continue;
+			errno = save_errno;
 			fatal_errno(GFARM_MSG_1000600, "select");
 		}
 
