@@ -43,6 +43,7 @@ SUBDIRS = \
 	gfsetfacl \
 	gfspoolgen \
 	gfspoolinum \
+	gfspoolmd5 \
 	gfspoolpath \
 	gfstat \
 	gfstatus \
