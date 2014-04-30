@@ -5049,6 +5049,7 @@ main(int argc, char **argv)
 	int syslog_level = -1;
 	struct in_addr *self_addresses, listen_address;
 	int table_size, self_addresses_count, ch, i, nfound, max_fd, p;
+	int save_errno;
 	struct sigaction sa;
 	fd_set requests;
 	struct stat sb;
@@ -5358,8 +5359,7 @@ main(int argc, char **argv)
 		    "too big socket file descriptor: %d", max_fd);
 
 	if (seteuid(gfsd_uid) == -1) {
-		int save_errno = errno;
-
+		save_errno = errno;
 		if (geteuid() == 0)
 			gflog_error(GFARM_MSG_1002403,
 			    "seteuid(%ld): %s",
@@ -5432,9 +5432,11 @@ main(int argc, char **argv)
 			FD_SET(accepting.udp_socks[i], &requests);
 		nfound = select(max_fd + 1, &requests, NULL, NULL, NULL);
 		if (nfound <= 0) {
+			save_errno = errno;
 			if (got_sigchld)
 				clear_child();
-			if (nfound == 0 || errno == EINTR || errno == EAGAIN)
+			if (nfound == 0 || save_errno == EINTR ||
+			    save_errno == EAGAIN)
 				continue;
 			fatal_errno(GFARM_MSG_1000600, "select");
 		}
