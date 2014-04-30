@@ -1702,8 +1702,8 @@ gfs_client_cksum(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 {
 	gfarm_error_t e;
 
-	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_CKSUM, "is/b",
-	    fd, type, size, np, cksum)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfs_client_rpc_notimeout(gfs_server, 0, GFS_PROTO_CKSUM,
+	    "is/b", fd, type, size, np, cksum)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfs_client_cksum: %s", gfarm_error_string(e));
 		return (e);
