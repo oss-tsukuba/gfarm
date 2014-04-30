@@ -167,6 +167,9 @@ gfarm_error_t inode_file_handle_update(struct inode *,
 	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *,
 	struct host *, gfarm_int64_t *, gfarm_int64_t *, int *, char **);
 
+void inode_cksum_remove_in_cache(struct inode *);
+gfarm_error_t inode_cksum_set_in_cache(struct inode *,
+	const char *, size_t, const char *);
 gfarm_error_t inode_cksum_set(struct file_opening *,
 	const char *, size_t, const char *,
 	gfarm_int32_t, struct gfarm_timespec *);

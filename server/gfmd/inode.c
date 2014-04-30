@@ -260,7 +260,7 @@ inode_total_num(void)
 }
 
 void
-inode_cksum_clear(struct inode *inode)
+inode_cksum_remove_in_cache(struct inode *inode)
 {
 	struct inode_activity *ia = inode->u.c.activity;
 
@@ -284,7 +284,7 @@ inode_cksum_remove(struct inode *inode)
 			    (unsigned long long)inode->i_number,
 			    gfarm_error_string(e));
 	}
-	inode_cksum_clear(inode);
+	inode_cksum_remove_in_cache(inode);
 }
 
 void
@@ -345,6 +345,29 @@ inode_cksum_set_internal(struct inode *inode,
 }
 
 gfarm_error_t
+inode_cksum_set_in_cache(struct inode *inode,
+	const char *cksum_type, size_t cksum_len, const char *cksum)
+{
+	gfarm_error_t e;
+	struct checksum *cs = inode->u.c.s.f.cksum;
+
+	/* reduce memory reallocation */
+	if (cs != NULL &&
+	    strcmp(cksum_type, cs->type) == 0 && cksum_len == cs->len) {
+		memcpy(cs->sum, cksum, cksum_len);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	inode_cksum_remove_in_cache(inode);
+
+	e = inode_cksum_set_internal(inode, cksum_type, cksum_len, cksum);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_1001716,
+			"inode_cksum_set_internal() failed: %s",
+			gfarm_error_string(e));
+	return (e);
+}
+
+gfarm_error_t
 inode_cksum_set(struct file_opening *fo,
 	const char *cksum_type, size_t cksum_len, const char *cksum,
 	gfarm_int32_t flags, struct gfarm_timespec *mtime)
@@ -402,21 +425,9 @@ inode_cksum_set(struct file_opening *fo,
 		    (unsigned long long)inode->i_number,
 		    gfarm_error_string(e));
 
-	/* reduce memory reallocation */
-	if (cs != NULL &&
-	    strcmp(cksum_type, cs->type) == 0 && cksum_len == cs->len) {
-		memcpy(cs->sum, cksum, cksum_len);
-		return (GFARM_ERR_NO_ERROR);
-	}
-	inode_cksum_clear(inode);
-
-	e = inode_cksum_set_internal(inode, cksum_type, cksum_len, cksum);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001716,
-			"inode_cksum_set_internal() failed: %s",
-			gfarm_error_string(e));
-		return (e);
-	}
+	e = inode_cksum_set_in_cache(inode, cksum_type, cksum_len, cksum);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e); /* inode_cksum_set_in_cache() calls gflog_debug */
 
 	ia->u.f.cksum_owner = fo;
 
