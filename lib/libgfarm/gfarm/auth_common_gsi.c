@@ -169,7 +169,7 @@ gfarm_gsi_client_cred_name(void)
 	if (cred == GSS_C_NO_CREDENTIAL &&
 	    gfarmSecSessionGetInitiatorInitialCredential(&cred) < 0) {
 		staticp->client_dn = NULL;
-		gflog_auth_error(GFARM_MSG_1000707,
+		gflog_auth_notice(GFARM_MSG_1000707,
 		    "gfarm_gsi_client_cred_name(): "
 		    "not initialized as an initiator");
 	} else if (gfarmGssNewCredentialName(&name, cred, &e_major, &e_minor)
