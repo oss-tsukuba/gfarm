@@ -243,6 +243,8 @@ sockaddr_is_local(struct sockaddr *peer_addr)
 	struct sockaddr_in *peer_in;
 	int i;
 
+	if (!gfarm_ctxp->direct_local_access)
+		return (0);
 	if (!staticp->self_ip_asked) {
 		staticp->self_ip_asked = 1;
 		if (gfarm_get_ip_addresses(&staticp->self_ip_count,
