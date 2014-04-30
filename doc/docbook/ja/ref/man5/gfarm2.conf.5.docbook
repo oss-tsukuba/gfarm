@@ -353,22 +353,6 @@ gfsd起動時のスプールチェックを有効にします。スプールチ�
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_digest</token> <parameter moreinfo="none">digestタイプ</parameter></term>
-<listitem>
-<para>
-チェックサム計算を有効にし、
-digestタイプで指定されたチェックサムを計算します。
-digestタイプとしては、現在のところ md5 がサポートされています。
-この文は gfsd に対して有効です。
-</para>
-<para>例:</para>
-<literallayout format="linespecific" class="normal">
-	spool_digest md5
-</literallayout>
-</listitem>
-</varlistentry>
-
-<varlistentry>
 <term><token>metadb_server_host</token> <parameter moreinfo="none">gfmdホスト名</parameter></term>
 <listitem>
 <para>gfmdが動作しているホスト名を指定します。</para>
@@ -764,6 +748,22 @@ GSIは利用できません。この場合、<token>gsi</token>および
 <term><token>shared_key_file</token> <parameter moreinfo="none">パス名</parameter></term>
 <listitem>
 <para>sharedsecret認証に用いる秘密鍵ファイルのパス名を指定します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>digest</token> <parameter moreinfo="none">digestタイプ</parameter></term>
+<listitem>
+<para>
+チェックサム計算を有効にし、
+digestタイプで指定されたチェックサムを計算します。
+digestタイプとしては、現在のところ md5 がサポートされています。
+この文は gfmd.conf に対して有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	digest md5
+</literallayout>
 </listitem>
 </varlistentry>
 
@@ -1259,7 +1259,7 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負�
 指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定
 することで、それぞれ1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする
 ことができます。
-デフォルトは128Mバイトです。
+デフォルトは512Mバイトです。
 </para>
 <para>
 このパラメータは、gfarm2.confとgfmd.confの両方で指定する必要があります。
@@ -1878,7 +1878,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <variablelist>
 <varlistentry>
 <term>&lt;statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">&lt;spool_statement&gt; |
+<listitem><literallayout format="linespecific" class="normal">
+	&lt;spool_statement&gt; |
 	&lt;spool_server_listen_address_statement&gt; |
 	&lt;spool_server_listen_backlog_statement&gt; |
 	&lt;spool_server_cred_type_statement&gt; |
@@ -1886,7 +1887,6 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;spool_server_cred_name_statement&gt; |
 	&lt;spool_check_level_statement&gt; |
 	&lt;spool_base_load_statement&gt; |
-	&lt;spool_digest_statement&gt; |
 	&lt;metadb_server_host_statement&gt; |
 	&lt;metadb_server_port_statement&gt; |
 	&lt;metadb_server_cred_type_statement&gt; |
@@ -1912,6 +1912,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;postgresql_conninfo_statement&gt; |
 	&lt;auth_statement&gt; |
 	&lt;shared_key_file_statement&gt; |
+	&lt;digest_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
 <!--	&lt;address_use_statement&gt; | -->
@@ -2007,11 +2008,6 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <varlistentry>
 <term>&lt;spool_base_load_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"spool_base_load" &lt;load&gt;</literallayout></listitem>
-</varlistentry>
-
-<varlistentry>
-<term>&lt;spool_digest_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"spool_digest" &lt;digest_type&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2147,6 +2143,11 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <varlistentry>
 <term>&lt;shared_key_file_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"shared_key_file" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;digest_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"digest" &lt;digest_type&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--
