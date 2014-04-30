@@ -189,7 +189,7 @@ gfm_stat_cksum_request(struct gfm_connection *gfm_server, void *closure)
 	gfarm_error_t e = gfm_client_cksum_get_request(gfm_server);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1003744,
 		    "cksum_get request: %s", gfarm_error_string(e));
 	return (e);
 }
@@ -211,7 +211,7 @@ gfm_stat_cksum_result(struct gfm_connection *gfm_server, void *closure)
 		&st->type, size, &st->len, st->cksum, &st->flags);
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003745,
 		    "cksum_get result; %s", gfarm_error_string(e));
 #endif
 	if (size > st->len)
@@ -233,7 +233,7 @@ gfs_stat_cksum(const char *path, struct gfs_stat_cksum *s)
 	    NULL,
 	    &closure);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003746,
 		    "gfm_stat_cksum(%s): %s", path, gfarm_error_string(e));
 
 	return (e);
@@ -252,7 +252,7 @@ gfs_fstat_cksum(GFS_File gf, struct gfs_stat_cksum *s)
 	    NULL,
 	    &closure);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED, "gfm_fstat_cksum(%s): %s",
+		gflog_debug(GFARM_MSG_1003747, "gfm_fstat_cksum(%s): %s",
 		    gfs_pio_url(gf), gfarm_error_string(e));
 
 	return (e);
@@ -267,7 +267,7 @@ gfm_stat_cksum_set_request(struct gfm_connection *gfm_server, void *closure)
 	    st->type, st->len, st->cksum, 0, 0, 0);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1003748,
 		    "cksum_set request: %s", gfarm_error_string(e));
 	return (e);
 }
@@ -278,7 +278,7 @@ gfm_stat_cksum_set_result(struct gfm_connection *gfm_server, void *closure)
 	gfarm_error_t e = gfm_client_cksum_set_result(gfm_server);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003749,
 		    "cksum_set result; %s", gfarm_error_string(e));
 	return (e);
 }
@@ -294,7 +294,7 @@ gfs_fstat_cksum_set(GFS_File gf, struct gfs_stat_cksum *s)
 	    gfm_stat_cksum_set_request, gfm_stat_cksum_set_result, NULL,
 	    &closure);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED, "gfm_fstat_cksum_set(%s): %s",
+		gflog_debug(GFARM_MSG_1003750, "gfm_fstat_cksum_set(%s): %s",
 		    gfs_pio_url(gf), gfarm_error_string(e));
 
 	return (e);

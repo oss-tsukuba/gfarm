@@ -1150,7 +1150,7 @@ file_table_add(gfarm_int32_t net_fd, char *path,
 	static const char diag[] = "file_table_add";
 
 	if ((r = lstat(path, &st)) < 0 && errno != ENOENT)
-		fatal_errno(GFARM_MSG_UNFIXED, "%s: %s", diag, path);
+		fatal_errno(GFARM_MSG_1003769, "%s: %s", diag, path);
 	local_fd = open_data(path, flags);
 	if (local_fd == -1)
 		return (gfarm_errno_to_error(errno));
@@ -1197,7 +1197,7 @@ file_table_add(gfarm_int32_t net_fd, char *path,
 			}
 			if ((cksum_flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
 			    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0)
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003770,
 				    "%lld:%lld cksum flag %d, may be expired",
 				    (long long)fe->ino, (long long)fe->gen,
 				    cksum_flags);
@@ -1207,7 +1207,7 @@ file_table_add(gfarm_int32_t net_fd, char *path,
 			md5_init(&fe->md5_state);
 		} else {
 			fe->cksum_type = NULL;
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1003771,
 			    "%s: %s: unsupported digest", diag, cksum_type);
 		}
 	} else
@@ -1627,7 +1627,7 @@ gfs_server_reopen(const char *diag, gfarm_int32_t net_fd, char **pathp,
 		    diag, net_fd, gfarm_error_string(e));
 	else if ((e = gfm_client_cksum_get_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003772,
 		    "%s cksum_get request: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_compound_put_fd_result(diag))
@@ -1644,7 +1644,7 @@ gfs_server_reopen(const char *diag, gfarm_int32_t net_fd, char **pathp,
 	} else if ((e = gfm_client_cksum_get_result(gfm_server, &cksum_type,
 	     sizeof tmp_cksum, &cksum_len, tmp_cksum, &cksum_flags))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003773,
 		    "%s cksum_get result: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end(diag))
@@ -2088,33 +2088,33 @@ is_not_modified(gfarm_int32_t fd, const char *diag)
 	gfarm_error_t e;
 
 	if ((fe = file_table_entry(fd)) == NULL)
-		gflog_error(GFARM_MSG_UNFIXED, "fd %d: %s", fd,
+		gflog_error(GFARM_MSG_1003774, "fd %d: %s", fd,
 		    gfarm_error_string(GFARM_ERR_BAD_FILE_DESCRIPTOR));
 	else if (fstat(fe->local_fd, &st) == -1)
-		gflog_notice(GFARM_MSG_UNFIXED, "is_not_modified: %s",
+		gflog_notice(GFARM_MSG_1003775, "is_not_modified: %s",
 		    strerror(errno));
 	else if (st.st_size != fe->size || st.st_mtime != fe->mtime ||
 	    gfarm_stat_mtime_nsec(&st) != fe->mtimensec)
 		return (0);
 	else if ((e = gfm_client_compound_put_fd_request(fd, diag))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_UNFIXED,
+		fatal_metadb_proto(GFARM_MSG_1003776,
 		    "compound_put_fd_request", diag, e);
 	else if ((e = gfm_client_cksum_get_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED, "%s cksum_get request: %s",
+		gflog_error(GFARM_MSG_1003777, "%s cksum_get request: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_compound_put_fd_result(diag))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_UNFIXED,
+		fatal_metadb_proto(GFARM_MSG_1003778,
 		    "compound_put_fd_result", diag, e);
 	else if ((e = gfm_client_cksum_get_result(gfm_server, &cksum_type,
 	     sizeof tmp_cksum, &cksum_len, tmp_cksum, &cksum_flags))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_info(GFARM_MSG_UNFIXED, "%s cksum_get result: %s",
+		gflog_info(GFARM_MSG_1003779, "%s cksum_get result: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end(diag)) != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_UNFIXED, "compound_end", diag, e);
+		fatal_metadb_proto(GFARM_MSG_1003780, "compound_end", diag, e);
 	else if ((cksum_flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
 	    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0 || cksum_len == 0)
 		ret = 0;
@@ -2144,7 +2144,7 @@ digest_finish(gfarm_int32_t fd, const char *diag)
 	else if (memcmp(md5, fe->md5, fe->md5_len) &&
 	    is_not_modified(fd, diag)) {
 		e = GFARM_ERR_CHECKSUM_MISMATCH;
-		gflog_error(GFARM_MSG_UNFIXED, "%lld:%lld: %s",
+		gflog_error(GFARM_MSG_1003781, "%lld:%lld: %s",
 		    (long long)fe->ino, (long long)fe->gen,
 		    gfarm_error_string(e));
 	}
@@ -2230,7 +2230,7 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 	    (e = gfm_client_cksum_set_request(gfm_server,
 	    fe->cksum_type, fe->md5_len, fe->md5, 0, 0, 0))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED, "%s cksum_set request: %s",
+		gflog_error(GFARM_MSG_1003782, "%s cksum_set request: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = close_request(fe)) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000488,
@@ -2244,7 +2244,7 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 	    FILE_FLAG_WRITTEN)) == FILE_FLAG_DIGEST_FINISH &&
 	    (e = gfm_client_cksum_set_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_info(GFARM_MSG_UNFIXED, "%s cksum_set result: %s",
+		gflog_info(GFARM_MSG_1003783, "%s cksum_set result: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = close_result(fe, &gen_update_result))
 	    != GFARM_ERR_NO_ERROR) {
@@ -2291,7 +2291,7 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 		    (e2 = gfm_client_cksum_set_request(gfm_server,
 		    fe->cksum_type, fe->md5_len, fe->md5, 0, 0, 0))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003784,
 			    "%s cksum_set request: %s",
 			    diag, gfarm_error_string(e2));
 		else if ((e2 = gfm_client_compound_put_fd_result(diag))
@@ -2308,7 +2308,7 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 		    fe->new_gen == fe->gen + 1 &&
 		    (e2 = gfm_client_cksum_set_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003785,
 			    "%s cksum_set result: %s",
 			    diag, gfarm_error_string(e2));
 		else if ((e2 = gfm_client_compound_end(diag))
@@ -3843,7 +3843,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 			exit(1);
 		}
 		if (!gfm_client_connection_empty(gfm_server)) {
-			gflog_warning(GFARM_MSG_UNFIXED, "protocol mismatch, "
+			gflog_warning(GFARM_MSG_1003786, "protocol mismatch, "
 			    "iobufer not empty: request = %d", request);
 			cleanup(0);
 			exit(1);

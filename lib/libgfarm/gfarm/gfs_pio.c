@@ -432,7 +432,7 @@ gfs_pio_fhopen(gfarm_ino_t inum, gfarm_uint64_t gen, int flags, GFS_File *gfp)
 		}
 	}
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003739,
 		    "gfs_pio_fhopen(%lld:%lld): %s",
 		    (long long)inum, (long long)gen, gfarm_error_string(e));
 
@@ -960,7 +960,7 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 		 * when n > 0, part of data is stored in the buffer,
 		 * and the file position is changed.
 		 */
-		gflog_debug(GFARM_MSG_UNFIXED, "gfs_pio_read: n=%d: %s",
+		gflog_debug(GFARM_MSG_1003740, "gfs_pio_read: n=%d: %s",
 		    n, gfarm_error_string(e));
 		goto finish;
 	}
@@ -1772,7 +1772,7 @@ gfs_pio_stat(GFS_File gf, struct gfs_stat *st)
 	gfarm_error_t e = gfs_pio_check_view_default(gf);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003742,
 		    "gfs_pio_stat: %s", gfarm_error_string(e));
 		return (e);
 	}
@@ -1827,7 +1827,7 @@ gfs_pio_cksum(GFS_File gf, const char *type, struct gfs_stat_cksum *cksum)
 	gfarm_error_t e = gfs_pio_check_view_default(gf);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003743,
 		    "gfs_pio_cksum: %s", gfarm_error_string(e));
 		return (e);
 	}
@@ -1853,7 +1853,7 @@ gfs_pio_recvfile(GFS_File r_gf, gfarm_off_t r_off,
 
 	e = gfs_pio_check_view_default(r_gf);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003741,
 		    "gfs_pio_check_view_default() failed: %s",
 		    gfarm_error_string(e));
 		return (e);

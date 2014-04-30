@@ -826,7 +826,7 @@ process_peer_is_the_spool_opener(struct process *process,
 	/* if this request is valid, peer must be gfsd */
 
 	if (!GFARM_S_ISREG(mode)) { /* non-opener only can open a file */
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003752,
 		    "%s: pid:%lld fd:%d inode:%llu:%llu "
 		    "not a file (0%o) by %s@%s",
 		    diag, (long long)process->pid, (int)fd,
@@ -836,7 +836,7 @@ process_peer_is_the_spool_opener(struct process *process,
 		return (0);
 	}
 	if (peer != fo->u.f.spool_opener) { /* peer is not the spool opener */
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003753,
 		    "%s: pid:%lld fd:%d inode:%llu:%llu "
 		    "invalid request by %s@%s, should be %s",
 		    diag, (long long)process->pid, (int)fd,
@@ -1053,7 +1053,7 @@ process_cksum_set(struct process *process, struct peer *peer, int fd,
 	}
 	if (!inode_is_file(fo->inode)) {
 		e = GFARM_ERR_NOT_A_REGULAR_FILE;
-		gflog_info(GFARM_MSG_UNFIXED, "%s: inode %lld: %s",
+		gflog_info(GFARM_MSG_1003754, "%s: inode %lld: %s",
 		    diag, (long long)inode_get_number(fo->inode),
 		    gfarm_error_string(e));
 		return (e);

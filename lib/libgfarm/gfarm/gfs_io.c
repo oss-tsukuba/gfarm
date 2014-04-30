@@ -239,42 +239,42 @@ gfm_fhopen_fd(gfarm_ino_t inum, gfarm_uint64_t gen, int flags,
 
 	if ((e = gfm_client_connection_and_process_acquire_by_path(
 		     GFARM_PATH_ROOT, &gfm_server)) != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED, "process_acquire: %s",
+		gflog_warning(GFARM_MSG_1003726, "process_acquire: %s",
 		    gfarm_error_string(e));
 		return (e);
 	}
 	if ((e = gfm_client_compound_begin_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "compound_begin request: %s",
+		gflog_warning(GFARM_MSG_1003727, "compound_begin request: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_fhopen_request(gfm_server, inum, gen, flags))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "fhopen request: %s",
+		gflog_warning(GFARM_MSG_1003728, "fhopen request: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_get_fd_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "get_fd request: %s",
+		gflog_warning(GFARM_MSG_1003729, "get_fd request: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "compound_end request: %s",
+		gflog_warning(GFARM_MSG_1003730, "compound_end request: %s",
 		    gfarm_error_string(e));
 
 	else if ((e = gfm_client_compound_begin_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "compound_begin result: %s",
+		gflog_warning(GFARM_MSG_1003731, "compound_begin result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_fhopen_result(gfm_server, &mode))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED, "fhopen result: %s",
+		gflog_debug(GFARM_MSG_1003732, "fhopen result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_get_fd_result(gfm_server, &fd))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "get_fd result: %s",
+		gflog_warning(GFARM_MSG_1003733, "get_fd result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED, "compound_end result: %s",
+		gflog_warning(GFARM_MSG_1003734, "compound_end result: %s",
 		    gfarm_error_string(e));
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
