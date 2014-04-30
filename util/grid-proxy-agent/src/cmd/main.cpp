@@ -23,6 +23,7 @@ static char sPasswd[4096];
 static size_t sPasswdLen = 0;
 
 static int32_t sInterval = 4 * 3600;	// 4 h
+static char *sBits = NULL;
 
 static bool sDebug = false;
 
@@ -40,17 +41,22 @@ class GridProxyInit: public Process {
 private:
     char mPasswd[4096];
     size_t mPasswdLen;
-    char *mCwd;
+    char *mCwd, *mBits;
     bool mVerbose;
-
 
 protected:
     int
     runChild() {
-        const char * const argv[] = {
+        const char *argv[] = {
             "grid-proxy-init",
+	    NULL,
+	    NULL,
             NULL
         };
+	if (mBits != NULL) {
+		argv[1] = "-bits";
+		argv[2] = mBits;
+	}
         Process::unblockAllSignals();
 
         ::execvp((const char *)argv[0], (char * const *)argv);
@@ -108,10 +114,12 @@ protected:
 
 
 public:
-    GridProxyInit(const char *cwd, const char *passwd, size_t passLen) :
+    GridProxyInit(const char *cwd, const char *passwd, size_t passLen,
+	const char *bits) :
         Process(NULL, NULL, NULL, NULL),
         mPasswdLen(passLen),
         mCwd((isValidString(cwd) == true) ? strdup(cwd) : NULL),
+        mBits((isValidString(bits) == true) ? strdup(bits) : NULL),
         mVerbose(false) {
         setCwd(mCwd);
         (void)memset((void *)mPasswd, 0, sizeof(mPasswd));
@@ -238,8 +246,8 @@ public:
 
     GridProxyAgent(const char *cwd,
                    const char *passwd,
-                   size_t passLen) :
-        mGPIPtr(new GridProxyInit(cwd, passwd, passLen)),
+                   size_t passLen, const char *bits) :
+        mGPIPtr(new GridProxyInit(cwd, passwd, passLen, bits)),
         mIsWorking(false),
         mIsFirst(true),
         mVerbose(false) {
@@ -311,6 +319,7 @@ usage(void) {
     fprintf(stderr, "\nwhere:\n");
     fprintf(stderr, "\t-i #:\tspecify an update interval in sec. "
             "(default: 4 hour)\n");
+    fprintf(stderr, "\t-bits:\tnumber of bits in key {512|1024|2048|4096}\n");
     fprintf(stderr, "\t-d:\tdebug mode.\n");
 }
 
@@ -329,6 +338,25 @@ parseArgs(int argc, char *argv[]) {
             }
         } else if (strcmp("-d", *argv) == 0) {
             sDebug = true;
+        } else if (strcmp("-bits", *argv) == 0) {
+            if (isValidString(*(argv + 1)) == true) {
+                argv++;
+                int32_t val;
+                if (nata_ParseInt32(*argv, &val) == true) {
+			switch (val) {
+			case 512:
+			case 1024:
+			case 2048:
+			case 4096:
+				sBits = *argv;
+				break;
+			default:
+				fputs("unsupported number of bits\n", stderr);
+				usage();
+				exit(0);
+			}
+		}
+            }
         } else if (strcmp("-?", *argv) == 0 ||
                    strcmp("-h", *argv) == 0) {
             usage();
@@ -374,7 +402,7 @@ main(int argc, char *argv[]) {
     setupSignals();
     ProcessJanitor::initialize();
 
-    gpaPtr = new GridProxyAgent("/", sPasswd, sPasswdLen);
+    gpaPtr = new GridProxyAgent("/", sPasswd, sPasswdLen, sBits);
     if (gpaPtr == NULL) {
         return 1;
     }
