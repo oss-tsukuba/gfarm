@@ -955,16 +955,16 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 		size -= length;
 		gf->p += length;
 	}
-	if (e != GFARM_ERR_NO_ERROR && n == 0) {
-		gflog_debug(GFARM_MSG_1001314,
-			"gfs_pio_fillbuf() failed: %s",
-			gfarm_error_string(e));
+	if (e != GFARM_ERR_NO_ERROR) {
+		/*
+		 * when n > 0, part of data is stored in the buffer,
+		 * and the file position is changed.
+		 */
+		gflog_debug(GFARM_MSG_UNFIXED, "gfs_pio_read: n=%d: %s",
+		    n, gfarm_error_string(e));
 		goto finish;
 	}
-
 	*np = n;
-
-	e = GFARM_ERR_NO_ERROR;
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->read_time += gfarm_timerval_sub(&t2, &t1));
