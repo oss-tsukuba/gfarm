@@ -63,7 +63,6 @@
 #include "gfsk_fs.h"
 #endif /* __KERNEL__ */
 
-#define GFS_CLIENT_CONNECT_TIMEOUT	30 /* seconds */
 #define GFS_CLIENT_COMMAND_TIMEOUT	20 /* seconds */
 
 #define XAUTH_NEXTRACT_MAXLEN	512
@@ -478,7 +477,7 @@ gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 	}
 	if (connection_in_progress)
 		e = gfarm_connect_wait(gfp_xdr_fd(gfs_server->conn),
-		    GFS_CLIENT_CONNECT_TIMEOUT);
+		    gfarm_ctxp->gfsd_connection_timeout);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfarm_auth_request(gfs_server->conn, GFS_SERVICE_TAG,
 		    gfs_server->hostname, peer_addr, gfarm_get_auth_id_type(),

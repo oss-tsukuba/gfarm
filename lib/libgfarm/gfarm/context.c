@@ -114,6 +114,7 @@ gfarm_context_init(void)
 	ctxp->log_level = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->no_file_system_node_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->gfmd_reconnection_timeout = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->gfsd_connection_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->attr_cache_limit = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->attr_cache_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->page_cache_timeout = GFARM_CONFIG_MISC_DEFAULT;

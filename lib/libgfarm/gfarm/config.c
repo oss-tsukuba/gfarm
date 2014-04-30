@@ -909,6 +909,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_LOG_MESSAGE_VERBOSE_DEFAULT	0
 #define GFARM_NO_FILE_SYSTEM_NODE_TIMEOUT_DEFAULT 30 /* 30 seconds */
 #define GFARM_GFMD_RECONNECTION_TIMEOUT_DEFAULT 30 /* 30 seconds */
+#define GFARM_GFSD_CONNECTION_TIMEOUT_DEFAULT 30 /* 30 seconds */
 #define GFARM_ATTR_CACHE_LIMIT_DEFAULT		40000 /* 40,000 entries */
 #define GFARM_ATTR_CACHE_TIMEOUT_DEFAULT	1000 /* 1,000 milli second */
 #define GFARM_PAGE_CACHE_TIMEOUT_DEFAULT	1000 /* 1,000 milli second */
@@ -2875,6 +2876,9 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "gfmd_reconnection_timeout") == 0) {
 		e = parse_set_misc_int(
 		    p, &gfarm_ctxp->gfmd_reconnection_timeout);
+	} else if (strcmp(s, o = "gfsd_connection_timeout") == 0) {
+		e = parse_set_misc_int(
+		    p, &gfarm_ctxp->gfsd_connection_timeout);
 	} else if (strcmp(s, o = "attr_cache_limit") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->attr_cache_limit);
 	} else if (strcmp(s, o = "attr_cache_timeout") == 0) {
@@ -3179,6 +3183,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->gfmd_reconnection_timeout == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->gfmd_reconnection_timeout =
 		    GFARM_GFMD_RECONNECTION_TIMEOUT_DEFAULT;
+	if (gfarm_ctxp->gfsd_connection_timeout == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->gfsd_connection_timeout =
+		    GFARM_GFSD_CONNECTION_TIMEOUT_DEFAULT;
 	if (gfarm_ctxp->attr_cache_limit == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->attr_cache_limit = GFARM_ATTR_CACHE_LIMIT_DEFAULT;
 	if (gfarm_ctxp->attr_cache_timeout == GFARM_CONFIG_MISC_DEFAULT)

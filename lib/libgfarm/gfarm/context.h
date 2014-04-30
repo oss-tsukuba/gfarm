@@ -9,6 +9,7 @@ struct gfarm_context {
 	int log_level;
 	int no_file_system_node_timeout;
 	int gfmd_reconnection_timeout;
+	int gfsd_connection_timeout;
 	int attr_cache_limit;
 	int attr_cache_timeout;
 	int page_cache_timeout;

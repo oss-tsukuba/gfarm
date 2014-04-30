@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>18 Apr 2014</date></refentryinfo>
+<refentryinfo><date>23 Apr 2014</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1632,6 +1632,20 @@ The default is 30 seconds.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>gfsd_connection_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+This directive specifies the timeout to connect to a gfsd.  The
+default is 30 seconds.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	gfsd_connection_timeout 30
+</literallayout>
+</listitem>
+</varlistentry>
+
 <!--
 <varlistentry>
 <term><token>record_atime </token><parameter moreinfo="none">validity</parameter></term>
@@ -2473,6 +2487,11 @@ notation.</para>
 <varlistentry>
 <term>&lt;gfmd_reconnection_timeout_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"gfmd_reconnection_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;gfsd_connection_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"gfsd_connection_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--
