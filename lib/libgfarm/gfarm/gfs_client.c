@@ -1720,14 +1720,6 @@ gfs_client_cksum(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 }
 
 gfarm_error_t
-gfs_client_cksum_set(struct gfs_connection *gfs_server, gfarm_int32_t fd,
-	const char *cksum_type, size_t length, const char *cksum)
-{
-	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_CKSUM_SET, "isb/",
-	    fd, cksum_type, length, cksum));
-}
-
-gfarm_error_t
 gfs_client_lock(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	gfarm_off_t start, gfarm_off_t len,
 	gfarm_int32_t type, gfarm_int32_t whence)

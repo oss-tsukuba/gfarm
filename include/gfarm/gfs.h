@@ -284,6 +284,7 @@ gfarm_error_t gfs_stat_index(char *, int, struct gfs_stat *);
 gfarm_error_t gfs_stat_cksum(const char *, struct gfs_stat_cksum *);
 gfarm_error_t gfs_fstat_cksum(GFS_File, struct gfs_stat_cksum *);
 gfarm_error_t gfs_stat_cksum_free(struct gfs_stat_cksum *);
+gfarm_error_t gfs_fstat_cksum_set(GFS_File, struct gfs_stat_cksum *);
 
 gfarm_error_t gfs_access(const char *, int);
 #define GFS_F_OK	0

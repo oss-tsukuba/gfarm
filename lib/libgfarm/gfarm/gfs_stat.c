@@ -258,6 +258,48 @@ gfs_fstat_cksum(GFS_File gf, struct gfs_stat_cksum *s)
 	return (e);
 }
 
+static gfarm_error_t
+gfm_stat_cksum_set_request(struct gfm_connection *gfm_server, void *closure)
+{
+	struct gfm_stat_cksum_closure *c = closure;
+	struct gfs_stat_cksum *st = c->st;
+	gfarm_error_t e = gfm_client_cksum_set_request(gfm_server,
+	    st->type, st->len, st->cksum, 0, 0, 0);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "cksum_set request: %s", gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_stat_cksum_set_result(struct gfm_connection *gfm_server, void *closure)
+{
+	gfarm_error_t e = gfm_client_cksum_set_result(gfm_server);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "cksum_set result; %s", gfarm_error_string(e));
+	return (e);
+}
+
+gfarm_error_t
+gfs_fstat_cksum_set(GFS_File gf, struct gfs_stat_cksum *s)
+{
+	struct gfm_stat_cksum_closure closure;
+	gfarm_error_t e;
+
+	closure.st = s;
+	e = gfm_client_compound_fd_op(gfs_pio_metadb(gf), gfs_pio_fileno(gf),
+	    gfm_stat_cksum_set_request, gfm_stat_cksum_set_result, NULL,
+	    &closure);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED, "gfm_fstat_cksum_set(%s): %s",
+		    gfs_pio_url(gf), gfarm_error_string(e));
+
+	return (e);
+}
+
 gfarm_error_t
 gfs_stat_cksum_free(struct gfs_stat_cksum *s)
 {
