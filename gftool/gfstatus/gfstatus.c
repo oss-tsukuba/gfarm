@@ -56,7 +56,7 @@ void
 usage(void)
 {
 	fprintf(stderr,
-	    "Usage:\t%s [-V] [-P <path>]\n",
+	    "Usage:\t%s [-d] [-V] [-P <path>]\n",
 	    program_name);
 	exit(EXIT_FAILURE);
 }
@@ -65,7 +65,7 @@ int
 main(int argc, char *argv[])
 {
 	gfarm_error_t e, e2;
-	int port, c;
+	int port, c, debug_mode = 0;
 	char *canonical_hostname, *hostname, *realpath = NULL;
 	const char *user, *gfmd_hostname;
 	const char *path = ".";
@@ -82,7 +82,9 @@ main(int argc, char *argv[])
 	    != -1) {
 		switch (c) {
 		case 'd':
+			debug_mode = 1;
 			gflog_set_priority_level(LOG_DEBUG);
+			gflog_auth_set_verbose(1);
 			break;
 		case 'P':
 			path = optarg;
@@ -99,7 +101,11 @@ main(int argc, char *argv[])
 
 	e = gfarm_initialize(&argc, &argv);
 	error_check("gfarm_initialize", e);
-
+	if (debug_mode) {
+		/* set again since gfarm_initialize overwrites them */
+		gflog_set_priority_level(LOG_DEBUG);
+		gflog_auth_set_verbose(1);
+	}
 	if (gfarm_realpath_by_gfarm2fs(path, &realpath) == GFARM_ERR_NO_ERROR)
 		path = realpath;
 	if ((e = gfm_client_connection_and_process_acquire_by_path(
