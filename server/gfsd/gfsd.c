@@ -233,6 +233,35 @@ cleanup_handler(int signo)
 	}
 }
 
+/*
+ * if the connection to the client is down,
+ * the client may already issued GFM_PROTO_REVOKE_GFSD_ACCESS
+ */
+static int fd_may_be_revoked = 0;
+
+static void
+gflog_closing_problem_full(int, const char *, int, const char *,
+	gfarm_error_t, const char *, ...) GFLOG_PRINTF_ARG(6, 7);
+
+static void
+gflog_closing_problem_full(int msg_no,
+	const char *file, int line_no, const char *func,
+	gfarm_error_t e, const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	gflog_vmessage(msg_no,
+	    e == GFARM_ERR_BAD_FILE_DESCRIPTOR && fd_may_be_revoked ?
+	    LOG_INFO : LOG_ERR, file, line_no, func, format, ap);
+	va_end(ap);
+}
+
+#define gflog_closing_problem(msg_no, e, ...) \
+	gflog_closing_problem_full(msg_no, __FILE__, __LINE__, __func__, \
+	    e, __VA_ARGS__)
+
+
 static int kill_master_gfsd;
 
 void
@@ -508,9 +537,12 @@ gfs_server_get_request(struct gfp_xdr *client, const char *diag,
 	va_end(ap);
 
 	/* XXX FIXME: should handle GFARM_ERR_NO_MEMORY gracefully */
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (IS_CONNECTION_ERROR(e))
+			fd_may_be_revoked = 1;
 		fatal(GFARM_MSG_1000455, "%s get request: %s",
 		    diag, gfarm_error_string(e));
+	}
 }
 
 #define IS_IO_ERROR(e) \
@@ -541,9 +573,12 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 	e = gfp_xdr_vsend_result(client, ecode, format, app);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(client);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (IS_CONNECTION_ERROR(e))
+			fd_may_be_revoked = 1;
 		fatal(GFARM_MSG_1000459, "%s put reply: %s",
 		    diag, gfarm_error_string(e));
+	}
 
 	io_error_check(ecode, diag);
 }
@@ -1243,7 +1278,7 @@ gfm_client_compound_put_fd_result(const char *diag)
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_put_fd_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_1002295,
+		gflog_closing_problem(GFARM_MSG_1002295, e,
 		    "gfmd protocol: put_fd result error on %s: %s",
 		    diag, gfarm_error_string(e));
 
@@ -1813,7 +1848,7 @@ close_fd(gfarm_int32_t fd, const char *diag)
 		    "%s close request: %s", diag, gfarm_error_string(e));
 	else if ((e = gfm_client_compound_put_fd_result(diag))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_1003338,
+		gflog_closing_problem(GFARM_MSG_1003338, e,
 		    "%s compound_put_fd_result: %s",
 		    diag, gfarm_error_string(e));
 	else if ((fe->flags & (FILE_FLAG_DIGEST_FINISH|FILE_FLAG_DIGEST_AVAIL|
@@ -3153,9 +3188,12 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 
 	for (;;) {
 		e = gfp_xdr_recv_notimeout(client, 0, &eof, "i", &request);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			if (IS_CONNECTION_ERROR(e))
+				fd_may_be_revoked = 1;
 			fatal(GFARM_MSG_1000557, "request number: %s",
 			    gfarm_error_string(e));
+		}
 		if (eof) {
 			/*
 			 * XXX FIXME update metadata of all opened
