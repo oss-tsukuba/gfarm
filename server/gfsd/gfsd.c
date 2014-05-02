@@ -2099,8 +2099,9 @@ is_not_modified(gfarm_int32_t fd, const char *diag)
 		return (0);
 	else if ((e = gfm_client_compound_put_fd_request(fd, diag))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1003776,
-		    "compound_put_fd_request", diag, e);
+		gflog_error(GFARM_MSG_1003776,
+		    "%s: compound_put_fd_request: %s",
+		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_cksum_get_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1003777, "%s cksum_get request: %s",
@@ -2116,7 +2117,8 @@ is_not_modified(gfarm_int32_t fd, const char *diag)
 		gflog_info(GFARM_MSG_1003779, "%s cksum_get result: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end(diag)) != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1003780, "compound_end", diag, e);
+		gflog_error(GFARM_MSG_1003780, "%s: compound_end: %s",
+		    diag, gfarm_error_string(e));
 	else if ((cksum_flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
 	    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0 || cksum_len == 0)
 		ret = 0;
