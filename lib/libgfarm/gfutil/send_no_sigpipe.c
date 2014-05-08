@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 
 #ifndef __KERNEL__	/* gfarm_sigpipe_ignore  ???*/
 static int sigpipe_is_ignored = 0;
