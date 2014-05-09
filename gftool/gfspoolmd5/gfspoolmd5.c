@@ -14,6 +14,8 @@
 #include <errno.h>
 #include <stdio.h>
 #include <libgen.h>
+#include <limits.h>
+#include <float.h>
 
 #include <gfarm/gfarm.h>
 
@@ -158,22 +160,23 @@ static void
 show_progress(void)
 {
 	struct timeval t;
-	int sec, min, hour;
-	double time, bw;
+	int min, hour;
+	double time, bw, sec;
 
 	gettimeofday(&t, NULL);
 	time = t.tv_sec - start_time.tv_sec +
 	    .000001 * (t.tv_usec - start_time.tv_usec);
-	bw = size / 1000 / time;
-	sec = (int)((total_size - size) / 1000 / bw);
+	bw = time == 0 ? DBL_MAX : size / 1000.0 / time;
+	sec = bw == 0.0 ? INT_MAX : (total_size - size) / 1000.0 / bw;
 	hour = sec / 3600;
 	min = (sec - hour * 3600) / 60;
 	sec = sec - hour * 3600 - min * 60;
 
 	printf("file: %lld/%lld size: %lld/%lld (%2lld%%) "
 	       "ave: %.2f KB/s Est: %d:%02d:%02d \r",
-	       count, total_count, size, total_size, size * 100 / total_size,
-	       bw, hour, min, sec);
+	       count, total_count, size, total_size,
+	       total_size == 0 ? 100 : size * 100 / total_size,
+	       bw, hour, min, (int)sec);
 	fflush(stdout);
 }
 
