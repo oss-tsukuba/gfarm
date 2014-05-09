@@ -62,8 +62,10 @@ gfarm_foreach_directory(
 		sprintf(path, "%s%s%s", file, slash, d);
 		e = gfs_lstat_cached(path, &stent);
 		if (e == GFARM_ERR_NO_ERROR) {
-			e = gfarm_foreach_directory_hierarchy_internal(
-			    op_file, op_dir1, op_dir2, path, arg, &stent);
+			if (filter(&stent))
+				e = gfarm_foreach_directory_hierarchy_internal(
+				    op_file, op_dir1, op_dir2, path, arg,
+				    &stent);
 			gfs_stat_free(&stent);
 		}
 		if (e_save == GFARM_ERR_NO_ERROR)
