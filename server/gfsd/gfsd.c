@@ -14,6 +14,7 @@
 #include <arpa/inet.h>
 #include <sys/resource.h>
 #include <netdb.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -47,6 +48,8 @@
 #include <sys/loadavg.h>	/* getloadavg() on Solaris */
 #endif
 
+#include <openssl/evp.h>
+
 #define GFLOG_USE_STDARG
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
@@ -61,7 +64,6 @@
 #include "nanosec.h"
 #include "timer.h"
 #include "timespec.h"
-#include "md5.h"
 
 #include "context.h"
 #include "gfp_xdr.h"
@@ -1068,12 +1070,15 @@ struct file_entry {
 /*
  * digest
  */
-	char *cksum_type;
-#define MD5_SIZE	16
-	md5_state_t md5_state;
-	off_t md5_offset;
-	char md5[MD5_SIZE * 2 + 1];
-	size_t md5_len;
+	off_t md_offset;
+
+	const EVP_MD *md_type;
+	EVP_MD_CTX md_ctx;
+
+	/* the followings are available if FILE_FLAG_DIGEST_FINISH is set */
+	char md_string[EVP_MAX_MD_SIZE * 2 + 1];
+	size_t md_strlen;
+
 /*
  * performance data (only available in profile mode)
  */
@@ -1133,8 +1138,6 @@ file_table_is_available(gfarm_int32_t net_fd)
 		return (0);
 }
 
-char cksum_type_md5[] = "md5";
-
 #ifndef ACCESSPERMS
 #define ACCESSPERMS (S_IRWXU|S_IRWXG|S_IRWXO)
 #endif
@@ -1186,33 +1189,30 @@ file_table_add(gfarm_int32_t net_fd, char *path,
 	fe->gen = fe->new_gen = gen;
 
 	/* checksum */
-	if (cksum_type != NULL && cksum_type[0] != '\0') {
-		if (strcmp(cksum_type, cksum_type_md5) == 0) {
-			fe->cksum_type = cksum_type_md5;
-			if (cksum_len == 0)
-				fe->md5_len = MD5_SIZE * 2;
-			else {
-				fe->flags |= FILE_FLAG_DIGEST_AVAIL;
-				memcpy(fe->md5, cksum, cksum_len);
-				fe->md5_len = cksum_len;
-			}
-			if ((cksum_flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
-			    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0)
-				gflog_debug(GFARM_MSG_1003770,
-				    "%lld:%lld cksum flag %d, may be expired",
-				    (long long)fe->ino, (long long)fe->gen,
-				    cksum_flags);
-			else
-				fe->flags |= FILE_FLAG_DIGEST_CALC;
-			fe->md5_offset = 0;
-			md5_init(&fe->md5_state);
+	if (cksum_type == NULL || cksum_type[0] == '\0') {
+		fe->md_type = NULL;
+	} else if ((fe->md_type = EVP_get_digestbyname(cksum_type)) == NULL) {
+		gflog_warning(GFARM_MSG_1003771,
+		    "%s: %s: unsupported digest", diag, cksum_type);
+	} else {
+		if (cksum_len == 0) {
+			fe->md_strlen = 0;
 		} else {
-			fe->cksum_type = NULL;
-			gflog_warning(GFARM_MSG_1003771,
-			    "%s: %s: unsupported digest", diag, cksum_type);
+			fe->flags |= FILE_FLAG_DIGEST_AVAIL;
+			memcpy(fe->md_string, cksum, cksum_len);
+			fe->md_strlen = cksum_len;
 		}
-	} else
-		fe->cksum_type = NULL;
+		if ((cksum_flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
+		    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0)
+			gflog_debug(GFARM_MSG_1003770,
+			    "%lld:%lld cksum flag %d, may be expired",
+			    (long long)fe->ino, (long long)fe->gen,
+			    cksum_flags);
+		else
+			fe->flags |= FILE_FLAG_DIGEST_CALC;
+		fe->md_offset = 0;
+		EVP_DigestInit(&fe->md_ctx, fe->md_type);
+	}
 	/* performance data (only available in profile mode) */
 	fe->start_time = *start;
 	fe->nwrite = fe-> nread = 0;
@@ -1267,6 +1267,15 @@ file_table_close(gfarm_int32_t net_fd)
 			    fe->local_fd_rdonly,
 			    (long long)fe->ino, (long long)fe->gen);
 		fe->local_fd_rdonly = -1;
+	}
+
+	if (fe->md_type != NULL &&
+	    (fe->flags & FILE_FLAG_DIGEST_FINISH) == 0) {
+		unsigned char md_value[EVP_MAX_MD_SIZE];
+		unsigned int md_len;
+
+		/* We need to do this to avoid memory leak */
+		EVP_DigestFinal(&fe->md_ctx, md_value, &md_len);
 	}
 
 	gfs_profile(
@@ -2055,25 +2064,37 @@ fhclose_result(struct file_entry *fe, gfarm_uint64_t *cookie_p,
 }
 
 static gfarm_error_t
-md5(int fd, char md5[MD5_SIZE * 2 + 1])
+calc_digest(int fd,
+	const char *md_type_name, char *md_string, size_t *md_strlenp)
 {
-#define bufsize	65536
-	md5_state_t state;
-	md5_byte_t digest[MD5_SIZE], buf[bufsize];
-	int di, sz;
+#define BUFSIZE	65536
+	char buf[BUFSIZE];
+	ssize_t sz;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	const EVP_MD *md_type;
+	EVP_MD_CTX md_ctx;
+	unsigned int md_len, di;
+	unsigned char md_value[EVP_MAX_MD_SIZE];
+
+	md_type = EVP_get_digestbyname(md_type_name);
+	if (md_type == NULL)
+		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 
 	if (lseek(fd, 0, SEEK_SET) == -1)
 		return (gfarm_errno_to_error(errno));
-	md5_init(&state);
+
+	EVP_DigestInit(&md_ctx, md_type);
+
 	while ((sz = read(fd, buf, sizeof buf)) > 0)
-		md5_append(&state, buf, sz);
+		EVP_DigestUpdate(&md_ctx, buf, sz);
 	if (sz == -1)
 		e = gfarm_errno_to_error(errno);
-	else {
-		md5_finish(&state, digest);
-		for (di = 0; di < MD5_SIZE; ++di)
-			sprintf(&md5[di * 2], "%02x", digest[di]);
+
+	EVP_DigestFinal(&md_ctx, md_value, &md_len);
+	if (e == GFARM_ERR_NO_ERROR) {
+		for (di = 0; di < md_len; ++di)
+			sprintf(&md_string[di * 2], "%02x", md_value[di]);
 	}
 	return (e);
 }
@@ -2130,22 +2151,25 @@ static gfarm_error_t
 digest_finish(gfarm_int32_t fd, const char *diag)
 {
 	struct file_entry *fe;
-	md5_byte_t digest[MD5_SIZE];
-	char md5[MD5_SIZE * 2 + 1];
+
+	unsigned char md_value[EVP_MAX_MD_SIZE];
+	char md_string[EVP_MAX_MD_SIZE * 2 + 1];
+	unsigned int md_len, i;
+
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	int i;
 
 	if ((fe = file_table_entry(fd)) == NULL)
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	if ((fe->flags & FILE_FLAG_DIGEST_FINISH) != 0)
 		return (e);
-	md5_finish(&fe->md5_state, digest);
-	for (i = 0; i < MD5_SIZE; ++i)
-		sprintf(&md5[2 * i], "%02x", digest[i]);
+	EVP_DigestFinal(&fe->md_ctx, md_value, &md_len);
+	for (i = 0; i < md_len; ++i)
+		sprintf(&md_string[2 * i], "%02x", md_value[i]);
+	fe->md_strlen = md_len * 2;
 	if ((fe->flags & FILE_FLAG_WRITTEN) != 0 ||
 	    (fe->flags & FILE_FLAG_DIGEST_AVAIL) == 0)
-		memcpy(fe->md5, md5, fe->md5_len);
-	else if (memcmp(md5, fe->md5, fe->md5_len) &&
+		memcpy(fe->md_string, md_string, fe->md_strlen);
+	else if (memcmp(md_string, fe->md_string, fe->md_strlen) &&
 	    is_not_modified(fd, diag)) {
 		e = GFARM_ERR_CHECKSUM_MISMATCH;
 		gflog_error(GFARM_MSG_1003781, "%lld:%lld: %s",
@@ -2202,7 +2226,7 @@ update_file_entry_for_close(gfarm_int32_t fd, const char *diag)
 			fe->size = st.st_size;
 	}
 	if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0 &&
-	    fe->md5_offset == fe->size) {
+	    fe->md_offset == fe->size) {
 		e2 = digest_finish(fd, diag);
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
@@ -2216,6 +2240,38 @@ add_to_lost_found(struct file_entry *fe)
 	(void) register_to_lost_found(
 	    fe->local_fd_rdonly != -1 ? fe->local_fd_rdonly : fe->local_fd,
 	    fe->ino, fe->gen);
+}
+
+/*
+ * convert OpenSSL digest name (e.g. "MD5") to Gfarm digest name (e.g. "md5")
+ *
+ * CAUTION:
+ * - this function is NOT multithread-safe
+ * - do not call this function twice as arguments of same function call
+ */
+static char *
+cksum_type_name(const EVP_MD *md_type)
+{
+	static const EVP_MD *cached_type = NULL;
+	static char namebuf[80];
+	const char *name;
+	int i;
+
+	if (md_type == cached_type)
+		return (namebuf);
+
+	name = EVP_MD_name(md_type);
+	if (strlen(name) >= sizeof(namebuf))
+		fatal(GFARM_MSG_UNFIXED,
+		    "cksum type name <%s> is longer than %zd characters",
+		    name, sizeof(namebuf) - 1);
+
+	for (i = 0; name[i] != '\0'; i++)
+		namebuf[i] = tolower(name[i]);
+	namebuf[i] = '\0';
+
+	cached_type = md_type;
+	return (namebuf);
 }
 
 gfarm_error_t
@@ -2232,8 +2288,8 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 	else if ((fe->flags & (FILE_FLAG_DIGEST_FINISH|FILE_FLAG_DIGEST_AVAIL|
 	    FILE_FLAG_WRITTEN)) == FILE_FLAG_DIGEST_FINISH &&
 	    (e = gfm_client_cksum_set_request(gfm_server,
-	    fe->cksum_type, fe->md5_len, fe->md5, 0, 0, 0))
-	    != GFARM_ERR_NO_ERROR)
+	    cksum_type_name(fe->md_type), fe->md_strlen, fe->md_string,
+	    0, 0, 0)) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1003782, "%s cksum_set request: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = close_request(fe)) != GFARM_ERR_NO_ERROR)
@@ -2293,8 +2349,8 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 		else if ((fe->flags & FILE_FLAG_DIGEST_FINISH) != 0 &&
 		    fe->new_gen == fe->gen + 1 &&
 		    (e2 = gfm_client_cksum_set_request(gfm_server,
-		    fe->cksum_type, fe->md5_len, fe->md5, 0, 0, 0))
-		    != GFARM_ERR_NO_ERROR)
+		    cksum_type_name(fe->md_type), fe->md_strlen, fe->md_string,
+		    0, 0, 0)) != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1003784,
 			    "%s cksum_set request: %s",
 			    diag, gfarm_error_string(e2));
@@ -2529,10 +2585,10 @@ gfs_server_pread(struct gfp_xdr *client)
 		file_table_set_read(fd);
 		/* update checksum */
 		if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0) {
-			if (fe->md5_offset == offset) {
-				md5_append(&fe->md5_state, buffer, rv);
-				fe->md5_offset += rv;
-				if (fe->md5_offset == fe->size &&
+			if (fe->md_offset == offset) {
+				EVP_DigestUpdate(&fe->md_ctx, buffer, rv);
+				fe->md_offset += rv;
+				if (fe->md_offset == fe->size &&
 				    (fe->flags & FILE_FLAG_WRITTEN) == 0)
 					e = digest_finish(fd, diag);
 			} else
@@ -2593,9 +2649,9 @@ gfs_server_pwrite(struct gfp_xdr *client)
 		file_table_set_written(fd);
 		/* update checksum */
 		if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0) {
-			if (fe->md5_offset == offset) {
-				md5_append(&fe->md5_state, buffer, rv);
-				fe->md5_offset += rv;
+			if (fe->md_offset == offset) {
+				EVP_DigestUpdate(&fe->md_ctx, buffer, rv);
+				fe->md_offset += rv;
 			} else
 				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 		} else if ((fe->flags & FILE_FLAG_DIGEST_FINISH) != 0)
@@ -2880,19 +2936,24 @@ gfs_server_cksum(struct gfp_xdr *client)
 {
 	gfarm_int32_t fd;
 	struct file_entry *fe;
-	char *type = NULL, cksum[MD5_SIZE * 2 + 1];
+	char *type = NULL, cksum[EVP_MAX_MD_SIZE * 2 + 1];
 	size_t len = 0;
 	gfarm_error_t e;
+	static const char diag[] = "GFS_PROTO_CKSUM";
 
 	gfs_server_get_request(client, "cksum", "is", &fd, &type);
 
 	if ((fe = file_table_entry(fd)) == NULL)
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
-	else if (strcmp(type, cksum_type_md5) != 0)
-		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 	else {
-		e = md5(file_table_get(fd), cksum);
-		len = MD5_SIZE * 2;
+		e = calc_digest(file_table_get(fd), type, cksum, &len);
+		if (e == GFARM_ERR_OPERATION_NOT_SUPPORTED) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "inum %lld gen %lld: %s: "
+			    "cksum type <%s> isn't supported on this host",
+			    (unsigned long long)fe->ino,
+			    (unsigned long long)fe->gen, diag, type);
+		}
 	}
 	free(type);
 	gfs_server_put_reply(client, "cksum", e, "b", len, cksum);
@@ -5068,6 +5129,8 @@ main(int argc, char **argv)
 		break;
 	}
 	assert(e == GFARM_ERR_NO_ERROR);
+
+	OpenSSL_add_all_algorithms(); /* to use EVP_get_digestbyname() */
 
 	e = gfarm_server_initialize(config_file, &argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {

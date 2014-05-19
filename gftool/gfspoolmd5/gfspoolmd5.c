@@ -17,11 +17,13 @@
 #include <limits.h>
 #include <float.h>
 
+#include <openssl/evp.h>
+
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
-#include "md5.h"
 
+#include "config.h"
 #include "lookup.h"
 #include "gfm_proto.h"
 #include "gfm_client.h"
@@ -130,28 +132,41 @@ dir_foreach(
 	return (GFARM_ERR_NO_ERROR);
 }
 
-#define MD5_SIZE	16
-
 static gfarm_error_t
-calc_md5(char *file, char md5[MD5_SIZE * 2 + 1])
+calc_digest(const char *file,
+	const char *md_type_name, char *md_string, size_t *md_strlenp)
 {
-#define bufsize	65536
-	md5_state_t state;
-	md5_byte_t digest[16], buf[bufsize];
-	int di, fd, sz;
+#define BUFSIZE	65536
+	char buf[BUFSIZE];
+	ssize_t sz;
+	int fd;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	const EVP_MD *md_type;
+	EVP_MD_CTX md_ctx;
+	unsigned int di, md_len;
+	unsigned char md_value[EVP_MAX_MD_SIZE];
+
+	md_type = EVP_get_digestbyname(md_type_name);
+	if (md_type == NULL)
+		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 
 	if ((fd = open(file, O_RDONLY)) == -1)
 		return (gfarm_errno_to_error(errno));
-	md5_init(&state);
+
+	EVP_DigestInit(&md_ctx, md_type);
+
 	while ((sz = read(fd, buf, sizeof buf)) > 0)
-		md5_append(&state, buf, sz);
+		EVP_DigestUpdate(&md_ctx, buf, sz);
 	if (sz == -1)
 		e = gfarm_errno_to_error(errno);
-	md5_finish(&state, digest);
-	if (e == GFARM_ERR_NO_ERROR)
-		for (di = 0; di < 16; ++di)
-			sprintf(&md5[di * 2], "%02x", digest[di]);
+
+	EVP_DigestFinal(&md_ctx, md_value, &md_len);
+	if (e == GFARM_ERR_NO_ERROR) {
+		for (di = 0; di < md_len; ++di)
+			sprintf(&md_string[di * 2], "%02x", md_value[di]);
+		*md_strlenp = md_len * 2;
+	}
 	close(fd);
 	return (e);
 }
@@ -205,8 +220,8 @@ check_file(char *file, struct stat *stp, void *arg)
 	gfarm_uint64_t gen;
 	GFS_File gf;
 	gfarm_error_t e;
-	size_t md5_size = MD5_SIZE * 2;
-	char md5[MD5_SIZE * 2 + 1];
+	size_t md_strlen = 0;
+	char md_string[EVP_MAX_MD_SIZE * 2 + 1];
 
 	if (!mtime_filter(stp))
 		return (GFARM_ERR_NO_ERROR);
@@ -223,8 +238,11 @@ check_file(char *file, struct stat *stp, void *arg)
 		goto progress;
 	if ((e = gfs_fstat_cksum(gf, &c)) != GFARM_ERR_NO_ERROR)
 		goto close_progress;
-	if (c.len > 0 && strcmp(c.type, "md5") != 0) {
-		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+	if (c.type[0] == '\0') {
+		/* do not calculate, if "digest" is not configured in gfmd */
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: cksum type is not specified", file);
+		e = GFARM_ERR_NO_ERROR;
 	} else if ((c.flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
 	    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0) {
 		gflog_info(GFARM_MSG_1003788, "%s: cksum flag %d, skipped",
@@ -236,9 +254,23 @@ check_file(char *file, struct stat *stp, void *arg)
 		e = GFARM_ERR_NO_ERROR;
 	} else if (c.len > 0 && !cksum_check) {
 		e = GFARM_ERR_NO_ERROR;
-	} else if ((e = calc_md5(file, md5)) != GFARM_ERR_NO_ERROR) {
-		;
-	} else if (c.len > 0 && memcmp(md5, c.cksum, md5_size) != 0) {
+	} else if ((e = calc_digest(file, c.type, md_string, &md_strlen))
+	    != GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_OPERATION_NOT_SUPPORTED) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s: cksum type <%s> isn't supported on this host",
+			    file, c.type);
+		} else if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
+			/*
+			 * GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY means
+			 * this file is updated simultaneously
+			 */
+		} else {
+			gflog_warning(GFARM_MSG_UNFIXED, "%s: %s",
+			    file, gfarm_error_string(e));
+		}
+	} else if (c.len > 0 &&
+	    (md_strlen != c.len || memcmp(md_string, c.cksum, c.len) != 0)) {
 		gfs_stat_cksum_free(&c);
 		if ((e = gfs_fstat_cksum(gf, &c)) != GFARM_ERR_NO_ERROR)
 			goto close_progress;
@@ -246,14 +278,14 @@ check_file(char *file, struct stat *stp, void *arg)
 		    GFM_PROTO_CKSUM_GET_EXPIRED)) == 0) {
 			e = GFARM_ERR_CHECKSUM_MISMATCH;
 			gflog_error(GFARM_MSG_1003789, "%s: file %.*s mds %.*s",
-			    file, (int)md5_size, md5, (int)c.len, c.cksum);
+			    file, (int)md_strlen, md_string, (int)c.len, c.cksum);
 		}
 	} else {
 		struct gfs_stat_cksum ck;
 
-		ck.type = "md5";
-		ck.len = md5_size;
-		ck.cksum = md5;
+		ck.type = c.type;
+		ck.len = md_strlen;
+		ck.cksum = md_string;
 		e = gfs_fstat_cksum_set(gf, &ck);
 	}
 	gfs_stat_cksum_free(&c);
@@ -403,6 +435,7 @@ main(int argc, char *argv[])
 		perror(spool_root);
 		exit(1);
 	}
+	OpenSSL_add_all_algorithms(); /* to use EVP_get_digestbyname() */
 	e = gfarm_initialize(&argc, &argv);
 	error_check(progname, e);
 

@@ -2859,6 +2859,17 @@ parse_one_line(char *s, char *p, char **op)
 
 	} else if (strcmp(s, o = "digest") == 0) {
 		e = parse_set_var(p, &gfarm_digest);
+		if (e == GFARM_ERR_NO_ERROR) {
+			/*
+			 * OpenSSL supports both "md5" and "MD5",
+			 * but we stores "md5" only in Gfarm metadata.
+			 */
+			int i;
+
+			for (i = 0; gfarm_digest[i] != '\0'; i++)
+				gfarm_digest[i] = tolower(
+				    ((unsigned char *)gfarm_digest)[i]);
+		}
 	} else if (strcmp(s, o = "log_level") == 0) {
 		e = parse_log_level(p, &gfarm_ctxp->log_level);
 	} else if (strcmp(s, o = "log_message_verbose_level") == 0) {

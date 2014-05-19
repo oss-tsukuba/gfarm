@@ -21,7 +21,6 @@ SRCS =	alloc.c \
 	limit.c \
 	logutil.c \
 	lru_cache.c \
-	md5.c \
 	nanosec.c \
 	privlock.c \
 	random.c \
@@ -44,7 +43,6 @@ OBJS =	alloc.lo \
 	limit.lo \
 	logutil.lo \
 	lru_cache.lo \
-	md5.lo \
 	nanosec.lo \
 	privlock.lo \
 	random.lo \
@@ -76,7 +74,6 @@ hash_strptr.lo: hash.h
 limit.lo: gfutil.h
 logutil.lo: gfutil.h gflog_reduced.h
 lru_cache.lo: lru_cache.h
-md5.lo: md5.h
 nanosec.lo: nanosec.h
 random.lo: thrsubr.h
 sleep.lo: nanosec.h gfutil.h

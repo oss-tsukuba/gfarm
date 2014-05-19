@@ -9,7 +9,7 @@ include $(srcdir)/../Makefile.inc
 
 # $(pthread_includes): ctime_r() needs -D_POSIX_PTHREAD_SEMANTICS on Solaris
 CFLAGS = $(pthread_includes) $(COMMON_CFLAGS) \
-	-I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
+	-I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) $(openssl_includes) \
 	-DGFARM_DEFAULT_BINDIR=\"$(default_bindir)\"
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
