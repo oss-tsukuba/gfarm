@@ -96,7 +96,9 @@ gfs_stat_realsize(char *path, char *host, struct gfs_stat *st)
 	GFS_File gf;
 	gfarm_error_t e;
 
-	e = gfs_pio_open(path, GFARM_FILE_RDONLY, &gf);
+	e = gfs_pio_open(path, GFARM_FILE_WRONLY, &gf);
+	if (e != GFARM_ERR_NO_ERROR)
+		e = gfs_pio_open(path, GFARM_FILE_RDONLY, &gf);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */

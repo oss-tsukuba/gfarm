@@ -5,7 +5,7 @@
 
 <refentry id="gfstat.1">
 
-<refentryinfo><date>9 Sep 2011</date></refentryinfo>
+<refentryinfo><date>22 May 2014</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfstat</refentrytitle>
@@ -57,6 +57,20 @@ specified files or directories in the Gfarm filesystem.</para>
 <term><option>-l</option></term>
 <listitem>
 <para>does not follow symbolic links, but show the link information itself.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>shows file size and time of the file data instead of the metadata.  This option is useful to know the file size during the file creation.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option> <parameter moreinfo="none">host</parameter></term>
+<listitem>
+<para>specifies the location of the file replica.  This option is only effective with the -c option.</para>
 </listitem>
 </varlistentry>
 
