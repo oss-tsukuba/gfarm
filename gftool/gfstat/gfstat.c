@@ -10,9 +10,15 @@
 
 #include <gfarm/gfarm.h>
 
+#include "queue.h"
+
 #include "gfm_client.h"
 #include "lookup.h"
 #include "gfarm_path.h"
+
+/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
+#include <openssl/evp.h>
+#include "gfs_pio.h"
 
 /*
  * Display struct gfs_stat.
@@ -84,6 +90,25 @@ display_ncopy(char *fn, struct gfs_stat *st)
 	printf("%" GFARM_PRId64 "\n", st->st_ncopy);
 }
 
+gfarm_error_t
+gfs_stat_realsize(char *path, char *host, struct gfs_stat *st)
+{
+	GFS_File gf;
+	gfarm_error_t e;
+
+	e = gfs_pio_open(path, GFARM_FILE_WRONLY, &gf);
+	if (e != GFARM_ERR_NO_ERROR)
+		e = gfs_pio_open(path, GFARM_FILE_RDONLY, &gf);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
+	if (host == NULL || (e = gfs_pio_internal_set_view_section(gf, host))
+	    == GFARM_ERR_NO_ERROR)
+		e = gfs_pio_stat(gf, st);
+	(void)gfs_pio_close(gf);
+	return (e);
+}
+
 void
 usage(char *prog_name)
 {
@@ -93,6 +118,8 @@ usage(char *prog_name)
 	fprintf(stderr, "\t-M\t\tdisplay metadata server information too\n");
 	fprintf(stderr, "\t-c\t\tdisplay number of file replicas only\n");
 	fprintf(stderr, "\t-l\t\tshow symbolic links\n");
+	fprintf(stderr, "\t-r\t\tshow file size of file data\n");
+	fprintf(stderr, "\t-h host\t\tspecify the file system node\n");
 	exit(2);
 }
 
@@ -104,11 +131,13 @@ int
 main(int argc, char *argv[])
 {
 	char *prog_name = argc > 0 ? basename(argv[0]) : "gfstat";
+	char *host = NULL;
 	gfarm_error_t e;
 	int show_gfm_server = 0, show_ncopy_only = 0, show_symlink = 0;
+	int show_realsize = 0;
 	int c, first_entry = 1, r = 0;
 
-	while ((c = getopt(argc, argv, "Mchl?")) != -1) {
+	while ((c = getopt(argc, argv, "Mch:lr?")) != -1) {
 		switch (c) {
 		case 'M':
 			show_gfm_server = 1;
@@ -116,10 +145,15 @@ main(int argc, char *argv[])
 		case 'c':
 			show_ncopy_only = 1;
 			break;
+		case 'h':
+			host = optarg;
+			break;
 		case 'l':
 			show_symlink = 1;
 			break;
-		case 'h':
+		case 'r':
+			show_realsize = 1;
+			break;
 		case '?':
 		default:
 			usage(prog_name);
@@ -152,6 +186,8 @@ main(int argc, char *argv[])
 			*argv = realpath;
 		if (show_symlink)
 			e = gfs_lstat(*argv, &st);
+		else if (show_realsize)
+			e = gfs_stat_realsize(*argv, host, &st);
 		else
 			e = gfs_stat(*argv, &st);
 		if (e != GFARM_ERR_NO_ERROR) {
