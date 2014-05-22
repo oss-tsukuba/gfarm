@@ -2,12 +2,12 @@
 .\"     Title: gfstat
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 9 Sep 2011
+.\"      Date: 22 May 2014
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSTAT" "1" "9 Sep 2011" "Gfarm" "Gfarm"
+.TH "GFSTAT" "1" "22 May 2014" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -50,6 +50,16 @@ gfstat \- Gfarm ファイルまたはディレクトリの情報を表示する
 \fB\-l\fR
 .RS 4
 シンボリックリンクを辿らず．リンク自身の情報を表示します．
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+メタデータではなく実際のファイルデータのファイルサイズを表示します．書き込み中のファイルのファイルサイズを表示することができます．
+.RE
+.PP
+\fB\-h\fR \fIhost\fR
+.RS 4
+\-r オプションとともに用いられ、ファイルが格納されているホストを指定します．
 .RE
 .PP
 \fB\-?\fR
