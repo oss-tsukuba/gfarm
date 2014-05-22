@@ -2,12 +2,12 @@
 .\"     Title: gfstat
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 9 Sep 2011
+.\"      Date: 22 May 2014
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSTAT" "1" "9 Sep 2011" "Gfarm" "Gfarm"
+.TH "GFSTAT" "1" "22 May 2014" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -51,6 +51,16 @@ displays only the number of file replicas\&.
 \fB\-l\fR
 .RS 4
 does not follow symbolic links, but show the link information itself\&.
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+shows file size and time of the file data instead of the metadata\&. This option is useful to know the file size during the file creation\&.
+.RE
+.PP
+\fB\-h\fR \fIhost\fR
+.RS 4
+specifies the location of the file replica\&. This option is only effective with the \-c option\&.
 .RE
 .PP
 \fB\-?\fR
