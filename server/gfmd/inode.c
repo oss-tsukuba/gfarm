@@ -1935,6 +1935,22 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 			    (unsigned long long)inode->i_number,
 			    gfarm_error_string(e));
 	}
+	if (user != NULL || group != NULL) {
+		gfarm_mode_t mode = inode->i_mode;
+
+		if (GFARM_S_ISREG(mode) && (mode & 0111) != 0) {
+			/*
+			 * Solaris doesn't drop the setuid/setgid bits,
+			 * if the user is root.  But we follow
+			 * the linux behavior which drops the bits always.
+			 */
+			mode &= ~(GFARM_S_ISUID|GFARM_S_ISGID);
+			/* inode_set_mode() implies inode_status_changed() */
+			inode_set_mode(inode, mode & ~GFARM_S_IFMT);
+		} else {
+			inode_status_changed(inode);
+		}
+	}
 	quota_update_file_add(inode);
 
 	return (GFARM_ERR_NO_ERROR);

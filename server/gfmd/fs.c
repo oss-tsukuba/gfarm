@@ -1624,13 +1624,15 @@ gfm_server_fchown(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			   (new_group = group_lookup(groupname)) == NULL) {
 			gflog_debug(GFARM_MSG_1001842, "group is not found");
 			e = GFARM_ERR_NO_SUCH_GROUP;
-		} else if (new_user != NULL && !user_is_root(inode, user)) {
+		} else if (new_user != NULL && !user_is_root(inode, user) &&
+		    (user != inode_get_user(inode) ||
+		    new_user != user)) {
 			gflog_debug(GFARM_MSG_1001843,
 			    "operation is not permitted for user");
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else if (new_group != NULL && !user_is_root(inode, user) &&
-			   (user != inode_get_user(inode) ||
-			    !user_in_group(user, new_group))) {
+		    (user != inode_get_user(inode) ||
+		    !user_in_group(user, new_group))) {
 			gflog_debug(GFARM_MSG_1001844,
 			    "operation is not permitted for group");
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
