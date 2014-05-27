@@ -1545,8 +1545,12 @@ gfm_server_fchmod(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 			gflog_debug(GFARM_MSG_1001834,
 			    "operation is not permitted for user");
-		} else
+		} else {
+			if (!user_is_root(inode, user) &&
+			    !user_in_group(user, inode_get_group(inode)))
+				mode &= ~GFARM_S_ISGID; /* POSIX requirement */
 			e = inode_set_mode(inode, mode);
+		}
 
 		giant_unlock();
 	}
