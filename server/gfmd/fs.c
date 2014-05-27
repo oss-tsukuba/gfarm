@@ -1401,7 +1401,9 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 	    (new_group = group_lookup(groupname)) == NULL) {
 		gflog_debug(GFARM_MSG_1001842, "group is not found");
 		e = GFARM_ERR_NO_SUCH_GROUP;
-	} else if (new_user != NULL && !user_is_root(inode, user)) {
+	} else if (new_user != NULL && !user_is_root(inode, user) &&
+	    (user != inode_get_user(inode) ||
+	    new_user != user)) {
 		gflog_debug(GFARM_MSG_1001843,
 			"operation is not permitted for user");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
