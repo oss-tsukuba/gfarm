@@ -1874,6 +1874,7 @@ inode_set_mode(struct inode *inode, gfarm_mode_t mode)
 	}
 	inode_set_mode_in_cache(inode, mode);
 
+	inode_status_changed(inode);
 	e = db_inode_mode_modify(inode->i_number, inode->i_mode);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000304,
