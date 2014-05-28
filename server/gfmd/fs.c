@@ -1546,9 +1546,17 @@ gfm_server_fchmod(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			gflog_debug(GFARM_MSG_1001834,
 			    "operation is not permitted for user");
 		} else {
-			if (!user_is_root(inode, user) &&
-			    !user_in_group(user, inode_get_group(inode)))
-				mode &= ~GFARM_S_ISGID; /* POSIX requirement */
+			if (!user_is_root(inode, user)) {
+				/* POSIX requirement for setgid-bit security */
+				if ((mode & GFARM_S_ISGID) != 0 &&
+				    !user_in_group(user,
+				    inode_get_group(inode)))
+					mode &= ~GFARM_S_ISGID;
+				/* Solaris behavior. BSDs return EFTYPE */
+				if ((mode & GFARM_S_ISTXT) != 0 &&
+				    !inode_is_dir(inode))
+					mode &= ~GFARM_S_ISTXT;
+			}
 			e = inode_set_mode(inode, mode);
 		}
 

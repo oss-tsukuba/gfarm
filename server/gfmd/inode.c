@@ -2505,6 +2505,27 @@ inode_db_init(struct inode *inode)
 		    gfarm_error_string(e));
 }
 
+static int
+is_removable_in_sticky_dir(struct inode *dir, struct inode *entry,
+	struct user *user,
+	const char *diag, const char *name, int len)
+{
+	if (user == inode_get_user(dir) ||
+	    user == inode_get_user(entry) ||
+	    user_is_root(dir, user) ||
+	    user_is_root(entry, user)) {
+		return (1);
+	} else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s is disallowed due to sticky dir: "
+		    "dir %lld:%lld name %.*s user %s", diag,
+		    (long long)inode_get_number(dir),
+		    (long long)inode_get_gen(dir),
+		    len, name, user_name(user));
+		return (0);
+	}
+}
+
 enum gfarm_inode_lookup_op {
 	INODE_LOOKUP,
 	INODE_CREATE,
@@ -2584,6 +2605,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		}
 
 		assert(op == INODE_REMOVE);
+		/* GFS_X_OK is already checked by inode_lookup_relative() */
 		if ((e = inode_access(parent, user, GFS_W_OK)) !=
 		    GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001731,
@@ -2591,6 +2613,11 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 				gfarm_error_string(e));
 			return (e);
 		}
+		if ((parent->i_mode & GFARM_S_ISTXT) != 0 &&
+		    !is_removable_in_sticky_dir(parent,
+		    dir_entry_get_inode(entry), user, "remove op", name, len))
+			return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+
 		*inp = dir_entry_get_inode(entry);
 		(*inp)->i_nlink--;
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
@@ -3344,6 +3371,11 @@ inode_rename(
 			gfarm_error_string(e));
 		return (e);
 	}
+	if ((inode_get_mode(sdir) & GFARM_S_ISTXT) != 0 &&
+	    !is_removable_in_sticky_dir(sdir, src, user,
+	    "rename op", sname, strlen(sname)))
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+
 	if (gfarm_ctxp->file_trace && srctp != NULL) {
 		srctp->inum = inode_get_number(src);
 		srctp->igen = inode_get_gen(src);
