@@ -1757,18 +1757,21 @@ on_error_result:
 
 	if (same_mds) {
 		/* ignore result */
-		if ((e2 = close_fd2(sconn, sfd, dfd)) != GFARM_ERR_NO_ERROR)
+		if (sconn != NULL &&
+		    (e2 = close_fd2(sconn, sfd, dfd)) != GFARM_ERR_NO_ERROR)
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "close_fd2: %s",
 			    gfarm_error_string(e2));
 	} else {
 		/* ignore result */
-		if ((e2 = close_fd2(sconn, sfd, GFARM_DESCRIPTOR_INVALID)) !=
+		if (sconn != NULL &&
+		    (e2 = close_fd2(sconn, sfd, GFARM_DESCRIPTOR_INVALID)) !=
 		    GFARM_ERR_NO_ERROR)
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "close_fd2: %s",
 			    gfarm_error_string(e2));
-		if ((e2 = close_fd2(dconn, dfd, GFARM_DESCRIPTOR_INVALID)) !=
+		if (dconn != NULL &&
+		    (e2 = close_fd2(dconn, dfd, GFARM_DESCRIPTOR_INVALID)) !=
 		    GFARM_ERR_NO_ERROR)
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "close_fd2: %s",
