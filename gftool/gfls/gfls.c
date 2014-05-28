@@ -3,6 +3,7 @@
  */
 
 #include <errno.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -12,6 +13,7 @@
 #include <sys/time.h>
 #include <math.h>
 #include <time.h>
+
 #include <gfarm/gfarm.h>
 
 #include "timespec.h" /* XXX should export this interface */
@@ -200,7 +202,7 @@ put_suffix(struct ls_entry *ls)
 }
 
 void
-put_perm(int mode)
+put_perm(int mode, int highbit, int highchar)
 {
 	if (mode & 04)
 		putchar('r');
@@ -210,7 +212,12 @@ put_perm(int mode)
 		putchar('w');
 	else
 		putchar('-');
-	if (mode & 01)
+	if (mode & highbit) {
+		if (mode & 01)
+			putchar(highchar);
+		else
+			putchar(toupper(highchar));
+	} else if (mode & 01)
 		putchar('x');
 	else
 		putchar('-');
@@ -253,9 +260,9 @@ put_stat(struct gfs_stat *st)
 		putchar('l');
 	else
 		putchar('-');
-	put_perm(st->st_mode >> 6);
-	put_perm(st->st_mode >> 3);
-	put_perm(st->st_mode);
+	put_perm(st->st_mode >> 6, GFARM_S_ISUID >> 6, 's');
+	put_perm(st->st_mode >> 3, GFARM_S_ISGID >> 3, 's');
+	put_perm(st->st_mode, GFARM_S_ISTXT, 't');
 	printf(" %d %-8s %-8s ", (int)st->st_nlink, st->st_user, st->st_group);
 	printf("%10" GFARM_PRId64 " ", st->st_size);
 	put_time(&st->st_mtimespec);
