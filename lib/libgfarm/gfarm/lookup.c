@@ -1410,11 +1410,14 @@ on_error_result:
 	if (is_success)
 		return (*success_op)(sconn, closure);
 
-	if (same_mds)
-		gfm_close_fd(sconn, sfd, dfd);
-	else {
-		gfm_close_fd(sconn, sfd, -1);
-		gfm_close_fd(dconn, dfd, -1);
+	if (same_mds) {
+		if (sconn != NULL)
+			gfm_close_fd(sconn, sfd, dfd);
+	} else {
+		if (sconn != NULL)
+			gfm_close_fd(sconn, sfd, -1);
+		if (dconn != NULL)
+			gfm_close_fd(dconn, dfd, -1);
 	}
 	if (sconn)
 		gfm_client_connection_free(sconn);
