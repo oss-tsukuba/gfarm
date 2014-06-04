@@ -1704,7 +1704,7 @@ gfm_server_remove(struct peer *peer, int from_client, int skip)
 
 	if (gfarm_file_trace && !GFARM_S_ISDIR(inodet.imode)) {
 		if ((e = process_get_path_for_trace_log(process, peer, cfd,
-		    &path,diag)) != GFARM_ERR_NO_ERROR) {
+		    &path, diag)) != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1003296,
 			    "process_get_path_for_trace_log() failed: %s",
 			    gfarm_error_string(e));
