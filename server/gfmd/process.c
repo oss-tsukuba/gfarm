@@ -243,7 +243,8 @@ process_attach_peer(struct process *process, struct peer *peer)
 
 /* NOTE: caller of this function should acquire giant_lock as well */
 void
-process_detach_peer(struct process *process, struct peer *peer)
+process_detach_peer(struct process *process, struct peer *peer,
+	const char *diag)
 {
 	int fd;
 
@@ -256,7 +257,7 @@ process_detach_peer(struct process *process, struct peer *peer)
 		 * if we'll support gfmd reconnection.
 		 */
 		if (process->filetab[fd] != NULL)
-			process_close_file(process, peer, fd, NULL);
+			process_close_file(process, peer, fd, NULL, diag);
 	}
 }
 
@@ -273,51 +274,50 @@ process_get_user(struct process *process)
 }
 
 gfarm_error_t
-process_verify_fd(struct process *process, int fd)
+process_verify_fd(struct process *process, struct peer *peer, int fd,
+	const char *diag)
 {
 	struct file_opening *fo;
 
-	if (fd < 0 || fd >= process->nfiles) {
-		gflog_debug(GFARM_MSG_1001597,
-			"bad file descriptor");
-		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	if (0 <= fd && fd < process->nfiles) {
+		fo = process->filetab[fd];
+		if (fo != NULL)
+			return (GFARM_ERR_NO_ERROR);
 	}
-	fo = process->filetab[fd];
-	if (fo == NULL) {
-		gflog_debug(GFARM_MSG_1001598,
-			"'file_opening' is NULL");
-		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
-	}
-	return (GFARM_ERR_NO_ERROR);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "%s: pid:%lld fd:%d by %s@%s: bad file descriptor",
+	    diag, (long long)process->pid, (int)fd,
+	    peer_get_username(peer), peer_get_hostname(peer));
+	return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 }
 
 gfarm_error_t
-process_get_file_opening(struct process *process, int fd,
-	struct file_opening **fop)
+process_get_file_opening(struct process *process, struct peer *peer, int fd,
+	struct file_opening **fop, const char *diag)
 {
 	struct file_opening *fo;
 
-	if (fd < 0 || fd >= process->nfiles) {
-		gflog_debug(GFARM_MSG_1001599,
-			"bad file descriptor");
-		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	if (0 <= fd && fd < process->nfiles) {
+		fo = process->filetab[fd];
+		if (fo != NULL) {
+			*fop = fo;
+			return (GFARM_ERR_NO_ERROR);
+		}
 	}
-	fo = process->filetab[fd];
-	if (fo == NULL) {
-		gflog_debug(GFARM_MSG_1001600,
-			"'file_opening' is NULL");
-		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
-	}
-	*fop = fo;
-	return (GFARM_ERR_NO_ERROR);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "%s: pid:%lld fd:%d by %s@%s: bad file descriptor",
+	    diag, (long long)process->pid, (int)fd,
+	    peer_get_username(peer), peer_get_hostname(peer));
+	return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 }
 
 gfarm_error_t
-process_record_desired_number(struct process *process, int fd,
-	int desired_number)
+process_record_desired_number(struct process *process, struct peer *peer,
+	int fd, int desired_number, const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd, &fo,
+	    diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1002475,
@@ -337,10 +337,12 @@ process_record_desired_number(struct process *process, int fd,
 }
 
 gfarm_error_t
-process_get_file_inode(struct process *process,	int fd, struct inode **inp)
+process_get_file_inode(struct process *process,	struct peer *peer, int fd,
+	struct inode **inp, const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001601,
@@ -353,10 +355,12 @@ process_get_file_inode(struct process *process,	int fd, struct inode **inp)
 }
 
 gfarm_error_t
-process_get_file_writable(struct process *process, struct peer *peer, int fd)
+process_get_file_writable(struct process *process, struct peer *peer, int fd,
+	const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001602,
@@ -381,10 +385,11 @@ process_get_file_writable(struct process *process, struct peer *peer, int fd)
 
 gfarm_error_t
 process_get_dir_offset(struct process *process, struct peer *peer,
-	int fd, gfarm_off_t *offsetp)
+	int fd, gfarm_off_t *offsetp, const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001605,
@@ -408,10 +413,11 @@ process_get_dir_offset(struct process *process, struct peer *peer,
 
 gfarm_error_t
 process_set_dir_offset(struct process *process, struct peer *peer,
-	int fd, gfarm_off_t offset)
+	int fd, gfarm_off_t offset, const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001608,
@@ -440,10 +446,11 @@ process_set_dir_offset(struct process *process, struct peer *peer,
 
 gfarm_error_t
 process_get_dir_key(struct process *process, struct peer *peer,
-	int fd, char **keyp, int *keylenp)
+	int fd, char **keyp, int *keylenp, const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001611,
@@ -473,10 +480,11 @@ process_get_dir_key(struct process *process, struct peer *peer,
 
 gfarm_error_t
 process_set_dir_key(struct process *process, struct peer *peer,
-	int fd, char *key, int keylen)
+	int fd, char *key, int keylen, const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 	char *s;
 
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -512,10 +520,12 @@ process_set_dir_key(struct process *process, struct peer *peer,
 }
 
 gfarm_error_t
-process_clear_dir_key(struct process *process, struct peer *peer, int fd)
+process_clear_dir_key(struct process *process, struct peer *peer, int fd,
+	const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001618,
@@ -574,18 +584,18 @@ process_does_match(gfarm_pid_t pid,
 
 gfarm_error_t
 process_new_generation_wait(struct peer *peer, int fd,
-	gfarm_error_t (*action)(struct peer *, void *, int *), void *arg)
+	gfarm_error_t (*action)(struct peer *, void *, int *), void *arg,
+	const char *diag)
 {
 	struct process *process;
 	struct file_opening *fo;
 	gfarm_error_t e;
-	static const char diag[] = "process_new_generation_wait";
 
 	if ((process = peer_get_process(peer)) == NULL) {
 		gflog_debug(GFARM_MSG_1002237,
 		    "%s: peer_get_process() failed", diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((e = process_get_file_opening(process, fd, &fo))
+	} else if ((e = process_get_file_opening(process, peer, fd, &fo, diag))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002238,
 		    "%s: process_get_file_opening(%d) failed", diag, fd);
@@ -598,12 +608,12 @@ process_new_generation_wait(struct peer *peer, int fd,
 
 gfarm_error_t
 process_new_generation_done(struct process *process, struct peer *peer, int fd,
-	gfarm_int32_t result)
+	gfarm_int32_t result, const char *diag)
 {
 	struct file_opening *fo;
 	gfarm_mode_t mode;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
-	static const char diag[] = "process_new_generation_done";
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002325,
@@ -688,11 +698,12 @@ process_open_file(struct process *process, struct inode *file,
 }
 
 gfarm_error_t
-process_schedule_file(struct process *process,
-	struct peer *peer, int fd, gfarm_int32_t *np, struct host ***hostsp)
+process_schedule_file(struct process *process, struct peer *peer, int fd,
+	gfarm_int32_t *np, struct host ***hostsp, const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001861,
@@ -714,10 +725,11 @@ gfarm_error_t
 process_reopen_file(struct process *process,
 	struct peer *peer, struct host *spool_host, int fd,
 	gfarm_ino_t *inump, gfarm_uint64_t *genp, gfarm_int32_t *modep,
-	gfarm_int32_t *flagsp, gfarm_int32_t *to_createp)
+	gfarm_int32_t *flagsp, gfarm_int32_t *to_createp, const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 	int no_replica, to_create, is_creating_file_replica;
 
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -813,6 +825,12 @@ process_peer_is_the_spool_opener(struct process *process,
 	/* if this request is valid, peer must be gfsd */
 
 	if (!GFARM_S_ISREG(mode)) { /* non-opener only can open a file */
+		/*
+		 * use "info" level, altough this is a bad file descriptor,
+		 * this may be caused by GFM_PROTO_REVOKE_GFSD_ACCESS.
+		 * do not check GFARM_FILE_GFSD_ACCESS_REVOKED, because
+		 * the revoked descriptor must be already closed in this case.
+		 */
 		gflog_info(GFARM_MSG_1003752,
 		    "%s: pid:%lld fd:%d inode:%llu:%llu "
 		    "not a file (0%o) by %s@%s",
@@ -823,15 +841,18 @@ process_peer_is_the_spool_opener(struct process *process,
 		return (0);
 	}
 	if (peer != fo->u.f.spool_opener) { /* peer is not the spool opener */
-		gflog_info(GFARM_MSG_1003753,
+		gflog_info(GFARM_MSG_UNFIXED,
 		    "%s: pid:%lld fd:%d inode:%llu:%llu "
-		    "invalid request by %s@%s, should be %s",
+		    "invalid request by %s@%s, should be %s, "
+		    "NOTE: GFM_PROTO_REVOKE_GFSD_ACCESS is%s called",
 		    diag, (long long)process->pid, (int)fd,
 		    (long long)inode_get_number(fo->inode),
 		    (long long)inode_get_gen(fo->inode),
 		    peer_get_username(peer), peer_get_hostname(peer),
 		    fo->u.f.spool_opener == NULL ? "closed already" :
-		    peer_get_hostname(fo->u.f.spool_opener));
+		    peer_get_hostname(fo->u.f.spool_opener),
+		    (fo->flag & GFARM_FILE_GFSD_ACCESS_REVOKED) != 0 ?
+		    "" : " not");
 		return (0);
 	}
 	return (1);
@@ -839,12 +860,12 @@ process_peer_is_the_spool_opener(struct process *process,
 
 gfarm_error_t
 process_close_file(struct process *process, struct peer *peer, int fd,
-	char **trace_logp)
+	char **trace_logp, const char *diag)
 {
 	struct file_opening *fo;
 	gfarm_mode_t mode;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
-	static const char diag[] = "process_close_file";
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001634,
@@ -895,12 +916,12 @@ process_close_file(struct process *process, struct peer *peer, int fd,
 
 gfarm_error_t
 process_close_file_read(struct process *process, struct peer *peer, int fd,
-	struct gfarm_timespec *atime)
+	struct gfarm_timespec *atime, const char *diag)
 {
 	struct file_opening *fo;
 	gfarm_mode_t mode;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
-	static const char diag[] = "process_close_file_read";
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001637,
@@ -942,14 +963,15 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
 	gfarm_int32_t *flagsp, gfarm_ino_t *inump,
-	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp, char **trace_logp)
+	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp, char **trace_logp,
+	const char *diag)
 {
 	struct file_opening *fo;
 	gfarm_mode_t mode;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 	gfarm_int32_t flags = 0;
 	int is_v2_4 = (flagsp != NULL);
-	static const char diag[] = "process_close_file_write";
 
 	/*
 	 * NOTE: gfsd uses CLOSE_FILE_WRITE protocol only if the file is
@@ -1028,11 +1050,11 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 gfarm_error_t
 process_cksum_set(struct process *process, struct peer *peer, int fd,
 	const char *cksum_type, size_t cksum_len, const char *cksum,
-	gfarm_int32_t flags, struct gfarm_timespec *mtime)
+	gfarm_int32_t flags, struct gfarm_timespec *mtime, const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
-	static const char diag[] = "process_cksum_set";
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001644,
@@ -1054,10 +1076,11 @@ process_cksum_set(struct process *process, struct peer *peer, int fd,
 gfarm_error_t
 process_cksum_get(struct process *process, struct peer *peer, int fd,
 	char **cksum_typep, size_t *cksum_lenp, char **cksump,
-	gfarm_int32_t *flagsp)
+	gfarm_int32_t *flagsp, const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001648,
@@ -1076,10 +1099,12 @@ process_cksum_get(struct process *process, struct peer *peer, int fd,
 }
 
 gfarm_error_t
-process_bequeath_fd(struct process *process, gfarm_int32_t fd)
+process_bequeath_fd(struct process *process, struct peer *peer,
+	gfarm_int32_t fd, const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001650,
@@ -1093,7 +1118,8 @@ process_bequeath_fd(struct process *process, gfarm_int32_t fd)
 
 gfarm_error_t
 process_inherit_fd(struct process *process, gfarm_int32_t parent_fd,
-	struct peer *peer, struct host *spool_host, gfarm_int32_t *fdp)
+	struct peer *peer, struct host *spool_host, gfarm_int32_t *fdp,
+	const char *diag)
 {
 	struct file_opening *fo;
 	gfarm_error_t e;
@@ -1103,7 +1129,7 @@ process_inherit_fd(struct process *process, gfarm_int32_t parent_fd,
 			"process->parent does not exist");
 		return (GFARM_ERR_NO_SUCH_PROCESS);
 	}
-	e = process_get_file_opening(process, parent_fd, &fo);
+	e = process_get_file_opening(process, peer, parent_fd, &fo, diag);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001652,
 			"process_get_file_opening() failed: %s",
@@ -1122,13 +1148,13 @@ process_inherit_fd(struct process *process, gfarm_int32_t parent_fd,
 gfarm_error_t
 process_prepare_to_replicate(struct process *process, struct peer *peer,
 	struct host *src, struct host *dst, int fd, gfarm_int32_t flags,
-	struct file_replicating **frp, struct inode **inodep)
+	struct file_replicating **frp, struct inode **inodep, const char *diag)
 {
 	gfarm_error_t e;
 	struct file_opening *fo;
 	struct user *user;
 
-	if ((e = process_get_file_opening(process, fd, &fo))
+	if ((e = process_get_file_opening(process, peer, fd, &fo, diag))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001654,
 			"process_get_file_opening() failed: %s",
@@ -1161,10 +1187,11 @@ process_prepare_to_replicate(struct process *process, struct peer *peer,
 gfarm_error_t
 process_replica_adding(struct process *process, struct peer *peer,
 	struct host *src, struct host *dst, int fd,
-	struct inode **inodep)
+	struct inode **inodep, const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1179,7 +1206,7 @@ process_replica_adding(struct process *process, struct peer *peer,
 	}
 
 	e = process_prepare_to_replicate(process, peer, src, dst, fd,
-	    0, NULL, inodep);
+	    0, NULL, inodep, diag);
 	if (e == GFARM_ERR_NO_ERROR) {
 		fo->u.f.spool_opener = peer;
 		/*
@@ -1199,12 +1226,13 @@ gfarm_error_t
 process_replica_added(struct process *process,
 	struct peer *peer, struct host *spool_host, int fd,
 	int flags, gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec,
-	gfarm_off_t size)
+	gfarm_off_t size, const char *diag)
 {
 	struct file_opening *fo;
 	struct gfarm_timespec *mtime;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo), e2;
-	static const char diag[] = "process_replica_added";
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
+	gfarm_error_t e2;
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003539,
@@ -1270,7 +1298,7 @@ process_replica_added(struct process *process,
 		e = inode_add_replica(fo->inode, spool_host, 1);
 	free(fo->u.f.replica_source);
 	fo->u.f.replica_source = NULL;
-	e2 = process_close_file_read(process, peer, fd, NULL);
+	e2 = process_close_file_read(process, peer, fd, NULL, diag);
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
 
@@ -1440,7 +1468,7 @@ gfm_server_process_free(struct peer *peer, int from_client, int skip)
 		 * closing must be done regardless of the result of db_begin().
 		 * because not closing may cause descriptor leak.
 		 */
-		peer_unset_process(peer);
+		peer_unset_process(peer, diag);
 		e = GFARM_ERR_NO_ERROR;
 		if (transaction)
 			db_end(diag);
@@ -1476,7 +1504,7 @@ gfm_server_bequeath_fd(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001677,
 			"peer_fdpair_get_current() failed");
 	} else
-		e = process_bequeath_fd(process, fd);
+		e = process_bequeath_fd(process, peer, fd, diag);
 
 	giant_unlock();
 	return (gfm_server_put_reply(peer, diag, e, ""));
@@ -1511,22 +1539,24 @@ gfm_server_inherit_fd(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001680,
 			"peer_get_process() failed");
 	} else if ((e = process_inherit_fd(process, parent_fd, peer, NULL,
-	    &fd)) != GFARM_ERR_NO_ERROR) {
+	    &fd, diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001681,
 			"process_inherit_fd() failed: %s",
 			gfarm_error_string(e));
 	} else
-		peer_fdpair_set_current(peer, fd);
+		peer_fdpair_set_current(peer, fd, diag);
 
 	giant_unlock();
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
 gfarm_error_t
-process_set_path_for_trace_log(struct process *process, int fd, char *path)
+process_set_path_for_trace_log(struct process *process, struct peer *peer,
+	int fd, char *path, const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003280,
@@ -1541,10 +1571,12 @@ process_set_path_for_trace_log(struct process *process, int fd, char *path)
 }
 
 gfarm_error_t
-process_get_path_for_trace_log(struct process *process, int fd, char **path)
+process_get_path_for_trace_log(struct process *process, struct peer *peer,
+	int fd, char **path, const char *diag)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003281,

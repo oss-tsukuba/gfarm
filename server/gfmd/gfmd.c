@@ -611,7 +611,7 @@ protocol_service(struct peer *peer)
 		if (suspended)
 			return (1); /* finish */
 		giant_lock();
-		peer_fdpair_clear(peer);
+		peer_fdpair_clear(peer, diag);
 		if (peer_had_protocol_error(peer)) {
 			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 				transaction = 1;
@@ -647,7 +647,7 @@ protocol_service(struct peer *peer)
 			return (1); /* finish */
 		if (peer_had_protocol_error(peer)) {
 			giant_lock();
-			peer_fdpair_clear(peer);
+			peer_fdpair_clear(peer, diag);
 			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 				transaction = 1;
 			/*
@@ -688,7 +688,7 @@ protocol_service(struct peer *peer)
 			cs->skip = 1;
 		} else if (request == GFM_PROTO_COMPOUND_END) {
 			giant_lock();
-			peer_fdpair_clear(peer);
+			peer_fdpair_clear(peer, diag);
 			giant_unlock();
 			ps->nesting_level--;
 		} else if (request == GFM_PROTO_COMPOUND_ON_ERROR) {

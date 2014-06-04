@@ -975,7 +975,7 @@ peer_free(struct peer *peer)
 
 	peer->protocol_error = 0;
 	if (peer->process != NULL) {
-		process_detach_peer(peer->process, peer);
+		process_detach_peer(peer->process, peer, diag);
 		peer->process = NULL;
 	}
 
@@ -1055,7 +1055,7 @@ peer_shutdown_all(void)
 #if 0		/* we don't really have to do this at shutdown */
 		peer_unset_pending_new_generation(peer);
 #endif
-		process_detach_peer(peer->process, peer);
+		process_detach_peer(peer->process, peer, diag);
 		peer->process = NULL;
 	}
 	if (transaction)
@@ -1289,7 +1289,7 @@ peer_set_process(struct peer *peer, struct process *process)
 
 /* NOTE: caller of this function should acquire giant_lock as well */
 void
-peer_unset_process(struct peer *peer)
+peer_unset_process(struct peer *peer, const char *diag)
 {
 	if (peer->process == NULL)
 		gflog_fatal(GFARM_MSG_1000292,
@@ -1297,9 +1297,9 @@ peer_unset_process(struct peer *peer)
 
 	peer_unset_pending_new_generation(peer);
 
-	peer_fdpair_clear(peer);
+	peer_fdpair_clear(peer, diag);
 
-	process_detach_peer(peer->process, peer);
+	process_detach_peer(peer->process, peer, diag);
 	peer->process = NULL;
 }
 
@@ -1353,7 +1353,7 @@ peer_get_jobs_ref(struct peer *peer)
  * because only externalized descriptor needs the calls.
  */
 void
-peer_fdpair_clear(struct peer *peer)
+peer_fdpair_clear(struct peer *peer, const char *diag)
 {
 	if (peer->process == NULL) {
 		assert(peer->fd_current == -1 && peer->fd_saved == -1);
@@ -1362,11 +1362,13 @@ peer_fdpair_clear(struct peer *peer)
 	if (peer->fd_current != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
 	    peer->fd_current != peer->fd_saved) { /* prevent double close */
-		process_close_file(peer->process, peer, peer->fd_current, NULL);
+		process_close_file(peer->process, peer, peer->fd_current, NULL,
+		    diag);
 	}
 	if (peer->fd_saved != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0) {
-		process_close_file(peer->process, peer, peer->fd_saved, NULL);
+		process_close_file(peer->process, peer, peer->fd_saved, NULL,
+		    diag);
 	}
 	peer->fd_current = -1;
 	peer->fd_saved = -1;
@@ -1412,12 +1414,13 @@ peer_fdpair_close_current(struct peer *peer)
  * because only externalized descriptor needs the calls.
  */
 void
-peer_fdpair_set_current(struct peer *peer, gfarm_int32_t fd)
+peer_fdpair_set_current(struct peer *peer, gfarm_int32_t fd, const char *diag)
 {
 	if (peer->fd_current != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
 	    peer->fd_current != peer->fd_saved) { /* prevent double close */
-		process_close_file(peer->process, peer, peer->fd_current, NULL);
+		process_close_file(peer->process, peer, peer->fd_current, NULL,
+		diag);
 	}
 	peer->flags &= ~PEER_FLAGS_FD_CURRENT_EXTERNALIZED;
 	peer->fd_current = fd;
@@ -1453,7 +1456,7 @@ peer_fdpair_get_saved(struct peer *peer, gfarm_int32_t *fdp)
  * because only externalized descriptor needs the calls.
  */
 gfarm_error_t
-peer_fdpair_save(struct peer *peer)
+peer_fdpair_save(struct peer *peer, const char *diag)
 {
 	if (peer->fd_current == -1) {
 		gflog_debug(GFARM_MSG_1001591,
@@ -1464,7 +1467,8 @@ peer_fdpair_save(struct peer *peer)
 	if (peer->fd_saved != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0 &&
 	    peer->fd_saved != peer->fd_current) { /* prevent double close */
-		process_close_file(peer->process, peer, peer->fd_saved, NULL);
+		process_close_file(peer->process, peer, peer->fd_saved, NULL,
+		    diag);
 	}
 	peer->fd_saved = peer->fd_current;
 	peer->flags = (peer->flags & ~PEER_FLAGS_FD_SAVED_EXTERNALIZED) |
@@ -1479,7 +1483,7 @@ peer_fdpair_save(struct peer *peer)
  * because only externalized descriptor needs the calls.
  */
 gfarm_error_t
-peer_fdpair_restore(struct peer *peer)
+peer_fdpair_restore(struct peer *peer, const char *diag)
 {
 	if (peer->fd_saved == -1) {
 		gflog_debug(GFARM_MSG_1001592,
@@ -1490,7 +1494,8 @@ peer_fdpair_restore(struct peer *peer)
 	if (peer->fd_current != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
 	    peer->fd_current != peer->fd_saved) { /* prevent double close */
-		process_close_file(peer->process, peer, peer->fd_current, NULL);
+		process_close_file(peer->process, peer, peer->fd_current, NULL,
+		    diag);
 	}
 	peer->fd_current = peer->fd_saved;
 	peer->flags = (peer->flags & ~PEER_FLAGS_FD_CURRENT_EXTERNALIZED) |
