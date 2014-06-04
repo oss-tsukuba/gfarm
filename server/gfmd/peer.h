@@ -80,7 +80,7 @@ int peer_delete_cookie(struct peer *, gfarm_uint64_t);
 struct process;
 struct process *peer_get_process(struct peer *);
 void peer_set_process(struct peer *, struct process *);
-void peer_unset_process(struct peer *);
+void peer_unset_process(struct peer *, const char *diag);
 
 void peer_record_protocol_error(struct peer *);
 int peer_had_protocol_error(struct peer *);
@@ -94,14 +94,14 @@ struct protocol_state *peer_get_protocol_state(struct peer *);
 struct job_table_entry;
 struct job_table_entry **peer_get_jobs_ref(struct peer *);
 
-void peer_fdpair_clear(struct peer *);
+void peer_fdpair_clear(struct peer *, const char *);
 gfarm_error_t peer_fdpair_externalize_current(struct peer *);
 gfarm_error_t peer_fdpair_close_current(struct peer *);
-void peer_fdpair_set_current(struct peer *, gfarm_int32_t);
+void peer_fdpair_set_current(struct peer *, gfarm_int32_t, const char *);
 gfarm_error_t peer_fdpair_get_current(struct peer *, gfarm_int32_t *);
 gfarm_error_t peer_fdpair_get_saved(struct peer *, gfarm_int32_t *);
-gfarm_error_t peer_fdpair_save(struct peer *);
-gfarm_error_t peer_fdpair_restore(struct peer *);
+gfarm_error_t peer_fdpair_save(struct peer *, const char *);
+gfarm_error_t peer_fdpair_restore(struct peer *, const char *);
 
 void peer_findxmlattrctx_set(struct peer *, void *);
 void *peer_findxmlattrctx_get(struct peer *);

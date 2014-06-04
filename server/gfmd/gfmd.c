@@ -635,7 +635,7 @@ protocol_service(struct peer *peer)
 		if (suspended)
 			return (1); /* finish */
 		giant_lock();
-		peer_fdpair_clear(peer);
+		peer_fdpair_clear(peer, diag);
 		if (peer_had_protocol_error(peer)) {
 			/*
 			 * gfmd_channel and back_channel will be
@@ -659,7 +659,7 @@ protocol_service(struct peer *peer)
 			return (1); /* finish */
 		if (peer_had_protocol_error(peer)) {
 			giant_lock();
-			peer_fdpair_clear(peer);
+			peer_fdpair_clear(peer, diag);
 			/*
 			 * gfmd_channel and back_channel will be
 			 * freed by their own thread
@@ -687,7 +687,7 @@ protocol_service(struct peer *peer)
 			cs->skip = 1;
 		} else if (request == GFM_PROTO_COMPOUND_END) {
 			giant_lock();
-			peer_fdpair_clear(peer);
+			peer_fdpair_clear(peer, diag);
 			giant_unlock();
 			ps->nesting_level--;
 		} else if (request == GFM_PROTO_COMPOUND_ON_ERROR) {
@@ -834,7 +834,7 @@ resuming_thread(void *arg)
 			peer_record_protocol_error(peer);
 
 			giant_lock();
-			peer_fdpair_clear(peer);
+			peer_fdpair_clear(peer, diag);
 			protocol_finish(peer, diag);
 			giant_unlock();
 			return (NULL);

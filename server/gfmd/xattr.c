@@ -511,8 +511,8 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1002074,
 			"peer_fdpair_get_current() failed: %s",
 			gfarm_error_string(e));
-	} else if ((e = process_get_file_inode(process, fd, &inode)) !=
-	    GFARM_ERR_NO_ERROR) {
+	} else if ((e = process_get_file_inode(process, peer, fd, &inode, diag)
+	    ) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002075,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
@@ -598,8 +598,8 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1002082,
 			"peer_fdpair_get_current() failed: %s",
 			gfarm_error_string(e));
-	} else if ((e = process_get_file_inode(process, fd, &inode)) !=
-	    GFARM_ERR_NO_ERROR) {
+	} else if ((e = process_get_file_inode(process, peer, fd, &inode, diag)
+	    ) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002083,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
@@ -681,8 +681,8 @@ gfm_server_listxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1002086,
 			"peer_fdpair_get_current() failed: %s",
 			gfarm_error_string(e));
-	} else if ((e = process_get_file_inode(process, fd, &inode)) !=
-	    GFARM_ERR_NO_ERROR) {
+	} else if ((e = process_get_file_inode(process, peer, fd, &inode, diag)
+	    ) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002087,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
@@ -770,8 +770,8 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 		gflog_debug(GFARM_MSG_1002093,
 			"peer_fdpair_get_current() failed: %s",
 			gfarm_error_string(e));
-	} else if ((e = process_get_file_inode(process, fd, &inode)) !=
-	    GFARM_ERR_NO_ERROR) {
+	} else if ((e = process_get_file_inode(process, peer, fd, &inode, diag)
+	    ) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002094,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
@@ -1516,8 +1516,8 @@ gfm_server_findxmlattr(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1002113,
 			"peer_fdpair_get_current() failed: %s",
 			gfarm_error_string(e));
-	} else if ((e = process_get_file_inode(process, fd, &inode)) !=
-	    GFARM_ERR_NO_ERROR) {
+	} else if ((e = process_get_file_inode(process, peer, fd, &inode, diag)
+	    ) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002114,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
