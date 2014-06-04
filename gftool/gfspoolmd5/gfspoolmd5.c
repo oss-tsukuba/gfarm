@@ -28,7 +28,7 @@
 #include "gfm_proto.h"
 #include "gfm_client.h"
 
-char *progname = "gfspoolmd5";
+const char *progname = "gfspoolmd5";
 
 static struct gfm_connection *gfm_server;
 static long long total_count, total_size;
@@ -147,9 +147,12 @@ calc_digest(const char *file,
 	unsigned int di, md_len;
 	unsigned char md_value[EVP_MAX_MD_SIZE];
 
-	md_type = EVP_get_digestbyname(md_type_name);
+	md_type =
+	    EVP_get_digestbyname(gfarm_digest_name_to_openssl(md_type_name));
 	if (md_type == NULL)
-		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: fatal error. "
+		    "digest type <%s> isn't supported on this host",
+		    file, md_type_name);
 
 	if ((fd = open(file, O_RDONLY)) == -1)
 		return (gfarm_errno_to_error(errno));
@@ -377,7 +380,7 @@ munmap_progress_file(void *addr)
 }
 
 static void
-error_check(char *msg, gfarm_error_t e)
+error_check(const char *msg, gfarm_error_t e)
 {
 	if (e == GFARM_ERR_NO_ERROR)
 		return;

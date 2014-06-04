@@ -14,7 +14,6 @@
 #include <arpa/inet.h>
 #include <sys/resource.h>
 #include <netdb.h>
-#include <ctype.h>
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -1072,6 +1071,7 @@ struct file_entry {
  */
 	off_t md_offset;
 
+	char *md_type_name;
 	const EVP_MD *md_type;
 	EVP_MD_CTX md_ctx;
 
@@ -1190,11 +1190,19 @@ file_table_add(gfarm_int32_t net_fd, char *path,
 
 	/* checksum */
 	if (cksum_type == NULL || cksum_type[0] == '\0') {
+		free(cksum_type);
+		fe->md_type_name = NULL;
 		fe->md_type = NULL;
-	} else if ((fe->md_type = EVP_get_digestbyname(cksum_type)) == NULL) {
+	} else if ((fe->md_type = EVP_get_digestbyname(
+	    gfarm_digest_name_to_openssl(cksum_type))) == NULL) {
+		free(cksum_type);
+		fe->md_type_name = NULL;
 		gflog_warning(GFARM_MSG_1003771,
-		    "%s: %s: unsupported digest", diag, cksum_type);
+		    "%s: digest type <%s> isn't supported on this host",
+		    diag, cksum_type);
 	} else {
+		/* memory owner of cksum_type is moved to `fe->md_type_name' */
+		fe->md_type_name = cksum_type;
 		if (cksum_len == 0) {
 			fe->md_strlen = 0;
 		} else {
@@ -1277,6 +1285,7 @@ file_table_close(gfarm_int32_t net_fd)
 		/* We need to do this to avoid memory leak */
 		EVP_DigestFinal(&fe->md_ctx, md_value, &md_len);
 	}
+	free(fe->md_type_name); /* may be NULL */
 
 	gfs_profile(
 		gettimeofday(&end_time, NULL);
@@ -1806,11 +1815,15 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 			    ino, gen, cksum_type, cksum_len, cksum,
 			    cksum_flags, &start, local_fdp);
 			free(path);
-			free(cksum_type);
 			if (e2 == GFARM_ERR_NO_ERROR) {
+				/*
+				 * the memory owner of cksum_type is moved
+				 * to the file_table_entry
+				 */
 				*net_fdp = net_fd;
 				break;
 			}
+			free(cksum_type);
 
 			if ((e = close_on_metadb_server(net_fd, diag))
 			    != GFARM_ERR_NO_ERROR) {
@@ -2077,7 +2090,8 @@ calc_digest(int fd,
 	unsigned int md_len, di;
 	unsigned char md_value[EVP_MAX_MD_SIZE];
 
-	md_type = EVP_get_digestbyname(md_type_name);
+	md_type = EVP_get_digestbyname(
+	    gfarm_digest_name_to_openssl(md_type_name));
 	if (md_type == NULL)
 		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 
@@ -2242,38 +2256,6 @@ add_to_lost_found(struct file_entry *fe)
 	    fe->ino, fe->gen);
 }
 
-/*
- * convert OpenSSL digest name (e.g. "MD5") to Gfarm digest name (e.g. "md5")
- *
- * CAUTION:
- * - this function is NOT multithread-safe
- * - do not call this function twice as arguments of same function call
- */
-static char *
-cksum_type_name(const EVP_MD *md_type)
-{
-	static const EVP_MD *cached_type = NULL;
-	static char namebuf[80];
-	const char *name;
-	int i;
-
-	if (md_type == cached_type)
-		return (namebuf);
-
-	name = EVP_MD_name(md_type);
-	if (strlen(name) >= sizeof(namebuf))
-		fatal(GFARM_MSG_UNFIXED,
-		    "cksum type name <%s> is longer than %zd characters",
-		    name, sizeof(namebuf) - 1);
-
-	for (i = 0; name[i] != '\0'; i++)
-		namebuf[i] = tolower(name[i]);
-	namebuf[i] = '\0';
-
-	cached_type = md_type;
-	return (namebuf);
-}
-
 gfarm_error_t
 close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 {
@@ -2288,8 +2270,8 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 	else if ((fe->flags & (FILE_FLAG_DIGEST_FINISH|FILE_FLAG_DIGEST_AVAIL|
 	    FILE_FLAG_WRITTEN)) == FILE_FLAG_DIGEST_FINISH &&
 	    (e = gfm_client_cksum_set_request(gfm_server,
-	    cksum_type_name(fe->md_type), fe->md_strlen, fe->md_string,
-	    0, 0, 0)) != GFARM_ERR_NO_ERROR)
+	    fe->md_type_name, fe->md_strlen, fe->md_string, 0, 0, 0))
+	    != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1003782, "%s cksum_set request: %s",
 		    diag, gfarm_error_string(e));
 	else if ((e = close_request(fe)) != GFARM_ERR_NO_ERROR)
@@ -2349,7 +2331,7 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 		else if ((fe->flags & FILE_FLAG_DIGEST_FINISH) != 0 &&
 		    fe->new_gen == fe->gen + 1 &&
 		    (e2 = gfm_client_cksum_set_request(gfm_server,
-		    cksum_type_name(fe->md_type), fe->md_strlen, fe->md_string,
+		    fe->md_type_name, fe->md_strlen, fe->md_string,
 		    0, 0, 0)) != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1003784,
 			    "%s cksum_set request: %s",
@@ -2950,7 +2932,7 @@ gfs_server_cksum(struct gfp_xdr *client)
 		if (e == GFARM_ERR_OPERATION_NOT_SUPPORTED) {
 			gflog_warning(GFARM_MSG_UNFIXED,
 			    "inum %lld gen %lld: %s: "
-			    "cksum type <%s> isn't supported on this host",
+			    "digest type <%s> isn't supported on this host",
 			    (unsigned long long)fe->ino,
 			    (unsigned long long)fe->gen, diag, type);
 		}

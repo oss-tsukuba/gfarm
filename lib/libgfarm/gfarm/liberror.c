@@ -276,6 +276,9 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	/* refered only from gfarm/import_help.c */
 	"hostname expected",
 	"empty file",
+
+	/* refered only from gfarm/config.c */
+	"invalid digest type",
 };
 
 /*

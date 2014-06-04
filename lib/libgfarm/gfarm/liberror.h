@@ -137,6 +137,9 @@ enum gfarm_errmsg {
 	GFARM_ERRMSG_HOSTNAME_EXPECTED,
 	GFARM_ERRMSG_EMPTY_FILE,
 
+	/* refered only from gfarm/config.c */
+	GFARM_ERRMSG_INVALID_DIGEST_TYPE,
+
 	GFARM_ERRMSG_END
 };
 

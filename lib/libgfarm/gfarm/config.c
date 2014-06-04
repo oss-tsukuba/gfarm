@@ -2249,6 +2249,35 @@ parse_cred_config(char *p, char *service,
 }
 
 static gfarm_error_t
+parse_digest_type(char *p, char **rv)
+{
+	unsigned char *s;
+	gfarm_error_t e = parse_set_var(p, rv);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	/*
+	 * XXX FIXME: we should check the digest type more strictly
+	 * Gfarm uses just same names with OpenSSL for now
+	 */
+	for (s = *(unsigned char **)rv; *s != '\0'; s++) {
+		if (!islower(*s) && !isdigit(*s)) {
+			/* XXX this leaves `*rv' as is */
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid digest type <%s>", *rv);
+			return (GFARM_ERRMSG_INVALID_DIGEST_TYPE);
+		}
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+const char *
+gfarm_digest_name_to_openssl(const char *gfarm_name)
+{
+	return (gfarm_name); /* XXX just same names with OpenSSL for now */
+}
+
+static gfarm_error_t
 parse_log_level(char *p, int *vp)
 {
 	gfarm_error_t e;
@@ -2858,18 +2887,7 @@ parse_one_line(char *s, char *p, char **op)
 #endif
 
 	} else if (strcmp(s, o = "digest") == 0) {
-		e = parse_set_var(p, &gfarm_digest);
-		if (e == GFARM_ERR_NO_ERROR) {
-			/*
-			 * OpenSSL supports both "md5" and "MD5",
-			 * but we stores "md5" only in Gfarm metadata.
-			 */
-			int i;
-
-			for (i = 0; gfarm_digest[i] != '\0'; i++)
-				gfarm_digest[i] = tolower(
-				    ((unsigned char *)gfarm_digest)[i]);
-		}
+		e = parse_digest_type(p, &gfarm_digest);
 	} else if (strcmp(s, o = "log_level") == 0) {
 		e = parse_log_level(p, &gfarm_ctxp->log_level);
 	} else if (strcmp(s, o = "log_message_verbose_level") == 0) {
