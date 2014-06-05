@@ -228,23 +228,34 @@ make_configuration_file_private_for_debian_postgresql()
 	      "$BACKEND_DATA_DIR"/postgresql.conf.org
 
 	$awk '
-	/^[ 	]*#*[ 	]*unix_socket_directory[ 	]*=/ {
-		if (/^[ 	]*unix_socket_directory/) {
+	# In PostgreSQL 9.3, 'unix_socket_directory' has been renamed to
+	# 'unix_socket_directories'.
+	/^[ 	]*#*[ 	]*unix_socket_director(y|ies)[ 	]*=/ {
+		if (/^[ 	]*unix_socket_director(y|ies)/) {
 			print "#" $0
 		} else {
 			print $0
 		}
 		if (!unix_socket_directory_done) {
 			# prevent access except $BACKEND_ADMIN_USER
-			print "unix_socket_directory = '"'$BACKEND_DATA_DIR'"'"
+			if ('$BACKEND_VERSION' >= 9.3) {
+				print "unix_socket_directories = '"'$BACKEND_DATA_DIR'"'"
+			} else {
+				print "unix_socket_directory = '"'$BACKEND_DATA_DIR'"'"
+			}
 			unix_socket_directory_done = 1
 		}
 		next
 	}
 	{print}
 	END {
-		if (!unix_socket_directory_done)
-			print "unix_socket_directory = '"'$BACKEND_DATA_DIR'"'"
+		if (!unix_socket_directory_done) {
+			if ('$BACKEND_VERSION' >= 9.3) {
+				print "unix_socket_directories = '"'$BACKEND_DATA_DIR'"'"
+			} else {
+				print "unix_socket_directory = '"'$BACKEND_DATA_DIR'"'"
+			}
+		}
 	}'	 "$BACKEND_DATA_DIR"/postgresql.conf.org \
 		>"$BACKEND_DATA_DIR"/postgresql.conf
 }
@@ -413,15 +424,21 @@ apply_configuration_postgresql()
 		}
 		next
 	}
-	/^[ 	]*#*[ 	]*unix_socket_directory[ 	]*=/ {
-		if (/^[ 	]*unix_socket_directory/) {
+	# In PostgreSQL 9.3, 'unix_socket_directory' has been renamed to
+	# 'unix_socket_directories'.
+	/^[ 	]*#*[ 	]*unix_socket_director(y|ies)[ 	]*=/ {
+		if (/^[ 	]*unix_socket_director(y|ies)/) {
 			print "#" $0
 		} else {
 			print $0
 		}
 		if (!unix_socket_directory_done) {
 			# prevent access except $BACKEND_ADMIN_USER
-			print "unix_socket_directory = '"'$BACKEND_DATA_DIR'"'"
+			if ('$BACKEND_VERSION' >= 9.3) {
+				print "unix_socket_directories = '"'$BACKEND_DATA_DIR'"'"
+			} else {
+				print "unix_socket_directory = '"'$BACKEND_DATA_DIR'"'"
+			}
 			unix_socket_directory_done = 1
 		}
 		next
@@ -443,8 +460,13 @@ apply_configuration_postgresql()
 	END {
 		if (!tcpip_socket_done && !listen_addresses_done)
 			print "listen_addresses = '"''"'"
-		if (!unix_socket_directory_done)
-			print "unix_socket_directory = '"'$BACKEND_DATA_DIR'"'"
+		if (!unix_socket_directory_done) {
+			if ('$BACKEND_VERSION' >= 9.3) {
+				print "unix_socket_directories = '"'$BACKEND_DATA_DIR'"'"
+			} else {
+				print "unix_socket_directory = '"'$BACKEND_DATA_DIR'"'"
+			}
+		}
 		# ignore client_min_messages for now.
 		# PostgreSQL should be earlier than 7.4
 	}'	 "$BACKEND_DATA_DIR"/postgresql.conf.bak \
