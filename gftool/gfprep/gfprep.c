@@ -43,7 +43,6 @@
 
 #define HOSTHASH_SIZE 101
 
-static const char name_gfprep[] = "gfprep";
 static const char name_gfpcopy[] = "gfpcopy";
 static char *program_name;
 
