@@ -31,6 +31,7 @@
 #include "filesystem.h"
 #include "config.h"
 #include "gfarm_path.h"
+#include "context.h"
 
 char *program_name = "gfhost";
 
@@ -1248,6 +1249,7 @@ parse_opt_long(char *option, int option_char, char *argument_name)
 
 
 #define DEFAULT_CONCURRENCY 10 /* reflect this value to gfhost.1.docbook */
+#define DEFAULT_OPT_PATH "."
 
 int
 main(int argc, char **argv)
@@ -1258,7 +1260,7 @@ main(int argc, char **argv)
 	char opt_operation = '\0'; /* default operation */
 	int opt_concurrency = DEFAULT_CONCURRENCY;
 	int opt_alter_aliases = 0;
-	const char *opt_path = ".";
+	const char *opt_path = DEFAULT_OPT_PATH;
 	char *realpath = NULL;
 	char *opt_architecture = NULL, *opt_domainname = NULL;
 	long opt_ncpu = 0;
@@ -1422,13 +1424,41 @@ main(int argc, char **argv)
 	e = gfarm_realpath_by_gfarm2fs(opt_path, &realpath);
 	if (e == GFARM_ERR_NO_ERROR)
 		opt_path = realpath;
-	if (opt_use_metadb &&
-	    (e = gfm_client_connection_and_process_acquire_by_path(opt_path,
-	    &gfm_server)) != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
-		    program_name, opt_path, gfarm_error_string(e));
-		exit(1);
+
+	if (!opt_use_metadb)
+		; /* nothing to do */
+	else if (strcmp(opt_path, DEFAULT_OPT_PATH) == 0) {
+		char *user = NULL;
+
+		e = gfarm_get_global_username_by_host_for_connection_cache(
+		    gfarm_ctxp->metadb_server_name,
+		    gfarm_ctxp->metadb_server_port, &user);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "gfarm_get_global_username_by_host_"
+			    "for_connection_cache: %s", gfarm_error_string(e));
+			exit(1);
+		}
+		if ((e = gfm_client_connection_acquire(
+		    gfarm_ctxp->metadb_server_name,
+		    gfarm_ctxp->metadb_server_port, user, &gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "metadata server `%s', port %d: %s\n",
+			    gfarm_ctxp->metadb_server_name,
+			    gfarm_ctxp->metadb_server_port,
+			    gfarm_error_string(e));
+			free(user);
+			exit(1);
+		}
+		free(user);
+	} else {
+		if ((e = gfm_client_connection_and_process_acquire_by_path(
+		    opt_path, &gfm_server)) != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
+			    program_name, opt_path, gfarm_error_string(e));
+			exit(1);
+		}
 	}
+
 	free(realpath);
 
 	switch (opt_operation) {
