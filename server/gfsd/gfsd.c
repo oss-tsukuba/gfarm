@@ -2800,7 +2800,7 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 	gfarm_error_t e;
 	gfarm_int32_t fd;
 	gfarm_int64_t offset;
-	gfarm_off_t written;
+	gfarm_off_t written = 0;
 	struct file_entry *fe;
 	gfarm_timerval_t t1, t2;
 	static const char diag[] = "GFS_PROTO_BULKWRITE";

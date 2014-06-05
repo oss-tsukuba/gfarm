@@ -42,8 +42,6 @@ static struct thread_pool *proto_status_send_thread_pool;
 
 static struct peer_watcher *back_channel_recv_watcher;
 
-static const char BACK_CHANNEL_DIAG[] = "back_channel";
-
 #define GFS_PROTO_STATUS_TIMEOUT		10000000 /* 10.0 sec. */
 #define GFS_PROTO_REPLICATION_REQUEST_TIMEOUT	1000000  /*  1.0 sec. */
 #define GFS_PROTO_FHREMOVE_TIMEOUT		100000   /*  0.1 sec. */
