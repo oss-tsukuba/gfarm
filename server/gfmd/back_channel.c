@@ -46,8 +46,6 @@
 
 static struct peer_watcher *back_channel_recv_watcher;
 
-static const char BACK_CHANNEL_DIAG[] = "back_channel";
-
 /*
  * responsibility to call host_disconnect_request():
  *
