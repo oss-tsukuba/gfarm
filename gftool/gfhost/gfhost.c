@@ -1245,7 +1245,7 @@ parse_opt_long(char *option, int option_char, char *argument_name)
 
 
 #define DEFAULT_CONCURRENCY 10 /* reflect this value to gfhost.1.docbook */
-#define DEFAULT_OPT_PATH "."
+const char *default_opt_path = ".";
 
 int
 main(int argc, char **argv)
@@ -1256,7 +1256,7 @@ main(int argc, char **argv)
 	char opt_operation = '\0'; /* default operation */
 	int opt_concurrency = DEFAULT_CONCURRENCY;
 	int opt_alter_aliases = 0;
-	const char *opt_path = DEFAULT_OPT_PATH;
+	const char *opt_path = default_opt_path;
 	char *realpath = NULL;
 	char *opt_architecture = NULL, *opt_domainname = NULL;
 	long opt_ncpu = 0;
@@ -1423,7 +1423,7 @@ main(int argc, char **argv)
 
 	if (!opt_use_metadb)
 		; /* nothing to do */
-	else if (strcmp(opt_path, DEFAULT_OPT_PATH) == 0) {
+	else if (opt_path == default_opt_path) {
 		char *user = NULL;
 
 		e = gfarm_get_global_username_by_host_for_connection_cache(
