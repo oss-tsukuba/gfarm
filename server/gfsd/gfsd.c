@@ -2663,8 +2663,7 @@ gfs_server_pwrite(struct gfp_xdr *client)
 				fe->md_offset += rv;
 			} else
 				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
-		} else if ((fe->flags & FILE_FLAG_DIGEST_FINISH) != 0)
-			fe->flags &= ~FILE_FLAG_DIGEST_FINISH;
+		}
 	}
 	if (rv > 0) {
 		gfarm_iostat_local_add(GFARM_IOSTAT_IO_WCOUNT, 1);
