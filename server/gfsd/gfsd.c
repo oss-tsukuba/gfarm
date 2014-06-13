@@ -2384,7 +2384,9 @@ close_fd(struct gfp_xdr *client, gfarm_int32_t fd, struct file_entry *fe,
 			gflog_error(GFARM_MSG_1002302,
 			    "%s generation_updated result: %s", 
 			    diag, gfarm_error_string(e2));
-		else if ((fe->flags & FILE_FLAG_DIGEST_FINISH) != 0 &&
+		else if ((fe->flags &
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH) &&
 		    fe->new_gen == fe->gen + 1 &&
 		    (e2 = gfm_client_cksum_set_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR)
