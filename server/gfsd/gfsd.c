@@ -1214,11 +1214,11 @@ file_table_add(gfarm_int32_t net_fd, char *path,
 		fe->md_type = NULL;
 	} else if ((fe->md_type = EVP_get_digestbyname(
 	    gfarm_digest_name_to_openssl(cksum_type))) == NULL) {
-		free(cksum_type);
 		fe->md_type_name = NULL;
 		gflog_warning(GFARM_MSG_1003771,
 		    "%s: digest type <%s> isn't supported on this host",
 		    diag, cksum_type);
+		free(cksum_type);
 	} else {
 		/* memory owner of cksum_type is moved to `fe->md_type_name' */
 		fe->md_type_name = cksum_type;
