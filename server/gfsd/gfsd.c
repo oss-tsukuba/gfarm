@@ -1088,7 +1088,7 @@ struct file_entry {
 #define FILE_FLAG_DIGEST_FINISH	0x80
 	/*
 	 * switch (flags & (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) {
-	 * case  FILE_FLAG_DIGEST_CALC:
+	 * case  0:
 	 *	do not calculate digest
 	 * case  FILE_FLAG_DIGEST_CALC:
 	 *	digest calculation is ongoing
