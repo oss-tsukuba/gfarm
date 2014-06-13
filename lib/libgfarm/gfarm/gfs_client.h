@@ -145,12 +145,14 @@ gfarm_error_t gfs_client_fhstat(struct gfs_connection *, gfarm_ino_t,
 	struct gfs_stat *);
 gfarm_error_t gfs_client_fhremove(struct gfs_connection *, gfarm_ino_t);
 
+#ifdef GFARM_USE_OPENSSL /* this requires <openssl/evp.h> */
 /* commonly used by both clients and gfsd */
 struct gfp_xdr;
 gfarm_error_t gfs_sendfile_common(struct gfp_xdr *, int, gfarm_off_t,
-	gfarm_off_t, gfarm_off_t *);
-gfarm_error_t gfs_recvfile_common(struct gfp_xdr *, int, gfarm_off_t,
-	gfarm_off_t *);
+	gfarm_off_t, EVP_MD_CTX *, gfarm_off_t *);
+gfarm_error_t gfs_recvfile_common(struct gfp_xdr *, int,
+	gfarm_off_t, EVP_MD_CTX *, gfarm_off_t *);
+#endif
 
 /*
  * gfsd service on UDP port.

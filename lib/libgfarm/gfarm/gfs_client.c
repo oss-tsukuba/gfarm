@@ -53,6 +53,7 @@
 #include "config.h"
 #include "conn_cache.h"
 #include "gfs_proto.h"
+#define GFARM_USE_OPENSSL
 #include "gfs_client.h"
 #include "gfm_client.h"
 #include "filesystem.h"
@@ -1959,7 +1960,7 @@ gfs_client_statfs_result_multiplexed(struct gfs_client_statfs_state *state,
  */
 gfarm_error_t
 gfs_sendfile_common(struct gfp_xdr *conn, int r_fd, gfarm_off_t r_off,
-	gfarm_off_t len, gfarm_off_t *sentp)
+	gfarm_off_t len, EVP_MD_CTX *md_ctx, gfarm_off_t *sentp)
 {
 	gfarm_error_t e, error = GFARM_ERR_NO_ERROR;
 	size_t to_read;
@@ -2014,6 +2015,9 @@ gfs_sendfile_common(struct gfp_xdr *conn, int r_fd, gfarm_off_t r_off,
 				break;
 			}
 			sent += rv;
+			/* sent == the length of calculated digest */
+			if (md_ctx != NULL)
+				EVP_DigestUpdate(md_ctx, buffer, rv);
 
 #if 0 /* not yet in gfarm v2 */
 			if (rate_limit != 0)
@@ -2042,7 +2046,7 @@ gfs_sendfile_common(struct gfp_xdr *conn, int r_fd, gfarm_off_t r_off,
  */
 gfarm_error_t
 gfs_recvfile_common(struct gfp_xdr *conn, int w_fd, gfarm_off_t w_off,
-	gfarm_off_t *recvp)
+	EVP_MD_CTX *md_ctx, gfarm_off_t *recvp)
 {
 	gfarm_error_t e, e_write = GFARM_ERR_NO_ERROR;
 	gfarm_off_t written = 0;
@@ -2077,6 +2081,8 @@ gfs_recvfile_common(struct gfp_xdr *conn, int w_fd, gfarm_off_t w_off,
 				break;
 			}
 			size -= partial;
+			if (md_ctx != NULL)
+				EVP_DigestUpdate(md_ctx, buffer, partial);
 			if (e_write != GFARM_ERR_NO_ERROR) {
 				/*
 				 * write(2) returned an error.
@@ -2147,7 +2153,7 @@ gfs_client_sendfile(struct gfs_connection *gfs_server,
 		    remote_w_fd, (long long)w_off, gfarm_error_string(e));
 	} else {
 		e = gfs_sendfile_common(gfs_server->conn, local_r_fd, r_off,
-		    len, NULL);
+		    len, NULL, NULL);
 		if (IS_CONNECTION_ERROR(e)) {
 			gfs_client_execute_hook_for_connection_error(
 			    gfs_server);
@@ -2184,7 +2190,7 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 		    gfarm_error_string(e));
 	} else {
 		e = gfs_recvfile_common(gfs_server->conn, local_w_fd, w_off,
-		    &written);
+		    NULL, &written);
 		if (IS_CONNECTION_ERROR(e)) {
 			e2 = GFARM_ERR_NO_ERROR;
 		} else { /* read the rest, even if a local error happens */
@@ -2234,7 +2240,7 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 		return (e);
 	}
 
-	e = gfs_recvfile_common(gfs_server->conn, local_fd, 0, NULL);
+	e = gfs_recvfile_common(gfs_server->conn, local_fd, 0, NULL, NULL);
 	if (IS_CONNECTION_ERROR(e)) {
 		gfs_client_execute_hook_for_connection_error(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);

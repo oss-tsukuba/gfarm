@@ -74,6 +74,7 @@
 #include "auth.h"
 #include "config.h"
 #include "gfs_proto.h"
+#define GFARM_USE_OPENSSL
 #include "gfs_client.h"
 #include "gfm_proto.h"
 #include "gfm_client.h"
@@ -2746,6 +2747,7 @@ gfs_server_bulkread(struct gfp_xdr *client)
 	gfarm_int32_t fd;
 	gfarm_int64_t len, offset, sent;
 	struct file_entry *fe;
+	EVP_MD_CTX *md_ctx;
 	gfarm_timerval_t t1, t2;
 	static const char diag[] = "GFS_PROTO_BULKREAD";
 
@@ -2771,11 +2773,32 @@ gfs_server_bulkread(struct gfp_xdr *client)
 		GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 		gfs_profile(gfarm_gettimerval(&t1));
 
+		/* update checksum? */
+		if ((fe->flags & FILE_FLAG_DIGEST_CALC) == 0) {
+			md_ctx = NULL;
+		} else if (fe->md_offset != offset) {
+			md_ctx = NULL;
+			fe->flags &= ~FILE_FLAG_DIGEST_CALC;
+		} else {
+			md_ctx = &fe->md_ctx;
+		}
+
 		e = gfs_sendfile_common(client, fe->local_fd, offset, len,
-		    &sent);
+		    md_ctx, &sent);
 		if (IS_CONNECTION_ERROR(e))
 			fatal(GFARM_MSG_UNFIXED, "%s sendfile: %s",
 			    diag, gfarm_error_string(e));
+		if (md_ctx != NULL) {
+			/* `sent' is set even if an error happens */
+			fe->md_offset += sent;
+			if (e != GFARM_ERR_NO_ERROR) {
+				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
+			} else {
+				if (fe->md_offset == fe->size &&
+				    (fe->flags & FILE_FLAG_WRITTEN) == 0)
+					e = digest_finish(client, fd, diag);
+			}
+		}
 		if (sent > 0)
 			file_table_set_read(fe->local_fd);
 
@@ -2801,6 +2824,7 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 	gfarm_int64_t offset;
 	gfarm_off_t written = 0;
 	struct file_entry *fe;
+	EVP_MD_CTX *md_ctx;
 	gfarm_timerval_t t1, t2;
 	static const char diag[] = "GFS_PROTO_BULKWRITE";
 
@@ -2820,13 +2844,29 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 		GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 		gfs_profile(gfarm_gettimerval(&t1));
 
+		/* update checksum? */
+		if ((fe->flags & FILE_FLAG_DIGEST_CALC) == 0) {
+			md_ctx = NULL;
+		} else if (fe->md_offset != offset) {
+			md_ctx = NULL;
+			fe->flags &= ~FILE_FLAG_DIGEST_CALC;
+		} else {
+			md_ctx = &fe->md_ctx;
+		}
+
 		e = gfs_recvfile_common(client, fe->local_fd, offset,
-		    &written);
+		    md_ctx, &written);
 		if (IS_CONNECTION_ERROR(e))
 			fatal(GFARM_MSG_UNFIXED, "%s recvdfile: %s",
 			    diag, gfarm_error_string(e));
 		if (written > 0)
 			file_table_set_written(fd);
+		if (md_ctx != NULL) {
+			/* `written' is set even if an error happens */
+			fe->md_offset += written;
+			if (e != GFARM_ERR_NO_ERROR)
+				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
+		}
 
 		gfs_profile(
 			gfarm_gettimerval(&t2);
@@ -3210,7 +3250,8 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1002179,
 			"operation is not permitted(peer_type)");
-		e = gfs_sendfile_common(client, -1, 0, 0, NULL); /* send EOF */
+		 /* send EOF */
+		e = gfs_sendfile_common(client, -1, 0, 0, NULL, NULL);
 		goto finish;
 	}
 	/*
@@ -3231,7 +3272,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 			    gfarm_error_string(error));
 			free(path);
 			/* send EOF */
-			e = gfs_sendfile_common(client, -1, 0, 0, NULL);
+			e = gfs_sendfile_common(client, -1, 0, 0, NULL, NULL);
 			goto finish;
 		}
 		/* ENOENT: wait generation-update, retry open_data() */
@@ -3246,7 +3287,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	free(path);
 
 	/* data transfer */
-	error = gfs_sendfile_common(client, local_fd, 0, -1, NULL);
+	error = gfs_sendfile_common(client, local_fd, 0, -1, NULL, NULL);
 
 	e = close(local_fd);
 	if (error == GFARM_ERR_NO_ERROR)
