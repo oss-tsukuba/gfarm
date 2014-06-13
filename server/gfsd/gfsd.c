@@ -1086,6 +1086,19 @@ struct file_entry {
 #define FILE_FLAG_DIGEST_CALC	0x20
 #define FILE_FLAG_DIGEST_AVAIL	0x40
 #define FILE_FLAG_DIGEST_FINISH	0x80
+	/*
+	 * switch (flags & (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) {
+	 * case  FILE_FLAG_DIGEST_CALC:
+	 *	do not calculate digest
+	 * case  FILE_FLAG_DIGEST_CALC:
+	 *	digest calculation is ongoing
+	 * case (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH):
+	 *	digest calculation is completed
+	 * case  FILE_FLAG_DIGEST_FINISH:
+	 *	digest calculation is completed, but the digest is invalidated
+	 * }
+	 */
+
 /*
  * digest
  */
@@ -2212,7 +2225,6 @@ digest_finish(struct gfp_xdr *client, gfarm_int32_t fd, const char *diag)
 		    (long long)fe->ino, (long long)fe->gen,
 		    gfarm_error_string(e));
 	}
-	fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 	fe->flags |= FILE_FLAG_DIGEST_FINISH;
 	return (e);
 }
@@ -2262,8 +2274,8 @@ update_file_entry_for_close(struct gfp_xdr *client, gfarm_int32_t fd,
 		} else
 			fe->size = st.st_size;
 	}
-	if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0 &&
-	    fe->md_offset == fe->size) {
+	if ((fe->flags & (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
+	    FILE_FLAG_DIGEST_CALC && fe->md_offset == fe->size) {
 		e2 = digest_finish(client, fd, diag);
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
@@ -2352,7 +2364,9 @@ close_fd(struct gfp_xdr *client, gfarm_int32_t fd, struct file_entry *fe,
 			gflog_error(GFARM_MSG_1002301,
 			    "%s generation_updated request: %s",
 			    diag, gfarm_error_string(e2));
-		else if ((fe->flags & FILE_FLAG_DIGEST_FINISH) != 0 &&
+		else if ((fe->flags &
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH) &&
 		    fe->new_gen == fe->gen + 1 &&
 		    (e2 = gfm_client_cksum_set_request(gfm_server,
 		    fe->md_type_name, fe->md_strlen, fe->md_string,
@@ -2594,7 +2608,9 @@ gfs_server_pread(struct gfp_xdr *client)
 	else {
 		file_table_set_read(fd);
 		/* update checksum */
-		if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0) {
+		if ((fe->flags &
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
+		    FILE_FLAG_DIGEST_CALC) {
 			if (fe->md_offset == offset) {
 				EVP_DigestUpdate(&fe->md_ctx, buffer, rv);
 				fe->md_offset += rv;
@@ -2658,13 +2674,18 @@ gfs_server_pwrite(struct gfp_xdr *client)
 	else {
 		file_table_set_written(fd);
 		/* update checksum */
-		if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0) {
+		if ((fe->flags &
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
+		    FILE_FLAG_DIGEST_CALC) {
 			if (fe->md_offset == offset) {
 				EVP_DigestUpdate(&fe->md_ctx, buffer, rv);
 				fe->md_offset += rv;
 			} else
 				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
-		}
+		} else if ((fe->flags &
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH))
+			fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 	}
 	if (rv > 0) {
 		gfarm_iostat_local_add(GFARM_IOSTAT_IO_WCOUNT, 1);
@@ -2774,7 +2795,9 @@ gfs_server_bulkread(struct gfp_xdr *client)
 		gfs_profile(gfarm_gettimerval(&t1));
 
 		/* update checksum? */
-		if ((fe->flags & FILE_FLAG_DIGEST_CALC) == 0) {
+		if ((fe->flags &
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) !=
+		    FILE_FLAG_DIGEST_CALC) {
 			md_ctx = NULL;
 		} else if (fe->md_offset != offset) {
 			md_ctx = NULL;
@@ -2845,7 +2868,13 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 		gfs_profile(gfarm_gettimerval(&t1));
 
 		/* update checksum? */
-		if ((fe->flags & FILE_FLAG_DIGEST_CALC) == 0) {
+		if ((fe->flags &
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) !=
+		    FILE_FLAG_DIGEST_CALC) {
+			if ((fe->flags &
+			    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
+			    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH))
+				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 			md_ctx = NULL;
 		} else if (fe->md_offset != offset) {
 			md_ctx = NULL;
