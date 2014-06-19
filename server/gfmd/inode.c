@@ -3398,8 +3398,10 @@ inode_fhclose_write(struct inode *inode, gfarm_uint64_t old_gen,
 		/* update generation number */
 		inode_increment_gen(inode);
 	}
-	/* always update the generation of physical file */
-	*generation_updatedp = 1;
+	if (inode->i_gen != old_gen) {
+		/* update the generation of physical file */
+		*generation_updatedp = 1;
+	}
 	*new_genp = inode->i_gen;
 
 	return (GFARM_ERR_NO_ERROR);
