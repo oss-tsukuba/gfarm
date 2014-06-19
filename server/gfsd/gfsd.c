@@ -1959,7 +1959,7 @@ close_fd(struct gfp_xdr *client, gfarm_int32_t fd, const char *diag)
 	return (e);
 }
 
-gfarm_error_t
+static gfarm_error_t
 fhclose_fd(struct gfp_xdr *client, gfarm_int32_t fd, const char *diag)
 {
 	gfarm_error_t e, e2;
