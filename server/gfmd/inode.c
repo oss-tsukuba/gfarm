@@ -3388,20 +3388,15 @@ inode_fhclose_write(struct inode *inode, gfarm_uint64_t old_gen,
 	inode_set_ctime(inode, mtime);
 	inode_set_size(inode, size);
 
-	if (inode->i_gen == old_gen) {
-		inode_cksum_remove(inode);
-		e = inode_fhclose_cksum_set(inode,
-		    cksum_type, cksum_len, cksum, flags, mtime);
-		if (e != GFARM_ERR_NO_ERROR)
-			gflog_info(GFARM_MSG_1003799, "%s: cksum_set: %s",
-			    diag, gfarm_error_string(e));
-		/* update generation number */
-		inode_increment_gen(inode);
-	}
-	if (inode->i_gen != old_gen) {
-		/* update the generation of physical file */
-		*generation_updatedp = 1;
-	}
+	/* update generation number */
+	inode_cksum_remove(inode);
+	e = inode_fhclose_cksum_set(inode,
+	    cksum_type, cksum_len, cksum, flags, mtime);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_info(GFARM_MSG_1003799, "%s: cksum_set: %s",
+		    diag, gfarm_error_string(e));
+	inode_increment_gen(inode);
+	*generation_updatedp = 1;
 	*new_genp = inode->i_gen;
 
 	return (GFARM_ERR_NO_ERROR);
