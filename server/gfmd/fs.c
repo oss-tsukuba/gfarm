@@ -1482,11 +1482,12 @@ gfarm_error_t
 gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
-	gfarm_int32_t fd, cksum_len, flags;
+	gfarm_int32_t fd, flags;
 	struct process *process;
 	struct inode *inode;
 	struct user *user;
 	char *cksum_type;
+	size_t cksum_len;
 	char cksum[GFM_PROTO_CKSUM_MAXLEN];
 	struct gfarm_timespec mtime;
 	static const char diag[] = "GFM_PROTO_CKSUM_SET";
