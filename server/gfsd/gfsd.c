@@ -2122,11 +2122,11 @@ calc_digest(int fd,
 
 	const EVP_MD *md_type;
 	EVP_MD_CTX md_ctx;
-	unsigned int md_len, di;
+	unsigned int di, md_len;
 	unsigned char md_value[EVP_MAX_MD_SIZE];
 
-	md_type = EVP_get_digestbyname(
-	    gfarm_digest_name_to_openssl(md_type_name));
+	md_type =
+	    EVP_get_digestbyname(gfarm_digest_name_to_openssl(md_type_name));
 	if (md_type == NULL)
 		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 
@@ -2144,6 +2144,7 @@ calc_digest(int fd,
 	if (e == GFARM_ERR_NO_ERROR) {
 		for (di = 0; di < md_len; ++di)
 			sprintf(&md_string[di * 2], "%02x", md_value[di]);
+		*md_strlenp = md_len * 2;
 	}
 	return (e);
 }
