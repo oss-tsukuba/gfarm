@@ -1749,10 +1749,11 @@ gfm_server_cksum_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 {
 	gfarm_error_t e;
 	gfarm_int32_t fd;
-	gfarm_int32_t cksum_len, flags;
+	gfarm_int32_t flags;
 	struct host *spool_host = NULL;
 	struct process *process;
 	char *cksum_type;
+	size_t cksum_len;
 	char cksum[GFM_PROTO_CKSUM_MAXLEN];
 	struct gfarm_timespec mtime;
 	struct relayed_request *relay;
