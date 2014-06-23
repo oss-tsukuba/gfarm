@@ -2359,11 +2359,6 @@ close_fd(struct gfp_xdr *client, gfarm_int32_t fd, struct file_entry *fe,
 			gflog_error(GFARM_MSG_1003340,
 			    "%s compound_put_fd_request: %s",
 			    diag, gfarm_error_string(e2));
-		else if ((e2 = gfm_client_generation_updated_request(
-		    gfm_server, gen_update_result)) != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_1002301,
-			    "%s generation_updated request: %s",
-			    diag, gfarm_error_string(e2));
 		else if ((fe->flags &
 		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
 		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH) &&
@@ -2374,15 +2369,15 @@ close_fd(struct gfp_xdr *client, gfarm_int32_t fd, struct file_entry *fe,
 			gflog_error(GFARM_MSG_1003784,
 			    "%s cksum_set request: %s",
 			    diag, gfarm_error_string(e2));
+		else if ((e2 = gfm_client_generation_updated_request(
+		    gfm_server, gen_update_result)) != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_1002301,
+			    "%s generation_updated request: %s",
+			    diag, gfarm_error_string(e2));
 		else if ((e2 = gfm_client_compound_put_fd_result(client, diag))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_put_fd_problem(GFARM_MSG_1003341, client, e2,
 			    "%s compound_put_fd_result: %s",
-			    diag, gfarm_error_string(e2));
-		else if ((e2 = gfm_client_generation_updated_result(
-		    gfm_server)) != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_1002302,
-			    "%s generation_updated result: %s", 
 			    diag, gfarm_error_string(e2));
 		else if ((fe->flags &
 		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
@@ -2392,6 +2387,11 @@ close_fd(struct gfp_xdr *client, gfarm_int32_t fd, struct file_entry *fe,
 		    != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1003785,
 			    "%s cksum_set result: %s",
+			    diag, gfarm_error_string(e2));
+		else if ((e2 = gfm_client_generation_updated_result(
+		    gfm_server)) != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_1002302,
+			    "%s generation_updated result: %s", 
 			    diag, gfarm_error_string(e2));
 		else if ((e2 = gfm_client_compound_end(diag))
 		    != GFARM_ERR_NO_ERROR)
