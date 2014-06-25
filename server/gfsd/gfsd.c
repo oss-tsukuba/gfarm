@@ -1588,9 +1588,8 @@ close_request(struct file_entry *fe)
 gfarm_error_t
 fhclose_request(struct file_entry *fe)
 {
-	if ((fe->flags & (FILE_FLAG_WRITTEN|FILE_FLAG_DIGEST_FINISH|
-	    FILE_FLAG_DIGEST_AVAIL|FILE_FLAG_WRITTEN)) ==
-	    (FILE_FLAG_WRITTEN|FILE_FLAG_DIGEST_FINISH))
+	if ((fe->flags & (FILE_FLAG_WRITTEN|FILE_FLAG_DIGEST_FINISH))
+	    == (FILE_FLAG_WRITTEN|FILE_FLAG_DIGEST_FINISH))
 		return (gfm_client_fhclose_write_cksum_request(gfm_server,
 		    fe->ino, fe->gen, fe->size,
 		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)fe->atimensec,
