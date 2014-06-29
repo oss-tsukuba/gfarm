@@ -284,7 +284,7 @@ process_verify_fd(struct process *process, struct peer *peer, int fd,
 		if (fo != NULL)
 			return (GFARM_ERR_NO_ERROR);
 	}
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003804,
 	    "%s: pid:%lld fd:%d by %s@%s: bad file descriptor",
 	    diag, (long long)process->pid, (int)fd,
 	    peer_get_username(peer), peer_get_hostname(peer));
@@ -304,7 +304,7 @@ process_get_file_opening(struct process *process, struct peer *peer, int fd,
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003805,
 	    "%s: pid:%lld fd:%d by %s@%s: bad file descriptor",
 	    diag, (long long)process->pid, (int)fd,
 	    peer_get_username(peer), peer_get_hostname(peer));
@@ -841,7 +841,7 @@ process_peer_is_the_spool_opener(struct process *process,
 		return (0);
 	}
 	if (peer != fo->u.f.spool_opener) { /* peer is not the spool opener */
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003806,
 		    "%s: pid:%lld fd:%d inode:%llu:%llu "
 		    "invalid request by %s@%s, should be %s, "
 		    "NOTE: GFM_PROTO_REVOKE_GFSD_ACCESS is%s called",
