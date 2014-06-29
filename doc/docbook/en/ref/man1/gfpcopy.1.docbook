@@ -101,8 +101,8 @@ source file.
 </para>
 <para>
 Without -f option, existing destination files will be overwritten when
-the size is different or the modification time (mtime) is older than the
-source file.
+that they are older than the corresponding source files in the
+modification time.
 </para>
 </listitem>
 </varlistentry>
