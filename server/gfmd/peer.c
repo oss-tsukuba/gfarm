@@ -33,6 +33,7 @@
 #include "io_fd.h"
 #include "auth.h"
 #include "config.h" /* gfarm_simultaneous_replication_receivers */
+#include "gfs_proto.h"
 
 #include "subr.h"
 #include "thrpool.h"
@@ -72,7 +73,7 @@ peer_watcher_set_default_nfd(int nfd_hint_default)
 
 /* this function never fails, but aborts. */
 struct peer_watcher *
-peer_watcher_alloc(int thrpool_size, int thrqueue_length, 
+peer_watcher_alloc(int thrpool_size, int thrqueue_length,
 	void *(*readable_handler)(void *),
 	const char *diag)
 {
@@ -231,10 +232,23 @@ file_replicating_set_handle(struct file_replicating *fr, gfarm_int64_t handle)
 	fr->handle = handle;
 }
 
+void
+file_replicating_set_cksum_request_flags(struct file_replicating *fr,
+	gfarm_int32_t cksum_request_flags)
+{
+	fr->cksum_request_flags = cksum_request_flags;
+}
+
 gfarm_int64_t
 file_replicating_get_handle(struct file_replicating *fr)
 {
 	return (fr->handle);
+}
+
+gfarm_int32_t
+file_replicating_get_cksum_request_flags(struct file_replicating *fr)
+{
+	return (fr->cksum_request_flags);
 }
 
 struct peer *
@@ -262,11 +276,13 @@ peer_replicating_new(struct peer *peer, struct host *dst,
 
 	fr->peer = peer;
 	fr->dst = dst;
-	fr->handle = -1;
+	fr->handle = GFS_PROTO_REPLICATION_HANDLE_INVALID;
 
 	/* the followings should be initialized by inode_replicating() */
 	fr->prev_host = fr;
 	fr->next_host = fr;
+
+	fr->cksum_request_flags = 0;
 
 	gfarm_mutex_lock(&peer->replication_mutex, diag, replication_diag);
 	if (peer->simultaneous_replication_receivers >=
@@ -314,7 +330,9 @@ gfarm_error_t
 peer_replicated(struct peer *peer,
 	struct host *host, gfarm_ino_t ino, gfarm_int64_t gen,
 	gfarm_int64_t handle,
-	gfarm_int32_t src_errcode, gfarm_int32_t dst_errcode, gfarm_off_t size)
+	gfarm_int32_t src_errcode, gfarm_int32_t dst_errcode, gfarm_off_t size,
+	int cksum_protocol, char *cksum_type, size_t cksum_len, char *cksum,
+	gfarm_int32_t cksum_result_flags)
 {
 	gfarm_error_t e;
 	struct file_replicating *fr;
@@ -322,7 +340,7 @@ peer_replicated(struct peer *peer,
 
 	gfarm_mutex_lock(&peer->replication_mutex, diag, replication_diag);
 
-	if (handle == -1) {
+	if (handle == GFS_PROTO_REPLICATION_HANDLE_INVALID) {
 		for (fr = peer->replicating_inodes.next_inode;
 		    fr != &peer->replicating_inodes; fr = fr->next_inode) {
 			if (fr->igen == gen &&
@@ -345,14 +363,32 @@ peer_replicated(struct peer *peer,
 
 	gfarm_mutex_unlock(&peer->replication_mutex, diag, replication_diag);
 
-	if (e == GFARM_ERR_NO_ERROR)
-		e = inode_replicated(fr, src_errcode, dst_errcode, size);
-	else
+	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002410,
 		    "orphan replication (%s, %lld:%lld): s=%d d=%d size:%lld "
 		    "maybe the connection had a problem?",
 		    host_name(host), (long long)ino, (long long)gen,
 		    src_errcode, dst_errcode, (long long)size);
+	} else {
+		int cksum_enabled = (fr->cksum_request_flags &
+		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED) != 0;
+
+		if (cksum_enabled != cksum_protocol)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "mismatch of %s vs %s in replication "
+			    "(%s, %lld:%lld): s=%d d=%d size:%lld",
+			    cksum_enabled ?
+			    "GFS_PROTO_REPLICATION_CKSUM_REQUEST" :
+			    "GFS_PROTO_REPLICATION_REQUEST",
+			    cksum_protocol ?
+			    "GFM_PROTO_REPLICATION_CKSUM_RESULT" :
+			    "GFM_PROTO_REPLICATION_RESULT",
+			    host_name(host), (long long)ino, (long long)gen,
+			    src_errcode, dst_errcode, (long long)size);
+		e = inode_replicated(fr, src_errcode, dst_errcode, size,
+		    cksum_protocol, fr->cksum_request_flags,
+		    cksum_type, cksum_len, cksum, cksum_result_flags);
+	}
 	return (e);
 }
 
@@ -383,7 +419,8 @@ peer_replicating_free_all_waiting_result(struct peer *peer)
 		    diag, replication_diag);
 		for (fr = peer->replicating_inodes.next_inode;
 		    fr != &peer->replicating_inodes; fr = fr->next_inode) {
-			if (fr->handle != -1) {
+			if (fr->handle !=
+			    GFS_PROTO_REPLICATION_HANDLE_INVALID) {
 				found = 1;
 				dst = fr->dst;
 				ino = inode_get_number(fr->inode);
@@ -397,7 +434,10 @@ peer_replicating_free_all_waiting_result(struct peer *peer)
 		if (!found)
 			break;
 
-		e = inode_replicated(fr, 0, GFARM_ERR_CONNECTION_ABORTED, -1);
+		e = inode_replicated(fr, 0, GFARM_ERR_CONNECTION_ABORTED, -1,
+		    (fr->cksum_request_flags &
+		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED) != 0,
+		    fr->cksum_request_flags, NULL, 0, NULL, 0);
 		gflog_debug(GFARM_MSG_1003612,
 		    "%s: (%s, %lld:%lld): connection aborted: %s",
 		    diag, host_name(dst), (long long)ino, (long long)gen,
@@ -422,7 +462,10 @@ peer_replicating_free_all(struct peer *peer)
 	    &peer->replicating_inodes) {
 		gfarm_mutex_unlock(&peer->replication_mutex, diag, "settle");
 		(void)inode_replicated(fr, GFARM_ERR_NO_ERROR,
-		     GFARM_ERR_CONNECTION_ABORTED, -1);
+		    GFARM_ERR_CONNECTION_ABORTED, -1,
+		    (fr->cksum_request_flags &
+		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED) != 0,
+		    fr->cksum_request_flags, NULL, 0, NULL, 0);
 		/* abandon error */
 		/* assert(e == GFARM_ERR_INVALID_FILE_REPLICA); */
 		gfarm_mutex_lock(&peer->replication_mutex, diag, "settle");

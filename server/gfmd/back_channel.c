@@ -3,6 +3,7 @@
  */
 
 #include <pthread.h>
+#include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -330,7 +331,6 @@ remover(void *closure)
 /*
  * GFS_PROTO_REPLICATION_REQUEST didn't exist before gfarm-2.4.0
  */
-
 static gfarm_int32_t
 gfs_client_replication_request_result(void *p, void *arg, size_t size)
 {
@@ -355,18 +355,72 @@ gfs_client_replication_request_result(void *p, void *arg, size_t size)
 		ino = inode_get_number(fr->inode);
 		gen = fr->igen;
 		if (e != GFARM_ERR_NO_ERROR)
-			e2 = peer_replicated(peer, dst, ino, gen, -1,
-			    0, e, -1);
+			e2 = peer_replicated(peer, dst, ino, gen,
+			    GFS_PROTO_REPLICATION_HANDLE_INVALID,
+			    GFARM_ERR_NO_ERROR, e, -1,
+			    0, NULL, 0, NULL, 0);
 		else if (IS_CONNECTION_ERROR(errcode))
-			e2 = peer_replicated(peer, dst, ino, gen, -1,
-			    errcode, 0, -1);
+			e2 = peer_replicated(peer, dst, ino, gen,
+			    GFS_PROTO_REPLICATION_HANDLE_INVALID,
+			    errcode, GFARM_ERR_NO_ERROR, -1,
+			    0, NULL, 0, NULL, 0);
 		else
-			e2 = peer_replicated(peer, dst, ino, gen, -1,
-			    0, errcode, -1);
+			e2 = peer_replicated(peer, dst, ino, gen,
+			    GFS_PROTO_REPLICATION_HANDLE_INVALID,
+			    GFARM_ERR_NO_ERROR, errcode, -1,
+			    0, NULL, 0, NULL, 0);
 		gflog_debug(GFARM_MSG_1002359,
 		    "%s: (%s, %lld:%lld): aborted: %s - (%s, %s)",
 		    diag, host_name(dst), (long long)ino, (long long)gen,
 		    gfarm_error_string(errcode),
+		    gfarm_error_string(e), gfarm_error_string(e2));
+	}
+	giant_unlock();
+	return (e);
+}
+
+/*
+ * GFS_PROTO_REPLICATION_CKSUM_REQUEST didn't exist before gfarm-2.6.0
+ */
+static gfarm_int32_t
+gfs_client_replication_cksum_request_result(void *p, void *arg, size_t size)
+{
+	struct peer *peer = p;
+	struct file_replicating *fr = arg;
+	gfarm_int64_t handle = GFS_PROTO_REPLICATION_HANDLE_INVALID;
+	struct host *dst;
+	gfarm_ino_t ino;
+	gfarm_int64_t gen;
+	gfarm_error_t e, e2;
+	gfarm_int32_t src_errcode = GFARM_ERR_NO_ERROR;
+	gfarm_int32_t dst_errcode = GFARM_ERR_NO_ERROR;
+	static const char diag[] =
+	    "GFS_PROTO_REPLICATION_CKSUM_REQUEST result";
+
+	e = gfs_client_recv_result_and_error(peer, fr->dst, size, &dst_errcode,
+	    diag, "li", &handle, &src_errcode);
+	/* XXX FIXME: deadlock */
+	giant_lock();
+	if (e == GFARM_ERR_NO_ERROR && dst_errcode == GFARM_ERR_NO_ERROR)
+		file_replicating_set_handle(fr, handle);
+	if (e != GFARM_ERR_NO_ERROR ||
+	    dst_errcode != GFARM_ERR_NO_ERROR ||
+	    src_errcode != GFARM_ERR_NO_ERROR) {
+		dst = fr->dst;
+		ino = inode_get_number(fr->inode);
+		gen = fr->igen;
+		if (e != GFARM_ERR_NO_ERROR) {
+			dst_errcode = e;
+			src_errcode = GFARM_ERR_NO_ERROR;
+		}
+		e2 = peer_replicated(peer, dst, ino, gen,
+		    handle, src_errcode, dst_errcode, -1,
+		    1, NULL, 0, NULL, 0);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: (%s, %lld:%lld): aborted: %s/%s - (%s, %s)",
+		    diag, host_name(dst), (long long)ino, (long long)gen,
+		    gfarm_error_string(src_errcode),
+		    gfarm_error_string(dst_errcode),
 		    gfarm_error_string(e), gfarm_error_string(e2));
 	}
 	giant_unlock();
@@ -383,10 +437,17 @@ gfs_client_replication_request_free(void *p, void *arg)
 	gfarm_ino_t ino = inode_get_number(fr->inode);
 	gfarm_int64_t gen = fr->igen;
 	gfarm_error_t e;
-	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST free";
+	int cksum_protocol =
+	    (file_replicating_get_cksum_request_flags(fr) &
+	     GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED) != 0;
+	const char *diag = cksum_protocol ?
+	    "GFS_PROTO_REPLICATION_CKSUM_REQUEST free" :
+	    "GFS_PROTO_REPLICATION_REQUEST free";
 
 	e = peer_replicated(peer, dst, ino, gen,
-	    -1, 0, GFARM_ERR_CONNECTION_ABORTED, -1);
+	    GFS_PROTO_REPLICATION_HANDLE_INVALID,
+	    GFARM_ERR_NO_ERROR, GFARM_ERR_CONNECTION_ABORTED, -1,
+	    cksum_protocol, NULL, 0, NULL, 0);
 	gflog_debug(GFARM_MSG_1002360,
 	    "%s: (%s, %lld:%lld): connection aborted: %s",
 	    diag, host_name(dst), (long long)ino, (long long)gen,
@@ -399,47 +460,74 @@ struct gfs_client_replication_request_arg {
 	struct host *dst;
 	gfarm_ino_t ino;
 	gfarm_int64_t gen;
+
 	struct file_replicating *fr;
+
+	/* only used by GFS_PROTO_REPLICATION_CKSUM_REQUEST */
+	gfarm_int64_t filesize;
+	char *cksum_type;
+	size_t cksum_len;
+	char *cksum;
+	gfarm_int32_t cksum_request_flags;
 };
 
 static void *
 gfs_client_replication_request_request(void *closure)
 {
 	struct gfs_client_replication_request_arg *arg = closure;
-	char *srchost = arg->srchost;
-	gfarm_int32_t srcport = arg->srcport;
-	struct host *dst = arg->dst;
-	gfarm_ino_t ino = arg->ino;
-	gfarm_int64_t gen = arg->gen;
-	struct file_replicating *fr = arg->fr;
-	struct peer *peer = file_replicating_get_peer(fr);
+	struct peer *peer = file_replicating_get_peer(arg->fr);
 	gfarm_error_t e, e2;
-	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST request";
+	int cksum_protocol = (arg->cksum_request_flags &
+	    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED) != 0;
+	const char *diag = cksum_protocol ?
+	    "GFS_PROTO_REPLICATION_CKSUM_REQUEST request" :
+	    "GFS_PROTO_REPLICATION_REQUEST request";
 
-	free(arg);
-	e = gfs_client_send_request(dst, peer, diag,
-	    gfs_client_replication_request_result,
-	    gfs_client_replication_request_free, fr,
-	    GFS_PROTO_REPLICATION_REQUEST_TIMEOUT,
-	    GFS_PROTO_REPLICATION_REQUEST, "sill",
-	    srchost, srcport, ino, gen);
+	if (cksum_protocol) {
+		e = gfs_client_send_request(arg->dst, peer, diag,
+		    gfs_client_replication_cksum_request_result,
+		    gfs_client_replication_request_free, arg->fr,
+		    GFS_PROTO_REPLICATION_REQUEST_TIMEOUT,
+		    GFS_PROTO_REPLICATION_CKSUM_REQUEST, "silllsbi",
+		    arg->srchost, arg->srcport, arg->ino, arg->gen,
+		    arg->filesize, arg->cksum_type, arg->cksum_len, arg->cksum,
+		    arg->cksum_request_flags &
+		    ~GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_MASK);
+		free(arg->cksum_type);
+		free(arg->cksum);
+	} else {
+		e = gfs_client_send_request(arg->dst, peer, diag,
+		    gfs_client_replication_request_result,
+		    gfs_client_replication_request_free, arg->fr,
+		    GFS_PROTO_REPLICATION_REQUEST_TIMEOUT,
+		    GFS_PROTO_REPLICATION_REQUEST, "sill",
+		    arg->srchost, arg->srcport, arg->ino, arg->gen);
+	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		giant_lock(); /* XXX FIXME: deadlock */
-		e2 = peer_replicated(peer, dst, ino, gen, -1, 0, e, -1);
+		e2 = peer_replicated(peer, arg->dst, arg->ino, arg->gen,
+		    GFS_PROTO_REPLICATION_HANDLE_INVALID,
+		    GFARM_ERR_NO_ERROR, e, -1,
+		    cksum_protocol, NULL, 0, NULL, 0);
 		giant_unlock();
 		gflog_debug(GFARM_MSG_1002361,
 		    "%s: %s->(%s, %lld:%lld): aborted: %s (%s)", diag,
-		    srchost, host_name(dst), (long long)ino, (long long)gen,
+		    arg->srchost, host_name(arg->dst),
+		    (long long)arg->ino, (long long)arg->gen,
 		    gfarm_error_string(e), gfarm_error_string(e2));
 	}
+	free(arg);
 
 	/* this return value won't be used, because this thread is detached */
 	return (NULL);
 }
 
 gfarm_error_t
-async_back_channel_replication_request(char *srchost, int srcport,
+async_back_channel_replication_cksum_request(char *srchost, int srcport,
 	struct host *dst, gfarm_ino_t ino, gfarm_int64_t gen,
+	gfarm_int64_t filesize,
+	char *cksum_type, size_t cksum_len, char *cksum,
+	gfarm_int32_t cksum_request_flags,
 	struct file_replicating *fr)
 {
 	struct gfs_client_replication_request_arg *arg;
@@ -458,9 +546,29 @@ async_back_channel_replication_request(char *srchost, int srcport,
 	arg->ino = ino;
 	arg->gen = gen;
 	arg->fr = fr;
+	arg->filesize = filesize;
+	arg->cksum_type = cksum_type;
+	arg->cksum_len = cksum_len;
+	arg->cksum = cksum;
+	arg->cksum_request_flags = cksum_request_flags;
+	assert(
+	    (cksum_type != NULL &&
+	     (cksum_request_flags &
+	      GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED) != 0) ||
+	    (cksum_type == NULL &&
+	     cksum_len == 0 && cksum == NULL && cksum_request_flags == 0));
 	thrpool_add_job(back_channel_send_thread_pool,
 	    gfs_client_replication_request_request, arg);
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+async_back_channel_replication_request(char *srchost, int srcport,
+	struct host *dst, gfarm_ino_t ino, gfarm_int64_t gen,
+	struct file_replicating *fr)
+{
+	return (async_back_channel_replication_cksum_request(srchost, srcport,
+	    dst, ino, gen, -1, NULL, 0, NULL, 0, fr));
 }
 
 /*
@@ -469,7 +577,7 @@ async_back_channel_replication_request(char *srchost, int srcport,
  */
 static gfarm_error_t
 gfm_async_server_replication_result(struct host *host,
-	struct peer *peer, gfp_xdr_xid_t xid, size_t size)
+	struct peer *peer, gfp_xdr_xid_t xid, size_t size, int cksum_protocol)
 {
 	gfarm_error_t e, e2;
 	gfarm_int32_t src_errcode, dst_errcode;
@@ -478,22 +586,39 @@ gfm_async_server_replication_result(struct host *host,
 	gfarm_int64_t handle;
 	gfarm_int64_t trace_seq_num; /* for gfarm_file_trace */
 	gfarm_off_t filesize;
-	static const char diag[] = "GFM_PROTO_REPLICATION_RESULT";
+	char *cksum_type = NULL;
+	size_t cksum_len = 0;
+	char cksum[GFM_PROTO_CKSUM_MAXLEN];
+	gfarm_int32_t cksum_result_flags = 0;
+	const char *diag = cksum_protocol ?
+	    "GFM_PROTO_REPLICATION_CKSUM_RESULT" :
+	    "GFM_PROTO_REPLICATION_RESULT";
 
 	/*
-	 * The reason why this protocol returns not only handle
+	 * The reason why these protocols return not only handle
 	 * but also ino and gen is because it's possible that
-	 * this request may arrive earlier than the result of
-	 * GFS_PROTO_REPLICATION_REQUEST due to race condition.
+	 * this request may arrive in the peer layer earlier
+	 * than the result of GFS_PROTO_REPLICATION_REQUEST
+	 * due to race condition of gfmd thread scheduling.
 	 */
-	if ((e = gfm_async_server_get_request(peer, size, diag, "llliil",
-	    &ino, &gen, &handle, &src_errcode, &dst_errcode, &filesize))
-	    != GFARM_ERR_NO_ERROR)
+	if (cksum_protocol)
+		e = gfm_async_server_get_request(peer, size, diag, "llliilsbi",
+		    &ino, &gen, &handle,
+		    &src_errcode, &dst_errcode, &filesize,
+		    &cksum_type, sizeof(cksum), &cksum_len, cksum,
+		    &cksum_result_flags);
+	else
+		e = gfm_async_server_get_request(peer, size, diag, "llliil",
+		    &ino, &gen, &handle,
+		    &src_errcode, &dst_errcode, &filesize);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
 	giant_lock(); /* XXX FIXME: deadlock */
 	e = peer_replicated(peer, host, ino, gen, handle,
-	    src_errcode, dst_errcode, filesize);
+	    src_errcode, dst_errcode, filesize,
+	    cksum_protocol, cksum_type, cksum_len, cksum, cksum_result_flags);
+	free(cksum_type);
 	trace_seq_num = trace_log_get_sequence_number(),
 	giant_unlock();
 
@@ -526,7 +651,12 @@ async_back_channel_protocol_switch(struct abstract_host *h,
 
 	switch (request) {
 	case GFM_PROTO_REPLICATION_RESULT:
-		e = gfm_async_server_replication_result(host, peer, xid, size);
+		e = gfm_async_server_replication_result(host, peer, xid,
+		    size, 0);
+		break;
+	case GFM_PROTO_REPLICATION_CKSUM_RESULT:
+		e = gfm_async_server_replication_result(host, peer, xid,
+		    size, 1);
 		break;
 	default:
 		*unknown_request = 1;
@@ -596,7 +726,7 @@ back_channel_async_peer_free(struct peer *peer, gfp_xdr_async_peer_t async)
 
 static gfarm_error_t
 gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
-	int version, const char *diag)
+	int is_async, int version, const char *diag)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
 	struct host *host;
@@ -615,14 +745,23 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		gflog_debug(GFARM_MSG_1001996,
 			"Operation not permitted: peer_get_host() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (version >= GFS_PROTOCOL_VERSION_V2_4 &&
+	} else if (is_async ? (
+	    version <  GFS_PROTOCOL_VERSION_V2_4 ||
+	    version >  GFS_PROTOCOL_VERSION_V2_6) :
+	    version != GFS_PROTOCOL_VERSION_V2_3) {
+		e = GFARM_ERR_PROTOCOL_NOT_SUPPORTED;
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: %s@%s: unsupported protocol version %d",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    version);
+	} else if (is_async &&
 	    (e = gfp_xdr_async_peer_new(&async)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002288,
 		    "%s: gfp_xdr_async_peer_new(): %s",
 		    diag, gfarm_error_string(e));
 	}
 	giant_unlock();
-	if (version < GFS_PROTOCOL_VERSION_V2_4)
+	if (!is_async)
 		e2 = gfm_server_put_reply(peer, diag, e, "");
 	else
 		e2 = gfm_server_put_reply(peer, diag, e, "i", 0 /*XXX FIXME*/);
@@ -676,7 +815,7 @@ gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_ERROR);
 
 	e = gfm_server_switch_back_channel_common(peer, from_client,
-	    GFS_PROTOCOL_VERSION_V2_3, diag);
+	    0, GFS_PROTOCOL_VERSION_V2_3, diag);
 
 	return (e);
 }
@@ -700,7 +839,7 @@ gfm_server_switch_async_back_channel(struct peer *peer, int from_client,
 		return (GFARM_ERR_NO_ERROR);
 
 	e = gfm_server_switch_back_channel_common(peer, from_client,
-	    version, diag);
+	    1, version, diag);
 
 	return (e);
 }

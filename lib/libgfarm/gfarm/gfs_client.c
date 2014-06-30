@@ -1357,12 +1357,10 @@ gfs_client_rpc_request(struct gfs_connection *gfs_server, int command,
 }
 
 gfarm_error_t
-gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
-	const char *format, ...)
+gfs_client_vrpc_result(struct gfs_connection *gfs_server, int just,
+	gfarm_int32_t *errcodep, const char *format, va_list *app)
 {
-	va_list ap;
 	gfarm_error_t e;
-	int errcode;
 
 	gfs_client_connection_used(gfs_server);
 
@@ -1378,10 +1376,8 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 		return (e);
 	}
 
-	va_start(ap, format);
 	e = gfp_xdr_vrpc_result(gfs_server->conn, just, 1,
-	    &errcode, &format, &ap);
-	va_end(ap);
+	    errcodep, &format, app);
 
 	if (IS_CONNECTION_ERROR(e)) {
 		gfs_client_execute_hook_for_connection_error(gfs_server);
@@ -1393,17 +1389,43 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 			gfarm_error_string(e));
 		return (e);
 	}
-	if (errcode != 0) {
-		/*
-		 * We just use gfarm_error_t as the errcode,
-		 * Note that GFARM_ERR_NO_ERROR == 0.
-		 */
+	/* We just use gfarm_error_t as the errcode */
+	if (*errcodep != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1001199,
-			"gfp_xdr_vrpc_result() failed errcode=%d",
-			errcode);
-		return (errcode);
-	}
+		    "gfp_xdr_vrpc_result() failed errcode=%d", (int)*errcodep);
+
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_client_rpc_result_w_errcode(struct gfs_connection *gfs_server, int just,
+	gfarm_int32_t *errcodep, const char *format, ...)
+{
+	va_list ap;
+	gfarm_error_t e;
+
+	va_start(ap, format);
+	e = gfs_client_vrpc_result(gfs_server, just, errcodep, format, &ap);
+	va_end(ap);
+
+	return (e);
+}
+
+gfarm_error_t
+gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
+	const char *format, ...)
+{
+	va_list ap;
+	gfarm_error_t e;
+	gfarm_int32_t errcode;
+
+	va_start(ap, format);
+	e = gfs_client_vrpc_result(gfs_server, just, &errcode, format, &ap);
+	va_end(ap);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (errcode);
 }
 
 static gfarm_error_t
@@ -1952,6 +1974,8 @@ gfs_client_statfs_result_multiplexed(struct gfs_client_statfs_state *state,
  * commonly used by both clients and gfsd
  *
  * len: if -1, read until EOF.
+ * return value: connection related error
+ * *src_errp: set even if an error happens.
  * *sentp: set even if an error happens.
  *
  * XXX not yet in gfarm v2:
@@ -1959,10 +1983,13 @@ gfs_client_statfs_result_multiplexed(struct gfs_client_statfs_state *state,
  * XXX should use "netparam file_read_size" setting as well.
  */
 gfarm_error_t
-gfs_sendfile_common(struct gfp_xdr *conn, int r_fd, gfarm_off_t r_off,
+gfs_sendfile_common(struct gfp_xdr *conn, gfarm_int32_t *src_errp,
+	int r_fd, gfarm_off_t r_off,
 	gfarm_off_t len, EVP_MD_CTX *md_ctx, gfarm_off_t *sentp)
 {
-	gfarm_error_t e, error = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e;
+	gfarm_error_t e_conn = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e_read = GFARM_ERR_NO_ERROR;
 	size_t to_read;
 	ssize_t rv;
 	off_t sent = 0;
@@ -1998,7 +2025,7 @@ gfs_sendfile_common(struct gfp_xdr *conn, int r_fd, gfarm_off_t r_off,
 			if (rv == 0)
 				break;
 			if (rv == -1) {
-				error = gfarm_errno_to_error(errno);
+				e_read = gfarm_errno_to_error(errno);
 				break;
 			}
 			r_off += rv;
@@ -2008,7 +2035,7 @@ gfs_sendfile_common(struct gfp_xdr *conn, int r_fd, gfarm_off_t r_off,
 			gfarm_iostat_local_add(GFARM_IOSTAT_IO_RBYTES, rv);
 			e = gfp_xdr_send(conn, "b", rv, buffer);
 			if (e != GFARM_ERR_NO_ERROR) {
-				error = e;
+				e_conn = e;
 				gflog_debug(GFARM_MSG_1002180,
 				    "gfp_xdr_send() failed: %s",
 				    gfarm_error_string(e));
@@ -2032,23 +2059,29 @@ gfs_sendfile_common(struct gfp_xdr *conn, int r_fd, gfarm_off_t r_off,
 
 	/* send EOF mark */
 	e = gfp_xdr_send(conn, "b", 0, buffer);
-	if (error == GFARM_ERR_NO_ERROR)
-		error = e;
+	if (e_conn == GFARM_ERR_NO_ERROR)
+		e_conn = e;
+	if (src_errp != NULL)
+		*src_errp = e_read;
 	if (sentp != NULL)
 		*sentp = sent;
-	return (error);
+	return (e_conn);
 }
 
 /*
  * commonly used by both clients and gfsd
  *
+ * return value: connection related error
+ * *dst_errp: set even if an error happens.
  * *recvp: set even if an error happens.
  */
 gfarm_error_t
-gfs_recvfile_common(struct gfp_xdr *conn, int w_fd, gfarm_off_t w_off,
+gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
+	int w_fd, gfarm_off_t w_off,
 	EVP_MD_CTX *md_ctx, gfarm_off_t *recvp)
 {
-	gfarm_error_t e, e_write = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e; /* connection related error */
+	gfarm_error_t e_write = GFARM_ERR_NO_ERROR;
 	gfarm_off_t written = 0;
 	int mode_unknown = 1, mode_thread_safe = 1;
 
@@ -2132,9 +2165,11 @@ gfs_recvfile_common(struct gfp_xdr *conn, int w_fd, gfarm_off_t w_off,
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
 	}
+	if (dst_errp != NULL)
+		*dst_errp = e_write;
 	if (recvp != NULL)
 		*recvp = written;
-	return (e != GFARM_ERR_NO_ERROR ? e : e_write);
+	return (e);
 }
 
 gfarm_error_t
@@ -2144,6 +2179,7 @@ gfs_client_sendfile(struct gfs_connection *gfs_server,
 	gfarm_off_t len, gfarm_off_t *sentp)
 {
 	gfarm_error_t e, e2;
+	gfarm_int32_t src_err = GFARM_ERR_NO_ERROR;
 	gfarm_off_t written = 0;
 
 	if ((e = gfs_client_rpc_request(gfs_server, GFS_PROTO_BULKWRITE, "il",
@@ -2152,8 +2188,8 @@ gfs_client_sendfile(struct gfs_connection *gfs_server,
 		    "gfs_client_sendfile: GFS_PROTO_BULKWRITE(%d, %lld): %s",
 		    remote_w_fd, (long long)w_off, gfarm_error_string(e));
 	} else {
-		e = gfs_sendfile_common(gfs_server->conn, local_r_fd, r_off,
-		    len, NULL, NULL);
+		e = gfs_sendfile_common(gfs_server->conn, &src_err,
+		    local_r_fd, r_off, len, NULL, NULL);
 		if (IS_CONNECTION_ERROR(e)) {
 			gfs_client_execute_hook_for_connection_error(
 			    gfs_server);
@@ -2167,7 +2203,7 @@ gfs_client_sendfile(struct gfs_connection *gfs_server,
 	}
 	if (sentp != NULL)
 		*sentp = written;
-	return (e);
+	return (e != GFARM_ERR_NO_ERROR ? e : src_err);
 }
 
 gfarm_error_t
@@ -2177,7 +2213,8 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 	gfarm_off_t len, gfarm_off_t *recvp)
 {
 	gfarm_error_t e, e2;
-	gfarm_int32_t e_read;
+	gfarm_int32_t src_err = GFARM_ERR_NO_ERROR;
+	gfarm_int32_t dst_err = GFARM_ERR_NO_ERROR;
 	gfarm_off_t written = 0;
 	int eof;
 
@@ -2189,13 +2226,13 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 		    remote_r_fd, (long long)len, (long long)r_off,
 		    gfarm_error_string(e));
 	} else {
-		e = gfs_recvfile_common(gfs_server->conn, local_w_fd, w_off,
-		    NULL, &written);
+		e = gfs_recvfile_common(gfs_server->conn, &dst_err,
+		    local_w_fd, w_off, NULL, &written);
 		if (IS_CONNECTION_ERROR(e)) {
 			e2 = GFARM_ERR_NO_ERROR;
 		} else { /* read the rest, even if a local error happens */
 			e2 = gfp_xdr_recv(gfs_server->conn, 0, &eof, "i",
-			    &e_read);
+			    &src_err);
 			if (e2 == GFARM_ERR_NO_ERROR && eof)
 				e2 = GFARM_ERR_PROTOCOL;
 			
@@ -2206,7 +2243,8 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 			gfs_client_purge_from_cache(gfs_server);
 		}
 		if (e == GFARM_ERR_NO_ERROR)
-			e = e2 != GFARM_ERR_NO_ERROR ? e2 : e_read;
+			e = e2 != GFARM_ERR_NO_ERROR ? e2 :
+			    src_err != GFARM_ERR_NO_ERROR ? src_err : dst_err;
 	}
 	if (recvp != NULL)
 		*recvp = written;
@@ -2215,18 +2253,31 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 
 #ifndef __KERNEL__ /* gfsd only */
 /*
- * GFS_PROTO_REPLICA_RECV is only used by gfsd,
- * but defined here for better maintainability.
+ * GFS_PROTO_REPLICA_RECV and GFS_PROTO_REPLICA_RECV_CKSUM are
+ * only used by gfsd, but defined here for better maintainability.
  */
 
-gfarm_error_t
-gfs_client_replica_recv(struct gfs_connection *gfs_server,
-	gfarm_ino_t ino, gfarm_uint64_t gen, gfarm_int32_t local_fd)
+static gfarm_error_t
+gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
+	gfarm_int32_t *src_errp, gfarm_int32_t *dst_errp,
+	gfarm_ino_t ino, gfarm_uint64_t gen, gfarm_int64_t filesize,
+	const char *cksum_type, size_t cksum_len, const char *cksum,
+	gfarm_int32_t cksum_request_flags,
+	size_t src_cksum_size, size_t *src_cksum_lenp, char *src_cksum,
+	gfarm_int32_t *cksum_result_flagsp,
+	int local_fd, EVP_MD_CTX *md_ctx, int cksum_protocol)
 {
 	gfarm_error_t e, e_rpc;
 
-	e = gfs_client_rpc_request(gfs_server, GFS_PROTO_REPLICA_RECV, "ll",
-	    ino, gen);
+
+	if (cksum_protocol) {
+		e = gfs_client_rpc_request(gfs_server,
+		    GFS_PROTO_REPLICA_RECV_CKSUM, "lllsbi", ino, gen, filesize,
+		    cksum_type, cksum_len, cksum, cksum_request_flags);
+	} else {
+		e = gfs_client_rpc_request(gfs_server,
+		    GFS_PROTO_REPLICA_RECV, "ll", ino, gen);
+	}
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(gfs_server->conn);
 	if (IS_CONNECTION_ERROR(e)) {
@@ -2240,12 +2291,21 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 		return (e);
 	}
 
-	e = gfs_recvfile_common(gfs_server->conn, local_fd, 0, NULL, NULL);
+	e = gfs_recvfile_common(gfs_server->conn, dst_errp,
+	    local_fd, 0, md_ctx, NULL);
 	if (IS_CONNECTION_ERROR(e)) {
 		gfs_client_execute_hook_for_connection_error(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);
 	} else { /* read the rest, even if a local error happens */
-		e_rpc = gfs_client_rpc_result(gfs_server, 0, "");
+		if (cksum_protocol) {
+			e_rpc = gfs_client_rpc_result_w_errcode(gfs_server, 0,
+			    src_errp, "bi",
+			    src_cksum_size, src_cksum_lenp, src_cksum,
+			    cksum_result_flagsp);
+		} else {
+			e_rpc = gfs_client_rpc_result_w_errcode(gfs_server, 0,
+			    src_errp, "");
+		}
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e_rpc;
 	}
@@ -2256,6 +2316,34 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 	}
 	return (e);
 }
+
+gfarm_error_t
+gfs_client_replica_recv_md(struct gfs_connection *gfs_server,
+	gfarm_int32_t *src_errp, gfarm_int32_t *dst_errp,
+	gfarm_ino_t ino, gfarm_uint64_t gen, int local_fd, EVP_MD_CTX *md_ctx)
+{
+	return (gfs_client_replica_recv_common(gfs_server, src_errp, dst_errp,
+	    ino, gen, 0, NULL, 0, NULL, 0, 0, NULL, NULL, NULL,
+	    local_fd, md_ctx, 0));
+}
+
+gfarm_error_t
+gfs_client_replica_recv_cksum_md(struct gfs_connection *gfs_server,
+	gfarm_int32_t *src_errp, gfarm_int32_t *dst_errp,
+	gfarm_ino_t ino, gfarm_uint64_t gen, gfarm_int64_t filesize,
+	const char *cksum_type, size_t cksum_len, const char *cksum,
+	gfarm_int32_t cksum_request_flags,
+	size_t src_cksum_size, size_t *src_cksum_lenp, char *src_cksum,
+	gfarm_int32_t *cksum_result_flagsp,
+	int local_fd, EVP_MD_CTX *md_ctx)
+{
+	return (gfs_client_replica_recv_common(gfs_server, src_errp, dst_errp,
+	    ino, gen, filesize,
+	    cksum_type, cksum_len, cksum, cksum_request_flags,
+	    src_cksum_size, src_cksum_lenp, src_cksum, cksum_result_flagsp,
+	    local_fd, md_ctx, 1));
+}
+
 #endif /* __KERNEL__ */
 
 /*

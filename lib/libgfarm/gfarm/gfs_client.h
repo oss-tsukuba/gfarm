@@ -97,8 +97,17 @@ gfarm_error_t gfs_client_lock_info(struct gfs_connection *, gfarm_int32_t,
 	gfarm_off_t *, gfarm_off_t *, gfarm_int32_t *, char**, gfarm_pid_t **);
 gfarm_error_t gfs_client_replica_add_from(struct gfs_connection *,
 	char *, gfarm_int32_t, gfarm_int32_t);
-gfarm_error_t gfs_client_replica_recv(struct gfs_connection *,
-	gfarm_ino_t, gfarm_uint64_t, gfarm_int32_t);
+#ifdef GFARM_USE_OPENSSL /* this requires <openssl/evp.h> */
+gfarm_error_t gfs_client_replica_recv_cksum_md(struct gfs_connection *,
+	gfarm_int32_t *, gfarm_int32_t *,
+	gfarm_ino_t, gfarm_uint64_t, gfarm_int64_t,
+	const char *, size_t, const char *, gfarm_int32_t,
+	size_t, size_t *, char *, gfarm_int32_t *,
+	int, EVP_MD_CTX *);
+gfarm_error_t gfs_client_replica_recv_md(struct gfs_connection *,
+	gfarm_int32_t *, gfarm_int32_t *,
+	gfarm_ino_t, gfarm_uint64_t, int, EVP_MD_CTX *);
+#endif
 gfarm_error_t gfs_client_statfs(struct gfs_connection *, char *,
 	gfarm_int32_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,
@@ -148,10 +157,10 @@ gfarm_error_t gfs_client_fhremove(struct gfs_connection *, gfarm_ino_t);
 #ifdef GFARM_USE_OPENSSL /* this requires <openssl/evp.h> */
 /* commonly used by both clients and gfsd */
 struct gfp_xdr;
-gfarm_error_t gfs_sendfile_common(struct gfp_xdr *, int, gfarm_off_t,
-	gfarm_off_t, EVP_MD_CTX *, gfarm_off_t *);
-gfarm_error_t gfs_recvfile_common(struct gfp_xdr *, int,
-	gfarm_off_t, EVP_MD_CTX *, gfarm_off_t *);
+gfarm_error_t gfs_sendfile_common(struct gfp_xdr *, gfarm_int32_t *,
+	int, gfarm_off_t, gfarm_off_t, EVP_MD_CTX *, gfarm_off_t *);
+gfarm_error_t gfs_recvfile_common(struct gfp_xdr *, gfarm_int32_t *,
+	int, gfarm_off_t, EVP_MD_CTX *, gfarm_off_t *);
 #endif
 
 /*

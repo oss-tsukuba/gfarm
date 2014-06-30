@@ -3269,7 +3269,7 @@ fhclose_write(struct peer *peer, struct host *spool_host, struct inode *inode,
 	old_size = inode_get_size(inode);
 	/* closing must be done regardless of the result of db_begin(). */
 	e = inode_file_handle_update(inode, size, atimep, mtimep, spool_host,
-	    old_genp, new_genp, &generation_updated, trace_logp);
+	    old_genp, new_genp, &generation_updated, trace_logp, diag);
 	if (e == GFARM_ERR_NO_ERROR && generation_updated) {
 		flags = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
 		if ((e = peer_add_pending_new_generation_by_cookie(
@@ -4009,20 +4009,11 @@ gfm_server_replicate_file_from_to(struct peer *peer, int from_client, int skip)
 	struct process *process;
 	gfarm_int32_t cfd;
 	struct host *src, *dst;
-	struct inode *inode;
-	struct file_replicating *fr;
-	int srcport;
-	gfarm_ino_t ino;
-	gfarm_int64_t gen;
 	static const char diag[] = "GFM_PROTO_REPLICATE_FILE_FROM_TO";
 
 #ifdef __GNUC__ /* shut up stupid warning by gcc */
 	src = NULL;
 	dst = NULL;
-	fr = NULL;
-	srcport = 0;
-	ino = 0;
-	gen = 0;
 #endif
 
 	e = gfm_server_get_request(peer, diag, "ssi",
@@ -4045,30 +4036,12 @@ gfm_server_replicate_file_from_to(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_UNKNOWN_HOST;
 	else if ((dst = host_lookup(dsthost)) == NULL)
 		e = GFARM_ERR_UNKNOWN_HOST;
-	else if ((e = process_prepare_to_replicate(process, peer, src, dst,
-	    cfd, flags, &fr, &inode, diag)) != GFARM_ERR_NO_ERROR)
-		;
-	else {
-		srcport = host_port(src);
-		ino = inode_get_number(inode);
-		gen = inode_get_gen(inode);
-	}
+	else
+		e = process_replication_request(process, peer, src, dst,
+		    cfd, flags, diag);
 
 	giant_unlock();
 
-	if (e == GFARM_ERR_NO_ERROR) {
-		/*
-		 * host_name() is always callable without giant_lock,
-		 * and even accessible after the removal of the host.
-		 */
-		e = async_back_channel_replication_request(
-		    host_name(src), srcport, dst, ino, gen, fr);
-		if (e != GFARM_ERR_NO_ERROR) {
-			giant_lock();
-			file_replicating_free_by_error_before_request(fr);
-			giant_unlock();
-		}
-	}
 	free(srchost);
 	free(dsthost);
 

@@ -37,6 +37,7 @@ int host_ncpu(struct host *);
 int host_flags(struct host *);
 char *host_fsngroup(struct host *);
 int host_supports_async_protocols(struct host *);
+int host_supports_cksum_protocols(struct host *);
 int host_is_disk_available(struct host *, gfarm_off_t);
 
 #ifdef COMPAT_GFARM_2_3

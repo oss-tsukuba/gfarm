@@ -150,10 +150,17 @@ struct file_replicating {
 	 * or, NULL
 	 */
 	struct dead_file_copy *cleanup;
+
+	/* GFS_PROTO_REPLICATION_CKSUM_REQUEST */
+	gfarm_int32_t cksum_request_flags;
 };
 
 void file_replicating_set_handle(struct file_replicating *, gfarm_int64_t);
+void file_replicating_set_cksum_request_flags(struct file_replicating *,
+	gfarm_int32_t);
 gfarm_int64_t file_replicating_get_handle(struct file_replicating *);
+gfarm_int32_t file_replicating_get_cksum_request_flags(
+	struct file_replicating *);
 struct peer *file_replicating_get_peer(struct file_replicating *);
 
 gfarm_error_t peer_replicating_new(struct peer *, struct host *,
@@ -161,7 +168,8 @@ gfarm_error_t peer_replicating_new(struct peer *, struct host *,
 void peer_replicating_free(struct file_replicating *);
 gfarm_error_t peer_replicated(struct peer *,
 	struct host *, gfarm_ino_t, gfarm_int64_t,
-	gfarm_int64_t, gfarm_int32_t, gfarm_int32_t, gfarm_off_t);
+	gfarm_int64_t, gfarm_int32_t, gfarm_int32_t, gfarm_off_t,
+	int, char *, size_t, char *, gfarm_int32_t);
 
 /* only used by gfmd channel */
 struct gfmdc_peer_record *peer_get_gfmdc_record(struct peer *);

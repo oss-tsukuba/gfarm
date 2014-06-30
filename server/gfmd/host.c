@@ -451,6 +451,13 @@ host_supports_async_protocols(struct host *h)
 		>= GFS_PROTOCOL_VERSION_V2_4);
 }
 
+int
+host_supports_cksum_protocols(struct host *h)
+{
+	return (abstract_host_get_protocol_version(&h->ah)
+		>= GFS_PROTOCOL_VERSION_V2_6);
+}
+
 static void
 back_channel_mutex_lock(struct host *h, const char *diag)
 {

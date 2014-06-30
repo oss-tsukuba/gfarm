@@ -206,6 +206,7 @@ process_del_ref(struct process *process)
 	struct file_opening *fo;
 	struct process_link *pl, *pln;
 	struct process *child;
+	const char diag[] = "process_del_ref";
 
 	if (--process->refcount > 0)
 		return (1); /* still referenced */
@@ -225,7 +226,7 @@ process_del_ref(struct process *process)
 		fo = process->filetab[fd];
 		if (fo != NULL) {
 			mode = inode_get_mode(fo->inode);
-			inode_close_read(fo, NULL, NULL);
+			inode_close_read(fo, NULL, NULL, diag);
 			file_opening_free(fo, mode);
 		}
 	}
@@ -647,7 +648,7 @@ process_new_generation_done(struct process *process, struct peer *peer, int fd,
 			fo->u.f.spool_host = NULL;
 		} else {
 			mode = inode_get_mode(fo->inode);
-			inode_close(fo, NULL);
+			inode_close(fo, NULL, diag);
 
 			file_opening_free(fo, mode);
 			process->filetab[fd] = NULL;
@@ -921,7 +922,7 @@ process_close_file(struct process *process, struct peer *peer, int fd,
 		}
 	}
 
-	inode_close(fo, trace_logp);
+	inode_close(fo, trace_logp, diag);
 	file_opening_free(fo, mode);
 	process->filetab[fd] = NULL;
 	return (GFARM_ERR_NO_ERROR);
@@ -959,7 +960,7 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	inode_close_read(fo, atime, NULL);
+	inode_close_read(fo, atime, NULL, diag);
 	file_opening_free(fo, mode);
 	process->filetab[fd] = NULL;
 	return (GFARM_ERR_NO_ERROR);
@@ -1030,7 +1031,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	    == GFARM_ERR_ALREADY_EXISTS) &&
 
 	    inode_file_update(fo, size, atime, mtime, old_genp, new_genp,
-	    trace_logp)) {
+	    trace_logp, diag)) {
 
 		flags = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
 	}
@@ -1047,7 +1048,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		fo->u.f.spool_opener = NULL;
 		fo->u.f.spool_host = NULL;
 	} else {
-		inode_close(fo, NULL);
+		inode_close(fo, NULL, diag);
 
 		file_opening_free(fo, mode);
 		process->filetab[fd] = NULL;
@@ -1080,7 +1081,7 @@ process_cksum_set(struct process *process, struct peer *peer, int fd,
 		    gfarm_error_string(e));
 		return (e);
 	}
-	return (inode_cksum_set(fo, cksum_type, cksum_len, cksum,
+	return (file_opening_cksum_set(fo, cksum_type, cksum_len, cksum,
 	    flags, mtime));
 }
 
@@ -1105,7 +1106,7 @@ process_cksum_get(struct process *process, struct peer *peer, int fd,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 
-	return (inode_cksum_get(fo, cksum_typep, cksum_lenp, cksump,
+	return (file_opening_cksum_get(fo, cksum_typep, cksum_lenp, cksump,
 	    flagsp));
 }
 
@@ -1156,7 +1157,7 @@ process_inherit_fd(struct process *process, gfarm_int32_t parent_fd,
 	    (fo->flag & GFARM_FILE_CREATE) != 0, peer, spool_host, fdp));
 }
 
-gfarm_error_t
+static gfarm_error_t
 process_prepare_to_replicate(struct process *process, struct peer *peer,
 	struct host *src, struct host *dst, int fd, gfarm_int32_t flags,
 	struct file_replicating **frp, struct inode **inodep, const char *diag)
@@ -1193,6 +1194,21 @@ process_prepare_to_replicate(struct process *process, struct peer *peer,
 
 	*inodep = fo->inode;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+process_replication_request(struct process *process, struct peer *peer,
+	struct host *src, struct host *dst, int fd, gfarm_int32_t flags,
+	const char *diag)
+{
+	gfarm_error_t e;
+	struct inode *inode;
+	struct file_replicating *fr;
+
+	if ((e = process_prepare_to_replicate(process, peer, src, dst,
+	    fd, flags, &fr, &inode, diag)) == GFARM_ERR_NO_ERROR)
+		e = inode_replication_request(src, dst, inode, fr, diag);
+	return (e);
 }
 
 gfarm_error_t

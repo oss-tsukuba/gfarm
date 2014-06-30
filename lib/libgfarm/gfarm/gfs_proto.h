@@ -12,10 +12,12 @@
 /*
  * 1: protocol until gfarm 2.3
  * 2: protocol since gfarm 2.4
+ * 3: protocol since gfarm 2.6
  */
 #define GFS_PROTOCOL_VERSION_V2_3	1
 #define GFS_PROTOCOL_VERSION_V2_4	2
-#define GFS_PROTOCOL_VERSION		GFS_PROTOCOL_VERSION_V2_4
+#define GFS_PROTOCOL_VERSION_V2_6	3
+#define GFS_PROTOCOL_VERSION		GFS_PROTOCOL_VERSION_V2_6
 
 enum gfs_proto_command {
 	/* from client */
@@ -42,23 +44,30 @@ enum gfs_proto_command {
 	GFS_PROTO_REPLICA_RECV,
 
 	GFS_PROTO_STATFS,
-	GFS_PROTO_COMMAND,
+	GFS_PROTO_COMMAND,			/* gfarm-1.x only */
 
-	/* from gfmd */
+	/* from gfmd (i.e. back channel) */
 
 	GFS_PROTO_FHSTAT,
 	GFS_PROTO_FHREMOVE,
 	GFS_PROTO_STATUS,
-	GFS_PROTO_REPLICATION_REQUEST,
-	GFS_PROTO_REPLICATION_CANCEL,
+	GFS_PROTO_REPLICATION_REQUEST,		/* since gfarm-2.4.0 */
+	GFS_PROTO_REPLICATION_CANCEL,		/* since gfarm-2.4.0 */
 
 	/* from client */
 
-	GFS_PROTO_PROCESS_RESET,
-	GFS_PROTO_WRITE,
-	GFS_PROTO_CKSUM,
-	GFS_PROTO_BULKREAD,
-	GFS_PROTO_BULKWRITE,
+	GFS_PROTO_PROCESS_RESET,		/* since gfarm-2.5.3 */
+	GFS_PROTO_WRITE,			/* since gfarm-2.5.8 */
+
+	GFS_PROTO_CKSUM,			/* since gfarm-2.5.8.5 */
+	GFS_PROTO_BULKREAD,			/* since gfarm-2.6.0 */
+	GFS_PROTO_BULKWRITE,			/* since gfarm-2.6.0 */
+	GFS_PROTO_REPLICA_RECV_CKSUM,		/* since gfarm-2.6.0 */
+
+	/* from gfmd (i.e. back channel) */
+
+	GFS_PROTO_REPLICATION_CKSUM_REQUEST,	/* since gfarm-2.6.0 */
+
 };
 
 /*
@@ -83,6 +92,8 @@ enum gfs_proto_command_server {
 	GFS_PROTO_COMMAND_FD_OUTPUT,
 };
 
+#define GFARM_DEFAULT_COMMAND_IOBUF_SIZE 0x4000
+
 /*
  * sub protocol of GFS_PROTO_FSYNC
  */
@@ -92,9 +103,26 @@ enum gfs_proto_fsync_operation {
 	GFS_PROTO_FSYNC_WITH_METADATA
 };
 
-#define GFARM_DEFAULT_COMMAND_IOBUF_SIZE 0x4000
+/*
+ * GFS_PROTO_REPLICATION_REQUEST and GFS_PROTO_REPLICATION_CKSUM_REQUEST
+ */
+#define GFS_PROTO_REPLICATION_HANDLE_INVALID	((gfarm_int64_t)-1)
 
-#define GFSD_MAX_PASSING_FD 5
+/*
+ * GFS_PROTO_REPLICATION_CKSUM_REQUEST/GFS_PROTO_REPLICA_RECV_CKSUM flags
+ * see GFM_PROTO_CKSUM_GET flags as well
+ */
+
+#define	GFS_PROTO_REPLICATION_CKSUM_REQFLAG_MAYBE_EXPIRED	0x00000001
+#define	GFS_PROTO_REPLICATION_CKSUM_REQFLAG_SRC_SUPPORTS	0x80000000
+/* the following are not protocol flags, but only used by gfmd internally */
+#define	GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_MASK	0x00ff0000
+#define	GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_SUM_AVAIL	0x00400000
+#define	GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED	0x00800000
+
+/*
+ * connection parameters
+ */
 
 /* used for both gfsd local privilege and global username of sharedsecret */
 #define GFSD_USERNAME	"_gfarmfs"
