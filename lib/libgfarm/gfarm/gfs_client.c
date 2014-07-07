@@ -2182,7 +2182,7 @@ gfs_client_sendfile(struct gfs_connection *gfs_server,
 	gfarm_int32_t src_err = GFARM_ERR_NO_ERROR;
 	gfarm_off_t written = 0;
 
-	if ((e = gfs_client_rpc_request(gfs_server, GFS_PROTO_BULKWRITE, "il",
+	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_BULKWRITE, "il/",
 	    remote_w_fd, w_off)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfs_client_sendfile: GFS_PROTO_BULKWRITE(%d, %lld): %s",
@@ -2229,6 +2229,9 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 		e = gfs_recvfile_common(gfs_server->conn, &dst_err,
 		    local_w_fd, w_off, NULL, &written);
 		if (IS_CONNECTION_ERROR(e)) {
+			gfs_client_execute_hook_for_connection_error(
+			    gfs_server);
+			gfs_client_purge_from_cache(gfs_server);
 			e2 = GFARM_ERR_NO_ERROR;
 		} else { /* read the rest, even if a local error happens */
 			e2 = gfp_xdr_recv(gfs_server->conn, 0, &eof, "i",

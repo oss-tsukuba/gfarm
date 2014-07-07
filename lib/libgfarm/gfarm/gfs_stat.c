@@ -246,11 +246,8 @@ gfs_fstat_cksum(GFS_File gf, struct gfs_stat_cksum *s)
 	gfarm_error_t e;
 
 	closure.st = s;
-	e = gfm_client_compound_fd_op(gfs_pio_metadb(gf), gfs_pio_fileno(gf),
-	    gfm_stat_cksum_request,
-	    gfm_stat_cksum_result,
-	    NULL,
-	    &closure);
+	e = gfm_client_compound_file_op_readonly(gf,
+	    gfm_stat_cksum_request, gfm_stat_cksum_result, NULL, &closure);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1003747, "gfm_fstat_cksum(%s): %s",
 		    gfs_pio_url(gf), gfarm_error_string(e));
@@ -290,8 +287,9 @@ gfs_fstat_cksum_set(GFS_File gf, struct gfs_stat_cksum *s)
 	gfarm_error_t e;
 
 	closure.st = s;
-	e = gfm_client_compound_fd_op(gfs_pio_metadb(gf), gfs_pio_fileno(gf),
+	e = gfm_client_compound_file_op_modifiable(gf,
 	    gfm_stat_cksum_set_request, gfm_stat_cksum_set_result, NULL,
+	    NULL /* GFM_PROTO_CKSUM_SET never returns ALREADY_EXISTS */,
 	    &closure);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1003750, "gfm_fstat_cksum_set(%s): %s",

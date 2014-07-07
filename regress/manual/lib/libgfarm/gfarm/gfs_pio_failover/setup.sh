@@ -18,5 +18,4 @@ gfreg $TMPF $GF_TMPD/1
 gfreg $TMPF $GF_TMPD/2
 gfreg $TMPF $GF_TMPD/3
 
-rm -f $TMPF
-
+mkdir $TMPD

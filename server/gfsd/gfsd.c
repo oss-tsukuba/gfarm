@@ -2885,7 +2885,7 @@ gfs_server_bulkread(struct gfp_xdr *client)
 void
 gfs_server_bulkwrite(struct gfp_xdr *client)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	gfarm_int32_t dst_err = GFARM_ERR_NO_ERROR;
 	gfarm_int32_t fd;
 	gfarm_int64_t offset;
@@ -2907,7 +2907,16 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
 	else if (offset < 0)
 		e = GFARM_ERR_INVALID_ARGUMENT;
-	else {
+	else
+		e = GFARM_ERR_NO_ERROR;
+	e2 = gfp_xdr_send(client, "i", (gfarm_int32_t)e);
+	if (e2 == GFARM_ERR_NO_ERROR)
+		e2 = gfp_xdr_flush(client);
+	if (e2 != GFARM_ERR_NO_ERROR) {
+		fatal(GFARM_MSG_UNFIXED, "%s: put reply: %s",
+		    diag, gfarm_error_string(e2));
+	}
+	if (e == GFARM_ERR_NO_ERROR) {
 		GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 		gfs_profile(gfarm_gettimerval(&t1));
 
@@ -2947,11 +2956,14 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 			fe->write_size += written;
 			fe->write_time += gfarm_timerval_sub(&t2, &t1);
 		);
-	}
 
-	gfs_server_put_reply(client, diag,
-	    e != GFARM_ERR_NO_ERROR ? e : dst_err, "l",
-	    (gfarm_int64_t)written);
+		gfs_server_put_reply(client, diag,
+		    e != GFARM_ERR_NO_ERROR ? e : dst_err, "l",
+		    (gfarm_int64_t)written);
+	} else if (debug_mode) {
+		gflog_debug(GFARM_MSG_UNFIXED, "reply: %s: %d (%s)",
+		    diag, (int)e, gfarm_error_string(e));
+	}
 }
 
 void

@@ -1,5 +1,6 @@
 PROG=./gfs_pio_failover_test
 TMPF=/tmp/gfs_pio_failover_test.file
+TMPD=/tmp/gfs_pio_failover_test.dir
 GF_TMPF=$TMPF
 GF_TMPF_SLNK=/tmp/gfs_pio_failover_test.slnk
 GF_TMPD=/tmp/gfs_pio_failover_test.dir
