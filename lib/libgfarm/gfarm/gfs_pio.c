@@ -1825,13 +1825,18 @@ gfarm_error_t
 gfs_pio_cksum(GFS_File gf, const char *type, struct gfs_stat_cksum *cksum)
 {
 	gfarm_error_t e = gfs_pio_check_view_default(gf);
+	int nretries = GFS_FAILOVER_RETRY_COUNT;
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003743,
 		    "gfs_pio_cksum: %s", gfarm_error_string(e));
 		return (e);
 	}
-	return (gf->ops->view_cksum(gf, type, cksum));
+	do {
+		e = (*gf->ops->view_cksum)(gf, type, cksum);
+	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
+	    gfs_pio_failover_check_retry(gf, &e));
+	return (e);
 }
 
 /*

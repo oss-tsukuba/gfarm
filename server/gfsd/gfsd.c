@@ -3060,6 +3060,12 @@ gfs_server_cksum(struct gfp_xdr *client)
 
 	gfs_server_get_request(client, "cksum", "is", &fd, &type);
 
+	if (!fd_usable_to_gfmd) {
+		gfs_server_put_reply(client, diag, GFARM_ERR_GFMD_FAILED_OVER,
+		    "");
+		return;
+	}
+
 	if ((fe = file_table_entry(fd)) == NULL)
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
 	else {
