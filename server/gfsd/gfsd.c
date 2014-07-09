@@ -1058,6 +1058,9 @@ msgdigest_init(const char *md_type_name, EVP_MD_CTX *md_ctx,
 {
 	const EVP_MD *md_type;
 
+	if (md_type_name == NULL || md_type_name[0] == '\0')
+		return (0); /* DO NOT calculate message digest */
+
 	md_type =
 	    EVP_get_digestbyname(gfarm_digest_name_to_openssl(md_type_name));
 	if (md_type == NULL) {
@@ -1266,10 +1269,7 @@ file_table_add(gfarm_int32_t net_fd, char *path,
 	fe->gen = fe->new_gen = gen;
 
 	/* checksum */
-	if (cksum_type == NULL || cksum_type[0] == '\0') {
-		free(cksum_type);
-		fe->md_type_name = NULL;
-	} else if (cksum_len > sizeof(fe->md_string)) {
+	if (cksum_len > sizeof(fe->md_string)) {
 		gflog_warning(GFARM_MSG_UNFIXED,
 		    "%s: inum %lld gen %lld: "
 		    "digest type <%s> len:%zd is larger than %zd: unsupported",
@@ -3145,34 +3145,38 @@ gfs_server_statfs(struct gfp_xdr *client)
 
 static gfarm_error_t
 replica_adding(struct gfp_xdr *client, gfarm_int32_t net_fd, char *src_host,
-	gfarm_ino_t *inop, gfarm_uint64_t *genp,
-	gfarm_int64_t *mtime_secp, gfarm_int32_t *mtime_nsecp,
+	gfarm_ino_t *inop, gfarm_uint64_t *genp, gfarm_off_t *filesizep,
+	char **cksum_typep, size_t cksum_size, size_t *cksum_lenp, char *cksum,
+	gfarm_int32_t *cksum_request_flagsp,
 	const char *request)
 {
 	gfarm_error_t e;
 	gfarm_ino_t ino;
 	gfarm_uint64_t gen;
-	gfarm_int64_t mtime_sec;
-	gfarm_int32_t mtime_nsec;
-	static const char diag[] = "GFM_PROTO_REPLICA_ADDING";
+	gfarm_off_t filesize;
+	char *cksum_type;
+	size_t cksum_len;
+	gfarm_int32_t cksum_request_flags;
+	static const char diag[] = "GFM_PROTO_REPLICA_ADDING_CKSUM";
 
 	if ((e = gfm_client_compound_put_fd_request(net_fd, diag))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: compound_put_fd_request request=%s: %s",
 		    diag, request, gfarm_error_string(e));
-	if ((e = gfm_client_replica_adding_request(gfm_server, src_host))
-	    != GFARM_ERR_NO_ERROR)
+	else if ((e = gfm_client_replica_adding_cksum_request(gfm_server,
+	    src_host)) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: gfm_client_replica_adding_request request=%s: %s",
 		    diag, request, gfarm_error_string(e));
-	if ((e = gfm_client_compound_put_fd_result(client, diag))
+	else if ((e = gfm_client_compound_put_fd_result(client, diag))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_put_fd_problem(GFARM_MSG_1003356, client, e,
 		    "%s: compound_put_fd_result reqeust=%s: %s",
 		    diag, request, gfarm_error_string(e));
-	if ((e = gfm_client_replica_adding_result(gfm_server,
-	    &ino, &gen, &mtime_sec, &mtime_nsec))
+	else if ((e = gfm_client_replica_adding_cksum_result(gfm_server,
+	    &ino, &gen, &filesize,
+	    &cksum_type, cksum_size, &cksum_len, cksum, &cksum_request_flags))
 	    != GFARM_ERR_NO_ERROR) {
 		if (debug_mode)
 			gflog_info(GFARM_MSG_1000510,
@@ -3183,11 +3187,14 @@ replica_adding(struct gfp_xdr *client, gfarm_int32_t net_fd, char *src_host,
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: compound_end request=%s: %s",
 		    diag, request, gfarm_error_string(e));
+		free(cksum_type);
 	} else {
 		*inop = ino;
 		*genp = gen;
-		*mtime_secp = mtime_sec;
-		*mtime_nsecp = mtime_nsec;
+		*filesizep = filesize;
+		*cksum_typep = cksum_type;
+		*cksum_lenp = cksum_len;
+		*cksum_request_flagsp = cksum_request_flags;
 	}
 
 	if (IS_CONNECTION_ERROR(e)) {
@@ -3199,29 +3206,31 @@ replica_adding(struct gfp_xdr *client, gfarm_int32_t net_fd, char *src_host,
 
 static gfarm_error_t
 replica_added(struct gfp_xdr *client, gfarm_int32_t net_fd,
-    gfarm_int32_t flags, gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec,
-    gfarm_off_t size, const char *request)
+	gfarm_int32_t src_err, gfarm_int32_t dst_err, gfarm_int32_t flags,
+	gfarm_int64_t filesize,
+	char *cksum_type, size_t cksum_len, char *cksum,
+	gfarm_int32_t cksum_result_flags, const char *request)
 {
 	gfarm_error_t e;
-	static const char diag[] = "GFM_PROTO_REPLICA_ADDED2";
+	static const char diag[] = "GFM_PROTO_REPLICA_ADDED_CKSUM";
 
 	if ((e = gfm_client_compound_put_fd_request(net_fd, diag))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: compound_put_fd_request request=%s: %s",
 		    diag, request, gfarm_error_string(e));
-	if ((e = gfm_client_replica_added2_request(gfm_server,
-	    flags, mtime_sec, mtime_nsec, size))
-	    != GFARM_ERR_NO_ERROR)
+	else if ((e = gfm_client_replica_added_cksum_request(gfm_server,
+	    src_err, dst_err, flags, filesize, cksum_type, cksum_len, cksum,
+	    cksum_result_flags)) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: gfm_client_replica_added2_request request=%s: %s",
 		    diag, request, gfarm_error_string(e));
-	if ((e = gfm_client_compound_put_fd_result(client, diag))
+	else if ((e = gfm_client_compound_put_fd_result(client, diag))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_put_fd_problem(GFARM_MSG_1003359, client, e,
 		    "%s: compound_put_fd_result request=%s: %s",
 		    diag, request, gfarm_error_string(e));
-	if ((e = gfm_client_replica_added_result(gfm_server))
+	else if ((e = gfm_client_replica_added_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
 		if (debug_mode)
 			gflog_info(GFARM_MSG_1000518,
@@ -3241,21 +3250,80 @@ replica_added(struct gfp_xdr *client, gfarm_int32_t net_fd,
 	return (e);
 }
 
+gfarm_error_t
+replication_cksum_verify(int issue_cksum_protocol,
+	size_t req_cksum_len, const char *req_cksum,
+	size_t src_cksum_len, const char *src_cksum,
+	size_t dst_cksum_len, const char *dst_cksum,
+	const char *diag, const char *issue_diag,
+	gfarm_ino_t diag_ino, gfarm_uint64_t diag_gen,
+	const char *src_hostname, int src_port)
+{
+	gfarm_error_t dst_err = GFARM_ERR_NO_ERROR;
+
+	if (issue_cksum_protocol &&
+	    src_cksum_len > 0 /* 0, if cksum_type is unsupported */ &&
+	    (dst_cksum_len != src_cksum_len ||
+	    memcmp(dst_cksum, src_cksum, src_cksum_len) != 0)) {
+		/* network malfunction */
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: %s %lld:%lld from %s:%d: "
+		    "checksum mismatch during network transfer. "
+		    "<%.*s> expected, but <%.*s>", diag, issue_diag,
+		    (long long)diag_ino, (long long)diag_gen,
+		   src_hostname, src_port,
+		    (int)src_cksum_len, src_cksum,
+		    (int)dst_cksum_len, dst_cksum);
+		dst_err = GFARM_ERR_CHECKSUM_MISMATCH;
+	}
+	if (req_cksum_len > 0 &&
+	    (dst_cksum_len != req_cksum_len ||
+	    memcmp(dst_cksum, req_cksum, req_cksum_len) != 0)) {
+		/* may not be critical.  modified after cksum set */
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: %s %lld:%lld from %s:%d: checksum mismatch. "
+		    "<%.*s> expected, but <%.*s>", diag, issue_diag,
+		    (long long)diag_ino, (long long)diag_gen,
+		    src_hostname, src_port,
+		    (int)req_cksum_len, req_cksum,
+		    (int)dst_cksum_len, dst_cksum);
+		dst_err = GFARM_ERR_CHECKSUM_MISMATCH;
+	}
+	return (dst_err);
+}
+
 void
 gfs_server_replica_add_from(struct gfp_xdr *client)
 {
-	gfarm_int32_t net_fd, local_fd, port, mtime_nsec = 0;
-	gfarm_int64_t mtime_sec = 0;
-	gfarm_ino_t ino = 0;
-	gfarm_uint64_t gen = 0;
-	gfarm_int32_t src_err = GFARM_ERR_NO_ERROR;
-	gfarm_int32_t dst_err = GFARM_ERR_NO_ERROR;
 	gfarm_error_t e, e2;
 	char *host, *path;
 	struct gfs_connection *server;
+	gfarm_int32_t net_fd, local_fd, port;
+
+	gfarm_ino_t ino = 0;
+	gfarm_uint64_t gen = 0;
+	gfarm_off_t filesize = -1;
+	char *cksum_type = NULL;
+	size_t req_cksum_len = 0;
+	char req_cksum[GFM_PROTO_CKSUM_MAXLEN];
+	gfarm_int32_t cksum_request_flags = 0;
+	int issue_cksum_protocol = 0;
+
+	EVP_MD_CTX md_ctx;
+	EVP_MD_CTX *md_ctxp = NULL; /* non-NULL == calculate message-digest */
+	size_t md_strlen = 0;
+	char md_string[EVP_MAX_MD_SIZE * 2 + 1];
+
+	gfarm_int32_t src_err = GFARM_ERR_NO_ERROR;
+	gfarm_int32_t dst_err = GFARM_ERR_NO_ERROR;
+	size_t src_cksum_len = 0;
+	char src_cksum[GFM_PROTO_CKSUM_MAXLEN];
+	gfarm_int32_t cksum_result_flags = 0;
+
 	int flags = 0; /* XXX - for now */
 	struct stat sb;
 	static const char diag[] = "GFS_PROTO_REPLICA_ADD_FROM";
+	const char *issue_diag;
 
 	if (!fd_usable_to_gfmd) {
 		gfs_server_put_reply(client, diag, GFARM_ERR_GFMD_FAILED_OVER,
@@ -3263,11 +3331,11 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		return;
 	}
 
-	sb.st_size = -1;
 	gfs_server_get_request(client, diag, "sii", &host, &port, &net_fd);
 
-	e = replica_adding(client, net_fd, host,
-	    &ino, &gen, &mtime_sec, &mtime_nsec, diag);
+	e = replica_adding(client, net_fd, host, &ino, &gen, &filesize,
+	    &cksum_type, sizeof req_cksum, &req_cksum_len, req_cksum,
+	    &cksum_request_flags, diag);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002176,
 			"replica_adding() failed: %s",
@@ -3279,9 +3347,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
 	free(path);
 	if (local_fd == -1) {
-		e = gfarm_errno_to_error(errno);
-		/* invalidate the creating file replica */
-		mtime_sec = mtime_nsec = 0;
+		e = dst_err = gfarm_errno_to_error(errno);
 		goto adding_cancel;
 	}
 
@@ -3291,35 +3357,71 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		gflog_debug(GFARM_MSG_1002177,
 			"gfs_client_connection_acquire_by_host() failed: %s",
 			gfarm_error_string(e));
-		mtime_sec = mtime_nsec = 0; /* invalidate */
+		src_err = e;
 		goto close;
 	}
-	e = gfs_client_replica_recv_md(server, &src_err, &dst_err,
-	    ino, gen, local_fd, NULL);
+	if (msgdigest_init(cksum_type, &md_ctx, diag, ino, gen))
+		md_ctxp = &md_ctx;
+	if ((cksum_request_flags &
+	    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_SRC_SUPPORTS) != 0) {
+		issue_cksum_protocol = 1;
+		issue_diag = "GFS_PROTO_REPLICA_RECV_CKSUM";
+		e = gfs_client_replica_recv_cksum_md(server,
+		    &src_err, &dst_err, ino, gen, filesize,
+		    cksum_type, req_cksum_len, req_cksum, cksum_request_flags,
+		    sizeof(src_cksum), &src_cksum_len, src_cksum,
+		    &cksum_result_flags,
+		    local_fd, md_ctxp);
+	} else {
+		issue_cksum_protocol = 0;
+		issue_diag = "GFS_PROTO_REPLICA_RECV";
+		e = gfs_client_replica_recv_md(server,
+		    &src_err, &dst_err, ino, gen, local_fd, md_ctxp);
+	}
+
+	if (md_ctxp != NULL) {
+		/*
+		 * call EVP_DigestFinal() even if an error happens,
+		 * otherwise memory leaks
+		 */
+		md_strlen = msgdigest_final_string(md_string, md_ctxp);
+	}
+
 	if (e == GFARM_ERR_NO_ERROR)
 		e = src_err != GFARM_ERR_NO_ERROR ? src_err : dst_err;
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002178,
 			"gfs_client_replica_recv() failed: %s",
 			gfarm_error_string(e));
-		mtime_sec = mtime_nsec = 0; /* invalidate */
 		goto free_server;
 	}
+	if (md_ctxp != NULL)
+		e = dst_err = replication_cksum_verify(issue_cksum_protocol,
+		    req_cksum_len, req_cksum,
+		    src_cksum_len, src_cksum,
+		    md_strlen, md_string,
+		    diag, issue_diag, ino, gen, host, port);
+
 	if (fstat(local_fd, &sb) == -1) {
 		e = gfarm_errno_to_error(errno);
-		mtime_sec = mtime_nsec = 0; /* invalidate */
+	} else {
+		filesize = sb.st_size;
 	}
  free_server:
 	gfs_client_connection_free(server);
  close:
 	close(local_fd);
  adding_cancel:
-	e2 = replica_added(client, net_fd, flags,
-	    mtime_sec, mtime_nsec, sb.st_size, diag);
+	e2 = replica_added(client, net_fd, src_err, dst_err, flags, filesize,
+	    cksum_type != NULL ? cksum_type : "",
+	    issue_cksum_protocol ? src_cksum_len : md_strlen,
+	    issue_cksum_protocol ? src_cksum     : md_string,
+	    cksum_result_flags, diag);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = e2;
  free_host:
 	free(host);
+	free(cksum_type);
 	gfs_server_put_reply(client, diag, e, "");
 	return;
 }
@@ -3453,7 +3555,7 @@ finish:
 			    "checksum mismatch. <%.*s> expected, but <%.*s>",
 			    diag, (long long)ino, (long long)gen,
 			    (int)cksum_len, cksum, (int)md_strlen, md_string);
-#if 1 /* change this value to 0 at a test of client side cksum validation */
+#if 1 /* change this value to 0 at a test of cksum validation on receiver */
 			error = GFARM_ERR_CHECKSUM_MISMATCH;
 #endif
 		}
@@ -3737,35 +3839,12 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 		    gfarm_error_string(src_err),
 		    gfarm_error_string(dst_err));
 	} else if (md_ctxp != NULL) { /* no error case */
-
-		if (rep->issue_cksum_protocol &&
-		    src_cksum_len > 0 /* 0, if cksum_type is unsupported */ &&
-		    (md_strlen != src_cksum_len ||
-		    memcmp(md_string, src_cksum, src_cksum_len) != 0)) {
-			/* network malfunction */
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "%s: %s %lld:%lld from %s:%d: "
-			    "checksum mismatch during network transfer. "
-			    "<%.*s> expected, but <%.*s>", diag, issue_diag,
-			    (long long)rep->ino, (long long)rep->gen,
-			    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
-			    (int)src_cksum_len, src_cksum,
-			    (int)md_strlen, md_string);
-			dst_err = GFARM_ERR_CHECKSUM_MISMATCH;
-		}
-		if (rep->cksum_len > 0 &&
-		    (md_strlen != rep->cksum_len ||
-		    memcmp(md_string, rep->cksum, rep->cksum_len) != 0)) {
-			/* may not be critical.  modified after cksum set */
-			gflog_info(GFARM_MSG_UNFIXED,
-			    "%s: %s %lld:%lld from %s:%d: checksum mismatch. "
-			    "<%.*s> expected, but <%.*s>", diag, issue_diag,
-			    (long long)rep->ino, (long long)rep->gen,
-			    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
-			    (int)rep->cksum_len, rep->cksum,
-			    (int)md_strlen, md_string);
-			dst_err = GFARM_ERR_CHECKSUM_MISMATCH;
-		}
+		dst_err = replication_cksum_verify(rep->issue_cksum_protocol,
+		    rep->cksum_len, rep->cksum,
+		    src_cksum_len, src_cksum,
+		    md_strlen, md_string,
+		    diag, issue_diag, rep->ino, rep->gen,
+		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q));
 	}
 
 	rv = close(local_fd);

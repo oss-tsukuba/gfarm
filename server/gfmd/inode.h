@@ -211,6 +211,8 @@ gfarm_error_t inode_replicated(struct file_replicating *,
 gfarm_error_t inode_prepare_to_replicate(struct inode *, struct user *,
 	struct host *, struct host *, gfarm_int32_t,
 	struct file_replicating **);
+void inode_replication_get_cksum_mode(struct inode *, struct host *,
+	char **, size_t *, char **, gfarm_int32_t *);
 gfarm_error_t inode_replication_request(struct host *, struct host *,
 	struct inode *, struct file_replicating *, const char *);
 

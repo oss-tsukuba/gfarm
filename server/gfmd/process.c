@@ -14,6 +14,7 @@
 #include "gfutil.h"
 #include "auth.h"
 #include "gfm_proto.h"
+#include "gfs_proto.h"
 #include "timespec.h"
 
 #include "subr.h"
@@ -63,6 +64,7 @@ static struct gfarm_id_table_entry_ops process_id_table_ops = {
 struct replication_info {
 	gfarm_int64_t gen;
 	struct host *dst;
+	gfarm_int32_t cksum_request_flags;
 };
 
 static struct file_opening *
@@ -1213,8 +1215,10 @@ process_replication_request(struct process *process, struct peer *peer,
 
 gfarm_error_t
 process_replica_adding(struct process *process, struct peer *peer,
-	struct host *src, struct host *dst, int fd,
-	struct inode **inodep, const char *diag)
+	int cksum_protocol, struct host *src, struct host *dst, int fd,
+	struct inode **inodep,
+	char **cksum_typep, size_t *cksum_lenp, char *cksum,
+	gfarm_int32_t *cksum_request_flagsp, const char *diag)
 {
 	struct file_opening *fo;
 	gfarm_error_t e = process_get_file_opening(process, peer, fd,
@@ -1235,25 +1239,51 @@ process_replica_adding(struct process *process, struct peer *peer,
 	e = process_prepare_to_replicate(process, peer, src, dst, fd,
 	    0, NULL, inodep, diag);
 	if (e == GFARM_ERR_NO_ERROR) {
-		fo->u.f.spool_opener = peer;
+		size_t cksum_len = 0;
+		char *cksum_type = NULL, *cksump = NULL;
+		gfarm_int32_t cksum_request_flags = 0;
+
+		if (cksum_protocol) {
+			inode_replication_get_cksum_mode(fo->inode, src,
+			    &cksum_type, &cksum_len, &cksump,
+			    &cksum_request_flags);
+			cksum_type = strdup_log(cksum_type, diag);
+			if (cksum_type == NULL)
+				return (GFARM_ERR_NO_MEMORY);
+		}
+
 		/*
 		 * do not set spool_host
 		 * since replica is now creating to this host
 		 */
 		GFARM_MALLOC(fo->u.f.replica_source);
-		if (fo->u.f.replica_source == NULL)
+		if (fo->u.f.replica_source == NULL) {
+			free(cksum_type);
 			return (GFARM_ERR_NO_MEMORY);
+		}
 		fo->u.f.replica_source->gen = inode_get_gen(fo->inode);
 		fo->u.f.replica_source->dst = dst;
+		fo->u.f.replica_source->cksum_request_flags =
+		    cksum_request_flags;
+		fo->u.f.spool_opener = peer;
+
+		*cksum_typep = cksum_type;
+		*cksum_lenp = cksum_len;
+		if (cksum_len > 0)
+			memcpy(cksum, cksump, cksum_len);
+		*cksum_request_flagsp = cksum_request_flags;
 	}
 	return (e);
 }
 
 gfarm_error_t
 process_replica_added(struct process *process,
-	struct peer *peer, struct host *spool_host, int fd,
+	struct peer *peer, int cksum_protocol, struct host *spool_host, int fd,
+	gfarm_int32_t src_err, gfarm_int32_t dst_err,
 	int flags, gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec,
-	gfarm_off_t size, const char *diag)
+	gfarm_off_t size,
+	const char *cksum_type, size_t cksum_len, const char *cksum,
+	gfarm_int32_t cksum_result_flags, const char *diag)
 {
 	struct file_opening *fo;
 	struct gfarm_timespec *mtime;
@@ -1292,6 +1322,17 @@ process_replica_added(struct process *process,
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
+	mtime = inode_get_mtime(fo->inode);
+	if (cksum_protocol) {
+		/*
+		 * mtime_sec and mtime_nsec parameters are removed
+		 * in cksum_protocol.
+		 * see the comment about mtime_sec/mtime_nsec below.
+		 */
+		mtime_sec = mtime->tv_sec;
+		mtime_nsec = mtime->tv_nsec;
+	}
+
 	if (inode_has_no_replica(fo->inode)) {
 		gflog_debug(GFARM_MSG_1003543,
 		    "%s: inode %lld: no replica", diag,
@@ -1303,26 +1344,56 @@ process_replica_added(struct process *process,
 		    diag, (long long)inode_get_number(fo->inode),
 		    host_name(spool_host), gfarm_error_string(e));
 	} else if (inode_is_opened_for_writing(fo->inode) ||
-	    mtime_sec != (mtime = inode_get_mtime(fo->inode))->tv_sec ||
+	    mtime_sec != mtime->tv_sec ||
 	    mtime_nsec != mtime->tv_nsec ||
 	    (size != -1 && size != inode_get_size(fo->inode)) ||
-	    fo->u.f.replica_source->gen != inode_get_gen(fo->inode)) {
-		gflog_notice(GFARM_MSG_1002244,
-		    "inode(%lld) updated during replication: "
-		    "mtime %lld.%09lld/%lld.%09lld, "
-		    "size: %lld/%lld, gen:%lld/%lld",
-		    (long long)inode_get_number(fo->inode),
-		    (long long)mtime_sec, (long long)mtime_nsec,
-		    (long long)inode_get_mtime(fo->inode)->tv_sec,
-		    (long long)inode_get_mtime(fo->inode)->tv_nsec,
-		    (long long)size, (long long)inode_get_size(fo->inode),
-		    (long long)fo->u.f.replica_source->gen,
-		    (long long)inode_get_gen(fo->inode));
-		e = GFARM_ERR_INVALID_FILE_REPLICA;
+	    fo->u.f.replica_source->gen != inode_get_gen(fo->inode) ||
+	    src_err != GFARM_ERR_NO_ERROR || dst_err != GFARM_ERR_NO_ERROR) {
+		/*
+		 * the mtime_sec/mtime_nsec comparison above is for
+		 * GFM_PROTO_REPLICA_ADDED and GFM_PROTO_REPLICA_ADDED2
+		 * used by gfsd before gfarm-2.6.0.
+		 * GFM_PROTO_REPLICA_ADDED_CKSUM doesn't need the comparison.
+		 */
+		if (src_err != GFARM_ERR_NO_ERROR ||
+		    dst_err != GFARM_ERR_NO_ERROR) {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "inode(%lld:%lld) current gen=%lld: error happened"
+			    " during client-initiated replication: %s/%s",
+			    (long long)inode_get_number(fo->inode),
+			    (long long)fo->u.f.replica_source->gen,
+			    (long long)inode_get_gen(fo->inode),
+			    gfarm_error_string(src_err),
+			    gfarm_error_string(dst_err));
+			e = GFARM_ERR_NO_ERROR;
+		} else {
+			gflog_notice(GFARM_MSG_1002244,
+			    "inode(%lld) updated during replication: "
+			    "mtime %lld.%09lld/%lld.%09lld, "
+			    "size: %lld/%lld, gen:%lld/%lld",
+			    (long long)inode_get_number(fo->inode),
+			    (long long)mtime_sec, (long long)mtime_nsec,
+			    (long long)inode_get_mtime(fo->inode)->tv_sec,
+			    (long long)inode_get_mtime(fo->inode)->tv_nsec,
+			    (long long)size,
+			    (long long)inode_get_size(fo->inode),
+			    (long long)fo->u.f.replica_source->gen,
+			    (long long)inode_get_gen(fo->inode));
+			e = GFARM_ERR_INVALID_FILE_REPLICA;
+		}
 		inode_remove_replica_incomplete(fo->inode, spool_host,
 		    fo->u.f.replica_source->gen);
-	} else
+	} else {
 		e = inode_add_replica(fo->inode, spool_host, 1);
+		if (e == GFARM_ERR_NO_ERROR && cksum_protocol &&
+		    (fo->u.f.replica_source->cksum_request_flags &
+		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_SUM_AVAIL
+		    ) == 0 && cksum_type != NULL && *cksum_type != '\0' &&
+		    cksum_len > 0) {
+			inode_cksum_set(fo->inode,
+			    cksum_type, cksum_len, cksum);
+		}
+	}
 	free(fo->u.f.replica_source);
 	fo->u.f.replica_source = NULL;
 	e2 = process_close_file_read(process, peer, fd, NULL, diag);

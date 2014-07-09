@@ -3563,6 +3563,25 @@ gfm_client_replica_adding_result(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
+gfm_client_replica_adding_cksum_request(struct gfm_connection *gfm_server,
+	char *src_host)
+{
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_REPLICA_ADDING_CKSUM, "s", src_host));
+}
+
+gfarm_error_t
+gfm_client_replica_adding_cksum_result(struct gfm_connection *gfm_server,
+	gfarm_ino_t *ino_p, gfarm_uint64_t *gen_p, gfarm_off_t *filesizep,
+	char **cksum_typep, size_t cksum_size, size_t *cksum_lenp, char *cksum,
+	gfarm_int32_t *cksum_request_flagsp)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "lllsbi",
+	    ino_p, gen_p, filesizep,
+	    cksum_typep, cksum_size, cksum_lenp, cksum, cksum_request_flagsp));
+}
+
+gfarm_error_t
 gfm_client_replica_added_request(struct gfm_connection *gfm_server,
 	gfarm_int32_t flags, gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec)
 {
@@ -3578,6 +3597,18 @@ gfm_client_replica_added2_request(struct gfm_connection *gfm_server,
 	return (gfm_client_rpc_request(gfm_server,
 	    GFM_PROTO_REPLICA_ADDED2, "ilil",
 	    flags, mtime_sec, mtime_nsec, size));
+}
+
+gfarm_error_t
+gfm_client_replica_added_cksum_request(struct gfm_connection *gfm_server,
+	gfarm_int32_t src_err, gfarm_int32_t dst_err, gfarm_int32_t flags,
+	gfarm_off_t filesize, char *cksum_type, size_t cksum_len, char *cksum,
+	gfarm_int32_t cksum_result_flags)
+{
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_REPLICA_ADDED_CKSUM, "iiilsbi",
+	    src_err, dst_err, flags, filesize,
+	    cksum_type, cksum_len, cksum, cksum_result_flags));
 }
 
 gfarm_error_t

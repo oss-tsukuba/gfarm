@@ -129,8 +129,11 @@ gfarm_error_t gfm_server_inherit_fd(struct peer *, int, int);
 
 gfarm_error_t process_replication_request(struct process *, struct peer *,
 	struct host *, struct host *, int, gfarm_int32_t, const char *);
-gfarm_error_t process_replica_adding(struct process *, struct peer *,
-	struct host *, struct host *, int, struct inode **, const char *);
-gfarm_error_t process_replica_added(struct process *, struct peer *,
-	struct host *, int, int, gfarm_int64_t, gfarm_int32_t, gfarm_off_t,
-	const char *diag);
+gfarm_error_t process_replica_adding(struct process *, struct peer *, int,
+	struct host *, struct host *, int, struct inode **,
+	char **, size_t *, char *, gfarm_int32_t *, const char *);
+gfarm_error_t process_replica_added(struct process *, struct peer *, int,
+	struct host *, int, gfarm_int32_t, gfarm_int32_t, int,
+	gfarm_int64_t, gfarm_int32_t, gfarm_off_t,
+	const char *, size_t, const char *,
+	gfarm_int32_t, const char *);

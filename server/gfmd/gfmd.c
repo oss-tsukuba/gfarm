@@ -454,11 +454,18 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfm_server_replica_adding(peer, from_client, skip,
 		    suspendedp);
 		break;
+	case GFM_PROTO_REPLICA_ADDING_CKSUM:
+		e = gfm_server_replica_adding_cksum(peer, from_client, skip,
+		    suspendedp);
+		break;
 	case GFM_PROTO_REPLICA_ADDED: /* obsolete protocol */
 		e = gfm_server_replica_added(peer, from_client, skip);
 		break;
 	case GFM_PROTO_REPLICA_ADDED2:
 		e = gfm_server_replica_added2(peer, from_client, skip);
+		break;
+	case GFM_PROTO_REPLICA_ADDED_CKSUM:
+		e = gfm_server_replica_added_cksum(peer, from_client, skip);
 		break;
 	case GFM_PROTO_REPLICA_LOST:
 		e = gfm_server_replica_lost(peer, from_client, skip);

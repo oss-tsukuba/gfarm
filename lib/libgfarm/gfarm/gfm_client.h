@@ -392,10 +392,18 @@ gfarm_error_t gfm_client_replica_adding_request(struct gfm_connection *,
 	char *);
 gfarm_error_t gfm_client_replica_adding_result(struct gfm_connection *,
 	gfarm_ino_t *, gfarm_uint64_t *, gfarm_int64_t *, gfarm_int32_t *);
+gfarm_error_t gfm_client_replica_adding_cksum_request(struct gfm_connection *,
+	char *);
+gfarm_error_t gfm_client_replica_adding_cksum_result(struct gfm_connection *,
+	gfarm_ino_t *, gfarm_uint64_t *, gfarm_off_t *,
+	char **, size_t, size_t *, char *, gfarm_int32_t *);
 gfarm_error_t gfm_client_replica_added_request(struct gfm_connection *,
 	gfarm_int32_t, gfarm_int64_t, gfarm_int32_t);
 gfarm_error_t gfm_client_replica_added2_request(struct gfm_connection *,
 	gfarm_int32_t, gfarm_int64_t, gfarm_int32_t, gfarm_off_t);
+gfarm_error_t gfm_client_replica_added_cksum_request(struct gfm_connection *,
+	gfarm_int32_t, gfarm_int32_t, gfarm_int32_t,
+	gfarm_off_t, char *, size_t, char *, gfarm_int32_t);
 gfarm_error_t gfm_client_replica_added_result(struct gfm_connection *);
 gfarm_error_t gfm_client_replica_lost_request(struct gfm_connection *,
 	gfarm_ino_t, gfarm_uint64_t);

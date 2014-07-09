@@ -20,6 +20,7 @@
 #include "gfp_xdr.h"
 #include "auth.h"
 #include "gfm_proto.h"
+#include "gfs_proto.h"
 
 #include "gfmd.h"
 #include "subr.h"
@@ -4051,6 +4052,7 @@ gfm_server_replicate_file_from_to(struct peer *peer, int from_client, int skip)
 struct replica_adding_resume_arg {
 	int fd;
 	char *src_host;
+	int cksum_protocol;
 };
 
 gfarm_error_t
@@ -4058,6 +4060,7 @@ replica_adding_resume(struct peer *peer, void *closure, int *suspendedp)
 {
 	gfarm_error_t e;
 	struct replica_adding_resume_arg *arg = closure;
+	int cksum_protocol = arg->cksum_protocol;
 	struct host *spool_host;
 	struct process *process;
 	struct host *src;
@@ -4067,6 +4070,11 @@ replica_adding_resume(struct peer *peer, void *closure, int *suspendedp)
 	struct gfarm_timespec *mtime;
 	gfarm_int64_t mtime_sec = 0;
 	gfarm_int32_t mtime_nsec = 0;
+	gfarm_off_t filesize = 0;
+	char *cksum_type = NULL;
+	size_t cksum_len = 0;
+	char cksum[GFM_PROTO_CKSUM_MAXLEN];
+	gfarm_int32_t cksum_request_flags = 0;
 	static const char diag[] = "replica_adding_resume";
 
 	giant_lock();
@@ -4082,7 +4090,8 @@ replica_adding_resume(struct peer *peer, void *closure, int *suspendedp)
 	} else if ((src = host_lookup(arg->src_host)) == NULL) {
 		e = GFARM_ERR_UNKNOWN_HOST;
 	} else if ((e = process_replica_adding(process, peer,
-	    src, spool_host, arg->fd, &inode, diag)) ==
+	    cksum_protocol, src, spool_host, arg->fd, &inode,
+	    &cksum_type, &cksum_len, cksum, &cksum_request_flags, diag)) ==
 	    GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 		if ((e = process_new_generation_wait(peer, arg->fd,
 		    replica_adding_resume, arg, diag)) ==
@@ -4099,6 +4108,7 @@ replica_adding_resume(struct peer *peer, void *closure, int *suspendedp)
 		mtime = inode_get_mtime(inode);
 		mtime_sec = mtime->tv_sec;
 		mtime_nsec = mtime->tv_nsec;
+		filesize = inode_get_size(inode);
 	}
 
 	/* we don't maintain file_replicating in this case */
@@ -4106,13 +4116,22 @@ replica_adding_resume(struct peer *peer, void *closure, int *suspendedp)
 	free(arg->src_host);
 	free(arg);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, "llli",
-	    inum, gen, mtime_sec, mtime_nsec));
+
+	if (cksum_protocol)
+		e = gfm_server_put_reply(peer, diag, e, "lllsbi",
+		    inum, gen, filesize,
+		    cksum_type, cksum_len, cksum, cksum_request_flags &
+		    ~GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_MASK);
+	else
+		e = gfm_server_put_reply(peer, diag, e, "llli",
+		    inum, gen, mtime_sec, mtime_nsec);
+	free(cksum_type);
+	return (e);
 }
 
 gfarm_error_t
-gfm_server_replica_adding(struct peer *peer, int from_client, int skip,
-	int *suspendedp)
+gfm_server_replica_adding_common(struct peer *peer, int from_client, int skip,
+	int cksum_protocol, const char *diag, int *suspendedp)
 {
 	gfarm_error_t e;
 	gfarm_ino_t inum = 0;
@@ -4120,12 +4139,16 @@ gfm_server_replica_adding(struct peer *peer, int from_client, int skip,
 	struct gfarm_timespec *mtime;
 	gfarm_int64_t mtime_sec = 0;
 	gfarm_int32_t fd, mtime_nsec = 0;
+	gfarm_off_t filesize = 0;
+	char *cksum_type = NULL;
+	size_t cksum_len = 0;
+	char cksum[GFM_PROTO_CKSUM_MAXLEN];
+	gfarm_int32_t cksum_request_flags = 0;
 	struct host *src, *spool_host;
 	struct process *process;
 	char *src_host;
 	struct inode *inode;
 	struct replica_adding_resume_arg *arg;
-	static const char diag[] = "GFM_PROTO_REPLICA_ADDING";
 
 	e = gfm_server_get_request(peer, diag, "s", &src_host);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -4157,7 +4180,8 @@ gfm_server_replica_adding(struct peer *peer, int from_client, int skip,
 	else if ((src = host_lookup(src_host)) == NULL)
 		e = GFARM_ERR_UNKNOWN_HOST;
 	else if ((e = process_replica_adding(process, peer,
-	    src, spool_host, fd, &inode, diag)) ==
+	    cksum_protocol, src, spool_host, fd, &inode,
+	    &cksum_type, &cksum_len, cksum, &cksum_request_flags, diag)) ==
 	    GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 		GFARM_MALLOC(arg);
 		if (arg == NULL) {
@@ -4165,6 +4189,7 @@ gfm_server_replica_adding(struct peer *peer, int from_client, int skip,
 		} else {
 			arg->fd = fd;
 			arg->src_host = src_host;
+			arg->cksum_protocol = cksum_protocol;
 			if ((e = process_new_generation_wait(peer, fd,
 			    replica_adding_resume, arg, diag)) ==
 			    GFARM_ERR_NO_ERROR) {
@@ -4181,22 +4206,55 @@ gfm_server_replica_adding(struct peer *peer, int from_client, int skip,
 		mtime = inode_get_mtime(inode);
 		mtime_sec = mtime->tv_sec;
 		mtime_nsec = mtime->tv_nsec;
+		filesize = inode_get_size(inode);
 	}
 
 	/* we don't maintain file_replicating in this case */
 
 	free(src_host);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, "llli",
-	    inum, gen, mtime_sec, mtime_nsec));
+
+	if (cksum_protocol)
+		e = gfm_server_put_reply(peer, diag, e, "lllsbi",
+		    inum, gen, filesize,
+		    cksum_type, cksum_len, cksum, cksum_request_flags &
+		    ~GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_MASK);
+	else
+		e = gfm_server_put_reply(peer, diag, e, "llli",
+		    inum, gen, mtime_sec, mtime_nsec);
+	free(cksum_type);
+	return (e);
+}
+
+gfarm_error_t
+gfm_server_replica_adding(struct peer *peer, int from_client, int skip,
+	int *suspendedp)
+{
+	static const char diag[] = "GFM_PROTO_REPLICA_ADDING";
+
+	return (gfm_server_replica_adding_common(peer, from_client, skip, 0,
+	    diag, suspendedp));
+}
+
+gfarm_error_t
+gfm_server_replica_adding_cksum(struct peer *peer, int from_client, int skip,
+	int *suspendedp)
+{
+	static const char diag[] = "GFM_PROTO_REPLICA_ADDING_CKSUM";
+
+	return (gfm_server_replica_adding_common(peer, from_client, skip, 1,
+	    diag, suspendedp));
 }
 
 /* assume giant lock is obtained */
 gfarm_error_t
 gfm_server_replica_added_common(const char *diag,
-	struct peer *peer, int from_client,
+	struct peer *peer, int from_client, int cksum_protocol,
+	gfarm_int32_t src_err, gfarm_int32_t dst_err,
 	gfarm_int32_t flags, gfarm_int64_t mtime_sec,
-	gfarm_int32_t mtime_nsec, gfarm_off_t size)
+	gfarm_int32_t mtime_nsec, gfarm_off_t size,
+	const char *cksum_type, size_t cksum_len, const char *cksum,
+	gfarm_uint32_t cksum_result_flags)
 {
 	gfarm_error_t e;
 	gfarm_int32_t fd;
@@ -4230,8 +4288,10 @@ gfm_server_replica_added_common(const char *diag,
 		 * closing must be done regardless of the result of db_begin().
 		 * because not closing may cause descriptor leak.
 		 */
-		e = process_replica_added(process, peer, spool_host, fd,
-		    flags, mtime_sec, mtime_nsec, size, diag);
+		e = process_replica_added(process, peer, cksum_protocol,
+		    spool_host, fd, src_err, dst_err, flags,
+		    mtime_sec, mtime_nsec, size,
+		    cksum_type, cksum_len, cksum, cksum_result_flags, diag);
 		if (transaction)
 			db_end(diag);
 	}
@@ -4259,8 +4319,9 @@ gfm_server_replica_added(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
 
-	e = gfm_server_replica_added_common(diag, peer, from_client,
-		flags, mtime_sec, mtime_nsec, -1);
+	e = gfm_server_replica_added_common(diag, peer, from_client, 0,
+	    GFARM_ERR_NO_ERROR, GFARM_ERR_NO_ERROR, flags,
+	    mtime_sec, mtime_nsec, -1, NULL, 0, NULL, 0);
 
 	giant_unlock();
 	return (gfm_server_put_reply(peer, diag, e, ""));
@@ -4286,8 +4347,41 @@ gfm_server_replica_added2(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
 
-	e = gfm_server_replica_added_common(diag, peer, from_client,
-		flags, mtime_sec, mtime_nsec, size);
+	e = gfm_server_replica_added_common(diag, peer, from_client, 0,
+	    GFARM_ERR_NO_ERROR, GFARM_ERR_NO_ERROR, flags,
+	    mtime_sec, mtime_nsec, size, NULL, 0, NULL, 0);
+
+	giant_unlock();
+	return (gfm_server_put_reply(peer, diag, e, ""));
+}
+
+gfarm_error_t
+gfm_server_replica_added_cksum(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_int32_t src_err, dst_err, flags, cksum_result_flags;
+	gfarm_off_t size;
+	char *cksum_type;
+	size_t cksum_len;
+	char cksum[GFM_PROTO_CKSUM_MAXLEN];
+	static const char diag[] = "GFM_PROTO_REPLICA_ADDED_CKSUM";
+
+	e = gfm_server_get_request(peer, diag, "iiilsbi",
+	    &src_err, &dst_err, &flags, &size,
+	    &cksum_type, sizeof(cksum), &cksum_len, cksum,
+	    &cksum_result_flags);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s request failed: %s",
+			diag, gfarm_error_string(e));
+		return (e);
+	}
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	e = gfm_server_replica_added_common(diag, peer, from_client, 1,
+	    src_err, dst_err, flags, 0, 0, size,
+	    cksum_type, cksum_len, cksum, cksum_result_flags);
 
 	giant_unlock();
 	return (gfm_server_put_reply(peer, diag, e, ""));

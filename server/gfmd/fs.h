@@ -74,8 +74,10 @@ gfarm_error_t gfm_server_replicate_file_from_to(struct peer *, int, int);
 
 /* replica management from gfsd */
 gfarm_error_t gfm_server_replica_adding(struct peer *, int, int, int *);
+gfarm_error_t gfm_server_replica_adding_cksum(struct peer *, int, int, int *);
 gfarm_error_t gfm_server_replica_added(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_added2(struct peer *, int, int);
+gfarm_error_t gfm_server_replica_added_cksum(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_lost(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_add(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_get_my_entries(struct peer *, int, int);

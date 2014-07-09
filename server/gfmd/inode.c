@@ -4491,7 +4491,8 @@ inode_replicated(struct file_replicating *fr,
 		if (cksum_enabled &&
 		    (cksum_request_flags &
 		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_SUM_AVAIL
-		    ) == 0 && cksum_type != NULL && cksum_len > 0) {
+		    ) == 0 && cksum_type != NULL && *cksum_type != '\0' &&
+		    cksum_len > 0) {
 			/*
 			 * calling inode_cksum_set() without checking
 			 * `cs == NULL' is OK, since r8972.
@@ -5032,6 +5033,57 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 }
 
 /*
+ * the contents pointed by *cksum_type and *cksump should be copied
+ * before releasing giant_lock
+ */
+void
+inode_replication_get_cksum_mode(struct inode *inode, struct host *src,
+	char **cksum_typep, size_t *cksum_lenp, char **cksump,
+	gfarm_int32_t *cksum_request_flagsp)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+	struct checksum *cs = inode->u.c.s.f.cksum;
+	gfarm_int32_t cksum_request_flags = 0;
+	size_t cksum_len;
+	char *cksum_type, *cksum;
+	int src_supports = host_supports_cksum_protocols(src);
+
+	if (ia != NULL && ia->u.f.writers > 0)
+		cksum_request_flags |=
+		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_MAYBE_EXPIRED;
+	if (src_supports)
+		cksum_request_flags |=
+		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_SRC_SUPPORTS;
+	if (cs != NULL) {
+		cksum_request_flags |=
+		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_SUM_AVAIL;
+		cksum_type = cs->type;
+		cksum_len = cs->len;
+		cksum = cs->sum;
+	} else {
+		if (!src_supports) {
+			/* We don't trust destination calculated cksum */
+			cksum_type = "";
+		} else {
+			cksum_type = gfarm_digest != NULL ? gfarm_digest : "";
+		}
+		cksum_len = 0;
+		cksum = NULL;
+	}
+	/*
+	 * cksum handling is enabled in this protocol sequence?
+	 * this is a gfmd internal flag, and isn't passed via protocol.
+	 */
+	cksum_request_flags |=
+	    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED;
+
+	*cksum_typep = cksum_type;
+	*cksum_lenp = cksum_len;
+	*cksump = cksum;
+	*cksum_request_flagsp = cksum_request_flags;
+}
+
+/*
  * if dst-gfsd is gfarm-2.5 or older,
  * or cksum is not set and src-gfsd is gfarm-2.5 or older:
  *	gfmd issues GFS_PROTO_REPLICATION_REQUEST, and
@@ -5062,35 +5114,20 @@ inode_replication_request(struct host *src, struct host *dst,
 
 	if (!host_supports_cksum_protocols(dst) ||
 	    (cs == NULL && !host_supports_cksum_protocols(src))) {
+		/*
+		 * re: cs == NULL && !host_supports_cksum_protocols(src)) case:
+		 * We don't trust destination calculated cksum
+		 */
 		e = async_back_channel_replication_request(
 		    host_name(src), host_port(src),
 		    dst, inode->i_number, inode->i_gen, fr);
 	} else {
-		struct inode_activity *ia = inode->u.c.activity;
-		gfarm_int32_t cksum_request_flags = 0;
 		size_t cksum_len;
 		char *cksum_type, *cksum, *cksumbuf = NULL;
+		gfarm_int32_t cksum_request_flags;
 
-		if (ia != NULL && ia->u.f.writers > 0)
-			cksum_request_flags |=
-			    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_MAYBE_EXPIRED;
-		if (host_supports_cksum_protocols(src))
-			cksum_request_flags |=
-			    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_SRC_SUPPORTS;
-		if (cs != NULL) {
-			cksum_request_flags |=
-			    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_SUM_AVAIL;
-			cksum_type = cs->type;
-			cksum_len = cs->len;
-			cksum = cs->sum;
-		} else {
-			cksum_type = gfarm_digest != NULL ? gfarm_digest : "";
-			cksum_len = 0;
-			cksum = NULL;
-		}
-		/* gfmd internal flag, this isn't passed via protocol */
-		cksum_request_flags |=
-		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED;
+		inode_replication_get_cksum_mode(inode, src,
+		    &cksum_type, &cksum_len, &cksum, &cksum_request_flags);
 
 		if ((cksum_type = strdup_log(cksum_type, diag)) == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
