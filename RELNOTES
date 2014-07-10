@@ -1,3 +1,24 @@
+Release note for Gfarm 2.5.8.8
+==============================
+
+[2014.6.29]
+
+Updated feature
+* gfpcopy - do not overwrite new files when the size is different
+* gfls - print setuid/setgid/sticky bits [sf.net ticket #761]
+* gfstat - -r and -h option to obtain file size of file data not
+  metadata
+* gfhost - can be executed by _gfarmfs user
+* config-gfarm - support PostgreSQL 9.3 or later [sf.net ticket #764]
+* gfs_chown and gfs_lchown - return success, if the owner is not
+  actually changed [sf.net ticket #758]
+
+Bug fix
+* fix lost replica when disconnection happens during close
+* gfs_chmod and gfs_lchmod - lacks some posix semantics [sf.net ticket
+  #760]
+* gfstatus - -d option does not work
+
 Release note for Gfarm 2.5.8.7
 ==============================
 
