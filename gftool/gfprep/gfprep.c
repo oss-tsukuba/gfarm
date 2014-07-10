@@ -3661,15 +3661,14 @@ main(int argc, char *argv[])
 			if (entry->src_d_type == GFS_DT_REG) {
 				if (entry->dst_exist) {
 					if (entry->dst_d_type == GFS_DT_REG) {
-						if (entry->src_size ==
-						    entry->dst_size &&
-						    ((!opt_force_copy &&
-						      entry->src_m_sec <=
-						      entry->dst_m_sec)
-						     ||
-						     (opt_force_copy &&
-						      entry->src_m_sec ==
-						      entry->dst_m_sec))) {
+						if ((!opt_force_copy &&
+						     entry->src_m_sec <=
+						     entry->dst_m_sec) ||
+						    (opt_force_copy &&
+						     entry->src_size ==
+						     entry->dst_size &&
+						     entry->src_m_sec ==
+						     entry->dst_m_sec)) {
 							gfprep_verbose(
 							  "already exists: %s",
 							  dst_url);
