@@ -150,9 +150,10 @@ gfarm_error_t inode_open(struct file_opening *);
 void inode_close(struct file_opening *, char**);
 void inode_close_read(struct file_opening *, struct gfarm_timespec *, char**);
 gfarm_error_t inode_fhclose_read(struct inode *, struct gfarm_timespec *);
-gfarm_error_t inode_fhclose_write(struct inode *, gfarm_uint64_t, gfarm_off_t,
+gfarm_error_t inode_fhclose_write(struct inode *, gfarm_off_t,
     struct gfarm_timespec *, struct gfarm_timespec *,
-    const char *, size_t, const char *, gfarm_int32_t, gfarm_int64_t *, int *);
+    const char *, size_t, const char *, gfarm_int32_t,
+    gfarm_int64_t *, gfarm_int64_t *, int *);
 void inode_add_ref_spool_writers(struct inode *);
 void inode_del_ref_spool_writers(struct inode *);
 void inode_check_pending_replication(struct file_opening *);

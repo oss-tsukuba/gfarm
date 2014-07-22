@@ -3233,11 +3233,12 @@ gfm_server_fhclose_read(struct peer *peer, int from_client, int skip)
 
 static gfarm_error_t
 gfm_server_fhclose_write_common(const char *diag, struct peer *peer,
-	int from_client, gfarm_ino_t inum, gfarm_int64_t old_gen,
+	int from_client, gfarm_ino_t inum,
 	gfarm_off_t size, struct gfarm_timespec *atime,
 	struct gfarm_timespec *mtime, const char *cksum_type, size_t cksum_len,
 	const char *cksum, gfarm_int32_t cksum_flags, gfarm_int32_t *flagp,
-	gfarm_int64_t *new_genp, gfarm_uint64_t *cookiep)
+	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
+	gfarm_uint64_t *cookiep)
 {
 	gfarm_error_t e;
 	int transaction = 0;
@@ -3261,9 +3262,9 @@ gfm_server_fhclose_write_common(const char *diag, struct peer *peer,
 		 * closing must be done regardless of the result of db_begin().
 		 * because not closing may cause descriptor leak.
 		 */
-		e = inode_fhclose_write(inode, old_gen, size, atime, mtime,
+		e = inode_fhclose_write(inode, size, atime, mtime,
 		    cksum_type, cksum_len, cksum, cksum_flags,
-		    new_genp, &generation_updated);
+		    old_genp, new_genp, &generation_updated);
 		if (e == GFARM_ERR_NO_ERROR && generation_updated) {
 			*flagp = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
 			*cookiep = peer_add_cookie(peer);
@@ -3297,8 +3298,8 @@ gfm_server_fhclose_write(struct peer *peer, int from_client, int skip)
 
 	new_gen = old_gen;
 	e = gfm_server_fhclose_write_common(diag, peer, from_client,
-	    inum, old_gen, size, &atime, &mtime, NULL, 0, NULL, 0,
-	    &flags, &new_gen, &cookie);
+	    inum, size, &atime, &mtime, NULL, 0, NULL, 0,
+	    &flags, &old_gen, &new_gen, &cookie);
 
 	return (gfm_server_put_reply(peer, diag, e, "illl",
 	    flags, old_gen, new_gen, cookie));
@@ -3330,9 +3331,9 @@ gfm_server_fhclose_write_cksum(struct peer *peer, int from_client, int skip)
 	}
 	new_gen = old_gen;
 	e = gfm_server_fhclose_write_common(diag, peer, from_client,
-	    inum, old_gen, size, &atime, &mtime,
+	    inum, size, &atime, &mtime,
 	    cksum_type, cksum_len, cksum, cksum_flags,
-	    &flags, &new_gen, &cookie);
+	    &flags, &old_gen, &new_gen, &cookie);
 	free(cksum_type);
 
 	return (gfm_server_put_reply(peer, diag, e, "illl",

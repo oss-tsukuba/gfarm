@@ -3370,11 +3370,12 @@ inode_fhclose_read(struct inode *inode, struct gfarm_timespec *atime)
 }
 
 gfarm_error_t
-inode_fhclose_write(struct inode *inode, gfarm_uint64_t old_gen,
+inode_fhclose_write(struct inode *inode,
     gfarm_off_t size, struct gfarm_timespec *atime,
     struct gfarm_timespec *mtime,
     const char *cksum_type, size_t cksum_len, const char *cksum,
-    gfarm_int32_t flags, gfarm_int64_t *new_genp, int *generation_updatedp)
+    gfarm_int32_t flags,
+    gfarm_int64_t *old_genp, gfarm_int64_t *new_genp, int *generation_updatedp)
 {
 	static const char diag[] = "inode_fhclose_write";
 	gfarm_error_t e;
@@ -3395,6 +3396,7 @@ inode_fhclose_write(struct inode *inode, gfarm_uint64_t old_gen,
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_info(GFARM_MSG_1003799, "%s: cksum_set: %s",
 		    diag, gfarm_error_string(e));
+	*old_genp = inode->i_gen;
 	inode_increment_gen(inode);
 	*generation_updatedp = 1;
 	*new_genp = inode->i_gen;
