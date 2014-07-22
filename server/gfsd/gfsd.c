@@ -2532,7 +2532,10 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	if (local_fd < 0) {
 		e = gfarm_errno_to_error(errno);
 		/* invalidate the creating file replica */
-		mtime_sec = mtime_nsec = 0;
+		if (mtime_sec == 0 && mtime_nsec == 0)
+			mtime_sec = mtime_nsec = -1;
+		else
+			mtime_sec = mtime_nsec = 0;
 		goto adding_cancel;
 	}
 
@@ -2542,7 +2545,11 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		gflog_debug(GFARM_MSG_1002177,
 			"gfs_client_connection_acquire_by_host() failed: %s",
 			gfarm_error_string(e));
-		mtime_sec = mtime_nsec = 0; /* invalidate */
+		/* invalidate */
+		if (mtime_sec == 0 && mtime_nsec == 0)
+			mtime_sec = mtime_nsec = -1;
+		else
+			mtime_sec = mtime_nsec = 0;
 		goto close;
 	}
 	e = gfs_client_replica_recv(server, ino, gen, local_fd);
@@ -2550,12 +2557,20 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		gflog_debug(GFARM_MSG_1002178,
 			"gfs_client_replica_recv() failed: %s",
 			gfarm_error_string(e));
-		mtime_sec = mtime_nsec = 0; /* invalidate */
+		/* invalidate */
+		if (mtime_sec == 0 && mtime_nsec == 0)
+			mtime_sec = mtime_nsec = -1;
+		else
+			mtime_sec = mtime_nsec = 0;
 		goto free_server;
 	}
 	if (fstat(local_fd, &sb) == -1) {
 		e = gfarm_errno_to_error(errno);
-		mtime_sec = mtime_nsec = 0; /* invalidate */
+		/* invalidate */
+		if (mtime_sec == 0 && mtime_nsec == 0)
+			mtime_sec = mtime_nsec = -1;
+		else
+			mtime_sec = mtime_nsec = 0;
 	}
  free_server:
 	gfs_client_connection_free(server);
