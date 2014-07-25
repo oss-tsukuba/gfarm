@@ -3790,7 +3790,8 @@ main(int argc, char *argv[])
 
 		/* ----- a file ----- */
 		/* select a file within specified src  */
-		if (hash_src && (hash_srcname || opt_src_domain)) {
+		if (hash_src && (hash_srcname || opt_src_domain ||
+		    opt_migrate)) {
 			int found = 0;
 
 			for (i = 0; i < entry->src_ncopy; i++) {
