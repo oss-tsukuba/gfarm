@@ -16,8 +16,6 @@
 
 #include <gfarm/gfarm.h>
 
-#include "queue.h" /* for gfs_file */
-
 #include "gfutil.h"
 #include "timer.h"
 
@@ -25,9 +23,6 @@
 #include "gfs_profile.h"
 #include "host.h"
 #include "gfarm_path.h"
-
-/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
-#include <openssl/evp.h>
 #include "gfs_pio.h"
 
 char *program_name = "gfreg";

@@ -31,8 +31,10 @@
 #include "gfm_schedule.h"
 #include "gfs_client.h"
 #include "gfs_proto.h"
+#define GFARM_USE_GFS_PIO_INTERNAL_CKSUM_INFO
 #include "gfs_io.h"
 #include "gfs_pio.h"
+#include "gfs_pio_impl.h"
 #include "schedule.h"
 #include "filesystem.h"
 #include "gfs_failover.h"
@@ -74,148 +76,6 @@ gfs_pio_view_section_close(GFS_File gf)
 	struct gfs_file_section_context *vc = gf->view_context;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR, e_save = GFARM_ERR_NO_ERROR;
 
-#if 0 /* not yet in gfarm v2 */
-	int md_calculated = 0;
-	file_offset_t filesize;
-	size_t md_len;
-	unsigned char md_value[EVP_MAX_MD_SIZE];
-	char md_value_string[EVP_MAX_MD_SIZE * 2 + 1];
-	struct gfarm_file_section_info fi, fi1;
-	unsigned int len;
-	int i;
-
-#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
-	filesize = 0;
-	md_len = 0;
-#endif
-	/* calculate checksum */
-	/*
-	 * EVP_DigestFinal should be called always to clean up
-	 * allocated memory by EVP_DigestInit.
-	 */
-	EVP_DigestFinal(&vc->md_ctx, md_value, &len);
-
-	if (gfs_pio_check_calc_digest(gf)) {
-		if (((gf->mode & GFS_FILE_MODE_WRITE) != 0 &&
-		     (gf->open_flags & GFARM_FILE_TRUNC) == 0) ||
-		    ((gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
-		     (gf->error != GFARM_ERRMSG_GFS_PIO_IS_EOF) &&
-		     (gf->mode & GFS_FILE_MODE_UPDATE_METADATA) != 0)) {
-			/* we have to read rest of the file in this case */
-#if 0
-			/* XXX - not supported for now */
-			gflog_fatal(GFARM_MSG_UNFIXED,
-			    "writing without truncation isn't supported yet\n");
-#endif
-#if 0
-			/* re-read whole file to calculate digest value */
-			e = (*vc->ops->storage_calculate_digest)(gf,
-			    GFS_DEFAULT_DIGEST_NAME, sizeof(md_value),
-			    &md_len, md_value, &filesize);
-			if (gfs_client_is_connection_error(e) &&
-			    gfs_pio_view_section_try_to_switch_replica(gf) ==
-			    NULL) {
-				e = (*vc->ops->storage_calculate_digest)(gf,
-				    GFS_DEFAULT_DIGEST_NAME, sizeof(md_value),
-				    &md_len, md_value, &filesize);
-			}
-			if (e != GFARM_ERR_NO_ERROR) {
-				md_calculated = 0;
-				if (e_save == GFARM_ERR_NO_ERROR)
-					e_save = e;
-			}
-			md_calculated = 1;
-#endif
-		} else if ((gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
-		    (gf->error != GFARM_ERRMSG_GFS_PIO_IS_EOF)) {
-			/*
-			 * sequential and read-only case, but
-			 * either error occurred or gf doesn't reach EOF,
-			 * we don't confirm checksum in this case.
-			 */
-			md_calculated = 0;
-		} else {
-			md_len = len;
-			filesize = gf->offset + gf->length;
-			md_calculated = 1;
-		}
-	} else {
-		if ((gf->mode & GFS_FILE_MODE_UPDATE_METADATA) == 0) {
-			/*
-			 * random-access and read-only case,
-			 * we don't confirm checksum for this case,
-			 * because of its high overhead.
-			 */
-			md_calculated = 0;
-		} else {
-#if 0
-			/*
-			 * re-read whole file to calculate digest value
-			 * for writing.
-			 * note that this effectively breaks file offset.
-			 */
-			e = (*vc->ops->storage_calculate_digest)(gf,
-			    GFS_DEFAULT_DIGEST_NAME, sizeof(md_value),
-			    &md_len, md_value, &filesize);
-			if (gfs_client_is_connection_error(e) &&
-			    gfs_pio_view_section_try_to_switch_replica(gf) ==
-			    GFARM_ERR_NO_ERROR) {
-				e = (*vc->ops->storage_calculate_digest)(gf,
-				    GFS_DEFAULT_DIGEST_NAME, sizeof(md_value),
-				    &md_len, md_value, &filesize);
-			}
-			if (e != GFARM_ERR_NO_ERROR) {
-				md_calculated = 0;
-				if (e_save == GFARM_ERR_NO_ERROR)
-					e_save = e;
-			}
-			md_calculated = 1;
-#endif
-		}
-	}
-
-	if (md_calculated == 1) {
-		for (i = 0; i < md_len; i++)
-			sprintf(&md_value_string[i + i], "%02x", md_value[i]);
-	}
-
-	if (gf->mode & GFS_FILE_MODE_UPDATE_METADATA) {
-		if (md_calculated == 1) {
-			fi1.filesize = filesize;
-			fi1.checksum_type = GFS_DEFAULT_DIGEST_NAME;
-			fi1.checksum = md_value_string;
-
-			e = gfarm_file_section_info_replace(
-				gf->pi.pathname, vc->section, &fi1);
-		} else
-			e = gfs_pio_view_section_set_checksum_unknown(gf);
-	} else if (md_calculated == 1 &&
-		(e = gfarm_file_section_info_get(gf->pi.pathname,
-		    vc->section, &fi)) == GFARM_ERR_NO_ERROR) {
-		if (gfs_file_section_info_check_busy(&fi))
-			/* skip check*/;
-		else if (gfs_file_section_info_check_checksum_unknown(&fi)) {
-			fi1.filesize = filesize;
-			fi1.checksum_type = GFS_DEFAULT_DIGEST_NAME;
-			fi1.checksum = md_value_string;
-
-			e = gfarm_file_section_info_replace(
-				gf->pi.pathname, vc->section, &fi1);
-		} else {
-			if (filesize != fi.filesize)
-				e = "filesize mismatch";
-			else if (strcasecmp(fi.checksum_type,
-					    GFS_DEFAULT_DIGEST_NAME) != 0 ||
-				 strcasecmp(fi.checksum, md_value_string) != 0)
-				e = "checksum mismatch";
-		}
-		gfarm_file_section_info_free(&fi);
-	}
-	if (e_save == GFARM_ERR_NO_ERROR)
-		e_save = e;
-
-#endif /* not yet in gfarm v2 */
-
 	e = (*vc->ops->storage_close)(gf);
 	if (e_save == GFARM_ERR_NO_ERROR)
 		e_save = e;
@@ -241,18 +101,26 @@ gfs_pio_view_section_pwrite(GFS_File gf,
 	gfarm_error_t e = (*vc->ops->storage_pwrite)(gf,
 	    buffer, size, offset, lengthp);
 
-#if 0 /* not yet in gfarm v2  */
-	if (e == GFARM_ERR_NO_ERROR && *lengthp > 0 &&
-	    (gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0)
-		EVP_DigestUpdate(&vc->md_ctx, buffer, *lengthp);
-#endif
-
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001347,
 			"storage_pwrite() failed: %s",
 			gfarm_error_string(e));
+	} else if (*lengthp > 0) {
+		gf->mode |= GFS_FILE_MODE_MODIFIED;
+		if (gf->md.filesize < offset + *lengthp)
+			gf->md.filesize = offset + *lengthp;
+		if ((gf->mode &
+		    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
+		    (GFS_FILE_MODE_DIGEST_CALC)) {
+			if (gf->md_offset != offset) {
+				gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+			} else {
+				EVP_DigestUpdate(
+				    &gf->md_ctx, buffer, *lengthp);
+				gf->md_offset += *lengthp;
+			}
+		}
 	}
-
 	return (e);
 }
 
@@ -265,17 +133,27 @@ gfs_pio_view_section_write(GFS_File gf,
 	gfarm_error_t e = (*vc->ops->storage_write)(gf,
 	    buffer, size, lengthp, offsetp, total_sizep);
 
-#if 0 /* not yet in gfarm v2  */
-	if (e == GFARM_ERR_NO_ERROR && *lengthp > 0 &&
-	    (gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0)
-		EVP_DigestUpdate(&vc->md_ctx, buffer, *lengthp);
-#endif
-
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003689,
 			"storage_write() failed: %s",
 			gfarm_error_string(e));
+	} else if (*lengthp > 0) {
+		gf->mode |= GFS_FILE_MODE_MODIFIED;
+		if (gf->md.filesize < *offsetp + *lengthp)
+			gf->md.filesize = *offsetp + *lengthp;
+		if ((gf->mode &
+		    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
+		    (GFS_FILE_MODE_DIGEST_CALC)) {
+			if (gf->md_offset != *offsetp) {
+				gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+			} else {
+				EVP_DigestUpdate(
+				    &gf->md_ctx, buffer, *lengthp);
+				gf->md_offset += *lengthp;
+			}
+		}
 	}
+
 	return (e);
 }
 
@@ -287,16 +165,34 @@ gfs_pio_view_section_pread(GFS_File gf,
 	gfarm_error_t e = (*vc->ops->storage_pread)(gf,
 	    buffer, size, offset, lengthp);
 
-#if 0 /* not yet in gfarm v2  */
-	if (e == GFARM_ERR_NO_ERROR && *lengthp > 0 &&
-	    (gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0)
-		EVP_DigestUpdate(&vc->md_ctx, buffer, *lengthp);
-#endif
-
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001348,
 			"storage_pread failed: %s",
 			gfarm_error_string(e));
+	} else if (*lengthp > 0 && (gf->mode &
+	    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
+	    (GFS_FILE_MODE_DIGEST_CALC)) {
+		if (gf->md_offset != offset) {
+			gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+		} else {
+			/*
+			 * There is alternative strategy that we calls
+			 * gfs_pio_md_finish() only if
+			 * the GFS_FILE_MODE_DIGEST_AVAIL flags is set.
+			 * With that strategy, we may be able to set
+			 * new checksum, if the actual filesize is larger
+			 * than the metadata due to file modification by
+			 * other processes.
+			 * But that's a rare case and we don't check the
+			 * AVAIL flags for consistency with the gfsd
+			 * implementation.
+			 */
+			EVP_DigestUpdate(&gf->md_ctx, buffer, *lengthp);
+			gf->md_offset += *lengthp;
+			if (gf->md_offset == gf->md.filesize && (gf->mode &
+			    GFS_FILE_MODE_MODIFIED) == 0)
+				e = gfs_pio_md_finish(gf);
+		}
 	}
 
 	return (e);
@@ -307,9 +203,35 @@ gfs_pio_view_section_recvfile(GFS_File gf, gfarm_off_t r_off,
 	int w_fd, gfarm_off_t w_off, gfarm_off_t len, gfarm_off_t *recvp)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
+	EVP_MD_CTX *md_ctx = NULL;
+	gfarm_error_t e;
+	gfarm_off_t recv = 0;
 
-	return ((*vc->ops->storage_recvfile)(gf, r_off, w_fd, w_off, len,
-	    recvp));
+	if ((gf->mode &
+	    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
+	    (GFS_FILE_MODE_DIGEST_CALC)) {
+		if (gf->md_offset != r_off) {
+			gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+		} else {
+			md_ctx = &gf->md_ctx;
+		}
+	}
+	e = (*vc->ops->storage_recvfile)(gf, r_off, w_fd, w_off, len,
+	    md_ctx, &recv);
+
+	/* recv is set even if e != GFARM_ERR_NO_ERROR */
+	if (md_ctx != NULL) {
+		gf->md_offset += recv;
+		if (e == GFARM_ERR_NO_ERROR &&
+		    gf->md_offset == gf->md.filesize && (gf->mode &
+		    (GFS_FILE_MODE_MODIFIED|GFS_FILE_MODE_DIGEST_AVAIL))
+		    == GFS_FILE_MODE_DIGEST_AVAIL)
+			e = gfs_pio_md_finish(gf);
+	}
+	if (recvp != NULL)
+		*recvp = recv;
+
+	return (e);
 }
 
 static gfarm_error_t
@@ -317,17 +239,50 @@ gfs_pio_view_section_sendfile(GFS_File gf, gfarm_off_t w_off,
 	int r_fd, gfarm_off_t r_off, gfarm_off_t len, gfarm_off_t *sentp)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
+	EVP_MD_CTX *md_ctx = NULL;
+	gfarm_error_t e;
+	gfarm_off_t sent = 0;
 
-	return ((*vc->ops->storage_sendfile)(gf, w_off, r_fd, r_off, len,
-	    sentp));
+	if ((gf->mode &
+	    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
+	    (GFS_FILE_MODE_DIGEST_CALC)) {
+		if (gf->md_offset != w_off) {
+			gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+		} else {
+			md_ctx = &gf->md_ctx;
+		}
+	}
+	e = (*vc->ops->storage_sendfile)(gf, w_off, r_fd, r_off, len,
+	    md_ctx, &sent);
+
+	/* sent is set even if e != GFARM_ERR_NO_ERROR */
+	if (sent > 0) {
+		gf->mode |= GFS_FILE_MODE_MODIFIED;
+		if (gf->md.filesize < w_off + sent)
+			gf->md.filesize = w_off + sent;
+	}
+	if (md_ctx != NULL) 
+		gf->md_offset += sent;
+	if (sentp != NULL)
+		*sentp = sent;
+
+	return (e);
 }
 
 static gfarm_error_t
 gfs_pio_view_section_ftruncate(GFS_File gf, gfarm_off_t length)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
+	gfarm_error_t e;
 
-	return ((*vc->ops->storage_ftruncate)(gf, length));
+	e = (*vc->ops->storage_ftruncate)(gf, length);
+	if (e == GFARM_ERR_NO_ERROR) {
+		gf->mode |= GFS_FILE_MODE_MODIFIED;
+		if (length < gf->md_offset)
+			gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+		gf->md.filesize = length;
+	}
+	return (e);
 }
 
 static gfarm_error_t

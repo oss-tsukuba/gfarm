@@ -25,4 +25,4 @@ include $(top_srcdir)/makes/gflog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC) $(GFUTIL_SRCDIR)/gfutil.h $(GFARMLIB_SRCDIR)/config.h $(GFARMLIB_SRCDIR)/lookup.h $(GFARMLIB_SRCDIR)/gfm_proto.h $(GFARMLIB_SRCDIR)/gfm_client.h
+$(OBJS): $(DEPGFARMINC) $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/msgdigest.h $(GFARMLIB_SRCDIR)/config.h $(GFARMLIB_SRCDIR)/lookup.h $(GFARMLIB_SRCDIR)/gfm_proto.h $(GFARMLIB_SRCDIR)/gfm_client.h

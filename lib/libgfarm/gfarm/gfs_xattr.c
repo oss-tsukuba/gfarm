@@ -13,16 +13,15 @@
 
 #include "gfutil.h"
 #include "timer.h"
-#include "queue.h"
 
 #include "context.h"
 #include "gfm_client.h"
 #include "lookup.h"
 #include "gfs_io.h"
-#include "gfs_misc.h"
 #include "gfs_pio.h"
 #include "gfs_profile.h"
 #include "gfs_failover.h"
+#include "gfs_misc.h"
 #include "xattr_info.h"
 
 #define staticp	(gfarm_ctxp->gfs_xattr_static)
@@ -694,12 +693,12 @@ gfs_findxmlattr(const char *path, const char *expr,
 		gflog_debug(GFARM_MSG_1001409,
 			"allococation of 'gfs_xmlattr_ctx' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
-	} else if ((e = gfm_open_fd_with_ino(path, GFARM_FILE_RDONLY,
-	    &ctxp->gfm_server, &ctxp->fd, &ctxp->type, &url, &ino))
+	} else if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY,
+	    &ctxp->gfm_server, &ctxp->fd, &ctxp->type, &url, &ino, NULL))
 		!= GFARM_ERR_NO_ERROR) {
 		gfs_xmlattr_ctx_free(ctxp, 1);
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "gfm_open_fd_with_ino(%s) failed: %s",
+		    "gfm_open_fd(%s) failed: %s",
 		    path, gfarm_error_string(e));
 	} else {
 		free(url);
@@ -871,7 +870,7 @@ gfs_closexmlattr(struct gfs_xmlattr_ctx *ctxp)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	if (ctxp != NULL) {
-		e = gfm_close_fd(ctxp->gfm_server, ctxp->fd);
+		e = gfm_close_fd(ctxp->gfm_server, ctxp->fd, NULL);
 		gfm_client_connection_free(ctxp->gfm_server);
 		gfs_xmlattr_ctx_free(ctxp, 1);
 	} else {

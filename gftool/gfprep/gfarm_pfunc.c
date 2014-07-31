@@ -20,8 +20,6 @@
 #include "thrsubr.h"
 
 #include "config.h"
-#include "queue.h" /* for gfs_pio.h */
-#include <openssl/evp.h> /* for gfs_pio.h */
 #include "gfs_pio.h"
 
 #include "gfprep.h"

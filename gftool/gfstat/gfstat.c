@@ -10,14 +10,9 @@
 
 #include <gfarm/gfarm.h>
 
-#include "queue.h"
-
 #include "gfm_client.h"
 #include "lookup.h"
 #include "gfarm_path.h"
-
-/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
-#include <openssl/evp.h>
 #include "gfs_pio.h"
 
 /*

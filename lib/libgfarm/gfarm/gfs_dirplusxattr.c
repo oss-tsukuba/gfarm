@@ -144,8 +144,8 @@ gfs_opendirplusxattr(const char *path, GFS_DirPlusXAttr *dirp)
 	char *url;
 	gfarm_ino_t ino;
 
-	if ((e = gfm_open_fd_with_ino(path, GFARM_FILE_RDONLY, &gfm_server,
-	    &fd, &type, &url, &ino)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &gfm_server,
+	    &fd, &type, &url, &ino, NULL)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002459,
 			"gfm_open_fd(%s) failed: %s",
 			path,
@@ -170,7 +170,7 @@ gfs_opendirplusxattr(const char *path, GFS_DirPlusXAttr *dirp)
 			path,
 			gfarm_error_string(e));
 
-	(void)gfm_close_fd(gfm_server, fd); /* ignore result */
+	(void)gfm_close_fd(gfm_server, fd, NULL); /* ignore result */
 	gfm_client_connection_free(gfm_server);
 	return (e);
 }
@@ -296,7 +296,8 @@ gfs_closedirplusxattr(GFS_DirPlusXAttr dir)
 {
 	gfarm_error_t e;
 
-	if ((e = gfm_close_fd(dir->gfm_server, dir->fd)) != GFARM_ERR_NO_ERROR)
+	if ((e = gfm_close_fd(dir->gfm_server, dir->fd, NULL))
+	    != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfm_close_fd: %s",
 		    gfarm_error_string(e));

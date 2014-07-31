@@ -5,15 +5,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <libgen.h>
-#include <gfarm/gfarm.h>
+#include <time.h>
 
-#include "queue.h" /* for gfs_file */
+#include <gfarm/gfarm.h>
 
 #include "gfarm_foreach.h"
 #include "gfarm_path.h"
-
-/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
-#include <openssl/evp.h>
 #include "gfs_pio.h"
 
 char *program_name = "gfcksum";

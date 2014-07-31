@@ -11,18 +11,22 @@
 #include <sys/time.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <openssl/evp.h>
 #include <assert.h>
+
+#include <openssl/evp.h>
 
 #include <gfarm/gfarm.h>
 
-#include "queue.h"
+#include "queue.h"	/* gfs_pio_impl.h */
 
 #include "config.h"
+#include "gfm_proto.h"	/* for GFARM_USE_GFS_PIO_INTERNAL_CKSUM_INFO */
 #include "gfm_client.h"
 #include "gfs_client.h"
+#define GFARM_USE_GFS_PIO_INTERNAL_CKSUM_INFO
 #include "gfs_io.h"
 #include "gfs_pio.h"
+#include "gfs_pio_impl.h"
 #include "filesystem.h"
 #include "gfs_failover.h"
 #include "gfs_file_list.h"
@@ -117,13 +121,14 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 	gfarm_ino_t ino;
 	char *real_url = NULL;
 
-	/* avoid failover in gfm_open_fd_with_ino() */
+	/* avoid failover in gfm_open_fd() */
 	gfarm_filesystem_set_failover_detected(fs, 0);
 
 	/* increment ref count of gfm_server */
-	if ((e = gfm_open_fd_with_ino(gf->url,
+	if ((e = gfm_open_fd(gf->url,
 	    gf->open_flags & (~GFARM_FILE_TRUNC),
-	    &gfm_server, &fd, &type, &real_url, &ino)) != GFARM_ERR_NO_ERROR) {
+	    &gfm_server, &fd, &type, &real_url, &ino, NULL))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003380,
 		    "reopen operation on file descriptor for URL (%s) "
 		    "failed: %s",
@@ -150,7 +155,7 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 		if (real_url != NULL) {
 			free(real_url);
 		}
-		(void)gfm_close_fd(gfm_server, fd); /* ignore result */
+		(void)gfm_close_fd(gfm_server, fd, NULL); /* ignore result */
 		gf->fd = -1;
 		gf->error = e;
 		gflog_debug(GFARM_MSG_1003381,
@@ -200,7 +205,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 	}
 
 	/* if old gfm_connection is alive, fd must be closed */
-	(void)gfm_close_fd(gf->gfm_server, gf->fd);
+	(void)gfm_close_fd(gf->gfm_server, gf->fd, NULL);
 	gf->fd = -1;
 	gfm_client_connection_free(gf->gfm_server);
 	/* ref count of gfm_server is incremented above */
@@ -576,10 +581,11 @@ compound_fd_op_post_failover(struct gfm_connection *gfm_server, void *closure)
 	if (url0 == NULL) /* XXX - try fhopen()? */
 		return (GFARM_ERR_STALE_FILE_HANDLE); /* XXX */
 	/* reopen */
-	if ((e = gfm_open_fd_with_ino(url0, GFARM_FILE_RDONLY,
-	    &gfm_server, &fd, &type, &url, &ino)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfm_open_fd(url0, GFARM_FILE_RDONLY,
+	    &gfm_server, &fd, &type, &url, &ino, NULL))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "gfm_open_fd_with_ino(%s) failed: %s",
+		    "gfm_open_fd(%s) failed: %s",
 		    url0, gfarm_error_string(e));
 		/*
 		 * any error except connection error means that the file

@@ -9,17 +9,23 @@
 #include <string.h>
 #include <libgen.h>
 #include <sys/socket.h> /* struct sockaddr */
+
 #include <openssl/evp.h>
+
 #include <gfarm/gfarm.h>
 
 #include "queue.h"
 
 #include "host.h"
 #include "config.h"
+#include "gfm_proto.h"	/* GFM_PROTO_CKSUM_MAXLEN in gfs_io.h */
 #include "gfs_proto.h"	/* GFS_PROTO_FSYNC_* */
+#define GFARM_USE_OPENSSL
 #include "gfs_client.h"
+#define GFARM_USE_GFS_PIO_INTERNAL_CKSUM_INFO
 #include "gfs_io.h"
 #include "gfs_pio.h"
+#include "gfs_pio_impl.h"
 #include "schedule.h"
 
 static gfarm_error_t
@@ -112,24 +118,38 @@ gfs_pio_remote_storage_pread(GFS_File gf,
 
 static gfarm_error_t
 gfs_pio_remote_storage_recvfile(GFS_File gf, gfarm_off_t r_off,
-	int w_fd, gfarm_off_t w_off, gfarm_off_t len, gfarm_off_t *recvp)
+	int w_fd, gfarm_off_t w_off, gfarm_off_t len,
+	EVP_MD_CTX *md_ctx, gfarm_off_t *recvp)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
 
 	return (gfs_client_recvfile(gfs_server, gf->fd, r_off,
-	    w_fd, w_off, len, recvp));
+	    w_fd, w_off, len, md_ctx, recvp));
 }
 
 static gfarm_error_t
 gfs_pio_remote_storage_sendfile(GFS_File gf, gfarm_off_t w_off,
-	int r_fd, gfarm_off_t r_off, gfarm_off_t len, gfarm_off_t *sentp)
+	int r_fd, gfarm_off_t r_off, gfarm_off_t len,
+	EVP_MD_CTX *md_ctx, gfarm_off_t *sentp)
 {
+	gfarm_error_t e;
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
 
-	return (gfs_client_sendfile(gfs_server, gf->fd, w_off,
-	    r_fd, r_off, len, sentp));
+	e = gfs_client_sendfile(gfs_server, gf->fd, w_off,
+	    r_fd, r_off, len, md_ctx, sentp);
+	if (e != GFARM_ERR_NO_ERROR && md_ctx != NULL) {
+		/*
+		 * re: gfs_client_sendfile():
+		 * when an error happens in gfsd side,
+		 * the message digest in *md_ctx may not reflect
+		 * the actually written contents.
+		 * thus, *md_ctx has to be invalidated.
+		 */
+		gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+	}
+	return (e);
 }
 
 static gfarm_error_t

@@ -3,13 +3,17 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <openssl/evp.h>
+
 #define GFARM_INTERNAL_USE /* GFARM_FILE_LOOKUP */
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
 
+#include "gfm_proto.h"
 #include "gfm_client.h"
 #include "lookup.h"
+#define GFARM_USE_GFS_PIO_INTERNAL_CKSUM_INFO
 #include "gfs_io.h"
 
 static gfarm_error_t
@@ -39,9 +43,10 @@ struct gfm_create_fd_closure {
 	struct gfm_connection **gfm_serverp;
 	int *fdp;
 	int *typep;
-	char **urlp;
 	gfarm_ino_t *inump;
 	gfarm_uint64_t *igenp; /* currentyly only for gfarm_file_trace */
+	char **urlp;
+	struct gfs_pio_internal_cksum_info *cksum_info; /* may be NULL */
 };
 
 static gfarm_error_t
@@ -54,6 +59,15 @@ gfm_create_fd_request(struct gfm_connection *gfm_server, void *closure,
 	if ((e = gfm_client_create_request(gfm_server, base,
 	    c->flags, c->mode_to_create)) != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1000080, "create(%s) request: %s",
+		    base, gfarm_error_string(e));
+	} else if (c->cksum_info != NULL &&
+	    (e = gfm_client_fstat_request(gfm_server)) != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED, "create(%s) request: %s",
+		    base, gfarm_error_string(e));
+	} else if (c->cksum_info != NULL &&
+	    (e = gfm_client_cksum_get_request(gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED, "create(%s) request: %s",
 		    base, gfarm_error_string(e));
 	} else if ((e = gfm_client_get_fd_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
@@ -68,6 +82,13 @@ gfm_create_fd_result(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_create_fd_closure *c = closure;
 	gfarm_error_t e;
+	struct gfs_pio_internal_cksum_info *ci = c->cksum_info;
+	struct gfs_stat st;
+
+	if (ci != NULL) {
+		ci->cksum_type = NULL;
+		memset(&st, 0, sizeof(st));
+	}
 
 	if ((e = gfm_client_create_result(gfm_server,
 	    c->inump, c->igenp, &c->mode_created))
@@ -76,11 +97,33 @@ gfm_create_fd_result(struct gfm_connection *gfm_server, void *closure)
 		gflog_debug(GFARM_MSG_1000082,
 		    "create() result: %s", gfarm_error_string(e));
 #endif
+	} else if (ci != NULL &&
+	    (e = gfm_client_fstat_result(gfm_server, &st))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "create() result: %s", gfarm_error_string(e));
+	} else if (ci != NULL &&
+	    (e = gfm_client_cksum_get_result(gfm_server,
+	    &ci->cksum_type, sizeof(ci->cksum), &ci->cksum_len, ci->cksum,
+	    &ci->cksum_flags)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "create() result: %s", gfarm_error_string(e));
 	} else if ((e = gfm_client_get_fd_result(gfm_server, &c->fd))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1000083,
 		    "get_fd() result: %s", gfarm_error_string(e));
 	}
+
+	if (ci != NULL) {
+		if (e == GFARM_ERR_NO_ERROR) {
+			ci->filesize = st.st_size;
+		} else {
+			free(ci->cksum_type);
+			ci->cksum_type = NULL;
+		}
+		gfs_stat_free(&st);
+	}
+
 	return (e);
 }
 
@@ -101,10 +144,12 @@ gfm_create_fd_success(struct gfm_connection *gfm_server, void *closure,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* cksum_info may be NULL */
 gfarm_error_t
 gfm_create_fd(const char *path, int flags, gfarm_mode_t mode,
 	struct gfm_connection **gfm_serverp, int *fdp, int *typep,
-	gfarm_ino_t *inump, gfarm_uint64_t *igenp, char **urlp)
+	gfarm_ino_t *inump, gfarm_uint64_t *igenp, char **urlp,
+	struct gfs_pio_internal_cksum_info *cksum_info)
 {
 	gfarm_error_t e;
 	struct gfm_create_fd_closure closure;
@@ -125,6 +170,7 @@ gfm_create_fd(const char *path, int flags, gfarm_mode_t mode,
 	closure.inump = inump;
 	closure.igenp = igenp;
 	closure.urlp = urlp;
+	closure.cksum_info = cksum_info;
 
 	return (gfm_name_op_modifiable(path, GFARM_ERR_IS_A_DIRECTORY,
 	    gfm_create_fd_request,
@@ -144,16 +190,29 @@ struct gfm_open_fd_closure {
 	int *typep;
 	gfarm_ino_t *inump;
 	char **urlp;
+	struct gfs_pio_internal_cksum_info *cksum_info; /* may be NULL */
 };
 
 static gfarm_error_t
 gfm_open_fd_request(struct gfm_connection *gfm_server, void *closure)
 {
-	gfarm_error_t e = gfm_client_get_fd_request(gfm_server);
+	struct gfm_open_fd_closure *c = closure;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
-	if (e != GFARM_ERR_NO_ERROR)
+	if (c->cksum_info != NULL &&
+	    (e = gfm_client_fstat_request(gfm_server)) != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED, "fstat() request: %s",
+		    gfarm_error_string(e));
+	} else if (c->cksum_info != NULL &&
+	    (e = gfm_client_cksum_get_request(gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED, "cksum_get() request: %s",
+		    gfarm_error_string(e));
+	} else if ((e = gfm_client_get_fd_request(gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1000084,
 		    "get_fd request; %s", gfarm_error_string(e));
+	}
 	return (e);
 }
 
@@ -161,13 +220,44 @@ static gfarm_error_t
 gfm_open_fd_result(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_open_fd_closure *c = closure;
-	gfarm_error_t e = gfm_client_get_fd_result(gfm_server, &c->fd);
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	struct gfs_pio_internal_cksum_info *ci = c->cksum_info;
+	struct gfs_stat st;
 
+	if (ci != NULL) {
+		ci->cksum_type = NULL;
+		memset(&st, 0, sizeof(st));
+	}
+
+	if (ci != NULL &&
+	    (e = gfm_client_fstat_result(gfm_server, &st))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "create() result: %s", gfarm_error_string(e));
+	} else if (ci != NULL &&
+	    (e = gfm_client_cksum_get_result(gfm_server,
+	    &ci->cksum_type, sizeof(ci->cksum), &ci->cksum_len, ci->cksum,
+	    &ci->cksum_flags)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "create() result: %s", gfarm_error_string(e));
+	} else if ((e = gfm_client_get_fd_result(gfm_server, &c->fd))
+	    != GFARM_ERR_NO_ERROR) {
 #if 0 /* DEBUG */
-	if (e != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1000085,
 		    "get_fd result; %s", gfarm_error_string(e));
 #endif
+	}
+
+	if (ci != NULL) {
+		if (e == GFARM_ERR_NO_ERROR) {
+			ci->filesize = st.st_size;
+		} else {
+			free(ci->cksum_type);
+			ci->cksum_type = NULL;
+		}
+		gfs_stat_free(&st);
+	}
+
 	return (e);
 }
 
@@ -188,10 +278,12 @@ gfm_open_fd_success(struct gfm_connection *gfm_server, void *closure, int type,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* cksum_info may be NULL */
 gfarm_error_t
-gfm_open_fd_with_ino(const char *path, int flags,
+gfm_open_fd(const char *path, int flags,
 	struct gfm_connection **gfm_serverp, int *fdp, int *typep,
-	char **urlp, gfarm_ino_t *inump)
+	char **urlp, gfarm_ino_t *inump,
+	struct gfs_pio_internal_cksum_info *cksum_info)
 {
 	gfarm_error_t e;
 	struct gfm_open_fd_closure closure;
@@ -212,6 +304,7 @@ gfm_open_fd_with_ino(const char *path, int flags,
 	closure.typep = typep;
 	closure.inump = inump;
 	closure.urlp = urlp;
+	closure.cksum_info = cksum_info;
 	return (gfm_inode_op_modifiable(path, flags & GFARM_FILE_USER_MODE,
 	    gfm_open_fd_request,
 	    gfm_open_fd_result,
@@ -220,22 +313,25 @@ gfm_open_fd_with_ino(const char *path, int flags,
 	    &closure));
 }
 
-gfarm_error_t
-gfm_open_fd(const char *path, int flags,
-	struct gfm_connection **gfm_serverp, int *fdp, int *typep)
-{
-	return (gfm_open_fd_with_ino(path, flags, gfm_serverp, fdp,
-		typep, NULL, NULL));
-}
+/*
+ * gfm_fhopen_fd()
+ */
 
 gfarm_error_t
 gfm_fhopen_fd(gfarm_ino_t inum, gfarm_uint64_t gen, int flags,
-      struct gfm_connection **gfm_serverp, int *fdp, int *typep)
+	struct gfm_connection **gfm_serverp, int *fdp, int *typep,
+	struct gfs_pio_internal_cksum_info *ci)
 {
 	struct gfm_connection *gfm_server;
 	gfarm_error_t e;
 	gfarm_mode_t mode;
 	int fd;
+	struct gfs_stat st;
+
+	if (ci != NULL) {
+		ci->cksum_type = NULL;
+		memset(&st, 0, sizeof(st));
+	}
 
 	if ((e = gfm_client_connection_and_process_acquire_by_path(
 		     GFARM_PATH_ROOT, &gfm_server)) != GFARM_ERR_NO_ERROR) {
@@ -250,6 +346,15 @@ gfm_fhopen_fd(gfarm_ino_t inum, gfarm_uint64_t gen, int flags,
 	else if ((e = gfm_client_fhopen_request(gfm_server, inum, gen, flags))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1003728, "fhopen request: %s",
+		    gfarm_error_string(e));
+	else if (ci != NULL &&
+	    (e = gfm_client_fstat_request(gfm_server)) != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "fstat request: %s",
+		    gfarm_error_string(e));
+	else if (ci != NULL &&
+	    (e = gfm_client_cksum_get_request(gfm_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "cksum_get request: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_get_fd_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
@@ -268,6 +373,17 @@ gfm_fhopen_fd(gfarm_ino_t inum, gfarm_uint64_t gen, int flags,
 	    != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1003732, "fhopen result: %s",
 		    gfarm_error_string(e));
+	else if (ci != NULL &&
+	    (e = gfm_client_fstat_result(gfm_server, &st))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED, "fstat result: %s",
+		    gfarm_error_string(e));
+	else if (ci != NULL &&
+	    (e = gfm_client_cksum_get_result(gfm_server,
+	    &ci->cksum_type, sizeof(ci->cksum), &ci->cksum_len, ci->cksum,
+	    &ci->cksum_flags)) != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED, "cksum_get result: %s",
+		    gfarm_error_string(e));
 	else if ((e = gfm_client_get_fd_result(gfm_server, &fd))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1003733, "get_fd result: %s",
@@ -277,6 +393,17 @@ gfm_fhopen_fd(gfarm_ino_t inum, gfarm_uint64_t gen, int flags,
 		gflog_warning(GFARM_MSG_1003734, "compound_end result: %s",
 		    gfarm_error_string(e));
 	}
+
+	if (ci != NULL) {
+		if (e == GFARM_ERR_NO_ERROR) {
+			ci->filesize = st.st_size;
+		} else {
+			free(ci->cksum_type);
+			ci->cksum_type = NULL;
+		}
+		gfs_stat_free(&st);
+	}
+
 	if (e == GFARM_ERR_NO_ERROR) {
 		*fdp = fd;
 		*typep = gfs_mode_to_type(mode);
@@ -287,44 +414,70 @@ gfm_fhopen_fd(gfarm_ino_t inum, gfarm_uint64_t gen, int flags,
 	return (e);
 }
 
+/*
+ * gfm_close_fd()
+ */
+
 static gfarm_error_t
 gfm_close_request(struct gfm_connection *gfm_server, void *closure)
 {
-	gfarm_error_t e = gfm_client_close_request(gfm_server);
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	struct gfs_pio_internal_cksum_info *ci = closure;
 
-	if (e != GFARM_ERR_NO_ERROR)
+	if (ci != NULL &&
+	    (e = gfm_client_cksum_set_request(gfm_server, ci->cksum_type,
+	    ci->cksum_len, ci->cksum, 0, 0, 0))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED, "cksum_set() request: %s",
+		    gfarm_error_string(e));
+	} else if ((e = gfm_client_close_request(gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1000086,
 		    "close request: %s", gfarm_error_string(e));
+	}
 	return (e);
 }
 
 static gfarm_error_t
 gfm_close_result(struct gfm_connection *gfm_server, void *closure)
 {
-	gfarm_error_t e = gfm_client_close_result(gfm_server);
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	struct gfs_pio_internal_cksum_info *ci = closure;
 
-#if 1 /* DEBUG */
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_1000087,
-		    "close result: %s", gfarm_error_string(e));
+	if (ci != NULL &&
+	    (e = gfm_client_cksum_set_result(gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
+#if 0 /* DEBUG */
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "cksum_set() result: %s", gfarm_error_string(e));
 #endif
+	} else if ((e = gfm_client_close_result(gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
+#if 1 /* DEBUG */
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_1000087,
+			    "close result: %s", gfarm_error_string(e));
+#endif
+	}
 	return (e);
 }
 
 /*
- * gfm_close_fd()
+ * cksum_info may be NULL
  *
  * NOTE:
  * gfm_server is not freed by this function.
  * callers of this function should free it.
  */
 gfarm_error_t
-gfm_close_fd(struct gfm_connection *gfm_server, int fd)
+gfm_close_fd(struct gfm_connection *gfm_server, int fd,
+	struct gfs_pio_internal_cksum_info *cksum_info)
+
 {
 	gfarm_error_t e;
 
 	if ((e = gfm_client_compound_fd_op(gfm_server, fd,
-	    gfm_close_request, gfm_close_result, NULL, NULL))
+	    gfm_close_request, gfm_close_result, NULL, cksum_info))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfm_close_fd fd=%d: %s", fd, gfarm_error_string(e));

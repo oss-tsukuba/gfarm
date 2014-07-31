@@ -29,6 +29,7 @@
 #include "gfutil.h"
 #include "hash.h"
 #include "lru_cache.h"
+#include "msgdigest.h"
 
 #include "context.h"
 #include "liberror.h"
@@ -929,6 +930,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
 #define GFARM_METADB_MAX_DESCRIPTORS_DEFAULT	(2*65536)
+#define GFARM_CLIENT_DIGEST_CHECK_DEFAULT	0
 #define GFARM_CLIENT_FILE_BUFSIZE_DEFAULT	(1048576 - 8) /* 1MB - 8B */
 #define GFARM_CLIENT_PARALLEL_COPY_DEFAULT	4
 #define GFARM_PROFILE_DEFAULT 0 /* disable */
@@ -2251,30 +2253,19 @@ parse_cred_config(char *p, char *service,
 static gfarm_error_t
 parse_digest_type(char *p, char **rv)
 {
-	unsigned char *s;
 	gfarm_error_t e = parse_set_var(p, rv);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	/*
-	 * XXX FIXME: we should check the digest type more strictly
-	 * Gfarm uses just same names with OpenSSL for now
-	 */
-	for (s = *(unsigned char **)rv; *s != '\0'; s++) {
-		if (!islower(*s) && !isdigit(*s)) {
-			/* XXX this leaves `*rv' as is */
-			gflog_debug(GFARM_MSG_UNFIXED,
-			    "invalid digest type <%s>", *rv);
-			return (GFARM_ERRMSG_INVALID_DIGEST_TYPE);
-		}
-	}
-	return (GFARM_ERR_NO_ERROR);
-}
 
-const char *
-gfarm_digest_name_to_openssl(const char *gfarm_name)
-{
-	return (gfarm_name); /* XXX just same names with OpenSSL for now */
+	if (!gfarm_msgdigest_name_verify(*rv)) {
+		/* XXX this leaves `*rv' as is */
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "invalid digest type <%s>", *rv);
+		return (GFARM_ERRMSG_INVALID_DIGEST_TYPE);
+	}
+
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
@@ -2994,6 +2985,9 @@ parse_one_line(char *s, char *p, char **op)
 			gfarm_atime_type_set(GFARM_ATIME_DISABLE);
 	} else if (strcmp(s, o = "atime") == 0) {
 		e = parse_atime_type(p);
+	} else if (strcmp(s, o = "client_digest_check") == 0) {
+		e = parse_set_misc_enabled(p,
+		    &gfarm_ctxp->client_digest_check);
 	} else if (strcmp(s, o = "client_file_bufsize") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->client_file_bufsize);
 	} else if (strcmp(s, o = "client_parallel_copy") == 0) {
@@ -3293,6 +3287,9 @@ gfarm_config_set_default_misc(void)
 		gfarm_metadb_dbq_size = GFARM_METADB_DBQ_SIZE_DEFAULT;
 	if (gfarm_atime_type == GFARM_ATIME_DEFAULT)
 		(void)gfarm_atime_type_set(GFARM_ATIME_RELATIVE);
+	if (gfarm_ctxp->client_digest_check == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->client_digest_check =
+		    GFARM_CLIENT_DIGEST_CHECK_DEFAULT;
 	if (gfarm_ctxp->client_file_bufsize == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->client_file_bufsize =
 		    GFARM_CLIENT_FILE_BUFSIZE_DEFAULT;

@@ -303,7 +303,8 @@ gfs_closedir_internal(GFS_Dir super)
 	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)super;
 	gfarm_error_t e;
 
-	if ((e = gfm_close_fd(dir->gfm_server, dir->fd)) != GFARM_ERR_NO_ERROR)
+	if ((e = gfm_close_fd(dir->gfm_server, dir->fd, NULL))
+	    != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfm_close_fd: %s",
 		    gfarm_error_string(e));
@@ -419,8 +420,8 @@ gfs_opendir(const char *path, GFS_Dir *dirp)
 	char *url;
 	gfarm_ino_t ino;
 
-	if ((e = gfm_open_fd_with_ino(path, GFARM_FILE_RDONLY, &gfm_server,
-	    &fd, &type, &url, &ino)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &gfm_server,
+	    &fd, &type, &url, &ino, NULL)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001274,
 			"gfm_open_fd(%s) failed: %s",
 			path,
@@ -445,7 +446,7 @@ gfs_opendir(const char *path, GFS_Dir *dirp)
 			path,
 			gfarm_error_string(e));
 
-	(void)gfm_close_fd(gfm_server, fd); /* ignore result */
+	(void)gfm_close_fd(gfm_server, fd, NULL); /* ignore result */
 	gfm_client_connection_free(gfm_server);
 	return (e);
 }
@@ -458,13 +459,14 @@ gfs_fhopendir(gfarm_ino_t inum, gfarm_uint64_t gen, GFS_Dir *dirp)
 	int fd, type;
 
 	if ((e = gfm_fhopen_fd(inum, gen, GFARM_FILE_RDONLY,
-	    &gfm_server, &fd, &type)) == GFARM_ERR_NO_ERROR) {
+	    &gfm_server, &fd, &type, NULL)) == GFARM_ERR_NO_ERROR) {
 		if (type != GFS_DT_DIR)
 			e = GFARM_ERR_NOT_A_DIRECTORY;
 		else
 			e = gfs_dir_alloc(gfm_server, fd, NULL, inum, dirp);
 		if (e != GFARM_ERR_NO_ERROR) {
-			(void)gfm_close_fd(gfm_server, fd); /* ignore result */
+			/* ignore result */
+			(void)gfm_close_fd(gfm_server, fd, NULL);
 			gfm_client_connection_free(gfm_server);
 		}
 	}

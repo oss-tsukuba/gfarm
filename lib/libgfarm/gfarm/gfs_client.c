@@ -2042,7 +2042,11 @@ gfs_sendfile_common(struct gfp_xdr *conn, gfarm_int32_t *src_errp,
 				break;
 			}
 			sent += rv;
-			/* sent == the length of calculated digest */
+			/*
+			 * sent == the length of calculated digest.
+			 * NOTE: there is no guarantee that the contents are
+			 * actually written in the remote side at this point.
+			 */
 			if (md_ctx != NULL)
 				EVP_DigestUpdate(md_ctx, buffer, rv);
 
@@ -2114,8 +2118,6 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 				break;
 			}
 			size -= partial;
-			if (md_ctx != NULL)
-				EVP_DigestUpdate(md_ctx, buffer, partial);
 			if (e_write != GFARM_ERR_NO_ERROR) {
 				/*
 				 * write(2) returned an error.
@@ -2156,6 +2158,9 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 				}
 				w_off += rv;
 				written += rv;
+				if (md_ctx != NULL)
+					EVP_DigestUpdate(
+					    md_ctx, buffer, partial);
 				gfarm_iostat_local_add(
 				    GFARM_IOSTAT_IO_WCOUNT, 1);
 				gfarm_iostat_local_add(
@@ -2172,11 +2177,17 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 	return (e);
 }
 
+/*
+ * *md_ctx: if an error happens in gfsd side, *md_ctx may not reflect
+ *	the content which is actually written by the gfsd.
+ *	thus, if an error happens, *md_ctx has to be invalidated.
+ *	see that the last argument of gfs_sendfile_common() (sentp) is NULL.
+ */
 gfarm_error_t
 gfs_client_sendfile(struct gfs_connection *gfs_server,
 	gfarm_int32_t remote_w_fd, gfarm_off_t w_off,
 	int local_r_fd, gfarm_off_t r_off,
-	gfarm_off_t len, gfarm_off_t *sentp)
+	gfarm_off_t len, EVP_MD_CTX *md_ctx, gfarm_off_t *sentp)
 {
 	gfarm_error_t e, e2;
 	gfarm_int32_t src_err = GFARM_ERR_NO_ERROR;
@@ -2189,7 +2200,7 @@ gfs_client_sendfile(struct gfs_connection *gfs_server,
 		    remote_w_fd, (long long)w_off, gfarm_error_string(e));
 	} else {
 		e = gfs_sendfile_common(gfs_server->conn, &src_err,
-		    local_r_fd, r_off, len, NULL, NULL);
+		    local_r_fd, r_off, len, md_ctx, NULL);
 		if (IS_CONNECTION_ERROR(e)) {
 			gfs_client_execute_hook_for_connection_error(
 			    gfs_server);
@@ -2210,7 +2221,7 @@ gfarm_error_t
 gfs_client_recvfile(struct gfs_connection *gfs_server,
 	gfarm_int32_t remote_r_fd, gfarm_off_t r_off,
 	int local_w_fd, gfarm_off_t w_off,
-	gfarm_off_t len, gfarm_off_t *recvp)
+	gfarm_off_t len, EVP_MD_CTX *md_ctx, gfarm_off_t *recvp)
 {
 	gfarm_error_t e, e2;
 	gfarm_int32_t src_err = GFARM_ERR_NO_ERROR;
@@ -2227,7 +2238,7 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 		    gfarm_error_string(e));
 	} else {
 		e = gfs_recvfile_common(gfs_server->conn, &dst_err,
-		    local_w_fd, w_off, NULL, &written);
+		    local_w_fd, w_off, md_ctx, &written);
 		if (IS_CONNECTION_ERROR(e)) {
 			gfs_client_execute_hook_for_connection_error(
 			    gfs_server);

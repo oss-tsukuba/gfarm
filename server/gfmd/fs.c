@@ -1542,9 +1542,11 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 		    gfarm_error_string(e));
 	} else if (from_client &&
 	    ((user = process_get_user(process)) == NULL ||
-	     !user_is_root(inode, user))) {
+	     (!user_is_root(inode, user) && 
+	      process_get_file_writable(process, peer, fd, diag) !=
+	      GFARM_ERR_NO_ERROR))) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_1003802, "user_is_root: (%s) %s",
+		gflog_debug(GFARM_MSG_1003802, "user can set cksum: (%s) %s",
 		    user_name(user), gfarm_error_string(e));
 	} else if (strlen(cksum_type) > GFM_PROTO_CKSUM_TYPE_MAXLEN ||
 	    cksum_len > GFM_PROTO_CKSUM_MAXLEN) {

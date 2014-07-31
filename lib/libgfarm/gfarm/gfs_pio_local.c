@@ -13,16 +13,20 @@
 #include <fcntl.h>
 #include <string.h>
 #include <libgen.h>
+
 #include <openssl/evp.h>
 
 #include <gfarm/gfarm.h>
 
 #include "queue.h"
 
+#include "gfm_proto.h"	/* GFM_PROTO_CKSUM_MAXLEN in gfs_io.h */
 #include "gfs_proto.h"	/* GFS_PROTO_FSYNC_* */
 #include "gfs_client.h"
+#define GFARM_USE_GFS_PIO_INTERNAL_CKSUM_INFO
 #include "gfs_io.h"
 #include "gfs_pio.h"
+#include "gfs_pio_impl.h"
 #include "schedule.h"
 #include "context.h"
 #ifdef __KERNEL__
@@ -233,9 +237,13 @@ gfs_pio_local_storage_pread(GFS_File gf,
 /* GFS_PROTO_MAX_IOSIZE is somewhat too large, and is not a power of 2 */
 #define COPYFILE_BUFSIZE	65536
 
+/*
+ * *writtenp: set even if an error happens.
+ */
 static gfarm_error_t
 gfs_pio_local_copyfile(int r_fd, gfarm_off_t r_off,
-	int w_fd, gfarm_off_t w_off, gfarm_off_t len, gfarm_off_t *writtenp)
+	int w_fd, gfarm_off_t w_off, gfarm_off_t len,
+	EVP_MD_CTX *md_ctx, gfarm_off_t *writtenp)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	int until_eof = len < 0;
@@ -306,6 +314,9 @@ gfs_pio_local_copyfile(int r_fd, gfarm_off_t r_off,
 				}
 				w_off += rv;
 				written += rv;
+				if (md_ctx != NULL)
+					EVP_DigestUpdate(
+					    md_ctx, buffer + i, rv);
 			}
 			if (e != GFARM_ERR_NO_ERROR)
 				break;
@@ -318,22 +329,24 @@ gfs_pio_local_copyfile(int r_fd, gfarm_off_t r_off,
 
 static gfarm_error_t
 gfs_pio_local_storage_recvfile(GFS_File gf, gfarm_off_t r_off,
-	int w_fd, gfarm_off_t w_off, gfarm_off_t len, gfarm_off_t *recvp)
+	int w_fd, gfarm_off_t w_off, gfarm_off_t len,
+	EVP_MD_CTX *md_ctx, gfarm_off_t *recvp)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 
 	return (gfs_pio_local_copyfile(vc->fd, r_off, w_fd, w_off, len,
-	    recvp));
+	    md_ctx, recvp));
 }
 
 static gfarm_error_t
 gfs_pio_local_storage_sendfile(GFS_File gf, gfarm_off_t w_off,
-	int r_fd, gfarm_off_t r_off, gfarm_off_t len, gfarm_off_t *sentp)
+	int r_fd, gfarm_off_t r_off, gfarm_off_t len,
+	EVP_MD_CTX *md_ctx, gfarm_off_t *sentp)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 
 	return (gfs_pio_local_copyfile(r_fd, r_off, vc->fd, w_off, len,
-	    sentp));
+	    md_ctx, sentp));
 }
 
 static gfarm_error_t

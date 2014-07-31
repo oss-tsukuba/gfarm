@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>23 Apr 2014</date></refentryinfo>
+<refentryinfo><date>16 Jul 2014</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -757,14 +757,28 @@ GSIは利用できません。この場合、<token>gsi</token>および
 <para>
 チェックサム計算を有効にし、
 digestタイプで指定されたチェックサムを計算します。
-digestタイプとしては、現在のところ md5 がサポートされています。
-この文は gfmd.conf に対して有効です。
+digestタイプとしては、チェックサム計算を実行するファイルシステムノード上の
+OpenSSL ライブラリがサポートしているタイプを、小文字で、
+例えば md5 や sha256 のように指定します。
+あるいは <token>client_digest_check</token>文で<token>enable</token>を指定して
+いる場合は、このdigstタイプをクライアント上の OpenSSL ライブラリもサポート
+している必要があります。
 </para>
 <para>
-ただし、チェックサム計算を有効にしても、
-ローカルホストのファイルアクセスについてはチェックサム計算が行われません。
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>
+注:
+たとえこの設定でチェックサム計算を有効にしても、
+ローカルホストの gfsd が管理するファイル複製にクライアントがアクセスする
+場合には、そのままではチェックサムが計算されません。
+これは、デフォルト設定だと gfsd のみがチェックサム計算を行なうのに対し、
+ローカルアクセスについては、クライアントがファイルを直接読み書きするためです。
 ローカルアクセスについてもチェックサム計算を行うためには、
-<token>direct_local_access</token>文で<token>disable</token>を指定してください。
+<token>direct_local_access</token>文で<token>disable</token>を指定して、
+ローカルアクセスの場合の直接読み書きを抑制するか、
+あるいは <token>client_digest_check</token>文で<token>enable</token>を指定して、
+チェックサム計算をクライアント側でも行なうようにする必要があります。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -1282,13 +1296,19 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負�
 <term><token>direct_local_access</token> <parameter moreinfo="none">有効性</parameter></term>
 <listitem>
 <para>
-ローカルホストのファイルをアクセスする場合、
-オーバヘッドを削減するため、通常 gfsd をバイパスして直接アクセスします。
+ローカルホストの gfsd が管理するファイル複製にクライアントがアクセスする場合、
+オーバヘッドを削減するため、ファイルの読み書きに関しては、
+通常 gfsd をバイパスして直接アクセスします。
 この文で<token>disable</token>と指定することによって、
 このバイパスを無効化することができます。
-ローカルホストのファイルアクセスに対してもチェックサム計算を行うためには、
-このバイパスを無効化する必要があります。
+この無効化機能は、ローカルホストのファイルアクセスに対して、
+gfsdによるチェックサム計算を行うために用意されています。
+詳しくは <token>direct_local_access</token>文の説明を参照してください。
 デフォルトはenableです。
+</para>
+<para>
+この文は、クライアントが参照するgfarm2.confのみで有効です。
+gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -1638,6 +1658,28 @@ disable設定は、通常のファイルシステムにおける"noatime"オプ�
 </varlistentry>
 
 <varlistentry>
+<term><token>client_digest_check</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+このオプションがenableの場合、Gfarmクライアントライブラリ (libgfarm)は、
+ファイル全体をシーケンシャルにアクセスする際、チェックサムを計算し、
+そのファイルのメタデータに設定されているチェックサムと比較して検証します。
+また、メタデータにチェックサムが設定されておらず、
+書き込みオープンしている場合には、計算したチェックサムをメタデータに設定します。
+デフォルトはdiableです。
+</para>
+<para>
+この文は、クライアントが参照するgfarm2.confのみで有効です。
+gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	client_digest_check enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>client_file_bufsize</token> <parameter moreinfo="none">バイト数</parameter></term>
 <listitem>
 <para>Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ
@@ -1645,6 +1687,10 @@ disable設定は、通常のファイルシステムにおける"noatime"オプ�
   8B）です。Gfarm-2.5.0以前では、ファイルのバッファサイズは、遠隔ファイ
   ルアクセス性能を極端に低下させないためにも、デフォルト値以下である必
   要があります。
+</para>
+<para>
+この文は、クライアントが参照するgfarm2.confのみで有効です。
+gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -1991,6 +2037,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;debug_command_statement&gt; |
 <!--	&lt;record_atime_statement&gt; | -->
 	&lt;atime_statement&gt; |
+	&lt;client_digest_check_statement&gt; |
 	&lt;client_file_bufsize_statement&gt; |
 	&lt;client_parallel_copy_statement&gt; |
 	&lt;profile_statement&gt; |
@@ -2455,6 +2502,11 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <varlistentry>
 <term>&lt;atime_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"atime" &lt;atime_type&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;client_digest_check_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"client_digest_check" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

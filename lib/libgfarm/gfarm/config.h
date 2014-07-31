@@ -120,9 +120,6 @@ int gfarm_get_metadb_server_slave_max_size(void);
 int gfarm_get_metadb_server_force_slave(void);
 void gfarm_set_metadb_server_force_slave(int);
 
-/* message digest */
-const char *gfarm_digest_name_to_openssl(const char *);
-
 /* miscellaneous */
 extern int gfarm_network_receive_timeout;
 extern int gfarm_file_trace;

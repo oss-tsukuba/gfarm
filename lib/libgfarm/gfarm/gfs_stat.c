@@ -2,13 +2,11 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <stdlib.h>
-#include <openssl/evp.h>
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
-#include "queue.h"
 #include "timer.h"
 
 #include "context.h"

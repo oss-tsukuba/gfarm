@@ -5,15 +5,10 @@
 
 #include <gfarm/gfarm.h>
 
-#include "queue.h" /* for gfs_file */
-
 #include "gfs_profile.h"
 #include "host.h"
 #include "config.h"
 #include "gfarm_path.h"
-
-/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
-#include <openssl/evp.h>
 #include "gfs_pio.h"
 
 char *program_name = "gfexport";

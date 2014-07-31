@@ -27,6 +27,7 @@ struct gfarm_context {
 	int direct_local_access;
 	int gfmd_connection_cache;
 	int gfsd_connection_cache;
+	int client_digest_check;
 	int client_file_bufsize;
 	int client_parallel_copy;
 	int on_demand_replication;

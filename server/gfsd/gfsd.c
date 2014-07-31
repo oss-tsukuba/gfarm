@@ -60,6 +60,8 @@
 #include "gfutil.h"
 #include "gflog_reduced.h"
 #include "hash.h"
+#define GFARM_USE_OPENSSL
+#include "msgdigest.h"
 #include "nanosec.h"
 #include "timer.h"
 #include "timespec.h"
@@ -1056,49 +1058,19 @@ static int
 msgdigest_init(const char *md_type_name, EVP_MD_CTX *md_ctx,
 	const char *diag, gfarm_ino_t diag_ino, gfarm_uint64_t diag_gen)
 {
-	const EVP_MD *md_type;
+	int not_supported;
 
-	if (md_type_name == NULL || md_type_name[0] == '\0')
-		return (0); /* DO NOT calculate message digest */
+	if (gfarm_msgdigest_init(md_type_name, md_ctx, &not_supported))
+		return (1);
 
-	md_type =
-	    EVP_get_digestbyname(gfarm_digest_name_to_openssl(md_type_name));
-	if (md_type == NULL) {
+	if (not_supported)
 		gflog_warning(GFARM_MSG_UNFIXED,
 		    "%s: inum %lld gen %lld: "
 		    "digest type <%s> isn't supported on this host",
 		    diag,
 		    (unsigned long long)diag_ino,
 		    (unsigned long long)diag_gen, md_type_name);
-		return (0);
-	}
-	EVP_DigestInit(md_ctx, md_type);
-	return (1);
-}
-
-/*
- * md_string should be declared as:
- * 	char md_string[EVP_MAX_MD_SIZE * 2 + 1];
- */
-static size_t
-msgdigest_to_string(char *md_string,
-	unsigned char *md_value, unsigned int md_len)
-{
-	unsigned int i;
-
-	for (i = 0; i < md_len; ++i)
-		sprintf(&md_string[i * 2], "%02x", md_value[i]);
-	return (md_len * 2);
-}
-
-static size_t
-msgdigest_final_string(char *md_string, EVP_MD_CTX *md_ctx)
-{
-	unsigned int md_len;
-	unsigned char md_value[EVP_MAX_MD_SIZE];
-
-	EVP_DigestFinal(md_ctx, md_value, &md_len);
-	return (msgdigest_to_string(md_string, md_value, md_len));
+	return (0);
 }
 
 /* with errno */
@@ -1136,15 +1108,19 @@ struct file_entry {
 #define FILE_FLAG_DIGEST_AVAIL	0x40
 #define FILE_FLAG_DIGEST_FINISH	0x80
 	/*
+	 * if (md_type_name != NULL)
+	 *	md_ctx was initialized, and EVP_DigestFinal() has to be called,
+	 *	unless FILE_FLAG_DIGEST_FINISH bit is set.
+	 *
 	 * switch (flags & (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) {
 	 * case  0:
-	 *	do not calculate digest
+	 *	do not calculate digest, or the digest was invalidated
 	 * case  FILE_FLAG_DIGEST_CALC:
 	 *	digest calculation is ongoing
 	 * case (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH):
 	 *	digest calculation is completed
 	 * case  FILE_FLAG_DIGEST_FINISH:
-	 *	digest calculation is completed, but the digest is invalidated
+	 *	digest calculation is completed, but the digest was invalidated
 	 * }
 	 */
 
@@ -1157,7 +1133,7 @@ struct file_entry {
 	EVP_MD_CTX md_ctx;
 
 	/* the followings are available if FILE_FLAG_DIGEST_FINISH is set */
-	char md_string[EVP_MAX_MD_SIZE * 2 + 1];
+	char md_string[GFARM_MSGDIGEST_STRSIZE];
 	size_t md_strlen;
 
 /*
@@ -2187,7 +2163,8 @@ calc_digest(int fd,
 
 	EVP_DigestFinal(&md_ctx, md_value, &md_len);
 	if (e == GFARM_ERR_NO_ERROR)
-		*md_strlenp = msgdigest_to_string(md_string, md_value, md_len);
+		*md_strlenp =
+		    gfarm_msgdigest_to_string(md_string, md_value, md_len);
 
 	return (e);
 }
@@ -2245,7 +2222,8 @@ digest_finish(struct gfp_xdr *client, gfarm_int32_t fd, const char *diag)
 {
 	struct file_entry *fe;
 
-	char md_string[EVP_MAX_MD_SIZE * 2 + 1];
+	char md_string[GFARM_MSGDIGEST_STRSIZE];
+	size_t md_strlen;
 
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
@@ -2253,18 +2231,22 @@ digest_finish(struct gfp_xdr *client, gfarm_int32_t fd, const char *diag)
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	if ((fe->flags & FILE_FLAG_DIGEST_FINISH) != 0)
 		return (e);
-	fe->md_strlen = msgdigest_final_string(md_string, &fe->md_ctx);
+
+	md_strlen = gfarm_msgdigest_final_string(md_string, &fe->md_ctx);
+	fe->flags |= FILE_FLAG_DIGEST_FINISH;
+
 	if ((fe->flags & FILE_FLAG_WRITTEN) != 0 ||
-	    (fe->flags & FILE_FLAG_DIGEST_AVAIL) == 0)
-		memcpy(fe->md_string, md_string, fe->md_strlen);
-	else if (memcmp(md_string, fe->md_string, fe->md_strlen) &&
+	    (fe->flags & FILE_FLAG_DIGEST_AVAIL) == 0) {
+		memcpy(fe->md_string, md_string, md_strlen);
+		fe->md_strlen = md_strlen;
+	} else if (memcmp(md_string, fe->md_string, fe->md_strlen) != 0 &&
 	    is_not_modified(client, fd, diag)) {
 		e = GFARM_ERR_CHECKSUM_MISMATCH;
 		gflog_error(GFARM_MSG_1003781, "%lld:%lld: %s",
 		    (long long)fe->ino, (long long)fe->gen,
 		    gfarm_error_string(e));
+		fe->flags &= ~FILE_FLAG_DIGEST_CALC; /* invalidate */
 	}
-	fe->flags |= FILE_FLAG_DIGEST_FINISH;
 	return (e);
 }
 
@@ -3065,7 +3047,7 @@ gfs_server_cksum(struct gfp_xdr *client)
 {
 	gfarm_int32_t fd;
 	struct file_entry *fe;
-	char *type = NULL, cksum[EVP_MAX_MD_SIZE * 2 + 1];
+	char *type = NULL, cksum[GFARM_MSGDIGEST_STRSIZE];
 	size_t len = 0;
 	gfarm_error_t e;
 	static const char diag[] = "GFS_PROTO_CKSUM";
@@ -3312,7 +3294,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	EVP_MD_CTX md_ctx;
 	EVP_MD_CTX *md_ctxp = NULL; /* non-NULL == calculate message-digest */
 	size_t md_strlen = 0;
-	char md_string[EVP_MAX_MD_SIZE * 2 + 1];
+	char md_string[GFARM_MSGDIGEST_STRSIZE];
 
 	gfarm_int32_t src_err = GFARM_ERR_NO_ERROR;
 	gfarm_int32_t dst_err = GFARM_ERR_NO_ERROR;
@@ -3384,7 +3366,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		 * call EVP_DigestFinal() even if an error happens,
 		 * otherwise memory leaks
 		 */
-		md_strlen = msgdigest_final_string(md_string, md_ctxp);
+		md_strlen = gfarm_msgdigest_final_string(md_string, md_ctxp);
 	}
 
 	if (e == GFARM_ERR_NO_ERROR)
@@ -3445,7 +3427,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	EVP_MD_CTX md_ctx;
 	EVP_MD_CTX *md_ctxp = NULL; /* non-NULL == calculate message-digest */
 	size_t md_strlen = 0;
-	char md_string[EVP_MAX_MD_SIZE * 2 + 1];
+	char md_string[GFARM_MSGDIGEST_STRSIZE];
 	gfarm_int32_t cksum_result_flags = 0;
 
 	unsigned long long msl = 1, total_msl = 0; /* sleep millisec. */
@@ -3538,7 +3520,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	 * otherwise memory leaks
 	 */
 	if (md_ctxp != NULL)
-		md_strlen = msgdigest_final_string(md_string, md_ctxp);
+		md_strlen = gfarm_msgdigest_final_string(md_string, md_ctxp);
 
 	e = close(local_fd);
 	if (error == GFARM_ERR_NO_ERROR)
@@ -3788,7 +3770,7 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 	EVP_MD_CTX md_ctx;
 	EVP_MD_CTX *md_ctxp = NULL; /* non-NULL == calculate message-digest */
 	size_t md_strlen = 0;
-	char md_string[EVP_MAX_MD_SIZE * 2 + 1];
+	char md_string[GFARM_MSGDIGEST_STRSIZE];
 	size_t src_cksum_len = 0;
 	char src_cksum[GFM_PROTO_CKSUM_MAXLEN];
 	gfarm_int32_t cksum_result_flags = 0;
@@ -3825,7 +3807,7 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 		 * call EVP_DigestFinal() even if an error happens,
 		 * otherwise memory leaks
 		 */
-		md_strlen = msgdigest_final_string(md_string, md_ctxp);
+		md_strlen = gfarm_msgdigest_final_string(md_string, md_ctxp);
 	}
 
 	if (conn_err != GFARM_ERR_NO_ERROR ||
@@ -5657,8 +5639,6 @@ main(int argc, char **argv)
 		break;
 	}
 	assert(e == GFARM_ERR_NO_ERROR);
-
-	OpenSSL_add_all_algorithms(); /* to use EVP_get_digestbyname() */
 
 	e = gfarm_server_initialize(config_file, &argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {

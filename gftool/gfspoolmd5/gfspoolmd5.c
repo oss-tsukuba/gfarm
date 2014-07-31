@@ -22,6 +22,8 @@
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
+#define GFARM_USE_OPENSSL
+#include "msgdigest.h"
 
 #include "config.h"
 #include "lookup.h"
@@ -142,14 +144,11 @@ calc_digest(const char *file,
 	int fd;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
-	const EVP_MD *md_type;
 	EVP_MD_CTX md_ctx;
-	unsigned int di, md_len;
+	unsigned int md_len;
 	unsigned char md_value[EVP_MAX_MD_SIZE];
 
-	md_type =
-	    EVP_get_digestbyname(gfarm_digest_name_to_openssl(md_type_name));
-	if (md_type == NULL)
+	if (!gfarm_msgdigest_init(md_type_name, &md_ctx, NULL))
 		gflog_fatal(GFARM_MSG_UNFIXED, "%s: fatal error. "
 		    "digest type <%s> isn't supported on this host",
 		    file, md_type_name);
@@ -157,19 +156,15 @@ calc_digest(const char *file,
 	if ((fd = open(file, O_RDONLY)) == -1)
 		return (gfarm_errno_to_error(errno));
 
-	EVP_DigestInit(&md_ctx, md_type);
-
 	while ((sz = read(fd, buf, sizeof buf)) > 0)
 		EVP_DigestUpdate(&md_ctx, buf, sz);
 	if (sz == -1)
 		e = gfarm_errno_to_error(errno);
 
 	EVP_DigestFinal(&md_ctx, md_value, &md_len);
-	if (e == GFARM_ERR_NO_ERROR) {
-		for (di = 0; di < md_len; ++di)
-			sprintf(&md_string[di * 2], "%02x", md_value[di]);
-		*md_strlenp = md_len * 2;
-	}
+	if (e == GFARM_ERR_NO_ERROR)
+		*md_strlenp = gfarm_msgdigest_to_string(
+		    md_string, md_value, md_len);
 	close(fd);
 	return (e);
 }
@@ -224,7 +219,7 @@ check_file(char *file, struct stat *stp, void *arg)
 	GFS_File gf;
 	gfarm_error_t e;
 	size_t md_strlen = 0;
-	char md_string[EVP_MAX_MD_SIZE * 2 + 1];
+	char md_string[GFARM_MSGDIGEST_STRSIZE];
 
 	if (!mtime_filter(stp))
 		return (GFARM_ERR_NO_ERROR);
@@ -438,7 +433,6 @@ main(int argc, char *argv[])
 		perror(spool_root);
 		exit(1);
 	}
-	OpenSSL_add_all_algorithms(); /* to use EVP_get_digestbyname() */
 	e = gfarm_initialize(&argc, &argv);
 	error_check(progname, e);
 
