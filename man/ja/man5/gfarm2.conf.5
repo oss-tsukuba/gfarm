@@ -1,22 +1,13 @@
 '\" t
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 23 Apr 2014
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 16 Jul 2014
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "23 Apr 2014" "Gfarm" "Gfarm"
-.\" -----------------------------------------------------------------
-.\" * Define some portability stuff
-.\" -----------------------------------------------------------------
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.\" http://bugs.debian.org/507673
-.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.ie \n(.g .ds Aq \(aq
-.el       .ds Aq '
+.TH "GFARM2\&.CONF" "5" "16 Jul 2014" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -35,7 +26,7 @@ gfarm2\&.confファイルは、gfarmプログラムの設定ファイルです�
 .PP
 アプリケーションプログラムは、環境変数GFARM_CONFIG_FILEで 指定したファイルと、%%SYSCONFDIR%%/gfarm2\&.confを、設定ファイル として参照します。この二つのファイルでは、環境変数GFARM_CONFIG_FILEで 指定したファイルの設定の方が先に読み込まれます。 どちらの設定ファイルも、同一の文法で記述します。 同一の指定文が複数あった場合には、先に指定されていた方が優先されます。 環境変数GFARM_CONFIG_FILEが設定されてない場合、代わりに ユーザのホームディレクトリにある\&.gfarm2rcファイルを使用します。
 .PP
-gfarm2\&.confは、一行に一文の形式で設定します。 ただし、行末に文字``\e\*(Aq\*(Aqを記述することによって、行を継続させることが できます。また、文字``#\*(Aq\*(Aqから行末までは、コメントとして扱われ、無視 されます。
+gfarm2\&.confは、一行に一文の形式で設定します。 ただし、行末に文字``\e\'\'を記述することによって、行を継続させることが できます。また、文字``#\'\'から行末までは、コメントとして扱われ、無視 されます。
 .SH "ホスト指定"
 .PP
 引数として、\fIホスト指定\fRを記述できる文がいくつかありますが、 この場合、ホスト指定には、下記のいずれかを記述できます。
@@ -165,7 +156,7 @@ spool_server_cred_nameの 指定を行ってはいけません。
 host
 .RS 4
 ホスト証明書あるいはサービス証明書を用いることを示します。 サービス証明書を用いる場合、そのサービスの名前を
-spool_server_cred_serviceで指定します。 サービス名に「host」を指定した場合、 ファイル``/etc/grid\-security/hostcert\&.pem\*(Aq\*(Aqに あるホスト証明書を用います。 それ以外のサービス名を指定した場合、 ファイル``/etc/grid\-security/サービス/サービスcert\&.pem\*(Aq\*(Aq にあるサービス証明書を用います。 サービス名を省略した場合、「host」が指定されたとみなします。 ホスト証明書およびサービス証明書の場合、証明書のCommon Name欄のみを 比較します。Common Nameは、「CN=サービス名/ホスト名」の形式である必要が あります。また、ホスト名は、\fBgfhost\fRコマンドで指定した 正式名と正確に一致している必要があります。ホスト別名は許されません。
+spool_server_cred_serviceで指定します。 サービス名に「host」を指定した場合、 ファイル``/etc/grid\-security/hostcert\&.pem\'\'に あるホスト証明書を用います。 それ以外のサービス名を指定した場合、 ファイル``/etc/grid\-security/サービス/サービスcert\&.pem\'\' にあるサービス証明書を用います。 サービス名を省略した場合、「host」が指定されたとみなします。 ホスト証明書およびサービス証明書の場合、証明書のCommon Name欄のみを 比較します。Common Nameは、「CN=サービス名/ホスト名」の形式である必要が あります。また、ホスト名は、\fBgfhost\fRコマンドで指定した 正式名と正確に一致している必要があります。ホスト別名は許されません。
 .sp
 これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_HOSTBASED_SERVICEに 対応する機能です。
 .sp
@@ -187,7 +178,7 @@ user
 .RS 4
 ユーザ証明書を用いることを示します。 ユーザのアカウント名をspool_server_cred_nameで指定します。 アカウント名を省略した場合には、そのコマンドを起動したユーザ名が使われます。 この指定を利用する際には、spool_server_cred_serviceの 指定を行ってはいけません。
 .sp
-ユーザ名と証明書のDistinguished Nameの対応をとるため、 ``/etc/grid\-security/grid\-mapfile\*(Aq\*(Aqを用います。 このため、このファイルが存在しなかったり、あるいはこのファイルに登録 されてないユーザは、この機能を用いることができません。
+ユーザ名と証明書のDistinguished Nameの対応をとるため、 ``/etc/grid\-security/grid\-mapfile\'\'を用います。 このため、このファイルが存在しなかったり、あるいはこのファイルに登録 されてないユーザは、この機能を用いることができません。
 .sp
 これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_USER_NAMEに対応する機能です。
 .sp
@@ -708,10 +699,14 @@ sharedsecret認証に用いる秘密鍵ファイルのパス名を指定しま�
 .PP
 digest \fIdigestタイプ\fR
 .RS 4
-チェックサム計算を有効にし、 digestタイプで指定されたチェックサムを計算します。 digestタイプとしては、現在のところ md5 がサポートされています。 この文は gfmd\&.conf に対して有効です。
+チェックサム計算を有効にし、 digestタイプで指定されたチェックサムを計算します。 digestタイプとしては、チェックサム計算を実行するファイルシステムノード上の OpenSSL ライブラリがサポートしているタイプを、小文字で、 例えば md5 や sha256 のように指定します。 あるいは
+client_digest_check文でenableを指定して いる場合は、このdigstタイプをクライアント上の OpenSSL ライブラリもサポート している必要があります。
 .sp
-ただし、チェックサム計算を有効にしても、 ローカルホストのファイルアクセスについてはチェックサム計算が行われません。 ローカルアクセスについてもチェックサム計算を行うためには、
-direct_local_access文でdisableを指定してください。
+この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
+.sp
+注: たとえこの設定でチェックサム計算を有効にしても、 ローカルホストの gfsd が管理するファイル複製にクライアントがアクセスする 場合には、そのままではチェックサムが計算されません。 これは、デフォルト設定だと gfsd のみがチェックサム計算を行なうのに対し、 ローカルアクセスについては、クライアントがファイルを直接読み書きするためです。 ローカルアクセスについてもチェックサム計算を行うためには、
+direct_local_access文でdisableを指定して、 ローカルアクセスの場合の直接読み書きを抑制するか、 あるいは
+client_digest_check文でenableを指定して、 チェックサム計算をクライアント側でも行なうようにする必要があります。
 .sp
 例:
 .sp
@@ -1109,7 +1104,10 @@ minimum_free_disk_space \fIバイト数\fR
 .PP
 direct_local_access \fI有効性\fR
 .RS 4
-ローカルホストのファイルをアクセスする場合、 オーバヘッドを削減するため、通常 gfsd をバイパスして直接アクセスします。 この文でdisableと指定することによって、 このバイパスを無効化することができます。 ローカルホストのファイルアクセスに対してもチェックサム計算を行うためには、 このバイパスを無効化する必要があります。 デフォルトはenableです。
+ローカルホストの gfsd が管理するファイル複製にクライアントがアクセスする場合、 オーバヘッドを削減するため、ファイルの読み書きに関しては、 通常 gfsd をバイパスして直接アクセスします。 この文でdisableと指定することによって、 このバイパスを無効化することができます。 この無効化機能は、ローカルホストのファイルアクセスに対して、 gfsdによるチェックサム計算を行うために用意されています。 詳しくは
+direct_local_access文の説明を参照してください。 デフォルトはenableです。
+.sp
+この文は、クライアントが参照するgfarm2\&.confのみで有効です。 gfsd や gfmd は、gfarm2\&.conf や gfmd\&.conf 中のこの文を無視します。
 .sp
 例:
 .sp
@@ -1456,9 +1454,30 @@ atime \fIタイプ\fR
 .\}
 .RE
 .PP
+client_digest_check \fI有効性\fR
+.RS 4
+このオプションがenableの場合、Gfarmクライアントライブラリ (libgfarm)は、 ファイル全体をシーケンシャルにアクセスする際、チェックサムを計算し、 そのファイルのメタデータに設定されているチェックサムと比較して検証します。 また、メタデータにチェックサムが設定されておらず、 書き込みオープンしている場合には、計算したチェックサムをメタデータに設定します。 デフォルトはdiableです。
+.sp
+この文は、クライアントが参照するgfarm2\&.confのみで有効です。 gfsd や gfmd は、gfarm2\&.conf や gfmd\&.conf 中のこの文を無視します。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	client_digest_check enable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 client_file_bufsize \fIバイト数\fR
 .RS 4
 Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ サイズをバイト単位で指定します。デフォルトは1048568バイト（= 1MiB \- 8B）です。Gfarm\-2\&.5\&.0以前では、ファイルのバッファサイズは、遠隔ファイ ルアクセス性能を極端に低下させないためにも、デフォルト値以下である必 要があります。
+.sp
+この文は、クライアントが参照するgfarm2\&.confのみで有効です。 gfsd や gfmd は、gfarm2\&.conf や gfmd\&.conf 中のこの文を無視します。
 .sp
 例:
 .sp
@@ -1840,6 +1859,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<debug_command_statement> |
 
 	<atime_statement> |
+	<client_digest_check_statement> |
 	<client_file_bufsize_statement> |
 	<client_parallel_copy_statement> |
 	<profile_statement> |
@@ -2923,6 +2943,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "atime" <atime_type>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<client_digest_check_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"client_digest_check" <validity>
 .fi
 .if n \{\
 .RE

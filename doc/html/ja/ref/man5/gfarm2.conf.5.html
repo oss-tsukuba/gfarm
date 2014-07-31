@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarm2.conf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm2.conf">
 <a name="gfarm2.conf.5"></a><div class="titlepage"></div>
@@ -577,14 +577,28 @@ GSIは利用できません。この場合、<span class="token">gsi</span>お�
 <p>
 チェックサム計算を有効にし、
 digestタイプで指定されたチェックサムを計算します。
-digestタイプとしては、現在のところ md5 がサポートされています。
-この文は gfmd.conf に対して有効です。
+digestタイプとしては、チェックサム計算を実行するファイルシステムノード上の
+OpenSSL ライブラリがサポートしているタイプを、小文字で、
+例えば md5 や sha256 のように指定します。
+あるいは <span class="token">client_digest_check</span>文で<span class="token">enable</span>を指定して
+いる場合は、このdigstタイプをクライアント上の OpenSSL ライブラリもサポート
+している必要があります。
 </p>
 <p>
-ただし、チェックサム計算を有効にしても、
-ローカルホストのファイルアクセスについてはチェックサム計算が行われません。
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</p>
+<p>
+注:
+たとえこの設定でチェックサム計算を有効にしても、
+ローカルホストの gfsd が管理するファイル複製にクライアントがアクセスする
+場合には、そのままではチェックサムが計算されません。
+これは、デフォルト設定だと gfsd のみがチェックサム計算を行なうのに対し、
+ローカルアクセスについては、クライアントがファイルを直接読み書きするためです。
 ローカルアクセスについてもチェックサム計算を行うためには、
-<span class="token">direct_local_access</span>文で<span class="token">disable</span>を指定してください。
+<span class="token">direct_local_access</span>文で<span class="token">disable</span>を指定して、
+ローカルアクセスの場合の直接読み書きを抑制するか、
+あるいは <span class="token">client_digest_check</span>文で<span class="token">enable</span>を指定して、
+チェックサム計算をクライアント側でも行なうようにする必要があります。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -927,13 +941,19 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負�
 <dt><span class="term"><span class="token">direct_local_access</span> <em class="parameter"><code>有効性</code></em></span></dt>
 <dd>
 <p>
-ローカルホストのファイルをアクセスする場合、
-オーバヘッドを削減するため、通常 gfsd をバイパスして直接アクセスします。
+ローカルホストの gfsd が管理するファイル複製にクライアントがアクセスする場合、
+オーバヘッドを削減するため、ファイルの読み書きに関しては、
+通常 gfsd をバイパスして直接アクセスします。
 この文で<span class="token">disable</span>と指定することによって、
 このバイパスを無効化することができます。
-ローカルホストのファイルアクセスに対してもチェックサム計算を行うためには、
-このバイパスを無効化する必要があります。
+この無効化機能は、ローカルホストのファイルアクセスに対して、
+gfsdによるチェックサム計算を行うために用意されています。
+詳しくは <span class="token">direct_local_access</span>文の説明を参照してください。
 デフォルトはenableです。
+</p>
+<p>
+この文は、クライアントが参照するgfarm2.confのみで有効です。
+gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1185,6 +1205,25 @@ Gfarmクライアントライブラリはファイルシステムノードが利
 	atime disable<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">client_digest_check</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>
+このオプションがenableの場合、Gfarmクライアントライブラリ (libgfarm)は、
+ファイル全体をシーケンシャルにアクセスする際、チェックサムを計算し、
+そのファイルのメタデータに設定されているチェックサムと比較して検証します。
+また、メタデータにチェックサムが設定されておらず、
+書き込みオープンしている場合には、計算したチェックサムをメタデータに設定します。
+デフォルトはdiableです。
+</p>
+<p>
+この文は、クライアントが参照するgfarm2.confのみで有効です。
+gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	client_digest_check enable<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">client_file_bufsize</span> <em class="parameter"><code>バイト数</code></em></span></dt>
 <dd>
 <p>Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ
@@ -1192,6 +1231,10 @@ Gfarmクライアントライブラリはファイルシステムノードが利
   8B）です。Gfarm-2.5.0以前では、ファイルのバッファサイズは、遠隔ファイ
   ルアクセス性能を極端に低下させないためにも、デフォルト値以下である必
   要があります。
+</p>
+<p>
+この文は、クライアントが参照するgfarm2.confのみで有効です。
+gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
@@ -1490,6 +1533,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;debug_command_statement&gt; |<br>
 <br>
 	&lt;atime_statement&gt; |<br>
+	&lt;client_digest_check_statement&gt; |<br>
 	&lt;client_file_bufsize_statement&gt; |<br>
 	&lt;client_parallel_copy_statement&gt; |<br>
 	&lt;profile_statement&gt; |<br>
@@ -1661,6 +1705,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <dd><div class="literallayout"><p>"gfsd_connection_timeout" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;atime_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"atime" &lt;atime_type&gt;</p></div></dd>
+<dt><span class="term">&lt;client_digest_check_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"client_digest_check" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;client_file_bufsize_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"client_file_bufsize" &lt;size&gt;</p></div></dd>
 <dt><span class="term">&lt;client_parallel_copy_statement&gt; ::=</span></dt>

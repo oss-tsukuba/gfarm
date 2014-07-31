@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarm2.conf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm2.conf">
 <a name="gfarm2.conf.5"></a><div class="titlepage"></div>
@@ -611,14 +611,27 @@ and all other hosts will be authenticated by
 <p>
 The <span class="token">digest</span> statement enables the checksum
 calculation, and specifies the digest type of the checksum.
-Currently, md5 is supported.  This directive is only effective for
-gfmd.conf.
+The digest_type parameter is a lower-case name which is supported
+by the OpenSSL library on the filesystem nodes.
+For example, "md5", "sha256".
+Or, if <span class="token">client_digest_check</span> is enabled,
+the digest_type has to be supported on clients as well.
 </p>
 <p>
-The digest is not calculated when accessing local files since they are
-accessed directly bypassing the gfsd.  To calculate the digest of
-local files, disable this feature by
-the <span class="token">direct_local_access</span> statement.
+This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+</p>
+<p>
+NOTE:
+Even if checksum calculation is enabled by this directive,
+the digest checksum is not calculated when a client accesses a file replica
+which is managed by a local gfsd.
+This is because only gfsd calculates the checksum by default, but
+the client directly reads/writes the file replica in the local access case.
+To calculate the checksum of local files,
+You have to either disable the direct access feature by
+the <span class="token">direct_local_access</span> statement,
+or enable the client-side checksum calculation feature by
+the <span class="token">client_digest_check</span> statement.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -974,11 +987,20 @@ After restarting the gfmd and the Gfarm client, it is effective.
 <dt><span class="term"><span class="token">direct_local_access</span> <em class="parameter"><code>validity</code></em></span></dt>
 <dd>
 <p>
-When a file is stored at the local host, a Gfarm client accesses the
-file directly bypassing the gfsd to reduce the overhead.  This
-directive is used to disable this feature.  It is useful when enabling
-the digest feature, since the digest is not calculated when accessing
-a file directly.  The default is <span class="token">enable</span>.
+When a Gfarm client accesses a file replica which is stored by the local gfsd,
+the client bypasses the gfsd and directly accesses the file replica
+for reading/writing the file contents to reduce the overhead.
+This directive is used to disable this feature.
+It is useful to make the local gfsd calculate the checksum of
+the local file replica.
+Please see the <span class="token">digest</span> directive for detail.
+</p>
+<p>
+The default is <span class="token">enable</span>.
+</p>
+<p>
+This directive is only available for clients in gfarm2.conf.
+Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1233,6 +1255,26 @@ This parameter is only available in gfmd.conf.
 	atime disable<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">client_digest_check</span> <em class="parameter"><code>validity</code></em></span></dt>
+<dd>
+<p>When "enable" is specified, the Gfarm client library (libgfarm)
+calculates checksum while accessing a whole file sequentially,
+and verify the result against a value which is set in the metadata of the file.
+Also, libgfarm sets the calculated checksum to the metadata,
+if checksum isn't set in the metadata, and the file is opened for writing.
+</p>
+<p>
+The default value is disable.
+</p>
+<p>
+This directive is only available for clients in gfarm2.conf.
+Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	client_digest_check enable<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">client_file_bufsize</span> <em class="parameter"><code>bytes</code></em></span></dt>
 <dd>
 <p>This directive specifies the file buffer size in bytes used in
@@ -1240,6 +1282,10 @@ This parameter is only available in gfmd.conf.
   bytes (= 1MiB - 8B).  The file buffer size should be less than the
   default value not for deterioration of remote access performance for
   version 2.5.0 or earlier.
+</p>
+<p>
+This directive is only available for clients in gfarm2.conf.
+Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
@@ -1542,6 +1588,7 @@ notation.</p>
 	&lt;debug_command_statement&gt; |<br>
 <br>
 	&lt;atime_statement&gt; |<br>
+	&lt;client_digest_check_statement&gt; |<br>
 	&lt;client_file_bufsize_statement&gt; |<br>
 	&lt;client_parallel_copy_statement&gt; |<br>
 	&lt;profile_statement&gt; |<br>
@@ -1711,6 +1758,8 @@ notation.</p>
 <dd><div class="literallayout"><p>"gfsd_connection_timeout" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;atime_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"atime" &lt;atime_type&gt;</p></div></dd>
+<dt><span class="term">&lt;client_digest_check_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"client_digest_check" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;client_file_bufsize_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"client_file_bufsize" &lt;size&gt;</p></div></dd>
 <dt><span class="term">&lt;client_parallel_copy_statement&gt; ::=</span></dt>
