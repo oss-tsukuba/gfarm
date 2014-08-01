@@ -1048,7 +1048,7 @@ list_all(const char *architecture, const char *domainname,
 	struct gfarm_paraccess *pa)
 {
 	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
-	int i, nhosts;
+	int i, nhosts, ndisplayed;
 	struct gfarm_host_info *hosts;
 
 	if (architecture != NULL)
@@ -1062,14 +1062,24 @@ list_all(const char *architecture, const char *domainname,
 		    gfarm_error_string(e));
 		return (e);
 	}
+
+	ndisplayed = 0;
 	for (i = 0; i < nhosts; i++) {
 		if (domainname == NULL ||
 	 	    gfarm_host_is_in_domain(hosts[i].hostname, domainname)) {
 			e = (*request_op)(&hosts[i], pa);
 			if (e_save == GFARM_ERR_NO_ERROR)
 				e_save = e;
+			ndisplayed++;
 		}
 	}
+
+	if (nhosts == 0 || ndisplayed == 0) {
+		fprintf(stderr, "%s: %s\n",  program_name,
+		    gfarm_error_string(GFARM_ERRMSG_NO_FILESYSTEM_NODE));
+		return (GFARM_ERR_UNKNOWN_HOST);
+	}
+
 	gfarm_host_info_free_all(nhosts, hosts);
 	return (e_save);
 }

@@ -12,6 +12,7 @@
 
 #include <gfarm/gfarm.h>
 
+#include "liberror.h"
 #include "gfm_client.h"
 #include "gfm_schedule.h"
 #include "schedule.h"
@@ -25,6 +26,7 @@
  */
 
 char *program_name = "gfsched";
+char *default_opt_domain = "";
 
 void
 usage(void)
@@ -73,7 +75,7 @@ int
 main(int argc, char **argv)
 {
 	gfarm_error_t e;
-	char *opt_domain = "";
+	char *opt_domain = default_opt_domain;
 	char *opt_mount_point = NULL;
 	char *opt_file = NULL;
 	int opt_metadata_only = 0;
@@ -222,6 +224,11 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
+	if (nhosts == 0) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(GFARM_ERRMSG_NO_FILESYSTEM_NODE));
+		exit(1);
+	}
 	for (i = 0; i < nhosts; i++) {
 		printf("%s", hosts[i]);
 		if (opt_long_format)
