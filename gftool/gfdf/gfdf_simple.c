@@ -10,6 +10,7 @@
 
 #include <gfarm/gfarm.h>
 
+#include "liberror.h"
 #include "gfm_client.h"
 #include "lookup.h"
 #include "gfarm_path.h"
@@ -90,7 +91,7 @@ usage(void)
 }
 
 gfarm_error_t
-display_statfs(const char *path, const char *dummy)
+display_statfs(const char *path, const char *dummy, int *ndisplayed)
 {
 	gfarm_error_t e;
 	gfarm_off_t used, avail, files;
@@ -99,6 +100,7 @@ display_statfs(const char *path, const char *dummy)
 	char availbuf[GFARM_INT64STRLEN];
 	char filesbuf[GFARM_INT64STRLEN];
 
+	*ndisplayed = 0;
 	/* XXX FIXME: should implement and use gfs_statvfs */
 	e = gfs_statfs(&used, &avail, &files);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -120,6 +122,7 @@ display_statfs(const char *path, const char *dummy)
 	       (double)used / (used + avail) * 100,
 	       filesbuf);
 
+	*ndisplayed = 1;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -199,7 +202,7 @@ schedule_host_domain(const char *path, const char *domain,
 }
 
 gfarm_error_t
-display_statfs_nodes(const char *path, const char *domain)
+display_statfs_nodes(const char *path, const char *domain, int *ndisplayed)
 {
 	gfarm_error_t e;
 	int nhosts, i;
@@ -210,6 +213,7 @@ display_statfs_nodes(const char *path, const char *domain)
 	char usedbuf[GFARM_INT64STRLEN];
 	char availbuf[GFARM_INT64STRLEN];
 
+	*ndisplayed = 0;
 	e = schedule_host_domain(path, domain, &nhosts, &hosts);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -243,22 +247,25 @@ display_statfs_nodes(const char *path, const char *domain)
 		       capbuf, usedbuf, availbuf,
 		       (double)total_used / (total_used + total_avail) * 100,
 		       "");
+	} else {
+		fprintf(stderr, "%s\n",
+		    gfarm_error_string(GFARM_ERRMSG_NO_FILESYSTEM_NODE));
 	}
-	else
-		puts("No file system node");
 
 	gfarm_host_sched_info_free(nhosts, hosts);
+	*ndisplayed = nhosts;
  
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-display_nodes(const char *path, const char *domain)
+display_nodes(const char *path, const char *domain, int *ndisplayed)
 {
 	gfarm_error_t e;
 	int nhosts, i;
 	struct gfarm_host_sched_info *hosts;
 
+	*ndisplayed = 0;
 	e = schedule_host_domain(path, domain, &nhosts, &hosts);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -267,6 +274,7 @@ display_nodes(const char *path, const char *domain)
 		printf("%s\n", hosts[i].host);
 
 	gfarm_host_sched_info_free(nhosts, hosts);
+	*ndisplayed = nhosts;
 	return (e);
 }
 
@@ -276,8 +284,9 @@ main(int argc, char *argv[])
 	gfarm_error_t e;
 	const char *domain = "", *path = ".";
 	char *p = NULL;
-	gfarm_error_t (*statfs)(const char *, const char *) =
+	gfarm_error_t (*statfs)(const char *, const char *, int *) =
 		display_statfs_nodes;
+	int ndisplayed;
 	int c;
 
 	if (argc > 0)
@@ -325,7 +334,7 @@ main(int argc, char *argv[])
 	}
 	if (gfarm_realpath_by_gfarm2fs(path, &p) == GFARM_ERR_NO_ERROR)
 		path = p;
-	e = statfs(path, domain);
+	e = statfs(path, domain, &ndisplayed);
 	free(p);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
@@ -339,5 +348,7 @@ main(int argc, char *argv[])
 		    gfarm_error_string(e));
 		exit(1);
 	}
+	if (ndisplayed == 0)
+		exit(1);
 	exit (0);
 }
