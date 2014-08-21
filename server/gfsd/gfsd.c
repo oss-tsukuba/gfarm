@@ -2748,6 +2748,11 @@ gfs_server_write(struct gfp_xdr *client)
 		    "");
 		return;
 	}
+	if ((fe = file_table_entry(fd)) == NULL) {
+		gfs_server_put_reply(client, diag,
+		    GFARM_ERR_BAD_FILE_DESCRIPTOR, "");
+		return;
+	}
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
@@ -2766,6 +2771,19 @@ gfs_server_write(struct gfp_xdr *client)
 		written_offset = lseek(localfd, 0, SEEK_CUR) - rv;
 		total_file_size = lseek(localfd, 0, SEEK_END);
 		file_table_set_written(fd);
+		/* update checksum */
+		if ((fe->flags &
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
+		    FILE_FLAG_DIGEST_CALC) {
+			if (fe->md_offset == written_offset) {
+				EVP_DigestUpdate(&fe->md_ctx, buffer, rv);
+				fe->md_offset += rv;
+			} else
+				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
+		} else if ((fe->flags &
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH))
+			fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 	}
 	if (rv > 0) {
 		gfarm_iostat_local_add(GFARM_IOSTAT_IO_WCOUNT, 1);
@@ -2773,12 +2791,9 @@ gfs_server_write(struct gfp_xdr *client)
 	}
 	gfs_profile(
 		gfarm_gettimerval(&t2);
-		fe = file_table_entry(fd);
-		if (fe != NULL) {
-			fe->nwrite++;
-			fe->write_size += rv;
-			fe->write_time += gfarm_timerval_sub(&t2, &t1);
-		});
+		fe->nwrite++;
+		fe->write_size += rv;
+		fe->write_time += gfarm_timerval_sub(&t2, &t1));
 
 	gfs_server_put_reply_with_errno(client, diag, save_errno,
 	    "ill", (gfarm_int32_t)rv, written_offset, total_file_size);
@@ -2953,7 +2968,10 @@ gfs_server_ftruncate(struct gfp_xdr *client)
 {
 	int fd;
 	gfarm_int64_t length;
+	struct file_entry *fe;
 	int save_errno = 0;
+	unsigned char md_value[EVP_MAX_MD_SIZE];
+	unsigned int md_len;
 	static const char diag[] = "GFS_PROTO_FTRUNCATE";
 
 	gfs_server_get_request(client, diag, "il", &fd, &length);
@@ -2964,10 +2982,34 @@ gfs_server_ftruncate(struct gfp_xdr *client)
 		return;
 	}
 
-	if (ftruncate(file_table_get(fd), (off_t)length) == -1)
+	if ((fe = file_table_entry(fd)) == NULL)
+		save_errno = EBADF;
+	else if (ftruncate(file_table_get(fd), (off_t)length) == -1)
 		save_errno = errno;
-	else
+	else {
 		file_table_set_written(fd);
+
+		/* update checksum */
+		if ((fe->flags & FILE_FLAG_DIGEST_CALC) != 0) {
+			if (length == 0) {
+				if ((fe->flags & FILE_FLAG_DIGEST_FINISH)
+				    == 0) {
+					/* to avoid memory leak*/
+					EVP_DigestFinal(&fe->md_ctx,
+					    md_value, &md_len);
+					fe->flags |= FILE_FLAG_DIGEST_FINISH;
+				}
+				if (!msgdigest_init(fe->md_type_name,
+				    &fe->md_ctx, diag, fe->ino, fe->gen)) {
+					free(fe->md_type_name);
+					fe->md_type_name = NULL;
+					fe->flags &= ~FILE_FLAG_DIGEST_CALC;
+				} else
+					fe->flags &= ~FILE_FLAG_DIGEST_FINISH;
+			} else if (length < fe->md_offset)
+				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
+		}
+	}
 
 	gfs_server_put_reply_with_errno(client, diag, save_errno, "");
 }
