@@ -1,3 +1,17 @@
+Release note for Gfarm 2.5.8.10
+===============================
+
+[2014.8.21]
+
+Updated feature
+* return EIO instead of EINVAL when checksum mismatch happens
+* gfdf, gfsched, gfhost - exit with non-zero code when no filesystem
+  node is available
+
+Bug fix
+* gfstat - -r option may cause file migrated or no filesystem node
+  when filesystem nodes are full
+
 Release note for Gfarm 2.5.8.9
 ==============================
 
