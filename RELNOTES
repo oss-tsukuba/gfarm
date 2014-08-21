@@ -1,3 +1,14 @@
+Release note for Gfarm 2.5.8.9
+==============================
+
+[2014.7.27]
+
+Updated feature
+* checksum calculation support for ftruncate
+
+Bug fix
+* gfprep - migration may fail when the destination domain is specified
+
 Release note for Gfarm 2.5.8.8
 ==============================
 
