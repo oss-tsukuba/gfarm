@@ -291,6 +291,7 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
  * (because that means errno is more detailed than gfarm_error_t).
  */
 
+/* UNIX errno <-> gfarm_error_t */
 static struct gfarm_errno_error_map {
 	int unix_errno;
 	gfarm_error_t gfarm_error;
@@ -432,6 +433,14 @@ static struct gfarm_errno_error_map {
 	/*		GFARM_ERR_BAD_COOKIE */
 	/*		GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS */
 	/*		GFARM_ERR_CHECKSUM_MISMATCH */
+};
+
+/* gfarm_error_t -> UNIX errno */
+static struct gfarm_error_errno_map {
+	int unix_errno;
+	gfarm_error_t gfarm_error;
+} gfarm_error_errno_map_table[] = {
+	{ EIO,		GFARM_ERR_CHECKSUM_MISMATCH },
 };
 
 struct gfarm_error_domain {
@@ -737,11 +746,17 @@ static void
 gfarm_error_to_errno_initialize(void)
 {
 	int i;
-	struct gfarm_errno_error_map *map;
+	struct gfarm_errno_error_map *map1;
+	struct gfarm_error_errno_map *map2;
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_errno_error_map_table); i++) {
-		map = &gfarm_errno_error_map_table[i];
-		gfarm_error_to_errno_map[map->gfarm_error] = map->unix_errno;
+		map1 = &gfarm_errno_error_map_table[i];
+		gfarm_error_to_errno_map[map1->gfarm_error] = map1->unix_errno;
+	}
+	/* error_errno_map takes priority over errno_error_map */
+	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_error_errno_map_table); i++) {
+		map2 = &gfarm_error_errno_map_table[i];
+		gfarm_error_to_errno_map[map2->gfarm_error] = map2->unix_errno;
 	}
 	for (i = 1; i < GFARM_ARRAY_LENGTH(gfarm_error_to_errno_map); i++) {
 		if (gfarm_error_to_errno_map[i] == 0)
