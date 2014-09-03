@@ -448,7 +448,6 @@ db_journal_direntry_arg_destroy(struct db_direntry_arg *arg)
 static void
 db_journal_symlink_arg_destroy(struct db_symlink_arg *arg)
 {
-	free(arg->source_path);
 	free(arg);
 }
 
@@ -2410,29 +2409,31 @@ static gfarm_error_t
 db_journal_read_symlink_add(struct gfp_xdr *xdr, struct db_symlink_arg **argp)
 {
 	gfarm_error_t e;
-	struct db_symlink_arg *arg;
+	gfarm_ino_t inum;
+	char *source_path;
 	int eof;
 	const enum journal_operation ope = GFM_JOURNAL_SYMLINK_ADD;
+	struct db_symlink_arg *arg = NULL;
 
-	GFARM_MALLOC(arg);
-	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003152,
-		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
-		return (GFARM_ERR_NO_MEMORY);
-	}
 	if ((e = gfp_xdr_recv(xdr, 1, &eof,
 	    GFM_JOURNAL_SYMLINK_XDR_FMT,
-	    &arg->inum,
-	    &arg->source_path)) != GFARM_ERR_NO_ERROR) {
+	    &inum, &source_path)) != GFARM_ERR_NO_ERROR) {
 		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003153,
 		    "gfp_xdr_recv", e, ope);
 	}
+	if (e == GFARM_ERR_NO_ERROR) {
+		arg = db_symlink_arg_alloc(inum, source_path);
+		if (arg == NULL) {
+			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003152,
+			    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
+			e = GFARM_ERR_NO_MEMORY;
+		}
+		free(source_path);
+	}
 	if (e == GFARM_ERR_NO_ERROR)
 		*argp = arg;
-	else {
-		db_journal_symlink_arg_destroy(arg);
+	else
 		*argp = NULL;
-	}
 	return (e);
 }
 
