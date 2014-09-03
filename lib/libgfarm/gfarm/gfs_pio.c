@@ -297,17 +297,6 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	if (!(flags & GFARM_FILE_UNBUFFERED)) {
-		GFARM_MALLOC_ARRAY(buffer, gfarm_ctxp->client_file_bufsize);
-		if (buffer == NULL) {
-			free(gf);
-			gflog_debug(GFARM_MSG_UNFIXED,
-				"allocation of GFS_File's buffer failed: %s",
-				gfarm_error_string(GFARM_ERR_NO_MEMORY));
-			return (GFARM_ERR_NO_MEMORY);
-		}
-	} else
-		buffer = NULL;
 	memset(gf, 0, sizeof(*gf));
 	gf->gfm_server = gfm_server;
 	gf->fd = fd;
@@ -322,6 +311,21 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 	case GFARM_FILE_RDWR:
 		gf->mode |= GFS_FILE_MODE_READ|GFS_FILE_MODE_WRITE;
 		break;
+	}
+	if ((flags & GFARM_FILE_TRUNC) != 0)
+		gf->mode |= GFS_FILE_MODE_MODIFIED;
+
+	if ((flags & GFARM_FILE_UNBUFFERED) != 0) {
+		buffer = NULL;
+	} else {
+		GFARM_MALLOC_ARRAY(buffer, gfarm_ctxp->client_file_bufsize);
+		if (buffer == NULL) {
+			free(gf);
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"allocation of GFS_File's buffer failed: %s",
+				gfarm_error_string(GFARM_ERR_NO_MEMORY));
+			return (GFARM_ERR_NO_MEMORY);
+		}
 	}
 
 	gf->open_flags = flags;
