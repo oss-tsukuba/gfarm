@@ -253,17 +253,12 @@ gfs_pio_md_finish(GFS_File gf)
 	char md_string[GFARM_MSGDIGEST_STRSIZE];
 	size_t md_strlen;
 
-	if (gf->md.cksum_type == NULL) /* do not calculate checksum at all */
-		return (GFARM_ERR_NO_ERROR);
-
-	if ((gf->mode & GFS_FILE_MODE_DIGEST_FINISH) != 0)
-		return (GFARM_ERR_NO_ERROR);
-
+	assert(gf->md.cksum_type != NULL);
+	assert((gf->mode & GFS_FILE_MODE_DIGEST_FINISH) == 0);
+	assert((gf->mode & GFS_FILE_MODE_DIGEST_CALC) != 0);
+	
 	md_strlen = gfarm_msgdigest_final_string(md_string, &gf->md_ctx);
 	gf->mode |= GFS_FILE_MODE_DIGEST_FINISH;
-
-	if ((gf->mode & GFS_FILE_MODE_DIGEST_CALC) == 0)
-		return (GFARM_ERR_NO_ERROR); /* checksum invalidated */
 
 	if ((gf->mode & GFS_FILE_MODE_MODIFIED) != 0 ||
 	    (gf->mode & GFS_FILE_MODE_DIGEST_AVAIL) == 0) {
@@ -598,19 +593,32 @@ gfs_pio_close(GFS_File gf)
 
 	gfs_pio_file_list_remove(gfarm_filesystem_opened_file_list(fs), gf);
 
-	e = gfs_pio_md_finish(gf);
-	if (e_save == GFARM_ERR_NO_ERROR)
-		e_save = e;
-	if (e == GFARM_ERR_NO_ERROR &&
-	    (gf->mode &
-	     (GFS_FILE_MODE_WRITE|GFS_FILE_MODE_DIGEST_CALC|
-	      GFS_FILE_MODE_DIGEST_FINISH)) ==
-	     (GFS_FILE_MODE_WRITE|GFS_FILE_MODE_DIGEST_CALC|
-	      GFS_FILE_MODE_DIGEST_FINISH) &&
-	    ((gf->mode & GFS_FILE_MODE_MODIFIED) != 0 ||
-	     (gf->mode & GFS_FILE_MODE_DIGEST_AVAIL) == 0) &&
-	    gf->md_offset == gf->md.filesize)
-		cip = &gf->md;
+	if ((gf->mode &
+	    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
+	    (GFS_FILE_MODE_DIGEST_CALC) && gf->md_offset == gf->md.filesize) {
+		e = gfs_pio_md_finish(gf);
+		if (e_save == GFARM_ERR_NO_ERROR)
+			e_save = e;
+
+		if (e == GFARM_ERR_NO_ERROR &&
+		    (gf->mode &
+		     (GFS_FILE_MODE_WRITE|GFS_FILE_MODE_DIGEST_CALC|
+		      GFS_FILE_MODE_DIGEST_FINISH)) ==
+		     (GFS_FILE_MODE_WRITE|GFS_FILE_MODE_DIGEST_CALC|
+		      GFS_FILE_MODE_DIGEST_FINISH) &&
+		    ((gf->mode & GFS_FILE_MODE_MODIFIED) != 0 ||
+		     (gf->mode & GFS_FILE_MODE_DIGEST_AVAIL) == 0) &&
+		    gf->md_offset == gf->md.filesize)
+			cip = &gf->md;
+	}
+
+	if (gf->md.cksum_type != NULL &&
+	    (gf->mode & GFS_FILE_MODE_DIGEST_FINISH) == 0) {
+		unsigned char md_value[EVP_MAX_MD_SIZE];
+
+		/* We need to do this to avoid memory leak */
+		gfarm_msgdigest_final(md_value, &gf->md_ctx);
+	}
 
 	/*
 	 * even if gfsd detectes gfmd failover,

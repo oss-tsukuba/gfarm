@@ -67,10 +67,10 @@ gfarm_msgdigest_init(const char *md_type_name, EVP_MD_CTX *md_ctx,
  * 	char md_string[GFARM_MSGDIGEST_STRSIZE];
  */
 size_t
-gfarm_msgdigest_to_string(char *md_string,
-	unsigned char *md_value, unsigned int md_len)
+gfarm_msgdigest_to_string(
+	char *md_string, unsigned char *md_value, size_t md_len)
 {
-	unsigned int i;
+	size_t i;
 
 	for (i = 0; i < md_len; ++i)
 		sprintf(&md_string[i * 2], "%02x", md_value[i]);
@@ -78,11 +78,20 @@ gfarm_msgdigest_to_string(char *md_string,
 }
 
 size_t
-gfarm_msgdigest_final_string(char *md_string, EVP_MD_CTX *md_ctx)
+gfarm_msgdigest_final(unsigned char *md_value, EVP_MD_CTX *md_ctx)
 {
 	unsigned int md_len;
-	unsigned char md_value[EVP_MAX_MD_SIZE];
 
 	EVP_DigestFinal(md_ctx, md_value, &md_len);
+	return md_len;
+}
+
+size_t
+gfarm_msgdigest_final_string(char *md_string, EVP_MD_CTX *md_ctx)
+{
+	size_t md_len;
+	unsigned char md_value[EVP_MAX_MD_SIZE];
+
+	md_len = gfarm_msgdigest_final(md_value, md_ctx);
 	return (gfarm_msgdigest_to_string(md_string, md_value, md_len));
 }

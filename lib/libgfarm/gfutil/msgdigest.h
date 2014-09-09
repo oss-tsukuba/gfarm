@@ -5,6 +5,7 @@ const char *gfarm_msgdigest_name_to_openssl(const char *);
 
 #ifdef GFARM_USE_OPENSSL /* this requires <openssl/evp.h> */
 int gfarm_msgdigest_init(const char *, EVP_MD_CTX *, int *);
+size_t gfarm_msgdigest_final(unsigned char *md_value, EVP_MD_CTX *md_ctx);
 size_t gfarm_msgdigest_final_string(char *, EVP_MD_CTX *);
 #endif
-size_t gfarm_msgdigest_to_string(char *, unsigned char *, unsigned int);
+size_t gfarm_msgdigest_to_string(char *, unsigned char *, size_t);
