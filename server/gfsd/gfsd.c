@@ -1337,13 +1337,12 @@ file_table_close(gfarm_int32_t net_fd)
 	if (fe->md_type_name != NULL &&
 	    (fe->flags & FILE_FLAG_DIGEST_FINISH) == 0) {
 		unsigned char md_value[EVP_MAX_MD_SIZE];
-		unsigned int md_len;
 
 		/* We need to do this to avoid memory leak */
-		EVP_DigestFinal(&fe->md_ctx, md_value, &md_len);
-
-		free(fe->md_type_name);
+		gfarm_msgdigest_final(md_value, &fe->md_ctx);
 	}
+	free(fe->md_type_name);
+	fe->md_type_name = NULL;
 
 	gfs_profile(
 		gettimeofday(&end_time, NULL);
