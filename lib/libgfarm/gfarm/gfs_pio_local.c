@@ -18,11 +18,16 @@
 #include <gfarm/gfarm.h>
 
 #include "queue.h"
+#include "timer.h"
 
 #include "gfs_proto.h"	/* GFS_PROTO_FSYNC_* */
 #include "gfs_client.h"
 #include "gfs_io.h"
 #include "gfs_pio.h"
+#include "gfs_profile.h"
+
+static double gfs_pio_local_write_time;
+static double gfs_pio_local_read_time;
 
 #if 0 /* not yet in gfarm v2 */
 
@@ -137,30 +142,21 @@ gfs_pio_local_storage_pwrite(GFS_File gf,
 	const char *buffer, size_t size, gfarm_off_t offset, size_t *lengthp)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
-#if 0 /* XXX FIXME: pwrite(2) on NetBSD-3.0_BETA is broken */
-	int rv = pwrite(vc->fd, buffer, size, offset);
-#else
 	int rv, save_errno;
+	gfarm_timerval_t t1, t2;
 
-	if (lseek(vc->fd, offset, SEEK_SET) == -1) {
-		save_errno = errno;
-		gflog_debug(GFARM_MSG_1001364,
-			"lseek() on view context file descriptor failed: %s",
-			strerror(save_errno));
-		return (gfarm_errno_to_error(save_errno));
-	}
-
-	rv = write(vc->fd, buffer, size);
-#endif
-
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+	rv = pwrite(vc->fd, buffer, size, offset);
 	if (rv == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_1001365,
-			"write() on view context file descriptor failed: %s",
+		gflog_debug(GFARM_MSG_UNFIXED, "pwrite: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
 	*lengthp = rv;
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_local_write_time += gfarm_timerval_sub(&t2, &t1));
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -191,29 +187,21 @@ gfs_pio_local_storage_pread(GFS_File gf,
 	char *buffer, size_t size, gfarm_off_t offset, size_t *lengthp)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
-#if 0 /* XXX FIXME: pread(2) on NetBSD-3.0_BETA is broken */
-	int rv = pread(vc->fd, buffer, size, offset);
-#else
 	int rv, save_errno;
+	gfarm_timerval_t t1, t2;
 
-	if (lseek(vc->fd, offset, SEEK_SET) == -1) {
-		save_errno = errno;
-		gflog_debug(GFARM_MSG_1001366,
-			"lseek() on view context file descriptor failed: %s",
-			strerror(save_errno));
-		return (gfarm_errno_to_error(save_errno));
-	}
-	rv = read(vc->fd, buffer, size);
-#endif
-
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+	rv = pread(vc->fd, buffer, size, offset);
 	if (rv == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_1001367,
-			"read() on view context file descriptor failed: %s",
+		gflog_debug(GFARM_MSG_UNFIXED, "pread: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
 	*lengthp = rv;
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_local_read_time += gfarm_timerval_sub(&t2, &t1));
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -357,4 +345,13 @@ gfs_pio_open_local_section(GFS_File gf, struct gfs_connection *gfs_server)
 	vc->storage_context = gfs_server;
 	vc->pid = getpid();
 	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+gfs_pio_local_display_timers(void)
+{
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "local read      : %g sec", gfs_pio_local_read_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "local write     : %g sec", gfs_pio_local_write_time);
 }

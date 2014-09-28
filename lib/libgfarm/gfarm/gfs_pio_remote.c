@@ -13,6 +13,7 @@
 #include <gfarm/gfarm.h>
 
 #include "queue.h"
+#include "timer.h"
 
 #include "host.h"
 #include "config.h"
@@ -20,6 +21,10 @@
 #include "gfs_client.h"
 #include "gfs_io.h"
 #include "gfs_pio.h"
+#include "gfs_profile.h"
+
+static double gfs_pio_remote_write_time;
+static double gfs_pio_remote_read_time;
 
 static gfarm_error_t
 gfs_pio_remote_storage_close(GFS_File gf)
@@ -53,7 +58,11 @@ gfs_pio_remote_storage_pwrite(GFS_File gf,
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
+	gfarm_error_t e;
+	gfarm_timerval_t t1, t2;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
 	/*
 	 * buffer beyond GFS_PROTO_MAX_IOSIZE are just ignored by gfsd,
 	 * we don't perform such GFS_PROTO_WRITE request, because it's
@@ -62,8 +71,11 @@ gfs_pio_remote_storage_pwrite(GFS_File gf,
 	 */
 	if (size > GFS_PROTO_MAX_IOSIZE)
 		size = GFS_PROTO_MAX_IOSIZE;
-	return (gfs_client_pwrite(gfs_server, gf->fd, buffer, size, offset,
-	    lengthp));
+	e = gfs_client_pwrite(gfs_server, gf->fd, buffer, size, offset,
+	    lengthp);
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_remote_write_time += gfarm_timerval_sub(&t2, &t1));
+	return (e);
 }
 
 static gfarm_error_t
@@ -92,15 +104,22 @@ gfs_pio_remote_storage_pread(GFS_File gf,
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
+	gfarm_error_t e;
+	gfarm_timerval_t t1, t2;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
 	/*
 	 * Unlike gfs_pio_remote_storage_write(), we don't care
 	 * buffer size here, because automatic i/o size truncation
 	 * performed by gfsd isn't inefficient for read case.
 	 * Note that upper gfs_pio layer should care the partial read.
 	 */
-	return (gfs_client_pread(gfs_server, gf->fd, buffer, size, offset,
-	    lengthp));
+	e = gfs_client_pread(gfs_server, gf->fd, buffer, size, offset,
+	    lengthp);
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_remote_read_time += gfarm_timerval_sub(&t2, &t1));
+	return (e);
 }
 
 static gfarm_error_t
@@ -197,4 +216,13 @@ gfs_pio_open_remote_section(GFS_File gf, struct gfs_connection *gfs_server)
 	vc->fd = -1; /* not used */
 	vc->pid = getpid();
 	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+gfs_pio_remote_display_timers(void)
+{
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "remote read     : %g sec", gfs_pio_remote_read_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "remote write    : %g sec", gfs_pio_remote_write_time);
 }
