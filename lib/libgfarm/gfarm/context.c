@@ -70,6 +70,14 @@ static const struct gfarm_context_module_entry module_entries[] = {
 		gfarm_gfs_pio_section_static_term
 	},
 	{
+		gfarm_gfs_pio_local_static_init,
+		gfarm_gfs_pio_local_static_term
+	},
+	{
+		gfarm_gfs_pio_remote_static_init,
+		gfarm_gfs_pio_remote_static_term
+	},
+	{
 		gfarm_gfs_stat_static_init,
 		gfarm_gfs_stat_static_term
 	},
