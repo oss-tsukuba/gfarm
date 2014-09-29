@@ -3299,7 +3299,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		}
 		if (!gfm_client_connection_empty(gfm_server)) {
 			gflog_warning(GFARM_MSG_1003786, "protocol mismatch, "
-			    "iobufer not empty: request = %d", request);
+			    "iobuffer not empty: request = %d", request);
 			cleanup(0);
 			exit(1);
 		}
