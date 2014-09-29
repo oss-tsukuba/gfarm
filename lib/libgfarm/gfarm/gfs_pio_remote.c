@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <libgen.h>
+#include <sys/time.h>
 #include <sys/socket.h> /* struct sockaddr */
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
