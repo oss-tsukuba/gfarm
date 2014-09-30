@@ -20,6 +20,7 @@
 #include "gfs_misc.h"
 
 static double gfs_stat_time;
+static unsigned long long gfs_stat_count;
 
 struct gfm_stat_closure {
 	struct gfs_stat *st;
@@ -81,6 +82,7 @@ gfs_stat(const char *path, struct gfs_stat *s)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_stat_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_stat_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001377,
@@ -112,6 +114,7 @@ gfs_lstat(const char *path, struct gfs_stat *s)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_stat_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_stat_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002666,
@@ -142,6 +145,7 @@ gfs_fstat(GFS_File gf, struct gfs_stat *s)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_stat_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_stat_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001378,
@@ -287,5 +291,7 @@ void
 gfs_stat_display_timers(void)
 {
 	gflog_info(GFARM_MSG_1000132,
-	    "gfs_stat        : %g sec", gfs_stat_time);
+	    "gfs_stat time  : %g sec", gfs_stat_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_stat count : %llu", gfs_stat_count);
 }

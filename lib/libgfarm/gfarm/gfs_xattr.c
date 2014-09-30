@@ -25,7 +25,8 @@
 #include "gfs_profile.h"
 #include "xattr_info.h"
 
-static double gfs_xattr_time = 0.0;
+static double gfs_xattr_time;
+static unsigned long long gfs_xattr_count;
 
 struct gfm_setxattr0_closure {
 	int xmlMode;
@@ -86,6 +87,7 @@ gfs_setxattr0(int xmlMode, int cflags, const char *path, const char *name,
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001398,
@@ -151,6 +153,7 @@ gfs_fsetxattr(GFS_File gf, const char *name, const void *value,
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001399,
@@ -221,6 +224,7 @@ gfs_getxattr_proccall(int xmlMode, int cflags, const char *path,
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001400,
@@ -255,6 +259,7 @@ gfs_fgetxattr_proccall(int xmlMode, GFS_File gf, const char *name,
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001401,
@@ -389,6 +394,7 @@ gfs_listxattr_proccall(int xmlMode, int cflags, const char *path,
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001404,
@@ -509,6 +515,7 @@ gfs_removexattr0(int xmlMode, int cflags, const char *path, const char *name)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001407,
@@ -561,6 +568,7 @@ gfs_fremovexattr(GFS_File gf, const char *name)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001408,
@@ -662,6 +670,7 @@ gfs_findxmlattr(const char *path, const char *expr,
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_xattr_count++);
 
 	return (e);
 }
@@ -752,6 +761,7 @@ gfs_getxmlent(struct gfs_xmlattr_ctx *ctxp, char **fpathp, char **namep)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001411,
@@ -781,6 +791,7 @@ gfs_closexmlattr(struct gfs_xmlattr_ctx *ctxp)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001412,
@@ -795,5 +806,7 @@ void
 gfs_xattr_display_timers(void)
 {
 	gflog_info(GFARM_MSG_1000170,
-	    "gfs_xattr      : %g sec", gfs_xattr_time);
+	    "gfs_xattr time  : %g sec", gfs_xattr_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_xattr count : %llu", gfs_xattr_count);
 }

@@ -26,6 +26,10 @@
 
 static double gfs_pio_remote_write_time;
 static double gfs_pio_remote_read_time;
+static unsigned long long gfs_pio_remote_write_size;
+static unsigned long long gfs_pio_remote_read_size;
+static unsigned long long gfs_pio_remote_write_count;
+static unsigned long long gfs_pio_remote_read_count;
 
 static gfarm_error_t
 gfs_pio_remote_storage_close(GFS_File gf)
@@ -74,8 +78,12 @@ gfs_pio_remote_storage_pwrite(GFS_File gf,
 		size = GFS_PROTO_MAX_IOSIZE;
 	e = gfs_client_pwrite(gfs_server, gf->fd, buffer, size, offset,
 	    lengthp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_remote_write_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_pio_remote_write_size += *lengthp);
+	gfs_profile(gfs_pio_remote_write_count++);
 	return (e);
 }
 
@@ -118,8 +126,12 @@ gfs_pio_remote_storage_pread(GFS_File gf,
 	 */
 	e = gfs_client_pread(gfs_server, gf->fd, buffer, size, offset,
 	    lengthp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_remote_read_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_pio_remote_read_size += *lengthp);
+	gfs_profile(gfs_pio_remote_read_count++);
 	return (e);
 }
 
@@ -223,7 +235,15 @@ void
 gfs_pio_remote_display_timers(void)
 {
 	gflog_info(GFARM_MSG_UNFIXED,
-	    "remote read     : %g sec", gfs_pio_remote_read_time);
+	    "remote read time   : %g sec", gfs_pio_remote_read_time);
 	gflog_info(GFARM_MSG_UNFIXED,
-	    "remote write    : %g sec", gfs_pio_remote_write_time);
+	    "remote read size   : %llu", gfs_pio_remote_read_size);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "remote read count  : %llu", gfs_pio_remote_read_count);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "remote write time  : %g sec", gfs_pio_remote_write_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "remote write size  : %llu", gfs_pio_remote_write_size);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "remote write count : %llu", gfs_pio_remote_write_count);
 }

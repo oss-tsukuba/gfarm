@@ -14,6 +14,7 @@
 #include "gfs_profile.h"
 
 static double gfs_unlink_time;
+static unsigned long long gfs_unlink_count;
 
 gfarm_error_t
 gfs_unlink(const char *path)
@@ -48,6 +49,7 @@ gfs_unlink(const char *path)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_unlink_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_unlink_count++);
 
 	return (gfs_remove(path));
 }
@@ -56,5 +58,7 @@ void
 gfs_unlink_display_timers(void)
 {
 	gflog_info(GFARM_MSG_1000157,
-	    "gfs_unlink      : %g sec", gfs_unlink_time);
+	    "gfs_unlink time  : %g sec", gfs_unlink_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_unlink count : %llu", gfs_unlink_count);
 }

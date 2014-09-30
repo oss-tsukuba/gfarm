@@ -29,6 +29,10 @@
 
 static double gfs_pio_local_write_time;
 static double gfs_pio_local_read_time;
+static unsigned long long gfs_pio_local_write_size;
+static unsigned long long gfs_pio_local_read_size;
+static unsigned long long gfs_pio_local_write_count;
+static unsigned long long gfs_pio_local_read_count;
 
 #if 0 /* not yet in gfarm v2 */
 
@@ -158,6 +162,8 @@ gfs_pio_local_storage_pwrite(GFS_File gf,
 	*lengthp = rv;
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_local_write_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_pio_local_write_size += rv);
+	gfs_profile(gfs_pio_local_write_count++);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -203,6 +209,8 @@ gfs_pio_local_storage_pread(GFS_File gf,
 	*lengthp = rv;
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_local_read_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(gfs_pio_local_read_size += rv);
+	gfs_profile(gfs_pio_local_read_count++);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -352,7 +360,15 @@ void
 gfs_pio_local_display_timers(void)
 {
 	gflog_info(GFARM_MSG_UNFIXED,
-	    "local read      : %g sec", gfs_pio_local_read_time);
+	    "local read time   : %g sec", gfs_pio_local_read_time);
 	gflog_info(GFARM_MSG_UNFIXED,
-	    "local write     : %g sec", gfs_pio_local_write_time);
+	    "local read size   : %llu", gfs_pio_local_read_size);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "local read count  : %llu", gfs_pio_local_read_count);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "local write time  : %g sec", gfs_pio_local_write_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "local write size  : %llu", gfs_pio_local_write_size);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "local write count : %llu", gfs_pio_local_write_count);
 }
