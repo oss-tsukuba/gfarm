@@ -2,19 +2,19 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfmd</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfmd">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfmd.8"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfmd — Gfarm metadata server</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfmd</code>  [<em class="replaceable"><code>options</code></em>]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p><span class="command"><strong>gfmd</strong></span> is a Gfarm filesystem metadata server for accessing
 the filesystem metadata of the Gfarm filesystem.  <span class="command"><strong>gfmd</strong></span> must
@@ -31,9 +31,9 @@ respectively, in <code class="filename">~/.gfarm2rc</code>
 or in <code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code>
 on a client node.</p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-L</code> <em class="parameter"><code>log-level</code></em></span></dt>
 <dd><p>Specifies a log priority level.  The log output, which priority
 is higher or equal to this level, will be sent to syslog or standard error.
@@ -42,6 +42,10 @@ by this option.
 </p></dd>
 <dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>pid-file</code></em></span></dt>
 <dd><p>Specifies a file name to be used to record the process ID of gfmd.</p></dd>
+<dt><span class="term"><code class="option">-S</code></span></dt>
+<dd><p>Runs as slave forcedly, even if the gfmd is set to default master.
+NOTE: Please do not use this feature for now, because this implementation
+is not complete.</p></dd>
 <dt><span class="term"><code class="option">-d</code></span></dt>
 <dd>
 <p>Specifies the debug mode.  With the -d option, gfmd runs as a
@@ -60,6 +64,9 @@ configuration file.</p></dd>
 <dd><p>Specifies a syslog facility to report errors encountered by gfmd.
 By default,
 local0 is used.</p></dd>
+<dt><span class="term"><code class="option">-t</code></span></dt>
+<dd><p>Enables an audit log feature for file creation, modification and
+removal.</p></dd>
 <dt><span class="term"><code class="option">-v</code></span></dt>
 <dd><p>Makes gfmd output verbose log message on authentication.
 This is useful, when one has to resolve an issue about GSI authenticaion.
@@ -68,14 +75,14 @@ This is useful, when one has to resolve an issue about GSI authenticaion.
 <dd><p>Displays a list of command options.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="FILES">
+<div class="refsect1">
 <a name="files"></a><h2>FILES</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfmd.conf</code></span></dt>
 <dd><p>configuration file</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
 <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
