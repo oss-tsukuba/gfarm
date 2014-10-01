@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfmd
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
 .\"      Date: 14 Feb 2008
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -62,6 +62,11 @@ Specifies a log priority level\&. The log output, which priority is higher or eq
 Specifies a file name to be used to record the process ID of gfmd\&.
 .RE
 .PP
+\fB\-S\fR
+.RS 4
+Runs as slave forcedly, even if the gfmd is set to default master\&. NOTE: Please do not use this feature for now, because this implementation is not complete\&.
+.RE
+.PP
 \fB\-d\fR
 .RS 4
 Specifies the debug mode\&. With the \-d option, gfmd runs as a foreground process, not a daemon\&.
@@ -86,6 +91,11 @@ Specifies a port number to be used by gfmd\&.
 Specifies a syslog facility to report errors encountered by gfmd\&. By default, local0 is used\&.
 .RE
 .PP
+\fB\-t\fR
+.RS 4
+Enables an audit log feature for file creation, modification and removal\&.
+.RE
+.PP
 \fB\-v\fR
 .RS 4
 Makes gfmd output verbose log message on authentication\&. This is useful, when one has to resolve an issue about GSI authenticaion\&.
@@ -103,5 +113,4 @@ configuration file
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfarm2.conf\fR(5)

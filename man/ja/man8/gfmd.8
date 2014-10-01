@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfmd
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
 .\"      Date: 14 Feb 2008
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -51,6 +51,11 @@ gfmdを利用するためには， クライアントノードの~/\&.gfarm2rc�
 gfmdのprocess IDを、指定したファイルに記録します。
 .RE
 .PP
+\fB\-S\fR
+.RS 4
+デフォルトのマスターgfmdとして設定されている場合でも、スレーブgfmd として起動します。 注意: この機能の実装は不完全ですので、今のところ、利用しないでください。
+.RE
+.PP
 \fB\-d\fR
 .RS 4
 デバッグオプションです。デーモンとしてではなく、フォアグラウンド・ プロセスとして立ち上がります。
@@ -73,6 +78,11 @@ gfmdが利用するTCPのポート番号を指定します。
 gfmdがエラー報告に用いるsyslogのファシリティを指定します。省略 した場合には、local0を使用します。
 .RE
 .PP
+\fB\-t\fR
+.RS 4
+ファイル作成・変更・削除に関する監査ログの出力機能を有効にします。
+.RE
+.PP
 \fB\-v\fR
 .RS 4
 認証処理に関するログを詳しく出力します。 GSI認証の問題を解決する場合に有用なオプションです。
@@ -90,5 +100,4 @@ gfmdが参照する設定ファイルです。
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfarm2.conf\fR(5)
