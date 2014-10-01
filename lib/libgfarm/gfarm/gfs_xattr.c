@@ -807,6 +807,6 @@ gfs_xattr_display_timers(void)
 {
 	gflog_info(GFARM_MSG_1000170,
 	    "gfs_xattr time  : %g sec", gfs_xattr_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003838,
 	    "gfs_xattr count : %llu", gfs_xattr_count);
 }

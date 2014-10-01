@@ -1615,56 +1615,56 @@ gfs_pio_display_timers(void)
 {
 	gflog_info(GFARM_MSG_1000095,
 	    "gfs_pio_create time  : %g sec", gfs_pio_create_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003807,
 	    "gfs_pio_create count : %llu", gfs_pio_create_count);
 	gflog_info(GFARM_MSG_1000096,
 	    "gfs_pio_open time   : %g sec", gfs_pio_open_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003808,
 	    "gfs_pio_open count  : %llu", gfs_pio_open_count);
 	gflog_info(GFARM_MSG_1000097,
 	    "gfs_pio_close time  : %g sec", gfs_pio_close_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003809,
 	    "gfs_pio_close count : %llu", gfs_pio_close_count);
 	gflog_info(GFARM_MSG_1000098,
 	    "gfs_pio_seek time   : %g sec", gfs_pio_seek_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003810,
 	    "gfs_pio_seek count  : %llu", gfs_pio_seek_count);
 	gflog_info(GFARM_MSG_1000099,
 	    "gfs_pio_truncate time  : %g sec", gfs_pio_truncate_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003811,
 	    "gfs_pio_truncate count : %llu", gfs_pio_truncate_count);
 	gflog_info(GFARM_MSG_1000100,
 	    "gfs_pio_read time   : %g sec", gfs_pio_read_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003812,
 	    "gfs_pio_read size   : %llu", gfs_pio_read_size);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003813,
 	    "gfs_pio_read count  : %llu", gfs_pio_read_count);
 	gflog_info(GFARM_MSG_1000101,
 	    "gfs_pio_write time  : %g sec", gfs_pio_write_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003814,
 	    "gfs_pio_write size  : %llu", gfs_pio_write_size);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003815,
 	    "gfs_pio_write count : %llu", gfs_pio_write_count);
 	gflog_info(GFARM_MSG_1000102,
 	    "gfs_pio_sync time   : %g sec", gfs_pio_sync_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003816,
 	    "gfs_pio_sync count  : %llu", gfs_pio_sync_count);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003817,
 	    "gfs_pio_datasync time  : %g sec", gfs_pio_datasync_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003818,
 	    "gfs_pio_datasync count : %llu", gfs_pio_datasync_count);
 	gflog_info(GFARM_MSG_1000103,
 	    "gfs_pio_getline time  : %g sec (this calls getc)",
 			gfs_pio_getline_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003819,
 	    "gfs_pio_getline count : %llu (this calls getc)",
 			gfs_pio_getline_count);
 	gflog_info(GFARM_MSG_1000104,
 	    "gfs_pio_getc time  : %g sec", gfs_pio_getc_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003820,
 	    "gfs_pio_getc count : %llu", gfs_pio_getc_count);
 	gflog_info(GFARM_MSG_1000105,
 	    "gfs_pio_putc time  : %g sec", gfs_pio_putc_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003821,
 	    "gfs_pio_putc count : %llu", gfs_pio_putc_count);
 }
