@@ -70,6 +70,15 @@ by this option.
 </varlistentry>
 
 <varlistentry>
+<term><option>-S</option></term>
+<listitem>
+<para>Runs as slave forcedly, even if the gfmd is set to default master.
+NOTE: Please do not use this feature for now, because this implementation
+is not complete.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-d</option></term>
 <listitem>
 <para>Specifies the debug mode.  With the -d option, gfmd runs as a
@@ -102,6 +111,14 @@ configuration file.</para>
 <para>Specifies a syslog facility to report errors encountered by gfmd.
 By default,
 local0 is used.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-t</option></term>
+<listitem>
+<para>Enables an audit log feature for file creation, modification and
+removal.</para>
 </listitem>
 </varlistentry>
 
