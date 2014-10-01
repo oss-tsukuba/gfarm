@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
 .\"      Date: 12 Nov 2013
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -1315,7 +1315,6 @@ fatal_action \fI動作名\fR
 \fIbacktrace_and_abort\fR
 です。
 .sp
-
 例:
 .sp
 .if n \{\
@@ -1346,14 +1345,12 @@ backtrace_and_exit
 .PP
 abort
 .RS 4
-
 \fBabort\fR(3)
 を呼びます。
 .RE
 .PP
 exit
 .RS 4
-
 \fBexit\fR(3)
 を呼びます。
 .RE
@@ -1561,8 +1558,6 @@ synchronous_journaling \fI有効性\fR
 metadb_server_force_slave \fI有効性\fR
 .RS 4
 enable のとき、デフォルトのマスターgfmdとして設定されている場合でも、スレーブgfmdとして起動します。 デフォルトはdisableです。
-.sp
-注意: この機能の実装は不完全ですので、今のところ、利用しないでください。
 .sp
 この文はgfmd\&.confのみで有効です。
 .sp
@@ -3479,7 +3474,6 @@ $HOME/\&.gfarm2rc
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfmd\fR(8),
 \fBgfsd\fR(8),
 \fBsetsockopt\fR(2)
