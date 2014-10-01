@@ -1,8 +1,8 @@
 '\" t
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 23 Apr 2014
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 12 Jun 2013
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
@@ -942,7 +942,6 @@ This directive specifies a file name
 \fIuser\-map\-file\fR
 for mapping local user names to global user names\&. This map file is used only for sharedsecret authentication\&. When this file is not specified, a global user name is assumed to be same as the local user name\&.
 .sp
-
 \fIuser\-map\-file\fR
 is needed when you have to use the sharedsecret authentication method in the case where you have different unix account names on different filesystem nodes\&. In such a case, the
 \fIuser\-map\-file\fR
@@ -1451,7 +1450,6 @@ fatal_action \fIaction_name\fR
 This parameter specifies the behavior at a fatal error\&. The default action is
 \fIbacktrace_and_abort\fR\&.
 .sp
-
 For example,
 .sp
 .if n \{\
@@ -1718,8 +1716,6 @@ Example:
 metadb_server_force_slave \fIvalidity\fR
 .RS 4
 When "enable" is specified, even if the gfmd is set to default master, it run as slave gfmd forcedly\&. The default is "disable"\&.
-.sp
-NOTE: Please do not use this feature for now, because this implementation is not complete\&.
 .sp
 This parameter is only available in gfmd\&.conf\&.
 .sp
@@ -3614,7 +3610,6 @@ $HOME/\&.gfarm2rc
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfmd\fR(8),
 \fBgfsd\fR(8),
 \fBsetsockopt\fR(2)
