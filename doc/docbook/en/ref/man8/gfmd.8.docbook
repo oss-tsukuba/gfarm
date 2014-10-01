@@ -72,9 +72,7 @@ by this option.
 <varlistentry>
 <term><option>-S</option></term>
 <listitem>
-<para>Runs as slave forcedly, even if the gfmd is set to default master.
-NOTE: Please do not use this feature for now, because this implementation
-is not complete.</para>
+<para>Runs as slave forcedly, even if the gfmd is set to default master.</para>
 </listitem>
 </varlistentry>
 
