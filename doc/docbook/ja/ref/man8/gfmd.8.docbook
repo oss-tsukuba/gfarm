@@ -69,6 +69,16 @@ metadb_server_portでポート番号を指定する必要がありま
 </varlistentry>
 
 <varlistentry>
+<term><option>-S</option></term>
+<listitem>
+<para>デフォルトのマスターgfmdとして設定されている場合でも、スレーブgfmd
+として起動します。
+注意: この機能の実装は不完全ですので、今のところ、利用しないでください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-d</option></term>
 <listitem>
 <para>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
@@ -99,6 +109,13 @@ metadb_server_portでポート番号を指定する必要がありま
 <listitem>
 <para>gfmdがエラー報告に用いるsyslogのファシリティを指定します。省略
 した場合には、local0を使用します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-t</option></term>
+<listitem>
+<para>ファイル作成・変更・削除に関する監査ログの出力機能を有効にします。</para>
 </listitem>
 </varlistentry>
 
