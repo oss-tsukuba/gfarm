@@ -1,3 +1,16 @@
+Release note for Gfarm 2.5.8.11
+===============================
+
+[2014.10.2]
+
+Updated feature
+* show local access time, remote access time and API counts when
+  profiling feature enabled
+
+Bug fix
+* memory leak in slave gfmd, when a symbolic link is created [sf.net
+  ticket #776]
+
 Release note for Gfarm 2.5.8.10
 ===============================
 
