@@ -2,19 +2,19 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfmd</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfmd">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfmd.8"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfmd — GfarmメタDB・デーモン</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfmd</code>  [<em class="replaceable"><code>オプション</code></em>]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>gfmdは、Gfarmライブラリと協調して動作し、Gfarmファイルシステ
 ムのメタデータへのアクセスを提供するデーモンプログラムです。
@@ -31,9 +31,9 @@ metadb_server_hostで利用したいgfmdのホスト名，
 metadb_server_portでポート番号を指定する必要がありま
 す．</p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-L</code> <em class="parameter"><code>ログレベル</code></em></span></dt>
 <dd><p>
 このオプションで指定したレベル以上の優先度のログを出力します。
@@ -41,6 +41,11 @@ metadb_server_portでポート番号を指定する必要がありま
 </p></dd>
 <dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>PIDファイル</code></em></span></dt>
 <dd><p>gfmdのprocess IDを、指定したファイルに記録します。</p></dd>
+<dt><span class="term"><code class="option">-S</code></span></dt>
+<dd><p>デフォルトのマスターgfmdとして設定されている場合でも、スレーブgfmd
+として起動します。
+注意: この機能の実装は不完全ですので、今のところ、利用しないでください。
+</p></dd>
 <dt><span class="term"><code class="option">-d</code></span></dt>
 <dd>
 <p>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
@@ -57,6 +62,8 @@ metadb_server_portでポート番号を指定する必要がありま
 <dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>syslogファシリティ</code></em></span></dt>
 <dd><p>gfmdがエラー報告に用いるsyslogのファシリティを指定します。省略
 した場合には、local0を使用します。</p></dd>
+<dt><span class="term"><code class="option">-t</code></span></dt>
+<dd><p>ファイル作成・変更・削除に関する監査ログの出力機能を有効にします。</p></dd>
 <dt><span class="term"><code class="option">-v</code></span></dt>
 <dd><p>
 認証処理に関するログを詳しく出力します。
@@ -66,14 +73,14 @@ GSI認証の問題を解決する場合に有用なオプションです。
 <dd><p>引数オプションを表示します。</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="FILES">
+<div class="refsect1">
 <a name="files"></a><h2>FILES</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfmd.conf</code></span></dt>
 <dd><p>gfmdが参照する設定ファイルです。</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
 <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
