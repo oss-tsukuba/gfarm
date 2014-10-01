@@ -1775,10 +1775,6 @@ it run as slave gfmd forcedly.
 The default is "disable".
 </para>
 <para>
-NOTE: Please do not use this feature for now,
-because this implementation is not complete.
-</para>
-<para>
 This parameter is only available in gfmd.conf.
 </para>
 <para>Example:</para>

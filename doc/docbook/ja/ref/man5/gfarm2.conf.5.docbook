@@ -1721,9 +1721,6 @@ disable設定は、通常のファイルシステムにおける"noatime"オプ�
 デフォルトはdisableです。
 </para>
 <para>
-注意: この機能の実装は不完全ですので、今のところ、利用しないでください。
-</para>
-<para>
 この文はgfmd.confのみで有効です。
 </para>
 <para>例:</para>
