@@ -1799,9 +1799,6 @@ gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します�
 デフォルトはdisableです。
 </para>
 <para>
-注意: この機能の実装は不完全ですので、今のところ、利用しないでください。
-</para>
-<para>
 この文はgfmd.confのみで有効です。
 </para>
 <para>例:</para>
