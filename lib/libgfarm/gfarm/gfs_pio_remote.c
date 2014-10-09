@@ -9,6 +9,7 @@
 #include <string.h>
 #include <libgen.h>
 #include <sys/socket.h> /* struct sockaddr */
+#include <sys/time.h>
 
 #include <openssl/evp.h>
 

@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h> /* gfs_client.h needs socklen_t */
+#include <sys/time.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
