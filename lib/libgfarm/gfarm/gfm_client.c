@@ -439,7 +439,10 @@ gfm_client_connect_multiple(const char *hostname, int port,
 			e2 = e;
 	}
 	if (nfd == 0) {
-		assert(e2 != GFARM_ERR_NO_ERROR);
+		free(cis);
+		free(pfds);
+		if (e2 == GFARM_ERR_NO_ERROR)
+			e2 = GFARM_ERR_NO_SUCH_OBJECT;
 		return (e2);
 	}
 	*cisp = cis;

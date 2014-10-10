@@ -27,6 +27,7 @@
 #include "gfs_proto.h"
 #include "auth.h"
 #include "gfm_client.h"
+#include "metadb_server.h"
 #include "config.h"
 
 #include "peer.h"
@@ -1036,6 +1037,55 @@ gfmdc_connect(void)
 	gflog_info(GFARM_MSG_1002998,
 	    "gfmd_channel(%s) : connected", hostname);
 	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * This function is similar to gfmdc_connect(), but it only examines
+ * whether another gfmd is running.
+ */
+int
+gfmdc_try_connect_once(void)
+{
+	gfarm_error_t e;
+	int port;
+	const char *hostname;
+	struct mdhost *master;
+	struct gfm_connection *gfm_server = NULL;
+	char *local_user;
+	struct passwd *pwd;
+	static const char *service_user = GFMD_USERNAME;
+	struct gfarm_metadb_server *real_server;
+
+	master = mdhost_lookup_master();
+	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_METADATA_HOST);
+	hostname = mdhost_get_name(master);
+	port = mdhost_get_port(master);
+
+	if ((e = gfarm_global_to_local_username_by_url(GFARM_PATH_ROOT,
+	    service_user, &local_user)) != GFARM_ERR_NO_ERROR) {
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "no local user for the global `%s' user.",
+		    service_user); /* exit */
+	}
+	if ((pwd = getpwnam(local_user)) == NULL) {
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "user `%s' is necessary, but doesn't exist.",
+		    local_user); /* exit */
+	}
+
+	/* try connecting to multiple destinations */
+	e = gfm_client_connect_with_seteuid(hostname, port,
+	    service_user, &gfm_server, NULL, pwd, 1);
+	if (e == GFARM_ERR_NO_ERROR) {
+		real_server =
+		    gfm_client_connection_get_real_server(gfm_server);
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "master gfmd is running on %s",
+		    gfarm_metadb_server_get_name(real_server));
+		gfm_client_connection_free(gfm_server);
+		return (1);
+	}
+	return (0);
 }
 
 static int
