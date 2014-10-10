@@ -288,6 +288,16 @@ mdhost_set_is_default_master(struct mdhost *m, int enable)
 	mdhost_mutex_unlock(m, diag);
 }
 
+static void
+mdhost_set_is_self(struct mdhost *m, int enable)
+{
+	static const char diag[] = "mdhost_set_is_self";
+
+	mdhost_mutex_lock(m, diag);
+	gfarm_metadb_server_set_is_self(&m->ms, enable);
+	mdhost_mutex_unlock(m, diag);
+}
+
 struct mdcluster *
 mdhost_get_cluster(struct mdhost *m)
 {
@@ -1346,6 +1356,7 @@ mdhost_init(void)
 		}
 	}
 	mdhost_self = self;
+	mdhost_set_is_self(mdhost_self, 1);
 	if (gfarm_get_metadb_replication_enabled()) {
 		FOREACH_MDHOST(it) {
 			mh = mdhost_iterator_access(&it);
