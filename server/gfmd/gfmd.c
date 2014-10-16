@@ -1170,7 +1170,7 @@ transform_to_master(void)
 		    "because this is not a master candidate.");
 		return;
 	}
-	if (gfmdc_try_connect_once()) {
+	if (gfmdc_is_master_gfmd_running()) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "cannot transform to the master gfmd "
 		    "because another master gfmd is already running");
@@ -1771,7 +1771,7 @@ main(int argc, char **argv)
 		start_gfmdc_threads();
 		gfmd_startup_state_notify_ready();
 		if (is_master) {
-			if (gfmdc_try_connect_once()) {
+			if (gfmdc_is_master_gfmd_running()) {
 				gflog_fatal(GFARM_MSG_UNFIXED,
 				    "another master gfmd is already running");
 			}
