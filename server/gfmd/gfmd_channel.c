@@ -1044,7 +1044,7 @@ gfmdc_connect(void)
  * whether another gfmd is running.
  */
 int
-gfmdc_try_connect_once(void)
+gfmdc_is_master_gfmd_running(void)
 {
 	gfarm_error_t e;
 	int port;
