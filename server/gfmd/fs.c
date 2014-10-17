@@ -4436,13 +4436,16 @@ gfm_server_replica_added_cksum(struct peer *peer, int from_client, int skip)
 			diag, gfarm_error_string(e));
 		return (e);
 	}
-	if (skip)
+	if (skip) {
+		free(cksum_type);
 		return (GFARM_ERR_NO_ERROR);
+	}
 	giant_lock();
 
 	e = gfm_server_replica_added_common(diag, peer, from_client, 1,
 	    src_err, dst_err, flags, 0, 0, size,
 	    cksum_type, cksum_len, cksum, cksum_result_flags);
+	free(cksum_type);
 
 	giant_unlock();
 	return (gfm_server_put_reply(peer, diag, e, ""));
