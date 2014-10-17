@@ -3358,30 +3358,20 @@ fhclose_write_resume(struct peer *peer, void *closure, int *suspendedp)
 	    flags, old_gen, new_gen, cookie));
 }
 
-gfarm_error_t
-gfm_server_fhclose_write(struct peer *peer, int from_client, int skip,
-	int *suspendedp)
+static gfarm_error_t
+gfm_server_fhclose_write_common(struct peer *peer, int from_client,
+	gfarm_ino_t inum, gfarm_off_t size,
+	struct gfarm_timespec *atimep, struct gfarm_timespec *mtimep,
+	gfarm_int32_t *flagsp,
+	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
+	gfarm_uint64_t *cookiep, int *suspendedp, const char *diag)
 {
 	gfarm_error_t e;
 	struct host *spool_host;
-	gfarm_ino_t inum;
-	gfarm_int64_t old_gen, new_gen = 0;
-	gfarm_off_t size;
-	struct gfarm_timespec atime, mtime;
-	gfarm_int32_t flags = 0;
-	gfarm_uint64_t cookie = 0;
 	struct inode *inode;
 	struct fhclose_write_resume_arg *arg;
 	char *trace_log;
-	static const char diag[] = "GFM_PROTO_FHCLOSE_WRITE";
 
-	e = gfm_server_get_request(peer, diag, "llllili",
-	    &inum, &old_gen, &size,
-	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (skip)
-		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
 
 	if (from_client) { /* from gfsd only */
@@ -3389,8 +3379,7 @@ gfm_server_fhclose_write(struct peer *peer, int from_client, int skip,
 		    "operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1003315,
-	    "peer_get_host() failed");
+		gflog_debug(GFARM_MSG_1003315, "peer_get_host() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((inode = inode_lookup(inum)) == NULL) {
 		gflog_debug(GFARM_MSG_1003316,
@@ -3399,7 +3388,7 @@ gfm_server_fhclose_write(struct peer *peer, int from_client, int skip,
 	} else if (!inode_is_file(inode)) {
 		gflog_warning(GFARM_MSG_UNFIXED,
 		    "%s: inode %lld:%lld: not a file",
-		    diag, (long long)inum, (long long)old_gen);
+		    diag, (long long)inum, (long long)*old_genp);
 		e = GFARM_ERR_STALE_FILE_HANDLE;
 	} else if (inode_new_generation_is_pending(inode)) {
 		GFARM_MALLOC(arg);
@@ -3408,9 +3397,9 @@ gfm_server_fhclose_write(struct peer *peer, int from_client, int skip,
 		} else {
 			arg->inode = inode;
 			arg->size = size;
-			arg->atime = atime;
-			arg->mtime = mtime;
-			arg->old_gen = old_gen; /* for logging */
+			arg->atime = *atimep;
+			arg->mtime = *mtimep;
+			arg->old_gen = *old_genp; /* for logging */
 			if ((e = inode_new_generation_wait(inode, peer,
 			    fhclose_write_resume, arg)) ==
 			    GFARM_ERR_NO_ERROR) {
@@ -3421,19 +3410,89 @@ gfm_server_fhclose_write(struct peer *peer, int from_client, int skip,
 		}
 	} else {
 		e = fhclose_write(peer, spool_host, inode, size,
-		    &atime, &mtime,
-		    &flags, &old_gen, &new_gen, &cookie,
+		    atimep, mtimep,
+		    flagsp, old_genp, new_genp, cookiep,
 		    &trace_log, diag);
 	}
 
 	giant_unlock();
 
 	if (e == GFARM_ERR_NO_ERROR && gfarm_ctxp->file_trace &&
-	    (flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0 &&
+	    (*flagsp & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0 &&
 	    trace_log != NULL) {
 		gflog_trace(GFARM_MSG_UNFIXED, "%s", trace_log);
 		free(trace_log);
 	}
+	return (e);
+}
+
+gfarm_error_t
+gfm_server_fhclose_write(struct peer *peer, int from_client, int skip,
+	int *suspendedp)
+{
+	gfarm_error_t e;
+	gfarm_ino_t inum;
+	gfarm_off_t size;
+	struct gfarm_timespec atime, mtime;
+	gfarm_int64_t old_gen, new_gen = 0;
+	gfarm_int32_t flags = 0;
+	gfarm_uint64_t cookie = 0;
+	static const char diag[] = "GFM_PROTO_FHCLOSE_WRITE";
+
+	e = gfm_server_get_request(peer, diag, "llllili",
+	    &inum, &old_gen, &size,
+	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	e = gfm_server_fhclose_write_common(
+	    peer, from_client, inum, size, &atime, &mtime,
+	    &flags, &old_gen, &new_gen, &cookie, suspendedp, diag);
+
+	return (gfm_server_put_reply(peer, diag, e, "illl",
+	    flags, old_gen, new_gen, cookie));
+}
+
+gfarm_error_t
+gfm_server_fhclose_write_cksum(struct peer *peer, int from_client, int skip,
+	int *suspendedp)
+{
+	gfarm_error_t e;
+	gfarm_ino_t inum;
+	gfarm_off_t size;
+	struct gfarm_timespec atime, mtime;
+	gfarm_int32_t cksum_len, cksum_flags;
+	char *cksum_type, cksum[GFM_PROTO_CKSUM_MAXLEN];
+	gfarm_int64_t old_gen, new_gen = 0;
+	gfarm_int32_t flags = 0;
+	gfarm_uint64_t cookie = 0;
+	static const char diag[] = "GFM_PROTO_FHCLOSE_WRITE_CKSUM";
+
+	e = gfm_server_get_request(peer, diag, "llllilisbi",
+	    &inum, &old_gen, &size,
+	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec,
+	    &cksum_type, sizeof(cksum), &cksum_len, cksum, &cksum_flags);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip) {
+		free(cksum_type);
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	/*
+	 * We don't use cksum_type, cksum_len, cksum and cksum_flags
+	 * on gfarm-2.6 or later.
+	 * gfsd since gfarm-2.6 never issues GFM_PROTO_FHCLOSE_WRITE_CKSUM,
+	 * because clients since gfarm-2.6 abandons old descriptors at
+	 * gfmd failover, and the cksum which was calculated by gfsd
+	 * is abandoned at that time.
+	 */
+	free(cksum_type);
+	e = gfm_server_fhclose_write_common(
+	    peer, from_client, inum, size, &atime, &mtime,
+	    &flags, &old_gen, &new_gen, &cookie, suspendedp, diag);
 
 	return (gfm_server_put_reply(peer, diag, e, "illl",
 	    flags, old_gen, new_gen, cookie));
