@@ -68,6 +68,9 @@ enum gfs_proto_command {
 
 	GFS_PROTO_REPLICATION_CKSUM_REQUEST,	/* since gfarm-2.6.0 */
 
+	/* from client */
+
+	GFS_PROTO_CLOSE_WRITE,			/* since gfarm-2.6.0 */
 };
 
 /*
@@ -127,6 +130,13 @@ enum gfs_proto_fsync_operation {
  * and cksum_result_flags of GFM_PROTO_REPLICA_ADDED_CKSUM,
  * and currently always 0.
  */
+
+/*
+ * flags of GFS_PROTO_CLOSE_WRITE
+ */
+enum gfs_proto_close_flags {
+	GFS_PROTO_CLOSE_FLAG_MODIFIED = 0x01,
+};
 
 /*
  * connection parameters

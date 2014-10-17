@@ -66,6 +66,8 @@ gfarm_error_t gfs_client_open(struct gfs_connection *, gfarm_int32_t);
 gfarm_error_t gfs_client_open_local(struct gfs_connection *, gfarm_int32_t,
 	int *);
 gfarm_error_t gfs_client_close(struct gfs_connection *, gfarm_int32_t);
+gfarm_error_t gfs_client_close_write(struct gfs_connection *,
+	gfarm_int32_t, gfarm_int32_t);
 gfarm_error_t gfs_client_pread(struct gfs_connection *,
 		       gfarm_int32_t, void *, size_t, gfarm_off_t, size_t *);
 gfarm_error_t gfs_client_pwrite(struct gfs_connection *,

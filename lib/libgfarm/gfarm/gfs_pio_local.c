@@ -162,7 +162,11 @@ gfs_pio_local_storage_close(GFS_File gf)
 		return (e);
 	}
 #endif /* __KERNEL__ */
-	e2 = gfs_client_close(gfs_server, gf->fd);
+	if ((gf->mode & GFS_FILE_MODE_MODIFIED) != 0)
+		e2 = gfs_client_close_write(
+		    gfs_server, gf->fd, GFS_PROTO_CLOSE_FLAG_MODIFIED);
+	else
+		e2 = gfs_client_close(gfs_server, gf->fd);
 	gfarm_schedule_host_unused(
 	    gfs_client_hostname(gfs_server),
 	    gfs_client_port(gfs_server),

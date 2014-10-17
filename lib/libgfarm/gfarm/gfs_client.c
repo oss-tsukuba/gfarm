@@ -1625,6 +1625,26 @@ gfs_client_close(struct gfs_connection *gfs_server, gfarm_int32_t fd)
 }
 
 gfarm_error_t
+gfs_client_close_write(struct gfs_connection *gfs_server,
+	gfarm_int32_t fd, gfarm_int32_t flags)
+{
+	gfarm_error_t e;
+
+	/* locked */
+	gfs_client_connection_lock(gfs_server);
+	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_CLOSE_WRITE, "ii/",
+	    fd, flags);
+	if (e == GFARM_ERR_NO_ERROR)
+		--gfs_server->opened;
+	else
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_rpc() failed: %s",
+			gfarm_error_string(e));
+	gfs_client_connection_unlock(gfs_server);
+	return (e);
+}
+
+gfarm_error_t
 gfs_client_pread(struct gfs_connection *gfs_server,
 	gfarm_int32_t fd, void *buffer, size_t size,
 	gfarm_off_t off, size_t *np)

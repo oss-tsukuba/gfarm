@@ -2250,8 +2250,8 @@ digest_finish(struct gfp_xdr *client, gfarm_int32_t fd, const char *diag)
 }
 
 static gfarm_error_t
-update_file_entry_for_close(struct gfp_xdr *client, gfarm_int32_t fd,
-	const char *diag)
+update_file_entry_for_close(struct gfp_xdr *client,
+	gfarm_int32_t fd, gfarm_int32_t close_flags, const char *diag)
 {
 	struct stat st;
 	int stat_is_done = 0;
@@ -2261,6 +2261,12 @@ update_file_entry_for_close(struct gfp_xdr *client, gfarm_int32_t fd,
 
 	if ((fe = file_table_entry(fd)) == NULL)
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+
+	if ((close_flags & GFS_PROTO_CLOSE_FLAG_MODIFIED) != 0) {
+		fe->flags |= FILE_FLAG_WRITTEN;
+		fe->flags &= ~FILE_FLAG_DIGEST_CALC;
+	}
+
 	if ((fe->flags & FILE_FLAG_LOCAL) == 0) { /* remote? */
 		;
 	} else if (fstat(fe->local_fd, &st) == -1) {
@@ -2486,7 +2492,8 @@ fhclose_fd(struct gfp_xdr *client, struct file_entry *fe, const char *diag)
  * and reenter this function from cleanup().
  */
 gfarm_error_t
-close_fd_somehow(struct gfp_xdr *client, gfarm_int32_t fd, const char *diag)
+close_fd_somehow(struct gfp_xdr *client,
+	gfarm_int32_t fd, gfarm_int32_t close_flags, const char *diag)
 {
 	int failedover = 0;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2, e3;
@@ -2499,7 +2506,7 @@ close_fd_somehow(struct gfp_xdr *client, gfarm_int32_t fd, const char *diag)
 		return (e);
 	}
 
-	e3 = update_file_entry_for_close(client, fd, diag);
+	e3 = update_file_entry_for_close(client, fd, close_flags, diag);
 
 	if (gfm_server != NULL) {
 
@@ -2548,7 +2555,7 @@ close_fd_somehow(struct gfp_xdr *client, gfarm_int32_t fd, const char *diag)
 static void
 close_fd_adapter(struct gfp_xdr *client, void *closure, gfarm_int32_t fd)
 {
-	close_fd_somehow(client, fd, closure);
+	close_fd_somehow(client, fd, 0, closure);
 }
 
 static void
@@ -2563,7 +2570,7 @@ close_fd_adapter_for_process_reset(struct gfp_xdr *client,
 	void *closure, gfarm_int32_t fd)
 {
 	int *failedoverp = closure;
-	gfarm_error_t e = close_fd_somehow(client, fd,
+	gfarm_error_t e = close_fd_somehow(client, fd, 0,
 	    "close_all_fd_for_process_reset");
 
 	if (e == GFARM_ERR_GFMD_FAILED_OVER)
@@ -2591,7 +2598,19 @@ gfs_server_close(struct gfp_xdr *client)
 	static const char diag[] = "GFS_PROTO_CLOSE";
 
 	gfs_server_get_request(client, diag, "i", &fd);
-	e = close_fd_somehow(client, fd, diag);
+	e = close_fd_somehow(client, fd, 0, diag);
+	gfs_server_put_reply(client, diag, e, "");
+}
+
+void
+gfs_server_close_write(struct gfp_xdr *client)
+{
+	gfarm_error_t e;
+	gfarm_int32_t fd, flags;
+	static const char diag[] = "GFS_PROTO_CLOSE_WRITE";
+
+	gfs_server_get_request(client, diag, "ii", &fd, &flags);
+	e = close_fd_somehow(client, fd, flags, diag);
 	gfs_server_put_reply(client, diag, e, "");
 }
 
@@ -4410,6 +4429,9 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 			gfs_server_open_local(client); break;
 		case GFS_PROTO_OPEN:	gfs_server_open(client); break;
 		case GFS_PROTO_CLOSE:	gfs_server_close(client); break;
+		case GFS_PROTO_CLOSE_WRITE:
+			gfs_server_close_write(client);
+			break;
 		case GFS_PROTO_PREAD:	gfs_server_pread(client); break;
 		case GFS_PROTO_PWRITE:	gfs_server_pwrite(client); break;
 		case GFS_PROTO_WRITE:	gfs_server_write(client); break;
