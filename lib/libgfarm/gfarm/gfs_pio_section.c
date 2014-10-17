@@ -20,6 +20,8 @@
 #include "timer.h"
 #include "gfutil.h"
 #include "queue.h"
+#define GFARM_USE_OPENSSL
+#include "msgdigest.h"
 
 #include "context.h"
 #include "liberror.h"
@@ -274,12 +276,33 @@ gfs_pio_view_section_ftruncate(GFS_File gf, gfarm_off_t length)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 	gfarm_error_t e;
+	unsigned char md_value[EVP_MAX_MD_SIZE];
 
 	e = (*vc->ops->storage_ftruncate)(gf, length);
 	if (e == GFARM_ERR_NO_ERROR) {
 		gf->mode |= GFS_FILE_MODE_MODIFIED;
-		if (length < gf->md_offset)
-			gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+		if ((gf->mode & GFS_FILE_MODE_DIGEST_CALC) != 0) {
+			if (length == 0) {
+				if ((gf->mode & GFS_FILE_MODE_DIGEST_FINISH)
+				    == 0) {
+					/* to avoid memory leak */
+					gfarm_msgdigest_final(
+					    md_value, &gf->md_ctx);
+					gf->mode |=
+					    GFS_FILE_MODE_DIGEST_FINISH;
+				}
+				if (!gfs_pio_md_init(gf->md.cksum_type,
+				    &gf->md_ctx, gf->url)) {
+					free(gf->md.cksum_type);
+					gf->md.cksum_type = NULL;
+					gf->mode &=
+					    ~GFS_FILE_MODE_DIGEST_CALC;
+				} else
+					gf->mode &=
+					    ~GFS_FILE_MODE_DIGEST_FINISH;
+			} else if (length < gf->md_offset)
+				gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+		}
 		gf->md.filesize = length;
 	}
 	return (e);

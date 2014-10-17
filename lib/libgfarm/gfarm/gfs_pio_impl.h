@@ -161,3 +161,6 @@ struct gfs_file_section_context {
  * on read:
  *	io_offset == offset + length
  */
+
+int gfs_pio_md_init(const char *, EVP_MD_CTX *, char *);
+gfarm_error_t gfs_pio_md_finish(GFS_File);

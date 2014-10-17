@@ -215,7 +215,7 @@ check_connection_in_file_list(GFS_File gf, void *closure)
 #endif
 #endif /* __KERNEL__ */
 
-static int
+int
 gfs_pio_md_init(const char *md_type_name, EVP_MD_CTX *md_ctx, char *url)
 {
 	int not_supported;

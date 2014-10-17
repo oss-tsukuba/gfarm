@@ -13,4 +13,3 @@ gfarm_error_t gfs_pio_create_igen(const char *url, int flags, gfarm_mode_t mode,
 	GFS_File *gfp, gfarm_ino_t *inop, gfarm_uint64_t *genp);
 gfarm_error_t gfs_pio_append(GFS_File gf, void *buffer, int size, int *np,
 	gfarm_off_t *offp, gfarm_off_t *fsizep);
-gfarm_error_t gfs_pio_md_finish(GFS_File);
