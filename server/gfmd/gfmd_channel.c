@@ -1062,6 +1062,7 @@ gfmdc_is_master_gfmd_running(void)
 		    "user `%s' is necessary, but doesn't exist.",
 		    local_user); /* exit */
 	}
+	free(local_user);
 
 	/* try connecting to multiple destinations */
 	e = gfm_client_connect_with_seteuid(hostname, port,
