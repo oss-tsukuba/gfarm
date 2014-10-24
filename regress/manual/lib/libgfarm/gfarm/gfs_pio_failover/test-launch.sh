@@ -32,7 +32,6 @@ shhosts-domainfile|rep-info|rep-list)
 	$PROG $autoopt $type $GF_TMPF
 	;;
 
-sched-recvfile|\
 recvfile|recvfile-stat|recvfile-close-recvfile)
 	$PROG $autoopt $type $GF_TMPF $TMPD
 	;;
@@ -41,6 +40,7 @@ open-recvfile-loop)
 	$PROG $autoopt $type $GF_TMPF $TMPD/0
 	;;
 
+sched-recvfile|\
 sched-open-sendfile|sched-create-sendfile|\
 sendfile|sendfile-stat)
 	$PROG $autoopt $type $GF_TMPF $TMPF
