@@ -48,7 +48,7 @@ read
 read-stat
 open-read-loop
 recvfile
-recvfile-sat
+recvfile-stat
 open-recvfile-loop
 getc
 seek
