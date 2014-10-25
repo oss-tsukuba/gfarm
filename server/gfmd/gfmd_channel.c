@@ -1063,12 +1063,12 @@ gfmdc_is_master_gfmd_running(void)
 
 	if ((e = gfarm_global_to_local_username_by_url(GFARM_PATH_ROOT,
 	    service_user, &local_user)) != GFARM_ERR_NO_ERROR) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003841,
 		    "no local user for the global `%s' user.",
 		    service_user); /* exit */
 	}
 	if ((pwd = getpwnam(local_user)) == NULL) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003842,
 		    "user `%s' is necessary, but doesn't exist.",
 		    local_user); /* exit */
 	}
@@ -1080,7 +1080,7 @@ gfmdc_is_master_gfmd_running(void)
 	if (e == GFARM_ERR_NO_ERROR) {
 		real_server =
 		    gfm_client_connection_get_real_server(gfm_server);
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1003843,
 		    "master gfmd is running on %s",
 		    gfarm_metadb_server_get_name(real_server));
 		gfm_client_connection_free(gfm_server);

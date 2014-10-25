@@ -1187,7 +1187,7 @@ transform_to_master(void)
 		return;
 	}
 	if (gfmdc_is_master_gfmd_running()) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003839,
 		    "cannot transform to the master gfmd "
 		    "because another master gfmd is already running");
 		return;
@@ -1794,7 +1794,7 @@ main(int argc, char **argv)
 		gfmd_startup_state_notify_ready();
 		if (is_master) {
 			if (gfmdc_is_master_gfmd_running()) {
-				gflog_fatal(GFARM_MSG_UNFIXED,
+				gflog_fatal(GFARM_MSG_1003840,
 				    "another master gfmd is already running");
 			}
 			sock = open_accepting_socket(gfmd_port);
