@@ -19,6 +19,7 @@
 
 struct gfarm_gfs_unlink_static {
 	double unlink_time;
+	unsigned long long unlink_count;
 };
 
 gfarm_error_t
@@ -31,6 +32,7 @@ gfarm_gfs_unlink_static_init(struct gfarm_context *ctxp)
 		return (GFARM_ERR_NO_MEMORY);
 
 	s->unlink_time = 0;
+	s->unlink_count = 0;
 
 	ctxp->gfs_unlink_static = s;
 	return (GFARM_ERR_NO_ERROR);
@@ -76,6 +78,7 @@ gfs_unlink(const char *path)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->unlink_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->unlink_count++);
 
 	return (gfs_remove(path));
 }
@@ -84,5 +87,7 @@ void
 gfs_unlink_display_timers(void)
 {
 	gflog_info(GFARM_MSG_1000157,
-	    "gfs_unlink      : %g sec", staticp->unlink_time);
+	    "gfs_unlink time  : %g sec", staticp->unlink_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_unlink count : %llu", staticp->unlink_count);
 }

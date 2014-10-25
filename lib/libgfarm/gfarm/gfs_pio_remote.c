@@ -35,8 +35,9 @@
 #define staticp	(gfarm_ctxp->gfs_pio_remote_static)
 
 struct gfarm_gfs_pio_remote_static {
-	double write_time;
-	double read_time;
+	double write_time, read_time;
+	unsigned long long write_size, read_size;
+	unsigned long long write_count, read_count;
 };
 
 gfarm_error_t
@@ -50,6 +51,10 @@ gfarm_gfs_pio_remote_static_init(struct gfarm_context *ctxp)
 
 	s->write_time =
 	s->read_time = 0;
+	s->write_size =
+	s->read_size =
+	s->write_count =
+	s->read_count = 0;
 
 	ctxp->gfs_pio_remote_static = s;
 	return (GFARM_ERR_NO_ERROR);
@@ -114,8 +119,12 @@ gfs_pio_remote_storage_pwrite(GFS_File gf,
 		size = GFS_PROTO_MAX_IOSIZE;
 	e = gfs_client_pwrite(gfs_server, gf->fd, buffer, size, offset,
 	    lengthp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->write_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->write_size += *lengthp);
+	gfs_profile(staticp->write_count++);
 	return (e);
 }
 
@@ -158,8 +167,12 @@ gfs_pio_remote_storage_pread(GFS_File gf,
 	 */
 	e = gfs_client_pread(gfs_server, gf->fd, buffer, size, offset,
 	    lengthp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->read_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->read_size += *lengthp);
+	gfs_profile(staticp->read_count++);
 	return (e);
 }
 
@@ -301,7 +314,15 @@ void
 gfs_pio_remote_display_timers(void)
 {
 	gflog_info(GFARM_MSG_UNFIXED,
-	    "remote read     : %g sec", staticp->read_time);
+	    "remote read time   : %g sec", staticp->read_time);
 	gflog_info(GFARM_MSG_UNFIXED,
-	    "remote write    : %g sec", staticp->write_time);
+	    "remote read size   : %llu", staticp->read_size);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "remote read count  : %llu", staticp->read_count);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "remote write time  : %g sec", staticp->write_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "remote write size  : %llu", staticp->write_size);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "remote write count : %llu", staticp->write_count);
 }

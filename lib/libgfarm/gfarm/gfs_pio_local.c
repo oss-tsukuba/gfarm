@@ -39,8 +39,9 @@
 #define staticp	(gfarm_ctxp->gfs_pio_local_static)
 
 struct gfarm_gfs_pio_local_static {
-	double write_time;
-	double read_time;
+	double write_time, read_time;
+	unsigned long long write_size, read_size;
+	unsigned long long write_count, read_count;
 };
 
 gfarm_error_t
@@ -54,6 +55,10 @@ gfarm_gfs_pio_local_static_init(struct gfarm_context *ctxp)
 
 	s->write_time =
 	s->read_time = 0;
+	s->write_size =
+	s->read_size =
+	s->write_count =
+	s->read_count = 0;
 
 	ctxp->gfs_pio_local_static = s;
 	return (GFARM_ERR_NO_ERROR);
@@ -205,6 +210,8 @@ gfs_pio_local_storage_pwrite(GFS_File gf,
 	*lengthp = rv;
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->write_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->write_size += rv);
+	gfs_profile(staticp->write_count++);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -250,6 +257,8 @@ gfs_pio_local_storage_pread(GFS_File gf,
 	*lengthp = rv;
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->read_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->read_size += rv);
+	gfs_profile(staticp->read_count++);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -527,7 +536,15 @@ void
 gfs_pio_local_display_timers(void)
 {
 	gflog_info(GFARM_MSG_UNFIXED,
-	    "local read      : %g sec", staticp->read_time);
+	    "local read time   : %g sec", staticp->read_time);
 	gflog_info(GFARM_MSG_UNFIXED,
-	    "local write     : %g sec", staticp->write_time);
+	    "local read size   : %llu", staticp->read_size);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "local read count  : %llu", staticp->read_count);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "local write time  : %g sec", staticp->write_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "local write size  : %llu", staticp->write_size);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "local write count : %llu", staticp->write_count);
 }
