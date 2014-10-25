@@ -316,6 +316,6 @@ gfs_stat_display_timers(void)
 {
 	gflog_info(GFARM_MSG_1000132,
 	    "gfs_stat time  : %g sec", staticp->stat_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003836,
 	    "gfs_stat count : %llu", staticp->stat_count);
 }

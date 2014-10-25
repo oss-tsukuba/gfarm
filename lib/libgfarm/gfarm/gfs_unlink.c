@@ -88,6 +88,6 @@ gfs_unlink_display_timers(void)
 {
 	gflog_info(GFARM_MSG_1000157,
 	    "gfs_unlink time  : %g sec", staticp->unlink_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003837,
 	    "gfs_unlink count : %llu", staticp->unlink_count);
 }

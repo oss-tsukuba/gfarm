@@ -203,7 +203,7 @@ gfs_pio_local_storage_pwrite(GFS_File gf,
 	rv = pwrite(vc->fd, buffer, size, offset);
 	if (rv == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED, "pwrite: %s",
+		gflog_debug(GFARM_MSG_1003822, "pwrite: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
@@ -250,7 +250,7 @@ gfs_pio_local_storage_pread(GFS_File gf,
 	rv = pread(vc->fd, buffer, size, offset);
 	if (rv == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED, "pread: %s",
+		gflog_debug(GFARM_MSG_1003823, "pread: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
@@ -535,16 +535,16 @@ gfs_pio_open_local_section(GFS_File gf, struct gfs_connection *gfs_server)
 void
 gfs_pio_local_display_timers(void)
 {
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003824,
 	    "local read time   : %g sec", staticp->read_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003825,
 	    "local read size   : %llu", staticp->read_size);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003826,
 	    "local read count  : %llu", staticp->read_count);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003827,
 	    "local write time  : %g sec", staticp->write_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003828,
 	    "local write size  : %llu", staticp->write_size);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003829,
 	    "local write count : %llu", staticp->write_count);
 }

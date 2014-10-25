@@ -313,16 +313,16 @@ gfs_pio_open_remote_section(GFS_File gf, struct gfs_connection *gfs_server)
 void
 gfs_pio_remote_display_timers(void)
 {
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003830,
 	    "remote read time   : %g sec", staticp->read_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003831,
 	    "remote read size   : %llu", staticp->read_size);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003832,
 	    "remote read count  : %llu", staticp->read_count);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003833,
 	    "remote write time  : %g sec", staticp->write_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003834,
 	    "remote write size  : %llu", staticp->write_size);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003835,
 	    "remote write count : %llu", staticp->write_count);
 }
