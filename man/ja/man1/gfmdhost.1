@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfmdhost
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
 .\"      Date: 11 March 2014
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -31,11 +31,13 @@
 gfmdhost \- gfarm メタデータサーバ管理コマンド
 .SH "SYNOPSIS"
 .HP \w'\fBgfmdhost\fR\ 'u
-\fBgfmdhost\fR [\-l] [\-P\ \fIpath\fR]
+\fBgfmdhost\fR [\-l] [\-P\ \fIpath\fR] [\-1]
 .HP \w'\fBgfmdhost\fR\ 'u
-\fBgfmdhost\fR {\-c | \-m} [\-P\ \fIpath\fR] [\-p\ \fIポート番号\fR] [\-C\ \fIクラスタ名\fR] [\-t\ {m\ |\ c\ |\ s}] {\fIメタデータサーバ名\fR}
+\fBgfmdhost\fR [\-N] [\-P\ \fIpath\fR] [\-1]
 .HP \w'\fBgfmdhost\fR\ 'u
-\fBgfmdhost\fR {\-d} [\-P\ \fIpath\fR] {\fIメタデータサーバ名\fR}
+\fBgfmdhost\fR {\-c | \-m} [\-P\ \fIpath\fR] [\-1] [\-p\ \fIポート番号\fR] [\-C\ \fIクラスタ名\fR] [\-t\ {m\ |\ c\ |\ s}] {\fIメタデータサーバ名\fR}
+.HP \w'\fBgfmdhost\fR\ 'u
+\fBgfmdhost\fR {\-d} [\-P\ \fIpath\fR] [\-1] {\fIメタデータサーバ名\fR}
 .SH "DESCRIPTION"
 .PP
 \fBgfmdhost\fR
@@ -76,6 +78,11 @@ m はデフォルトのマスター、c はマスター候補、 s はスレー�
 \fBクラスタ名\fR
 .sp
 gfmd が属するクラスタ名です。 デフォルトのクラスタは "(default)" と表示されます。
+.RE
+.PP
+\fB\-N\fR
+.RS 4
+接続したメタデータサーバのホスト名とポート番号を表示します。
 .RE
 .PP
 \fB\-c\fR
@@ -120,7 +127,15 @@ gfmd が属するクラスタ名です。 デフォルトのクラスタは "(de
 .RS 4
 このコマンドがアクセスするメタデータサーバを特定するための パス名または Gfarm URL を指定します。 省略した場合は、"/" を指定したのと同じ意味になります。
 .RE
+.PP
+\fB\-1\fR
+.RS 4
+このオプションを付与すると、gfmdhost はメタデータサーバ 1 台だけ に対して接続を試みます。 このとき接続を試みるのは、\-P オプションで指定されたサーバか、 \-P オプションが付与されていない場合は
+gfarm2\&.conf
+ファイルの中の
+metadb_server_host
+行に指定されたサーバとなります。
+.RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfarm2.conf\fR(5)
