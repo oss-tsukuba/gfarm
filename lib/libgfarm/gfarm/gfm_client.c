@@ -731,16 +731,16 @@ gfarm_error_t
 gfm_client_connection_acquire(const char *hostname, int port,
 	const char *user, struct gfm_connection **gfm_serverp)
 {
-	return gfm_client_connection_acquire0(hostname, port, user,
-	    gfm_serverp, gfm_client_connect_multiple);
+	return (gfm_client_connection_acquire0(hostname, port, user,
+	    gfm_serverp, gfm_client_connect_multiple));
 }
 
 gfarm_error_t
 gfm_client_connection_acquire_single(const char *hostname, int port,
 	const char *user, struct gfm_connection **gfm_serverp)
 {
-	return gfm_client_connection_acquire0(hostname, port, user,
-	    gfm_serverp, gfm_client_connect_single);
+	return (gfm_client_connection_acquire0(hostname, port, user,
+	    gfm_serverp, gfm_client_connect_single));
 }
 
 gfarm_error_t
