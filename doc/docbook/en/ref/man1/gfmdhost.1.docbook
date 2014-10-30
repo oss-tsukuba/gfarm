@@ -23,6 +23,14 @@
   <command moreinfo="none">gfmdhost</command>
   <arg choice="opt" rep="norepeat">-l</arg>
   <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-1</arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfmdhost</command>
+  <arg choice="opt" rep="norepeat">-N</arg>
+  <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-1</arg>
 </cmdsynopsis>
 
 <cmdsynopsis sepchar=" ">
@@ -32,6 +40,7 @@
     <arg choice="plain" rep="norepeat">-m</arg>
   </group>
   <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-1</arg>
   <arg choice="opt" rep="norepeat">-p <replaceable>port-number</replaceable></arg>
   <arg choice="opt" rep="norepeat">-C <replaceable>cluster-name</replaceable></arg>
   <arg choice="opt" rep="norepeat">-t 
@@ -48,6 +57,7 @@
   <command moreinfo="none">gfmdhost</command>
   <arg choice="req" rep="norepeat">-d</arg>
   <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-1</arg>
   <arg choice="req" rep="norepeat"><replaceable>metadata-server-name</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -137,6 +147,16 @@ names will be listed.
       <para>
         A cluster name where the gfmd belongs to.
         "(default)" is displayed for the default cluster.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-N</option></term>
+    <listitem>
+      <para>
+	Displays a hostname and port number of the connected metadata
+	server.
       </para>
     </listitem>
   </varlistentry>
@@ -239,6 +259,18 @@ names will be listed.
 	This option specifies a pathname or a Gfarm URL to identify
 	a metadata server which will be accessed by this command.
 	If not specified, "/" is used as the default value.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-1</option></term>
+    <listitem>
+      <para>
+	With this option, gfmdhost only tries to connect with one
+	metadata server specified by -P option, or if missing,
+	<token>metadb_server_host</token> statement in
+	<filename moreinfo="none">gfarm2.conf</filename> file.
       </para>
     </listitem>
   </varlistentry>
