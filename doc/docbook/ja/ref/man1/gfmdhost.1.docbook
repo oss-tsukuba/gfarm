@@ -23,6 +23,14 @@
   <command moreinfo="none">gfmdhost</command>
   <arg choice="opt" rep="norepeat">-l</arg>
   <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-1</arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfmdhost</command>
+  <arg choice="opt" rep="norepeat">-N</arg>
+  <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-1</arg>
 </cmdsynopsis>
 
 <cmdsynopsis sepchar=" ">
@@ -32,6 +40,7 @@
     <arg choice="plain" rep="norepeat">-m</arg>
   </group>
   <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-1</arg>
   <arg choice="opt" rep="norepeat">-p <replaceable>ポート番号</replaceable></arg>
   <arg choice="opt" rep="norepeat">-C <replaceable>クラスタ名</replaceable></arg>
   <arg choice="opt" rep="norepeat">-t 
@@ -48,6 +57,7 @@
   <command moreinfo="none">gfmdhost</command>
   <arg choice="req" rep="norepeat">-d</arg>
   <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-1</arg>
   <arg choice="req" rep="norepeat"><replaceable>メタデータサーバ名</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -125,6 +135,15 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
       <para>
         gfmd が属するクラスタ名です。
         デフォルトのクラスタは "(default)" と表示されます。
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-N</option></term>
+    <listitem>
+      <para>
+	接続したメタデータサーバのホスト名とポート番号を表示します。
       </para>
     </listitem>
   </varlistentry>
@@ -223,6 +242,20 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
 	このコマンドがアクセスするメタデータサーバを特定するための
 	パス名または Gfarm URL を指定します。
 	省略した場合は、"/" を指定したのと同じ意味になります。
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-1</option></term>
+    <listitem>
+      <para>
+	このオプションを付与すると、gfmdhost はメタデータサーバ 1 台だけ
+	に対して接続を試みます。
+	このとき接続を試みるのは、-P オプションで指定されたサーバか、
+	-P オプションが付与されていない場合は 
+	<filename moreinfo="none">gfarm2.conf</filename> ファイルの中の
+	<token>metadb_server_host</token> 行に指定されたサーバとなります。
       </para>
     </listitem>
   </varlistentry>

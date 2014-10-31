@@ -603,9 +603,11 @@ end:
 /*
  * gfm_client_connection_acquire - create or lookup a cached connection
  */
-gfarm_error_t
-gfm_client_connection_acquire(const char *hostname, int port,
-	const char *user, struct gfm_connection **gfm_serverp)
+static gfarm_error_t
+gfm_client_connection_acquire0(const char *hostname, int port,
+	const char *user, struct gfm_connection **gfm_serverp,
+	gfarm_error_t (*connect_op)(const char *, int, const char *,
+	    struct gfm_client_connect_info **, struct pollfd **, int *))
 {
 	gfarm_error_t e;
 	struct gfp_cached_connection *cache_entry;
@@ -627,7 +629,7 @@ gfm_client_connection_acquire(const char *hostname, int port,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	e = gfm_client_connection0(cache_entry, gfm_serverp, NULL, NULL,
-	    gfm_client_connect_multiple);
+	    connect_op);
 	gettimeofday(&expiration_time, NULL);
 	expiration_time.tv_sec += gfarm_gfmd_reconnection_timeout;
 	while (IS_CONNECTION_ERROR(e) &&
@@ -638,7 +640,7 @@ gfm_client_connection_acquire(const char *hostname, int port,
 		    gfarm_error_string(e));
 		sleep(sleep_interval);
 		e = gfm_client_connection0(cache_entry, gfm_serverp, NULL,
-		    NULL, gfm_client_connect_multiple);
+		    NULL, connect_op);
 		if (sleep_interval < sleep_max_interval)
 			sleep_interval *= 2;
 	}
@@ -651,6 +653,22 @@ gfm_client_connection_acquire(const char *hostname, int port,
 		gfp_uncached_connection_dispose(cache_entry);
 	}
 	return (e);
+}
+
+gfarm_error_t
+gfm_client_connection_acquire(const char *hostname, int port,
+	const char *user, struct gfm_connection **gfm_serverp)
+{
+	return (gfm_client_connection_acquire0(hostname, port, user,
+	    gfm_serverp, gfm_client_connect_multiple));
+}
+
+gfarm_error_t
+gfm_client_connection_acquire_single(const char *hostname, int port,
+	const char *user, struct gfm_connection **gfm_serverp)
+{
+	return (gfm_client_connection_acquire0(hostname, port, user,
+	    gfm_serverp, gfm_client_connect_single));
 }
 
 gfarm_error_t
