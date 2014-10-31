@@ -257,12 +257,8 @@ do_list(int detail)
 static gfarm_error_t
 do_nop(void)
 {
-	struct gfarm_metadb_server *real_server = 
-	    gfm_client_connection_get_real_server(gfm_conn);
-	const char *name = gfarm_metadb_server_get_name(real_server);
-	int port = gfarm_metadb_server_get_port(real_server);
-
-	printf("%s:%d\n", name, port);
+	printf("%s:%d\n", gfm_client_hostname(gfm_conn),
+	    gfm_client_port(gfm_conn));
 	return (GFARM_ERR_NO_ERROR);
 }
 
