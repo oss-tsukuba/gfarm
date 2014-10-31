@@ -2,23 +2,24 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfmdhost</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfmdhost">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfmdhost.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfmdhost — Gfarm metadata server host maintenance command</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  [-l] [-P <em class="replaceable"><code>path</code></em>]</p></div>
-<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  { -c  |   -m } [-P <em class="replaceable"><code>path</code></em>] [-p <em class="replaceable"><code>port-number</code></em>] [-C <em class="replaceable"><code>cluster-name</code></em>] [-t 
+<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  [-l] [-P <em class="replaceable"><code>path</code></em>] [-1]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  [-N] [-P <em class="replaceable"><code>path</code></em>] [-1]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  { -c  |   -m } [-P <em class="replaceable"><code>path</code></em>] [-1] [-p <em class="replaceable"><code>port-number</code></em>] [-C <em class="replaceable"><code>cluster-name</code></em>] [-t 
     { m  |   c  |   s }
   ] {<em class="replaceable"><code>metadata-server-name</code></em>}</p></div>
-<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  {-d} [-P <em class="replaceable"><code>path</code></em>] {<em class="replaceable"><code>metadata-server-name</code></em>}</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  {-d} [-P <em class="replaceable"><code>path</code></em>] [-1] {<em class="replaceable"><code>metadata-server-name</code></em>}</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p><span class="command"><strong>gfmdhost</strong></span> is used to display and maintain
 the information about synchronous and asynchronous replicated metadata
@@ -31,12 +32,12 @@ If none of them is specified, registered metadata server (gfmd host)
 names will be listed.
 </p>
 </div>
-<div class="refsect1" title="FUNCTIONS">
+<div class="refsect1">
 <a name="functions"></a><h2>FUNCTIONS</h2>
 <p>
   The functions of <span class="command"><strong>gfmdhost</strong></span> command are listed in following.
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">&lt;none&gt;</span></dt>
 <dd><p>
         If no function is specified,
@@ -91,6 +92,11 @@ names will be listed.
         "(default)" is displayed for the default cluster.
       </p>
 </dd>
+<dt><span class="term"><code class="option">-N</code></span></dt>
+<dd><p>
+	Displays a hostname and port number of the connected metadata
+	server.
+      </p></dd>
 <dt><span class="term"><code class="option">-c</code></span></dt>
 <dd><p>
         Registers the gfmd host that is specified in the argument.
@@ -110,9 +116,9 @@ names will be listed.
 <dd><p>Prints usage.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-C</code> <em class="parameter"><code>cluster-name</code></em></span></dt>
 <dd>
 <p>
@@ -154,9 +160,16 @@ names will be listed.
 	a metadata server which will be accessed by this command.
 	If not specified, "/" is used as the default value.
       </p></dd>
+<dt><span class="term"><code class="option">-1</code></span></dt>
+<dd><p>
+	With this option, gfmdhost only tries to connect with one
+	metadata server specified by -P option, or if missing,
+	<span class="token">metadb_server_host</span> statement in
+	<code class="filename">gfarm2.conf</code> file.
+      </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
