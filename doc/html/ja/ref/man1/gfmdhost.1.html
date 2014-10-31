@@ -2,23 +2,24 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfmdhost</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfmdhost">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfmdhost.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfmdhost — gfarm メタデータサーバ管理コマンド</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  [-l] [-P <em class="replaceable"><code>path</code></em>]</p></div>
-<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  { -c  |   -m } [-P <em class="replaceable"><code>path</code></em>] [-p <em class="replaceable"><code>ポート番号</code></em>] [-C <em class="replaceable"><code>クラスタ名</code></em>] [-t 
+<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  [-l] [-P <em class="replaceable"><code>path</code></em>] [-1]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  [-N] [-P <em class="replaceable"><code>path</code></em>] [-1]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  { -c  |   -m } [-P <em class="replaceable"><code>path</code></em>] [-1] [-p <em class="replaceable"><code>ポート番号</code></em>] [-C <em class="replaceable"><code>クラスタ名</code></em>] [-t 
     { m  |   c  |   s }
   ] {<em class="replaceable"><code>メタデータサーバ名</code></em>}</p></div>
-<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  {-d} [-P <em class="replaceable"><code>path</code></em>] {<em class="replaceable"><code>メタデータサーバ名</code></em>}</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  {-d} [-P <em class="replaceable"><code>path</code></em>] [-1] {<em class="replaceable"><code>メタデータサーバ名</code></em>}</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p><span class="command"><strong>gfmdhost</strong></span> は
 gfarm のメタデータサーバの冗長化機能に関連する情報の表示や管理を行います。
@@ -29,13 +30,13 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
 デフォルトの機能である gfmd ホスト名の一覧表示が行われます。
 </p>
 </div>
-<div class="refsect1" title="FUNCTIONS">
+<div class="refsect1">
 <a name="functions"></a><h2>FUNCTIONS</h2>
 <p>
   下記は、<span class="command"><strong>gfmdhost</strong></span>コマンドの機能一覧です。二つ以上の機能を同時に
   指定することはできません。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">無指定</span></dt>
 <dd><p>
 	登録されているgfmdホストのホスト名一覧を、
@@ -87,6 +88,10 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
         デフォルトのクラスタは "(default)" と表示されます。
       </p>
 </dd>
+<dt><span class="term"><code class="option">-N</code></span></dt>
+<dd><p>
+	接続したメタデータサーバのホスト名とポート番号を表示します。
+      </p></dd>
 <dt><span class="term"><code class="option">-c</code></span></dt>
 <dd><p>
 	引数で指定した gfmd ホストを登録します。
@@ -106,9 +111,9 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
 <dd><p>引数オプションを表示します。</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-C</code> <em class="parameter"><code>クラスタ名</code></em></span></dt>
 <dd>
 <p>
@@ -146,9 +151,18 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
 	パス名または Gfarm URL を指定します。
 	省略した場合は、"/" を指定したのと同じ意味になります。
       </p></dd>
+<dt><span class="term"><code class="option">-1</code></span></dt>
+<dd><p>
+	このオプションを付与すると、gfmdhost はメタデータサーバ 1 台だけ
+	に対して接続を試みます。
+	このとき接続を試みるのは、-P オプションで指定されたサーバか、
+	-P オプションが付与されていない場合は 
+	<code class="filename">gfarm2.conf</code> ファイルの中の
+	<span class="token">metadb_server_host</span> 行に指定されたサーバとなります。
+      </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
