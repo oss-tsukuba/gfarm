@@ -31,23 +31,26 @@ struct gfm_connection *gfm_conn = NULL;
 #define OP_CREATE_ENTRY		'c'
 #define OP_MODIFY_ENTRY		'm'
 #define OP_DELETE_ENTRY		'd'
+#define OP_NOP			'N'
 
 
 static void
 usage(void)
 {
 	fprintf(stderr, "Usage:"
-	    "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n",
+	    "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n",
 	    program_name,
-	    "[-l] [-P <path>]",
+	    "[-l] [-P <path>] [-1]",
 	    program_name,
-	    "-c   [-P <path>] "
+	    "-N   [-P <path>] [-1]",
+	    program_name,
+	    "-c   [-P <path>] [-1] "
 	    "[-p <port>] [-C <clustername>] [-t <m|c|s>] <hostname>",
 	    program_name,
-	    "-m   [-P <path>] "
+	    "-m   [-P <path>] [-1] "
 	    "[-p <port>] [-C <clustername>] [-t <m|c|s>] <hostname>",
 	    program_name,
-	    "-d   [-P <path>] <hostname> ...");
+	    "-d   [-P <path>] [-1] <hostname> ...");
 	exit(EXIT_FAILURE);
 }
 
@@ -247,6 +250,14 @@ do_list(int detail)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static gfarm_error_t
+do_nop(void)
+{
+	printf("%s:%d\n", gfm_client_hostname(gfm_conn),
+	    gfm_client_port(gfm_conn));
+	return (GFARM_ERR_NO_ERROR);
+}
+
 static void
 inconsistent_option(int c1, int c2)
 {
@@ -335,13 +346,17 @@ main(int argc, char **argv)
 	char *realpath = NULL, *opt_clustername = NULL;
 	int cname_is_set = 0, opt_port = -1, opt_def_master = -1;
 	int opt_master_candidate = -1;
+	int multi_conn_mode = 1;
 	int i, c;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
-	while ((c = getopt(argc, argv, "C:P:cdlmp:t:?"))
+	while ((c = getopt(argc, argv, "1C:NP:cdlmp:t:?"))
 	    != -1) {
 		switch (c) {
+		case '1':
+			multi_conn_mode = 0;
+			break;
 		case 'C':
 			opt_clustername = optarg;
 			cname_is_set = 1;
@@ -368,6 +383,7 @@ main(int argc, char **argv)
 		case 'd':
 		case 'l':
 		case 'm':
+		case 'N':
 			if (opt_operation != '\0' && opt_operation != c)
 				inconsistent_option(opt_operation, c);
 			opt_operation = c;
@@ -413,6 +429,7 @@ main(int argc, char **argv)
 		break;
 	case OP_LIST:
 	case OP_LIST_DETAIL:
+	case OP_NOP:
 		if (argc > 0) {
 			fprintf(stderr, "%s: too many arguments specified\n",
 			    program_name);
@@ -430,11 +447,35 @@ main(int argc, char **argv)
 	if (gfarm_realpath_by_gfarm2fs(opt_path, &realpath)
 	    == GFARM_ERR_NO_ERROR)
 		opt_path = realpath;
-	if ((e2 = gfm_client_connection_and_process_acquire_by_path(
-	    opt_path, &gfm_conn)) != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
-		    program_name, opt_path, gfarm_error_string(e2));
-		exit(EXIT_FAILURE);
+	if (multi_conn_mode) {
+		if ((e2 = gfm_client_connection_and_process_acquire_by_path(
+			    opt_path, &gfm_conn)) != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
+			    program_name, opt_path, gfarm_error_string(e2));
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		char *hostname = NULL;
+		int port;
+		char *user = NULL;
+
+		gfarm_get_hostname_by_url(opt_path, &hostname, &port);
+		e = gfarm_get_global_username_by_host_for_connection_cache(
+		    hostname, port, &user);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "gfarm_get_global_username_by_host_"
+			    "for_connection_cache: %s", gfarm_error_string(e));
+			exit(1);
+		}
+		if ((e2 = gfm_client_connection_acquire_single(hostname,
+			    port, user, &gfm_conn)) != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: metadata server \"%s:%d\": %s\n",
+			    program_name, hostname, port,
+			    gfarm_error_string(e2));
+			exit(EXIT_FAILURE);
+		}
+		free(user);
+		free(hostname);
 	}
 	free(realpath);
 
@@ -462,6 +503,9 @@ main(int argc, char **argv)
 		    != GFARM_ERR_NO_ERROR)
 			fprintf(stderr, "%s: %s\n", program_name,
 			    gfarm_error_string(e));
+		break;
+	case OP_NOP:
+		do_nop();
 		break;
 	default:
 		abort();

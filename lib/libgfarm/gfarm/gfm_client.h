@@ -52,6 +52,8 @@ int gfm_cached_connection_had_connection_error(struct gfm_connection *);
 
 gfarm_error_t gfm_client_connection_acquire(const char *, int, const char *,
 	struct gfm_connection **);
+gfarm_error_t gfm_client_connection_acquire_single(const char *, int,
+	const char *, struct gfm_connection **);
 gfarm_error_t gfm_client_connection_addref(struct gfm_connection *);
 gfarm_error_t gfm_client_connection_and_process_acquire(const char *, int,
 	const char *, struct gfm_connection **);
