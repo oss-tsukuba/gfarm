@@ -20,6 +20,10 @@
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfcksum</command>
     <arg choice="opt" rep="norepeat">-r</arg>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-T</arg>
+      <arg choice="plain" rep="norepeat">-t</arg>
+    </group>
     <arg choice="plain" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis sepchar=" ">
@@ -37,6 +41,11 @@
 <para>
 指定したファイルについてチェックサムを表示します。
 -r オプションを指定すると、指定されたディレクトリに含まれるファイルのチェックサムを再帰的に表示します。
+</para>
+
+<para>
+-t オプションを指定すると、現在設定されているチェックサムの種類のみを表示します。
+-T オプションを指定すると、ファイルを修正したとき、どの種類のチェックサムが計算されるかを表示します。
 </para>
 
 <para>
