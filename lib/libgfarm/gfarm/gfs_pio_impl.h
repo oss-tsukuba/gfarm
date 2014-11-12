@@ -164,3 +164,5 @@ struct gfs_file_section_context {
 
 int gfs_pio_md_init(const char *, EVP_MD_CTX *, char *);
 gfarm_error_t gfs_pio_md_finish(GFS_File);
+
+extern struct gfs_storage_ops gfs_pio_local_storage_ops;

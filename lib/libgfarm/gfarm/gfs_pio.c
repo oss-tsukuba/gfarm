@@ -580,6 +580,8 @@ gfs_pio_close(GFS_File gf)
 	struct gfarm_filesystem *fs = gfarm_filesystem_get_by_connection(
 		gf->gfm_server);
 	struct gfs_pio_internal_cksum_info *cip = NULL;
+	struct gfs_stat gst;
+	gfarm_off_t filesize = gf->md.filesize;
 
 	GFARM_KERNEL_UNUSE2(t1, t2);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
@@ -595,6 +597,19 @@ gfs_pio_close(GFS_File gf)
 	if (gfs_pio_is_view_set(gf)) {
 		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			e_save = gfs_pio_flush(gf);
+
+		/* for client-side cksum calculation */
+		if ((gf->mode &
+		    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
+		    (GFS_FILE_MODE_DIGEST_CALC)) {
+			struct gfs_file_section_context *vc = gf->view_context;
+			if (vc->ops == &gfs_pio_local_storage_ops) {
+				e = (gf->ops->view_fstat)(gf, &gst);
+				if (e == GFARM_ERR_NO_ERROR)
+					filesize = gst.st_size;
+			}
+		}
+
 		e = (*gf->ops->view_close)(gf);
 		if (e == GFARM_ERR_GFMD_FAILED_OVER) {
 			gflog_info(GFARM_MSG_1003268,
@@ -611,7 +626,7 @@ gfs_pio_close(GFS_File gf)
 
 	if ((gf->mode &
 	    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
-	    (GFS_FILE_MODE_DIGEST_CALC) && gf->md_offset == gf->md.filesize) {
+	    (GFS_FILE_MODE_DIGEST_CALC) && gf->md_offset == filesize) {
 		e = gfs_pio_md_finish(gf);
 		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
@@ -632,7 +647,7 @@ gfs_pio_close(GFS_File gf)
 	    (gf->mode & GFS_FILE_MODE_DIGEST_FINISH) == 0) {
 		unsigned char md_value[EVP_MAX_MD_SIZE];
 
-		/* We need to do this to avoid memory leak */
+		/* not calculated, but need to do this to avoid memory leak */
 		gfarm_msgdigest_final(md_value, &gf->md_ctx);
 	}
 
