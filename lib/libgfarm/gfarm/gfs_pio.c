@@ -605,8 +605,14 @@ gfs_pio_close(GFS_File gf)
 			struct gfs_file_section_context *vc = gf->view_context;
 			if (vc->ops == &gfs_pio_local_storage_ops) {
 				e = (gf->ops->view_fstat)(gf, &gst);
-				if (e == GFARM_ERR_NO_ERROR)
+				if (e == GFARM_ERR_NO_ERROR) {
+					/*
+					 * should not call gfs_stat_free(),
+					 * because (gf->ops->view_fstat)()
+					 * doesn't set gst->st_user/st_group.
+					 */
 					filesize = gst.st_size;
+				}
 			}
 		}
 
