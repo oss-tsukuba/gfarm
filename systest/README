@@ -22,13 +22,13 @@ prepare a configuration file of 'gfservice' (the default path is
 "$HOME/.gfservice") for those hosts, like as follows:
 
     gfmd1=mds1-ctl.example.com
-    gfmd1_CONFIG_GFARM_OPTIONS="-h mds1.example.com"
+    gfmd1_CONFIG_GFARM_OPTIONS="-r -h mds1.example.com -A $LOGNAME"
     gfmd1_IFUP_CMD="/sbin/ifup eth2"
     gfmd1_IFDOWN_CMD="/sbin/ifdown eth2"
     gfmd1_LOG_FILE_PATHS=/var/log/syslog
 
     gfmd2=mds2-ctl.example.com
-    gfmd2_CONFIG_GFARM_OPTIONS="-h mds2.example.com"
+    gfmd2_CONFIG_GFARM_OPTIONS="-r -h mds2.example.com -A $LOGNAME"
     gfmd2_REPLICATION_MODE=async
     gfmd2_IFUP_CMD="/sbin/ifup eth2"
     gfmd2_IFDOWN_CMD="/sbin/ifdown eth2"
@@ -59,6 +59,11 @@ prepare a configuration file of 'gfservice' (the default path is
     gfsd4_LOG_FILE_PATHS=/var/log/syslog
 
     client1=pc1.example.com
+
+Note that the "-A" options has to be specified in gfmd*_CONFIG_GFARM_OPTIONS,
+because the config-gfarm command invoked by gfservice cannot get
+appropriate default value, when it's invoked from ssh, because it doesn't
+have a tty and the "who am i" command fails in that case.
 
 The example above declares variables not explained in gfservice.conf(5).
 They are not interpreted by 'gfservice' but 'systest':
