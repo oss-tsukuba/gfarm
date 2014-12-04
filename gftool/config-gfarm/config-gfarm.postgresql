@@ -393,15 +393,29 @@ apply_configuration_postgresql()
 	cp -p "$BACKEND_DATA_DIR"/pg_hba.conf \
 	      "$BACKEND_DATA_DIR"/pg_hba.conf.bak
 
+	#
+	# Beginning with PostgreSQL 9.3, 'unix_socket_directory' is renamed
+	# to 'unix_socket_directories'.  However, Red Hat Enterprise Linux
+	# applies the patch named 'postgresql-multi-sockets.patch' to
+	# PostgreSQL 9.2.x.  It makes PostgreSQL 9.2 recognize
+	# 'unix_socket_directories'.
+	#
+	# To get an appropriate parameter name for PostgreSQL installed on
+	# the system, we test which parameter name is appeared in the
+	# 'postgresql.conf' file.
+	#
+	grep unix_socket_directories $BACKEND_DATA_DIR/postgresql.conf \
+	     >/dev/null 2>&1
+	if [ $? -eq 0 ]; then
+		UNIX_SOCKET_DIR_PARAM=unix_socket_directories
+	else
+		UNIX_SOCKET_DIR_PARAM=unix_socket_directory
+	fi
+
 	# create temporary configuration files 
 	$awk '
 	BEGIN {
-		# In PostgreSQL 9.3, 'unix_socket_directory' has been renamed
-		# to 'unix_socket_directories'.
-		if ('$BACKEND_VERSION' >= 9.3)
-			unix_socket_dir_param = "unix_socket_directories"
-		else
-			unix_socket_dir_param = "unix_socket_directory"
+		unix_socket_dir_param = "'$UNIX_SOCKET_DIR_PARAM'"
 	}
 	/^[ 	]*#*[ 	]*listen_addresses[ 	]*=/ {
 		if (/^[ 	]*listen_addresses/) {
