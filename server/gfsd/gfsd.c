@@ -232,7 +232,7 @@ cleanup_handler(int signo)
 	terminate_flag = 1;
 	if (write_open_count == 0) {
 		cleanup(1);
-		_exit(2);
+		_exit(0);
 	}
 }
 
@@ -1052,7 +1052,7 @@ file_table_close(gfarm_int32_t net_fd)
 		if (terminate_flag && write_open_count == 0) {
 			gflog_debug(GFARM_MSG_1003432, "bye");
 			cleanup(0);
-			exit(2);
+			exit(0);
 		}
 	}
 	return (e);
