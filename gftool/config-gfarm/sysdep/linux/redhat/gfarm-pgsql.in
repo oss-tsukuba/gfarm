@@ -31,7 +31,7 @@ export PGDATA
 unset LANG
 
 # Check that networking is up.
-if [ ${NETWORKING} = "no" ]
+if [ "${NETWORKING}" = "no" ]
 then
 	exit 0
 fi

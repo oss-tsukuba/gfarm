@@ -1,0 +1,20 @@
+[Unit]
+Description=Gfarm filesystem node daemon
+After=network.target
+
+[Service]
+Type=forking
+
+User=root
+Group=root
+Environment=X509_USER_CERT=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdcert.pem
+Environment=X509_USER_KEY=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdkey.pem
+
+ExecStart=@config_gfarm_prefix@/sbin/gfsd -P @config_gfarm_gfsd_pid_file@ @config_gfarm_gfsd_option@
+PIDFile=@config_gfarm_gfsd_pid_file@
+
+OOMScoreAdjust=-1000
+TimeoutSec=300
+
+[Install]
+WantedBy=multi-user.target

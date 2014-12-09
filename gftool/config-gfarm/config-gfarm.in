@@ -257,8 +257,8 @@ display_plain_params()
 
     display_plain_params_backend_optional_$BACKEND_TYPE
 
-    echo "rc script for gfmd               : $RC_DIR/gfmd"
-    echo "rc script for backend            : $RC_DIR/$RC_BACKEND_BASENAME"
+    echo "rc script for gfmd               : $RC_GFMD"
+    echo "rc script for backend            : $RC_BACKEND"
     echo "gfmd conf file                   : $GFMD_CONF"
     if $PRIVATE_MODE; then
 	echo "gfsd conf file                   : $GFSD_CONF"
@@ -292,8 +292,8 @@ display_script_params()
 
     display_script_params_backend_optional_$BACKEND_TYPE
 
-    echo     "GFMD_RC=$RC_DIR/gfmd"
-    echo     "BACKEND_RC=$RC_DIR/$RC_BACKEND_BASENAME"
+    echo     "GFMD_RC=$RC_GFMD"
+    echo     "BACKEND_RC=$RC_BACKEND"
     echo     "GFMD_CONF=$GFMD_CONF"
     if $PRIVATE_MODE; then
 	echo     "GFSD_CONF=$GFSD_CONF"
@@ -454,6 +454,15 @@ set_first_defaults_$BACKEND_TYPE
 #	before calling sysdep_defaults
 # sysdep_defaults must set: $RC_DIR
 sysdep_defaults
+
+[ X"$RC_BACKEND" = X ] && \
+	: ${RC_BACKEND="$RC_DIR/$RC_BACKEND_BASENAME"}
+[ X"$RC_GFMD" = X ] && \
+	: ${RC_GFMD="$RC_DIR/gfmd"}
+[ X"$RC_AGENT" = X ] && \
+	: ${RC_AGENT="$RC_DIR/gfarm_agent"}
+[ X"$RC_GFSD" = X ] && \
+	: ${RC_GFSD="$RC_DIR/gfsd"}
 
 : ${START_SERVICE:=true}
 : ${FORCE:=false}
@@ -627,7 +636,7 @@ delete_file_or_directory \
 	"$GFMD_CONF" \
 	"$BACKEND_DATA_DIR" \
 	"$BACKEND_LOG_DIR" \
-	"$RC_DIR/$RC_BACKEND_BASENAME"
+	"$RC_BACKEND"
 $METADATA_REPLICATION && \
 	delete_file_or_directory "$METADATA_JOURNAL_DIR"
 
@@ -717,8 +726,9 @@ if $PRIVATE_MODE; then
 fi
 
 # create run scripts
-mkscript "$RC_DIR/$RC_BACKEND_BASENAME"	replace "$RC_BACKEND_IN"
-mkscript "$RC_DIR/gfmd"			replace "$RC_GFMD_IN"
+mkscript "$RC_BACKEND"	replace "$RC_BACKEND_IN"
+mkscript "$RC_GFMD"	replace "$RC_GFMD_IN"
+$PRIVATE_MODE || service_reg $RC_BACKEND_BASENAME gfmd
 
 apply_configuration_$BACKEND_TYPE
 

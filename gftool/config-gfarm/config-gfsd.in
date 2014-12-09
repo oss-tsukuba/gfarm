@@ -92,7 +92,7 @@ display_plain_params()
 	echo "port                         [-p]: $GFSD_PORT"
 	echo "ncpu                         [-n]: $NCPU"
 	echo "spool directory                  : $SPOOL_DIRECTORY"
-	echo "rc script                        : $RC_DIR/$RC_NAME"
+	echo "rc script                        : $RC_GFSD"
 	echo "gfarm client conf file           : $GFARM_CLIENT_CONF"
 	if $PRIVATE_MODE; then
 		echo "gfsd conf file                   : $GFARM_CONF"
@@ -113,7 +113,7 @@ display_script_params()
 	echo "GFSD_PORT=$GFSD_PORT"
 	echo "NCPU=$NCPU"
 	echo "SPOOL_DIRECTORY=$SPOOL_DIRECTORY"
-	echo "GFSD_RC=$RC_DIR/$RC_NAME"
+	echo "GFSD_RC=$RC_GFSD"
 	echo "GFARM_CONF=$GFARM_CLIENT_CONF"
 	if $PRIVATE_MODE; then
 		echo "GFSD_CONF=$GFARM_CONF"
@@ -190,6 +190,12 @@ esac
 #
 
 : ${CONFIG_PREFIX:=}
+: ${LISTEN_ADDRESS:=""}
+if [ -n "$LISTEN_ADDRESS" ]; then
+	: ${GFSD_SERVICE_NAME:="gfsd-$LISTEN_ADDRESS"}
+else
+	: ${GFSD_SERVICE_NAME:="gfsd"}
+fi
 
 # NOTE: $CONFIG_PREFIX needs to be set before calling sysdep_defaults
 # sysdep_defaults must set: $RC_DIR
@@ -231,23 +237,20 @@ fi
 [ X"$ARCH" = X ] && ABORT 'cannot determine the architecture of this machine'
 
 : ${RC_GFSD_IN="$config_dir/gfsd.in"}
-
-: ${LISTEN_ADDRESS:=""}
+: ${RC_GFSD:="$RC_DIR/$GFSD_SERVICE_NAME"}
 
 if [ -n "$LISTEN_ADDRESS" ]; then
 	: ${SPOOL_DIRECTORY:="$CONFIG_PREFIX/var/gfarm-spool-$LISTEN_ADDRESS"}
 	: ${GFSD_EXTRA_OPTIONS:=" -l $LISTEN_ADDRESS"}
-	: ${RC_NAME:="gfsd-$LISTEN_ADDRESS"}
 	# $RC_VAR will be used as a shell variable name on *BSD ports & pkgsrc,
 	# thus, we only allow [0-9a-z_] as its value.
 	: ${RC_VAR:="`echo gfsd_$LISTEN_ADDRESS | sed 's/[^0-9a-z_]/_/g'`"}
 else
 	: ${SPOOL_DIRECTORY:="$CONFIG_PREFIX/var/gfarm-spool"}
 	: ${GFSD_EXTRA_OPTIONS:=""}
-	: ${RC_NAME:="gfsd"}
-	: ${RC_VAR:="$RC_NAME"}
+	: ${RC_VAR:="$GFSD_SERVICE_NAME"}
 fi
-: ${GFSD_PID_FILE:="$RUN_DIR/${RC_NAME}.pid"}
+: ${GFSD_PID_FILE:="$RUN_DIR/${GFSD_SERVICE_NAME}.pid"}
 
 # -t option; display parameters
 [ $PARAMS_DISPLAY_STYLE != none ] && display_${PARAMS_DISPLAY_STYLE}_params
@@ -263,7 +266,7 @@ config()
 	-e "s|@config_gfarm_globus_location@|${GLOBUS_LOCATION:-$globus_location}|g" \
 	-e "s|@config_gfarm_gfarm_config@|$GFARM_CONF|g" \
 	-e "s|@config_gfarm_gfsd_option@|-f $GFARM_CONF -h $GFSD_HOSTNAME -r $SPOOL_DIRECTORY$GFSD_EXTRA_OPTIONS|g" \
-	-e "s|@config_gfarm_gfsd_rc_name@|$RC_NAME|g" \
+	-e "s|@config_gfarm_gfsd_rc_name@|$GFSD_SERVICE_NAME|g" \
 	-e "s|@config_gfarm_gfsd_rc_var@|$RC_VAR|g" \
 	-e "s|@config_gfarm_gfsd_pid_file@|$GFSD_PID_FILE|g" \
 	-e "s|@config_gfarm_run_dir@|$RUN_DIR|g" \
@@ -343,7 +346,8 @@ fi
 mkcnf_gfsd_sysdep
 
 # create run scripts
-mkscript $RC_DIR/$RC_NAME	config "$RC_GFSD_IN"
+mkscript "$RC_GFSD"	config "$RC_GFSD_IN"
+$PRIVATE_MODE || service_reg gfsd
 
 # update configuration file
 # spool_check_level (default value)
@@ -370,9 +374,9 @@ echo >&2 "gfhost -c -a $ARCH -p $GFSD_PORT -n $NCPU $GFSD_HOSTNAME: failed"
 
 if $START_SERVICE; then
 	if [ -f $GFSD_PID_FILE ]; then ctl=restart; else ctl=start; fi
-	service_add $RC_NAME &&
-		service_ctl $RC_NAME $ctl ||
-		ABORT "failed to $ctl $RC_NAME"
+	service_add $GFSD_SERVICE_NAME &&
+		service_ctl $GFSD_SERVICE_NAME $ctl ||
+		ABORT "failed to $ctl $GFSD_SERVICE_NAME"
 fi
 echo "$PROGNAME success"
 
@@ -386,8 +390,6 @@ echo "$prefix/bin/gfhost" -c -a $ARCH -p $GFSD_PORT -n $NCPU $GFSD_HOSTNAME
 echo
 echo After that, start gfsd by the following command as a root:
 echo
-# XXX FIXME should use "forcestart" instead of "start" on NetBSD and FreeBSD.
-echo "$RC_DIR/$RC_NAME start"
-
+service_ctl -n $GFSD_SERVICE_NAME start
 fi
 exit 0

@@ -45,6 +45,11 @@ mkcnf_gfsd_sysdep()
 	: # do nothing
 }
 
+service_reg()
+{
+	: # do nothing
+}
+
 service_add()
 {
 	# local service
@@ -70,6 +75,12 @@ service_ctl()
 {
 	# local service ctl mode
 
+	run_or_echo=
+	if [ X"$1" = X-n ]; then
+		run_or_echo=echo
+		shift
+	fi
+
 	service=$1
 	ctl=$2
 
@@ -79,5 +90,6 @@ service_ctl()
 		mode=force
 	fi
 
-	"$RC_DIR/$service" ${mode}$ctl || ABORT "cannot $ctl $service"
+	$run_or_echo "$RC_DIR/$service" ${mode}$ctl ||
+		ABORT "cannot $ctl $service"
 }
