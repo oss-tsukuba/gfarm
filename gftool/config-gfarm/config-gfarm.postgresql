@@ -190,14 +190,14 @@ set_last_defaults_postgresql()
 	7.*) # -w option makes "pg_ctl start" ask password on PostgreSQL-7.4
 		WAIT_F='' ;;
 	esac
-	: ${PGSQL_OPTIONS:=$WAIT_F'-s -m fast -D $PGDATA -l $PGDATA/logfile'}
-	# postgresql in debian needs to change the directory of the
-	# unix-domain socket in private mode
+		# For 'systemd', variable names are surrounded by ${...}.
+		: ${PGSQL_OPTIONS:=$WAIT_F'-s -m fast -D ${PGDATA} -l ${PGDATA}/logfile'}
+	# In private mode, we change the directory of the unix-domain socket
+	# for PostgreSQL since some Linux distributions set the default
+	# directory to somewhere other than /tmp, which is restricted to be
+	# written by owner of the directory.
 	if $PRIVATE_MODE; then
-		case X$LINUX_RC_TYPE in
-		Xdebian)
-			PGSQL_OPTIONS="$PGSQL_OPTIONS -o '-k /tmp'" ;;
-		esac
+		PGSQL_OPTIONS="$PGSQL_OPTIONS -o '-k $BACKEND_DATA_DIR'"
 	fi
 }
 
