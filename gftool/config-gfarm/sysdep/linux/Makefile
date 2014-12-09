@@ -6,7 +6,7 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SUBDIRS=debian default redhat suse
+SUBDIRS=debian default redhat suse systemd
 
 datadir=$(default_datadir)/gfarm/config
 

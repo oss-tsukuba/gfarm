@@ -151,6 +151,7 @@ set_last_defaults_postgresql()
 		: ${BACKEND_ADMIN_USER:="`whoami`"}
 		: ${BACKEND_PRIVILEGE:=""}
 	fi
+	: ${PGSQL_GROUP:="`id -gn $BACKEND_ADMIN_USER`"}
 	if [ -f /usr/bin/getent ]; then
 		if getent passwd "$BACKEND_ADMIN_USER" >/dev/null; then
 			:
@@ -214,6 +215,7 @@ init_replace_postgresql()
 s|@config_gfarm_database_name@|$DB_NAME|g
 s|@config_gfarm_pgsql_bindir@|$PGSQL_BINDIR|g
 s|@config_gfarm_pgsql_options@|$PGSQL_OPTIONS|g
+s|@config_gfarm_pgsql_group@|$PGSQL_GROUP|g
 _EOF_
 }
 
@@ -558,7 +560,13 @@ _EOF_
 		| $PGSQL_BINDIR/psql -q $DB_NAME
 _EOF_
 
-	service_ctl $RC_BACKEND_BASENAME stop
+	#
+	# Since we start PostgreSQL with pg_ctl, we use pg_ctl again.
+	#
+	cat << _EOF_ | $run_with_backend_privilege || ABORT "pg_ctl stop failed"
+	$PGSQL_BINDIR/pg_ctl -s -m fast \
+		-D $BACKEND_DATA_DIR -l $BACKEND_DATA_DIR/logfile stop
+_EOF_
 
 	# save configuration for administration
 	mv "$BACKEND_DATA_DIR"/postgresql.conf \

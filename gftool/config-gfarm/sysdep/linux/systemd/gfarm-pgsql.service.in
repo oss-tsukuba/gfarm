@@ -1,0 +1,21 @@
+[Unit]
+Description=PostgreSQL for Gfarm
+After=network.target
+
+[Service]
+Type=forking
+
+User=@config_gfarm_backend_privilege@
+Group=@config_gfarm_pgsql_group@
+Environment=PGPORT=@config_gfarm_backend_port@
+Environment=PGDATA=@config_gfarm_backend_data_dir@
+
+ExecStart=@config_gfarm_pgsql_bindir@/pg_ctl start -D ${PGDATA} -o "-p ${PGPORT}" @config_gfarm_pgsql_options@
+ExecStop=@config_gfarm_pgsql_bindir@/pg_ctl stop -D ${PGDATA} @config_gfarm_pgsql_options@
+ExecReload=@config_gfarm_pgsql_bindir@/pg_ctl reload -D ${PGDATA} @config_gfarm_pgsql_options@
+
+OOMScoreAdjust=-1000
+TimeoutSec=300
+
+[Install]
+WantedBy=multi-user.target
