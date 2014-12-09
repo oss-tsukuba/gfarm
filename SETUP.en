@@ -108,19 +108,34 @@ user without the -t option.
 
 	# config-gfarm -A <global_admin_name> -a gsi_auth -D <Subject DN>
 
-config-gfarm sets up the backend database, creates a Gfarm configuration
-files <sysconfdir>/gfarm2.conf and <sysconfdir>/gfmd.conf, puts startup
-scripts 'gfmd' and 'gfarm-pgsql' (or 'gfarm-slapd') onto /etc/init.d (or
-/etc/rc.d/init.d, according to operating system), and executes the
-Gfarm metadata server gfmd.
+config-gfarm performs the following processes, in that order:
 
-  '<sysconfdir>' represents a directory for configuration files,
-  specified by --sysconfdir option of 'configure' at the compilation
-  of Gfarm (see 'INSTALL.en' for more details).  If you have installed
-  Gfarm from the RPM binary packages, <sysconfdir> is '/etc'.
+  1. sets up the backend database.
+  2. generates Gfarm configuration files <sysconfdir>/gfarm2.conf and
+     <sysconfdir>/gfmd.conf.
 
-  'prefix' is used to configure several Gfarm filesystems. It
-  generates all configuration files under the specified directory.
+       '<sysconfdir>' represents a directory for configuration files,
+       specified by --sysconfdir option of 'configure' at the compilation
+       of Gfarm (see 'INSTALL.en' for more details).  If you have installed
+       Gfarm from the RPM binary packages, <sysconfdir> is '/etc'.
+
+       'prefix' is used to configure several Gfarm filesystems. It
+       generates all configuration files under the specified directory.
+
+  3. creates scripts (or configuration files) to start/stop the backend
+     database and the Gfarm metadata server gfmd.
+
+       On most systems, config-gfarm puts start/stop scripts 'gfmd' and
+       'gfarm-pgsql' onto either /etc/init.d or /etc/rc.d/init.d, according
+       to the operating system.
+
+       On Linux with systemd such as Red Hat Enterprise Linux 7 or later,
+       config-gfarm puts the unit configuration files 'gfmd.service' and
+       'gfarm-pgsql.service' onto /etc/systemd/system, and then executes
+       'systemctl enable gfmd.service' and 'systemctl enable
+       gfarm-pgsql.service' respectively.
+
+  4. starts the backend database and gfmd.
 
 When you use the shared secret authentication between gfsd and gfmd,
 it is necessary to create a '_gfarmfs' user and a shared secret key.
@@ -141,33 +156,53 @@ in the home directory.
 You can check whether the metadata server gfmd is running or not by
 the following command execution;
 
+  Red Hat Enterprise Linux 7 or later:
+	# systemctl status gfmd.service
+
+  Others:
 	# /etc/init.d/gfmd status
 
-For the automatic startup during the boot process, chkconfig command
-is useful in Red Hat Linux.
+For the automatic startup during the boot process, type the following
+commands;
 
+  Red Hat Enterprise Linux 7 or later:
+	# systemctl enable gfarm-pgsql.service
+	# systemctl enable gfmd.service
+
+  Red Hat Enterprise Linux 6 or earlier:
 	# chkconfig --add gfmd
 	# chkconfig --add gfarm-pgsql
-	(or # chkconfig --add gfarm-slapd)
 
-For debian, use update-rc.d instead of chkconfig.
-
+  Debian:
 	# update-rc.d gfmd defaults
 	# update-rc.d gfarm-pgsql defaults
-	(or # update-rc.d gfarm-slapd defaults)
 
 If you would like to remove all files created by config-gfarm, first
 stop gfmd and backend database server;
 
+  Red Hat Enterprise Linux 7 or later:
+	# systemctl stop gfarm-pgsql.service
+	(it also stops gfmd)
+
+  Others:
 	# /etc/init.d/gfmd stop
 	(or # killall gfmd)
 	# /etc/init.d/gfarm-pgsql stop
-	(or # /etc/init.d/gfarm-slapd stop)
 
 Then, remove files and directories as follows;
 
+  Red Hat Enterprise Linux 7 or later:
 	# rm -f /etc/gfarm2.conf /etc/gfmd.conf
-	# rm -f /etc/init.d/gfarm-* /etc/init.d/gfmd
+	# systemctl disable gfmd.service
+	# systemctl disable gfarm-pgsql.service
+	# rm -f /etc/systemd/system/gfarm-pgsql.service
+	# rm -f /etc/systemd/system/gfmd.service
+	# systemctl daemon-reload
+	# rm -rf /var/gfarm-*
+
+  Others:
+	# rm -f /etc/gfarm2.conf /etc/gfmd.conf
+	# rm -f /etc/init.d/gfarm-pgsql /etc/init.d/gfmd
 	# rm -rf /var/gfarm-*
 
 o Firewall configuration
@@ -257,29 +292,52 @@ Ask the administrator to execute the displayed text.
 
 Start gfsd by the root user.
 
+  Red Hat Enterprise Linux 7 or later:
+	# systemctl start gfsd.service
+
+  Others:
 	# /etc/init.d/gfsd start
 
 You can check whether the gfsd is running or not by the following
 command execution;
 
-	# /etc/init.d/gfmd status
+  Red Hat Enterprise Linux 7 or later:
+	# systemctl status gfsd.service
 
-For the automatic startup during the boot process, chkconfig command
-is useful in Red Hat Linux.
+  Others:
+	# /etc/init.d/gfsd status
 
+For the automatic startup during the boot process, type the following
+command.
+
+  Red Hat Enterprise Linux 7 or later:
+	# systemctl enable gfsd.service
+
+  Red Hat Enterprise Linux 6 or earlier:
 	# chkconfig --add gfsd
 
-For debian, use update-rc.d instead of chkconfig.
-
+  Debian:
 	# update-rc.d gfsd defaults
 
 If you would like to remove all files created by config-gfsd, first
 stop gfsd;
 
+  Red Hat Enterprise Linux 7 or later:
+	# systemctl stop gfsd.service
+
+  Others:
 	# /etc/init.d/gfsd stop
 
 Then, remove files and directories as follows;
 
+  Red Hat Enterprise Linux 7 or later:
+	# rm -f /etc/gfarm2.conf
+	# systemctl disable gfsd.service
+	# rm -f /etc/systemd/system/gfsd.service
+	# systemctl daemon-reload
+	# rm -rf <spool_directory>
+
+  Others:
 	# rm -f /etc/gfarm2.conf /etc/init.d/gfsd
 	# rm -rf <spool_directory>
 

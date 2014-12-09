@@ -76,7 +76,6 @@ $PREFIX/etc/gfmd.conf などが作成された筈です。
 	% etc/init.d/gfmd stop
 	(場合によっては % killall gfmd)
 	% etc/init.d/gfarm-pgsql stop
-	(あるいは % etc/init.d/gfarm-slapd stop)
 
 下記のコマンドで削除できます。
 
