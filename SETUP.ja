@@ -112,20 +112,35 @@ XPath による検索が可能な XML 拡張属性を利用する際には，-X 
 
 	# config-gfarm -A <global_admin_name> -a gsi_auth -D <Subject DN>
 
-エラーが起きなければ，バックエンド DB の設定と起動，設定ファイル 
-<sysconfdir>/gfarm2.conf，<sysconfdir>/gfmd.conf の作成，/etc/init.d
-(OS によっては /etc/rc.d/init.d) 上へ起動スクリプト 'gfmd' および
-'gfarm-pgsql' (もしくは 'gfarm-slapd') の配置，メタデータサーバ gfmd
-の起動が行われます．
+config-gfarm は，順番に次の処理を行います．
 
-  ここで <sysconfdir> は，Gfarm をコンパイルした際に，configure の
-  --sysconfdir オプションとして指定した値 (詳しくは INSTALL.ja 参照)
-  を意味します．Gfarm を PRM バイナリパッケージからインストールした場
-  合は /etc になります．
+  1. バックエンド DB の設定を行います．
+  2. Gfarm の設定ファイル <sysconfdir>/gfarm2.conf および
+     <sysconfdir>/gfmd.conf を作成します．
 
-  prefix は，特に同一サーバで複数の Gfarm ファイルシステムに対するメタ
-  データサーバを立ち上げる場合などに指定します．この場合，prefix で指
-  定したディレクトリの下に設定ファイルが生成されます．
+       ここで <sysconfdir> は，Gfarm をコンパイルした際に，configure の
+       --sysconfdir オプションとして指定した値 (詳しくは INSTALL.ja 参照)
+       を意味します．Gfarm を PRM バイナリパッケージからインストールした
+       場合は /etc になります．
+
+       prefix は，特に同一サーバで複数の Gfarm ファイルシステムに対する
+       メタデータサーバを立ち上げる場合などに指定します．この場合，prefix
+       で指定したディレクトリの下に設定ファイルが生成されます．
+
+  3. バックエンド DB およびメタデータサーバ gfmd の起動/停止スクリプト
+     (ないし設定ファイル) を配置します．
+
+       ほとんどのシステムでは，config-gfarm は起動/停止スクリプト
+       'gfmd' および 'gfarm-pgsql' を /etc/init.d または /etc/rc.d/init.d
+       の下に配置します．どちらに配置するかは，OS によって異なります．
+
+       Red Hat Enterprise Linux 7 以降のように，systemd を採用している
+       Linux では，config-gfarm はユニットファイル 'gfmd.service' と
+       'gfarm-pgsql.service' を /etc/systemd/system の下に配置して，
+       'systemctl enable gfmd.service' と 'systemctl enable
+       gfarm-pgsql.service' をそれぞれ実行します．
+
+  4. バックエンド DB と gfmd を起動します．
 
 共有鍵認証で gfsd との認証を行う場合は，ユーザ「_gfarmfs」を作成し，そ
 のホームディレクトリに，認証鍵ファイルを置きます．
@@ -147,32 +162,50 @@ XPath による検索が可能な XML 拡張属性を利用する際には，-X 
 以上で，メタデータサーバー上での設定は完了です．
 下記を実行して，gfmd が動作していることを確認してください．
 
+  Red Hat Enterprise Linux 7 またはそれ以降:
+	# systemctl status gfmd.service
+
+  その他:
 	# /etc/init.d/gfmd status
 
-Red Hat 系の Linux の場合，chkconfig コマンドを用いて，自動起動の設定
-を行なえます．
+ブート時における自動起動の設定を行うには，以下のコマンドを用います．
 
+  Red Hat Enterprise Linux 7 またはそれ以降:
+	# systemctl enable gfarm-pgsql.service
+	# systemctl enable gfmd.service
+
+  Red Hat Enterprise Linux 6 またはそれ以前:
 	# chkconfig --add gfmd
 	# chkconfig --add gfarm-pgsql
-	(あるいは # chkconfig --add gfarm-slapd)
 
-Debian 系の Linux の場合，update-rc.d コマンドを用いて，自動起動の設定
-を行なえます．
-
+  Debian:
 	# update-rc.d gfmd defaults
 	# update-rc.d gfarm-pgsql defaults
-	(あるいは # update-rc.d gfarm-slapd defaults)
 
-上記作業によって作成されたファイルを消去したい場合には，下記のコマンド
-で gfmd およびバックエンドデータベースサーバを停止させたのち，
+上記作業によって作成されたファイルを消去したい場合には，まず下記の
+コマンドで gfmd およびバックエンドデータベースサーバを停止させます．
 
+  Red Hat Enterprise Linux 7 またはそれ以降:
+	# systemctl stop gfarm-pgsql.service
+	(これで，gfmd も停止します)
+
+  その他:
 	# /etc/init.d/gfmd stop
 	(場合によっては # killall gfmd)
 	# /etc/init.d/gfarm-pgsql stop
-	(あるいは # /etc/init.d/gfarm-slapd stop)
 
-下記のコマンドで削除できます．
+次に，下記のコマンドでファイルおよびディレクトリを削除します．
 
+  Red Hat Enterprise Linux 7 またはそれ以降:
+	# rm -f /etc/gfarm2.conf /etc/gfmd.conf
+	# systemctl disable gfmd.service
+	# systemctl disable gfarm-pgsql.service
+	# rm -f /etc/systemd/system/gfarm-pgsql.service
+	# rm -f /etc/systemd/system/gfmd.service
+	# systemctl daemon-reload
+	# rm -rf /var/gfarm-*
+
+  その他:
 	# rm -f /etc/gfarm2.conf /etc/gfmd.conf
 	# rm -f /etc/init.d/gfarm-* /etc/init.d/gfmd
 	# rm -rf /var/gfarm-*
@@ -214,9 +247,9 @@ GSI 認証の場合は，gfsd 用のサービス証明書を取得します．
   トリとファイルのオーナを _gfarmfs とします．gfsdkey.pem のファイルモー
   ドは 0400 とします．複数の gfsd を異なる仮想IPアドレスを用い同一ホス
   トで立ち上げたい場合は以下の config-gfsd に対し -l オプションでホスト
-  名、あるいはIPアドレスを指定します。その場合、証明書は
+  名，あるいはIPアドレスを指定します．その場合，証明書は
   /etc/grid-security/gfsd-<ホスト名 or IPアドレス>/gfsd{cert,key}.pem
-  に置きます。
+  に置きます．
 
 次に，メタデータサーバで生成された <sysconfdir>/etc/gfarm2.conf ファイ
 ルをファイルシステムノードの <sysconfdir>/etc にコピーします．
@@ -267,31 +300,52 @@ config-gfsd は，最後に「gfhost」コマンドの実行をうながす表�
 
 root 権限になり，下記のコマンドで gfsd を起動します．
 
+  Red Hat Enterprise Linux 7 またはそれ以降:
+	# systemctl start gfsd.service
+
+  その他:
 	# /etc/init.d/gfsd start
 
 以上で設定は完了です．
 
 下記を実行して，gfsd が動作していることを確認してください．
 
+  Red Hat Enterprise Linux 7 またはそれ以降:
+	# systemctl status gfsd.service
+
+  その他:
 	# /etc/init.d/gfsd status
 
-Red Hat 系の Linux の場合，chkconfig コマンドを用いて，自動起動の設定
-を行なえます．
+ブート時における自動起動の設定を行うには，以下のコマンドを用います．
 
+  Red Hat Enterprise Linux 7 またはそれ以降:
+	# systemctl enable gfsd.service
+
+  Red Hat Enterprise Linux 6 またはそれ以前:
 	# chkconfig --add gfsd
 
-Debian 系の Linux の場合，update-rc.d コマンドを用いて，自動起動の設定
-を行なえます．
-
+  Debian:
 	# update-rc.d gfsd defaults
 
-上記作業によって作成されたファイルを消去したい場合には，
-下記のコマンドで gfsd を停止させたのち，
+上記作業によって作成されたファイルを消去したい場合には，まず
+下記のコマンドで gfsd を停止させます．
 
+  Red Hat Enterprise Linux 7 またはそれ以降:
+	# systemctl stop gfsd.service
+
+  その他:
 	# /etc/init.d/gfsd stop
 
 下記のコマンドで削除できます．
 
+  Red Hat Enterprise Linux 7 またはそれ以降:
+	# rm -f /etc/gfarm2.conf
+	# systemctl disable gfsd.service
+	# rm -f /etc/systemd/system/gfsd.service
+	# systemctl daemon-reload
+	# rm -rf スプール・ディレクトリ
+
+  その他:
 	# rm -f /etc/gfarm2.conf /etc/init.d/gfsd
 	# rm -rf スプール・ディレクトリ
 
@@ -538,6 +592,6 @@ Gfarm ファイルシステムでは，ファイルはどこかのファイル�
 	$ gfncopy -s 2 /
 
 このとき，これ以降に作成されたファイルは自動的にファイル複製が二つ作成
-されます．ファイルシステムノードが故障して、必要な複製数が足りなくなっ
+されます．ファイルシステムノードが故障して，必要な複製数が足りなくなっ
 た場合，replica_check_host_down_threshで指定される時間後に自動的に必要
 数の複製が作成されます．デフォルトは3時間後です．
