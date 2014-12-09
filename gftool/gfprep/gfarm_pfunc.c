@@ -678,7 +678,15 @@ pfunc_remove_replica_main(gfarm_pfunc_t *handle,
 	}
 
 	e = gfs_replica_remove_by_file(src_url, src_host);
-	if (e != GFARM_ERR_NO_ERROR) {
+	/*
+	 * GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS is not
+	 * usually considered to be an error since gfprep -x -N 1 is
+	 * used to remove excessive number of replicas.
+	 * XXX - Probably we need a command-line option to report this
+	 * error.
+	 */
+	if (e != GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS &&
+	    e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr,
 			"ERROR: cannot remove replica: %s (%s:%d): %s\n",
 			src_url, src_host, src_port,
