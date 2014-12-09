@@ -66,6 +66,26 @@ Create a shared secret key (~/.gfarm_shared_key) in the home directory.
   This example sets up an expiration date of about one year (31536000
   seconds).
 
+You can check whether the metadata server gfmd is running or not by
+the following command execution;
+
+	% etc/init.d/gfmd status
+
+If you would like to remove all files created by config-gfarm, first
+stop gfmd and backend database server;
+
+	% etc/init.d/gfmd stop
+	(or % killall gfmd)
+	% etc/init.d/gfarm-pgsql stop
+
+Then, remove files and directories as follows;
+
+	% cd $PREFIX
+	% rm -f etc/gfarm2.conf etc/gfmd.conf
+	% rm -f etc/gfsd.conf etc/usermap
+	% rm -f etc/init.d/gfarm-* etc/init.d/gfmd
+	% rm -rf var/gfarm-*
+
 o Firewall configuration
 
 The Gfarm metadata server should be able to accept TCP connections at
@@ -100,6 +120,21 @@ Execute the following command to configure the filesystem node.
   physical files in Gfarm file system.  Note that the spool directory
   should be a non-shared area among filesystem nodes.  If you do not
   specify the directory, it would be $PREFIX/var/gfarm-spool.
+
+The setup of gfsd is complete.
+
+If you would like to remove all files created by config-gfsd, first
+stop gfsd;
+
+	% $PREFIX/etc/init.d/gfsd stop
+	(or % killall gfsd)
+
+Then, remove files and directories as follows;
+
+	% rm -f $PREFIX/etc/{gfarm2,gfsd}.conf
+	% rm -f $PREFIX/etc/init.d/gfsd
+	% rm -rf $PREFIX/var/gfarm-spool
+	(or remove the spool directory specified at config-gfsd)
 
 o Firewall configuration
 
