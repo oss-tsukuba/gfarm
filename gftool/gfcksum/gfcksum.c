@@ -275,7 +275,7 @@ main(int argc, char **argv)
 		gfs_glob(argv[i], &paths, &types);
 	gfs_glob_free(&types);
 
-	if (argc <= 1 &&
+	if (argc <= 1 && !opt_recursive &&
 	    (op == query_cksum_calculation_type || op == query_cksum_type))
 		opt_print_filename = 0;
 
