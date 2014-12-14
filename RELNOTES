@@ -1,3 +1,15 @@
+Release note for Gfarm 2.5.8.13
+===============================
+
+[2014.12.14]
+
+Updated feature
+* config-gfarm - CentOS 7 support [sf.net ticket #787]
+* gfprep - suppress insufficient number of replicas error since it is
+  norm when -x option is specified 
+* gfmdhost - -N and -1 options for health check purpose [sf.net ticket
+  #779]
+
 Release note for Gfarm 2.5.8.12
 ===============================
 

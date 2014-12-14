@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.5.8.12
+%define ver	2.5.8.13
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
@@ -1164,6 +1164,7 @@ fi
 %{share_prefix}/config/linux/default/gfsd.in
 %{share_prefix}/config/linux/redhat/gfsd.in
 %{share_prefix}/config/linux/suse/gfsd.in
+%{share_prefix}/config/linux/systemd/gfsd.service.in
 
 %files ganglia
 %defattr(-,root,root)
@@ -1208,6 +1209,8 @@ fi
 %{share_prefix}/config/linux/suse/gfarm-pgsql.in
 %{share_prefix}/config/linux/suse/gfarm-slapd.in
 %{share_prefix}/config/linux/suse/gfmd.in
+%{share_prefix}/config/linux/systemd/gfarm-pgsql.service.in
+%{share_prefix}/config/linux/systemd/gfmd.service.in
 %{share_prefix}/config/slapd.conf-2.0.in
 %{share_prefix}/config/slapd.conf-2.1.in
 
