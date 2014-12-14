@@ -23,6 +23,8 @@
 #include "metadb_server.h"
 #include "repattr.h"
 
+#define ISBLANK(c)	((c) == ' ' || (c) == '\t')
+
 static char *program_name = "gfncopy";
 
 static void
@@ -620,7 +622,7 @@ translate_digit(char *out, int size, const char *in)
 {
 	const unsigned char *p = (unsigned char *)in;
 
-	while (isblank(*p))
+	while (ISBLANK(*p))
 		p++;
 #if 0
 	if (*p == '-') {
@@ -640,7 +642,7 @@ translate_digit(char *out, int size, const char *in)
 		out++;
 		size--;
 	}
-	while (isblank(*p))
+	while (ISBLANK(*p))
 		p++;
 	while (*p != '\0') {
 		if (size <= 1)
