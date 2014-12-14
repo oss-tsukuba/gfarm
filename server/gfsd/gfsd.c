@@ -3022,8 +3022,10 @@ gfs_server_ftruncate(struct gfp_xdr *client)
 					free(fe->md_type_name);
 					fe->md_type_name = NULL;
 					fe->flags &= ~FILE_FLAG_DIGEST_CALC;
-				} else
+				} else {
 					fe->flags &= ~FILE_FLAG_DIGEST_FINISH;
+					fe->md_offset = 0;
+				}
 			} else if (length < fe->md_offset)
 				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 		}

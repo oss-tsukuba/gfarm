@@ -27,9 +27,15 @@ if
    [ X"`gfcksum -t $gftmp`" = X"" ] &&
    gfrm -f $gftmp &&
 
-   # gfs_pio_truncate to 0, no calculation
+   # gfs_pio_truncate to 0
    $gfs_pio_test $* -ctw -O -T 0 $gftmp <$data/65byte &&
-   [ X"`gfcksum -t $gftmp`" = X"" ] &&
+   $regress/bin/is_cksum_same $gftmp /dev/null &&
+   gfrm -f $gftmp &&
+
+   # gfs_pio_truncate, rewind and gfs_pio_write
+   cat $data/65byte $data/65byte |
+   $gfs_pio_test $* -ctw -W 65 -T 0 -S 0 -O $gftmp &&
+   $regress/bin/is_cksum_same $gftmp $data/65byte &&
    gfrm -f $gftmp &&
 
    # gfs_pio_truncate to shorter size, no calculation

@@ -297,9 +297,11 @@ gfs_pio_view_section_ftruncate(GFS_File gf, gfarm_off_t length)
 					gf->md.cksum_type = NULL;
 					gf->mode &=
 					    ~GFS_FILE_MODE_DIGEST_CALC;
-				} else
+				} else {
 					gf->mode &=
 					    ~GFS_FILE_MODE_DIGEST_FINISH;
+					gf->md_offset = 0;
+				}
 			} else if (length < gf->md_offset)
 				gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
 		}
