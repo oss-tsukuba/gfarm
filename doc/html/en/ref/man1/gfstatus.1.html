@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfstatus</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfstatus">
 <a name="gfstatus.1"></a><div class="titlepage"></div>
@@ -13,11 +13,25 @@
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [<em class="replaceable"><code>options</code></em>]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfstatus</code>   <em class="replaceable"><code>configuration_directive</code></em>... </p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
-<p><span class="command"><strong>gfstatus</strong></span> displays information about the
-Gfarm file system.</p>
+<p>
+When no configuration directive is specified as an argument,
+<span class="command"><strong>gfstatus</strong></span> displays information about the
+Gfarm file system.
+</p>
+<p>
+When any configuration directive is specified as an argument,
+<span class="command"><strong>gfstatus</strong></span> displays the current
+setting of it on localhost.
+NOTE: Currently, only limited set of directives can be specified.
+</p>
+<p>Example:</p>
+<div class="literallayout"><p><br>
+	$ gfstatus digest<br>
+</p></div>
 </div>
 <div class="refsect1" title="OPTIONS">
 <a name="options"></a><h2>OPTIONS</h2>
