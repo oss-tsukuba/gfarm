@@ -20,4 +20,4 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC) $(GFUTIL_SRCDIR)/queue.h $(GFARMLIB_SRCDIR)/gfarm_foreach.h $(GFARMLIB_SRCDIR)/gfarm_path.h $(GFARMLIB_SRCDIR)/gfs_pio.h
+$(OBJS): $(DEPGFARMINC) $(GFUTIL_SRCDIR)/queue.h $(GFARMLIB_SRCDIR)/gfarm_foreach.h $(GFARMLIB_SRCDIR)/gfarm_foreach.h $(GFARMLIB_SRCDIR)/gfarm_path.h $(GFARMLIB_SRCDIR)/gfs_pio.h
