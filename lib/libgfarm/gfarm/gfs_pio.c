@@ -743,7 +743,6 @@ gfs_pio_fillbuf(GFS_File gf, size_t size)
 		gfs_pio_purge(gf);
 
 	if (gf->io_offset != gf->offset) {
-		gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
 		gf->io_offset = gf->offset;
 	}
 
@@ -780,7 +779,6 @@ do_write(GFS_File gf, const char *buffer, size_t length,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (gf->io_offset != gf->offset) {
-		gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
 		gf->io_offset = gf->offset;
 	}
 	for (written = 0; written < length; written += len) {
@@ -897,14 +895,6 @@ gfs_pio_seek(GFS_File gf, gfarm_off_t offset, int whence, gfarm_off_t *resultp)
 	if (((gf->open_flags & GFARM_FILE_APPEND) == 0 ||
 	     (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) == 0) &&
 	    gf->offset <= where && where <= gf->offset + gf->length) {
-		/*
-		 * We don't have to clear GFS_FILE_MODE_DIGEST_CALC bit here,
-		 * because this is no problem to calculate checksum for
-		 * write-only or read-only case.
-		 * This is also ok on switching from writing to reading.
-		 * This is not ok on switching from reading to writing,
-		 * but gfs_pio_flush() clears the bit at that case.
-		 */
 		gf->p = where - gf->offset;
 		if (resultp != NULL)
 			*resultp = where;
@@ -912,8 +902,6 @@ gfs_pio_seek(GFS_File gf, gfarm_off_t offset, int whence, gfarm_off_t *resultp)
 		e = GFARM_ERR_NO_ERROR;
 		goto finish;
 	}
-
-	gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
 
 	if (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) {
 		e = gfs_pio_flush(gf);
@@ -960,8 +948,6 @@ gfs_pio_truncate(GFS_File gf, gfarm_off_t length)
 	}
 
 	CHECK_WRITABLE(gf);
-
-	gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
 
 	if (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) {
 		e = gfs_pio_flush(gf);
