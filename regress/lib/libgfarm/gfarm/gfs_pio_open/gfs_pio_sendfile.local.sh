@@ -4,8 +4,7 @@
 
 # client runs on a filesystem node
 
-host=`hostname`
-if gfsched -D $host >/dev/null 2>&1; then
+if host=`$regress/bin/get_local_gfhost`; then
 	$testbase/gfs_pio_sendfile.sh -h $host
 else
 	exit $exit_unsupported

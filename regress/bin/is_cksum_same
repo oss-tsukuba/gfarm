@@ -1,0 +1,35 @@
+#!/bin/sh
+
+. ./regress.conf
+
+tmpfile1=/tmp/ICS1.$$
+tmpfile2=/tmp/ICS2.$$
+tmpfile3=/tmp/ICS3.$$
+
+case $# in
+2)	:;;
+*)	echo >&2 "Usage: is_cksum_same <gffile> <localfile>"
+	exit $exit_untested;;
+esac
+
+trap 'rm -f $tmpfile1 $tmpfile2 $tmpfile3; exit $exit_trap' $trap_sigs
+
+gffile=$1
+localfile=$2
+
+if type=`gfcksum -t "$gffile"` &&
+   openssl "$type" "$localfile" >$tmpfile1 &&
+   awk '{print $NF}' $tmpfile1 >$tmpfile2 &&
+   gfcksum "$gffile" >$tmpfile3
+then
+   if awk '{print $1}' $tmpfile3 | cmp -s $tmpfile2; then
+     exit_code=$exit_pass
+   else
+     exit_code=$exit_fail
+   fi
+else
+   exit_code=$exit_untested
+fi
+
+rm -f $tmpfile1 $tmpfile2 $tmpfile3
+exit $exit_code
