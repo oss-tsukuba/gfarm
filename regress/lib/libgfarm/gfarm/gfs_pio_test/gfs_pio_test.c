@@ -8,8 +8,6 @@
 #include <gfarm/gfarm.h>
 
 /* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
-#include <openssl/evp.h> /* for #include "gfs_pio.h" */
-#include "queue.h"	/* for #include "gfs_pio.h" */
 #include "gfs_pio.h"	/* for gfs_pio_internal_set_view_section() */
 
 char *program_name = "gfs_pio_test";

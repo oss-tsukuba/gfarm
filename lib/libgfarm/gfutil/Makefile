@@ -55,7 +55,8 @@ OBJS =	alloc.lo \
 	timeval.lo \
 	utf8.lo
 
-CFLAGS = $(pthread_includes) $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR)
+CFLAGS = $(pthread_includes) $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) \
+	$(openssl_includes)
 
 all: $(LIBRARY)
 
