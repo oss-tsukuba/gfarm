@@ -26,7 +26,6 @@ optional conditions:
 	- which cksum type is set
 	- whether $GFARM_TEST_CKSUM_MISMATCH is set or not
 	- the $GFARM_TEST_CKSUM_MISMATCH is larger than client_file_bufsize
-	- during cksum related test, client_file_bufsize == 1048568 (default)
 	- whether $GFARM_TEST_MDS* is set or not
 
 TO WRITE TEST
