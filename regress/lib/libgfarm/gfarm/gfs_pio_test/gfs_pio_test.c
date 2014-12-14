@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <libgen.h>
@@ -44,6 +45,10 @@ struct op {
 
 #define MAX_OPS	1024
 
+/* should be > GFARM_CLIENT_FILE_BUFSIZE_DEFAULT */
+#define IO_BUFSIZE (10*1024*1024)
+char buffer[IO_BUFSIZE];
+
 struct op ops[MAX_OPS];
 int nops = 0;
 
@@ -68,11 +73,11 @@ main(int argc, char **argv)
 {
 	gfarm_error_t e;
 	GFS_File gf;
-	int do_create = 0, verbose = 0, c, i, rv, m;
+	int do_create = 0, verbose = 0, c, i, rv, done, m;
 	int flags = GFARM_FILE_RDWR;
 	gfarm_mode_t mode = 0666;
 	gfarm_off_t off, roff;
-	char buffer[BUFSIZ], *s, *host = NULL;
+	char *s, *host = NULL;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -200,30 +205,40 @@ main(int argc, char **argv)
 			if (verbose)
 				fprintf(stderr, "gfs_pio_read(%d): %d\n",
 				    (int)off, rv);
-			off = write(1, buffer, rv);
-			if (rv == -1) {
-				perror("write");
-				return (EXIT_SYS_WRITE);
+			for (done = 0; done < rv; done += off) {
+				off = write(1, buffer + done, rv - done);
+				if (off == -1) {
+					if (errno == EINTR)
+						continue;
+					perror("write");
+					return (EXIT_SYS_WRITE);
+				}
+				if (verbose)
+					fprintf(stderr, "write(%d): %d\n",
+					    rv - done, (int)off);
 			}
-			if (verbose)
-				fprintf(stderr, "write(%d): %d\n",
-				    rv, (int)off);
 			break;
 		case OP_WRITE:
 			if (off > sizeof buffer)
 				off = sizeof buffer;
-			rv = read(0, buffer, (size_t)off);
-			if (rv == -1) {
-				perror("read");
-				return (EXIT_SYS_READ);
+			for (done = 0; done < off; done += rv) {
+				rv = read(0, buffer + done,
+				    (size_t)(off - done));
+				if (rv == -1) {
+					if (errno == EINTR)
+						continue;
+					perror("read");
+					return (EXIT_SYS_READ);
+				}
+				if (verbose)
+					fprintf(stderr, "read(%d): %d\n",
+					    (int)(off - done), rv);
+				if (rv == 0)
+					break;
 			}
-			if (verbose)
-				fprintf(stderr, "read(%d): %d\n",
-				    (int)off, rv);
-			if (rv == 0)
+			if (done == 0)
 				break;
-			off = rv;
-			e = gfs_pio_write(gf, buffer, (int)off, &rv);
+			e = gfs_pio_write(gf, buffer, done, &rv);
 			if (e != GFARM_ERR_NO_ERROR) {
 				fprintf(stderr, "gfs_pio_write: %s\n",
 				    gfarm_error_string(e));
@@ -231,7 +246,7 @@ main(int argc, char **argv)
 			}
 			if (verbose)
 				fprintf(stderr, "gfs_pio_write(%d): %d\n",
-				    (int)off, rv);
+				    done, rv);
 			break;
 		case OP_SEEK_SET:
 		case OP_SEEK_CUR:

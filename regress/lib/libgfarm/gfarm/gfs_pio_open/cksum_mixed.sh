@@ -25,7 +25,23 @@ if
    }' |
    $gfs_pio_test $* -R $bufsize -S $bufsize -O $gftmp >/dev/null &&
    $regress/bin/is_cksum_same $gftmp $localtmp &&
-   gfrm -f $gftmp
+   gfrm -f $gftmp &&
+
+   # gfs_pio_write, then gfs_pio_read
+   awk 'BEGIN{
+      for (i = 0; i < '$bufsize'; i++) printf "%c", 0
+      for (i = 0; i < '$bufsize'; i++) printf "a"
+      exit
+   }' | gfreg $* - $gftmp &&
+   awk 'BEGIN{
+      for (i = 0; i < '$bufsize'; i++) printf "a";
+      exit
+   }' |
+   $gfs_pio_test $* -S 0 -W $bufsize -S $bufsize -I $gftmp >/dev/null &&
+   $regress/bin/is_cksum_same $gftmp $localtmp &&
+   gfrm -f $gftmp &&
+
+   true
 
 then
     exit_code=$exit_pass
