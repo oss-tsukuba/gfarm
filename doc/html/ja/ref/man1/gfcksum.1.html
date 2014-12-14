@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfcksum</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfcksum">
 <a name="gfcksum.1"></a><div class="titlepage"></div>
@@ -12,7 +12,7 @@
 </div>
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfcksum</code>  [-r]  <em class="replaceable"><code>path</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfcksum</code>  [-r] [ -T  |   -t ]  <em class="replaceable"><code>path</code></em>... </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfcksum</code>   -c  [-rv] [-h <em class="replaceable"><code>host</code></em>]  <em class="replaceable"><code>path</code></em>... </p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
@@ -20,6 +20,10 @@
 <p>
 指定したファイルについてチェックサムを表示します。
 -r オプションを指定すると、指定されたディレクトリに含まれるファイルのチェックサムを再帰的に表示します。
+</p>
+<p>
+-t オプションを指定すると、現在設定されているチェックサムの種類のみを表示します。
+-T オプションを指定すると、ファイルを修正したとき、どの種類のチェックサムが計算されるかを表示します。
 </p>
 <p>
 -c オプションを指定すると、ファイルのチェックサムを計算し、
