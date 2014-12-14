@@ -20,7 +20,7 @@ if
    # gfs_pio_sendfile
    $gfs_pio_test $* -ctw -Y 0,0,-1 $gftmp <$data/65byte &&
    $regress/bin/is_cksum_same $gftmp $data/65byte &&
-   gfrm -f $gftmp
+   gfrm -f $gftmp &&
 
    # gfs_pio_sendfile, no calculation
    $gfs_pio_test $* -ctw -Y 1,0,-1 $gftmp <$data/65byte &&
@@ -39,18 +39,25 @@ if
    gfrm -f $gftmp &&
 
    # gfs_pio_truncate to shorter size, no calculation
-   $gfs_pio_test $* -ctw -O -T 64  $gftmp <$data/65byte &&
+   $gfs_pio_test $* -ctw -O -T 64 $gftmp <$data/65byte &&
    [ X"`gfcksum -t $gftmp`" = X"" ] &&
    gfrm -f $gftmp &&
 
    # gfs_pio_truncate to just same size
-   $gfs_pio_test $* -ctw -O -T 65  $gftmp <$data/65byte &&
+   $gfs_pio_test $* -ctw -O -T 65 $gftmp <$data/65byte &&
    $regress/bin/is_cksum_same $gftmp $data/65byte &&
    gfrm -f $gftmp &&
 
    # gfs_pio_truncate to longer size, no calculation
-   $gfs_pio_test $* -ctw -O -T 66  $gftmp <$data/65byte &&
+   $gfs_pio_test $* -ctw -O -T 66 $gftmp <$data/65byte &&
    [ X"`gfcksum -t $gftmp`" = X"" ] &&
+   gfrm -f $gftmp &&
+
+   # gfs_pio_truncate to longer size
+   ( cat $data/65byte; awk 'BEGIN {printf "%c", 0; exit}' ) >$localtmp &&
+   $gfs_pio_test $* -ct -O -T 66 -S 65 -I $gftmp <$data/65byte >/dev/null &&
+   $regress/bin/is_cksum_same $gftmp $localtmp &&
+   rm -f $localtmp &&
    gfrm -f $gftmp &&
 
    true
