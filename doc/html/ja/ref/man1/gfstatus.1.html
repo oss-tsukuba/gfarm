@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfstatus</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfstatus">
 <a name="gfstatus.1"></a><div class="titlepage"></div>
@@ -14,9 +14,19 @@
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [<em class="replaceable"><code>オプション</code></em>]</p></div>
 </div>
+<div class="cmdsynopsis"><p><code class="command">gfstatus</code>   <em class="replaceable"><code>設定ディレクティブ</code></em>... </p></div>
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
-<p>Gfarmファイルシステムの情報を表示します．</p>
+<p>引数に、設定ディレクティブを指定しない場合，
+Gfarmファイルシステムの情報を表示します．</p>
+<p>引数に、設定ディレクティブを指定した場合，
+そのディレクティブの、ローカルホストでの設定値を表示します．
+ただし、今のところ、ごく限られたディレクティブのみが指定できます．
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	$ gfstatus digest<br>
+</p></div>
 </div>
 <div class="refsect1" title="OPTIONS">
 <a name="options"></a><h2>OPTIONS</h2>
