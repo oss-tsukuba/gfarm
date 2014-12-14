@@ -1,0 +1,16 @@
+#!/bin/sh
+
+. ./regress.conf
+
+gtmp=${gftmp}.de_check
+
+trap 'gfrm $gtmp; exit $exit_trap' $trap_sigs
+
+if gfreg /dev/null $gtmp && [ -n "`gfcksum -T $gtmp`" ]; then
+  exit_code=$exit_pass
+else
+  exit_code=$exit_fail
+fi
+
+gfrm $gtmp
+exit $exit_code

@@ -9,6 +9,8 @@ TO RUN TEST
 2. run "make check"
 
 optional variables:
+	$GFARM_TEST_CKSUM_MISMATCH=<path>
+					... a file which causes cksum mismatch
 	$GFARM_TEST_MDS2=<host>:<port>	... optional gfmd
 	$GFARM_TEST_MDS3=<host>:<port>	... optional gfmd
 	$GFARM_TEST_MDS4=<host>:<port>	... optional gfmd
@@ -19,6 +21,12 @@ optional conditions:
 	- whether there are at least two filesystem nodes or not.
 	- whether there are at least two users or not.
 	- whether XML attribute is enabled by the configure command or not.
+	- whether cksum calculation is enabled or not.
+	- whether client-side cksum calculation is enabled or not.
+	- which cksum type is set
+	- whether $GFARM_TEST_CKSUM_MISMATCH is set or not
+	- the $GFARM_TEST_CKSUM_MISMATCH is larger than client_file_bufsize
+	- whether $GFARM_TEST_MDS* is set or not
 
 TO WRITE TEST
 - each test should be independent from other test.
@@ -28,4 +36,4 @@ i.e.
 
 TODO
 - test by root?
-- make 
+

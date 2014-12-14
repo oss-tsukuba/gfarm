@@ -1,0 +1,32 @@
+#!/bin/sh
+
+# display a filesystem node which is remote
+#
+# if a gfarm file is specified as an argument, display a remote hostname
+# which has a replica of the file
+
+host=`hostname`
+
+case $# in
+0)	if host=`gfsched -D $host 2>/dev/null`; then
+		host=`gfsched | awk '$0 != "'$host'" { print $0; exit }'`
+	else
+		host=`gfsched | head -1`
+	fi;;
+1)	host=`gfwhere $1 |
+	   awk '{
+			for(i = 1; i <= NR; i++) {
+				if ($i != "'"$host"'") { print $i; exit}
+			}
+		}'`
+	;;
+*)	echo >&2 "Usage: get_remote_gfhost [<gfarm_file>]"
+	exit 2;;
+esac
+
+if [ -z "$host" ]; then
+	exit 1
+else
+	echo $host
+	exit 0
+fi
