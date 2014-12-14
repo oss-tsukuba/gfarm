@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <libgen.h>
 #include <gfarm/gfarm.h>
@@ -48,6 +49,62 @@ print_user_config_file(char *msg)
 		printf("%s/%s\n", gfarm_get_local_homedir(), gfarm_client_rc);
 	else
 		printf("%s\n", rc);
+}
+
+static void
+print_config_int(int print_type, const char *type, int value)
+{
+	if (print_type)
+		printf("%s: %d\n", type, value);
+	else
+		printf("%d\n", value);
+}
+
+static void
+print_config_string(int print_type, const char *type, const char *string)
+{
+	if (string == NULL)
+		string = "";
+	if (print_type)
+		printf("%s: %s\n", type, string);
+	else
+		puts(string);
+}
+
+static void
+print_config_enabled(int print_type, const char *type, int enabled)
+{
+	print_config_string(print_type, type,
+	    enabled ? "enabled" : "disabled");
+}
+
+static gfarm_error_t
+print_configurations(int argc, char **argv)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	int i, print_type = 1;
+	const char *type;
+
+	if (argc <= 1)
+		print_type = 0;
+
+	for (i = 0; i < argc; i++) {
+		type = argv[i];
+		if (strcmp(type, "digest") == 0) {
+			print_config_string(print_type, type, gfarm_digest);
+		} else if (strcmp(type, "direct_local_access") == 0) {
+			print_config_enabled(print_type, type,
+			    gfarm_direct_local_access);
+		} else if (strcmp(type, "client_file_bufsize") == 0) {
+			print_config_int(print_type, type,
+			    gfarm_client_file_bufsize);
+		} else {
+			fprintf(stderr,
+			    "%s: unsupported configuration directive\n", type);
+			e = GFARM_ERR_NO_SUCH_OBJECT;
+		}
+	}
+	return (e);
 }
 
 void
@@ -104,6 +161,14 @@ main(int argc, char *argv[])
 		gflog_set_priority_level(LOG_DEBUG);
 		gflog_auth_set_verbose(1);
 	}
+	if (argc > 0) {
+		e = print_configurations(argc, argv);
+		e2 = gfarm_terminate();
+		error_check("gfarm_terminate", e2);
+
+		exit(e == GFARM_ERR_NO_ERROR ? 0 : 1);
+	}
+
 	if (gfarm_realpath_by_gfarm2fs(path, &realpath) == GFARM_ERR_NO_ERROR)
 		path = realpath;
 	if ((e = gfm_client_connection_and_process_acquire_by_path(

@@ -25,11 +25,26 @@
 </cmdsynopsis>
 </refsynopsisdiv>
 
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfstatus</command>
+    <arg choice="plain" rep="repeat"><replaceable>設定ディレクティブ</replaceable></arg>
+</cmdsynopsis>
+
 <!-- body begins here -->
 
 <refsect1 id="description"><title>DESCRIPTION</title>
 
-<para>Gfarmファイルシステムの情報を表示します．</para>
+<para>引数に、設定ディレクティブを指定しない場合，
+Gfarmファイルシステムの情報を表示します．</para>
+
+<para>引数に、設定ディレクティブを指定した場合，
+そのディレクティブの、ローカルホストでの設定値を表示します．
+ただし、今のところ、ごく限られたディレクティブのみが指定できます．
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	$ gfstatus digest
+</literallayout>
 
 </refsect1>
 

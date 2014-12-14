@@ -23,14 +23,35 @@
   <command moreinfo="none">gfstatus</command>
     <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
 </cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfstatus</command>
+    <arg choice="plain" rep="repeat"><replaceable>configuration_directive</replaceable></arg>
+</cmdsynopsis>
+
+
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id="description"><title>DESCRIPTION</title>
 
-<para><command moreinfo="none">gfstatus</command> displays information about the
-Gfarm file system.</para>
+<para>
+When no configuration directive is specified as an argument,
+<command moreinfo="none">gfstatus</command> displays information about the
+Gfarm file system.
+</para>
+
+<para>
+When any configuration directive is specified as an argument,
+<command moreinfo="none">gfstatus</command> displays the current
+setting of it on localhost.
+NOTE: Currently, only limited set of directives can be specified.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	$ gfstatus digest
+</literallayout>
 
 </refsect1>
 
