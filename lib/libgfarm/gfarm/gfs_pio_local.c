@@ -152,7 +152,10 @@ gfs_pio_local_storage_pwrite(GFS_File gf,
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
-	rv = pwrite(vc->fd, buffer, size, offset);
+	if (gf->open_flags & GFARM_FILE_APPEND)
+		rv = write(vc->fd, buffer, size);
+	else
+		rv = pwrite(vc->fd, buffer, size, offset);
 	if (rv == -1) {
 		save_errno = errno;
 		gflog_debug(GFARM_MSG_1003822, "pwrite: %s",
