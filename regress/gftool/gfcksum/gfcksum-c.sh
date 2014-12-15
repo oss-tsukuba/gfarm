@@ -9,6 +9,8 @@ gfs_pio_test=$testbin/../../lib/libgfarm/gfarm/gfs_pio_test/gfs_pio_test
 
 trap 'gfrm -rf $gftmp; rm -f $localtmp; exit $exit_trap' $trap_sigs
 
+$regress/bin/is_digest_enabled || exit $exit_unsupported
+
 if
    # metadata has checksum
    gfreg $data/65byte $gftmp &&
