@@ -50,6 +50,12 @@ if
    rm -f $localtmp &&
    gfrm -f $gftmp &&
 
+   # appened (but, libgfarm may take it as writing whole while), no calculation
+   gfreg $* $data/65byte $gftmp &&
+   $gfs_pio_test $* -a -O $gftmp <$data/65byte &&
+   [ X"`gfcksum -t $gftmp`" = X"" ] &&
+#   gfrm -f $gftmp &&
+
    true
 
 then
