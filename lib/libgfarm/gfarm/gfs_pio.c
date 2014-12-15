@@ -572,6 +572,8 @@ gfs_pio_get_nfragment(GFS_File gf, int *nfragmentsp)
 
 #endif /* not yet in gfarm v2 */
 
+static gfarm_error_t gfs_pio_view_fstat(GFS_File, struct gfs_stat *);
+
 gfarm_error_t
 gfs_pio_close(GFS_File gf)
 {
@@ -602,17 +604,18 @@ gfs_pio_close(GFS_File gf)
 		if ((gf->mode &
 		    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
 		    (GFS_FILE_MODE_DIGEST_CALC)) {
-			struct gfs_file_section_context *vc = gf->view_context;
-			if (vc->ops == &gfs_pio_local_storage_ops) {
-				e = (gf->ops->view_fstat)(gf, &gst);
-				if (e == GFARM_ERR_NO_ERROR) {
-					/*
-					 * should not call gfs_stat_free(),
-					 * because (gf->ops->view_fstat)()
-					 * doesn't set gst->st_user/st_group.
-					 */
-					filesize = gst.st_size;
-				}
+			/*
+			 * this is slow, if the filesystem node is remote,
+			 * but necessary, especially for GFARM_FILE_APPEND case
+			 */
+			e = gfs_pio_view_fstat(gf, &gst);
+			if (e == GFARM_ERR_NO_ERROR) {
+				/*
+				 * should not call gfs_stat_free(),
+				 * because gfs_pio_view_fstat()
+				 * doesn't set gst->st_user/st_group.
+				 */
+				filesize = gst.st_size;
 			}
 		}
 
