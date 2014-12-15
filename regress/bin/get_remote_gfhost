@@ -9,14 +9,17 @@ host=`hostname`
 
 case $# in
 0)	if host=`gfsched -D $host 2>/dev/null`; then
-		host=`gfsched | awk '$0 != "'$host'" { print $0; exit }'`
+		host=`gfsched |
+		    awk '$0 != "'$host'" && $0 != "localhost" {print; exit }'`
 	else
-		host=`gfsched | head -1`
+		host=`gfsched | grep -v '^localhost$' | head -1`
 	fi;;
 1)	host=`gfwhere $1 |
 	   awk '{
 			for(i = 1; i <= NR; i++) {
-				if ($i != "'"$host"'") { print $i; exit}
+				if ($i != "'"$host"'" && $0 != "localhost" ) {
+					print $i;
+				exit}
 			}
 		}'`
 	;;
