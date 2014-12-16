@@ -57,11 +57,7 @@ enum gfs_proto_command {
 	GFS_PROTO_WRITE,
 };
 
-/*
- * For better remote read performance, subtract 8 byte (errno and the
- * size of data of gfs_client_pread) to fill up the iobuffer.
- */
-#define GFS_PROTO_MAX_IOSIZE	(1048576 - 8)
+#define GFS_PROTO_MAX_IOSIZE	(1024 * 1024)
 
 /*
  * sub protocols of GFS_PROTO_COMMAND
