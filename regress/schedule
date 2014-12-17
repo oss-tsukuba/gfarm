@@ -19,6 +19,11 @@ lib/libgfarm/gfarm/gfs_pio_open/file_trunc.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc_read.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc_not_writable.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc_not_writable_rdonly.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_basic.remote.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_mismatch.remote.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_no_check.remote.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_mixed.remote.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_simultaneous.remote.sh
 lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/file_busy/file_busy.sh
 lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/in_progress/in_progress.sh
 lib/libgfarm/gfarm/gfs_stat_cached/purge.sh
@@ -97,6 +102,8 @@ gftool/gfchmod/gfchmod_symlink.sh
 gftool/gfchmod/gfchmod-h.sh
 gftool/gfchown/gfchown.sh
 gftool/gfchown/gfchown-h.sh
+gftool/gfcksum/gfcksum-c.sh
+gftool/gfcksum/gfcksum-c.mismatch.sh
 gftool/gfstatus/gfstatus_mds2.sh
 gftool/gfwhoami/gfwhoami.sh
 gftool/gfwhoami/gfwhoami_mds2.sh

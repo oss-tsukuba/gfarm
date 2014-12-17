@@ -20,6 +20,10 @@
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfcksum</command>
     <arg choice="opt" rep="norepeat">-r</arg>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-T</arg>
+      <arg choice="plain" rep="norepeat">-t</arg>
+    </group>
     <arg choice="plain" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis sepchar=" ">
@@ -38,6 +42,12 @@
 <command moreinfo="none">gfcksum</command> prints checksum of
 specified files.  When -r option is specified, it prints checksum of
 subentries in the specified directories recursively.
+</para>
+
+<para>
+When -t option is specified, only checksum type which is currently set
+to the file is printed.
+When -T option is specified, which checksum type will be calculated is printed.
 </para>
 
 <para>

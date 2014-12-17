@@ -17,7 +17,8 @@
 #include "gfs_pio.h"
 
 char *program_name = "gfcksum";
-static int opt_verbose;
+static int opt_verbose = 0;
+static int opt_print_filename = 1;
 
 static gfarm_error_t
 display_dir(char *p, struct gfs_stat *st, void *arg)
@@ -159,6 +160,42 @@ calc_cksum(char *p, struct gfs_stat *st, void *arg)
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
 
+static gfarm_error_t
+display_cksum_type(char *p, struct gfs_stat *st, int current_type)
+{
+	gfarm_error_t e;
+	struct gfs_stat_cksum c;
+	const char *type;
+
+	if (!GFARM_S_ISREG(st->st_mode))
+		return (GFARM_ERR_NO_ERROR);
+	e = gfs_stat_cksum(p, &c);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	type = c.type;
+	if (current_type && c.len == 0)
+		type = "";
+	if (opt_print_filename)
+		printf("%s: %s\n", p, type);
+	else
+		printf("%s\n", type);
+	gfs_stat_cksum_free(&c);
+	return (type[0] == '\0' ? GFARM_ERR_NO_SUCH_OBJECT :
+	    GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+query_cksum_calculation_type(char *p, struct gfs_stat *st, void *arg)
+{
+	return (display_cksum_type(p, st, 0));
+}
+
+static gfarm_error_t
+query_cksum_type(char *p, struct gfs_stat *st, void *arg)
+{
+	return (display_cksum_type(p, st, 1));
+}
+
 void
 usage(void)
 {
@@ -168,6 +205,8 @@ usage(void)
 	fprintf(stderr, "\t-c\tcompute checksum\n");
 	fprintf(stderr, "\t-h host\tspecify file system node\n");
 	fprintf(stderr, "\t-r\tdisplay subdirectories recursively\n");
+	fprintf(stderr, "\t-T\tdisplay which cksum type will be calculated\n");
+	fprintf(stderr, "\t-t\tdisplay cksum type\n");
 	fprintf(stderr, "\t-v\tverbose output\n");
 	exit(2);
 }
@@ -186,7 +225,7 @@ main(int argc, char **argv)
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "ch:rv?")) != -1) {
+	while ((ch = getopt(argc, argv, "ch:rTtv?")) != -1) {
 		switch (ch) {
 		case 'c':
 			op = calc_cksum;
@@ -196,6 +235,12 @@ main(int argc, char **argv)
 			break;
 		case 'r':
 			opt_recursive = 1;
+			break;
+		case 'T':
+			op = query_cksum_calculation_type;
+			break;
+		case 't':
+			op = query_cksum_type;
 			break;
 		case 'v':
 			opt_verbose = 1;
@@ -232,6 +277,10 @@ main(int argc, char **argv)
 	for (i = 0; i < argc; i++)
 		gfs_glob(argv[i], &paths, &types);
 	gfs_glob_free(&types);
+
+	if (argc <= 1 && !opt_recursive &&
+	    (op == query_cksum_calculation_type || op == query_cksum_type))
+		opt_print_filename = 0;
 
 	n = gfarm_stringlist_length(&paths);
 	for (i = 0; i < n; i++) {

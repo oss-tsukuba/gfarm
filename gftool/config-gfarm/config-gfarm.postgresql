@@ -191,14 +191,14 @@ set_last_defaults_postgresql()
 	7.*) # -w option makes "pg_ctl start" ask password on PostgreSQL-7.4
 		WAIT_F='' ;;
 	esac
-		# For 'systemd', variable names are surrounded by ${...}.
-		: ${PGSQL_OPTIONS:=$WAIT_F'-s -m fast -D ${PGDATA} -l ${PGDATA}/logfile'}
+	# For 'systemd', variable names are surrounded by ${...}.
+	: ${PGSQL_OPTIONS:=$WAIT_F'-s -m fast -D ${PGDATA} -l ${PGDATA}/logfile'}
 	# In private mode, we change the directory of the unix-domain socket
 	# for PostgreSQL since some Linux distributions set the default
 	# directory to somewhere other than /tmp, which is restricted to be
 	# written by owner of the directory.
 	if $PRIVATE_MODE; then
-		PGSQL_OPTIONS="$PGSQL_OPTIONS -o '-k $BACKEND_DATA_DIR'"
+		PGSQL_OPTIONS="$PGSQL_OPTIONS -o '-k /tmp'"
 	fi
 }
 

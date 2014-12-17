@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <libgen.h>
@@ -6,10 +7,23 @@
 
 #include <gfarm/gfarm.h>
 
-#define EXIT_USAGE	250
+/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
+#include <openssl/evp.h> /* for #include "gfs_pio.h" */
+#include "queue.h"	/* for #include "gfs_pio.h" */
+#include "gfs_pio.h"	/* for gfs_pio_internal_set_view_section() */
 
 char *program_name = "gfs_pio_test";
 
+#define EXIT_GF_SUCCESS	0
+#define EXIT_GF_INIT	1
+#define EXIT_GF_OPEN	2
+#define EXIT_GF_CLOSE	3
+#define EXIT_GF_TERM	4
+#define EXIT_GF_SECHOST	5
+#define EXIT_SYS_WRITE	10
+#define EXIT_SYS_READ	11
+#define EXIT_GF_USAGE	250
+/* the OP_* codes below are also used as EXIT_* codes */
 #define OP_READ		'R'
 #define OP_WRITE	'W'
 #define OP_SEEK_SET	'S'
@@ -31,6 +45,10 @@ struct op {
 
 #define MAX_OPS	1024
 
+/* should be > GFARM_CLIENT_FILE_BUFSIZE_DEFAULT */
+#define IO_BUFSIZE (10*1024*1024)
+char buffer[IO_BUFSIZE];
+
 struct op ops[MAX_OPS];
 int nops = 0;
 
@@ -45,9 +63,9 @@ usage(void)
 #ifdef GFARM_FILE_EXCLUSIVE
 		"e"
 #endif
-		"rtw] [-m mode] <filename>\n",
+		"rtw] [-h <host>] [-m <mode>] <filename>\n",
 	    program_name);
-	exit(EXIT_USAGE);
+	exit(EXIT_GF_USAGE);
 }
 
 int
@@ -55,11 +73,11 @@ main(int argc, char **argv)
 {
 	gfarm_error_t e;
 	GFS_File gf;
-	int do_create = 0, verbose = 0, c, i, rv, m;
+	int do_create = 0, verbose = 0, c, i, rv, done, m;
 	int flags = GFARM_FILE_RDWR;
 	gfarm_mode_t mode = 0666;
 	gfarm_off_t off, roff;
-	char buffer[BUFSIZ], *s;
+	char *s, *host = NULL;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -68,10 +86,10 @@ main(int argc, char **argv)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "gfarm_initialize: %s\n",
 		    gfarm_error_string(e));
-		return (1);
+		return (EXIT_GF_INIT);
 	}
 
-	while ((c = getopt(argc, argv, "acC:DeE:FIm:MnOP:rR:S:tT:vwW:"))
+	while ((c = getopt(argc, argv, "acC:DeE:Fh:Im:MnOP:rR:S:tT:vwW:"))
 	    != -1) {
 		off = -1;
 		switch (c) {
@@ -112,6 +130,9 @@ main(int argc, char **argv)
 			flags |= GFARM_FILE_EXCLUSIVE;
 			break;
 #endif
+		case 'h':
+			host = optarg;
+			break;
 		case 'm':
 			mode = strtol(optarg, NULL, 0);
 			break;
@@ -156,7 +177,17 @@ main(int argc, char **argv)
 		fprintf(stderr, "%s: %s\n",
 		    do_create ? "gfs_pio_create" : "gfs_pio_open",
 		    gfarm_error_string(e));
-		return (2);
+		return (EXIT_GF_OPEN);
+	}
+	if (host != NULL) {
+		/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
+		e = gfs_pio_internal_set_view_section(gf, host);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr,
+			    "gfs_pio_internal_set_view_section(%s): %s\n",
+			    host, gfarm_error_string(e));
+			return (EXIT_GF_SECHOST);
+		}
 	}
 	for (i = 0; i < nops; i++) {
 		c = ops[i].op;
@@ -174,30 +205,40 @@ main(int argc, char **argv)
 			if (verbose)
 				fprintf(stderr, "gfs_pio_read(%d): %d\n",
 				    (int)off, rv);
-			off = write(1, buffer, rv);
-			if (rv == -1) {
-				perror("write");
-				return (10);
+			for (done = 0; done < rv; done += off) {
+				off = write(1, buffer + done, rv - done);
+				if (off == -1) {
+					if (errno == EINTR)
+						continue;
+					perror("write");
+					return (EXIT_SYS_WRITE);
+				}
+				if (verbose)
+					fprintf(stderr, "write(%d): %d\n",
+					    rv - done, (int)off);
 			}
-			if (verbose)
-				fprintf(stderr, "write(%d): %d\n",
-				    rv, (int)off);
 			break;
 		case OP_WRITE:
 			if (off > sizeof buffer)
 				off = sizeof buffer;
-			rv = read(0, buffer, (size_t)off);
-			if (rv == -1) {
-				perror("read");
-				return (11);
+			for (done = 0; done < off; done += rv) {
+				rv = read(0, buffer + done,
+				    (size_t)(off - done));
+				if (rv == -1) {
+					if (errno == EINTR)
+						continue;
+					perror("read");
+					return (EXIT_SYS_READ);
+				}
+				if (verbose)
+					fprintf(stderr, "read(%d): %d\n",
+					    (int)(off - done), rv);
+				if (rv == 0)
+					break;
 			}
-			if (verbose)
-				fprintf(stderr, "read(%d): %d\n",
-				    (int)off, rv);
-			if (rv == 0)
+			if (done == 0)
 				break;
-			off = rv;
-			e = gfs_pio_write(gf, buffer, (int)off, &rv);
+			e = gfs_pio_write(gf, buffer, done, &rv);
 			if (e != GFARM_ERR_NO_ERROR) {
 				fprintf(stderr, "gfs_pio_write: %s\n",
 				    gfarm_error_string(e));
@@ -205,7 +246,7 @@ main(int argc, char **argv)
 			}
 			if (verbose)
 				fprintf(stderr, "gfs_pio_write(%d): %d\n",
-				    (int)off, rv);
+				    done, rv);
 			break;
 		case OP_SEEK_SET:
 		case OP_SEEK_CUR:
@@ -214,7 +255,9 @@ main(int argc, char **argv)
 			case OP_SEEK_SET: m = GFARM_SEEK_SET; s = "SET"; break;
 			case OP_SEEK_CUR: m = GFARM_SEEK_CUR; s = "CUR"; break;
 			case OP_SEEK_END: m = GFARM_SEEK_END; s = "END"; break;
-			default: assert(0);
+			default:
+				m = 0; s = NULL; /* shut up gcc warnings */
+				assert(0);
 			}
 			e = gfs_pio_seek(gf, off, m, &roff);
 			if (e != GFARM_ERR_NO_ERROR) {
@@ -294,7 +337,7 @@ main(int argc, char **argv)
 				off = write(1, buffer, rv);
 				if (off == -1) {
 					perror("write");
-					return (10);
+					return (EXIT_SYS_WRITE);
 				}
 			}
 			if (verbose)
@@ -307,7 +350,7 @@ main(int argc, char **argv)
 				rv = read(0, buffer, sizeof buffer);
 				if (rv == -1) {
 					perror("read");
-					return (11);
+					return (EXIT_SYS_READ);
 				}
 				if (rv == 0)
 					break;
@@ -332,14 +375,14 @@ main(int argc, char **argv)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "gfs_pio_close: %s\n",
 		    gfarm_error_string(e));
-		return (3);
+		return (EXIT_GF_CLOSE);
 	}
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "gfarm_terminate: %s\n",
 		    gfarm_error_string(e));
-		return (4);
+		return (EXIT_GF_TERM);
 	}
-	return (0);
+	return (EXIT_GF_SUCCESS);
 }

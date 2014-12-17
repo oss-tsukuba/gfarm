@@ -837,7 +837,8 @@ struct file_entry {
 	time_t mtime, atime;
 	unsigned long mtimensec, atimensec;
 	gfarm_ino_t ino;
-	int flags, local_fd;
+	gfarm_uint64_t gen, new_gen;
+	int flags, local_flags, local_fd;
 #define FILE_FLAG_LOCAL		0x01
 #define FILE_FLAG_CREATED	0x02
 #define FILE_FLAG_WRITABLE	0x04
@@ -846,7 +847,6 @@ struct file_entry {
 #define FILE_FLAG_DIGEST_CALC	0x20
 #define FILE_FLAG_DIGEST_AVAIL	0x40
 #define FILE_FLAG_DIGEST_FINISH	0x80
-	gfarm_uint64_t gen, new_gen;
 /*
  * digest
  */
@@ -934,6 +934,7 @@ file_table_add(gfarm_int32_t net_fd, char *path, int flags, gfarm_ino_t ino,
 		fatal_errno(GFARM_MSG_1000463, "%s: %s", diag, path);
 	fe = &file_table[net_fd];
 	fe->local_fd = *local_fdp = local_fd;
+	fe->local_flags = flags;
 	fe->flags = 0;
 	fe->ino = ino;
 	if (flags & O_CREAT)
@@ -2163,7 +2164,7 @@ reply:
 void
 gfs_server_pwrite(struct gfp_xdr *client)
 {
-	gfarm_int32_t fd;
+	gfarm_int32_t fd, localfd;
 	size_t size;
 	gfarm_int64_t offset;
 	ssize_t rv = 0;
@@ -2188,7 +2189,13 @@ gfs_server_pwrite(struct gfp_xdr *client)
 	 */
 	if (size > GFS_PROTO_MAX_IOSIZE)
 		size = GFS_PROTO_MAX_IOSIZE;
-	if ((rv = pwrite(file_table_get(fd), buffer, size, offset)) == -1)
+	localfd = file_table_get(fd);
+	if (fe->local_flags & O_APPEND) {
+		if ((rv = write(localfd, buffer, size)) != -1)
+			offset = lseek(localfd, 0, SEEK_CUR) - rv;
+	} else
+		rv = pwrite(localfd, buffer, size, offset);
+	if (rv == -1)
 		save_errno = errno;
 	else {
 		file_table_set_written(fd);
