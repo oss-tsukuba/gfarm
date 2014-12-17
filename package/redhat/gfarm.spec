@@ -336,10 +336,12 @@ fi
 %{man_prefix}/man1/gfgetfacl.1.gz
 %{man_prefix}/man1/gfgroup.1.gz
 %{man_prefix}/man1/gfhost.1.gz
+%{man_prefix}/man1/gfhostgroup.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfimport_fixed.1.gz
 %{man_prefix}/man1/gfimport_text.1.gz
 %endif
+%{man_prefix}/man1/gfjournal.1.gz
 %{man_prefix}/man1/gfjournaladmin.1.gz
 %{man_prefix}/man1/gfkey.1.gz
 %{man_prefix}/man1/gfln.1.gz
@@ -513,10 +515,12 @@ fi
 %{man_prefix}/ja/man1/gfgetfacl.1.gz
 %{man_prefix}/ja/man1/gfgroup.1.gz
 %{man_prefix}/ja/man1/gfhost.1.gz
+%{man_prefix}/ja/man1/gfhostgroup.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfimport_fixed.1.gz
 %{man_prefix}/ja/man1/gfimport_text.1.gz
 %endif
+%{man_prefix}/ja/man1/gfjournal.1.gz
 %{man_prefix}/ja/man1/gfjournaladmin.1.gz
 %{man_prefix}/ja/man1/gfkey.1.gz
 %{man_prefix}/ja/man1/gfln.1.gz
@@ -669,10 +673,12 @@ fi
 %{html_prefix}/en/ref/man1/gfgetfacl.1.html
 %{html_prefix}/en/ref/man1/gfgroup.1.html
 %{html_prefix}/en/ref/man1/gfhost.1.html
+%{html_prefix}/en/ref/man1/gfhostgroup.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfimport_fixed.1.html
 %{html_prefix}/en/ref/man1/gfimport_text.1.html
 %endif
+%{html_prefix}/en/ref/man1/gfjournal.1.html
 %{html_prefix}/en/ref/man1/gfjournaladmin.1.html
 %{html_prefix}/en/ref/man1/gfkey.1.html
 %{html_prefix}/en/ref/man1/gfln.1.html
@@ -851,10 +857,12 @@ fi
 %{html_prefix}/ja/ref/man1/gfgetfacl.1.html
 %{html_prefix}/ja/ref/man1/gfgroup.1.html
 %{html_prefix}/ja/ref/man1/gfhost.1.html
+%{html_prefix}/ja/ref/man1/gfhostgroup.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfimport_fixed.1.html
 %{html_prefix}/ja/ref/man1/gfimport_text.1.html
 %endif
+%{html_prefix}/ja/ref/man1/gfjournal.1.html
 %{html_prefix}/ja/ref/man1/gfjournaladmin.1.html
 %{html_prefix}/ja/ref/man1/gfkey.1.html
 %{html_prefix}/ja/ref/man1/gfln.1.html
@@ -1050,6 +1058,7 @@ fi
 %{prefix}/bin/gfgetfacl
 %{prefix}/bin/gfgroup
 %{prefix}/bin/gfhost
+%{prefix}/bin/gfhostgroup
 %if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfifo.sh
 %{prefix}/bin/gfimport_fixed
@@ -1150,6 +1159,7 @@ fi
 %defattr(-,root,root)
 %{prefix}/bin/config-gfsd
 %{prefix}/bin/gfarm.arch.guess
+%{prefix}/bin/gfspooldigest
 %{prefix}/bin/gfspoolmd5
 %{prefix}/bin/gfspoolpath
 %if %{gfarm_v2_not_yet}
@@ -1183,6 +1193,7 @@ fi
 %{prefix}/bin/gfdump.postgresql
 %{prefix}/bin/gfjournal
 %{prefix}/bin/gfjournaladmin
+%{prefix}/bin/gfjournaldump
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/bdb.DB_CONFIG.in
@@ -1213,6 +1224,8 @@ fi
 %{share_prefix}/config/linux/systemd/gfmd.service.in
 %{share_prefix}/config/slapd.conf-2.0.in
 %{share_prefix}/config/slapd.conf-2.1.in
+%{share_prefix}/ruby/gfcrc32.rb
+%{share_prefix}/ruby/gfjournalfile.rb
 
 %files devel
 %defattr(-,root,root)
