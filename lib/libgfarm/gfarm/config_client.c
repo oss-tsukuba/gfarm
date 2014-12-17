@@ -133,7 +133,7 @@ gfarm_initialize(int *argcp, char ***argvp)
 
 	e = gfarm_context_init();
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003866,
 			"gfarm_context_init failed: %s",
 			gfarm_error_string(e));
 		return (e);

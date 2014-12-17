@@ -193,7 +193,7 @@ gfs_fsetxattr(GFS_File gf, const char *name, const void *value,
 	gfs_profile(staticp->xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003985,
 		    "gfm_client_compound_file_op_modifiable: %s",
 		    gfarm_error_string(e));
 	}
@@ -299,7 +299,7 @@ gfs_fgetxattr_proccall(int xmlMode, GFS_File gf, const char *name,
 	gfs_profile(staticp->xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003986,
 		    "gfm_client_compound_file_op_readonly: %s",
 		    gfarm_error_string(e));
 	}
@@ -617,7 +617,7 @@ gfs_fremovexattr(GFS_File gf, const char *name)
 	gfs_profile(staticp->xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003987,
 		    "gfm_client_compound_file_op_modifiable: %s",
 		    gfarm_error_string(e));
 	}
@@ -705,7 +705,7 @@ gfs_findxmlattr(const char *path, const char *expr,
 	    &ctxp->gfm_server, &ctxp->fd, &ctxp->type, &url, &ino, NULL))
 		!= GFARM_ERR_NO_ERROR) {
 		gfs_xmlattr_ctx_free(ctxp, 1);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003988,
 		    "gfm_open_fd(%s) failed: %s",
 		    path, gfarm_error_string(e));
 	} else {

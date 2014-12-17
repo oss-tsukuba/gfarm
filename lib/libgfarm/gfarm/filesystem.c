@@ -137,7 +137,7 @@ gfarm_filesystem_new(struct gfarm_filesystem **fsp)
 	if (gfl == NULL) {
 		free(fs);
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003872,
 		    "alloc gfs_file_list: %s",
 		    gfarm_error_string(e));
 		return (e);
@@ -355,18 +355,18 @@ gfarm_filesystem_add(const char *hostname, int port,
 	host = strdup(hostname);
 	if (host == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003873,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
 	if ((e = gfarm_metadb_server_new(&ms, host, port))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003874,
 		    "%s", gfarm_error_string(e));
 		goto error;
 	}
 	if ((e = gfarm_filesystem_new(&fs)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003875,
 		    "%s", gfarm_error_string(e));
 		goto error;
 	}
@@ -374,7 +374,7 @@ gfarm_filesystem_add(const char *hostname, int port,
 	mss[0] = ms;
 	if ((e = gfarm_filesystem_set_metadb_server_list(fs, mss, 1))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003876,
 		    "%s", gfarm_error_string(e));
 		goto error;
 	}

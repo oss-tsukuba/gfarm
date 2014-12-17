@@ -280,7 +280,7 @@ gfs_readdir_internal(GFS_Dir super, struct gfs_dirent **entry)
 		    gfm_getdirents_request, gfm_getdirents_result,
 		    NULL, dir);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003935,
 			    "gfm_client_compound_readonly_fd: %s",
 			    gfarm_error_string(e));
 			return (e);
@@ -305,7 +305,7 @@ gfs_closedir_internal(GFS_Dir super)
 
 	if ((e = gfm_close_fd(dir->gfm_server, dir->fd, NULL))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003936,
 		    "gfm_close_fd: %s",
 		    gfarm_error_string(e));
 	gfm_client_connection_free(dir->gfm_server);

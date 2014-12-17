@@ -527,14 +527,14 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 		r = poll(pfds, nfd, 1000);
 		if (r == -1) {
 			e = gfarm_errno_to_error(errno);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003877,
 			    "poll: %s",
 			    gfarm_error_string(e));
 			break;
 		}
 		if (r == 0) {
 			e = GFARM_ERR_CONNECTION_REFUSED;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003878,
 			    "poll: %s",
 			    gfarm_error_string(e));
 			break;
@@ -596,7 +596,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	    != GFARM_ERR_NO_ERROR) {
 		free(gfm_server);
 		close(sock);
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1003879,
 		    "add filesystem failed: %s",
 		    gfarm_error_string(e));
 		goto end;
@@ -689,7 +689,7 @@ retry:
 		*gfm_serverp = gfp_cached_connection_get_data(cache_entry);
 #ifdef __KERNEL__	/* workaround for race condition in MT */
 		if (!*gfm_serverp) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1003880,
 				"gfm_client_connection_acquire:"
 				"gfm_client_connection_acquire NULL");
 			gfp_cached_or_uncached_connection_free(
@@ -832,7 +832,7 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 
 		/* possibly gfmd failover or temporary error */
 		sleep(sleep_interval);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003881,
 		    "retry to connect");
 		sleep_interval *= 2;
 	}
@@ -992,11 +992,11 @@ gfm_client_xdr_send(struct gfm_connection *gfm_server, const char *format, ...)
 	check_connection_or_purge(gfm_server, e);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003882,
 		    "gfp_xdr_send: %s",
 		    gfarm_error_string(e));
 	} else if (*format != '\0') {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003883,
 		    "invalid format character: %c(%x)",
 		    *format, *format);
 		e = GFARM_ERRMSG_GFP_XDR_SEND_INVALID_FORMAT_CHARACTER;
@@ -1019,11 +1019,11 @@ gfm_client_xdr_recv(struct gfm_connection *gfm_server, int just, int *eofp,
 	check_connection_or_purge(gfm_server, e);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003884,
 		    "gfp_xdr_vrecv_sized_x: %s",
 		    gfarm_error_string(e));
 	} else if (!*eofp && *format != '\0') {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003885,
 		    "invalid format character: %c(%x)", *format, *format);
 		e = GFARM_ERRMSG_GFP_XDR_RECV_INVALID_FORMAT_CHARACTER;
 	}
@@ -1159,7 +1159,7 @@ gfm_client_get_nhosts(struct gfm_connection *gfm_server,
 		    &hosts[i].ncpu, &hosts[i].port, &hosts[i].flags,
 		    &naliases);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003886,
 				"gfm_client_xdr_recv() failed: %s",
 				gfarm_error_string(e));
 			return (e); /* XXX */
@@ -1358,7 +1358,7 @@ gfm_client_fsngroup_get_all(struct gfm_connection *gfm_server,
 
 	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_FSNGROUP_GET_ALL,
 	    "/i", &nhosts)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003887,
 			"%s: gfm_client_rpc() failed: %s",
 			diag, gfarm_error_string(e));
 		goto bailout;
@@ -1369,7 +1369,7 @@ gfm_client_fsngroup_get_all(struct gfm_connection *gfm_server,
 		int eof;
 		GFARM_MALLOC_ARRAY(ret, (size_t)nhosts);
 		if (ret == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003888,
 				"%s: can't allocate fsngroup_info(s).", diag);
 			e = GFARM_ERR_NO_MEMORY;
 			goto bailout;
@@ -1382,13 +1382,13 @@ gfm_client_fsngroup_get_all(struct gfm_connection *gfm_server,
 			if (eof || e != GFARM_ERR_NO_ERROR) {
 				if (eof) {
 					e = GFARM_ERR_PROTOCOL;
-					gflog_debug(GFARM_MSG_UNFIXED,
+					gflog_debug(GFARM_MSG_1003889,
 						"%s: Unexpected EOF while "
 						"receiving replies: %s",
 						diag, gfarm_error_string(e));
 				}
 				if (e != GFARM_ERR_NO_ERROR)
-					gflog_debug(GFARM_MSG_UNFIXED,
+					gflog_debug(GFARM_MSG_1003890,
 						"%s: gfm_client_xdr_recv() "
 						"failed: %s",
 						diag, gfarm_error_string(e));
@@ -1424,7 +1424,7 @@ gfm_client_fsngroup_get_by_hostname(struct gfm_connection *gfm_server,
 	if ((e = gfm_client_rpc(gfm_server, 0,
 			GFM_PROTO_FSNGROUP_GET_BY_HOSTNAME, "s/s",
 			hostname, &ret)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003891,
 			"%s: gfm_client_rpc() failed: %s",
 			diag, gfarm_error_string(e));
 	}
@@ -1448,7 +1448,7 @@ gfm_client_fsngroup_modify(struct gfm_connection *gfm_server,
 			GFM_PROTO_FSNGROUP_MODIFY, "ss/",
 			info->hostname,
 			info->fsngroupname)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003892,
 			"%s: gfm_client_rpc() failed: %s",
 			diag, gfarm_error_string(e));
 	}
@@ -3882,7 +3882,7 @@ gfm_client_metadb_server_get_n(struct gfm_connection *gfm_server,
 		    &ms->name, &ms->port, &ms->clustername, &ms->flags,
 		    &ms->tflags);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003893,
 			    "gfm_client_xdr_recv() failed: %s",
 			    gfarm_error_string(e));
 			return (e);

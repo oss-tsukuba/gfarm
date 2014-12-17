@@ -374,7 +374,7 @@ peer_replicated(struct peer *peer,
 		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED) != 0;
 
 		if (cksum_enabled != cksum_protocol)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004008,
 			    "mismatch of %s vs %s in replication "
 			    "(%s, %lld:%lld): s=%d d=%d size:%lld",
 			    cksum_enabled ?
@@ -1346,7 +1346,7 @@ peer_unset_pending_new_generation_by_fd(
 	struct inode *inode = peer->pending_new_generation;
 
 	if (inode != NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004009,
 		    "gfsd connection is lost during GFM_PROTO_CLOSE_WRITE: "
 		    "inode %lld:%lld may be lost. (new size:%lld)",
 		    (long long)inode_get_number(inode),
@@ -1428,7 +1428,7 @@ peer_unset_pending_new_generation_by_cookie(
 		cookie = GFARM_HCIRCLEQ_FIRST(
 		    peer->pending_new_generation_cookies, cookie_link);
 		inode = cookie->inode;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004010,
 		    "gfsd connection is lost during GFM_PROTO_FHCLOSE_WRITE: "
 		    "inode %lld:%lld may be lost. "
 		    "(new size:%lld, old size:%lld)",

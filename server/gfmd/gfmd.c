@@ -841,7 +841,7 @@ resuming_thread(void *arg)
 	} else { /* maybe inside COMPOUND, maybe not */
 		e = gfp_xdr_flush(peer_get_conn(peer));
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_UNFIXED, "protocol flush: %s",
+			gflog_warning(GFARM_MSG_1004004, "protocol flush: %s",
 			    gfarm_error_string(e));
 			peer_record_protocol_error(peer);
 

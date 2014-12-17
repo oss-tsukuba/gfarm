@@ -169,7 +169,7 @@ gfarm_url_parse_metadb(const char **pathp,
 	    !gfarm_filesystem_in_failover_process(fs)) {
 		if ((e = gfm_client_connection_failover_pre_connect(
 		    hostname, port, user)) != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003913,
 			    "gfm_client_connection_failover_acquired: %s",
 			    gfarm_error_string(e));
 			goto end;
@@ -179,7 +179,7 @@ gfarm_url_parse_metadb(const char **pathp,
 	if ((e = gfm_client_connection_and_process_acquire(
 		    hostname, port, user, &gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003914,
 		    "gfm_client_connection_and_process_acquire: %s",
 		    gfarm_error_string(e));
 	} else
@@ -856,7 +856,7 @@ inode_or_name_op_exit(struct gfm_connection *gfm_server, gfarm_error_t e,
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* do not release connection when no error occurred. */
 		(void)inode_or_name_op_post_failover(gfm_server, closure);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003915,
 		    "gfm_inode_or_name_op: %s",
 		    gfarm_error_string(e));
 	}
@@ -1597,19 +1597,19 @@ on_error_result:
 		/* ignore result */
 		if (sconn != NULL &&
 		    (e2 = close_fd2(sconn, sfd, dfd)) != GFARM_ERR_NO_ERROR)
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003916,
 			    "close_fd2: %s",
 			    gfarm_error_string(e2));
 	} else {
 		/* ignore result */
 		if (sconn != NULL &&
 		    (e2 = close_fd2(sconn, sfd, -1)) != GFARM_ERR_NO_ERROR)
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003917,
 			    "close_fd2: %s",
 			    gfarm_error_string(e2));
 		if (dconn != NULL &&
 		    (e2 = close_fd2(dconn, dfd, -1)) != GFARM_ERR_NO_ERROR)
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003918,
 			    "close_fd2: %s",
 			    gfarm_error_string(e2));
 	}
@@ -1682,7 +1682,7 @@ name2_op_exit(struct gfm_connection *gfm_serverp, gfarm_error_t e,
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* do not release connection when no error occurred. */
 		(void)name2_op_post_failover(gfm_serverp, closure);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003919,
 		    "gfm_name2_op: %s", gfarm_error_string(e));
 	}
 }

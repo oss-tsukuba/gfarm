@@ -38,7 +38,7 @@ gfs_client_failover_notify_request(int sock, int retry_count, const char *xid,
 	int save_errno;
 
 	if (debug_mode)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004061,
 		    "failover notifiy: sending to %s", hostname);
 	u32 = htonl(GFS_UDP_RPC_MAGIC);
 	memcpy(p, &u32, sizeof(u32)); p += sizeof(u32);
@@ -57,7 +57,7 @@ gfs_client_failover_notify_request(int sock, int retry_count, const char *xid,
 
 	namelen = strlen(gfarm_ctxp->metadb_server_name);
 	if (namelen > GFARM_MAXHOSTNAMELEN) { /* sanity */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004062,
 		    "metadb_server_name %s: too long name (%zd > %d)",
 		    gfarm_ctxp->metadb_server_name,
 		    namelen, GFARM_MAXHOSTNAMELEN);
@@ -74,12 +74,12 @@ gfs_client_failover_notify_request(int sock, int retry_count, const char *xid,
 	rv = write(sock, buffer, p - buffer);
 	if (rv == -1) {
 		save_errno = errno;
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004063,
 		    "failover_notify_reqeust(%s): %s",
 		    hostname, strerror(save_errno));
 		return (save_errno);
 	} else if (rv != p - buffer) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004064,
 		    "failover_notify_reqeust(%s): short write: %zd != %zd",
 		    hostname, rv, p - buffer);
 		return (ERANGE);
@@ -102,19 +102,19 @@ gfs_client_failover_notify_result(int sock, int retry_count, const char *xid,
 	rv = read(sock, buffer, sizeof buffer);
 	if (rv == -1) {
 		save_errno = errno;
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004065,
 		    "failover_notify_result(%s): %s",
 		    hostname, strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
 	if (rv == GFS_UDP_PROTO_OLD_LOADAV_REPLY_SIZE) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004066,
 		    "failover_notify_result(%s): gfsd version is obsolete ",
 		    hostname);
 		return (GFARM_ERR_PROTOCOL_NOT_SUPPORTED);
 	}
 	if (rv != GFS_UDP_PROTO_FAILOVER_NOTIFY_REPLY_SIZE) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004067,
 		    "failover_notify_result(%s): unknown reply size: %zd",
 		    hostname, rv);
 		return (GFARM_ERR_PROTOCOL_NOT_SUPPORTED);
@@ -145,7 +145,7 @@ gfs_client_failover_notify_result(int sock, int retry_count, const char *xid,
 	    got_retry_count > retry_count ||
 	    !xid_match ||
 	    got_request_type != GFS_UDP_PROTO_FAILOVER_NOTIFY) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004068,
 		    "failover_notify_result(%s): rpc not supported: "
 		    "type=0x%08x, retry_count=0x%08x (should be <= 0x%08x), "
 		    "xid=%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x "
@@ -159,7 +159,7 @@ gfs_client_failover_notify_result(int sock, int retry_count, const char *xid,
 		return (GFARM_ERR_PROTOCOL_NOT_SUPPORTED);
 	}
 	if (got_rpc_result != GFARM_ERR_NO_ERROR)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004069,
 		    "failover_notify_result(%s): result: %s (0x%x)",
 		    hostname,
 		    gfarm_error_string(got_rpc_result), got_rpc_result);
@@ -185,14 +185,14 @@ failover_notify_closure_alloc(struct host *h, int sock)
 
 	GFARM_MALLOC(fnc);
 	if (fnc == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004070,
 		    "failover_notify(%s): no memory", host_name(h));
 		return (NULL);
 	}
 
 	if ((e = watcher_fd_readable_or_timeout_event_alloc(sock,
 	    &fnc->result_event)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004071,
 		    "failover_notify(%s): "
 		    "watcher_fd_readable_or_timeout_event_alloc: %s",
 		    host_name(h), gfarm_error_string(e));
@@ -215,7 +215,7 @@ static void
 failover_notify_finish(struct failover_notify_closure *fnc)
 {
 	if (debug_mode)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004072,
 		    "failover notifiy: finish for %s",
 		    host_name(fnc->fsnode));
 
@@ -230,7 +230,7 @@ failover_notify_got_reply(struct failover_notify_closure *fnc)
 	gfarm_error_t e;
 
 	if (debug_mode)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004073,
 		    "failover notifiy: result for %s", host_name(fnc->fsnode));
 
 	e = gfs_client_failover_notify_result(fnc->socket,
@@ -254,12 +254,12 @@ failover_notify_timeout(struct failover_notify_closure *fnc)
 	int error;
 
 	if (debug_mode)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004074,
 		    "failover notifiy: timeout for %s",
 		     host_name(fnc->fsnode));
 
 	if (++fnc->retry_count >= gfs_client_datagram_ntimeouts) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004075,
 		    "failover_notify(%s): "
 		    "retry_count exceeds %d times - timedout",
 		    host_name(fnc->fsnode), fnc->retry_count);
@@ -270,7 +270,7 @@ failover_notify_timeout(struct failover_notify_closure *fnc)
 	    host_name(fnc->fsnode))) != 0 &&
 	    (error != EWOULDBLOCK ||
 	     fnc->retry_count >= gfs_client_datagram_ntimeouts - 1)) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004076,
 		    "failover_notify(%s): %d time(s) retried, but failed: %s",
 		    host_name(fnc->fsnode), fnc->retry_count, strerror(error));
 
@@ -330,7 +330,7 @@ udp_connect_to(const char *hostname, int port)
 	/* use different socket for each peer, to identify error code */
 	sock = socket(PF_INET, SOCK_DGRAM, 0);
 	if (sock == -1) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004077,
 		    "failover_notify: getaddrinfo(%s): %s",
 		    hostname, strerror(errno));
 		return (-1);
@@ -350,7 +350,7 @@ udp_connect_to(const char *hostname, int port)
 	 * non-blocking mode and dealing with the EWOULDBLOCK condition.
 	 */
 	if (fcntl(sock, F_SETFL, O_NONBLOCK) == -1)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004078,
 		    "failover_notify(%s): set nonblock: %s",
 		    hostname, strerror(errno));
 
@@ -360,7 +360,7 @@ udp_connect_to(const char *hostname, int port)
 	hints.ai_socktype = SOCK_DGRAM;
 	error = gfarm_getaddrinfo(hostname, sbuf, &hints, &res0);
 	if (error != 0) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004079,
 		    "failover_notify: getaddrinfo(%s): %s",
 		    hostname, gai_strerror(error));
 		return (-1);
@@ -370,7 +370,7 @@ udp_connect_to(const char *hostname, int port)
 		if (res->ai_addr->sa_family != AF_INET)
 			continue;
 		if (res->ai_addrlen != sizeof(struct sockaddr_in)) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004080,
 			    "failover_notify: getaddrinfo(%s): "
 			    "unexpected address length %d, should be %zd",
 			    hostname,
@@ -380,7 +380,7 @@ udp_connect_to(const char *hostname, int port)
 		if (connect(sock, res->ai_addr, res->ai_addrlen) == -1) {
 			gfarm_sockaddr_to_string(res->ai_addr,
 			    addr_string, GFARM_SOCKADDR_STRLEN);
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1004081,
 			    "failover_notify: UDP connect(%s/%s): %s",
 			    hostname, addr_string,
 			    strerror(errno));
@@ -391,7 +391,7 @@ udp_connect_to(const char *hostname, int port)
 		gfarm_freeaddrinfo(res0);
 		return (sock);
 	}
-	gflog_warning(GFARM_MSG_UNFIXED,
+	gflog_warning(GFARM_MSG_1004082,
 	    "failover_notify(%s): UDP connect failed", hostname);
 	gfarm_freeaddrinfo(res0);
 	close(sock);
@@ -422,7 +422,7 @@ failover_notify(void)
 	    &nfsnodes, &tmp);
 	giant_unlock();
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004083,
 		    "failover_notify: filesystem node allocation: %s",
 		    gfarm_error_string(e));
 		return;

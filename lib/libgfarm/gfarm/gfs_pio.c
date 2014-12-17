@@ -238,7 +238,7 @@ gfs_pio_md_init(const char *md_type_name, EVP_MD_CTX *md_ctx, char *url)
 		return (1);
 
 	if (not_supported)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003941,
 		    "%s: digest type <%s> isn't supported on this host",
 		    url, md_type_name);
 	return (0);
@@ -280,7 +280,7 @@ gfs_pio_md_finish(GFS_File gf)
 		gf->md.cksum_len = md_strlen;
 	} else if (memcmp(md_string, gf->md.cksum, gf->md.cksum_len) != 0 &&
 	    gfs_pio_md_is_valid(gf)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003942,
 		    "%s: checksum mismatch <%.*s> expected, but <%.*s>",
 		    gf->url,
 		    (int)gf->md.cksum_len, gf->md.cksum,
@@ -330,7 +330,7 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 		GFARM_MALLOC_ARRAY(buffer, gfarm_ctxp->client_file_bufsize);
 		if (buffer == NULL) {
 			free(gf);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003943,
 				"allocation of GFS_File's buffer failed: %s",
 				gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			return (GFARM_ERR_NO_MEMORY);
@@ -996,7 +996,7 @@ gfs_pio_pread_unbuffer(GFS_File gf, void *buffer, int size,
 		} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 		    gfs_pio_failover_check_retry(gf, &e));
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003944,
 				"pread() failed: %s",
 				gfarm_error_string(e));
 			if (n == 0)
@@ -1035,7 +1035,7 @@ gfs_pio_pwrite_unbuffer(GFS_File gf, const void *buffer, int size,
 		} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 		    gfs_pio_failover_check_retry(gf, &e));
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003945,
 				"pwrite() failed: %s",
 				gfarm_error_string(e));
 			if (n == 0)
@@ -1228,7 +1228,7 @@ gfs_pio_pread(GFS_File gf, void *buffer, int size, gfarm_off_t offset, int *np)
 
 	e = gfs_pio_check_view_default(gf);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003946,
 			"Check view default for pio failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1256,7 +1256,7 @@ gfs_pio_pwrite(GFS_File gf, void *buffer, int size, gfarm_off_t offset, int *np)
 
 	e = gfs_pio_check_view_default(gf);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003947,
 			"gfs_pio_check_view_default() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1287,7 +1287,7 @@ gfs_pio_append(GFS_File gf, void *buffer, int size, int *np,
 
 	e = gfs_pio_check_view_default(gf);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003948,
 			"gfs_pio_check_view_default() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1301,7 +1301,7 @@ gfs_pio_append(GFS_File gf, void *buffer, int size, int *np,
 	} while (e != GFARM_ERR_NO_ERROR && --nretries >= 0 &&
 	    gfs_pio_failover_check_retry(gf, &e));
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003949,
 			"view_write() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1321,7 +1321,7 @@ gfs_pio_view_fd(GFS_File gf, int *fdp)
 	*fdp = 0;
 	e = gfs_pio_check_view_default(gf);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003950,
 			"gfs_pio_check_view_default() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1348,7 +1348,7 @@ sync_internal(GFS_File gf, int operation, double *time, unsigned long long *ct)
 
 	e = gfs_pio_check_view_default(gf);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003951,
 		    "gfs_pio_sync: %s", gfarm_error_string(e));
 		return (e);
 	}
@@ -2057,7 +2057,7 @@ gfs_pio_sendfile(GFS_File w_gf, gfarm_off_t w_off,
 
 	e = gfs_pio_check_view_default(w_gf);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003952,
 			"gfs_pio_check_view_default() failed: %s",
 			gfarm_error_string(e));
 		return (e);

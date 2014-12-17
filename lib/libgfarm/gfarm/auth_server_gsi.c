@@ -139,7 +139,7 @@ gfarm_authorize_gsi_common0(struct gfp_xdr *conn, int switch_to,
 			    "%s: Can't accept session because of:",
 			    hostname);
 			if (gsi_errno != 0) {
-				gflog_info(GFARM_MSG_UNFIXED, "%s",
+				gflog_info(GFARM_MSG_1004003, "%s",
 				    strerror(gsi_errno));
 			} else {
 				gfarmGssPrintMajorStatus(e_major);

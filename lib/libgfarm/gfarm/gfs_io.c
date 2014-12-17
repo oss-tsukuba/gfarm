@@ -62,12 +62,12 @@ gfm_create_fd_request(struct gfm_connection *gfm_server, void *closure,
 		    base, gfarm_error_string(e));
 	} else if (c->cksum_info != NULL &&
 	    (e = gfm_client_fstat_request(gfm_server)) != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED, "create(%s) request: %s",
+		gflog_warning(GFARM_MSG_1003920, "create(%s) request: %s",
 		    base, gfarm_error_string(e));
 	} else if (c->cksum_info != NULL &&
 	    (e = gfm_client_cksum_get_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED, "create(%s) request: %s",
+		gflog_warning(GFARM_MSG_1003921, "create(%s) request: %s",
 		    base, gfarm_error_string(e));
 	} else if ((e = gfm_client_get_fd_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
@@ -100,13 +100,13 @@ gfm_create_fd_result(struct gfm_connection *gfm_server, void *closure)
 	} else if (ci != NULL &&
 	    (e = gfm_client_fstat_result(gfm_server, &st))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003922,
 		    "create() result: %s", gfarm_error_string(e));
 	} else if (ci != NULL &&
 	    (e = gfm_client_cksum_get_result(gfm_server,
 	    &ci->cksum_type, sizeof(ci->cksum), &ci->cksum_len, ci->cksum,
 	    &ci->cksum_flags)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003923,
 		    "create() result: %s", gfarm_error_string(e));
 	} else if ((e = gfm_client_get_fd_result(gfm_server, &c->fd))
 	    != GFARM_ERR_NO_ERROR) {
@@ -201,12 +201,12 @@ gfm_open_fd_request(struct gfm_connection *gfm_server, void *closure)
 
 	if (c->cksum_info != NULL &&
 	    (e = gfm_client_fstat_request(gfm_server)) != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED, "fstat() request: %s",
+		gflog_warning(GFARM_MSG_1003924, "fstat() request: %s",
 		    gfarm_error_string(e));
 	} else if (c->cksum_info != NULL &&
 	    (e = gfm_client_cksum_get_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED, "cksum_get() request: %s",
+		gflog_warning(GFARM_MSG_1003925, "cksum_get() request: %s",
 		    gfarm_error_string(e));
 	} else if ((e = gfm_client_get_fd_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
@@ -232,13 +232,13 @@ gfm_open_fd_result(struct gfm_connection *gfm_server, void *closure)
 	if (ci != NULL &&
 	    (e = gfm_client_fstat_result(gfm_server, &st))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003926,
 		    "create() result: %s", gfarm_error_string(e));
 	} else if (ci != NULL &&
 	    (e = gfm_client_cksum_get_result(gfm_server,
 	    &ci->cksum_type, sizeof(ci->cksum), &ci->cksum_len, ci->cksum,
 	    &ci->cksum_flags)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003927,
 		    "create() result: %s", gfarm_error_string(e));
 	} else if ((e = gfm_client_get_fd_result(gfm_server, &c->fd))
 	    != GFARM_ERR_NO_ERROR) {
@@ -349,12 +349,12 @@ gfm_fhopen_fd(gfarm_ino_t inum, gfarm_uint64_t gen, int flags,
 		    gfarm_error_string(e));
 	else if (ci != NULL &&
 	    (e = gfm_client_fstat_request(gfm_server)) != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "fstat request: %s",
+		gflog_warning(GFARM_MSG_1003928, "fstat request: %s",
 		    gfarm_error_string(e));
 	else if (ci != NULL &&
 	    (e = gfm_client_cksum_get_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "cksum_get request: %s",
+		gflog_warning(GFARM_MSG_1003929, "cksum_get request: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_get_fd_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
@@ -376,13 +376,13 @@ gfm_fhopen_fd(gfarm_ino_t inum, gfarm_uint64_t gen, int flags,
 	else if (ci != NULL &&
 	    (e = gfm_client_fstat_result(gfm_server, &st))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED, "fstat result: %s",
+		gflog_debug(GFARM_MSG_1003930, "fstat result: %s",
 		    gfarm_error_string(e));
 	else if (ci != NULL &&
 	    (e = gfm_client_cksum_get_result(gfm_server,
 	    &ci->cksum_type, sizeof(ci->cksum), &ci->cksum_len, ci->cksum,
 	    &ci->cksum_flags)) != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED, "cksum_get result: %s",
+		gflog_debug(GFARM_MSG_1003931, "cksum_get result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_get_fd_result(gfm_server, &fd))
 	    != GFARM_ERR_NO_ERROR)
@@ -428,7 +428,7 @@ gfm_close_request(struct gfm_connection *gfm_server, void *closure)
 	    (e = gfm_client_cksum_set_request(gfm_server, ci->cksum_type,
 	    ci->cksum_len, ci->cksum, 0, 0, 0))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED, "cksum_set() request: %s",
+		gflog_warning(GFARM_MSG_1003932, "cksum_set() request: %s",
 		    gfarm_error_string(e));
 	} else if ((e = gfm_client_close_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
@@ -448,7 +448,7 @@ gfm_close_result(struct gfm_connection *gfm_server, void *closure)
 	    (e = gfm_client_cksum_set_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
 #if 0 /* DEBUG */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003933,
 		    "cksum_set() result: %s", gfarm_error_string(e));
 #endif
 	} else if ((e = gfm_client_close_result(gfm_server))
@@ -479,7 +479,7 @@ gfm_close_fd(struct gfm_connection *gfm_server, int fd,
 	if ((e = gfm_client_compound_fd_op(gfm_server, fd,
 	    gfm_close_request, gfm_close_result, NULL, cksum_info))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003934,
 		    "gfm_close_fd fd=%d: %s", fd, gfarm_error_string(e));
 	return (e);
 }

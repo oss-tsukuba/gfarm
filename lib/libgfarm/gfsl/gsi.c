@@ -595,7 +595,7 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 	tknStat = gfarmGssReceiveToken(fd, itPtr, GFARM_GSS_TIMEOUT_INFINITE);
 	if (tknStat <= 0) {
 	    gsiErrNo = errno;
-	    gflog_auth_info(GFARM_MSG_UNFIXED,
+	    gflog_auth_info(GFARM_MSG_1003845,
 		"gfarmGssAcceptSecurityContext(): failed to receive response"
 		"%s", strerror(gsiErrNo));
 	    majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
@@ -628,7 +628,7 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 	    if (tknStat > 0) {
 		gsiErrNo = 0;
 	    } else {
-		gflog_auth_info(GFARM_MSG_UNFIXED,
+		gflog_auth_info(GFARM_MSG_1003846,
 		    "gfarmGssAcceptSecurityContext(): failed to send response"
 		    "%s", strerror(gsiErrNo));
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
@@ -741,7 +741,7 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 	    if (tknStat > 0) {
 		gsiErrNo = 0;
 	    } else {
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1003847,
 		    "gfarmGssInitiateSecurityContext(): "
 		    "failed to send response: %s", strerror(gsiErrNo));
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
@@ -758,7 +758,7 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 					   GFARM_GSS_TIMEOUT_INFINITE);
 	    if (tknStat <= 0) {
 		gsiErrNo = errno;
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1003848,
 		    "gfarmGssInitiateSecurityContext(): "
 		    "failed to receive response: %s", strerror(gsiErrNo));
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;

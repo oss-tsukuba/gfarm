@@ -443,7 +443,7 @@ retry:
 		return (e);
 	}
 
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003953,
 	    "gfs_pio_open_%s_section: %s",
 	    is_local ? "local" : "remote", gfarm_error_string(e));
 
@@ -465,7 +465,7 @@ retry:
 	 */
 	if (gfs_pio_should_failover_at_gfs_open(gf, e) && nretry-- > 0) {
 		if ((e = gfs_pio_failover(gf)) != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003954,
 			    "gfs_pio_failover: %s", gfarm_error_string(e));
 			return (e);
 		}
@@ -477,11 +477,11 @@ retry:
 			 * in gfarm_filesystem. so gfs_server did not fail
 			 * over.
 			 */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003955,
 			    "reset_process");
 			if ((e = gfarm_client_process_reset(gfs_server,
 			    gf->gfm_server)) != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003956,
 				    "gfarm_client_process_reset: %s",
 				    gfarm_error_string(e));
 				return (e);
@@ -522,7 +522,7 @@ retry:
 	gfs_profile(gfarm_gettimerval(&t2));
 
 	if ((e = gfs_pio_open_section(gf, gfs_server)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003957,
 		    "gfs_pio_open_section: %s",
 		    gfarm_error_string(e));
 		gfs_client_connection_free(gfs_server);
@@ -535,7 +535,7 @@ retry:
 
 	gfs_profile(
 		gfarm_gettimerval(&t3);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003958,
 		    "(connect_and_open) connection_acquire/process_set %f, "
 			   "open %f",
 			   gfarm_timerval_sub(&t2, &t1),
@@ -766,7 +766,7 @@ gfs_file_section_context_alloc(void)
 	GFARM_MALLOC(vc);
 	if (vc == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003959,
 		    "allocation of file section context failed: %s",
 		    gfarm_error_string(e));
 		return (NULL);
@@ -815,7 +815,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 				if ((e = gfs_pio_failover(gf))
 				    == GFARM_ERR_NO_ERROR)
 					continue;
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003960,
 				    "gfs_pio_failover: %s",
 				    gfarm_error_string(e));
 				goto finish;

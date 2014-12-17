@@ -174,7 +174,7 @@ gfs_fstat(GFS_File gf, struct gfs_stat *s)
 	gfs_profile(staticp->stat_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003976,
 		    "gfm_client_compound_file_op_readonly() failed: %s",
 		    gfarm_error_string(e));
 	}

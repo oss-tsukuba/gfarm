@@ -689,7 +689,7 @@ gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 			if (invalid_XML_value) {
 				transaction_ok = 0;
 				invalid_XML_value = 0;
-				gflog_notice(GFARM_MSG_UNFIXED,
+				gflog_notice(GFARM_MSG_1004084,
 				    "transaction aborted by invalid XML value:"
 				    " seqnum %lld: %s", (long long)seqnum,
 				    gfarm_error_string(e));
@@ -1344,7 +1344,7 @@ gen_scheme_check_query(const char *tablename,
 	if (of == 0 && sz > 0)
 		tmp = (char *)malloc(sz);
 	if (tmp == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004085,
 			"Can't allocate an SQL query string "
 		"for table scheme check.");
 		return (NULL);
@@ -1404,13 +1404,13 @@ gfarm_pgsql_check_scheme(const char *tablename,
 	}
 
 	if (gfarm_pgsql_start(diag) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "pgsql restart failed");
+		gflog_debug(GFARM_MSG_1004086, "pgsql restart failed");
 		goto bailout;
 	}
 
 	res = PQexec(conn, sql);
 	if (res == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004087,
 			"A PostgreSQL qurey result is NULL: %s",
 			PQerrorMessage(conn));
 		goto bailout;
@@ -1437,10 +1437,10 @@ gfarm_pgsql_check_scheme(const char *tablename,
 		emsg = PQresultErrorMessage(res);
 		dbe = gfarm_pgsql_sql_error_to_gfarm_rdbms_error(res);
 		if (dbe != RDBMS_ERROR_ANY_OTHERS)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004088,
 				"SQL realated error: %s", emsg);
 		else
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004089,
 				"Unexpected PostgreSQL error: %s", emsg);
 		break;
 	default:
@@ -1450,7 +1450,7 @@ gfarm_pgsql_check_scheme(const char *tablename,
 		 * PGRES_COPY_IN */
 		emsg = PQresultErrorMessage(res);
 		dbe = RDBMS_ERROR_ANY_OTHERS;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004090,
 			"must not happen, unexpected query status: %s", emsg);
 		assert(0);
 		break;
@@ -1674,19 +1674,19 @@ gfarm_pgsql_host_check_scheme(void)
 
 		switch (dbe) {
 		case RDBMS_ERROR_INVALID_SCHEME:
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1004091,
 				"The Host table scheme is not valid. "
 				"Running the config-gfarm-update might "
 				"solve this.");
 			break;
 		case RDBMS_ERROR_SQL_SYNTAX_ERROR:
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004092,
 				"Must not happen. "
 				"SQL syntax error(s) in query??");
 			assert(0);
 			break;
 		default:
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1004093,
 				"Got an error while checking the Host "
 				"table scheme. Exit anyway to prevent "
 				"any filesystem metadata corruptions.");
@@ -2981,7 +2981,7 @@ gfarm_pgsql_xattr_add(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 	/* XXX FIXME - workaround for SourceForge #549 */
 	if (gfarm_get_metadb_replication_enabled() &&
 	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld attr %s value "
+		gflog_notice(GFARM_MSG_1004094, "%s: inum %lld attr %s value "
 		    "\'%*s\': %s", diag, (long long)arg->inum,
 		    (char *)arg->attrname, (int)arg->size, (char *)arg->value,
 		    gfarm_error_string(e));
@@ -3038,7 +3038,7 @@ gfarm_pgsql_xattr_modify(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 	/* XXX FIXME - workaround for SourceForge #549 */
 	if (gfarm_get_metadb_replication_enabled() &&
 	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld attr %s value "
+		gflog_notice(GFARM_MSG_1004095, "%s: inum %lld attr %s value "
 		    "\'%*s\': %s", diag, (long long)arg->inum,
 		    (char *)arg->attrname, (int)arg->size, (char *)arg->value,
 		    gfarm_error_string(e));
@@ -3086,7 +3086,7 @@ gfarm_pgsql_xattr_remove(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 	/* XXX FIXME - workaround for SourceForge #549 */
 	if (gfarm_get_metadb_replication_enabled() &&
 	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: attr %s: %s", diag,
+		gflog_notice(GFARM_MSG_1004096, "%s: attr %s: %s", diag,
 		    (char *)arg->attrname, gfarm_error_string(e));
 		invalid_XML_value = 1;
 		e = GFARM_ERR_NO_ERROR;
@@ -3129,7 +3129,7 @@ gfarm_pgsql_xattr_removeall(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 	/* XXX FIXME - workaround for SourceForge #549 */
 	if (gfarm_get_metadb_replication_enabled() &&
 	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld: %s", diag,
+		gflog_notice(GFARM_MSG_1004097, "%s: inum %lld: %s", diag,
 		    (long long)arg->inum, gfarm_error_string(e));
 		invalid_XML_value = 1;
 		e = GFARM_ERR_NO_ERROR;

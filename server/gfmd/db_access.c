@@ -610,7 +610,7 @@ db_fsngroup_modify_arg_alloc(const char *hostname, const char *fsngroupname)
 		arg = (struct db_fsngroup_modify_arg *)malloc(sz);
 alloc_check:
 	if (arg == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004038,
 			"allocation of 'db_fsngroup_modify_arg' failed.");
 		return (NULL);
 	}

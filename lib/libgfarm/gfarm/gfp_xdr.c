@@ -331,7 +331,7 @@ gfp_xdr_vsend_size_add(size_t *sizep, const char **formatp, va_list *app)
 			size += sizeof(nd);
 			continue;
 #else /* __KERNEL__ */
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1003867,
 			    "floating format is not "
 			    "supported. '%s'", *formatp);
 			return (GFARM_ERR_PROTOCOL);  /* floating */
@@ -467,7 +467,7 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			    &nd, sizeof(nd));
 			continue;
 #else /* __KERNEL__ */
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1003868,
 			    "floating format is not "
 			    "supported. '%s'", *formatp);
 			return (GFARM_ERR_PROTOCOL);  /* floating */
@@ -556,7 +556,7 @@ gfp_xdr_vrecv_free(int format_parsed, const char *format, va_list *app)
 			(void)va_arg(*app, double *);
 			continue;
 #else
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1003869,
 			    "floating format is not supported. '%s'", format);
 			return; /* floating */
 #endif /* __KERNEL__ */
@@ -815,7 +815,7 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 			format_parsed++;
 			continue;
 #else /* __KERNEL__ */
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1003870,
 			    "floating format is not "
 			    "supported. '%s'", *formatp);
 			return (GFARM_ERR_PROTOCOL);  /* floating */

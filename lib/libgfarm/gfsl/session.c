@@ -402,7 +402,7 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 	    if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM,
 			       GFARM_GSS_TIMEOUT_INFINITE) != NUM_NEGO_PARAM) {
 		gsiErrNo = errno;
-		gflog_auth_info(GFARM_MSG_UNFIXED,
+		gflog_auth_info(GFARM_MSG_1003849,
 		    "gfarmSecSession:negotiateConfigParam(): "
 		    "negotiation failure with the initiator: %s",
 		    strerror(errno));
@@ -477,7 +477,7 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 
 	    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
 		gsiErrNo = errno;
-		gflog_auth_info(GFARM_MSG_UNFIXED,
+		gflog_auth_info(GFARM_MSG_1003850,
 		    "gfarmSecSession:negotiateConfigParam(): "
 		    "initiator disappered: %s", strerror(errno));
 		goto Done;
@@ -497,7 +497,7 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 
 	    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
 		gsiErrNo = errno;
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1003851,
 		    "gfarmSecSession:negotiateConfigParam(): "
 		    "acceptor disappered: %s", strerror(errno));
 		goto Done;
@@ -1143,7 +1143,7 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
     if (ret == NULL) {
 	gsiErrNo = errno;
 	gfarm_mutex_unlock(&acceptor_mutex, diag, acceptorDiag);
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1003852,
 	    "gfarmSecSessionAccept(): %s", strerror(gsiErrNo));
 	goto Fail;
     }
@@ -1151,7 +1151,7 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
     if (canonicSecSessionOpt(GFARM_SS_ACCEPTOR, ssOptPtr, &canOpt) < 0) {
 	gsiErrNo = errno;
 	gfarm_mutex_unlock(&acceptor_mutex, diag, acceptorDiag);
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003853,
 		"canonicSecSessionOpt() failed: %s", strerror(gsiErrNo));
 	goto Fail;
     }
@@ -1162,7 +1162,7 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
     if (gfarmGetPeernameOfSocket(fd, &rPort, &peerName)) {
 	gsiErrNo = errno;
 	gfarm_mutex_unlock(&acceptor_mutex, diag, acceptorDiag);
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003854,
 		"gfarmGetPeernameOfSocket() failed: %s", strerror(gsiErrNo));
 	goto Fail;
     }
@@ -1243,7 +1243,7 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
     if (negotiateConfigParam(fd, sCtx, GFARM_SS_ACCEPTOR, &canOpt,
 			     &qOp, &maxTransSize, &config,
 			     &gsiErrNo, &majStat, &minStat) < 0) {
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003855,
 		"negotiateConfigParam() failed (%s)(%u)(%u)",
 		strerror(gsiErrNo), majStat, minStat);
 	goto Fail;
@@ -1347,7 +1347,7 @@ secSessionInitiate(int fd, const gss_name_t acceptorName,
     if (ret == NULL) {
 	gsiErrNo = errno;
 	gfarm_mutex_unlock(&initiator_mutex, diag, initiatorDiag);
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1003856,
 	    "gfarm:secSessionInitiate(): %s", strerror(gsiErrNo));
 	goto Fail;
     }
@@ -1355,7 +1355,7 @@ secSessionInitiate(int fd, const gss_name_t acceptorName,
     if (canonicSecSessionOpt(GFARM_SS_INITIATOR, ssOptPtr, &canOpt) < 0) {
 	gsiErrNo = errno;
 	gfarm_mutex_unlock(&initiator_mutex, diag, initiatorDiag);
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003857,
 		"canonicSecSessionOpt() failed: %s", strerror(gsiErrNo));
 	goto Fail;
     }
@@ -1366,7 +1366,7 @@ secSessionInitiate(int fd, const gss_name_t acceptorName,
     if (gfarmGetPeernameOfSocket(fd, &rPort, &peerName)) {
 	gsiErrNo = errno;
 	gfarm_mutex_unlock(&initiator_mutex, diag, initiatorDiag);
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003858,
 		"gfarmGetPeernameOfSocket() failed: %s", strerror(gsiErrNo));
 	goto Fail;
     }
@@ -1385,7 +1385,7 @@ secSessionInitiate(int fd, const gss_name_t acceptorName,
     if (gfarmGssInitiateSecurityContext(fd, acceptorName, cred, reqFlag, &sCtx,
 					&gsiErrNo, &majStat, &minStat,
 					&acceptorNameResult) < 0) {
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003859,
 		"gfarmGssInitiateSecurityContext() failed (%s)(%u)(%u)",
 		strerror(gsiErrNo), majStat, minStat);
 	goto Fail;
@@ -1407,7 +1407,7 @@ secSessionInitiate(int fd, const gss_name_t acceptorName,
      */
     if (gfarmReadInt32(fd, &acknack, 1, GFARM_GSS_TIMEOUT_INFINITE) != 1) {
 	gsiErrNo = errno;
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1003860,
 	    "%s: acceptor does not answer authentication result: %s",
 	    acceptorDistName, strerror(gsiErrNo));
 	majStat = GSS_S_UNAUTHORIZED;
@@ -1427,7 +1427,7 @@ secSessionInitiate(int fd, const gss_name_t acceptorName,
     if (negotiateConfigParam(fd, sCtx, GFARM_SS_INITIATOR, &canOpt,
 			     &qOp, &maxTransSize, &config,
 			     &gsiErrNo, &majStat, &minStat) < 0) {
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003861,
 		"negotiateConfigParam() failed (%s)(%u)(%u)",
 		strerror(gsiErrNo), majStat, minStat);
 	goto Fail;

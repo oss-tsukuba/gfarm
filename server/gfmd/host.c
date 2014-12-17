@@ -1741,7 +1741,7 @@ host_fsngroup_modify(struct host *h, const char *fsngroupname,
 	char *g;
 
 	if (strlen(fsngroupname) > GFARM_CLUSTER_NAME_MAX) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004005,
 		    "%s: host %s: too long fsngroupname \"%s\"",
 		    diag, host_name(h), fsngroupname);
 		return (GFARM_ERR_INVALID_ARGUMENT);
@@ -1837,10 +1837,10 @@ host_info_remove_default(const char *hostname, const char *diag)
 	host_disconnect_request(host, NULL);
 
 	if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: db_begin: %s",
+		gflog_debug(GFARM_MSG_1004006, "%s: db_begin: %s",
 		    diag, gfarm_error_string(e));
 	} else if ((e = host_remove(hostname)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: host_remove: %s",
+		gflog_debug(GFARM_MSG_1004007, "%s: host_remove: %s",
 		    diag, gfarm_error_string(e));
 	} else if ((e2 = db_host_remove(hostname)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1000272,

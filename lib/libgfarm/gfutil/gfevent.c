@@ -229,7 +229,7 @@ gfarm_eventqueue_alloc(int ndesc_hint, struct gfarm_eventqueue **qp)
 		return (errno);
 	}
 	if (!gfarm_eventqueue_alloc_fd_set(q, q->evfd, &q->read_fd_set)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003844,
 			"allocation of 'q->read_fd_set' failed");
 		close(q->evfd);
 		free(q);

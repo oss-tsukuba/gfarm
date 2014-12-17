@@ -158,7 +158,7 @@ gfp_connection_unlock(struct gfp_cached_connection *connection)
 	int err;
 	err = GFSP_CONN_UNLOCK(connection);
 	if (err != 0) {
-		gflog_fatal(GFARM_MSG_UNFIXED, "owner=%d count=%d",
+		gflog_fatal(GFARM_MSG_1003871, "owner=%d count=%d",
 			connection->conn_lock.r_owner,
 			connection->conn_lock.r_locked);
 	}

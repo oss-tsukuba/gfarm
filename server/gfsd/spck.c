@@ -221,7 +221,7 @@ register_to_lost_found(int fd, gfarm_ino_t inum, gfarm_uint64_t gen)
 
 	if (fstat(fd, &sb) == -1) {
 		save_errno = errno;
-		gflog_warning_errno(GFARM_MSG_UNFIXED,
+		gflog_warning_errno(GFARM_MSG_1004187,
 		    "inode %lld:%lld: fstat()",
 		    (unsigned long long)inum, (unsigned long long)gen);
 		return (gfarm_errno_to_error(save_errno));
@@ -232,7 +232,7 @@ register_to_lost_found(int fd, gfarm_ino_t inum, gfarm_uint64_t gen)
 	e = gfm_client_replica_create_file_in_lost_found(
 	    inum, gen, (gfarm_off_t)sb.st_size, &mtime, &inum_new, &gen_new);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004188,
 		    "inode %lld:%lld: replica_create_file_in_lost_found: %s",
 		    (unsigned long long)inum, (unsigned long long)gen,
 		    gfarm_error_string(e));
@@ -240,17 +240,17 @@ register_to_lost_found(int fd, gfarm_ino_t inum, gfarm_uint64_t gen)
 	}
 	gfsd_local_path(inum_new, gen_new, "register_to_lost_found", &newpath);
 	if ((e = gfsd_copy_file(fd, newpath)) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004189,
 		    "inode %lld:%lld: cannot copy to %s, invalid file may "
 		    "remain: %s",
 		    (unsigned long long)inum, (unsigned long long)gen, newpath,
 		    gfarm_error_string(e));
 	else if (stat(newpath, &sb1) == -1)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004190,
 		    "inode %lld:%lld: copied file does not exist",
 		    (unsigned long long)inum, (unsigned long long)gen);
 	else if (sb1.st_size != sb.st_size)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004191,
 		    "inode %lld:%lld: size mismatch: copied file has "
 		    "%lld byte that should be %lld byte.  invalid file "
 		    "remains at %s",
@@ -259,11 +259,11 @@ register_to_lost_found(int fd, gfarm_ino_t inum, gfarm_uint64_t gen)
 		    (unsigned long long)sb.st_size, newpath);
 	else if ((e = gfm_client_replica_add(inum_new, gen_new,
 	    (gfarm_off_t)sb1.st_size)) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004192,
 		    "%s: replica_add failed: %s", newpath,
 		    gfarm_error_string(e));
 	else
-		gflog_notice(GFARM_MSG_UNFIXED, "lost file due to write "
+		gflog_notice(GFARM_MSG_1004193, "lost file due to write "
 		    "conflict is moved to /lost+found/%016llX%016llX-%s",
 		    (unsigned long long)inum, (unsigned long long)gen,
 		    canonical_self_name);

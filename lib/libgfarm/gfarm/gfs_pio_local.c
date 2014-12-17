@@ -481,7 +481,7 @@ gfs_pio_local_storage_reopen(GFS_File gf)
 
 	if (close(vc->fd) == -1) {
 		/* this shouldn't happen */
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1003961,
 		    "closing obsolete local fd during gfmd failover");
 	}
 	vc->fd = -1;

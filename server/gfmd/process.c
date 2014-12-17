@@ -330,14 +330,14 @@ process_record_replica_spec(struct process *process, struct peer *peer, int fd,
 	char *repattr_str = (repattr == NULL) ? "" : repattr;
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004011,
 		    "process_record_replica_spec(%ld,%d,%d,'%s'): %s",
 		    (long)process->pid, fd, desired_number, repattr_str,
 		    gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004012,
 		    "process_record_replica_spec(%ld,%d,%d,'%s'): not a file",
 		    (long)process->pid, fd, desired_number, repattr_str);
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
@@ -1357,7 +1357,7 @@ process_replica_added(struct process *process,
 		 */
 		if (src_err != GFARM_ERR_NO_ERROR ||
 		    dst_err != GFARM_ERR_NO_ERROR) {
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1004013,
 			    "inode(%lld:%lld) current gen=%lld: error happened"
 			    " during client-initiated replication: %s/%s",
 			    (long long)inode_get_number(fo->inode),

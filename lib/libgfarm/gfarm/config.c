@@ -2065,7 +2065,7 @@ parse_set_misc_float(char *p, float *vp)
 		return (GFARM_ERRMSG_INVALID_CHARACTER);
 	*vp = (float)v;
 #else /* __KERNEL__ */
-	gflog_warning(GFARM_MSG_UNFIXED, "floating %s is ignored", p);
+	gflog_warning(GFARM_MSG_1003862, "floating %s is ignored", p);
 #endif /* __KERNEL__ */
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -2260,7 +2260,7 @@ parse_digest_type(char *p, char **rv)
 
 	if (!gfarm_msgdigest_name_verify(*rv)) {
 		/* XXX this leaves `*rv' as is */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003863,
 		    "invalid digest type <%s>", *rv);
 		return (GFARM_ERRMSG_INVALID_DIGEST_TYPE);
 	}
@@ -3102,7 +3102,7 @@ void
 gfarm_config_set_default_ports(void)
 {
 	if (gfarm_ctxp->metadb_server_name == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003864,
 		    "metadb_server_host isn't specified in "
 		    GFARM_CONFIG " file");
 

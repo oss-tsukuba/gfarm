@@ -158,7 +158,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 			gflog_notice(GFARM_MSG_1000700,
 			    "Can't initiate session because of:");
 			if (gsi_errno != 0) {
-				gflog_info(GFARM_MSG_UNFIXED, "%s",
+				gflog_info(GFARM_MSG_1004002, "%s",
 				    strerror(gsi_errno));
 			} else {
 				gfarmGssPrintMajorStatus(e_major);

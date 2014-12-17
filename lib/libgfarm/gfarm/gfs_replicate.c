@@ -154,7 +154,7 @@ retry:
 	    gfs_pio_fileno(gf));
 	gfs_client_connection_free(gfs_server);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003982,
 		    "gfs_client_replica_add_from: %s",
 		    gfarm_error_string(e));
 		if (gfs_client_is_connection_error(e) &&
@@ -164,7 +164,7 @@ retry:
 		    --failover_nretries >= 0) {
 			if ((e = gfs_pio_failover(gf)) == GFARM_ERR_NO_ERROR)
 				goto retry;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003983,
 			    "gfs_pio_failover: %s",
 			    gfarm_error_string(e));
 		}
@@ -248,7 +248,7 @@ gfs_replicate_to_local(GFS_File gf, char *srchost, int srcport)
 		    gfs_pio_metadb(gf), e) || nretries-- <= 0)
 			break;
 		if ((e = gfs_pio_failover(gf)) != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003984,
 			    "gfs_pio_failover: %s", gfarm_error_string(e));
 			break;
 		}

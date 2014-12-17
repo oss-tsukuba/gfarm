@@ -65,7 +65,7 @@ gfarm_server_initialize(char *config_file, int *argcp, char ***argvp)
 	gfarm_error_t e;
 
 	if ((e = gfarm_context_init()) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003865,
 			"gfarm_context_init failed: %s",
 			gfarm_error_string(e));
 		return (e);

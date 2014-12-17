@@ -149,7 +149,7 @@ calc_digest(const char *file,
 	unsigned char md_value[EVP_MAX_MD_SIZE];
 
 	if (!gfarm_msgdigest_init(md_type_name, &md_ctx, NULL))
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: fatal error. "
+		gflog_fatal(GFARM_MSG_1004194, "%s: fatal error. "
 		    "digest type <%s> isn't supported on this host",
 		    file, md_type_name);
 
@@ -238,7 +238,7 @@ check_file(char *file, struct stat *stp, void *arg)
 		goto close_progress;
 	if (c.type[0] == '\0') {
 		/* do not calculate, if "digest" is not configured in gfmd */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004195,
 		    "%s: cksum type is not specified", file);
 		e = GFARM_ERR_NO_ERROR;
 	} else if ((c.flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
@@ -255,7 +255,7 @@ check_file(char *file, struct stat *stp, void *arg)
 	} else if ((e = calc_digest(file, c.type, md_string, &md_strlen))
 	    != GFARM_ERR_NO_ERROR) {
 		if (e == GFARM_ERR_OPERATION_NOT_SUPPORTED) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1004196,
 			    "%s: cksum type <%s> isn't supported on this host",
 			    file, c.type);
 		} else if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
@@ -264,7 +264,7 @@ check_file(char *file, struct stat *stp, void *arg)
 			 * this file is updated simultaneously
 			 */
 		} else {
-			gflog_warning(GFARM_MSG_UNFIXED, "%s: %s",
+			gflog_warning(GFARM_MSG_1004197, "%s: %s",
 			    file, gfarm_error_string(e));
 		}
 	} else if (c.len > 0 &&

@@ -978,7 +978,7 @@ inode_schedule_replication(
 
 	if (repattr != NULL) {
 		if (debug_mode)
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004014,
 			    "%s: about to schedule "
 			    "repattr-based replication for inode "
 			    "%lld:%lld@%s.", diag,
@@ -1004,7 +1004,7 @@ inode_schedule_replication(
 			    inode, &n_existing2, &existing2,
 			    &n_being_removed2, &being_removed2);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1004015,
 				    "%s: %lld:%lld:%s: replica_hosts: %s",
 				    diag,
 				    (long long)inode_get_number(inode),
@@ -1045,7 +1045,7 @@ inode_schedule_replication(
 					    existing3, n_existing3);
 					if (existing3 == NULL) {
 						gflog_debug(
-						    GFARM_MSG_UNFIXED,
+						    GFARM_MSG_1004016,
 						    "no memory");
 						return (GFARM_ERR_NO_MEMORY);
 					}
@@ -1074,7 +1074,7 @@ inode_schedule_replication(
 					    being_removed3, n_being_removed3);
 					if (being_removed3 == NULL) {
 						gflog_debug(
-						    GFARM_MSG_UNFIXED,
+						    GFARM_MSG_1004017,
 						    "no memory");
 						return (GFARM_ERR_NO_MEMORY);
 					}
@@ -1094,7 +1094,7 @@ inode_schedule_replication(
 				}
 			}
 
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004018,
 			    "%s: about to schedule "
 			    "ncopy-based replication for inode %lld:%lld@%s. "
 			    "number = %d (= %d - %d + %d)", diag,
@@ -2277,7 +2277,7 @@ inode_new_generation_by_cookie_start(struct inode *inode,
 		 */
 		ia = inode_activity_alloc();
 		if (ia == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004019,
 			    "unable to track inode generation");
 			return (GFARM_ERR_NO_MEMORY);
 		}
@@ -2332,7 +2332,7 @@ inode_new_generation_by_fd_finish(struct inode *inode, struct peer *peer,
 
 	ia = inode->u.c.activity;
 	if (ia->u.f.event_type != EVENT_GEN_UPDATED) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004020,
 		    "%s: not pending generation update: %d",
 		    diag, ia->u.f.event_type);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
@@ -2371,7 +2371,7 @@ inode_new_generation_by_cookie_finish(
 
 	ia = inode->u.c.activity;
 	if (ia->u.f.event_type != EVENT_GEN_UPDATED_BY_COOKIE) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004021,
 		    "%s: not pending generation update by cookie: %d",
 		    diag, ia->u.f.event_type);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
@@ -2545,7 +2545,7 @@ is_removable_in_sticky_dir(struct inode *dir, struct inode *entry,
 	    user_is_root(entry, user)) {
 		return (1);
 	} else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004022,
 		    "%s is disallowed due to sticky dir: "
 		    "dir %lld:%lld name %.*s user %s", diag,
 		    (long long)inode_get_number(dir),
@@ -3871,7 +3871,7 @@ inode_file_handle_update(struct inode *inode, gfarm_off_t size,
 
 	if (!inode_has_replica(inode, spool_host)) {
 		/* this replica became obsolete during gfmd failover */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004023,
 		    "inode_file_handle_update: "
 		    "inode %lld:%lld modification on %s "
 		    "is lost during gfmd failover, current generation %lld",
@@ -3883,7 +3883,7 @@ inode_file_handle_update(struct inode *inode, gfarm_off_t size,
 	if ((writing_spool_host = inode_writing_spool_host(inode)) != NULL &&
 	    spool_host != writing_spool_host) {
 		/* conflict. another replica was opened for writing */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004024,
 		    "inode_file_handle_update: "
 		    "inode %lld:%lld modification on %s "
 		    "conflicts with current generation %lld on %s",
@@ -4765,7 +4765,7 @@ check_removable_replicas(
 
 		e = gfarm_repattr_parse(fo->u.f.repattr, &reps, &nreps);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004025,
 			    "gfarm_repattr_parse(%s): %s",
 			    fo->u.f.repattr, gfarm_error_string(e));
 			return (e);
@@ -4800,7 +4800,7 @@ check_removable_replicas(
 		e = fsngroup_get_hosts(fsng, &nhosts, &hosts);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfarm_repattr_free_all(nreps, reps);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004026,
 			    "fsngroup_get_hosts(%s): %s",
 			    fsng, gfarm_error_string(e));
 			return (e);
@@ -4816,7 +4816,7 @@ check_removable_replicas(
 		if (e != GFARM_ERR_NO_ERROR) {
 			free(hosts);
 			gfarm_repattr_free_all(nreps, reps);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004027,
 			    "inode_count_ncopy_with_grace: %s",
 			    gfarm_error_string(e));
 			return (e);

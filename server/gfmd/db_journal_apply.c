@@ -109,7 +109,7 @@ db_journal_apply_fsngroup_modify(gfarm_uint64_t seqnum,
 
 	if ((h = host_lookup_including_invalid(arg->hostname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004049,
 			"seqnum=%llu hostname=%s : %s",
 			(unsigned long long)seqnum,
 			arg->hostname, gfarm_error_string(e));

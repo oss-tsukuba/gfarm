@@ -25,7 +25,7 @@ statfs_rpc(struct gfm_connection **gfm_serverp, void *closure)
 
 	if ((e = gfarm_url_parse_metadb(&si->path, gfm_serverp))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003977,
 		    "gfarm_url_parse_metadb: %s",
 		    gfarm_error_string(e));
 		return (e);
@@ -50,7 +50,7 @@ statfs_exit(struct gfm_connection *gfm_server, gfarm_error_t e,
 {
 	(void)statfs_post_failover(gfm_server, closure);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003978,
 		    "gfs_statfs: %s",
 		    gfarm_error_string(e));
 }

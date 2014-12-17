@@ -221,22 +221,22 @@ xattr_check_repattr(
 	char *repattr = NULL, *repattr2;
 
 	if (!is_string(*valuep, *sizep)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004039,
 		    "gfarm.replicainfo is not a string");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if ((e = gfarm_repattr_reduce(*valuep, &reps, &nreps))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004040,
 		    "gfarm_repattr_reduce() failed: %s",
 		    gfarm_error_string(e));
 	} else if (nreps == 0 || reps == NULL) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004041,
 		    "invalid repattr: %s", (char *)(*valuep));
 	} else if ((e = gfarm_repattr_stringify(reps, nreps, &repattr))
 		   != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004042,
 		    "gfarm_repattr_stringify() failed: %s",
 		    gfarm_error_string(e));
 	} else {
@@ -390,7 +390,7 @@ xattr_set(int xmlMode, struct inode *inode,
 		    inode, attrname, valuep, sizep,
 		    &have_replica_spec, &change_replica_spec);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004043,
 			    "xattr_check_replica_spec(): %s",
 			    gfarm_error_string(e));
 			return (e);

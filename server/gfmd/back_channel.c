@@ -416,7 +416,7 @@ gfs_client_replication_cksum_request_result(void *p, void *arg, size_t size)
 		e2 = peer_replicated(peer, dst, ino, gen,
 		    handle, src_errcode, dst_errcode, -1,
 		    1, NULL, 0, NULL, 0);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004036,
 		    "%s: (%s, %lld:%lld): aborted: %s/%s - (%s, %s)",
 		    diag, host_name(dst), (long long)ino, (long long)gen,
 		    gfarm_error_string(src_errcode),
@@ -750,7 +750,7 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 	    version >  GFS_PROTOCOL_VERSION_V2_6) :
 	    version != GFS_PROTOCOL_VERSION_V2_3) {
 		e = GFARM_ERR_PROTOCOL_NOT_SUPPORTED;
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004037,
 		    "%s: %s@%s: unsupported protocol version %d",
 		    diag, peer_get_username(peer), peer_get_hostname(peer),
 		    version);
