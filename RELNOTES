@@ -1,3 +1,37 @@
+Release note for Gfarm 2.6.0
+============================
+
+[2014.12.17]
+
+New feature
+* end-to-end data integrity for silent data corruption [sf.net ticket
+  #774]
+* checksum during replication [sf.net tickets #769 and #771]
+* replica locations specified by file system node groups [sf.net
+  tickets #494 and #711]
+* gfhostgroup - manage file system node group
+* fast failover by notifying to gfsd [sf.net ticket #721]
+* client transparent failover [sf.net ticket #527]
+* support sticky bit of directories [sf.net ticket #762]
+
+New configuration directive
+* client_digest_check - enables end-to-end data integrity
+
+Updated feature
+* gfncopy - -S option to specify replica locations by node groups
+  [sf.net ticket #712]
+* gfpcopy, gfexport, gfreg - performance improvement [sf.net ticket
+  #728]
+* support sha256 digest type [sf.net ticket #757]
+* gfmdhost - introduce a new state under synchronization [sf.net
+  ticket #752]
+
+Bug fix
+* fix race condition when updating files during a failover [sf.net
+  ticket #341]
+* file metadata may not be updated when using direct access feature on
+  a file system node [sf.net ticket #461]
+
 Release note for Gfarm 2.5.8.13
 ===============================
 
