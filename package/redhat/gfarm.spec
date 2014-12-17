@@ -146,6 +146,9 @@ Gfarm performance monitoring plugin for Ganglia
 Development header files and libraries for Gfarm file system
 
 %changelog
+* Wed Dec 17 2014 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.6.0-1
+- Gfarm version 2.6.0 released
+
 * Mon Apr 22 2013 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.8-1
 - Gfarm version 2.5.8 released
 

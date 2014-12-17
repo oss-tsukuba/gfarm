@@ -98,6 +98,7 @@ configure コマンドには，下記のオプションがあります．
 	% env CC=gcc ./configure [options]
 
 ・--enable-linuxkernel
+
   linux kernel 2.6 上の Gfarmカーネルドライバーを作成することを指示します。
   詳しくは linux/doc/manual.{pdf,doc} を参照してください。
 

@@ -17,6 +17,9 @@ New feature
 New configuration directive
 * client_digest_check - enables end-to-end data integrity
 
+New API
+* gfs_pio_sendfile, gfs_pio_recvfile - bulk data transfer
+
 Updated feature
 * gfncopy - -S option to specify replica locations by node groups
   [sf.net ticket #712]

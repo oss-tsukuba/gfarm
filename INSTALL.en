@@ -90,6 +90,7 @@ Options for configure:
   This is optional.
 
   --enable-linuxkernel
+
   Enables to compile the Gfarm kernel driver on linux kernel 2.6.
 
 When you need to specify a compiler program explicitly, use the
