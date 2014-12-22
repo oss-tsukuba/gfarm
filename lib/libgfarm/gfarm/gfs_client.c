@@ -192,8 +192,8 @@ gfs_client_connection_gc(void)
 	gfp_cached_connection_gc_all(&gfs_server_cache);
 }
 
-static int
-sockaddr_is_local(struct sockaddr *peer_addr)
+int
+gfs_client_sockaddr_is_local(struct sockaddr *peer_addr)
 {
 	static int self_ip_asked = 0;
 	static int self_ip_count = 0;
@@ -350,7 +350,7 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 #ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
 	connection_in_progress = 0;
 #endif
-	if (sockaddr_is_local(peer_addr)) {
+	if (gfs_client_sockaddr_is_local(peer_addr)) {
 		e = gfs_client_connect_unix(peer_addr, &sock);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001177,

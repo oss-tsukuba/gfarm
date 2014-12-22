@@ -6,7 +6,7 @@
 
 <refentry id="gfsched.1">
 
-<refentryinfo><date>28 Dec 2010</date></refentryinfo>
+<refentryinfo><date>22 Dec 2014</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsched</refentrytitle>
@@ -33,7 +33,7 @@ schedule and display available file system nodes
     <arg choice="plain" rep="norepeat">-f <replaceable>gfarm-URL</replaceable></arg>
     <arg choice="opt" rep="norepeat">-D <replaceable>domain-name</replaceable></arg>
     <arg choice="opt" rep="norepeat">-n <replaceable>number</replaceable></arg>
-    <arg choice="opt" rep="norepeat">-LMclw</arg>
+    <arg choice="opt" rep="norepeat">-LMOSclw</arg>
 </cmdsynopsis>
 
 <cmdsynopsis sepchar=" ">
@@ -45,7 +45,7 @@ schedule and display available file system nodes
     <arg choice="opt" rep="norepeat">-P <replaceable>gfarm-URL</replaceable></arg>
     <arg choice="opt" rep="norepeat">-D <replaceable>domain-name</replaceable></arg>
     <arg choice="opt" rep="norepeat">-n <replaceable>number</replaceable></arg>
-    <arg choice="opt" rep="norepeat">-LMlw</arg>
+    <arg choice="opt" rep="norepeat">-LMOSlw</arg>
 </cmdsynopsis>
 
 </refsynopsisdiv>
@@ -153,11 +153,31 @@ fails authentication with the user may be scheduled.
 </varlistentry>
 
 <varlistentry>
+<term><option>-O</option></term>
+<listitem>
+<para>
+Displays filesystem nodes where the hosts are other than the host that
+the gfsched command is running.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-P</option> <parameter moreinfo="none">gfarm-URL</parameter></term>
 <listitem>
 <para>Specifies a <parameter moreinfo="none">gfarm-URL</parameter> or a pathname
 to identify a metadata server which is used for the scheduling.
 This option conflicts with the <option>-f</option> option.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option></term>
+<listitem>
+<para>
+Displays a filesystem node where the host is same with the host that
+the gfsched command is running.
 </para>
 </listitem>
 </varlistentry>
