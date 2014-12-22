@@ -2,12 +2,12 @@
 .\"     Title: gfsched
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 28 Dec 2010
+.\"      Date: 22 Dec 2014
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSCHED" "1" "28 Dec 2010" "Gfarm" "Gfarm"
+.TH "GFSCHED" "1" "22 Dec 2014" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,9 +31,9 @@
 gfsched \- schedule and display available file system nodes
 .SH "SYNOPSIS"
 .HP \w'\fBgfsched\fR\ 'u
-\fBgfsched\fR \-f\ \fIgfarm\-URL\fR [\-D\ \fIdomain\-name\fR] [\-n\ \fInumber\fR] [\-LMclw]
+\fBgfsched\fR \-f\ \fIgfarm\-URL\fR [\-D\ \fIdomain\-name\fR] [\-n\ \fInumber\fR] [\-LMOSclw]
 .HP \w'\fBgfsched\fR\ 'u
-\fBgfsched\fR [\-P\ \fIgfarm\-URL\fR] [\-D\ \fIdomain\-name\fR] [\-n\ \fInumber\fR] [\-LMlw]
+\fBgfsched\fR [\-P\ \fIgfarm\-URL\fR] [\-D\ \fIdomain\-name\fR] [\-n\ \fInumber\fR] [\-LMOSlw]
 .SH "DESCRIPTION"
 .PP
 The
@@ -78,6 +78,11 @@ Suppresses authentication check\&. Without this option, the scheduler checks whe
 Suppresses client\-side scheduling and only performs metadata\-server\-side scheduling\&. This option makes scheduling faster, but also creates a risk that hosts which is network\-unreachable or fails authentication with the user may be scheduled\&.
 .RE
 .PP
+\fB\-O\fR
+.RS 4
+Displays filesystem nodes where the hosts are other than the host that the gfsched command is running\&.
+.RE
+.PP
 \fB\-P\fR \fIgfarm\-URL\fR
 .RS 4
 Specifies a
@@ -85,6 +90,11 @@ Specifies a
 or a pathname to identify a metadata server which is used for the scheduling\&. This option conflicts with the
 \fB\-f\fR
 option\&.
+.RE
+.PP
+\fB\-S\fR
+.RS 4
+Displays a filesystem node where the host is same with the host that the gfsched command is running\&.
 .RE
 .PP
 \fB\-f\fR \fIgfarm\-URL\fR
