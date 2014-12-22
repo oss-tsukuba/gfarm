@@ -390,8 +390,179 @@ accepting_fatal_errno_full(int msg_no, const char *file, int line_no,
 }
 
 
+ static int
+#ifdef HAVE_POLL
+sleep_or_wait_fds(int seconds, int nfds, struct pollfd *fds, const char *diag)
+#else
+sleep_or_wait_fds(int seconds, int max_fd, fd_set *fds, const char *diag)
+#endif
+{
+	int nfound;
+	struct timeval expiration_time, now, t;
+
+	gettimeofday(&expiration_time, NULL);
+	expiration_time.tv_sec += seconds;
+#ifdef HAVE_POLL
+	for (;;) {
+		gettimeofday(&now, NULL);
+		if (gfarm_timeval_cmp(&now, &expiration_time) >= 0)
+			return (EAGAIN);
+		t = expiration_time;
+		gfarm_timeval_sub(&t, &now);
+
+		nfound = poll(fds, 1, t.tv_sec * 1000 - t.tv_usec / 1000);
+		if (nfound == 0)
+			return (EAGAIN);
+		if (nfound == -1) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+			return (errno);
+		}
+		return (0);
+	}
+#else /* !HAVE_POLL */
+	fd_set fds;
+
+	for (;;) {
+		gettimeofday(&now, NULL);
+		if (gfarm_timeval_cmp(&now, &expiration_time) >= 0)
+			return (EAGAIN);
+		t = expiration_time;
+		gfarm_timeval_sub(&t, &now);
+
+		/* using the returned `t` from select(2) is not portable */
+		nfound =
+		    select(max_fd, &fds, NULL, NULL, &t);
+		if (nfound == 0)
+			return (EAGAIN);
+		if (nfound == -1) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+			return (errno);
+		}
+		return (0);
+	}
+#endif /* !HAVE_POLL */
+}
+
 static int
-sleep_or_wait_signal(int seconds, int signo)
+sleep_or_wait_failover_packet(int seconds)
+{
+	int i, rv;
+	static const char diag[] = "sleep_or_wait_failover_packet";
+
+#ifdef HAVE_POLL
+	static int fds_alloced = 0;
+	static struct pollfd *fds = NULL;
+
+	if (fds_alloced <= accepting.udp_socks_count) {
+		free(fds);
+		GFARM_MALLOC_ARRAY(fds, accepting.udp_socks_count);
+		if (fds == NULL)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "cannot allocate pollfds for UDP sockets (%d)",
+			    accepting.udp_socks_count);
+		fds_alloced = accepting.udp_socks_count;
+	}
+	for (i = 0; i < accepting.udp_socks_count; i++) {
+		fds[i].fd = accepting.udp_socks[i];
+		fds[i].events = POLLIN;
+	}
+	rv = sleep_or_wait_fds(seconds, accepting.udp_socks_count, fds, diag);
+#else /* !HAVE_POLL */
+	int max_fd = -1;
+	struct fd_set fds;
+
+	FD_ZERO(&fds);
+	for (i = 0; i < accepting.udp_socks_count; i++) {
+		if (accepting.udp_socks[i] >= FD_SETSIZE)
+			fatal(GFARM_MSG_UNFIXED,
+			    "too big descriptor: udp_fd:%d exceeds %d",
+			    accepting.udp_socks[i], FD_SETSIZE);
+		if (max_fd < accepting.udp_socks[i])
+			max_fd = accepting.udp_socks[i];
+		FD_SET(accepting.udp_socks[i], &fds);
+	}
+	rv = sleep_or_wait_fds(seconds, max_fd + 1, &fds, diag);
+#endif /* !HAVE_POLL */
+	return (rv);
+}
+
+
+static enum gfsd_type {
+	type_listener, type_client, type_back_channel, type_replication
+} my_type = type_listener;
+
+static int failover_notify_recv_fd = -1;
+static int failover_notify_send_fd = -1;
+
+static void
+failover_handler(int signo)
+{
+	char dummy[1];
+	ssize_t rv;
+
+	if (my_type == type_listener || my_type == type_replication)
+		return; /* nothing to do */
+	if (failover_notify_send_fd == -1)
+		abort();
+	dummy[0] = 0;
+	rv = write(failover_notify_send_fd, dummy, sizeof dummy);
+	if (rv != sizeof dummy)
+		abort(); /* cannot call assert() from a signal handler */
+}
+
+static void
+failover_notified(int do_logging, const char *diag)
+{
+	ssize_t rv;
+	char dummy[1];
+
+	if (do_logging)
+		gflog_info(GFARM_MSG_1004105,
+		    "%s: failover notified", diag);
+	rv = read(failover_notify_recv_fd, dummy, sizeof dummy);
+	if (rv == -1)
+		gflog_error_errno(GFARM_MSG_1004106,
+		    "%s: failover notified: read", diag);
+	else if (rv != sizeof dummy)
+		gflog_error(GFARM_MSG_1004107,
+		    "%s: failover notified: size expected %zd but %zd",
+		    diag, sizeof dummy, rv);
+}
+
+
+static int
+sleep_or_wait_failover_recv_fd(int seconds)
+{
+	int rv;
+	static const char diag[] = "sleep_or_wait_failover_signal";
+
+#ifdef HAVE_POLL
+	struct pollfd fds;
+
+	fds.fd = failover_notify_recv_fd;
+	fds.events = POLLIN;
+	rv = sleep_or_wait_fds(seconds, 1, &fds, diag);
+#else /* !HAVE_POLL */
+	struct fd_set fds;
+
+	if (failover_notify_recv_fd >= FD_SETSIZE)
+		fatal(GFARM_MSG_UNFIXED,
+		    "too big descriptor: failover_fd:%d exceeds %d",
+		    failover_notify_recv_fd, FD_SETSIZE);
+	FD_ZERO(&fds);
+	FD_SET(failover_notify_recv_fd, &fds);
+	rv = sleep_or_wait_fds(seconds, failover_notify_recv_fd + 1, &fds,
+	    diag);
+#endif /* !HAVE_POLL */
+	if (rv == 0)
+		failover_notified(debug_mode, diag);
+	return (rv);
+}
+
+static int
+sleep_or_wait_failover_signal(int seconds, int signo)
 {
 #ifdef HAVE_SIGTIMEDWAIT
 	sigset_t sigs;
@@ -433,6 +604,25 @@ sleep_or_wait_signal(int seconds, int signo)
 	gfarm_sleep(seconds);
 	return (EAGAIN); /* signal wasn't received */
 #endif
+}
+
+static void
+sleep_or_wait_failover(int seconds)
+{
+	switch (my_type) {
+	case type_listener:
+		sleep_or_wait_failover_packet(seconds);
+		break;
+	case type_client:
+	case type_back_channel:
+		sleep_or_wait_failover_recv_fd(seconds);
+		break;
+	case type_replication:
+		sleep_or_wait_failover_signal(seconds, FAILOVER_SIGNAL);
+		break;
+	default:
+		assert(0);
+	}
 }
 
 static gfarm_error_t
@@ -514,7 +704,7 @@ connect_gfm_server0(int use_timeout, const char *diag)
 			    sleep_interval, gfarm_error_string(e));
 			/* retry if IS_CONNECTION_ERROR(e) */
 		}
-		sleep_or_wait_signal(sleep_interval, FAILOVER_SIGNAL);
+		sleep_or_wait_failover(sleep_interval);
 		if (sleep_interval < GFMD_CONNECT_SLEEP_INTVL_MAX)
 			sleep_interval *= 2;
 	}
@@ -561,48 +751,6 @@ reconnect_gfm_server_for_failover(const char *diag)
 	fd_usable_to_gfmd = 0;
 }
 
-
-static enum gfsd_type {
-	type_listener, type_client, type_back_channel, type_replication
-} my_type = type_listener;
-
-static int failover_notify_recv_fd = -1;
-static int failover_notify_send_fd = -1;
-
-static void
-failover_handler(int signo)
-{
-	char dummy[1];
-	ssize_t rv;
-
-	if (my_type == type_listener || my_type == type_replication)
-		return; /* nothing to do */
-	if (failover_notify_send_fd == -1)
-		abort();
-	dummy[0] = 0;
-	rv = write(failover_notify_send_fd, dummy, sizeof dummy);
-	if (rv != sizeof dummy)
-		abort(); /* cannot call assert() from a signal handler */
-}
-
-static void
-failover_notified(int do_logging, const char *diag)
-{
-	ssize_t rv;
-	char dummy[1];
-
-	if (do_logging)
-		gflog_info(GFARM_MSG_1004105,
-		    "%s: failover notified", diag);
-	rv = read(failover_notify_recv_fd, dummy, sizeof dummy);
-	if (rv == -1)
-		gflog_error_errno(GFARM_MSG_1004106,
-		    "%s: failover notified: read", diag);
-	else if (rv != sizeof dummy)
-		gflog_error(GFARM_MSG_1004107,
-		    "%s: failover notified: size expected %zd but %zd",
-		    diag, sizeof dummy, rv);
-}
 
 static pid_t
 do_fork(enum gfsd_type new_type)
