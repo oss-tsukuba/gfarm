@@ -5,30 +5,15 @@
 # if a gfarm file is specified as an argument, display local hostname,
 # only if the host has its replica.
 
-host=`hostname`
-
-case $# in
-0)	if gfsched -D $host >/dev/null 2>&1; then
-		echo $host
-		exit 0
-	elif gfsched -D localhost >/dev/null 2>&1; then
-		echo localhost
-		exit 0
-	else
-		exit 1
-	fi;;
-1)	gfwhere $1 | awk '
-		BEGIN {status=1}
-		{
-			for(i = 1; i <= NR; i++) {
-				if ($i == "'"$host"'" || $i == "localhost") {
-					print $i
-					status=0; exit
-				}
-			}
-		}
-		END {exit status}';;
-*)	echo >&2 "Usage: get_local_gfhost [<gfarm_file>]"
-	exit 2;;
-esac
-
+if	case $# in
+	0)	host=`gfsched -n 1 -S 2>&1`;;
+	1)	host=`gfsched -n 1 -S -f "$1" 2>/dev/null`;;
+	*)	echo >&2 "Usage: get_local_gfhost [<gfarm_file>]"
+		exit 2;;
+	esac
+then
+	echo $host
+	exit 0
+else
+	exit 1
+fi

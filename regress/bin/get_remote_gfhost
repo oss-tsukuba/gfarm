@@ -5,31 +5,15 @@
 # if a gfarm file is specified as an argument, display a remote hostname
 # which has a replica of the file
 
-host=`hostname`
-
-case $# in
-0)	if host=`gfsched -D $host 2>/dev/null`; then
-		host=`gfsched |
-		    awk '$0 != "'$host'" && $0 != "localhost" {print; exit }'`
-	else
-		host=`gfsched | grep -v '^localhost$' | head -1`
-	fi;;
-1)	host=`gfwhere $1 |
-	   awk '{
-			for(i = 1; i <= NR; i++) {
-				if ($i != "'"$host"'" && $0 != "localhost" ) {
-					print $i;
-				exit}
-			}
-		}'`
-	;;
-*)	echo >&2 "Usage: get_remote_gfhost [<gfarm_file>]"
-	exit 2;;
-esac
-
-if [ -z "$host" ]; then
-	exit 1
-else
+if	case $# in
+	0)	host=`gfsched -n 1 -O 2>&1`;;
+	1)	host=`gfsched -n 1 -O -f "$1" 2>/dev/null`;;
+	*)	echo >&2 "Usage: get_remote_gfhost [<gfarm_file>]"
+		exit 2;;
+	esac
+then
 	echo $host
 	exit 0
+else
+	exit 1
 fi

@@ -92,7 +92,7 @@ struct gfs_client_static {
 	struct gfp_conn_cache server_cache;
 	gfarm_error_t (*hook_for_connection_error)(struct gfs_connection *);
 
-	/* sockaddr_is_local() */
+	/* gfs_client_sockaddr_is_local() */
 	int self_ip_asked;
 	int self_ip_count;
 	struct in_addr *self_ip_list;
@@ -237,8 +237,8 @@ gfs_client_connection_gc(void)
 	gfp_cached_connection_gc_all(&staticp->server_cache);
 }
 
-static int
-sockaddr_is_local(struct sockaddr *peer_addr)
+int
+gfs_client_sockaddr_is_local(struct sockaddr *peer_addr)
 {
 	struct sockaddr_in *peer_in;
 	int i;
@@ -392,7 +392,7 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 #ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
 	connection_in_progress = 0;
 #endif
-	if (sockaddr_is_local(peer_addr)) {
+	if (gfs_client_sockaddr_is_local(peer_addr)) {
 		e = gfs_client_connect_unix(peer_addr, &sock);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001177,
@@ -526,7 +526,7 @@ gfsk_client_connection_alloc_and_auth(struct gfarm_eventqueue *q,
 	int sock = -1, is_local = 0;
 	int fd = -1;
 
-	if (sockaddr_is_local(peer_addr)) {
+	if (gfs_client_sockaddr_is_local(peer_addr)) {
 		is_local = 1;
 	}
 

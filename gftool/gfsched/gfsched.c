@@ -9,13 +9,17 @@
 #include <libgen.h>
 #include <string.h>
 #include <limits.h>
+#include <sys/socket.h>
 
 #include <gfarm/gfarm.h>
 
 #include "liberror.h"
+#include "host.h"
 #include "gfm_client.h"
 #include "gfm_schedule.h"
+#include "gfs_client.h"
 #include "schedule.h"
+#include "lookup.h"
 #include "gfarm_path.h"
 
 /*
@@ -28,19 +32,37 @@
 char *program_name = "gfsched";
 char *default_opt_domain = "";
 
+static gfarm_error_t
+get_local(struct gfm_connection *gfm_server,
+	struct gfarm_host_sched_info *host, int *localp)
+{
+	gfarm_error_t e;
+	struct sockaddr peer_addr;
+
+	e = gfm_host_address_get(gfm_server, host->host, host->port,
+	    &peer_addr, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		return e;
+
+	*localp = gfs_client_sockaddr_is_local(&peer_addr);
+	return (GFARM_ERR_NO_ERROR);
+}
+
 void
 usage(void)
 {
 	fprintf(stderr, 
-	    "Usage:\t%s [-P <path>] [-D <domain>] [-n <number>] [-LMVlw]\n",
+	    "Usage:\t%s [-P <path>] [-D <domain>] [-n <number>] [-LMOSVlw]\n",
 	    program_name);
 	fprintf(stderr,
-	          "\t%s  -f <file>  [-D <domain>] [-n <number>] [-LMVclw]\n",
+	          "\t%s  -f <file>  [-D <domain>] [-n <number>] [-LMOSVclw]\n",
 	    program_name);
 	fprintf(stderr,
 	    "options:\n");
 	fprintf(stderr, "\t-L\t\tdo not check authentication\n");
 	fprintf(stderr, "\t-M\t\tno client-side scheduling\n");
+	fprintf(stderr, "\t-S\t\tself: local filesystem node only\n");
+	fprintf(stderr, "\t-O\t\tother: remote filesystem node only\n");
 	fprintf(stderr, "\t-c\t\tcreate mode (currently leaves a file)\n");
 	fprintf(stderr, "\t-w\t\twrite mode\n");
 	fprintf(stderr, "\t-l\t\tlong format\n");
@@ -83,6 +105,7 @@ main(int argc, char **argv)
 	int opt_nhosts = 0;
 	int opt_write_mode = 0;
 	int opt_create_mode = 0;
+	enum { all_host, local_host, remote_host } opt_host_type = all_host;
 	int c, i, available_nhosts, nhosts, *ports;
 	struct gfarm_host_sched_info *available_hosts;
 	char *path, **hosts, *realpath = NULL;
@@ -97,7 +120,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "D:LMP:Vcf:ln:w")) != -1) {
+	while ((c = getopt(argc, argv, "D:LMOP:SVcf:ln:w")) != -1) {
 		switch (c) {
 		case 'D':
 			opt_domain = optarg;
@@ -108,8 +131,14 @@ main(int argc, char **argv)
 		case 'M':
 			opt_metadata_only = 1;
 			break;
+		case 'S':
+			opt_host_type = local_host;
+			break;
 		case 'P':
 			opt_mount_point = optarg;
+			break;
+		case 'O':
+			opt_host_type = remote_host;
 			break;
 		case 'V':
 			fprintf(stderr, "Gfarm version %s\n", gfarm_version());
@@ -190,6 +219,39 @@ main(int argc, char **argv)
 		fprintf(stderr, "%s: metadata scheduling: %s\n",
 		    program_name, gfarm_error_string(e));
 		exit(1);
+	}
+
+	if (opt_host_type != all_host) {
+		struct gfm_connection *gfm_server;
+		int j, local;
+
+		if ((e = gfm_client_connection_and_process_acquire_by_path(
+		    opt_mount_point, &gfm_server)) != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
+			    program_name, opt_mount_point,
+			    gfarm_error_string(e));
+			exit(1);
+		}
+
+		/*
+		 * it's OK to modify available_hosts[],
+		 * because gfarm_host_sched_info_free() is not called here.
+		 */
+		j = 0;
+		for (i = 0; i < available_nhosts; i++) {
+			if (get_local(gfm_server, &available_hosts[i], &local)
+			    != GFARM_ERR_NO_ERROR)
+				continue;
+			if (local) {
+				if (opt_host_type == remote_host)
+					continue;
+			} else {
+				if (opt_host_type == local_host)
+					continue;
+			}
+			available_hosts[j++] = available_hosts[i];
+		}
+		available_nhosts = j;
 	}
 
 	nhosts = opt_nhosts > 0 ? opt_nhosts : available_nhosts;
