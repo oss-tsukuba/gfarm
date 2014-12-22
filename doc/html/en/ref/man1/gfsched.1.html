@@ -15,8 +15,8 @@ schedule and display available file system nodes
 </div>
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfsched</code>   -f <em class="replaceable"><code>gfarm-URL</code></em>  [-D <em class="replaceable"><code>domain-name</code></em>] [-n <em class="replaceable"><code>number</code></em>] [-LMclw]</p></div>
-<div class="cmdsynopsis"><p><code class="command">gfsched</code>  [-P <em class="replaceable"><code>gfarm-URL</code></em>] [-D <em class="replaceable"><code>domain-name</code></em>] [-n <em class="replaceable"><code>number</code></em>] [-LMlw]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfsched</code>   -f <em class="replaceable"><code>gfarm-URL</code></em>  [-D <em class="replaceable"><code>domain-name</code></em>] [-n <em class="replaceable"><code>number</code></em>] [-LMOSclw]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfsched</code>  [-P <em class="replaceable"><code>gfarm-URL</code></em>] [-D <em class="replaceable"><code>domain-name</code></em>] [-n <em class="replaceable"><code>number</code></em>] [-LMOSlw]</p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
@@ -66,10 +66,20 @@ This option makes scheduling faster,
 but also creates a risk that hosts which is network-unreachable or
 fails authentication with the user may be scheduled.
 </p></dd>
+<dt><span class="term"><code class="option">-O</code></span></dt>
+<dd><p>
+Displays filesystem nodes where the hosts are other than the host that
+the gfsched command is running.
+</p></dd>
 <dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>gfarm-URL</code></em></span></dt>
 <dd><p>Specifies a <em class="parameter"><code>gfarm-URL</code></em> or a pathname
 to identify a metadata server which is used for the scheduling.
 This option conflicts with the <code class="option">-f</code> option.
+</p></dd>
+<dt><span class="term"><code class="option">-S</code></span></dt>
+<dd><p>
+Displays a filesystem node where the host is same with the host that
+the gfsched command is running.
 </p></dd>
 <dt><span class="term"><code class="option">-f</code> <em class="parameter"><code>gfarm-URL</code></em></span></dt>
 <dd><p>The <span class="command"><strong>gfsched</strong></span> command schedules file system nodes

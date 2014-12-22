@@ -2,12 +2,12 @@
 .\"     Title: gfsched
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 28 Dec 2010
+.\"      Date: 22 Dec 2014
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSCHED" "1" "28 Dec 2010" "Gfarm" "Gfarm"
+.TH "GFSCHED" "1" "22 Dec 2014" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,9 +31,9 @@
 gfsched \- ファイルシステムノードをスケジューリングし、利用可能なノードを表示
 .SH "SYNOPSIS"
 .HP \w'\fBgfsched\fR\ 'u
-\fBgfsched\fR \-f\ \fIgfarm\-URL\fR [\-D\ \fIドメイン名\fR] [\-n\ \fIノード数\fR] [\-LMclw]
+\fBgfsched\fR \-f\ \fIgfarm\-URL\fR [\-D\ \fIドメイン名\fR] [\-n\ \fIノード数\fR] [\-LMOSclw]
 .HP \w'\fBgfsched\fR\ 'u
-\fBgfsched\fR [\-P\ \fIgfarm\-URL\fR] [\-D\ \fIドメイン名\fR] [\-n\ \fIノード数\fR] [\-LMlw]
+\fBgfsched\fR [\-P\ \fIgfarm\-URL\fR] [\-D\ \fIドメイン名\fR] [\-n\ \fIノード数\fR] [\-LMOSlw]
 .SH "DESCRIPTION"
 .PP
 
@@ -65,10 +65,20 @@ gfsched \- ファイルシステムノードをスケジューリングし、利
 メタデータサーバに問い合わせた結果のみを表示し、クライアント側での スケジューリング処理を行ないません。 このオプションを指定すると、動作は高速になりますが、ネットワーク的に到 達不能なホストや、認証不能なホストが表示される危険があります。
 .RE
 .PP
+\fB\-O\fR
+.RS 4
+gfsched コマンドを実行しているホストとは異なるホストである ファイルシステムノードのみ表示します。
+.RE
+.PP
 \fB\-P\fR \fIgfarm\-URL\fR
 .RS 4
 ファイルシステムノードを管理するメタデータサーバを特定する ために、gfarm\-URL ないしパス名を指定します。 このオプションは、\fB\-f\fR
 オプションと排他的です。
+.RE
+.PP
+\fB\-S\fR
+.RS 4
+gfsched コマンドを実行しているホストと同一ホストである ファイルシステムノードのみ表示します。
 .RE
 .PP
 \fB\-f\fR \fIgfarm\-URL\fR
