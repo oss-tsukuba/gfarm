@@ -344,7 +344,12 @@ get_pgsql_status()
 {
 	log_debug "get_pgsql_status"
 
-	$BACKEND_RC status > /dev/null 2>&1
+	if [ -x /bin/systemctl ]; then
+		systemctl status `basename $BACKEND_RC` > /dev/null 2>&1
+	else
+		$BACKEND_RC status > /dev/null 2>&1
+	fi
+
 	if [ $? -eq 0 ]; then
 		log_debug "end get_pgsql_status: return 0"
 		return 0
@@ -362,7 +367,14 @@ get_gfmd_status()
 {
 	log_debug "get_gfmd_status"
 
-	$GFMD_RC status > /dev/null 2>&1
+	if [ -x /bin/systemctl ]; then
+		systemctl status `basename $GFMD_RC` > /dev/null 2>&1
+		RESULT=$?
+	else
+		$GFMD_RC status > /dev/null 2>&1
+		RESULT=$?
+	fi
+
 	if [ $? -eq 0 ]; then
 		log_debug "end get_gfmd_status: return 0"
 		return 0
@@ -380,7 +392,14 @@ get_gfsd_status()
 {
 	log_debug "get_gfsd_status"
 
-	$GFSD_RC status > /dev/null 2>&1
+	if [ -x /bin/systemctl ]; then
+		systemctl status `basename $GFSD_RC` > /dev/null 2>&1
+		RESULT=$?
+	else
+		$GFSD_RC status > /dev/null 2>&1
+		RESULT=$?
+	fi
+
 	if [ $? -eq 0 ]; then
 		log_debug "end get_gfsd_status: return 0"
 		return 0
@@ -388,6 +407,192 @@ get_gfsd_status()
 		log_debug "end get_gfsd_status: return 1"
 		return 1
 	fi
+}
+
+#
+# Start backend DB.
+#
+start_backend_db()
+{
+	log_debug "start_backend_db"
+
+	if [ -x /bin/systemctl ]; then
+		log_debug "start_backend_db: execute gfservice-timeout $1" \
+			"systemctl start `basename $BACKEND_RC`"
+		gfservice-timeout $1 systemctl start \
+			`basename $BACKEND_RC` > /dev/null 2>&1
+	else
+		log_debug "start_backend_db: execute gfservice-timeout $1" \
+			"$BACKEND_RC start"
+		gfservice-timeout $1 $BACKEND_RC start > /dev/null 2>&1
+	fi
+	log_debug "end start_backend_db"
+}
+
+#
+# Stop backend DB.
+#
+stop_backend_db()
+{
+	log_debug "stop_backend_db"
+
+	TIMEOUT=`get_param timeout || echo 'no'`
+
+	if [ -x /bin/systemctl ]; then
+		log_debug "stop_backend_db: execute gfservice-timeout $1" \
+			"systemctl stop `basename $BACKEND_RC`"
+		gfservice-timeout $1 systemctl stop \
+			`basename $BACKEND_RC` > /dev/null 2>&1
+	else
+		log_debug "stop_backend_db: execute gfservice-timeout $1" \
+			"$BACKEND_RC stop"
+		gfservice-timeout $1 $BACKEND_RC stop > /dev/null 2>&1
+	fi
+	log_debug "end stop_backend_db"
+}
+
+#
+# Start gfmd.
+#
+start_gfmd()
+{
+	log_debug "start_gfmd"
+
+	TIMEOUT=`get_param timeout || echo 'no'`
+
+	if [ -x /bin/systemctl ]; then
+		log_debug "start_gfmd: execute gfservice-timeout $1" \
+			"systemctl start `basename $GFMD_RC`"
+		gfservice-timeout $1 systemctl start \
+			`basename $GFMD_RC` > /dev/null 2>&1
+	else
+		log_debug "start_gfmd: execute gfservice-timeout $1" \
+			"$GFMD_RC start"
+		gfservice-timeout $1 $GFMD_RC start > /dev/null 2>&1
+	fi
+	[ $? -eq $EXITCODE_TIMEOUT ] && log_error "failed to start backend DB"
+
+	log_debug "end: start_gfmd"
+}
+
+#
+# Start gfmd as a slave.
+#
+slavestart_gfmd()
+{
+	log_debug "slavestart_gfmd"
+
+	TIMEOUT=`get_param timeout || echo 'no'`
+
+	if [ -x /bin/systemctl ]; then
+		log_debug "slavestart_gfmd: execute gfservice-timeout $1" \
+			"systemctl start `basename $GFMD_RC`"
+		gfservice-timeout $1 systemctl slavestart \
+			`basename $GFMD_RC` > /dev/null 2>&1
+	else
+		log_debug "slavestart_gfmd: execute gfservice-timeout $1" \
+			"$GFMD_RC start"
+		gfservice-timeout $1 $GFMD_RC slavestart > /dev/null 2>&1
+	fi
+	[ $? -eq $EXITCODE_TIMEOUT ] && log_error "failed to slavestart backend DB"
+
+	log_debug "end: slavestart_gfmd"
+}
+
+#
+# Stop gfmd.
+#
+stop_gfmd()
+{
+	log_debug "stop_gfmd"
+
+	TIMEOUT=`get_param timeout || echo 'no'`
+
+	if [ -x /bin/systemctl ]; then
+		log_debug "start_gfmd: execute gfservice-timeout $1" \
+			"systemctl stop `basename $GFMD_RC`"
+		gfservice-timeout $1 systemctl stop \
+			`basename $GFMD_RC` > /dev/null 2>&1
+	else
+		log_debug "stop_gfmd: execute gfservice-timeout $1" \
+			"$GFMD_RC stop"
+		gfservice-timeout $1 $GFMD_RC stop > /dev/null 2>&1
+	fi
+	[ $? -eq $EXITCODE_TIMEOUT ] && log_error "failed to stop backend DB"
+
+	log_debug "end: stop_gfmd"
+}
+
+#
+# Kill gfmd.
+#
+kill_gfmd()
+{
+	log_debug "kill_gfmd"
+
+	TIMEOUT=`get_param timeout || echo 'no'`
+
+	if [ -x /bin/systemctl ]; then
+		log_debug "start_gfmd: execute gfservice-timeout $1" \
+			"systemctl kill `basename $GFMD_RC`"
+		gfservice-timeout $1 systemctl kill \
+			`basename $GFMD_RC` > /dev/null 2>&1
+	else
+		log_debug "kill_gfmd: execute gfservice-timeout $1" \
+			"$GFMD_RC kill"
+		gfservice-timeout $1 $GFMD_RC kill > /dev/null 2>&1
+	fi
+	[ $? -eq $EXITCODE_TIMEOUT ] && log_error "failed to kill backend DB"
+
+	log_debug "end: kill_gfmd"
+}
+
+#
+# Start gfsd.
+#
+start_gfsd()
+{
+	log_debug "start_gfsd"
+
+	TIMEOUT=`get_param timeout || echo 'no'`
+
+	if [ -x /bin/systemctl ]; then
+		log_debug "start_gfsd: execute gfservice-timeout $1" \
+			"systemctl start `basename $GFSD_RC`"
+		gfservice-timeout $1 systemctl start \
+			`basename $GFSD_RC` > /dev/null 2>&1
+	else
+		log_debug "start_gfsd: execute gfservice-timeout $1" \
+			"$GFSD_RC start"
+		gfservice-timeout $1 $GFSD_RC start > /dev/null 2>&1
+	fi
+	[ $? -eq $EXITCODE_TIMEOUT ] && log_error "failed to start backend DB"
+
+	log_debug "end: start_gfsd"
+}
+
+#
+# Stop gfsd.
+#
+stop_gfsd()
+{
+	log_debug "stop_gfsd"
+
+	TIMEOUT=`get_param timeout || echo 'no'`
+
+	if [ -x /bin/systemctl ]; then
+		log_debug "stop_gfsd: execute gfservice-timeout $1" \
+			"systemctl stop `basename $GFSD_RC`"
+		gfservice-timeout $1 systemctl stop \
+			`basename $GFSD_RC` > /dev/null 2>&1
+	else
+		log_debug "stop_gfsd: execute gfservice-timeout $1" \
+			"$GFSD_RC stop"
+		gfservice-timeout $1 $GFSD_RC stop > /dev/null 2>&1
+	fi
+	[ $? -eq $EXITCODE_TIMEOUT ] && log_error "failed to stop backend DB"
+
+	log_debug "end: stop_gfsd"
 }
 
 ######################################################################
@@ -505,10 +710,7 @@ subcmd_start_backend_db()
 	log_debug "subcmd_start_backend_db"
 
 	TIMEOUT=`get_param timeout || echo 'no'`
-	log_debug "subcmd_start_backend_db:" \
-		"execute gfservice-timeout $TIMEOUT $BACKEND_RC start"
-	gfservice-timeout $TIMEOUT $BACKEND_RC start > /dev/null 2>&1
-
+	start_backend_db $TIMEOUT
 	log_debug "end subcmd_start_backend_db"
 }
 
@@ -521,11 +723,7 @@ subcmd_start_gfmd()
 	log_debug "subcmd_start_gfmd"
 
 	TIMEOUT=`get_param timeout || echo 'no'`
-	log_debug "subcmd_start_gfmd:" \
-		"execute gfservice-timeout $TIMEOUT $GFMD_RC start"
-	gfservice-timeout $TIMEOUT $GFMD_RC start > /dev/null 2>&1
-	[ $? -eq $EXITCODE_TIMEOUT ] && log_error "failed to start backend DB"
-
+	start_gfmd $TIMEOUT
 	log_debug "subcmd_start_gfmd"
 }
 
@@ -541,9 +739,7 @@ subcmd_start_gfmd_master()
 	unset_conf $GFMD_CONF metadb_server_force_slave
 	log_debug "subcmd_start_gfmd_master:" \
 		"execute gfservice-timeout $TIMEOUT $GFMD_RC start"
-	gfservice-timeout $TIMEOUT $GFMD_RC start > /dev/null 2>&1
-	[ $? -eq $EXITCODE_TIMEOUT ] && log_error "failed to start gfmd"
-
+	start_gfmd $TIMEOUT
 	log_debug "end subcmd_start_gfmd_master"
 }
 
@@ -556,11 +752,7 @@ subcmd_start_gfmd_slave()
 	log_debug "subcmd_start_gfmd_slave"
 
 	TIMEOUT=`get_param timeout || echo 'no'`
-	log_debug "subcmd_start_gfmd_slave:" \
-		"execute gfservice-timeout $TIMEOUT $GFMD_RC slavestart"
-	gfservice-timeout $TIMEOUT $GFMD_RC slavestart > /dev/null 2>&1
-	[ $? -eq $EXITCODE_TIMEOUT ] && log_error "failed to start gfmd"
-
+	slsvestart_gfmd $TIMEOUT
 	log_debug "end subcmd_start_gfmd_slave"
 }
 
@@ -573,11 +765,7 @@ subcmd_start_gfsd()
 	log_debug "subcmd_start_gfsd"
 
 	TIMEOUT=`get_param timeout || echo 'no'`
-	log_debug "subcmd_start_gfsd:" \
-		"execute gfservice-timeout $TIMEOUT $GFSD_RC start"
-	gfservice-timeout $TIMEOUT $GFSD_RC start > /dev/null 2>&1
-	[ $? -eq $EXITCODE_TIMEOUT ] && log_error "failed to start gfsd"
-
+	start_gfsd $TIMEOUT
 	log_debug "end subcmd_start_gfsd"
 }
 
@@ -590,11 +778,7 @@ subcmd_stop_backend_db()
 	log_debug "subcmd_stop_backend_db"
 
 	TIMEOUT=`get_param timeout || echo 'no'`
-	log_debug "subcmd_stop_backend_db:" \
-		"execute gfservice-timeout $TIMEOUT $BACKEND_RC stop"
-	gfservice-timeout $TIMEOUT $BACKEND_RC stop > /dev/null 2>&1
-	[ $? -eq $EXITCODE_TIMEOUT ] && log_error "failed to stop backend DB"
-
+	stop_backend_db $TIMEOUT
 	log_debug "end subcmd_stop_backend_db"
 }
 
@@ -607,11 +791,7 @@ subcmd_stop_gfmd()
 	log_debug "subcmd_stop_gfmd"
 
 	TIMEOUT=`get_param timeout || echo 'no'`
-	log_debug "subcmd_stop_gfmd:" \
-		"execute gfservice-timeout $TIMEOUT $GFMD_RC stop"
-	gfservice-timeout $TIMEOUT $GFMD_RC stop > /dev/null 2>&1
-	[ $? -eq $EXITCODE_TIMEOUT ] && log_error "failed to stop gfmd"
-
+	stop_gfmd $TIMEOUT
 	log_debug "end subcmd_stop_gfmd"
 }
 
@@ -624,11 +804,7 @@ subcmd_kill_gfmd()
 	log_debug "subcmd_kill_gfmd"
 
 	TIMEOUT=`get_param timeout || echo 'no'`
-	log_debug "subcmd_kill_gfmd:" \
-		"execute gfservice-timeout $TIMEOUT $GFMD_RC kill"
-	gfservice-timeout $TIMEOUT $GFMD_RC kill > /dev/null 2>&1
-	[ $? -eq $EXITCODE_TIMEOUT ] && log_error "failed to kill gfmd"
-
+	kill_gfmd $TIMEOUT
 	log_debug "end subcmd_kill_gfmd"
 }
 
@@ -641,11 +817,7 @@ subcmd_stop_gfsd()
 	log_debug "subcmd_stop_gfsd"
 
 	TIMEOUT=`get_param timeout || echo 'no'`
-	log_debug "subcmd_stop_gfsd:" \
-		"execute gfservice-timeout $TIMEOUT $GFSD_RC stop"
-	gfservice-timeout $TIMEOUT $GFSD_RC stop > /dev/null 2>&1
-	[ $? -eq $EXITCODE_TIMEOUT ] && log_error "failed to stop gfsd"
-
+	stop_gfmd $TIMEOUT
 	log_debug "end subcmd_stop_gfsd"
 }
 
@@ -709,8 +881,9 @@ subcmd_unconfig_gfarm()
 {
 	log_debug "subcmd_unconfig_gfarm"
 
-	[ -f $GFMD_RC ] && $GFMD_RC stop > /dev/null 2>&1
-	[ -f $BACKEND_RC ] && $BACKEND_RC stop > /dev/null 2>&1
+	TIMEOUT=`get_param timeout || echo 'no'`
+	[ -f $GFMD_RC ] && stop_gfmd $TIMEOUT > /dev/null 2>&1
+	[ -f $BACKEND_RC ] && stop_backend_db $TIMEOUT > /dev/null 2>&1
 	rm -f $GFMD_PID_FILE
 	rm -f $GFARM_CONF
 	rm -f $GFMD_CONF
@@ -732,7 +905,8 @@ subcmd_unconfig_gfsd()
 {
 	log_debug "subcmd_unconfig_gfsd"
 
-	[ -f $GFSD_RC ] && $GFSD_RC stop > /dev/null 2>&1
+	TIMEOUT=`get_param timeout || echo 'no'`
+	[ -f $GFSD_RC ] && stop_gfsd $TIMEOUT > /dev/null 2>&1
 	rm -f $GFSD_PID_FILE
 	rm -f $GFARM_CONF
 	rm -f $GFSD_RC
