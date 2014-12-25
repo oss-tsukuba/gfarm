@@ -23,6 +23,7 @@ DOCBOOK = \
 	gfquotacheck.1 \
 	gfreg.1 \
 	gfrep.1 \
+	gfrm.1 \
 	gfrmdir.1 \
 	gfsched.1 \
 	gfsetfacl.1 \
@@ -67,7 +68,6 @@ DOCBOOK = \
 #	gfps.1 \
 #	gfpwd.1 \
 #	gfrcmd.1 \
-#	gfrm.1 \
 #	gfront.1 \
 #	gfrun.1 \
 #	gfsetdir.1 \
