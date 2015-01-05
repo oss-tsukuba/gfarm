@@ -1536,7 +1536,7 @@ main(int argc, char **argv)
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int ch, sock, table_size;
 	sigset_t sigs;
-	int is_master;
+	int is_master, replication_enabled;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -1753,9 +1753,15 @@ main(int argc, char **argv)
 		    "create_detached_thread(resumer): %s",
 		    gfarm_error_string(e));
 
-	if (gfarm_get_metadb_replication_enabled())
+	replication_enabled = gfarm_get_metadb_replication_enabled();
+	is_master = mdhost_self_is_master();
+	if (replication_enabled)
 		start_db_journal_threads();
-	if (mdhost_self_is_master()) {
+	if (is_master) {
+		if (replication_enabled && gfmdc_is_master_gfmd_running()) {
+			gflog_fatal(GFARM_MSG_1003840,
+			    "another master gfmd is already running");
+		}
 		/* these functions write db, thus, must be after db_thread  */
 		inode_remove_orphan(); /* should be before
 					  inode_check_and_repair() */
@@ -1763,20 +1769,15 @@ main(int argc, char **argv)
 		quota_check();
 	}
 	inode_free_orphan();
-	if (gfarm_get_metadb_replication_enabled()) {
-		is_master = mdhost_self_is_master();
+	if (replication_enabled) {
 		gflog_info(GFARM_MSG_1002737,
 		    "metadata replication %s mode",
 		    is_master ? "master" : "slave");
 		start_gfmdc_threads();
 		gfmd_startup_state_notify_ready();
-		if (is_master) {
-			if (gfmdc_is_master_gfmd_running()) {
-				gflog_fatal(GFARM_MSG_1003840,
-				    "another master gfmd is already running");
-			}
+		if (is_master)
 			sock = open_accepting_socket(gfarm_metadb_server_port);
-		} else
+		else
 			sock = wait_transform_to_master();
 	} else
 		sock = open_accepting_socket(gfarm_metadb_server_port);
