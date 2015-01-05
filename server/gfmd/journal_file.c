@@ -1449,7 +1449,7 @@ journal_file_reader_reopen_if_needed(struct journal_file *jf,
 	int *initedp)
 {
 	gfarm_error_t e, e2;
-	int fd = -1, save_errno;
+	int fd = -1;
 	off_t rpos, wpos;
 	gfarm_uint64_t rlap, wlap, cur_wlap;
 	off_t tail;
@@ -1476,7 +1476,6 @@ journal_file_reader_reopen_if_needed(struct journal_file *jf,
 
 	gfarm_privilege_lock(diag);
 	fd = open(jf->path, O_RDONLY);
-	save_errno = errno;
 	gfarm_privilege_unlock(diag);
 	if (fd == -1) {
 		e = gfarm_errno_to_error(errno);
