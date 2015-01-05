@@ -752,7 +752,7 @@ subcmd_start_gfmd_slave()
 	log_debug "subcmd_start_gfmd_slave"
 
 	TIMEOUT=`get_param timeout || echo 'no'`
-	slsvestart_gfmd $TIMEOUT
+	slavestart_gfmd $TIMEOUT
 	log_debug "end subcmd_start_gfmd_slave"
 }
 
