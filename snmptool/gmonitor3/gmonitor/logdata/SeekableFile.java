@@ -25,9 +25,9 @@ public interface SeekableFile {
 	public long size() throws IOException;
 
 	/**
-	 * @param buf 読み出しバッファ
-	 * @param idx バッファ中の開始位置
-	 * @param amount 読み出し量
+	 * @param buf 隱ｭ縺ｿ蜃ｺ縺励ヰ繝�繝輔ぃ
+	 * @param idx 繝舌ャ繝輔ぃ荳ｭ縺ｮ髢句ｧ倶ｽ咲ｽｮ
+	 * @param amount 隱ｭ縺ｿ蜃ｺ縺鈴㍼
 	 * @return
 	 * @throws java.io.IOException
 	 */

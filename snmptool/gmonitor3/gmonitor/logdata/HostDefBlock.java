@@ -31,7 +31,7 @@ public class HostDefBlock extends BinaryBlock {
 	}
 	/* (non-Javadoc)
 	 * @see BinaryBlock#parse_binary_block(java.io.InputStream)
-	 * {IPƒAƒhƒŒƒX(•¶Žš—ñ)}{NULL}{FQDN}{NULL}{—ªÌ}{NULL}{ƒRƒ~ƒ…ƒjƒeƒBƒXƒgƒŠƒ“ƒO}{NULL}
+	 * {IPã‚¢ãƒ‰ãƒ¬ã‚¹(æ–‡å­—åˆ—)}{NULL}{FQDN}{NULL}{ç•¥ç§°}{NULL}{ã‚³ãƒŸãƒ¥ãƒ‹ãƒ†ã‚£ã‚¹ãƒˆãƒªãƒ³ã‚°}{NULL}
 	 */
 	protected void parse_binary_block(InputStream is) throws IOException {
 		byte[] buf = new byte[STRLEN];
