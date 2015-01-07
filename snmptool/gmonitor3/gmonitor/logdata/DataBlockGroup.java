@@ -17,10 +17,10 @@ import java.util.Date;
  */
 public class DataBlockGroup extends ArrayList {
 
-	// ‚±‚±‚Å–ß‚³‚ê‚é ArrayList ‚ÍA•K‚¸ java.util.Date ‚Æ DataElement ‚ª‘g‚É‚È‚Á‚Ä‚¢‚éB
+	// ã“ã“ã§æˆ»ã•ã‚Œã‚‹ ArrayList ã¯ã€å¿…ãš java.util.Date ã¨ DataElement ãŒçµ„ã«ãªã£ã¦ã„ã‚‹ã€‚
 	public ArrayList pickData(DataBlockGroupTable tbl, int hidx, int oidx)
 	{
-		// hidx ‚Æ oidx ‚Éƒ}ƒbƒ`‚·‚éƒf[ƒ^‚ğŒŸõ‚µ‚Äæ‚èo‚·B
+		// hidx ã¨ oidx ã«ãƒãƒƒãƒã™ã‚‹ãƒ‡ãƒ¼ã‚¿ã‚’æ¤œç´¢ã—ã¦å–ã‚Šå‡ºã™ã€‚
 		ArrayList ret = new ArrayList();
 		ArrayList rows = tbl.getDataBlockGroupElements();
 		synchronized(this){
@@ -28,7 +28,7 @@ public class DataBlockGroup extends ArrayList {
 				DataBlockGroupElement[] row = (DataBlockGroupElement[]) rows.get(i);
 				for(int j = 0; j < row.length; j++){
 					if(row[j].isPairOfHIDandOID(hidx, oidx) == true){
-						// ‚±‚Ì row ‚ÉƒyƒA‚ğ”­Œ©‚µ‚½
+						// ã“ã® row ã«ãƒšã‚¢ã‚’ç™ºè¦‹ã—ãŸ
 						DataBlock db = (DataBlock) this.get(i);
 						long t = db.getTime();
 						Date dt = new Date(t);
@@ -36,9 +36,9 @@ public class DataBlockGroup extends ArrayList {
 						DataElement de = (DataElement) delist.get(j);
 						ret.add(dt);
 						ret.add(de);
-						// row@‚É‚Í•K‚¸‚Ğ‚Æ‚Â‚Ìƒf[ƒ^‚µ‚©‚È‚¢B“ñ‚ÂˆÈã‘¶İ‚µ‚Ä‚àA‚ª“¯ˆê‚Å‚ ‚é
-						// ˆÈãA“¯‚¶Œv‘ª’l‚Å‚È‚¯‚ê‚Î‚¨‚©‚µ‚¢B‚»‚à‚»‚àA“¯‚¶‚É‘¶İ‚·‚éˆÙ‚È‚éŒv
-						// ‘ª’l‚ğ³‚µ‚­ƒOƒ‰ƒt‚É•`‰æ‚·‚é‚±‚Æ‚Í‚Å‚«‚È‚¢B
+						// rowã€€ã«ã¯å¿…ãšã²ã¨ã¤ã®ãƒ‡ãƒ¼ã‚¿ã—ã‹ãªã„ã€‚äºŒã¤ä»¥ä¸Šå­˜åœ¨ã—ã¦ã‚‚ã€æ™‚åˆ»ãŒåŒä¸€ã§ã‚ã‚‹
+						// ä»¥ä¸Šã€åŒã˜è¨ˆæ¸¬å€¤ã§ãªã‘ã‚Œã°ãŠã‹ã—ã„ã€‚ãã‚‚ãã‚‚ã€åŒã˜æ™‚åˆ»ã«å­˜åœ¨ã™ã‚‹ç•°ãªã‚‹è¨ˆ
+						// æ¸¬å€¤ã‚’æ­£ã—ãã‚°ãƒ©ãƒ•ã«æç”»ã™ã‚‹ã“ã¨ã¯ã§ããªã„ã€‚
 						break;
 					}
 				}

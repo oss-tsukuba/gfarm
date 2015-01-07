@@ -17,34 +17,34 @@ import java.util.ArrayList;
 public class GraphMonitorModel {
 
 	/**
-	 * Œv‘ªƒf[ƒ^‚ÌŒn—ñ(“à•”‚É‚Í RawData Œ^‚Ì‚İ‚ğ‹–—e‚·‚é‚±‚ÆBRawData[] ‚Æ‚µ‚Äˆµ‚¤)
-	 * •¡”Œn—ñ‚ÌƒTƒ|[ƒg‚Ì‚½‚ßB
+	 * è¨ˆæ¸¬ãƒ‡ãƒ¼ã‚¿ã®ç³»åˆ—(å†…éƒ¨ã«ã¯ RawData å‹ã®ã¿ã‚’è¨±å®¹ã™ã‚‹ã“ã¨ã€‚RawData[] ã¨ã—ã¦æ‰±ã†)
+	 * è¤‡æ•°ç³»åˆ—ã®ã‚µãƒãƒ¼ãƒˆã®ãŸã‚ã€‚
 	 */
 	private ArrayList rawdata;
 	
 	/**
-	 * ‡Zƒ‚[ƒh‚Å“®ì‚·‚×‚«‚©‚Ç‚¤‚©‚Ìƒtƒ‰ƒO
+	 * åˆç®—ãƒ¢ãƒ¼ãƒ‰ã§å‹•ä½œã™ã¹ãã‹ã©ã†ã‹ã®ãƒ•ãƒ©ã‚°
 	 */
 	private boolean sumMode = false;
 
 	/**
-	 * •\¦‚³‚ê‚é‚×‚«ŠÔ”ÍˆÍ‚ÌŠJn“ú(JavaŠÔƒ~ƒŠ•b’PˆÊ)
+	 * è¡¨ç¤ºã•ã‚Œã‚‹ã¹ãæ™‚é–“ç¯„å›²ã®é–‹å§‹æ—¥æ™‚(Javaæ™‚é–“ãƒŸãƒªç§’å˜ä½)
 	 */
 	private long begin;
 
 	/**
-	 * •\¦‚³‚ê‚é‚×‚«ŠÔ•(JavaŠÔƒ~ƒŠ•b’PˆÊ)
+	 * è¡¨ç¤ºã•ã‚Œã‚‹ã¹ãæ™‚é–“å¹…(Javaæ™‚é–“ãƒŸãƒªç§’å˜ä½)
 	 */
 	private long term;
 
 	/**
-	 * Ú“ª«‚Ì”‘å‚«‚³(K, M, G, T, ... ‚Ì”{—¦B‚½‚Æ‚¦‚ÎK‚Ìê‡1000‚Æ‚·‚é)
+	 * æ¥é ­è¾ã®æ•°å¤§ãã•(K, M, G, T, ... ã®å€ç‡ã€‚ãŸã¨ãˆã°Kã®å ´åˆ1000ã¨ã™ã‚‹)
 	 * @return
 	 */
 	private long prefixFactor = 1;
 
 	/**
-	 * Œv‘ª’lŒn—ñŒQ’†‚ÌÅ‘å’l(Œn—ñŒQ‚Ì’†‚Å‚ÌÅ‘å’l)
+	 * è¨ˆæ¸¬å€¤ç³»åˆ—ç¾¤ä¸­ã®æœ€å¤§å€¤(ç³»åˆ—ç¾¤ã®ä¸­ã§ã®æœ€å¤§å€¤)
 	 */
 	private long maxValue;
 	private long maxValueTime;
@@ -58,7 +58,7 @@ public class GraphMonitorModel {
 	private double avgValue;
 
 	/**
-	 * Œv‘ª’lŒn—ñŒQ’†‚ÌƒOƒ‰ƒtc²‚ÌÅ‘å’l(10, 100, 1000, 10000, ...)
+	 * è¨ˆæ¸¬å€¤ç³»åˆ—ç¾¤ä¸­ã®ã‚°ãƒ©ãƒ•ç¸¦è»¸ã®æœ€å¤§å€¤(10, 100, 1000, 10000, ...)
 	 * @return
 	 */
 	private long topValue;
@@ -151,10 +151,10 @@ public class GraphMonitorModel {
 	 * @param list
 	 */
 	public void setRawDataSeries(ArrayList list, long magnification) {
-		// ƒZƒbƒg
+		// ã‚»ãƒƒãƒˆ
 		rawdata = list;
 
-		// TopValue, MaxValue ‚ğŒvZ‚µ‚ÄŠo‚¦‚Ä‚¨‚­B
+		// TopValue, MaxValue ã‚’è¨ˆç®—ã—ã¦è¦šãˆã¦ãŠãã€‚
 		long tTmp = 0;
 		long maxTmp = 0;
 		long minTmp = -1;

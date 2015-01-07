@@ -31,7 +31,7 @@ public class OIDDefBlock extends BinaryBlock {
 	}
 	/* (non-Javadoc)
 	 * @see BinaryBlock#parse_binary_block(java.io.InputStream)
-	 * {OID(ASN.1‚Å‚Í‚È‚­•¶š—ñ)}{NULL}{—ªÌ}{NULL}
+	 * {OID(ASN.1ã§ã¯ãªãæ–‡å­—åˆ—)}{NULL}{ç•¥ç§°}{NULL}
 	 */
 	protected void parse_binary_block(InputStream is) throws IOException {
 		byte[] buf = new byte[STRLEN];

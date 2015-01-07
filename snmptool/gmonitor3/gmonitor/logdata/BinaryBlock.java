@@ -98,7 +98,7 @@ public abstract class BinaryBlock {
 	}
 	protected void deserialize(InputStream is, int sz) throws IOException
 	{
-		deserialize(is, sz, /* TO DEBUG */ true); // ƒƒ‚ƒŠ‚ğß–ñ‚·‚é‚½‚ß‚É‚Í false ‚É‚·‚é‚±‚Æ
+		deserialize(is, sz, /* TO DEBUG */ true); // ãƒ¡ãƒ¢ãƒªã‚’ç¯€ç´„ã™ã‚‹ãŸã‚ã«ã¯ false ã«ã™ã‚‹ã“ã¨
 	}
 //	protected void deserialize(InputStream is, int sz) throws IOException
 //	{

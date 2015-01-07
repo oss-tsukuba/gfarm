@@ -10,7 +10,7 @@
 
 	<target name="compile">
 		<mkdir dir="${outdir}"/>
-		<javac srcdir="${gmonitordir}" destdir="${outdir}"/>
+		<javac srcdir="${gmonitordir}" destdir="${outdir}" encoding="UTF-8"/>
 	</target>
 
 	<target name="clean">

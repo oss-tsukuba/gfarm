@@ -34,9 +34,9 @@ public class GlogDump {
 	{
 		for(int i = 0; i < args.length; i++){
 			if(args[i].startsWith("-")){
-				// ƒIƒvƒVƒ‡ƒ“‚Ìˆ—
+				// ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã®å‡¦ç†
 			}else{
-				// ƒtƒ@ƒCƒ‹–¼‚Ìˆ—
+				// ãƒ•ã‚¡ã‚¤ãƒ«åã®å‡¦ç†
 				filename = args[i];
 			}
 		}
