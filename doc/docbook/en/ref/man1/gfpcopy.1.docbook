@@ -68,7 +68,7 @@ files under the directory will be copied recursively.
 </para>
 <para>
 <command moreinfo="none">gfpcopy</command> can also read the directory and get
-informations of the entries in parallel.
+information of the entries in parallel.
 </para>
 </refsect1>
 

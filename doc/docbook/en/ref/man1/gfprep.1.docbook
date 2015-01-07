@@ -68,7 +68,7 @@ directory, files under the directory will be replicated recursively.
 </para>
 <para>
 <command moreinfo="none">gfprep</command> can also read the directory and get
-informations of the entries in parallel.
+information of the entries in parallel.
 </para>
 </refsect1>
 
@@ -294,7 +294,7 @@ The default value is 10000.
 <listitem>
 <para>
 Specifies a throughput(KB/s) to simulate the replication/copy, and
-does nothing (gets file informations only).
+does nothing (gets file information only).
 </para>
 </listitem>
 </varlistentry>

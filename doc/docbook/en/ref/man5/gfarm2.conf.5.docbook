@@ -1215,7 +1215,7 @@ The default ratio is 4.0.
 <term><token>write_local_priority</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>Gfarm nearly always chooses localhost, when it selects a filesystem
-node to write a file. By specifing the <token>disable</token> keyword in
+node to write a file. By specifyng the <token>disable</token> keyword in
 this directive, Gfarm handles localhost the same as other
 filesystem nodes.
 <!--

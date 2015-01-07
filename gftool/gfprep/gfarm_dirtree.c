@@ -531,7 +531,7 @@ dents_error:
 		if (name[0] == '.' &&
 		    (name[1] == '\0' || (name[1] == '.' && name[2] == '\0')))
 			goto dents_loop; /* . and .. : skip */
-		/* send entry informations */
+		/* send entry information */
 		gfpara_send_int(tmpfp, DIRTREE_ENTRY_NAME);
 		/* 1: subpath/name */
 		if (subpath[0] == '\0')
