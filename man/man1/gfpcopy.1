@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfpcopy
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
 .\"      Date: 29 Jun 2014
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -34,7 +34,6 @@ gfpcopy \- copy Gfarm files in parallel
 \fBgfpcopy\fR [\-nqvdpPU] [\-f] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fIlimit\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-b\ \fIbufsize\fR] \fIsource\-path\fR \fIdestination\-path\fR
 .SH "DESCRIPTION"
 .PP
-
 \fBgfpcopy\fR
 copies files and directries in parallel\&.
 .PP
@@ -44,9 +43,8 @@ If the
 \fIsource\-url\fR
 parameter is a directory, files under the directory will be copied recursively\&.
 .PP
-
 \fBgfpcopy\fR
-can also read the directory and get informations of the entries in parallel\&.
+can also read the directory and get information of the entries in parallel\&.
 .SH "GFPCOPY OPTIONS"
 .PP
 These are the options only for
@@ -67,7 +65,6 @@ Without \-f option, existing destination files will be overwritten when that the
 .RE
 .SH "COMMON OPTIONS"
 .PP
-
 \fBgfpcopy\fR
 has the same options with
 \fBgfprep\fR\&. (see man
@@ -148,7 +145,6 @@ are far apart, the
 operation is slow\&. Specifying a large value by \-j or \-J options may be effective in such a case\&.
 .SH "SEE ALSO"
 .PP
-
 \fBgfprep\fR(1),
 \fBgfreg\fR(1),
 \fBgfexport\fR(1),
