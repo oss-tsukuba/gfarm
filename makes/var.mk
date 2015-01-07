@@ -82,7 +82,7 @@ dstsubst = dummy
 LTFLAGS_SHARELIB_IN = -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -rpath
 CCLD = $(CC)
 
-LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(CFLAGS) $(CPPFLAGS)
 LTLINK = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LTLDFLAGS) $(LDFLAGS) -o $@
 LTCLEAN = $(LIBTOOL) --mode=clean $(RM) -f
 # the use of the following operations should honor $(DESTDIR)
