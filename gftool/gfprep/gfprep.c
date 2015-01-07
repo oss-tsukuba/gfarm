@@ -3093,7 +3093,7 @@ main(int argc, char *argv[])
 			opt.quiet = 1; /* shut up warnings */
 			break;
 		case 'v':
-			opt.verbose = 1; /* print more informations */
+			opt.verbose = 1; /* print more information */
 			break;
 		case 'd':
 			opt.debug = 1;
