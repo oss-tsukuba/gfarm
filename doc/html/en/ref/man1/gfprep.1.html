@@ -2,19 +2,19 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfprep</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfprep">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfprep.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfprep — replicate Gfarm files in parallel</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfprep</code>  [-nqvdpPU] [-mx] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>limit-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-N <em class="replaceable"><code>num-of-replicas</code></em>]  <em class="replaceable"><code>path</code></em> </p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 <span class="command"><strong>gfprep</strong></span> creates replicas of Gfarm
@@ -40,15 +40,15 @@ directory, files under the directory will be replicated recursively.
 </p>
 <p>
 <span class="command"><strong>gfprep</strong></span> can also read the directory and get
-informations of the entries in parallel.
+information of the entries in parallel.
 </p>
 </div>
-<div class="refsect1" title="GFPREP OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>GFPREP OPTIONS</h2>
 <p>
 These are the options only for <span class="command"><strong>gfprep</strong></span>.
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-N</code> <em class="parameter"><code>num-of-replicas</code></em></span></dt>
 <dd>
 <p>
@@ -80,13 +80,13 @@ This option and -N option are mutually exclusive.
 </dd>
 </dl></div>
 </div>
-<div class="refsect1" title="COMMON OPTIONS">
+<div class="refsect1">
 <a name="common-options"></a><h2>COMMON OPTIONS</h2>
 <p>
 <span class="command"><strong>gfprep</strong></span> has the same options
 with <span class="command"><strong>gfpcopy</strong></span>.
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-S</code> <em class="parameter"><code>source-domainname</code></em></span></dt>
 <dd><p>
 Specifies a domain name to select files.
@@ -209,7 +209,7 @@ The default value is 10000.
 <dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>kilobytes-per-sec.</code></em></span></dt>
 <dd><p>
 Specifies a throughput(KB/s) to simulate the replication/copy, and
-does nothing (gets file informations only).
+does nothing (gets file information only).
 </p></dd>
 <dt><span class="term"><code class="option">-n</code></span></dt>
 <dd><p>
@@ -237,7 +237,7 @@ Suppresses non-error messages.
 <dd><p>Displays a list of command options.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="EXAMPLES">
+<div class="refsect1">
 <a name="examples"></a><h2>EXAMPLES</h2>
 <p>
 To replicate files under the directory recursively.
@@ -262,7 +262,7 @@ To migrate replicas from gfsd1.example.com to other nodes.
 $ gfprep -m -S gfsd1.example.com gfarm:///<br>
 </p></div>
 </div>
-<div class="refsect1" title="NOTES">
+<div class="refsect1">
 <a name="notes"></a><h2>NOTES</h2>
 <p>
 When the -L or -m option is not specified, a source node is not always
@@ -277,7 +277,7 @@ Specifying a large value by -j or -J options may be effective in such
 a case.
 </p>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfrep</span>(1)</span>,

@@ -2,12 +2,21 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 12 Jun 2013
+.\"      Date: 16 Jul 2014
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
 .TH "GFARM2\&.CONF" "5" "16 Jul 2014" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -24,9 +33,9 @@ gfarm2.conf \- Gfarm configuration file
 .PP
 gfarm2\&.conf is a text file that contains a Gfarm configuration\&. Gfarm server processes gfmd and gfsd refer to %%SYSCONFDIR%%/gfmd\&.conf and %%SYSCONFDIR%%/gfarm2\&.conf, respectively, by default\&. Since this configuration file is only read at startup, it is necessary to restart servers when the contents of the configuration file are updated\&.
 .PP
-Application programs, such as gfls and gfhost, refer to both %%SYSCONFDIR%%/gfarm2\&.conf, and a file specified by an environment variable, GFARM_CONFIG_FILE\&. If both configuration files exist, the file specified by the environment variable, GFARM_CONFIG_FILE, is read first\&. Both files have the same grammar\&. If the environment variable GFARM_CONFIG_FILE doesn\'t exist, ~/\&.gfarm2rc in a user\'s home directory is used instead\&.
+Application programs, such as gfls and gfhost, refer to both %%SYSCONFDIR%%/gfarm2\&.conf, and a file specified by an environment variable, GFARM_CONFIG_FILE\&. If both configuration files exist, the file specified by the environment variable, GFARM_CONFIG_FILE, is read first\&. Both files have the same grammar\&. If the environment variable GFARM_CONFIG_FILE doesn\*(Aqt exist, ~/\&.gfarm2rc in a user\*(Aqs home directory is used instead\&.
 .PP
-Each line of gfarm2\&.conf consists of one statement\&. When the line ends with the character ``\e\'\', the line continues for the next line\&. A word beginning with ``#\'\' causes that word and all remaining characters on that line to be ignored\&.
+Each line of gfarm2\&.conf consists of one statement\&. When the line ends with the character ``\e\*(Aq\*(Aq, the line continues for the next line\&. A word beginning with ``#\*(Aq\*(Aq causes that word and all remaining characters on that line to be ignored\&.
 .SH "HOST_SPECIFICATION"
 .PP
 \fIHost_specification\fR
@@ -102,9 +111,9 @@ spool_server_listen_backlog \fInumber\fR
 .RS 4
 This statement specifies the second parameter of the
 \fBlisten\fR(2)
-system call that gfsd invokes\&. The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes which define this symbol in <sys/socket\&.h>, or 5 if it\'s undefined\&.
+system call that gfsd invokes\&. The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes which define this symbol in <sys/socket\&.h>, or 5 if it\*(Aqs undefined\&.
 .sp
-On an environment which has many gfarm clients, it\'s recommened to increase this value after increasing system limit\&.
+On an environment which has many gfarm clients, it\*(Aqs recommened to increase this value after increasing system limit\&.
 .sp
 This parameter is only available in gfarm2\&.conf, and ignored in gfmd\&.conf\&.
 .sp
@@ -127,9 +136,9 @@ This statement specifies the type of credential used by gfsd for GSI authenticat
 sharedsecret
 authentication\&.
 .sp
-If this statement isn\'t used on the server side, the server uses a host certificate, if the server is invoked with root privileges\&. Or, if the server is invoked as a non\-privileged user, the server uses the user\'s certificate\&.
+If this statement isn\*(Aqt used on the server side, the server uses a host certificate, if the server is invoked with root privileges\&. Or, if the server is invoked as a non\-privileged user, the server uses the user\*(Aqs certificate\&.
 .sp
-If this statement isn\'t used on the client side, the client assumes that the server that the client is going to connect is using a host certificate of the server host\&. Thus, if the server is not invoked with root privileges, but invoked with user privileges where the user is the same as the user who invoked the client, the client side needs to specify the following one line\&.
+If this statement isn\*(Aqt used on the client side, the client assumes that the server that the client is going to connect is using a host certificate of the server host\&. Thus, if the server is not invoked with root privileges, but invoked with user privileges where the user is the same as the user who invoked the client, the client side needs to specify the following one line\&.
 .sp
 Example:
 .sp
@@ -145,7 +154,7 @@ Example:
 .sp
 The possible types of
 \fIcred_type\fR
-are ``self\'\', ``host\'\', ``user\'\' and ``mechanism\-specific\'\'\&. And those are used with the
+are ``self\*(Aq\*(Aq, ``host\*(Aq\*(Aq, ``user\*(Aq\*(Aq and ``mechanism\-specific\*(Aq\*(Aq\&. And those are used with the
 spool_server_cred_service
 and
 spool_server_cred_name
@@ -164,7 +173,7 @@ host
 .RS 4
 This keyword specifies that a host certificate or a service certificate is used\&. To choose a service certificate, the name of the service may be specified by the
 spool_server_cred_service
-statement\&. If ``host\'\' is specified as the service name, a host certificate in the file ``/etc/grid\-security/hostcert\&.pem\'\' will be used\&. If any server name other than ``host\'\' is specified, a service certificate in the file ``/etc/grid\-security/SERVICE/SERVICEcert\&.pem\'\' will be used\&. If the service name is omitted, ``host\'\' will be used as the service name by default\&. Only the Common Name field of a certificate will be used to check the server\'s identity for both a host certificate and a service certificate\&. And the Common Name field must be in the ``CN=SERVERNAME/HOSTNAME\'\' format\&. Also, the hostname must match the canonical name configured by the
+statement\&. If ``host\*(Aq\*(Aq is specified as the service name, a host certificate in the file ``/etc/grid\-security/hostcert\&.pem\*(Aq\*(Aq will be used\&. If any server name other than ``host\*(Aq\*(Aq is specified, a service certificate in the file ``/etc/grid\-security/SERVICE/SERVICEcert\&.pem\*(Aq\*(Aq will be used\&. If the service name is omitted, ``host\*(Aq\*(Aq will be used as the service name by default\&. Only the Common Name field of a certificate will be used to check the server\*(Aqs identity for both a host certificate and a service certificate\&. And the Common Name field must be in the ``CN=SERVERNAME/HOSTNAME\*(Aq\*(Aq format\&. Also, the hostname must match the canonical name configured by the
 \fBgfhost\fR
 command exactly\&. Alias hostnames are not allowed\&.
 .sp
@@ -192,7 +201,7 @@ statement\&. If the account name is omitted, the user who invoked the command wi
 spool_server_cred_service
 statement, if you are using a user certificate\&.
 .sp
-To map from the account name to a Distinguished Name of a certificate, file ``/etc/grid\-security/grid\-mapfile\'\' is used\&. Thus, if there isn\'t such a file, or if the user isn\'t specified in this file, this feature cannot be used\&.
+To map from the account name to a Distinguished Name of a certificate, file ``/etc/grid\-security/grid\-mapfile\*(Aq\*(Aq is used\&. Thus, if there isn\*(Aqt such a file, or if the user isn\*(Aqt specified in this file, this feature cannot be used\&.
 .sp
 This feature corresponds to the GSS_C_NT_USER_NAME feature in GSSAPI (RFC2743/RFC2744)\&.
 .sp
@@ -214,7 +223,7 @@ mechanism\-specific
 .RS 4
 This keyword specifies that
 spool_server_cred_name
-is treated as a raw X\&.509 Distinguished Name serving as a server\'s certificate\&. You must not specify a service name using a
+is treated as a raw X\&.509 Distinguished Name serving as a server\*(Aqs certificate\&. You must not specify a service name using a
 spool_server_cred_service
 statement, if you are using this type\&.
 .sp
@@ -237,7 +246,7 @@ Example:
 .PP
 spool_server_cred_service \fIcred_service\fR
 .RS 4
-This statement specifies the service name of a service certificate used by gfsd for GSI authentication, when ``host\'\' is specified in
+This statement specifies the service name of a service certificate used by gfsd for GSI authentication, when ``host\*(Aq\*(Aq is specified in
 spool_server_cred_type
 statement\&. This is ignored when you are using
 sharedsecret
@@ -344,7 +353,7 @@ statement on the configuration of this statement\&.
 .PP
 metadb_server_cred_service \fIcred_service\fR
 .RS 4
-This statement specifies the service name of a service certificate used by gfmd for GSI authentication, when ``host\'\' is specified in
+This statement specifies the service name of a service certificate used by gfmd for GSI authentication, when ``host\*(Aq\*(Aq is specified in
 metadb_server_cred_type
 statement\&. This is ignored when you are using
 sharedsecret
@@ -368,7 +377,7 @@ metadb_server_listen_backlog \fInumber\fR
 .RS 4
 This statement specifies the second parameter of the
 \fBlisten\fR(2)
-system call that gfmd invokes\&. The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes which define this symbol in <sys/socket\&.h>, or 5 if it\'s undefined\&.
+system call that gfmd invokes\&. The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes which define this symbol in <sys/socket\&.h>, or 5 if it\*(Aqs undefined\&.
 .sp
 This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
 .sp
@@ -387,7 +396,7 @@ For example,
 .PP
 metadb_server_max_descriptors \fInumber\fR
 .RS 4
-This directive specifies the number of file descriptor limit for the gfmd metadata server process\&. If not specified, the default limit is min(OS\'s hard limit, 131072)\&. You may have to increase this value on a larger configuration, or decrease on a smaller configuration\&. See Gfarm FAQ to see how to calculate this value\&.
+This directive specifies the number of file descriptor limit for the gfmd metadata server process\&. If not specified, the default limit is min(OS\*(Aqs hard limit, 131072)\&. You may have to increase this value on a larger configuration, or decrease on a smaller configuration\&. See Gfarm FAQ to see how to calculate this value\&.
 .sp
 This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
 .sp
@@ -1056,7 +1065,7 @@ For example,
 .PP
 schedule_concurrency_per_net \fInumber\fR
 .RS 4
-This directive specifies the number how many filesystem nodes will be used in same network at measuring network latency for each network of filesystem nodes\&. It may be better to increase this parameter, if many filesystem nodes are stopping, or many filesystem nodes are under higher load\&. If this parameter is increased, it\'s recommened to increase schedule_concurrency parameter too\&. The default number is 3\&.
+This directive specifies the number how many filesystem nodes will be used in same network at measuring network latency for each network of filesystem nodes\&. It may be better to increase this parameter, if many filesystem nodes are stopping, or many filesystem nodes are under higher load\&. If this parameter is increased, it\*(Aqs recommened to increase schedule_concurrency parameter too\&. The default number is 3\&.
 .sp
 For example,
 .sp
@@ -1141,7 +1150,7 @@ For example,
 .PP
 schedule_rtt_thresh_diff \fImicroseconds\fR
 .RS 4
-This parameter specifies the threshold time of network latency which divides the domains of scheduling priority\&. If a network latency difference from nearer network is larger than this value, the network\'s scheduling priority is lowered\&. There is a similar parameter schedule_rtt_thresh_ratio, and the scheduling priority is lowered if the network latency exceeds one of the parameters\&. The default is 1000 microseconds\&. i\&.e\&. 1 millisecond\&.
+This parameter specifies the threshold time of network latency which divides the domains of scheduling priority\&. If a network latency difference from nearer network is larger than this value, the network\*(Aqs scheduling priority is lowered\&. There is a similar parameter schedule_rtt_thresh_ratio, and the scheduling priority is lowered if the network latency exceeds one of the parameters\&. The default is 1000 microseconds\&. i\&.e\&. 1 millisecond\&.
 .sp
 For example,
 .sp
@@ -1158,7 +1167,7 @@ For example,
 .PP
 schedule_rtt_thresh_ratio \fIratio\fR
 .RS 4
-This parameter specifies the threshold ratio of network latency which divides the domains of scheduling priority\&. If a network latency is larger than this ratio from nearer network, the network\'s scheduling priority is lowered\&. There is a similar parameter schedule_rtt_thresh_diff, and the scheduling priority is lowered if the network latency exceeds one of the parameters\&. The default ratio is 4\&.0\&.
+This parameter specifies the threshold ratio of network latency which divides the domains of scheduling priority\&. If a network latency is larger than this ratio from nearer network, the network\*(Aqs scheduling priority is lowered\&. There is a similar parameter schedule_rtt_thresh_diff, and the scheduling priority is lowered if the network latency exceeds one of the parameters\&. The default ratio is 4\&.0\&.
 .sp
 For example,
 .sp
@@ -1192,7 +1201,7 @@ For example,
 .PP
 write_local_priority \fIvalidity\fR
 .RS 4
-Gfarm nearly always chooses localhost, when it selects a filesystem node to write a file\&. By specifing the
+Gfarm nearly always chooses localhost, when it selects a filesystem node to write a file\&. By specifyng the
 disable
 keyword in this directive, Gfarm handles localhost the same as other filesystem nodes\&.
 The default is
@@ -1231,7 +1240,7 @@ For example,
 .PP
 minimum_free_disk_space \fIbytes\fR
 .RS 4
-This directive specifies free disk space (in bytes) which is required on filesystem nodes\&. The Gfarm scheduler excludes filesystem nodes which have less free space than this parameter, when it schedules nodes for jobs which may write files\&. The free space value may have a suffix like ``k\'\' (kilo bytes), ``M\'\' (mega bytes), ``G\'\' (giga bytes) and ``T\'\' (tera bytes)\&. The default size is 512M bytes\&.
+This directive specifies free disk space (in bytes) which is required on filesystem nodes\&. The Gfarm scheduler excludes filesystem nodes which have less free space than this parameter, when it schedules nodes for jobs which may write files\&. The free space value may have a suffix like ``k\*(Aq\*(Aq (kilo bytes), ``M\*(Aq\*(Aq (mega bytes), ``G\*(Aq\*(Aq (giga bytes) and ``T\*(Aq\*(Aq (tera bytes)\&. The default size is 512M bytes\&.
 .sp
 This directive has to be specified in both gfarm2\&.conf and gfmd\&.conf\&. After restarting the gfmd and the Gfarm client, it is effective\&.
 .sp
@@ -1397,7 +1406,7 @@ For example,
 .PP
 log_level \fIpriority_level\fR
 .RS 4
-This directive specifies a level of log priority\&. The log output, which priority is inferior to this level, will not be sent to syslog or standard error\&. The priority levels are "emerg", "alert", "crit", "err", "warning", "notice", "info" and "debug" in highest first order\&. The default level is "info"\&. It\'s not recommended to specify a level higher or equal to "crit"\&.
+This directive specifies a level of log priority\&. The log output, which priority is inferior to this level, will not be sent to syslog or standard error\&. The priority levels are "emerg", "alert", "crit", "err", "warning", "notice", "info" and "debug" in highest first order\&. The default level is "info"\&. It\*(Aqs not recommended to specify a level higher or equal to "crit"\&.
 .sp
 For example,
 .sp
@@ -1527,7 +1536,7 @@ When a Gfarm application program crashes (received SIGSEGV, SIGBUG, etc\&.), a d
 .RE
 .\}
 .sp
-"%e" and "%p" are expanded to an actual program name and a process ID, respectively\&. If you\'d like to use "%" character itself in the command line, type "%%"\&.
+"%e" and "%p" are expanded to an actual program name and a process ID, respectively\&. If you\*(Aqd like to use "%" character itself in the command line, type "%%"\&.
 .sp
 This directive is available in both gfarm2\&.conf and gfmd\&.conf\&. If this directive is omitted, no debug command is executed\&.
 .RE
@@ -1604,7 +1613,7 @@ For example,
 .PP
 client_digest_check \fIvalidity\fR
 .RS 4
-When "enable" is specified, the Gfarm client library (libgfarm) calculates checksum while accessing a whole file sequentially, and verify the result against a value which is set in the metadata of the file\&. Also, libgfarm sets the calculated checksum to the metadata, if checksum isn\'t set in the metadata, and the file is opened for writing\&.
+When "enable" is specified, the Gfarm client library (libgfarm) calculates checksum while accessing a whole file sequentially, and verify the result against a value which is set in the metadata of the file\&. Also, libgfarm sets the calculated checksum to the metadata, if checksum isn\*(Aqt set in the metadata, and the file is opened for writing\&.
 .sp
 The default value is disable\&.
 .sp
@@ -1834,7 +1843,7 @@ Example:
 .PP
 metadb_journal_recvq_size \fIsize\fR
 .RS 4
-This parameter specifies the maximum number of on\-memory records of the journal data that the slave gfmd receives from the master gfmd\&. If it reaches this value, the slave gfmd gives up and exits, because the gfmd thinks that it\'s too slow to apply the journal data to the backend database\&. The default value is 100000\&.
+This parameter specifies the maximum number of on\-memory records of the journal data that the slave gfmd receives from the master gfmd\&. If it reaches this value, the slave gfmd gives up and exits, because the gfmd thinks that it\*(Aqs too slow to apply the journal data to the backend database\&. The default value is 100000\&.
 .sp
 This parameter is only available in gfmd\&.conf\&.
 .sp

@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfprep
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
 .\"      Date: 9 Dec 2013
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -34,7 +34,6 @@ gfprep \- replicate Gfarm files in parallel
 \fBgfprep\fR [\-nqvdpPU] [\-mx] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fIlimit\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
 .SH "DESCRIPTION"
 .PP
-
 \fBgfprep\fR
 creates replicas of Gfarm files win parallel\&.
 .PP
@@ -48,9 +47,8 @@ If the
 \fIpath\fR
 parameter is a directory, files under the directory will be replicated recursively\&.
 .PP
-
 \fBgfprep\fR
-can also read the directory and get informations of the entries in parallel\&.
+can also read the directory and get information of the entries in parallel\&.
 .SH "GFPREP OPTIONS"
 .PP
 These are the options only for
@@ -78,7 +76,6 @@ This option and \-N option are mutually exclusive\&.
 .RE
 .SH "COMMON OPTIONS"
 .PP
-
 \fBgfprep\fR
 has the same options with
 \fBgfpcopy\fR\&.
@@ -176,7 +173,7 @@ The default value is 10000\&.
 .PP
 \fB\-s\fR \fIkilobytes\-per\-sec\&.\fR
 .RS 4
-Specifies a throughput(KB/s) to simulate the replication/copy, and does nothing (gets file informations only)\&.
+Specifies a throughput(KB/s) to simulate the replication/copy, and does nothing (gets file information only)\&.
 .RE
 .PP
 \fB\-n\fR
@@ -265,7 +262,6 @@ $ gfprep \-m \-S gfsd1\&.example\&.com gfarm:///
 .PP
 When the \-L or \-m option is not specified, a source node is not always selected within a set of specified source filesystem nodes\&.
 .PP
-
 \fBgfprep\fR
 command should be executed at the same host of gfmd\&. If the gfmd and
 \fBgfprep\fR
@@ -274,7 +270,6 @@ are far apart, the
 operation is slow\&. Specifying a large value by \-j or \-J options may be effective in such a case\&.
 .SH "SEE ALSO"
 .PP
-
 \fBgfrep\fR(1),
 \fBgfpcopy\fR(1),
 \fBgfhost\fR(1),
