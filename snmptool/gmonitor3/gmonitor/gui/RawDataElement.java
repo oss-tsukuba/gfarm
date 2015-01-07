@@ -15,19 +15,19 @@ package gmonitor.gui;
 public class RawDataElement {
 	
 	/**
-	 * ���̗v�f�������v���|�C���g�̌v���l���L�����ǂ���
+	 * この要素が示す計測ポイントの計測値が有効かどうか
 	 */
 	private boolean valid = false;
 	
 	/**
-	 * ���̗v�f�������v���|�C���g�̌v���l
-	 * valid �� false �ł������ꍇ�́A�Ӗ��̂���l�Ƃ��ĎQ�Ƃ��Ă͂Ȃ�Ȃ�
+	 * この要素が示す計測ポイントの計測値
+	 * valid が false であった場合は、意味のある値として参照してはならない
 	 */
 	private long value = 0L;
 	
 	/**
-	 * ���̗v�f�������v���|�C���g�̎���
-	 * valid �������Ȃ�l�ł����Ă��A�����͐��������̂Ƃ��ĎQ�Ƃ��Ă悢
+	 * この要素が示す計測ポイントの時刻
+	 * valid がいかなる値であっても、時刻は正しいものとして参照してよい
 	 */
 	private long time = 0L;
 

@@ -79,12 +79,12 @@ public class CachedSeekableFile implements SeekableFile {
 		byte[] internal_buf = new byte[CacheBlock.BLKSZ];
 		int transferred_amount = 0;
 		synchronized (cache) {
-			int blk = (idx / CacheBlock.BLKSZ); // �J�n�u���b�N�ԍ����Z�b�g���Ă���
-			// �L���b�V���̋�ɂ���ẮA�܂Ƃ߂Ăǂ����Ɠǂݍ���ł���L���b�V���ɐU��������ق��������悢��������Ȃ��B			
+			int blk = (idx / CacheBlock.BLKSZ); // 開始ブロック番号をセットしておく
+			// キャッシュの具合によっては、まとめてどかっと読み込んでからキャッシュに振り向けたほうが効率よいかもしれない。			
 			do {
 				int i = findCachedBlock(blk);
 				if (i < 0) {
-					// �t�@�C������ǂݏo���ăL���b�V���ƃo�b�t�@�ɏ[�U����
+					// ファイルから読み出してキャッシュとバッファに充填する
 					int to_read = amount - transferred_amount;
 					if (to_read > CacheBlock.BLKSZ) {
 						to_read = CacheBlock.BLKSZ;
@@ -92,16 +92,16 @@ public class CachedSeekableFile implements SeekableFile {
 					int realsz = file.read(internal_buf, 0, to_read);
 					CacheBlock cb = new CacheBlock(blk, internal_buf, realsz);
 					cb.getBlock(buf, transferred_amount);
-					// �L���b�V�������ӂꂻ���ɂȂ�����ӂ邢���̂��폜����
+					// キャッシュがあふれそうになったらふるいものを削除する
 					cache.add(cb);
 					if (cache.size() > CACHE_CAPACITY) {
-						// ���X�g�̐擪�̂��̂قǌÂ��̂ŁA��Ԑ擪�̂��̂��폜
+						// リストの先頭のものほど古いので、一番先頭のものを削除
 						CacheBlock c = (CacheBlock) cache.remove(0);
-						c.data = null; // �����I�ɎQ�Ƃ�؂��Ă���
+						c.data = null; // 明示的に参照を切っておく
 					}
 					transferred_amount += realsz;
 				} else {
-					// �L���b�V������o�b�t�@�ɏ[�U����
+					// キャッシュからバッファに充填する
 					CacheBlock cb = (CacheBlock) cache.remove(i);
 					transferred_amount += cb.getBlock(buf, transferred_amount);
 					cache.add(cb);

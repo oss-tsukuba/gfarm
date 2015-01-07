@@ -25,7 +25,7 @@ public class DataFile implements Comparable {
 	private SecondMetaBlock smb;
 	private long latestDateTime = -1;
 	private long size;
-	private int dbgroup_length; // ƒtƒ@ƒCƒ‹’†‚ÉŠÜ‚Ü‚ê‚éƒf[ƒ^ƒuƒƒbƒNƒOƒ‹[ƒv‚ÌŒÂ”
+	private int dbgroup_length; // ãƒ•ã‚¡ã‚¤ãƒ«ä¸­ã«å«ã¾ã‚Œã‚‹ãƒ‡ãƒ¼ã‚¿ãƒ–ãƒ­ãƒƒã‚¯ã‚°ãƒ«ãƒ¼ãƒ—ã®å€‹æ•°
 	long datablock_pos;
 	private static final int CAPACITY = 100;
 	private static HashMap instanceMap = new HashMap();
@@ -41,7 +41,7 @@ public class DataFile implements Comparable {
 				instanceMap.put(url, f);
 				instanceGeneration.add(url);
 				if(instanceGeneration.size() > CAPACITY){
-					// “¯‚ÉƒI[ƒvƒ“‚µ‚Ä‚¨‚­ƒtƒ@ƒCƒ‹”‚ğ’´‰ß‚µ‚½‚Ì‚ÅƒNƒ[ƒY‚·‚é
+					// åŒæ™‚ã«ã‚ªãƒ¼ãƒ—ãƒ³ã—ã¦ãŠããƒ•ã‚¡ã‚¤ãƒ«æ•°ã‚’è¶…éã—ãŸã®ã§ã‚¯ãƒ­ãƒ¼ã‚ºã™ã‚‹
 					String u = (String) instanceGeneration.remove(0);
 					DataFile df = (DataFile) instanceMap.remove(u);
 					df.close();
@@ -49,7 +49,7 @@ public class DataFile implements Comparable {
 			}else{
 				f = (DataFile) o;
 				int idx = instanceGeneration.indexOf(url);
-				// ƒAƒNƒZƒX‚³‚ê‚½‚Ì‚Å¢‘ã‚ğƒŠƒtƒŒƒbƒVƒ…
+				// ã‚¢ã‚¯ã‚»ã‚¹ã•ã‚ŒãŸã®ã§ä¸–ä»£ã‚’ãƒªãƒ•ãƒ¬ãƒƒã‚·ãƒ¥
 				instanceGeneration.remove(idx);
 				instanceGeneration.add(url);
 				
@@ -96,7 +96,7 @@ public class DataFile implements Comparable {
 		is.close();
 		this.size = file.size();
 
-		// ƒtƒ@ƒCƒ‹ƒTƒCƒY‚©‚çAŠÜ‚Ü‚ê‚é‚Å‚ ‚ë‚¤ƒf[ƒ^ƒuƒƒbƒNƒOƒ‹[ƒv‚ÌŒÂ”‚ğZo‚µAdbgroup_length‚ÉŠo‚¦‚éB
+		// ãƒ•ã‚¡ã‚¤ãƒ«ã‚µã‚¤ã‚ºã‹ã‚‰ã€å«ã¾ã‚Œã‚‹ã§ã‚ã‚ã†ãƒ‡ãƒ¼ã‚¿ãƒ–ãƒ­ãƒƒã‚¯ã‚°ãƒ«ãƒ¼ãƒ—ã®å€‹æ•°ã‚’ç®—å‡ºã—ã€dbgroup_lengthã«è¦šãˆã‚‹ã€‚
 		DataBlockGroupTable t = smb.getDataBlockGroupTable();
 		ArrayList l = t.getDataBlockGroupElements();
 		datablock_pos = fmb.getSize() + smb.getSize() + 2 + 4; // 2 + 4 means size fields.
@@ -114,7 +114,7 @@ file = f;
 	}
 
 	/**
-	 * ƒtƒ@ƒCƒ‹‚ÉŠÜ‚Ü‚ê‚Ä‚¢‚éŠ®‘S‚Èƒf[ƒ^ƒuƒƒbƒNƒOƒ‹[ƒv‚ÌŒÂ”‚ğ•Ô‚·
+	 * ãƒ•ã‚¡ã‚¤ãƒ«ã«å«ã¾ã‚Œã¦ã„ã‚‹å®Œå…¨ãªãƒ‡ãƒ¼ã‚¿ãƒ–ãƒ­ãƒƒã‚¯ã‚°ãƒ«ãƒ¼ãƒ—ã®å€‹æ•°ã‚’è¿”ã™
 	 * @return
 	 */
 	public long getLength()
@@ -142,18 +142,18 @@ file = f;
 		int szGroup = fmb.getDataBlockGroupSize();
 		byte[] buf = new byte[szGroup];
 
-		// 1.“Ç‚İo‚·‚×‚«ˆÊ’u‚Ü‚Å seek ‚·‚é
+		// 1.èª­ã¿å‡ºã™ã¹ãä½ç½®ã¾ã§ seek ã™ã‚‹
 		long pos = datablock_pos + (idx * szGroup);
 		file.seek(pos);
 		
-		// 2.read ‚·‚é
+		// 2.read ã™ã‚‹
 		int ret = file.read(buf, 0, szGroup);
 		if(ret < 0){
-			// ƒtƒ@ƒCƒ‹‚ÌI’[‚ğ‰z‚¦‚½B
+			// ãƒ•ã‚¡ã‚¤ãƒ«ã®çµ‚ç«¯ã‚’è¶ŠãˆãŸã€‚
 			throw new IOException("File pointer exceeded.");
 		}
 		
-		// 3.parse ‚·‚é
+		// 3.parse ã™ã‚‹
 		DataBlockGroupTable dbgt = smb.getDataBlockGroupTable();
 		ArrayList rows = dbgt.getDataBlockGroupElements();
 		for(int r = 0; r < rows.size(); r++){
@@ -173,8 +173,8 @@ file = f;
 	}
 
 	/**
-	 * ‚±‚Ìƒf[ƒ^ƒtƒ@ƒCƒ‹‚É‚¨‚¯‚é‚à‚Á‚Æ‚àŒÃ‚¢Œv‘ª’l‚Ì‚ğæ“¾‚·‚é
-	 * @return 
+	 * ã“ã®ãƒ‡ãƒ¼ã‚¿ãƒ•ã‚¡ã‚¤ãƒ«ã«ãŠã‘ã‚‹ã‚‚ã£ã¨ã‚‚å¤ã„è¨ˆæ¸¬å€¤ã®æ™‚åˆ»ã‚’å–å¾—ã™ã‚‹
+	 * @return æ™‚åˆ»
 	 */
 	public long getBeginDateTime()
 	{
@@ -182,8 +182,8 @@ file = f;
 	}
 
 	/**
-	 * ‚±‚Ìƒf[ƒ^ƒtƒ@ƒCƒ‹’†‚Ì‚à‚Á‚Æ‚àV‚µ‚¢Œv‘ª’l‚Ì‚ğæ“¾‚·‚é
-	 * @return 
+	 * ã“ã®ãƒ‡ãƒ¼ã‚¿ãƒ•ã‚¡ã‚¤ãƒ«ä¸­ã®ã‚‚ã£ã¨ã‚‚æ–°ã—ã„è¨ˆæ¸¬å€¤ã®æ™‚åˆ»ã‚’å–å¾—ã™ã‚‹
+	 * @return æ™‚åˆ»
 	 */
 	public long getLatestDateTime() throws IOException
 	{
@@ -214,9 +214,9 @@ file = f;
 	}
 	
 	/**
-	 * ‚±‚Ìƒf[ƒ^ƒtƒ@ƒCƒ‹’†‚ÉAw’è‚³‚ê‚½ƒzƒXƒg‚ªŠÜ‚Ü‚ê‚Ä‚¢‚é‚©‚Ç‚¤‚©‚ğƒeƒXƒg‚·‚é
-	 * @param host ŒŸ¸‚·‚éƒzƒXƒg–¼
-	 * @return ŠÜ‚Ü‚ê‚Ä‚¢‚ê‚Î true.
+	 * ã“ã®ãƒ‡ãƒ¼ã‚¿ãƒ•ã‚¡ã‚¤ãƒ«ä¸­ã«ã€æŒ‡å®šã•ã‚ŒãŸãƒ›ã‚¹ãƒˆãŒå«ã¾ã‚Œã¦ã„ã‚‹ã‹ã©ã†ã‹ã‚’ãƒ†ã‚¹ãƒˆã™ã‚‹
+	 * @param host æ¤œæŸ»ã™ã‚‹ãƒ›ã‚¹ãƒˆå
+	 * @return å«ã¾ã‚Œã¦ã„ã‚Œã° true.
 	 */
 	public boolean containsHost(String host)
 	{
@@ -224,19 +224,19 @@ file = f;
 	}
 	
 	/**
-	 * ‚±‚Ìƒf[ƒ^ƒtƒ@ƒCƒ‹’†‚ÉAw’è‚³‚ê‚½ƒCƒxƒ“ƒg‚ªŠÜ‚Ü‚ê‚Ä‚¢‚é‚©‚Ç‚¤‚©‚ğƒeƒXƒg‚·‚é
-	 * @param event ŒŸ¸‚·‚éƒCƒxƒ“ƒg–¼
-	 * @return ŠÜ‚Ü‚ê‚Ä‚¢‚ê‚Î true.
+	 * ã“ã®ãƒ‡ãƒ¼ã‚¿ãƒ•ã‚¡ã‚¤ãƒ«ä¸­ã«ã€æŒ‡å®šã•ã‚ŒãŸã‚¤ãƒ™ãƒ³ãƒˆãŒå«ã¾ã‚Œã¦ã„ã‚‹ã‹ã©ã†ã‹ã‚’ãƒ†ã‚¹ãƒˆã™ã‚‹
+	 * @param event æ¤œæŸ»ã™ã‚‹ã‚¤ãƒ™ãƒ³ãƒˆå
+	 * @return å«ã¾ã‚Œã¦ã„ã‚Œã° true.
 	 */
 	public boolean containsEvent(String event) {
 		return smb.containsEvent(event);
 	}
 
 	/**
-	 * ‚±‚Ìƒf[ƒ^ƒtƒ@ƒCƒ‹’†‚ÉAw’è‚³‚ê‚½‚ªŠÜ‚Ü‚ê‚Ä‚¢‚é‚©‚Ç‚¤‚©‚ğƒeƒXƒg‚·‚é
-	 * ‚½‚¾‚µAu‚Ü‚³‚É‚¿‚å‚¤‚Ç‚»‚Ìv‚ªŠÜ‚Ü‚ê‚é‚©‚Ç‚¤‚©‚Í–â‘è‚É‚µ‚È‚¢B
-	 * @param t ŒŸ¸‚·‚é
-	 * @return ŠÜ‚Ü‚ê‚Ä‚¢‚ê‚Î true.
+	 * ã“ã®ãƒ‡ãƒ¼ã‚¿ãƒ•ã‚¡ã‚¤ãƒ«ä¸­ã«ã€æŒ‡å®šã•ã‚ŒãŸæ™‚åˆ»ãŒå«ã¾ã‚Œã¦ã„ã‚‹ã‹ã©ã†ã‹ã‚’ãƒ†ã‚¹ãƒˆã™ã‚‹
+	 * ãŸã ã—ã€ã€Œã¾ã•ã«ã¡ã‚‡ã†ã©ãã®æ™‚åˆ»ã€ãŒå«ã¾ã‚Œã‚‹ã‹ã©ã†ã‹ã¯å•é¡Œã«ã—ãªã„ã€‚
+	 * @param t æ¤œæŸ»ã™ã‚‹æ™‚åˆ»
+	 * @return å«ã¾ã‚Œã¦ã„ã‚Œã° true.
 	 */
 	public boolean containsDateTime(long t) throws IOException {
 		boolean ret = false;
@@ -249,15 +249,15 @@ file = f;
 	}
 	
 	/**
-	 * ‚Æ‚ ‚é‚ª‚Ç‚Ìƒf[ƒ^ƒuƒƒbƒNƒOƒ‹[ƒv‚ÉŠÜ‚Ü‚ê‚Ä‚¢‚é‚©‚ğŒvZ‚·‚é
-	 * @param t ƒeƒXƒg‚µ‚½‚¢
-	 * @return ƒf[ƒ^ƒuƒƒbƒNƒOƒ‹[ƒv‚ÌƒCƒ“ƒfƒNƒX
+	 * ã¨ã‚ã‚‹æ™‚åˆ»ãŒã©ã®ãƒ‡ãƒ¼ã‚¿ãƒ–ãƒ­ãƒƒã‚¯ã‚°ãƒ«ãƒ¼ãƒ—ã«å«ã¾ã‚Œã¦ã„ã‚‹ã‹ã‚’è¨ˆç®—ã™ã‚‹
+	 * @param t ãƒ†ã‚¹ãƒˆã—ãŸã„æ™‚åˆ»
+	 * @return ãƒ‡ãƒ¼ã‚¿ãƒ–ãƒ­ãƒƒã‚¯ã‚°ãƒ«ãƒ¼ãƒ—ã®ã‚¤ãƒ³ãƒ‡ã‚¯ã‚¹
 	 */
 	public long getDataBlockGroupIndex(long t) throws IOException
 	{
 		long idx = -1;
 		if(containsDateTime(t) == false){
-			// ‚±‚Ìƒtƒ@ƒCƒ‹‚Ì”ÍˆÍŠO‚Ì‚ªw’è‚³‚ê‚Ä‚¢‚é‚Ì‚ÅƒGƒ‰[
+			// ã“ã®ãƒ•ã‚¡ã‚¤ãƒ«ã®ç¯„å›²å¤–ã®æ™‚åˆ»ãŒæŒ‡å®šã•ã‚Œã¦ã„ã‚‹ã®ã§ã‚¨ãƒ©ãƒ¼
 			throw new IOException("TimePointOutOfRangeInFile " + getUrl() + " " + t);
 		}
 		long intv = fmb.getGroupInterval();
@@ -271,7 +271,7 @@ file = f;
 	 */
 	public int compareTo(Object o) {
 		if((o instanceof DataFile) == false){
-			// ƒNƒ‰ƒX‚ªˆá‚¤‚Ì‚Å”äŠr‚Å‚«‚È‚¢B
+			// ã‚¯ãƒ©ã‚¹ãŒé•ã†ã®ã§æ¯”è¼ƒã§ããªã„ã€‚
 			throw new ClassCastException("Object is not compatible.");
 		}
 		DataFile f = (DataFile) o;
@@ -288,7 +288,7 @@ file = f;
 
 	public DataBlock readDataBlock(long idx) throws IOException
 	{
-		// ’Ê‚µ”Ô†‚Å idx ‚Ìƒf[ƒ^ƒuƒƒbƒN‚ğæ“¾‚·‚éBidx ‚Í 0@‚©‚çn‚Ü‚éB
+		// é€šã—ç•ªå·ã§ idx ã®ãƒ‡ãƒ¼ã‚¿ãƒ–ãƒ­ãƒƒã‚¯ã‚’å–å¾—ã™ã‚‹ã€‚idx ã¯ 0ã€€ã‹ã‚‰å§‹ã¾ã‚‹ã€‚
 		DataBlockGroupTable tbl = smb.getDataBlockGroupTable();
 		long blockCount = tbl.getDataBlockGroupElements().size();
 		long dbg_idx = idx / blockCount;
@@ -296,12 +296,12 @@ file = f;
 		try {
 			dbg = getDataBlockGroup(dbg_idx);
 		} catch (IOException e) {
-			// ŠY“–‚·‚éƒf[ƒ^ƒuƒƒbƒNƒOƒ‹[ƒv‚Í‘¶İ‚µ‚È‚¢B
+			// è©²å½“ã™ã‚‹ãƒ‡ãƒ¼ã‚¿ãƒ–ãƒ­ãƒƒã‚¯ã‚°ãƒ«ãƒ¼ãƒ—ã¯å­˜åœ¨ã—ãªã„ã€‚
 			return null;
 		}
 		int db_idx = (int) (idx % blockCount);
 		if(db_idx >= dbg.size()){
-			// ŠY“–‚·‚éƒf[ƒ^ƒuƒƒbƒN‚Í‘¶İ‚µ‚È‚¢B
+			// è©²å½“ã™ã‚‹ãƒ‡ãƒ¼ã‚¿ãƒ–ãƒ­ãƒƒã‚¯ã¯å­˜åœ¨ã—ãªã„ã€‚
 			return null;
 		}
 		DataBlock db = (DataBlock) dbg.get(db_idx);

@@ -33,8 +33,8 @@ public class DataBlockGroupTable extends BinaryBlock {
 
 	/* (non-Javadoc)
 	 * @see gmonitor.logdata.BinaryBlock#parse_binary_block(java.io.InputStream)
-	 * [ {���ڐ�n(2bytes)} {�z�X�g��`�C���f�N�X(2bytes)}{OID��`�C���f�N�X(2bytes)} * n ] 
-	 * �̌J��Ԃ�
+	 * [ {項目数n(2bytes)} {ホスト定義インデクス(2bytes)}{OID定義インデクス(2bytes)} * n ] 
+	 * の繰り返し
 	 */
 	protected void parse_binary_block(InputStream is) throws IOException {
 		int read_size = 0;
@@ -66,7 +66,7 @@ public class DataBlockGroupTable extends BinaryBlock {
 			int cnt = table.size();
 			for(int i = 0; i < cnt; i++){
 				DataBlockGroupElement[] e = (DataBlockGroupElement[]) table.get(i);
-				sb.append("\nDataBlockGroupElement:");
+				sb.append("¥nDataBlockGroupElement:");
 				sb.append(e.length);
 				for(int j = 0; j < e.length; j++){
 					sb.append(':');

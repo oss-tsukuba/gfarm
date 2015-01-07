@@ -32,17 +32,17 @@ public class SumRawDataSeries {
 		fillEndTime(endTime, rda);
 
 		while(true){
-			// totalBuffer ‚ğXV‚µ‚Ä–ß‚éB
+			// totalBuffer ã‚’æ›´æ–°ã—ã¦æˆ»ã‚‹ã€‚
 			time = scanNext(time, rda, scanIndex, totalBuffer);
 	
-			// ‡Zƒoƒbƒtƒ@‚ğ‡Œv‚µAV‚½‚È—v‘f‚Æ‚·‚é
+			// åˆç®—ãƒãƒƒãƒ•ã‚¡ã‚’åˆè¨ˆã—ã€æ–°ãŸãªè¦ç´ ã¨ã™ã‚‹
 			long v = addup(totalBuffer);
 			RawDataElement ne = new RawDataElement();
 			ne.setTime(time);
 			ne.setValue(v);
 			newList.add(ne);
 	
-			// I—¹ğŒH
+			// çµ‚äº†æ¡ä»¶ï¼Ÿ
 			if(isFinishedTime(time, endTime) == true){
 				break;
 			}
@@ -57,17 +57,17 @@ public class SumRawDataSeries {
 	{
 		int series = rda.length;
 
-		// ‚·‚×‚Ä‚ÌŒn—ñ‚É‚Â‚¢‚ÄA
+		// ã™ã¹ã¦ã®ç³»åˆ—ã«ã¤ã„ã¦ã€
 		long t = Long.MAX_VALUE;
 		for(int s = 0; s < series; s++){
 			RawDataElement[] rde = rda[s].getData();
-			// time ‚æ‚è‘å‚«‚¢—v‘f‚ÌƒCƒ“ƒfƒNƒX‚ğ’T‚·B
+			// time ã‚ˆã‚Šå¤§ãã„è¦ç´ ã®ã‚¤ãƒ³ãƒ‡ã‚¯ã‚¹ã‚’æ¢ã™ã€‚
 			int idx = findFirstExceededTime(time, rde);
-			// ‚»‚Ì’†‚ÅAÅŒÃ‚Ìƒ^ƒCƒ€ƒXƒ^ƒ“ƒv‚Ì—v‘f‚ğuƒ}ƒbƒ`‚µ‚½v‚Æ‚·‚é
+			// ãã®ä¸­ã§ã€æœ€å¤ã®ã‚¿ã‚¤ãƒ ã‚¹ã‚¿ãƒ³ãƒ—ã®è¦ç´ ã‚’ã€Œãƒãƒƒãƒã—ãŸã€ã¨ã™ã‚‹
 			if(idx < 0){
-				// ‚±‚ÌŒn—ñ‚Å‚ÍŒ©‚Â‚©‚ç‚È‚©‚Á‚½B
+				// ã“ã®ç³»åˆ—ã§ã¯è¦‹ã¤ã‹ã‚‰ãªã‹ã£ãŸã€‚
 			}else{
-				// ‚Æ‚è‚ ‚¦‚¸Šo‚¦‚Ä‚¨‚­B
+				// ã¨ã‚Šã‚ãˆãšè¦šãˆã¦ãŠãã€‚
 				si[s] = idx;
 				long tt = rde[idx].getTime();
 				if(t < tt){
@@ -76,11 +76,11 @@ public class SumRawDataSeries {
 			}
 		}
 
-		// ƒ}ƒbƒ`‚µ‚½—v‘f‚ğtb‚ÉŠo‚¦‚éB•¡”ƒ}ƒbƒ`‚µ‚½ê‡‚É‚Í‚·‚×‚ÄŠo‚¦‚éB
+		// ãƒãƒƒãƒã—ãŸè¦ç´ ã‚’tbã«è¦šãˆã‚‹ã€‚è¤‡æ•°ãƒãƒƒãƒã—ãŸå ´åˆã«ã¯ã™ã¹ã¦è¦šãˆã‚‹ã€‚
 		for(int s = 0; s < series; s++){
 			RawDataElement[] rde = rda[s].getData();
 			if(rde[si[s]].getTime() == t){
-				// ‡Zƒoƒbƒtƒ@‚É’~‚¦‚é‚×‚«B
+				// åˆç®—ãƒãƒƒãƒ•ã‚¡ã«è“„ãˆã‚‹ã¹ãã€‚
 				tb[s] = rde[si[s]];
 			}
 		}

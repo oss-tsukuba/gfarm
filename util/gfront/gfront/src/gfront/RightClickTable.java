@@ -143,9 +143,9 @@ public class RightClickTable implements MouseListener, ActionListener {
 			run_gfexport(filesize, url, null);
 		} else if (ae.getSource() == gfrep) {
 			/*
-			gfrep -H hostfile gfarm-URL  ˆêƒtƒ@ƒCƒ‹ì‚ç‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
-			gfrep -D domainname gfarm-URL  ‚Å‚«‚é
-			‰E‰º  ƒm[ƒh–¼‘I‘ğ‚·‚é‚Æ -s ƒIƒvƒVƒ‡ƒ“‚à”½‰f
+			gfrep -H hostfile gfarm-URL  ä¸€æ™‚ãƒ•ã‚¡ã‚¤ãƒ«ä½œã‚‰ãªã‘ã‚Œã°ãªã‚‰ãªã„
+			gfrep -D domainname gfarm-URL  ã§ãã‚‹
+			å³ä¸‹  ãƒãƒ¼ãƒ‰åé¸æŠã™ã‚‹ã¨ -s ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚‚åæ˜ 
 			gfrep -I fragment-index [ -s src-node ] -d dest-node gfarm-URL
 			*/
 

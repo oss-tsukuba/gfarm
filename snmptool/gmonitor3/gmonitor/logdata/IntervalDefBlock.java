@@ -35,7 +35,7 @@ public class IntervalDefBlock extends BinaryBlock {
 	
 	/* (non-Javadoc)
 	 * @see BinaryBlock#parse_binary_block(java.io.InputStream)
-	 * {ƒzƒXƒgƒCƒ“ƒfƒbƒNƒX”Ô†}{OID ƒCƒ“ƒfƒbƒNƒX”Ô†}{ŽžŠÔ(4+4bytes)}
+	 * {ãƒ›ã‚¹ãƒˆã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ç•ªå·}{OID ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ç•ªå·}{æ™‚é–“(4+4bytes)}
 	 */
 	protected void parse_binary_block(InputStream is) throws IOException {
 		int read_size = 0;
