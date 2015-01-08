@@ -1,6 +1,7 @@
 usage_postgresql()
 {
 	echo >&2 "	[-X]"
+	echo >&2 "	[-E]"
 	return 0 # backend-specific option(s) exist(s)
 }
 
@@ -16,6 +17,12 @@ sanity_postgresql()
 	[1-6].*|7.[0-3]|unknown)	# 7.3 or before
 		echo "WARNING: PostgreSQL version 7.4 or later required: $BACKEND_VERSION" >&2
 		rv=1
+		;;
+	8.*|9.[0-1])
+		if [ $BACKEND_DATA_CHECKSUMS = yes ]; then
+			echo "WARNING: PostgreSQL $BACKEND_VERSION doesn't support data checksums" >&2
+			rv=1
+		fi
 		;;
 	esac
 	if [ ! -x "$BACKEND_PREFIX/bin/pg_config" ]; then
@@ -46,6 +53,8 @@ display_plain_params_backend_postgresql()
 	echo "postgresql prefix            [-P]: $BACKEND_PREFIX"
 	echo "postgresql version           [-V]: $BACKEND_VERSION"
 	echo "postgresql XML supported     [-X]: $SUPPORT_XML_TYPE"
+	echo "postgresql data checksum support"
+	echo "                             [-E]: $BACKEND_DATA_CHECKSUMS"
 }
 
 display_script_params_backend_postgresql()
@@ -61,6 +70,7 @@ display_script_params_backend_postgresql()
 	echo "BACKEND_PREFIX=$BACKEND_PREFIX"
 	echo "BACKEND_VERSION=$BACKEND_VERSION"
 	echo "BACKEND_SUPPORT_XML_TYPE=$SUPPORT_XML_TYPE"
+	echo "BACKEND_DATA_CHECKSUMS=$BACKEND_DATA_CHECKSUMS"
 }
 
 display_plain_params_backend_port_postgresql()
@@ -94,6 +104,10 @@ parse_argument_postgresql()
 #		true;;
 	  -X)
 		SUPPORT_XML_TYPE=yes
+		argshift=0
+		true;;
+	  -E)
+		BACKEND_DATA_CHECKSUMS=yes
 		argshift=0
 		true;;
 	  *)	false;;
@@ -132,6 +146,7 @@ set_first_defaults_postgresql()
 	: ${RC_BACKEND_BASENAME=gfarm-pgsql}
 	: ${PGSQL_BINDIR:="$BACKEND_PREFIX/bin"}
 	: ${SUPPORT_XML_TYPE:="no"}
+	: ${BACKEND_DATA_CHECKSUMS:="no"}
 }
 
 set_last_defaults_postgresql()
@@ -261,8 +276,13 @@ make_configuration_file_private_for_debian_postgresql()
 
 make_configuration_file_postgresql()
 {
+	INITDB_OPTIONS='--no-locale -E SQL_ASCII'
+	if [ $BACKEND_DATA_CHECKSUMS = yes ]; then
+		INITDB_OPTIONS="$INITDB_OPTIONS --data-checksums"
+	fi	
+
 	cat << _EOF_ | $run_with_backend_privilege || ABORT "initdb failed"
-	$PGSQL_BINDIR/initdb -D "$BACKEND_DATA_DIR" --no-locale -E SQL_ASCII
+	$PGSQL_BINDIR/initdb -D "$BACKEND_DATA_DIR" $INITDB_OPTIONS
 _EOF_
 
 	# record the password
