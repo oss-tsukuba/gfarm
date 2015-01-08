@@ -390,7 +390,7 @@ accepting_fatal_errno_full(int msg_no, const char *file, int line_no,
 }
 
 
- static int
+static int
 #ifdef HAVE_POLL
 sleep_or_wait_fds(int seconds, int nfds, struct pollfd *fds, const char *diag)
 #else
@@ -410,7 +410,7 @@ sleep_or_wait_fds(int seconds, int max_fd, fd_set *fds, const char *diag)
 		t = expiration_time;
 		gfarm_timeval_sub(&t, &now);
 
-		nfound = poll(fds, 1, t.tv_sec * 1000 - t.tv_usec / 1000);
+		nfound = poll(fds, nfds, t.tv_sec * 1000 + t.tv_usec / 1000);
 		if (nfound == 0)
 			return (EAGAIN);
 		if (nfound == -1) {
