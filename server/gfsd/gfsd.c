@@ -928,6 +928,16 @@ io_error_check(gfarm_error_t ecode, const char *diag)
 	}
 }
 
+static void
+io_error_check_errno(const char *diag)
+{
+	/* if input/output error occurs, die */
+	if (errno == EIO || errno == ESTALE) {
+		kill_master_gfsd = 1;
+		fatal(GFARM_MSG_UNFIXED, "%s: %s, die", diag, strerror(errno));
+	}
+}
+
 void
 gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 	gfp_xdr_xid_t xid,
@@ -946,8 +956,6 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 		fatal(GFARM_MSG_1000459, "%s put reply: %s",
 		    diag, gfarm_error_string(e));
 	}
-
-	io_error_check(ecode, diag);
 }
 
 void
@@ -1020,8 +1028,6 @@ gfs_async_server_put_reply_common(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1002382, "%s put reply: %s",
 		    diag, gfarm_error_string(e));
-
-	io_error_check(ecode, diag);
 	return (e);
 }
 
@@ -1226,14 +1232,18 @@ static int
 open_data(char *path, int flags)
 {
 	int fd = open(path, flags, DATA_FILE_MASK);
+	static char diag[] = "open_data";
 
+	io_error_check_errno(diag);
 	if (fd >= 0)
 		return (fd);
 	if ((flags & O_CREAT) == 0 || errno != ENOENT)
 		return (-1);
 	if (gfsd_create_ancestor_dir(path))
 		return (-1);
-	return (open(path, flags, DATA_FILE_MASK));
+	fd = open(path, flags, DATA_FILE_MASK);
+	io_error_check_errno(diag);
+	return (fd);
 }
 
 int file_table_size = 0;
@@ -2306,6 +2316,7 @@ calc_digest(int fd,
 
 	while ((sz = read(fd, buf, sizeof buf)) > 0)
 		EVP_DigestUpdate(&md_ctx, buf, sz);
+	io_error_check_errno("calc_digest");
 	if (sz == -1)
 		e = gfarm_errno_to_error(errno);
 
@@ -2793,9 +2804,10 @@ gfs_server_pread(struct gfp_xdr *client)
 	/* We truncatef i/o size bigger than GFS_PROTO_MAX_IOSIZE. */
 	if (size > GFS_PROTO_MAX_IOSIZE)
 		size = GFS_PROTO_MAX_IOSIZE;
-	if ((rv = pread(fe->local_fd, buffer, size, offset)) == -1)
+	if ((rv = pread(fe->local_fd, buffer, size, offset)) == -1) {
+		io_error_check_errno(diag);
 		e = gfarm_errno_to_error(errno);
-	else {
+	} else {
 		file_table_set_read(fd);
 		/* update checksum */
 		if ((fe->flags &
@@ -2865,9 +2877,10 @@ gfs_server_pwrite(struct gfp_xdr *client)
 			offset = lseek(localfd, 0, SEEK_CUR) - rv;
 	} else
 		rv = pwrite(localfd, buffer, size, offset);
-	if (rv == -1)
+	if (rv == -1) {
+		io_error_check_errno(diag);
 		save_errno = errno;
-	else {
+	} else {
 		file_table_set_written(fd);
 		/* update checksum */
 		if ((fe->flags &
@@ -2938,9 +2951,10 @@ gfs_server_write(struct gfp_xdr *client)
 		size = GFS_PROTO_MAX_IOSIZE;
 	localfd = file_table_get(fd);
 	(void) lseek(localfd, 0, SEEK_END);
-	if ((rv = write(localfd, buffer, size)) == -1)
+	if ((rv = write(localfd, buffer, size)) == -1) {
+		io_error_check_errno(diag);
 		save_errno = errno;
-	else {
+	} else {
 		written_offset = lseek(localfd, 0, SEEK_CUR) - rv;
 		total_file_size = lseek(localfd, 0, SEEK_END);
 		file_table_set_written(fd);
@@ -3020,6 +3034,7 @@ gfs_server_bulkread(struct gfp_xdr *client)
 
 		e = gfs_sendfile_common(client, &src_err,
 		    fe->local_fd, offset, len, md_ctx, &sent);
+		io_error_check(src_err, diag);
 		if (IS_CONNECTION_ERROR(e))
 			fatal(GFARM_MSG_1004139, "%s sendfile: %s",
 			    diag, gfarm_error_string(e));
@@ -3108,6 +3123,7 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 
 		e = gfs_recvfile_common(client, &dst_err, fe->local_fd, offset,
 		    md_ctx, &written);
+		io_error_check(dst_err, diag);
 		if (IS_CONNECTION_ERROR(e))
 			fatal(GFARM_MSG_1004142, "%s recvdfile: %s",
 			    diag, gfarm_error_string(e));
@@ -3329,15 +3345,19 @@ gfs_server_statfs(struct gfp_xdr *client)
 	    &readonly);
 	free(dir);
 
-	if (readonly)
-		gflog_error(GFARM_MSG_1003715, "%s: read only file system",
-		    gfarm_spool_root);
-	if (save_errno == 0 && (readonly || is_readonly_mode())) {
-		/* pretend to be disk full, to make this gfsd read-only */
-		bavail -= bfree;
-		bfree = 0;
-	}
-
+	if (save_errno == 0) {
+		if (readonly)
+			gflog_error(GFARM_MSG_1003715,
+			    "%s: read only file system", gfarm_spool_root);
+		if (readonly || is_readonly_mode()) {
+			/* pretend to be disk full to make gfsd read-only */
+			bavail -= bfree;
+			bfree = 0;
+		}
+	} else
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "gfsd_statfs: %s", strerror(save_errno));
+		
 	gfs_server_put_reply_with_errno(client, "statfs", save_errno,
 	    "illllll", bsize, blocks, bfree, bavail, files, ffree, favail);
 }
@@ -3731,6 +3751,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	/* data transfer */
 	error = gfs_sendfile_common(client, &src_err, local_fd, 0, -1,
 	    md_ctxp, NULL);
+	io_error_check(src_err, diag);
 
 	/*
 	 * call EVP_DigestFinal() even if an error happens,
@@ -3850,15 +3871,15 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 		save_errno = gfsd_statfs(gfarm_spool_root, &bsize, &blocks,
 		    &bfree, &bavail, &files, &ffree, &favail, &readonly);
 
-		if (readonly)
-			gflog_error(GFARM_MSG_1003716,
-			    "%s: read only file system", gfarm_spool_root);
-		/* pretend to be disk full, to make this gfsd read-only */
-		if (save_errno == 0 && (readonly || is_readonly_mode())) {
-			bavail -= bfree;
-			bfree = 0;
-		}
 		if (save_errno == 0) {
+			if (readonly)
+				gflog_error(GFARM_MSG_1003716, "%s: "
+				    "read only file system", gfarm_spool_root);
+			/* pretend to be disk full to make gfsd read-only */
+			if (readonly || is_readonly_mode()) {
+				bavail -= bfree;
+				bfree = 0;
+			}
 			used = (blocks - bfree) * bsize / 1024;
 			avail = bavail * bsize / 1024;
 		}
