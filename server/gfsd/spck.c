@@ -86,26 +86,33 @@ gfm_client_replica_create_file_in_lost_found(
 	return (e);
 }
 
+/*
+ * switch (op)
+ * case 0: rename
+ * case 1: copy
+ */
 static gfarm_error_t
-move_file_to_lost_found_main(const char *file, struct stat *stp,
-	gfarm_ino_t inum_old, gfarm_uint64_t gen_old)
+move_or_copy_to_lost_found(int op, const char *file, int fd, struct stat *stp,
+	gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag)
 {
 	gfarm_error_t e;
 	int save_errno;
 	struct gfarm_timespec mtime;
-	char *newpath;
+	char *newpath, *path = NULL;
 	gfarm_ino_t inum_new;
 	gfarm_uint64_t gen_new;
+	struct stat sb1;
 
 	mtime.tv_sec = stp->st_mtime;
 	mtime.tv_nsec = gfarm_stat_mtime_nsec(stp);
 	e = gfm_client_replica_create_file_in_lost_found(
-	    inum_old, gen_old, (gfarm_off_t)stp->st_size, &mtime,
-	    &inum_new, &gen_new);
+	    inum, gen, (gfarm_off_t)stp->st_size, &mtime, &inum_new, &gen_new);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1003520,
-		    "%s: replica_create_file_in_lost_found: %s",
-		    file, gfarm_error_string(e));
+		    "%s (%lld:%lld): %s: %s",
+		    file != NULL ? file : "<unknown filename>",
+		    (long long)inum, (long long)gen,
+		    diag, gfarm_error_string(e));
 		/*
 		 * GFARM_ERR_ALREADY_EXISTS will occur, if below
 		 * gfsd_create_ancestor_dir() or rename() are failed
@@ -119,8 +126,7 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 		 */
 		return (e);
 	}
-	gfsd_local_path(inum_new, gen_new, "move_file_to_lost_found",
-	    &newpath);
+	gfsd_local_path(inum_new, gen_new, diag, &newpath);
 	if (gfsd_create_ancestor_dir(newpath)) {
 		save_errno = errno;
 		gflog_error(GFARM_MSG_1003521,
@@ -129,17 +135,50 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 		free(newpath);
 		return (gfarm_errno_to_error(save_errno));
 	}
-	if (rename(file, newpath)) {
-		save_errno = errno;
-		gflog_error(GFARM_MSG_1003522,
-		    "%s: cannot rename to %s: %s", file, newpath,
-		    strerror(save_errno));
-		free(newpath);
-		return (gfarm_errno_to_error(save_errno));
+	switch (op) {
+	case 0: /* rename */
+		if (file == NULL) {
+			gfsd_local_path(inum, gen, diag, &path);
+			file = path;
+		}
+		if (rename(file, newpath)) {
+			save_errno = errno;
+			gflog_error(GFARM_MSG_1003522,
+			    "%s: cannot rename to %s: %s", file, newpath,
+			    strerror(save_errno));
+			e = gfarm_errno_to_error(save_errno);
+		}
+		free(path);
+		break;
+	case 1: /* copy */
+		if ((e = gfsd_copy_file(fd, newpath)) != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_1004189,
+			    "inode %lld:%lld: cannot copy to %s, "
+			    "invalid file may remain: %s",
+			    (unsigned long long)inum, (unsigned long long)gen,
+			    newpath, gfarm_error_string(e));
+		else if (stat(newpath, &sb1) == -1) {
+			save_errno = errno;
+			gflog_error(GFARM_MSG_1004190,
+			    "inode %lld:%lld: copied file does not exist: %s",
+			    (unsigned long long)inum, (unsigned long long)gen,
+			    strerror(save_errno));
+			e = gfarm_errno_to_error(save_errno);
+		} else if (sb1.st_size != stp->st_size) {
+			e = GFARM_ERR_INPUT_OUTPUT;
+			gflog_error(GFARM_MSG_1004191,
+			    "inode %lld:%lld: size mismatch: copied file has "
+			    "%lld byte that should be %lld byte.  invalid file"
+			    " remains at %s",
+			    (unsigned long long)inum, (unsigned long long)gen,
+			    (unsigned long long)sb1.st_size,
+			    (unsigned long long)stp->st_size, newpath);
+		}
+		break;
 	}
-	e = gfm_client_replica_add(inum_new, gen_new,
-	    (gfarm_off_t)stp->st_size);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e == GFARM_ERR_NO_ERROR &&
+	    (e = gfm_client_replica_add(inum_new, gen_new,
+		    (gfarm_off_t)stp->st_size)) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1003523,
 		    "%s: replica_add failed: %s", newpath,
 		    gfarm_error_string(e));
@@ -166,6 +205,7 @@ move_file_to_lost_found(const char *file, struct stat *stp,
 	gfarm_ino_t inum_old, gfarm_uint64_t gen_old, int size_mismatch)
 {
 	gfarm_error_t e;
+	static const char diag[] = "move_file_to_lost_found";
 
 	if (stp->st_size == 0) { /* unreferred empty file is unnecessary */
 		if (size_mismatch)
@@ -182,7 +222,8 @@ move_file_to_lost_found(const char *file, struct stat *stp,
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	e = move_file_to_lost_found_main(file, stp, inum_old, gen_old);
+	e = move_or_copy_to_lost_found(0, file, -1, stp, inum_old, gen_old,
+		diag);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1003526,
 		    "%s cannot be moved to /lost+found/%016llX%016llX-%s: %s",
@@ -209,15 +250,11 @@ move_file_to_lost_found(const char *file, struct stat *stp,
 }
 
 gfarm_error_t
-register_to_lost_found(int fd, gfarm_ino_t inum, gfarm_uint64_t gen)
+register_to_lost_found(int op, int fd, gfarm_ino_t inum, gfarm_uint64_t gen)
 {
-	struct stat sb, sb1;
-	struct gfarm_timespec mtime;
-	char *newpath;
-	gfarm_ino_t inum_new;
-	gfarm_uint64_t gen_new;
-	gfarm_error_t e;
+	struct stat sb;
 	int save_errno;
+	static char diag[] = "register_to_lost_found";
 
 	if (fstat(fd, &sb) == -1) {
 		save_errno = errno;
@@ -226,49 +263,7 @@ register_to_lost_found(int fd, gfarm_ino_t inum, gfarm_uint64_t gen)
 		    (unsigned long long)inum, (unsigned long long)gen);
 		return (gfarm_errno_to_error(save_errno));
 	}
-
-	mtime.tv_sec = sb.st_mtime;
-	mtime.tv_nsec = gfarm_stat_mtime_nsec(&sb);
-	e = gfm_client_replica_create_file_in_lost_found(
-	    inum, gen, (gfarm_off_t)sb.st_size, &mtime, &inum_new, &gen_new);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1004188,
-		    "inode %lld:%lld: replica_create_file_in_lost_found: %s",
-		    (unsigned long long)inum, (unsigned long long)gen,
-		    gfarm_error_string(e));
-		return (e);
-	}
-	gfsd_local_path(inum_new, gen_new, "register_to_lost_found", &newpath);
-	if ((e = gfsd_copy_file(fd, newpath)) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_1004189,
-		    "inode %lld:%lld: cannot copy to %s, invalid file may "
-		    "remain: %s",
-		    (unsigned long long)inum, (unsigned long long)gen, newpath,
-		    gfarm_error_string(e));
-	else if (stat(newpath, &sb1) == -1)
-		gflog_error(GFARM_MSG_1004190,
-		    "inode %lld:%lld: copied file does not exist",
-		    (unsigned long long)inum, (unsigned long long)gen);
-	else if (sb1.st_size != sb.st_size)
-		gflog_error(GFARM_MSG_1004191,
-		    "inode %lld:%lld: size mismatch: copied file has "
-		    "%lld byte that should be %lld byte.  invalid file "
-		    "remains at %s",
-		    (unsigned long long)inum, (unsigned long long)gen,
-		    (unsigned long long)sb1.st_size,
-		    (unsigned long long)sb.st_size, newpath);
-	else if ((e = gfm_client_replica_add(inum_new, gen_new,
-	    (gfarm_off_t)sb1.st_size)) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_1004192,
-		    "%s: replica_add failed: %s", newpath,
-		    gfarm_error_string(e));
-	else
-		gflog_notice(GFARM_MSG_1004193, "lost file due to write "
-		    "conflict is moved to /lost+found/%016llX%016llX-%s",
-		    (unsigned long long)inum, (unsigned long long)gen,
-		    canonical_self_name);
-	free(newpath);
-	return (e);
+	return (move_or_copy_to_lost_found(op, NULL, fd, &sb, inum, gen, diag));
 }
 
 /*

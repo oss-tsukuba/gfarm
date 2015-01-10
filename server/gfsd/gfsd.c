@@ -1265,6 +1265,7 @@ struct file_entry {
 #define FILE_FLAG_DIGEST_CALC	0x20
 #define FILE_FLAG_DIGEST_AVAIL	0x40
 #define FILE_FLAG_DIGEST_FINISH	0x80
+#define FILE_FLAG_DIGEST_ERROR	0x100
 	/*
 	 * if (md_type_name != NULL)
 	 *	md_ctx was initialized, and EVP_DigestFinal() has to be called,
@@ -2380,10 +2381,8 @@ static gfarm_error_t
 digest_finish(struct gfp_xdr *client, gfarm_int32_t fd, const char *diag)
 {
 	struct file_entry *fe;
-
 	char md_string[GFARM_MSGDIGEST_STRSIZE];
 	size_t md_strlen;
-
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
 	if ((fe = file_table_entry(fd)) == NULL)
@@ -2405,6 +2404,7 @@ digest_finish(struct gfp_xdr *client, gfarm_int32_t fd, const char *diag)
 		    (long long)fe->ino, (long long)fe->gen,
 		    gfarm_error_string(e));
 		fe->flags &= ~FILE_FLAG_DIGEST_CALC; /* invalidate */
+		fe->flags |= FILE_FLAG_DIGEST_ERROR;
 	}
 	return (e);
 }
@@ -2469,12 +2469,42 @@ update_file_entry_for_close(struct gfp_xdr *client,
 	return (e);
 }
 
-void
-add_to_lost_found(struct file_entry *fe)
+static void
+copy_to_lost_found(struct file_entry *fe)
 {
-	(void) register_to_lost_found(
+	if (register_to_lost_found(1,
 	    fe->local_fd_rdonly != -1 ? fe->local_fd_rdonly : fe->local_fd,
-	    fe->ino, fe->gen);
+	    fe->ino, fe->gen) == GFARM_ERR_NO_ERROR)
+		gflog_notice(GFARM_MSG_1004193, "lost file due to write "
+		    "conflict is moved to /lost+found/%016llX%016llX-%s",
+		    (unsigned long long)fe->ino, (unsigned long long)fe->gen,
+		    canonical_self_name);
+}
+
+static void
+move_to_lost_found(struct file_entry *fe)
+{
+	char *path;
+
+	if (fe->size == 0) {
+		gfsd_local_path(fe->ino, fe->gen, "move_to_lost_found", &path);
+		if (unlink(path) == -1)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "unlink(%s)", path);
+		else
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "%lld:%lld: corrupted file removed",
+			    (long long)fe->ino,	(long long)fe->gen);
+		free(path);
+		return;
+	}
+	if (register_to_lost_found(0, fe->local_fd, fe->ino, fe->gen)
+	    == GFARM_ERR_NO_ERROR)
+		gflog_notice(GFARM_MSG_UNFIXED, "%lld:%lld: corrupted file "
+		    "moved to /lost+found/%016llX%016llX-%s",
+		    (long long)fe->ino, (long long)fe->gen,
+		    (unsigned long long)fe->ino, (unsigned long long)fe->gen,
+		    canonical_self_name);
 }
 
 gfarm_error_t
@@ -2586,7 +2616,7 @@ close_fd(struct gfp_xdr *client, gfarm_int32_t fd, struct file_entry *fe,
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
 		if (gen_update_result == GFARM_ERR_CONFLICT_DETECTED)
-			add_to_lost_found(fe);
+			copy_to_lost_found(fe);
 	}
 	return (e);
 }
@@ -2639,7 +2669,7 @@ fhclose_fd(struct gfp_xdr *client, struct file_entry *fe, const char *diag)
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
 		if (gen_update_result == GFARM_ERR_CONFLICT_DETECTED)
-			add_to_lost_found(fe);
+			copy_to_lost_found(fe);
 	}
 
 	return (e);
@@ -2702,7 +2732,16 @@ close_fd_somehow(struct gfp_xdr *client,
 			}
 		}
 	}
-
+	if (fe->flags & FILE_FLAG_DIGEST_ERROR) {
+		e2 = gfm_client_replica_lost(fe->ino, fe->gen);
+		if (e2 == GFARM_ERR_NO_ERROR)
+			move_to_lost_found(fe);
+		else
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%lld:%lld: corrupted replica remains: %s",
+			    (long long)fe->ino, (long long)fe->gen,
+			    gfarm_error_string(e2));
+	}
 	e2 = file_table_close(fd);
 	if (e2 == GFARM_ERR_NO_ERROR)
 		e2 = e3;
