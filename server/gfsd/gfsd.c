@@ -3396,7 +3396,7 @@ gfs_server_statfs(struct gfp_xdr *client)
 	} else
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "gfsd_statfs: %s", strerror(save_errno));
-		
+
 	gfs_server_put_reply_with_errno(client, "statfs", save_errno,
 	    "illllll", bsize, blocks, bfree, bavail, files, ffree, favail);
 }
