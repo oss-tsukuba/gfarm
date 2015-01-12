@@ -179,9 +179,9 @@ display_cksum_type(char *p, struct gfs_stat *st, int current_type)
 		printf("%s: %s\n", p, type);
 	else
 		printf("%s\n", type);
+	e = type[0] == '\0' ? GFARM_ERR_NO_SUCH_OBJECT : GFARM_ERR_NO_ERROR;
 	gfs_stat_cksum_free(&c);
-	return (type[0] == '\0' ? GFARM_ERR_NO_SUCH_OBJECT :
-	    GFARM_ERR_NO_ERROR);
+	return (e);
 }
 
 static gfarm_error_t
