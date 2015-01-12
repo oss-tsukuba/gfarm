@@ -237,6 +237,11 @@ Table of Contents:
 	to set up a shared secret key or the GSI configuration
 	correctly.
 
+	When executing gfsd with an additional -dv option, gfsd will be
+	executed in the foreground and output verbose messages, which may
+	help you to find the reason why the authentication error
+	happens.
+
 	Regarding the shared secret authentication, make sure the same
 	shared secret key file (~/.gfarm_shared_key) is located on a
 	home directory on all file system nodes.
