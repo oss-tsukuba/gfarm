@@ -15,12 +15,13 @@ static int
 is_readonly(char *path)
 {
 	char *testfile;
-	int fd, ret = 0;
+	int fd, ret = 0, save_errno;
 
 	GFARM_MALLOC_ARRAY(testfile, strlen(path) + sizeof(TEST_FILE));
 	if (testfile == NULL) {
 		gflog_error(GFARM_MSG_1003717, "is_readonly: no memory");
-		return (ret);
+		errno = ENOMEM;
+		return (-1);
 	}
 	strcpy(testfile, path);
 	strcat(testfile, TEST_FILE);
@@ -29,10 +30,15 @@ is_readonly(char *path)
 		unlink(testfile);
 	} else if (errno == EROFS || errno == ENOSPC)
 		ret = 1;
-	else
+	else {
+		save_errno = errno;
 		gflog_warning(GFARM_MSG_1003718, "is_readonly: %s",
 		    strerror(errno));
+		ret = -1;
+	}
 	free(testfile);
+	if (ret == -1)
+		errno = save_errno;
 	return (ret);
 }
 
@@ -45,8 +51,15 @@ int gfsd_statfs(char *path, gfarm_int32_t *bsizep,
 	int *readonlyp)
 {
 	struct statvfs buf;
+	int readonly;
 
 	if (statvfs(path, &buf) == -1)
+		return (errno);
+	/*
+	 * to check ENOSPC we do not use f_flag
+	 * readonly = (buf.f_flag & ST_RDONLY) != 0;
+	 */
+	if ((readonly = is_readonly(path)) == -1)
 		return (errno);
 	*bsizep = buf.f_frsize;
 	*blocksp = buf.f_blocks;
@@ -55,11 +68,7 @@ int gfsd_statfs(char *path, gfarm_int32_t *bsizep,
 	*filesp = buf.f_files;
 	*ffreep = buf.f_ffree;
 	*favailp = buf.f_favail;
-	/*
-	 * to check ENOSPC we do not use f_flag
-	 * *readonlyp = (buf.f_flag & ST_RDONLY) != 0;
-	 */
-	*readonlyp = is_readonly(path);
+	*readonlyp = readonly;
 	return (0);
 }
 
@@ -77,8 +86,11 @@ int gfsd_statfs(char *path, gfarm_int32_t *bsizep,
 	int *readonlyp)
 {
 	struct statfs buf;
+	int readonly;
 
 	if (statfs(path, &buf) == -1)
+		return (errno);
+	if ((readonly = is_readonly(path)) == -1)
 		return (errno);
 	*bsizep = buf.f_bsize;
 	*blocksp = buf.f_blocks;
@@ -87,7 +99,7 @@ int gfsd_statfs(char *path, gfarm_int32_t *bsizep,
 	*filesp = buf.f_files;
 	*ffreep = buf.f_ffree;
 	*favailp = buf.f_ffree; /* assumes there is no limit about i-node */
-	*readonlyp = is_readonly(path);
+	*readonlyp = readonly;
 	return (0);
 }
 
