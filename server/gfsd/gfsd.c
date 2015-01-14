@@ -2404,7 +2404,8 @@ digest_finish(struct gfp_xdr *client, gfarm_int32_t fd, const char *diag)
 		    (long long)fe->ino, (long long)fe->gen,
 		    gfarm_error_string(e));
 		fe->flags &= ~FILE_FLAG_DIGEST_CALC; /* invalidate */
-		fe->flags |= FILE_FLAG_DIGEST_ERROR;
+		if (gfarm_spool_digest_error_check)
+			fe->flags |= FILE_FLAG_DIGEST_ERROR;
 	}
 	return (e);
 }
