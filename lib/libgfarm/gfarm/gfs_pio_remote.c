@@ -181,11 +181,17 @@ gfs_pio_remote_storage_recvfile(GFS_File gf, gfarm_off_t r_off,
 	int w_fd, gfarm_off_t w_off, gfarm_off_t len,
 	EVP_MD_CTX *md_ctx, gfarm_off_t *recvp)
 {
+	gfarm_error_t e;
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
+	int md_aborted;
 
-	return (gfs_client_recvfile(gfs_server, gf->fd, r_off,
-	    w_fd, w_off, len, md_ctx, recvp));
+	e = gfs_client_recvfile(gfs_server, gf->fd, r_off,
+	    w_fd, w_off, len, (gf->open_flags & GFARM_FILE_APPEND) != 0,
+	    md_ctx, &md_aborted, recvp);
+	if (md_aborted)
+		gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+	return (e);
 }
 
 static gfarm_error_t

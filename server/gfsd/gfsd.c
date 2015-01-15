@@ -3117,6 +3117,7 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 	gfarm_off_t written = 0;
 	struct file_entry *fe;
 	EVP_MD_CTX *md_ctx;
+	int md_aborted;
 	gfarm_timerval_t t1, t2;
 	static const char diag[] = "GFS_PROTO_BULKWRITE";
 
@@ -3162,7 +3163,8 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 		}
 
 		e = gfs_recvfile_common(client, &dst_err, fe->local_fd, offset,
-		    md_ctx, &written);
+		    (fe->local_flags & O_APPEND) != 0, md_ctx, &md_aborted,
+		    &written);
 		io_error_check(dst_err, diag);
 		if (IS_CONNECTION_ERROR(e))
 			fatal(GFARM_MSG_1004142, "%s recvdfile: %s",
@@ -3172,7 +3174,7 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 		if (md_ctx != NULL) {
 			/* `written' is set even if an error happens */
 			fe->md_offset += written;
-			if (e != GFARM_ERR_NO_ERROR)
+			if (e != GFARM_ERR_NO_ERROR || md_aborted)
 				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 		}
 

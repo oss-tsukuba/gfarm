@@ -2102,13 +2102,19 @@ gfs_sendfile_common(struct gfp_xdr *conn, gfarm_int32_t *src_errp,
 gfarm_error_t
 gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 	int w_fd, gfarm_off_t w_off,
-	EVP_MD_CTX *md_ctx, gfarm_off_t *recvp)
+	int append_mode, EVP_MD_CTX *md_ctx, int *md_abortedp,
+	gfarm_off_t *recvp)
 {
 	gfarm_error_t e; /* connection related error */
 	gfarm_error_t e_write = GFARM_ERR_NO_ERROR;
-	gfarm_off_t written = 0;
+	gfarm_off_t written = 0, written_offset;
+	int md_aborted = 0;
 	int mode_unknown = 1, mode_thread_safe = 1;
 
+	if (append_mode) {
+		mode_unknown = 0;
+		mode_thread_safe = 0;
+	}
 	for (;;) {
 		gfarm_int32_t size;
 		int eof;
@@ -2176,9 +2182,25 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 					e_write = gfarm_errno_to_error(errno);
 					break;
 				}
+				if (append_mode) {
+					assert(!mode_thread_safe);
+					written_offset =
+					    lseek(w_fd, 0, SEEK_CUR);
+					/*
+					 * if lseek(2) fails, this isn't called
+					 * by gfsd for gfs_pio_sendfile(), but
+					 * by a client for gfs_pio_recvfile().
+					 * it's OK to continue to calculate
+					 * cksum in that case, because the
+					 * cksum won't be set as metadata.
+					 */
+					if (written_offset != -1 &&
+					    written_offset - rv != w_off)
+						md_aborted = 1;
+				}
 				w_off += rv;
 				written += rv;
-				if (md_ctx != NULL)
+				if (md_ctx != NULL && !md_aborted)
 					EVP_DigestUpdate(
 					    md_ctx, buffer, partial);
 				gfarm_iostat_local_add(
@@ -2192,6 +2214,8 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 	}
 	if (dst_errp != NULL)
 		*dst_errp = e_write;
+	if (md_abortedp != NULL)
+		*md_abortedp = md_aborted;
 	if (recvp != NULL)
 		*recvp = written;
 	return (e);
@@ -2241,7 +2265,8 @@ gfarm_error_t
 gfs_client_recvfile(struct gfs_connection *gfs_server,
 	gfarm_int32_t remote_r_fd, gfarm_off_t r_off,
 	int local_w_fd, gfarm_off_t w_off,
-	gfarm_off_t len, EVP_MD_CTX *md_ctx, gfarm_off_t *recvp)
+	gfarm_off_t len, int append_mode, EVP_MD_CTX *md_ctx, int *md_abortedp,
+	gfarm_off_t *recvp)
 {
 	gfarm_error_t e, e2;
 	gfarm_int32_t src_err = GFARM_ERR_NO_ERROR;
@@ -2258,7 +2283,8 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 		    gfarm_error_string(e));
 	} else {
 		e = gfs_recvfile_common(gfs_server->conn, &dst_err,
-		    local_w_fd, w_off, md_ctx, &written);
+		    local_w_fd, w_off,
+		    append_mode, md_ctx, md_abortedp, &written);
 		if (IS_CONNECTION_ERROR(e)) {
 			gfs_client_execute_hook_for_connection_error(
 			    gfs_server);
@@ -2326,7 +2352,7 @@ gfs_client_replica_recv_common(struct gfs_connection *gfs_server,
 	}
 
 	e = gfs_recvfile_common(gfs_server->conn, dst_errp,
-	    local_fd, 0, md_ctx, NULL);
+	    local_fd, 0, 0, md_ctx, NULL, NULL);
 	if (IS_CONNECTION_ERROR(e)) {
 		gfs_client_execute_hook_for_connection_error(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);

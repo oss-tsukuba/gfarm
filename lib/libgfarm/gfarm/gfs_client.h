@@ -132,14 +132,14 @@ gfarm_error_t gfs_client_sendfile(struct gfs_connection *,
 	EVP_MD_CTX *, gfarm_off_t *);
 gfarm_error_t gfs_client_recvfile(struct gfs_connection *,
 	gfarm_int32_t, gfarm_off_t, int, gfarm_off_t, gfarm_off_t,
-	EVP_MD_CTX *, gfarm_off_t *);
+	int, EVP_MD_CTX *, int *, gfarm_off_t *);
 
 /* commonly used by both clients and gfsd */
 struct gfp_xdr;
 gfarm_error_t gfs_sendfile_common(struct gfp_xdr *, gfarm_int32_t *,
 	int, gfarm_off_t, gfarm_off_t, EVP_MD_CTX *, gfarm_off_t *);
 gfarm_error_t gfs_recvfile_common(struct gfp_xdr *, gfarm_int32_t *,
-	int, gfarm_off_t, EVP_MD_CTX *, gfarm_off_t *);
+	int, gfarm_off_t, int, EVP_MD_CTX *, int *, gfarm_off_t *);
 #endif
 
 #define GFS_CLIENT_COMMAND_FLAG_STDIN_EOF	0x01
