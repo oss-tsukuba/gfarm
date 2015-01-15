@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <string.h>
+#include <time.h>
 
 #include <gssapi.h>
 
@@ -235,18 +236,32 @@ gfarm_gsi_server_init_count_decrement(void)
 	gsi_server_init_count_add(-1, diag);
 }
 
+#define POSSIBLE_DEADLOCK_TIMEOUT	3600 /* 60 min */
+#define POSSIBLE_DEADLOCK_COUNT		16
+
 void
 gfarm_gsi_server_finalize(void)
 {
 	static const char diag[] = "gfarm_gsi_server_finalize";
 	static const char name[] = "init_count";
+	struct timespec ts;
+	int rc;
 
 	gfarm_gsi_initialize_mutex_lock(diag);
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_sec += POSSIBLE_DEADLOCK_TIMEOUT;
 	while (staticp->gsi_server_init_count > 0) {
 		gflog_info(GFARM_MSG_1003751, "%s: wait (%d)", diag,
 		    staticp->gsi_server_init_count);
-		gfarm_cond_wait(&staticp->gsi_server_init_count_cond,
-		    &staticp->gsi_init_mutex, diag, name);
+		rc = gfarm_cond_timedwait(&staticp->gsi_server_init_count_cond,
+		    &staticp->gsi_init_mutex, &ts, diag, name);
+		if (rc == 0 ||
+		    staticp->gsi_server_init_count > POSSIBLE_DEADLOCK_COUNT) {
+			/* backtrace may cause deadlock */
+			gflog_set_fatal_action(GFLOG_FATAL_ACTION_ABORT);
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "%s: possible deadlock detected, die", diag);
+		}
 	}
 	if (staticp->gsi_initialized && staticp->gsi_server_initialized)
 		gfarm_gsi_server_finalize_unlocked();
