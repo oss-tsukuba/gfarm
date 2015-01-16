@@ -41,6 +41,20 @@ if
    $regress/bin/is_cksum_same $gftmp $localtmp &&
    gfrm -f $gftmp &&
 
+   # gfs_pio_write/append, then gfs_pio_read
+   # (may be taken as accessing whole while), no calculation
+   awk 'BEGIN{
+      for (i = 0; i < '$bufsize'; i++) printf "%c", 0
+      exit
+   }' | gfreg $* - $gftmp &&
+   awk 'BEGIN{
+      for (i = 0; i < '$bufsize'; i++) printf "a";
+      exit
+   }' |
+   $gfs_pio_test $* -a -S 0 -W $bufsize -S $bufsize -I $gftmp >/dev/null &&
+   [ X"`gfcksum -t $gftmp`" = X"" ] &&
+   gfrm -f $gftmp &&
+
    # gfs_pio_sendfile/append, then gfs_pio_read
    # (may be taken as accessing whole while), no calculation
    awk 'BEGIN{
