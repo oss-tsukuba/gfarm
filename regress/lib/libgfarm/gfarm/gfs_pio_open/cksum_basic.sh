@@ -38,6 +38,12 @@ if
    $regress/bin/is_cksum_same $gftmp $data/65byte &&
    gfrm -f $gftmp &&
 
+   # gfs_pio_truncate, and gfs_pio_sendfile
+   cat $data/65byte $data/65byte |
+   $gfs_pio_test $* -ctw -W 65 -T 0 -Y 0,0,-1 $gftmp &&
+   $regress/bin/is_cksum_same $gftmp $data/65byte &&
+   gfrm -f $gftmp &&
+
    # gfs_pio_truncate to shorter size, no calculation
    $gfs_pio_test $* -ctw -O -T 64 $gftmp <$data/65byte &&
    [ X"`gfcksum -t $gftmp`" = X"" ] &&
@@ -60,11 +66,20 @@ if
    rm -f $localtmp &&
    gfrm -f $gftmp &&
 
-   # appened (but, libgfarm may take it as writing whole while), no calculation
-   gfreg $* $data/65byte $gftmp &&
+   # gfs_pio_write/append (may be taken as writing whole while), no calculation
+   echo ================================================================ |
+   gfreg $* - $gftmp &&
    $gfs_pio_test $* -a -O $gftmp <$data/65byte &&
    [ X"`gfcksum -t $gftmp`" = X"" ] &&
-#   gfrm -f $gftmp &&
+   gfrm -f $gftmp &&
+
+   # gfs_pio_sendfile/append
+   # (may be taken as writing whole while), no calculation
+   echo ================================================================ |
+   gfreg $* - $gftmp &&
+   $gfs_pio_test $* -a -Y0,0,65 $gftmp <$data/65byte &&
+   [ X"`gfcksum -t $gftmp`" = X"" ] &&
+   gfrm -f $gftmp &&
 
    true
 
