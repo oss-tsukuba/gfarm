@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <ctype.h>
 #include <pwd.h>
+#include <time.h>
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
@@ -534,7 +535,7 @@ gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf, int timeoutMsec)
     return iLen;
 }
 
-
+#define POSSIBLE_DEADLOCK_TIMEOUT	3600 /* 60 min */
 int
 gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
     OM_uint32 *majStatPtr, OM_uint32 *minStatPtr, gss_name_t *remoteNamePtr,
@@ -555,7 +556,8 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
     gss_OID mechType = GSS_C_NO_OID;
     OM_uint32 timeRet;
 
-    int tknStat;
+    int tknStat, rc;
+    struct timespec ts;
 
     static const char diag[] = "gfarmGssAcceptSecurityContext()";
 
@@ -571,7 +573,15 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 	    break;
 	}
 
-	gfarm_mutex_lock(&gss_mutex, diag, gssDiag);
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_sec += POSSIBLE_DEADLOCK_TIMEOUT;
+	rc = gfarm_mutex_timedlock(&gss_mutex, &ts, diag, gssDiag);
+	if (rc != 0) {
+		/* backtrace may cause deadlock */
+		gflog_set_fatal_action(GFLOG_FATAL_ACTION_ABORT);
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "%s: possible deadlock detected, die", diag);
+	}
 	majStat = gss_accept_sec_context(&minStat,
 					 scPtr,
 					 cred,
