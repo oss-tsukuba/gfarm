@@ -108,9 +108,11 @@ enum gfs_proto_fsync_operation {
 #define GFS_PROTO_REPLICATION_HANDLE_INVALID	((gfarm_int64_t)-1)
 
 /*
- * request flags for GFS_PROTO_REPLICATION_CKSUM_REQUEST,
- * GFS_PROTO_REPLICA_RECV_CKSUM, and GFM_PROTO_REPLICA_ADDING_CKSUM.
- * see GFM_PROTO_CKSUM_GET flags as well
+ * GFS_PROTO_REPLICATION_CKSUM_REQUEST request flags
+ * GFS_PROTO_REPLICA_RECV_CKSUM request flags
+ * GFM_PROTO_REPLICA_ADDING_CKSUM result flags (cksum_request_flags) 
+ *
+ * see GFM_PROTO_CKSUM_GET result flags as well
  */
 
 #define	GFS_PROTO_REPLICATION_CKSUM_REQFLAG_MAYBE_EXPIRED	0x00000001
@@ -121,7 +123,7 @@ enum gfs_proto_fsync_operation {
 #define	GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED	0x00800000
 
 /*
- * cksum_result_flags of GFS_PROTO_REPLICA_RECV_CKSUM is
+ * GFS_PROTO_REPLICA_RECV_CKSUM result flags (cksum_result_flags):
  * just same with both GFM_PROTO_REPLICATION_CKSUM_RESULT flags
  * and cksum_result_flags of GFM_PROTO_REPLICA_ADDED_CKSUM,
  * and currently always 0.

@@ -87,6 +87,7 @@ gfm_create_fd_result(struct gfm_connection *gfm_server, void *closure)
 
 	if (ci != NULL) {
 		ci->cksum_type = NULL;
+		ci->cksum_set_flags = 0;
 		memset(&st, 0, sizeof(st));
 	}
 
@@ -105,7 +106,7 @@ gfm_create_fd_result(struct gfm_connection *gfm_server, void *closure)
 	} else if (ci != NULL &&
 	    (e = gfm_client_cksum_get_result(gfm_server,
 	    &ci->cksum_type, sizeof(ci->cksum), &ci->cksum_len, ci->cksum,
-	    &ci->cksum_flags)) != GFARM_ERR_NO_ERROR) {
+	    &ci->cksum_get_flags)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003923,
 		    "create() result: %s", gfarm_error_string(e));
 	} else if ((e = gfm_client_get_fd_result(gfm_server, &c->fd))
@@ -226,6 +227,7 @@ gfm_open_fd_result(struct gfm_connection *gfm_server, void *closure)
 
 	if (ci != NULL) {
 		ci->cksum_type = NULL;
+		ci->cksum_set_flags = 0;
 		memset(&st, 0, sizeof(st));
 	}
 
@@ -237,7 +239,7 @@ gfm_open_fd_result(struct gfm_connection *gfm_server, void *closure)
 	} else if (ci != NULL &&
 	    (e = gfm_client_cksum_get_result(gfm_server,
 	    &ci->cksum_type, sizeof(ci->cksum), &ci->cksum_len, ci->cksum,
-	    &ci->cksum_flags)) != GFARM_ERR_NO_ERROR) {
+	    &ci->cksum_get_flags)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003927,
 		    "create() result: %s", gfarm_error_string(e));
 	} else if ((e = gfm_client_get_fd_result(gfm_server, &c->fd))
@@ -330,6 +332,7 @@ gfm_fhopen_fd(gfarm_ino_t inum, gfarm_uint64_t gen, int flags,
 
 	if (ci != NULL) {
 		ci->cksum_type = NULL;
+		ci->cksum_set_flags = 0;
 		memset(&st, 0, sizeof(st));
 	}
 
@@ -381,7 +384,7 @@ gfm_fhopen_fd(gfarm_ino_t inum, gfarm_uint64_t gen, int flags,
 	else if (ci != NULL &&
 	    (e = gfm_client_cksum_get_result(gfm_server,
 	    &ci->cksum_type, sizeof(ci->cksum), &ci->cksum_len, ci->cksum,
-	    &ci->cksum_flags)) != GFARM_ERR_NO_ERROR)
+	    &ci->cksum_get_flags)) != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1003931, "cksum_get result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_get_fd_result(gfm_server, &fd))
@@ -426,7 +429,7 @@ gfm_close_request(struct gfm_connection *gfm_server, void *closure)
 
 	if (ci != NULL &&
 	    (e = gfm_client_cksum_set_request(gfm_server, ci->cksum_type,
-	    ci->cksum_len, ci->cksum, 0, 0, 0))
+	    ci->cksum_len, ci->cksum, ci->cksum_set_flags, 0, 0))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1003932, "cksum_set() request: %s",
 		    gfarm_error_string(e));
@@ -472,7 +475,6 @@ gfm_close_result(struct gfm_connection *gfm_server, void *closure)
 gfarm_error_t
 gfm_close_fd(struct gfm_connection *gfm_server, int fd,
 	struct gfs_pio_internal_cksum_info *cksum_info)
-
 {
 	gfarm_error_t e;
 

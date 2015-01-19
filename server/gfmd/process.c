@@ -1391,7 +1391,7 @@ process_replica_added(struct process *process,
 		    ) == 0 && cksum_type != NULL && *cksum_type != '\0' &&
 		    cksum_len > 0) {
 			inode_cksum_set(fo->inode,
-			    cksum_type, cksum_len, cksum);
+			    cksum_type, cksum_len, cksum, cksum_result_flags);
 		}
 	}
 	free(fo->u.f.replica_source);

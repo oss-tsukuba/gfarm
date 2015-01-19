@@ -353,7 +353,8 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 	gf->md.filesize = -1;
 	gf->md.cksum_type = NULL;
 	gf->md.cksum_len = 0;
-	gf->md.cksum_flags = 0;
+	gf->md.cksum_get_flags = 0;
+	gf->md.cksum_set_flags = 0;
 	if (cip == NULL) {
 		/* do not calculate cksum */
 	} else if (!gfs_pio_md_init(cip->cksum_type, &gf->md_ctx, url)) {
@@ -362,7 +363,7 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 		gf->md = *cip;
 		if (cip->cksum_len > 0)
 			gf->mode |= GFS_FILE_MODE_DIGEST_AVAIL;
-		if ((cip->cksum_flags & (
+		if ((cip->cksum_get_flags & (
 		    GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
 		    GFM_PROTO_CKSUM_GET_EXPIRED)) == 0)
 			gf->mode |= GFS_FILE_MODE_DIGEST_CALC;
@@ -584,6 +585,7 @@ gfs_pio_close(GFS_File gf)
 	struct gfs_pio_internal_cksum_info *cip = NULL;
 	struct gfs_stat gst;
 	gfarm_off_t filesize = gf->md.filesize;
+	int is_local = 0;
 
 	GFARM_KERNEL_UNUSE2(t1, t2);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
@@ -597,6 +599,9 @@ gfs_pio_close(GFS_File gf)
 	 */
 	e_save = GFARM_ERR_NO_ERROR;
 	if (gfs_pio_is_view_set(gf)) {
+		struct gfs_file_section_context *vc = gf->view_context;
+
+		is_local = vc->ops == &gfs_pio_local_storage_ops;
 		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			e_save = gfs_pio_flush(gf);
 
@@ -648,8 +653,12 @@ gfs_pio_close(GFS_File gf)
 		      GFS_FILE_MODE_DIGEST_FINISH) &&
 		    ((gf->mode & GFS_FILE_MODE_MODIFIED) != 0 ||
 		     (gf->mode & GFS_FILE_MODE_DIGEST_AVAIL) == 0) &&
-		    gf->md_offset == gf->md.filesize)
+		    gf->md_offset == gf->md.filesize) {
 			cip = &gf->md;
+			if (!is_local)
+				cip->cksum_set_flags =
+				    GFM_PROTO_CKSUM_SET_REPORT_ONLY;
+		}
 	}
 
 	if (gf->md.cksum_type != NULL &&

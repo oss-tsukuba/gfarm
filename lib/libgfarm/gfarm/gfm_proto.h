@@ -359,22 +359,27 @@ enum gfm_proto_command {
 #define GFM_PROTO_REPLICA_CHECK_CTRL_STOP	1
 
 /*
- * GFM_PROTO_CKSUM_GET flags
- * see cksum_request_flags of GFS_PROTO_REPLICATION_CKSUM_REQUEST,
+ * GFM_PROTO_CKSUM_GET result flags
+ * see cksum request_flags of GFS_PROTO_REPLICATION_CKSUM_REQUEST,
  * GFS_PROTO_REPLICA_RECV_CKSUM and GFM_PROTO_REPLICA_ADDING_CKSUM as well.
  */
 #define	GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED	0x00000001
 #define	GFM_PROTO_CKSUM_GET_EXPIRED		0x00000002
 
 /*
- * cksum_request_flags of GFM_PROTO_REPLICA_ADDING_CKSUM:
+ * GFM_PROTO_CKSUM_SET request flags
+ */
+#define	GFM_PROTO_CKSUM_SET_REPORT_ONLY		0x00000001 /* since 2.6.1 */
+
+/*
+ * GFM_PROTO_REPLICA_ADDING_CKSUM request flags:
  * just same with both GFS_PROTO_REPLICATION_CKSUM_REQUEST flags
  * and request_flags of GFS_PROTO_REPLICA_RECV_CKSUM.
  */
 
 /*
- * both GFM_PROTO_REPLICATION_CKSUM_RESULT flags
- * and cksum_result_flags of GFM_PROTO_REPLICA_ADDED_CKSUM are
+ * both GFM_PROTO_REPLICATION_CKSUM_RESULT request flags
+ * and GFM_PROTO_REPLICA_ADDED_CKSUM result flags are
  * just same with cksum_result_flags of GFS_PROTO_REPLICA_RECV_CKSUM,
  * and currently always 0.
  */

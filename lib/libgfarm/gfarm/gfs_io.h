@@ -5,7 +5,7 @@ struct gfs_pio_internal_cksum_info {
 	gfarm_off_t filesize;
 
 	char *cksum_type;
-	gfarm_int32_t cksum_flags;
+	gfarm_int32_t cksum_get_flags, cksum_set_flags;
 	/* the followings are available when GFS_PIO_MD_FLAG_DIGEST_FINISH */
 	size_t cksum_len;
 	char cksum[

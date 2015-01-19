@@ -173,7 +173,7 @@ void inode_cksum_remove_in_cache(struct inode *);
 gfarm_error_t inode_cksum_set_in_cache(struct inode *,
 	const char *, size_t, const char *);
 gfarm_error_t inode_cksum_set(struct inode *,
-	const char *, size_t, const char *);
+	const char *, size_t, const char *, gfarm_int32_t);
 
 gfarm_error_t file_opening_cksum_set(struct file_opening *,
 	const char *, size_t, const char *,

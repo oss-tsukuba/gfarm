@@ -372,7 +372,8 @@ cmp_cksum(struct checksum *c1,
 
 gfarm_error_t
 inode_cksum_set(struct inode *inode,
-	const char *cksum_type, size_t cksum_len, const char *cksum)
+	const char *cksum_type, size_t cksum_len, const char *cksum,
+	gfarm_int32_t cksum_result_flags)
 {
 	gfarm_error_t e;
 	struct inode_activity *ia = inode->u.c.activity;
@@ -401,6 +402,15 @@ inode_cksum_set(struct inode *inode,
 				   (unsigned long long)inode_get_gen(inode),
 				   gfarm_error_string(e));
 				return (GFARM_ERR_NO_ERROR);
+			} else if ((cksum_result_flags &
+			    GFM_PROTO_CKSUM_SET_REPORT_ONLY) != 0) {
+				gflog_notice(GFARM_MSG_UNFIXED,
+				   "%s: (%llu:%llu) %s (flaky network?)", diag,
+				   (unsigned long long)inode_get_number(inode),
+				   (unsigned long long)inode_get_gen(inode),
+				   gfarm_error_string(e));
+				/* don't report error. SF.net #813 */
+				return (GFARM_ERR_NO_ERROR);
 			} else {
 				gflog_error(GFARM_MSG_1003762,
 				   "%s: (%llu:%llu) %s", diag,
@@ -417,6 +427,31 @@ inode_cksum_set(struct inode *inode,
 			    gfarm_error_string(e));
 			return (GFARM_ERR_NO_ERROR);
 		}
+	} else if ((cksum_result_flags & GFM_PROTO_CKSUM_SET_REPORT_ONLY)
+	    != 0) {
+		if (ia != NULL && ia->u.f.writers >= 1) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			   "%s: (%llu:%llu) client cksum report "
+			    "about multiple writer case", diag,
+			   (unsigned long long)inode_get_number(inode),
+			   (unsigned long long)inode_get_gen(inode));
+			return (GFARM_ERR_NO_ERROR);
+		}
+		/*
+		 * this report is sent from a client about remote access,
+		 * and in that case, cksum should be set by gfsd already,
+		 * but it's not really set.
+		 */
+		gflog_notice(GFARM_MSG_UNFIXED,
+		   "%s: (%llu:%llu): cksum is incorrectly set by client", diag,
+		   (unsigned long long)inode_get_number(inode),
+		   (unsigned long long)inode_get_gen(inode));
+		/*
+		 * We don't return GFARM_ERR_CHECKSUM_MISMATCH here,
+		 * because this must be a bug of gfarm.
+		 */
+		return (GFARM_ERR_NO_ERROR);
+
 	}
 	if (cs == NULL) {
 		e = db_inode_cksum_add(inode->i_number,
@@ -452,7 +487,7 @@ file_opening_cksum_set(struct file_opening *fo,
 		gflog_debug(GFARM_MSG_1001714, "file checksum is invalidated");
 		return (GFARM_ERR_EXPIRED);
 	}
-	e = inode_cksum_set(fo->inode, cksum_type, cksum_len, cksum);
+	e = inode_cksum_set(fo->inode, cksum_type, cksum_len, cksum, flags);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e); /* inode_cksum_set() calls gflog_debug */
 
@@ -4501,7 +4536,8 @@ inode_replicated(struct file_replicating *fr,
 			 * thus, we don't have to report the return value of
 			 * inode_cksum_set()
 			 */
-			inode_cksum_set(inode, cksum_type, cksum_len, cksum);
+			inode_cksum_set(inode, cksum_type, cksum_len, cksum,
+			    cksum_result_flags);
 		}
 	} else {
 		if (src_errcode == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY &&
