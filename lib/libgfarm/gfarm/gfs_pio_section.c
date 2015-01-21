@@ -109,6 +109,14 @@ gfs_pio_view_section_pwrite(GFS_File gf,
 			gfarm_error_string(e));
 	} else if (*lengthp > 0) {
 		gf->mode |= GFS_FILE_MODE_MODIFIED;
+		/*
+		 * gf->md.filesize may be incorrect, if this file is
+		 * simultaneously written via multiple descriptors,
+		 * but we don't have to care such case, because
+		 * the cksum will be invalidated by gfmd.
+		 */
+		if ((gf->open_flags & GFARM_FILE_APPEND) != 0)
+			offset = gf->md.filesize;
 		if (gf->md.filesize < offset + *lengthp)
 			gf->md.filesize = offset + *lengthp;
 		if ((gf->mode &
@@ -248,6 +256,14 @@ gfs_pio_view_section_sendfile(GFS_File gf, gfarm_off_t w_off,
 	if ((gf->mode &
 	    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
 	    (GFS_FILE_MODE_DIGEST_CALC)) {
+		/*
+		 * gf->md.filesize may be incorrect, if this file is
+		 * simultaneously written via multiple descriptors,
+		 * but we don't have to care such case, because
+		 * the cksum will be invalidated by gfmd.
+		 */
+		if ((gf->open_flags & GFARM_FILE_APPEND) != 0)
+			w_off = gf->md.filesize;
 		if (gf->md_offset != w_off) {
 			gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
 		} else {
