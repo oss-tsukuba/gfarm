@@ -270,10 +270,19 @@ gfs_pio_local_storage_pread(GFS_File gf,
 
 /*
  * *writtenp: set even if an error happens.
+ *
+ * NOTE:
+ * the `md_aborted' related code in gfsd.c:gfs_server_bulkwrite()
+ * and gfs_client.c:gfs_recvfile_common() is unnecessary here,
+ * because gfs_pio_view_section_sendfile() is effectively resetting
+ * the GFS_FILE_MODE_DIGEST_CALC bit by using gf->md.filesize.
+ * i.e. the `md_aborted' related code in gfsd.c can be eliminated,
+ * if gfsd maintains struct file_entry::size just like
+ * gf->md.filesize in libgfarm.
  */
 static gfarm_error_t
 gfs_pio_local_copyfile(int r_fd, gfarm_off_t r_off,
-	int w_fd, gfarm_off_t w_off, gfarm_off_t len,
+	int w_fd, gfarm_off_t w_off, gfarm_off_t len, int append_mode,
 	EVP_MD_CTX *md_ctx, gfarm_off_t *writtenp)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
@@ -285,6 +294,10 @@ gfs_pio_local_copyfile(int r_fd, gfarm_off_t r_off,
 	gfarm_off_t written = 0;
 	char buffer[COPYFILE_BUFSIZE];
 
+	if (append_mode) {
+		write_mode_unknown = 0;
+		write_mode_thread_safe = 0;
+	}
 	if (until_eof || len > 0) {
 		for (;;) {
 			to_read = until_eof ? sizeof buffer :
@@ -365,7 +378,7 @@ gfs_pio_local_storage_recvfile(GFS_File gf, gfarm_off_t r_off,
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 
-	return (gfs_pio_local_copyfile(vc->fd, r_off, w_fd, w_off, len,
+	return (gfs_pio_local_copyfile(vc->fd, r_off, w_fd, w_off, len, 0,
 	    md_ctx, recvp));
 }
 
@@ -377,7 +390,7 @@ gfs_pio_local_storage_sendfile(GFS_File gf, gfarm_off_t w_off,
 	struct gfs_file_section_context *vc = gf->view_context;
 
 	return (gfs_pio_local_copyfile(r_fd, r_off, vc->fd, w_off, len,
-	    md_ctx, sentp));
+	    (gf->open_flags & GFARM_FILE_APPEND) != 0, md_ctx, sentp));
 }
 
 static gfarm_error_t
