@@ -611,7 +611,13 @@ gfs_pio_close(GFS_File gf)
 		    (GFS_FILE_MODE_DIGEST_CALC)) {
 			/*
 			 * this is slow, if the filesystem node is remote,
-			 * but necessary, especially for GFARM_FILE_APPEND case
+			 * but necessary to detect file corruption which
+			 * is caused by e.g. a kernel bug on the filesystem
+			 * node.
+			 * see r9289, r9349, and the following test with
+			 * a corrupted file which size is increased than
+			 * what it should be:
+			 * regress/lib/libgfarm/gfarm/gfs_pio_open/cksum_mismatch.sh
 			 */
 			e = gfs_pio_view_fstat(gf, &gst);
 			if (e == GFARM_ERR_NO_ERROR) {
@@ -645,6 +651,14 @@ gfs_pio_close(GFS_File gf)
 		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 
+		/*
+		 * the reason why `gf->md.filesize' is compared instead
+		 * of `filesize' is because the comparison effectively
+		 * invalidates incorrect checksum calculation.
+		 * although this comparison became unnecessary since r9425
+		 * for SF.net #814, we leave this comparision as is
+		 * because it's cheap and no harm.
+		 */
 		if (e == GFARM_ERR_NO_ERROR &&
 		    (gf->mode &
 		     (GFS_FILE_MODE_WRITE|GFS_FILE_MODE_DIGEST_CALC|
