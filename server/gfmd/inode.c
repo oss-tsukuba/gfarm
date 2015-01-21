@@ -409,7 +409,7 @@ inode_cksum_set(struct inode *inode,
 				   (unsigned long long)inode_get_number(inode),
 				   (unsigned long long)inode_get_gen(inode),
 				   gfarm_error_string(e));
-				/* don't report error. SF.net #813 */
+				/* don't report error (SF.net #813) XXX */
 				return (GFARM_ERR_NO_ERROR);
 			} else {
 				gflog_error(GFARM_MSG_1003762,
@@ -447,8 +447,10 @@ inode_cksum_set(struct inode *inode,
 		   (unsigned long long)inode_get_number(inode),
 		   (unsigned long long)inode_get_gen(inode));
 		/*
-		 * We don't return GFARM_ERR_CHECKSUM_MISMATCH here,
-		 * because this must be a bug of gfarm.
+		 * don't report error (SF.net #813),
+		 * because the way of cksum calculation is not exactly
+		 * same between gfsd and libgfarm, especially about
+		 * whether they call lseek(,SEEK_CUR,) or not.
 		 */
 		return (GFARM_ERR_NO_ERROR);
 
