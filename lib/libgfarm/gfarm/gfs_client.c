@@ -2097,6 +2097,7 @@ gfs_sendfile_common(struct gfp_xdr *conn, gfarm_int32_t *src_errp,
  *
  * return value: connection related error
  * *dst_errp: set even if an error happens.
+ * *md_abortedp: set even if an error happens.
  * *recvp: set even if an error happens.
  */
 gfarm_error_t
