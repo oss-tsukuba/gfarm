@@ -208,9 +208,12 @@ Then, remove files and directories as follows;
 
 o Firewall configuration
 
-The Gfarm metadata server should be able to accept TCP connections at
+The Gfarm metadata servers should be able to accept TCP connections at
 a port that are specified by the -m option of the config-gfarm
 command.
+Furthermore, they should be able to send/receive UDP packets
+to filesystem nodes, to the port specified by the -p option
+of the config-gfsd command.
 
 Configuration of a Gfarm filesystem node
 ========================================
@@ -379,8 +382,8 @@ o Firewall configuration
 Client nodes should be able to initiate TCP connections to the metadata
 server, at the port specified by the -m option of the config-gfarm command.
 Furthermore, they should be able to initiate TCP connections and
-should be able to send/receive UDP packets to filesystem nodes, from the
-port specified by the -p option of the config-gfsd command.
+should be able to send/receive UDP packets to filesystem nodes,
+to the port specified by the -p option of the config-gfsd command.
 
 Testing of the Gfarm filesystem
 ===============================
