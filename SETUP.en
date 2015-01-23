@@ -6,13 +6,11 @@ Table of contents
 * About this document
   - Convention of command execution
 * Overview
+  - Firewall configuration
 * Configuration of a Gfarm metadata server (MDS)
-  - Firewall configuration
 * Configuration of a Gfarm filesystem node
-  - Firewall configuration
 * Configuration of a Gfarm client node
   - Configuration of a client node
-  - Firewall configuration
 * Testing of the Gfarm filesystem
   - gfls - Directory listing
   - gfhost - Filesystem node information
@@ -56,6 +54,44 @@ Overview
 To introduce the Gfarm filesystem, configure a metadata server, and
 filesystem nodes have to be configured, and register users,
 administrators and root users.
+
+o Firewall configuration
+
+The following network communication has to be allowed.
+
+source           destination      proto purpose
+IP     port      IP     port
+------ --------- ------ --------- ----- -------------------------------
+gfmd   ephemeral gfmd   gfmd_port TCP   metadata replication
+gfmd   ephemeral gfsd   gfsd_port UDP   gfmd failover notification request
+gfsd   ephemeral gfmd   gfmd_port TCP   metadata access 
+gfsd   ephemeral gfsd   gfsd_port TCP   data replication
+gfsd   gfsd_port gfmd   ephemeral UDP   gfmd failover notification response
+gfsd   gfsd_port client ephemeral UDP   gfsd health check response
+client ephemeral gfmd   gfmd_port TCP   metadata access 
+client ephemeral gfsd   gfsd_port TCP   data access
+client ephemeral gfsd   gfsd_port UDP   gfsd health check request
+
+    gfmd_port: the port number which is specified by "config-gfarm -m"
+    gfsd_port: the port number which is specified by "config-gfsd -p"
+    ephemeral: port number range that communication initiators will use.
+	The range depends on the type of the client OS,
+	and is greater than 1023 usually.
+
+For TCP connections, this table only describes rules for communication
+from a connection initiator to a connection acceptor, and omits rules
+for the other direction.
+If you are not using a stateful inspection feature of your firewall,
+you must allow the TCP communication for the other direction as well.
+
+Also, This table doesn't describe anything about icmp packets.  But if
+you disallow packets of icmp type:3 (unreachable) code:4 (need fragment),
+the Path MTU discovery feature stops working, and the communication
+performance may drop or the communication itself may stop working in
+some cases.
+For other types of icmp packets, disalllowing them may delay detection
+of a communication error, or may prevent gfarm related programs from
+getting a reason of an error.
 
 Configuration of a Gfarm metadata server (MDS)
 ==============================================
@@ -205,12 +241,6 @@ Then, remove files and directories as follows;
 	# rm -f /etc/init.d/gfarm-pgsql /etc/init.d/gfmd
 	# rm -rf /var/gfarm-*
 
-o Firewall configuration
-
-The Gfarm metadata server should be able to accept TCP connections at
-a port that are specified by the -m option of the config-gfarm
-command.
-
 Configuration of a Gfarm filesystem node
 ========================================
 
@@ -341,14 +371,6 @@ Then, remove files and directories as follows;
 	# rm -f /etc/gfarm2.conf /etc/init.d/gfsd
 	# rm -rf <spool_directory>
 
-o Firewall configuration
-
-Filesystem nodes should be able to accept TCP connections and
-UDP packet reception and transmission at the port that is
-specified by the -p option of the config-gfsd command.
-
-Also, it requires the same settings as those of the client nodes.
-
 Configuration of a Gfarm client node
 ====================================
 
@@ -367,14 +389,6 @@ copied among every nodes.
 
 In case of GSI, obtain the user certificate, and ask to add your entry
 into grid-mapfile of every file system node and a metadata server.
-
-o Firewall configuration
-
-Client nodes should be able to initiate TCP connections to the metadata
-server, at the port specified by the -m option of the config-gfarm command.
-Furthermore, they should be able to initiate TCP connections and
-should be able to send/receive UDP packets to filesystem nodes, from the
-port specified by the -p option of the config-gfsd command.
 
 Testing of the Gfarm filesystem
 ===============================
