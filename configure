@@ -2579,10 +2579,18 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
 
-# "linux-gnu" -> "linux", "netbsdelf" -> "netbsd", "osf5.1b" -> "osf1"
-host_os_nickname=`echo $host_os |
-	sed -e 's/-.*//' -e 's/[0-9.]*$//' \
-		-e 's/^netbsdelf$/netbsd/' -e 's/osf0-9.*/osf1/'`
+# $host_os_nickname is used to select startup RC scripts, etc.
+# currently GNU/Hurd and Debian/kFreeBSD are treated as Linux, because they
+# are using Debian way, but not really tested.
+case $host_os in
+gnu*)		host_os_nickname=linux;;	# "gnu" (GNU/Hurd)
+kfreebsd-gnu*)	host_os_nickname=linux;;	# (Debian/kFreeBSD)
+linux-gnu*)	host_os_nickname=linux;;	# (Linux)
+netbsdelf*)	host_os_nickname=netbsd;;	# "netbsdelf4.0"
+osf*)		host_os_nickname=osf1;;		# "osf5.1b"
+*)		host_os_nickname=`echo $host_os | sed -e 's/[0-9.]*$//'`;;
+			# "netbsd6.1.4" -> "netbsd"
+esac
 
 ######
 ###### Checks for programs.
