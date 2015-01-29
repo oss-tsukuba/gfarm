@@ -32,9 +32,10 @@
 <para>
 <command moreinfo="none">config-gfarm</command> is a utility to set up a
 metadata server of Gfarm file system.
-It is required to be run with the root privilege, unless you use the
-file system for private purpose such as development, evaluation or
-test of Gfarm.
+The server program for a metadata server is named gfmd.
+<command moreinfo="none">config-gfarm</command> is required to be run with
+the root privilege, unless you use the file system for private purpose such
+as development, evaluation or test of Gfarm.
 </para>
 
 <para>
@@ -51,22 +52,25 @@ Set up the backend database.
 
 <listitem>
 <para>
-Generate Gfarm configuration files %%SYSCONFDIR%%/gfarm2.conf and
-%%SYSCONFDIR%%/gfmd.conf.
+Generate Gfarm configuration files
+<filename moreinfo="none">%%SYSCONFDIR%%/gfarm2.conf</filename> and
+<filename moreinfo="none">%%SYSCONFDIR%%/gfmd.conf</filename>.
 </para>
 </listitem>
 
 <listitem>
 <para>
 Create scripts (or configuration files) to start/stop the backend
-database and the Gfarm metadata server gfmd.
+database and the Gfarm metadata server named gfmd.
 </para>
 
 <para>
 On most systems, <command moreinfo="none">config-gfarm</command> puts
 start/stop scripts <command moreinfo="none">gfmd</command> and
-<command moreinfo="none">gfarm-pgsql</command> onto either /etc/init.d
-or /etc/rc.d/init.d, according to the operating system.
+<command moreinfo="none">gfarm-pgsql</command> onto either
+<filename moreinfo="none">/etc/init.d</filename> or
+<filename moreinfo="none">/etc/rc.d/init.d</filename>, according to the
+operating system.
 </para>
 
 <para>
@@ -74,7 +78,7 @@ On Linux with systemd such as Red Hat Enterprise Linux 7 or later,
 <command moreinfo="none">config-gfarm</command> puts the unit configuration
 files <filename moreinfo="none">gfmd.service</filename> and
 <filename moreinfo="none">gfarm-pgsql.service</filename> onto
-/etc/systemd/system, and then executes
+<filename moreinfo="none">/etc/systemd/system</filename>, and then executes
 <command moreinfo="none">systemctl enable gfmd.service</command> and
 <command moreinfo="none">systemctl enable gfarm-pgsql.service</command>
 respectively.
@@ -148,7 +152,8 @@ Specifically, the followings are affected.
   <listitem>
   <para>
   The directory to put metadata of Gfarm.
-  That is PREFIX/var/gfarm-pgsql if the backend database is PostgreSQL.
+  That is <filename moreinfo="none">PREFIX/var/gfarm-pgsql</filename> if
+  the backend database is PostgreSQL.
   The path can also be changed by <option>-l</option> option.
   When both options are specified, <option>-l</option> option has preference.
   </para>
@@ -157,8 +162,8 @@ Specifically, the followings are affected.
   <listitem>
   <para>
   The directory to put log files about metadata.
-  That is PREFIX/var/gfarm-pgsql/pg_xlog if the backend database is
-  PostgreSQL.
+  That is <filename moreinfo="none">PREFIX/var/gfarm-pgsql/pg_xlog</filename>
+  if the backend database is PostgreSQL.
   The path can also be changed by <option>-L</option> option.
   When both options are specified, <option>-L</option> option has preference.
   </para>
@@ -167,7 +172,8 @@ Specifically, the followings are affected.
   <listitem>
   <para>
   The directory to put journal files of gfmd.
-  That is PREFIX/var/gfarm-metadata/journal.
+  That is
+  <filename moreinfo="none">PREFIX/var/gfarm-metadata/journal</filename>.
   The path can also be changed by <option>-j</option> option.
   When both options are specified, <option>-j</option> option has preference.
   </para>
@@ -176,22 +182,23 @@ Specifically, the followings are affected.
   <listitem>
   <para>
   The directory to put PID files of gfmd and the backend database.
-  That is PREFIX/var/run.
+  That is <filename moreinfo="none">PREFIX/var/run</filename>.
   </para>
   </listitem>
 
   <listitem>
   <para>
   The directory to put configuration files.
-  That is PREFIX/etc.
+  That is <filename moreinfo="none">PREFIX/etc</filename>.
   </para>
   </listitem>
 
   <listitem>
   <para>
   The directory of start/stop scripts for gfmd and its backend database.
-  That is PREFIX/etc/init.d or PREFIX/rc.d/init.d/etc which is depending
-  on operating systems.
+  That is <filename moreinfo="none">PREFIX/etc/init.d</filename> or
+  <filename moreinfo="none">PREFIX/rc.d/init.d/etc</filename> which is
+  depending on operating systems.
   </para>
   </listitem>
 
@@ -201,7 +208,8 @@ Specifically, the followings are affected.
   When an empty prefix is given by <option>--prefix</option> option on
   such host, <command moreinfo="none">config-gfarm</command> doesn't
   put unit configuration files for systemd.
-  Instead, it puts traditional start/stop scripts at PREFIX/etc/init.d.
+  Instead, it puts traditional start/stop scripts at
+  <filename moreinfo="none">PREFIX/etc/init.d</filename>.
   </para>
   </listitem>
 
@@ -308,8 +316,8 @@ store metadata of Gfarm.
 <para>
 If the backend database is PostgreSQL, the directory is commonly called
 PGDATA directory.
-The default is PREFIX/var/gfarm-pgsql where PREFIX is a prefix given by
-<option>--prefix</option> option.
+The default is <filename moreinfo="none">PREFIX/var/gfarm-pgsql</filename>
+where PREFIX is a prefix given by <option>--prefix</option> option.
 </para>
 </listitem>
 </varlistentry>
@@ -320,8 +328,8 @@ The default is PREFIX/var/gfarm-pgsql where PREFIX is a prefix given by
 <para>
 Specify a path to the directory where the backend database puts log files.
 If the backend database is PostgreSQL, the default is
-PREFIX/var/gfarm-pgsql/pg_xlog where PREFIX is a prefix given by
-<option>--prefix</option> option.
+<filename moreinfo="none">PREFIX/var/gfarm-pgsql/pg_xlog</filename> where
+PREFIX is a prefix given by <option>--prefix</option> option.
 </para>
 </listitem>
 </varlistentry>
@@ -343,8 +351,9 @@ The default is the fully qualified domainname of the host.
 Specify a path to the directory where gfmd puts journal files.
 This option takes an effect only when metadata replication is enabled by
 <option>-r</option> option.
-The default value is PREFIX/var/gfarm-metadata/journal where PREFIX is a
-prefix given by <option>--prefix</option> option.
+The default value is
+<filename moreinfo="none">PREFIX/var/gfarm-metadata/journal</filename>
+where PREFIX is a prefix given by <option>--prefix</option> option.
 </para>
 </listitem>
 </varlistentry>
@@ -354,7 +363,7 @@ prefix given by <option>--prefix</option> option.
 <listitem>
 <para>
 Specify administrator of the Gfarm file system.
-If this option is omitted, 
+If this option is omitted,
 <command moreinfo="none">config-gfarm</command> gets a username by executing
 <command moreinfo="none">who am i</command> command.
 </para>
@@ -386,7 +395,7 @@ The default is 10602.
 <listitem>
 <para>
 Specify a TCP port number the configured gfmd listens on.
-The default value is 10601 in case of private mode, 601 otherwise.
+The default value is 10601 in case of the private mode, 601 otherwise.
 </para>
 </listitem>
 </varlistentry>
@@ -415,9 +424,9 @@ Show usage, then exit.
 <term><option>-S</option></term>
 <listitem>
 <para>
-Enable private mode.
+Enable the private mode.
 <command moreinfo="none">config-gfarm</command> sets up the Gfarm
-filesystem which can be run without root privilege.
+file system which can be run without root privilege.
 Specifically, <command moreinfo="none">config-gfarm</command> changes
 the configuration procedures as follows:
 </para>
@@ -432,9 +441,11 @@ the configuration procedures as follows:
 
   <listitem>
   <para>
-  The user map file %%SYSCONFDIR%%/usermap is also created.
+  The user map file
+  <filename moreinfo="none">%%SYSCONFDIR%%/usermap</filename>
+  is also created.
   The metadata server reads this file when it starts.
-  In non-private mode, it is required to create the user accounts for
+  In the non-private mode, it is required to create the user accounts for
   _gfarmmd and _gfarmfs on the operating system.
   With the user map file, the creation of the user accounts is not needed.
   The file defines mappings of Gfarm system users to actual user accounts.
@@ -443,12 +454,14 @@ the configuration procedures as follows:
 
   <listitem>
   <para>
-  The configuration file for gfsd, %%SYSCONFDIR%%/gfsd.conf is also created.
-  In non-private mode, gfsd reads the configuration file
-  %%SYSCONFDIR%%/gfarm2.conf instead, which is read by all Gfarm programs
-  connecting with a metadata server.
-  %%SYSCONFDIR%%/gfsd.conf is a configuration file cutomized for gfsd
-  running under the private mode.
+  The configuration file for gfsd,
+  <filename moreinfo="none">%%SYSCONFDIR%%/gfsd.conf</filename> is also
+  created.
+  In the non-private mode, gfsd reads the configuration file
+  <filename moreinfo="none">%%SYSCONFDIR%%/gfarm2.conf</filename> instead,
+  which is read by all Gfarm programs connecting with a metadata server.
+  <filename moreinfo="none">%%SYSCONFDIR%%/gfsd.conf</filename> is a
+  configuration file cutomized for gfsd running under the private mode.
   </para>
   </listitem>
   </itemizedlist>
@@ -584,7 +597,7 @@ configuration file for gfmd
 <term><filename moreinfo="none">%%SYSCONFDIR%%/gfsd.conf</filename></term>
 <listitem>
 <para>
-configuration file for gfsd (used only in private mode)
+configuration file for gfsd (used only in the private mode)
 </para>
 </listitem>
 </varlistentry>
@@ -593,7 +606,7 @@ configuration file for gfsd (used only in private mode)
 <term><filename moreinfo="none">%%SYSCONFDIR%%/usermap</filename></term>
 <listitem>
 <para>
-user mapping definition file (used only in private mode)
+user mapping definition file (used only in the private mode)
 </para>
 </listitem>
 </varlistentry>
