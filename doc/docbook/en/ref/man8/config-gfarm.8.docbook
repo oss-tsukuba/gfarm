@@ -279,9 +279,9 @@ The default is "gfarm".
 <listitem>
 <para>
 Specify an installation prefix of the backend database (e.g. /usr/local).
-When <command moreinfo="none">config-gfarm</command> executes administration
-commands of the backend database, it assumes those commands are installed
-under the given prefix.
+When <command moreinfo="none">config-gfarm</command> executes an
+administration command of the backend database, it assumes the command is
+installed under the given prefix.
 An example of those commands is
 <command moreinfo="none">initdb</command> of PostgreSQL.
 If this option is omitted, <command moreinfo="none">config-gfarm</command>
