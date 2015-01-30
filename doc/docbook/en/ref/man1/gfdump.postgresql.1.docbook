@@ -1,0 +1,226 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<!-- $Id$ -->
+
+<refentry id="gfdump.postgresql.1">
+
+<refentryinfo><date>30 Jan 2015</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfdump.postgresql</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>gfdump.postgresql</refname>
+<refpurpose>dump/restore Gfarm metadata</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfdump.postgresql -d</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfdump.postgresql -r</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>
+<command moreinfo="none">gfdump.postgresql</command> dumps/restores metadata
+of Gfarm, managed by PostgreSQL running as a backend database.
+You need to execute this command on the host that the backend database of
+PostgreSQL is running.
+The command reads <filename moreinfo="none">gfmd.conf</filename>, the
+configuration file of gfmd to get access information about the backend
+database.
+If gfmd is configured in the non-private mode, the root privilege is
+required to read the file.
+</para>
+
+<para>
+When <command moreinfo="none">gfdump.postgresql</command> is executed
+with <option>-d</option> option, it dumps the database to the file
+<filename moreinfo="none">db.out</filename> at the current directory.
+</para>
+
+<para>
+When it is executed with <option>-r</option> option, it restores the database
+from the dump file, <filename moreinfo="none">db.out</filename> at the
+current directory.
+More specifically, it does the followings.
+</para>
+
+<orderedlist numeration="arabic" inheritnum="ignore" continuation="restarts">
+<listitem>
+<para>
+Stop gfmd if running.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Remove the current database.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Create a database again.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Restore a database from the dump file.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Delete the current journal file of gfmd, if exists.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Start gfmd again.
+</para>
+</listitem>
+</orderedlist>
+
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term>--prefix<option></option> <parameter moreinfo="none">path</parameter></term>
+<listitem>
+<para>
+If this option is given,
+<command moreinfo="none">gfdump.postgresql</command> reads
+<filename moreinfo="none">PREFIX/etc/gfmd.conf</filename> as the
+configuration file of gfmd.
+By default, it reads 
+<filename moreinfo="none">%%SYSCONFDIR%%/etc/gfmd.conf</filename>.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter moreinfo="none">prefix</parameter></term>
+<listitem>
+<para>
+Specify an installation prefix of the backend database (e.g. /usr/local).
+When <command moreinfo="none">gfdump.postgresql</command> executes a
+PostgreSQL command such as <command>pg_dump</command>, it assumes the
+command is installed under the given prefix.
+If this option is omitted,
+<command moreinfo="none">gfdump.postgresql</command> searches directories
+listed in the environment variable <envar>PATH</envar> for the commands.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>
+This option is not currently used.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-f<option></option> <parameter moreinfo="none">file</parameter></term>
+<listitem>
+<para>
+Specify the name of dump file.
+The default is 
+<filename moreinfo="none">db.out</filename> at the current directory.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--help</option></term>
+<listitem>
+<para>
+Show usage, then exit.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-t</option></term>
+<listitem>
+<para>
+Show values of configurable parameters in human readable format,
+then exit immediately.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>
+Dump mode.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>
+Do not start/stop gfmd.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>
+Restore mode.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="files"><title>FILES</title>
+<variablelist>
+<varlistentry>
+<term><filename moreinfo="none">%%SYSCONFDIR%%/gfmd.conf</filename></term>
+<listitem>
+<para>
+configuration file for Gfarm clients
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="see-also"><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>pg_dump</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+<citerefentry><refentrytitle>dropdb</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+<citerefentry><refentrytitle>createdb</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+<citerefentry><refentrytitle>psql</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+</para>
+
+</refsect1>
+
+</refentry>

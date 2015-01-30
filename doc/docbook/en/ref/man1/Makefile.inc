@@ -4,6 +4,7 @@ DOCBOOK = \
 	gfchown.1 \
 	gfcksum.1 \
 	gfdf.1 \
+	gfdump.postgresql.1 \
 	gfedquota.1 \
 	gfexport.1 \
 	gffindxmlattr.1 \
