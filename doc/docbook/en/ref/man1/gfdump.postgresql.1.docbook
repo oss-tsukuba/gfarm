@@ -21,11 +21,13 @@
 
 <refsynopsisdiv id="synopsis">
 <cmdsynopsis sepchar=" ">
-  <command moreinfo="none">gfdump.postgresql -d</command>
+  <command moreinfo="none">gfdump.postgresql</command>
+    <arg choice="plain" rep="norepeat">-d</arg>
     <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis sepchar=" ">
-  <command moreinfo="none">gfdump.postgresql -r</command>
+  <command moreinfo="none">gfdump.postgresql</command>
+    <arg choice="plain" rep="norepeat">-r</arg>
     <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -134,7 +136,14 @@ listed in the environment variable <envar>PATH</envar> for the commands.
 <term><option>-l</option></term>
 <listitem>
 <para>
-This option is not currently used.
+Specify a path to the directory where the backend database puts files to
+store metadata of Gfarm.
+</para>
+<para>
+If the backend database is PostgreSQL, the directory is commonly called
+PGDATA directory.
+The default is <filename moreinfo="none">PREFIX/var/gfarm-pgsql</filename>
+where PREFIX is a prefix given by <option>--prefix</option> option.
 </para>
 </listitem>
 </varlistentry>
@@ -205,7 +214,7 @@ Restore mode.
 <term><filename moreinfo="none">%%SYSCONFDIR%%/gfmd.conf</filename></term>
 <listitem>
 <para>
-configuration file for Gfarm clients
+configuration file for metadata server, gfmd
 </para>
 </listitem>
 </varlistentry>
