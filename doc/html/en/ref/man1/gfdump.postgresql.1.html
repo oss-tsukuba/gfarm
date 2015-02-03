@@ -1,0 +1,146 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfdump.postgresql</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="gfdump.postgresql.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfdump.postgresql — dump/restore Gfarm metadata</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfdump.postgresql</code>   -d  [<em class="replaceable"><code>options</code></em>]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfdump.postgresql</code>   -r  [<em class="replaceable"><code>options</code></em>]</p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<span class="command"><strong>gfdump.postgresql</strong></span> dumps/restores metadata
+of Gfarm, managed by PostgreSQL running as a backend database.
+You need to execute this command on the host that the backend database of
+PostgreSQL is running.
+The command reads <code class="filename">gfmd.conf</code>, the
+configuration file of gfmd to get access information about the backend
+database.
+If gfmd is configured in the non-private mode, the root privilege is
+required to read the file.
+</p>
+<p>
+When <span class="command"><strong>gfdump.postgresql</strong></span> is executed
+with <code class="option">-d</code> option, it dumps the database to the file
+<code class="filename">db.out</code> at the current directory.
+</p>
+<p>
+When it is executed with <code class="option">-r</code> option, it restores the database
+from the dump file, <code class="filename">db.out</code> at the
+current directory.
+More specifically, it does the followings.
+</p>
+<div class="orderedlist"><ol class="orderedlist" type="1">
+<li class="listitem"><p>
+Stop gfmd if running.
+</p></li>
+<li class="listitem"><p>
+Remove the current database.
+</p></li>
+<li class="listitem"><p>
+Create a database again.
+</p></li>
+<li class="listitem"><p>
+Restore a database from the dump file.
+</p></li>
+<li class="listitem"><p>
+Delete the current journal file of gfmd, if exists.
+</p></li>
+<li class="listitem"><p>
+Start gfmd again.
+</p></li>
+</ol></div>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term">--prefix<code class="option"></code> <em class="parameter"><code>path</code></em></span></dt>
+<dd><p>
+If this option is given,
+<span class="command"><strong>gfdump.postgresql</strong></span> reads
+<code class="filename">PREFIX/etc/gfmd.conf</code> as the
+configuration file of gfmd.
+By default, it reads 
+<code class="filename">%%SYSCONFDIR%%/etc/gfmd.conf</code>.
+</p></dd>
+<dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>prefix</code></em></span></dt>
+<dd><p>
+Specify an installation prefix of the backend database (e.g. /usr/local).
+When <span class="command"><strong>gfdump.postgresql</strong></span> executes a
+PostgreSQL command such as <span class="command"><strong>pg_dump</strong></span>, it assumes the
+command is installed under the given prefix.
+If this option is omitted,
+<span class="command"><strong>gfdump.postgresql</strong></span> searches directories
+listed in the environment variable <code class="envar">PATH</code> for the commands.
+</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd>
+<p>
+Specify a path to the directory where the backend database puts files to
+store metadata of Gfarm.
+</p>
+<p>
+If the backend database is PostgreSQL, the directory is commonly called
+PGDATA directory.
+The default is <code class="filename">PREFIX/var/gfarm-pgsql</code>
+where PREFIX is a prefix given by <code class="option">--prefix</code> option.
+</p>
+</dd>
+<dt><span class="term">-f<code class="option"></code> <em class="parameter"><code>file</code></em></span></dt>
+<dd><p>
+Specify the name of dump file.
+The default is 
+<code class="filename">db.out</code> at the current directory.
+</p></dd>
+<dt><span class="term"><code class="option">--help</code></span></dt>
+<dd><p>
+Show usage, then exit.
+</p></dd>
+<dt><span class="term"><code class="option">-t</code></span></dt>
+<dd><p>
+Show values of configurable parameters in human readable format,
+then exit immediately.
+</p></dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>
+Dump mode.
+</p></dd>
+<dt><span class="term"><code class="option">-n</code></span></dt>
+<dd><p>
+Do not start/stop gfmd.
+</p></dd>
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd><p>
+Restore mode.
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="files"></a><h2>FILES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfmd.conf</code></span></dt>
+<dd><p>
+configuration file for metadata server, gfmd
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">pg_dump</span>(1)</span>
+<span class="citerefentry"><span class="refentrytitle">dropdb</span>(1)</span>
+<span class="citerefentry"><span class="refentrytitle">createdb</span>(1)</span>
+<span class="citerefentry"><span class="refentrytitle">psql</span>(1)</span>
+</p>
+</div>
+</div></body>
+</html>

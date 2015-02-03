@@ -1,0 +1,549 @@
+'\" t
+.\"     Title: config-gfarm
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 20 Jan 2015
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "CONFIG\-GFARM" "8" "20 Jan 2015" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+config-gfarm \- set up a metadata server of Gfarm
+.SH "SYNOPSIS"
+.HP \w'\fBconfig\-gfarm\fR\ 'u
+\fBconfig\-gfarm\fR [\fIoptions\fR]
+.SH "DESCRIPTION"
+.PP
+\fBconfig\-gfarm\fR
+is a utility to set up a metadata server of Gfarm file system\&. The server program for a metadata server is named gfmd\&.
+\fBconfig\-gfarm\fR
+is required to be run with the root privilege, unless you use the file system for private purpose such as development, evaluation or test of Gfarm\&.
+.PP
+\fBconfig\-gfarm\fR
+performs the following processes, in that order:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+Set up the backend database\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Generate Gfarm configuration files
+%%SYSCONFDIR%%/gfarm2\&.conf
+and
+%%SYSCONFDIR%%/gfmd\&.conf\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+Create scripts (or configuration files) to start/stop the backend database and the Gfarm metadata server named gfmd\&.
+.sp
+On most systems,
+\fBconfig\-gfarm\fR
+puts start/stop scripts
+\fBgfmd\fR
+and
+\fBgfarm\-pgsql\fR
+onto either
+/etc/init\&.d
+or
+/etc/rc\&.d/init\&.d, according to the operating system\&.
+.sp
+On Linux with systemd such as Red Hat Enterprise Linux 7 or later,
+\fBconfig\-gfarm\fR
+puts the unit configuration files
+gfmd\&.service
+and
+gfarm\-pgsql\&.service
+onto
+/etc/systemd/system, and then executes
+\fBsystemctl enable gfmd\&.service\fR
+and
+\fBsystemctl enable gfarm\-pgsql\&.service\fR
+respectively\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+Start the backend database and gfmd\&.
+.RE
+.PP
+Before set up a metadata server using
+\fBconfig\-gfarm\fR, it is recommended to execute
+\fBconfig\-gfarm \-t\fR\&. With
+\fB\-t\fR
+option, the sets up is not performed\&. Instead, it shows values of all configurable parameters:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ config\-gfarm \-t
+prefix                 [\-\-prefix]:
+metadata backend             [\-b]: postgresql
+(available backend: postgresql )
+metadata     directory       [\-l]: /var/gfarm\-pgsql
+metadata log directory       [\-L]: /var/gfarm\-pgsql/pg_xlog
+postgresql admin user        [\-U]: miles
+postgresql admin password    [\-W]: (auto generated)
+postgresql user              [\-u]: gfarm
+postgresql password          [\-w]: (auto generated)
+postgresql prefix            [\-P]: /usr
+postgresql version           [\-V]: 9\&.2
+postgresql XML supported     [\-X]: no
+metadata replication         [\-r]: no
+metaserver hostname          [\-h]: host1\&.example\&.org
+matadata admin user          [\-A]: miles
+matadata admin dn            [\-D]:
+portmaster port              [\-p]: 10602
+gfmd port                    [\-m]: 601
+auth type                    [\-a]: sharedsecret
+rc script for gfmd               : /etc/init\&.d/gfmd
+rc script for backend            : /etc/init\&.d/gfarm\-pgsql
+gfmd conf file                   : /etc/gfmd\&.conf
+gfarm client conf file           : /etc/gfarm2\&.conf
+gfmd pid file                    : /var/run/gfmd\&.pid
+backend pid file                 : /var/run/postmaster\&.pid
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+The option name surrounded by [ ] means that you can specify a value with that option\&.
+.SH "OPTIONS"
+.PP
+\-\-prefix \fIpath\fR
+.RS 4
+Configure some paths related to gfmd and the backend database\&. Specifically, the followings are affected\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The directory to put metadata of Gfarm\&. That is
+PREFIX/var/gfarm\-pgsql
+if the backend database is PostgreSQL\&. The path can also be changed by
+\fB\-l\fR
+option\&. When both options are specified,
+\fB\-l\fR
+option has preference\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The directory to put log files about metadata\&. That is
+PREFIX/var/gfarm\-pgsql/pg_xlog
+if the backend database is PostgreSQL\&. The path can also be changed by
+\fB\-L\fR
+option\&. When both options are specified,
+\fB\-L\fR
+option has preference\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The directory to put journal files of gfmd\&. That is
+PREFIX/var/gfarm\-metadata/journal\&. The path can also be changed by
+\fB\-j\fR
+option\&. When both options are specified,
+\fB\-j\fR
+option has preference\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The directory to put PID files of gfmd and the backend database\&. That is
+PREFIX/var/run\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The directory to put configuration files\&. That is
+PREFIX/etc\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The directory of start/stop scripts for gfmd and its backend database\&. That is
+PREFIX/etc/init\&.d
+or
+PREFIX/rc\&.d/init\&.d/etc
+which is depending on operating systems\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+If systemd is running on the host, there is a special exception\&. When an empty prefix is given by
+\fB\-\-prefix\fR
+option on such host,
+\fBconfig\-gfarm\fR
+doesn\*(Aqt put unit configuration files for systemd\&. Instead, it puts traditional start/stop scripts at
+PREFIX/etc/init\&.d\&.
+.RE
+.sp
+The default is "" (empty)\&.
+.RE
+.PP
+\fB\-b\fR \fIbackend\fR
+.RS 4
+Specify backend database\&. It currently supports "postgresql" (for PostgreSQL) only\&. "ldap" (for LDAP) was supported in the past, but not maintained any longer\&.
+\fBconfig\-gfarm \-t\fR
+lists which backend databases are available\&.
+.sp
+PostgreSQL is chosen by default if "postgresql" is in the list\&. If the available backend is "ldap" only, it is still chosen by default\&. Note that you need to recompile Gfarm if you\*(Aqd like to make Gfarm on your system support a backend database not in the list\&.
+.RE
+.PP
+\fB\-d\fR \fIdomainname\fR
+.RS 4
+This option is used to specify a base DN of metadata\&. This option takes an effect only when the backend database is LDAP\&. The default is the fully qualified domainname of the host on DNS\&.
+.RE
+.PP
+\fB\-U\fR \fIusername\fR
+.RS 4
+Specify administrator\*(Aqs username of the Gfarm file system\&. Since the default value differs depending on operating systems, execute
+\fBconfig\-gfarm \-t\fR
+to confirm the username\&.
+.RE
+.PP
+\fB\-u\fR \fIusername\fR
+.RS 4
+The configured gfmd will connect to the backend database as the specified username\&. The default is "gfarm"\&.
+.RE
+.PP
+\fB\-P\fR \fIprefix\fR
+.RS 4
+Specify an installation prefix of the backend database (e\&.g\&. /usr/local)\&. When
+\fBconfig\-gfarm\fR
+executes an administration command of the backend database, it assumes the command is installed under the given prefix\&. An example of those commands is
+\fBinitdb\fR
+of PostgreSQL\&. If this option is omitted,
+\fBconfig\-gfarm\fR
+searches directories listed in the environment variable
+\fBPATH\fR
+for the commands\&.
+.RE
+.PP
+\fB\-V\fR \fIversion\fR
+.RS 4
+Tell version of the backend database to
+\fBconfig\-gfarm\fR\&. In most cases,
+\fBconfig\-gfarm\fR
+can detect a correct version number by itself\&. This option should be used only when
+\fBconfig\-gfarm\fR
+fails to get the correct version number\&.
+.RE
+.PP
+\fB\-l\fR \fIdirectory\fR
+.RS 4
+Specify a path to the directory where the backend database puts files to store metadata of Gfarm\&.
+.sp
+If the backend database is PostgreSQL, the directory is commonly called PGDATA directory\&. The default is
+PREFIX/var/gfarm\-pgsql
+where PREFIX is a prefix given by
+\fB\-\-prefix\fR
+option\&.
+.RE
+.PP
+\fB\-L\fR \fIdirectory\fR
+.RS 4
+Specify a path to the directory where the backend database puts log files\&. If the backend database is PostgreSQL, the default is
+PREFIX/var/gfarm\-pgsql/pg_xlog
+where PREFIX is a prefix given by
+\fB\-\-prefix\fR
+option\&.
+.RE
+.PP
+\fB\-h\fR \fIhostname\fR
+.RS 4
+Specify a hostname which is used to identify the metadata server\&. The default is the fully qualified domainname of the host\&.
+.RE
+.PP
+\fB\-j\fR \fIdirectory\fR
+.RS 4
+Specify a path to the directory where gfmd puts journal files\&. This option takes an effect only when metadata replication is enabled by
+\fB\-r\fR
+option\&. The default value is
+PREFIX/var/gfarm\-metadata/journal
+where PREFIX is a prefix given by
+\fB\-\-prefix\fR
+option\&.
+.RE
+.PP
+\fB\-A\fR \fIusername\fR
+.RS 4
+Specify administrator of the Gfarm file system\&. If this option is omitted,
+\fBconfig\-gfarm\fR
+gets a username by executing
+\fBwho am i\fR
+command\&.
+.RE
+.PP
+\fB\-D\fR \fIsubject\-dn\fR
+.RS 4
+Specify a subject DN of global administrator\&. This option is mandatory, in case that the authentication method is GSI,
+.RE
+.PP
+\fB\-p\fR \fIport\fR
+.RS 4
+Specify a TCP port number the configured backend database listens on\&. The default is 10602\&.
+.RE
+.PP
+\fB\-m\fR \fIport\fR
+.RS 4
+Specify a TCP port number the configured gfmd listens on\&. The default value is 10601 in case of the private mode, 601 otherwise\&.
+.RE
+.PP
+\fB\-a\fR \fImethod\fR
+.RS 4
+Specify an authentication method\&. It currently recognizes "sharedsecret" or "gsi"\&. The default is "sharedsecret"\&.
+.RE
+.PP
+\fB\-\-help\fR
+.RS 4
+Show usage, then exit\&.
+.RE
+.PP
+\fB\-S\fR
+.RS 4
+Enable the private mode\&.
+\fBconfig\-gfarm\fR
+sets up the Gfarm file system which can be run without root privilege\&. Specifically,
+\fBconfig\-gfarm\fR
+changes the configuration procedures as follows:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The default listen port of gfmd (corresponding with
+\fB\-m\fR
+option) is changed from 601 to 10601\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The user map file
+%%SYSCONFDIR%%/usermap
+is also created\&. The metadata server reads this file when it starts\&. In the non\-private mode, it is required to create the user accounts for _gfarmmd and _gfarmfs on the operating system\&. With the user map file, the creation of the user accounts is not needed\&. The file defines mappings of Gfarm system users to actual user accounts\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The configuration file for gfsd,
+%%SYSCONFDIR%%/gfsd\&.conf
+is also created\&. In the non\-private mode, gfsd reads the configuration file
+%%SYSCONFDIR%%/gfarm2\&.conf
+instead, which is read by all Gfarm programs connecting with a metadata server\&.
+%%SYSCONFDIR%%/gfsd\&.conf
+is a configuration file cutomized for gfsd running under the private mode\&.
+.RE
+.sp
+\fB\-S\fR
+option never changes locations of start/stop scripts and configuration files\&. Since the default locations of those files are usually writable only for privilege users,
+\fBconfig\-gfarm\fR
+fails to create them\&. To avoid this problem, also specify
+\fB\-\-prefix\fR
+option\&.
+.RE
+.PP
+\fB\-N\fR
+.RS 4
+Do not start gfmd or the backend database\&.
+.RE
+.PP
+\fB\-f\fR
+.RS 4
+Force overwriting an existing set up\&.
+.RE
+.PP
+\fB\-t\fR
+.RS 4
+Show values of all configurable parameters in human readable format, then exit immediately\&.
+.RE
+.PP
+\fB\-T\fR
+.RS 4
+Like
+\fB\-t\fR
+option, but it shows values in KEY=VALUE format\&.
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+Enable metadata replication among metadata servers\&.
+.RE
+.PP
+\fB\-W\fR \fIpassword\fR
+.RS 4
+Specify administrator\*(Aqs password of backend database\&. This option corresponds with
+\fB\-U\fR
+option which specifies the username\&. By default, the password is generated automatically\&.
+.RE
+.PP
+\fB\-w\fR \fIpassword\fR
+.RS 4
+The configured gfmd will connect the backend database with the specified password\&. This option corresponds with
+\fB\-u\fR
+option which specifies the username\&. By default, the password is generated automatically\&.
+.RE
+.PP
+\fB\-X\fR
+.RS 4
+Enable XML Path Language (XPath) support for querying XML extended attributes\&.
+.RE
+.PP
+\fB\-E\fR
+.RS 4
+Set up PostgreSQL with the data checksums option\&.
+\fBconfig\-gfarm\fR
+gives
+\fB\-\-data\-checksums\fR
+option to
+\fBinitdb\fR
+command of PostgreSQL\&. Note that PostgreSQL 9\&.3 or later is required to use this feature\&. This option takes an effect only when the backend database is PostgreSQL\&.
+.RE
+.SH "FILES"
+.PP
+%%SYSCONFDIR%%/gfarm2\&.conf
+.RS 4
+configuration file for Gfarm clients
+.RE
+.PP
+%%SYSCONFDIR%%/gfmd\&.conf
+.RS 4
+configuration file for gfmd
+.RE
+.PP
+%%SYSCONFDIR%%/gfsd\&.conf
+.RS 4
+configuration file for gfsd (used only in the private mode)
+.RE
+.PP
+%%SYSCONFDIR%%/usermap
+.RS 4
+user mapping definition file (used only in the private mode)
+.RE
+.PP
+/etc/init\&.d/gfarm\-pgsql
+.RS 4
+start/stop script for PostgreSQL running as backend database of Gfarm
+.RE
+.PP
+/etc/init\&.d/gfmd
+.RS 4
+start/stop script for gfmd
+.RE
+.PP
+/etc/systemd/system/gfarm\-pgsql\&.service
+.RS 4
+unit configuration file for PostgreSQL running as backend database of Gfarm, read by systemd
+.RE
+.PP
+/etc/systemd/system/gfmd\&.service
+.RS 4
+unit configuration file for gfmd, read by systemd
+.RE
+.SH "SEE ALSO"
+.PP
+\fBgfarm2.conf\fR(5)\fBconfig-gfsd\fR(8)

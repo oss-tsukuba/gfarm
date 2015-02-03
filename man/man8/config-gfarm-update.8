@@ -1,0 +1,259 @@
+'\" t
+.\"     Title: config-gfarm-update
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 2 Feb 2015
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "CONFIG\-GFARM\-UPDAT" "8" "2 Feb 2015" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+config-gfarm-update \- dump/restore Gfarm metadata
+.SH "SYNOPSIS"
+.HP \w'\fBconfig\-gfarm\-update\fR\ 'u
+\fBconfig\-gfarm\-update\fR [\fIoptions\fR]
+.HP \w'\fBconfig\-gfarm\-update\fR\ 'u
+\fBconfig\-gfarm\-update\fR \-\-update [\fIoptions\fR]
+.SH "DESCRIPTION"
+.PP
+\fBconfig\-gfarm\-update\fR
+upgrades/updates the backend database of a metadata server\&. Unless the metadata server is configured as the private mode, the root privilege is required to run this command\&. It reads the configuration file for gfmd (gfmd\&.conf), in order to get information for accessing the backend database\&.
+.PP
+\fBconfig\-gfarm\-update\fR
+can enable the following features of the backend database:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+XML Path Language (XPath) support
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Metadata replication among metadata servers
+.RE
+.PP
+Whether the backend database supports those features or not is initially configured by
+\fBconfig\-gfarm\fR\&. If you would like to enable a feature after the configuration, run
+\fBconfig\-gfarm\-update \-\-update\fR
+with
+\fB\-X\fR
+and/or
+\fB\-r\fR
+options\&. The option
+\fB\-X\fR
+enables XPath support and the option
+\fB\-r\fR
+enables metadata replication\&.
+.PP
+\fBconfig\-gfarm\-update\fR
+is also used for upgrading the backend database\&. Sometimes Gfarm contains incompatible changes against older releases\&. With
+\fB\-\-update\fR
+option,
+\fBconfig\-gfarm\-update\fR
+edits table schema and/or data in the database for upgrading, if needed\&.
+.PP
+When you update/upgrade the metadata server, you must stop gfmd beforehand\&. If there are some metadata servers in a file system, run
+\fBconfig\-gfarm\-update\fR
+on every metadata servers\&. After the update/upgrade, it starts a metadata server on the host by default\&.
+.PP
+Like
+\fBconfig\-gfarm\fR, also
+\fBconfig\-gfarm\-update\fR
+has
+\fB\-t\fR
+option which shows values of all configurable parameters, like this:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ config\-gfarm\-update \-t
+prefix [\-\-prefix]:
+metadata backend    [\-b]: postgresql
+metadata directory  [\-l]: /var/gfarm\-pgsql
+postgresql admin user        [\-U]: postgres
+postgresql admin password    [\-W]: (auto generated)
+postgresql user              [\-u]: gfarm
+postgresql password          [\-w]: (auto generated)
+postgresql prefix            [\-P]: /usr
+postgresql version           [\-V]: 8\&.4
+postgresql XML supported     [\-X]: no
+postgresql data checksum support
+                             [\-E]: no
+portmaster port              [\-p]: 10602
+metadata replication         [\-r]: yes
+metadata journal directory   [\-j]: /var/gfarm\-metadata/journal
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+It is recommended to execute
+\fBconfig\-gfarm\-update \-t\fR
+before update/upgrade\&.
+.PP
+In case that the backend database is PostgreSQL and
+\fBconfig\-gfarm\-update\fR
+is executed without
+\fB\-\-update\fR
+option,
+\fBpsql\fR
+command is invoked\&.
+\fBpsql\fR
+is a front\-end terminal to the backend database\&. It enables you to type in queries interactively\&. This is useful since a connection from
+\fBpsql\fR
+to the PostgreSQL server is established automatically\&.
+.SH "OPTIONS"
+.PP
+\-\-prefix \fIpath\fR
+.RS 4
+If this option is given,
+\fBconfig\-gfarm\-update\fR
+reads
+PREFIX/etc/gfmd\&.conf
+as the configuration file of gfmd\&. By default, it reads
+%%SYSCONFDIR%%/etc/gfmd\&.conf\&.
+.RE
+.PP
+\fB\-P\fR \fIprefix\fR
+.RS 4
+Specify an installation prefix of the backend database (e\&.g\&. /usr/local)\&. When
+\fBconfig\-gfarm\-update\fR
+executes a PostgreSQL command such as
+\fBpsql\fR, it assumes the command is installed under the given prefix\&. If this option is omitted,
+\fBconfig\-gfarm\-update\fR
+searches directories listed in the environment variable
+\fBPATH\fR
+for the commands\&.
+.RE
+.PP
+\fB\-l\fR
+.RS 4
+Specify a path to the directory where the backend database puts files to store metadata of Gfarm\&.
+.sp
+If the backend database is PostgreSQL, the directory is commonly called PGDATA directory\&. The default is
+PREFIX/var/gfarm\-pgsql
+where PREFIX is a prefix given by
+\fB\-\-prefix\fR
+option\&.
+.RE
+.PP
+\-f \fIfile\fR
+.RS 4
+When
+\fBconfig\-gfarm\-update\fR
+invokes
+\fBpsql\fR
+as a front\-end terminal to PostgreSQL,
+\fBconfig\-gfarm\-update\fR
+passes
+\fB\-f\fR
+option and the given
+\fIfile\fR
+argument to
+\fBpsql\fR\&.
+\fBpsql\fR
+interprets commands written in the file, instead of reading commands interactively\&. This option is ignored when also
+\fB\-\-update\fR
+option is specified\&.
+.RE
+.PP
+\-o \fIoption\fR
+.RS 4
+When
+\fBconfig\-gfarm\-update\fR
+invokes
+\fBpsql\fR
+as a front\-end terminal to PostgreSQL,
+\fBconfig\-gfarm\-update\fR
+also passes the given option to
+\fBpsql\fR\&. This option is ignored when also
+\fB\-\-update\fR
+option is specified\&.
+.RE
+.PP
+\-j \fIfile\fR
+.RS 4
+Specify a path to the directory where gfmd puts journal files\&. The default value is
+PREFIX/var/gfarm\-metadata/journal
+where PREFIX is a prefix given by
+\fB\-\-prefix\fR
+option\&.
+.RE
+.PP
+\fB\-\-help\fR
+.RS 4
+Show usage, then exit\&.
+.RE
+.PP
+\fB\-t\fR
+.RS 4
+Show values of configurable parameters in human readable format, then exit immediately\&.
+.RE
+.PP
+\fB\-N\fR
+.RS 4
+Do not start gfmd after update/upgrade\&. This option takes effect only when also
+\fB\-\-update\fR
+option is specified\&.
+.RE
+.PP
+\fB\-t\fR
+.RS 4
+Show values of all configurable parameters in human readable format, then exit immediately\&.
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+Enable metadata replication among metadata servers\&. This option takes effect only when also
+\fB\-\-update\fR
+option is specified\&.
+.RE
+.PP
+\fB\-X\fR
+.RS 4
+Enable XML Path Language (XPath) support for querying XML extended attributes\&. This option takes effect only when also
+\fB\-\-update\fR
+option is specified\&.
+.RE
+.SH "FILES"
+.PP
+%%SYSCONFDIR%%/gfmd\&.conf
+.RS 4
+configuration file for metadata server, gfmd
+.RE
+.SH "SEE ALSO"
+.PP
+\fBconfig-gfarm\fR(8)\fBgfmd\fR(8)\fBpsql\fR(1)

@@ -1,0 +1,196 @@
+'\" t
+.\"     Title: gfdump.postgresql
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 30 Jan 2015
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFDUMP\&.POSTGRESQL" "1" "30 Jan 2015" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfdump.postgresql \- dump/restore Gfarm metadata
+.SH "SYNOPSIS"
+.HP \w'\fBgfdump\&.postgresql\fR\ 'u
+\fBgfdump\&.postgresql\fR \-d [\fIoptions\fR]
+.HP \w'\fBgfdump\&.postgresql\fR\ 'u
+\fBgfdump\&.postgresql\fR \-r [\fIoptions\fR]
+.SH "DESCRIPTION"
+.PP
+\fBgfdump\&.postgresql\fR
+dumps/restores metadata of Gfarm, managed by PostgreSQL running as a backend database\&. You need to execute this command on the host that the backend database of PostgreSQL is running\&. The command reads
+gfmd\&.conf, the configuration file of gfmd to get access information about the backend database\&. If gfmd is configured in the non\-private mode, the root privilege is required to read the file\&.
+.PP
+When
+\fBgfdump\&.postgresql\fR
+is executed with
+\fB\-d\fR
+option, it dumps the database to the file
+db\&.out
+at the current directory\&.
+.PP
+When it is executed with
+\fB\-r\fR
+option, it restores the database from the dump file,
+db\&.out
+at the current directory\&. More specifically, it does the followings\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+Stop gfmd if running\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Remove the current database\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+Create a database again\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+Restore a database from the dump file\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+Delete the current journal file of gfmd, if exists\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  6." 4.2
+.\}
+Start gfmd again\&.
+.RE
+.SH "OPTIONS"
+.PP
+\-\-prefix \fIpath\fR
+.RS 4
+If this option is given,
+\fBgfdump\&.postgresql\fR
+reads
+PREFIX/etc/gfmd\&.conf
+as the configuration file of gfmd\&. By default, it reads
+%%SYSCONFDIR%%/etc/gfmd\&.conf\&.
+.RE
+.PP
+\fB\-P\fR \fIprefix\fR
+.RS 4
+Specify an installation prefix of the backend database (e\&.g\&. /usr/local)\&. When
+\fBgfdump\&.postgresql\fR
+executes a PostgreSQL command such as
+\fBpg_dump\fR, it assumes the command is installed under the given prefix\&. If this option is omitted,
+\fBgfdump\&.postgresql\fR
+searches directories listed in the environment variable
+\fBPATH\fR
+for the commands\&.
+.RE
+.PP
+\fB\-l\fR
+.RS 4
+Specify a path to the directory where the backend database puts files to store metadata of Gfarm\&.
+.sp
+If the backend database is PostgreSQL, the directory is commonly called PGDATA directory\&. The default is
+PREFIX/var/gfarm\-pgsql
+where PREFIX is a prefix given by
+\fB\-\-prefix\fR
+option\&.
+.RE
+.PP
+\-f \fIfile\fR
+.RS 4
+Specify the name of dump file\&. The default is
+db\&.out
+at the current directory\&.
+.RE
+.PP
+\fB\-\-help\fR
+.RS 4
+Show usage, then exit\&.
+.RE
+.PP
+\fB\-t\fR
+.RS 4
+Show values of configurable parameters in human readable format, then exit immediately\&.
+.RE
+.PP
+\fB\-d\fR
+.RS 4
+Dump mode\&.
+.RE
+.PP
+\fB\-n\fR
+.RS 4
+Do not start/stop gfmd\&.
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+Restore mode\&.
+.RE
+.SH "FILES"
+.PP
+%%SYSCONFDIR%%/gfmd\&.conf
+.RS 4
+configuration file for metadata server, gfmd
+.RE
+.SH "SEE ALSO"
+.PP
+\fBpg_dump\fR(1)\fBdropdb\fR(1)\fBcreatedb\fR(1)\fBpsql\fR(1)

@@ -1,0 +1,478 @@
+'\" t
+.\"     Title: config-gfsd
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 20 Jan 2015
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "CONFIG\-GFSD" "8" "20 Jan 2015" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+config-gfsd \- set up a file spool node of Gfarm
+.SH "SYNOPSIS"
+.HP \w'\fBconfig\-gfsd\fR\ 'u
+\fBconfig\-gfsd\fR [\fIoptions\fR]
+.SH "DESCRIPTION"
+.PP
+\fBconfig\-gfsd\fR
+is a utility to set up a file sppol node of Gfarm file system\&. The server program for a file spool node is named gfsd\&.
+\fBconfig\-gfsd\fR
+is required to be run with the root privilege, unless you use the file system for private purpose such as development, evaluation or test of Gfarm\&.
+.PP
+\fBconfig\-gfsd\fR
+assumes that the configuration file
+%%SYSCONFDIR%%/gfarm2\&.conf
+(or
+%%SYSCONFDIR%%/gfsd\&.conf
+in case of the private\-mode) exists on the host\&. Please copy the file from the metadata server, if missing\&.
+.PP
+It performs the following processes, in that order:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+Crerate a spool directory\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Update the Gfarm configuration file
+%%SYSCONFDIR%%/gfarm2\&.conf
+or
+%%SYSCONFDIR%%/gfsd\&.conf\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+Create a script (or a configuration file) to start/stop gfsd\&.
+.sp
+On most systems,
+\fBconfig\-gfsd\fR
+puts a start/stop script
+\fBgfsd\fR
+(or
+\fBgfsd\-ADDRESS\fR
+in case of the private mode) onto either
+/etc/init\&.d
+or
+/etc/rc\&.d/init\&.d, according to the operating system\&.
+.sp
+On Linux with systemd such as Red Hat Enterprise Linux 7 or later,
+\fBconfig\-gfsd\fR
+puts the unit configuration file
+gfsd\&.service
+(or
+gfsd\-ADDRESS\&.service
+in case of the private mode) onto
+/etc/systemd/system, and then executes
+\fBsystemctl enable gfsd\&.service\fR
+(or
+\fBsystemctl enable gfsd\-ADDRESS\&.service\fR
+respectively)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+In case of the private mode,
+\fBconfig\-gfsd\fR
+registers the host as a file spool node to the metadata server, by executing
+\fBgfhost \-c\fR
+command\&. In the non\-private mode, it shows how to register the host as a file spool node to the metadata server, like this:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Please ask admin_user to register your host by the following command:
+
+/usr/bin/gfhost \-c \-a x86_64\-centos7\&.0\-linux \-p 600 \-n 2 ext540
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+In case of the private mode,
+\fBconfig\-gfsd\fR
+starts
+\fBgfsd\fR\&. In the non\-private mode, it shows how to start
+\fBgfsd\fR, like as follows:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+After that, start gfsd by the following command as a root:
+
+systemctl start gfsd\&.service
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+Before set up a file spool node using
+\fBconfig\-gfsd\fR, it is recommended to execute
+\fBconfig\-gfsd \-t\fR\&. With
+\fB\-t\fR
+option, the sets up is not performed\&. Instead, it shows values of all configurable parameters:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ config\-gfsd \-t
+
+prefix                 [\-\-prefix]:
+hostname                     [\-h]: host1\&.example\&.org
+listen address               [\-l]: (all local IP addresses)
+architecture                 [\-a]: x86_64\-centos6\&.5\-linux
+port                         [\-p]: 600
+ncpu                         [\-n]: 8
+spool directory                  : /var/gfarm\-spool
+rc script                        : /etc/init\&.d/gfsd
+gfarm client conf file           : /etc/gfarm2\&.conf
+gfsd pid file                    : /var/run/gfsd\&.pid
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+The option name surrounded by [ ] means that you can specify a value with that option\&.
+.SH "OPTIONS"
+.PP
+\-\-prefix \fIpath\fR
+.RS 4
+Configure some paths related to gfsd\&. Specifically, the followings are affected\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The spool directory of gfsd\&. That is
+PREFIX/var/gfarm\-spool\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The directory to put a PID file of gfsd\&. That is
+PREFIX/var/run\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The directory of configuration files\&. That is
+PREFIX/etc\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The directory of start/stop script for gfsd\&. That is
+PREFIX/etc/init\&.d
+or
+PREFIX/rc\&.d/init\&.d/etc
+which is depending on operating systems\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+If systemd is running on the host, there is a special exception\&. When an empty prefix is given by
+\fB\-\-prefix\fR
+option on such host,
+\fBconfig\-gfsd\fR
+doesn\*(Aqt put a unit configuration file for systemd\&. Instead, it puts traditional start/stop script at
+PREFIX/etc/init\&.d\&.
+.RE
+.sp
+The default is "" (empty)\&.
+.RE
+.PP
+\fB\-a\fR \fIarchitecture\fR
+.RS 4
+Specify architecture of the host\&.
+\fBconfig\-gfsd\fR
+gives this value to
+\fBgfhost \-c\fR
+as an argument of
+\fB\-a\fR
+option\&.
+\fBconfig\-gfsd\fR
+guesses the architecture, and use it by default\&.
+.RE
+.PP
+\fB\-p\fR \fIport\fR
+.RS 4
+Specify a TCP port number the configured gfsd listens on\&. The default is 10600 if the private mode, 600 otherwise\&.
+.RE
+.PP
+\fB\-h\fR \fIhostname\fR
+.RS 4
+Specify a hostname of the host\&.
+\fBconfig\-gfsd\fR
+gives this value to
+\fBgfhost \-c\fR
+as an non\-option argument\&. The default is the fully qualified domainname of the host on DNS\&.
+.RE
+.PP
+\fB\-l\fR \fIaddress\fR
+.RS 4
+Specify a listen address of gfsd\&. By default, it listens on all local IP addresses\&. If this option is specified, also the following changes occur:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The name of start/stop script is changed from
+gfsd
+to
+gfsd\-ADDRESS, when
+\fBconfig\-gfsd\fR
+creates the script\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The name of unit configuration file for systemd is changed from
+gfsd\&.service
+to
+gfsd\-ADDRESS\&.service, when
+\fBconfig\-gfsd\fR
+creates the file\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The spool directory is changed from
+PREFIX/var/gfarm\-spool
+to
+PREFIX/var/gfarm\-spool\-ADDRESS, where PREFIX is a prefix given by
+\fB\-\-prefix\fR
+option\&.
+.RE
+.RE
+.PP
+\fB\-n\fR \fIncpu\fR
+.RS 4
+Specify the number of CPUs of the host\&.
+\fBconfig\-gfsd\fR
+gives this value to
+\fBgfhost \-c\fR
+as an argument of
+\fB\-n\fR
+option\&.
+\fBconfig\-gfsd\fR
+guesses the number of CPUs, and use it by default\&.
+.RE
+.PP
+\fB\-\-help\fR
+.RS 4
+Show usage, then exit\&.
+.RE
+.PP
+\fB\-S\fR
+.RS 4
+Enable the private mode\&.
+\fBconfig\-gfsd\fR
+sets up the Gfarm file system which can be run without root privilege\&. Specifically,
+\fBconfig\-gfsd\fR
+changes the configuration procedures as follows:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The default listen port of gfsd (corresponding with
+\fB\-p\fR
+option) is changed from 600 to 10600\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+It updates the configuration file
+%%SYSCONFDIR%%/gfsd\&.conf, instead of
+%%SYSCONFDIR%%/gfarm2\&.conf\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+It registers the file spool node by executing
+\fBgfhost \-c\fR\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+It starts gfsd, unless
+\fB\-N\fR
+option is given\&.
+.RE
+.sp
+\fB\-S\fR
+option never changes locations of a start/stop script and a configuration file\&. Since the default locations of those files are usually writable only for privilege users,
+\fBconfig\-gfsd\fR
+fails to create them\&. To avoid this problem, also specify
+\fB\-\-prefix\fR
+option\&.
+.RE
+.PP
+\fB\-N\fR
+.RS 4
+Do not start gfsd\&.
+.RE
+.PP
+\fB\-f\fR
+.RS 4
+Force overwriting an existing set up\&.
+.RE
+.PP
+\fB\-t\fR
+.RS 4
+Show values of all configurable parameters in human readable format, then exit immediately\&.
+.RE
+.PP
+\fB\-T\fR
+.RS 4
+Like \*(Aq\-t\*(Aq, but it shows values in KEY=VALUE format\&.
+.RE
+.SH "FILES"
+.PP
+%%SYSCONFDIR%%/gfarm2\&.conf
+.RS 4
+configuration file for Gfarm clients
+.RE
+.PP
+%%SYSCONFDIR%%/gfsd\&.conf
+.RS 4
+configuration file for gfsd (used only in the private mode)
+.RE
+.PP
+/etc/init\&.d/gfsd
+.RS 4
+start/stop script for gfmd
+.RE
+.PP
+/etc/systemd/system/gfsd\&.service
+.RS 4
+unit configuration file for gfsd, read by systemd
+.RE
+.SH "SEE ALSO"
+.PP
+\fBgfarm2.conf\fR(5)\fBconfig-gfarm\fR(8)\fBgfsd\fR(8)

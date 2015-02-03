@@ -1,0 +1,430 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>config-gfarm</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="confog-gfarm.8"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>config-gfarm — set up a metadata server of Gfarm</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">config-gfarm</code>  [<em class="replaceable"><code>options</code></em>]</p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<span class="command"><strong>config-gfarm</strong></span> is a utility to set up a
+metadata server of Gfarm file system.
+The server program for a metadata server is named gfmd.
+<span class="command"><strong>config-gfarm</strong></span> is required to be run with
+the root privilege, unless you use the file system for private purpose such
+as development, evaluation or test of Gfarm.
+</p>
+<p>
+<span class="command"><strong>config-gfarm</strong></span> performs the following
+processes, in that order:
+</p>
+<div class="orderedlist"><ol class="orderedlist" type="1">
+<li class="listitem"><p>
+Set up the backend database.
+</p></li>
+<li class="listitem"><p>
+Generate Gfarm configuration files
+<code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code> and
+<code class="filename">%%SYSCONFDIR%%/gfmd.conf</code>.
+</p></li>
+<li class="listitem">
+<p>
+Create scripts (or configuration files) to start/stop the backend
+database and the Gfarm metadata server named gfmd.
+</p>
+<p>
+On most systems, <span class="command"><strong>config-gfarm</strong></span> puts
+start/stop scripts <span class="command"><strong>gfmd</strong></span> and
+<span class="command"><strong>gfarm-pgsql</strong></span> onto either
+<code class="filename">/etc/init.d</code> or
+<code class="filename">/etc/rc.d/init.d</code>, according to the
+operating system.
+</p>
+<p>
+On Linux with systemd such as Red Hat Enterprise Linux 7 or later,
+<span class="command"><strong>config-gfarm</strong></span> puts the unit configuration
+files <code class="filename">gfmd.service</code> and
+<code class="filename">gfarm-pgsql.service</code> onto
+<code class="filename">/etc/systemd/system</code>, and then executes
+<span class="command"><strong>systemctl enable gfmd.service</strong></span> and
+<span class="command"><strong>systemctl enable gfarm-pgsql.service</strong></span>
+respectively.
+</p>
+</li>
+<li class="listitem"><p>
+Start the backend database and gfmd.
+</p></li>
+</ol></div>
+<p>
+Before set up a metadata server using
+<span class="command"><strong>config-gfarm</strong></span>,
+it is recommended to execute
+<span class="command"><strong>config-gfarm -t</strong></span>.
+With <code class="option">-t</code> option, the sets up is not performed.
+Instead, it shows values of all configurable parameters:
+</p>
+<pre class="screen">
+$ config-gfarm -t
+prefix                 [--prefix]:
+metadata backend             [-b]: postgresql
+(available backend: postgresql )
+metadata     directory       [-l]: /var/gfarm-pgsql
+metadata log directory       [-L]: /var/gfarm-pgsql/pg_xlog
+postgresql admin user        [-U]: miles
+postgresql admin password    [-W]: (auto generated)
+postgresql user              [-u]: gfarm
+postgresql password          [-w]: (auto generated)
+postgresql prefix            [-P]: /usr
+postgresql version           [-V]: 9.2
+postgresql XML supported     [-X]: no
+metadata replication         [-r]: no
+metaserver hostname          [-h]: host1.example.org
+matadata admin user          [-A]: miles
+matadata admin dn            [-D]:
+portmaster port              [-p]: 10602
+gfmd port                    [-m]: 601
+auth type                    [-a]: sharedsecret
+rc script for gfmd               : /etc/init.d/gfmd
+rc script for backend            : /etc/init.d/gfarm-pgsql
+gfmd conf file                   : /etc/gfmd.conf
+gfarm client conf file           : /etc/gfarm2.conf
+gfmd pid file                    : /var/run/gfmd.pid
+backend pid file                 : /var/run/postmaster.pid
+</pre>
+<p>
+The option name surrounded by [ ] means that you can specify a value with
+that option.
+</p>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term">--prefix<code class="option"></code> <em class="parameter"><code>path</code></em></span></dt>
+<dd>
+<p>
+Configure some paths related to gfmd and the backend database.
+Specifically, the followings are affected.
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p>
+  The directory to put metadata of Gfarm.
+  That is <code class="filename">PREFIX/var/gfarm-pgsql</code> if
+  the backend database is PostgreSQL.
+  The path can also be changed by <code class="option">-l</code> option.
+  When both options are specified, <code class="option">-l</code> option has preference.
+  </p></li>
+<li class="listitem"><p>
+  The directory to put log files about metadata.
+  That is <code class="filename">PREFIX/var/gfarm-pgsql/pg_xlog</code>
+  if the backend database is PostgreSQL.
+  The path can also be changed by <code class="option">-L</code> option.
+  When both options are specified, <code class="option">-L</code> option has preference.
+  </p></li>
+<li class="listitem"><p>
+  The directory to put journal files of gfmd.
+  That is
+  <code class="filename">PREFIX/var/gfarm-metadata/journal</code>.
+  The path can also be changed by <code class="option">-j</code> option.
+  When both options are specified, <code class="option">-j</code> option has preference.
+  </p></li>
+<li class="listitem"><p>
+  The directory to put PID files of gfmd and the backend database.
+  That is <code class="filename">PREFIX/var/run</code>.
+  </p></li>
+<li class="listitem"><p>
+  The directory to put configuration files.
+  That is <code class="filename">PREFIX/etc</code>.
+  </p></li>
+<li class="listitem"><p>
+  The directory of start/stop scripts for gfmd and its backend database.
+  That is <code class="filename">PREFIX/etc/init.d</code> or
+  <code class="filename">PREFIX/rc.d/init.d/etc</code> which is
+  depending on operating systems.
+  </p></li>
+<li class="listitem"><p>
+  If systemd is running on the host, there is a special exception.
+  When an empty prefix is given by <code class="option">--prefix</code> option on
+  such host, <span class="command"><strong>config-gfarm</strong></span> doesn't
+  put unit configuration files for systemd.
+  Instead, it puts traditional start/stop scripts at
+  <code class="filename">PREFIX/etc/init.d</code>.
+  </p></li>
+</ul></div>
+<p>
+The default is "" (empty).
+</p>
+</dd>
+<dt><span class="term"><code class="option">-b</code> <em class="parameter"><code>backend</code></em></span></dt>
+<dd>
+<p>
+Specify backend database.
+It currently supports "postgresql" (for PostgreSQL) only.
+"ldap" (for LDAP) was supported in the past, but not maintained any longer.
+<span class="command"><strong>config-gfarm -t</strong></span> lists which backend
+databases are available.
+</p>
+<p>
+PostgreSQL is chosen by default if "postgresql" is in the list.
+If the available backend is "ldap" only, it is still chosen by default.
+Note that you need to recompile Gfarm if you'd like to make Gfarm on
+your system support a backend database not in the list.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-d</code> <em class="parameter"><code>domainname</code></em></span></dt>
+<dd><p>
+This option is used to specify a base DN of metadata.
+This option takes an effect only when the backend database is LDAP.
+The default is the fully qualified domainname of the host on DNS.
+</p></dd>
+<dt><span class="term"><code class="option">-U</code> <em class="parameter"><code>username</code></em></span></dt>
+<dd><p>
+Specify administrator's username of the Gfarm file system.
+Since the default value differs depending on operating systems, execute
+<span class="command"><strong>config-gfarm -t</strong></span> to confirm the username.
+</p></dd>
+<dt><span class="term"><code class="option">-u</code> <em class="parameter"><code>username</code></em></span></dt>
+<dd><p>
+The configured gfmd will connect to the backend database as the specified
+username.
+The default is "gfarm".
+</p></dd>
+<dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>prefix</code></em></span></dt>
+<dd><p>
+Specify an installation prefix of the backend database (e.g. /usr/local).
+When <span class="command"><strong>config-gfarm</strong></span> executes an
+administration command of the backend database, it assumes the command is
+installed under the given prefix.
+An example of those commands is
+<span class="command"><strong>initdb</strong></span> of PostgreSQL.
+If this option is omitted, <span class="command"><strong>config-gfarm</strong></span>
+searches directories listed in the environment variable <code class="envar">PATH</code>
+for the commands.
+</p></dd>
+<dt><span class="term"><code class="option">-V</code> <em class="parameter"><code>version</code></em></span></dt>
+<dd><p>
+Tell version of the backend database to
+<span class="command"><strong>config-gfarm</strong></span>.
+In most cases, <span class="command"><strong>config-gfarm</strong></span> can detect
+a correct version number by itself.
+This option should be used only when
+<span class="command"><strong>config-gfarm</strong></span> fails to get the correct
+version number.
+</p></dd>
+<dt><span class="term"><code class="option">-l</code> <em class="parameter"><code>directory</code></em></span></dt>
+<dd>
+<p>
+Specify a path to the directory where the backend database puts files to
+store metadata of Gfarm.
+</p>
+<p>
+If the backend database is PostgreSQL, the directory is commonly called
+PGDATA directory.
+The default is <code class="filename">PREFIX/var/gfarm-pgsql</code>
+where PREFIX is a prefix given by <code class="option">--prefix</code> option.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-L</code> <em class="parameter"><code>directory</code></em></span></dt>
+<dd><p>
+Specify a path to the directory where the backend database puts log files.
+If the backend database is PostgreSQL, the default is
+<code class="filename">PREFIX/var/gfarm-pgsql/pg_xlog</code> where
+PREFIX is a prefix given by <code class="option">--prefix</code> option.
+</p></dd>
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>hostname</code></em></span></dt>
+<dd><p>
+Specify a hostname which is used to identify the metadata server.
+The default is the fully qualified domainname of the host.
+</p></dd>
+<dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>directory</code></em></span></dt>
+<dd><p>
+Specify a path to the directory where gfmd puts journal files.
+This option takes an effect only when metadata replication is enabled by
+<code class="option">-r</code> option.
+The default value is
+<code class="filename">PREFIX/var/gfarm-metadata/journal</code>
+where PREFIX is a prefix given by <code class="option">--prefix</code> option.
+</p></dd>
+<dt><span class="term"><code class="option">-A</code> <em class="parameter"><code>username</code></em></span></dt>
+<dd><p>
+Specify administrator of the Gfarm file system.
+If this option is omitted,
+<span class="command"><strong>config-gfarm</strong></span> gets a username by executing
+<span class="command"><strong>who am i</strong></span> command.
+</p></dd>
+<dt><span class="term"><code class="option">-D</code> <em class="parameter"><code>subject-dn</code></em></span></dt>
+<dd><p>
+Specify a subject DN of global administrator.
+This option is mandatory, in case that the authentication method is GSI,
+</p></dd>
+<dt><span class="term"><code class="option">-p</code> <em class="parameter"><code>port</code></em></span></dt>
+<dd><p>
+Specify a TCP port number the configured backend database listens on.
+The default is 10602.
+</p></dd>
+<dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>port</code></em></span></dt>
+<dd><p>
+Specify a TCP port number the configured gfmd listens on.
+The default value is 10601 in case of the private mode, 601 otherwise.
+</p></dd>
+<dt><span class="term"><code class="option">-a</code> <em class="parameter"><code>method</code></em></span></dt>
+<dd><p>
+Specify an authentication method.
+It currently recognizes "sharedsecret" or "gsi".
+The default is "sharedsecret".
+</p></dd>
+<dt><span class="term"><code class="option">--help</code></span></dt>
+<dd><p>
+Show usage, then exit.
+</p></dd>
+<dt><span class="term"><code class="option">-S</code></span></dt>
+<dd>
+<p>
+Enable the private mode.
+<span class="command"><strong>config-gfarm</strong></span> sets up the Gfarm
+file system which can be run without root privilege.
+Specifically, <span class="command"><strong>config-gfarm</strong></span> changes
+the configuration procedures as follows:
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p>
+  The default listen port of gfmd (corresponding with <code class="option">-m</code>
+  option) is changed from 601 to 10601.
+  </p></li>
+<li class="listitem"><p>
+  The user map file
+  <code class="filename">%%SYSCONFDIR%%/usermap</code>
+  is also created.
+  The metadata server reads this file when it starts.
+  In the non-private mode, it is required to create the user accounts for
+  _gfarmmd and _gfarmfs on the operating system.
+  With the user map file, the creation of the user accounts is not needed.
+  The file defines mappings of Gfarm system users to actual user accounts.
+  </p></li>
+<li class="listitem"><p>
+  The configuration file for gfsd,
+  <code class="filename">%%SYSCONFDIR%%/gfsd.conf</code> is also
+  created.
+  In the non-private mode, gfsd reads the configuration file
+  <code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code> instead,
+  which is read by all Gfarm programs connecting with a metadata server.
+  <code class="filename">%%SYSCONFDIR%%/gfsd.conf</code> is a
+  configuration file cutomized for gfsd running under the private mode.
+  </p></li>
+</ul></div>
+<p>
+<code class="option">-S</code> option never changes locations of start/stop scripts
+and configuration files.
+Since the default locations of those files are usually writable only for
+privilege users, <span class="command"><strong>config-gfarm</strong></span> fails to
+create them.
+To avoid this problem, also specify <code class="option">--prefix</code> option.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-N</code></span></dt>
+<dd><p>
+Do not start gfmd or the backend database.
+</p></dd>
+<dt><span class="term"><code class="option">-f</code></span></dt>
+<dd><p>
+Force overwriting an existing set up.
+</p></dd>
+<dt><span class="term"><code class="option">-t</code></span></dt>
+<dd><p>
+Show values of all configurable parameters in human readable format,
+then exit immediately.
+</p></dd>
+<dt><span class="term"><code class="option">-T</code></span></dt>
+<dd><p>
+Like <code class="option">-t</code> option, but it shows values in KEY=VALUE format.
+</p></dd>
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd><p>
+Enable metadata replication among metadata servers.
+</p></dd>
+<dt><span class="term"><code class="option">-W</code> <em class="parameter"><code>password</code></em></span></dt>
+<dd><p>
+Specify administrator's password of backend database.
+This option corresponds with <code class="option">-U</code> option which specifies
+the username.
+By default, the password is generated automatically.
+</p></dd>
+<dt><span class="term"><code class="option">-w</code> <em class="parameter"><code>password</code></em></span></dt>
+<dd><p>
+The configured gfmd will connect the backend database with the specified
+password.
+This option corresponds with <code class="option">-u</code> option which specifies
+the username.
+By default, the password is generated automatically.
+</p></dd>
+<dt><span class="term"><code class="option">-X</code></span></dt>
+<dd><p>
+Enable XML Path Language (XPath) support for querying XML extended attributes.
+</p></dd>
+<dt><span class="term"><code class="option">-E</code></span></dt>
+<dd><p>
+Set up PostgreSQL with the data checksums option.
+<span class="command"><strong>config-gfarm</strong></span> gives
+<code class="option">--data-checksums</code> option to
+<span class="command"><strong>initdb</strong></span> command of PostgreSQL.
+Note that PostgreSQL 9.3 or later is required to use this feature.
+This option takes an effect only when the backend database is PostgreSQL.
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="files"></a><h2>FILES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code></span></dt>
+<dd><p>
+configuration file for Gfarm clients
+</p></dd>
+<dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfmd.conf</code></span></dt>
+<dd><p>
+configuration file for gfmd
+</p></dd>
+<dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfsd.conf</code></span></dt>
+<dd><p>
+configuration file for gfsd (used only in the private mode)
+</p></dd>
+<dt><span class="term"><code class="filename">%%SYSCONFDIR%%/usermap</code></span></dt>
+<dd><p>
+user mapping definition file (used only in the private mode)
+</p></dd>
+<dt><span class="term"><code class="filename">/etc/init.d/gfarm-pgsql</code></span></dt>
+<dd><p>
+start/stop script for PostgreSQL running as backend database of Gfarm
+</p></dd>
+<dt><span class="term"><code class="filename">/etc/init.d/gfmd</code></span></dt>
+<dd><p>
+start/stop script for gfmd
+</p></dd>
+<dt><span class="term"><code class="filename">/etc/systemd/system/gfarm-pgsql.service</code></span></dt>
+<dd><p>
+unit configuration file for PostgreSQL running as backend database of Gfarm,
+read by systemd
+</p></dd>
+<dt><span class="term"><code class="filename">/etc/systemd/system/gfmd.service</code></span></dt>
+<dd><p>
+unit configuration file for gfmd, read by systemd
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
+<span class="citerefentry"><span class="refentrytitle">config-gfsd</span>(8)</span>
+</p>
+</div>
+</div></body>
+</html>
