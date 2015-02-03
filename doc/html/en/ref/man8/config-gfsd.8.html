@@ -1,0 +1,320 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>config-gfsd</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="confog-gfsd.8"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>config-gfsd — set up a file spool node of Gfarm</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">config-gfsd</code>  [<em class="replaceable"><code>options</code></em>]</p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<span class="command"><strong>config-gfsd</strong></span> is a utility to set up a
+file sppol node of Gfarm file system.
+The server program for a file spool node is named gfsd.
+<span class="command"><strong>config-gfsd</strong></span> is required to be run with
+the root privilege, unless you use the file system for private purpose such
+as development, evaluation or test of Gfarm.
+</p>
+<p>
+<span class="command"><strong>config-gfsd</strong></span> assumes that the
+configuration file
+<code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code> (or
+<code class="filename">%%SYSCONFDIR%%/gfsd.conf</code> in case of
+the private-mode) exists on the host.
+Please copy the file from the metadata server, if missing.
+</p>
+<p>
+It performs the following processes, in that order:
+</p>
+<div class="orderedlist"><ol class="orderedlist" type="1">
+<li class="listitem"><p>
+Crerate a spool directory.
+</p></li>
+<li class="listitem"><p>
+Update the Gfarm configuration file
+<code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code> or
+<code class="filename">%%SYSCONFDIR%%/gfsd.conf</code>.
+</p></li>
+<li class="listitem">
+<p>
+Create a script (or a configuration file) to start/stop gfsd.
+</p>
+<p>
+On most systems, <span class="command"><strong>config-gfsd</strong></span> puts
+a start/stop script <span class="command"><strong>gfsd</strong></span> (or
+<span class="command"><strong>gfsd-ADDRESS</strong></span> in case of the private
+mode) onto either
+<code class="filename">/etc/init.d</code> or
+<code class="filename">/etc/rc.d/init.d</code>, according to the
+operating system.
+</p>
+<p>
+On Linux with systemd such as Red Hat Enterprise Linux 7 or later,
+<span class="command"><strong>config-gfsd</strong></span> puts the unit configuration
+file <code class="filename">gfsd.service</code> (or
+<code class="filename">gfsd-ADDRESS.service</code> in case of the
+private mode) onto <code class="filename">/etc/systemd/system</code>,
+and then executes
+<span class="command"><strong>systemctl enable gfsd.service</strong></span> (or
+<span class="command"><strong>systemctl enable gfsd-ADDRESS.service</strong></span>
+respectively).
+</p>
+</li>
+<li class="listitem">
+<p>
+In case of the private mode, <span class="command"><strong>config-gfsd</strong></span>
+registers the host as a file spool node to the metadata server, by executing
+<span class="command"><strong>gfhost -c</strong></span> command.
+In the non-private mode, it shows how to register the host as a file spool
+node to the metadata server, like this:
+
+</p>
+<pre class="screen">
+Please ask admin_user to register your host by the following command:
+
+/usr/bin/gfhost -c -a x86_64-centos7.0-linux -p 600 -n 2 ext540
+</pre>
+<p>
+</p>
+</li>
+<li class="listitem">
+<p>
+In case of the private mode, <span class="command"><strong>config-gfsd</strong></span>
+starts <span class="command"><strong>gfsd</strong></span>.
+In the non-private mode, it shows how to start
+<span class="command"><strong>gfsd</strong></span>, like as follows:
+</p>
+<pre class="screen">
+After that, start gfsd by the following command as a root:
+
+systemctl start gfsd.service
+</pre>
+<p>
+</p>
+</li>
+</ol></div>
+<p>
+Before set up a file spool node using
+<span class="command"><strong>config-gfsd</strong></span>,
+it is recommended to execute
+<span class="command"><strong>config-gfsd -t</strong></span>.
+With <code class="option">-t</code> option, the sets up is not performed.
+Instead, it shows values of all configurable parameters:
+</p>
+<pre class="screen">
+$ config-gfsd -t
+
+prefix                 [--prefix]:
+hostname                     [-h]: host1.example.org
+listen address               [-l]: (all local IP addresses)
+architecture                 [-a]: x86_64-centos6.5-linux
+port                         [-p]: 600
+ncpu                         [-n]: 8
+spool directory                  : /var/gfarm-spool
+rc script                        : /etc/init.d/gfsd
+gfarm client conf file           : /etc/gfarm2.conf
+gfsd pid file                    : /var/run/gfsd.pid
+</pre>
+<p>
+The option name surrounded by [ ] means that you can specify a value with
+that option.
+</p>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term">--prefix<code class="option"></code> <em class="parameter"><code>path</code></em></span></dt>
+<dd>
+<p>
+Configure some paths related to gfsd.
+Specifically, the followings are affected.
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p>
+  The spool directory of gfsd.
+  That is <code class="filename">PREFIX/var/gfarm-spool</code>.
+  </p></li>
+<li class="listitem"><p>
+  The directory to put a PID file of gfsd.
+  That is <code class="filename">PREFIX/var/run</code>.
+  </p></li>
+<li class="listitem"><p>
+  The directory of configuration files.
+  That is <code class="filename">PREFIX/etc</code>.
+  </p></li>
+<li class="listitem"><p>
+  The directory of start/stop script for gfsd.
+  That is <code class="filename">PREFIX/etc/init.d </code> or
+  <code class="filename">PREFIX/rc.d/init.d/etc</code> which is
+  depending on operating systems.
+  </p></li>
+<li class="listitem"><p>
+  If systemd is running on the host, there is a special exception.
+  When an empty prefix is given by <code class="option">--prefix</code> option on
+  such host, <span class="command"><strong>config-gfsd</strong></span> doesn't
+  put a unit configuration file for systemd.
+  Instead, it puts traditional start/stop script at
+  <code class="filename">PREFIX/etc/init.d</code>.
+  </p></li>
+</ul></div>
+<p>
+The default is "" (empty).
+</p>
+</dd>
+<dt><span class="term"><code class="option">-a</code> <em class="parameter"><code>architecture</code></em></span></dt>
+<dd><p>
+Specify architecture of the host.
+<span class="command"><strong>config-gfsd</strong></span> gives this value to
+<span class="command"><strong>gfhost -c</strong></span> as an argument of
+<code class="option">-a</code> option.
+<span class="command"><strong>config-gfsd</strong></span> guesses the architecture,
+and use it by default.
+</p></dd>
+<dt><span class="term"><code class="option">-p</code> <em class="parameter"><code>port</code></em></span></dt>
+<dd><p>
+Specify a TCP port number the configured gfsd listens on.
+The default is 10600 if the private mode, 600 otherwise.
+</p></dd>
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>hostname</code></em></span></dt>
+<dd><p>
+Specify a hostname of the host.
+<span class="command"><strong>config-gfsd</strong></span> gives this value to
+<span class="command"><strong>gfhost -c</strong></span> as an non-option argument.
+The default is the fully qualified domainname of the host on DNS.
+</p></dd>
+<dt><span class="term"><code class="option">-l</code> <em class="parameter"><code>address</code></em></span></dt>
+<dd>
+<p>
+Specify a listen address of gfsd.
+By default, it listens on all local IP addresses.
+If this option is specified, also the following changes occur:
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p>
+  The name of start/stop script is changed from
+  <code class="filename">gfsd</code> to
+  <code class="filename">gfsd-ADDRESS</code>, when
+  <span class="command"><strong>config-gfsd</strong></span> creates the script.
+  </p></li>
+<li class="listitem"><p>
+  The name of unit configuration file for systemd is changed from
+  <code class="filename">gfsd.service</code> to
+  <code class="filename">gfsd-ADDRESS.service</code>, when
+  <span class="command"><strong>config-gfsd</strong></span> creates the file.
+  </p></li>
+<li class="listitem"><p>
+  The spool directory is changed from
+  <code class="filename">PREFIX/var/gfarm-spool</code> to
+  <code class="filename">PREFIX/var/gfarm-spool-ADDRESS</code>,
+  where PREFIX is a prefix given by <code class="option">--prefix</code> option.
+  </p></li>
+</ul></div>
+</dd>
+<dt><span class="term"><code class="option">-n</code> <em class="parameter"><code>ncpu</code></em></span></dt>
+<dd><p>
+Specify the number of CPUs of the host.
+<span class="command"><strong>config-gfsd</strong></span> gives this value to
+<span class="command"><strong>gfhost -c</strong></span> as an argument of
+<code class="option">-n</code> option.
+<span class="command"><strong>config-gfsd</strong></span> guesses the number of CPUs,
+and use it by default.
+</p></dd>
+<dt><span class="term"><code class="option">--help</code></span></dt>
+<dd><p>
+Show usage, then exit.
+</p></dd>
+<dt><span class="term"><code class="option">-S</code></span></dt>
+<dd>
+<p>
+Enable the private mode.
+<span class="command"><strong>config-gfsd</strong></span> sets up the Gfarm
+file system which can be run without root privilege.
+Specifically, <span class="command"><strong>config-gfsd</strong></span> changes
+the configuration procedures as follows:
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p>
+  The default listen port of gfsd (corresponding with <code class="option">-p</code>
+  option) is changed from 600 to 10600.
+  </p></li>
+<li class="listitem"><p>
+  It updates the configuration file
+  <code class="filename">%%SYSCONFDIR%%/gfsd.conf</code>, instead
+  of <code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code>.
+  </p></li>
+<li class="listitem"><p>
+  It registers the file spool node by executing
+  <span class="command"><strong>gfhost -c</strong></span>.
+  </p></li>
+<li class="listitem"><p>
+  It starts gfsd, unless <code class="option">-N</code> option is given.
+  </p></li>
+</ul></div>
+<p>
+<code class="option">-S</code> option never changes locations of a start/stop
+script and a configuration file.
+Since the default locations of those files are usually writable only for
+privilege users, <span class="command"><strong>config-gfsd</strong></span> fails to
+create them.
+To avoid this problem, also specify <code class="option">--prefix</code> option.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-N</code></span></dt>
+<dd><p>
+Do not start gfsd.
+</p></dd>
+<dt><span class="term"><code class="option">-f</code></span></dt>
+<dd><p>
+Force overwriting an existing set up.
+</p></dd>
+<dt><span class="term"><code class="option">-t</code></span></dt>
+<dd><p>
+Show values of all configurable parameters in human readable format,
+then exit immediately.
+</p></dd>
+<dt><span class="term"><code class="option">-T</code></span></dt>
+<dd><p>
+Like '-t', but it shows values in KEY=VALUE format.
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="files"></a><h2>FILES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code></span></dt>
+<dd><p>
+configuration file for Gfarm clients
+</p></dd>
+<dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfsd.conf</code></span></dt>
+<dd><p>
+configuration file for gfsd (used only in the private mode)
+</p></dd>
+<dt><span class="term"><code class="filename">/etc/init.d/gfsd</code></span></dt>
+<dd><p>
+start/stop script for gfmd
+</p></dd>
+<dt><span class="term"><code class="filename">/etc/systemd/system/gfsd.service</code></span></dt>
+<dd><p>
+unit configuration file for gfsd, read by systemd
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>
+<span class="citerefentry"><span class="refentrytitle">config-gfarm</span>(8)</span>
+<span class="citerefentry"><span class="refentrytitle">gfsd</span>(8)</span>
+</p>
+</div>
+</div></body>
+</html>
