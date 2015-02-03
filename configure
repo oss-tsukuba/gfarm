@@ -11947,7 +11947,7 @@ if test "${with_globus+set}" = set; then :
  case "${globus_location}" in yes) globus_location=${GLOBUS_LOCATION};; esac
 
  # try pkg-config first
- skip_pkgconfig=false
+ try_pkgconfig=true
  if test -f $globus_libdir/pkgconfig/globus-gssapi-gsi.pc; then
     GLOBUS_PKG_CONFIG_PATH="env PKG_CONFIG_PATH=$globus_libdir/pkgconfig"
  elif test x"$globus_location" != x; then
@@ -11955,10 +11955,10 @@ if test "${with_globus+set}" = set; then :
     if test x"$globus_pkgconfig" != x; then
 	GLOBUS_PKG_CONFIG_PATH="env PKG_CONFIG_PATH=`dirname $globus_pkgconfig`"
     else
-	skip_pkgconfig=true
+	try_pkgconfig=false
     fi
  fi
- if ! $skip_pkgconfig -a $GLOBUS_PKG_CONFIG_PATH pkg-config globus-gssapi-gsi; then
+ if $try_pkgconfig && $GLOBUS_PKG_CONFIG_PATH pkg-config globus-gssapi-gsi; then
 	case ${globus_static} in
 	yes) globus_static=--static;;
 	*)   globus_static=        ;;
@@ -13057,7 +13057,9 @@ if test x"${postgresql_specified}" = x""; then
 $as_echo "no" >&6; }
 else
   if test -x ${with_postgresql}/bin/pg_config; then
-    if ! ${with_postgresql}/bin/pg_config --version > /dev/null 2>&1; then
+    if ${with_postgresql}/bin/pg_config --version > /dev/null 2>&1; then
+	:
+    else
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed to call ${with_postgresql}/bin/pg_config command." >&5
 $as_echo "failed to call ${with_postgresql}/bin/pg_config command." >&6; }
 	as_fn_error $? "PostgreSQL installation is incomplete, aborted." "$LINENO" 5
