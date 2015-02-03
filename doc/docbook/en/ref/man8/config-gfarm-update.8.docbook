@@ -1,0 +1,316 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<!-- $Id$ -->
+
+<refentry id="config-gfarm-update.8">
+
+<refentryinfo><date>2 Feb 2015</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>config-gfarm-update</refentrytitle>
+<manvolnum>8</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>config-gfarm-update</refname>
+<refpurpose>dump/restore Gfarm metadata</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">config-gfarm-update</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">config-gfarm-update</command>
+    <arg choice="plain" rep="norepeat">--update</arg>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>
+<command moreinfo="none">config-gfarm-update</command> upgrades/updates
+the backend database of a metadata server.
+Unless the metadata server is configured as the private mode,
+the root privilege is required to run this command.
+It reads the configuration file for gfmd
+(<filename moreinfo="none">gfmd.conf</filename>), in order to get
+information for accessing the backend database.
+</para>
+
+<para>
+<command moreinfo="none">config-gfarm-update</command> can enable the
+following features of the backend database:
+</para>
+
+  <itemizedlist>
+  <listitem>
+  <para>XML Path Language (XPath) support</para>
+  </listitem>
+
+  <listitem>
+  <para>Metadata replication among metadata servers</para>
+  </listitem>
+  </itemizedlist>
+
+<para>
+Whether the backend database supports those features or not is
+initially configured by <command moreinfo="none">config-gfarm</command>.
+If you would like to enable a feature after the configuration, run
+<command moreinfo="none">config-gfarm-update --update</command> with
+<option>-X</option> and/or <option>-r</option> options.
+The option <option>-X</option> enables XPath support and the option
+<option>-r</option> enables metadata replication.
+</para>
+
+<para>
+<command moreinfo="none">config-gfarm-update</command> is also used for
+upgrading the backend database.
+Sometimes Gfarm contains incompatible changes against older releases.
+With <option>--update</option> option,
+<command moreinfo="none">config-gfarm-update</command> edits table schema
+and/or data in the database for upgrading, if needed.
+</para>
+
+<para>
+When you update/upgrade the metadata server, you must stop gfmd beforehand.
+If there are some metadata servers in a file system, run
+<command moreinfo="none">config-gfarm-update</command> on every metadata
+servers.
+After the update/upgrade, it starts a metadata server on the host by
+default.
+</para>
+
+<para>
+Like <command moreinfo="none">config-gfarm</command>,
+also <command moreinfo="none">config-gfarm-update</command> has 
+<option>-t</option> option which shows values of all configurable parameters,
+like this:
+</para>
+
+<screen>
+$ config-gfarm-update -t
+prefix [--prefix]:
+metadata backend    [-b]: postgresql
+metadata directory  [-l]: /var/gfarm-pgsql
+postgresql admin user        [-U]: postgres
+postgresql admin password    [-W]: (auto generated)
+postgresql user              [-u]: gfarm
+postgresql password          [-w]: (auto generated)
+postgresql prefix            [-P]: /usr
+postgresql version           [-V]: 8.4
+postgresql XML supported     [-X]: no
+postgresql data checksum support
+                             [-E]: no
+portmaster port              [-p]: 10602
+metadata replication         [-r]: yes
+metadata journal directory   [-j]: /var/gfarm-metadata/journal
+</screen>
+
+<para>
+It is recommended to execute
+<command moreinfo="none">config-gfarm-update -t</command> before
+update/upgrade.
+</para>
+
+<para>
+In case that the backend database is PostgreSQL and
+<command moreinfo="none">config-gfarm-update</command> is executed without
+<option>--update</option> option, <command moreinfo="none">psql</command>
+command is invoked.
+<command moreinfo="none">psql</command> is a front-end terminal to the
+backend database.
+It enables you to type in queries interactively.
+This is useful since a connection from <command moreinfo="none">psql</command>
+to the PostgreSQL server is established automatically.
+</para>
+
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term>--prefix<option></option> <parameter moreinfo="none">path</parameter></term>
+<listitem>
+<para>
+If this option is given,
+<command moreinfo="none">config-gfarm-update</command> reads
+<filename moreinfo="none">PREFIX/etc/gfmd.conf</filename> as the
+configuration file of gfmd.
+By default, it reads 
+<filename moreinfo="none">%%SYSCONFDIR%%/etc/gfmd.conf</filename>.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter moreinfo="none">prefix</parameter></term>
+<listitem>
+<para>
+Specify an installation prefix of the backend database (e.g. /usr/local).
+When <command moreinfo="none">config-gfarm-update</command> executes a
+PostgreSQL command such as <command>psql</command>, it assumes the command
+is installed under the given prefix.
+If this option is omitted,
+<command moreinfo="none">config-gfarm-update</command> searches directories
+listed in the environment variable <envar>PATH</envar> for the commands.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>
+Specify a path to the directory where the backend database puts files to
+store metadata of Gfarm.
+</para>
+<para>
+If the backend database is PostgreSQL, the directory is commonly called
+PGDATA directory.
+The default is <filename moreinfo="none">PREFIX/var/gfarm-pgsql</filename>
+where PREFIX is a prefix given by <option>--prefix</option> option.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-f<option></option> <parameter moreinfo="none">file</parameter></term>
+<listitem>
+<para>
+When <command moreinfo="none">config-gfarm-update</command> invokes
+<command moreinfo="none">psql</command> as a front-end terminal to
+PostgreSQL, <command moreinfo="none">config-gfarm-update</command> 
+passes <option>-f</option> option and the given
+<parameter moreinfo="none">file</parameter> argument to 
+<command moreinfo="none">psql</command>.
+<command moreinfo="none">psql</command> interprets commands written in
+the file, instead of reading commands interactively.
+This option is ignored when also <option>--update</option> option is
+specified.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-o<option></option> <parameter moreinfo="none">option</parameter></term>
+<listitem>
+<para>
+When <command moreinfo="none">config-gfarm-update</command> invokes
+<command moreinfo="none">psql</command> as a front-end terminal to
+PostgreSQL, <command moreinfo="none">config-gfarm-update</command> also
+passes the given option to <command moreinfo="none">psql</command>.
+This option is ignored when also <option>--update</option> option
+is specified.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-j<option></option> <parameter moreinfo="none">file</parameter></term>
+<listitem>
+<para>
+Specify a path to the directory where gfmd puts journal files.
+The default value is
+<filename moreinfo="none">PREFIX/var/gfarm-metadata/journal</filename>
+where PREFIX is a prefix given by <option>--prefix</option> option.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--help</option></term>
+<listitem>
+<para>
+Show usage, then exit.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-t</option></term>
+<listitem>
+<para>
+Show values of configurable parameters in human readable format,
+then exit immediately.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-N</option></term>
+<listitem>
+<para>
+Do not start gfmd after update/upgrade.
+This option takes effect only when also <option>--update</option> option
+is specified.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-t</option></term>
+<listitem>
+<para>
+Show values of all configurable parameters in human readable format,
+then exit immediately.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>
+Enable metadata replication among metadata servers.
+This option takes effect only when also <option>--update</option> option
+is specified.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-X</option></term>
+<listitem>
+<para>
+Enable XML Path Language (XPath) support for querying XML extended attributes.
+This option takes effect only when also <option>--update</option> option
+is specified.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="files"><title>FILES</title>
+<variablelist>
+<varlistentry>
+<term><filename moreinfo="none">%%SYSCONFDIR%%/gfmd.conf</filename></term>
+<listitem>
+<para>
+configuration file for metadata server, gfmd
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="see-also"><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>config-gfarm</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+<citerefentry><refentrytitle>gfmd</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+<citerefentry><refentrytitle>psql</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+</para>
+
+</refsect1>
+
+</refentry>

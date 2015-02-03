@@ -3,6 +3,7 @@ DOCBOOK = \
 	gfchmod.1 \
 	gfchown.1 \
 	gfdf.1 \
+	gfdump.postgresql.1 \
 	gfedquota.1 \
 	gfexport.1 \
 	gffindxmlattr.1 \
