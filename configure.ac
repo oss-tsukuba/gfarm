@@ -281,7 +281,7 @@ AC_ARG_WITH(globus,
  case "${globus_location}" in yes) globus_location=${GLOBUS_LOCATION};; esac
 
  # try pkg-config first
- skip_pkgconfig=false
+ try_pkgconfig=true
  if test -f $globus_libdir/pkgconfig/globus-gssapi-gsi.pc; then
     GLOBUS_PKG_CONFIG_PATH="env PKG_CONFIG_PATH=$globus_libdir/pkgconfig"
  elif test x"$globus_location" != x; then
@@ -289,10 +289,10 @@ AC_ARG_WITH(globus,
     if test x"$globus_pkgconfig" != x; then
 	GLOBUS_PKG_CONFIG_PATH="env PKG_CONFIG_PATH=`dirname $globus_pkgconfig`"
     else
-	skip_pkgconfig=true
+	try_pkgconfig=false
     fi
  fi
- if ! $skip_pkgconfig -a $GLOBUS_PKG_CONFIG_PATH pkg-config globus-gssapi-gsi; then
+ if $try_pkgconfig && $GLOBUS_PKG_CONFIG_PATH pkg-config globus-gssapi-gsi; then
 	case ${globus_static} in
 	yes) globus_static=--static;;
 	*)   globus_static=        ;;
@@ -779,7 +779,9 @@ if test x"${postgresql_specified}" = x""; then
   AC_MSG_RESULT([no])
 else
   if test -x ${with_postgresql}/bin/pg_config; then
-    if ! ${with_postgresql}/bin/pg_config --version > /dev/null 2>&1; then
+    if ${with_postgresql}/bin/pg_config --version > /dev/null 2>&1; then
+	:
+    else
 	AC_MSG_RESULT([failed to call ${with_postgresql}/bin/pg_config command.])
 	AC_MSG_ERROR([PostgreSQL installation is incomplete, aborted.])
     fi
