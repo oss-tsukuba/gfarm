@@ -28,7 +28,7 @@ display_plain_params_backend_ldap()
 	display_plain_param_backend_data_dir
 	display_plain_param_backend_log_dir
 
-	echo "domain name                  [-d]: $DOMAIN_NAME"
+	echo 'domain name ($DOMAIN_NAME)       :' $DOMAIN_NAME
 	echo "ldap root user               [-U]: $BACKEND_ADMIN_USER"
 	echo "ldap root password           [-W]: `if [ -r $admin_password ]; then cat $admin_password; else echo '(auto generated)'; fi`"
 	echo "ldap user                    [-u]: $BACKEND_USER"
