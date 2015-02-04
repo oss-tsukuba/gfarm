@@ -246,6 +246,7 @@ display_plain_params()
     if $METADATA_REPLICATION; then
         echo "metadata journal directory   [-j]: $METADATA_JOURNAL_DIR"
     fi
+    echo "digest                       [-d]: $DIGEST_TYPE"
     echo "metaserver hostname          [-h]: $BACKEND_HOSTNAME"
     echo "matadata admin user          [-A]: $METADATA_ADMIN_USER"
     echo "matadata admin dn            [-D]: $METADATA_ADMIN_USER_GSI_DN"
@@ -281,6 +282,7 @@ display_script_params()
 
     echo     "METADATA_REPLICATION=$METADATA_REPLICATION"
     echo     "METADATA_JOURNAL_DIR=$METADATA_JOURNAL_DIR"
+    echo     "DIGEST_TYPE=$DIGEST_TYPE"
     echo     "BACKEND_HOSTNAME=$BACKEND_HOSTNAME"
     echo     "METADATA_ADMIN_USER=$METADATA_ADMIN_USER"
     echo     "METADATA_ADMIN_USER_GSI_DN='$METADATA_ADMIN_USER_GSI_DN'"
