@@ -306,8 +306,8 @@ configuration file for metadata server, gfmd
 
 <refsect1 id="see-also"><title>SEE ALSO</title>
 <para>
-<citerefentry><refentrytitle>config-gfarm</refentrytitle><manvolnum>8</manvolnum></citerefentry>
-<citerefentry><refentrytitle>gfmd</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+<citerefentry><refentrytitle>config-gfarm</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfmd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>psql</refentrytitle><manvolnum>1</manvolnum></citerefentry>
 </para>
 
