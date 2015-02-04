@@ -52,6 +52,7 @@ usage()
 	echo >&2 "usage: $PROGNAME [--help] [-t] [--update]"
 	echo >&2 "	[-N]			- do not restart the server processes"
 	echo >&2 "	[-r]			- enable metadata replication"
+	echo >&2 "	[-d digest_type]	- specify digest type"
 	echo >&2 "	[--prefix prefix]	- directory specified in config-gfarm"
 	echo >&2 "	[-P backend_prefix]	- installation prefix of the backend program"
 	echo >&2 "	[-l metadata_directory]	- backend database data directory"
@@ -123,6 +124,7 @@ display_params()
     if $METADATA_REPLICATION; then
         echo "metadata journal directory   [-j]: $METADATA_JOURNAL_DIR"
     fi
+    echo "digest                       [-d]: $DIGEST_TYPE"
     exit 0
 }
 
@@ -144,6 +146,19 @@ update_metadata_replication()
     }
 }
 
+update_digest()
+{
+    if [ X"$DIGEST_TYPE" != X ]; then
+	tmp=`mktemp` || ABORT "cannot create a tmp file to update $GFMD_CONF"
+	egrep -v '^digest ' $GFMD_CONF > $tmp &&
+	echo "digest $DIGEST_TYPE" >> $tmp &&
+	mv $tmp $GFMD_CONF || {
+	    rm -f $tmp
+	    ABORT "cannot update $GFMD_CONF"
+	}
+    fi
+}
+
 update_first_set_param()
 {
     METADATA_REPLICATION_ED=`getvalue metadb_replication`
@@ -155,6 +170,8 @@ update_first_set_param()
 
     : ${METADATA_JOURNAL_DIR:=`getvalue metadb_journal_dir`}
     : ${METADATA_JOURNAL_DIR:="$CONFIG_PREFIX/var/gfarm-metadata/journal"}
+
+    : ${DIGEST_TYPE=`getvalue digest`}
 }
 
 #
@@ -199,6 +216,9 @@ while [ $# -gt 0 ] ; do
 		;;
 	  -r)
 		METADATA_REPLICATION=true
+		;;
+	  -d) shift; [ $# -ge 1 ] || usage
+		DIGEST_TYPE=$1
 		;;
 	  --update|--update-symlink)
 		UPDATE=true
@@ -292,6 +312,7 @@ update_postprocess_$BACKEND_TYPE || ABORT "aborted"
 #
 if $UPDATE; then
 	update_metadata_replication
+	update_digest
 	update_$BACKEND_TYPE
 else
 	update_access_db_$BACKEND_TYPE $BACKEND_OPTIONS
