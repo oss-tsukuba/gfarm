@@ -242,12 +242,13 @@ your system support a backend database not in the list.
 </varlistentry>
 
 <varlistentry>
-<term><option>-d</option> <parameter moreinfo="none">domainname</parameter></term>
+<term><option>-d</option> <parameter moreinfo="none">digest_type</parameter></term>
 <listitem>
 <para>
-This option is used to specify a base DN of metadata.
-This option takes an effect only when the backend database is LDAP.
-The default is the fully qualified domainname of the host on DNS.
+Enable checksum calculation and specify the digest type of the checksum.
+The <parameter moreinfo="none">digest_type</parameter> argument is a
+lower-case name which is supported by the OpenSSL library on the host,
+such as "md5".
 </para>
 </listitem>
 </varlistentry>
