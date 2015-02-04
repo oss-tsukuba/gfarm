@@ -141,9 +141,9 @@ usage()
 {
 	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t|-T] [-f]"
 	echo >&2 "	[-S] [-N] [-W] [-w] [-r]"
-	echo >&2 "	[-h hostname] [-d domain_name] [-m gfmd_port]"
+	echo >&2 "	[-h hostname] [-m gfmd_port]"
 	echo >&2 "	[-A metadata_admin_user] [-D metadata_admin_gsi_dn]"
-	echo >&2 "	[-a auth_type]"
+	echo >&2 "	[-a auth_type] [-d digest_type]"
 	echo >&2 "	[-b metadata_backend] [-P backend_prefix]"
 	echo >&2 "	[-V metadata_backend_version] [-p metadata_backend_port]"
 	echo >&2 "	[-U backend_admin_user] [-u backend_user]"
@@ -331,7 +331,7 @@ while [ $# -gt 0 ] ; do
 		esac
 		;;
 	  -d) shift; [ $# -ge 1 ] || usage
-		DOMAIN_NAME=$1
+		DIGEST_TYPE=$1
 		;;
 	  -U) shift; [ $# -ge 1 ] || usage
 		BACKEND_ADMIN_USER=$1
@@ -712,6 +712,11 @@ fi
 echo "metadb_replication $METADATA_REPLICATION_ED" >> $GFMD_CONF
 echo "# mkdir following directory when metadb_replication is set to enable." >> $GFMD_CONF
 echo "metadb_journal_dir $METADATA_JOURNAL_DIR" >> $GFMD_CONF
+
+# digest
+if [ X"$DIGEST_TYPE" != X ]; then
+	echo "digest $DIGEST_TYPE" >> $GFMD_CONF
+fi
 
 # by backend type
 make_configuration_file_$BACKEND_TYPE
