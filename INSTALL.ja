@@ -115,10 +115,10 @@ postgresql, postgresql-server		(config-gfarm の実行に必要)
 fuse-devel				(gfarm2fs の構築に必要)
 ganglia-gmond-python			(config-gf[ms]d-iostat の実行に必要)
 
-(*) http://www.globus.org/toolkit/downloads/latest-stable/
+(*) http://toolkit.globus.org/toolkit/downloads/latest-stable/
     を参考に Globus configuration ファイルを導入する必要があります．
-    例えば，CentOS 6，Globus 5.2.2の場合，以下の様になります．
-    # rpm -Uvh http://www.globus.org/ftppub/gt5/5.2/5.2.2/installers/repo/Globus-5.2.stable-config.centos-6-1.noarch.rpm
+    例えば，CentOS 6，Globus 6.0の場合，以下の様になります．
+    # rpm -Uvh http://toolkit.globus.org/ftppub/gt6/installers/repo/globus-toolkit-repo-latest.noarch.rpm
 
 * Debian パッケージ
 

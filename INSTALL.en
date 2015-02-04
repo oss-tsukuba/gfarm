@@ -112,9 +112,9 @@ fuse-devel				(required to build gfarm2fs)
 ganglia-gmond-python		(required to execute config-gf[ms]d-iostat)
 
 (*) It is necessary to install Globus configuration file.  See
-    http://www.globus.org/toolkit/downloads/latest-stable/
-    Here is an example in case of CentOS 6 and Globus 5.2.2.
-    # rpm -Uvh http://www.globus.org/ftppub/gt5/5.2/5.2.2/installers/repo/Globus-5.2.stable-config.centos-6-1.noarch.rpm
+    http://toolkit.globus.org/toolkit/downloads/latest-stable/
+    Here is an example in case of CentOS 6 or 7 and Globus 6.0.
+    # rpm -Uvh http://toolkit.globus.org/ftppub/gt6/installers/repo/globus-toolkit-repo-latest.noarch.rpm
 
 * Debian Package
 
