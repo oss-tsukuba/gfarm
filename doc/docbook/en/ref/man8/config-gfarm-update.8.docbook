@@ -140,7 +140,7 @@ to the PostgreSQL server is established automatically.
 <variablelist>
 
 <varlistentry>
-<term>--prefix<option></option> <parameter moreinfo="none">path</parameter></term>
+<term><option>--prefix</option> <parameter moreinfo="none">path</parameter></term>
 <listitem>
 <para>
 If this option is given,
@@ -185,7 +185,7 @@ where PREFIX is a prefix given by <option>--prefix</option> option.
 </varlistentry>
 
 <varlistentry>
-<term>-f<option></option> <parameter moreinfo="none">file</parameter></term>
+<term><option>-f</option> <parameter moreinfo="none">file</parameter></term>
 <listitem>
 <para>
 When <command moreinfo="none">config-gfarm-update</command> invokes
@@ -203,7 +203,7 @@ specified.
 </varlistentry>
 
 <varlistentry>
-<term>-o<option></option> <parameter moreinfo="none">option</parameter></term>
+<term><option>-o</option> <parameter moreinfo="none">option</parameter></term>
 <listitem>
 <para>
 When <command moreinfo="none">config-gfarm-update</command> invokes
@@ -217,7 +217,7 @@ is specified.
 </varlistentry>
 
 <varlistentry>
-<term>-j<option></option> <parameter moreinfo="none">file</parameter></term>
+<term><option>-j</option> <parameter moreinfo="none">file</parameter></term>
 <listitem>
 <para>
 Specify a path to the directory where gfmd puts journal files.

@@ -104,7 +104,7 @@ Start gfmd again.
 <variablelist>
 
 <varlistentry>
-<term>--prefix<option></option> <parameter moreinfo="none">path</parameter></term>
+<term><option>--prefix</option> <parameter moreinfo="none">path</parameter></term>
 <listitem>
 <para>
 If this option is given,
@@ -149,7 +149,7 @@ where PREFIX is a prefix given by <option>--prefix</option> option.
 </varlistentry>
 
 <varlistentry>
-<term>-f<option></option> <parameter moreinfo="none">file</parameter></term>
+<term><option>-f</option> <parameter moreinfo="none">file</parameter></term>
 <listitem>
 <para>
 Specify the name of dump file.
