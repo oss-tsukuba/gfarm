@@ -103,7 +103,7 @@ to the PostgreSQL server is established automatically.
 <div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
 <div class="variablelist"><dl class="variablelist">
-<dt><span class="term">--prefix<code class="option"></code> <em class="parameter"><code>path</code></em></span></dt>
+<dt><span class="term"><code class="option">--prefix</code> <em class="parameter"><code>path</code></em></span></dt>
 <dd><p>
 If this option is given,
 <span class="command"><strong>config-gfarm-update</strong></span> reads
@@ -135,7 +135,7 @@ The default is <code class="filename">PREFIX/var/gfarm-pgsql</code>
 where PREFIX is a prefix given by <code class="option">--prefix</code> option.
 </p>
 </dd>
-<dt><span class="term">-f<code class="option"></code> <em class="parameter"><code>file</code></em></span></dt>
+<dt><span class="term"><code class="option">-f</code> <em class="parameter"><code>file</code></em></span></dt>
 <dd><p>
 When <span class="command"><strong>config-gfarm-update</strong></span> invokes
 <span class="command"><strong>psql</strong></span> as a front-end terminal to
@@ -148,7 +148,7 @@ the file, instead of reading commands interactively.
 This option is ignored when also <code class="option">--update</code> option is
 specified.
 </p></dd>
-<dt><span class="term">-o<code class="option"></code> <em class="parameter"><code>option</code></em></span></dt>
+<dt><span class="term"><code class="option">-o</code> <em class="parameter"><code>option</code></em></span></dt>
 <dd><p>
 When <span class="command"><strong>config-gfarm-update</strong></span> invokes
 <span class="command"><strong>psql</strong></span> as a front-end terminal to
@@ -157,7 +157,7 @@ passes the given option to <span class="command"><strong>psql</strong></span>.
 This option is ignored when also <code class="option">--update</code> option
 is specified.
 </p></dd>
-<dt><span class="term">-j<code class="option"></code> <em class="parameter"><code>file</code></em></span></dt>
+<dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>file</code></em></span></dt>
 <dd><p>
 Specify a path to the directory where gfmd puts journal files.
 The default value is
