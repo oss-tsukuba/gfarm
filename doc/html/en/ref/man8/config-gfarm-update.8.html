@@ -31,17 +31,16 @@ information for accessing the backend database.
 following features of the backend database:
 </p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
-<li class="listitem"><p>XML Path Language (XPath) support</p></li>
-<li class="listitem"><p>Metadata replication among metadata servers</p></li>
+<li class="listitem"><p>XML Path Language (XPath) support [-X]</p></li>
+<li class="listitem"><p>Metadata replication among metadata servers [-r]</p></li>
+<li class="listitem"><p>Checksum calculation [-d]</p></li>
 </ul></div>
 <p>
 Whether the backend database supports those features or not is
 initially configured by <span class="command"><strong>config-gfarm</strong></span>.
 If you would like to enable a feature after the configuration, run
 <span class="command"><strong>config-gfarm-update --update</strong></span> with
-<code class="option">-X</code> and/or <code class="option">-r</code> options.
-The option <code class="option">-X</code> enables XPath support and the option
-<code class="option">-r</code> enables metadata replication.
+an option surrounded by [ ] in the list above.
 </p>
 <p>
 <span class="command"><strong>config-gfarm-update</strong></span> is also used for
@@ -82,6 +81,7 @@ postgresql data checksum support
 portmaster port              [-p]: 10602
 metadata replication         [-r]: yes
 metadata journal directory   [-j]: /var/gfarm-metadata/journal
+digest type                  [-d]: md5
 </pre>
 <p>
 It is recommended to execute
@@ -103,7 +103,7 @@ to the PostgreSQL server is established automatically.
 <div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
 <div class="variablelist"><dl class="variablelist">
-<dt><span class="term">--prefix<code class="option"></code> <em class="parameter"><code>path</code></em></span></dt>
+<dt><span class="term"><code class="option">--prefix</code> <em class="parameter"><code>path</code></em></span></dt>
 <dd><p>
 If this option is given,
 <span class="command"><strong>config-gfarm-update</strong></span> reads
@@ -135,7 +135,7 @@ The default is <code class="filename">PREFIX/var/gfarm-pgsql</code>
 where PREFIX is a prefix given by <code class="option">--prefix</code> option.
 </p>
 </dd>
-<dt><span class="term">-f<code class="option"></code> <em class="parameter"><code>file</code></em></span></dt>
+<dt><span class="term"><code class="option">-f</code> <em class="parameter"><code>file</code></em></span></dt>
 <dd><p>
 When <span class="command"><strong>config-gfarm-update</strong></span> invokes
 <span class="command"><strong>psql</strong></span> as a front-end terminal to
@@ -148,7 +148,7 @@ the file, instead of reading commands interactively.
 This option is ignored when also <code class="option">--update</code> option is
 specified.
 </p></dd>
-<dt><span class="term">-o<code class="option"></code> <em class="parameter"><code>option</code></em></span></dt>
+<dt><span class="term"><code class="option">-o</code> <em class="parameter"><code>option</code></em></span></dt>
 <dd><p>
 When <span class="command"><strong>config-gfarm-update</strong></span> invokes
 <span class="command"><strong>psql</strong></span> as a front-end terminal to
@@ -157,7 +157,7 @@ passes the given option to <span class="command"><strong>psql</strong></span>.
 This option is ignored when also <code class="option">--update</code> option
 is specified.
 </p></dd>
-<dt><span class="term">-j<code class="option"></code> <em class="parameter"><code>file</code></em></span></dt>
+<dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>file</code></em></span></dt>
 <dd><p>
 Specify a path to the directory where gfmd puts journal files.
 The default value is
@@ -189,6 +189,13 @@ then exit immediately.
 Enable metadata replication among metadata servers.
 This option takes effect only when also <code class="option">--update</code> option
 is specified.
+</p></dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>
+Enable checksum calculation and specify the digest type of the checksum.
+The <em class="parameter"><code>digest_type</code></em> argument is a
+lower-case name which is supported by the OpenSSL library on the host,
+such as "md5".
 </p></dd>
 <dt><span class="term"><code class="option">-X</code></span></dt>
 <dd><p>
