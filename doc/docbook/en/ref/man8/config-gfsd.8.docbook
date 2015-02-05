@@ -160,7 +160,7 @@ that option.
 <variablelist>
 
 <varlistentry>
-<term>--prefix<option></option> <parameter moreinfo="none">path</parameter></term>
+<term><option>--prefix</option> <parameter moreinfo="none">path</parameter></term>
 <listitem>
 <para>
 Configure some paths related to gfsd.
