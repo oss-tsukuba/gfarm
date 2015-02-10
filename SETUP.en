@@ -48,6 +48,8 @@ privilege is required for execution and command lines with the prompt
 	# useradd -c "Gfarm gfsd" -m _gfarmfs	[with the root privilege]
 	$ gfkey -f -p 31536000			[without the root privilege]
 
+Note that --force-badname option may be required for useradd on Debian.
+
 Overview
 ========
 
