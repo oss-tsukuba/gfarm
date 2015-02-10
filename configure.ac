@@ -35,6 +35,7 @@ if test x"$GCC" = x"yes"; then # CFLAGS='-g -O2'
 else # CFLAGS='-g'
   CFLAGS="-O" # don't use -g, but use -O
 fi
+AC_OPENMP
 
 # Check whether gcc accepts '-rdynamic' option
 # This check is performed for backtrace_symbols() function of glibc.

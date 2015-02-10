@@ -10,8 +10,7 @@ SRCS = gfrep.c gfarm_list.c
 OBJS = gfrep.o gfarm_list.o
 PROGRAM = gfrep
 #CC = omcc
-#OMPFLAGS = -fopenmp
-CFLAGS = $(OMPFLAGS) $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) $(openssl_includes)
+CFLAGS = $(OMPCFLAGS) $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) $(openssl_includes)
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
