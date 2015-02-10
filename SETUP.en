@@ -497,6 +497,18 @@ example,
 	$ gfmkdir /home/foo
 	$ gfchown foo /home/foo
 
+In case of the shared secret authentication, create a user account on
+all metadata servers and all file system nodes.  When the local
+account name on a host is not same as the global username in Gfarm, a
+user mapfile is required in the host.  Create a shared secret key for
+a user, and copy it to the home directory on all metadata servers and
+all file system nodes.  Note that the shared secret key should be
+owned by the user.
+
+In case of GSI, register user's distinguished name to the grid-mapfile
+that maps to nobody user on all metadata servers and all file system
+nodes.
+
 Registration of Gfarm administrators and root users
 ===================================================
 
