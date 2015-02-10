@@ -179,6 +179,7 @@ config-gfarm は，順番に次の処理を行います．
 
 	# useradd -c "Gfarm gfsd" -m _gfarmfs
 
+  Debian では，--force-badname オプションが必要な場合があります．
   もし，メタデータサーバとファイルシステムノードが，NFS でディスクを共
   有しているならば，ユーザ _gfarmfs のホームディレクトリを NFS 上に置
   き，認証鍵を NFS で共有することをお勧めします．
