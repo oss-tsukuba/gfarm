@@ -61,7 +61,7 @@ gfarmTCPConnectPortByHost(char *host, int port)
 	if (sock < 0) {
 	    save_errno = errno;
 	    gflog_error(GFARM_MSG_1000630,
-		"socket(%d, %d, %d): %s\n", (int)res->ai_family,
+		"socket(%d, %d, %d): %s", (int)res->ai_family,
 		(int)res->ai_socktype, (int)res->ai_protocol, strerror(errno));
 	    continue;
 	}
@@ -71,7 +71,7 @@ gfarmTCPConnectPortByHost(char *host, int port)
 		;
 	if (rv < 0) {
 	    save_errno = errno;
-	    gflog_error(GFARM_MSG_1000631, "connect: %s\n", strerror(errno));
+	    gflog_error(GFARM_MSG_1000631, "connect: %s", strerror(errno));
 	    close(sock);
 	    sock = -1;
 	    continue;
@@ -106,7 +106,7 @@ gfarmTCPBindPort(int port)
     e = gfarm_getaddrinfo(NULL, sbuf, &hints, &res);
     if (e) {
 	gflog_error(GFARM_MSG_1000632,
-	    "getaddrinfo(port = %u): %s\n", port, gai_strerror(e));
+	    "getaddrinfo(port = %u): %s", port, gai_strerror(e));
 	errno = EINVAL; /* errno doesn't have GFARM_ERR_UNKNOWN_HOST */
 	return -1;
     }
@@ -124,7 +124,7 @@ gfarmTCPBindPort(int port)
     } else if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 			  (void *)&one, sizeof(int)) != 0) {
 	save_errno = errno;
-	gflog_error(GFARM_MSG_1000634, "setsockopt: %s", strerror(errno));
+	gflog_notice(GFARM_MSG_1000634, "setsockopt: %s", strerror(errno));
 	close(sock);
 	sock = -1;
     } else if (bind(sock, res->ai_addr, res->ai_addrlen) < 0) {
@@ -155,7 +155,7 @@ gfarmGetPeernameOfSocket(int sock, int *portPtr, char **hostPtr)
 
     if (getpeername(sock, (struct sockaddr *)&sin, &slen) != 0) {
 	save_errno = errno;
-	gflog_error(GFARM_MSG_1000637, "getpeername: %s", strerror(errno));
+	gflog_notice(GFARM_MSG_1000637, "getpeername: %s", strerror(errno));
 	errno = save_errno;
 	return (-1);
     }
@@ -191,7 +191,7 @@ gfarmGetNameOfSocket(int sock, int *portPtr)
     
     if (getsockname(sock, (struct sockaddr *)&sin, &slen) != 0) {
 	save_errno = errno;
-	gflog_error(GFARM_MSG_1000638, "getsockname: %s", strerror(errno));
+	gflog_notice(GFARM_MSG_1000638, "getsockname: %s", strerror(errno));
 	errno = save_errno;
 	return (-1);
     }
