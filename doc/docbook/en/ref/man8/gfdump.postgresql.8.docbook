@@ -4,13 +4,13 @@
 
 <!-- $Id$ -->
 
-<refentry id="gfdump.postgresql.1">
+<refentry id="gfdump.postgresql.8">
 
 <refentryinfo><date>30 Jan 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfdump.postgresql</refentrytitle>
-<manvolnum>1</manvolnum>
+<manvolnum>8</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
