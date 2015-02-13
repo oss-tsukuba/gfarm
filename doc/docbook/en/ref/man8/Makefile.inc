@@ -1,4 +1,5 @@
 DOCBOOK = \
+	gfdump.postgresql.8 \
 	gfmd.8 \
 	gfsd.8 \
 	config-gfarm.8 \
