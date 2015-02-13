@@ -487,8 +487,12 @@ fi
 %{man_prefix}/man5/gfarm2.conf.5.gz
 %{man_prefix}/man5/gfarm_attr.5.gz
 %{man_prefix}/man5/gfservice.conf.5.gz
+%{man_prefix}/man8/gfdump.postgresql.8.gz
 %{man_prefix}/man8/gfmd.8.gz
 %{man_prefix}/man8/gfsd.8.gz
+%{man_prefix}/man8/config-gfarm-update.8.gz
+%{man_prefix}/man8/config-gfarm.8.gz
+%{man_prefix}/man8/config-gfsd.8.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfarm_agent.1.gz
 %{man_prefix}/ja/man1/gfcd.1.gz
@@ -814,8 +818,12 @@ fi
 %{html_prefix}/en/ref/man5/gfarm2.conf.5.html
 %{html_prefix}/en/ref/man5/gfarm_attr.5.html
 %{html_prefix}/en/ref/man5/gfservice.conf.5.html
+%{html_prefix}/en/ref/man8/gfdump.postgresql.8.html
 %{html_prefix}/en/ref/man8/gfmd.8.html
 %{html_prefix}/en/ref/man8/gfsd.8.html
+%{html_prefix}/en/ref/man8/config-gfarm-update.8.html
+%{html_prefix}/en/ref/man8/config-gfarm.8.html
+%{html_prefix}/en/ref/man8/config-gfsd.8.html
 %{html_prefix}/en/user/index.html
 %{html_prefix}/en/user/samba-gfarmfs.html
 %{html_prefix}/en/user/redundancy-tutorial.html
