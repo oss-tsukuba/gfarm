@@ -12,10 +12,9 @@
 %define share_prefix	%{_prefix}/share/%{pkg}
 %define doc_prefix	%{_prefix}/share/doc/%{name}-%{ver}
 %define html_prefix	%{doc_prefix}/html
-%define etc_prefix	/etc
-%define rc_prefix	%{etc_prefix}/rc.d/init.d
-%define profile_prefix	%{etc_prefix}/profile.d
-%define sysconfdir	%{etc_prefix}
+%define rc_prefix	%{_sysconfdir}/rc.d/init.d
+%define profile_prefix	%{_sysconfdir}/profile.d
+%define sysconfdir	%{_sysconfdir}
 
 %define gfarm_v2_not_yet 0
 
