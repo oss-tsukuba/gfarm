@@ -10,8 +10,8 @@
 %define lib_prefix	%{_libdir}
 %define libexec_prefix	%{_libexecdir}
 %define man_prefix	%{_mandir}
-%define share_prefix	%{prefix}/share/%{pkg}
-%define doc_prefix	%{prefix}/share/doc/%{name}-%{ver}
+%define share_prefix	%{_prefix}/share/%{pkg}
+%define doc_prefix	%{_prefix}/share/doc/%{name}-%{ver}
 %define html_prefix	%{doc_prefix}/html
 %define etc_prefix	/etc
 %define rc_prefix	%{etc_prefix}/rc.d/init.d
