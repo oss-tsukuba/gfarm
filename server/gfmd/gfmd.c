@@ -1555,7 +1555,7 @@ boot_apply_db_journal(void)
 	gfarm_error_t e;
 	static int boot_apply = 1;
 
-	gflog_info(GFARM_MSG_1003273, "start boot-apply db journal");
+	gflog_info(GFARM_MSG_1003273, "start applying db journal");
 	if ((e = create_detached_thread(db_journal_store_thread,
 	    &boot_apply)) != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1003274,
@@ -1563,7 +1563,7 @@ boot_apply_db_journal(void)
 		    gfarm_error_string(e));
 
 	db_journal_wait_for_apply_thread();
-	gflog_info(GFARM_MSG_1003275, "end boot-apply db journal");
+	gflog_info(GFARM_MSG_1003275, "end applying db journal");
 
 	/*
 	 * Reload seqnum from the database.
@@ -1943,9 +1943,12 @@ gfmd_modules_init_default(int table_size)
 	if (gfarm_get_metadb_replication_enabled()) {
 		db_journal_set_fail_store_op(db_journal_store_failure);
 		db_journal_apply_init();
+		gflog_info(GFARM_MSG_UNFIXED, "start reading db journal");
 		db_journal_init();
 		boot_apply_db_journal();
 	}
+	gflog_info(GFARM_MSG_UNFIXED, "start initializing modules and "
+	    "loading database");
 	mdhost_init();
 	back_channel_init();
 	if (gfarm_get_metadb_replication_enabled()) {
@@ -2210,6 +2213,7 @@ main(int argc, char **argv)
 	if (gfarm_get_metadb_replication_enabled())
 		start_db_journal_threads();
 	if (mdhost_self_is_master()) {
+		gflog_info(GFARM_MSG_UNFIXED, "start filesystem check");
 		/* these functions write db, thus, must be after db_thread  */
 		inode_remove_orphan(); /* should be before
 					  inode_check_and_repair() */
@@ -2217,6 +2221,7 @@ main(int argc, char **argv)
 		quota_check();
 	}
 	inode_free_orphan();
+	gflog_info(GFARM_MSG_UNFIXED, "end bootstrap");
 	if (gfarm_get_metadb_replication_enabled()) {
 		is_master = mdhost_self_is_master();
 		gflog_info(GFARM_MSG_1002737,
