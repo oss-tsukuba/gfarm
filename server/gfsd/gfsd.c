@@ -174,15 +174,22 @@ cleanup_accepting(int sighandler)
 			    "rmdir(%s)", accepting.local_socks[i].dir);
 	}
 }
+
 void
-cleanup_iostat(void)
+cleanup_iostat(int sighandler)
 {
 	if (iostat_dirbuf) {
+		/*
+		 * XXX strcpy() is not defined as async-signal-safe
+		 * in IEEE Std 1003.1, 2013 (POSIX).
+		 * thus, the following code is not portable, strictly speaking.
+		 */
 		strcpy(&iostat_dirbuf[iostat_dirlen], "gfsd");
 		(void) unlink(iostat_dirbuf);
 		strcpy(&iostat_dirbuf[iostat_dirlen], "bcs");
 		(void) unlink(iostat_dirbuf);
-		free(iostat_dirbuf);
+		if (!sighandler)
+			free(iostat_dirbuf);
 		iostat_dirbuf = NULL;
 	}
 }
@@ -213,7 +220,7 @@ cleanup(int sighandler)
 		if (kill(back_channel_gfsd_pid, SIGTERM) == -1 && !sighandler)
 			gflog_warning_errno(GFARM_MSG_1002377,
 			    "kill(%ld)", (long)back_channel_gfsd_pid);
-		cleanup_iostat();
+		cleanup_iostat(sighandler);
 	}
 
 	if (credential_exported != NULL)
