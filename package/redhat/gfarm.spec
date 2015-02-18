@@ -1,7 +1,14 @@
+# Check if symbol is defined.
+%define	undefined()	%{expand:%%{?%1:0}%%{!?%1:1}}
+
 # Part 1 data definition
 %define pkg	gfarm
+%if %{undefined ver}
 %define ver	2.6.0
+%endif
+%if %{undefined rel}
 %define rel	1
+%endif
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
@@ -30,11 +37,14 @@
 
 %define globus %(echo "${GFARM_CONFIGURE_OPTION}" | grep -e --with-globus > /dev/null && echo 1 || echo 0)
 
+%if %{undefined pkg_suffix}
 %if %{globus}
-%define package_name	%{pkg}-gsi
+%define pkg_suffix	-gsi
 %else
-%define package_name	%{pkg}
+%define pkg_suffix	%{nil}
 %endif
+%endif
+%define package_name	%{pkg}%{pkg_suffix}
 
 Summary: Gfarm File System 2 
 Name: %{package_name}
@@ -57,7 +67,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Summary: Document for Gfarm file system
 Group: Documentation
 # always provide "gfarm-doc" as a virtual package.
-%if %{globus}
+%if "%{pkg_suffix}" != ""
 Provides: %{pkg}-doc = %{pkgver}-%{rel}
 %endif
 
@@ -65,7 +75,7 @@ Provides: %{pkg}-doc = %{pkgver}-%{rel}
 Summary: Runtime libraries for Gfarm file system
 Group: System Environment/Libraries
 # always provide "gfarm-libs" as a virtual package.
-%if %{globus}
+%if "%{pkg_suffix}" != ""
 Provides: %{pkg}-libs = %{pkgver}-%{rel}
 %endif
 BuildRequires: openssl-devel, postgresql-devel
@@ -74,7 +84,7 @@ BuildRequires: openssl-devel, postgresql-devel
 Summary: Clients for Gfarm file system
 Group: Applications/File
 # always provide "gfarm-client" as a virtual package.
-%if %{globus}
+%if "%{pkg_suffix}" != ""
 Provides: %{pkg}-client = %{pkgver}-%{rel}
 %endif
 Requires: %{package_name}-libs = %{pkgver}
@@ -83,7 +93,7 @@ Requires: %{package_name}-libs = %{pkgver}
 Summary: File system daemon for Gfarm file system
 Group: System Environment/Daemons
 # always provide "gfarm-fsnode" as a virtual package.
-%if %{globus}
+%if "%{pkg_suffix}" != ""
 Provides: %{pkg}-fsnode = %{pkgver}-%{rel}
 %endif
 Requires: %{package_name}-libs = %{pkgver}, %{package_name}-client = %{pkgver}
@@ -92,7 +102,7 @@ Requires: %{package_name}-libs = %{pkgver}, %{package_name}-client = %{pkgver}
 Summary: Metadata server for Gfarm file system
 Group: System Environment/Daemons
 # always provide "gfarm-server" as a virtual package.
-%if %{globus}
+%if "%{pkg_suffix}" != ""
 Provides: %{pkg}-server = %{pkgver}-%{rel}
 %endif
 Requires: %{package_name}-libs = %{pkgver}
@@ -101,14 +111,14 @@ Requires: %{package_name}-libs = %{pkgver}
 Summary: Gfarm performance monitoring plugin for Ganglia
 Group: System Environment/Libraries
 # always provide "gfarm-ganglia" as a virtual package.
-%if %{globus}
+%if "%{pkg_suffix}" != ""
 Provides: %{pkg}-ganglia = %{pkgver}-%{rel}
 %endif
 
 %package devel
 Summary: Development header files and libraries for Gfarm file system
 Group: Development/Libraries
-%if %{globus}
+%if "%{pkg_suffix}" != ""
 Provides: %{pkg}-devel = %{pkgver}-%{rel}
 %endif
 Requires: %{package_name}-libs = %{pkgver}
