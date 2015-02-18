@@ -1,6 +1,3 @@
-# Check if symbol is defined.
-%define	undefined()	%{expand:%%{?%1:0}%%{!?%1:1}}
-
 # Part 1 data definition
 %define pkg	gfarm
 %if %{undefined ver}
