@@ -49,8 +49,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	gss_name_t acceptor_name = GSS_C_NO_NAME;
 	gss_name_t initiator_name = GSS_C_NO_NAME;
 	gss_cred_id_t cred;
-	OM_uint32 e_major;
-	OM_uint32 e_minor;
+	OM_uint32 e_major, e_minor;
 	gfarmSecSession *session;
 	gfarm_int32_t error; /* enum gfarm_auth_error */
 	int eof, cred_acquired = 0;
@@ -76,7 +75,22 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 		return (e);
 	}
 	cred = gfarm_gsi_get_delegated_cred();
-
+	if (cred != GSS_C_NO_CREDENTIAL &&
+	    (e_major = gss_inquire_cred(&e_minor, cred, NULL, NULL,
+		    NULL, NULL)) != GSS_S_COMPLETE) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "Delegated credential is invalid because of:");
+		gfarmGssPrintMajorStatus(e_major);
+		gfarmGssPrintMinorStatus(e_minor);
+		if (gfarmGssDeleteCredential(&cred, &e_major, &e_minor) < 0) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "Can't free my credential because of:");
+			gfarmGssPrintMajorStatus(e_major);
+			gfarmGssPrintMinorStatus(e_minor);
+		}
+		gfarm_gsi_set_delegated_cred(GSS_C_NO_CREDENTIAL);
+		cred = GSS_C_NO_CREDENTIAL;
+	}
 	if (cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
 		switch (self_type) {
 		  case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
@@ -371,6 +385,23 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 
 	state->cred_acquired = 0;
 	state->cred = gfarm_gsi_get_delegated_cred();
+	if (state->cred != GSS_C_NO_CREDENTIAL &&
+	    (e_major = gss_inquire_cred(&e_minor, state->cred, NULL,
+		    NULL, NULL, NULL)) != GSS_S_COMPLETE) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "Delegated credential is invalid because of:");
+		gfarmGssPrintMajorStatus(e_major);
+		gfarmGssPrintMinorStatus(e_minor);
+		if (gfarmGssDeleteCredential(&state->cred, &e_major, &e_minor)
+		    < 0) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "Can't free my credential because of:");
+			gfarmGssPrintMajorStatus(e_major);
+			gfarmGssPrintMinorStatus(e_minor);
+		}
+		gfarm_gsi_set_delegated_cred(GSS_C_NO_CREDENTIAL);
+		state->cred = GSS_C_NO_CREDENTIAL;
+	}
 	if (state->cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
 		/*
 		 * always re-acquire my credential, otherwise we cannot deal
@@ -406,7 +437,6 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 		}
 		state->cred_acquired = 1;
 	}
-
 	/* XXX NOTYET deal with self_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
 	state->gfsl_state = gfarmSecSessionInitiateRequest(q,
 	    gfp_xdr_fd(conn), state->acceptor_name, state->cred,
