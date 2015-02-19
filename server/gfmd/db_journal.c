@@ -4034,7 +4034,7 @@ db_journal_cancel_recvq()
 static gfarm_error_t
 db_journal_recvq_proc(int *canceledp)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	gfarm_uint64_t last_seqnum;
 	struct db_journal_recv_info *ri;
 	static const char diag[] = "db_journal_recvq_proc";
@@ -4061,8 +4061,11 @@ db_journal_recvq_proc(int *canceledp)
 	}
 	free(ri->recs);
 	free(ri);
-	if (gfarm_get_journal_sync_file())
-		db_journal_file_writer_sync();
+	if (gfarm_get_journal_sync_file()) {
+		if ((e2 = db_journal_file_writer_sync()) != GFARM_ERR_NO_ERROR)
+			if (e == GFARM_ERR_NO_ERROR)
+				e = e2;
+	}
 	return (e);
 }
 

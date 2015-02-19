@@ -2786,8 +2786,15 @@ gfmdc_journal_sync_multiple(gfarm_uint64_t seqnum)
 
 	mdhost_foreach(gfmdc_journal_sync_count_host, &nhosts);
 	if (nhosts == 0) {
-		if (gfarm_get_journal_sync_file())
-			return (db_journal_file_writer_sync());
+		if (gfarm_get_journal_sync_file()) {
+			int e = db_journal_file_writer_sync();
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_fatal(GFARM_MSG_UNFIXED,
+				    "failed to sync the journal file: %s",
+				    gfarm_error_string(e));
+			}
+			return (e);
+		}
 		return (GFARM_ERR_NO_ERROR);
 	}
 
@@ -2804,6 +2811,11 @@ gfmdc_journal_sync_multiple(gfarm_uint64_t seqnum)
 	mdhost_foreach(gfmdc_journal_sync_mdhost_add_job, NULL);
 
 	gfmdc_wait_journal_recv_threads(diag);
+	if (journal_sync_info.file_sync_error != GFARM_ERR_NO_ERROR) {
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "failed to sync the journal file: %s",
+		    gfarm_error_string(journal_sync_info.file_sync_error));
+	}
 
 	return (journal_sync_info.file_sync_error);
 }
