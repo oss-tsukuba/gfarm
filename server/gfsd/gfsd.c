@@ -1210,6 +1210,8 @@ gfs_server_process_reset(struct gfp_xdr *client)
 #if 0 /* currently, no need to tell the failedover flag to the client */
 	if (failedover && e == GFARM_ERR_NO_ERROR)
 		e = some other code, instead of GFARM_ERR_GFMD_FAILED_OVER;
+#else
+	(void)failedover;
 #endif
 
 	gfs_server_put_reply(client, diag, e, "");

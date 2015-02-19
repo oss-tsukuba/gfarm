@@ -252,6 +252,11 @@ gfs_pio_md_is_valid(GFS_File gf)
 	struct gfs_stat_cksum cksum;
 
 	e = gfs_fstat_cksum(gf, &cksum);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: couldn't get cksum: %s",
+			    gf->url, gfarm_error_string(e));
+		return 0;
+	}
 	if ((cksum.flags & (
 	    GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED |
 	    GFM_PROTO_CKSUM_GET_EXPIRED)) != 0 ||
