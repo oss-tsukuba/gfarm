@@ -97,14 +97,18 @@ gfarm_gsi_client_cred_name(void)
 	gss_name_t name;
 	OM_uint32 e_major, e_minor;
 	char *dn;
+	static pthread_mutex_t client_cred_initialize_mutex =
+	    PTHREAD_MUTEX_INITIALIZER;
 	static int initialized = 0;
 	static char *client_dn;
 	static const char diag[] = "gfarm_gsi_client_cred_name";
+	static const char mutex_name[] = "client_cred_initialize_mutex";
 
-	gfarm_gsi_initialize_mutex_lock(diag);
+	gfarm_mutex_lock(&client_cred_initialize_mutex, diag, mutex_name);
 	if (initialized) {
 		dn = client_dn;
-		gfarm_gsi_initialize_mutex_unlock(diag);
+		gfarm_mutex_unlock(&client_cred_initialize_mutex,
+		    diag, mutex_name);
 		return (dn);
 	}
 
@@ -138,7 +142,7 @@ gfarm_gsi_client_cred_name(void)
 	}
 	initialized = 1;
 	dn = client_dn;
-	gfarm_gsi_initialize_mutex_unlock(diag);
+	gfarm_mutex_unlock(&client_cred_initialize_mutex, diag, mutex_name);
 	return (dn);
 }
 
@@ -245,40 +249,22 @@ gfarm_gsi_server_initialize(void)
  * Delegated credential
  */
 
+/*
+ * XXX - thread-unsafe interface.  this assumes a single thread server
+ * like gfsd and gfarm_gridftp_dsi.  this is not for gfmd.
+ */
 static gss_cred_id_t delegated_cred = GSS_C_NO_CREDENTIAL;
-
-void
-gfarm_gsi_set_delegated_cred_unlocked(gss_cred_id_t cred)
-{
-	delegated_cred = cred;
-}
 
 void
 gfarm_gsi_set_delegated_cred(gss_cred_id_t cred)
 {
-	static const char diag[] = "gfarm_gsi_set_delegated_cred";
-
-	gfarm_gsi_initialize_mutex_lock(diag);
-	gfarm_gsi_set_delegated_cred_unlocked(cred);
-	gfarm_gsi_initialize_mutex_unlock(diag);
-}
-
-gss_cred_id_t
-gfarm_gsi_get_delegated_cred_unlocked()
-{
-	return (delegated_cred);
+	delegated_cred = cred;
 }
 
 gss_cred_id_t
 gfarm_gsi_get_delegated_cred()
 {
-	static const char diag[] = "gfarm_gsi_get_delegated_cred";
-	gss_cred_id_t cred;
-
-	gfarm_gsi_initialize_mutex_lock(diag);
-	cred = gfarm_gsi_get_delegated_cred_unlocked();
-	gfarm_gsi_initialize_mutex_unlock(diag);
-	return (cred);
+	return (delegated_cred);
 }
 
 /*
