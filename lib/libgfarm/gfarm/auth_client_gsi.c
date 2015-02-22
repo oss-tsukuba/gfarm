@@ -53,6 +53,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	gfarmSecSession *session;
 	gfarm_int32_t error; /* enum gfarm_auth_error */
 	int eof, cred_acquired = 0;
+	static const char diag[] = "gfarm_auth_request_gsi";
 
 	e = gfarm_gsi_client_initialize();
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -74,7 +75,8 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 		    service_tag, hostname, gfarm_error_string(e));
 		return (e);
 	}
-	cred = gfarm_gsi_get_delegated_cred();
+	gfarm_gsi_initialize_mutex_lock(diag);
+	cred = gfarm_gsi_get_delegated_cred_unlocked();
 	if (cred != GSS_C_NO_CREDENTIAL &&
 	    (e_major = gss_inquire_cred(&e_minor, cred, NULL, NULL,
 		    NULL, NULL)) != GSS_S_COMPLETE) {
@@ -88,9 +90,10 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
-		gfarm_gsi_set_delegated_cred(GSS_C_NO_CREDENTIAL);
+		gfarm_gsi_set_delegated_cred_unlocked(GSS_C_NO_CREDENTIAL);
 		cred = GSS_C_NO_CREDENTIAL;
 	}
+	gfarm_gsi_initialize_mutex_unlock(diag);
 	if (cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
 		switch (self_type) {
 		  case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
@@ -337,6 +340,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	char *serv_service = gfarm_auth_server_cred_service_get(service_tag);
 	char *serv_name = gfarm_auth_server_cred_name_get(service_tag);
 	OM_uint32 e_major, e_minor;
+	static const char diag[] = "gfarm_auth_request_gsi_multiplexed";
 
 	e = gfarm_gsi_client_initialize();
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -384,7 +388,8 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	}
 
 	state->cred_acquired = 0;
-	state->cred = gfarm_gsi_get_delegated_cred();
+	gfarm_gsi_initialize_mutex_lock(diag);
+	state->cred = gfarm_gsi_get_delegated_cred_unlocked();
 	if (state->cred != GSS_C_NO_CREDENTIAL &&
 	    (e_major = gss_inquire_cred(&e_minor, state->cred, NULL,
 		    NULL, NULL, NULL)) != GSS_S_COMPLETE) {
@@ -399,9 +404,10 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
-		gfarm_gsi_set_delegated_cred(GSS_C_NO_CREDENTIAL);
+		gfarm_gsi_set_delegated_cred_unlocked(GSS_C_NO_CREDENTIAL);
 		state->cred = GSS_C_NO_CREDENTIAL;
 	}
+	gfarm_gsi_initialize_mutex_unlock(diag);
 	if (state->cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
 		/*
 		 * always re-acquire my credential, otherwise we cannot deal

@@ -266,10 +266,6 @@ gfarm_authorize_gsi_common0(struct gfp_xdr *conn, int switch_to,
 		    userinfo->authData.userAuth.homeDir);
 		/*
 		 * set the delegated credential
-		 *
-		 * XXX - thread unsafe function.  this causes data race
-		 * in gfmd, but it is not harmful since gfmd currently
-		 * does not support to use delegated credential.
 		 */
 		gfarm_gsi_set_delegated_cred(
 		    gfarmSecSessionGetDelegatedCredential(session));

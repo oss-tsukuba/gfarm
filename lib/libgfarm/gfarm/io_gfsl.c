@@ -22,6 +22,7 @@
 
 #include "gfarm_secure_session.h"
 
+#include "auth_gsi.h"
 #include "liberror.h"
 #include "iobuffer.h"
 #include "gfp_xdr.h"
