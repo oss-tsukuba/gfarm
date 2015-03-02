@@ -1514,11 +1514,11 @@ gfmd_modules_init_default(int table_size)
 	if (gfarm_get_metadb_replication_enabled()) {
 		db_journal_set_fail_store_op(db_journal_store_failure);
 		db_journal_apply_init();
-		gflog_info(GFARM_MSG_UNFIXED, "start reading db journal");
+		gflog_info(GFARM_MSG_1004201, "start reading db journal");
 		db_journal_init();
 		boot_apply_db_journal();
 	}
-	gflog_info(GFARM_MSG_UNFIXED, "start initializing modules and "
+	gflog_info(GFARM_MSG_1004202, "start initializing modules and "
 	    "loading database");
 	mdhost_init();
 	back_channel_init();
@@ -1784,7 +1784,7 @@ main(int argc, char **argv)
 	if (replication_enabled)
 		start_db_journal_threads();
 	if (is_master) {
-		gflog_info(GFARM_MSG_UNFIXED, "start filesystem check");
+		gflog_info(GFARM_MSG_1004203, "start filesystem check");
 		if (replication_enabled && gfmdc_is_master_gfmd_running()) {
 			gflog_fatal(GFARM_MSG_1003840,
 			    "another master gfmd is already running");
@@ -1796,7 +1796,7 @@ main(int argc, char **argv)
 		quota_check();
 	}
 	inode_free_orphan();
-	gflog_info(GFARM_MSG_UNFIXED, "end bootstrap");
+	gflog_info(GFARM_MSG_1004204, "end bootstrap");
 	if (replication_enabled) {
 		gflog_info(GFARM_MSG_1002737,
 		    "metadata replication %s mode",

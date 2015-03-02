@@ -404,7 +404,7 @@ inode_cksum_set(struct inode *inode,
 				return (GFARM_ERR_NO_ERROR);
 			} else if ((cksum_result_flags &
 			    GFM_PROTO_CKSUM_SET_REPORT_ONLY) != 0) {
-				gflog_notice(GFARM_MSG_UNFIXED,
+				gflog_notice(GFARM_MSG_1004205,
 				   "%s: (%llu:%llu) %s (flaky network?)", diag,
 				   (unsigned long long)inode_get_number(inode),
 				   (unsigned long long)inode_get_gen(inode),
@@ -430,7 +430,7 @@ inode_cksum_set(struct inode *inode,
 	} else if ((cksum_result_flags & GFM_PROTO_CKSUM_SET_REPORT_ONLY)
 	    != 0) {
 		if (ia != NULL && ia->u.f.writers >= 1) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004206,
 			   "%s: (%llu:%llu) client cksum report "
 			    "about multiple writer case", diag,
 			   (unsigned long long)inode_get_number(inode),
@@ -442,7 +442,7 @@ inode_cksum_set(struct inode *inode,
 		 * and in that case, cksum should be set by gfsd already,
 		 * but it's not really set.
 		 */
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004207,
 		   "%s: (%llu:%llu): cksum is incorrectly set by client", diag,
 		   (unsigned long long)inode_get_number(inode),
 		   (unsigned long long)inode_get_gen(inode));

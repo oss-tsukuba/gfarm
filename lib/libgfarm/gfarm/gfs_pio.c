@@ -253,7 +253,7 @@ gfs_pio_md_is_valid(GFS_File gf)
 
 	e = gfs_fstat_cksum(gf, &cksum);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: couldn't get cksum: %s",
+		gflog_debug(GFARM_MSG_1004200, "%s: couldn't get cksum: %s",
 			    gf->url, gfarm_error_string(e));
 		return 0;
 	}

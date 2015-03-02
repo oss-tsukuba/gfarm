@@ -34,7 +34,7 @@ gfarm_privilege_lock(const char *diag)
 	if (rc != 0) {
 		/* backtrace may cause deadlock */
 		gflog_set_fatal_action(GFLOG_FATAL_ACTION_ABORT);
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1004198,
 		    "%s: possible deadlock detected, die", diag);
 	}
 }

@@ -466,7 +466,7 @@ sleep_or_wait_failover_packet(int seconds)
 		free(fds);
 		GFARM_MALLOC_ARRAY(fds, accepting.udp_socks_count);
 		if (fds == NULL)
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1004210,
 			    "cannot allocate pollfds for UDP sockets (%d)",
 			    accepting.udp_socks_count);
 		fds_alloced = accepting.udp_socks_count;
@@ -483,7 +483,7 @@ sleep_or_wait_failover_packet(int seconds)
 	FD_ZERO(&fds);
 	for (i = 0; i < accepting.udp_socks_count; i++) {
 		if (accepting.udp_socks[i] >= FD_SETSIZE)
-			fatal(GFARM_MSG_UNFIXED,
+			fatal(GFARM_MSG_1004211,
 			    "too big descriptor: udp_fd:%d exceeds %d",
 			    accepting.udp_socks[i], FD_SETSIZE);
 		if (max_fd < accepting.udp_socks[i])
@@ -555,7 +555,7 @@ sleep_or_wait_failover_recv_fd(int seconds)
 	struct fd_set fds;
 
 	if (failover_notify_recv_fd >= FD_SETSIZE)
-		fatal(GFARM_MSG_UNFIXED,
+		fatal(GFARM_MSG_1004212,
 		    "too big descriptor: failover_fd:%d exceeds %d",
 		    failover_notify_recv_fd, FD_SETSIZE);
 	FD_ZERO(&fds);
@@ -941,7 +941,7 @@ io_error_check_errno(const char *diag)
 	/* if input/output error occurs, die */
 	if (errno == EIO || errno == ESTALE) {
 		kill_master_gfsd = 1;
-		fatal(GFARM_MSG_UNFIXED, "%s: %s, die", diag, strerror(errno));
+		fatal(GFARM_MSG_1004213, "%s: %s, die", diag, strerror(errno));
 	}
 }
 
@@ -2499,10 +2499,10 @@ move_to_lost_found(struct file_entry *fe)
 	if (fe->size == 0) {
 		gfsd_local_path(fe->ino, fe->gen, "move_to_lost_found", &path);
 		if (unlink(path) == -1)
-			gflog_error_errno(GFARM_MSG_UNFIXED,
+			gflog_error_errno(GFARM_MSG_1004214,
 			    "unlink(%s)", path);
 		else
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1004215,
 			    "%lld:%lld: corrupted file removed",
 			    (long long)fe->ino,	(long long)fe->gen);
 		free(path);
@@ -2510,7 +2510,7 @@ move_to_lost_found(struct file_entry *fe)
 	}
 	if (register_to_lost_found(0, fe->local_fd, fe->ino, fe->gen)
 	    == GFARM_ERR_NO_ERROR)
-		gflog_notice(GFARM_MSG_UNFIXED, "%lld:%lld: corrupted file "
+		gflog_notice(GFARM_MSG_1004216, "%lld:%lld: corrupted file "
 		    "moved to /lost+found/%016llX%016llX-%s",
 		    (long long)fe->ino, (long long)fe->gen,
 		    (unsigned long long)fe->ino, (unsigned long long)fe->gen,
@@ -2747,7 +2747,7 @@ close_fd_somehow(struct gfp_xdr *client,
 		if (e2 == GFARM_ERR_NO_ERROR)
 			move_to_lost_found(fe);
 		else
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1004217,
 			    "%lld:%lld: corrupted replica remains: %s",
 			    (long long)fe->ino, (long long)fe->gen,
 			    gfarm_error_string(e2));
@@ -3406,7 +3406,7 @@ gfs_server_statfs(struct gfp_xdr *client)
 			bfree = 0;
 		}
 	} else
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004218,
 		    "gfsd_statfs: %s", strerror(save_errno));
 
 	gfs_server_put_reply_with_errno(client, "statfs", save_errno,
