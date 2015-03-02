@@ -580,7 +580,7 @@ io_error_check_errno(const char *diag)
 	/* if input/output error occurs, die */
 	if (errno == EIO || errno == ESTALE) {
 		kill_master_gfsd = 1;
-		fatal(GFARM_MSG_UNFIXED, "%s: %s, die", diag, strerror(errno));
+		fatal(GFARM_MSG_1003846, "%s: %s, die", diag, strerror(errno));
 	}
 }
 
@@ -2459,7 +2459,7 @@ gfs_server_statfs(struct gfp_xdr *client)
 			bfree = 0;
 		}
 	} else
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003847,
 		    "gfsd_statfs: %s", strerror(save_errno));
 
 	gfs_server_put_reply_with_errno(client, "statfs", save_errno,

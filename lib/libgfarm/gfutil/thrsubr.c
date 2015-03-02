@@ -48,7 +48,7 @@ gfarm_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec *timeout,
 	int err = pthread_mutex_timedlock(mutex, timeout);
 
 	if (err != 0)
-		gflog_error(GFARM_MSG_UNFIXED, "%s: %s mutex timedlock: %s",
+		gflog_error(GFARM_MSG_1003844, "%s: %s mutex timedlock: %s",
 		    where, what, strerror(err));
 	return (err);
 }
