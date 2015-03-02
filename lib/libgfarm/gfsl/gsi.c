@@ -579,7 +579,7 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 	if (rc != 0) {
 		/* backtrace may cause deadlock */
 		gflog_set_fatal_action(GFLOG_FATAL_ACTION_ABORT);
-		gflog_fatal(GFARM_MSG_1003845,
+		gflog_fatal(GFARM_MSG_UNFIXED,
 		    "%s: possible deadlock detected, die", diag);
 	}
 	majStat = gss_accept_sec_context(&minStat,
