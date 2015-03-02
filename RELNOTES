@@ -1,3 +1,33 @@
+Release note for Gfarm 2.5.8.14
+===============================
+
+[2015.3.2]
+
+Documentation
+* SETUP - update firewall setting [sf.net ticket #816]
+* SETUP - user registration setting required on metadata servers and
+  file system nodes [sf.net ticket #803]
+* manual pages - gfrm(1), config-gfarm(8), config-gfarm-update(8),
+  config-gfsd(8) and gfdump.postgresql(8) [sf.net ticket #799]
+* Gfarm-FAQ - gfsd -dv may help to find a reason of authentication
+  error
+
+Updated feature
+* gfprep, gfpcopy - keep minimum disk space to reduce no space risk
+* config-gfarm, config-gfarm-update - -d digest_type option to enable
+  digest check
+* config-gfarm - -E option to enable data checksum support in a
+  backend database.  PostgreSQL 9.3 or later is required to use this
+  option [sf.net ticket #804]
+* gfmd - performance improvement of initialization process [sf.net
+  ticket #808]
+* gfmd - multi-master check at the startup process [sf.net ticket
+  #807]
+* configure - support GNU hurd for host_os_name [sf.net ticket #806]
+
+Bug fix
+* gfpcopy - count skipped files correctly [sf.net ticket #810]
+
 Release note for Gfarm 2.5.8.13
 ===============================
 
