@@ -1,0 +1,142 @@
+#!/bin/sh
+#
+# $Id$
+
+${DEBUG:="false"} && set -xu
+PROGNAME=`basename $0`
+
+awk=awk
+if [ -f /usr/bin/nawk ]; then awk=/usr/bin/nawk; fi
+
+: ${FORCE:=false}
+: ${DRYRUN:=false}
+
+prefix="@config_gfarm_prefix@"
+datadir="@config_gfarm_datadir@"
+config_dir="${datadir}/gfarm/config"
+SPOOL_DIRECTORY="@config_gfarm_spool_directory@"
+RC_GFSD="@config_gfarm_rc_gfsd@"
+GFSD_PID_FILE="@config_gfarm_gfsd_pid_file@"
+GFARM_CONF="@config_gfarm_gfarm_config@"
+GFARM_CLIENT_CONF="@config_gfarm_gfarm_client_config@"
+GFARM_CONF_DIR="@config_gfarm_gfarm_conf_dir@"
+GFMD_CONF="${GFARM_CONF_DIR}/gfmd.conf"
+CONFIG_PREFIX="@config_gfarm_config_prefix@"
+PRIVATE_MODE="@config_gfarm_private_mode@"
+USERMAP_FILE="@config_gfarm_usermap_file@"
+GFSD_HOSTNAME="@config_gfarm_gfsd_hostname@"
+SELF_SCRIPT="${GFARM_CONF_DIR}/$PROGNAME"
+
+# gfhost
+if [ X"$CONFIG_PREFIX" != X ]; then
+	GFARM_CONFIG_FILE="$GFARM_CLIENT_CONF"
+	export GFARM_CONFIG_FILE
+fi
+
+. $config_dir/config-gfarm.common
+
+usage()
+{
+        echo >&2 "usage: $PROGNAME [--help] [-f] [-t]"
+        exit 1
+}
+
+#
+# parse arguments
+#
+parse_arguments()
+{
+	while [ $# -gt 0 ] ; do
+		case $1 in
+		# control options
+		  --help)
+			usage
+			;;
+		  -t)
+			DRYRUN=true
+			;;
+		  -f)
+			FORCE=true
+			;;
+		  -*)
+			echo "unknown option $1"; usage
+			;;
+		  *)
+			usage
+			;;
+		esac
+		shift
+	done
+}
+
+service_unconfig()
+{
+	TEST_OPT=
+	if [ X"$1" = "X-n" ]; then
+		TEST_OPT="-n"
+	fi
+
+	service_ctl $TEST_OPT gfsd stop
+
+	service_remove $TEST_OPT gfsd
+
+	delete_file_or_directory -f $TEST_OPT "$RC_GFSD"
+
+	service_reg
+
+	delete_file_or_directory -f $TEST_OPT "$SPOOL_DIRECTORY"
+	delete_file_or_directory -f $TEST_OPT "$GFSD_PID_FILE"
+	delete_file_or_directory -f $TEST_OPT "$SELF_SCRIPT"
+
+	if $PRIVATE_MODE; then
+		if [ X"$TEST_OPT" = "X-n" ]; then
+			echo $prefix/bin/gfhost -d "$GFSD_HOSTNAME"
+		else
+			$prefix/bin/gfhost -d "$GFSD_HOSTNAME"
+		fi
+	else
+		echo Please execute the following command on your host:
+		echo
+		echo "$prefix/bin/gfhost -d $GFSD_HOSTNAME"
+		echo
+	fi
+
+	if [ -f "$GFMD_CONF" ]; then
+		if [ X"$TEST_OPT" = "X-n" ]; then
+			echo
+			echo "The following files will not be deleted, because also gfmd has been configured:"
+			echo "  $GFARM_CONF"
+			echo "  $USERMAP_FILE"
+			if $PRIVATE_MODE; then
+				echo "  $GFARM_CLIENT_CONF"
+			fi
+		fi
+	else
+		delete_file_or_directory -f $TEST_OPT "$GFARM_CONF"
+		delete_file_or_directory -f $TEST_OPT "$USERMAP_FILE"
+		if $PRIVATE_MODE; then
+			delete_file_or_directory -f $TEST_OPT "$GFARM_CLIENT_CONF"
+		fi
+	fi
+}
+
+. $config_dir/config-gfarm.sysdep
+
+# NOTE: $CONFIG_PREFIX need to be set
+#       before calling sysdep_defaults
+# sysdep_defaults must set: $RC_DIR
+sysdep_defaults
+
+parse_arguments $@
+
+# print procedure of unconfiguration.
+if $DRYRUN; then
+	echo "=== Unconfiguration procedure ==="
+	service_unconfig -n
+	exit 0
+# execute unconfiguration.
+elif $FORCE || prompt_qa "Do you run unconfiguration?"; then
+	service_unconfig
+else
+	:
+fi

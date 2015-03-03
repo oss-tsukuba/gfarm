@@ -82,61 +82,13 @@ else
 	exit 1
 fi
 
+. $config_dir/config-gfarm.common
+
 # load backend-dependent functions. should be done after shell detection above.
 for i in $backend_all
 do
   . $config_dir/config-gfarm.$i
 done
-
-gen_passwd()
-{
-	chars="=.0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-	if [ -r /dev/urandom ]; then
-		# enough entropy, use 258bit(=log2(64)*43) key
-
-		dd if=/dev/urandom bs=44 count=1 2>/dev/null | od -d |
-		$awk '
-		BEGIN{
-			chars="'"$chars"'"
-			k=length(chars)
-			chars_per_word=2
-			l=43 # 43 characters, 256bits/log2(64) = 42.666
-		}
-		{
-			for (i = 2; i <= NF; i++) {
-				r = $i
-				for (j = 0; j < chars_per_word; j++) {
-					if (l <= 0)
-						exit
-					printf "%c", substr(chars, r%k + 1, 1)
-					r /= k
-					--l
-				}
-			}
-		}
-		END {
-			printf "\n"
-		}'
-	else
-		# 32bit entropy due to the seed, use 66bit(=log2(64)*11) key
-
-		$awk '
-		BEGIN {
-			chars="'"$chars"'"
-			k=length(chars)
-
-			srand(); now = srand();
-			srand('$$' * 12 * 60 * 60 + now)
-
-			for (i = 0; i < 11; i++) {
-				printf "%c", substr(chars, int(rand()*k)+1, 1)
-			}
-			printf "\n"
-			exit
-		}'
-	fi
-}
 
 usage()
 {
@@ -155,13 +107,6 @@ usage()
 		echo >&2 "	no option for backend=$BACKEND_TYPE"
 	echo >&2 "  available metadata_backend: $backend_candidates (default is $backend_default)"
 
-	exit 1
-}
-
-ABORT()
-{
-	[ $# -gt 0 ] && echo >&2 "${PROGNAME}: $@"
-	echo >&2 "$PROGNAME failure"
 	exit 1
 }
 
@@ -446,7 +391,6 @@ set_default_backend_prefix_$BACKEND_TYPE
 #
 # default values
 #
-
 : ${CONFIG_PREFIX:=}
 
 set_first_defaults_$BACKEND_TYPE
@@ -481,6 +425,8 @@ else
 fi
 : ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
 : ${GFMD_CONF:="$GFARM_CONF_DIR/gfmd.conf"}
+: ${UNCONFIG_SCRIPT:="$GFARM_CONF_DIR/unconfig-gfarm.sh"}
+: ${UNCONFIG_SCRIPT_IN:="$config_dir/unconfig-gfarm.sh.in"}
 if $PRIVATE_MODE; then
 	: ${GFSD_CONF:="$GFARM_CONF_DIR/gfsd.conf"}
 	: ${USERMAP_FILE:="$GFARM_CONF_DIR/usermap"}
@@ -505,6 +451,7 @@ fi
 : ${FQ_HOSTNAME:=`fq_hostname`}
 
 : ${BACKEND_HOSTNAME:="$FQ_HOSTNAME"}
+
 [ X$BACKEND_HOSTNAME = X ] &&
 	ABORT 'cannot determine metadata server hostname, please specify it by -h option'
 
@@ -569,62 +516,41 @@ _EOF_
 	)
 }
 
+unconfig_replace()
+{
+	# create $unconfig_script for "replace" command
+	(
+	    umask 077
+	    (
+		cat <<_EOF_
+s|@config_gfarm_datadir@|$datadir|g
+s|@config_gfarm_backend_type@|$BACKEND_TYPE|g
+s|@config_gfarm_rc_gfmd@|$RC_GFMD|g
+s|@config_gfarm_rc_backend@|$RC_BACKEND|g
+s|@rc_backend_basename@|$RC_BACKEND_BASENAME|g
+s|@config_gfarm_gfmd_config@|$GFMD_CONF|g
+s|@config_gfarm_gfarm_config@|$GFARM_CONF|g
+s|@config_gfarm_gfarm_config_dir@|$GFARM_CONF_DIR|g
+s|@config_gfarm_config_prefix@|$CONFIG_PREFIX|g
+s|@config_gfarm_backend_data_dir@|$BACKEND_DATA_DIR|g
+s|@config_gfarm_backend_log_dir@|$BACKEND_LOG_DIR|g
+s|@config_gfarm_gfmd_pid_file@|$GFMD_PID_FILE|g
+s|@config_gfarm_backend_pid_file@|$BACKEND_PID_FILE|g
+s|@config_gfarm_private_mode@|$PRIVATE_MODE|g
+s|@config_gfarm_usermap_file@|$USERMAP_FILE|g
+s|@config_gfarm_gfsd_config@|$GFSD_CONF|g
+s|@config_gfarm_metadata_replication@|$METADATA_REPLICATION|g
+s|@config_gfarm_metadata_journal_dir@|$METADATA_JOURNAL_DIR|g
+_EOF_
+	    ) > $sed_script
+	)
+
+	sed -f $sed_script ${1+"$@"}
+}
+
 replace()
 {
 	sed -f $sed_script ${1+"$@"} | config_sysdep
-}
-
-mkcnf()
-{
-	# local out
-
-	out=$1
-	shift
-	if ${1+"$@"} >$out; then
-		echo created $out
-	else
-		ABORT "cannot create $out"
-	fi
-}
-
-mkscript()
-{
-	mkcnf ${1+"$@"}
-	chmod +x "$1" || ABORT "cannot chmod +x $1"
-}
-
-delete_file_or_directory()
-{
-	# local p
-
-	for p
-	do
-		[ -d "$p" ] && rmdir "$p" > /dev/null 2>&1
-		# [ -e "$p" ] isn't portable. not supported by Solaris /bin/sh
-		if ls -1d "$p" >/dev/null 2>&1; then
-			if $FORCE; then
-				rm -rf "$p"
-				echo removed "$p"
-			else
-				ABORT "$p already exist"
-			fi
-		fi
-	done
-}
-
-create_directory()
-{
-	# local d
-
-	for d
-	do
-		[ -d "$d" ] && continue
-		if mkdir -p "$d"; then
-			echo created "$d"
-		else
-			ABORT "mkdir -p $d, failed"
-		fi
-	done
 }
 
 # most $BACKEND_TYPE uses the following as "init_replace_$BACKEND_TYPE"
@@ -741,6 +667,9 @@ if $START_SERVICE; then
 	service_ctl gfmd $ctl ||
 		ABORT "failed to $ctl gfmd"
 fi
+
+mkscript "$UNCONFIG_SCRIPT" unconfig_replace "$UNCONFIG_SCRIPT_IN"
+rm -f $sed_script
 
 echo "$PROGNAME success"
 status=0

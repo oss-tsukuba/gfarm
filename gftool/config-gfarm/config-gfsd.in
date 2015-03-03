@@ -53,18 +53,13 @@ else
 	exit 1
 fi
 
+. $config_dir/config-gfarm.common
+
 usage()
 {
 	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t|-T] [-f]"
 	echo >&2 "	[-a arch] [-p port] [-h hostname] [-n ncpu] "
 	echo >&2 "	[-l listen_address] [-S] [-N] spool_directory"
-	exit 1
-}
-
-ABORT()
-{
-	[ $# -gt 0 ] && echo >&2 "${PROGNAME}: $@"
-	echo >&2 "$PROGNAME failure"
 	exit 1
 }
 
@@ -212,6 +207,8 @@ if [ X"$CONFIG_PREFIX" != X ]; then
 else
 	: ${GFARM_CONF_DIR:="$sysconfdir"}
 fi
+: ${UNCONFIG_SCRIPT:="$GFARM_CONF_DIR/unconfig-gfsd.sh"}
+: ${UNCONFIG_SCRIPT_IN:="$config_dir/unconfig-gfsd.sh.in"}
 if $PRIVATE_MODE; then
 	: ${GFARM_CONF:="$GFARM_CONF_DIR/gfsd.conf"}
 else
@@ -273,57 +270,22 @@ config()
 	${1+"$@"} | config_sysdep
 }
 
-mkcnf()
+unconfig()
 {
-	# local out
-
-	out=$1
-	shift
-	if ${1+"$@"} >$out; then
-		echo created $out
-	else
-		ABORT "cannot create $out"
-	fi
-}
-
-mkscript()
-{
-	mkcnf ${1+"$@"}
-	chmod +x "$1" || ABORT "cannot chmod +x $1"
-}
-
-delete_file_or_directory()
-{
-	# local p
-
-	for p
-	do
-		[ -d "$p" ] && rmdir "$p" > /dev/null 2>&1
-		# [ -e "$p" ] isn't portable. not supported by Solaris /bin/sh
-		if ls -1d "$p" >/dev/null 2>&1; then
-			if $FORCE; then
-				rm -rf "$p"
-				echo removed "$p"
-			else
-				ABORT "$p already exist"
-			fi
-		fi
-	done
-}
-
-create_directory()
-{
-	# local d
-
-	for d
-	do
-		[ -d "$d" ] && continue
-		if mkdir -p "$d"; then
-			echo created "$d"
-		else
-			ABORT "mkdir -p $d, failed"
-		fi
-	done
+	sed \
+	-e "s|@config_gfarm_prefix@|$prefix|g" \
+	-e "s|@config_gfarm_datadir@|$datadir|g" \
+	-e "s|@config_gfarm_spool_directory@|$SPOOL_DIRECTORY|g" \
+	-e "s|@config_gfarm_rc_gfsd@|$RC_GFSD|g" \
+	-e "s|@config_gfarm_gfsd_pid_file@|$GFSD_PID_FILE|g" \
+	-e "s|@config_gfarm_gfarm_config@|$GFARM_CONF|g" \
+	-e "s|@config_gfarm_gfarm_client_config@|$GFARM_CLIENT_CONF|g" \
+	-e "s|@config_gfarm_gfarm_conf_dir@|$GFARM_CONF_DIR|g" \
+	-e "s|@config_gfarm_config_prefix@|$CONFIG_PREFIX|g" \
+        -e "s|@config_gfarm_private_mode@|$PRIVATE_MODE|g" \
+	-e "s|@config_gfarm_usermap_file@|$USERMAP_FILE|g" \
+	-e "s|@config_gfarm_gfsd_hostname@|$GFSD_HOSTNAME|g" \
+	${1+"$@"}
 }
 
 #########################################################################
@@ -348,6 +310,8 @@ mkcnf_gfsd_sysdep
 # create run scripts
 mkscript "$RC_GFSD"	config "$RC_GFSD_IN"
 $PRIVATE_MODE || service_reg gfsd
+
+mkscript "$UNCONFIG_SCRIPT"	unconfig "$UNCONFIG_SCRIPT_IN"
 
 # update configuration file
 # spool_check_level (default value)
@@ -392,4 +356,5 @@ echo After that, start gfsd by the following command as a root:
 echo
 service_ctl -n $GFSD_SERVICE_NAME start
 fi
+
 exit 0
