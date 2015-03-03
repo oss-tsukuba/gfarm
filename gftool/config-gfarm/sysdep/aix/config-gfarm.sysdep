@@ -80,6 +80,11 @@ service_add()
 	fi
 }
 
+service_remove()
+{
+	:
+}
+
 service_ctl()
 {
 	# local service ctl

@@ -1,0 +1,141 @@
+ABORT()
+{
+	[ $# -gt 0 ] && echo >&2 "${PROGNAME}: $@"
+	echo >&2 "$PROGNAME failure"
+	exit 1
+}
+
+gen_passwd()
+{
+	chars="=.0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+	if [ -r /dev/urandom ]; then
+		# enough entropy, use 258bit(=log2(64)*43) key
+
+		dd if=/dev/urandom bs=44 count=1 2>/dev/null | od -d |
+		$awk '
+		BEGIN{
+			chars="'"$chars"'"
+			k=length(chars)
+			chars_per_word=2
+			l=43 # 43 characters, 256bits/log2(64) = 42.666
+		}
+		{
+			for (i = 2; i <= NF; i++) {
+				r = $i
+				for (j = 0; j < chars_per_word; j++) {
+					if (l <= 0)
+						exit
+					printf "%c", substr(chars, r%k + 1, 1)
+					r /= k
+					--l
+				}
+			}
+		}
+		END {
+			printf "\n"
+		}'
+	else
+		# 32bit entropy due to the seed, use 66bit(=log2(64)*11) key
+
+		$awk '
+		BEGIN {
+			chars="'"$chars"'"
+			k=length(chars)
+
+			srand(); now = srand();
+			srand('$$' * 12 * 60 * 60 + now)
+
+			for (i = 0; i < 11; i++) {
+				printf "%c", substr(chars, int(rand()*k)+1, 1)
+			}
+			printf "\n"
+			exit
+		}'
+	fi
+}
+
+mkcnf()
+{
+	# local out
+
+	out=$1
+	shift
+	if ${1+"$@"} >$out; then
+		echo created $out
+	else
+		ABORT "cannot create $out"
+	fi
+}
+
+mkscript()
+{
+	mkcnf ${1+"$@"}
+	chmod +x "$1" || ABORT "cannot chmod +x $1"
+}
+
+delete_file_or_directory()
+{
+	run_or_echo=
+	force=false
+	while [ $# -gt 0 ];
+	do
+		if [ X"$1" = "X-n" ]; then
+			run_or_echo="echo"
+			force=true
+		elif [ X"$1" = "X-f" ]; then
+			force=true
+		else
+			break
+		fi
+		shift
+	done
+
+	# local p
+
+	for p
+	do
+		[ -d "$p" ] && $run_or_echo rmdir "$p" > /dev/null 2>&1
+		# [ -e "$p" ] isn't portable. not supported by Solaris /bin/sh
+		if ls -1d "$p" >/dev/null 2>&1; then
+			if [ X"$force" = "Xtrue" ] ; then
+				$run_or_echo rm -rf "$p"
+			else
+				ABORT "$p already exist"
+			fi
+		fi
+	done
+}
+
+create_directory()
+{
+	# local d
+	for d
+	do
+		[ -d "$d" ] && continue
+		if mkdir -p "$d"; then
+			echo created "$d"
+		else
+			ABORT "mkdir -p $d, failed"
+		fi
+	done
+}
+
+prompt_qa()
+{
+	ans=
+	while [ X"$ans" = X ]; do
+		echo >&2 -n "$1 [y/n]: "
+		read answer
+		ans=`echo $answer | sed -e "s| ||g"`
+		if [ X"$ans" = "Xy" -o X"$ans" = "XY" ]; then
+			return 0
+		elif [ X"$ans" = "Xn" -o X"$ans" = "XN" ]; then
+			return 1
+		else
+			ans=
+			echo >&2 "answer 'y' or 'n'."
+			echo >&2 ""
+		fi
+	done
+}

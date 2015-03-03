@@ -578,5 +578,19 @@ service_start_postgresql()
 
 service_stop_postgresql()
 {
-	service_ctl $RC_BACKEND_BASENAME stop ${1+"$@"}
+	opt=
+	if [ X"$1" = X-n ]; then
+		opt="-n"
+		shift
+	fi
+
+	service=$1
+	shift
+
+	service_ctl $opt $service stop ${1+"$@"}
+}
+
+service_remove_postgresql()
+{
+	service_remove ${1+"$@"}
 }

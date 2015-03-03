@@ -16,11 +16,14 @@ SCRIPTS = $(srcdir)/gfarm.arch.guess $(optional_srcs)
 BUILT_SCRIPTS = config-gfarm config-gfarm-update config-gfsd \
 	config-gfmd-iostat config-gfsd-iostat
 
-DATA =	$(srcdir)/config-gfarm.postgresql \
+DATA =	$(srcdir)/config-gfarm.common \
+	$(srcdir)/config-gfarm.postgresql \
 	$(srcdir)/config-gfarm.ldap \
 	$(srcdir)/config-gfarm.iostat \
 	$(srcdir)/config-gfarm-update.postgresql \
 	$(srcdir)/config-gfarm-update.ldap \
+	$(srcdir)/unconfig-gfarm.sh.in \
+	$(srcdir)/unconfig-gfsd.sh.in \
 	$(srcdir)/gfarm.conf-postgresql.in \
 	$(srcdir)/gfarm.conf-ldap.in \
 	$(srcdir)/gfarm.conf.in \

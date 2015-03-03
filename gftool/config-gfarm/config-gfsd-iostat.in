@@ -44,6 +44,8 @@ else
 	exit 1
 fi
 
+. $config_dir/config-gfarm.common
+
 # iostat
 . $config_dir/config-gfarm.iostat
 

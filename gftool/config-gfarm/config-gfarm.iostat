@@ -23,48 +23,9 @@ tf2yn()
 	*)    echo no;;
 	esac
 }
-ABORT()
-{
-	[ $# -gt 0 ] && echo >&2 "${PROGNAME}: $@"
-	echo >&2 "$PROGNAME failure"
-	exit 1
-}
 iostat_fail()
 {
 	ABORT $@
-}
-delete_file_or_directory()
-{
-	# local p
-
-	for p
-	do
-		[ -d "$p" ] && rmdir "$p" > /dev/null 2>&1
-		# [ -e "$p" ] isn't portable. not supported by Solaris /bin/sh
-		if ls -1d "$p" >/dev/null 2>&1; then
-			if $FORCE; then
-				rm -rf "$p"
-				echo removed "$p"
-			else
-				ABORT "$p already exist"
-			fi
-		fi
-	done
-}
-
-create_directory()
-{
-	# local d
-
-	for d
-	do
-		[ -d "$d" ] && continue
-		if mkdir -p "$d"; then
-			echo created "$d"
-		else
-			ABORT "mkdir -p $d, failed"
-		fi
-	done
 }
 
 iostat_init()

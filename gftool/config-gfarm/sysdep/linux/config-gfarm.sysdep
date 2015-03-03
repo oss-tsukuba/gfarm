@@ -287,11 +287,16 @@ service_ctl_default()
 
 service_reg()
 {
+	run_or_echo=
+	if [ X"$1" = X-n ]; then
+		run_or_echo=echo
+		shift
+	fi
+
 	case $LINUX_RC_TYPE in
 	systemd)
-		systemctl daemon-reload ||
+		$run_or_echo systemctl daemon-reload ||
 			ABORT "systemctl daemon-reload: failed"
-		echo systemctl daemon-reload
 		;;
 	esac
 }
@@ -305,6 +310,25 @@ service_add()
 	systemd)
 		service_add_by_systemd $1;;
 	*)	service_add_default $1;;
+	esac
+}
+
+service_remove()
+{
+	case $LINUX_RC_TYPE in
+	systemd)
+		opt=
+		if [ X"$1" = X-n ]; then
+			opt="-n"
+			shift
+		fi
+
+		service=$1
+		shift
+
+		service_ctl_systemd $opt $service disable ${1+"$@"} ||
+			ABORT "service_ctl_systemd $opt $service disable ${1+"$@"}: failed"
+		;;
 	esac
 }
 

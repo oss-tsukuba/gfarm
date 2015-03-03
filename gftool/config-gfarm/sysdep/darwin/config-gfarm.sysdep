@@ -62,6 +62,11 @@ service_add()
 	echo add "$service" service: not implemented
 }
 
+service_remove()
+{
+	:
+}
+
 service_ctl()
 {
 	# local service ctl

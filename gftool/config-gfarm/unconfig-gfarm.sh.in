@@ -1,0 +1,130 @@
+#!/bin/sh
+#
+# $Id$
+
+${DEBUG:="false"} && set -xu
+PROGNAME=`basename $0`
+
+awk=awk
+if [ -f /usr/bin/nawk ]; then awk=/usr/bin/nawk; fi
+
+: ${FORCE:=false}
+: ${DRYRUN:=false}
+
+datadir="@config_gfarm_datadir@"
+config_dir="${datadir}/gfarm/config"
+BACKEND_TYPE="@config_gfarm_backend_type@"
+RC_GFMD="@config_gfarm_rc_gfmd@"
+RC_BACKEND="@config_gfarm_rc_backend@"
+RC_BACKEND_BASENAME="@rc_backend_basename@"
+GFMD_CONF="@config_gfarm_gfmd_config@"
+GFARM_CONF="@config_gfarm_gfarm_config@"
+GFARM_CONF_DIR="@config_gfarm_gfarm_config_dir@"
+CONFIG_PREFIX="@config_gfarm_config_prefix@"
+BACKEND_DATA_DIR="@config_gfarm_backend_data_dir@"
+BACKEND_LOG_DIR="@config_gfarm_backend_log_dir@"
+GFMD_PID_FILE="@config_gfarm_gfmd_pid_file@"
+BACKEND_PID_FILE="@config_gfarm_backend_pid_file@"
+PRIVATE_MODE="@config_gfarm_private_mode@"
+GFSD_CONF="@config_gfarm_gfsd_config@"
+USERMAP_FILE="@config_gfarm_usermap_file@"
+METADATA_REPLICATION="@config_gfarm_metadata_replication@"
+METADATA_JOURNAL_DIR="@config_gfarm_metadata_journal_dir@"
+SELF_SCRIPT="${GFARM_CONF_DIR}/$PROGNAME"
+
+. $config_dir/config-gfarm.common
+
+usage()
+{
+        echo >&2 "usage: $PROGNAME [--help] [-f] [-t]"
+        exit 1
+}
+
+#
+# parse arguments
+#
+parse_arguments()
+{
+	while [ $# -gt 0 ] ; do
+		case $1 in
+		# control options
+		  --help)
+			usage
+			;;
+		  -t)
+			DRYRUN=true
+			;;
+		  -f)
+			FORCE=true
+			;;
+		  -*)
+			echo "unknown option $1"; usage
+			;;
+		  *)
+			usage
+			;;
+		esac
+		shift
+	done
+}
+
+service_unconfig()
+{
+	TEST_OPT=
+	if [ X"$1" = "X-n" ]; then
+		TEST_OPT=$1
+	fi
+
+	service_stop_$BACKEND_TYPE $TEST_OPT gfmd
+	service_stop_$BACKEND_TYPE $TEST_OPT $RC_BACKEND_BASENAME
+
+	delete_file_or_directory -f $TEST_OPT "$GFMD_CONF"
+	delete_file_or_directory -f $TEST_OPT "$GFARM_CONF"
+
+	service_remove_$BACKEND_TYPE $TEST_OPT gfmd
+	service_remove_$BACKEND_TYPE $TEST_OPT "$RC_BACKEND_BASENAME"
+
+	delete_file_or_directory -f $TEST_OPT "$RC_GFMD"
+	delete_file_or_directory -f $TEST_OPT "$RC_BACKEND"
+
+	service_reg
+
+	delete_file_or_directory -f $TEST_OPT "$BACKEND_DATA_DIR"
+	delete_file_or_directory -f $TEST_OPT "$BACKEND_LOG_DIR"
+	delete_file_or_directory -f $TEST_OPT "$GFMD_PID_FILE"
+	delete_file_or_directory -f $TEST_OPT "$BACKEND_PID_FILE"
+
+	if $PRIVATE_MODE; then
+		delete_file_or_directory -f $TEST_OPT "$GFSD_CONF"
+		delete_file_or_directory -f $TEST_OPT "$USERMAP_FILE"
+	fi
+
+	if $METADATA_REPLICATION; then
+		delete_file_or_directory -f $TEST_OPT "$METADATA_JOURNAL_DIR"
+	fi
+
+	delete_file_or_directory -f $TEST_OPT "$SELF_SCRIPT"
+}
+
+. $config_dir/config-gfarm.$BACKEND_TYPE
+
+. $config_dir/config-gfarm.sysdep
+
+# NOTE: $CONFIG_PREFIX and $RC_BACKEND_BASENAME need to be set
+#       before calling sysdep_defaults
+# sysdep_defaults must set: $RC_DIR
+sysdep_defaults
+
+parse_arguments $@
+
+# print procedure of unconfiguration.
+if $DRYRUN; then
+	echo "=== Unconfiguration procedure ==="
+	service_unconfig -n
+	exit 0
+# execute unconfiguration.
+elif $FORCE || prompt_qa "Do you unconfigure gfarm?"; then
+	service_unconfig
+else
+	:
+fi
