@@ -255,7 +255,7 @@ gfs_pio_md_is_valid(GFS_File gf)
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1004200, "%s: couldn't get cksum: %s",
 		    gf->url, gfarm_error_string(e));
-		return 0;
+		return (0);
 	}
 	if ((cksum.flags & (
 	    GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED |
@@ -275,7 +275,7 @@ gfs_pio_md_finish(GFS_File gf)
 	assert(gf->md.cksum_type != NULL);
 	assert((gf->mode & GFS_FILE_MODE_DIGEST_FINISH) == 0);
 	assert((gf->mode & GFS_FILE_MODE_DIGEST_CALC) != 0);
-	
+
 	md_strlen = gfarm_msgdigest_final_string(md_string, &gf->md_ctx);
 	gf->mode |= GFS_FILE_MODE_DIGEST_FINISH;
 
@@ -432,7 +432,7 @@ gfs_pio_create_igen(const char *url, int flags, gfarm_mode_t mode,
 			e = gfs_file_alloc(gfm_server, fd, flags, real_url,
 			    inum, cip, gfp);
 		if (e != GFARM_ERR_NO_ERROR) {
-			 /* ignore result */
+			/* ignore result */
 			(void)gfm_close_fd(gfm_server, fd, NULL);
 			gfm_client_connection_free(gfm_server);
 			gflog_debug(GFARM_MSG_1001295,
@@ -622,7 +622,8 @@ gfs_pio_close(GFS_File gf)
 			 * see r9289, r9349, and the following test with
 			 * a corrupted file which size is increased than
 			 * what it should be:
-			 * regress/lib/libgfarm/gfarm/gfs_pio_open/cksum_mismatch.sh
+			 * cksum_mismatch.sh in
+			 * regress/lib/libgfarm/gfarm/gfs_pio_open/
 			 */
 			e = gfs_pio_view_fstat(gf, &gst);
 			if (e == GFARM_ERR_NO_ERROR) {
