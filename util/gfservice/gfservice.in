@@ -1356,16 +1356,6 @@ subcmd_config_gfarm()
 	[ $? -ne 0 ] && log_error "gfservice-agent config-gfarm failed"
 
 	#
-	# Execute 'gfmdhost -m' on the gfmd host to set a cluster name.
-	#
-	CLUSTER_NAME="`eval echo \\$$HOSTID\_CLUSTER_NAME`"
-	if [ "X$CLUSTER_NAME" != X ]; then
-		exec_remote_host_gfcmd $MASTER_HOSTID - gfmdhost -m \
-			-C $CLUSTER_NAME
-		[ $? -ne 0 ] && log_error "gfmdhost -m failed"
-	fi
-
-	#
 	# Create a new shared secret key and distribute it.
 	#
 	if [ $SETUP_SHARED_KEY = true ]; then
@@ -1373,6 +1363,16 @@ subcmd_config_gfarm()
 			-p $SHARED_KEY_VALIDITY_PERIOD
 		[ $? -ne 0 ] && log_error "gfkey failed"
 		copy_shared_key $HOSTID $HOSTID
+	fi
+
+	#
+	# Execute 'gfmdhost -m' on the gfmd host to set a cluster name.
+	#
+	CLUSTER_NAME="`eval echo \\$$HOSTID\_CLUSTER_NAME`"
+	if [ "X$CLUSTER_NAME" != X ]; then
+		exec_remote_host_gfcmd $HOSTID - gfmdhost -m \
+			$BACKEND_HOSTNAME -C $CLUSTER_NAME
+		[ $? -ne 0 ] && log_error "gfmdhost -m failed"
 	fi
 
 	log_debug "end subcmd_config_gfarm"
@@ -1399,16 +1399,6 @@ subcmd_config_gfarm_master()
 	[ $? -ne 0 ] && log_error "gfservice-agent config-gfarm-master failed"
 
 	#
-	# Execute 'gfmdhost -m' on the gfmd host to set a cluster name.
-	#
-	CLUSTER_NAME="`eval echo \\$$HOSTID\_CLUSTER_NAME`"
-	if [ "X$CLUSTER_NAME" != X ]; then
-		exec_remote_host_gfcmd $MASTER_HOSTID - gfmdhost -m \
-			-C $CLUSTER_NAME
-		[ $? -ne 0 ] && log_error "gfmdhost -m failed"
-	fi
-
-	#
 	# Create a new shared secret key.
 	#
 	if [ $SETUP_SHARED_KEY = true ]; then
@@ -1416,6 +1406,16 @@ subcmd_config_gfarm_master()
 			-p $SHARED_KEY_VALIDITY_PERIOD
 		[ $? -ne 0 ] && log_error "gfkey failed"
 		copy_shared_key $HOSTID $HOSTID
+	fi
+
+	#
+	# Execute 'gfmdhost -m' on the gfmd host to set a cluster name.
+	#
+	CLUSTER_NAME="`eval echo \\$$HOSTID\_CLUSTER_NAME`"
+	if [ "X$CLUSTER_NAME" != X ]; then
+		exec_remote_host_gfcmd $HOSTID - gfmdhost -m \
+			$BACKEND_HOSTNAME -C $CLUSTER_NAME
+		[ $? -ne 0 ] && log_error "gfmdhost -m failed"
 	fi
 
 	#
