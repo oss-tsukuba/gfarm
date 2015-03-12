@@ -19,7 +19,8 @@
 <p>
 <span class="command"><strong>config-gfsd</strong></span> is a utility to set up a
 file sppol node of Gfarm file system.
-The server program for a file spool node is named gfsd.
+The server program for a file spool node is named 
+<span class="command"><strong>gfsd</strong></span>.
 <span class="command"><strong>config-gfsd</strong></span> is required to be run with
 the root privilege, unless you use the file system for private purpose such
 as development, evaluation or test of Gfarm.
@@ -46,7 +47,8 @@ Update the Gfarm configuration file
 </p></li>
 <li class="listitem">
 <p>
-Create a script (or a configuration file) to start/stop gfsd.
+Create a script (or a configuration file) to start/stop
+<span class="command"><strong>gfsd</strong></span>.
 </p>
 <p>
 On most systems, <span class="command"><strong>config-gfsd</strong></span> puts
@@ -101,6 +103,14 @@ systemctl start gfsd.service
 <p>
 </p>
 </li>
+<li class="listitem">
+Puts the script <span class="command"><strong>unconfig-gfsd.sh</strong></span> on
+%%SYSCONFDIR%%.
+The script does unconfiguration of <span class="command"><strong>gfsd</strong></span>.
+It stops <span class="command"><strong>gfsd</strong></span> and removes all files
+created by <span class="command"><strong>config-gfsd</strong></span> including 
+<span class="command"><strong>unconfig-gfsd.sh</strong></span> itself.
+</li>
 </ol></div>
 <p>
 Before set up a file spool node using
@@ -135,16 +145,16 @@ that option.
 <dt><span class="term"><code class="option">--prefix</code> <em class="parameter"><code>path</code></em></span></dt>
 <dd>
 <p>
-Configure some paths related to gfsd.
+Configure some paths related to <span class="command"><strong>gfsd</strong></span>.
 Specifically, the followings are affected.
 </p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem"><p>
-  The spool directory of gfsd.
+  The spool directory of <span class="command"><strong>gfsd</strong></span>.
   That is <code class="filename">PREFIX/var/gfarm-spool</code>.
   </p></li>
 <li class="listitem"><p>
-  The directory to put a PID file of gfsd.
+  The directory to put a PID file of <span class="command"><strong>gfsd</strong></span>.
   That is <code class="filename">PREFIX/var/run</code>.
   </p></li>
 <li class="listitem"><p>
@@ -152,7 +162,8 @@ Specifically, the followings are affected.
   That is <code class="filename">PREFIX/etc</code>.
   </p></li>
 <li class="listitem"><p>
-  The directory of start/stop script for gfsd.
+  The directory of start/stop script for
+  <span class="command"><strong>gfsd</strong></span>.
   That is <code class="filename">PREFIX/etc/init.d </code> or
   <code class="filename">PREFIX/rc.d/init.d/etc</code> which is
   depending on operating systems.
@@ -164,6 +175,11 @@ Specifically, the followings are affected.
   put a unit configuration file for systemd.
   Instead, it puts traditional start/stop script at
   <code class="filename">PREFIX/etc/init.d</code>.
+  </p></li>
+<li class="listitem"><p>
+  The unconfiguration script
+  <span class="command"><strong>unconfig-gfsd.sh</strong></span>.
+  That is <span class="command"><strong>PREFIX/etc/unconfig-gfsd.sh</strong></span>.
   </p></li>
 </ul></div>
 <p>
@@ -181,7 +197,8 @@ and use it by default.
 </p></dd>
 <dt><span class="term"><code class="option">-p</code> <em class="parameter"><code>port</code></em></span></dt>
 <dd><p>
-Specify a TCP port number the configured gfsd listens on.
+Specify a TCP port number the configured
+<span class="command"><strong>gfsd</strong></span> listens on.
 The default is 10600 if the private mode, 600 otherwise.
 </p></dd>
 <dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>hostname</code></em></span></dt>
@@ -194,7 +211,7 @@ The default is the fully qualified domainname of the host on DNS.
 <dt><span class="term"><code class="option">-l</code> <em class="parameter"><code>address</code></em></span></dt>
 <dd>
 <p>
-Specify a listen address of gfsd.
+Specify a listen address of <span class="command"><strong>gfsd</strong></span>.
 By default, it listens on all local IP addresses.
 If this option is specified, also the following changes occur:
 </p>
@@ -243,8 +260,9 @@ the configuration procedures as follows:
 </p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem"><p>
-  The default listen port of gfsd (corresponding with <code class="option">-p</code>
-  option) is changed from 600 to 10600.
+  The default listen port of <span class="command"><strong>gfsd</strong></span>
+  (corresponding with <code class="option">-p</code> option) is changed from 600
+  to 10600.
   </p></li>
 <li class="listitem"><p>
   It updates the configuration file
@@ -256,7 +274,8 @@ the configuration procedures as follows:
   <span class="command"><strong>gfhost -c</strong></span>.
   </p></li>
 <li class="listitem"><p>
-  It starts gfsd, unless <code class="option">-N</code> option is given.
+  It starts <span class="command"><strong>gfsd</strong></span>, unless
+  <code class="option">-N</code> option is given.
   </p></li>
 </ul></div>
 <p>
@@ -270,7 +289,7 @@ To avoid this problem, also specify <code class="option">--prefix</code> option.
 </dd>
 <dt><span class="term"><code class="option">-N</code></span></dt>
 <dd><p>
-Do not start gfsd.
+Do not start <span class="command"><strong>gfsd</strong></span>.
 </p></dd>
 <dt><span class="term"><code class="option">-f</code></span></dt>
 <dd><p>
@@ -296,15 +315,17 @@ configuration file for Gfarm clients
 </p></dd>
 <dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfsd.conf</code></span></dt>
 <dd><p>
-configuration file for gfsd (used only in the private mode)
+configuration file for <span class="command"><strong>gfsd</strong></span> (used only
+in the private mode)
 </p></dd>
 <dt><span class="term"><code class="filename">/etc/init.d/gfsd</code></span></dt>
 <dd><p>
-start/stop script for gfmd
+start/stop script for <span class="command"><strong>gfsd</strong></span>
 </p></dd>
 <dt><span class="term"><code class="filename">/etc/systemd/system/gfsd.service</code></span></dt>
 <dd><p>
-unit configuration file for gfsd, read by systemd
+unit configuration file for <span class="command"><strong>gfsd</strong></span>, read
+by systemd
 </p></dd>
 </dl></div>
 </div>

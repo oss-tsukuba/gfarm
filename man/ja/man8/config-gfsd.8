@@ -1,0 +1,455 @@
+'\" t
+.\"     Title: config-gfsd
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 20 Jan 2015
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "CONFIG\-GFSD" "8" "20 Jan 2015" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+config-gfsd \- Gfarmのファイルスプールノードのセットアップ
+.SH "SYNOPSIS"
+.HP \w'\fBconfig\-gfsd\fR\ 'u
+\fBconfig\-gfsd\fR [\fIオプション\fR]
+.SH "DESCRIPTION"
+.PP
+\fBconfig\-gfsd\fRは、 Gfarmファイルシステムのファイルスプールノードを セットアップするためのユーティリティです。 なお、このファイルスプールノードに対するサーバプログラムは、
+\fBgfsd\fRと名づけられています。 Gfarmの開発、評価、またはテストといった 私的な用途でファイルシステムを使用する場合を除き、
+\fBconfig\-gfsd\fRを実行するためには、 ルート権限が必要です。
+.PP
+\fBconfig\-gfsd\fRは、設定ファイル
+%%SYSCONFDIR%%/gfarm2\&.conf
+(プライベートモードの場合は、
+%%SYSCONFDIR%%/gfsd\&.conf) がホスト上に存在することを前提としています。 存在しない場合は、メタデータサーバから設定ファイルをコピーしてください。
+.PP
+\fBconfig\-gfsd\fRは下記に示した順に実行します。
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+スプールディレクトリを作成します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Gfarmの設定ファイル
+%%SYSCONFDIR%%/gfarm2\&.confや
+%%SYSCONFDIR%%/gfsd\&.confを更新します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+\fBgfsd\fRを起動/停止するためのスクリプト (または、設定ファイル)を作成します。
+.sp
+大抵のOSにおいて、
+\fBconfig\-gfsd\fRは、 起動/停止スクリプトgfsd(プライベートモードの場合は、
+gfsd\-ADDRESS)を
+/etc/init\&.dまたは
+/etc/rc\&.d/init\&.dに置きます。 (どちらに置くかはOSに依存します。)
+.sp
+Red Hat Enterprise Linux 7 またはそれ以降のsystemdで動作するLinuxにおいて、
+\fBconfig\-gfsd\fRは、 ユニット設定ファイルであるgfsd\&.service
+(プライベートモードの場合は、
+gfsd\-ADDRESS\&.service)を
+/etc/systemd/systemディレクトリに 置きます。 その後、\fBsystemctl enable gfsd\&.service\fR
+(または
+\fBsystemctl enable gfsd\-ADDRESS\&.service\fR) を実行します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+プライベートモードの場合、\fBconfig\-gfsd\fRは、
+\fBgfhost \-c\fRを実行することにより、 メタデータサーバにファイルスプールノードであるホストを登録します。 プライベートモードではない場合、
+\fBconfig\-gfsd\fRは、 メタデータサーバにファイルスプールノードであるホストの登録方法を 以下に示す例のように表示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Please ask admin_user to register your host by the following command:
+
+/usr/bin/gfhost \-c \-a x86_64\-centos7\&.0\-linux \-p 600 \-n 2 ext540
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+プライベートモードの場合、\fBconfig\-gfsd\fRは
+\fBgfsd\fRを起動します。 プライベートモードではない場合、
+\fBconfig\-gfsd\fRは
+\fBgfsd\fRの起動方法を以下のように表示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+After that, start gfsd by the following command as a root:
+
+systemctl start gfsd\&.service
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  6." 4.2
+.\}
+\fBunconfig\-gfsd\&.sh\fR
+というスクリプトを %%SYSCONFDIR%% 上に作成します。 このスクリプトは、\fBgfsd\fR
+のセットアップの 取り消しを行います。
+\fBgfsd\fR
+を停止し、
+\fBconfig\-gfsd\fR
+によって作成されたファイル (\fBunconfig\-gfsd\&.sh\fR
+スクリプト自身を含む) をすべて消去します。
+.RE
+.PP
+\fBconfig\-gfsd\fRを使用して ファイルスプールノードをセットアップする前に、
+\fBconfig\-gfsd \-t\fRを実行することを推奨します。
+\fB\-t\fRオプションを付けて実行することにより、 セットアップする代わりに全ての設定パラメータを表示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ config\-gfsd \-t
+
+prefix                 [\-\-prefix]:
+hostname                     [\-h]: host1\&.example\&.org
+listen address               [\-l]: (all local IP addresses)
+architecture                 [\-a]: x86_64\-centos6\&.5\-linux
+port                         [\-p]: 600
+ncpu                         [\-n]: 8
+spool directory                  : /var/gfarm\-spool
+rc script                        : /etc/init\&.d/gfsd
+gfarm client conf file           : /etc/gfarm2\&.conf
+gfsd pid file                    : /var/run/gfsd\&.pid
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+[]で囲まれたオプション名は、 オプションとして指定できることを意味しています。
+.SH "OPTIONS"
+.PP
+\fB\-\-prefix\fR \fIパス\fR
+.RS 4
+このオプションを付与した場合、 以下に挙げた\fBgfsd\fRに関連する複数のパスが 設定されます。 具体的には、以下の通りです。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgfsd\fRのスプールディレクトリ:
+PREFIX/var/gfarm\-spool
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgfsd\fRのPIDファイルを置くためのディレクトリ:
+PREFIX/var/run
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+設定ファイルが置かれたディレクトリ:
+PREFIX/etc
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgfsd\fRの起動/停止スクリプトが置かれた ディレクトリ:
+PREFIX/etc/init\&.d
+か、
+PREFIX/rc\&.d/init\&.d/etc
+これはOSに依存します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ホスト上でsystemdが起動している場合に、特殊な例外が存在します。 そのホスト上で\fB\-\-prefix\fRオプションとして空文字を指定する際、
+\fBconfig\-gfsd\fRはsystemdに ユニット設定ファイルを置きません。 その代わりに、PREFIX/etc/init\&.dに 旧形式の起動/停止スクリプトを置きます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+セットアップを取り消すスクリプト
+\fBunconfig\-gfsd\&.sh\fR:
+\fBPREFIX/etc/unconfig\-gfsd\&.sh\fR
+.RE
+.sp
+デフォルトでは""(空文字列)です。
+.RE
+.PP
+\fB\-a\fR \fIアーキテクチャ\fR
+.RS 4
+ホストのアーキテクチャを指定します。
+\fBconfig\-gfsd\fRは、 指定されたアーキテクチャをgfhost \-c コマンドに\fB\-a\fRオプションの引数 として渡します。デフォルトで、
+\fBconfig\-gfsd\fRはアーキテクチャを推測しそれを使用します。
+.RE
+.PP
+\fB\-p\fR \fIポート番号\fR
+.RS 4
+\fBgfsd\fRが待ち受けるTCPポート番号を指定します。 デフォルトではプライベートモードの場合に10600、 それ以外では600が指定されます。
+.RE
+.PP
+\fB\-h\fR \fIホスト名\fR
+.RS 4
+ホスト名を指定することができます。
+\fBconfig\-gfsd\fRは、 指定されたホスト名をgfhost \-c コマンドに非オプションの引数として渡します。 デフォルトでは、DNS上におけるそのホストの完全修飾ドメイン名(FQDN)となります。
+.RE
+.PP
+\fB\-l\fR \fIIPアドレス\fR
+.RS 4
+\fBgfsd\fRの待ち受けるアドレスを指定すること ができます。 デフォルトでは、全てのローカルIPアドレスで待ち受けます。 オプションが指定された場合、以下に挙げた変更が生じます。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBconfig\-gfsd\fRが起動/停止スクリプトを 作成する際、そのスクリプト名は、gfsd
+からgfsd\-ADDRESSに変更されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBconfig\-gfsd\fRがsystemdの設定ファイルを 作成する際、そのファイル名は、
+gfsd\&.serviceから
+gfsd\-ADDRESS\&.serviceに変更されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+スプールディレクトリは、
+PREFIX/var/gfarm\-spoolから
+PREFIX/var/gfarm\-spool\-ADDRESS
+に変更されます。 ただし、PREFIXは\fB\-\-prefix\fRで指定された接頭辞です。
+.RE
+.RE
+.PP
+\fB\-n\fR \fIcpu数\fR
+.RS 4
+ホストのCPU数を指定することができます。
+\fBconfig\-gfsd\fRは、 指定されたCPU数をgfhost \-c コマンドに\fB\-n\fRオプションの引数 として渡します。 デフォルトでは、
+\fBconfig\-gfsd\fRはCPU数を推測しその値を与えます。
+.RE
+.PP
+\fB\-\-help\fR
+.RS 4
+このコマンドの使用法を表示して、終了します。
+.RE
+.PP
+\fB\-S\fR
+.RS 4
+このオプションを付与した場合、 プライベートモードを有効にします。
+\fBconfig\-gfsd\fRは、 ルート権限なしで実行可能なGfarmファイルシステムをセットアップします。 具体的には、以下の通りに設定手順を変更します。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgfsd\fRにおけるデフォルトの待ち受け ポート番号(\fB\-p\fRに対応)が、600から10600に変更されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+%%SYSCONFDIR%%/gfarm2\&.confの代わりに、
+%%SYSCONFDIR%%/gfsd\&.conf設定ファイル を更新します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+gfhost \-cコマンドを実行することにより、 ファイルスプールノードを登録します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB\-N\fRオプションが付与されているかに関わらず、
+\fBgfsd\fRを起動します。
+.RE
+.sp
+\fB\-S\fRオプションは、起動/停止スクリプトや 設定ファイルの位置を決して変更しません。 これらのファイルのデフォルト位置は 通常では特権ユーザの場合のみ書き込み可能であるため、
+\fBconfig\-gfsd\fRはこれらのファイルの生成に 失敗してしまいます。この問題を回避するためには、
+\fB\-\-prefix\fRオプションを合わせて指定してください。
+.RE
+.PP
+\fB\-N\fR
+.RS 4
+このオプションを付与した場合、
+\fBgfsd\fRを起動しません。
+.RE
+.PP
+\fB\-f\fR
+.RS 4
+このオプションを付与した場合、 強制的に存在しているセットアップを上書きします。
+.RE
+.PP
+\fB\-t\fR
+.RS 4
+このオプションを付与した場合、 人間が読みやすい形式で全ての設定パラメータの値を表示した後、 すぐに終了します。
+.RE
+.PP
+\fB\-T\fR
+.RS 4
+\fB\-t\fRオプションと似ていますが、 設定値をKEY=VALUE形式で表示します。
+.RE
+.SH "FILES"
+.PP
+%%SYSCONFDIR%%/gfarm2\&.conf
+.RS 4
+クライアント側のGfarmが参照する設定ファイル
+.RE
+.PP
+%%SYSCONFDIR%%/gfsd\&.conf
+.RS 4
+\fBgfsd\fRが参照する設定ファイル (プライベートモードの場合のみ使用されます)
+.RE
+.PP
+/etc/init\&.d/gfsd
+.RS 4
+\fBgfsd\fRが参照する起動/停止スクリプト ファイル
+.RE
+.PP
+/etc/systemd/system/gfsd\&.service
+.RS 4
+systemdにより読み込まれる、
+\fBgfsd\fRのユニット設定ファイル
+.RE
+.SH "SEE ALSO"
+.PP
+\fBgfarm2.conf\fR(5),
+\fBconfig-gfarm\fR(8),
+\fBgfsd\fR(8)
