@@ -28,7 +28,7 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-config-gfarm-update \- dump/restore Gfarm metadata
+config-gfarm-update \- upgrades/updates metadata server of Gfarm
 .SH "SYNOPSIS"
 .HP \w'\fBconfig\-gfarm\-update\fR\ 'u
 \fBconfig\-gfarm\-update\fR [\fIoptions\fR]
@@ -37,7 +37,9 @@ config-gfarm-update \- dump/restore Gfarm metadata
 .SH "DESCRIPTION"
 .PP
 \fBconfig\-gfarm\-update\fR
-upgrades/updates the backend database of a metadata server\&. Unless the metadata server is configured as the private mode, the root privilege is required to run this command\&. It reads the configuration file for gfmd (gfmd\&.conf), in order to get information for accessing the backend database\&.
+upgrades/updates the backend database of a metadata server\&. Unless the metadata server is configured as the private mode, the root privilege is required to run this command\&. It reads the configuration file for
+\fBgfmd\fR
+(gfmd\&.conf), in order to get information for accessing the backend database\&.
 .PP
 \fBconfig\-gfarm\-update\fR
 can enable the following features of the backend database:
@@ -87,9 +89,11 @@ option,
 \fBconfig\-gfarm\-update\fR
 edits table schema and/or data in the database for upgrading, if needed\&.
 .PP
-When you update/upgrade the metadata server, you must stop gfmd beforehand\&. If there are some metadata servers in a file system, run
+When you update/upgrade the metadata server, you must stop
+\fBgfmd\fR
+beforehand\&. If there are some metadata servers in a file system, run
 \fBconfig\-gfarm\-update\fR
-on every metadata servers\&. After the update/upgrade, it starts a metadata server on the host by default\&.
+on every metadata servers\&. After the update/upgrade, it starts a metadata server on the host\&.
 .PP
 Like
 \fBconfig\-gfarm\fR, also
@@ -147,7 +151,8 @@ If this option is given,
 \fBconfig\-gfarm\-update\fR
 reads
 PREFIX/etc/gfmd\&.conf
-as the configuration file of gfmd\&. By default, it reads
+as the configuration file of
+\fBgfmd\fR\&. By default, it reads
 %%SYSCONFDIR%%/etc/gfmd\&.conf\&.
 .RE
 .PP
@@ -163,7 +168,7 @@ searches directories listed in the environment variable
 for the commands\&.
 .RE
 .PP
-\fB\-l\fR
+\fB\-l\fR \fIpath\fR
 .RS 4
 Specify a path to the directory where the backend database puts files to store metadata of Gfarm\&.
 .sp
@@ -210,7 +215,9 @@ option is specified\&.
 .PP
 \fB\-j\fR \fIfile\fR
 .RS 4
-Specify a path to the directory where gfmd puts journal files\&. The default value is
+Specify a path to the directory where
+\fBgfmd\fR
+puts journal files\&. The default value is
 PREFIX/var/gfarm\-metadata/journal
 where PREFIX is a prefix given by
 \fB\-\-prefix\fR
@@ -229,14 +236,11 @@ Show values of configurable parameters in human readable format, then exit immed
 .PP
 \fB\-N\fR
 .RS 4
-Do not start gfmd after update/upgrade\&. This option takes effect only when also
+Do not start
+\fBgfmd\fR
+after update/upgrade\&. This option takes effect only when also
 \fB\-\-update\fR
 option is specified\&.
-.RE
-.PP
-\fB\-t\fR
-.RS 4
-Show values of all configurable parameters in human readable format, then exit immediately\&.
 .RE
 .PP
 \fB\-r\fR
@@ -263,7 +267,8 @@ option is specified\&.
 .PP
 %%SYSCONFDIR%%/gfmd\&.conf
 .RS 4
-configuration file for metadata server, gfmd
+configuration file for
+\fBgfmd\fR
 .RE
 .SH "SEE ALSO"
 .PP

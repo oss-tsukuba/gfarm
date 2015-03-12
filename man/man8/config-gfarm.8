@@ -35,7 +35,8 @@ config-gfarm \- set up a metadata server of Gfarm
 .SH "DESCRIPTION"
 .PP
 \fBconfig\-gfarm\fR
-is a utility to set up a metadata server of Gfarm file system\&. The server program for a metadata server is named gfmd\&.
+is a utility to set up a metadata server of Gfarm file system\&. The server program for a metadata server is named
+\fBgfmd\fR\&.
 \fBconfig\-gfarm\fR
 is required to be run with the root privilege, unless you use the file system for private purpose such as development, evaluation or test of Gfarm\&.
 .PP
@@ -75,7 +76,8 @@ and
 .sp -1
 .IP "  3." 4.2
 .\}
-Create scripts (or configuration files) to start/stop the backend database and the Gfarm metadata server named gfmd\&.
+Create scripts (or configuration files) to start/stop the backend database and
+\fBgfmd\fR\&.
 .sp
 On most systems,
 \fBconfig\-gfarm\fR
@@ -110,7 +112,26 @@ respectively\&.
 .sp -1
 .IP "  4." 4.2
 .\}
-Start the backend database and gfmd\&.
+Start the backend database and
+\fBgfmd\fR\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+
+Put the script \fBunconfig\-gfarm\&.sh\fR on
+%%SYSCONFDIR%%\&.
+The script does unconfiguration of the metadata server\&.
+It stops \fBgfmd\fR and the backend database,
+and removes all files created by
+\fBconfig\-gfarm\fR including 
+\fBunconfig\-gfarm\&.sh\fR itself\&.
 .RE
 .PP
 Before set up a metadata server using
@@ -159,7 +180,9 @@ The option name surrounded by [ ] means that you can specify a value with that o
 .PP
 \fB\-\-prefix\fR \fIpath\fR
 .RS 4
-Configure some paths related to gfmd and the backend database\&. Specifically, the followings are affected\&.
+Configure some paths related to
+\fBgfmd\fR
+and the backend database\&. Specifically, the followings are affected\&.
 .sp
 .RS 4
 .ie n \{\
@@ -203,7 +226,8 @@ option has preference\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-The directory to put journal files of gfmd\&. That is
+The directory to put journal files of
+\fBgfmd\fR\&. That is
 PREFIX/var/gfarm\-metadata/journal\&. The path can also be changed by
 \fB\-j\fR
 option\&. When both options are specified,
@@ -219,7 +243,9 @@ option has preference\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-The directory to put PID files of gfmd and the backend database\&. That is
+The directory to put PID files of
+\fBgfmd\fR
+and the backend database\&. That is
 PREFIX/var/run\&.
 .RE
 .sp
@@ -243,7 +269,9 @@ PREFIX/etc\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-The directory of start/stop scripts for gfmd and its backend database\&. That is
+The directory of start/stop scripts for
+\fBgfmd\fR
+and its backend database\&. That is
 PREFIX/etc/init\&.d
 or
 PREFIX/rc\&.d/init\&.d/etc
@@ -264,6 +292,19 @@ option on such host,
 \fBconfig\-gfarm\fR
 doesn\*(Aqt put unit configuration files for systemd\&. Instead, it puts traditional start/stop scripts at
 PREFIX/etc/init\&.d\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The unconfiguration script
+\fBunconfig\-gfarm\&.sh\fR\&. That is
+\fBPREFIX/etc/unconfig\-gfarm\&.sh\fR\&.
 .RE
 .sp
 The default is "" (empty)\&.
@@ -294,7 +335,9 @@ to confirm the username\&.
 .PP
 \fB\-u\fR \fIusername\fR
 .RS 4
-The configured gfmd will connect to the backend database as the specified username\&. The default is "gfarm"\&.
+The configured
+\fBgfmd\fR
+will connect to the backend database as the specified username\&. The default is "gfarm"\&.
 .RE
 .PP
 \fB\-P\fR \fIprefix\fR
@@ -347,7 +390,9 @@ Specify a hostname which is used to identify the metadata server\&. The default 
 .PP
 \fB\-j\fR \fIdirectory\fR
 .RS 4
-Specify a path to the directory where gfmd puts journal files\&. This option takes an effect only when metadata replication is enabled by
+Specify a path to the directory where
+\fBgfmd\fR
+puts journal files\&. This option takes an effect only when metadata replication is enabled by
 \fB\-r\fR
 option\&. The default value is
 PREFIX/var/gfarm\-metadata/journal
@@ -377,7 +422,9 @@ Specify a TCP port number the configured backend database listens on\&. The defa
 .PP
 \fB\-m\fR \fIport\fR
 .RS 4
-Specify a TCP port number the configured gfmd listens on\&. The default value is 10601 in case of the private mode, 601 otherwise\&.
+Specify a TCP port number the configured
+\fBgfmd\fR
+listens on\&. The default value is 10601 in case of the private mode, 601 otherwise\&.
 .RE
 .PP
 \fB\-a\fR \fImethod\fR
@@ -406,7 +453,9 @@ changes the configuration procedures as follows:
 .sp -1
 .IP \(bu 2.3
 .\}
-The default listen port of gfmd (corresponding with
+The default listen port of
+\fBgfmd\fR
+(corresponding with
 \fB\-m\fR
 option) is changed from 601 to 10601\&.
 .RE
@@ -451,7 +500,9 @@ option\&.
 .PP
 \fB\-N\fR
 .RS 4
-Do not start gfmd or the backend database\&.
+Do not start
+\fBgfmd\fR
+or the backend database\&.
 .RE
 .PP
 \fB\-f\fR
@@ -485,7 +536,9 @@ option which specifies the username\&. By default, the password is generated aut
 .PP
 \fB\-w\fR \fIpassword\fR
 .RS 4
-The configured gfmd will connect the backend database with the specified password\&. This option corresponds with
+The configured
+\fBgfmd\fR
+will connect the backend database with the specified password\&. This option corresponds with
 \fB\-u\fR
 option which specifies the username\&. By default, the password is generated automatically\&.
 .RE
@@ -514,7 +567,8 @@ configuration file for Gfarm clients
 .PP
 %%SYSCONFDIR%%/gfmd\&.conf
 .RS 4
-configuration file for gfmd
+configuration file for
+\fBgfmd\fR
 .RE
 .PP
 %%SYSCONFDIR%%/gfsd\&.conf
@@ -534,7 +588,8 @@ start/stop script for PostgreSQL running as backend database of Gfarm
 .PP
 /etc/init\&.d/gfmd
 .RS 4
-start/stop script for gfmd
+start/stop script for
+\fBgfmd\fR
 .RE
 .PP
 /etc/systemd/system/gfarm\-pgsql\&.service
@@ -544,7 +599,8 @@ unit configuration file for PostgreSQL running as backend database of Gfarm, rea
 .PP
 /etc/systemd/system/gfmd\&.service
 .RS 4
-unit configuration file for gfmd, read by systemd
+unit configuration file for
+\fBgfmd\fR, read by systemd
 .RE
 .SH "SEE ALSO"
 .PP

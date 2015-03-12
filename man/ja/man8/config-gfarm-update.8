@@ -1,0 +1,216 @@
+'\" t
+.\"     Title: config-gfarm-update
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 2 Feb 2015
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "CONFIG\-GFARM\-UPDAT" "8" "2 Feb 2015" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+config-gfarm-update \- Gfarmメタデータの更新
+.SH "SYNOPSIS"
+.HP \w'\fBconfig\-gfarm\-update\fR\ 'u
+\fBconfig\-gfarm\-update\fR [\fIオプション\fR]
+.HP \w'\fBconfig\-gfarm\-update\fR\ 'u
+\fBconfig\-gfarm\-update\fR \-\-update [\fIオプション\fR]
+.SH "DESCRIPTION"
+.PP
+\fBconfig\-gfarm\-update\fRは、 メタデータサーバにおけるバックエンドDBを アップグレード/アップデートするコマンドです。 メタデータサーバがプライベートモードで設定されている場合を除き、 このコマンドを実行するためにはroot権限が必要です。 バックエンドDBに接続するための情報を得るため、 起動時に\fBgfmd\fRの設定ファイル (gfmd\&.conf)を読み込みます。
+.PP
+\fBconfig\-gfarm\-update\fRは、 以下に示すバックエンドDBの機能を有効にすることができます。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+XML Path言語(XPath)のサポート [\-X]
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+メタデータサーバ内でメタデータの複製 [\-r]
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+チェックサム計算 [\-d]
+.RE
+.PP
+バックエンドDBがこれらの機能をサポートするかどうかは、
+\fBconfig\-gfarm\fRによって初期設定が 行われたときに決定されます。 初期設定後に機能を有効にしたい場合は、
+\fBconfig\-gfarm\-update \-\-update\fRに 上記の一覧中の [ ] で囲まれたオプションをつけて実行してください。
+.PP
+\fBconfig\-gfarm\-update\fRは、 バックエンドDBのアップグレードにも使用されます。 このコマンドを実行することにより、 データベース内のテーブルスキーマやデータが編集されます。 Gfarmは古いリリースに対して互換性がない可能性があるため、 アップグレードの必要がある場合は、\fB\-\-update\fRオプションを付けて
+\fBconfig\-gfarm\-update\fRを実行してください。
+.PP
+メタデータサーバをアップデートやアップグレードする際、
+\fBgfmd\fRを停止してから実行しなければ いけません。 また、ファイルシステム内にメターデータサーバが複数存在する場合は、 全てのメタデータサーバ上で\fBconfig\-gfarm\-update\fR
+を実行してください。 メタデータサーバのアップデートやアップグレード後、 ホスト上のメタデータサーバは、 このコマンドにより起動されます。
+.PP
+\fBconfig\-gfarm\fRと同様に、
+\fBconfig\-gfarm\-update\fRには、 全ての設定パラメータの値を表示する\fB\-t\fRオプションが存在します。 このコマンドの実行例は以下の通りです。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ config\-gfarm\-update \-t
+prefix [\-\-prefix]:
+metadata backend    [\-b]: postgresql
+metadata directory  [\-l]: /var/gfarm\-pgsql
+postgresql admin user        [\-U]: postgres
+postgresql admin password    [\-W]: (auto generated)
+postgresql user              [\-u]: gfarm
+postgresql password          [\-w]: (auto generated)
+postgresql prefix            [\-P]: /usr
+postgresql version           [\-V]: 8\&.4
+postgresql XML supported     [\-X]: no
+postgresql data checksum support
+                             [\-E]: no
+portmaster port              [\-p]: 10602
+metadata replication         [\-r]: yes
+metadata journal directory   [\-j]: /var/gfarm\-metadata/journal
+digest type                  [\-d]: md5
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+アップデートやアップグレードを行う前に、
+\fBconfig\-gfarm\-update \-t\fR
+を実行することを推奨します。
+.PP
+バックエンドDBがPostgreSQLである場合、 かつ\fBconfig\-gfarm\-update\fRが
+\fB\-\-update\fRオプション無しで処理された場合は、
+\fBpsql\fRコマンドが実行されます。 このコマンドは、バックエンドDBへのフロントエンドターミナルであり、 対話的にクエリを入力することができます。
+\fBpsql\fRはPostgreSQLへ 自動的に接続を行うので便利です。
+.SH "OPTIONS"
+.PP
+\fB\-\-prefix\fR \fIパス\fR
+.RS 4
+\fBconfig\-gfarm\-update\fRは、
+\fBgfmd\fRの設定ファイル
+PREFIX/etc/gfmd\&.confを読み込みます。 デフォルトでは、
+%%SYSCONFDIR%%/etc/gfmd\&.conf
+が読み込まれます。
+.RE
+.PP
+\fB\-P\fR \fIインストール先のディレクトリ\fR
+.RS 4
+このオプションを付与した場合、 バックエンドDBに対するインストール先のディレクトリ (例えば、/usr/local)を指定することができます。
+\fBconfig\-gfarm\-update\fRが\fBpsql\fR
+などのPostgreSQLコマンドを実行する際、 指定したディレクトリの下にこのコマンドが インストールされていることを前提としています。 このオプションを省略した場合、
+\fBconfig\-gfarm\-update\fRは、 環境変数\fBPATH\fRのリストからそのコマンドへのディレクトリを 探し出します。
+.RE
+.PP
+\fB\-l\fR \fIパス\fR
+.RS 4
+バックエンドDBがGfarmのメタデータを記録したファイルを置く ディレクトリへのパスを指定することができます。
+.sp
+バックエンドDBがPostgreSQLである場合、 指定したディレクトリは一般にPGDATAと呼ばれています。 デフォルトではPREFIX/var/gfarm\-pgsql
+が設定されており、このPREFIXは\fB\-\-prefix\fRオプションで 与えられた値となります。
+.RE
+.PP
+\fB\-f\fR \fIコマンドファイル\fR
+.RS 4
+このオプションを付与した場合、
+\fBconfig\-gfarm\-update\fRがPostgreSQLへの フロントエンドターミナルとして\fBpsql\fRを実行する際、
+\fBconfig\-gfarm\-update\fRは
+\fB\-f\fRオプションと与えられたファイル引数を
+\fBpsql\fRに渡します。 そして、\fBpsql\fRは、対話的にコマンドを読み込むのではなく、 このファイル内に書き込まれたコマンドを解釈します。 ただし、\fB\-\-update\fRオプションが指定されている場合、 このオプションは無視されます。
+.RE
+.PP
+\fB\-o\fR \fIオプション\fR
+.RS 4
+このオプションを付与した場合、
+\fBconfig\-gfarm\-update\fRがPostgreSQLへの フロントエンドターミナルとして\fBpsql\fRを実行する際、
+\fBconfig\-gfarm\-update\fRは 与えられたオプションを\fBpsql\fRに渡します。 ただし、\fB\-\-update\fRオプションが指定されている場合、 このオプションは無視されます。
+.RE
+.PP
+\fB\-j\fR \fIジャーナルファイル用ディレクトリ\fR
+.RS 4
+\fBgfmd\fRによりジャーナルファイルが置かれる ディレクトリのパスを指定することができます。デフォルトでは、
+PREFIX/var/gfarm\-metadata/journal
+が設定されており、このPREFIXは\fB\-\-prefix\fRオプションで 与えられた値となります。
+.RE
+.PP
+\fB\-\-help\fR
+.RS 4
+このコマンドの使用法を表示して、終了します。
+.RE
+.PP
+\fB\-t\fR
+.RS 4
+このオプションを付与した場合、 人間が読みやすい形式で全ての設定パラメータの値を表示した後、 すぐに終了します。
+.RE
+.PP
+\fB\-N\fR
+.RS 4
+このオプションを付与した場合、 アップデートやアップグレードを実行した後、
+\fBgfmd\fRを起動/停止しません。 このオプションは\fB\-\-update\fRオプション指定時のみ 有効となります。
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+このオプションを付与した場合、 メタデータサーバ内でメタデータの複製を有効にします。 このオプションは\fB\-\-update\fRオプション指定時のみ 有効となります。
+.RE
+.PP
+\fB\-d\fR \fIダイジェストタイプ\fR
+.RS 4
+チェックサム計算を有効にし、チェックサムのダイジェストタイプを指定します。 引数
+\fIダイジェストタイプ\fR
+には、 そのホスト上にインストールされた OpenSSL ライブラリが対応しているタイプ名 を小文字 (たとえば "md5") で指定します。
+.RE
+.PP
+\fB\-X\fR
+.RS 4
+このオプションを付与した場合、 拡張ファイル属性をクエリするためのXML Path言語(XPath) のサポートを有効にします。 このオプションは\fB\-\-update\fRオプション指定時のみ 有効となります。
+.RE
+.SH "FILES"
+.PP
+%%SYSCONFDIR%%/gfmd\&.conf
+.RS 4
+\fBgfmd\fRが参照する設定ファイル
+.RE
+.SH "SEE ALSO"
+.PP
+\fBconfig-gfarm\fR(8),
+\fBgfmd\fR(8),
+\fBpsql\fR(1)

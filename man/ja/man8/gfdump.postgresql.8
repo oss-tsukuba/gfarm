@@ -1,0 +1,184 @@
+'\" t
+.\"     Title: gfdump.postgresql
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 30 Jan 2015
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFDUMP\&.POSTGRESQL" "8" "30 Jan 2015" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfdump.postgresql \- Gfarmメタデータのダンプ/リストア
+.SH "SYNOPSIS"
+.HP \w'\fBgfdump\&.postgresql\fR\ 'u
+\fBgfdump\&.postgresql\fR \-d [\fIオプション\fR]
+.HP \w'\fBgfdump\&.postgresql\fR\ 'u
+\fBgfdump\&.postgresql\fR \-r [\fIオプション\fR]
+.SH "DESCRIPTION"
+.PP
+\fBgfdump\&.postgresql\fRは、 バックエンドDBとして動作しているPostgreSQLにより管理された、 Gfarmのメタデータをダンプ、またはリストアすることができます。 このコマンドを実行する場合は、 バックエンドDBであるPostgreSQLが起動しているホスト上でなければいけません。 このコマンドは、実行時にバックエンドDBのアクセス情報を取得するため、
+\fBgfmd\fRの設定ファイル
+gfmd\&.confを読み込みます。
+\fBgfmd\fRがプライベートモードではない状態で 設定された場合、このファイルを読み込むためには、ルート権限が必要となります。
+.PP
+\fBgfdump\&.postgresql\fRが
+\fB\-d\fRオプション付きで実行された際は、 カレントディレクトリにdb\&.outファイルを作成し、 データベースをそのファイルにダンプします。
+.PP
+\fBgfdump\&.postgresql\fRが
+\fB\-r\fRオプション付きで実行された際は、 カレントディレクトリに置かれたdb\&.outから データベースをリストアします。 さらに具体的な説明を下記に示します。
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+\fBgfmd\fRが起動している場合は停止します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+データベースを削除します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+データベースを作成します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+ダンプファイルからデータベースをリストアします。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+\fBgfmd\fRのジャーナルファイルが存在している 場合は、そのファイルを削除します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  6." 4.2
+.\}
+\fBgfmd\fRを起動します。
+.RE
+.SH "OPTIONS"
+.PP
+\fB\-\-prefix\fR \fIパス\fR
+.RS 4
+このオプションを付与した場合、
+\fBgfdump\&.postgresql\fRは、
+\fBgfmd\fRの設定ファイル
+PREFIX/etc/gfmd\&.confを読み込みます。 デフォルトでは、%%SYSCONFDIR%%/etc/gfmd\&.conf
+が読み込まれます。
+.RE
+.PP
+\fB\-P\fR \fIインストール先のディレクトリ\fR
+.RS 4
+バックエンドDBに対するインストール先のディレクトリ (例えば、/usr/local)を指定することができます。
+\fBgfdump\&.postgresql\fRが
+\fBpg_dump\fRといったPostgreSQLコマンドを 実行する際は、指定したディレクトリの下にこのコマンドが インストールされていることを前提としています。 このオプションを省略した場合、
+\fBgfdump\&.postgresql\fRは、 環境変数\fBPATH\fRのリストからそのコマンドへのディレクトリ を探し出します。
+.RE
+.PP
+\fB\-l\fR
+.RS 4
+バックエンドDBがGfarmのメタデータを記録したファイルを置く ディレクトリへのパスを指定することができます。
+.sp
+バックエンドDBがPostgreSQLである場合、 そのディレクトリは一般にPGDATAと呼ばれています。 デフォルトでは、
+PREFIX/var/gfarm\-pgsqlが設定されており、 このPREFIXは\fB\-\-prefix\fRオプションで与えられた値となります。
+.RE
+.PP
+\fB\-f\fR \fIダンプファイル\fR
+.RS 4
+ダンプファイルの名前を指定することができます。 デフォルトでは、カレントディレクトリパスに ファイル名db\&.outを加えた値が設定されます。
+.RE
+.PP
+\fB\-\-help\fR
+.RS 4
+このコマンドの使用法を表示して、終了します。
+.RE
+.PP
+\fB\-t\fR
+.RS 4
+このオプションを付与した場合、 人間が読みやすい形式で全ての設定パラメータの値を表示した後、 すぐに終了します。
+.RE
+.PP
+\fB\-d\fR
+.RS 4
+このオプションを付与した場合、 ダンプモードで起動します。
+.RE
+.PP
+\fB\-n\fR
+.RS 4
+このオプションを付与した場合、
+\fBgfmd\fRを起動/停止しません。
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+このオプションを付与した場合、 リストアモードで起動します。
+.RE
+.SH "FILES"
+.PP
+%%SYSCONFDIR%%/gfmd\&.conf
+.RS 4
+\fBgfmd\fRが参照する設定ファイル
+.RE
+.SH "SEE ALSO"
+.PP
+\fBpg_dump\fR(1),
+\fBdropdb\fR(1),
+\fBcreatedb\fR(1),
+\fBpsql\fR(1),
+\fBgfmd\fR(8)

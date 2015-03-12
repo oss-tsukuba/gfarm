@@ -2,20 +2,20 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfdump.postgresql</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfdump.postgresql">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfdump.postgresql.8"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfdump.postgresql — dump/restore Gfarm metadata</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfdump.postgresql</code>   -d  [<em class="replaceable"><code>options</code></em>]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfdump.postgresql</code>   -r  [<em class="replaceable"><code>options</code></em>]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 <span class="command"><strong>gfdump.postgresql</strong></span> dumps/restores metadata
@@ -23,10 +23,10 @@ of Gfarm, managed by PostgreSQL running as a backend database.
 You need to execute this command on the host that the backend database of
 PostgreSQL is running.
 The command reads <code class="filename">gfmd.conf</code>, the
-configuration file of gfmd to get access information about the backend
-database.
-If gfmd is configured in the non-private mode, the root privilege is
-required to read the file.
+configuration file of <span class="command"><strong>gfmd</strong></span> to get access
+information about the backend database.
+If <span class="command"><strong>gfmd</strong></span> is configured in the non-private
+mode, the root privilege is required to read the file.
 </p>
 <p>
 When <span class="command"><strong>gfdump.postgresql</strong></span> is executed
@@ -41,7 +41,7 @@ More specifically, it does the followings.
 </p>
 <div class="orderedlist"><ol class="orderedlist" type="1">
 <li class="listitem"><p>
-Stop gfmd if running.
+Stop <span class="command"><strong>gfmd</strong></span> if running.
 </p></li>
 <li class="listitem"><p>
 Remove the current database.
@@ -53,22 +53,23 @@ Create a database again.
 Restore a database from the dump file.
 </p></li>
 <li class="listitem"><p>
-Delete the current journal file of gfmd, if exists.
+Delete the current journal file of <span class="command"><strong>gfmd</strong></span>,
+if exists.
 </p></li>
 <li class="listitem"><p>
-Start gfmd again.
+Start <span class="command"><strong>gfmd</strong></span> again.
 </p></li>
 </ol></div>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">--prefix</code> <em class="parameter"><code>path</code></em></span></dt>
 <dd><p>
 If this option is given,
 <span class="command"><strong>gfdump.postgresql</strong></span> reads
 <code class="filename">PREFIX/etc/gfmd.conf</code> as the
-configuration file of gfmd.
+configuration file of <span class="command"><strong>gfmd</strong></span>.
 By default, it reads 
 <code class="filename">%%SYSCONFDIR%%/etc/gfmd.conf</code>.
 </p></dd>
@@ -76,8 +77,8 @@ By default, it reads
 <dd><p>
 Specify an installation prefix of the backend database (e.g. /usr/local).
 When <span class="command"><strong>gfdump.postgresql</strong></span> executes a
-PostgreSQL command such as <span class="command"><strong>pg_dump</strong></span>, it assumes the
-command is installed under the given prefix.
+PostgreSQL command such as <span class="command"><strong>pg_dump</strong></span>,
+it assumes the command is installed under the given prefix.
 If this option is omitted,
 <span class="command"><strong>gfdump.postgresql</strong></span> searches directories
 listed in the environment variable <code class="envar">PATH</code> for the commands.
@@ -116,7 +117,7 @@ Dump mode.
 </p></dd>
 <dt><span class="term"><code class="option">-n</code></span></dt>
 <dd><p>
-Do not start/stop gfmd.
+Do not start/stop <span class="command"><strong>gfmd</strong></span>.
 </p></dd>
 <dt><span class="term"><code class="option">-r</code></span></dt>
 <dd><p>
@@ -124,16 +125,16 @@ Restore mode.
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="FILES">
+<div class="refsect1">
 <a name="files"></a><h2>FILES</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfmd.conf</code></span></dt>
 <dd><p>
-configuration file for metadata server, gfmd
+configuration file for <span class="command"><strong>gfmd</strong></span>
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
 <span class="citerefentry"><span class="refentrytitle">pg_dump</span>(1)</span>,
