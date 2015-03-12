@@ -32,7 +32,8 @@
 <para>
 <command moreinfo="none">config-gfarm</command> is a utility to set up a
 metadata server of Gfarm file system.
-The server program for a metadata server is named gfmd.
+The server program for a metadata server is named
+<command moreinfo="none">gfmd</command>.
 <command moreinfo="none">config-gfarm</command> is required to be run with
 the root privilege, unless you use the file system for private purpose such
 as development, evaluation or test of Gfarm.
@@ -61,7 +62,7 @@ Generate Gfarm configuration files
 <listitem>
 <para>
 Create scripts (or configuration files) to start/stop the backend
-database and the Gfarm metadata server named gfmd.
+database and <command moreinfo="none">gfmd</command>.
 </para>
 
 <para>
@@ -87,8 +88,18 @@ respectively.
 
 <listitem>
 <para>
-Start the backend database and gfmd.
+Start the backend database and <command moreinfo="none">gfmd</command>.
 </para>
+</listitem>
+
+<listitem>
+Put the script <command moreinfo="none">unconfig-gfarm.sh</command> on
+%%SYSCONFDIR%%.
+The script does unconfiguration of the metadata server.
+It stops <command moreinfo="none">gfmd</command> and the backend database,
+and removes all files created by
+<command moreinfo="none">config-gfarm</command> including 
+<command moreinfo="none">unconfig-gfarm.sh</command> itself.
 </listitem>
 </orderedlist>
 
@@ -144,7 +155,8 @@ that option.
 <term><option>--prefix</option> <parameter moreinfo="none">path</parameter></term>
 <listitem>
 <para>
-Configure some paths related to gfmd and the backend database.
+Configure some paths related to <command moreinfo="none">gfmd</command>
+and the backend database.
 Specifically, the followings are affected.
 </para>
 
@@ -171,7 +183,8 @@ Specifically, the followings are affected.
 
   <listitem>
   <para>
-  The directory to put journal files of gfmd.
+  The directory to put journal files of
+  <command moreinfo="none">gfmd</command>.
   That is
   <filename moreinfo="none">PREFIX/var/gfarm-metadata/journal</filename>.
   The path can also be changed by <option>-j</option> option.
@@ -181,7 +194,8 @@ Specifically, the followings are affected.
 
   <listitem>
   <para>
-  The directory to put PID files of gfmd and the backend database.
+  The directory to put PID files of <command moreinfo="none">gfmd</command>
+  and the backend database.
   That is <filename moreinfo="none">PREFIX/var/run</filename>.
   </para>
   </listitem>
@@ -195,7 +209,8 @@ Specifically, the followings are affected.
 
   <listitem>
   <para>
-  The directory of start/stop scripts for gfmd and its backend database.
+  The directory of start/stop scripts for
+  <command moreinfo="none">gfmd</command> and its backend database.
   That is <filename moreinfo="none">PREFIX/etc/init.d</filename> or
   <filename moreinfo="none">PREFIX/rc.d/init.d/etc</filename> which is
   depending on operating systems.
@@ -213,6 +228,13 @@ Specifically, the followings are affected.
   </para>
   </listitem>
 
+  <listitem>
+  <para>
+  The unconfiguration script
+  <command moreinfo="none">unconfig-gfarm.sh</command>.
+  That is <command moreinfo="none">PREFIX/etc/unconfig-gfarm.sh</command>.
+  </para>
+  </listitem>
   </itemizedlist>
 
 <para>
@@ -267,8 +289,8 @@ Since the default value differs depending on operating systems, execute
 <term><option>-u</option> <parameter moreinfo="none">username</parameter></term>
 <listitem>
 <para>
-The configured gfmd will connect to the backend database as the specified
-username.
+The configured <command moreinfo="none">gfmd</command> will connect to
+the backend database as the specified username.
 The default is "gfarm".
 </para>
 </listitem>
@@ -348,7 +370,8 @@ The default is the fully qualified domainname of the host.
 <term><option>-j</option> <parameter moreinfo="none">directory</parameter></term>
 <listitem>
 <para>
-Specify a path to the directory where gfmd puts journal files.
+Specify a path to the directory where
+<command moreinfo="none">gfmd</command> puts journal files.
 This option takes an effect only when metadata replication is enabled by
 <option>-r</option> option.
 The default value is
@@ -394,7 +417,8 @@ The default is 10602.
 <term><option>-m</option> <parameter moreinfo="none">port</parameter></term>
 <listitem>
 <para>
-Specify a TCP port number the configured gfmd listens on.
+Specify a TCP port number the configured
+<command moreinfo="none">gfmd</command> listens on.
 The default value is 10601 in case of the private mode, 601 otherwise.
 </para>
 </listitem>
@@ -434,8 +458,9 @@ the configuration procedures as follows:
   <itemizedlist>
   <listitem>
   <para>
-  The default listen port of gfmd (corresponding with <option>-m</option>
-  option) is changed from 601 to 10601.
+  The default listen port of <command moreinfo="none">gfmd</command>
+  (corresponding with <option>-m</option> option) is changed from 601
+  to 10601.
   </para>
   </listitem>
 
@@ -480,7 +505,7 @@ To avoid this problem, also specify <option>--prefix</option> option.
 <term><option>-N</option></term>
 <listitem>
 <para>
-Do not start gfmd or the backend database.
+Do not start <command moreinfo="none">gfmd</command> or the backend database.
 </para>
 </listitem>
 </varlistentry>
@@ -538,8 +563,8 @@ By default, the password is generated automatically.
 <term><option>-w</option> <parameter moreinfo="none">password</parameter></term>
 <listitem>
 <para>
-The configured gfmd will connect the backend database with the specified
-password.
+The configured <command moreinfo="none">gfmd</command> will connect the
+backend database with the specified password.
 This option corresponds with <option>-u</option> option which specifies
 the username.
 By default, the password is generated automatically.
@@ -588,7 +613,7 @@ configuration file for Gfarm clients
 <term><filename moreinfo="none">%%SYSCONFDIR%%/gfmd.conf</filename></term>
 <listitem>
 <para>
-configuration file for gfmd
+configuration file for <command moreinfo="none">gfmd</command>
 </para>
 </listitem>
 </varlistentry>
@@ -624,7 +649,7 @@ start/stop script for PostgreSQL running as backend database of Gfarm
 <term><filename moreinfo="none">/etc/init.d/gfmd</filename></term>
 <listitem>
 <para>
-start/stop script for gfmd
+start/stop script for <command moreinfo="none">gfmd</command>
 </para>
 </listitem>
 </varlistentry>
@@ -643,7 +668,8 @@ read by systemd
 <term><filename moreinfo="none">/etc/systemd/system/gfmd.service</filename></term>
 <listitem>
 <para>
-unit configuration file for gfmd, read by systemd
+unit configuration file for <command moreinfo="none">gfmd</command>,
+read by systemd
 </para>
 </listitem>
 </varlistentry>

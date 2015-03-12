@@ -16,7 +16,7 @@
 
 <refnamediv id="name">
 <refname>config-gfarm-update</refname>
-<refpurpose>dump/restore Gfarm metadata</refpurpose>
+<refpurpose>upgrades/updates metadata server of Gfarm</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id="synopsis">
@@ -39,7 +39,7 @@
 the backend database of a metadata server.
 Unless the metadata server is configured as the private mode,
 the root privilege is required to run this command.
-It reads the configuration file for gfmd
+It reads the configuration file for <command moreinfo="none">gfmd</command>
 (<filename moreinfo="none">gfmd.conf</filename>), in order to get
 information for accessing the backend database.
 </para>
@@ -79,12 +79,12 @@ and/or data in the database for upgrading, if needed.
 </para>
 
 <para>
-When you update/upgrade the metadata server, you must stop gfmd beforehand.
+When you update/upgrade the metadata server, you must stop
+<command moreinfo="none">gfmd</command> beforehand.
 If there are some metadata servers in a file system, run
 <command moreinfo="none">config-gfarm-update</command> on every metadata
 servers.
-After the update/upgrade, it starts a metadata server on the host by
-default.
+After the update/upgrade, it starts a metadata server on the host.
 </para>
 
 <para>
@@ -143,7 +143,7 @@ to the PostgreSQL server is established automatically.
 If this option is given,
 <command moreinfo="none">config-gfarm-update</command> reads
 <filename moreinfo="none">PREFIX/etc/gfmd.conf</filename> as the
-configuration file of gfmd.
+configuration file of <command moreinfo="none">gfmd</command>.
 By default, it reads 
 <filename moreinfo="none">%%SYSCONFDIR%%/etc/gfmd.conf</filename>.
 </para>
@@ -217,7 +217,8 @@ is specified.
 <term><option>-j</option> <parameter moreinfo="none">file</parameter></term>
 <listitem>
 <para>
-Specify a path to the directory where gfmd puts journal files.
+Specify a path to the directory where <command moreinfo="none">gfmd</command>
+puts journal files.
 The default value is
 <filename moreinfo="none">PREFIX/var/gfarm-metadata/journal</filename>
 where PREFIX is a prefix given by <option>--prefix</option> option.
@@ -248,19 +249,9 @@ then exit immediately.
 <term><option>-N</option></term>
 <listitem>
 <para>
-Do not start gfmd after update/upgrade.
+Do not start <command moreinfo="none">gfmd</command> after update/upgrade.
 This option takes effect only when also <option>--update</option> option
 is specified.
-</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><option>-t</option></term>
-<listitem>
-<para>
-Show values of all configurable parameters in human readable format,
-then exit immediately.
 </para>
 </listitem>
 </varlistentry>
@@ -296,7 +287,7 @@ is specified.
 <term><filename moreinfo="none">%%SYSCONFDIR%%/gfmd.conf</filename></term>
 <listitem>
 <para>
-configuration file for metadata server, gfmd
+configuration file for <command moreinfo="none">gfmd</command>
 </para>
 </listitem>
 </varlistentry>
