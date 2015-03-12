@@ -1,0 +1,502 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<!-- $Id$ -->
+
+<refentry id="confog-gfsd.8">
+
+<refentryinfo><date>20 Jan 2015</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>config-gfsd</refentrytitle>
+<manvolnum>8</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>config-gfsd</refname>
+<refpurpose>Gfarmのファイルスプールノードのセットアップ</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">config-gfsd</command>
+    <arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>
+<command moreinfo="none">config-gfsd</command>は、
+Gfarmファイルシステムのファイルスプールノードを
+セットアップするためのユーティリティです。
+なお、このファイルスプールノードに対するサーバプログラムは、
+<command moreinfo="none">gfsd</command>と名づけられています。
+Gfarmの開発、評価、またはテストといった
+私的な用途でファイルシステムを使用する場合を除き、
+<command moreinfo="none">config-gfsd</command>を実行するためには、
+ルート権限が必要です。
+</para>
+
+<para>
+<command moreinfo="none">config-gfsd</command>は、設定ファイル
+<filename moreinfo="none">%%SYSCONFDIR%%/gfarm2.conf</filename>
+(プライベートモードの場合は、
+<filename moreinfo="none">%%SYSCONFDIR%%/gfsd.conf</filename>)
+がホスト上に存在することを前提としています。
+存在しない場合は、メタデータサーバから設定ファイルをコピーしてください。
+</para>
+
+<para>
+<command moreinfo="none">config-gfsd</command>は下記に示した順に実行します。
+</para>
+
+<orderedlist numeration="arabic" inheritnum="ignore" continuation="restarts">
+<listitem>
+<para>
+スプールディレクトリを作成します。
+</para>
+</listitem>
+
+<listitem>
+<para>
+Gfarmの設定ファイル
+<filename moreinfo="none">%%SYSCONFDIR%%/gfarm2.conf</filename>や
+<filename moreinfo="none">%%SYSCONFDIR%%/gfsd.conf</filename>を更新します。
+</para>
+</listitem>
+
+<listitem>
+<para>
+<command moreinfo="none">gfsd</command>を起動/停止するためのスクリプト
+(または、設定ファイル)を作成します。
+</para>
+
+<para>
+大抵のOSにおいて、
+<command moreinfo="none">config-gfsd</command>は、
+起動/停止スクリプトgfsd(プライベートモードの場合は、
+<filename moreinfo="none">gfsd-ADDRESS</filename>)を
+<filename moreinfo="none">/etc/init.d</filename>または
+<filename moreinfo="none">/etc/rc.d/init.d</filename>に置きます。
+(どちらに置くかはOSに依存します。)
+</para>
+
+<para>
+Red Hat Enterprise Linux 7 またはそれ以降のsystemdで動作するLinuxにおいて、
+<command moreinfo="none">config-gfsd</command>は、
+ユニット設定ファイルである<filename moreinfo="none">gfsd.service</filename>
+(プライベートモードの場合は、
+<filename moreinfo="none">gfsd-ADDRESS.service</filename>)を
+<filename moreinfo="none">/etc/systemd/system</filename>ディレクトリに
+置きます。
+その後、<command moreinfo="none">systemctl enable gfsd.service</command>
+(または
+<command moreinfo="none">systemctl enable gfsd-ADDRESS.service</command>)
+を実行します。
+</para>
+</listitem>
+
+<listitem>
+<para>
+プライベートモードの場合、<command moreinfo="none">config-gfsd</command>は、
+<command moreinfo="none">gfhost -c</command>を実行することにより、
+メタデータサーバにファイルスプールノードであるホストを登録します。
+
+プライベートモードではない場合、
+<command moreinfo="none">config-gfsd</command>は、
+メタデータサーバにファイルスプールノードであるホストの登録方法を
+以下に示す例のように表示します。
+
+<screen>
+Please ask admin_user to register your host by the following command:
+
+/usr/bin/gfhost -c -a x86_64-centos7.0-linux -p 600 -n 2 ext540
+</screen>
+</para>
+</listitem>
+
+<listitem>
+<para>
+プライベートモードの場合、<command moreinfo="none">config-gfsd</command>は
+<command moreinfo="none">gfsd</command>を起動します。
+プライベートモードではない場合、
+<command moreinfo="none">config-gfsd</command>は
+<command moreinfo="none">gfsd</command>の起動方法を以下のように表示します。
+
+<screen>
+After that, start gfsd by the following command as a root:
+
+systemctl start gfsd.service
+</screen>
+</para>
+</listitem>
+
+<listitem>
+<para>
+<command moreinfo="none">unconfig-gfsd.sh</command> というスクリプトを
+%%SYSCONFDIR%% 上に作成します。
+このスクリプトは、<command moreinfo="none">gfsd</command> のセットアップの
+取り消しを行います。
+<command moreinfo="none">gfsd</command> を停止し、
+<command moreinfo="none">config-gfsd</command> によって作成されたファイル
+(<command moreinfo="none">unconfig-gfsd.sh</command> スクリプト自身を含む)
+をすべて消去します。
+</para>
+</listitem>
+</orderedlist>
+
+<para>
+<command moreinfo="none">config-gfsd</command>を使用して
+ファイルスプールノードをセットアップする前に、
+<command moreinfo="none">config-gfsd -t</command>を実行することを推奨します。
+<option>-t</option>オプションを付けて実行することにより、
+セットアップする代わりに全ての設定パラメータを表示します。
+</para>
+
+<screen>
+$ config-gfsd -t
+
+prefix                 [--prefix]:
+hostname                     [-h]: host1.example.org
+listen address               [-l]: (all local IP addresses)
+architecture                 [-a]: x86_64-centos6.5-linux
+port                         [-p]: 600
+ncpu                         [-n]: 8
+spool directory                  : /var/gfarm-spool
+rc script                        : /etc/init.d/gfsd
+gfarm client conf file           : /etc/gfarm2.conf
+gfsd pid file                    : /var/run/gfsd.pid
+</screen>
+
+<para>
+[]で囲まれたオプション名は、
+オプションとして指定できることを意味しています。
+</para>
+
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>--prefix</option> <parameter moreinfo="none">パス</parameter></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+以下に挙げた<command moreinfo="none">gfsd</command>に関連する複数のパスが
+設定されます。
+具体的には、以下の通りです。
+</para>
+
+  <itemizedlist>
+  <listitem>
+  <para>
+  <command moreinfo="none">gfsd</command>のスプールディレクトリ:
+  <filename moreinfo="none">PREFIX/var/gfarm-spool</filename>
+  </para>
+  </listitem>
+
+  <listitem>
+  <para>
+  <command moreinfo="none">gfsd</command>のPIDファイルを置くためのディレクトリ:
+  <filename moreinfo="none">PREFIX/var/run</filename>
+  </para>
+  </listitem>
+
+  <listitem>
+  <para>
+  設定ファイルが置かれたディレクトリ:
+  <filename moreinfo="none">PREFIX/etc</filename>
+  </para>
+  </listitem>
+
+  <listitem>
+  <para>
+  <command moreinfo="none">gfsd</command>の起動/停止スクリプトが置かれた
+  ディレクトリ:
+  <filename moreinfo="none">PREFIX/etc/init.d </filename> か、
+  <filename moreinfo="none">PREFIX/rc.d/init.d/etc</filename>
+  これはOSに依存します。
+  </para>
+  </listitem>
+
+  <listitem>
+  <para>
+  ホスト上でsystemdが起動している場合に、特殊な例外が存在します。
+  そのホスト上で<option>--prefix</option>オプションとして空文字を指定する際、
+  <command moreinfo="none">config-gfsd</command>はsystemdに
+  ユニット設定ファイルを置きません。
+  その代わりに、<filename moreinfo="none">PREFIX/etc/init.d</filename>に
+  旧形式の起動/停止スクリプトを置きます。
+  </para>
+  </listitem>
+
+  <listitem>
+  <para>
+  セットアップを取り消すスクリプト
+  <command moreinfo="none">unconfig-gfsd.sh</command>: 
+  <command moreinfo="none">PREFIX/etc/unconfig-gfsd.sh</command>
+  </para>
+  </listitem>
+  </itemizedlist>
+
+<para>
+デフォルトでは""(空文字列)です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-a</option> <parameter moreinfo="none">アーキテクチャ</parameter></term>
+<listitem>
+<para>
+ホストのアーキテクチャを指定します。
+<command moreinfo="none">config-gfsd</command>は、
+指定されたアーキテクチャをgfhost -c コマンドに<option>-a</option>オプションの引数
+として渡します。デフォルトで、
+<command moreinfo="none">config-gfsd</command>はアーキテクチャを推測しそれを使用します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-p</option> <parameter moreinfo="none">ポート番号</parameter></term>
+<listitem>
+<para>
+<command moreinfo="none">gfsd</command>が待ち受けるTCPポート番号を指定します。
+デフォルトではプライベートモードの場合に10600、
+それ以外では600が指定されます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option> <parameter moreinfo="none">ホスト名</parameter></term>
+<listitem>
+<para>
+ホスト名を指定することができます。
+<command moreinfo="none">config-gfsd</command>は、
+指定されたホスト名をgfhost -c コマンドに非オプションの引数として渡します。
+デフォルトでは、DNS上におけるそのホストの完全修飾ドメイン名(FQDN)となります。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l</option> <parameter moreinfo="none">IPアドレス</parameter></term>
+<listitem>
+<para>
+<command moreinfo="none">gfsd</command>の待ち受けるアドレスを指定すること
+ができます。
+デフォルトでは、全てのローカルIPアドレスで待ち受けます。
+オプションが指定された場合、以下に挙げた変更が生じます。
+</para>
+
+  <itemizedlist>
+  <listitem>
+  <para>
+  <command moreinfo="none">config-gfsd</command>が起動/停止スクリプトを
+  作成する際、そのスクリプト名は、<filename moreinfo="none">gfsd</filename>
+  から<filename moreinfo="none">gfsd-ADDRESS</filename>に変更されます。
+  </para>
+  </listitem>
+
+  <listitem>
+  <para>
+  <command moreinfo="none">config-gfsd</command>がsystemdの設定ファイルを
+  作成する際、そのファイル名は、
+  <filename moreinfo="none">gfsd.service</filename>から
+  <filename moreinfo="none">gfsd-ADDRESS.service</filename>に変更されます。
+  </para>
+  </listitem>
+
+  <listitem>
+  <para>
+  スプールディレクトリは、
+  <filename moreinfo="none">PREFIX/var/gfarm-spool</filename>から
+  <filename moreinfo="none">PREFIX/var/gfarm-spool-ADDRESS</filename>
+  に変更されます。
+  ただし、PREFIXは<option>--prefix</option>で指定された接頭辞です。
+  </para>
+  </listitem>
+  </itemizedlist>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n</option> <parameter moreinfo="none">cpu数</parameter></term>
+<listitem>
+<para>
+ホストのCPU数を指定することができます。
+<command moreinfo="none">config-gfsd</command>は、
+指定されたCPU数をgfhost -c コマンドに<option>-n</option>オプションの引数
+として渡します。
+デフォルトでは、
+<command moreinfo="none">config-gfsd</command>はCPU数を推測しその値を与えます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--help</option></term>
+<listitem>
+<para>
+このコマンドの使用法を表示して、終了します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+プライベートモードを有効にします。
+<command moreinfo="none">config-gfsd</command>は、
+ルート権限なしで実行可能なGfarmファイルシステムをセットアップします。
+具体的には、以下の通りに設定手順を変更します。
+</para>
+
+  <itemizedlist>
+  <listitem>
+  <para>
+  <command moreinfo="none">gfsd</command>におけるデフォルトの待ち受け
+  ポート番号(<option>-p</option>に対応)が、600から10600に変更されます。
+  </para>
+  </listitem>
+
+  <listitem>
+  <para>
+  <filename moreinfo="none">%%SYSCONFDIR%%/gfarm2.conf</filename>の代わりに、
+  <filename moreinfo="none">%%SYSCONFDIR%%/gfsd.conf</filename>設定ファイル
+  を更新します。
+  </para>
+  </listitem>
+
+  <listitem>
+  <para>
+  gfhost -cコマンドを実行することにより、
+  ファイルスプールノードを登録します。
+  </para>
+  </listitem>
+
+  <listitem>
+  <para>
+  <option>-N</option>オプションが付与されているかに関わらず、
+  <command moreinfo="none">gfsd</command>を起動します。
+  </para>
+  </listitem>
+  </itemizedlist>
+<para>
+<option>-S</option>オプションは、起動/停止スクリプトや
+設定ファイルの位置を決して変更しません。
+これらのファイルのデフォルト位置は
+通常では特権ユーザの場合のみ書き込み可能であるため、
+<command moreinfo="none">config-gfsd</command>はこれらのファイルの生成に
+失敗してしまいます。この問題を回避するためには、
+<option>--prefix</option>オプションを合わせて指定してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-N</option></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+<command moreinfo="none">gfsd</command>を起動しません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-f</option></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+強制的に存在しているセットアップを上書きします。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-t</option></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+人間が読みやすい形式で全ての設定パラメータの値を表示した後、
+すぐに終了します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-T</option></term>
+<listitem>
+<para>
+<option>-t</option>オプションと似ていますが、
+設定値をKEY=VALUE形式で表示します。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="files"><title>FILES</title>
+<variablelist>
+<varlistentry>
+<term><filename moreinfo="none">%%SYSCONFDIR%%/gfarm2.conf</filename></term>
+<listitem>
+<para>
+クライアント側のGfarmが参照する設定ファイル
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><filename moreinfo="none">%%SYSCONFDIR%%/gfsd.conf</filename></term>
+<listitem>
+<para>
+<command moreinfo="none">gfsd</command>が参照する設定ファイル
+(プライベートモードの場合のみ使用されます)
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><filename moreinfo="none">/etc/init.d/gfsd</filename></term>
+<listitem>
+<para>
+<command moreinfo="none">gfsd</command>が参照する起動/停止スクリプト
+ファイル
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><filename moreinfo="none">/etc/systemd/system/gfsd.service</filename></term>
+<listitem>
+<para>
+systemdにより読み込まれる、
+<command moreinfo="none">gfsd</command>のユニット設定ファイル
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id="see-also"><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>config-gfarm</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+</para>
+
+</refsect1>
+
+</refentry>
