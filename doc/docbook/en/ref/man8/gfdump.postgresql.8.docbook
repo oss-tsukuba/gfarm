@@ -41,10 +41,10 @@ of Gfarm, managed by PostgreSQL running as a backend database.
 You need to execute this command on the host that the backend database of
 PostgreSQL is running.
 The command reads <filename moreinfo="none">gfmd.conf</filename>, the
-configuration file of gfmd to get access information about the backend
-database.
-If gfmd is configured in the non-private mode, the root privilege is
-required to read the file.
+configuration file of <command moreinfo="none">gfmd</command> to get access
+information about the backend database.
+If <command moreinfo="none">gfmd</command> is configured in the non-private
+mode, the root privilege is required to read the file.
 </para>
 
 <para>
@@ -63,7 +63,7 @@ More specifically, it does the followings.
 <orderedlist numeration="arabic" inheritnum="ignore" continuation="restarts">
 <listitem>
 <para>
-Stop gfmd if running.
+Stop <command moreinfo="none">gfmd</command> if running.
 </para>
 </listitem>
 
@@ -87,13 +87,14 @@ Restore a database from the dump file.
 
 <listitem>
 <para>
-Delete the current journal file of gfmd, if exists.
+Delete the current journal file of <command moreinfo="none">gfmd</command>,
+if exists.
 </para>
 </listitem>
 
 <listitem>
 <para>
-Start gfmd again.
+Start <command moreinfo="none">gfmd</command> again.
 </para>
 </listitem>
 </orderedlist>
@@ -110,7 +111,7 @@ Start gfmd again.
 If this option is given,
 <command moreinfo="none">gfdump.postgresql</command> reads
 <filename moreinfo="none">PREFIX/etc/gfmd.conf</filename> as the
-configuration file of gfmd.
+configuration file of <command moreinfo="none">gfmd</command>.
 By default, it reads 
 <filename moreinfo="none">%%SYSCONFDIR%%/etc/gfmd.conf</filename>.
 </para>
@@ -123,8 +124,8 @@ By default, it reads
 <para>
 Specify an installation prefix of the backend database (e.g. /usr/local).
 When <command moreinfo="none">gfdump.postgresql</command> executes a
-PostgreSQL command such as <command>pg_dump</command>, it assumes the
-command is installed under the given prefix.
+PostgreSQL command such as <command moreinfo="none">pg_dump</command>,
+it assumes the command is installed under the given prefix.
 If this option is omitted,
 <command moreinfo="none">gfdump.postgresql</command> searches directories
 listed in the environment variable <envar>PATH</envar> for the commands.
@@ -191,7 +192,7 @@ Dump mode.
 <term><option>-n</option></term>
 <listitem>
 <para>
-Do not start/stop gfmd.
+Do not start/stop <command moreinfo="none">gfmd</command>.
 </para>
 </listitem>
 </varlistentry>
@@ -214,7 +215,7 @@ Restore mode.
 <term><filename moreinfo="none">%%SYSCONFDIR%%/gfmd.conf</filename></term>
 <listitem>
 <para>
-configuration file for metadata server, gfmd
+configuration file for <command moreinfo="none">gfmd</command>
 </para>
 </listitem>
 </varlistentry>
