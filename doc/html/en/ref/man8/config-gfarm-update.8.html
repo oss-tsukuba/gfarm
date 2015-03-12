@@ -8,7 +8,7 @@
 <a name="config-gfarm-update.8"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
-<p>config-gfarm-update — dump/restore Gfarm metadata</p>
+<p>config-gfarm-update — upgrades/updates metadata server of Gfarm</p>
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
@@ -22,7 +22,7 @@
 the backend database of a metadata server.
 Unless the metadata server is configured as the private mode,
 the root privilege is required to run this command.
-It reads the configuration file for gfmd
+It reads the configuration file for <span class="command"><strong>gfmd</strong></span>
 (<code class="filename">gfmd.conf</code>), in order to get
 information for accessing the backend database.
 </p>
@@ -52,12 +52,12 @@ With <code class="option">--update</code> option,
 and/or data in the database for upgrading, if needed.
 </p>
 <p>
-When you update/upgrade the metadata server, you must stop gfmd beforehand.
+When you update/upgrade the metadata server, you must stop
+<span class="command"><strong>gfmd</strong></span> beforehand.
 If there are some metadata servers in a file system, run
 <span class="command"><strong>config-gfarm-update</strong></span> on every metadata
 servers.
-After the update/upgrade, it starts a metadata server on the host by
-default.
+After the update/upgrade, it starts a metadata server on the host.
 </p>
 <p>
 Like <span class="command"><strong>config-gfarm</strong></span>,
@@ -108,7 +108,7 @@ to the PostgreSQL server is established automatically.
 If this option is given,
 <span class="command"><strong>config-gfarm-update</strong></span> reads
 <code class="filename">PREFIX/etc/gfmd.conf</code> as the
-configuration file of gfmd.
+configuration file of <span class="command"><strong>gfmd</strong></span>.
 By default, it reads 
 <code class="filename">%%SYSCONFDIR%%/etc/gfmd.conf</code>.
 </p></dd>
@@ -122,7 +122,7 @@ If this option is omitted,
 <span class="command"><strong>config-gfarm-update</strong></span> searches directories
 listed in the environment variable <code class="envar">PATH</code> for the commands.
 </p></dd>
-<dt><span class="term"><code class="option">-l</code></span></dt>
+<dt><span class="term"><code class="option">-l</code> <em class="parameter"><code>path</code></em></span></dt>
 <dd>
 <p>
 Specify a path to the directory where the backend database puts files to
@@ -159,7 +159,8 @@ is specified.
 </p></dd>
 <dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>file</code></em></span></dt>
 <dd><p>
-Specify a path to the directory where gfmd puts journal files.
+Specify a path to the directory where <span class="command"><strong>gfmd</strong></span>
+puts journal files.
 The default value is
 <code class="filename">PREFIX/var/gfarm-metadata/journal</code>
 where PREFIX is a prefix given by <code class="option">--prefix</code> option.
@@ -175,14 +176,9 @@ then exit immediately.
 </p></dd>
 <dt><span class="term"><code class="option">-N</code></span></dt>
 <dd><p>
-Do not start gfmd after update/upgrade.
+Do not start <span class="command"><strong>gfmd</strong></span> after update/upgrade.
 This option takes effect only when also <code class="option">--update</code> option
 is specified.
-</p></dd>
-<dt><span class="term"><code class="option">-t</code></span></dt>
-<dd><p>
-Show values of all configurable parameters in human readable format,
-then exit immediately.
 </p></dd>
 <dt><span class="term"><code class="option">-r</code></span></dt>
 <dd><p>
@@ -203,7 +199,7 @@ is specified.
 <div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfmd.conf</code></span></dt>
 <dd><p>
-configuration file for metadata server, gfmd
+configuration file for <span class="command"><strong>gfmd</strong></span>
 </p></dd>
 </dl></div>
 </div>

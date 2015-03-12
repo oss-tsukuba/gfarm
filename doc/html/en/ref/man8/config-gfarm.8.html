@@ -19,7 +19,8 @@
 <p>
 <span class="command"><strong>config-gfarm</strong></span> is a utility to set up a
 metadata server of Gfarm file system.
-The server program for a metadata server is named gfmd.
+The server program for a metadata server is named
+<span class="command"><strong>gfmd</strong></span>.
 <span class="command"><strong>config-gfarm</strong></span> is required to be run with
 the root privilege, unless you use the file system for private purpose such
 as development, evaluation or test of Gfarm.
@@ -40,7 +41,7 @@ Generate Gfarm configuration files
 <li class="listitem">
 <p>
 Create scripts (or configuration files) to start/stop the backend
-database and the Gfarm metadata server named gfmd.
+database and <span class="command"><strong>gfmd</strong></span>.
 </p>
 <p>
 On most systems, <span class="command"><strong>config-gfarm</strong></span> puts
@@ -62,8 +63,17 @@ respectively.
 </p>
 </li>
 <li class="listitem"><p>
-Start the backend database and gfmd.
+Start the backend database and <span class="command"><strong>gfmd</strong></span>.
 </p></li>
+<li class="listitem">
+Put the script <span class="command"><strong>unconfig-gfarm.sh</strong></span> on
+%%SYSCONFDIR%%.
+The script does unconfiguration of the metadata server.
+It stops <span class="command"><strong>gfmd</strong></span> and the backend database,
+and removes all files created by
+<span class="command"><strong>config-gfarm</strong></span> including 
+<span class="command"><strong>unconfig-gfarm.sh</strong></span> itself.
+</li>
 </ol></div>
 <p>
 Before set up a metadata server using
@@ -112,7 +122,8 @@ that option.
 <dt><span class="term"><code class="option">--prefix</code> <em class="parameter"><code>path</code></em></span></dt>
 <dd>
 <p>
-Configure some paths related to gfmd and the backend database.
+Configure some paths related to <span class="command"><strong>gfmd</strong></span>
+and the backend database.
 Specifically, the followings are affected.
 </p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
@@ -131,14 +142,16 @@ Specifically, the followings are affected.
   When both options are specified, <code class="option">-L</code> option has preference.
   </p></li>
 <li class="listitem"><p>
-  The directory to put journal files of gfmd.
+  The directory to put journal files of
+  <span class="command"><strong>gfmd</strong></span>.
   That is
   <code class="filename">PREFIX/var/gfarm-metadata/journal</code>.
   The path can also be changed by <code class="option">-j</code> option.
   When both options are specified, <code class="option">-j</code> option has preference.
   </p></li>
 <li class="listitem"><p>
-  The directory to put PID files of gfmd and the backend database.
+  The directory to put PID files of <span class="command"><strong>gfmd</strong></span>
+  and the backend database.
   That is <code class="filename">PREFIX/var/run</code>.
   </p></li>
 <li class="listitem"><p>
@@ -146,7 +159,8 @@ Specifically, the followings are affected.
   That is <code class="filename">PREFIX/etc</code>.
   </p></li>
 <li class="listitem"><p>
-  The directory of start/stop scripts for gfmd and its backend database.
+  The directory of start/stop scripts for
+  <span class="command"><strong>gfmd</strong></span> and its backend database.
   That is <code class="filename">PREFIX/etc/init.d</code> or
   <code class="filename">PREFIX/rc.d/init.d/etc</code> which is
   depending on operating systems.
@@ -158,6 +172,11 @@ Specifically, the followings are affected.
   put unit configuration files for systemd.
   Instead, it puts traditional start/stop scripts at
   <code class="filename">PREFIX/etc/init.d</code>.
+  </p></li>
+<li class="listitem"><p>
+  The unconfiguration script
+  <span class="command"><strong>unconfig-gfarm.sh</strong></span>.
+  That is <span class="command"><strong>PREFIX/etc/unconfig-gfarm.sh</strong></span>.
   </p></li>
 </ul></div>
 <p>
@@ -194,8 +213,8 @@ Since the default value differs depending on operating systems, execute
 </p></dd>
 <dt><span class="term"><code class="option">-u</code> <em class="parameter"><code>username</code></em></span></dt>
 <dd><p>
-The configured gfmd will connect to the backend database as the specified
-username.
+The configured <span class="command"><strong>gfmd</strong></span> will connect to
+the backend database as the specified username.
 The default is "gfarm".
 </p></dd>
 <dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>prefix</code></em></span></dt>
@@ -247,7 +266,8 @@ The default is the fully qualified domainname of the host.
 </p></dd>
 <dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>directory</code></em></span></dt>
 <dd><p>
-Specify a path to the directory where gfmd puts journal files.
+Specify a path to the directory where
+<span class="command"><strong>gfmd</strong></span> puts journal files.
 This option takes an effect only when metadata replication is enabled by
 <code class="option">-r</code> option.
 The default value is
@@ -273,7 +293,8 @@ The default is 10602.
 </p></dd>
 <dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>port</code></em></span></dt>
 <dd><p>
-Specify a TCP port number the configured gfmd listens on.
+Specify a TCP port number the configured
+<span class="command"><strong>gfmd</strong></span> listens on.
 The default value is 10601 in case of the private mode, 601 otherwise.
 </p></dd>
 <dt><span class="term"><code class="option">-a</code> <em class="parameter"><code>method</code></em></span></dt>
@@ -297,8 +318,9 @@ the configuration procedures as follows:
 </p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem"><p>
-  The default listen port of gfmd (corresponding with <code class="option">-m</code>
-  option) is changed from 601 to 10601.
+  The default listen port of <span class="command"><strong>gfmd</strong></span>
+  (corresponding with <code class="option">-m</code> option) is changed from 601
+  to 10601.
   </p></li>
 <li class="listitem"><p>
   The user map file
@@ -332,7 +354,7 @@ To avoid this problem, also specify <code class="option">--prefix</code> option.
 </dd>
 <dt><span class="term"><code class="option">-N</code></span></dt>
 <dd><p>
-Do not start gfmd or the backend database.
+Do not start <span class="command"><strong>gfmd</strong></span> or the backend database.
 </p></dd>
 <dt><span class="term"><code class="option">-f</code></span></dt>
 <dd><p>
@@ -360,8 +382,8 @@ By default, the password is generated automatically.
 </p></dd>
 <dt><span class="term"><code class="option">-w</code> <em class="parameter"><code>password</code></em></span></dt>
 <dd><p>
-The configured gfmd will connect the backend database with the specified
-password.
+The configured <span class="command"><strong>gfmd</strong></span> will connect the
+backend database with the specified password.
 This option corresponds with <code class="option">-u</code> option which specifies
 the username.
 By default, the password is generated automatically.
@@ -390,7 +412,7 @@ configuration file for Gfarm clients
 </p></dd>
 <dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfmd.conf</code></span></dt>
 <dd><p>
-configuration file for gfmd
+configuration file for <span class="command"><strong>gfmd</strong></span>
 </p></dd>
 <dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfsd.conf</code></span></dt>
 <dd><p>
@@ -406,7 +428,7 @@ start/stop script for PostgreSQL running as backend database of Gfarm
 </p></dd>
 <dt><span class="term"><code class="filename">/etc/init.d/gfmd</code></span></dt>
 <dd><p>
-start/stop script for gfmd
+start/stop script for <span class="command"><strong>gfmd</strong></span>
 </p></dd>
 <dt><span class="term"><code class="filename">/etc/systemd/system/gfarm-pgsql.service</code></span></dt>
 <dd><p>
@@ -415,7 +437,8 @@ read by systemd
 </p></dd>
 <dt><span class="term"><code class="filename">/etc/systemd/system/gfmd.service</code></span></dt>
 <dd><p>
-unit configuration file for gfmd, read by systemd
+unit configuration file for <span class="command"><strong>gfmd</strong></span>,
+read by systemd
 </p></dd>
 </dl></div>
 </div>
