@@ -1,0 +1,339 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<!-- $Id$ -->
+
+<refentry id="config-gfarm-update.8">
+
+<refentryinfo><date>2 Feb 2015</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>config-gfarm-update</refentrytitle>
+<manvolnum>8</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>config-gfarm-update</refname>
+<refpurpose>Gfarmメタデータの更新</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">config-gfarm-update</command>
+    <arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">config-gfarm-update</command>
+    <arg choice="plain" rep="norepeat">--update</arg>
+    <arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>
+<command moreinfo="none">config-gfarm-update</command>は、
+メタデータサーバにおけるバックエンドDBを
+アップグレード/アップデートするコマンドです。
+メタデータサーバがプライベートモードで設定されている場合を除き、
+このコマンドを実行するためにはroot権限が必要です。
+バックエンドDBに接続するための情報を得るため、
+起動時に<command moreinfo="none">gfmd</command>の設定ファイル
+(<filename moreinfo="none">gfmd.conf</filename>)を読み込みます。
+</para>
+
+<para>
+<command moreinfo="none">config-gfarm-update</command>は、
+以下に示すバックエンドDBの機能を有効にすることができます。
+</para>
+
+  <itemizedlist>
+  <listitem>
+  <para>XML Path言語(XPath)のサポート [-X]</para>
+  </listitem>
+
+  <listitem>
+  <para>メタデータサーバ内でメタデータの複製 [-r]</para>
+  </listitem>
+
+  <listitem>
+  <para>チェックサム計算 [-d]</para>
+  </listitem>
+  </itemizedlist>
+
+<para>
+バックエンドDBがこれらの機能をサポートするかどうかは、
+<command moreinfo="none">config-gfarm</command>によって初期設定が
+行われたときに決定されます。
+初期設定後に機能を有効にしたい場合は、
+<command moreinfo="none">config-gfarm-update --update</command>に
+上記の一覧中の [ ] で囲まれたオプションをつけて実行してください。
+</para>
+
+<para>
+<command moreinfo="none">config-gfarm-update</command>は、
+バックエンドDBのアップグレードにも使用されます。
+このコマンドを実行することにより、
+データベース内のテーブルスキーマやデータが編集されます。
+Gfarmは古いリリースに対して互換性がない可能性があるため、
+アップグレードの必要がある場合は、<option>--update</option>オプションを付けて
+<command moreinfo="none">config-gfarm-update</command>を実行してください。
+</para>
+
+<para>
+メタデータサーバをアップデートやアップグレードする際、
+<command moreinfo="none">gfmd</command>を停止してから実行しなければ
+いけません。
+また、ファイルシステム内にメターデータサーバが複数存在する場合は、
+全てのメタデータサーバ上で<command moreinfo="none">config-gfarm-update</command>
+を実行してください。
+メタデータサーバのアップデートやアップグレード後、
+ホスト上のメタデータサーバは、
+このコマンドにより起動されます。
+</para>
+
+<para>
+<command moreinfo="none">config-gfarm</command>と同様に、
+<command moreinfo="none">config-gfarm-update</command>には、
+全ての設定パラメータの値を表示する<option>-t</option>オプションが存在します。
+このコマンドの実行例は以下の通りです。
+</para>
+
+<screen>
+$ config-gfarm-update -t
+prefix [--prefix]:
+metadata backend    [-b]: postgresql
+metadata directory  [-l]: /var/gfarm-pgsql
+postgresql admin user        [-U]: postgres
+postgresql admin password    [-W]: (auto generated)
+postgresql user              [-u]: gfarm
+postgresql password          [-w]: (auto generated)
+postgresql prefix            [-P]: /usr
+postgresql version           [-V]: 8.4
+postgresql XML supported     [-X]: no
+postgresql data checksum support
+                             [-E]: no
+portmaster port              [-p]: 10602
+metadata replication         [-r]: yes
+metadata journal directory   [-j]: /var/gfarm-metadata/journal
+digest type                  [-d]: md5
+</screen>
+
+<para>
+アップデートやアップグレードを行う前に、
+<command moreinfo="none">config-gfarm-update -t</command>
+を実行することを推奨します。
+</para>
+
+<para>
+バックエンドDBがPostgreSQLである場合、
+かつ<command moreinfo="none">config-gfarm-update</command>が
+<option>--update</option>オプション無しで処理された場合は、
+<command>psql</command>コマンドが実行されます。
+このコマンドは、バックエンドDBへのフロントエンドターミナルであり、
+対話的にクエリを入力することができます。
+<command>psql</command>はPostgreSQLへ
+自動的に接続を行うので便利です。
+</para>
+
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>--prefix</option> <parameter moreinfo="none">パス</parameter></term>
+<listitem>
+<para>
+<command moreinfo="none">config-gfarm-update</command>は、
+<command moreinfo="none">gfmd</command>の設定ファイル
+<filename moreinfo="none">PREFIX/etc/gfmd.conf</filename>を読み込みます。
+デフォルトでは、
+<filename moreinfo="none">%%SYSCONFDIR%%/etc/gfmd.conf</filename>
+が読み込まれます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter moreinfo="none">インストール先のディレクトリ</parameter></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+バックエンドDBに対するインストール先のディレクトリ
+(例えば、/usr/local)を指定することができます。
+<command moreinfo="none">config-gfarm-update</command>が<command>psql</command>
+などのPostgreSQLコマンドを実行する際、
+指定したディレクトリの下にこのコマンドが
+インストールされていることを前提としています。
+このオプションを省略した場合、
+<command moreinfo="none">config-gfarm-update</command>は、
+環境変数<envar>PATH</envar>のリストからそのコマンドへのディレクトリを
+探し出します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l</option> <parameter moreinfo="none">パス</parameter></term>
+<listitem>
+<para>
+バックエンドDBがGfarmのメタデータを記録したファイルを置く
+ディレクトリへのパスを指定することができます。
+</para>
+<para>
+バックエンドDBがPostgreSQLである場合、
+指定したディレクトリは一般にPGDATAと呼ばれています。
+デフォルトでは<filename moreinfo="none">PREFIX/var/gfarm-pgsql</filename>
+が設定されており、このPREFIXは<option>--prefix</option>オプションで
+与えられた値となります。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-f</option> <parameter moreinfo="none">コマンドファイル</parameter></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+<command moreinfo="none">config-gfarm-update</command>がPostgreSQLへの
+フロントエンドターミナルとして<command>psql</command>を実行する際、
+<command moreinfo="none">config-gfarm-update</command>は
+<option>-f</option>オプションと与えられたファイル引数を
+<command>psql</command>に渡します。
+そして、<command>psql</command>は、対話的にコマンドを読み込むのではなく、
+このファイル内に書き込まれたコマンドを解釈します。
+ただし、<option>--update</option>オプションが指定されている場合、
+このオプションは無視されます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-o</option> <parameter moreinfo="none">オプション</parameter></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+<command moreinfo="none">config-gfarm-update</command>がPostgreSQLへの
+フロントエンドターミナルとして<command>psql</command>を実行する際、
+<command moreinfo="none">config-gfarm-update</command>は
+与えられたオプションを<command>psql</command>に渡します。
+ただし、<option>--update</option>オプションが指定されている場合、
+このオプションは無視されます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-j</option> <parameter moreinfo="none">ジャーナルファイル用ディレクトリ</parameter></term>
+<listitem>
+<para>
+<command moreinfo="none">gfmd</command>によりジャーナルファイルが置かれる
+ディレクトリのパスを指定することができます。デフォルトでは、
+<filename moreinfo="none">PREFIX/var/gfarm-metadata/journal</filename>
+が設定されており、このPREFIXは<option>--prefix</option>オプションで
+与えられた値となります。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--help</option></term>
+<listitem>
+<para>
+このコマンドの使用法を表示して、終了します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-t</option></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+人間が読みやすい形式で全ての設定パラメータの値を表示した後、
+すぐに終了します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-N</option></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+アップデートやアップグレードを実行した後、
+<command moreinfo="none">gfmd</command>を起動/停止しません。
+このオプションは<option>--update</option>オプション指定時のみ
+有効となります。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+メタデータサーバ内でメタデータの複製を有効にします。
+このオプションは<option>--update</option>オプション指定時のみ
+有効となります。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d</option> <parameter moreinfo="none">ダイジェストタイプ</parameter></term>
+<listitem>
+<para>
+チェックサム計算を有効にし、チェックサムのダイジェストタイプを指定します。
+引数 <parameter moreinfo="none">ダイジェストタイプ</parameter> には、
+そのホスト上にインストールされた OpenSSL ライブラリが対応しているタイプ名
+を小文字 (たとえば "md5") で指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-X</option></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+拡張ファイル属性をクエリするためのXML Path言語(XPath)
+のサポートを有効にします。
+このオプションは<option>--update</option>オプション指定時のみ
+有効となります。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="files"><title>FILES</title>
+<variablelist>
+<varlistentry>
+<term><filename moreinfo="none">%%SYSCONFDIR%%/gfmd.conf</filename></term>
+<listitem>
+<para>
+<command moreinfo="none">gfmd</command>が参照する設定ファイル
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="see-also"><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>config-gfarm</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfmd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>psql</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+</para>
+
+</refsect1>
+
+</refentry>
