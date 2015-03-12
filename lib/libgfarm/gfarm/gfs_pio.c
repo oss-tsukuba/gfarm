@@ -1223,9 +1223,8 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 		e = GFARM_ERR_NO_ERROR;
 		goto finish;
 	}
-	/* purge the buffer for reading in case of GFARM_FILE_APPEND */
-	if ((gf->open_flags & GFARM_FILE_APPEND) &&
-	    (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) == 0)
+	/* purge the buffer for reading to avoid unintended overwrite */
+	if ((gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) == 0)
 		gfs_pio_purge(gf);
 	gf->mode |= GFS_FILE_MODE_BUFFER_DIRTY;
 	memcpy(gf->buffer + gf->p, buffer, size);
@@ -1525,9 +1524,8 @@ gfs_pio_putc(GFS_File gf, int c)
 			goto finish;
 		}
 	}
-	/* purge the buffer for reading in case of GFARM_FILE_APPEND */
-	if ((gf->open_flags & GFARM_FILE_APPEND) &&
-	    (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) == 0)
+	/* purge the buffer for reading to avoid unintended overwrite */
+	if ((gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) == 0)
 		gfs_pio_purge(gf);
 	gf->mode |= GFS_FILE_MODE_BUFFER_DIRTY;
 	gf->buffer[gf->p++] = c;
