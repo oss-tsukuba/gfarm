@@ -169,7 +169,7 @@ listed in the environment variable <envar>PATH</envar> for the commands.
 </varlistentry>
 
 <varlistentry>
-<term><option>-l</option></term>
+<term><option>-l</option> <parameter moreinfo="none">path</parameter></term>
 <listitem>
 <para>
 Specify a path to the directory where the backend database puts files to
