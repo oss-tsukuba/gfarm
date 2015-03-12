@@ -1,0 +1,248 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<!-- $Id$ -->
+
+<refentry id="gfdump.postgresql.8">
+
+<refentryinfo><date>30 Jan 2015</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfdump.postgresql</refentrytitle>
+<manvolnum>8</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>gfdump.postgresql</refname>
+<refpurpose>Gfarmメタデータのダンプ/リストア</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfdump.postgresql</command>
+    <arg choice="plain" rep="norepeat">-d</arg>
+    <arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfdump.postgresql</command>
+    <arg choice="plain" rep="norepeat">-r</arg>
+    <arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>
+<command moreinfo="none">gfdump.postgresql</command>は、
+バックエンドDBとして動作しているPostgreSQLにより管理された、
+Gfarmのメタデータをダンプ、またはリストアすることができます。
+このコマンドを実行する場合は、
+バックエンドDBであるPostgreSQLが起動しているホスト上でなければいけません。
+このコマンドは、実行時にバックエンドDBのアクセス情報を取得するため、
+<command moreinfo="none">gfmd</command>の設定ファイル
+<filename moreinfo="none">gfmd.conf</filename>を読み込みます。
+<command moreinfo="none">gfmd</command>がプライベートモードではない状態で
+設定された場合、このファイルを読み込むためには、ルート権限が必要となります。
+</para>
+
+<para>
+<command moreinfo="none">gfdump.postgresql</command>が
+<option>-d</option>オプション付きで実行された際は、
+カレントディレクトリにdb.outファイルを作成し、
+データベースをそのファイルにダンプします。
+</para>
+
+<para>
+<command moreinfo="none">gfdump.postgresql</command>が
+<option>-r</option>オプション付きで実行された際は、
+カレントディレクトリに置かれた<filename moreinfo="none">db.out</filename>から
+データベースをリストアします。
+さらに具体的な説明を下記に示します。
+</para>
+
+<orderedlist numeration="arabic" inheritnum="ignore" continuation="restarts">
+<listitem>
+<para>
+<command moreinfo="none">gfmd</command>が起動している場合は停止します。
+</para>
+</listitem>
+
+<listitem>
+<para>
+データベースを削除します。
+</para>
+</listitem>
+
+<listitem>
+<para>
+データベースを作成します。
+</para>
+</listitem>
+
+<listitem>
+<para>
+ダンプファイルからデータベースをリストアします。
+</para>
+</listitem>
+
+<listitem>
+<para>
+<command moreinfo="none">gfmd</command>のジャーナルファイルが存在している
+場合は、そのファイルを削除します。
+</para>
+</listitem>
+
+<listitem>
+<para>
+<command moreinfo="none">gfmd</command>を起動します。
+</para>
+</listitem>
+</orderedlist>
+
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>--prefix</option> <parameter moreinfo="none">パス</parameter></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+<command moreinfo="none">gfdump.postgresql</command>は、
+<command moreinfo="none">gfmd</command>の設定ファイル
+<filename moreinfo="none">PREFIX/etc/gfmd.conf</filename>を読み込みます。
+デフォルトでは、<filename moreinfo="none">%%SYSCONFDIR%%/etc/gfmd.conf</filename>
+が読み込まれます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter moreinfo="none">インストール先のディレクトリ</parameter></term>
+<listitem>
+<para>
+バックエンドDBに対するインストール先のディレクトリ
+(例えば、/usr/local)を指定することができます。
+<command moreinfo="none">gfdump.postgresql</command>が
+<command moreinfo="none">pg_dump</command>といったPostgreSQLコマンドを
+実行する際は、指定したディレクトリの下にこのコマンドが
+インストールされていることを前提としています。
+このオプションを省略した場合、
+<command moreinfo="none">gfdump.postgresql</command>は、
+環境変数<envar>PATH</envar>のリストからそのコマンドへのディレクトリ
+を探し出します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>
+バックエンドDBがGfarmのメタデータを記録したファイルを置く
+ディレクトリへのパスを指定することができます。
+</para>
+<para>
+バックエンドDBがPostgreSQLである場合、
+そのディレクトリは一般にPGDATAと呼ばれています。
+デフォルトでは、
+<filename moreinfo="none">PREFIX/var/gfarm-pgsql</filename>が設定されており、
+このPREFIXは<option>--prefix</option>オプションで与えられた値となります。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-f</option> <parameter moreinfo="none">ダンプファイル</parameter></term>
+<listitem>
+<para>
+ダンプファイルの名前を指定することができます。
+デフォルトでは、カレントディレクトリパスに
+ファイル名<filename moreinfo="none">db.out</filename>を加えた値が設定されます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--help</option></term>
+<listitem>
+<para>
+このコマンドの使用法を表示して、終了します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-t</option></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+人間が読みやすい形式で全ての設定パラメータの値を表示した後、
+すぐに終了します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+ダンプモードで起動します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+<command moreinfo="none">gfmd</command>を起動/停止しません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>
+このオプションを付与した場合、
+リストアモードで起動します。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="files"><title>FILES</title>
+<variablelist>
+<varlistentry>
+<term><filename moreinfo="none">%%SYSCONFDIR%%/gfmd.conf</filename></term>
+<listitem>
+<para>
+<command moreinfo="none">gfmd</command>が参照する設定ファイル
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="see-also"><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>pg_dump</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>dropdb</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>createdb</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>psql</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfmd</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+</para>
+
+</refsect1>
+
+</refentry>
