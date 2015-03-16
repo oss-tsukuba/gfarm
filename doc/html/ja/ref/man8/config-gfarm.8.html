@@ -1,0 +1,483 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>config-gfarm</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="confog-gfarm.8"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>config-gfarm — Gfarmのメタデータサーバのセットアップ</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">config-gfarm</code>  [<em class="replaceable"><code>オプション</code></em>]</p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<span class="command"><strong>config-gfarm</strong></span>は、
+Gfarm ファイルシステムのメタサーバをセットアップするためのユーティリティです。
+メタデータサーバのサーバプログラムは'gfmd'と呼ばれています。
+Gfarmの開発、評価、またはテストといった
+私的な用途でファイルシステムを使用する場合を除き、
+<span class="command"><strong>config-gfarm</strong></span>を実行するためには、
+ルート権限が必要です。
+</p>
+<p>
+<span class="command"><strong>config-gfarm</strong></span>は下記に示した順に処理を実行します。
+</p>
+<div class="orderedlist"><ol class="orderedlist" type="1">
+<li class="listitem"><p>
+バックエンドDBをセットアップします。
+</p></li>
+<li class="listitem"><p>
+Gfarmの設定ファイル
+<code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code>や
+<code class="filename">%%SYSCONFDIR%%/gfsd.conf</code>を生成します。
+</p></li>
+<li class="listitem">
+<p>
+バックエンドDBや、<span class="command"><strong>gfmd</strong></span>と呼ばれる
+Gfarmメタデータサーバを起動/停止するためのスクリプト(または、設定ファイル)を作成します。
+</p>
+<p>
+大抵のOSにおいて、
+<span class="command"><strong>config-gfarm</strong></span>は、
+起動/停止スクリプト<span class="command"><strong>gfmd</strong></span>と
+<span class="command"><strong>gfarm-pgsql</strong></span>を
+<code class="filename">/etc/init.d</code>または
+<code class="filename">/etc/rc.d/init.d</code>に置きます。
+(どちらに置くのかは、OSに依存します。)
+</p>
+<p>
+Red Hat Enterprise Linux 7 またはそれ以降のsystemdで動作するLinuxにおいて、
+<span class="command"><strong>config-gfarm</strong></span>は、
+ユニット設定ファイルである<code class="filename">gfmd.service</code>や
+<code class="filename">gfarm-pgsql.service</code>を
+<code class="filename">/etc/systemd/system</code>ディレクトリに置きます。
+その後、
+<span class="command"><strong>systemctl enable gfmd.service</strong></span>、
+<span class="command"><strong>systemctl enable gfarm-pgsql.service</strong></span>
+を順に実行します。
+</p>
+</li>
+<li class="listitem"><p>
+バックエンドDBや、<span class="command"><strong>gfmd</strong></span>を起動します。
+</p></li>
+<li class="listitem"><p>
+<span class="command"><strong>unconfig-gfarm.sh</strong></span> というスクリプトを
+%%SYSCONFDIR%% 上に作成します。
+このスクリプトは、メタデータサーバのセットアップの取り消しを行います。
+<span class="command"><strong>gfmd</strong></span> とバックエンドDBを停止し、
+<span class="command"><strong>config-gfarm</strong></span> によって作成されたファイル
+(<span class="command"><strong>unconfig-gfarm.sh</strong></span> スクリプト自身を含む)
+をすべて消去します。
+</p></li>
+</ol></div>
+<p>
+<span class="command"><strong>config-gfarm</strong></span>を使用して
+メタデータサーバをセットアップする前に、
+<span class="command"><strong>config-gfarm -t</strong></span>を実行することを推奨します。
+<code class="option">-t</code>オプションを付けて実行することにより、
+セットアップする代わりに全ての設定パラメータを表示します。
+</p>
+<pre class="screen">
+$ config-gfarm -t
+prefix                 [--prefix]:
+metadata backend             [-b]: postgresql
+(available backend: postgresql )
+metadata     directory       [-l]: /var/gfarm-pgsql
+metadata log directory       [-L]: /var/gfarm-pgsql/pg_xlog
+postgresql admin user        [-U]: miles
+postgresql admin password    [-W]: (auto generated)
+postgresql user              [-u]: gfarm
+postgresql password          [-w]: (auto generated)
+postgresql prefix            [-P]: /usr
+postgresql version           [-V]: 9.2
+postgresql XML supported     [-X]: no
+metadata replication         [-r]: no
+metaserver hostname          [-h]: host1.example.org
+matadata admin user          [-A]: miles
+matadata admin dn            [-D]:
+portmaster port              [-p]: 10602
+gfmd port                    [-m]: 601
+auth type                    [-a]: sharedsecret
+rc script for gfmd               : /etc/init.d/gfmd
+rc script for backend            : /etc/init.d/gfarm-pgsql
+gfmd conf file                   : /etc/gfmd.conf
+gfarm client conf file           : /etc/gfarm2.conf
+gfmd pid file                    : /var/run/gfmd.pid
+backend pid file                 : /var/run/postmaster.pid
+</pre>
+<p>
+[ ]で囲まれたオプション名は、
+オプションとして指定できることを意味しています。
+</p>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">--prefix</code> <em class="parameter"><code>パス</code></em></span></dt>
+<dd>
+<p>
+このオプションを与えた場合、
+以下に挙げた<span class="command"><strong>gfmd</strong></span>とバックエンドDBに関連する
+複数のパスが設定されます。
+具体的には、以下の通りです。
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p>
+  Gfarmのメタデータを置くためのディレクトリ。
+  バックエンドDBがPostgreSQLである場合は、
+  <code class="filename">PREFIX/var/gfarm-pgsql</code>となります。
+  また、このパスは<code class="option">-L</code>オプションによって変更可能です。
+  <code class="option">--prefix</code>と<code class="option">-l</code>オプションを同時に指定した場合、
+  <code class="option">-l</code>オプションが優先されます。
+  </p></li>
+<li class="listitem"><p>
+  Gfarmのメタデータに対するログファイルを置くためのディレクトリ。
+  バックエンドDBがPostgreSQLである場合は、
+  <code class="filename">PREFIX/var/gfarm-pgsql/pg_xlog</code>となります。
+  また、このパスは<code class="option">-L</code>オプションによって変更可能です。
+  <code class="option">--prefix</code>と<code class="option">-L</code>オプションを同時に指定した場合、
+  <code class="option">-L</code>オプションが優先されます。
+  </p></li>
+<li class="listitem"><p>
+  <span class="command"><strong>gfmd</strong></span>のジャーナルファイルを置くためのディレクトリ。
+  これは、<code class="filename">PREFIX/var/gfarm-metadata/journal</code>となります。
+  また、このパスは<code class="option">-j</code>オプションによって変更可能です。
+  <code class="option">--prefix</code>と<code class="option">-j</code>オプションを同時に指定した場合、
+  <code class="option">-j</code>オプションが優先されます。
+  </p></li>
+<li class="listitem"><p>
+  <span class="command"><strong>gfmd</strong></span>とバックエンドDBのPIDファイル
+  を置くためのディレクトリ。
+  これは、<code class="filename">PREFIX/var/run</code>となります。
+  </p></li>
+<li class="listitem"><p>
+  設定ファイルを置くためのディレクトリ。
+  これは、<code class="filename">PREFIX/etc</code>となります。
+  </p></li>
+<li class="listitem"><p>
+  <span class="command"><strong>gfmd</strong></span>とバックエンドDBの起動/停止スクリプト
+  を置くためのディレクトリ。
+  これは、<code class="filename">PREFIX/etc/init.d</code>、または
+  <code class="filename">PREFIX/rc.d/init.d/etc</code>となります。
+  (どちらに置くのかは、OSに依存します。)
+  </p></li>
+<li class="listitem"><p>
+  ホスト上でsystemdが起動している場合に、特殊な例外が存在します。
+  そのホスト上で<code class="option">--prefix</code>オプションとして空文字列以外を指定すると、
+  <span class="command"><strong>config-gfarm</strong></span>はsystemdにユニット設定ファイルを置きません。
+  その代わりに、<code class="filename">PREFIX/etc/init.d</code>に
+  旧形式の起動/停止スクリプトを置きます。
+  </p></li>
+<li class="listitem"><p>
+  セットアップの取り消しを行うスクリプト
+  <span class="command"><strong>unconfig-gfarm.sh</strong></span>。
+  これは、<span class="command"><strong>PREFIX/etc/unconfig-gfarm.sh</strong></span>
+  となります。
+  </p></li>
+</ul></div>
+<p>
+デフォルトでは""(空文字列)です。
+</p>
+</dd>
+<dt><span class="term"><code class="option">-b</code> <em class="parameter"><code>バックエンドDB</code></em></span></dt>
+<dd>
+<p>
+バックエンドDBを指定することができます。
+現在、"postgresql" (PostgreSQL) だけがサポートされています。
+"ldap" (LDAP) は以前にサポートされていましたが、
+サポートは継続されていません。
+<span class="command"><strong>config-gfarm -t</strong></span>は、
+利用可能なバックエンドDBをリスト表示します。
+</p>
+<p>
+"postgresql" がリストに存在する場合、PostgreSQLがデフォルトとして選択されます。
+利用可能なバックエンドDBがldapのみである場合、
+LDAPがデフォルトとして選択されてしまいます。
+リストにないバックエンドDBをGfarmにサポートさせたい場合、
+Gfarmを再度コンパイルする必要があるため、
+注意してください。
+</p>
+</dd>
+<dt><span class="term"><code class="option">-d</code> <em class="parameter"><code>ダイジェストタイプ</code></em></span></dt>
+<dd><p>
+チェックサム計算を有効するとともに、チェックサムのダイジェストタイプを
+指定します。
+引数 <em class="parameter"><code>ダイジェストタイプ</code></em> には、
+ホスト上にインストールされた OpenSSL ライブラリが対応している
+ダイジェストタイプ名を小文字 (例: "md5") で記します。
+</p></dd>
+<dt><span class="term"><code class="option">-U</code> <em class="parameter"><code>Gfarmの管理ユーザ名</code></em></span></dt>
+<dd><p>
+Gfarmファイルシステムの管理ユーザ名を指定することができます。
+デフォルト値はOSによって異なるため、
+<span class="command"><strong>config-gfarm -t</strong></span>を実行し、
+ユーザ名を確認してください。
+</p></dd>
+<dt><span class="term"><code class="option">-u</code> <em class="parameter"><code>ユーザ名</code></em></span></dt>
+<dd><p>
+このオプションを付与した場合、
+セットアップした<span class="command"><strong>gfmd</strong></span>は、
+指定したユーザ名でバックエンドDBに接続します。
+デフォルトは、"gfarm"です。
+</p></dd>
+<dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>インストール先のディレクトリ</code></em></span></dt>
+<dd><p>
+このオプションを付与した場合、
+バックエンドDBに対するインストール先のディレクトリ
+(例えば、/usr/local)を指定することができます。
+<span class="command"><strong>config-gfarm</strong></span>がバックエンドDBの管理コマンド
+(例えば、PostgreSQLでの<span class="command"><strong>initdb</strong></span>)を実行する際、
+指定したディレクトリの下にこのコマンドが
+インストールされていることを前提としています。
+このオプションを省略した場合、
+<span class="command"><strong>config-gfarm</strong></span>は、
+環境変数<code class="envar">PATH</code>のリストからそのコマンドへのディレクトリを
+探し出します。
+</p></dd>
+<dt><span class="term"><code class="option">-V</code> <em class="parameter"><code>バージョン</code></em></span></dt>
+<dd><p>
+<span class="command"><strong>config-gfarm</strong></span>に対するバックエンドDBの
+バージョンを表示することができます。
+多くの場合、<span class="command"><strong>config-gfarm</strong></span>は、
+正しいバージョン番号を検出することができます。
+そのため、<span class="command"><strong>config-gfarm</strong></span>が
+バージョン番号の検出に失敗した場合にのみ、
+このオプションを使用することをお勧めします。
+</p></dd>
+<dt><span class="term"><code class="option">-l</code> <em class="parameter"><code>メタデータ用ディレクトリ</code></em></span></dt>
+<dd>
+<p>
+バックエンドDBがGfarmのメタデータを記録したファイルを置く
+ディレクトリへのパスを指定することができます。
+</p>
+<p>
+バックエンドDBがPostgreSQLである場合、
+指定したディレクトリは一般にPGDATAと呼ばれています。
+デフォルトでは<code class="filename">PREFIX/var/gfarm-pgsql</code>
+が設定されており、このPREFIXは<code class="option">--prefix</code>オプションで
+与えられた値となります。
+</p>
+</dd>
+<dt><span class="term"><code class="option">-L</code> <em class="parameter"><code>ログファイル用ディレクトリ</code></em></span></dt>
+<dd><p>
+バックエンドDBがログファイルを置くディレクトリへのパスを指定することができます。
+バックエンドDBがPostgreSQLである場合、
+デフォルトでは<code class="filename">PREFIX/var/gfarm-pgsql/pg_xlog</code>
+が設定されており、このPREFIXは<code class="option">--prefix</code>オプションで
+与えられた値となります。
+</p></dd>
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>ホスト名</code></em></span></dt>
+<dd><p>
+メタデータサーバを認識するために使用されるホスト名を指定することができます。
+デフォルトでは、DNS上におけるそのホストの完全修飾ドメイン名(FQDN)となります。
+</p></dd>
+<dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>ジャーナルファイル用ディレクトリ</code></em></span></dt>
+<dd><p>
+<span class="command"><strong>gfmd</strong></span>がジャーナルファイルを置くディレクトリ
+のパスを指定することができます。
+このオプションは、<code class="option">-r</code>オプションによりメタデータの複製が
+有効となっている場合にのみ影響を及ぼします。デフォルトでは、
+<code class="filename">PREFIX/var/gfarm-metadata/journal</code>
+が設定されており、このPREFIXは<code class="option">--prefix</code>オプションで
+与えられた値となります。
+</p></dd>
+<dt><span class="term"><code class="option">-A</code> <em class="parameter"><code>ユーザ名</code></em></span></dt>
+<dd><p>
+Gfarmファイルシステムの管理者を指定することができます。
+このオプションを省略した場合、
+<span class="command"><strong>config-gfarm</strong></span>は
+<span class="command"><strong>who am i</strong></span>コマンド
+を実行することによりユーザ名を取得します。
+
+</p></dd>
+<dt><span class="term"><code class="option">-D</code> <em class="parameter"><code>サブジェクトDN</code></em></span></dt>
+<dd><p>
+グローバルユーザとしての管理者のサブジェクトDNを指定することができます。
+GSI認証を行う場合、このオプションは必須です。
+</p></dd>
+<dt><span class="term"><code class="option">-p</code> <em class="parameter"><code>バックエンドDB用ポート番号</code></em></span></dt>
+<dd><p>
+設定したバックエンドDBが待ち受けるTCPポート番号を指定することができます。
+デフォルトでは10602が指定されます。
+</p></dd>
+<dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>gfmd用ポート番号</code></em></span></dt>
+<dd><p>
+設定した<span class="command"><strong>gfmd</strong></span>が待ち受ける
+TCPポート番号を指定することができます。
+デフォルトではプライベートモードの場合に10601、
+それ以外では601が指定されます。
+</p></dd>
+<dt><span class="term"><code class="option">-a</code> <em class="parameter"><code>認証方法</code></em></span></dt>
+<dd><p>
+認証方法を指定することができます。
+現在は、"sharedsecret" または "gsi" を使用することができ、
+デフォルトは "sharedsecret"となっています。
+</p></dd>
+<dt><span class="term"><code class="option">--help</code></span></dt>
+<dd><p>
+このオプションを付与した場合、
+config-gfarmの使用法を表示した後、
+終了します。
+</p></dd>
+<dt><span class="term"><code class="option">-S</code></span></dt>
+<dd>
+<p>
+このオプションを付与した場合、
+プライベートモードを有効にします。
+<span class="command"><strong>config-gfarm</strong></span>は、
+ルート権限なしで実行可能なGfarmファイルシステムをセットアップします。
+具体的には、以下の通りに設定手順を変更します。
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p>
+  <span class="command"><strong>gfmd</strong></span>のデフォルト待ち受けポート番号
+  (<code class="option">-m</code>オプションに対応)は、601から10601に変更されます。
+  </p></li>
+<li class="listitem"><p>
+  ユーザマップファイル<code class="filename">%%SYSCONFDIR%%/usermap</code>が
+  作成されます。
+  メタデータサーバは、起動時にこのファイルを読み込みます。
+  プライベートモードでない場合、OS上にユーザアカウント _gfarmmd と _gfarmfs が
+  作成されていなければいけません。
+  ユーザマップファイルがあれば、ユーザアカウントの作成は必要ありません。
+  このファイルは、実際のユーザアカウントに対する
+  Gfarmシステムユーザのマッピングを定義しています。
+  </p></li>
+<li class="listitem"><p>
+  gfsd設定ファイル<code class="filename">%%SYSCONFDIR%%/gfsd.conf</code>
+  が作成されます。
+  プライベートモードでない場合、
+  gfsdは、メタデータサーバと接続する全てのGfarmプログラムが読み込む前に、
+  gfarm設定ファイル
+  <code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code>
+  を読み込みます。
+  <code class="filename">%%SYSCONFDIR%%/gfsd.conf</code>は、
+  プライベートモードで起動するgfsd向けにカスタマイズされた
+  設定ファイルです。
+  </p></li>
+</ul></div>
+<p>
+<code class="option">-S</code>オプションは、起動/停止スクリプトや
+設定ファイルの位置を決して変更しません。
+これらのファイルのデフォルト位置は
+通常では特権ユーザの場合のみ書き込み可能であるため、
+<span class="command"><strong>config-gfarm</strong></span>はこれらのファイルの生成に
+失敗してしまいます。この問題を回避するためには、
+<code class="option">--prefix</code>オプションを合わせて指定してください。
+</p>
+</dd>
+<dt><span class="term"><code class="option">-N</code></span></dt>
+<dd><p>
+このオプションを付与した場合、
+<span class="command"><strong>gfmd</strong></span>とバックエンドDBを起動しません。
+</p></dd>
+<dt><span class="term"><code class="option">-f</code></span></dt>
+<dd><p>
+このオプションを付与した場合、
+強制的に存在しているセットアップを上書きします。
+</p></dd>
+<dt><span class="term"><code class="option">-t</code></span></dt>
+<dd><p>
+このオプションを付与した場合、
+人間が読みやすい形式で全ての設定パラメータの値を表示した後、
+すぐに終了します。
+</p></dd>
+<dt><span class="term"><code class="option">-T</code></span></dt>
+<dd><p>
+<code class="option">-t</code>オプションと似ていますが、
+設定値をKEY=VALUE形式で表示します。
+</p></dd>
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd><p>
+このオプションを付与した場合、
+メタデータサーバ同士でのメタデータの複製を有効にします。
+</p></dd>
+<dt><span class="term"><code class="option">-W</code> <em class="parameter"><code>バックエンドDB用パスワード</code></em></span></dt>
+<dd><p>
+バックエンドDBの管理者パスワードを指定することができます。
+このオプションは、ユーザ名を指定する<code class="option">-U</code>オプションに対応します。
+デフォルトで、パスワードは自動的に生成されます。
+</p></dd>
+<dt><span class="term"><code class="option">-w</code> <em class="parameter"><code>バックエンドDBへの接続用パスワード</code></em></span></dt>
+<dd><p>
+設定された<span class="command"><strong>gfmd</strong></span>は、
+指定されたパスワードを使用してバックエンドDBと接続します。
+このオプションは、ユーザ名を指定する<code class="option">-u</code>オプションに対応します。
+デフォルトで、パスワードは自動的に生成されます。
+</p></dd>
+<dt><span class="term"><code class="option">-X</code></span></dt>
+<dd><p>
+このオプションを付与した場合、
+拡張ファイル属性をクエリするためのXML Path言語(XPath)
+のサポートを有効にします。
+</p></dd>
+<dt><span class="term"><code class="option">-E</code></span></dt>
+<dd><p>
+このオプションを付与した場合、
+データチェックサムオプションを付けたPostgreSQLセットアップします。
+<span class="command"><strong>config-gfarm</strong></span>は、
+<code class="option">--data-checksums</code>オプションをPostgreSQLコマンド
+<span class="command"><strong>initdb</strong></span>に渡します。
+この機能を使用するには、PostgreSQL 9.3またはそれ以降のバージョンが必要です。
+このオプションは、バックエンドDBがPostgreSQLであるときのみ機能します。
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="files"></a><h2>FILES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code></span></dt>
+<dd><p>
+Gfarmのクライアントが参照する設定ファイル
+</p></dd>
+<dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfmd.conf</code></span></dt>
+<dd><p>
+<span class="command"><strong>gfmd</strong></span>が参照する設定ファイル
+</p></dd>
+<dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfsd.conf</code></span></dt>
+<dd><p>
+<span class="command"><strong>gfsd</strong></span>が参照する設定ファイル
+(プライベートモードの場合のみ使用)
+</p></dd>
+<dt><span class="term"><code class="filename">%%SYSCONFDIR%%/usermap</code></span></dt>
+<dd><p>
+ユーザマッピングを定義しているファイル
+(プライベートモードの場合のみ使用)
+</p></dd>
+<dt><span class="term"><code class="filename">/etc/init.d/gfarm-pgsql</code></span></dt>
+<dd><p>
+GfarmのバックエンドDBとして動作する
+PostgreSQLの起動/停止スクリプトファイル
+</p></dd>
+<dt><span class="term"><code class="filename">/etc/init.d/gfmd</code></span></dt>
+<dd><p>
+<span class="command"><strong>gfmd</strong></span>が参照する起動/停止スクリプトファイルです。
+</p></dd>
+<dt><span class="term"><code class="filename">/etc/systemd/system/gfarm-pgsql.service</code></span></dt>
+<dd><p>
+systemdにより読み込まれ、
+GfarmのバックエンドDBとして動作する
+PostgreSQLのユニット設定ファイル
+</p></dd>
+<dt><span class="term"><code class="filename">/etc/systemd/system/gfmd.service</code></span></dt>
+<dd><p>
+systemdにより読み込まれる、
+<span class="command"><strong>gfmd</strong></span>のユニット設定ファイル
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>,
+<span class="citerefentry"><span class="refentrytitle">config-gfsd</span>(8)</span>
+</p>
+</div>
+</div></body>
+</html>

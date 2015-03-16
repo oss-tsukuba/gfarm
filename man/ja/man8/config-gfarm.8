@@ -1,0 +1,504 @@
+'\" t
+.\"     Title: config-gfarm
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 20 Jan 2015
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "CONFIG\-GFARM" "8" "20 Jan 2015" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+config-gfarm \- Gfarmのメタデータサーバのセットアップ
+.SH "SYNOPSIS"
+.HP \w'\fBconfig\-gfarm\fR\ 'u
+\fBconfig\-gfarm\fR [\fIオプション\fR]
+.SH "DESCRIPTION"
+.PP
+\fBconfig\-gfarm\fRは、 Gfarm ファイルシステムのメタサーバをセットアップするためのユーティリティです。 メタデータサーバのサーバプログラムは\*(Aqgfmd\*(Aqと呼ばれています。 Gfarmの開発、評価、またはテストといった 私的な用途でファイルシステムを使用する場合を除き、
+\fBconfig\-gfarm\fRを実行するためには、 ルート権限が必要です。
+.PP
+\fBconfig\-gfarm\fRは下記に示した順に処理を実行します。
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+バックエンドDBをセットアップします。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Gfarmの設定ファイル
+%%SYSCONFDIR%%/gfarm2\&.confや
+%%SYSCONFDIR%%/gfsd\&.confを生成します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+バックエンドDBや、\fBgfmd\fRと呼ばれる Gfarmメタデータサーバを起動/停止するためのスクリプト(または、設定ファイル)を作成します。
+.sp
+大抵のOSにおいて、
+\fBconfig\-gfarm\fRは、 起動/停止スクリプト\fBgfmd\fRと
+\fBgfarm\-pgsql\fRを
+/etc/init\&.dまたは
+/etc/rc\&.d/init\&.dに置きます。 (どちらに置くのかは、OSに依存します。)
+.sp
+Red Hat Enterprise Linux 7 またはそれ以降のsystemdで動作するLinuxにおいて、
+\fBconfig\-gfarm\fRは、 ユニット設定ファイルであるgfmd\&.serviceや
+gfarm\-pgsql\&.serviceを
+/etc/systemd/systemディレクトリに置きます。 その後、
+\fBsystemctl enable gfmd\&.service\fR、
+\fBsystemctl enable gfarm\-pgsql\&.service\fR
+を順に実行します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+バックエンドDBや、\fBgfmd\fRを起動します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+\fBunconfig\-gfarm\&.sh\fR
+というスクリプトを %%SYSCONFDIR%% 上に作成します。 このスクリプトは、メタデータサーバのセットアップの取り消しを行います。
+\fBgfmd\fR
+とバックエンドDBを停止し、
+\fBconfig\-gfarm\fR
+によって作成されたファイル (\fBunconfig\-gfarm\&.sh\fR
+スクリプト自身を含む) をすべて消去します。
+.RE
+.PP
+\fBconfig\-gfarm\fRを使用して メタデータサーバをセットアップする前に、
+\fBconfig\-gfarm \-t\fRを実行することを推奨します。
+\fB\-t\fRオプションを付けて実行することにより、 セットアップする代わりに全ての設定パラメータを表示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ config\-gfarm \-t
+prefix                 [\-\-prefix]:
+metadata backend             [\-b]: postgresql
+(available backend: postgresql )
+metadata     directory       [\-l]: /var/gfarm\-pgsql
+metadata log directory       [\-L]: /var/gfarm\-pgsql/pg_xlog
+postgresql admin user        [\-U]: miles
+postgresql admin password    [\-W]: (auto generated)
+postgresql user              [\-u]: gfarm
+postgresql password          [\-w]: (auto generated)
+postgresql prefix            [\-P]: /usr
+postgresql version           [\-V]: 9\&.2
+postgresql XML supported     [\-X]: no
+metadata replication         [\-r]: no
+metaserver hostname          [\-h]: host1\&.example\&.org
+matadata admin user          [\-A]: miles
+matadata admin dn            [\-D]:
+portmaster port              [\-p]: 10602
+gfmd port                    [\-m]: 601
+auth type                    [\-a]: sharedsecret
+rc script for gfmd               : /etc/init\&.d/gfmd
+rc script for backend            : /etc/init\&.d/gfarm\-pgsql
+gfmd conf file                   : /etc/gfmd\&.conf
+gfarm client conf file           : /etc/gfarm2\&.conf
+gfmd pid file                    : /var/run/gfmd\&.pid
+backend pid file                 : /var/run/postmaster\&.pid
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+[ ]で囲まれたオプション名は、 オプションとして指定できることを意味しています。
+.SH "OPTIONS"
+.PP
+\fB\-\-prefix\fR \fIパス\fR
+.RS 4
+このオプションを与えた場合、 以下に挙げた\fBgfmd\fRとバックエンドDBに関連する 複数のパスが設定されます。 具体的には、以下の通りです。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Gfarmのメタデータを置くためのディレクトリ。 バックエンドDBがPostgreSQLである場合は、
+PREFIX/var/gfarm\-pgsqlとなります。 また、このパスは\fB\-L\fRオプションによって変更可能です。
+\fB\-\-prefix\fRと\fB\-l\fRオプションを同時に指定した場合、
+\fB\-l\fRオプションが優先されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Gfarmのメタデータに対するログファイルを置くためのディレクトリ。 バックエンドDBがPostgreSQLである場合は、
+PREFIX/var/gfarm\-pgsql/pg_xlogとなります。 また、このパスは\fB\-L\fRオプションによって変更可能です。
+\fB\-\-prefix\fRと\fB\-L\fRオプションを同時に指定した場合、
+\fB\-L\fRオプションが優先されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgfmd\fRのジャーナルファイルを置くためのディレクトリ。 これは、PREFIX/var/gfarm\-metadata/journalとなります。 また、このパスは\fB\-j\fRオプションによって変更可能です。
+\fB\-\-prefix\fRと\fB\-j\fRオプションを同時に指定した場合、
+\fB\-j\fRオプションが優先されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgfmd\fRとバックエンドDBのPIDファイル を置くためのディレクトリ。 これは、PREFIX/var/runとなります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+設定ファイルを置くためのディレクトリ。 これは、PREFIX/etcとなります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgfmd\fRとバックエンドDBの起動/停止スクリプト を置くためのディレクトリ。 これは、PREFIX/etc/init\&.d、または
+PREFIX/rc\&.d/init\&.d/etcとなります。 (どちらに置くのかは、OSに依存します。)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ホスト上でsystemdが起動している場合に、特殊な例外が存在します。 そのホスト上で\fB\-\-prefix\fRオプションとして空文字列以外を指定すると、
+\fBconfig\-gfarm\fRはsystemdにユニット設定ファイルを置きません。 その代わりに、PREFIX/etc/init\&.dに 旧形式の起動/停止スクリプトを置きます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+セットアップの取り消しを行うスクリプト
+\fBunconfig\-gfarm\&.sh\fR。 これは、\fBPREFIX/etc/unconfig\-gfarm\&.sh\fR
+となります。
+.RE
+.sp
+デフォルトでは""(空文字列)です。
+.RE
+.PP
+\fB\-b\fR \fIバックエンドDB\fR
+.RS 4
+バックエンドDBを指定することができます。 現在、"postgresql" (PostgreSQL) だけがサポートされています。 "ldap" (LDAP) は以前にサポートされていましたが、 サポートは継続されていません。
+\fBconfig\-gfarm \-t\fRは、 利用可能なバックエンドDBをリスト表示します。
+.sp
+"postgresql" がリストに存在する場合、PostgreSQLがデフォルトとして選択されます。 利用可能なバックエンドDBがldapのみである場合、 LDAPがデフォルトとして選択されてしまいます。 リストにないバックエンドDBをGfarmにサポートさせたい場合、 Gfarmを再度コンパイルする必要があるため、 注意してください。
+.RE
+.PP
+\fB\-d\fR \fIダイジェストタイプ\fR
+.RS 4
+チェックサム計算を有効するとともに、チェックサムのダイジェストタイプを 指定します。 引数
+\fIダイジェストタイプ\fR
+には、 ホスト上にインストールされた OpenSSL ライブラリが対応している ダイジェストタイプ名を小文字 (例: "md5") で記します。
+.RE
+.PP
+\fB\-U\fR \fIGfarmの管理ユーザ名\fR
+.RS 4
+Gfarmファイルシステムの管理ユーザ名を指定することができます。 デフォルト値はOSによって異なるため、
+\fBconfig\-gfarm \-t\fRを実行し、 ユーザ名を確認してください。
+.RE
+.PP
+\fB\-u\fR \fIユーザ名\fR
+.RS 4
+このオプションを付与した場合、 セットアップした\fBgfmd\fRは、 指定したユーザ名でバックエンドDBに接続します。 デフォルトは、"gfarm"です。
+.RE
+.PP
+\fB\-P\fR \fIインストール先のディレクトリ\fR
+.RS 4
+このオプションを付与した場合、 バックエンドDBに対するインストール先のディレクトリ (例えば、/usr/local)を指定することができます。
+\fBconfig\-gfarm\fRがバックエンドDBの管理コマンド (例えば、PostgreSQLでの\fBinitdb\fR)を実行する際、 指定したディレクトリの下にこのコマンドが インストールされていることを前提としています。 このオプションを省略した場合、
+\fBconfig\-gfarm\fRは、 環境変数\fBPATH\fRのリストからそのコマンドへのディレクトリを 探し出します。
+.RE
+.PP
+\fB\-V\fR \fIバージョン\fR
+.RS 4
+\fBconfig\-gfarm\fRに対するバックエンドDBの バージョンを表示することができます。 多くの場合、\fBconfig\-gfarm\fRは、 正しいバージョン番号を検出することができます。 そのため、\fBconfig\-gfarm\fRが バージョン番号の検出に失敗した場合にのみ、 このオプションを使用することをお勧めします。
+.RE
+.PP
+\fB\-l\fR \fIメタデータ用ディレクトリ\fR
+.RS 4
+バックエンドDBがGfarmのメタデータを記録したファイルを置く ディレクトリへのパスを指定することができます。
+.sp
+バックエンドDBがPostgreSQLである場合、 指定したディレクトリは一般にPGDATAと呼ばれています。 デフォルトではPREFIX/var/gfarm\-pgsql
+が設定されており、このPREFIXは\fB\-\-prefix\fRオプションで 与えられた値となります。
+.RE
+.PP
+\fB\-L\fR \fIログファイル用ディレクトリ\fR
+.RS 4
+バックエンドDBがログファイルを置くディレクトリへのパスを指定することができます。 バックエンドDBがPostgreSQLである場合、 デフォルトではPREFIX/var/gfarm\-pgsql/pg_xlog
+が設定されており、このPREFIXは\fB\-\-prefix\fRオプションで 与えられた値となります。
+.RE
+.PP
+\fB\-h\fR \fIホスト名\fR
+.RS 4
+メタデータサーバを認識するために使用されるホスト名を指定することができます。 デフォルトでは、DNS上におけるそのホストの完全修飾ドメイン名(FQDN)となります。
+.RE
+.PP
+\fB\-j\fR \fIジャーナルファイル用ディレクトリ\fR
+.RS 4
+\fBgfmd\fRがジャーナルファイルを置くディレクトリ のパスを指定することができます。 このオプションは、\fB\-r\fRオプションによりメタデータの複製が 有効となっている場合にのみ影響を及ぼします。デフォルトでは、
+PREFIX/var/gfarm\-metadata/journal
+が設定されており、このPREFIXは\fB\-\-prefix\fRオプションで 与えられた値となります。
+.RE
+.PP
+\fB\-A\fR \fIユーザ名\fR
+.RS 4
+Gfarmファイルシステムの管理者を指定することができます。 このオプションを省略した場合、
+\fBconfig\-gfarm\fRは
+\fBwho am i\fRコマンド を実行することによりユーザ名を取得します。
+.RE
+.PP
+\fB\-D\fR \fIサブジェクトDN\fR
+.RS 4
+グローバルユーザとしての管理者のサブジェクトDNを指定することができます。 GSI認証を行う場合、このオプションは必須です。
+.RE
+.PP
+\fB\-p\fR \fIバックエンドDB用ポート番号\fR
+.RS 4
+設定したバックエンドDBが待ち受けるTCPポート番号を指定することができます。 デフォルトでは10602が指定されます。
+.RE
+.PP
+\fB\-m\fR \fIgfmd用ポート番号\fR
+.RS 4
+設定した\fBgfmd\fRが待ち受ける TCPポート番号を指定することができます。 デフォルトではプライベートモードの場合に10601、 それ以外では601が指定されます。
+.RE
+.PP
+\fB\-a\fR \fI認証方法\fR
+.RS 4
+認証方法を指定することができます。 現在は、"sharedsecret" または "gsi" を使用することができ、 デフォルトは "sharedsecret"となっています。
+.RE
+.PP
+\fB\-\-help\fR
+.RS 4
+このオプションを付与した場合、 config\-gfarmの使用法を表示した後、 終了します。
+.RE
+.PP
+\fB\-S\fR
+.RS 4
+このオプションを付与した場合、 プライベートモードを有効にします。
+\fBconfig\-gfarm\fRは、 ルート権限なしで実行可能なGfarmファイルシステムをセットアップします。 具体的には、以下の通りに設定手順を変更します。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgfmd\fRのデフォルト待ち受けポート番号 (\fB\-m\fRオプションに対応)は、601から10601に変更されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ユーザマップファイル%%SYSCONFDIR%%/usermapが 作成されます。 メタデータサーバは、起動時にこのファイルを読み込みます。 プライベートモードでない場合、OS上にユーザアカウント _gfarmmd と _gfarmfs が 作成されていなければいけません。 ユーザマップファイルがあれば、ユーザアカウントの作成は必要ありません。 このファイルは、実際のユーザアカウントに対する Gfarmシステムユーザのマッピングを定義しています。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+gfsd設定ファイル%%SYSCONFDIR%%/gfsd\&.conf
+が作成されます。 プライベートモードでない場合、 gfsdは、メタデータサーバと接続する全てのGfarmプログラムが読み込む前に、 gfarm設定ファイル
+%%SYSCONFDIR%%/gfarm2\&.conf
+を読み込みます。
+%%SYSCONFDIR%%/gfsd\&.confは、 プライベートモードで起動するgfsd向けにカスタマイズされた 設定ファイルです。
+.RE
+.sp
+\fB\-S\fRオプションは、起動/停止スクリプトや 設定ファイルの位置を決して変更しません。 これらのファイルのデフォルト位置は 通常では特権ユーザの場合のみ書き込み可能であるため、
+\fBconfig\-gfarm\fRはこれらのファイルの生成に 失敗してしまいます。この問題を回避するためには、
+\fB\-\-prefix\fRオプションを合わせて指定してください。
+.RE
+.PP
+\fB\-N\fR
+.RS 4
+このオプションを付与した場合、
+\fBgfmd\fRとバックエンドDBを起動しません。
+.RE
+.PP
+\fB\-f\fR
+.RS 4
+このオプションを付与した場合、 強制的に存在しているセットアップを上書きします。
+.RE
+.PP
+\fB\-t\fR
+.RS 4
+このオプションを付与した場合、 人間が読みやすい形式で全ての設定パラメータの値を表示した後、 すぐに終了します。
+.RE
+.PP
+\fB\-T\fR
+.RS 4
+\fB\-t\fRオプションと似ていますが、 設定値をKEY=VALUE形式で表示します。
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+このオプションを付与した場合、 メタデータサーバ同士でのメタデータの複製を有効にします。
+.RE
+.PP
+\fB\-W\fR \fIバックエンドDB用パスワード\fR
+.RS 4
+バックエンドDBの管理者パスワードを指定することができます。 このオプションは、ユーザ名を指定する\fB\-U\fRオプションに対応します。 デフォルトで、パスワードは自動的に生成されます。
+.RE
+.PP
+\fB\-w\fR \fIバックエンドDBへの接続用パスワード\fR
+.RS 4
+設定された\fBgfmd\fRは、 指定されたパスワードを使用してバックエンドDBと接続します。 このオプションは、ユーザ名を指定する\fB\-u\fRオプションに対応します。 デフォルトで、パスワードは自動的に生成されます。
+.RE
+.PP
+\fB\-X\fR
+.RS 4
+このオプションを付与した場合、 拡張ファイル属性をクエリするためのXML Path言語(XPath) のサポートを有効にします。
+.RE
+.PP
+\fB\-E\fR
+.RS 4
+このオプションを付与した場合、 データチェックサムオプションを付けたPostgreSQLセットアップします。
+\fBconfig\-gfarm\fRは、
+\fB\-\-data\-checksums\fRオプションをPostgreSQLコマンド
+\fBinitdb\fRに渡します。 この機能を使用するには、PostgreSQL 9\&.3またはそれ以降のバージョンが必要です。 このオプションは、バックエンドDBがPostgreSQLであるときのみ機能します。
+.RE
+.SH "FILES"
+.PP
+%%SYSCONFDIR%%/gfarm2\&.conf
+.RS 4
+Gfarmのクライアントが参照する設定ファイル
+.RE
+.PP
+%%SYSCONFDIR%%/gfmd\&.conf
+.RS 4
+\fBgfmd\fRが参照する設定ファイル
+.RE
+.PP
+%%SYSCONFDIR%%/gfsd\&.conf
+.RS 4
+\fBgfsd\fRが参照する設定ファイル (プライベートモードの場合のみ使用)
+.RE
+.PP
+%%SYSCONFDIR%%/usermap
+.RS 4
+ユーザマッピングを定義しているファイル (プライベートモードの場合のみ使用)
+.RE
+.PP
+/etc/init\&.d/gfarm\-pgsql
+.RS 4
+GfarmのバックエンドDBとして動作する PostgreSQLの起動/停止スクリプトファイル
+.RE
+.PP
+/etc/init\&.d/gfmd
+.RS 4
+\fBgfmd\fRが参照する起動/停止スクリプトファイルです。
+.RE
+.PP
+/etc/systemd/system/gfarm\-pgsql\&.service
+.RS 4
+systemdにより読み込まれ、 GfarmのバックエンドDBとして動作する PostgreSQLのユニット設定ファイル
+.RE
+.PP
+/etc/systemd/system/gfmd\&.service
+.RS 4
+systemdにより読み込まれる、
+\fBgfmd\fRのユニット設定ファイル
+.RE
+.SH "SEE ALSO"
+.PP
+\fBgfarm2.conf\fR(5),
+\fBconfig-gfsd\fR(8)
