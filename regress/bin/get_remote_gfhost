@@ -6,7 +6,7 @@
 # which has a replica of the file
 
 if	case $# in
-	0)	host=`gfsched -n 1 -O 2>&1`;;
+	0)	host=`gfsched -n 1 -O -w 2>&1`;;
 	1)	host=`gfsched -n 1 -O -f "$1" 2>/dev/null`;;
 	*)	echo >&2 "Usage: get_remote_gfhost [<gfarm_file>]"
 		exit 2;;

@@ -4,7 +4,7 @@
 # replicas are too many.
 
 NCOPY=3
-WAIT_TIME_LIMIT=20  # sec.
+WAIT_TIME_LIMIT=60  # sec.
 hostgroupfile=/tmp/.hostgroup.$$
 
 . ./regress.conf

@@ -52,7 +52,7 @@ $regress/bin/am_I_gfarmroot || exit $exit_unsupported
 
 setup
 
-n=`gfsched | wc -l`
+n=`gfsched -w | wc -l`
 [ $n -le 0 ] && error "no filesystem node"
 test_chown $n
 

@@ -4,7 +4,7 @@
 # replicas are too many.
 
 NCOPY=2
-WAIT_TIME_LIMIT=20  # sec.
+WAIT_TIME_LIMIT=60  # sec.
 
 . ./regress.conf
 

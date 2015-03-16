@@ -3,6 +3,7 @@
 # XXX FIXME: runnig this script simultaneously is not safe
 
 . ./regress.conf
+GFNCOPY_TIMEOUT=60
 
 #####################################################################
 
