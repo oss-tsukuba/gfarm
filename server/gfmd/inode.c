@@ -493,17 +493,6 @@ file_opening_cksum_set(struct file_opening *fo,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e); /* inode_cksum_set() calls gflog_debug */
 
-	if (flags & GFM_PROTO_CKSUM_SET_FILE_MODIFIED) {
-		inode_set_mtime(inode, mtime);
-		/*
-		 * XXX: This doesn't take effect on checksum calculation
-		 * during replication, because it doesn't use file_opening.
-		 * Although GFM_PROTO_CKSUM_SET_FILE_MODIFIED flag is
-		 * currently not used, and has been annulled since r8972.
-		 */
-		inode_cksum_invalidate(fo);
-	}
-
 	return (GFARM_ERR_NO_ERROR);
 }
 

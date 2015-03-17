@@ -384,9 +384,6 @@ enum gfm_proto_command {
  * and currently always 0.
  */
 
-/* GFM_PROTO_CKSUM_SET flags */
-#define	GFM_PROTO_CKSUM_SET_FILE_MODIFIED	0x00000001
-
 /*
  * data size limits:
  *
