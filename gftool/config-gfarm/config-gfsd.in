@@ -308,10 +308,11 @@ fi
 mkcnf_gfsd_sysdep
 
 # create run scripts
-mkscript "$RC_GFSD"	config "$RC_GFSD_IN"
+create_run_script "$RC_GFSD"	config "$RC_GFSD_IN"
 $PRIVATE_MODE || service_reg gfsd
 
-mkscript "$UNCONFIG_SCRIPT"	unconfig "$UNCONFIG_SCRIPT_IN"
+mkcnf "$UNCONFIG_SCRIPT"	unconfig "$UNCONFIG_SCRIPT_IN"
+chmod +x "$UNCONFIG_SCRIPT" || ABORT "cannot chmod +x $UNCONFIG_SCRIPT"
 
 # update configuration file
 # spool_check_level (default value)

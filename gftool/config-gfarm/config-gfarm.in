@@ -653,8 +653,8 @@ if $PRIVATE_MODE; then
 fi
 
 # create run scripts
-mkscript "$RC_BACKEND"	replace "$RC_BACKEND_IN"
-mkscript "$RC_GFMD"	replace "$RC_GFMD_IN"
+create_run_script "$RC_BACKEND"	replace "$RC_BACKEND_IN"
+create_run_script "$RC_GFMD"	replace "$RC_GFMD_IN"
 $PRIVATE_MODE || service_reg $RC_BACKEND_BASENAME gfmd
 
 apply_configuration_$BACKEND_TYPE
@@ -668,7 +668,9 @@ if $START_SERVICE; then
 		ABORT "failed to $ctl gfmd"
 fi
 
-mkscript "$UNCONFIG_SCRIPT" unconfig_replace "$UNCONFIG_SCRIPT_IN"
+mkcnf "$UNCONFIG_SCRIPT" unconfig_replace "$UNCONFIG_SCRIPT_IN"
+chmod +x "$UNCONFIG_SCRIPT" || ABORT "cannot chmod +x $UNCONFIG_SCRIPT"
+
 rm -f $sed_script
 
 echo "$PROGNAME success"
