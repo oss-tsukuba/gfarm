@@ -68,12 +68,6 @@ mkcnf()
 	fi
 }
 
-mkscript()
-{
-	mkcnf ${1+"$@"}
-	chmod +x "$1" || ABORT "cannot chmod +x $1"
-}
-
 delete_file_or_directory()
 {
 	run_or_echo=
