@@ -319,3 +319,14 @@ service_ctl()
 	*)	service_ctl_default ${1+"$@"};;
 	esac
 }
+
+create_run_script()
+{
+
+	mkcnf ${1+"$@"}
+	case $LINUX_RC_TYPE in
+	systemd)
+		chmod 0644 "$1" || ABORT "cannot chmod 0644 $1";;
+	*)	chmod +x "$1" || ABORT "cannot chmod +x $1";;
+	esac
+}

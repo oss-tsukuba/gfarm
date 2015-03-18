@@ -588,12 +588,6 @@ mkcnf()
 	fi
 }
 
-mkscript()
-{
-	mkcnf ${1+"$@"}
-	chmod +x "$1" || ABORT "cannot chmod +x $1"
-}
-
 delete_file_or_directory()
 {
 	# local p
@@ -733,8 +727,8 @@ if $PRIVATE_MODE; then
 fi
 
 # create run scripts
-mkscript "$RC_BACKEND"	replace "$RC_BACKEND_IN"
-mkscript "$RC_GFMD"	replace "$RC_GFMD_IN"
+create_run_script "$RC_BACKEND"	replace "$RC_BACKEND_IN"
+create_run_script "$RC_GFMD"	replace "$RC_GFMD_IN"
 $PRIVATE_MODE || service_reg $RC_BACKEND_BASENAME gfmd
 
 apply_configuration_$BACKEND_TYPE

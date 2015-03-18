@@ -93,3 +93,9 @@ service_ctl()
 	$run_or_echo "$RC_DIR/$service" ${mode}$ctl ||
 		ABORT "cannot $ctl $service"
 }
+
+create_run_script()
+{
+	mkcnf ${1+"$@"}
+	chmod +x "$1" || ABORT "cannot chmod +x $1"
+}

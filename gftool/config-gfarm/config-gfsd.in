@@ -286,12 +286,6 @@ mkcnf()
 	fi
 }
 
-mkscript()
-{
-	mkcnf ${1+"$@"}
-	chmod +x "$1" || ABORT "cannot chmod +x $1"
-}
-
 delete_file_or_directory()
 {
 	# local p
@@ -346,7 +340,7 @@ fi
 mkcnf_gfsd_sysdep
 
 # create run scripts
-mkscript "$RC_GFSD"	config "$RC_GFSD_IN"
+create_run_script "$RC_GFSD"	config "$RC_GFSD_IN"
 $PRIVATE_MODE || service_reg gfsd
 
 # update configuration file
