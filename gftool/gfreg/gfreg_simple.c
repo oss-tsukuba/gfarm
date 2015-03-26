@@ -111,6 +111,8 @@ gfimport_to(FILE *ifp, char *gfarm_url, int mode,
 	e = gfs_pio_internal_set_view_section(gf, host);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", gfarm_url, gfarm_error_string(e));
+		if ((flags & GFARM_FILE_TRUNC) != 0)
+			gfs_unlink(gfarm_url);
 		goto close;
 	}
 	gfs_profile(gfarm_gettimerval(&t3));
