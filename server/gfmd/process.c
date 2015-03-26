@@ -1392,7 +1392,7 @@ process_replica_added(struct process *process,
 			e = inode_cksum_set(fo->inode,
 			    cksum_type, cksum_len, cksum, cksum_result_flags);
 			if (e != GFARM_ERR_NO_ERROR)
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_notice(GFARM_MSG_UNFIXED,
 				    "checksum error during replication of "
 				    "inode %lld:%lld to %s: %s",
 				    (long long)inode_get_number(fo->inode),

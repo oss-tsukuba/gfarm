@@ -4525,7 +4525,7 @@ inode_replicated(struct file_replicating *fr,
 			e = inode_cksum_set(inode, cksum_type, cksum_len,
 			    cksum, cksum_result_flags);
 			if (e != GFARM_ERR_NO_ERROR)
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_notice(GFARM_MSG_UNFIXED,
 				    "checksum error during replication of "
 				    "inode %lld:%lld to %s: %s",
 				    (long long)inode_get_number(inode),
@@ -4544,9 +4544,6 @@ inode_replicated(struct file_replicating *fr,
 				    gfarm_error_string(e));
 			}
 		}
-		if (e != GFARM_ERR_NO_ERROR)
-			inode_remove_replica_incomplete(inode, fr->dst,
-			    fr->igen);
 	} else {
 		if (src_errcode == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY &&
 		    dst_errcode == GFARM_ERR_NO_ERROR &&
@@ -4578,9 +4575,10 @@ inode_replicated(struct file_replicating *fr,
 			    (long long)fr->igen, (long long)size,
 			    (long long)inode_get_gen(inode),
 			    (long long)inode_get_size(inode));
-		inode_remove_replica_incomplete(inode, fr->dst, fr->igen);
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
 	}
+	if (e != GFARM_ERR_NO_ERROR)
+		inode_remove_replica_incomplete(inode, fr->dst, fr->igen);
 
 	if (fr->cleanup != NULL) {
 		if (dead_file_copy_is_removable(fr->cleanup))
@@ -4603,7 +4601,7 @@ inode_replicated(struct file_replicating *fr,
 	if (transaction)
 		db_end(diag);
 
-	if (e != GFARM_ERR_NO_ERROR) {
+	if (e == GFARM_ERR_INVALID_FILE_REPLICA) {
 		/*
 		 * #647 - workaround for #646 - retry replication when
 		 * a result of replication is failure
