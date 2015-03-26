@@ -1294,8 +1294,21 @@ process_replica_added(struct process *process,
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
 		inode_remove_replica_incomplete(fo->inode, spool_host,
 		    fo->u.f.replica_source->gen);
-	} else
+	} else {
 		e = inode_add_replica(fo->inode, spool_host, 1);
+		if (e != GFARM_ERR_NO_ERROR) {
+			/* possibly quota check failure? */
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "replication of inode %lld:%lld to %s "
+			    "completed, but: %s",
+			    (long long)inode_get_number(fo->inode),
+			    (long long)fo->u.f.replica_source->gen,
+			    host_name(spool_host),
+			    gfarm_error_string(e));
+			inode_remove_replica_incomplete(fo->inode, spool_host,
+			    fo->u.f.replica_source->gen);
+		}
+	}
 	free(fo->u.f.replica_source);
 	fo->u.f.replica_source = NULL;
 	e2 = process_close_file_read(process, peer, fd, NULL, diag);
