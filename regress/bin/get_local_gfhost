@@ -6,7 +6,7 @@
 # only if the host has its replica.
 
 if	case $# in
-	0)	host=`gfsched -n 1 -S 2>&1`;;
+	0)	host=`gfsched -n 1 -S -w 2>&1`;;
 	1)	host=`gfsched -n 1 -S -f "$1" 2>/dev/null`;;
 	*)	echo >&2 "Usage: get_local_gfhost [<gfarm_file>]"
 		exit 2;;
