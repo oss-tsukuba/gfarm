@@ -4513,7 +4513,6 @@ inode_replicated(struct file_replicating *fr,
 	    dst_errcode == GFARM_ERR_NO_ERROR &&
 	    size == inode_get_size(inode) &&
 	    fr->igen == inode_get_gen(inode)) {
-		e = inode_add_replica(inode, fr->dst, 1);
 		if (cksum_enabled &&
 		    (cksum_request_flags &
 		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_SUM_AVAIL
@@ -4522,14 +4521,32 @@ inode_replicated(struct file_replicating *fr,
 			/*
 			 * calling inode_cksum_set() without checking
 			 * `cs == NULL' is OK, since r8972.
-			 *
-			 * NOTE: inode_cksum_set() calls gflog_debug,
-			 * thus, we don't have to report the return value of
-			 * inode_cksum_set()
 			 */
-			inode_cksum_set(inode, cksum_type, cksum_len, cksum,
-			    cksum_result_flags);
+			e = inode_cksum_set(inode, cksum_type, cksum_len,
+			    cksum, cksum_result_flags);
+			if (e != GFARM_ERR_NO_ERROR)
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "checksum error during replication of "
+				    "inode %lld:%lld to %s: %s",
+				    (long long)inode_get_number(inode),
+				    (long long)fr->igen, host_name(fr->dst),
+				    gfarm_error_string(e));
 		}
+		if (e == GFARM_ERR_NO_ERROR) {
+			e = inode_add_replica(inode, fr->dst, 1);
+			if (e != GFARM_ERR_NO_ERROR) {
+				/* possibly quota check failure */
+				gflog_notice(GFARM_MSG_UNFIXED,
+				    "replication of inode %lld:%lld to %s "
+				    "completed, but: %s",
+				    (long long)inode_get_number(inode),
+				    (long long)fr->igen, host_name(fr->dst),
+				    gfarm_error_string(e));
+			}
+		}
+		if (e != GFARM_ERR_NO_ERROR)
+			inode_remove_replica_incomplete(inode, fr->dst,
+			    fr->igen);
 	} else {
 		if (src_errcode == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY &&
 		    dst_errcode == GFARM_ERR_NO_ERROR &&
