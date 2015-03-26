@@ -4427,6 +4427,16 @@ inode_replicated(struct file_replication *fr,
 	    size == inode_get_size(inode) &&
 	    file_replication_get_gen(fr) == inode_get_gen(inode)) {
 		e = inode_add_replica(inode, file_replication_get_dst(fr), 1);
+		if (e != GFARM_ERR_NO_ERROR) {
+			/* possibly quota check failure */
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "replication of inode %lld:%lld to %s "
+			    "completed, but: %s",
+			    (long long)inode_get_number(inode),
+			    (long long)file_replication_get_gen(fr),
+			    host_name(file_replication_get_dst(fr)),
+			    gfarm_error_string(e));
+		}
 	} else {
 		if (src_errcode == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY &&
 		    dst_errcode == GFARM_ERR_NO_ERROR &&
@@ -4460,11 +4470,12 @@ inode_replicated(struct file_replication *fr,
 			    (long long)size,
 			    (long long)inode_get_gen(inode),
 			    (long long)inode_get_size(inode));
+		e = GFARM_ERR_INVALID_FILE_REPLICA;
+	}
+	if (e != GFARM_ERR_NO_ERROR)
 		inode_remove_replica_incomplete(inode,
 		    file_replication_get_dst(fr),
 		    file_replication_get_gen(fr));
-		e = GFARM_ERR_INVALID_FILE_REPLICA;
-	}
 
 	if ((dfc = file_replication_get_dead_file_copy(fr)) != NULL) {
 		if (dead_file_copy_is_removable(dfc))
