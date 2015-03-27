@@ -1188,8 +1188,6 @@ gfs_server_process_reset(struct gfp_xdr *client)
 			fd_usable_to_gfmd = 1;
 			break;
 		}
-		gflog_error(GFARM_MSG_1003401,
-		    "gfm_client_process_set: %s", gfarm_error_string(e));
 		if (e == GFARM_ERR_ALREADY_EXISTS) {
 			if ((e = gfm_client_process_free(gfm_server))
 			    != GFARM_ERR_NO_ERROR) {
@@ -1199,6 +1197,8 @@ gfs_server_process_reset(struct gfp_xdr *client)
 			}
 			continue;
 		}
+		gflog_notice(GFARM_MSG_1003401,
+		    "gfm_client_process_set: %s", gfarm_error_string(e));
 		if (!IS_CONNECTION_ERROR(e))
 			break;
 		/* gfmd failed over after close_all_fd() */
