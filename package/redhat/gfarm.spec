@@ -152,6 +152,12 @@ Gfarm performance monitoring plugin for Ganglia
 Development header files and libraries for Gfarm file system
 
 %changelog
+* Fri Mar 27 2015 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.6.2-1
+- Gfarm version 2.6.2 released
+
+* Mon Mar  2 2015 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.6.1-1
+- Gfarm version 2.6.1 released
+
 * Wed Dec 17 2014 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.6.0-1
 - Gfarm version 2.6.0 released
 
@@ -657,8 +663,12 @@ fi
 %{man_prefix}/ja/man5/gfarm2.conf.5.gz
 %{man_prefix}/ja/man5/gfarm_attr.5.gz
 %{man_prefix}/ja/man5/gfservice.conf.5.gz
+%{man_prefix}/ja/man8/gfdump.postgresql.8.gz
 %{man_prefix}/ja/man8/gfmd.8.gz
 %{man_prefix}/ja/man8/gfsd.8.gz
+%{man_prefix}/ja/man8/config-gfarm-update.8.gz
+%{man_prefix}/ja/man8/config-gfarm.8.gz
+%{man_prefix}/ja/man8/config-gfsd.8.gz
 %{html_prefix}/index.html
 %{html_prefix}/en/ref/index.html
 %if %{gfarm_v2_not_yet}
@@ -997,8 +1007,12 @@ fi
 %{html_prefix}/ja/ref/man5/gfarm2.conf.5.html
 %{html_prefix}/ja/ref/man5/gfarm_attr.5.html
 %{html_prefix}/ja/ref/man5/gfservice.conf.5.html
+%{html_prefix}/ja/ref/man8/gfdump.postgresql.8.html
 %{html_prefix}/ja/ref/man8/gfmd.8.html
 %{html_prefix}/ja/ref/man8/gfsd.8.html
+%{html_prefix}/ja/ref/man8/config-gfarm-update.8.html
+%{html_prefix}/ja/ref/man8/config-gfarm.8.html
+%{html_prefix}/ja/ref/man8/config-gfsd.8.html
 %{html_prefix}/ja/user/index.html
 %{html_prefix}/ja/user/samba-gfarmfs.html
 %if %{gfarm_v2_not_yet}
@@ -1206,6 +1220,7 @@ fi
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/bdb.DB_CONFIG.in
+%{share_prefix}/config/config-gfarm.common
 %{share_prefix}/config/config-gfarm.ldap
 %{share_prefix}/config/config-gfarm.postgresql
 %{share_prefix}/config/config-gfarm-update.postgresql
@@ -1233,6 +1248,8 @@ fi
 %{share_prefix}/config/linux/systemd/gfmd.service.in
 %{share_prefix}/config/slapd.conf-2.0.in
 %{share_prefix}/config/slapd.conf-2.1.in
+%{share_prefix}/config/unconfig-gfarm.sh.in
+%{share_prefix}/config/unconfig-gfsd.sh.in
 %{share_prefix}/ruby/gfcrc32.rb
 %{share_prefix}/ruby/gfjournalfile.rb
 
