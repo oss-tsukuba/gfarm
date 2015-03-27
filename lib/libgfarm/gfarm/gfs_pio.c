@@ -699,7 +699,7 @@ gfs_pio_close(GFS_File gf)
 	if (gf->fd >= 0) {
 		e = gfm_close_fd(gf->gfm_server, gf->fd, cip);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004220,
 				    "gfs_pio_close: close gfmd: %s",
 				    gfarm_error_string(e));
 		/*

@@ -4525,7 +4525,7 @@ inode_replicated(struct file_replicating *fr,
 			e = inode_cksum_set(inode, cksum_type, cksum_len,
 			    cksum, cksum_result_flags);
 			if (e != GFARM_ERR_NO_ERROR)
-				gflog_notice(GFARM_MSG_UNFIXED,
+				gflog_notice(GFARM_MSG_1004223,
 				    "checksum error during replication of "
 				    "inode %lld:%lld to %s: %s",
 				    (long long)inode_get_number(inode),
@@ -4536,7 +4536,7 @@ inode_replicated(struct file_replicating *fr,
 			e = inode_add_replica(inode, fr->dst, 1);
 			if (e != GFARM_ERR_NO_ERROR) {
 				/* possibly quota check failure */
-				gflog_notice(GFARM_MSG_UNFIXED,
+				gflog_notice(GFARM_MSG_1004224,
 				    "replication of inode %lld:%lld to %s "
 				    "completed, but: %s",
 				    (long long)inode_get_number(inode),
