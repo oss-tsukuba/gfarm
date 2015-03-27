@@ -4602,6 +4602,7 @@ inode_replicated(struct file_replicating *fr,
 		db_end(diag);
 
 	if (e == GFARM_ERR_INVALID_FILE_REPLICA &&
+	    src_errcode != GFARM_ERR_INVALID_FILE_REPLICA &&
 	    src_errcode != GFARM_ERR_CHECKSUM_MISMATCH) {
 		/*
 		 * XXX - src_errcode check is a workaround to avoid
