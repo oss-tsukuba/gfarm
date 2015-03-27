@@ -1298,7 +1298,7 @@ process_replica_added(struct process *process,
 		e = inode_add_replica(fo->inode, spool_host, 1);
 		if (e != GFARM_ERR_NO_ERROR) {
 			/* possibly quota check failure? */
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1004222,
 			    "replication of inode %lld:%lld to %s "
 			    "completed, but: %s",
 			    (long long)inode_get_number(fo->inode),
