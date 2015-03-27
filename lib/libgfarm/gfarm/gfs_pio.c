@@ -464,8 +464,26 @@ gfs_pio_close(GFS_File gf)
 	 * retrying gfm_close_fd is not necessary because fd is
 	 * closed in gfmd when the connection is closed.
 	 */
-	if (gf->fd != GFARM_DESCRIPTOR_INVALID)
-		(void)gfm_close_fd(gf->gfm_server, gf->fd);
+	if (gf->fd != GFARM_DESCRIPTOR_INVALID) {
+		e = gfm_close_fd(gf->gfm_server, gf->fd);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfs_pio_close: close gfmd: %s",
+				    gfarm_error_string(e));
+		/*
+		 * NOTE:
+		 * Because a successful failover shouldn't return
+		 * a connection error, we ignore such error here.
+		 * Note: unlike other protocols, retrying the close
+		 *  protocol at a failover is meaningless.
+		 * Ignoring connection errors is not a serious problem,
+		 * because the file will be automatically closed by gfmd
+		 * due to the connection error.
+		 */
+		if (e_save == GFARM_ERR_NO_ERROR &&
+		    !gfm_client_is_connection_error(e))
+			e_save = e;
+	}
 
 	gfm_client_connection_free(gf->gfm_server);
 	gfs_file_free(gf);
