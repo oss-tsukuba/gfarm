@@ -1178,6 +1178,17 @@ gfmdc_journal_asyncsend_thread_wakeup(void)
 			ASYNC_WAIT_COND_DIAG);
 }
 
+static gfarm_error_t
+gfmdc_peer_switch_to_sync(struct mdhost *mh)
+{
+	struct peer *peer = mdhost_get_peer(mh); /* increment refcount */
+	if (peer != NULL) {
+		thrpool_add_job(journal_sync_thread_pool,
+		    gfmdc_journal_first_sync_thread, peer);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
 void *
 gfmdc_connect_thread(void *arg)
 {
@@ -1458,6 +1469,7 @@ gfmdc_init(void)
 {
 	mdhost_set_update_hook_for_journal_send(
 	    gfmdc_journal_asyncsend_thread_wakeup);
+	mdhost_set_switch_to_sync_hook(gfmdc_peer_switch_to_sync);
 
 	gfmdc_recv_watcher = peer_watcher_alloc(
 	    /* XXX FIXME use different config parameter */
