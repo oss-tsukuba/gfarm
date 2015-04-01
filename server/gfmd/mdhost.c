@@ -76,6 +76,10 @@ static struct mdhost *mdhost_master;
 
 struct netsendq_manager *mdhost_send_manager;
 
+/* They will be called when replication type of an mdhost is changed. */
+static mdhost_modify_hook_t mdhost_switch_to_sync_hook = NULL;
+static mdhost_modify_hook_t mdhost_switch_to_async_hook = NULL;
+
 #define MDHOST_HASHTAB_SIZE	31
 
 #define FOREACH_MDHOST(it) \
@@ -95,6 +99,18 @@ void
 mdhost_set_update_hook_for_journal_send(void (*hook)(void))
 {
 	mdhost_update_hook_for_journal_send = hook;
+}
+
+void
+mdhost_set_switch_to_sync_hook(mdhost_modify_hook_t hook)
+{
+	mdhost_switch_to_sync_hook = hook;
+}
+
+void
+mdhost_set_switch_to_async_hook(mdhost_modify_hook_t hook)
+{
+	mdhost_switch_to_async_hook = hook;
 }
 
 /**********************************************************************/
@@ -720,21 +736,154 @@ mdhost_add_one(void *closure, struct gfarm_metadb_server *ms)
 		    "mdhost_add_one: %s", gfarm_error_string(e));
 }
 
+static gfarm_error_t
+mdhost_update_replication_type(struct mdhost *mh,
+    const char *old_clustername, const char *new_clustername)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
+	struct mdhost **to_sync_array = NULL;
+	struct mdhost **to_async_array = NULL;
+	int array_len;
+	int to_sync_len = 0;
+	int to_async_len = 0;
+	struct gfarm_hash_iterator it;
+	struct mdhost *m;
+	int was_sync;
+	int is_sync;
+	int i;
+	static const char diag[] = "mdhost_update_replication_type";
+
+	if (mdhost_switch_to_sync_hook == NULL &&
+	    mdhost_switch_to_sync_hook == NULL)
+		return (e);
+
+	if (mdhost_is_master(mh)) {
+		/*
+		 * The cluster name of the master has been changed.
+		 * It may cause changes of the replication types of slaves.
+		 */
+		mdhost_global_mutex_lock(diag);
+		array_len = 0;
+		FOREACH_MDHOST(it) {
+			if (mdhost_is_valid(mdhost_iterator_access(&it)))
+				++array_len;
+		}
+		GFARM_MALLOC_ARRAY(to_sync_array, array_len);
+		if (to_sync_array == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_error(GFARM_MSG_UNFIXED, "%s",
+			    gfarm_error_string(e));
+			mdhost_global_mutex_unlock(diag);
+			return (e);
+		}
+		GFARM_MALLOC_ARRAY(to_async_array, array_len);
+		if (to_async_array == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_error(GFARM_MSG_UNFIXED, "%s",
+			    gfarm_error_string(e));
+			free(to_sync_array);
+			mdhost_global_mutex_unlock(diag);
+			return (e);
+		}
+
+		FOREACH_MDHOST(it) {
+			m = mdhost_iterator_access(&it);
+			if (!mdhost_is_valid(m) || m == mh)
+				continue;
+			was_sync = (strcmp(m->ms.clustername,
+				old_clustername) == 0);
+			is_sync  = (strcmp(m->ms.clustername,
+				new_clustername) == 0);
+			if (!was_sync && is_sync)
+				to_sync_array[to_sync_len++] = m;
+			else if (was_sync && !is_sync)
+				to_async_array[to_async_len++] = m;
+		}
+		mdhost_global_mutex_unlock(diag);
+
+		if (mdhost_switch_to_sync_hook != NULL) {
+			for (i = 0; i < to_sync_len; i++) {
+				m = to_sync_array[i];
+				e2 = mdhost_switch_to_sync_hook(m);
+				if (e == GFARM_ERR_NO_ERROR &&
+				    e2 != GFARM_ERR_NO_ERROR)
+					e = e2;
+			}
+		}
+		if (mdhost_switch_to_async_hook != NULL) {
+			for (i = 0; i < to_async_len; i++) {
+				m = to_async_array[i];
+				e2 = mdhost_switch_to_async_hook(m);
+				if (e == GFARM_ERR_NO_ERROR &&
+				    e2 != GFARM_ERR_NO_ERROR)
+					e = e2;
+			}
+		}
+
+		free(to_sync_array);
+		free(to_async_array);
+	} else {
+		/*
+		 * The cluster name of a slave is changed.
+		 * Also the replication type of the slave may be changed.
+		 */
+		m = mdhost_lookup_master();
+		mdhost_mutex_lock(m, diag);
+		was_sync = (strcmp(m->ms.clustername, old_clustername) == 0);
+		is_sync  = (strcmp(m->ms.clustername, new_clustername) == 0);
+		mdhost_mutex_unlock(m, diag);
+
+		if (!was_sync && is_sync &&
+		    mdhost_switch_to_sync_hook != NULL) {
+			e = mdhost_switch_to_sync_hook(mh);
+		} else if (was_sync && !is_sync &&
+		    mdhost_switch_to_async_hook != NULL) {
+			e = mdhost_switch_to_async_hook(mh);
+		}
+	}
+
+	return (e);
+}
+
 gfarm_error_t
 mdhost_modify_in_cache(struct mdhost *mh, struct gfarm_metadb_server *ms)
 {
-	int cluster_changed = strcmp(mh->ms.clustername, ms->clustername) != 0;
+	int cluster_changed;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	char *old_clustername = NULL;
+	char *new_clustername;
 	static const char diag[] = "mdhost_modify_in_cache";
 
+	mdhost_mutex_lock(mh, diag);
+	cluster_changed = strcmp(mh->ms.clustername, ms->clustername) != 0;
+	mdhost_mutex_unlock(mh, diag);
 	if (cluster_changed)
 		mdcluster_remove_mdhost(mh);
-	free(mh->ms.clustername);
-	mh->ms.clustername = strdup_ck(ms->clustername, diag);
+	new_clustername = strdup(ms->clustername);
+	if (new_clustername == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_error(GFARM_MSG_1003682, "%s", gfarm_error_string(e));
+		goto end;
+	}
+	mdhost_mutex_lock(mh, diag);
+	old_clustername = mh->ms.clustername;
+	mh->ms.clustername = new_clustername;
 	mh->ms.port = ms->port;
 	mh->ms.flags = ms->flags;
-	if (cluster_changed)
-		return (mdcluster_get_or_create_by_mdhost(mh));
-	return (GFARM_ERR_NO_ERROR);
+	mdhost_mutex_unlock(mh, diag);
+
+	if (cluster_changed) {
+		e = mdcluster_get_or_create_by_mdhost(mh);
+		if (e != GFARM_ERR_NO_ERROR)
+			goto end;
+		if (mdhost_self_is_master()) {
+			e = mdhost_update_replication_type(mh, old_clustername,
+			    new_clustername);
+		}
+	}
+end:
+	free(old_clustername);
+	return (e);
 }
 
 /* PREREQUISITE: giant_lock */
