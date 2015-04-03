@@ -753,7 +753,7 @@ mdhost_update_replication_type(struct mdhost *mh,
 	static const char diag[] = "mdhost_update_replication_type";
 
 	if (mdhost_switch_to_sync_hook == NULL &&
-	    mdhost_switch_to_sync_hook == NULL)
+	    mdhost_switch_to_async_hook == NULL)
 		return (e);
 
 	if (mdhost_is_master(mh)) {
