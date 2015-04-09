@@ -2201,14 +2201,14 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 				}
 				w_off += rv;
 				written += rv;
-				if (md_ctx != NULL && !md_aborted)
-					EVP_DigestUpdate(
-					    md_ctx, buffer, partial);
 				gfarm_iostat_local_add(
 				    GFARM_IOSTAT_IO_WCOUNT, 1);
 				gfarm_iostat_local_add(
 				    GFARM_IOSTAT_IO_WBYTES, rv);
 			}
+			if (md_ctx != NULL && !md_aborted)
+				EVP_DigestUpdate(
+				    md_ctx, buffer, partial);
 		} while (size > 0);
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
