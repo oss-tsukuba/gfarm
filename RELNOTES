@@ -1,3 +1,13 @@
+Release note for Gfarm 2.6.3
+============================
+
+[2015.4.13]
+
+Bug fix
+* gfs_pio_sendfile/recvfile may generate incorrect digest
+* when a slave gfmd is changed from asynchronous to synchronous, it
+  stops to work [sf.net ticket #829]
+
 Release note for Gfarm 2.6.2
 ============================
 
