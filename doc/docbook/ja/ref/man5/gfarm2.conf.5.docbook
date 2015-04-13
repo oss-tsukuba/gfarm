@@ -353,6 +353,28 @@ gfsd起動時のスプールチェックを有効にします。スプールチ�
 </varlistentry>
 
 <varlistentry>
+<term><token>spool_digest_error_check</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+digest文によりチェックサム計算が有効となっている場合、
+ファイル読込時にチェックサムが計算されます。
+チェックサムが異なる場合、つまり、ファイルが損傷している場合は
+lost+foundディレクトリに移動し、損傷したファイルは自動的に除かれます。
+この文で<token>disable</token>と指定することによって、
+この移動を抑制することができます。
+</para>
+<para>
+このオプションはgfsdノード（ファイルシステムノード）でのみ有効です。
+デフォルトはenableです。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_digest_error_check disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>metadb_server_host</token> <parameter moreinfo="none">gfmdホスト名</parameter></term>
 <listitem>
 <para>gfmdが動作しているホスト名を指定します。</para>
@@ -1968,6 +1990,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;spool_server_cred_name_statement&gt; |
 	&lt;spool_check_level_statement&gt; |
 	&lt;spool_base_load_statement&gt; |
+	&lt;spool_digest_error_check_statement&gt; |
 	&lt;metadb_server_host_statement&gt; |
 	&lt;metadb_server_port_statement&gt; |
 	&lt;metadb_server_cred_type_statement&gt; |
@@ -2091,6 +2114,11 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <varlistentry>
 <term>&lt;spool_base_load_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"spool_base_load" &lt;load&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_digest_error_check_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_digest_error_check" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

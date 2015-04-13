@@ -355,6 +355,28 @@ be busy or idle to change the scheduling priority.
 </varlistentry>
 
 <varlistentry>
+<term><token>spool_digest_error_check</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+When digest calculation is enabled by the digest directive, the digest
+is calculated when reading a whole replica.  If the digest is
+incorrect, i.e. the replica is damaged, the damaged replica is moved
+to lost+found directory to automatically fix this problem.  This
+statement is used to disable this feature.  When it is disabled, the
+damaged raplica remains in the spool directory.
+</para>
+<para>
+This option is only available for a gfsd node (or a file system
+node).  The default is <token>enable</token>.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	spool_digest_error_check disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>metadb_server_host</token> <parameter moreinfo="none">hostname</parameter></term>
 <listitem>
 <para>The <token>metadb_server_host</token> statement specifies the
@@ -2025,6 +2047,7 @@ notation.</para>
 	&lt;spool_server_cred_name_statement&gt; |
 	&lt;spool_check_level_statement&gt; |
 	&lt;spool_base_load_statement&gt; |
+	&lt;spool_digest_error_check_statement&gt; |
 	&lt;metadb_server_host_statement&gt; |
 	&lt;metadb_server_port_statement&gt; |
 	&lt;metadb_server_cred_type_statement&gt; |
@@ -2147,6 +2170,11 @@ notation.</para>
 <varlistentry>
 <term>&lt;spool_base_load_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"spool_base_load" &lt;load&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_digest_error_check_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_digest_error_check" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
