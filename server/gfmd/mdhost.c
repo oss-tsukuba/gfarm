@@ -770,7 +770,7 @@ mdhost_update_replication_type(struct mdhost *mh,
 		GFARM_MALLOC_ARRAY(to_sync_array, array_len);
 		if (to_sync_array == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_error(GFARM_MSG_UNFIXED, "%s",
+			gflog_error(GFARM_MSG_1004225, "%s",
 			    gfarm_error_string(e));
 			mdhost_global_mutex_unlock(diag);
 			return (e);
@@ -778,7 +778,7 @@ mdhost_update_replication_type(struct mdhost *mh,
 		GFARM_MALLOC_ARRAY(to_async_array, array_len);
 		if (to_async_array == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_error(GFARM_MSG_UNFIXED, "%s",
+			gflog_error(GFARM_MSG_1004226, "%s",
 			    gfarm_error_string(e));
 			free(to_sync_array);
 			mdhost_global_mutex_unlock(diag);
