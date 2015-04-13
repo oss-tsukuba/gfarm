@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
 .\"      Date: 16 Jul 2014
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -296,6 +296,26 @@ For example,
 .\}
 .nf
 	spool_base_load 1\&.0
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+spool_digest_error_check \fIvalidity\fR
+.RS 4
+When digest calculation is enabled by the digest directive, the digest is calculated when reading a whole replica\&. If the digest is incorrect, i\&.e\&. the replica is damaged, the damaged replica is moved to lost+found directory to automatically fix this problem\&. This statement is used to disable this feature\&. When it is disabled, the damaged raplica remains in the spool directory\&.
+.sp
+This option is only available for a gfsd node (or a file system node)\&. The default is
+enable\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_digest_error_check disable
 .fi
 .if n \{\
 .RE
@@ -948,6 +968,7 @@ This directive specifies a file name
 \fIuser\-map\-file\fR
 for mapping local user names to global user names\&. This map file is used only for sharedsecret authentication\&. When this file is not specified, a global user name is assumed to be same as the local user name\&.
 .sp
+
 \fIuser\-map\-file\fR
 is needed when you have to use the sharedsecret authentication method in the case where you have different unix account names on different filesystem nodes\&. In such a case, the
 \fIuser\-map\-file\fR
@@ -1479,6 +1500,7 @@ fatal_action \fIaction_name\fR
 This parameter specifies the behavior at a fatal error\&. The default action is
 \fIbacktrace_and_abort\fR\&.
 .sp
+
 For example,
 .sp
 .if n \{\
@@ -1954,6 +1976,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<spool_server_cred_name_statement> |
 	<spool_check_level_statement> |
 	<spool_base_load_statement> |
+	<spool_digest_error_check_statement> |
 	<metadb_server_host_statement> |
 	<metadb_server_port_statement> |
 	<metadb_server_cred_type_statement> |
@@ -2148,6 +2171,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "spool_base_load" <load>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<spool_digest_error_check_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"spool_digest_error_check" <validity>
 .fi
 .if n \{\
 .RE
@@ -3677,6 +3714,7 @@ $HOME/\&.gfarm2rc
 .RE
 .SH "SEE ALSO"
 .PP
+
 \fBgfmd\fR(8),
 \fBgfsd\fR(8),
 \fBsetsockopt\fR(2)

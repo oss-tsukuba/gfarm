@@ -2,15 +2,15 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarm2.conf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm2.conf">
 <a name="gfarm2.conf.5"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfarm2.conf — Gfarm設定ファイル</p>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 gfarm2.confファイルは、gfarmプログラムの設定ファイルです。
@@ -38,13 +38,13 @@ gfarm2.confは、一行に一文の形式で設定します。
 されます。
 </p>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="ホスト指定">
 <a name="hostspecification"></a><h2>ホスト指定</h2>
 <p>
 引数として、<em class="parameter"><code>ホスト指定</code></em>を記述できる文がいくつかありますが、
 この場合、ホスト指定には、下記のいずれかを記述できます。
 </p>
-<div class="variablelist"><dl class="variablelist">
+<div class="variablelist"><dl>
 <dt><span class="term"><em class="parameter"><code>III.JJJ.KKK.LLL</code></em></span></dt>
 <dd><p>
 "."で区切られた0〜255までの数字4つで、IPアドレスを指定します。
@@ -68,10 +68,10 @@ IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワ
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="文">
 <a name="statement"></a><h2>文</h2>
 <p>文には、下記の種類があります。</p>
-<div class="variablelist"><dl class="variablelist">
+<div class="variablelist"><dl>
 <dt><span class="term"><span class="token">spool</span> <em class="parameter"><code>gfsdスプール・ディレクトリ</code></em></span></dt>
 <dd>
 <p>gfsdが、gfarmファイルの実体を保持するディレクトリ名を
@@ -144,7 +144,7 @@ GSI認証において、gfsdが用いる証明書の種類を指定します。
 <span class="token">spool_server_cred_name</span>と組み合わせて
 下記のように用います。
 </p>
-<div class="variablelist"><dl class="variablelist">
+<div class="variablelist"><dl>
 <dt><span class="term"><span class="token">self</span></span></dt>
 <dd><p>
 そのユーザが現在所持しているユーザ証明書を用いることを示します。
@@ -266,6 +266,25 @@ gfsd起動時のスプールチェックを有効にします。スプールチ�
 <p>例:</p>
 <div class="literallayout"><p><br>
 	spool_base_load 1.0<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">spool_digest_error_check</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>
+digest文によりチェックサム計算が有効となっている場合、
+ファイル読込時にチェックサムが計算されます。
+チェックサムが異なる場合、つまり、ファイルが損傷している場合は
+lost+foundディレクトリに移動し、損傷したファイルは自動的に除かれます。
+この文で<span class="token">disable</span>と指定することによって、
+この移動を抑制することができます。
+</p>
+<p>
+このオプションはgfsdノード（ファイルシステムノード）でのみ有効です。
+デフォルトはenableです。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	spool_digest_error_check disable<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">metadb_server_host</span> <em class="parameter"><code>gfmdホスト名</code></em></span></dt>
@@ -1110,7 +1129,7 @@ enableと指定した場合、ファイル作成・変更・削除に関する
 <p>
 指定可能な動作名は以下の通りです:
 </p>
-<div class="variablelist"><dl class="variablelist">
+<div class="variablelist"><dl>
 <dt><span class="term"><span class="token">backtrace_and_abort</span></span></dt>
 <dd><p>
 バックトレースを出力した後、
@@ -1450,10 +1469,10 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 </dd>
 </dl></div>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="GRAMMAR">
 <a name="grammar"></a><h2>GRAMMAR</h2>
 <p>gfarm2.confの文法をBNFで記述すると、下記のようになります。</p>
-<div class="variablelist"><dl class="variablelist">
+<div class="variablelist"><dl>
 <dt><span class="term">&lt;statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p><br>
 	&lt;spool_statement&gt; |<br>
@@ -1464,6 +1483,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;spool_server_cred_name_statement&gt; |<br>
 	&lt;spool_check_level_statement&gt; |<br>
 	&lt;spool_base_load_statement&gt; |<br>
+	&lt;spool_digest_error_check_statement&gt; |<br>
 	&lt;metadb_server_host_statement&gt; |<br>
 	&lt;metadb_server_port_statement&gt; |<br>
 	&lt;metadb_server_cred_type_statement&gt; |<br>
@@ -1563,6 +1583,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <dd><div class="literallayout"><p>"spool_check_level" &lt;spck_level&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_base_load_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool_base_load" &lt;load&gt;</p></div></dd>
+<dt><span class="term">&lt;spool_digest_error_check_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"spool_digest_error_check" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_host_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_server_host" &lt;hostname&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_port_statement&gt; ::=</span></dt>
@@ -1783,7 +1805,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	"abort" | "exit"</p></div></dd>
 </dl></div>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="EXAMPLES">
 <a name="examples"></a><h2>EXAMPLES</h2>
 <p>
 以下は sharedsecret認証を使う gfarm2.conf の例です。
@@ -1832,16 +1854,16 @@ admin_user_gsi_dn "/C=JP/ST=Tokyo/L=Chuo-ku/O=Example, Inc./OU=Example Divisi
 sockopt keepalive<br>
 </p></div>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="FILES">
 <a name="files"></a><h2>FILES</h2>
-<div class="variablelist"><dl class="variablelist">
+<div class="variablelist"><dl>
 <dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code></span></dt>
 <dd><p></p></dd>
 <dt><span class="term"><code class="filename">$HOME/.gfarm2rc</code></span></dt>
 <dd><p></p></dd>
 </dl></div>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="SEE ALSO">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfmd</span>(8)</span>,
