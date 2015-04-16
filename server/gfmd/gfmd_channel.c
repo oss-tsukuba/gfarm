@@ -1443,7 +1443,8 @@ gfmdc_journal_first_sync_thread(void *closure)
  * gfmdc_journal_transfer_wait() related variables and functions
  */
 
-static int journal_transfer_wait_verbose = 0;
+static enum { verbose_silent, verbose_wait, verbose_timeout }
+	journal_transfer_wait_verbose = verbose_silent;
 static int journal_transfer_waiting = 0;
 static pthread_mutex_t journal_transfer_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t journal_transfer_event = PTHREAD_COND_INITIALIZER;
@@ -1455,13 +1456,11 @@ gfmdc_journal_transfer_event(void)
 {
 	const char diag[] = "gfmdc_journal_transfer_event";
 
-	if (!journal_transfer_waiting)
-		return;
-
 	gfarm_mutex_lock(&journal_transfer_mutex,
 	    diag, JOURNAL_TRANSFER_MUTEX_DIAG);
-	gfarm_cond_signal(&journal_transfer_event,
-	    diag, JOURNAL_TRANSFER_EVENT_DIAG);
+	if (journal_transfer_waiting)
+		gfarm_cond_signal(&journal_transfer_event,
+		    diag, JOURNAL_TRANSFER_EVENT_DIAG);
 	gfarm_mutex_unlock(&journal_transfer_mutex,
 	    diag, JOURNAL_TRANSFER_MUTEX_DIAG);
 }
@@ -1485,13 +1484,28 @@ gfmdc_journal_transferring_each_mdhost(struct mdhost *mh, void *closure)
 			to_sn = db_journal_get_current_seqnum();
 			if (lf_sn < to_sn) {
 				*transferringp = 1;
-				if (journal_transfer_wait_verbose)
+				switch (journal_transfer_wait_verbose) {
+				case verbose_silent:
+					/* nothing to do */
+					break;
+				case verbose_wait:
 					gflog_info(GFARM_MSG_UNFIXED,
 					    "journal transfer: waiting for %s "
 					    "till seqnum %llu, currently %llu",
 					    mdhost_get_name(mh),
 					    (unsigned long long)to_sn,
 					    (unsigned long long)lf_sn);
+					break;
+				case verbose_timeout:
+					gflog_info(GFARM_MSG_UNFIXED,
+					    "journal transfer: "
+					    "timeout transferring to %s: "
+					    "target seqnum %llu, sent %llu",
+					    mdhost_get_name(mh),
+					    (unsigned long long)to_sn,
+					    (unsigned long long)lf_sn);
+					break;
+				}
 			}
 		}
 		mdhost_put_peer(mh, peer); /* decrement refcount */
@@ -1517,14 +1531,19 @@ gfmdc_journal_transfer_wait(void)
 	int retry;
 	const char diag[] = "gfmdc_journal_transfer_wait";
 
-	journal_transfer_wait_verbose = 1;
+	journal_transfer_wait_verbose = verbose_wait;
 	if (!gfmdc_journal_transferring()) {
 		gflog_info(GFARM_MSG_UNFIXED,
-		    "journal is already synchronized");
+		    "journal transfer: no need to wait");
 		return;
 	}
-	journal_transfer_wait_verbose = 0;
+	journal_transfer_wait_verbose = verbose_silent;
+
+	gfarm_mutex_lock(&journal_transfer_mutex,
+	    diag, JOURNAL_TRANSFER_MUTEX_DIAG);
 	journal_transfer_waiting = 1;
+	gfarm_mutex_unlock(&journal_transfer_mutex,
+	    diag, JOURNAL_TRANSFER_MUTEX_DIAG);
 
 	if (clock_gettime(CLOCK_REALTIME, &timeout) == -1) {
 		gflog_error_errno(GFARM_MSG_UNFIXED, "clock_gettime");
@@ -1543,8 +1562,13 @@ gfmdc_journal_transfer_wait(void)
 		if (!retry || !gfmdc_journal_transferring())
 			break;
 	}
+	journal_transfer_wait_verbose = verbose_timeout;
 	if (gfmdc_journal_transferring())
-		gflog_notice(GFARM_MSG_UNFIXED, "journal transfer: giving up");
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "journal transfer: timeout due to no response "
+		    "within %d seconds "
+		    "(metadb_server_slave_replication_timeout)",
+		     gfarm_get_metadb_server_slave_replication_timeout());
 	else
 		gflog_info(GFARM_MSG_UNFIXED, "journal transfer: completed");
 }
