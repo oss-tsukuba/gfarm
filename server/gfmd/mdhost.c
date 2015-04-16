@@ -402,6 +402,21 @@ mdhost_set_seqnum_state_by_error(struct mdhost *m, gfarm_error_t e)
 	}
 }
 
+int
+mdhost_may_transfer_journal(struct mdhost *m)
+{
+	enum mdhost_seqnum_state s;
+
+	if (!mdhost_is_up(m))
+		return 0;
+
+	s = mdhost_get_seqnum_state(m);
+	if (s == seqnum_state_out_of_sync ||
+	    s == seqnum_state_error)
+		return 0;
+	return 1;
+}
+
 static void
 mdhost_invalidate(struct mdhost *m)
 {

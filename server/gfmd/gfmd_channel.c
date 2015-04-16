@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <time.h>
 #include <pwd.h>
 
 #include <gfarm/gflog.h>
@@ -138,6 +139,8 @@ gfmdc_journal_syncsend_free(struct gfmdc_journal_send_closure *c)
 	free(c);
 }
 
+static void gfmdc_journal_transfer_event(void);
+
 static void
 gfmdc_journal_send_closure_reset(struct gfmdc_journal_send_closure *c,
 	struct mdhost *mh)
@@ -158,6 +161,8 @@ gfmdc_journal_syncsend_completed(struct gfmdc_journal_send_closure *c)
 	c->end = 1;
 	gfarm_mutex_unlock(&c->send_mutex, diag, SEND_MUTEX_DIAG);
 	gfarm_cond_signal(&c->send_end_cond, diag, SEND_END_COND_DIAG);
+
+	gfmdc_journal_transfer_event();
 }
 
 static struct gfmdc_journal_send_closure *
@@ -176,6 +181,8 @@ gfmdc_journal_asyncsend_free(struct gfmdc_journal_send_closure *c)
 {
 	free(c->data);
 	free(c);
+
+	gfmdc_journal_transfer_event();
 }
 
 /*
@@ -1430,6 +1437,117 @@ gfmdc_journal_first_sync_thread(void *closure)
 	gfmdc_peer_set_first_sync_completed(gfmdc_peer, 1);
 	peer_del_ref(peer); /* decrement refcount */
 	return (NULL);
+}
+
+/*
+ * gfmdc_journal_transfer_wait() related variables and functions
+ */
+
+static int journal_transfer_wait_verbose = 0;
+static int journal_transfer_waiting = 0;
+static pthread_mutex_t journal_transfer_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t journal_transfer_event = PTHREAD_COND_INITIALIZER;
+static const char JOURNAL_TRANSFER_MUTEX_DIAG[] = "journal_transfer_mutex";
+static const char JOURNAL_TRANSFER_EVENT_DIAG[] = "journal_transfer_event";
+
+static void
+gfmdc_journal_transfer_event(void)
+{
+	const char diag[] = "gfmdc_journal_transfer_event";
+
+	if (!journal_transfer_waiting)
+		return;
+
+	gfarm_mutex_lock(&journal_transfer_mutex,
+	    diag, JOURNAL_TRANSFER_MUTEX_DIAG);
+	gfarm_cond_signal(&journal_transfer_event,
+	    diag, JOURNAL_TRANSFER_EVENT_DIAG);
+	gfarm_mutex_unlock(&journal_transfer_mutex,
+	    diag, JOURNAL_TRANSFER_MUTEX_DIAG);
+}
+
+static int
+gfmdc_journal_transferring_each_mdhost(struct mdhost *mh, void *closure)
+{
+	int *transferringp = closure;
+	struct peer *peer = mdhost_get_peer(mh); /* increment refcount */
+
+	/* don't touch *transferringp, if peer == NULL || gfmdc_peer == NULL */
+	if (peer != NULL && mdhost_may_transfer_journal(mh)) {
+		struct gfmdc_peer_record *gfmdc_peer;
+
+		gfmdc_peer = peer_get_gfmdc_record(peer);
+		if (gfmdc_peer != NULL &&
+		    gfmdc_journal_mdhost_can_sync(mh, gfmdc_peer)) {
+			gfarm_uint64_t lf_sn, to_sn;
+
+			lf_sn = gfmdc_peer_get_last_fetch_seqnum(gfmdc_peer);
+			to_sn = db_journal_get_current_seqnum();
+			if (lf_sn < to_sn) {
+				*transferringp = 1;
+				if (journal_transfer_wait_verbose)
+					gflog_info(GFARM_MSG_UNFIXED,
+					    "journal transfer: waiting for %s "
+					    "till seqnum %llu, currently %llu",
+					    mdhost_get_name(mh),
+					    (unsigned long long)to_sn,
+					    (unsigned long long)lf_sn);
+			}
+		}
+		mdhost_put_peer(mh, peer); /* decrement refcount */
+	}
+	return (1); /* continue this mdhost_foreach() loop */
+
+}
+
+static int
+gfmdc_journal_transferring(void)
+{
+	int transferring = 0;
+
+	mdhost_foreach(gfmdc_journal_transferring_each_mdhost, &transferring);
+	return (transferring);
+	
+}
+
+/* NOTE: caller of this function should acquire giant_lock as well */
+void
+gfmdc_journal_transfer_wait(void)
+{
+	struct timespec timeout;
+	int retry;
+	const char diag[] = "gfmdc_journal_transfer_wait";
+
+	journal_transfer_wait_verbose = 1;
+	if (!gfmdc_journal_transferring()) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "journal is already synchronized");
+		return;
+	}
+	journal_transfer_wait_verbose = 0;
+	journal_transfer_waiting = 1;
+
+	if (clock_gettime(CLOCK_REALTIME, &timeout) == -1) {
+		gflog_error_errno(GFARM_MSG_UNFIXED, "clock_gettime");
+		return;
+	}
+	timeout.tv_sec += gfarm_get_metadb_server_slave_replication_timeout();
+
+	for (;;) {
+		gfarm_mutex_lock(&journal_transfer_mutex,
+		    diag, JOURNAL_TRANSFER_MUTEX_DIAG);
+		retry = gfarm_cond_timedwait(
+		    &journal_transfer_event, &journal_transfer_mutex, &timeout,
+		    diag, JOURNAL_TRANSFER_EVENT_DIAG);
+		gfarm_mutex_unlock(&journal_transfer_mutex,
+		    diag, JOURNAL_TRANSFER_MUTEX_DIAG);
+		if (!retry || !gfmdc_journal_transferring())
+			break;
+	}
+	if (gfmdc_journal_transferring())
+		gflog_notice(GFARM_MSG_UNFIXED, "journal transfer: giving up");
+	else
+		gflog_info(GFARM_MSG_UNFIXED, "journal transfer: completed");
 }
 
 static void

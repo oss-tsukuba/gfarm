@@ -941,6 +941,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_JOURNAL_RECVQ_SIZE_DEFAULT	100000
 #define GFARM_JOURNAL_SYNC_FILE_DEFAULT		1
 #define GFARM_JOURNAL_SYNC_SLAVE_TIMEOUT_DEFAULT 10 /* 10 second */
+#define GFARM_METADB_SERVER_SLAVE_REPLICATION_TIMEOUT_DEFAULT 120 /* 120 sec */
 #define GFARM_METADB_SERVER_SLAVE_MAX_SIZE_DEFAULT	16
 #define GFARM_METADB_SERVER_FORCE_SLAVE_DEFAULT		0
 #define GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT  60 /* 60 seconds */
@@ -967,6 +968,7 @@ static int journal_max_size = GFARM_CONFIG_MISC_DEFAULT;
 static int journal_recvq_size = GFARM_CONFIG_MISC_DEFAULT;
 static int journal_sync_file = GFARM_CONFIG_MISC_DEFAULT;
 static int journal_sync_slave_timeout = GFARM_CONFIG_MISC_DEFAULT;
+static int metadb_server_slave_replication_timeout = GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_server_slave_max_size = GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_server_force_slave = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check = GFARM_CONFIG_MISC_DEFAULT;
@@ -1240,6 +1242,12 @@ int
 gfarm_get_journal_sync_slave_timeout(void)
 {
 	return (journal_sync_slave_timeout);
+}
+
+int
+gfarm_get_metadb_server_slave_replication_timeout(void)
+{
+	return (metadb_server_slave_replication_timeout);
 }
 
 int
@@ -3016,6 +3024,10 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_enabled(p, &journal_sync_file);
 	} else if (strcmp(s, o = "synchronous_replication_timeout") == 0) {
 		e = parse_set_misc_int(p, &journal_sync_slave_timeout);
+	} else if (strcmp(s, o = "metadb_server_slave_replication_timeout")
+	    == 0) {
+		e = parse_set_misc_int(p,
+		    &metadb_server_slave_replication_timeout);
 	} else if (strcmp(s, o = "metadb_server_slave_max_size") == 0) {
 		e = parse_set_misc_int(p, &metadb_server_slave_max_size);
 	} else if (strcmp(s, o = "metadb_server_force_slave") == 0) {
@@ -3317,6 +3329,10 @@ gfarm_config_set_default_misc(void)
 	if (journal_sync_slave_timeout == GFARM_CONFIG_MISC_DEFAULT)
 		journal_sync_slave_timeout =
 		    GFARM_JOURNAL_SYNC_SLAVE_TIMEOUT_DEFAULT;
+	if (metadb_server_slave_replication_timeout ==
+	    GFARM_CONFIG_MISC_DEFAULT)
+		metadb_server_slave_replication_timeout =
+		    GFARM_METADB_SERVER_SLAVE_REPLICATION_TIMEOUT_DEFAULT;
 	if (metadb_server_slave_max_size == GFARM_CONFIG_MISC_DEFAULT)
 		metadb_server_slave_max_size =
 		    GFARM_METADB_SERVER_SLAVE_MAX_SIZE_DEFAULT;

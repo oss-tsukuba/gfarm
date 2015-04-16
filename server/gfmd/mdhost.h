@@ -45,6 +45,7 @@ void mdhost_set_seqnum_ok(struct mdhost *);
 void mdhost_set_seqnum_error(struct mdhost *);
 void mdhost_set_seqnum_behind(struct mdhost *);
 void mdhost_set_seqnum_state_by_error(struct mdhost *, gfarm_error_t);
+int mdhost_may_transfer_journal(struct mdhost *);
 #ifdef PEER_REFCOUNT_DEBUG
 struct peer *mdhost_get_peer_impl(struct mdhost *,
 	const char *, int, const char *);

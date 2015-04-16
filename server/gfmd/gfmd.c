@@ -1447,8 +1447,13 @@ gfmd_terminate(const char *diag)
 	 *
 	 * NOTE:
 	 * We do not call db_begin(diag)/db_end() here to avoid SF.net #736.
+	 *
+	 * Because peer_shutdown_all() only detaches the peers' processes,
+	 * journal transfer to slaves is possible even after this call.
 	 */
 	peer_shutdown_all();
+
+	gfmdc_journal_transfer_wait();
 
 	/* save all pending transactions */
 	/* db_terminate() needs giant_lock(), see comment in dbq_enter() */
