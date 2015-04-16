@@ -749,9 +749,7 @@ gfmdc_client_journal_ready_to_recv(struct mdhost *mh, struct peer *peer)
 	ji.error = GFARM_ERR_NO_ERROR;
 	ji.end = 0;
 
-	giant_lock();
 	seqnum = db_journal_get_current_seqnum();
-	giant_unlock();
 
 	if ((e = gfmdc_client_send_request(mh, peer, diag,
 	    gfmdc_client_journal_ready_to_recv_result,
@@ -1406,7 +1404,6 @@ gfmdc_journal_first_sync_thread(void *closure)
 	gflog_debug(GFARM_MSG_1003006,
 	    "%s : first sync start", mdhost_get_name(mh));
 #endif
-	giant_lock();
 	if (gfmdc_peer_get_last_fetch_seqnum(gfmdc_peer) <
 	    db_journal_get_current_seqnum()) {
 		/* it's still unknown whether seqnum is ok or out_of_sync */
@@ -1415,7 +1412,6 @@ gfmdc_journal_first_sync_thread(void *closure)
 	} else {
 		mdhost_set_seqnum_ok(mh);
 	}
-	giant_unlock();
 
 	while (exist_recs) {
 		if ((e = gfmdc_journal_asyncsend(mh, peer, &exist_recs))

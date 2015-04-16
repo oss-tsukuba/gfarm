@@ -90,11 +90,58 @@ static int journal_begin_called = 0;
 static int journal_slave_transaction_nesting = 0;
 
 
+gfarm_uint64_t
+db_journal_next_seqnum(void)
+{
+	gfarm_uint64_t n;
+	static const char diag[] = "db_journal_next_seqnum";
+
+	gfarm_mutex_lock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
+	n = ++journal_seqnum;
+	gfarm_mutex_unlock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
+	return (n);
+}
+
+gfarm_uint64_t
+db_journal_get_current_seqnum(void)
+{
+	gfarm_uint64_t n;
+	static const char diag[] = "db_journal_get_current_seqnum";
+
+	gfarm_mutex_lock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
+	n = journal_seqnum;
+	gfarm_mutex_unlock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
+	return (n);
+}
+
+static void
+db_journal_set_current_seqnum(gfarm_uint64_t sn)
+{
+	static const char diag[] = "db_journal_set_current_seqnum";
+
+	gfarm_mutex_lock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
+	journal_seqnum = sn;
+	gfarm_mutex_unlock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
+}
+
+static gfarm_uint64_t
+db_journal_subtract_current_seqnum(int n)
+{
+	gfarm_uint64_t sn;
+	static const char diag[] = "db_journal_subtract_current_seqnum";
+
+	gfarm_mutex_lock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
+	journal_seqnum -= n;
+	sn = journal_seqnum;
+	gfarm_mutex_unlock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
+	return (sn);
+}
+
 static void
 db_seqnum_load_callback(void *closure, struct db_seqnum_arg *a)
 {
 	if (a->name == NULL || strcmp(a->name, DB_SEQNUM_MASTER_NAME) == 0)
-		journal_seqnum = a->value;
+		db_journal_set_current_seqnum(a->value);
 	free(a->name);
 }
 
@@ -208,40 +255,6 @@ db_journal_terminate(void)
 	store_ops->terminate();
 	journal_file_close(self_jf);
 	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_uint64_t
-db_journal_next_seqnum(void)
-{
-	gfarm_uint64_t n;
-	static const char diag[] = "db_journal_next_seqnum";
-
-	gfarm_mutex_lock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
-	n = ++journal_seqnum;
-	gfarm_mutex_unlock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
-	return (n);
-}
-
-gfarm_uint64_t
-db_journal_get_current_seqnum(void)
-{
-	gfarm_uint64_t n;
-	static const char diag[] = "db_journal_get_current_seqnum";
-
-	gfarm_mutex_lock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
-	n = journal_seqnum;
-	gfarm_mutex_unlock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
-	return (n);
-}
-
-static void
-db_journal_subtract_current_seqnum(int n)
-{
-	static const char diag[] = "db_journal_subtract_current_seqnum";
-
-	gfarm_mutex_lock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
-	journal_seqnum -= n;
-	gfarm_mutex_unlock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
 }
 
 static gfarm_error_t
@@ -646,8 +659,7 @@ db_journal_write_end(gfarm_uint64_t seqnum, void *arg)
 	 */
 	if (journal_begin_called) {
 		journal_begin_called = 0;
-		db_journal_subtract_current_seqnum(2);
-		journal_seqnum_pre = journal_seqnum;
+		journal_seqnum_pre = db_journal_subtract_current_seqnum(2);
 		return (GFARM_ERR_NO_ERROR);
 	}
 	return (db_journal_write(seqnum, GFM_JOURNAL_END, arg,
@@ -4042,7 +4054,7 @@ db_journal_recvq_proc(int *canceledp)
 	if ((e = journal_file_write_raw(self_jf, ri->recs_len, ri->recs,
 	    &last_seqnum, &journal_slave_transaction_nesting))
 	    == GFARM_ERR_NO_ERROR)
-		journal_seqnum = last_seqnum;
+		db_journal_set_current_seqnum(last_seqnum);
 	free(ri->recs);
 	free(ri);
 	if (gfarm_get_journal_sync_file()) {
