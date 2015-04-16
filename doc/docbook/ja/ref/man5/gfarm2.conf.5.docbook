@@ -1846,6 +1846,25 @@ gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します�
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_server_slave_replication_timeout</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>gfmd が SIGTERM シグナルを受けて停止する際に、
+スレーブ gfmd へのメタデータ・レプリケーション完了を待つ
+タイムアウト時間を秒単位で設定します。
+タイムアウト時間を過ぎた場合、スレーブ gfmd へのレプリケーションを諦めます。
+デフォルトは 120 秒です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_slave_replication_timeout 180
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>metadb_journal_dir</token> <parameter moreinfo="none">ジャーナルディレクトリ</parameter></term>
 <listitem>
 <para>ジャーナルファイルの保存ディレクトリを指定します。
@@ -2067,6 +2086,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;synchronous_journaling_statement&gt; |
 	&lt;metadb_server_force_slave_statement&gt; |
 	&lt;metadb_server_slave_max_size_statement&gt; |
+	&lt;metadb_server_slave_replication_timeout_statement&gt; |
 	&lt;metadb_journal_dir_statement&gt; |
 	&lt;metadb_journal_max_size_statement&gt; |
 	&lt;metadb_journal_recvq_size_statement&gt; |
@@ -2583,6 +2603,11 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <varlistentry>
 <term>&lt;metadb_server_slave_max_size_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_server_slave_max_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_slave_replication_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_slave_replication_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

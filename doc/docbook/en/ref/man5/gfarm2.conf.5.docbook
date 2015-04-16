@@ -1904,6 +1904,25 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_server_slave_replication_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>This parameter specifies timeout in seconds to wait for completion of
+  metadata replication at gfmd shutdown caused by a SIGTERM signal.
+If the timeout period passed,
+master gfmd gives up metadata replication to slave gfmd.
+The default is 120 seconds.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_slave_replication_timeout 180
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>metadb_journal_dir</token> <parameter moreinfo="none">directory</parameter></term>
 <listitem>
 <para>This parameter specifies the directory for the journal file.
@@ -2123,6 +2142,7 @@ notation.</para>
 	&lt;synchronous_journaling_statement&gt; |
 	&lt;metadb_server_force_slave_statement&gt; |
 	&lt;metadb_server_slave_max_size_statement&gt; |
+	&lt;metadb_server_slave_replication_timeout_statement&gt; |
 	&lt;metadb_journal_dir_statement&gt; |
 	&lt;metadb_journal_max_size_statement&gt; |
 	&lt;metadb_journal_recvq_size_statement&gt; |
@@ -2634,6 +2654,11 @@ notation.</para>
 <varlistentry>
 <term>&lt;metadb_server_slave_max_size_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_server_slave_max_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_slave_replication_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_slave_replication_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
