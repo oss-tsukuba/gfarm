@@ -1507,7 +1507,6 @@ gfmdc_journal_transferring(void)
 
 	mdhost_foreach(gfmdc_journal_transferring_each_mdhost, &transferring);
 	return (transferring);
-	
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */
