@@ -1416,6 +1416,22 @@ This parameter is only available in gfmd.conf.
 	metadb_server_slave_max_size 40<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">metadb_server_slave_replication_timeout</span> <em class="parameter"><code>seconds</code></em></span></dt>
+<dd>
+<p>This parameter specifies timeout in seconds to wait for completion of
+  metadata replication at gfmd shutdown caused by a SIGTERM signal.
+If the timeout period passed,
+master gfmd gives up metadata replication to slave gfmd.
+The default is 120 seconds.
+</p>
+<p>
+This parameter is only available in gfmd.conf.
+</p>
+<p>Example:</p>
+<div class="literallayout"><p><br>
+	metadb_server_slave_replication_timeout 180<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">metadb_journal_dir</span> <em class="parameter"><code>directory</code></em></span></dt>
 <dd>
 <p>This parameter specifies the directory for the journal file.
@@ -1614,6 +1630,7 @@ notation.</p>
 	&lt;synchronous_journaling_statement&gt; |<br>
 	&lt;metadb_server_force_slave_statement&gt; |<br>
 	&lt;metadb_server_slave_max_size_statement&gt; |<br>
+	&lt;metadb_server_slave_replication_timeout_statement&gt; |<br>
 	&lt;metadb_journal_dir_statement&gt; |<br>
 	&lt;metadb_journal_max_size_statement&gt; |<br>
 	&lt;metadb_journal_recvq_size_statement&gt; |<br>
@@ -1799,6 +1816,8 @@ notation.</p>
 <dd><div class="literallayout"><p>"metadb_server_force_slave" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_slave_max_size_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_server_slave_max_size" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;metadb_server_slave_replication_timeout_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"metadb_server_slave_replication_timeout" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_journal_dir_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_journal_dir" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_journal_max_size_statement&gt; ::=</span></dt>
