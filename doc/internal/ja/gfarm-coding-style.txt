@@ -180,6 +180,8 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 	・具体的には下記の通り。
 	  /* gfutil */
 		#include "hash.h"
+		#include "nanosec.h"
+		#include "thrsubr.h"
 		#include "gfevent.h"
 		#include "gfutil.h"
 	  /* gfsl public */

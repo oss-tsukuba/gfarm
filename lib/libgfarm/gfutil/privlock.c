@@ -5,6 +5,7 @@
 
 #include <gfarm/gflog.h>
 
+#include "nanosec.h"
 #include "thrsubr.h"
 #include "gfutil.h"
 
@@ -27,7 +28,7 @@ gfarm_privilege_lock(const char *diag)
 	struct timespec ts;
 	int rc;
 
-	clock_gettime(CLOCK_REALTIME, &ts);
+	gfarm_gettime(&ts);
 	ts.tv_sec += POSSIBLE_DEADLOCK_TIMEOUT;
 	rc = gfarm_mutex_timedlock(&gfarm_privilege_mutex, &ts, diag,
 	    privilege_diag);

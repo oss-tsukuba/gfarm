@@ -19,9 +19,9 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 
-#include "gfutil.h"
 #include "nanosec.h"
 #include "thrsubr.h"
+#include "gfutil.h"
 
 #include "gfp_xdr.h"
 #include "gfm_proto.h"
@@ -1545,10 +1545,7 @@ gfmdc_journal_transfer_wait(void)
 	gfarm_mutex_unlock(&journal_transfer_mutex,
 	    diag, JOURNAL_TRANSFER_MUTEX_DIAG);
 
-	if (clock_gettime(CLOCK_REALTIME, &timeout) == -1) {
-		gflog_error_errno(GFARM_MSG_UNFIXED, "clock_gettime");
-		return;
-	}
+	gfarm_gettime(&timeout);
 	timeout.tv_sec += gfarm_get_metadb_server_slave_replication_timeout();
 
 	for (;;) {
