@@ -26,13 +26,13 @@ void
 gfarm_privilege_lock(const char *diag)
 {
 	struct timespec ts;
-	int rc;
+	int locked;
 
 	gfarm_gettime(&ts);
 	ts.tv_sec += POSSIBLE_DEADLOCK_TIMEOUT;
-	rc = gfarm_mutex_timedlock(&gfarm_privilege_mutex, &ts, diag,
+	locked = gfarm_mutex_timedlock(&gfarm_privilege_mutex, &ts, diag,
 	    privilege_diag);
-	if (rc != 0) {
+	if (!locked) {
 		/* backtrace may cause deadlock */
 		gflog_set_fatal_action(GFLOG_FATAL_ACTION_ABORT);
 		gflog_fatal(GFARM_MSG_1004198,
