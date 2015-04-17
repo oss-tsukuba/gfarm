@@ -500,7 +500,7 @@ yes)
     ])
 
   # Checks for library functions with pthread enabled
-  AC_CHECK_FUNCS(pthread_barrier_wait)
+  AC_CHECK_FUNCS(pthread_barrier_wait pthread_mutex_timedlock)
 
   CPPFLAGS="$CPPFLAGS_SAVE"
   LIBS="$LIBS_SAVE"
