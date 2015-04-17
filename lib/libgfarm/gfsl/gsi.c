@@ -556,7 +556,7 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
     gss_OID mechType = GSS_C_NO_OID;
     OM_uint32 timeRet;
 
-    int tknStat, rc;
+    int tknStat, locked;
     struct timespec ts;
 
     static const char diag[] = "gfarmGssAcceptSecurityContext()";
@@ -575,8 +575,8 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec += POSSIBLE_DEADLOCK_TIMEOUT;
-	rc = gfarm_mutex_timedlock(&gss_mutex, &ts, diag, gssDiag);
-	if (rc != 0) {
+	locked = gfarm_mutex_timedlock(&gss_mutex, &ts, diag, gssDiag);
+	if (!locked) {
 		/* backtrace may cause deadlock */
 		gflog_set_fatal_action(GFLOG_FATAL_ACTION_ABORT);
 		gflog_fatal(GFARM_MSG_1004219,
