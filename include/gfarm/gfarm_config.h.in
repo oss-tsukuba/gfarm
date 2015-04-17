@@ -158,6 +158,9 @@
 /* Define to 1 if you have the `pthread_barrier_wait' function. */
 #undef HAVE_PTHREAD_BARRIER_WAIT
 
+/* Define to 1 if you have the `pthread_mutex_timedlock' function. */
+#undef HAVE_PTHREAD_MUTEX_TIMEDLOCK
+
 /* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
 
