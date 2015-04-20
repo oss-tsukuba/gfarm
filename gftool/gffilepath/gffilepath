@@ -41,6 +41,7 @@ filepath()
 	if [ X"$out" = X ]; then
 		echo >&2 "$inum: no such object"
 	else
+		out=`echo $out | awk '{ printf $1 }'`
 		inum=`echo $out | awk -F/ '{ printf $1 }'`
 		name=`echo $out | awk -F/ '{ printf $2 }'`
 		fullpath="$name"
