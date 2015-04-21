@@ -300,7 +300,7 @@ handle_removal_result(struct dead_file_copy *dfc)
 		dead_file_copy_free(dfc); /* sleeps to wait for dbq.mutex */
 	} else if (host_is_up(dfc->host)) {
 		/* unexpected error, try again later to avoid busy loop */
-		gflog_error(GFARM_MSG_1002223,
+		gflog_notice(GFARM_MSG_1002223,
 		    "waiting removal of (%lld, %lld, %s): %s",
 		    (long long)dfc->inum, (long long)dfc->igen,
 		    host_name(dfc->host), gfarm_error_string(dfc->result));
