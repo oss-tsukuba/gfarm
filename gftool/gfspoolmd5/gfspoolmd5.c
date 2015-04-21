@@ -275,8 +275,9 @@ check_file(char *file, struct stat *stp, void *arg)
 		if (c.len > 0 && (c.flags & (GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED|
 		    GFM_PROTO_CKSUM_GET_EXPIRED)) == 0) {
 			e = GFARM_ERR_CHECKSUM_MISMATCH;
-			gflog_error(GFARM_MSG_1003789, "%s: file %.*s mds %.*s",
-			    file, (int)md_strlen, md_string, (int)c.len, c.cksum);
+			gflog_error(GFARM_MSG_1003789, "%s: %s: file %.*s "
+			    "mds %.*s", file, gfarm_error_string(e),
+			    (int)md_strlen, md_string, (int)c.len, c.cksum);
 		}
 	} else {
 		struct gfs_stat_cksum ck;
@@ -445,6 +446,7 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 	if (!foreground) {
+		gflog_set_identifier(progname);
 		gflog_syslog_open(LOG_PID, syslog_facility);
 		if (gfarm_daemon(1, 0) == -1)
 			gflog_warning_errno(GFARM_MSG_1003795, "daemon");
