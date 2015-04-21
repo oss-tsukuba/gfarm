@@ -37,11 +37,10 @@ dirpath()
 filepath()
 {
 	inum=$1
-	out=`echo "select dirinumber, entryname from direntry where entryinumber = $inum and entryname != '.' and entryname != '..'" | config-gfarm-update -o '-tAF/' $options`
+	out=`echo "select dirinumber, entryname from direntry where entryinumber = $inum and entryname != '.' and entryname != '..' limit 1" | config-gfarm-update -o '-tAF/' $options`
 	if [ X"$out" = X ]; then
 		echo >&2 "$inum: no such object"
 	else
-		out=`echo $out | awk '{ printf $1 }'`
 		inum=`echo $out | awk -F/ '{ printf $1 }'`
 		name=`echo $out | awk -F/ '{ printf $2 }'`
 		fullpath="$name"
