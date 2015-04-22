@@ -9,7 +9,8 @@ PROGNAME=`basename $0`
 
 usage()
 {
-	echo >&2 "usage: $PROGNAME [--prefix prefix] [-l metadata_directory] inum ..."
+	echo >&2 "usage: $PROGNAME [--prefix prefix]"
+	echo >&2 "	[-P backend_prefix] [-l metadata_directory] inum ..."
 	exit 1
 }
 
@@ -50,7 +51,7 @@ filepath()
 
 while [ $# -gt 0 ]; do
 	case $1 in
-	--prefix|-l) [ $# -ge 2 ] || usage
+	--prefix|-P|-l) [ $# -ge 2 ] || usage
 		options="$options $1 $2"
 		shift
 		;;
