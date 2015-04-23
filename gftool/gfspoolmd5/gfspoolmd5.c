@@ -432,10 +432,12 @@ error_check(const char *msg, gfarm_error_t e)
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [ -n ] [ -m mtime_day ] ", progname);
-	fprintf(stderr, "-r spool_root [ dir ... ]\n");
-	fprintf(stderr, "       %s -f [ -n ] [ -m mtime_day ] ", progname);
-	fprintf(stderr, "-r spool_root [ dir ... ] 2> log\n");
+	fprintf(stderr, "Usage: %s [-nL] [-m mtime_day] [-h host] ",
+	    progname);
+	fprintf(stderr, "-r spool_root [dir ...]\n");
+	fprintf(stderr, "       %s -f [-nL] [-m mtime_day] [-h host] ",
+	    progname);
+	fprintf(stderr, "-r spool_root [dir ...] 2> log\n");
 	exit(2);
 }
 
