@@ -80,8 +80,8 @@ echo "--- stopping old master ($old_master -> $new_master) ---"
 
 # make new journal records.
 awk 'BEGIN{for(i=0;i<100;i++)print i;exit}' |
-
 while read line; do gfmkdir /tmp/fotest; gfrmdir /tmp/fotest; done 2>/dev/null 
+
 # start failover
 $ssh $priv@$old_master -n $RC_DIR/gfmd stop
 
