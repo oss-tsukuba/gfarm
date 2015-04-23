@@ -29,6 +29,7 @@
 #include "lookup.h"
 #include "gfm_proto.h"
 #include "gfm_client.h"
+#include "gfs_pio.h"
 
 const char *progname = "gfspoolmd5";
 
@@ -40,6 +41,7 @@ const char PROGRESS_FILE[] = ".md5.count";
 long long *progress_addr;
 int mtime_day = -1;
 int foreground, cksum_check = 1;
+static char *op_host;
 
 /*
  * File format should be consistent with gfsd_local_path() in gfsd.c
@@ -211,6 +213,50 @@ check_file_size(GFS_File gf, char *file)
 }
 
 static gfarm_error_t
+read_file(char *file, struct stat *stp, void *arg)
+{
+	gfarm_ino_t inum;
+	gfarm_uint64_t gen;
+	GFS_File gf;
+	int fd;
+	gfarm_error_t e, e2;
+
+	if (!mtime_filter(stp))
+		return (GFARM_ERR_NO_ERROR);
+	if (get_inum_gen(file, &inum, &gen))
+		return (GFARM_ERR_NO_ERROR);
+
+	if (count < start_count) {
+		count += 1;
+		size += stp->st_size;
+		return (GFARM_ERR_NO_ERROR);
+	}
+	e = gfs_pio_fhopen(inum, gen, GFARM_FILE_RDONLY, &gf);
+	if (e != GFARM_ERR_NO_ERROR)
+		goto progress;
+	if ((fd = open("/dev/null", O_WRONLY)) == -1) {
+		e = gfarm_errno_to_error(errno);
+		goto close_progress;
+	}
+	/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
+	e = gfs_pio_internal_set_view_section(gf, op_host);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfs_pio_recvfile(gf, 0, fd, 0, -1, NULL);
+	close(fd);
+close_progress:
+	e2 = gfs_pio_close(gf);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = e2;
+progress:
+	count += 1;
+	size += stp->st_size;
+	if (foreground)
+		show_progress();
+	*progress_addr = count;
+	return (e);
+}
+
+static gfarm_error_t
 check_file(char *file, struct stat *stp, void *arg)
 {
 	struct gfs_stat_cksum c;
@@ -300,11 +346,11 @@ progress:
 }
 
 static void
-check_spool(char *dir)
+check_spool(char *dir, gfarm_error_t (*op)(char *, struct stat *, void *))
 {
 	gfarm_error_t e;
 
-	e = dir_foreach(check_file, NULL, NULL, dir, NULL);
+	e = dir_foreach(op, NULL, NULL, dir, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1003790, "%s: %s", dir,
 		    gfarm_error_string(e));
@@ -400,14 +446,18 @@ main(int argc, char *argv[])
 	char *spool_root = NULL;
 	int c, i;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
+	gfarm_error_t (*op)(char *, struct stat *, void *) = check_file;
 
 	if (argc > 0)
 		progname = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "fhm:nr:?")) != -1) {
+	while ((c = getopt(argc, argv, "fh:m:nr:L?")) != -1) {
 		switch (c) {
 		case 'f':
 			foreground = 1;
+			break;
+		case 'h':
+			op_host = optarg;
 			break;
 		case 'm':
 			mtime_day = atoi(optarg) * 3600 * 24;
@@ -418,7 +468,9 @@ main(int argc, char *argv[])
 		case 'r':
 			spool_root = optarg;
 			break;
-		case 'h':
+		case 'L':
+			op = read_file;
+			break;
 		case '?':
 		default:
 			usage();
@@ -459,11 +511,11 @@ main(int argc, char *argv[])
 		count_size(argv[i]);
 	gettimeofday(&start_time, NULL);
 	for (i = 0; i < argc; ++i)
-		check_spool(argv[i]);
+		check_spool(argv[i], op);
 	if (i == 0) {
 		count_size(".");
 		gettimeofday(&start_time, NULL);
-		check_spool(".");
+		check_spool(".", op);
 	}
 	if (foreground)
 		puts("");
