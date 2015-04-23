@@ -440,7 +440,7 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		if (e == GFARM_ERR_UNEXPECTED_EOF) {
 			e = GFARM_ERR_NO_ERROR;
 		} else {
-			gflog_warning(GFARM_MSG_1000180,
+			gflog_notice(GFARM_MSG_1000180,
 			    "receiving request number: %s",
 			    gfarm_error_string(e));
 		}

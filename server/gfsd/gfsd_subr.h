@@ -25,10 +25,10 @@ void fatal_metadb_proto_full(int,
 	const char *, const char *, gfarm_error_t);
 
 #define fatal(msg_no, ...) \
-	fatal_full(msg_no, __FILE__, __LINE__, __func__, __VA_ARGS__)
+	fatal_full(msg_no, LOG_ERR, __FILE__, __LINE__, __func__, __VA_ARGS__)
 
-void fatal_full(int, const char *, int, const char *,
-	const char *, ...) GFLOG_PRINTF_ARG(5, 6);
+void fatal_full(int, int, const char *, int, const char *,
+	const char *, ...) GFLOG_PRINTF_ARG(6, 7);
 
 void gfsd_local_path(gfarm_ino_t, gfarm_uint64_t, const char *, char **);
 int gfsd_create_ancestor_dir(char *);

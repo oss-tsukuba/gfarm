@@ -104,7 +104,12 @@
 #define GFMD_CONNECT_SLEEP_LOG_INTERVAL	86400	/* 1 day */
 
 #define fatal_errno(msg_no, ...) \
-	fatal_errno_full(msg_no, __FILE__, __LINE__, __func__, __VA_ARGS__)
+	fatal_errno_full(msg_no, LOG_ERR, __FILE__, __LINE__, __func__, \
+	    __VA_ARGS__)
+/* connection related fatal error.  zabbix alert is unnecessary. */
+#define conn_fatal(msg_no, ...) \
+	fatal_full(msg_no, LOG_NOTICE, __FILE__, __LINE__, __func__, \
+	    __VA_ARGS__)
 #define accepting_fatal(msg_no, ...) \
 	accepting_fatal_full(msg_no, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define accepting_fatal_errno(msg_no, ...) \
@@ -248,13 +253,13 @@ cleanup_handler(int signo)
 static int kill_master_gfsd;
 
 void
-fatal_full(int msg_no, const char *file, int line_no, const char *func,
-		const char *format, ...)
+fatal_full(int msg_no, int priority, const char *file,
+	int line_no, const char *func, const char *format, ...)
 {
 	va_list ap;
 
 	va_start(ap, format);
-	gflog_vmessage(msg_no, LOG_ERR, file, line_no, func, format, ap);
+	gflog_vmessage(msg_no, priority, file, line_no, func, format, ap);
 	va_end(ap);
 
 	if (!shutting_down) {
@@ -274,11 +279,11 @@ fatal_full(int msg_no, const char *file, int line_no, const char *func,
 	exit(2);
 }
 
-static void fatal_errno_full(int, const char *, int, const char*,
-		const char *, ...) GFLOG_PRINTF_ARG(5, 6);
+static void fatal_errno_full(int, int, const char *, int, const char*,
+		const char *, ...) GFLOG_PRINTF_ARG(6, 7);
 static void
-fatal_errno_full(int msg_no, const char *file, int line_no, const char *func,
-		const char *format, ...)
+fatal_errno_full(int msg_no, int priority, const char *file,
+	int line_no, const char *func, const char *format, ...)
 {
 	char buffer[2048];
 	va_list ap;
@@ -286,7 +291,7 @@ fatal_errno_full(int msg_no, const char *file, int line_no, const char *func,
 	va_start(ap, format);
 	vsnprintf(buffer, sizeof buffer, format, ap);
 	va_end(ap);
-	fatal_full(msg_no, file, line_no, func, "%s: %s",
+	fatal_full(msg_no, priority, file, line_no, func, "%s: %s",
 			buffer, strerror(errno));
 }
 
@@ -295,7 +300,7 @@ fatal_metadb_proto_full(int msg_no,
 	const char *file, int line_no, const char *func,
 	const char *diag, const char *proto, gfarm_error_t e)
 {
-	fatal_full(msg_no, file, line_no, func,
+	fatal_full(msg_no, LOG_ERR, file, line_no, func,
 	    "gfmd protocol: %s error on %s: %s", proto, diag,
 	    gfarm_error_string(e));
 }
@@ -544,7 +549,7 @@ gfs_server_get_request(struct gfp_xdr *client, size_t size, const char *diag,
 
 	/* XXX FIXME: should handle GFARM_ERR_NO_MEMORY gracefully */
 	if (e != GFARM_ERR_NO_ERROR)
-		fatal(GFARM_MSG_1000455, "%s get request: %s",
+		conn_fatal(GFARM_MSG_1000455, "%s get request: %s",
 		    diag, gfarm_error_string(e));
 }
 
@@ -564,7 +569,7 @@ gfs_server_put_reply_common(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(client);
 	if (e != GFARM_ERR_NO_ERROR)
-		fatal(GFARM_MSG_1000459, "%s put reply: %s",
+		conn_fatal(GFARM_MSG_1000459, "%s put reply: %s",
 		    diag, gfarm_error_string(e));
 
 	/* if input/output error occurs, die */
@@ -2807,7 +2812,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	} else if ((conn_err = gfs_client_connection_acquire_by_host(gfm_server,
 	    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
 	    &src_gfsd, listen_addrname)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1002184, "%s: connecting to %s:%d: %s",
+		gflog_notice(GFARM_MSG_1002184, "%s: connecting to %s:%d: %s",
 		    diag,
 		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
 		    gfarm_error_string(conn_err));
@@ -2857,7 +2862,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		    dst_err != GFARM_ERR_NO_ERROR ? dst_err :
 		    gfarm_errno_to_error(save_errno);
 		if ((rv = write(fds[1], &errcodes, sizeof(errcodes))) == -1)
-			gflog_error(GFARM_MSG_1002188, "%s: write pipe: %s",
+			gflog_notice(GFARM_MSG_1002188, "%s: write pipe: %s",
 			    diag, strerror(errno));
 		else if (rv != sizeof(errcodes))
 			gflog_error(GFARM_MSG_1002189, "%s: partial write: "
