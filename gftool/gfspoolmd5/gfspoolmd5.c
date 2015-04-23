@@ -432,10 +432,10 @@ error_check(const char *msg, gfarm_error_t e)
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-nL] [-m mtime_day] [-h host] ",
+	fprintf(stderr, "Usage: %s [-nG] [-m mtime_day] [-h host] ",
 	    progname);
 	fprintf(stderr, "-r spool_root [dir ...]\n");
-	fprintf(stderr, "       %s -f [-nL] [-m mtime_day] [-h host] ",
+	fprintf(stderr, "       %s -f [-nG] [-m mtime_day] [-h host] ",
 	    progname);
 	fprintf(stderr, "-r spool_root [dir ...] 2> log\n");
 	exit(2);
@@ -453,7 +453,7 @@ main(int argc, char *argv[])
 	if (argc > 0)
 		progname = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "fh:m:nr:L?")) != -1) {
+	while ((c = getopt(argc, argv, "fh:m:nr:G?")) != -1) {
 		switch (c) {
 		case 'f':
 			foreground = 1;
@@ -470,7 +470,7 @@ main(int argc, char *argv[])
 		case 'r':
 			spool_root = optarg;
 			break;
-		case 'L':
+		case 'G':
 			op = read_file;
 			break;
 		case '?':
