@@ -35,13 +35,13 @@ gfm_server_get_request(struct peer *peer, const char *diag,
 	va_end(ap);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_1000226,
+		gflog_notice(GFARM_MSG_1000226,
 		    "%s receiving request: %s", diag, gfarm_error_string(e));
 		peer_record_protocol_error(peer);
 		return (e);
 	}
 	if (eof) {
-		gflog_warning(GFARM_MSG_1000227,
+		gflog_notice(GFARM_MSG_1000227,
 		    "%s receiving request: missing RPC argument", diag);
 		peer_record_protocol_error(peer);
 		return (GFARM_ERR_PROTOCOL);
@@ -69,7 +69,7 @@ gfm_server_put_reply(struct peer *peer, const char *diag,
 	e = gfp_xdr_send(client, "i", (gfarm_int32_t)ecode);
 	if (e != GFARM_ERR_NO_ERROR) {
 		va_end(ap);
-		gflog_warning(GFARM_MSG_1000230,
+		gflog_notice(GFARM_MSG_1000230,
 		    "%s sending reply: %s", diag, gfarm_error_string(e));
 		peer_record_protocol_error(peer);
 		return (e);
@@ -78,7 +78,7 @@ gfm_server_put_reply(struct peer *peer, const char *diag,
 		e = gfp_xdr_vsend(client, &format, &ap);
 		if (e != GFARM_ERR_NO_ERROR) {
 			va_end(ap);
-			gflog_warning(GFARM_MSG_1000231,
+			gflog_notice(GFARM_MSG_1000231,
 			    "%s sending reply: %s",
 			    diag, gfarm_error_string(e));
 			peer_record_protocol_error(peer);

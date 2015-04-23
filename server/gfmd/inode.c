@@ -1333,7 +1333,7 @@ update_replicas(struct inode *inode, struct host *spool_host,
 			e = file_replicating_new(inode, copy->host,
 			    deferred_cleanup, &fr);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_warning(GFARM_MSG_1002245,
+				gflog_notice(GFARM_MSG_1002245,
 				    "replication before removal: host %s: %s",
 				    host_name(copy->host),
 				    gfarm_error_string(e));
