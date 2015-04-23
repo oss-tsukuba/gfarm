@@ -1,0 +1,4 @@
+- make it possible to run "ssh root@gfmd-hosts" from this account
+- export CONFIG_PREFIX=....
+- run the following comand:
+	while ./gfmd-failover.ssh.sh; do :; done
