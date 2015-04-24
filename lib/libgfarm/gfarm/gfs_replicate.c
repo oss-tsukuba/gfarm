@@ -172,7 +172,7 @@ retry:
 	if ((e == GFARM_ERR_ALREADY_EXISTS || e == GFARM_ERR_FILE_BUSY) &&
 	    (gfsd_nretries != GFS_CONN_RETRY_COUNT ||
 	     failover_nretries != GFS_FAILOVER_RETRY_COUNT)) {
-		gflog_warning(GFARM_MSG_1003453,
+		gflog_notice(GFARM_MSG_1003453,
 		    "error ocurred at retry for the operation after "
 		    "connection to %s, "
 		    "so the operation possibly succeeded in the server."
