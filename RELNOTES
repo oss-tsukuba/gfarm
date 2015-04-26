@@ -1,3 +1,24 @@
+Release note for Gfarm 2.6.4
+============================
+
+[2015.4.26]
+
+Updated feature
+* gfpcopy - overwrite files when having no file replica
+* gfspooldigest (aka gfspoolmd5) - -G option to read files in a spool
+  directory in Gfarm API, which is useful to move corrupted files to
+  lost+found
+* gffilepath - -l and -P options to specify the metadata directory and
+  the backend database path, respectively
+* master gfmd stops after all journal transfer for safe failover to an
+  asynchronous slave server [sf.net ticket #845]
+* adjust log level
+
+Bug fix
+* cannot build on Mac OS X and NetBSD since Gfarm 2.6.1 [sf.net ticket
+  #846]
+* gffilepath - it does not support hardlinked files
+
 Release note for Gfarm 2.6.3
 ============================
 
