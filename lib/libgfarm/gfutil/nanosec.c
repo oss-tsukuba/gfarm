@@ -54,7 +54,7 @@ gfarm_gettime(struct timespec *ts)
 		rv = clock_gettime(CLOCK_REALTIME, ts);
 		if (rv == 0)
 			return;
-		gflog_notice_errno(GFARM_MSG_UNFIXED, "clock_gettime");
+		gflog_notice_errno(GFARM_MSG_1004227, "clock_gettime");
 		clock_gettime_ok = 0;
 	}
 #endif
@@ -67,7 +67,7 @@ gfarm_gettime(struct timespec *ts)
 			ts->tv_nsec = tv.tv_usec * GFARM_MICROSEC_BY_NANOSEC;
 			return;
 		}
-		gflog_notice_errno(GFARM_MSG_UNFIXED, "gettimeofday");
+		gflog_notice_errno(GFARM_MSG_1004228, "gettimeofday");
 		gettimeofday_ok = 0;
 	}
 	ts->tv_sec = time(NULL);

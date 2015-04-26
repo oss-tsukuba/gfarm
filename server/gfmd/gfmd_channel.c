@@ -1489,7 +1489,7 @@ gfmdc_journal_transferring_each_mdhost(struct mdhost *mh, void *closure)
 					/* nothing to do */
 					break;
 				case verbose_wait:
-					gflog_info(GFARM_MSG_UNFIXED,
+					gflog_info(GFARM_MSG_1004229,
 					    "journal transfer: waiting for %s "
 					    "till seqnum %llu, currently %llu",
 					    mdhost_get_name(mh),
@@ -1497,7 +1497,7 @@ gfmdc_journal_transferring_each_mdhost(struct mdhost *mh, void *closure)
 					    (unsigned long long)lf_sn);
 					break;
 				case verbose_timeout:
-					gflog_info(GFARM_MSG_UNFIXED,
+					gflog_info(GFARM_MSG_1004230,
 					    "journal transfer: "
 					    "timeout transferring to %s: "
 					    "target seqnum %llu, sent %llu",
@@ -1533,7 +1533,7 @@ gfmdc_journal_transfer_wait(void)
 
 	journal_transfer_wait_verbose = verbose_wait;
 	if (!gfmdc_journal_transferring()) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004231,
 		    "journal transfer: no need to wait");
 		return;
 	}
@@ -1561,13 +1561,13 @@ gfmdc_journal_transfer_wait(void)
 	}
 	journal_transfer_wait_verbose = verbose_timeout;
 	if (gfmdc_journal_transferring())
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004232,
 		    "journal transfer: timeout due to no response "
 		    "within %d seconds "
 		    "(metadb_server_slave_replication_timeout)",
 		     gfarm_get_metadb_server_slave_replication_timeout());
 	else
-		gflog_info(GFARM_MSG_UNFIXED, "journal transfer: completed");
+		gflog_info(GFARM_MSG_1004233, "journal transfer: completed");
 }
 
 static void

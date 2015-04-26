@@ -4105,7 +4105,7 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 	}
 
 	if (conn_err != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004234,
 		    "%s: %s %lld:%lld from %s:%d: %s", diag, issue_diag,
 		    (long long)rep->ino, (long long)rep->gen,
 		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
@@ -4113,7 +4113,7 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 	} else if (src_err != GFARM_ERR_NO_ERROR ||
 	    dst_err != GFARM_ERR_NO_ERROR) {
 		/* use gflog_warning, because this may be a checksum error */
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004235,
 		    "%s: %s %lld:%lld from %s:%d: %s/%s", diag, issue_diag,
 		    (long long)rep->ino, (long long)rep->gen,
 		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
