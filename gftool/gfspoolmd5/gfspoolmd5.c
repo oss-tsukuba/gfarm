@@ -39,7 +39,7 @@ static long long count, size, start_count;
 static struct timeval itime, start_time;
 const char PROGRESS_FILE[] = ".md5.count";
 long long *progress_addr;
-int mtime_day = -1;
+static int mtime_max_day = -1, mtime_min_day = -1;
 int foreground, cksum_check = 1;
 static char *op_host;
 
@@ -71,7 +71,10 @@ get_inum_gen(const char *path, gfarm_ino_t *inump, gfarm_uint64_t *genp)
 static int
 mtime_filter(struct stat *stp)
 {
-	return (mtime_day < 0 || itime.tv_sec - stp->st_mtime < mtime_day);
+	int d = itime.tv_sec - stp->st_mtime;
+
+	return ((mtime_max_day < 0 || d < mtime_max_day) &&
+		(mtime_min_day < 0 || d >= mtime_min_day));
 }
 
 static gfarm_error_t
@@ -432,12 +435,20 @@ error_check(const char *msg, gfarm_error_t e)
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-nG] [-m mtime_day] [-h host] ",
+	fprintf(stderr, "Usage: %s [options] -r spool_root [dir ...]\n",
 	    progname);
-	fprintf(stderr, "-r spool_root [dir ...]\n");
-	fprintf(stderr, "       %s -f [-nG] [-m mtime_day] [-h host] ",
+	fprintf(stderr, "       %s [options] -f -r spool_root [dir ...] ",
 	    progname);
-	fprintf(stderr, "-r spool_root [dir ...] 2> log\n");
+	fprintf(stderr, "2> log\n");
+	fprintf(stderr, "Options:\n");
+	fprintf(stderr, "\t-n\tdo not calculate checksum\n");
+	fprintf(stderr, "\t-m day\tselect files modified within day days\n");
+	fprintf(stderr, "\t-M day\tselect files modified older than day ");
+	fprintf(stderr, "days ago\n");
+	fprintf(stderr, "\t-G\tread files in Gfarm API to move corrupted ");
+	fprintf(stderr, "files to lost+found\n");
+	fprintf(stderr, "\t-h host\tspecify the file system node to read.  ");
+	fprintf(stderr, "Effective with -G option\n");
 	exit(2);
 }
 
@@ -462,7 +473,10 @@ main(int argc, char *argv[])
 			op_host = optarg;
 			break;
 		case 'm':
-			mtime_day = atoi(optarg) * 3600 * 24;
+			mtime_max_day = atoi(optarg) * 3600 * 24;
+			break;
+		case 'M':
+			mtime_min_day = atoi(optarg) * 3600 * 24;
 			break;
 		case 'n':
 			cksum_check = 0;
