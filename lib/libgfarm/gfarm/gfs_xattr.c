@@ -691,6 +691,7 @@ gfs_findxmlattr(const char *path, const char *expr,
 	struct gfs_xmlattr_ctx *ctxp;
 	char *url;
 	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
@@ -702,7 +703,7 @@ gfs_findxmlattr(const char *path, const char *expr,
 			"allococation of 'gfs_xmlattr_ctx' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 	} else if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY,
-	    &ctxp->gfm_server, &ctxp->fd, &ctxp->type, &url, &ino, NULL))
+	    &ctxp->gfm_server, &ctxp->fd, &ctxp->type, &url, &ino, &gen, NULL))
 		!= GFARM_ERR_NO_ERROR) {
 		gfs_xmlattr_ctx_free(ctxp, 1);
 		gflog_debug(GFARM_MSG_1003988,

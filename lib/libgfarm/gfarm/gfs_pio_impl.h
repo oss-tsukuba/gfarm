@@ -61,6 +61,7 @@ struct gfs_file {
 	char *url;
 	/* remember opened inode num */
 	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 #if 0 /* not yet in gfarm v2 */
 	int view_flags;
 #endif /* not yet in gfarm v2 */
@@ -164,5 +165,8 @@ struct gfs_file_section_context {
 
 int gfs_pio_md_init(const char *, EVP_MD_CTX *, char *);
 gfarm_error_t gfs_pio_md_finish(GFS_File);
+gfarm_error_t gfs_pio_reopen_fd(GFS_File,
+	struct gfm_connection **, int *, int *,
+	char **, gfarm_ino_t *, gfarm_uint64_t *);
 
 extern struct gfs_storage_ops gfs_pio_local_storage_ops;

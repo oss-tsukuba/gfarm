@@ -361,10 +361,11 @@ gfm_lookup_dir_result(struct gfm_connection *gfm_server, const char *path,
 
 gfarm_error_t
 gfm_name_success_op_connection_free(struct gfm_connection *gfm_server,
-	void *closure, int type, const char *path, gfarm_ino_t ino)
+	void *closure, int type, const char *path,
+	gfarm_ino_t ino, gfarm_uint64_t gen)
 {
 	return (gfm_inode_success_op_connection_free(gfm_server, closure, type,
-		path, ino));
+		path, ino, gen));
 }
 
 
@@ -379,7 +380,8 @@ gfm_name2_success_op_connection_free(struct gfm_connection *gfm_server,
 
 gfarm_error_t
 gfm_inode_success_op_connection_free(struct gfm_connection *gfm_server,
-	void *closure, int type, const char *path, gfarm_ino_t ino)
+	void *closure, int type,
+	const char *path, gfarm_ino_t ino, gfarm_uint64_t igen)
 {
 	gfm_client_connection_free(gfm_server);
 	return (GFARM_ERR_NO_ERROR);
@@ -538,7 +540,7 @@ static gfarm_error_t
 gfm_inode_or_name_op_lookup_result(struct gfm_connection *gfm_server,
 	const char *path, int flags, int do_verify, char **restp,
 	int *typep, int *retry_countp, int *is_lastp, int *is_retryp,
-	gfarm_ino_t *inop)
+	gfarm_ino_t *inop, gfarm_uint64_t *igenp)
 {
 	gfarm_error_t e;
 	int is_open_last = (flags & GFARM_FILE_OPEN_LAST_COMPONENT) != 0;
@@ -591,8 +593,10 @@ gfm_inode_or_name_op_lookup_result(struct gfm_connection *gfm_server,
 			return (e);
 		}
 		*typep = gfs_mode_to_type(mode);
-		if (inop)
+		if (inop != NULL)
 			*inop = inum;
+		if (igenp != NULL)
+			*igenp = gen;
 	}
 
 	return (GFARM_ERR_NO_ERROR);
@@ -661,6 +665,7 @@ gfm_inode_or_name_op0(const char *url, int flags,
 	int is_success = 0;
 	int is_open_last = (flags & GFARM_FILE_OPEN_LAST_COMPONENT) != 0;
 	gfarm_ino_t ino;
+	gfarm_uint64_t igen;
 
 	nextpath = trim_trailing_file_separator(url);
 	if (nextpath == NULL) {
@@ -744,7 +749,7 @@ gfm_inode_or_name_op0(const char *url, int flags,
 			break;
 		} else if ((e = gfm_inode_or_name_op_lookup_result(gfm_server,
 		    path, flags, do_verify, &rest, &type, &retry_count,
-		    &is_last, &is_retry, &ino)) != GFARM_ERR_NO_ERROR) {
+		    &is_last, &is_retry, &ino, &igen)) != GFARM_ERR_NO_ERROR) {
 			if (is_retry)
 				continue;
 			if (e != GFARM_ERR_IS_A_SYMBOLIC_LINK)
@@ -796,7 +801,7 @@ gfm_inode_or_name_op0(const char *url, int flags,
 		gfm_client_connection_unlock(gfm_server);
 	}
 	if (is_success) {
-		e = (*success_op)(gfm_server, closure, type, path, ino);
+		e = (*success_op)(gfm_server, closure, type, path, ino, igen);
 		if (nextpath)
 			free(nextpath);
 		return (e);
@@ -1095,6 +1100,7 @@ gfm_name2_op0(const char *src, const char *dst, int flags,
 	int is_open_last = (flags & GFARM_FILE_OPEN_LAST_COMPONENT) != 0;
 	gfarm_int32_t sfd = -1, dfd = -1;
 	gfarm_ino_t ino;
+	gfarm_uint64_t igen;
 
 	snextpath = trim_trailing_file_separator(src);
 	dnextpath = trim_trailing_file_separator(dst);
@@ -1421,7 +1427,7 @@ gfm_name2_op0(const char *src, const char *dst, int flags,
 		if (slookup) {
 			if ((se = gfm_inode_or_name_op_lookup_result(sconn,
 			    spath, flags, s_do_verify, &srest, &type,
-			    &retry_count, &s_is_last, &sretry, &ino))
+			    &retry_count, &s_is_last, &sretry, &ino, &igen))
 			    != GFARM_ERR_NO_ERROR) {
 				if (sretry)
 					continue;
@@ -1463,7 +1469,7 @@ dst_lookup_result:
 		if (dlookup) {
 			if ((de = gfm_inode_or_name_op_lookup_result(dconn,
 			    dpath, 0, d_do_verify, &drest, &type,
-			    &retry_count, &d_is_last, &dretry, &ino))
+			    &retry_count, &d_is_last, &dretry, &ino, &igen))
 			    != GFARM_ERR_NO_ERROR) {
 				if (dretry)
 					continue;

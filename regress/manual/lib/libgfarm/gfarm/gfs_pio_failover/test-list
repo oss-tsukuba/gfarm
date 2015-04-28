@@ -44,6 +44,7 @@ sched-create-sendfile
 close
 close-open
 close-open2
+fhopen-file
 read
 read-stat
 open-read-loop

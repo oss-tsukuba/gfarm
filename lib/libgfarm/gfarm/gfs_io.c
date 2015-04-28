@@ -130,7 +130,7 @@ gfm_create_fd_result(struct gfm_connection *gfm_server, void *closure)
 
 static gfarm_error_t
 gfm_create_fd_success(struct gfm_connection *gfm_server, void *closure,
-	int type, const char *url, gfarm_ino_t ino)
+	int type, const char *url, gfarm_ino_t ino, gfarm_uint64_t gen)
 {
 	struct gfm_create_fd_closure *c = closure;
 
@@ -190,6 +190,7 @@ struct gfm_open_fd_closure {
 	int *fdp;
 	int *typep;
 	gfarm_ino_t *inump;
+	gfarm_uint64_t *igenp;
 	char **urlp;
 	struct gfs_pio_internal_cksum_info *cksum_info; /* may be NULL */
 };
@@ -265,7 +266,7 @@ gfm_open_fd_result(struct gfm_connection *gfm_server, void *closure)
 
 static gfarm_error_t
 gfm_open_fd_success(struct gfm_connection *gfm_server, void *closure, int type,
-	const char *path, gfarm_ino_t ino)
+	const char *path, gfarm_ino_t ino, gfarm_uint64_t igen)
 {
 	struct gfm_open_fd_closure *c = closure;
 
@@ -275,6 +276,8 @@ gfm_open_fd_success(struct gfm_connection *gfm_server, void *closure, int type,
 		*c->typep = type;
 	if (c->inump)
 		*c->inump = ino;
+	if (c->igenp)
+		*c->igenp = igen;
 	if (c->urlp)
 		*c->urlp = strdup(path);
 	return (GFARM_ERR_NO_ERROR);
@@ -284,7 +287,7 @@ gfm_open_fd_success(struct gfm_connection *gfm_server, void *closure, int type,
 gfarm_error_t
 gfm_open_fd(const char *path, int flags,
 	struct gfm_connection **gfm_serverp, int *fdp, int *typep,
-	char **urlp, gfarm_ino_t *inump,
+	char **urlp, gfarm_ino_t *inump, gfarm_uint64_t *igenp,
 	struct gfs_pio_internal_cksum_info *cksum_info)
 {
 	gfarm_error_t e;
@@ -305,6 +308,7 @@ gfm_open_fd(const char *path, int flags,
 	closure.fdp = fdp;
 	closure.typep = typep;
 	closure.inump = inump;
+	closure.igenp = igenp;
 	closure.urlp = urlp;
 	closure.cksum_info = cksum_info;
 	return (gfm_inode_op_modifiable(path, flags & GFARM_FILE_USER_MODE,

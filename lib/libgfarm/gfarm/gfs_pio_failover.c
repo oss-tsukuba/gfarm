@@ -119,20 +119,19 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 	struct gfm_connection *gfm_server;
 	int fd, type;
 	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 	char *real_url = NULL;
 
 	/* avoid failover in gfm_open_fd() */
 	gfarm_filesystem_set_failover_detected(fs, 0);
 
 	/* increment ref count of gfm_server */
-	if ((e = gfm_open_fd(gf->url,
-	    gf->open_flags & (~GFARM_FILE_TRUNC),
-	    &gfm_server, &fd, &type, &real_url, &ino, NULL))
-	    != GFARM_ERR_NO_ERROR) {
+	if ((e = gfs_pio_reopen_fd(gf, &gfm_server, &fd, &type, &real_url,
+	    &ino, &gen)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003380,
 		    "reopen operation on file descriptor for URL (%s) "
 		    "failed: %s",
-		    gf->url,
+		    gfs_pio_url(gf),
 		    gfarm_error_string(e));
 		free(real_url);
 		return (e);
@@ -573,6 +572,7 @@ compound_fd_op_post_failover(struct gfm_connection *gfm_server, void *closure)
 	int fd, type;
 	char *url;
 	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 	struct compound_fd_op_info *ci = closure;
 	void *file = ci->file;
 	struct gfs_failover_file_ops *ops = ci->ops;
@@ -582,7 +582,7 @@ compound_fd_op_post_failover(struct gfm_connection *gfm_server, void *closure)
 		return (GFARM_ERR_STALE_FILE_HANDLE); /* XXX */
 	/* reopen */
 	if ((e = gfm_open_fd(url0, GFARM_FILE_RDONLY,
-	    &gfm_server, &fd, &type, &url, &ino, NULL))
+	    &gfm_server, &fd, &type, &url, &ino, &gen, NULL))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003972,
 		    "gfm_open_fd(%s) failed: %s",

@@ -143,9 +143,10 @@ gfs_opendirplusxattr(const char *path, GFS_DirPlusXAttr *dirp)
 	int fd, type;
 	char *url;
 	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 
 	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &gfm_server,
-	    &fd, &type, &url, &ino, NULL)) != GFARM_ERR_NO_ERROR) {
+	    &fd, &type, &url, &ino, &gen, NULL)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002459,
 			"gfm_open_fd(%s) failed: %s",
 			path,

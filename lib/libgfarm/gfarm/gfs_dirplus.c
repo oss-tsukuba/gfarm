@@ -118,9 +118,10 @@ gfs_opendirplus(const char *path, GFS_DirPlus *dirp)
 	int fd, type;
 	char *url;
 	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 
 	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &gfm_server,
-	    &fd, &type, &url, &ino, NULL)) != GFARM_ERR_NO_ERROR) {
+	    &fd, &type, &url, &ino, &gen, NULL)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001278,
 			"gfm_open_fd(%s) failed: %s",
 			path,

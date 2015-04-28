@@ -21,7 +21,8 @@ gfarm_error_t gfm_create_fd(const char *, int, gfarm_mode_t,
 	gfarm_ino_t *, gfarm_uint64_t *, char **,
 	struct gfs_pio_internal_cksum_info *);
 gfarm_error_t gfm_open_fd(const char *, int,
-	struct gfm_connection **, int *, int *, char **, gfarm_ino_t *,
+	struct gfm_connection **, int *, int *, char **,
+	gfarm_ino_t *, gfarm_uint64_t *,
 	struct gfs_pio_internal_cksum_info *);
 gfarm_error_t gfm_fhopen_fd(gfarm_ino_t, gfarm_uint64_t, int,
 	struct gfm_connection **, int *, int *,

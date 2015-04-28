@@ -20,7 +20,8 @@ case "$type" in
 realpath|rename|statfs|chmod|lchmod|chown|lchown|\
 stat|lstat|fstat|stat_cksum|fstat_cksum|pio_cksum|\
 utimes|lutimes|remove|unlink|link|symlink|\
-sched-read|sched-open-write|sched-create-write|close|close-open|close-open2|\
+sched-read|sched-open-write|sched-create-write|\
+close|close-open|close-open2|fhopen-file|\
 read|read-stat|open-read-loop|getc|seek|seek-dirty|\
 write|write-stat|putc|truncate|flush|sync|datasync|read-close-read|\
 getxattr|lgetxattr|getattrplus|lgetattrplus|setxattr|lsetxattr|\

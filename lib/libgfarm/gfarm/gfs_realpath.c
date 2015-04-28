@@ -30,7 +30,7 @@ gfm_realpath_result(struct gfm_connection *gfm_server, void *closure)
 
 static gfarm_error_t
 gfm_realpath_success(struct gfm_connection *gfm_server, void *closure,
-	int type, const char *path, gfarm_ino_t ino)
+	int type, const char *path, gfarm_ino_t ino, gfarm_uint64_t igen)
 {
 	gfarm_error_t e;
 	char *buf, *b;

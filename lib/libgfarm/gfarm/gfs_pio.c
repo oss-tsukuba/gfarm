@@ -205,10 +205,12 @@ gfs_pio_fileno(GFS_File gf)
 	return (gf == NULL ? -1 : gf->fd);
 }
 
+/* only gflog_*() can use the return value gfs_pio_url() due to NULL cases */
 char *
 gfs_pio_url(GFS_File gf)
 {
-	return (gf == NULL ? NULL : gf->url);
+	return (gf == NULL ? "(GFS_File is null)" :
+		gf->url == NULL ? "(GFS_File::url is null)" : gf->url);
 }
 
 #ifndef __KERNEL__	/* not support failover */
@@ -254,7 +256,7 @@ gfs_pio_md_is_valid(GFS_File gf)
 	e = gfs_fstat_cksum(gf, &cksum);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1004200, "%s: couldn't get cksum: %s",
-		    gf->url, gfarm_error_string(e));
+		    gfs_pio_url(gf), gfarm_error_string(e));
 		return (0);
 	}
 	if ((cksum.flags & (
@@ -287,7 +289,7 @@ gfs_pio_md_finish(GFS_File gf)
 	    gfs_pio_md_is_valid(gf)) {
 		gflog_debug(GFARM_MSG_1003942,
 		    "%s: checksum mismatch <%.*s> expected, but <%.*s>",
-		    gf->url,
+		    gfs_pio_url(gf),
 		    (int)gf->md.cksum_len, gf->md.cksum,
 		    (int)md_strlen, md_string);
 		return (GFARM_ERR_CHECKSUM_MISMATCH);
@@ -295,10 +297,35 @@ gfs_pio_md_finish(GFS_File gf)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* only gfs_pio_failover.c:gfs_pio_reopen() is allowed to use this function */
+gfarm_error_t
+gfs_pio_reopen_fd(GFS_File gf,
+	struct gfm_connection **gfm_serverp, int *fdp, int *typep,
+	char **real_urlp, gfarm_ino_t *inump, gfarm_uint64_t *igenp)
+{
+	if (gf->url != NULL) {
+		return (gfm_open_fd(gf->url,
+		    gf->open_flags & ~GFARM_FILE_TRUNC,
+		    gfm_serverp, fdp, typep, real_urlp, inump, igenp, NULL));
+	} else {
+		gfarm_error_t e = gfm_fhopen_fd(gf->ino, gf->gen,
+		    gf->open_flags & ~GFARM_FILE_TRUNC,
+		    gfm_serverp, fdp, typep, NULL);
+
+		if (e == GFARM_ERR_NO_ERROR) {
+			*real_urlp = NULL;
+			*inump = gf->ino;
+			*igenp = gf->gen;
+		}
+		return (e);
+	}
+			
+}
+
 static gfarm_error_t
 gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
-	char *url, gfarm_ino_t ino, struct gfs_pio_internal_cksum_info *cip,
-	GFS_File *gfp)
+	char *url, gfarm_ino_t ino, gfarm_uint64_t gen,
+	struct gfs_pio_internal_cksum_info *cip, GFS_File *gfp)
 {
 	GFS_File gf;
 	char *buffer;
@@ -352,6 +379,7 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 	gf->length = 0;
 	gf->offset = 0;
 	gf->ino = ino;
+	gf->gen = gen;
 	gf->url = url;
 
 	gf->md_offset = 0;
@@ -430,7 +458,7 @@ gfs_pio_create_igen(const char *url, int flags, gfarm_mode_t mode,
 			    GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else
 			e = gfs_file_alloc(gfm_server, fd, flags, real_url,
-			    inum, cip, gfp);
+			    inum, gen, cip, gfp);
 		if (e != GFARM_ERR_NO_ERROR) {
 			/* ignore result */
 			(void)gfm_close_fd(gfm_server, fd, NULL);
@@ -483,6 +511,7 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 	int fd, type;
 	gfarm_timerval_t t1, t2;
 	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 	char *real_url = NULL;
 	struct gfs_pio_internal_cksum_info ci, *cip =
 	    gfarm_ctxp->client_digest_check ? &ci : NULL;
@@ -492,14 +521,14 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	if ((e = gfm_open_fd(url, flags, &gfm_server, &fd, &type,
-	    &real_url, &ino, cip)) == GFARM_ERR_NO_ERROR) {
+	    &real_url, &ino, &gen, cip)) == GFARM_ERR_NO_ERROR) {
 		if (type != GFS_DT_REG) {
 			e = type == GFS_DT_DIR ? GFARM_ERR_IS_A_DIRECTORY :
 			    type == GFS_DT_LNK ? GFARM_ERR_IS_A_SYMBOLIC_LINK :
 			    GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else
-			e = gfs_file_alloc(gfm_server, fd, flags,
-			    real_url, ino, cip, gfp);
+			e = gfs_file_alloc(gfm_server, fd, flags, real_url,
+			    ino, gen, cip, gfp);
 		if (e != GFARM_ERR_NO_ERROR) {
 			free(real_url);
 			/* ignore result */
@@ -544,8 +573,8 @@ gfs_pio_fhopen(gfarm_ino_t inum, gfarm_uint64_t gen, int flags, GFS_File *gfp)
 			    type == GFS_DT_LNK ? GFARM_ERR_IS_A_SYMBOLIC_LINK :
 			    GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else
-			e = gfs_file_alloc(gfm_server, fd, flags, NULL, inum,
-			    cip, gfp);
+			e = gfs_file_alloc(gfm_server, fd, flags, NULL,
+			    inum, gen, cip, gfp);
 		if (e != GFARM_ERR_NO_ERROR) {
 			/* ignore result */
 			(void)gfm_close_fd(gfm_server, fd, NULL);

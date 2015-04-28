@@ -308,7 +308,7 @@ gfs_pio_view_section_ftruncate(GFS_File gf, gfarm_off_t length)
 					    GFS_FILE_MODE_DIGEST_FINISH;
 				}
 				if (!gfs_pio_md_init(gf->md.cksum_type,
-				    &gf->md_ctx, gf->url)) {
+				    &gf->md_ctx, gfs_pio_url(gf))) {
 					free(gf->md.cksum_type);
 					gf->md.cksum_type = NULL;
 					gf->mode &=

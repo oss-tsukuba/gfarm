@@ -1641,6 +1641,73 @@ test_close_open2(const char **argv)
 }
 
 static void
+test_fhopen_file(const char **argv)
+{
+	const char *path = argv[0];
+	GFS_File gf0, gf1, gf2;
+	struct gfs_stat st;
+	struct gfm_connection *con0, *con1, *con2;
+
+	msg("gf[%d]: open %s\n", 0, path);
+	chkerr_n(gfs_pio_open(path, GFARM_FILE_RDONLY, &gf0), "open", 0);
+	msg("gf[%d]: open ok\n", 0);
+
+	msg("gf[%d]: pio_stat %s\n", 0, path);
+	chkerr_n(gfs_pio_stat(gf0, &st), "pio_stat", 0);
+	msg("gf[%d]: pio_stat ok\n", 0);
+
+	msg("gf[%d]: fhopen %s\n", 1, path);
+	chkerr_n(gfs_pio_fhopen(st.st_ino, st.st_gen, GFARM_FILE_RDONLY,
+	    &gf1), "fhopen", 1);
+	msg("gf[%d]: fhopen ok\n", 1);
+
+	/* schedule gf0 */
+	do_read(gf0, 0);
+
+	/* schedule gf1 */
+	do_read(gf1, 1);
+
+	wait_for_failover();
+
+	con0 = gfs_pio_metadb(gf0);
+	con1 = gfs_pio_metadb(gf1);
+	assert(con0 == con1);
+
+	/* open and failover */
+	msg("gf[%d]: open %s\n", 2, path);
+	/* gfm_client_connection_failover_pre_connect() will be called */
+	chkerr_n(gfs_pio_open(path, GFARM_FILE_RDONLY, &gf2), "open", 2);
+	msg("gf[%d]: open ok\n", 2);
+
+	/* gfm_connection in gf1 is new connection */
+	con2 = gfs_pio_metadb(gf2);
+	assert(con0 != con2);
+	/* schedule gf2 */
+	do_read(gf2, 2);
+
+	assert(con0 != gfs_pio_metadb(gf0));
+	/* gfm_connection is not changed in gf2 after failover */
+	assert(con2 == gfs_pio_metadb(gf2));
+	con0 = gfs_pio_metadb(gf0);
+	assert(con0 == con2);
+
+	/* schedule gf1 */
+	do_read(gf1, 1);
+
+	msg("gf[%d]: close\n", 0);
+	chkerr_n(gfs_pio_close(gf0), "close", 0);
+	msg("gf[%d]: close ok\n", 0);
+
+	msg("gf[%d]: close\n", 0);
+	chkerr_n(gfs_pio_close(gf1), "close", 1);
+	msg("gf[%d]: close ok\n", 1);
+
+	msg("gf[%d]: close\n", 2);
+	chkerr_n(gfs_pio_close(gf2), "close", 2);
+	msg("gf[%d]: close ok\n", 2);
+}
+
+static void
 test_open_read_loop(const char **argv)
 {
 	const char *path = argv[0];
@@ -3009,6 +3076,7 @@ struct type_info {
 	{ "sched-create-write",	1, test_sched_create_write },
 	{ "sched-open-sendfile", 2, test_sched_open_sendfile },
 	{ "sched-create-sendfile", 2, test_sched_create_sendfile },
+	{ "fhopen-file",	1, test_fhopen_file },
 	{ "close",		1, test_close },
 	{ "close-open",		1, test_close_open },
 	{ "close-open2",	1, test_close_open2 },
