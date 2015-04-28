@@ -464,7 +464,7 @@ main(int argc, char *argv[])
 	if (argc > 0)
 		progname = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "fh:m:nr:G?")) != -1) {
+	while ((c = getopt(argc, argv, "fh:m:nr:GM:?")) != -1) {
 		switch (c) {
 		case 'f':
 			foreground = 1;
