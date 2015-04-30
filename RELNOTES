@@ -1,3 +1,17 @@
+Release note for Gfarm 2.6.4.1
+==============================
+
+[2015.4.30]
+
+Updated feature
+* gfspooldigest - -M option to select files modified older than the
+  specified days ago
+* make progress of replica check
+
+Bug fix
+* gfspooldigest - segfault when gfmd failover happens [sf.net ticket
+  #848]
+
 Release note for Gfarm 2.6.4
 ============================
 
