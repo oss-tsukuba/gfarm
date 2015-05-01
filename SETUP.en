@@ -7,6 +7,7 @@ Table of contents
   - Convention of command execution
 * Overview
   - Firewall configuration
+  - about SELinux
 * Configuration of a Gfarm metadata server (MDS)
 * Configuration of a Gfarm filesystem node
 * Configuration of a Gfarm client node
@@ -16,7 +17,7 @@ Table of contents
   - gfhost - Filesystem node information
   - gfdf - display storage capacity
 * User registration
-* Registration of Gfarm administrators and root users
+* Addition of Gfarm administrative privilege and gfarmroot privilege
 * Examples of basic functionality
   - File copy
   - File access
@@ -42,8 +43,9 @@ in Gfarm-FAQ.en.
 o Convention of command execution
 
 In this document, command lines with the prompt '#' mean that the root
-privilege is required for execution and command lines with the prompt
-'$' mean that they should be executed without the root privilege.
+privilege of the Operating system is required for execution and
+command lines with the prompt '$' mean that they should be executed
+without the root privilege.
 
 	# useradd -c "Gfarm gfsd" -m _gfarmfs	[with the root privilege]
 	$ gfkey -f -p 31536000			[without the root privilege]
@@ -51,9 +53,12 @@ privilege is required for execution and command lines with the prompt
 Overview
 ========
 
-To introduce the Gfarm filesystem, configure a metadata server, and
-filesystem nodes have to be configured, and register users,
-administrators and root users.
+To introduce the Gfarm filesystem, configure a metadata server at first,
+then configure filesystem nodes, and clients.
+
+After such configuration is done, register gfarm global users,
+not only regular users, but also global users with administrative
+privilege and gfarmroot privilege.
 
 o Firewall configuration
 
@@ -93,10 +98,22 @@ For other types of icmp packets, disalllowing them may delay detection
 of a communication error, or may prevent gfarm related programs from
 getting a reason of an error.
 
+o about SELinux
+
+Current Gfarm distribution doesn't include settings for SELinux,
+thus, you have to change SELinux setting to "Permissive" or "Disabled",
+or add custom SELinux privilege setting for Gfarm.
+
+If "Enforcing" is displayed by the following command, you have to
+do such setting.
+	# getenforce 
+
+
 Configuration of a Gfarm metadata server (MDS)
 ==============================================
 
-To set up a Gfarm file system, the root privilege is required.
+To set up a Gfarm file system, the root privilege of the Operating
+System is required.
 
 To begin with, the following information is required:
 
@@ -107,16 +124,19 @@ To begin with, the following information is required:
   to share files among several administrative domains having different
   account names.
 
-  When you log on as a normal user and change to the root privilege by
-  'su', the normal user account name is used as a global username of
-  the administrator by default.
+  If you log on to your Operating System as a normal user and
+  get the root privilege by using the su command, and then
+  invoke the config-gfarm command, the account name of the normal user
+  will be used as the default setting of the global username of
+  a Gfarm administrator.  If you'd like to change the default setting,
+  please specify the -A option to the config-gfarm command.
 
-  In case of the shared secret authentication, the default mapping
-  from a local account to a global username is identical.  A user
-  having the same account name as the global username is an
-  administrator by default.  This mapping can be managed by a user
-  mapfile that is specified by 'local_user_map' directive in
-  gfarm2.conf.
+  In case of the shared secret authentication, the account name which
+  was used to log on to the Operating System is used as the Gfarm
+  global username by default.  This mapping from the account name of
+  the Operating System to the Gfarm global username can be customized
+  by a user mapfile that is specified by 'local_user_map' directive in
+  gfarm2.conf file.
 
   In case of GSI, a user having the specified subject DN is an
   administrator for a Gfarm file system.
@@ -137,7 +157,7 @@ Note that the -X option is required to enable XML Path Language
 (XPath) support for querying XML extended attributes.  The -r option
 is required for master-slave metadata server configuration that
 enables failover of gfmd.  For details, see tutorial of master-slave
-metadata servers.
+metadata servers. (html/en/user/redundancy-tutorial.html)
 
 You can modify any default parameter with the option shown in [ ].
 When you have confirmed the parameter, run 'config-gfarm' by the root
@@ -255,23 +275,31 @@ for a gfsd I/O daemon.
 	# useradd -c "Gfarm gfsd" -m _gfarmfs
 
 In case of the shared secret authentication, copy the shared secret
-key .gfarm_shared_key in the _gfarmfs's directory from the metadata
-server if the home directory is not shared.
+key ".gfarm_shared_key" in the _gfarmfs's directory from the metadata
+server if the home directory is not shared by NFS.
 
-  Note that the permission of .gfarm_shared_key should be '0600'
+  Note that the permission of ".gfarm_shared_key" file should be '0600'
   and the owner should be '_gfarmfs'.
+
+  The ".gfarm_shared_key" file will be void after the expiration period
+  specified by the -p option of the gfkey command.  Thus, you have to
+  redistribute the key file to all filesystem nodes before the period.
 
 In case of the GSI authentication, obtain a service certificate for
 the gfsd.
 
-  Copy the certificate to /etc/grid-security/gfsd/gfsd{cert,key}.pem
-  and change the owner to '_gfarmfs'.  The permission of gfsdkey.pem
-  should be 0400.  If you would like to execute two or more gfsd
-  servers on the same host using virtual IP addresses, you need to
-  specify the hostname or IP address of each gfsd by -l option of
-  config-gfsd.  In this case, the location of gfsd service certificate
-  should be /etc/grid-security/gfsd-<hostname or IP
-  address>/gfsd{cert,key}.pem
+  Copy the certificate to /etc/grid-security/gfsd/gfsdcert.pem,
+  and the privagte key to /etc/grid-security/gfsd/gfsdkey.pem,
+  and change the owner to '_gfarmfs'.
+  The permission of gfsdkey.pem should be 0400.
+
+  If you would like to execute two or more gfsd servers on the same host
+  using virtual IP addresses, you need to specify the hostname or
+  IP address of each gfsd by -l option of config-gfsd.  In this case,
+  the location of gfsd service certificate should be
+  /etc/grid-security/gfsd-<hostname or IP address>/gfsdcert.pem
+  and the location of gfsd private key should be
+  /etc/grid-security/gfsd-<hostname or IP address>/gfsdkey.pem
 
 Copy <sysconfdir>/gfarm2.conf from the metadata server that is created
 by 'config-gfarm'.
@@ -379,24 +407,45 @@ Then, remove files and directories as follows;
 	# rm -f /etc/gfarm2.conf /etc/init.d/gfsd
 	# rm -rf <spool_directory>
 
+In case of the shared secret authentication, and if account names
+of Gfarm users on the Operating System are different from
+names of Gfarm global users, the 'local_user_map' directive setting
+in gfarm2.conf file is needed.
+
+
 Configuration of a Gfarm client node
 ====================================
-
-This chapter describes configuration for a client node.
-
-o Configuration of a client node
 
 Copy /etc/gfarm2.conf from the metadata server to the client node.
 
   This setting can be substituted for copying to ~/.gfarm2rc.
 
-In case of the shared secret authentication, if user's home directory
-is shared among metadata server and file system nodes, there is
-nothing to do.  If not, .gfarm_shared_key needs to be create and
-copied among every nodes.
+In case of the shared secret authentication:
 
-In case of GSI, obtain the user certificate, and ask to add your entry
-into grid-mapfile of every file system node and a metadata server.
+   if users' home directories are shared among metadata servers
+   and file system nodes:
+      there is nothing to do.
+
+   If not:
+      run the "gfkey -f -p <expiration_time_by_second>" command by
+      the each user's privilege which correspond to Gfarm global
+      users.  The command creates ".gfarm_shared_key" file in
+      each user's home directory.  Then copy the file to each user's
+      home directory on all metadata servers, all filesystem nodes,
+      and all client nodes.
+      Make sure that the mode of the ".gfarm_shared_key" file is '0600',
+      and the owner of the file is each user.
+      Because the key will be void after the <expiration_time_by_second>
+      have passed, you must redo the key generation and the copy before
+      the expiration.
+
+   If account names of Gfarm users on the Operating System are different
+   from names of Gfarm global users, the 'local_user_map' directive setting
+   in gfarm2.conf file is needed.
+
+In case of GSI:
+   obtain the user certificate, and ask to add your entry
+   into grid-mapfile of all file system nodes and all metadata servers.
 
 Testing of the Gfarm filesystem
 ===============================
@@ -464,18 +513,29 @@ For details of the above Gfarm commands, refer to the respective man page.
 User registration
 =================
 
-Every user needs to be registered to access Gfarm file system by a
-Gfarm administrator.  Besides, a Gfarm root user needs to create his
-home directory.
+Every user needs to be registered to access Gfarm file system as
+a Gfarm global user.
 
-  A Gfarm administrator specified by config-gfarm is automatically
-  registered during config-gfarm.
+  The Gfarm global users include normal users, users with Gfarm
+  administrative privilege, and users with gfarmroot privilege.
 
-  Gfarm administrators are members of gfarmadm group.
+  The Gfarm administrative privilege is the privilege to create/modify/
+  delete Gfarm global users, groups, metadata servers, and filesystem nodes.
+  The members of the "gfarmadm" group which is stored in the metadata server
+  have this privilege.
 
-  Gfarm root users are members of gfarmroot group.
+  The gfarmroot privilege is the privilege to access all directories
+  and all data in a Gfarm filesystem.
+  The members of the "gfarmroot" group which is stored in the metadata server
+  have this privilege.
 
-For user registration, execute gfuser command;
+  A Gfarm administrator specified by the -A option of the config-gfarm
+  command is automatically registered as a Gfarm global user which has
+  the Gfarm administrative privilege.
+  Thus, it not necessary to register the user by the gfuser command.
+
+For user registration, execute gfuser command,
+this requires the Gfarm administrative privilege;
 
 	$ gfuser -c global_username realname homedir gsi_dn
 
@@ -491,34 +551,44 @@ following example registers a global user 'foo';
 
 	$ gfuser -c foo "foo bar" /home/foo ""
 
-Next, it is necessary to create a home directory for the user.  This
-should be done by a Gfarm root user.  In the case of the above
-example,
+Next, it is necessary to create a home directory for the user.
+This should be done by a user which have the gfarmroot privilege.
+Because there is no user which has the gfarmroot privilege by default,
+it's necessary to add the privilege by the "gfgroup -m" command
+describe in the next section, before invoking the following commands.
+
+In the case of the above "gfuser -c" example, run the following commands.
 
 	$ gfmkdir /home
 	$ gfmkdir /home/foo
 	$ gfchown foo /home/foo
 
 In case of the shared secret authentication, create a user account on
-all metadata servers and all file system nodes.  When the local
-account name on a host is not same as the global username in Gfarm, a
-user mapfile is required in the host.  Create a shared secret key for
-a user, and copy it to the home directory on all metadata servers and
-all file system nodes.  Note that the shared secret key should be
-owned by the user.
+all metadata servers and all file system nodes and all clients nodes.
+Don't forget to create the account of the administrator which is
+specified by the -A option of the config-gfarm command.
+Also, you have to create a shared secret key for all global users
+including users with administrative privilege and gfarmroot privilege,
+and copy the key to the home directory on all metadata servers,
+all file system nodes and all client nodes.
+Please read "Configuration of a Gfarm client node" section above
+about the detail of the key creation and distribution.
 
 In case of GSI, register user's distinguished name to the grid-mapfile
 that maps to nobody user on all metadata servers and all file system
 nodes.
 
-Registration of Gfarm administrators and root users
-===================================================
+Addition of Gfarm administrative privilege and gfarmroot privilege
+==================================================================
 
-Gfarm administrators manages file system nodes, users, and groups.
-Gfarm root users manages access control in Gfarm file system.
+This section describe how to add the Gfarm administrative privilege
+and the gfarmroot privilege to Gfarm global users.
+This operation requires the Gfarm administrative privilege.
+The administrator specified by the -A option of the config-gfarm
+command has this Gfarm administrative privilege by default.
 
-Gfarm administrators are members of the gfarmadm group.  The following
-command displays the current administrators.
+The members of the "gfarmadm" group have the Gfarm administrative privilege.
+The following displays the members.
 
 	$ gfgroup -l gfarmadm
 
@@ -526,12 +596,14 @@ To change the members, use 'gfgroup -m' command.
 
 	$ gfgroup -m gfarmadm user1 user2 ...
 
-Note that 'gfgroup -m' replaces members with specified members.  The
-old members are overwritten.
+Note that 'gfgroup -m' replaces group members with specified users.
+The old members are overwritten.
 
-Gfarm root users are members of the gfarmroot group.
+The member of the "gfarmroot" group have the gfarmroot privilege.
 
 	$ gfgroup -m gfarmroot user1 user2 ...
+
+No user has the gfarmroot privilege by default.
 
 Examples of basic functionality
 ===============================
