@@ -23,21 +23,17 @@ See INSTALL document for details.
 <H2>2. Configuration</H2>
 <H3>2.1 Master metadata server</H3>
 
-Create a user '_gfarmmd' and the shared secret key for inter-gfmd
+Create a user '_gfarmmd' which is used as the privilege for inter-gfmd
 communication.
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # useradd -c "Gfarm gfmd" -m _gfarmmd
-# su _gfarmmd
-$ gfkey -f -p 31536000
 </PRE></TD></TR></TBODY></TABLE>
-Note that the inter-gfmd communication only supports the shared secret
-authentication for now.
+
 <p>
 Configure the master metadata server by the root user.
-To enable replicated metadata servers, execute config-gfarm with the
--r option.
-Regarding the config-gfarm, see SETUP document.
+Add extra -r option to the the config-gfarm command which is described
+in the SETUP.en docuemnt to enable replicated metadata servers.
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # config-gfarm -r
@@ -85,6 +81,17 @@ you have to specify same options to the gfdump.postgresql command too.
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # gfdump.postgresql -d -f gfarm-pgsql.dmp
 </PRE></TD></TR></TBODY></TABLE>
+
+<p>
+Create the shared secret key for a user '_gfarmmd' which is used
+for inter-gfmd communication.
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# su _gfarmmd
+$ gfkey -f -p 31536000
+</PRE></TD></TR></TBODY></TABLE>
+Note that the inter-gfmd communication only supports the shared secret
+authentication for now.
 
 <H3>2.2 Slave metadata server</H3>
 
