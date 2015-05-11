@@ -1,3 +1,5 @@
 gfarm_v2::failover_by_kill
 gfarm_v2::failover_by_reboot
 gfarm_v2::failover_by_stop
+gfarm_v2::failover_in_read
+gfarm_v2::failover_in_write
