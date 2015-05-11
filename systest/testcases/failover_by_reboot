@@ -40,7 +40,7 @@ test_failover_by_reboot()
 
 	# step: promote gfmd on gfmd2
 	$GFSERVICE promote-gfmd gfmd2
-	[ $? -ne 0 ] && log_warn "$TESTNAME: failed to stop gfmd on gfmd1"
+	[ $? -ne 0 ] && log_warn "$TESTNAME: failed to promote gfmd on gfmd2"
 
 	# step: check whether gfmd on gfmd2 is master
 	check_gfmd_master gfmd2 client1 $RETRY_COUNT $RETRY_INTERVAL
