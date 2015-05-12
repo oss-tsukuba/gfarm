@@ -524,8 +524,8 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	/* when reset_and_reopen() fails during failover, error is set */
-	if (gf->error != GFARM_ERR_NO_ERROR)
-		return (gf->error);
+	if (gfs_pio_error(gf) != GFARM_ERR_NO_ERROR)
+		return (gfs_pio_error(gf));
 retry:
 	gfm_client_connection_addref(gf->gfm_server);
 	e = gfs_client_connection_and_process_acquire(&gf->gfm_server,
