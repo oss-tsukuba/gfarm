@@ -1208,7 +1208,8 @@ gfmdc_connect_thread(void *arg)
 		if (peer != NULL) { /* already connected to the master? */
 			mdhost_put_peer(mh, peer); /* decrement refcount */
 			sleep(GFMDC_CONNECT_INTERVAL);
-		} else if ((e = gfmdc_connect()) != GFARM_ERR_NO_ERROR) {
+		} else if ((e = gfmdc_connect()) != GFARM_ERR_NO_ERROR &&
+		    !gfm_client_is_connection_error(e)) {
 			gflog_error(GFARM_MSG_1003430,
 			    "gfmd_channel : "
 			    "give up to connect to the master gfmd: %s",
