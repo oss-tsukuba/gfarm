@@ -151,7 +151,7 @@ main(int argc, char *argv[])
 
 	e = gfexport(url, hostname, stdout, off, size);
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s: %s: %s\n", program_name, url,
+		fprintf(stderr, "%s: %s: %s\n", program_name, argv[0],
 		    gfarm_error_string(e));
 		exit(1);
 	}
