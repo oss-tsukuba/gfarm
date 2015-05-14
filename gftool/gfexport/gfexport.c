@@ -89,7 +89,7 @@ gfexport(char *gfarm_url, char *host, FILE *ofp,
 void
 usage()
 {
-	fprintf(stderr, "Usage: %s [option] <input_file>\n", program_name);
+	fprintf(stderr, "Usage: %s [option] <input_file>...\n", program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-h <hostname>\n");
 #if 0
@@ -104,8 +104,8 @@ int
 main(int argc, char *argv[])
 {
 	gfarm_error_t e;
-	char *url, *realpath = NULL, *hostname = NULL;
-	int ch;
+	char *url, *realpath, *hostname = NULL;
+	int ch, i;
 	gfarm_off_t off = -1, size = -1;
 
 	if (argc > 0)
@@ -138,24 +138,29 @@ main(int argc, char *argv[])
 	}
 	argc -= optind;
 	argv += optind;
-	if (argc != 1) {
+	if (argc < 1) {
 		fprintf(stderr, "%s: %s\n", program_name,
-		    "error: only one input file name expected");
+		    "error: missing input file name");
 		usage();
 	}
-	e = gfarm_realpath_by_gfarm2fs(argv[0], &realpath);
-	if (e == GFARM_ERR_NO_ERROR)
-		url = realpath;
-	else
-		url = argv[0];
 
-	e = gfexport(url, hostname, stdout, off, size);
-	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s: %s: %s\n", program_name, argv[0],
-		    gfarm_error_string(e));
-		exit(1);
+	for (i = 0; i < argc; i++) {
+		e = gfarm_realpath_by_gfarm2fs(argv[i], &realpath);
+		if (e == GFARM_ERR_NO_ERROR) {
+			url = realpath;
+		} else {
+			url = argv[i];
+			realpath = NULL;
+		}
+
+		e = gfexport(url, hostname, stdout, off, size);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: %s: %s\n", program_name, argv[i],
+			    gfarm_error_string(e));
+			exit(1);
+		}
+		free(realpath);
 	}
-	free(realpath);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
