@@ -81,7 +81,8 @@ gfarm_lru_cache_addref_entry(struct gfarm_lru_cache *cache,
 		--cache->free_cached_entries; /* now, this isn't free */
 	}
 	++entry->acquired;
-	gfarm_lru_cache_access_entry(cache, entry);
+	if (entry->prev != NULL) /* i.e. if cached entry */
+		gfarm_lru_cache_access_entry(cache, entry);
 }
 
 /* free the entry */
