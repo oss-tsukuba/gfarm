@@ -1206,10 +1206,7 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
 	gflog_auth_notice(GFARM_MSG_1000672,
 	    "%s: not registered in mapfile", initiatorDistName);
 	majStat = GSS_S_UNAUTHORIZED;
-	/* Send NACK. */
-	acknack = GFARM_SS_AUTH_NACK;
-	(void)gfarmWriteInt32(fd, &acknack, 1);
-	goto Fail;
+	goto SendNack;
     } else {
 	int type = gfarmAuthGetAuthEntryType(entry);
 	if (type == GFARM_AUTH_USER) {
@@ -1228,10 +1225,7 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
 		    "peer %s, expected %s", initiatorDistName, peerName,
 		    entry->authData.hostAuth.FQDN);
 		majStat = GSS_S_UNAUTHORIZED;
-		/* Send NACK. */
-		acknack = GFARM_SS_AUTH_NACK;
-		(void)gfarmWriteInt32(fd, &acknack, 1);
-		goto Fail;
+		goto SendNack;
 	    }
 	}
     }
@@ -1272,7 +1266,11 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
     ret->gssLastStat = majStat;
     goto Done;
 
-    Fail:
+SendNack:
+    /* Send NACK. */
+    acknack = GFARM_SS_AUTH_NACK;
+    gfarmWriteInt32(fd, &acknack, 1);
+Fail:
     if (ret != NULL) {
 	destroySecSession(ret);
 	ret = NULL;
@@ -1405,7 +1403,7 @@ secSessionInitiate(int fd, const gss_name_t acceptorName,
     /*
      * Phase 2: Receive authorization acknowledgement.
      */
-    if (gfarmReadInt32(fd, &acknack, 1, GFARM_GSS_TIMEOUT_INFINITE) != 1) {
+    if (gfarmReadInt32(fd, &acknack, 1, GFARM_GSS_AUTH_TIMEOUT) != 1) {
 	gsiErrNo = errno;
 	gflog_auth_error(GFARM_MSG_1003860,
 	    "%s: acceptor does not answer authentication result: %s",
