@@ -198,6 +198,26 @@ show_progress(void)
 	fflush(stdout);
 }
 
+static void
+show_statistics(void)
+{
+	struct timeval t;
+	int min, hour;
+	double time, bw, sec;
+
+	gettimeofday(&t, NULL);
+	time = t.tv_sec - start_time.tv_sec +
+	    .000001 * (t.tv_usec - start_time.tv_usec);
+	bw = time == 0 ? DBL_MAX : size / 1000.0 / time;
+	hour = time / 3600;
+	min = (time - hour * 3600) / 60;
+	sec = time - hour * 3600 - min * 60;
+
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "file: %lld size: %lld time: %d:%02d:%02d bandwidth: %.2f KB/s",
+	    total_count, total_size, hour, min, (int)sec, bw);
+}
+
 static gfarm_error_t
 check_file_size(GFS_File gf, char *file)
 {
@@ -513,12 +533,12 @@ main(int argc, char *argv[])
 		fprintf(stderr, "You are not gfarmroot\n");
 		exit(1);
 	}
+	gflog_set_identifier(progname);
 	if (!foreground) {
-		gflog_set_identifier(progname);
 		gflog_syslog_open(LOG_PID, syslog_facility);
 		if (gfarm_daemon(1, 0) == -1)
 			gflog_warning_errno(GFARM_MSG_1003795, "daemon");
-		gflog_info(GFARM_MSG_1003796, "%s: start", progname);
+		gflog_info(GFARM_MSG_1003796, "start");
 	}
 	progress_addr = mmap_progress_file(PROGRESS_FILE);
 	start_count = *progress_addr;
@@ -536,7 +556,8 @@ main(int argc, char *argv[])
 	if (foreground)
 		puts("");
 	else
-		gflog_info(GFARM_MSG_1003797, "%s: finish", progname);
+		gflog_info(GFARM_MSG_1003797, "finish");
+	show_statistics();
 	munmap_progress_file(progress_addr);
 	if (unlink(PROGRESS_FILE) == -1)
 		gflog_error_errno(GFARM_MSG_1003798, PROGRESS_FILE);
