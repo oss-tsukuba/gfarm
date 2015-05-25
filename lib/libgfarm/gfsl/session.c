@@ -1403,7 +1403,7 @@ secSessionInitiate(int fd, const gss_name_t acceptorName,
     /*
      * Phase 2: Receive authorization acknowledgement.
      */
-    if (gfarmReadInt32(fd, &acknack, 1, GFARM_GSS_AUTH_TIMEOUT) != 1) {
+    if (gfarmReadInt32(fd, &acknack, 1, GFARM_GSS_AUTH_TIMEOUT * 1000) != 1) {
 	gsiErrNo = errno;
 	gflog_auth_error(GFARM_MSG_1003860,
 	    "%s: acceptor does not answer authentication result: %s",
