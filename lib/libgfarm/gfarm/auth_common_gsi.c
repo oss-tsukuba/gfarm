@@ -22,17 +22,10 @@
 #include "auth.h"
 #include "auth_gsi.h"
 
-static const char gsi_initialize_diag[] = "gsi_initialize_mutex";
-
 #define staticp	(gfarm_ctxp->auth_common_gsi_static)
 
 struct gfarm_auth_common_gsi_static {
-	pthread_mutex_t gsi_init_mutex;
-	int gsi_initialized;
-	int gsi_server_initialized;
 	gss_cred_id_t delegated_cred;
-	pthread_cond_t gsi_server_init_count_cond;
-	int gsi_server_init_count;
 
 	/* gfarm_gsi_client_cred_name() */
 	pthread_mutex_t client_cred_init_mutex;
@@ -50,12 +43,6 @@ gfarm_auth_common_gsi_static_init(struct gfarm_context *ctxp)
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	gfarm_mutex_init(&s->gsi_init_mutex, diag, "gsi_initialize");
-	s->gsi_initialized = 0;
-	s->gsi_server_initialized = 0;
-	gfarm_cond_init(&s->gsi_server_init_count_cond,
-	    diag, "gsi_server_init_count");
-	s->gsi_server_init_count = 0;
 	s->delegated_cred = GSS_C_NO_CREDENTIAL;
 	gfarm_mutex_init(&s->client_cred_init_mutex,
 	    diag, "client_cred_initialize");
@@ -75,9 +62,6 @@ gfarm_auth_common_gsi_static_term(struct gfarm_context *ctxp)
 	if (s == NULL)
 		return;
 
-	gfarm_mutex_destroy(&s->gsi_init_mutex, diag, "gsi_initialize");
-	gfarm_cond_destroy(&s->gsi_server_init_count_cond,
-	    diag, "gsi_server_init_count");
 	gfarm_mutex_destroy(&s->client_cred_init_mutex,
 	    diag, "client_cred_initialize");
 	free(s->client_dn);
@@ -85,48 +69,16 @@ gfarm_auth_common_gsi_static_term(struct gfarm_context *ctxp)
 }
 
 void
-gfarm_gsi_initialize_mutex_lock(const char *diag)
-{
-	gfarm_mutex_lock(&staticp->gsi_init_mutex, diag, gsi_initialize_diag);
-}
-
-void
-gfarm_gsi_initialize_mutex_unlock(const char *diag)
-{
-	gfarm_mutex_unlock(&staticp->gsi_init_mutex, diag, gsi_initialize_diag);
-}
-
-static void
-gfarm_gsi_client_finalize_unlocked(void)
-{
-	gfarmSecSessionFinalizeInitiator();
-	staticp->gsi_initialized = 0;
-}
-
-void
 gfarm_gsi_client_finalize(void)
 {
-	static const char diag[] = "gfarm_gsi_client_finalize";
-
-	gfarm_gsi_initialize_mutex_lock(diag);
-	if (staticp->gsi_initialized)
-		gfarm_gsi_client_finalize_unlocked();
-	gfarm_gsi_initialize_mutex_unlock(diag);
+	gfarmSecSessionFinalizeInitiator();
 }
 
 gfarm_error_t
 gfarm_gsi_client_initialize(void)
 {
-	OM_uint32 e_major;
-	OM_uint32 e_minor;
+	OM_uint32 e_major, e_minor;
 	int rv;
-	static const char diag[] = "gfarm_gsi_client_initialize";
-
-	gfarm_gsi_initialize_mutex_lock(diag);
-	if (staticp->gsi_initialized) {
-		gfarm_gsi_initialize_mutex_unlock(diag);
-		return (GFARM_ERR_NO_ERROR);
-	}
 
 	rv = gfarmSecSessionInitializeInitiator(NULL, GRID_MAPFILE,
 	    &e_major, &e_minor);
@@ -137,14 +89,10 @@ gfarm_gsi_client_initialize(void)
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
-		gfarm_gsi_client_finalize_unlocked();
-		gfarm_gsi_initialize_mutex_unlock(diag);
+		gfarm_gsi_client_finalize();
 
 		return (GFARM_ERRMSG_GSI_CREDENTIAL_INITIALIZATION_FAILED);
 	}
-	staticp->gsi_initialized = 1;
-	staticp->gsi_server_initialized = 0;
-	gfarm_gsi_initialize_mutex_unlock(diag);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -195,72 +143,17 @@ gfarm_gsi_client_cred_name(void)
 	return (client_dn);
 }
 
-static void
-gfarm_gsi_server_finalize_unlocked(void)
-{
-	gfarmSecSessionFinalizeBoth();
-	staticp->gsi_initialized = 0;
-	staticp->gsi_server_initialized = 0;
-}
-
-static void
-gsi_server_init_count_add(int i, const char *diag)
-{
-	static const char name[] = "init_count";
-
-	gfarm_gsi_initialize_mutex_lock(diag);
-	staticp->gsi_server_init_count += i;
-	gfarm_cond_signal(&staticp->gsi_server_init_count_cond, diag, name);
-	gfarm_gsi_initialize_mutex_unlock(diag);
-}
-
-void
-gfarm_gsi_server_init_count_increment(void)
-{
-	static const char diag[] = "gsi_server_init_count_increment";
-
-	gsi_server_init_count_add(1, diag);
-}
-
-void
-gfarm_gsi_server_init_count_decrement(void)
-{
-	static const char diag[] = "gsi_server_init_count_decrement";
-
-	gsi_server_init_count_add(-1, diag);
-}
-
 void
 gfarm_gsi_server_finalize(void)
 {
-	static const char diag[] = "gfarm_gsi_server_finalize";
-	static const char name[] = "init_count";
-
-	gfarm_gsi_initialize_mutex_lock(diag);
-	while (staticp->gsi_server_init_count > 0) {
-		gflog_info(GFARM_MSG_1003751, "%s: wait (%d)", diag,
-		    staticp->gsi_server_init_count);
-		gfarm_cond_wait(&staticp->gsi_server_init_count_cond,
-		    &staticp->gsi_init_mutex, diag, name);
-	}
-	if (staticp->gsi_initialized && staticp->gsi_server_initialized)
-		gfarm_gsi_server_finalize_unlocked();
-	gfarm_gsi_initialize_mutex_unlock(diag);
+	gfarmSecSessionFinalizeBoth();
 }
 
 gfarm_error_t
-gfarm_gsi_server_initialize_unlocked(void)
+gfarm_gsi_server_initialize(void)
 {
-	OM_uint32 e_major;
-	OM_uint32 e_minor;
+	OM_uint32 e_major, e_minor;
 	int rv;
-
-	if (staticp->gsi_initialized) {
-		if (staticp->gsi_server_initialized)
-			return (GFARM_ERR_NO_ERROR);
-		else
-			gfarm_gsi_client_finalize_unlocked();
-	}
 
 	rv = gfarmSecSessionInitializeBoth(NULL, NULL, GRID_MAPFILE,
 	    &e_major, &e_minor);
@@ -271,24 +164,11 @@ gfarm_gsi_server_initialize_unlocked(void)
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
-		gfarm_gsi_server_finalize_unlocked();
+		gfarm_gsi_server_finalize();
+
 		return (GFARM_ERRMSG_GSI_INITIALIZATION_FAILED);
 	}
-	staticp->gsi_initialized = 1;
-	staticp->gsi_server_initialized = 1;
 	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
-gfarm_gsi_server_initialize(void)
-{
-	static const char diag[] = "gfarm_gsi_server_initialize";
-	gfarm_error_t e;
-
-	gfarm_gsi_initialize_mutex_lock(diag);
-	e = gfarm_gsi_server_initialize_unlocked();
-	gfarm_gsi_initialize_mutex_unlock(diag);
-	return (e);
 }
 
 /*
