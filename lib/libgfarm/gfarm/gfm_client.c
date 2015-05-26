@@ -17,6 +17,11 @@
 #include <sys/time.h>
 
 #include <gfarm/gfarm_config.h>
+
+#ifdef HAVE_GSI
+#include <gssapi.h>
+#endif
+
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
@@ -32,9 +37,16 @@
 #include "queue.h"
 #include "thrsubr.h"
 
+#ifdef HAVE_GSI
+#include "gfarm_secure_session.h"
+#endif
+
 #include "context.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
+#ifdef HAVE_GSI
+#include "io_gfsl.h"
+#endif
 #include "sockopt.h"
 #include "sockutil.h"
 #include "host.h"
@@ -463,7 +475,7 @@ gfarm_set_global_user_by_gsi(struct gfm_connection *gfm_server)
 	char *gsi_dn;
 
 	/* Global user name determined by the distinguished name. */
-	gsi_dn = gfarm_gsi_client_cred_name();
+	gsi_dn = gfp_xdr_secsession_initiator_dn(gfm_server->conn);
 	if (gsi_dn != NULL) {
 		e = gfm_client_user_info_get_by_gsi_dn(gfm_server,
 			gsi_dn, &user);

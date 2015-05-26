@@ -8,11 +8,10 @@
 #include <sys/stat.h>
 #include <ctype.h>
 #include <pwd.h>
+#include <gssapi.h>
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
-
-#include "gssapi.h"
 
 #include "gfevent.h"
 #include "gfutil.h"
@@ -382,8 +381,6 @@ gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
     gss_cred_id_t cred;
     static const char diag[] = "gfarmGssAcquireCredential";
     
-    *credPtr = GSS_C_NO_CREDENTIAL;
-
     gfarm_privilege_lock(diag);
     majStat = gss_acquire_cred(&minStat,
 			       desiredName,

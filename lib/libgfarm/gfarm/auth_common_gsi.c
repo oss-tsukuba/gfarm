@@ -167,18 +167,13 @@ gfarm_gsi_client_cred_name(void)
 	}
 
 	if (cred == GSS_C_NO_CREDENTIAL &&
-	    gfarmSecSessionGetInitiatorInitialCredential(&cred) < 0) {
+	    gfarmGssAcquireCredential(NULL, GSS_C_NO_NAME, GSS_C_INITIATE,
+		&e_major, &e_minor, &name) < 0) {
 		staticp->client_dn = NULL;
-		gflog_auth_notice(GFARM_MSG_1000707,
+		gflog_auth_notice(GFARM_MSG_UNFIXED,
 		    "gfarm_gsi_client_cred_name(): "
-		    "not initialized as an initiator");
-	} else if (gfarmGssNewCredentialName(&name, cred, &e_major, &e_minor)
-	    < 0) {
-		staticp->client_dn = NULL;
+		    "cannot acquire initiator credential");
 		if (gflog_auth_get_verbose()) {
-			gflog_error(GFARM_MSG_1000708,
-			    "cannot convert initiator credential "
-			    "to name");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
@@ -347,7 +342,6 @@ gfarm_gsi_cred_config_convert_to_name(
 	int rv;
 	OM_uint32 e_major;
 	OM_uint32 e_minor;
-	gss_cred_id_t cred;
 
 	switch (type) {
 	case GFARM_AUTH_CRED_TYPE_DEFAULT:
@@ -401,10 +395,8 @@ gfarm_gsi_cred_config_convert_to_name(
 			return (GFARM_ERRMSG_CRED_TYPE_SELF_CRED_INVALID_CRED_NAME);
 		if (service != NULL)
 			return (GFARM_ERRMSG_CRED_TYPE_SELF_CRED_INVALID_CRED_SERVICE);
-		if (gfarmSecSessionGetInitiatorInitialCredential(&cred) < 0 ||
-		    cred == GSS_C_NO_CREDENTIAL)
-			return (GFARM_ERRMSG_CRED_TYPE_SELF_NOT_INITIALIZED_AS_AN_INITIATOR);
-		rv = gfarmGssNewCredentialName(namep, cred, &e_major, &e_minor);
+		rv = gfarmGssAcquireCredential(NULL, GSS_C_NO_NAME,
+			GSS_C_INITIATE, &e_major, &e_minor, namep);
 		break;
 	default:
 		return (GFARM_ERRMSG_INVALID_CRED_TYPE);

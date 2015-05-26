@@ -37,6 +37,7 @@
 struct io_gfsl {
 	gfarmSecSession *session;
 	gss_cred_id_t cred_to_be_freed; /* cred which will be freed at close */
+	char *initiator_dn;
 	gfarmExportedCredential *exported_credential;
 
 	/* for read */
@@ -148,9 +149,8 @@ free_secsession(struct io_gfsl *io)
 		gfarmGssPrintMajorStatus(e_major);
 		gfarmGssPrintMinorStatus(e_minor);
 	}
-
-	if (io->buffer != NULL)
-		free(io->buffer);
+	free(io->initiator_dn);
+	free(io->buffer);
 	free(io);
 }
 
@@ -221,7 +221,7 @@ struct gfp_iobuffer_ops gfp_xdr_secsession_iobuffer_ops = {
 
 gfarm_error_t
 gfp_xdr_set_secsession(struct gfp_xdr *conn,
-	gfarmSecSession *secsession, gss_cred_id_t cred_to_be_freed)
+	gfarmSecSession *secsession, gss_cred_id_t cred_to_be_freed, char *dn)
 {
 	struct io_gfsl *io;
 
@@ -234,6 +234,7 @@ gfp_xdr_set_secsession(struct gfp_xdr *conn,
 	}
 	io->session = secsession;
 	io->cred_to_be_freed = cred_to_be_freed;
+	io->initiator_dn = dn;
 	io->exported_credential = NULL;
 	io->buffer = NULL;
 	io->p = io->residual = 0;
@@ -251,6 +252,16 @@ gfp_xdr_reset_secsession(struct gfp_xdr *conn)
 	if (io != NULL)
 		free_secsession(io);
 	gfp_xdr_set(conn, &gfp_xdr_secsession_iobuffer_ops, NULL, -1);
+}
+
+char *
+gfp_xdr_secsession_initiator_dn(struct gfp_xdr *conn)
+{
+	struct io_gfsl *io = gfp_xdr_cookie(conn);
+
+	if (io != NULL)
+		return (io->initiator_dn);
+	return (NULL);
 }
 
 /*

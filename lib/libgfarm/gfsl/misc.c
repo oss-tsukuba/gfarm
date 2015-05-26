@@ -7,9 +7,13 @@
 #include <sys/stat.h>
 #include <ctype.h>
 #include <pwd.h>
+#include <pthread.h>
 
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gflog.h>
+
+#include "thrsubr.h"
+
 #include "gfsl_config.h"
 #include "gfarm_auth.h"
 
@@ -81,7 +85,7 @@ gfarmGetInt(char *str, int *val)
     return ret;
 }
 
-
+/* thread safe */
 int
 gfarmGetToken(char *buf, char *tokens[], int max)
 {
@@ -138,33 +142,42 @@ gfarmGetToken(char *buf, char *tokens[], int max)
     return n;
 }
 
+/* thread safe */
+static char *etc_dir = NULL;
+static pthread_mutex_t etc_dir_mutex = PTHREAD_MUTEX_INITIALIZER;
+static const char etc_dir_diag[] = "etc_dir";
 
+/* returned pointer should *not* be free'ed */
 char *
 gfarmGetEtcDir(void)
 {
-    char buf[PATH_MAX];
-    char *dir = getenv(GFARM_INSTALL_DIR_ENV), *path;
-    struct stat st;
+	char *path, *dir;
+	struct stat st;
+	static const char diag[] = "gfarmGetEtcDir";
 
-    if (dir != NULL) {
-#ifdef HAVE_SNPRINTF
-	snprintf(buf, sizeof buf, "%s/%s", dir, GFARM_DEFAULT_INSTALL_ETC_DIR);
-#else
-	sprintf(buf, "%s/%s", dir, GFARM_DEFAULT_INSTALL_ETC_DIR);
-#endif
-	path = buf;
-    } else {
-	path = GFARM_INSTALL_ETC_DIR;
-    }
+	gfarm_mutex_lock(&etc_dir_mutex, etc_dir_diag, diag);
+	path = etc_dir;
+	gfarm_mutex_unlock(&etc_dir_mutex, etc_dir_diag, diag);
+	if (path != NULL)
+		return (path);
 
-    if (stat(path, &st) == 0 &&
-	S_ISDIR(st.st_mode)) {
-	return strdup(path);
-    } else {
-	gflog_debug(GFARM_MSG_1000844,
-		"stat() failed or given path is not directory (%s)", path);
-    }
-
-    return NULL;
+	dir = getenv(GFARM_INSTALL_DIR_ENV);
+	if (dir != NULL)
+		path = gfarmGetDefaultConfigPath(
+			dir, GFARM_DEFAULT_INSTALL_ETC_DIR);
+	else
+		path = strdup(GFARM_INSTALL_ETC_DIR);
+	if (path == NULL)
+		gflog_error(GFARM_MSG_UNFIXED, "no memory");
+	else if (stat(path, &st) == -1 || !S_ISDIR(st.st_mode)) {
+		gflog_error(GFARM_MSG_1000844,
+		    "%s: no configuration directory", path);
+		free(path);
+	} else {
+		gfarm_mutex_lock(&etc_dir_mutex, etc_dir_diag, diag);
+		etc_dir = path;
+		gfarm_mutex_unlock(&etc_dir_mutex, etc_dir_diag, diag);
+		return (path);
+	}
+	return (NULL);
 }
-
