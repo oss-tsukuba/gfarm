@@ -86,6 +86,8 @@ gfarm_auth_config_static_term(struct gfarm_context *ctxp)
 	}
 	for (cc = s->auth_server_cred_config_list; cc != NULL; cc = cc_next) {
 		cc_next = cc->next;
+		free(cc->service);
+		free(cc->name);
 		free(cc);
 	}
 	free(s);
