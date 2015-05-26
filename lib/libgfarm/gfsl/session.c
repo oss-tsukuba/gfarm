@@ -400,7 +400,7 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 	    int iConf, iConfF;
 	   
 	    if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM,
-			       GFARM_GSS_TIMEOUT_INFINITE) != NUM_NEGO_PARAM) {
+		GFARM_GSS_AUTH_TIMEOUT_MSEC) != NUM_NEGO_PARAM) {
 		gsiErrNo = errno;
 		gflog_auth_info(GFARM_MSG_1003849,
 		    "gfarmSecSession:negotiateConfigParam(): "
@@ -504,7 +504,7 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 	    }
 
 	    if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM,
-			       GFARM_GSS_TIMEOUT_INFINITE) != NUM_NEGO_PARAM) {
+		GFARM_GSS_AUTH_TIMEOUT_MSEC) != NUM_NEGO_PARAM) {
 		gsiErrNo = errno;
 		gflog_auth_error(GFARM_MSG_1000665,
 		    "gfarmSecSession:negotiateConfigParam(): "
@@ -1403,7 +1403,7 @@ secSessionInitiate(int fd, const gss_name_t acceptorName,
     /*
      * Phase 2: Receive authorization acknowledgement.
      */
-    if (gfarmReadInt32(fd, &acknack, 1, GFARM_GSS_AUTH_TIMEOUT * 1000) != 1) {
+    if (gfarmReadInt32(fd, &acknack, 1, GFARM_GSS_AUTH_TIMEOUT_MSEC) != 1) {
 	gsiErrNo = errno;
 	gflog_auth_error(GFARM_MSG_1003860,
 	    "%s: acceptor does not answer authentication result: %s",
@@ -1893,7 +1893,7 @@ negotiateConfigParamInitiatorReceive(int events, int fd, void *closure,
     } else {
 	assert(events == GFARM_EVENT_READ);
 	if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM,
-			   GFARM_GSS_TIMEOUT_INFINITE) != NUM_NEGO_PARAM) {
+	    GFARM_GSS_AUTH_TIMEOUT_MSEC) != NUM_NEGO_PARAM) {
 	    gflog_auth_error(GFARM_MSG_1000680, "gfarmSecSession: "
 			     "negotiateConfigParamInitiatorReceive(): "
 			     "negotiation failure with the acceptor");
@@ -2153,7 +2153,7 @@ secSessionInitiateReceiveAuthorizationAck(int events, int fd, void *closure,
 	/*
 	 * Phase 2: Receive authorization acknowledgement.
 	 */
-	if (gfarmReadInt32(fd, &acknack, 1, GFARM_GSS_TIMEOUT_INFINITE) != 1) {
+	if (gfarmReadInt32(fd, &acknack, 1, GFARM_GSS_AUTH_TIMEOUT_MSEC) != 1) {
 	    gflog_auth_error(GFARM_MSG_1000689,
 	        "%s: acceptor does not answer authentication result",
 		state->acceptorDistName);

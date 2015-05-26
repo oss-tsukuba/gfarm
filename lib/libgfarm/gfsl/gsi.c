@@ -592,11 +592,11 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
     *scPtr = GSS_C_NO_CONTEXT;
 
     do {
-	tknStat = gfarmGssReceiveToken(fd, itPtr, GFARM_GSS_TIMEOUT_INFINITE);
+	tknStat = gfarmGssReceiveToken(fd, itPtr, GFARM_GSS_AUTH_TIMEOUT_MSEC);
 	if (tknStat <= 0) {
 	    gsiErrNo = errno;
 	    gflog_auth_info(GFARM_MSG_1003845,
-		"gfarmGssAcceptSecurityContext(): failed to receive response"
+		"gfarmGssAcceptSecurityContext(): failed to receive response: "
 		"%s", strerror(gsiErrNo));
 	    majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;
@@ -755,7 +755,7 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
     
 	if (majStat & GSS_S_CONTINUE_NEEDED) {
 	    tknStat = gfarmGssReceiveToken(fd, itPtr,
-					   GFARM_GSS_TIMEOUT_INFINITE);
+			GFARM_GSS_AUTH_TIMEOUT_MSEC);
 	    if (tknStat <= 0) {
 		gsiErrNo = errno;
 		gflog_auth_error(GFARM_MSG_1003848,
@@ -1283,7 +1283,7 @@ gfarmGssInitiateSecurityContextReceiveToken(int events, int fd,
     } else {
 	assert(events == GFARM_EVENT_READ);
 	tknStat = gfarmGssReceiveToken(fd, state->itPtr,
-				       GFARM_GSS_TIMEOUT_INFINITE);
+			GFARM_GSS_AUTH_TIMEOUT_MSEC);
 	if (tknStat <= 0) {
 	    gflog_auth_error(GFARM_MSG_1000624,
 		"gfarmGssInitiateSecurityContextReceiveToken(): "
