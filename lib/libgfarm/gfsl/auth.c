@@ -201,99 +201,8 @@ dumpAuthEntry(gfarmAuthEntry *aePtr)
 
 static pthread_mutex_t authFile_mutex = PTHREAD_MUTEX_INITIALIZER;
 static char *authFile = NULL;
-static const char authFileDiag[] = "authFile";
-
-static int
-setAuthFile(char *usermap)
-{
-    static const char diag[] = "gfsl/setAuthFile()";
-    char *auth_file = NULL;
-
-    if (usermap != NULL && usermap[0] != '\0') {
-	auth_file = strdup(usermap);
-	if (auth_file == NULL) {
-	    gflog_auth_error(GFARM_MSG_1000642, "%s: no memory", diag);
-	    return (-1);
-	}
-    }
-    gfarm_mutex_lock(&authFile_mutex, diag, authFileDiag);
-    free(authFile);
-    authFile = auth_file;
-    gfarm_mutex_unlock(&authFile_mutex, diag, authFileDiag);
-    return (0);
-}
-
-static void
-unsetAuthFile(void)
-{
-    setAuthFile(NULL);
-}
-
-static char *
-getAuthFile(void)
-{
-    char *file;
-    static const char diag[] = "gfsl/getAuthFile()";
-
-    gfarm_mutex_lock(&authFile_mutex, diag, authFileDiag);
-    file = authFile;
-    gfarm_mutex_unlock(&authFile_mutex, diag, authFileDiag);
-    return (file);
-}
-
 static struct stat authFileStat;
-static pthread_mutex_t authFileStat_mutex = PTHREAD_MUTEX_INITIALIZER;
-static const char authFileStatDiag[] = "authFileStat";
-
-static int
-getAuthFileStat(struct stat *sb)
-{
-    char *file = getAuthFile();
-    static const char diag[] = "gfsl/getAuthFileStat()";
-
-    if (file == NULL) {
-	gflog_auth_warning(GFARM_MSG_1000643,
-	    "%s: AuthFile not set or no memory", diag);
-	return (-1);
-    }
-    if (stat(file, sb) < 0) {
-	gflog_auth_warning(GFARM_MSG_1000644, "%s: not found", file);
-	return (-1);
-    }
-    return (0);
-}
-
-static int
-setAuthFileStat(void)
-{
-    struct stat sb;
-    static const char diag[] = "gfsl/setAuthFileStat()";
-
-    if (getAuthFileStat(&sb) < 0)
-	return (-1);
-
-    gfarm_mutex_lock(&authFileStat_mutex, diag, authFileStatDiag);
-    authFileStat = sb;
-    gfarm_mutex_unlock(&authFileStat_mutex, diag, authFileStatDiag);
-    return (0);
-}
-
-static int
-checkAuthFileStat(void)
-{
-    struct stat sb;
-    int update;
-    static const char diag[] = "gfsl/checkAuthFileStat()";
-
-    if (getAuthFileStat(&sb) < 0)
-	return (-1);
-
-    gfarm_mutex_lock(&authFileStat_mutex, diag, authFileStatDiag);
-    update = (authFileStat.st_mtime < sb.st_mtime);
-    authFileStat = sb;
-    gfarm_mutex_unlock(&authFileStat_mutex, diag, authFileStatDiag);
-    return (update);
-}
+static const char authFileDiag[] = "authFile";
 
 /* returned pointer should be free'ed */
 char *
@@ -321,6 +230,63 @@ gfarmGetDefaultConfigFile(char *file)
 	return (gfarmGetDefaultConfigPath(dir, file));
 }
 
+static int
+setAuthFile(char *usermap)
+{
+	struct stat sb;
+	int ret = -1;
+	static const char diag[] = "gfsl/setAuthFile()";
+
+	if (usermap != NULL && stat(usermap, &sb) == -1) {
+		gflog_auth_error(GFARM_MSG_UNFIXED, "%s: %s", usermap,
+			strerror(errno));
+		return (ret);
+	}
+	gfarm_mutex_lock(&authFile_mutex, diag, authFileDiag);
+	if (authFile == NULL) {
+		if (usermap == NULL)
+			authFile = gfarmGetDefaultConfigFile(
+				GFARM_DEFAULT_USERMAP_FILE);
+		else
+			authFile = strdup(usermap);
+	} else if (usermap != NULL && strcmp(authFile, usermap) != 0) {
+		free(authFile);
+		authFile = strdup(usermap);
+	}
+	if (authFile == NULL)
+		gflog_auth_error(GFARM_MSG_UNFIXED, "no memory");
+	else if (usermap == NULL && stat(authFile, &sb) == -1)
+		gflog_auth_error(GFARM_MSG_UNFIXED, "%s: %s", authFile,
+			strerror(errno));
+	else {
+		authFileStat = sb;
+		ret = 0;
+	}
+	gfarm_mutex_unlock(&authFile_mutex, diag, authFileDiag);
+	return (ret);
+}
+
+static int
+checkAuthFileStat(void)
+{
+	struct stat sb;
+	int update = -1;
+	static const char diag[] = "gfsl/checkAuthFileStat()";
+
+	gfarm_mutex_lock(&authFile_mutex, diag, authFileDiag);
+	if (authFile == NULL)
+		gflog_auth_notice(GFARM_MSG_UNFIXED, "authFile not set");
+	else if (stat(authFile, &sb) == -1)
+		gflog_auth_warning(GFARM_MSG_UNFIXED, "%s: %s", authFile,
+			strerror(errno));
+	else {
+		update = (authFileStat.st_mtime < sb.st_mtime);
+		authFileStat = sb;
+	}
+	gfarm_mutex_unlock(&authFile_mutex, diag, authFileDiag);
+	return (update);
+}
+
 int
 gfarmAuthInitialize(char *usermapFile)
 {
@@ -334,13 +300,13 @@ gfarmAuthInitialize(char *usermapFile)
     static const char diag[] = "gfarmAuthInitialize()";
 
     gfarm_mutex_lock(&authTable_mutex, diag, authTableDiag);
-    auth_table = authTable;
-    gfarm_mutex_unlock(&authTable_mutex, diag, authTableDiag);
-    if (auth_table != NULL)
+    if (authTable != NULL) {
+	gfarm_mutex_unlock(&authTable_mutex, diag, authTableDiag);
 	return (ret);
+    }
+    gfarm_mutex_unlock(&authTable_mutex, diag, authTableDiag);
 
     {
-	char *mapFile = NULL;
 	char lineBuf[65536];
 	struct gfarm_hash_entry *ePtr;
 
@@ -348,24 +314,17 @@ gfarmAuthInitialize(char *usermapFile)
 	 * Read global users -> local users mapping file
 	 * and create a translation table.
 	 */
-	if (usermapFile == NULL || usermapFile[0] == '\0') {
-	    mapFile = gfarmGetDefaultConfigFile(GFARM_DEFAULT_USERMAP_FILE);
-	    usermapFile = mapFile;
-	}
-	if (setAuthFile(usermapFile) == -1 || setAuthFileStat() == -1) {
-	    free(mapFile);
+	if (setAuthFile(usermapFile) == -1)
 	    return (-1);
-	}
+
 	gfarm_privilege_lock(diag);
 	mFd = fopen(usermapFile, "r");
 	gfarm_privilege_unlock(diag);
 	if (mFd == NULL) {
 	    gflog_auth_error(GFARM_MSG_1000646, "%s: cannot open: %s",
 		usermapFile, strerror(errno));
-	    free(mapFile);
 	    return (-1);
 	}
-	free(mapFile);
 
 	auth_table = gfarm_hash_table_alloc(AUTH_TABLE_SIZE,
 		gfarm_hash_default, gfarm_hash_key_equal_default);
@@ -558,13 +517,10 @@ initDone:
     return (ret);
 }
 
-
 void
 gfarmAuthFinalize(void)
 {
     static const char diag[] = "gfarmAuthFinalize()";
-
-    unsetAuthFile();
 
     gfarm_mutex_lock(&authTable_mutex, diag, authTableDiag);
     if (authTable != NULL) {
@@ -597,12 +553,8 @@ gfarmAuthGetUserEntry(char *distUserName)
 
     /* update a usermap if needed */
     if (checkAuthFileStat() > 0) {
-	char *usermap = getAuthFile();
-
-	if (usermap) {
-	    gfarmAuthFinalize();
-	    (void)gfarmAuthInitialize(usermap);
-	}
+	gfarmAuthFinalize();
+	gfarmAuthInitialize(NULL);
     }
     gfarm_mutex_lock(&authTable_mutex, diag, authTableDiag);
     if (authTable != NULL) {
@@ -636,14 +588,9 @@ gfarmAuthGetLocalUserEntry(char *localUserName)
 
     /* update a usermap if needed */
     if (checkAuthFileStat() > 0) {
-	char *usermap = getAuthFile();
-
-	if (usermap) {
-	    gfarmAuthFinalize();
-	    (void)gfarmAuthInitialize(usermap);
-	}
+	gfarmAuthFinalize();
+	gfarmAuthInitialize(NULL);
     }
-
     gfarm_mutex_lock(&authTable_mutex, diag, authTableDiag);
     if (userToDNTable != NULL) {
 	struct gfarm_hash_entry *ePtr = gfarm_hash_lookup(userToDNTable,
