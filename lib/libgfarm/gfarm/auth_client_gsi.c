@@ -191,7 +191,6 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	if (initiator_name != GSS_C_NO_NAME)
 		gfarmGssDeleteName(&initiator_name, NULL, NULL);
 	if (e != GFARM_ERR_NO_ERROR) {
-		free(initiator_dn);
 		if (acceptor_name != GSS_C_NO_NAME)
 			gfarmGssDeleteName(&acceptor_name, NULL, NULL);
 		return (e);

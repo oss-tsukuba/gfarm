@@ -627,7 +627,7 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 	    } else {
 		gflog_auth_info(GFARM_MSG_1003846,
 		    "gfarmGssAcceptSecurityContext(): failed to send response"
-		    "%s", strerror(gsiErrNo));
+		    ": %s", strerror(gsiErrNo));
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
 		minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    }
