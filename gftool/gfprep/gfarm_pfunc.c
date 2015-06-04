@@ -647,10 +647,11 @@ end:
 	if (result == PFUNC_RESULT_NG) {
 		e = pfunc_unlink(tmp_url);
 		if (e != GFARM_ERR_NO_ERROR &&
-		    e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
-			fprintf(stderr,
-				"ERROR: cannot remove tmp-file: %s: %s\n",
-			tmp_url, gfarm_error_string(e));
+		    e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
+			fprintf(stderr, "FATAL: cannot remove temporary file: "
+			    "%s: %s\n", tmp_url, gfarm_error_string(e));
+			result = PFUNC_RESULT_FATAL;
+		}
 	}
 	gfpara_send_int(to_parent, result);
 	free(tmp_url);
