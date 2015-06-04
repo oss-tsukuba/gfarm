@@ -951,7 +951,7 @@ inode_schedule_replication(
 		    e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 			/* retry in replica_check */
 		} else {
-			int n_existing2, n_being_removed2, n_existing_tmp;
+			int n_existing2, n_being_removed2;
 			struct host **existing2, **being_removed2;
 
 			/*
@@ -975,18 +975,6 @@ inode_schedule_replication(
 			/* gfarm.ncopy vs gfarm.replicainfo */
 			if (total_repattr > n_desired)
 				n_desired = total_repattr;
-
-			if (!is_replica_check) /* replication at close */
-				n_existing_tmp =
-				    *n_existingp - 1 + n_existing2;
-			else
-				n_existing_tmp = n_existing2;
-
-			if (n_existing_tmp >= n_desired) {
-				free(existing2);
-				free(being_removed2);
-				return (GFARM_ERR_NO_ERROR); /* OK */
-			}
 
 			if (!is_replica_check) { /* replication at close */
 				int n_existing3, n_being_removed3, i, j;
@@ -1070,7 +1058,7 @@ inode_schedule_replication(
 			free(existing2);
 			free(being_removed2);
 		}
-	} else if (n_desired > *n_existingp) {
+	} else {
 		gflog_debug(GFARM_MSG_1003648,
 		    "%s: about to schedule "
 		    "ncopy-based replication for inode %lld:%lld@%s. "
@@ -1085,8 +1073,7 @@ inode_schedule_replication(
 		    inode, n_desired,
 		    n_srcs, srcs, n_existingp, existing, grace,
 		    n_being_removedp, being_removed, diag, n_successp);
-	} else
-		e = GFARM_ERR_NO_ERROR;
+	}
 
 	return (e);
 }
