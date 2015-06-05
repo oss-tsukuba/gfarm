@@ -266,6 +266,25 @@ setAuthFile(char *usermap)
 	return (ret);
 }
 
+static FILE *
+openAuthFile(void)
+{
+	FILE *f = NULL;
+	static const char diag[] = "gfsl/openAuthFile()";
+
+	gfarm_mutex_lock(&authFile_mutex, diag, authFileDiag);
+	if (authFile == NULL)
+		gflog_auth_notice(GFARM_MSG_UNFIXED, "authFile not set");
+	else {
+		f = fopen(authFile, "r");
+		if (f == NULL)
+			gflog_auth_error(GFARM_MSG_1000646,
+			    "%s: cannot open: %s", authFile, strerror(errno));
+	}
+	gfarm_mutex_unlock(&authFile_mutex, diag, authFileDiag);
+	return (f);
+}
+
 static int
 checkAuthFileStat(void)
 {
@@ -318,13 +337,10 @@ gfarmAuthInitialize(char *usermapFile)
 	    return (-1);
 
 	gfarm_privilege_lock(diag);
-	mFd = fopen(usermapFile, "r");
+	mFd = openAuthFile();
 	gfarm_privilege_unlock(diag);
-	if (mFd == NULL) {
-	    gflog_auth_error(GFARM_MSG_1000646, "%s: cannot open: %s",
-		usermapFile, strerror(errno));
+	if (mFd == NULL)
 	    return (-1);
-	}
 
 	auth_table = gfarm_hash_table_alloc(AUTH_TABLE_SIZE,
 		gfarm_hash_default, gfarm_hash_key_equal_default);
