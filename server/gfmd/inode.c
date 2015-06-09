@@ -4882,9 +4882,10 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 		    copyp = &copy->host_next) {
 			if (copy->host == spool_host)
 				foundp = copyp;
-			if (FILE_COPY_IS_VALID(copy))
-				++num_valid;
-			else if (!FILE_COPY_IS_BEING_REMOVED(copy))
+			if (FILE_COPY_IS_VALID(copy)) {
+				if (host_is_up(copy->host))
+					++num_valid; /* available replicas */
+			} else if (!FILE_COPY_IS_BEING_REMOVED(copy))
 				++num_incomplete;
 		}
 		if (foundp == NULL) {
