@@ -45,10 +45,8 @@ void inode_set_group_by_name_in_cache(struct inode *, const char *);
 int inode_has_no_replica(struct inode *);
 gfarm_int64_t inode_get_ncopy(struct inode *);
 gfarm_int64_t inode_get_ncopy_with_dead_host(struct inode *);
-gfarm_error_t inode_count_ncopy_with_grace(
-	struct file_copy *, int, gfarm_time_t, int, struct host **, int *);
-gfarm_error_t inode_get_ncopy_with_grace(
-	struct inode *, int, gfarm_time_t, int, struct host **, int *);
+gfarm_error_t inode_count_replicas(
+	struct inode *, int, int, gfarm_time_t, int, struct host **, int *);
 
 gfarm_mode_t inode_get_mode(struct inode *);
 gfarm_error_t inode_set_mode(struct inode *, gfarm_mode_t);
