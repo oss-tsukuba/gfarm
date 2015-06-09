@@ -103,7 +103,7 @@ gfarm_gsi_acquire_client_credential(const char *hostname,
 		 */
 		gflog_debug(GFARM_MSG_1001466,
 		    "acquirement of client credential failed");
-		return (GFARM_ERRMSG_CANNOT_ACQUIRE_CLIENT_CRED);
+		return (GFARM_ERR_INVALID_CREDENTIAL);
 #endif
 	}
 	if (output_cred != NULL)
@@ -166,7 +166,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	} else {
 		if (gfarmGssNewCredentialName(&initiator_name, cred,
 		    &e_major, &e_minor) < 0) {
-			e = GFARM_ERRMSG_CANNOT_ACQUIRE_CLIENT_CRED;
+			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
 				gflog_error(GFARM_MSG_UNFIXED,
 				    "cannot obtain initiator name");
@@ -179,7 +179,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 		initiator_dn = gfarmGssNewDisplayName(initiator_name,
 		    &e_major, &e_minor, NULL);
 		if (initiator_dn == NULL) {
-			e = GFARM_ERRMSG_CANNOT_ACQUIRE_CLIENT_CRED;
+			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
 				gflog_error(GFARM_MSG_UNFIXED,
 				    "cannot obtain initiator dn");
@@ -438,7 +438,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	} else {
 		if (gfarmGssNewCredentialName(&initiator_name,
 		    state->cred, &e_major, &e_minor) < 0) {
-			e = GFARM_ERRMSG_CANNOT_ACQUIRE_CLIENT_CRED;
+			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
 				gflog_error(GFARM_MSG_UNFIXED,
 				    "cannot obtain initiator name");
@@ -452,7 +452,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 		state->initiator_dn = gfarmGssNewDisplayName(
 		    initiator_name, &e_major, &e_minor, NULL);
 		if (state->initiator_dn == NULL) {
-			e = GFARM_ERRMSG_CANNOT_ACQUIRE_CLIENT_CRED;
+			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
 				gflog_error(GFARM_MSG_UNFIXED,
 				    "cannot obtain initiator dn");

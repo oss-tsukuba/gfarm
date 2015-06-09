@@ -61,6 +61,7 @@ gfarm_error_t gfarm_set_global_user_for_this_local_account(void);
 gfarm_error_t gfarm_initialize(int *, char ***);
 gfarm_error_t gfarm_terminate(void);
 gfarm_error_t gfarm_config_read(void);
+gfarm_error_t gfarm_auth_method_gsi_available(void);
 
 const char *gfarm_version(void);
 

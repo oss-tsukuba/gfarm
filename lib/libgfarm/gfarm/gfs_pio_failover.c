@@ -32,7 +32,6 @@
 #include "gfs_file_list.h"
 #include "gfs_misc.h"
 
-
 static struct gfs_connection *
 get_storage_context(struct gfs_file_section_context *vc)
 {
@@ -385,10 +384,16 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 
 	for (i = 0; i < NUM_FAILOVER_RETRY; ++i) {
 		/* reconnect to gfmd */
-		if ((e = gfm_client_connection_and_process_acquire(
-		    host, port, user, &gfm_server)) != GFARM_ERR_NO_ERROR) {
+		e = gfm_client_connection_and_process_acquire(
+			host, port, user, &gfm_server);
+		if (e == GFARM_ERR_EXPIRED ||
+		    e == GFARM_ERR_INVALID_CREDENTIAL) {
+			gflog_notice(GFARM_MSG_UNFIXED, "%s:%d:%s: %s",
+			    host, port, user, gfarm_error_string(e));
+			break;
+		} else if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1003390,
-			    "gfm_client_connection_acquire failed : %s",
+			    "gfm_client_connection_acquire failed: %s",
 			    gfarm_error_string(e));
 			continue;
 		}
@@ -423,9 +428,10 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 		    "connection to metadb server was failed over successfully");
 	} else {
 		gfarm_filesystem_set_failover_detected(fs, 1);
-		e = GFARM_ERR_OPERATION_TIMED_OUT;
+		if (e == GFARM_ERR_NO_ERROR)
+			e = GFARM_ERR_OPERATION_TIMED_OUT;
 		gflog_debug(GFARM_MSG_1003392,
-		    "falied to fail over: %s", gfarm_error_string(e));
+		    "failover failed: %s", gfarm_error_string(e));
 	}
 end:
 	free(host);

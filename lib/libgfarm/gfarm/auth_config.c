@@ -2,10 +2,20 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+
 #include <gfarm/gfarm_config.h>
+
+#ifdef HAVE_GSI
+#include <gssapi.h>
+#endif
+
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+
+#ifdef HAVE_GSI
+#include "gfarm_gsi.h"
+#endif
 
 #include "context.h"
 #include "liberror.h"
@@ -212,6 +222,19 @@ gfarm_auth_method_get_enabled_by_name_addr(
 		}
 	}
 	return (enabled);
+}
+
+gfarm_error_t
+gfarm_auth_method_gsi_available(void)
+{
+#ifdef HAVE_GSI
+	if (gfarmGssAcquireCredential(NULL, GSS_C_NO_NAME, GSS_C_INITIATE,
+		NULL, NULL, NULL) < 0)
+		return (GFARM_ERR_INVALID_CREDENTIAL);
+	return (GFARM_ERR_NO_ERROR);
+#else
+	return (GFARM_ERRMSG_AUTH_METHOD_NOT_AVAILABLE_FOR_THE_HOST);
+#endif
 }
 
 gfarm_int32_t

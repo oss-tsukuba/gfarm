@@ -143,6 +143,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"insufficient number of file replicas",
 	"checksum mismatch",
 	"conflict detected",
+	"invalid credential",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
