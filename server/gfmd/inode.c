@@ -4777,16 +4777,16 @@ inode_remove_replica_completed(gfarm_ino_t inum, gfarm_int64_t igen,
 }
 
 static gfarm_error_t
-check_removable_replicas(
-	struct file_opening *fo, int n_valid,
+can_remove_replica(
+	struct file_opening *fo, int num,
 	struct file_copy *copy, struct file_copy *copies_list)
 {
 	gfarm_error_t e;
 
-	if (n_valid <= 1)
+	if (num <= 1)
 		return (GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA);
 
-	if (n_valid <= fo->u.f.desired_replica_number)
+	if (num <= fo->u.f.desired_replica_number)
 		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
 
 	if (fo->u.f.repattr != NULL) {
@@ -4820,7 +4820,7 @@ check_removable_replicas(
 			}
 		}
 
-		if (n_valid <= total) {
+		if (num <= total) {
 			gfarm_repattr_free_all(nreps, reps);
 			return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
 		}
@@ -4875,7 +4875,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 {
 	struct file_copy **copyp, *copy, **foundp = NULL;
 	gfarm_error_t e;
-	int num_valid = 0, num_incomplete = 0;
+	int num_valid = 0, num_up = 0, num_incomplete = 0;
 
 	if (gen == inode->i_gen) {
 		for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;
@@ -4883,10 +4883,12 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 			if (copy->host == spool_host)
 				foundp = copyp;
 			if (FILE_COPY_IS_VALID(copy)) {
+				++num_valid; /* include down hosts */
 				if (host_is_up(copy->host))
-					++num_valid; /* available replicas */
+					++num_up; /* available replicas */
 			} else if (!FILE_COPY_IS_BEING_REMOVED(copy))
 				++num_incomplete;
+			/* else: FILE_COPY_IS_BEING_REMOVED */
 		}
 		if (foundp == NULL) {
 			gflog_debug(GFARM_MSG_1001770,
@@ -4895,12 +4897,13 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 		}
 		copy = *foundp;
 		if (protect_replicas != NULL && FILE_COPY_IS_VALID(copy)) {
-			e = check_removable_replicas(
-			    protect_replicas, num_valid,
+			int num = host_is_up(copy->host) ? num_up : num_valid;
+
+			e = can_remove_replica(protect_replicas, num,
 			    copy, inode->u.c.s.f.copies);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1003698,
-				    "check_removable_replicas: %s",
+				    "can_remove_replica: %s",
 				    gfarm_error_string(e));
 				return (e);
 			}
