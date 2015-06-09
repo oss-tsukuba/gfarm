@@ -1696,74 +1696,50 @@ inode_get_ncopy_with_dead_host(struct inode *inode)
 	return (inode_get_ncopy_common(inode, 1, 0));
 }
 
-/* if is_valid == 0, FILE_COPY_BEING_REMOVED copies are excluded */
+/* This function modifies scope[]. Do not use scope[] later */
+/* if is_valid == 0, incomplete replicas are included */
 gfarm_error_t
-inode_count_ncopy_with_grace(
-	struct file_copy *copies, int is_valid, gfarm_time_t grace,
+inode_count_replicas(
+	struct inode *inode, int is_valid, int is_up,
+	gfarm_time_t host_down_grace,
 	int n_scope, struct host **scope, int *ncopyp)
 {
 	gfarm_error_t e;
-	struct file_copy *copy;
-	int count = 0, n_valid = 0, n_invalid = 0, n_before;
-	struct host **valid, **invalid;
+	struct file_copy *copy, *copies = inode->u.c.s.f.copies;
+	int count = 0, n_includes = 0, n_before;
+	struct host **includes;
 
 	for (copy = copies; copy != NULL; copy = copy->host_next)
 		count++;
 
-	GFARM_MALLOC_ARRAY(valid, count);
-	GFARM_MALLOC_ARRAY(invalid, count);
-	if (valid == NULL || invalid == NULL) {
-		free(valid);
-		free(invalid);
+	GFARM_MALLOC_ARRAY(includes, count);
+	if (includes == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	}
+
 	for (copy = copies; copy != NULL; copy = copy->host_next) {
 		if ((is_valid ?
 		     FILE_COPY_IS_VALID(copy) :
 		     !FILE_COPY_IS_BEING_REMOVED(copy))
-		    && host_is_up_with_grace(copy->host, grace))
-			valid[n_valid++] = copy->host;
-		else
-			invalid[n_invalid++] = copy->host;
+		    &&
+		    (is_up ?
+		     host_is_up_with_grace(copy->host, host_down_grace) : 1))
+			includes[n_includes++] = copy->host;
 	}
 
 	if (n_scope <= 0 || scope == NULL) {
-		free(valid);
-		free(invalid);
-
-		*ncopyp = n_valid;
+		free(includes);
+		*ncopyp = n_includes;
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	e = host_except(&n_scope, scope, &n_invalid, invalid, NULL, NULL);
-	if (e != GFARM_ERR_NO_ERROR) {
-		free(valid);
-		free(invalid);
-		return (e);
-	}
-
 	n_before = n_scope;
-	e = host_except(&n_scope, scope, &n_valid, valid, NULL, NULL);
-	if (e != GFARM_ERR_NO_ERROR) {
-		free(valid);
-		free(invalid);
+	e = host_except(&n_scope, scope, &n_includes, includes, NULL, NULL);
+	free(includes);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
-	free(valid);
-	free(invalid);
 
 	*ncopyp = n_before - n_scope;
 	return (GFARM_ERR_NO_ERROR);
-}
-
-/* if is_valid == 0, FILE_COPY_BEING_REMOVED copies are excluded */
-gfarm_error_t
-inode_get_ncopy_with_grace(
-	struct inode *inode, int is_valid, gfarm_time_t grace,
-	int nscope, struct host **scope, int *ncopyp)
-{
-	return (inode_count_ncopy_with_grace(
-	    inode->u.c.s.f.copies, is_valid, grace, nscope, scope, ncopyp));
 }
 
 static gfarm_error_t
@@ -4777,9 +4753,8 @@ inode_remove_replica_completed(gfarm_ino_t inum, gfarm_int64_t igen,
 }
 
 static gfarm_error_t
-can_remove_replica(
-	struct file_opening *fo, int num,
-	struct file_copy *copy, struct file_copy *copies_list)
+can_remove_replica(struct inode *inode, struct file_copy *copy,
+	struct file_opening *fo, int num, int is_up)
 {
 	gfarm_error_t e;
 
@@ -4845,13 +4820,13 @@ can_remove_replica(
 			return (GFARM_ERR_NO_ERROR);
 		}
 
-		e = inode_count_ncopy_with_grace(
-		    copies_list, 0, 0, nhosts, hosts, &ncopy);
+		e = inode_count_replicas(
+		    inode, 0, is_up, 0, nhosts, hosts, &ncopy);
 		if (e != GFARM_ERR_NO_ERROR) {
 			free(hosts);
 			gfarm_repattr_free_all(nreps, reps);
 			gflog_debug(GFARM_MSG_1004027,
-			    "inode_count_ncopy_with_grace: %s",
+			    "inode_count_replicas: %s",
 			    gfarm_error_string(e));
 			return (e);
 		}
@@ -4897,10 +4872,11 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 		}
 		copy = *foundp;
 		if (protect_replicas != NULL && FILE_COPY_IS_VALID(copy)) {
-			int num = host_is_up(copy->host) ? num_up : num_valid;
+			int is_up = host_is_up(copy->host);
+			int num = is_up ? num_up : num_valid;
 
-			e = can_remove_replica(protect_replicas, num,
-			    copy, inode->u.c.s.f.copies);
+			e = can_remove_replica(inode, copy,
+			    protect_replicas, num, is_up);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1003698,
 				    "can_remove_replica: %s",
