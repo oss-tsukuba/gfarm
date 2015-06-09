@@ -1367,12 +1367,7 @@ sigs_handler(void *p)
 		}
 		switch (sig) {
 		case SIGHUP:
-#ifdef HAVE_GSI
-			/* initialize the GSI environment */
-			gflog_info(GFARM_MSG_1002735,
-			    "initialize the GSI environment");
-			gfarm_gsi_server_finalize();
-#endif
+			/* nothing to do */
 			continue;
 
 		case SIGUSR1:
