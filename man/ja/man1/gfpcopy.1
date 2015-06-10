@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfpcopy
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 9 Dec 2013
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 29 Jun 2014
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPCOPY" "1" "9 Dec 2013" "Gfarm" "Gfarm"
+.TH "GFPCOPY" "1" "29 Jun 2014" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -34,17 +34,14 @@ gfpcopy \- copy Gfarm files in parallel
 \fBgfpcopy\fR [\-nqvdpPU] [\-f] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fIlimit\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-b\ \fIbufsize\fR] \fIsource\-path\fR \fIdestination\-path\fR
 .SH "DESCRIPTION"
 .PP
-
 \fBgfpcopy\fR
 は、ファイルやディレクトリを 並列にコピーします。
 .PP
 転送先や転送元のホスト群を指定するには、 ドメイン名で指定するか、ホスト名を行ごとに記述したホストリストファイルを指定します。 ドメイン名とホストリストファイルを両方指定した場合は、 両方の条件に合うホスト群を決定します。 転送元ホスト群を指定した場合、そのホストに存在するファイルのみ複製が作成されます。
 .PP
-
 \fIsource\-path\fR
 がディレクトリの場合、 それ以下にあるすべてのファイルをコピーします。
 .PP
-
 \fBgfpcopy\fR
 は、ディレクトリを辿る際に、 ディレクトリエントリ情報も並列に取得します。
 .SH "GFPCOPY OPTIONS"
@@ -64,11 +61,10 @@ gfpcopy \- copy Gfarm files in parallel
 .RS 4
 \-f オプションを指定する場合、コピー先のファイルとコピー元のファイルが、 サイズまたは mtime が異なる場合に上書きします。
 .sp
-\-f オプションを指定しない場合、コピー先のファイルとコピー元のファイルが、 サイズが異なるか、コピー先のほうが mtime が古い場合に、上書きします。
+\-f オプションを指定しない場合、 コピー先のほうが mtime が古い場合に、上書きします。
 .RE
 .SH "COMMON OPTIONS"
 .PP
-
 \fBgfpcopy\fR
 には
 \fBgfprep\fR
@@ -144,7 +140,6 @@ $ gfpcopy file /tmp/dir
 .\}
 .SH "NOTES"
 .PP
-
 \fBgfmd\fR
 と
 \fBgfpcopy\fR
@@ -153,7 +148,6 @@ $ gfpcopy file /tmp/dir
 の動作が遅くなります。 そのような場合には、\-j または \-J オプションに大きな値を指定すると、 性能が改善するかもしれません。
 .SH "SEE ALSO"
 .PP
-
 \fBgfprep\fR(1),
 \fBgfreg\fR(1),
 \fBgfexport\fR(1),

@@ -2,19 +2,19 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfpcopy</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfpcopy">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfpcopy.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfpcopy — copy Gfarm files in parallel</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfpcopy</code>  [-nqvdpPU] [-f] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>limit-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-b <em class="replaceable"><code>bufsize</code></em>]  <em class="replaceable"><code>source-path</code></em>   <em class="replaceable"><code>destination-path</code></em> </p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 <span class="command"><strong>gfpcopy</strong></span> は、ファイルやディレクトリを
@@ -36,12 +36,12 @@
 ディレクトリエントリ情報も並列に取得します。
 </p>
 </div>
-<div class="refsect1" title="GFPCOPY OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>GFPCOPY OPTIONS</h2>
 <p>
 以下は <span class="command"><strong>gfpcopy</strong></span> 専用のオプションです。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-b</code> <em class="parameter"><code>bufsize</code></em></span></dt>
 <dd>
 <p>
@@ -58,13 +58,13 @@
 サイズまたは mtime が異なる場合に上書きします。
 </p>
 <p>
--f オプションを指定しない場合、コピー先のファイルとコピー元のファイルが、
-サイズが異なるか、コピー先のほうが mtime が古い場合に、上書きします。
+-f オプションを指定しない場合、
+コピー先のほうが mtime が古い場合に、上書きします。
 </p>
 </dd>
 </dl></div>
 </div>
-<div class="refsect1" title="COMMON OPTIONS">
+<div class="refsect1">
 <a name="common-options"></a><h2>COMMON OPTIONS</h2>
 <p>
 
@@ -73,7 +73,7 @@
 <span class="command"><strong>gfprep</strong></span> のマニュアルを参照してください。
 </p>
 </div>
-<div class="refsect1" title="EXAMPLES">
+<div class="refsect1">
 <a name="examples"></a><h2>EXAMPLES</h2>
 <p>
 ディレクトリ以下すべてをコピーします。
@@ -102,7 +102,7 @@ $ cd /mnt/gfarm2fs<br>
 $ gfpcopy file /tmp/dir<br>
 </p></div>
 </div>
-<div class="refsect1" title="NOTES">
+<div class="refsect1">
 <a name="notes"></a><h2>NOTES</h2>
 <p>
 <span class="command"><strong>gfmd</strong></span> と
@@ -112,7 +112,7 @@ $ gfpcopy file /tmp/dir<br>
 性能が改善するかもしれません。
 </p>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfprep</span>(1)</span>,
