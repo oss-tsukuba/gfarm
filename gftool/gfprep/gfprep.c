@@ -2995,6 +2995,19 @@ gfprep_signal_init()
 		gfprep_fatal("pthread_create: %s", strerror(err));
 }
 
+static int
+can_skip_copy(int dst_is_gfarm, int force, gfarm_dirtree_entry_t *entry)
+{
+	if (dst_is_gfarm && entry->dst_d_type == GFS_DT_REG &&
+	    entry->dst_ncopy == 0)
+		return (0);
+	if (!force)
+		return (entry->src_m_sec <= entry->dst_m_sec);
+	else
+		return (entry->src_size == entry->dst_size &&
+		    entry->src_m_sec == entry->dst_m_sec);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -3670,14 +3683,8 @@ main(int argc, char *argv[])
 			if (entry->src_d_type == GFS_DT_REG) {
 				if (entry->dst_exist) {
 					if (entry->dst_d_type == GFS_DT_REG) {
-						if ((!opt_force_copy &&
-						     entry->src_m_sec <=
-						     entry->dst_m_sec) ||
-						    (opt_force_copy &&
-						     entry->src_size ==
-						     entry->dst_size &&
-						     entry->src_m_sec ==
-						     entry->dst_m_sec)) {
+						if (can_skip_copy(dst_is_gfarm,
+						    opt_force_copy, entry)) {
 							gfprep_verbose(
 							  "already exists: %s",
 							  dst_url);
@@ -3716,13 +3723,8 @@ main(int argc, char *argv[])
 			} else if (entry->src_d_type == GFS_DT_LNK) {
 				if (entry->dst_exist) {
 					if (entry->dst_d_type == GFS_DT_LNK &&
-					    ((!opt_force_copy &&
-					      entry->src_m_sec <=
-					      entry->dst_m_sec)
-					     ||
-					     (opt_force_copy &&
-					      entry->src_m_sec ==
-					      entry->dst_m_sec))) {
+					    can_skip_copy(dst_is_gfarm,
+						opt_force_copy, entry)) {
 						gfprep_verbose(
 						    "already exists: %s",
 						    dst_url);
