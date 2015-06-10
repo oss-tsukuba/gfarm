@@ -845,7 +845,6 @@ pfunc_recv(FILE *child_out, gfpara_proc_t *proc, void *param)
 	gfpara_recv_int(child_out, &result);
 	switch (result) {
 	case PFUNC_RESULT_OK:
-	case PFUNC_RESULT_NG:
 	case PFUNC_RESULT_SKIP:
 	case PFUNC_RESULT_BUSY_REMOVE_REPLICA:
 		if (handle->cb_end != NULL && data != NULL) {
@@ -855,6 +854,7 @@ pfunc_recv(FILE *child_out, gfpara_proc_t *proc, void *param)
 		return (GFPARA_NEXT);
 	case PFUNC_RESULT_END:
 		return (GFPARA_END);
+	case PFUNC_RESULT_NG:
 	case PFUNC_RESULT_FATAL:
 	default:
 		gfpara_recv_purge(child_out);
