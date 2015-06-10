@@ -2181,8 +2181,8 @@ gfprep_check_disk_avail(struct gfprep_host_info *hi, gfarm_off_t src_size)
 	gfprep_get_and_reset_failed_size(hi, &failed_size);
 	hi->disk_avail += failed_size;
 
-	if (hi->disk_avail >= src_size &&
-	    hi->disk_avail >= gfarm_get_minimum_free_disk_space())
+	/* to reduce no space risk, keep minimum disk space */
+	if (hi->disk_avail >= src_size + gfarm_get_minimum_free_disk_space())
 		return (GFARM_ERR_NO_ERROR);
 	return (GFARM_ERR_NO_SPACE);
 }
