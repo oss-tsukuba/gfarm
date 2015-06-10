@@ -6,7 +6,7 @@
 
 <refentry id="gfpcopy.1">
 
-<refentryinfo><date>9 Dec 2013</date></refentryinfo>
+<refentryinfo><date>29 Jun 2014</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfpcopy</refentrytitle>
@@ -101,8 +101,8 @@ source file.
 </para>
 <para>
 Without -f option, existing destination files will be overwritten when
-the size is different or the modification time (mtime) is older than the
-source file.
+that they are older than the corresponding source files in the
+modification time.
 </para>
 </listitem>
 </varlistentry>

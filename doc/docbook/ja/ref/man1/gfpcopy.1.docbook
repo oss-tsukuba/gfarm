@@ -6,7 +6,7 @@
 
 <refentry id="gfpcopy.1">
 
-<refentryinfo><date>9 Dec 2013</date></refentryinfo>
+<refentryinfo><date>29 Jun 2014</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfpcopy</refentrytitle>
@@ -92,8 +92,8 @@
 サイズまたは mtime が異なる場合に上書きします。
 </para>
 <para>
--f オプションを指定しない場合、コピー先のファイルとコピー元のファイルが、
-サイズが異なるか、コピー先のほうが mtime が古い場合に、上書きします。
+-f オプションを指定しない場合、
+コピー先のほうが mtime が古い場合に、上書きします。
 </para>
 </listitem>
 </varlistentry>
