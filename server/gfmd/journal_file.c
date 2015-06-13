@@ -1918,34 +1918,30 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 	if ((e = gfp_xdr_recv_ahead(xdr, JOURNAL_READ_AHEAD_SIZE,
 	    &avail)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002914,
-		    "gfp_xdr_recv_ahead : %s", gfarm_error_string(e));
+		    "gfp_xdr_recv_ahead: %s", gfarm_error_string(e));
 		goto unlock;
 	}
-	if (avail < min_rec_size) { /* no more record */
+	while (avail < min_rec_size) { /* no more record */
 		if (journal_file_has_writer(jf) == 0) {
 			*eofp = 1;
 			goto unlock;
 		}
-		while (avail < min_rec_size) {
-			jf->wait_until_nonempty = 1;
-			if (JOURNAL_FILE_READER_DRAINED(reader)) {
-				journal_file_reader_set_flag(reader,
-				    JOURNAL_FILE_READER_F_DRAIN, 0);
-				drained = 1;
-				e = GFARM_ERR_CANT_OPEN;
-				goto unlock;
-			}
-			gfarm_cond_wait(&jf->nonempty_cond, &jf->mutex,
-			    diag, JOURNAL_FILE_STR);
-			jf->wait_until_nonempty = 0;
-			if ((e = gfp_xdr_recv_ahead(xdr,
-			    JOURNAL_READ_AHEAD_SIZE, &avail))
-			    != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_1002915,
-				    "gfp_xdr_recv_ahead : %s",
-				    gfarm_error_string(e));
-				goto unlock;
-			}
+		if (JOURNAL_FILE_READER_DRAINED(reader)) {
+			journal_file_reader_set_flag(reader,
+			    JOURNAL_FILE_READER_F_DRAIN, 0);
+			drained = 1;
+			e = GFARM_ERR_CANT_OPEN;
+			goto unlock;
+		}
+		jf->wait_until_nonempty = 1;
+		gfarm_cond_wait(&jf->nonempty_cond, &jf->mutex, diag,
+		    JOURNAL_FILE_STR);
+		jf->wait_until_nonempty = 0;
+		if ((e = gfp_xdr_recv_ahead(xdr, JOURNAL_READ_AHEAD_SIZE,
+		    &avail)) != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_1002915,
+			    "gfp_xdr_recv_ahead: %s", gfarm_error_string(e));
+			goto unlock;
 		}
 	}
 	if ((e = journal_read_rec_header(xdr, &ope, &seqnum, &len))
