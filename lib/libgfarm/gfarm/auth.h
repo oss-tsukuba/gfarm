@@ -193,3 +193,7 @@ gfarm_error_t gfarm_auth_uid_to_global_username_sharedsecret(void *,
 /* auth_server_uid_gsi */
 gfarm_error_t gfarm_auth_uid_to_global_username_gsi(void *,
 	const char *, char **);
+
+/* gsi_auth_error */
+void gfarm_auth_set_gsi_auth_error(int);
+gfarm_error_t gfarm_auth_check_gsi_auth_error(void);

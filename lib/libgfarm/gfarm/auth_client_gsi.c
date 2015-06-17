@@ -103,6 +103,7 @@ gfarm_gsi_acquire_client_credential(const char *hostname,
 		 */
 		gflog_debug(GFARM_MSG_1001466,
 		    "acquirement of client credential failed");
+		gfarm_auth_set_gsi_auth_error(1);
 		return (GFARM_ERR_INVALID_CREDENTIAL);
 #endif
 	}
@@ -166,6 +167,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	} else {
 		if (gfarmGssNewCredentialName(&initiator_name, cred,
 		    &e_major, &e_minor) < 0) {
+			gfarm_auth_set_gsi_auth_error(1);
 			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
 				gflog_error(GFARM_MSG_UNFIXED,
@@ -179,6 +181,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 		initiator_dn = gfarmGssNewDisplayName(initiator_name,
 		    &e_major, &e_minor, NULL);
 		if (initiator_dn == NULL) {
+			gfarm_auth_set_gsi_auth_error(1);
 			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
 				gflog_error(GFARM_MSG_UNFIXED,
@@ -438,6 +441,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	} else {
 		if (gfarmGssNewCredentialName(&initiator_name,
 		    state->cred, &e_major, &e_minor) < 0) {
+			gfarm_auth_set_gsi_auth_error(1);
 			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
 				gflog_error(GFARM_MSG_UNFIXED,
@@ -452,6 +456,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 		state->initiator_dn = gfarmGssNewDisplayName(
 		    initiator_name, &e_major, &e_minor, NULL);
 		if (state->initiator_dn == NULL) {
+			gfarm_auth_set_gsi_auth_error(1);
 			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
 				gflog_error(GFARM_MSG_UNFIXED,

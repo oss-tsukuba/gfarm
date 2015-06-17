@@ -519,6 +519,12 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	struct timeval timeout;
 #endif /* __KERNEL__ */
 
+#ifdef HAVE_GSI
+	/* prevent to connect servers with expired client credential */
+	e = gfarm_auth_check_gsi_auth_error();
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+#endif
 	hostname = gfp_cached_connection_hostname(cache_entry);
 	port = gfp_cached_connection_port(cache_entry);
 	user = gfp_cached_connection_username(cache_entry);
