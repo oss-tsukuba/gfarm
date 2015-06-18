@@ -3948,17 +3948,9 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 	ri->recs_len = recs_len;
 	ri->recs = recs;
 	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
-	while (journal_recvq_nelems >= gfarm_get_journal_recvq_size()) {
-		if (journal_file_is_waiting_until_nonempty(self_jf)) {
-			gflog_notice(GFARM_MSG_1003328,
-			    "journal receive queue overflow on memory, "
-			    "please try to increase "
-			    "\"metadb_journal_recvq_size\" (currently %d)",
-			    gfarm_get_journal_recvq_size());
-		}
+	while (journal_recvq_nelems >= gfarm_get_journal_recvq_size())
 		gfarm_cond_wait(&journal_recvq_nonfull_cond,
 		    &journal_recvq_mutex, diag, RECVQ_NONFULL_COND_DIAG);
-	}
 	GFARM_STAILQ_INSERT_TAIL(&journal_recvq, ri, next);
 	gfarm_cond_signal(&journal_recvq_nonempty_cond, diag,
 	    RECVQ_NONEMPTY_COND_DIAG);
@@ -3971,43 +3963,35 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 static gfarm_error_t
 db_journal_recvq_delete(struct db_journal_recv_info **rip)
 {
-	struct db_journal_recv_info *ri, *rii, *ri_last = NULL;
+	struct db_journal_recv_info *ri;
 	gfarm_uint64_t next_sn;
 	static const char diag[] = "db_journal_recvq_delete";
 
 	next_sn = db_journal_get_current_seqnum() + 1;
 
 	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
-	for (;;) {
-		while ((ri = GFARM_STAILQ_LAST(&journal_recvq,
-		    db_journal_recv_info, next)) == ri_last &&
-		    journal_recvq_cancel == 0)
-			gfarm_cond_wait(&journal_recvq_nonempty_cond,
-			    &journal_recvq_mutex, diag,
-			    RECVQ_NONEMPTY_COND_DIAG);
-		if (journal_recvq_cancel && ri == ri_last) {
-			*rip = NULL;
-			gfarm_mutex_unlock(&journal_recvq_mutex, diag,
-			    RECVQ_MUTEX_DIAG);
-			return (GFARM_ERR_NO_ERROR);
-		}
+retry:
+	while (journal_recvq_nelems <= 0 && journal_recvq_cancel == 0)
+		gfarm_cond_wait(&journal_recvq_nonempty_cond,
+		    &journal_recvq_mutex, diag, RECVQ_NONEMPTY_COND_DIAG);
+	if (journal_recvq_cancel)
 		ri = NULL;
-		GFARM_STAILQ_FOREACH(rii, &journal_recvq, next) {
-			if (rii->from_sn == next_sn) {
-				ri = rii;
-				goto found;
-			}
-		}
-		ri_last = GFARM_STAILQ_LAST(&journal_recvq,
-		    db_journal_recv_info, next);
-	}
-found:
-	GFARM_STAILQ_REMOVE_HEAD(&journal_recvq, next);
-	if (journal_recvq_nelems >= gfarm_get_journal_recvq_size()) {
+	else {
+		ri = GFARM_STAILQ_FIRST(&journal_recvq);
+		GFARM_STAILQ_REMOVE_HEAD(&journal_recvq, next);
+		--journal_recvq_nelems;
 		gfarm_cond_signal(&journal_recvq_nonfull_cond, diag,
 		    RECVQ_NONFULL_COND_DIAG);
+		if (ri->from_sn != next_sn) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "abandon invalid journal: seqnum %llu "
+			    "should be %llu", (unsigned long long)ri->from_sn,
+			    (unsigned long long)next_sn);
+			free(ri->recs);
+			free(ri);
+			goto retry;
+		}
 	}
-	--journal_recvq_nelems;
 	gfarm_mutex_unlock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 	*rip = ri;
 	return (GFARM_ERR_NO_ERROR);
