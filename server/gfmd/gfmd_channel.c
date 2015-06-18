@@ -533,6 +533,12 @@ gfmdc_wait_journal_syncsend(struct gfmdc_journal_send_closure *c)
 	if ((r = c->end) == 0)
 		c->end = 1;
 	gfarm_mutex_unlock(&c->send_mutex, diag, SEND_MUTEX_DIAG);
+	if (in_time == 0)
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "journal send to %s: timeout due to no response "
+		    "within %d seconds "
+		    "(synchronous_journal_timeout)", mdhost_get_name(c->host),
+		     gfarm_get_journal_sync_slave_timeout());
 	return (r);
 }
 
@@ -1268,13 +1274,13 @@ gfmdc_journal_syncsend_thread(void *closure)
 		if ((e = gfmdc_client_journal_syncsend(peer, c, &to_sn))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1003003,
-			    "%s : failed to send journal : %s",
+			    "%s: failed to send journal: %s",
 			    mdhost_get_name(c->host), gfarm_error_string(e));
 			break;
 		}
 		if (to_sn == 0) {
 			gflog_warning(GFARM_MSG_1003004,
-			    "%s : no journal records to send (seqnum=%lld) "
+			    "%s: no journal record to send (seqnum=%lld)"
 			    ": %s", mdhost_get_name(c->host),
 			    (unsigned long long)journal_sync_info.seqnum,
 			    gfarm_error_string(e));
