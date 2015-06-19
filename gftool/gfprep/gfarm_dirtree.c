@@ -165,11 +165,6 @@ enum dirtree_entry {
 	DIRTREE_ENTRY_END
 };
 
-enum finfo_result {
-	FINFO_RESULT_OK,
-	FINFO_RESULT_NG
-};
-
 struct dirtree_dir_handle {
 	const char *path;
 	void *dir;
@@ -459,7 +454,7 @@ dents_retry:
 				is_retry = 1;
 				goto dents_retry;
 			}
-			gfpara_send_int(to_parent, DIRTREE_STAT_NG);
+			gfpara_send_int(to_parent, DIRTREE_STAT_IGNORE);
 			free(subpath);
 			free(src_dir);
 			goto next_command;
@@ -481,7 +476,8 @@ dents_loop:
 				fflush(stderr);
 				free(src_dir);
 				free(subpath);
-				gfpara_send_int(to_parent, DIRTREE_STAT_NG);
+				gfpara_send_int(
+					to_parent, DIRTREE_STAT_IGNORE);
 				goto next_command;
 			}
 			/* GFARM_ERR_NO_SUCH_OBJECT: end of directory */
@@ -577,7 +573,6 @@ dents_error:
 			free(subpath);
 			goto term;
 		}
-
 		gfpara_send_int(to_parent, DIRTREE_STAT_GET_FINFO_OK);
 		/* ----- src ----- */
 		if (handle->src_type == URL_TYPE_LOCAL || is_file == 0) {
@@ -599,10 +594,7 @@ finfo_retry1:
 			fprintf(stderr,
 				"ERROR: gfs_replica_list_by_name(%s): %s\n",
 				src_path, gfarm_error_string(e));
-			gfpara_send_int(to_parent, 0); /* 3: dst_exist */
-			/* 10: result */
-			gfpara_send_int(to_parent, FINFO_RESULT_NG);
-			goto next_command;
+			goto finfo_dst;
 		}
 		if (is_retry)
 			fprintf(stderr,
@@ -617,8 +609,6 @@ finfo_dst:	/* ----- dst ----- */
 		if (handle->dst_type == URL_TYPE_UNUSED) {
 			/* dst is unused */
 			gfpara_send_int(to_parent, 0); /* 3: dst_exist */
-			/* 10: result */
-			gfpara_send_int(to_parent, FINFO_RESULT_OK);
 			free(subpath);
 			free(src_path);
 			goto next_command;
@@ -629,8 +619,6 @@ finfo_dst:	/* ----- dst ----- */
 		if (retv == -1) {
 			fprintf(stderr, "FATAL: no memory\n");
 			gfpara_send_int(to_parent, 0); /* 3: dst_exist */
-			/* 10: result */
-			gfpara_send_int(to_parent, FINFO_RESULT_NG);
 			free(subpath);
 			free(src_path);
 			goto next_command;
@@ -645,13 +633,6 @@ finfo_retry2:
 			}
 			/* dst does not exist */
 			gfpara_send_int(to_parent, 0); /* 3: dst_exist */
-
-			/* 10: result */
-			if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
-				gfpara_send_int(to_parent, FINFO_RESULT_OK);
-			else
-				gfpara_send_int(to_parent, FINFO_RESULT_NG);
-
 			free(subpath);
 			free(src_path);
 			free(dst_path);
@@ -703,14 +684,6 @@ finfo_retry3:
 					gfarm_error_string(e));
 					/* 8: dst_ncopy */
 					gfpara_send_int(to_parent, 0);
-					/* 10: result */
-					gfpara_send_int(to_parent,
-					    FINFO_RESULT_NG);
-					
-					free(subpath);
-					free(src_path);
-					free(dst_path);
-					goto next_command;
 				}
 			} else /* URL_TYPE_LOCAL: ncopy == 0 */
 				/* 8: dst_ncopy */
@@ -721,10 +694,6 @@ finfo_retry3:
 			gfpara_send_int(to_parent, GFS_DT_LNK);
 		else /* 6: dst_d_type */
 			gfpara_send_int(to_parent, GFS_DT_UNKNOWN);
-
-		/* 10: result */
-		gfpara_send_int(to_parent, FINFO_RESULT_OK);
-
 		free(subpath);
 		free(src_path);
 		free(dst_path);
@@ -913,7 +882,7 @@ static int
 dirtree_recv_finfo(FILE *child_out, gfpara_proc_t *proc, void *param)
 {
 	gfarm_dirtree_t *handle = param;
-	int d_type_int, i, result;
+	int d_type_int, i;
 	gfarm_dirtree_entry_t *ent;
 
 	ent = gfpara_data_get(proc);
@@ -977,10 +946,6 @@ dirtree_recv_finfo(FILE *child_out, gfpara_proc_t *proc, void *param)
 		ent->dst_ncopy = 0;  /* 8 */
 		ent->dst_copy = NULL; /* 9 */
 	}
-	gfpara_recv_int(child_out, &result); /* 10 */
-	if (result == FINFO_RESULT_NG)
-		return (GFPARA_FATAL);
-
 	ent->n_pending = 0;
 	gfarm_fifo_enter(handle->fifo_handle, &ent);
 	return (GFPARA_NEXT);
@@ -1011,7 +976,8 @@ dirtree_recv(FILE *child_out, gfpara_proc_t *proc, void *param)
 	case DIRTREE_STAT_NG:
 	default:
 		gfpara_recv_purge(child_out);
-		fprintf(stderr, "error in reading directories\n");
+		fprintf(stderr,
+			"FATAL: unexpected dirtree status: %d\n", status);
 		return (GFPARA_FATAL);
 	}
 }

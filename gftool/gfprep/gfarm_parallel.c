@@ -64,7 +64,7 @@ gfpara_fatal(const char *format, ...)
 			if (handle_list[i] != NULL &&
 			    handle_list[i]->watch_stderr_end == 0)
 				gfpara_watch_stderr_stop(handle_list[i]);
-	fprintf(stderr, "EXIT: error occurred: ");
+	fprintf(stderr, "fatal error: ");
 	va_start(ap, format);
 	vfprintf(stderr, format, ap);
 	va_end(ap);
@@ -465,7 +465,7 @@ gfpara_thread(void *param)
 		if (retv == GFPARA_END)
 			goto end;
 		else if (retv == GFPARA_FATAL)
-			gfpara_fatal("error before sending to subprocess");
+			gfpara_fatal("gfpara error in func_send");
 		assert(retv == GFPARA_NEXT);
 		for (;;) {
 			if (handle->interrupt == GFPARA_INTR_TERM) {
@@ -493,7 +493,7 @@ gfpara_thread(void *param)
 		if (retv == GFPARA_END)
 			goto end;
 		else if (retv == GFPARA_FATAL)
-			gfpara_fatal("error from subprocess");
+			gfpara_fatal("gfpara error in func_recv");
 		assert(retv == GFPARA_NEXT);
 	}
 end:
