@@ -657,6 +657,7 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 	int inited = 0;
 	struct gfmdc_peer_record *gfmdc_peer = peer_get_gfmdc_record(peer);
 	struct journal_file_reader *reader;
+	const char *host = mdhost_get_name(mh);
 	static const char diag[] = "GFM_PROTO_JOURNAL_READY_TO_RECV";
 
 	if ((e = gfmdc_server_get_request(peer, size, diag, "l", &seqnum))
@@ -666,10 +667,10 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 #ifdef DEBUG_JOURNAL
 		gflog_debug(GFARM_MSG_1002980,
 		    "%s : last_fetch_seqnum=%llu",
-		    mdhost_get_name(mh), (unsigned long long)seqnum);
+		    host, (unsigned long long)seqnum);
 #endif
 		reader = gfmdc_peer_get_journal_file_reader(gfmdc_peer);
-		if ((e = db_journal_reader_reopen_if_needed(&reader,
+		if ((e = db_journal_reader_reopen_if_needed(host, &reader,
 		    gfmdc_peer_get_last_fetch_seqnum(gfmdc_peer), &inited))
 		    == GFARM_ERR_NO_ERROR) {
 			if (seqnum == db_journal_get_current_seqnum())
@@ -680,8 +681,7 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 			mdhost_set_seqnum_state_by_error(mh, e);
 			gflog_error(GFARM_MSG_1002981,
 			    "gfmd_channel(%s) : %s",
-			    mdhost_get_name(mh),
-			    gfarm_error_string(e));
+			    host, gfarm_error_string(e));
 		}
 		/*
 		 * if reader is already expired,

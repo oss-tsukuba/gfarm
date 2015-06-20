@@ -3778,10 +3778,11 @@ db_journal_reset_slave_transaction_nesting(void)
 }
 
 gfarm_error_t
-db_journal_reader_reopen_if_needed(struct journal_file_reader **readerp,
+db_journal_reader_reopen_if_needed(const char *label,
+	struct journal_file_reader **readerp,
 	gfarm_uint64_t last_fetch_seqnum, int *initedp)
 {
-	return (journal_file_reader_reopen_if_needed(self_jf, readerp,
+	return (journal_file_reader_reopen_if_needed(self_jf, label, readerp,
 		last_fetch_seqnum, initedp));
 }
 

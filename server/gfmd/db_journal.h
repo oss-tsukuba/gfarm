@@ -17,8 +17,8 @@ gfarm_error_t db_journal_read(struct journal_file_reader *, void *,
 	gfarm_error_t (*)(void *, gfarm_uint64_t, enum journal_operation,
 	void *, void *, size_t, int *), void *, int *);
 void db_journal_wait_for_apply_thread(void);
-gfarm_error_t db_journal_reader_reopen_if_needed(struct journal_file_reader **,
-	gfarm_uint64_t, int *);
+gfarm_error_t db_journal_reader_reopen_if_needed(const char *,
+	struct journal_file_reader **, gfarm_uint64_t, int *);
 gfarm_error_t db_journal_fetch(struct journal_file_reader *, gfarm_uint64_t,
 	char **, int *, gfarm_uint64_t *, gfarm_uint64_t *, int *,
 	const char *);

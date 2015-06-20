@@ -66,7 +66,10 @@ struct journal_file_reader {
 	struct gfp_xdr *xdr;
 	int flags;
 	gfarm_uint64_t last_seqnum;
+	const char *label;
 };
+
+static const char *main_reader_label = "main_reader";
 
 #define JOURNAL_FILE_READER_F_BLOCK_WRITER	0x1
 #define JOURNAL_FILE_READER_F_INVALID		0x2
@@ -83,7 +86,9 @@ struct journal_file_reader {
 
 #define JOURNAL_RECORD_SIZE_MAX			(1024 * 1024)
 #define JOURNAL_FILE_HEADER_SIZE		4096
-#define JOURNAL_FILE_HEADER_MIN_SIZE		(JOURNAL_FILE_HEADER_SIZE + 128)
+/* JOURNAL_FILE_HEADER_SIZE + maximum transaction size */
+/* XXX - this assumes 4096, but xmlattr may exceed it */
+#define JOURNAL_FILE_MIN_SIZE			(2 * JOURNAL_FILE_HEADER_SIZE)
 #define GFARM_JOURNAL_RECORD_HEADER_XDR_FMT	"cccclii"
 #define JOURNAL_BUFSIZE				8192
 #define JOURNAL_READ_AHEAD_SIZE			8192
@@ -103,7 +108,7 @@ struct journal_file {
 	char *path;
 	size_t size, max_size;
 	off_t tail;
-	int wait_until_nonempty;
+	int wait_until_nonempty, wait_until_nonfull;
 	pthread_cond_t nonfull_cond, nonempty_cond, drain_cond;
 	gfarm_uint64_t initial_max_seqnum;
 	pthread_mutex_t mutex;
@@ -762,12 +767,14 @@ journal_file_reader_writer_wait(struct journal_file_reader *reader,
 		if (!needed)
 			break;
 
-#ifdef DEBUG_JOURNAL
-		gflog_info(GFARM_MSG_1002875,
-		    "wait jounal_file.nonfull_cond");
-#endif
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "wait until %s reads the journal file, "
+		    "increase \"metadb_journal_max_size\" (currently %ld)",
+		    reader->label, (unsigned long)jf->max_size);
+		jf->wait_until_nonfull = 1;
 		gfarm_cond_wait(&jf->nonfull_cond, &jf->mutex,
 		    diag, JOURNAL_FILE_STR);
+		jf->wait_until_nonfull = 0;
 		waited = 1;
 	}
 	return (waited);
@@ -1319,7 +1326,7 @@ journal_file_reader_init(struct journal_file *jf, int fd,
 
 static gfarm_error_t
 journal_file_reader_new(struct journal_file *jf, int fd,
-	off_t pos, gfarm_uint64_t lap, int block_writer, 
+	off_t pos, gfarm_uint64_t lap, int block_writer, const char *label,
 	struct journal_file_reader **readerp)
 {
 	gfarm_error_t e;
@@ -1337,8 +1344,9 @@ journal_file_reader_new(struct journal_file *jf, int fd,
 		free(reader);
 		return (e);
 	}
-	GFARM_HCIRCLEQ_INSERT_TAIL(jf->reader_list, reader, readers);
 	reader->last_seqnum = 0;
+	reader->label = label;
+	GFARM_HCIRCLEQ_INSERT_TAIL(jf->reader_list, reader, readers);
 	*readerp = reader;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -1409,11 +1417,11 @@ journal_file_open(const char *path, size_t max_size,
 		return (e);
 	}
 	if ((flags & GFARM_JOURNAL_RDWR) != 0 &&
-	    max_size < JOURNAL_FILE_HEADER_MIN_SIZE) {
+	    max_size < JOURNAL_FILE_MIN_SIZE) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
 		gflog_error(GFARM_MSG_1002896,
 		    "journal_max_size must be larger than %d. current=%lu",
-		    JOURNAL_FILE_HEADER_MIN_SIZE, (unsigned long)max_size);
+		    JOURNAL_FILE_MIN_SIZE, (unsigned long)max_size);
 		return (e);
 	}
 
@@ -1487,14 +1495,15 @@ journal_file_open(const char *path, size_t max_size,
 
 	/* create journal_file_main_reader */
 	if ((e = journal_file_reader_new(jf, rfd, rpos, rlap, 1,
-	    &reader)) != GFARM_ERR_NO_ERROR)
+	    main_reader_label, &reader)) != GFARM_ERR_NO_ERROR)
 		goto error;
 
 	gfarm_cond_init(&jf->nonfull_cond, diag, JOURNAL_FILE_STR);
 	gfarm_cond_init(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
 	gfarm_cond_init(&jf->drain_cond, diag, JOURNAL_FILE_STR);
 	gfarm_mutex_init(&jf->mutex, diag, JOURNAL_FILE_STR);
-	jf->wait_until_nonempty = 0;
+	jf->wait_until_nonempty =
+	jf->wait_until_nonfull = 0;
 	*jfp = jf;
 
 	return (GFARM_ERR_NO_ERROR);
@@ -1514,8 +1523,8 @@ error:
 
 gfarm_error_t
 journal_file_reader_reopen_if_needed(struct journal_file *jf,
-	struct journal_file_reader **readerp, gfarm_uint64_t seqnum,
-	int *initedp)
+	const char *label, struct journal_file_reader **readerp,
+	gfarm_uint64_t seqnum, int *initedp)
 {
 	gfarm_error_t e, e2;
 	int fd = -1;
@@ -1570,7 +1579,8 @@ journal_file_reader_reopen_if_needed(struct journal_file *jf,
 	if (*readerp != NULL)
 		e = journal_file_reader_init(jf, fd, rpos, rlap, 0, *readerp);
 	else
-		e = journal_file_reader_new(jf, fd, rpos, rlap, 0, readerp);
+		e = journal_file_reader_new(
+			jf, fd, rpos, rlap, 0, label, readerp);
 	gfarm_cond_broadcast(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
 	if (e == GFARM_ERR_NO_ERROR) {
 		if (e2 != GFARM_ERR_NO_ERROR) {
@@ -1946,6 +1956,11 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 			goto unlock;
 		}
 		jf->wait_until_nonempty = 1;
+		if (jf->wait_until_nonfull == 1 &&
+		    reader->label == main_reader_label)
+			gflog_error(GFARM_MSG_UNFIXED, "deadlock detected: "
+			    "increase \"metadb_journal_max_size\" "
+			    "(currently %ld)", (unsigned long)jf->max_size);
 		gfarm_cond_wait(&jf->nonempty_cond, &jf->mutex, diag,
 		    JOURNAL_FILE_STR);
 		jf->wait_until_nonempty = 0;

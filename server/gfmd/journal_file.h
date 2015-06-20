@@ -130,7 +130,7 @@ void journal_file_reader_disable_block_writer(struct journal_file_reader *);
 void journal_file_reader_invalidate(struct journal_file_reader *);
 void journal_file_reader_close(struct journal_file_reader *);
 gfarm_error_t journal_file_reader_reopen_if_needed(struct journal_file *,
-	struct journal_file_reader **, gfarm_uint64_t, int *);
+	const char *, struct journal_file_reader **, gfarm_uint64_t, int *);
 
 const char *journal_operation_name(enum journal_operation);
 
