@@ -771,10 +771,12 @@ journal_file_reader_writer_wait(struct journal_file_reader *reader,
 		    "wait until %s reads the journal file, "
 		    "increase \"metadb_journal_max_size\" (currently %ld)",
 		    reader->label, (unsigned long)jf->max_size);
-		jf->wait_until_nonfull = 1;
+		if (reader->label == main_reader_label)
+			jf->wait_until_nonfull = 1;
 		gfarm_cond_wait(&jf->nonfull_cond, &jf->mutex,
 		    diag, JOURNAL_FILE_STR);
-		jf->wait_until_nonfull = 0;
+		if (reader->label == main_reader_label)
+			jf->wait_until_nonfull = 0;
 		waited = 1;
 	}
 	return (waited);
@@ -1955,12 +1957,12 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 			e = GFARM_ERR_CANT_OPEN;
 			goto unlock;
 		}
-		jf->wait_until_nonempty = 1;
 		if (jf->wait_until_nonfull == 1 &&
 		    reader->label == main_reader_label)
-			gflog_error(GFARM_MSG_UNFIXED, "deadlock detected: "
+			gflog_fatal(GFARM_MSG_UNFIXED, "deadlock detected: "
 			    "increase \"metadb_journal_max_size\" "
 			    "(currently %ld)", (unsigned long)jf->max_size);
+		jf->wait_until_nonempty = 1;
 		gfarm_cond_wait(&jf->nonempty_cond, &jf->mutex, diag,
 		    JOURNAL_FILE_STR);
 		jf->wait_until_nonempty = 0;
