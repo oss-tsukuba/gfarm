@@ -932,6 +932,9 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
 #define GFARM_METADB_MAX_DESCRIPTORS_DEFAULT	(2*65536)
+#define GFARM_METADB_REPLICA_REMOVER_BY_HOST_SLEEP_TIME_DEFAULT	20000
+							/* nanosec. */
+#define GFARM_METADB_REPLICA_REMOVER_BY_HOST_INODE_STEP_DEFAULT	1024
 #define GFARM_CLIENT_DIGEST_CHECK_DEFAULT	0
 #define GFARM_CLIENT_FILE_BUFSIZE_DEFAULT	(1024 * 1024)
 #define GFARM_CLIENT_PARALLEL_COPY_DEFAULT	4
@@ -962,6 +965,10 @@ int gfarm_metadb_thread_pool_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_job_queue_length = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_heartbeat_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_dbq_size = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_replica_remover_by_host_sleep_time =
+	GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_replica_remover_by_host_inode_step =
+	GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_replication_enabled = GFARM_CONFIG_MISC_DEFAULT;
 static char *journal_dir = NULL;
 static int journal_max_size = GFARM_CONFIG_MISC_DEFAULT;
@@ -2989,6 +2996,14 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_metadb_heartbeat_interval);
 	} else if (strcmp(s, o = "metadb_server_dbq_size") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_dbq_size);
+	} else if (strcmp(s, o = "metadb_replica_remover_by_host_sleep_time")
+	     == 0) {
+		e = parse_set_misc_int(p,
+		    &gfarm_metadb_replica_remover_by_host_sleep_time);
+	} else if (strcmp(s, o = "metadb_replica_remover_by_host_inode_step")
+	    == 0) {
+		e = parse_set_misc_int(p,
+		    &gfarm_metadb_replica_remover_by_host_inode_step);
 	} else if (strcmp(s, o = "record_atime") == 0) {
 		int record_atime;
 
@@ -3304,6 +3319,14 @@ gfarm_config_set_default_misc(void)
 		    GFARM_METADB_HEARTBEAT_INTERVAL_DEFAULT;
 	if (gfarm_metadb_dbq_size == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_dbq_size = GFARM_METADB_DBQ_SIZE_DEFAULT;
+	if (gfarm_metadb_replica_remover_by_host_sleep_time
+	    == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_metadb_replica_remover_by_host_sleep_time =
+		    GFARM_METADB_REPLICA_REMOVER_BY_HOST_SLEEP_TIME_DEFAULT;
+	if (gfarm_metadb_replica_remover_by_host_inode_step
+	    == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_metadb_replica_remover_by_host_inode_step =
+		    GFARM_METADB_REPLICA_REMOVER_BY_HOST_INODE_STEP_DEFAULT;
 	if (gfarm_atime_type == GFARM_ATIME_DEFAULT)
 		(void)gfarm_atime_type_set(GFARM_ATIME_RELATIVE);
 	if (gfarm_ctxp->client_digest_check == GFARM_CONFIG_MISC_DEFAULT)

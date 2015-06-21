@@ -1,7 +1,9 @@
 #include <pthread.h>
 
+#include <errno.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -110,6 +112,41 @@ create_detached_thread(void *(*thread_main)(void *), void *arg)
 	err = pthread_create(&thread_id, gfarm_pthread_attr_get(),
 	    thread_main, arg);
 	return (err == 0 ? GFARM_ERR_NO_ERROR : gfarm_errno_to_error(err));
+}
+
+gfarm_error_t
+gfarm_pthread_set_priority_minimum(void)
+{
+	pthread_t self = pthread_self();
+	int policy, min_prio;
+	struct sched_param param;
+	int save_errno;
+
+	save_errno = pthread_getschedparam(self, &policy, &param);
+	if (save_errno != 0) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "pthread_get_schedparam(): %s", strerror(errno));
+		return (gfarm_errno_to_error(save_errno));
+	}
+
+	min_prio = sched_get_priority_min(policy);
+	if (min_prio == -1) {
+		save_errno = errno;
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "sched_get_priority_min(%d): %s", policy, strerror(errno));
+		return (gfarm_errno_to_error(save_errno));
+	}
+
+	param.sched_priority = min_prio;
+	save_errno = pthread_setschedparam(self, policy, &param);
+	if (save_errno != 0) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "pthread_set_schedparam(%d, %d): %s",
+		    policy, min_prio, strerror(errno));
+		return (gfarm_errno_to_error(save_errno));
+	}
+
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /* only initialization routines are allowed to call this function */

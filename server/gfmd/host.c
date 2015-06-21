@@ -40,6 +40,7 @@
 #include "user.h"
 #include "peer.h"
 #include "inode.h"
+#include "file_copy.h"
 #include "abstract_host.h"
 #include "dead_file_copy.h"
 #include "back_channel.h"
@@ -86,10 +87,27 @@ struct host {
 	gfarm_time_t last_report;
 	gfarm_time_t disconnect_time;
 	int status_callout_retry;
+
+	struct host *removed_host_next;
 };
 
 static struct gfarm_hash_table *host_hashtab = NULL;
 static struct gfarm_hash_table *hostalias_hashtab = NULL;
+
+/*
+ * when a host is removed by "gfhost -d", all file_copy entities which
+ * point the host must be invalidated, even after the same hostname is
+ * reused.  To achieve this, we allocate new struct host for a host
+ * with a reused hostname, and let removed_host_hashtab hold the removed hosts.
+ */
+static struct gfarm_hash_table *removed_host_hashtab = NULL;
+
+/*
+ * to make valgrind quiet,
+ * we need this list to hold multiple removed hosts with same hostname,
+ * because removed_host_hashtab only can hold one host for each hostname.
+ */
+static struct host *removed_host_list = NULL;
 
 static struct host *host_new(struct gfarm_host_info *, struct callout *);
 static void host_free(struct host *);
@@ -153,9 +171,17 @@ host_is_valid(struct host *h)
 struct host *
 host_lookup(const char *hostname)
 {
-	struct host *h = host_lookup_including_invalid(hostname);
+	struct host *h = host_hashtab_lookup(host_hashtab, hostname);
 
-	return ((h == NULL || host_is_invalid_unlocked(h)) ? NULL : h);
+	if (h == NULL)
+		return (NULL);
+	if (host_is_invalid_unlocked(h)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "unexpected error: invalid host %s in host_hashtab",
+		    host_name(h));
+		return (NULL);
+	}
+	return (h);
 }
 
 /*
@@ -164,8 +190,15 @@ host_lookup(const char *hostname)
 struct host *
 host_lookup_including_invalid(const char *hostname)
 {
-	return (host_hashtab_lookup(host_hashtab, hostname));
+	struct host *h;
+
+	h = host_hashtab_lookup(host_hashtab, hostname);
+	if (h != NULL)
+		return (h);
+	return (host_hashtab_lookup(removed_host_hashtab, hostname));
 }
+
+static gfarm_error_t host_remove_internal(const char *, int);
 
 /*
  * Same as host_lookup() but it adds a host entry to the host table
@@ -195,7 +228,7 @@ host_lookup_at_loading(const char *hostname)
 		giant_lock();
 		e = host_enter(&hi, &h);
 		if (e == GFARM_ERR_NO_ERROR)
-			host_invalidate(h);
+			host_remove_internal(hostname, 0);
 		giant_unlock();
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -272,9 +305,12 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	struct callout *callout;
 	static const char diag[] = "host_enter";
 
-	h = host_lookup_including_invalid(hi->hostname);
+	h = host_hashtab_lookup(host_hashtab, hi->hostname);
 	if (h != NULL) {
 		if (host_is_invalid_unlocked(h)) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "unexpected error: invalid host %s "
+			    "in host_hashtab", hi->hostname);
 			host_validate(h);
 			if (hpp != NULL)
 				*hpp = h;
@@ -335,17 +371,36 @@ static gfarm_error_t
 host_remove_internal(const char *hostname, int update_deadfilecopy)
 {
 	struct host *h = host_lookup(hostname);
+	struct gfarm_hash_entry *entry;
+	int created;
 
 	if (h == NULL) {
 		gflog_debug(GFARM_MSG_1001549,
 		    "host_remove(%s): not exist", hostname);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
-	/*
-	 * do not purge the hash entry.  Instead, invalidate it so
-	 * that it can be activated later.
-	 */
 	host_invalidate(h);
+
+	if (!gfarm_hash_purge(host_hashtab,
+	    &h->hi.hostname, sizeof(h->hi.hostname))) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "unexpected error: host %s doesn't exist in host_hashtab",
+		    host_name(h));
+	}
+
+	entry = gfarm_hash_enter(removed_host_hashtab,
+	    &h->hi.hostname, sizeof(h->hi.hostname), sizeof(struct host *),
+	    &created);
+	if (entry == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "host %s: cannot register removed_host_hashtab: no memory",
+		    host_name(h));
+	}
+	if (created) /* !created means that the hostname was removed at once */
+		*(struct host **)gfarm_hash_entry_data(entry) = h;
+
+	h->removed_host_next = removed_host_list;
+	removed_host_list = h;
 
 	if (update_deadfilecopy)
 		dead_file_copy_host_removed(h);
@@ -356,13 +411,19 @@ host_remove_internal(const char *hostname, int update_deadfilecopy)
 static gfarm_error_t
 host_remove(const char *hostname)
 {
-	return (host_remove_internal(hostname, 1));
+	gfarm_error_t e = host_remove_internal(hostname, 1);
+
+	file_copy_removal_by_host_start();
+	return (e);
 }
 
 gfarm_error_t
 host_remove_in_cache(const char *hostname)
 {
-	return (host_remove_internal(hostname, 0));
+	gfarm_error_t e = host_remove_internal(hostname, 0);
+
+	file_copy_removal_by_host_start();
+	return (e);
 }
 
 struct abstract_host *
@@ -876,6 +937,7 @@ host_new(struct gfarm_host_info *hi, struct callout *callout)
 	h->status_callout_retry = 0;
 	h->last_report = 0;
 	h->disconnect_time = time(NULL);
+	h->removed_host_next = NULL;
 	return (h);
 }
 
@@ -1348,6 +1410,13 @@ host_init(void)
 		gflog_fatal(GFARM_MSG_1000268,
 		    "no memory for hostalias hashtab");
 	}
+	removed_host_hashtab =
+	    gfarm_hash_table_alloc(HOST_HASHTAB_SIZE,
+		gfarm_hash_casefold_strptr,
+		gfarm_hash_key_equal_casefold_strptr);
+	if (removed_host_hashtab == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "no memory for host removed_hashtab");
 
 	e = db_host_load(NULL, host_add_one);
 	if (e != GFARM_ERR_NO_ERROR)

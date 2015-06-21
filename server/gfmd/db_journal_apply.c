@@ -7,8 +7,6 @@
 
 #include <gfarm/gfarm.h>
 
-#include "internal_host_info.h"
-
 #include "config.h"
 #include "quota.h"
 #include "metadb_server.h"
@@ -541,17 +539,34 @@ db_journal_apply_filecopy_remove(gfarm_uint64_t seqnum,
 		/* nothing to do */
 	} else if ((host = host_lookup_including_invalid(arg->hostname))
 	    == NULL) {
-		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_error(GFARM_MSG_1003230,
+		/*
+		 * We don't treat this as an error, because master gfmd before
+		 * SF.net #860 may send stale GFM_JOURNAL_FILECOPY_REMOVE
+		 */
+		e = GFARM_ERR_NO_ERROR;
+		gflog_notice(GFARM_MSG_UNFIXED,
 		    "inum=%llu hostname=%s : %s",
 		    (unsigned long long)arg->inum, arg->hostname,
-		    gfarm_error_string(e));
+		    "stale host");
 	} else if ((e = inode_remove_replica_in_cache(n,
 	    host)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1003231,
-		    "inum=%llu hostname=%s : %s",
-		    (unsigned long long)arg->inum, arg->hostname,
-		    gfarm_error_string(e));
+		if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+			/*
+			 * We don't treat this as an error, because
+			 * master gfmd before SF.net #860 may send
+			 * stale GFM_JOURNAL_FILECOPY_REMOVE
+			 */
+			e = GFARM_ERR_NO_ERROR;
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "inum=%llu hostname=%s : %s",
+			    (unsigned long long)arg->inum, arg->hostname,
+			    "stale filecopy");
+		} else {
+			gflog_error(GFARM_MSG_1003231,
+			    "inum=%llu hostname=%s : %s",
+			    (unsigned long long)arg->inum, arg->hostname,
+			    gfarm_error_string(e));
+		}
 	}
 	return (e);
 }
@@ -882,10 +897,12 @@ const struct db_ops db_journal_apply_ops = {
 
 	db_journal_apply_filecopy_add,
 	db_journal_apply_filecopy_remove,
+	NULL,		/* only called at initialization, bypass journal */
 	NULL,
 
 	db_journal_apply_deadfilecopy_add,
 	db_journal_apply_deadfilecopy_remove,
+	NULL,		/* only called at initialization, bypass journal */
 	NULL,
 
 	db_journal_apply_direntry_add,

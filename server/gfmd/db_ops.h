@@ -18,6 +18,8 @@
  * $Id$
  */
 
+struct gfarm_internal_host_info;
+
 struct db_host_modify_arg {
 	struct gfarm_host_info hi;
 	int modflags;
@@ -204,6 +206,8 @@ struct db_ops {
 		struct db_filecopy_arg *);
 	gfarm_error_t (*filecopy_remove)(gfarm_uint64_t,
 		struct db_filecopy_arg *);
+	gfarm_error_t (*filecopy_remove_by_host)(gfarm_uint64_t, char *);
+			/* only called at initialization, bypass journal */
 	gfarm_error_t (*filecopy_load)(void *,
 		void (*)(void *, gfarm_ino_t, char *));
 
@@ -211,6 +215,8 @@ struct db_ops {
 		struct db_deadfilecopy_arg *);
 	gfarm_error_t (*deadfilecopy_remove)(gfarm_uint64_t,
 		struct db_deadfilecopy_arg *);
+	gfarm_error_t (*deadfilecopy_remove_by_host)(gfarm_uint64_t, char *);
+			/* only called at initialization, bypass journal */
 	gfarm_error_t (*deadfilecopy_load)(void *,
 		void (*)(void *, gfarm_ino_t, gfarm_uint64_t, char *));
 

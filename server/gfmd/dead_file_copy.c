@@ -51,6 +51,7 @@ struct dead_file_copy {
  *	dfcstate_deferred
  *		-> dfcstate_kept
  *		-> dfcstate_pending
+ *		-> dfcstate_finished
  *		-> (freed) ... needs giant_lock()
  *
  *	dfcstate_kept
@@ -252,7 +253,8 @@ removal_finishedq_enqueue(struct dead_file_copy *dfc, gfarm_int32_t result)
 
 	/* sanity check */
 	gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
-	if (dfc->state != dfcstate_in_flight) {
+	if (dfc->state != dfcstate_deferred &&
+	    dfc->state != dfcstate_in_flight) {
 		gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
 		gflog_fatal(GFARM_MSG_1002222, "%s(%lld, %lld, %s): "
 		    "insane state %d", diag,
@@ -511,7 +513,7 @@ dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
 {
 	struct dead_file_copy *dfc;
 	time_t now = time(NULL);
-	int busy;
+	int busy, host_valid;
 	enum dead_file_copy_state state;
 
 	gfarm_mutex_lock(&dfc_allq.mutex, diag, "lock");
@@ -523,8 +525,13 @@ dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
 		gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
 		state = dfc->state;
 		gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
-		if (state != dfcstate_deferred ||
-		    !(*filter)(dfc, inum, host))
+		if (state != dfcstate_deferred)
+			continue;
+
+		host_valid = host_is_valid(dfc->host);
+
+		/* if host is invalid, remove this dfc anyway */
+		if (host_valid && !(*filter)(dfc, inum, host))
 			continue;
 
 		/*
@@ -534,9 +541,13 @@ dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
 		gfarm_mutex_unlock(&dfc_allq.mutex,
 		    diag, "unlock before sleeping");
 
-		busy = host_check_busy(dfc->host, now);
-		if (!busy && dead_file_copy_is_removable(dfc))
-			removal_pendingq_enqueue(dfc);
+		if (!host_valid) {
+			removal_finishedq_enqueue(dfc, GFARM_ERR_NO_ERROR);
+		} else {
+			busy = host_check_busy(dfc->host, now);
+			if (!busy && dead_file_copy_is_removable(dfc))
+				removal_pendingq_enqueue(dfc);
+		}
 
 		gfarm_mutex_lock(&dfc_allq.mutex,
 		    diag, "lock after sleeping");

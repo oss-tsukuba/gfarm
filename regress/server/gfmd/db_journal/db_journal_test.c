@@ -22,6 +22,7 @@
 #include "group.h"
 #include "mdhost.h"
 #include "inode.h"
+#include "file_copy.h"
 #include "dir.h"
 #include "db_journal_test.h"
 #include "db_journal_apply.h"

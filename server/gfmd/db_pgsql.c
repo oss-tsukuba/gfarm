@@ -499,10 +499,9 @@ gfarm_pgsql_check_insert(PGresult *res,
 	return (e);
 }
 
-/* this interface is exported for a use from a private extension */
 gfarm_error_t
-gfarm_pgsql_check_update_or_delete(PGresult *res,
-	const char *command, const char *diag)
+gfarm_pgsql_check_update_or_delete0(PGresult *res,
+	const char *command, int object_must_exist, const char *diag)
 {
 	gfarm_error_t e;
 	char *pge;
@@ -518,7 +517,8 @@ gfarm_pgsql_check_update_or_delete(PGresult *res,
 			e = GFARM_ERR_UNKNOWN;
 		gflog_error(GFARM_MSG_1000426, "%s: %s: %s", diag, command,
 		    PQresultErrorMessage(res));
-	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0) {
+	} else if (object_must_exist &&
+	    strtol(PQcmdTuples(res), NULL, 0) == 0) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		gflog_error(GFARM_MSG_1000427,
 		    "%s: %s: %s", diag, command, "no such object");
@@ -526,6 +526,14 @@ gfarm_pgsql_check_update_or_delete(PGresult *res,
 		e = GFARM_ERR_NO_ERROR;
 	}
 	return (e);
+}
+
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
+gfarm_pgsql_check_update_or_delete(PGresult *res,
+	const char *command, const char *diag)
+{
+	return (gfarm_pgsql_check_update_or_delete0(res, command, 1, diag));
 }
 
 static gfarm_error_t
@@ -804,6 +812,7 @@ gfarm_pgsql_update_or_delete0(gfarm_uint64_t seqnum,
 	gfarm_error_t (*start_op)(const char *),
 	PGresult *(*exec_params_op)(const char *, int, const Oid *,
 	    const char *const *, const int *, const int *, int),
+	int object_must_exist,
 	const char *diag)
 {
 	PGresult *res;
@@ -816,7 +825,8 @@ gfarm_pgsql_update_or_delete0(gfarm_uint64_t seqnum,
 		res = PQexecParams(conn, command, nParams,
 		    paramTypes, paramValues, paramLengths, paramFormats,
 		    resultFormat);
-		e = gfarm_pgsql_check_update_or_delete(res, command, diag);
+		e = gfarm_pgsql_check_update_or_delete0(
+		    res, command, object_must_exist, diag);
 		if (e == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED)
 			return (e);
 		if (e == GFARM_ERR_NO_ERROR)
@@ -827,7 +837,8 @@ gfarm_pgsql_update_or_delete0(gfarm_uint64_t seqnum,
 		res = exec_params_op(command, nParams,
 		    paramTypes, paramValues, paramLengths, paramFormats,
 		    resultFormat);
-		e = gfarm_pgsql_check_update_or_delete(res, command, diag);
+		e = gfarm_pgsql_check_update_or_delete0(
+		    res, command, object_must_exist, diag);
 		if (e == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED)
 			return (e);
 	}
@@ -849,7 +860,7 @@ gfarm_pgsql_update_or_delete(gfarm_uint64_t seqnum,
 {
 	return (gfarm_pgsql_update_or_delete0(seqnum, command, nParams,
 	    paramTypes, paramValues, paramLengths, paramFormats, resultFormat,
-	    gfarm_pgsql_start, gfarm_pgsql_exec_params, diag));
+	    gfarm_pgsql_start, gfarm_pgsql_exec_params, 1, diag));
 }
 
 /* this interface is exported for a use from a private extension */
@@ -866,7 +877,24 @@ gfarm_pgsql_update_or_delete_with_retry(const char *command,
 	return (gfarm_pgsql_update_or_delete0(0, command, nParams,
 	    paramTypes, paramValues, paramLengths, paramFormats, resultFormat,
 	    gfarm_pgsql_start_with_retry, gfarm_pgsql_exec_params_with_retry,
-	    diag));
+	    1, diag));
+}
+
+/* similar to gfarm_pgsql_update_or_delete(), but "no such object" is OK */
+static gfarm_error_t
+gfarm_pgsql_try_delete(gfarm_uint64_t seqnum,
+	const char *command,
+	int nParams,
+	const Oid *paramTypes,
+	const char *const *paramValues,
+	const int *paramLengths,
+	const int *paramFormats,
+	int resultFormat,
+	const char *diag)
+{
+	return (gfarm_pgsql_update_or_delete0(seqnum, command, nParams,
+	    paramTypes, paramValues, paramLengths, paramFormats, resultFormat,
+	    gfarm_pgsql_start, gfarm_pgsql_exec_params, 0, diag));
 }
 
 static gfarm_error_t
@@ -1632,10 +1660,51 @@ gfarm_pgsql_host_modify(gfarm_uint64_t seqnum, struct db_host_modify_arg *arg)
 }
 
 static gfarm_error_t
+pgsql_filecopy_remove_by_host(gfarm_uint64_t seqnum, char *hostname)
+{
+	const char *paramValues[1];
+
+	paramValues[0] = hostname;
+	return (gfarm_pgsql_update_or_delete(seqnum,
+	    "DELETE FROM FileCopy WHERE hostname = $1",
+	    1, /* number of params */
+	    NULL, /* param types */
+	    paramValues,
+	    NULL, /* param lengths */
+	    NULL, /* param formats */
+	    0, /* ask for text results */
+	    "pgsql_filecopy_remove_by_host"));
+}
+
+static gfarm_error_t
+pgsql_deadfilecopy_remove_by_host(gfarm_uint64_t seqnum, char *hostname)
+{
+	const char *paramValues[1];
+
+	paramValues[0] = hostname;
+	/*
+	 * We use gfarm_pgsql_try_delete, because master gfmd before
+	 * SF.net #860 may send stale GFM_JOURNAL_DEADFILECOPY_REMOVE
+	 */
+	return (gfarm_pgsql_try_delete(seqnum,
+	    "DELETE FROM DeadFileCopy WHERE hostname = $1",
+	    1, /* number of params */
+	    NULL, /* param types */
+	    paramValues,
+	    NULL, /* param lengths */
+	    NULL, /* param formats */
+	    0, /* ask for text results */
+	    "pgsql_filecopy_remove_by_host"));
+}
+
+static gfarm_error_t
 gfarm_pgsql_host_remove(gfarm_uint64_t seqnum, char *hostname)
 {
 	gfarm_error_t e;
 	const char *paramValues[1];
+
+	pgsql_filecopy_remove_by_host(seqnum, hostname);
+	pgsql_deadfilecopy_remove_by_host(seqnum, hostname);
 
 	paramValues[0] = hostname;
 	e = gfarm_pgsql_update_or_delete(seqnum,
@@ -2601,10 +2670,25 @@ static gfarm_error_t
 gfarm_pgsql_filecopy_remove(gfarm_uint64_t seqnum,
 	struct db_filecopy_arg *arg)
 {
+	/*
+	 * We use gfarm_pgsql_try_delete, because master gfmd before
+	 * SF.net #860 may send stale GFM_JOURNAL_FILECOPY_REMOVE
+	 */
 	return (pgsql_filecopy_call(seqnum, arg,
 		"DELETE FROM FileCopy WHERE inumber = $1 AND hostname = $2",
-		gfarm_pgsql_update_or_delete,
+		gfarm_pgsql_try_delete,
 		"pgsql_filecopy_remove"));
+}
+
+/* only called at initialization, bypass journal */
+static gfarm_error_t
+gfarm_pgsql_filecopy_remove_by_host(gfarm_uint64_t seqnum, char *hostname)
+{
+	gfarm_error_t e;
+
+	e = pgsql_filecopy_remove_by_host(seqnum, hostname);
+	free_arg(hostname);
+	return (e);
 }
 
 static void
@@ -2711,6 +2795,17 @@ gfarm_pgsql_deadfilecopy_remove(gfarm_uint64_t seqnum,
 			"WHERE inumber = $1 AND igen = $2 AND hostname = $3",
 		gfarm_pgsql_update_or_delete,
 		"pgsql_deadfilecopy_remove"));
+}
+
+/* only called at initialization, bypass journal */
+static gfarm_error_t
+gfarm_pgsql_deadfilecopy_remove_by_host(gfarm_uint64_t seqnum, char *hostname)
+{
+	gfarm_error_t e;
+
+	e = pgsql_deadfilecopy_remove_by_host(seqnum, hostname);
+	free_arg(hostname);
+	return (e);
 }
 
 static void
@@ -3884,10 +3979,12 @@ const struct db_ops db_pgsql_ops = {
 
 	gfarm_pgsql_filecopy_add,
 	gfarm_pgsql_filecopy_remove,
+	gfarm_pgsql_filecopy_remove_by_host,
 	gfarm_pgsql_filecopy_load,
 
 	gfarm_pgsql_deadfilecopy_add,
 	gfarm_pgsql_deadfilecopy_remove,
+	gfarm_pgsql_deadfilecopy_remove_by_host,
 	gfarm_pgsql_deadfilecopy_load,
 
 	gfarm_pgsql_direntry_add,

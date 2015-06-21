@@ -58,6 +58,7 @@
 #include "group.h"
 #include "peer.h"
 #include "inode.h"
+#include "file_copy.h"
 #include "dead_file_copy.h"
 #include "process.h"
 #include "fs.h"

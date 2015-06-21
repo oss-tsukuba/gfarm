@@ -1,6 +1,5 @@
 void inode_init(void);
 void dir_entry_init(void);
-void file_copy_init(void);
 void symlink_init(void);
 void xattr_init(void);
 
@@ -128,9 +127,11 @@ gfarm_error_t inode_remove_replica_metadata(struct inode *, struct host *,
 	gfarm_int64_t);
 gfarm_error_t inode_remove_replica_protected(struct inode *, struct host *,
 	struct file_opening *);
+gfarm_error_t inode_remove_replica_orphan(struct inode *, struct host *);
 void inode_remove_replica_incomplete(struct inode *, struct host *,
 	gfarm_int64_t);
 gfarm_error_t inode_remove_replica_in_cache(struct inode *, struct host *);
+void inode_remove_replica_in_cache_for_invalid_host(gfarm_ino_t);
 int inode_is_updated(struct inode *, struct gfarm_timespec *);
 gfarm_error_t dir_entry_add(gfarm_ino_t, char *, int, gfarm_ino_t);
 

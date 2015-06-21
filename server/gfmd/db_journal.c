@@ -18,8 +18,6 @@
 
 #include <gfarm/gfarm.h>
 
-#include "internal_host_info.h"
-
 #include "queue.h"
 #include "gfutil.h"
 #include "thrsubr.h"
@@ -27,7 +25,6 @@
 #include "timer.h"
 #endif
 
-#include "metadb_common.h"
 #include "xattr_info.h"
 #include "quota_info.h"
 #include "quota.h"
@@ -42,7 +39,6 @@
 
 #include "subr.h"
 #include "journal_file.h"
-#include "db_common.h"
 #include "db_access.h"
 #include "db_ops.h"
 #include "db_journal.h"
@@ -4107,11 +4103,23 @@ db_journal_inode_cksum_load(
 }
 
 static gfarm_error_t
+db_journal_filecopy_remove_by_host(gfarm_uint64_t seqnum, char *hostname)
+{
+	return (store_ops->filecopy_remove_by_host(seqnum, hostname));
+}
+
+static gfarm_error_t
 db_journal_filecopy_load(
 	void *closure,
 	void (*callback)(void *, gfarm_ino_t, char *))
 {
 	return (store_ops->filecopy_load(closure, callback));
+}
+
+static gfarm_error_t
+db_journal_deadfilecopy_remove_by_host(gfarm_uint64_t seqnum, char *hostname)
+{
+	return (store_ops->deadfilecopy_remove_by_host(seqnum, hostname));
 }
 
 static gfarm_error_t
@@ -4247,10 +4255,14 @@ struct db_ops db_journal_ops = {
 
 	db_journal_write_filecopy_add,
 	db_journal_write_filecopy_remove,
+	db_journal_filecopy_remove_by_host,
+			/* only called at initialization, bypass journal */
 	db_journal_filecopy_load,
 
 	db_journal_write_deadfilecopy_add,
 	db_journal_write_deadfilecopy_remove,
+	db_journal_deadfilecopy_remove_by_host,
+			/* only called at initialization, bypass journal */
 	db_journal_deadfilecopy_load,
 
 	db_journal_write_direntry_add,

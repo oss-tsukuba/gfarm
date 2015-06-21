@@ -12,8 +12,6 @@
 
 #include <gfarm/gfarm.h>
 
-#include "internal_host_info.h"
-
 #include "gfutil.h"
 #include "thrsubr.h"
 
@@ -1261,6 +1259,19 @@ db_filecopy_remove(gfarm_ino_t inum, const char *hostname)
 }
 
 gfarm_error_t
+db_filecopy_remove_by_host(const char *hostname)
+{
+	char *arg = strdup_log(hostname, "db_filecopy_remove_by_host");
+
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	/* only called at initialization, bypass journal */
+	return (db_enter_nosn(
+	    (dbq_entry_func_t)ops->filecopy_remove_by_host, arg));
+}
+
+gfarm_error_t
 db_filecopy_load(void *closure,
 	void (*callback)(void *, gfarm_ino_t, char *))
 {
@@ -1331,6 +1342,20 @@ db_deadfilecopy_remove(gfarm_ino_t inum, gfarm_uint64_t igen,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	return (db_enter_sn((dbq_entry_func_t)ops->deadfilecopy_remove, arg));
+}
+
+/* only called at initialization, bypass journal */
+gfarm_error_t
+db_deadfilecopy_remove_by_host(const char *hostname)
+{
+	char *arg = strdup_log(hostname, "db_deadfilecopy_remove_by_host");
+
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	/* bypass journal */
+	return (db_enter_nosn(
+	    (dbq_entry_func_t)ops->deadfilecopy_remove_by_host, arg));
 }
 
 gfarm_error_t

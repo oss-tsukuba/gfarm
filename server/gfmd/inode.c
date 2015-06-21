@@ -31,12 +31,14 @@
 
 #include "quota.h"
 #include "subr.h"
+#include "inum_string_list.h"
 #include "db_access.h"
 #include "host.h"
 #include "user.h"
 #include "group.h"
 #include "dir.h"
 #include "inode.h"
+#include "file_copy.h"
 #include "dead_file_copy.h"
 #include "process.h" /* struct file_opening */
 #include "xattr_info.h"
@@ -4315,6 +4317,32 @@ inode_schedule_file_default(struct file_opening *opening,
 gfarm_error_t (*inode_schedule_file)(struct file_opening *, struct peer *,
 	gfarm_int32_t *, struct host ***) = inode_schedule_file_default;
 
+/* remove file_copy metadata on an already removed filesystem node */
+void
+inode_remove_replica_in_cache_for_invalid_host(gfarm_ino_t inum)
+{
+	struct inode *inode = inode_lookup(inum);
+	struct file_copy **copyp, *copy, **nextp;
+
+	if (inode == NULL)
+		return;
+	if (!inode_is_file(inode))
+		return;
+
+	for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;
+	    copyp = nextp) {
+		nextp = &copy->host_next;
+		if (!host_is_valid(copy->host)) {
+			if (FILE_COPY_IS_VALID(copy))
+				quota_update_replica_remove(inode);
+
+			*copyp = copy->host_next;
+			nextp = copyp;
+			free(copy);
+		}
+	}
+}
+
 gfarm_error_t
 inode_remove_replica_in_cache(struct inode *inode, struct host *spool_host)
 {
@@ -4691,7 +4719,7 @@ inode_add_replica(struct inode *inode, struct host *spool_host, int valid)
 gfarm_error_t
 inode_add_file_copy_in_cache(struct inode *inode, struct host *host)
 {
-	return (inode_add_replica_internal(inode, host, 1, 0));
+	return (inode_add_replica_internal(inode, host, FILE_COPY_VALID, 0));
 }
 
 static gfarm_error_t
@@ -4977,6 +5005,13 @@ inode_remove_replica_protected(struct inode *inode, struct host *spool_host,
 {
 	return (inode_remove_replica_internal(inode, spool_host,
 	    inode_get_gen(inode), fo, 0, 0, NULL));
+}
+
+gfarm_error_t
+inode_remove_replica_orphan(struct inode *inode, struct host *spool_host)
+{
+	return (inode_remove_replica_internal(inode, spool_host,
+	    inode_get_gen(inode), NULL, 1, 1, NULL));
 }
 
 /* remove an incomplete replica, when a replication fails */
@@ -5490,119 +5525,6 @@ symlink_free_orphan(void)
 	inum_list_free(&symlink_removal_list);
 }
 
-struct inum_string_list_entry {
-	struct inum_string_list_entry *next;
-
-	gfarm_ino_t inum;
-	char *string;
-};
-
-static int
-inum_string_list_add(struct inum_string_list_entry **listp,
-	gfarm_ino_t inum, char *string)
-{
-	struct inum_string_list_entry *entry;
-
-	GFARM_MALLOC(entry);
-	if (entry == NULL)
-		return (0);
-
-	entry->inum = inum;
-	entry->string = string;
-
-	entry->next = *listp;
-	*listp = entry;
-	return (1);
-}
-
-static void
-inum_string_list_free(struct inum_string_list_entry **listp)
-{
-	struct inum_string_list_entry *entry, *next;
-
-	for (entry = *listp; entry != NULL; entry = next) {
-		next = entry->next;
-		free(entry->string);
-		free(entry);
-	}
-	*listp = NULL;
-}
-
-#define INUM_STRING_LIST_FIRST(list)  (list)
-#define INUM_STRING_LIST_NEXT(list)   ((list) == NULL ? NULL : (list)->next)
-#define INUM_STRING_LIST_IS_END(list) ((list) == NULL)
-
-static void
-inum_string_list_foreach(struct inum_string_list_entry *list,
-	gfarm_error_t (*op)(gfarm_ino_t, const char *),
-	const char *name, const char *label)
-{
-	gfarm_error_t e;
-	struct inum_string_list_entry *entry, *next;
-
-	for (entry = list; entry != NULL; entry = next) {
-		next = entry->next;
-		e = (*op)(entry->inum, entry->string);
-		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_1002824,
-			    "orphan %s %llu %s:%s removal: %s",
-			    name, (unsigned long long)entry->inum,
-			    label, entry->string, gfarm_error_string(e));
-	}
-}
-
-static struct inum_string_list_entry *file_copy_removal_list = NULL;
-
-static void
-file_copy_defer_db_removal(gfarm_ino_t inum, char *hostname)
-{
-	if (!inum_string_list_add(&file_copy_removal_list, inum, hostname)) {
-		gflog_error(GFARM_MSG_1002825,
-		    "file_copy %llu host:%s: no memory to record for removal",
-		    (unsigned long long)inum, hostname);
-		free(hostname);
-	} else {
-		gflog_error(GFARM_MSG_1002826,
-		    "file_copy %llu host:%s: removing orphan data",
-		    (unsigned long long)inum, hostname);
-	}
-}
-
-static void
-file_copy_db_remove_orphan(void)
-{
-	gfarm_error_t e;
-	struct inode *inode;
-	gfarm_int64_t gen;
-	struct host *spool_host;
-	struct inum_string_list_entry *entry, *next;
-
-	entry = INUM_STRING_LIST_FIRST(file_copy_removal_list);
-	while (!INUM_STRING_LIST_IS_END(entry)) {
-		next = INUM_STRING_LIST_NEXT(entry);
-		inode = inode_lookup(entry->inum);
-		assert(inode != NULL);
-		gen = inode_get_gen(inode);
-		spool_host = host_lookup_including_invalid(entry->string);
-		assert(spool_host != NULL);
-		e = inode_remove_replica_internal(inode, spool_host,
-		    gen, NULL, 1, 1, NULL);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1003710,
-			    "cannot remove a replica (%s, %lld:%lld): %s",
-			    entry->string, (long long)entry->inum,
-			    (long long)gen, gfarm_error_string(e));
-		}
-		entry = next;
-	}
-}
-
-static void
-file_copy_free_orphan(void)
-{
-	inum_string_list_free(&file_copy_removal_list);
-}
-
 static struct dir_entry_removal_todo {
 	struct dir_entry_removal_todo *next;
 
@@ -5718,23 +5640,36 @@ xml_defer_db_removal(struct xattr_info *info)
 	xattr_xml_defer_db_removal(&xml_removal_list, "xml", info);
 }
 
-static gfarm_error_t
-db_xattr_remove_wrapper(gfarm_ino_t inum, const char *attrname)
+static void
+db_xattr_remove_one_orphan(void *closure,
+	gfarm_ino_t inum, const char *attrname)
 {
-	return (db_xattr_remove(0, inum, (char *)attrname)); /* XXX UNCONST */
+	gfarm_error_t e;
+
+	e = db_xattr_remove(0, inum, (char *)attrname); /* XXX UNCONST */
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_1002824,
+		    "orphan xattr %llu attrname:%s removal: %s",
+		    (unsigned long long)inum, attrname, gfarm_error_string(e));
 }
 
-static gfarm_error_t
-db_xml_remove_wrapper(gfarm_ino_t inum, const char *attrname)
+static void
+db_xml_remove_one_orphan(void *closure, gfarm_ino_t inum, const char *attrname)
 {
-	return (db_xattr_remove(1, inum, (char *)attrname)); /* XXX UNCONST */
+	gfarm_error_t e;
+
+	e = db_xattr_remove(1, inum, (char *)attrname); /* XXX UNCONST */
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "orphan xml %llu attrname:%s removal: %s",
+		    (unsigned long long)inum, attrname, gfarm_error_string(e));
 }
 
 static void
 xattr_db_remove_orphan(void)
 {
-	inum_string_list_foreach(xattr_removal_list, db_xattr_remove_wrapper,
-	    "xattr", "attrname");
+	inum_string_list_foreach(xattr_removal_list,
+	    db_xattr_remove_one_orphan, NULL);
 }
 
 static void
@@ -5746,8 +5681,8 @@ xattr_free_orphan(void)
 static void
 xml_db_remove_orphan(void)
 {
-	inum_string_list_foreach(xml_removal_list, db_xml_remove_wrapper,
-	    "xml", "attrname");
+	inum_string_list_foreach(xml_removal_list,
+	    db_xml_remove_one_orphan, NULL);
 }
 
 static void
@@ -5964,42 +5899,6 @@ symlink_add(gfarm_ino_t inum, char *source_path)
 	return (e);
 }
 
-/* The memory owner of `hostname' is changed to inode.c */
-static void
-file_copy_add_one(void *closure, gfarm_ino_t inum, char *hostname)
-{
-	gfarm_error_t e;
-	struct inode *inode = inode_lookup(inum);
-	struct host *host = host_lookup_at_loading(hostname);
-
-	if (inode == NULL) {
-		gflog_error(GFARM_MSG_1000343,
-		    "file_copy_add_one: no inode %lld",
-		    (unsigned long long)inum);
-		file_copy_defer_db_removal(inum, hostname);
-		return;
-	} else if (!inode_is_file(inode)) {
-		gflog_error(GFARM_MSG_1000344,
-		    "file_copy_add_one: not file %lld",
-		    (unsigned long long)inum);
-		file_copy_defer_db_removal(inum, hostname);
-		return;
-	} else if (host == NULL) {
-		gflog_error(GFARM_MSG_1003711,
-		    "file_copy_add_one(%s, %lld): no memory",
-		    hostname, (long long)inum);
-	} else if ((e = inode_add_replica_internal(inode, host,
-	    FILE_COPY_VALID, 0)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1000346,
-		    "file_copy_add_one: add_replica: %s",
-		    gfarm_error_string(e));
-	} else if (!host_is_valid(host)) {
-		file_copy_defer_db_removal(inum, hostname);
-		return;
-	}
-	free(hostname);
-}
-
 static int
 name_is_dot_or_dotdot(const char *name, int len)
 {
@@ -6140,17 +6039,6 @@ inode_init(void)
 		gflog_error(GFARM_MSG_1000360,
 		    "failed to store '..' in root directory to storage: %s",
 		    gfarm_error_string(e));
-}
-
-void
-file_copy_init(void)
-{
-	gfarm_error_t e;
-
-	e = db_filecopy_load(NULL, file_copy_add_one);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_1000361,
-		    "loading filecopy: %s", gfarm_error_string(e));
 }
 
 static void

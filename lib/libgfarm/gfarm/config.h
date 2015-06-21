@@ -50,6 +50,8 @@ extern int gfarm_metadb_thread_pool_size;
 extern int gfarm_metadb_job_queue_length;
 extern int gfarm_metadb_heartbeat_interval;
 extern int gfarm_metadb_dbq_size;
+extern int gfarm_metadb_replica_remover_by_host_sleep_time;
+extern int gfarm_metadb_replica_remover_by_host_inode_step;
 extern int gfarm_replica_check;
 extern int gfarm_replica_check_host_down_thresh;
 extern int gfarm_replica_check_sleep_time;
