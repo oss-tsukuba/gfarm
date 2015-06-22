@@ -1477,6 +1477,41 @@ This parameter is only available in gfmd.conf.
 	metadb_journal_recvq_size 100000<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">metadb_replica_remover_by_host_sleep_time</span> <em class="parameter"><code>nanoseconds</code></em></span></dt>
+<dd>
+<p>
+This statement specifies the sleep time of replica remover,
+which is invoked by a removal of a filesystem node,
+in nanoseconds when gfmd is busy.
+If this value is increased, the processing runs more slowly.
+The default value is 20000000 nanoseconds (20 milliseconds).
+The maximum value is 1000000000 nanoseconds (1 second).
+</p>
+<p>
+This parameter is only available in gfmd.conf.
+</p>
+<p>Example:</p>
+<div class="literallayout"><p><br>
+	metadb_replica_remover_by_host_sleep_time 20000000<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">metadb_replica_remover_by_host_inode_step</span> <em class="parameter"><code>number</code></em></span></dt>
+<dd>
+<p>
+This statement specifies the number of i-node that replica remover,
+which is invoked by a removal of a filesystem node,
+processes in each step.
+If this value is decreased, the remover runs more slowly.
+The default value is 1024.
+</p>
+<p>
+This parameter is only available in gfmd.conf.
+</p>
+<p>Example:</p>
+<div class="literallayout"><p><br>
+	metadb_replica_remover_by_host_inode_step 1024<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">replica_check</span> <em class="parameter"><code>validity</code></em></span></dt>
 <dd>
 <p>
@@ -1634,6 +1669,8 @@ notation.</p>
 	&lt;metadb_journal_dir_statement&gt; |<br>
 	&lt;metadb_journal_max_size_statement&gt; |<br>
 	&lt;metadb_journal_recvq_size_statement&gt; |<br>
+	&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; |<br>
+	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |<br>
 	&lt;replica_check_statement&gt; |<br>
 	&lt;replica_check_host_down_thresh_statement&gt; |<br>
 	&lt;replica_check_sleep_time_statement&gt; |<br>
@@ -1824,6 +1861,10 @@ notation.</p>
 <dd><div class="literallayout"><p>"metadb_journal_max_size" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_journal_recvq_size_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_journal_recvq_size" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"metadb_replica_remover_by_host_sleep_time" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;metadb_replica_remover_by_host_inode_step_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"metadb_replica_remover_by_host_inode_step" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;replica_check_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"replica_check" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;replica_check_host_down_thresh_statement&gt; ::=</span></dt>

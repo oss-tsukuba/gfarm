@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 16 Jul 2014
+.\"      Date: 22 Jun 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "16 Jul 2014" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "22 Jun 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -1825,6 +1825,25 @@ Example:
 .\}
 .RE
 .PP
+metadb_server_slave_replication_timeout \fIseconds\fR
+.RS 4
+This parameter specifies timeout in seconds to wait for completion of metadata replication at gfmd shutdown caused by a SIGTERM signal\&. If the timeout period passed, master gfmd gives up metadata replication to slave gfmd\&. The default is 120 seconds\&.
+.sp
+This parameter is only available in gfmd\&.conf\&.
+.sp
+Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_server_slave_replication_timeout 180
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 metadb_journal_dir \fIdirectory\fR
 .RS 4
 This parameter specifies the directory for the journal file\&. The value of this parameter is specified at config\-gfarm execution \&. When this parameter is not specified, the gfmd does not start\&.
@@ -1876,6 +1895,44 @@ Example:
 .\}
 .nf
 	metadb_journal_recvq_size 100000
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+metadb_replica_remover_by_host_sleep_time \fInanoseconds\fR
+.RS 4
+This statement specifies the sleep time of replica remover, which is invoked by a removal of a filesystem node, in nanoseconds when gfmd is busy\&. If this value is increased, the processing runs more slowly\&. The default value is 20000000 nanoseconds (20 milliseconds)\&. The maximum value is 1000000000 nanoseconds (1 second)\&.
+.sp
+This parameter is only available in gfmd\&.conf\&.
+.sp
+Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_replica_remover_by_host_sleep_time 20000000
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+metadb_replica_remover_by_host_inode_step \fInumber\fR
+.RS 4
+This statement specifies the number of i\-node that replica remover, which is invoked by a removal of a filesystem node, processes in each step\&. If this value is decreased, the remover runs more slowly\&. The default value is 1024\&.
+.sp
+This parameter is only available in gfmd\&.conf\&.
+.sp
+Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_replica_remover_by_host_inode_step 1024
 .fi
 .if n \{\
 .RE
@@ -2052,9 +2109,12 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<synchronous_journaling_statement> |
 	<metadb_server_force_slave_statement> |
 	<metadb_server_slave_max_size_statement> |
+	<metadb_server_slave_replication_timeout_statement> |
 	<metadb_journal_dir_statement> |
 	<metadb_journal_max_size_statement> |
 	<metadb_journal_recvq_size_statement> |
+	<metadb_replica_remover_by_host_sleep_time_statement> |
+	<metadb_replica_remover_by_host_inode_step_statement> |
 	<replica_check_statement> |
 	<replica_check_host_down_thresh_statement> |
 	<replica_check_sleep_time_statement> |
@@ -3287,6 +3347,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .RE
 .PP
+<metadb_server_slave_replication_timeout_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_server_slave_replication_timeout" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <metadb_journal_dir_statement> ::=
 .RS 4
 .sp
@@ -3323,6 +3397,34 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "metadb_journal_recvq_size" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<metadb_replica_remover_by_host_sleep_time_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_replica_remover_by_host_sleep_time" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<metadb_replica_remover_by_host_inode_step_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_replica_remover_by_host_inode_step" <number>
 .fi
 .if n \{\
 .RE

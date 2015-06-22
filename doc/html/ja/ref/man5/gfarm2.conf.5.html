@@ -1420,6 +1420,39 @@ gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します�
 	metadb_journal_recvq_size 100000<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">metadb_replica_remover_by_host_sleep_time</span> <em class="parameter"><code>ナノ秒</code></em></span></dt>
+<dd>
+<p>
+ファイルシステムノード削除時のレプリカ削除処理が、
+gfmdが忙しい場合に処理を休む時間をナノ秒で指定します。
+この値を増やすと、この処理の優先度が下がり、ゆっくり動作します。
+デフォルトは20000000ナノ秒(20ミリ秒)です。
+最大値は1000000000ナノ秒(1秒)です。
+</p>
+<p>
+この文はgfmd.confのみで有効です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	metadb_replica_remover_by_host_sleep_time 20000000<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">metadb_replica_remover_by_host_inode_step</span> <em class="parameter"><code>個数</code></em></span></dt>
+<dd>
+<p>
+ファイルシステムノード削除時のレプリカ削除処理が、
+一度に処理するi-nodeの数を指定します。
+この値を減らすと、この処理の優先度が下がり、ゆっくり動作します。
+デフォルトは1024個です。
+</p>
+<p>
+この文はgfmd.confのみで有効です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	metadb_replica_remover_by_host_inode_step 1024<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">replica_check</span> <em class="parameter"><code>有効性</code></em></span></dt>
 <dd>
 <p>
@@ -1580,6 +1613,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;metadb_journal_dir_statement&gt; |<br>
 	&lt;metadb_journal_max_size_statement&gt; |<br>
 	&lt;metadb_journal_recvq_size_statement&gt; |<br>
+	&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; |<br>
+	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |<br>
 	&lt;replica_check_statement&gt; |<br>
 	&lt;replica_check_host_down_thresh_statement&gt; |<br>
 	&lt;replica_check_sleep_time_statement&gt; |<br>
@@ -1772,6 +1807,10 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <dd><div class="literallayout"><p>"metadb_journal_max_size" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_journal_recvq_size_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_journal_recvq_size" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"metadb_replica_remover_by_host_sleep_time" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;metadb_replica_remover_by_host_inode_step_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"metadb_replica_remover_by_host_inode_step" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;replica_check_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"replica_check" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;replica_check_host_down_thresh_statement&gt; ::=</span></dt>

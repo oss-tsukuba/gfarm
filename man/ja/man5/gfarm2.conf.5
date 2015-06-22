@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 16 Jul 2014
+.\"      Date: 22 Jun 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "16 Jul 2014" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "22 Jun 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -1668,6 +1668,25 @@ metadb_server_slave_max_size \fIノード数\fR
 .\}
 .RE
 .PP
+metadb_server_slave_replication_timeout \fI秒数\fR
+.RS 4
+gfmd が SIGTERM シグナルを受けて停止する際に、 スレーブ gfmd へのメタデータ・レプリケーション完了を待つ タイムアウト時間を秒単位で設定します。 タイムアウト時間を過ぎた場合、スレーブ gfmd へのレプリケーションを諦めます。 デフォルトは 120 秒です。
+.sp
+この文はgfmd\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_server_slave_replication_timeout 180
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 metadb_journal_dir \fIジャーナルディレクトリ\fR
 .RS 4
 ジャーナルファイルの保存ディレクトリを指定します。 このオプションはconfig\-gfarmで指定します。 このオプションが指定されていない場合、gfmdは起動しません。
@@ -1719,6 +1738,44 @@ metadb_journal_recvq_size \fIキュー長\fR
 .\}
 .nf
 	metadb_journal_recvq_size 100000
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+metadb_replica_remover_by_host_sleep_time \fIナノ秒\fR
+.RS 4
+ファイルシステムノード削除時のレプリカ削除処理が、 gfmdが忙しい場合に処理を休む時間をナノ秒で指定します。 この値を増やすと、この処理の優先度が下がり、ゆっくり動作します。 デフォルトは20000000ナノ秒(20ミリ秒)です。 最大値は1000000000ナノ秒(1秒)です。
+.sp
+この文はgfmd\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_replica_remover_by_host_sleep_time 20000000
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+metadb_replica_remover_by_host_inode_step \fI個数\fR
+.RS 4
+ファイルシステムノード削除時のレプリカ削除処理が、 一度に処理するi\-nodeの数を指定します。 この値を減らすと、この処理の優先度が下がり、ゆっくり動作します。 デフォルトは1024個です。
+.sp
+この文はgfmd\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_replica_remover_by_host_inode_step 1024
 .fi
 .if n \{\
 .RE
@@ -1896,9 +1953,12 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<synchronous_journaling_statement> |
 	<metadb_server_force_slave_statement> |
 	<metadb_server_slave_max_size_statement> |
+	<metadb_server_slave_replication_timeout_statement> |
 	<metadb_journal_dir_statement> |
 	<metadb_journal_max_size_statement> |
 	<metadb_journal_recvq_size_statement> |
+	<metadb_replica_remover_by_host_sleep_time_statement> |
+	<metadb_replica_remover_by_host_inode_step_statement> |
 	<replica_check_statement> |
 	<replica_check_host_down_thresh_statement> |
 	<replica_check_sleep_time_statement> |
@@ -3145,6 +3205,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
+<metadb_server_slave_replication_timeout_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_server_slave_replication_timeout" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <metadb_journal_dir_statement> ::=
 .RS 4
 .sp
@@ -3181,6 +3255,34 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "metadb_journal_recvq_size" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<metadb_replica_remover_by_host_sleep_time_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_replica_remover_by_host_sleep_time" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<metadb_replica_remover_by_host_inode_step_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_replica_remover_by_host_inode_step" <number>
 .fi
 .if n \{\
 .RE
