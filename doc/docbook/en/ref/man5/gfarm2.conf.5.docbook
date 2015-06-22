@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>16 Jul 2014</date></refentryinfo>
+<refentryinfo><date>22 Jun 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1977,6 +1977,47 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_replica_remover_by_host_sleep_time</token> <parameter moreinfo="none">nanoseconds</parameter></term>
+<listitem>
+<para>
+This statement specifies the sleep time of replica remover,
+which is invoked by a removal of a filesystem node,
+in nanoseconds when gfmd is busy.
+If this value is increased, the processing runs more slowly.
+The default value is 20000000 nanoseconds (20 milliseconds).
+The maximum value is 1000000000 nanoseconds (1 second).
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_replica_remover_by_host_sleep_time 20000000
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_replica_remover_by_host_inode_step</token> <parameter moreinfo="none">number</parameter></term>
+<listitem>
+<para>
+This statement specifies the number of i-node that replica remover,
+which is invoked by a removal of a filesystem node,
+processes in each step.
+If this value is decreased, the remover runs more slowly.
+The default value is 1024.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_replica_remover_by_host_inode_step 1024
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>replica_check</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>
@@ -2146,6 +2187,8 @@ notation.</para>
 	&lt;metadb_journal_dir_statement&gt; |
 	&lt;metadb_journal_max_size_statement&gt; |
 	&lt;metadb_journal_recvq_size_statement&gt; |
+	&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; |
+	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |
 	&lt;replica_check_statement&gt; |
 	&lt;replica_check_host_down_thresh_statement&gt; |
 	&lt;replica_check_sleep_time_statement&gt; |
@@ -2674,6 +2717,16 @@ notation.</para>
 <varlistentry>
 <term>&lt;metadb_journal_recvq_size_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_journal_recvq_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_replica_remover_by_host_sleep_time" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_replica_remover_by_host_inode_step_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_replica_remover_by_host_inode_step" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
