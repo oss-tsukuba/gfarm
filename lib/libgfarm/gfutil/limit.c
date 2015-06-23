@@ -80,13 +80,13 @@ gfarm_limit_nofiles(int *file_table_size_p)
 	if (new.rlim_cur != want) {
 		new.rlim_cur = want;
 		if (setrlimit(RLIMIT_NOFILE, &new) == -1) {
-			gflog_warning_errno(GFARM_MSG_1003438,
+			gflog_notice_errno(GFARM_MSG_1003438,
 			    "setrlimit(RLIMIT_NOFILE) "
 			    "from soft=%llu/hard=%llu "
 			    "to soft=%llu/hard=%llu",
 			    (long long)old.rlim_cur, (long long)old.rlim_max,
 			    (long long)new.rlim_cur, (long long)new.rlim_max);
-			/* log warning, but returns SUCCESS */
+			/* log notice, but returns SUCCESS */
 			*file_table_size_p = old.rlim_cur;
 			return (0);
 		}
