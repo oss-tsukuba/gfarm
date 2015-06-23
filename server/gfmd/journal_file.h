@@ -92,6 +92,8 @@ typedef void (*journal_free_op_t)(void *, enum journal_operation, void *);
 off_t journal_file_tail(struct journal_file *);
 void journal_file_mutex_lock(struct journal_file *, const char *);
 void journal_file_mutex_unlock(struct journal_file *, const char *);
+void journal_file_nonfull_cond_signal(struct journal_file_reader *,
+	const char *);
 gfarm_error_t journal_file_open(const char *, size_t,
 	gfarm_uint64_t, struct journal_file **, int);
 void journal_file_close(struct journal_file *);

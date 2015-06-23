@@ -333,6 +333,15 @@ journal_file_reader_is_empty(struct journal_file_reader *reader)
 	    reader->committed_lap == writer->lap);
 }
 
+void
+journal_file_nonfull_cond_signal(struct journal_file_reader *reader,
+	const char *diag)
+{
+	struct journal_file *jf = reader->file;
+
+	gfarm_cond_signal(&jf->nonfull_cond, diag, JOURNAL_FILE_STR);
+}
+
 /* PREREQUISITE: journal_file_mutex. */
 void
 journal_file_reader_commit_pos(struct journal_file_reader *reader)
@@ -352,7 +361,7 @@ journal_file_reader_commit_pos(struct journal_file_reader *reader)
 		reader->committed_lap++;
 	}
 	reader->uncommitted_len = 0;
-	gfarm_cond_signal(&jf->nonfull_cond, diag, JOURNAL_FILE_STR);
+	journal_file_nonfull_cond_signal(reader, diag);
 }
 
 static int

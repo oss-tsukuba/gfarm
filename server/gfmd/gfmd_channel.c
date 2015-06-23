@@ -585,7 +585,7 @@ gfmdc_client_journal_send(struct peer *peer,
 	    GFM_PROTO_JOURNAL_SEND, "llb", from_sn, to_sn,
 	    (size_t)data_len, data)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002978,
-		    "%s : %s", mdhost_get_name(mh), gfarm_error_string(e));
+		    "%s: %s", mdhost_get_name(mh), gfarm_error_string(e));
 		free(data);
 		c->data = NULL;
 		return (e);
@@ -732,7 +732,7 @@ gfmdc_client_journal_ready_to_recv_result(void *p, void *arg, size_t size)
 
 	if ((e = gfmdc_client_recv_result(peer, mh, size, diag, ""))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_1002982, "%s : %s",
+		gflog_error(GFARM_MSG_1002982, "%s: %s",
 		    mdhost_get_name(mh), gfarm_error_string(e));
 	gfmdc_client_journal_ready_to_recv_notify(arg, e, diag);
 	return (e);
@@ -771,7 +771,7 @@ gfmdc_client_journal_ready_to_recv(struct mdhost *mh, struct peer *peer)
 	    GFM_PROTO_JOURNAL_READY_TO_RECV, "l", seqnum))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002983,
-		    "%s : %s", mdhost_get_name(mh), gfarm_error_string(e));
+		    "%s: %s", mdhost_get_name(mh), gfarm_error_string(e));
 		goto end;
 	}
 
@@ -785,7 +785,7 @@ gfmdc_client_journal_ready_to_recv(struct mdhost *mh, struct peer *peer)
 	e = ji.error;
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1003425,
-		    "%s : %s", mdhost_get_name(mh), gfarm_error_string(e));
+		    "%s: %s", mdhost_get_name(mh), gfarm_error_string(e));
 	}
 
 end:
@@ -1256,6 +1256,7 @@ gfmdc_journal_syncsend_thread(void *closure)
 	struct gfmdc_journal_send_closure *c =
 	    gfmdc_peer_get_journal_send_closure(gfmdc_peer);
 	struct mdhost *mh = peer_get_mdhost(peer);
+	struct journal_file_reader *reader;
 	gfarm_error_t e;
 	gfarm_uint64_t to_sn;
 	static const char diag[] = "gfmdc_journal_send_thread";
@@ -1288,9 +1289,15 @@ gfmdc_journal_syncsend_thread(void *closure)
 		}
 	} while (to_sn < journal_sync_info.seqnum);
 
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		/*
+		 * send signal to nonfull cond just in case the writer
+		 * waits for this reader thread
+		 */
+		reader = gfmdc_peer_get_journal_file_reader(gfmdc_peer);
+		journal_file_nonfull_cond_signal(reader, diag);
 		mdhost_disconnect_request(c->host, NULL);
-
+	}
 	mdhost_put_peer(c->host, peer); /* decrement refcount */
 	gfmdc_journal_recv_end_signal(diag);
 #ifdef DEBUG_JOURNAL
@@ -1303,12 +1310,30 @@ gfmdc_journal_syncsend_thread(void *closure)
 static void
 gfmdc_wait_journal_recv_threads(const char *diag)
 {
+	struct timespec ts;
+	int in_time, timeout = gfarm_get_journal_sync_slave_timeout();
+	int timeout_max = 120;
+
+	gfarm_gettime(&ts);
+	ts.tv_sec += timeout;
 	gfarm_mutex_lock(&journal_sync_info.sync_mutex, diag,
 	    SYNC_MUTEX_DIAG);
-	while (journal_sync_info.nrecv_threads > 0)
-		gfarm_cond_wait(&journal_sync_info.sync_end_cond,
-		    &journal_sync_info.sync_mutex, diag,
+	while (journal_sync_info.nrecv_threads > 0) {
+		in_time = gfarm_cond_timedwait(
+		    &journal_sync_info.sync_end_cond,
+		    &journal_sync_info.sync_mutex, &ts, diag,
 		    SYNC_END_COND_DIAG);
+		if (in_time == 0) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "journal response timeout (%d seconds), check "
+			    "synchronous slave servers", timeout);
+			timeout *= 2;
+			if (timeout > timeout_max)
+				timeout = timeout_max;
+			gfarm_gettime(&ts);
+			ts.tv_sec += timeout;
+		}
+	}
 	gfarm_mutex_unlock(&journal_sync_info.sync_mutex, diag,
 	    SYNC_MUTEX_DIAG);
 }
