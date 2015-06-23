@@ -69,7 +69,7 @@ struct journal_file_reader {
 	const char *label;
 };
 
-static const char *main_reader_label = "main_reader";
+static const char main_reader_label[] = "main_reader";
 
 #define JOURNAL_FILE_READER_F_BLOCK_WRITER	0x1
 #define JOURNAL_FILE_READER_F_INVALID		0x2
@@ -87,8 +87,8 @@ static const char *main_reader_label = "main_reader";
 #define JOURNAL_RECORD_SIZE_MAX			(1024 * 1024)
 #define JOURNAL_FILE_HEADER_SIZE		4096
 /* JOURNAL_FILE_HEADER_SIZE + maximum transaction size */
-/* XXX - this assumes 4096, but xmlattr may exceed it */
-#define JOURNAL_FILE_MIN_SIZE			(2 * JOURNAL_FILE_HEADER_SIZE)
+/* XXX - this assumes 128, but it is too small */
+#define JOURNAL_FILE_MIN_SIZE			(JOURNAL_FILE_HEADER_SIZE + 128)
 #define GFARM_JOURNAL_RECORD_HEADER_XDR_FMT	"cccclii"
 #define JOURNAL_BUFSIZE				8192
 #define JOURNAL_READ_AHEAD_SIZE			8192
@@ -709,7 +709,7 @@ journal_file_reader_writer_wait(struct journal_file_reader *reader,
 	struct journal_file *jf, size_t rec_len)
 {
 	struct journal_file_writer *writer = &jf->writer;
-	static const char diag[] = "journal_file_reader_adjust_pos";
+	static const char diag[] = "journal_file_reader_writer_wait";
 	off_t wpos, rpos;
 	gfarm_uint64_t wlap, rlap;
 	int needed, waited = 0;
@@ -768,7 +768,7 @@ journal_file_reader_writer_wait(struct journal_file_reader *reader,
 			break;
 
 		gflog_warning(GFARM_MSG_UNFIXED,
-		    "wait until %s reads the journal file, "
+		    "journal write: wait until %s reads the journal file, "
 		    "increase \"metadb_journal_max_size\" (currently %ld)",
 		    reader->label, (unsigned long)jf->max_size);
 		if (reader->label == main_reader_label)
