@@ -114,9 +114,7 @@ gfarm_gsi_client_cred_name(void)
 		return (client_dn);
 	}
 
-	if (cred == GSS_C_NO_CREDENTIAL &&
-	    gfarmGssAcquireCredential(NULL, GSS_C_NO_NAME, GSS_C_INITIATE,
-		&e_major, &e_minor, &name) < 0) {
+	if (gfarmGssNewCredentialName(&name, cred, &e_major, &e_minor) < 0) {
 		staticp->client_dn = NULL;
 		gflog_auth_notice(GFARM_MSG_UNFIXED,
 		    "gfarm_gsi_client_cred_name(): "
@@ -136,8 +134,8 @@ gfarm_gsi_client_cred_name(void)
 			gfarmGssPrintMinorStatus(e_minor);
 		}
 		gfarmGssDeleteName(&name, NULL, NULL);
+		staticp->client_cred_initialized = 1;
 	}
-	staticp->client_cred_initialized = 1;
 	client_dn = staticp->client_dn;
 	gfarm_mutex_unlock(&staticp->client_cred_init_mutex, diag, mutex_name);
 	return (client_dn);
