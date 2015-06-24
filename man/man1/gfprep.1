@@ -2,12 +2,12 @@
 .\"     Title: gfprep
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 9 Dec 2013
+.\"      Date: 24 Jun 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPREP" "1" "9 Dec 2013" "Gfarm" "Gfarm"
+.TH "GFPREP" "1" "24 Jun 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,21 +31,24 @@
 gfprep \- replicate Gfarm files in parallel
 .SH "SYNOPSIS"
 .HP \w'\fBgfprep\fR\ 'u
-\fBgfprep\fR [\-nqvdpPU] [\-mx] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fIlimit\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
+\fBgfprep\fR [\-nqvdpPU] [\-mx] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
 .SH "DESCRIPTION"
 .PP
 \fBgfprep\fR
-creates replicas of Gfarm files win parallel\&.
+creates replicas of Gfarm files in parallel\&.
+.PP
+If the
+\fIpath\fR
+parameter is a directory, files under the directory will be replicated recursively\&.
+.PP
+\fIpath\fR
+is a Gfarm URL or a path on a mountpoint of gfarm2fs\&.
 .PP
 A set of source/destination hosts can be specified by a domain name and/or a hostlist file\&. When both a domain name and a hostlist file are specified, a set of hosts is determined by both conditions\&. When a set of source hosts is specified, only files stored on the source hosts are replicated\&.
 .PP
 Idler filesystem nodes will be selected for source or destination\&. The maximum number of parallel to send or receive per host is the number of CPUs\&. Please see the manual page of
 \fBgfhost\fR
 for information about the number of CPUs\&.
-.PP
-If the
-\fIpath\fR
-parameter is a directory, files under the directory will be replicated recursively\&.
 .PP
 \fBgfprep\fR
 can also read the directory and get information of the entries in parallel\&.
@@ -134,9 +137,23 @@ Specifies the number of processes to read directories in parallel\&.
 The default value is 8\&.
 .RE
 .PP
-\fB\-M\fR \fIlimit\-byte\fR
+\fB\-M\fR \fItotal\-byte\fR
 .RS 4
-Specifies the bytes to limit the total copied size\&.
+Specifies the bytes to limit total copied size\&.
+.sp
+The default value is unlimited\&.
+.RE
+.PP
+\fB\-z\fR \fIminimum\-byte\fR
+.RS 4
+Specifies the bytes to limit minimum size of a file\&.
+.sp
+The default value is unlimited\&.
+.RE
+.PP
+\fB\-Z\fR \fImaximum\-byte\fR
+.RS 4
+Specifies the bytes to limit maximum size of a file\&.
 .sp
 The default value is unlimited\&.
 .RE

@@ -2,12 +2,12 @@
 .\"     Title: gfpcopy
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 29 Jun 2014
+.\"      Date: 24 Jun 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPCOPY" "1" "29 Jun 2014" "Gfarm" "Gfarm"
+.TH "GFPCOPY" "1" "24 Jun 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,19 +31,71 @@
 gfpcopy \- copy Gfarm files in parallel
 .SH "SYNOPSIS"
 .HP \w'\fBgfpcopy\fR\ 'u
-\fBgfpcopy\fR [\-nqvdpPU] [\-f] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fIlimit\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-b\ \fIbufsize\fR] \fIsource\-path\fR \fIdestination\-path\fR
+\fBgfpcopy\fR [\-nqvdpPU] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-f] [\-b\ \fIbufsize\fR] \fIsource\-path\fR \fIdestination\-path\fR
 .SH "DESCRIPTION"
 .PP
 \fBgfpcopy\fR
-は、ファイルやディレクトリを 並列にコピーします。
-.PP
-転送先や転送元のホスト群を指定するには、 ドメイン名で指定するか、ホスト名を行ごとに記述したホストリストファイルを指定します。 ドメイン名とホストリストファイルを両方指定した場合は、 両方の条件に合うホスト群を決定します。 転送元ホスト群を指定した場合、そのホストに存在するファイルのみ複製が作成されます。
+は、 複数のファイルを並列にコピーします。
 .PP
 \fIsource\-path\fR
-がディレクトリの場合、 それ以下にあるすべてのファイルをコピーします。
+がディレクトリの場合は、 その下にあるすべてのファイルとディレクトリをコピーします。
+.PP
+\fIdestination\-path\fR
+が存在しない場合は、 ディレクトリを作成します。
+\fIdestination\-path\fR
+が存在する場合は、 そのディレクトリの下に
+\fIsource\-path\fR
+のディレクトリと同名のディレクトリを作成します。
+.PP
+転送先や転送元のホスト群を指定するには、ドメイン名で指定するか、 ホスト名を行ごとに記述したホストリストファイルを指定します。 ドメイン名とホストリストファイルを両方指定した場合は、 両方の条件に合うホスト群を決定します。 転送元ホスト群を指定した場合、 そのホストに存在するファイルのみコピーされます。
 .PP
 \fBgfpcopy\fR
 は、ディレクトリを辿る際に、 ディレクトリエントリ情報も並列に取得します。
+.SH "SOURCE PATH"
+.PP
+\fIsource\-path\fR
+には以下を指定できます。 HPSS 上のファイルをコピーできません。
+.PP
+\fIgfarm:\&.\&.\&.\fR
+.RS 4
+Gfarm URL で指定します。
+.RE
+.PP
+\fIfile:\&.\&.\&.\fR
+.RS 4
+ローカルファイルシステム上のパスを URL で指定します。
+.RE
+.PP
+\fI任意\fR
+.RS 4
+ローカルファイルシステム上のパスを絶対パスまたは相対パスで指定します。 そのパスが gfarm2fs のマウントポイントの場合は、 gfarm2fs を経由せずに Gfarm からコピーします。
+.RE
+.SH "DESTINATION PATH"
+.PP
+\fIdestination\-path\fR
+には以下を指定できます。
+.PP
+\fIgfarm:\&.\&.\&.\fR
+.RS 4
+ディレクトリを Gfarm URL で指定します。
+.RE
+.PP
+\fIfile:\&.\&.\&.\fR
+.RS 4
+ローカルファイルシステム上のディレクトリを URL で指定します。
+.RE
+.PP
+\fIhpss:\&.\&.\&.\fR
+.RS 4
+HPSS 上の存在するディレクトリを URL で指定します。 その下に
+\fIsource\-path\fR
+と同名のディレクトリが存在する場合はエラーになります。 HPSS に対して差分コピーはできません。
+.RE
+.PP
+\fI任意\fR
+.RS 4
+ローカルファイルシステム上のディレクトリを絶対パスまたは相対パスで指定します。 そのパスが gfarm2fs のマウントポイントの場合は、 gfarm2fs を経由せずに Gfarm へコピーします。
+.RE
 .SH "GFPCOPY OPTIONS"
 .PP
 以下は
@@ -100,6 +152,16 @@ $ gfpcopy file:///tmp/dir gfarm:///dir
 .\}
 .nf
 $ gfpcopy gfarm:///dir1 gfarm:///dir2
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ gfpcopy gfarm:///dir hpss:///tmp/dir
 .fi
 .if n \{\
 .RE
