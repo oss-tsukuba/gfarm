@@ -12,21 +12,31 @@
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfpcopy</code>  [-nqvdpPU] [-f] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>limit-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-b <em class="replaceable"><code>bufsize</code></em>]  <em class="replaceable"><code>source-path</code></em>   <em class="replaceable"><code>destination-path</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfpcopy</code>  [-nqvdpPU] [-f] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>limit-byte</code></em>] [-z <em class="replaceable"><code>minimum-byte</code></em>] [-Z <em class="replaceable"><code>maximum-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-b <em class="replaceable"><code>bufsize</code></em>]  <em class="replaceable"><code>source-path</code></em>   <em class="replaceable"><code>destination-path</code></em> </p></div>
 </div>
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
-<span class="command"><strong>gfpcopy</strong></span> copies files and directries
-in parallel.
+<span class="command"><strong>gfpcopy</strong></span> copies files in parallel.
+</p>
+<p>
+When the <em class="parameter"><code>source-path</code></em> parameter is
+a directory, files under the directory will be copied recursively.
+</p>
+<p>
+When the <em class="parameter"><code>destination-path</code></em> does
+not exist, the directory is created.
+When the <em class="parameter"><code>destination-path</code></em>
+exists, a directry of the same name as
+the <em class="parameter"><code>source-path</code></em> is created
+under the <em class="parameter"><code>destination-path</code></em>.
 </p>
 <p>
 A set of source/destination hosts can be specified by a domain name
-and/or a hostlist file. When both a domain name and a hostlist file
+and/or a hostlist file.  When both a domain name and a hostlist file
 are specified, a set of hosts is determined by both conditions. When a
 set of source hosts is specified, only files stored on the source
-hosts are replicated.
-
+hosts are cppied.
 
 When a set of source hosts are specified, only files stored on the set
 of source hosts are copied.  A set of hosts can be specified by a
@@ -34,13 +44,65 @@ domain name and/or a host file.  When both a domain name and a host
 file are specified, a set of hosts is determined by both conditions.
 </p>
 <p>
-If the <em class="parameter"><code>source-url</code></em> parameter is a directory,
-files under the directory will be copied recursively.
+<span class="command"><strong>gfpcopy</strong></span> can also read the directory
+and get information of the entries in parallel.
 </p>
+</div>
+<div class="refsect1">
+<a name="source-path"></a><h2>SOURCE PATH</h2>
 <p>
-<span class="command"><strong>gfpcopy</strong></span> can also read the directory and get
-information of the entries in parallel.
+<em class="parameter"><code>source-path</code></em> must be following format.
+Files on HPSS cannot be copied.
 </p>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><em class="parameter"><code>gfarm:...</code></em></span></dt>
+<dd><p>
+is Gfarm URL.
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>file:...</code></em></span></dt>
+<dd><p>
+is URL of Local Filesystem.
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>ANY</code></em></span></dt>
+<dd><p>
+is relative path or absolute path of Local Filesystem.  When the path
+is a mountpoint on gfarm2fs, files are copied without passing through
+the gfarm2fs.
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="source-path"></a><h2>DESTINATION PATH</h2>
+<p>
+<em class="parameter"><code>destination-path</code></em>
+must be following format.
+</p>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><em class="parameter"><code>gfarm:...</code></em></span></dt>
+<dd><p>
+is Gfarm URL of a directory.
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>file:...</code></em></span></dt>
+<dd><p>
+is URL of a directory on Local Filesystem.
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>hpss:...</code></em></span></dt>
+<dd><p>
+is URL of a directory on HPSS.
+
+If A directory named the same as
+the <em class="parameter"><code>source-path</code></em> exists under
+this directory, the <em class="parameter"><code>source-path</code></em>
+cannot be copied.
+The difference of files cannot be copied to HPSS.
+</p></dd>
+<dt><span class="term"><em class="parameter"><code>ANY</code></em></span></dt>
+<dd><p>
+is relative path or absolute path of Local Filesystem.  When the path
+is a mountpoint on gfarm2fs, files are copied without passing through
+the gfarm2fs.
+</p></dd>
+</dl></div>
 </div>
 <div class="refsect1">
 <a name="options"></a><h2>GFPCOPY OPTIONS</h2>
@@ -52,7 +114,6 @@ These are the options only for <span class="command"><strong>gfpcopy</strong></s
 <dd>
 <p>
 Specifies the buffer size to copy.
-This option is obsolete in Gfarm version 2.6 or later.
 </p>
 <p>
 The default value is 64KiB (64 * 1024).
@@ -93,6 +154,9 @@ $ gfpcopy file:///tmp/dir gfarm:///dir<br>
 </p></div>
 <div class="literallayout"><p><br>
 $ gfpcopy gfarm:///dir1 gfarm:///dir2<br>
+</p></div>
+<div class="literallayout"><p><br>
+$ gfpcopy gfarm:///dir hpss:///tmp/dir<br>
 </p></div>
 <div class="literallayout"><p><br>
 $ cd /mnt/gfarm2fs<br>

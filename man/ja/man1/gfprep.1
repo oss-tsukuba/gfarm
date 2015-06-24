@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfprep
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 9 Dec 2013
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 24 Jun 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPREP" "1" "9 Dec 2013" "Gfarm" "Gfarm"
+.TH "GFPREP" "1" "24 Jun 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,22 +31,23 @@
 gfprep \- Gfarm ファイル複製を並列に作成する
 .SH "SYNOPSIS"
 .HP \w'\fBgfprep\fR\ 'u
-\fBgfprep\fR [\-nqvdpPU] [\-mx] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fIlimit\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
+\fBgfprep\fR [\-nqvdpPU] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-mx] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
 .SH "DESCRIPTION"
 .PP
-
 \fBgfprep\fR
-は、 Gfarm ファイルの複製を並列に作成します。
+は、 Gfarm ファイル複製を並列に作成します。
 .PP
-転送先や転送元のホスト群を指定するには、 ドメイン名で指定するか、ホスト名を行ごとに記述したホストリストファイルを指定します。 ドメイン名とホストリストファイルを両方指定した場合は、 両方の条件に合うホスト群を決定します。 転送元ホスト群を指定した場合、そのホストに存在するファイルのみ複製が作成されます。
-.PP
-なるべく転送中ではないホストを選択して転送開始します。 転送元や転送先 1 ホストあたりの最大並列転送数は、ホストごとの CPU 数です。 CPU 数については、gfhost コマンドのマニュアルを参照してください。
-.PP
-
 \fIpath\fR
-がディレクトリの場合、 それ以下にあるすべてのファイルの複製を作成します。
+がディレクトリの場合、 その下にあるすべてのファイルに対する複製を作成します。
 .PP
-
+\fIpath\fR
+には、 Gfarm URL または gfarm2fs 上のパスを指定できます。
+.PP
+転送先や転送元のホスト群を指定するには、ドメイン名で指定するか、 ホスト名を行ごとに記述したホストリストファイルを指定します。 ドメイン名とホストリストファイルを両方指定した場合は、 両方の条件に合うホスト群を決定します。 転送元ホスト群を指定した場合、 そのホストに存在するファイルのみ複製が作成されます。
+.PP
+なるべく転送中ではないホストを選択して転送開始します。 転送元や転送先 1 ホストあたりの最大並列転送数は、ホストごとの CPU 数です。 CPU 数については、\fBgfhost\fR
+コマンドのマニュアルを参照してください。
+.PP
 \fBgfprep\fR
 は、ディレクトリを辿る際に、 ディレクトリエントリ情報も並列に取得します。
 .SH "GFPREP OPTIONS"
@@ -77,7 +78,6 @@ gfprep \- Gfarm ファイル複製を並列に作成する
 .RE
 .SH "COMMON OPTIONS"
 .PP
-
 \fBgfprep\fR
 と
 \fBgfpcopy\fR
@@ -131,9 +131,23 @@ gfprep \- Gfarm ファイル複製を並列に作成する
 デフォルト値は 8 です。
 .RE
 .PP
-\fB\-M\fR \fIlimit\-byte\fR
+\fB\-M\fR \fItotal\-byte\fR
 .RS 4
 コピーする際に制限する合計サイズをバイト数で指定します。
+.sp
+デフォルトでは制限しません。
+.RE
+.PP
+\fB\-z\fR \fIminimum\-byte\fR
+.RS 4
+コピーする際に制限する最小ファイルサイズをバイト数で指定します。
+.sp
+デフォルトでは制限しません。
+.RE
+.PP
+\fB\-Z\fR \fImaximum\-byte\fR
+.RS 4
+コピーする際に制限する最大ファイルサイズをバイト数で指定します。
 .sp
 デフォルトでは制限しません。
 .RE
@@ -259,7 +273,6 @@ $ gfprep \-m \-S gfsd1\&.example\&.com gfarm:///
 .PP
 \-L または \-m オプションを使用しない場合は、指定した転送元範囲の中から ファイルシステムノードが選ばれるとは限りません。
 .PP
-
 \fBgfprep\fR
 コマンドは、
 \fBgfmd\fR
@@ -272,7 +285,6 @@ $ gfprep \-m \-S gfsd1\&.example\&.com gfarm:///
 の動作が遅くなります。 そのような場合には、\-j または \-J オプションに大きな値を指定すると、 性能が改善するかもしれません。
 .SH "SEE ALSO"
 .PP
-
 \fBgfrep\fR(1),
 \fBgfpcopy\fR(1),
 \fBgfhost\fR(1),

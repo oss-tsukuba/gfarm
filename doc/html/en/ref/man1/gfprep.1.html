@@ -12,13 +12,21 @@
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfprep</code>  [-nqvdpPU] [-mx] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>limit-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-N <em class="replaceable"><code>num-of-replicas</code></em>]  <em class="replaceable"><code>path</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfprep</code>  [-nqvdpPU] [-mx] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>total-byte</code></em>] [-z <em class="replaceable"><code>minimum-byte</code></em>] [-Z <em class="replaceable"><code>maximum-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-N <em class="replaceable"><code>num-of-replicas</code></em>]  <em class="replaceable"><code>path</code></em> </p></div>
 </div>
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 <span class="command"><strong>gfprep</strong></span> creates replicas of Gfarm
-files win parallel.
+files in parallel.
+</p>
+<p>
+If the <em class="parameter"><code>path</code></em> parameter is a
+directory, files under the directory will be replicated recursively.
+</p>
+<p>
+<em class="parameter"><code>path</code></em> is a Gfarm URL or a path
+on a mountpoint of gfarm2fs.
 </p>
 <p>
 A set of source/destination hosts can be specified by a domain name
@@ -33,10 +41,6 @@ The maximum number of parallel to send or receive per host is the
 number of CPUs.  Please see the manual page
 of <span class="command"><strong>gfhost</strong></span> for information about the
 number of CPUs.
-</p>
-<p>
-If the <em class="parameter"><code>path</code></em> parameter is a
-directory, files under the directory will be replicated recursively.
 </p>
 <p>
 <span class="command"><strong>gfprep</strong></span> can also read the directory and get
@@ -155,10 +159,28 @@ Specifies the number of processes to read directories in parallel.
 The default value is 8.
 </p>
 </dd>
-<dt><span class="term"><code class="option">-M</code> <em class="parameter"><code>limit-byte</code></em></span></dt>
+<dt><span class="term"><code class="option">-M</code> <em class="parameter"><code>total-byte</code></em></span></dt>
 <dd>
 <p>
-Specifies the bytes to limit the total copied size.
+Specifies the bytes to limit total copied size.
+</p>
+<p>
+The default value is unlimited.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-z</code> <em class="parameter"><code>minimum-byte</code></em></span></dt>
+<dd>
+<p>
+Specifies the bytes to limit minimum size of a file.
+</p>
+<p>
+The default value is unlimited.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-Z</code> <em class="parameter"><code>maximum-byte</code></em></span></dt>
+<dd>
+<p>
+Specifies the bytes to limit maximum size of a file.
 </p>
 <p>
 The default value is unlimited.

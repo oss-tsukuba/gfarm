@@ -2,12 +2,12 @@
 .\"     Title: gfpcopy
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 29 Jun 2014
+.\"      Date: 24 Jun 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPCOPY" "1" "29 Jun 2014" "Gfarm" "Gfarm"
+.TH "GFPCOPY" "1" "24 Jun 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,20 +31,76 @@
 gfpcopy \- copy Gfarm files in parallel
 .SH "SYNOPSIS"
 .HP \w'\fBgfpcopy\fR\ 'u
-\fBgfpcopy\fR [\-nqvdpPU] [\-f] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fIlimit\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-b\ \fIbufsize\fR] \fIsource\-path\fR \fIdestination\-path\fR
+\fBgfpcopy\fR [\-nqvdpPU] [\-f] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fIlimit\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-b\ \fIbufsize\fR] \fIsource\-path\fR \fIdestination\-path\fR
 .SH "DESCRIPTION"
 .PP
 \fBgfpcopy\fR
-copies files and directries in parallel\&.
+copies files in parallel\&.
 .PP
-A set of source/destination hosts can be specified by a domain name and/or a hostlist file\&. When both a domain name and a hostlist file are specified, a set of hosts is determined by both conditions\&. When a set of source hosts is specified, only files stored on the source hosts are replicated\&. When a set of source hosts are specified, only files stored on the set of source hosts are copied\&. A set of hosts can be specified by a domain name and/or a host file\&. When both a domain name and a host file are specified, a set of hosts is determined by both conditions\&.
-.PP
-If the
-\fIsource\-url\fR
+When the
+\fIsource\-path\fR
 parameter is a directory, files under the directory will be copied recursively\&.
+.PP
+When the
+\fIdestination\-path\fR
+does not exist, the directory is created\&. When the
+\fIdestination\-path\fR
+exists, a directry of the same name as the
+\fIsource\-path\fR
+is created under the
+\fIdestination\-path\fR\&.
+.PP
+A set of source/destination hosts can be specified by a domain name and/or a hostlist file\&. When both a domain name and a hostlist file are specified, a set of hosts is determined by both conditions\&. When a set of source hosts is specified, only files stored on the source hosts are cppied\&. When a set of source hosts are specified, only files stored on the set of source hosts are copied\&. A set of hosts can be specified by a domain name and/or a host file\&. When both a domain name and a host file are specified, a set of hosts is determined by both conditions\&.
 .PP
 \fBgfpcopy\fR
 can also read the directory and get information of the entries in parallel\&.
+.SH "SOURCE PATH"
+.PP
+\fIsource\-path\fR
+must be following format\&. Files on HPSS cannot be copied\&.
+.PP
+\fIgfarm:\&.\&.\&.\fR
+.RS 4
+is Gfarm URL\&.
+.RE
+.PP
+\fIfile:\&.\&.\&.\fR
+.RS 4
+is URL of Local Filesystem\&.
+.RE
+.PP
+\fIANY\fR
+.RS 4
+is relative path or absolute path of Local Filesystem\&. When the path is a mountpoint on gfarm2fs, files are copied without passing through the gfarm2fs\&.
+.RE
+.SH "DESTINATION PATH"
+.PP
+\fIdestination\-path\fR
+must be following format\&.
+.PP
+\fIgfarm:\&.\&.\&.\fR
+.RS 4
+is Gfarm URL of a directory\&.
+.RE
+.PP
+\fIfile:\&.\&.\&.\fR
+.RS 4
+is URL of a directory on Local Filesystem\&.
+.RE
+.PP
+\fIhpss:\&.\&.\&.\fR
+.RS 4
+is URL of a directory on HPSS\&. If A directory named the same as the
+\fIsource\-path\fR
+exists under this directory, the
+\fIsource\-path\fR
+cannot be copied\&. The difference of files cannot be copied to HPSS\&.
+.RE
+.PP
+\fIANY\fR
+.RS 4
+is relative path or absolute path of Local Filesystem\&. When the path is a mountpoint on gfarm2fs, files are copied without passing through the gfarm2fs\&.
+.RE
 .SH "GFPCOPY OPTIONS"
 .PP
 These are the options only for
@@ -52,7 +108,7 @@ These are the options only for
 .PP
 \fB\-b\fR \fIbufsize\fR
 .RS 4
-Specifies the buffer size to copy\&. This option is obsolete in Gfarm version 2\&.6 or later\&.
+Specifies the buffer size to copy\&.
 .sp
 The default value is 64KiB (64 * 1024)\&.
 .RE
@@ -98,6 +154,16 @@ $ gfpcopy file:///tmp/dir gfarm:///dir
 .\}
 .nf
 $ gfpcopy gfarm:///dir1 gfarm:///dir2
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ gfpcopy gfarm:///dir hpss:///tmp/dir
 .fi
 .if n \{\
 .RE

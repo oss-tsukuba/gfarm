@@ -2,51 +2,57 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfprep</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfprep">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfprep.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfprep — Gfarm ファイル複製を並列に作成する</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfprep</code>  [-nqvdpPU] [-mx] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>limit-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-N <em class="replaceable"><code>num-of-replicas</code></em>]  <em class="replaceable"><code>path</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfprep</code>  [-nqvdpPU] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>total-byte</code></em>] [-z <em class="replaceable"><code>minimum-byte</code></em>] [-Z <em class="replaceable"><code>maximum-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-mx] [-N <em class="replaceable"><code>num-of-replicas</code></em>]  <em class="replaceable"><code>path</code></em> </p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 <span class="command"><strong>gfprep</strong></span> は、
-Gfarm ファイルの複製を並列に作成します。
+Gfarm ファイル複製を並列に作成します。
 </p>
 <p>
-転送先や転送元のホスト群を指定するには、
-ドメイン名で指定するか、ホスト名を行ごとに記述したホストリストファイルを指定します。
+<em class="parameter"><code>path</code></em> がディレクトリの場合、
+その下にあるすべてのファイルに対する複製を作成します。
+</p>
+<p>
+<em class="parameter"><code>path</code></em> には、
+Gfarm URL または gfarm2fs 上のパスを指定できます。
+</p>
+<p>
+転送先や転送元のホスト群を指定するには、ドメイン名で指定するか、
+ホスト名を行ごとに記述したホストリストファイルを指定します。
 ドメイン名とホストリストファイルを両方指定した場合は、
 両方の条件に合うホスト群を決定します。
-転送元ホスト群を指定した場合、そのホストに存在するファイルのみ複製が作成されます。
+転送元ホスト群を指定した場合、
+そのホストに存在するファイルのみ複製が作成されます。
 </p>
 <p>
 なるべく転送中ではないホストを選択して転送開始します。
 転送元や転送先 1 ホストあたりの最大並列転送数は、ホストごとの CPU 数です。
-CPU 数については、gfhost コマンドのマニュアルを参照してください。
-</p>
-<p>
-<em class="parameter"><code>path</code></em> がディレクトリの場合、
-それ以下にあるすべてのファイルの複製を作成します。
+CPU 数については、<span class="command"><strong>gfhost</strong></span>
+コマンドのマニュアルを参照してください。
 </p>
 <p>
 <span class="command"><strong>gfprep</strong></span> は、ディレクトリを辿る際に、
 ディレクトリエントリ情報も並列に取得します。
 </p>
 </div>
-<div class="refsect1" title="GFPREP OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>GFPREP OPTIONS</h2>
 <p>
 以下は <span class="command"><strong>gfprep</strong></span> 専用のオプションです。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-N</code> <em class="parameter"><code>num-of-replicas</code></em></span></dt>
 <dd>
 <p>
@@ -77,14 +83,14 @@ CPU 数については、gfhost コマンドのマニュアルを参照してく
 </dd>
 </dl></div>
 </div>
-<div class="refsect1" title="COMMON OPTIONS">
+<div class="refsect1">
 <a name="common-options"></a><h2>COMMON OPTIONS</h2>
 <p>
 <span class="command"><strong>gfprep</strong></span>
 と <span class="command"><strong>gfpcopy</strong></span> には、
 共通で利用できるオプションがあります。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-S</code> <em class="parameter"><code>source-domainname</code></em></span></dt>
 <dd><p>
 転送対象ファイルを選ぶためのドメイン名を指定します。
@@ -150,10 +156,28 @@ CPU 数については、<span class="command"><strong>gfhost</strong></span>
 デフォルト値は 8 です。
 </p>
 </dd>
-<dt><span class="term"><code class="option">-M</code> <em class="parameter"><code>limit-byte</code></em></span></dt>
+<dt><span class="term"><code class="option">-M</code> <em class="parameter"><code>total-byte</code></em></span></dt>
 <dd>
 <p>
 コピーする際に制限する合計サイズをバイト数で指定します。
+</p>
+<p>
+デフォルトでは制限しません。
+</p>
+</dd>
+<dt><span class="term"><code class="option">-z</code> <em class="parameter"><code>minimum-byte</code></em></span></dt>
+<dd>
+<p>
+コピーする際に制限する最小ファイルサイズをバイト数で指定します。
+</p>
+<p>
+デフォルトでは制限しません。
+</p>
+</dd>
+<dt><span class="term"><code class="option">-Z</code> <em class="parameter"><code>maximum-byte</code></em></span></dt>
+<dd>
+<p>
+コピーする際に制限する最大ファイルサイズをバイト数で指定します。
 </p>
 <p>
 デフォルトでは制限しません。
@@ -236,7 +260,7 @@ Connection とは、子プロセスごとにファイルを割り当てるため
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="EXAMPLES">
+<div class="refsect1">
 <a name="examples"></a><h2>EXAMPLES</h2>
 <p>
 ディレクトリ以下すべてのファイルを複製作成します。
@@ -261,7 +285,7 @@ gfsd1.example.com にある複製を別のノードに移動します。
 $ gfprep -m -S gfsd1.example.com gfarm:///<br>
 </p></div>
 </div>
-<div class="refsect1" title="NOTES">
+<div class="refsect1">
 <a name="notes"></a><h2>NOTES</h2>
 <p>
 -L または -m オプションを使用しない場合は、指定した転送元範囲の中から
@@ -277,7 +301,7 @@ $ gfprep -m -S gfsd1.example.com gfarm:///<br>
 性能が改善するかもしれません。
 </p>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfrep</span>(1)</span>,
