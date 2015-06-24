@@ -50,17 +50,6 @@ gfurl_local_exist(const char *path)
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
-static long
-gfurl_local_utime_option(gfarm_int32_t nsec)
-{
-	if (nsec == GFARM_UTIME_NOW)
-		return (UTIME_NOW);
-	else if (nsec == GFARM_UTIME_OMIT)
-		return (UTIME_OMIT);
-	else
-		return (nsec);
-}
-
 static gfarm_error_t
 gfurl_local_lutimens(
 	const char *path, struct gfarm_timespec *atimep,
@@ -72,8 +61,8 @@ gfurl_local_lutimens(
 
 	ts[0].tv_sec = atimep->tv_sec;
 	ts[1].tv_sec = mtimep->tv_sec;
-	ts[0].tv_nsec = gfurl_local_utime_option(atimep->tv_nsec);
-	ts[1].tv_nsec = gfurl_local_utime_option(mtimep->tv_nsec);
+	ts[0].tv_nsec = atimep->tv_nsec;
+	ts[1].tv_nsec = mtimep->tv_nsec;
 	retv = gfarm_local_lutimens(path, ts);
 	if (retv == -1) {
 		save_errno = errno;

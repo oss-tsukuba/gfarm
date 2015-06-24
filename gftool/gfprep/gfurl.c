@@ -215,7 +215,7 @@ static GFURL
 gfurl_alloc(const char *path)
 {
 	gfarm_error_t e;
-	char *p, *url;
+	char *p = NULL, *url;
 	size_t len;
 	int overflow = 0;
 	GFURL u;
