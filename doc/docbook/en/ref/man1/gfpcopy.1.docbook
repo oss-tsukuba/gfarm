@@ -6,7 +6,7 @@
 
 <refentry id="gfpcopy.1">
 
-<refentryinfo><date>29 Jun 2014</date></refentryinfo>
+<refentryinfo><date>24 Jun 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfpcopy</refentrytitle>
@@ -31,6 +31,8 @@
   <arg choice="opt" rep="norepeat">-j <replaceable>num-of-processes</replaceable></arg>
   <arg choice="opt" rep="norepeat">-J <replaceable>num-of-processes</replaceable></arg>
   <arg choice="opt" rep="norepeat">-M <replaceable>limit-byte</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-z <replaceable>minimum-byte</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-Z <replaceable>maximum-byte</replaceable></arg>
   <arg choice="opt" rep="norepeat">-w <replaceable>way-of-scheduling</replaceable></arg>
   <arg choice="opt" rep="norepeat">-W <replaceable>kilobytes-for-threshold</replaceable></arg>
   <arg choice="opt" rep="norepeat">-s <replaceable>KB/s-to-simulate</replaceable></arg>
@@ -46,16 +48,26 @@
 <refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command moreinfo="none">gfpcopy</command> copies files and directries
-in parallel.
+<command moreinfo="none">gfpcopy</command> copies files in parallel.
+</para>
+<para>
+When the <parameter moreinfo="none">source-path</parameter> parameter is
+a directory, files under the directory will be copied recursively.
+</para>
+<para>
+When the <parameter moreinfo="none">destination-path</parameter> does
+not exist, the directory is created.
+When the <parameter moreinfo="none">destination-path</parameter>
+exists, a directry of the same name as
+the <parameter moreinfo="none">source-path</parameter> is created
+under the <parameter moreinfo="none">destination-path</parameter>.
 </para>
 <para>
 A set of source/destination hosts can be specified by a domain name
-and/or a hostlist file. When both a domain name and a hostlist file
+and/or a hostlist file.  When both a domain name and a hostlist file
 are specified, a set of hosts is determined by both conditions. When a
 set of source hosts is specified, only files stored on the source
-hosts are replicated.
-
+hosts are cppied.
 
 When a set of source hosts are specified, only files stored on the set
 of source hosts are copied.  A set of hosts can be specified by a
@@ -63,13 +75,104 @@ domain name and/or a host file.  When both a domain name and a host
 file are specified, a set of hosts is determined by both conditions.
 </para>
 <para>
-If the <parameter moreinfo="none">source-url</parameter> parameter is a directory,
-files under the directory will be copied recursively.
+<command moreinfo="none">gfpcopy</command> can also read the directory
+and get information of the entries in parallel.
 </para>
+</refsect1>
+
+<refsect1 id="source-path"><title>SOURCE PATH</title>
 <para>
-<command moreinfo="none">gfpcopy</command> can also read the directory and get
-information of the entries in parallel.
+<parameter moreinfo="none">source-path</parameter> must be following format.
+Files on HPSS cannot be copied.
 </para>
+
+<variablelist>
+
+<varlistentry>
+<term><parameter moreinfo="none">gfarm:...</parameter></term>
+<listitem>
+<para>
+is Gfarm URL.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">file:...</parameter></term>
+<listitem>
+<para>
+is URL of Local Filesystem.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">ANY</parameter></term>
+<listitem>
+<para>
+is relative path or absolute path of Local Filesystem.  When the path
+is a mountpoint on gfarm2fs, files are copied without passing through
+the gfarm2fs.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="source-path"><title>DESTINATION PATH</title>
+<para>
+<parameter moreinfo="none">destination-path</parameter>
+must be following format.
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><parameter moreinfo="none">gfarm:...</parameter></term>
+<listitem>
+<para>
+is Gfarm URL of a directory.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">file:...</parameter></term>
+<listitem>
+<para>
+is URL of a directory on Local Filesystem.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">hpss:...</parameter></term>
+<listitem>
+<para>
+is URL of a directory on HPSS.
+
+If A directory named the same as
+the <parameter moreinfo="none">source-path</parameter> exists under
+this directory, the <parameter moreinfo="none">source-path</parameter>
+cannot be copied.
+The difference of files cannot be copied to HPSS.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">ANY</parameter></term>
+<listitem>
+<para>
+is relative path or absolute path of Local Filesystem.  When the path
+is a mountpoint on gfarm2fs, files are copied without passing through
+the gfarm2fs.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
 </refsect1>
 
 <refsect1 id="options"><title>GFPCOPY OPTIONS</title>
@@ -83,7 +186,6 @@ These are the options only for <command moreinfo="none">gfpcopy</command>.
 <listitem>
 <para>
 Specifies the buffer size to copy.
-This option is obsolete in Gfarm version 2.6 or later.
 </para>
 <para>
 The default value is 64KiB (64 * 1024).
@@ -129,6 +231,9 @@ $ gfpcopy file:///tmp/dir gfarm:///dir
 </literallayout>
 <literallayout format="linespecific" class="normal">
 $ gfpcopy gfarm:///dir1 gfarm:///dir2
+</literallayout>
+<literallayout format="linespecific" class="normal">
+$ gfpcopy gfarm:///dir hpss:///tmp/dir
 </literallayout>
 <literallayout format="linespecific" class="normal">
 $ cd /mnt/gfarm2fs

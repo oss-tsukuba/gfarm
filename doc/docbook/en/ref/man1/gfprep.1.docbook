@@ -6,7 +6,7 @@
 
 <refentry id="gfprep.1">
 
-<refentryinfo><date>9 Dec 2013</date></refentryinfo>
+<refentryinfo><date>24 Jun 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfprep</refentrytitle>
@@ -30,7 +30,9 @@
   <arg choice="opt" rep="norepeat">-H <replaceable>destination-hostfile</replaceable></arg>
   <arg choice="opt" rep="norepeat">-j <replaceable>num-of-processes</replaceable></arg>
   <arg choice="opt" rep="norepeat">-J <replaceable>num-of-processes</replaceable></arg>
-  <arg choice="opt" rep="norepeat">-M <replaceable>limit-byte</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-M <replaceable>total-byte</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-z <replaceable>minimum-byte</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-Z <replaceable>maximum-byte</replaceable></arg>
   <arg choice="opt" rep="norepeat">-w <replaceable>way-of-scheduling</replaceable></arg>
   <arg choice="opt" rep="norepeat">-W <replaceable>kilobytes-for-threshold</replaceable></arg>
   <arg choice="opt" rep="norepeat">-s <replaceable>KB/s-to-simulate</replaceable></arg>
@@ -46,7 +48,15 @@
 
 <para>
 <command moreinfo="none">gfprep</command> creates replicas of Gfarm
-files win parallel.
+files in parallel.
+</para>
+<para>
+If the <parameter moreinfo="none">path</parameter> parameter is a
+directory, files under the directory will be replicated recursively.
+</para>
+<para>
+<parameter moreinfo="none">path</parameter> is a Gfarm URL or a path
+on a mountpoint of gfarm2fs.
 </para>
 <para>
 A set of source/destination hosts can be specified by a domain name
@@ -61,10 +71,6 @@ The maximum number of parallel to send or receive per host is the
 number of CPUs.  Please see the manual page
 of <command moreinfo="none">gfhost</command> for information about the
 number of CPUs.
-</para>
-<para>
-If the <parameter moreinfo="none">path</parameter> parameter is a
-directory, files under the directory will be replicated recursively.
 </para>
 <para>
 <command moreinfo="none">gfprep</command> can also read the directory and get
@@ -222,10 +228,34 @@ The default value is 8.
 </varlistentry>
 
 <varlistentry>
-<term><option>-M</option> <parameter moreinfo="none">limit-byte</parameter></term>
+<term><option>-M</option> <parameter moreinfo="none">total-byte</parameter></term>
 <listitem>
 <para>
-Specifies the bytes to limit the total copied size.
+Specifies the bytes to limit total copied size.
+</para>
+<para>
+The default value is unlimited.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-z</option> <parameter moreinfo="none">minimum-byte</parameter></term>
+<listitem>
+<para>
+Specifies the bytes to limit minimum size of a file.
+</para>
+<para>
+The default value is unlimited.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-Z</option> <parameter moreinfo="none">maximum-byte</parameter></term>
+<listitem>
+<para>
+Specifies the bytes to limit maximum size of a file.
 </para>
 <para>
 The default value is unlimited.

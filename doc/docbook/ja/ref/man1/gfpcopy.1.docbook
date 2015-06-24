@@ -6,7 +6,7 @@
 
 <refentry id="gfpcopy.1">
 
-<refentryinfo><date>29 Jun 2014</date></refentryinfo>
+<refentryinfo><date>24 Jun 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfpcopy</refentrytitle>
@@ -23,18 +23,20 @@
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfpcopy</command>
   <arg choice="opt" rep="norepeat">-nqvdpPU</arg>
-  <arg choice="opt" rep="norepeat">-f</arg>
   <arg choice="opt" rep="norepeat">-S <replaceable>source-domainname</replaceable></arg>
   <arg choice="opt" rep="norepeat">-h <replaceable>source-hostfile</replaceable></arg>
   <arg choice="opt" rep="norepeat">-D <replaceable>destination-domainname</replaceable></arg>
   <arg choice="opt" rep="norepeat">-H <replaceable>destination-hostfile</replaceable></arg>
   <arg choice="opt" rep="norepeat">-j <replaceable>num-of-processes</replaceable></arg>
   <arg choice="opt" rep="norepeat">-J <replaceable>num-of-processes</replaceable></arg>
-  <arg choice="opt" rep="norepeat">-M <replaceable>limit-byte</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-M <replaceable>total-byte</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-z <replaceable>minimum-byte</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-Z <replaceable>maximum-byte</replaceable></arg>
   <arg choice="opt" rep="norepeat">-w <replaceable>way-of-scheduling</replaceable></arg>
   <arg choice="opt" rep="norepeat">-W <replaceable>kilobytes-for-threshold</replaceable></arg>
   <arg choice="opt" rep="norepeat">-s <replaceable>KB/s-to-simulate</replaceable></arg>
   <arg choice="opt" rep="norepeat">-F <replaceable>num-for-readahead</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-f</arg>
   <arg choice="opt" rep="norepeat">-b <replaceable>bufsize</replaceable></arg>
   <arg choice="plain" rep="norepeat"><replaceable>source-path</replaceable></arg>
   <arg choice="plain" rep="norepeat"><replaceable>destination-path</replaceable></arg>
@@ -46,24 +48,124 @@
 <refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command moreinfo="none">gfpcopy</command> は、ファイルやディレクトリを
-並列にコピーします。
+<command moreinfo="none">gfpcopy</command> は、
+複数のファイルを並列にコピーします。
 </para>
 <para>
-転送先や転送元のホスト群を指定するには、
-ドメイン名で指定するか、ホスト名を行ごとに記述したホストリストファイルを指定します。
+<parameter moreinfo="none">source-path</parameter> がディレクトリの場合は、
+その下にあるすべてのファイルとディレクトリをコピーします。
+</para>
+<para>
+<parameter moreinfo="none">destination-path</parameter> が存在しない場合は、
+ディレクトリを作成します。
+<parameter moreinfo="none">destination-path</parameter> が存在する場合は、
+そのディレクトリの下に <parameter moreinfo="none">source-path</parameter>
+のディレクトリと同名のディレクトリを作成します。
+</para>
+<para>
+転送先や転送元のホスト群を指定するには、ドメイン名で指定するか、
+ホスト名を行ごとに記述したホストリストファイルを指定します。
 ドメイン名とホストリストファイルを両方指定した場合は、
 両方の条件に合うホスト群を決定します。
-転送元ホスト群を指定した場合、そのホストに存在するファイルのみ複製が作成されます。
-</para>
-<para>
-<parameter moreinfo="none">source-path</parameter> がディレクトリの場合、
-それ以下にあるすべてのファイルをコピーします。
+転送元ホスト群を指定した場合、
+そのホストに存在するファイルのみコピーされます。
 </para>
 <para>
 <command moreinfo="none">gfpcopy</command> は、ディレクトリを辿る際に、
 ディレクトリエントリ情報も並列に取得します。
 </para>
+</refsect1>
+
+<refsect1 id="source-path"><title>SOURCE PATH</title>
+<para>
+<parameter moreinfo="none">source-path</parameter> には以下を指定できます。
+HPSS 上のファイルをコピーできません。
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><parameter moreinfo="none">gfarm:...</parameter></term>
+<listitem>
+<para>
+Gfarm URL で指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">file:...</parameter></term>
+<listitem>
+<para>
+ローカルファイルシステム上のパスを URL で指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">任意</parameter></term>
+<listitem>
+<para>
+ローカルファイルシステム上のパスを絶対パスまたは相対パスで指定します。
+そのパスが gfarm2fs のマウントポイントの場合は、
+gfarm2fs を経由せずに Gfarm からコピーします。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="source-path"><title>DESTINATION PATH</title>
+<para>
+<parameter moreinfo="none">destination-path</parameter>
+には以下を指定できます。
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><parameter moreinfo="none">gfarm:...</parameter></term>
+<listitem>
+<para>
+ディレクトリを Gfarm URL で指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">file:...</parameter></term>
+<listitem>
+<para>
+ローカルファイルシステム上のディレクトリを URL で指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">hpss:...</parameter></term>
+<listitem>
+<para>
+HPSS 上の存在するディレクトリを URL で指定します。
+その下に <parameter moreinfo="none">source-path</parameter>
+と同名のディレクトリが存在する場合はエラーになります。
+HPSS に対して差分コピーはできません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">任意</parameter></term>
+<listitem>
+<para>
+ローカルファイルシステム上のディレクトリを絶対パスまたは相対パスで指定します。
+そのパスが gfarm2fs のマウントポイントの場合は、
+gfarm2fs を経由せずに Gfarm へコピーします。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
 </refsect1>
 
 <refsect1 id="options"><title>GFPCOPY OPTIONS</title>
@@ -122,6 +224,9 @@ $ gfpcopy file:///tmp/dir gfarm:///dir
 </literallayout>
 <literallayout format="linespecific" class="normal">
 $ gfpcopy gfarm:///dir1 gfarm:///dir2
+</literallayout>
+<literallayout format="linespecific" class="normal">
+$ gfpcopy gfarm:///dir hpss:///tmp/dir
 </literallayout>
 <literallayout format="linespecific" class="normal">
 $ cd /mnt/gfarm2fs
