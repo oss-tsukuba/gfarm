@@ -3,7 +3,6 @@
  */
 
 #include <stdio.h>
-#include <stdarg.h> /* gfprep.h: va_list*/
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -24,7 +23,9 @@
 #include <openssl/evp.h> /* for gfs_pio.h */
 #include "gfs_pio.h"
 
-#include "gfprep.h"
+#include "gfurl.h"
+#include "gfarm_cmd.h"
+
 #include "gfarm_parallel.h"
 #include "gfarm_fifo.h"
 #include "gfarm_pfunc.h"
@@ -97,11 +98,11 @@ pfunc_simulate(const char *url, gfarm_uint64_t KBs)
 {
 	gfarm_uint64_t size = 0;
 
-	if (gfprep_url_is_local(url)) {
+	if (gfurl_path_is_local(url)) {
 		int retv;
 		char *path = (char *) url;
 		struct stat st;
-		path += GFPREP_FILE_URL_PREFIX_LENGTH;
+		path += GFURL_LOCAL_PREFIX_LENGTH;
 		retv = lstat(path, &st);
 		if (retv == 0)
 			size = st.st_size;
@@ -207,6 +208,7 @@ free_mem:
 }
 
 struct pfunc_file {
+	const char *url;
 	int fd;
 	GFS_File gfarm;
 };
@@ -214,16 +216,16 @@ struct pfunc_file {
 static gfarm_error_t
 pfunc_open(const char *url, int flags, int mode, struct pfunc_file *fp)
 {
-	if (gfprep_url_is_local(url)) {
+	if (gfurl_path_is_local(url)) {
 		int fd;
 		char *path = (char *) url;
-		path += GFPREP_FILE_URL_PREFIX_LENGTH;
+		path += GFURL_LOCAL_PREFIX_LENGTH;
 		fd = open(path, flags, mode);
 		if (fd == -1)
 			return (gfarm_errno_to_error(errno));
 		fp->fd = fd;
 		fp->gfarm = NULL;
-	} else if (gfprep_url_is_gfarm(url)) {
+	} else if (gfurl_path_is_gfarm(url)) {
 		gfarm_error_t e;
 		GFS_File gf;
 		int gflags = 0;
@@ -245,6 +247,8 @@ pfunc_open(const char *url, int flags, int mode, struct pfunc_file *fp)
 		fp->gfarm = gf;
 	} else
 		return (GFARM_ERR_INVALID_ARGUMENT);
+
+	fp->url = url;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -265,12 +269,12 @@ pfunc_lstat(const char *url, struct pfunc_stat *stp)
 	stp->mtime_sec = stp->atime_sec = 0;
 	stp->mtime_nsec = stp->atime_nsec = 0;
 #endif
-	if (gfprep_url_is_local(url)) {
+	if (gfurl_path_is_local(url)) {
 		int retv;
 		struct stat st;
 		char *path = (char *)url;
 
-		path += GFPREP_FILE_URL_PREFIX_LENGTH;
+		path += GFURL_LOCAL_PREFIX_LENGTH;
 		retv = lstat(path, &st);
 		if (retv == -1)
 			return (gfarm_errno_to_error(errno));
@@ -280,7 +284,7 @@ pfunc_lstat(const char *url, struct pfunc_stat *stp)
 		stp->atime_nsec = gfarm_stat_atime_nsec(&st);
 		stp->mtime_sec = st.st_mtime;
 		stp->mtime_nsec = gfarm_stat_mtime_nsec(&st);
-	} else if (gfprep_url_is_gfarm(url)) {
+	} else if (gfurl_path_is_gfarm(url)) {
 		struct gfs_stat gst;
 		gfarm_error_t e = gfs_lstat(url, &gst);
 
@@ -337,7 +341,9 @@ pfunc_write(struct pfunc_file *fp, void *buf, int bufsize, int *wsize)
 		bufsize -= len;
 		*wsize += len;
 	}
-	if (len == -1)
+	if (len == 0)
+		return (GFARM_ERR_NO_SPACE);
+	else if (len == -1)
 		return (gfarm_errno_to_error(errno));
 	*wsize += len;
 	return (GFARM_ERR_NO_ERROR);
@@ -359,9 +365,9 @@ pfunc_close(struct pfunc_file *fp)
 static gfarm_error_t
 pfunc_lutimens(const char *url, struct pfunc_stat *stp)
 {
-	if (gfprep_url_is_local(url)) {
+	if (gfurl_path_is_local(url)) {
 		int retv;
-		const char *path = url + GFPREP_FILE_URL_PREFIX_LENGTH;
+		const char *path = url + GFURL_LOCAL_PREFIX_LENGTH;
 		struct timespec ts[2];
 
 		ts[0].tv_sec = stp->atime_sec;
@@ -371,7 +377,7 @@ pfunc_lutimens(const char *url, struct pfunc_stat *stp)
 		retv = gfarm_local_lutimens(path, ts);
 		if (retv == -1)
 			return (gfarm_errno_to_error(errno));
-	} else if (gfprep_url_is_gfarm(url)) {
+	} else if (gfurl_path_is_gfarm(url)) {
 		gfarm_error_t e;
 		struct gfarm_timespec gt[2];
 
@@ -390,17 +396,17 @@ pfunc_lutimens(const char *url, struct pfunc_stat *stp)
 static gfarm_error_t
 pfunc_rename(const char *old_url, const char *new_url)
 {
-	if (gfprep_url_is_local(old_url) && gfprep_url_is_local(new_url)) {
+	if (gfurl_path_is_local(old_url) && gfurl_path_is_local(new_url)) {
 		int retv;
 		const char *old_path = old_url;
 		const char *new_path = new_url;
-		old_path += GFPREP_FILE_URL_PREFIX_LENGTH;
-		new_path += GFPREP_FILE_URL_PREFIX_LENGTH;
+		old_path += GFURL_LOCAL_PREFIX_LENGTH;
+		new_path += GFURL_LOCAL_PREFIX_LENGTH;
 		retv = rename(old_path, new_path);
 		if (retv == -1)
 			return (gfarm_errno_to_error(errno));
-	} else if (gfprep_url_is_gfarm(old_url) &&
-		   gfprep_url_is_gfarm(new_url)) {
+	} else if (gfurl_path_is_gfarm(old_url) &&
+	    gfurl_path_is_gfarm(new_url)) {
 		gfarm_error_t e;
 		e = gfs_rename(old_url, new_url);
 		if (e != GFARM_ERR_NO_ERROR)
@@ -413,14 +419,14 @@ pfunc_rename(const char *old_url, const char *new_url)
 static gfarm_error_t
 pfunc_unlink(const char *url)
 {
-	if (gfprep_url_is_local(url)) {
+	if (gfurl_path_is_local(url)) {
 		int retv;
 		const char *path = url;
-		path += GFPREP_FILE_URL_PREFIX_LENGTH;
+		path += GFURL_LOCAL_PREFIX_LENGTH;
 		retv = unlink(path);
 		if (retv == -1)
 			return (gfarm_errno_to_error(errno));
-	} else if (gfprep_url_is_gfarm(url)) {
+	} else if (gfurl_path_is_gfarm(url)) {
 		gfarm_error_t e;
 		e = gfs_unlink(url);
 		if (e != GFARM_ERR_NO_ERROR)
@@ -428,6 +434,168 @@ pfunc_unlink(const char *url)
 	} else
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	return (GFARM_ERR_NO_ERROR);
+}
+
+struct send_to_cmd_arg {
+	gfarm_pfunc_t *handle;
+	struct pfunc_file *fp;
+};
+
+static int
+gfarm_to_hpss(int cmd_in, void *arg)
+{
+	gfarm_error_t e;
+	struct send_to_cmd_arg *a = arg;
+
+	assert(a->fp->gfarm);
+#if 0  /* XXX gfs_pio_recvfile() is not merged */
+	e = gfs_pio_recvfile(a->fp->gfarm, 0, cmd_in, 0, -1, NULL);
+	close(cmd_in);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "ERROR: gfs_pio_recvfile(%s to HPSS): %s\n",
+		    a->fp->url, gfarm_error_string(e));
+		return (-1);
+	}
+#else
+	for (;;) {
+		int rlen, wlen, copy_bufsize = a->handle->copy_bufsize;
+		char *b = a->handle->copy_buf;
+
+		e = gfs_pio_read(a->fp->gfarm, b, copy_bufsize, &rlen);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "ERROR: read(%s) to copy to HPSS: %s\n",
+				a->fp->url, gfarm_error_string(e));
+			close(cmd_in);
+			return (-1);
+		}
+		if (rlen == 0) {
+			close(cmd_in);
+			return (0); /* EOF */
+		}
+		while ((wlen = write(cmd_in, b, rlen)) > 0) {
+			if (wlen == rlen)
+				break;
+			b += wlen;
+			rlen -= wlen;
+		}
+		if (wlen == 0) {
+			errno = ENOSPC;
+			fprintf(stderr, "ERROR: write() to HPSS from %s: %s\n",
+				a->fp->url, strerror(errno));
+			close(cmd_in);
+			return (-1);
+		} else if (wlen == -1) {
+			fprintf(stderr, "ERROR: write() to HPSS from %s: %s\n",
+				a->fp->url, strerror(errno));
+			close(cmd_in);
+			return (-1);
+		}
+	}
+#endif
+	return (0);
+}
+
+static int
+local_to_hpss(int cmd_in, void *arg)
+{
+	struct send_to_cmd_arg *a = arg;
+	int rlen, wlen, copy_bufsize = a->handle->copy_bufsize;
+	char *b;
+
+	for (;;) {
+		b = a->handle->copy_buf;
+		rlen = read(a->fp->fd, b, copy_bufsize);
+		if (rlen == -1) {
+			fprintf(stderr, "ERROR: read(%s) to copy to HPSS: %s\n",
+				a->fp->url, strerror(errno));
+			close(cmd_in);
+			return (-1);
+		} else if (rlen == 0) {
+			close(cmd_in);
+			return (0); /* EOF */
+		}
+		while ((wlen = write(cmd_in, b, rlen)) > 0) {
+			if (wlen == rlen)
+				break;
+			b += wlen;
+			rlen -= wlen;
+		}
+		if (wlen == 0) {
+			errno = ENOSPC;
+			fprintf(stderr, "ERROR: write() to HPSS from %s: %s\n",
+				a->fp->url, strerror(errno));
+			close(cmd_in);
+			return (-1);
+		} else if (wlen == -1) {
+			fprintf(stderr, "ERROR: write() to HPSS from %s: %s\n",
+				a->fp->url, strerror(errno));
+			close(cmd_in);
+			return (-1);
+		}
+	}
+}
+
+static void
+pfunc_copy_to_hpss(gfarm_pfunc_t *handle, FILE *to_parent,
+	const char *src_url, char *src_host, const char *dst_url)
+{
+	gfarm_error_t e;
+	int result = PFUNC_RESULT_OK, retv;
+	struct pfunc_file src_fp;
+	struct pfunc_stat src_st;
+	char *hpss_path = (char *)(dst_url + GFURL_HPSS_PREFIX_LENGTH);
+	char *cmd_args[] = {"hsi", "-q", "put", "-", ":", hpss_path, NULL};
+	int (*send_to_cmd)(int cmd_in, void *arg);
+	struct send_to_cmd_arg arg;
+
+	e = pfunc_lstat(src_url, &src_st);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "ERROR: copy failed: lstat(%s): %s\n",
+		    src_url, gfarm_error_string(e));
+		result = PFUNC_RESULT_NG;
+		goto end;
+	}
+
+	e = pfunc_open(src_url, O_RDONLY, 0, &src_fp);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "ERROR: copy failed: open(%s): %s\n",
+		    src_url, gfarm_error_string(e));
+		result = PFUNC_RESULT_NG;
+		goto end;
+	}
+
+	arg.handle = handle;
+	arg.fp = &src_fp;
+	if (src_fp.gfarm) {
+		if (src_st.size > 0 && strcmp(src_host, "") != 0) {
+			/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
+			e = gfs_pio_internal_set_view_section(
+			    src_fp.gfarm, src_host);
+			if (e != GFARM_ERR_NO_ERROR) {
+				(void)pfunc_close(&src_fp);
+				fprintf(stderr,
+				  "ERROR: copy failed: set_view(%s, %s): %s\n",
+				src_url, src_host, gfarm_error_string(e));
+				result = PFUNC_RESULT_NG;
+				goto end;
+			}
+		}
+		send_to_cmd = gfarm_to_hpss;
+	} else
+		send_to_cmd = local_to_hpss;
+
+	retv = gfarm_cmd_exec(cmd_args, send_to_cmd, &arg, 0, 1);
+	if (retv != 0)
+		result = PFUNC_RESULT_NG;
+
+	e = pfunc_close(&src_fp);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "ERROR: copy failed: close(%s): %s\n",
+			src_url, gfarm_error_string(e));
+		result = PFUNC_RESULT_NG;
+	}
+end:
+	gfpara_send_int(to_parent, result);
 }
 
 static const char tmp_url_suffix[] = "__tmp_gfpcopy__";
@@ -455,7 +623,24 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 	gfpara_recv_int(from_parent, &dst_port);
 	gfpara_recv_int(from_parent, &check_disk_avail);
 
-	retv = gfprep_asprintf(&tmp_url, "%s%s", dst_url, tmp_url_suffix);
+	if (handle->simulate_KBs > 0) {
+		pfunc_simulate(src_url, handle->simulate_KBs);
+		/* OK */
+		tmp_url = NULL;
+		goto end;
+	}
+
+	if (gfurl_path_is_hpss(dst_url)) {
+		pfunc_copy_to_hpss(handle, to_parent, src_url, src_host,
+		    dst_url);
+		free(src_url);
+		free(dst_url);
+		free(src_host);
+		free(dst_host);
+		return;
+	}
+
+	retv = gfurl_asprintf(&tmp_url, "%s%s", dst_url, tmp_url_suffix);
 	if (retv == -1) {
 		fprintf(stderr, "ERROR: copy failed (no memory): %s\n",
 			src_url);
@@ -463,11 +648,7 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 		result = PFUNC_RESULT_NG;
 		goto end;
 	}
-	if (handle->simulate_KBs > 0) {
-		pfunc_simulate(src_url, handle->simulate_KBs);
-		/* OK */
-		goto end;
-	}
+
 	if (check_disk_avail && dst_port > 0) { /* dst is gfarm */
 		e = pfunc_check_disk_avail(
 		    dst_url, dst_host, dst_port, src_size);

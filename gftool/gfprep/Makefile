@@ -11,9 +11,11 @@ SUBDIRS = gfpcopy-test gfpcopy-stress
 GFREP_SRCDIR = $(srcdir)/../gfrep
 
 SRCS = gfprep.c gfarm_list.c gfarm_parallel.c gfarm_dirtree.c gfarm_fifo.c \
-	gfarm_pfunc.c
+	gfarm_pfunc.c gfmsg.c gfurl.c gfurl_local.c gfurl_gfarm.c gfurl_hpss.c \
+	gfarm_cmd.c
 OBJS = gfprep.o gfarm_list.o gfarm_parallel.o gfarm_dirtree.o gfarm_fifo.o \
-	gfarm_pfunc.o
+	gfarm_pfunc.o gfmsg.o gfurl.o gfurl_local.o gfurl_gfarm.o gfurl_hpss.o \
+	gfarm_cmd.o
 EXTRA_CLEAN_TARGETS = gfarm_list.c
 PROGRAM = gfprep
 GFPCOPY = gfpcopy
@@ -53,6 +55,9 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/humanize_number.h \
 	$(GFREP_SRCDIR)/gfarm_list.h \
 	gfprep.h \
+	gfmsg.h \
+	gfurl.h \
+	gfarm_cmd.h \
 	gfarm_parallel.h \
 	gfarm_dirtree.h \
 	gfarm_fifo.h \
