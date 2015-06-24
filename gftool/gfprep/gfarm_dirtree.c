@@ -413,7 +413,6 @@ next_command: /* instead of "for (;;)" */
 	switch (command) {
 	case DIRTREE_CMD_GET_DENTS:
 		subpath = NULL;
-		src_dir = NULL;
 		gfpara_recv_string(from_parent, &subpath);
 		src_dir = gfurl_path_combine(gfurl_epath(handle->src_dir),
 		    subpath);
@@ -540,9 +539,8 @@ dents_error:
 		goto dents_loop; /* loop */
 		/* ---------------------------------- */
 	case DIRTREE_CMD_GET_FINFO:
-		subpath = NULL;
-		src_path = NULL;
 		dst_path = NULL;
+		subpath = NULL;
 		gfpara_recv_string(from_parent, &subpath);
 		gfpara_recv_int(from_parent, &is_file);
 		if (subpath[0] == '\0') {
@@ -584,8 +582,8 @@ finfo_retry1:
 		}
 		if (is_retry)
 			fprintf(stderr,
-				"INFO: retry gfs_replica_list_by_name(%s)"
-				" OK\n", src_dir);
+			    "INFO: retry gfs_replica_list_by_name(%s) OK\n",
+			    src_path);
 		/* 1: src_ncopy */
 		gfpara_send_int(to_parent, ncopy);
 		for (i = 0; i < ncopy; i++) /* 2: src_copy */
@@ -625,7 +623,7 @@ finfo_retry2:
 			goto next_command;
 		}
 		if (is_retry)
-			fprintf(stderr, "INFO: retry lstat(%s) OK\n", src_dir);
+			fprintf(stderr, "INFO: retry lstat(%s) OK\n", dst_path);
 
 		/* 3: dst_exist */
 		gfpara_send_int(to_parent, 1);
@@ -648,7 +646,7 @@ finfo_retry3:
 						fprintf(stderr,
 						"INFO: retry "
 						"gfs_replica_list_by_name(%s) "
-						"OK\n", src_dir);
+						"OK\n", dst_path);
 					/* 8: dst_ncopy */
 					gfpara_send_int(to_parent, ncopy);
 					for (i = 0; i < ncopy; i++)
