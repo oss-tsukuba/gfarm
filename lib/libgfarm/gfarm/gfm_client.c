@@ -3580,6 +3580,38 @@ gfm_client_replica_check_ctrl_stop(struct gfm_connection *gfm_server)
 	    GFM_PROTO_REPLICA_CHECK_CTRL_STOP));
 }
 
+gfarm_error_t
+gfm_client_replica_check_ctrl_remove_enable(
+	struct gfm_connection *gfm_server)
+{
+	return (gfm_client_replica_check_ctrl(gfm_server,
+	    GFM_PROTO_REPLICA_CHECK_CTRL_REMOVE_ENABLE));
+}
+
+gfarm_error_t
+gfm_client_replica_check_ctrl_remove_disable(
+	struct gfm_connection *gfm_server)
+{
+	return (gfm_client_replica_check_ctrl(gfm_server,
+	    GFM_PROTO_REPLICA_CHECK_CTRL_REMOVE_DISABLE));
+}
+
+gfarm_error_t
+gfm_client_replica_check_ctrl_reduced_log_enable(
+	struct gfm_connection *gfm_server)
+{
+	return (gfm_client_replica_check_ctrl(gfm_server,
+	    GFM_PROTO_REPLICA_CHECK_CTRL_REDUCED_LOG_ENABLE));
+}
+
+gfarm_error_t
+gfm_client_replica_check_ctrl_reduced_log_disable(
+	struct gfm_connection *gfm_server)
+{
+	return (gfm_client_replica_check_ctrl(gfm_server,
+	    GFM_PROTO_REPLICA_CHECK_CTRL_REDUCED_LOG_DISABLE));
+}
+
 /*
  * replica management from gfsd
  */

@@ -114,18 +114,61 @@ create_detached_thread(void *(*thread_main)(void *), void *arg)
 	return (err == 0 ? GFARM_ERR_NO_ERROR : gfarm_errno_to_error(err));
 }
 
+static const char *
+gfarm_sched_policy_name(int policy)
+{
+	return ((policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+		(policy == SCHED_RR)    ? "SCHED_RR" :
+		(policy == SCHED_OTHER) ? "SCHED_OTHER" :
+#ifdef SCHED_BATCH
+		(policy == SCHED_BATCH) ? "SCHED_BATCH" :
+#endif
+#ifdef SCHED_IDLE
+		(policy == SCHED_IDLE) ? "SCHED_IDLE" :
+#endif
+		"SCHED_<unknown>");
+}
+
+static gfarm_error_t
+gfarm_pthread_set_priority_idle(const char *thread_name, pthread_t thread)
+{
+#ifdef SCHED_IDLE /* Since Linux 2.6.23 */
+	int save_errno, policy = SCHED_IDLE;
+	struct sched_param param;
+
+	param.sched_priority = 0;
+	save_errno = pthread_setschedparam(thread, policy, &param);
+	if (save_errno == 0) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: scheduling policy=SCHED_IDLE", thread_name);
+		return (GFARM_ERR_NO_ERROR); /* use SCHED_IDLE */
+	}
+	gflog_warning(GFARM_MSG_UNFIXED,
+	    "%s: pthread_set_schedparam(%d, %d): %s",
+	    thread_name, policy, param.sched_priority, strerror(save_errno));
+	return (gfarm_errno_to_error(save_errno));
+#else
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+#endif
+}
+
 gfarm_error_t
-gfarm_pthread_set_priority_minimum(void)
+gfarm_pthread_set_priority_minimum(const char *thread_name)
 {
 	pthread_t self = pthread_self();
 	int policy, min_prio;
 	struct sched_param param;
 	int save_errno;
 
+	if (gfarm_pthread_set_priority_idle(thread_name, self)
+	    == GFARM_ERR_NO_ERROR)
+		return (GFARM_ERR_NO_ERROR); /* use SCHED_IDLE */
+
 	save_errno = pthread_getschedparam(self, &policy, &param);
 	if (save_errno != 0) {
 		gflog_warning(GFARM_MSG_UNFIXED,
-		    "pthread_get_schedparam(): %s", strerror(errno));
+		    "%s: pthread_get_schedparam(): %s",
+		    thread_name, strerror(errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
 
@@ -133,18 +176,31 @@ gfarm_pthread_set_priority_minimum(void)
 	if (min_prio == -1) {
 		save_errno = errno;
 		gflog_warning(GFARM_MSG_UNFIXED,
-		    "sched_get_priority_min(%d): %s", policy, strerror(errno));
+		    "%s: sched_get_priority_min(%s): %s",
+		    thread_name, gfarm_sched_policy_name(policy),
+		    strerror(errno));
 		return (gfarm_errno_to_error(save_errno));
+	}
+
+	if (param.sched_priority == min_prio) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: cannot change the scheduling priority of %s",
+		    thread_name, gfarm_sched_policy_name(policy));
+		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 	}
 
 	param.sched_priority = min_prio;
 	save_errno = pthread_setschedparam(self, policy, &param);
 	if (save_errno != 0) {
 		gflog_warning(GFARM_MSG_UNFIXED,
-		    "pthread_set_schedparam(%d, %d): %s",
-		    policy, min_prio, strerror(errno));
+		    "%s: pthread_set_schedparam(%d, %d): %s",
+		    thread_name, policy, min_prio, strerror(errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
+
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "%s: scheduling policy=%s, priority=%d",
+	    thread_name, gfarm_sched_policy_name(policy), min_prio);
 
 	return (GFARM_ERR_NO_ERROR);
 }

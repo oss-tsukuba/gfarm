@@ -648,7 +648,7 @@ int
 host_is_disk_available(struct host *h, gfarm_off_t size)
 {
 	gfarm_off_t avail, minfree = gfarm_get_minimum_free_disk_space();
-	static const char diag[] = "host_get_disk_avail";
+	static const char diag[] = "host_is_disk_available";
 
 	back_channel_mutex_lock(h, diag);
 
@@ -808,11 +808,38 @@ host_status_update(struct host *host, struct host_status *status)
 		GFM_PROTO_SCHED_FLAG_HOST_AVAIL |
 		GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL;
 	host->status = *status;
+	host->status.disk_used_in_byte = status->disk_used * 1024;
+	host->status.disk_avail_in_byte = status->disk_avail * 1024;
 
 	back_channel_mutex_unlock(host, diag);
 
 	host_total_disk_update(saved_used, saved_avail,
 	    status->disk_used, status->disk_avail);
+}
+
+void
+host_status_get_disk_usage(struct host *host,
+	gfarm_off_t *used, gfarm_off_t *avail)
+{
+	const char diag[] = "host_status_get_disk_usage";
+
+	back_channel_mutex_lock(host, diag);
+	if (used)
+		*used = host->status.disk_used_in_byte;
+	if (avail)
+		*avail = host->status.disk_avail_in_byte;
+	back_channel_mutex_unlock(host, diag);
+}
+
+void
+host_status_update_disk_usage(struct host *host, gfarm_off_t filesize)
+{
+	const char diag[] = "host_status_update_disk_usage";
+
+	back_channel_mutex_lock(host, diag);
+	host->status.disk_used_in_byte += filesize ;
+	host->status.disk_avail_in_byte -= filesize;
+	back_channel_mutex_unlock(host, diag);
 }
 
 /*
@@ -931,6 +958,8 @@ host_new(struct gfarm_host_info *hi, struct callout *callout)
 	h->status.loadavg_1min =
 	h->status.loadavg_5min =
 	h->status.loadavg_15min = 0.0;
+	h->status.disk_used_in_byte =
+	h->status.disk_avail_in_byte =
 	h->status.disk_used =
 	h->status.disk_avail = 0;
 	h->status_callout = callout;
@@ -970,7 +999,7 @@ host_order(const void *a, const void *b)
 	else if (*h1 > *h2)
 		return (1);
 	else
-		return (0);			
+		return (0);
 }
 
 static void
@@ -980,6 +1009,32 @@ host_sort(int nhosts, struct host **hosts)
 		return;
 
 	qsort(hosts, nhosts, sizeof(*hosts), host_order);
+}
+
+static int
+host_order_by_disk_avail(const void *a, const void *b)
+{
+	const struct host *const *h1 = a, *const *h2 = b;
+	gfarm_off_t h1_avail, h2_avail;
+
+	host_status_get_disk_usage((struct host *)*h1, NULL, &h1_avail);
+	host_status_get_disk_usage((struct host *)*h2, NULL, &h2_avail);
+
+	if (h1_avail < h2_avail)
+		return (-1);
+	else if (h1_avail > h2_avail)
+		return (1);
+	else
+		return (0);
+}
+
+void
+host_sort_to_remove_replicas(int nhosts, struct host **hosts)
+{
+	if (nhosts <= 0) /* 2nd parameter of qsort(3) is unsigned */
+		return;
+
+	qsort(hosts, nhosts, sizeof(*hosts), host_order_by_disk_avail);
 }
 
 /*

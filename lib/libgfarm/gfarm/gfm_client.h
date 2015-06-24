@@ -388,6 +388,14 @@ gfarm_error_t gfm_client_replicate_file_from_result(
 	struct gfm_connection *);
 gfarm_error_t gfm_client_replica_check_ctrl_start(struct gfm_connection *);
 gfarm_error_t gfm_client_replica_check_ctrl_stop(struct gfm_connection *);
+gfarm_error_t gfm_client_replica_check_ctrl_remove_enable(
+	struct gfm_connection *);
+gfarm_error_t gfm_client_replica_check_ctrl_remove_disable(
+	struct gfm_connection *);
+gfarm_error_t gfm_client_replica_check_ctrl_reduced_log_enable(
+	struct gfm_connection *);
+gfarm_error_t gfm_client_replica_check_ctrl_reduced_log_disable(
+	struct gfm_connection *);
 
 /* replica management from gfsd */
 gfarm_error_t gfm_client_replica_adding_request(struct gfm_connection *,

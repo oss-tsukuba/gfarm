@@ -23,7 +23,14 @@ error_check(const char *msg, gfarm_error_t e)
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-P <path>] start|stop\n", program_name);
+	fprintf(stderr, "Usage: \t%s %s\n" "\t%s %s\n" "\t%s %s\n"
+	    "\t%s %s\n" "\t%s %s\n" "\t%s %s\n",
+	    program_name, "[-P <path>] enable(or start)",
+	    program_name, "[-P <path>] disable(or stop)",
+	    program_name, "[-P <path>] remove enable",
+	    program_name, "[-P <path>] remove disable",
+	    program_name, "[-P <path>] reduced_log enable",
+	    program_name, "[-P <path>] reduced_log disable");
 	exit(EXIT_FAILURE);
 }
 
@@ -35,7 +42,10 @@ main(int argc, char *argv[])
 	const char *path = ".";
 	char *realpath = NULL;
 	struct gfm_connection *gfm_server;
-	enum { START, STOP } ctrl = STOP;
+	enum { START, STOP, REMOVE, REDUCED_LOG } ctrl = STOP;
+#define ENABLE  1
+#define DISABLE 0
+	int value = ENABLE;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -55,14 +65,33 @@ main(int argc, char *argv[])
 	e = gfarm_initialize(&argc, &argv);
 	error_check("gfarm_initialize", e);
 
-	if (argc != 1)
+	if (argc < 1)
 		usage();
-	if (strcmp(*argv, "start") == 0)
+	if (strcmp(*argv, "start") == 0 || strcmp(*argv, "enable") == 0)
 		ctrl = START;
-	else if (strcmp(*argv, "stop") == 0)
+	else if (strcmp(*argv, "stop") == 0 || strcmp(*argv, "disable") == 0)
 		ctrl = STOP;
+	else if (strcmp(*argv, "remove") == 0)
+		ctrl = REMOVE;
+	else if (strcmp(*argv, "reduced_log") == 0)
+		ctrl = REDUCED_LOG;
 	else
 		usage();
+
+	if (ctrl == START || ctrl == STOP) {
+		if (argc != 1)
+			usage();
+	} else {
+		if (argc != 2)
+			usage();
+		argv++;
+		if (strcmp(*argv, "enable") == 0)
+			value = ENABLE;
+		else if (strcmp(*argv, "disable") == 0)
+			value = DISABLE;
+		else
+			usage();
+	}
 
 	if (gfarm_realpath_by_gfarm2fs(path, &realpath) == GFARM_ERR_NO_ERROR)
 		path = realpath;
@@ -76,6 +105,22 @@ main(int argc, char *argv[])
 		break;
 	case STOP:
 		e = gfm_client_replica_check_ctrl_stop(gfm_server);
+		break;
+	case REMOVE:
+		if (value)
+			e = gfm_client_replica_check_ctrl_remove_enable(
+			    gfm_server);
+		else
+			e = gfm_client_replica_check_ctrl_remove_disable(
+			    gfm_server);
+		break;
+	case REDUCED_LOG:
+		if (value)
+			e = gfm_client_replica_check_ctrl_reduced_log_enable(
+			    gfm_server);
+		else
+			e = gfm_client_replica_check_ctrl_reduced_log_disable(
+			    gfm_server);
 		break;
 	}
 	error_check(path, e);

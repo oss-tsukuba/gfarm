@@ -14,11 +14,21 @@ trap 'restore_hostgroup; clean_test; exit $exit_trap' $trap_sigs
 clean_test
 setup_test_repattr
 
+# nlink=2
+hardlink $tmpf ${tmpf}.lnk
 set_repattr $NCOPY1 $gftmp
 wait_for_rep $NCOPY1 $tmpf false
 
+# directory
 set_repattr $NCOPY2 $gftmp
-wait_for_rep $NCOPY2 $tmpf false
+SAVE_TIMEOUT=$NCOPY_TIMEOUT
+NCOPY_TIMEOUT=10
+wait_for_rep $NCOPY2 $tmpf true  ### timeout
+NCOPY_TIMEOUT=$SAVE_TIMEOUT
+
+# file
+set_repattr $NCOPY2 $tmpf
+wait_for_rep $NCOPY2 $tmpf false ### not timeout
 
 restore_hostgroup
 clean_test

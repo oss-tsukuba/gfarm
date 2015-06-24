@@ -3995,7 +3995,8 @@ gfm_server_replica_remove_by_file(struct peer *peer, int from_client, int skip)
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
-		e = inode_remove_replica_protected(inode, host, fo);
+		e = inode_remove_replica_protected(inode, host,
+		    &fo->u.f.replica_spec);
 		if (transaction)
 			db_end(diag);
 	}

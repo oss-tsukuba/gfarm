@@ -15,6 +15,7 @@ struct file_copy;
 struct dead_file_copy;
 struct gfs_stat;
 struct inode_trace_log_info;
+struct replica_spec;
 
 void inode_for_each_file_copies(
 	struct inode *,
@@ -126,7 +127,7 @@ void inode_remove_replica_completed(gfarm_ino_t, gfarm_int64_t, struct host *);
 gfarm_error_t inode_remove_replica_metadata(struct inode *, struct host *,
 	gfarm_int64_t);
 gfarm_error_t inode_remove_replica_protected(struct inode *, struct host *,
-	struct file_opening *);
+	struct replica_spec *);
 gfarm_error_t inode_remove_replica_orphan(struct inode *, struct host *);
 void inode_remove_replica_incomplete(struct inode *, struct host *,
 	gfarm_int64_t);

@@ -85,7 +85,7 @@ file_copy_by_host_remover(void *arg)
 {
 	static const char diag[] = "file_copy_by_host_remover";
 
-	(void)gfarm_pthread_set_priority_minimum();
+	(void)gfarm_pthread_set_priority_minimum(diag);
 
 	for (;;) {
 		gfarm_mutex_lock(&file_copy_by_host_mutex, diag,

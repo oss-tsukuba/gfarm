@@ -6,7 +6,7 @@ int giant_trylock(void);
 void giant_unlock(void);
 
 gfarm_error_t create_detached_thread(void *(*)(void *), void *);
-gfarm_error_t gfarm_pthread_set_priority_minimum(void);
+gfarm_error_t gfarm_pthread_set_priority_minimum(const char *);
 
 char *strdup_ck(const char *, const char *);
 char *strdup_log(const char *, const char *);

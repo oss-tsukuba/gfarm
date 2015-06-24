@@ -148,8 +148,11 @@ server/gfmd/db_journal/db_journal_open.sh
 server/gfmd/db_journal/db_journal_write.sh
 server/gfmd/db_journal/db_journal_ops.sh
 server/gfmd/db_journal/db_journal_apply.sh
-server/gfmd/replica_check/ncopy.sh   ### wait at least 10 seconds
-server/gfmd/replica_check/repattr.sh ### wait at least 10 seconds
+## Time of tests for replica_check depends on replica_check_minimum_interval.
+server/gfmd/replica_check/ncopy.sh   ### wait at least 20 seconds
+server/gfmd/replica_check/repattr.sh ### wait at least 20 seconds
+server/gfmd/replica_check/ncopy-nlink2.sh   ### wait at least 30 seconds
+server/gfmd/replica_check/repattr-nlink2.sh ### wait at least 30 seconds
 
 # manual test: see log file when the result is UNSUPPORTED
 manual/server/gfsd/spool_check/lost_found.sh

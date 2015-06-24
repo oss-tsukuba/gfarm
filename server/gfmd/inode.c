@@ -3739,7 +3739,8 @@ inode_check_pending_replication(struct file_opening *fo)
 	    ia->u.f.spool_writers == 0 && ia->u.f.replication_pending) {
 		ia->u.f.replication_pending = 0;
 		e = make_replicas_except(inode, spool_host,
-		    fo->u.f.desired_replica_number, fo->u.f.repattr,
+		    fo->u.f.replica_spec.desired_number,
+		    fo->u.f.replica_spec.repattr,
 		    inode->u.c.s.f.copies);
 		/*
 		 * #464 - retry automatic replication after
@@ -3846,7 +3847,8 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	inode_cksum_remove(inode);
 
 	return (inode_file_update_common(inode, size, atime, mtime,
-	    fo->u.f.spool_host, fo->u.f.desired_replica_number, fo->u.f.repattr,
+	    fo->u.f.spool_host,
+	    fo->u.f.replica_spec.desired_number, fo->u.f.replica_spec.repattr,
 	    old_genp, new_genp, trace_logp, diag));
 }
 
@@ -4706,6 +4708,7 @@ inode_add_replica(struct inode *inode, struct host *spool_host, int valid)
 	}
 	if (!valid)
 		return (GFARM_ERR_NO_ERROR);
+	host_status_update_disk_usage(spool_host, inode_get_size(inode));
 	e = db_filecopy_add(inode->i_number, host_name(spool_host));
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000327,
@@ -4728,6 +4731,7 @@ remove_replica_metadata(struct inode *inode, struct host *spool_host)
 	gfarm_error_t e;
 
 	quota_update_replica_remove(inode);
+	host_status_update_disk_usage(spool_host, -inode_get_size(inode));
 
 	e = db_filecopy_remove(inode->i_number, host_name(spool_host));
 	if (e != GFARM_ERR_NO_ERROR)
@@ -4782,17 +4786,17 @@ inode_remove_replica_completed(gfarm_ino_t inum, gfarm_int64_t igen,
 
 static gfarm_error_t
 can_remove_replica(struct inode *inode, struct file_copy *copy,
-	struct file_opening *fo, int num, int is_up)
+	struct replica_spec *replica_spec, int num, int is_up)
 {
 	gfarm_error_t e;
 
 	if (num <= 1)
 		return (GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA);
 
-	if (num <= fo->u.f.desired_replica_number)
+	if (num <= replica_spec->desired_number)
 		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
 
-	if (fo->u.f.repattr != NULL) {
+	if (replica_spec->repattr != NULL) {
 		int nhosts;
 		struct host **hosts;
 		int ncopy, n_desired, total, found;
@@ -4800,11 +4804,11 @@ can_remove_replica(struct inode *inode, struct file_copy *copy,
 		gfarm_repattr_t *reps = NULL;
 		char *fsng;
 
-		e = gfarm_repattr_parse(fo->u.f.repattr, &reps, &nreps);
+		e = gfarm_repattr_parse(replica_spec->repattr, &reps, &nreps);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1004025,
 			    "gfarm_repattr_parse(%s): %s",
-			    fo->u.f.repattr, gfarm_error_string(e));
+			    replica_spec->repattr, gfarm_error_string(e));
 			return (e);
 		}
 
@@ -4872,7 +4876,7 @@ can_remove_replica(struct inode *inode, struct file_copy *copy,
 
 static gfarm_error_t
 inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
-	gfarm_int64_t gen, struct file_opening *protect_replicas,
+	gfarm_int64_t gen, struct replica_spec *replica_spec,
 	int invalid_is_removable, int metadata_only,
 	struct dead_file_copy **deferred_cleanupp)
 {
@@ -4899,12 +4903,12 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 			return (GFARM_ERR_NO_SUCH_OBJECT);
 		}
 		copy = *foundp;
-		if (protect_replicas != NULL && FILE_COPY_IS_VALID(copy)) {
+		if (replica_spec != NULL && FILE_COPY_IS_VALID(copy)) {
 			int is_up = host_is_up(copy->host);
 			int num = is_up ? num_up : num_valid;
 
 			e = can_remove_replica(inode, copy,
-			    protect_replicas, num, is_up);
+			    replica_spec, num, is_up);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1003698,
 				    "can_remove_replica: %s",
@@ -5001,10 +5005,11 @@ inode_remove_replica_metadata(struct inode *inode, struct host *spool_host,
 
 gfarm_error_t
 inode_remove_replica_protected(struct inode *inode, struct host *spool_host,
-	struct file_opening *fo)
+	struct replica_spec *replica_spec)
 {
+	assert(replica_spec != NULL);
 	return (inode_remove_replica_internal(inode, spool_host,
-	    inode_get_gen(inode), fo, 0, 0, NULL));
+	    inode_get_gen(inode), replica_spec, 0, 0, NULL));
 }
 
 gfarm_error_t

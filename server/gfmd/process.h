@@ -42,6 +42,13 @@ gfarm_error_t process_get_path_for_trace_log(struct process *, struct peer *,
 gfarm_error_t process_set_path_for_trace_log(struct process *, struct peer *,
 	int, char *, const char *);
 
+struct replica_spec {
+	int desired_number;
+	char *repattr;
+};
+
+void replica_spec_free(struct replica_spec *);
+
 struct file_opening {
 	/*
 	 * end marker:
@@ -58,8 +65,7 @@ struct file_opening {
 		struct opening_file {
 			struct peer *spool_opener;
 			struct host *spool_host;
-			int desired_replica_number;
-			char *repattr;
+			struct replica_spec replica_spec;
 
 			/* only used by client initiated replication */
 			struct replication_info *replica_source;

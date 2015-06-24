@@ -12,6 +12,7 @@
 #include <sys/time.h>
 #include <string.h>
 #include <syslog.h>
+#include <sched.h>
 
 #include <gfarm/error.h>
 #include <gfarm/gflog.h>
@@ -28,11 +29,13 @@
 #include "repattr.h"
 #include "gfm_proto.h"
 
+#include "db_access.h"
 #include "rpcsubr.h"
 #include "peer.h"
 #include "fsngroup.h"
 #include "gfmd.h"
 #include "inode.h"
+#include "process.h"
 #include "dead_file_copy.h"
 #include "dir.h"
 #include "host.h"
@@ -63,26 +66,119 @@ static struct gflog_reduced_state hosts_down_state =
 		SAME_WARNING_DURATION,
 		SAME_WARNING_INTERVAL);
 
+static struct gflog_reduced_state remove_ok_state =
+	GFLOG_REDUCED_STATE_INITIALIZER(
+		SAME_WARNING_TRIGGER,
+		SAME_WARNING_THRESHOLD,
+		SAME_WARNING_DURATION,
+		SAME_WARNING_INTERVAL);
+
 struct replication_info {
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
-	int desired_number;
-	char *repattr;
+	struct replica_spec replica_spec;
 };
+
+static int replica_check_remove_enabled(void);
+static int replica_check_reduced_log_enabled(void);
+
+#define REDUCED_WARN(msg_no, state, ...)				\
+	{								\
+		if (replica_check_reduced_log_enabled())		\
+			gflog_reduced_warning(msg_no, state, __VA_ARGS__); \
+		else							\
+			gflog_warning(msg_no, __VA_ARGS__);		\
+	}
+
+#define REDUCED_INFO(msg_no, state, ...)				\
+	{								\
+		if (replica_check_reduced_log_enabled())		\
+			gflog_reduced_info(msg_no, state, __VA_ARGS__); \
+		else							\
+			gflog_info(msg_no, __VA_ARGS__);		\
+	}
+
+static gfarm_error_t
+replica_check_remove_replicas(struct inode *inode,
+	int n_srcs, struct host **srcs, struct replication_info *info)
+{
+	gfarm_error_t e, e2;
+	int i;
+
+	if (n_srcs <= 1)
+		return (GFARM_ERR_NO_ERROR); /* skip */
+	if (n_srcs <= info->replica_spec.desired_number)
+		return (GFARM_ERR_NO_ERROR); /* skip */
+	if (inode_get_nlink(inode) >= 2) {
+		char *repattr;
+		int desired_number;
+
+		/*
+		 * Do not remove replicas, when this file is
+		 * hard-linked and has no replica_spec.
+		 */
+		if (!inode_get_replica_spec(
+		    inode, &repattr, &desired_number)) /* no replica_spec */
+			return (GFARM_ERR_NO_ERROR); /* skip */
+		/* replica_spec is set for this file */
+
+		free(repattr);
+		/* through */
+	}
+
+	/* prefer a host which has few disk_avail */
+	host_sort_to_remove_replicas(n_srcs, srcs);
+
+	e = GFARM_ERR_NO_ERROR;
+	/* srcs are available replicas */
+	for (i = 0; i < n_srcs; i++) {
+#if 0
+#ifdef DEBUG_REPLICA_CHECK
+		gfarm_off_t used, avail;
+
+		host_status_get_disk_usage(srcs[i], &used, &avail);
+		RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+		    "replica_check: candidate to remove: "
+		    "[%d]%s: used=%lld, avail=%lld",
+		    i, host_name(srcs[i]), (long long)used, (long long)avail);
+#endif
+#endif
+		/* remove a replica only when it is excessive */
+		e2 = inode_remove_replica_protected(inode, srcs[i],
+		    &info->replica_spec);
+		if (e2 == GFARM_ERR_NO_ERROR) {
+			REDUCED_INFO(GFARM_MSG_UNFIXED, &remove_ok_state,
+			    "replica_check: %lld:%lld:%s@%s: removed",
+			    (long long)info->inum, (long long)info->gen,
+			    user_name(inode_get_user(inode)),
+			    host_name(srcs[i]));
+		}
+
+		/* ignore error except GFARM_ERR_FILE_BUSY */
+		/*
+		 * When inode_schedule_replication() is creating
+		 * replicas, inode_remove_replica_protected() may
+		 * return GFARM_ERR_FILE_BUSY.
+		 */
+		if (e2 == GFARM_ERR_FILE_BUSY)
+			e = e2;
+	}
+	return (e); /* GFARM_ERR_FILE_BUSY: retry */
+}
 
 static gfarm_error_t
 replica_check_fix(struct replication_info *info)
 {
 	gfarm_error_t e;
 	struct inode *inode = inode_lookup(info->inum);
-	int n_srcs, n_existing, n_being_removed;
+	int n_srcs, n_existing, n_being_removed, transaction = 0;
 	struct host **srcs, **existing, **being_removed;
 	static const char diag[] = "replica_check_fix";
 
 	if (inode == NULL || !inode_is_file(inode) ||
 	    inode_get_gen(inode) != info->gen) {
 		gflog_debug(GFARM_MSG_1003623,
-		    "%lld:%lld was changed, ignore replica_check",
+		    "replica_check: %lld:%lld was changed, ignore",
 		    (long long)info->inum, (long long)info->gen);
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
@@ -127,31 +223,58 @@ replica_check_fix(struct replication_info *info)
 		    user_name(inode_get_user(inode)), gfarm_error_string(e));
 		return (e); /* retry */
 	}
+
 	/* n_srcs may be 0, because host_is_up() may change */
-	if (n_srcs <= 0) {
+	if (n_srcs <= 0) { /* hosts are down, no available replica */
 		free(existing);
 		free(being_removed);
 		free(srcs);
-		gflog_reduced_warning(GFARM_MSG_1003629, &hosts_down_state,
-		    "replica_check: %lld:%lld:%s: hosts are down",
+		REDUCED_WARN(GFARM_MSG_UNFIXED, &hosts_down_state,
+		    "replica_check: %lld:%lld:%s: no available replica",
 		    (long long)info->inum, (long long)info->gen,
 		    user_name(inode_get_user(inode)));
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
 
-	if (info->repattr == NULL && info->desired_number <= 0) {/* disabled */
+	if (info->replica_spec.repattr == NULL &&
+	    info->replica_spec.desired_number <= 0) { /* disabled */
 		free(existing);
 		free(being_removed);
 		free(srcs);
 		return (GFARM_ERR_NO_ERROR); /* skip */
 	}
 
+	if (gfarm_get_metadb_replication_enabled()) { /* XXX */
+		/*
+		 * XXX: If dbq is used,
+		 * db_begin() + not updating DB + db_end() are slow.
+		 *
+		 * WORKAROUND: Only when db_journal is used,
+		 * this transaction is used.
+		 */
+		e = db_begin(diag);
+		if (e == GFARM_ERR_NO_ERROR)
+			transaction = 1;
+		else
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "replica_check: db_begin(): %s",
+			    gfarm_error_string(e));
+	}
+
+	/* create replicas if the replicas are insufficient */
 	e = inode_schedule_replication(
-	    inode, 1, info->desired_number, info->repattr,
+	    inode, 1,
+	    info->replica_spec.desired_number, info->replica_spec.repattr,
 	    n_srcs, srcs, &n_existing, existing,
 	    gfarm_replica_check_host_down_thresh,
 	    &n_being_removed, being_removed, diag);
 
+	if (e == GFARM_ERR_NO_ERROR && replica_check_remove_enabled())
+		/* remove excessive number of replicas */
+		e = replica_check_remove_replicas(inode, n_srcs, srcs, info);
+
+	if (transaction)
+		db_end(diag);
 	free(existing);
 	free(being_removed);
 	free(srcs);
@@ -168,11 +291,11 @@ replica_check_desired_set(
 
 	if (inode_get_replica_spec(file_ino, &repattr, &desired_number) ||
 	    inode_search_replica_spec(dir_ino, &repattr, &desired_number)) {
-		infop->desired_number = desired_number;
-		infop->repattr = repattr;
+		infop->replica_spec.desired_number = desired_number;
+		infop->replica_spec.repattr = repattr;
 	} else {
-		infop->desired_number = 0;
-		infop->repattr = NULL;
+		infop->replica_spec.desired_number = 0;
+		infop->replica_spec.repattr = NULL;
 	}
 }
 
@@ -182,7 +305,7 @@ static size_t replica_check_stack_size, replica_check_stack_index;
 static struct replication_info *replica_check_stack;
 
 static int
-replica_check_stack_init()
+replica_check_stack_init(void)
 {
 	replica_check_stack_index = 0;
 	replica_check_stack_size = REPLICA_CHECK_DIRENTS_BUFCOUNT;
@@ -219,15 +342,31 @@ replica_check_stack_pop(struct replication_info *infop)
 }
 
 static void
-replica_check_giant_lock_default()
+replica_check_giant_lock_default(void)
 {
 	if (!giant_trylock()) {
+		RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+		    "replica_check: cannot get lock, sleep");
 		gfarm_nanosleep(gfarm_replica_check_sleep_time);
 		giant_lock();
 	}
 }
 
 static void (*replica_check_giant_lock)(void);
+
+#define YIELD_INTERVAL 0  /* 0: every time */
+static int yield_count = 0;
+
+static void
+replica_check_giant_unlock_yield(void)
+{
+	giant_unlock();
+	if (++yield_count > YIELD_INTERVAL) {
+		sched_yield(); /* lower priority than other threads */
+		yield_count = 0;
+	}
+}
+
 static void (*replica_check_giant_unlock)(void) = giant_unlock;
 
 static int
@@ -299,7 +438,7 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 				    gfarm_error_string(e));
 			}
 			(*countp)++;
-			free(rep_info.repattr);
+			replica_spec_free(&rep_info.replica_spec);
 		}
 	}
 	return (need_to_retry);
@@ -309,18 +448,24 @@ static gfarm_ino_t info_inum, info_table_size;
 static time_t info_time_start;
 
 static int
-replica_check_main()
+replica_check_main(void)
 {
 	gfarm_ino_t inum, table_size, count = 0;
 	gfarm_ino_t root_inum = inode_root_number();
 	int need_to_retry = 0;
+	time_t time_total, time_start;
 
 	replica_check_giant_lock();
 	info_table_size = table_size = inode_table_current_size();
-	info_time_start = time(NULL);
+	info_time_start = time_start = time(NULL);
 	replica_check_giant_unlock();
 
 	RC_LOG_INFO(GFARM_MSG_1003632, "replica_check: start");
+	RC_LOG_INFO(GFARM_MSG_UNFIXED,
+	    "replica_check: remove=%s, reduced_log=%s",
+	    replica_check_remove_enabled() ? "enable" : "disable",
+	    replica_check_reduced_log_enabled() ? "enable" : "disable");
+
 	for (inum = root_inum;;) {
 		replica_check_giant_lock();
 		info_inum = inum;
@@ -338,8 +483,10 @@ replica_check_main()
 				break;
 		}
 	}
+	time_total = time(NULL) - time_start;
 	RC_LOG_INFO(GFARM_MSG_1003633,
-	    "replica_check: finished, files=%llu", (unsigned long long)count);
+	    "replica_check: finished, files=%llu, time=%lld",
+	    (unsigned long long)count, (long long)time_total);
 
 	replica_check_giant_lock();
 	info_time_start = 0;
@@ -349,7 +496,7 @@ replica_check_main()
 }
 
 void
-replica_check_info()
+replica_check_info(void)
 {
 	gfarm_ino_t inum, table_size;
 	time_t time_start, elapse;
@@ -362,10 +509,6 @@ replica_check_info()
 	time_start = info_time_start;
 	replica_check_giant_unlock();
 
-	if (!gfarm_replica_check) {
-		RC_LOG_INFO(GFARM_MSG_1003755, "replica_check is disabled");
-		return;
-	}
 	if (time_start == 0 || table_size == 0) {
 		RC_LOG_INFO(GFARM_MSG_1003756, "replica_check: standby");
 		return;
@@ -374,6 +517,8 @@ replica_check_info()
 	elapse = time(NULL) - time_start;
 	progress = (float)inum / (float)table_size;
 	/* elapse / estimate_all = progress */
+	/* estimate_all = elapse / progress */
+	/* estimate = estimate_all - elapse */
 	estimate = (long long)((float)elapse / progress - (float)elapse);
 
 	RC_LOG_INFO(GFARM_MSG_1003757,
@@ -383,8 +528,8 @@ replica_check_info()
 	    (long long)elapse, estimate);
 }
 
-#define REPLICA_CHECK_DIAG "replica_check"
 
+static const char REPLICA_CHECK_DIAG[] = "replica_check";
 static pthread_mutex_t replica_check_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t replica_check_cond = PTHREAD_COND_INITIALIZER;
 static int replica_check_initialized = 0; /* ignore cond_signal in startup */
@@ -403,7 +548,7 @@ replica_check_timeval_cmp(const void *p1, const void *p2)
 }
 
 static int
-replica_check_targets_init()
+replica_check_targets_init(void)
 {
 	targets_num = 0;
 	targets_size = MAX_TARGETS_SIZE;
@@ -493,7 +638,7 @@ replica_check_targets_next(struct timeval *next, const struct timeval *now)
 }
 
 static void
-replica_check_targets_del()
+replica_check_targets_del(void)
 {
 	if (targets_num == 0)
 		return;
@@ -517,9 +662,9 @@ replica_check_timedwait(
 }
 
 static void
-replica_check_wait()
+replica_check_signal_wait(void)
 {
-	static const char diag[] = "replica_check_wait";
+	static const char diag[] = "replica_check_signal_wait";
 	struct timeval next, now;
 
 	gfarm_mutex_lock(&replica_check_mutex, diag, REPLICA_CHECK_DIAG);
@@ -590,7 +735,7 @@ replica_check_signal_general(const char *diag, long sec)
 }
 
 void
-replica_check_signal_host_up()
+replica_check_signal_host_up(void)
 {
 	static const char diag[] = "replica_check_signal_host_up";
 
@@ -598,7 +743,7 @@ replica_check_signal_host_up()
 }
 
 void
-replica_check_signal_host_down()
+replica_check_signal_host_down(void)
 {
 	static const char diag[] = "replica_check_signal_host_down";
 
@@ -608,7 +753,7 @@ replica_check_signal_host_down()
 }
 
 void
-replica_check_signal_update_xattr()
+replica_check_signal_update_xattr(void)
 {
 	static const char diag[] = "replica_check_signal_update_xattr";
 
@@ -616,7 +761,7 @@ replica_check_signal_update_xattr()
 }
 
 void
-replica_check_signal_rename()
+replica_check_signal_rename(void)
 {
 	static const char diag[] = "replica_check_signal_rename";
 
@@ -624,7 +769,7 @@ replica_check_signal_rename()
 }
 
 void
-replica_check_signal_rep_request_failed()
+replica_check_signal_rep_request_failed(void)
 {
 	static const char diag[] = "replica_check_signal_rep_request_failed";
 
@@ -632,53 +777,134 @@ replica_check_signal_rep_request_failed()
 }
 
 void
-replica_check_signal_rep_result_failed()
+replica_check_signal_rep_result_failed(void)
 {
 	static const char diag[] = "replica_check_signal_rep_result_failed";
 
 	replica_check_signal_general(diag, 0);
 }
 
-static pthread_mutex_t replica_check_status_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t replica_check_status_cond = PTHREAD_COND_INITIALIZER;
-static int replica_check_status = GFM_PROTO_REPLICA_CHECK_CTRL_STOP;
+#define ENABLE  1
+#define DISABLE 0
+
+static const char REPLICA_CHECK_CTRL_DIAG[] = "replica_check_ctrl";
+static pthread_mutex_t replica_check_ctrl_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t replica_check_ctrl_cond = PTHREAD_COND_INITIALIZER;
+static int replica_check_ctrl_waiting = 0;
+static int replica_check_ctrl = DISABLE;
+static int replica_check_remove = DISABLE;
+static int replica_check_reduced_log = DISABLE;
 
 static void
-replica_check_set_status(int status)
+replica_check_ctrl_set(int ctrl)
 {
-	static const char diag[] = "replica_check_set_status";
-	static const char name[] = "status";
+	static const char diag[] = "replica_check_ctrl_set";
 
-	gfarm_mutex_lock(&replica_check_status_mutex, diag, name);
-	replica_check_status = status;
-	gfarm_cond_signal(&replica_check_status_cond, diag, name);
-	gfarm_mutex_unlock(&replica_check_status_mutex, diag, name);
-}
+	gfarm_mutex_lock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
 
-void
-replica_check_set_status_start()
-{
-	replica_check_set_status(GFM_PROTO_REPLICA_CHECK_CTRL_START);
-}
+	/* escape from replica_check_signal_wait() */
+	if (replica_check_ctrl_waiting == 0)
+		replica_check_signal_general(diag, 0);
 
-void
-replica_check_set_status_stop()
-{
-	replica_check_set_status(GFM_PROTO_REPLICA_CHECK_CTRL_STOP);
+	replica_check_ctrl = ctrl;
+	gfarm_cond_signal(&replica_check_ctrl_cond, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+	gfarm_mutex_unlock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
 }
 
 static void
-check_status()
+replica_check_ctrl_wait(void)
 {
-	static const char diag[] = "check_status", name[] = "status";
+	static const char diag[] = "replica_check_ctrl_wait";
 
-	gfarm_mutex_lock(&replica_check_status_mutex, diag, name);
-	while (replica_check_status == GFM_PROTO_REPLICA_CHECK_CTRL_STOP) {
+	gfarm_mutex_lock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+	while (replica_check_ctrl == DISABLE) {
 		gflog_info(GFARM_MSG_1003758, "replica_check: stopped");
-		gfarm_cond_wait(&replica_check_status_cond,
-		    &replica_check_status_mutex, diag, name);
+		replica_check_ctrl_waiting = 1;
+		gfarm_cond_wait(&replica_check_ctrl_cond,
+		    &replica_check_ctrl_mutex, diag, REPLICA_CHECK_CTRL_DIAG);
 	}
-	gfarm_mutex_unlock(&replica_check_status_mutex, diag, name);
+	replica_check_ctrl_waiting = 0;
+	gfarm_mutex_unlock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+}
+
+static void
+replica_check_remove_set(int ctrl)
+{
+	static const char diag[] = "replica_check_remove_set";
+
+	gfarm_mutex_lock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+	replica_check_remove = ctrl;
+	gfarm_mutex_unlock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+}
+
+static int
+replica_check_remove_enabled(void)
+{
+	static const char diag[] = "replica_check_remove_enabled";
+	int ctrl;
+
+	gfarm_mutex_lock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+	ctrl = replica_check_remove;
+	gfarm_mutex_unlock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+
+	return (ctrl == ENABLE);
+}
+
+static void
+replica_check_reduced_log_set(int ctrl)
+{
+	static const char diag[] = "replica_check_reduced_log_set";
+
+	gfarm_mutex_lock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+	replica_check_reduced_log = ctrl;
+	gfarm_mutex_unlock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+}
+
+static int
+replica_check_reduced_log_enabled(void)
+{
+	static const char diag[] = "replica_check_reduced_log_enabled";
+	int ctrl;
+
+	gfarm_mutex_lock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+	ctrl = replica_check_reduced_log;
+	gfarm_mutex_unlock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+
+	return (ctrl == ENABLE);
+}
+
+static const char *
+replica_check_ctrl_string(gfarm_int32_t ctrl)
+{
+	switch (ctrl) {
+	case GFM_PROTO_REPLICA_CHECK_CTRL_START:
+		return ("START");
+	case GFM_PROTO_REPLICA_CHECK_CTRL_STOP:
+		return ("STOP");
+	case GFM_PROTO_REPLICA_CHECK_CTRL_REMOVE_ENABLE:
+		return ("REMOVE_ENABLE");
+	case GFM_PROTO_REPLICA_CHECK_CTRL_REMOVE_DISABLE:
+		return ("REMOVE_DISABLE");
+	case GFM_PROTO_REPLICA_CHECK_CTRL_REDUCED_LOG_ENABLE:
+		return ("REDUCED_LOG_ENABLE");
+	case GFM_PROTO_REPLICA_CHECK_CTRL_REDUCED_LOG_DISABLE:
+		return ("REDUCED_LOG_DISABLE");
+	default:
+		return ("<UNKNOWN>");
+	}
 }
 
 gfarm_error_t
@@ -701,10 +927,27 @@ gfm_server_replica_check_ctrl(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1003759, "%s", gfarm_error_string(e));
 	} else {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "replica_check: ctrl=%s",
+		    replica_check_ctrl_string(ctrl));
 		switch (ctrl) {
 		case GFM_PROTO_REPLICA_CHECK_CTRL_START:
+			replica_check_ctrl_set(ENABLE);
+			break;
 		case GFM_PROTO_REPLICA_CHECK_CTRL_STOP:
-			replica_check_set_status(ctrl);
+			replica_check_ctrl_set(DISABLE);
+			break;
+		case GFM_PROTO_REPLICA_CHECK_CTRL_REMOVE_ENABLE:
+			replica_check_remove_set(ENABLE);
+			break;
+		case GFM_PROTO_REPLICA_CHECK_CTRL_REMOVE_DISABLE:
+			replica_check_remove_set(DISABLE);
+			break;
+		case GFM_PROTO_REPLICA_CHECK_CTRL_REDUCED_LOG_ENABLE:
+			replica_check_reduced_log_set(ENABLE);
+			break;
+		case GFM_PROTO_REPLICA_CHECK_CTRL_REDUCED_LOG_DISABLE:
+			replica_check_reduced_log_set(DISABLE);
 			break;
 		default:
 			e = GFARM_ERR_INVALID_ARGUMENT;
@@ -724,18 +967,27 @@ replica_check_thread(void *arg)
 {
 	int wait_time;
 	time_t dfc_scan_time;
+	gfarm_error_t e;
 
 	if (!replica_check_stack_init() || !replica_check_targets_init())
 		return (NULL);
+
+	e = gfarm_pthread_set_priority_minimum(REPLICA_CHECK_DIAG);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "replica_check: use sched_yield()");
+		replica_check_giant_unlock = replica_check_giant_unlock_yield;
+	}
 
 	if (gfarm_replica_check_sleep_time > 0)
 		replica_check_giant_lock = replica_check_giant_lock_default;
 	else
 		replica_check_giant_lock = giant_lock;
+
 	if (gfarm_replica_check_sleep_time > GFARM_SECOND_BY_NANOSEC)
 		gfarm_replica_check_sleep_time = GFARM_SECOND_BY_NANOSEC;
 
-	/* wait startup of gfsd hosts */
+	/* wait for startup of gfsd hosts */
 	wait_time = gfarm_metadb_heartbeat_interval;
 	replica_check_targets_add(wait_time);
 
@@ -745,9 +997,8 @@ replica_check_thread(void *arg)
 	for (;;) {
 		time_t t = time(NULL) + gfarm_replica_check_minimum_interval;
 
-		replica_check_wait();
-		/* if the status is stop, wait here */
-		check_status();
+		replica_check_signal_wait();
+		replica_check_ctrl_wait(); /* if the ctrl is stop, wait here */
 		if (replica_check_main()) /* error occured, retry */
 			replica_check_targets_add(wait_time);
 
@@ -771,12 +1022,22 @@ replica_check_thread(void *arg)
 }
 
 void
-replica_check_start()
+replica_check_start(void)
 {
 	if (gfarm_replica_check)
-		replica_check_set_status_start();
+		replica_check_ctrl_set(ENABLE);
 	else
-		replica_check_set_status_stop();
+		replica_check_ctrl_set(DISABLE);
+
+	if (gfarm_replica_check_remove)
+		replica_check_remove_set(ENABLE);
+	else
+		replica_check_remove_set(DISABLE);
+
+	if (gfarm_replica_check_reduced_log)
+		replica_check_reduced_log_set(ENABLE);
+	else
+		replica_check_reduced_log_set(DISABLE);
 
 	create_detached_thread(replica_check_thread, NULL);
 }

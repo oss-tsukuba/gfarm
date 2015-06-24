@@ -951,6 +951,8 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_FILE_TRACE_DEFAULT 0 /* disable */
 #define GFARM_FATAL_ACTION_DEFAULT GFLOG_FATAL_ACTION_ABORT_BACKTRACE
 #define GFARM_REPLICA_CHECK_DEFAULT 1 /* enable */
+#define GFARM_REPLICA_CHECK_REMOVE_DEFAULT 1 /* enable */
+#define GFARM_REPLICA_CHECK_REDUCED_LOG_DEFAULT 1 /* enable */
 #define GFARM_REPLICA_CHECK_HOST_DOWN_THRESH_DEFAULT 10800 /* 3 hours */
 #define GFARM_REPLICA_CHECK_SLEEP_TIME_DEFAULT 100000 /* nanosec. */
 #define GFARM_REPLICA_CHECK_MINIMUM_INTERVAL_DEFAULT 10 /* 10 sec. */
@@ -979,6 +981,8 @@ static int metadb_server_slave_replication_timeout = GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_server_slave_max_size = GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_server_force_slave = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_replica_check_remove = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_replica_check_reduced_log = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_host_down_thresh = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_sleep_time = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_minimum_interval = GFARM_CONFIG_MISC_DEFAULT;
@@ -3059,6 +3063,10 @@ parse_one_line(char *s, char *p, char **op)
 
 	} else if (strcmp(s, o = "replica_check") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_replica_check);
+	} else if (strcmp(s, o = "replica_check_remove") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_replica_check_remove);
+	} else if (strcmp(s, o = "replica_check_reduced_log") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_replica_check_reduced_log);
 	} else if (strcmp(s, o = "replica_check_host_down_thresh") == 0) {
 		e = parse_set_misc_int(
 		    p, &gfarm_replica_check_host_down_thresh);
@@ -3371,6 +3379,12 @@ gfarm_config_set_default_misc(void)
 		gflog_set_fatal_action(GFARM_FATAL_ACTION_DEFAULT);
 	if (gfarm_replica_check == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_replica_check = GFARM_REPLICA_CHECK_DEFAULT;
+	if (gfarm_replica_check_remove == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_replica_check_remove =
+		    GFARM_REPLICA_CHECK_REMOVE_DEFAULT;
+	if (gfarm_replica_check_reduced_log == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_replica_check_reduced_log =
+		    GFARM_REPLICA_CHECK_REDUCED_LOG_DEFAULT;
 	if (gfarm_replica_check_host_down_thresh == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_replica_check_host_down_thresh =
 		    GFARM_REPLICA_CHECK_HOST_DOWN_THRESH_DEFAULT;

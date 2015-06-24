@@ -14,6 +14,7 @@ struct dead_file_copy;
 struct host_status {
 	double loadavg_1min, loadavg_5min, loadavg_15min;
 	gfarm_off_t disk_used, disk_avail;
+	gfarm_off_t disk_used_in_byte, disk_avail_in_byte;
 };
 
 struct abstract_host *host_to_abstract_host(struct host *);
@@ -60,6 +61,7 @@ struct file_replicating;
 gfarm_error_t host_replicating_new(struct host *, struct file_replicating **);
 struct inode;
 
+void host_sort_to_remove_replicas(int, struct host **);
 int host_unique_sort(int, struct host **);
 void host_intersect(int *, struct host **, int *, struct host **);
 gfarm_error_t host_except(int *, struct host **, int *, struct host **,
@@ -84,6 +86,9 @@ void host_status_reply_waiting_set(struct host *);
 void host_status_reply_waiting_reset(struct host *);
 int host_status_reply_is_waiting(struct host *);
 void host_status_update(struct host *, struct host_status *);
+
+void host_status_get_disk_usage(struct host *, gfarm_off_t *, gfarm_off_t *);
+void host_status_update_disk_usage(struct host *, gfarm_off_t);
 
 struct gfarm_host_info;
 gfarm_error_t host_enter(struct gfarm_host_info *, struct host **);

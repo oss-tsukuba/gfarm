@@ -91,8 +91,8 @@ file_opening_alloc(struct inode *inode,
 			fo->u.f.spool_opener = peer;
 			fo->u.f.spool_host = spool_host;
 		}
-		fo->u.f.desired_replica_number = 0;
-		fo->u.f.repattr = NULL;
+		fo->u.f.replica_spec.desired_number = 0;
+		fo->u.f.replica_spec.repattr = NULL;
 		fo->u.f.replica_source = NULL;
 	} else if (inode_is_dir(inode)) {
 		fo->u.d.offset = 0;
@@ -102,6 +102,12 @@ file_opening_alloc(struct inode *inode,
 	fo->path_for_trace_log = NULL;
 
 	return (fo);
+}
+
+void
+replica_spec_free(struct replica_spec *spec)
+{
+	free(spec->repattr);
 }
 
 void
@@ -120,7 +126,7 @@ file_opening_free(struct file_opening *fo, gfarm_mode_t mode)
 			free(fo->u.f.replica_source);
 			fo->u.f.replica_source = NULL;
 		}
-		free(fo->u.f.repattr);
+		replica_spec_free(&fo->u.f.replica_spec);
 	} else if (GFARM_S_ISDIR(mode))
 		free(fo->u.d.key);
 	free(fo->path_for_trace_log);
@@ -342,12 +348,12 @@ process_record_replica_spec(struct process *process, struct peer *peer, int fd,
 		    (long)process->pid, fd, desired_number, repattr_str);
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
-	fo->u.f.desired_replica_number = desired_number;
+	fo->u.f.replica_spec.desired_number = desired_number;
 	/*
 	 * The repattr must be malloc'd. It will be free'd in
 	 * file_opening_free().
 	 */
-	fo->u.f.repattr = repattr;
+	fo->u.f.replica_spec.repattr = repattr;
 	return (GFARM_ERR_NO_ERROR);
 }
 
