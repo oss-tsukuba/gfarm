@@ -6,7 +6,7 @@
 
 <refentry id="gfprep.1">
 
-<refentryinfo><date>9 Dec 2013</date></refentryinfo>
+<refentryinfo><date>24 Jun 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfprep</refentrytitle>
@@ -23,18 +23,20 @@
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfprep</command>
   <arg choice="opt" rep="norepeat">-nqvdpPU</arg>
-  <arg choice="opt" rep="norepeat">-mx</arg>
   <arg choice="opt" rep="norepeat">-S <replaceable>source-domainname</replaceable></arg>
   <arg choice="opt" rep="norepeat">-h <replaceable>source-hostfile</replaceable></arg>
   <arg choice="opt" rep="norepeat">-D <replaceable>destination-domainname</replaceable></arg>
   <arg choice="opt" rep="norepeat">-H <replaceable>destination-hostfile</replaceable></arg>
   <arg choice="opt" rep="norepeat">-j <replaceable>num-of-processes</replaceable></arg>
   <arg choice="opt" rep="norepeat">-J <replaceable>num-of-processes</replaceable></arg>
-  <arg choice="opt" rep="norepeat">-M <replaceable>limit-byte</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-M <replaceable>total-byte</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-z <replaceable>minimum-byte</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-Z <replaceable>maximum-byte</replaceable></arg>
   <arg choice="opt" rep="norepeat">-w <replaceable>way-of-scheduling</replaceable></arg>
   <arg choice="opt" rep="norepeat">-W <replaceable>kilobytes-for-threshold</replaceable></arg>
   <arg choice="opt" rep="norepeat">-s <replaceable>KB/s-to-simulate</replaceable></arg>
   <arg choice="opt" rep="norepeat">-F <replaceable>num-for-readahead</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-mx</arg>
   <arg choice="opt" rep="norepeat">-N <replaceable>num-of-replicas</replaceable></arg>
   <arg choice="plain" rep="norepeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
@@ -46,23 +48,29 @@
 
 <para>
 <command moreinfo="none">gfprep</command> は、
-Gfarm ファイルの複製を並列に作成します。
+Gfarm ファイル複製を並列に作成します。
 </para>
 <para>
-転送先や転送元のホスト群を指定するには、
-ドメイン名で指定するか、ホスト名を行ごとに記述したホストリストファイルを指定します。
+<parameter moreinfo="none">path</parameter> がディレクトリの場合、
+その下にあるすべてのファイルに対する複製を作成します。
+</para>
+<para>
+<parameter moreinfo="none">path</parameter> には、
+Gfarm URL または gfarm2fs 上のパスを指定できます。
+</para>
+<para>
+転送先や転送元のホスト群を指定するには、ドメイン名で指定するか、
+ホスト名を行ごとに記述したホストリストファイルを指定します。
 ドメイン名とホストリストファイルを両方指定した場合は、
 両方の条件に合うホスト群を決定します。
-転送元ホスト群を指定した場合、そのホストに存在するファイルのみ複製が作成されます。
+転送元ホスト群を指定した場合、
+そのホストに存在するファイルのみ複製が作成されます。
 </para>
 <para>
 なるべく転送中ではないホストを選択して転送開始します。
 転送元や転送先 1 ホストあたりの最大並列転送数は、ホストごとの CPU 数です。
-CPU 数については、gfhost コマンドのマニュアルを参照してください。
-</para>
-<para>
-<parameter moreinfo="none">path</parameter> がディレクトリの場合、
-それ以下にあるすべてのファイルの複製を作成します。
+CPU 数については、<command moreinfo="none">gfhost</command>
+コマンドのマニュアルを参照してください。
 </para>
 <para>
 <command moreinfo="none">gfprep</command> は、ディレクトリを辿る際に、
@@ -217,10 +225,34 @@ CPU 数については、<command moreinfo="none">gfhost</command>
 </varlistentry>
 
 <varlistentry>
-<term><option>-M</option> <parameter moreinfo="none">limit-byte</parameter></term>
+<term><option>-M</option> <parameter moreinfo="none">total-byte</parameter></term>
 <listitem>
 <para>
 コピーする際に制限する合計サイズをバイト数で指定します。
+</para>
+<para>
+デフォルトでは制限しません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-z</option> <parameter moreinfo="none">minimum-byte</parameter></term>
+<listitem>
+<para>
+コピーする際に制限する最小ファイルサイズをバイト数で指定します。
+</para>
+<para>
+デフォルトでは制限しません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-Z</option> <parameter moreinfo="none">maximum-byte</parameter></term>
+<listitem>
+<para>
+コピーする際に制限する最大ファイルサイズをバイト数で指定します。
 </para>
 <para>
 デフォルトでは制限しません。
