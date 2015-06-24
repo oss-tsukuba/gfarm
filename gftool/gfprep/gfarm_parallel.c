@@ -23,7 +23,8 @@
 #include "nanosec.h"
 #include "thrsubr.h"
 
-#include "gfprep.h"
+#include "gfurl.h"
+
 #include "gfarm_parallel.h"
 
 #define GFPARA_HANDLE_LIST_MAX 32
@@ -422,7 +423,7 @@ gfpara_send_string(FILE *out, const char *format, ...)
 	size_t retv;
 
 	va_start(ap, format);
-	len = gfprep_vasprintf(&str, format, ap);
+	len = gfurl_vasprintf(&str, format, ap);
 	va_end(ap);
 	if (len == -1)
 		gfpara_fatal("cannot allocate buffer for send");

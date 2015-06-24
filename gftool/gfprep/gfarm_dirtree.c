@@ -22,7 +22,8 @@
 
 #include "gfm_client.h"
 
-#include "gfprep.h"
+#include "gfurl.h"
+
 #include "gfarm_parallel.h"
 #include "gfarm_dirtree.h"
 #include "gfarm_fifo.h"
@@ -101,8 +102,8 @@ struct gfarm_dirtree {
 	pthread_cond_t free_procs;
 	pthread_cond_t get_ents;
 	gfpara_t *gfpara_handle;
-	const char *src_dir;
-	const char *dst_dir;
+	GFURL src_dir;
+	GFURL dst_dir;
 	int src_type; /* url type */
 	int dst_type; /* url type */
 	int n_parallel;
@@ -120,15 +121,6 @@ enum url_type {
 	URL_TYPE_GFARM,
 	URL_TYPE_UNUSED
 };
-
-static const char *
-gfarm_dirtree_path_skip_root_slash(const char *path)
-{
-	const char *p = path;
-	while (*p != '\0' && *p == '/' && *(p + 1) == '/')
-		p++;
-	return (p);
-}
 
 static void
 dirtree_fifo_set(void *entries, int index, void *entryp)
@@ -236,8 +228,8 @@ dirtree_local_readdirplus(struct dirtree_dir_handle *dh,
 			dh->path, strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
-	retv = gfprep_asprintf(&child, "%s/%s", dh->path, dent->d_name);
-	if (retv == -1) {
+	child = gfurl_path_combine(dh->path, dent->d_name);
+	if (child == NULL) {
 		fprintf(stderr, "FATAL: no memory(%s)\n", dh->path);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -423,15 +415,9 @@ next_command: /* instead of "for (;;)" */
 		subpath = NULL;
 		src_dir = NULL;
 		gfpara_recv_string(from_parent, &subpath);
-		if (subpath[0] == '\0')
-			retv = gfprep_asprintf(&src_dir, "%s",
-					       handle->src_dir);
-		else if (strcmp(handle->src_dir, "/") == 0)
-			retv = gfprep_asprintf(&src_dir, "/%s", subpath);
-		else
-			retv = gfprep_asprintf(&src_dir, "%s/%s",
-					       handle->src_dir, subpath);
-		if (retv == -1) {
+		src_dir = gfurl_path_combine(gfurl_epath(handle->src_dir),
+		    subpath);
+		if (src_dir == NULL) {
 			fprintf(stderr, "FATAL: no memory\n");
 			gfpara_send_int(to_parent, DIRTREE_STAT_NG);
 			free(subpath);
@@ -564,9 +550,9 @@ dents_error:
 			gfpara_send_int(to_parent, DIRTREE_STAT_NG);
 			goto term;
 		}
-		retv = gfprep_asprintf(&src_path, "%s/%s",
-				       handle->src_dir, subpath);
-		if (retv == -1) {
+		src_path = gfurl_path_combine(gfurl_epath(handle->src_dir),
+		    subpath);
+		if (src_path == NULL) {
 			fprintf(stderr, "FATAL: no memory\n");
 			gfpara_send_int(to_parent, DIRTREE_STAT_NG);
 			src_dir = NULL;
@@ -614,9 +600,9 @@ finfo_dst:	/* ----- dst ----- */
 			goto next_command;
 		}
 		assert(handle->dst_dir);
-		retv = gfprep_asprintf(&dst_path, "%s/%s",
-				       handle->dst_dir, subpath);
-		if (retv == -1) {
+		dst_path = gfurl_path_combine(gfurl_epath(handle->dst_dir),
+		    subpath);
+		if (dst_path == NULL) {
 			fprintf(stderr, "FATAL: no memory\n");
 			gfpara_send_int(to_parent, 0); /* 3: dst_exist */
 			free(subpath);
@@ -992,59 +978,38 @@ dirtree_end(void *param)
 
 static const char dirtree_startdir[] = "";
 
-static const char *
-convert_gfarm_url(const char *gfarm_url)
-{
-	/* gfarm:/... to gfarm: */
-	if (strncmp(gfarm_url, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH) == 0
-	    &&
-	    *(gfarm_url + GFARM_URL_PREFIX_LENGTH) == '/'
-	    &&
-	    *(gfarm_url + GFARM_URL_PREFIX_LENGTH + 1) == '\0')
-		return (GFARM_URL_PREFIX);
-	else
-		return (gfarm_url);
-}
-
 /* Do not call this function after gfarm_initialize() */
 gfarm_error_t
 gfarm_dirtree_init_fork(
-	gfarm_dirtree_t **handlep, const char *src_url, const char *dst_url,
+	gfarm_dirtree_t **handlep, GFURL src_url, GFURL dst_url,
 	int n_parallel, int fifo_size, int is_recursive)
 {
 	static const char diag[] = "gfarm_dirtree_init_fork";
 	gfarm_dirtree_t *handle;
 	gfarm_error_t e;
 	int src_type, dst_type;
-	const char *src_dir, *dst_dir;
 	char *startdir;
 
 	if (n_parallel <= 0 || handlep == NULL || src_url == NULL)
 		return (GFARM_ERR_INVALID_ARGUMENT);
-	if (gfprep_url_is_gfarm(src_url)) {
-		src_type = URL_TYPE_GFARM;
-		/* not remove gfarm: prefix */
-		src_dir = convert_gfarm_url(src_url);
-	} else if (gfprep_url_is_local(src_url)) {
-		src_type = URL_TYPE_LOCAL;
-		src_dir = src_url + GFPREP_FILE_URL_PREFIX_LENGTH;
-		src_dir = gfarm_dirtree_path_skip_root_slash(src_dir);
-	} else
-		return (GFARM_ERR_INVALID_ARGUMENT);
 
-	if (dst_url == NULL) {
+	if (gfurl_is_gfarm(src_url))
+		src_type = URL_TYPE_GFARM;
+	else if (gfurl_is_local(src_url))
+		src_type = URL_TYPE_LOCAL;
+	else
+		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+
+	if (dst_url == NULL)
 		dst_type = URL_TYPE_UNUSED;
-		dst_dir = NULL;
-	} else if (gfprep_url_is_gfarm(dst_url)) {
+	else if (gfurl_is_gfarm(dst_url))
 		dst_type = URL_TYPE_GFARM;
-		/* not remove gfarm: prefix */
-		dst_dir = convert_gfarm_url(dst_url);
-	} else if (gfprep_url_is_local(dst_url)) {
+	else if (gfurl_is_local(dst_url))
 		dst_type = URL_TYPE_LOCAL;
-		dst_dir = dst_url + GFPREP_FILE_URL_PREFIX_LENGTH;
-		dst_dir = gfarm_dirtree_path_skip_root_slash(dst_dir);
-	} else
-		return (GFARM_ERR_INVALID_ARGUMENT);
+	else if (gfurl_is_hpss(dst_url))
+		dst_type = URL_TYPE_UNUSED; /* ignore HPSS */
+	else
+		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 
 	GFARM_MALLOC(handle);
 	if (handle == NULL)
@@ -1073,8 +1038,8 @@ gfarm_dirtree_init_fork(
 	}
 
 	/* set src_dir and dst_dir before gfpara_init() */
-	handle->src_dir = src_dir;
-	handle->dst_dir = dst_dir;
+	handle->src_dir = src_url;
+	handle->dst_dir = dst_url;
 	handle->src_type = src_type;
 	handle->dst_type = dst_type;
 	e = gfpara_init(&handle->gfpara_handle, n_parallel,
