@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>22 Jun 2015</date></refentryinfo>
+<refentryinfo><date>24 Jun 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1960,10 +1960,14 @@ gfmdが忙しい場合に処理を休む時間をナノ秒で指定します。
 <term><token>replica_check</token> <parameter moreinfo="none">有効性</parameter></term>
 <listitem>
 <para>
-enableと指定した場合、gfmd内のreplica_check機能が自動的に、
-ファイル複製の数と配置をチェックし、修復します。
-replica_checkは必要なときにしか動作しません。
+enableと指定した場合、gfmd内のreplica_check機能が
+ファイル複製の数と配置を自動的にチェックし、修復します。
+replica_checkは必要なときにだけ動作します。
 デフォルトはenableです。
+</para>
+<para>
+<command moreinfo="none">gfrepcheck</command>コマンドを使うと、
+この挙動をオンライン状態で変更できます。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
@@ -1971,6 +1975,53 @@ replica_checkは必要なときにしか動作しません。
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	replica_check disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replica_check_remove</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+enableと指定した場合、gfmd内のreplica_check機能が
+余剰ファイル複製を自動的に削除します。
+例外として、ファイルにハードリンクが設定されていて (nlink >= 2)、
+そのファイル自身に複製数の設定 (gfarm.ncopy または gfarm.replicainfo)
+がされていない場合、そのファイルの余剰ファイル複製は削除されません。
+デフォルトはenableです。
+</para>
+<para>
+<command moreinfo="none">gfrepcheck remove</command>コマンドを使うと、
+この挙動をオンライン状態で変更できます。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_remove disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replica_check_reduced_log</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+enableと指定した場合、
+replica_check機能が出力するログメッセージが抑制されることがあります。
+デフォルトはenableです。
+</para>
+<para>
+<command moreinfo="none">gfrepcheck reduced_log</command>コマンドを使うと、
+この挙動をオンライン状態で変更できます。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_reduced_log disable
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2132,6 +2183,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; |
 	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |
 	&lt;replica_check_statement&gt; |
+	&lt;replica_check_remove_statement&gt; |
+	&lt;replica_check_reduced_log_statement&gt; |
 	&lt;replica_check_host_down_thresh_statement&gt; |
 	&lt;replica_check_sleep_time_statement&gt; |
 	&lt;replica_check_minimum_interval_statement&gt;</literallayout></listitem>
@@ -2679,6 +2732,16 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <varlistentry>
 <term>&lt;replica_check_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"replica_check" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_remove_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_remove" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_reduced_log_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_reduced_log" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

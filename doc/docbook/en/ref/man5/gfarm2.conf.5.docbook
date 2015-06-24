@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>22 Jun 2015</date></refentryinfo>
+<refentryinfo><date>24 Jun 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -2024,7 +2024,8 @@ This parameter is only available in gfmd.conf.
 When "enable" is specified, the replica_check system in gfmd can check
 and fix the number and placement of file replicas automatically.  The
 replica_check works only when necessary.  The default value is
-"enable".
+"enable".  This behavior can be chagned by
+the <command moreinfo="none">gfrepcheck</command> command in online.
 </para>
 <para>
 This parameter is only available in gfmd.conf.
@@ -2032,6 +2033,48 @@ This parameter is only available in gfmd.conf.
 <para>Example:</para>
 <literallayout format="linespecific" class="normal">
 	replica_check disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replica_check_remove</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+When "enable" is specified, the replica_check system in gfmd can
+remove excessive file rpelicas automatically.  As an exception, when a
+file has hard-links (nlink >= 2) and replication attributes
+(gfarm.ncopy or gfarm.replicainfo) in the file itself is not set, the
+excessive file replicas does not remove automatically.  The default
+value is "enable".  This behavior can be chagned by
+the <command moreinfo="none">gfrepcheck remove</command> command in
+online.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_remove disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replica_check_reduced_log</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+When "enable" is specified, log messages from the replica_check may be
+reduced.  The default value is "enable".  This behavior can be chagned
+by the <command moreinfo="none">gfrepcheck reduced_log</command>
+command in online.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_reduced_log disable
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2190,6 +2233,8 @@ notation.</para>
 	&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; |
 	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |
 	&lt;replica_check_statement&gt; |
+	&lt;replica_check_remove_statement&gt; |
+	&lt;replica_check_reduced_log_statement&gt; |
 	&lt;replica_check_host_down_thresh_statement&gt; |
 	&lt;replica_check_sleep_time_statement&gt; |
 	&lt;replica_check_minimum_interval_statement&gt;</literallayout></listitem>
@@ -2732,6 +2777,16 @@ notation.</para>
 <varlistentry>
 <term>&lt;replica_check_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"replica_check" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_remove_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_remove" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_reduced_log_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_reduced_log" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
