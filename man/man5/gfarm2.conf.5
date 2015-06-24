@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 22 Jun 2015
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 24 Jun 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "22 Jun 2015" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "24 Jun 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -968,7 +968,6 @@ This directive specifies a file name
 \fIuser\-map\-file\fR
 for mapping local user names to global user names\&. This map file is used only for sharedsecret authentication\&. When this file is not specified, a global user name is assumed to be same as the local user name\&.
 .sp
-
 \fIuser\-map\-file\fR
 is needed when you have to use the sharedsecret authentication method in the case where you have different unix account names on different filesystem nodes\&. In such a case, the
 \fIuser\-map\-file\fR
@@ -1500,7 +1499,6 @@ fatal_action \fIaction_name\fR
 This parameter specifies the behavior at a fatal error\&. The default action is
 \fIbacktrace_and_abort\fR\&.
 .sp
-
 For example,
 .sp
 .if n \{\
@@ -1941,7 +1939,9 @@ Example:
 .PP
 replica_check \fIvalidity\fR
 .RS 4
-When "enable" is specified, the replica_check system in gfmd can check and fix the number and placement of file replicas automatically\&. The replica_check works only when necessary\&. The default value is "enable"\&.
+When "enable" is specified, the replica_check system in gfmd can check and fix the number and placement of file replicas automatically\&. The replica_check works only when necessary\&. The default value is "enable"\&. This behavior can be chagned by the
+\fBgfrepcheck\fR
+command in online\&.
 .sp
 This parameter is only available in gfmd\&.conf\&.
 .sp
@@ -1952,6 +1952,48 @@ Example:
 .\}
 .nf
 	replica_check disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+replica_check_remove \fIvalidity\fR
+.RS 4
+When "enable" is specified, the replica_check system in gfmd can remove excessive file rpelicas automatically\&. As an exception, when a file has hard\-links (nlink >= 2) and replication attributes (gfarm\&.ncopy or gfarm\&.replicainfo) in the file itself is not set, the excessive file replicas does not remove automatically\&. The default value is "enable"\&. This behavior can be chagned by the
+\fBgfrepcheck remove\fR
+command in online\&.
+.sp
+This parameter is only available in gfmd\&.conf\&.
+.sp
+Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	replica_check_remove disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+replica_check_reduced_log \fIvalidity\fR
+.RS 4
+When "enable" is specified, log messages from the replica_check may be reduced\&. The default value is "enable"\&. This behavior can be chagned by the
+\fBgfrepcheck reduced_log\fR
+command in online\&.
+.sp
+This parameter is only available in gfmd\&.conf\&.
+.sp
+Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	replica_check_reduced_log disable
 .fi
 .if n \{\
 .RE
@@ -2116,6 +2158,8 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<metadb_replica_remover_by_host_sleep_time_statement> |
 	<metadb_replica_remover_by_host_inode_step_statement> |
 	<replica_check_statement> |
+	<replica_check_remove_statement> |
+	<replica_check_reduced_log_statement> |
 	<replica_check_host_down_thresh_statement> |
 	<replica_check_sleep_time_statement> |
 	<replica_check_minimum_interval_statement>
@@ -3445,6 +3489,34 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .RE
 .PP
+<replica_check_remove_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"replica_check_remove" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<replica_check_reduced_log_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"replica_check_reduced_log" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <replica_check_host_down_thresh_statement> ::=
 .RS 4
 .sp
@@ -3816,7 +3888,6 @@ $HOME/\&.gfarm2rc
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfmd\fR(8),
 \fBgfsd\fR(8),
 \fBsetsockopt\fR(2)

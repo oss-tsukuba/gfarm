@@ -2,15 +2,15 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarm2.conf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm2.conf">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfarm2.conf.5"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfarm2.conf — Gfarm設定ファイル</p>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 gfarm2.confファイルは、gfarmプログラムの設定ファイルです。
@@ -38,13 +38,13 @@ gfarm2.confは、一行に一文の形式で設定します。
 されます。
 </p>
 </div>
-<div class="refsect1" title="ホスト指定">
+<div class="refsect1">
 <a name="hostspecification"></a><h2>ホスト指定</h2>
 <p>
 引数として、<em class="parameter"><code>ホスト指定</code></em>を記述できる文がいくつかありますが、
 この場合、ホスト指定には、下記のいずれかを記述できます。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><em class="parameter"><code>III.JJJ.KKK.LLL</code></em></span></dt>
 <dd><p>
 "."で区切られた0〜255までの数字4つで、IPアドレスを指定します。
@@ -68,10 +68,10 @@ IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワ
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="文">
+<div class="refsect1">
 <a name="statement"></a><h2>文</h2>
 <p>文には、下記の種類があります。</p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><span class="token">spool</span> <em class="parameter"><code>gfsdスプール・ディレクトリ</code></em></span></dt>
 <dd>
 <p>gfsdが、gfarmファイルの実体を保持するディレクトリ名を
@@ -144,7 +144,7 @@ GSI認証において、gfsdが用いる証明書の種類を指定します。
 <span class="token">spool_server_cred_name</span>と組み合わせて
 下記のように用います。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><span class="token">self</span></span></dt>
 <dd><p>
 そのユーザが現在所持しているユーザ証明書を用いることを示します。
@@ -1129,7 +1129,7 @@ enableと指定した場合、ファイル作成・変更・削除に関する
 <p>
 指定可能な動作名は以下の通りです:
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><span class="token">backtrace_and_abort</span></span></dt>
 <dd><p>
 バックトレースを出力した後、
@@ -1456,10 +1456,14 @@ gfmdが忙しい場合に処理を休む時間をナノ秒で指定します。
 <dt><span class="term"><span class="token">replica_check</span> <em class="parameter"><code>有効性</code></em></span></dt>
 <dd>
 <p>
-enableと指定した場合、gfmd内のreplica_check機能が自動的に、
-ファイル複製の数と配置をチェックし、修復します。
-replica_checkは必要なときにしか動作しません。
+enableと指定した場合、gfmd内のreplica_check機能が
+ファイル複製の数と配置を自動的にチェックし、修復します。
+replica_checkは必要なときにだけ動作します。
 デフォルトはenableです。
+</p>
+<p>
+<span class="command"><strong>gfrepcheck</strong></span>コマンドを使うと、
+この挙動をオンライン状態で変更できます。
 </p>
 <p>
 この文はgfmd.confのみで有効です。
@@ -1467,6 +1471,47 @@ replica_checkは必要なときにしか動作しません。
 <p>例:</p>
 <div class="literallayout"><p><br>
 	replica_check disable<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">replica_check_remove</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>
+enableと指定した場合、gfmd内のreplica_check機能が
+余剰ファイル複製を自動的に削除します。
+例外として、ファイルにハードリンクが設定されていて (nlink &gt;= 2)、
+そのファイル自身に複製数の設定 (gfarm.ncopy または gfarm.replicainfo)
+がされていない場合、そのファイルの余剰ファイル複製は削除されません。
+デフォルトはenableです。
+</p>
+<p>
+<span class="command"><strong>gfrepcheck remove</strong></span>コマンドを使うと、
+この挙動をオンライン状態で変更できます。
+</p>
+<p>
+この文はgfmd.confのみで有効です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	replica_check_remove disable<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">replica_check_reduced_log</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>
+enableと指定した場合、
+replica_check機能が出力するログメッセージが抑制されることがあります。
+デフォルトはenableです。
+</p>
+<p>
+<span class="command"><strong>gfrepcheck reduced_log</strong></span>コマンドを使うと、
+この挙動をオンライン状態で変更できます。
+</p>
+<p>
+この文はgfmd.confのみで有効です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	replica_check_reduced_log disable<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">replica_check_host_down_thresh</span> <em class="parameter"><code>秒数</code></em></span></dt>
@@ -1518,10 +1563,10 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 </dd>
 </dl></div>
 </div>
-<div class="refsect1" title="GRAMMAR">
+<div class="refsect1">
 <a name="grammar"></a><h2>GRAMMAR</h2>
 <p>gfarm2.confの文法をBNFで記述すると、下記のようになります。</p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">&lt;statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p><br>
 	&lt;spool_statement&gt; |<br>
@@ -1616,6 +1661,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; |<br>
 	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |<br>
 	&lt;replica_check_statement&gt; |<br>
+	&lt;replica_check_remove_statement&gt; |<br>
+	&lt;replica_check_reduced_log_statement&gt; |<br>
 	&lt;replica_check_host_down_thresh_statement&gt; |<br>
 	&lt;replica_check_sleep_time_statement&gt; |<br>
 	&lt;replica_check_minimum_interval_statement&gt;</p></div></dd>
@@ -1813,6 +1860,10 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <dd><div class="literallayout"><p>"metadb_replica_remover_by_host_inode_step" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;replica_check_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"replica_check" &lt;validity&gt;</p></div></dd>
+<dt><span class="term">&lt;replica_check_remove_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"replica_check_remove" &lt;validity&gt;</p></div></dd>
+<dt><span class="term">&lt;replica_check_reduced_log_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"replica_check_reduced_log" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;replica_check_host_down_thresh_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"replica_check_host_down_thresh" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;replica_check_sleep_time_statement&gt; ::=</span></dt>
@@ -1863,7 +1914,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	"abort" | "exit"</p></div></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="EXAMPLES">
+<div class="refsect1">
 <a name="examples"></a><h2>EXAMPLES</h2>
 <p>
 以下は sharedsecret認証を使う gfarm2.conf の例です。
@@ -1912,16 +1963,16 @@ admin_user_gsi_dn "/C=JP/ST=Tokyo/L=Chuo-ku/O=Example, Inc./OU=Example Divisi
 sockopt keepalive<br>
 </p></div>
 </div>
-<div class="refsect1" title="FILES">
+<div class="refsect1">
 <a name="files"></a><h2>FILES</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code></span></dt>
 <dd><p></p></dd>
 <dt><span class="term"><code class="filename">$HOME/.gfarm2rc</code></span></dt>
 <dd><p></p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfmd</span>(8)</span>,
