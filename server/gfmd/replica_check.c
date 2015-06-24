@@ -21,6 +21,7 @@
 #include "gfutil.h"
 #include "nanosec.h"
 #include "thrsubr.h"
+#include "gflog_reduced.h"
 
 #include "config.h"
 #include "auth.h"
@@ -38,7 +39,6 @@
 #include "subr.h"
 #include "user.h"
 #include "back_channel.h"
-#include "gflog_reduced.h"
 
 /* for debug */
 /* #define DEBUG_REPLICA_CHECK or CPPFLAGS='-DDEBUG_REPLICA_CHECK' */

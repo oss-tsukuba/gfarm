@@ -39,6 +39,7 @@
 
 #include "gfutil.h"
 #include "queue.h"
+#include "gflog_reduced.h"
 
 #include "crc32.h"
 #include "iobuffer.h"
@@ -713,6 +714,9 @@ journal_file_reader_rewind(struct journal_file_reader *reader)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static struct gflog_reduced_state wait_log_state =
+	GFLOG_REDUCED_STATE_INITIALIZER(3, 60, 600, 60);
+
 static int
 journal_file_reader_writer_wait(struct journal_file_reader *reader,
 	struct journal_file *jf, size_t rec_len)
@@ -776,10 +780,9 @@ journal_file_reader_writer_wait(struct journal_file_reader *reader,
 		if (!needed)
 			break;
 
-		gflog_warning(GFARM_MSG_UNFIXED,
-		    "journal write: wait until %s reads the journal file, "
-		    "increase \"metadb_journal_max_size\" (currently %ld)",
-		    reader->label, (unsigned long)jf->max_size);
+		gflog_reduced_notice(GFARM_MSG_UNFIXED, &wait_log_state,
+		    "journal write: wait until %s reads the journal file",
+		    reader->label);
 		if (reader->label == main_reader_label)
 			jf->wait_until_nonfull = 1;
 		gfarm_cond_wait(&jf->nonfull_cond, &jf->mutex,
