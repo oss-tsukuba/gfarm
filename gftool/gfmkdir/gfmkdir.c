@@ -97,13 +97,13 @@ main(int argc, char **argv)
 			if (e == GFARM_ERR_NO_ERROR)
 				argv[i] = path;
 			e = gfs_mkdir(argv[i], 0755);
-			free(path);
 		}
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s: %s\n",
 			    program_name, argv[i], gfarm_error_string(e));
 			status = 1;
 		}
+		free(path);
 	}
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
