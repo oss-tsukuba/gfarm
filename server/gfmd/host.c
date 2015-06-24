@@ -176,7 +176,7 @@ host_lookup(const char *hostname)
 	if (h == NULL)
 		return (NULL);
 	if (host_is_invalid_unlocked(h)) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004261,
 		    "unexpected error: invalid host %s in host_hashtab",
 		    host_name(h));
 		return (NULL);
@@ -308,7 +308,7 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	h = host_hashtab_lookup(host_hashtab, hi->hostname);
 	if (h != NULL) {
 		if (host_is_invalid_unlocked(h)) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004262,
 			    "unexpected error: invalid host %s "
 			    "in host_hashtab", hi->hostname);
 			host_validate(h);
@@ -383,7 +383,7 @@ host_remove_internal(const char *hostname, int update_deadfilecopy)
 
 	if (!gfarm_hash_purge(host_hashtab,
 	    &h->hi.hostname, sizeof(h->hi.hostname))) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004263,
 		    "unexpected error: host %s doesn't exist in host_hashtab",
 		    host_name(h));
 	}
@@ -392,7 +392,7 @@ host_remove_internal(const char *hostname, int update_deadfilecopy)
 	    &h->hi.hostname, sizeof(h->hi.hostname), sizeof(struct host *),
 	    &created);
 	if (entry == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004264,
 		    "host %s: cannot register removed_host_hashtab: no memory",
 		    host_name(h));
 	}
@@ -1470,7 +1470,7 @@ host_init(void)
 		gfarm_hash_casefold_strptr,
 		gfarm_hash_key_equal_casefold_strptr);
 	if (removed_host_hashtab == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1004265,
 		    "no memory for host removed_hashtab");
 
 	e = db_host_load(NULL, host_add_one);

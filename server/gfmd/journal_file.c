@@ -780,7 +780,7 @@ journal_file_reader_writer_wait(struct journal_file_reader *reader,
 		if (!needed)
 			break;
 
-		gflog_reduced_notice(GFARM_MSG_UNFIXED, &wait_log_state,
+		gflog_reduced_notice(GFARM_MSG_1004257, &wait_log_state,
 		    "journal write: wait until %s reads the journal file",
 		    reader->label);
 		if (reader->label == main_reader_label)
@@ -1971,7 +1971,7 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 		}
 		if (jf->wait_until_nonfull == 1 &&
 		    reader->label == main_reader_label)
-			gflog_fatal(GFARM_MSG_UNFIXED, "deadlock detected: "
+			gflog_fatal(GFARM_MSG_1004258, "deadlock detected: "
 			    "increase \"metadb_journal_max_size\" "
 			    "(currently %ld)", (unsigned long)jf->max_size);
 		jf->wait_until_nonempty = 1;

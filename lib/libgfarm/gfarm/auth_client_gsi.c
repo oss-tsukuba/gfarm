@@ -170,7 +170,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 			gfarm_auth_set_gsi_auth_error(1);
 			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1004245,
 				    "cannot obtain initiator name");
 				gfarmGssPrintMajorStatus(e_major);
 				gfarmGssPrintMinorStatus(e_minor);
@@ -184,7 +184,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 			gfarm_auth_set_gsi_auth_error(1);
 			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1004246,
 				    "cannot obtain initiator dn");
 				gfarmGssPrintMajorStatus(e_major);
 				gfarmGssPrintMinorStatus(e_minor);
@@ -444,7 +444,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 			gfarm_auth_set_gsi_auth_error(1);
 			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1004247,
 				    "cannot obtain initiator name");
 				gfarmGssPrintMajorStatus(e_major);
 				gfarmGssPrintMinorStatus(e_minor);
@@ -459,7 +459,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 			gfarm_auth_set_gsi_auth_error(1);
 			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1004248,
 				    "cannot obtain initiator dn");
 				gfarmGssPrintMajorStatus(e_major);
 				gfarmGssPrintMinorStatus(e_minor);

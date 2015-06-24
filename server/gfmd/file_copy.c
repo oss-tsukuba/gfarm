@@ -51,7 +51,7 @@ file_copy_by_host_remove(void)
 {
 	gfarm_ino_t inum, inum_limit, inum_target;
 
-	gflog_info(GFARM_MSG_UNFIXED, "file_copy remover start");
+	gflog_info(GFARM_MSG_1004266, "file_copy remover start");
 	housekeep_giant_lock();
 
 	inum = inode_root_number();
@@ -77,7 +77,7 @@ file_copy_by_host_remove(void)
 	}
 
 	housekeep_giant_unlock();
-	gflog_info(GFARM_MSG_UNFIXED, "file_copy remover completed");
+	gflog_info(GFARM_MSG_1004267, "file_copy remover completed");
 }
 
 static void *
@@ -222,7 +222,7 @@ file_copy_init(void)
 
 	if ((e = create_detached_thread(file_copy_by_host_remover, NULL))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1004268,
 		    "create_detached_thread(file_copy_by_host_remover): "
 		    "%s", gfarm_error_string(e));
 }

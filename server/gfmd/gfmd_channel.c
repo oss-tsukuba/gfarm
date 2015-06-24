@@ -534,7 +534,7 @@ gfmdc_wait_journal_syncsend(struct gfmdc_journal_send_closure *c)
 		c->end = 1;
 	gfarm_mutex_unlock(&c->send_mutex, diag, SEND_MUTEX_DIAG);
 	if (in_time == 0)
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004270,
 		    "journal send to %s: timeout due to no response "
 		    "within %d seconds "
 		    "(synchronous_journal_timeout)", mdhost_get_name(c->host),
@@ -1324,7 +1324,7 @@ gfmdc_wait_journal_recv_threads(const char *diag)
 		    &journal_sync_info.sync_mutex, &ts, diag,
 		    SYNC_END_COND_DIAG);
 		if (in_time == 0) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1004271,
 			    "journal response timeout (%d seconds), check "
 			    "synchronous slave servers", timeout);
 			timeout *= 2;

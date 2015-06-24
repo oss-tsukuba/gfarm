@@ -137,7 +137,7 @@ replica_check_remove_replicas(struct inode *inode,
 		gfarm_off_t used, avail;
 
 		host_status_get_disk_usage(srcs[i], &used, &avail);
-		RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+		RC_LOG_DEBUG(GFARM_MSG_1004272,
 		    "replica_check: candidate to remove: "
 		    "[%d]%s: used=%lld, avail=%lld",
 		    i, host_name(srcs[i]), (long long)used, (long long)avail);
@@ -147,7 +147,7 @@ replica_check_remove_replicas(struct inode *inode,
 		e2 = inode_remove_replica_protected(inode, srcs[i],
 		    &info->replica_spec);
 		if (e2 == GFARM_ERR_NO_ERROR) {
-			REDUCED_INFO(GFARM_MSG_UNFIXED, &remove_ok_state,
+			REDUCED_INFO(GFARM_MSG_1004273, &remove_ok_state,
 			    "replica_check: %lld:%lld:%s@%s: removed",
 			    (long long)info->inum, (long long)info->gen,
 			    user_name(inode_get_user(inode)),
@@ -229,7 +229,7 @@ replica_check_fix(struct replication_info *info)
 		free(existing);
 		free(being_removed);
 		free(srcs);
-		REDUCED_WARN(GFARM_MSG_UNFIXED, &hosts_down_state,
+		REDUCED_WARN(GFARM_MSG_1004274, &hosts_down_state,
 		    "replica_check: %lld:%lld:%s: no available replica",
 		    (long long)info->inum, (long long)info->gen,
 		    user_name(inode_get_user(inode)));
@@ -256,7 +256,7 @@ replica_check_fix(struct replication_info *info)
 		if (e == GFARM_ERR_NO_ERROR)
 			transaction = 1;
 		else
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1004275,
 			    "replica_check: db_begin(): %s",
 			    gfarm_error_string(e));
 	}
@@ -345,7 +345,7 @@ static void
 replica_check_giant_lock_default(void)
 {
 	if (!giant_trylock()) {
-		RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+		RC_LOG_DEBUG(GFARM_MSG_1004276,
 		    "replica_check: cannot get lock, sleep");
 		gfarm_nanosleep(gfarm_replica_check_sleep_time);
 		giant_lock();
@@ -461,7 +461,7 @@ replica_check_main(void)
 	replica_check_giant_unlock();
 
 	RC_LOG_INFO(GFARM_MSG_1003632, "replica_check: start");
-	RC_LOG_INFO(GFARM_MSG_UNFIXED,
+	RC_LOG_INFO(GFARM_MSG_1004277,
 	    "replica_check: remove=%s, reduced_log=%s",
 	    replica_check_remove_enabled() ? "enable" : "disable",
 	    replica_check_reduced_log_enabled() ? "enable" : "disable");
@@ -927,7 +927,7 @@ gfm_server_replica_check_ctrl(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1003759, "%s", gfarm_error_string(e));
 	} else {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004278,
 		    "replica_check: ctrl=%s",
 		    replica_check_ctrl_string(ctrl));
 		switch (ctrl) {
@@ -974,7 +974,7 @@ replica_check_thread(void *arg)
 
 	e = gfarm_pthread_set_priority_minimum(REPLICA_CHECK_DIAG);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004279,
 		    "replica_check: use sched_yield()");
 		replica_check_giant_unlock = replica_check_giant_unlock_yield;
 	}

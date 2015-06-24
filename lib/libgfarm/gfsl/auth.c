@@ -214,7 +214,7 @@ gfarmGetDefaultConfigPath(char *dir, char *file)
 		return (NULL);
 	GFARM_MALLOC_ARRAY(path, strlen(dir) + 1 + strlen(file) + 1);
 	if (path == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no memory");
+		gflog_error(GFARM_MSG_1004236, "no memory");
 		return (NULL);
 	}
 	sprintf(path, "%s/%s", dir, file);
@@ -238,7 +238,7 @@ setAuthFile(char *usermap)
 	static const char diag[] = "gfsl/setAuthFile()";
 
 	if (usermap != NULL && stat(usermap, &sb) == -1) {
-		gflog_auth_error(GFARM_MSG_UNFIXED, "%s: %s", usermap,
+		gflog_auth_error(GFARM_MSG_1004237, "%s: %s", usermap,
 			strerror(errno));
 		return (ret);
 	}
@@ -254,9 +254,9 @@ setAuthFile(char *usermap)
 		authFile = strdup(usermap);
 	}
 	if (authFile == NULL)
-		gflog_auth_error(GFARM_MSG_UNFIXED, "no memory");
+		gflog_auth_error(GFARM_MSG_1004238, "no memory");
 	else if (usermap == NULL && stat(authFile, &sb) == -1)
-		gflog_auth_error(GFARM_MSG_UNFIXED, "%s: %s", authFile,
+		gflog_auth_error(GFARM_MSG_1004239, "%s: %s", authFile,
 			strerror(errno));
 	else {
 		authFileStat = sb;
@@ -274,7 +274,7 @@ openAuthFile(void)
 
 	gfarm_mutex_lock(&authFile_mutex, diag, authFileDiag);
 	if (authFile == NULL)
-		gflog_auth_notice(GFARM_MSG_UNFIXED, "authFile not set");
+		gflog_auth_notice(GFARM_MSG_1004240, "authFile not set");
 	else {
 		f = fopen(authFile, "r");
 		if (f == NULL)
@@ -294,9 +294,9 @@ checkAuthFileStat(void)
 
 	gfarm_mutex_lock(&authFile_mutex, diag, authFileDiag);
 	if (authFile == NULL)
-		gflog_auth_notice(GFARM_MSG_UNFIXED, "authFile not set");
+		gflog_auth_notice(GFARM_MSG_1004241, "authFile not set");
 	else if (stat(authFile, &sb) == -1)
-		gflog_auth_warning(GFARM_MSG_UNFIXED, "%s: %s", authFile,
+		gflog_auth_warning(GFARM_MSG_1004242, "%s: %s", authFile,
 			strerror(errno));
 	else {
 		update = (authFileStat.st_mtime < sb.st_mtime);

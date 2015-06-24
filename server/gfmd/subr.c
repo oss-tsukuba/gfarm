@@ -139,11 +139,11 @@ gfarm_pthread_set_priority_idle(const char *thread_name, pthread_t thread)
 	param.sched_priority = 0;
 	save_errno = pthread_setschedparam(thread, policy, &param);
 	if (save_errno == 0) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004250,
 		    "%s: scheduling policy=SCHED_IDLE", thread_name);
 		return (GFARM_ERR_NO_ERROR); /* use SCHED_IDLE */
 	}
-	gflog_warning(GFARM_MSG_UNFIXED,
+	gflog_warning(GFARM_MSG_1004251,
 	    "%s: pthread_set_schedparam(%d, %d): %s",
 	    thread_name, policy, param.sched_priority, strerror(save_errno));
 	return (gfarm_errno_to_error(save_errno));
@@ -166,7 +166,7 @@ gfarm_pthread_set_priority_minimum(const char *thread_name)
 
 	save_errno = pthread_getschedparam(self, &policy, &param);
 	if (save_errno != 0) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004252,
 		    "%s: pthread_get_schedparam(): %s",
 		    thread_name, strerror(errno));
 		return (gfarm_errno_to_error(save_errno));
@@ -175,7 +175,7 @@ gfarm_pthread_set_priority_minimum(const char *thread_name)
 	min_prio = sched_get_priority_min(policy);
 	if (min_prio == -1) {
 		save_errno = errno;
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004253,
 		    "%s: sched_get_priority_min(%s): %s",
 		    thread_name, gfarm_sched_policy_name(policy),
 		    strerror(errno));
@@ -183,7 +183,7 @@ gfarm_pthread_set_priority_minimum(const char *thread_name)
 	}
 
 	if (param.sched_priority == min_prio) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004254,
 		    "%s: cannot change the scheduling priority of %s",
 		    thread_name, gfarm_sched_policy_name(policy));
 		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -192,13 +192,13 @@ gfarm_pthread_set_priority_minimum(const char *thread_name)
 	param.sched_priority = min_prio;
 	save_errno = pthread_setschedparam(self, policy, &param);
 	if (save_errno != 0) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004255,
 		    "%s: pthread_set_schedparam(%d, %d): %s",
 		    thread_name, policy, min_prio, strerror(errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
 
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1004256,
 	    "%s: scheduling policy=%s, priority=%d",
 	    thread_name, gfarm_sched_policy_name(policy), min_prio);
 

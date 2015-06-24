@@ -388,7 +388,7 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 			host, port, user, &gfm_server);
 		if (e == GFARM_ERR_EXPIRED ||
 		    e == GFARM_ERR_INVALID_CREDENTIAL) {
-			gflog_notice(GFARM_MSG_UNFIXED, "%s:%d:%s: %s",
+			gflog_notice(GFARM_MSG_1004244, "%s:%d:%s: %s",
 			    host, port, user, gfarm_error_string(e));
 			break;
 		} else if (e != GFARM_ERR_NO_ERROR) {

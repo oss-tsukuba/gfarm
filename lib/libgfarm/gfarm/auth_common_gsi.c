@@ -116,7 +116,7 @@ gfarm_gsi_client_cred_name(void)
 
 	if (gfarmGssNewCredentialName(&name, cred, &e_major, &e_minor) < 0) {
 		staticp->client_dn = NULL;
-		gflog_auth_notice(GFARM_MSG_UNFIXED,
+		gflog_auth_notice(GFARM_MSG_1004249,
 		    "gfarm_gsi_client_cred_name(): "
 		    "cannot acquire initiator credential");
 		if (gflog_auth_get_verbose()) {

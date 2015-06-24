@@ -3980,7 +3980,7 @@ retry:
 		gfarm_cond_signal(&journal_recvq_nonfull_cond, diag,
 		    RECVQ_NONFULL_COND_DIAG);
 		if (ri->from_sn != next_sn) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1004280,
 			    "abandon invalid journal: seqnum %llu "
 			    "should be %llu", (unsigned long long)ri->from_sn,
 			    (unsigned long long)next_sn);

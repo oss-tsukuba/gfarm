@@ -5665,7 +5665,7 @@ db_xml_remove_one_orphan(void *closure, gfarm_ino_t inum, const char *attrname)
 
 	e = db_xattr_remove(1, inum, (char *)attrname); /* XXX UNCONST */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004269,
 		    "orphan xml %llu attrname:%s removal: %s",
 		    (unsigned long long)inum, attrname, gfarm_error_string(e));
 }

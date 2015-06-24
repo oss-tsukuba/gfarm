@@ -2351,7 +2351,7 @@ gfarm_ldap_hostname_make_dn(void *vkey)
 	GFARM_MALLOC_ARRAY(dn, strlen(ldap_hostname_dn_template)
 	    + strlen(key) + strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004281,
 			"allocation of string 'dn' failed");
 		return (NULL);
 	}

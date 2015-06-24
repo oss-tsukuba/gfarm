@@ -544,7 +544,7 @@ db_journal_apply_filecopy_remove(gfarm_uint64_t seqnum,
 		 * SF.net #860 may send stale GFM_JOURNAL_FILECOPY_REMOVE
 		 */
 		e = GFARM_ERR_NO_ERROR;
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004259,
 		    "inum=%llu hostname=%s : %s",
 		    (unsigned long long)arg->inum, arg->hostname,
 		    "stale host");
@@ -557,7 +557,7 @@ db_journal_apply_filecopy_remove(gfarm_uint64_t seqnum,
 			 * stale GFM_JOURNAL_FILECOPY_REMOVE
 			 */
 			e = GFARM_ERR_NO_ERROR;
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1004260,
 			    "inum=%llu hostname=%s : %s",
 			    (unsigned long long)arg->inum, arg->hostname,
 			    "stale filecopy");

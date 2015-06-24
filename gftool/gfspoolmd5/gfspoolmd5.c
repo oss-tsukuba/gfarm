@@ -213,7 +213,7 @@ show_statistics(void)
 	min = (time - hour * 3600) / 60;
 	sec = time - hour * 3600 - min * 60;
 
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1004282,
 	    "file: %lld size: %lld time: %d:%02d:%02d bandwidth: %.2f KB/s",
 	    total_count, total_size, hour, min, (int)sec, bw);
 }
