@@ -58,7 +58,7 @@
   対処予定:
 	未定です。
 
-- ファイルビュー機能はサポートされていません。
+- Gfarm 1.X で提供していたファイルビュー機能はサポートされていません。
 
   対処予定:
 	サポート予定はありません。
@@ -217,9 +217,7 @@
 - 下記のコマンドに関する参照マニュアルが存在しないか，更新されていませ
   ん。
 
-  config-gfarm, config-gfarm-update, config-gfsd, gfarm.arch.guess,
-  gfrm, gfarm-pcp, gfarm-prun,
-  gfvoms-sync
+  gfarm.arch.guess, gfarm-pcp, gfarm-prun, gfvoms-sync
 
   対処予定:
 	未定です。

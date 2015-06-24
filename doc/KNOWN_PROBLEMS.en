@@ -59,7 +59,7 @@ Please refer the following URL for more detail:
   Plans for fixes:
 	Not determined yet.
 
-- File view is not implemented.
+- File view supported by Gfarm 1.X is not implemented.
 
   Plans for fixes:
 	No plan to support.
@@ -212,9 +212,7 @@ command.
 
 - There is no reference manual for the following commands:
 
-  config-gfarm, config-gfarm-update, config-gfsd, gfarm.arch.guess,
-  gfrm, gfarm-pcp, gfarm-prun,
-  gfvoms-sync
+  gfarm.arch.guess, gfarm-pcp, gfarm-prun, gfvoms-sync
 
   Plans for fixes:
 	Not determined yet.

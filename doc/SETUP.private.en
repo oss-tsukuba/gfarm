@@ -238,7 +238,7 @@ catalog, of the specified files.
 
 The 'gfrep' command creates file copies.
 
-	% gfrep -s linux-1.example.com -d linux-2.example.com .bashrc
+	% gfrep -N 2 .bashrc
 	% gfwhere .bashrc
 	linux-1.example.com linux-2.example.com
 
