@@ -1,3 +1,47 @@
+Release note for Gfarm 2.6.5
+============================
+
+[2015.6.25]
+
+New feature
+* automatic removal of excessive number of file replicas
+* gfrepcheck - remove and reduce_log commands to control automatic
+  replica removal and log summary output features
+* gfpcopy - HPSS support
+* gfprep, gfpcopy - -z and -Z options to specify the minimum and
+  maximum file size to copy, respectively
+
+New configuration directive
+* replica_check_remove - disables automatic replica removal feature
+* replica_check_reduced_log - disables log summary output feature in
+  replica check
+* metadb_replica_remover_by_host_sleep_time
+* metadb_replica_remover_by_host_inode_step
+
+Updated feature
+* file replicas can be removed only when available number of replicas
+  is greater than required [sf.net ticket #857]
+* gfexport - accept multiple input files [sf.net ticket #853]
+* gfspooldigest - show statistics at the end
+* libgfarm - do not connect to servers when client certificate is
+  expired
+* gfhost -d removes file replicas stored on the deleted host [sf.net
+  ticket #860]
+* gfjournal -m - performance improvement
+* gfmd - SIGHUP is not needed to reload CA certificate and CRL
+* slave gfmd - do not exit when journal receive queue overflows
+
+Bug fix
+* gfmd may crash in GSI [sf.net ticket #854]
+* gfmd - replica check does not create required replicas when gfsd is
+  up [sf.net ticket #856]
+* client may block when GSI authentication fails
+* client may crash when connection problem happens [sf.net ticket
+  #852]
+* slave gfmd may exit when connection problem happens [sf.net ticket
+  #851]
+* gfmkdir - fix invalid memory reference in error case
+
 Release note for Gfarm 2.6.4.1
 ==============================
 
