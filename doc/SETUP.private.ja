@@ -70,20 +70,21 @@ $PREFIX/etc/gfmd.conf などが作成された筈です。
 
 	% etc/init.d/gfmd status
 
-上記作業によって作成されたファイルを消去したい場合には、下記のコマンド
-で gfmd およびバックエンドデータベースサーバを停止させたのち、
+上記作業によって作成されたファイルを消去したい場合には，消去用
+スクリプトが etc/unconfig-gfarm.sh として生成されていますので，
+これを実行してください．
 
-	% etc/init.d/gfmd stop
-	(場合によっては % killall gfmd)
-	% etc/init.d/gfarm-pgsql stop
+	% etc/unconfig-gfarm.sh   
 
-下記のコマンドで削除できます。
+すると、以下のように尋ねてきますので「y」と答えます．
 
-	% cd $PREFIX
-	% rm -f etc/gfarm2.conf etc/gfmd.conf
-	% rm -f etc/gfsd.conf etc/usermap
-	% rm -f etc/init.d/gfarm-* etc/init.d/gfmd
-	% rm -rf var/gfarm-*
+	Do you unconfigure gfarm? [y/n]: 
+
+これで，gfmd が停止し，設定ファイルが消去されます。また，この
+Gfarm ファイルシステムのメタデータも消去されます．
+
+unconfig-gfarm.sh が実行する内容は，unconfig-gfarm.sh に -t オプションを
+指定することで，事前に確認できます．
 
 ▽ ファイアウォールの設定
 
@@ -122,18 +123,22 @@ $PREFIX/etc/gfmd.conf などが作成された筈です。
 
 以上で設定は完了です。
 
-上記作業によって作成されたファイルを消去したい場合には、
-下記のコマンドで gfsd を停止させたのち、
+上記作業によって作成されたファイルを消去したい場合には、消去用
+スクリプトが etc/unconfig-gfsd.sh として生成されていますので，
+これを実行してください．
 
-	% $PREFIX/etc/init.d/gfsd stop
-	(場合によっては % killall gfsd)
+	% $PREFIX/etc/unconfig-gfsd.sh
 
-下記のコマンドで削除できます。
+すると、以下のように尋ねてきますので「y」と答えます．
 
-	% rm -f $PREFIX/etc/{gfarm2,gfsd}.conf
-	% rm -f $PREFIX/etc/init.d/gfsd
-	% rm -rf $PREFIX/var/gfarm-spool
-	(あるいは指定したスプールディレクトリを消去)
+	Do you run unconfiguration? [y/n]: 
+
+これで，gfsd が停止し，設定ファイルが消去されます。また，この
+ノード上に存在する Gfarm ファイルシステムのデータも消去され，
+メタデータから，このファイルシステムノードの登録も削除されます．
+
+unconfig-gfsd.sh が実行する内容は，unconfig-gfsd.sh に -t オプションを
+指定することで，事前に確認できます．
 
 ▽ ファイアウォールの設定
 
