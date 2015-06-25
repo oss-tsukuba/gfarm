@@ -152,6 +152,9 @@ Gfarm performance monitoring plugin for Ganglia
 Development header files and libraries for Gfarm file system
 
 %changelog
+* Thu Jun 25 2015 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.6.5-1
+- Gfarm version 2.6.5 released
+
 * Fri Mar 27 2015 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.6.2-1
 - Gfarm version 2.6.2 released
 
@@ -1150,6 +1153,7 @@ fi
 %{share_prefix}/gfservice
 %{share_prefix}/systest
 
+%{prefix}/bin/gfcreate-test
 %{prefix}/bin/gfperf-autoreplica
 %{prefix}/bin/gfperf-copy
 %{prefix}/bin/gfperf-metadata
