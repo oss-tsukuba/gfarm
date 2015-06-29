@@ -133,6 +133,7 @@ free_arg(void *arg)
 
 static PGconn *conn = NULL;
 static int transaction_nesting = 0;
+static int transaction_postponed = 0;
 static int transaction_ok;
 static int connection_recovered = 0;
 
@@ -419,6 +420,7 @@ pgsql_should_retry(PGresult *res)
 		gflog_info(GFARM_MSG_1002333,
 		    "PostgreSQL connection recovered");
 		transaction_nesting = 0;
+		transaction_postponed = 0;
 		connection_recovered = 1;
 		transaction_ok = 0;
 		return (1);
@@ -626,9 +628,10 @@ gfarm_pgsql_start(const char *diag)
 
 	if (connection_recovered)
 		connection_recovered = 0;
-	if (transaction_nesting++ > 0)
+	if (transaction_nesting++ > 0 && !transaction_postponed)
 		return (GFARM_ERR_NO_ERROR);
 
+	transaction_postponed = 0;
 	transaction_ok = 1;
 	invalid_XML_value = 0;
 	res = PQexec(conn, "START TRANSACTION");
@@ -653,9 +656,10 @@ gfarm_pgsql_start_with_retry(const char *diag)
 
 	if (connection_recovered)
 		connection_recovered = 0;
-	if (transaction_nesting++ > 0)
+	if (transaction_nesting++ > 0 && !transaction_postponed)
 		return (GFARM_ERR_NO_ERROR);
 
+	transaction_postponed = 0;
 	transaction_ok = 1;
 	invalid_XML_value = 0;
 	do {
@@ -681,6 +685,15 @@ gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 		return (GFARM_ERR_NO_ERROR);
 
 	assert(transaction_nesting == 0);
+	if (transaction_postponed) {
+		/*
+		 * this means this transaction is actually empty,
+		 * because all entries in db_pgsql_ops call gfarm_pgsql_start()
+		 * explicitly.
+		 */
+		transaction_postponed = 0;
+		return (GFARM_ERR_NO_ERROR);
+	}
 
 	if (gfarm_get_metadb_replication_enabled() && seqnum > 0) {
 		gfarm_error_t e;
@@ -742,7 +755,7 @@ gfarm_pgsql_insert0(gfarm_uint64_t seqnum,
 	PGresult *res;
 	gfarm_error_t e;
 
-	if (transaction_nesting == 0) {
+	if (transaction_nesting == 0 || transaction_postponed) {
 		e = start_op(diag);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
@@ -818,7 +831,7 @@ gfarm_pgsql_update_or_delete0(gfarm_uint64_t seqnum,
 	PGresult *res;
 	gfarm_error_t e;
 
-	if (transaction_nesting == 0) {
+	if (transaction_nesting == 0 || transaction_postponed) {
 		e = start_op(diag);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
@@ -1335,7 +1348,15 @@ static gfarm_error_t
 gfarm_pgsql_begin(gfarm_uint64_t seqnum, void *arg)
 {
 	assert(transaction_nesting == 0);
-	return (gfarm_pgsql_start("pgsql_begin"));
+	transaction_nesting++;
+	/*
+	 * `transaction_postponed' means that db_begin() has been called,
+	 * but no SQL statement is issued yet.
+	 * this handling depends on the fact that all all entries in
+	 * db_pgsql_ops call gfarm_pgsql_start() explicitly.
+	 */
+	transaction_postponed = 1;
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
@@ -1880,6 +1901,7 @@ static gfarm_error_t
 gfarm_pgsql_user_add(gfarm_uint64_t seqnum, struct gfarm_user_info *info)
 {
 	gfarm_error_t e;
+
 	e = pgsql_user_call(seqnum, info,
 		"INSERT INTO GfarmUser (username, homedir, realname, gsiDN) "
 		     "VALUES ($1, $2, $3, $4)",
