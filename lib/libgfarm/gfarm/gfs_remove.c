@@ -72,7 +72,7 @@ gfs_remove(const char *path)
 
 	closure.path = path;
 	return (gfm_name_op_modifiable(path,
-	    GFARM_ERR_IS_A_DIRECTORY /*XXX posix ok?*/,
+	    GFARM_ERR_DEVICE_BUSY,
 	    gfm_remove_request,
 	    gfm_remove_result,
 	    gfm_name_success_op_connection_free,
