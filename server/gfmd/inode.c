@@ -3424,6 +3424,9 @@ inode_rename(
 
 	e = inode_lookup_by_name(ddir, dname, process, 0, &dst);
 	if (e == GFARM_ERR_NO_ERROR) {
+		if (src == dst)
+			return (GFARM_ERR_NO_ERROR);
+
 		if (gfarm_ctxp->file_trace && dsttp != NULL) {
 			dsttp->inum = inode_get_number(dst);
 			dsttp->igen = inode_get_gen(dst);
