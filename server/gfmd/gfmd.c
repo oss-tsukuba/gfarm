@@ -1814,7 +1814,7 @@ main(int argc, char **argv)
 	/* master */
 
 	failover_notify();
-	replica_check_start();
+	replica_check_init();
 	accepting_loop(sock);
 
 	/*NOTREACHED*/

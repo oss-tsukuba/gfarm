@@ -27,6 +27,7 @@
 #include "rpcsubr.h"
 #include "subr.h"
 #include "user.h"
+#include "replica_check.h"
 
 struct fsngroup_tuple {
 	char *hostname;
@@ -361,6 +362,9 @@ gfm_server_fsngroup_modify(
 		}
 
 		giant_unlock();
+
+		if (e == GFARM_ERR_NO_ERROR)
+			replica_check_start_fsngroup_modify();
 	}
 	e = gfm_server_put_reply(peer, diag, e, "");
 

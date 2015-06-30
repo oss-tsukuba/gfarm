@@ -335,8 +335,10 @@ static void
 replica_check_giant_lock_default(void)
 {
 	if (!giant_trylock()) {
+#ifdef DEBUG_REPLICA_CHECK
 		RC_LOG_DEBUG(GFARM_MSG_1004276,
 		    "replica_check: cannot get lock, sleep");
+#endif
 		gfarm_nanosleep(gfarm_replica_check_sleep_time);
 		giant_lock();
 	}
@@ -652,9 +654,9 @@ replica_check_timedwait(
 }
 
 static void
-replica_check_signal_wait(void)
+replica_check_cond_wait(void)
 {
-	static const char diag[] = "replica_check_signal_wait";
+	static const char diag[] = "replica_check_cond_wait";
 	struct timeval next, now;
 
 	gfarm_mutex_lock(&replica_check_mutex, diag, REPLICA_CHECK_DIAG);
@@ -686,7 +688,7 @@ replica_check_signal_wait(void)
 		/* caught cond_signal */
 
 		/*
-		 * integrate many replica_check_signal_*()
+		 * integrate many replica_check_start_*()
 		 *
 		 * waiting gfarm_replica_check_minimum_interval
 		 * seconds here, and replica_check_targets_next() will
@@ -706,12 +708,13 @@ replica_check_signal_wait(void)
 }
 
 static void
-replica_check_signal_general(const char *diag, long sec)
+replica_check_cond_signal(const char *diag, long sec)
 {
 	gfarm_mutex_lock(&replica_check_mutex, diag, REPLICA_CHECK_DIAG);
 	if (replica_check_initialized) {
 #ifdef DEBUG_REPLICA_CHECK
-		RC_LOG_DEBUG(GFARM_MSG_1003639, "%s is called", diag);
+		RC_LOG_DEBUG(GFARM_MSG_1003639,
+		    "replica_check: %s is called", diag);
 #endif
 		replica_check_targets_add(sec);
 		gfarm_cond_signal(
@@ -719,59 +722,68 @@ replica_check_signal_general(const char *diag, long sec)
 	}
 #ifdef DEBUG_REPLICA_CHECK
 	else
-		RC_LOG_DEBUG(GFARM_MSG_1003640, "%s is ignored", diag);
+		RC_LOG_DEBUG(GFARM_MSG_1003640,
+		    "replica_check: %s is ignored", diag);
 #endif
 	gfarm_mutex_unlock(&replica_check_mutex, diag, REPLICA_CHECK_DIAG);
 }
 
 void
-replica_check_signal_host_up(void)
+replica_check_start_host_up(void)
 {
-	static const char diag[] = "replica_check_signal_host_up";
+	static const char diag[] = "replica_check_start_host_up";
 
-	replica_check_signal_general(diag, 0);
+	replica_check_cond_signal(diag, 0);
 }
 
 void
-replica_check_signal_host_down(void)
+replica_check_start_host_down(void)
 {
-	static const char diag[] = "replica_check_signal_host_down";
+	static const char diag[] = "replica_check_start_host_down";
 
-	replica_check_signal_general(
+	replica_check_cond_signal(
 	    diag, gfarm_replica_check_host_down_thresh);
 	/* NOTE: execute replica_check_main() twice after restarting gfsd */
 }
 
 void
-replica_check_signal_update_xattr(void)
+replica_check_start_xattr_update(void)
 {
-	static const char diag[] = "replica_check_signal_update_xattr";
+	static const char diag[] = "replica_check_start_xattr_update";
 
-	replica_check_signal_general(diag, 0);
+	replica_check_cond_signal(diag, 0);
 }
 
 void
-replica_check_signal_rename(void)
+replica_check_start_move(void)
 {
-	static const char diag[] = "replica_check_signal_rename";
+	static const char diag[] = "replica_check_start_move";
 
-	replica_check_signal_general(diag, 0);
+	replica_check_cond_signal(diag, 0);
 }
 
 void
-replica_check_signal_rep_request_failed(void)
+replica_check_start_rep_request_failed(void)
 {
-	static const char diag[] = "replica_check_signal_rep_request_failed";
+	static const char diag[] = "replica_check_start_rep_request_failed";
 
-	replica_check_signal_general(diag, 0);
+	replica_check_cond_signal(diag, 0);
 }
 
 void
-replica_check_signal_rep_result_failed(void)
+replica_check_start_rep_result_failed(void)
 {
-	static const char diag[] = "replica_check_signal_rep_result_failed";
+	static const char diag[] = "replica_check_start_rep_result_failed";
 
-	replica_check_signal_general(diag, 0);
+	replica_check_cond_signal(diag, 0);
+}
+
+void
+replica_check_start_fsngroup_modify(void)
+{
+	static const char diag[] = "replica_check_start_fsngroup_modify";
+
+	replica_check_cond_signal(diag, 60);  /* 60 sec. */
 }
 
 #define ENABLE  1
@@ -793,9 +805,9 @@ replica_check_ctrl_set(int ctrl)
 	gfarm_mutex_lock(&replica_check_ctrl_mutex, diag,
 	    REPLICA_CHECK_CTRL_DIAG);
 
-	/* escape from replica_check_signal_wait() */
+	/* escape from replica_check_cond_wait() */
 	if (replica_check_ctrl_waiting == 0)
-		replica_check_signal_general(diag, 0);
+		replica_check_cond_signal(diag, 0);
 
 	replica_check_ctrl = ctrl;
 	gfarm_cond_signal(&replica_check_ctrl_cond, diag,
@@ -955,12 +967,8 @@ gfm_server_replica_check_ctrl(struct peer *peer, int from_client, int skip)
 static void *
 replica_check_thread(void *arg)
 {
-	int wait_time;
-	time_t dfc_scan_time;
+	time_t dfc_scan_time = 0;
 	gfarm_error_t e;
-
-	if (!replica_check_stack_init() || !replica_check_targets_init())
-		return (NULL);
 
 	e = gfarm_pthread_set_priority_minimum(REPLICA_CHECK_DIAG);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -977,20 +985,14 @@ replica_check_thread(void *arg)
 	if (gfarm_replica_check_sleep_time > GFARM_SECOND_BY_NANOSEC)
 		gfarm_replica_check_sleep_time = GFARM_SECOND_BY_NANOSEC;
 
-	/* wait for startup of gfsd hosts */
-	wait_time = gfarm_metadb_heartbeat_interval;
-	replica_check_targets_add(wait_time);
-
-	dfc_scan_time = time(NULL) + DFC_SCAN_INTERVAL;
-	replica_check_targets_add(DFC_SCAN_INTERVAL);
-
 	for (;;) {
 		time_t t = time(NULL) + gfarm_replica_check_minimum_interval;
 
-		replica_check_signal_wait();
+		replica_check_cond_wait();
 		replica_check_ctrl_wait(); /* if the ctrl is stop, wait here */
 		if (replica_check_main()) /* error occured, retry */
-			replica_check_targets_add(wait_time);
+			replica_check_cond_signal("retry_by_error",
+			    gfarm_metadb_heartbeat_interval);
 
 		/* call dead_file_copy_scan_deferred_all */
 		if (time(NULL) >= dfc_scan_time) {
@@ -999,7 +1001,8 @@ replica_check_thread(void *arg)
 			replica_check_giant_unlock();
 
 			dfc_scan_time = time(NULL) + DFC_SCAN_INTERVAL;
-			replica_check_targets_add(DFC_SCAN_INTERVAL);
+			replica_check_cond_signal("dead_file_copy_scan",
+			    DFC_SCAN_INTERVAL);
 			RC_LOG_DEBUG(GFARM_MSG_1003641,
 			    "replica_check: dead_file_copy_scan_deferred_all,"
 			    " next=%ld", (long)dfc_scan_time);
@@ -1009,10 +1012,11 @@ replica_check_thread(void *arg)
 			gfarm_sleep(t);
 	}
 	/*NOTREACHED*/
+	return (NULL);
 }
 
 void
-replica_check_start(void)
+replica_check_init(void)
 {
 	if (gfarm_replica_check)
 		replica_check_ctrl_set(ENABLE);
@@ -1028,6 +1032,11 @@ replica_check_start(void)
 		replica_check_reduced_log_set(ENABLE);
 	else
 		replica_check_reduced_log_set(DISABLE);
+
+	if (!replica_check_stack_init() || !replica_check_targets_init())
+		return;
+	/* initial target: wait for startup of gfsd hosts */
+	replica_check_targets_add(gfarm_metadb_heartbeat_interval);
 
 	create_detached_thread(replica_check_thread, NULL);
 }

@@ -1370,7 +1370,7 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	 */
 	/* avoid calling replica_check if GFARM_ERR_NO_MEMORY occurs */
 	if (save_e != GFARM_ERR_NO_ERROR && save_e != GFARM_ERR_NO_MEMORY)
-		replica_check_signal_rep_request_failed();
+		replica_check_start_rep_request_failed();
 }
 
 void
@@ -3484,7 +3484,7 @@ inode_rename(
 		if (sdir != ddir && (inode_is_dir(src) || inode_is_file(src))
 		    && (!inode_has_desired_number(src, &num) &&
 			!inode_has_repattr(src, NULL)))
-			replica_check_signal_rename();
+			replica_check_start_move();
 	}
 	/* db_inode_nlink_modify() is not necessary, because it's unchanged */
 	return (e);
@@ -3754,7 +3754,7 @@ inode_check_pending_replication(struct file_opening *fo)
 		 */
 		/* avoid calling replica_check if GFARM_ERR_NO_MEMORY occurs */
 		if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_MEMORY)
-			replica_check_signal_rep_request_failed();
+			replica_check_start_rep_request_failed();
 	}
 }
 
@@ -4607,7 +4607,7 @@ inode_replicated(struct file_replicating *fr,
 		 * #647 - workaround for #646 - retry replication when
 		 * a result of replication is failure
 		 */
-		replica_check_signal_rep_result_failed();
+		replica_check_start_rep_result_failed();
 	}
 
 	return (e);

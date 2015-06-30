@@ -868,7 +868,7 @@ static void
 host_set_peer_unlocked(struct abstract_host *ah, struct peer *p)
 {
 	dead_file_copy_host_becomes_up(abstract_host_to_host(ah));
-	replica_check_signal_host_up();
+	replica_check_start_host_up();
 }
 
 /*
@@ -904,7 +904,7 @@ host_disable(struct abstract_host *ah)
 	back_channel_mutex_unlock(h, diag);
 
 	host_total_disk_update(saved_used, saved_avail, 0, 0);
-	replica_check_signal_host_down();
+	replica_check_start_host_down();
 }
 
 static void

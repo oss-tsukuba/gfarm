@@ -441,7 +441,7 @@ xattr_set(int xmlMode, struct inode *inode,
 		}
 	}
 	if (change_replica_spec)
-		replica_check_signal_update_xattr();
+		replica_check_start_xattr_update();
 
 	if (*addattr) {
 		e = db_xattr_add(xmlMode, inode_get_number(inode),
@@ -787,7 +787,7 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 
 	if (e == GFARM_ERR_NO_ERROR && !xmlMode &&
 	    strcmp("gfarm.ncopy", attrname) == 0)
-		replica_check_signal_update_xattr();
+		replica_check_start_xattr_update();
 
 	free(attrname);
 	return (gfm_server_put_reply(peer, diag, e, ""));
