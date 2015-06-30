@@ -33,6 +33,7 @@ SRCS = \
 	auth_config.c \
 	stringlist.c \
 	config.c \
+	config_openssl.c \
 	config_server.c \
 	config_client.c \
 	import_help.c \
@@ -116,6 +117,7 @@ OBJS = \
 	auth_config.lo \
 	stringlist.lo \
 	config.lo \
+	config_openssl.lo \
 	config_server.lo \
 	config_client.lo \
 	import_help.lo \
@@ -211,8 +213,9 @@ auth_server_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFSL_SRCDIR)/gfarm_secure_sessio
 auth_server_uid.lo: $(GFUTIL_SRCDIR)/gfutil.h auth.h gfm_client.h
 auth_server_uid_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h auth.h gfm_client.h
 config.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/lru_cache.h context.h liberror.h patmatch.h hostspec.h param.h sockopt.h host.h auth.h gfpath.h config.h gfm_proto.h gfs_proto.h gfs_profile.h gfm_client.h lookup.h metadb_server.h filesystem.h conn_hash.h conn_cache.h humanize_number.h $(top_builddir)/makes/config.mk # $(GFARM_CONFIG) -> $(sysconfdir)
+config_openssl.lo: config_openssl.h
 config_client.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h context.h liberror.h gfs_profile.h host.h auth.h gfpath.h config.h gfm_client.h gfs_proto.h gfs_client.h lookup.h filesystem.h metadb_server.h
-config_server.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h liberror.h auth.h gfpath.h config.h
+config_server.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h liberror.h auth.h gfpath.h config.h config_openssl.h
 conn_cache.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/lru_cache.h $(GFUTIL_SRCDIR)/thrsubr.h conn_hash.h conn_cache.h
 conn_hash.lo: $(GFUTIL_SRCDIR)/hash.h conn_hash.h
 context.lo: context.h config.h

@@ -19,6 +19,7 @@
 #include "gfpath.h"
 #define GFARM_USE_STDIO
 #include "config.h"
+#include "config_openssl.h"
 
 static void
 gfarm_config_set_default_spool_on_server(void)
@@ -70,6 +71,7 @@ gfarm_server_initialize(char *config_file, int *argcp, char ***argvp)
 			gfarm_error_string(e));
 		return (e);
 	}
+	gfarm_openssl_initialize();
 	gflog_initialize();
 	if (argvp)
 		gfarm_config_set_argv0(**argvp);
