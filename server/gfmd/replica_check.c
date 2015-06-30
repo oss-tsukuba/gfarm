@@ -161,7 +161,37 @@ replica_check_remove_replicas(struct inode *inode,
 		 * return GFARM_ERR_FILE_BUSY.
 		 */
 		if (e2 == GFARM_ERR_FILE_BUSY)
-			e = e2;
+			e = e2; /* retry */
+
+		/*
+		 * Replicas cannot be moved between hostgroups
+		 * (ex. group1:2,group2:0 to group1:0,group2:2) at a
+		 * time of replica_check, because replicas cannot be
+		 * removed when inode_remove_replica_protected()
+		 * returns GFARM_ERR_FILE_BUSY or
+		 * GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS.
+		 *
+		 * When GFARM_ERR_FILE_BUSY is returned, replica_check
+		 * will retry, and excessive replicas will be removed
+		 * at next time.
+		 *
+		 * When GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS
+		 * is returned, replica_check does not retry, and
+		 * excessive replicas cannot be removed immediately
+		 * (may be removed later).
+		 *
+		 * If inode_remove_replica_protected() counts the
+		 * total number of valid replicas and incomplete
+		 * replicas after
+		 * GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS
+		 * case, and GFARM_ERR_FILE_BUSY is returned,
+		 * excessive replicas can be removed at next time.
+		 *
+		 * But, If incomplete replicas exists forever,
+		 * replica_check retries forever.  Therefore
+		 * inode_remove_replica_protected() does not use the
+		 * number of incomplete replicas.
+		 */
 	}
 	return (e); /* GFARM_ERR_FILE_BUSY: retry */
 }
