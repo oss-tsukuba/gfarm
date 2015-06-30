@@ -244,22 +244,12 @@ replica_check_fix(struct replication_info *info)
 		return (GFARM_ERR_NO_ERROR); /* skip */
 	}
 
-	if (gfarm_get_metadb_replication_enabled()) { /* XXX */
-		/*
-		 * XXX: If dbq is used,
-		 * db_begin() + not updating DB + db_end() are slow.
-		 *
-		 * WORKAROUND: Only when db_journal is used,
-		 * this transaction is used.
-		 */
-		e = db_begin(diag);
-		if (e == GFARM_ERR_NO_ERROR)
-			transaction = 1;
-		else
-			gflog_warning(GFARM_MSG_1004275,
-			    "replica_check: db_begin(): %s",
-			    gfarm_error_string(e));
-	}
+	e = db_begin(diag);
+	if (e == GFARM_ERR_NO_ERROR)
+		transaction = 1;
+	else
+		gflog_warning(GFARM_MSG_1004275,
+		    "replica_check: db_begin(): %s", gfarm_error_string(e));
 
 	/* create replicas if the replicas are insufficient */
 	e = inode_schedule_replication(
