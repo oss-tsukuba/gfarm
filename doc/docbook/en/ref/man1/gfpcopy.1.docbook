@@ -6,7 +6,7 @@
 
 <refentry id="gfpcopy.1">
 
-<refentryinfo><date>24 Jun 2015</date></refentryinfo>
+<refentryinfo><date>30 Jun 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfpcopy</refentrytitle>
@@ -157,6 +157,7 @@ the <parameter moreinfo="none">source-path</parameter> exists under
 this directory, the <parameter moreinfo="none">source-path</parameter>
 cannot be copied.
 The difference of files cannot be copied to HPSS.
+Relative path such as "hpss:". or "hpss:dir" can be also specified.
 </para>
 </listitem>
 </varlistentry>
