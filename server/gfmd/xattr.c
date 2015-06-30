@@ -786,7 +786,8 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 	giant_unlock();
 
 	if (e == GFARM_ERR_NO_ERROR && !xmlMode &&
-	    strcmp("gfarm.ncopy", attrname) == 0)
+	    (strcmp("gfarm.ncopy", attrname) == 0 ||
+	     strcmp(GFARM_REPATTR_NAME, attrname) == 0))
 		replica_check_start_xattr_update();
 
 	free(attrname);
