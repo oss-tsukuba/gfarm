@@ -1048,6 +1048,8 @@ replica_check_thread(void *arg)
 void
 replica_check_init(void)
 {
+	gfarm_error_t e;
+
 	if (gfarm_replica_check)
 		replica_check_ctrl_set(ENABLE);
 	else
@@ -1068,5 +1070,9 @@ replica_check_init(void)
 	/* initial target: wait for startup of gfsd hosts */
 	replica_check_targets_add(gfarm_metadb_heartbeat_interval);
 
-	create_detached_thread(replica_check_thread, NULL);
+	if ((e = create_detached_thread(replica_check_thread, NULL))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "create_detached_thread(replica_check_thread): %s",
+		    gfarm_error_string(e));
 }
