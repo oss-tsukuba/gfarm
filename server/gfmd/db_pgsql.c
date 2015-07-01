@@ -1686,7 +1686,8 @@ pgsql_filecopy_remove_by_host(gfarm_uint64_t seqnum, char *hostname)
 	const char *paramValues[1];
 
 	paramValues[0] = hostname;
-	return (gfarm_pgsql_update_or_delete(seqnum,
+	/* use gfarm_pgsql_try_delete, because there may be no filecopy */
+	return (gfarm_pgsql_try_delete(seqnum,
 	    "DELETE FROM FileCopy WHERE hostname = $1",
 	    1, /* number of params */
 	    NULL, /* param types */
@@ -1703,10 +1704,7 @@ pgsql_deadfilecopy_remove_by_host(gfarm_uint64_t seqnum, char *hostname)
 	const char *paramValues[1];
 
 	paramValues[0] = hostname;
-	/*
-	 * We use gfarm_pgsql_try_delete, because master gfmd before
-	 * SF.net #860 may send stale GFM_JOURNAL_DEADFILECOPY_REMOVE
-	 */
+	/* use gfarm_pgsql_try_delete, because there may be no deadfilecopy */
 	return (gfarm_pgsql_try_delete(seqnum,
 	    "DELETE FROM DeadFileCopy WHERE hostname = $1",
 	    1, /* number of params */
@@ -2812,11 +2810,15 @@ static gfarm_error_t
 gfarm_pgsql_deadfilecopy_remove(gfarm_uint64_t seqnum,
 	struct db_deadfilecopy_arg *arg)
 {
+	/*
+	 * We use gfarm_pgsql_try_delete, because master gfmd before
+	 * SF.net #860 may send stale GFM_JOURNAL_DEADFILECOPY_REMOVE
+	 */
 	return (pgsql_deadfilecopy_call(seqnum, arg,
 		"DELETE FROM DeadFileCopy "
 			"WHERE inumber = $1 AND igen = $2 AND hostname = $3",
-		gfarm_pgsql_update_or_delete,
-		"pgsql_deadfilecopy_remove"));
+		gfarm_pgsql_try_delete,
+		"pgsql_dilecopy_remove"));
 }
 
 /* only called at initialization, bypass journal */
