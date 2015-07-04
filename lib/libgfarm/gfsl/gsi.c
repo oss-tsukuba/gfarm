@@ -859,8 +859,9 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
 
     int sum = 0;
     int rem = n;
-    int len, tknStat;
+    int len, tknStat, save_errno;
     gfarm_int32_t n_buf = n;
+    static const char diag[] = "gfarmGssSend";
 
     /*
      * Send a length of a PLAIN TEXT.
@@ -876,6 +877,7 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
     }
 
     if (gfarmWriteInt32(fd, &n_buf, 1) != 1) {
+	gflog_info(GFARM_MSG_UNFIXED, "%s: %s", diag, strerror(errno));
 	majStat = GSS_S_CALL_INACCESSIBLE_WRITE;
 	goto Done;
     }
@@ -891,18 +893,25 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
 	if (majStat == GSS_S_COMPLETE) {
 	    if (otPtr->length > 0) {
 		tknStat = gfarmGssSendToken(fd, otPtr);
+		save_errno = errno;
 		gss_release_buffer(&minStat, otPtr);
 		if (tknStat <= 0) {
+		    gflog_info(GFARM_MSG_UNFIXED, "%s: %s", diag,
+			strerror(save_errno));
 		    majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
 		    goto Done;
 		}
 		rem -= len;
 		sum += len;
 	    } else {
+		gflog_info(GFARM_MSG_UNFIXED, "%s: zero length", diag);
 		majStat = GSS_S_DEFECTIVE_TOKEN;
 		goto Done;
 	    }
 	} else {
+	    gflog_info(GFARM_MSG_UNFIXED, "%s: gss_wrap fails", diag);
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
 	    break;
 	}
     } while (rem > 0);
@@ -931,7 +940,7 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
 {
     int ret = -1;
     OM_uint32 majStat;
-    OM_uint32 minStat;
+    OM_uint32 minStat, minStat2;
 
     gss_buffer_desc inputToken = GSS_C_EMPTY_BUFFER;
     gss_buffer_t itPtr = &inputToken;
@@ -944,6 +953,7 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
     int len;
     gfarm_int8_t *buf = NULL;
     int i;
+    static const char diag[] = "gfarmGssReceive";
 
     /*
      * Receive a length of a PLAIN TEXT.
@@ -960,11 +970,13 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
 	majStat = GSS_S_COMPLETE;
 	goto Done;
     } else if (i != 1) {
+	gflog_info(GFARM_MSG_UNFIXED, "%s: %s", diag, strerror(errno));
 	majStat = GSS_S_CALL_INACCESSIBLE_READ;
 	goto Done;
     }
     GFARM_MALLOC_ARRAY(buf, n);
     if (buf == NULL) {
+	gflog_info(GFARM_MSG_UNFIXED, "%s: no memory", diag);
 	majStat = GSS_S_FAILURE;
 	goto Done;
     }
@@ -972,6 +984,7 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
     rem = n;
     do {
 	if (gfarmGssReceiveToken(fd, itPtr, timeoutMsec) <= 0) {
+	    gflog_info(GFARM_MSG_UNFIXED, "%s: %s", diag, strerror(errno));
 	    majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
 	    goto Done;
 	}
@@ -979,7 +992,7 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
 			     (const gss_buffer_t)itPtr,
 			     otPtr,
 			     NULL, NULL);
-	gss_release_buffer(&minStat, itPtr);
+	gss_release_buffer(&minStat2, itPtr);
 	if (majStat == GSS_S_COMPLETE) {
 	    if (otPtr->length > 0) {
 		memcpy(buf + sum, otPtr->value, otPtr->length);
@@ -988,10 +1001,14 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
 		sum += len;
 		gss_release_buffer(&minStat, otPtr);
 	    } else {
+		gflog_info(GFARM_MSG_UNFIXED, "%s: zero length", diag);
 		majStat = GSS_S_DEFECTIVE_TOKEN;
 		goto Done;
 	    }
 	} else {
+	    gflog_info(GFARM_MSG_UNFIXED, "%s: gss_unwrap fails", diag);
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
 	    break;
 	}
     } while (rem > 0);
