@@ -432,12 +432,12 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 		/*
 		 * Use the acceptor's.
 		 */
-		retMaxT = iMax;
+		retMaxT = canPtr->maxTransSizeReq;
 	    } else if (iMaxF == 1) {
 		/*
 		 * Use the initiator's.
 		 */
-		retMaxT = canPtr->maxTransSizeReq;
+		retMaxT = iMax;
 	    } else { 
 		/*
 		 * Both force flags are off.
