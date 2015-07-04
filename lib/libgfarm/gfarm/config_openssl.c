@@ -33,7 +33,7 @@ gfarm_openssl_initialize()
 	num_locks = CRYPTO_num_locks();
 	GFARM_MALLOC_ARRAY(config_openssl_mutexes, num_locks);
 	if (config_openssl_mutexes == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: no memory", diag);
+		gflog_fatal(GFARM_MSG_1004292, "%s: no memory", diag);
 	for (i = 0; i < num_locks; ++i)
 		pthread_mutex_init(&config_openssl_mutexes[i], NULL);
 	CRYPTO_set_locking_callback(gfarm_openssl_lock);

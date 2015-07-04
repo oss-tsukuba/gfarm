@@ -1072,7 +1072,7 @@ replica_check_init(void)
 
 	if ((e = create_detached_thread(replica_check_thread, NULL))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1004293,
 		    "create_detached_thread(replica_check_thread): %s",
 		    gfarm_error_string(e));
 }
