@@ -1,3 +1,22 @@
+Release note for Gfarm 2.6.5.1
+==============================
+
+[2015.7.5]
+
+Bug fix
+* initialization for thread-safe OpenSSL is not called at the
+  beginning
+* when specifying the same entry for rename, the entry is unlinked
+  [sf.net ticket #450]
+* gfrmdir / returns 'is a directory' [sf.net ticket #451]
+* file system node is not removed in the backend database when it has
+  no file replica, which was introduced by Gfarm 2.6.5 [sf.net ticket
+  #868]
+* replica check does not start when the file system node group is
+  changed [sf.net ticket #866]
+* replica check does not start when gfarm.replicainfo is removed
+  [sf.net ticket #867]
+
 Release note for Gfarm 2.6.5
 ============================
 
