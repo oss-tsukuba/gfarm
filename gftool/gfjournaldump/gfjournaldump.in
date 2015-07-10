@@ -253,7 +253,7 @@ class GFJournalRecordFormatter
 	else
 	  i = 0
 	  while index < field.data.length && i < OCTETS_PER_LINE
-	    printf("%02x ", field.data[index])
+	    printf("%02x ", field.data[index].unpack('C')[0])
 	    index += 1
 	    i += 1
 	  end
