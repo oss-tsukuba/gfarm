@@ -340,7 +340,11 @@ class GFJournalRecordAnalyzer
       rescue => e
 	break
       end
-      if data == nil || data.length != RECORD_DATA_OFFSET
+      if data == nil
+	break
+      elsif data.length != RECORD_DATA_OFFSET
+        saved_pos += data.length
+        junkdata += data
 	break
       end
       magic_data = data.slice(RECORD_MAGIC_OFFSET, RECORD_MAGIC_LENGTH)
