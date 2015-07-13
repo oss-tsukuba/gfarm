@@ -3928,6 +3928,34 @@ inode_is_opened_on(struct inode *inode, struct host *spool_host)
 	return (0);
 }
 
+gfarm_uint64_t
+inode_get_open_status_by_host(struct inode *inode, struct host *spool_host)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+	struct file_opening *fo;
+	gfarm_uint64_t opening = 0;
+	int op;
+
+	if (!inode_is_file(inode))
+		return (0);
+
+	if (ia != NULL &&
+	    (fo = ia->openings.opening_next) != &ia->openings) {
+		for (; fo != &ia->openings; fo = fo->opening_next) {
+			if (spool_host == fo->u.f.spool_host) {
+				op = accmode_to_op(fo->flag);
+				if ((op & GFS_W_OK) != 0)
+					opening |=
+					    GFM_PROTO_REPLICA_OPENED_WRITE;
+				if ((op & GFS_R_OK) != 0)
+					opening |=
+					    GFM_PROTO_REPLICA_OPENED_READ;
+			}
+		}
+	}
+	return (opening);
+}
+
 struct file_copy *
 inode_get_file_copy(struct inode *inode, struct host *spool_host)
 {

@@ -344,6 +344,8 @@ gfarm_error_t gfm_client_lock_info_request(struct gfm_connection *,
 	gfarm_off_t, gfarm_off_t, gfarm_int32_t, gfarm_int32_t);
 gfarm_error_t gfm_client_lock_info_result(struct gfm_connection *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_int32_t *, char **, gfarm_pid_t *);
+gfarm_error_t gfm_client_replica_open_status(struct gfm_connection *,
+	gfarm_ino_t, gfarm_uint64_t, gfarm_uint64_t *);
 #if 1 /* should be 0, since gfmd has to be newer than gfsd */
 gfarm_error_t gfm_client_switch_back_channel(struct gfm_connection *);
 #endif

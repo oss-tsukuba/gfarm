@@ -4780,3 +4780,48 @@ gfm_server_replica_create_file_in_lost_found(struct peer *peer,
 	return (gfm_server_put_reply(peer, diag, e_rpc, "ll",
 	    inum_new, gen_new));
 }
+
+gfarm_error_t
+gfm_server_replica_open_status(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	struct host *spool_host;
+	gfarm_ino_t inum;
+	gfarm_uint64_t igen;
+	struct inode *inode;
+	gfarm_uint64_t open_status = 0;
+	static const char diag[] = "GFM_PROTO_REPLICA_OPEN_STATUS";
+
+	e = gfm_server_get_request(peer, diag, "ll", &inum, &igen);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s request failed: %s",
+		    diag, gfarm_error_string(e));
+		return (e);
+	}
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	if (from_client) { /* from gfsd only */
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: from client", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((spool_host = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_host() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((inode = inode_lookup(inum)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld:%lld: no inode",
+		    diag, (long long)inum, (long long)igen);
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	} else if (inode_get_gen(inode) != igen) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld:%lld: different generation",
+		    diag, (long long)inum, (long long)igen);
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	} else
+		open_status = inode_get_open_status_by_host(inode, spool_host);
+
+	giant_unlock();
+	return (gfm_server_put_reply(peer, diag, e, "l", open_status));
+}

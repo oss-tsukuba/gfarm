@@ -2497,28 +2497,40 @@ copy_to_lost_found(struct file_entry *fe)
 }
 
 static void
-move_to_lost_found(struct file_entry *fe)
+replica_lost_move_to_lost_found(gfarm_ino_t ino, gfarm_uint64_t gen,
+	int local_fd, off_t size)
 {
+	gfarm_error_t e;
 	char *path;
+	static const char diag[] = "replica_lost_move_to_lost_found";
 
-	if (fe->size == 0) {
-		gfsd_local_path(fe->ino, fe->gen, "move_to_lost_found", &path);
+	e = gfm_client_replica_lost(ino, gen);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_1004217,
+		    "%lld:%lld: corrupted replica remains: %s",
+		    (long long)ino, (long long)gen,
+		    gfarm_error_string(e));
+		return;
+	}
+
+	if (size == 0) {
+		gfsd_local_path(ino, gen, diag, &path);
 		if (unlink(path) == -1)
 			gflog_error_errno(GFARM_MSG_1004214,
 			    "unlink(%s)", path);
 		else
 			gflog_notice(GFARM_MSG_1004215,
 			    "%lld:%lld: corrupted file removed",
-			    (long long)fe->ino,	(long long)fe->gen);
+			    (long long)ino, (long long)gen);
 		free(path);
 		return;
 	}
-	if (register_to_lost_found(0, fe->local_fd, fe->ino, fe->gen)
+	if (register_to_lost_found(0, local_fd, ino, gen)
 	    == GFARM_ERR_NO_ERROR)
 		gflog_notice(GFARM_MSG_1004216, "%lld:%lld: corrupted file "
 		    "moved to /lost+found/%016llX%016llX-%s",
-		    (long long)fe->ino, (long long)fe->gen,
-		    (unsigned long long)fe->ino, (unsigned long long)fe->gen,
+		    (long long)ino, (long long)gen,
+		    (unsigned long long)ino, (unsigned long long)gen,
 		    canonical_self_name);
 }
 
@@ -2748,14 +2760,8 @@ close_fd_somehow(struct gfp_xdr *client,
 		}
 	}
 	if (fe->flags & FILE_FLAG_DIGEST_ERROR) {
-		e2 = gfm_client_replica_lost(fe->ino, fe->gen);
-		if (e2 == GFARM_ERR_NO_ERROR)
-			move_to_lost_found(fe);
-		else
-			gflog_warning(GFARM_MSG_1004217,
-			    "%lld:%lld: corrupted replica remains: %s",
-			    (long long)fe->ino, (long long)fe->gen,
-			    gfarm_error_string(e2));
+		replica_lost_move_to_lost_found(
+		    fe->ino, fe->gen, fe->local_fd, fe->size);
 	}
 	e2 = file_table_close(fd);
 	if (e2 == GFARM_ERR_NO_ERROR)
@@ -3526,7 +3532,7 @@ replica_added(struct gfp_xdr *client, gfarm_int32_t net_fd,
 }
 
 gfarm_error_t
-replication_cksum_verify(int issue_cksum_protocol,
+replication_dst_cksum_verify(int issue_cksum_protocol,
 	size_t req_cksum_len, const char *req_cksum,
 	size_t src_cksum_len, const char *src_cksum,
 	size_t dst_cksum_len, const char *dst_cksum,
@@ -3671,7 +3677,8 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		goto free_server;
 	}
 	if (md_ctxp != NULL)
-		e = dst_err = replication_cksum_verify(issue_cksum_protocol,
+		e = dst_err = replication_dst_cksum_verify(
+		    issue_cksum_protocol,
 		    req_cksum_len, req_cksum,
 		    src_cksum_len, src_cksum,
 		    md_strlen, md_string,
@@ -3701,6 +3708,24 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	return;
 }
 
+int
+replication_src_cksum_error(gfarm_ino_t ino, gfarm_uint64_t gen,
+	int local_fd, off_t size)
+{
+	gfarm_error_t e;
+	gfarm_uint64_t open_status;
+
+	e = gfm_client_replica_open_status(gfm_server, ino, gen, &open_status);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (0); /* generation is updated. i.e. file modified */
+
+	if ((open_status & GFM_PROTO_REPLICA_OPENED_WRITE) != 0)
+		return (0); /* file replica is being opened for write */
+
+	replica_lost_move_to_lost_found(ino, gen, local_fd, size);
+	return (1);
+}
+
 void
 gfs_server_replica_recv(struct gfp_xdr *client,
 	enum gfarm_auth_id_type peer_type, int cksum_protocol)
@@ -3710,7 +3735,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	gfarm_ino_t ino;
 	gfarm_uint64_t gen;
 	char *path;
-	int local_fd;
+	int local_fd = -1;
 
 	gfarm_int64_t filesize = 0;
 	char *cksum_type = NULL;
@@ -3722,6 +3747,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	size_t md_strlen = 0;
 	char md_string[GFARM_MSGDIGEST_STRSIZE];
 	gfarm_int32_t cksum_result_flags = 0;
+	gfarm_off_t sent = 0;
 
 	unsigned long long msl = 1, total_msl = 0; /* sleep millisec. */
 	const char *diag = cksum_protocol ?
@@ -3784,10 +3810,13 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 		errno = 0;
 		if (fstat(local_fd, &st) == -1 || st.st_size != filesize) {
 			int save_errno = errno;
-			if (save_errno != 0)
+			if (save_errno != 0) {
 				error = gfarm_errno_to_error(save_errno);
-			else /* st.st_size != filesize */
+			} else { /* st.st_size != filesize */
 				error = GFARM_ERR_INVALID_FILE_REPLICA;
+				(void)replication_src_cksum_error(
+				    ino, gen, local_fd, st.st_size);
+			}
 			 /* send EOF */
 			e = gfs_sendfile_common(client, &src_err, -1, 0, 0,
 			    NULL, NULL);
@@ -3806,7 +3835,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 
 	/* data transfer */
 	error = gfs_sendfile_common(client, &src_err, local_fd, 0, -1,
-	    md_ctxp, NULL);
+	    md_ctxp, &sent);
 	io_error_check(src_err, diag);
 
 	/*
@@ -3816,28 +3845,40 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	if (md_ctxp != NULL)
 		md_strlen = gfarm_msgdigest_final_string(md_string, md_ctxp);
 
-	e = close(local_fd);
-	if (error == GFARM_ERR_NO_ERROR)
-		error = e;
 finish:
 	if (error == GFARM_ERR_NO_ERROR)
 		error = src_err;
 	if (cksum_protocol) {
-		if (md_ctxp != NULL && cksum_len > 0 &&
+		if (error == GFARM_ERR_NO_ERROR &&
+		    md_ctxp != NULL && cksum_len > 0 &&
 		    (cksum_len != md_strlen ||
 		     memcmp(cksum, md_string, md_strlen) != 0)) {
-			/* may not be critical.  modified after cksum set */
+			(void)replication_src_cksum_error(
+			    ino, gen, local_fd, sent);
+			/* maybe no problem, if modified after cksum set */
 			gflog_info(GFARM_MSG_1004152, "%s: %lld:%lld: "
-			    "checksum mismatch. <%.*s> expected, but <%.*s>",
+			    "checksum mismatch. <%.*s> expected, "
+			    "but <%.*s>",
 			    diag, (long long)ino, (long long)gen,
-			    (int)cksum_len, cksum, (int)md_strlen, md_string);
+			    (int)cksum_len, cksum,
+			    (int)md_strlen, md_string);
 #if 1 /* change this value to 0 at a test of cksum validation on receiver */
 			error = GFARM_ERR_CHECKSUM_MISMATCH;
 #endif
 		}
+		if (local_fd >= 0) {
+			e = close(local_fd);
+			if (error == GFARM_ERR_NO_ERROR)
+				error = e;
+		}
 		gfs_server_put_reply(client, diag, error, "bi",
 		    md_strlen, md_string, cksum_result_flags);
 	} else {
+		if (local_fd >= 0) {
+			e = close(local_fd);
+			if (error == GFARM_ERR_NO_ERROR)
+				error = e;
+		}
 		gfs_server_put_reply(client, diag, error, "");
 	}
 	free(cksum_type);
@@ -4120,7 +4161,8 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 		    gfarm_error_string(src_err),
 		    gfarm_error_string(dst_err));
 	} else if (md_ctxp != NULL) { /* no error case */
-		dst_err = replication_cksum_verify(rep->issue_cksum_protocol,
+		dst_err = replication_dst_cksum_verify(
+		    rep->issue_cksum_protocol,
 		    rep->cksum_len, rep->cksum,
 		    src_cksum_len, src_cksum,
 		    md_strlen, md_string,

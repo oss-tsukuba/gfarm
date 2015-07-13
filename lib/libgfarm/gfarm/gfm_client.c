@@ -3207,6 +3207,14 @@ gfm_client_lock_info_result(struct gfm_connection *gfm_server,
 	    startp, lenp, typep, hostp, pidp));
 }
 
+gfarm_error_t
+gfm_client_replica_open_status(struct gfm_connection *gfm_server,
+	gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_uint64_t *openingp)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+	    GFM_PROTO_REPLICA_OPEN_STATUS, "ll/l", inum, gen, openingp));
+}
+
 #if 1 /* should be 0, since gfmd has to be newer than gfsd */
 gfarm_error_t
 gfm_client_switch_back_channel(struct gfm_connection *gfm_server)

@@ -85,3 +85,4 @@ gfarm_error_t gfm_server_replica_get_my_entries(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_get_my_entries2(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_create_file_in_lost_found(struct peer *,
 	int, int);
+gfarm_error_t gfm_server_replica_open_status(struct peer *, int, int);
