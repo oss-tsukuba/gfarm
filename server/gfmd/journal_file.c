@@ -86,6 +86,21 @@ static const char main_reader_label[] = "main_reader";
 	(((r)->flags & JOURNAL_FILE_READER_F_EXPIRED) != 0)
 
 #define JOURNAL_RECORD_SIZE_MAX			(1024 * 1024)
+#define JOURNAL_RECORD_MAGIC_SIZE		GFARM_JOURNAL_MAGIC_SIZE
+#define JOURNAL_RECORD_SEQNUM_SIZE		8
+#define JOURNAL_RECORD_OPEID_SIZE		4
+#define JOURNAL_RECORD_DATALEN_SIZE		4
+#define JOURNAL_RECORD_CRC_SIZE			4
+
+#define JOURNAL_RECORD_MAGIC_OFFSET		0
+#define JOURNAL_RECORD_SEQNUM_OFFSET		4
+#define JOURNAL_RECORD_OPEID_OFFSET		12
+#define JOURNAL_RECORD_DATALEN_OFFSET		16
+
+#define JOURNAL_RECORD_HEADER_SIZE		20
+#define JOURNAL_RECORD_SIZE(datalen) \
+	(JOURNAL_RECORD_HEADER_SIZE + 4 + (datalen))
+
 #define JOURNAL_FILE_HEADER_SIZE		4096
 /* JOURNAL_FILE_HEADER_SIZE + maximum transaction size */
 /* XXX - this assumes 128, but it is too small */
@@ -114,9 +129,6 @@ struct journal_file {
 	gfarm_uint64_t initial_max_seqnum;
 	pthread_mutex_t mutex;
 };
-
-#define JOURNAL_RECORD_SIZE(data_len) (journal_rec_header_size() + \
-	sizeof(gfarm_uint32_t) + (data_len))
 
 static const char JOURNAL_FILE_STR[] = "journal_file";
 
@@ -420,24 +432,6 @@ journal_file_writer_pos(struct journal_file_writer *writer)
 	return (writer->pos);
 }
 
-static size_t
-journal_rec_header_size(void)
-{
-	static size_t header_size = 0;
-
-	if (header_size == 0) {
-		gfarm_error_t e;
-		if ((e = gfp_xdr_send_size_add(&header_size,
-		    GFARM_JOURNAL_RECORD_HEADER_XDR_FMT,
-		    0, 0, 0, 0, 0, 0, 0)) != GFARM_ERR_NO_ERROR) {
-			gflog_fatal(GFARM_MSG_1002873,
-			    "journal_rec_header_size : %s",
-			    gfarm_error_string(e)); /* exit */
-		}
-	}
-	return (header_size);
-}
-
 static int
 jounal_read_fully(int fd, void *buf, size_t sz, off_t *posp, int *eofp)
 {
@@ -498,21 +492,6 @@ journal_fread_uint32(FILE *file, gfarm_uint32_t *np, void *data, off_t *posp)
 	if (data)
 		memcpy(data, np, sizeof(*np));
 	*np = ntohl(*np);
-	return (sizeof(*np));
-}
-
-static int
-journal_fread_uint64(FILE *file, gfarm_uint64_t *np, void *data, off_t *posp)
-{
-	ssize_t ssz;
-	gfarm_uint32_t n1, n2;
-
-	if ((ssz = journal_fread_uint32(file, &n1, data, posp)) <= 0)
-		return (ssz);
-	if ((ssz = journal_fread_uint32(file, &n2,
-	    data ? data + sizeof(n1) : NULL, posp)) <= 0)
-		return (ssz);
-	*np = ((gfarm_uint64_t)n1 << 32) | n2;
 	return (sizeof(*np));
 }
 
@@ -582,117 +561,106 @@ journal_write_fully(int fd, void *data, size_t length, off_t *posp)
 
 static gfarm_error_t
 journal_fread_rec_outline(FILE *file, size_t file_size,
-	gfarm_uint64_t *seqnump, enum journal_operation *opep, off_t *posp,
+	gfarm_uint64_t *seqnump, enum journal_operation *opeidp, off_t *posp,
 	off_t *next_posp)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	ssize_t ssz;
 	gfarm_uint32_t crc1, crc2;
-	off_t pos, pos1;
-	int eof, found = 0;
-	char *rec = NULL;
-	char magic[GFARM_JOURNAL_MAGIC_SIZE];
+	off_t pos, pos_saved;
+	int eof;
 	gfarm_uint64_t seqnum = 0;
-	gfarm_uint32_t ope;
-	gfarm_uint32_t len;
-	char buf[JOURNAL_BUFSIZE], *raw;
+	gfarm_uint32_t opeid;
+	gfarm_uint32_t datalen;
+	unsigned char *buf = NULL;
+	size_t buflen;
+	int backward = 0;
 
 	*posp = *next_posp = -1;
 	errno = 0;
 
 	if ((pos = ftell(file)) < 0)
 		return (gfarm_errno_to_error(errno));
+	pos_saved = pos;
+
+	buf = malloc(JOURNAL_BUFSIZE);
+	if (buf == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	buflen = JOURNAL_BUFSIZE;
 
 	for (;;) {
+		if (backward) {
+			pos = pos_saved + 1;
+			if (fseek(file, pos, SEEK_SET) < 0) {
+				e = gfarm_errno_to_error(errno);
+				break;
+			}
+			backward = 0;
+		}
+		pos_saved = pos;
+
 		/* MAGIC(4) */
-		crc1 = 0;
-		if (jounal_fread_fully(file, magic,
-		    GFARM_JOURNAL_MAGIC_SIZE, &pos, &eof) < 0)
-			return (gfarm_errno_to_error(errno));
+		if (jounal_fread_fully(file, buf, JOURNAL_RECORD_HEADER_SIZE,
+			&pos, &eof) < 0) {
+			e = gfarm_errno_to_error(errno);
+			break;
+		}
 		if (eof)
 			break;
-		raw = buf;
-		memcpy(raw, magic, GFARM_JOURNAL_MAGIC_SIZE);
-		if (strncmp(magic, GFARM_JOURNAL_RECORD_MAGIC,
-			GFARM_JOURNAL_MAGIC_SIZE) != 0) {
-			if (fseek(file, 1 - GFARM_JOURNAL_MAGIC_SIZE,
-				SEEK_CUR) < 0)
-				return (gfarm_errno_to_error(errno));
-			if ((pos = ftell(file)) < 0)
-				return (gfarm_errno_to_error(errno));
+		if (memcmp(buf, GFARM_JOURNAL_RECORD_MAGIC,
+			JOURNAL_RECORD_MAGIC_SIZE) != 0) {
+			backward = 1;
 			continue;
 		}
-		if ((pos1 = ftell(file)) < 0)
-			return (gfarm_errno_to_error(errno));
-		raw += GFARM_JOURNAL_MAGIC_SIZE;
-		pos1 -= GFARM_JOURNAL_MAGIC_SIZE;
 		/* SEQNUM */
-		if ((ssz = journal_fread_uint64(file, &seqnum,
-		    raw, &pos)) < 0)
-			return (gfarm_errno_to_error(errno));
-		if (ssz == 0)
-			goto next;
-		raw += sizeof(gfarm_uint64_t);
+		seqnum = journal_deserialize_uint64(buf +
+		    JOURNAL_RECORD_SEQNUM_OFFSET);
 		/* OPE_ID */
-		if ((ssz = journal_fread_uint32(file, &ope,
-		    raw, &pos)) < 0)
-			return (gfarm_errno_to_error(errno));
-		if (ssz == 0)
-			goto next;
-		raw += sizeof(gfarm_uint32_t);
-		*opep = ope;
+		opeid = journal_deserialize_uint32(buf +
+		    JOURNAL_RECORD_OPEID_OFFSET);
 		/* DATA_LENGTH */
-		if ((ssz = journal_fread_uint32(file, &len,
-		    raw, &pos)) < 0)
-			return (gfarm_errno_to_error(errno));
-		if (ssz == 0)
-			goto next;
-		raw += sizeof(gfarm_uint32_t);
+		datalen = journal_deserialize_uint32(buf +
+		    JOURNAL_RECORD_DATALEN_OFFSET);
 		/* DATA */
-		if (pos + len + sizeof(crc1) > file_size ||
-		    len > JOURNAL_RECORD_SIZE_MAX)
-			goto next;
-		crc1 = gfarm_crc32(0, buf, journal_rec_header_size());
-		GFARM_MALLOC_ARRAY(rec, len);
-		if (rec == NULL)
-			return (GFARM_ERR_NO_MEMORY);
-		if (jounal_fread_fully(file, rec, len, &pos, &eof) < 0) {
-			e = gfarm_errno_to_error(errno);
-			goto next;
+		if (pos + datalen + JOURNAL_RECORD_CRC_SIZE > file_size ||
+		    datalen > JOURNAL_RECORD_SIZE_MAX) {
+			backward = 1;
+			continue;
 		}
-		if (eof)
-			goto next;
+		crc1 = gfarm_crc32(0, buf, JOURNAL_RECORD_HEADER_SIZE);
+		if (datalen + JOURNAL_RECORD_CRC_SIZE > buflen) {
+			unsigned char *newbuf = realloc(buf, datalen + 4);
+			if (newbuf == NULL) {
+				e = GFARM_ERR_NO_MEMORY;
+				break;
+			}
+			buf = newbuf;
+			buflen = datalen + 4;
+		}
+		if (jounal_fread_fully(file, buf,
+			datalen + JOURNAL_RECORD_CRC_SIZE, &pos, &eof) < 0) {
+			backward = 1;
+			continue;
+		}
+		if (eof) {
+			backward = 1;
+			continue;
+		}
 		/* CRC */
-		if ((ssz = journal_fread_uint32(file, &crc2, NULL,
-		    &pos)) < 0) {
-			e = gfarm_errno_to_error(errno);
-			goto next;
+		crc2 = journal_deserialize_uint32(buf + datalen);
+		crc1 = gfarm_crc32(crc1, buf, datalen);
+		if (crc1 != crc2) {
+			backward = 1;
+			continue;
 		}
-		if (ssz == 0)
-			goto next;
-		crc1 = gfarm_crc32(crc1, rec, len);
-		if (crc1 != crc2)
-			goto next;
+		*opeidp = opeid;
 		*seqnump = seqnum;
-		*posp = pos1;
+		*posp = pos_saved;
 		*next_posp = pos;
-		found = 1;
-next:
-		if (rec) {
-			free(rec);
-			rec = NULL;
-		}
-		if (found)
-			break;
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e);
-		if (fseek(file, pos1 - pos + 1, SEEK_CUR) < 0)
-			return (gfarm_errno_to_error(errno));
-		if ((pos = ftell(file)) < 0)
-			return (gfarm_errno_to_error(errno));
+		break;
 	}
 
-	return (GFARM_ERR_NO_ERROR);
+	free(buf);
+	return (e);
 }
 
 static gfarm_error_t
@@ -1013,8 +981,6 @@ journal_find_rw_pos0(FILE *file, int has_writer, size_t file_size,
 			}
 		}
 		*tailp = next_pos;
-		if (fseek(file, next_pos, SEEK_SET) < 0)
-			return (gfarm_errno_to_error(errno));
 	}
 
 	/*
@@ -1706,7 +1672,7 @@ journal_write_rec_header(struct gfp_xdr *xdr, gfarm_uint64_t seqnum,
 	enum journal_operation ope, size_t data_len, gfarm_uint32_t *crcp)
 {
 	gfarm_error_t e;
-	size_t header_size = journal_rec_header_size();
+	size_t header_size = JOURNAL_RECORD_HEADER_SIZE;
 
 	if ((e = gfp_xdr_send(xdr, GFARM_JOURNAL_RECORD_HEADER_XDR_FMT,
 		GFARM_JOURNAL_RECORD_MAGIC[0],
@@ -1834,7 +1800,7 @@ journal_read_rec_header(struct gfp_xdr *xdr, enum journal_operation *opep,
 	gfarm_uint32_t len, crc1, crc2;
 	char magic[GFARM_JOURNAL_MAGIC_SIZE];
 	int eof;
-	size_t rlen, avail, header_size = journal_rec_header_size();
+	size_t rlen, avail, header_size = JOURNAL_RECORD_HEADER_SIZE;
 
 	memset(magic, 0, sizeof(magic));
 
@@ -1936,7 +1902,7 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 	struct gfp_xdr *xdr = reader->xdr;
 	static const char diag[] = "journal_file_read";
 	size_t avail;
-	size_t min_rec_size = journal_rec_header_size()
+	size_t min_rec_size = JOURNAL_RECORD_HEADER_SIZE
 		+ sizeof(gfarm_uint32_t);
 
 	if (eofp)
@@ -2028,7 +1994,7 @@ journal_file_read_serialized(struct journal_file_reader *reader,
 	int rlen;
 	struct journal_file *jf = reader->file;
 	struct gfp_xdr *xdr = reader->xdr;
-	size_t avail, header_size = journal_rec_header_size();
+	size_t avail, header_size = JOURNAL_RECORD_HEADER_SIZE;
 	static const char diag[] = "journal_file_read_serialized";
 
 	*eofp = 0;
@@ -2166,7 +2132,7 @@ journal_file_write_raw(struct journal_file *jf, int recs_len,
 	gfarm_uint64_t seqnum;
 	enum journal_operation ope;
 	struct journal_file_writer *writer = &jf->writer;
-	size_t header_size = journal_rec_header_size();
+	size_t header_size = JOURNAL_RECORD_HEADER_SIZE;
 	static const char diag[] = "journal_file_write_raw";
 	struct journal_file_reader *reader;
 	int waited;
