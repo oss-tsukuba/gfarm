@@ -1,0 +1,112 @@
+'\" t
+.\"     Title: gfarm_environ
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 27 Jul 2015
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFARM_ENVIRON" "7" "27 Jul 2015" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfarm_environ \- Gfarm が扱う環境変数
+.SH "DESCRIPTION"
+.PP
+COLUMNS
+.RS 4
+ターミナル画面の横幅を指定します。 実際の幅よりも、こちらの設定の方が優先されます。
+.sp
+この環境変数は、現在のところ、gfls コマンドの出力が端末に表示される 場合のみ利用されています。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	COLUMNS=120
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+GFARM_CONFIG_FILE
+.RS 4
+ホームディレクトリ直下の \&.gfarm2rc ファイルの代わりに、 この環境変数で指定したファイルが、Gfarmクライアントの追加設定に使われます。 このファイルで指定した内容は、gfarm2\&.conf よりも優先されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	GFARM_CONFIG_FILE=$HOME/\&.gfarm2rc\&.alt
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+GFARM_FLAGS
+.RS 4
+Gfarmクライアントの動作を変更するフラグを指定します。 下記のフラグがあります。
+.PP
+r
+.RS 4
+Gfarmクライアントをファイルシステムノード上で実行した場合、 ファイルアクセス時に、まず自ノードにそのファイルを複製してから アクセスします。
+.RE
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	GFARM_FLAGS=r
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+GLOBUS_GSSAPI_CIPHERS
+.RS 4
+globus_gssapi_gsi version 11\&.17 以降 (globus_toolkit version 6\&.0\&.1433193802以降) を利用している場合、 この環境変数を指定することにより、gsi 認証時の暗号化方式を指定できます。
+.sp
+指定可能な方式については、OpenSSL の ciphers マニュアル (
+\fBopenssl_ciphers\fR(1)
+ないし
+\fBciphers\fR(1)
+) を参照してください。
+.sp
+AES\-NI 命令セットを備える x86 系 CPU の場合、クライアント側で AES128\-GCM\-SHA256 を指定することで、若干の安全性低下の見返りに、 数パーセント程度、通信性能が向上することがあります。 AES\-NI 命令セットを備えない x86 系 CPU では、クライアント側で AES128\-SHA を指定することで、若干の安全性低下の見返りに、 倍程度、通信性能が向上することがあります。 性能の変化は、CPUの種類によって異なりますので、利用の前に性能計測を お勧めします。あるCPUでは性能向上となる設定が、別のCPUでは性能低下を 招くことがあります。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	GLOBUS_GSSAPI_CIPHERS=AES128\-GCM\-SHA256
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.SH "SEE ALSO"
+.PP
+
+\fBgfls\fR(1),
+\fBgfarm2.conf\fR(5),
+\fBenviron\fR(7)

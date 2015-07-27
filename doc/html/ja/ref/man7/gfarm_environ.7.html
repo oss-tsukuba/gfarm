@@ -1,0 +1,103 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfarm_environ</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm_environ">
+<a name="gfarm_environ.7"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfarm_environ — Gfarm が扱う環境変数</p>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><span class="token">COLUMNS</span></span></dt>
+<dd>
+<p>
+ターミナル画面の横幅を指定します。
+実際の幅よりも、こちらの設定の方が優先されます。
+</p>
+<p>
+この環境変数は、現在のところ、gfls コマンドの出力が端末に表示される
+場合のみ利用されています。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	COLUMNS=120<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">GFARM_CONFIG_FILE</span></span></dt>
+<dd>
+<p>
+ホームディレクトリ直下の .gfarm2rc ファイルの代わりに、
+この環境変数で指定したファイルが、Gfarmクライアントの追加設定に使われます。
+このファイルで指定した内容は、gfarm2.conf よりも優先されます。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	GFARM_CONFIG_FILE=$HOME/.gfarm2rc.alt<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">GFARM_FLAGS</span></span></dt>
+<dd>
+<p>
+Gfarmクライアントの動作を変更するフラグを指定します。
+下記のフラグがあります。
+</p>
+<div class="variablelist"><dl>
+<dt><span class="term"><span class="token">r</span></span></dt>
+<dd><p>
+      Gfarmクライアントをファイルシステムノード上で実行した場合、
+      ファイルアクセス時に、まず自ノードにそのファイルを複製してから
+      アクセスします。
+      </p></dd>
+</dl></div>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	GFARM_FLAGS=r<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">GLOBUS_GSSAPI_CIPHERS</span></span></dt>
+<dd>
+<p>
+globus_gssapi_gsi version 11.17 以降
+(globus_toolkit version 6.0.1433193802以降) を利用している場合、
+この環境変数を指定することにより、gsi 認証時の暗号化方式を指定できます。
+</p>
+<p>
+指定可能な方式については、OpenSSL の ciphers マニュアル (
+<span class="citerefentry"><span class="refentrytitle">openssl_ciphers</span>(1)</span>
+ないし
+<span class="citerefentry"><span class="refentrytitle">ciphers</span>(1)</span>
+) を参照してください。
+</p>
+<p>
+AES-NI 命令セットを備える x86 系 CPU の場合、クライアント側で
+AES128-GCM-SHA256 を指定することで、若干の安全性低下の見返りに、
+数パーセント程度、通信性能が向上することがあります。
+AES-NI 命令セットを備えない x86 系 CPU では、クライアント側で
+AES128-SHA を指定することで、若干の安全性低下の見返りに、
+倍程度、通信性能が向上することがあります。
+性能の変化は、CPUの種類によって異なりますので、利用の前に性能計測を
+お勧めします。あるCPUでは性能向上となる設定が、別のCPUでは性能低下を
+招くことがあります。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	GLOBUS_GSSAPI_CIPHERS=AES128-GCM-SHA256<br>
+</p></div>
+</dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfls</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>,
+  <span class="citerefentry"><span class="refentrytitle">environ</span>(7)</span>
+</p>
+</div>
+</div></body>
+</html>
