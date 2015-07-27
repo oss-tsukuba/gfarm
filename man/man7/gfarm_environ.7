@@ -1,0 +1,112 @@
+'\" t
+.\"     Title: gfarm_environ
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 27 Jul 2015
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFARM_ENVIRON" "7" "27 Jul 2015" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfarm_environ \- environment variables for Gfarm
+.SH "DESCRIPTION"
+.PP
+COLUMNS
+.RS 4
+Specifies terminal window width\&. Note that this setting overrides the actual width\&.
+.sp
+This is currently only used by the gfls command, when its output is terminal\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	COLUMNS=120
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+GFARM_CONFIG_FILE
+.RS 4
+The file specified by this variable is used as additional setting for Gfarm clients, instead of the \&.gfarm2rc file under the user\'s home directory\&. The settings in this file overrides the settings in gfarm2\&.conf\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	GFARM_CONFIG_FILE=$HOME/\&.gfarm2rc\&.alt
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+GFARM_FLAGS
+.RS 4
+Specifies flags which modify the behavior of gfarm clients\&. There is a following flag for now\&.
+.PP
+r
+.RS 4
+If gfarm clients are invoked on a filesystem node, the gfarm clients replicates files to local node, before accessing them\&.
+.RE
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	GFARM_FLAGS=r
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+GLOBUS_GSSAPI_CIPHERS
+.RS 4
+If you are using globus_gssapi_gsi since version 11\&.17 (globus_toolkit since version 6\&.0\&.1433193802), you can specify cipher lists for gsi authenticated connections by this variable\&.
+.sp
+Please refer the ciphers manual of the OpenSSL (
+\fBopenssl_ciphers\fR(1)
+or
+\fBciphers\fR(1)
+) for the available cipher lists\&.
+.sp
+On x86 CPUs which have AES\-NI instruction set, specifying AES128\-GCM\-SHA256 may increase communication speed by few percent as a recompense for slight security decrease\&. On x86 CPUs which do not have AES\-NI instruction set, specifying AES128\-SHA may double communication speed as a recompense for slight security decrease\&. It\'s recommended to measure the gain of the communication speed before actually using this option, because the performace gain varies between CPUs,
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	GLOBUS_GSSAPI_CIPHERS=AES128\-GCM\-SHA256
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.SH "SEE ALSO"
+.PP
+
+\fBgfls\fR(1),
+\fBgfarm2.conf\fR(5),
+\fBenviron\fR(7)
