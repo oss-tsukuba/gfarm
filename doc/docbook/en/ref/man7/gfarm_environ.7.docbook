@@ -1,0 +1,133 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+
+<refentry id="gfarm_environ.7">
+
+<refentryinfo><date>27 Jul 2015</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_environ</refentrytitle>
+<manvolnum>7</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>gfarm_environ</refname>
+<refpurpose>environment variables for Gfarm</refpurpose>
+</refnamediv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+
+<variablelist>
+
+<varlistentry>
+<term><token>COLUMNS</token></term>
+<listitem>
+<para>
+Specifies terminal window width.
+Note that this setting overrides the actual width.
+</para>
+<para>
+This is currently only used by the gfls command, when its output is
+terminal.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	COLUMNS=120
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>GFARM_CONFIG_FILE</token></term>
+<listitem>
+<para>
+The file specified by this variable is used as additional setting for
+Gfarm clients, instead of the .gfarm2rc file under the user's home directory.
+The settings in this file overrides the settings in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	GFARM_CONFIG_FILE=$HOME/.gfarm2rc.alt
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>GFARM_FLAGS</token></term>
+<listitem>
+<para>
+Specifies flags which modify the behavior of gfarm clients.
+There is a following flag for now.
+</para>
+  <variablelist>
+    <varlistentry>
+      <term><token>r</token></term>
+      <listitem>
+      <para>
+      If gfarm clients are invoked on a filesystem node,
+      the gfarm clients replicates files to local node,
+      before accessing them.
+      </para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	GFARM_FLAGS=r
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>GLOBUS_GSSAPI_CIPHERS</token></term>
+<listitem>
+<para>
+If you are using globus_gssapi_gsi since version 11.17
+(globus_toolkit since version 6.0.1433193802),
+you can specify cipher lists for gsi authenticated connections
+by this variable.
+</para>
+<para>
+Please refer the ciphers manual of the OpenSSL 
+(
+<citerefentry><refentrytitle>openssl_ciphers</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+or
+<citerefentry><refentrytitle>ciphers</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+)
+for the available cipher lists.
+</para>
+<para>
+On x86 CPUs which have AES-NI instruction set,
+specifying AES128-GCM-SHA256 may increase communication speed by few percent
+as a recompense for slight security decrease.
+On x86 CPUs which do not have AES-NI instruction set,
+specifying AES128-SHA may double communication speed
+as a recompense for slight security decrease.
+It's recommended to measure the gain of the communication speed
+before actually using this option, because the performace gain
+varies between CPUs, 
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	GLOBUS_GSSAPI_CIPHERS=AES128-GCM-SHA256
+</literallayout>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+<refsect1 id="see-also"><title>SEE ALSO</title>
+<para>
+  <citerefentry><refentrytitle>gfls</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>environ</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
