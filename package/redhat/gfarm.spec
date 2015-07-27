@@ -483,6 +483,7 @@ fi
 %{man_prefix}/man5/gfarm2.conf.5.gz
 %{man_prefix}/man5/gfarm_attr.5.gz
 %{man_prefix}/man5/gfservice.conf.5.gz
+%{man_prefix}/man7/gfarm_envirion.7.gz
 %{man_prefix}/man8/gfdump.postgresql.8.gz
 %{man_prefix}/man8/gfmd.8.gz
 %{man_prefix}/man8/gfsd.8.gz
@@ -634,6 +635,7 @@ fi
 %{man_prefix}/ja/man5/gfarm2.conf.5.gz
 %{man_prefix}/ja/man5/gfarm_attr.5.gz
 %{man_prefix}/ja/man5/gfservice.conf.5.gz
+%{man_prefix}/ja/man7/gfarm_envirion.7.gz
 %{man_prefix}/ja/man8/gfmd.8.gz
 %{man_prefix}/ja/man8/gfsd.8.gz
 %{html_prefix}/index.html
@@ -806,6 +808,7 @@ fi
 %{html_prefix}/en/ref/man5/gfarm2.conf.5.html
 %{html_prefix}/en/ref/man5/gfarm_attr.5.html
 %{html_prefix}/en/ref/man5/gfservice.conf.5.html
+%{html_prefix}/en/ref/man7/gfarm_envirion.7.html
 %{html_prefix}/en/ref/man8/gfdump.postgresql.8.html
 %{html_prefix}/en/ref/man8/gfmd.8.html
 %{html_prefix}/en/ref/man8/gfsd.8.html
@@ -962,6 +965,7 @@ fi
 %{html_prefix}/ja/ref/man5/gfarm2.conf.5.html
 %{html_prefix}/ja/ref/man5/gfarm_attr.5.html
 %{html_prefix}/ja/ref/man5/gfservice.conf.5.html
+%{html_prefix}/ja/ref/man7/gfarm_envirion.7.html
 %{html_prefix}/ja/ref/man8/gfmd.8.html
 %{html_prefix}/ja/ref/man8/gfsd.8.html
 %{html_prefix}/ja/user/index.html
