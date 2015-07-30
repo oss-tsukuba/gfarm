@@ -2,12 +2,12 @@
 
 DISTNAME=	gfarm-${GFARM_VERSION}
 CATEGORIES=	parallel net
-MASTER_SITES=	http://datafarm.apgrid.org/software/${GFARM_VERSION}/
+MASTER_SITES=	https://sourceforge.net/projects/gfarm/files/gfarm_v2/${GFARM_VERSION}/
 
 PATCH_SITES=	${MASTER_SITES}
 
 MAINTAINER=	soda@NetBSD.org
-HOMEPAGE=	http://datafarm.apgrid.org/
+HOMEPAGE=	http://gfarm.sourceforge.net/
 COMMENT=	User-level grid filesystem and parallel process management
 
 GFARM_VERSION=	1.4
