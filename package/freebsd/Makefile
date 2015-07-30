@@ -8,7 +8,7 @@
 PORTNAME=	gfarm
 PORTVERSION=	1.4
 CATEGORIES=	net
-MASTER_SITES=	http://datafarm.apgrid.org/software/${PORTVERSION}/
+MASTER_SITES=	https://sourceforge.net/projects/gfarm/files/gfarm_v2/${PORTVERSION}/
 
 PATCH_SITES=	${MASTER_SITES}
 

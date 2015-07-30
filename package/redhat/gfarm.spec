@@ -55,7 +55,7 @@ Source: %{pkg}-%{ver}.tar.gz
 Group: Applications/File
 License: BSD
 Vendor: National Institute of Advanced Industrial Science and Technology (AIST) and Osamu Tatebe
-URL: http://datafarm.apgrid.org/
+URL: http://gfarm.sourceforge.net/
 Packager: Osamu Tatebe <tatebe@cs.tsukuba.ac.jp>
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 

@@ -4,7 +4,7 @@
 <TITLE>Grid Datafarm:  Gfarm over SMB over SSH [Japanese]</TITLE>
 <META content="document" name="resource-type">
 </HEAD>
-<BODY><A href="http://datafarm.apgrid.org/">
+<BODY><A href="http://oss-tsukuba.org/software/gfarm">
 <IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align="right" border="0"></A>
 <A href="../../index.html">文書集</A> &gt;
 <A href="index.html">ユーザーズマニュアル</A> &gt;
@@ -30,7 +30,7 @@ SSH サーバから見えるネットワーク上に Samba サーバが存在し
 Samba を経由して Gfarm にアクセスする方法は，
 <UL>
 <LI> <A HREF="samba-hook.html">システムコールフックを用いて</A> (まずはこちら)
-<LI> <A HREF="samba-gfarmfs.html">GfarmFS-FUSE を用いて</A>
+<LI> <A HREF="samba-gfarmfs.html">gfarm2fs を用いて</A>
 </UL>
 をご覧ください．
 
@@ -182,9 +182,9 @@ LocalForward 169.254.0.1:139 192.168.1.234:139
 Linux の場合は，以下の手段で，手元のクライアントから直接アクセスできない Gfarm のディレクトリ以下のファイルに直接アクセスできます．さらに簡単です．
 <UL>
 <LI>手元では <A HREF="http://fuse.sourceforge.net/sshfs.html">SSHFS-FUSE</A> か <A HREF="http://shfs.sourceforge.net/">SHFS</A> を用いて，SSH 越しで以下のサーバのディレクトリをマウント
-<LI>Gfarm にアクセスできる SSH サーバマシン上で <A HREF="http://datafarm.apgrid.org/software/gfarmfs-fuse.ja.html">GfarmFS-FUSE</A> を用いて Gfarm をマウント
+<LI>Gfarm にアクセスできる SSH サーバマシン上で <A HREF="https://sourceforge.net/projects/gfarm/files/gfarm2fs">gfarm2fs</A> を用いて Gfarm をマウント
 </UL>
 
 <HR>
 
-<ADDRESS><A href="http://datafarm.apgrid.org/">Grid Datafarm</A></ADDRESS></BODY></HTML>
+<ADDRESS><A href="http://oss-tsukuba.org/software/gfarm">Grid Datafarm</A></ADDRESS></BODY></HTML>

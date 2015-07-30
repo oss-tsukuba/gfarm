@@ -92,8 +92,8 @@
 
 各ソース・ファイルは、下記のような機能分担になっています。
 
-ChangeLog	変更ログ。gfarm-cvs@apgrid.org に流れたメールを元に、
-		建部さんが時々生成。
+ChangeLog	変更ログ。gfarm-commits@lists.sourceforge.net に
+		流れたメールを元に、建部さんが時々生成。
 INSTALL.en	インストール・ドキュメント 英語版
 INSTALL.ja	インストール・ドキュメント 日本語版
 
