@@ -93,7 +93,7 @@ you can specify cipher lists for gsi authenticated connections
 by this variable.
 </para>
 <para>
-Please refer the ciphers manual of the OpenSSL 
+Please refer to the ciphers manual of the OpenSSL 
 (
 <citerefentry><refentrytitle>openssl_ciphers</refentrytitle><manvolnum>1</manvolnum></citerefentry>
 or
