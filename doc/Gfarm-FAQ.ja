@@ -45,23 +45,23 @@ Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 
 	下記の URL をご覧ください．
 
-		http://sourceforge.net/projects/gfarm/
+		http://oss-tsukuba.org/software/gfarm
 
   1.2 Gfarm はどこからダウンロードできますか？
 
 	下記の URL から配布されています．
 
-		http://sourceforge.net/projects/gfarm/
+		https://sourceforge.net/projects/gfarm/files/
 
 	なお，最新のソースコードは以下のコマンドで入手できます．
 	Gfarm 2.5.8系
-		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm_v2/branches/2.5 gfarm_v2
+		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.5 gfarm_v2
 	Gfarm 2.6系
-		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm_v2/branches/2.6 gfarm_v2
+		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.6 gfarm_v2
 	開発版
-		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm_v2/trunk gfarm_v2
+		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/trunk gfarm_v2
 	Gfarm2fs
-		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm2fs/trunk gfarm2fs
+		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm2fs/trunk gfarm2fs
 
   1.3 gfmd は，どの程度のメモリを消費しますか？
 

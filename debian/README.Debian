@@ -7,7 +7,7 @@ distributed and parallel data computing in a Grid across
 administrative domains by providing a Grid file system.  A Grid file
 system is a virtual file system that federates multiple file systems.
 It is possible to share files or data by mounting the virtual file
-system. Please see http://datafarm.apgrid.org/ for details.
+system. Please see http://gfarm.sourceforge.net/ for details.
 
 Configuratoin
 =============
