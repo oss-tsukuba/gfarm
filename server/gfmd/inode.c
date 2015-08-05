@@ -3116,8 +3116,14 @@ inode_rename(
 		return (e);
 
 	e = inode_create_link_internal(ddir, dname, user, src);
-	if (e != GFARM_ERR_NO_ERROR) { /* shouldn't happen */
-		gflog_error(GFARM_MSG_1000319,
+	if (e != GFARM_ERR_NO_ERROR) {
+		/*
+		 * this may fail (e.g. GFARM_ERR_PERMISSION_DENIED),
+		 * but doesn't have to undo the inode_unlink() operation above,
+		 * because the above inode_unlink() should already fail
+		 * in such cases.
+		 */
+		gflog_debug(GFARM_MSG_1000319,
 		    "rename(%s, %s): failed to link: %s",
 		    sname, dname, gfarm_error_string(e));
 		return (e);
