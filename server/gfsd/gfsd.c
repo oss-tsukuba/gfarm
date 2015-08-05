@@ -2664,7 +2664,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 			break; /* success */
 		if (errno != ENOENT || total_msl >= 3000) { /* 3 sec. */
 			error = gfarm_errno_to_error(errno);
-			gflog_error(GFARM_MSG_1003511,
+			gflog_notice(GFARM_MSG_1003511,
 			    "open_data(%lld:%lld): %s",
 			    (long long) ino, (long long) gen,
 			    gfarm_error_string(error));
