@@ -97,6 +97,7 @@ gfarm_error_t journal_file_open(const char *, size_t,
 void journal_file_close(struct journal_file *);
 struct journal_file_writer *journal_file_writer(struct journal_file *);
 struct journal_file_reader *journal_file_main_reader(struct journal_file *);
+gfarm_uint64_t journal_file_get_inital_max_seqnum(struct journal_file *jf);
 gfarm_error_t journal_file_write(struct journal_file *,
 	gfarm_uint64_t, enum journal_operation, void *,
 	journal_size_add_op_t, journal_send_op_t);

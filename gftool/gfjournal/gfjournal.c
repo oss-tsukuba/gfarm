@@ -531,10 +531,15 @@ main(int argc, char **argv)
 		exit_code = EXIT_FAILURE;
 		goto end;
 	}
+	if (opt_max_seqnum_only) {
+		max_seqnum = journal_file_get_inital_max_seqnum(jf);
+		printf("%" GFARM_PRId64 "\n", max_seqnum);
+		goto end;
+	}
 
 	reader = journal_file_main_reader(jf);
 
-	if (opt_list && !opt_record_only && !opt_max_seqnum_only) {
+	if (opt_list && !opt_record_only) {
 		printf(
 		    "seqnum       operation              "
 		    "length  ");
@@ -549,8 +554,6 @@ main(int argc, char **argv)
 	ave_reclen = num_rec > 0 ? ave_reclen / num_rec : 0;
 	if (num_rec == 0)
 		min_seqnum = 0;
-	if (opt_max_seqnum_only)
-		printf("%" GFARM_PRId64 "\n", max_seqnum);
 	else if (!opt_record_only) {
 		if (opt_list)
 			printf("\n");
