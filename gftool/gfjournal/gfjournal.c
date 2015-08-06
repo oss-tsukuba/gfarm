@@ -47,6 +47,8 @@ static gfarm_uint64_t min_seqnum = UINT64_MAX;
 static gfarm_uint64_t max_seqnum = GFARM_METADB_SERVER_SEQNUM_INVALID;
 static struct journal_file *jf;
 static struct journal_file_reader *reader;
+static off_t file_size;
+static off_t file_offset;
 
 /* dummy definition to link successfully without db_journal_apply.o */
 const struct db_ops db_journal_apply_ops;
@@ -458,8 +460,6 @@ post_read_list(void *op_arg, gfarm_uint64_t seqnum, enum journal_operation ope,
 	void *obj, void *closure, size_t length, int *needs_freep)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	off_t pos, t;
-	gfarm_uint64_t lap;
 
 	post_read_aggregate(NULL, seqnum, ope, obj, NULL, length, needs_freep);
 	/* seqnum operation length */
@@ -467,9 +467,10 @@ post_read_list(void *op_arg, gfarm_uint64_t seqnum, enum journal_operation ope,
 	    journal_operation_name(ope), (unsigned long)length);
 	if (opt_verbose) {
 		/* offset */
-		journal_file_reader_committed_pos_unlocked(reader, &pos, &lap);
-		t = journal_file_tail(jf);
-		printf("%10" GFARM_PRId64 " ",  (gfarm_off_t)((pos + t) % t));
+		if (file_offset + length > file_size)
+			file_offset = JOURNAL_FILE_HEADER_SIZE;
+		printf("%10" GFARM_PRId64 " ",  (gfarm_off_t)file_offset);
+		file_offset += length;
 	}
 	print_obj(ope, obj);
 	printf("\n");
@@ -538,6 +539,8 @@ main(int argc, char **argv)
 	}
 
 	reader = journal_file_main_reader(jf);
+	file_size = journal_file_size(jf);
+	file_offset = journal_file_reader_fd_pos(reader);
 
 	if (opt_list && !opt_record_only) {
 		printf(

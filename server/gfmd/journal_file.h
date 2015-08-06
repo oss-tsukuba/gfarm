@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#define JOURNAL_FILE_HEADER_SIZE		4096
 #define GFARM_JOURNAL_FILE_MAGIC		"GfMj"
 #define GFARM_JOURNAL_RECORD_MAGIC		"GfMr"
 #define GFARM_JOURNAL_MAGIC_SIZE		4
@@ -90,6 +91,7 @@ typedef gfarm_error_t (*journal_read_op_t)(void *, struct gfp_xdr *,
 typedef void (*journal_free_op_t)(void *, enum journal_operation, void *);
 
 off_t journal_file_tail(struct journal_file *);
+off_t journal_file_size(struct journal_file *);
 void journal_file_mutex_lock(struct journal_file *, const char *);
 void journal_file_mutex_unlock(struct journal_file *, const char *);
 gfarm_error_t journal_file_open(const char *, size_t,
@@ -125,6 +127,7 @@ void journal_file_reader_committed_pos(struct journal_file_reader *, off_t *,
 void journal_file_reader_committed_pos_unlocked(struct journal_file_reader *,
 	off_t *, gfarm_uint64_t *);
 void journal_file_reader_commit_pos(struct journal_file_reader *);
+off_t journal_file_reader_fd_pos(struct journal_file_reader *reader);
 int journal_file_reader_is_expired(struct journal_file_reader *);
 void journal_file_reader_disable_block_writer(struct journal_file_reader *);
 void journal_file_reader_invalidate(struct journal_file_reader *);
