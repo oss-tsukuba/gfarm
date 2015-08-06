@@ -101,7 +101,6 @@ static const char main_reader_label[] = "main_reader";
 #define JOURNAL_RECORD_SIZE(datalen) \
 	(JOURNAL_RECORD_HEADER_SIZE + 4 + (datalen))
 
-#define JOURNAL_FILE_HEADER_SIZE		4096
 /* JOURNAL_FILE_HEADER_SIZE + maximum transaction size */
 /* XXX - this assumes 128, but it is too small */
 #define JOURNAL_FILE_MIN_SIZE			(JOURNAL_FILE_HEADER_SIZE + 128)
@@ -207,6 +206,13 @@ journal_file_tail(struct journal_file *jf)
 	return (jf->tail);
 }
 
+/* Called by gfjournal only */
+off_t
+journal_file_size(struct journal_file *jf)
+{
+	return (jf->size);
+}
+
 void
 journal_file_mutex_lock(struct journal_file *jf, const char *diag)
 {
@@ -237,6 +243,7 @@ journal_file_main_reader(struct journal_file *jf)
 	return (GFARM_HCIRCLEQ_FIRST(jf->reader_list, readers));
 }
 
+/* Called by gfjournal only */
 gfarm_uint64_t
 journal_file_get_inital_max_seqnum(struct journal_file *jf)
 {
@@ -334,6 +341,13 @@ journal_file_reader_committed_pos_unlocked(struct journal_file_reader *reader,
 {
 	*rposp = reader->committed_pos;
 	*rlapp = reader->committed_lap;
+}
+
+/* Called by gfjournal only */
+off_t
+journal_file_reader_fd_pos(struct journal_file_reader *reader)
+{
+	return (reader->fd_pos);
 }
 
 static int
