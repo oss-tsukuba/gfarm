@@ -1,0 +1,277 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<TITLE>Network Transfer Speed Comparison by ciphers</TITLE>
+
+<style type="text/css">
+table { border-collapse: collapse; }
+thead { background:#e0e0e0; }
+colgroup.bio_type    { background:#f0f0f0; }
+colgroup.cipher_type { background:#f0f0f0; }
+colgroup.speed       { background:#fafafa; }
+colgroup.cpu_type    { background:#f0f0f0; }
+th { border: solid 1px; padding: 0.5em; }
+td { border: solid 1px; padding: 0.5em; }
+td.speed { text-align: right; }
+</style>
+
+</HEAD>
+<BODY><A href="http://gfarm.sourceforge.net/">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<A href="../../index.html">documents</A> &gt;
+<A href="index.html">User's Manual</A> &gt;
+Network Transfer Speed Comparison by ciphers
+
+<H1>Network Transfer Speed Comparison by ciphers</H1>
+English | <A href="../../ja/user/cipher-comparison.html">Japanese</A>
+<p>
+This documents compares network transfer speed of each cipher,
+which was measured on 3 CPU types,
+to help to determine which cipher should be set to
+the GLOBUS_GSSAPI_CIPHERS environment vairable.
+Please
+see <a href="../ref/man7/gfarm_environ.7.html">gfarm_environ(7)</a> man page
+for the GLOBUS_GSSAPI_CIPHERS setting.
+
+
+<H3>Transfer Speed</H3>
+
+<div id="speed_table">
+<div>
+<table>
+
+<colgroup class="bio_type"></colgroup>
+<colgroup class="cipher_type"></colgroup>
+<colgroup class="speed" span="3"></colgroup>
+
+<thead>
+<tr>
+  <th rowspan="2">bio type</th>
+  <th rowspan="2">cipher type</th>
+  <th colspan="3">speed [Mbps]</th>
+  <th rowspan="2">note</th>
+</tr>
+<tr>
+  <th>Xeon E5-2695</th><th>Xeon X5670</th><th>Opteron 2218</tr>
+</tr>
+</thead>
+
+<tbody>
+<tr><td>socket</td><td>plain text</td>		<td>12070</td>	<td>5510</td>	<td>940</td><td>insecure</td></tr>
+<tr><td>ssl</td>   <td>AES128-GCM-SHA256</td>	<td>4180</td>	<td>2270</td>	<td>410</td><td></td></tr>
+<tr><td>ssl</td>   <td>AES256-GCM-SHA384</td>	<td>3890</td>	<td>2200</td>	<td>330</td><td></td></tr>
+<tr><td>ssl</td>   <td>NULL-MD5</td>		<td>2640</td>	<td>1810</td>	<td>940</td><td>no encryption</td></tr>
+<tr><td>ssl</td>   <td>AES128-SHA</td>		<td>2630</td>	<td>1630</td>	<td>640</td><td></td></tr>
+<tr><td>ssl</td>   <td>RC4-MD5</td>		<td>2440</td>	<td>1630</td>	<td>940</td><td>too weak</td></tr>
+<tr><td>ssl</td>   <td>AES256-SHA</td>		<td>1840</td>	<td>1590</td>	<td>560</td><td></td></tr>
+<tr><td>ssl</td>   <td>RC4-SHA</td>		<td>1820</td>	<td>1300</td>	<td>940</td><td>too weak</td></tr>
+<tr><td>cipher</td><td>aes-128-cbc</td>		<td>1740</td>	<td>2080</td>	<td>900</td><td>no message authentication</td></tr>
+<tr><td>cipher</td><td>aes-192-cbc</td>		<td>1640</td>	<td>1910</td>	<td>810</td><td>no message authentication</td></tr>
+<tr><td>cipher</td><td>aes-256-cbc</td>		<td>1540</td>	<td>1770</td>	<td>750</td><td>no message authentication</td></tr>
+<tr><td>ssl</td>   <td>NULL-SHA256</td>		<td>1350</td>	<td>980</td>	<td>790</td><td>no encryption</td></tr>
+<tr><td>ssl</td>   <td>AES128-SHA256</td>	<td>950</td>	<td>850</td>	<td>510</td><td></td></tr>
+<tr><td>ssl</td>   <td>AES256-SHA256</td>	<td>950</td>	<td>820</td>	<td>450</td><td></td></tr>
+<tr><td>ssl</td>   <td>CAMELLIA128-SHA</td>	<td>760</td>	<td>690</td>	<td>580</td><td></td></tr>
+<tr><td>cipher</td><td>bf-cbc</td>		<td>750</td>	<td>670</td>	<td>620</td><td>no message authentication</td></tr>
+<tr><td>ssl</td>   <td>CAMELLIA256-SHA</td>	<td>620</td>	<td>580</td>	<td>520</td><td></td></tr>
+<tr><td>ssl</td>   <td>IDEA-CBC-SHA</td>	<td>500</td>	<td>440</td>	<td>310</td><td></td></tr>
+<tr><td>ssl</td>   <td>SEED-SHA</td>		<td>400</td>	<td>410</td>	<td>370</td><td></td></tr>
+<tr><td>ssl</td>   <td>DES-CBC3-pMD5</td>	<td>160</td>	<td>170</td>	<td>150</td><td></td></tr>
+</tbody>
+
+</table>
+sorted by the speed of: 
+<form>
+  <select>
+    <option selected>Xeon E5-2695</option>
+  </select>
+</form>
+</div>
+</div>
+
+<H3>Measurement Conditions</H3>
+
+<ul>
+<li>bio type
+  <ul>
+  <li>socket:<br/>OpenSSL BIO created by BIO_new_socket()
+  <li>cipher:<br/>OpenSSL BIO created by BIO_new(BIO_f_cipher())
+  <li>ssl:<br/>   OpenSSL BIO created by BIO_new(BIO_f_ssl())
+  </ul>
+<li>cipher type
+  <ul>
+  <li>if "bio type" is "cipher":<br/>
+      the cipher type is passed to BIO_set_cipher(bio, EVP_get_cipherbyname(), ...)
+  <li>if "bio type" is "ssl":<br/>
+      the cipher type is passed to SSL_set_cipher_list()
+  </ul>
+<li>cpu type
+
+<table>
+<colgroup class="cpu_type"></colgroup>
+
+<thead>
+<tr>
+<th>cpu type</th><th>clock [GHz]</th><th>released year</th><th>micro architecture</th><th>AES-NI instruction set</th><th>network type</th>
+</tr>
+</thead>
+
+<tbody>
+<tr><td>Xeon E5-2695</td>	<td>2.40</td><td>2013</td><td>Ivy Bridge-EP</td>	<td>yes</td>	<td>Infiniband</td></tr>
+<tr><td>Xeon X5670</td>		<td>2.93</td><td>2010</td><td>Westmere</td>		<td>yes</td>	<td>Infiniband</td></tr>
+<tr><td>Opteron 2218</td>	<td>2.60</td><td>2007</td><td>Istanbul</td>		<td>no</td>	<td>1000BASE-T</td></tr>
+
+</tbody>
+
+</table>
+
+</ul>
+
+<p>
+NOTE:<br/>
+What you can set to the GLOBUS_GSSAPI_CIPHERS environment variable is
+one of the cipher types which "bio type" is "ssl".
+
+<p>
+NOTE:<br/>
+Usually, AES256-GCM-SHA384 is used as the default cipher type.
+
+<HR>
+
+<ADDRESS><A href="http://gfarm.sourceforge.net/">Gfarm File System</A> &lt;<TT>gfarmfs at gmail.com</TT>&gt;</ADDRESS>
+
+<script type="text/javascript">
+function newText(text) {
+  return document.createTextNode(text);
+}
+
+function newElem(type) {
+  var e = document.createElement(type);
+  return e;
+}
+
+Element.prototype.setAttr = function (name, value) {
+  this.setAttribute(name, value);
+  return this;
+};
+
+Element.prototype.setAttrs = function (attrs) {
+  var e = this;
+  for (key in attrs) { e.setAttribute(key, attrs[key]); };
+  return this;
+};
+
+Element.prototype.appendChildren = function (children) {
+  var parent = this;
+  children.forEach(function (elem) { parent.appendChild(elem); });
+  return this;
+};
+
+Element.prototype.setText = function (text) {
+  this.appendChild(document.createTextNode(text));
+  return this;
+};
+
+function newSpeed(speed) {
+  speed = Math.round(speed / 1E7) * 10;
+  return newElem('TD').setText(speed).setAttr('class', 'speed');
+}
+
+function newOption(opt_text, default_opt_text) {
+  var option = newElem('OPTION').setText(opt_text);
+  if (opt_text === default_opt_text) option.setAttr('selected', '');
+  return option;
+}
+
+var results = [
+{'Xeon E5-2695':12066884813, 'Xeon X5670':5512180531, 'Opteron 2218':941486899, bio: 'socket', cipher:'plain text',        note: 'insecure'},
+{'Xeon E5-2695': 4184919245, 'Xeon X5670':2273486438, 'Opteron 2218':413230694, bio: 'ssl',    cipher:'AES128-GCM-SHA256', note: ''},
+{'Xeon E5-2695': 3893782118, 'Xeon X5670':2200594022, 'Opteron 2218':329229926, bio: 'ssl',    cipher:'AES256-GCM-SHA384', note: ''},
+{'Xeon E5-2695': 2640966451, 'Xeon X5670':1813846426, 'Opteron 2218':939078451, bio: 'ssl',    cipher:'NULL-MD5',          note: 'no encryption'},
+{'Xeon E5-2695': 2634773299, 'Xeon X5670':1631325389, 'Opteron 2218':641767834, bio: 'ssl',    cipher:'AES128-SHA',        note: ''},
+{'Xeon E5-2695': 2440583578, 'Xeon X5670':1634510438, 'Opteron 2218':939009638, bio: 'ssl',    cipher:'RC4-MD5',           note: 'too weak'},
+{'Xeon E5-2695': 1843101696, 'Xeon X5670':1586017075, 'Opteron 2218':561079910, bio: 'ssl',    cipher:'AES256-SHA',        note: ''},
+{'Xeon E5-2695': 1821543629, 'Xeon X5670':1297091789, 'Opteron 2218':938586931, bio: 'ssl',    cipher:'RC4-SHA',           note: 'too weak'},
+{'Xeon E5-2695': 1743519744, 'Xeon X5670':2081568978, 'Opteron 2218':899856594, bio: 'cipher', cipher:'aes-128-cbc',       note: 'no message authentication'},
+{'Xeon E5-2695': 1639063353, 'Xeon X5670':1910028498, 'Opteron 2218':810881644, bio: 'cipher', cipher:'aes-192-cbc',       note: 'no message authentication'},
+{'Xeon E5-2695': 1540356306, 'Xeon X5670':1767251769, 'Opteron 2218':747436242, bio: 'cipher', cipher:'aes-256-cbc',       note: 'no message authentication'},
+{'Xeon E5-2695': 1354117939, 'Xeon X5670': 975922790, 'Opteron 2218':791563469, bio: 'ssl',    cipher:'NULL-SHA256',       note: 'no encryption'},
+{'Xeon E5-2695':  948849869, 'Xeon X5670': 852276019, 'Opteron 2218':507818803, bio: 'ssl',    cipher:'AES128-SHA256',     note: ''},
+{'Xeon E5-2695':  947178701, 'Xeon X5670': 821939405, 'Opteron 2218':449485210, bio: 'ssl',    cipher:'AES256-SHA256',     note: ''},
+{'Xeon E5-2695':  756046234, 'Xeon X5670': 685749043, 'Opteron 2218':581389517, bio: 'ssl',    cipher:'CAMELLIA128-SHA',   note: ''},
+{'Xeon E5-2695':  750649344, 'Xeon X5670': 665617001, 'Opteron 2218':615147727, bio: 'cipher', cipher:'bf-cbc',            note: 'no message authentication'},
+{'Xeon E5-2695':  618341990, 'Xeon X5670': 577771930, 'Opteron 2218':517029888, bio: 'ssl',    cipher:'CAMELLIA256-SHA',   note: ''},
+{'Xeon E5-2695':  495678259, 'Xeon X5670': 435988070, 'Opteron 2218':308900659, bio: 'ssl',    cipher:'IDEA-CBC-SHA',      note: ''},
+{'Xeon E5-2695':  395870208, 'Xeon X5670': 414980506, 'Opteron 2218':368541696, bio: 'ssl',    cipher:'SEED-SHA',          note: ''},
+{'Xeon E5-2695':  161012122, 'Xeon X5670': 170478797, 'Opteron 2218':152204083, bio: 'ssl',    cipher:'DES-CBC3-MD5',      note: ''},
+];
+
+results.sortBy = function (key) {
+  var tbody = newElem('TBODY');
+
+  this.sort(function (a, b) { return b[key] - a[key]; });
+
+  this.forEach(function (result) {
+    tbody.appendChildren([
+      newElem('TR').appendChildren([
+	newElem('TD').setText(result['bio']),
+	newElem('TD').setText(result['cipher']),
+	newSpeed(result['Xeon E5-2695']),
+	newSpeed(result['Xeon X5670']),
+	newSpeed(result['Opteron 2218']),
+	newElem('TD').setText(result['note']),
+      ])
+    ]);
+  });
+
+  return newElem('DIV').appendChildren([ 
+    newElem('TABLE').appendChildren([
+      newElem('COLGROUP').setAttr('class', 'bio_type'),
+      newElem('COLGROUP').setAttr('class', 'cipher_type'),
+      newElem('COLGROUP').setAttrs({'class':'speed', 'SPAN':'3'}),
+      newElem('THEAD').appendChildren([
+	 newElem('TR').appendChildren([
+	   newElem('TH').setAttr('rowspan', '2').setText('bio type'),
+	   newElem('TH').setAttr('rowspan', '2').setText('cipher type'),
+	   newElem('TH').setAttr('colspan', '3').setText('speed [Mbps]'),
+	   newElem('TH').setAttr('rowspan', '2').setText('note'),
+	 ]),
+	 newElem('TR').appendChildren([
+	   newElem('TH').setText('Xeon E5-2695'),
+	   newElem('TH').setText('Xeon X5670'),
+	   newElem('TH').setText('Opteron 2218'),
+	 ]),
+      ]),
+      tbody
+    ]),
+    newText('sorted by the speed of: '),
+    newElem('FORM').setAttr('name', 'cpu_selection').appendChildren([
+      newElem('SELECT')
+        .setAttrs({name: 'cpu_type', onchange: 'cpu_selected()'})
+        .appendChildren([
+          newOption('Xeon E5-2695', key),
+          newOption('Xeon X5670', key),
+          newOption('Opteron 2218', key),
+        ])
+    ]),
+  ]);
+};
+
+var tablePosition = document.getElementById('speed_table');
+
+function cpu_selected() {
+  var cpu_type = document.cpu_selection.cpu_type;
+
+  tablePosition.replaceChild(
+   results.sortBy(cpu_type.options[cpu_type.selectedIndex].text),
+   tablePosition.firstChild);
+}
+
+while (tablePosition.firstChild) tablePosition.removeChild(tablePosition.firstChild);
+
+tablePosition.appendChild(results.sortBy('Xeon E5-2695'));
+
+</script>
+
+</BODY>
+</HTML>
