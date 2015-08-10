@@ -5,7 +5,7 @@
 
 <refentry id="gfarm_environ.7">
 
-<refentryinfo><date>27 Jul 2015</date></refentryinfo>
+<refentryinfo><date>10 Aug 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm_environ</refentrytitle>
@@ -110,7 +110,10 @@ specifying AES128-SHA may double communication speed
 as a recompense for slight security decrease.
 It's recommended to measure the gain of the communication speed
 before actually using this option, because the performace gain
-varies between CPUs, 
+varies between CPUs.
+There are some measurement results in 
+<quote><citerefentry><refentrytitle>Network Transfer Speed Comparison by ciphers</refentrytitle></citerefentry></quote>
+section of the Gfarm Users' Manual for reference.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
