@@ -2,20 +2,20 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfcksum</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfcksum">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfcksum.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfcksum — print checksum</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfcksum</code>  [-r] [ -T  |   -t ]  <em class="replaceable"><code>path</code></em>... </p></div>
-<div class="cmdsynopsis"><p><code class="command">gfcksum</code>   -c  [-rv] [-h <em class="replaceable"><code>host</code></em>]  <em class="replaceable"><code>path</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfcksum</code>  [-rl] [ -T  |   -t ]  <em class="replaceable"><code>path</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfcksum</code>   -c  [-rlv] [-h <em class="replaceable"><code>host</code></em>]  <em class="replaceable"><code>path</code></em>... </p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 <span class="command"><strong>gfcksum</strong></span> prints checksum of
@@ -34,10 +34,15 @@ metadata.  The -h option specifies the location of the file replica to
 be calculated.  With the -v option, the verbose information including
 modification time of the file replica is displayed.
 </p>
+<p>
+If the -l option is present, <span class="command"><strong>gfcksum</strong></span>
+displays a path for each file.
+By default, gfcksum shows its basename only.
+</p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-r</code></span></dt>
 <dd><p>Displays subdirectories recursively.</p></dd>
 <dt><span class="term"><code class="option">-c</code></span></dt>
@@ -49,6 +54,10 @@ is specified.</p></dd>
 <dt><span class="term"><code class="option">-v</code></span></dt>
 <dd><p>Displays the verbose information including modification time of
 the file replica, when the -c option is specified.</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd><p>Displays a path for each file.
+By default, gfcksum shows its basename only.
+</p></dd>
 <dt><span class="term"><code class="option">-?</code></span></dt>
 <dd><p>Displays a list of command options.</p></dd>
 </dl></div>
