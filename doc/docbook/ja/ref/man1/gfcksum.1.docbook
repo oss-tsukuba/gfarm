@@ -19,7 +19,7 @@
 <refsynopsisdiv id="synopsis">
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfcksum</command>
-    <arg choice="opt" rep="norepeat">-r</arg>
+    <arg choice="opt" rep="norepeat">-rl</arg>
     <group choice="opt" rep="norepeat">
       <arg choice="plain" rep="norepeat">-T</arg>
       <arg choice="plain" rep="norepeat">-t</arg>
@@ -29,7 +29,7 @@
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfcksum</command>
     <arg choice="plain" rep="norepeat">-c</arg>
-    <arg choice="opt" rep="norepeat">-rv</arg>
+    <arg choice="opt" rep="norepeat">-rlv</arg>
     <arg choice="opt" rep="norepeat">-h <replaceable>host</replaceable></arg>
     <arg choice="plain" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
@@ -54,6 +54,11 @@
 -h オプションにより、ファイルが格納されているホストを指定することができます。
 -v オプションを指定すると、実際に格納されているファイルの修正時刻なども表示します。
 </para>
+
+<para>
+-l オプションを指定すると、それぞれのファイルのパスを表示します。
+デフォルトでは、ベース名 (basename) しか表示しません。
+</para>
 </refsect1>
 
 <refsect1 id="options"><title>OPTIONS</title>
@@ -64,24 +69,36 @@
 <para>ディレクトリに含まれるファイルのチェックサムを再帰的に表示します。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-c</option></term>
 <listitem>
 <para>ファイルのチェックサムを計算し、メタデータに格納されているチェックサムと比較します。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-h</option> <parameter moreinfo="none">host</parameter></term>
 <listitem>
 <para>-c オプションとともに用いられ、ファイルが格納されているホストを指定します。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-v</option></term>
 <listitem>
 <para>-c オプションとともに用いられ、実際に格納されているファイルの修正日時など詳細な情報を表示します。</para>
 </listitem>
 </varlistentry>
+
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>それぞれのファイルのパスを表示します。
+デフォルトでは、gfcksum はベース名 (basename) しか表示しません。</para>
+</listitem>
+</varlistentry>
+
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>

@@ -16,6 +16,7 @@
 char *program_name = "gfcksum";
 static int opt_verbose = 0;
 static int opt_print_filename = 1;
+static int opt_print_path = 0;
 
 static gfarm_error_t
 display_dir(char *p, struct gfs_stat *st, void *arg)
@@ -34,13 +35,17 @@ display_dir(char *p, struct gfs_stat *st, void *arg)
 static void
 display_cksum(char *p, struct gfs_stat_cksum *c)
 {
-	const char *b = gfarm_url_dir_skip(p);
+	const char *name;
 
+	if (opt_print_path)
+		name = p;
+	else
+		name = gfarm_url_dir_skip(p);
 	if (c == NULL || c->len == 0)
-		printf("%s: no checksum\n", b);
+		printf("%s: no checksum\n", name);
 	else
 		printf("%.*s (%s) %d %s\n", (int)c->len, c->cksum, c->type,
-		    c->flags, b);
+		    c->flags, name);
 }
 
 static void
@@ -201,6 +206,7 @@ usage(void)
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-c\tcompute checksum\n");
 	fprintf(stderr, "\t-h host\tspecify file system node\n");
+	fprintf(stderr, "\t-l\tdisplay a path for each file\n");
 	fprintf(stderr, "\t-r\tdisplay subdirectories recursively\n");
 	fprintf(stderr, "\t-T\tdisplay which cksum type will be calculated\n");
 	fprintf(stderr, "\t-t\tdisplay cksum type\n");
@@ -222,13 +228,16 @@ main(int argc, char **argv)
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "ch:rTtv?")) != -1) {
+	while ((ch = getopt(argc, argv, "ch:lrTtv?")) != -1) {
 		switch (ch) {
 		case 'c':
 			op = calc_cksum;
 			break;
 		case 'h':
 			host = optarg;
+			break;
+		case 'l':
+			opt_print_path = 1;
 			break;
 		case 'r':
 			opt_recursive = 1;
@@ -275,7 +284,7 @@ main(int argc, char **argv)
 		gfs_glob(argv[i], &paths, &types);
 	gfs_glob_free(&types);
 
-	if (argc <= 1 && !opt_recursive &&
+	if (argc <= 1 && !opt_recursive && !opt_print_path &&
 	    (op == query_cksum_calculation_type || op == query_cksum_type))
 		opt_print_filename = 0;
 

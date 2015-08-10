@@ -19,7 +19,7 @@
 <refsynopsisdiv id="synopsis">
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfcksum</command>
-    <arg choice="opt" rep="norepeat">-r</arg>
+    <arg choice="opt" rep="norepeat">-rl</arg>
     <group choice="opt" rep="norepeat">
       <arg choice="plain" rep="norepeat">-T</arg>
       <arg choice="plain" rep="norepeat">-t</arg>
@@ -29,7 +29,7 @@
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfcksum</command>
     <arg choice="plain" rep="norepeat">-c</arg>
-    <arg choice="opt" rep="norepeat">-rv</arg>
+    <arg choice="opt" rep="norepeat">-rlv</arg>
     <arg choice="opt" rep="norepeat">-h <replaceable>host</replaceable></arg>
     <arg choice="plain" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
@@ -57,6 +57,12 @@ metadata.  The -h option specifies the location of the file replica to
 be calculated.  With the -v option, the verbose information including
 modification time of the file replica is displayed.
 </para>
+
+<para>
+If the -l option is present, <command moreinfo="none">gfcksum</command>
+displays a path for each file.
+By default, gfcksum shows its basename only.
+</para>
 </refsect1>
 
 <refsect1 id="options"><title>OPTIONS</title>
@@ -67,6 +73,7 @@ modification time of the file replica is displayed.
 <para>Displays subdirectories recursively.</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-c</option></term>
 <listitem>
@@ -74,6 +81,7 @@ modification time of the file replica is displayed.
 the checksum stored in the metadata.</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-h</option> <parameter moreinfo="none">host</parameter></term>
 <listitem>
@@ -81,6 +89,7 @@ the checksum stored in the metadata.</para>
 is specified.</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-v</option></term>
 <listitem>
@@ -88,6 +97,16 @@ is specified.</para>
 the file replica, when the -c option is specified.</para>
 </listitem>
 </varlistentry>
+
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>Displays a path for each file.
+By default, gfcksum shows its basename only.
+</para>
+</listitem>
+</varlistentry>
+
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
