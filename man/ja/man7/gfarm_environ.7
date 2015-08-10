@@ -2,12 +2,12 @@
 .\"     Title: gfarm_environ
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 27 Jul 2015
+.\"      Date: 10 Aug 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM_ENVIRON" "7" "27 Jul 2015" "Gfarm" "Gfarm"
+.TH "GFARM_ENVIRON" "7" "10 Aug 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -90,7 +90,9 @@ globus_gssapi_gsi version 11\&.17 以降 (globus_toolkit version 6\&.0\&.1433193
 \fBciphers\fR(1)
 ) を参照してください。
 .sp
-AES\-NI 命令セットを備える x86 系 CPU の場合、クライアント側で AES128\-GCM\-SHA256 を指定することで、若干の安全性低下の見返りに、 数パーセント程度、通信性能が向上することがあります。 AES\-NI 命令セットを備えない x86 系 CPU では、クライアント側で AES128\-SHA を指定することで、若干の安全性低下の見返りに、 倍程度、通信性能が向上することがあります。 性能の変化は、CPUの種類によって異なりますので、利用の前に性能計測を お勧めします。あるCPUでは性能向上となる設定が、別のCPUでは性能低下を 招くことがあります。
+AES\-NI 命令セットを備える x86 系 CPU の場合、クライアント側で AES128\-GCM\-SHA256 を指定することで、若干の安全性低下の見返りに、 数パーセント程度、通信性能が向上することがあります。 AES\-NI 命令セットを備えない x86 系 CPU では、クライアント側で AES128\-SHA を指定することで、若干の安全性低下の見返りに、 倍程度、通信性能が向上することがあります。 性能の変化は、CPUの種類によって異なりますので、利用の前に性能計測を お勧めします。あるCPUでは性能向上となる設定が、別のCPUでは性能低下を 招くことがあります。 参考のため、いくつかのCPUでの計測結果を、Gfarm ユーザーズマニュアルの
+\(lq\fB暗号化方式によるネットワーク転送速度の比較\fR()\(rq
+に記載しています。
 .sp
 例:
 .sp
