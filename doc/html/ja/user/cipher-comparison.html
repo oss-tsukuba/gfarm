@@ -98,9 +98,9 @@ td.speed { text-align: right; }
   </ul>
 <li>cipher type
   <ul>
-  <li>if "bio type" is "cipher":<br/>
+  <li>「bio type」が「cipher」の場合:<br/>
       BIO_set_cipher(bio, EVP_get_cipherbyname(), ...) で cipher type を設定
-  <li>if "bio type" is "ssl":<br/>
+  <li>「bio type」が「ssl」の場合:<br/>
       SSL_set_cipher_list() で cipher type を設定
   </ul>
 <li>cpu type
@@ -126,12 +126,12 @@ td.speed { text-align: right; }
 </ul>
 
 <p>
-注E:<br/>
+注:<br/>
 環境変数 GLOBUS_GSSAPI_CIPHERS に設定可能な cipher type は、
 「bio type」が「ssl」となっているもののみです。
 
 <p>
-注E:<br/>
+注:<br/>
 多くの環境では、cipher type のデフォルトとして AES256-GCM-SHA384 が使われます。
 
 <HR>
