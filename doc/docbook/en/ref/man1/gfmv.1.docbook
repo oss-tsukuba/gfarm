@@ -5,7 +5,7 @@
 
 <refentry id="gfmv.1">
 
-<refentryinfo><date>21 Dec 2008</date></refentryinfo>
+<refentryinfo><date>19 Aug 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfmv</refentrytitle>
@@ -23,7 +23,13 @@
   <command moreinfo="none">gfmv</command>
     <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
     <arg choice="plain" rep="norepeat">src</arg>
-    <arg choice="plain" rep="norepeat">dest</arg>
+    <arg choice="plain" rep="norepeat">dest-file</arg>
+</cmdsynopsis>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfmv</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="plain" rep="repeat">src</arg>
+    <arg choice="plain" rep="norepeat">dest-dir</arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -32,8 +38,17 @@
 <refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-<command moreinfo="none">gfmv</command> moves or renames a Gfarm file from
-<parameter moreinfo="none">src</parameter> to <parameter moreinfo="none">dest</parameter>.
+In its first form,
+<command moreinfo="none">gfmv</command> renames a Gfarm file from
+<parameter moreinfo="none">src</parameter> to
+<parameter moreinfo="none">dest-file</parameter>.
+</para>
+
+<para>
+In its second form,
+<command moreinfo="none">gfmv</command> moves Gfarm files, which are
+specified by the <parameter moreinfo="none">src</parameter> parameter,
+to under the existing <parameter moreinfo="none">dest-dir</parameter>.
 </para>
 
 </refsect1>
@@ -41,6 +56,20 @@
 <refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
+
+<varlistentry>
+<term><option>-f</option></term>
+<listitem>
+<para>Do not prompt before overwriting not-writable files.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-i</option></term>
+<listitem>
+<para>Prompt before overwriting.</para>
+</listitem>
+</varlistentry>
 
 <varlistentry>
 <term><option>-?</option></term>

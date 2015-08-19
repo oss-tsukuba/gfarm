@@ -5,7 +5,7 @@
 
 <refentry id="gfmv.1">
 
-<refentryinfo><date>21 Dec 2008</date></refentryinfo>
+<refentryinfo><date>19 Aug 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfmv</refentrytitle>
@@ -23,7 +23,13 @@
   <command moreinfo="none">gfmv</command>
     <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
     <arg choice="plain" rep="norepeat">src</arg>
-    <arg choice="plain" rep="norepeat">dest</arg>
+    <arg choice="plain" rep="norepeat">dest-file</arg>
+</cmdsynopsis>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfmv</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="plain" rep="repeat">src</arg>
+    <arg choice="plain" rep="norepeat">dest-dir</arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -32,8 +38,16 @@
 <refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
+最初のコマンド形式の場合，
 Gfarm ファイルを<parameter moreinfo="none">src</parameter>から
-<parameter moreinfo="none">dest</parameter>に名称変更あるいは移動します．
+<parameter moreinfo="none">dest-file</parameter>に名称変更します．
+</para>
+
+<para>
+2つ目のコマンド形式の場合，
+<parameter moreinfo="none">src</parameter>で指定された Gfarm ファイルを，
+既存のディレクトリである
+<parameter moreinfo="none">dest-dir</parameter>の下に移動します．
 </para>
 
 </refsect1>
@@ -41,6 +55,24 @@ Gfarm ファイルを<parameter moreinfo="none">src</parameter>から
 <refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
+
+<varlistentry>
+<term><option>-f</option></term>
+<listitem>
+<para>
+書き込み権限のないファイルを置き換える場合に，確認を求めないようにします．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-i</option></term>
+<listitem>
+<para>
+ファイルを置き換える場合に，確認を求めるようにします．
+</para>
+</listitem>
+</varlistentry>
 
 <varlistentry>
 <term><option>-?</option></term>
