@@ -1,0 +1,121 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfs_pio_sendfile</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfs_pio_sendfile">
+<a name="gfs-pio-sendfile.3"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfs_pio_sendfile — ローカルファイルを送信する</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="funcsynopsis">
+<pre class="funcsynopsisinfo">
+#include &lt;gfarm/gfarm.h&gt;
+</pre>
+<table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" class="funcprototype-table">
+<tr>
+<td><code class="funcdef"><b class="fsfunc">gfarm_error_t gfs_pio_sendfile</b>(</code></td>
+<td>
+<var class="pdparam">w_gf</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">w_off</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">r_fd</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">r_off</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">len</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">sentp</var><code>)</code>;</td>
+<td> </td>
+</tr>
+</table>
+<div class="paramdef-list">
+<code>GFS_File <var class="pdparam">w_gf</var></code>;<br><code>gfarm_off_t <var class="pdparam">w_off</var></code>;<br><code>int <var class="pdparam">r_fd</var></code>;<br><code>gfarm_off_t <var class="pdparam">r_off</var></code>;<br><code>gfarm_off_t <var class="pdparam">len</var></code>;<br><code>gfarm_off_t * <var class="pdparam">sentp</var></code>;</div>
+<div class="funcprototype-spacer"> </div>
+</div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+ファイルディスクリプタ
+<em class="parameter"><code>r_fd</code></em> で指定したローカルファイルの
+オフセット
+<em class="parameter"><code>r_off</code></em> から、
+Gfarm ファイル
+<em class="parameter"><code>w_gf</code></em> の
+オフセット
+<em class="parameter"><code>w_off</code></em> へ、
+<em class="parameter"><code>len</code></em>
+バイトだけ、ファイルの内容を転送します。
+len が -1 の場合は、ファイル末尾までの転送を意味します。
+転送されたバイト数は
+<em class="parameter"><code>sentp</code></em>
+の指す先に返します。
+<em class="parameter"><code>len</code></em> が正の値で、
+<em class="parameter"><code>sentp</code></em> の指す先に返った値が
+<em class="parameter"><code>len</code></em> 未満の場合は、
+<acronym class="acronym">EOF</acronym>
+に到達したことをを意味します。
+<em class="parameter"><code>sentp</code></em> は
+<span style="color: red">&lt;term&gt;<code class="constant">NULL</code>&lt;/term&gt;</span> でも構いません。
+</p>
+</div>
+<div class="refsect1" title="RETURN VALUES">
+<a name="return-values"></a><h2>RETURN VALUES</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_ERROR</code></span></dt>
+<dd><p>正常終了を示します。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_OPERATION_NOT_PERMITTED</code></span></dt>
+<dd><p><em class="parameter"><code>gf</code></em>
+で指定されるファイルがレギュラーファイルではありません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_BAD_FILE_DESCRIPTOR</code></span></dt>
+<dd><p><em class="parameter"><code>gf</code></em>
+で指定されるファイルディスクリプタが不正、
+あるいは読込可能でオープンされていません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_FILE_SYSTEM_NODE</code></span></dt>
+<dd><p>利用可能なファイルシステムノードがありません。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_MEMORY</code></span></dt>
+<dd><p>メモリ不足のため処理を中止しました。</p></dd>
+<dt><span class="term">その他</span></dt>
+<dd><p>上記以外のエラーが生じたことを示します。
+<span class="citerefentry"><span class="refentrytitle">gfarm_error_string</span>(3)</span>
+によりエラーの原因を文字列に変換することができます。
+</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_create</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_open</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_write</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_recvfile</span>(3)</span>
+</p>
+</div>
+</div></body>
+</html>

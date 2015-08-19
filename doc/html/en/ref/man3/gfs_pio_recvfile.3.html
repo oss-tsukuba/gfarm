@@ -1,0 +1,119 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfs_pio_recvfile</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfs_pio_recvfile">
+<a name="gfs-pio-recvfile.3"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfs_pio_recvfile — receive a Gfarm file to local machine</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="funcsynopsis">
+<pre class="funcsynopsisinfo">
+#include &lt;gfarm/gfarm.h&gt;
+</pre>
+<table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" class="funcprototype-table">
+<tr>
+<td><code class="funcdef"><b class="fsfunc">gfarm_error_t gfs_pio_recvfile</b>(</code></td>
+<td>
+<var class="pdparam">r_gf</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">r_off</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">w_fd</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">w_off</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">len</var>, </td>
+<td> </td>
+</tr>
+<tr>
+<td> </td>
+<td>
+<var class="pdparam">recvp</var><code>)</code>;</td>
+<td> </td>
+</tr>
+</table>
+<div class="paramdef-list">
+<code>GFS_File <var class="pdparam">r_gf</var></code>;<br><code>gfarm_off_t <var class="pdparam">r_off</var></code>;<br><code>int <var class="pdparam">w_fd</var></code>;<br><code>gfarm_off_t <var class="pdparam">w_off</var></code>;<br><code>gfarm_off_t <var class="pdparam">len</var></code>;<br><code>gfarm_off_t * <var class="pdparam">recvp</var></code>;</div>
+<div class="funcprototype-spacer"> </div>
+</div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+Receives 
+<em class="parameter"><code>len</code></em>
+bytes of data from
+the position specified by the offset
+<em class="parameter"><code>r_off</code></em>
+in a Gfarm file
+<em class="parameter"><code>r_gf</code></em>,
+to the position specified by the offset
+<em class="parameter"><code>w_off</code></em>
+of a local file which is pointed by a file descriptor
+<em class="parameter"><code>w_fd</code></em>.
+If len is -1, this function transfers until the end of the file.
+The transfered bytes will be stored to the memory pointed by
+<em class="parameter"><code>recvp</code></em>.
+If 
+<em class="parameter"><code>len</code></em> is a positive value,
+and the value pointed by
+<em class="parameter"><code>recvp</code></em> is less than
+<em class="parameter"><code>len</code></em>,
+that means the transfer reached
+<acronym class="acronym">EOF</acronym>.
+<span style="color: red">&lt;term&gt;<code class="constant">NULL</code>&lt;/term&gt;</span> is allowed as
+<em class="parameter"><code>recvp</code></em>.
+</p>
+</div>
+<div class="refsect1" title="RETURN VALUES">
+<a name="return-values"></a><h2>RETURN VALUES</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_ERROR</code></span></dt>
+<dd><p>The function terminated successfully.</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_OPERATION_NOT_PERMITTED</code></span></dt>
+<dd><p><em class="parameter"><code>gf</code></em> does not specify a regular file.</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_BAD_FILE_DESCRIPTOR</code></span></dt>
+<dd><p>The file descripter specified by <em class="parameter"><code>gf</code></em> is
+not a valid or is not open for reading.</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_FILE_SYSTEM_NODE</code></span></dt>
+<dd><p>There is no available file system node.</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_MEMORY</code></span></dt>
+<dd><p>Insufficient memory was available.</p></dd>
+<dt><span class="term">Others</span></dt>
+<dd><p>An error except the above occurred.  The reason is shown by
+<span class="citerefentry"><span class="refentrytitle">gfarm_error_string</span>(3)</span>.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_create</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_open</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_read</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_sendfile</span>(3)</span>
+</p>
+</div>
+</div></body>
+</html>
