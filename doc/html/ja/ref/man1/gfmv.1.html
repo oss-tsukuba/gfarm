@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfmv</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfmv">
 <a name="gfmv.1"></a><div class="titlepage"></div>
@@ -12,18 +12,34 @@
 </div>
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfmv</code>  [<em class="replaceable"><code>options</code></em>]  src   dest </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfmv</code>  [<em class="replaceable"><code>options</code></em>]  src   dest-file </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfmv</code>  [<em class="replaceable"><code>options</code></em>]  src...   dest-dir </p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
+最初のコマンド形式の場合，
 Gfarm ファイルを<em class="parameter"><code>src</code></em>から
-<em class="parameter"><code>dest</code></em>に名称変更あるいは移動します．
+<em class="parameter"><code>dest-file</code></em>に名称変更します．
+</p>
+<p>
+2つ目のコマンド形式の場合，
+<em class="parameter"><code>src</code></em>で指定された Gfarm ファイルを，
+既存のディレクトリである
+<em class="parameter"><code>dest-dir</code></em>の下に移動します．
 </p>
 </div>
 <div class="refsect1" title="OPTIONS">
 <a name="options"></a><h2>OPTIONS</h2>
 <div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-f</code></span></dt>
+<dd><p>
+書き込み権限のないファイルを置き換える場合に，確認を求めないようにします．
+</p></dd>
+<dt><span class="term"><code class="option">-i</code></span></dt>
+<dd><p>
+ファイルを置き換える場合に，確認を求めるようにします．
+</p></dd>
 <dt><span class="term"><code class="option">-?</code></span></dt>
 <dd><p>引数オプションを表示します．</p></dd>
 </dl></div>
