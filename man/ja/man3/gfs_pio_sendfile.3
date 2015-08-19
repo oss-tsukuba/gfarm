@@ -1,0 +1,100 @@
+'\" t
+.\"     Title: gfs_pio_sendfile
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 12 Aug 2015
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFS_PIO_SENDFILE" "3" "12 Aug 2015" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfs_pio_sendfile \- ローカルファイルを送信する
+.SH "SYNOPSIS"
+.sp
+.ft B
+.nf
+#include <gfarm/gfarm\&.h>
+.fi
+.ft
+.HP \w'gfarm_error_t\ gfs_pio_sendfile('u
+.BI "gfarm_error_t\ gfs_pio_sendfile(GFS_File\ " "w_gf" ", gfarm_off_t\ " "w_off" ", int\ " "r_fd" ", gfarm_off_t\ " "r_off" ", gfarm_off_t\ " "len" ", gfarm_off_t\ *\ " "sentp" ");"
+.SH "DESCRIPTION"
+.PP
+ファイルディスクリプタ
+\fIr_fd\fR
+で指定したローカルファイルの オフセット
+\fIr_off\fR
+から、 Gfarm ファイル
+\fIw_gf\fR
+の オフセット
+\fIw_off\fR
+へ、
+\fIlen\fR
+バイトだけ、ファイルの内容を転送します。 len が \-1 の場合は、ファイル末尾までの転送を意味します。 転送されたバイト数は
+\fIsentp\fR
+の指す先に返します。
+\fIlen\fR
+が正の値で、
+\fIsentp\fR
+の指す先に返った値が
+\fIlen\fR
+未満の場合は、
+EOF
+に到達したことをを意味します。
+\fIsentp\fR
+は
+<term>\fBNULL\fR</term>
+でも構いません。
+.SH "RETURN VALUES"
+.PP
+\fBGFARM_ERR_NO_ERROR\fR
+.RS 4
+正常終了を示します。
+.RE
+.PP
+\fBGFARM_ERR_OPERATION_NOT_PERMITTED\fR
+.RS 4
+\fIgf\fR
+で指定されるファイルがレギュラーファイルではありません。
+.RE
+.PP
+\fBGFARM_ERR_BAD_FILE_DESCRIPTOR\fR
+.RS 4
+\fIgf\fR
+で指定されるファイルディスクリプタが不正、 あるいは読込可能でオープンされていません。
+.RE
+.PP
+\fBGFARM_ERR_NO_FILE_SYSTEM_NODE\fR
+.RS 4
+利用可能なファイルシステムノードがありません。
+.RE
+.PP
+\fBGFARM_ERR_NO_MEMORY\fR
+.RS 4
+メモリ不足のため処理を中止しました。
+.RE
+.PP
+その他
+.RS 4
+上記以外のエラーが生じたことを示します。
+\fBgfarm_error_string\fR(3)
+によりエラーの原因を文字列に変換することができます。
+.RE
+.SH "SEE ALSO"
+.PP
+
+\fBgfs_pio_create\fR(3),
+\fBgfs_pio_open\fR(3),
+\fBgfs_pio_write\fR(3),
+\fBgfs_pio_recvfile\fR(3)
