@@ -6,7 +6,9 @@ DOCBOOK = \
 	gfs_pio_create.3 \
 	gfs_pio_open.3 \
 	gfs_pio_read.3 \
-	gfs_pio_write.3
+	gfs_pio_write.3 \
+	gfs_pio_recvfile.3 \
+	gfs_pio_sendfile.3
 
 #DOCBOOK = \
 #	gfarm_hostlist_read.3 \
