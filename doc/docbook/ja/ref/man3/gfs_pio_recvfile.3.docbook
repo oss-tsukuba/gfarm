@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+
+<refentry id="gfs-pio-recvfile.3">
+
+<refentryinfo><date>12 Aug 2015</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_pio_recvfile</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>gfs_pio_recvfile</refname>
+<refpurpose>ファイルをローカルマシンに取り込む</refpurpose>
+</refnamediv>
+<refsynopsisdiv id="synopsis">
+<funcsynopsis>
+<funcsynopsisinfo format="linespecific">
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfs_pio_recvfile</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">r_gf</parameter></paramdef>
+    <paramdef>gfarm_off_t <parameter moreinfo="none">r_off</parameter></paramdef>
+    <paramdef>int <parameter moreinfo="none">w_fd</parameter></paramdef>
+    <paramdef>gfarm_off_t <parameter moreinfo="none">w_off</parameter></paramdef>
+    <paramdef>gfarm_off_t <parameter moreinfo="none">len</parameter></paramdef>
+    <paramdef>gfarm_off_t * <parameter moreinfo="none">recvp</parameter></paramdef>
+</funcprototype>
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>
+Gfarm ファイル
+<parameter moreinfo="none">r_gf</parameter> の
+オフセット
+<parameter moreinfo="none">r_off</parameter> から、
+ファイルディスクリプタ
+<parameter moreinfo="none">w_fd</parameter> で指定したローカルファイルの
+オフセット
+<parameter moreinfo="none">w_off</parameter> へ、
+<parameter moreinfo="none">len</parameter>
+バイトだけ、ファイルの内容を転送します。
+len が -1 の場合は、ファイル末尾までの転送を意味します。
+転送されたバイト数は
+<parameter moreinfo="none">recvp</parameter>
+の指す先に返します。
+<parameter moreinfo="none">len</parameter> が正の値で、
+<parameter moreinfo="none">recvp</parameter> の指す先に返った値が
+<parameter moreinfo="none">len</parameter> 未満の場合は、
+<acronym>EOF</acronym>
+に到達したことをを意味します。
+<parameter moreinfo="none">recvp</parameter> は
+<term><constant>NULL</constant></term> でも構いません。
+</para>
+
+</refsect1>
+
+<refsect1 id="return-values"><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_ERROR</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
+<listitem>
+<para><parameter moreinfo="none">gf</parameter>
+で指定されるファイルがレギュラーファイルではありません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_BAD_FILE_DESCRIPTOR</constant></term>
+<listitem>
+<para><parameter moreinfo="none">gf</parameter>
+で指定されるファイルディスクリプタが不正、
+あるいは読込可能でオープンされていません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_FILE_SYSTEM_NODE</constant></term>
+<listitem>
+<para>利用可能なファイルシステムノードがありません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。
+<citerefentry><refentrytitle>gfarm_error_string</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+によりエラーの原因を文字列に変換することができます。
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id="see-also"><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_read</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_sendfile</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>

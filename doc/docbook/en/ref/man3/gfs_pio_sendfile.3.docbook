@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+
+<refentry id="gfs-pio-sendfile.3">
+
+<refentryinfo><date>12 Aug 2015</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_pio_sendfile</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>gfs_pio_sendfile</refname>
+<refpurpose>receive a Gfarm file to local machine</refpurpose>
+</refnamediv>
+<refsynopsisdiv id="synopsis">
+<funcsynopsis>
+<funcsynopsisinfo format="linespecific">
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfs_pio_sendfile</function></funcdef>
+    <paramdef>GFS_File <parameter moreinfo="none">w_gf</parameter></paramdef>
+    <paramdef>gfarm_off_t <parameter moreinfo="none">w_off</parameter></paramdef>
+    <paramdef>int <parameter moreinfo="none">r_fd</parameter></paramdef>
+    <paramdef>gfarm_off_t <parameter moreinfo="none">r_off</parameter></paramdef>
+    <paramdef>gfarm_off_t <parameter moreinfo="none">len</parameter></paramdef>
+    <paramdef>gfarm_off_t * <parameter moreinfo="none">sentp</parameter></paramdef>
+</funcprototype>
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>
+Sends
+<parameter moreinfo="none">len</parameter>
+bytes of data from
+the position specified by the offset
+<parameter moreinfo="none">r_off</parameter>
+in a local file which is pointed by a file descriptor
+<parameter moreinfo="none">r_fd</parameter>.
+to the position specified by the offset
+<parameter moreinfo="none">w_off</parameter>
+of a Gfarm file
+<parameter moreinfo="none">w_gf</parameter>.
+If len is -1, this function transfers until the end of the file.
+The transfered bytes will be stored to the memory pointed by
+<parameter moreinfo="none">sentp</parameter>.
+If 
+<parameter moreinfo="none">len</parameter> is a positive value,
+and the value pointed by
+<parameter moreinfo="none">sentp</parameter> is less than
+<parameter moreinfo="none">len</parameter>,
+that means the transfer reached
+<acronym>EOF</acronym>.
+<term><constant>NULL</constant></term> is allowed as
+<parameter moreinfo="none">sentp</parameter>.
+</para>
+
+</refsect1>
+
+<refsect1 id="return-values"><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_ERROR</constant></term>
+<listitem>
+<para>The function terminated successfully.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
+<listitem>
+<para><parameter moreinfo="none">gf</parameter> does not specify a regular file.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_BAD_FILE_DESCRIPTOR</constant></term>
+<listitem>
+<para>The file descripter specified by <parameter moreinfo="none">gf</parameter> is
+not a valid or is not open for reading.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_FILE_SYSTEM_NODE</constant></term>
+<listitem>
+<para>There is no available file system node.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>Insufficient memory was available.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Others</term>
+<listitem>
+<para>An error except the above occurred.  The reason is shown by
+<citerefentry><refentrytitle>gfarm_error_string</refentrytitle><manvolnum>3</manvolnum></citerefentry>.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id="see-also"><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_write</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_recvfile</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
