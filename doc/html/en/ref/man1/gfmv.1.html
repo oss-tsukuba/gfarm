@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfmv</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfmv">
 <a name="gfmv.1"></a><div class="titlepage"></div>
@@ -12,18 +12,31 @@
 </div>
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfmv</code>  [<em class="replaceable"><code>options</code></em>]  src   dest </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfmv</code>  [<em class="replaceable"><code>options</code></em>]  src   dest-file </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfmv</code>  [<em class="replaceable"><code>options</code></em>]  src...   dest-dir </p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
-<span class="command"><strong>gfmv</strong></span> moves or renames a Gfarm file from
-<em class="parameter"><code>src</code></em> to <em class="parameter"><code>dest</code></em>.
+In its first form,
+<span class="command"><strong>gfmv</strong></span> renames a Gfarm file from
+<em class="parameter"><code>src</code></em> to
+<em class="parameter"><code>dest-file</code></em>.
+</p>
+<p>
+In its second form,
+<span class="command"><strong>gfmv</strong></span> moves Gfarm files, which are
+specified by the <em class="parameter"><code>src</code></em> parameter,
+to under the existing <em class="parameter"><code>dest-dir</code></em>.
 </p>
 </div>
 <div class="refsect1" title="OPTIONS">
 <a name="options"></a><h2>OPTIONS</h2>
 <div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-f</code></span></dt>
+<dd><p>Do not prompt before overwriting not-writable files.</p></dd>
+<dt><span class="term"><code class="option">-i</code></span></dt>
+<dd><p>Prompt before overwriting.</p></dd>
 <dt><span class="term"><code class="option">-?</code></span></dt>
 <dd><p>Displays a list of command options.</p></dd>
 </dl></div>
