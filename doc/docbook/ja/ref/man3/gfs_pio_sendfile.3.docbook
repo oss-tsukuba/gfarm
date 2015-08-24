@@ -51,7 +51,9 @@ Gfarm ファイル
 <parameter moreinfo="none">len</parameter>
 バイトだけ、ファイルの内容を転送します。
 len が -1 の場合は、ファイル末尾までの転送を意味します。
-転送されたバイト数は
+<parameter moreinfo="none">sentp</parameter>
+が <constant>NULL</constant> 以外であれば、
+転送されたバイト数を
 <parameter moreinfo="none">sentp</parameter>
 の指す先に返します。
 <parameter moreinfo="none">len</parameter> が正の値で、
@@ -59,8 +61,6 @@ len が -1 の場合は、ファイル末尾までの転送を意味します。
 <parameter moreinfo="none">len</parameter> 未満の場合は、
 <acronym>EOF</acronym>
 に到達したことをを意味します。
-<parameter moreinfo="none">sentp</parameter> は
-<term><constant>NULL</constant></term> でも構いません。
 </para>
 
 </refsect1>

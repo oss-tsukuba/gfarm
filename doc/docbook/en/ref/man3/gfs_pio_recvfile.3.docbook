@@ -53,7 +53,10 @@ of a local file which is pointed by a file descriptor
 <parameter moreinfo="none">w_fd</parameter>.
 If len is -1, this function transfers until the end of the file.
 The transfered bytes will be stored to the memory pointed by
-<parameter moreinfo="none">recvp</parameter>.
+<parameter moreinfo="none">recvp</parameter>
+when
+<parameter moreinfo="none">recvp</parameter>
+is not <constant>NULL</constant>.
 If 
 <parameter moreinfo="none">len</parameter> is a positive value,
 and the value pointed by
@@ -61,8 +64,6 @@ and the value pointed by
 <parameter moreinfo="none">len</parameter>,
 that means the transfer reached
 <acronym>EOF</acronym>.
-<term><constant>NULL</constant></term> is allowed as
-<parameter moreinfo="none">recvp</parameter>.
 </para>
 
 </refsect1>
