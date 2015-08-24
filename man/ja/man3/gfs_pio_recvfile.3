@@ -41,7 +41,11 @@ Gfarm ファイル
 \fIw_off\fR
 へ、
 \fIlen\fR
-バイトだけ、ファイルの内容を転送します。 len が \-1 の場合は、ファイル末尾までの転送を意味します。 転送されたバイト数は
+バイトだけ、ファイルの内容を転送します。 len が \-1 の場合は、ファイル末尾までの転送を意味します。
+\fIrecvp\fR
+が
+\fBNULL\fR
+以外であれば、 転送されたバイト数を
 \fIrecvp\fR
 の指す先に返します。
 \fIlen\fR
@@ -52,10 +56,6 @@ Gfarm ファイル
 未満の場合は、
 EOF
 に到達したことをを意味します。
-\fIrecvp\fR
-は
-<term>\fBNULL\fR</term>
-でも構いません。
 .SH "RETURN VALUES"
 .PP
 \fBGFARM_ERR_NO_ERROR\fR
