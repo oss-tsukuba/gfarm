@@ -46,14 +46,17 @@ bytes of data from
 the position specified by the offset
 <parameter moreinfo="none">r_off</parameter>
 in a local file which is pointed by a file descriptor
-<parameter moreinfo="none">r_fd</parameter>.
+<parameter moreinfo="none">r_fd</parameter>,
 to the position specified by the offset
 <parameter moreinfo="none">w_off</parameter>
 of a Gfarm file
 <parameter moreinfo="none">w_gf</parameter>.
 If len is -1, this function transfers until the end of the file.
 The transfered bytes will be stored to the memory pointed by
-<parameter moreinfo="none">sentp</parameter>.
+<parameter moreinfo="none">sentp</parameter>
+when
+<parameter moreinfo="none">sentp</parameter>
+is not <constant>NULL</constant>.
 If 
 <parameter moreinfo="none">len</parameter> is a positive value,
 and the value pointed by
@@ -61,8 +64,6 @@ and the value pointed by
 <parameter moreinfo="none">len</parameter>,
 that means the transfer reached
 <acronym>EOF</acronym>.
-<term><constant>NULL</constant></term> is allowed as
-<parameter moreinfo="none">sentp</parameter>.
 </para>
 
 </refsect1>
