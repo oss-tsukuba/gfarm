@@ -41,7 +41,11 @@ gfs_pio_sendfile \- ローカルファイルを送信する
 \fIw_off\fR
 へ、
 \fIlen\fR
-バイトだけ、ファイルの内容を転送します。 len が \-1 の場合は、ファイル末尾までの転送を意味します。 転送されたバイト数は
+バイトだけ、ファイルの内容を転送します。 len が \-1 の場合は、ファイル末尾までの転送を意味します。
+\fIsentp\fR
+が
+\fBNULL\fR
+以外であれば、 転送されたバイト数を
 \fIsentp\fR
 の指す先に返します。
 \fIlen\fR
@@ -52,10 +56,6 @@ gfs_pio_sendfile \- ローカルファイルを送信する
 未満の場合は、
 EOF
 に到達したことをを意味します。
-\fIsentp\fR
-は
-<term>\fBNULL\fR</term>
-でも構いません。
 .SH "RETURN VALUES"
 .PP
 \fBGFARM_ERR_NO_ERROR\fR

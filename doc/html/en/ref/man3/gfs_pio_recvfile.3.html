@@ -75,7 +75,10 @@ of a local file which is pointed by a file descriptor
 <em class="parameter"><code>w_fd</code></em>.
 If len is -1, this function transfers until the end of the file.
 The transfered bytes will be stored to the memory pointed by
-<em class="parameter"><code>recvp</code></em>.
+<em class="parameter"><code>recvp</code></em>
+when
+<em class="parameter"><code>recvp</code></em>
+is not <code class="constant">NULL</code>.
 If 
 <em class="parameter"><code>len</code></em> is a positive value,
 and the value pointed by
@@ -83,8 +86,6 @@ and the value pointed by
 <em class="parameter"><code>len</code></em>,
 that means the transfer reached
 <acronym class="acronym">EOF</acronym>.
-<span style="color: red">&lt;term&gt;<code class="constant">NULL</code>&lt;/term&gt;</span> is allowed as
-<em class="parameter"><code>recvp</code></em>.
 </p>
 </div>
 <div class="refsect1" title="RETURN VALUES">

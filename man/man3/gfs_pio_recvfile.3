@@ -40,16 +40,17 @@ in a Gfarm file
 \fIw_off\fR
 of a local file which is pointed by a file descriptor
 \fIw_fd\fR\&. If len is \-1, this function transfers until the end of the file\&. The transfered bytes will be stored to the memory pointed by
-\fIrecvp\fR\&. If
+\fIrecvp\fR
+when
+\fIrecvp\fR
+is not
+\fBNULL\fR\&. If
 \fIlen\fR
 is a positive value, and the value pointed by
 \fIrecvp\fR
 is less than
 \fIlen\fR, that means the transfer reached
 EOF\&.
-<term>\fBNULL\fR</term>
-is allowed as
-\fIrecvp\fR\&.
 .SH "RETURN VALUES"
 .PP
 \fBGFARM_ERR_NO_ERROR\fR

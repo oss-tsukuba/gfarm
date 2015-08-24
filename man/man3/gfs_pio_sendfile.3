@@ -36,20 +36,21 @@ Sends
 bytes of data from the position specified by the offset
 \fIr_off\fR
 in a local file which is pointed by a file descriptor
-\fIr_fd\fR\&. to the position specified by the offset
+\fIr_fd\fR, to the position specified by the offset
 \fIw_off\fR
 of a Gfarm file
 \fIw_gf\fR\&. If len is \-1, this function transfers until the end of the file\&. The transfered bytes will be stored to the memory pointed by
-\fIsentp\fR\&. If
+\fIsentp\fR
+when
+\fIsentp\fR
+is not
+\fBNULL\fR\&. If
 \fIlen\fR
 is a positive value, and the value pointed by
 \fIsentp\fR
 is less than
 \fIlen\fR, that means the transfer reached
 EOF\&.
-<term>\fBNULL\fR</term>
-is allowed as
-\fIsentp\fR\&.
 .SH "RETURN VALUES"
 .PP
 \fBGFARM_ERR_NO_ERROR\fR
