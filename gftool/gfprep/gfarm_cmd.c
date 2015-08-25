@@ -175,7 +175,7 @@ gfarm_cmd_exec(char *const args[], int (*func_stdin)(int fd, void *arg),
 		return (eno);
 	}
 
-	gfarm_sigpipe_ignore();
+	signal(SIGPIPE, SIG_IGN);
 	retv = func_stdin(cmd_in, func_stdin_arg);
 
 	pthread_join(t, NULL);
