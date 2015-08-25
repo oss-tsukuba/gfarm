@@ -99,6 +99,7 @@ gfpcopy_usage()
 "\t[-f (force copy)(overwrite)] [-b <#bufsize to copy>]\n"
 "\t[-e (skip existing files\n"
 "\t     in order to execute multiple gfpcopy simultaneously)]\n"
+"\t[-k (skip symlink)]\n"
 "\t<src_url(gfarm:... or file:...) or local-path>\n"
 "\t<dst_directory(gfarm:... or file:... or hpss:...) or local-path>\n");
 }
@@ -2518,6 +2519,7 @@ main(int argc, char *argv[])
 	gfarm_int64_t opt_simulate_KBs = -1; /* -s and -n */
 	int opt_force_copy = 0; /* -f */
 	int opt_skip_existing = 0; /* -e */
+	int opt_skip_symlink = 0; /* -k */
 	int opt_n_desire = 1;  /* -N */
 	int opt_migrate = 0; /* -m */
 	gfarm_int64_t opt_max_copy_size = -1; /* -M */
@@ -2545,7 +2547,7 @@ main(int argc, char *argv[])
 	gfmsg_fatal_e(e, "gfarm_list_init");
 
 	while ((ch = getopt(argc, argv,
-	    "N:h:j:w:W:s:S:D:H:R:M:b:J:F:C:c:LemnpPqvdfUlxX:z:Z:?")) != -1) {
+	    "N:h:j:w:W:s:S:D:H:R:M:b:J:F:C:c:LekmnpPqvdfUlxX:z:Z:?")) != -1) {
 		switch (ch) {
 		case 'w':
 			opt_way = optarg;
@@ -2641,6 +2643,9 @@ main(int argc, char *argv[])
 			break;
 		case 'e': /* gfpcopy */
 			opt_skip_existing = 1;
+			break;
+		case 'k': /* gfpcopy */
+			opt_skip_symlink = 1;
 			break;
 		case 'x': /* gfprep */
 			opt_remove = 1;
@@ -2775,8 +2780,8 @@ main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 	} else { /* gfprep */
-		if (opt_force_copy || opt_skip_existing) /* -f or -e */
-			gfprep_usage_common(1);
+		if (opt_force_copy || opt_skip_existing || opt_skip_symlink)
+			gfprep_usage_common(1); /* -f or -e or -k */
 		if (opt_migrate) {
 			if (opt_n_desire > 1) { /* -m and -N */
 				gfmsg_error("gfprep needs either -N or -m");
@@ -3188,6 +3193,11 @@ main(int argc, char *argv[])
 				}
 				/* through: copy a file */
 			} else if (entry->src_d_type == GFS_DT_LNK) {
+				if (opt_skip_symlink) {
+					gfmsg_info("skip symlink: %s",
+					    src_url);
+					goto next_entry;
+				}
 				if (entry->dst_exist) {
 					if (entry->dst_d_type == GFS_DT_LNK &&
 					    can_skip_copy(
