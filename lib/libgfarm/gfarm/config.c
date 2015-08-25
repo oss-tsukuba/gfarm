@@ -938,6 +938,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_CLIENT_DIGEST_CHECK_DEFAULT	0
 #define GFARM_CLIENT_FILE_BUFSIZE_DEFAULT	(1024 * 1024)
 #define GFARM_CLIENT_PARALLEL_COPY_DEFAULT	4
+#define GFARM_CLIENT_PARALLEL_MAX_DEFAULT	16
 #define GFARM_PROFILE_DEFAULT 0 /* disable */
 #define GFARM_METADB_REPLICATION_ENABLED_DEFAULT	0
 #define GFARM_JOURNAL_MAX_SIZE_DEFAULT		(32 * 1024 * 1024) /* 32MB */
@@ -3023,6 +3024,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_ctxp->client_file_bufsize);
 	} else if (strcmp(s, o = "client_parallel_copy") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->client_parallel_copy);
+	} else if (strcmp(s, o = "client_parallel_max") == 0) {
+		e = parse_set_misc_int(p, &gfarm_ctxp->client_parallel_max);
 	} else if (strcmp(s, o = "profile") == 0) {
 		e = parse_profile(p, &staticp->profile);
 	} else if (strcmp(s, o = "iostat_gfmd_path") == 0) {
@@ -3346,6 +3349,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->client_parallel_copy == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->client_parallel_copy =
 		    GFARM_CLIENT_PARALLEL_COPY_DEFAULT;
+	if (gfarm_ctxp->client_parallel_max == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->client_parallel_max =
+		    GFARM_CLIENT_PARALLEL_MAX_DEFAULT;
 	if (staticp->profile == GFARM_CONFIG_MISC_DEFAULT)
 		staticp->profile = GFARM_PROFILE_DEFAULT;
 	if (metadb_replication_enabled == GFARM_CONFIG_MISC_DEFAULT)

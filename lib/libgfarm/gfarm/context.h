@@ -30,6 +30,7 @@ struct gfarm_context {
 	int client_digest_check;
 	int client_file_bufsize;
 	int client_parallel_copy;
+	int client_parallel_max;
 	int on_demand_replication;
 	int call_rpc_instead_syscall;
 	int network_receive_timeout;

@@ -106,6 +106,11 @@ gfpcopy_usage()
 static void
 gfprep_usage_common(int error)
 {
+	int n_para = gfarm_ctxp->client_parallel_copy;
+
+	if (n_para > gfarm_ctxp->client_parallel_max)
+		n_para = gfarm_ctxp->client_parallel_max;
+
 	fprintf(stderr,
 "Usage: %s [-?] [-q (quiet)] [-v (verbose)] [-d (debug)]\n"
 "\t[-X <regexp to exclude a source path>] [-X <regexp>] ...\n"
@@ -128,8 +133,7 @@ gfprep_usage_common(int error)
 /* "\t[-R <#ratio (throughput: local=remote*ratio)(for -w greedy)>]\n" */
 "\t[-F <#dirents(readahead)>]\n",
 		program_name,
-		gfarm_ctxp->client_parallel_copy,
-		GFPREP_PARALLEL_DIRTREE
+		n_para, GFPREP_PARALLEL_DIRTREE
 		);
 	if (strcmp(program_name, name_gfpcopy) == 0)
 		gfpcopy_usage();
@@ -2828,24 +2832,45 @@ main(int argc, char *argv[])
 			gfmsg_fatal("no memory");
 	}
 
-	if (opt_n_para <= 0)
-		opt_n_para = gfarm_ctxp->client_parallel_copy;
+	gfmsg_debug("-j option = %d", opt_n_para);
 	if (opt_n_para <= 0) {
-		gfmsg_error("client_parallel_copy must be "
-			     "a positive interger");
+		opt_n_para = gfarm_ctxp->client_parallel_copy;
+		gfmsg_debug("client_parallel_copy = %d",
+		    gfarm_ctxp->client_parallel_copy);
+	}
+	if (opt_n_para > gfarm_ctxp->client_parallel_max) {
+		opt_n_para = gfarm_ctxp->client_parallel_max;
+		gfmsg_debug("client_parallel_max = %d",
+		    gfarm_ctxp->client_parallel_max);
+	}
+	if (opt_n_para <= 0) {
+		gfmsg_error("client_parallel_copy or -j must be "
+		    "a positive interger: %d", opt_n_para);
 		exit(EXIT_FAILURE);
 	}
 	gfmsg_debug("number of parallel to copy: %d", opt_n_para);
-	if (opt_dirtree_n_para <= 0)
-		opt_dirtree_n_para = GFPREP_PARALLEL_DIRTREE;
+
+	gfmsg_debug("-J option = %d", opt_dirtree_n_para);
 	if (opt_dirtree_n_para <= 0) {
-		gfmsg_error("-J must be a positive interger");
+		opt_dirtree_n_para = GFPREP_PARALLEL_DIRTREE;
+		gfmsg_debug("default number of parallel for dirtree = %d",
+		    opt_dirtree_n_para);
+	}
+	if (opt_dirtree_n_para > gfarm_ctxp->client_parallel_max) {
+		opt_dirtree_n_para = gfarm_ctxp->client_parallel_max;
+		gfmsg_debug("client_parallel_max = %d",
+		    gfarm_ctxp->client_parallel_max);
+	}
+	if (opt_dirtree_n_para <= 0) {
+		gfmsg_error("-J must be a positive interger: %d",
+		    opt_dirtree_n_para);
 		exit(EXIT_FAILURE);
 	}
 	gfmsg_debug("number of parallel to read dirents: %d",
 	    opt_dirtree_n_para);
 	gfmsg_debug("number of child-processes: %d",
-		     opt_n_para + opt_dirtree_n_para);
+	    opt_n_para + opt_dirtree_n_para);
+
 	if (opt_simulate_KBs == 0)
 		gfprep_usage_common(1);
 	if (opt_copy_bufsize <= 0)
