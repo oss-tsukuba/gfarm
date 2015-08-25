@@ -23,12 +23,20 @@ gfarm_openssl_threadid(void)
 	return (pthread_self());
 }
 
+/*
+ * this may be called again after gfarm_terminate(), in which we do
+ * not destroy openssl_mutexes since it is considered to be sefe for
+ * openssl to remain thread-safe.
+ */
 void
 gfarm_openssl_initialize()
 {
 	int num_locks, i;
+	static int initialized = 0;
 	static const char diag[] = "gfarm_openssl_initialize";
 
+	if (initialized)
+		return;
 	SSL_library_init();
 	num_locks = CRYPTO_num_locks();
 	GFARM_MALLOC_ARRAY(config_openssl_mutexes, num_locks);
@@ -38,4 +46,5 @@ gfarm_openssl_initialize()
 		pthread_mutex_init(&config_openssl_mutexes[i], NULL);
 	CRYPTO_set_locking_callback(gfarm_openssl_lock);
 	CRYPTO_set_id_callback(gfarm_openssl_threadid);
+	initialized = 1;
 }
