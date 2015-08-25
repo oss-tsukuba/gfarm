@@ -25,7 +25,7 @@ typedef struct gfarm_dirtree_entry {
 } gfarm_dirtree_entry_t;
 
 gfarm_error_t gfarm_dirtree_init_fork(gfarm_dirtree_t **, GFURL, GFURL,
-	int, int, int);
+	int, int, int, int, regex_t *);
 gfarm_error_t gfarm_dirtree_open(gfarm_dirtree_t *);
 
 gfarm_error_t gfarm_dirtree_checknext(gfarm_dirtree_t *,

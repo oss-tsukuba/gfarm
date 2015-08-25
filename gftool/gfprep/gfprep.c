@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <regex.h>
 
 #include <gfarm/gfarm.h>
 
@@ -107,6 +108,7 @@ gfprep_usage_common(int error)
 {
 	fprintf(stderr,
 "Usage: %s [-?] [-q (quiet)] [-v (verbose)] [-d (debug)]\n"
+"\t[-X <regexp to exclude a source path>] [-X <regexp>] ...\n"
 "\t[-S <source domainname to select a replica>]\n"
 "\t[-h <source hostfile to select a replica>]\n"
 "\t[-L (select a src_host within specified source)(limited scope)]\n"
@@ -2122,7 +2124,8 @@ gfprep_check_busy_and_wait(
 static void
 gfprep_print_list(
 	GFURL src_dir, GFURL dst_dir, const char *src_base_name,
-	int n_para, int n_fifo)
+	int n_para, int n_fifo,
+	int excluded_regexs_num, regex_t *excluded_regexs)
 {
 	gfarm_error_t e;
 	gfarm_dirtree_t *dirtree_handle;
@@ -2133,8 +2136,9 @@ gfprep_print_list(
 
 	e = gfarm_dirtree_init_fork(
 	    &dirtree_handle, src_dir, dst_dir,
-	    n_para, n_fifo, src_base_name ? 0 : 1);
-	gfmsg_fatal_e(e, "gfarm_dirtree_init_fork");
+	    n_para, n_fifo, src_base_name ? 0 : 1,
+	    excluded_regexs_num, excluded_regexs);
+	gfmsg_fatal_e(e, "gfarm_dirtree_init_fork: %s", gfurl_url(src_dir));
 	e = gfarm_dirtree_open(dirtree_handle);
 	gfmsg_fatal_e(e, "gfarm_dirtree_open");
 	n_entry = 0;
@@ -2520,6 +2524,9 @@ main(int argc, char *argv[])
 	int opt_dirtree_n_para = -1; /* -J */
 	int opt_dirtree_n_fifo = 10000; /* -F */
 	int opt_list_only = 0; /* -l */
+	gfarm_list list_excluded_regex; /* -X */
+	regex_t *excluded_regexs;       /* -X */
+	int excluded_regexs_num;        /* -X */
 	gfarm_int64_t opt_size_min = -1; /* -z */
 	gfarm_int64_t opt_size_max = -1; /* -Z */
 
@@ -2530,8 +2537,11 @@ main(int argc, char *argv[])
 	e = gfarm_initialize(&orig_argc, &orig_argv);
 	gfmsg_fatal_e(e, "gfarm_initialize");
 
+	e = gfarm_list_init(&list_excluded_regex);
+	gfmsg_fatal_e(e, "gfarm_list_init");
+
 	while ((ch = getopt(argc, argv,
-	    "N:h:j:w:W:s:S:D:H:R:M:b:J:F:C:c:LexmnpPqvdfUlz:Z:?")) != -1) {
+	    "N:h:j:w:W:s:S:D:H:R:M:b:J:F:C:c:LemnpPqvdfUlxX:z:Z:?")) != -1) {
 		switch (ch) {
 		case 'w':
 			opt_way = optarg;
@@ -2607,9 +2617,6 @@ main(int argc, char *argv[])
 		case 'N': /* gfprep */
 			opt_n_desire = strtol(optarg, NULL, 0);
 			break;
-		case 'x': /* gfprep */
-			opt_remove = 1;
-			break;
 		case 'm': /* gfprep */
 			opt_migrate = 1;
 			opt_limited_src = 1;
@@ -2630,6 +2637,12 @@ main(int argc, char *argv[])
 			break;
 		case 'e': /* gfpcopy */
 			opt_skip_existing = 1;
+			break;
+		case 'x': /* gfprep */
+			opt_remove = 1;
+			break;
+		case 'X':
+			gfarm_list_add(&list_excluded_regex, optarg);
 			break;
 		case 'z':
 			e = gfarm_humanize_number_to_int64(
@@ -2700,6 +2713,26 @@ main(int argc, char *argv[])
 	gfmsg_debug("set options...done");
 
 	/* validate options */
+	excluded_regexs_num = gfarm_list_length(&list_excluded_regex);
+	if (excluded_regexs_num > 0) {
+		regex_t *preg;
+		char *regex;
+
+		GFARM_MALLOC_ARRAY(excluded_regexs, excluded_regexs_num);
+		gfmsg_nomem_check(excluded_regexs);
+
+		for (i = 0; i < excluded_regexs_num; i++) {
+			preg = &excluded_regexs[i];
+			regex = GFARM_LIST_ELEM(list_excluded_regex, i);
+			if (regcomp(preg, regex, REG_EXTENDED|REG_NOSUB) != 0) {
+				gfmsg_error("%s: invalid regular expression",
+				    regex);
+				exit(EXIT_FAILURE);
+			}
+		}
+	} else
+		excluded_regexs = NULL;
+
 	if (opt_way) {
 		if (strcmp(opt_way, "noplan") == 0)
 			way = WAY_NOPLAN;
@@ -2834,7 +2867,8 @@ main(int argc, char *argv[])
 		gfmsg_fatal_e(e, "gfarm_terminate");
 		gfprep_print_list(
 		    src, is_gfpcopy ? dst : NULL, src_base_name,
-		    opt_dirtree_n_para, opt_dirtree_n_fifo);
+		    opt_dirtree_n_para, opt_dirtree_n_fifo,
+		    excluded_regexs_num, excluded_regexs);
 		gfurl_free(src_orig);
 		gfurl_free(dst_orig);
 		gfurl_free(src);
@@ -2876,8 +2910,9 @@ main(int argc, char *argv[])
 
 	e = gfarm_dirtree_init_fork(&dirtree_handle, src,
 	    is_gfpcopy ? dst : NULL,
-	    opt_dirtree_n_para, opt_dirtree_n_fifo, src_base_name ? 0 : 1);
-	gfmsg_fatal_e(e, "gfarm_dirtree_init_fork");
+	    opt_dirtree_n_para, opt_dirtree_n_fifo, src_base_name ? 0 : 1,
+	    excluded_regexs_num, excluded_regexs);
+	gfmsg_fatal_e(e, "gfarm_dirtree_init_fork: %s", gfurl_url(src));
 
 	pfunc_cb_func_init();
 
@@ -3710,6 +3745,13 @@ next_entry:
 	if (way != WAY_NOPLAN)
 		gfarm_list_free(&list_to_schedule);
 	free(array_dst);
+
+	if (excluded_regexs != NULL) {
+		for (i = 0; i < excluded_regexs_num; i++)
+			regfree(&excluded_regexs[i]);
+		free(excluded_regexs);
+	}
+	gfarm_list_free(&list_excluded_regex);
 
 	gfurl_free(src_orig);
 	gfurl_free(dst_orig);

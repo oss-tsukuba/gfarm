@@ -14,6 +14,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <assert.h>
+#include <regex.h>
 
 #include <gfarm/gfarm.h>
 
@@ -23,6 +24,7 @@
 #include "gfm_client.h"
 
 #include "gfurl.h"
+#include "gfmsg.h"
 
 #include "gfarm_parallel.h"
 #include "gfarm_dirtree.h"
@@ -114,6 +116,8 @@ struct gfarm_dirtree {
 	gfarm_fifo_simple_t *fifo_dirs;
 	gfarm_fifo_simple_t *fifo_ents;
 	gfarm_fifo_t *fifo_handle;
+	int n_excluded_regexs;
+	regex_t *excluded_regexs;
 };
 
 enum url_type {
@@ -138,6 +142,19 @@ dirtree_fifo_get(void *entries, int index, void *entryp)
 	*entp = ents[index]; /* pointer */
 }
 
+static int
+dirtree_is_excluded(int n_excluded_regexs, regex_t *excluded_regexs,
+	const char *path)
+{
+	int i;
+
+	for (i = 0; i < n_excluded_regexs; i++) {
+		if (regexec(&excluded_regexs[i], path, 0, NULL, 0) == 0)
+			return (1);
+	}
+	return (0);
+}
+
 enum dirtree_cmd {
 	DIRTREE_CMD_GET_DENTS,
 	DIRTREE_CMD_GET_FINFO,
@@ -146,8 +163,9 @@ enum dirtree_cmd {
 
 enum dirtree_stat {
 	DIRTREE_STAT_GET_DENTS_OK,
+	DIRTREE_STAT_GET_DENTS_IGN,
 	DIRTREE_STAT_GET_FINFO_OK,
-	DIRTREE_STAT_IGNORE,
+	DIRTREE_STAT_GET_FINFO_IGN,
 	DIRTREE_STAT_NG,
 	DIRTREE_STAT_END
 };
@@ -439,7 +457,7 @@ dents_retry:
 				is_retry = 1;
 				goto dents_retry;
 			}
-			gfpara_send_int(to_parent, DIRTREE_STAT_IGNORE);
+			gfpara_send_int(to_parent, DIRTREE_STAT_GET_DENTS_IGN);
 			free(subpath);
 			free(src_dir);
 			goto next_command;
@@ -462,7 +480,7 @@ dents_loop:
 				free(src_dir);
 				free(subpath);
 				gfpara_send_int(
-					to_parent, DIRTREE_STAT_IGNORE);
+				    to_parent, DIRTREE_STAT_GET_DENTS_IGN);
 				goto next_command;
 			}
 			/* GFARM_ERR_NO_SUCH_OBJECT: end of directory */
@@ -537,7 +555,7 @@ dents_error:
 			/* 7: src_size */
 			gfpara_send_int64(tmpfp, src_st.size);
 		goto dents_loop; /* loop */
-		/* ---------------------------------- */
+	/* ------------------------------------------------------------ */
 	case DIRTREE_CMD_GET_FINFO:
 		dst_path = NULL;
 		subpath = NULL;
@@ -553,10 +571,22 @@ dents_error:
 		if (src_path == NULL) {
 			fprintf(stderr, "FATAL: no memory\n");
 			gfpara_send_int(to_parent, DIRTREE_STAT_NG);
-			src_dir = NULL;
 			free(subpath);
 			goto term;
 		}
+		if (handle->dst_type != URL_TYPE_UNUSED) {
+			assert(handle->dst_dir);
+			dst_path = gfurl_path_combine(
+			    gfurl_epath(handle->dst_dir), subpath);
+			if (dst_path == NULL) {
+				fprintf(stderr, "FATAL: no memory\n");
+				gfpara_send_int(to_parent, DIRTREE_STAT_NG);
+				free(subpath);
+				free(src_path);
+				goto term;
+			}
+		}
+
 		gfpara_send_int(to_parent, DIRTREE_STAT_GET_FINFO_OK);
 		/* ----- src ----- */
 		if (handle->src_type == URL_TYPE_LOCAL || is_file == 0) {
@@ -597,16 +627,7 @@ finfo_dst:	/* ----- dst ----- */
 			free(src_path);
 			goto next_command;
 		}
-		assert(handle->dst_dir);
-		dst_path = gfurl_path_combine(gfurl_epath(handle->dst_dir),
-		    subpath);
-		if (dst_path == NULL) {
-			fprintf(stderr, "FATAL: no memory\n");
-			gfpara_send_int(to_parent, 0); /* 3: dst_exist */
-			free(subpath);
-			free(src_path);
-			goto next_command;
-		}
+		assert(dst_path);
 		is_retry = 0;
 finfo_retry2:
 		e = func_lstat(dst_path, &dst_st);
@@ -682,7 +703,7 @@ finfo_retry3:
 		free(src_path);
 		free(dst_path);
 		goto next_command;
-		 /* ---------------------------------- */
+	/* ------------------------------------------------------------ */
 	case DIRTREE_CMD_TERMINATE:
 		e = gfarm_terminate();
 		if (e != GFARM_ERR_NO_ERROR)
@@ -690,7 +711,7 @@ finfo_retry3:
 			    gfarm_error_string(e));
 		gfpara_send_int(to_parent, DIRTREE_STAT_END);
 		return (0);
-		/* ---------------------------------- */
+	/* ------------------------------------------------------------ */
 	default:
 		fprintf(stderr, "ERROR: unexpected DIRTREE_CMD: %d\n",
 			command);
@@ -790,7 +811,7 @@ dirtree_recv_dents(FILE *child_out, gfpara_proc_t *proc, void *param)
 	gfarm_dirtree_t *handle = param;
 	int type, d_type_int;
 	gfarm_dirtree_entry_t *ent;
-	char *subpath;
+	char *subpath, *src_path;
 
 	for (;;) {
 		gfpara_recv_int(child_out, &type);
@@ -815,6 +836,28 @@ dirtree_recv_dents(FILE *child_out, gfpara_proc_t *proc, void *param)
 			gfpara_recv_int(child_out, &ent->src_nlink); /* 5 */
 			gfpara_recv_int(child_out, &d_type_int); /* 6 */
 			ent->src_d_type = (unsigned char) d_type_int;
+			if (ent->src_d_type == GFS_DT_REG) /* 7 */
+				gfpara_recv_int64(child_out, &ent->src_size);
+			else
+				ent->src_size = 0;
+
+			src_path = gfurl_path_combine(
+			    gfurl_epath(handle->src_dir), subpath);
+			if (src_path == NULL) {
+				fprintf(stderr, "FATAL: no memory\n");
+				gfpara_recv_purge(child_out);
+				return (GFPARA_FATAL);
+			}
+			if (dirtree_is_excluded(handle->n_excluded_regexs,
+			    handle->excluded_regexs, src_path)) {
+				gfmsg_info("excluded: %s", src_path);
+				free(src_path);
+				free(subpath);
+				free(ent);
+				continue;
+			}
+			free(src_path);
+
 			gfarm_mutex_lock(&handle->mutex, diag, "mutex");
 			if (handle->is_recursive &&
 			    ent->src_d_type == GFS_DT_DIR) {
@@ -838,10 +881,6 @@ dirtree_recv_dents(FILE *child_out, gfpara_proc_t *proc, void *param)
 					return (GFPARA_FATAL);
 				}
 			}
-			if (ent->src_d_type == GFS_DT_REG) /* 7 */
-				gfpara_recv_int64(child_out, &ent->src_size);
-			else
-				ent->src_size = 0;
 			e = gfarm_fifo_simple_enter(handle->fifo_ents, ent);
 			gfarm_mutex_unlock(&handle->mutex, diag, "mutex");
 			if (e != GFARM_ERR_NO_ERROR) {
@@ -946,6 +985,8 @@ dirtree_recv(FILE *child_out, gfpara_proc_t *proc, void *param)
 	switch (status) {
 	case DIRTREE_STAT_GET_DENTS_OK:
 		return (dirtree_recv_dents(child_out, proc, param));
+	case DIRTREE_STAT_GET_DENTS_IGN:
+		return (GFPARA_NEXT);
 	case DIRTREE_STAT_GET_FINFO_OK:
 		retv = dirtree_recv_finfo(child_out, proc, param);
 		gfarm_mutex_lock(&handle->mutex, diag, "mutex");
@@ -953,7 +994,11 @@ dirtree_recv(FILE *child_out, gfpara_proc_t *proc, void *param)
 		gfarm_cond_broadcast(&handle->get_ents, diag, "get_ents");
 		gfarm_mutex_unlock(&handle->mutex, diag, "mutex");
 		return (retv);
-	case DIRTREE_STAT_IGNORE:
+	case DIRTREE_STAT_GET_FINFO_IGN:
+		gfarm_mutex_lock(&handle->mutex, diag, "mutex");
+		handle->n_get_ents--;
+		gfarm_cond_broadcast(&handle->get_ents, diag, "get_ents");
+		gfarm_mutex_unlock(&handle->mutex, diag, "mutex");
 		return (GFPARA_NEXT);
 	case DIRTREE_STAT_END:
 		return (GFPARA_END);
@@ -980,7 +1025,8 @@ static const char dirtree_startdir[] = "";
 gfarm_error_t
 gfarm_dirtree_init_fork(
 	gfarm_dirtree_t **handlep, GFURL src_url, GFURL dst_url,
-	int n_parallel, int fifo_size, int is_recursive)
+	int n_parallel, int fifo_size, int is_recursive,
+	int n_excluded_regexs, regex_t *excluded_regexs)
 {
 	static const char diag[] = "gfarm_dirtree_init_fork";
 	gfarm_dirtree_t *handle;
@@ -990,6 +1036,13 @@ gfarm_dirtree_init_fork(
 
 	if (n_parallel <= 0 || handlep == NULL || src_url == NULL)
 		return (GFARM_ERR_INVALID_ARGUMENT);
+
+	if (dirtree_is_excluded(n_excluded_regexs, excluded_regexs,
+	    gfurl_url(src_url))) {
+		gfmsg_error("source directory is excluded: %s",
+		   gfurl_url(src_url));
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
 
 	if (gfurl_is_gfarm(src_url))
 		src_type = URL_TYPE_GFARM;
@@ -1040,6 +1093,8 @@ gfarm_dirtree_init_fork(
 	handle->dst_dir = dst_url;
 	handle->src_type = src_type;
 	handle->dst_type = dst_type;
+	handle->n_excluded_regexs = n_excluded_regexs;
+	handle->excluded_regexs = excluded_regexs;
 	e = gfpara_init(&handle->gfpara_handle, n_parallel,
 			dirtree_child, handle,
 			dirtree_send, handle,
