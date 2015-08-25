@@ -6,6 +6,7 @@ struct user *user_lookup_or_enter_invalid(const char *);
 struct user *user_lookup(const char *);
 struct user *user_lookup_gsi_dn(const char *);
 char *user_name(struct user *);
+char *user_name_with_invalid(struct user *);
 char *user_realname(struct user *);
 char *user_gsi_dn(struct user *);
 int user_is_invalid(struct user *);
@@ -19,6 +20,8 @@ void user_all(void *, void (*)(void *, struct user *), int);
 
 struct quota;
 struct quota *user_quota(struct user *);
+struct usage;
+struct usage *user_usage_tmp(struct user *);
 
 extern char ADMIN_USER_NAME[];
 

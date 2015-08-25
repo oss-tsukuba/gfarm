@@ -33,7 +33,8 @@
 struct user {
 	struct gfarm_user_info ui;
 	struct group_assignment groups;
-	struct quota q;
+	struct quota quota;
+	struct usage usage_tmp;
 	int invalid;	/* set when deleted */
 };
 
@@ -211,7 +212,7 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 		return (e);
 	}
 
-	quota_data_init(&u->q);
+	quota_data_init(&u->quota);
 	u->groups.group_prev = u->groups.group_next = &u->groups;
 	*(struct user **)gfarm_hash_entry_data(entry) = u;
 	user_validate(u);
@@ -319,6 +320,12 @@ user_name(struct user *u)
 }
 
 char *
+user_name_with_invalid(struct user *u)
+{
+	return (u != NULL ? u->ui.username : "");
+}
+
+char *
 user_realname(struct user *u)
 {
 	return (u != NULL && user_is_valid(u) ?
@@ -335,7 +342,13 @@ user_gsi_dn(struct user *u)
 struct quota *
 user_quota(struct user *u)
 {
-	return (&u->q);
+	return (&u->quota);
+}
+
+struct usage *
+user_usage_tmp(struct user *u)
+{
+	return (&u->usage_tmp);
 }
 
 void
@@ -853,6 +866,10 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 	if (e != GFARM_ERR_NO_ERROR && !do_not_free)
 		gfarm_user_info_free(&ui);
 	giant_unlock();
+
+	if (e == GFARM_ERR_NO_ERROR)
+		quota_check_start();
+
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 

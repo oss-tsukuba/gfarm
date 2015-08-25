@@ -23,6 +23,7 @@ struct group *group_lookup(const char *);
 gfarm_error_t grpassign_add(struct user *, struct group *);
 void grpassign_remove(struct group_assignment *);
 char *group_name(struct group *);
+char *group_name_with_invalid(struct group *);
 int group_is_invalid(struct group *);
 int group_is_valid(struct group *);
 
@@ -36,6 +37,8 @@ gfarm_error_t group_remove_in_cache(const char *);
 
 struct quota;
 struct quota *group_quota(struct group *);
+struct usage;
+struct usage *group_usage_tmp(struct group *);
 
 struct peer;
 gfarm_error_t gfm_server_group_info_get_all(struct peer *, int, int);

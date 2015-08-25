@@ -5,7 +5,7 @@
 
 <refentry id="gfedquota.1">
 
-<refentryinfo><date>23 Mar 2011</date></refentryinfo>
+<refentryinfo><date>25 Aug 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfedquota</refentrytitle>
@@ -15,7 +15,7 @@
 
 <refnamediv id="name">
 <refname>gfedquota</refname>
-<refpurpose>edit the limits</refpurpose>
+<refpurpose>edit file limits</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id="synopsis">
@@ -27,8 +27,8 @@
 
 <refsect1 id="description"><title>DESCRIPTION</title>
 
-<para><command moreinfo="none">gfedquota</command> is a editor of limits (quotas) for
-users and groups.</para>
+<para><command moreinfo="none">gfedquota</command> is a editor of
+limits (quotas) for users and groups.</para>
 
 <para>There are two kinds of limits which are "soft limit" and "hard
 limit".  Soft limits have a grace period.
@@ -42,10 +42,6 @@ If no option for limits is specified, no quota is imposed.
 <para>
 This command can be executed by an administrator in the gfarmadm
 group.
-</para>
-<para>
-The count of usage and the check of quota are enabled after executiing
-<command moreinfo="none">gfedquota</command> and <command moreinfo="none">gfquotacheck </command>command.
 </para>
 </refsect1>
 

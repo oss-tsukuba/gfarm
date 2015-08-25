@@ -2702,7 +2702,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			"inode_alloc() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	e = quota_check_limits(user, parent->i_group, 1, 0);
+	e = quota_limit_check(user, parent->i_group, 1, 0);
 	if (e == GFARM_ERR_NO_ERROR) {
 		switch (expected_type) {
 		case GFS_DT_DIR:
@@ -2948,7 +2948,7 @@ inode_lookup_by_name(struct inode *base, char *name,
 		}
 		if (e == GFARM_ERR_NO_ERROR && inode_is_file(inode) &&
 		    (op & GFS_W_OK) != 0)
-			e = quota_check_limits(inode_get_user(inode),
+			e = quota_limit_check(inode_get_user(inode),
 					       inode_get_group(inode), 0, 0);
 		if (e == GFARM_ERR_NO_ERROR) {
 			*inp = inode;
@@ -4687,7 +4687,7 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 	if (update_quota) {
 		gfarm_error_t e;
 		/* check limits of space and number of the replica */
-		e = quota_check_limits(inode_get_user(inode),
+		e = quota_limit_check(inode_get_user(inode),
 			       inode_get_group(inode), 0, 1);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001767,

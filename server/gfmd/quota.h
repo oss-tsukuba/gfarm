@@ -24,13 +24,20 @@ struct quota {
 	gfarm_uint64_t  phy_num_hard;
 };
 
+struct usage {
+	gfarm_off_t     space;
+	gfarm_uint64_t  num;
+	gfarm_off_t     phy_space;
+	gfarm_uint64_t  phy_num;
+};
+
 void quota_init(void);
 
 void quota_data_init(struct quota *);
 
 struct user;
 struct group;
-gfarm_error_t quota_check_limits(struct user *, struct group *, int, int);
+gfarm_error_t quota_limit_check(struct user *, struct group *, int, int);
 void quota_user_remove(struct user *);
 void quota_group_remove(struct group *);
 
@@ -41,7 +48,9 @@ void quota_update_replica_add(struct inode *);
 void quota_update_replica_remove(struct inode *);
 void quota_update_file_remove(struct inode *);
 gfarm_error_t quota_lookup(const char *, int, struct quota **, const char *);
-void quota_check(void);
+
+void quota_check_init(void);
+void quota_check_start(void);
 
 struct peer;
 gfarm_error_t gfm_server_quota_user_get(struct peer *, int, int);

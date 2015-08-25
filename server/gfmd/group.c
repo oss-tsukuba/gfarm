@@ -29,7 +29,8 @@
 struct group {
 	char *groupname;
 	struct group_assignment users;
-	struct quota q;
+	struct quota quota;
+	struct usage usage_tmp;
 	int invalid;	/* set when deleted */
 };
 
@@ -168,7 +169,7 @@ group_enter(char *groupname, struct group **gpp)
 		free(g);
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
-	quota_data_init(&g->q);
+	quota_data_init(&g->quota);
 	g->users.user_prev = g->users.user_next = &g->users;
 	*(struct group **)gfarm_hash_entry_data(entry) = g;
 	group_validate(g);
@@ -265,10 +266,22 @@ group_name(struct group *g)
 	    g->groupname : REMOVED_GROUP_NAME);
 }
 
+char *
+group_name_with_invalid(struct group *g)
+{
+	return (g != NULL ? g->groupname : "");
+}
+
 struct quota *
 group_quota(struct group *g)
 {
-	return (&g->q);
+	return (&g->quota);
+}
+
+struct usage *
+group_usage_tmp(struct group *g)
+{
+	return (&g->usage_tmp);
 }
 
 void
@@ -795,11 +808,16 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 			    "%s: group_info_add(): %s",
 			    diag, gfarm_error_string(e));
 		}
+
 		need_free = 0;
 	}
 	if (need_free)
 		gfarm_group_info_free(&gi);
 	giant_unlock();
+
+	if (e == GFARM_ERR_NO_ERROR)
+		quota_check_start();
+
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 

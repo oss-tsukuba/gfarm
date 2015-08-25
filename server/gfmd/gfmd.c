@@ -1218,8 +1218,6 @@ transform_to_master(void)
 	/* this must be after db_journal_wait_for_apply_thread() */
 	dead_file_copy_init_load();
 
-	quota_check();
-
 	giant_unlock();
 
 	gfarm_cond_signal(&transform_cond, diag, TRANSFORM_COND_DIAG);
@@ -1797,7 +1795,6 @@ main(int argc, char **argv)
 		inode_remove_orphan(); /* should be before
 					  inode_check_and_repair() */
 		inode_check_and_repair();
-		quota_check();
 	}
 	inode_free_orphan();
 	gflog_info(GFARM_MSG_1004204, "end bootstrap");
@@ -1817,6 +1814,7 @@ main(int argc, char **argv)
 	/* master */
 
 	failover_notify();
+	quota_check_init();
 	replica_check_init();
 	accepting_loop(sock);
 
