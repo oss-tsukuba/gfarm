@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfquotacheck
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 23 Mar 2011
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 25 Aug 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFQUOTACHECK" "1" "23 Mar 2011" "Gfarm" "Gfarm"
+.TH "GFQUOTACHECK" "1" "25 Aug 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -28,14 +28,14 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-gfquotacheck \- 現在の使用量管理表を構築し、quota チェックを有効にする
+gfquotacheck \- ファイル使用量管理表を再構築する
 .SH "SYNOPSIS"
 .HP \w'\fBgfquotacheck\fR\ 'u
 \fBgfquotacheck\fR [\fIオプション\fR]
 .SH "DESCRIPTION"
 .PP
 \fBgfquotacheck\fR
-は、すべてのユーザのファイル数と ファイルサイズを数えなおします。 そして、まだ有効になっていないユーザやグループに対する quota によるファ イル制限を有効にします。
+は、 ユーザやグループごとのファイル数とファイルサイズの合計をカウントしなおします。
 .PP
 このコマンドは gfarmadm グループに所属している管理者が実行できます。
 .SH "OPTIONS"
@@ -51,7 +51,6 @@ gfquotacheck \- 現在の使用量管理表を構築し、quota チェックを�
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfedquota\fR(1),
 \fBgfquota\fR(1),
 \fBgfusage\fR(1)
