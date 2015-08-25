@@ -13,12 +13,6 @@
 #include <string.h>
 #include <pthread.h>
 
-void
-gfarm_sigpipe_ignore(void)
-{
-	signal(SIGPIPE, SIG_IGN);
-}
-
 pid_t
 gfarm_popen3(char *const cmd_args[], int *fd_in, int *fd_out, int *fd_err)
 {
@@ -103,7 +97,7 @@ print_stdout_stderr(void *arg)
 	fd_set fdset_r;
 	int nfds, retv;
 
-	gfarm_sigpipe_ignore();
+	signal(SIGPIPE, SIG_IGN);
 
 	stdout_eof = stderr_eof = 0;
 	while (stdout_eof == 0 || stderr_eof == 0) {
