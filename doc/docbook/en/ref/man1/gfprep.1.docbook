@@ -6,7 +6,7 @@
 
 <refentry id="gfprep.1">
 
-<refentryinfo><date>24 Jun 2015</date></refentryinfo>
+<refentryinfo><date>27 Aug 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfprep</refentrytitle>
@@ -24,6 +24,7 @@
   <command moreinfo="none">gfprep</command>
   <arg choice="opt" rep="norepeat">-nqvdpPU</arg>
   <arg choice="opt" rep="norepeat">-mx</arg>
+  <arg choice="opt" rep="norepeat">-X <replaceable>regexp</replaceable></arg>
   <arg choice="opt" rep="norepeat">-S <replaceable>source-domainname</replaceable></arg>
   <arg choice="opt" rep="norepeat">-h <replaceable>source-hostfile</replaceable></arg>
   <arg choice="opt" rep="norepeat">-D <replaceable>destination-domainname</replaceable></arg>
@@ -135,11 +136,22 @@ with <command moreinfo="none">gfpcopy</command>.
 
 <variablelist>
 <varlistentry>
+<term><option>-X</option> <parameter moreinfo="none">regexp</parameter></term>
+<listitem>
+<para>
+Skips source-files matched by pattern
+of <parameter moreinfo="none">regexp</parameter>.
+If multiple patterns are specified, multiple -X options can be specified.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-S</option> <parameter moreinfo="none">source-domainname</parameter></term>
 <listitem>
 <para>
 Specifies a domain name to select files.
-Only files which have the real file on the domain will be sended.
+Only files which have the real file on the domain will be sent.
 </para>
 </listitem>
 </varlistentry>

@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>12 Nov 2013</date></refentryinfo>
+<refentryinfo><date>27 Aug 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1624,13 +1624,27 @@ disable設定は、通常のファイルシステムにおける"noatime"オプ�
 <varlistentry>
 <term><token>client_parallel_copy</token> <parameter moreinfo="none">並列度</parameter></term>
 <listitem>
-<para><command moreinfo="none">gfprep</command>コマンドと<command moreinfo="none">gfpcopy</command>コマ
-ンドが並列で動作する際の並列度を指定します。指定しない場合は
-4並列で動作します。
+<para><command moreinfo="none">gfprep</command>コマンドと
+<command moreinfo="none">gfpcopy</command>コマンドが並列で動作する際の
+並列度を指定します。指定しない場合は4並列で動作します。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	client_parallel_copy 10
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>client_parallel_max</token> <parameter moreinfo="none">並列度</parameter></term>
+<listitem>
+<para><command moreinfo="none">gfprep</command>コマンドと
+<command moreinfo="none">gfpcopy</command>コマンドが並列で動作する際の
+最大並列度を指定します。指定しない場合は、最大16並列です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	client_palallel_max 8
 </literallayout>
 </listitem>
 </varlistentry>

@@ -6,7 +6,7 @@
 
 <refentry id="gfprep.1">
 
-<refentryinfo><date>24 Jun 2015</date></refentryinfo>
+<refentryinfo><date>27 Aug 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfprep</refentrytitle>
@@ -23,6 +23,7 @@
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfprep</command>
   <arg choice="opt" rep="norepeat">-nqvdpPU</arg>
+  <arg choice="opt" rep="norepeat">-X <replaceable>regexp</replaceable></arg>
   <arg choice="opt" rep="norepeat">-S <replaceable>source-domainname</replaceable></arg>
   <arg choice="opt" rep="norepeat">-h <replaceable>source-hostfile</replaceable></arg>
   <arg choice="opt" rep="norepeat">-D <replaceable>destination-domainname</replaceable></arg>
@@ -135,6 +136,17 @@ CPU 数については、<command moreinfo="none">gfhost</command>
 
 <variablelist>
 <varlistentry>
+<term><option>-X</option> <parameter moreinfo="none">regexp</parameter></term>
+<listitem>
+<para>
+<parameter moreinfo="none">regexp</parameter>で指定した正規表現による
+パターンと一致する転送元パス名を無視します。
+複数個のパターンを指定する場合は、-X オプションを複数回指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-S</option> <parameter moreinfo="none">source-domainname</parameter></term>
 <listitem>
 <para>
@@ -201,6 +213,7 @@ CPU 数については、<command moreinfo="none">gfhost</command>
 </para>
 <para>
 デフォルト値は gfarm2.conf の client_parallel_copy パラメータです。
+最大値は gfarm2.conf の client_parallel_max パラメータです。
 詳細は gfarm2.conf のマニュアルを参照してください。
 </para>
 <para>
