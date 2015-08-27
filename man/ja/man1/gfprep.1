@@ -2,12 +2,12 @@
 .\"     Title: gfprep
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 24 Jun 2015
+.\"      Date: 27 Aug 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPREP" "1" "24 Jun 2015" "Gfarm" "Gfarm"
+.TH "GFPREP" "1" "27 Aug 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 gfprep \- Gfarm ファイル複製を並列に作成する
 .SH "SYNOPSIS"
 .HP \w'\fBgfprep\fR\ 'u
-\fBgfprep\fR [\-nqvdpPU] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-mx] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
+\fBgfprep\fR [\-nqvdpPU] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-mx] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
 .SH "DESCRIPTION"
 .PP
 \fBgfprep\fR
@@ -83,6 +83,11 @@ gfprep \- Gfarm ファイル複製を並列に作成する
 \fBgfpcopy\fR
 には、 共通で利用できるオプションがあります。
 .PP
+\fB\-X\fR \fIregexp\fR
+.RS 4
+\fIregexp\fRで指定した正規表現による パターンと一致する転送元パス名を無視します。 複数個のパターンを指定する場合は、\-X オプションを複数回指定します。
+.RE
+.PP
 \fB\-S\fR \fIsource\-domainname\fR
 .RS 4
 転送対象ファイルを選ぶためのドメイン名を指定します。 そのドメイン名の範囲に、 ファイル複製の実体が存在するファイルだけを転送対象にします。
@@ -118,7 +123,7 @@ gfprep \- Gfarm ファイル複製を並列に作成する
 .RS 4
 同時に複製作成やコピーをする際の最大並列数を指定します。
 .sp
-デフォルト値は gfarm2\&.conf の client_parallel_copy パラメータです。 詳細は gfarm2\&.conf のマニュアルを参照してください。
+デフォルト値は gfarm2\&.conf の client_parallel_copy パラメータです。 最大値は gfarm2\&.conf の client_parallel_max パラメータです。 詳細は gfarm2\&.conf のマニュアルを参照してください。
 .sp
 転送元または転送先のファイルシステムノードごとの最大並列数は、 その CPU 数までです。 CPU 数については、\fBgfhost\fR
 のマニュアルを参照してください。

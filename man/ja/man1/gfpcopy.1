@@ -2,12 +2,12 @@
 .\"     Title: gfpcopy
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 30 Jun 2015
+.\"      Date: 27 Aug 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPCOPY" "1" "30 Jun 2015" "Gfarm" "Gfarm"
+.TH "GFPCOPY" "1" "27 Aug 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 gfpcopy \- copy Gfarm files in parallel
 .SH "SYNOPSIS"
 .HP \w'\fBgfpcopy\fR\ 'u
-\fBgfpcopy\fR [\-nqvdpPU] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-f] [\-b\ \fIbufsize\fR] \fIsource\-path\fR \fIdestination\-path\fR
+\fBgfpcopy\fR [\-nqvdpPU] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-f] [\-b\ \fIbufsize\fR] [\-e] [\-k] \fIsource\-path\fR \fIdestination\-path\fR
 .SH "DESCRIPTION"
 .PP
 \fBgfpcopy\fR
@@ -114,6 +114,16 @@ HPSS 上に存在するディレクトリを URL で指定します。 その下
 \-f オプションを指定する場合、コピー先のファイルとコピー元のファイルが、 サイズまたは mtime が異なる場合に上書きします。
 .sp
 \-f オプションを指定しない場合、 コピー先のほうが mtime が古い場合に、上書きします。
+.RE
+.PP
+\fB\-e\fR
+.RS 4
+gfpcopy を複数同時に実行するために、コピー先にファイルが存在すれば無視 します。
+.RE
+.PP
+\fB\-k\fR
+.RS 4
+シンボリックリンクをコピーしません。
 .RE
 .SH "COMMON OPTIONS"
 .PP

@@ -2,12 +2,12 @@
 .\"     Title: gfprep
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 24 Jun 2015
+.\"      Date: 27 Aug 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPREP" "1" "24 Jun 2015" "Gfarm" "Gfarm"
+.TH "GFPREP" "1" "27 Aug 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 gfprep \- replicate Gfarm files in parallel
 .SH "SYNOPSIS"
 .HP \w'\fBgfprep\fR\ 'u
-\fBgfprep\fR [\-nqvdpPU] [\-mx] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
+\fBgfprep\fR [\-nqvdpPU] [\-mx] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
 .SH "DESCRIPTION"
 .PP
 \fBgfprep\fR
@@ -83,9 +83,15 @@ This option and \-N option are mutually exclusive\&.
 has the same options with
 \fBgfpcopy\fR\&.
 .PP
+\fB\-X\fR \fIregexp\fR
+.RS 4
+Skips source\-files matched by pattern of
+\fIregexp\fR\&. If multiple patterns are specified, multiple \-X options can be specified\&.
+.RE
+.PP
 \fB\-S\fR \fIsource\-domainname\fR
 .RS 4
-Specifies a domain name to select files\&. Only files which have the real file on the domain will be sended\&.
+Specifies a domain name to select files\&. Only files which have the real file on the domain will be sent\&.
 .RE
 .PP
 \fB\-h\fR \fIsource\-hostfile\fR

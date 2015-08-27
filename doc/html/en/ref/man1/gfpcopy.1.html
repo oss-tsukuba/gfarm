@@ -12,7 +12,7 @@
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfpcopy</code>  [-nqvdpPU] [-f] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>limit-byte</code></em>] [-z <em class="replaceable"><code>minimum-byte</code></em>] [-Z <em class="replaceable"><code>maximum-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-b <em class="replaceable"><code>bufsize</code></em>]  <em class="replaceable"><code>source-path</code></em>   <em class="replaceable"><code>destination-path</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfpcopy</code>  [-nqvdpPU] [-X <em class="replaceable"><code>regexp</code></em>] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>limit-byte</code></em>] [-z <em class="replaceable"><code>minimum-byte</code></em>] [-Z <em class="replaceable"><code>maximum-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-b <em class="replaceable"><code>bufsize</code></em>] [-f] [-e] [-k]  <em class="replaceable"><code>source-path</code></em>   <em class="replaceable"><code>destination-path</code></em> </p></div>
 </div>
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
@@ -133,6 +133,15 @@ that they are older than the corresponding source files in the
 modification time.
 </p>
 </dd>
+<dt><span class="term"><code class="option">-e</code></span></dt>
+<dd><p>
+Skips existing destination files in order to execute multiple gfpcopy
+simultaneously.
+</p></dd>
+<dt><span class="term"><code class="option">-k</code></span></dt>
+<dd><p>
+Does not copy symbolic links.
+</p></dd>
 </dl></div>
 </div>
 <div class="refsect1">
