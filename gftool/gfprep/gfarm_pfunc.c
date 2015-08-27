@@ -32,6 +32,9 @@
 #include "gfarm_pfunc.h"
 #include "gfarm_dirtree.h"
 
+#define RETRY_MAX        3
+#define RETRY_SLEEP_TIME 1 /* second */
+
 static mode_t mask;
 
 struct gfarm_pfunc {
@@ -150,6 +153,7 @@ pfunc_replicate_main(gfarm_pfunc_t *handle, int pfunc_mode,
 	int src_port, dst_port;
 	gfarm_off_t src_size;
 	int check_disk_avail;
+	int retry, result = PFUNC_RESULT_OK;
 
 	gfpara_recv_string(from_parent, &url);
 	gfpara_recv_int64(from_parent, &src_size);
@@ -172,10 +176,12 @@ pfunc_replicate_main(gfarm_pfunc_t *handle, int pfunc_mode,
 				"checking disk_avail: %s (%s:%d, %s:%d): %s\n",
 				url, src_host, src_port,
 				dst_host, dst_port, gfarm_error_string(e));
-			gfpara_send_int(to_parent, PFUNC_RESULT_NG);
-			goto free_mem;
+			result = PFUNC_RESULT_NG;
+			goto end;
 		}
 	}
+	retry = 0;
+retry:
 	e = gfs_replicate_from_to(url, src_host, src_port,
 				  dst_host, dst_port);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -183,26 +189,31 @@ pfunc_replicate_main(gfarm_pfunc_t *handle, int pfunc_mode,
 			"ERROR: cannot replicate: %s (%s:%d, %s:%d): %s\n",
 			url, src_host, src_port, dst_host, dst_port,
 			gfarm_error_string(e));
-		gfpara_send_int(to_parent, PFUNC_RESULT_NG);
-		goto free_mem;
+		if (retry >= RETRY_MAX) {
+			result = PFUNC_RESULT_NG;
+			goto end;
+		}
+		retry++;
+		fprintf(stderr, "INFO: retry replication (%d of %d): %s\n",
+		    retry, RETRY_MAX, url);
+		sleep(RETRY_SLEEP_TIME);
+		goto retry;
 	}
 	if (pfunc_mode == PFUNC_MODE_MIGRATE) {
 		e = gfs_replica_remove_by_file(url, src_host);
 		if (e == GFARM_ERR_FILE_BUSY) {
-			gfpara_send_int(to_parent,
-			    PFUNC_RESULT_BUSY_REMOVE_REPLICA);
-			goto free_mem;
+			result = PFUNC_RESULT_BUSY_REMOVE_REPLICA;
+			goto end;
 		} else if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr,
 			    "ERROR: cannot remove a replica: %s (%s:%d): %s\n",
 			    url, src_host, src_port, gfarm_error_string(e));
-			gfpara_send_int(to_parent, PFUNC_RESULT_NG);
-			goto free_mem;
+			result = PFUNC_RESULT_NG;
+			goto end;
 		}
 	}
 end:
-	gfpara_send_int(to_parent, PFUNC_RESULT_OK);
-free_mem:
+	gfpara_send_int(to_parent, result);
 	free(url);
 	free(src_host);
 	free(dst_host);
@@ -536,7 +547,7 @@ local_to_hpss(int cmd_in, void *arg)
 	}
 }
 
-static void
+static int
 pfunc_copy_to_hpss(gfarm_pfunc_t *handle, FILE *to_parent,
 	const char *src_url, char *src_host, const char *dst_url)
 {
@@ -596,50 +607,23 @@ pfunc_copy_to_hpss(gfarm_pfunc_t *handle, FILE *to_parent,
 		result = PFUNC_RESULT_NG;
 	}
 end:
-	gfpara_send_int(to_parent, result);
+	return (result);
 }
 
 static const char tmp_url_suffix[] = "__tmp_gfpcopy__";
 
-static void
-pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
-		FILE *from_parent, FILE *to_parent)
+static int
+pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
+	const char *src_url, char *src_host, int src_port, gfarm_off_t src_size,
+	const char *dst_url, char *dst_host, int dst_port, int check_disk_avail)
 {
 	gfarm_error_t e;
 	int result = PFUNC_RESULT_OK, retv;
-	char *tmp_url, *src_url, *dst_url, *src_host, *dst_host;
-	int src_port, dst_port;
+	char *tmp_url;
 	int rsize, wsize;
 	struct pfunc_file src_fp, dst_fp;
 	struct pfunc_stat src_st;
-	gfarm_off_t src_size;
-	int flags, check_disk_avail;
-
-	gfpara_recv_string(from_parent, &src_url);
-	gfpara_recv_int64(from_parent, &src_size);
-	gfpara_recv_string(from_parent, &src_host);
-	gfpara_recv_int(from_parent, &src_port);
-	gfpara_recv_string(from_parent, &dst_url);
-	gfpara_recv_string(from_parent, &dst_host);
-	gfpara_recv_int(from_parent, &dst_port);
-	gfpara_recv_int(from_parent, &check_disk_avail);
-
-	if (handle->simulate_KBs > 0) {
-		pfunc_simulate(src_url, handle->simulate_KBs);
-		/* OK */
-		tmp_url = NULL;
-		goto end;
-	}
-
-	if (gfurl_path_is_hpss(dst_url)) {
-		pfunc_copy_to_hpss(handle, to_parent, src_url, src_host,
-		    dst_url);
-		free(src_url);
-		free(dst_url);
-		free(src_host);
-		free(dst_host);
-		return;
-	}
+	int flags;
 
 	retv = gfurl_asprintf(&tmp_url, "%s%s", dst_url, tmp_url_suffix);
 	if (retv == -1) {
@@ -808,8 +792,53 @@ end:
 				"ERROR: cannot remove tmp-file: %s: %s\n",
 			tmp_url, gfarm_error_string(e));
 	}
+	return (result);
+}
+
+static void
+pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
+		FILE *from_parent, FILE *to_parent)
+{
+	int result, retry;
+	char *src_url, *dst_url, *src_host, *dst_host;
+	int src_port, dst_port;
+	gfarm_off_t src_size;
+	int check_disk_avail;
+
+	gfpara_recv_string(from_parent, &src_url);
+	gfpara_recv_int64(from_parent, &src_size);
+	gfpara_recv_string(from_parent, &src_host);
+	gfpara_recv_int(from_parent, &src_port);
+	gfpara_recv_string(from_parent, &dst_url);
+	gfpara_recv_string(from_parent, &dst_host);
+	gfpara_recv_int(from_parent, &dst_port);
+	gfpara_recv_int(from_parent, &check_disk_avail);
+
+	if (handle->simulate_KBs > 0) {
+		pfunc_simulate(src_url, handle->simulate_KBs);
+		/* OK */
+		result = PFUNC_RESULT_OK;
+		goto end;
+	}
+
+	retry = 0;
+	for (;;) {
+		if (gfurl_path_is_hpss(dst_url))
+			result = pfunc_copy_to_hpss(handle, to_parent,
+			    src_url, src_host, dst_url);
+		else
+			result = pfunc_copy_to_gfarm_or_local(handle, to_parent,
+			    src_url, src_host, src_port, src_size,
+			    dst_url, dst_host, dst_port, check_disk_avail);
+		if (result != PFUNC_RESULT_NG || retry >= RETRY_MAX)
+			break;
+		retry++;
+		fprintf(stderr, "INFO: retry copying (%d of %d): %s\n",
+		    retry, RETRY_MAX, src_url);
+		sleep(RETRY_SLEEP_TIME);
+	}
+end:
 	gfpara_send_int(to_parent, result);
-	free(tmp_url);
 	free(src_url);
 	free(dst_url);
 	free(src_host);
