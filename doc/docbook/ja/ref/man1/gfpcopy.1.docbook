@@ -6,7 +6,7 @@
 
 <refentry id="gfpcopy.1">
 
-<refentryinfo><date>30 Jun 2015</date></refentryinfo>
+<refentryinfo><date>27 Aug 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfpcopy</refentrytitle>
@@ -23,6 +23,7 @@
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfpcopy</command>
   <arg choice="opt" rep="norepeat">-nqvdpPU</arg>
+  <arg choice="opt" rep="norepeat">-X <replaceable>regexp</replaceable></arg>
   <arg choice="opt" rep="norepeat">-S <replaceable>source-domainname</replaceable></arg>
   <arg choice="opt" rep="norepeat">-h <replaceable>source-hostfile</replaceable></arg>
   <arg choice="opt" rep="norepeat">-D <replaceable>destination-domainname</replaceable></arg>
@@ -38,6 +39,8 @@
   <arg choice="opt" rep="norepeat">-F <replaceable>num-for-readahead</replaceable></arg>
   <arg choice="opt" rep="norepeat">-f</arg>
   <arg choice="opt" rep="norepeat">-b <replaceable>bufsize</replaceable></arg>
+  <arg choice="opt" rep="norepeat">-e</arg>
+  <arg choice="opt" rep="norepeat">-k</arg>
   <arg choice="plain" rep="norepeat"><replaceable>source-path</replaceable></arg>
   <arg choice="plain" rep="norepeat"><replaceable>destination-path</replaceable></arg>
 </cmdsynopsis>
@@ -197,6 +200,25 @@ gfarm2fs を経由せずに Gfarm へコピーします。
 <para>
 -f オプションを指定しない場合、
 コピー先のほうが mtime が古い場合に、上書きします。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-e</option></term>
+<listitem>
+<para>
+gfpcopy を複数同時に実行するために、コピー先にファイルが存在すれば無視
+します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-k</option></term>
+<listitem>
+<para>
+シンボリックリンクをコピーしません。
 </para>
 </listitem>
 </varlistentry>

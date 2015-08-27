@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>24 Jun 2015</date></refentryinfo>
+<refentryinfo><date>27 Aug 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1776,12 +1776,31 @@ Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
 <varlistentry>
 <term><token>client_parallel_copy</token> <parameter moreinfo="none">num-of-parallel</parameter></term>
 <listitem>
-<para>This directive specifies the number of parallel for <command moreinfo="none">gfprep</command> and <command moreinfo="none">gfpcopy</command> to work in parallel.
-When this number is not specified, the default number of parallel is 4.
+<para>This directive specifies the number of parallel
+for <command moreinfo="none">gfprep</command>
+and <command moreinfo="none">gfpcopy</command> to work in parallel.
+When this number is not specified, the default number of parallel is
+4.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	client_palallel_copy 10
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>client_parallel_max</token> <parameter moreinfo="none">num-of-parallel</parameter></term>
+<listitem>
+<para>This directive specifies the maximum number of parallel
+for <command moreinfo="none">gfprep</command>
+and <command moreinfo="none">gfpcopy</command> to work in parallel.
+When this number is not specified, the default maximum number of
+parallel is 16.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	client_palallel_max 8
 </literallayout>
 </listitem>
 </varlistentry>
