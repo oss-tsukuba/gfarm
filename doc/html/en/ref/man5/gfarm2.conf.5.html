@@ -1224,12 +1224,28 @@ This parameter is only available in gfmd.conf.
 </dd>
 <dt><span class="term"><span class="token">client_parallel_copy</span> <em class="parameter"><code>num-of-parallel</code></em></span></dt>
 <dd>
-<p>This directive specifies the number of parallel for <span class="command"><strong>gfprep</strong></span> and <span class="command"><strong>gfpcopy</strong></span> to work in parallel.
-When this number is not specified, the default number of parallel is 4.
+<p>This directive specifies the number of parallel
+for <span class="command"><strong>gfprep</strong></span>
+and <span class="command"><strong>gfpcopy</strong></span> to work in parallel.
+When this number is not specified, the default number of parallel is
+4.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
 	client_palallel_copy 10<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">client_parallel_max</span> <em class="parameter"><code>num-of-parallel</code></em></span></dt>
+<dd>
+<p>This directive specifies the maximum number of parallel
+for <span class="command"><strong>gfprep</strong></span>
+and <span class="command"><strong>gfpcopy</strong></span> to work in parallel.
+When this number is not specified, the default maximum number of
+parallel is 16.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	client_palallel_max 8<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">profile </span><em class="parameter"><code>validity</code></em></span></dt>

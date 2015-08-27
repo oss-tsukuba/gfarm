@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 12 Nov 2013
+.\"      Date: 27 Aug 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "12 Nov 2013" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "27 Aug 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -1447,7 +1447,8 @@ Gfarmクライアントライブラリ（libgfarm）で使われるファイル�
 .PP
 client_parallel_copy \fI並列度\fR
 .RS 4
-\fBgfprep\fRコマンドと\fBgfpcopy\fRコマ ンドが並列で動作する際の並列度を指定します。指定しない場合は 4並列で動作します。
+\fBgfprep\fRコマンドと
+\fBgfpcopy\fRコマンドが並列で動作する際の 並列度を指定します。指定しない場合は4並列で動作します。
 .sp
 例:
 .sp
@@ -1456,6 +1457,24 @@ client_parallel_copy \fI並列度\fR
 .\}
 .nf
 	client_parallel_copy 10
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+client_parallel_max \fI並列度\fR
+.RS 4
+\fBgfprep\fRコマンドと
+\fBgfpcopy\fRコマンドが並列で動作する際の 最大並列度を指定します。指定しない場合は、最大16並列です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	client_palallel_max 8
 .fi
 .if n \{\
 .RE

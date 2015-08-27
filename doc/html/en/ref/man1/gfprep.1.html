@@ -12,7 +12,7 @@
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfprep</code>  [-nqvdpPU] [-mx] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>total-byte</code></em>] [-z <em class="replaceable"><code>minimum-byte</code></em>] [-Z <em class="replaceable"><code>maximum-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-N <em class="replaceable"><code>num-of-replicas</code></em>]  <em class="replaceable"><code>path</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfprep</code>  [-nqvdpPU] [-mx] [-X <em class="replaceable"><code>regexp</code></em>] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>total-byte</code></em>] [-z <em class="replaceable"><code>minimum-byte</code></em>] [-Z <em class="replaceable"><code>maximum-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-N <em class="replaceable"><code>num-of-replicas</code></em>]  <em class="replaceable"><code>path</code></em> </p></div>
 </div>
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
@@ -91,10 +91,16 @@ This option and -N option are mutually exclusive.
 with <span class="command"><strong>gfpcopy</strong></span>.
 </p>
 <div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-X</code> <em class="parameter"><code>regexp</code></em></span></dt>
+<dd><p>
+Skips source-files matched by pattern
+of <em class="parameter"><code>regexp</code></em>.
+If multiple patterns are specified, multiple -X options can be specified.
+</p></dd>
 <dt><span class="term"><code class="option">-S</code> <em class="parameter"><code>source-domainname</code></em></span></dt>
 <dd><p>
 Specifies a domain name to select files.
-Only files which have the real file on the domain will be sended.
+Only files which have the real file on the domain will be sent.
 </p></dd>
 <dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>source-hostfile</code></em></span></dt>
 <dd>

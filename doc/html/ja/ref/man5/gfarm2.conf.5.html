@@ -1176,13 +1176,24 @@ Gfarmクライアントライブラリはファイルシステムノードが利
 </dd>
 <dt><span class="term"><span class="token">client_parallel_copy</span> <em class="parameter"><code>並列度</code></em></span></dt>
 <dd>
-<p><span class="command"><strong>gfprep</strong></span>コマンドと<span class="command"><strong>gfpcopy</strong></span>コマ
-ンドが並列で動作する際の並列度を指定します。指定しない場合は
-4並列で動作します。
+<p><span class="command"><strong>gfprep</strong></span>コマンドと
+<span class="command"><strong>gfpcopy</strong></span>コマンドが並列で動作する際の
+並列度を指定します。指定しない場合は4並列で動作します。
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
 	client_parallel_copy 10<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">client_parallel_max</span> <em class="parameter"><code>並列度</code></em></span></dt>
+<dd>
+<p><span class="command"><strong>gfprep</strong></span>コマンドと
+<span class="command"><strong>gfpcopy</strong></span>コマンドが並列で動作する際の
+最大並列度を指定します。指定しない場合は、最大16並列です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	client_palallel_max 8<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">profile</span> <em class="parameter"><code>有効性</code></em></span></dt>
