@@ -759,8 +759,10 @@ db_journal_apply_quota_add(gfarm_uint64_t seqnum, struct db_quota_arg *arg)
 	struct quota *q;
 
 	if ((e = quota_lookup(arg->name, arg->is_group, &q,
-	    "db_journal_apply_quota_add")) == GFARM_ERR_NO_ERROR)
+	    "db_journal_apply_quota_add")) == GFARM_ERR_NO_ERROR) {
 		*q = arg->quota;
+		q->on_db = 1;
+	}
 	return (e);
 }
 
@@ -771,8 +773,10 @@ db_journal_apply_quota_modify(gfarm_uint64_t seqnum, struct db_quota_arg *arg)
 	struct quota *q;
 
 	if ((e = quota_lookup(arg->name, arg->is_group, &q,
-	    "db_journal_apply_quota_modify")) == GFARM_ERR_NO_ERROR)
+	    "db_journal_apply_quota_modify")) == GFARM_ERR_NO_ERROR) {
 		*q = arg->quota;
+		q->on_db = 1;
+	}
 	return (e);
 }
 
