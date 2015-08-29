@@ -1,3 +1,44 @@
+Release note for Gfarm 2.6.6
+============================
+
+[2015.8.29]
+
+New configuration directive
+* client_parallel_max - the maximum number of parallel operations that
+  can be specified by gfpcopy and gfprep
+
+Documentation
+* manual pages - gfs_pio_sendfile(3), gfs_pio_recvfile(3)
+* manual pages - gfarm_environ(7) that describes environment variables
+  for Gfarm including ciphers in GSI communication
+* user manual - cipher-comparison.html that describes the performance
+  of each cipher in typical architectures
+
+Updated feature
+* gfpcopy, gfprep - -k option not to copy symlinks [sf.net ticket
+  #904]
+* gfpcopy, gfprep - -X option to exclude files or directories [sf.net
+  ticket #901]
+* gfpcopy, gfprep - retry if copy or replication fails [sf.net ticket
+  #903]
+* gfmv - more like mv(1) not just calling gfs_rename(2) [sf.net ticket
+  #897]
+* automatic quota check - gfquotacheck is not needed to be called
+  explicitly [sf.net ticket #902]
+* gfcksum - -l option to show a long path for each file [sf.net ticket
+  #879]
+* adjust log level [sf.net ticket #876, #877]
+* gfjournal - performance improvement [sf.net ticket #872]
+* automatic repair at replication when the file is corrupted [sf.net
+  ticket #836]
+* gfjournaldump - support ruby 1.9 or later
+
+Bug fix
+* gfjournal - fix incorrect output for offset [sf.net ticket #878]
+* gfjournaldump - fix incorrect output [sf.net ticket #870]
+* gfmd may crash when gfedquota is executed after gfmd failover
+  [sf.net ticket #906]
+
 Release note for Gfarm 2.6.5.1
 ==============================
 
