@@ -152,6 +152,9 @@ Gfarm performance monitoring plugin for Ganglia
 Development header files and libraries for Gfarm file system
 
 %changelog
+* Sat Aug 29 2015 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.6.6-1
+- Gfarm version 2.6.6 released
+
 * Thu Jun 25 2015 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.6.5-1
 - Gfarm version 2.6.5 released
 
@@ -461,6 +464,8 @@ fi
 %{man_prefix}/man3/gfs_pio_open.3.gz
 %{man_prefix}/man3/gfs_pio_read.3.gz
 %{man_prefix}/man3/gfs_pio_write.3.gz
+%{man_prefix}/man3/gfs_pio_recvfile.3.gz
+%{man_prefix}/man3/gfs_pio_sendfile.3.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man3/gfarm_strings_free_deeply.3.gz
 %{man_prefix}/man3/gfarm_url_fragments_replicate.3.gz
@@ -508,7 +513,7 @@ fi
 %{man_prefix}/man5/gfarm2.conf.5.gz
 %{man_prefix}/man5/gfarm_attr.5.gz
 %{man_prefix}/man5/gfservice.conf.5.gz
-%{man_prefix}/man7/gfarm_envirion.7.gz
+%{man_prefix}/man7/gfarm_environ.7.gz
 %{man_prefix}/man8/gfdump.postgresql.8.gz
 %{man_prefix}/man8/gfmd.8.gz
 %{man_prefix}/man8/gfsd.8.gz
@@ -609,6 +614,8 @@ fi
 %{man_prefix}/ja/man3/gfs_pio_open.3.gz
 %{man_prefix}/ja/man3/gfs_pio_read.3.gz
 %{man_prefix}/ja/man3/gfs_pio_write.3.gz
+%{man_prefix}/ja/man3/gfs_pio_recvfile.3.gz
+%{man_prefix}/ja/man3/gfs_pio_sendfile.3.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man3/gfarm_hostlist_read.3.gz
 %{man_prefix}/ja/man3/gfarm_import_fragment_config_read.3.gz
@@ -667,7 +674,7 @@ fi
 %{man_prefix}/ja/man5/gfarm2.conf.5.gz
 %{man_prefix}/ja/man5/gfarm_attr.5.gz
 %{man_prefix}/ja/man5/gfservice.conf.5.gz
-%{man_prefix}/ja/man7/gfarm_envirion.7.gz
+%{man_prefix}/ja/man7/gfarm_environ.7.gz
 %{man_prefix}/ja/man8/gfdump.postgresql.8.gz
 %{man_prefix}/ja/man8/gfmd.8.gz
 %{man_prefix}/ja/man8/gfsd.8.gz
@@ -802,6 +809,8 @@ fi
 %{html_prefix}/en/ref/man3/gfs_pio_open.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_read.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_write.3.html
+%{html_prefix}/en/ref/man3/gfs_pio_recvfile.3.html
+%{html_prefix}/en/ref/man3/gfs_pio_sendfile.3.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man3/gfarm_strings_free_deeply.3.html
 %{html_prefix}/en/ref/man3/gfarm_url_fragments_replicate.3.html
@@ -849,7 +858,7 @@ fi
 %{html_prefix}/en/ref/man5/gfarm2.conf.5.html
 %{html_prefix}/en/ref/man5/gfarm_attr.5.html
 %{html_prefix}/en/ref/man5/gfservice.conf.5.html
-%{html_prefix}/en/ref/man7/gfarm_envirion.7.html
+%{html_prefix}/en/ref/man7/gfarm_environ.7.html
 %{html_prefix}/en/ref/man8/gfdump.postgresql.8.html
 %{html_prefix}/en/ref/man8/gfmd.8.html
 %{html_prefix}/en/ref/man8/gfsd.8.html
@@ -955,6 +964,8 @@ fi
 %{html_prefix}/ja/ref/man3/gfs_pio_open.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_read.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_write.3.html
+%{html_prefix}/ja/ref/man3/gfs_pio_recvfile.3.html
+%{html_prefix}/ja/ref/man3/gfs_pio_sendfile.3.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man3/gfarm_hostlist_read.3.html
 %{html_prefix}/ja/ref/man3/gfarm_import_fragment_config_read.3.html
@@ -1013,7 +1024,7 @@ fi
 %{html_prefix}/ja/ref/man5/gfarm2.conf.5.html
 %{html_prefix}/ja/ref/man5/gfarm_attr.5.html
 %{html_prefix}/ja/ref/man5/gfservice.conf.5.html
-%{html_prefix}/ja/ref/man7/gfarm_envirion.7.html
+%{html_prefix}/ja/ref/man7/gfarm_environ.7.html
 %{html_prefix}/ja/ref/man8/gfdump.postgresql.8.html
 %{html_prefix}/ja/ref/man8/gfmd.8.html
 %{html_prefix}/ja/ref/man8/gfsd.8.html
