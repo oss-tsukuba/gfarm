@@ -120,7 +120,7 @@ quota_update_usage_user(void *closure, struct user *u)
 	quota_softlimit_exceed(q);
 
 	if (!user_is_valid(u))
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004294,
 		    "quota_check: removed user(%s), Usage: "
 		    "space=%lld, inodes=%lld, phys_space=%lld, phys_num=%lld",
 		    user_name_with_invalid(u),
@@ -138,7 +138,7 @@ quota_update_usage_group(void *closure, struct group *g)
 	quota_softlimit_exceed(q);
 
 	if (!group_is_valid(g))
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004295,
 		    "quota_check: removed group(%s), Usage: "
 		    "space=%lld, inodes=%lld, phys_space=%lld, phys_num=%lld",
 		    group_name_with_invalid(g),
@@ -741,7 +741,7 @@ quota_check_main(void)
 	giant_unlock();
 
 	time_total = time(NULL) - time_start;
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1004296,
 	    "quota_check: finished, inodes=%lld, time=%lld",
 	    (long long)inum_limit, (long long)time_total);
 
@@ -770,11 +770,11 @@ quota_check(void *arg)
 		gfarm_mutex_unlock(&quota_check_mutex, diag,
 		    quota_check_mutex_diag);
 
-		gflog_info(GFARM_MSG_UNFIXED, "quota_check: start");
+		gflog_info(GFARM_MSG_1004297, "quota_check: start");
 		quota_check_needed_clear(diag);
 		while (quota_check_main()) {
 			quota_check_needed_clear(diag);
-			gflog_info(GFARM_MSG_UNFIXED, "quota_check: retry");
+			gflog_info(GFARM_MSG_1004298, "quota_check: retry");
 		}
 	}
 
@@ -824,7 +824,7 @@ quota_check_init(void)
 
 	if ((e = create_detached_thread(quota_check, NULL))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1004299,
 		    "create_detached_thread(quota_check_init): %s",
 		    gfarm_error_string(e));
 
