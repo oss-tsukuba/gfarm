@@ -2,12 +2,12 @@
 .\"     Title: gfs_pio_open
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 26 Jun 2010
+.\"      Date: 3 Sep 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFS_PIO_OPEN" "3" "26 Jun 2010" "Gfarm" "Gfarm"
+.TH "GFS_PIO_OPEN" "3" "3 Sep 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -70,6 +70,11 @@ gfs_pio_open \- Gfarmファイルシステムのファイルのオープン
 \fBGFARM_FILE_TRUNC\fR
 .RS 4
 ファイルが存在し、レギュラーファイルで書込みが許される場合、ファイルサイズを0にします。
+.RE
+.PP
+\fBGFARM_FILE_APPEND\fR
+.RS 4
+ファイルをアペンドモードでオープンします。
 .RE
 .SH "RETURN VALUES"
 .PP

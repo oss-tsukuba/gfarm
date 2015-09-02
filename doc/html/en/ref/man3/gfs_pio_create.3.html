@@ -65,7 +65,11 @@ such that exactly one of
 <em class="parameter"><code>GFARM_FILE_WRONLY</code></em>, and
 <em class="parameter"><code>GFARM_FILE_RDWR</code></em>
 should be specified.
-
+In addition, it is possible to specify
+<em class="parameter"><code>GFARM_FILE_EXCLUSIVE</code></em>.
+With this flag, 
+<code class="function">gfs_pio_create()</code>
+will fail when the file already exists.
 </p>
 <p>
 Note that
@@ -124,6 +128,8 @@ does not include a port number of the metadata server.</p></dd>
 <dd><p>Specified authentication protocol is not supported.</p></dd>
 <dt><span class="term"><code class="constant">GFARM_ERR_AUTHENTICATION</code></span></dt>
 <dd><p>User authentication failed when connecting to the metadata server.</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_ALREADY_EXISTS</code></span></dt>
+<dd><p><em class="parameter"><code>gfarm_url</code></em> already exists and GFARM_FILE_EXCLUSIVE was used.</p></dd>
 <dt><span class="term">Others</span></dt>
 <dd><p>An error except the above occurred.  The reason is shown by
 <span class="citerefentry"><span class="refentrytitle">gfarm_error_string</span>(3)</span>.</p></dd>

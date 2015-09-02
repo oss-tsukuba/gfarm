@@ -68,7 +68,12 @@
 <em class="parameter"><code>GFARM_FILE_WRONLY</code></em>、
 <em class="parameter"><code>GFARM_FILE_RDWR</code></em>
 のいずれか一つのフラグを必ず指定しなければならない点も同じです。
-
+ただし、
+<code class="function">gfs_pio_create()</code>
+に特有のフラグとして、
+<em class="parameter"><code>GFARM_FILE_EXCLUSIVE</code></em>
+を指定することができます。この指定を行なった場合、
+ファイルが既に存在する場合は、ファイルのオープンに失敗します。
 </p>
 <p>
 引数
@@ -130,6 +135,11 @@
 <dd><p>指定された認証プロトコルはサポートしていません。</p></dd>
 <dt><span class="term"><code class="constant">GFARM_ERR_AUTHENTICATION</code></span></dt>
 <dd><p>メタデータサーバに対する認証に失敗しました。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_ALREADY_EXISTS</code></span></dt>
+<dd><p><em class="parameter"><code>flags</code></em>引数に
+<code class="constant">GFARM_FILE_EXCLUSIVE</code>フラグが指定されたが、
+ファイルが既に存在しました。
+</p></dd>
 <dt><span class="term">その他</span></dt>
 <dd><p>上記以外のエラーが生じたことを示します。
 <span class="citerefentry"><span class="refentrytitle">gfarm_error_string</span>(3)</span>
