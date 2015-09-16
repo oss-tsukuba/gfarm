@@ -4985,11 +4985,13 @@ gfs_udp_server(int sock,
 	unsigned char *got_xid, *p = request;
 	gfarm_uint32_t u32, got_rpc_magic;
 	gfarm_uint32_t got_rpc_type, got_retry_count, got_request_type;
+	char addr_str[GFARM_SOCKADDR_STRLEN];
+	int addr_strlen = GFARM_SOCKADDR_STRLEN;
 
 	if (reqlen < GFS_UDP_RPC_HEADER_SIZE) {
-		/* XXX gfarm_sockaddr_to_name */
-		gflog_warning(GFARM_MSG_1004174,
-		    "UDP request: too short: %d bytes", reqlen);
+		gfarm_sockaddr_to_string(client_addr, addr_str, addr_strlen);
+		gflog_warning(GFARM_MSG_UNFIXED, "UDP request: too short: "
+		    "%d bytes from %s", reqlen, addr_str);
 		return;
 	}
 
