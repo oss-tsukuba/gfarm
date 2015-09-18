@@ -472,7 +472,7 @@ search_idle_network_list_add0(struct sockaddr *addr, int flags,
 }
 
 static gfarm_error_t
-serch_idle_network_list_local_host_init(void)
+search_idle_network_list_local_host_init(void)
 {
 	int count, i, j;
 	struct in_addr *self_ip;
@@ -515,7 +515,7 @@ search_idle_network_list_init(struct gfm_connection *gfm_server)
 
 	assert(staticp->search_idle_network_list == NULL);
 
-	e = serch_idle_network_list_local_host_init();
+	e = search_idle_network_list_local_host_init();
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -587,17 +587,21 @@ static gfarm_error_t
 search_idle_host_state_init(struct gfm_connection *gfm_server)
 {
 	gfarm_error_t e;
+	static const char diag[] = "search_idle_host_state_init";
 
 	e = gfp_conn_hash_table_init(&staticp->search_idle_hosts_state,
 	    HOSTS_HASHTAB_SIZE);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001427,
-		    "search_idle_host_state_init: hash_table_init: %s",
-		    gfarm_error_string(e));
+		    "%s: hash_table_init: %s", diag, gfarm_error_string(e));
 		return (e);
 	}
 
-	search_idle_network_list_init(gfm_server); /* ignore any error here */
+	/* ignore any error here */
+	e = search_idle_network_list_init(gfm_server);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_notice(GFARM_MSG_UNFIXED, "%s: network_list_init: %s",
+		    diag, gfarm_error_string(e));
 
 	/* when a connection error happens, make the host unavailable. */
 	gfs_client_add_hook_for_connection_error(

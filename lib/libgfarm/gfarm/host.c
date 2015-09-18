@@ -432,12 +432,14 @@ gfarm_error_t
 gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 {
 	struct ifaddrs *ifa_head, *ifa;
-	int i, n;
+	int i, n, save_errno;
 	struct in_addr *addresses;
 
-	if (getifaddrs(&ifa_head) == -1)
-		return (gfarm_errno_to_error(errno));
-
+	if (getifaddrs(&ifa_head) == -1) {
+		save_errno = errno;
+		gflog_notice_errno(GFARM_MSG_UNFIXED, "getifaddrs");
+		return (gfarm_errno_to_error(save_errno));
+	}
 	for (n = 0, ifa = ifa_head; ifa != NULL; ifa = ifa->ifa_next) {
 		if (ifa->ifa_addr->sa_family == AF_INET &&
 		    (ifa->ifa_flags & IFF_UP) != 0) {
