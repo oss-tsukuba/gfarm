@@ -1052,19 +1052,25 @@ search_idle_count(struct search_idle_state *s,
 	long long loadavg = h->loadavg;
 	int ncpu = h->ncpu;
 	int ok = 1;
+	char *msg1, *msg2, *msg3;
 
+	msg1 = msg2 = msg3 = "";
 	if (s->write_mode &&
 	    (h->flags & HOST_STATE_FLAG_STATFS_AVAIL) != 0 &&
 	    h->diskavail < gfarm_get_minimum_free_disk_space())
 		ok = 0; /* not enough free space */
-	if (ok)
+	if (ok) {
 		(*usable_numberp)++;
+		msg1 = "usable ";
+	}
 
 	if (ncpu <= 0) /* sanity */
 		ncpu = 1;
 	loadavg += h->scheduled * VIRTUAL_LOAD_FOR_SCHEDULED_HOST;
-	if (ok && loadavg / ncpu <= IDLE_LOAD_AVERAGE)
+	if (ok && loadavg / ncpu <= IDLE_LOAD_AVERAGE) {
 		(*idle_numberp)++;
+		msg2 = "idle ";
+	}
 
 	/*
 	 * We don't use (loadavg / h->host_info->ncpu) to count
@@ -1072,8 +1078,13 @@ search_idle_count(struct search_idle_state *s,
 	 * that there is a process which is consuming 100% of
 	 * memory or 100% of I/O bandwidth on the host.
 	 */
-	if (ok && loadavg <= SEMI_IDLE_LOAD_AVERAGE)
+	if (ok && loadavg <= SEMI_IDLE_LOAD_AVERAGE) {
 		(*semi_idle_numberp)++;
+		msg3 = "semi-idle ";
+	}
+	gflog_debug(GFARM_MSG_UNFIXED, "%s: %s%s%s"
+	    "(avail %llu load %lld ncpu %d)", h->return_value, msg1, msg2, msg3,
+	    (unsigned long long)h->diskavail, loadavg, ncpu);
 }
 
 static void
@@ -1708,21 +1719,26 @@ search_idle(struct gfm_connection *gfm_server,
 	/*
 	 * 1. search local hosts
 	 */
-	if (staticp->search_idle_local_host != NULL)
+	if (staticp->search_idle_local_host != NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "== search local host ==");
 		search_idle_in_networks(&s,
 			staticp->search_idle_local_host_count,
 			staticp->search_idle_local_host);
+	}
 	/*
 	 * 2. search hosts on the local network
 	 *   (i.e. the same network with this client host).
 	 */
 	if (((write_mode && !gfarm_schedule_write_local_priority())
 	     || !search_idle_is_satisfied(&s))
-	    && staticp->search_idle_local_net != NULL)
+	    && staticp->search_idle_local_net != NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "== search local network ==");
 		search_idle_in_networks(&s, 1, &staticp->search_idle_local_net);
+	}
 	gfs_profile(gfarm_gettimerval(&t3));
 
 	if (!search_idle_is_satisfied(&s)) {
+		gflog_debug(GFARM_MSG_UNFIXED, "== search all networks ==");
 		search_idle_examine_rtt_of_all_networks(&s);
 		e = search_idle_by_rtt_order(&s);
 	}
@@ -1795,6 +1811,8 @@ search_idle(struct gfm_connection *gfm_server,
 	for (i = 0; i < n && i < s.desired_number; i++) {
 		ohosts[i] = results[i]->return_value;
 		oports[i] = results[i]->port;
+		gflog_debug(GFARM_MSG_UNFIXED, "[%d] %s:%d",
+		    i, ohosts[i], oports[i]);
 	}
 	*nohostsp = i;
 	free(results);
