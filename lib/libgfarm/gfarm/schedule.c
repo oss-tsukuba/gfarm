@@ -2109,6 +2109,9 @@ gfarm_schedule_host_used(const char *hostname, int port, const char *username)
 	struct gfarm_hash_entry *entry;
 	struct search_idle_host_state *h;
 
+	if (staticp->search_idle_hosts_state == NULL)
+		return (HOST_STATE_SCHEDULED_AGE_NOT_FOUND);
+
 	e = gfp_conn_hash_lookup(&staticp->search_idle_hosts_state,
 	    HOSTS_HASHTAB_SIZE, hostname, port, username, &entry);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -2126,10 +2129,14 @@ gfarm_schedule_host_unused(const char *hostname, int port, const char *username,
 	gfarm_error_t e;
 	struct gfarm_hash_entry *entry;
 	struct search_idle_host_state *h;
+	static const char diag[] = "search_host_unused";
 
 	if (scheduled_age == HOST_STATE_SCHEDULED_AGE_NOT_FOUND)
 		return;
-
+	if (staticp->search_idle_hosts_state == NULL) {
+		gflog_notice(GFARM_MSG_UNFIXED, "%s: internal error", diag);
+		return;
+	}
 	e = gfp_conn_hash_lookup(&staticp->search_idle_hosts_state,
 	    HOSTS_HASHTAB_SIZE, hostname, port, username, &entry);
 	if (e != GFARM_ERR_NO_ERROR)
