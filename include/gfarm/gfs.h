@@ -60,15 +60,6 @@ struct gfs_stat_cksum {
  * File/Directory operations
  */
 
-#if 0 /* not yet on Gfarm v2 */
-typedef struct gfs_desc *GFS_Desc;
-
-gfarm_error_t gfs_desc_create(const char *, int, gfarm_mode_t, GFS_Desc *);
-gfarm_error_t gfs_desc_open(const char *, int, GFS_Desc *);
-gfarm_error_t gfs_desc_close(GFS_Desc);
-int gfs_desc_fileno(GFS_Desc);
-#endif /* not yet on Gfarm v2 */
-
 #define GFARM_FILE_RDONLY		0
 #define GFARM_FILE_WRONLY		1
 #define GFARM_FILE_RDWR			2
@@ -102,38 +93,19 @@ int gfs_desc_fileno(GFS_Desc);
 #define GFARM_FILE_BEQUEATHED		0x40000000
 #define GFARM_FILE_CKSUM_INVALIDATED	0x80000000
 
-#if 0 /* not yet on Gfarm v2 */
-#define GFARM_FILE_USER_MODE	(GFARM_FILE_ACCMODE|GFARM_FILE_TRUNC| \
-		GFARM_FILE_APPEND|GFARM_FILE_EXCLUSIVE|GFARM_FILE_SEQUENTIAL| \
-		GFARM_FILE_REPLICATE|GFARM_FILE_NOT_REPLICATE)
-
-#else
 #define GFARM_FILE_USER_MODE	(GFARM_FILE_ACCMODE|GFARM_FILE_TRUNC| \
 	GFARM_FILE_APPEND|GFARM_FILE_EXCLUSIVE| \
 	GFARM_FILE_CREATE_REPLICA|GFARM_FILE_REPLICA_SPEC)
 
-#endif /* not yet on Gfarm v2 */
 #define GFARM_FILE_USER_OPEN_FLAGS	(GFARM_FILE_USER_MODE|\
 		GFARM_FILE_UNBUFFERED)
 #define GFARM_FILE_PROTOCOL_MASK	(GFARM_FILE_USER_MODE|\
 	GFARM_FILE_BEQUEATHED|GFARM_FILE_CKSUM_INVALIDATED)
 #endif /* GFARM_INTERNAL_USE */
 
-#if 0 /* not yet on Gfarm v2 */
-gfarm_error_t gfs_desc_seek(GFS_Desc, gfarm_off_t, int, gfarm_off_t *);
-#endif /* not yet on Gfarm v2 */
-
 #define GFARM_SEEK_SET	0
 #define GFARM_SEEK_CUR	1
 #define GFARM_SEEK_END	2
-
-#if 0 /* not yet on Gfarm v2 */
-gfarm_error_t gfs_desc_chown(GFS_Desc, char *, char *);
-gfarm_error_t gfs_desc_chmod(GFS_Desc, gfarm_mode_t);
-gfarm_error_t gfs_desc_utimes(GFS_Desc, const struct gfarm_timespec *);
-
-gfarm_error_t gfs_desc_stat(GFS_Desc, struct gfs_stat *);
-#endif /* not yet on Gfarm v2 */
 
 void gfs_stat_free(struct gfs_stat *);
 gfarm_error_t gfs_stat_copy(struct gfs_stat *, const struct gfs_stat *);
@@ -148,30 +120,12 @@ typedef struct gfs_file *GFS_File;
 
 gfarm_error_t gfs_pio_open(const char *, int, GFS_File *);
 gfarm_error_t gfs_pio_fhopen(gfarm_ino_t, gfarm_uint64_t, int, GFS_File *);
-gfarm_error_t gfs_pio_create(const char *, int, gfarm_mode_t mode, GFS_File *);
-
-#if 0 /* not yet on Gfarm v2 */
-gfarm_error_t gfs_pio_set_local(int, int);
-gfarm_error_t gfs_pio_set_local_check(void);
-gfarm_error_t gfs_pio_get_node_rank(int *);
-gfarm_error_t gfs_pio_get_node_size(int *);
-
-gfarm_error_t gfs_pio_set_view_local(GFS_File, int);
-gfarm_error_t gfs_pio_set_view_index(GFS_File, int, int, char *, int);
-gfarm_error_t gfs_pio_set_view_section(GFS_File, const char *, char *, int);
-gfarm_error_t gfs_pio_set_view_global(GFS_File, int);
-/* as total fragment number */
-#define GFARM_FILE_DONTCARE		(-1)
-#endif
-
+gfarm_error_t gfs_pio_create(const char *, int, gfarm_mode_t, GFS_File *);
 gfarm_error_t gfs_pio_close(GFS_File);
 
 int gfs_pio_eof(GFS_File);
 gfarm_error_t gfs_pio_error(GFS_File);
 void gfs_pio_clearerr(GFS_File);
-#if 0 /* not yet on Gfarm v2 */
-gfarm_error_t gfs_pio_get_nfragment(GFS_File, int *);
-#endif
 
 gfarm_error_t gfs_pio_seek(GFS_File, gfarm_off_t, int, gfarm_off_t *);
 gfarm_error_t gfs_pio_read(GFS_File, void *, int, int *);
@@ -254,16 +208,12 @@ gfarm_error_t gfs_readlink(const char *, char **);
 
 gfarm_error_t gfs_remove(const char *); /* XXX shouldn't be exported? */
 gfarm_error_t gfs_unlink(const char *);
-#if 0 /* not yet on Gfarm v2 */
-gfarm_error_t gfs_unlink_section(const char *, const char *);
-gfarm_error_t gfs_unlink_section_replica(const char *, const char *,
-	int, char **, int);
-gfarm_error_t gfs_unlink_replicas_on_host(const char *,	const char *, int);
-#endif
 gfarm_error_t gfs_mkdir(const char *, gfarm_mode_t);
 gfarm_error_t gfs_rmdir(const char *);
+#if 0
 gfarm_error_t gfs_chdir(const char *);
 gfarm_error_t gfs_getcwd(char *, int);
+#endif
 gfarm_error_t gfs_chown(const char *, const char *, const char *);
 gfarm_error_t gfs_chmod(const char *, gfarm_mode_t);
 gfarm_error_t gfs_utimes(const char *, const struct gfarm_timespec *);
@@ -278,10 +228,6 @@ gfarm_error_t gfs_rename(const char *, const char *);
 gfarm_error_t gfs_stat(const char *, struct gfs_stat *);
 gfarm_error_t gfs_lstat(const char *, struct gfs_stat *);
 gfarm_error_t gfs_fstat(GFS_File, struct gfs_stat *);
-#if 0
-gfarm_error_t gfs_stat_section(const char *, const char *, struct gfs_stat *);
-gfarm_error_t gfs_stat_index(char *, int, struct gfs_stat *);
-#endif
 gfarm_error_t gfs_stat_cksum(const char *, struct gfs_stat_cksum *);
 gfarm_error_t gfs_fstat_cksum(GFS_File, struct gfs_stat_cksum *);
 gfarm_error_t gfs_stat_cksum_free(struct gfs_stat_cksum *);
@@ -370,9 +316,7 @@ void gfs_replica_info_free(struct gfs_replica_info *);
 gfarm_error_t gfs_replica_list_by_name(const char *, int *, char ***);
 gfarm_error_t gfs_replica_remove_by_file(const char *, const char *);
 gfarm_error_t gfs_replicate_to_local(GFS_File, char *, int);
-#if 0
-gfarm_error_t gfs_execve(const char *, char *const *, char *const *);
-#endif
+
 gfarm_error_t gfs_statfs(gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
 gfarm_error_t gfs_statfsnode_by_path(const char *, char *, int,
 	gfarm_int32_t *, gfarm_off_t *, gfarm_off_t *,
