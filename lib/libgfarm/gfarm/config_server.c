@@ -39,7 +39,6 @@ gfarm_server_config_read(void)
 	FILE *config;
 	char *config_file = gfarm_config_get_filename();
 
-	gfarm_init_config();
 	if ((config = fopen(config_file, "r")) == NULL) {
 		gflog_debug(GFARM_MSG_1000976,
 			"open operation on server config file (%s) failed",

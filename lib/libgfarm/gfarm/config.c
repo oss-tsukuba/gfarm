@@ -99,7 +99,7 @@ gfarm_config_static_init(struct gfarm_context *ctxp)
 
 	s->config_file = GFARM_CONFIG;
 	s->shared_key_file = NULL;
-	/* xattr_cache_list is initialized in gfarm_init_config() */
+	gfarm_stringlist_init(&s->xattr_cache_list);
 	s->local_ug_maps_tab = NULL;
 	s->local_username = NULL;
 	s->local_homedir = NULL;
@@ -113,6 +113,9 @@ gfarm_config_static_init(struct gfarm_context *ctxp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static void local_ug_maps_tab_free(void);
+static void debug_command_argv_free(void);
+
 void
 gfarm_config_static_term(struct gfarm_context *ctxp)
 {
@@ -122,17 +125,11 @@ gfarm_config_static_term(struct gfarm_context *ctxp)
 		return;
 
 	free(s->shared_key_file);
-	/*
-	 * The following gfarm_stringlist_free_deeply() call also is
-	 * performed by gfarm_free_config(), but the repeated call of
-	 * this function has no problem.
-	 */
 	gfarm_stringlist_free_deeply(&s->xattr_cache_list);
-	if (s->local_ug_maps_tab != NULL)
-		gfarm_hash_table_free(s->local_ug_maps_tab);
+	local_ug_maps_tab_free();
 	free(s->local_username);
 	free(s->local_homedir);
-	free(s->debug_command_argv);
+	debug_command_argv_free();
 	free(s->argv0);
 	free(s);
 }
@@ -375,6 +372,7 @@ local_ug_maps_tab_free(void)
 		gfarm_stringlist_free_deeply(&ugm->local_group_map_file_list);
 		gfarm_hash_iterator_purge(&it);
 	}
+	gfarm_hash_table_free(staticp->local_ug_maps_tab);
 }
 
 static struct gfarm_local_ug_maps *
@@ -3089,22 +3087,6 @@ parse_one_line(char *s, char *p, char **op)
 	}
 	*op = o;
 	return (e);
-}
-
-gfarm_error_t
-gfarm_init_config(void)
-{
-	gfarm_stringlist_init(&staticp->xattr_cache_list);
-	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
-gfarm_free_config(void)
-{
-	gfarm_stringlist_free_deeply(&staticp->xattr_cache_list);
-	local_ug_maps_tab_free();
-	debug_command_argv_free();
-	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t

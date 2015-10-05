@@ -64,7 +64,6 @@ gfarm_config_read(void)
 		sprintf(rc, "%s/%s", home, gfarm_client_rc);
 		rc_need_free = 1;
 	}
-	gfarm_init_config();
 	if ((config = fopen(rc, "r")) == NULL) {
 		user_config_errno = errno;
 	} else {
@@ -221,7 +220,6 @@ gfarm_error_t
 gfarm_terminate(void)
 {
 	gfs_profile(gfs_display_timers());
-	gfarm_free_config();
 	gfs_client_terminate();
 	gfm_client_terminate();
 	gflog_terminate();
