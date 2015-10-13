@@ -30,6 +30,7 @@ struct dead_file_copy {
 	enum dead_file_copy_state {
 		dfcstate_deferred,	/* not on any dfc_workq */
 		dfcstate_kept,		/* do not move to removal_pendingq */
+		dfcstate_lost,		/* not on any dfc_workq */
 		dfcstate_pending,	/* on removal_pendingq */
 		dfcstate_in_flight,	/* during protocol process */
 		dfcstate_finished,	/* on removal_finishedq */
@@ -50,13 +51,18 @@ struct dead_file_copy {
  *
  *	dfcstate_deferred
  *		-> dfcstate_kept
+ *		-> dfcstate_lost
  *		-> dfcstate_pending
  *		-> dfcstate_finished
  *		-> (freed) ... needs giant_lock()
  *
  *	dfcstate_kept
  *		-> dfcstate_deferred
+ *		-> dfcstate_lost
  *		-> dfcstate_pending
+ *
+ *	dfcstate_lost
+ *		-> dfcstate_finished
  *
  *	dfcstate_pending
  *		-> dfcstate_deferred
@@ -254,6 +260,7 @@ removal_finishedq_enqueue(struct dead_file_copy *dfc, gfarm_int32_t result)
 	/* sanity check */
 	gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
 	if (dfc->state != dfcstate_deferred &&
+	    dfc->state != dfcstate_lost &&
 	    dfc->state != dfcstate_in_flight) {
 		gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
 		gflog_fatal(GFARM_MSG_1002222, "%s(%lld, %lld, %s): "
@@ -499,6 +506,43 @@ host_busyq_scanner_init(void)
 
 /*
  * PREREQUISITE: giant_lock
+ * LOCKS: dfc_allq.mutex
+ * SLEEPS: no
+ *
+ * XXX
+ * this assumes that the number of dead file copies is small enough,
+ * otherwise this is too slow.
+ */
+static struct dead_file_copy *
+dead_file_copy_lookup(gfarm_ino_t inum, gfarm_uint64_t igen, struct host *host,
+	const char *diag)
+{
+	struct dead_file_copy *dfc;
+	int found = 0;
+
+	gfarm_mutex_lock(&dfc_allq.mutex, diag, "lock");
+
+	/* giant_lock prevents dfc from being freed */
+	for (dfc = dfc_allq.q.allq_next; dfc != &dfc_allq.q;
+	     dfc = dfc->allq_next) {
+		/*
+		 * dfc->mutex lock is not necessary,
+		 * because dfc->inum, dfc->igen and dfc->host are constant
+		 */
+		if (dfc->inum == inum &&
+		    dfc->igen == igen &&
+		    dfc->host == host) {
+			found = 1;
+			break;
+		}
+	}
+
+	gfarm_mutex_unlock(&dfc_allq.mutex, diag, "unlock");
+	return (found ? dfc : NULL);
+}
+
+/*
+ * PREREQUISITE: giant_lock
  * LOCKS: dfc_allq.mutex, removal_pendingq.mutex
  * SLEEPS: maybe,
  *	but dfc_allq.mutex and removal_pendingq.mutex
@@ -513,7 +557,7 @@ dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
 {
 	struct dead_file_copy *dfc;
 	time_t now = time(NULL);
-	int busy, host_valid;
+	int busy, already_removed;
 	enum dead_file_copy_state state;
 
 	gfarm_mutex_lock(&dfc_allq.mutex, diag, "lock");
@@ -525,14 +569,18 @@ dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
 		gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
 		state = dfc->state;
 		gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
-		if (state != dfcstate_deferred)
+		if (state != dfcstate_deferred && state != dfcstate_lost)
 			continue;
 
-		host_valid = host_is_valid(dfc->host);
-
-		/* if host is invalid, remove this dfc anyway */
-		if (host_valid && !(*filter)(dfc, inum, host))
-			continue;
+		if (state == dfcstate_lost) {
+			already_removed = 1;
+		} else if (host_is_valid(dfc->host)) {
+			if (!(*filter)(dfc, inum, host))
+				continue;
+			already_removed = 0;
+		} else { /* if host is invalid. remove this dfc anyway */
+			already_removed = 1;
+		}
 
 		/*
 		 * to prevent functions which acquire dfc_all.mutex
@@ -541,7 +589,7 @@ dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
 		gfarm_mutex_unlock(&dfc_allq.mutex,
 		    diag, "unlock before sleeping");
 
-		if (!host_valid) {
+		if (already_removed) {
 			removal_finishedq_enqueue(dfc, GFARM_ERR_NO_ERROR);
 		} else {
 			busy = host_check_busy(dfc->host, now);
@@ -784,6 +832,40 @@ dead_file_copy_mark_deferred(struct dead_file_copy *dfc)
 	gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
 }
 
+/* used for kept/deferred -> lost: move dfc to removal_finishedq */
+gfarm_error_t
+dead_file_copy_mark_lost(
+	gfarm_ino_t inum, gfarm_uint64_t igen, struct host *host)
+{
+	struct dead_file_copy *dfc;
+	static const char diag[] = "dead_file_copy_mark_lost";
+
+	dfc = dead_file_copy_lookup(inum, igen, host, diag);
+	if (dfc == NULL) {
+		gflog_notice(GFARM_MSG_UNFIXED, "%s(%lld, %lld, %s): "
+		    "not found", diag,
+		    (unsigned long long)dfc->inum,
+		    (unsigned long long)dfc->igen,
+		    host_name(dfc->host));
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	}
+
+	/* sanity check */
+	gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
+	if (dfc->state != dfcstate_kept && dfc->state != dfcstate_deferred) {
+		gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
+		gflog_notice(GFARM_MSG_UNFIXED, "%s(%lld, %lld, %s): "
+		    "cannot remove due to unexpected state %d", diag,
+		    (unsigned long long)dfc->inum,
+		    (unsigned long long)dfc->igen,
+		    host_name(dfc->host), dfc->state);
+		return (GFARM_ERR_FILE_BUSY);
+	}
+	dfc->state = dfcstate_lost;
+	gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
+	return (GFARM_ERR_NO_ERROR);
+}
+
 /*
  * PREREQUISITE: nothing
  * LOCKS: dfc_allq.mutex, host::back_channel_mutex
@@ -885,8 +967,8 @@ dead_file_copy_info_by_inode(gfarm_ino_t inum, gfarm_uint64_t igen, int up_only,
 }
 
 /*
- * PREREQUISITE: nothing
- * LOCKS: dfc_allq.mutex, host::back_channel_mutex
+ * PREREQUISITE: giant_lock
+ * LOCKS: dfc_allq.mutex
  * SLEEPS: no
  *
  * XXX
@@ -897,24 +979,9 @@ int
 dead_file_copy_existing(gfarm_ino_t inum, gfarm_uint64_t igen,
 	struct host *host)
 {
-	struct dead_file_copy *dfc;
-	int existing = 0;
 	static const char diag[] = "dead_file_copy_existing";
 
-	gfarm_mutex_lock(&dfc_allq.mutex, diag, "lock");
-
-	for (dfc = dfc_allq.q.allq_next; dfc != &dfc_allq.q;
-	     dfc = dfc->allq_next) {
-		if (dfc->inum == inum && dfc->igen == igen &&
-		    dfc->host == host) {
-			existing = 1;
-			break;
-		}
-	}
-
-	gfarm_mutex_unlock(&dfc_allq.mutex, diag, "unlock");
-
-	return (existing);
+	return (dead_file_copy_lookup(inum, igen, host, diag) != NULL);
 }
 
 gfarm_ino_t

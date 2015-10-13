@@ -4501,7 +4501,7 @@ gfm_server_replica_lost(struct peer *peer, int from_client, int skip)
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
-		e = inode_remove_replica_metadata(inode, spool_host, gen);
+		e = inode_remove_replica_lost(inode, spool_host, gen);
 		if (transaction)
 			db_end(diag);
 	}

@@ -124,7 +124,7 @@ void inode_dead_file_copy_added(gfarm_ino_t, gfarm_int64_t, struct host *);
 gfarm_error_t inode_add_replica(struct inode *, struct host *, int);
 gfarm_error_t inode_add_file_copy_in_cache(struct inode *, struct host *);
 void inode_remove_replica_completed(gfarm_ino_t, gfarm_int64_t, struct host *);
-gfarm_error_t inode_remove_replica_metadata(struct inode *, struct host *,
+gfarm_error_t inode_remove_replica_lost(struct inode *, struct host *,
 	gfarm_int64_t);
 gfarm_error_t inode_remove_replica_protected(struct inode *, struct host *,
 	struct replica_spec *);
