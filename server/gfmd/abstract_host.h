@@ -87,6 +87,7 @@ gfarm_error_t gfm_server_channel_vput_reply(struct abstract_host *,
 	struct peer *, gfp_xdr_xid_t, const char *, gfarm_error_t,
 	char *, va_list *);
 
+#define GFM_CLIENT_CHANNEL_TIMEOUT_INFINITY	-1
 gfarm_error_t gfm_client_channel_vsend_request(struct abstract_host *,
 	struct peer *, const char *, result_callback_t, disconnect_callback_t,
 	void *,

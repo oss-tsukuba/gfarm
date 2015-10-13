@@ -43,7 +43,7 @@ static struct thread_pool *proto_status_send_thread_pool;
 
 static struct peer_watcher *back_channel_recv_watcher;
 
-#define GFS_PROTO_STATUS_TIMEOUT		10000000 /* 10.0 sec. */
+/* SF.net #429: use short timeout, to make GFS_PROTO_STATUS success */
 #define GFS_PROTO_REPLICATION_REQUEST_TIMEOUT	1000000  /*  1.0 sec. */
 #define GFS_PROTO_FHREMOVE_TIMEOUT		100000   /*  0.1 sec. */
 
@@ -229,16 +229,7 @@ gfs_client_status_request(void *arg)
 	host_status_reply_waiting_set(host);
 	e = gfs_client_send_request(host, NULL, diag,
 	    gfs_client_status_result, gfs_client_status_free, host,
-	    GFS_PROTO_STATUS_TIMEOUT, GFS_PROTO_STATUS, "");
-	if (e == GFARM_ERR_DEVICE_BUSY) {
-		host_status_reply_waiting_reset(host);
-		if (!host_status_callout_retry(host)) {
-			gfs_client_status_disconnect_or_message(host, peer,
-			    diag, "request", "status rpc unresponsive");
-		}
-		host_put_peer(host, peer); /* decrement refcount */
-		return (NULL);
-	}
+	    GFM_CLIENT_CHANNEL_TIMEOUT_INFINITY, GFS_PROTO_STATUS, "");
 	if (e != GFARM_ERR_NO_ERROR) {
 		host_status_reply_waiting_reset(host);
 		gflog_error(GFARM_MSG_1001986,

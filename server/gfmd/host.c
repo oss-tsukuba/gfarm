@@ -86,7 +86,6 @@ struct host {
 	struct callout *status_callout;
 	gfarm_time_t last_report;
 	gfarm_time_t disconnect_time;
-	int status_callout_retry;
 
 	struct host *removed_host_next;
 };
@@ -712,30 +711,6 @@ host_put_peer_for_replication(struct host *h, struct peer *peer)
 	peer_del_ref_for_replication(peer);
 }
 
-int
-host_status_callout_retry(struct host *host)
-{
-	long interval;
-	int ok;
-	static const char diag[] = "host_status_callout_retry";
-
-	back_channel_mutex_lock(host, diag);
-
-	++host->status_callout_retry;
-	interval = 1 << host->status_callout_retry;
-	ok = (interval <= gfarm_metadb_heartbeat_interval);
-
-	back_channel_mutex_unlock(host, diag);
-
-	if (ok) {
-		callout_schedule(host->status_callout, interval);
-		gflog_debug(GFARM_MSG_1002215,
-		    "%s(%s): retrying in %ld seconds",
-		    diag, host_name(host), interval);
-	}
-	return (ok);
-}
-
 void
 host_status_reply_waiting_set(struct host *host)
 {
@@ -796,7 +771,6 @@ host_status_update(struct host *host, struct host_status *status)
 	back_channel_mutex_lock(host, diag);
 
 	host->status_reply_waiting = 0;
-	host->status_callout_retry = 0;
 
 	if (host->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
 		saved_used = host->status.disk_used;
@@ -861,7 +835,6 @@ host_set_peer_locked(struct abstract_host *ah, struct peer *p)
 	h->back_channel_callback_closure = NULL;
 #endif
 	h->status_reply_waiting = 0;
-	h->status_callout_retry = 0;
 }
 
 static void
@@ -963,7 +936,6 @@ host_new(struct gfarm_host_info *hi, struct callout *callout)
 	h->status.disk_used =
 	h->status.disk_avail = 0;
 	h->status_callout = callout;
-	h->status_callout_retry = 0;
 	h->last_report = 0;
 	h->disconnect_time = time(NULL);
 	h->removed_host_next = NULL;

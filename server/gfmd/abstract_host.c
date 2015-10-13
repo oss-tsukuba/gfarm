@@ -261,14 +261,19 @@ abstract_host_sender_trylock(struct abstract_host *host, struct peer **peerp,
 			e = GFARM_ERR_NO_ERROR;
 			break;
 		}
-		gettimeofday(&tv, NULL);
-		gfarm_timeval_add_microsec(&tv, timeout_microsec);
-		ts.tv_sec = tv.tv_sec;
-		ts.tv_nsec = tv.tv_usec * 1000;
-		if (gfarm_cond_timedwait(&host->ready_to_send, &host->mutex,
-		    &ts, diag, "ready_to_send") == 0) {
-			e = GFARM_ERR_DEVICE_BUSY;
-			break;
+		if (timeout_microsec == GFM_CLIENT_CHANNEL_TIMEOUT_INFINITY) {
+			gfarm_cond_wait(&host->ready_to_send, &host->mutex,
+			    diag, "ready_to_send:infinity");
+		} else {
+			gettimeofday(&tv, NULL);
+			gfarm_timeval_add_microsec(&tv, timeout_microsec);
+			ts.tv_sec = tv.tv_sec;
+			ts.tv_nsec = tv.tv_usec * 1000;
+			if (gfarm_cond_timedwait(&host->ready_to_send,
+			    &host->mutex, &ts, diag, "ready_to_send") == 0) {
+				e = GFARM_ERR_DEVICE_BUSY;
+				break;
+			}
 		}
 		if (host->peer != peer0) {
 			e = GFARM_ERR_CONNECTION_ABORTED;
