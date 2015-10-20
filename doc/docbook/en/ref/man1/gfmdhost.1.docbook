@@ -110,7 +110,7 @@ names will be listed.
 	its metadata have not been synchronized yet. Note that this
 	may happen even on a synchronous slave gfmd, when the slave
 	is just connecting to the master, or in the middle of metadata
-	taransfer even if it has been already synchronized.
+	transfer even if it has been already synchronized.
         "-" means that the gfmd is not connected to the master gfmd.
 	"?" means either the gfmd state is unknown because it's just
 	after the connection was established, or the master gfmd is
@@ -235,7 +235,7 @@ names will be listed.
   </varlistentry>
 
   <varlistentry>
-    <term>-t {m|c|s}</term>
+    <term><option>-t</option> {m|c|s}</term>
     <listitem>
       <para>
         This option specifies a configuration of master candidate.

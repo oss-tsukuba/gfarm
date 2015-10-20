@@ -228,7 +228,7 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
   </varlistentry>
 
   <varlistentry>
-    <term>-t {m|c|s}</term>
+    <term><option>-t</option> {m|c|s}</term>
     <listitem>
       <para>
 	-c, -m 機能でマスター候補の設定を指定します。
