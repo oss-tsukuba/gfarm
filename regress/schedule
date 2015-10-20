@@ -59,6 +59,7 @@ lib/libgfarm/gfarm/gfs_realpath/realpath.sh
 lib/libgfarm/gfarm/gfs_realpath/realpath_mds2.sh
 
 # gftool/config-gfarm
+gftool/gfmdhost/gfmdhost.sh
 gftool/gfhost/gfhost-c.sh
 gftool/gfhost/gfhost-c.name.toolong.sh
 gftool/gfhost/gfhost-c.arch.toolong.sh
