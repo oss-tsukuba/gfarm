@@ -844,6 +844,7 @@ gfarm_set_local_user_for_this_uid(uid_t uid)
 /* GFS dependent */
 int gfarm_spool_server_listen_backlog = GFARM_CONFIG_MISC_DEFAULT;
 char *gfarm_spool_server_listen_address = NULL;
+int gfarm_spool_server_back_channel_rcvbuf_limit = GFARM_CONFIG_MISC_DEFAULT;
 char *gfarm_spool_root = NULL;
 static struct {
 	enum gfarm_spool_check_level level;
@@ -931,6 +932,8 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
 #define GFARM_METADB_MAX_DESCRIPTORS_DEFAULT	(2*65536)
 #define GFARM_METADB_REPLICA_REMOVER_BY_HOST_SLEEP_TIME_DEFAULT	20000000
+#define GFARM_SOCKBUF_LIMIT_UNLIMITED GFARM_CONFIG_MISC_DEFAULT /* no limit */
+#define GFARM_SOCKBUF_LIMIT_DEFAULT		GFARM_SOCKBUF_LIMIT_UNLIMITED
 							/* nanosec. */
 #define GFARM_METADB_REPLICA_REMOVER_BY_HOST_INODE_STEP_DEFAULT	1024
 #define GFARM_CLIENT_DIGEST_CHECK_DEFAULT	0
@@ -966,6 +969,7 @@ int gfarm_metadb_thread_pool_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_job_queue_length = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_heartbeat_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_dbq_size = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_server_back_channel_sndbuf_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_replica_remover_by_host_sleep_time =
 	GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_replica_remover_by_host_inode_step =
@@ -2775,6 +2779,10 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "spool_server_cred_name") == 0) {
 		e = parse_cred_config(p, GFS_SERVICE_TAG,
 		    gfarm_auth_server_cred_name_set);
+	} else if (strcmp(s, o = "spool_server_back_channel_rcvbuf_limit")
+	    == 0) {
+		e = parse_set_misc_int(p,
+		    &gfarm_spool_server_back_channel_rcvbuf_limit);
 	} else if (strcmp(s, o = "spool_check_level") == 0) {
 		e = parse_spool_check_level(p);
 	} else if (strcmp(s, o = "spool_base_load") == 0) {
@@ -2999,6 +3007,10 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_metadb_heartbeat_interval);
 	} else if (strcmp(s, o = "metadb_server_dbq_size") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_dbq_size);
+	} else if (strcmp(s, o = "metadb_server_back_channel_sndbuf_limit")
+	    == 0) {
+		e = parse_set_misc_int(p,
+		    &gfarm_metadb_server_back_channel_sndbuf_limit);
 	} else if (strcmp(s, o = "metadb_replica_remover_by_host_sleep_time")
 	     == 0) {
 		e = parse_set_misc_int(p,
@@ -3218,6 +3230,15 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_metadb_server_listen_backlog == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_server_listen_backlog = LISTEN_BACKLOG_DEFAULT;
 
+	if (gfarm_spool_server_back_channel_rcvbuf_limit ==
+	    GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_spool_server_back_channel_rcvbuf_limit =
+		    GFARM_SOCKBUF_LIMIT_DEFAULT;
+	if (gfarm_metadb_server_back_channel_sndbuf_limit ==
+	    GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_metadb_server_back_channel_sndbuf_limit =
+		    GFARM_SOCKBUF_LIMIT_DEFAULT;
+
 	if (gfarm_ctxp->log_level == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
 	gflog_set_priority_level(gfarm_ctxp->log_level);
@@ -3388,6 +3409,37 @@ gfarm_config_set_default_misc(void)
 
 	gfarm_config_set_default_filesystem();
 	gfarm_config_set_default_metadb_server();
+}
+
+gfarm_error_t
+gfarm_sockbuf_apply_limit(int sock, int opt, int limit, const char *optname)
+{
+	int rv, save_errno, oldval;
+	socklen_t vallen = sizeof(oldval);
+
+	if (limit == GFARM_SOCKBUF_LIMIT_UNLIMITED)
+		return (GFARM_ERR_NO_ERROR);
+
+	rv = getsockopt(sock, SOL_SOCKET, opt, &oldval, &vallen);
+	if (rv == -1) {
+		save_errno = errno;
+		gflog_error_errno(GFARM_MSG_UNFIXED, "%s: getsockopt",
+		    optname);
+		return (gfarm_errno_to_error(save_errno));
+	}
+	if (oldval <= limit)
+		return (GFARM_ERR_NO_ERROR);
+
+	rv = setsockopt(sock, SOL_SOCKET, opt, &limit, sizeof(limit));
+	if (rv != 0) {
+		save_errno = errno;
+		gflog_error_errno(GFARM_MSG_UNFIXED,
+		    "%s: limiting to %d (old: %d)", optname, limit, oldval);
+		return (gfarm_errno_to_error(save_errno));
+	}
+	gflog_info(GFARM_MSG_UNFIXED, "%s: limiting to %d (old: %d)",
+	    optname, limit, oldval);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 void

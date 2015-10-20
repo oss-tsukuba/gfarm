@@ -5527,6 +5527,10 @@ back_channel_server(void)
 			    "cannot allocate resource for async protocol: %s",
 			    gfarm_error_string(e));
 		}
+		(void)gfarm_sockbuf_apply_limit(
+		    gfm_client_connection_fd(back_channel),
+		    SO_RCVBUF, gfarm_spool_server_back_channel_rcvbuf_limit,
+		    "spool_server_back_channel_rcvbuf_limit");
 
 		/* create another gfmd connection for a foreground channel */
 		gfm_server = NULL;

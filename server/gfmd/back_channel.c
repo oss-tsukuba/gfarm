@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <sys/socket.h>
 
 #include <gfarm/gflog.h>
 #include <gfarm/gfarm_config.h>
@@ -782,6 +783,9 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		    peer, version);
 		giant_unlock();
 
+		(void)gfarm_sockbuf_apply_limit(peer_get_fd(peer),
+		    SO_SNDBUF, gfarm_metadb_server_back_channel_sndbuf_limit,
+		    "metadb_server_back_channel_sndbuf_limit");
 		peer_watch_access(peer);
 		callout_setfunc(host_status_callout(host),
 		    proto_status_send_thread_pool,

@@ -6,6 +6,7 @@
 /* GFS dependent */
 extern int gfarm_spool_server_listen_backlog;
 extern char *gfarm_spool_server_listen_address;
+extern int gfarm_spool_server_back_channel_rcvbuf_limit;
 extern char *gfarm_spool_root;
 enum gfarm_spool_check_level {
 	GFARM_SPOOL_CHECK_LEVEL_DEFAULT,
@@ -50,6 +51,7 @@ extern int gfarm_metadb_thread_pool_size;
 extern int gfarm_metadb_job_queue_length;
 extern int gfarm_metadb_heartbeat_interval;
 extern int gfarm_metadb_dbq_size;
+extern int gfarm_metadb_server_back_channel_sndbuf_limit;
 extern int gfarm_metadb_replica_remover_by_host_sleep_time;
 extern int gfarm_metadb_replica_remover_by_host_inode_step;
 extern int gfarm_replica_check;
@@ -139,6 +141,7 @@ gfarm_error_t gfarm_config_read_file(FILE *, int *);
 #endif
 void gfarm_config_set_default_ports(void);
 void gfarm_config_set_default_misc(void);
+gfarm_error_t gfarm_sockbuf_apply_limit(int, int, int, const char *);
 void gfs_display_timers(void);
 
 int gfarm_xattr_caching_patterns_number(void);
