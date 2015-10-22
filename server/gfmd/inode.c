@@ -440,15 +440,19 @@ inode_cksum_set(struct inode *inode,
 			   (unsigned long long)inode_get_gen(inode));
 			return (GFARM_ERR_NO_ERROR);
 		}
-		/*
-		 * this report is sent from a client about remote access,
-		 * and in that case, cksum should be set by gfsd already,
-		 * but it's not really set.
-		 */
-		gflog_notice(GFARM_MSG_1004207,
-		   "%s: (%llu:%llu): cksum is incorrectly set by client", diag,
-		   (unsigned long long)inode_get_number(inode),
-		   (unsigned long long)inode_get_gen(inode));
+		if (inode_get_size(inode) > 0) {
+			/*
+			 * this report is sent from a client
+			 * about remote access, and in that case,
+			 * cksum should be set by gfsd already,
+			 * but it's not really set.
+			 */
+			gflog_notice(GFARM_MSG_1004207,
+			   "%s: (%llu:%llu): "
+			   "cksum is incorrectly set by client", diag,
+			   (unsigned long long)inode_get_number(inode),
+			   (unsigned long long)inode_get_gen(inode));
+		}
 		/*
 		 * don't report error (SF.net #813),
 		 * because the way of cksum calculation is not exactly
