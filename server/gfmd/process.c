@@ -1089,8 +1089,20 @@ process_cksum_set(struct process *process, struct peer *peer, int fd,
 		    gfarm_error_string(e));
 		return (e);
 	}
-	return (file_opening_cksum_set(fo, cksum_type, cksum_len, cksum,
-	    flags, mtime));
+	e = file_opening_cksum_set(fo, cksum_type, cksum_len, cksum,
+	    flags, mtime);
+	if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_EXPIRED) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "(%s@%s) %s: inode %lld:%lld for %s-open%s: %s",
+		    peer_get_username(peer), peer_get_hostname(peer), diag,
+		    (long long)inode_get_number(fo->inode),
+		    (long long)inode_get_gen(fo->inode),
+		    accmode_to_string(fo->flag),
+		    (flags & GFM_PROTO_CKSUM_SET_REPORT_ONLY) != 0 ?
+		    " (report only)" : "",
+		    gfarm_error_string(e));
+	}
+	return (e);
 }
 
 gfarm_error_t

@@ -405,16 +405,8 @@ inode_cksum_set(struct inode *inode,
 				   (unsigned long long)inode_get_gen(inode),
 				   gfarm_error_string(e));
 				return (GFARM_ERR_NO_ERROR);
-			} else if ((cksum_result_flags &
-			    GFM_PROTO_CKSUM_SET_REPORT_ONLY) != 0) {
-				gflog_notice(GFARM_MSG_1004205,
-				   "%s: (%llu:%llu) %s (flaky network?)", diag,
-				   (unsigned long long)inode_get_number(inode),
-				   (unsigned long long)inode_get_gen(inode),
-				   gfarm_error_string(e));
-				/* don't report error (SF.net #813) XXX */
-				return (GFARM_ERR_NO_ERROR);
 			} else {
+				/* do this even if GFM_PROTO_CKSUM_SET_REPORT_ONLY */
 				gflog_error(GFARM_MSG_1003762,
 				   "%s: (%llu:%llu) %s", diag,
 				   (unsigned long long)inode_get_number(inode),

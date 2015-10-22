@@ -12,5 +12,6 @@ char *strdup_ck(const char *, const char *);
 char *strdup_log(const char *, const char *);
 
 int accmode_to_op(gfarm_uint32_t);
+const char *accmode_to_string(gfarm_uint32_t);
 
 gfarm_uint64_t trace_log_get_sequence_number(void);

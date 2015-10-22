@@ -248,6 +248,19 @@ accmode_to_op(gfarm_uint32_t flag)
 	return (op);
 }
 
+const char *
+accmode_to_string(gfarm_uint32_t flag)
+{
+	switch (flag & GFARM_FILE_ACCMODE) {
+	case GFARM_FILE_RDONLY:	return ("RDONLY");
+	case GFARM_FILE_WRONLY:	return ("WRONLY");
+	case GFARM_FILE_RDWR:	return ("RDWR");
+	case GFARM_FILE_LOOKUP:	return ("LOOKUP");
+	}
+	assert(0);
+	return ("shouldn't happen");
+}
+
 /* giant_lock should be held before calling this */
 gfarm_uint64_t
 trace_log_get_sequence_number(void)
