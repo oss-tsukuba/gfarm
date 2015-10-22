@@ -1395,8 +1395,8 @@ process_replica_added(struct process *process,
 		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_SUM_AVAIL
 		    ) == 0 && cksum_type != NULL && *cksum_type != '\0' &&
 		    cksum_len > 0) {
-			e = inode_cksum_set(fo->inode,
-			    cksum_type, cksum_len, cksum, cksum_result_flags);
+			e = inode_cksum_set(fo->inode, cksum_type, cksum_len,
+			    cksum, cksum_result_flags, 0);
 			if (e != GFARM_ERR_NO_ERROR)
 				gflog_notice(GFARM_MSG_1004221,
 				    "checksum error during replication of "

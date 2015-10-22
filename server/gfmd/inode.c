@@ -375,7 +375,7 @@ cmp_cksum(struct checksum *c1,
 gfarm_error_t
 inode_cksum_set(struct inode *inode,
 	const char *cksum_type, size_t cksum_len, const char *cksum,
-	gfarm_int32_t cksum_result_flags)
+	gfarm_int32_t cksum_result_flags, int i_am_only_writer)
 {
 	gfarm_error_t e;
 	struct inode_activity *ia = inode->u.c.activity;
@@ -397,7 +397,8 @@ inode_cksum_set(struct inode *inode,
 	if (cs != NULL) {
 		if (cmp_cksum(cs, cksum_type, cksum_len, cksum) != 0) {
 			e = GFARM_ERR_CHECKSUM_MISMATCH;
-			if (ia != NULL && ia->u.f.writers >= 1) {
+			if (ia != NULL && ia->u.f.writers >= 1 &&
+			    !i_am_only_writer) {
 				gflog_debug(GFARM_MSG_1003761,
 				   "%s: (%llu:%llu) %s", diag,
 				   (unsigned long long)inode_get_number(inode),
@@ -431,7 +432,7 @@ inode_cksum_set(struct inode *inode,
 		}
 	} else if ((cksum_result_flags & GFM_PROTO_CKSUM_SET_REPORT_ONLY)
 	    != 0) {
-		if (ia != NULL && ia->u.f.writers >= 1) {
+		if (ia != NULL && ia->u.f.writers >= 1 && !i_am_only_writer) {
 			gflog_debug(GFARM_MSG_1004206,
 			   "%s: (%llu:%llu) client cksum report "
 			    "about multiple writer case", diag,
@@ -491,7 +492,8 @@ file_opening_cksum_set(struct file_opening *fo,
 		gflog_debug(GFARM_MSG_1001714, "file checksum is invalidated");
 		return (GFARM_ERR_EXPIRED);
 	}
-	e = inode_cksum_set(fo->inode, cksum_type, cksum_len, cksum, flags);
+	e = inode_cksum_set(fo->inode, cksum_type, cksum_len, cksum, flags,
+	    ia->u.f.writers == 1 && (accmode_to_op(fo->flag) & GFS_W_OK) != 0);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e); /* inode_cksum_set() calls gflog_debug */
 
@@ -4553,7 +4555,7 @@ inode_replicated(struct file_replicating *fr,
 			 * `cs == NULL' is OK, since r8972.
 			 */
 			e = inode_cksum_set(inode, cksum_type, cksum_len,
-			    cksum, cksum_result_flags);
+			    cksum, cksum_result_flags, 0);
 			if (e != GFARM_ERR_NO_ERROR)
 				gflog_notice(GFARM_MSG_1004223,
 				    "checksum error during replication of "
