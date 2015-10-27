@@ -20,9 +20,9 @@ trap 'gfmdhost -d $tmphost 2>/dev/null; exit $exit_code' 0
 if gfmdhost -c -t s -C FOR-REGRESS -p 60000 $tmphost >/dev/null &&
    gfmdhost -l |
 	grep "^- slave  async s FOR-REGRESS  $tmphost 60000"'$' >/dev/null &&
-   gfmdhost -m -t c -C XXX-REGRESS -p 60000 $tmphost >/dev/null &&
+   gfmdhost -m -t c -C XXX-REGRESS -p 50000 $tmphost >/dev/null &&
    gfmdhost -l |
-	grep "^- slave  async c XXX-REGRESS  $tmphost 60000"'$' >/dev/null &&
+	grep "^- slave  async c XXX-REGRESS  $tmphost 50000"'$' >/dev/null &&
    gfmdhost -d $tmphost
 then
    if gfmdhost | grep "^$tmphost"'$' >/dev/null; then
