@@ -494,6 +494,30 @@ gfarm_set_global_user_by_gsi(struct gfm_connection *gfm_server)
 }
 #endif /* HAVE_GSI */
 
+static void
+gfm_client_connection_report_error(int fd, const char *hostname, int port,
+	struct gfarm_metadb_server *ms)
+{
+	int error = -1;
+	socklen_t error_size = sizeof(error);
+	int rv = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &error_size);
+
+	if (rv == -1) /* Solaris, see UNP by rstevens */
+		error = errno;
+	if (error == ECONNREFUSED) /* possibly slave gfmd, do not report */
+		return;
+	if (ms == NULL) /* gfm_client_connect_single */
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "connecting to gfmd at %s:%d: %s",
+		    hostname, port, strerror(error));
+	else /* gfm_client_connect_multiple */
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "connecting to gfmd at %s:%d: %s",
+		    gfarm_metadb_server_get_name(ms),
+		    gfarm_metadb_server_get_port(ms),
+		    strerror(error));
+}
+
 static gfarm_error_t
 gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	struct gfm_connection **gfm_serverp, const char *source_ip,
@@ -542,7 +566,8 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	e = GFARM_ERR_NO_ERROR;
 	do {
 		errno = 0;
-		r = poll(pfds, nfd, 1000);
+		r = poll(pfds, nfd,
+		    gfarm_ctxp->gfmd_authentication_timeout * 1000);
 		if (r == -1) {
 			e = gfarm_errno_to_error(errno);
 			gflog_debug(GFARM_MSG_1003877,
@@ -552,15 +577,29 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 		}
 		if (r == 0) {
 			e = GFARM_ERR_CONNECTION_REFUSED;
-			gflog_debug(GFARM_MSG_1003878,
-			    "poll: %s",
-			    gfarm_error_string(e));
+			for (i = 0; i < nfd; i++) {
+				ci = &cis[i];
+				if (ci->pfd->fd == -1) /* error on this fd */
+					continue;
+				ms = ci->ms;
+				/* ms == NULL, if gfm_client_connect_single */
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "connected to gfmd at %s:%d, "
+				    "but no reponse within %d second",
+				    ms == NULL ? hostname :
+				    gfarm_metadb_server_get_name(ms),
+				    ms == NULL ? port :
+				    gfarm_metadb_server_get_port(ms),
+				    gfarm_ctxp->gfmd_authentication_timeout);
+			}
 			break;
 		}
 		for (i = 0; i < nfd; ++i) {
 			ci = &cis[i];
 			pfd = ci->pfd;
 			if ((pfd->revents & (POLLERR|POLLHUP|POLLNVAL)) != 0) {
+				gfm_client_connection_report_error(
+				    pfd->fd, hostname, port, ci->ms);
 				close(pfd->fd);
 				pfd->fd = -1;
 				if (++nerr < nfd)

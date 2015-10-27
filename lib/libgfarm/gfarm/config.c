@@ -910,6 +910,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 /* miscellaneous */
 #define GFARM_LOG_MESSAGE_VERBOSE_DEFAULT	0
 #define GFARM_NO_FILE_SYSTEM_NODE_TIMEOUT_DEFAULT 30 /* 30 seconds */
+#define GFARM_GFMD_AUTHENTICATION_TIMEOUT_DEFAULT 1 /* 1 seconds */
 #define GFARM_GFMD_RECONNECTION_TIMEOUT_DEFAULT 30 /* 30 seconds */
 #define GFARM_GFSD_CONNECTION_TIMEOUT_DEFAULT 30 /* 30 seconds */
 #define GFARM_ATTR_CACHE_LIMIT_DEFAULT		40000 /* 40,000 entries */
@@ -2923,6 +2924,9 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "no_file_system_node_timeout") == 0) {
 		e = parse_set_misc_int(
 		    p, &gfarm_ctxp->no_file_system_node_timeout);
+	} else if (strcmp(s, o = "gfmd_authentication_timeout") == 0) {
+		e = parse_set_misc_int(
+		    p, &gfarm_ctxp->gfmd_authentication_timeout);
 	} else if (strcmp(s, o = "gfmd_reconnection_timeout") == 0) {
 		e = parse_set_misc_int(
 		    p, &gfarm_ctxp->gfmd_reconnection_timeout);
@@ -3251,6 +3255,10 @@ gfarm_config_set_default_misc(void)
 	    GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->no_file_system_node_timeout =
 		    GFARM_NO_FILE_SYSTEM_NODE_TIMEOUT_DEFAULT;
+	if (gfarm_ctxp->gfmd_authentication_timeout ==
+	    GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->gfmd_authentication_timeout =
+		    GFARM_GFMD_AUTHENTICATION_TIMEOUT_DEFAULT;
 	if (gfarm_ctxp->gfmd_reconnection_timeout == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->gfmd_reconnection_timeout =
 		    GFARM_GFMD_RECONNECTION_TIMEOUT_DEFAULT;

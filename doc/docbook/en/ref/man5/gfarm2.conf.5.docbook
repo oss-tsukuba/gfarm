@@ -1701,6 +1701,22 @@ The default is 30 seconds.
 </varlistentry>
 
 <varlistentry>
+<term><token>gfmd_authentication_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>After the connection to the metadata server is established,
+Gfarm client library starts an authentication procedure,
+but gives up the procedure, if this timeout period is passed
+without any response from the metadata server.
+This unit of this directive is second, and the default value is 1.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	gfmd_authentication_timeout 20
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>gfmd_reconnection_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>If the connection to the metadata server is disconnected,
@@ -2276,6 +2292,7 @@ notation.</para>
 	&lt;fatal_action_statement&gt; |
 	&lt;debug_command_statement&gt; |
 	&lt;no_file_system_node_timeout_statement&gt; |
+	&lt;gfmd_authentication_timeout_statement&gt; |
 	&lt;gfmd_reconnection_timeout_statement&gt; |
 	&lt;gfsd_connection_timeout_statement&gt; |
 <!--	&lt;record_atime_statement&gt; | -->
@@ -2743,6 +2760,11 @@ notation.</para>
 <varlistentry>
 <term>&lt;no_file_system_node_timeout_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"no_file_system_node_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;gfmd_authentication_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"gfmd_authentication_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

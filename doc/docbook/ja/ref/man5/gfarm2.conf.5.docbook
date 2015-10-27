@@ -1649,6 +1649,20 @@ Gfarmクライアントライブラリはファイルシステムノードが利
 </varlistentry>
 
 <varlistentry>
+<term><token>gfmd_authentication_timeout</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>メタデータサーバへの接続後、認証要求への反応がない場合の
+タイムアウト時間を秒単位で指定します。
+デフォルトは 1秒です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	gfmd_authentication_timeout 20
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>gfmd_reconnection_timeout</token> <parameter moreinfo="none">秒数</parameter></term>
 <listitem>
 <para>メタデータサーバへの接続が切断された場合，
@@ -2217,6 +2231,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;fatal_action_statement&gt; |
 	&lt;debug_command_statement&gt; |
 	&lt;no_file_system_node_timeout_statement&gt; |
+	&lt;gfmd_authentication_timeout_statement&gt; |
 	&lt;gfmd_reconnection_timeout_statement&gt; |
 	&lt;gfsd_connection_timeout_statement&gt; |
 <!--	&lt;record_atime_statement&gt; | -->
@@ -2684,6 +2699,11 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <varlistentry>
 <term>&lt;no_file_system_node_timeout_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"no_file_system_node_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;gfmd_authentication_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"gfmd_authentication_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
