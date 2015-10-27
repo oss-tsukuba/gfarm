@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>27 Aug 2015</date></refentryinfo>
+<refentryinfo><date>27 Oct 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -320,6 +320,26 @@ statement for details.
 </varlistentry>
 
 <varlistentry>
+<term><token>spool_server_back_channel_rcvbuf_limit</token> <parameter moreinfo="none">size</parameter></term>
+<listitem>
+<para>This directive specifies the upper limit of SO_RCVBUF
+for the back channel socket of gfsd.
+By decreasing this value, the number of outstanding requests from gfmd to gfsd
+can be limited.
+The default value of this limit depends on the OS.
+</para>
+<para>
+This parameter is only available in gfarm2.conf which is referred by gfsd,
+and ignored clients, and ignored in gfmd.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	spool_server_back_channel_rcvbuf_limit 16384
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>spool_check_level</token> <parameter moreinfo="none">level</parameter></term>
 <listitem>
 <para>
@@ -578,6 +598,25 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	metadb_server_dbq_size 65536
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_back_channel_sndbuf_limit</token> <parameter moreinfo="none">size</parameter></term>
+<listitem>
+<para>This directive specifies the upper limit of SO_SNDBUF
+for the socket that the metadata server connects to the gfsd back channel.
+By decreasing this value, the number of outstanding requests from gfmd to gfsd
+can be limited.
+The default value of this limit depends on the OS.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_back_channel_sndbuf_limit 16384
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2167,6 +2206,7 @@ notation.</para>
 	&lt;spool_server_cred_type_statement&gt; |
 	&lt;spool_server_cred_service_statement&gt; |
 	&lt;spool_server_cred_name_statement&gt; |
+	&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; |
 	&lt;spool_check_level_statement&gt; |
 	&lt;spool_base_load_statement&gt; |
 	&lt;spool_digest_error_check_statement&gt; |
@@ -2182,6 +2222,7 @@ notation.</para>
 	&lt;metadb_server_job_queue_length_statement&gt; |
 	&lt;metadb_server_heartbeat_interval_statement&gt; |
 	&lt;metadb_server_dbq_size_statement&gt; |
+	&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; |
 	&lt;ldap_server_host_statement&gt; |
 	&lt;ldap_server_port_statement&gt; |
 	&lt;ldap_base_dn_statement&gt; |
@@ -2294,6 +2335,11 @@ notation.</para>
 </varlistentry>
 
 <varlistentry>
+<term>&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_server_back_channel_rcvbuf_limit" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
 <term>&lt;spool_check_level_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"spool_check_level" &lt;spck_level&gt;</literallayout></listitem>
 </varlistentry>
@@ -2366,6 +2412,11 @@ notation.</para>
 <varlistentry>
 <term>&lt;metadb_server_dbq_size_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_server_dbq_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_back_channel_sndbuf_limit" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
