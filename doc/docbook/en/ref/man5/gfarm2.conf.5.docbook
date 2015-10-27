@@ -2227,6 +2227,7 @@ notation.</para>
 	&lt;xattr_size_limit_statement&gt; |
 	&lt;attr_cache_limit_statement&gt; |
 	&lt;attr_cache_timeout_statement&gt; |
+	&lt;page_cache_timeout_statement&gt; |
 	&lt;log_level_statement&gt; |
 	&lt;log_message_verbose_level_statement&gt; |
 	&lt;log_auth_verbose_statement&gt; |
@@ -2648,6 +2649,11 @@ notation.</para>
 <varlistentry>
 <term>&lt;attr_cache_timeout_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"attr_cache_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;page_cache_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"page_cache_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
