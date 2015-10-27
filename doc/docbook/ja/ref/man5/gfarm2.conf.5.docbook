@@ -2180,6 +2180,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;debug_command_statement&gt; |
 	&lt;no_file_system_node_timeout_statement&gt; |
 	&lt;gfmd_reconnection_timeout_statement&gt; |
+	&lt;gfsd_connection_timeout_statement&gt; |
 <!--	&lt;record_atime_statement&gt; | -->
 	&lt;atime_statement&gt; |
 	&lt;client_digest_check_statement&gt; |
