@@ -737,6 +737,9 @@ check_node_group(const char *url, size_t nreps, gfarm_repattr_t *reps)
 		}
 	}
 error:
+	if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "%s: %s\n", g != NULL ? g : url,
+		    gfarm_error_string(e));
 	gfarm_hash_table_free(ngroup);
 	if (nginfos != NULL) {
 		for (i = 0; i < n; ++i) {
@@ -745,9 +748,6 @@ error:
 		}
 		free(nginfos);
 	}
-	if (e != GFARM_ERR_NO_ERROR)
-		fprintf(stderr, "%s: %s\n", g != NULL ? g : url,
-		    gfarm_error_string(e));
 	return (e);
 }
 
