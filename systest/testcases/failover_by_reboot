@@ -38,13 +38,13 @@ test_failover_by_reboot()
 	$GFSERVICE systest::gfarm_v2::reboot_host gfmd1
 	[ $? -ne 0 ] && log_warn "$TESTNAME: failed to reboot gfmd1"
 
-	# step: promote gfmd on gfmd2
-	$GFSERVICE promote-gfmd gfmd2
-	[ $? -ne 0 ] && log_warn "$TESTNAME: failed to promote gfmd on gfmd2"
-
 	# wait for gfmd1 down here, otherwise failover fails due to:
 	# <err> [1003839] cannot transform to the master gfmd because another master gfmd is already running
 	sleep 5
+
+	# step: promote gfmd on gfmd2
+	$GFSERVICE promote-gfmd gfmd2
+	[ $? -ne 0 ] && log_warn "$TESTNAME: failed to promote gfmd on gfmd2"
 
 	# step: check whether gfmd on gfmd2 is master
 	check_gfmd_master gfmd2 client1 $RETRY_COUNT $RETRY_INTERVAL
