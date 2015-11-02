@@ -412,6 +412,10 @@ inode_cksum_set(struct inode *inode,
 				   (unsigned long long)inode_get_number(inode),
 				   (unsigned long long)inode_get_gen(inode),
 				   gfarm_error_string(e));
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "cksum %s:<%.*s> vs %s:<%.*s>",
+				    cs->type, (int)cs->len, cs->sum,
+				    cksum_type, (int)cksum_len, cksum);
 				return (e);
 			}
 		} else {
