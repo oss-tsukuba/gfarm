@@ -145,6 +145,8 @@ gftool/gfwhoami/gfwhoami.sh
 gftool/gfwhoami/gfwhoami_mds2.sh
 gftool/gfxattr/gfxattr-long-value.sh
 gftool/gfxattr/gfxattr-xml-long-value.sh
+gftool/gfxattr/gfxattr-size-limit.sh
+gftool/gfxattr/gfxattr-xml-size-limit.sh
 gftool/gfxattr/gfxattr-xml-non-utf8-value.sh
 gftool/gfncopy/gfncopy-s.sh
 gftool/gfncopy/gfncopy-S-repattr.sh

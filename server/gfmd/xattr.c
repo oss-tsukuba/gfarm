@@ -368,14 +368,27 @@ xattr_set(int xmlMode, struct inode *inode,
 {
 	gfarm_error_t e;
 	int have_replica_spec, change_replica_spec = 0, done;
+	int size_limit;
+
+	if (xmlMode) {
+		/*
+		 * NOTE: the "+ 1" below is for trailing NUL.
+		 * XXX:
+		 *	the XML protocol should use "s" format 
+		 *	instead of "b"/"B",
+		 *	then extra "+ 1" in here and there was unnecessary,
+		 *	but it's too late.
+		 */
+		size_limit = gfarm_xmlattr_size_limit + 1;
+	} else
+		size_limit = gfarm_xattr_size_limit;
 
 	*addattr = 0;
 	if (!isvalid_attrname(attrname)) {
 		gflog_debug(GFARM_MSG_1002066,
 			"argument 'attrname' is invalid");
 		return (GFARM_ERR_INVALID_ARGUMENT);
-	} else if (*sizep >
-	    (xmlMode ? gfarm_xmlattr_size_limit : gfarm_xattr_size_limit)) {
+	} else if (*sizep > size_limit) {
 		return (GFARM_ERR_ARGUMENT_LIST_TOO_LONG); /* i.e. E2BIG */
 	}
 

@@ -424,8 +424,14 @@ enum gfm_proto_command {
 #define GFARM_XATTR_NAME_MAX			256
 
 /*
- * NOTE: GFARM_XATTR_SIZE_MAX_LIMIT and GFARM_XMLATTR_SIZE_MAX_LIMIT must be
+ * NOTE: GFARM_XATTR_SIZE_MAX_LIMIT and GFARM_XMLATTR_SIZE_MAX_LIMIT+1 must be
  * smaller than JOURNAL_RECORD_SIZE_MAX in server/gfmd/journal_file.c.
+ *
+ * NOTE: the "+1" for GFARM_XMLATTR_SIZE_MAX_LIMIT above is for trailing NUL.
+ * XXX:
+ *	the XML protocol should use "s" format instead of "b"/"B",
+ *	then extra "+ 1" in here and there was unnecessary,
+ *	but it's too late.
  */
 #define GFARM_XATTR_SIZE_MAX_DEFAULT		(64*1024)
 #define GFARM_XATTR_SIZE_MAX_LIMIT		(1024*1024-64*1024)
