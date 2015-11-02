@@ -1,22 +1,13 @@
 '\" t
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 27 Aug 2015
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 27 Oct 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "27 Aug 2015" "Gfarm" "Gfarm"
-.\" -----------------------------------------------------------------
-.\" * Define some portability stuff
-.\" -----------------------------------------------------------------
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.\" http://bugs.debian.org/507673
-.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.ie \n(.g .ds Aq \(aq
-.el       .ds Aq '
+.TH "GFARM2\&.CONF" "5" "27 Oct 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -35,7 +26,7 @@ gfarm2\&.confファイルは、gfarmプログラムの設定ファイルです�
 .PP
 アプリケーションプログラムは、環境変数GFARM_CONFIG_FILEで 指定したファイルと、%%SYSCONFDIR%%/gfarm2\&.confを、設定ファイル として参照します。この二つのファイルでは、環境変数GFARM_CONFIG_FILEで 指定したファイルの設定の方が先に読み込まれます。 どちらの設定ファイルも、同一の文法で記述します。 同一の指定文が複数あった場合には、先に指定されていた方が優先されます。 環境変数GFARM_CONFIG_FILEが設定されてない場合、代わりに ユーザのホームディレクトリにある\&.gfarm2rcファイルを使用します。
 .PP
-gfarm2\&.confは、一行に一文の形式で設定します。 ただし、行末に文字``\e\*(Aq\*(Aqを記述することによって、行を継続させることが できます。また、文字``#\*(Aq\*(Aqから行末までは、コメントとして扱われ、無視 されます。
+gfarm2\&.confは、一行に一文の形式で設定します。 ただし、行末に文字``\e\'\'を記述することによって、行を継続させることが できます。また、文字``#\'\'から行末までは、コメントとして扱われ、無視 されます。
 .SH "ホスト指定"
 .PP
 引数として、\fIホスト指定\fRを記述できる文がいくつかありますが、 この場合、ホスト指定には、下記のいずれかを記述できます。
@@ -165,7 +156,7 @@ spool_server_cred_nameの 指定を行ってはいけません。
 host
 .RS 4
 ホスト証明書あるいはサービス証明書を用いることを示します。 サービス証明書を用いる場合、そのサービスの名前を
-spool_server_cred_serviceで指定します。 サービス名に「host」を指定した場合、 ファイル``/etc/grid\-security/hostcert\&.pem\*(Aq\*(Aqに あるホスト証明書を用います。 それ以外のサービス名を指定した場合、 ファイル``/etc/grid\-security/サービス/サービスcert\&.pem\*(Aq\*(Aq にあるサービス証明書を用います。 サービス名を省略した場合、「host」が指定されたとみなします。 ホスト証明書およびサービス証明書の場合、証明書のCommon Name欄のみを 比較します。Common Nameは、「CN=サービス名/ホスト名」の形式である必要が あります。また、ホスト名は、\fBgfhost\fRコマンドで指定した 正式名と正確に一致している必要があります。ホスト別名は許されません。
+spool_server_cred_serviceで指定します。 サービス名に「host」を指定した場合、 ファイル``/etc/grid\-security/hostcert\&.pem\'\'に あるホスト証明書を用います。 それ以外のサービス名を指定した場合、 ファイル``/etc/grid\-security/サービス/サービスcert\&.pem\'\' にあるサービス証明書を用います。 サービス名を省略した場合、「host」が指定されたとみなします。 ホスト証明書およびサービス証明書の場合、証明書のCommon Name欄のみを 比較します。Common Nameは、「CN=サービス名/ホスト名」の形式である必要が あります。また、ホスト名は、\fBgfhost\fRコマンドで指定した 正式名と正確に一致している必要があります。ホスト別名は許されません。
 .sp
 これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_HOSTBASED_SERVICEに 対応する機能です。
 .sp
@@ -187,7 +178,7 @@ user
 .RS 4
 ユーザ証明書を用いることを示します。 ユーザのアカウント名をspool_server_cred_nameで指定します。 アカウント名を省略した場合には、そのコマンドを起動したユーザ名が使われます。 この指定を利用する際には、spool_server_cred_serviceの 指定を行ってはいけません。
 .sp
-ユーザ名と証明書のDistinguished Nameの対応をとるため、 ``/etc/grid\-security/grid\-mapfile\*(Aq\*(Aqを用います。 このため、このファイルが存在しなかったり、あるいはこのファイルに登録 されてないユーザは、この機能を用いることができません。
+ユーザ名と証明書のDistinguished Nameの対応をとるため、 ``/etc/grid\-security/grid\-mapfile\'\'を用います。 このため、このファイルが存在しなかったり、あるいはこのファイルに登録 されてないユーザは、この機能を用いることができません。
 .sp
 これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_USER_NAMEに対応する機能です。
 .sp
@@ -236,6 +227,25 @@ spool_server_cred_name \fIcred_name\fR
 .RS 4
 GSI認証において、spool_server_cred_typeで指定した値に 応じて、gfsdが用いる証明書の設定を行います。
 sharedsecret利用時には、この指定は単に無視されます。 詳しくはspool_server_cred_typeの項を参照してください。
+.RE
+.PP
+spool_server_back_channel_rcvbuf_limit \fIバッファサイズ\fR
+.RS 4
+gfsd の back channel ソケットの、SO_RCVBUF サイズの上限を指定します。 バッファ長を短くすると，メタデータサーバからの要求が過度に溜らなくなります。 デフォルト値は OS に依存します。
+.sp
+この文は gfsd が参照する gfarm2\&.conf のみで有効であり、 クライアントや gfmd\&.conf では無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_server_back_channel_rcvbuf_limit 16384
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .PP
 spool_check_level \fIレベル\fR
@@ -476,6 +486,25 @@ metadb_server_dbq_size \fIキュー長\fR
 .\}
 .nf
 	metadb_server_dbq_size 65536
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+metadb_server_back_channel_sndbuf_limit \fIバッファサイズ\fR
+.RS 4
+メタデータサーバが gfsd back channel への接続に用いるソケットの SO_SNDBUF サイズの上限を指定します。 バッファ長を短くすると，gfsd への要求が過度に溜らなくなります。 デフォルト値は OS に依存します。
+.sp
+この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_server_back_channel_sndbuf_limit 16384
 .fi
 .if n \{\
 .RE
@@ -1349,6 +1378,7 @@ fatal_action \fI動作名\fR
 \fIbacktrace_and_abort\fR
 です。
 .sp
+
 例:
 .sp
 .if n \{\
@@ -1379,12 +1409,14 @@ backtrace_and_exit
 .PP
 abort
 .RS 4
+
 \fBabort\fR(3)
 を呼びます。
 .RE
 .PP
 exit
 .RS 4
+
 \fBexit\fR(3)
 を呼びます。
 .RE
@@ -1420,6 +1452,23 @@ no_file_system_node_timeout \fI秒数\fR
 .\}
 .nf
 	no_file_system_node_timeout 30
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+gfmd_authentication_timeout \fI秒数\fR
+.RS 4
+メタデータサーバへの接続後、認証要求への反応がない場合の タイムアウト時間を秒単位で指定します。 デフォルトは 1秒です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	gfmd_authentication_timeout 20
 .fi
 .if n \{\
 .RE
@@ -1802,6 +1851,7 @@ replica_check \fI有効性\fR
 .RS 4
 enableと指定した場合、gfmd内のreplica_check機能が ファイル複製の数と配置を自動的にチェックし、修復します。 replica_checkは必要なときにだけ動作します。 デフォルトはenableです。
 .sp
+
 \fBgfrepcheck\fRコマンドを使うと、 この挙動をオンライン状態で変更できます。
 .sp
 この文はgfmd\&.confのみで有効です。
@@ -1823,6 +1873,7 @@ replica_check_remove \fI有効性\fR
 .RS 4
 enableと指定した場合、gfmd内のreplica_check機能が 余剰ファイル複製を自動的に削除します。 例外として、ファイルにハードリンクが設定されていて (nlink >= 2)、 そのファイル自身に複製数の設定 (gfarm\&.ncopy または gfarm\&.replicainfo) がされていない場合、そのファイルの余剰ファイル複製は削除されません。 デフォルトはenableです。
 .sp
+
 \fBgfrepcheck remove\fRコマンドを使うと、 この挙動をオンライン状態で変更できます。
 .sp
 この文はgfmd\&.confのみで有効です。
@@ -1844,6 +1895,7 @@ replica_check_reduced_log \fI有効性\fR
 .RS 4
 enableと指定した場合、 replica_check機能が出力するログメッセージが抑制されることがあります。 デフォルトはenableです。
 .sp
+
 \fBgfrepcheck reduced_log\fRコマンドを使うと、 この挙動をオンライン状態で変更できます。
 .sp
 この文はgfmd\&.confのみで有効です。
@@ -1934,6 +1986,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<spool_server_cred_type_statement> |
 	<spool_server_cred_service_statement> |
 	<spool_server_cred_name_statement> |
+	<spool_server_back_channel_rcvbuf_limit_statement> |
 	<spool_check_level_statement> |
 	<spool_base_load_statement> |
 	<spool_digest_error_check_statement> |
@@ -1949,6 +2002,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<metadb_server_job_queue_length_statement> |
 	<metadb_server_heartbeat_interval_statement> |
 	<metadb_server_dbq_size_statement> |
+	<metadb_server_back_channel_sndbuf_limit_statement> |
 	<ldap_server_host_statement> |
 	<ldap_server_port_statement> |
 	<ldap_base_dn_statement> |
@@ -2001,6 +2055,10 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<file_trace_statement> |
 	<fatal_action_statement> |
 	<debug_command_statement> |
+	<no_file_system_node_timeout_statement> |
+	<gfmd_authentication_timeout_statement> |
+	<gfmd_reconnection_timeout_statement> |
+	<gfsd_connection_timeout_statement> |
 
 	<atime_statement> |
 	<client_digest_check_statement> |
@@ -2109,6 +2167,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "spool_server_cred_name" <cred_name>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<spool_server_back_channel_rcvbuf_limit_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"spool_server_back_channel_rcvbuf_limit" <number>
 .fi
 .if n \{\
 .RE
@@ -2319,6 +2391,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "metadb_server_dbq_size" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<metadb_server_back_channel_sndbuf_limit_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_server_back_channel_sndbuf_limit" <number>
 .fi
 .if n \{\
 .RE
@@ -3070,6 +3156,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
+<gfmd_authentication_timeout_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"gfmd_authentication_timeout" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <gfmd_reconnection_timeout_statement> ::=
 .RS 4
 .sp
@@ -3764,6 +3864,7 @@ $HOME/\&.gfarm2rc
 .RE
 .SH "SEE ALSO"
 .PP
+
 \fBgfmd\fR(8),
 \fBgfsd\fR(8),
 \fBsetsockopt\fR(2)
