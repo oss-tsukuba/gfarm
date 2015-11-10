@@ -17,6 +17,7 @@
 #include <gfarm/gfs.h>
 
 #include "gfutil.h"
+#include "gflog_reduced.h"
 #include "thrsubr.h"
 
 #include "context.h"
@@ -270,6 +271,17 @@ gfs_client_fhremove_free(void *p, void *arg)
 	removal_finishedq_enqueue(dfc, GFARM_ERR_CONNECTION_ABORTED);
 }
 
+#define SAME_WARNING_TRIGGER	10	/* check reduced mode */
+#define SAME_WARNING_THRESHOLD	30	/* more than this -> reduced mode */
+#define SAME_WARNING_DURATION	600	/* seconds to measure the limit */
+#define	SAME_WARNING_INTERVAL	60	/* seconds: interval of reduced log */
+
+struct gflog_reduced_state busy_state = GFLOG_REDUCED_STATE_INITIALIZER(
+	SAME_WARNING_TRIGGER,
+	SAME_WARNING_THRESHOLD,
+	SAME_WARNING_DURATION,
+	SAME_WARNING_INTERVAL);
+
 static void *
 gfs_client_fhremove_request(void *closure)
 {
@@ -286,7 +298,7 @@ gfs_client_fhremove_request(void *closure)
 	if (e == GFARM_ERR_NO_ERROR) {
 		return (NULL);
 	} else if (e == GFARM_ERR_DEVICE_BUSY) {
-		gflog_info(GFARM_MSG_1002284,
+		gflog_reduced_info(GFARM_MSG_1002284, &busy_state,
 		    "%s(%lld, %lld, %s): "
 		    "busy, waiting for some time", diag,
 		    (long long)dead_file_copy_get_ino(dfc),
