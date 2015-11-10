@@ -288,7 +288,7 @@ main(int argc, char **argv)
 
 	if (nhosts == 0) {
 		fprintf(stderr, "%s: %s\n", program_name,
-		    gfarm_error_string(GFARM_ERRMSG_NO_FILESYSTEM_NODE));
+		    gfarm_error_string(GFARM_ERR_NO_FILESYSTEM_NODE));
 		exit(1);
 	}
 	for (i = 0; i < nhosts; i++) {

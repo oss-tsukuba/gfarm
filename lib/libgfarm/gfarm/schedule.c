@@ -1024,13 +1024,13 @@ search_idle_init_state(struct search_idle_state *s,
 	 * If we don't check enough_number or desired_number here,
 	 * the behavior of search_idle() becomes undeterministic.
 	 * i.e. If there is a candidate, search_idle() returns NULL,
-	 * otherwise GFARM_ERRMSG_NO_FILESYSTEM_NODE.
+	 * otherwise GFARM_ERR_NO_FILESYSTEM_NODE.
 	 */
 	if (s->enough_number == 0 || s->desired_number == 0 ||
 	    staticp->search_idle_candidate_list == NULL) {
 		gflog_debug(GFARM_MSG_1001437,
 		    "search_idle_init_state: no answer is requested");
-		return (GFARM_ERRMSG_NO_FILESYSTEM_NODE);
+		return (GFARM_ERR_NO_FILESYSTEM_NODE);
 	}
 
 	syserr = gfarm_eventqueue_alloc(CONCURRENCY, &s->q);
@@ -1765,7 +1765,7 @@ search_idle(struct gfm_connection *gfm_server,
 	if (s.usable_hosts_number == 0) {
 		gflog_debug(GFARM_MSG_1001450,
 		    "search_idle: no filesystem node");
-		return (GFARM_ERRMSG_NO_FILESYSTEM_NODE);
+		return (GFARM_ERR_NO_FILESYSTEM_NODE);
 	}
 
 	assert(s.available_hosts_number >= s.usable_hosts_number);
@@ -1849,7 +1849,7 @@ search_idle_cyclic(struct gfm_connection *gfm_server,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (nfound == 0)
-		return (GFARM_ERRMSG_NO_FILESYSTEM_NODE);
+		return (GFARM_ERR_NO_FILESYSTEM_NODE);
 	if (nohosts > nfound)
 		hosts_expand_cyclic(nfound, ohosts, oports,
 		    nohosts - nfound, &ohosts[nfound], &oports[nfound]);
@@ -1953,7 +1953,7 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 	SCHED_MUTEX_LOCK(staticp)
 	e = select_hosts(gfm_server, 1, write_mode, target_domain,
 		nhosts, infos, &n, &host, &port);
-	if (target_domain != NULL && e == GFARM_ERRMSG_NO_FILESYSTEM_NODE)
+	if (target_domain != NULL && e == GFARM_ERR_NO_FILESYSTEM_NODE)
 		e = select_hosts(gfm_server, 1, write_mode, NULL,
 			nhosts, infos, &n, &host, &port);
 	SCHED_MUTEX_UNLOCK(staticp)
@@ -1962,7 +1962,7 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 	if (n == 0) { /* although this shouldn't happen */
 		gflog_debug(GFARM_MSG_1001456,
 		    "gfarm_schedule_select_host: no filesystem node");
-		return (GFARM_ERRMSG_NO_FILESYSTEM_NODE);
+		return (GFARM_ERR_NO_FILESYSTEM_NODE);
 	}
 	host = strdup(host);
 	if (host == NULL) {
@@ -2009,7 +2009,7 @@ select_hosts_by_path_rpc(struct gfm_connection **gfm_serverp, void *closure)
 		gflog_debug(GFARM_MSG_1003992,
 		    "select_hosts: %s",
 		    gfarm_error_string(e));
-	if (si->target_domain != NULL && e == GFARM_ERRMSG_NO_FILESYSTEM_NODE)
+	if (si->target_domain != NULL && e == GFARM_ERR_NO_FILESYSTEM_NODE)
 		e = select_hosts(*gfm_serverp, si->acyclic, si->write_mode,
 			NULL, si->ninfos, si->infos, si->nohostsp, si->ohosts,
 			si->oports);

@@ -144,6 +144,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"checksum mismatch",
 	"conflict detected",
 	"invalid credential",
+	"no filesystem node",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
@@ -256,8 +257,8 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	/* refered only from gfarm/glob.c */
 	"gfs_glob(): gfarm library isn't properly initialized",
 
-	/* refered only from gfarm/schedule.c */
-	"no filesystem node",
+	/* OBSOLETE: should be able to be removed, but keeped for safety */
+	"no filesystem node (obsolete)",
 
 	/* refered only from gfarm/auth_common_gsi.c */
 	"cred_type is not set, but cred_name is set",
@@ -438,6 +439,9 @@ static struct gfarm_errno_error_map {
 	/*		GFARM_ERR_BAD_COOKIE */
 	/*		GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS */
 	/*		GFARM_ERR_CHECKSUM_MISMATCH */
+	/*		GFARM_ERR_CONFLICT_DETECTED */
+	/*		GFARM_ERR_INVALID_CREDENTIAL */
+	/*		GFARM_ERR_NO_FILESYSTEM_NODE */
 };
 
 /* gfarm_error_t -> UNIX errno */
@@ -446,6 +450,7 @@ static struct gfarm_error_errno_map {
 	gfarm_error_t gfarm_error;
 } gfarm_error_errno_map_table[] = {
 	{ EIO,		GFARM_ERR_CHECKSUM_MISMATCH },
+	{ EIO,		GFARM_ERR_NO_FILESYSTEM_NODE },
 };
 
 struct gfarm_error_domain {

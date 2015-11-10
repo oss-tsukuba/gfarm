@@ -630,7 +630,7 @@ gfarm_schedule_file_cache(GFS_File gf, char **hostp, gfarm_int32_t *portp,
 		    (gf->mode & GFS_FILE_MODE_WRITE) != 0, &host, &port);
 	}
 	/* in case of no file system node, clear status of connection cache */
-	if (e == GFARM_ERRMSG_NO_FILESYSTEM_NODE)
+	if (e == GFARM_ERR_NO_FILESYSTEM_NODE)
 		gfarm_schedule_host_cache_reset(gf->gfm_server, nhosts, infos);
 	gfarm_host_sched_info_free(nhosts, infos);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -717,7 +717,7 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 		if (host == NULL) {
 			e = gfarm_schedule_file_cache(gf, &host, &port, &nc);
 			/* reschedule another host */
-			if (e == GFARM_ERRMSG_NO_FILESYSTEM_NODE &&
+			if (e == GFARM_ERR_NO_FILESYSTEM_NODE &&
 			    !gfarm_timeval_is_expired(&expiration_time)) {
 				gflog_info(GFARM_MSG_1001359,
 				    "sleep %d sec: %s", sleep_interval,
@@ -748,7 +748,7 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 			 * reschedule another host unless host is
 			 * explicitly specified
 			 */
-			if ((e == GFARM_ERRMSG_NO_FILESYSTEM_NODE ||
+			if ((e == GFARM_ERR_NO_FILESYSTEM_NODE ||
 			     e == GFARM_ERR_FILE_MIGRATED ||
 			     e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE ||
 			    gfs_client_is_connection_error(e)) &&

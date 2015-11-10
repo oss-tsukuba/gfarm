@@ -249,7 +249,7 @@ display_statfs_nodes(const char *path, const char *domain, int *ndisplayed)
 		       "");
 	} else {
 		fprintf(stderr, "%s\n",
-		    gfarm_error_string(GFARM_ERRMSG_NO_FILESYSTEM_NODE));
+		    gfarm_error_string(GFARM_ERR_NO_FILESYSTEM_NODE));
 	}
 
 	gfarm_host_sched_info_free(nhosts, hosts);
