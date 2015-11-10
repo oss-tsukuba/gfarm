@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>27 Oct 2015</date></refentryinfo>
+<refentryinfo><date>10 Nov 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1653,7 +1653,7 @@ Gfarmクライアントライブラリはファイルシステムノードが利
 <listitem>
 <para>メタデータサーバへの接続後、認証要求への反応がない場合の
 タイムアウト時間を秒単位で指定します。
-デフォルトは 1秒です。
+デフォルトは 10秒です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
