@@ -5,7 +5,7 @@
 
 <refentry id="gfstat.1">
 
-<refentryinfo><date>22 May 2014</date></refentryinfo>
+<refentryinfo><date>12 Nov 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfstat</refentrytitle>
@@ -70,7 +70,7 @@ specified files or directories in the Gfarm filesystem.</para>
 <varlistentry>
 <term><option>-h</option> <parameter moreinfo="none">host</parameter></term>
 <listitem>
-<para>specifies the location of the file replica.  This option is only effective with the -c option.</para>
+<para>specifies the location of the file replica.  This option is only effective with the -r option.</para>
 </listitem>
 </varlistentry>
 
