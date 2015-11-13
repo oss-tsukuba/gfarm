@@ -4120,7 +4120,7 @@ inode_writing_spool_host(struct inode *inode)
 	return (NULL);
 }
 
-int
+gfarm_error_t
 inode_schedule_confirm_for_write(struct file_opening *opening,
 	struct host *spool_host, int *to_createp)
 {
@@ -4142,7 +4142,7 @@ inode_schedule_confirm_for_write(struct file_opening *opening,
 		    inode_get_size(inode) == 0);
 
 		if (!host_is_disk_available(spool_host, 0))
-			return (0);
+			return (GFARM_ERR_NO_SPACE);
 
 		/*
 		 * process_reopen_file() adds a replica,
@@ -4151,12 +4151,15 @@ inode_schedule_confirm_for_write(struct file_opening *opening,
 		 * simultaneously creating a file.
 		 */
 		*to_createp = 1;
-		return (1);
+		return (GFARM_ERR_NO_ERROR);
 	}
 
 	if ((writing_spool_host = inode_writing_spool_host(inode)) != NULL) {
 		/* this replica must be valid */
-		return (spool_host == writing_spool_host);
+		if (spool_host == writing_spool_host)
+			return (GFARM_ERR_NO_ERROR);
+		else
+			return (GFARM_ERR_FILE_MIGRATED);
 	}
 
 	/* not opened for writing */
@@ -4166,20 +4169,26 @@ inode_schedule_confirm_for_write(struct file_opening *opening,
 		 * if a replication is ongoing, don't allow to create new one,
 		 * because it incurs a race.
 		 */
-		return (FILE_COPY_IS_VALID(copy) /* == inode_has_replica() */
-		    && host_is_disk_available(spool_host, 0));
+		if (FILE_COPY_IS_VALID(copy) /* == inode_has_replica() */) {
+			if (host_is_disk_available(spool_host, 0))
+				return (GFARM_ERR_NO_ERROR);
+			else
+				return (GFARM_ERR_NO_SPACE);
+		} else
+			return (GFARM_ERR_FILE_MIGRATED); /* XXX ? */
 	}
 	if (((opening->flag & GFARM_FILE_TRUNC) != 0 ||
-	     inode_get_size(inode) == 0) &&
-	    host_is_disk_available(spool_host, 0)) {
+	     inode_get_size(inode) == 0)) {
+		if (!host_is_disk_available(spool_host, 0))
+			return (GFARM_ERR_NO_SPACE);
 		/*
 		 * http://sourceforge.net/apps/trac/gfarm/ticket/68
 		 * (measures against disk full for a file overwriting case)
 		 */
 		*to_createp = 1;
-		return (1);
+		return (GFARM_ERR_NO_ERROR);
 	}
-	return (0);
+	return (GFARM_ERR_FILE_MIGRATED);
 }
 
 static gfarm_error_t

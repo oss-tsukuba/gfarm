@@ -803,11 +803,11 @@ process_reopen_file(struct process *process,
 					gfarm_error_string(e));
 				return (e);
 			}
-		} else if (!inode_schedule_confirm_for_write(fo, spool_host,
-		    &to_create)) {
-			gflog_debug(GFARM_MSG_1001631,
-				"file migrated");
-			return (GFARM_ERR_FILE_MIGRATED);
+		} else if ((e = inode_schedule_confirm_for_write(
+		    fo, spool_host, &to_create)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001631, "%s",
+			    gfarm_error_string(e));
+			return (e);
 		}
 		if (to_create) {
 			e = inode_add_replica(fo->inode, spool_host, 1);
