@@ -6,7 +6,7 @@
 
 <refentry id="gfwhere.1">
 
-<refentryinfo><date>12 Mov 2006</date></refentryinfo>
+<refentryinfo><date>17 Nov 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfwhere</refentrytitle>
@@ -22,7 +22,7 @@
 <refsynopsisdiv id="synopsis">
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfwhere</command>
-    <arg choice="opt" rep="norepeat">-r, -R</arg>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
     <arg choice="plain" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -30,13 +30,101 @@
 <!-- body begins here -->
 
 <refsect1 id="description"><title>DESCRIPTION</title>
-<para><command moreinfo="none">gfwhere</command> prints replica locations of specified
-files.  When -r or -R option is specified, prints replica locations of
-subentries in specified directories recursively.</para>
+<para>
+The <command moreinfo="none">gfwhere</command> command prints hostnames
+of filesystem nodes which hold replicas of the specified files.
+</para>
 </refsect1>
 
 <refsect1 id="options"><title>OPTIONS</title>
 <variablelist>
+
+<varlistentry>
+<term><option>-a</option></term>
+<listitem>
+<para>
+Displays information of all replicas.
+This is similar to specifying the <option>-dio</option> options.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>
+Displays replicas on filesystem nodes which are currently down as well.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-F</option></term>
+<listitem>
+<para>
+Displays the following indicators just after each hostname.
+If the replica has been logically removed,
+but may still remain phisically, ";" and the replica's generation number
+are displayed.
+If the replica is incomplete because it's in the midst of replication,
+"?" is displayed.
+If the host is currently down, "-" is displayed.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-i</option></term>
+<listitem>
+<para>
+Displays incomplete replicas which are in the midst of replication.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>
+Displays in long format as follows.
+</para>
+<para>
+This displays one hostname in each line.
+</para>
+<para>
+If <option>-o</option> option or <option>-a</option> option is specified,
+this displays the generation number of the replica after the hostname.
+</para>
+<para>
+If <option>-d</option> option or <option>-a</option> option is specified,
+this displays an indicator which shows whether this host is down (d) or up (-)
+at next column.
+</para>
+<para>
+If <option>-i</option> option or <option>-a</option> option is specified,
+this displays an indicator which shows whether this replica is incomplete (i)
+or not (-) at next column.
+In the former case, this replica is in the midst of replication.
+</para>
+<para>
+If <option>-o</option> option or <option>-a</option> option is
+specified,
+this displays an indicator which shows whether this replica is obsolete (o)
+or not (-) at next column.
+In the former case, this replica has been logicall removed.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-o</option></term>
+<listitem>
+<para>
+Displays obsolete replicas which has been logically removed,
+but may still remain phisically.
+</para>
+</listitem>
+</varlistentry>
 
 <varlistentry>
 <term><option>-r, -R</option>
