@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfwhere</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfwhere">
 <a name="gfwhere.1"></a><div class="titlepage"></div>
@@ -12,18 +12,72 @@
 </div>
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfwhere</code>  [-r, -R]  <em class="replaceable"><code>path</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfwhere</code>  [<em class="replaceable"><code>オプション</code></em>]  <em class="replaceable"><code>path</code></em>... </p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
-<p>指定したファイルについて、レプリカの所在を表示します。
--r あるいは -R オプションを付けると、
-指定されたディレクトリに含まれるファイルのレプリカの所在を
-再帰的に表示します。</p>
+<p>
+指定したファイルについて、そのファイルのレプリカを保持する
+ファイルシステムノードのホスト名を表示します。
+</p>
 </div>
 <div class="refsect1" title="OPTIONS">
 <a name="options"></a><h2>OPTIONS</h2>
 <div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-a</code></span></dt>
+<dd><p>
+全てのレプリカに関する情報を表示します。
+オプション <code class="option">-dio</code> を指定するのと等価です。
+</p></dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>
+現在停止しているファイルシステムノード上に存在するレプリカの情報も表示します。
+</p></dd>
+<dt><span class="term"><code class="option">-F</code></span></dt>
+<dd><p>
+ホスト名の直後に、以下の情報もつけ加えて表示します。
+論理的には削除されているが、まだ実体が残っている可能性のあるレプリカの場合
+「;世代番号」、
+複製途中の不完全なレプリカの場合「?」、
+停止中のファイルシステムノードの場合「-」。
+</p></dd>
+<dt><span class="term"><code class="option">-i</code></span></dt>
+<dd><p>
+複製処理途中で、不完全な状態のレプリカの情報も表示します。
+</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd>
+<p>
+以下のように、より長い形式で表示します。
+</p>
+<p>
+一行に、ひとつのホストのみ表示して改行します。
+</p>
+<p>
+<code class="option">-o</code> オプションないし <code class="option">-a</code> オプションが
+指定されている場合は、ホスト名の後にレプリカの世代番号も表示します。
+</p>
+<p>
+<code class="option">-d</code> オプションないし <code class="option">-a</code> オプションが
+指定されている場合は、その次に、そのホストが停止しているか否かを表示します。
+停止している場合は「d」、稼働している場合は「-」となります。
+</p>
+<p>
+<code class="option">-i</code> オプションないし <code class="option">-a</code> オプションが
+指定されている場合は、その次に、そのレプリカが不完全な状態か否かを表示します。
+複製途中で不完全な場合は「i」、完全な状態の場合は「-」となります。
+</p>
+<p>
+<code class="option">-o</code> オプションないし <code class="option">-a</code> オプションが
+指定されている場合は、その次に、そのレプリカが論理的に削除済か否かを表示します。
+論理的に削除済の場合は「o」、削除されていない場合は「-」となります。
+</p>
+</dd>
+<dt><span class="term"><code class="option">-o</code></span></dt>
+<dd><p>
+論理的には削除されているが、物理的にはまだ存在している可能性があるレプリカの
+情報も表示します。
+</p></dd>
 <dt><span class="term"><code class="option">-r, -R</code></span></dt>
 <dd><p>ディレクトリに含まれるファイルのレプリカの所在を
 再帰的に表示します。</p></dd>
