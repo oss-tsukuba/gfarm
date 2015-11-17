@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfwhere</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfwhere">
 <a name="gfwhere.1"></a><div class="titlepage"></div>
@@ -12,17 +12,77 @@
 </div>
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfwhere</code>  [-r, -R]  <em class="replaceable"><code>path</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfwhere</code>  [<em class="replaceable"><code>options</code></em>]  <em class="replaceable"><code>path</code></em>... </p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
-<p><span class="command"><strong>gfwhere</strong></span> prints replica locations of specified
-files.  When -r or -R option is specified, prints replica locations of
-subentries in specified directories recursively.</p>
+<p>
+The <span class="command"><strong>gfwhere</strong></span> command prints hostnames
+of filesystem nodes which hold replicas of the specified files.
+</p>
 </div>
 <div class="refsect1" title="OPTIONS">
 <a name="options"></a><h2>OPTIONS</h2>
 <div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-a</code></span></dt>
+<dd><p>
+Displays information of all replicas.
+This is similar to specifying the <code class="option">-dio</code> options.
+</p></dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>
+Displays replicas on filesystem nodes which are currently down as well.
+</p></dd>
+<dt><span class="term"><code class="option">-F</code></span></dt>
+<dd><p>
+Displays the following indicators just after each hostname.
+If the replica has been logically removed,
+but may still remain phisically, ";" and the replica's generation number
+are displayed.
+If the replica is incomplete because it's in the midst of replication,
+"?" is displayed.
+If the host is currently down, "-" is displayed.
+</p></dd>
+<dt><span class="term"><code class="option">-i</code></span></dt>
+<dd><p>
+Displays incomplete replicas which are in the midst of replication.
+</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd>
+<p>
+Displays in long format as follows.
+</p>
+<p>
+This displays one hostname in each line.
+</p>
+<p>
+If <code class="option">-o</code> option or <code class="option">-a</code> option is specified,
+this displays the generation number of the replica after the hostname.
+</p>
+<p>
+If <code class="option">-d</code> option or <code class="option">-a</code> option is specified,
+this displays an indicator which shows whether this host is down (d) or up (-)
+at next column.
+</p>
+<p>
+If <code class="option">-i</code> option or <code class="option">-a</code> option is specified,
+this displays an indicator which shows whether this replica is incomplete (i)
+or not (-) at next column.
+In the former case, this replica is in the midst of replication.
+</p>
+<p>
+If <code class="option">-o</code> option or <code class="option">-a</code> option is
+specified,
+this displays an indicator which shows whether this replica is obsolete (o)
+or not (-) at next column.
+In the former case, this replica has been logicall removed.
+</p>
+</dd>
+<dt><span class="term"><code class="option">-o</code></span></dt>
+<dd><p>
+Displays obsolete replicas which has been logically removed,
+but may still remain phisically.
+</p></dd>
 <dt><span class="term"><code class="option">-r, -R</code>
 </span></dt>
 <dd><p>Displays subdirectories recursively.</p></dd>
