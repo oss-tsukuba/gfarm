@@ -5020,7 +5020,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 			} else if (replica_lost &&
 			    FILE_COPY_IS_BEING_REMOVED(copy)) {
 				/*
-				 * SF.net #XXX
+				 * SF.net #913
 				 * this file_copy will be removed at
 				 * dead_file_copy_free(), when it calls
 				 * inode_remove_replica_completed().
