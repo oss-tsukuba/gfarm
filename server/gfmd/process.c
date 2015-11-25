@@ -1383,6 +1383,13 @@ process_replica_added(struct process *process,
 			    (long long)inode_get_gen(fo->inode),
 			    gfarm_error_string(src_err),
 			    gfarm_error_string(dst_err));
+			/*
+			 * in this case, gfsd already knows the src_err
+			 * and dst_err, and will return the appropriate error
+			 * to the client.
+			 * thus, what gfmd should do here is to acknowledge
+			 * the report of the error.
+			 */
 			e = GFARM_ERR_NO_ERROR;
 		} else {
 			gflog_notice(GFARM_MSG_1002244,
