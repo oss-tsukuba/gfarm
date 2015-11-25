@@ -3628,6 +3628,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
 	free(path);
 	if (local_fd == -1) {
+		/* dst_err: invalidate */
 		e = dst_err = gfarm_errno_to_error(errno);
 		goto adding_cancel;
 	}
@@ -3638,7 +3639,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		gflog_debug(GFARM_MSG_1002177,
 			"gfs_client_connection_acquire_by_host() failed: %s",
 			gfarm_error_string(e));
-		src_err = e;
+		src_err = e; /* invalidate */
 		goto close;
 	}
 	if (msgdigest_init(cksum_type, &md_ctx, diag, ino, gen))
@@ -3671,25 +3672,27 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	if (e == GFARM_ERR_NO_ERROR)
 		e = src_err != GFARM_ERR_NO_ERROR ? src_err : dst_err;
 	else /* gfs_client_replica_recv*() may not change src_err/dst_err */
-		dst_err = e;
+		dst_err = e; /* invalidate */
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002178,
 			"gfs_client_replica_recv() failed: %s",
 			gfarm_error_string(e));
 		goto free_server;
 	}
-	if (md_ctxp != NULL)
+	if (md_ctxp != NULL) {
+		/* dst_err: invalidate */
 		e = dst_err = replication_dst_cksum_verify(
 		    issue_cksum_protocol,
 		    req_cksum_len, req_cksum,
 		    src_cksum_len, src_cksum,
 		    md_strlen, md_string,
 		    diag, issue_diag, ino, gen, host, port);
+	}
 
 	if (fstat(local_fd, &sb) == -1) {
 		e = gfarm_errno_to_error(errno);
 		if (dst_err == GFARM_ERR_NO_ERROR)
-			dst_err = e;
+			dst_err = e; /* invalidate */
 	} else {
 		filesize = sb.st_size;
 	}
