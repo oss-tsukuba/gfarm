@@ -3670,6 +3670,8 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 
 	if (e == GFARM_ERR_NO_ERROR)
 		e = src_err != GFARM_ERR_NO_ERROR ? src_err : dst_err;
+	else /* gfs_client_replica_recv*() may not change src_err/dst_err */
+		dst_err = e;
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002178,
 			"gfs_client_replica_recv() failed: %s",
@@ -3686,6 +3688,8 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 
 	if (fstat(local_fd, &sb) == -1) {
 		e = gfarm_errno_to_error(errno);
+		if (dst_err == GFARM_ERR_NO_ERROR)
+			dst_err = e;
 	} else {
 		filesize = sb.st_size;
 	}
