@@ -1,3 +1,29 @@
+Release note for Gfarm 2.6.7
+============================
+
+[2015.11.28]
+
+Updated feature
+* make gfarm2fs return EIO instead of EINVAL, when no replica is
+  available [sf.net ticket #924]
+
+Bug fix
+* gfrep and gfprep may create incomplete replica when network error
+  happens, which is introduced by Gfarm 2.6.0 [sf.net ticket #926]
+* local host is not selected when reading a file at first operation,
+  which was introduced by Gfarm 2.6.0
+* When a file system node crashes during receiving a file replica, the
+  metadata remains [sf.net ticket #913]
+* client_digest_check does not return an error even when checksum
+  mismatch happens [sf.net ticket #915, #916]
+* gfarm clients may access uninitialized data, and may dump core, if
+  $HOME/.gfarm2rc does not exist [sf.net ticket #912]
+* changing gfmd port number by "gfmdhost -m -p" makes gfmd crash
+  [sf.net ticket #918]
+* When trying to modify a file stored at a file server with no space
+  or in read-only mode, return no space immediately instead of
+  retrying for a while
+
 Release note for Gfarm 2.6.6
 ============================
 

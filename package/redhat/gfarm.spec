@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %if %{undefined ver}
-%define ver	2.6.6
+%define ver	2.6.7
 %endif
 %if %{undefined rel}
 %define rel	1
@@ -152,6 +152,9 @@ Gfarm performance monitoring plugin for Ganglia
 Development header files and libraries for Gfarm file system
 
 %changelog
+* Sat Nov 28 2015 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.6.7-1
+- Gfarm version 2.6.7 released
+
 * Sat Aug 29 2015 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.6.6-1
 - Gfarm version 2.6.6 released
 
