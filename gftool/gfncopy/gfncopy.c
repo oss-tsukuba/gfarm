@@ -715,9 +715,9 @@ check_node_group(const char *url, size_t nreps, gfarm_repattr_t *reps)
 		     url, &gfm_server)) != GFARM_ERR_NO_ERROR)
 		goto error;
 	e = gfm_client_fsngroup_get_all(gfm_server, &n, &nginfos);
+	gfm_client_connection_free(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR)
 		goto error;
-	gfm_client_connection_free(gfm_server);
 	for (i = 0; i < n; ++i) {
 		g = nginfos[i].fsngroupname;
 		if (g == NULL || g[0] == '\0')
