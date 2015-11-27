@@ -5,7 +5,7 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	gfxattr -g -f $getfile / $attrname 
+	gfxattr -g -f $getfile / $attrname
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -18,28 +18,28 @@
 # normal xattr limit test - 2
 {
 	attrfileBig="/etc/services"
-	gfxattr -s -f $attrfileBig / $attrname 
-	if [ $? != 0 ]; then
-		exit $exit_fail
-	fi
-	gfxattr -g -f $getfile / $attrname 
-	if [ $? != 0 ]; then
-		exit $exit_fail
-	fi
-	cmp $attrfileBig $getfile
-	if [ $? != 0 ]; then
-		exit $exit_fail
+	gfxattr -s -f $attrfileBig / $attrname
+	if [ $? == 0 ]; then
+		gfxattr -g -f $getfile / $attrname
+		if [ $? != 0 ]; then
+			exit $exit_fail
+		fi
+		cmp $attrfileBig $getfile
+		if [ $? != 0 ]; then
+			exit $exit_fail
+		fi
 	fi
 }
 
 # normal xattr limit test - 3
 {
 	attrfileBig="/usr/local/sbin/gfmd"
-	gfxattr -s -f $attrfileBig / $attrname 
+	[ -f $attrfileBig ] || return
+	gfxattr -s -f $attrfileBig / $attrname
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	gfxattr -g -f $getfile / $attrname 
+	gfxattr -g -f $getfile / $attrname
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi

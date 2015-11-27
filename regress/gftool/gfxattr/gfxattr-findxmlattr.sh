@@ -170,7 +170,7 @@ echo '<b>bbb</b>' > $attrfile2
 	echo "/	$attrname" > $nameslist
 	echo "/$subdir	$attrname" >> $nameslist
 	echo "/$fileX	$attrname" >> $nameslist
-	cmp $nameslist $getfile
+	sort $nameslist | cmp - $getfile
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -220,7 +220,7 @@ echo '<b>bbb</b>' > $attrfile2
 	echo "/$subdir	$attrname" >> $nameslist
 	echo "/$subsubdir	$attrname" >> $nameslist
 	echo "/file1	$attrname" >> $nameslist
-	cmp $nameslist $getfile
+	sort $nameslist | cmp - $getfile
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -233,7 +233,7 @@ echo '<b>bbb</b>' > $attrfile2
 		exit $exit_fail
 	fi
 	echo "/	$attrname" > $nameslist
-	cmp $nameslist $getfile
+	sort $nameslist | cmp - $getfile
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -248,7 +248,7 @@ echo '<b>bbb</b>' > $attrfile2
 	echo "/	$attrname" > $nameslist
 	echo "/$subdir	$attrname" >> $nameslist
 	echo "/file1	$attrname" >> $nameslist
-	cmp $nameslist $getfile
+	sort $nameslist | cmp - $getfile
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -264,7 +264,7 @@ echo '<b>bbb</b>' > $attrfile2
 	echo "/$subdir	$attrname" >> $nameslist
 	echo "/$subsubdir	$attrname" >> $nameslist
 	echo "/file1	$attrname" >> $nameslist
-	cmp $nameslist $getfile
+	sort $nameslist | cmp - $getfile
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -281,7 +281,7 @@ echo '<b>bbb</b>' > $attrfile2
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	cmp $nameslist $getfile
+	sort $nameslist | cmp - $getfile
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -300,7 +300,7 @@ echo '<b>bbb</b>' > $attrfile2
 	echo "/	$attrname" > $nameslist
 	echo "/$subdir	$attrname" >> $nameslist
 	echo "/$fileX	$attrname" >> $nameslist
-	cmp $nameslist $getfile
+	sort $nameslist | cmp - $getfile
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -319,7 +319,7 @@ echo '<b>bbb</b>' > $attrfile2
 	echo "/	$attrname" > $nameslist
 	echo "/$subsubdir	$attrname" >> $nameslist
 	echo "/$fileX	$attrname" >> $nameslist
-	cmp $nameslist $getfile
+	sort $nameslist | cmp - $getfile
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -339,7 +339,7 @@ echo '<b>bbb</b>' > $attrfile2
 	echo "/$subdir	$attrname" >> $nameslist
 	echo "/$subsubdir	$attrname" >> $nameslist
 	echo "/file1	$attrname" >> $nameslist
-	cmp $nameslist $getfile
+	sort $nameslist | cmp - $getfile
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -359,7 +359,7 @@ echo '<b>bbb</b>' > $attrfile2
 	echo "/$subdir,$attrname" >> $nameslist
 	echo "/$subsubdir,$attrname" >> $nameslist
 	echo "/file1,$attrname" >> $nameslist
-	cmp $nameslist $getfile
+	sort $nameslist | cmp - $getfile
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -376,7 +376,7 @@ echo '<b>bbb</b>' > $attrfile2
 	echo "/$subdir	$attrname" >> $nameslist
 	echo "/$subsubdir	$attrname" >> $nameslist
 	echo "/file1	$attrname" >> $nameslist
-	cmp $nameslist $getfile
+	sort $nameslist | cmp - $getfile
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi

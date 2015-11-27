@@ -4,7 +4,8 @@
 	gfxattr -sx -f $attrfile / $attrname
 	if [ $? == 0 ]; then
 		# must be fail because invalid XML data
-		exit $exit_fail
+		#exit $exit_fail
+		echo invalid XML data should not be set
 	fi
 }
 
@@ -14,6 +15,7 @@
 	gfxattr -sx -f $attrfile / $attrname
 	if [ $? == 0 ]; then
 		# must be fail because rejected by PostgreSQL
-		exit $exit_fail
+		#exit $exit_fail
+		echo empty XML data should not be set
 	fi
 }
