@@ -406,7 +406,10 @@ inode_cksum_set(struct inode *inode,
 				   gfarm_error_string(e));
 				return (GFARM_ERR_NO_ERROR);
 			} else {
-				/* do this even if GFM_PROTO_CKSUM_SET_REPORT_ONLY */
+				/*
+				 * return error even when
+				 * GFM_PROTO_CKSUM_SET_REPORT_ONLY
+				 */
 				gflog_error(GFARM_MSG_1003762,
 				   "%s: (%llu:%llu) %s", diag,
 				   (unsigned long long)inode_get_number(inode),

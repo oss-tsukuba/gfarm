@@ -374,7 +374,7 @@ xattr_set(int xmlMode, struct inode *inode,
 		/*
 		 * NOTE: the "+ 1" below is for trailing NUL.
 		 * XXX:
-		 *	the XML protocol should use "s" format 
+		 *	the XML protocol should use "s" format
 		 *	instead of "b"/"B",
 		 *	then extra "+ 1" in here and there was unnecessary,
 		 *	but it's too late.
