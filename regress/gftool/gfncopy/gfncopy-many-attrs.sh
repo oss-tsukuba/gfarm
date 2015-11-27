@@ -2,6 +2,9 @@
 
 . ./regress.conf
 
+# XXX
+exit $exit_unsupported
+
 large_num=4100
 
 dir=${gftmp}

@@ -2,6 +2,11 @@
 
 . ./regress.conf
 
+$regress/bin/am_I_gfarmadm
+if test $? -ne 0; then
+    exit $exit_unsupported
+fi
+
 dir=$gftmp
 syml=${gftmp}-syml
 pat="g0:1, g1:1, g0:2, g2:1, g0:3"
@@ -13,12 +18,22 @@ setup() {
     gfmkdir ${dir}
     gfln -s ${dir} ${syml}
     gfncopy -r ${dir}
+
+    for g in g0 g1 g2
+    do
+	gfhost -c -a dummy-arch -p 12345 dummy-$g
+	gfhostgroup -s dummy-$g $g
+    done
 }
 
 cleanup() {
-    gfncopy -r ${dir}
     gfrm -f ${syml}
     gfrmdir ${dir}
+
+    for g in g0 g1 g2
+    do
+	gfhost -d dummy-$g
+    done
 }
 
 trap 'cleanup; exit $exit_trap' $trap_sigs
