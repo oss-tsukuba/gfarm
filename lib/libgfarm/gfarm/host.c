@@ -437,7 +437,7 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 
 	if (getifaddrs(&ifa_head) == -1) {
 		save_errno = errno;
-		gflog_notice_errno(GFARM_MSG_UNFIXED, "getifaddrs");
+		gflog_notice_errno(GFARM_MSG_1004305, "getifaddrs");
 		return (gfarm_errno_to_error(save_errno));
 	}
 	for (n = 0, ifa = ifa_head; ifa != NULL; ifa = ifa->ifa_next) {

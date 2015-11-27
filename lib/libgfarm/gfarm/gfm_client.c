@@ -507,11 +507,11 @@ gfm_client_connection_report_error(int fd, const char *hostname, int port,
 	if (error == ECONNREFUSED) /* possibly slave gfmd, do not report */
 		return;
 	if (ms == NULL) /* gfm_client_connect_single */
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004309,
 		    "connecting to gfmd at %s:%d: %s",
 		    hostname, port, strerror(error));
 	else /* gfm_client_connect_multiple */
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004310,
 		    "connecting to gfmd at %s:%d: %s",
 		    gfarm_metadb_server_get_name(ms),
 		    gfarm_metadb_server_get_port(ms),
@@ -583,7 +583,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 					continue;
 				ms = ci->ms;
 				/* ms == NULL, if gfm_client_connect_single */
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1004311,
 				    "connected to gfmd at %s:%d, "
 				    "but no reponse within %d second",
 				    ms == NULL ? hostname :

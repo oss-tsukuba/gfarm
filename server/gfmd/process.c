@@ -1092,7 +1092,7 @@ process_cksum_set(struct process *process, struct peer *peer, int fd,
 	e = file_opening_cksum_set(fo, cksum_type, cksum_len, cksum,
 	    flags, mtime);
 	if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_EXPIRED) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004322,
 		    "(%s@%s) %s: inode %lld:%lld for %s-open%s: %s",
 		    peer_get_username(peer), peer_get_hostname(peer), diag,
 		    (long long)inode_get_number(fo->inode),

@@ -3431,7 +3431,7 @@ gfarm_sockbuf_apply_limit(int sock, int opt, int limit, const char *optname)
 	rv = getsockopt(sock, SOL_SOCKET, opt, &oldval, &vallen);
 	if (rv == -1) {
 		save_errno = errno;
-		gflog_error_errno(GFARM_MSG_UNFIXED, "%s: getsockopt",
+		gflog_error_errno(GFARM_MSG_1004306, "%s: getsockopt",
 		    optname);
 		return (gfarm_errno_to_error(save_errno));
 	}
@@ -3441,11 +3441,11 @@ gfarm_sockbuf_apply_limit(int sock, int opt, int limit, const char *optname)
 	rv = setsockopt(sock, SOL_SOCKET, opt, &limit, sizeof(limit));
 	if (rv != 0) {
 		save_errno = errno;
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1004307,
 		    "%s: limiting to %d (old: %d)", optname, limit, oldval);
 		return (gfarm_errno_to_error(save_errno));
 	}
-	gflog_info(GFARM_MSG_UNFIXED, "%s: limiting to %d (old: %d)",
+	gflog_info(GFARM_MSG_1004308, "%s: limiting to %d (old: %d)",
 	    optname, limit, oldval);
 	return (GFARM_ERR_NO_ERROR);
 }

@@ -600,7 +600,7 @@ search_idle_host_state_init(struct gfm_connection *gfm_server)
 	/* ignore any error here */
 	e = search_idle_network_list_init(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: network_list_init: %s",
+		gflog_notice(GFARM_MSG_1004312, "%s: network_list_init: %s",
 		    diag, gfarm_error_string(e));
 
 	/* when a connection error happens, make the host unavailable. */
@@ -1086,7 +1086,7 @@ search_idle_count(struct search_idle_state *s,
 		(*semi_idle_numberp)++;
 		msg3 = "semi-idle ";
 	}
-	gflog_debug(GFARM_MSG_UNFIXED, "%s: %s%s%s"
+	gflog_debug(GFARM_MSG_1004313, "%s: %s%s%s"
 	    "(avail %llu load %lld ncpu %d)", h->return_value, msg1, msg2, msg3,
 	    (unsigned long long)h->diskavail, loadavg, ncpu);
 }
@@ -1724,7 +1724,7 @@ search_idle(struct gfm_connection *gfm_server,
 	 * 1. search local hosts
 	 */
 	if (staticp->search_idle_local_host != NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "== search local host ==");
+		gflog_debug(GFARM_MSG_1004314, "== search local host ==");
 		search_idle_in_networks(&s,
 			staticp->search_idle_local_host_count,
 			staticp->search_idle_local_host);
@@ -1736,13 +1736,13 @@ search_idle(struct gfm_connection *gfm_server,
 	if (((write_mode && !gfarm_schedule_write_local_priority())
 	     || !search_idle_is_satisfied(&s))
 	    && staticp->search_idle_local_net != NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "== search local network ==");
+		gflog_debug(GFARM_MSG_1004315, "== search local network ==");
 		search_idle_in_networks(&s, 1, &staticp->search_idle_local_net);
 	}
 	gfs_profile(gfarm_gettimerval(&t3));
 
 	if (!search_idle_is_satisfied(&s)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "== search all networks ==");
+		gflog_debug(GFARM_MSG_1004316, "== search all networks ==");
 		search_idle_examine_rtt_of_all_networks(&s);
 		e = search_idle_by_rtt_order(&s);
 	}
@@ -1815,7 +1815,7 @@ search_idle(struct gfm_connection *gfm_server,
 	for (i = 0; i < n && i < s.desired_number; i++) {
 		ohosts[i] = results[i]->return_value;
 		oports[i] = results[i]->port;
-		gflog_debug(GFARM_MSG_UNFIXED, "[%d] %s:%d",
+		gflog_debug(GFARM_MSG_1004317, "[%d] %s:%d",
 		    i, ohosts[i], oports[i]);
 	}
 	*nohostsp = i;
@@ -2134,7 +2134,7 @@ gfarm_schedule_host_unused(const char *hostname, int port, const char *username,
 	if (scheduled_age == HOST_STATE_SCHEDULED_AGE_NOT_FOUND)
 		return;
 	if (staticp->search_idle_hosts_state == NULL) {
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: internal error", diag);
+		gflog_notice(GFARM_MSG_1004318, "%s: internal error", diag);
 		return;
 	}
 	e = gfp_conn_hash_lookup(&staticp->search_idle_hosts_state,

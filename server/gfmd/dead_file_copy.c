@@ -842,7 +842,7 @@ dead_file_copy_mark_lost(
 
 	dfc = dead_file_copy_lookup(inum, igen, host, diag);
 	if (dfc == NULL) {
-		gflog_notice(GFARM_MSG_UNFIXED, "%s(%lld, %lld, %s): "
+		gflog_notice(GFARM_MSG_1004319, "%s(%lld, %lld, %s): "
 		    "not found", diag,
 		    (unsigned long long)dfc->inum,
 		    (unsigned long long)dfc->igen,
@@ -854,7 +854,7 @@ dead_file_copy_mark_lost(
 	gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
 	if (dfc->state != dfcstate_kept && dfc->state != dfcstate_deferred) {
 		gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
-		gflog_notice(GFARM_MSG_UNFIXED, "%s(%lld, %lld, %s): "
+		gflog_notice(GFARM_MSG_1004320, "%s(%lld, %lld, %s): "
 		    "cannot remove due to unexpected state %d", diag,
 		    (unsigned long long)dfc->inum,
 		    (unsigned long long)dfc->igen,
