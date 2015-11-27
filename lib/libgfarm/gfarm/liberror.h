@@ -115,7 +115,7 @@ enum gfarm_errmsg {
 	/* refered only from gfarm/glob.c */
 	GFARM_ERRMSG_GFS_GLOB_NOT_PROPERLY_INITIALIZED,
 
-	/* OBSOLETE: should be able to be removed, but keeped for safety */
+	/* OBSOLETE: should be able to be removed, but kept for safety */
 	GFARM_ERRMSG_NO_FILESYSTEM_NODE_OBSOLETE,
 
 	/* refered only from gfarm/auth_common_gsi.c */

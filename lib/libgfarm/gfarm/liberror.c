@@ -257,7 +257,7 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	/* refered only from gfarm/glob.c */
 	"gfs_glob(): gfarm library isn't properly initialized",
 
-	/* OBSOLETE: should be able to be removed, but keeped for safety */
+	/* OBSOLETE: should be able to be removed, but kept for safety */
 	"no filesystem node (obsolete)",
 
 	/* refered only from gfarm/auth_common_gsi.c */
