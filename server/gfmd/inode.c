@@ -812,6 +812,13 @@ static struct gflog_reduced_state rep_rtunavail_state =
 		SAME_WARNING_DURATION,
 		SAME_WARNING_INTERVAL);
 
+static struct gflog_reduced_state rep_quota_exceeded_state =
+	GFLOG_REDUCED_STATE_INITIALIZER(
+		SAME_WARNING_TRIGGER,
+		SAME_WARNING_THRESHOLD,
+		SAME_WARNING_DURATION,
+		SAME_WARNING_INTERVAL);
+
 static struct gflog_reduced_state rep_reqfailed_state =
 	GFLOG_REDUCED_STATE_INITIALIZER(
 		SAME_WARNING_TRIGGER,
@@ -902,12 +909,25 @@ inode_schedule_replication_within_scope(
 			busy = 1;
 			gflog_reduced_debug(
 			    GFARM_MSG_1003645, &rep_rtunavail_state,
-			    "%s: file_replicating_new: "
-			    "(%s, %lld:%lld): %s",
-			    diag, host_name(dst),
+			    "%s: %lld:%lld:%s@%s: file_replicating_new:"
+			    " %s", diag,
 			    (long long)inode_get_number(inode),
 			    (long long)inode_get_gen(inode),
+			    user_name(inode_get_user(inode)),
+			    host_name(dst),
 			    gfarm_error_string(e));
+		} else if (e == GFARM_ERR_DISK_QUOTA_EXCEEDED) {
+			gflog_reduced_info(
+			    GFARM_MSG_UNFIXED, &rep_quota_exceeded_state,
+			    "%s: %lld:%lld:%s@%s: replication failed:"
+			    " %s", diag,
+			    (long long)inode_get_number(inode),
+			    (long long)inode_get_gen(inode),
+			    user_name(inode_get_user(inode)),
+			    host_name(dst),
+			    gfarm_error_string(e));
+			save_e = e;
+			break;
 		} else if (e != GFARM_ERR_NO_ERROR) {
 			gflog_reduced_warning(
 			    GFARM_MSG_1003705, &rep_reqfailed_state,
@@ -1373,8 +1393,11 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	 * #673 - retry automatic replication when a request of
 	 * replication is failure
 	 */
-	/* avoid calling replica_check if GFARM_ERR_NO_MEMORY occurs */
-	if (save_e != GFARM_ERR_NO_ERROR && save_e != GFARM_ERR_NO_MEMORY)
+	/* avoid calling replica_check
+	   if GFARM_ERR_DISK_QUOTA_EXCEEDED and GFARM_ERR_NO_MEMORY occur */
+	if (save_e != GFARM_ERR_NO_ERROR &&
+	    save_e != GFARM_ERR_DISK_QUOTA_EXCEEDED &&
+	    save_e != GFARM_ERR_NO_MEMORY)
 		replica_check_start_rep_request_failed();
 }
 
@@ -2707,23 +2730,26 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			"inode_alloc() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	e = quota_limit_check(user, parent->i_group, 1, 0);
-	if (e == GFARM_ERR_NO_ERROR) {
-		switch (expected_type) {
-		case GFS_DT_DIR:
+	switch (expected_type) {
+	case GFS_DT_DIR:
+		e = quota_limit_check(user, parent->i_group, 1, 0, 0);
+		if (e == GFARM_ERR_NO_ERROR)
 			e = inode_init_dir(n, parent);
-			break;
-		case GFS_DT_REG:
+		break;
+	case GFS_DT_REG:
+		e = quota_limit_check(user, parent->i_group, 1, 1, 0);
+		if (e == GFARM_ERR_NO_ERROR)
 			e = inode_init_file(n);
-			break;
-		case GFS_DT_LNK:
+		break;
+	case GFS_DT_LNK:
+		e = quota_limit_check(user, parent->i_group, 1, 0, 0);
+		if (e == GFARM_ERR_NO_ERROR)
 			e = inode_init_symlink(n, symlink_src);
-			break;
-		default:
-			assert(0);
-			e = GFARM_ERR_UNKNOWN;
-			break;
-		}
+		break;
+	default:
+		assert(0);
+		e = GFARM_ERR_UNKNOWN;
+		break;
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001736,
@@ -2954,7 +2980,7 @@ inode_lookup_by_name(struct inode *base, char *name,
 		if (e == GFARM_ERR_NO_ERROR && inode_is_file(inode) &&
 		    (op & GFS_W_OK) != 0)
 			e = quota_limit_check(inode_get_user(inode),
-					       inode_get_group(inode), 0, 0);
+			    inode_get_group(inode), 0, 0, 0);
 		if (e == GFARM_ERR_NO_ERROR) {
 			*inp = inode;
 		}
@@ -4702,7 +4728,7 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 		gfarm_error_t e;
 		/* check limits of space and number of the replica */
 		e = quota_limit_check(inode_get_user(inode),
-			       inode_get_group(inode), 0, 1);
+		    inode_get_group(inode), 0, 1, inode_get_size(inode));
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001767,
 				"checking of limits of the replica failed");

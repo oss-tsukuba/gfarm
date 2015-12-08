@@ -453,7 +453,8 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 				if (sl < GFARM_SECOND_BY_NANOSEC)
 					sl *= 2; /* 2,4,8,...,512,1024,1024 */
 			}
-			if (e != GFARM_ERR_NO_ERROR) {
+			if (e != GFARM_ERR_NO_ERROR &&
+			    e != GFARM_ERR_DISK_QUOTA_EXCEEDED) {
 				need_to_retry = 1;
 				gflog_debug(GFARM_MSG_1003631,
 				    "replica_check_fix(): %s",

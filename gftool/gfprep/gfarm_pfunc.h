@@ -8,6 +8,7 @@ typedef struct gfarm_pfunc_cmd gfarm_pfunc_cmd_t;
 enum pfunc_result {
 	PFUNC_RESULT_OK,
 	PFUNC_RESULT_NG,
+	PFUNC_RESULT_NG_NOT_RETRY,
 	PFUNC_RESULT_SKIP,
 	PFUNC_RESULT_BUSY_REMOVE_REPLICA,
 	PFUNC_RESULT_END,

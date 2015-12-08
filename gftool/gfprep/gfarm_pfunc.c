@@ -188,7 +188,7 @@ retry:
 			"ERROR: cannot replicate: %s (%s:%d, %s:%d): %s\n",
 			url, src_host, src_port, dst_host, dst_port,
 			gfarm_error_string(e));
-		if (retry >= RETRY_MAX) {
+		if (retry >= RETRY_MAX || e == GFARM_ERR_DISK_QUOTA_EXCEEDED) {
 			result = PFUNC_RESULT_NG;
 			goto end;
 		}
@@ -703,6 +703,10 @@ pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
 		(void)pfunc_close(&src_fp);
 		if (handle->skip_existing && e == GFARM_ERR_ALREADY_EXISTS) {
 			result = PFUNC_RESULT_SKIP;
+		} else if (e == GFARM_ERR_DISK_QUOTA_EXCEEDED) {
+			result = PFUNC_RESULT_NG_NOT_RETRY;
+			fprintf(stderr, "ERROR: copy failed: open(%s): %s\n",
+			    tmp_url, gfarm_error_string(e));
 		} else {
 			fprintf(stderr, "ERROR: copy failed: open(%s): %s\n",
 			    tmp_url, gfarm_error_string(e));
@@ -820,6 +824,10 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 			result = pfunc_copy_to_gfarm_or_local(handle, to_parent,
 			    src_url, src_host, src_port, src_size,
 			    dst_url, dst_host, dst_port, check_disk_avail);
+		if (result == PFUNC_RESULT_NG_NOT_RETRY) {
+			result = PFUNC_RESULT_NG;
+			break;
+		}
 		if (result != PFUNC_RESULT_NG || retry >= RETRY_MAX)
 			break;
 		retry++;

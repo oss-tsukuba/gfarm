@@ -37,7 +37,8 @@ void quota_data_init(struct quota *);
 
 struct user;
 struct group;
-gfarm_error_t quota_limit_check(struct user *, struct group *, int, int);
+gfarm_error_t quota_limit_check(struct user *, struct group *, int, int,
+	gfarm_off_t);
 void quota_user_remove(struct user *);
 void quota_group_remove(struct group *);
 

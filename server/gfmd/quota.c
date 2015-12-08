@@ -571,8 +571,10 @@ enum quota_exceeded_type {
 
 static int
 is_exceeded(struct timeval *nowp, struct quota *q,
-	    int is_file_creating, int is_replica_adding)
+	int num_file_creating, int num_replica_adding, gfarm_off_t size)
 {
+	int check_logical = 0, check_physical = 0;
+
 	if (!is_checked(q))  /* quota is disabled */
 		return (QUOTA_NOT_EXCEEDED);
 
@@ -597,37 +599,57 @@ is_exceeded(struct timeval *nowp, struct quota *q,
 	}
 
 	/* hardlimit */
-	if ((quota_limit_is_valid(q->space_hard) &&
-	     q->space > q->space_hard))
-		return (QUOTA_EXCEEDED_SPACE_HARD);
-	if (quota_limit_is_valid(q->num_hard) &&
-	    q->num + (is_file_creating ? 1 : 0) > q->num_hard)
-		return (QUOTA_EXCEEDED_NUM_HARD);
-	if (quota_limit_is_valid(q->phy_space_hard) &&
-	    q->phy_space > q->phy_space_hard)
-		return (QUOTA_EXCEEDED_PHY_SPACE_HARD);
-	if (quota_limit_is_valid(q->phy_num_hard) &&
-	    q->phy_num + (is_replica_adding ? 1 : 0) > q->phy_num_hard)
-		return (QUOTA_EXCEEDED_PHY_NUM_HARD);
+	if (num_file_creating >= 1 && num_replica_adding <= 0) {
+		check_logical = 1;
+	} else if (num_file_creating <= 0 && num_replica_adding >= 1) {
+		check_physical = 1;
+	} else {
+		check_logical = 1;
+		check_physical = 1;
+	}
+
+	if (check_logical) {
+		if ((quota_limit_is_valid(q->space_hard) &&
+		    q->space + size > q->space_hard))
+			return (QUOTA_EXCEEDED_SPACE_HARD);
+		if (quota_limit_is_valid(q->num_hard) &&
+		    q->num + num_file_creating > q->num_hard)
+			return (QUOTA_EXCEEDED_NUM_HARD);
+	}
+	if (check_physical) {
+		if (quota_limit_is_valid(q->phy_space_hard) &&
+		    q->phy_space + (size * num_replica_adding) >
+		    q->phy_space_hard)
+			return (QUOTA_EXCEEDED_PHY_SPACE_HARD);
+		if (quota_limit_is_valid(q->phy_num_hard) &&
+		    q->phy_num + num_replica_adding > q->phy_num_hard)
+			return (QUOTA_EXCEEDED_PHY_NUM_HARD);
+	}
 
 	return (QUOTA_NOT_EXCEEDED);
 }
 
+/*
+ * num_file_creating >= 1 && num_replica_adding == 0 : check logical quota
+ * num_file_creating == 0 && num_replica_adding >= 1 : check physical quota
+ * num_file_creating == 0 && num_replica_adding == 0 : check both
+ * num_file_creating >= 1 && num_replica_adding >= 1 : check both
+ */
 gfarm_error_t
 quota_limit_check(struct user *u, struct group *g,
-		   int is_file_creating, int is_replica_adding)
+	int num_file_creating, int num_replica_adding, gfarm_off_t size)
 {
 	struct timeval now;
 
 	gettimeofday(&now, NULL);
 	if (u && is_exceeded(&now, user_quota(u),
-			    is_file_creating, is_replica_adding)) {
+	    num_file_creating, num_replica_adding, size)) {
 		gflog_debug(GFARM_MSG_1002051,
 			 "user_quota(%s) exceeded", user_name(u));
 		return (GFARM_ERR_DISK_QUOTA_EXCEEDED);
 	}
 	if (g && is_exceeded(&now, group_quota(g),
-			     is_file_creating, is_replica_adding)) {
+	    num_file_creating, num_replica_adding, size)) {
 		gflog_debug(GFARM_MSG_1002052,
 			 "group_quota(%s) exceeded", group_name(g));
 		return (GFARM_ERR_DISK_QUOTA_EXCEEDED);
