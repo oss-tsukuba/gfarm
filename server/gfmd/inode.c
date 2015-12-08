@@ -1984,6 +1984,7 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 		user = NULL;  /* not changed */
 	if (group != NULL && group == inode_get_group(inode))
 		group = NULL; /* not changed */
+	/* if unchanged, ctime is not updated */
 	if (user == NULL && group == NULL)
 		return (GFARM_ERR_NO_ERROR); /* shortcut */
 
