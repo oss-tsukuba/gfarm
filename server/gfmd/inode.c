@@ -1980,8 +1980,26 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 {
 	gfarm_error_t e;
 
+	if (user != NULL && user == inode_get_user(inode))
+		user = NULL;  /* not changed */
+	if (group != NULL && group == inode_get_group(inode))
+		group = NULL; /* not changed */
 	if (user == NULL && group == NULL)
-		return (GFARM_ERR_NO_ERROR);
+		return (GFARM_ERR_NO_ERROR); /* shortcut */
+
+	e = quota_limit_check(user, group,
+	    1, inode_get_ncopy_with_dead_host(inode), inode_get_size(inode));
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "inode=%lld, quota_limit_check(%s, %s, 1, %lld, %lld): %s",
+		    (long long)inode_get_number(inode),
+		    user ? user_name(user) : "NULL",
+		    group ? group_name(group) : "NULL",
+		    (long long)inode_get_ncopy_with_dead_host(inode),
+		    (long long)inode_get_size(inode),
+		    gfarm_error_string(e));
+		return (e);
+	}
 
 	quota_update_file_remove(inode);
 	if (user != NULL) {
