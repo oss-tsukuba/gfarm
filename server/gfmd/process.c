@@ -905,6 +905,13 @@ process_close_file(struct process *process, struct peer *peer, int fd,
 
 		/* i.e. REOPENed file, and I am a gfsd. */
 		if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "gfsd on %s@%s exited without closing write-opened"
+			    " file: pid:%lld fd:%d inode %llu:%llu",
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    (long long)process->pid, (int)fd,
+			    (long long)inode_get_number(fo->inode),
+			    (long long)inode_get_gen(fo->inode));
 			inode_del_ref_spool_writers(fo->inode);
 			inode_check_pending_replication(fo);
 		}
