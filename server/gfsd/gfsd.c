@@ -85,6 +85,7 @@
 #include "iostat.h"
 
 #include "gfsd_subr.h"
+#include "write_verify.h"
 
 #define COMPAT_OLD_GFS_PROTOCOL
 
@@ -133,6 +134,18 @@ const char READONLY_CONFIG_FILE[] = ".readonly";
 const char *program_name = "gfsd";
 
 int debug_mode = 0;
+
+static enum gfsd_type my_type = type_listener;
+
+#define USING_PIPE_FOR_FAILOVER_SIGNAL(my_type) \
+	((my_type) == type_client || \
+	 (my_type) == type_back_channel || \
+	 (my_type) == type_write_verify)
+
+/* available only if USING_PIPE_FOR_FAILOVER_SIGNAL(my_type) */
+static int failover_notify_recv_fd = -1;
+static int failover_notify_send_fd = -1;
+
 pid_t master_gfsd_pid;
 pid_t back_channel_gfsd_pid;
 uid_t gfsd_uid = -1;
@@ -215,20 +228,20 @@ static int close_all_fd_for_process_reset(struct gfp_xdr *);
 static struct gfp_xdr *current_client = NULL;
 
 /* this routine should be called before calling exit(). */
-static void
+void
 cleanup(int sighandler)
 {
 	static int cleanup_started = 0;
 	pid_t pid = getpid();
 
-	if (!cleanup_started) {
-		cleanup_started = 1;
+	if (!cleanup_started && !sighandler) {
+		cleanup_started = 1; /* prevent recursive close_all_fd() */
 
-		if (pid != master_gfsd_pid && pid != back_channel_gfsd_pid &&
-		    !sighandler) {
+		if (my_type == type_client) {
 			/* may recursivelly call cleanup() */
 			close_all_fd(current_client);
-		}
+		} else if (my_type == type_write_verify_controller)
+			write_verify_controller_cleanup();
 	}
 
 	if (pid == master_gfsd_pid) {
@@ -245,7 +258,7 @@ cleanup(int sighandler)
 	credential_exported = NULL;
 
 	if (!sighandler) {
-		/* It's not safe to do the following operation */
+		/* It's not safe to do the following operation in sighandler */
 		gflog_notice(GFARM_MSG_1000451, "disconnected");
 	}
 }
@@ -501,20 +514,13 @@ sleep_or_wait_failover_packet(int seconds)
 }
 
 
-static enum gfsd_type {
-	type_listener, type_client, type_back_channel, type_replication
-} my_type = type_listener;
-
-static int failover_notify_recv_fd = -1;
-static int failover_notify_send_fd = -1;
-
 static void
 failover_handler(int signo)
 {
 	char dummy[1];
 	ssize_t rv;
 
-	if (my_type == type_listener || my_type == type_replication)
+	if (!USING_PIPE_FOR_FAILOVER_SIGNAL(my_type))
 		return; /* nothing to do */
 	if (failover_notify_send_fd == -1)
 		abort();
@@ -621,20 +627,12 @@ sleep_or_wait_failover_signal(int seconds, int signo)
 static void
 sleep_or_wait_failover(int seconds)
 {
-	switch (my_type) {
-	case type_listener:
+	if (my_type == type_listener)
 		sleep_or_wait_failover_packet(seconds);
-		break;
-	case type_client:
-	case type_back_channel:
+	else if (USING_PIPE_FOR_FAILOVER_SIGNAL(my_type))
 		sleep_or_wait_failover_recv_fd(seconds);
-		break;
-	case type_replication:
+	else
 		sleep_or_wait_failover_signal(seconds, FAILOVER_SIGNAL);
-		break;
-	default:
-		assert(0);
-	}
 }
 
 static gfarm_error_t
@@ -729,13 +727,13 @@ connect_gfm_server_with_timeout(const char *diag)
 	return (connect_gfm_server0(1, diag));
 }
 
-static gfarm_error_t
+gfarm_error_t
 connect_gfm_server(const char *diag)
 {
 	return (connect_gfm_server0(0, diag));
 }
 
-static void
+void
 free_gfm_server(void)
 {
 	if (gfm_server == NULL)
@@ -764,7 +762,7 @@ reconnect_gfm_server_for_failover(const char *diag)
 }
 
 
-static pid_t
+pid_t
 do_fork(enum gfsd_type new_type)
 {
 	sigset_t old, new;
@@ -773,8 +771,13 @@ do_fork(enum gfsd_type new_type)
 	int pipefds[2];
 
 	assert((my_type == type_listener &&
-		(new_type == type_client || new_type == type_back_channel)) ||
-	       (my_type == type_back_channel && new_type == type_replication));
+		(new_type == type_client ||
+		 new_type == type_back_channel ||
+		 new_type == type_write_verify_controller)) ||
+	       (my_type == type_back_channel &&
+		new_type == type_replication) ||
+	       (my_type == type_write_verify_controller &&
+		new_type == type_write_verify));
 
 	/* block FAILOVER_SIGNAL to prevent race condition */
 	if (sigemptyset(&new) == -1)
@@ -795,35 +798,24 @@ do_fork(enum gfsd_type new_type)
 			back_channel_gfsd_pid = rv;
 	} else { /* child process */
 		free_gfm_server(); /* to make sure to avoid race */
-		switch (my_type) {
-		case type_listener:
-			switch (new_type) {
-			case type_client:
-				break;
-			case type_back_channel:
-				/* this should be set before fatal() */
-				back_channel_gfsd_pid = getpid();
-				break;
-			default:
-				assert(0);
-			}
-			my_type = new_type;
+
+		if (new_type == type_back_channel) {
+			/* this should be set before fatal() */
+			back_channel_gfsd_pid = getpid();
+		}
+		my_type = new_type;
+		if (USING_PIPE_FOR_FAILOVER_SIGNAL(my_type)) {
 			if (pipe(pipefds) == -1)
 				fatal(GFARM_MSG_1004111, "pipe after fork: %s",
 				    strerror(errno));
 			failover_notify_recv_fd = pipefds[0];
 			failover_notify_send_fd = pipefds[1];
-			break;
-		case type_back_channel:
-			assert(new_type == type_replication);
-			my_type = new_type;
-			close(failover_notify_recv_fd);
-			close(failover_notify_send_fd);
+		} else {
+			if (failover_notify_recv_fd != -1)
+				close(failover_notify_recv_fd);
+			if (failover_notify_send_fd != -1)
+				close(failover_notify_send_fd);
 			failover_notify_recv_fd = failover_notify_send_fd = -1;
-			break;
-		default:
-			assert(0);
-			break;
 		}
 	}
 	if (sigprocmask(SIG_SETMASK, &old, NULL) == -1)
@@ -1242,7 +1234,7 @@ msgdigest_init(const char *md_type_name, EVP_MD_CTX *md_ctx,
 }
 
 /* with errno */
-static int
+int
 open_data(char *path, int flags)
 {
 	int fd = open(path, flags, DATA_FILE_MASK);
@@ -1644,6 +1636,22 @@ gfs_open_flags_localize(int open_flags)
 		local_flags |= O_EXCL;
 #endif /* not yet in gfarm v2 */
 	return (local_flags);
+}
+
+char *
+gfsd_make_path(const char *relpath, const char *diag)
+{
+	/* gfarm_spool_root + "/" + relpath + "\0" */
+	size_t length = gfarm_spool_root_len + 1 + strlen(relpath) + 1;
+	char *p;
+
+	GFARM_MALLOC_ARRAY(p, length);
+	if (p == NULL) {
+		fatal(GFARM_MSG_UNFIXED, "%s: no memory for %s/%s (%zd bytes)",
+		      diag, gfarm_spool_root, relpath, length);
+	}
+	snprintf(p, length, "%s/%s", gfarm_spool_root, relpath);
+	return (p);
 }
 
 /*
@@ -2248,6 +2256,15 @@ update_local_file_generation(struct file_entry *fe, gfarm_int64_t old_gen,
 			e = GFARM_ERR_CONFLICT_DETECTED;
 		} else {
 			e = GFARM_ERR_NO_ERROR;
+			if (gfarm_write_verify) {
+				/*
+				 * request even if cksum does not exist at this
+				 * point,  because it may be added later.
+				 */
+				write_verify_request(
+				    fe->ino, new_gen, new_st.st_mtime,
+				    "generation update");
+			}
 		}
 		fe->new_gen = new_gen; /* rename(2) succeeded, at least */
 	}
@@ -2309,13 +2326,12 @@ fhclose_result(struct file_entry *fe, gfarm_uint64_t *cookie_p,
 	}
 }
 
-static gfarm_error_t
+gfarm_error_t
 calc_digest(int fd,
 	const char *md_type_name, char *md_string, size_t *md_strlenp,
+	char *data_buf, size_t data_bufsize,
 	const char *diag, gfarm_ino_t diag_ino, gfarm_uint64_t diag_gen)
 {
-#define BUFSIZE	65536
-	char buf[BUFSIZE];
 	ssize_t sz;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
@@ -2323,19 +2339,20 @@ calc_digest(int fd,
 	unsigned int md_len;
 	unsigned char md_value[EVP_MAX_MD_SIZE];
 
-	if (!msgdigest_init(md_type_name, &md_ctx, diag, diag_ino, diag_gen))
-		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
-
+	/* do this before msgdigest_init() to prevent memory leak */
 	if (lseek(fd, 0, SEEK_SET) == -1)
 		return (gfarm_errno_to_error(errno));
 
-	while ((sz = read(fd, buf, sizeof buf)) > 0)
-		EVP_DigestUpdate(&md_ctx, buf, sz);
+	if (!msgdigest_init(md_type_name, &md_ctx, diag, diag_ino, diag_gen))
+		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+
+	while ((sz = read(fd, data_buf, data_bufsize)) > 0)
+		EVP_DigestUpdate(&md_ctx, data_buf, sz);
 	io_error_check_errno("calc_digest");
 	if (sz == -1)
 		e = gfarm_errno_to_error(errno);
 
-	EVP_DigestFinal(&md_ctx, md_value, &md_len);
+	md_len = gfarm_msgdigest_final(md_value, &md_ctx);
 	if (e == GFARM_ERR_NO_ERROR)
 		*md_strlenp =
 		    gfarm_msgdigest_to_string(md_string, md_value, md_len);
@@ -2496,7 +2513,7 @@ copy_to_lost_found(struct file_entry *fe)
 		    canonical_self_name);
 }
 
-static void
+void
 replica_lost_move_to_lost_found(gfarm_ino_t ino, gfarm_uint64_t gen,
 	int local_fd, off_t size)
 {
@@ -2504,7 +2521,14 @@ replica_lost_move_to_lost_found(gfarm_ino_t ino, gfarm_uint64_t gen,
 	char *path;
 	static const char diag[] = "replica_lost_move_to_lost_found";
 
-	e = gfm_client_replica_lost(ino, gen);
+	for (;;) {
+		e = gfm_client_replica_lost(ino, gen);
+		if (!IS_CONNECTION_ERROR(e))
+			break;
+		free_gfm_server();
+		if ((e = connect_gfm_server(diag)) != GFARM_ERR_NO_ERROR)
+			fatal(GFARM_MSG_UNFIXED, "die");
+	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1004217,
 		    "%lld:%lld: corrupted replica remains: %s",
@@ -3345,6 +3369,8 @@ gfs_server_cksum(struct gfp_xdr *client)
 	char *type = NULL, cksum[GFARM_MSGDIGEST_STRSIZE];
 	size_t len = 0;
 	gfarm_error_t e;
+#define DATA_BUFSIZE	65536 /* small size is better, because of read-ahead */
+	char data_buf[DATA_BUFSIZE];
 	static const char diag[] = "GFS_PROTO_CKSUM";
 
 	gfs_server_get_request(client, "cksum", "is", &fd, &type);
@@ -3359,7 +3385,7 @@ gfs_server_cksum(struct gfp_xdr *client)
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
 	else {
 		e = calc_digest(file_table_get(fd), type, cksum, &len,
-		    diag, fe->ino, fe->gen);
+		    data_buf, sizeof(data_buf), diag, fe->ino, fe->gen);
 	}
 	free(type);
 	gfs_server_put_reply(client, "cksum", e, "b", len, cksum);
@@ -3577,6 +3603,7 @@ void
 gfs_server_replica_add_from(struct gfp_xdr *client)
 {
 	gfarm_error_t e, e2;
+	int save_errno;
 	char *host, *path;
 	struct gfs_connection *server;
 	gfarm_int32_t net_fd, local_fd, port;
@@ -3626,10 +3653,11 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 
 	gfsd_local_path(ino, gen, diag, &path);
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
+	save_errno = errno;
 	free(path);
 	if (local_fd == -1) {
 		/* dst_err: invalidate */
-		e = dst_err = gfarm_errno_to_error(errno);
+		e = dst_err = gfarm_errno_to_error(save_errno);
 		goto adding_cancel;
 	}
 
@@ -3695,6 +3723,8 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 			dst_err = e; /* invalidate */
 	} else {
 		filesize = sb.st_size;
+		if (gfarm_write_verify)
+			write_verify_request(ino, gen, sb.st_mtime, diag);
 	}
  free_server:
 	gfs_client_connection_free(server);
@@ -4177,6 +4207,21 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q));
 	}
 
+	if (gfarm_write_verify && conn_err == GFARM_ERR_NO_ERROR &&
+	    src_err == GFARM_ERR_NO_ERROR && dst_err == GFARM_ERR_NO_ERROR) {
+		struct stat st;
+
+		if (fstat(local_fd, &st) == -1) {
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "%s: %s %lld:%lld fstat(): %s", diag, issue_diag,
+			    (long long)rep->ino, (long long)rep->gen,
+			    strerror(errno));
+		} else {
+			write_verify_request(rep->ino, rep->gen, st.st_mtime,
+			    diag);
+		}
+	}
+
 	rv = close(local_fd);
 	if (rv == -1) {
 		save_errno = errno;
@@ -4223,7 +4268,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	struct gfs_connection *src_gfsd;
 	int fds[2];
 	pid_t pid = -1; /* == GFS_PROTO_REPLICATION_HANDLE_INVALID */
-	int local_fd;
+	int local_fd, save_errno;
 	size_t sz;
 	ssize_t rv;
 	union replication_results res;
@@ -4242,12 +4287,14 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	 */
 	gfsd_local_path(rep->ino, rep->gen, diag, &path);
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
+	save_errno = errno;
 	free(path);
 	if (local_fd == -1) {
-		dst_err = gfarm_errno_to_error(errno);
+		dst_err = gfarm_errno_to_error(save_errno);
 		gflog_error(GFARM_MSG_1002182,
 		    "%s: cannot open local file for %lld:%lld: %s", diag,
-		    (long long)rep->ino, (long long)rep->gen, strerror(errno));
+		    (long long)rep->ino, (long long)rep->gen,
+		    strerror(save_errno));
 	} else if ((conn_err = gfs_client_connection_acquire_by_host(
 	    gfm_server, gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
 	    &src_gfsd, listen_addrname)) != GFARM_ERR_NO_ERROR) {
@@ -4553,70 +4600,145 @@ clear_child(void)
 	}
 }
 
-void
-wait_client(int client_fd)
+int
+timedwait_fd(int fd, time_t seconds, const char *diag)
 {
 	int nfound;
 #ifdef HAVE_POLL
-	struct pollfd fds[2];
+	time_t now, expire_time = 0;
+	struct pollfd pfd;
+
+	if (seconds != TIMEDWAIT_INFINITE)
+		expire_time = time(NULL) + seconds;
 
 	for (;;) {
-		fds[0].fd = client_fd;
-		fds[0].events = POLLIN;
-		fds[1].fd = failover_notify_recv_fd;
-		fds[1].events = POLLIN;
-		nfound = poll(fds, GFARM_ARRAY_LENGTH(fds), INFTIM);
-		if (nfound == 0)
-			fatal(GFARM_MSG_1004156,
-			    "unexpected poll in wait_client()");
+		now = time(NULL);
+		if (seconds != TIMEDWAIT_INFINITE && expire_time < now)
+			expire_time = now;
+
+		pfd.fd = fd;
+		pfd.events = POLLIN;
+		nfound = poll(&pfd, 1, seconds == TIMEDWAIT_INFINITE ? INFTIM :
+		    expire_time - now);
 		if (nfound == -1) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
-			fatal_errno(GFARM_MSG_1004157,
-			    "poll in wait_client()");
+			fatal_errno(GFARM_MSG_UNFIXED,
+			    "poll in timedwait_fd()");
 		}
-		assert(nfound > 0);
-		if (fds[1].revents != 0) {
-			failover_notified(debug_mode, "gfsd-for-client");
-			reconnect_gfm_server_for_failover("failover signal");
-		}
-		if (fds[0].revents != 0)
-			break;
+		return (nfound > 0);
 	}
+#else /* !HAVE_POLL */
+	struct timeval expire_time, now, timeout;
+	fd_set fds;
+
+	if (seconds != TIMEDWAIT_INFINITE) {
+		gettimeofday(&expire_time, NULL);
+		expire_time.tv_sec += seconds;
+	}
+
+	for (;;) {
+		gettimeofday(&now, NULL);
+		if (seconds != TIMEDWAIT_INFINITE) {
+			if (gfarm_timeval_cmp(&expire_time, &now) < 0)
+				expire_time = now;
+			timeout = expire_time;
+			gfarm_timeval_sub(&timeout, &now);
+		}
+
+		FD_ZERO(&fds);
+		if (fd >= FD_SETSIZE)
+			fatal(GFARM_MSG_UNFIXED,
+			    "too big descriptor: fd:%d", fd);
+		FD_SET(fd, &fds);
+		nfound = select(fd + 1, &fds, NULL, NULL,
+		    seconds == TIMEDWAIT_INFINITE ? NULL : &timeout);
+		if (nfound == -1) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+			fatal_errno(GFARM_MSG_UNFIXED,
+			    "select in timedwait_fd()");
+		}
+		return (nfound > 0);
+	}
+#endif /* !HAVE_POLL */
+}
+
+/*
+ * return value:
+ *  0: EINTR or EAGAIN
+ *  bit0 is set: fd0 is ready
+ *  bit1 is set: fd1 is ready
+ */
+int
+wait_2fds(int fd0, int fd1, const char *diag)
+{
+	int nfound, rv = 0;
+#ifdef HAVE_POLL
+	struct pollfd fds[2];
+
+	fds[0].fd = fd0;
+	fds[0].events = POLLIN;
+	fds[1].fd = fd1;
+	fds[1].events = POLLIN;
+	nfound = poll(fds, GFARM_ARRAY_LENGTH(fds), INFTIM);
+	if (nfound == 0)
+		fatal(GFARM_MSG_1004156,
+		    "unexpected poll in wait_2fds()");
+	if (nfound == -1) {
+		if (errno == EINTR || errno == EAGAIN)
+			return (0);
+		fatal_errno(GFARM_MSG_1004157, "poll in wait_2fds()");
+	}
+	assert(nfound > 0);
+	if (fds[0].revents != 0)
+		rv |= 1;
+	if (fds[1].revents != 0)
+		rv |= 2;
 #else /* !HAVE_POLL */
 	fd_set fds;
 	int max_fd;
 
+	FD_ZERO(&fds);
+	max_fd = fd0 >= fd0 ? fd0 : fd1;
+	if (max_fd >= FD_SETSIZE)
+		fatal(GFARM_MSG_1004158,
+		    "too big descriptor: fd0:%d fd1:%d", fd0, fd1);
+	FD_SET(fd0, &fds);
+	FD_SET(fd1, &fds);
+	nfound = select(max_fd + 1, &fds, NULL, NULL, NULL);
+	if (nfound == 0)
+		fatal(GFARM_MSG_1004159, "unexpected select in wait_2fds()");
+	if (nfound == -1) {
+		if (errno == EINTR || errno == EAGAIN)
+			return (0);
+		fatal_errno(GFARM_MSG_1004160, "select in wait_2fds()");
+	}
+	assert(nfound > 0);
+	if (FD_ISSET(fd0, &fds))
+		rv |= 1;
+	if (FD_ISSET(fd1, &fds))
+		rv |= 2;
+#endif /* !HAVE_POLL */
+	return rv;
+}
+
+void
+wait_fd_with_failover_pipe(int waiting_fd, const char *diag)
+{
+	int rv;
+
 	for (;;) {
-		FD_ZERO(&fds);
-		max_fd =
-		    client_fd >= failover_notify_recv_fd ?
-		    client_fd : failover_notify_recv_fd;
-		if (max_fd >= FD_SETSIZE)
-			fatal(GFARM_MSG_1004158,
-			    "too big descriptor: client_fd:%d failover_fd:%d",
-			    client_fd, failover_notify_recv_fd);
-		FD_SET(client_fd, &fds);
-		FD_SET(failover_notify_recv_fd, &fds);
-		nfound = select(max_fd + 1, &fds, NULL, NULL, NULL);
-		if (nfound == 0)
-			fatal(GFARM_MSG_1004159,
-			    "unexpected poll in wait_client()");
-		if (nfound == -1) {
-			if (errno == EINTR || errno == EAGAIN)
-				continue;
-			fatal_errno(GFARM_MSG_1004160,
-			    "select in wait_client()");
-		}
-		assert(nfound > 0);
-		if (FD_ISSET(failover_notify_recv_fd, &fds)) {
-			failover_notified(debug_mode, "gfsd-for-client");
+		rv = wait_2fds(waiting_fd, failover_notify_recv_fd, diag);
+		if (rv == 0)
+			continue;
+		if ((rv & 2) != 0) {
+			failover_notified(debug_mode, diag);
 			reconnect_gfm_server_for_failover("failover signal");
 		}
-		if (FD_ISSET(client_fd, &fds))
+		if ((rv & 1) != 0)
 			break;
 	}
-#endif /* !HAVE_POLL */
 }
 
 void
@@ -4694,7 +4816,8 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	}
 
 	for (;;) {
-		wait_client(gfp_xdr_fd(client));
+		wait_fd_with_failover_pipe(
+		    gfp_xdr_fd(client), "gfsd-for-client");
 		e = gfp_xdr_recv_notimeout(client, 0, &eof, "i", &request);
 		if (e != GFARM_ERR_NO_ERROR) {
 			conn_fatal(GFARM_MSG_1000557, "request number: %s",
@@ -5675,7 +5798,7 @@ start_back_channel_server(void)
 		back_channel_server();
 		/*NOTREACHED*/
 	case -1:
-		gflog_warning_errno(GFARM_MSG_1000567, "fork");
+		gflog_error_errno(GFARM_MSG_1000567, "fork");
 		/*FALLTHROUGH*/
 	default:
 		break;
@@ -6240,8 +6363,11 @@ main(int argc, char **argv)
 		gflog_fatal_errno(GFARM_MSG_1000598, "chdir(%s)",
 		    gfarm_spool_root);
 
+	/* call before spool check to get ringbuf from spool_check (not-yet) */
+	write_verify_state_init();
+
 	/* spool check */
-	gfsd_spool_check();
+	gfsd_spool_check(); /* should be after write_verify_state_init() */
 
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
@@ -6250,7 +6376,11 @@ main(int argc, char **argv)
 		gflog_fatal_errno(GFARM_MSG_1002404,
 		    "signal(SIGPIPE, SIG_IGN)");
 
-	/* start back channel server */
+	/* call before start_back_channel_server() */
+	if (gfarm_write_verify)
+		start_write_verify_controller();
+	write_verify_state_free(); /* type_listener doesn't need this */
+
 	start_back_channel_server();
 
 	table_size = FILE_TABLE_LIMIT;

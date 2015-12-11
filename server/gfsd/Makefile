@@ -15,8 +15,8 @@ LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
 PROGRAM = gfsd
-SRCS =	gfsd.c loadavg.c statfs.c spck.c
-OBJS =	gfsd.o loadavg.o statfs.o spck.o
+SRCS =	gfsd.c loadavg.c statfs.c spck.c write_verify.c
+OBJS =	gfsd.o loadavg.o statfs.o spck.o write_verify.o
 
 all: $(PROGRAM)
 
@@ -32,6 +32,7 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/nanosec.h \
 	$(GFUTIL_SRCDIR)/hash.h \
 	$(GFUTIL_SRCDIR)/timer.h \
+	$(GFUTIL_SRCDIR)/tree.h \
 	$(GFARMLIB_SRCDIR)/context.h \
 	$(GFARMLIB_SRCDIR)/gfp_xdr.h \
 	$(GFARMLIB_SRCDIR)/io_fd.h \
@@ -46,4 +47,5 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/gfm_proto.h \
 	$(GFARMLIB_SRCDIR)/gfm_client.h \
 	$(GFARMLIB_SRCDIR)/gfs_profile.h \
-	$(srcdir)/gfsd_subr.h
+	$(srcdir)/gfsd_subr.h \
+	$(srcdir)/write_verify.h

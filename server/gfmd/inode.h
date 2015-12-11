@@ -180,6 +180,8 @@ gfarm_error_t file_opening_cksum_set(struct file_opening *,
 	gfarm_int32_t, struct gfarm_timespec *);
 gfarm_error_t file_opening_cksum_get(struct file_opening *,
 	char **, size_t *, char **, gfarm_int32_t *);
+gfarm_error_t inode_cksum_get_on_host(struct inode *, struct host *,
+	char **, size_t *, char **, gfarm_int32_t *);
 
 int inode_is_opened_for_writing(struct inode *);
 int inode_is_opened_on(struct inode *, struct host *);

@@ -83,7 +83,7 @@ gfarm_msgdigest_final(unsigned char *md_value, EVP_MD_CTX *md_ctx)
 	unsigned int md_len;
 
 	EVP_DigestFinal(md_ctx, md_value, &md_len);
-	return md_len;
+	return (md_len);
 }
 
 size_t

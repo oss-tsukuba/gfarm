@@ -842,6 +842,12 @@ gfarm_set_local_user_for_this_uid(uid_t uid)
  * value at gfarm_config_set_default*().
  */
 /* GFS dependent */
+#define GFARM_SPOOL_BASE_LOAD_DEFAULT	0.0F
+#define GFARM_SPOOL_DIGEST_ERROR_CHECK_DEFAULT	1 /* enable */
+#define GFARM_WRITE_VERIFY_DEFAULT 0 /* disable */
+#define GFARM_WRITE_VERIFY_INTERVAL_DEFAULT 86400 /* 86400 seconds (1 day) */
+#define GFARM_WRITE_VERIFY_RETRY_INTERVAL_DEFAULT 600 /* 600 seconds (10min) */
+
 int gfarm_spool_server_listen_backlog = GFARM_CONFIG_MISC_DEFAULT;
 char *gfarm_spool_server_listen_address = NULL;
 int gfarm_spool_server_back_channel_rcvbuf_limit = GFARM_CONFIG_MISC_DEFAULT;
@@ -858,10 +864,11 @@ static struct {
 static enum gfarm_spool_check_level gfarm_spool_check_level =
 	GFARM_SPOOL_CHECK_LEVEL_DEFAULT;
 static const char *gfarm_spool_check_level_name = NULL;
-#define GFARM_SPOOL_BASE_LOAD_DEFAULT	0.0F
 float gfarm_spool_base_load = GFARM_CONFIG_MISC_DEFAULT;
-#define GFARM_SPOOL_DIGEST_ERROR_CHECK_DEFAULT	1 /* enable */
 int gfarm_spool_digest_error_check = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_write_verify = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_write_verify_interval = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_write_verify_retry_interval = GFARM_CONFIG_MISC_DEFAULT;
 
 /* GFM dependent */
 enum gfarm_backend_db_type gfarm_backend_db_type =
@@ -2791,6 +2798,12 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "spool_digest_error_check") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_spool_digest_error_check);
 
+	} else if (strcmp(s, o = "write_verify") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_write_verify);
+	} else if (strcmp(s, o = "write_verify_interval") == 0) {
+		e = parse_set_misc_int(p, &gfarm_write_verify_interval);
+	} else if (strcmp(s, o = "write_verify_retry_interval") == 0) {
+		e = parse_set_misc_int(p, &gfarm_write_verify_retry_interval);
 	} else if (strcmp(s, o = "metadb_server_host") == 0) {
 		e = parse_set_var(p, &gfarm_ctxp->metadb_server_name);
 	} else if (strcmp(s, o = "metadb_server_port") == 0) {
@@ -3228,6 +3241,14 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_spool_digest_error_check == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_spool_digest_error_check =
 		    GFARM_SPOOL_DIGEST_ERROR_CHECK_DEFAULT;
+	if (gfarm_write_verify == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_write_verify = GFARM_WRITE_VERIFY_DEFAULT;
+	if (gfarm_write_verify_interval == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_write_verify_interval =
+		    GFARM_WRITE_VERIFY_INTERVAL_DEFAULT;
+	if (gfarm_write_verify_retry_interval == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_write_verify_retry_interval =
+		    GFARM_WRITE_VERIFY_RETRY_INTERVAL_DEFAULT;
 
 	if (gfarm_spool_server_listen_backlog == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_spool_server_listen_backlog = LISTEN_BACKLOG_DEFAULT;

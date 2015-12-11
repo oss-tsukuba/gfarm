@@ -21,6 +21,9 @@ gfarm_error_t gfarm_spool_check_level_set(enum gfarm_spool_check_level);
 gfarm_error_t gfarm_spool_check_level_set_by_name(const char *);
 extern float gfarm_spool_base_load;
 extern int gfarm_spool_digest_error_check;
+extern int gfarm_write_verify;
+extern int gfarm_write_verify_interval;
+extern int gfarm_write_verify_retry_interval;
 
 /* GFM dependent */
 enum gfarm_atime_type {

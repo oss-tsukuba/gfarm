@@ -20,6 +20,7 @@
 #include "hash.h"
 
 #include "config.h"
+#include "gfp_xdr.h"
 #include "gfm_client.h"
 
 #include "gfsd_subr.h"
@@ -105,8 +106,16 @@ move_or_copy_to_lost_found(int op, const char *file, int fd, struct stat *stp,
 
 	mtime.tv_sec = stp->st_mtime;
 	mtime.tv_nsec = gfarm_stat_mtime_nsec(stp);
-	e = gfm_client_replica_create_file_in_lost_found(
-	    inum, gen, (gfarm_off_t)stp->st_size, &mtime, &inum_new, &gen_new);
+	for (;;) {
+		e = gfm_client_replica_create_file_in_lost_found(
+		    inum, gen, (gfarm_off_t)stp->st_size,
+		    &mtime, &inum_new, &gen_new);
+		if (!IS_CONNECTION_ERROR(e))
+			break;
+		free_gfm_server();
+		if ((e = connect_gfm_server(diag)) != GFARM_ERR_NO_ERROR)
+			fatal(GFARM_MSG_UNFIXED, "die");
+	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1003520,
 		    "%s (%lld:%lld): %s: %s",
@@ -176,12 +185,22 @@ move_or_copy_to_lost_found(int op, const char *file, int fd, struct stat *stp,
 		}
 		break;
 	}
-	if (e == GFARM_ERR_NO_ERROR &&
-	    (e = gfm_client_replica_add(inum_new, gen_new,
-		    (gfarm_off_t)stp->st_size)) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_1003523,
-		    "%s: replica_add failed: %s", newpath,
-		    gfarm_error_string(e));
+	if (e == GFARM_ERR_NO_ERROR) {
+		for (;;) {
+			e = gfm_client_replica_add(inum_new, gen_new,
+			    (gfarm_off_t)stp->st_size);
+			if (!IS_CONNECTION_ERROR(e))
+				break;
+			free_gfm_server();
+			if ((e = connect_gfm_server(diag))
+			    != GFARM_ERR_NO_ERROR)
+				fatal(GFARM_MSG_UNFIXED, "die");
+		}
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_1003523,
+			    "%s: replica_add failed: %s", newpath,
+			    gfarm_error_string(e));
+	}
 	free(newpath);
 	return (e);
 }
@@ -608,7 +627,7 @@ gfsd_spool_check()
 	default:
 		return;
 	}
-	(void)check_spool(".", hash_ok);
+	(void)check_spool("data", hash_ok);
 	if (hash_ok)
 		gfarm_hash_table_free(hash_ok);
 }

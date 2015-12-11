@@ -542,6 +542,54 @@ file_opening_cksum_get(struct file_opening *fo,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+gfarm_error_t
+inode_cksum_get_on_host(struct inode *inode, struct host *spool_host,
+	char **cksum_typep, size_t *cksum_lenp, char **cksump,
+	gfarm_int32_t *flagsp)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+	struct checksum *cs;
+	gfarm_int32_t flags = 0;
+
+	if (!inode_is_file(inode)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode type is not file");
+		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+	}
+
+	/*
+	 * already removed, or (once removed and) during replication.
+	 * if it's during replication, write_verify will be requested again
+	 * after the completion of the replication.
+	 */
+	if (!inode_has_replica(inode, spool_host))
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	/* opened for writing? */
+	if (ia != NULL && ia->u.f.writers > 0)
+		flags |= GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED;
+
+	/*
+	 * NOTE: We don't/can't check GFM_PROTO_CKSUM_GET_EXPIRED here, but
+	 * the caller side should have already checked it by using inode gen.
+	 */
+
+	cs = inode->u.c.s.f.cksum;
+	if (cs == NULL) {
+		*cksum_typep = gfarm_digest;
+		*cksum_lenp = 0;
+		*cksump = NULL;
+		*flagsp = flags;
+		return (GFARM_ERR_NO_ERROR);
+	}
+	/* NOTE: These values shoundn't be referered without giant_lock */
+	*cksum_typep = cs->type;
+	*cksum_lenp = cs->len;
+	*cksump = cs->sum;
+	*flagsp = flags;
+	return (GFARM_ERR_NO_ERROR);
+}
+
 static void
 xattrs_init(struct xattrs *xattrs)
 {
