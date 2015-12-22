@@ -641,14 +641,15 @@ replica_lost_move_to_lost_found_by_fd(gfarm_ino_t ino, gfarm_uint64_t gen,
 
 #ifdef O_DIRECT
 #define WRITE_VERIFY_OPEN_MODE	(O_RDONLY|O_DIRECT)
-#else
-#define WRITE_VERIFY_OPEN_MODE	(O_RDONLY)
-#endif
-
 /* larger buffer size is better, because direct I/O doesn't do read-ahead */
 #define WRITE_VERIFY_BUFSIZE	(1024*1024)
+#else
+#define WRITE_VERIFY_OPEN_MODE	(O_RDONLY)
+/* small size is better, because of read-ahead */
+#define WRITE_VERIFY_BUFSIZE	65536
+#endif
 
-#define LINUX_RAWIO_ALIGNMENT	512	/* Linux needs this */
+#define LINUX_RAWIO_ALIGNMENT	512	/* Linux O_DIRECT feature needs this */
 
 static char write_verify_buf[WRITE_VERIFY_BUFSIZE + LINUX_RAWIO_ALIGNMENT - 1];
 
