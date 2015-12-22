@@ -2146,6 +2146,71 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>write_verify</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+enableと指定した場合、
+ファイル書き込み後しばらく後に、gfsd がデータを読み直してチェックサムを
+再確認する write_verify 機能が有効になります。
+デフォルトは <token>disable</token> です。
+</para>
+<para>
+この文は gfsd が参照する gfarm2.conf のみで有効であり、
+クライアントや gfmd.conf では無視されます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	write_verify enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_verify_interval</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>
+ファイルへの書き込み完了後、どの程度時間をおいて、write_verify を実施するか、
+秒数で指定します。
+デフォルトは 21600秒 (6時間) です。
+</para>
+<para>
+write_verify のための読み込みは、O_DIRECT 機能が存在する OS では、
+direct I/O を用います。しかし、ディスクコントローラ内のキャッシュや、
+メタデータ・キャッシュのクリアは行ないませんので、write_verify_interval
+には、十分長い時間を指定することを推奨します。
+</para>
+<para>
+この文は gfsd が参照する gfarm2.conf のみで有効であり、
+クライアントや gfmd.conf では無視されます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	write_verify_interval 21600
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_verify_retry_interval</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>
+write_verify を試みたが、対象ファイルが書き込みオープンされていて
+実施できなかった場合に、どれだけの時間待ってから、再度 write_verify を
+試みるかを指定します。
+デフォルトは 600秒 (10分) です。
+</para>
+<para>
+この文は gfsd が参照する gfarm2.conf のみで有効であり、
+クライアントや gfmd.conf では無視されます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	write_verify_retry_interval 600
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -2257,7 +2322,10 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;replica_check_reduced_log_statement&gt; |
 	&lt;replica_check_host_down_thresh_statement&gt; |
 	&lt;replica_check_sleep_time_statement&gt; |
-	&lt;replica_check_minimum_interval_statement&gt;</literallayout></listitem>
+	&lt;replica_check_minimum_interval_statement&gt; |
+	&lt;write_verify_statement&gt; |
+	&lt;write_verify_interval_statement&gt; |
+	&lt;write_verify_retry_interval_statement&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2957,6 +3025,21 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <term>&lt;fatal_action_name&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"backtrace_and_abort" | "backtrace_and_exit" |
 	"abort" | "exit"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_retry_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify_retry_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 </variablelist>

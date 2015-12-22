@@ -2206,6 +2206,70 @@ This parameter is only available in gfmd.conf.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>write_verify</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+This statement enables gfsd's write_verify feature that compares file data
+checksum by re-reading the contents of the file sometime after the file
+is written.
+The default is <token>disable</token>.
+</para>
+<para>
+This parameter is only available in gfarm2.conf which is referred by gfsd,
+and ignored clients, and ignored in gfmd.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	write_verify enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_verify_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+This statement specifies how long to wait before starting the write_verify
+feature after a file is written.
+The default value is 21600 seconds (6 hours).
+</para>
+<para>
+The write_verify feature uses direct I/O on OSes which have the O_DIRECT flag.
+But it does not flush caches on disk controllers and kernel metadata.
+Thus, it's recommended to specify long enough period in this parameter.
+</para>
+<para>
+This parameter is only available in gfarm2.conf which is referred by gfsd,
+and ignored clients, and ignored in gfmd.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	write_verify_interval 21600
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_verify_retry_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+This statement specifies how long to wait until retring the write_verify
+feature, if previous try was postponed, because the file was opened
+for writing at that time.
+The default value is 600 seconds (10 minutes).
+</para>
+<para>
+This parameter is only available in gfarm2.conf which is referred by gfsd,
+and ignored clients, and ignored in gfmd.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	write_verify_retry_interval 600
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -2318,7 +2382,10 @@ notation.</para>
 	&lt;replica_check_reduced_log_statement&gt; |
 	&lt;replica_check_host_down_thresh_statement&gt; |
 	&lt;replica_check_sleep_time_statement&gt; |
-	&lt;replica_check_minimum_interval_statement&gt;</literallayout></listitem>
+	&lt;replica_check_minimum_interval_statement&gt; |
+	&lt;write_verify_statement&gt; |
+	&lt;write_verify_interval_statement&gt; |
+	&lt;write_verify_retry_interval_statement&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -3018,6 +3085,21 @@ notation.</para>
 <term>&lt;fatal_action_name&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"backtrace_and_abort" | "backtrace_and_exit" |
 	"abort" | "exit"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_retry_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify_retry_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 </variablelist>
