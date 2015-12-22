@@ -1613,6 +1613,62 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	replica_check_minimum_interval 5<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">write_verify</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>
+enableと指定した場合、
+ファイル書き込み後しばらく後に、gfsd がデータを読み直してチェックサムを
+再確認する write_verify 機能が有効になります。
+デフォルトは <span class="token">disable</span> です。
+</p>
+<p>
+この文は gfsd が参照する gfarm2.conf のみで有効であり、
+クライアントや gfmd.conf では無視されます。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	write_verify enable<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">write_verify_interval</span> <em class="parameter"><code>秒数</code></em></span></dt>
+<dd>
+<p>
+ファイルへの書き込み完了後、どの程度時間をおいて、write_verify を実施するか、
+秒数で指定します。
+デフォルトは 21600秒 (6時間) です。
+</p>
+<p>
+write_verify のための読み込みは、O_DIRECT 機能が存在する OS では、
+direct I/O を用います。しかし、ディスクコントローラ内のキャッシュや、
+メタデータ・キャッシュのクリアは行ないませんので、write_verify_interval
+には、十分長い時間を指定することを推奨します。
+</p>
+<p>
+この文は gfsd が参照する gfarm2.conf のみで有効であり、
+クライアントや gfmd.conf では無視されます。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	write_verify_interval 21600<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">write_verify_retry_interval</span> <em class="parameter"><code>秒数</code></em></span></dt>
+<dd>
+<p>
+write_verify を試みたが、対象ファイルが書き込みオープンされていて
+実施できなかった場合に、どれだけの時間待ってから、再度 write_verify を
+試みるかを指定します。
+デフォルトは 600秒 (10分) です。
+</p>
+<p>
+この文は gfsd が参照する gfarm2.conf のみで有効であり、
+クライアントや gfmd.conf では無視されます。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	write_verify_retry_interval 600<br>
+</p></div>
+</dd>
 </dl></div>
 </div>
 <div class="refsect1" title="GRAMMAR">
@@ -1723,7 +1779,10 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;replica_check_reduced_log_statement&gt; |<br>
 	&lt;replica_check_host_down_thresh_statement&gt; |<br>
 	&lt;replica_check_sleep_time_statement&gt; |<br>
-	&lt;replica_check_minimum_interval_statement&gt;</p></div></dd>
+	&lt;replica_check_minimum_interval_statement&gt; |<br>
+	&lt;write_verify_statement&gt; |<br>
+	&lt;write_verify_interval_statement&gt; |<br>
+	&lt;write_verify_retry_interval_statement&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_server_listen_address_statement&gt; ::=</span></dt>
@@ -1976,6 +2035,12 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <dt><span class="term">&lt;fatal_action_name&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"backtrace_and_abort" | "backtrace_and_exit" |<br>
 	"abort" | "exit"</p></div></dd>
+<dt><span class="term">&lt;write_verify_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"write_verify" &lt;validity&gt;</p></div></dd>
+<dt><span class="term">&lt;write_verify_interval_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"write_verify_interval" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;write_verify_retry_interval_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"write_verify_retry_interval" &lt;number&gt;</p></div></dd>
 </dl></div>
 </div>
 <div class="refsect1" title="EXAMPLES">

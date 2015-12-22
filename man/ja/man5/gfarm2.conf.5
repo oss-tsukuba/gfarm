@@ -1969,6 +1969,67 @@ replica_checkが動作するための最小間隔(秒)を指定します。 デ�
 .RE
 .\}
 .RE
+.PP
+write_verify \fI有効性\fR
+.RS 4
+enableと指定した場合、 ファイル書き込み後しばらく後に、gfsd がデータを読み直してチェックサムを 再確認する write_verify 機能が有効になります。 デフォルトは
+disable
+です。
+.sp
+この文は gfsd が参照する gfarm2\&.conf のみで有効であり、 クライアントや gfmd\&.conf では無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	write_verify enable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+write_verify_interval \fI秒数\fR
+.RS 4
+ファイルへの書き込み完了後、どの程度時間をおいて、write_verify を実施するか、 秒数で指定します。 デフォルトは 21600秒 (6時間) です。
+.sp
+write_verify のための読み込みは、O_DIRECT 機能が存在する OS では、 direct I/O を用います。しかし、ディスクコントローラ内のキャッシュや、 メタデータ・キャッシュのクリアは行ないませんので、write_verify_interval には、十分長い時間を指定することを推奨します。
+.sp
+この文は gfsd が参照する gfarm2\&.conf のみで有効であり、 クライアントや gfmd\&.conf では無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	write_verify_interval 21600
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+write_verify_retry_interval \fI秒数\fR
+.RS 4
+write_verify を試みたが、対象ファイルが書き込みオープンされていて 実施できなかった場合に、どれだけの時間待ってから、再度 write_verify を 試みるかを指定します。 デフォルトは 600秒 (10分) です。
+.sp
+この文は gfsd が参照する gfarm2\&.conf のみで有効であり、 クライアントや gfmd\&.conf では無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	write_verify_retry_interval 600
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SH "GRAMMAR"
 .PP
 gfarm2\&.confの文法をBNFで記述すると、下記のようになります。
@@ -2082,7 +2143,10 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<replica_check_reduced_log_statement> |
 	<replica_check_host_down_thresh_statement> |
 	<replica_check_sleep_time_statement> |
-	<replica_check_minimum_interval_statement>
+	<replica_check_minimum_interval_statement> |
+	<write_verify_statement> |
+	<write_verify_interval_statement> |
+	<write_verify_retry_interval_statement>
 .fi
 .if n \{\
 .RE
@@ -3787,6 +3851,48 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .nf
 "backtrace_and_abort" | "backtrace_and_exit" |
 	"abort" | "exit"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<write_verify_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"write_verify" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<write_verify_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"write_verify_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<write_verify_retry_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"write_verify_retry_interval" <number>
 .fi
 .if n \{\
 .RE

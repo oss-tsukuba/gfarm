@@ -2125,6 +2125,66 @@ Example:
 .RE
 .\}
 .RE
+.PP
+write_verify \fIvalidity\fR
+.RS 4
+This statement enables gfsd\'s write_verify feature that compares file data checksum by re\-reading the contents of the file sometime after the file is written\&. The default is
+disable\&.
+.sp
+This parameter is only available in gfarm2\&.conf which is referred by gfsd, and ignored clients, and ignored in gfmd\&.conf\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	write_verify enable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+write_verify_interval \fIseconds\fR
+.RS 4
+This statement specifies how long to wait before starting the write_verify feature after a file is written\&. The default value is 21600 seconds (6 hours)\&.
+.sp
+The write_verify feature uses direct I/O on OSes which have the O_DIRECT flag\&. But it does not flush caches on disk controllers and kernel metadata\&. Thus, it\'s recommended to specify long enough period in this parameter\&.
+.sp
+This parameter is only available in gfarm2\&.conf which is referred by gfsd, and ignored clients, and ignored in gfmd\&.conf\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	write_verify_interval 21600
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+write_verify_retry_interval \fIseconds\fR
+.RS 4
+This statement specifies how long to wait until retring the write_verify feature, if previous try was postponed, because the file was opened for writing at that time\&. The default value is 600 seconds (10 minutes)\&.
+.sp
+This parameter is only available in gfarm2\&.conf which is referred by gfsd, and ignored clients, and ignored in gfmd\&.conf\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	write_verify_retry_interval 600
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SH "GRAMMAR"
 .PP
 This is a grammar of gfarm2\&.conf described by the BNF notation\&.
@@ -2238,7 +2298,10 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<replica_check_reduced_log_statement> |
 	<replica_check_host_down_thresh_statement> |
 	<replica_check_sleep_time_statement> |
-	<replica_check_minimum_interval_statement>
+	<replica_check_minimum_interval_statement> |
+	<write_verify_statement> |
+	<write_verify_interval_statement> |
+	<write_verify_retry_interval_statement>
 .fi
 .if n \{\
 .RE
@@ -3943,6 +4006,48 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .nf
 "backtrace_and_abort" | "backtrace_and_exit" |
 	"abort" | "exit"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<write_verify_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"write_verify" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<write_verify_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"write_verify_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<write_verify_retry_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"write_verify_retry_interval" <number>
 .fi
 .if n \{\
 .RE

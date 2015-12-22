@@ -1671,6 +1671,61 @@ This parameter is only available in gfmd.conf.
 	replica_check_minimum_interval 5<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">write_verify</span> <em class="parameter"><code>validity</code></em></span></dt>
+<dd>
+<p>
+This statement enables gfsd's write_verify feature that compares file data
+checksum by re-reading the contents of the file sometime after the file
+is written.
+The default is <span class="token">disable</span>.
+</p>
+<p>
+This parameter is only available in gfarm2.conf which is referred by gfsd,
+and ignored clients, and ignored in gfmd.conf.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	write_verify enable<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">write_verify_interval</span> <em class="parameter"><code>seconds</code></em></span></dt>
+<dd>
+<p>
+This statement specifies how long to wait before starting the write_verify
+feature after a file is written.
+The default value is 21600 seconds (6 hours).
+</p>
+<p>
+The write_verify feature uses direct I/O on OSes which have the O_DIRECT flag.
+But it does not flush caches on disk controllers and kernel metadata.
+Thus, it's recommended to specify long enough period in this parameter.
+</p>
+<p>
+This parameter is only available in gfarm2.conf which is referred by gfsd,
+and ignored clients, and ignored in gfmd.conf.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	write_verify_interval 21600<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">write_verify_retry_interval</span> <em class="parameter"><code>seconds</code></em></span></dt>
+<dd>
+<p>
+This statement specifies how long to wait until retring the write_verify
+feature, if previous try was postponed, because the file was opened
+for writing at that time.
+The default value is 600 seconds (10 minutes).
+</p>
+<p>
+This parameter is only available in gfarm2.conf which is referred by gfsd,
+and ignored clients, and ignored in gfmd.conf.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	write_verify_retry_interval 600<br>
+</p></div>
+</dd>
 </dl></div>
 </div>
 <div class="refsect1" title="GRAMMAR">
@@ -1782,7 +1837,10 @@ notation.</p>
 	&lt;replica_check_reduced_log_statement&gt; |<br>
 	&lt;replica_check_host_down_thresh_statement&gt; |<br>
 	&lt;replica_check_sleep_time_statement&gt; |<br>
-	&lt;replica_check_minimum_interval_statement&gt;</p></div></dd>
+	&lt;replica_check_minimum_interval_statement&gt; |<br>
+	&lt;write_verify_statement&gt; |<br>
+	&lt;write_verify_interval_statement&gt; |<br>
+	&lt;write_verify_retry_interval_statement&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_server_listen_address_statement&gt; ::=</span></dt>
@@ -2035,6 +2093,12 @@ notation.</p>
 <dt><span class="term">&lt;fatal_action_name&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"backtrace_and_abort" | "backtrace_and_exit" |<br>
 	"abort" | "exit"</p></div></dd>
+<dt><span class="term">&lt;write_verify_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"write_verify" &lt;validity&gt;</p></div></dd>
+<dt><span class="term">&lt;write_verify_interval_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"write_verify_interval" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;write_verify_retry_interval_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"write_verify_retry_interval" &lt;number&gt;</p></div></dd>
 </dl></div>
 </div>
 <div class="refsect1" title="EXAMPLES">
