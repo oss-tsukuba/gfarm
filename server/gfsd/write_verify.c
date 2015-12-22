@@ -65,7 +65,7 @@ read_nbytes(int fd, void *buffer, size_t sz, const char *diag)
 	return (1);
 }
 
-static void
+static int
 write_nbytes(int fd, void *buffer, size_t sz, const char *diag)
 {
 	char *bufp = buffer;
@@ -77,8 +77,7 @@ write_nbytes(int fd, void *buffer, size_t sz, const char *diag)
 		if (rv == -1) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
-			fatal(GFARM_MSG_UNFIXED,
-			    "%s: write: %s", diag, strerror(errno));
+			return (errno);
 		}
 		if (rv == 0) {
 			fatal(GFARM_MSG_UNFIXED,
@@ -87,6 +86,7 @@ write_nbytes(int fd, void *buffer, size_t sz, const char *diag)
 		}
 		done += rv;
 	}
+	return (0); /* no error */
 }
 
 /*
@@ -215,11 +215,15 @@ write_verify_job_req_send(
 	gfarm_int64_t ino, gfarm_uint64_t gen, const char *diag)
 {
 	struct write_verify_job_req jreq;
+	int err;
 
 	jreq.ino = ino;
 	jreq.gen = gen;
-	write_nbytes(
+	err = write_nbytes(
 	    write_verify_job_controller_fd, &jreq, sizeof(jreq), diag);
+	if (err != 0)
+		fatal(GFARM_MSG_UNFIXED, "%s: write: %s",
+		    diag, strerror(err));
 }
 
 static int
@@ -233,10 +237,20 @@ static void
 write_verify_job_reply_send(unsigned char status, const char *diag)
 {
 	struct write_verify_job_reply jreply;
+	int err;
 
 	jreply.status = status;
-	write_nbytes(
+	err = write_nbytes(
 	    write_verify_job_verifier_fd, &jreply, sizeof(jreply), diag);
+	if (err == EPIPE) {
+		/* type_write_verify_controller exited before this process */
+		gflog_info(GFARM_MSG_UNFIXED, "%s: write: %s, end",
+		    diag, strerror(err));
+		exit(0);
+	} else if (err != 0) {
+		fatal(GFARM_MSG_UNFIXED, "%s: write: %s",
+		    diag, strerror(err));
+	}
 }
 
 static int
