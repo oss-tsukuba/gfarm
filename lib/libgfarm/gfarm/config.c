@@ -845,7 +845,7 @@ gfarm_set_local_user_for_this_uid(uid_t uid)
 #define GFARM_SPOOL_BASE_LOAD_DEFAULT	0.0F
 #define GFARM_SPOOL_DIGEST_ERROR_CHECK_DEFAULT	1 /* enable */
 #define GFARM_WRITE_VERIFY_DEFAULT 0 /* disable */
-#define GFARM_WRITE_VERIFY_INTERVAL_DEFAULT 86400 /* 86400 seconds (1 day) */
+#define GFARM_WRITE_VERIFY_INTERVAL_DEFAULT 21600 /* seconds (6 hours) */
 #define GFARM_WRITE_VERIFY_RETRY_INTERVAL_DEFAULT 600 /* 600 seconds (10min) */
 
 int gfarm_spool_server_listen_backlog = GFARM_CONFIG_MISC_DEFAULT;
