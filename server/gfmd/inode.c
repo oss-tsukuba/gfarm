@@ -1783,6 +1783,10 @@ inode_get_ncopy_common(struct inode *inode, int is_valid, int is_up)
 	struct file_copy *copy;
 	gfarm_int64_t n = 0;
 
+	if (!inode_is_file(inode)) {
+		gflog_error(GFARM_MSG_UNFIXED, "internal error: not a file");
+		return (0);
+	}
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
 		if ((is_valid ? FILE_COPY_IS_VALID(copy) : 1) &&
@@ -2058,6 +2062,7 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 {
 	gfarm_error_t e;
 	int change_user = 0, change_group = 0;
+	gfarm_int64_t ncopy = 0;
 
 	if (user == NULL && group == NULL)
 		return (GFARM_ERR_NO_ERROR); /* shortcut */
@@ -2066,16 +2071,18 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 		change_user = 1;
 	if (group != NULL && group != inode_get_group(inode))
 		change_group = 1;
+	if (inode_is_file(inode))
+		ncopy = inode_get_ncopy_with_dead_host(inode);
 	e = quota_limit_check(
 	    change_user ? user : NULL, change_group ? group : NULL,
-	    1, inode_get_ncopy_with_dead_host(inode), inode_get_size(inode));
+	    1, ncopy, inode_get_size(inode));
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "inode=%lld, quota_limit_check(%s, %s, 1, %lld, %lld): %s",
 		    (long long)inode_get_number(inode),
 		    user ? user_name(user) : "NULL",
 		    group ? group_name(group) : "NULL",
-		    (long long)inode_get_ncopy_with_dead_host(inode),
+		    (long long)ncopy,
 		    (long long)inode_get_size(inode),
 		    gfarm_error_string(e));
 		return (e);
