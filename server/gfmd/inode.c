@@ -2057,16 +2057,17 @@ gfarm_error_t
 inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 {
 	gfarm_error_t e;
+	int change_user = 0, change_group = 0;
 
-	if (user != NULL && user == inode_get_user(inode))
-		user = NULL;  /* not changed */
-	if (group != NULL && group == inode_get_group(inode))
-		group = NULL; /* not changed */
-	/* if unchanged, ctime is not updated */
 	if (user == NULL && group == NULL)
 		return (GFARM_ERR_NO_ERROR); /* shortcut */
 
-	e = quota_limit_check(user, group,
+	if (user != NULL && user != inode_get_user(inode))
+		change_user = 1;
+	if (group != NULL && group != inode_get_group(inode))
+		change_group = 1;
+	e = quota_limit_check(
+	    change_user ? user : NULL, change_group ? group : NULL,
 	    1, inode_get_ncopy_with_dead_host(inode), inode_get_size(inode));
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -2081,7 +2082,7 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 	}
 
 	quota_update_file_remove(inode);
-	if (user != NULL) {
+	if (change_user) {
 		inode->i_user = user;
 
 		e = db_inode_user_modify(inode->i_number, user_name(user));
@@ -2091,7 +2092,7 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 			    (unsigned long long)inode->i_number,
 			    gfarm_error_string(e));
 	}
-	if (group != NULL) {
+	if (change_group) {
 		inode->i_group = group;
 
 		e = db_inode_group_modify(inode->i_number, group_name(group));
