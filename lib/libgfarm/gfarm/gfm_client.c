@@ -3265,6 +3265,17 @@ gfm_client_replica_get_cksum(struct gfm_connection *gfm_server,
 	    cksum_typep, bufsize, cksum_lenp, cksum, flagsp));
 }
 
+gfarm_error_t
+gfm_client_fhset_cksum(struct gfm_connection *gfm_server,
+	gfarm_ino_t inum, gfarm_uint64_t gen,
+	const char *cksum_type, size_t cksum_len, const char *cksum,
+	gfarm_int32_t flags)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+	    GFM_PROTO_FHSET_CKSUM, "llsbi/", inum, gen,
+	    cksum_type, cksum_len, cksum, flags));
+}
+
 #if 1 /* should be 0, since gfmd has to be newer than gfsd */
 gfarm_error_t
 gfm_client_switch_back_channel(struct gfm_connection *gfm_server)

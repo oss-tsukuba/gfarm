@@ -349,6 +349,10 @@ gfarm_error_t gfm_client_replica_open_status(struct gfm_connection *,
 gfarm_error_t gfm_client_replica_get_cksum(struct gfm_connection *,
 	gfarm_ino_t, gfarm_uint64_t,
 	char **, size_t, size_t *, char *, gfarm_int32_t *);
+gfarm_error_t gfm_client_fhset_cksum(struct gfm_connection *,
+	gfarm_ino_t, gfarm_uint64_t,
+	const char *, size_t, const char *, gfarm_int32_t flags);
+
 #if 1 /* should be 0, since gfmd has to be newer than gfsd */
 gfarm_error_t gfm_client_switch_back_channel(struct gfm_connection *);
 #endif

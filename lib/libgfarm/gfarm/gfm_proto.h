@@ -252,7 +252,7 @@ enum gfm_proto_command {
 	GFM_PROTO_REPLICA_ADDED_CKSUM,		/* since gfarm-2.6.0 */
 	GFM_PROTO_REPLICA_OPEN_STATUS,		/* since gfarm-2.6.6 */
 	GFM_PROTO_REPLICA_GET_CKSUM,		/* since gfarm-2.6.8 */
-	GFM_PROTO_REPLICA_MNG_RESERVE14,
+	GFM_PROTO_FHSET_CKSUM,			/* since gfarm-2.6.8 */
 	GFM_PROTO_REPLICA_MNG_RESERVE15,
 
 	/* job management */
@@ -377,6 +377,7 @@ enum gfm_proto_command {
 
 /*
  * GFM_PROTO_CKSUM_SET request flags
+ * and maybe GFM_PROTO_FHSET_CKSUM too? (not really used at least for now)
  */
 #define	GFM_PROTO_CKSUM_SET_REPORT_ONLY		0x00000001 /* since 2.6.1 */
 

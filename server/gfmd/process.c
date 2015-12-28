@@ -1421,8 +1421,14 @@ process_replica_added(struct process *process,
 		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_SUM_AVAIL
 		    ) == 0 && cksum_type != NULL && *cksum_type != '\0' &&
 		    cksum_len > 0) {
+			int cksum_is_set;
+
+			/*
+			 * calling inode_cksum_set() without checking
+			 * `cs == NULL' is OK, since r8972.
+			 */
 			e = inode_cksum_set(fo->inode, cksum_type, cksum_len,
-			    cksum, cksum_result_flags, 0);
+			    cksum, cksum_result_flags, 0, &cksum_is_set);
 			if (e != GFARM_ERR_NO_ERROR)
 				gflog_notice(GFARM_MSG_1004221,
 				    "checksum error during replication of "
@@ -1431,6 +1437,14 @@ process_replica_added(struct process *process,
 				    (long long)fo->u.f.replica_source->gen,
 				    host_name(spool_host),
 				    gfarm_error_string(e));
+			else if (cksum_is_set)
+				gflog_notice(GFARM_MSG_UNFIXED,
+				    "inode %lld:%lld: checksum set to "
+				    "<%s>:<%.*s> by replication to %s",
+				    (long long)inode_get_number(fo->inode),
+				    (long long)fo->u.f.replica_source->gen,
+				    cksum_type, (int)cksum_len, cksum,
+				    host_name(spool_host));
 		}
 		if (e == GFARM_ERR_NO_ERROR) {
 			e = inode_add_replica(fo->inode, spool_host, 1);

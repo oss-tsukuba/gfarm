@@ -327,8 +327,8 @@ inode_cksum_set_internal(struct inode *inode,
 	if (!overflow)
 		cs = malloc(size);
 	if (overflow || cs == NULL) {
-		gflog_debug(GFARM_MSG_1001712,
-			"allocation of 'size' failed or overflow");
+		gflog_error(GFARM_MSG_1001712,
+		    "cksum allocation failed: no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	cs->type = cs->sum + cksum_len;
@@ -375,7 +375,7 @@ cmp_cksum(struct checksum *c1,
 gfarm_error_t
 inode_cksum_set(struct inode *inode,
 	const char *cksum_type, size_t cksum_len, const char *cksum,
-	gfarm_int32_t cksum_result_flags, int i_am_only_writer)
+	gfarm_int32_t cksum_result_flags, int i_am_only_writer, int *is_setp)
 {
 	gfarm_error_t e;
 	struct inode_activity *ia = inode->u.c.activity;
@@ -404,6 +404,8 @@ inode_cksum_set(struct inode *inode,
 				   (unsigned long long)inode_get_number(inode),
 				   (unsigned long long)inode_get_gen(inode),
 				   gfarm_error_string(e));
+				if (is_setp != NULL)
+					*is_setp = 0;
 				return (GFARM_ERR_NO_ERROR);
 			} else {
 				/*
@@ -427,6 +429,8 @@ inode_cksum_set(struct inode *inode,
 			    diag, (unsigned long long)inode_get_number(inode),
 			    (unsigned long long)inode_get_gen(inode),
 			    gfarm_error_string(e));
+			if (is_setp != NULL)
+				*is_setp = 0;
 			return (GFARM_ERR_NO_ERROR);
 		}
 	} else if ((cksum_result_flags & GFM_PROTO_CKSUM_SET_REPORT_ONLY)
@@ -437,6 +441,8 @@ inode_cksum_set(struct inode *inode,
 			    "about multiple writer case", diag,
 			   (unsigned long long)inode_get_number(inode),
 			   (unsigned long long)inode_get_gen(inode));
+			if (is_setp != NULL)
+				*is_setp = 0;
 			return (GFARM_ERR_NO_ERROR);
 		}
 		if (inode_get_size(inode) > 0) {
@@ -458,6 +464,8 @@ inode_cksum_set(struct inode *inode,
 		 * same between gfsd and libgfarm, especially about
 		 * whether they call lseek(,SEEK_CUR,) or not.
 		 */
+		if (is_setp != NULL)
+			*is_setp = 0;
 		return (GFARM_ERR_NO_ERROR);
 
 	}
@@ -476,8 +484,29 @@ inode_cksum_set(struct inode *inode,
 		    (unsigned long long)inode->i_number,
 		    gfarm_error_string(e));
 
-	/* inode_cksum_set_in_cache() calls gflog_debug */
+	if (is_setp != NULL)
+		*is_setp = 1;
+	/* inode_cksum_set_in_cache() calls gflog_error/gflog_debug */
 	return (inode_cksum_set_in_cache(inode, cksum_type, cksum_len, cksum));
+}
+
+/*
+ * This function is called from GFM_PROTO_FHSET_CKSUM (i.e. write_verify gfsd).
+ * Unlike GFM_PROTO_CKSUM_SET, this protocol never sets checksum,
+ * if the file is opened for writing, and returns GFARM_ERR_FILE_BUSY
+ * in that case.
+ */
+gfarm_error_t
+inode_cksum_set_if_not_writing(struct inode *inode,
+	const char *cksum_type, size_t cksum_len, const char *cksum,
+	gfarm_int32_t cksum_result_flags)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+
+	if (ia != NULL && ia->u.f.writers > 0)
+		return (GFARM_ERR_FILE_BUSY);
+	return (inode_cksum_set(inode,
+	    cksum_type, cksum_len, cksum, cksum_result_flags, 0, NULL));
 }
 
 gfarm_error_t
@@ -496,9 +525,10 @@ file_opening_cksum_set(struct file_opening *fo,
 		return (GFARM_ERR_EXPIRED);
 	}
 	e = inode_cksum_set(fo->inode, cksum_type, cksum_len, cksum, flags,
-	    ia->u.f.writers == 1 && (accmode_to_op(fo->flag) & GFS_W_OK) != 0);
+	    ia->u.f.writers == 1 && (accmode_to_op(fo->flag) & GFS_W_OK) != 0,
+	    NULL);
 	if (e != GFARM_ERR_NO_ERROR)
-		return (e); /* inode_cksum_set() calls gflog_debug */
+		return (e); /* inode_cksum_set() calls gflog_error/debug */
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -4655,12 +4685,14 @@ inode_replicated(struct file_replicating *fr,
 		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_SUM_AVAIL
 		    ) == 0 && cksum_type != NULL && *cksum_type != '\0' &&
 		    cksum_len > 0) {
+			int cksum_is_set;
+
 			/*
 			 * calling inode_cksum_set() without checking
 			 * `cs == NULL' is OK, since r8972.
 			 */
 			e = inode_cksum_set(inode, cksum_type, cksum_len,
-			    cksum, cksum_result_flags, 0);
+			    cksum, cksum_result_flags, 0, &cksum_is_set);
 			if (e != GFARM_ERR_NO_ERROR)
 				gflog_notice(GFARM_MSG_1004223,
 				    "checksum error during replication of "
@@ -4668,6 +4700,14 @@ inode_replicated(struct file_replicating *fr,
 				    (long long)inode_get_number(inode),
 				    (long long)fr->igen, host_name(fr->dst),
 				    gfarm_error_string(e));
+			else if (cksum_is_set)
+				gflog_notice(GFARM_MSG_UNFIXED,
+				    "%s: inode %lld:%lld: checksum set to "
+				    "<%s>:<%.*s> by replication to %s",
+				    diag, (long long)inode_get_number(inode),
+				    (long long)fr->igen,
+				    cksum_type, (int)cksum_len, cksum,
+				    host_name(fr->dst));
 		}
 		if (e == GFARM_ERR_NO_ERROR) {
 			e = inode_add_replica(inode, fr->dst, 1);

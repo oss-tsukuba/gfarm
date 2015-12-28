@@ -707,14 +707,7 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 		    WRITE_VERIFY_JOB_REPLY_STATUS_POSTPONE, diag);
 		return;
 	}
-	if (gotten_cksum_len == 0) {
-		gflog_info(GFARM_MSG_UNFIXED,
-		    "%s: %lld:%lld: no checksum, skipped",
-		    diag, (long long)ino, (long long)gen);
-		write_verify_job_reply_send(
-		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
-		return;
-	}
+	/* NOTE: maybe gotten_cksum_len == 0 here, if checksum is not set */
 
 	gfsd_local_path(ino, gen, diag, &path);
 	local_fd = open_data(path, WRITE_VERIFY_OPEN_MODE);
@@ -740,8 +733,45 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
 		return;
 	}
+	if (gotten_cksum_len == 0) { /* cksum was not set */
+		for (;;) {
+			e = gfm_client_fhset_cksum(gfm_server, ino, gen,
+			    cksum_type, cksum_len, cksum, 0);
+			if (!IS_CONNECTION_ERROR(e))
+				break;
+			free_gfm_server();
+			if ((e = connect_gfm_server(diag))
+			    != GFARM_ERR_NO_ERROR)
+				fatal(GFARM_MSG_UNFIXED, "die");
+		}
+		if (e == GFARM_ERR_FILE_BUSY) {
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "%s: %lld:%lld: opened for write. postponed",
+			    diag, (long long)ino, (long long)gen);
+			write_verify_job_reply_send(
+			    WRITE_VERIFY_JOB_REPLY_STATUS_POSTPONE, diag);
+			return;
+		}
+		if (e == GFARM_ERR_NO_ERROR)
+			gflog_notice(GFARM_MSG_UNFIXED, "%s: inode %lld:%lld: "
+			    "checksum set to <%s>:<%.*s> by write_verify",
+			    diag, (long long)ino, (long long)gen,
+			    cksum_type, (int)cksum_len, cksum);
+		else if (e == GFARM_ERR_NO_SUCH_OBJECT) /* updated */
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: %lld:%lld: already updated",
+			    diag, (long long)ino, (long long)gen);
+		else
+			gflog_warning(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s",
+			    diag, (long long)ino, (long long)gen,
+			    gfarm_error_string(e));
+		write_verify_job_reply_send(
+		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
+		return;
+	}
 	if (cksum_len == gotten_cksum_len &&
 	    memcmp(cksum, gotten_cksum, cksum_len) == 0) {
+		assert(cksum_len > 0);
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: %lld:%lld: cksum <%.*s> ok",
 		    diag, (long long)ino, (long long)gen,

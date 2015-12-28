@@ -624,6 +624,14 @@
 	  入力: i:ctrl
 	  出力: i:エラー
 
+	GFM_PROTO_FHSET_CKSUM
+	  入力: l:i_node_number, l:generation
+		s:cksum_type, b:cksum
+		i:flags, l:mtime_sec, i:mtime_nsec
+	  出力: i:エラー
+		※ GFM_PROTO_CKSUM_GET とは異なり、書き込みオープン
+		   されている場合は、GFARM_ERR_FILE_BUSY を返す。
+
   gfs 系 / クライアントと gfsd の両方からのアクセス
 
 	GFM_PROTO_CLOSE

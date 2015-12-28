@@ -4892,3 +4892,68 @@ gfm_server_replica_get_cksum(struct peer *peer, int from_client, int skip)
 	free(cksumbuf);
 	return (e2);
 }
+
+gfarm_error_t
+gfm_server_fhset_cksum(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	struct host *spool_host;
+	gfarm_ino_t inum;
+	gfarm_uint64_t igen;
+	struct inode *inode;
+	char *cksum_type;
+	size_t cksum_len;
+	char cksum[GFM_PROTO_CKSUM_MAXLEN];
+	gfarm_int32_t flags;
+	static const char diag[] = "GFM_PROTO_FHSET_CKSUM";
+
+	e = gfm_server_get_request(peer, diag, "llsbili", &inum, &igen,
+	    &cksum_type, sizeof(cksum), &cksum_len, cksum, &flags);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s request failed: %s",
+		    diag, gfarm_error_string(e));
+		return (e);
+	}
+	if (skip) {
+		free(cksum_type);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	giant_lock();
+
+	if (from_client) { /* from gfsd only */
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: from client", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((spool_host = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_host() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((inode = inode_lookup(inum)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld:%lld: no inode",
+		    diag, (long long)inum, (long long)igen);
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	} else if (inode_get_gen(inode) != igen) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld:%lld: different generation",
+		    diag, (long long)inum, (long long)igen);
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "db_begin() failed: %s",
+			gfarm_error_string(e));
+	} else {
+		/*
+		 * the following checks will be done in
+		 * inode_cksum_set_if_not_writing():
+		 * if (strlen(cksum_type) > GFM_PROTO_CKSUM_TYPE_MAXLEN ||
+		 *     cksum_len > GFM_PROTO_CKSUM_MAXLEN) 
+		 *	e = GFARM_ERR_INVALID_ARGUMENT;
+		 */
+		e = inode_cksum_set_if_not_writing(inode,
+		    cksum_type, cksum_len, cksum, flags);
+		db_end(diag);
+	}
+
+	giant_unlock();
+	free(cksum_type);
+	return (gfm_server_put_reply(peer, diag, e, ""));
+}

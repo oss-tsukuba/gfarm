@@ -496,6 +496,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_REPLICA_GET_CKSUM:
 		e = gfm_server_replica_get_cksum(peer, from_client, skip);
 		break;
+	case GFM_PROTO_FHSET_CKSUM:
+		e = gfm_server_fhset_cksum(peer, from_client, skip);
+		break;
 	case GFM_PROTO_PROCESS_ALLOC:
 		e = gfm_server_process_alloc(peer, from_client, skip);
 		break;
