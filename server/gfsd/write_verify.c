@@ -1167,7 +1167,7 @@ write_verify_controller(void)
 	/* the followings are only available if state != WRITE_VERIFY_IDLE */
 	struct write_verify_entry todo;
 #ifndef SAFER_STATE_FILE
-	struct write_verify_mtime_rec *mtime_rec;
+	struct write_verify_mtime_rec *mtime_rec = NULL;
 #endif
 	static const char diag[] = "write_verify_controller";
 
