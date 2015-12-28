@@ -907,7 +907,8 @@ process_close_file(struct process *process, struct peer *peer, int fd,
 		if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0) {
 			gflog_warning(GFARM_MSG_UNFIXED,
 			    "gfsd on %s@%s exited without closing write-opened"
-			    " file: pid:%lld fd:%d inode %llu:%llu",
+			    " file (pid:%lld fd:%d). inode %llu:%llu"
+			    " might be modified, run gfspooldigest",
 			    peer_get_username(peer), peer_get_hostname(peer),
 			    (long long)process->pid, (int)fd,
 			    (long long)inode_get_number(fo->inode),
