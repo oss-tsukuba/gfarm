@@ -319,7 +319,6 @@ gfs_pio_reopen_fd(GFS_File gf,
 		}
 		return (e);
 	}
-			
 }
 
 static gfarm_error_t
