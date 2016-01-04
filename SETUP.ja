@@ -177,9 +177,15 @@ config-gfarm は，順番に次の処理を行います．
        を意味します．Gfarm を PRM バイナリパッケージからインストールした
        場合は /etc になります．
 
-       prefix は，特に同一サーバで複数の Gfarm ファイルシステムに対する
-       メタデータサーバを立ち上げる場合などに指定します．この場合，prefix
-       で指定したディレクトリの下に設定ファイルが生成されます．
+       同一サーバで複数の Gfarm ファイルシステムに対するメタデータサーバを
+       立ち上げる場合には，config-gfarm に、--prefix <directory> オプション
+       に，それぞれのメタデータサーバ毎に異なるディレクトリを指定します．
+       この場合，指定したディレクトリの下に etc ディレクトリが作成され，
+       <sysconfdir> はそこになります．設定ファイルはその下に生成され，
+       またサーバープログラムの利用するデータディレクトリのデフォルトも，
+       --prefix で指定されたディレクトリの下になります．
+       以下のコマンド実行例では、<sysconfdir> として /etc を仮定して記載
+       されていますので，適宜読みかえてください．
 
   3. バックエンド DB およびメタデータサーバ gfmd の起動/停止スクリプト
      (ないし設定ファイル) を配置します．
@@ -214,6 +220,10 @@ config-gfarm は，順番に次の処理を行います．
 
   ここでは，認証鍵の期限を，ほぼ1年(31536000秒) に設定しています．
 
+共有鍵認証を用いる場合で，Gfarm の利用者のオペレーティングシステム上での
+アカウント名が，Gfarm のグローバルユーザ名と異なる場合には，gfmd.conf と
+gfarm2.conf に local_user_map の設定も行ない，gfmd を再起動しておきます．
+
 以上で，メタデータサーバー上での設定は完了です．
 下記を実行して，gfmd が動作していることを確認してください．
 
@@ -237,33 +247,21 @@ config-gfarm は，順番に次の処理を行います．
 	# update-rc.d gfmd defaults
 	# update-rc.d gfarm-pgsql defaults
 
-上記作業によって作成されたファイルを消去したい場合には，まず下記の
-コマンドで gfmd およびバックエンドデータベースサーバを停止させます．
+上記作業によって作成されたファイルを消去したい場合には，消去用
+スクリプトが <sysconfdir>/unconfig-gfarm.sh として生成されています
+ので，これを実行してください．
 
-  Red Hat Enterprise Linux 7 またはそれ以降:
-	# systemctl stop gfarm-pgsql.service
-	(これで，gfmd も停止します)
+	# /etc/unconfig-gfarm.sh   
 
-  その他:
-	# /etc/init.d/gfmd stop
-	(場合によっては # killall gfmd)
-	# /etc/init.d/gfarm-pgsql stop
+すると、以下のように尋ねてきますので「y」と答えます．
 
-次に，下記のコマンドでファイルおよびディレクトリを削除します．
+	Do you unconfigure gfarm? [y/n]: 
 
-  Red Hat Enterprise Linux 7 またはそれ以降:
-	# rm -f /etc/gfarm2.conf /etc/gfmd.conf
-	# systemctl disable gfmd.service
-	# systemctl disable gfarm-pgsql.service
-	# rm -f /etc/systemd/system/gfarm-pgsql.service
-	# rm -f /etc/systemd/system/gfmd.service
-	# systemctl daemon-reload
-	# rm -rf /var/gfarm-*
+これで，gfmd が停止し，設定ファイルが消去されます。また，この
+Gfarm ファイルシステムのメタデータも消去されます．
 
-  その他:
-	# rm -f /etc/gfarm2.conf /etc/gfmd.conf
-	# rm -f /etc/init.d/gfarm-* /etc/init.d/gfmd
-	# rm -rf /var/gfarm-*
+unconfig-gfarm.sh が実行する内容は，unconfig-gfarm.sh に -t オプションを
+指定することで，事前に確認できます．
 
 ● ファイルシステムノードの設定
 ===============================
@@ -308,13 +306,17 @@ GSI 認証の場合は，gfsd 用のサービス証明書を取得します．
   秘密鍵は /etc/grid-security/gfsd-<ホスト名 or IPアドレス>/gfsdkey.pem
   に置きます．
 
-次に，メタデータサーバで生成された <sysconfdir>/etc/gfarm2.conf ファイ
-ルをファイルシステムノードの <sysconfdir>/etc にコピーします．
+次に，メタデータサーバで生成された <sysconfdir>/gfarm2.conf ファイルを
+ファイルシステムノードの <sysconfdir> にコピーします．
 
   ここで <sysconfdir> は，Gfarm をコンパイルした際に，configure の
   --sysconfdir オプションとして指定した値 (詳しくは INSTALL.ja 参照)
   を意味します．Gfarm を PRM バイナリパッケージからインストールした場
   合は /etc になります．
+  ただし，config-gfsd コマンドに --prefix <directory> オプションを指定
+  した場合には、指定したディレクトリの下の etc ディレクトリとなります．
+  以下のコマンド実行例では、<sysconfdir> として /etc を仮定して記載さ
+  れていますので，適宜読みかえてください．
 
 ファイルシステムノード上で以下のコマンドを実行して，これから行う設定に
 関して，適切なデフォルト値が設定されているか確認します．
@@ -333,9 +335,9 @@ GSI 認証の場合は，gfsd 用のサービス証明書を取得します．
 
 	# config-gfsd /var/gfarm
 
-エラーが起きなければ，設定ファイル <sysconfdir>/etc/gfsd.conf の作成，
-起動スクリプト /etc/init.d/gfsd (OS によっては /etc/rc.d/init.d/gfsd)
-の配置が行われます．
+エラーが起きなければ，設定ファイル <sysconfdir>/gfsd.conf の作成，
+起動スクリプト <sysconfdir>/init.d/gfsd の配置が行われます．
+(OS によっては <sysconfdir>/rc.d/gfsd に配置されます．) 
 
 config-gfsd は，最後に「gfhost」コマンドの実行をうながす表示を行います．
 その表示を Gfarm ファイルシステムの管理者に伝え，実行してもらってくだ
@@ -354,6 +356,10 @@ config-gfsd は，最後に「gfhost」コマンドの実行をうながす表�
   す．変更することはできません．
 
 	"Subject DN of gfsd server cert" @host@ FQDN
+
+  共有鍵認証を用いる場合で，Gfarm の利用者のオペレーティングシステム上での
+  アカウント名が，Gfarm のグローバルユーザ名と異なる場合には，gfarm2.conf 
+  に local_user_map の設定も行なっておきます．
 
 root 権限になり，下記のコマンドで gfsd を起動します．
 
@@ -384,32 +390,28 @@ root 権限になり，下記のコマンドで gfsd を起動します．
   Debian:
 	# update-rc.d gfsd defaults
 
-上記作業によって作成されたファイルを消去したい場合には，まず
-下記のコマンドで gfsd を停止させます．
+上記作業によって作成されたファイルを消去したい場合には，消去用
+スクリプトが <sysconfdir>/unconfig-gfsd.sh として生成されています
+ので，これを実行してください．
 
-  Red Hat Enterprise Linux 7 またはそれ以降:
-	# systemctl stop gfsd.service
+	# /etc/unconfig-gfsd.sh
 
-  その他:
-	# /etc/init.d/gfsd stop
+すると、以下のように尋ねてきますので「y」と答えます．
 
-下記のコマンドで削除できます．
+	Do you run unconfiguration? [y/n]: 
 
-  Red Hat Enterprise Linux 7 またはそれ以降:
-	# rm -f /etc/gfarm2.conf
-	# systemctl disable gfsd.service
-	# rm -f /etc/systemd/system/gfsd.service
-	# systemctl daemon-reload
-	# rm -rf スプール・ディレクトリ
+これで，gfsd が停止し，設定ファイルが消去されます。また，この
+ノード上に存在する Gfarm ファイルシステムのデータも消去されます．
 
-  その他:
-	# rm -f /etc/gfarm2.conf /etc/init.d/gfsd
-	# rm -rf スプール・ディレクトリ
+unconfig-gfsd.sh は，最後に「gfhost -d」コマンドの実行をうながす表示を
+行います．表示されたコマンドを上述の「gfhost -c」を実行した管理権限で，
+実行してください．上述の「gfhost -c」に対応する例だと，以下のような
+コマンドになります．
 
+	$ /usr/bin/gfhost -d node1.example.org
 
-共有鍵認証を用いる場合で，Gfarm の利用者のオペレーティングシステム上での
-アカウント名が，Gfarm のグローバルユーザ名と異なる場合には，gfarm2.conf に
-local_user_map の設定も行なっておきます．
+unconfig-gfsd.sh が実行する内容は，unconfig-gfsd.sh に -t オプションを
+指定することで，事前に確認できます．
 
 ● クライアントノードの設定
 ===========================
