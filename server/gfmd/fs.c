@@ -4945,7 +4945,7 @@ gfm_server_fhset_cksum(struct peer *peer, int from_client, int skip)
 		 * the following checks will be done in
 		 * inode_cksum_set_if_not_writing():
 		 * if (strlen(cksum_type) > GFM_PROTO_CKSUM_TYPE_MAXLEN ||
-		 *     cksum_len > GFM_PROTO_CKSUM_MAXLEN) 
+		 *     cksum_len > GFM_PROTO_CKSUM_MAXLEN)
 		 *	e = GFARM_ERR_INVALID_ARGUMENT;
 		 */
 		e = inode_cksum_set_if_not_writing(inode,
