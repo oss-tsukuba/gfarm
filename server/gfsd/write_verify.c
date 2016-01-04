@@ -689,9 +689,6 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 			fatal(GFARM_MSG_UNFIXED, "die");
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-
-gflog_warning(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag, (long long)ino, (long long)gen, gfarm_error_string(e));
-
 		if (e == GFARM_ERR_NO_SUCH_OBJECT) /* already removed */
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "%s: %lld:%lld: already removed",
@@ -721,7 +718,6 @@ gflog_warning(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag, (long long)ino, (lon
 	save_errno = errno;
 	free(path);
 	if (local_fd == -1) {
-gflog_info(GFARM_MSG_UNFIXED, "%s: %lld:%lld: must be generation updated: %s", diag, (long long)ino, (long long)gen, strerror(save_errno));
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: %lld:%lld: must be generation updated: %s",
 		    diag, (long long)ino, (long long)gen,
@@ -765,7 +761,6 @@ gflog_info(GFARM_MSG_UNFIXED, "%s: %lld:%lld: must be generation updated: %s", d
 			free(cksum_type);
 			return;
 		}
-gflog_warning(GFARM_MSG_UNFIXED, "%s: XXX %lld:%lld: %s",diag, (long long)ino, (long long)gen,gfarm_error_string(e));
 		if (e == GFARM_ERR_NO_ERROR)
 			gflog_notice(GFARM_MSG_UNFIXED, "%s: inode %lld:%lld: "
 			    "checksum set to <%s>:<%.*s> by write_verify",
@@ -788,12 +783,6 @@ gflog_warning(GFARM_MSG_UNFIXED, "%s: XXX %lld:%lld: %s",diag, (long long)ino, (
 	if (cksum_len == got_cksum_len &&
 	    memcmp(cksum, got_cksum, cksum_len) == 0) {
 		assert(cksum_len > 0);
-
-gflog_info(GFARM_MSG_UNFIXED,
-"%s: %lld:%lld: cksum <%.*s> ok",
-diag, (long long)ino, (long long)gen,
-(int)cksum_len, cksum);
-
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: %lld:%lld: cksum <%.*s> ok",
 		    diag, (long long)ino, (long long)gen,
@@ -814,7 +803,6 @@ diag, (long long)ino, (long long)gen,
 			fatal(GFARM_MSG_UNFIXED, "die");
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-gflog_warning(GFARM_MSG_UNFIXED, "%s: YYY %lld:%lld: %s", diag, (long long)ino, (long long)gen, gfarm_error_string(e));
 		if (e == GFARM_ERR_NO_SUCH_OBJECT) /* generation updated */
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "%s: %lld:%lld: generation updated",
@@ -831,7 +819,6 @@ gflog_warning(GFARM_MSG_UNFIXED, "%s: YYY %lld:%lld: %s", diag, (long long)ino, 
 	}
 
 	if ((open_status & GFM_PROTO_REPLICA_OPENED_WRITE) != 0) {
-gflog_info(GFARM_MSG_UNFIXED, "%s: ZZZ %lld:%lld: opened for write. postponed", diag, (long long)ino, (long long)gen);
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: %lld:%lld: opened for write. postponed",
 		    diag, (long long)ino, (long long)gen);
