@@ -4706,7 +4706,7 @@ wait_2fds(int fd0, int fd1, const char *diag)
 	int max_fd;
 
 	FD_ZERO(&fds);
-	max_fd = fd0 >= fd0 ? fd0 : fd1;
+	max_fd = fd0 >= fd1 ? fd0 : fd1;
 	if (max_fd >= FD_SETSIZE)
 		fatal(GFARM_MSG_1004158,
 		    "too big descriptor: fd0:%d fd1:%d", fd0, fd1);

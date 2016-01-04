@@ -483,11 +483,13 @@ inode_cksum_set(struct inode *inode,
 		    cs == NULL ? "add" : "modify",
 		    (unsigned long long)inode->i_number,
 		    gfarm_error_string(e));
+	/* abandon `e' here, since it shouldn't happen */
 
-	if (is_setp != NULL)
-		*is_setp = 1;
 	/* inode_cksum_set_in_cache() calls gflog_error/gflog_debug */
-	return (inode_cksum_set_in_cache(inode, cksum_type, cksum_len, cksum));
+	e = inode_cksum_set_in_cache(inode, cksum_type, cksum_len, cksum);
+	if (e == GFARM_ERR_NO_ERROR && is_setp != NULL)
+		*is_setp = 1;
+	return (e);
 }
 
 /*

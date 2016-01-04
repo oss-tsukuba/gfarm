@@ -4907,7 +4907,7 @@ gfm_server_fhset_cksum(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t flags;
 	static const char diag[] = "GFM_PROTO_FHSET_CKSUM";
 
-	e = gfm_server_get_request(peer, diag, "llsbili", &inum, &igen,
+	e = gfm_server_get_request(peer, diag, "llsbi", &inum, &igen,
 	    &cksum_type, sizeof(cksum), &cksum_len, cksum, &flags);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED, "%s request failed: %s",

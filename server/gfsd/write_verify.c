@@ -465,8 +465,14 @@ ringbuf_read(int fd, gfarm_uint64_t nrecords, gfarm_uint32_t expected_crc32,
 		    "%s: cannot read", diag);
 		return (0);
 	} else if (rv != sz) {
+		/*
+		 * In traditional UNIX varints including Linux, the read(2)
+		 * syscall against a local regular file without O_NONBLOCK
+		 * guarantees to read the number of bytes requested,
+		 * unless it reaches EOF or an I/O error happens.
+		 */
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s: partial write %zd/%zd", diag, rv, sz);
+		    "%s: partial read %zd/%zd", diag, rv, sz);
 		return (0);
 	}
 	crc32 = gfarm_crc32(0, ringbuf_ptr, rv);
@@ -575,7 +581,7 @@ mtime_rec_remove(struct write_verify_mtime_rec *mtime_rec)
 	}
 
 	deleted = RB_REMOVE(write_verify_mtime_tree, &mtime_tree, mtime_rec);
-	if (mtime_rec == NULL)
+	if (deleted == NULL)
 		fatal(GFARM_MSG_UNFIXED,
 		    "write_verify, removing mtime:%llu failed",
 		    (long long)mtime_rec);
@@ -657,10 +663,10 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 	int local_fd, save_errno;
 	gfarm_uint64_t open_status;
 
-	char *cksum_type;
-	gfarm_int32_t gotten_cksum_flags;
-	size_t gotten_cksum_len, cksum_len;
-	char gotten_cksum[GFM_PROTO_CKSUM_MAXLEN];
+	char *cksum_type = NULL;
+	gfarm_int32_t got_cksum_flags;
+	size_t got_cksum_len, cksum_len;
+	char got_cksum[GFM_PROTO_CKSUM_MAXLEN];
 	char cksum[GFARM_MSGDIGEST_STRSIZE];
 	static const char diag[] = "write_verify_calc_cksum";
 
@@ -674,8 +680,8 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 
 	for (;;) {
 		e = gfm_client_replica_get_cksum(gfm_server, ino, gen,
-		    &cksum_type, sizeof(gotten_cksum), &gotten_cksum_len,
-		    gotten_cksum, &gotten_cksum_flags);
+		    &cksum_type, sizeof(got_cksum), &got_cksum_len,
+		    got_cksum, &got_cksum_flags);
 		if (!IS_CONNECTION_ERROR(e))
 			break;
 		free_gfm_server();
@@ -683,6 +689,9 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 			fatal(GFARM_MSG_UNFIXED, "die");
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
+
+gflog_warning(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s", diag, (long long)ino, (long long)gen, gfarm_error_string(e));
+
 		if (e == GFARM_ERR_NO_SUCH_OBJECT) /* already removed */
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "%s: %lld:%lld: already removed",
@@ -693,29 +702,33 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 			    gfarm_error_string(e));
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
+		free(cksum_type);
 		return;
 	}
-	if ((gotten_cksum_flags & GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED) != 0) {
+	if ((got_cksum_flags & GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED) != 0) {
 		gflog_info(GFARM_MSG_UNFIXED,
 		    "%s: %lld:%lld: opened for write. postponed",
 		    diag, (long long)ino, (long long)gen);
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_POSTPONE, diag);
+		free(cksum_type);
 		return;
 	}
-	/* NOTE: maybe gotten_cksum_len == 0 here, if checksum is not set */
+	/* NOTE: maybe got_cksum_len == 0 here, if checksum is not set */
 
 	gfsd_local_path(ino, gen, diag, &path);
 	local_fd = open_data(path, WRITE_VERIFY_OPEN_MODE);
 	save_errno = errno;
 	free(path);
 	if (local_fd == -1) {
+gflog_info(GFARM_MSG_UNFIXED, "%s: %lld:%lld: must be generation updated: %s", diag, (long long)ino, (long long)gen, strerror(save_errno));
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: %lld:%lld: must be generation updated: %s",
 		    diag, (long long)ino, (long long)gen,
 		    strerror(save_errno));
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
+		free(cksum_type);
 		return;
 	}
 	e = calc_digest(local_fd, cksum_type, cksum, &cksum_len,
@@ -727,9 +740,11 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 		    gfarm_error_string(e));
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
+		close(local_fd);
+		free(cksum_type);
 		return;
 	}
-	if (gotten_cksum_len == 0) { /* cksum was not set */
+	if (got_cksum_len == 0) { /* cksum was not set */
 		for (;;) {
 			e = gfm_client_fhset_cksum(gfm_server, ino, gen,
 			    cksum_type, cksum_len, cksum, 0);
@@ -746,8 +761,11 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 			    diag, (long long)ino, (long long)gen);
 			write_verify_job_reply_send(
 			    WRITE_VERIFY_JOB_REPLY_STATUS_POSTPONE, diag);
+			close(local_fd);
+			free(cksum_type);
 			return;
 		}
+gflog_warning(GFARM_MSG_UNFIXED, "%s: XXX %lld:%lld: %s",diag, (long long)ino, (long long)gen,gfarm_error_string(e));
 		if (e == GFARM_ERR_NO_ERROR)
 			gflog_notice(GFARM_MSG_UNFIXED, "%s: inode %lld:%lld: "
 			    "checksum set to <%s>:<%.*s> by write_verify",
@@ -763,17 +781,27 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 			    gfarm_error_string(e));
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
+		close(local_fd);
+		free(cksum_type);
 		return;
 	}
-	if (cksum_len == gotten_cksum_len &&
-	    memcmp(cksum, gotten_cksum, cksum_len) == 0) {
+	if (cksum_len == got_cksum_len &&
+	    memcmp(cksum, got_cksum, cksum_len) == 0) {
 		assert(cksum_len > 0);
+
+gflog_info(GFARM_MSG_UNFIXED,
+"%s: %lld:%lld: cksum <%.*s> ok",
+diag, (long long)ino, (long long)gen,
+(int)cksum_len, cksum);
+
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: %lld:%lld: cksum <%.*s> ok",
 		    diag, (long long)ino, (long long)gen,
 		    (int)cksum_len, cksum);
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
+		close(local_fd);
+		free(cksum_type);
 		return;
 	}
 	for (;;) {
@@ -786,6 +814,7 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 			fatal(GFARM_MSG_UNFIXED, "die");
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
+gflog_warning(GFARM_MSG_UNFIXED, "%s: YYY %lld:%lld: %s", diag, (long long)ino, (long long)gen, gfarm_error_string(e));
 		if (e == GFARM_ERR_NO_SUCH_OBJECT) /* generation updated */
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "%s: %lld:%lld: generation updated",
@@ -796,21 +825,27 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 			    gfarm_error_string(e));
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
+		close(local_fd);
+		free(cksum_type);
 		return;
 	}
 
 	if ((open_status & GFM_PROTO_REPLICA_OPENED_WRITE) != 0) {
+gflog_info(GFARM_MSG_UNFIXED, "%s: ZZZ %lld:%lld: opened for write. postponed", diag, (long long)ino, (long long)gen);
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: %lld:%lld: opened for write. postponed",
 		    diag, (long long)ino, (long long)gen);
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_POSTPONE, diag);
+		close(local_fd);
+		free(cksum_type);
 		return;
 	}
 	gflog_error(GFARM_MSG_UNFIXED,
 	    "%s: %lld:%lld: checksum mismatch <%.*s> should be <%.*s>", diag,
 	    (long long)ino, (long long)gen, (int)cksum_len, cksum,
-	    (int)gotten_cksum_len, gotten_cksum);
+	    (int)got_cksum_len, got_cksum);
+	free(cksum_type);
 	replica_lost_move_to_lost_found_by_fd(ino, gen, local_fd, diag);
 	close(local_fd);
 	write_verify_job_reply_send(WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
@@ -897,14 +932,22 @@ write_verify_state_save(void)
 	header.n_records = ringbuf_n_entries;
 	rv = write(fd, &header, sizeof(header));
 	if (rv != sizeof(header)) {
-		if (rv == -1)
+		if (rv == -1) {
 			gflog_error_errno(GFARM_MSG_UNFIXED,
 			    "write_verify: writing %s",
 			    write_verify_state_tmp);
-		else
+		} else {
+			/*
+			 * In traditional UNIX varints including Linux,
+			 * the write(2) syscall against a local regular
+			 * file without O_NONBLOCK guarantees to write
+			 * the number of bytes requested,
+			 * unless disk full or an I/O error happens.
+			 */
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "write_verify: writing %s: partial write %zd/%zd",
 			    write_verify_state_tmp, rv, sizeof(header));
+		}
 		close(fd);
 		unlink(write_verify_state_tmp);
 		return;
@@ -1022,6 +1065,7 @@ write_verify_state_init(void)
 			    write_verify_state_file, strerror(errno));
 			gfarm_write_verify = 0;
 			free(tmpfile);
+			close(fd);
 			return;
 		}
 		if (st.st_size == 0) {
