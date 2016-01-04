@@ -584,7 +584,7 @@ mtime_rec_remove(struct write_verify_mtime_rec *mtime_rec)
 	if (deleted == NULL)
 		fatal(GFARM_MSG_UNFIXED,
 		    "write_verify, removing mtime:%llu failed",
-		    (long long)mtime_rec);
+		    (long long)mtime_rec->mtime);
 
 	free(deleted);
 }
