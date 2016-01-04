@@ -370,7 +370,6 @@ enum gfm_proto_command {
  * NOTE:
  * GFM_PROTO_REPLICA_GET_CKSUM never returns GFM_PROTO_CKSUM_GET_EXPIRED
  * but reports GFARM_ERR_NO_SUCH_OBJECT due to generation update of the inode.
- * 
  */
 #define	GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED	0x00000001
 #define	GFM_PROTO_CKSUM_GET_EXPIRED		0x00000002

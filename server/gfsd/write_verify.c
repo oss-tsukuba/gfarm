@@ -132,7 +132,7 @@ write_verify_request(gfarm_ino_t ino, gfarm_uint64_t gen, time_t mtime,
 	 * partial write isn't allowed,
 	 * because this is NOT O_NONBLOCK and must be atomic
 	 */
-	rv = write(write_verify_request_send_fd, &req, sizeof req); 
+	rv = write(write_verify_request_send_fd, &req, sizeof req);
 	if (rv != sizeof req) {
 		if (rv == -1) {
 			gflog_error_errno(GFARM_MSG_UNFIXED, "%s: "
@@ -508,7 +508,7 @@ static RB_HEAD(write_verify_mtime_tree, write_verify_mtime_rec) mtime_tree =
 
 static int
 mtime_rec_compare(
-	struct write_verify_mtime_rec *a, 
+	struct write_verify_mtime_rec *a,
 	struct write_verify_mtime_rec *b)
 {
 	if (a->mtime < b->mtime)
@@ -1190,7 +1190,7 @@ write_verify_controller(void)
 		}
 		has_room = ringbuf_has_room();
 		if (has_room && state == WRITE_VERIFY_RUNNING) {
-			rv = wait_2fds(write_verify_request_recv_fd, 
+			rv = wait_2fds(write_verify_request_recv_fd,
 			    write_verify_job_controller_fd, diag);
 			if ((rv & 1) != 0)
 				write_verify_request_get(diag);

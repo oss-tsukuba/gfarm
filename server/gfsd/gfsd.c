@@ -4726,7 +4726,7 @@ wait_2fds(int fd0, int fd1, const char *diag)
 	if (FD_ISSET(fd1, &fds))
 		rv |= 2;
 #endif /* !HAVE_POLL */
-	return rv;
+	return (rv);
 }
 
 void
