@@ -33,7 +33,7 @@ gfmdhosts_down()
 	echo >&2 "!!! cannot run gfmdhost command"
 	exit
 }
-	
+
 get_master()
 {
 	awk '$2 == "master" { print $(NF-1) }' $gfmdlist
@@ -80,7 +80,7 @@ echo "--- stopping old master ($old_master -> $new_master) ---"
 
 # make new journal records.
 awk 'BEGIN{for(i=0;i<100;i++)print i;exit}' |
-while read line; do gfmkdir /tmp/fotest; gfrmdir /tmp/fotest; done 2>/dev/null 
+while read line; do gfmkdir /tmp/fotest; gfrmdir /tmp/fotest; done 2>/dev/null
 
 # start failover
 $ssh $priv@$old_master -n $RC_DIR/gfmd stop
