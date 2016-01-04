@@ -178,7 +178,9 @@ it is necessary to create a '_gfarmfs' user and a shared secret key.
 
 	# useradd -c "Gfarm gfsd" -m _gfarmfs
 
-  We recommend to create a home directory in NFS if available.
+  Note that --force-badname option may be required for useradd on
+  Debian.  We recommend to create a home directory in NFS if
+  available.
 
 Create a shared secret key '~/.gfarm_shared_key' for the _gfarmfs user
 in the home directory.
