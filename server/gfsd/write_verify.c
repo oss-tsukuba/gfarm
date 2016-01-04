@@ -33,8 +33,6 @@
 #include "gfsd_subr.h"
 #include "write_verify.h"
 
-/* #define SAFER_STATE_FILE */
-
 /*
  * RPC stub functions
  */
@@ -492,7 +490,6 @@ ringbuf_free(void)
 	ringbuf_overflow = 0;
 }
 
-#ifndef SAFER_STATE_FILE
 /*
  * write_verify_mtime_rec data structure
  */
@@ -619,7 +616,6 @@ write_verify_entry_load(
 		mtime_rec_add(ringbuf_ptr[i].req.mtime);
 	return (1);
 }
-#endif /* !defined(SAFER_STATE_FILE) */
 
 /*
  * functions which run on type_write_verify
@@ -866,21 +862,15 @@ static char *write_verify_state_tmp;
 static void
 write_verify_state_snapshot(void)
 {
-#ifndef SAFER_STATE_FILE
 	struct write_verify_mtime_rec *oldest_mtime = mtime_rec_oldest();
-#endif
 	struct timeval tv[2];
 
-#ifndef SAFER_STATE_FILE
 	if (oldest_mtime == NULL) {
-#endif
 		gettimeofday(&tv[0], NULL);
-#ifndef SAFER_STATE_FILE
 	} else {
 		tv[0].tv_sec = oldest_mtime->mtime;
 		tv[0].tv_usec = 0;
 	}
-#endif
 	tv[1] = tv[0];
 	if (futimes(write_verify_state_fd, tv) == -1)
 		gflog_error_errno(GFARM_MSG_UNFIXED,
@@ -964,11 +954,7 @@ write_verify_state_load(int fd)
 		    (int)header.magic, WRITE_VERIFY_STATE_FILE_MAGIC);
 		return (0);
 	}
-#ifndef SAFER_STATE_FILE
 	if (!write_verify_entry_load(
-#else
-	if (!ringbuf_read(
-#endif
 	    fd, header.n_records, header.crc32, write_verify_state_file))
 		return (0);
 
@@ -1088,9 +1074,7 @@ void
 write_verify_state_free(void)
 {
 
-#ifndef SAFER_STATE_FILE
 	mtime_tree_free();
-#endif
 	ringbuf_free();
 }
 
@@ -1117,19 +1101,14 @@ write_verify_request_get(const char *diag)
 
 	entry.schedule = entry.req.mtime + gfarm_write_verify_interval;
 	ringbuf_enqueue(&entry);
-#ifndef SAFER_STATE_FILE
 	mtime_rec_add(entry.req.mtime);
 
 	write_verify_state_snapshot();
-#endif
 }
 
 static void
-write_verify_job_done(struct write_verify_entry *todo
-#ifndef SAFER_STATE_FILE
-	, struct write_verify_mtime_rec *mtime_rec
-#endif
-)
+write_verify_job_done(struct write_verify_entry *todo,
+	struct write_verify_mtime_rec *mtime_rec)
 {
 	int status;
 	struct write_verify_entry tmp;
@@ -1144,10 +1123,8 @@ write_verify_job_done(struct write_verify_entry *todo
 	    tmp.schedule == todo->schedule);
 	switch (status) {
 	case WRITE_VERIFY_JOB_REPLY_STATUS_DONE:
-#ifndef SAFER_STATE_FILE
 		mtime_rec_remove(mtime_rec);
 		write_verify_state_snapshot();
-#endif
 		break;
 	case WRITE_VERIFY_JOB_REPLY_STATUS_POSTPONE:
 		tmp.schedule = time(NULL) + gfarm_write_verify_retry_interval;
@@ -1166,9 +1143,7 @@ write_verify_controller(void)
 
 	/* the followings are only available if state != WRITE_VERIFY_IDLE */
 	struct write_verify_entry todo;
-#ifndef SAFER_STATE_FILE
 	struct write_verify_mtime_rec *mtime_rec = NULL;
-#endif
 	static const char diag[] = "write_verify_controller";
 
 	for (;;) {
@@ -1177,10 +1152,8 @@ write_verify_controller(void)
 
 		if (state == WRITE_VERIFY_IDLE && !ringbuf_is_empty()) {
 			ringbuf_peek_head(&todo);
-#ifndef SAFER_STATE_FILE
 			mtime_rec = mtime_rec_find(todo.req.mtime);
 			assert(mtime_rec != NULL);
-#endif
 			state = WRITE_VERIFY_RESERVED;
 		}
 		if (state == WRITE_VERIFY_RESERVED && todo.schedule <= now) {
@@ -1196,14 +1169,10 @@ write_verify_controller(void)
 				write_verify_request_get(diag);
 			if ((rv & 2) != 0) {
 				write_verify_job_done(&todo
-#ifndef SAFER_STATE_FILE
 				    , mtime_rec
-#endif
 				);
 				state = WRITE_VERIFY_IDLE;
-#ifndef SAFER_STATE_FILE
 				mtime_rec = NULL; /* unnecessary, to be sure */
-#endif
 			}
 		} else if (has_room) {
 			if (timedwait_fd(write_verify_request_recv_fd,
@@ -1213,14 +1182,10 @@ write_verify_controller(void)
 		} else if (state == WRITE_VERIFY_RUNNING) {
 			/* only check job_reply, due to !ringbuf_has_room() */
 			write_verify_job_done(&todo
-#ifndef SAFER_STATE_FILE
 			    , mtime_rec
-#endif
 			);
 			state = WRITE_VERIFY_IDLE;
-#ifndef SAFER_STATE_FILE
 			mtime_rec = NULL; /* unnecessary, to be sure */
-#endif
 		} else {
 			/*
 			 * if state == IDLE, has_room must be true,
