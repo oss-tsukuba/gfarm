@@ -64,7 +64,6 @@ is_answer_yes(void)
 			;
 	}
 	return (c1 == 'y' || c1 == 'Y');
-	
 }
 
 static int
