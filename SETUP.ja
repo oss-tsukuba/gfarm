@@ -70,11 +70,11 @@ IP     port      IP     port
 ------ --------- ------ --------- ----- -------------------------------
 gfmd   ephemeral gfmd   gfmd_port TCP   metadata replication
 gfmd   ephemeral gfsd   gfsd_port UDP   gfmd failover notification 要求
-gfsd   ephemeral gfmd   gfmd_port TCP   metadata access 
+gfsd   ephemeral gfmd   gfmd_port TCP   metadata access
 gfsd   ephemeral gfsd   gfsd_port TCP   data replication
 gfsd   gfsd_port gfmd   ephemeral UDP   gfmd failover notification 応答
 gfsd   gfsd_port client ephemeral UDP   gfsd health check 応答
-client ephemeral gfmd   gfmd_port TCP   metadata access 
+client ephemeral gfmd   gfmd_port TCP   metadata access
 client ephemeral gfsd   gfsd_port TCP   data access
 client ephemeral gfsd   gfsd_port UDP   gfsd health check 要求
 
@@ -104,7 +104,7 @@ SELinux を、Permissive ないし Disabled と設定するか、
 
 以下のコマンドで、Enforcing と表示された場合には、設定作業が必要と
 なります。
-	# getenforce 
+	# getenforce
 
 ● メタデータサーバの設定
 =========================
@@ -157,7 +157,7 @@ XPath による検索が可能な XML 拡張属性を利用する際には，-X 
 指定する必要があります．
 
 メタデータサーバの冗長化を有効にしたい場合は，-r オプションを指定する必
-要があります．詳細はメタデータ冗長化のチュートリアル 
+要があります．詳細はメタデータ冗長化のチュートリアル
 (html/ja/user/redundancy-tutorial.html) を参照してください．
 
 もしデフォルト値が適切でない場合には，表示されるオプションを指定して設
@@ -251,11 +251,11 @@ gfarm2.conf に local_user_map の設定も行ない，gfmd を再起動して�
 スクリプトが <sysconfdir>/unconfig-gfarm.sh として生成されています
 ので，これを実行してください．
 
-	# /etc/unconfig-gfarm.sh   
+	# /etc/unconfig-gfarm.sh
 
 すると、以下のように尋ねてきますので「y」と答えます．
 
-	Do you unconfigure gfarm? [y/n]: 
+	Do you unconfigure gfarm? [y/n]:
 
 これで，gfmd が停止し，設定ファイルが消去されます。また，この
 Gfarm ファイルシステムのメタデータも消去されます．
@@ -337,7 +337,7 @@ GSI 認証の場合は，gfsd 用のサービス証明書を取得します．
 
 エラーが起きなければ，設定ファイル <sysconfdir>/gfsd.conf の作成，
 起動スクリプト <sysconfdir>/init.d/gfsd の配置が行われます．
-(OS によっては <sysconfdir>/rc.d/gfsd に配置されます．) 
+(OS によっては <sysconfdir>/rc.d/gfsd に配置されます．)
 
 config-gfsd は，最後に「gfhost」コマンドの実行をうながす表示を行います．
 その表示を Gfarm ファイルシステムの管理者に伝え，実行してもらってくだ
@@ -358,7 +358,7 @@ config-gfsd は，最後に「gfhost」コマンドの実行をうながす表�
 	"Subject DN of gfsd server cert" @host@ FQDN
 
   共有鍵認証を用いる場合で，Gfarm の利用者のオペレーティングシステム上での
-  アカウント名が，Gfarm のグローバルユーザ名と異なる場合には，gfarm2.conf 
+  アカウント名が，Gfarm のグローバルユーザ名と異なる場合には，gfarm2.conf
   に local_user_map の設定も行なっておきます．
 
 root 権限になり，下記のコマンドで gfsd を起動します．
@@ -398,7 +398,7 @@ root 権限になり，下記のコマンドで gfsd を起動します．
 
 すると、以下のように尋ねてきますので「y」と答えます．
 
-	Do you run unconfiguration? [y/n]: 
+	Do you run unconfiguration? [y/n]:
 
 これで，gfsd が停止し，設定ファイルが消去されます。また，この
 ノード上に存在する Gfarm ファイルシステムのデータも消去されます．
@@ -568,7 +568,7 @@ config-gfarm コマンドの -A オプションで指定した，デフォルト
 共有鍵のコピーについては，上述の「クライアントノードの設定」の項を
 参照してください．
 
-GSI 認証の場合は，全メタデータサーバ，全ファイルシステムノードの 
+GSI 認証の場合は，全メタデータサーバ，全ファイルシステムノードの
 grid-mapfile に，ユーザの Subject DN を登録し，nobody にマップします．
 
 ● 管理者権限，gfarmroot 権限の追加

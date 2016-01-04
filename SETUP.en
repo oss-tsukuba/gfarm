@@ -69,11 +69,11 @@ IP     port      IP     port
 ------ --------- ------ --------- ----- -------------------------------
 gfmd   ephemeral gfmd   gfmd_port TCP   metadata replication
 gfmd   ephemeral gfsd   gfsd_port UDP   gfmd failover notification request
-gfsd   ephemeral gfmd   gfmd_port TCP   metadata access 
+gfsd   ephemeral gfmd   gfmd_port TCP   metadata access
 gfsd   ephemeral gfsd   gfsd_port TCP   data replication
 gfsd   gfsd_port gfmd   ephemeral UDP   gfmd failover notification response
 gfsd   gfsd_port client ephemeral UDP   gfsd health check response
-client ephemeral gfmd   gfmd_port TCP   metadata access 
+client ephemeral gfmd   gfmd_port TCP   metadata access
 client ephemeral gfsd   gfsd_port TCP   data access
 client ephemeral gfsd   gfsd_port UDP   gfsd health check request
 
@@ -106,7 +106,7 @@ or add custom SELinux privilege setting for Gfarm.
 
 If "Enforcing" is displayed by the following command, you have to
 change the setting.
-	# getenforce 
+	# getenforce
 
 
 Configuration of a Gfarm metadata server (MDS)
@@ -254,7 +254,7 @@ please use <sysconfdir>/unconfig-gfarm.sh.
 
 This command asks confirmation as follows:
 
-	Do you unconfigure gfarm? [y/n]: 
+	Do you unconfigure gfarm? [y/n]:
 
 If you answer "y", the gfmd daemon will be stopped, and generated
 configuration files will be removed.  Also, all metadata of this
@@ -400,7 +400,7 @@ please use <sysconfdir>/unconfig-gfsd.sh.
 
 This command asks confirmation as follows:
 
-	Do you run unconfiguration? [y/n]: 
+	Do you run unconfiguration? [y/n]:
 
 If you answer "y", the gfsd daemon will be stopped, and generated
 configuration files will be removed.  Also, all Gfarm file system data
