@@ -703,14 +703,13 @@ pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
 		(void)pfunc_close(&src_fp);
 		if (handle->skip_existing && e == GFARM_ERR_ALREADY_EXISTS) {
 			result = PFUNC_RESULT_SKIP;
-		} else if (e == GFARM_ERR_DISK_QUOTA_EXCEEDED) {
-			result = PFUNC_RESULT_NG_NOT_RETRY;
-			fprintf(stderr, "ERROR: copy failed: open(%s): %s\n",
-			    tmp_url, gfarm_error_string(e));
 		} else {
+			if (e == GFARM_ERR_DISK_QUOTA_EXCEEDED)
+				result = PFUNC_RESULT_NG_NOT_RETRY;
+			else
+				result = PFUNC_RESULT_NG;
 			fprintf(stderr, "ERROR: copy failed: open(%s): %s\n",
 			    tmp_url, gfarm_error_string(e));
-			result = PFUNC_RESULT_NG;
 		}
 		goto end;
 	}
