@@ -780,6 +780,7 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 		free(cksum_type);
 		return;
 	}
+	free(cksum_type);
 	if (cksum_len == got_cksum_len &&
 	    memcmp(cksum, got_cksum, cksum_len) == 0) {
 		assert(cksum_len > 0);
@@ -790,7 +791,6 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
 		close(local_fd);
-		free(cksum_type);
 		return;
 	}
 	for (;;) {
@@ -814,7 +814,6 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
 		close(local_fd);
-		free(cksum_type);
 		return;
 	}
 
@@ -825,14 +824,12 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_POSTPONE, diag);
 		close(local_fd);
-		free(cksum_type);
 		return;
 	}
 	gflog_error(GFARM_MSG_UNFIXED,
 	    "%s: %lld:%lld: checksum mismatch <%.*s> should be <%.*s>", diag,
 	    (long long)ino, (long long)gen, (int)cksum_len, cksum,
 	    (int)got_cksum_len, got_cksum);
-	free(cksum_type);
 	replica_lost_move_to_lost_found_by_fd(ino, gen, local_fd, diag);
 	close(local_fd);
 	write_verify_job_reply_send(WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
@@ -1199,9 +1196,7 @@ write_verify_controller(void)
 			if ((rv & 1) != 0)
 				write_verify_request_get(diag);
 			if ((rv & 2) != 0) {
-				write_verify_job_done(&todo
-				    , mtime_rec
-				);
+				write_verify_job_done(&todo, mtime_rec);
 				state = WRITE_VERIFY_IDLE;
 				mtime_rec = NULL; /* unnecessary, to be sure */
 			}
@@ -1212,9 +1207,7 @@ write_verify_controller(void)
 				write_verify_request_get(diag);
 		} else if (state == WRITE_VERIFY_RUNNING) {
 			/* only check job_reply, due to !ringbuf_has_room() */
-			write_verify_job_done(&todo
-			    , mtime_rec
-			);
+			write_verify_job_done(&todo, mtime_rec);
 			state = WRITE_VERIFY_IDLE;
 			mtime_rec = NULL; /* unnecessary, to be sure */
 		} else {

@@ -4826,7 +4826,6 @@ gfm_server_replica_open_status(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, "l", open_status));
 }
 
-
 gfarm_error_t
 gfm_server_replica_get_cksum(struct peer *peer, int from_client, int skip)
 {
