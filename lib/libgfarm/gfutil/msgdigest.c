@@ -1,4 +1,3 @@
-#include <pthread.h>
 #include <ctype.h>
 #include <stdlib.h>
 
@@ -29,20 +28,11 @@ gfarm_msgdigest_name_to_openssl(const char *gfarm_name)
 	return (gfarm_name); /* XXX just same names with OpenSSL for now */
 }
 
-static void
-gfarm_msgdigest_openssl_initialize(void)
-{
-	OpenSSL_add_all_algorithms(); /* to use EVP_get_digestbyname() */
-}
-
 int
 gfarm_msgdigest_init(const char *md_type_name, EVP_MD_CTX *md_ctx,
 	int *not_supported_p)
 {
-	static pthread_once_t openssl_initialized = PTHREAD_ONCE_INIT;
 	const EVP_MD *md_type;
-
-	pthread_once(&openssl_initialized, gfarm_msgdigest_openssl_initialize);
 
 	if (md_type_name == NULL || md_type_name[0] == '\0') {
 		if (not_supported_p != NULL)
