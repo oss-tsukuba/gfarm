@@ -4333,6 +4333,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 
 		close(fds[0]);
 
+		memset(&res, 0, sizeof(res)); /* to shut up valgrind */
 		replica_receive(q, rep, src_gfsd, local_fd, &res, diag);
 
 		sz = rep->handling_cksum_protocol ?
@@ -4460,6 +4461,7 @@ start_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 		 * started or finished.
 		 */
 		rep = qd->head->q_next;
+		free(qd->head->cksum_type);
 		free(qd->head);
 
 		qd->head = rep;
@@ -5396,6 +5398,7 @@ replication_result_notify(struct gfp_xdr *bc_conn,
 	rep->ongoing_next->ongoing_prev = rep->ongoing_prev;
 
 	rep = rep->q_next;
+	free(qd->head->cksum_type);
 	free(qd->head);
 
 	qd->head = rep;
@@ -5599,6 +5602,7 @@ kill_pending_replications(void)
 			    "%s:%d %lld:%lld",
 			    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
 			    (long long)rep->ino, (long long)rep->gen);
+			free(rep->cksum_type);
 			free(rep);
 		}
 		qd->head->q_next = NULL;
@@ -6034,7 +6038,10 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	struct sockaddr_in client_addr, *self_sockaddr_array;
+	/* specify static, to shut up valgrind */
+	static struct sockaddr_in *self_sockaddr_array;
+
+	struct sockaddr_in client_addr;
 	struct sockaddr_un client_local_addr;
 	gfarm_error_t e, e2;
 	char *config_file = NULL, *pid_file = NULL;
