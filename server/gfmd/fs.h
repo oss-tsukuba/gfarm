@@ -65,6 +65,9 @@ gfarm_error_t gfm_server_pio_set_paths(struct peer *, int, int);
 gfarm_error_t gfm_server_pio_close(struct peer *, int, int);
 gfarm_error_t gfm_server_pio_visit(struct peer *, int, int);
 
+/* miscellaneous */
+gfarm_error_t gfm_server_config_get(struct peer *, int, int);
+
 /* replica management from client */
 gfarm_error_t gfm_server_replica_list_by_name(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_list_by_host(struct peer *, int, int);

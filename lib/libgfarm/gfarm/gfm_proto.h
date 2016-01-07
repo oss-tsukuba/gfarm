@@ -4,6 +4,10 @@
 
 #define GFM_PROTOCOL_VERSION		1
 
+#define GFM_VERSION_MAJOR		2
+#define GFM_VERSION_MINOR		6
+#define GFM_VERSION_TEENY		8
+
 enum gfm_proto_command {
 	/* host/user/group metadata */
 
@@ -200,11 +204,13 @@ enum gfm_proto_command {
 	GFM_PROTO_PIO_MISC_RESERVE14,
 	GFM_PROTO_PIO_MISC_RESERVE15,
 
+	/* miscellaneous */
+
 	GFM_PROTO_HOSTNAME_SET,
 	GFM_PROTO_SCHEDULE_HOST_DOMAIN,
 	GFM_PROTO_STATFS,
-	GFM_PROTO_MISC_RESERVE3,
-	GFM_PROTO_MISC_RESERVE4,
+	GFM_PROTO_CONFIG_GET,			/* since gfarm-2.6.8 */
+	GFM_PROTO_CONFIG_SET,			/* reserved (not used yet) */
 	GFM_PROTO_MISC_RESERVE5,
 	GFM_PROTO_MISC_RESERVE6,
 	GFM_PROTO_MISC_RESERVE7,

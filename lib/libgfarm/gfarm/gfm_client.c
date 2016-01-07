@@ -3394,14 +3394,92 @@ gfm_client_pio_visit(struct gfm_connection *gfm_server)
 }
 
 /*
- * misc operations from gfsd
+ * miscellaneous
  */
 
 gfarm_error_t
-gfm_client_hostname_set(struct gfm_connection *gfm_server, const char *hostname)
+gfm_client_hostname_set_request(struct gfm_connection *gfm_server,
+	const char *hostname)
 {
-	return (gfm_client_rpc(gfm_server, 0,
-	    GFM_PROTO_HOSTNAME_SET, "s/", hostname));
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_HOSTNAME_SET, "s", hostname));
+}
+
+gfarm_error_t
+gfm_client_hostname_set_result(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
+gfarm_error_t
+gfm_client_hostname_set(struct gfm_connection *gfm_server,
+	const char *hostname)
+{
+	gfarm_error_t e;
+
+	e = gfm_client_hostname_set_request(gfm_server, hostname);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_hostname_set(%s) request: %s",
+		    hostname, gfarm_error_string(e));
+		return (e);
+	}
+	return (gfm_client_hostname_set_result(gfm_server));
+}
+
+gfarm_error_t
+gfm_client_config_get_request(struct gfm_connection *gfm_server,
+	const char *name, char fmt)
+{
+	if (fmt != 'i' && fmt != 's') {
+		abort();
+		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	}
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_CONFIG_GET, "sc", name, fmt));
+}
+
+gfarm_error_t
+gfm_client_config_get_result(struct gfm_connection *gfm_server,
+	char fmt, void *addr)
+{
+	gfarm_error_t e;
+	char f;
+
+	switch (fmt) {
+	case 'i':
+		e = gfm_client_rpc_result(gfm_server, 0, "ci", &f, addr);
+		break;
+	case 's':
+		e = gfm_client_rpc_result(gfm_server, 0, "cs", &f, addr);
+		break;
+	default:
+		e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
+		abort();
+	}
+	if (e == GFARM_ERR_NO_ERROR && f != fmt) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_config_get_result: format '%c' is expected, "
+		    "but '%c'", fmt, f);
+		e = GFARM_ERR_PROTOCOL;
+	}
+	return (e);
+}
+
+gfarm_error_t
+gfm_client_config_get(struct gfm_connection *gfm_server,
+	const char *name, char fmt, void *addr)
+{
+	gfarm_error_t e;
+
+	e = gfm_client_config_get_request(gfm_server, name, fmt);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_config_get(%s) request: %s",
+		    name, gfarm_error_string(e));
+		return (e);
+	}
+	return (gfm_client_config_get_result(gfm_server, fmt, addr));
 }
 
 /*

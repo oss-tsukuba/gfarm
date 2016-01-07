@@ -435,6 +435,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_STATFS:
 		e = gfm_server_statfs(peer, from_client, skip);
 		break;
+	case GFM_PROTO_CONFIG_GET:
+		e = gfm_server_config_get(peer, from_client, skip);
+		break;
 	case GFM_PROTO_REPLICA_LIST_BY_NAME:
 		e = gfm_server_replica_list_by_name(peer, from_client, skip);
 		break;
@@ -1623,6 +1626,9 @@ main(int argc, char **argv)
 
 	if (config_file == NULL)
 		config_file = GFMD_CONFIG;
+	gfarm_metadb_version_major = GFM_VERSION_MAJOR;
+	gfarm_metadb_version_minor = GFM_VERSION_MINOR;
+	gfarm_metadb_version_teeny = GFM_VERSION_TEENY;
 	e = gfarm_server_initialize(config_file, &argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001486,

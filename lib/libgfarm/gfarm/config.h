@@ -48,6 +48,9 @@ extern enum gfarm_backend_db_type gfarm_backend_db_type;
 extern int gfarm_metadb_server_listen_backlog;
 extern int gfarm_xattr_size_limit;
 extern int gfarm_xmlattr_size_limit;
+extern int gfarm_metadb_version_major;
+extern int gfarm_metadb_version_minor;
+extern int gfarm_metadb_version_teeny;
 extern int gfarm_metadb_max_descriptors;
 extern int gfarm_metadb_stack_size;
 extern int gfarm_metadb_thread_pool_size;
@@ -131,6 +134,30 @@ int gfarm_get_metadb_server_slave_max_size(void);
 int gfarm_get_metadb_server_force_slave(void);
 void gfarm_set_metadb_server_force_slave(int);
 
+/* configuration manipulation */
+
+struct gfarm_config_type;
+union gfarm_config_storage {
+	int i;
+	char *s;
+};
+gfarm_error_t gfarm_config_type_by_name_for_metadb(const char *,
+	const struct gfarm_config_type **);
+char gfarm_config_type_get_format(const struct gfarm_config_type *);
+int gfarm_config_type_is_privileged_to_get(const struct gfarm_config_type *);
+gfarm_error_t gfarm_config_copyout(const struct gfarm_config_type *,
+	union gfarm_config_storage *);
+
+gfarm_error_t gfarm_config_name_to_string(const char *, char *, size_t);
+
+struct gfm_connection;
+gfarm_error_t gfm_client_config_get_by_name(struct gfm_connection *,
+	const char *);
+gfarm_error_t gfm_client_config_get_vars_request(struct gfm_connection *,
+	int, void **);
+gfarm_error_t gfm_client_config_get_vars_result(struct gfm_connection *,
+	int, void **);
+
 /* miscellaneous */
 extern int gfarm_network_receive_timeout;
 extern int gfarm_file_trace;
@@ -155,7 +182,6 @@ gfarm_error_t gfarm_set_local_user_for_this_uid(uid_t);
 /* for client */
 struct gfs_connection;
 
-struct gfm_connection;
 gfarm_error_t gfarm_client_process_set(struct gfs_connection *,
 	struct gfm_connection *);
 gfarm_error_t gfarm_client_process_reset(struct gfs_connection *,

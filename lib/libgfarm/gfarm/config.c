@@ -7,6 +7,7 @@
 #include <sys/param.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
@@ -971,6 +972,9 @@ char *gfarm_digest = NULL;
 int gfarm_simultaneous_replication_receivers = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xmlattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_version_major = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_version_minor = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_version_teeny = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_max_descriptors = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_stack_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_thread_pool_size = GFARM_CONFIG_MISC_DEFAULT;
@@ -3440,6 +3444,269 @@ gfarm_config_set_default_misc(void)
 	gfarm_config_set_default_metadb_server();
 }
 
+/*
+ * configuration manipulation
+ */
+
+int
+gfarm_config_print_int(void *addr, char *string, size_t sz)
+{
+	int *ip = addr;
+
+	return (snprintf(string, sz, "%d", *ip));
+}
+
+int
+gfarm_config_print_enabled(void *addr, char *string, size_t sz)
+{
+	int *enabledp = addr;
+
+	if (*enabledp)
+		return (snprintf(string, sz, "%s", "enabled"));
+	else
+		return (snprintf(string, sz, "%s", "disabled"));
+}
+
+int
+gfarm_config_print_string(void *addr, char *string, size_t sz)
+{
+	char **sp = addr;
+
+	return (snprintf(string, sz, "%s", *sp));
+}
+
+const struct gfarm_config_type {
+	const char *name;
+	char fmt;
+	int for_metadb;
+	int (*printer)(void *, char *, size_t);
+	void *addr; /* maybe NULL, if it's in gfarm_ctxp-> */
+	size_t offset; /* only available if it's in gfarm_ctxp-> */
+} config_types[] = {
+	{ "protocol_major", 'i', 1, gfarm_config_print_int,
+	  &gfarm_metadb_version_major, 0 },
+	{ "protocol_minor", 'i', 1, gfarm_config_print_int,
+	  &gfarm_metadb_version_minor, 0 },
+	{ "protocol_teeny", 'i', 1, gfarm_config_print_int,
+	  &gfarm_metadb_version_teeny, 0 },
+	{ "digest", 's', 1, gfarm_config_print_string,
+	  &gfarm_digest, 0 },
+	{ "write_verify", 'i', 1, gfarm_config_print_enabled,
+	  &gfarm_write_verify, 0 },
+	{ "write_verify_interval", 'i', 1, gfarm_config_print_int,
+	  &gfarm_write_verify_interval, 0 },
+	{ "write_verify_retry_interval", 'i', 1, gfarm_config_print_int,
+	  &gfarm_write_verify_retry_interval, 0 },
+	{ "direct_local_access", 'i', 0, gfarm_config_print_enabled,
+	  NULL, offsetof(struct gfarm_context, direct_local_access) },
+	{ "client_digest_check", 'i', 0, gfarm_config_print_enabled,
+	  NULL, offsetof(struct gfarm_context, client_digest_check) },
+	{ "client_file_bufsize", 'i', 0, gfarm_config_print_int,
+	  NULL, offsetof(struct gfarm_context, client_file_bufsize) },
+};
+
+static void *
+gfarm_config_addr(const struct gfarm_config_type *type)
+{
+	if (type->addr != NULL)
+		return (type->addr);
+	if (gfarm_ctxp == NULL)
+		return (NULL);
+	return ((char *)gfarm_ctxp + type->offset);
+}
+
+static gfarm_error_t
+gfarm_config_type_by_var(void *var, const struct gfarm_config_type **typep)
+{
+	int i;
+
+	/* XXX linear search */
+	for (i = 0; i < GFARM_ARRAY_LENGTH(config_types); i++) {
+		if (var == gfarm_config_addr(&config_types[i])) {
+			*typep = &config_types[i];
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+gfarm_config_type_by_name(const char *name,
+	const struct gfarm_config_type **typep)
+{
+	int i;
+
+	/* XXX linear search.  use hash, when config_types[] becomes big */
+	for (i = 0; i < GFARM_ARRAY_LENGTH(config_types); i++) {
+		if (strcmp(name, config_types[i].name) == 0) {
+			*typep = &config_types[i];
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+gfarm_error_t
+gfarm_config_type_by_name_for_metadb(const char *name,
+	const struct gfarm_config_type **typep)
+{
+	gfarm_error_t e;
+	const struct gfarm_config_type *type;
+
+	e = gfarm_config_type_by_name(name, &type);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (!type->for_metadb)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+
+	*typep = type;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+char
+gfarm_config_type_get_format(const struct gfarm_config_type *type)
+{
+	return (type->fmt);
+}
+
+int
+gfarm_config_type_is_privileged_to_get(const struct gfarm_config_type *type)
+{
+	return (0); /* currently, privileged config does not exist */
+}
+
+gfarm_error_t
+gfarm_config_name_to_string(const char *name, char *string, size_t sz)
+{
+	gfarm_error_t e;
+	const struct gfarm_config_type *type;
+	void *addr;
+
+	e = gfarm_config_type_by_name(name, &type);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	addr = gfarm_config_addr(type);
+	if (addr == NULL)
+		return (GFARM_ERR_BAD_ADDRESS);
+
+	if ((*type->printer)(addr, string, sz) >= sz)
+		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_config_copyout(const struct gfarm_config_type *type,
+	union gfarm_config_storage *storage)
+{
+	void *addr = gfarm_config_addr(type);
+
+	if (addr == NULL)
+		return (GFARM_ERR_BAD_ADDRESS);
+
+	switch (type->fmt) {
+	case 'i':
+		storage->i = *(int *)addr;
+		break;
+	case 's':
+		if (*(char **)addr == NULL)
+			storage->s = NULL;
+		else if ((storage->s = strdup(*(char **)addr)) == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		break;
+	default:
+		return (GFARM_ERR_UNKNOWN);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfm_client_config_type_get(struct gfm_connection *gfm_server,
+	const struct gfarm_config_type *type)
+{
+	void *addr = gfarm_config_addr(type);
+
+	if (addr == NULL)
+		return (GFARM_ERR_BAD_ADDRESS);
+	return (gfm_client_config_get(gfm_server, type->name, type->fmt,
+	    addr));
+}
+
+gfarm_error_t
+gfm_client_config_get_by_name(
+	struct gfm_connection *gfm_server, const char *name)
+{
+	const struct gfarm_config_type *type;
+	gfarm_error_t e = gfarm_config_type_by_name(name, &type);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (gfm_client_config_type_get(gfm_server, type));
+}
+
+gfarm_error_t
+gfm_client_config_get_vars_request(struct gfm_connection *gfm_server,
+	int n_config_vars, void **config_vars)
+{
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
+	const struct gfarm_config_type *type;
+	void *addr;
+	int i;
+
+	for (i = 0; i < n_config_vars; i++) {
+		e = gfarm_config_type_by_var(config_vars[i], &type);
+		if (e != GFARM_ERR_NO_ERROR) {
+			if (e_save == GFARM_ERR_NO_ERROR)
+				e_save = e;
+			continue;
+		}
+		addr = gfarm_config_addr(type);
+		if (addr == NULL) {
+			if (e_save == GFARM_ERR_NO_ERROR)
+				e_save = GFARM_ERR_BAD_ADDRESS;
+			continue;
+		}
+		e = gfm_client_config_get_request(gfm_server,
+		    type->name, type->fmt);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+	}
+	return (e_save);
+}
+
+gfarm_error_t
+gfm_client_config_get_vars_result(struct gfm_connection *gfm_server,
+	int n_config_vars, void **config_vars)
+{
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
+	const struct gfarm_config_type *type;
+	void *addr;
+	int i;
+
+	for (i = 0; i < n_config_vars; i++) {
+		e = gfarm_config_type_by_var(config_vars[i], &type);
+		if (e != GFARM_ERR_NO_ERROR) {
+			if (e_save == GFARM_ERR_NO_ERROR)
+				e_save = e;
+			continue;
+		}
+		addr = gfarm_config_addr(type);
+		if (addr == NULL) {
+			if (e_save == GFARM_ERR_NO_ERROR)
+				e_save = GFARM_ERR_BAD_ADDRESS;
+			continue;
+		}
+		e = gfm_client_config_get_result(gfm_server, type->fmt, addr);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+	}
+	return (e_save);
+}
+
+
+
 gfarm_error_t
 gfarm_sockbuf_apply_limit(int sock, int opt, int limit, const char *optname)
 {
@@ -3484,6 +3751,13 @@ gfs_display_timers(void)
 	gfs_xattr_display_timers();
 #endif /* __KERNEL__ */
 }
+
+struct config_get_set {
+	char *name;
+	void *addr;
+	int settable;
+	char type; /* currently compatible with gfp_xdr format type, but... */
+};
 
 #ifdef STRTOKEN_TEST
 main()

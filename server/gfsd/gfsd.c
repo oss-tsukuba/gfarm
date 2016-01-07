@@ -635,8 +635,85 @@ sleep_or_wait_failover(int seconds)
 		sleep_or_wait_failover_signal(seconds, FAILOVER_SIGNAL);
 }
 
+/* return true, if the negotiation succeeds, or timed_out happens */
+static int
+negotiate_with_gfm_server(int timed_out, int n_config_vars, void **config_vars,
+	const char *diag, gfarm_error_t *ep)
+{
+	gfarm_error_t e;
+
+	if ((e = gfm_client_compound_begin_request(gfm_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "compound_begin request: %s",
+		    gfarm_error_string(e));
+	else if (canonical_self_name != NULL &&
+	    (e = gfm_client_hostname_set_request(gfm_server,
+	    canonical_self_name)) != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "hostname_set(%s) request: %s", canonical_self_name,
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_config_get_vars_request(
+	    gfm_server, n_config_vars, config_vars)) != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "config_get_vars() request: %s", gfarm_error_string(e));
+	else if ((e = gfm_client_compound_end_request(gfm_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "compound_end request: %s",
+		    gfarm_error_string(e));
+
+	else if ((e = gfm_client_compound_begin_result(gfm_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "compound_begin result: %s",
+		    gfarm_error_string(e));
+	else if (canonical_self_name != NULL &&
+	    (e = gfm_client_hostname_set_result(gfm_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "hostname_set(%s) result: %s", canonical_self_name,
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_config_get_vars_result(
+	    gfm_server, n_config_vars, config_vars)) != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "config_get_vars() result: %s", gfarm_error_string(e));
+	else if ((e = gfm_client_compound_end_result(gfm_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "compound_end result: %s",
+		    gfarm_error_string(e));
+
+	*ep = e;
+	if (e == GFARM_ERR_NO_ERROR) {
+		if (gfarm_metadb_version_major < GFM_VERSION_MAJOR ||
+		    gfarm_metadb_version_minor < GFM_VERSION_MINOR ||
+		    gfarm_metadb_version_teeny < GFM_VERSION_TEENY) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "gfmd version %d.%d.%d or later is expected, "
+			    "but it's %d.%d.%d",
+			    GFM_VERSION_MAJOR,
+			    GFM_VERSION_MINOR,
+			    GFM_VERSION_TEENY,
+			    gfarm_metadb_version_major,
+			    gfarm_metadb_version_minor,
+			    gfarm_metadb_version_teeny);
+			*ep = GFARM_ERR_PROTOCOL_NOT_SUPPORTED;
+			return (1);
+		}
+		gflog_info(GFARM_MSG_1004103, "%s: connected to gfmd", diag);
+		return (1);
+	}
+	if (timed_out || !IS_CONNECTION_ERROR(e)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "negotiation with gfmd failed (as node: %s): %s",
+		    canonical_self_name != NULL ? canonical_self_name : "-",
+		    gfarm_error_string(e));
+		return (1);
+	}
+	/* caller of this function will report the error in *ep */
+	return (0);
+}
+
 static gfarm_error_t
-connect_gfm_server0(int use_timeout, const char *diag)
+connect_gfm_server0(int use_timeout, int n_config_vars, void **config_vars,
+	const char *diag)
 {
 	gfarm_error_t e;
 	int sleep_interval = GFMD_CONNECT_SLEEP_INTVL_MIN;
@@ -646,7 +723,7 @@ connect_gfm_server0(int use_timeout, const char *diag)
 		GFMD_CONNECT_SLEEP_LOG_OMIT, 1,
 		GFMD_CONNECT_SLEEP_INTVL_MAX * 10,
 		GFMD_CONNECT_SLEEP_LOG_INTERVAL);
-	struct gflog_reduced_state hnamelog = GFLOG_REDUCED_STATE_INITIALIZER(
+	struct gflog_reduced_state negolog = GFLOG_REDUCED_STATE_INITIALIZER(
 		GFMD_CONNECT_SLEEP_LOG_OMIT, 1,
 		GFMD_CONNECT_SLEEP_INTVL_MAX * 10,
 		GFMD_CONNECT_SLEEP_LOG_INTERVAL);
@@ -681,36 +758,14 @@ connect_gfm_server0(int use_timeout, const char *diag)
 			    gfarm_ctxp->metadb_server_port,
 			    sleep_interval, gfarm_error_string(e));
 		} else {
-			/*
-			 * If canonical_self_name is specified (by the
-			 * command-line argument), send the hostname to
-			 * identify myself.  If not sending the hostname,
-			 * the canonical name will be decided by the gfmd using
-			 * the reverse lookup of the connected IP address.
-			 */
-			if (canonical_self_name == NULL) {
-				gflog_info(GFARM_MSG_1004102,
-				    "%s: connected to gfmd", diag);
-				return (GFARM_ERR_NO_ERROR);
-			}
-
-			e = gfm_client_hostname_set(gfm_server,
-			    canonical_self_name);
-			if (e == GFARM_ERR_NO_ERROR) {
-				gflog_info(GFARM_MSG_1004103,
-				    "%s: connected to gfmd", diag);
-				return (GFARM_ERR_NO_ERROR);
-			}
-			if (timed_out || !IS_CONNECTION_ERROR(e)) {
-				gflog_error(GFARM_MSG_1000551,
-				    "cannot set canonical hostname of "
-				    "this node (%s): %s", canonical_self_name,
-				    gfarm_error_string(e));
+			if (negotiate_with_gfm_server(timed_out,
+			    n_config_vars, config_vars, diag, &e))
 				return (e);
-			}
-			gflog_reduced_notice(GFARM_MSG_1003669, &hnamelog,
-			    "cannot set canonical hostname of this node (%s), "
-			    "sleep %d sec: %s", canonical_self_name,
+			gflog_reduced_notice(GFARM_MSG_UNFIXED, &negolog,
+			    "negotiation with gfmd failed (as node: %s), "
+			    "sleep %d sec: %s",
+			    canonical_self_name != NULL ?
+			    canonical_self_name : "-",
 			    sleep_interval, gfarm_error_string(e));
 			/* retry if IS_CONNECTION_ERROR(e) */
 		}
@@ -721,16 +776,41 @@ connect_gfm_server0(int use_timeout, const char *diag)
 
 }
 
+static void *config_vars[] = {
+	&gfarm_metadb_version_major,
+	&gfarm_metadb_version_minor,
+	&gfarm_metadb_version_teeny,
+};
+
+static void *initial_config_vars[] = {
+	&gfarm_metadb_version_major,
+	&gfarm_metadb_version_minor,
+	&gfarm_metadb_version_teeny,
+	&gfarm_write_verify,
+	&gfarm_write_verify_interval,
+	&gfarm_write_verify_retry_interval,
+};
+
 static gfarm_error_t
 connect_gfm_server_with_timeout(const char *diag)
 {
-	return (connect_gfm_server0(1, diag));
+	return (connect_gfm_server0(1,
+	    GFARM_ARRAY_LENGTH(config_vars), config_vars, diag));
 }
 
 gfarm_error_t
 connect_gfm_server(const char *diag)
 {
-	return (connect_gfm_server0(0, diag));
+	return (connect_gfm_server0(0,
+	    GFARM_ARRAY_LENGTH(config_vars), config_vars, diag));
+}
+
+gfarm_error_t
+connect_gfm_server_at_first(const char *diag)
+{
+	return (connect_gfm_server0(0,
+	    GFARM_ARRAY_LENGTH(initial_config_vars), initial_config_vars,
+	    diag));
 }
 
 void
@@ -6244,8 +6324,10 @@ main(int argc, char **argv)
 	}
 
 	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_SPOOL_HOST);
-	if ((e = connect_gfm_server("listener")) != GFARM_ERR_NO_ERROR)
+	e = connect_gfm_server_at_first("listener");
+	if (e != GFARM_ERR_NO_ERROR)
 		fatal(GFARM_MSG_1003365, "die");
+
 	/*
 	 * in case of canonical_self_name != NULL, get_canonical_self_name()
 	 * cannot be used because host_get_self_name() may not be registered.

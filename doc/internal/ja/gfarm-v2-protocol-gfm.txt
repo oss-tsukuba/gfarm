@@ -420,6 +420,51 @@
 	  入力: なし
 	  出力: i:エラー, l:used, l:avail, l:files
 
+	GFM_PROTO_CONFIG_GET
+	  入力:	s: 設定種別文字列
+		c: 設定フォーマットタイプ
+	  出力:	i: エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		c: 設定フォーマットタイプ (入力と同一)
+		フォーマットタイプ依存の型: 設定値
+		※ 設定種別文字列が未知の場合:
+			エラー == GFARM_ERR_FUNCTION_NOT_IMPLEMENTED
+		   設定種別文字列が gfmd 用でない場合:
+			エラー == GFARM_ERR_OPERATION_NOT_PERMITTED
+		   設定フォーマットタイプが、期待と異なる場合:
+			エラー == GFARM_ERR_INVALID_ARGUMENT
+		   gfarmadm 権限が必要な値を、権限なしで取得しようとした場合:
+			エラー == GFARM_ERR_PERMISSION_DENIED
+
+	GFM_PROTO_CONFIG_SET ※ 現行バージョンでは未実装
+	  入力:	s: 設定種別文字列
+		c: 設定フォーマットタイプ
+		フォーマットタイプ依存の型: 設定値
+	  出力:
+		i: エラー
+		※ 設定種別文字列が未知の場合:
+			GFARM_ERR_FUNCTION_NOT_IMPLEMENTED
+		   設定種別文字列が gfmd 用でない場合:
+			エラー == GFARM_ERR_OPERATION_NOT_PERMITTED
+		   設定フォーマットタイプが、期待と異なる場合:
+			エラー == GFARM_ERR_INVALID_ARGUMENT
+		   設定値が、許容される範囲を越えた場合:
+			エラー == GFARM_ERR_INVALID_ARGUMENT
+		   gfarmadm 権限なしで GFM_PROTO_CONFIG_SET を指定した場合:
+			エラー == GFARM_ERR_PERMISSION_DENIED
+
+		※ GFM_RPTO_CONFIG_GET / GFM_PROTO_CONFIG_SET では、
+		   設定種別文字列として、gfarm2.conf の directive の
+		   サブセットが利用できる。
+		   それ以外に、GFM_RPTO_CONFIG_GET 専用で、以下も有効
+			version_major / i
+			version_minor / i
+			version_teeny / i
+		※ 設定フォーマットタイプを明示的に渡している理由は、
+		   WireShark 用 Lua スクリプトの実装を容易にするため。
+		   この文字は、現状、gfp_xdr.c のフォーマット文字列中の
+		   文字と互換だが、将来拡張する可能性あり。
+
 	GFM_PROTO_REPLICA_LIST_BY_NAME
 	  暗黙の入力: i:current file descriptor
 	  入力: なし
