@@ -87,9 +87,7 @@ do_configurations(struct gfm_connection *gfm_server, int argc, char **argv,
 	for (i = 0; i < argc; i++) {
 		e = do_config(gfm_server, argv[i],
 		    ask_gfmd, print_config_name);
-		if (e != GFARM_ERR_NO_ERROR)
-			;
-		if (e_save == GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR && e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 	}
 	return (e_save);
