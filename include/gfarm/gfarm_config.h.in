@@ -53,6 +53,12 @@
 /* Define to 1 if you have the `fdopendir' function. */
 #undef HAVE_FDOPENDIR
 
+/* Define to 1 if you have the `futimes' function. */
+#undef HAVE_FUTIMES
+
+/* Define to 1 if you have the `futimesat' function. */
+#undef HAVE_FUTIMESAT
+
 /* Define to 1 if you have the `getdents' function. */
 #undef HAVE_GETDENTS
 
