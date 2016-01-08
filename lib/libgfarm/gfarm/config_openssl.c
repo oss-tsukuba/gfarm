@@ -20,7 +20,7 @@ static unsigned long
 gfarm_openssl_threadid(void)
 {
 	/* XXX - check pthread_self() returns unsigned long or not */
-	return (pthread_self());
+	return ((unsigned long)pthread_self());
 }
 
 /*
