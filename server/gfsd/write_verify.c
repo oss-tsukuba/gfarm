@@ -1,8 +1,8 @@
 #include <assert.h>
+#include <inttypes.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h>
 #include <unistd.h>
 #include <limits.h>
 #include <fcntl.h>
@@ -891,7 +891,11 @@ write_verify_state_snapshot(void)
 		tv[0].tv_usec = 0;
 	}
 	tv[1] = tv[0];
+#if !defined(HAVE_FUTIMES) && defined(HAVE_FUTIMESAT)
+	if (futimesat(write_verify_state_fd, NULL, tv) == -1)
+#else
 	if (futimes(write_verify_state_fd, tv) == -1)
+#endif
 		gflog_error_errno(GFARM_MSG_UNFIXED,
 		    "recording mtime to %s", write_verify_state_file);
 	if (fsync(write_verify_state_fd) == -1)
