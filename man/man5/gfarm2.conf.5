@@ -2131,7 +2131,7 @@ write_verify \fIvalidity\fR
 This statement enables gfsd\'s write_verify feature that compares file data checksum by re\-reading the contents of the file sometime after the file is written\&. The default is
 disable\&.
 .sp
-This parameter is only available in gfarm2\&.conf which is referred by gfsd, and ignored clients, and ignored in gfmd\&.conf\&.
+This parameter is only available in gfmd\&.conf, and ignored in gfmd\&.conf\&. gfsd uses this setting at its startup by asking gfmd\&.
 .sp
 For example,
 .sp
@@ -2152,7 +2152,7 @@ This statement specifies how long to wait before starting the write_verify featu
 .sp
 The write_verify feature uses direct I/O on OSes which have the O_DIRECT flag\&. But it does not flush caches on disk controllers and kernel metadata\&. Thus, it\'s recommended to specify long enough period in this parameter\&.
 .sp
-This parameter is only available in gfarm2\&.conf which is referred by gfsd, and ignored clients, and ignored in gfmd\&.conf\&.
+This parameter is only available in gfmd\&.conf, and ignored in gfmd\&.conf\&. gfsd uses this setting at its startup by asking gfmd\&.
 .sp
 For example,
 .sp
@@ -2171,7 +2171,7 @@ write_verify_retry_interval \fIseconds\fR
 .RS 4
 This statement specifies how long to wait until retring the write_verify feature, if previous try was postponed, because the file was opened for writing at that time\&. The default value is 600 seconds (10 minutes)\&.
 .sp
-This parameter is only available in gfarm2\&.conf which is referred by gfsd, and ignored clients, and ignored in gfmd\&.conf\&.
+This parameter is only available in gfmd\&.conf, and ignored in gfmd\&.conf\&. gfsd uses this setting at its startup by asking gfmd\&.
 .sp
 For example,
 .sp
