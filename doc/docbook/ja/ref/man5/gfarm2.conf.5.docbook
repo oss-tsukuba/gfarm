@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>10 Nov 2015</date></refentryinfo>
+<refentryinfo><date>8 January 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -2156,8 +2156,9 @@ enableと指定した場合、
 デフォルトは <token>disable</token> です。
 </para>
 <para>
-この文は gfsd が参照する gfarm2.conf のみで有効であり、
-クライアントや gfmd.conf では無視されます。
+この文は gfmd.conf のみで有効です。
+gfarm2.confでは無視されます。
+gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2181,8 +2182,9 @@ direct I/O を用います。しかし、ディスクコントローラ内のキ
 には、十分長い時間を指定することを推奨します。
 </para>
 <para>
-この文は gfsd が参照する gfarm2.conf のみで有効であり、
-クライアントや gfmd.conf では無視されます。
+この文は gfmd.conf のみで有効です。
+gfarm2.confでは無視されます。
+gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2201,8 +2203,9 @@ write_verify を試みたが、対象ファイルが書き込みオープンさ�
 デフォルトは 600秒 (10分) です。
 </para>
 <para>
-この文は gfsd が参照する gfarm2.conf のみで有効であり、
-クライアントや gfmd.conf では無視されます。
+この文は gfmd.conf のみで有効です。
+gfarm2.confでは無視されます。
+gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
