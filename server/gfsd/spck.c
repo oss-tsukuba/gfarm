@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <dirent.h>
 #include <string.h>
