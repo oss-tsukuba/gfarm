@@ -682,15 +682,19 @@ negotiate_with_gfm_server(int timed_out, int n_config_vars, void **config_vars,
 
 	*ep = e;
 	if (e == GFARM_ERR_NO_ERROR) {
-		if (gfarm_metadb_version_major < GFM_VERSION_MAJOR ||
-		    gfarm_metadb_version_minor < GFM_VERSION_MINOR ||
-		    gfarm_metadb_version_teeny < GFM_VERSION_TEENY) {
+		int major_version = gfarm_major_version();
+		int minor_version = gfarm_minor_version();
+		int teeny_version = gfarm_teeny_version();
+
+		if (gfarm_metadb_version_major < major_version ||
+		    (gfarm_metadb_version_major == major_version &&
+		     (gfarm_metadb_version_minor < minor_version ||
+		      (gfarm_metadb_version_minor == minor_version &&
+		       gfarm_metadb_version_teeny < teeny_version)))) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "gfmd version %d.%d.%d or later is expected, "
 			    "but it's %d.%d.%d",
-			    GFM_VERSION_MAJOR,
-			    GFM_VERSION_MINOR,
-			    GFM_VERSION_TEENY,
+			    major_version, minor_version, teeny_version,
 			    gfarm_metadb_version_major,
 			    gfarm_metadb_version_minor,
 			    gfarm_metadb_version_teeny);

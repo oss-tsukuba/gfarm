@@ -4,10 +4,6 @@
 
 #define GFM_PROTOCOL_VERSION		1
 
-#define GFM_VERSION_MAJOR		2
-#define GFM_VERSION_MINOR		6
-#define GFM_VERSION_TEENY		8
-
 enum gfm_proto_command {
 	/* host/user/group metadata */
 

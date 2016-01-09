@@ -155,6 +155,64 @@ gfarm_version(void)
 	return (ver);
 }
 
+static int
+version_to_int(const char *c)
+{
+	int ver = 0;
+
+	for (; isdigit(*c); ++c)
+		ver = ver * 10 + (*c - '0');
+	return (ver);
+}
+
+static const char *
+skip_version(const char *c)
+{
+	while (*c && *c != '.')
+		++c;
+	if (*c == '.')
+		++c;
+	return (c);
+}
+
+int
+gfarm_major_version(void)
+{
+	const char *v = gfarm_version();
+	static int major = 0;
+
+	if (major == 0)
+		major = version_to_int(v);
+	return (major);
+}
+
+int
+gfarm_minor_version(void)
+{
+	const char *v = gfarm_version();
+	static int minor = 0;
+
+	if (minor == 0) {
+		v = skip_version(v);
+		minor = version_to_int(v);
+	}
+	return (minor);
+}
+
+int
+gfarm_teeny_version(void)
+{
+	const char *v = gfarm_version();
+	static int teeny = 0;
+
+	if (teeny == 0) {
+		v = skip_version(v);
+		v = skip_version(v);
+		teeny = version_to_int(v);
+	}
+	return (teeny);
+}
+
 /* XXX move actual function definition here */
 static gfarm_error_t gfarm_strtoken(char **, char **);
 
