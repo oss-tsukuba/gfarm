@@ -2216,7 +2216,7 @@ is written.
 The default is <token>disable</token>.
 </para>
 <para>
-This parameter is only available in gfmd.conf, and ignored in gfmd.conf.
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 gfsd uses this setting at its startup by asking gfmd.
 </para>
 <para>For example,</para>
@@ -2240,7 +2240,7 @@ But it does not flush caches on disk controllers and kernel metadata.
 Thus, it's recommended to specify long enough period in this parameter.
 </para>
 <para>
-This parameter is only available in gfmd.conf, and ignored in gfmd.conf.
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 gfsd uses this setting at its startup by asking gfmd.
 </para>
 <para>For example,</para>
@@ -2260,7 +2260,7 @@ for writing at that time.
 The default value is 600 seconds (10 minutes).
 </para>
 <para>
-This parameter is only available in gfmd.conf, and ignored in gfmd.conf.
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 gfsd uses this setting at its startup by asking gfmd.
 </para>
 <para>For example,</para>
