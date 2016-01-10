@@ -108,7 +108,7 @@ main(int argc, char *argv[])
 	gfarm_error_t e, e2;
 	int port, c, debug_mode = 0, ask_gfmd = 0;
 	char *canonical_hostname, *hostname, *realpath = NULL;
-	const char *user, *gfmd_hostname;
+	const char *user = NULL, *gfmd_hostname;
 	const char *path = ".";
 	struct gfm_connection *gfm_server;
 	struct gfarm_metadb_server *ms;
