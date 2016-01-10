@@ -176,7 +176,7 @@ skip_version(const char *c)
 }
 
 int
-gfarm_version_major(void)
+gfarm_major_version(void)
 {
 	const char *v = gfarm_version();
 	static int major = 0;
@@ -187,7 +187,7 @@ gfarm_version_major(void)
 }
 
 int
-gfarm_version_minor(void)
+gfarm_minor_version(void)
 {
 	const char *v = gfarm_version();
 	static int minor = 0;
@@ -200,7 +200,7 @@ gfarm_version_minor(void)
 }
 
 int
-gfarm_version_teeny(void)
+gfarm_teeny_version(void)
 {
 	const char *v = gfarm_version();
 	static int teeny = 0;
@@ -1026,12 +1026,13 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_REPLICA_CHECK_SLEEP_TIME_DEFAULT 100000 /* nanosec. */
 #define GFARM_REPLICA_CHECK_MINIMUM_INTERVAL_DEFAULT 10 /* 10 sec. */
 
-static int version_major, version_minor, version_teeny;
-
 char *gfarm_digest = NULL;
 int gfarm_simultaneous_replication_receivers = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xmlattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_version_major = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_version_minor = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_version_teeny = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_max_descriptors = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_stack_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_thread_pool_size = GFARM_CONFIG_MISC_DEFAULT;
@@ -3294,10 +3295,6 @@ gfarm_config_set_default_metadb_server(void)
 void
 gfarm_config_set_default_misc(void)
 {
-	version_major = gfarm_version_major();
-	version_minor = gfarm_version_minor();
-	version_teeny = gfarm_version_teeny();
-
 	if (gfarm_spool_check_level == GFARM_SPOOL_CHECK_LEVEL_DEFAULT)
 		(void)gfarm_spool_check_level_set(
 			GFARM_SPOOL_CHECK_LEVEL_LOST_FOUND);
@@ -3545,11 +3542,11 @@ const struct gfarm_config_type {
 	size_t offset; /* only available if it's in gfarm_ctxp-> */
 } config_types[] = {
 	{ "protocol_major", 'i', 1, gfarm_config_print_int,
-	  &version_major, 0 },
+	  &gfarm_metadb_version_major, 0 },
 	{ "protocol_minor", 'i', 1, gfarm_config_print_int,
-	  &version_minor, 0 },
+	  &gfarm_metadb_version_minor, 0 },
 	{ "protocol_teeny", 'i', 1, gfarm_config_print_int,
-	  &version_teeny, 0 },
+	  &gfarm_metadb_version_teeny, 0 },
 	{ "digest", 's', 1, gfarm_config_print_string,
 	  &gfarm_digest, 0 },
 	{ "write_verify", 'i', 1, gfarm_config_print_enabled,

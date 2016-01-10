@@ -130,9 +130,11 @@
 				   __VA_ARGS__)
 
 const char READONLY_CONFIG_FILE[] = ".readonly";
+
 const char *program_name = "gfsd";
-static int metadb_version_major, metadb_version_minor, metadb_version_teeny;
+
 int debug_mode = 0;
+
 static enum gfsd_type my_type = type_listener;
 
 #define USING_PIPE_FOR_FAILOVER_SIGNAL(my_type) \
@@ -680,22 +682,22 @@ negotiate_with_gfm_server(int timed_out, int n_config_vars, void **config_vars,
 
 	*ep = e;
 	if (e == GFARM_ERR_NO_ERROR) {
-		int major_version = gfarm_version_major();
-		int minor_version = gfarm_version_minor();
-		int teeny_version = gfarm_version_teeny();
+		int major_version = gfarm_major_version();
+		int minor_version = gfarm_minor_version();
+		int teeny_version = gfarm_teeny_version();
 
-		if (metadb_version_major < major_version ||
-		    (metadb_version_major == major_version &&
-		     (metadb_version_minor < minor_version ||
-		      (metadb_version_minor == minor_version &&
-		       metadb_version_teeny < teeny_version)))) {
+		if (gfarm_metadb_version_major < major_version ||
+		    (gfarm_metadb_version_major == major_version &&
+		     (gfarm_metadb_version_minor < minor_version ||
+		      (gfarm_metadb_version_minor == minor_version &&
+		       gfarm_metadb_version_teeny < teeny_version)))) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "gfmd version %d.%d.%d or later is expected, "
 			    "but it's %d.%d.%d",
 			    major_version, minor_version, teeny_version,
-			    metadb_version_major,
-			    metadb_version_minor,
-			    metadb_version_teeny);
+			    gfarm_metadb_version_major,
+			    gfarm_metadb_version_minor,
+			    gfarm_metadb_version_teeny);
 			*ep = GFARM_ERR_PROTOCOL_NOT_SUPPORTED;
 			return (1);
 		}
@@ -779,15 +781,15 @@ connect_gfm_server0(int use_timeout, int n_config_vars, void **config_vars,
 }
 
 static void *config_vars[] = {
-	&metadb_version_major,
-	&metadb_version_minor,
-	&metadb_version_teeny,
+	&gfarm_metadb_version_major,
+	&gfarm_metadb_version_minor,
+	&gfarm_metadb_version_teeny,
 };
 
 static void *initial_config_vars[] = {
-	&metadb_version_major,
-	&metadb_version_minor,
-	&metadb_version_teeny,
+	&gfarm_metadb_version_major,
+	&gfarm_metadb_version_minor,
+	&gfarm_metadb_version_teeny,
 	&gfarm_write_verify,
 	&gfarm_write_verify_interval,
 	&gfarm_write_verify_retry_interval,
