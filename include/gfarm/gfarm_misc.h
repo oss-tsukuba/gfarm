@@ -64,9 +64,9 @@ gfarm_error_t gfarm_config_read(void);
 gfarm_error_t gfarm_auth_method_gsi_available(void);
 
 const char *gfarm_version(void);
-int gfarm_major_version(void);
-int gfarm_minor_version(void);
-int gfarm_teeny_version(void);
+int gfarm_version_major(void);
+int gfarm_version_minor(void);
+int gfarm_version_teeny(void);
 
 /*
  * GFarm URL and pathname handling

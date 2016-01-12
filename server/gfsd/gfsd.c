@@ -682,9 +682,9 @@ negotiate_with_gfm_server(int timed_out, int n_config_vars, void **config_vars,
 
 	*ep = e;
 	if (e == GFARM_ERR_NO_ERROR) {
-		int major_version = gfarm_major_version();
-		int minor_version = gfarm_minor_version();
-		int teeny_version = gfarm_teeny_version();
+		int major_version = gfarm_version_major();
+		int minor_version = gfarm_version_minor();
+		int teeny_version = gfarm_version_teeny();
 
 		if (gfarm_metadb_version_major < major_version ||
 		    (gfarm_metadb_version_major == major_version &&

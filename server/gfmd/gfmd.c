@@ -1626,9 +1626,9 @@ main(int argc, char **argv)
 
 	if (config_file == NULL)
 		config_file = GFMD_CONFIG;
-	gfarm_metadb_version_major = gfarm_major_version();
-	gfarm_metadb_version_minor = gfarm_minor_version();
-	gfarm_metadb_version_teeny = gfarm_teeny_version();
+	gfarm_metadb_version_major = gfarm_version_major();
+	gfarm_metadb_version_minor = gfarm_version_minor();
+	gfarm_metadb_version_teeny = gfarm_version_teeny();
 	e = gfarm_server_initialize(config_file, &argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001486,

@@ -176,7 +176,7 @@ skip_version(const char *c)
 }
 
 int
-gfarm_major_version(void)
+gfarm_version_major(void)
 {
 	const char *v = gfarm_version();
 	static int major = 0;
@@ -187,7 +187,7 @@ gfarm_major_version(void)
 }
 
 int
-gfarm_minor_version(void)
+gfarm_version_minor(void)
 {
 	const char *v = gfarm_version();
 	static int minor = 0;
@@ -200,7 +200,7 @@ gfarm_minor_version(void)
 }
 
 int
-gfarm_teeny_version(void)
+gfarm_version_teeny(void)
 {
 	const char *v = gfarm_version();
 	static int teeny = 0;
