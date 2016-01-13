@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>27 Oct 2015</date></refentryinfo>
+<refentryinfo><date>13 January 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -2257,6 +2257,10 @@ gfsd uses this setting at its startup by asking gfmd.
 This statement specifies how long to wait until retring the write_verify
 feature, if previous try was postponed, because the file was opened
 for writing at that time.
+</para>
+<para>
+It's recommended to keep this value smaller enough than
+the write_verify_interval setting.
 The default value is 600 seconds (10 minutes).
 </para>
 <para>

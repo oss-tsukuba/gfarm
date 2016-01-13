@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>8 January 2016</date></refentryinfo>
+<refentryinfo><date>13 January 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -2200,6 +2200,10 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 write_verify を試みたが、対象ファイルが書き込みオープンされていて
 実施できなかった場合に、どれだけの時間待ってから、再度 write_verify を
 試みるかを指定します。
+</para>
+<para>
+この設定値は、write_verify_interval で指定した時間より十分短い時間と
+することを推奨します。
 デフォルトは 600秒 (10分) です。
 </para>
 <para>
