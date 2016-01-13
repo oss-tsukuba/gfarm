@@ -61,19 +61,23 @@ do_config(struct gfm_connection *gfm_server, char *config,
 	char buffer[2048];
 
 	if (ask_gfmd) {
-		e = gfm_client_config_get_by_name(gfm_server, config);
+		e = gfm_client_config_name_to_string(gfm_server,
+		    config, buffer, sizeof buffer);
+	} else {
+		e = gfarm_config_local_name_to_string(
+		    config, buffer, sizeof buffer);
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
-		e = gfarm_config_name_to_string(config, buffer, sizeof buffer);
-		if (e == GFARM_ERR_NO_ERROR) {
-			if (print_config_name)
-				printf("%s: %s\n", config, buffer);
-			else
-				printf("%s\n", buffer);
-		}
-	}
-	if (e != GFARM_ERR_NO_ERROR)
+		if (print_config_name)
+			printf("%s: %s\n", config, buffer);
+		else
+			printf("%s\n", buffer);
+	} else if (e == GFARM_ERR_OPERATION_NOT_PERMITTED) {
+		fprintf(stderr, "%s: not available%s\n", config,
+		    ask_gfmd ? " in gfmd" : "");
+	} else {
 		fprintf(stderr, "%s: %s\n", config, gfarm_error_string(e));
+	}
 	return (e);
 }
 

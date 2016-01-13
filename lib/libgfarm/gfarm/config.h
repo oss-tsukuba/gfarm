@@ -148,11 +148,11 @@ int gfarm_config_type_is_privileged_to_get(const struct gfarm_config_type *);
 gfarm_error_t gfarm_config_copyout(const struct gfarm_config_type *,
 	union gfarm_config_storage *);
 
-gfarm_error_t gfarm_config_name_to_string(const char *, char *, size_t);
+gfarm_error_t gfarm_config_local_name_to_string(const char *, char *, size_t);
 
 struct gfm_connection;
-gfarm_error_t gfm_client_config_get_by_name(struct gfm_connection *,
-	const char *);
+gfarm_error_t gfm_client_config_name_to_string(struct gfm_connection *,
+	const char *, char *, size_t);
 gfarm_error_t gfm_client_config_get_vars_request(struct gfm_connection *,
 	int, void **);
 gfarm_error_t gfm_client_config_get_vars_result(struct gfm_connection *,

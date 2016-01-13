@@ -3635,7 +3635,7 @@ gfarm_config_type_is_privileged_to_get(const struct gfarm_config_type *type)
 }
 
 gfarm_error_t
-gfarm_config_name_to_string(const char *name, char *string, size_t sz)
+gfarm_config_local_name_to_string(const char *name, char *string, size_t sz)
 {
 	gfarm_error_t e;
 	const struct gfarm_config_type *type;
@@ -3644,6 +3644,9 @@ gfarm_config_name_to_string(const char *name, char *string, size_t sz)
 	e = gfarm_config_type_by_name(name, &type);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	if (type->for_metadb)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 
 	addr = gfarm_config_addr(type);
 	if (addr == NULL)
@@ -3693,15 +3696,30 @@ gfm_client_config_type_get(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
-gfm_client_config_get_by_name(
-	struct gfm_connection *gfm_server, const char *name)
+gfm_client_config_name_to_string(
+	struct gfm_connection *gfm_server, const char *name,
+	char *string, size_t sz)
 {
+	gfarm_error_t e;
 	const struct gfarm_config_type *type;
-	gfarm_error_t e = gfarm_config_type_by_name(name, &type);
+	void *addr;
 
+	e = gfarm_config_type_by_name(name, &type);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	e = gfm_client_config_type_get(gfm_server, type);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	return (gfm_client_config_type_get(gfm_server, type));
+
+	addr = gfarm_config_addr(type);
+	if (addr == NULL)
+		return (GFARM_ERR_BAD_ADDRESS);
+
+	if ((*type->printer)(addr, string, sz) >= sz)
+		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
+
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
