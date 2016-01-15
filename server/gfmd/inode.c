@@ -693,6 +693,21 @@ inode_clear(struct inode *inode)
 	    diag, total_num_inodes_diag);
 }
 
+static void
+inode_undo_alloc(struct inode *inode)
+{
+	/*
+	 * to make inode_db_init() happy.
+	 * inode->i_gen++ will be done at next inode_alloc_num(),
+	 * and if we don't do inode->i_gen-- here,
+	 * the inode->i_gen == 0 check in inode_db_init() won't work correctly.
+	 * see SF.net #936
+	 */
+	inode->i_gen--;
+
+	inode_clear(inode);
+}
+
 void
 inode_free(struct inode *inode)
 {
@@ -2208,7 +2223,7 @@ inode_db_init(struct inode *inode)
 	st.st_atimespec = inode->i_atimespec;
 	st.st_mtimespec = inode->i_mtimespec;
 	st.st_ctimespec = inode->i_ctimespec;
-	if (inode->i_gen == 0)
+	if (inode->i_gen == 0) /* see inode_undo_alloc() */
 		e = db_inode_add(&st);
 	else
 		e = db_inode_modify(&st);
@@ -2363,6 +2378,16 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	}
 	assert((op == INODE_CREATE || op == INODE_CREATE_EXCLUSIVE) &&
 	    expected_type != GFS_DT_UNKNOWN);
+
+	e = quota_check_limits(user, parent->i_group, 1, 0);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"file creation failed due to quota: %s",
+			gfarm_error_string(e));
+		dir_remove_entry(parent->u.c.s.d.entries, name, len);
+		return (e);
+	}
+
 	n = inode_alloc();
 	if (n == NULL) {
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
@@ -2370,30 +2395,27 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			"inode_alloc() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	e = quota_check_limits(user, parent->i_group, 1, 0);
-	if (e == GFARM_ERR_NO_ERROR) {
-		switch (expected_type) {
-		case GFS_DT_DIR:
-			e = inode_init_dir(n, parent);
-			break;
-		case GFS_DT_REG:
-			e = inode_init_file(n);
-			break;
-		case GFS_DT_LNK:
-			e = inode_init_symlink(n, symlink_src);
-			break;
-		default:
-			assert(0);
-			e = GFARM_ERR_UNKNOWN;
-			break;
-		}
+	switch (expected_type) {
+	case GFS_DT_DIR:
+		e = inode_init_dir(n, parent);
+		break;
+	case GFS_DT_REG:
+		e = inode_init_file(n);
+		break;
+	case GFS_DT_LNK:
+		e = inode_init_symlink(n, symlink_src);
+		break;
+	default:
+		assert(0);
+		e = GFARM_ERR_UNKNOWN;
+		break;
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001736,
 			"error occurred during process: %s",
 			gfarm_error_string(e));
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
-		inode_clear(n);
+		inode_undo_alloc(n);
 		return (e);
 	}
 	n->i_mode |= new_mode;
@@ -2419,7 +2441,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			free(n->u.c.s.l.source_path);
 		}
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
-		inode_clear(n);
+		inode_undo_alloc(n);
 		return (e);
 	}
 
