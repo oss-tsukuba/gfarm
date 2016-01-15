@@ -160,7 +160,7 @@ version_to_int(const char *c)
 {
 	int ver = 0;
 
-	for (; isdigit(*c); ++c)
+	for (; isdigit(*(unsigned char *)c); ++c)
 		ver = ver * 10 + (*c - '0');
 	return (ver);
 }
