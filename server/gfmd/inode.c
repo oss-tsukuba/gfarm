@@ -812,7 +812,7 @@ inode_alloc_num(gfarm_ino_t inum)
 		/* remove from the inode_free_list */
 		inode->u.l.next->u.l.prev = inode->u.l.prev;
 		inode->u.l.prev->u.l.next = inode->u.l.next;
-		inode->i_gen++;
+		inode->i_gen++; /* see inode_undo_alloc() */
 	}
 	inode->i_nlink_ini = 0;
 	inode->u.c.activity = NULL;
@@ -852,6 +852,21 @@ inode_clear(struct inode *inode)
 	--total_num_inodes;
 	gfarm_mutex_unlock(&total_num_inodes_mutex,
 	    diag, total_num_inodes_diag);
+}
+
+static void
+inode_undo_alloc(struct inode *inode)
+{
+	/*
+	 * to make inode_db_init() happy.
+	 * inode->i_gen++ will be done at next inode_alloc_num(),
+	 * and if we don't do inode->i_gen-- here,
+	 * the inode->i_gen == 0 check in inode_db_init() won't work correctly.
+	 * see SF.net #936
+	 */
+	inode->i_gen--;
+
+	inode_clear(inode);
 }
 
 void
@@ -2646,7 +2661,7 @@ inode_db_init(struct inode *inode)
 	st.st_atimespec = inode->i_atimespec;
 	st.st_mtimespec = inode->i_mtimespec;
 	st.st_ctimespec = inode->i_ctimespec;
-	if (inode->i_gen == 0)
+	if (inode->i_gen == 0) /* see inode_undo_alloc() */
 		e = db_inode_add(&st);
 	else
 		e = db_inode_modify(&st);
@@ -2828,6 +2843,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	}
 	assert((op == INODE_CREATE || op == INODE_CREATE_EXCLUSIVE) &&
 	    expected_type != GFS_DT_UNKNOWN);
+
 	n = inode_alloc();
 	if (n == NULL) {
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
@@ -2861,7 +2877,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			"error occurred during process: %s",
 			gfarm_error_string(e));
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
-		inode_clear(n);
+		inode_undo_alloc(n);
 		return (e);
 	}
 	n->i_mode |= new_mode;
@@ -2887,7 +2903,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			free(n->u.c.s.l.source_path);
 		}
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
-		inode_clear(n);
+		inode_undo_alloc(n);
 		return (e);
 	}
 
