@@ -2668,7 +2668,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			"error occurred during process: %s",
 			gfarm_error_string(e));
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
-		inode_free(n);
+		inode_clear(n);
 		return (e);
 	}
 	n->i_mode |= new_mode;
@@ -2694,7 +2694,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			free(n->u.c.s.l.source_path);
 		}
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
-		inode_free(n);
+		inode_clear(n);
 		return (e);
 	}
 
