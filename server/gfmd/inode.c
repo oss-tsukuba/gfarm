@@ -1488,7 +1488,7 @@ inode_lookup_including_free(gfarm_ino_t inum)
 void
 inode_lookup_all(void *closure, void (*callback)(void *, struct inode *))
 {
-	int i;
+	gfarm_ino_t i;
 
 	for (i = ROOT_INUMBER; i < inode_table_size; i++) {
 		if (inode_table[i] != NULL &&
