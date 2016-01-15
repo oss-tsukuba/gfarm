@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 8 January 2016
+.\"      Date: 13 January 2016
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "8 January 2016" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "13 January 2016" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -2014,7 +2014,9 @@ write_verify のための読み込みは、O_DIRECT 機能が存在する OS で
 .PP
 write_verify_retry_interval \fI秒数\fR
 .RS 4
-write_verify を試みたが、対象ファイルが書き込みオープンされていて 実施できなかった場合に、どれだけの時間待ってから、再度 write_verify を 試みるかを指定します。 デフォルトは 600秒 (10分) です。
+write_verify を試みたが、対象ファイルが書き込みオープンされていて 実施できなかった場合に、どれだけの時間待ってから、再度 write_verify を 試みるかを指定します。
+.sp
+この設定値は、write_verify_interval で指定した時間より十分短い時間と することを推奨します。 デフォルトは 600秒 (10分) です。
 .sp
 この文は gfmd\&.conf のみで有効です。 gfarm2\&.confでは無視されます。 gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
 .sp

@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarm2.conf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm2.conf">
 <a name="gfarm2.conf.5"></a><div class="titlepage"></div>
@@ -1715,6 +1715,10 @@ gfsd uses this setting at its startup by asking gfmd.
 This statement specifies how long to wait until retring the write_verify
 feature, if previous try was postponed, because the file was opened
 for writing at that time.
+</p>
+<p>
+It's recommended to keep this value smaller enough than
+the write_verify_interval setting.
 The default value is 600 seconds (10 minutes).
 </p>
 <p>
