@@ -58,7 +58,6 @@
 #define ROOT_INUMBER			2
 #define INODE_TABLE_SIZE_INITIAL	1024
 #define INODE_TABLE_SIZE_MULTIPLY	2
-#define INODE_TABLE_SIZE_THRESH		(8 * 1024 * 1024)
 
 #define INODE_MODE_FREE			0	/* struct inode:i_mode */
 
@@ -770,10 +769,9 @@ inode_alloc_num(gfarm_ino_t inum)
 		gfarm_ino_t new_table_size;
 		struct inode **p;
 
-		if (inum < INODE_TABLE_SIZE_THRESH)
+		new_table_size = inode_table_size * INODE_TABLE_SIZE_MULTIPLY;
+		if (new_table_size <= inum)
 			new_table_size = inum * INODE_TABLE_SIZE_MULTIPLY;
-		else
-			new_table_size = inum + INODE_TABLE_SIZE_THRESH;
 		if (new_table_size < INODE_TABLE_SIZE_INITIAL)
 			new_table_size = INODE_TABLE_SIZE_INITIAL;
 		GFARM_REALLOC_ARRAY(p, inode_table, new_table_size);
