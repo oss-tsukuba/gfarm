@@ -648,6 +648,14 @@ inode_alloc_num(gfarm_ino_t inum)
 		assert(0);
 		return (NULL); /* the inode is not free */
 	} else {
+		if (inode->i_number != inum) {
+			/* should be gflog_fatal() */
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "alloc inode(%lld): unexpected inode(%lld:%lld)",
+			    (long long)inum,
+			    (long long)inode->i_number,
+			    (long long)inode->i_gen);
+		}
 		/* remove from the inode_free_list */
 		inode->u.l.next->u.l.prev = inode->u.l.prev;
 		inode->u.l.prev->u.l.next = inode->u.l.next;
