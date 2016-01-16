@@ -1,3 +1,32 @@
+Release note for Gfarm 2.6.8
+============================
+
+[2016.1.16]
+
+New feature
+* write verify - detect silent data corruption by re-reading files
+
+New configuration directive
+* write_verify - enables the write verify feature
+* write_verify_interval - specifies the wait time in seconds of the
+  write verify after the file creation.  Default is 21600 seconds (6
+  hours).
+* write_verify_retry_interval - specifies the wait time in seconds to
+  retry write verify when the file is opened for writing at the write
+  verify time.  Default is 600 seconds (10 minutes).
+
+Updated feature
+* gfstatus - -M option to ask configuration, e.g. write_verify or
+  digest, in gfmd
+* gfmd reports file names opened for writing when gfsd exits without
+  closing them
+* quota check for file replication, chown, and chgrp
+
+Bug fix
+* gfmd crashes when quota prevents file creation [sf.net ticket #936]
+* gfsd - plug memory leak at gfmd-initiated replication, which was
+  introduced by Gfarm 2.6.0
+
 Release note for Gfarm 2.6.7
 ============================
 
