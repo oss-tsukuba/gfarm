@@ -3843,7 +3843,7 @@ gfm_server_config_get(struct peer *peer, int from_client, int skip)
 
 	e = gfm_server_get_request(peer, diag, "sc", &name, &fmt);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: get_request name: %s",
+		gflog_debug(GFARM_MSG_1004356, "%s: get_request name: %s",
 		    diag, gfarm_error_string(e));
 		return (e);
 	}
@@ -3856,27 +3856,27 @@ gfm_server_config_get(struct peer *peer, int from_client, int skip)
 
 	if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s(%s): %s",
+		gflog_debug(GFARM_MSG_1004357, "%s(%s): %s",
 		    diag, name, gfarm_error_string(e));
 	} else if (fmt != 'i' && fmt != 's') {
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004358,
 		    "%s(%s): unknown format '%c': %s",
 		    diag, name, fmt, gfarm_error_string(e));
 	} else if ((e = gfarm_config_type_by_name_for_metadb(name, &type))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s(%s): %s",
+		gflog_debug(GFARM_MSG_1004359, "%s(%s): %s",
 		    diag, name, gfarm_error_string(e));
 	} else if (fmt != gfarm_config_type_get_format(type)) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004360,
 		    "%s(%s): format '%c' is expected, but '%c': %s",
 		    diag, name, gfarm_config_type_get_format(type), fmt,
 		    gfarm_error_string(e));
 	} else if (gfarm_config_type_is_privileged_to_get(type) &&
 	    from_client && (user == NULL || !user_is_admin(user))) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004361,
 		    "%s(%s): user %s does not belong to gfarmadm: %s",
 		    diag, name, user == NULL ? "(null)" : user_name(user),
 		    gfarm_error_string(e));
@@ -4911,7 +4911,7 @@ gfm_server_replica_get_cksum(struct peer *peer, int from_client, int skip)
 
 	e = gfm_server_get_request(peer, diag, "ll", &inum, &igen);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s request failed: %s",
+		gflog_debug(GFARM_MSG_1004362, "%s request failed: %s",
 		    diag, gfarm_error_string(e));
 		return (e);
 	}
@@ -4920,25 +4920,25 @@ gfm_server_replica_get_cksum(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if (from_client) { /* from gfsd only */
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: from client", diag);
+		gflog_debug(GFARM_MSG_1004363, "%s: from client", diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004364,
 		    "%s: peer_get_host() failed", diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((inode = inode_lookup(inum)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004365,
 		    "%s: inode %lld:%lld: no inode",
 		    diag, (long long)inum, (long long)igen);
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if (inode_get_gen(inode) != igen) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004366,
 		    "%s: inode %lld:%lld: different generation",
 		    diag, (long long)inum, (long long)igen);
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if ((e = inode_cksum_get_on_host(inode, spool_host,
 	    &cksum_type, &cksum_len, &cksum, &flags)) != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004367,
 		    "%s: inode_cksum_get_on_host(): %s",
 		    diag, gfarm_error_string(e));
 	else if (cksum_type == NULL)
@@ -4979,7 +4979,7 @@ gfm_server_fhset_cksum(struct peer *peer, int from_client, int skip)
 	e = gfm_server_get_request(peer, diag, "llsbi", &inum, &igen,
 	    &cksum_type, sizeof(cksum), &cksum_len, cksum, &flags);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s request failed: %s",
+		gflog_debug(GFARM_MSG_1004368, "%s request failed: %s",
 		    diag, gfarm_error_string(e));
 		return (e);
 	}
@@ -4990,24 +4990,24 @@ gfm_server_fhset_cksum(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if (from_client) { /* from gfsd only */
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: from client", diag);
+		gflog_debug(GFARM_MSG_1004369, "%s: from client", diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004370,
 		    "%s: peer_get_host() failed", diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((inode = inode_lookup(inum)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004371,
 		    "%s: inode %lld:%lld: no inode",
 		    diag, (long long)inum, (long long)igen);
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if (inode_get_gen(inode) != igen) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004372,
 		    "%s: inode %lld:%lld: different generation",
 		    diag, (long long)inum, (long long)igen);
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "db_begin() failed: %s",
+		gflog_debug(GFARM_MSG_1004373, "db_begin() failed: %s",
 			gfarm_error_string(e));
 	} else {
 		/*

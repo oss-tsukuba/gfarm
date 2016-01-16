@@ -905,7 +905,7 @@ process_close_file(struct process *process, struct peer *peer, int fd,
 
 		/* i.e. REOPENed file, and I am a gfsd. */
 		if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1004354,
 			    "gfsd on %s@%s exited without closing write-opened"
 			    " file (pid:%lld fd:%d). inode %llu:%llu"
 			    " might be modified, run gfspooldigest",
@@ -1439,7 +1439,7 @@ process_replica_added(struct process *process,
 				    host_name(spool_host),
 				    gfarm_error_string(e));
 			else if (cksum_is_set)
-				gflog_notice(GFARM_MSG_UNFIXED,
+				gflog_notice(GFARM_MSG_1004355,
 				    "inode %lld:%lld: checksum set to "
 				    "<%s>:<%.*s> by replication to %s",
 				    (long long)inode_get_number(fo->inode),

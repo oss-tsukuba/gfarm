@@ -50,12 +50,12 @@ read_nbytes(int fd, void *buffer, size_t sz, const char *diag)
 		if (rv == -1) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
-			fatal(GFARM_MSG_UNFIXED,
+			fatal(GFARM_MSG_1004394,
 			    "%s: read: %s", diag, strerror(errno));
 		}
 		if (rv == 0) {
 			if (done > 0)
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1004395,
 				    "%s: partial read %zd bytes", diag, done);
 			return (0);
 		}
@@ -79,7 +79,7 @@ write_nbytes(int fd, void *buffer, size_t sz, const char *diag)
 			return (errno);
 		}
 		if (rv == 0) {
-			fatal(GFARM_MSG_UNFIXED,
+			fatal(GFARM_MSG_1004396,
 			    "%s: write(2) returns 0 (%zd bytes written)",
 			    diag, done);
 		}
@@ -134,12 +134,12 @@ write_verify_request(gfarm_ino_t ino, gfarm_uint64_t gen, time_t mtime,
 	rv = write(write_verify_request_send_fd, &req, sizeof req);
 	if (rv != sizeof req) {
 		if (rv == -1) {
-			gflog_error_errno(GFARM_MSG_UNFIXED, "%s: "
+			gflog_error_errno(GFARM_MSG_1004397, "%s: "
 			    "write_verify request %lld:%lld (mtime: %lld)",
 			    diag,
 			    (long long)ino, (long long)gen, (long long)mtime);
 		} else {
-			gflog_error_errno(GFARM_MSG_UNFIXED, "%s: "
+			gflog_error_errno(GFARM_MSG_1004398, "%s: "
 			    "write_verify request %lld:%lld (mtime: %lld):"
 			    "partial write %zd bytes: write_verify disabled",
 			    diag,
@@ -164,7 +164,7 @@ write_verify_request_recv(struct write_verify_req *req, const char *diag)
 	 */
 	rv = read(write_verify_request_recv_fd, req, sizeof(*req));
 	if (rv == 0) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004399,
 		    "%s: all clients finished", diag);
 		cleanup(0);
 		exit(0);
@@ -173,11 +173,11 @@ write_verify_request_recv(struct write_verify_req *req, const char *diag)
 		return;
 
 	if (rv == -1) {
-		fatal(GFARM_MSG_UNFIXED,
+		fatal(GFARM_MSG_1004400,
 		    "%s: receiving write_verify request: %s",
 		    diag, strerror(errno));
 	} else {
-		fatal(GFARM_MSG_UNFIXED,
+		fatal(GFARM_MSG_1004401,
 		    "%s: receiving write_verify request: "
 		    "partial read %zd bytes", diag, rv);
 	}
@@ -221,7 +221,7 @@ write_verify_job_req_send(
 	err = write_nbytes(
 	    write_verify_job_controller_fd, &jreq, sizeof(jreq), diag);
 	if (err != 0)
-		fatal(GFARM_MSG_UNFIXED, "%s: write: %s",
+		fatal(GFARM_MSG_1004402, "%s: write: %s",
 		    diag, strerror(err));
 }
 
@@ -243,11 +243,11 @@ write_verify_job_reply_send(unsigned char status, const char *diag)
 	    write_verify_job_verifier_fd, &jreply, sizeof(jreply), diag);
 	if (err == EPIPE) {
 		/* type_write_verify_controller exited before this process */
-		gflog_info(GFARM_MSG_UNFIXED, "%s: write: %s, end",
+		gflog_info(GFARM_MSG_1004403, "%s: write: %s, end",
 		    diag, strerror(err));
 		exit(0);
 	} else if (err != 0) {
-		fatal(GFARM_MSG_UNFIXED, "%s: write: %s",
+		fatal(GFARM_MSG_1004404, "%s: write: %s",
 		    diag, strerror(err));
 	}
 }
@@ -259,7 +259,7 @@ write_verify_job_reply_recv(const char *diag)
 
 	if (!read_nbytes(
 	    write_verify_job_controller_fd, &jreply, sizeof(jreply), diag))
-		fatal(GFARM_MSG_UNFIXED,
+		fatal(GFARM_MSG_1004405,
 		    "%s: write_verify process is dead", diag);
 	return (jreply.status);
 }
@@ -307,7 +307,7 @@ ringbuf_has_room(void)
 		    gfarm_size_add(&overflow, ringbuf_size, ringbuf_size);
 		if (overflow) {
 			ringbuf_overflow = 1;
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1004406,
 			    "write_verify: integer overflow "
 			    "to remember more than %zd entries",
 			    ringbuf_size);
@@ -317,7 +317,7 @@ ringbuf_has_room(void)
 	GFARM_REALLOC_ARRAY(new_buffer, ringbuf_ptr, new_size);
 	if (new_buffer == NULL) {
 		ringbuf_overflow = 1;
-		gflog_warning(GFARM_MSG_UNFIXED, "write_verify: "
+		gflog_warning(GFARM_MSG_1004407, "write_verify: "
 		    "no memory to remember more than %zd entries",
 		    ringbuf_size);
 		return (0);
@@ -427,11 +427,11 @@ ringbuf_write(int fd, const char *diag)
 		return (1);
 	rv = writev(fd, iov, n);
 	if (rv == -1) {
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1004408,
 		    "%s: cannot write", diag);
 		return (0);
 	} else if (rv != sz) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004409,
 		    "%s: partial write %zd/%zd", diag, rv, sz);
 		return (0);
 	}
@@ -449,20 +449,20 @@ ringbuf_read(int fd, gfarm_uint64_t nrecords, gfarm_uint32_t expected_crc32,
 
 	ringbuf_size = nrecords * 2;
 	if (ringbuf_size < nrecords)
-		fatal(GFARM_MSG_UNFIXED,
+		fatal(GFARM_MSG_1004410,
 		    "write_verify: state file too big: %lld records",
 		    (long long)nrecords);
 	if (ringbuf_size < RINGBUF_INITIAL_SIZE)
 		ringbuf_size = RINGBUF_INITIAL_SIZE;
 	GFARM_MALLOC_ARRAY(ringbuf_ptr, ringbuf_size);
 	if (ringbuf_ptr == NULL)
-		fatal(GFARM_MSG_UNFIXED,
+		fatal(GFARM_MSG_1004411,
 		    "write_verify: no memory for %zd records", ringbuf_size);
 
 	sz = nrecords * sizeof(*ringbuf_ptr);
 	rv = read(fd, ringbuf_ptr, sz);
 	if (rv == -1) {
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1004412,
 		    "%s: cannot read", diag);
 		return (0);
 	} else if (rv != sz) {
@@ -472,13 +472,13 @@ ringbuf_read(int fd, gfarm_uint64_t nrecords, gfarm_uint32_t expected_crc32,
 		 * guarantees to read the number of bytes requested,
 		 * unless it reaches EOF or an I/O error happens.
 		 */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004413,
 		    "%s: partial read %zd/%zd", diag, rv, sz);
 		return (0);
 	}
 	crc32 = gfarm_crc32(0, ringbuf_ptr, rv);
 	if (crc32 != expected_crc32) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004414,
 		    "%s: bad CRC 0x%08X, should be 0x%08X",
 		    diag, crc32, expected_crc32);
 		return (0);
@@ -537,7 +537,7 @@ mtime_rec_add(gfarm_uint64_t mtime)
 	if (next == NULL) {
 		GFARM_MALLOC(next);
 		if (next == NULL)
-			fatal(GFARM_MSG_UNFIXED,
+			fatal(GFARM_MSG_1004415,
 			    "write_verify: no memory for %zdth entry",
 			    ringbuf_n_entries);
 	}
@@ -556,7 +556,7 @@ mtime_rec_add(gfarm_uint64_t mtime)
 	GFARM_MALLOC(next);
 	if (next == NULL && !ringbuf_overflow) {
 		ringbuf_overflow = 1;
-		gflog_warning(GFARM_MSG_UNFIXED, "write_verify: "
+		gflog_warning(GFARM_MSG_1004416, "write_verify: "
 		    "no memory to reserve %zdth entry",
 		    ringbuf_n_entries + 1);
 	}
@@ -583,7 +583,7 @@ mtime_rec_remove(struct write_verify_mtime_rec *mtime_rec)
 
 	deleted = RB_REMOVE(write_verify_mtime_tree, &mtime_tree, mtime_rec);
 	if (deleted == NULL)
-		fatal(GFARM_MSG_UNFIXED,
+		fatal(GFARM_MSG_1004417,
 		    "write_verify, removing mtime:%llu failed",
 		    (long long)mtime_rec->mtime);
 
@@ -635,7 +635,7 @@ replica_lost_move_to_lost_found_by_fd(gfarm_ino_t ino, gfarm_uint64_t gen,
 	struct stat st;
 
 	if (fstat(local_fd, &st) == -1) {
-		gflog_error_errno(GFARM_MSG_UNFIXED, "%s: fstat(%lld:%lld)",
+		gflog_error_errno(GFARM_MSG_1004418, "%s: fstat(%lld:%lld)",
 		    diag, (long long)ino, (long long)gen);
 		return;
 	}
@@ -687,15 +687,15 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 			break;
 		free_gfm_server();
 		if ((e = connect_gfm_server(diag)) != GFARM_ERR_NO_ERROR)
-			fatal(GFARM_MSG_UNFIXED, "die");
+			fatal(GFARM_MSG_1004419, "die");
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e == GFARM_ERR_NO_SUCH_OBJECT) /* already removed */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004420,
 			    "%s: %lld:%lld: already removed",
 			    diag, (long long)ino, (long long)gen);
 		else
-			gflog_warning(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s",
+			gflog_warning(GFARM_MSG_1004421, "%s: %lld:%lld: %s",
 			    diag, (long long)ino, (long long)gen,
 			    gfarm_error_string(e));
 		write_verify_job_reply_send(
@@ -704,7 +704,7 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 		return;
 	}
 	if ((got_cksum_flags & GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED) != 0) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004422,
 		    "%s: %lld:%lld: opened for write. postponed",
 		    diag, (long long)ino, (long long)gen);
 		write_verify_job_reply_send(
@@ -719,7 +719,7 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 	save_errno = errno;
 	free(path);
 	if (local_fd == -1) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004423,
 		    "%s: %lld:%lld: must be generation updated: %s",
 		    diag, (long long)ino, (long long)gen,
 		    strerror(save_errno));
@@ -731,7 +731,7 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 	e = calc_digest(local_fd, cksum_type, cksum, &cksum_len,
 	    buffer, WRITE_VERIFY_BUFSIZE, diag, ino, gen);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004424,
 		    "%s: %lld:%lld: checksum calculation failed: %s",
 		    diag, (long long)ino, (long long)gen,
 		    gfarm_error_string(e));
@@ -750,10 +750,10 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 			free_gfm_server();
 			if ((e = connect_gfm_server(diag))
 			    != GFARM_ERR_NO_ERROR)
-				fatal(GFARM_MSG_UNFIXED, "die");
+				fatal(GFARM_MSG_1004425, "die");
 		}
 		if (e == GFARM_ERR_FILE_BUSY) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1004426,
 			    "%s: %lld:%lld: opened for write. postponed",
 			    diag, (long long)ino, (long long)gen);
 			write_verify_job_reply_send(
@@ -763,16 +763,16 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 			return;
 		}
 		if (e == GFARM_ERR_NO_ERROR)
-			gflog_notice(GFARM_MSG_UNFIXED, "%s: inode %lld:%lld: "
+			gflog_notice(GFARM_MSG_1004427, "%s: inode %lld:%lld: "
 			    "checksum set to <%s>:<%.*s> by write_verify",
 			    diag, (long long)ino, (long long)gen,
 			    cksum_type, (int)cksum_len, cksum);
 		else if (e == GFARM_ERR_NO_SUCH_OBJECT) /* updated */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004428,
 			    "%s: %lld:%lld: already updated",
 			    diag, (long long)ino, (long long)gen);
 		else
-			gflog_warning(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s",
+			gflog_warning(GFARM_MSG_1004429, "%s: %lld:%lld: %s",
 			    diag, (long long)ino, (long long)gen,
 			    gfarm_error_string(e));
 		write_verify_job_reply_send(
@@ -785,7 +785,7 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 	if (cksum_len == got_cksum_len &&
 	    memcmp(cksum, got_cksum, cksum_len) == 0) {
 		assert(cksum_len > 0);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004430,
 		    "%s: %lld:%lld: cksum <%.*s> ok",
 		    diag, (long long)ino, (long long)gen,
 		    (int)cksum_len, cksum);
@@ -801,15 +801,15 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 			break;
 		free_gfm_server();
 		if ((e = connect_gfm_server(diag)) != GFARM_ERR_NO_ERROR)
-			fatal(GFARM_MSG_UNFIXED, "die");
+			fatal(GFARM_MSG_1004431, "die");
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e == GFARM_ERR_NO_SUCH_OBJECT) /* generation updated */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004432,
 			    "%s: %lld:%lld: generation updated",
 			    diag, (long long)ino, (long long)gen);
 		else
-			gflog_warning(GFARM_MSG_UNFIXED, "%s: %lld:%lld: %s",
+			gflog_warning(GFARM_MSG_1004433, "%s: %lld:%lld: %s",
 			    diag, (long long)ino, (long long)gen,
 			    gfarm_error_string(e));
 		write_verify_job_reply_send(
@@ -819,7 +819,7 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 	}
 
 	if ((open_status & GFM_PROTO_REPLICA_OPENED_WRITE) != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004434,
 		    "%s: %lld:%lld: opened for write. postponed",
 		    diag, (long long)ino, (long long)gen);
 		write_verify_job_reply_send(
@@ -827,7 +827,7 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 		close(local_fd);
 		return;
 	}
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1004435,
 	    "%s: %lld:%lld: checksum mismatch <%.*s> should be <%.*s>", diag,
 	    (long long)ino, (long long)gen, (int)cksum_len, cksum,
 	    (int)got_cksum_len, got_cksum);
@@ -845,14 +845,14 @@ write_verify(void)
 	static const char diag[] = "write_verify";
 
 	if ((e = connect_gfm_server("write_verify")) != GFARM_ERR_NO_ERROR)
-		fatal(GFARM_MSG_UNFIXED, "die");
+		fatal(GFARM_MSG_1004436, "die");
 
 	for (;;) {
 		wait_fd_with_failover_pipe(
 		    write_verify_job_verifier_fd, diag);
 
 		if (!write_verify_job_req_recv(&jreq, diag)) {
-			gflog_info(GFARM_MSG_UNFIXED, "%s: end", diag);
+			gflog_info(GFARM_MSG_1004437, "%s: end", diag);
 			exit(0);
 		}
 		write_verify_calc_cksum(jreq.ino, jreq.gen);
@@ -897,10 +897,10 @@ write_verify_state_snapshot(void)
 #else
 	if (futimes(write_verify_state_fd, tv) == -1)
 #endif
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1004438,
 		    "recording mtime to %s", write_verify_state_file);
 	if (fsync(write_verify_state_fd) == -1)
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1004439,
 		    "fsync(%s)", write_verify_state_file);
 }
 
@@ -912,7 +912,7 @@ write_verify_state_save(void)
 	int fd = open(write_verify_state_tmp, O_CREAT|O_WRONLY|O_TRUNC, 0600);
 
 	if (fd == -1) {
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1004440,
 		    "write_verify: open(%s)", write_verify_state_tmp);
 		return;
 	}
@@ -922,7 +922,7 @@ write_verify_state_save(void)
 	rv = write(fd, &header, sizeof(header));
 	if (rv != sizeof(header)) {
 		if (rv == -1) {
-			gflog_error_errno(GFARM_MSG_UNFIXED,
+			gflog_error_errno(GFARM_MSG_1004441,
 			    "write_verify: writing %s",
 			    write_verify_state_tmp);
 		} else {
@@ -933,7 +933,7 @@ write_verify_state_save(void)
 			 * the number of bytes requested,
 			 * unless disk full or an I/O error happens.
 			 */
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004442,
 			    "write_verify: writing %s: partial write %zd/%zd",
 			    write_verify_state_tmp, rv, sizeof(header));
 		}
@@ -948,7 +948,7 @@ write_verify_state_save(void)
 	}
 	if (rename(write_verify_state_tmp, write_verify_state_file)
 	    == -1) {
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1004443,
 		    "write_verify: renaming %s to %s",
 		    write_verify_state_tmp, write_verify_state_file);
 		close(fd);
@@ -956,7 +956,7 @@ write_verify_state_save(void)
 		return;
 	}
 	if (fsync(fd) == -1)
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1004444,
 		    "write_verify: fsync(%s)", write_verify_state_file);
 	close(fd);
 }
@@ -970,17 +970,17 @@ write_verify_state_load(int fd)
 	rv = read(fd, &header, sizeof(header));
 	if (rv != sizeof(header)) {
 		if (rv == -1)
-			gflog_error_errno(GFARM_MSG_UNFIXED,
+			gflog_error_errno(GFARM_MSG_1004445,
 			    "write_verify: reading %s",
 			    write_verify_state_file);
 		else
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004446,
 			    "write_verify: reading %s: partial read %zd/%zd",
 			    write_verify_state_file, rv, sizeof(header));
 		return (0);
 	}
 	if (header.magic != WRITE_VERIFY_STATE_FILE_MAGIC) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004447,
 		    "write_verify: %s: bad magic 0x%08X, should be 0x%08X",
 		    write_verify_state_file,
 		    (int)header.magic, WRITE_VERIFY_STATE_FILE_MAGIC);
@@ -1006,7 +1006,7 @@ write_verify_report_crash(time_t crash_time)
 	strftime(crash, sizeof crash, TIMEBUF_FMT, tp);
 	tp = localtime(&current_time);
 	strftime(current, sizeof current, TIMEBUF_FMT, tp);
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1004448,
 	    "write_verify: gfsd crashed previously.  "
 	    "please calculate checksum since %s until %s (%lld..%lld)",
 	    crash, current, (long long)crash_time, (long long)current_time);
@@ -1030,11 +1030,11 @@ write_verify_state_init(void)
 			return; /* just OK */
 		close(fd);
 		bakfile = gfsd_make_path(WRITE_VERIFY_STATE_FILE_BAK, diag);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004449,
 		    "write_verify is disabled, but old state file %s exists.  "
 		    "renamed to %s", write_verify_state_file, bakfile);
 		if (rename(write_verify_state_file, bakfile) == -1)
-			gflog_error_errno(GFARM_MSG_UNFIXED,
+			gflog_error_errno(GFARM_MSG_1004450,
 			    "renaming %s to %s",
 			    write_verify_state_file, bakfile);
 		free(bakfile);
@@ -1045,11 +1045,11 @@ write_verify_state_init(void)
 	tmpfile = gfsd_make_path(WRITE_VERIFY_STATE_FILE_TMP, diag);
 
 	if (fd == -1) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004451,
 		    "%s: does not exist.  creating", write_verify_state_file);
 	} else {
 		if (fstat(fd, &st) == -1) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004452,
 			    "fstat(%s): %s.  write_verify is disabled",
 			    write_verify_state_file, strerror(errno));
 			gfarm_write_verify = 0;
@@ -1064,11 +1064,11 @@ write_verify_state_init(void)
 			fd = -1;
 			bakfile =
 			    gfsd_make_path(WRITE_VERIFY_STATE_FILE_BAK, diag);
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004453,
 			    "incomplete state file %s is renamed to %s",
 			    write_verify_state_file, bakfile);
 			if (rename(write_verify_state_file, bakfile) == -1)
-				gflog_error_errno(GFARM_MSG_UNFIXED,
+				gflog_error_errno(GFARM_MSG_1004454,
 				    "renaming %s to %s",
 				    write_verify_state_file, bakfile);
 			free(bakfile);
@@ -1079,7 +1079,7 @@ write_verify_state_init(void)
 	}
 	if (fd == -1) {
 		if (gfsd_create_ancestor_dir(write_verify_state_file) == -1) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004455,
 			    "write_verify is disabled");
 			gfarm_write_verify = 0;
 			free(tmpfile);
@@ -1088,7 +1088,7 @@ write_verify_state_init(void)
 		fd = open(write_verify_state_file,
 		    O_CREAT|O_RDWR|O_TRUNC, 0600);
 		if (fd == -1) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004456,
 			    "failed to create %s: %s.  "
 			    "write_verify is disabled",
 			    write_verify_state_file, strerror(errno));
@@ -1239,24 +1239,24 @@ start_write_verify_controller(void)
 
 	/* use pipe, because we need the guarantee of PIPE_BUF for this */
 	if (pipe(pipefds) == -1)
-		fatal(GFARM_MSG_UNFIXED, "pipe for write_verify: %s",
+		fatal(GFARM_MSG_1004457, "pipe for write_verify: %s",
 		    strerror(errno));
 
 	pid = do_fork(type_write_verify_controller);
 	switch (pid) {
 	case -1:
-		gflog_error_errno(GFARM_MSG_UNFIXED, "fork");
+		gflog_error_errno(GFARM_MSG_1004458, "fork");
 		break;
 	case 0: /* child: type_write_verify_controller */
 		if (socketpair(PF_UNIX, SOCK_STREAM, 0, sockfds) == -1)
-			fatal(GFARM_MSG_UNFIXED,
+			fatal(GFARM_MSG_1004459,
 			    "socketpair for write_verify: %s",
 			    strerror(errno));
 
 		pid = do_fork(type_write_verify);
 		switch (pid) {
 		case -1:
-			fatal(GFARM_MSG_UNFIXED, "fork: %s", strerror(errno));
+			fatal(GFARM_MSG_1004460, "fork: %s", strerror(errno));
 			/*NOTREACHED*/
 			break;
 		case 0: /* child: type_write_verify */

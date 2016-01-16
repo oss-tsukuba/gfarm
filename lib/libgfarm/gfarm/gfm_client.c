@@ -3419,7 +3419,7 @@ gfm_client_hostname_set(struct gfm_connection *gfm_server,
 
 	e = gfm_client_hostname_set_request(gfm_server, hostname);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004324,
 		    "gfm_client_hostname_set(%s) request: %s",
 		    hostname, gfarm_error_string(e));
 		return (e);
@@ -3458,7 +3458,7 @@ gfm_client_config_get_result(struct gfm_connection *gfm_server,
 		abort();
 	}
 	if (e == GFARM_ERR_NO_ERROR && f != fmt) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004325,
 		    "gfm_client_config_get_result: format '%c' is expected, "
 		    "but '%c'", fmt, f);
 		e = GFARM_ERR_PROTOCOL;
@@ -3474,7 +3474,7 @@ gfm_client_config_get(struct gfm_connection *gfm_server,
 
 	e = gfm_client_config_get_request(gfm_server, name, fmt);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004326,
 		    "gfm_client_config_get(%s) request: %s",
 		    name, gfarm_error_string(e));
 		return (e);

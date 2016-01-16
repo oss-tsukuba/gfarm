@@ -584,7 +584,7 @@ inode_cksum_get_on_host(struct inode *inode, struct host *spool_host,
 	gfarm_int32_t flags = 0;
 
 	if (!inode_is_file(inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004327,
 			"inode type is not file");
 		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 	}
@@ -703,7 +703,7 @@ inode_activity_alloc(void)
 
 	GFARM_MALLOC(ia);
 	if (ia == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no memory");
+		gflog_error(GFARM_MSG_1004328, "no memory");
 		return (NULL);
 	}
 	/* make circular list `openings' empty */
@@ -776,7 +776,7 @@ inode_alloc_num(gfarm_ino_t inum)
 			new_table_size = INODE_TABLE_SIZE_INITIAL;
 		GFARM_REALLOC_ARRAY(p, inode_table, new_table_size);
 		if (p == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED, "%s: no memory", diag);
+			gflog_error(GFARM_MSG_1004329, "%s: no memory", diag);
 			return (NULL); /* no memory */
 		}
 		inode_table = p;
@@ -788,7 +788,7 @@ inode_alloc_num(gfarm_ino_t inum)
 	if ((inode = inode_table[inum]) == NULL) {
 		GFARM_MALLOC(inode);
 		if (inode == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED, "%s: no memory", diag);
+			gflog_error(GFARM_MSG_1004330, "%s: no memory", diag);
 			return (NULL); /* no memory */
 		}
 		inode_xattrs_init(inode);
@@ -811,7 +811,7 @@ inode_alloc_num(gfarm_ino_t inum)
 	} else {
 		if (inode->i_number != inum) {
 			/* should be gflog_fatal() */
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004331,
 			    "alloc inode(%lld): unexpected inode(%lld:%lld)",
 			    (long long)inum,
 			    (long long)inode->i_number,
@@ -1016,7 +1016,7 @@ inode_schedule_replication_within_scope(
 			    gfarm_error_string(e));
 		} else if (e == GFARM_ERR_DISK_QUOTA_EXCEEDED) {
 			gflog_reduced_info(
-			    GFARM_MSG_UNFIXED, &rep_quota_exceeded_state,
+			    GFARM_MSG_1004332, &rep_quota_exceeded_state,
 			    "%s: %lld:%lld:%s@%s: replication failed:"
 			    " %s", diag,
 			    (long long)inode_get_number(inode),
@@ -1802,7 +1802,7 @@ inode_get_ncopy_common(struct inode *inode, int is_valid, int is_up)
 	gfarm_int64_t n = 0;
 
 	if (!inode_is_file(inode)) {
-		gflog_error(GFARM_MSG_UNFIXED, "internal error: not a file");
+		gflog_error(GFARM_MSG_1004333, "internal error: not a file");
 		return (0);
 	}
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
@@ -1844,7 +1844,7 @@ inode_count_replicas(
 
 	GFARM_MALLOC_ARRAY(includes, count);
 	if (includes == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no memory");
+		gflog_error(GFARM_MSG_1004334, "no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	for (copy = copies; copy != NULL; copy = copy->host_next) {
@@ -1901,7 +1901,7 @@ inode_alloc_file_copy_hosts(struct inode *inode,
 	 */
 	GFARM_MALLOC_ARRAY(hosts, nhosts);
 	if (hosts == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no memory");
+		gflog_error(GFARM_MSG_1004335, "no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	i = 0;
@@ -1941,7 +1941,7 @@ inode_replica_hosts(
 	if (n_existing > 0) {
 		GFARM_MALLOC_ARRAY(existing, n_existing);
 		if (existing == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED, "no memory");
+			gflog_error(GFARM_MSG_1004336, "no memory");
 			return (GFARM_ERR_NO_MEMORY);
 		}
 	}
@@ -1949,7 +1949,7 @@ inode_replica_hosts(
 		GFARM_MALLOC_ARRAY(removing, n_removing);
 		if (removing == NULL) {
 			free(existing);
-			gflog_error(GFARM_MSG_UNFIXED, "no memory");
+			gflog_error(GFARM_MSG_1004337, "no memory");
 			return (GFARM_ERR_NO_MEMORY);
 		}
 	}
@@ -2100,7 +2100,7 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 	    change_user ? user : NULL, change_group ? group : NULL,
 	    1, ncopy, inode_get_size(inode));
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004338,
 		    "inode=%lld, quota_limit_check(%s, %s, 1, %lld, %lld): %s",
 		    (long long)inode_get_number(inode),
 		    user ? user_name(user) : "NULL",
@@ -4215,7 +4215,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 			for (i = 0; i < depth; i++)
 				free(names[i]);
 			if (s == NULL)
-				gflog_error(GFARM_MSG_UNFIXED, "no memory");
+				gflog_error(GFARM_MSG_1004339, "no memory");
 			else
 				gflog_debug(GFARM_MSG_1001759,
 				    "directory too deep");
@@ -4238,7 +4238,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 
 	}
 	if (s == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no memory");
+		gflog_error(GFARM_MSG_1004340, "no memory");
 		e = GFARM_ERR_NO_MEMORY;
 	} else if (depth == 0) {
 		strcpy(s, "/");
@@ -4413,7 +4413,7 @@ inode_schedule_file_default(struct file_opening *opening,
 				 */
 				GFARM_MALLOC_ARRAY(hosts, 1);
 				if (hosts == NULL) {
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_error(GFARM_MSG_1004341,
 					    "no memory");
 					return (GFARM_ERR_NO_MEMORY);
 				}
@@ -4440,7 +4440,7 @@ inode_schedule_file_default(struct file_opening *opening,
 			 */
 			GFARM_MALLOC_ARRAY(opening_hosts, n);
 			if (opening_hosts == NULL) {
-				gflog_error(GFARM_MSG_UNFIXED, "no memory");
+				gflog_error(GFARM_MSG_1004342, "no memory");
 				return (GFARM_ERR_NO_MEMORY);
 			}
 			n_opening_hosts = 0;
@@ -4622,7 +4622,7 @@ file_replicating_new(struct inode *inode, struct host *dst,
 		if (ia != NULL) {
 			GFARM_MALLOC(irs);
 			if (irs == NULL)
-				gflog_error(GFARM_MSG_UNFIXED, "no memory");
+				gflog_error(GFARM_MSG_1004343, "no memory");
 		}
 		if (ia == NULL || irs == NULL) {
 			peer_replicating_free(fr);
@@ -4743,7 +4743,7 @@ inode_replicated(struct file_replicating *fr,
 				    (long long)fr->igen, host_name(fr->dst),
 				    gfarm_error_string(e));
 			else if (cksum_is_set)
-				gflog_notice(GFARM_MSG_UNFIXED,
+				gflog_notice(GFARM_MSG_1004344,
 				    "%s: inode %lld:%lld: checksum set to "
 				    "<%s>:<%.*s> by replication to %s",
 				    diag, (long long)inode_get_number(inode),
@@ -4887,7 +4887,7 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 
 	GFARM_MALLOC(copy);
 	if (copy == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no memory");
+		gflog_error(GFARM_MSG_1004345, "no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if (update_quota && (flags & FILE_COPY_VALID) != 0)
@@ -5424,7 +5424,7 @@ inode_replication_request(struct host *src, struct host *dst,
 		} else {
 			GFARM_MALLOC_ARRAY(cksumbuf, cksum_len);
 			if (cksumbuf == NULL) {
-				gflog_error(GFARM_MSG_UNFIXED, "no memory");
+				gflog_error(GFARM_MSG_1004346, "no memory");
 				e = GFARM_ERR_NO_MEMORY;
 			} else {
 				e = GFARM_ERR_NO_ERROR;
@@ -5497,7 +5497,7 @@ inode_replica_list_by_name_common(struct inode *inode,
 	/* host_is_up() may change even while the giant lock is held. */
 	GFARM_MALLOC_ARRAY(hosts, n);
 	if (hosts == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no memory");
+		gflog_error(GFARM_MSG_1004347, "no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
@@ -5586,7 +5586,7 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 		free(hosts);
 		free(gens);
 		free(oflags);
-		gflog_error(GFARM_MSG_UNFIXED, "no memory");
+		gflog_error(GFARM_MSG_1004348, "no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
@@ -5660,7 +5660,7 @@ inum_list_add(struct inum_list_entry **listp, gfarm_ino_t inum)
 
 	GFARM_MALLOC(entry);
 	if (entry == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no memory");
+		gflog_error(GFARM_MSG_1004349, "no memory");
 		return (0);
 	}
 	entry->inum = inum;
@@ -6782,7 +6782,7 @@ inode_xattr_get_cache(struct inode *inode, int xmlMode,
 		*cached_valuep = NULL;
 		*cached_sizep = 0;
 	} else if ((r = malloc(entry->cached_attrsize)) == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no memory");
+		gflog_error(GFARM_MSG_1004350, "no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	} else {
 		memcpy(r, entry->cached_attrvalue, entry->cached_attrsize);
@@ -6864,7 +6864,7 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 	}
 	GFARM_CALLOC_ARRAY(list, nxattrs);
 	if (list == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no memory");
+		gflog_error(GFARM_MSG_1004351, "no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	for (entry = xattrs->head, i = 0;
@@ -6885,7 +6885,7 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 					list[i].value =
 					    malloc(entry->cached_attrsize);
 					if (list[i].value == NULL) {
-						gflog_error(GFARM_MSG_UNFIXED,
+						gflog_error(GFARM_MSG_1004352,
 						    "no memory");
 						list[i].size = 0;
 					} else {
@@ -6962,7 +6962,7 @@ inode_xattr_list(struct inode *inode, int xmlMode, char **namesp, size_t *sizep)
 	if (size == 0)
 		return (GFARM_ERR_NO_ERROR);
 	if (GFARM_MALLOC_ARRAY(names, size) == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no memory");
+		gflog_error(GFARM_MSG_1004353, "no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	entry = xattrs->head;

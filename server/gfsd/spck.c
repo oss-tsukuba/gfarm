@@ -115,7 +115,7 @@ move_or_copy_to_lost_found(int op, const char *file, int fd, struct stat *stp,
 			break;
 		free_gfm_server();
 		if ((e = connect_gfm_server(diag)) != GFARM_ERR_NO_ERROR)
-			fatal(GFARM_MSG_UNFIXED, "die");
+			fatal(GFARM_MSG_1004392, "die");
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1003520,
@@ -195,7 +195,7 @@ move_or_copy_to_lost_found(int op, const char *file, int fd, struct stat *stp,
 			free_gfm_server();
 			if ((e = connect_gfm_server(diag))
 			    != GFARM_ERR_NO_ERROR)
-				fatal(GFARM_MSG_UNFIXED, "die");
+				fatal(GFARM_MSG_1004393, "die");
 		}
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1003523,

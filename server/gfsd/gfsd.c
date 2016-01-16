@@ -644,40 +644,40 @@ negotiate_with_gfm_server(int timed_out, int n_config_vars, void **config_vars,
 
 	if ((e = gfm_client_compound_begin_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "compound_begin request: %s",
+		gflog_warning(GFARM_MSG_1004374, "compound_begin request: %s",
 		    gfarm_error_string(e));
 	else if (canonical_self_name != NULL &&
 	    (e = gfm_client_hostname_set_request(gfm_server,
 	    canonical_self_name)) != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004375,
 		    "hostname_set(%s) request: %s", canonical_self_name,
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_config_get_vars_request(
 	    gfm_server, n_config_vars, config_vars)) != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004376,
 		    "config_get_vars() request: %s", gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "compound_end request: %s",
+		gflog_warning(GFARM_MSG_1004377, "compound_end request: %s",
 		    gfarm_error_string(e));
 
 	else if ((e = gfm_client_compound_begin_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "compound_begin result: %s",
+		gflog_warning(GFARM_MSG_1004378, "compound_begin result: %s",
 		    gfarm_error_string(e));
 	else if (canonical_self_name != NULL &&
 	    (e = gfm_client_hostname_set_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004379,
 		    "hostname_set(%s) result: %s", canonical_self_name,
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_config_get_vars_result(
 	    gfm_server, n_config_vars, config_vars)) != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004380,
 		    "config_get_vars() result: %s", gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "compound_end result: %s",
+		gflog_warning(GFARM_MSG_1004381, "compound_end result: %s",
 		    gfarm_error_string(e));
 
 	*ep = e;
@@ -691,7 +691,7 @@ negotiate_with_gfm_server(int timed_out, int n_config_vars, void **config_vars,
 		     (gfarm_metadb_version_minor < minor_version ||
 		      (gfarm_metadb_version_minor == minor_version &&
 		       gfarm_metadb_version_teeny < teeny_version)))) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004382,
 			    "gfmd version %d.%d.%d or later is expected, "
 			    "but it's %d.%d.%d",
 			    major_version, minor_version, teeny_version,
@@ -705,7 +705,7 @@ negotiate_with_gfm_server(int timed_out, int n_config_vars, void **config_vars,
 		return (1);
 	}
 	if (timed_out || !IS_CONNECTION_ERROR(e)) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004383,
 		    "negotiation with gfmd failed (as node: %s): %s",
 		    canonical_self_name != NULL ? canonical_self_name : "-",
 		    gfarm_error_string(e));
@@ -765,7 +765,7 @@ connect_gfm_server0(int use_timeout, int n_config_vars, void **config_vars,
 			if (negotiate_with_gfm_server(timed_out,
 			    n_config_vars, config_vars, diag, &e))
 				return (e);
-			gflog_reduced_notice(GFARM_MSG_UNFIXED, &negolog,
+			gflog_reduced_notice(GFARM_MSG_1004384, &negolog,
 			    "negotiation with gfmd failed (as node: %s), "
 			    "sleep %d sec: %s",
 			    canonical_self_name != NULL ?
@@ -1731,7 +1731,7 @@ gfsd_make_path(const char *relpath, const char *diag)
 
 	GFARM_MALLOC_ARRAY(p, length);
 	if (p == NULL) {
-		fatal(GFARM_MSG_UNFIXED, "%s: no memory for %s/%s (%zd bytes)",
+		fatal(GFARM_MSG_1004385, "%s: no memory for %s/%s (%zd bytes)",
 		      diag, gfarm_spool_root, relpath, length);
 	}
 	snprintf(p, length, "%s/%s", gfarm_spool_root, relpath);
@@ -2611,7 +2611,7 @@ replica_lost_move_to_lost_found(gfarm_ino_t ino, gfarm_uint64_t gen,
 			break;
 		free_gfm_server();
 		if ((e = connect_gfm_server(diag)) != GFARM_ERR_NO_ERROR)
-			fatal(GFARM_MSG_UNFIXED, "die");
+			fatal(GFARM_MSG_1004386, "die");
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1004217,
@@ -2754,7 +2754,7 @@ close_fd(struct gfp_xdr *client, gfarm_int32_t fd, struct file_entry *fe,
 			copy_to_lost_found(fe);
 	} else if ((fe->flags & (FILE_FLAG_DIGEST_FINISH|FILE_FLAG_DIGEST_AVAIL
 	    |FILE_FLAG_WRITTEN)) == FILE_FLAG_DIGEST_FINISH) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004387,
 		    "inode %lld:%lld: checksum set to <%s>:<%.*s> by read",
 		    (long long)fe->ino, (long long)fe->gen,
 		    fe->md_type_name, (int)fe->md_strlen, fe->md_string);
@@ -4302,7 +4302,7 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 		struct stat st;
 
 		if (fstat(local_fd, &st) == -1) {
-			gflog_error_errno(GFARM_MSG_UNFIXED,
+			gflog_error_errno(GFARM_MSG_1004388,
 			    "%s: %s %lld:%lld fstat(): %s", diag, issue_diag,
 			    (long long)rep->ino, (long long)rep->gen,
 			    strerror(errno));
@@ -4715,7 +4715,7 @@ timedwait_fd(int fd, time_t seconds, const char *diag)
 		if (nfound == -1) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
-			fatal_errno(GFARM_MSG_UNFIXED,
+			fatal_errno(GFARM_MSG_1004389,
 			    "poll in timedwait_fd()");
 		}
 		return (nfound > 0);
@@ -4740,7 +4740,7 @@ timedwait_fd(int fd, time_t seconds, const char *diag)
 
 		FD_ZERO(&fds);
 		if (fd >= FD_SETSIZE)
-			fatal(GFARM_MSG_UNFIXED,
+			fatal(GFARM_MSG_1004390,
 			    "too big descriptor: fd:%d", fd);
 		FD_SET(fd, &fds);
 		nfound = select(fd + 1, &fds, NULL, NULL,
@@ -4748,7 +4748,7 @@ timedwait_fd(int fd, time_t seconds, const char *diag)
 		if (nfound == -1) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
-			fatal_errno(GFARM_MSG_UNFIXED,
+			fatal_errno(GFARM_MSG_1004391,
 			    "select in timedwait_fd()");
 		}
 		return (nfound > 0);
