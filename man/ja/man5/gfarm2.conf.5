@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 13 January 2016
+.\"      Date: 27 January 2016
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "13 January 2016" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "27 January 2016" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -758,6 +758,8 @@ digest \fIdigestタイプ\fR
 .RS 4
 チェックサム計算を有効にし、 digestタイプで指定されたチェックサムを計算します。 digestタイプとしては、チェックサム計算を実行するファイルシステムノード上の OpenSSL ライブラリがサポートしているタイプを、小文字で、 例えば md5 や sha256 のように指定します。 あるいは
 client_digest_check文でenableを指定して いる場合は、このdigstタイプをクライアント上の OpenSSL ライブラリもサポート している必要があります。
+.sp
+digestタイプとして disable と指定した場合は、チェックサム計算を抑制します。
 .sp
 この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
 .sp
