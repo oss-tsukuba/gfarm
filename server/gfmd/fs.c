@@ -4907,7 +4907,7 @@ gfm_server_replica_get_cksum(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t flags = 0;
 	size_t cksum_len = 0;
 	char *cksum_type = NULL, *cksumbuf = NULL, *cksum;
-	static const char diag[] = "GFM_PROTO_REPLICA_OPEN_STATUS";
+	static const char diag[] = "GFM_PROTO_REPLICA_GET_CKSUM";
 
 	e = gfm_server_get_request(peer, diag, "ll", &inum, &igen);
 	if (e != GFARM_ERR_NO_ERROR) {
