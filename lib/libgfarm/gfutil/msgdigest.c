@@ -9,9 +9,9 @@ int
 gfarm_msgdigest_name_verify(const char *gfarm_name)
 {
 	const unsigned char *s = (const unsigned char *)gfarm_name;
+	const EVP_MD *md_type;
 
 	/*
-	 * XXX FIXME: we should check the digest type more strictly
 	 * Gfarm uses just same names with OpenSSL for now,
 	 * except that only lower-case characters and digits are allowed.
 	 */
@@ -19,7 +19,11 @@ gfarm_msgdigest_name_verify(const char *gfarm_name)
 		if (!islower(*s) && !isdigit(*s))
 			return 0;
 	}
-	return 1;
+
+	md_type = EVP_get_digestbyname(
+	    gfarm_msgdigest_name_to_openssl(gfarm_name));
+
+	return (md_type != NULL);
 }
 
 const char *

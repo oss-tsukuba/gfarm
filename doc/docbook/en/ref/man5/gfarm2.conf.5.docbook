@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>13 January 2016</date></refentryinfo>
+<refentryinfo><date>27 January 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -852,6 +852,9 @@ by the OpenSSL library on the filesystem nodes.
 For example, "md5", "sha256".
 Or, if <token>client_digest_check</token> is enabled,
 the digest_type has to be supported on clients as well.
+</para>
+<para>
+Specifying "disable" as digest_type disables the checksum calculation.
 </para>
 <para>
 This directive is only available in gfmd.conf, and ignored in gfarm2.conf.

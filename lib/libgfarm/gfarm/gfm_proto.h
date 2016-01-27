@@ -206,7 +206,7 @@ enum gfm_proto_command {
 	GFM_PROTO_SCHEDULE_HOST_DOMAIN,
 	GFM_PROTO_STATFS,
 	GFM_PROTO_CONFIG_GET,			/* since gfarm-2.6.8 */
-	GFM_PROTO_CONFIG_SET,			/* reserved (not used yet) */
+	GFM_PROTO_CONFIG_SET,			/* since gfarm-2.6.9 */
 	GFM_PROTO_MISC_RESERVE5,
 	GFM_PROTO_MISC_RESERVE6,
 	GFM_PROTO_MISC_RESERVE7,

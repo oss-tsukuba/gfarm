@@ -3901,6 +3901,83 @@ gfm_server_config_get(struct peer *peer, int from_client, int skip)
 }
 
 gfarm_error_t
+gfm_server_config_set(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	int eof;
+	struct gfp_xdr *client = peer_get_conn(peer);
+	struct user *user = peer_get_user(peer);
+	char *name = NULL, fmt = '\0';
+	const struct gfarm_config_type *type;
+	union gfarm_config_storage storage;
+	static const char diag[] = "GFM_PROTO_CONFIG_SET";
+
+	e = gfm_server_get_request(peer, diag, "sc", &name, &fmt);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: get_request name: %s",
+		    diag, gfarm_error_string(e));
+		return (e);
+	}
+	storage.s = NULL; /* shut up compiler */
+	switch (fmt) {
+	case 'i':
+		e = gfp_xdr_recv(client, 0, &eof, "i", &storage.i);
+		break;
+	case 's':
+		e = gfp_xdr_recv(client, 0, &eof, "s", &storage.s);
+		break;
+	default:
+		/* XXX this is somewhat fatal protocol error */
+		e = GFARM_ERR_PROTOCOL;
+		break;
+	}
+	if (e != GFARM_ERR_NO_ERROR || eof) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: gfp_xdr_recv(): %s", diag, gfarm_error_string(e));
+		if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
+			e = GFARM_ERR_PROTOCOL;
+		free(name);
+		return (e);
+	}
+
+	if (skip) {
+		if (fmt == 's')
+			free(storage.s);
+		free(name);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	giant_lock();
+
+	if (!from_client || user == NULL || !user_is_admin(user)) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s(%s): user %s does not belong to gfarmadm: %s",
+		    diag, name, user == NULL ? "(null)" : user_name(user),
+		    gfarm_error_string(e));
+	} else if ((e = gfarm_config_type_by_name_for_metadb(name, &type))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s(%s): %s",
+		    diag, name, gfarm_error_string(e));
+	} else if (fmt != gfarm_config_type_get_format(type)) {
+		e = GFARM_ERR_INVALID_ARGUMENT;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s(%s): format '%c' is expected, but '%c': %s",
+		    diag, name, gfarm_config_type_get_format(type), fmt,
+		    gfarm_error_string(e));
+	} else {
+		e = gfarm_config_copyin(type, &storage);
+	}
+
+	giant_unlock();
+
+	if (fmt == 's')
+		free(storage.s);
+	free(name);
+
+	return (gfm_server_put_reply(peer, diag, e, ""));
+}
+
+gfarm_error_t
 gfm_server_replica_list_by_name(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e, e2;

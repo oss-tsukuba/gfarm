@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>13 January 2016</date></refentryinfo>
+<refentryinfo><date>27 January 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -821,6 +821,9 @@ OpenSSL ライブラリがサポートしているタイプを、小文字で、
 あるいは <token>client_digest_check</token>文で<token>enable</token>を指定して
 いる場合は、このdigstタイプをクライアント上の OpenSSL ライブラリもサポート
 している必要があります。
+</para>
+<para>
+digestタイプとして disable と指定した場合は、チェックサム計算を抑制します。
 </para>
 <para>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。

@@ -55,10 +55,23 @@ print_user_config_file(char *msg)
 
 static gfarm_error_t
 do_config(struct gfm_connection *gfm_server, char *config,
-	int ask_gfmd, int print_config_name)
+	int ask_gfmd, int modify_mode, int print_config_name)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	char buffer[2048];
+
+	if (modify_mode) {
+		if (!ask_gfmd) {
+			fprintf(stderr, "%s: does not make sense "
+			    "without -M option\n", config);
+			return (GFARM_ERR_INVALID_ARGUMENT);
+		}
+		e = gfm_client_config_set_by_string(gfm_server, config);
+		if (e != GFARM_ERR_NO_ERROR)
+			fprintf(stderr, "%s: %s\n", config,
+			    gfarm_error_string(e));
+		return (e);
+	}
 
 	if (ask_gfmd) {
 		e = gfm_client_config_name_to_string(gfm_server,
@@ -83,14 +96,14 @@ do_config(struct gfm_connection *gfm_server, char *config,
 
 static gfarm_error_t
 do_configurations(struct gfm_connection *gfm_server, int argc, char **argv,
-	int ask_gfmd)
+	int ask_gfmd, int modify_mode)
 {
 	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	int i, print_config_name = (argc > 1);
 
 	for (i = 0; i < argc; i++) {
 		e = do_config(gfm_server, argv[i],
-		    ask_gfmd, print_config_name);
+		    ask_gfmd, modify_mode, print_config_name);
 		if (e != GFARM_ERR_NO_ERROR && e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 	}
@@ -110,7 +123,7 @@ int
 main(int argc, char *argv[])
 {
 	gfarm_error_t e, e2;
-	int port, c, debug_mode = 0, ask_gfmd = 0;
+	int port, c, debug_mode = 0, ask_gfmd = 0, modify_mode = 0;
 	char *canonical_hostname, *hostname, *realpath = NULL;
 	const char *user = NULL, *gfmd_hostname;
 	const char *path = ".";
@@ -123,7 +136,7 @@ main(int argc, char *argv[])
 	if (argc > 0)
 		program_name = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "dMP:V?"))
+	while ((c = getopt(argc, argv, "dMmP:V?"))
 	    != -1) {
 		switch (c) {
 		case 'd':
@@ -133,6 +146,9 @@ main(int argc, char *argv[])
 			break;
 		case 'M':
 			ask_gfmd = 1;
+			break;
+		case 'm':
+			modify_mode = 1;
 			break;
 		case 'P':
 			path = optarg;
@@ -180,7 +196,8 @@ main(int argc, char *argv[])
 	}
 
 	if (argc > 0) {
-		e = do_configurations(gfm_server, argc, argv, ask_gfmd);
+		e = do_configurations(gfm_server, argc, argv,
+		    ask_gfmd, modify_mode);
 		e2 = gfarm_terminate();
 		error_check("gfarm_terminate", e2);
 

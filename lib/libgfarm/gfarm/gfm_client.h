@@ -376,6 +376,8 @@ gfarm_error_t gfm_client_config_get_result(struct gfm_connection *,
 	char, void *);
 gfarm_error_t gfm_client_config_get(struct gfm_connection *,
 	const char *, char, void *);
+gfarm_error_t gfm_client_config_set(struct gfm_connection *,
+	const char *, char, void *);
 
 /* replica management from client */
 gfarm_error_t gfm_client_replica_list_by_name_request(struct gfm_connection *);

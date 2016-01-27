@@ -3482,6 +3482,34 @@ gfm_client_config_get(struct gfm_connection *gfm_server,
 	return (gfm_client_config_get_result(gfm_server, fmt, addr));
 }
 
+gfarm_error_t
+gfm_client_config_set(struct gfm_connection *gfm_server,
+	const char *name, char fmt, void *addr)
+{
+	gfarm_error_t e;
+	int i;
+	char *s;
+
+	switch (fmt) {
+	case 'i':
+		i = *(int *)addr;
+		e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_CONFIG_SET, "sci/",
+		    name, fmt, i);
+		break;
+	case 's':
+		s = *(char **)addr;
+		if (s == NULL)
+			s = "";
+		e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_CONFIG_SET, "scs/",
+		    name, fmt, s);
+		break;
+	default:
+		e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
+		abort();
+	}
+	return (e);
+}
+
 /*
  * replica management from client
  */

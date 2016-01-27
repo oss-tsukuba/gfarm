@@ -2352,7 +2352,10 @@ parse_digest_type(char *p, char **rv)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	if (!gfarm_msgdigest_name_verify(*rv)) {
+	if (strcmp(*rv, "disable") == 0) {
+		free(*rv);
+		*rv = NULL; /* back to the default */
+	} else if (!gfarm_msgdigest_name_verify(*rv)) {
 		/* XXX this leaves `*rv' as is */
 		gflog_debug(GFARM_MSG_1003863,
 		    "invalid digest type <%s>", *rv);
@@ -3514,6 +3517,26 @@ gfarm_config_print_int(void *addr, char *string, size_t sz)
 	return (snprintf(string, sz, "%d", *ip));
 }
 
+void
+gfarm_config_set_default_int(void *addr)
+{
+	int *ip = addr;
+
+	*ip = GFARM_CONFIG_MISC_DEFAULT;
+}
+
+int
+gfarm_config_validate_true(union gfarm_config_storage *storage)
+{
+	return (1);
+}
+
+int
+gfarm_config_validate_false(union gfarm_config_storage *storage)
+{
+	return (0);
+}
+
 int
 gfarm_config_print_enabled(void *addr, char *string, size_t sz)
 {
@@ -3525,6 +3548,20 @@ gfarm_config_print_enabled(void *addr, char *string, size_t sz)
 		return (snprintf(string, sz, "%s", "disabled"));
 }
 
+void
+gfarm_config_set_default_enabled(void *addr)
+{
+	int *ip = addr;
+
+	*ip = GFARM_CONFIG_MISC_DEFAULT;
+}
+
+int
+gfarm_config_validate_enabled(union gfarm_config_storage *storage)
+{
+	return (storage->i == 0 || storage->i == 1);
+}
+
 int
 gfarm_config_print_string(void *addr, char *string, size_t sz)
 {
@@ -3533,33 +3570,63 @@ gfarm_config_print_string(void *addr, char *string, size_t sz)
 	return (snprintf(string, sz, "%s", *sp));
 }
 
+void
+gfarm_config_set_default_string(void *addr)
+{
+	char **sp = addr;
+
+	*sp = NULL;
+}
+
+int
+gfarm_config_validate_digest(union gfarm_config_storage *storage)
+{
+	if (storage->s == NULL)
+		return (1);
+	if (*storage->s == '\0')
+		return (1);
+	return (gfarm_msgdigest_name_verify(storage->s));
+}
+
 const struct gfarm_config_type {
 	const char *name;
 	char fmt;
 	int for_metadb;
 	int (*printer)(void *, char *, size_t);
+	void (*set_default)(void *);
+	int (*validater)(union gfarm_config_storage *);
 	void *addr; /* maybe NULL, if it's in gfarm_ctxp-> */
 	size_t offset; /* only available if it's in gfarm_ctxp-> */
 } config_types[] = {
 	{ "protocol_major", 'i', 1, gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_false,
 	  &gfarm_metadb_version_major, 0 },
 	{ "protocol_minor", 'i', 1, gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_false,
 	  &gfarm_metadb_version_minor, 0 },
 	{ "protocol_teeny", 'i', 1, gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_false,
 	  &gfarm_metadb_version_teeny, 0 },
 	{ "digest", 's', 1, gfarm_config_print_string,
+	  gfarm_config_set_default_string, gfarm_config_validate_digest,
 	  &gfarm_digest, 0 },
 	{ "write_verify", 'i', 1, gfarm_config_print_enabled,
+	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
 	  &gfarm_write_verify, 0 },
 	{ "write_verify_interval", 'i', 1, gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_true,
 	  &gfarm_write_verify_interval, 0 },
 	{ "write_verify_retry_interval", 'i', 1, gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_true,
 	  &gfarm_write_verify_retry_interval, 0 },
 	{ "direct_local_access", 'i', 0, gfarm_config_print_enabled,
+	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
 	  NULL, offsetof(struct gfarm_context, direct_local_access) },
 	{ "client_digest_check", 'i', 0, gfarm_config_print_enabled,
+	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
 	  NULL, offsetof(struct gfarm_context, client_digest_check) },
 	{ "client_file_bufsize", 'i', 0, gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_true,
 	  NULL, offsetof(struct gfarm_context, client_file_bufsize) },
 };
 
@@ -3659,6 +3726,44 @@ gfarm_config_local_name_to_string(const char *name, char *string, size_t sz)
 }
 
 gfarm_error_t
+gfarm_config_copyin(const struct gfarm_config_type *type,
+	union gfarm_config_storage *storage)
+{
+	void *addr = gfarm_config_addr(type);
+	char *t;
+
+	if (addr == NULL)
+		return (GFARM_ERR_BAD_ADDRESS);
+
+	if (!(*type->validater)(storage))
+		return (GFARM_ERR_INVALID_ARGUMENT);
+
+	switch (type->fmt) {
+	case 'i':
+		*(int *)addr = storage->i;
+		break;
+	case 's':
+		t = storage->s;
+
+		/* "" means: change the variable to default (NULL) */
+		if (t != NULL && *t == '\0')
+			t = NULL;
+
+		if (t != NULL) {
+			t = strdup(t);
+			if (t == NULL)
+				return (GFARM_ERR_NO_MEMORY);
+		}
+		free(*(char **)addr);
+		*(char **)addr = t;
+		break;
+	default:
+		return (GFARM_ERR_UNKNOWN);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
 gfarm_config_copyout(const struct gfarm_config_type *type,
 	union gfarm_config_storage *storage)
 {
@@ -3720,6 +3825,43 @@ gfm_client_config_name_to_string(
 		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfm_client_config_set_by_string(
+	struct gfm_connection *gfm_server, char *string)
+{
+	gfarm_error_t e;
+	const struct gfarm_config_type *type = NULL;
+	void *addr;
+	char *s, *p, *o = NULL;
+
+	p = string;
+	e = gfarm_strtoken(&p, &s);
+
+	if (e == GFARM_ERR_NO_ERROR) {
+		if (s == NULL) /* blank or comment line */
+			return (GFARM_ERRMSG_MISSING_ARGUMENT);
+
+		e = gfarm_config_type_by_name_for_metadb(s, &type);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+		addr = gfarm_config_addr(type);
+		if (addr == NULL)
+			return (GFARM_ERR_BAD_ADDRESS);
+
+		(*type->set_default)(addr);
+		e = parse_one_line(s, p, &o);
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_config_set_by_string(): %s: %s: %s",
+		    o == NULL ? "" : o, p, gfarm_error_string(e));
+		return (e);
+	}
+
+	return (gfm_client_config_set(gfm_server, type->name, type->fmt,
+	    addr));
 }
 
 gfarm_error_t
