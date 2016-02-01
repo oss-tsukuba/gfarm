@@ -446,8 +446,6 @@ sleep_or_wait_fds(int seconds, int max_fd, fd_set *fds, const char *diag)
 		return (0);
 	}
 #else /* !HAVE_POLL */
-	fd_set fds;
-
 	for (;;) {
 		gettimeofday(&now, NULL);
 		if (gfarm_timeval_cmp(&now, &expiration_time) >= 0)
@@ -456,8 +454,7 @@ sleep_or_wait_fds(int seconds, int max_fd, fd_set *fds, const char *diag)
 		gfarm_timeval_sub(&t, &now);
 
 		/* using the returned `t` from select(2) is not portable */
-		nfound =
-		    select(max_fd, &fds, NULL, NULL, &t);
+		nfound = select(max_fd, fds, NULL, NULL, &t);
 		if (nfound == 0)
 			return (EAGAIN);
 		if (nfound == -1) {
@@ -496,7 +493,7 @@ sleep_or_wait_failover_packet(int seconds)
 	rv = sleep_or_wait_fds(seconds, accepting.udp_socks_count, fds, diag);
 #else /* !HAVE_POLL */
 	int max_fd = -1;
-	struct fd_set fds;
+	fd_set fds;
 
 	FD_ZERO(&fds);
 	for (i = 0; i < accepting.udp_socks_count; i++) {
@@ -563,7 +560,7 @@ sleep_or_wait_failover_recv_fd(int seconds)
 	fds.events = POLLIN;
 	rv = sleep_or_wait_fds(seconds, 1, &fds, diag);
 #else /* !HAVE_POLL */
-	struct fd_set fds;
+	fd_set fds;
 
 	if (failover_notify_recv_fd >= FD_SETSIZE)
 		fatal(GFARM_MSG_1004212,
