@@ -135,7 +135,8 @@ const char *program_name = "gfsd";
 
 int debug_mode = 0;
 
-static enum gfsd_type my_type = type_listener;
+/* my_type is a variable of enum gfsd_type */
+static volatile sig_atomic_t my_type = type_listener;
 
 #define USING_PIPE_FOR_FAILOVER_SIGNAL(my_type) \
 	((my_type) == type_client || \
@@ -267,7 +268,8 @@ static void
 cleanup_handler(int signo)
 {
 	terminate_flag = 1;
-	if (write_open_count == 0) {
+	if (my_type != type_write_verify_controller &&
+	    write_open_count == 0) {
 		cleanup(1);
 		_exit(0);
 	}
