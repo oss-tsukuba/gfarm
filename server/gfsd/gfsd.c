@@ -1467,11 +1467,15 @@ file_table_add(gfarm_int32_t net_fd, char *path,
 	int *local_fdp, const char *diag)
 {
 	struct file_entry *fe;
-	int local_fd, local_fd_rdonly, r, save_errno;
+	int local_fd, local_fd_rdonly, r, save_errno, is_new_file = 0;
 	struct stat st;
 
-	if ((r = lstat(path, &st)) < 0 && errno != ENOENT)
-		fatal_errno(GFARM_MSG_1003769, "%s: %s", diag, path);
+	r = lstat(path, &st);
+	if (r == -1) {
+		if (errno != ENOENT)
+			fatal_errno(GFARM_MSG_1003769, "%s: %s", diag, path);
+		is_new_file = 1;
+	}
 	local_fd = open_data(path, flags);
 	if (local_fd == -1)
 		return (gfarm_errno_to_error(errno));
@@ -1493,7 +1497,7 @@ file_table_add(gfarm_int32_t net_fd, char *path,
 	fe->ino = ino;
 	if (flags & O_CREAT)
 		fe->flags |= FILE_FLAG_CREATED;
-	if (flags & O_TRUNC)
+	if ((flags & O_TRUNC) != 0 || is_new_file)
 		fe->flags |= FILE_FLAG_WRITTEN;
 	if ((flags & O_ACCMODE) != O_RDONLY) {
 		fe->flags |= FILE_FLAG_WRITABLE;
@@ -1670,26 +1674,22 @@ static void
 file_table_set_read(gfarm_int32_t net_fd)
 {
 	struct file_entry *fe = file_table_entry(net_fd);
-	struct timespec now;
 
 	if (fe == NULL)
 		return;
 
-	gfarm_gettime(&now);
-	file_entry_set_atime(fe, now.tv_sec, now.tv_nsec);
+	fe->flags |= FILE_FLAG_READ;
 }
 
 static void
 file_table_set_written(gfarm_int32_t net_fd)
 {
 	struct file_entry *fe = file_table_entry(net_fd);
-	struct timespec now;
 
 	if (fe == NULL)
 		return;
 
-	gfarm_gettime(&now);
-	file_entry_set_mtime(fe, now.tv_sec, now.tv_nsec);
+	fe->flags |= FILE_FLAG_WRITTEN;
 }
 
 static void
@@ -2555,9 +2555,7 @@ update_file_entry_for_close(struct gfp_xdr *client,
 		fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 	}
 
-	if ((fe->flags & FILE_FLAG_LOCAL) == 0) { /* remote? */
-		;
-	} else if (fstat(fe->local_fd, &st) == -1) {
+	if (fstat(fe->local_fd, &st) == -1) {
 		e = gfarm_errno_to_error(errno);
 		gflog_warning(GFARM_MSG_1000484,
 		    "fd %d: stat failed at close: %s",
