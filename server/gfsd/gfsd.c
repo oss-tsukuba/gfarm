@@ -849,7 +849,7 @@ do_fork(enum gfsd_type new_type)
 	sigset_t old, new;
 	pid_t rv;
 	int save_errno;
-	int pipefds[2];
+	int i, pipefds[2];
 
 	assert((my_type == type_listener &&
 		(new_type == type_client ||
@@ -879,6 +879,19 @@ do_fork(enum gfsd_type new_type)
 			back_channel_gfsd_pid = rv;
 	} else { /* child process */
 		free_gfm_server(); /* to make sure to avoid race */
+
+		if (my_type == type_listener) {
+			for (i = 0; i < accepting.local_socks_count; i++) {
+				close(accepting.local_socks[i].sock);
+				accepting.local_socks[i].sock = -1;
+			}
+			close(accepting.tcp_sock);
+			accepting.tcp_sock = -1;
+			for (i = 0; i < accepting.udp_socks_count; i++) {
+				close(accepting.udp_socks[i]);
+				accepting.udp_socks[i] = -1;
+			}
+		}
 
 		if (new_type == type_back_channel) {
 			/* this should be set before fatal() */
@@ -4981,7 +4994,7 @@ start_server(int accepting_sock,
 #ifndef GFSD_DEBUG
 	pid_t pid = 0;
 #endif
-	int i, client = accept(accepting_sock,
+	int client = accept(accepting_sock,
 	   client_addr_storage, &client_addr_size);
 	struct gfarm_iostat_items *statp;
 
@@ -5003,12 +5016,6 @@ start_server(int accepting_sock,
 			gfarm_iostat_set_id(statp, (gfarm_uint64_t) getpid());
 			gfarm_iostat_set_local_ip(statp);
 		}
-		for (i = 0; i < accepting->local_socks_count; i++)
-			close(accepting->local_socks[i].sock);
-		close(accepting->tcp_sock);
-		for (i = 0; i < accepting->udp_socks_count; i++)
-			close(accepting->udp_socks[i]);
-
 		server(client, client_name, client_addr);
 		/*NOTREACHED*/
 #ifndef GFSD_DEBUG
