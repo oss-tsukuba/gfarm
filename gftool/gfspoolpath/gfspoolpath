@@ -2,10 +2,14 @@
 
 status=0
 TMP=/tmp/gfspoolpath-$$
+inum_mode=false
 
 trap 'rm -f $TMP; exit $status' 0 1 2 25
 
 case $1 in
+-I)
+	inum_mode=true
+	shift;;
 -s)
 	shift
 	GFARM_SPOOL=$1
@@ -16,14 +20,27 @@ esac
 
 for i
 do
-	gfstat $i > $TMP || continue
-	inum=`sed -n 's/.*Inode: \([0-9]*\).*/\1/p' $TMP`
-	gen=`sed -n 's/.*Gen: \([0-9]*\).*/\1/p' $TMP`
-	size=`sed -n 's/.*Size: \([0-9]*\).*/\1/p' $TMP`
+	if $inum_mode; then
+		case $i in
+		[0-9]*:[0-9]*) # this wildcard is not strict enough
+			inum=`expr "$i" : '\(.*\):'`
+			gen=`expr "$i" : '.*:\(.*\)'`
+			;;
+		*)
+			echo "$i: <INUM>:<IGEN> is expected" >&2
+			continue;;
+		esac
+	else
+		gfstat "$i" > $TMP || continue
+		inum=`sed -n 's/.*Inode: \([0-9]*\).*/\1/p' $TMP`
+		gen=`sed -n 's/.*Gen: \([0-9]*\).*/\1/p' $TMP`
+		size=`sed -n 's/.*Size: \([0-9]*\).*/\1/p' $TMP`
+	fi
 	path=`printf "%016X%016X" $inum $gen |
 		sed 's/\([0-9A-F]\{8\}\)\([0-9A-F][0-9A-F]\)\([0-9A-F][0-9A-F]\)\([0-9A-F][0-9A-F]\)\([0-9A-F]\{18\}\)/\1\/\2\/\3\/\4\/\5/'`
 	path="data/$path"
 	echo $path
+	$inum_mode && continue
 	if [ -f "$GFARM_SPOOL/$path" ]; then
 		rsize=`ls -ln "$GFARM_SPOOL/$path" | awk '{print $5}'`
 		if [ $size != $rsize ]; then
