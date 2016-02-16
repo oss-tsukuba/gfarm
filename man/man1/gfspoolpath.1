@@ -1,22 +1,13 @@
 '\" t
 .\"     Title: gfspoolpath
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 17 Oct 2011
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 16 Feb 2016
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSPOOLPATH" "1" "17 Oct 2011" "Gfarm" "Gfarm"
-.\" -----------------------------------------------------------------
-.\" * Define some portability stuff
-.\" -----------------------------------------------------------------
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.\" http://bugs.debian.org/507673
-.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.ie \n(.g .ds Aq \(aq
-.el       .ds Aq '
+.TH "GFSPOOLPATH" "1" "16 Feb 2016" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -31,10 +22,25 @@
 gfspoolpath \- display a pathname on a filesystem node about a Gfarm file
 .SH "SYNOPSIS"
 .HP \w'\fBgfspoolpath\fR\ 'u
-\fBgfspoolpath\fR [\fIpath\fR...]
+\fBgfspoolpath\fR [\-s\ \fIspool_directory\fR] [\fIpath\fR...]
+.HP \w'\fBgfspoolpath\fR\ 'u
+\fBgfspoolpath\fR [\-I] [\fIinode_number:generation_number\fR...]
 .SH "DESCRIPTION"
 .PP
 This command displays a pathname of a concrete file on a filesystem node, which is corresponding to a Gfarm file specified in the command argument\&. The pathname is relative to the top directory of a spool directory of gfsd\&.
+.SH "OPTIONS"
+.PP
+\fB\-I\fR
+.RS 4
+If this option is specified, inode_numbers and generation_numbers which are separated by colon (:) are expected as arguments\&.
+.RE
+.PP
+\fB\-s\fR \fIspool_directory\fR
+.RS 4
+If this command is invoked with a privilege which can access gfsd spool directory, and if
+\fB\-I\fR
+is not specified, the gfspoolpath command will check whether the file size of metadata and the size of the concrete file are same or not, and displays warning when they are different\&. This option specifies the pathname of the gfsd spool directory for the check\&. If this option is not specified, /var/gfarm\-spool is assumed\&. If there isn\'t enough privilege, this check is simply skipped\&.
+.RE
 .SH "BUGS"
 .PP
 No error is reported, if the command argument refers a directory\&.
