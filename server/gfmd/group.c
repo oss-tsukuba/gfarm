@@ -47,7 +47,7 @@ grpassign_add(struct user *u, struct group *g)
 
 	GFARM_MALLOC(ga);
 	if (ga == NULL) {
-		gflog_debug(GFARM_MSG_1001514,
+		gflog_error(GFARM_MSG_1001514,
 		    "memory allocation of group_assignment failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -148,7 +148,7 @@ group_enter(char *groupname, struct group **gpp)
 
 	GFARM_MALLOC(g);
 	if (g == NULL) {
-		gflog_debug(GFARM_MSG_1001516,
+		gflog_error(GFARM_MSG_1001516,
 		    "memory allocation of group failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -159,7 +159,7 @@ group_enter(char *groupname, struct group **gpp)
 	    &created);
 	if (entry == NULL) {
 		free(g);
-		gflog_debug(GFARM_MSG_1001517,
+		gflog_error(GFARM_MSG_1001517,
 		    "gfarm_hash_enter() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -244,7 +244,7 @@ group_lookup_or_enter_invalid(const char *groupname)
 	}
 	e = group_enter(n, &g);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1002759,
+		gflog_notice(GFARM_MSG_1002759,
 		    "group_lookup_or_enter_invalid(%s): group_enter: %s",
 		    groupname, gfarm_error_string(e));
 		free(n);
@@ -252,7 +252,7 @@ group_lookup_or_enter_invalid(const char *groupname)
 	}
 	e = group_remove_in_cache(groupname);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1002760,
+		gflog_notice(GFARM_MSG_1002760,
 		    "group_lookup_or_enter_invalid(%s): group_remove: %s",
 		    groupname, gfarm_error_string(e));
 	}
@@ -310,7 +310,7 @@ group_info_add(struct gfarm_group_info *gi)
 	struct user *u;
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_1000241,
+		gflog_debug(GFARM_MSG_1000241,
 		    "group_add_one: adding group %s: %s",
 		    gi->groupname, gfarm_error_string(e));
 		gfarm_group_info_free(gi);
@@ -319,7 +319,7 @@ group_info_add(struct gfarm_group_info *gi)
 	for (i = 0; i < gi->nusers; i++) {
 		u = user_lookup(gi->usernames[i]);
 		if (u == NULL) {
-			gflog_warning(GFARM_MSG_1000242,
+			gflog_debug(GFARM_MSG_1000242,
 			    "group_add_one: unknown user %s",
 			    gi->usernames[i]);
 			(void)group_remove(g->groupname);
@@ -328,7 +328,7 @@ group_info_add(struct gfarm_group_info *gi)
 		}
 		e = grpassign_add(u, g);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_1000243,
+			gflog_debug(GFARM_MSG_1000243,
 			    "group_add_one: grpassign(%s, %s): %s",
 			    gi->usernames[i], g->groupname,
 			    gfarm_error_string(e));
@@ -351,7 +351,7 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* cannot use gi.groupname, since it's freed here */
-		gflog_warning(GFARM_MSG_1002314, "group_add_one(): %s",
+		gflog_notice(GFARM_MSG_1002314, "group_add_one(): %s",
 		    gfarm_error_string(e));
 	}
 }
@@ -733,7 +733,7 @@ group_user_check(struct gfarm_group_info *gi, const char *diag)
 	for (i = 0; i < gi->nusers && e == GFARM_ERR_NO_ERROR; i++) {
 		u = user_lookup(gi->usernames[i]);
 		if (u == NULL) {
-			gflog_warning(GFARM_MSG_1000253,
+			gflog_debug(GFARM_MSG_1000253,
 			    "%s: unknown user %s", diag,
 				    gi->usernames[i]);
 			e = GFARM_ERR_NO_SUCH_USER;
@@ -741,7 +741,7 @@ group_user_check(struct gfarm_group_info *gi, const char *diag)
 		}
 		for (j = 0; j < i; j++) {
 			if (ulist[j] == u) {
-				gflog_warning(GFARM_MSG_1003468,
+				gflog_debug(GFARM_MSG_1003468,
 				    "%s: %s: specified multiple times",
 				    diag, gi->usernames[i]);
 				e = GFARM_ERR_ALREADY_EXISTS;
@@ -838,12 +838,12 @@ group_modify(struct group *group, struct gfarm_group_info *gi,
 		struct user *u = user_lookup(username);
 
 		if (u == NULL) {
-			gflog_warning(GFARM_MSG_1000255,
+			gflog_notice(GFARM_MSG_1000255,
 			    "%s: unknown user %s", diag,
 			    username);
 		} else if ((e = grpassign_add(u, group))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_1000256,
+			gflog_notice(GFARM_MSG_1000256,
 			    "%s: grpassign(%s, %s): %s", diag,
 			    username, gi->groupname,
 			    gfarm_error_string(e));
