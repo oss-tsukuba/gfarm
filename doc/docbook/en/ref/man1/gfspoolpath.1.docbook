@@ -5,7 +5,7 @@
 
 <refentry id="gfspoolpath.1">
 
-<refentryinfo><date>17 Oct 2011</date></refentryinfo>
+<refentryinfo><date>16 Feb 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfspoolpath</refentrytitle>
@@ -19,10 +19,19 @@
 </refnamediv>
 
 <refsynopsisdiv id="synopsis">
+
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfspoolpath</command>
+	<arg choice="opt" rep="norepeat">-s <replaceable>spool_directory</replaceable></arg>
 	<arg choice="opt" rep="repeat"><replaceable>path</replaceable></arg>
 </cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfspoolpath</command>
+	<arg choice="opt" rep="norepeat">-I</arg>
+	<arg choice="opt" rep="repeat"><replaceable>inode_number:generation_number</replaceable></arg>
+</cmdsynopsis>
+
 </refsynopsisdiv>
 
 <!-- body begins here -->
@@ -35,6 +44,38 @@ which is corresponding to a Gfarm file specified in the command argument.
 The pathname is relative to the top directory of a spool directory of gfsd.
 </para>
 
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-I</option></term>
+<listitem>
+<para>
+If this option is specified, inode_numbers and generation_numbers
+which are separated by colon (:) are expected as arguments.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-s</option> <parameter moreinfo="none">spool_directory</parameter></term>
+<listitem>
+<para>
+If this command is invoked with a privilege which can access gfsd
+spool directory, and if <option>-I</option> is not specified,
+the gfspoolpath command will check whether the file size of metadata and
+the size of the concrete file are same or not, and displays warning
+when they are different.
+This option specifies the pathname of the gfsd spool directory for the check.
+If this option is not specified, /var/gfarm-spool is assumed.
+If there isn't enough privilege, this check is simply skipped.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
 </refsect1>
 
 <refsect1 id="bugs"><title>BUGS</title>
