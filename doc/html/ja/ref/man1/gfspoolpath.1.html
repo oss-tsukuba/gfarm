@@ -2,23 +2,44 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfspoolpath</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfspoolpath">
 <a name="gfspoolpath.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
-<p>gfspoolpath — Gfarm ファイルの、ファイルシステムノード上でのパス名を表示する</p>
+<p>gfspoolpath — Gfarm ファイルの，ファイルシステムノード上でのパス名を表示する</p>
 </div>
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfspoolpath</code>  [<em class="replaceable"><code>path</code></em>...]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfspoolpath</code>  [-s <em class="replaceable"><code>スプール・ディレクトリ</code></em>] [<em class="replaceable"><code>path</code></em>...]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfspoolpath</code>  [-I] [<em class="replaceable"><code>inode番号:世代番号</code></em>...]</p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>指定したファイルに対応する，ファイルシステムノードでの
 実体ファイルのパス名を，gfsd のスプール・ディレクトリのトップからの
 相対パスで表示します．</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-I</code></span></dt>
+<dd><p>
+このオプションが指定された場合，引数には
+コロン (:) で区切られたinode番号と世代番号を指定します．
+</p></dd>
+<dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>スプール・ディレクトリ</code></em></span></dt>
+<dd><p>
+gfsd のスプール・ディレクトリにアクセスできる権限で，
+<code class="option">-I</code> オプションなしで起動した場合，
+gfspoolpath は，メタデータ中のファイルサイズとスプールの実体ファイルサイズが
+等しいかどうか検査し，異なる場合は警告を表示します．
+このオプションでは、この時のスプール・ディレクトリのパス名を指定します．
+省略した場合は /var/gfarm-spool が仮定されます．
+スプールにアクセスできない場合はこの検査は単に省略されます．
+</p></dd>
+</dl></div>
 </div>
 <div class="refsect1" title="BUGS">
 <a name="bugs"></a><h2>BUGS</h2>

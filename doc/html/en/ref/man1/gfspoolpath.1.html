@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfspoolpath</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfspoolpath">
 <a name="gfspoolpath.1"></a><div class="titlepage"></div>
@@ -12,7 +12,8 @@
 </div>
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfspoolpath</code>  [<em class="replaceable"><code>path</code></em>...]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfspoolpath</code>  [-s <em class="replaceable"><code>spool_directory</code></em>] [<em class="replaceable"><code>path</code></em>...]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfspoolpath</code>  [-I] [<em class="replaceable"><code>inode_number:generation_number</code></em>...]</p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
@@ -21,6 +22,27 @@ This command displays a pathname of a concrete file on a filesystem node,
 which is corresponding to a Gfarm file specified in the command argument.
 The pathname is relative to the top directory of a spool directory of gfsd.
 </p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-I</code></span></dt>
+<dd><p>
+If this option is specified, inode_numbers and generation_numbers
+which are separated by colon (:) are expected as arguments.
+</p></dd>
+<dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>spool_directory</code></em></span></dt>
+<dd><p>
+If this command is invoked with a privilege which can access gfsd
+spool directory, and if <code class="option">-I</code> is not specified,
+the gfspoolpath command will check whether the file size of metadata and
+the size of the concrete file are same or not, and displays warning
+when they are different.
+This option specifies the pathname of the gfsd spool directory for the check.
+If this option is not specified, /var/gfarm-spool is assumed.
+If there isn't enough privilege, this check is simply skipped.
+</p></dd>
+</dl></div>
 </div>
 <div class="refsect1" title="BUGS">
 <a name="bugs"></a><h2>BUGS</h2>

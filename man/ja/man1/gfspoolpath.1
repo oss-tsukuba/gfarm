@@ -1,22 +1,13 @@
 '\" t
 .\"     Title: gfspoolpath
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 17 Oct 2011
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 16 Feb 2016
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSPOOLPATH" "1" "17 Oct 2011" "Gfarm" "Gfarm"
-.\" -----------------------------------------------------------------
-.\" * Define some portability stuff
-.\" -----------------------------------------------------------------
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.\" http://bugs.debian.org/507673
-.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.ie \n(.g .ds Aq \(aq
-.el       .ds Aq '
+.TH "GFSPOOLPATH" "1" "16 Feb 2016" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -28,13 +19,28 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-gfspoolpath \- Gfarm ファイルの、ファイルシステムノード上でのパス名を表示する
+gfspoolpath \- Gfarm ファイルの，ファイルシステムノード上でのパス名を表示する
 .SH "SYNOPSIS"
 .HP \w'\fBgfspoolpath\fR\ 'u
-\fBgfspoolpath\fR [\fIpath\fR...]
+\fBgfspoolpath\fR [\-s\ \fIスプール・ディレクトリ\fR] [\fIpath\fR...]
+.HP \w'\fBgfspoolpath\fR\ 'u
+\fBgfspoolpath\fR [\-I] [\fIinode番号:世代番号\fR...]
 .SH "DESCRIPTION"
 .PP
 指定したファイルに対応する，ファイルシステムノードでの 実体ファイルのパス名を，gfsd のスプール・ディレクトリのトップからの 相対パスで表示します．
+.SH "OPTIONS"
+.PP
+\fB\-I\fR
+.RS 4
+このオプションが指定された場合，引数には コロン (:) で区切られたinode番号と世代番号を指定します．
+.RE
+.PP
+\fB\-s\fR \fIスプール・ディレクトリ\fR
+.RS 4
+gfsd のスプール・ディレクトリにアクセスできる権限で，
+\fB\-I\fR
+オプションなしで起動した場合， gfspoolpath は，メタデータ中のファイルサイズとスプールの実体ファイルサイズが 等しいかどうか検査し，異なる場合は警告を表示します． このオプションでは、この時のスプール・ディレクトリのパス名を指定します． 省略した場合は /var/gfarm\-spool が仮定されます． スプールにアクセスできない場合はこの検査は単に省略されます．
+.RE
 .SH "BUGS"
 .PP
 ディレクトリを指定した場合もエラーとなりません．
