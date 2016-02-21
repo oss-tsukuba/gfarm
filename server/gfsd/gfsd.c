@@ -2623,7 +2623,12 @@ replica_lost_move_to_lost_found(gfarm_ino_t ino, gfarm_uint64_t gen,
 		if ((e = connect_gfm_server(diag)) != GFARM_ERR_NO_ERROR)
 			fatal(GFARM_MSG_1004386, "die");
 	}
-	if (e != GFARM_ERR_NO_ERROR) {
+	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "%lld:%lld: possible race to move lost+found",
+		    (long long)ino, (long long)gen);
+		return;
+	} else if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1004217,
 		    "%lld:%lld: corrupted replica remains: %s",
 		    (long long)ino, (long long)gen,
