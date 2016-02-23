@@ -2542,7 +2542,6 @@ update_file_entry_for_close(struct gfp_xdr *client,
 	gfarm_int32_t fd, gfarm_int32_t close_flags, const char *diag)
 {
 	struct stat st;
-	int stat_is_done = 0;
 	unsigned long atimensec, mtimensec;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
 	struct file_entry *fe;
@@ -2561,12 +2560,12 @@ update_file_entry_for_close(struct gfp_xdr *client,
 		    "fd %d: stat failed at close: %s",
 		    fd, strerror(errno));
 	} else {
-		stat_is_done = 1;
 		atimensec = gfarm_stat_atime_nsec(&st);
 		if (st.st_atime != fe->atime || atimensec != fe->atimensec)
 			file_entry_set_atime(fe, st.st_atime, atimensec);
 		/* another process might write this file */
-		if ((fe->flags & FILE_FLAG_WRITABLE) != 0) {
+		if ((fe->flags & FILE_FLAG_WRITABLE) != 0 ||
+		    (fe->flags & FILE_FLAG_WRITTEN) != 0) {
 			mtimensec = gfarm_stat_mtime_nsec(&st);
 			if (st.st_mtime != fe->mtime ||
 			    mtimensec != fe->mtimensec)
@@ -2574,17 +2573,8 @@ update_file_entry_for_close(struct gfp_xdr *client,
 				    st.st_mtime, mtimensec);
 			if (st.st_size != fe->size)
 				file_entry_set_size(fe, st.st_size);
-			/* XXX FIXME this may be caused by others */
+			/* NOTE: this may be caused by others */
 		}
-	}
-	if ((fe->flags & FILE_FLAG_WRITTEN) != 0 && !stat_is_done) {
-		if (fstat(fe->local_fd, &st) == -1) {
-			e = gfarm_errno_to_error(errno);
-			gflog_warning(GFARM_MSG_1000485,
-			    "fd %d: stat failed at close: %s",
-			    fd, strerror(errno));
-		} else
-			fe->size = st.st_size;
 	}
 	if ((fe->flags & (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
 	    FILE_FLAG_DIGEST_CALC && fe->md_offset == fe->size) {
