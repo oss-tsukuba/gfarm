@@ -20,7 +20,6 @@ export CC=gcc
 CLIENT_PKG = gfarm-client
 GFRONT_PKG = gfarm-gfront
 DOC_PKG = gfarm-doc
-GFPTOOL_PKG = gfarm-gfptool
 GFMD_PKG = gfmd
 GFSD_PKG=gfsd
 DEV_PKG = libgfarm-dev
@@ -28,7 +27,6 @@ LIBS_PKG = libgfarm
 AGENT_PKG = gfarm-agent
 
 CLIENT_GSI_PKG = gfarm-gsi-client
-GFPTOOL_GSI_PKG = gfarm-gsi-gfptool
 GFMD_GSI_PKG = gfmd-gsi
 GFSD_GSI_PKG=gfsd-gsi
 DEV_GSI_PKG = libgfarm-gsi-dev
@@ -88,7 +86,6 @@ endif
 
 ifeq ($(globus), yes)
 	ln -s $(CLIENT_PKG).install  debian/$(CLIENT_GSI_PKG).install
-	ln -s $(GFPTOOL_PKG).install  debian/$(GFPTOOL_GSI_PKG).install
 	ln -s $(GFMD_PKG).install  debian/$(GFMD_GSI_PKG).install
 	ln -s $(GFSD_PKG).install  debian/$(GFSD_GSI_PKG).install
 	ln -s $(DEV_PKG).install  debian/$(DEV_GSI_PKG).install
@@ -106,7 +103,6 @@ ifeq ($(globus), yes)
 	ln -s $(GFSD_PKG).conffiles  debian/$(GFSD_GSI_PKG).conffiles
 
 	ln -s $(CLIENT_PKG).manpages debian/$(CLIENT_GSI_PKG).manpages
-	ln -s $(GFPTOOL_PKG).manpages debian/$(GFPTOOL_GSI_PKG).manpages
 	ln -s $(GFMD_PKG).manpages debian/$(GFMD_GSI_PKG).manpages
 	ln -s $(GFSD_PKG).manpages debian/$(GFSD_GSI_PKG).manpages
 	ln -s $(DEV_PKG).manpages debian/$(DEV_GSI_PKG).manpages
@@ -142,7 +138,6 @@ clean:
 	-rm -f debian/$(GFSD_PKG).docs
 
 	rm -f debian/$(CLIENT_GSI_PKG).install
-	rm -f debian/$(GFPTOOL_GSI_PKG).install
 	rm -f debian/$(GFMD_GSI_PKG).install
 	rm -f debian/$(GFSD_GSI_PKG).install
 	rm -f debian/$(DEV_GSI_PKG).install
@@ -159,7 +154,6 @@ clean:
 	rm -f debian/$(GFSD_GSI_PKG).conffiles
 
 	rm -f debian/$(CLIENT_GSI_PKG).manpages
-	rm -f debian/$(GFPTOOL_GSI_PKG).manpages
 	rm -f debian/$(GFMD_GSI_PKG).manpages
 	rm -f debian/$(GFSD_GSI_PKG).manpages
 	rm -f debian/$(DEV_GSI_PKG).manpages
@@ -212,7 +206,6 @@ endif
 ifeq ($(non-globus),yes)
 	dh_install -p$(CLIENT_PKG)
 	dh_install -p$(DOC_PKG)
-	dh_install -p$(GFPTOOL_PKG)
 	dh_install -p$(GFMD_PKG)
 	dh_install -p$(GFSD_PKG)
 	dh_install -p$(DEV_PKG)
@@ -227,7 +220,6 @@ endif
 
 ifeq ($(globus),yes)
 	dh_install -p$(CLIENT_GSI_PKG)
-	dh_install -p$(GFPTOOL_GSI_PKG)
 	dh_install -p$(GFMD_GSI_PKG)
 	dh_install -p$(GFSD_GSI_PKG)
 	dh_install -p$(DEV_GSI_PKG)
@@ -298,7 +290,7 @@ endif
 	dh_installchangelogs
 ifeq ($(globus_static),yes)
    ifeq ($(non-globus),yes)
-	for pkg in $(CLIENT_PKG) $(GFPTOOL_PKG) $(GFMD_PKG) $(GFSD_PKG) $(DEV_PKG) $(LIBS_PKG) $(AGENT_PKG); do \
+	for pkg in $(CLIENT_PKG) $(GFMD_PKG) $(GFSD_PKG) $(DEV_PKG) $(LIBS_PKG) $(AGENT_PKG); do \
           dh_strip -p$$pkg; \
 	done
    endif
@@ -320,11 +312,11 @@ ifeq ($(build_both),yes)
 	dh_builddeb
 else
    ifeq ($(non-globus),yes)
-	for pkg in $(CLIENT_PKG) $(GFPTOOL_PKG) $(GFMD_PKG) $(GFSD_PKG) $(DEV_PKG) $(LIBS_PKG) $(AGENT_PKG); do \
+	for pkg in $(CLIENT_PKG) $(GFMD_PKG) $(GFSD_PKG) $(DEV_PKG) $(LIBS_PKG) $(AGENT_PKG); do \
           dh_builddeb -p$$pkg; \
 	done
    else
-	for pkg in $(CLIENT_GSI_PKG) $(GFPTOOL_GSI_PKG) $(GFMD_GSI_PKG) $(GFSD_GSI_PKG) $(DEV_GSI_PKG) $(LIBS_GSI_PKG); do \
+	for pkg in $(CLIENT_GSI_PKG) $(GFMD_GSI_PKG) $(GFSD_GSI_PKG) $(DEV_GSI_PKG) $(LIBS_GSI_PKG); do \
           dh_builddeb -p$$pkg; \
 	done
    endif

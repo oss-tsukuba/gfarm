@@ -49,9 +49,6 @@
 		gfarm 関係の各種コマンド
 		詳しくは man1, man8 参照
 
-	gfptools/ → ${prefix}/bin/*
-		gfarm スプール (gfarm:...) にインストールされるバイナリ
-
 	bench/ → ${prefix}/bin/* (デフォールトでは生成しない)
 		gfarm で利用しているベンチマーク・プログラム
 

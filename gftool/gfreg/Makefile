@@ -16,7 +16,7 @@ DEPLIBS = $(DEPGFARMLIB)
 
 all: $(PROGRAM)
 
-include $(top_srcdir)/makes/gfptool.mk
+include $(top_srcdir)/makes/prog.mk
 
 ###
 

@@ -1265,7 +1265,6 @@ AC_SUBST(optional_targets)
 # The following is for --srcdir option.
 # AC_OUTPUT() assumes that parent directory of the Makefile exists
 test -d include || mkdir include
-test -d gfptool || mkdir gfptool
 test -d package || mkdir package
 test -d util || mkdir util
 
