@@ -232,6 +232,7 @@ gfarm_terminate(void)
 main()
 {
 	gfarm_error_t e;
+	int i;
 
 	e = gfarm_set_local_user_for_this_local_account();
 	if (e) {
@@ -245,7 +246,11 @@ main()
 		fprintf(stderr, "gfarm_config_read(): %s\n", e);
 		exit(1);
 	}
-	printf("gfarm_spool_root = <%s>\n", gfarm_spool_root);
+	for (i = 0; i < GFARM_SPOOL_ROOT_NUM; ++i) {
+		if (gfarm_spool_root[i] == NULL)
+			break;
+		printf("gfarm_spool_root = <%s>\n", gfarm_spool_root[i]);
+	}
 	printf("gfarm_spool_server_port = <%d>\n", gfarm_spool_server_port);
 	printf("gfarm_metadb_server_name = <%s>\n", gfarm_metadb_server_name);
 	printf("gfarm_metadb_server_port = <%d>\n", gfarm_metadb_server_name);

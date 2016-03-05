@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
@@ -155,7 +156,9 @@ struct gfm_connection *gfm_server;
 char *canonical_self_name;
 char *username; /* gfarm global user name */
 
-int gfarm_spool_root_len;
+int gfarm_spool_root_len[GFARM_SPOOL_ROOT_NUM];
+int gfarm_spool_root_num;
+static int gfarm_spool_root_len_max;
 
 struct gfp_xdr *credential_exported = NULL;
 
@@ -1734,20 +1737,64 @@ gfs_open_flags_localize(int open_flags)
 	return (local_flags);
 }
 
+static int
+is_readonly_mode(int i)
+{
+	struct stat st;
+	int length;
+	static char **p = NULL;
+	static const char diag[] = "is_readonly_mode";
+
+	if (i < 0 || i >= gfarm_spool_root_num)
+		fatal(GFARM_MSG_UNFIXED, "%s: internal error: %d / %d", diag,
+		    i, gfarm_spool_root_num);
+	if (p == NULL) {
+		GFARM_CALLOC_ARRAY(p, gfarm_spool_root_num);
+		if (p == NULL)
+			fatal(GFARM_MSG_UNFIXED, "%s: no memory for %d bytes",
+			    diag, gfarm_spool_root_num);
+	}
+	if (p[i] == NULL) {
+		length = gfarm_spool_root_len[i] + 1 +
+			sizeof(READONLY_CONFIG_FILE);
+		GFARM_MALLOC_ARRAY(p[i], length);
+		if (p[i] == NULL)
+			fatal(GFARM_MSG_1000503, "%s: no memory for %d bytes",
+			    diag, length);
+		snprintf(p[i], length, "%s/%s", gfarm_spool_root[i],
+			 READONLY_CONFIG_FILE);
+	}
+	return (stat(p[i], &st) == 0);
+}
+
 char *
 gfsd_make_path(const char *relpath, const char *diag)
 {
 	/* gfarm_spool_root + "/" + relpath + "\0" */
-	size_t length = gfarm_spool_root_len + 1 + strlen(relpath) + 1;
+	size_t length = gfarm_spool_root_len[0] + 1 + strlen(relpath) + 1;
 	char *p;
 
 	GFARM_MALLOC_ARRAY(p, length);
 	if (p == NULL) {
 		fatal(GFARM_MSG_1004385, "%s: no memory for %s/%s (%zd bytes)",
-		      diag, gfarm_spool_root, relpath, length);
+		      diag, gfarm_spool_root[0], relpath, length);
 	}
-	snprintf(p, length, "%s/%s", gfarm_spool_root, relpath);
+	snprintf(p, length, "%s/%s", gfarm_spool_root[0], relpath);
 	return (p);
+}
+
+const char *
+gfsd_skip_spool_root(const char *path)
+{
+	int i, len;
+
+	for (i = 0; i < gfarm_spool_root_num; ++i) {
+		len = strlen(gfarm_spool_root[i]);
+		if (strncmp(gfarm_spool_root[i], path, len) == 0 &&
+		    path[len] == '/')
+			return (path + len + 1);
+	}
+	return (path);
 }
 
 /*
@@ -1765,32 +1812,93 @@ gfsd_make_path(const char *relpath, const char *diag)
  */
 
 void
-gfsd_local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
-	char **pathp)
+gfsd_local_path2(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
+	char **pathp, gfarm_ino_t inum2, gfarm_uint64_t gen2,
+	const char *diag2, char **pathp2)
 {
-	char *p;
+	char *p, *p2;
 	static int length = 0;
 	static char template[] = "/data/00112233/44/55/66/778899AABBCCDDEEFF";
+	static char template2[] = "/data/00112233/44/55/66/778899AABBCCDDEEFF";
+	static char format[] = "/data/%08X/%02X/%02X/%02X/%02X%08X%08X";
+	int i, max_i = 0;
+	struct statvfs fsb;
+	struct stat sb;
+	unsigned long long max_avail = 0, avail;
 #define DIRLEVEL 5 /* there are 5 levels of directories in template[] */
 
 	if (length == 0)
-		length = gfarm_spool_root_len + sizeof(template);
+		length = gfarm_spool_root_len_max + sizeof(template);
+
+	snprintf(template, sizeof(template), format,
+	    (unsigned int)((inum >> 32) & 0xffffffff),
+	    (unsigned int)((inum >> 24) & 0xff),
+	    (unsigned int)((inum >> 16) & 0xff),
+	    (unsigned int)((inum >>  8) & 0xff),
+	    (unsigned int)(inum         & 0xff),
+	    (unsigned int)((gen  >> 32) & 0xffffffff),
+	    (unsigned int)(gen          & 0xffffffff));
 
 	GFARM_MALLOC_ARRAY(p, length);
 	if (p == NULL) {
 		fatal(GFARM_MSG_1000464, "%s: no memory for %d bytes",
 			diag, length);
 	}
-	snprintf(p, length, "%s/data/%08X/%02X/%02X/%02X/%02X%08X%08X",
-	    gfarm_spool_root,
-	    (unsigned int)((inum >> 32) & 0xffffffff),
-	    (unsigned int)((inum >> 24) & 0xff),
-	    (unsigned int)((inum >> 16) & 0xff),
-	    (unsigned int)((inum >>  8) & 0xff),
-	    (unsigned int)( inum        & 0xff),
-	    (unsigned int)((gen  >> 32) & 0xffffffff),
-	    (unsigned int)( gen         & 0xffffffff));
+	for (i = 0; i < gfarm_spool_root_num; ++i) {
+		char *r = gfarm_spool_root[i];
+
+		if (r == NULL)
+			break;
+		snprintf(p, length, "%s%s", r, template);
+		if (stat(p, &sb) == 0) {
+			max_i = i;
+			break;
+		}
+		if (gfarm_spool_root_num == 1)
+			break;
+		if (statvfs(r, &fsb))
+			gflog_fatal_errno(GFARM_MSG_UNFIXED, "%d %s", i, r);
+		if (is_readonly_mode(i)) {
+			/* pretend to be disk full to make gfsd read-only */
+			fsb.f_bavail = fsb.f_bfree = 0;
+		}
+		avail = fsb.f_bsize * fsb.f_bavail;
+		if (max_avail < avail) {
+			max_avail = avail;
+			max_i = i;
+		}
+	}
+	if (gfarm_spool_root_num > 1 && i == gfarm_spool_root_num &&
+		max_i != i - 1)
+		snprintf(p, length, "%s%s", gfarm_spool_root[max_i], template);
 	*pathp = p;
+
+	if (inum2 != 0) {
+		snprintf(template2, sizeof(template2), format,
+		    (unsigned int)((inum2 >> 32) & 0xffffffff),
+		    (unsigned int)((inum2 >> 24) & 0xff),
+		    (unsigned int)((inum2 >> 16) & 0xff),
+		    (unsigned int)((inum2 >>  8) & 0xff),
+		    (unsigned int)(inum2         & 0xff),
+		    (unsigned int)((gen2  >> 32) & 0xffffffff),
+		    (unsigned int)(gen2          & 0xffffffff));
+
+		GFARM_MALLOC_ARRAY(p2, length);
+		if (p2 == NULL) {
+			fatal(GFARM_MSG_UNFIXED, "%s: no memory for %d bytes",
+				diag2, length);
+		}
+		snprintf(p2, length, "%s%s", gfarm_spool_root[max_i],
+		    template2);
+		*pathp2 = p2;
+	}
+}
+
+void
+gfsd_local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
+	char **pathp)
+{
+	gfsd_local_path2(inum, gen, diag, pathp, 0, 0, NULL, NULL);
 }
 
 /* with errno */
@@ -2302,8 +2410,8 @@ update_local_file_generation(struct file_entry *fe, gfarm_int64_t old_gen,
 	char *old, *new;
 	struct stat old_st, new_st;
 
-	gfsd_local_path(fe->ino, old_gen, "close_write: old", &old);
-	gfsd_local_path(fe->ino, new_gen, "close_write: new", &new);
+	gfsd_local_path2(fe->ino, old_gen, "close_write: old", &old,
+	    fe->ino, new_gen, "close_write: new", &new);
 	if (rename(old, new) == -1) {
 		save_errno = errno;
 		gflog_error(GFARM_MSG_1004130,
@@ -3486,25 +3594,61 @@ gfs_server_cksum(struct gfp_xdr *client)
 	gfs_server_put_reply(client, "cksum", e, "b", len, cksum);
 }
 
-static int
-is_readonly_mode(void)
+static void
+statfs_all(gfarm_int32_t *bsizep,
+	gfarm_off_t *blocksp, gfarm_off_t *bfreep, gfarm_off_t *bavailp,
+	gfarm_off_t *filesp, gfarm_off_t *ffreep, gfarm_off_t *favailp,
+	int *readonlyp)
 {
-	struct stat st;
-	int length;
-	static char *p = NULL;
-	static const char diag[] = "is_readonly_mode";
+	int i, err;
+	gfarm_int32_t bsize, bsize_t = 0;
+	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
+	gfarm_off_t blocks_t, bfree_t, bavail_t, files_t, ffree_t, favail_t;
+	int readonly = 1, ronly;
+	float brel;
 
-	if (p == NULL) {
-		length = gfarm_spool_root_len + 1 +
-			sizeof(READONLY_CONFIG_FILE);
-		GFARM_MALLOC_ARRAY(p, length);
-		if (p == NULL)
-			fatal(GFARM_MSG_1000503, "%s: no memory for %d bytes",
-			    diag, length);
-		snprintf(p, length, "%s/%s", gfarm_spool_root,
-			 READONLY_CONFIG_FILE);
+	blocks_t = bfree_t = bavail_t = files_t = ffree_t = favail_t = 0;
+
+	for (i = 0; i < gfarm_spool_root_num; ++i) {
+		if (gfarm_spool_root[i] == NULL)
+			break;
+		err = gfsd_statfs(gfarm_spool_root[i], &bsize,
+		    &blocks, &bfree, &bavail, &files, &ffree, &favail, &ronly);
+		if (err)
+			gflog_fatal_errno(GFARM_MSG_UNFIXED, "statfs");
+		if (ronly)
+			gflog_error(GFARM_MSG_1003715,
+			    "%s: read only file system", gfarm_spool_root[i]);
+		if (ronly || is_readonly_mode(i)) {
+			/* pretend to be disk full to make gfsd read-only */
+			bavail = bfree = 0;
+		}
+		if (i == 0)
+			bsize_t = bsize;
+		if (bsize_t == bsize) {
+			blocks_t += blocks;
+			bfree_t += bfree;
+			bavail_t += bavail;
+		} else {
+			brel = (float)bsize_t / bsize;
+			blocks_t += brel * blocks;
+			bfree_t += brel * bfree;
+			bavail_t += brel * bavail;
+		}
+		files_t += files;
+		ffree_t += ffree;
+		favail_t += favail;
+		if (ronly == 0)
+			readonly = 0;
 	}
-	return (stat(p, &st) == 0);
+	*bsizep = bsize_t;
+	*blocksp = blocks_t;
+	*bfreep = bfree_t;
+	*bavailp = bavail_t;
+	*filesp = files_t;
+	*ffreep = ffree_t;
+	*favailp = favail_t;
+	*readonlyp = readonly;
 }
 
 void
@@ -3521,25 +3665,10 @@ gfs_server_statfs(struct gfp_xdr *client)
 	 * this code is kept for backward compatibility reason.
 	 */
 	gfs_server_get_request(client, "statfs", "s", &dir);
-
-	save_errno = gfsd_statfs(gfarm_spool_root, &bsize,
-	    &blocks, &bfree, &bavail,
-	    &files, &ffree, &favail,
-	    &readonly);
 	free(dir);
 
-	if (save_errno == 0) {
-		if (readonly)
-			gflog_error(GFARM_MSG_1003715,
-			    "%s: read only file system", gfarm_spool_root);
-		if (readonly || is_readonly_mode()) {
-			/* pretend to be disk full to make gfsd read-only */
-			bavail -= bfree;
-			bfree = 0;
-		}
-	} else
-		gflog_error(GFARM_MSG_1004218,
-		    "gfsd_statfs: %s", strerror(save_errno));
+	statfs_all(&bsize, &blocks, &bfree, &bavail, &files, &ffree, &favail,
+	    &readonly);
 
 	gfs_server_put_reply_with_errno(client, "statfs", save_errno,
 	    "illllll", bsize, blocks, bfree, bavail, files, ffree, favail);
@@ -4097,21 +4226,10 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 		gflog_warning(GFARM_MSG_1000520,
 		    "%s: cannot get load average", diag);
 	} else {
-		save_errno = gfsd_statfs(gfarm_spool_root, &bsize, &blocks,
-		    &bfree, &bavail, &files, &ffree, &favail, &readonly);
-
-		if (save_errno == 0) {
-			if (readonly)
-				gflog_error(GFARM_MSG_1003716, "%s: "
-				    "read only file system", gfarm_spool_root);
-			/* pretend to be disk full to make gfsd read-only */
-			if (readonly || is_readonly_mode()) {
-				bavail -= bfree;
-				bfree = 0;
-			}
-			used = (blocks - bfree) * bsize / 1024;
-			avail = bavail * bsize / 1024;
-		}
+		statfs_all(&bsize, &blocks, &bfree, &bavail, &files, &ffree,
+		    &favail, &readonly);
+		used = (blocks - bfree) * bsize / 1024;
+		avail = bavail * bsize / 1024;
 	}
 	/* add base load */
 	loadavg[0] += gfarm_spool_base_load;
@@ -6176,10 +6294,10 @@ main(int argc, char **argv)
 			listen_addrname = optarg;
 			break;
 		case 'r':
-			gfarm_spool_root = strdup(optarg);
-			if (gfarm_spool_root == NULL)
+			e = parse_set_spool_root(optarg);
+			if (e != GFARM_ERR_NO_ERROR)
 				gflog_fatal(GFARM_MSG_1000586, "%s",
-				    gfarm_error_string(GFARM_ERR_NO_MEMORY));
+				    gfarm_error_string(e));
 			break;
 		case 's':
 			syslog_facility =
@@ -6226,7 +6344,20 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	gfarm_spool_root_len = strlen(gfarm_spool_root);
+	for (i = 0; i < GFARM_SPOOL_ROOT_NUM; ++i) {
+		int s;
+
+		if (gfarm_spool_root[i] == NULL) {
+			gfarm_spool_root_num = i;
+			break;
+		}
+		s = strlen(gfarm_spool_root[i]);
+		gfarm_spool_root_len[i] = s;
+		if (gfarm_spool_root_len_max < s)
+			gfarm_spool_root_len_max = s;
+	}
+	if (gfarm_spool_root_num == 0)
+		gflog_fatal(GFARM_MSG_UNFIXED, "no spool directory");
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);
 
@@ -6258,12 +6389,17 @@ main(int argc, char **argv)
 	free(local_gfsd_user);
 
 	/* sanity check on a spool directory */
-	if (stat(gfarm_spool_root, &sb) == -1)
-		gflog_fatal_errno(GFARM_MSG_1000588, "%s", gfarm_spool_root);
-	else if (!S_ISDIR(sb.st_mode))
-		gflog_fatal(GFARM_MSG_1000589, "%s: %s", gfarm_spool_root,
-		    gfarm_error_string(GFARM_ERR_NOT_A_DIRECTORY));
-
+	for (i = 0; i < gfarm_spool_root_num; ++i) {
+		if (gfarm_spool_root[i] == NULL)
+			break;
+		if (stat(gfarm_spool_root[i], &sb) == -1)
+			gflog_fatal_errno(GFARM_MSG_1000588, "%s",
+			    gfarm_spool_root[i]);
+		else if (!S_ISDIR(sb.st_mode))
+			gflog_fatal(GFARM_MSG_1000589, "%s: %s",
+			    gfarm_spool_root[i],
+			    gfarm_error_string(GFARM_ERR_NOT_A_DIRECTORY));
+	}
 	if (pid_file != NULL) {
 		/*
 		 * We do this before calling gfarm_daemon()
@@ -6455,17 +6591,17 @@ main(int argc, char **argv)
 			    (long)gfsd_uid, strerror(save_errno));
 	}
 
-	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
-	/* XXX - kluge for GFS_PROTO_STATFS for now */
-	if (chdir(gfarm_spool_root) == -1)
-		gflog_fatal_errno(GFARM_MSG_1000598, "chdir(%s)",
-		    gfarm_spool_root);
-
 	/* call before spool check to get ringbuf from spool_check (not-yet) */
 	write_verify_state_init();
 
 	/* spool check */
 	gfsd_spool_check(); /* should be after write_verify_state_init() */
+
+	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
+	/* XXX - kluge for GFS_PROTO_STATFS for now */
+	if (chdir(gfarm_spool_root[0]) == -1)
+		gflog_fatal_errno(GFARM_MSG_1000598, "chdir(%s)",
+		    gfarm_spool_root[0]);
 
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).

@@ -495,7 +495,8 @@ check_existing(
 	gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 {
 	gfarm_error_t e;
-	char *path, *file;
+	char *path;
+	const char *file;
 	struct stat st;
 	int save_errno, lost = 0;
 	gfarm_ino_t inum2;
@@ -507,7 +508,7 @@ check_existing(
 	 * all replica-references are deleted....
 	 */
 	gfsd_local_path(inum, gen, "compare_file", &path);
-	file = path + gfarm_spool_root_len + 1;
+	file = gfsd_skip_spool_root(path);
 	get_inum_gen(file, &inum2, &gen2);
 	if (inum != inum2 || gen != gen2)
 		fatal(GFARM_MSG_1003533,
@@ -609,6 +610,7 @@ void
 gfsd_spool_check()
 {
 	struct gfarm_hash_table *hash_ok; /* valid files */
+	int i;
 
 	gflog_debug(GFARM_MSG_1003680, "spool_check_level=%s",
 	    gfarm_spool_check_level_get_by_name());
@@ -629,7 +631,14 @@ gfsd_spool_check()
 	default:
 		return;
 	}
-	(void)check_spool("data", hash_ok);
+	for (i = 0; i < gfarm_spool_root_num; ++i) {
+		if (gfarm_spool_root[i] == NULL)
+			break;
+		if (chdir(gfarm_spool_root[i]) == -1)
+			gflog_fatal_errno(GFARM_MSG_UNFIXED, "chdir(%s)",
+			    gfarm_spool_root[i]);
+		(void)check_spool("data", hash_ok);
+	}
 	if (hash_ok)
 		gfarm_hash_table_free(hash_ok);
 }

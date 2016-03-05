@@ -21,15 +21,6 @@
 #include "config.h"
 #include "config_openssl.h"
 
-static void
-gfarm_config_set_default_spool_on_server(void)
-{
-	if (gfarm_spool_root == NULL) {
-		/* XXX - this case is not recommended. */
-		gfarm_spool_root = GFARM_SPOOL_ROOT;
-	}
-}
-
 /* the following function is for server. */
 gfarm_error_t
 gfarm_server_config_read(void)
@@ -86,8 +77,6 @@ gfarm_server_initialize(char *config_file, int *argcp, char ***argvp)
 	}
 
 	gfarm_setup_debug_command();
-
-	gfarm_config_set_default_spool_on_server();
 
 	return (GFARM_ERR_NO_ERROR);
 }

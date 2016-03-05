@@ -3,7 +3,8 @@
 extern int debug_mode;
 extern struct gfm_connection *gfm_server;
 extern const char READONLY_CONFIG_FILE[];
-extern int gfarm_spool_root_len;
+extern int gfarm_spool_root_len[];
+extern int gfarm_spool_root_num;
 extern char *canonical_self_name;
 
 #ifndef HAVE_GETLOADAVG
@@ -44,6 +45,7 @@ void free_gfm_server(void);
 pid_t do_fork(enum gfsd_type);
 int open_data(char *, int);
 char *gfsd_make_path(const char *, const char *);
+const char *gfsd_skip_spool_root(const char *);
 void gfsd_local_path(gfarm_ino_t, gfarm_uint64_t, const char *, char **);
 int gfsd_create_ancestor_dir(char *);
 gfarm_error_t gfsd_copy_file(int, char *);

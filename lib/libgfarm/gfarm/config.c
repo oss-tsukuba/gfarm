@@ -910,7 +910,7 @@ gfarm_set_local_user_for_this_uid(uid_t uid)
 int gfarm_spool_server_listen_backlog = GFARM_CONFIG_MISC_DEFAULT;
 char *gfarm_spool_server_listen_address = NULL;
 int gfarm_spool_server_back_channel_rcvbuf_limit = GFARM_CONFIG_MISC_DEFAULT;
-char *gfarm_spool_root = NULL;
+char *gfarm_spool_root[GFARM_SPOOL_ROOT_NUM];
 static struct {
 	enum gfarm_spool_check_level level;
 	const char *name;
@@ -1065,7 +1065,6 @@ gfarm_config_clear(void)
 {
 	static char **vars[] = {
 		&gfarm_spool_server_listen_address,
-		&gfarm_spool_root,
 		&gfarm_ldap_server_name,
 		&gfarm_ldap_server_port,
 		&gfarm_ldap_base_dn,
@@ -1092,7 +1091,10 @@ gfarm_config_clear(void)
 			*vars[i] = NULL;
 		}
 	}
-
+	for (i = 0; i < GFARM_SPOOL_ROOT_NUM; i++) {
+		free(gfarm_spool_root[i]);
+		gfarm_spool_root[i] = NULL;
+	}
 #if 0 /* XXX */
 	config_read = gfarm_config_not_read;
 #endif
@@ -2087,6 +2089,46 @@ parse_set_var(char *p, char **rv)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+gfarm_error_t
+parse_set_spool_root(char *p)
+{
+	gfarm_error_t e;
+	char *s;
+	int i, len1, len2;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"get_one_argument failed "
+			"when parsing var (%s): %s",
+			p, gfarm_error_string(e));
+		return (e);
+	}
+	for (i = 0; i < GFARM_SPOOL_ROOT_NUM; ++i) {
+		if (gfarm_spool_root[i] != NULL) {
+			len1 = strlen(gfarm_spool_root[i]);
+			len2 = strlen(s);
+			if (len1 > len2)
+				len1 = len2;
+			if (strncmp(gfarm_spool_root[i], s, len1) == 0)
+				break;
+		} else {
+			gfarm_spool_root[i] = strdup(s);
+			if (gfarm_spool_root[i] == NULL) {
+				gflog_error(GFARM_MSG_UNFIXED, "no memory");
+				return (GFARM_ERR_NO_MEMORY);
+			}
+			len1 = strlen(gfarm_spool_root[i]) - 1;
+			while (len1 >= 0 && gfarm_spool_root[i][len1] == '/')
+				gfarm_spool_root[i][len1--] = '\0';
+			break;
+		}
+	}
+	if (i == GFARM_SPOOL_ROOT_NUM)
+		gflog_fatal(GFARM_MSG_UNFIXED, "too many spool directories");
+	return (GFARM_ERR_NO_ERROR);
+}
+
 static gfarm_error_t
 parse_set_misc_int(char *p, int *vp)
 {
@@ -2838,7 +2880,7 @@ parse_one_line(char *s, char *p, char **op)
 	char *o;
 
 	if (strcmp(s, o = "spool") == 0) {
-		e = parse_set_var(p, &gfarm_spool_root);
+		e = parse_set_spool_root(p);
 	} else if (strcmp(s, o = "spool_server_listen_address") == 0) {
 		e = parse_set_var(p, &gfarm_spool_server_listen_address);
 	} else if (strcmp(s, o = "spool_server_listen_backlog") == 0) {
