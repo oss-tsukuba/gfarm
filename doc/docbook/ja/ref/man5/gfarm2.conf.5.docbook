@@ -121,6 +121,7 @@ IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワ
 <listitem>
 <para>gfsdが、gfarmファイルの実体を保持するディレクトリ名を
 指定します。
+複数回（最大5回まで）指定することで複数のディレクトリを指定可能です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">

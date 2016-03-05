@@ -102,7 +102,8 @@ from 0 to 31 separated by "/".</para>
 <term><token>spool</token> <parameter moreinfo="none">directory</parameter></term>
 <listitem>
 <para>The <token>spool</token> statement specifies a spool directory
-for a Gfarm filesystem on this filesystem node.</para>
+for a Gfarm filesystem on this filesystem node.
+This statement can be specified multiple times to specify multiple spool directories up to five.</para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	spool /var/spool/gfarm
