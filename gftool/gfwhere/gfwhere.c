@@ -237,7 +237,7 @@ main(int argc, char **argv)
 			opt.long_format = 1;
 			break;
 		case 'm':
-			opt.max_ncopy = 1;
+			opt.max_ncopy = atoi(optarg);
 			break;
 		case 'o':
 			opt.print_dead_copy = 1;
