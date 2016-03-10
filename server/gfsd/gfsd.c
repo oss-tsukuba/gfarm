@@ -2317,8 +2317,9 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 					    (long long)ino, (long long)gen,
 					    gfarm_error_string(e));
 			} else
-				gflog_error(GFARM_MSG_1003714, "%s: %s", diag,
-				    gfarm_error_string(e2));
+				gflog_error(GFARM_MSG_UNFIXED, "%s: "
+				    "%lld:%lld: %s", diag, (long long)ino,
+				    (long long)gen, gfarm_error_string(e2));
 			e = e2;
 			break;
 		}
