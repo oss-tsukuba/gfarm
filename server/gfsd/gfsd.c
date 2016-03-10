@@ -2278,7 +2278,8 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 				break;
 			}
 
-			if (e2 == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
+			if (e2 == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY ||
+			    e2 == GFARM_ERR_NO_SPACE) {
 				e = gfm_client_replica_lost(ino, gen);
 				if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 					gflog_debug(GFARM_MSG_1002299,
