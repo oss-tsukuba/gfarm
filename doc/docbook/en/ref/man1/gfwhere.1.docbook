@@ -6,7 +6,7 @@
 
 <refentry id="gfwhere.1">
 
-<refentryinfo><date>17 Nov 2015</date></refentryinfo>
+<refentryinfo><date>12 Mar 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfwhere</refentrytitle>
@@ -74,6 +74,15 @@ If the host is currently down, "-" is displayed.
 </varlistentry>
 
 <varlistentry>
+<term><option>-h</option> <parameter moreinfo="none">host</parameter></term>
+<listitem>
+<para>
+Only displays files stored on the specified host.  When the -h option is specified multiple times, it displays files stored on all specified hosts.  When the host A and host B are specified, it displays files stored on both host A and host B.  The -h option can be specified up to three times.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-i</option></term>
 <listitem>
 <para>
@@ -112,6 +121,15 @@ specified,
 this displays an indicator which shows whether this replica is obsolete (o)
 or not (-) at next column.
 In the former case, this replica has been logicall removed.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option> <parameter moreinfo="none">N</parameter></term>
+<listitem>
+<para>
+Only displays files having less than or equal to N replicas and having greater than 0 bytes.
 </para>
 </listitem>
 </varlistentry>

@@ -5,7 +5,7 @@
 
 <refentry id="gfwhere.1">
 
-<refentryinfo><date>17 Nov 2015</date></refentryinfo>
+<refentryinfo><date>12 Mar 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfwhere</refentrytitle>
@@ -70,6 +70,17 @@
 </varlistentry>
 
 <varlistentry>
+<term><option>-h</option> <parameter moreinfo="none">host</parameter></term>
+<listitem>
+<para>
+指定されたhostに複製が格納されているファイルについて複製情報を表示します。
+複数回指定された場合は、指定された全てのホストに格納されているファイルについて複製情報が表示されます。
+指定されるホスト数は最大3です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-i</option></term>
 <listitem>
 <para>
@@ -105,6 +116,15 @@
 <option>-o</option> オプションないし <option>-a</option> オプションが
 指定されている場合は、その次に、そのレプリカが論理的に削除済か否かを表示します。
 論理的に削除済の場合は「o」、削除されていない場合は「-」となります。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option> <parameter moreinfo="none">N</parameter></term>
+<listitem>
+<para>
+複製数がN以下でサイズが0以上のファイルについて複製情報を表示します。
 </para>
 </listitem>
 </varlistentry>
