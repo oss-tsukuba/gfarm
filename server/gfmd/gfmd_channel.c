@@ -633,7 +633,7 @@ static gfarm_error_t
 gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 	gfp_xdr_xid_t xid, size_t size)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e_rpc;
 	gfarm_uint64_t seqnum;
 	int inited = 0;
 	struct gfmdc_peer_record *gfmdc_peer = peer_get_gfmdc_record(peer);
@@ -670,13 +670,15 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 		if (inited)
 			gfmdc_peer_set_journal_file_reader(gfmdc_peer, reader);
 	}
-	e = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
-	if (mdhost_is_sync_replication(mh)) {
+	e_rpc = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
+	if (e == GFARM_ERR_NO_ERROR)
+		e = e_rpc;
+	if (e == GFARM_ERR_NO_ERROR && mdhost_is_sync_replication(mh)) {
 		peer_add_ref(peer); /* increment refcount */
 		thrpool_add_job(journal_sync_thread_pool,
 		    gfmdc_journal_first_sync_thread, peer);
 	}
-	return (e);
+	return (e_rpc);
 }
 
 struct journal_ready_to_recv_info {
