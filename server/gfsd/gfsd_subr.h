@@ -40,6 +40,8 @@ enum gfsd_type {
 	type_write_verify_controller, type_write_verify,
 };
 
+void fd_event_notified(int, int, const char *, const char *);
+void fd_event_notify(int);
 gfarm_error_t connect_gfm_server(const char *);
 void free_gfm_server(void);
 pid_t do_fork(enum gfsd_type);
@@ -54,7 +56,10 @@ gfarm_error_t calc_digest(int, const char *, char *, size_t *, char *, size_t,
 	const char *, gfarm_ino_t, gfarm_uint64_t);
 void replica_lost_move_to_lost_found(gfarm_ino_t, gfarm_uint64_t, int, off_t);
 #define TIMEDWAIT_INFINITE -1
+int timedwait_2fds(int, int, time_t, const char *);
 int timedwait_fd(int, time_t, const char *);
+int fd_is_ready(int, const char *);
+int wait_3fds(int, int, int, const char *);
 int wait_2fds(int, int, const char *);
 void wait_fd_with_failover_pipe(int, const char *);
 

@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 #include <unistd.h>
 #include <limits.h>
 #include <fcntl.h>
@@ -135,7 +136,8 @@ write_verify_request(gfarm_ino_t ino, gfarm_uint64_t gen, time_t mtime,
 	if (rv != sizeof req) {
 		if (rv == -1) {
 			gflog_error_errno(GFARM_MSG_1004397, "%s: "
-			    "write_verify request %lld:%lld (mtime: %lld)",
+			    "write_verify request %lld:%lld (mtime: %lld), "
+			    "please run gfspooldigest",
 			    diag,
 			    (long long)ino, (long long)gen, (long long)mtime);
 		} else {
@@ -1117,11 +1119,10 @@ write_verify_state_free(void)
  * NOTE: type_write_verify_controller won't access gfmd
  */
 
-void
-write_verify_controller_cleanup(void)
-{
-	write_verify_state_save();
-}
+static int cleanup_notify_recv_fd = -1;
+static int cleanup_notify_send_fd = -1;
+
+static pid_t write_verify_gfsd_pid = -1;
 
 static void
 write_verify_request_get(const char *diag)
@@ -1137,6 +1138,61 @@ write_verify_request_get(const char *diag)
 	mtime_rec_add(entry.req.mtime);
 
 	write_verify_state_snapshot();
+}
+
+static void
+write_verify_request_abandon(const char *diag)
+{
+	struct write_verify_entry entry;
+
+	write_verify_request_recv(&entry.req, diag);
+	gflog_error(GFARM_MSG_UNFIXED, "inode %lld:%lld is written at %lld, "
+	    "but not write_verified due to memory shorage, "
+	    "please run gfspooldigest",
+	    (long long)entry.req.ino, (long long)entry.req.gen,
+	    (long long)entry.req.mtime);
+}
+
+void
+write_verify_controller_cleanup(void)
+{
+	const char diag[] = "write_verify_controller_cleanup";
+
+	while (fd_is_ready(write_verify_request_recv_fd, diag)) {
+		if (ringbuf_has_room())
+			write_verify_request_get(diag);
+		else
+			write_verify_request_abandon(diag);
+	}
+	/*
+	 * NOTE: there is race condition here that the requests
+	 * in the write_verify_request pipe may not be logged
+	 */
+	write_verify_state_save();
+}
+
+static void
+cleanup_notified(const char *diag)
+{
+	fd_event_notified(cleanup_notify_recv_fd, 1, "cleanup", diag);
+}
+
+void
+write_verify_controller_cleanup_signal(void)
+{
+	fd_event_notify(cleanup_notify_send_fd);
+}
+
+static void
+cleanup_notify_setup(void)
+{
+	int pipefds[2];
+
+	if (pipe(pipefds) == -1)
+		fatal(GFARM_MSG_UNFIXED, "pipe after fork: %s",
+		    strerror(errno));
+	cleanup_notify_recv_fd = pipefds[0];
+	cleanup_notify_send_fd = pipefds[1];
 }
 
 static void
@@ -1179,6 +1235,8 @@ write_verify_controller(void)
 	struct write_verify_mtime_rec *mtime_rec = NULL;
 	static const char diag[] = "write_verify_controller";
 
+	cleanup_notify_setup();
+
 	for (;;) {
 		time_t now = time(NULL);
 		int rv, has_room;
@@ -1196,8 +1254,9 @@ write_verify_controller(void)
 		}
 		has_room = ringbuf_has_room();
 		if (has_room && state == WRITE_VERIFY_RUNNING) {
-			rv = wait_2fds(write_verify_request_recv_fd,
-			    write_verify_job_controller_fd, diag);
+			rv = wait_3fds(write_verify_request_recv_fd,
+			    write_verify_job_controller_fd,
+			    cleanup_notify_recv_fd, diag);
 			if ((rv & 1) != 0)
 				write_verify_request_get(diag);
 			if ((rv & 2) != 0) {
@@ -1205,14 +1264,25 @@ write_verify_controller(void)
 				state = WRITE_VERIFY_IDLE;
 				mtime_rec = NULL; /* unnecessary, to be sure */
 			}
+			if ((rv & 4) != 0)
+				break;
 		} else if (has_room) {
-			if (timedwait_fd(write_verify_request_recv_fd,
+			rv = timedwait_2fds(write_verify_request_recv_fd,
+			    cleanup_notify_recv_fd,
 			    state == WRITE_VERIFY_IDLE ? TIMEDWAIT_INFINITE :
-			    todo.schedule - now, diag))
+			    todo.schedule - now, diag);
+			if ((rv & 1) != 0)
 				write_verify_request_get(diag);
+			if ((rv & 2) != 0)
+				break;
 		} else if (state == WRITE_VERIFY_RUNNING) {
 			/* only check job_reply, due to !ringbuf_has_room() */
-			write_verify_job_done(&todo, mtime_rec);
+			rv = wait_2fds(write_verify_job_controller_fd,
+			    cleanup_notify_recv_fd, diag);
+			if ((rv & 1) != 0)
+				write_verify_job_done(&todo, mtime_rec);
+			if ((rv & 2) != 0)
+				break;
 			state = WRITE_VERIFY_IDLE;
 			mtime_rec = NULL; /* unnecessary, to be sure */
 		} else {
@@ -1222,9 +1292,18 @@ write_verify_controller(void)
 			 */
 			assert(state == WRITE_VERIFY_RESERVED);
 			assert(todo.schedule > now);
-			gfarm_sleep(todo.schedule - now);
+			if (timedwait_fd(cleanup_notify_recv_fd,
+			    todo.schedule - now, diag))
+				break;
 		}
 	}
+	cleanup_notified(diag);
+	if (kill(write_verify_gfsd_pid, SIGTERM) == -1)
+		gflog_warning_errno(GFARM_MSG_UNFIXED,
+		    "kill(write_verify:%ld)",
+		    (long)write_verify_gfsd_pid);
+	cleanup(0);
+	exit(0);
 }
 
 void
@@ -1272,6 +1351,7 @@ start_write_verify_controller(void)
 			close(pipefds[1]);
 			close(sockfds[0]);
 			write_verify_job_controller_fd = sockfds[1];
+			write_verify_gfsd_pid = pid;
 			write_verify_controller();
 			/*NOTREACHED*/
 			break;

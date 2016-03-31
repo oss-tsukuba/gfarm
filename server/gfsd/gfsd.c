@@ -149,7 +149,8 @@ static int failover_notify_recv_fd = -1;
 static int failover_notify_send_fd = -1;
 
 pid_t master_gfsd_pid;
-pid_t back_channel_gfsd_pid;
+pid_t back_channel_gfsd_pid = -1;
+pid_t write_verify_controller_gfsd_pid = -1;
 uid_t gfsd_uid = -1;
 
 struct gfm_connection *gfm_server;
@@ -251,9 +252,17 @@ cleanup(int sighandler)
 	if (pid == master_gfsd_pid) {
 		cleanup_accepting(sighandler);
 		/* send terminate signal to a back channel process */
-		if (kill(back_channel_gfsd_pid, SIGTERM) == -1 && !sighandler)
+		if (back_channel_gfsd_pid != -1 &&
+		    kill(back_channel_gfsd_pid, SIGTERM) == -1 && !sighandler)
 			gflog_warning_errno(GFARM_MSG_1002377,
-			    "kill(%ld)", (long)back_channel_gfsd_pid);
+			    "kill(back_channel:%ld)",
+			    (long)back_channel_gfsd_pid);
+		if (write_verify_controller_gfsd_pid != -1 &&
+		    kill(write_verify_controller_gfsd_pid, SIGTERM) == -1 &&
+		    !sighandler)
+			gflog_warning_errno(GFARM_MSG_UNFIXED,
+			    "kill(write_verify_controller:%ld)",
+			    (long)write_verify_controller_gfsd_pid);
 		cleanup_iostat(sighandler);
 	}
 
@@ -271,8 +280,11 @@ static void
 cleanup_handler(int signo)
 {
 	terminate_flag = 1;
-	if (my_type != type_write_verify_controller &&
-	    write_open_count == 0) {
+	if (my_type == type_write_verify_controller) {
+		write_verify_controller_cleanup_signal();
+		return;
+	}
+	if (write_open_count == 0) {
 		cleanup(1);
 		_exit(0);
 	}
@@ -419,7 +431,7 @@ accepting_fatal_errno_full(int msg_no, const char *file, int line_no,
 			strerror(save_errno));
 }
 
-
+/* return 0, if one of the file descriptors is available, otherwise errno */
 static int
 #ifdef HAVE_POLL
 sleep_or_wait_fds(int seconds, int nfds, struct pollfd *fds, const char *diag)
@@ -519,15 +531,42 @@ sleep_or_wait_failover_packet(int seconds)
 static void
 failover_handler(int signo)
 {
+	if (!USING_PIPE_FOR_FAILOVER_SIGNAL(my_type))
+		return; /* nothing to do */
+	fd_event_notify(failover_notify_send_fd);
+}
+
+void
+fd_event_notified(int event_fd,
+	int do_logging, const char *event_name, const char *diag)
+{
+	ssize_t rv;
+	char dummy[1];
+
+	if (do_logging)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: %s notified", event_name, diag);
+	rv = read(event_fd, dummy, sizeof dummy);
+	if (rv == -1)
+		gflog_error_errno(GFARM_MSG_UNFIXED,
+		    "%s: %s notified: read", event_name, diag);
+	else if (rv != sizeof dummy)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: %s notified: size expected %zd but %zd",
+		    diag, event_name, sizeof dummy, rv);
+}
+
+/* NOTE: this function is called from a signal handler */
+void
+fd_event_notify(int event_fd)
+{
 	char dummy[1];
 	ssize_t rv;
 
-	if (!USING_PIPE_FOR_FAILOVER_SIGNAL(my_type))
-		return; /* nothing to do */
-	if (failover_notify_send_fd == -1)
+	if (event_fd == -1)
 		abort();
 	dummy[0] = 0;
-	rv = write(failover_notify_send_fd, dummy, sizeof dummy);
+	rv = write(event_fd, dummy, sizeof dummy);
 	if (rv != sizeof dummy)
 		abort(); /* cannot call assert() from a signal handler */
 }
@@ -535,22 +574,9 @@ failover_handler(int signo)
 static void
 failover_notified(int do_logging, const char *diag)
 {
-	ssize_t rv;
-	char dummy[1];
-
-	if (do_logging)
-		gflog_info(GFARM_MSG_1004105,
-		    "%s: failover notified", diag);
-	rv = read(failover_notify_recv_fd, dummy, sizeof dummy);
-	if (rv == -1)
-		gflog_error_errno(GFARM_MSG_1004106,
-		    "%s: failover notified: read", diag);
-	else if (rv != sizeof dummy)
-		gflog_error(GFARM_MSG_1004107,
-		    "%s: failover notified: size expected %zd but %zd",
-		    diag, sizeof dummy, rv);
+	fd_event_notified(failover_notify_recv_fd,
+	    do_logging, "failover", diag);
 }
-
 
 static int
 sleep_or_wait_failover_recv_fd(int seconds)
@@ -880,8 +906,12 @@ do_fork(enum gfsd_type new_type)
 	if (rv == -1) {
 		/* nothing to do */
 	} else if (rv != 0) { /* parent process */
-		if (my_type == type_listener && new_type == type_back_channel)
-			back_channel_gfsd_pid = rv;
+		if (my_type == type_listener) {
+			if (new_type == type_back_channel)
+				back_channel_gfsd_pid = rv;
+			else if (new_type == type_write_verify_controller)
+				write_verify_controller_gfsd_pid = rv;
+		}
 	} else { /* child process */
 		free_gfm_server(); /* to make sure to avoid race */
 
@@ -902,7 +932,7 @@ do_fork(enum gfsd_type new_type)
 			/* this should be set before fatal() */
 			back_channel_gfsd_pid = getpid();
 		}
-		my_type = new_type;
+		my_type = new_type; /* this should be set before fatal() */
 		if (USING_PIPE_FOR_FAILOVER_SIGNAL(my_type)) {
 			if (pipe(pipefds) == -1)
 				fatal(GFARM_MSG_1004111, "pipe after fork: %s",
@@ -4817,13 +4847,22 @@ clear_child(void)
 	}
 }
 
+/*
+ * input value:
+ *  fd1 may be -1, in that case, it's ignored;
+ * return value:
+ *  0: timed out
+ *  bit0 is set: fd0 is ready
+ *  bit1 is set: fd1 is ready
+ */
 int
-timedwait_fd(int fd, time_t seconds, const char *diag)
+timedwait_2fds(int fd0, int fd1, time_t seconds, const char *diag)
 {
-	int nfound;
+	int nfound, rv = 0;
 #ifdef HAVE_POLL
 	time_t now, expire_time = 0;
-	struct pollfd pfd;
+	struct pollfd fds[2];
+	int nfds = GFARM_ARRAY_LENGTH(fds);
 
 	if (seconds != TIMEDWAIT_INFINITE)
 		expire_time = time(NULL) + seconds;
@@ -4833,21 +4872,32 @@ timedwait_fd(int fd, time_t seconds, const char *diag)
 		if (seconds != TIMEDWAIT_INFINITE && expire_time < now)
 			expire_time = now;
 
-		pfd.fd = fd;
-		pfd.events = POLLIN;
-		nfound = poll(&pfd, 1, seconds == TIMEDWAIT_INFINITE ? INFTIM :
-		    expire_time - now);
+		fds[0].fd = fd0;
+		fds[0].events = POLLIN;
+		if (fd1 != -1) {
+			fds[1].fd = fd1;
+			fds[1].events = POLLIN;
+		} else{
+			--nfds;
+		}
+		nfound = poll(fds, nfds, seconds == TIMEDWAIT_INFINITE ?
+		    INFTIM : expire_time - now);
 		if (nfound == -1) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
 			fatal_errno(GFARM_MSG_1004389,
-			    "poll in timedwait_fd()");
+			    "poll in timedwait_2fds()");
 		}
-		return (nfound > 0);
+		if (fds[0].revents != 0)
+			rv |= 1;
+		if (fd1 != -1 && fds[1].revents != 0)
+			rv |= 2;
+		return (rv);
 	}
 #else /* !HAVE_POLL */
 	struct timeval expire_time, now, timeout;
 	fd_set fds;
+	int max_fd;
 
 	if (seconds != TIMEDWAIT_INFINITE) {
 		gettimeofday(&expire_time, NULL);
@@ -4863,22 +4913,121 @@ timedwait_fd(int fd, time_t seconds, const char *diag)
 			gfarm_timeval_sub(&timeout, &now);
 		}
 
-		FD_ZERO(&fds);
-		if (fd >= FD_SETSIZE)
+		max_fd = fd0;
+		if (fd1 != -1 && fd1 > max_fd)
+			max_fd = fd1;
+		if (max_fd >= FD_SETSIZE)
 			fatal(GFARM_MSG_1004390,
-			    "too big descriptor: fd:%d", fd);
-		FD_SET(fd, &fds);
-		nfound = select(fd + 1, &fds, NULL, NULL,
+			    "too big descriptor: fd:%d", max_fd);
+		FD_ZERO(&fds);
+		FD_SET(fd0, &fds);
+		FD_SET(fd1, &fds);
+		nfound = select(max_fd + 1, &fds, NULL, NULL,
 		    seconds == TIMEDWAIT_INFINITE ? NULL : &timeout);
 		if (nfound == -1) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
 			fatal_errno(GFARM_MSG_1004391,
-			    "select in timedwait_fd()");
+			    "select in timedwait_2fds()");
 		}
-		return (nfound > 0);
+		if (FD_ISSET(fd0, &fds))
+			rv |= 1;
+		if (fd1 != -1 && FD_ISSET(fd1, &fds))
+			rv |= 2;
+		return (rv);
 	}
 #endif /* !HAVE_POLL */
+}
+
+int
+timedwait_fd(int fd, time_t seconds, const char *diag)
+{
+	return (timedwait_2fds(fd, -1, seconds, diag));
+}
+
+int
+fd_is_ready(int fd, const char *diag)
+{
+	return (timedwait_fd(fd, 0, diag));
+}
+
+/*
+ * input value:
+ *  fd2 may be -1, in that case, it's ignored;
+ * return value:
+ *  0: EINTR or EAGAIN
+ *  bit0 is set: fd0 is ready
+ *  bit1 is set: fd1 is ready
+ *  bit2 is set: fd2 is ready
+ */
+int
+wait_3fds(int fd0, int fd1, int fd2, const char *diag)
+{
+	int nfound, rv = 0;
+#ifdef HAVE_POLL
+	struct pollfd fds[3];
+	int nfds = GFARM_ARRAY_LENGTH(fds);
+
+	fds[0].fd = fd0;
+	fds[0].events = POLLIN;
+	fds[1].fd = fd1;
+	fds[1].events = POLLIN;
+	if (fd2 != -1) {
+		fds[2].fd = fd2;
+		fds[2].events = POLLIN;
+	} else{
+		--nfds;
+	}
+	nfound = poll(fds, nfds, INFTIM);
+	if (nfound == 0)
+		fatal(GFARM_MSG_UNFIXED,
+		    "unexpected poll in wait_3fds()");
+	if (nfound == -1) {
+		if (errno == EINTR || errno == EAGAIN)
+			return (0);
+		fatal_errno(GFARM_MSG_1004157, "poll in wait_3fds()");
+	}
+	assert(nfound > 0);
+	if (fds[0].revents != 0)
+		rv |= 1;
+	if (fds[1].revents != 0)
+		rv |= 2;
+	if (fd2 != -1 && fds[2].revents != 0)
+		rv |= 4;
+#else /* !HAVE_POLL */
+	fd_set fds;
+	int max_fd;
+
+	max_fd = fd0;
+	if (fd1 > max_fd)
+		max_fd = fd1;
+	if (fd2 != -1 && fd2 > max_fd)
+		max_fd = fd2;
+	if (max_fd >= FD_SETSIZE)
+		fatal(GFARM_MSG_1004158,
+		    "too big descriptor: fd0:%d fd1:%d fd2:%d", fd0, fd1, fd2);
+	FD_ZERO(&fds);
+	FD_SET(fd0, &fds);
+	FD_SET(fd1, &fds);
+	if (fd2 != -1)
+		FD_SET(fd2, &fds);
+	nfound = select(max_fd + 1, &fds, NULL, NULL, NULL);
+	if (nfound == 0)
+		fatal(GFARM_MSG_1004159, "unexpected select in wait_3fds()");
+	if (nfound == -1) {
+		if (errno == EINTR || errno == EAGAIN)
+			return (0);
+		fatal_errno(GFARM_MSG_1004160, "select in wait_3fds()");
+	}
+	assert(nfound > 0);
+	if (FD_ISSET(fd0, &fds))
+		rv |= 1;
+	if (FD_ISSET(fd1, &fds))
+		rv |= 2;
+	if (fd2 != -1 && FD_ISSET(fd2, &fds))
+		rv |= 4;
+#endif /* !HAVE_POLL */
+	return (rv);
 }
 
 /*
@@ -4890,54 +5039,7 @@ timedwait_fd(int fd, time_t seconds, const char *diag)
 int
 wait_2fds(int fd0, int fd1, const char *diag)
 {
-	int nfound, rv = 0;
-#ifdef HAVE_POLL
-	struct pollfd fds[2];
-
-	fds[0].fd = fd0;
-	fds[0].events = POLLIN;
-	fds[1].fd = fd1;
-	fds[1].events = POLLIN;
-	nfound = poll(fds, GFARM_ARRAY_LENGTH(fds), INFTIM);
-	if (nfound == 0)
-		fatal(GFARM_MSG_1004156,
-		    "unexpected poll in wait_2fds()");
-	if (nfound == -1) {
-		if (errno == EINTR || errno == EAGAIN)
-			return (0);
-		fatal_errno(GFARM_MSG_1004157, "poll in wait_2fds()");
-	}
-	assert(nfound > 0);
-	if (fds[0].revents != 0)
-		rv |= 1;
-	if (fds[1].revents != 0)
-		rv |= 2;
-#else /* !HAVE_POLL */
-	fd_set fds;
-	int max_fd;
-
-	FD_ZERO(&fds);
-	max_fd = fd0 >= fd1 ? fd0 : fd1;
-	if (max_fd >= FD_SETSIZE)
-		fatal(GFARM_MSG_1004158,
-		    "too big descriptor: fd0:%d fd1:%d", fd0, fd1);
-	FD_SET(fd0, &fds);
-	FD_SET(fd1, &fds);
-	nfound = select(max_fd + 1, &fds, NULL, NULL, NULL);
-	if (nfound == 0)
-		fatal(GFARM_MSG_1004159, "unexpected select in wait_2fds()");
-	if (nfound == -1) {
-		if (errno == EINTR || errno == EAGAIN)
-			return (0);
-		fatal_errno(GFARM_MSG_1004160, "select in wait_2fds()");
-	}
-	assert(nfound > 0);
-	if (FD_ISSET(fd0, &fds))
-		rv |= 1;
-	if (FD_ISSET(fd1, &fds))
-		rv |= 2;
-#endif /* !HAVE_POLL */
-	return (rv);
+	return (wait_3fds(fd0, fd1, -1, diag));
 }
 
 void
