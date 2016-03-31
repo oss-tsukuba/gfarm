@@ -4921,7 +4921,8 @@ timedwait_2fds(int fd0, int fd1, time_t seconds, const char *diag)
 			    "too big descriptor: fd:%d", max_fd);
 		FD_ZERO(&fds);
 		FD_SET(fd0, &fds);
-		FD_SET(fd1, &fds);
+		if (fd1 != -1)
+			FD_SET(fd1, &fds);
 		nfound = select(max_fd + 1, &fds, NULL, NULL,
 		    seconds == TIMEDWAIT_INFINITE ? NULL : &timeout);
 		if (nfound == -1) {
