@@ -1097,6 +1097,9 @@ static void
 search_idle_record_host(struct search_idle_state *s,
 	struct search_idle_host_state *h)
 {
+	if ((h->flags & HOST_STATE_FLAG_AVAILABLE) != 0)
+		return;
+
 	search_idle_count(s, h,
 	    &s->usable_hosts_number,
 	    &s->idle_hosts_number,
