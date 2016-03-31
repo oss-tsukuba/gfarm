@@ -4877,7 +4877,7 @@ timedwait_2fds(int fd0, int fd1, time_t seconds, const char *diag)
 		if (fd1 != -1) {
 			fds[1].fd = fd1;
 			fds[1].events = POLLIN;
-		} else{
+		} else {
 			--nfds;
 		}
 		nfound = poll(fds, nfds, seconds == TIMEDWAIT_INFINITE ?
@@ -4975,12 +4975,12 @@ wait_3fds(int fd0, int fd1, int fd2, const char *diag)
 	if (fd2 != -1) {
 		fds[2].fd = fd2;
 		fds[2].events = POLLIN;
-	} else{
+	} else {
 		--nfds;
 	}
 	nfound = poll(fds, nfds, INFTIM);
 	if (nfound == 0)
-		fatal(GFARM_MSG_UNFIXED,
+		fatal(GFARM_MSG_1004156,
 		    "unexpected poll in wait_3fds()");
 	if (nfound == -1) {
 		if (errno == EINTR || errno == EAGAIN)
