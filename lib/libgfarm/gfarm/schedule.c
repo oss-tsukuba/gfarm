@@ -166,7 +166,8 @@
 enum gfarm_schedule_search_mode {
 	GFARM_SCHEDULE_SEARCH_BY_LOADAVG,
 	GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH,
-	GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKAVAIL
+	GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKAVAIL,
+	GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_DISKAVAIL
 };
 
 struct gfarm_schedule_static {
@@ -648,6 +649,7 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 	if (created || (h->flags & HOST_STATE_FLAG_ADDR_AVAIL) == 0 ||
 	    is_expired(&h->addr_cache_time, ADDR_EXPIRATION)) {
 		if (created) {
+			memset(h, 0, sizeof(*h));
 			h->port = info->port;
 			h->ncpu = info->ncpu;
 #if 0 /* not yet in gfarm v2 */
@@ -1019,7 +1021,7 @@ search_idle_init_state(struct search_idle_state *s,
 	s->write_mode = write_mode;
 	if (write_mode)
 		s->mode =
-		    GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKAVAIL;
+		    GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_DISKAVAIL;
 	/*
 	 * If we don't check enough_number or desired_number here,
 	 * the behavior of search_idle() becomes undeterministic.
@@ -1211,9 +1213,6 @@ search_idle_connect_callback(void *closure)
 			search_idle_record(c);
 			gfs_client_connection_free(c->gfs_server);
 		} else {
-			assert(s->mode ==
-			 GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKAVAIL
-			);
 #endif
 			e = gfs_client_statfs_request_multiplexed(c->state->q,
 			    c->gfs_server, ".", search_idle_statfs_callback, c,
@@ -1444,8 +1443,7 @@ search_idle_cache_is_available(struct search_idle_state *s,
 	if ((h->flags & HOST_STATE_FLAG_ADDR_AVAIL) == 0)
 		return (0);
 
-	if ((h->flags & HOST_STATE_FLAG_RTT_TRIED) == 0 ||
-	    is_expired(&h->loadavg_cache_time, LOADAVG_EXPIRATION))
+	if (is_expired(&h->loadavg_cache_time, LOADAVG_EXPIRATION))
 		return (0);
 
 	switch (s->mode) {
@@ -1457,6 +1455,9 @@ search_idle_cache_is_available(struct search_idle_state *s,
 		return ((h->flags &
 		   (HOST_STATE_FLAG_AUTH_SUCCEED|HOST_STATE_FLAG_STATFS_AVAIL))
 		== (HOST_STATE_FLAG_AUTH_SUCCEED|HOST_STATE_FLAG_STATFS_AVAIL)
+		&& !is_expired(&h->statfs_cache_time, STATFS_EXPIRATION));
+	case GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_DISKAVAIL:
+		return ((h->flags & HOST_STATE_FLAG_STATFS_AVAIL) != 0
 		&& !is_expired(&h->statfs_cache_time, STATFS_EXPIRATION));
 	default:
 		assert(0);
