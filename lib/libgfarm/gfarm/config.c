@@ -999,9 +999,9 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
 #define GFARM_METADB_MAX_DESCRIPTORS_DEFAULT	(2*65536)
 #define GFARM_METADB_REPLICA_REMOVER_BY_HOST_SLEEP_TIME_DEFAULT	20000000
-#define GFARM_SOCKBUF_LIMIT_UNLIMITED GFARM_CONFIG_MISC_DEFAULT /* no limit */
-#define GFARM_SOCKBUF_LIMIT_DEFAULT		GFARM_SOCKBUF_LIMIT_UNLIMITED
 							/* nanosec. */
+#define GFARM_BACK_CHANNEL_SOCKBUF_LIMIT_UNLIMITED	0 /* no limit */
+#define GFARM_BACK_CHANNEL_SOCKBUF_LIMIT_DEFAULT	4096
 #define GFARM_METADB_REPLICA_REMOVER_BY_HOST_INODE_STEP_DEFAULT	1024
 #define GFARM_CLIENT_DIGEST_CHECK_DEFAULT	0
 #define GFARM_CLIENT_FILE_BUFSIZE_DEFAULT	(1024 * 1024)
@@ -2130,23 +2130,11 @@ parse_set_spool_root(char *p)
 }
 
 static gfarm_error_t
-parse_set_misc_int(char *p, int *vp)
+parse_set_int(char *s, int *vp)
 {
-	gfarm_error_t e;
-	char *ep, *s;
+	char *ep;
 	long v;
 
-	e = get_one_argument(p, &s);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1000961,
-			"get_one_argument failed "
-			"when parsing misc integer (%s): %s",
-			p, gfarm_error_string(e));
-		return (e);
-	}
-
-	if (*vp != GFARM_CONFIG_MISC_DEFAULT) /* first line has precedence */
-		return (GFARM_ERR_NO_ERROR);
 	errno = 0;
 	v = strtol(s, &ep, 10);
 	if (errno == 0 && (v > INT_MAX || v < INT_MIN))
@@ -2156,7 +2144,7 @@ parse_set_misc_int(char *p, int *vp)
 		gflog_debug(GFARM_MSG_1000962,
 			"conversion to integer failed "
 			"when parsing misc integer (%s): %s",
-			p, strerror(save_errno));
+			s, strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
 	if (ep == s) {
@@ -2174,6 +2162,51 @@ parse_set_misc_int(char *p, int *vp)
 	}
 	*vp = (int)v;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+parse_set_misc_int(char *p, int *vp)
+{
+	gfarm_error_t e;
+	char *s;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1000961,
+			"get_one_argument failed "
+			"when parsing misc integer (%s): %s",
+			p, gfarm_error_string(e));
+		return (e);
+	}
+	if (*vp != GFARM_CONFIG_MISC_DEFAULT) /* first line has precedence */
+		return (GFARM_ERR_NO_ERROR);
+
+	return (parse_set_int(s, vp));
+}
+
+static gfarm_error_t
+parse_set_sockbuf_limit_int(char *p, int *vp)
+{
+	gfarm_error_t e;
+	char *s;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"get_one_argument failed "
+			"when sockbuf limit (%s): %s",
+			p, gfarm_error_string(e));
+		return (e);
+	}
+	if (*vp != GFARM_CONFIG_MISC_DEFAULT) /* first line has precedence */
+		return (GFARM_ERR_NO_ERROR);
+
+	if (strcmp(s, "disable") == 0) {
+		*vp = GFARM_BACK_CHANNEL_SOCKBUF_LIMIT_UNLIMITED;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	return (parse_set_int(s, vp));
 }
 
 /* client cannot use this */
@@ -2896,7 +2929,7 @@ parse_one_line(char *s, char *p, char **op)
 		    gfarm_auth_server_cred_name_set);
 	} else if (strcmp(s, o = "spool_server_back_channel_rcvbuf_limit")
 	    == 0) {
-		e = parse_set_misc_int(p,
+		e = parse_set_sockbuf_limit_int(p,
 		    &gfarm_spool_server_back_channel_rcvbuf_limit);
 	} else if (strcmp(s, o = "spool_check_level") == 0) {
 		e = parse_spool_check_level(p);
@@ -2908,7 +2941,8 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "write_verify") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_write_verify);
 	} else if (strcmp(s, o = "write_verify_interval") == 0) {
-		e = parse_set_misc_int(p, &gfarm_write_verify_interval);
+		e = parse_set_sockbuf_limit_int(p,
+		    &gfarm_write_verify_interval);
 	} else if (strcmp(s, o = "write_verify_retry_interval") == 0) {
 		e = parse_set_misc_int(p, &gfarm_write_verify_retry_interval);
 	} else if (strcmp(s, o = "metadb_server_host") == 0) {
@@ -3365,11 +3399,11 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_spool_server_back_channel_rcvbuf_limit ==
 	    GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_spool_server_back_channel_rcvbuf_limit =
-		    GFARM_SOCKBUF_LIMIT_DEFAULT;
+		    GFARM_BACK_CHANNEL_SOCKBUF_LIMIT_DEFAULT;
 	if (gfarm_metadb_server_back_channel_sndbuf_limit ==
 	    GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_server_back_channel_sndbuf_limit =
-		    GFARM_SOCKBUF_LIMIT_DEFAULT;
+		    GFARM_BACK_CHANNEL_SOCKBUF_LIMIT_DEFAULT;
 
 	if (gfarm_ctxp->log_level == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
@@ -3973,7 +4007,7 @@ gfarm_sockbuf_apply_limit(int sock, int opt, int limit, const char *optname)
 	int rv, save_errno, oldval;
 	socklen_t vallen = sizeof(oldval);
 
-	if (limit == GFARM_SOCKBUF_LIMIT_UNLIMITED)
+	if (limit == GFARM_BACK_CHANNEL_SOCKBUF_LIMIT_UNLIMITED)
 		return (GFARM_ERR_NO_ERROR);
 
 	rv = getsockopt(sock, SOL_SOCKET, opt, &oldval, &vallen);
