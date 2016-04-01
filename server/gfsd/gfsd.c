@@ -452,7 +452,9 @@ sleep_or_wait_fds(int seconds, int max_fd, fd_set *fds, const char *diag)
 		t = expiration_time;
 		gfarm_timeval_sub(&t, &now);
 
-		nfound = poll(fds, nfds, t.tv_sec * 1000 + t.tv_usec / 1000);
+		nfound = poll(fds, nfds,
+		    t.tv_sec * GFARM_SECOND_BY_MILLISEC +
+		    t.tv_usec / GFARM_MILLISEC_BY_MICROSEC);
 		if (nfound == 0)
 			return (EAGAIN);
 		if (nfound == -1) {
@@ -4882,7 +4884,7 @@ timedwait_2fds(int fd0, int fd1, time_t seconds, const char *diag)
 			nfds = GFARM_ARRAY_LENGTH(fds) - 1;
 		}
 		nfound = poll(fds, nfds, seconds == TIMEDWAIT_INFINITE ?
-		    INFTIM : expire_time - now);
+		    INFTIM : (expire_time - now) * GFARM_SECOND_BY_MILLISEC);
 		if (nfound == -1) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
@@ -5774,7 +5776,8 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 		}
 
 		nfound =
-		    poll(fds, n, gfarm_metadb_heartbeat_interval * 2 * 1000);
+		    poll(fds, n, gfarm_metadb_heartbeat_interval * 2 *
+		    GFARM_SECOND_BY_MILLISEC);
 		if (nfound == 0) {
 			gflog_error(GFARM_MSG_1003671,
 			    "back channel: gfmd is down");

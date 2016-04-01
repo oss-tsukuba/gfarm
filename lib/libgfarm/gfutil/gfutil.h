@@ -51,6 +51,7 @@ void gfarm_sleep(long);
 
 #define GFARM_MILLISEC_BY_MICROSEC	1000
 #define GFARM_SECOND_BY_MICROSEC	1000000
+#define GFARM_SECOND_BY_MILLISEC	1000
 
 struct timeval;
 int gfarm_timeval_cmp(const struct timeval *, const struct timeval *);
