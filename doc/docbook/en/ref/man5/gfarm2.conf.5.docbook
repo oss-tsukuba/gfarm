@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>5 March 2016</date></refentryinfo>
+<refentryinfo><date>1 April 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -321,13 +321,16 @@ statement for details.
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_server_back_channel_rcvbuf_limit</token> <parameter moreinfo="none">size</parameter></term>
+<term><token>spool_server_back_channel_rcvbuf_limit</token> <parameter moreinfo="none">size_limit</parameter></term>
 <listitem>
 <para>This directive specifies the upper limit of SO_RCVBUF
 for the back channel socket of gfsd.
 By decreasing this value, the number of outstanding requests from gfmd to gfsd
-can be limited.
-The default value of this limit depends on the OS.
+can be limited, and the problem of gfsd back channel disconnection
+will be mitigated.
+If <token>disable</token> keyword is specified as the parameter,
+no limit is applied.
+The default limit is 4096 bytes.
 </para>
 <para>
 This parameter is only available in gfarm2.conf which is referred by gfsd,
@@ -604,13 +607,16 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_back_channel_sndbuf_limit</token> <parameter moreinfo="none">size</parameter></term>
+<term><token>metadb_server_back_channel_sndbuf_limit</token> <parameter moreinfo="none">size_limit</parameter></term>
 <listitem>
 <para>This directive specifies the upper limit of SO_SNDBUF
 for the socket that the metadata server connects to the gfsd back channel.
 By decreasing this value, the number of outstanding requests from gfmd to gfsd
-can be limited.
-The default value of this limit depends on the OS.
+can be limited, and the problem of gfsd back channel disconnection
+will be mitigated.
+If <token>disable</token> keyword is specified as the parameter,
+no limit is applied.
+The default limit is 4096 bytes.
 </para>
 <para>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
@@ -2428,7 +2434,7 @@ notation.</para>
 
 <varlistentry>
 <term>&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"spool_server_back_channel_rcvbuf_limit" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"spool_server_back_channel_rcvbuf_limit" &lt;size_limit&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2508,7 +2514,7 @@ notation.</para>
 
 <varlistentry>
 <term>&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"metadb_server_back_channel_sndbuf_limit" &lt;number&gt;</literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_back_channel_sndbuf_limit" &lt;size_limit&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -3036,6 +3042,11 @@ notation.</para>
 <varlistentry>
 <term>&lt;digit&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;size_limit&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">&lt;number&gt; | "disable" </literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
