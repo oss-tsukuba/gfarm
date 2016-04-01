@@ -871,8 +871,8 @@ search_idle_free_program_filter(void)
 static long long
 entropy(void)
 {
-	/* 0 ... (GFM_PROTO_LOADAVG_FSCALE / 10) */
-	return (gfarm_random() * GFM_PROTO_LOADAVG_FSCALE / 10
+	/* 0 ... (GFM_PROTO_LOADAVG_FSCALE / 100) */
+	return (gfarm_random() * GFM_PROTO_LOADAVG_FSCALE / 100
 	    / (RAND_MAX + 1LL));
 }
 
