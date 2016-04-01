@@ -1094,8 +1094,8 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	    inode_add_replica(fo->inode, fo->u.f.spool_host, 1)
 	    == GFARM_ERR_ALREADY_EXISTS) &&
 
-	    inode_file_update(fo, size, atime, mtime, old_genp, new_genp,
-	    trace_logp)) {
+	    inode_file_update(fo, size, atime, mtime, is_v2_4,
+	    old_genp, new_genp, trace_logp)) {
 
 		flags = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
 	}

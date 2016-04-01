@@ -3614,7 +3614,7 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 
 	if ((fo->flag & GFARM_FILE_TRUNC_PENDING) != 0) {
 		assert(!slave_mode);
-		inode_file_update(fo, 0, atime, &inode->i_mtimespec,
+		inode_file_update(fo, 0, atime, &inode->i_mtimespec, 0,
 		    NULL, NULL, trace_logp);
 	} else if (atime != NULL && !slave_mode)
 		inode_set_relatime(inode, atime);
@@ -3722,6 +3722,7 @@ inode_check_pending_replication(struct file_opening *fo)
 static int
 inode_file_update_common(struct inode *inode, gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	int want_gen_update,
 	struct host *spool_host, int desired_replica_number, char *repattr,
 	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
 	char **trace_logp)
@@ -3747,7 +3748,7 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 
 	old_gen = inode->i_gen;
 
-	if (spool_host == NULL || host_supports_async_protocols(spool_host)) {
+	if (spool_host == NULL || want_gen_update) {
 		/* update generation number */
 		if (old_genp != NULL)
 			*old_genp = inode->i_gen;
@@ -3798,6 +3799,7 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 int
 inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	int want_gen_update,
 	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
 	char **trace_logp)
 {
@@ -3809,10 +3811,9 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 		inode_cksum_remove(inode);
 
 	return (inode_file_update_common(fo->inode, size, atime, mtime,
-			fo->u.f.spool_host,
-			fo->u.f.desired_replica_number,
-			fo->u.f.repattr,
-			old_genp, new_genp, trace_logp));
+	    want_gen_update, fo->u.f.spool_host,
+	    fo->u.f.desired_replica_number, fo->u.f.repattr,
+	    old_genp, new_genp, trace_logp));
 }
 
 /* returns TRUE, if generation number is updated. */
@@ -3836,17 +3837,17 @@ inode_file_handle_update(struct inode *inode, gfarm_off_t size,
 	inode_cksum_remove(inode);
 
 	*gen_updatedp = inode_file_update_common(inode,
-				size, atime, mtime, spool_host,
-				/*
-				 * XXX FIXME:
-				 *
-				 *	desired_file_number and
-				 *	repattr are unknown.
-				 * 	We need a file_opening here.
-				 */
-				1,
-				NULL,
-				old_genp, new_genp, trace_logp);
+	    size, atime, mtime, 1, spool_host,
+	    /*
+	     * XXX FIXME:
+	     *
+	     *	desired_file_number and
+	     *	repattr are unknown.
+	     * 	We need a file_opening here.
+	     */
+	    /* desired_file_number is unknown */ 1,
+	    /* repattr is unknown */ NULL,
+	    old_genp, new_genp, trace_logp);
 	return (GFARM_ERR_NO_ERROR);
 }
 

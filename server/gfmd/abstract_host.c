@@ -441,7 +441,12 @@ abstract_host_peer_unset(struct abstract_host *h)
 	struct peer *peer = h->peer;
 
 	h->peer = NULL;
-	h->protocol_version = 0;
+	/*
+	 * We don't do "h->protocol_version = 0" here, to keep the version
+	 * to avoid SF.net #949 - during back_channel gfsd is stopped,
+	 * files written by gfsd on the same filesystem node won't be updated
+	 * correctly.
+	 */
 	h->is_active = 0;
 	h->ops->unset_peer(h, peer);
 
