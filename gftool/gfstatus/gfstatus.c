@@ -114,8 +114,11 @@ void
 usage(void)
 {
 	fprintf(stderr,
-	    "Usage:\t%s [-d] [-V] [-P <path>]\n",
-	    program_name);
+	    "Usage:\t%s [-P <path>] [-d]\n"
+	    "\t%s [-P <path>] [-d] [-M] <configuration_variable>...\n"
+	    "\t%s [-P <path>] [-d] -Mm <configuration_directive>...\n"
+	    "\t%s -V\n",
+	    program_name, program_name, program_name, program_name);
 	exit(EXIT_FAILURE);
 }
 
