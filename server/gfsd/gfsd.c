@@ -4862,7 +4862,7 @@ timedwait_2fds(int fd0, int fd1, time_t seconds, const char *diag)
 #ifdef HAVE_POLL
 	time_t now, expire_time = 0;
 	struct pollfd fds[2];
-	int nfds = GFARM_ARRAY_LENGTH(fds);
+	int nfds;
 
 	if (seconds != TIMEDWAIT_INFINITE)
 		expire_time = time(NULL) + seconds;
@@ -4877,8 +4877,9 @@ timedwait_2fds(int fd0, int fd1, time_t seconds, const char *diag)
 		if (fd1 != -1) {
 			fds[1].fd = fd1;
 			fds[1].events = POLLIN;
+			nfds = GFARM_ARRAY_LENGTH(fds);
 		} else {
-			--nfds;
+			nfds = GFARM_ARRAY_LENGTH(fds) - 1;
 		}
 		nfound = poll(fds, nfds, seconds == TIMEDWAIT_INFINITE ?
 		    INFTIM : expire_time - now);
@@ -4967,7 +4968,7 @@ wait_3fds(int fd0, int fd1, int fd2, const char *diag)
 	int nfound, rv = 0;
 #ifdef HAVE_POLL
 	struct pollfd fds[3];
-	int nfds = GFARM_ARRAY_LENGTH(fds);
+	int nfds;
 
 	fds[0].fd = fd0;
 	fds[0].events = POLLIN;
@@ -4976,8 +4977,9 @@ wait_3fds(int fd0, int fd1, int fd2, const char *diag)
 	if (fd2 != -1) {
 		fds[2].fd = fd2;
 		fds[2].events = POLLIN;
+		nfds = GFARM_ARRAY_LENGTH(fds);
 	} else {
-		--nfds;
+		nfds = GFARM_ARRAY_LENGTH(fds) - 1;
 	}
 	nfound = poll(fds, nfds, INFTIM);
 	if (nfound == 0)
