@@ -1149,7 +1149,7 @@ write_verify_request_abandon(const char *diag)
 	write_verify_request_recv(&entry.req, diag);
 	gflog_error(GFARM_MSG_UNFIXED,
 	    "please run gfspooldigest: inode %lld:%lld is written at %lld, "
-	    "but not write_verified due to memory shorage",
+	    "but not write_verified due to memory shortage",
 	    (long long)entry.req.ino, (long long)entry.req.gen,
 	    (long long)entry.req.mtime);
 }
