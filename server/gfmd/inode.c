@@ -3841,7 +3841,7 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 		 * of open(O_TRUNC) is ignored in this case.
 		 * see SF.net #472 and #441.
 		 */
-		inode_file_update(fo, 0, atime, &inode->i_mtimespec,
+		inode_file_update(fo, 0, atime, &inode->i_mtimespec, 0,
 		    NULL, NULL, trace_logp, diag);
 	} else if (atime != NULL)
 		inode_set_relatime(inode, atime);
@@ -3934,6 +3934,7 @@ inode_check_pending_replication(struct file_opening *fo)
 static int
 inode_file_update_common(struct inode *inode, gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	int want_gen_update,
 	struct host *spool_host, int desired_replica_number, char *repattr,
 	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
 	char **trace_logp, const char *diag)
@@ -3958,7 +3959,7 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 
 	old_gen = inode->i_gen;
 
-	if (spool_host == NULL || host_supports_async_protocols(spool_host)) {
+	if (spool_host == NULL || want_gen_update) {
 		/* update generation number */
 		if (old_genp != NULL)
 			*old_genp = inode->i_gen;
@@ -4009,6 +4010,7 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 int
 inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	int want_gen_update,
 	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
 	char **trace_logp, const char *diag)
 {
@@ -4018,7 +4020,7 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	inode_cksum_remove(inode);
 
 	return (inode_file_update_common(inode, size, atime, mtime,
-	    fo->u.f.spool_host,
+	    want_gen_update, fo->u.f.spool_host,
 	    fo->u.f.replica_spec.desired_number, fo->u.f.replica_spec.repattr,
 	    old_genp, new_genp, trace_logp, diag));
 }
@@ -4062,7 +4064,7 @@ inode_file_handle_update(struct inode *inode, gfarm_off_t size,
 
 	/* replica_check will fix the unknown desired_file_number and repattr */
 	*gen_updatedp = inode_file_update_common(inode,
-	    size, atime, mtime, spool_host,
+	    size, atime, mtime, 1, spool_host,
 	    /* desired_file_number is unknown */ 1,
 	    /* repattr is unknown */ NULL,
 	    old_genp, new_genp, trace_logp, diag);
