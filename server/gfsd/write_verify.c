@@ -135,9 +135,10 @@ write_verify_request(gfarm_ino_t ino, gfarm_uint64_t gen, time_t mtime,
 	rv = write(write_verify_request_send_fd, &req, sizeof req);
 	if (rv != sizeof req) {
 		if (rv == -1) {
-			gflog_error_errno(GFARM_MSG_1004397, "%s: "
-			    "write_verify request %lld:%lld (mtime: %lld), "
-			    "please run gfspooldigest",
+			gflog_error_errno(GFARM_MSG_1004397,
+			    "please run gfspooldigest: %s: "
+			    "write_verify request "
+			    "inode %lld:%lld (mtime: %lld)",
 			    diag,
 			    (long long)ino, (long long)gen, (long long)mtime);
 		} else {
@@ -1146,9 +1147,9 @@ write_verify_request_abandon(const char *diag)
 	struct write_verify_entry entry;
 
 	write_verify_request_recv(&entry.req, diag);
-	gflog_error(GFARM_MSG_UNFIXED, "inode %lld:%lld is written at %lld, "
-	    "but not write_verified due to memory shorage, "
-	    "please run gfspooldigest",
+	gflog_error(GFARM_MSG_UNFIXED,
+	    "please run gfspooldigest: inode %lld:%lld is written at %lld, "
+	    "but not write_verified due to memory shorage",
 	    (long long)entry.req.ino, (long long)entry.req.gen,
 	    (long long)entry.req.mtime);
 }
