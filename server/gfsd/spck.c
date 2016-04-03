@@ -635,7 +635,7 @@ gfsd_spool_check()
 		if (gfarm_spool_root[i] == NULL)
 			break;
 		if (chdir(gfarm_spool_root[i]) == -1)
-			gflog_fatal_errno(GFARM_MSG_UNFIXED, "chdir(%s)",
+			gflog_fatal_errno(GFARM_MSG_1004484, "chdir(%s)",
 			    gfarm_spool_root[i]);
 		(void)check_spool("data", hash_ok);
 	}

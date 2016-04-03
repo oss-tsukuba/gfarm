@@ -238,7 +238,7 @@ process_del_ref(struct process *process, struct peer *peer)
 		if (fo != NULL) {
 			mode = inode_get_mode(fo->inode);
 			/* sanity check: this shouldn't happen */
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1004466,
 			    "%s: minor internal error "
 			    "pid:%lld fd:%d inode:%llu:%llu (mode:0%o) "
 			    "remains opened, closed by %s@%s, spool is %s, "

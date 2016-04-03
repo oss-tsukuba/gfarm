@@ -1147,7 +1147,7 @@ write_verify_request_abandon(const char *diag)
 	struct write_verify_entry entry;
 
 	write_verify_request_recv(&entry.req, diag);
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1004485,
 	    "please run gfspooldigest: inode %lld:%lld is written at %lld, "
 	    "but not write_verified due to memory shortage",
 	    (long long)entry.req.ino, (long long)entry.req.gen,
@@ -1190,7 +1190,7 @@ cleanup_notify_setup(void)
 	int pipefds[2];
 
 	if (pipe(pipefds) == -1)
-		fatal(GFARM_MSG_UNFIXED, "pipe after fork: %s",
+		fatal(GFARM_MSG_1004486, "pipe after fork: %s",
 		    strerror(errno));
 	cleanup_notify_recv_fd = pipefds[0];
 	cleanup_notify_send_fd = pipefds[1];
@@ -1300,7 +1300,7 @@ write_verify_controller(void)
 	}
 	cleanup_notified(diag);
 	if (kill(write_verify_gfsd_pid, SIGTERM) == -1)
-		gflog_warning_errno(GFARM_MSG_UNFIXED,
+		gflog_warning_errno(GFARM_MSG_1004487,
 		    "kill(write_verify:%ld)",
 		    (long)write_verify_gfsd_pid);
 	cleanup(0);

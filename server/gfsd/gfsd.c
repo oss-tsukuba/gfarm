@@ -260,7 +260,7 @@ cleanup(int sighandler)
 		if (write_verify_controller_gfsd_pid != -1 &&
 		    kill(write_verify_controller_gfsd_pid, SIGTERM) == -1 &&
 		    !sighandler)
-			gflog_warning_errno(GFARM_MSG_UNFIXED,
+			gflog_warning_errno(GFARM_MSG_1004472,
 			    "kill(write_verify_controller:%ld)",
 			    (long)write_verify_controller_gfsd_pid);
 		cleanup_iostat(sighandler);
@@ -546,14 +546,14 @@ fd_event_notified(int event_fd,
 	char dummy[1];
 
 	if (do_logging)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004473,
 		    "%s: %s notified", event_name, diag);
 	rv = read(event_fd, dummy, sizeof dummy);
 	if (rv == -1)
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1004474,
 		    "%s: %s notified: read", event_name, diag);
 	else if (rv != sizeof dummy)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004475,
 		    "%s: %s notified: size expected %zd but %zd",
 		    diag, event_name, sizeof dummy, rv);
 }
@@ -1778,12 +1778,12 @@ is_readonly_mode(int i)
 	static const char diag[] = "is_readonly_mode";
 
 	if (i < 0 || i >= gfarm_spool_root_num)
-		fatal(GFARM_MSG_UNFIXED, "%s: internal error: %d / %d", diag,
+		fatal(GFARM_MSG_1004476, "%s: internal error: %d / %d", diag,
 		    i, gfarm_spool_root_num);
 	if (p == NULL) {
 		GFARM_CALLOC_ARRAY(p, gfarm_spool_root_num);
 		if (p == NULL)
-			fatal(GFARM_MSG_UNFIXED, "%s: no memory for %d bytes",
+			fatal(GFARM_MSG_1004477, "%s: no memory for %d bytes",
 			    diag, gfarm_spool_root_num);
 	}
 	if (p[i] == NULL) {
@@ -1889,7 +1889,7 @@ gfsd_local_path2(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
 		if (gfarm_spool_root_num == 1)
 			break;
 		if (statvfs(r, &fsb))
-			gflog_fatal_errno(GFARM_MSG_UNFIXED, "%d %s", i, r);
+			gflog_fatal_errno(GFARM_MSG_1004478, "%d %s", i, r);
 		if (is_readonly_mode(i)) {
 			/* pretend to be disk full to make gfsd read-only */
 			fsb.f_bavail = fsb.f_bfree = 0;
@@ -1917,7 +1917,7 @@ gfsd_local_path2(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
 
 		GFARM_MALLOC_ARRAY(p2, length);
 		if (p2 == NULL) {
-			fatal(GFARM_MSG_UNFIXED, "%s: no memory for %d bytes",
+			fatal(GFARM_MSG_1004479, "%s: no memory for %d bytes",
 				diag2, length);
 		}
 		snprintf(p2, length, "%s%s", gfarm_spool_root[max_i],
@@ -2349,7 +2349,7 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 					    (long long)ino, (long long)gen,
 					    gfarm_error_string(e));
 			} else
-				gflog_error(GFARM_MSG_UNFIXED, "%s: "
+				gflog_error(GFARM_MSG_1004480, "%s: "
 				    "%lld:%lld: %s", diag, (long long)ino,
 				    (long long)gen, gfarm_error_string(e2));
 			e = e2;
@@ -2756,7 +2756,7 @@ replica_lost_move_to_lost_found(gfarm_ino_t ino, gfarm_uint64_t gen,
 			fatal(GFARM_MSG_1004386, "die");
 	}
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004481,
 		    "%lld:%lld: possible race to move lost+found",
 		    (long long)ino, (long long)gen);
 		return;
@@ -3649,7 +3649,7 @@ statfs_all(gfarm_int32_t *bsizep,
 		err = gfsd_statfs(gfarm_spool_root[i], &bsize,
 		    &blocks, &bfree, &bavail, &files, &ffree, &favail, &ronly);
 		if (err)
-			gflog_fatal_errno(GFARM_MSG_UNFIXED, "statfs");
+			gflog_fatal_errno(GFARM_MSG_1004482, "statfs");
 		if (ronly)
 			gflog_error(GFARM_MSG_1003715,
 			    "%s: read only file system", gfarm_spool_root[i]);
@@ -6467,7 +6467,7 @@ main(int argc, char **argv)
 			gfarm_spool_root_len_max = s;
 	}
 	if (gfarm_spool_root_num == 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "no spool directory");
+		gflog_fatal(GFARM_MSG_1004483, "no spool directory");
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);
 

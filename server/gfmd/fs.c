@@ -3914,7 +3914,7 @@ gfm_server_config_set(struct peer *peer, int from_client, int skip)
 
 	e = gfm_server_get_request(peer, diag, "sc", &name, &fmt);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: get_request name: %s",
+		gflog_debug(GFARM_MSG_1004467, "%s: get_request name: %s",
 		    diag, gfarm_error_string(e));
 		return (e);
 	}
@@ -3932,7 +3932,7 @@ gfm_server_config_set(struct peer *peer, int from_client, int skip)
 		break;
 	}
 	if (e != GFARM_ERR_NO_ERROR || eof) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004468,
 		    "%s: gfp_xdr_recv(): %s", diag, gfarm_error_string(e));
 		if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
 			e = GFARM_ERR_PROTOCOL;
@@ -3950,17 +3950,17 @@ gfm_server_config_set(struct peer *peer, int from_client, int skip)
 
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004469,
 		    "%s(%s): user %s does not belong to gfarmadm: %s",
 		    diag, name, user == NULL ? "(null)" : user_name(user),
 		    gfarm_error_string(e));
 	} else if ((e = gfarm_config_type_by_name_for_metadb(name, &type))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s(%s): %s",
+		gflog_debug(GFARM_MSG_1004470, "%s(%s): %s",
 		    diag, name, gfarm_error_string(e));
 	} else if (fmt != gfarm_config_type_get_format(type)) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004471,
 		    "%s(%s): format '%c' is expected, but '%c': %s",
 		    diag, name, gfarm_config_type_get_format(type), fmt,
 		    gfarm_error_string(e));

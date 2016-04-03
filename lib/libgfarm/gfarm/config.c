@@ -2098,7 +2098,7 @@ parse_set_spool_root(char *p)
 
 	e = get_one_argument(p, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004461,
 			"get_one_argument failed "
 			"when parsing var (%s): %s",
 			p, gfarm_error_string(e));
@@ -2115,7 +2115,7 @@ parse_set_spool_root(char *p)
 		} else {
 			gfarm_spool_root[i] = strdup(s);
 			if (gfarm_spool_root[i] == NULL) {
-				gflog_error(GFARM_MSG_UNFIXED, "no memory");
+				gflog_error(GFARM_MSG_1004462, "no memory");
 				return (GFARM_ERR_NO_MEMORY);
 			}
 			len1 = strlen(gfarm_spool_root[i]) - 1;
@@ -2125,7 +2125,7 @@ parse_set_spool_root(char *p)
 		}
 	}
 	if (i == GFARM_SPOOL_ROOT_NUM)
-		gflog_fatal(GFARM_MSG_UNFIXED, "too many spool directories");
+		gflog_fatal(GFARM_MSG_1004463, "too many spool directories");
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -2192,7 +2192,7 @@ parse_set_sockbuf_limit_int(char *p, int *vp)
 
 	e = get_one_argument(p, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004464,
 			"get_one_argument failed "
 			"when sockbuf limit (%s): %s",
 			p, gfarm_error_string(e));
@@ -3930,7 +3930,7 @@ gfm_client_config_set_by_string(
 		e = parse_one_line(s, p, &o);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004465,
 		    "gfm_client_config_set_by_string(): %s: %s: %s",
 		    o == NULL ? "" : o, p, gfarm_error_string(e));
 		return (e);
