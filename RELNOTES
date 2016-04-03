@@ -1,3 +1,40 @@
+Release note for Gfarm 2.6.9
+============================
+
+[2016.4.3]
+
+New configuration directive
+* spool_server_back_channel_rcvbuf_limit and
+  metadb_server_back_channel_sndbuf_limit - limits outstanding
+  requests between gfsd and gfmd to reduce risk of the disconnection.
+  Default is 4096 bytes.
+
+Updated feature
+* gfsd - support multiple spool directories
+* most available disk space is selected when creating files
+* gfwhere - -m option to select files having the specified number or
+  less number of replicas
+* gfwhere - -h option to select files that stored on the specified
+  host
+* gfstatus - -m option to change the configuration parameter in gfmd
+  with -M option.  Currently, 'digest', 'write_verify',
+  'write_verify_interval', 'write_verify_retry_interval' can be
+  changed.  Note that write_verify is enabled only after gfsd is
+  restarted.
+* write_verify process of gfsd terminates and dumps file information
+  to be verified by TERM signal
+* gfspoolpath - -I option to specify inode number and generation
+  number instead of a filename
+
+Bug fix
+* updated files during the connection between gfsd and gfmd is
+  disconnected cannot be accessed
+* master gfmd may crash when connecting from an expired slave gfmd
+  [sf.net ticket #947]
+* delete metadata when a copy cannot be created due to no space error
+* mtime of gfs_pio_stat() and gfs_stat() is inconsistent, which may
+  cause failure to extract symbolic links from tar files
+
 Release note for Gfarm 2.6.8
 ============================
 
