@@ -193,12 +193,9 @@ secSessionReadConfigFile(char *configFile, gfarmSecSessionOption *ssOptPtr)
     static const char diag[] = "secSessionReadConfigFile";
 
     if (configFile == NULL || configFile[0] == '\0') {
-	gflog_auth_error(GFARM_MSG_1000659,
-	    "gfarm:secSessionReadConfigFile(): "
-			 "GFSL configuration file isn't specified");
-	return -1;
+	gflog_debug(GFARM_MSG_UNFIXED, "%d: no configuration file", diag);
+	goto Done;
     }
-
     gfarm_privilege_lock(diag);
     fd = fopen(configFile, "r");
     gfarm_privilege_unlock(diag);

@@ -170,7 +170,7 @@ gfarmGetEtcDir(void)
 	if (path == NULL)
 		gflog_error(GFARM_MSG_1004243, "no memory");
 	else if (stat(path, &st) == -1 || !S_ISDIR(st.st_mode)) {
-		gflog_error(GFARM_MSG_1000844,
+		gflog_info(GFARM_MSG_1000844,
 		    "%s: no configuration directory", path);
 		free(path);
 	} else {
