@@ -193,7 +193,7 @@ secSessionReadConfigFile(char *configFile, gfarmSecSessionOption *ssOptPtr)
     static const char diag[] = "secSessionReadConfigFile";
 
     if (configFile == NULL || configFile[0] == '\0') {
-	gflog_debug(GFARM_MSG_UNFIXED, "%d: no configuration file", diag);
+	gflog_debug(GFARM_MSG_UNFIXED, "%s: no configuration file", diag);
 	goto Done;
     }
     gfarm_privilege_lock(diag);
