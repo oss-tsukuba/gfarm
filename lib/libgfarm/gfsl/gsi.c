@@ -299,23 +299,11 @@ gfarmGssNewCredentialName(gss_name_t *outputNamePtr, gss_cred_id_t cred,
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
-    static const char diag[] = "gfarmGssNewCredentialName";
 
-    /*
-     * gss_inquire_cred() may call gss_acquire_cred() internally
-     *
-     * NOTE: this code may be called from a client,
-     * and that means we access a static variable (i.e. privilege_lock mutex)
-     * instead of a per-kernel-module variable (i.e. gfarm_ctxp->...).
-     * But that's OK, because the in-kernel implementation doesn't support GSI
-     * for now, and libgfarm/gfsl/ itself has lots of such static variables.
-     */
-    gfarm_privilege_lock(diag);
     majStat = gss_inquire_cred(&minStat, cred, outputNamePtr,
 			       NULL,	/* lifetime */
 			       NULL,	/* usage */
 			       NULL	/* supported mech */);
-    gfarm_privilege_unlock(diag);
 
     if (majStatPtr != NULL) {
 	*majStatPtr = majStat;
@@ -379,9 +367,7 @@ gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
     OM_uint32 minStat = 0;
     int ret = -1;
     gss_cred_id_t cred;
-    static const char diag[] = "gfarmGssAcquireCredential";
     
-    gfarm_privilege_lock(diag);
     majStat = gss_acquire_cred(&minStat,
 			       desiredName,
 			       GSS_C_INDEFINITE,
@@ -391,11 +377,8 @@ gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
 			       NULL,
 			       NULL);
 #if !GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
-    gfarm_privilege_unlock(diag);
 #else
-    if (majStat == GSS_S_COMPLETE) {
-	gfarm_privilege_unlock(diag);
-    } else {
+    if (majStat != GSS_S_COMPLETE) {
 	OM_uint32 majStat2, majStat3;
 	OM_uint32 minStat2, minStat3;
 
@@ -412,7 +395,6 @@ gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
 				    &cred,
 				    NULL,
 				    NULL);
-	gfarm_privilege_unlock(diag);
 
 	if (majStat2 == GSS_S_COMPLETE) {
 	    gss_name_t credName;
@@ -592,16 +574,14 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 	tknStat = gfarmGssReceiveToken(fd, itPtr, GFARM_GSS_AUTH_TIMEOUT_MSEC);
 	if (tknStat <= 0) {
 	    gsiErrNo = errno;
-	    gflog_auth_info(GFARM_MSG_1003845,
-		"gfarmGssAcceptSecurityContext(): failed to receive response: "
-		"%s", strerror(gsiErrNo));
+	    gflog_auth_info(GFARM_MSG_UNFIXED,
+		"%s: failed to receive response: %s", diag,
+		strerror(gsiErrNo));
 	    majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    break;
 	}
 
-	/* gss_accept_sec_context() may call gss_acquire_cred() internally */
-	gfarm_privilege_lock(diag);
 	majStat = gss_accept_sec_context(&minStat,
 					 scPtr,
 					 cred,
@@ -613,7 +593,6 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 					 &retFlag,
 					 &timeRet,
 					 &remCred);
-	gfarm_privilege_unlock(diag);
 
 	if (itPtr->length > 0)
 	    gss_release_buffer(&minStat2, itPtr);
@@ -625,9 +604,9 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 	    if (tknStat > 0) {
 		gsiErrNo = 0;
 	    } else {
-		gflog_auth_info(GFARM_MSG_1003846,
-		    "gfarmGssAcceptSecurityContext(): failed to send response"
-		    ": %s", strerror(gsiErrNo));
+		gflog_auth_info(GFARM_MSG_UNFIXED,
+		    "%s: failed to send response: %s", diag,
+		    strerror(gsiErrNo));
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
 		minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    }
@@ -696,9 +675,8 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
      */
     if ((reqFlag & GSS_C_ANON_FLAG) == GSS_C_ANON_FLAG) {
 	/* It is a bit safer to deny the request than to silently ignore it */
-	gflog_auth_error(GFARM_MSG_1000618,
-	    "gfarmGssInitiateSecurityContext(): "
-	    "GSS_C_ANON_FLAG is not allowed");
+	gflog_auth_error(GFARM_MSG_UNFIXED,
+	    "%s: GSS_C_ANON_FLAG is not allowed", diag);
 	gsiErrNo = EINVAL;
 	majStat = GSS_S_UNAVAILABLE;
 	minStat = GFSL_DEFAULT_MINOR_ERROR;
@@ -706,13 +684,6 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
     }
 
     while (1) {
-	/*
-	 * gss_init_sec_context() may call gss_acquire_cred() internally
-	 *
-	 * NOTE: this code may be called from a client,
-	 * see the comment in gfarmGssNewCredentialName() about this issue.
-	 */
-	gfarm_privilege_lock(diag);
 	majStat = gss_init_sec_context(&minStat,
 				       cred,
 				       scPtr,
@@ -726,7 +697,6 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 				       otPtr,
 				       &retFlag,
 				       &timeRet);
-	gfarm_privilege_unlock(diag);
 
 	if (itPtr->length > 0)
 	    gss_release_buffer(&minStat2, itPtr);
@@ -738,9 +708,9 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 	    if (tknStat > 0) {
 		gsiErrNo = 0;
 	    } else {
-		gflog_auth_error(GFARM_MSG_1003847,
-		    "gfarmGssInitiateSecurityContext(): "
-		    "failed to send response: %s", strerror(gsiErrNo));
+		gflog_auth_error(GFARM_MSG_UNFIXED,
+		    "%s: failed to send response: %s", diag,
+		    strerror(gsiErrNo));
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
 		minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    }
@@ -755,9 +725,9 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 			GFARM_GSS_AUTH_TIMEOUT_MSEC);
 	    if (tknStat <= 0) {
 		gsiErrNo = errno;
-		gflog_auth_error(GFARM_MSG_1003848,
-		    "gfarmGssInitiateSecurityContext(): "
-		    "failed to receive response: %s", strerror(gsiErrNo));
+		gflog_auth_error(GFARM_MSG_UNFIXED,
+		    "%s: failed to receive response: %s", diag,
+		    strerror(gsiErrNo));
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
 		minStat = GFSL_DEFAULT_MINOR_ERROR;
 		break;
@@ -1055,15 +1025,8 @@ gfarmGssExportCredential(gss_cred_id_t cred, OM_uint32 *statPtr)
     static char exported_name[] = "X509_USER_DELEG_PROXY=";
     static char env_name[] = "X509_USER_PROXY=";
     static char file_prefix[] = "FILE:";
-    static const char diag[] = "gfarmGssExportCredential";
 
-    /*
-     * NOTE: this code may be called from a client,
-     * see the comment in gfarmGssNewCredentialName() about this issue.
-     */
-    gfarm_privilege_lock(diag);
     majStat = gss_export_cred(&minStat, cred, GSS_C_NO_OID, 1, &buf);
-    gfarm_privilege_unlock(diag);
     if (GSS_ERROR(majStat))
 	goto Done;
 
@@ -1129,13 +1092,8 @@ void
 gfarmGssDeleteExportedCredential(gfarmExportedCredential *exportedCred,
     int sigHandler)
 {
-    static const char diag[] = "gfarmGssDeleteExportedCredential";
-
-    if (exportedCred->filename != NULL) {
-	gfarm_privilege_lock(diag);
+    if (exportedCred->filename != NULL)
 	unlink(exportedCred->filename);
-	gfarm_privilege_unlock(diag);
-    }
 
     if (sigHandler) /* It's not safe to do the following operation */
 	    return;
@@ -1217,13 +1175,6 @@ gssInitiateSecurityContextNext(
     int rv;
     static const char diag[] = "gssInitiateSecurityContextNext()";
 
-    /*
-     * gss_init_sec_context() may call gss_acquire_cred() internally
-     *
-     * NOTE: this code may be called from a client,
-     * see the comment in gfarmGssNewCredentialName() about this issue.
-     */
-    gfarm_privilege_lock(diag);
     state->majStat = gss_init_sec_context(&state->minStat,
 					  state->cred,
 					  &state->sc,
@@ -1237,7 +1188,6 @@ gssInitiateSecurityContextNext(
 					  state->otPtr,
 					  &state->retFlag,
 					  &state->timeRet);
-    gfarm_privilege_unlock(diag);
 
     if (state->itPtr->length > 0)
 	gss_release_buffer(&minStat2, state->itPtr);
@@ -1248,9 +1198,7 @@ gssInitiateSecurityContextNext(
 	    /* go to gfarmGssInitiateSecurityContextSendToken() */
 	    return 1;
 	}
-	gflog_auth_error(GFARM_MSG_1000622,
-	    "gfarm:gssInitiateSecurityContextNext(): %s",
-			 strerror(rv));
+	gflog_auth_error(GFARM_MSG_UNFIXED, "%s: %s", diag, strerror(rv));
 	state->majStat = GSS_S_FAILURE;
 	state->minStat = GFSL_DEFAULT_MINOR_ERROR;
     }

@@ -196,9 +196,7 @@ secSessionReadConfigFile(char *configFile, gfarmSecSessionOption *ssOptPtr)
 	gflog_debug(GFARM_MSG_UNFIXED, "%s: no configuration file", diag);
 	goto Done;
     }
-    gfarm_privilege_lock(diag);
     fd = fopen(configFile, "r");
-    gfarm_privilege_unlock(diag);
     if (fd == NULL) {
 	/*
 	 * use default option.
