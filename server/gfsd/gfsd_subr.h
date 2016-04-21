@@ -47,10 +47,13 @@ void free_gfm_server(void);
 pid_t do_fork(enum gfsd_type);
 int open_data(char *, int);
 char *gfsd_make_path(const char *, const char *);
-const char *gfsd_skip_spool_root(const char *);
+char *gfsd_skip_spool_root(char *);
 void gfsd_local_path(gfarm_ino_t, gfarm_uint64_t, const char *, char **);
+void gfsd_local_path2(gfarm_ino_t, gfarm_uint64_t, const char *, char **,
+	gfarm_ino_t, gfarm_uint64_t, const char *, char **);
 int gfsd_create_ancestor_dir(char *);
-gfarm_error_t gfsd_copy_file(int, char *);
+gfarm_error_t gfsd_copy_file(int, gfarm_ino_t, gfarm_uint64_t, const char *,
+	char **);
 gfarm_error_t gfm_client_replica_lost(gfarm_ino_t, gfarm_uint64_t);
 gfarm_error_t calc_digest(int, const char *, char *, size_t *, char *, size_t,
 	const char *, gfarm_ino_t, gfarm_uint64_t);

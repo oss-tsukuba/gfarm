@@ -101,7 +101,7 @@ move_or_copy_to_lost_found(int op, const char *file, int fd, struct stat *stp,
 	gfarm_error_t e;
 	int save_errno;
 	struct gfarm_timespec mtime;
-	char *newpath, *path = NULL;
+	char *newpath, *newfile, *path = NULL;
 	gfarm_ino_t inum_new;
 	gfarm_uint64_t gen_new;
 	struct stat sb1;
@@ -137,37 +137,43 @@ move_or_copy_to_lost_found(int op, const char *file, int fd, struct stat *stp,
 		 */
 		return (e);
 	}
-	gfsd_local_path(inum_new, gen_new, diag, &newpath);
-	if (gfsd_create_ancestor_dir(newpath)) {
-		save_errno = errno;
-		gflog_error(GFARM_MSG_1003521,
-		    "%s: cannot create ancestor directory: %s",
-		    newpath, strerror(save_errno));
-		free(newpath);
-		return (gfarm_errno_to_error(save_errno));
-	}
 	switch (op) {
 	case 0: /* rename */
 		if (file == NULL) {
-			gfsd_local_path(inum, gen, diag, &path);
+			gfsd_local_path2(inum, gen, diag, &path,
+			    inum_new, gen_new, diag, &newpath);
 			file = path;
+			newfile = newpath;
+		} else {
+			gfsd_local_path(inum_new, gen_new, diag, &newpath);
+			newfile = gfsd_skip_spool_root(newpath);
 		}
-		if (rename(file, newpath)) {
+		if (gfsd_create_ancestor_dir(newfile)) {
+			save_errno = errno;
+			gflog_error(GFARM_MSG_1003521,
+			    "%s: cannot create ancestor directory: %s",
+			    newfile, strerror(save_errno));
+			free(path);
+			free(newpath);
+			return (gfarm_errno_to_error(save_errno));
+		}
+		if (rename(file, newfile)) {
 			save_errno = errno;
 			gflog_error(GFARM_MSG_1003522,
-			    "%s: cannot rename to %s: %s", file, newpath,
+			    "%s: cannot rename to %s: %s", file, newfile,
 			    strerror(save_errno));
 			e = gfarm_errno_to_error(save_errno);
 		}
 		free(path);
 		break;
 	case 1: /* copy */
-		if ((e = gfsd_copy_file(fd, newpath)) != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_1004189,
-			    "inode %lld:%lld: cannot copy to %s, "
+		if ((e = gfsd_copy_file(fd, inum_new, gen_new, diag, &newpath))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "inode %lld:%lld: cannot be copied, "
 			    "invalid file may remain: %s",
 			    (unsigned long long)inum, (unsigned long long)gen,
-			    newpath, gfarm_error_string(e));
+			    gfarm_error_string(e));
 		else if (stat(newpath, &sb1) == -1) {
 			save_errno = errno;
 			gflog_error(GFARM_MSG_1004190,

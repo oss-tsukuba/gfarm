@@ -1844,8 +1844,8 @@ gfsd_make_path(const char *relpath, const char *diag)
 	return (p);
 }
 
-const char *
-gfsd_skip_spool_root(const char *path)
+char *
+gfsd_skip_spool_root(char *path)
 {
 	int i, len;
 
@@ -2029,24 +2029,27 @@ gfsd_create_ancestor_dir(char *path)
 	return (-1);
 }
 
-/*
- * this function is only used during spool check.
- * there is no race regarding path.
- */
 gfarm_error_t
-gfsd_copy_file(int fd, char *path)
+gfsd_copy_file(int fd, gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
+	char **pathp)
 {
 #define COPY_BLOCK_SIZE 65536
-	char buf[COPY_BLOCK_SIZE];
+	char buf[COPY_BLOCK_SIZE], *path;
 	ssize_t sz, rv;
 	int dst, i;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
 	if (lseek(fd, 0, SEEK_SET) == -1)
 		return (gfarm_errno_to_error(errno));
+	gfsd_local_path(inum, gen, diag, &path);
+retry:
 	dst = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
-	if (dst < 0)
+	if (dst < 0) {
+		free(path);
 		return (gfarm_errno_to_error(errno));
+	}
+	if (!confirm_local_path(inum, gen, diag, &path))
+		goto retry;
 	while ((sz = read(fd, buf, sizeof buf)) > 0
 	       || (sz == -1 && errno == EINTR)) {
 		for (i = 0; i < sz; i += rv) {
@@ -2068,6 +2071,10 @@ gfsd_copy_file(int fd, char *path)
 	if (sz == -1 && e == GFARM_ERR_NO_ERROR)
 		e = gfarm_errno_to_error(errno);
 	close(dst);
+	if (*pathp != NULL)
+		*pathp = path;
+	else
+		free(path);
 	return (e);
 }
 
