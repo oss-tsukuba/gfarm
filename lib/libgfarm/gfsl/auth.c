@@ -332,7 +332,9 @@ gfarmAuthInitialize_unlocked(char *usermapFile)
 	if (setAuthFile(usermapFile) == -1)
 	    return (-1);
 
+	gfarm_privilege_lock(diag);
 	mFd = openAuthFile();
+	gfarm_privilege_unlock(diag);
 	if (mFd == NULL)
 	    return (-1);
 
