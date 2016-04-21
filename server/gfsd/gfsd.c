@@ -1491,12 +1491,32 @@ file_table_is_available(gfarm_int32_t net_fd)
 		return (0);
 }
 
+static int
+confirm_local_path(gfarm_ino_t ino, gfarm_uint64_t gen, const char *diag,
+	char **pathp)
+{
+	char *path2;
+	int r = 1;
+
+	if (gfarm_spool_root_num > 1) {
+		gfsd_local_path(ino, gen, diag, &path2);
+		if (strcmp(*pathp, path2) != 0) {
+			unlink(*pathp);
+			free(*pathp);
+			*pathp = path2;
+			r = 0;
+		} else
+			free(path2);
+	}
+	return (r);
+}
+
 #ifndef ACCESSPERMS
 #define ACCESSPERMS (S_IRWXU|S_IRWXG|S_IRWXO)
 #endif
 
 static gfarm_error_t
-file_table_add(gfarm_int32_t net_fd, char *path,
+file_table_add(gfarm_int32_t net_fd,
 	int flags, gfarm_ino_t ino, gfarm_uint64_t gen, char *cksum_type,
 	size_t cksum_len, char *cksum, int cksum_flags, struct timeval *start,
 	int *local_fdp, const char *diag)
@@ -1504,7 +1524,10 @@ file_table_add(gfarm_int32_t net_fd, char *path,
 	struct file_entry *fe;
 	int local_fd, local_fd_rdonly, r, save_errno, is_new_file = 0;
 	struct stat st;
+	char *path;
 
+	gfsd_local_path(ino, gen, diag, &path);
+retry:
 	r = lstat(path, &st);
 	if (r == -1) {
 		if (errno != ENOENT)
@@ -1512,8 +1535,12 @@ file_table_add(gfarm_int32_t net_fd, char *path,
 		is_new_file = 1;
 	}
 	local_fd = open_data(path, flags);
-	if (local_fd == -1)
+	if (local_fd == -1) {
+		free(path);
 		return (gfarm_errno_to_error(errno));
+	}
+	if (is_new_file && !confirm_local_path(ino, gen, diag, &path))
+		goto retry;
 	if (r < 0 && fstat(local_fd, &st) < 0)
 		fatal_errno(GFARM_MSG_1000463, "%s: %s", diag, path);
 	if ((flags & ACCESSPERMS) != GFARM_FILE_WRONLY) {
@@ -1522,8 +1549,10 @@ file_table_add(gfarm_int32_t net_fd, char *path,
 	    (flags & ~ACCESSPERMS) | O_RDONLY)) == -1) {
 		save_errno = errno;
 		close(local_fd);
+		free(path);
 		return (gfarm_errno_to_error(save_errno));
 	}
+	free(path);
 	fe = &file_table[net_fd];
 	fe->local_fd = *local_fdp = local_fd;
 	fe->local_fd_rdonly = local_fd_rdonly;
@@ -2000,6 +2029,10 @@ gfsd_create_ancestor_dir(char *path)
 	return (-1);
 }
 
+/*
+ * this function is only used during spool check.
+ * there is no race regarding path.
+ */
 gfarm_error_t
 gfsd_copy_file(int fd, char *path)
 {
@@ -2097,7 +2130,7 @@ gfm_client_compound_end(const char *diag)
 
 static gfarm_error_t
 gfs_server_reopen(const char *diag, struct gfp_xdr *client,
-	gfarm_int32_t net_fd, char **pathp, int *net_flagsp, int *to_createp,
+	gfarm_int32_t net_fd, int *net_flagsp, int *to_createp,
 	gfarm_ino_t *inop, gfarm_uint64_t *genp, char **cksum_typep,
 	size_t *cksum_lenp, char cksum[], int *cksum_flagsp)
 {
@@ -2105,7 +2138,6 @@ gfs_server_reopen(const char *diag, struct gfp_xdr *client,
 	gfarm_ino_t ino;
 	gfarm_uint64_t gen;
 	gfarm_int32_t mode, net_flags, to_create;
-	char *path;
 	int cksum_flags;
 	char *cksum_type, tmp_cksum[GFM_PROTO_CKSUM_MAXLEN];
 	size_t cksum_len;
@@ -2155,8 +2187,6 @@ gfs_server_reopen(const char *diag, struct gfp_xdr *client,
 		    (long long)ino, (long long)gen,
 		    mode, net_flags, to_create);
 	} else {
-		gfsd_local_path(ino, gen, diag, &path);
-		*pathp = path;
 		*net_flagsp = net_flags;
 		*to_createp = to_create;
 		*inop = ino;
@@ -2242,7 +2272,6 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 	gfarm_int32_t *net_fdp, int *local_fdp)
 {
 	gfarm_error_t e, e2;
-	char *path = NULL;
 	gfarm_ino_t ino = 0;
 	gfarm_uint64_t gen = 0;
 	gfarm_int32_t net_flags = 0;
@@ -2266,7 +2295,7 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 	} else {
 		for (;;) {
 			if ((e = gfs_server_reopen(diag, client, net_fd,
-			    &path, &net_flags, &to_create, &ino, &gen,
+			    &net_flags, &to_create, &ino, &gen,
 			    &cksum_type, &cksum_len, cksum, &cksum_flags)) !=
 			    GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1002172,
@@ -2288,10 +2317,9 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 			}
 			if (to_create)
 				local_flags |= O_CREAT;
-			e2 = file_table_add(net_fd, path, local_flags,
+			e2 = file_table_add(net_fd, local_flags,
 			    ino, gen, cksum_type, cksum_len, cksum,
 			    cksum_flags, &start, local_fdp, diag);
-			free(path);
 			if (e2 == GFARM_ERR_NO_ERROR) {
 				/*
 				 * the memory owner of cksum_type is moved
@@ -3910,15 +3938,18 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	}
 
 	gfsd_local_path(ino, gen, diag, &path);
+retry:
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
 	save_errno = errno;
-	free(path);
 	if (local_fd == -1) {
 		/* dst_err: invalidate */
 		e = dst_err = gfarm_errno_to_error(save_errno);
+		free(path);
 		goto adding_cancel;
 	}
-
+	if (!confirm_local_path(ino, gen, diag, &path))
+		goto retry;
+	free(path);
 	e = gfs_client_connection_acquire_by_host(gfm_server, host, port,
 	    &server, listen_addrname);
 	if (e != GFARM_ERR_NO_ERROR) {
