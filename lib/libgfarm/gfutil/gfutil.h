@@ -31,6 +31,7 @@ int gflog_fatal_action_name_to_number(const char *);
 
 /* privlock */
 
+void gfarm_privilege_lock_disable(void);
 void gfarm_privilege_lock(const char *);
 void gfarm_privilege_unlock(const char *);
 

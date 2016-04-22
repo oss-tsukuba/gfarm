@@ -46,6 +46,7 @@ enum gfarm_auth_cred_type {
 void gfarm_auth_random(void *, size_t);
 void gfarm_auth_sharedsecret_response_data(char *, char *, char *);
 
+void gfarm_auth_root_squash_support_disable(void);
 struct passwd;
 gfarm_error_t gfarm_auth_shared_key_get(unsigned int *, char *,
 	char *, struct passwd *, int, int);

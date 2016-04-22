@@ -158,6 +158,18 @@ gfarm_auth_random(void *buffer, size_t length)
 }
 
 /*
+ * server only configuration.
+ * constant in clients, thus, gfarm_ctxp is not necessary
+ */
+static int gfarm_auth_root_squash_support = 1; /* always true in clients */
+
+void
+gfarm_auth_root_squash_support_disable(void)
+{
+	gfarm_auth_root_squash_support = 0;
+}
+
+/*
  * We switch the user's privilege to read ~/.gfarm_shared_key.
  *
  * NOTE: reading this file with root privilege may not work,
@@ -200,7 +212,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 		strcat(keyfilename, keyfile_basename);
 		allocbuf = keyfilename;
 	}
-	if (pwd != NULL) {
+	if (pwd != NULL && gfarm_auth_root_squash_support) {
 		gfarm_privilege_lock(diag);
 		o_gid = getegid();
 		o_uid = geteuid();
@@ -291,7 +303,7 @@ create:
 	}
 finish:
 	free(allocbuf);
-	if (pwd != NULL) {
+	if (pwd != NULL && gfarm_auth_root_squash_support) {
 		if (seteuid(0) == -1 && is_root) /* recover root privilege */
 			gflog_error_errno(GFARM_MSG_1002342, "seteuid(0)");
 		/* abandon group privileges */

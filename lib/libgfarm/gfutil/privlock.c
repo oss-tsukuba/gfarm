@@ -14,6 +14,8 @@
  * Because privilege_lock() and unlock() are only called from gfmd and gfsd,
  * we don't have to have privilege_mutex in *gfarm_ctxp, at least for now.
  */
+static int gfarm_privilege_lock_no_operation = 0; /* false by default */
+
 static pthread_mutex_t gfarm_privilege_mutex =
 	GFARM_MUTEX_INITIALIZER(gfarm_privilege_mutex);
 
@@ -46,6 +48,12 @@ gfarm_os_timespec_cmp(const struct timespec *t1, const struct timespec *t2)
 
 #endif
 
+void
+gfarm_privilege_lock_disable(void)
+{
+	gfarm_privilege_lock_no_operation = 1;
+}
+
 /*
  * Lock mutex for setuid(), setegid().
  */
@@ -55,6 +63,9 @@ gfarm_privilege_lock(const char *diag)
 {
 	struct timespec timeout;
 	int locked;
+
+	if (gfarm_privilege_lock_no_operation)
+		return;
 
 	gfarm_gettime(&timeout);
 	timeout.tv_sec += POSSIBLE_DEADLOCK_TIMEOUT;
@@ -102,6 +113,9 @@ gfarm_privilege_lock(const char *diag)
 void
 gfarm_privilege_unlock(const char *diag)
 {
+	if (gfarm_privilege_lock_no_operation)
+		return;
+
 	gfarm_mutex_unlock(&gfarm_privilege_mutex, diag, privilege_diag);
 
 #ifndef HAVE_PTHREAD_MUTEX_TIMEDLOCK

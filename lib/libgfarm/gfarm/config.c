@@ -1016,6 +1016,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_METADB_SERVER_SLAVE_REPLICATION_TIMEOUT_DEFAULT 120 /* 120 sec */
 #define GFARM_METADB_SERVER_SLAVE_MAX_SIZE_DEFAULT	16
 #define GFARM_METADB_SERVER_FORCE_SLAVE_DEFAULT		0
+#define GFARM_METADB_SERVER_NFS_ROOT_SQUASH_SUPPORT_DEFAULT	1 /* enable */
 #define GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT  60 /* 60 seconds */
 #define GFARM_FILE_TRACE_DEFAULT 0 /* disable */
 #define GFARM_FATAL_ACTION_DEFAULT GFLOG_FATAL_ACTION_ABORT_BACKTRACE
@@ -1040,6 +1041,7 @@ int gfarm_metadb_job_queue_length = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_heartbeat_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_dbq_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_server_back_channel_sndbuf_limit = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_server_nfs_root_squash_support = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_replica_remover_by_host_sleep_time =
 	GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_replica_remover_by_host_inode_step =
@@ -3169,6 +3171,10 @@ parse_one_line(char *s, char *p, char **op)
 	    == 0) {
 		e = parse_set_misc_int(p,
 		    &gfarm_metadb_server_back_channel_sndbuf_limit);
+	} else if (strcmp(s, o = "metadb_server_nfs_root_squash_support")
+	    == 0) {
+		e = parse_set_misc_enabled(p,
+		    &gfarm_metadb_server_nfs_root_squash_support);
 	} else if (strcmp(s, o = "metadb_replica_remover_by_host_sleep_time")
 	     == 0) {
 		e = parse_set_misc_int(p,
@@ -3549,6 +3555,10 @@ gfarm_config_set_default_misc(void)
 	if (metadb_server_force_slave == GFARM_CONFIG_MISC_DEFAULT)
 		metadb_server_force_slave =
 		    GFARM_METADB_SERVER_FORCE_SLAVE_DEFAULT;
+	if (gfarm_metadb_server_nfs_root_squash_support
+	    == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_metadb_server_nfs_root_squash_support =
+		    GFARM_METADB_SERVER_NFS_ROOT_SQUASH_SUPPORT_DEFAULT;
 	if (gfarm_ctxp->network_receive_timeout == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->network_receive_timeout =
 		    GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT;
