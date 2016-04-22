@@ -3029,7 +3029,16 @@ close_fd_somehow(struct gfp_xdr *client,
 
 	e3 = update_file_entry_for_close(client, fd, close_flags, diag);
 
-	if (gfm_server != NULL) {
+	if (gfm_server == NULL) {
+		if (fe->flags & FILE_FLAG_WRITTEN) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "inode %lld generation %lld (%lld): "
+			    "error occurred during close operation "
+			    "for writing: gfmd is down",
+			    (long long)fe->ino, (long long)fe->gen,
+			    (long long)fe->new_gen);
+		}
+	} else {
 
 		if (fd_usable_to_gfmd) {
 			e = close_fd(client, fd, fe, diag);
