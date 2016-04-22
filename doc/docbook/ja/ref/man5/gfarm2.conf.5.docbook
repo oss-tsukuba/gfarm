@@ -2250,6 +2250,29 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>write_verify_log_interval</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>
+write_verify に関する統計情報をログ出力する間隔を指定します。
+設定した値以上の時間が経過して、ファイルシステムノードでファイルが
+更新されると、統計情報がそのファイルシステムノードのログに記録されます。
+</para>
+<para>
+デフォルトは 3600秒 (1時間) です。
+</para>
+<para>
+この文は gfmd.conf のみで有効です。
+gfarm2.confでは無視されます。
+gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	write_verify_log_interval 3600
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -2365,7 +2388,8 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 	&lt;replica_check_minimum_interval_statement&gt; |
 	&lt;write_verify_statement&gt; |
 	&lt;write_verify_interval_statement&gt; |
-	&lt;write_verify_retry_interval_statement&gt;</literallayout></listitem>
+	&lt;write_verify_retry_interval_statement&gt; |
+	&lt;write_verify_log_interval_statement&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -3090,6 +3114,11 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 <varlistentry>
 <term>&lt;write_verify_retry_interval_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"write_verify_retry_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_log_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify_log_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 </variablelist>

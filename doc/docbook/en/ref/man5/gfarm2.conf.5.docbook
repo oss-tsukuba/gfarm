@@ -2311,6 +2311,28 @@ gfsd uses this setting at its startup by asking gfmd.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>write_verify_log_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+This statement specifies interval to record write_verify statistics in log.
+When this interval passes and then a file is updated on a filesystem node,
+statistics information will be recorded in the log on the filesystem node.
+</para>
+<para>
+The default value is 3600 seconds (1 hour).
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+gfsd uses this setting at its startup by asking gfmd.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	write_verify_log_interval 3600
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -2426,7 +2448,8 @@ gfsd uses this setting at its startup by asking gfmd.
 	&lt;replica_check_minimum_interval_statement&gt; |
 	&lt;write_verify_statement&gt; |
 	&lt;write_verify_interval_statement&gt; |
-	&lt;write_verify_retry_interval_statement&gt;</literallayout></listitem>
+	&lt;write_verify_retry_interval_statement&gt; |
+	&lt;write_verify_log_interval_statement&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -3151,6 +3174,11 @@ gfsd uses this setting at its startup by asking gfmd.
 <varlistentry>
 <term>&lt;write_verify_retry_interval_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"write_verify_retry_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_log_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify_log_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 </variablelist>
