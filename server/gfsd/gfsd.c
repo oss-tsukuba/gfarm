@@ -823,6 +823,7 @@ static void *initial_config_vars[] = {
 	&gfarm_write_verify,
 	&gfarm_write_verify_interval,
 	&gfarm_write_verify_retry_interval,
+	&gfarm_write_verify_log_interval,
 };
 
 static gfarm_error_t
@@ -2602,10 +2603,12 @@ fhclose_result(struct file_entry *fe, gfarm_uint64_t *cookie_p,
 gfarm_error_t
 calc_digest(int fd,
 	const char *md_type_name, char *md_string, size_t *md_strlenp,
+	gfarm_off_t *calc_lenp,
 	char *data_buf, size_t data_bufsize,
 	const char *diag, gfarm_ino_t diag_ino, gfarm_uint64_t diag_gen)
 {
 	ssize_t sz;
+	gfarm_off_t calc_len = 0;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
 	EVP_MD_CTX md_ctx;
@@ -2619,16 +2622,21 @@ calc_digest(int fd,
 	if (!msgdigest_init(md_type_name, &md_ctx, diag, diag_ino, diag_gen))
 		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 
-	while ((sz = read(fd, data_buf, data_bufsize)) > 0)
+	while ((sz = read(fd, data_buf, data_bufsize)) > 0) {
 		EVP_DigestUpdate(&md_ctx, data_buf, sz);
+		calc_len += sz;
+	}
 	io_error_check_errno("calc_digest");
 	if (sz == -1)
 		e = gfarm_errno_to_error(errno);
 
 	md_len = gfarm_msgdigest_final(md_value, &md_ctx);
-	if (e == GFARM_ERR_NO_ERROR)
+	if (e == GFARM_ERR_NO_ERROR) {
 		*md_strlenp =
 		    gfarm_msgdigest_to_string(md_string, md_value, md_len);
+		if (calc_lenp != NULL)
+			*calc_lenp = calc_len;
+	}
 
 	return (e);
 }
@@ -3656,7 +3664,7 @@ gfs_server_cksum(struct gfp_xdr *client)
 	if ((fe = file_table_entry(fd)) == NULL)
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
 	else {
-		e = calc_digest(file_table_get(fd), type, cksum, &len,
+		e = calc_digest(file_table_get(fd), type, cksum, &len, NULL,
 		    data_buf, sizeof(data_buf), diag, fe->ino, fe->gen);
 	}
 	free(type);

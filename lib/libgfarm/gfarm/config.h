@@ -26,6 +26,7 @@ extern int gfarm_spool_digest_error_check;
 extern int gfarm_write_verify;
 extern int gfarm_write_verify_interval;
 extern int gfarm_write_verify_retry_interval;
+extern int gfarm_write_verify_log_interval;
 
 /* GFM dependent */
 enum gfarm_atime_type {

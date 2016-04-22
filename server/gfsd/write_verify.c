@@ -23,17 +23,23 @@
 #include <gfarm/gfs.h>
 
 #include "gfutil.h"
+#include "timer.h"
 #include "tree.h"
 #include "msgdigest.h"
 
 #include "crc32.h"
+#include "context.h"
 #include "config.h"
 #include "gfp_xdr.h"
 #include "gfm_proto.h"
 #include "gfm_client.h"
+#include "gfs_profile.h"
 
 #include "gfsd_subr.h"
 #include "write_verify.h"
+
+#define TIMEBUF_FMT	"%Y-%m-%d %H:%M:%S"
+#define TIMEBUF_SIZE	32 /* "1999-12-31 23:59:59" + '\0' + 12 bytes spare */
 
 /*
  * RPC stub functions
@@ -283,6 +289,9 @@ static size_t ringbuf_size = 0;
 static size_t ringbuf_n_entries = 0, ringbuf_in = 0, ringbuf_out = 0;
 static int ringbuf_overflow = 0;
 
+/* statistics for logging */
+static size_t ringbuf_max_entries = 0;
+
 static int
 ringbuf_is_empty(void)
 {
@@ -348,6 +357,8 @@ ringbuf_enqueue(const struct write_verify_entry *entry)
 	ringbuf_ptr[ringbuf_in] = *entry;
 	ringbuf_in = (ringbuf_in + 1) % ringbuf_size;
 	++ringbuf_n_entries;
+	if (ringbuf_max_entries < ringbuf_n_entries)
+		ringbuf_max_entries = ringbuf_n_entries;
 }
 
 static void
@@ -487,6 +498,8 @@ ringbuf_read(int fd, gfarm_uint64_t nrecords, gfarm_uint32_t expected_crc32,
 		return (0);
 	}
 	ringbuf_n_entries = nrecords;
+	if (ringbuf_max_entries < ringbuf_n_entries)
+		ringbuf_max_entries = ringbuf_n_entries;
 	ringbuf_in = nrecords;
 	return (1);
 }
@@ -632,6 +645,32 @@ write_verify_entry_load(
  */
 
 static void
+write_verify_calc_report(gfarm_int64_t ino, gfarm_uint64_t gen,
+	gfarm_off_t calc_len,
+	const gfarm_timerval_t *t1, const gfarm_timerval_t *t2,
+	const char *result, const char *aux)
+{
+	const char *a1, *a2, *a3;
+	time_t t2sec = t2->tv_sec;
+	struct tm *tp = localtime(&t2sec);
+	double t = gfarm_timerval_sub(t2, t1);
+	char end_time[TIMEBUF_SIZE];
+
+	strftime(end_time, sizeof end_time, TIMEBUF_FMT, tp);
+	if (aux == NULL) {
+		a1 = a2 = a3 = "";
+	} else {
+		a1 = " (";
+		a2 = aux;
+		a3 = ")";
+	}
+	gflog_info(GFARM_MSG_UNFIXED, "write_verified at %s total_time %g "
+	    "inum %lld gen %lld size %lld: %s%s%s%s",
+	    end_time, t, (long long)ino, (long long)gen,
+	    (long long)calc_len, result, a1, a2, a3);
+}
+
+static void
 replica_lost_move_to_lost_found_by_fd(gfarm_ino_t ino, gfarm_uint64_t gen,
 	int local_fd, const char *diag)
 {
@@ -672,7 +711,12 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 	size_t got_cksum_len, cksum_len;
 	char got_cksum[GFM_PROTO_CKSUM_MAXLEN];
 	char cksum[GFARM_MSGDIGEST_STRSIZE];
+	gfarm_off_t calc_len;
+	gfarm_timerval_t t1, t2;
 	static const char diag[] = "write_verify_calc_cksum";
+
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1););
 
 	/*
 	 * do this regardless of whether it's linux or not,
@@ -693,14 +737,25 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 			fatal(GFARM_MSG_1004419, "die");
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_NO_SUCH_OBJECT) /* already removed */
+		if (e == GFARM_ERR_NO_SUCH_OBJECT) { /* already removed */
 			gflog_debug(GFARM_MSG_1004420,
 			    "%s: %lld:%lld: already removed",
 			    diag, (long long)ino, (long long)gen);
-		else
+			gfs_profile(
+				gfarm_gettimerval(&t2);
+				write_verify_calc_report(ino, gen, 0, &t1, &t2,
+				    "skipped", "updated before calculation");
+			);
+		} else {
 			gflog_warning(GFARM_MSG_1004421, "%s: %lld:%lld: %s",
 			    diag, (long long)ino, (long long)gen,
 			    gfarm_error_string(e));
+			gfs_profile(
+				gfarm_gettimerval(&t2);
+				write_verify_calc_report(ino, gen, 0, &t1, &t2,
+				    "skipped", gfarm_error_string(e));
+			);
+		}
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
 		free(cksum_type);
@@ -710,6 +765,11 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 		gflog_info(GFARM_MSG_1004422,
 		    "%s: %lld:%lld: opened for write. postponed",
 		    diag, (long long)ino, (long long)gen);
+		gfs_profile(
+			gfarm_gettimerval(&t2);
+			write_verify_calc_report(ino, gen, 0, &t1, &t2,
+			    "postpone", "opened for write before calculation");
+		);
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_POSTPONE, diag);
 		free(cksum_type);
@@ -726,24 +786,37 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 		    "%s: %lld:%lld: must be generation updated: %s",
 		    diag, (long long)ino, (long long)gen,
 		    strerror(save_errno));
+		gfs_profile(
+			gfarm_gettimerval(&t2);
+			write_verify_calc_report(ino, gen, 0, &t1, &t2,
+			    "open_fail", strerror(save_errno));
+		);
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
 		free(cksum_type);
 		return;
 	}
-	e = calc_digest(local_fd, cksum_type, cksum, &cksum_len,
+
+	e = calc_digest(local_fd, cksum_type, cksum, &cksum_len, &calc_len,
 	    buffer, WRITE_VERIFY_BUFSIZE, diag, ino, gen);
+
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
+	gfs_profile(gfarm_gettimerval(&t2););
+
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1004424,
 		    "%s: %lld:%lld: checksum calculation failed: %s",
 		    diag, (long long)ino, (long long)gen,
 		    gfarm_error_string(e));
+		gfs_profile(write_verify_calc_report(ino, gen, 0, &t1, &t2,
+		    "calculation_fail", gfarm_error_string(e)););
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
 		close(local_fd);
 		free(cksum_type);
 		return;
 	}
+
 	if (got_cksum_len == 0) { /* cksum was not set */
 		for (;;) {
 			e = gfm_client_fhset_cksum(gfm_server, ino, gen,
@@ -759,25 +832,38 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 			gflog_info(GFARM_MSG_1004426,
 			    "%s: %lld:%lld: opened for write. postponed",
 			    diag, (long long)ino, (long long)gen);
+			gfs_profile(write_verify_calc_report(ino, gen,
+			    calc_len, &t1, &t2,
+			    "postpone", "opened for write w/o cksum"););
 			write_verify_job_reply_send(
 			    WRITE_VERIFY_JOB_REPLY_STATUS_POSTPONE, diag);
 			close(local_fd);
 			free(cksum_type);
 			return;
 		}
-		if (e == GFARM_ERR_NO_ERROR)
+		if (e == GFARM_ERR_NO_ERROR) {
 			gflog_notice(GFARM_MSG_1004427, "%s: inode %lld:%lld: "
 			    "checksum set to <%s>:<%.*s> by write_verify",
 			    diag, (long long)ino, (long long)gen,
 			    cksum_type, (int)cksum_len, cksum);
-		else if (e == GFARM_ERR_NO_SUCH_OBJECT) /* updated */
+			gfs_profile(write_verify_calc_report(ino, gen,
+			    calc_len, &t1, &t2,
+			    "cksum_set", NULL););
+		} else if (e == GFARM_ERR_NO_SUCH_OBJECT) { /* updated */
 			gflog_debug(GFARM_MSG_1004428,
 			    "%s: %lld:%lld: already updated",
 			    diag, (long long)ino, (long long)gen);
-		else
+			gfs_profile(write_verify_calc_report(ino, gen,
+			    calc_len, &t1, &t2,
+			    "skipped", "updated w/o cksum"););
+		} else {
 			gflog_warning(GFARM_MSG_1004429, "%s: %lld:%lld: %s",
 			    diag, (long long)ino, (long long)gen,
 			    gfarm_error_string(e));
+			gfs_profile(write_verify_calc_report(ino, gen,
+			    calc_len, &t1, &t2,
+			    "skipped", gfarm_error_string(e)););
+		}
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
 		close(local_fd);
@@ -792,6 +878,8 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 		    "%s: %lld:%lld: cksum <%.*s> ok",
 		    diag, (long long)ino, (long long)gen,
 		    (int)cksum_len, cksum);
+		gfs_profile(write_verify_calc_report(ino, gen,
+		    calc_len, &t1, &t2, "ok", NULL);)
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
 		close(local_fd);
@@ -807,14 +895,20 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 			fatal(GFARM_MSG_1004431, "die");
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_NO_SUCH_OBJECT) /* generation updated */
+		if (e == GFARM_ERR_NO_SUCH_OBJECT) { /* generation updated */
 			gflog_debug(GFARM_MSG_1004432,
 			    "%s: %lld:%lld: generation updated",
 			    diag, (long long)ino, (long long)gen);
-		else
+			gfs_profile(write_verify_calc_report(ino, gen,
+			    calc_len, &t1, &t2, "skipped", "updated"););
+		} else {
 			gflog_warning(GFARM_MSG_1004433, "%s: %lld:%lld: %s",
 			    diag, (long long)ino, (long long)gen,
 			    gfarm_error_string(e));
+			gfs_profile(write_verify_calc_report(ino, gen,
+			    calc_len, &t1, &t2,
+			    "skipped", gfarm_error_string(e)););
+		}
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
 		close(local_fd);
@@ -825,6 +919,9 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 		gflog_debug(GFARM_MSG_1004434,
 		    "%s: %lld:%lld: opened for write. postponed",
 		    diag, (long long)ino, (long long)gen);
+		gfs_profile(write_verify_calc_report(ino, gen,
+		    calc_len, &t1, &t2,
+		    "postpone", "opened for write"););
 		write_verify_job_reply_send(
 		    WRITE_VERIFY_JOB_REPLY_STATUS_POSTPONE, diag);
 		close(local_fd);
@@ -836,6 +933,8 @@ write_verify_calc_cksum(gfarm_int64_t ino, gfarm_uint64_t gen)
 	    (int)got_cksum_len, got_cksum);
 	replica_lost_move_to_lost_found_by_fd(ino, gen, local_fd, diag);
 	close(local_fd);
+	gfs_profile(write_verify_calc_report(ino, gen, calc_len, &t1, &t2,
+	    "mismatch", NULL););
 	write_verify_job_reply_send(WRITE_VERIFY_JOB_REPLY_STATUS_DONE, diag);
 }
 
@@ -1001,8 +1100,6 @@ write_verify_report_crash(time_t crash_time)
 {
 	time_t current_time = time(NULL);
 	struct tm *tp;
-#define TIMEBUF_FMT	"%Y-%m-%d %H:%M:%S"
-#define TIMEBUF_SIZE	20 /* "1999-12-31 23:59:59" */
 	char crash[TIMEBUF_SIZE], current[TIMEBUF_SIZE];
 
 	tp = localtime(&crash_time);
@@ -1125,6 +1222,96 @@ static int cleanup_notify_send_fd = -1;
 
 static pid_t write_verify_gfsd_pid = -1;
 
+/* statistics for logging */
+static gfarm_int64_t total_requests = 0;
+static gfarm_int64_t total_processed = 0;
+static gfarm_int64_t total_retries = 0;
+static time_t last_report;
+
+static void
+write_verify_requests_report(int force)
+{
+	struct write_verify_mtime_rec *oldest_mtime;
+	time_t oldest_time, current_time = time(NULL);
+	static gfarm_int64_t last_requests = 0;
+	static gfarm_int64_t last_processed = 0;
+	static gfarm_int64_t last_retries = 0;
+	struct tm *tp;
+	char oldest[TIMEBUF_SIZE], current[TIMEBUF_SIZE];
+
+	if (!force) {
+		if (gfarm_write_verify_log_interval != 0 &&
+		    current_time <
+		    last_report + gfarm_write_verify_log_interval)
+			return;
+	}
+
+	oldest_mtime = mtime_rec_oldest();
+	if (oldest_mtime == NULL) {
+		oldest_time = 0;
+		strcpy(oldest, "none");
+	} else {
+		oldest_time = oldest_mtime->mtime;
+		tp = localtime(&oldest_time);
+		strftime(oldest, sizeof oldest, TIMEBUF_FMT, tp);
+	}
+
+	tp = localtime(&current_time);
+	strftime(current, sizeof current, TIMEBUF_FMT, tp);
+
+	gflog_info(GFARM_MSG_UNFIXED, "write_verify_requests at %s "
+	    "oldest %s (%lld) pending %zd max_pending %zd | "
+	    "total_requests %lld total_processed %lld total_retries %lld | "
+	    "requests %lld processed %lld retries %lld within %lld seconds",
+	    current, oldest, (long long)oldest_time,
+	    ringbuf_n_entries, ringbuf_max_entries,
+	    (long long)total_requests, (long long)total_processed,
+	    (long long)total_retries,
+	    (long long)(total_requests - last_requests),
+	    (long long)(total_processed - last_processed),
+	    (long long)(total_retries - last_retries),
+	    (long long)(current_time - last_report));
+
+	last_requests = total_requests;
+	last_processed = total_processed;
+	last_processed = total_retries;
+	last_report = current_time;
+}
+
+static void
+write_verify_start_report(struct write_verify_entry *todo_entry)
+{
+	struct write_verify_mtime_rec *oldest_mtime;
+	time_t oldest_time, todo_time, current_time = time(NULL);
+	struct tm *tp;
+	char oldest[TIMEBUF_SIZE], todo[TIMEBUF_SIZE], current[TIMEBUF_SIZE];
+
+	oldest_mtime = mtime_rec_oldest();
+	if (oldest_mtime == NULL) { /* shouldn't happen, but for safety */
+		oldest_time = 0;
+		strcpy(oldest, "none");
+	} else {
+		oldest_time = oldest_mtime->mtime;
+		tp = localtime(&oldest_time);
+		strftime(oldest, sizeof oldest, TIMEBUF_FMT, tp);
+	}
+
+	todo_time = todo_entry->req.mtime;
+	tp = localtime(&todo_time);
+	strftime(todo, sizeof todo, TIMEBUF_FMT, tp);
+
+	tp = localtime(&current_time);
+	strftime(current, sizeof current, TIMEBUF_FMT, tp);
+
+	gflog_info(GFARM_MSG_UNFIXED, "write_verify_starting at %s "
+	    "inum %lld gen %lld mtime %s (%lld) "
+	    "oldest %s (%lld) pending %zd max_pending %zd",
+	    current,
+	    (long long)todo_entry->req.ino, (long long)todo_entry->req.gen,
+	    todo, (long long)todo_time, oldest, (long long)oldest_time,
+	    ringbuf_n_entries, ringbuf_max_entries);
+}
+
 static void
 write_verify_request_get(const char *diag)
 {
@@ -1137,8 +1324,11 @@ write_verify_request_get(const char *diag)
 	entry.schedule = entry.req.mtime + gfarm_write_verify_interval;
 	ringbuf_enqueue(&entry);
 	mtime_rec_add(entry.req.mtime);
+	++total_requests;
 
 	write_verify_state_snapshot();
+
+	write_verify_requests_report(0);
 }
 
 static void
@@ -1170,6 +1360,8 @@ write_verify_controller_cleanup(void)
 	 * in the write_verify_request pipe may not be logged
 	 */
 	write_verify_state_save();
+
+	write_verify_requests_report(1);
 }
 
 static void
@@ -1214,11 +1406,13 @@ write_verify_job_done(struct write_verify_entry *todo,
 	switch (status) {
 	case WRITE_VERIFY_JOB_REPLY_STATUS_DONE:
 		mtime_rec_remove(mtime_rec);
+		++total_processed;
 		write_verify_state_snapshot();
 		break;
 	case WRITE_VERIFY_JOB_REPLY_STATUS_POSTPONE:
 		tmp.schedule = time(NULL) + gfarm_write_verify_retry_interval;
 		ringbuf_enqueue(&tmp);
+		++total_retries;
 		break;
 	default:
 		assert(0);
@@ -1236,6 +1430,9 @@ write_verify_controller(void)
 	struct write_verify_mtime_rec *mtime_rec = NULL;
 	static const char diag[] = "write_verify_controller";
 
+	last_report = time(NULL);
+	write_verify_requests_report(1); /* report records in the state file */
+
 	cleanup_notify_setup();
 
 	for (;;) {
@@ -1252,6 +1449,7 @@ write_verify_controller(void)
 			write_verify_job_req_send(
 			    todo.req.ino, todo.req.gen, diag);
 			state = WRITE_VERIFY_RUNNING;
+			gfs_profile(write_verify_start_report(&todo););
 		}
 		has_room = ringbuf_has_room();
 		if (has_room && state == WRITE_VERIFY_RUNNING) {

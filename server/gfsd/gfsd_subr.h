@@ -55,8 +55,8 @@ int gfsd_create_ancestor_dir(char *);
 gfarm_error_t gfsd_copy_file(int, gfarm_ino_t, gfarm_uint64_t, const char *,
 	char **);
 gfarm_error_t gfm_client_replica_lost(gfarm_ino_t, gfarm_uint64_t);
-gfarm_error_t calc_digest(int, const char *, char *, size_t *, char *, size_t,
-	const char *, gfarm_ino_t, gfarm_uint64_t);
+gfarm_error_t calc_digest(int, const char *, char *, size_t *, gfarm_off_t *,
+	char *, size_t, const char *, gfarm_ino_t, gfarm_uint64_t);
 void replica_lost_move_to_lost_found(gfarm_ino_t, gfarm_uint64_t, int, off_t);
 #define TIMEDWAIT_INFINITE -1
 int timedwait_2fds(int, int, time_t, const char *);
