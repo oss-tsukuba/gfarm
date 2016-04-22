@@ -223,6 +223,13 @@ names of Gfarm global users, the 'local_user_map' directive setting
 in gfmd.conf and gfarm2.conf file is needed.  gfmd has to be restarted
 after the change of gfmd.conf.
 
+If NFS is not used to share users' home directories, or your NFS server
+is using "no_root_squash" as an export option, you can decrease
+the CPU load of gfmd by using the following directive in gfmd.conf:
+	metadb_server_nfs_root_squash_support disable
+Do not use this option, if any home directory is shared by NFS
+which does not have the no_root_squash option.
+
 You can check whether the metadata server gfmd is running or not by
 the following command execution;
 

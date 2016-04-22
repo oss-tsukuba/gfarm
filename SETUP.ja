@@ -224,6 +224,13 @@ config-gfarm は，順番に次の処理を行います．
 アカウント名が，Gfarm のグローバルユーザ名と異なる場合には，gfmd.conf と
 gfarm2.conf に local_user_map の設定も行ない，gfmd を再起動しておきます．
 
+共有鍵認証を利用するユーザーのホームディレクトリをNFSで共有していないか，
+共有していても NFS サーバー側の export オプションとして no_root_squash を
+指定している場合，gfmd.conf に次の設定を入れて gfmd を再起動しておくと，
+gfmd の CPU 負荷をいくぶん低減することができます．
+	metadb_server_nfs_root_squash_support disable
+no_root_squash なしで NFS 共有している場合は，この設定をしてはいけません．
+
 以上で，メタデータサーバー上での設定は完了です．
 下記を実行して，gfmd が動作していることを確認してください．
 

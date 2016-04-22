@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>1 April 2016</date></refentryinfo>
+<refentryinfo><date>23 April 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -624,6 +624,33 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	metadb_server_back_channel_sndbuf_limit 16384
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_nfs_root_squash_support</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+When gfmd tries to read .gfarm_shared_key file in a home directory,
+gfmd will use the privilege of the owner of the home directory,
+if this configuration setting is "enable".
+If "disable" is specified, it will use the root privilege to do so.
+</para>
+<para>
+If any gfarm users is using sharedsecret authentication,
+and the user's home directory is shared by NFS
+which is not using the no_root_squash export option,
+this setting has to be "enable".
+The default is "enable", but you can slightly decrease the CPU load of
+gfmd by setting this parameter to "disable" if situation allows.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_nfs_root_squash_support disable
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2288,8 +2315,7 @@ gfsd uses this setting at its startup by asking gfmd.
 </refsect1>
 
 <refsect1 id="grammar"><title>GRAMMAR</title>
-<para>This is a grammar of gfarm2.conf described by the BNF
-notation.</para>
+<para>This is a grammar of gfarm2.conf described by the BNF notation.</para>
 <variablelist>
 <varlistentry>
 <term>&lt;statement&gt; ::=</term>
@@ -2317,6 +2343,7 @@ notation.</para>
 	&lt;metadb_server_heartbeat_interval_statement&gt; |
 	&lt;metadb_server_dbq_size_statement&gt; |
 	&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; |
+	&lt;metadb_server_nfs_root_squash_support_statement&gt; |
 	&lt;ldap_server_host_statement&gt; |
 	&lt;ldap_server_port_statement&gt; |
 	&lt;ldap_base_dn_statement&gt; |
@@ -2515,6 +2542,11 @@ notation.</para>
 <varlistentry>
 <term>&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_server_back_channel_sndbuf_limit" &lt;size_limit&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_nfs_root_squash_support_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_nfs_root_squash_support" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
