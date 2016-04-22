@@ -2214,6 +2214,27 @@ For example,
 .RE
 .\}
 .RE
+.PP
+write_verify_log_interval \fIseconds\fR
+.RS 4
+This statement specifies interval to record write_verify statistics in log\&. When this interval passes and then a file is updated on a filesystem node, statistics information will be recorded in the log on the filesystem node\&.
+.sp
+The default value is 3600 seconds (1 hour)\&.
+.sp
+This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&. gfsd uses this setting at its startup by asking gfmd\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	write_verify_log_interval 3600
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SH "GRAMMAR"
 .PP
 This is a grammar of gfarm2\&.conf described by the BNF notation\&.
@@ -2331,7 +2352,8 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<replica_check_minimum_interval_statement> |
 	<write_verify_statement> |
 	<write_verify_interval_statement> |
-	<write_verify_retry_interval_statement>
+	<write_verify_retry_interval_statement> |
+	<write_verify_log_interval_statement>
 .fi
 .if n \{\
 .RE
@@ -4106,6 +4128,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "write_verify_retry_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<write_verify_log_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"write_verify_log_interval" <number>
 .fi
 .if n \{\
 .RE

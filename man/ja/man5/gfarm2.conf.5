@@ -2055,6 +2055,27 @@ write_verify を試みたが、対象ファイルが書き込みオープンさ�
 .RE
 .\}
 .RE
+.PP
+write_verify_log_interval \fI秒数\fR
+.RS 4
+write_verify に関する統計情報をログ出力する間隔を指定します。 設定した値以上の時間が経過して、ファイルシステムノードでファイルが 更新されると、統計情報がそのファイルシステムノードのログに記録されます。
+.sp
+デフォルトは 3600秒 (1時間) です。
+.sp
+この文は gfmd\&.conf のみで有効です。 gfarm2\&.confでは無視されます。 gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	write_verify_log_interval 3600
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SH "GRAMMAR"
 .PP
 gfarm2\&.confの文法をBNFで記述すると、下記のようになります。
@@ -2172,7 +2193,8 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<replica_check_minimum_interval_statement> |
 	<write_verify_statement> |
 	<write_verify_interval_statement> |
-	<write_verify_retry_interval_statement>
+	<write_verify_retry_interval_statement> |
+	<write_verify_log_interval_statement>
 .fi
 .if n \{\
 .RE
@@ -3947,6 +3969,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "write_verify_retry_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<write_verify_log_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"write_verify_log_interval" <number>
 .fi
 .if n \{\
 .RE

@@ -1705,6 +1705,26 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 	write_verify_retry_interval 600<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">write_verify_log_interval</span> <em class="parameter"><code>秒数</code></em></span></dt>
+<dd>
+<p>
+write_verify に関する統計情報をログ出力する間隔を指定します。
+設定した値以上の時間が経過して、ファイルシステムノードでファイルが
+更新されると、統計情報がそのファイルシステムノードのログに記録されます。
+</p>
+<p>
+デフォルトは 3600秒 (1時間) です。
+</p>
+<p>
+この文は gfmd.conf のみで有効です。
+gfarm2.confでは無視されます。
+gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	write_verify_log_interval 3600<br>
+</p></div>
+</dd>
 </dl></div>
 </div>
 <div class="refsect1" title="GRAMMAR">
@@ -1819,7 +1839,8 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 	&lt;replica_check_minimum_interval_statement&gt; |<br>
 	&lt;write_verify_statement&gt; |<br>
 	&lt;write_verify_interval_statement&gt; |<br>
-	&lt;write_verify_retry_interval_statement&gt;</p></div></dd>
+	&lt;write_verify_retry_interval_statement&gt; |<br>
+	&lt;write_verify_log_interval_statement&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_server_listen_address_statement&gt; ::=</span></dt>
@@ -2082,6 +2103,8 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 <dd><div class="literallayout"><p>"write_verify_interval" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;write_verify_retry_interval_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"write_verify_retry_interval" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;write_verify_log_interval_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"write_verify_log_interval" &lt;number&gt;</p></div></dd>
 </dl></div>
 </div>
 <div class="refsect1" title="EXAMPLES">

@@ -1764,6 +1764,25 @@ gfsd uses this setting at its startup by asking gfmd.
 	write_verify_retry_interval 600<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">write_verify_log_interval</span> <em class="parameter"><code>seconds</code></em></span></dt>
+<dd>
+<p>
+This statement specifies interval to record write_verify statistics in log.
+When this interval passes and then a file is updated on a filesystem node,
+statistics information will be recorded in the log on the filesystem node.
+</p>
+<p>
+The default value is 3600 seconds (1 hour).
+</p>
+<p>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+gfsd uses this setting at its startup by asking gfmd.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	write_verify_log_interval 3600<br>
+</p></div>
+</dd>
 </dl></div>
 </div>
 <div class="refsect1" title="GRAMMAR">
@@ -1878,7 +1897,8 @@ gfsd uses this setting at its startup by asking gfmd.
 	&lt;replica_check_minimum_interval_statement&gt; |<br>
 	&lt;write_verify_statement&gt; |<br>
 	&lt;write_verify_interval_statement&gt; |<br>
-	&lt;write_verify_retry_interval_statement&gt;</p></div></dd>
+	&lt;write_verify_retry_interval_statement&gt; |<br>
+	&lt;write_verify_log_interval_statement&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_server_listen_address_statement&gt; ::=</span></dt>
@@ -2141,6 +2161,8 @@ gfsd uses this setting at its startup by asking gfmd.
 <dd><div class="literallayout"><p>"write_verify_interval" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;write_verify_retry_interval_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"write_verify_retry_interval" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;write_verify_log_interval_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"write_verify_log_interval" &lt;number&gt;</p></div></dd>
 </dl></div>
 </div>
 <div class="refsect1" title="EXAMPLES">
