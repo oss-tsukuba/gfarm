@@ -1502,6 +1502,9 @@ confirm_local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag)
 	struct stat sb;
 	int i, n = 0;
 
+	if (gfarm_spool_root_num == 1)
+		return (1);
+
 	if (length == 0)
 		length = gfarm_spool_root_len_max + sizeof(template);
 
@@ -1528,6 +1531,7 @@ confirm_local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag)
 		if (stat(p, &sb) == 0)
 			++n;
 	}
+	free(p);
 	return (n == 1);
 }
 
@@ -1562,8 +1566,6 @@ file_table_add(gfarm_int32_t net_fd,
 		close(local_fd);
 		unlink(path);
 		free(path);
-		gflog_error(GFARM_MSG_UNFIXED, "%s: %lld:%lld: race detected",
-		    diag, (long long)ino, (long long)gen);
 		return (GFARM_ERR_INTERNAL_ERROR);
 	}
 	if (r < 0 && fstat(local_fd, &st) < 0)
@@ -2076,8 +2078,6 @@ gfsd_copy_file(int fd, gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
 		close(dst);
 		unlink(path);
 		free(path);
-		gflog_error(GFARM_MSG_UNFIXED, "%s: %lld:%lld: race detected",
-		    diag, (long long)inum, (long long)gen);
 		return (GFARM_ERR_INTERNAL_ERROR);
 	}
 	while ((sz = read(fd, buf, sizeof buf)) > 0
