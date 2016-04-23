@@ -1535,6 +1535,42 @@ confirm_local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag)
 	return (n == 1);
 }
 
+static void
+move_to_local_lost_found(char *path, const char *diag)
+{
+	char *p, *pp, *root = NULL;
+	int i;
+
+	for (i = 0; i < gfarm_spool_root_num; ++i) {
+		root = gfarm_spool_root[i];
+		if (root == NULL)
+			break;
+		if (strncmp(root, path, strlen(root)) == 0)
+			break;
+	}
+	if (root == NULL || i == gfarm_spool_root_num) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: no spool root, "
+		    "move inconsistent file manually: %s", diag, path);
+		return;
+	}
+	p = strdup(path);
+	if (p == NULL)
+		fatal(GFARM_MSG_UNFIXED, "%s: no memory for %d bytes",
+		    diag, strlen(path) + 1);
+	for (pp = p + strlen(root) + 1; *pp; ++pp) {
+		if (*pp == '/')
+			*pp = '_';
+	}
+	if (rename(path, p) == -1) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: rename(%s, %s) failed, move inconsistent file "
+		    "manually: %s", diag, path, p, strerror(errno));
+	} else
+		gflog_warning(GFARM_MSG_UNFIXED, "%s: race detected: "
+		    "%s moved to %s", diag, path, p);
+	free(p);
+}
+
 #ifndef ACCESSPERMS
 #define ACCESSPERMS (S_IRWXU|S_IRWXG|S_IRWXO)
 #endif
@@ -1564,7 +1600,7 @@ file_table_add(gfarm_int32_t net_fd,
 	}
 	if (is_new_file && !confirm_local_path(ino, gen, diag)) {
 		close(local_fd);
-		unlink(path);
+		move_to_local_lost_found(path, diag);
 		free(path);
 		return (GFARM_ERR_INTERNAL_ERROR);
 	}
@@ -2076,7 +2112,7 @@ gfsd_copy_file(int fd, gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
 	}
 	if (!confirm_local_path(inum, gen, diag)) {
 		close(dst);
-		unlink(path);
+		move_to_local_lost_found(path, diag);
 		free(path);
 		return (GFARM_ERR_INTERNAL_ERROR);
 	}
@@ -3992,8 +4028,8 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 
 	gfsd_local_path(ino, gen, diag, &path);
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
-	free(path);
 	save_errno = errno;
+	free(path);
 	if (local_fd == -1) {
 		/* dst_err: invalidate */
 		e = dst_err = gfarm_errno_to_error(save_errno);
