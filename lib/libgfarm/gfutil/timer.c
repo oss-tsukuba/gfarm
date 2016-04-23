@@ -17,7 +17,7 @@
 #include <sys/time.h>
 #include "timer.h"
 
-#ifdef i386
+#if 0
 
 #include <unistd.h>
 
@@ -52,11 +52,6 @@ gfarm_timerval_calibrate(void)
 		((s2.tv_sec - s1.tv_sec) +
 		 (s2.tv_usec - s1.tv_usec) * .000001) /
 		(t2 - t1);
-/*
-	fprintf(stderr, "[%03d] timer/sec=%g %s\n",
-		node_index, 1.0 / timerval_calibration,
-		gfarm_host_get_self_name());
-*/
 }
 
 #else /* gettimeofday */

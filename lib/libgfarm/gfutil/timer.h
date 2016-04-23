@@ -4,7 +4,7 @@
  * TIMER routine
  */
 
-#ifdef i386
+#if 0
 
 typedef unsigned long long gfarm_timerval_t;
 extern double gfarm_timerval_calibration;
