@@ -4665,6 +4665,11 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		    "%s: cannot open local file for %lld:%lld: %s", diag,
 		    (long long)rep->ino, (long long)rep->gen,
 		    strerror(save_errno));
+	} else if (!confirm_local_path(rep->ino, rep->gen, diag)) {
+		dst_err = GFARM_ERR_INTERNAL_ERROR;
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %lld:%lld: race detected",
+		    diag, (long long)rep->ino, (long long)rep->gen);
+		close(local_fd);
 	} else if ((conn_err = gfs_client_connection_acquire_by_host(
 	    gfm_server, gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
 	    &src_gfsd, listen_addrname)) != GFARM_ERR_NO_ERROR) {
