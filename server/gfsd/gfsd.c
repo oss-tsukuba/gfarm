@@ -1493,23 +1493,42 @@ file_table_is_available(gfarm_int32_t net_fd)
 }
 
 static int
-confirm_local_path(gfarm_ino_t ino, gfarm_uint64_t gen, const char *diag,
-	char **pathp)
+confirm_local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag)
 {
-	char *path2;
-	int r = 1;
+	char *p;
+	static int length = 0;
+	static char template[] = "/data/00112233/44/55/66/778899AABBCCDDEEFF";
+	static char format[] = "/data/%08X/%02X/%02X/%02X/%02X%08X%08X";
+	struct stat sb;
+	int i, n = 0;
 
-	if (gfarm_spool_root_num > 1) {
-		gfsd_local_path(ino, gen, diag, &path2);
-		if (strcmp(*pathp, path2) != 0) {
-			unlink(*pathp);
-			free(*pathp);
-			*pathp = path2;
-			r = 0;
-		} else
-			free(path2);
+	if (length == 0)
+		length = gfarm_spool_root_len_max + sizeof(template);
+
+	snprintf(template, sizeof(template), format,
+	    (unsigned int)((inum >> 32) & 0xffffffff),
+	    (unsigned int)((inum >> 24) & 0xff),
+	    (unsigned int)((inum >> 16) & 0xff),
+	    (unsigned int)((inum >>  8) & 0xff),
+	    (unsigned int)(inum         & 0xff),
+	    (unsigned int)((gen  >> 32) & 0xffffffff),
+	    (unsigned int)(gen          & 0xffffffff));
+
+	GFARM_MALLOC_ARRAY(p, length);
+	if (p == NULL) {
+		fatal(GFARM_MSG_UNFIXED, "%s: no memory for %d bytes",
+			diag, length);
 	}
-	return (r);
+	for (i = 0; i < gfarm_spool_root_num; ++i) {
+		char *r = gfarm_spool_root[i];
+
+		if (r == NULL)
+			break;
+		snprintf(p, length, "%s%s", r, template);
+		if (stat(p, &sb) == 0)
+			++n;
+	}
+	return (n == 1);
 }
 
 #ifndef ACCESSPERMS
@@ -1528,7 +1547,6 @@ file_table_add(gfarm_int32_t net_fd,
 	char *path;
 
 	gfsd_local_path(ino, gen, diag, &path);
-retry:
 	r = lstat(path, &st);
 	if (r == -1) {
 		if (errno != ENOENT)
@@ -1540,8 +1558,14 @@ retry:
 		free(path);
 		return (gfarm_errno_to_error(errno));
 	}
-	if (is_new_file && !confirm_local_path(ino, gen, diag, &path))
-		goto retry;
+	if (is_new_file && !confirm_local_path(ino, gen, diag)) {
+		close(local_fd);
+		unlink(path);
+		free(path);
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %lld:%lld: race detected",
+		    diag, (long long)ino, (long long)gen);
+		return (GFARM_ERR_INTERNAL_ERROR);
+	}
 	if (r < 0 && fstat(local_fd, &st) < 0)
 		fatal_errno(GFARM_MSG_1000463, "%s: %s", diag, path);
 	if ((flags & ACCESSPERMS) != GFARM_FILE_WRONLY) {
@@ -2043,14 +2067,19 @@ gfsd_copy_file(int fd, gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
 	if (lseek(fd, 0, SEEK_SET) == -1)
 		return (gfarm_errno_to_error(errno));
 	gfsd_local_path(inum, gen, diag, &path);
-retry:
 	dst = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
 	if (dst < 0) {
 		free(path);
 		return (gfarm_errno_to_error(errno));
 	}
-	if (!confirm_local_path(inum, gen, diag, &path))
-		goto retry;
+	if (!confirm_local_path(inum, gen, diag)) {
+		close(dst);
+		unlink(path);
+		free(path);
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %lld:%lld: race detected",
+		    diag, (long long)inum, (long long)gen);
+		return (GFARM_ERR_INTERNAL_ERROR);
+	}
 	while ((sz = read(fd, buf, sizeof buf)) > 0
 	       || (sz == -1 && errno == EINTR)) {
 		for (i = 0; i < sz; i += rv) {
@@ -3962,18 +3991,21 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	}
 
 	gfsd_local_path(ino, gen, diag, &path);
-retry:
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
+	free(path);
 	save_errno = errno;
 	if (local_fd == -1) {
 		/* dst_err: invalidate */
 		e = dst_err = gfarm_errno_to_error(save_errno);
-		free(path);
 		goto adding_cancel;
 	}
-	if (!confirm_local_path(ino, gen, diag, &path))
-		goto retry;
-	free(path);
+	if (!confirm_local_path(ino, gen, diag)) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %lld:%lld: race detected",
+		    diag, (long long)ino, (long long)gen);
+		/* dst_err: invalidate */
+		e = dst_err = GFARM_ERR_INTERNAL_ERROR;
+		goto close;
+	}
 	e = gfs_client_connection_acquire_by_host(gfm_server, host, port,
 	    &server, listen_addrname);
 	if (e != GFARM_ERR_NO_ERROR) {
