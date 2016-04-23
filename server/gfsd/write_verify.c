@@ -651,7 +651,7 @@ write_verify_calc_report(gfarm_int64_t ino, gfarm_uint64_t gen,
 	const char *result, const char *aux)
 {
 	const char *a1, *a2, *a3;
-	time_t t2sec = t2->tv_sec;
+	time_t t2sec = gfarm_timerval_second(t2);
 	struct tm *tp = localtime(&t2sec);
 	double t = gfarm_timerval_sub(t2, t1);
 	char end_time[TIMEBUF_SIZE];
