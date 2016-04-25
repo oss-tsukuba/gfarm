@@ -1519,7 +1519,7 @@ confirm_local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag)
 
 	GFARM_MALLOC_ARRAY(p, length);
 	if (p == NULL) {
-		fatal(GFARM_MSG_UNFIXED, "%s: no memory for %d bytes",
+		fatal(GFARM_MSG_1004492, "%s: no memory for %d bytes",
 			diag, length);
 	}
 	for (i = 0; i < gfarm_spool_root_num; ++i) {
@@ -1549,24 +1549,24 @@ move_to_local_lost_found(char *path, const char *diag)
 			break;
 	}
 	if (root == NULL || i == gfarm_spool_root_num) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: no spool root, "
+		gflog_error(GFARM_MSG_1004493, "%s: no spool root, "
 		    "move inconsistent file manually: %s", diag, path);
 		return;
 	}
 	p = strdup(path);
 	if (p == NULL)
-		fatal(GFARM_MSG_UNFIXED, "%s: no memory for %d bytes",
+		fatal(GFARM_MSG_1004494, "%s: no memory for %d bytes",
 		    diag, strlen(path) + 1);
 	for (pp = p + strlen(root) + 1; *pp; ++pp) {
 		if (*pp == '/')
 			*pp = '_';
 	}
 	if (rename(path, p) == -1) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004495,
 		    "%s: rename(%s, %s) failed, move inconsistent file "
 		    "manually: %s", diag, path, p, strerror(errno));
 	} else
-		gflog_warning(GFARM_MSG_UNFIXED, "%s: race detected: "
+		gflog_warning(GFARM_MSG_1004496, "%s: race detected: "
 		    "%s moved to %s", diag, path, p);
 	free(p);
 }
@@ -3096,7 +3096,7 @@ close_fd_somehow(struct gfp_xdr *client,
 
 	if (gfm_server == NULL) {
 		if (fe->flags & FILE_FLAG_WRITTEN) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004497,
 			    "inode %lld generation %lld (%lld): "
 			    "error occurred during close operation "
 			    "for writing: gfmd is down",
@@ -4036,7 +4036,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		goto adding_cancel;
 	}
 	if (!confirm_local_path(ino, gen, diag)) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: %lld:%lld: race detected",
+		gflog_error(GFARM_MSG_1004498, "%s: %lld:%lld: race detected",
 		    diag, (long long)ino, (long long)gen);
 		/* dst_err: invalidate */
 		e = dst_err = GFARM_ERR_INTERNAL_ERROR;
@@ -4667,7 +4667,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		    strerror(save_errno));
 	} else if (!confirm_local_path(rep->ino, rep->gen, diag)) {
 		dst_err = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED, "%s: %lld:%lld: race detected",
+		gflog_error(GFARM_MSG_1004499, "%s: %lld:%lld: race detected",
 		    diag, (long long)rep->ino, (long long)rep->gen);
 		close(local_fd);
 	} else if ((conn_err = gfs_client_connection_acquire_by_host(

@@ -664,7 +664,7 @@ write_verify_calc_report(gfarm_int64_t ino, gfarm_uint64_t gen,
 		a2 = aux;
 		a3 = ")";
 	}
-	gflog_info(GFARM_MSG_UNFIXED, "write_verified at %s total_time %g "
+	gflog_info(GFARM_MSG_1004501, "write_verified at %s total_time %g "
 	    "inum %lld gen %lld size %lld: %s%s%s%s",
 	    end_time, t, (long long)ino, (long long)gen,
 	    (long long)calc_len, result, a1, a2, a3);
@@ -1259,7 +1259,7 @@ write_verify_requests_report(int force)
 	tp = localtime(&current_time);
 	strftime(current, sizeof current, TIMEBUF_FMT, tp);
 
-	gflog_info(GFARM_MSG_UNFIXED, "write_verify_requests at %s "
+	gflog_info(GFARM_MSG_1004502, "write_verify_requests at %s "
 	    "oldest %s (%lld) pending %zd max_pending %zd | "
 	    "total_requests %lld total_processed %lld total_retries %lld | "
 	    "requests %lld processed %lld retries %lld within %lld seconds",
@@ -1303,7 +1303,7 @@ write_verify_start_report(struct write_verify_entry *todo_entry)
 	tp = localtime(&current_time);
 	strftime(current, sizeof current, TIMEBUF_FMT, tp);
 
-	gflog_info(GFARM_MSG_UNFIXED, "write_verify_starting at %s "
+	gflog_info(GFARM_MSG_1004503, "write_verify_starting at %s "
 	    "inum %lld gen %lld mtime %s (%lld) "
 	    "oldest %s (%lld) pending %zd max_pending %zd",
 	    current,

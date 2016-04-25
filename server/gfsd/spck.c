@@ -169,7 +169,7 @@ move_or_copy_to_lost_found(int op, const char *file, int fd, struct stat *stp,
 	case 1: /* copy */
 		if ((e = gfsd_copy_file(fd, inum_new, gen_new, diag, &newpath))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004500,
 			    "inode %lld:%lld: cannot be copied, "
 			    "invalid file may remain: %s",
 			    (unsigned long long)inum, (unsigned long long)gen,

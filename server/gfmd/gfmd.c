@@ -1715,7 +1715,7 @@ main(int argc, char **argv)
 
 	/* after gflog_syslog_open/gfarm_daemon, but before pthread_create() */
 	if (!gfarm_metadb_server_nfs_root_squash_support) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004491,
 		    "nfs_root_squash_support disabled");
 		gfarm_privilege_lock_disable();
 		gfarm_auth_root_squash_support_disable();

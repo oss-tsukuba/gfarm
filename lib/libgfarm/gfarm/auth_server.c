@@ -183,12 +183,12 @@ gfarm_auth_sharedsecret_compare(
 	    shared_key_expected, challenge, response_expected);
 	if (expire != expire_expected) {
 		error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004489,
 		    "(%s@%s) auth_sharedsecret: expire time mismatch%s",
 		    global_username, hostname, diag);
 	} else if (memcmp(response, response_expected, response_size) != 0) {
 		error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004490,
 		    "(%s@%s) auth_sharedsecret: key mismatch%s",
 		    global_username, hostname, diag);
 	} else { /* success */
