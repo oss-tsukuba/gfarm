@@ -3,19 +3,19 @@ Release note for Gfarm 2.6.10
 
 [2016.4.25]
 
-New feature
-* profile and progress logging support for write verify
-
 New configuration directive
 * metadb_server_nfs_root_squash_support - disables nfs root squash
   support to improve the metadata performance if it is not necessary
 * write_verify_log_interval - specifies the interval to record
   statistics of write verify 
 
+Updated feature
+* profile and progress logging support for write verify
+
 Bug fix
 * when gfmd is down, gfsd may not log failed close operation at exit
 * multiple spool directories may cause inconsistent file creation.  If
-  this happens, alert it and move to the spool top directory.
+  this happens, alert and move it to the spool top directory.
 
 Release note for Gfarm 2.6.9
 ============================
