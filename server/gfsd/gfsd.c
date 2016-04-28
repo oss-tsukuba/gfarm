@@ -1556,7 +1556,7 @@ move_to_local_lost_found(char *path, const char *diag)
 	p = strdup(path);
 	if (p == NULL)
 		fatal(GFARM_MSG_1004494, "%s: no memory for %d bytes",
-		    diag, strlen(path) + 1);
+		    diag, (int)strlen(path) + 1);
 	for (pp = p + strlen(root) + 1; *pp; ++pp) {
 		if (*pp == '/')
 			*pp = '_';
