@@ -999,7 +999,7 @@ write_verify_state_snapshot(void)
 #else
 	if (futimes(write_verify_state_fd, tv) == -1)
 #endif
-		gflog_error_errno(GFARM_MSG_1004438,
+		gflog_info_errno(GFARM_MSG_1004438,
 		    "recording mtime to %s", write_verify_state_file);
 	if (fsync(write_verify_state_fd) == -1)
 		gflog_error_errno(GFARM_MSG_1004439,
