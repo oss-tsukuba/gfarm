@@ -22,6 +22,7 @@ lib/libgfarm/gfarm/gfs_pio_open/file_trunc.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc_read.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc_not_writable.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc_not_writable_rdonly.sh
+lib/libgfarm/gfarm/gfs_pio_open/0byte_no_replica.sh
 lib/libgfarm/gfarm/gfs_pio_open/gfs_pio_recvfile.remote.sh
 lib/libgfarm/gfarm/gfs_pio_open/gfs_pio_recvfile.local.sh
 lib/libgfarm/gfarm/gfs_pio_open/gfs_pio_sendfile.remote.sh

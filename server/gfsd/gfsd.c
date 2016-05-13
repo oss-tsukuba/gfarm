@@ -1624,9 +1624,33 @@ file_table_add(gfarm_int32_t net_fd,
 	fe->ino = ino;
 	if (flags & O_CREAT)
 		fe->flags |= FILE_FLAG_CREATED;
-	if ((flags & O_TRUNC) != 0 || is_new_file)
+	if ((flags & O_TRUNC) != 0)
 		fe->flags |= FILE_FLAG_WRITTEN;
+	/*
+	 * if it's opened for O_RDONLY, do not set FILE_FLAG_WRITTEN,
+	 * even if is_new_file is true, because the FILE_FLAG_WRITTEN flag
+	 * makes gfsd issue GFM_PROTO_CLOSE_WRITE_V2_4 against the O_RDONLY
+	 * descriptor, and causes GFARM_ERR_BAD_FILE_DESCRIPTOR (SF.net #957).
+	 * that means gfs_stat() and gfs_pio_stat() shows inconsistent result
+	 * in the O_RDONLY case, but currently no application is known to
+	 * cause a problem due to the inconsistency.
+	 */
 	if ((flags & O_ACCMODE) != O_RDONLY) {
+		if (is_new_file) {
+			/*
+			 * SF.net #942 - mtime inconsistency between
+			 * gfs_pio_stat() and gfs_stat().
+			 *
+			 * FILE_FLAG_WRITTEN has to be set here to fix
+			 * the inconsistency, for the case when GNU tar
+			 * extracts a 0-byte file.
+			 *
+			 * XXX: if this file was created a long time ago,
+			 * and won't be written this time as well,
+			 * undesired st_mtime change will happen.
+			 */
+			fe->flags |= FILE_FLAG_WRITTEN;
+		}
 		fe->flags |= FILE_FLAG_WRITABLE;
 		++write_open_count;
 	}
