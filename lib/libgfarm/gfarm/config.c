@@ -2098,7 +2098,7 @@ parse_set_spool_root(char *p)
 {
 	gfarm_error_t e;
 	char *s;
-	int i, len1, len2;
+	int i, len1;
 
 	e = get_one_argument(p, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -2110,11 +2110,7 @@ parse_set_spool_root(char *p)
 	}
 	for (i = 0; i < GFARM_SPOOL_ROOT_NUM; ++i) {
 		if (gfarm_spool_root[i] != NULL) {
-			len1 = strlen(gfarm_spool_root[i]);
-			len2 = strlen(s);
-			if (len1 > len2)
-				len1 = len2;
-			if (strncmp(gfarm_spool_root[i], s, len1) == 0)
+			if (strcmp(gfarm_spool_root[i], s) == 0)
 				break;
 		} else {
 			gfarm_spool_root[i] = strdup(s);
