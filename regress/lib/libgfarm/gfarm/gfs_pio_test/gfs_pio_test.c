@@ -33,11 +33,12 @@ char *program_name = "gfs_pio_test";
 #define OP_FLUSH	'F'
 #define OP_SYNC		'M'
 #define OP_DATASYNC	'D'
+#define OP_STAT		'Q'		/* Query Stat */
 #define OP_READALL	'I'		/* Input */
 #define OP_WRITEALL	'O'		/* Output */
 #define OP_RECVFILE	'A'		/* Acquire */
 #define OP_SENDFILE	'Y'		/* Yield */
-/* unused opcodes: BGHJKLNQUVXZ */
+/* unused opcodes: BGHJKLNUVXZ */
 
 struct op {
 	unsigned char op;
@@ -82,6 +83,7 @@ main(int argc, char **argv)
 	int flags = GFARM_FILE_RDWR;
 	gfarm_mode_t mode = 0666;
 	gfarm_off_t off, off2, off3, roff;
+	struct gfs_stat gst;
 	char *s, *host = NULL;
 
 	if (argc > 0)
@@ -94,7 +96,7 @@ main(int argc, char **argv)
 		return (EXIT_GF_INIT);
 	}
 
-	while ((c = getopt(argc, argv, "aA:cC:DeE:Fh:Im:MnOP:rR:S:tT:vwW:Y:"))
+	while ((c = getopt(argc, argv, "aA:cC:DeE:Fh:Im:MnOP:QrR:S:tT:vwW:Y:"))
 	    != -1) {
 		off = off2 = off3 = -1;
 		switch (c) {
@@ -120,6 +122,7 @@ main(int argc, char **argv)
 		case OP_FLUSH:
 		case OP_SYNC:
 		case OP_DATASYNC:
+		case OP_STAT:
 		case OP_READALL:
 		case OP_WRITEALL:
 			if (nops >= MAX_OPS) {
@@ -339,6 +342,16 @@ main(int argc, char **argv)
 			}
 			if (verbose)
 				fprintf(stderr, "gfs_pio_datasync()\n");
+			break;
+		case OP_STAT:
+			e = gfs_pio_stat(gf, &gst);
+			if (e != GFARM_ERR_NO_ERROR) {
+				fprintf(stderr, "gfs_pio_stat: %s\n",
+				    gfarm_error_string(e));
+				return (c);
+			}
+			if (verbose)
+				fprintf(stderr, "gfs_pio_stat()\n");
 			break;
 		case OP_READALL:
 			roff = 0;

@@ -16,14 +16,14 @@ else
 fi
 
 if
-## impossible to update st_mtime if read-only
-# $testbase/gfs_stat_pio_stat_consistency -h $remote -amNr $gftmp &&
-# gfrm -f $gftmp &&
+  gfreg -h $remote $data/1byte $gftmp &&
+  $testbase/gfs_stat_pio_stat_consistency -h $remote -amNr $gftmp &&
+  gfrm -f $gftmp &&
   $testbase/gfs_stat_pio_stat_consistency -h $remote -amNw $gftmp &&
   gfrm -f $gftmp &&
-## impossible to update st_mtime if read-only
-# $testbase/gfs_stat_pio_stat_consistency -h $remote -amRr $gftmp &&
-# gfrm -f $gftmp &&
+  gfreg -h $remote $data/1byte $gftmp &&
+  $testbase/gfs_stat_pio_stat_consistency -h $remote -amRr $gftmp &&
+  gfrm -f $gftmp &&
   $testbase/gfs_stat_pio_stat_consistency -h $remote -amR  $gftmp &&
   gfrm -f $gftmp &&
   $testbase/gfs_stat_pio_stat_consistency -h $remote -amWw $gftmp <$datafile
@@ -32,14 +32,14 @@ then
   if local=`$regress/bin/get_local_gfhost`; then
     gfrm -f $gftmp
     if
-###### impossible to update st_mtime if read-only
-#     $testbase/gfs_stat_pio_stat_consistency -h $local -amNr $gftmp &&
-#     gfrm -f $gftmp &&
+      gfreg -h $local $data/1byte $gftmp &&
+      $testbase/gfs_stat_pio_stat_consistency -h $local -amNr $gftmp &&
+      gfrm -f $gftmp &&
       $testbase/gfs_stat_pio_stat_consistency -h $local -amNw $gftmp &&
       gfrm -f $gftmp &&
-###### impossible to update st_mtime if read-only
-#     $testbase/gfs_stat_pio_stat_consistency -h $local -amRr $gftmp &&
-#     gfrm -f $gftmp &&
+      gfreg -h $local $data/1byte $gftmp &&
+      $testbase/gfs_stat_pio_stat_consistency -h $local -amRr $gftmp &&
+      gfrm -f $gftmp &&
       $testbase/gfs_stat_pio_stat_consistency -h $local -amR  $gftmp &&
       gfrm -f $gftmp &&
       $testbase/gfs_stat_pio_stat_consistency -h $local -amWw $gftmp <$datafile
