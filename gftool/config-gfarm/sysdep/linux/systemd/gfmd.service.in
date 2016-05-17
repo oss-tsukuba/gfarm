@@ -8,6 +8,7 @@ Type=forking
 
 User=root
 Group=root
+Environment=GLOBUS_THREAD_MODEL=pthread
 
 ExecStart=@config_gfarm_prefix@/sbin/gfmd -P @config_gfarm_gfmd_pid_file@ @config_gfarm_gfmd_option@
 PIDFile=@config_gfarm_gfmd_pid_file@

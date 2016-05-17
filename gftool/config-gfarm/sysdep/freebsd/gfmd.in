@@ -47,6 +47,7 @@ then
 	export GLOBUS_LOCATION
 	. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
 fi
+export GLOBUS_THREAD_MODEL=pthread
 
 CMD=$1
 case X$CMD in
