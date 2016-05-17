@@ -593,7 +593,11 @@ pfunc_copy_to_hpss(gfarm_pfunc_t *handle, FILE *to_parent,
 			/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 			e = gfs_pio_internal_set_view_section(
 			    src_fp.gfarm, src_host);
-			if (e != GFARM_ERR_NO_ERROR) {
+			if (e == GFARM_ERR_FILE_MIGRATED)
+				fprintf(stderr, "INFO: set_view(%s, %s): %s, "
+				    "do not specify source host\n", src_url,
+				    src_host, gfarm_error_string(e));
+			else if (e != GFARM_ERR_NO_ERROR) {
 				(void)pfunc_close(&src_fp);
 				fprintf(stderr,
 				  "ERROR: copy failed: set_view(%s, %s): %s\n",
@@ -717,7 +721,11 @@ pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
 	if (src_st.size > 0 && src_fp.gfarm && strcmp(src_host, "") != 0) {
 		/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 		e = gfs_pio_internal_set_view_section(src_fp.gfarm, src_host);
-		if (e != GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_FILE_MIGRATED)
+			fprintf(stderr, "INFO: set_view(%s, %s): %s, "
+			    "do not specify source host\n", src_url,
+			    src_host, gfarm_error_string(e));
+		else if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr,
 				"ERROR: copy failed: set_view(%s, %s): %s\n",
 				src_url, src_host, gfarm_error_string(e));
