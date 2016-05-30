@@ -550,7 +550,7 @@ Release note for Gfarm 2.5.8.3
 [2013.10.2]
 
 Updated feature
-* gfprep, gfcopy - -J option to specify the number of processes to
+* gfprep, gfpcopy - -J option to specify the number of processes to
   read directories [sf.net trac #726]
 
 Bug fix
