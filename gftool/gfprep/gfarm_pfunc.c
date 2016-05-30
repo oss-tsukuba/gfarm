@@ -593,18 +593,11 @@ pfunc_copy_to_hpss(gfarm_pfunc_t *handle, FILE *to_parent,
 			/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 			e = gfs_pio_internal_set_view_section(
 			    src_fp.gfarm, src_host);
-			if (e == GFARM_ERR_FILE_MIGRATED) {
+			if (e != GFARM_ERR_NO_ERROR) {
 				fprintf(stderr, "INFO: set_view(%s, %s): %s, "
 				    "do not specify source host\n", src_url,
 				    src_host, gfarm_error_string(e));
 				gfs_pio_clearerr(src_fp.gfarm);
-			} else if (e != GFARM_ERR_NO_ERROR) {
-				(void)pfunc_close(&src_fp);
-				fprintf(stderr,
-				  "ERROR: copy failed: set_view(%s, %s): %s\n",
-				src_url, src_host, gfarm_error_string(e));
-				result = PFUNC_RESULT_NG;
-				goto end;
 			}
 		}
 		send_to_cmd = gfarm_to_hpss;
@@ -722,28 +715,21 @@ pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
 	if (src_st.size > 0 && src_fp.gfarm && strcmp(src_host, "") != 0) {
 		/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 		e = gfs_pio_internal_set_view_section(src_fp.gfarm, src_host);
-		if (e == GFARM_ERR_FILE_MIGRATED) {
+		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "INFO: set_view(%s, %s): %s, "
 			    "do not specify source host\n", src_url,
 			    src_host, gfarm_error_string(e));
 			gfs_pio_clearerr(src_fp.gfarm);
-		} else if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr,
-				"ERROR: copy failed: set_view(%s, %s): %s\n",
-				src_url, src_host, gfarm_error_string(e));
-			result = PFUNC_RESULT_NG;
-			goto close;
 		}
 	}
 	if (src_st.size > 0 && dst_fp.gfarm && strcmp(dst_host, "") != 0) {
 		/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 		e = gfs_pio_internal_set_view_section(dst_fp.gfarm, dst_host);
 		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr,
-				"ERROR: copy failed: set_view(%s, %s): %s\n",
-				tmp_url, dst_host, gfarm_error_string(e));
-			result = PFUNC_RESULT_NG;
-			goto close;
+			fprintf(stderr, "INFO: set_view(%s, %s): %s, "
+			    "do not specify destination host\n", tmp_url,
+			    dst_host, gfarm_error_string(e));
+			gfs_pio_clearerr(dst_fp.gfarm);
 		}
 	}
 	e = pfunc_copy_io(handle, src_url, &src_fp, tmp_url, &dst_fp);
