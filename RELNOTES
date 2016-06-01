@@ -1,3 +1,16 @@
+Release note for Gfarm 2.6.11
+=============================
+
+[2016.6.2]
+
+Bug fix
+* gfpcopy does not tolerate file migration or file replica removal
+* gfs_pio_close() returns GFARM_ERR_BAD_FILE_DESCRIPTOR when it is
+  called against a never accessed 0-byte file
+* gfmd may deadlock in GSI when using Globus Toolkit 6.0 or later
+* multi spool directories - directories having the same prefix cannot
+  be specified
+
 Release note for Gfarm 2.6.10
 =============================
 
