@@ -1088,6 +1088,7 @@ fi
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/config-gfarm.sysdep
+%{share_prefix}/config/config-gfarm.common
 
 %files client
 %defattr(-,root,root)
@@ -1247,7 +1248,6 @@ fi
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/bdb.DB_CONFIG.in
-%{share_prefix}/config/config-gfarm.common
 %{share_prefix}/config/config-gfarm.ldap
 %{share_prefix}/config/config-gfarm.postgresql
 %{share_prefix}/config/config-gfarm-update.postgresql
