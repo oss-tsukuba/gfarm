@@ -9,7 +9,7 @@ trap 'gfrm -f $gftmp; rm -f $localtmp; exit $exit_trap' $trap_sigs
 # create a 0-byte file without any replica,
 # and access it
 
-if 
+if
 
    # SF.net #957 - read-only access causes EBADF
    $gfs_pio_test -ct $gftmp &&
