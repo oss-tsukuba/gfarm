@@ -2941,8 +2941,7 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "write_verify") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_write_verify);
 	} else if (strcmp(s, o = "write_verify_interval") == 0) {
-		e = parse_set_sockbuf_limit_int(p,
-		    &gfarm_write_verify_interval);
+		e = parse_set_misc_int(p, &gfarm_write_verify_interval);
 	} else if (strcmp(s, o = "write_verify_retry_interval") == 0) {
 		e = parse_set_misc_int(p, &gfarm_write_verify_retry_interval);
 	} else if (strcmp(s, o = "write_verify_log_interval") == 0) {
@@ -3169,7 +3168,7 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_metadb_dbq_size);
 	} else if (strcmp(s, o = "metadb_server_back_channel_sndbuf_limit")
 	    == 0) {
-		e = parse_set_misc_int(p,
+		e = parse_set_sockbuf_limit_int(p,
 		    &gfarm_metadb_server_back_channel_sndbuf_limit);
 	} else if (strcmp(s, o = "metadb_server_nfs_root_squash_support")
 	    == 0) {
