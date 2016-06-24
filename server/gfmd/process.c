@@ -223,6 +223,9 @@ process_add_ref(struct process *process)
 	++process->refcount;
 }
 
+static gfarm_error_t process_close_or_abort_file(struct process *,
+	struct peer *, int, char **, int, const char *);
+
 /* NOTE: caller of this function should acquire giant_lock as well */
 static int
 process_del_ref(struct process *process, struct peer *peer)
@@ -241,7 +244,8 @@ process_del_ref(struct process *process, struct peer *peer)
 			if (fo->opener == peer ||
 			    (inode_is_file(fo->inode) &&
 			     fo->u.f.spool_opener == peer)) {
-				process_close_file(process, peer, fd, NULL);
+				process_close_or_abort_file(
+				    process, peer, fd, NULL, 1, diag);
 			}
 		}
 	}
@@ -943,14 +947,13 @@ process_peer_is_the_spool_opener(struct process *process,
 	return (1);
 }
 
-gfarm_error_t
-process_close_file(struct process *process, struct peer *peer, int fd,
-	char **trace_logp)
+static gfarm_error_t
+process_close_or_abort_file(struct process *process, struct peer *peer, int fd,
+	char **trace_logp, int aborted, const char *diag)
 {
 	struct file_opening *fo;
 	gfarm_mode_t mode;
 	gfarm_error_t e;
-	static const char diag[] = "process_close_file";
 
 	if (FD_IS_SLAVE_ONLY(fd))
 		e = process_get_slave_file_opening(process, fd, &fo);
@@ -973,14 +976,18 @@ process_close_file(struct process *process, struct peer *peer, int fd,
 
 		/* i.e. REOPENed file, and I am a gfsd. */
 		if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0) {
-			gflog_warning(GFARM_MSG_UNFIXED,
-			    "gfsd on %s@%s exited without closing write-opened"
-			    " file (pid:%lld fd:%d). inode %llu:%llu"
-			    " might be modified, run gfspooldigest",
-			    peer_get_username(peer), peer_get_hostname(peer),
-			    (long long)process->pid, (int)fd,
-			    (long long)inode_get_number(fo->inode),
-			    (long long)inode_get_gen(fo->inode));
+			if (aborted) {
+				gflog_warning(GFARM_MSG_1004354,
+				    "gfsd on %s@%s exited"
+				    " without closing write-opened file"
+				    " (pid:%lld fd:%d). inode %llu:%llu"
+				    " might be modified, run gfspooldigest",
+				    peer_get_username(peer),
+				    peer_get_hostname(peer),
+				    (long long)process->pid, (int)fd,
+				    (long long)inode_get_number(fo->inode),
+				    (long long)inode_get_gen(fo->inode));
+			}
 			inode_del_ref_spool_writers(fo->inode);
 			inode_check_pending_replication(fo);
 		}
@@ -1011,6 +1018,14 @@ process_close_file(struct process *process, struct peer *peer, int fd,
 	file_opening_free(fo, mode);
 	process->filetab[fd] = NULL;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+process_close_file(struct process *process, struct peer *peer, int fd,
+	char **trace_logp)
+{
+	return (process_close_or_abort_file(process, peer, fd, trace_logp, 0,
+	    "process_close_file"));
 }
 
 gfarm_error_t
