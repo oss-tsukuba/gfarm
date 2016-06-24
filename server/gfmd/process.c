@@ -225,16 +225,57 @@ process_add_ref(struct process *process)
 
 /* NOTE: caller of this function should acquire giant_lock as well */
 static int
-process_del_ref(struct process *process)
+process_del_ref(struct process *process, struct peer *peer)
 {
 	int fd;
 	gfarm_mode_t mode;
 	struct file_opening *fo;
 	struct process_link *pl, *pln;
 	struct process *child;
+	const char diag[] = "process_del_ref";
+
+	for (fd = 0; fd < process->nfiles; fd++) {
+		fo = process->filetab[fd];
+		if (fo != NULL) {
+			mode = inode_get_mode(fo->inode);
+			if (fo->opener == peer ||
+			    (inode_is_file(fo->inode) &&
+			     fo->u.f.spool_opener == peer)) {
+				process_close_file(process, peer, fd, NULL);
+			}
+		}
+	}
 
 	if (--process->refcount > 0)
 		return (1); /* still referenced */
+
+	/* sanity check: process terminated, make sure all files are closed */
+	for (fd = 0; fd < process->nfiles; fd++) {
+		fo = process->filetab[fd];
+		if (fo != NULL) {
+			mode = inode_get_mode(fo->inode);
+			/* sanity check: this shouldn't happen */
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s: minor internal error "
+			    "pid:%lld fd:%d inode:%llu:%llu (mode:0%o) "
+			    "remains opened, closed by %s@%s, spool is %s, "
+			    "NOTE: GFM_PROTO_REVOKE_GFSD_ACCESS is%s called",
+			    diag, (long long)process->pid, (int)fd,
+			    (long long)inode_get_number(fo->inode),
+			    (long long)inode_get_gen(fo->inode), (int)mode,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    fo->u.f.spool_opener == NULL ? "closed already" :
+			    peer_get_hostname(fo->u.f.spool_opener),
+#if 0 /* not yet in main trunk */
+			    (fo->flag & GFARM_FILE_GFSD_ACCESS_REVOKED) != 0 ?
+			    "" :
+#endif
+			    " not");
+			inode_close_read(fo, NULL, NULL);
+			file_opening_free(fo, mode);
+		}
+	}
+	free(process->filetab);
 
 	/* make all children orphan */
 	for (pl = process->children.next; pl != &process->children; pl = pln) {
@@ -247,15 +288,6 @@ process_del_ref(struct process *process)
 	process->siblings.next->prev = process->siblings.prev;
 	process->siblings.prev->next = process->siblings.next;
 
-	for (fd = 0; fd < process->nfiles; fd++) {
-		fo = process->filetab[fd];
-		if (fo != NULL) {
-			mode = inode_get_mode(fo->inode);
-			inode_close_read(fo, NULL, NULL);
-			file_opening_free(fo, mode);
-		}
-	}
-	free(process->filetab);
 	gfarm_id_free(process_id_table, (gfarm_int32_t)process->pid);
 
 	return (0); /* process freed */
@@ -273,19 +305,7 @@ process_attach_peer(struct process *process, struct peer *peer)
 void
 process_detach_peer(struct process *process, struct peer *peer)
 {
-	int fd;
-
-	if (!process_del_ref(process)) /* process freed */
-		return;
-
-	for (fd = 0; fd < process->nfiles; fd++) {
-		/*
-		 * XXX This shouldn't be done,
-		 * if we'll support gfmd reconnection.
-		 */
-		if (process->filetab[fd] != NULL)
-			process_close_file(process, peer, fd, NULL);
-	}
+	(void)process_del_ref(process, peer);
 }
 
 gfarm_pid_t
