@@ -34,6 +34,8 @@ class gfarm_iostat_head(Structure):
 		("s_rowcur",c_uint),
 		("s_rowmax",c_uint),
 		("s_item_size",c_uint),
+		("s_ncolumn",c_uint),
+		("s_dummy",c_uint),
 		("s_start_sec",c_ulonglong),
 		("s_update_sec",c_ulonglong),
 		("s_item_off",c_ulonglong),
@@ -46,6 +48,8 @@ class gfarm_iostat_head(Structure):
 		s += ' rowcur=' + repr(self.s_rowcur)
 		s += ' rowmax=' + repr(self.s_rowmax)
 		s += ' item_size=' + repr(self.s_item_size)
+		s += ' ncolumn=' + repr(self.s_ncolumn)
+		s += ' dummy=' + repr(self.s_dummy)
 		s += ' start_sec=' + repr(self.s_start_sec)
 		s += ' update_sec=' + repr(self.s_update_sec)
 		s += ' item_off=' + repr(self.s_item_off)
@@ -84,9 +88,10 @@ class gfarm_iostat:
 			specs = gfarm_iostat_spec * head.s_nitem
 			aspec = specs()
 			sread(fd, aspec, sizeof(specs))
-			items = gfarm_iostat_items * ((head.s_nitem + 1) *
+			items = gfarm_iostat_items * (head.s_ncolumn *
 				head.s_rowmax)
 			aitems = items()
+			fd.seek(head.s_item_off)
 			sread(fd, aitems, sizeof(items))
 		except:
 			logging.execption('sread')
@@ -109,6 +114,10 @@ class gfarm_iostat:
 		if self.file == '' :
 			return
 		return self.ahead.s_nitem
+	def ncolumn(self):
+		if self.file == '' :
+			return
+		return self.ahead.s_ncolumn
 	def nraw(self):
 		if self.file == '' :
 			return
@@ -132,7 +141,7 @@ class gfarm_iostat:
 			return
 		if self.ahead.s_row <= row :
 			return
-		k = row * (self.ahead.s_nitem + 1)
+		k = row * self.ahead.s_ncolumn
 		return self.aitems[k], self.aitems[k+1:k+1+self.ahead.s_nitem]
 	def __str__(self):
 		if self.file == '' :

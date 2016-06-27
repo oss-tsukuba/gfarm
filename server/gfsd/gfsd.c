@@ -163,6 +163,7 @@ static int gfarm_spool_root_len_max;
 
 struct gfp_xdr *credential_exported = NULL;
 
+#define IOSTAT_PATH_NAME_MAX 16
 static struct gfarm_iostat_spec iostat_spec[] =  {
 	{ "rcount", GFARM_IOSTAT_TYPE_TOTAL },
 	{ "wcount", GFARM_IOSTAT_TYPE_TOTAL },
@@ -209,25 +210,37 @@ cleanup_accepting(int sighandler)
 	}
 }
 
-void
+static void
 cleanup_iostat(int sighandler)
 {
-	if (iostat_dirbuf) {
-		/*
-		 * XXX strcpy() is not defined as async-signal-safe
-		 * in IEEE Std 1003.1, 2013 (POSIX).
-		 * thus, the following code is not portable, strictly speaking.
-		 */
+	if (iostat_dirbuf != NULL && iostat_dirlen > 0) {
 		strcpy(&iostat_dirbuf[iostat_dirlen], "gfsd");
 		(void) unlink(iostat_dirbuf);
 		strcpy(&iostat_dirbuf[iostat_dirlen], "bcs");
+		(void) unlink(iostat_dirbuf);
+		strcpy(&iostat_dirbuf[iostat_dirlen], "wv");
 		(void) unlink(iostat_dirbuf);
 		if (!sighandler)
 			free(iostat_dirbuf);
 		iostat_dirbuf = NULL;
 	}
 }
+void
+gfsd_setup_iostat(const char *name, unsigned int row)
+{
+	if (iostat_dirbuf) {
+		gfarm_error_t e;
+		strncpy(&iostat_dirbuf[iostat_dirlen], name,
+				IOSTAT_PATH_NAME_MAX);
+		e = gfarm_iostat_mmap(iostat_dirbuf, iostat_spec,
+			GFARM_IOSTAT_IO_NITEM, row);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+				"gfarm_iostat_mmap('%s', %d): %s",
+				iostat_dirbuf, row, gfarm_error_string(e));
 
+	}
+}
 static void close_all_fd(struct gfp_xdr *);
 static int close_all_fd_for_process_reset(struct gfp_xdr *);
 static struct gfp_xdr *current_client = NULL;
@@ -884,6 +897,7 @@ do_fork(enum gfsd_type new_type)
 	pid_t rv;
 	int save_errno;
 	int i, pipefds[2];
+	struct gfarm_iostat_items *statp;
 
 	assert((my_type == type_listener &&
 		(new_type == type_client ||
@@ -904,10 +918,22 @@ do_fork(enum gfsd_type new_type)
 		fatal(GFARM_MSG_1004110, "sigprocmask: block failover: %s",
 		    strerror(errno));
 
+	switch (new_type) {
+	case type_client:
+	case type_replication:
+	case type_write_verify:
+		statp = gfarm_iostat_find_space(0);
+		break;
+	default:
+		statp = NULL;
+		break;
+	}
+
 	rv = fork();
 	save_errno = errno;
 	if (rv == -1) {
-		/* nothing to do */
+		if (statp)
+			gfarm_iostat_clear_ip(statp);
 	} else if (rv != 0) { /* parent process */
 		if (my_type == type_listener) {
 			if (new_type == type_back_channel)
@@ -915,9 +941,14 @@ do_fork(enum gfsd_type new_type)
 			else if (new_type == type_write_verify_controller)
 				write_verify_controller_gfsd_pid = rv;
 		}
+		if (statp)
+			gfarm_iostat_set_id(statp, (gfarm_uint64_t) rv);
 	} else { /* child process */
 		free_gfm_server(); /* to make sure to avoid race */
-
+		if (statp) {
+			gfarm_iostat_set_id(statp, (gfarm_uint64_t) getpid());
+			gfarm_iostat_set_local_ip(statp);
+		}
 		if (my_type == type_listener) {
 			for (i = 0; i < accepting.local_socks_count; i++) {
 				close(accepting.local_socks[i].sock);
@@ -934,7 +965,10 @@ do_fork(enum gfsd_type new_type)
 		if (new_type == type_back_channel) {
 			/* this should be set before fatal() */
 			back_channel_gfsd_pid = getpid();
-		}
+			gfsd_setup_iostat("bcs", gfarm_iostat_max_client);
+		} else if (new_type == type_write_verify_controller)
+			gfsd_setup_iostat("wv", 2);
+
 		my_type = new_type; /* this should be set before fatal() */
 		if (USING_PIPE_FOR_FAILOVER_SIGNAL(my_type)) {
 			if (pipe(pipefds) == -1)
@@ -2714,6 +2748,8 @@ calc_digest(int fd,
 	while ((sz = read(fd, data_buf, data_bufsize)) > 0) {
 		EVP_DigestUpdate(&md_ctx, data_buf, sz);
 		calc_len += sz;
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RCOUNT, 1);
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RBYTES, sz);
 	}
 	io_error_check_errno("calc_digest");
 	if (sz == -1)
@@ -4669,9 +4705,6 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	const char *diag = rep->handling_cksum_protocol ?
 	    "GFS_PROTO_REPLICATION_CKSUM_REQUEST" :
 	    "GFS_PROTO_REPLICATION_REQUEST";
-	struct gfarm_iostat_items *statp;
-
-	statp = gfarm_iostat_find_space(0);
 
 	/*
 	 * XXX FIXME:
@@ -4719,11 +4752,6 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		close(local_fd);
 #endif
 	} else if ((pid = do_fork(type_replication)) == 0) { /* child */
-		if (statp) {
-			gfarm_iostat_set_id(statp, (gfarm_uint64_t) getpid());
-			gfarm_iostat_set_local_ip(statp);
-		}
-
 		close(fds[0]);
 
 		memset(&res, 0, sizeof(res)); /* to shut up valgrind */
@@ -4751,10 +4779,6 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 			gfs_client_connection_free(src_gfsd);
 			close(local_fd);
 		} else {
-			if (statp) {
-				gfarm_iostat_set_id(statp, (gfarm_uint64_t)pid);
-				statp = NULL;
-			}
 			rep->src_gfsd = src_gfsd;
 			rep->file_fd = local_fd;
 			rep->pipe_fd = fds[0];
@@ -4766,8 +4790,6 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		}
 		close(fds[1]);
 	}
-	if (statp)
-		gfarm_iostat_clear_ip(statp);
 
 	*conn_errp = conn_err;
 	*dst_errp = dst_err;
@@ -4997,6 +5019,9 @@ clear_child(void)
 		pid = waitpid(-1, &status, WNOHANG);
 		if (pid == -1 || pid == 0)
 			break;
+		if (pid == back_channel_gfsd_pid
+		 || pid == write_verify_controller_gfsd_pid)
+			continue;
 		gfarm_iostat_clear_id(pid, 0);
 	}
 }
@@ -5370,7 +5395,6 @@ start_server(int accepting_sock,
 #endif
 	int client = accept(accepting_sock,
 	   client_addr_storage, &client_addr_size);
-	struct gfarm_iostat_items *statp;
 
 	if (client < 0) {
 		if (errno == EINTR || errno == ECONNABORTED ||
@@ -5381,15 +5405,10 @@ start_server(int accepting_sock,
 			return;
 		fatal_errno(GFARM_MSG_1000559, "accept");
 	}
-	statp = gfarm_iostat_find_space(0);
 #ifndef GFSD_DEBUG
 	switch ((pid = do_fork(type_client))) {
 	case 0:
 #endif
-		if (statp) {
-			gfarm_iostat_set_id(statp, (gfarm_uint64_t) getpid());
-			gfarm_iostat_set_local_ip(statp);
-		}
 		server(client, client_name, client_addr);
 		/*NOTREACHED*/
 #ifndef GFSD_DEBUG
@@ -5400,10 +5419,6 @@ start_server(int accepting_sock,
 		close(client);
 		break;
 	}
-	if (pid != -1 && statp)
-		gfarm_iostat_set_id(statp, (gfarm_uint64_t) pid);
-	else
-		gfarm_iostat_clear_ip(statp);
 #endif
 }
 
@@ -6087,16 +6102,6 @@ back_channel_server(void)
 
 	static int hack_to_make_cookie_not_work = 0; /* XXX FIXME */
 
-	if (iostat_dirbuf) {
-		strcpy(&iostat_dirbuf[iostat_dirlen], "bcs");
-		e = gfarm_iostat_mmap(iostat_dirbuf, iostat_spec,
-			GFARM_IOSTAT_IO_NITEM, gfarm_iostat_max_client);
-		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_1003674,
-				"gfarm_iostat_mmap(%s): %s",
-				iostat_dirbuf, gfarm_error_string(e));
-
-	}
 	for (;;) {
 		if ((e = connect_gfm_server("back channel"))
 		    != GFARM_ERR_NO_ERROR)
@@ -6790,12 +6795,13 @@ main(int argc, char **argv)
 		len = strlen(gfarm_iostat_gfsd_path) + 6; /* for port */
 		if (listen_addrname)
 			len += strlen(listen_addrname) + 1;
-		len += 1 + 16 + 1;	/* "-NAME\0" */
+		len += 1 + IOSTAT_PATH_NAME_MAX + 1;	/* "-NAME\0" */
 		GFARM_MALLOC_ARRAY(iostat_dirbuf, len);
 		if (iostat_dirbuf == NULL)
 			gflog_fatal(GFARM_MSG_1003676, "iostat_dirbuf:%s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 
+		iostat_dirbuf[len - 1] = 0;
 		iostat_dirlen = snprintf(iostat_dirbuf, len, "%s%s%s-%d/",
 			gfarm_iostat_gfsd_path, listen_addrname ? "-" : "",
 			listen_addrname ? listen_addrname : "",
@@ -6885,15 +6891,8 @@ main(int argc, char **argv)
 		    table_size);
 	file_table_init(table_size);
 
-	if (iostat_dirbuf) {
-		strcpy(&iostat_dirbuf[iostat_dirlen], "gfsd");
-		e = gfarm_iostat_mmap(iostat_dirbuf, iostat_spec,
-			GFARM_IOSTAT_IO_NITEM, gfarm_iostat_max_client);
-		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_1003679,
-				"gfarm_iostat_mmap(%s): %s",
-				iostat_dirbuf, gfarm_error_string(e));
-	}
+	gfsd_setup_iostat("gfsd", gfarm_iostat_max_client);
+
 	/*
 	 * Because SA_NOCLDWAIT is not implemented on some OS,
 	 * we do not rely on the feature.

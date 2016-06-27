@@ -24,6 +24,9 @@ struct gfarm_iostat_static {
 	gfarm_off_t		stat_size;
 };
 
+#define DEF_CACHE_LINESIZE 64
+static unsigned int cache_linesize = DEF_CACHE_LINESIZE;
+
 #define is_statfile_valid(hp, sip)	\
 	(staticp && (hp = staticp->stat_hp) && (sip = staticp->stat_sip))
 
@@ -43,6 +46,13 @@ gfarm_iostat_static_init(struct gfarm_context *ctxp)
 
 	memset(s, 0, sizeof(*s));
 	ctxp->iostat_static = s;
+#ifdef _SC_LEVEL1_DCACHE_LINESIZE
+	cache_linesize = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+	if (cache_linesize & 0x1f)
+		cache_linesize = DEF_CACHE_LINESIZE;
+	else if (cache_linesize > 0x100)
+		cache_linesize = 0x100;
+#endif
 	return (GFARM_ERR_NO_ERROR);
 }
 void
@@ -68,10 +78,16 @@ gfarm_iostat_mmap(char *path, struct gfarm_iostat_spec *specp,
 	size_t	size, off;
 	void	*addr;
 	struct gfarm_iostat_head head, *hp = &head;
+	int	ncol;
+	int	scol;
+
+	scol = sizeof(((struct gfarm_iostat_items *)0)->s_valid);
+	ncol = (((nitem + 1) * scol + (cache_linesize - 1))
+		& ~(cache_linesize - 1)) / scol;
 
 	off = sizeof(struct gfarm_iostat_head)
 		+ sizeof(struct gfarm_iostat_spec) * nitem;
-	off = (off + 7) & ~7;
+	off = (off + (cache_linesize - 1)) & ~(cache_linesize - 1);
 
 	memset(hp, 0, sizeof(*hp));
 	hp->s_magic = GFARM_IOSTAT_MAGIC;
@@ -81,7 +97,8 @@ gfarm_iostat_mmap(char *path, struct gfarm_iostat_spec *specp,
 	hp->s_rowmax = 0;
 	hp->s_start_sec = hp->s_update_sec = time(0);
 	hp->s_item_off = off;
-	hp->s_item_size = sizeof(gfarm_int64_t) * (nitem + 1);
+	hp->s_ncolumn = ncol;
+	hp->s_item_size = scol * ncol;
 
 	size = off + hp->s_item_size * row;
 	strncpy(hp->s_name, basename(path), GFARM_IOSTAT_NAME_MAX);
