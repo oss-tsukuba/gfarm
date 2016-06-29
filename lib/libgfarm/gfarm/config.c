@@ -2656,10 +2656,6 @@ parse_metadb_server_list_arguments(char *p, char **op)
 	struct gfarm_filesystem *fs;
 	struct gfarm_metadb_server *ms[METADB_SERVER_NUM_MAX];
 
-	/* XXX - consider to allow to specify several server lists */
-	if (gfarm_filesystem_is_initialized())
-		return (GFARM_ERR_NO_ERROR);
-
 	for (;;) {
 		if ((e = gfarm_strtoken(&p, &host_and_port))
 		    != GFARM_ERR_NO_ERROR) {
@@ -2695,6 +2691,13 @@ parse_metadb_server_list_arguments(char *p, char **op)
 		}
 		if (port < 0)
 			port = GFMD_DEFAULT_PORT;
+		if (gfarm_filesystem_get(host, port) != NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "duplicate metadb server ignored: %s:%d",
+			    host, port);
+			free(host);
+			continue;
+		}
 		if ((e = gfarm_metadb_server_new(&m, host, port))
 		    != GFARM_ERR_NO_ERROR) {
 			free(host);
@@ -2706,15 +2709,11 @@ parse_metadb_server_list_arguments(char *p, char **op)
 		*op = "1st (hostname:port) argument";
 		gflog_debug(GFARM_MSG_1002551,
 		    "Too few arguments passed to %s", listname);
-		return (GFARM_ERR_INVALID_ARGUMENT);
+		/* allow the same gfarm_metadb_server_list line */
+		return (GFARM_ERR_NO_ERROR);
 	}
-	gfarm_metadb_server_set_is_master(ms[0], 1);
-	if ((e = gfarm_filesystem_init()) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002552,
-		    "%s", gfarm_error_string(e));
+	if ((e = gfarm_filesystem_new(&fs)) != GFARM_ERR_NO_ERROR)
 		goto error;
-	}
-	fs = gfarm_filesystem_get_default();
 	if ((e = gfarm_filesystem_set_metadb_server_list(fs, ms, n))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002553,
@@ -3310,50 +3309,23 @@ gfarm_config_set_default_ports(void)
 }
 
 static gfarm_error_t
-gfarm_config_set_default_filesystem(void)
+gfarm_config_set_default_metadb_server(void)
 {
 	gfarm_error_t e;
+	struct gfarm_metadb_server *m;
 	struct gfarm_filesystem *fs;
-	int n;
+	char *host;
 
 	/* gfarm_metadb_server_name is checked in
 	 * gfarm_config_set_default_ports */
 	assert(gfarm_ctxp->metadb_server_name != NULL);
 
-	if ((e = gfarm_filesystem_init()) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002554,
-		    "%s", gfarm_error_string(e));
-		return (e);
-	}
-	fs = gfarm_filesystem_get(
-		gfarm_ctxp->metadb_server_name, gfarm_ctxp->metadb_server_port);
-	if (fs == NULL) {
-		fs = gfarm_filesystem_get_default();
-		if (gfarm_filesystem_get_metadb_server_list(fs, &n) != NULL)
-			/* XXX - for now, this is assumed */
-			gflog_fatal(GFARM_MSG_1002555, "configuration error: "
-			    "%s:%d is not included in the metadb_server_list",
-			    gfarm_ctxp->metadb_server_name,
-			    gfarm_ctxp->metadb_server_port);
-	}
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static gfarm_error_t
-gfarm_config_set_default_metadb_server(void)
-{
-	gfarm_error_t e;
-	struct gfarm_metadb_server *m;
-	struct gfarm_metadb_server *ms[1];
-	struct gfarm_filesystem *fs;
-	char *host;
-
-	if (gfarm_filesystem_get(
-	    gfarm_ctxp->metadb_server_name, gfarm_ctxp->metadb_server_port)
-	    != NULL)
+	if ((fs = gfarm_filesystem_get(
+	    gfarm_ctxp->metadb_server_name, gfarm_ctxp->metadb_server_port))
+	    != NULL) {
+		gfarm_filesystem_set_default(fs);
 		return (GFARM_ERR_NO_ERROR);
-
-	fs = gfarm_filesystem_get_default();
+	}
 	if ((host = strdup(gfarm_ctxp->metadb_server_name)) == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		gflog_debug(GFARM_MSG_1003433,
@@ -3367,12 +3339,16 @@ gfarm_config_set_default_metadb_server(void)
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
-	gfarm_metadb_server_set_is_master(m, 1);
-	ms[0] = m;
-	if ((e = gfarm_filesystem_set_metadb_server_list(fs, ms, 1))
+	if ((e = gfarm_filesystem_new(&fs)) != GFARM_ERR_NO_ERROR)
+		goto error;
+	gfarm_filesystem_set_default(fs);
+	if ((e = gfarm_filesystem_set_metadb_server_list(fs, &m, 1))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1002557,
 		    "%s", gfarm_error_string(e));
+error:
+	if (e != GFARM_ERR_NO_ERROR)
+		gfarm_metadb_server_free(m);
 	return (e);
 }
 
@@ -3589,7 +3565,6 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_iostat_max_client == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_iostat_max_client = GFARM_IOSTAT_MAX_CLIENT;
 
-	gfarm_config_set_default_filesystem();
 	gfarm_config_set_default_metadb_server();
 }
 

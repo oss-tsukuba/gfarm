@@ -117,7 +117,7 @@ gfarm_filesystem_hash_equal(const void *key1, int key1len,
 	return (strcasecmp(id1->hostname, id2->hostname) == 0);
 }
 
-static gfarm_error_t
+gfarm_error_t
 gfarm_filesystem_new(struct gfarm_filesystem **fsp)
 {
 	gfarm_error_t e;
@@ -176,12 +176,6 @@ gfarm_filesystem_free(struct gfarm_filesystem *fs)
 	}
 }
 
-int
-gfarm_filesystem_is_initialized(void)
-{
-	return (staticp->filesystems.next != &staticp->filesystems);
-}
-
 static gfarm_error_t
 gfarm_filesystem_ms2fs_hash_alloc(void)
 {
@@ -193,20 +187,6 @@ gfarm_filesystem_ms2fs_hash_alloc(void)
 	if (staticp->ms2fs_hashtab == NULL) {
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
-gfarm_filesystem_init(void)
-{
-	gfarm_error_t e;
-	struct gfarm_filesystem *fs;
-
-	if (gfarm_filesystem_is_initialized())
-		return (GFARM_ERR_NO_ERROR);
-	if ((e = gfarm_filesystem_new(&fs)) != GFARM_ERR_NO_ERROR)
-		return (e);
-	fs->flags |= GFARM_FILESYSTEM_FLAG_IS_DEFAULT;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -247,19 +227,28 @@ gfarm_filesystem_hash_purge(struct gfarm_filesystem *fs,
 	(void)r;
 }
 
-int
+void
+gfarm_filesystem_set_default(struct gfarm_filesystem *fs)
+{
+	fs->flags |= GFARM_FILESYSTEM_FLAG_IS_DEFAULT;
+}
+
+static int
 gfarm_filesystem_is_default(struct gfarm_filesystem *fs)
 {
 	return ((fs->flags & GFARM_FILESYSTEM_FLAG_IS_DEFAULT) != 0);
 }
 
-struct gfarm_filesystem*
+struct gfarm_filesystem *
 gfarm_filesystem_get_default(void)
 {
 	struct gfarm_filesystem *fs = staticp->filesystems.next;
 
-	assert(gfarm_filesystem_is_default(fs));
-	return (fs);
+	for (; fs != &staticp->filesystems; fs = fs->next) {
+		if (gfarm_filesystem_is_default(fs))
+			return (fs);
+	}
+	return (NULL);
 }
 
 struct gfarm_filesystem*
