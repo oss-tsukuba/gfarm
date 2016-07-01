@@ -781,6 +781,7 @@ end:
 				"ERROR: cannot remove tmp-file: %s: %s\n",
 			tmp_url, gfarm_error_string(e));
 	}
+	free(tmp_url);
 	return (result);
 }
 
