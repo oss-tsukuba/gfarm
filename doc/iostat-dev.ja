@@ -114,8 +114,8 @@
 	gfmd, gfsd について以下のようにパス名が生成される。
 
 	gfmd: ディレクトリパス/iostat-gfmd-ポート/gfmd
-	gfsd: ディレクトリパス/iostat-gfsd-ポート/{gfsd,bcs}
-	      ディレクトリパス/iostat-gfsd-リスンアドレス-ポート/{gfsd,bcs}
+	gfsd: ディレクトリパス/iostat-gfsd-ポート/{gfsd,bcs,wv}
+	      ディレクトリパス/iostat-gfsd-リスンアドレス-ポート/{gfsd,bcs,wv}
 
 3. gfarm 性能測定
 3.1 パラメタ設定
@@ -182,19 +182,22 @@
 	gfsd は 通常のクライアントサービスを行うプロセスと、
 	back channel service を行うプロセスで構成され、
 	それぞれrpc の接続要求毎にプロセスを作成し、要求を処理している。
+	また、write verify を指示するプロセスと実行するプロセスも存在する。
 
 	測定主体は各プロセスとする。
 	main プロセスがリスンアドレスとポートからディレクトリを作成する。
-	性能測定ファイルは、gfsd と bcs の二つを作成する。
-	それぞれ、accept を行う親プロセスが、測定行を管理し、
+	性能測定ファイルは、gfsd と bcs, wv の三つを作成する。
+	それぞれ、accept  または要求を受け付ける親プロセスが、測定行を管理し、
 	子プロセスに割り当てる。
 	親プロセスはfork 前に子プロセスのための空き測定行を確保し、
 	fork 後、pid をs_valid に記載する。
 	子プロセスが終了した時はpidを鍵に該当行を探し、s_valid をクリアする。
 
 	計測は以下の箇所で行う。
-		gfs_server_pread, gfs_server_pwrite
-		gfs_server_replica_recv, gfs_client_replica_recv
+		gfs_server_pread, gfs_server_pwrite,
+		gfs_server_write,
+		gfs_recvfile_common, gfs_sendfile_common,
+		calc_digest
 
 3.4　iostat
 	性能測定ファイルの操作は lib/libgfarm/gfarm/iostat.c 内で行っている。
@@ -222,10 +225,10 @@
 	'iostat-gf?d*' 毎に異なるメトリックとして報告される。
 
 	gfmd: ディレクトリパス/iostat-gfmd-ポート/gfmd
-	gfsd: ディレクトリパス/iostat-gfsd-ポート/{gfsd,bcs}
-	      ディレクトリパス/iostat-gfsd-ポート-リスンアドレス/{gfsd,bcs}
+	gfsd: ディレクトリパス/iostat-gfsd-ポート/{gfsd,bcs,wv}
+	      ディレクトリパス/iostat-gfsd-ポート-リスンアドレス/{gfsd,bcs,wv}
 
-	当該ディレクトリ配下の複数のファイル {gfsd, bcs} は同一の
+	当該ディレクトリ配下の複数のファイル {gfsd, bcs, wv} は同一の
 	メトリックとして合算される。
 
 	集計は各ファイルの同一測定行について、今回値から前回値を引いた差を
@@ -295,7 +298,8 @@
 	一つのプロセスが収集できる測定情報は一組のみである。
 	gfmd は1プロセスで一組の測定情報を収集し、
 	gfsd-server は親プロセスと子プロセス群で一組、
-	gfsd-back_channel_server も親プロセスと子プロセス群で一組の
+	gfsd-back_channel_server、write_verify_controller
+	も親プロセスと子プロセス群で一組の
 	収集を行うので、親プロセスが1回限り本関数を呼び出す。
 
 	【戻り値】

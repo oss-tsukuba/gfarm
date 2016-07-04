@@ -214,6 +214,11 @@ static void
 cleanup_iostat(int sighandler)
 {
 	if (iostat_dirbuf != NULL && iostat_dirlen > 0) {
+		/*
+		 * XXX strcpy() is not defined as async-signal-safe
+		 * in IEEE Std 1003.1, 2013 (POSIX).
+		 * thus, the following code is not portable, strictly speaking.
+		 */
 		strcpy(&iostat_dirbuf[iostat_dirlen], "gfsd");
 		(void) unlink(iostat_dirbuf);
 		strcpy(&iostat_dirbuf[iostat_dirlen], "bcs");
