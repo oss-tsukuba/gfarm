@@ -994,11 +994,7 @@ write_verify_state_snapshot(void)
 		tv[0].tv_usec = 0;
 	}
 	tv[1] = tv[0];
-#if !defined(HAVE_FUTIMES) && defined(HAVE_FUTIMESAT)
-	if (futimesat(write_verify_state_fd, NULL, tv) == -1)
-#else
-	if (futimes(write_verify_state_fd, tv) == -1)
-#endif
+	if (utimes(write_verify_state_file, tv) == -1)
 		gflog_info_errno(GFARM_MSG_1004438,
 		    "recording mtime to %s", write_verify_state_file);
 	if (fsync(write_verify_state_fd) == -1)
