@@ -1420,7 +1420,9 @@ sigs_handler(void *p)
 		case SIGXCPU:
 		case SIGXFSZ:
 #ifdef SIGPWR
+#if !defined(SIGINFO) || (SIGPWR != SIGINFO) /* see SF.net #961 */
 		case SIGPWR:
+#endif
 #endif
 			/* terminate gfmd */
 			break;
