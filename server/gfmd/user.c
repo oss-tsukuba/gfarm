@@ -867,9 +867,6 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 		gfarm_user_info_free(&ui);
 	giant_unlock();
 
-	if (e == GFARM_ERR_NO_ERROR)
-		quota_check_start();
-
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
