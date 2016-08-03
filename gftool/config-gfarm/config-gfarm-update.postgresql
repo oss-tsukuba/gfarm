@@ -160,6 +160,8 @@ update_postgresql()
 	create_table QuotaGroup
 	create_table SeqNum
 	create_table MdHost
+	create_table QuotaDirSet
+	create_table QuotaDirectory
 
 	update_host_table
 

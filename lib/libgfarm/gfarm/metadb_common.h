@@ -12,6 +12,7 @@ extern const struct gfarm_base_generic_info_ops
 	gfarm_base_gfs_stat_ops,
 	gfarm_base_xattr_info_ops,
 	gfarm_base_quota_info_ops,
+	gfarm_base_quota_dirset_info_ops,
 	gfarm_base_metadb_server_ops,
 	gfarm_base_metadb_cluster_ops;
 

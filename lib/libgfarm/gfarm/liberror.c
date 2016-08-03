@@ -145,6 +145,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"conflict detected",
 	"invalid credential",
 	"no filesystem node",
+	"directory quota exists",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
@@ -442,6 +443,7 @@ static struct gfarm_errno_error_map {
 	/*		GFARM_ERR_CONFLICT_DETECTED */
 	/*		GFARM_ERR_INVALID_CREDENTIAL */
 	/*		GFARM_ERR_NO_FILESYSTEM_NODE */
+	/*		GFARM_ERR_DIRECTORY_QUOTA_EXISTS */
 };
 
 /* gfarm_error_t -> UNIX errno */
@@ -451,6 +453,7 @@ static struct gfarm_error_errno_map {
 } gfarm_error_errno_map_table[] = {
 	{ EIO,		GFARM_ERR_CHECKSUM_MISMATCH },
 	{ EIO,		GFARM_ERR_NO_FILESYSTEM_NODE },
+	{ ENOTEMPTY,	GFARM_ERR_DIRECTORY_QUOTA_EXISTS },
 };
 
 struct gfarm_error_domain {

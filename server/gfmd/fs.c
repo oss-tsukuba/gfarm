@@ -32,6 +32,8 @@
 #include "dead_file_copy.h"
 #include "dir.h"
 #include "inode.h"
+#include "dirset.h"
+#include "quota_dir.h"
 #include "process.h"
 #include "peer.h"
 #include "back_channel.h"
@@ -238,6 +240,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	struct process *process;
 	int op;
 	struct inode *base, *inode;
+	struct dirset *tdirset;
 	int created, transaction = 0;;
 	gfarm_int32_t cfd, fd = -1;
 	char *repattr;
@@ -284,6 +287,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 		    gfarm_error_string(e));
 		return (e);
 	}
+	tdirset = inode_get_tdirset(base);
 
 	if (flag & ~GFARM_FILE_USER_MODE) {
 		gflog_debug(GFARM_MSG_1001794, "argument 'flag' is invalid");
@@ -336,11 +340,17 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	} else {
 		flag &= ~GFARM_FILE_EXCLUSIVE;
 		e = inode_lookup_by_name(base, name, process, op, &inode);
+		if (e == GFARM_ERR_NO_ERROR && tdirset == TDIRSET_IS_NOT_SET) {
+			tdirset = quota_dir_get_dirset_by_inum(
+			    inode_get_number(inode));
+			if (tdirset == NULL)
+				tdirset = TDIRSET_IS_NOT_SET;
+		}
 		created = 0;
 	}
 	if (e == GFARM_ERR_NO_ERROR)
 		e = process_open_file(process, inode, flag, created, peer,
-		    spool_host, &fd);
+		    spool_host, tdirset, &fd);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001797,
 			"error occurred during process: %s",
@@ -584,6 +594,7 @@ gfm_server_open_root(struct peer *peer, int from_client, int skip)
 	struct inode *inode;
 	gfarm_uint32_t flag;
 	gfarm_int32_t fd = -1;
+	struct dirset *dirset;
 	static const char diag[] = "GFM_PROTO_OPEN_ROOT";
 
 	e = gfm_server_get_request(peer, diag, "i", &flag);
@@ -619,7 +630,10 @@ gfm_server_open_root(struct peer *peer, int from_client, int skip)
 			    "inode_lookup_root?:%s\n",
 			    gfarm_error_string(e));
 	} else if ((e = process_open_file(process, inode, flag, 0,
-	    peer, spool_host, &fd)) != GFARM_ERR_NO_ERROR) {
+	    peer, spool_host,
+	    (dirset = quota_dir_get_dirset_by_inum(inode_get_number(inode)),
+	     dirset != NULL ? dirset : TDIRSET_IS_NOT_SET),
+	     &fd)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001802, "process_open_file() failed: %s",
 			gfarm_error_string(e));
 	} else
@@ -639,6 +653,7 @@ gfm_server_open_parent(struct peer *peer, int from_client, int skip)
 	gfarm_uint32_t flag;
 	gfarm_int32_t cfd, fd = -1;
 	struct inode *base, *inode;
+	struct dirset *tdirset;
 	static const char diag[] = "GFM_PROTO_OPEN_PARENT";
 
 	e = gfm_server_get_request(peer, diag, "i", &flag);
@@ -675,12 +690,12 @@ gfm_server_open_parent(struct peer *peer, int from_client, int skip)
 	    ) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001809, "process_get_file_inode() "
 			"failed: %s", gfarm_error_string(e));
-	} else if ((e = inode_lookup_parent(base, process, op, &inode)) !=
-	    GFARM_ERR_NO_ERROR) {
+	} else if ((e = inode_lookup_parent(base, process, op,
+	    &tdirset, &inode)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001810, "inode_lookup_parent() failed"
 			": %s", gfarm_error_string(e));
 	} else if ((e = process_open_file(process, inode, flag, 0,
-	    peer, spool_host, &fd)) != GFARM_ERR_NO_ERROR) {
+	    peer, spool_host, tdirset, &fd)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001811, "process_open_file() failed: "
 			"%s", gfarm_error_string(e));
 	} else
@@ -724,7 +739,7 @@ gfm_server_fhopen(struct peer *peer, int from_client, int skip)
 	} else if ((inode = inode_lookup(inum)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		msg = "no such inode";
-	} else if (!user_is_root(inode, user)) {
+	} else if (!user_is_root_for_inode(user, inode)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		msg = "not gfarmroot";
 	} else if (inode_get_gen(inode) != gen) {
@@ -734,7 +749,7 @@ gfm_server_fhopen(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_INVALID_ARGUMENT;
 		msg = "invalid flag";
 	} else if ((e = process_open_file(process, inode, flag, 0, peer,
-		    NULL, &fd)) != GFARM_ERR_NO_ERROR)
+	    NULL, NULL, &fd)) != GFARM_ERR_NO_ERROR)
 		msg = "process_open_file";
 	else {
 		peer_fdpair_set_current(peer, fd, diag);
@@ -1144,7 +1159,8 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 	} else {
 		needs_free = 1;
 		e_rpc = inode_xattr_list_get_cached_by_patterns(
-		    st.st_ino, attrpatterns, nattrpatterns, &xattrs, &nxattrs);
+		    st.st_ino, attrpatterns, nattrpatterns, NULL /* DQTODO */,
+		    &xattrs, &nxattrs);
 		if (e_rpc != GFARM_ERR_NO_ERROR) {
 			xattrs = NULL;
 			nxattrs = 0;
@@ -1267,7 +1283,7 @@ gfm_server_futimes(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001825, "process_get_user() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (user != inode_get_user(inode) &&
-	    !user_is_root(inode, user) &&
+		   !user_is_root_for_inode(user, inode) &&
 	    (e = process_get_file_writable(process, peer, fd, diag)) !=
 	    GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001826, "permission denied");
@@ -1334,12 +1350,12 @@ gfm_server_fchmod(struct peer *peer, int from_client, int skip)
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
 	} else if (user != inode_get_user(inode) &&
-	    !user_is_root(inode, user)) {
+	    !user_is_root_for_inode(user, inode)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1001834,
 			"operation is not permitted for user");
 	} else {
-		if (!user_is_root(inode, user)) {
+		if (!user_is_root_for_inode(user, inode)) {
 			/* POSIX requirement for setgid-bit security */
 			if ((mode & GFARM_S_ISGID) != 0 &&
 			    !user_in_group(user, inode_get_group(inode)))
@@ -1415,13 +1431,13 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 	    (new_group = group_lookup(groupname)) == NULL) {
 		gflog_debug(GFARM_MSG_1001842, "group is not found");
 		e = GFARM_ERR_NO_SUCH_GROUP;
-	} else if (new_user != NULL && !user_is_root(inode, user) &&
+	} else if (new_user != NULL && !user_is_root_for_inode(user, inode) &&
 	    (user != inode_get_user(inode) ||
 	    new_user != user)) {
 		gflog_debug(GFARM_MSG_1001843,
 			"operation is not permitted for user");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (new_group != NULL && !user_is_root(inode, user) &&
+	} else if (new_group != NULL && !user_is_root_for_inode(user, inode) &&
 	    (user != inode_get_user(inode) ||
 	    !user_in_group(user, new_group))) {
 		gflog_debug(GFARM_MSG_1001844,
@@ -1542,7 +1558,7 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 		    gfarm_error_string(e));
 	} else if (from_client &&
 	    ((user = process_get_user(process)) == NULL ||
-	     (!user_is_root(inode, user) && 
+	     (!user_is_root_for_inode(user, inode) && 
 	      process_get_file_writable(process, peer, fd, diag) !=
 	      GFARM_ERR_NO_ERROR))) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -1817,8 +1833,8 @@ gfm_server_rename(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001877, "db_begin() failed: %s",
 			gfarm_error_string(e));
 	} else {
-		e = inode_rename(sdir, sname, ddir, dname, process,
-			&srct, &dstt, &dst_removed, &hlink_removed);
+		e = inode_rename(sdir, sname, ddir, dname, process, peer,
+			&srct, &dstt, &dst_removed, &hlink_removed, diag);
 		if (gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR) {
 			gettimeofday(&tv, NULL),
 			trace_seq_num_rename =
@@ -2580,10 +2596,22 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 	}
 
 	if (e_rpc == GFARM_ERR_NO_ERROR) {
+		int has_directory_quota_ea = 0;
+		struct dirset *dirset = NULL;
+
+		for (i = 0; i < nattrpatterns; i++) {
+			if (strcmp(attrpatterns[i], GFARM_EA_DIRECTORY_QUOTA)
+			    == 0)
+				has_directory_quota_ea = 1;
+		}
+		if (has_directory_quota_ea)
+			dirset = quota_dir_get_dirset_by_inum(
+			    inode_get_number(inode));
+
 		for (i = 0; i < n; i++) {
 			pp = &p[i];
 			e_rpc = inode_xattr_list_get_cached_by_patterns(
-			    pp->st.st_ino, attrpatterns, nattrpatterns,
+			    pp->st.st_ino, attrpatterns, nattrpatterns, dirset,
 			    &pp->xattrs, &pp->nxattrs);
 			if (e_rpc != GFARM_ERR_NO_ERROR) {
 				pp->xattrs = NULL;

@@ -23,10 +23,11 @@
 #include "group.h"
 #include "inode.h"
 #include "quota.h"
+#include "dirset.h"
 #include "db_access.h"
 
 #define QUOTA_NOT_CHECK_YET -1
-#define is_checked(q) (q->space != QUOTA_NOT_CHECK_YET ? 1 : 0)
+#define is_checked(q) ((q)->space != QUOTA_NOT_CHECK_YET)
 
 static gfarm_error_t db_state = GFARM_ERR_NO_ERROR;
 
@@ -74,7 +75,37 @@ quota_softlimit_exceed(struct quota *q)
 }
 
 static void
-usage_clear(struct usage *usage)
+quota_metadata_softlimit_exceed(struct quota_metadata *q)
+{
+	struct timeval now;
+
+	if (!quota_limit_is_valid(q->limit.grace_period)) {
+		/* disable all softlimit */
+		q->exceed.space_time = GFARM_QUOTA_INVALID;
+		q->exceed.num_time = GFARM_QUOTA_INVALID;
+		q->exceed.phy_space_time = GFARM_QUOTA_INVALID;
+		q->exceed.phy_num_time = GFARM_QUOTA_INVALID;
+		return;
+	}
+
+	/* update exceeded time of softlimit */
+	gettimeofday(&now, NULL);
+	update_softlimit(&q->exceed.space_time, now.tv_sec,
+	    q->limit.grace_period, q->usage.space,
+	    q->limit.soft.space);
+	update_softlimit(&q->exceed.num_time, now.tv_sec,
+	    q->limit.grace_period, q->usage.num,
+	    q->limit.soft.num);
+	update_softlimit(&q->exceed.phy_space_time, now.tv_sec,
+	    q->limit.grace_period, q->usage.phy_space,
+	    q->limit.soft.phy_space);
+	update_softlimit(&q->exceed.phy_num_time, now.tv_sec,
+	    q->limit.grace_period, q->usage.phy_num,
+	    q->limit.soft.phy_num);
+}
+
+void
+quota_usage_clear(struct gfarm_quota_subject_info *usage)
 {
 	usage->space = 0;
 	usage->num = 0;
@@ -85,13 +116,13 @@ usage_clear(struct usage *usage)
 static void
 usage_tmp_clear_user(void *closure, struct user *u)
 {
-	usage_clear(user_usage_tmp(u));
+	quota_usage_clear(user_usage_tmp(u));
 }
 
 static void
 usage_tmp_clear_group(void *closure, struct group *g)
 {
-	usage_clear(group_usage_tmp(g));
+	quota_usage_clear(group_usage_tmp(g));
 }
 
 static void
@@ -102,21 +133,21 @@ usage_tmp_clear(void)
 }
 
 static void
-usage_to_quota(struct usage *src, struct quota *dst)
+usage_to_quota(struct gfarm_quota_subject_info *src_usage, struct quota *dst)
 {
-	dst->space = src->space;
-	dst->num = src->num;
-	dst->phy_space = src->phy_space;
-	dst->phy_num = src->phy_num;
+	dst->space = src_usage->space;
+	dst->num = src_usage->num;
+	dst->phy_space = src_usage->phy_space;
+	dst->phy_num = src_usage->phy_num;
 }
 
 static void
 quota_update_usage_user(void *closure, struct user *u)
 {
 	struct quota *q = user_quota(u);
-	struct usage *ut = user_usage_tmp(u);
+	struct gfarm_quota_subject_info *usage_tmp = user_usage_tmp(u);
 
-	usage_to_quota(ut, q);
+	usage_to_quota(usage_tmp, q);
 	quota_softlimit_exceed(q);
 
 	if (!user_is_valid(u))
@@ -132,9 +163,9 @@ static void
 quota_update_usage_group(void *closure, struct group *g)
 {
 	struct quota *q = group_quota(g);
-	struct usage *ut = group_usage_tmp(g);
+	struct gfarm_quota_subject_info *usage_tmp = group_usage_tmp(g);
 
-	usage_to_quota(ut, q);
+	usage_to_quota(usage_tmp, q);
 	quota_softlimit_exceed(q);
 
 	if (!group_is_valid(g))
@@ -147,7 +178,7 @@ quota_update_usage_group(void *closure, struct group *g)
 }
 
 static void
-quota_update_usage()
+quota_update_usage(void)
 {
 	user_all(NULL, quota_update_usage_user, 0);
 	group_all(NULL, quota_update_usage_group, 0);
@@ -169,6 +200,25 @@ calculate_grace_period(gfarm_time_t exceeded_time,
 		return (0); /* expired */
 
 	return (val); /* grace period until expiration */
+}
+
+void
+quota_exceed_to_grace(gfarm_time_t grace_period,
+	const struct gfarm_quota_subject_time *exceed,
+	struct gfarm_quota_subject_time *grace)
+{
+	struct timeval now;
+
+	gettimeofday(&now, NULL);
+
+	grace->space_time = calculate_grace_period(
+	    exceed->space_time, grace_period, now.tv_sec);
+	grace->num_time = calculate_grace_period(
+	    exceed->num_time, grace_period, now.tv_sec);
+	grace->phy_space_time = calculate_grace_period(
+	    exceed->phy_space_time, grace_period, now.tv_sec);
+	grace->phy_num_time = calculate_grace_period(
+	    exceed->phy_num_time, grace_period, now.tv_sec);
 }
 
 static void
@@ -285,7 +335,7 @@ quota_group_set_one_from_db(void *closure, struct gfarm_quota_info *qi)
 }
 
 void
-quota_init()
+quota_init(void)
 {
 	gfarm_error_t e;
 
@@ -329,6 +379,59 @@ quota_data_init(struct quota *q)
 	q->phy_num_hard = GFARM_QUOTA_INVALID;
 }
 
+/* for soft and hard */
+static void
+quota_limit_subject_init(struct gfarm_quota_subject_info *limit)
+{
+	limit->space = GFARM_QUOTA_INVALID;
+	limit->num = GFARM_QUOTA_INVALID;
+	limit->phy_space = GFARM_QUOTA_INVALID;
+	limit->phy_num = GFARM_QUOTA_INVALID;
+}
+
+/* for limit */
+static void
+quota_limit_init(struct gfarm_quota_limit_info *limit)
+{
+	limit->grace_period = GFARM_QUOTA_INVALID; /* disable all softlimit */
+	quota_limit_subject_init(&limit->soft);
+	quota_limit_subject_init(&limit->hard);
+}
+
+/* for usage */
+void
+quota_usage_init(struct gfarm_quota_subject_info *usage)
+{
+	usage->space = QUOTA_NOT_CHECK_YET; /* quota_check hasn't been done */
+	usage->num = 0;
+	usage->phy_space = 0;
+	usage->phy_num = 0;
+}
+
+/* for exceed, grace */
+void
+quota_subject_time_init(struct gfarm_quota_subject_time *time)
+{
+	time->space_time = GFARM_QUOTA_INVALID;
+	time->num_time = GFARM_QUOTA_INVALID;
+	time->phy_space_time = GFARM_QUOTA_INVALID;
+	time->phy_num_time = GFARM_QUOTA_INVALID;
+}
+
+void
+quota_metadata_init(struct quota_metadata *q)
+{
+	quota_limit_init(&q->limit);
+	quota_usage_init(&q->usage);
+	quota_subject_time_init(&q->exceed);
+}
+
+int
+quota_is_checked(const struct gfarm_quota_subject_info *usage)
+{
+	return (is_checked(usage));
+}
+
 static inline gfarm_int64_t
 int64_add(gfarm_int64_t orig, gfarm_int64_t diff)
 {
@@ -356,10 +459,10 @@ int64_add(gfarm_int64_t orig, gfarm_int64_t diff)
 
 #define update_file_add(q, size, ncopy)					\
 	{								\
-		q->space = int64_add(q->space, size);			\
-		q->num = int64_add(q->num, 1);				\
-		q->phy_space = int64_add(q->phy_space, size * ncopy);	\
-		q->phy_num = int64_add(q->phy_num, ncopy);		\
+		(q)->space = int64_add((q)->space, size);		\
+		(q)->num = int64_add((q)->num, 1);			\
+		(q)->phy_space = int64_add((q)->phy_space, size * ncopy); \
+		(q)->phy_num = int64_add((q)->phy_num, ncopy);		\
 	}
 
 
@@ -388,7 +491,7 @@ usage_tmp_update(struct inode *inode)
 static void quota_check_retry_if_running(void);
 
 void
-quota_update_file_add(struct inode *inode)
+quota_update_file_add(struct inode *inode, struct dirset *tdirset)
 {
 	gfarm_off_t size;
 	gfarm_int64_t ncopy;
@@ -417,6 +520,13 @@ quota_update_file_add(struct inode *inode)
 			quota_softlimit_exceed(gq);
 		}
 	}
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
+		struct quota_metadata *dsq = dirset_quota(tdirset);
+		if (is_checked(&dsq->usage)) {
+			update_file_add(&dsq->usage, size, ncopy);
+			quota_metadata_softlimit_exceed(dsq);
+		}
+	}
 
 	if (debug_mode) {
 		gfarm_ino_t inum;
@@ -440,12 +550,13 @@ quota_update_file_add(struct inode *inode)
 #define update_file_resize(q, old_size, new_size, ncopy)		\
 	{								\
 		gfarm_int64_t diff = new_size - old_size;		\
-		q->space = int64_add(q->space, diff);			\
-		q->phy_space = int64_add(q->phy_space, diff * ncopy);	\
+		(q)->space = int64_add((q)->space, diff);		\
+		(q)->phy_space = int64_add((q)->phy_space, diff * ncopy); \
 	}
 
 void
-quota_update_file_resize(struct inode *inode, gfarm_off_t new_size)
+quota_update_file_resize(struct inode *inode, struct dirset *tdirset,
+	gfarm_off_t new_size)
 {
 	gfarm_off_t old_size = inode_get_size(inode);
 	gfarm_int64_t ncopy = inode_get_ncopy_with_dead_host(inode);
@@ -468,18 +579,27 @@ quota_update_file_resize(struct inode *inode, gfarm_off_t new_size)
 			quota_softlimit_exceed(gq);
 		}
 	}
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
+		struct quota_metadata *dsq = dirset_quota(tdirset);
+		if (is_checked(&dsq->usage)) {
+			update_file_resize(&dsq->usage,
+			    old_size, new_size, ncopy);
+			quota_metadata_softlimit_exceed(dsq);
+		}
+	}
 
 	quota_check_retry_if_running();
 }
 
 #define update_replica_num(q, size, n)					\
 	{								\
-		q->phy_space = int64_add(q->phy_space, size * n);	\
-		q->phy_num = int64_add(q->phy_num, n);			\
+		(q)->phy_space = int64_add((q)->phy_space, size * n);	\
+		(q)->phy_num = int64_add((q)->phy_num, n);		\
 	}
 
 static void
-quota_update_replica_num(struct inode *inode, gfarm_int64_t n)
+quota_update_replica_num(struct inode *inode, struct dirset *tdirset,
+	gfarm_int64_t n)
 {
 	gfarm_off_t size = inode_get_size(inode);
 	struct user *u = inode_get_user(inode);
@@ -499,32 +619,39 @@ quota_update_replica_num(struct inode *inode, gfarm_int64_t n)
 			quota_softlimit_exceed(gq);
 		}
 	}
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
+		struct quota_metadata *dsq = dirset_quota(tdirset);
+		if (is_checked(&dsq->usage)) {
+			update_replica_num(&dsq->usage, size, n);
+			quota_metadata_softlimit_exceed(dsq);
+		}
+	}
 
 	quota_check_retry_if_running();
 }
 
 void
-quota_update_replica_add(struct inode *inode)
+quota_update_replica_add(struct inode *inode, struct dirset *tdirset)
 {
-	quota_update_replica_num(inode, 1);
+	quota_update_replica_num(inode, tdirset, 1);
 }
 
 void
-quota_update_replica_remove(struct inode *inode)
+quota_update_replica_remove(struct inode *inode, struct dirset *tdirset)
 {
-	quota_update_replica_num(inode, -1);
+	quota_update_replica_num(inode, tdirset, -1);
 }
 
 #define update_file_remove(q, size, ncopy)				\
 	{								\
-		q->space = int64_add(q->space, -size);			\
-		q->num = int64_add(q->num, -1);				\
-		q->phy_space = int64_add(q->phy_space, -(size * ncopy)); \
-		q->phy_num = int64_add(q->phy_num, -ncopy);		\
+		(q)->space = int64_add((q)->space, -size);		\
+		(q)->num = int64_add((q)->num, -1);			\
+		(q)->phy_space = int64_add((q)->phy_space, -(size * ncopy)); \
+		(q)->phy_num = int64_add((q)->phy_num, -ncopy);		\
 	}
 
 void
-quota_update_file_remove(struct inode *inode)
+quota_update_file_remove(struct inode *inode, struct dirset *tdirset)
 {
 	gfarm_off_t size;
 	gfarm_int64_t ncopy;
@@ -551,6 +678,63 @@ quota_update_file_remove(struct inode *inode)
 		if (is_checked(gq)) {
 			update_file_remove(gq, size, ncopy);
 			quota_softlimit_exceed(gq);
+		}
+	}
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
+		struct quota_metadata *dsq = dirset_quota(tdirset);
+		if (is_checked(&dsq->usage)) {
+			update_file_remove(&dsq->usage, size, ncopy);
+			quota_metadata_softlimit_exceed(dsq);
+		}
+	}
+
+	quota_check_retry_if_running();
+}
+
+void
+dirquota_update_file_add(struct inode *inode, struct dirset *tdirset)
+{
+	gfarm_off_t size;
+	gfarm_int64_t ncopy;
+
+	if (inode_is_file(inode)) {
+		size = inode_get_size(inode);
+		ncopy = inode_get_ncopy_with_dead_host(inode);
+	} else {
+		size = 0;
+		ncopy = 0;
+	}
+
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
+		struct quota_metadata *dsq = dirset_quota(tdirset);
+		if (is_checked(&dsq->usage)) {
+			update_file_add(&dsq->usage, size, ncopy);
+			quota_metadata_softlimit_exceed(dsq);
+		}
+	}
+
+	quota_check_retry_if_running();
+}
+
+void
+dirquota_update_file_remove(struct inode *inode, struct dirset *tdirset)
+{
+	gfarm_off_t size;
+	gfarm_int64_t ncopy;
+
+	if (inode_is_file(inode)) {
+		size = inode_get_size(inode);
+		ncopy = inode_get_ncopy_with_dead_host(inode);
+	} else {
+		size = 0;
+		ncopy = 0;
+	}
+
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
+		struct quota_metadata *dsq = dirset_quota(tdirset);
+		if (is_checked(&dsq->usage)) {
+			update_file_remove(&dsq->usage, size, ncopy);
+			quota_metadata_softlimit_exceed(dsq);
 		}
 	}
 
@@ -629,6 +813,71 @@ is_exceeded(struct timeval *nowp, struct quota *q,
 	return (QUOTA_NOT_EXCEEDED);
 }
 
+static int
+quota_metadata_is_exceeded(struct timeval *nowp, struct quota_metadata *q,
+	int num_file_creating, int num_replica_adding, gfarm_off_t size)
+{
+	int check_logical = 0, check_physical = 0;
+
+	if (!is_checked(&q->usage))  /* quota is disabled */
+		return (QUOTA_NOT_EXCEEDED);
+
+	/* softlimit */
+	if (quota_limit_is_valid(q->limit.grace_period)) {
+		if (quota_limit_is_valid(q->limit.soft.space) &&
+		    quota_limit_is_valid(q->exceed.space_time) &&
+		    (nowp->tv_sec - q->exceed.space_time) >
+		    q->limit.grace_period)
+			return (QUOTA_EXCEEDED_SPACE_SOFT);
+		if (quota_limit_is_valid(q->limit.soft.num) &&
+		    quota_limit_is_valid(q->exceed.num_time) &&
+		    (nowp->tv_sec - q->exceed.num_time) >
+		    q->limit.grace_period)
+			return (QUOTA_EXCEEDED_NUM_SOFT);
+		if (quota_limit_is_valid(q->limit.soft.phy_space) &&
+		    quota_limit_is_valid(q->exceed.phy_space_time) &&
+		    (nowp->tv_sec - q->exceed.phy_space_time) >
+		    q->limit.grace_period)
+			return (QUOTA_EXCEEDED_PHY_SPACE_SOFT);
+		if (quota_limit_is_valid(q->limit.soft.phy_num) &&
+		    quota_limit_is_valid(q->exceed.phy_num_time) &&
+		    (nowp->tv_sec - q->exceed.phy_num_time) >
+		    q->limit.grace_period)
+			return (QUOTA_EXCEEDED_PHY_NUM_SOFT);
+	}
+
+	/* hardlimit */
+	if (num_file_creating >= 1 && num_replica_adding <= 0) {
+		check_logical = 1;
+	} else if (num_file_creating <= 0 && num_replica_adding >= 1) {
+		check_physical = 1;
+	} else {
+		check_logical = 1;
+		check_physical = 1;
+	}
+
+	if (check_logical) {
+		if ((quota_limit_is_valid(q->limit.hard.space) &&
+		    q->usage.space + size > q->limit.hard.space))
+			return (QUOTA_EXCEEDED_SPACE_HARD);
+		if (quota_limit_is_valid(q->limit.hard.num) &&
+		    q->usage.num + num_file_creating > q->limit.hard.num)
+			return (QUOTA_EXCEEDED_NUM_HARD);
+	}
+	if (check_physical) {
+		if (quota_limit_is_valid(q->limit.hard.phy_space) &&
+		    q->usage.phy_space + (size * num_replica_adding) >
+		    q->limit.hard.phy_space)
+			return (QUOTA_EXCEEDED_PHY_SPACE_HARD);
+		if (quota_limit_is_valid(q->limit.hard.phy_num) &&
+		    q->usage.phy_num + num_replica_adding >
+		    q->limit.hard.phy_num)
+			return (QUOTA_EXCEEDED_PHY_NUM_HARD);
+	}
+
+	return (QUOTA_NOT_EXCEEDED);
+}
+
 /*
  * num_file_creating >= 1 && num_replica_adding == 0 : check logical quota
  * num_file_creating == 0 && num_replica_adding >= 1 : check physical quota
@@ -636,7 +885,7 @@ is_exceeded(struct timeval *nowp, struct quota *q,
  * num_file_creating >= 1 && num_replica_adding >= 1 : check both
  */
 gfarm_error_t
-quota_limit_check(struct user *u, struct group *g,
+quota_limit_check(struct user *u, struct group *g, struct dirset *tdirset,
 	int num_file_creating, int num_replica_adding, gfarm_off_t size)
 {
 	struct timeval now;
@@ -652,6 +901,35 @@ quota_limit_check(struct user *u, struct group *g,
 	    num_file_creating, num_replica_adding, size)) {
 		gflog_debug(GFARM_MSG_1002052,
 			 "group_quota(%s) exceeded", group_name(g));
+		return (GFARM_ERR_DISK_QUOTA_EXCEEDED);
+	}
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET &&
+	    quota_metadata_is_exceeded(&now, dirset_quota(tdirset),
+	    num_file_creating, num_replica_adding, size)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "dirset_quota(%s:%s) exceeded",
+		    dirset_get_username(tdirset),
+		    dirset_get_dirsetname(tdirset));
+		return (GFARM_ERR_DISK_QUOTA_EXCEEDED);
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+dirquota_limit_check(struct dirset *tdirset,
+	int num_file_creating, int num_replica_adding, gfarm_off_t size)
+{
+	struct timeval now;
+
+	gettimeofday(&now, NULL);
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET &&
+	    quota_metadata_is_exceeded(&now, dirset_quota(tdirset),
+	    num_file_creating, num_replica_adding, size)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "dirset_quota(%s:%s) exceeded",
+		    dirset_get_username(tdirset),
+		    dirset_get_dirsetname(tdirset));
 		return (GFARM_ERR_DISK_QUOTA_EXCEEDED);
 	}
 
@@ -837,6 +1115,22 @@ quota_check_start(void)
 	quota_check_running = 1;
 	gfarm_cond_signal(&quota_check_wakeup, diag, quota_check_wakeup_diag);
 	gfarm_mutex_unlock(&quota_check_mutex, diag, quota_check_mutex_diag);
+}
+
+void
+quota_dir_check_schedule(void)
+{
+	/* DQTODO */
+	gflog_error(GFARM_MSG_UNFIXED,
+	    "quota_dir_check_schedule: not implemented, yet");
+}
+
+void
+quota_dir_check_start(void)
+{
+	/* DQTODO */
+	gflog_error(GFARM_MSG_UNFIXED,
+	    "quota_dir_check_start: not implemented, yet");
 }
 
 void

@@ -12,6 +12,7 @@
 #include "gfutil.h"
 #include "hash.h"
 
+#include "quota_info.h"
 #include "context.h"
 #include "auth.h"
 #include "gfp_xdr.h"
@@ -23,6 +24,7 @@
 #include "db_access.h"
 #include "user.h"
 #include "group.h"
+#include "dirset.h"
 #include "peer.h"
 #include "quota.h"
 
@@ -34,7 +36,8 @@ struct user {
 	struct gfarm_user_info ui;
 	struct group_assignment groups;
 	struct quota quota;
-	struct usage usage_tmp;
+	struct gfarm_quota_subject_info usage_tmp;
+	struct dirsets *dirsets;
 	int invalid;	/* set when deleted */
 };
 
@@ -213,6 +216,7 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 	}
 
 	quota_data_init(&u->quota);
+	u->dirsets = NULL; /* delayed allocation.  see user_enter_dirset() */
 	u->groups.group_prev = u->groups.group_next = &u->groups;
 	*(struct user **)gfarm_hash_entry_data(entry) = u;
 	user_validate(u);
@@ -345,10 +349,58 @@ user_quota(struct user *u)
 	return (&u->quota);
 }
 
-struct usage *
+struct gfarm_quota_subject_info *
 user_usage_tmp(struct user *u)
 {
 	return (&u->usage_tmp);
+}
+
+gfarm_error_t
+user_enter_dirset(struct user *u, const char *dirsetname, int limit_check,
+	struct dirset **dirsetp)
+{
+	struct dirsets *sets = u->dirsets;
+
+	/* most users don't define dirset, so we usually don't allocate it */
+	if (sets == NULL) {
+		sets = dirsets_new();
+
+		if (sets == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "allocation of 'dirsets' for user %s failed",
+			    u->ui.username);
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		u->dirsets = sets;
+	}
+	return (dirset_enter(sets, dirsetname, u, limit_check, dirsetp));
+}
+
+struct dirset *
+user_lookup_dirset(struct user *u, const char *dirsetname)
+{
+	/* most users don't define dirset, so we usually don't allocate it */
+	if (u->dirsets == NULL)
+		return (NULL);
+
+	return (dirset_lookup(u->dirsets, dirsetname));
+}
+
+gfarm_error_t
+user_remove_dirset(struct user *u, const char *dirsetname)
+{
+	struct dirsets *sets = u->dirsets;
+
+	if (sets == NULL)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	return (dirset_remove(sets, dirsetname));
+}
+
+struct dirsets *
+user_get_dirsets(struct user *u)
+{
+	return (u->dirsets);
 }
 
 void
@@ -396,6 +448,16 @@ user_is_admin(struct user *user)
 	if (admin == NULL)
 		admin = group_lookup(ADMIN_GROUP_NAME);
 	return (user_in_group(user, admin));
+}
+
+int
+user_is_root(struct user *user)
+{
+	static struct group *root = NULL;
+
+	if (root == NULL)
+		root = group_lookup(ROOT_GROUP_NAME);
+	return (user_in_group(user, root));
 }
 
 #define is_nl_cr(c)  ((c == '\n' || c == '\r' || c == '\0') ? 1 : 0)
@@ -458,7 +520,7 @@ list_to_names(void **value_p, size_t size,
 }
 
 static int
-user_in_user_list(struct inode *inode, struct user *user)
+user_in_root_user_list(struct inode *inode, struct user *user)
 {
 	gfarm_error_t e;
 	void *value;
@@ -492,7 +554,7 @@ user_in_user_list(struct inode *inode, struct user *user)
 }
 
 static int
-user_in_group_list(struct inode *inode, struct user *user)
+user_in_root_group_list(struct inode *inode, struct user *user)
 {
 	gfarm_error_t e;
 	void *value;
@@ -527,7 +589,7 @@ user_in_group_list(struct inode *inode, struct user *user)
 }
 
 int
-user_is_root(struct inode *inode, struct user *user)
+user_is_root_for_inode(struct user *user, struct inode *inode)
 {
 	static struct group *root = NULL;
 
@@ -535,9 +597,9 @@ user_is_root(struct inode *inode, struct user *user)
 		root = group_lookup(ROOT_GROUP_NAME);
 	if (user_in_group(user, root))
 		return (1);
-	else if (user_in_user_list(inode, user))
+	else if (user_in_root_user_list(inode, user))
 		return (1);
-	return (user_in_group_list(inode, user));
+	return (user_in_root_group_list(inode, user));
 }
 
 /* The memory owner of `*ui' is changed to user.c */

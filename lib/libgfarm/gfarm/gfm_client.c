@@ -2907,6 +2907,313 @@ gfm_client_quota_check(struct gfm_connection *gfm_server)
 }
 
 /*
+ * directory quota
+ */
+
+gfarm_error_t
+gfm_client_dirset_info_set(struct gfm_connection *gfm_server,
+	const char *username, const char *dirsetname)
+{
+	return (gfm_client_rpc(gfm_server, 0, GFM_PROTO_DIRSET_INFO_SET,
+	    "ss/", username, dirsetname));
+}
+
+gfarm_error_t
+gfm_client_dirset_info_remove(struct gfm_connection *gfm_server,
+	const char *username, const char *dirsetname)
+{
+	return (gfm_client_rpc(gfm_server, 0, GFM_PROTO_DIRSET_INFO_REMOVE,
+	    "ss/", username, dirsetname));
+}
+
+gfarm_error_t
+gfm_client_dirset_info_list(struct gfm_connection *gfm_server,
+	const char *username,
+	int *ndirsetsp, struct gfarm_dirset_info **dirsetsp)
+{
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
+	int eof;
+	gfarm_int32_t i, ndirsets;
+	struct gfarm_dirset_info *dirsets = NULL;
+
+	gfm_client_connection_lock(gfm_server);
+
+	if ((e = gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_DIRSET_INFO_LIST, "s", username))
+	    != GFARM_ERR_NO_ERROR) {
+		e_save = e;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_dirset_info_list() request: %s",
+		    gfarm_error_string(e));
+	} else if ((e = gfm_client_rpc_result(gfm_server, 0, "i", &ndirsets))
+	    != GFARM_ERR_NO_ERROR) {
+		e_save = e;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_dirset_info_list() result: %s",
+		    gfarm_error_string(e));
+	} else {
+		struct gfarm_dirset_info dummy;
+
+		GFARM_MALLOC_ARRAY(dirsets, ndirsets);
+		if (dirsets == NULL) {
+			e_save = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfm_client_dirset_info_list(): "
+			    "no memory for %d dirsets", (int)ndirsets);
+		}
+		
+		for (i = 0; i < ndirsets; i++) {
+			e = gfm_client_xdr_recv(gfm_server, 0, &eof, "ss",
+			    dirsets == NULL ? &dummy.username :
+			    &dirsets[i].username,
+			    dirsets == NULL ? &dummy.dirsetname :
+			    &dirsets[i].dirsetname);
+			if (e != GFARM_ERR_NO_ERROR || eof) {
+				if (e == GFARM_ERR_NO_ERROR)
+					e = GFARM_ERR_PROTOCOL;
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfm_client_dirset_info_list() "
+				    "dirsets[%d]: %s",
+				    (int)i, gfarm_error_string(e));
+				if (e_save == GFARM_ERR_NO_ERROR)
+					e_save = e;
+				ndirsets = i;
+				break;
+			}
+			if (dirsets == NULL)
+				gfarm_dirset_info_free(&dummy);
+		}
+	}
+
+	gfm_client_connection_unlock(gfm_server);
+
+	if (e_save == GFARM_ERR_NO_ERROR) {
+		*ndirsetsp = ndirsets;
+		*dirsetsp = dirsets;
+	} else if (dirsets != NULL) {
+		for (i = 0; i < ndirsets; i++)
+			gfarm_dirset_info_free(&dirsets[i]);
+	}
+	return (e_save);
+}
+
+gfarm_error_t
+gfm_client_quota_dirset_get(struct gfm_connection *gfm_server,
+	const char *username, const char *dirsetname,
+	struct gfarm_quota_limit_info *limit_info,
+	struct gfarm_quota_subject_info *usage_info,
+	struct gfarm_quota_subject_time *grace_info)
+{
+	return (gfm_client_rpc(
+	    gfm_server, 0, GFM_PROTO_QUOTA_DIRSET_GET,
+	    "ss/lllllllllllllllll",
+	    username, dirsetname,
+
+	    /* the following is same order with user/group quota */
+
+	    &limit_info->grace_period,
+	    &usage_info->space,
+	    &grace_info->space_time,
+	    &limit_info->soft.space,
+	    &limit_info->hard.space,
+	    &usage_info->num,
+	    &grace_info->num_time,
+	    &limit_info->soft.num,
+	    &limit_info->hard.num,
+	    &usage_info->phy_space,
+	    &grace_info->phy_space_time,
+	    &limit_info->soft.phy_space,
+	    &limit_info->hard.phy_space,
+	    &usage_info->phy_num,
+	    &grace_info->phy_num_time,
+	    &limit_info->soft.phy_num,
+	    &limit_info->hard.phy_num));
+}
+
+gfarm_error_t
+gfm_client_quota_dirset_set(struct gfm_connection *gfm_server,
+	const char *username, const char *dirsetname,
+	const struct gfarm_quota_limit_info *limit_info)
+{
+	return (gfm_client_rpc(
+	    gfm_server, 0, GFM_PROTO_QUOTA_DIRSET_SET,
+	    "sslllllllll/",
+	    username, dirsetname,
+
+	    /* the following is same order with user/group quota */
+
+	    limit_info->grace_period,
+	    limit_info->soft.space,
+	    limit_info->hard.space,
+	    limit_info->soft.num,
+	    limit_info->hard.num,
+	    limit_info->soft.phy_space,
+	    limit_info->hard.phy_space,
+	    limit_info->soft.phy_num,
+	    limit_info->hard.phy_num));
+}
+
+gfarm_error_t
+gfm_client_quota_dir_get_request(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_QUOTA_DIR_GET,
+	    ""));
+}
+
+gfarm_error_t
+gfm_client_quota_dir_get_result(struct gfm_connection *gfm_server,
+	struct gfarm_dirset_info *dirset_info,
+	struct gfarm_quota_limit_info *limit_info,
+	struct gfarm_quota_subject_info *usage_info,
+	struct gfarm_quota_subject_time *grace_info)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "sslllllllllllllllll",
+
+	    &dirset_info->username,
+	    &dirset_info->dirsetname,
+
+	    /* the following is same order with user/group quota */
+
+	    &limit_info->grace_period,
+	    &usage_info->space,
+	    &grace_info->space_time,
+	    &limit_info->soft.space,
+	    &limit_info->hard.space,
+	    &usage_info->num,
+	    &grace_info->num_time,
+	    &limit_info->soft.num,
+	    &limit_info->hard.num,
+	    &usage_info->phy_space,
+	    &grace_info->phy_space_time,
+	    &limit_info->soft.phy_space,
+	    &limit_info->hard.phy_space,
+	    &usage_info->phy_num,
+	    &grace_info->phy_num_time,
+	    &limit_info->soft.phy_num,
+	    &limit_info->hard.phy_num));
+}
+
+gfarm_error_t
+gfm_client_quota_dir_set_request(struct gfm_connection *gfm_server,
+	const char *username, const char *dirsetname)
+{
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_QUOTA_DIR_SET,
+	    "ss", username, dirsetname));
+}
+
+gfarm_error_t
+gfm_client_quota_dir_set_result(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
+gfarm_error_t
+gfm_client_quota_dir_list(struct gfm_connection *gfm_server,
+	const char *username, const char *dirsetname,
+	int *ndirsetdirsp, gfarm_error_t **errorsp,
+	struct gfarm_dirset_dir_info **dirsetdirsp)
+{
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
+	int eof;
+	gfarm_int32_t i, ndirsetdirs;
+	gfarm_error_t *errors = NULL;
+	struct gfarm_dirset_dir_info *dirsetdirs = NULL;
+
+	gfm_client_connection_lock(gfm_server);
+
+	if ((e = gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_QUOTA_DIR_LIST, "ss", username, dirsetname))
+	    != GFARM_ERR_NO_ERROR) {
+		e_save = e;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_quota_dir_list() request: %s",
+		    gfarm_error_string(e));
+	} else if ((e = gfm_client_rpc_result(gfm_server, 0, "i",
+	    &ndirsetdirs)) != GFARM_ERR_NO_ERROR) {
+		e_save = e;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_quota_dir_list() result: %s",
+		    gfarm_error_string(e));
+	} else {
+		struct gfarm_dirset_dir_info dummy;
+		gfarm_int32_t ecode;
+
+		GFARM_MALLOC_ARRAY(errors, ndirsetdirs);
+		if (errors == NULL) {
+			e_save = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfm_client_quota_dir_list(): "
+			    "no memory for %d errors", (int)ndirsetdirs);
+		}
+		GFARM_MALLOC_ARRAY(dirsetdirs, ndirsetdirs);
+		if (dirsetdirs == NULL) {
+			e_save = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfm_client_quota_dir_list(): "
+			    "no memory for %d dirsetdirs", (int)ndirsetdirs);
+		}
+		
+		for (i = 0; i < ndirsetdirs; i++) {
+			e = gfm_client_xdr_recv(gfm_server, 0, &eof, "i",
+			    &ecode);
+			if (e != GFARM_ERR_NO_ERROR || eof) {
+				if (e == GFARM_ERR_NO_ERROR)
+					e = GFARM_ERR_PROTOCOL;
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfm_client_quota_dir_list() reading error"
+				    "dirsetdirs[%d]: %s",
+				    (int)i, gfarm_error_string(e));
+				if (e_save == GFARM_ERR_NO_ERROR)
+					e_save = e;
+				ndirsetdirs = i;
+				break;
+			}
+			if (errors != NULL)
+				errors[i] = ecode;
+			if (ecode != GFARM_ERR_NO_ERROR)
+				continue;
+			e = gfm_client_xdr_recv(gfm_server, 0, &eof, "sss",
+			    dirsetdirs == NULL ? &dummy.dirset.username :
+			    &dirsetdirs[i].dirset.username,
+			    dirsetdirs == NULL ? &dummy.dirset.dirsetname :
+			    &dirsetdirs[i].dirset.dirsetname,
+			    dirsetdirs == NULL ? &dummy.pathname :
+			    &dirsetdirs[i].pathname);
+			if (e != GFARM_ERR_NO_ERROR || eof) {
+				if (e == GFARM_ERR_NO_ERROR)
+					e = GFARM_ERR_PROTOCOL;
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfm_client_quota_dir_list() reading dir"
+				    "dirsetdirs[%d]: %s",
+				    (int)i, gfarm_error_string(e));
+				if (e_save == GFARM_ERR_NO_ERROR)
+					e_save = e;
+				ndirsetdirs = i;
+				break;
+			}
+			if (dirsetdirs == NULL)
+				gfarm_dirset_dir_info_free(&dummy);
+		}
+	}
+
+	gfm_client_connection_unlock(gfm_server);
+
+	if (e_save == GFARM_ERR_NO_ERROR) {
+		*ndirsetdirsp = ndirsetdirs;
+		*errorsp = errors;
+		*dirsetdirsp = dirsetdirs;
+	} else {
+		free(errors);
+		if (dirsetdirs != NULL) {
+			for (i = 0; i < ndirsetdirs; i++)
+				gfarm_dirset_dir_info_free(&dirsetdirs[i]);
+			free(dirsetdirs);
+		}
+	}
+	return (e_save);
+}
+
+/*
  * extended attributes
  */
 gfarm_error_t

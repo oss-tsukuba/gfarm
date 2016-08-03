@@ -4,7 +4,7 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-PROGRAM = gfedquota
+PROGRAM = gfdirquota
 SRCS = $(PROGRAM).c
 OBJS = $(PROGRAM).o
 CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR)
@@ -18,8 +18,8 @@ include $(top_srcdir)/makes/prog.mk
 ###
 
 $(OBJS): $(DEPGFARMINC) \
-	$(GFARMLIB_SRCDIR)/config.h \
 	$(GFARMLIB_SRCDIR)/quota_info.h \
 	$(GFARMLIB_SRCDIR)/gfm_client.h \
 	$(GFARMLIB_SRCDIR)/lookup.h \
+	$(GFARMLIB_SRCDIR)/gfs_dirquota.h \
 	$(GFARMLIB_SRCDIR)/gfarm_path.h

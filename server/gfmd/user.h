@@ -20,16 +20,26 @@ void user_all(void *, void (*)(void *, struct user *), int);
 
 struct quota;
 struct quota *user_quota(struct user *);
-struct usage;
-struct usage *user_usage_tmp(struct user *);
+struct gfarm_quota_subject_info;
+struct gfarm_quota_subject_info *user_usage_tmp(struct user *);
+
+struct dirset;
+gfarm_error_t user_enter_dirset(struct user *, const char *, int,
+	struct dirset **);
+struct dirset *user_lookup_dirset(struct user *, const char *);
+gfarm_error_t user_remove_dirset(struct user *, const char *);
+struct dirsets;
+struct dirsets *user_get_dirsets(struct user *);
+
 
 extern char ADMIN_USER_NAME[];
 
 struct group;
 int user_in_group(struct user *, struct group *);
 int user_is_admin(struct user *);
+int user_is_root(struct user *);
 struct inode;
-int user_is_root(struct inode *, struct user *);
+int user_is_root_for_inode(struct user *, struct inode *);
 
 struct peer;
 gfarm_error_t gfm_server_user_info_get_all(struct peer *, int, int);

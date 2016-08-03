@@ -113,10 +113,8 @@ error:
 static int
 user_is_owner_or_root(struct inode *inode, struct user *user)
 {
-	if (user == inode_get_user(inode) || user_is_root(inode, user))
-		return (1);
-	else
-		return (0);
+	return (user == inode_get_user(inode) ||
+	    user_is_root_for_inode(user, inode));
 }
 
 #define XATTR_OP_GET	1
@@ -157,7 +155,7 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 			goto not_supp;
 		else if (inode_is_symlink(inode))
 			goto symlink;
-		else if (user_is_root(inode, user))
+		else if (user_is_root_for_inode(user, inode))
 			return (GFARM_ERR_NO_ERROR);
 		else
 			goto not_permit;

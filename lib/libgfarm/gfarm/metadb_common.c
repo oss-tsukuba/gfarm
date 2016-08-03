@@ -382,6 +382,24 @@ gfarm_quota_info_free_all(
 /**********************************************************************/
 
 void
+gfarm_dirset_info_free(struct gfarm_dirset_info *info)
+{
+	free(info->username);
+	free(info->dirsetname);
+}
+
+/**********************************************************************/
+
+void
+gfarm_dirset_dir_info_free(struct gfarm_dirset_dir_info *dirsetdir)
+{
+	gfarm_dirset_info_free(&dirsetdir->dirset);
+	free(dirsetdir->pathname);
+}
+
+/**********************************************************************/
+
+void
 gfarm_metadb_server_free(struct gfarm_metadb_server *info)
 {
 	free(info->name);

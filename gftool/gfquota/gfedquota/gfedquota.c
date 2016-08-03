@@ -15,12 +15,12 @@
 #endif
 
 #include "config.h"
+#include "quota_info.h"
 #include "gfm_client.h"
 #include "lookup.h"
-#include "quota_info.h"
 #include "gfarm_path.h"
 
-char *program_name = "gfedquota";
+const char *program_name = "gfedquota";
 
 #ifdef HAVE_GETOPT_LONG
 #define OPT(s, l, m) fprintf(stderr, "  -%s,--%s\t%s\n", s, l, m)
@@ -32,14 +32,18 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-		"Usage:\t%s "
-		"[-P <path>] -u username (or -g groupname) [options]\n"
+		"Usage:"
+		"\t%s -u <user_name> [options]\n"
+		"\t%s -g <group_name>) [options]\n"
+		"\t%s -D <dirset_name> [-u <user_name>] [options]\n"
 		"Options:\n"
 		"(If the value is 'disable' or -1, the limit is disabled):\n",
-		program_name);
-	OPT("P", "path=NAME", "pathname (for multiple metadata servers)");
+		program_name, program_name, program_name);
+	OPT("P", "path=NAME", "pathname "
+		"(to select one of multiple metadata servers)");
 	OPT("u", "user=NAME", "username");
 	OPT("g", "group=NAME", "groupname");
+	OPT("D", "dirset=NAME", "dirset name (for directory quota)");
 	OPT("G", "grace=SEC", "grace period for all SoftLimits");
 	OPT("s", "softspc=BYTE", "SoftLimit of total used file space");
 	OPT("h", "hardspc=BYTE", "HardLimit of total used file space");
@@ -51,7 +55,23 @@ usage(void)
 	OPT("N", "phyhardnum=NUM", "HardLimit of total used physical number");
 	OPT("?", "help", "this help message");
 
-	exit(1);
+	exit(2);
+}
+
+static void
+gfarm_quota_set_info_to_limit_info(
+	const struct gfarm_quota_set_info *si,
+	struct gfarm_quota_limit_info *li)
+{
+	li->grace_period = si->grace_period;
+	li->soft.space = si->space_soft;
+	li->hard.space = si->space_hard;
+	li->soft.num = si->num_soft;
+	li->hard.num = si->num_hard;
+	li->soft.phy_space = si->phy_space_soft;
+	li->hard.phy_space = si->phy_space_hard;
+	li->soft.phy_num = si->phy_num_soft;
+	li->hard.phy_num = si->phy_num_hard;
 }
 
 static gfarm_int64_t
@@ -81,12 +101,13 @@ main(int argc, char **argv)
 {
 	gfarm_error_t e;
 	int c, status = 0;
-	char *username = NULL, *groupname = NULL;
-	char *optstring = "P:u:g:G:s:h:m:n:S:H:M:N:?";
+	char *username = NULL, *groupname = NULL, *dirsetname = NULL;
+	char *optstring = "P:u:D:g:G:s:h:m:n:S:H:M:N:?";
 #ifdef HAVE_GETOPT_LONG
 	struct option long_options[] = {
 		{"path", 1, NULL, 'P'},
 		{"user", 1, NULL, 'u'},
+		{"dirset", 1, NULL, 'D'},
 		{"group", 1, NULL, 'g'},
 		{"grace", 1, NULL, 'G'},
 		{"softspc", 1, NULL, 's'},
@@ -146,6 +167,9 @@ main(int argc, char **argv)
 		case 'g':
 			groupname = strdup(optarg);
 			break;
+		case 'D':
+			dirsetname = strdup(optarg);
+			break;
 		case 'G':
 			qi.grace_period = convert_value(optarg);
 			break;
@@ -187,23 +211,32 @@ main(int argc, char **argv)
 		     path, &gfm_server)) != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
 			program_name, path, gfarm_error_string(e));
-		status = -1;
+		status = 1;
 		goto terminate;
 	}
 	free(realpath);
 
-	if (username != NULL && groupname == NULL) {
+	if (username != NULL && groupname == NULL && dirsetname == NULL) {
 		qi.name = username;
 		e = gfm_client_quota_user_set(gfm_server, &qi);
-	} else if (username == NULL && groupname != NULL) {
+	} else if (groupname != NULL &&
+	    username == NULL && dirsetname == NULL) {
 		qi.name = groupname;
 		e = gfm_client_quota_group_set(gfm_server, &qi);
+	} else if (dirsetname != NULL && groupname == NULL) {
+		struct gfarm_quota_limit_info li;
+
+		gfarm_quota_set_info_to_limit_info(&qi, &li);
+		e = gfm_client_quota_dirset_set(gfm_server,
+		    username != NULL ? username :
+		    gfm_client_username(gfm_server),
+		    dirsetname, &li);
 	} else
 		usage();
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n",
 		    program_name, gfarm_error_string(e));
-		status = -2;
+		status = 1;
 	}
 	gfarm_quota_set_info_free(&qi);
 	gfm_client_connection_free(gfm_server);
@@ -212,7 +245,7 @@ terminate:
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
 		    gfarm_error_string(e));
-		status = -3;
+		status = 1;
 	}
 	return (status);
 }

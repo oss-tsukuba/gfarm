@@ -191,7 +191,15 @@ static const char *journal_operation_names[] = {
 	"MDHOST_REMOVE",
 
 	"FSNGROUP_MODIFY",
+
 	"NOP",
+
+	"QUOTA_DIRSET_ADD",
+	"QUOTA_DIRSET_MODIFY",
+	"QUOTA_DIRSET_REMOVE",
+
+	"QUOTA_DIR_ADD",
+	"QUOTA_DIR_REMOVE",
 };
 
 struct journal_file_writer *

@@ -8,14 +8,18 @@
 #include <gfarm/gfarm.h>
 
 #include "config.h"
-#include "quota.h"
+#include "quota_info.h"
 #include "metadb_server.h"
+
+#include "quota.h"
 #include "db_ops.h"
 #include "host.h"
 #include "user.h"
 #include "group.h"
 #include "inode.h"
 #include "dir.h"
+#include "dirset.h"
+#include "quota_dir.h"
 #include "mdhost.h"
 #include "journal_file.h"	/* for enum journal_operation */
 #include "db_journal.h"
@@ -794,6 +798,89 @@ db_journal_apply_quota_remove(gfarm_uint64_t seqnum,
 }
 
 /**********************************************************/
+/* quota_dirset */
+
+static gfarm_error_t
+db_journal_apply_quota_dirset_add(gfarm_uint64_t seqnum,
+	struct db_quota_dirset_arg *arg)
+{
+	gfarm_error_t e;
+	struct user *u;
+	struct dirset *ds;
+
+	u = user_lookup(arg->dirset.username);
+	if (u == NULL)
+		return (GFARM_ERR_NO_SUCH_USER);
+
+	e = user_enter_dirset(u, arg->dirset.dirsetname, 0, &ds);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	*dirset_quota(ds) = arg->q;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_apply_quota_dirset_modify(gfarm_uint64_t seqnum,
+	struct db_quota_dirset_arg *arg)
+{
+	struct user *u;
+	struct dirset *ds;
+
+	u = user_lookup(arg->dirset.username);
+	if (u == NULL)
+		return (GFARM_ERR_NO_SUCH_USER);
+
+	ds = user_lookup_dirset(u, arg->dirset.dirsetname);
+	if (ds == NULL)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	*dirset_quota(ds) = arg->q;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_apply_quota_dirset_remove(gfarm_uint64_t seqnum,
+	struct gfarm_dirset_info *arg)
+{
+	struct user *u;
+
+	u = user_lookup(arg->username);
+	if (u == NULL)
+		return (GFARM_ERR_NO_SUCH_USER);
+
+	return (user_remove_dirset(u, arg->dirsetname));
+}
+
+/**********************************************************/
+/* quota_dir */
+
+static gfarm_error_t
+db_journal_apply_quota_dir_add(gfarm_uint64_t seqnum,
+		struct db_inode_dirset_arg *arg)
+{
+	struct user *u;
+	struct dirset *ds;
+
+	u = user_lookup(arg->dirset.username);
+	if (u == NULL)
+		return (GFARM_ERR_NO_SUCH_USER);
+
+	ds = user_lookup_dirset(u, arg->dirset.dirsetname);
+	if (ds == NULL)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	return (quota_dir_enter(arg->inum, ds, NULL));
+}
+
+static gfarm_error_t
+db_journal_apply_quota_dir_remove(gfarm_uint64_t seqnum,
+	struct db_inode_inum_arg *arg)
+{
+	return (quota_dir_remove_in_cache(arg->inum));
+}
+
+/**********************************************************/
 /* mdhost */
 
 static gfarm_error_t
@@ -928,6 +1015,15 @@ const struct db_ops db_journal_apply_ops = {
 	db_journal_apply_quota_add,
 	db_journal_apply_quota_modify,
 	db_journal_apply_quota_remove,
+	NULL,
+
+	db_journal_apply_quota_dirset_add,
+	db_journal_apply_quota_dirset_modify,
+	db_journal_apply_quota_dirset_remove,
+	NULL,
+
+	db_journal_apply_quota_dir_add,
+	db_journal_apply_quota_dir_remove,
 	NULL,
 
 	NULL,

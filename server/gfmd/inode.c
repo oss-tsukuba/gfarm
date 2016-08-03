@@ -22,6 +22,7 @@
 #include "nanosec.h"
 #include "thrsubr.h"
 
+#include "quota_info.h"
 #include "config.h"
 #include "context.h"
 #include "timespec.h"
@@ -47,6 +48,8 @@
 #include "xattr.h"
 #include "repattr.h"
 #include "fsngroup.h"
+#include "dirset.h"
+#include "quota_dir.h"
 #include "replica_check.h"
 
 #include "auth.h" /* for "peer.h" */
@@ -149,6 +152,8 @@ struct checksum {
 
 struct inode_activity {
 	struct file_opening openings; /* dummy header */
+
+	struct dirset *tdirset;
 
 	union inode_state_type_specific {
 		struct inode_state_file {
@@ -697,7 +702,7 @@ inode_remove_all_xattrs(struct inode *inode)
 }
 
 struct inode_activity *
-inode_activity_alloc(void)
+inode_activity_alloc(struct dirset *tdirset)
 {
 	struct inode_activity *ia;
 
@@ -709,6 +714,10 @@ inode_activity_alloc(void)
 	/* make circular list `openings' empty */
 	ia->openings.opening_prev =
 	ia->openings.opening_next = &ia->openings;
+
+	ia->tdirset = tdirset;
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
+		dirset_add_ref(tdirset);
 
 	ia->u.f.writers = 0;
 	ia->u.f.spool_writers = 0;
@@ -730,6 +739,9 @@ void
 inode_activity_free(struct inode_activity *ia)
 {
 	assert(ia->openings.opening_next == &ia->openings);
+	if (ia->tdirset != TDIRSET_IS_UNKNOWN &&
+	    ia->tdirset != TDIRSET_IS_NOT_SET)
+		dirset_del_ref(ia->tdirset);
 	free(ia);
 }
 
@@ -896,6 +908,29 @@ inode_free(struct inode *inode)
 		    "db_inode_mode_modify(%lld): %s",
 		    (unsigned long long)inode->i_number,
 		    gfarm_error_string(e));
+}
+
+static void
+inode_tdirset_check(struct inode *inode, struct dirset *tdirset,
+	const char *diag)
+{
+	if (tdirset == TDIRSET_IS_UNKNOWN) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld: unknown dirset, scheduling quota_check",
+		    diag, (long long)inode_get_number(inode));
+		quota_dir_check_start();
+	}
+}
+
+static void
+inode_tdirset_info(struct inode *inode, struct dirset *tdirset,
+	const char *diag)
+{
+	if (tdirset == TDIRSET_IS_UNKNOWN) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld: unknown dirset",
+		    diag, (long long)inode_get_number(inode));
+	}
 }
 
 #define SAME_WARNING_TRIGGER	10	/* check reduced mode */
@@ -1498,7 +1533,7 @@ update_replicas(struct inode *inode, struct host *spool_host,
 }
 
 void
-inode_remove(struct inode *inode)
+inode_remove(struct inode *inode, struct dirset *tdirset)
 {
 	int dfc_needs_free = 0;
 
@@ -1533,7 +1568,7 @@ inode_remove(struct inode *inode)
 		    (unsigned long long)inode->i_number, inode->i_mode);
 		/*NOTREACHED*/
 	}
-	quota_update_file_remove(inode);
+	quota_update_file_remove(inode, tdirset);
 	inode_free(inode);
 
 	if (dfc_needs_free)
@@ -1541,11 +1576,11 @@ inode_remove(struct inode *inode)
 }
 
 static int
-inode_remove_try(struct inode *inode)
+inode_remove_try(struct inode *inode, struct dirset *tdirset)
 {
 	if (inode->i_nlink == 0 && inode->u.c.activity == NULL) {
 		/* this file is not currently used, i.e. removable */
-		inode_remove(inode);
+		inode_remove(inode, tdirset);
 		return (1);
 	}
 	return (0);
@@ -2040,12 +2075,12 @@ inode_set_size_in_cache(struct inode *inode, gfarm_off_t size)
 }
 
 void
-inode_set_size(struct inode *inode, gfarm_off_t size)
+inode_set_size(struct inode *inode, struct dirset *tdirset, gfarm_off_t size)
 {
 	gfarm_error_t e;
 
 	/* inode is file */
-	quota_update_file_resize(inode, size);
+	quota_update_file_resize(inode, tdirset, size);
 	inode_set_size_in_cache(inode, size);
 
 	e = db_inode_size_modify(inode->i_number, inode->i_size);
@@ -2096,8 +2131,9 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 		change_group = 1;
 	if (inode_is_file(inode))
 		ncopy = inode_get_ncopy_with_dead_host(inode);
+	/* chown won't change dirquota, so passing tdirset==NULL is OK here */
 	e = quota_limit_check(
-	    change_user ? user : NULL, change_group ? group : NULL,
+	    change_user ? user : NULL, change_group ? group : NULL, NULL,
 	    1, ncopy, inode_get_size(inode));
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1004338,
@@ -2111,7 +2147,8 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 		return (e);
 	}
 
-	quota_update_file_remove(inode);
+	/* chown won't change dirquota, so passing TDIRSET_IS_NOT_SET is OK */
+	quota_update_file_remove(inode, TDIRSET_IS_NOT_SET);
 	if (change_user) {
 		inode->i_user = user;
 
@@ -2148,7 +2185,8 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 			inode_status_changed(inode);
 		}
 	}
-	quota_update_file_add(inode);
+	/* chown won't change dirquota, so passing TDIRSET_IS_NOT_SET is OK */
+	quota_update_file_add(inode, TDIRSET_IS_NOT_SET);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -2370,6 +2408,13 @@ inode_get_symlink(struct inode *inode)
 }
 
 int
+inode_dir_is_empty(struct inode *inode)
+{
+	assert(inode_is_dir(inode));
+	return (inode->i_nlink <= 2 && dir_is_empty(inode->u.c.s.d.entries));
+}
+
+int
 inode_desired_dead_file_copy(gfarm_ino_t inum)
 {
 	struct inode *inode = inode_lookup(inum);
@@ -2422,7 +2467,7 @@ inode_new_generation_by_cookie_start(struct inode *inode,
 		 * EVENT_GEN_UPDATED_BY_COOKIE is a special case:
 		 * inode_activity is allocated without file_opening.
 		 */
-		ia = inode_activity_alloc();
+		ia = inode_activity_alloc(NULL);
 		if (ia == NULL) {
 			gflog_error(GFARM_MSG_1004019,
 			    "unable to track inode generation");
@@ -2510,6 +2555,8 @@ inode_new_generation_by_cookie_finish(
 {
 	gfarm_error_t e;
 	struct inode_activity *ia;
+	struct dirset *tdirset;
+	gfarm_ino_t inum;
 	static const char diag[] = "inode_new_generation_by_cookie_finish";
 
 	if ((e = inode_new_generation_finish_precondition(inode, diag)) !=
@@ -2534,10 +2581,25 @@ inode_new_generation_by_cookie_finish(
 	/* giant_lock should prevent resuming threads from running */
 	inode_new_generation_finish_event_post(inode);
 
-	if (size != inode_get_size(inode))
-		inode_set_size(inode, size);
+	tdirset = inode_get_tdirset(inode);
+	/* inode_activity_free_try() may free tdirset, so we need protection */
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
+		dirset_add_ref(tdirset);
+	inum = inode_get_number(inode);
+
+	if (size != inode_get_size(inode)) 
+		inode_set_size(inode, tdirset, size);
 	if (inode_activity_free_try(inode))
-		inode_remove_try(inode);
+		inode_remove_try(inode, tdirset);
+
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
+		dirset_del_ref(tdirset);
+	if (tdirset == TDIRSET_IS_UNKNOWN) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "inode %lld: unknown dirset, scheduling quota_check",
+		    (long long)inum);
+		quota_dir_check_start();
+	}
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -2600,12 +2662,12 @@ inode_access(struct inode *inode, struct user *user, int op)
 
 		if (check_mode(inode->i_mode, mask) == GFARM_ERR_NO_ERROR)
 			return (GFARM_ERR_NO_ERROR);
-		else if (user_is_root(inode, user))
+		else if (user_is_root_for_inode(user, inode))
 			return (GFARM_ERR_NO_ERROR);
 		return (GFARM_ERR_PERMISSION_DENIED);
 	}
 
-	if (user_is_root(inode, user))
+	if (user_is_root_for_inode(user, inode))
 		return (GFARM_ERR_NO_ERROR);
 
 	e = acl_access(inode, user, op);
@@ -2688,8 +2750,8 @@ is_removable_in_sticky_dir(struct inode *dir, struct inode *entry,
 {
 	if (user == inode_get_user(dir) ||
 	    user == inode_get_user(entry) ||
-	    user_is_root(dir, user) ||
-	    user_is_root(entry, user)) {
+	    user_is_root_for_inode(user, dir) ||
+	    user_is_root_for_inode(user, entry)) {
 		return (1);
 	} else {
 		gflog_debug(GFARM_MSG_1004022,
@@ -2736,6 +2798,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	DirEntry entry;
 	int created;
 	struct inode *n;
+	struct dirset *parent_tdirset = TDIRSET_IS_UNKNOWN;
 	void *acl_acc = NULL, *acl_def = NULL;
 	size_t acl_acc_size, acl_def_size;
 	void *root_user = NULL, *root_group = NULL;
@@ -2809,6 +2872,25 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		return (GFARM_ERR_NO_ERROR);
 	}
 
+	if (op == INODE_LINK) {
+		struct dirset *target_tdirset;
+
+		n = *inp;
+		target_tdirset = inode_get_tdirset(n);
+		parent_tdirset = inode_get_tdirset(parent);
+		if (parent_tdirset == TDIRSET_IS_UNKNOWN)
+			parent_tdirset = inode_search_tdirset(parent);
+		if (target_tdirset == TDIRSET_IS_UNKNOWN ||
+		    parent_tdirset == TDIRSET_IS_UNKNOWN) {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "inode_lookup_basename: unknown dirset: %p vs %p",
+			    target_tdirset, parent_tdirset);
+			return (GFARM_ERR_INTERNAL_ERROR);
+		}
+		if (target_tdirset != parent_tdirset)
+			return (GFARM_ERR_CROSS_DEVICE_LINK);
+	}
+
 	entry = dir_enter(parent->u.c.s.d.entries, name, len, &created);
 	if (entry == NULL) {
 		gflog_debug(GFARM_MSG_1001732,
@@ -2852,6 +2934,12 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	assert((op == INODE_CREATE || op == INODE_CREATE_EXCLUSIVE) &&
 	    expected_type != GFS_DT_UNKNOWN);
 
+	if (parent_tdirset == TDIRSET_IS_UNKNOWN) {
+		parent_tdirset = inode_get_tdirset(parent);
+		if (parent_tdirset == TDIRSET_IS_UNKNOWN)
+			parent_tdirset = inode_search_tdirset(parent);
+	}
+
 	n = inode_alloc();
 	if (n == NULL) {
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
@@ -2861,17 +2949,20 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	}
 	switch (expected_type) {
 	case GFS_DT_DIR:
-		e = quota_limit_check(user, parent->i_group, 1, 0, 0);
+		e = quota_limit_check(user, parent->i_group, parent_tdirset,
+		    1, 0, 0);
 		if (e == GFARM_ERR_NO_ERROR)
 			e = inode_init_dir(n, parent);
 		break;
 	case GFS_DT_REG:
-		e = quota_limit_check(user, parent->i_group, 1, 1, 0);
+		e = quota_limit_check(user, parent->i_group, parent_tdirset,
+		    1, 1, 0);
 		if (e == GFARM_ERR_NO_ERROR)
 			e = inode_init_file(n);
 		break;
 	case GFS_DT_LNK:
-		e = quota_limit_check(user, parent->i_group, 1, 0, 0);
+		e = quota_limit_check(user, parent->i_group, parent_tdirset,
+		    1, 0, 0);
 		if (e == GFARM_ERR_NO_ERROR)
 			e = inode_init_symlink(n, symlink_src);
 		break;
@@ -2916,7 +3007,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	}
 
 	inode_db_init(n);
-	quota_update_file_add(n);
+	quota_update_file_add(n, parent_tdirset);
 
 	if (acl_def != NULL) {
 		assert(inode_is_dir(n));
@@ -3074,15 +3165,29 @@ inode_lookup_root(struct process *process, int op, struct inode **inp)
 
 gfarm_error_t
 inode_lookup_parent(struct inode *base, struct process *process, int op,
-	struct inode **inp)
+	struct dirset **tdirsetp, struct inode **inp)
 {
 	struct inode *inode;
 	struct user *user = process_get_user(process);
 	gfarm_error_t e = inode_lookup_relative(base, dotdot, GFS_DT_DIR,
 	    INODE_LOOKUP, user, 0, NULL, &inode, NULL);
+	struct dirset *tdirset;
 
 	if (e == GFARM_ERR_NO_ERROR &&
 	    (e = inode_access(inode, user, op)) == GFARM_ERR_NO_ERROR) {
+
+		tdirset = inode_get_tdirset(base);
+		if (tdirset == TDIRSET_IS_NOT_SET)
+			*tdirsetp = TDIRSET_IS_NOT_SET;
+		else if (tdirset == TDIRSET_IS_UNKNOWN) {
+			tdirset = inode_search_tdirset(inode);
+			*tdirsetp = tdirset;
+		} else if (quota_dir_get_dirset_by_inum(inode_get_number(base))
+		    == tdirset)
+			*tdirsetp = TDIRSET_IS_NOT_SET;
+		else
+			*tdirsetp = tdirset;
+
 		*inp = inode;
 	}
 	return (e);
@@ -3097,6 +3202,7 @@ inode_lookup_by_name(struct inode *base, char *name,
 	struct user *user = process_get_user(process);
 	gfarm_error_t e = inode_lookup_relative(base, name, GFS_DT_UNKNOWN,
 	    INODE_LOOKUP, user, 0, NULL, &inode, NULL);
+	struct dirset *tdirset;
 
 	if (e == GFARM_ERR_NO_ERROR) {
 		if ((op & GFS_W_OK) != 0 && inode_is_dir(inode)) {
@@ -3107,9 +3213,13 @@ inode_lookup_by_name(struct inode *base, char *name,
 			e = inode_access(inode, user, op);
 		}
 		if (e == GFARM_ERR_NO_ERROR && inode_is_file(inode) &&
-		    (op & GFS_W_OK) != 0)
+		    (op & GFS_W_OK) != 0) {
+			tdirset = inode_get_tdirset(base);
+			if (tdirset == TDIRSET_IS_UNKNOWN)
+				tdirset = inode_search_tdirset(base);
 			e = quota_limit_check(inode_get_user(inode),
-			    inode_get_group(inode), 0, 0, 0);
+			    inode_get_group(inode), tdirset, 0, 0, 0);
+		}
 		if (e == GFARM_ERR_NO_ERROR) {
 			*inp = inode;
 		}
@@ -3469,7 +3579,7 @@ inode_create_file_in_lost_found(
 		    gfarm_error_string(e));
 	/* abandon `e' */
 
-	quota_update_file_add(n);
+	quota_update_file_add(n, inode_search_tdirset(lf));
 
 	*inodep = n;
 	return (GFARM_ERR_NO_ERROR);
@@ -3524,14 +3634,18 @@ gfarm_error_t
 inode_rename(
 	struct inode *sdir, char *sname,
 	struct inode *ddir, char *dname,
-	struct process *process,
+	struct process *process, struct peer *peer,
 	struct inode_trace_log_info *srctp,
 	struct inode_trace_log_info *dsttp,
-	int *dst_removed, int *hlink_removed) /* for gfarm_file_trace */
+	int *dst_removed, int *hlink_removed, /* for gfarm_file_trace */
+	const char *diag)
 {
 	gfarm_error_t e;
 	struct user *user = process_get_user(process);
 	struct inode *src, *dst;
+	struct dirset *src_tdirset, *dst_tdirset;
+	int dirquota_adjust = 0;
+	struct file_opening *fo = NULL;
 
 	if (user == NULL) {
 		gflog_debug(GFARM_MSG_1001742, "process_get_user() failed");
@@ -3584,10 +3698,62 @@ inode_rename(
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
+	src_tdirset = inode_get_tdirset(sdir);
+	if (src_tdirset == TDIRSET_IS_UNKNOWN)
+		src_tdirset = inode_search_tdirset(sdir);
+	dst_tdirset = inode_get_tdirset(ddir);
+	if (dst_tdirset == TDIRSET_IS_UNKNOWN)
+		dst_tdirset = inode_search_tdirset(ddir);
+	if (src_tdirset == TDIRSET_IS_UNKNOWN ||
+	    dst_tdirset == TDIRSET_IS_UNKNOWN) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "%s: unknown dirset: %p vs %p",
+		    diag, src_tdirset, dst_tdirset);
+		return (GFARM_ERR_INTERNAL_ERROR);
+	}
+	if (src_tdirset != dst_tdirset) {
+		gfarm_uint64_t ncopy = 0;
+
+		if (inode_is_dir(src)) {
+			/*
+			 * We don't return GFARM_ERR_CROSS_DEVICE_LINK,
+			 * to avoid mv(1) from automatically doing
+			 *"cp -r" + "rm -r"
+			 */
+			return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+		}
+		dirquota_adjust = 1;
+
+		if (inode_is_file(src))
+			ncopy = inode_get_ncopy_with_dead_host(src);
+		e = dirquota_limit_check(dst_tdirset,
+		    1, ncopy, inode_get_size(src));
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+	}
+
+	/*
+	 * make sure that src has inode_activity,
+	 * otherwise inode_create_link_internal() may fail
+	 */
+	fo = file_opening_alloc(src, peer, NULL, GFARM_FILE_LOOKUP);
+	if (fo == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	e = inode_open(fo, src_tdirset);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "inode_open() for rename: %s",
+		    gfarm_error_string(e));
+		file_opening_free(fo, inode_get_mode(src));
+	}
+
 	e = inode_lookup_by_name(ddir, dname, process, 0, &dst);
 	if (e == GFARM_ERR_NO_ERROR) {
-		if (src == dst)
+		if (src == dst) {
+			inode_close(fo, NULL, diag);
+			file_opening_free(fo, inode_get_mode(src));
 			return (GFARM_ERR_NO_ERROR);
+		}
 
 		if (gfarm_ctxp->file_trace && dsttp != NULL) {
 			dsttp->inum = inode_get_number(dst);
@@ -3602,6 +3768,8 @@ inode_rename(
 				gflog_debug(GFARM_MSG_1001747,
 					"inode_unlink() failed: %s",
 					gfarm_error_string(e));
+				inode_close(fo, NULL, diag);
+				file_opening_free(fo, inode_get_mode(src));
 				return (e);
 			} else {
 				*dst_removed = 1;
@@ -3610,17 +3778,33 @@ inode_rename(
 			gflog_debug(GFARM_MSG_1001748,
 				"inode 'inode_get_mode(src)' "
 				"is not a directory");
+			inode_close(fo, NULL, diag);
+			file_opening_free(fo, inode_get_mode(src));
 			return (GFARM_ERR_NOT_A_DIRECTORY);
 		} else {
 			gflog_debug(GFARM_MSG_1001749,
 				"inode 'inode_get_mode(src)' is directory");
+			inode_close(fo, NULL, diag);
+			file_opening_free(fo, inode_get_mode(src));
 			return (GFARM_ERR_IS_A_DIRECTORY);
 		}
-	} else if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
+	} else if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
+		inode_close(fo, NULL, diag);
+		file_opening_free(fo, inode_get_mode(src));
 		return (e);
+	}
 
+	if (dirquota_adjust) {
+		/*
+		 * fabricate src tdirset to avoid GFARM_ERR_CROSS_DEVICE_LINK
+		 */
+		src->u.c.activity->tdirset = dst_tdirset;
+	}
 	e = inode_create_link_internal(ddir, dname, user, src);
 	if (e != GFARM_ERR_NO_ERROR) {
+		if (dirquota_adjust) /* undo src tdirset change */
+			src->u.c.activity->tdirset = src_tdirset;
+
 		/*
 		 * this may fail (e.g. GFARM_ERR_PERMISSION_DENIED),
 		 * but doesn't have to undo the inode_unlink() operation above,
@@ -3630,8 +3814,22 @@ inode_rename(
 		gflog_debug(GFARM_MSG_1000319,
 		    "rename(%s, %s): failed to link: %s",
 		    sname, dname, gfarm_error_string(e));
+		inode_close(fo, NULL, diag);
+		file_opening_free(fo, inode_get_mode(src));
 		return (e);
 	}
+
+	inode_close(fo, NULL, diag);
+	file_opening_free(fo, inode_get_mode(src));
+	if (dirquota_adjust) {
+		/*
+		 * leave src->u.c.activity->tdirset as is, because it's correct
+		 * now, and we have to tell the new tdirset to simultaneously
+		 * opening processes.
+		 */
+		dirquota_update_file_add(src, dst_tdirset);
+	}
+
 	e = inode_lookup_relative(sdir, sname, GFS_DT_UNKNOWN, INODE_REMOVE,
 	    user, 0, NULL, &src, NULL);
 	if (e != GFARM_ERR_NO_ERROR) /* shouldn't happen */
@@ -3648,6 +3846,8 @@ inode_rename(
 				    "rename(%s, %s): failed to reparent: %s",
 				    sname, dname, gfarm_error_string(e));
 		}
+		if (dirquota_adjust)
+			dirquota_update_file_remove(src, src_tdirset);
 
 		if (sdir != ddir && (inode_is_dir(src) || inode_is_file(src))
 		    && (!inode_has_desired_number(src, &num) &&
@@ -3665,6 +3865,7 @@ inode_unlink(struct inode *base, char *name, struct process *process,
 {
 	struct inode *inode;
 	gfarm_error_t e = inode_lookup_by_name(base, name, process, 0, &inode);
+	struct dirset *dirset = NULL;
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001750,
@@ -3700,8 +3901,7 @@ inode_unlink(struct inode *base, char *name, struct process *process,
 			return (GFARM_ERR_NO_ERROR);
 		}
 	} else if (inode_is_dir(inode)) {
-		if (inode->i_nlink > 2 ||
-		    !dir_is_empty(inode->u.c.s.d.entries)) {
+		if (!inode_dir_is_empty(inode)) {
 			gflog_debug(GFARM_MSG_1001752,
 				"directory is not empty");
 			return (GFARM_ERR_DIRECTORY_NOT_EMPTY);
@@ -3720,6 +3920,9 @@ inode_unlink(struct inode *base, char *name, struct process *process,
 				gfarm_error_string(e));
 			return (e);
 		}
+
+		dirset = quota_dir_get_dirset_by_inum(inode->i_number);
+		/* if this is a top-directory of dirquota, dirset != NULL */
 
 		e = db_direntry_remove(inode->i_number, dot, DOT_LEN);
 		if (e != GFARM_ERR_NO_ERROR)
@@ -3749,6 +3952,11 @@ inode_unlink(struct inode *base, char *name, struct process *process,
 			    (unsigned long long)base->i_number,
 			    gfarm_error_string(e));
 
+		if (dirset != NULL) {
+			/* may fail, if dirset is set by an ancestor */
+			(void)quota_dir_remove(inode->i_number);
+		}
+
 	} else if (inode_is_symlink(inode)) {
 		e = inode_lookup_relative(base, name, GFS_DT_LNK, INODE_REMOVE,
 		    process_get_user(process), 0, NULL, &inode, NULL);
@@ -3771,7 +3979,8 @@ inode_unlink(struct inode *base, char *name, struct process *process,
 		/*NOTREACHED*/
 		return (GFARM_ERR_UNKNOWN);
 	}
-	if (!inode_remove_try(inode)) {
+	if (!inode_remove_try(inode,
+	    dirset != NULL ? dirset : inode_search_tdirset(base))) {
 		/* there are some processes which open this file */
 		/* leave this inode until closed */
 
@@ -3787,19 +3996,24 @@ inode_unlink(struct inode *base, char *name, struct process *process,
 }
 
 gfarm_error_t
-inode_open(struct file_opening *fo)
+inode_open(struct file_opening *fo, struct dirset *tdirset)
 {
 	struct inode *inode = fo->inode;
 	struct inode_activity *ia = inode->u.c.activity;
 
 	if (ia == NULL) {
-		ia = inode_activity_alloc();
+		ia = inode_activity_alloc(tdirset);
 		if (ia == NULL) {
 			gflog_debug(GFARM_MSG_1001756,
 				"inode_activity_alloc() failed");
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		inode->u.c.activity = ia;
+	} else if (ia->tdirset == TDIRSET_IS_UNKNOWN &&
+	    tdirset != TDIRSET_IS_UNKNOWN) {
+		ia->tdirset = tdirset;
+		if (tdirset != TDIRSET_IS_NOT_SET)
+			dirset_add_ref(tdirset);
 	}
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 		++ia->u.f.writers;
@@ -3815,6 +4029,16 @@ inode_open(struct file_opening *fo)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+struct dirset *
+inode_get_tdirset(struct inode *inode)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+
+	if (ia == NULL)
+		return (NULL); /* unknown */
+	return (ia->tdirset);
+}
+
 void
 inode_close(struct file_opening *fo, char **trace_logp, const char *diag)
 {
@@ -3827,6 +4051,7 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 {
 	struct inode *inode = fo->inode;
 	struct inode_activity *ia = inode->u.c.activity;
+	struct dirset *tdirset = inode_get_tdirset(inode);
 
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 		--ia->u.f.writers;
@@ -3846,6 +4071,10 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 	} else if (atime != NULL)
 		inode_set_relatime(inode, atime);
 
+	/* inode_activity_free_try() may free tdirset, so we need protection */
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
+		dirset_add_ref(tdirset);
+
 	fo->opening_prev->opening_next = fo->opening_next;
 	fo->opening_next->opening_prev = fo->opening_prev;
 	if (ia->openings.opening_next == &ia->openings) { /* all closed */
@@ -3860,7 +4089,10 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 		inode_activity_free_try(inode);
 	}
 
-	inode_remove_try(inode);
+	inode_remove_try(inode, tdirset);
+
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
+		dirset_del_ref(tdirset);
 }
 
 gfarm_error_t
@@ -3940,13 +4172,20 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 	char **trace_logp, const char *diag)
 {
 	struct inode_activity *ia = inode->u.c.activity;
+	struct dirset *tdirset = inode_get_tdirset(inode);
 	gfarm_int64_t old_gen;
 	int generation_updated = 0;
 	int start_replication = 0;
 	struct timeval tv;
 	char tmp_str[4096];
 
-	inode_set_size(inode, size);
+	inode_set_size(inode, tdirset, size);
+	if (tdirset == TDIRSET_IS_UNKNOWN) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "inode %lld: unknown dirset, scheduling quota_check",
+		    (long long)inode_get_number(inode));
+		quota_dir_check_start();
+	}
 	inode_set_atime(inode, atime);
 	if (ia == NULL ||
 	    /* to avoid that mtime and ctime move backward */
@@ -4550,8 +4789,15 @@ inode_remove_replica_in_cache_for_invalid_host(gfarm_ino_t inum)
 	    copyp = nextp) {
 		nextp = &copy->host_next;
 		if (!host_is_valid(copy->host)) {
-			if (FILE_COPY_IS_VALID(copy))
-				quota_update_replica_remove(inode);
+			if (FILE_COPY_IS_VALID(copy)) {
+				/*
+				 * called from file_copy_by_host_remove(), so
+				 * no way to know relevant dirset
+				 */
+				quota_dir_check_schedule();
+				quota_update_replica_remove(
+				    inode, TDIRSET_IS_UNKNOWN);
+			}
 
 			*copyp = copy->host_next;
 			nextp = copyp;
@@ -4614,7 +4860,7 @@ file_replicating_new(struct inode *inode, struct host *dst,
 	ia = inode->u.c.activity;
 	if (ia == NULL) {
 		ia_alloc_tried = 1;
-		ia = inode->u.c.activity = inode_activity_alloc();
+		ia = inode->u.c.activity = inode_activity_alloc(NULL);
 		irs = NULL;
 	} else {
 		ia_alloc_tried = 0;
@@ -4659,6 +4905,7 @@ file_replicating_free(struct file_replicating *fr)
 	struct inode *inode = fr->inode;
 	struct inode_activity *ia = inode->u.c.activity;
 	struct inode_replicating_state *irs;
+	struct dirset *tdirset;
 
 	assert(inode_is_file(inode));
 	assert(ia != NULL);
@@ -4672,8 +4919,16 @@ file_replicating_free(struct file_replicating *fr)
 	}
 	peer_replicating_free(fr);
 
+	tdirset = inode_get_tdirset(inode);
+	/* inode_activity_free_try() may free tdirset, so we need protection */
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
+		dirset_add_ref(tdirset);
+
 	if (inode_activity_free_try(inode))
-		inode_remove_try(inode);
+		inode_remove_try(inode, tdirset);
+
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
+		dirset_del_ref(tdirset);
 }
 
 /*
@@ -4843,6 +5098,8 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 	int flags, int update_quota)
 {
 	struct file_copy *copy;
+	struct dirset *tdirset = TDIRSET_IS_UNKNOWN;
+	static const char diag[] = "inode_add_replica_internal";
 
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
@@ -4865,11 +5122,16 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 				    "inode_add_replica: "
 				    "replicated while removal is ongoing");
 				return (GFARM_ERR_DEVICE_BUSY); /*dst is busy*/
-			} else { /* file_copy is invalid */
+			} else { /* replicated, file_copy becomes valid */
 				assert(copy->flags == 0);
 				copy->flags |= FILE_COPY_VALID;
-				if (update_quota)
-					quota_update_replica_add(inode);
+				if (update_quota) {
+					tdirset = inode_get_tdirset(inode);
+					quota_update_replica_add(
+					    inode, tdirset);
+					inode_tdirset_check(inode, tdirset,
+					    "inode_add_replica_internal");
+				}
 				return (GFARM_ERR_NO_ERROR);
 			}
 		}
@@ -4877,9 +5139,13 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 	/* not exist in u.c.s.f.copies : add new replica */
 	if (update_quota) {
 		gfarm_error_t e;
+
+		tdirset = inode_get_tdirset(inode);
 		/* check limits of space and number of the replica */
 		e = quota_limit_check(inode_get_user(inode),
-		    inode_get_group(inode), 0, 1, inode_get_size(inode));
+		    inode_get_group(inode), tdirset, 0, 1,
+		    inode_get_size(inode));
+		inode_tdirset_info(inode, tdirset, diag);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001767,
 				"checking of limits of the replica failed");
@@ -4892,8 +5158,10 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 		gflog_error(GFARM_MSG_1004345, "no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	if (update_quota && (flags & FILE_COPY_VALID) != 0)
-		quota_update_replica_add(inode);
+	if (update_quota && (flags & FILE_COPY_VALID) != 0) {
+		quota_update_replica_add(inode, tdirset);
+		inode_tdirset_check(inode, tdirset, diag);
+	}
 
 	copy->host = spool_host;
 	copy->flags = flags;
@@ -4955,8 +5223,11 @@ static gfarm_error_t
 remove_replica_metadata(struct inode *inode, struct host *spool_host)
 {
 	gfarm_error_t e;
+	struct dirset *tdirset = inode_get_tdirset(inode);
+	static const char diag[] = "remove_replica_metadata";
 
-	quota_update_replica_remove(inode);
+	quota_update_replica_remove(inode, tdirset);
+	inode_tdirset_check(inode, tdirset, diag);
 	host_status_update_disk_usage(spool_host, -inode_get_size(inode));
 
 	e = db_filecopy_remove(inode->i_number, host_name(spool_host));
@@ -5216,6 +5487,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 			}
 		}
 	} else if (!metadata_only) {
+		/* tdirset is not needed, because this is obsolete replica */
 		e = remove_replica_entity(inode, gen, spool_host, 0,
 		    deferred_cleanupp);
 	} else {
@@ -5235,6 +5507,10 @@ gfarm_error_t
 inode_remove_replica_lost(
 	struct inode *inode, struct host *spool_host, gfarm_int64_t gen)
 {
+	/*
+	 * no way to know relevant tdirset
+	 * because this is called from GFM_PROTO_REPLICA_LOST
+	 */
 	return (inode_remove_replica_internal(inode, spool_host, gen,
 	    NULL, 0, 1, 1, NULL));
 }
@@ -6832,7 +7108,7 @@ inode_xattr_list_free(struct xattr_list *list, size_t n)
 
 gfarm_error_t
 inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
-	char **patterns, int npattern,
+	char **patterns, int npattern, struct dirset *dirset,
 	struct xattr_list **listp, size_t *np)
 {
 	struct inode *inode;
@@ -6840,7 +7116,7 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 	struct xattr_list *list;
 	struct xattrs *xattrs;
 	struct xattr_entry *entry;
-	int i, j;
+	int i, j, directory_quota = 0;
 	static const char diag[] = "inode_xattr_list_get_cached_by_patterns";
 
 	inode = inode_lookup(inum);
@@ -6848,15 +7124,23 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
 
 	xattrs = &inode->i_xattrs;
-	entry = xattrs->head;
-	if (entry == NULL) {
-		*np = 0;
-		*listp = NULL;
-		return (GFARM_ERR_NO_ERROR);
-	}
-
 	nxattrs = 0;
-	for (; entry != NULL; entry = entry->next) {
+
+	for (j = 0; j < npattern; j++) {
+		if (strcmp(patterns[j], GFARM_EA_DIRECTORY_QUOTA) == 0) {
+			if (dirset != NULL)
+				directory_quota = 1;
+			else if (inode_is_dir(inode) &&
+			    (dirset = quota_dir_get_dirset_by_inum(inum))
+			    != NULL)
+				directory_quota = 1;
+			break;
+		}
+	}
+	if (directory_quota)
+		++nxattrs;
+
+	for (entry = xattrs->head; entry != NULL; entry = entry->next) {
 		for (j = 0; j < npattern; j++) {
 			if (gfarm_pattern_match(patterns[j], entry->name, 0)) {
 				++nxattrs;
@@ -6864,12 +7148,27 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 			}
 		}
 	}
+	if (nxattrs == 0) {
+		*np = 0;
+		*listp = NULL;
+		return (GFARM_ERR_NO_ERROR);
+	}
 	GFARM_CALLOC_ARRAY(list, nxattrs);
 	if (list == NULL) {
 		gflog_error(GFARM_MSG_1004351, "no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	for (entry = xattrs->head, i = 0;
+
+	i = 0;
+	if (directory_quota) {
+		if (xattr_list_set_by_dirset(&list[i],
+		    GFARM_EA_DIRECTORY_QUOTA, dirset, diag)
+		    != GFARM_ERR_NO_ERROR)
+			nxattrs = i;
+		else
+			i++;
+	}
+	for (entry = xattrs->head;
 	     entry != NULL && i < nxattrs;
 	     entry = entry->next) {
 		for (j = 0; j < npattern; j++) {
@@ -7111,6 +7410,31 @@ inode_search_replica_spec(struct inode *dir,
 		entry = dir_lookup(dir->u.c.s.d.entries, dotdot, DOTDOT_LEN);
 		if (entry == NULL)
 			return (0);
+
+		dir = dir_entry_get_inode(entry);
+	}
+}
+
+struct dirset *
+inode_search_tdirset(struct inode *dir)
+{
+	struct dirset *dirset;
+	DirEntry entry;
+
+	for (;;) {
+		if (!inode_is_dir(dir))
+			return (TDIRSET_IS_UNKNOWN);
+
+		if ((dirset = quota_dir_get_dirset_by_inum(dir->i_number))
+		    != NULL)
+			return (dirset);
+
+		if (dir->i_number == ROOT_INUMBER)
+			return (TDIRSET_IS_NOT_SET);
+
+		entry = dir_lookup(dir->u.c.s.d.entries, dotdot, DOTDOT_LEN);
+		if (entry == NULL)
+			return (TDIRSET_IS_UNKNOWN);
 
 		dir = dir_entry_get_inode(entry);
 	}

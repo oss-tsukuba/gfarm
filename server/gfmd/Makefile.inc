@@ -23,7 +23,9 @@ GFMD_COMMON_SRCS = \
 	$(GFMD_SRCDIR)/file_copy.c \
 	$(GFMD_SRCDIR)/dead_file_copy.c \
 	$(GFMD_SRCDIR)/quota.c \
+	$(GFMD_SRCDIR)/quota_dir.c \
 	$(GFMD_SRCDIR)/inode.c \
+	$(GFMD_SRCDIR)/dirset.c \
 	$(GFMD_SRCDIR)/process.c \
 	$(GFMD_SRCDIR)/job.c \
 	$(GFMD_SRCDIR)/peer.c \
@@ -56,7 +58,9 @@ GFMD_COMMON_OBJS = \
 	$(GFMD_BUILDDIR)/file_copy.o \
 	$(GFMD_BUILDDIR)/dead_file_copy.o \
 	$(GFMD_BUILDDIR)/quota.o \
+	$(GFMD_BUILDDIR)/quota_dir.o \
 	$(GFMD_BUILDDIR)/inode.o \
+	$(GFMD_BUILDDIR)/dirset.o \
 	$(GFMD_BUILDDIR)/process.o \
 	$(GFMD_BUILDDIR)/job.o \
 	$(GFMD_BUILDDIR)/peer.o \
@@ -106,7 +110,9 @@ DEPGFMDINC = \
 	$(GFMD_SRCDIR)/file_copy.h \
 	$(GFMD_SRCDIR)/dead_file_copy.h \
 	$(GFMD_SRCDIR)/quota.h \
+	$(GFMD_SRCDIR)/quota_dir.h \
 	$(GFMD_SRCDIR)/inode.h \
+	$(GFMD_SRCDIR)/dirset.h \
 	$(GFMD_SRCDIR)/process.h \
 	$(GFMD_SRCDIR)/protocol_state.h \
 	$(GFMD_SRCDIR)/peer.h \

@@ -4,6 +4,6 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SUBDIRS = gfquota gfedquota gfquotacheck
+SUBDIRS = gfquota gfedquota gfquotacheck gfdirquota
 
 include $(top_srcdir)/makes/subdir.mk

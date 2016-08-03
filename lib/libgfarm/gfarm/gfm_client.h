@@ -8,6 +8,11 @@ struct gfarm_group_info;
 struct gfarm_group_names;
 struct gfarm_quota_get_info;
 struct gfarm_quota_set_info;
+struct gfarm_quota_subject_info;
+struct gfarm_quota_subject_time;
+struct gfarm_quota_limit_info;
+struct gfarm_dirset_info;
+struct gfarm_dirset_dir_info;
 
 struct gfarm_host_sched_info {
 	char *host;
@@ -325,6 +330,30 @@ gfarm_error_t gfm_client_quota_group_get(struct gfm_connection *, const char *,
 gfarm_error_t gfm_client_quota_group_set(struct gfm_connection *,
 					struct gfarm_quota_set_info *);
 gfarm_error_t gfm_client_quota_check(struct gfm_connection *);
+
+gfarm_error_t gfm_client_dirset_info_set(struct gfm_connection *,
+	const char *, const char *);
+gfarm_error_t gfm_client_dirset_info_remove(struct gfm_connection *,
+	const char *, const char *);
+gfarm_error_t gfm_client_dirset_info_list(struct gfm_connection *,
+	const char *, int *, struct gfarm_dirset_info **);
+gfarm_error_t gfm_client_quota_dirset_get(struct gfm_connection *,
+	const char *, const char *,
+	struct gfarm_quota_limit_info *,
+	struct gfarm_quota_subject_info *, struct gfarm_quota_subject_time *);
+gfarm_error_t gfm_client_quota_dirset_set(struct gfm_connection *,
+	const char *, const char *, const struct gfarm_quota_limit_info *);
+gfarm_error_t gfm_client_quota_dir_get_request(struct gfm_connection *);
+gfarm_error_t gfm_client_quota_dir_get_result(struct gfm_connection *,
+	struct gfarm_dirset_info *,
+	struct gfarm_quota_limit_info *,
+	struct gfarm_quota_subject_info *, struct gfarm_quota_subject_time *);
+gfarm_error_t gfm_client_quota_dir_set_request(struct gfm_connection *,
+	const char *, const char *);
+gfarm_error_t gfm_client_quota_dir_set_result(struct gfm_connection *);
+gfarm_error_t gfm_client_quota_dir_list(struct gfm_connection *,
+	const char *, const char *,
+	int *, gfarm_error_t **, struct gfarm_dirset_dir_info **);
 
 /* gfs from gfsd */
 gfarm_error_t gfm_client_reopen_request(struct gfm_connection *);

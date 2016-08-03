@@ -13,6 +13,7 @@ struct group;
 struct process;
 struct file_copy;
 struct dead_file_copy;
+struct dirset;
 struct gfs_stat;
 struct inode_trace_log_info;
 struct replica_spec;
@@ -52,7 +53,7 @@ gfarm_mode_t inode_get_mode(struct inode *);
 gfarm_error_t inode_set_mode(struct inode *, gfarm_mode_t);
 void inode_set_mode_in_cache(struct inode *, gfarm_mode_t);
 gfarm_off_t inode_get_size(struct inode *);
-void inode_set_size(struct inode *, gfarm_off_t);
+void inode_set_size(struct inode *, struct dirset *, gfarm_off_t);
 void inode_set_size_in_cache(struct inode *, gfarm_off_t);
 gfarm_error_t inode_set_owner(struct inode *, struct user *, struct group *);
 struct gfarm_timespec *inode_get_atime(struct inode *);
@@ -69,6 +70,7 @@ void inode_accessed(struct inode *);
 void inode_modified(struct inode *);
 void inode_status_changed(struct inode *);
 char *inode_get_symlink(struct inode *);
+int inode_dir_is_empty(struct inode *);
 int inode_desired_dead_file_copy(gfarm_ino_t);
 gfarm_error_t inode_add_or_modify_in_cache(struct gfs_stat *, struct inode **);
 void inode_modify(struct inode *, struct gfs_stat *);
@@ -99,10 +101,9 @@ void inode_lookup_all(void *, void (*callback)(void *, struct inode *));
 
 gfarm_error_t inode_lookup_root(struct process *, int, struct inode **);
 gfarm_error_t inode_lookup_parent(struct inode *, struct process *, int,
-	struct inode **);
+	struct dirset **, struct inode **);
 gfarm_error_t inode_lookup_by_name(struct inode *, char *,
-	struct process *, int,
-	struct inode **);
+	struct process *, int, struct inode **);
 gfarm_error_t inode_create_file(struct inode *, char *,
 	struct process *, int, gfarm_mode_t, int,
 	struct inode **, int *);
@@ -113,8 +114,8 @@ gfarm_error_t inode_create_symlink(struct inode *, char *,
 gfarm_error_t inode_create_link(struct inode *, char *,
 	struct process *, struct inode *);
 gfarm_error_t inode_rename(struct inode *, char *, struct inode *, char *,
-	struct process *, struct inode_trace_log_info *,
-	struct inode_trace_log_info *, int *, int *);
+	struct process *, struct peer *, struct inode_trace_log_info *,
+	struct inode_trace_log_info *, int *, int *, const char *);
 gfarm_error_t inode_unlink(struct inode *, char *, struct process *,
 	struct inode_trace_log_info *, int *);
 
@@ -153,7 +154,8 @@ gfarm_error_t inode_schedule_replication(
 	int *, struct host **, gfarm_time_t,
 	int *, struct host **, const char *);
 
-gfarm_error_t inode_open(struct file_opening *);
+gfarm_error_t inode_open(struct file_opening *, struct dirset *);
+struct dirset *inode_get_tdirset(struct inode *);
 void inode_close(struct file_opening *, char **, const char *);
 void inode_close_read(struct file_opening *, struct gfarm_timespec *, char **,
 	const char *);
@@ -255,13 +257,15 @@ struct xattr_list {
 };
 void inode_xattr_list_free(struct xattr_list *, size_t);
 gfarm_error_t inode_xattr_list_get_cached_by_patterns(gfarm_ino_t,
-	char **, int, struct xattr_list **, size_t *);
+	char **, int, struct dirset *, struct xattr_list **, size_t *);
 
 gfarm_error_t inode_xattr_to_uint(const void *, size_t, unsigned int *, int *);
 int inode_has_desired_number(struct inode *, int *);
 int inode_has_repattr(struct inode *, char **);
 int inode_get_replica_spec(struct inode *, char **, int *);
 int inode_search_replica_spec(struct inode *, char **, int *);
+
+struct dirset *inode_search_tdirset(struct inode *);
 
 void inode_remove_orphan(void);
 void inode_free_orphan(void);

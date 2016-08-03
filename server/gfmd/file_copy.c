@@ -12,6 +12,7 @@
 #include "nanosec.h"
 #include "thrsubr.h"
 
+#include "quota_info.h"
 #include "config.h"
 
 #include "subr.h"
@@ -19,6 +20,8 @@
 #include "db_access.h"
 #include "host.h"
 #include "inode.h"
+#include "quota.h"
+
 
 /*
  * remove file_copy entries, when a filesystem node is removed
@@ -77,6 +80,12 @@ file_copy_by_host_remove(void)
 		}
 		inode_remove_replica_in_cache_for_invalid_host(inum);
 	}
+	/*
+	 * inode_remove_replica_in_cache_for_invalid_host() has
+	 * no way to know relevant dirset,
+	 * and calls quota_dir_check_schedule(), thus...
+	 */
+	quota_dir_check_start();
 
 	housekeep_giant_unlock();
 	gflog_info(GFARM_MSG_1004267, "file_copy remover completed");

@@ -34,6 +34,7 @@
 #include "gflog_reduced.h"
 #include "thrsubr.h"
 
+#include "quota_info.h"
 #include "context.h"
 #include "gfp_xdr.h"
 #include "hostspec.h"
@@ -60,14 +61,16 @@
 #include "inode.h"
 #include "file_copy.h"
 #include "dead_file_copy.h"
+#include "xattr.h"
+#include "quota.h"
+#include "dirset.h"
+#include "quota_dir.h"
+#include "gfmd.h"
 #include "process.h"
 #include "fs.h"
 #include "job.h"
 #include "back_channel.h"
 #include "gfmd_channel.h"
-#include "xattr.h"
-#include "quota.h"
-#include "gfmd.h"
 #include "replica_check.h"
 
 #include "protocol_state.h"
@@ -576,6 +579,30 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 	case GFM_PROTO_QUOTA_CHECK:
 		e = gfm_server_quota_check(peer, from_client, skip);
+		break;
+	case GFM_PROTO_DIRSET_INFO_SET:
+		e = gfm_server_dirset_info_set(peer, from_client, skip);
+		break;
+	case GFM_PROTO_DIRSET_INFO_REMOVE:
+		e = gfm_server_dirset_info_remove(peer, from_client, skip);
+		break;
+	case GFM_PROTO_DIRSET_INFO_LIST:
+		e = gfm_server_dirset_info_list(peer, from_client, skip);
+		break;
+	case GFM_PROTO_QUOTA_DIRSET_GET:
+		e = gfm_server_quota_dirset_get(peer, from_client, skip);
+		break;
+	case GFM_PROTO_QUOTA_DIRSET_SET:
+		e = gfm_server_quota_dirset_set(peer, from_client, skip);
+		break;
+	case GFM_PROTO_QUOTA_DIR_GET:
+		e = gfm_server_quota_dir_get(peer, from_client, skip);
+		break;
+	case GFM_PROTO_QUOTA_DIR_SET:
+		e = gfm_server_quota_dir_set(peer, from_client, skip);
+		break;
+	case GFM_PROTO_QUOTA_DIR_LIST:
+		e = gfm_server_quota_dir_list(peer, from_client, skip);
 		break;
 	case GFM_PROTO_METADB_SERVER_GET:
 		e = gfm_server_metadb_server_get(peer, from_client, skip);
@@ -1552,6 +1579,8 @@ gfmd_modules_init_default(int table_size)
 	symlink_init();
 	xattr_init();
 	quota_init();
+	dirset_init();
+	quota_dir_init();
 
 	/* must be after hosts and filesystem */
 	dead_file_copy_init(mdhost_self_is_master());

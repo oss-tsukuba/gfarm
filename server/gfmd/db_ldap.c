@@ -63,6 +63,7 @@
 #include "gfutil.h"
 
 #include "config.h"
+#include "quota_info.h"
 #include "metadb_common.h"
 #include "xattr_info.h"
 #include "metadb_server.h"
