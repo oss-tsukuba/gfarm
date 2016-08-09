@@ -626,7 +626,7 @@ list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-1ACFRSTVadhilrt] [-E <sec>] <path>...\n",
+	fprintf(stderr, "Usage: %s [-1ACDFRSTVadhilrt] [-E <sec>] <path>...\n",
 		program_name);
 	exit(EXIT_FAILURE);
 }
