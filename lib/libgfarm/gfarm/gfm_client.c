@@ -2993,6 +2993,7 @@ gfm_client_dirset_info_list(struct gfm_connection *gfm_server,
 	} else if (dirsets != NULL) {
 		for (i = 0; i < ndirsets; i++)
 			gfarm_dirset_info_free(&dirsets[i]);
+		free(dirsets);
 	}
 	return (e_save);
 }

@@ -162,13 +162,13 @@ main(int argc, char **argv)
 			path = optarg;
 			break;
 		case 'u':
-			username = strdup(optarg);
+			username = optarg;
 			break;
 		case 'g':
-			groupname = strdup(optarg);
+			groupname = optarg;
 			break;
 		case 'D':
-			dirsetname = strdup(optarg);
+			dirsetname = optarg;
 			break;
 		case 'G':
 			qi.grace_period = convert_value(optarg);
@@ -238,7 +238,6 @@ main(int argc, char **argv)
 		    program_name, gfarm_error_string(e));
 		status = 1;
 	}
-	gfarm_quota_set_info_free(&qi);
 	gfm_client_connection_free(gfm_server);
 terminate:
 	e = gfarm_terminate();

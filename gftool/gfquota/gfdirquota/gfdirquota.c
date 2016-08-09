@@ -144,6 +144,8 @@ list_long(struct gfm_connection *gfm_server,
 		if (errors[i] == GFARM_ERR_NO_ERROR)
 			gfarm_dirset_dir_info_free(&dirsetdirs[i]);
 	}
+	free(dirsetdirs);
+	free(errors);
 		
 	return (e);
 }
@@ -206,6 +208,7 @@ dirset_list_all(struct gfm_connection *gfm_server, const char *username)
 	}
 	for (i = 0; i < ndirsets; i++)
 		gfarm_dirset_info_free(&dirsets[i]);
+	free(dirsets);
 	return (e);
 }
 
