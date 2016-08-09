@@ -484,9 +484,7 @@ gfm_server_dirset_info_list(struct peer *peer, int from_client, int skip)
 		} else {
 			dirset_count_add(&count, u);
 		}
-		if (count == 0) {
-			e = GFARM_ERR_NO_SUCH_OBJECT;
-		} else if ((gfarm_uint32_t)count != count) {
+		if ((gfarm_uint32_t)count != count) {
 			e = GFARM_ERR_MESSAGE_TOO_LONG;
 		} else if ((e = gfm_server_put_reply(peer, diag, e, "i",
 		    (gfarm_uint32_t)count)) != GFARM_ERR_NO_ERROR) {
@@ -800,9 +798,7 @@ gfm_server_quota_dir_list(struct peer *peer, int from_client, int skip)
 		} else {
 			dir_count_add(&closure, u);
 		}
-		if (closure.count == 0) {
-			e = GFARM_ERR_NO_SUCH_OBJECT;
-		} else if ((gfarm_uint32_t)closure.count != closure.count) {
+		if ((gfarm_uint32_t)closure.count != closure.count) {
 			e = GFARM_ERR_MESSAGE_TOO_LONG;
 		} else if ((e = gfm_server_put_reply(peer, diag, e, "i",
 		    (gfarm_uint32_t)closure.count)) != GFARM_ERR_NO_ERROR) {

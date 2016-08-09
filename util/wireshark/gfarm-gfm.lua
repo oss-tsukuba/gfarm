@@ -79,6 +79,14 @@ local gfm_command_names = {
    [ 50] = 'GFM_PROTO_QUOTA_GROUP_GET', 
    [ 51] = 'GFM_PROTO_QUOTA_GROUP_SET', 
    [ 52] = 'GFM_PROTO_QUOTA_CHECK', 
+   [ 54] = 'GFM_PROTO_DIRSET_INFO_SET',
+   [ 55] = 'GFM_PROTO_DIRSET_INFO_REMOVE',
+   [ 56] = 'GFM_PROTO_DIRSET_INFO_LIST',
+   [ 57] = 'GFM_PROTO_QUOTA_DIRSET_GET',
+   [ 58] = 'GFM_PROTO_QUOTA_DIRSET_SET',
+   [ 59] = 'GFM_PROTO_QUOTA_DIR_GET',
+   [ 60] = 'GFM_PROTO_QUOTA_DIR_SET',
+   [ 61] = 'GFM_PROTO_QUOTA_DIR_LIST',
    [ 64] = 'GFM_PROTO_COMPOUND_BEGIN', 
    [ 65] = 'GFM_PROTO_COMPOUND_END', 
    [ 66] = 'GFM_PROTO_COMPOUND_ON_ERROR', 
@@ -288,6 +296,12 @@ local error_names = {
    [ 98] = 'GFARM_ERR_GFMD_FAILED_OVER', 
    [ 99] = 'GFARM_ERR_BAD_INODE_NUMBER', 
    [100] = 'GFARM_ERR_BAD_COOKIE', 
+   [101] = 'GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS',
+   [102] = 'GFARM_ERR_CHECKSUM_MISMATCH',
+   [103] = 'GFARM_ERR_CONFLICT_DETECTED',
+   [104] = 'GFARM_ERR_INVALID_CREDENTIAL',
+   [105] = 'GFARM_ERR_NO_FILESYSTEM_NODE',
+   [106] = 'GFARM_ERR_DIRECTORY_QUOTA_EXISTS',
 }
 
 --
@@ -938,6 +952,236 @@ end
 
 function parse_gfm_quota_check_response(tvb, pinfo, item, offset)
    return nil
+end
+
+--
+-- Parse GFM_PROTO_DIRSET_INFO_SET.
+--
+function parse_gfm_dirset_info_set_request(tvb, pinfo, item, offset)
+   -- IN s:username, s:dirsetname
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "s", offset, "username")
+   offset = parse_xdr(tvb, item, "s", offset, "dirsetname")
+   return offset
+end
+
+function parse_gfm_dirset_info_set_response(tvb, pinfo, item, offset)
+   -- OUT error_code
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   return offset
+end
+
+--
+-- Parse GFM_PROTO_DIRSET_INFO_REMOVE.
+--
+function parse_gfm_dirset_info_remove_request(tvb, pinfo, item, offset)
+   -- IN s:username, s:dirsetname
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "s", offset, "username")
+   offset = parse_xdr(tvb, item, "s", offset, "dirsetname")
+   return offset
+end
+
+function parse_gfm_dirset_info_remove_response(tvb, pinfo, item, offset)
+   -- OUT error_code
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   return offset
+end
+
+--
+-- Parse GFM_PROTO_DIRSET_INFO_LIST.
+--
+function parse_gfm_dirset_info_list_request(tvb, pinfo, item, offset)
+   -- IN s:username
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "s", offset, "username")
+   return offset
+end
+
+function parse_gfm_dirset_info_list_response(tvb, pinfo, item, offset)
+   -- OUT i:error_code
+   --     (upon success) i:n_dirsets,
+   --                    s[n_dirset]:username, s[n_dirset]:dirsetname
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   if err == 0 then
+      local n_dirsets
+      offset, n_dirsets = parse_xdr(tvb, item, "i", offset, "n_dirsets")
+      for i = 1, n_dirsets do
+         offset = parse_xdr(tvb, item, "s", offset, "username")
+         offset = parse_xdr(tvb, item, "s", offset, "dirsetname")
+      end
+   end
+   return offset
+end
+
+--
+-- Parse GFM_PROTO_QUOTA_DIRSET_GET.
+--
+function parse_gfm_quota_dirset_get_request(tvb, pinfo, item, offset)
+   -- IN s:username, s:dirsetname
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "s", offset, "username")
+   offset = parse_xdr(tvb, item, "s", offset, "dirsetname")
+   return offset
+end
+
+function parse_gfm_quota_dirset_get_response(tvb, pinfo, item, offset)
+   -- OUT i:error_code
+   --     (upon success)
+   --			l:grace_period, l:space, l:space_grace,
+   --			l:space_soft, l:space_hard, l:num, l:num_grace,
+   --			l:num_soft, l:num_hard, l:phy_space,
+   --			l:phy_space_grace, l:phy_space_soft,
+   --			l:phy_space_hard, l:phy_num, l:phy_num_grace,
+   --			l:phy_num_soft, l:phy_num_hard
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   if err == 0 then
+      offset = parse_xdr(tvb, item, "i", offset, "grace_period")
+      offset = parse_xdr(tvb, item, "i", offset, "space")
+      offset = parse_xdr(tvb, item, "i", offset, "space_grace")
+      offset = parse_xdr(tvb, item, "i", offset, "space_soft")
+      offset = parse_xdr(tvb, item, "i", offset, "space_hard")
+      offset = parse_xdr(tvb, item, "i", offset, "num")
+      offset = parse_xdr(tvb, item, "i", offset, "num_grace")
+      offset = parse_xdr(tvb, item, "i", offset, "num_soft")
+      offset = parse_xdr(tvb, item, "i", offset, "num_hard")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_space")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_space_grace")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_space_soft")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_space_hard")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_num")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_num_grace")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_num_soft")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_num_hard")
+   end
+   return offset
+end
+
+--
+-- Parse GFM_PROTO_QUOTA_DIRSET_SET.
+--
+function parse_gfm_quota_dirset_set_request(tvb, pinfo, item, offset)
+   -- IN s:username, s:dirsetname
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "s", offset, "username")
+   offset = parse_xdr(tvb, item, "s", offset, "dirsetname")
+   offset = parse_xdr(tvb, item, "i", offset, "grace_period")
+   offset = parse_xdr(tvb, item, "i", offset, "space_soft")
+   offset = parse_xdr(tvb, item, "i", offset, "space_hard")
+   offset = parse_xdr(tvb, item, "i", offset, "num_soft")
+   offset = parse_xdr(tvb, item, "i", offset, "num_hard")
+   offset = parse_xdr(tvb, item, "i", offset, "phy_space_soft")
+   offset = parse_xdr(tvb, item, "i", offset, "phy_space_hard")
+   offset = parse_xdr(tvb, item, "i", offset, "phy_num_soft")
+   offset = parse_xdr(tvb, item, "i", offset, "phy_num_hard")
+   return offset
+end
+
+function parse_gfm_quota_dirset_set_response(tvb, pinfo, item, offset)
+   -- OUT error_code
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   return offset
+end
+
+--
+-- Parse GFM_PROTO_QUOTA_DIR_GET.
+--
+function parse_gfm_quota_dir_get_request(tvb, pinfo, item, offset)
+   -- IN (none)
+   return offset + 4
+end
+
+function parse_gfm_quota_dir_get_response(tvb, pinfo, item, offset)
+   -- OUT i:error_code
+   --     (upon success)
+   --			s:username, s:dirsetname,
+   --			l:grace_period, l:space, l:space_grace,
+   --			l:space_soft, l:space_hard, l:num, l:num_grace,
+   --			l:num_soft, l:num_hard, l:phy_space,
+   --			l:phy_space_grace, l:phy_space_soft,
+   --			l:phy_space_hard, l:phy_num, l:phy_num_grace,
+   --			l:phy_num_soft, l:phy_num_hard
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   if err == 0 then
+      offset = parse_xdr(tvb, item, "i", offset, "grace_period")
+      offset = parse_xdr(tvb, item, "i", offset, "space")
+      offset = parse_xdr(tvb, item, "i", offset, "space_grace")
+      offset = parse_xdr(tvb, item, "i", offset, "space_soft")
+      offset = parse_xdr(tvb, item, "i", offset, "space_hard")
+      offset = parse_xdr(tvb, item, "i", offset, "num")
+      offset = parse_xdr(tvb, item, "i", offset, "num_grace")
+      offset = parse_xdr(tvb, item, "i", offset, "num_soft")
+      offset = parse_xdr(tvb, item, "i", offset, "num_hard")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_space")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_space_grace")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_space_soft")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_space_hard")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_num")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_num_grace")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_num_soft")
+      offset = parse_xdr(tvb, item, "i", offset, "phy_num_hard")
+   end
+   return offset
+end
+
+--
+-- Parse GFM_PROTO_QUOTA_DIR_SET.
+--
+function parse_gfm_quota_dir_set_request(tvb, pinfo, item, offset)
+   -- IN s:username, s:dirsetname
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "s", offset, "username")
+   offset = parse_xdr(tvb, item, "s", offset, "dirsetname")
+   return offset
+end
+
+function parse_gfm_quota_dir_set_response(tvb, pinfo, item, offset)
+   -- OUT error_code
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   return offset
+end
+
+--
+-- Parse GFM_PROTO_QUOTA_DIR_LIST.
+--
+function parse_gfm_quota_dir_list_request(tvb, pinfo, item, offset)
+   -- IN s:username, s:dirsetname
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "s", offset, "username")
+   offset = parse_xdr(tvb, item, "s", offset, "dirsetname")
+   return offset
+end
+
+function parse_gfm_quota_dir_list_response(tvb, pinfo, item, offset)
+   -- OUT i:error_code
+   --     (upon success) i:n_dirs,
+   --			 i:error_code[n_dir]
+   --                    (upon success)
+   --			 		s[n_dir]:username
+   --					s[n_dir]:dirsetname
+   --					s[n_dir]:pathname
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   if err == 0 then
+      local n_dirs
+      offset, n_dirs = parse_xdr(tvb, item, "i", offset, "n_dirs")
+      for i = 1, n_dirs do
+         offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+         if err == 0 then
+            offset = parse_xdr(tvb, item, "s", offset, "username")
+            offset = parse_xdr(tvb, item, "s", offset, "dirsetname")
+            offset = parse_xdr(tvb, item, "s", offset, "pathname")
+         end
+      end
+   end
+   return offset
 end
 
 --
@@ -2465,6 +2709,22 @@ local gfm_command_parsers = {
             response = parse_gfm_quota_group_set_response},
    [ 52] = {request  = parse_gfm_quota_check_request,
             response = parse_gfm_quota_check_response},
+   [ 54] = {request  = parse_gfm_dirset_info_set_request,
+            response = parse_gfm_dirset_info_set_response},
+   [ 55] = {request  = parse_gfm_dirset_info_remove_request,
+            response = parse_gfm_dirset_info_remove_response},
+   [ 56] = {request  = parse_gfm_dirset_info_list_request,
+            response = parse_gfm_dirset_info_list_response},
+   [ 57] = {request  = parse_gfm_quota_dirset_get_request,
+            response = parse_gfm_quota_dirset_get_response},
+   [ 58] = {request  = parse_gfm_quota_dirset_set_request,
+            response = parse_gfm_quota_dirset_set_response},
+   [ 59] = {request  = parse_gfm_quota_dir_get_request,
+            response = parse_gfm_quota_dir_get_response},
+   [ 60] = {request  = parse_gfm_quota_dir_set_request,
+            response = parse_gfm_quota_dir_set_response},
+   [ 61] = {request  = parse_gfm_quota_dir_list_request,
+            response = parse_gfm_quota_dir_list_response},
    [ 64] = {request  = parse_gfm_compound_begin_request,
             response = parse_gfm_compound_begin_response},
    [ 65] = {request  = parse_gfm_compound_end_request,

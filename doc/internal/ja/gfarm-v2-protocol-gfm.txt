@@ -1032,6 +1032,98 @@
 	  入力: なし
 	  出力: i:エラー
 	
+	GFM_PROTO_DIRSET_INFO_SET
+	  入力: s:ユーザー名
+		s:dirset name
+	  出力: i:エラー
+	  ※ gfarmroot 権限がない限り、ユーザー自身のみが設定可能
+
+	GFM_PROTO_DIRSET_INFO_REMOVE
+	  入力: s:ユーザー名
+		s:dirset name
+	  出力: i:エラー
+	  ※ dirset に属するトップディレクトリが存在する状況では、
+	     GFARM_ERR_DIRECTORY_QUOTA_EXISTS エラーを返す
+	  ※ gfarmroot 権限がない限り、ユーザー自身のみが削除可能
+
+	GFM_PROTO_DIRSET_INFO_LIST
+	  入力: s:ユーザー名 (空文字列は全ユーザーを意味する)
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+	        i:n_directory_quota_name
+		下記の、n_directory_quota_name 回の繰り返し
+			s:ユーザー名
+			s:dirset name
+	  ※ gfarmroot 権限がない限り、ユーザー自身のみが取得可能
+
+	GFM_PROTO_QUOTA_DIRSET_GET
+	  入力: s:ユーザー名
+		s:dirset name
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:grace_period,
+		l:space, l:space_grace, l:space_soft, l:space_hard,
+		l:num, l:num_grace, l:num_soft, l:num_hard,
+		l:phy_space, l:phy_space_grace, l:phy_space_soft,
+		l:phy_space_hard,
+		l:phy_num, l:phy_num_grace, l:phy_num_soft, l:phy_num_hard
+	  ※ gfarmroot 権限がない限り、ユーザー自身のみが取得可能
+
+	GFM_PROTO_QUOTA_DIRSET_SET
+	  入力: s:ユーザー名
+		s:dirset name
+		l:grace_period,
+		l:space_soft, l:space_hard,
+		l:num_soft, l:num_hard,
+		l:phy_space_soft, l:phy_space_hard,
+		l:phy_num_soft, l:phy_num_hard
+	  出力: i:エラー
+	  ※ gfarmroot 権限がない限り、ユーザー自身のみが設定可能
+
+	GFM_PROTO_QUOTA_DIR_GET
+	  暗黙の入力: i:current file descriptor
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		s:ユーザー名
+		s:dirset name
+		l:grace_period,
+		l:space, l:space_grace, l:space_soft, l:space_hard,
+		l:num, l:num_grace, l:num_soft, l:num_hard,
+		l:phy_space, l:phy_space_grace, l:phy_space_soft,
+		l:phy_space_hard,
+		l:phy_num, l:phy_num_grace, l:phy_num_soft, l:phy_num_hard
+	  ※ descriptor が取得できること、
+	     すなわちそのパスへのアクセス権限が必要
+
+	GFM_PROTO_QUOTA_DIR_SET
+	  暗黙の入力: i:current file descriptor
+	  入力: s:ユーザー名
+		s:dirset name
+	  出力: i:エラー
+		エラー == GFARM_ERR_NOT_A_DIRECTORY
+		   file descriptor が指す先が、ディレクトリではない
+		エラー == GFARM_ERR_OPERATION_NOT_PERMITTED
+		   file descriptor が指すディレクトリの所有者が、
+	  	   実行ユーザーと異なり、
+		   かつ、実行ユーザーに gfarmroot 権限がない
+		エラー == GFARM_ERR_DIRECTORY_NOT_EMPTY
+		   file descriptor が指すディレクトリが空ではない
+	  ※ gfarmroot 権限がない限り、dirset の所有ユーザー自身のみが設定可能
+
+	GFM_PROTO_QUOTA_DIR_LIST
+	  入力: s:ユーザー名 (空文字列は全ユーザーを意味する)
+		s:dirset name (空文字列は全dirsetを意味する)
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+	        i:n_dirs
+		下記の、n_dirs 回の繰り返し
+			i:エラー
+			エラー == GFARM_ERR_NO_ERROR の場合:
+				s:ユーザー名
+				s:dirset name
+				s:トップディレクトリのパス名
+	  ※ gfarmroot 権限がない限り、dirset の所有ユーザー自身のみが取得可能
+
   メタデータ・レプリケーション系 (gfmd channel)
 
 	GFM_PROTO_SWITCH_GFMD_CHANNEL
