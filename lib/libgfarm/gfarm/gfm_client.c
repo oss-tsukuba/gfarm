@@ -2955,7 +2955,7 @@ gfm_client_dirset_info_list(struct gfm_connection *gfm_server,
 		struct gfarm_dirset_info dummy;
 
 		GFARM_MALLOC_ARRAY(dirsets, ndirsets);
-		if (dirsets == NULL) {
+		if (dirsets == NULL && ndirsets != 0) {
 			e_save = GFARM_ERR_NO_MEMORY;
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "gfm_client_dirset_info_list(): "
@@ -3140,14 +3140,14 @@ gfm_client_quota_dir_list(struct gfm_connection *gfm_server,
 		gfarm_int32_t ecode;
 
 		GFARM_MALLOC_ARRAY(errors, ndirsetdirs);
-		if (errors == NULL) {
+		if (errors == NULL && ndirsetdirs != 0) {
 			e_save = GFARM_ERR_NO_MEMORY;
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "gfm_client_quota_dir_list(): "
 			    "no memory for %d errors", (int)ndirsetdirs);
 		}
 		GFARM_MALLOC_ARRAY(dirsetdirs, ndirsetdirs);
-		if (dirsetdirs == NULL) {
+		if (dirsetdirs == NULL && ndirsetdirs != 0) {
 			e_save = GFARM_ERR_NO_MEMORY;
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "gfm_client_quota_dir_list(): "
