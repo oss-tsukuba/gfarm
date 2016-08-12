@@ -33,44 +33,86 @@ static gfarm_error_t db_state = GFARM_ERR_NO_ERROR;
 /* private functions */
 static void
 update_softlimit(gfarm_time_t *exceedp, gfarm_time_t now, gfarm_time_t grace,
-		gfarm_int64_t val, gfarm_int64_t soft)
+	gfarm_int64_t val, gfarm_int64_t soft, int *need_db_update)
 {
 	if (!quota_limit_is_valid(grace) /* disable all softlimit */ ||
 	    !quota_limit_is_valid(soft) /* disable this softlimit */ ||
 	    val <= soft /* not exceed */
 		) {
-		*exceedp = GFARM_QUOTA_INVALID;
-		return;
+		if (*exceedp != GFARM_QUOTA_INVALID) {
+			*exceedp = GFARM_QUOTA_INVALID;
+			*need_db_update = 1;
+		}
 	} else if (*exceedp >= 0)
 		return; /* already exceeded */
-	else if (val > soft)
+	else if (val > soft) {
 		*exceedp = now; /* exceed now */
+		*need_db_update = 1;
+	}
 }
 
 static void
-quota_softlimit_exceed(struct quota *q)
+quota_softlimit_exceed(struct quota *q, int *need_db_update)
 {
 	struct timeval now;
 
 	if (!quota_limit_is_valid(q->grace_period)) {
-		/* disable all softlimit */
-		q->space_exceed = GFARM_QUOTA_INVALID;
-		q->num_exceed = GFARM_QUOTA_INVALID;
-		q->phy_space_exceed = GFARM_QUOTA_INVALID;
-		q->phy_num_exceed = GFARM_QUOTA_INVALID;
+		if (q->space_exceed != GFARM_QUOTA_INVALID ||
+		    q->num_exceed != GFARM_QUOTA_INVALID ||
+		    q->phy_space_exceed != GFARM_QUOTA_INVALID ||
+		    q->phy_num_exceed != GFARM_QUOTA_INVALID) {
+			/* disable all softlimit */
+			q->space_exceed = GFARM_QUOTA_INVALID;
+			q->num_exceed = GFARM_QUOTA_INVALID;
+			q->phy_space_exceed = GFARM_QUOTA_INVALID;
+			q->phy_num_exceed = GFARM_QUOTA_INVALID;
+			*need_db_update = 1;
+		}
 		return;
 	}
 
 	/* update exceeded time of softlimit */
 	gettimeofday(&now, NULL);
 	update_softlimit(&q->space_exceed, now.tv_sec, q->grace_period,
-			 q->space, q->space_soft);
+			 q->space, q->space_soft, need_db_update);
 	update_softlimit(&q->num_exceed, now.tv_sec, q->grace_period,
-			 q->num, q->num_soft);
+			 q->num, q->num_soft, need_db_update);
 	update_softlimit(&q->phy_space_exceed, now.tv_sec, q->grace_period,
-			 q->phy_space, q->phy_space_soft);
+			 q->phy_space, q->phy_space_soft, need_db_update);
 	update_softlimit(&q->phy_num_exceed, now.tv_sec, q->grace_period,
-			 q->phy_num, q->phy_num_soft);
+			 q->phy_num, q->phy_num_soft, need_db_update);
+}
+
+static void
+quota_softlimit_exceed_user(struct quota *q, struct user *u)
+{
+	gfarm_error_t e;
+	int need_db_update = 0;
+
+	quota_softlimit_exceed(q, &need_db_update);
+	if (need_db_update && user_is_valid(u)) {
+		e = db_quota_user_set(q, user_name(u));
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "db_quota_user_set(%s): %s",
+			    user_name(u), gfarm_error_string(e));
+	}
+}
+
+static void
+quota_softlimit_exceed_group(struct quota *q, struct group *g)
+{
+	gfarm_error_t e;
+	int need_db_update = 0;
+
+	quota_softlimit_exceed(q, &need_db_update);
+	if (need_db_update && group_is_valid(g)) {
+		e = db_quota_group_set(q, group_name(g));
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "db_quota_group_set(%s): %s",
+			    group_name(g), gfarm_error_string(e));
+	}
 }
 
 static void
@@ -117,7 +159,7 @@ quota_update_usage_user(void *closure, struct user *u)
 	struct usage *ut = user_usage_tmp(u);
 
 	usage_to_quota(ut, q);
-	quota_softlimit_exceed(q);
+	quota_softlimit_exceed_user(q, u);
 
 	if (!user_is_valid(u))
 		gflog_notice(GFARM_MSG_1004294,
@@ -135,7 +177,7 @@ quota_update_usage_group(void *closure, struct group *g)
 	struct usage *ut = group_usage_tmp(g);
 
 	usage_to_quota(ut, q);
-	quota_softlimit_exceed(q);
+	quota_softlimit_exceed_group(q, g);
 
 	if (!group_is_valid(g))
 		gflog_notice(GFARM_MSG_1004295,
@@ -407,14 +449,14 @@ quota_update_file_add(struct inode *inode)
 		struct quota *uq = user_quota(u);
 		if (is_checked(uq)) {
 			update_file_add(uq, size, ncopy);
-			quota_softlimit_exceed(uq);
+			quota_softlimit_exceed_user(uq, u);
 		}
 	}
 	if (g) {
 		struct quota *gq = group_quota(g);
 		if (is_checked(gq)) {
 			update_file_add(gq, size, ncopy);
-			quota_softlimit_exceed(gq);
+			quota_softlimit_exceed_group(gq, g);
 		}
 	}
 
@@ -458,14 +500,14 @@ quota_update_file_resize(struct inode *inode, gfarm_off_t new_size)
 		struct quota *uq = user_quota(u);
 		if (is_checked(uq)) {
 			update_file_resize(uq, old_size, new_size, ncopy);
-			quota_softlimit_exceed(uq);
+			quota_softlimit_exceed_user(uq, u);
 		}
 	}
 	if (g) {
 		struct quota *gq = group_quota(g);
 		if (is_checked(gq)) {
 			update_file_resize(gq, old_size, new_size, ncopy);
-			quota_softlimit_exceed(gq);
+			quota_softlimit_exceed_group(gq, g);
 		}
 	}
 
@@ -489,14 +531,14 @@ quota_update_replica_num(struct inode *inode, gfarm_int64_t n)
 		struct quota *uq = user_quota(u);
 		if (is_checked(uq)) {
 			update_replica_num(uq, size, n);
-			quota_softlimit_exceed(uq);
+			quota_softlimit_exceed_user(uq, u);
 		}
 	}
 	if (g) {
 		struct quota *gq = group_quota(g);
 		if (is_checked(gq)) {
 			update_replica_num(gq, size, n);
-			quota_softlimit_exceed(gq);
+			quota_softlimit_exceed_group(gq, g);
 		}
 	}
 
@@ -543,14 +585,14 @@ quota_update_file_remove(struct inode *inode)
 		struct quota *uq = user_quota(u);
 		if (is_checked(uq)) {
 			update_file_remove(uq, size, ncopy);
-			quota_softlimit_exceed(uq);
+			quota_softlimit_exceed_user(uq, u);
 		}
 	}
 	if (g) {
 		struct quota *gq = group_quota(g);
 		if (is_checked(gq)) {
 			update_file_remove(gq, size, ncopy);
-			quota_softlimit_exceed(gq);
+			quota_softlimit_exceed_group(gq, g);
 		}
 	}
 
@@ -1015,6 +1057,7 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 	struct gfarm_quota_set_info qi;
 	struct quota *q;
 	struct user *peer_user = peer_get_user(peer);
+	int need_db_update = 0;
 
 	e = gfm_server_get_request(peer, diag, "slllllllll",
 				   &qi.name,
@@ -1068,8 +1111,9 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 	set_limit(q->phy_num_hard, qi.phy_num_hard);
 
 	/* check softlimit and update exceeded time */
-	quota_softlimit_exceed(q);
+	quota_softlimit_exceed(q, &need_db_update);
 
+	/* update regardless of need_db_update */
 	if (is_group)
 		e = db_quota_group_set(q, qi.name);
 	else
