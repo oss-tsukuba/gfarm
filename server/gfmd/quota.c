@@ -851,6 +851,7 @@ quota_check_init(void)
 		    gfarm_error_string(e));
 
 	quota_check_start();
+	quota_check_wait_for_end();
 }
 
 /* server operations */
