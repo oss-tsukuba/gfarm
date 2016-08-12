@@ -14,6 +14,7 @@ extern struct dirset dirset_is_not_set;
 #define TDIRSET_IS_NOT_SET (&dirset_is_not_set)
 #define TDIRSET_IS_UNKNOWN NULL
 
+int dirset_is_valid(struct dirset *);
 const char *dirset_get_username(struct dirset *);
 const char *dirset_get_dirsetname(struct dirset *);
 struct quota_metadata;

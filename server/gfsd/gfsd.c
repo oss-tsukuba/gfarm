@@ -113,7 +113,6 @@
  */
 #define GFMD_CONNECT_SLEEP_INTVL_MIN	1	/* 1 sec */
 #define GFMD_CONNECT_SLEEP_INTVL_MAX	512	/* about 8.5 min */
-#define GFMD_CONNECT_SLEEP_TIMEOUT	60	/* 1 min for gfmd failover */
 #define GFMD_CONNECT_SLEEP_LOG_OMIT	11	/* log until 512 sec */
 #define GFMD_CONNECT_SLEEP_LOG_INTERVAL	86400	/* 1 day */
 
@@ -685,7 +684,7 @@ sleep_or_wait_failover(int seconds)
 
 /* return true, if the negotiation succeeds, or timed_out happens */
 static int
-negotiate_with_gfm_server(int timed_out, int n_config_vars, void **config_vars,
+negotiate_with_gfm_server(int n_config_vars, void **config_vars,
 	const char *diag, gfarm_error_t *ep)
 {
 	gfarm_error_t e;
@@ -752,7 +751,7 @@ negotiate_with_gfm_server(int timed_out, int n_config_vars, void **config_vars,
 		gflog_info(GFARM_MSG_1004103, "%s: connected to gfmd", diag);
 		return (1);
 	}
-	if (timed_out || !IS_CONNECTION_ERROR(e)) {
+	if (!IS_CONNECTION_ERROR(e)) {
 		gflog_error(GFARM_MSG_1004383,
 		    "negotiation with gfmd failed (as node: %s): %s",
 		    canonical_self_name != NULL ? canonical_self_name : "-",
@@ -764,13 +763,10 @@ negotiate_with_gfm_server(int timed_out, int n_config_vars, void **config_vars,
 }
 
 static gfarm_error_t
-connect_gfm_server0(int use_timeout, int n_config_vars, void **config_vars,
-	const char *diag)
+connect_gfm_server0(int n_config_vars, void **config_vars, const char *diag)
 {
 	gfarm_error_t e;
 	int sleep_interval = GFMD_CONNECT_SLEEP_INTVL_MIN;
-	struct timeval expiration_time;
-	int timed_out;
 	struct gflog_reduced_state connlog = GFLOG_REDUCED_STATE_INITIALIZER(
 		GFMD_CONNECT_SLEEP_LOG_OMIT, 1,
 		GFMD_CONNECT_SLEEP_INTVL_MAX * 10,
@@ -780,29 +776,11 @@ connect_gfm_server0(int use_timeout, int n_config_vars, void **config_vars,
 		GFMD_CONNECT_SLEEP_INTVL_MAX * 10,
 		GFMD_CONNECT_SLEEP_LOG_INTERVAL);
 
-	if (use_timeout) {
-		gettimeofday(&expiration_time, NULL);
-		expiration_time.tv_sec += GFMD_CONNECT_SLEEP_TIMEOUT;
-	}
-
 	for (;;) {
 		e = gfm_client_connect(gfarm_ctxp->metadb_server_name,
 		    gfarm_ctxp->metadb_server_port, GFSD_USERNAME,
 		    &gfm_server, listen_addrname);
-
-		timed_out = use_timeout &&
-		    gfarm_timeval_is_expired(&expiration_time);
-
 		if (e != GFARM_ERR_NO_ERROR) {
-			if (timed_out) {
-				gflog_error(GFARM_MSG_1004100,
-				    "%s: connecting to gfmd at %s:%d "
-				    "failed: %s", diag,
-				    gfarm_ctxp->metadb_server_name,
-				    gfarm_ctxp->metadb_server_port,
-				    gfarm_error_string(e));
-				return (e);
-			}
 			gflog_reduced_notice(GFARM_MSG_1004101, &connlog,
 			    "%s: connecting to gfmd at %s:%d failed, "
 			    "sleep %d sec: %s", diag,
@@ -810,7 +788,7 @@ connect_gfm_server0(int use_timeout, int n_config_vars, void **config_vars,
 			    gfarm_ctxp->metadb_server_port,
 			    sleep_interval, gfarm_error_string(e));
 		} else {
-			if (negotiate_with_gfm_server(timed_out,
+			if (negotiate_with_gfm_server(
 			    n_config_vars, config_vars, diag, &e))
 				return (e);
 			gflog_reduced_notice(GFARM_MSG_1004384, &negolog,
@@ -844,24 +822,17 @@ static void *initial_config_vars[] = {
 	&gfarm_write_verify_log_interval,
 };
 
-static gfarm_error_t
-connect_gfm_server_with_timeout(const char *diag)
-{
-	return (connect_gfm_server0(1,
-	    GFARM_ARRAY_LENGTH(config_vars), config_vars, diag));
-}
-
 gfarm_error_t
 connect_gfm_server(const char *diag)
 {
-	return (connect_gfm_server0(0,
+	return (connect_gfm_server0(
 	    GFARM_ARRAY_LENGTH(config_vars), config_vars, diag));
 }
 
 gfarm_error_t
 connect_gfm_server_at_first(const char *diag)
 {
-	return (connect_gfm_server0(0,
+	return (connect_gfm_server0(
 	    GFARM_ARRAY_LENGTH(initial_config_vars), initial_config_vars,
 	    diag));
 }
@@ -883,7 +854,7 @@ reconnect_gfm_server_for_failover(const char *diag)
 	gflog_notice(GFARM_MSG_1003348,
 	    "%s: gfmd may be failed over, try to reconnecting", diag);
 	free_gfm_server();
-	if ((e = connect_gfm_server_with_timeout(diag))
+	if ((e = connect_gfm_server(diag))
 	    != GFARM_ERR_NO_ERROR) {
 		/* mark gfmd reconnection failed */
 		free_gfm_server();

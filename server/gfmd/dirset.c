@@ -34,6 +34,7 @@ struct dirset {
 	struct quota_metadata q;
 	int dir_count;
 	struct quota_dir *dir_list;
+	int valid;
 	gfarm_uint64_t refcount;
 };
 
@@ -81,6 +82,7 @@ dirset_new(const char *dirsetname, struct user *u)
 	ds->user = u;
 	ds->dir_count = 0;
 	ds->dir_list = list_head;
+	ds->valid = 1;
 	ds->refcount = 1;
 	return (ds);	
 }
@@ -91,6 +93,12 @@ dirset_free(struct dirset *ds)
 	quota_dir_list_free(ds->dir_list);
 	free(ds->dirsetname);
 	free(ds);
+}
+
+int
+dirset_is_valid(struct dirset *ds)
+{
+	return (ds->valid);
 }
 
 const char *
@@ -303,6 +311,7 @@ dirset_remove(struct dirsets *sets, const char *dirsetname)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	--sets->dirset_count;
 
+	ds->valid = 0;
 	dirset_del_ref(ds);
 
 	return (GFARM_ERR_NO_ERROR);
@@ -650,8 +659,12 @@ gfm_server_quota_dirset_set(struct peer *peer, int from_client, int skip)
 	} else if ((ds = user_lookup_dirset(u, dirsetname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else {
-		e = GFARM_ERR_NO_ERROR;
 		ds->q.limit = limit;
+		e = db_quota_dirset_modify(username, dirsetname, &ds->q);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "failed to store dirset '%s:%s' to backend DB: %s",
+			    username, dirsetname, gfarm_error_string(e));
 	}
 
 	giant_unlock();
