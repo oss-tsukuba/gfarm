@@ -35,6 +35,7 @@
 #include "fsngroup.h"
 #include "gfmd.h"
 #include "inode.h"
+#include "dirset.h"
 #include "process.h"
 #include "dead_file_copy.h"
 #include "dir.h"
@@ -77,6 +78,7 @@ struct replication_info {
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
 	struct replica_spec replica_spec;
+	struct dirset *tdirset;
 };
 
 static int replica_check_remove_enabled(void);
@@ -145,7 +147,7 @@ replica_check_remove_replicas(struct inode *inode,
 #endif
 		/* remove a replica only when it is excessive */
 		e2 = inode_remove_replica_protected(inode, srcs[i],
-		    &info->replica_spec);
+		    &info->replica_spec, info->tdirset);
 		if (e2 == GFARM_ERR_NO_ERROR) {
 			REDUCED_INFO(GFARM_MSG_1004273, &remove_ok_state,
 			    "replica_check: %lld:%lld:%s@%s: removed",
@@ -283,7 +285,7 @@ replica_check_fix(struct replication_info *info)
 
 	/* create replicas if the replicas are insufficient */
 	e = inode_schedule_replication(
-	    inode, 1,
+	    inode, info->tdirset, 1,
 	    info->replica_spec.desired_number, info->replica_spec.repattr,
 	    n_srcs, srcs, &n_existing, existing,
 	    gfarm_replica_check_host_down_thresh,
@@ -338,16 +340,21 @@ replica_check_stack_init(void)
 }
 
 static void
-replica_check_stack_push(struct inode *dir_ino, struct inode *file_ino)
+replica_check_stack_push(struct inode *dir_ino, struct inode *file_ino,
+	struct dirset *tdirset)
 {
+	struct replication_info *rep_info =
+	    &replica_check_stack[replica_check_stack_index];
+
 	assert(replica_check_stack_index < replica_check_stack_size);
 
-	replica_check_stack[replica_check_stack_index].inum
-		= inode_get_number(file_ino);
-	replica_check_stack[replica_check_stack_index].gen
-		= inode_get_gen(file_ino);
-	replica_check_desired_set(dir_ino, file_ino,
-	    &(replica_check_stack[replica_check_stack_index]));
+	rep_info->inum = inode_get_number(file_ino);
+	rep_info->gen = inode_get_gen(file_ino);
+	replica_check_desired_set(dir_ino, file_ino, rep_info);
+	rep_info->tdirset = tdirset;
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
+		dirset_add_ref(tdirset);
+
 	replica_check_stack_index++;
 }
 
@@ -359,6 +366,15 @@ replica_check_stack_pop(struct replication_info *infop)
 	replica_check_stack_index--;
 	*infop = replica_check_stack[replica_check_stack_index];
 	return (1);
+}
+
+static void
+replication_info_free(struct replication_info *rep_info)
+{
+	if (rep_info->tdirset != TDIRSET_IS_UNKNOWN &&
+	    rep_info->tdirset != TDIRSET_IS_NOT_SET)
+		dirset_del_ref(rep_info->tdirset);
+	replica_spec_free(&rep_info->replica_spec);
 }
 
 static void
@@ -400,6 +416,7 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 	DirCursor cursor;
 	gfarm_off_t dir_offset = 0;
 	DirEntry entry;
+	struct dirset *tdirset;
 	struct replication_info rep_info;
 	int need_to_retry = 0, eod = 0, i;
 
@@ -419,6 +436,7 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 			replica_check_giant_unlock();
 			return (need_to_retry);
 		}
+		tdirset = inode_search_tdirset(dir_ino);
 		/* avoid long giant lock */
 		for (i = 0; i < REPLICA_CHECK_DIRENTS_BUFCOUNT; i++) {
 			entry = dir_cursor_get_entry(dir, &cursor);
@@ -428,7 +446,8 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 			}
 			file_ino = dir_entry_get_inode(entry);
 			if (inode_is_file(file_ino))
-				replica_check_stack_push(dir_ino, file_ino);
+				replica_check_stack_push(dir_ino, file_ino,
+				    tdirset);
 			if (!dir_cursor_next(dir, &cursor)) {
 				eod = 1; /* end of directory */
 				break;
@@ -461,7 +480,7 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 				    gfarm_error_string(e));
 			}
 			(*countp)++;
-			replica_spec_free(&rep_info.replica_spec);
+			replication_info_free(&rep_info);
 		}
 	}
 	return (need_to_retry);

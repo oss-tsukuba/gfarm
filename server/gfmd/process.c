@@ -61,7 +61,7 @@ static struct gfarm_id_table_entry_ops process_id_table_ops = {
 	sizeof(struct process)
 };
 
-struct replication_info {
+struct client_initiated_replication {
 	gfarm_int64_t gen;
 	struct host *dst;
 	gfarm_int32_t cksum_request_flags;

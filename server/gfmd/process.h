@@ -68,7 +68,7 @@ struct file_opening {
 			struct replica_spec replica_spec;
 
 			/* only used by client initiated replication */
-			struct replication_info *replica_source;
+			struct client_initiated_replication *replica_source;
 		} f;
 		struct opening_dir {
 			gfarm_off_t offset;

@@ -701,7 +701,7 @@ inode_remove_all_xattrs(struct inode *inode)
 #endif
 }
 
-struct inode_activity *
+static struct inode_activity *
 inode_activity_alloc(struct dirset *tdirset)
 {
 	struct inode_activity *ia;
@@ -735,7 +735,29 @@ inode_activity_alloc(struct dirset *tdirset)
 	return (ia);
 }
 
-void
+static struct inode_activity *
+inode_activity_alloc_or_update(
+	struct inode_activity **iap, struct dirset *tdirset)
+{
+	struct inode_activity *ia = *iap;
+
+	if (ia == NULL) {
+		ia = inode_activity_alloc(tdirset);
+		if (ia == NULL)
+			return (NULL);
+		*iap = ia;
+	} else {
+		if (ia->tdirset == TDIRSET_IS_UNKNOWN &&
+		    tdirset != TDIRSET_IS_UNKNOWN) {
+			ia->tdirset = tdirset;
+			if (tdirset != TDIRSET_IS_NOT_SET)
+				dirset_add_ref(tdirset);
+		}
+	}
+	return (ia);
+}
+
+static void
 inode_activity_free(struct inode_activity *ia)
 {
 	assert(ia->openings.opening_next == &ia->openings);
@@ -982,7 +1004,7 @@ static struct gflog_reduced_state rep_fixed_state =
  */
 gfarm_error_t
 inode_schedule_replication_within_scope(
-	struct inode *inode, int n_desired,
+	struct inode *inode, struct dirset *tdirset, int n_desired,
 	int n_srcs, struct host **srcs, int *next_src_indexp,
 	int *n_scopep, struct host **scope,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
@@ -1037,7 +1059,7 @@ inode_schedule_replication_within_scope(
 		src = srcs[*next_src_indexp];
 		dst = targets[i];
 
-		e = file_replicating_new(inode, dst, NULL, &fr);
+		e = file_replicating_new(inode, dst, NULL, tdirset, &fr);
 		if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 			busy = 1;
 			gflog_reduced_debug(
@@ -1118,7 +1140,7 @@ inode_schedule_replication_within_scope(
  */
 gfarm_error_t
 inode_schedule_replication_from_all(
-	struct inode *inode, int n_desired,
+	struct inode *inode, struct dirset *tdirset, int n_desired,
 	int n_srcs, struct host **srcs,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
 	int *n_being_removedp, struct host **being_removed, const char *diag)
@@ -1138,7 +1160,7 @@ inode_schedule_replication_from_all(
 		return (e);
 	}
 	e = inode_schedule_replication_within_scope(
-	    inode, n_desired, n_srcs, srcs, &next_src_index,
+	    inode, tdirset, n_desired, n_srcs, srcs, &next_src_index,
 	    &nhosts, hosts, n_existingp, existing, grace,
 	    n_being_removedp, being_removed, diag);
 	free(hosts);
@@ -1153,7 +1175,7 @@ inode_schedule_replication_from_all(
  */
 gfarm_error_t
 inode_schedule_replication(
-	struct inode *inode, int is_replica_check,
+	struct inode *inode, struct dirset *tdirset, int is_replica_check,
 	int n_desired, const char *repattr,
 	int n_srcs, struct host **srcs,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
@@ -1172,7 +1194,7 @@ inode_schedule_replication(
 			    (long long)inode_get_gen(inode),
 			    host_name(srcs[0]));
 		e = fsngroup_schedule_replication(
-		    inode, repattr, n_srcs, srcs,
+		    inode, tdirset, repattr, n_srcs, srcs,
 		    n_existingp, existing, grace,
 		    n_being_removedp, being_removed, diag, &total_repattr);
 		if (is_replica_check &&
@@ -1277,7 +1299,7 @@ inode_schedule_replication(
 			    n_desired, n_existing2 + n_being_removed2,
 			    n_being_removed2);
 			e = inode_schedule_replication_from_all(
-			    inode, n_desired,
+			    inode, tdirset, n_desired,
 			    n_srcs, srcs, &n_existing2, existing2, grace,
 			    &n_being_removed2, being_removed2, diag);
 			free(existing2);
@@ -1295,7 +1317,7 @@ inode_schedule_replication(
 		    n_desired, *n_existingp + *n_being_removedp,
 		    *n_being_removedp);
 		e = inode_schedule_replication_from_all(
-		    inode, n_desired,
+		    inode, tdirset, n_desired,
 		    n_srcs, srcs, n_existingp, existing, grace,
 		    n_being_removedp, being_removed, diag);
 	}
@@ -1309,8 +1331,8 @@ inode_schedule_replication(
  *	it does if this this is called from inode_check_pending_replication().
  */
 static gfarm_error_t
-make_replicas_except(struct inode *inode, struct host *spool_host,
-	int desired_replica_number, char *repattr,
+make_replicas_except(struct inode *inode, struct dirset *tdirset,
+	struct host *spool_host, int desired_replica_number, char *repattr,
 	struct file_copy *exception_list)
 {
 	gfarm_error_t e;
@@ -1363,7 +1385,7 @@ make_replicas_except(struct inode *inode, struct host *spool_host,
 
 	srcs[0] = spool_host;
 	e = inode_schedule_replication(
-	    inode, 0, desired_replica_number, repattr,
+	    inode, tdirset, 0, desired_replica_number, repattr,
 	    1, srcs, &n_existing, existing, 0,
 	    &n_being_removed, being_removed, diag);
 
@@ -1375,7 +1397,7 @@ make_replicas_except(struct inode *inode, struct host *spool_host,
 
 static gfarm_error_t
 remove_replica_entity(struct inode *, gfarm_int64_t, struct host *,
-	int, struct dead_file_copy **);
+	int, struct dirset *, struct dead_file_copy **);
 
 /* spool_host may be NULL, if GFARM_FILE_TRUNC_PENDING */
 static void
@@ -1384,6 +1406,7 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	int desired_replica_number, char *repattr, const char *diag)
 {
 	struct file_copy **copyp, *copy, *next, *to_be_excluded = NULL;
+	struct dirset *tdirset = inode_get_tdirset(inode);
 	struct dead_file_copy *deferred_cleanup;
 	struct file_replicating *fr;
 	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
@@ -1417,8 +1440,8 @@ update_replicas(struct inode *inode, struct host *spool_host,
 			if (FILE_COPY_IS_VALID(copy) &&
 			    !FILE_COPY_IS_BEING_REMOVED(copy)) {
 				e = remove_replica_entity(
-					inode, old_gen, copy->host,
-					FILE_COPY_IS_VALID(copy), NULL);
+				    inode, old_gen, copy->host,
+				    FILE_COPY_IS_VALID(copy), tdirset, NULL);
 				/* abandon `e' */
 			} else { /* dead_file_copy must be already created */
 				assert(!FILE_COPY_IS_VALID(copy));
@@ -1444,7 +1467,7 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	 *
 	 */
 	if (start_replication && spool_host != NULL)
-		save_e = make_replicas_except(inode, spool_host,
+		save_e = make_replicas_except(inode, tdirset, spool_host,
 		    desired_replica_number, repattr, to_be_excluded);
 
 	/*
@@ -1465,18 +1488,19 @@ update_replicas(struct inode *inode, struct host *spool_host,
 			if (FILE_COPY_IS_VALID(copy) &&
 			    !FILE_COPY_IS_BEING_REMOVED(copy)) {
 				e = remove_replica_entity(
-					inode, old_gen, copy->host,
-					FILE_COPY_IS_VALID(copy), NULL);
+				    inode, old_gen, copy->host,
+				    FILE_COPY_IS_VALID(copy), tdirset, NULL);
 				/* abandon `e' */
 			}
 		} else if (!FILE_COPY_IS_BEING_REMOVED(copy)) {
 			assert(FILE_COPY_IS_VALID(copy));
 			e = remove_replica_entity(inode, old_gen, copy->host,
-			    FILE_COPY_IS_VALID(copy), &deferred_cleanup);
+			    FILE_COPY_IS_VALID(copy), tdirset,
+			    &deferred_cleanup);
 			/* abandon `e' */
 
 			e = file_replicating_new(inode, copy->host,
-			    deferred_cleanup, &fr);
+			    deferred_cleanup, tdirset, &fr);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_notice(GFARM_MSG_1002245,
 				    "replication before removal: host %s: %s",
@@ -1548,8 +1572,9 @@ inode_remove(struct inode *inode, struct dirset *tdirset)
 		for (copy = inode->u.c.s.f.copies; copy != NULL; copy = cn) {
 			if (FILE_COPY_IS_VALID(copy) &&
 			    !FILE_COPY_IS_BEING_REMOVED(copy)) {
-				(void)remove_replica_entity(inode, inode->i_gen,
-				    copy->host, FILE_COPY_IS_VALID(copy), NULL);
+				(void)remove_replica_entity(inode,
+				    inode->i_gen, copy->host,
+				    FILE_COPY_IS_VALID(copy), tdirset, NULL);
 				/* abandon error */
 			}
 			cn = copy->host_next;
@@ -2460,20 +2485,17 @@ gfarm_error_t
 inode_new_generation_by_cookie_start(struct inode *inode,
 	struct peer *peer, gfarm_uint64_t cookie)
 {
-	struct inode_activity *ia = inode->u.c.activity;
+	/*
+	 * EVENT_GEN_UPDATED_BY_COOKIE is one of special cases:
+	 * inode_activity is allocated without file_opening.
+	 */
+	struct inode_activity *ia = inode_activity_alloc_or_update(
+	    &inode->u.c.activity, TDIRSET_IS_UNKNOWN);
 
 	if (ia == NULL) {
-		/*
-		 * EVENT_GEN_UPDATED_BY_COOKIE is a special case:
-		 * inode_activity is allocated without file_opening.
-		 */
-		ia = inode_activity_alloc(NULL);
-		if (ia == NULL) {
-			gflog_error(GFARM_MSG_1004019,
-			    "unable to track inode generation");
-			return (GFARM_ERR_NO_MEMORY);
-		}
-		inode->u.c.activity = ia;
+		gflog_error(GFARM_MSG_1004019,
+		    "unable to track inode generation");
+		return (GFARM_ERR_NO_MEMORY);
 	}
 	ia->u.f.event_type = EVENT_GEN_UPDATED_BY_COOKIE;
 	ia->u.f.event_source = peer;
@@ -3999,21 +4021,13 @@ gfarm_error_t
 inode_open(struct file_opening *fo, struct dirset *tdirset)
 {
 	struct inode *inode = fo->inode;
-	struct inode_activity *ia = inode->u.c.activity;
+	struct inode_activity *ia =
+	    inode_activity_alloc_or_update(&inode->u.c.activity, tdirset);
 
 	if (ia == NULL) {
-		ia = inode_activity_alloc(tdirset);
-		if (ia == NULL) {
-			gflog_debug(GFARM_MSG_1001756,
-				"inode_activity_alloc() failed");
-			return (GFARM_ERR_NO_MEMORY);
-		}
-		inode->u.c.activity = ia;
-	} else if (ia->tdirset == TDIRSET_IS_UNKNOWN &&
-	    tdirset != TDIRSET_IS_UNKNOWN) {
-		ia->tdirset = tdirset;
-		if (tdirset != TDIRSET_IS_NOT_SET)
-			dirset_add_ref(tdirset);
+		gflog_debug(GFARM_MSG_1001756,
+			"inode_activity_alloc() failed");
+		return (GFARM_ERR_NO_MEMORY);
 	}
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 		++ia->u.f.writers;
@@ -4141,7 +4155,7 @@ inode_check_pending_replication(struct file_opening *fo)
 	if (host_supports_async_protocols(spool_host) &&
 	    ia->u.f.spool_writers == 0 && ia->u.f.replication_pending) {
 		ia->u.f.replication_pending = 0;
-		e = make_replicas_except(inode, spool_host,
+		e = make_replicas_except(inode, ia->tdirset, spool_host,
 		    fo->u.f.replica_spec.desired_number,
 		    fo->u.f.replica_spec.repattr,
 		    inode->u.c.s.f.copies);
@@ -4836,7 +4850,7 @@ inode_remove_replica_in_cache(struct inode *inode, struct host *spool_host)
 
 gfarm_error_t
 file_replicating_new(struct inode *inode, struct host *dst,
-	struct dead_file_copy *deferred_cleanup,
+	struct dead_file_copy *deferred_cleanup, struct dirset *tdirset,
 	struct file_replicating **frp)
 {
 	gfarm_error_t e;
@@ -4857,15 +4871,9 @@ file_replicating_new(struct inode *inode, struct host *dst,
 		/* abandon error */
 		return (e);
 	}
-	ia = inode->u.c.activity;
-	if (ia == NULL) {
-		ia_alloc_tried = 1;
-		ia = inode->u.c.activity = inode_activity_alloc(NULL);
-		irs = NULL;
-	} else {
-		ia_alloc_tried = 0;
-		irs = ia->u.f.rstate;
-	}
+	ia_alloc_tried = (inode->u.c.activity == NULL);
+	ia = inode_activity_alloc_or_update(&inode->u.c.activity, tdirset);
+	irs = ia != NULL ? ia->u.f.rstate : NULL;
 	if (ia == NULL || irs == NULL) {
 		if (ia != NULL) {
 			GFARM_MALLOC(irs);
@@ -5220,10 +5228,10 @@ inode_add_file_copy_in_cache(struct inode *inode, struct host *host)
 }
 
 static gfarm_error_t
-remove_replica_metadata(struct inode *inode, struct host *spool_host)
+remove_replica_metadata(struct inode *inode, struct host *spool_host,
+	struct dirset *tdirset)
 {
 	gfarm_error_t e;
-	struct dirset *tdirset = inode_get_tdirset(inode);
 	static const char diag[] = "remove_replica_metadata";
 
 	quota_update_replica_remove(inode, tdirset);
@@ -5241,7 +5249,7 @@ remove_replica_metadata(struct inode *inode, struct host *spool_host)
 
 static gfarm_error_t
 remove_replica_entity(struct inode *inode, gfarm_int64_t gen,
-	struct host *spool_host, int valid,
+	struct host *spool_host, int valid, struct dirset *tdirset,
 	struct dead_file_copy **deferred_cleanupp)
 {
 	struct dead_file_copy *dfc;
@@ -5260,7 +5268,7 @@ remove_replica_entity(struct inode *inode, gfarm_int64_t gen,
 	}
 
 	if (valid) {
-		(void)remove_replica_metadata(inode, spool_host);
+		(void)remove_replica_metadata(inode, spool_host, tdirset);
 		/* abandon error */
 	}
 	return (dfc == NULL ? GFARM_ERR_NO_MEMORY : GFARM_ERR_NO_ERROR);
@@ -5374,6 +5382,7 @@ can_remove_replica(struct inode *inode, struct file_copy *copy,
 static gfarm_error_t
 inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 	gfarm_int64_t gen, struct replica_spec *replica_spec,
+	struct dirset *tdirset,
 	int invalid_is_removable, int replica_lost, int metadata_only,
 	struct dead_file_copy **deferred_cleanupp)
 {
@@ -5441,7 +5450,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 				 */
 				e = remove_replica_entity(inode, gen,
 				    copy->host, FILE_COPY_IS_VALID(copy),
-				    deferred_cleanupp);
+				    tdirset, deferred_cleanupp);
 				if (e == GFARM_ERR_NO_ERROR) {
 					copy->flags &= ~FILE_COPY_VALID;
 					copy->flags |= FILE_COPY_BEING_REMOVED;
@@ -5452,7 +5461,8 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 			}
 		} else {
 			if (FILE_COPY_IS_VALID(copy)) {
-				e = remove_replica_metadata(inode, copy->host);
+				e = remove_replica_metadata(inode, copy->host,
+				    tdirset);
 				if (e != GFARM_ERR_NO_ERROR) {
 					gflog_error(GFARM_MSG_1003701,
 					    "remove_replica_metadata("
@@ -5488,7 +5498,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 		}
 	} else if (!metadata_only) {
 		/* tdirset is not needed, because this is obsolete replica */
-		e = remove_replica_entity(inode, gen, spool_host, 0,
+		e = remove_replica_entity(inode, gen, spool_host, 0, tdirset,
 		    deferred_cleanupp);
 	} else {
 		/* remove_replica_entity() must be already called */
@@ -5512,23 +5522,28 @@ inode_remove_replica_lost(
 	 * because this is called from GFM_PROTO_REPLICA_LOST
 	 */
 	return (inode_remove_replica_internal(inode, spool_host, gen,
-	    NULL, 0, 1, 1, NULL));
+	    NULL, NULL, 0, 1, 1, NULL));
 }
 
 gfarm_error_t
 inode_remove_replica_protected(struct inode *inode, struct host *spool_host,
-	struct replica_spec *replica_spec)
+	struct replica_spec *replica_spec, struct dirset *tdirset)
 {
 	assert(replica_spec != NULL);
 	return (inode_remove_replica_internal(inode, spool_host,
-	    inode_get_gen(inode), replica_spec, 0, 0, 0, NULL));
+	    inode_get_gen(inode), replica_spec, tdirset, 0, 0, 0, NULL));
 }
 
 gfarm_error_t
 inode_remove_replica_orphan(struct inode *inode, struct host *spool_host)
 {
+	/*
+	 * no need to pass tdirset, because this is only called from
+	 * boot-time fsck,
+	 * i.e. inode_remove_orphan() via file_copy_db_remove_one_orphan()
+	 */
 	return (inode_remove_replica_internal(inode, spool_host,
-	    inode_get_gen(inode), NULL, 1, 0, 1, NULL));
+	    inode_get_gen(inode), NULL, NULL, 1, 0, 1, NULL));
 }
 
 /* remove an incomplete replica, when a replication fails */
@@ -5538,8 +5553,12 @@ inode_remove_replica_incomplete(struct inode *inode, struct host *spool_host,
 {
 	gfarm_error_t e;
 
+	/*
+	 * no need to pass tdirset, because this is only called at
+	 * replication failure.
+	 */
 	e = inode_remove_replica_internal(inode, spool_host, gen,
-	    NULL, 1, 0, 0, NULL);
+	    NULL, NULL, 1, 0, 0, NULL);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 		gflog_info(GFARM_MSG_1002433,
 		    "cannot remove an incomplete replica (%s, %lld:%lld): "
@@ -5589,8 +5608,8 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	if ((flags & GFS_REPLICATE_FILE_FORCE) == 0 &&
 	    inode_is_opened_for_writing(inode))
 		return (GFARM_ERR_FILE_BUSY); /* src is busy */
-	else if ((e = file_replicating_new(inode, dst, NULL, frp)) !=
-	    GFARM_ERR_NO_ERROR)
+	else if ((e = file_replicating_new(inode, dst, NULL,
+	    inode_get_tdirset(inode), frp)) != GFARM_ERR_NO_ERROR)
 		return (e);
 
 	if (file_replicating_p != NULL)
