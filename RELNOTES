@@ -1,3 +1,29 @@
+Release note for Gfarm 2.6.12
+=============================
+
+[2016.8.16]
+
+New feature
+* symbolic link support for master-slave redundant metadata servers -
+  metadb_server_list directive can be used several times to specify
+  several metadata server groups
+
+Updated feature
+* iostat - new data format that aligns the cache line to avoid
+  unnecessary false sharing.  This requires ganglia plugin update by
+  config-{gfsd,gfmd}-iostat -f
+
+Bug fix
+* fix compilation error on Linux/alpha.  This patch is contributed by
+  Michael Cree via Dmitry Smirnov [https://bugs.debian.org/827021]
+* gfpcopy - plug memory leak, which was introduced in Gfarm 2.6.6
+* gfmd - quota is not effective just after gfmd start-up or failover
+* gfmd - incorrect grace period for soft quota after gfmd restart or
+  failover
+* gfsd - may give up to reconnect to gfmd
+* gfsd - incorrect period for write_verify is reported at gfsd crash
+  on Linux 2.6.22 or before
+
 Release note for Gfarm 2.6.11
 =============================
 
