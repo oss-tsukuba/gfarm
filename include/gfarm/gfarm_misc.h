@@ -162,7 +162,7 @@ size_t gfarm_humanize_signed_number(char *, size_t, long long, int);
 
 #ifndef GFARM_CONFIG_H
 /* HAVE_BYTESWAP_H, WORDS_BIGENDIAN, etc need <gfarm/gfarm_config.h> */
-#error missing <gfarm/gfarm_config.h>, to use <gfarm/gfarm_misc.h>, 
+#error missing <gfarm/gfarm_config.h>, to use <gfarm/gfarm_misc.h>,
 #endif
 
 #ifdef HAVE_BYTESWAP_H

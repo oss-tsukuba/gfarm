@@ -110,7 +110,7 @@ enum gfs_proto_fsync_operation {
 /*
  * GFS_PROTO_REPLICATION_CKSUM_REQUEST request flags
  * GFS_PROTO_REPLICA_RECV_CKSUM request flags
- * GFM_PROTO_REPLICA_ADDING_CKSUM result flags (cksum_request_flags) 
+ * GFM_PROTO_REPLICA_ADDING_CKSUM result flags (cksum_request_flags)
  *
  * see GFM_PROTO_CKSUM_GET result flags as well
  */

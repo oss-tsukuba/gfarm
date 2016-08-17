@@ -236,7 +236,7 @@ failover_notify_got_reply(struct failover_notify_closure *fnc)
 	e = gfs_client_failover_notify_result(fnc->socket,
 	    fnc->retry_count, fnc->xid, host_name(fnc->fsnode));
 	if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE /*EWOULDBLOCK*/ ||
-	    e == GFARM_ERR_PROTOCOL_NOT_SUPPORTED /* forged packet? */) { 
+	    e == GFARM_ERR_PROTOCOL_NOT_SUPPORTED /* forged packet? */) {
 		/* wait again */
 		watcher_add_event_with_timeout(back_channel_watcher(),
 		    fnc->result_event,

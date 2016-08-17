@@ -2302,7 +2302,6 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 			    &src_err);
 			if (e2 == GFARM_ERR_NO_ERROR && eof)
 				e2 = GFARM_ERR_PROTOCOL;
-			
 		}
 		if (IS_CONNECTION_ERROR(e) || IS_CONNECTION_ERROR(e2)) {
 			gfs_client_execute_hook_for_connection_error(

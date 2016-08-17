@@ -47,7 +47,7 @@ fsngroup_free_tuples(gfarm_int32_t n_tuples, struct fsngroup_tuple *tuples)
 static int
 record_fsngroup_tuple(struct host *h, void *closure, void *elemp)
 {
-	struct fsngroup_tuple *tuple = elemp; 
+	struct fsngroup_tuple *tuple = elemp;
 
 	tuple->hostname = host_name(h);
 	tuple->fsngroupname = strdup(host_fsngroup(h));

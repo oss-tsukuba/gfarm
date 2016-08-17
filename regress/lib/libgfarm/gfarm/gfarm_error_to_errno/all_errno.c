@@ -29,7 +29,7 @@ main(int argc, char **argv)
 
 	msg(GFARM_ERR_NUMBER);
 	msg(GFARM_ERR_NUMBER + 1);
-	msg(GFARM_ERRMSG_BEGIN - 1); 
+	msg(GFARM_ERRMSG_BEGIN - 1);
 
 	for (e = GFARM_ERRMSG_BEGIN; e < GFARM_ERRMSG_END; e++)
 		msg(e);

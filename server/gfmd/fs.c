@@ -1630,7 +1630,7 @@ gfm_server_schedule_file(struct peer *peer, int from_client, int skip)
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (gfm_server_put_reply(peer, diag, e, ""));
-	
+
 	e_save = gfm_server_put_reply(peer, diag, e, "i", nhosts);
 	for (i = 0; i < nhosts; i++) {
 		e = host_schedule_reply(hosts[i], peer, diag);

@@ -380,7 +380,7 @@ gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
     int ret = -1;
     gss_cred_id_t cred;
     static const char diag[] = "gfarmGssAcquireCredential";
-    
+
     gfarm_privilege_lock(diag);
     majStat = gss_acquire_cred(&minStat,
 			       desiredName,
@@ -458,7 +458,7 @@ gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
     }
     if (minStatPtr != NULL) {
 	*minStatPtr = minStat;
-    }	
+    }
 
     if (ret == -1) {
 	gflog_debug(GFARM_MSG_1000790,
@@ -575,7 +575,7 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 
     gss_buffer_desc inputToken = GSS_C_EMPTY_BUFFER;
     gss_buffer_t itPtr = &inputToken;
-    
+
     gss_buffer_desc outputToken = GSS_C_EMPTY_BUFFER;
     gss_buffer_t otPtr = &outputToken;
 
@@ -655,7 +655,7 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 	*remoteCredPtr = remCred;
     else if (remCred != GSS_C_NO_CREDENTIAL)
 	gss_release_cred(&minStat2, &remCred);
-    
+
     if ((gsiErrNo != 0 || majStat != GSS_S_COMPLETE) &&
 	*scPtr != GSS_C_NO_CONTEXT)
 	gss_delete_sec_context(&minStat2, scPtr, GSS_C_NO_BUFFER);
@@ -677,7 +677,7 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 
     gss_buffer_desc inputToken = GSS_C_EMPTY_BUFFER;
     gss_buffer_t itPtr = &inputToken;
-    
+
     gss_buffer_desc outputToken = GSS_C_EMPTY_BUFFER;
     gss_buffer_t otPtr = &outputToken;
 
@@ -749,7 +749,7 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 	if (gsiErrNo != 0 || GSS_ERROR(majStat)) {
 	    break;
 	}
-    
+
 	if (majStat & GSS_S_CONTINUE_NEEDED) {
 	    tknStat = gfarmGssReceiveToken(fd, itPtr,
 			GFARM_GSS_AUTH_TIMEOUT_MSEC);
@@ -851,7 +851,7 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
     int ret = -1;
     OM_uint32 majStat;
     OM_uint32 minStat;
-    
+
     gss_buffer_desc inputToken = GSS_C_EMPTY_BUFFER;
     gss_buffer_t itPtr = &inputToken;
     gss_buffer_desc outputToken = GSS_C_EMPTY_BUFFER;
@@ -869,7 +869,7 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
      *		Generally it is wrong idea sending a plain text length
      *		in plain text communication. Should be encrypted.
      */
-    
+
     if (buf == NULL || n <= 0) {
 	ret = 0;
 	majStat = GSS_S_COMPLETE;
@@ -923,7 +923,7 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
     if (statPtr != NULL) {
 	*statPtr = majStat;
     }
-    
+
     if (ret == -1) {
 	gflog_debug(GFARM_MSG_1000798,
 		"error occurred during gfarmGssSend (%u)(%u)",
@@ -1285,7 +1285,7 @@ gfarmGssInitiateSecurityContextSendToken(int events, int fd, void *closure,
 }
 
 static void
-gfarmGssInitiateSecurityContextReceiveToken(int events, int fd, 
+gfarmGssInitiateSecurityContextReceiveToken(int events, int fd,
     void *closure, const struct timeval *t)
 {
     struct gfarmGssInitiateSecurityContextState *state = closure;

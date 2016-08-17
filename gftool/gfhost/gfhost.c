@@ -1195,7 +1195,7 @@ paraccess_list(int opt_concurrency, int opt_udp_only,
 void
 usage(void)
 {
-	fprintf(stderr, "Usage:" 
+	fprintf(stderr, "Usage:"
 	    "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n",
 	    program_name,
 	    "[-lMH] [-P <path>] [-a <architecture>] [-D <domainname>] [-j <concurrency>] [-iruv]",

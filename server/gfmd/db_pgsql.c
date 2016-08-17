@@ -411,7 +411,7 @@ pgsql_should_retry(PGresult *res)
 		 * we execute SQL commands requested by the upper layer
 		 * module anyway, since there is no way to keep consistency
 		 * of the database in such a situation.
-		 * 
+		 *
 		 * We enable 'connection_recovered' flag here.  While the
 		 * flag is enabled, we check 'transaction_nesting' value
 		 * lazily.  Once "START TRANSACTION", "COMMIT" or "ROLLBACK"

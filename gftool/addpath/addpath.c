@@ -100,7 +100,7 @@ gfarm_path_info_remove_all(char *pathname)
 	e = gfarm_path_info_remove(pathname);
 	if (e != NULL)
 		e_save = e;
-	return (e_save);	
+	return (e_save);
 }
 
 /*
@@ -127,7 +127,7 @@ main(int argc, char *argv[])
 	extern int optind;
 	int c;
 	enum { add, delete } mode = add;
-	
+
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", progname, e);

@@ -391,7 +391,7 @@ journal_file_reader_commit_pos(struct journal_file_reader *reader)
 	else if (pos == jf->tail && reader->committed_lap == jf->writer.lap)
 		reader->committed_pos = pos;
 	else {
-		reader->committed_pos = 
+		reader->committed_pos =
 		    pos - jf->tail + JOURNAL_FILE_HEADER_SIZE;
 		reader->committed_lap++;
 	}
@@ -734,7 +734,7 @@ journal_file_reader_writer_wait(struct journal_file_reader *reader,
 		if (wpos == rpos) {
 			/*
 			 * Case 1: wpos == rpos
-			 *   The writer must wait for the reader if the 
+			 *   The writer must wait for the reader if the
 			 *   reader is a lap behind.
 			 */
 			needed = (wlap > rlap);
@@ -929,7 +929,7 @@ journal_fread_file_header(FILE *file)
 
 static gfarm_error_t
 journal_find_rw_pos0(FILE *file, int has_writer, size_t file_size,
-	gfarm_uint64_t db_seqnum, off_t *rposp, gfarm_uint64_t *rlapp, 
+	gfarm_uint64_t db_seqnum, off_t *rposp, gfarm_uint64_t *rlapp,
 	off_t *wposp, gfarm_uint64_t wlap, off_t *tailp,
 	gfarm_uint64_t *max_seqnump)
 {
@@ -995,7 +995,7 @@ journal_find_rw_pos0(FILE *file, int has_writer, size_t file_size,
 			    db_seqnum <= seqnum) {
 				max_seqnum = seqnum;
 				max_seqnum_next_pos = next_pos;
-			} 
+			}
 			if (db_seqnum < begin_seqnum &&
 			    min_seqnum > begin_seqnum) {
 				min_seqnum = begin_seqnum;
@@ -1237,7 +1237,7 @@ journal_write_file_header(int fd)
 	gfarm_uint32_t version = htonl(GFARM_JOURNAL_VERSION);
 	int sync_result;
  	off_t pos = 0;
- 
+
 	GFARM_MALLOC_ARRAY(header, JOURNAL_FILE_HEADER_SIZE);
 	if (header == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
@@ -1246,7 +1246,7 @@ journal_write_file_header(int fd)
 			gfarm_error_string(e));
 		goto error;
 	}
- 
+
 	memset(header, 0, JOURNAL_FILE_HEADER_SIZE);
 	memcpy(header, GFARM_JOURNAL_FILE_MAGIC, GFARM_JOURNAL_MAGIC_SIZE);
 	memcpy(header + GFARM_JOURNAL_MAGIC_SIZE, (void *) &version,
@@ -1291,7 +1291,7 @@ static struct gfp_iobuffer_ops journal_iobuffer_ops = {
 
 static gfarm_error_t
 journal_file_reader_init(struct journal_file *jf, int fd,
-	off_t pos, gfarm_uint64_t lap, int block_writer, 
+	off_t pos, gfarm_uint64_t lap, int block_writer,
 	struct journal_file_reader *reader)
 {
 	gfarm_error_t e;

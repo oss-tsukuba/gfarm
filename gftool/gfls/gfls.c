@@ -394,7 +394,7 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 					    - len_suffix + 1, "");
 			}
 			putchar('\n');
-		}				
+		}
 	} else {
 		for (i = 0; i < n; i++) {
 			if (option_directory_quota) {

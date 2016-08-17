@@ -1094,7 +1094,7 @@ gfarm_ldap_generic_info_get_foreach_withattrs(
 					ldap_memfree(a);
 					continue;
 				}
-						
+
 				vals = ldap_get_values(gfarm_ldap_server, e, a);
 				if (vals == NULL) {
 					gflog_error(GFARM_MSG_1002368,

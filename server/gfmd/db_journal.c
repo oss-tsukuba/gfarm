@@ -219,7 +219,7 @@ db_journal_init(void)
 	    "journal_file_open : %10.5lf sec", ts);
 #endif
 
-	if ((e = db_journal_init_status()) 
+	if ((e = db_journal_init_status())
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_fatal(GFARM_MSG_1003326,
 		    "db_journal_init_status : %s",
@@ -3447,7 +3447,7 @@ db_journal_write_mdhost_remove(gfarm_uint64_t seqnum, char *name)
 
  /**********************************************************/
 /* nop */
- 
+
 static gfarm_error_t
 db_journal_read_nop(struct gfp_xdr *xdr,
 	struct db_mdhost_modify_arg **argp)
@@ -3914,7 +3914,7 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 
 	/*
 	 * Since the giant lock must be taken preceeded by the journal
-	 * file mutex in order to avoid deadlock, we unlock the journal 
+	 * file mutex in order to avoid deadlock, we unlock the journal
 	 * file mutex once, take the giant lock, and then lock the journal
 	 * file mutex again.
 	 */

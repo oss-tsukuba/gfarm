@@ -1931,7 +1931,7 @@ db_quota_dir_add(gfarm_ino_t inum,
 	if (arg == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	arg->inum = inum;
-	
+
 	return (db_enter_sn((dbq_entry_func_t)ops->quota_dir_add, arg));
 }
 

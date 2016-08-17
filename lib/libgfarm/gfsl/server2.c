@@ -44,7 +44,7 @@ ParseArgs(int argc, char **argv)
 	fprintf(stderr, "unknown extra argument %s\n", argv[optind]);
 	return -1;
     }
-    
+
     return 0;
 }
 
@@ -115,7 +115,7 @@ main(int argc, char **argv)
     (void)gfarmGetNameOfSocket(bindFd, &port);
     fprintf(stderr, "Accepting port: %d\n", port);
 
-    fd0 = accept(bindFd, (struct sockaddr *)&remote, &remLen);  
+    fd0 = accept(bindFd, (struct sockaddr *)&remote, &remLen);
     if (fd0 < 0) {
 	perror("accept");
 	goto Done;
@@ -133,7 +133,7 @@ main(int argc, char **argv)
 	goto Done;
     }
 
-    fd1 = accept(bindFd, (struct sockaddr *)&remote, &remLen);  
+    fd1 = accept(bindFd, (struct sockaddr *)&remote, &remLen);
     if (fd1 < 0) {
 	perror("accept");
 	goto Done;
@@ -171,8 +171,8 @@ main(int argc, char **argv)
 	    continue;
 	} else if (sel > 0) {
 	    if (gfarmSecSessionCheckPollReadable(ss0)) {
-		    i = gfarmSecSessionReceiveInt8(ss0, &buf, &n, 
-						   GFARM_GSS_TIMEOUT_INFINITE);
+		i = gfarmSecSessionReceiveInt8(ss0, &buf, &n,
+					       GFARM_GSS_TIMEOUT_INFINITE);
 		if (i == 0) {
 		    break;
 		} else if (i < 0) {

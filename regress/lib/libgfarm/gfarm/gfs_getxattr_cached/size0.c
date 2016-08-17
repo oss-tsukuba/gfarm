@@ -48,7 +48,7 @@ main(int argc, char **argv)
 	if (argc != 2)
 		usage();
 	path = argv[0];
-	xattr = argv[1];	
+	xattr = argv[1];
 
 	if (do_caching) {
 		if (!gfarm_xattr_caching(xattr))
@@ -62,7 +62,7 @@ main(int argc, char **argv)
 		    path, xattr, gfarm_error_string(e));
 		return (EXIT_FAILURE);
 	}
-	
+
 	sz1 = 0;
 	e = gfs_getxattr_caching(path, xattr, NULL, &sz1);
 	if (e != GFARM_ERR_NO_ERROR) {

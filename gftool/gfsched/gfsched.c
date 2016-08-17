@@ -51,7 +51,7 @@ get_local(struct gfm_connection *gfm_server,
 void
 usage(void)
 {
-	fprintf(stderr, 
+	fprintf(stderr,
 	    "Usage:\t%s [-P <path>] [-D <domain>] [-n <number>] [-LMOSVlw]\n",
 	    program_name);
 	fprintf(stderr,

@@ -100,7 +100,7 @@ getloadavg(double *loadavg, int n)
 
 int
 getloadavg(double *loadavg, int n)
-{	
+{
 	int i;
 	perfstat_cpu_total_t pct;
 

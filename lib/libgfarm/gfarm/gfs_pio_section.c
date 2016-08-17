@@ -279,7 +279,7 @@ gfs_pio_view_section_sendfile(GFS_File gf, gfarm_off_t w_off,
 		if (gf->md.filesize < w_off + sent)
 			gf->md.filesize = w_off + sent;
 	}
-	if (md_ctx != NULL) 
+	if (md_ctx != NULL)
 		gf->md_offset += sent;
 	if (sentp != NULL)
 		*sentp = sent;

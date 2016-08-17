@@ -1,6 +1,6 @@
 /**
  * @file  utf8.c
- * @brief UTF-8 validation utility. 
+ * @brief UTF-8 validation utility.
  */
 
 #include <stddef.h>
