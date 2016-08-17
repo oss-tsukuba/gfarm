@@ -38,8 +38,18 @@ int dir_cursor_remove_entry(Dir, DirCursor *);
 int dir_cursor_set_pos(Dir, gfarm_off_t, DirCursor *);
 gfarm_off_t dir_cursor_get_pos(Dir, DirCursor *);
 DirEntry dir_cursor_get_entry(Dir, DirCursor *);
+
+/* utility functions */
+
 gfarm_error_t dir_cursor_get_name_and_inode(Dir, DirCursor *,
 	char **, struct inode **);
+
+#define DOT_LEN		1
+#define DOTDOT_LEN	2
+extern const char DOT[];
+extern const char DOTDOT[];
+int name_is_dot_or_dotdot(const char *, int);
+int string_is_dot_or_dotdot(const char *);
 
 /*
  * the following should belong to inode.h, really.

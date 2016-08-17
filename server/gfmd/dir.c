@@ -377,3 +377,20 @@ dir_cursor_get_name_and_inode(Dir dir, DirCursor *cursorp,
 	*inodep  = dir_entry_get_inode(entry);
 	return (GFARM_ERR_NO_ERROR);
 }
+
+const char DOT[] = ".";
+const char DOTDOT[] = "..";
+
+int
+name_is_dot_or_dotdot(const char *name, int len)
+{
+	return ((len == DOT_LEN && name[0] == '.') ||
+		(len == DOTDOT_LEN && name[0] == '.' && name[1] == '.'));
+}
+
+int
+string_is_dot_or_dotdot(const char *s)
+{
+	return (s[0] == '.' &&
+	    (s[1] == '\0' || (s[1] == '.' && s[2] == '\0')));
+}

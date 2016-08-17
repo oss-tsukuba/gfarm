@@ -41,9 +41,6 @@
 #include "acl.h"
 #include "config.h" /* for gfarm_host_get_self_name() */
 
-static char dot[] = ".";
-static char dotdot[] = "..";
-
 gfarm_error_t
 gfm_server_compound_begin(struct peer *peer, int from_client, int skip,
 	int level)
@@ -421,7 +418,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 
 	/* set full path to file_opening */
 	if (gfarm_ctxp->file_trace) {
-		if (strcmp(name, dot) != 0 && strcmp(name, dotdot) != 0) {
+		if (!string_is_dot_or_dotdot(name)) {
 			if ((e = process_get_path_for_trace_log(
 			    process, peer, cfd, &parent_path, diag))
 			    != GFARM_ERR_NO_ERROR) {
@@ -443,7 +440,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	*modep = inode_get_mode(inode);
 
 	if (gfarm_ctxp->file_trace) {
-		if (strcmp(name, dot) != 0 && strcmp(name, dotdot) != 0) {
+		if (!string_is_dot_or_dotdot(name)) {
 			if (e == GFARM_ERR_NO_ERROR) {
 				path_len = strlen(parent_path) + 1 +
 				    strlen(name) + 1;

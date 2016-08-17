@@ -102,7 +102,7 @@ void inode_lookup_all(void *, void (*callback)(void *, struct inode *));
 gfarm_error_t inode_lookup_root(struct process *, int, struct inode **);
 gfarm_error_t inode_lookup_parent(struct inode *, struct process *, int,
 	struct dirset **, struct inode **);
-gfarm_error_t inode_lookup_by_name(struct inode *, char *,
+gfarm_error_t inode_lookup_by_name(struct inode *, const char *,
 	struct process *, int, struct inode **);
 gfarm_error_t inode_create_file(struct inode *, char *,
 	struct process *, int, gfarm_mode_t, int,
@@ -113,10 +113,11 @@ gfarm_error_t inode_create_symlink(struct inode *, char *,
 	struct process *, char *, struct inode_trace_log_info *);
 gfarm_error_t inode_create_link(struct inode *, char *,
 	struct process *, struct inode *);
-gfarm_error_t inode_rename(struct inode *, char *, struct inode *, char *,
+gfarm_error_t inode_rename(struct inode *, const char *,
+	struct inode *, const char *,
 	struct process *, struct peer *, struct inode_trace_log_info *,
 	struct inode_trace_log_info *, int *, int *, const char *);
-gfarm_error_t inode_unlink(struct inode *, char *, struct process *,
+gfarm_error_t inode_unlink(struct inode *, const char *, struct process *,
 	struct inode_trace_log_info *, int *);
 
 struct file_opening;
