@@ -27,7 +27,7 @@ char *group_name_with_invalid(struct group *);
 int group_is_invalid(struct group *);
 int group_is_valid(struct group *);
 
-void group_all(void *, void (*)(void *, struct group *), int);
+void group_foreach(void *, void (*)(void *, struct group *), int);
 
 struct gfarm_group_info;
 gfarm_error_t group_info_add(struct gfarm_group_info *);

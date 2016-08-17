@@ -103,7 +103,7 @@ void quota_dir_list_free(struct quota_dir *list_head)
 }
 
 void
-quota_dir_all_for_dirset(struct quota_dir *list_head,
+quota_dir_foreach_in_dirset(struct quota_dir *list_head,
 	void *closure, void (*callback)(void *, struct quota_dir *))
 {
 	struct quota_dir *i, *tmp;

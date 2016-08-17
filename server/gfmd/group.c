@@ -286,7 +286,7 @@ group_usage_tmp(struct group *g)
 }
 
 void
-group_all(void *closure, void (*callback)(void *, struct group *),
+group_foreach(void *closure, void (*callback)(void *, struct group *),
 	  int valid_only)
 {
 	struct gfarm_hash_iterator it;

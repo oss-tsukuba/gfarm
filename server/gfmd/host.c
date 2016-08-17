@@ -112,7 +112,7 @@ static struct host *host_new(struct gfarm_host_info *, struct callout *);
 static void host_free(struct host *);
 
 /* NOTE: each entry should be checked by host_is_valid(h) too */
-#define FOR_ALL_HOSTS(it) \
+#define HOST_FOREACH(it) \
 	for (gfarm_hash_iterator_begin(host_hashtab, (it)); \
 	    !gfarm_hash_iterator_is_end(it); \
 	     gfarm_hash_iterator_next(it))
@@ -266,7 +266,7 @@ host_addr_lookup(const char *hostname, struct sockaddr *addr)
 
 	/* XXX FIXME - this is too damn slow */
 
-	FOR_ALL_HOSTS(&it) {
+	HOST_FOREACH(&it) {
 		h = host_iterator_access(&it);
 		if (!host_is_valid(h))
 			continue;
@@ -1162,7 +1162,7 @@ host_array_alloc(int *nhostsp, struct host ***hostsp)
 	struct gfarm_hash_iterator it;
 
 	nhosts = 0;
-	FOR_ALL_HOSTS(&it) {
+	HOST_FOREACH(&it) {
 		h = host_iterator_access(&it);
 		if (host_is_valid(h))
 			++nhosts;
@@ -1173,7 +1173,7 @@ host_array_alloc(int *nhostsp, struct host ***hostsp)
 		return (GFARM_ERR_NO_MEMORY);
 
 	i = 0;
-	FOR_ALL_HOSTS(&it) {
+	HOST_FOREACH(&it) {
 		if (i >= nhosts) /* always false due to giant_lock */
 			break;
 		h = host_iterator_access(&it);
@@ -1219,7 +1219,7 @@ host_number()
 	struct host *h;
 	int nhosts = 0;
 
-	FOR_ALL_HOSTS(&it) {
+	HOST_FOREACH(&it) {
 		h = host_iterator_access(&it);
 		if (host_is_valid(h))
 			++nhosts;
@@ -1475,7 +1475,7 @@ gfm_server_host_generic_get(struct peer *peer,
 	char *match;
 
 	nhosts = 0;
-	FOR_ALL_HOSTS(&it) {
+	HOST_FOREACH(&it) {
 		h = host_iterator_access(&it);
 		++nhosts;
 	}
@@ -1492,7 +1492,7 @@ gfm_server_host_generic_get(struct peer *peer,
 		    "%s: no memory for %d hosts", diag, nhosts);
 	} else {
 		i = 0;
-		FOR_ALL_HOSTS(&it) {
+		HOST_FOREACH(&it) {
 			if (i >= nhosts) /* always false due to giant_lock */
 				break;
 			h = host_iterator_access(&it);
@@ -1517,7 +1517,7 @@ gfm_server_host_generic_get(struct peer *peer,
 	/* if network error doesn't happen, e2 == e here */
 	if (e2 == GFARM_ERR_NO_ERROR) {
 		i = answered = 0;
-		FOR_ALL_HOSTS(&it) {
+		HOST_FOREACH(&it) {
 			if (i >= nhosts || answered >= nmatch)
 				break;
 			h = host_iterator_access(&it);
@@ -2142,7 +2142,7 @@ host_iterate(
 	size_t sz;
 
 	nhosts = 0;
-	FOR_ALL_HOSTS(&it) {
+	HOST_FOREACH(&it) {
 		h = host_iterator_access(&it);
 		if (host_is_valid(h))
 			nhosts++;
@@ -2160,7 +2160,7 @@ host_iterate(
 
 	nmatches = 0;
 	p = ret;
-	FOR_ALL_HOSTS(&it) {
+	HOST_FOREACH(&it) {
 		if (nmatches >= nhosts)
 			break;
 		h = host_iterator_access(&it);

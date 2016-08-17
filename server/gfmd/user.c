@@ -404,7 +404,7 @@ user_get_dirsets(struct user *u)
 }
 
 void
-user_all(void *closure, void (*callback)(void *, struct user *),
+user_foreach(void *closure, void (*callback)(void *, struct user *),
 	 int valid_only)
 {
 	struct gfarm_hash_iterator it;

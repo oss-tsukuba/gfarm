@@ -318,7 +318,7 @@ dirset_remove(struct dirsets *sets, const char *dirsetname)
 }
 
 static void
-dirset_all_for_dirsets(struct dirsets *sets,
+dirset_foreach_in_dirsets(struct dirsets *sets,
 	void *closure, void (*callback)(void *, struct dirset *))
 {
 	struct gfarm_hash_iterator it;
@@ -453,7 +453,7 @@ dirset_reply(void *closure, struct user *u)
 
 	sets = user_get_dirsets(u);
 	if (sets != NULL)
-		dirset_all_for_dirsets(sets, client, dirset_reply_one);
+		dirset_foreach_in_dirsets(sets, client, dirset_reply_one);
 }
 
 gfarm_error_t
@@ -489,7 +489,7 @@ gfm_server_dirset_info_list(struct peer *peer, int from_client, int skip)
 		/* XXX FIXME too long giant lock */
 		count = 0;
 		if (all_users) {
-			user_all(&count, dirset_count_add, 1);
+			user_foreach(&count, dirset_count_add, 1);
 		} else {
 			dirset_count_add(&count, u);
 		}
@@ -500,7 +500,8 @@ gfm_server_dirset_info_list(struct peer *peer, int from_client, int skip)
 			;
 		} else {
 			if (all_users) {
-				user_all(peer_get_conn(peer), dirset_reply, 1);
+				user_foreach(peer_get_conn(peer),
+				    dirset_reply, 1);
 			} else {
 				dirset_reply(peer_get_conn(peer), u);
 			}
@@ -724,7 +725,7 @@ dir_reply_dirset(void *closure, struct dirset *ds)
 	struct quota_dir_list_closure *c = closure;
 
 	c->ds = ds;
-	quota_dir_all_for_dirset(ds->dir_list, c, dir_reply_quota_dir);
+	quota_dir_foreach_in_dirset(ds->dir_list, c, dir_reply_quota_dir);
 }
 
 static void
@@ -738,7 +739,8 @@ dir_count_add(void *closure, struct user *u)
 	if (all_dirsets) {
 		sets = user_get_dirsets(u);
 		if (sets != NULL)
-			dirset_all_for_dirsets(sets, c, dir_count_add_dirset);
+			dirset_foreach_in_dirsets(
+			    sets, c, dir_count_add_dirset);
 	} else {
 		ds = user_lookup_dirset(u, c->dirsetname);
 		if (ds != NULL)
@@ -757,7 +759,7 @@ dir_reply(void *closure, struct user *u)
 	if (all_dirsets) {
 		sets = user_get_dirsets(u);
 		if (sets != NULL)
-			dirset_all_for_dirsets(sets, c, dir_reply_dirset);
+			dirset_foreach_in_dirsets(sets, c, dir_reply_dirset);
 	} else {
 		ds = user_lookup_dirset(u, c->dirsetname);
 		if (ds != NULL)
@@ -807,7 +809,7 @@ gfm_server_quota_dir_list(struct peer *peer, int from_client, int skip)
 		closure.count = 0;
 		closure.dirsetname = dirsetname;
 		if (all_users) {
-			user_all(&closure, dir_count_add, 1);
+			user_foreach(&closure, dir_count_add, 1);
 		} else {
 			dir_count_add(&closure, u);
 		}
@@ -818,7 +820,7 @@ gfm_server_quota_dir_list(struct peer *peer, int from_client, int skip)
 			;
 		} else {
 			if (all_users) {
-				user_all(&closure, dir_reply, 1);
+				user_foreach(&closure, dir_reply, 1);
 			} else {
 				dir_reply(&closure, u);
 			}
