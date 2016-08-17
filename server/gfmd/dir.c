@@ -189,7 +189,8 @@ dir_enter(Dir dir, const char *name, int namelen, int *createdp)
 	found = RB_INSERT(rbdir, dir, entry);
 	if (found != NULL) {
 		rbdir_entry_free(entry);
-		*createdp = 0;
+		if (createdp != NULL)
+			*createdp = 0;
 		return (found);
 	}
 
