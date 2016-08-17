@@ -268,6 +268,17 @@ int inode_search_replica_spec(struct inode *, char **, int *);
 
 struct dirset *inode_search_tdirset(struct inode *);
 
+enum inode_scan_choice {
+	INODE_SCAN_CONTINUE,
+	INODE_SCAN_INTERRUPT,
+	INODE_SCAN_RELEASE_GIANT_LOCK
+};
+int inode_foreach_in_subtree_interruptible(struct inode *, void *,
+	enum inode_scan_choice (*)(void *, struct inode *), int (*)(void *));
+
+int inode_is_ok_to_set_dirset(struct inode *);
+void inode_subtree_fixup_tdirset(struct inode *, struct dirset *);
+
 void inode_remove_orphan(void);
 void inode_free_orphan(void);
 void inode_check_and_repair(void);

@@ -30,6 +30,7 @@
 #include "gfm_proto.h"
 #include "gfs_proto.h"
 
+#include "uint64_map.h"
 #include "quota.h"
 #include "subr.h"
 #include "inum_string_list.h"
@@ -931,10 +932,10 @@ inode_tdirset_check(struct inode *inode, struct dirset *tdirset,
 	const char *diag)
 {
 	if (tdirset == TDIRSET_IS_UNKNOWN) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: inode %lld: unknown dirset, scheduling quota_check",
 		    diag, (long long)inode_get_number(inode));
-		quota_dir_check_start();
+		dirquota_check_schedule();
 	}
 }
 
@@ -943,6 +944,7 @@ inode_tdirset_info(struct inode *inode, struct dirset *tdirset,
 	const char *diag)
 {
 	if (tdirset == TDIRSET_IS_UNKNOWN) {
+		/* DQTODO: change this to gflog_debug() in release version */
 		gflog_info(GFARM_MSG_UNFIXED,
 		    "%s: inode %lld: unknown dirset",
 		    diag, (long long)inode_get_number(inode));
@@ -2614,7 +2616,7 @@ inode_new_generation_by_cookie_finish(
 		gflog_notice(GFARM_MSG_UNFIXED,
 		    "inode %lld: unknown dirset, scheduling quota_check",
 		    (long long)inum);
-		quota_dir_check_start();
+		dirquota_check_schedule();
 	}
 
 	return (GFARM_ERR_NO_ERROR);
@@ -3621,6 +3623,434 @@ inode_link_to_lost_found_and_report(struct inode *inode)
 	}
 }
 
+#if 0 /* disable recursive call, because thread stack is relatively smaller */
+
+/* recursive version */
+static int
+inode_foreach_in_subtree(struct inode *inode,
+	void *closure, int (*callback)(void *, struct inode *))
+{
+	int interrupted;
+	Dir dir;
+	DirCursor cursor;
+
+	interrupted = (*callback)(closure, inode);
+	if (interrupted || !inode_is_dir(inode))
+		return (interrupted);
+
+	dir = inode_get_dir(inode);
+	if (dir == NULL)
+		return (0);
+	if (!dir_cursor_set_pos(dir, 0, &cursor))
+		return (0);
+	for (;;) {
+		const char *name;
+		int namelen;
+		DirEntry entry = dir_cursor_get_entry(dir, &cursor);
+
+		assert(entry != NULL);
+		name = dir_entry_get_name(entry, &namelen);
+		if (!name_is_dot_or_dotdot(name, namelen)) {
+			if (inode_foreach_in_subtree(
+			    dir_entry_get_inode(entry), closure, callback))
+				return (1); /* stop traversing */
+		}
+		if (!dir_cursor_next(dir, &cursor))
+			break;
+	}
+	return (0);
+}
+#else /* non-recursive version */
+static int
+inode_foreach_in_subtree(struct inode *inode,
+	void *closure, int (*callback)(void *, struct inode *))
+{
+	int interrupted;
+	static const char diag[] = "inode_foreach_in_subtree";
+
+	struct {
+		Dir dir;
+		DirCursor cursor;
+	} *dirs, *tmp_dirs;
+	int depth = 0, max_depth = MAX_DIR_DEPTH;
+
+	interrupted = (*callback)(closure, inode);
+	if (interrupted || !inode_is_dir(inode))
+		return (interrupted);
+
+	GFARM_MALLOC_ARRAY(dirs, max_depth);
+	if (dirs == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: no memory for %d depth dir %lld:%lld",
+		    diag, max_depth,
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode));
+		return (0);
+	}
+
+	dirs[depth].dir = inode_get_dir(inode);
+	if (dirs[depth].dir == NULL) {
+		free(dirs);
+		return (0);
+	}
+	if (!dir_cursor_set_pos(dirs[depth].dir, 0, &dirs[depth].cursor)) {
+		free(dirs);
+		return (0);
+	}
+	for (;;) {
+		const char *name;
+		int namelen;
+		DirEntry entry = dir_cursor_get_entry(
+		    dirs[depth].dir, &dirs[depth].cursor);
+
+		assert(entry != NULL);
+		name = dir_entry_get_name(entry, &namelen);
+		if (!name_is_dot_or_dotdot(name, namelen)) {
+
+			inode = dir_entry_get_inode(entry);
+			if ((*callback)(closure, inode)) {
+				interrupted = 1;
+				break;
+			}
+
+			if (inode_is_dir(inode)) {
+				++depth;
+				if (depth >= max_depth) {
+					int tmp_depth = max_depth + max_depth;
+
+					GFARM_REALLOC_ARRAY(
+					    tmp_dirs, dirs, tmp_depth);
+					if (tmp_dirs == NULL) {
+						gflog_error(GFARM_MSG_UNFIXED,
+						    "%s: no memory for %d "
+						    "depth dir %lld:%lld:",
+						    diag, tmp_depth,
+						    (long long)
+						    inode_get_number(inode),
+						    (long long)
+						    inode_get_gen(inode));
+					} else {
+						dirs = tmp_dirs;
+						max_depth = tmp_depth;
+					}
+				}
+				if (depth < max_depth) {
+					dirs[depth].dir = inode_get_dir(inode);
+					if (dirs[depth].dir != NULL &&
+					    dir_cursor_set_pos(dirs[depth].dir,
+					    0, &dirs[depth].cursor)) {
+						/* one-level deeper */
+						continue;
+					}
+				}
+				/* failed to traverse subdir */
+				--depth;
+			}
+		}
+		while (!dir_cursor_next(dirs[depth].dir,
+		    &dirs[depth].cursor)) {
+			if (depth <= 0)
+				goto completed;
+			--depth;
+		}
+	}
+completed:
+	free(dirs);
+	return (interrupted);
+}
+#endif /* non-recursive version */
+
+/* returns 1, if stopped, or tree is modified during giant_lock release */
+int
+inode_foreach_in_subtree_interruptible(struct inode *inode, void *closure,
+	enum inode_scan_choice (*callback)(void *, struct inode *),
+	int (*interval)(void *))
+{
+	Dir dir;
+	gfarm_off_t pos;
+	DirCursor cursor;
+	enum inode_scan_choice scan_choice;
+	int interrupted = 0;
+	static const char diag[] = "inode_foreach_in_subtree_interruptible";
+
+	struct {
+		gfarm_ino_t dir_inum;
+		gfarm_uint64_t dir_igen;
+		gfarm_off_t cursor_pos;
+	} *dirs, *tmp_dirs;
+	int depth = 0, max_depth = MAX_DIR_DEPTH;
+
+	scan_choice = (*callback)(closure, inode);
+	if (scan_choice == INODE_SCAN_INTERRUPT)
+		return (1); /* interrupted */
+	if (scan_choice == INODE_SCAN_RELEASE_GIANT_LOCK) {
+		gfarm_ino_t inum = inode_get_number(inode);
+		gfarm_uint64_t igen = inode_get_gen(inode);
+
+		giant_unlock();
+		if (interval != NULL)
+			interrupted = (*interval)(closure);
+		giant_lock();
+		if (interrupted)
+			return (1); /* interrupted */
+
+		inode = inode_lookup(inum);
+		if (inode == NULL || inode_get_gen(inode) != igen)
+			return (1); /* interrupted */
+	}
+	if (!inode_is_dir(inode))
+		return (0);
+
+	GFARM_MALLOC_ARRAY(dirs, max_depth);
+	if (dirs == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: no memory for %d depth dir %lld:%lld",
+		    diag, max_depth,
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode));
+		return (0);
+	}
+
+	dirs[depth].dir_inum = inode_get_number(inode);
+	dirs[depth].dir_igen = inode_get_gen(inode);
+	dirs[depth].cursor_pos = 0; /* this is not used */
+
+	dir = inode_get_dir(inode);
+	if (dir == NULL) {
+		free(dirs);
+		return (0);
+	}
+	pos = 0;
+	if (!dir_cursor_set_pos(dir, pos, &cursor)) {
+		free(dirs);
+		return (0);
+	}
+	for (;;) {
+		const char *name;
+		int namelen;
+		DirEntry entry = dir_cursor_get_entry(dir, &cursor);
+
+		assert(entry != NULL);
+		name = dir_entry_get_name(entry, &namelen);
+		if (!name_is_dot_or_dotdot(name, namelen)) {
+			inode = dir_entry_get_inode(entry);
+			scan_choice = (*callback)(closure, inode);
+			if (scan_choice == INODE_SCAN_INTERRUPT) {
+				interrupted = 1;
+				break;
+			}
+			if (scan_choice == INODE_SCAN_RELEASE_GIANT_LOCK) {
+				gfarm_ino_t inum = inode_get_number(inode);
+				gfarm_uint64_t igen = inode_get_gen(inode);
+
+				giant_unlock();
+				if (interval != NULL)
+					interrupted = (*interval)(closure);
+				giant_lock();
+				if (interrupted)
+					break;
+
+				inode = inode_lookup(dirs[depth].dir_inum);
+				if (inode == NULL ||
+				    inode_get_gen(inode) !=
+				    dirs[depth].dir_igen ||
+				    (dir = inode_get_dir(inode)) == NULL ||
+				    !dir_cursor_set_pos(dir, pos, &cursor) ||
+				    (entry = dir_cursor_get_entry(dir, &cursor)
+				    ) == NULL ||
+				    (inode = dir_entry_get_inode(entry))
+				    == NULL ||
+				    inode_get_number(inode) != inum ||
+				    inode_get_gen(inode) != igen) {
+					interrupted = 1;
+					break;
+				}
+			}
+
+			if (inode_is_dir(inode)) {
+				++depth;
+				if (depth >= max_depth) {
+					int tmp_depth = max_depth + max_depth;
+
+					GFARM_REALLOC_ARRAY(
+					    tmp_dirs, dirs, tmp_depth);
+					if (tmp_dirs == NULL) {
+						gflog_error(GFARM_MSG_UNFIXED,
+						    "%s: no memory for %d "
+						    "depth dir %lld:%lld:",
+						    diag, tmp_depth,
+						    (long long)
+						    inode_get_number(inode),
+						    (long long)
+						    inode_get_gen(inode));
+					} else {
+						dirs = tmp_dirs;
+						max_depth = tmp_depth;
+					}
+				}
+				if (depth < max_depth) {
+					Dir tmp_dir = inode_get_dir(inode);
+
+					if (tmp_dir != NULL &&
+					    dir_cursor_set_pos(tmp_dir, 0,
+					    &cursor)) {
+						/* one-level deeper */
+						dirs[depth].dir_inum =
+						    inode_get_number(inode);
+						dirs[depth].dir_igen =
+						    inode_get_gen(inode);
+						dirs[depth].cursor_pos = pos;
+
+						dir = tmp_dir;
+						pos = 0;
+						continue;
+					}
+				}
+				/* failed to traverse subdir */
+				--depth;
+			}
+		}
+		while (!dir_cursor_next(dir, &cursor)) {
+			if (depth <= 0)
+				goto completed;
+
+			pos = dirs[depth].cursor_pos;
+			--depth;
+
+			inode = inode_lookup(dirs[depth].dir_inum);
+			if (inode == NULL ||
+			    inode_get_gen(inode) != dirs[depth].dir_igen ||
+			    (dir = inode_get_dir(inode)) == NULL ||
+			    !dir_cursor_set_pos(dir, pos, &cursor) ||
+			    (entry = dir_cursor_get_entry(dir, &cursor))
+			    == NULL ||
+			    (inode = dir_entry_get_inode(entry)) == NULL ||
+			    inode_get_number(inode) !=
+			    dirs[depth + 1].dir_inum ||
+			    inode_get_gen(inode) != dirs[depth + 1].dir_igen) {
+				interrupted = 1;
+				goto completed;
+			}
+		}
+		/* currently, `pos' is the sequence number in the directory */
+		++pos;
+	}
+completed:
+	free(dirs);
+	return (interrupted);
+}
+
+
+static int
+is_all_hardlinks_within_subtree_per_inode(
+	void *closure, struct uint64_to_uint64_map_entry *entry)
+{
+	gfarm_ino_t inum = uint64_to_uint64_map_entry_key(entry);
+	struct inode *inode = inode_lookup(inum);
+	static const char diag[] = "is_all_hardlinks_within_subtree_per_inode";
+
+	if (inode == NULL) { /* shouldn't happen */
+		gflog_error(GFARM_MSG_UNFIXED, "%s: inum %lld: not found",
+		    diag, (long long)inum);
+		return (1); /* interrupted */
+	}
+	/* number of directory entries in subtree does not match nlink */
+	if (uint64_to_uint64_map_entry_value(entry) != inode_get_nlink(inode))
+		return (1); /* interrupted */
+
+	return (0); /* OK */
+}
+
+static int
+is_all_hardlinks_within_subtree(struct uint64_to_uint64_map *hardlink_counters)
+{
+	return (!uint64_to_uint64_map_foreach(hardlink_counters,
+	    NULL, is_all_hardlinks_within_subtree_per_inode));
+}
+
+struct is_ok_to_change_dirset_from_state {
+	struct uint64_to_uint64_map *hardlink_counters;
+	struct dirset *src_tdirset;
+};
+
+static int
+is_ok_to_change_dirset_from_per_inode(void *closure, struct inode *inode)
+{
+	struct is_ok_to_change_dirset_from_state *state = closure;
+
+	/*
+	 * if src_tdirset == TDIRSET_IS_NOT_SET, dst_tdirset must be set.
+	 * check if the result of this rename causes nested quota_dir
+	 */
+	if (state->src_tdirset == TDIRSET_IS_NOT_SET && inode_is_dir(inode)) {
+		struct dirset *ds =
+		    quota_dir_get_dirset_by_inum(inode_get_number(inode));
+
+		/* disallow nested quota_dir, even if gfarmroot */
+		if (ds != NULL)
+			return (1); /* interrupted */
+	}
+
+	if (inode_is_file(inode) && inode_get_nlink(inode) > 1) {
+		if (!uint64_to_uint64_map_inc_value(state->hardlink_counters,
+		    inode_get_number(inode), NULL)) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "dirquota_check: no memory for %lld hardlinks",
+			    (long long)uint64_to_uint64_map_size(
+			    state->hardlink_counters));
+			return (1); /* interrupted */
+		}
+	}
+	return (0);
+}
+
+static int
+is_ok_to_change_dirset_from(struct inode *movee, struct dirset *src_tdirset)
+{
+	struct is_ok_to_change_dirset_from_state state;
+	int ok;
+
+	state.hardlink_counters = uint64_to_uint64_map_new();
+	if (state.hardlink_counters == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inode_rename: no memory for hardlink counter");
+		return (0);
+	}
+	state.src_tdirset = src_tdirset;
+
+	ok = !inode_foreach_in_subtree(movee, &state,
+	    is_ok_to_change_dirset_from_per_inode);
+	if (ok)
+		ok = is_all_hardlinks_within_subtree(state.hardlink_counters);
+
+	uint64_to_uint64_map_free(state.hardlink_counters);
+	return (ok);
+}
+
+int
+inode_is_ok_to_set_dirset(struct inode *inode)
+{
+	return (is_ok_to_change_dirset_from(inode, TDIRSET_IS_NOT_SET));
+}
+
+static int
+inode_subtree_fixup_tdirset_per_inode(void *closure, struct inode *inode)
+{
+	struct dirset *tdirset = closure;
+	struct inode_activity *ia = inode->u.c.activity;
+
+	if (ia != NULL)
+		ia->tdirset = tdirset;
+	return (0);
+}
+
+void
+inode_subtree_fixup_tdirset(struct inode *inode, struct dirset *tdirset)
+{
+	inode_foreach_in_subtree(inode, tdirset,
+	    inode_subtree_fixup_tdirset_per_inode);
+}
+
 static int
 is_ok_to_move_to(struct inode *movee, struct inode *dir)
 {
@@ -3662,7 +4092,7 @@ inode_rename(
 	struct user *user = process_get_user(process);
 	struct inode *src, *dst;
 	struct dirset *src_tdirset, *dst_tdirset;
-	int dirquota_adjust = 0;
+	int dirquota_adjust = 0, dirquota_root_adjust = 0;
 	struct file_opening *fo = NULL;
 
 	if (user == NULL) {
@@ -3725,29 +4155,61 @@ inode_rename(
 	if (src_tdirset == TDIRSET_IS_UNKNOWN ||
 	    dst_tdirset == TDIRSET_IS_UNKNOWN) {
 		gflog_notice(GFARM_MSG_UNFIXED,
-		    "%s: unknown dirset: %p vs %p",
-		    diag, src_tdirset, dst_tdirset);
+		    "%s: unknown dirset: %lld:%lld (%p) vs %lld:%lld (%p)",
+		    diag,
+		    (long long)inode_get_number(sdir),
+		    (long long)inode_get_gen(sdir), src_tdirset,
+		    (long long)inode_get_number(ddir),
+		    (long long)inode_get_gen(ddir), dst_tdirset);
 		return (GFARM_ERR_INTERNAL_ERROR);
 	}
+
+	if (src_tdirset == TDIRSET_IS_NOT_SET && inode_is_dir(src)) {
+		struct dirset *ds =
+		    quota_dir_get_dirset_by_inum(inode_get_number(src));
+
+		if (ds != NULL) {
+			/* disallow nested quota_dir, even if gfarmroot */
+			if (dst_tdirset != TDIRSET_IS_NOT_SET)
+				return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+
+			src_tdirset = ds;
+		}
+	}
+
 	if (src_tdirset != dst_tdirset) {
 		gfarm_uint64_t ncopy = 0;
 
 		if (inode_is_dir(src)) {
 			/*
-			 * We don't return GFARM_ERR_CROSS_DEVICE_LINK,
-			 * to avoid mv(1) from automatically doing
-			 *"cp -r" + "rm -r"
+			 * use user_is_root() instead of
+			 * user_is_root_for_inode() here,
+			 * because dirquota_root_adjust may take giant_lock
+			 * too long period,
+			 * and only real gfarmroot is allowed to do such thing
+			 * usually during maintenance.
 			 */
-			return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+			if (!user_is_root(process_get_user(process))) {
+				/*
+				 * We don't return GFARM_ERR_CROSS_DEVICE_LINK,
+				 * to avoid mv(1) from automatically doing
+				 *"cp -r" + "rm -r"
+				 */
+				return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+			}
+			if (!is_ok_to_change_dirset_from(src, src_tdirset))
+				return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+			/* we dont care limit_check, because it's gfarmroot */
+			dirquota_root_adjust = 1;
+		} else {
+			if (inode_is_file(src))
+				ncopy = inode_get_ncopy_with_dead_host(src);
+			e = dirquota_limit_check(dst_tdirset,
+			    1, ncopy, inode_get_size(src));
+			if (e != GFARM_ERR_NO_ERROR)
+				return (e);
+			dirquota_adjust = 1;
 		}
-		dirquota_adjust = 1;
-
-		if (inode_is_file(src))
-			ncopy = inode_get_ncopy_with_dead_host(src);
-		e = dirquota_limit_check(dst_tdirset,
-		    1, ncopy, inode_get_size(src));
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e);
 	}
 
 	/*
@@ -3812,7 +4274,7 @@ inode_rename(
 		return (e);
 	}
 
-	if (dirquota_adjust) {
+	if (dirquota_adjust || dirquota_root_adjust) {
 		/*
 		 * fabricate src tdirset to avoid GFARM_ERR_CROSS_DEVICE_LINK
 		 */
@@ -3820,7 +4282,8 @@ inode_rename(
 	}
 	e = inode_create_link_internal(ddir, dname, user, src);
 	if (e != GFARM_ERR_NO_ERROR) {
-		if (dirquota_adjust) /* undo src tdirset change */
+		/* undo src tdirset change */
+		if (dirquota_adjust || dirquota_root_adjust)
 			src->u.c.activity->tdirset = src_tdirset;
 
 		/*
@@ -3846,6 +4309,9 @@ inode_rename(
 		 * opening processes.
 		 */
 		dirquota_update_file_add(src, dst_tdirset);
+	} else if (dirquota_root_adjust) {
+		inode_subtree_fixup_tdirset(src, dst_tdirset);
+		dirquota_invalidate(dst_tdirset);
 	}
 
 	e = inode_lookup_relative(sdir, sname, GFS_DT_UNKNOWN, INODE_REMOVE,
@@ -3866,6 +4332,10 @@ inode_rename(
 		}
 		if (dirquota_adjust)
 			dirquota_update_file_remove(src, src_tdirset);
+		else if (dirquota_root_adjust) {
+			dirquota_invalidate(src_tdirset);
+			dirquota_fixup_schedule();
+		}
 
 		if (sdir != ddir && (inode_is_dir(src) || inode_is_file(src))
 		    && (!inode_has_desired_number(src, &num) &&
@@ -4193,7 +4663,7 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 		gflog_notice(GFARM_MSG_UNFIXED,
 		    "inode %lld: unknown dirset, scheduling quota_check",
 		    (long long)inode_get_number(inode));
-		quota_dir_check_start();
+		dirquota_check_schedule();
 	}
 	inode_set_atime(inode, atime);
 	if (ia == NULL ||
@@ -4803,7 +5273,8 @@ inode_remove_replica_in_cache_for_invalid_host(gfarm_ino_t inum)
 				 * called from file_copy_by_host_remove(), so
 				 * no way to know relevant dirset
 				 */
-				quota_dir_check_schedule();
+				dirquota_check_schedule();
+
 				quota_update_replica_remove(
 				    inode, TDIRSET_IS_UNKNOWN);
 			}

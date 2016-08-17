@@ -816,7 +816,7 @@ db_journal_apply_quota_dirset_add(gfarm_uint64_t seqnum,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	*dirset_quota(ds) = arg->q;
+	dirset_set_quota_metadata_in_cache(ds, &arg->q);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -835,7 +835,7 @@ db_journal_apply_quota_dirset_modify(gfarm_uint64_t seqnum,
 	if (ds == NULL)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 
-	*dirset_quota(ds) = arg->q;
+	dirset_set_quota_metadata_in_cache(ds, &arg->q);
 	return (GFARM_ERR_NO_ERROR);
 }
 

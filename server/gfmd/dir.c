@@ -287,6 +287,10 @@ dir_cursor_remove_entry(Dir dir, DirCursor *cursor)
 	return (*cursor != NULL); /* is there still any entry? */
 }
 
+/*
+ * NOTE: inode_foreach_in_subtree_interruptible() depends on the fact that
+ * `pos' is the sequence number in the directory
+ */
 int
 dir_cursor_set_pos(Dir dir, gfarm_off_t nth, DirCursor *cursor)
 {

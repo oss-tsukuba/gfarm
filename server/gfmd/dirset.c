@@ -7,6 +7,7 @@
 
 #include <gfarm/gfarm.h>
 
+#include "queue.h"
 #include "hash.h"
 
 #include "quota_info.h"
@@ -31,21 +32,35 @@
 struct dirset {
 	char *dirsetname;
 	struct user *user;
-	struct quota_metadata q;
-	int dir_count;
+	struct dirquota dq;
+	gfarm_uint64_t dir_count;
 	struct quota_dir *dir_list;
-	int valid;
+
+	GFARM_HCIRCLEQ_ENTRY(dirset) dirsets_node;
+
 	gfarm_uint64_t refcount;
+	int valid;
+
 };
 
 struct dirset dirset_is_not_set = {
 	"DIRSET_IS_NOT_SET",
 	NULL,
-	{ { 0, {0}, {0} }, {0}, {0} },
+	{ { { { 0, {0}, {0} }, {0}, {0} }, 0}, 0, 0},
 	0,
 	NULL,
+	{ &dirset_is_not_set, &dirset_is_not_set },
 	1,
+	0
 };
+
+/*
+ * dirset entry will NOT be removed from all_dirset_list_head at its removal,
+ * it will remain linked at that time,
+ * but will be removed at dirset_del_ref(),
+ * to make dirset_foreach_interruptible() work.
+ */
+static GFARM_HCIRCLEQ_HEAD(dirset) all_dirset_list_head;
 
 static struct dirset *
 dirset_new(const char *dirsetname, struct user *u)
@@ -77,13 +92,13 @@ dirset_new(const char *dirsetname, struct user *u)
 	}
 
 	strcpy(ds->dirsetname, dirsetname);
-	quota_metadata_init(&ds->q);
-	quota_usage_clear(&ds->q.usage); /* dirset is empty at first */
 	ds->user = u;
+	dirquota_init(&ds->dq);
 	ds->dir_count = 0;
 	ds->dir_list = list_head;
-	ds->valid = 1;
+	/* ds->dirsets_node is initialized in dirset_enter() */
 	ds->refcount = 1;
+	ds->valid = 1;
 	return (ds);	
 }
 
@@ -113,10 +128,17 @@ dirset_get_dirsetname(struct dirset *ds)
 	return (ds->dirsetname);
 }
 
-struct quota_metadata *
-dirset_quota(struct dirset *ds)
+struct dirquota *
+dirset_get_dirquota(struct dirset *ds)
 {
-	return (&ds->q);
+	return (&ds->dq);
+}
+
+void
+dirset_set_quota_metadata_in_cache(struct dirset *ds,
+	const struct quota_metadata *q)
+{
+	quota_metadata_memory_convert_from_db(&ds->dq.qmm, q);
 }
 
 void
@@ -132,6 +154,7 @@ dirset_del_ref(struct dirset *ds)
 	if (ds->refcount > 0)
 		return (1); /* still referenced */
 
+	GFARM_HCIRCLEQ_REMOVE(ds, dirsets_node);
 	dirset_free(ds);
 	return (0); /* freed */
 }
@@ -171,24 +194,61 @@ dirset_add_one(void *closure,
 		    di->username, di->dirsetname, gfarm_error_string(e));
 		return;
 	}
-	ds->q = *q;
-#if 0 /* DQTODO - until dirquota_check is implemented */
-	quota_usage_init(&ds->q.usage); /* usage in backend DB is garbage */
-#endif
+	dirset_set_quota_metadata_in_cache(ds, q);
 
 	gfarm_dirset_info_free(di);
 }
-
 
 void
 dirset_init(void)
 {
 	gfarm_error_t e;
 
+	GFARM_HCIRCLEQ_INIT(all_dirset_list_head, dirsets_node);
+
 	e = db_quota_dirset_load(NULL, dirset_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "loading dirset: %s", gfarm_error_string(e));
+}
+
+int
+dirset_foreach_interruptible(
+	void *closure, int (*callback)(void *, struct dirset *))
+{
+	struct dirset *ds, *next;
+	int interrupted;
+
+	for (ds = GFARM_HCIRCLEQ_FIRST(all_dirset_list_head, dirsets_node);
+	    !GFARM_HCIRCLEQ_IS_END(all_dirset_list_head, ds);) {
+		if (!ds->valid) {
+			ds = GFARM_HCIRCLEQ_NEXT(ds, dirsets_node);
+		} else {
+			dirset_add_ref(ds);
+
+			/*
+			 * CAUTION: this callback function may
+			 * release and re-acquire giant_lock internally
+			 */
+			interrupted = (*callback)(closure, ds);
+
+			next = GFARM_HCIRCLEQ_NEXT(ds, dirsets_node);
+			dirset_del_ref(ds);
+			ds = next;
+
+			if (interrupted)
+				return (1);
+		}
+	}
+	return (0);
+}
+
+int
+dirset_foreach_quota_dir_interruptible(struct dirset *ds,
+	void *closure, int (*callback)(void *, struct quota_dir *))
+{
+	return (quota_dir_foreach_in_dirset_interruptible(ds->dir_list,
+	    closure, callback));
 }
 
 gfarm_error_t
@@ -218,7 +278,9 @@ xattr_list_set_by_dirset(struct xattr_list *entry,
  */
 
 struct dirsets {
+	/* dirset entry will be removed from hash at its removal */
 	struct gfarm_hash_table *table;
+
 	int dirset_count;
 };
 
@@ -230,6 +292,7 @@ dirsets_new(void)
 	GFARM_MALLOC(sets);
 	if (sets == NULL)
 		return (NULL);
+
 	sets->table = gfarm_hash_table_alloc(
 	    gfarm_directory_quota_count_per_user_limit,
 	    gfarm_hash_strptr, gfarm_hash_key_equal_strptr);
@@ -237,6 +300,7 @@ dirsets_new(void)
 		free(sets);
 		return (NULL);
 	}
+
 	sets->dirset_count = 0;
 	return (sets);
 }
@@ -252,6 +316,7 @@ dirset_enter(struct dirsets *sets, const char *dirsetname, struct user *u,
 
 	if (ds == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+
 	entry = gfarm_hash_enter(sets->table,
 	    &ds->dirsetname, sizeof(ds->dirsetname), sizeof(ds),
 	    &created);
@@ -267,6 +332,7 @@ dirset_enter(struct dirsets *sets, const char *dirsetname, struct user *u,
 		    "dirset_enter: already exists");
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
+
 	if (limit_check &&
 	    sets->dirset_count >= gfarm_directory_quota_count_per_user_limit) {
 		(void)gfarm_hash_purge(sets->table,
@@ -274,6 +340,9 @@ dirset_enter(struct dirsets *sets, const char *dirsetname, struct user *u,
 		dirset_free(ds);
 		return (GFARM_ERR_NO_SPACE);
 	}
+
+	GFARM_HCIRCLEQ_INSERT_TAIL(all_dirset_list_head, ds, dirsets_node);
+
 	*(struct dirset **)gfarm_hash_entry_data(entry) = ds;
 	++sets->dirset_count;
 	if (dirsetp != NULL)
@@ -309,6 +378,12 @@ dirset_remove(struct dirsets *sets, const char *dirsetname)
 	    &dirsetname, sizeof(dirsetname));
 	if (!removed)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	/*
+	 * do not remove from sets->list_head here,
+	 * to make dirset_foreach_interruptible() work.
+	 */
+
 	--sets->dirset_count;
 
 	ds->valid = 0;
@@ -324,6 +399,7 @@ dirset_foreach_in_dirsets(struct dirsets *sets,
 	struct gfarm_hash_iterator it;
 	struct dirset *ds;
 
+	/* only valid entries are in sets->table */
 	for (gfarm_hash_iterator_begin(sets->table, &it);
 	     !gfarm_hash_iterator_is_end(&it);
 	     gfarm_hash_iterator_next(&it)) {
@@ -344,6 +420,7 @@ gfm_server_dirset_info_set(struct peer *peer, int from_client, int skip)
 	char *username, *dirsetname;
 	struct user *u;
 	struct dirset *ds;
+	struct quota_metadata q;
 	static const char diag[] = "GFM_PROTO_DIRSET_INFO_SET";
 
 	e = gfm_server_get_request(peer, diag, "ss", &username, &dirsetname);
@@ -364,12 +441,13 @@ gfm_server_dirset_info_set(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else if (u != peer_get_user(peer) &&
 	    !user_is_root(peer_get_user(peer))) {
-		e = GFARM_ERR_PERMISSION_DENIED;
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((e = user_enter_dirset(u, dirsetname, 1, &ds))
 	    != GFARM_ERR_NO_ERROR) {
 		;
 	} else {
-		e = db_quota_dirset_add(username, dirsetname, &ds->q);
+		quota_metadata_memory_convert_to_db(&ds->dq.qmm, &q);
+		e = db_quota_dirset_add(username, dirsetname, &q);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "failed to store dirset '%s:%s' to backend DB: %s",
@@ -484,7 +562,7 @@ gfm_server_dirset_info_list(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else if (all_users ? !user_is_root(peer_get_user(peer)) :
 	    (u != peer_get_user(peer) && !user_is_root(peer_get_user(peer)))) {
-		e = GFARM_ERR_PERMISSION_DENIED;
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else {
 		/* XXX FIXME too long giant lock */
 		count = 0;
@@ -547,15 +625,15 @@ gfm_server_quota_dirset_get(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else if (u != peer_get_user(peer) &&
 	    !user_is_root(peer_get_user(peer))) {
-		e = GFARM_ERR_PERMISSION_DENIED;
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((ds = user_lookup_dirset(u, dirsetname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-	} else if (!quota_is_checked(&ds->q.usage)) {
+	} else if (!dirquota_is_checked(&ds->dq)) {
 		/* quota_check hasn't been done yet */
 		e = GFARM_ERR_FILE_BUSY;
 	} else {
 		e = GFARM_ERR_NO_ERROR;
-		q = ds->q;
+		q = ds->dq.qmm.q;
 		quota_exceed_to_grace(q.limit.grace_period, &q.exceed, &grace);
 	}
 
@@ -588,34 +666,34 @@ quota_dirset_put_reply(struct peer *peer, struct dirset *ds, const char *diag)
 	gfarm_error_t e;
 	struct gfarm_quota_subject_time grace;
 
-	if (!quota_is_checked(&ds->q.usage)) {
+	if (!dirquota_is_checked(&ds->dq)) {
 		/* quota_check hasn't been done yet */
 		e = GFARM_ERR_FILE_BUSY;
 	} else {
 		e = GFARM_ERR_NO_ERROR;
-		quota_exceed_to_grace(ds->q.limit.grace_period, &ds->q.exceed,
-		    &grace);
+		quota_exceed_to_grace(ds->dq.qmm.q.limit.grace_period,
+		    &ds->dq.qmm.q.exceed, &grace);
 	}
 	return (gfm_server_put_reply(peer, diag, e, "sslllllllllllllllll",
 	    user_name(ds->user),
 	    ds->dirsetname,
-	    ds->q.limit.grace_period,
-	    ds->q.usage.space,
+	    ds->dq.qmm.q.limit.grace_period,
+	    ds->dq.qmm.q.usage.space,
 	    grace.space_time,
-	    ds->q.limit.soft.space,
-	    ds->q.limit.hard.space,
-	    ds->q.usage.num,
+	    ds->dq.qmm.q.limit.soft.space,
+	    ds->dq.qmm.q.limit.hard.space,
+	    ds->dq.qmm.q.usage.num,
 	    grace.num_time,
-	    ds->q.limit.soft.num,
-	    ds->q.limit.hard.num,
-	    ds->q.usage.phy_space,
+	    ds->dq.qmm.q.limit.soft.num,
+	    ds->dq.qmm.q.limit.hard.num,
+	    ds->dq.qmm.q.usage.phy_space,
 	    grace.phy_space_time,
-	    ds->q.limit.soft.phy_space,
-	    ds->q.limit.hard.phy_space,
-	    ds->q.usage.phy_num,
+	    ds->dq.qmm.q.limit.soft.phy_space,
+	    ds->dq.qmm.q.limit.hard.phy_space,
+	    ds->dq.qmm.q.usage.phy_num,
 	    grace.phy_num_time,
-	    ds->q.limit.soft.phy_num,
-	    ds->q.limit.hard.phy_num));
+	    ds->dq.qmm.q.limit.soft.phy_num,
+	    ds->dq.qmm.q.limit.hard.phy_num));
 }
 
 gfarm_error_t
@@ -624,6 +702,7 @@ gfm_server_quota_dirset_set(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 	char *username, *dirsetname;
 	struct gfarm_quota_limit_info limit;
+	struct quota_metadata q;
 	struct user *u;
 	struct dirset *ds;
 	static const char diag[] = "GFM_PROTO_QUOTA_DIRSET_SET";
@@ -656,12 +735,14 @@ gfm_server_quota_dirset_set(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else if (u != peer_get_user(peer) &&
 	    !user_is_root(peer_get_user(peer))) {
-		e = GFARM_ERR_PERMISSION_DENIED;
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((ds = user_lookup_dirset(u, dirsetname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else {
-		ds->q.limit = limit;
-		e = db_quota_dirset_modify(username, dirsetname, &ds->q);
+		ds->dq.qmm.q.limit = limit;
+		dirquota_softlimit_exceed(&ds->dq.qmm.q, ds);
+		quota_metadata_memory_convert_to_db(&ds->dq.qmm, &q);
+		e = db_quota_dirset_modify(username, dirsetname, &q);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "failed to store dirset '%s:%s' to backend DB: %s",
@@ -801,7 +882,7 @@ gfm_server_quota_dir_list(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else if (all_users ? !user_is_root(peer_get_user(peer)) :
 	    (u != peer_get_user(peer) && !user_is_root(peer_get_user(peer)))) {
-		e = GFARM_ERR_PERMISSION_DENIED;
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else {
 		/* XXX FIXME too long giant lock */
 		closure.client = peer_get_conn(peer);

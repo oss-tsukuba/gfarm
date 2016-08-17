@@ -81,11 +81,11 @@ file_copy_by_host_remove(void)
 		inode_remove_replica_in_cache_for_invalid_host(inum);
 	}
 	/*
+	 * NOTE:
 	 * inode_remove_replica_in_cache_for_invalid_host() has
 	 * no way to know relevant dirset,
-	 * and calls quota_dir_check_schedule(), thus...
+	 * and calls dirquota_check_schedule()
 	 */
-	quota_dir_check_start();
 
 	housekeep_giant_unlock();
 	gflog_info(GFARM_MSG_1004267, "file_copy remover completed");

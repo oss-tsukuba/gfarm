@@ -36,11 +36,27 @@ struct quota_metadata {
 	struct gfarm_quota_subject_time exceed;
 };
 
-void quota_usage_init(struct gfarm_quota_subject_info *);
 void quota_subject_time_init(struct gfarm_quota_subject_time *);
 void quota_metadata_init(struct quota_metadata *);
-void quota_usage_clear(struct gfarm_quota_subject_info *);
-int quota_is_checked(const struct gfarm_quota_subject_info *);
+
+/* on gfmd memory (only used for dirquota for now) */
+struct quota_metadata_memory {
+	struct quota_metadata q;
+	int usage_is_valid;
+};
+void quota_metadata_memory_convert_to_db(
+	const struct quota_metadata_memory *, struct quota_metadata *);
+void quota_metadata_memory_convert_from_db(
+	struct quota_metadata_memory *, const struct quota_metadata *);
+
+/* on gfmd memory, and for dirquota only even in future */
+struct dirquota {
+	struct quota_metadata_memory qmm;
+	int dirquota_checking;
+	int invalidate_requested;
+};
+void dirquota_init(struct dirquota *);
+int dirquota_is_checked(const struct dirquota *);
 void quota_exceed_to_grace(gfarm_time_t,
 	const struct gfarm_quota_subject_time *,
 	struct gfarm_quota_subject_time *);
@@ -63,12 +79,13 @@ void quota_update_replica_remove(struct inode *, struct dirset *);
 void quota_update_file_remove(struct inode *, struct dirset *);
 void dirquota_update_file_add(struct inode *, struct dirset *);
 void dirquota_update_file_remove(struct inode *, struct dirset *);
+void dirquota_softlimit_exceed(struct quota_metadata *, struct dirset *);
 gfarm_error_t quota_lookup(const char *, int, struct quota **, const char *);
 
 void quota_check_init(void);
-void quota_check_start(void);
-void quota_dir_check_schedule(void);
-void quota_dir_check_start(void);
+void dirquota_invalidate(struct dirset *);
+void dirquota_fixup_schedule(void);
+void dirquota_check_schedule(void);
 
 struct peer;
 gfarm_error_t gfm_server_quota_user_get(struct peer *, int, int);

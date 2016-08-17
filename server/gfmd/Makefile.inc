@@ -1,4 +1,5 @@
 GFMD_COMMON_SRCS = \
+	$(GFMD_SRCDIR)/uint64_map.c \
 	$(GFMD_SRCDIR)/thrpool.c \
 	$(GFMD_SRCDIR)/callout.c \
 	$(GFMD_SRCDIR)/subr.c \
@@ -34,6 +35,7 @@ GFMD_COMMON_SRCS = \
 	$(GFMD_SRCDIR)/replica_check.c
 
 GFMD_COMMON_OBJS = \
+	$(GFMD_BUILDDIR)/uint64_map.o \
 	$(GFMD_BUILDDIR)/thrpool.o \
 	$(GFMD_BUILDDIR)/callout.o \
 	$(GFMD_BUILDDIR)/subr.o \
@@ -73,6 +75,7 @@ DEPGFMDINC = \
 	$(GFUTIL_SRCDIR)/gflog_reduced.h \
 	$(GFUTIL_SRCDIR)/hash.h \
 	$(GFUTIL_SRCDIR)/id_table.h \
+	$(GFUTIL_SRCDIR)/queue.h \
 	$(GFUTIL_SRCDIR)/tree.h \
 	$(GFUTIL_SRCDIR)/thrsubr.h \
 	$(GFARMLIB_SRCDIR)/context.h \
@@ -85,6 +88,7 @@ DEPGFMDINC = \
 	$(GFARMLIB_SRCDIR)/gfm_proto.h \
 	$(GFARMLIB_SRCDIR)/gfj_client.h \
 	$(GFARMLIB_SRCDIR)/timespec.h \
+	$(GFMD_SRCDIR)/uint64_map.h \
 	$(GFMD_SRCDIR)/thrpool.h \
 	$(GFMD_SRCDIR)/callout.h \
 	$(GFMD_SRCDIR)/subr.h \

@@ -16,14 +16,17 @@
 #include "auth.h"
 #include "quota_info.h"
 
+#include "uint64_map.h"
 #include "peer.h"
 #include "subr.h"
 #include "rpcsubr.h"
 #include "user.h"
 #include "group.h"
 #include "inode.h"
+#include "dir.h"
 #include "quota.h"
 #include "dirset.h"
+#include "quota_dir.h"
 #include "db_access.h"
 
 #define QUOTA_NOT_CHECK_YET -1
@@ -152,8 +155,8 @@ quota_softlimit_exceed_group(struct quota *q, struct group *g)
 	}
 }
 
-static void
-quota_softlimit_exceed_dirset(struct quota_metadata *q, struct dirset *ds)
+void
+dirquota_softlimit_exceed(struct quota_metadata *q, struct dirset *ds)
 {
 	gfarm_error_t e;
 	int need_db_update = 0;
@@ -170,7 +173,7 @@ quota_softlimit_exceed_dirset(struct quota_metadata *q, struct dirset *ds)
 	}
 }
 
-void
+static void
 quota_usage_clear(struct gfarm_quota_subject_info *usage)
 {
 	usage->space = 0;
@@ -464,16 +467,6 @@ quota_limit_init(struct gfarm_quota_limit_info *limit)
 	quota_limit_subject_init(&limit->hard);
 }
 
-/* for usage */
-void
-quota_usage_init(struct gfarm_quota_subject_info *usage)
-{
-	usage->space = QUOTA_NOT_CHECK_YET; /* quota_check hasn't been done */
-	usage->num = 0;
-	usage->phy_space = 0;
-	usage->phy_num = 0;
-}
-
 /* for exceed, grace */
 void
 quota_subject_time_init(struct gfarm_quota_subject_time *time)
@@ -488,14 +481,75 @@ void
 quota_metadata_init(struct quota_metadata *q)
 {
 	quota_limit_init(&q->limit);
-	quota_usage_init(&q->usage);
+	quota_usage_clear(&q->usage);
 	quota_subject_time_init(&q->exceed);
 }
 
-int
-quota_is_checked(const struct gfarm_quota_subject_info *usage)
+static void
+quota_metadata_memory_init(struct quota_metadata_memory *qmm)
 {
-	return (is_checked(usage));
+	quota_metadata_init(&qmm->q);
+	qmm->usage_is_valid = 0;
+}
+
+void
+quota_metadata_memory_convert_to_db(
+	const struct quota_metadata_memory *qmm, struct quota_metadata *q)
+{
+	*q = qmm->q;
+	if (!qmm->usage_is_valid) {
+		quota_usage_clear(&q->usage);
+		q->usage.space = QUOTA_NOT_CHECK_YET;
+	}
+}
+
+void
+quota_metadata_memory_convert_from_db(
+	struct quota_metadata_memory *qmm, const struct quota_metadata *q)
+{
+	qmm->q = *q;
+
+#if 0
+	qmm->usage_is_valid = is_checked(&q->usage);
+	if (!qmm->usage_is_valid)
+		quota_usage_clear(&qmm->q.usage);
+#else /* usage in backend DB is garbage */
+	quota_usage_clear(&qmm->q.usage);
+	qmm->usage_is_valid = 0;
+#endif
+}
+
+void
+dirquota_init(struct dirquota *dq)
+{
+	quota_metadata_memory_init(&dq->qmm);
+
+	/*
+	 * at the first place, usage is zero inodes and zero bytes.
+	 * and then, if quota_metadata_memory_convert_from_db() is called via
+	 * dirset_set_quota_metadata_in_cache(), usage_is_valid becomes 0.
+	 */
+	dq->qmm.usage_is_valid = 1;
+
+	dq->dirquota_checking = 0;
+	dq->invalidate_requested = 0;
+}
+
+/* this is protected by giant_lock */
+static int dirquota_invalidate_all_requested = 0;
+
+int
+dirquota_is_checked(const struct dirquota *dq)
+{
+	return (!dirquota_invalidate_all_requested &&
+	    dq->qmm.usage_is_valid && !dq->invalidate_requested);
+}
+
+void
+dirquota_check_retry_if_running(struct dirquota *dq)
+{
+	if (dq->dirquota_checking)
+		dq->invalidate_requested = 1;
 }
 
 static inline gfarm_int64_t
@@ -554,6 +608,24 @@ usage_tmp_update(struct inode *inode)
 		update_file_add(group_usage_tmp(g), size, ncopy);
 }
 
+static void
+dirquota_usage_update(struct dirset *ds, struct inode *inode)
+{
+	gfarm_off_t size;
+	gfarm_int64_t ncopy;
+	struct dirquota *dq = dirset_get_dirquota(ds);
+
+	if (inode_is_file(inode)) {
+		size = inode_get_size(inode);
+		ncopy = inode_get_ncopy_with_dead_host(inode);
+	} else {
+		size = 0;
+		ncopy = 0;
+	}
+
+	update_file_add(&dq->qmm.q.usage, size, ncopy);
+}
+
 static void quota_check_retry_if_running(void);
 
 void
@@ -587,11 +659,12 @@ quota_update_file_add(struct inode *inode, struct dirset *tdirset)
 		}
 	}
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
-		struct quota_metadata *dsq = dirset_quota(tdirset);
-		if (is_checked(&dsq->usage)) {
-			update_file_add(&dsq->usage, size, ncopy);
-			quota_softlimit_exceed_dirset(dsq, tdirset);
-		}
+		struct dirquota *dq = dirset_get_dirquota(tdirset);
+		if (dirquota_is_checked(dq)) {
+			update_file_add(&dq->qmm.q.usage, size, ncopy);
+			dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
+		} else
+			dirquota_check_retry_if_running(dq);
 	}
 
 	if (debug_mode) {
@@ -646,12 +719,13 @@ quota_update_file_resize(struct inode *inode, struct dirset *tdirset,
 		}
 	}
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
-		struct quota_metadata *dsq = dirset_quota(tdirset);
-		if (is_checked(&dsq->usage)) {
-			update_file_resize(&dsq->usage,
+		struct dirquota *dq = dirset_get_dirquota(tdirset);
+		if (dirquota_is_checked(dq)) {
+			update_file_resize(&dq->qmm.q.usage,
 			    old_size, new_size, ncopy);
-			quota_softlimit_exceed_dirset(dsq, tdirset);
-		}
+			dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
+		} else
+			dirquota_check_retry_if_running(dq);
 	}
 
 	quota_check_retry_if_running();
@@ -686,11 +760,12 @@ quota_update_replica_num(struct inode *inode, struct dirset *tdirset,
 		}
 	}
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
-		struct quota_metadata *dsq = dirset_quota(tdirset);
-		if (is_checked(&dsq->usage)) {
-			update_replica_num(&dsq->usage, size, n);
-			quota_softlimit_exceed_dirset(dsq, tdirset);
-		}
+		struct dirquota *dq = dirset_get_dirquota(tdirset);
+		if (dirquota_is_checked(dq)) {
+			update_replica_num(&dq->qmm.q.usage, size, n);
+			dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
+		} else
+			dirquota_check_retry_if_running(dq);
 	}
 
 	quota_check_retry_if_running();
@@ -747,11 +822,12 @@ quota_update_file_remove(struct inode *inode, struct dirset *tdirset)
 		}
 	}
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
-		struct quota_metadata *dsq = dirset_quota(tdirset);
-		if (is_checked(&dsq->usage)) {
-			update_file_remove(&dsq->usage, size, ncopy);
-			quota_softlimit_exceed_dirset(dsq, tdirset);
-		}
+		struct dirquota *dq = dirset_get_dirquota(tdirset);
+		if (dirquota_is_checked(dq)) {
+			update_file_remove(&dq->qmm.q.usage, size, ncopy);
+			dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
+		} else
+			dirquota_check_retry_if_running(dq);
 	}
 
 	quota_check_retry_if_running();
@@ -772,14 +848,15 @@ dirquota_update_file_add(struct inode *inode, struct dirset *tdirset)
 	}
 
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
-		struct quota_metadata *dsq = dirset_quota(tdirset);
-		if (is_checked(&dsq->usage)) {
-			update_file_add(&dsq->usage, size, ncopy);
-			quota_softlimit_exceed_dirset(dsq, tdirset);
-		}
+		struct dirquota *dq = dirset_get_dirquota(tdirset);
+		if (dirquota_is_checked(dq)) {
+			update_file_add(&dq->qmm.q.usage, size, ncopy);
+			dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
+		} else
+			dirquota_check_retry_if_running(dq);
 	}
 
-	quota_check_retry_if_running();
+	/* quota_check_retry_if_running() is unnecessary here */
 }
 
 void
@@ -797,14 +874,15 @@ dirquota_update_file_remove(struct inode *inode, struct dirset *tdirset)
 	}
 
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
-		struct quota_metadata *dsq = dirset_quota(tdirset);
-		if (is_checked(&dsq->usage)) {
-			update_file_remove(&dsq->usage, size, ncopy);
-			quota_softlimit_exceed_dirset(dsq, tdirset);
-		}
+		struct dirquota *dq = dirset_get_dirquota(tdirset);
+		if (dirquota_is_checked(dq)) {
+			update_file_remove(&dq->qmm.q.usage, size, ncopy);
+			dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
+		} else
+			dirquota_check_retry_if_running(dq);
 	}
 
-	quota_check_retry_if_running();
+	/* quota_check_retry_if_running() is unnecessary here */
 }
 
 enum quota_exceeded_type {
@@ -880,13 +958,15 @@ is_exceeded(struct timeval *nowp, struct quota *q,
 }
 
 static int
-quota_metadata_is_exceeded(struct timeval *nowp, struct quota_metadata *q,
+dirquota_is_exceeded(struct timeval *nowp, struct dirquota *dq,
 	int num_file_creating, int num_replica_adding, gfarm_off_t size)
 {
 	int check_logical = 0, check_physical = 0;
+	struct quota_metadata *q;
 
-	if (!is_checked(&q->usage))  /* quota is disabled */
+	if (!dirquota_is_checked(dq))  /* quota is disabled */
 		return (QUOTA_NOT_EXCEEDED);
+	q = &dq->qmm.q;
 
 	/* softlimit */
 	if (quota_limit_is_valid(q->limit.grace_period)) {
@@ -970,7 +1050,7 @@ quota_limit_check(struct user *u, struct group *g, struct dirset *tdirset,
 		return (GFARM_ERR_DISK_QUOTA_EXCEEDED);
 	}
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET &&
-	    quota_metadata_is_exceeded(&now, dirset_quota(tdirset),
+	    dirquota_is_exceeded(&now, dirset_get_dirquota(tdirset),
 	    num_file_creating, num_replica_adding, size)) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "dirset_quota(%s:%s) exceeded",
@@ -990,7 +1070,7 @@ dirquota_limit_check(struct dirset *tdirset,
 
 	gettimeofday(&now, NULL);
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET &&
-	    quota_metadata_is_exceeded(&now, dirset_quota(tdirset),
+	    dirquota_is_exceeded(&now, dirset_get_dirquota(tdirset),
 	    num_file_creating, num_replica_adding, size)) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "dirset_quota(%s:%s) exceeded",
@@ -1026,33 +1106,112 @@ quota_group_remove(struct group *g)
 	q->space = QUOTA_NOT_CHECK_YET;
 }
 
-static pthread_mutex_t quota_check_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t quota_check_wakeup = PTHREAD_COND_INITIALIZER;
-static pthread_cond_t quota_check_end = PTHREAD_COND_INITIALIZER;
-static int quota_check_needed = 0;
-static int quota_check_running = 0;
+/*
+ * common part of quota_check and dirquota_check
+ */
 
-static const char quota_check_mutex_diag[] = "quota_check_mutex";
-static const char quota_check_wakeup_diag[] = "quota_check_wakeup";
-static const char quota_check_end_diag[] = "quota_check_end";
+struct quota_check_control {
+	void (*main_function)(struct quota_check_control *);
+
+	pthread_mutex_t mutex;
+	pthread_cond_t wakeup;
+	pthread_cond_t end;
+	int needed;
+	int running;
+
+	const char *mutex_diag;
+	const char *wakeup_diag;
+	const char *end_diag;
+};
+
+static void
+quota_check_start(struct quota_check_control *ctl)
+{
+	static const char diag[] = "quota_check_start";
+
+	gfarm_mutex_lock(&ctl->mutex, diag, ctl->mutex_diag);
+	ctl->needed = 1;
+	gfarm_cond_signal(&ctl->wakeup, diag, ctl->wakeup_diag);
+	gfarm_mutex_unlock(&ctl->mutex, diag, ctl->mutex_diag);
+}
+
+static void
+quota_check_wait_for_end(struct quota_check_control *ctl)
+{
+	static const char diag[] = "quota_check_wait_for_end";
+
+	gfarm_mutex_lock(&ctl->mutex, diag, ctl->mutex_diag);
+	while (ctl->needed || ctl->running)
+		gfarm_cond_wait(&ctl->end, &ctl->mutex, diag, ctl->end_diag);
+	gfarm_mutex_unlock(&ctl->mutex, diag, ctl->mutex_diag);
+}
+
+static void *
+quota_check_thread(void *arg)
+{
+	struct quota_check_control *ctl = arg;
+	static const char diag[] = "quota_check_thread";
+
+	(void)gfarm_pthread_set_priority_minimum(diag);
+
+	for (;;) {
+		gfarm_mutex_lock(&ctl->mutex, diag, ctl->mutex_diag);
+		ctl->running = 0;
+		gfarm_cond_signal(&ctl->end, diag, ctl->end_diag);
+
+		while (!ctl->needed)
+			gfarm_cond_wait(&ctl->wakeup, &ctl->mutex,
+			    diag, ctl->wakeup_diag);
+
+		ctl->needed = 0;
+		ctl->running = 1;
+		gfarm_mutex_unlock(&ctl->mutex, diag, ctl->mutex_diag);
+
+		(*ctl->main_function)(ctl);
+	}
+
+	return (NULL);
+}
+
+/*
+ * quota_check
+ */
+
+static void quota_check_main_loop(struct quota_check_control *);
+
+static struct quota_check_control quota_check_ctl = {
+	quota_check_main_loop,
+	PTHREAD_MUTEX_INITIALIZER,
+	PTHREAD_COND_INITIALIZER,
+	PTHREAD_COND_INITIALIZER,
+	0,
+	0,
+	"quota_check_mutex",
+	"quota_check_wakeup",
+	"quota_check_end",
+};
 
 static int
 quota_check_needed_locked(const char *diag)
 {
 	int needed;
 
-	gfarm_mutex_lock(&quota_check_mutex, diag, quota_check_mutex_diag);
-	needed = quota_check_needed;
-	gfarm_mutex_unlock(&quota_check_mutex, diag, quota_check_mutex_diag);
+	gfarm_mutex_lock(&quota_check_ctl.mutex,
+	    diag, quota_check_ctl.mutex_diag);
+	needed = quota_check_ctl.needed;
+	gfarm_mutex_unlock(&quota_check_ctl.mutex,
+	    diag, quota_check_ctl.mutex_diag);
 	return (needed);
 }
 
 static void
 quota_check_needed_clear(const char *diag)
 {
-	gfarm_mutex_lock(&quota_check_mutex, diag, quota_check_mutex_diag);
-	quota_check_needed = 0;
-	gfarm_mutex_unlock(&quota_check_mutex, diag, quota_check_mutex_diag);
+	gfarm_mutex_lock(&quota_check_ctl.mutex,
+	    diag, quota_check_ctl.mutex_diag);
+	quota_check_ctl.needed = 0;
+	gfarm_mutex_unlock(&quota_check_ctl.mutex,
+	    diag, quota_check_ctl.mutex_diag);
 }
 
 static int
@@ -1114,49 +1273,16 @@ quota_check_main(void)
 	return (0); /* finished */
 }
 
-static void *
-quota_check(void *arg)
-{
-	static const char diag[] = "quota_check";
-
-	(void)gfarm_pthread_set_priority_minimum(diag);
-
-	for (;;) {
-		gfarm_mutex_lock(&quota_check_mutex, diag,
-		    quota_check_mutex_diag);
-		quota_check_running = 0;
-		gfarm_cond_signal(&quota_check_end, diag, quota_check_end_diag);
-
-		while (!quota_check_needed)
-			gfarm_cond_wait(&quota_check_wakeup,
-			    &quota_check_mutex, diag,
-			    quota_check_wakeup_diag);
-
-		quota_check_running = 1;
-		gfarm_mutex_unlock(&quota_check_mutex, diag,
-		    quota_check_mutex_diag);
-
-		gflog_info(GFARM_MSG_1004297, "quota_check: start");
-		quota_check_needed_clear(diag);
-		while (quota_check_main()) {
-			quota_check_needed_clear(diag);
-			gflog_info(GFARM_MSG_1004298, "quota_check: retry");
-		}
-	}
-
-	return (NULL);
-}
-
 static void
-quota_check_wait_for_end(void)
+quota_check_main_loop(struct quota_check_control *ctl)
 {
-	static const char diag[] = "quota_check_wait_for_end";
+	static const char diag[] = "quota_check_main_loop";
 
-	gfarm_mutex_lock(&quota_check_mutex, diag, quota_check_mutex_diag);
-	while (quota_check_running)
-		gfarm_cond_wait(&quota_check_end,
-		    &quota_check_mutex, diag, quota_check_end_diag);
-	gfarm_mutex_unlock(&quota_check_mutex, diag, quota_check_mutex_diag);
+	gflog_info(GFARM_MSG_1004297, "quota_check: start");
+	while (quota_check_main()) {
+		quota_check_needed_clear(diag);
+		gflog_info(GFARM_MSG_1004298, "quota_check: retry");
+	}
 }
 
 static void
@@ -1164,57 +1290,282 @@ quota_check_retry_if_running(void)
 {
 	static const char diag[] = "quota_check_retry_if_running";
 
-	gfarm_mutex_lock(&quota_check_mutex, diag, quota_check_mutex_diag);
-	if (quota_check_running)
-		quota_check_needed = 1;
+	gfarm_mutex_lock(&quota_check_ctl.mutex,
+	    diag, quota_check_ctl.mutex_diag);
+	if (quota_check_ctl.running)
+		quota_check_ctl.needed = 1;
 	/* else: cond_wait now */
-	gfarm_mutex_unlock(&quota_check_mutex, diag, quota_check_mutex_diag);
+	gfarm_mutex_unlock(&quota_check_ctl.mutex,
+	    diag, quota_check_ctl.mutex_diag);
+}
+
+
+/*
+ * dirquota_check
+ */
+
+
+/* this is protected by giant_lock */
+static struct dirquota_check_state {
+	struct uint64_to_uint64_map *hardlink_counters;
+
+	int giant_lock_limit;
+	int handled_inodes;
+	int handled_quota_dirs;
+	int handled_dirsets;
+	int retried_dirsets;
+	int skipped_dirsets;
+} dirquota_check_state;
+
+static int
+dirquota_check_needed_per_dirset(void *closure, struct dirset *ds)
+{
+	int *neededp = closure;
+
+	if (*neededp)
+		return (1); /* interrupted */
+	if (!dirquota_is_checked(dirset_get_dirquota(ds))) {
+		*neededp = 1;
+		return (1); /* interrupted */
+	}
+	return (0);
+}
+
+static int
+dirquota_check_needed(void)
+{
+	int needed = 0;
+
+	if (dirquota_invalidate_all_requested)
+		return (1);
+	dirset_foreach_interruptible(
+	    &needed, dirquota_check_needed_per_dirset);
+	return (needed);
+}
+
+static int
+dirquota_invalidate_per_dirset(void *closure, struct dirset *ds)
+{
+	struct dirquota *dq = dirset_get_dirquota(ds);
+
+	dq->invalidate_requested = 1;
+	return (0);
+}
+
+static enum inode_scan_choice
+dirquota_check_per_inode(void *closure, struct inode *inode)
+{
+	struct dirset *ds = closure;
+	struct dirquota *dq = dirset_get_dirquota(ds);
+	gfarm_uint64_t n;
+
+	if (dirquota_invalidate_all_requested || dq->invalidate_requested)
+		return (INODE_SCAN_INTERRUPT);
+
+	if (!inode_is_file(inode) || inode_get_nlink(inode) <= 1) {
+		n = 1;
+	} else {
+		if (!uint64_to_uint64_map_inc_value(
+		    dirquota_check_state.hardlink_counters,
+		    inode_get_number(inode), &n)) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "dirquota_check: no memory for %lld hardlinks",
+			    (long long)uint64_to_uint64_map_size(
+			    dirquota_check_state.hardlink_counters));
+			return (INODE_SCAN_INTERRUPT);
+		}
+	}
+
+	if (n == 1) { /* count hard-linked files only at once */
+		dirquota_usage_update(ds, inode);
+		++dirquota_check_state.handled_inodes;
+	}
+
+	if (++dirquota_check_state.giant_lock_limit
+	    >= QUOTA_CHECK_INODE_STEP) {
+		dirquota_check_state.giant_lock_limit = 0;
+		return (INODE_SCAN_RELEASE_GIANT_LOCK);
+	}
+	return (INODE_SCAN_CONTINUE);
+}
+
+static int
+dirquota_check_per_quota_dir(void *closure, struct quota_dir *qd)
+{
+	struct dirset *ds = closure;
+	struct inode *inode = inode_lookup(quota_dir_get_inum(qd));
+	int interrupted;
+
+	interrupted = inode_foreach_in_subtree_interruptible(
+	    inode, ds, dirquota_check_per_inode, NULL);
+	++dirquota_check_state.handled_quota_dirs;
+	return (interrupted);
+}
+
+static int
+dirquota_check_per_dirset(void *closure, struct dirset *ds)
+{
+	struct dirquota *dq = dirset_get_dirquota(ds);
+	int interrupted;
+
+	if (dirquota_invalidate_all_requested)
+		return (1); /* interrupted */
+
+	if (dq->invalidate_requested) {
+		dq->invalidate_requested = 0;
+		dq->qmm.usage_is_valid = 0;
+	}
+	if (dq->qmm.usage_is_valid) {
+		++dirquota_check_state.skipped_dirsets;
+		return (0);
+	}
+
+	dq->dirquota_checking = 1;
+	quota_usage_clear(&dq->qmm.q.usage);
+
+	dirquota_check_state.hardlink_counters = uint64_to_uint64_map_new();
+	if (dirquota_check_state.hardlink_counters == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "dirquota_check: no memory for hardlink counter");
+		interrupted = 1;
+	} else {
+		interrupted = dirset_foreach_quota_dir_interruptible(
+		    ds, ds, dirquota_check_per_quota_dir) ||
+		    dq->invalidate_requested ||
+		    dirquota_invalidate_all_requested;
+	}
+
+	if (interrupted) {
+		++dirquota_check_state.retried_dirsets;
+	} else {
+		++dirquota_check_state.handled_dirsets;
+		dq->qmm.usage_is_valid = 1;
+	}
+
+	uint64_to_uint64_map_free(dirquota_check_state.hardlink_counters);
+	dirquota_check_state.hardlink_counters = NULL;
+
+	dq->dirquota_checking = 0;
+	return (interrupted);
+}
+
+static void
+dirquota_check_run(void)
+{
+	if (dirquota_invalidate_all_requested) {
+		dirset_foreach_interruptible(
+		    NULL, dirquota_invalidate_per_dirset);
+		dirquota_invalidate_all_requested = 0;
+	}
+	dirset_foreach_interruptible(NULL, dirquota_check_per_dirset);
+}
+
+static void
+dirquota_check_main(struct quota_check_control *ctl)
+{
+	time_t time_start, time_total;
+
+	gflog_info(GFARM_MSG_UNFIXED, "dirquota_check: start");
+	time_start = time(NULL);
+
+	giant_lock();
+
+	dirquota_check_state.giant_lock_limit = 0;
+	dirquota_check_state.handled_inodes = 0;
+	dirquota_check_state.handled_quota_dirs = 0;
+	dirquota_check_state.handled_dirsets = 0;
+	dirquota_check_state.retried_dirsets = 0;
+	dirquota_check_state.skipped_dirsets = 0;
+
+	while (dirquota_check_needed())
+		dirquota_check_run();
+
+	giant_unlock();
+
+	time_total = time(NULL) - time_start;
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "dirquota_check: finished, inodes=%lld, quota_dirs=%lld, "
+	    "dirsets=%lld, dirset_retries=%lld, dirsets_ok=%lld time=%lld",
+	    (long long)dirquota_check_state.handled_inodes,
+	    (long long)dirquota_check_state.handled_quota_dirs,
+	    (long long)dirquota_check_state.handled_dirsets,
+	    (long long)dirquota_check_state.retried_dirsets,
+	    (long long)dirquota_check_state.skipped_dirsets,
+	    (long long)time_total);
+}
+
+static struct quota_check_control dirquota_check_ctl = {
+	dirquota_check_main,
+	PTHREAD_MUTEX_INITIALIZER,
+	PTHREAD_COND_INITIALIZER,
+	PTHREAD_COND_INITIALIZER,
+	0,
+	0,
+	"dirquota_check_mutex",
+	"dirquota_check_wakeup",
+	"dirquota_check_end",
+};
+
+/* PREREQUISITE: giant_lock */
+void
+dirquota_invalidate(struct dirset *tdirset)
+{
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
+		struct dirquota *dq = dirset_get_dirquota(tdirset);
+
+		dq->invalidate_requested = 1;
+	}
 }
 
 void
-quota_check_start(void)
+dirquota_fixup_schedule(void)
 {
-	static const char diag[] = "quota_check_start";
+	/* DQTODO - delay before starting to reduce retries */
 
-	gfarm_mutex_lock(&quota_check_mutex, diag, quota_check_mutex_diag);
-	quota_check_needed = 1;
-	quota_check_running = 1;
-	gfarm_cond_signal(&quota_check_wakeup, diag, quota_check_wakeup_diag);
-	gfarm_mutex_unlock(&quota_check_mutex, diag, quota_check_mutex_diag);
+	quota_check_start(&dirquota_check_ctl);
 }
 
+/* PREREQUISITE: giant_lock */
 void
-quota_dir_check_schedule(void)
+dirquota_check_schedule(void)
 {
-	/* DQTODO */
-	gflog_error(GFARM_MSG_UNFIXED,
-	    "quota_dir_check_schedule: not implemented, yet");
+	dirquota_invalidate_all_requested = 1;
+	dirquota_fixup_schedule();
 }
 
-void
-quota_dir_check_start(void)
-{
-	/* DQTODO */
-	gflog_error(GFARM_MSG_UNFIXED,
-	    "quota_dir_check_start: not implemented, yet");
-}
+
+/*
+ * thread startup
+ */
 
 void
 quota_check_init(void)
 {
 	gfarm_error_t e;
 
-	if ((e = create_detached_thread(quota_check, NULL))
-	    != GFARM_ERR_NO_ERROR)
+	if ((e = create_detached_thread(
+	    quota_check_thread, &quota_check_ctl)) != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1004299,
-		    "create_detached_thread(quota_check_init): %s",
+		    "create_detached_thread(quota_check): %s",
 		    gfarm_error_string(e));
 
-	quota_check_start();
-	quota_check_wait_for_end();
+	quota_check_start(&quota_check_ctl);
+	quota_check_wait_for_end(&quota_check_ctl);
+
+	if ((e = create_detached_thread(
+	    quota_check_thread, &dirquota_check_ctl)) != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "create_detached_thread(dirquota_check): %s",
+		    gfarm_error_string(e));
+
+	quota_check_start(&dirquota_check_ctl);
+	quota_check_wait_for_end(&dirquota_check_ctl);
 }
 
-/* server operations */
+/*
+ * server operations
+ */
+
 static gfarm_error_t
 quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 {
@@ -1501,8 +1852,11 @@ gfm_server_quota_check(struct peer *peer, int from_client, int skip)
 	}
 	giant_unlock();
 
-	quota_check_start();
-	quota_check_wait_for_end();
+	quota_check_start(&quota_check_ctl);
+	quota_check_wait_for_end(&quota_check_ctl);
+
+	quota_check_start(&dirquota_check_ctl);
+	quota_check_wait_for_end(&dirquota_check_ctl);
 
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }

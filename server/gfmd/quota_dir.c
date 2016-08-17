@@ -21,6 +21,7 @@
 #include "db_access.h"
 #include "user.h"
 #include "inode.h"
+#include "quota.h"
 #include "dirset.h"
 #include "process.h"
 
@@ -31,12 +32,20 @@
  */
 
 struct quota_dir {
+	/*
+	 * quota_dir entry will NOT be removed from list_head at its removal,
+	 * it will remain linked at that time,
+	 * but will be removed at quota_dir_free(),
+	 * to make quota_dir_foreach_in_dirset_interruptible() work.
+	 */
 	GFARM_HCIRCLEQ_ENTRY(quota_dir) dirset_node;
+
 	struct dirset *ds;
 	gfarm_ino_t inum;
-};
 
-GFARM_STAILQ_HEAD(quota_dir_stailq, quota_dir);
+	gfarm_uint64_t refcount;
+	int valid;
+};
 
 static struct gfarm_hash_table *quota_dir_table;
 
@@ -62,9 +71,12 @@ quota_dir_enter(gfarm_ino_t inum, struct dirset *ds, struct quota_dir **qdp)
 	qd = gfarm_hash_entry_data(entry);
 	qd->ds = ds;
 	qd->inum = inum;
+	qd->refcount = 1;
+	qd->valid = 1;
 
 	dirset_add_dir(ds, &list_head);
 	GFARM_HCIRCLEQ_INSERT_TAIL(*list_head, qd, dirset_node);
+	dirset_add_ref(ds);
 
 	if (qdp != NULL)
 		*qdp = qd;
@@ -74,11 +86,42 @@ quota_dir_enter(gfarm_ino_t inum, struct dirset *ds, struct quota_dir **qdp)
 static void
 quota_dir_free(struct quota_dir *qd)
 {
-	struct dirset *ds = qd->ds;
-
-	gfarm_hash_purge(quota_dir_table, &qd->inum, sizeof(qd->inum));
-	dirset_remove_dir(ds);
 	GFARM_HCIRCLEQ_REMOVE(qd, dirset_node);
+	dirset_del_ref(qd->ds);
+	free(qd);
+}
+
+static void
+quota_dir_add_ref(struct quota_dir *qd)
+{
+	++qd->refcount;
+}
+
+static int
+quota_dir_del_ref(struct quota_dir *qd)
+{
+	--qd->refcount;
+	if (qd->refcount > 0)
+		return (1); /* still referenced */
+
+	quota_dir_free(qd);
+	return (0); /* freed */
+}
+
+static void
+quota_dir_remove_internal(struct quota_dir *qd)
+{
+	gfarm_hash_purge(quota_dir_table, &qd->inum, sizeof(qd->inum));
+	dirset_remove_dir(qd->ds);
+	/* keep qd->ds as is, for future dirset_del_ref() */
+	qd->valid = 0;
+
+	/*
+	 * do not remove from qd->ds->dir_list here,
+	 * to make quota_dir_foreach_in_dirset_interruptible() work.
+	 */
+
+	quota_dir_del_ref(qd);
 }
 
 struct quota_dir *
@@ -109,8 +152,40 @@ quota_dir_foreach_in_dirset(struct quota_dir *list_head,
 	struct quota_dir *i, *tmp;
 
 	GFARM_HCIRCLEQ_FOREACH_SAFE(i, *list_head, dirset_node, tmp) {
-		callback(closure, i);
+		if (i->valid)
+			callback(closure, i);
 	}
+}
+
+int
+quota_dir_foreach_in_dirset_interruptible(struct quota_dir *list_head,
+	void *closure, int (*callback)(void *, struct quota_dir *))
+{
+	struct quota_dir *qd, *next;
+	int interrupted;
+
+	for (qd = GFARM_HCIRCLEQ_FIRST(*list_head, dirset_node);
+	    !GFARM_HCIRCLEQ_IS_END(*list_head, qd);) {
+		if (!qd->valid) {
+			qd = GFARM_HCIRCLEQ_NEXT(qd, dirset_node);
+		} else {
+			quota_dir_add_ref(qd);
+
+			/*
+			 * CAUTION: this callback function may
+			 * release and re-acquire giant_lock internally
+			 */
+			interrupted = (*callback)(closure, qd);
+
+			next = GFARM_HCIRCLEQ_NEXT(qd, dirset_node);
+			quota_dir_del_ref(qd);
+			qd = next;
+
+			if (interrupted)
+				return (1);
+		}
+	}
+	return (0);
 }
 
 static struct quota_dir *
@@ -139,7 +214,7 @@ quota_dir_remove(gfarm_ino_t inum)
 		    "failed to remove quota dir %lld from backend DB: %s",
 		    (long long)qd->inum, gfarm_error_string(e));
 
-	quota_dir_free(qd);
+	quota_dir_remove_internal(qd);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -150,11 +225,11 @@ quota_dir_remove_in_cache(gfarm_ino_t inum)
 
 	if (qd == NULL)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
-	quota_dir_free(qd);
+	quota_dir_remove_internal(qd);
 	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
+gfarm_ino_t
 quota_dir_get_inum(struct quota_dir *qd)
 {
 	return (qd->inum);
@@ -284,6 +359,45 @@ gfm_server_quota_dir_get(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
+static gfarm_error_t
+quota_dir_settable(struct inode *inode, struct dirset *ds,
+	struct user *user, const char *diag)
+{
+	gfarm_error_t e;
+
+	e = dirquota_limit_check(ds, 1, 0, 0);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (inode_dir_is_empty(inode))
+		return (GFARM_ERR_NO_ERROR);
+
+	/*
+	 * use user_is_root() instead of user_is_root_for_inode() here,
+	 * because inode_is_ok_to_set_dirset() may take giant_lock
+	 * too long period,
+	 * and only real gfarmroot is allowed to do such thing
+	 * usually during maintenance.
+	 */
+	if (!user_is_root(user)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: %s specified non-empty dir %lld:%lld",
+		    diag, user_name(user),
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode));
+		return (GFARM_ERR_DIRECTORY_NOT_EMPTY);
+	} else if (!inode_is_ok_to_set_dirset(inode)) {
+		/* nested quota_dir, or has a hardlink to outside of the dir */
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: %s specified prohibited dir %lld:%lld",
+		    diag, user_name(user),
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode));
+		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
 gfarm_error_t
 gfm_server_quota_dir_set(struct peer *peer, int from_client, int skip)
 {
@@ -294,6 +408,7 @@ gfm_server_quota_dir_set(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t fd;
 	struct inode *inode;
 	struct dirset *ds, *existing_tdirset;
+	int transaction;
 	static const char diag[] = "GFM_PROTO_QUOTA_DIR_SET";
 
 	e = gfm_server_get_request(peer, diag, "ss", &username, &dirsetname);
@@ -329,11 +444,11 @@ gfm_server_quota_dir_set(struct peer *peer, int from_client, int skip)
 	    !user_is_root_for_inode(user, inode)) {
 		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s has no privilege",
 		    diag, peer_get_username(peer));
-		e = GFARM_ERR_PERMISSION_DENIED;
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((dirset_user = user_lookup(username)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else if (user != dirset_user && !user_is_root(user)) {
-		e = GFARM_ERR_PERMISSION_DENIED;
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((ds = user_lookup_dirset(dirset_user, dirsetname))
 	    == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
@@ -341,22 +456,34 @@ gfm_server_quota_dir_set(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s specified non-dir",
 		    diag, peer_get_username(peer));
 		e = GFARM_ERR_NOT_A_DIRECTORY;
-	} else if (!inode_dir_is_empty(inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s: %s specified non-empty dir",
-		    diag, peer_get_username(peer));
-		e = GFARM_ERR_DIRECTORY_NOT_EMPTY;
 	} else if ((existing_tdirset = inode_search_tdirset(inode))
 	    == TDIRSET_IS_UNKNOWN) {
 		e = GFARM_ERR_UNKNOWN;
 	} else if (existing_tdirset != TDIRSET_IS_NOT_SET) {
 		e = GFARM_ERR_ALREADY_EXISTS;
+	} else if ((e = quota_dir_settable(inode, ds, user, diag))
+	    != GFARM_ERR_NO_ERROR) {
+		;
 	} else if ((e = quota_dir_enter(inode_get_number(inode), ds, NULL))
 	    != GFARM_ERR_NO_ERROR) {
 		;
 	} else {
+		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+			transaction = 1;
+
+		/* if this changes exceed, calls db_quota_dirset_modify() */
+		if (inode_dir_is_empty(inode)) {
+			dirquota_update_file_add(inode, ds);
+		} else { /* user_is_root(user) case */
+			inode_subtree_fixup_tdirset(inode, ds);
+			dirquota_invalidate(ds);
+		}
 		e = db_quota_dir_add(inode_get_number(inode),
 		    dirset_get_username(ds), dirset_get_dirsetname(ds));
+
+		if (transaction)
+			db_end(diag);
+
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "failed to store quota_dir %lld (dirset '%s:%s') "

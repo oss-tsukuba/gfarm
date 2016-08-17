@@ -17,8 +17,11 @@ extern struct dirset dirset_is_not_set;
 int dirset_is_valid(struct dirset *);
 const char *dirset_get_username(struct dirset *);
 const char *dirset_get_dirsetname(struct dirset *);
+struct dirquota;
+struct dirquota *dirset_get_dirquota(struct dirset *);
 struct quota_metadata;
-struct quota_metadata *dirset_quota(struct dirset *);
+void dirset_set_quota_metadata_in_cache(struct dirset *,
+	const struct quota_metadata *);
 
 /* for functions which refer dirset across giant lock */
 void dirset_add_ref(struct dirset *);
@@ -31,6 +34,9 @@ void dirset_remove_dir(struct dirset *);
 
 void dirset_init(void);
 
+int dirset_foreach_interruptible(void *, int (*)(void *, struct dirset *));
+int dirset_foreach_quota_dir_interruptible(struct dirset *,
+	void *, int (*)(void *, struct quota_dir *));
 gfarm_error_t xattr_list_set_by_dirset(struct xattr_list *,
 	const char *, struct dirset *, const char *);
 
