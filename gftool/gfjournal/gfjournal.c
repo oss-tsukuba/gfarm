@@ -257,7 +257,8 @@ print_quota_metadata(struct quota_metadata *q)
 	    ";phy_num_soft=%" GFARM_PRId64 ";phy_num_hard=%" GFARM_PRId64,
 	    q->usage.space, q->limit.soft.space, q->limit.hard.space,
 	    q->usage.num, q->limit.soft.num, q->limit.hard.num,
-	    q->usage.phy_space,q->limit.soft.phy_space,q->limit.hard.phy_space,
+	    q->usage.phy_space,
+	    q->limit.soft.phy_space, q->limit.hard.phy_space,
 	    q->usage.phy_num, q->limit.soft.phy_num, q->limit.hard.phy_num);
 
 	print_time("grace_period", q->limit.grace_period);

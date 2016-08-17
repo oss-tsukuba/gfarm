@@ -2605,7 +2605,7 @@ inode_new_generation_by_cookie_finish(
 		dirset_add_ref(tdirset);
 	inum = inode_get_number(inode);
 
-	if (size != inode_get_size(inode)) 
+	if (size != inode_get_size(inode))
 		inode_set_size(inode, tdirset, size);
 	if (inode_activity_free_try(inode))
 		inode_remove_try(inode, tdirset);

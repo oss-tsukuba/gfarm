@@ -99,7 +99,7 @@ dirset_new(const char *dirsetname, struct user *u)
 	/* ds->dirsets_node is initialized in dirset_enter() */
 	ds->refcount = 1;
 	ds->valid = 1;
-	return (ds);	
+	return (ds);
 }
 
 static void

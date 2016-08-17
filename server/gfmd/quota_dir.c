@@ -354,7 +354,7 @@ gfm_server_quota_dir_get(struct peer *peer, int from_client, int skip)
 		giant_unlock();
 		return (e);
 	}
-	       
+
 	giant_unlock();
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
@@ -492,7 +492,7 @@ gfm_server_quota_dir_set(struct peer *peer, int from_client, int skip)
 			    dirset_get_username(ds), dirset_get_dirsetname(ds),
 			    gfarm_error_string(e));
 	}
-	       
+
 	giant_unlock();
 	free(username);
 	free(dirsetname);

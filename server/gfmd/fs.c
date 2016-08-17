@@ -1555,7 +1555,7 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 		    gfarm_error_string(e));
 	} else if (from_client &&
 	    ((user = process_get_user(process)) == NULL ||
-	     (!user_is_root_for_inode(user, inode) && 
+	     (!user_is_root_for_inode(user, inode) &&
 	      process_get_file_writable(process, peer, fd, diag) !=
 	      GFARM_ERR_NO_ERROR))) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;

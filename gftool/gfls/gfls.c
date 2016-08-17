@@ -203,9 +203,10 @@ do_stats(char *prefix, int *np, char **files, struct gfs_stat *stats,
 				    strdup(value + strlen(value) + 1);
 				if (ls[m].dirset_user == NULL ||
 				    ls[m].dirset_name == NULL)
-				fprintf(stderr, "%s: no memory for %s:%s\n",
-					buffer,
-					value, value + strlen(value) + 1);
+					fprintf(stderr,
+					    "%s: no memory for %s:%s\n",
+					    buffer, value,
+					    value + strlen(value) + 1);
 			} else if (e != GFARM_ERR_NO_SUCH_OBJECT) {
 				fprintf(stderr, "%s: gfs_getxattr: %s\n",
 				    buffer, gfarm_error_string(e));
@@ -356,7 +357,7 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 			if (max_width < j)
 				max_width = j;
 		}
-		option_width = 
+		option_width =
 		    (option_directory_quota ? DIRECTORY_QUOTA_LEN : 0) +
 		    (option_inumber ? INUM_LEN : 0);
 		column_width = max_width +

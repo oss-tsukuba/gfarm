@@ -146,7 +146,7 @@ list_long(struct gfm_connection *gfm_server,
 	}
 	free(dirsetdirs);
 	free(errors);
-		
+
 	return (e);
 }
 

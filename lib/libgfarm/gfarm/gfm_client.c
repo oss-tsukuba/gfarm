@@ -2961,7 +2961,7 @@ gfm_client_dirset_info_list(struct gfm_connection *gfm_server,
 			    "gfm_client_dirset_info_list(): "
 			    "no memory for %d dirsets", (int)ndirsets);
 		}
-		
+
 		for (i = 0; i < ndirsets; i++) {
 			e = gfm_client_xdr_recv(gfm_server, 0, &eof, "ss",
 			    dirsets == NULL ? &dummy.username :
@@ -3153,7 +3153,7 @@ gfm_client_quota_dir_list(struct gfm_connection *gfm_server,
 			    "gfm_client_quota_dir_list(): "
 			    "no memory for %d dirsetdirs", (int)ndirsetdirs);
 		}
-		
+
 		for (i = 0; i < ndirsetdirs; i++) {
 			e = gfm_client_xdr_recv(gfm_server, 0, &eof, "i",
 			    &ecode);

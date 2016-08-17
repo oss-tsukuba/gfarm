@@ -128,7 +128,8 @@ quota_check_and_warning(FILE *f, struct gfarm_quota_get_info *q)
 	}
 
 static void
-quota_get_info_print(FILE *f, const char *nametype, struct gfarm_quota_get_info *q)
+quota_get_info_print(FILE *f, const char *nametype,
+	struct gfarm_quota_get_info *q)
 {
 	fprintf(f, "%-25s: %22s\n", nametype, q->name);
 	PRINT(f, "GracePeriod             ", q->grace_period);
