@@ -57,7 +57,7 @@ quota_dir_enter(gfarm_ino_t inum, struct dirset *ds, struct quota_dir **qdp)
 	int created;
 
 	entry = gfarm_hash_enter(quota_dir_table,
-	    &inum, sizeof(inum), sizeof(*qd), &created);
+	    &inum, sizeof(inum), sizeof(qd), &created);
 	if (entry == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "quota_dir_enter: gfarm_hash_enter() failed");
@@ -68,7 +68,16 @@ quota_dir_enter(gfarm_ino_t inum, struct dirset *ds, struct quota_dir **qdp)
 		    "quota_dir_enter_enter: already exists");
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
-	qd = gfarm_hash_entry_data(entry);
+	GFARM_MALLOC(qd);
+	if (qd == NULL) {
+		gfarm_hash_purge(quota_dir_table, &inum, sizeof(inum));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "quota_dir_enter: no memory for quota_dir(%lld)",
+		    (long long)inum);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	*(struct quota_dir **)gfarm_hash_entry_data(entry) = qd;
+
 	qd->ds = ds;
 	qd->inum = inum;
 	qd->refcount = 1;
@@ -196,7 +205,7 @@ quota_dir_lookup(gfarm_ino_t inum)
 	entry = gfarm_hash_lookup(quota_dir_table, &inum, sizeof(inum));
 	if (entry == NULL)
 		return (NULL);
-	return (gfarm_hash_entry_data(entry));
+	return (*(struct quota_dir **)gfarm_hash_entry_data(entry));
 }
 
 gfarm_error_t
@@ -281,6 +290,7 @@ quota_dir_init(void)
 {
 	gfarm_error_t e;
 
+	/* XXX DQTODO: this estimate of number may be totally wrong */
 	quota_dir_table = gfarm_hash_table_alloc(
 	    gfarm_directory_quota_count_per_user_limit * MANAGEMENT_USERS,
 	    gfarm_hash_default, gfarm_hash_key_equal_default);
