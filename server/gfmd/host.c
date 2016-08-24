@@ -657,9 +657,8 @@ host_is_disk_available(struct host *h, gfarm_off_t size)
 		avail = 0;
 	back_channel_mutex_unlock(h, diag);
 
-	if (minfree < size)
-		minfree = size;
-	return (avail >= minfree);
+	/* to reduce no space risk, keep minimum disk space */
+	return (avail >= minfree + size);
 }
 
 int
