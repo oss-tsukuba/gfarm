@@ -252,12 +252,12 @@ dirset_foreach_quota_dir_interruptible(struct dirset *ds,
 }
 
 gfarm_error_t
-xattr_list_set_by_tdirset(struct xattr_list *entry,
-	const char *name, struct dirset *tdirset, const char *diag)
+xattr_list_set_by_dirset(struct xattr_list *entry,
+	const char *name, struct dirset *ds, const char *diag)
 {
-	const char *username = user_name(tdirset->user);
+	const char *username = user_name(ds->user);
 	size_t userlen = strlen(username);
-	size_t dslen = strlen(tdirset->dirsetname);
+	size_t dslen = strlen(ds->dirsetname);
 	size_t size = userlen + 1 + dslen + 1; /* never overflow */
 	char *value;
 
@@ -265,7 +265,7 @@ xattr_list_set_by_tdirset(struct xattr_list *entry,
 	if (value == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	strcpy(value, username);
-	strcpy(value + userlen + 1, tdirset->dirsetname);
+	strcpy(value + userlen + 1, ds->dirsetname);
 	entry->name = strdup_log(name, diag);
 	entry->value = value;
 	entry->size = size;

@@ -7605,9 +7605,10 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 
 	for (j = 0; j < npattern; j++) {
 		if (strcmp(patterns[j], GFARM_EA_DIRECTORY_QUOTA) == 0) {
-			if (tdirset != TDIRSET_IS_UNKNOWN)
-				directory_quota = 1;
-			else if (inode_is_dir(inode)) {
+			if (tdirset != TDIRSET_IS_UNKNOWN) {
+				directory_quota =
+				    tdirset != TDIRSET_IS_NOT_SET;
+			} else if (inode_is_dir(inode)) {
 				tdirset = quota_dir_get_dirset_by_inum(inum);
 				if (tdirset != NULL)
 					directory_quota = 1;
@@ -7640,8 +7641,8 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 	}
 
 	i = 0;
-	if (directory_quota) {
-		if (xattr_list_set_by_tdirset(&list[i],
+	if (directory_quota) { /* only true if tdirset points actual dirset */
+		if (xattr_list_set_by_dirset(&list[i],
 		    GFARM_EA_DIRECTORY_QUOTA, tdirset, diag)
 		    != GFARM_ERR_NO_ERROR)
 			nxattrs = i;

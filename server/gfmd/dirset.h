@@ -37,7 +37,7 @@ void dirset_init(void);
 int dirset_foreach_interruptible(void *, int (*)(void *, struct dirset *));
 int dirset_foreach_quota_dir_interruptible(struct dirset *,
 	void *, int (*)(void *, struct quota_dir *));
-gfarm_error_t xattr_list_set_by_tdirset(struct xattr_list *,
+gfarm_error_t xattr_list_set_by_dirset(struct xattr_list *,
 	const char *, struct dirset *, const char *);
 
 struct dirsets;
