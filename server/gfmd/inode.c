@@ -7585,7 +7585,7 @@ inode_xattr_list_free(struct xattr_list *list, size_t n)
 
 gfarm_error_t
 inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
-	char **patterns, int npattern, struct dirset *dirset,
+	char **patterns, int npattern, struct dirset *tdirset,
 	struct xattr_list **listp, size_t *np)
 {
 	struct inode *inode;
@@ -7605,12 +7605,15 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 
 	for (j = 0; j < npattern; j++) {
 		if (strcmp(patterns[j], GFARM_EA_DIRECTORY_QUOTA) == 0) {
-			if (dirset != NULL)
+			if (tdirset != TDIRSET_IS_UNKNOWN)
 				directory_quota = 1;
-			else if (inode_is_dir(inode) &&
-			    (dirset = quota_dir_get_dirset_by_inum(inum))
-			    != NULL)
-				directory_quota = 1;
+			else if (inode_is_dir(inode)) {
+				tdirset = quota_dir_get_dirset_by_inum(inum);
+				if (tdirset != NULL)
+					directory_quota = 1;
+				else
+					tdirset = TDIRSET_IS_NOT_SET;
+			}
 			break;
 		}
 	}
@@ -7638,8 +7641,8 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 
 	i = 0;
 	if (directory_quota) {
-		if (xattr_list_set_by_dirset(&list[i],
-		    GFARM_EA_DIRECTORY_QUOTA, dirset, diag)
+		if (xattr_list_set_by_tdirset(&list[i],
+		    GFARM_EA_DIRECTORY_QUOTA, tdirset, diag)
 		    != GFARM_ERR_NO_ERROR)
 			nxattrs = i;
 		else
