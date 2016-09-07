@@ -1154,9 +1154,17 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 	} else if ((e_rpc = inode_get_stat(inode, &st)) !=
 	    GFARM_ERR_NO_ERROR) {
 	} else {
+		/* inode is already opened as fd */
+		struct dirset *tdirset, *dirset = NULL;
+
+		tdirset = inode_get_tdirset(inode);
+		if (tdirset != TDIRSET_IS_UNKNOWN ||
+		    tdirset != TDIRSET_IS_NOT_SET)
+			dirset = tdirset;
+
 		needs_free = 1;
 		e_rpc = inode_xattr_list_get_cached_by_patterns(
-		    st.st_ino, attrpatterns, nattrpatterns, NULL /* DQTODO */,
+		    st.st_ino, attrpatterns, nattrpatterns, dirset,
 		    &xattrs, &nxattrs);
 		if (e_rpc != GFARM_ERR_NO_ERROR) {
 			xattrs = NULL;
@@ -2594,21 +2602,30 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 
 	if (e_rpc == GFARM_ERR_NO_ERROR) {
 		int has_directory_quota_ea = 0;
-		struct dirset *tdirset = NULL;
+		struct dirset *dirset = NULL;
 
 		for (i = 0; i < nattrpatterns; i++) {
 			if (strcmp(attrpatterns[i], GFARM_EA_DIRECTORY_QUOTA)
 			    == 0)
 				has_directory_quota_ea = 1;
 		}
-		if (has_directory_quota_ea) /* inode is already opened as fd */
-			tdirset = inode_get_tdirset(inode);
+		if (has_directory_quota_ea) {
+			struct dirset *tdirset;
 
+			/* inode is already opened as fd */
+			tdirset = inode_get_tdirset(inode);
+			if (tdirset == TDIRSET_IS_UNKNOWN)
+				tdirset = inode_search_tdirset(inode);
+			if (tdirset != TDIRSET_IS_UNKNOWN &&
+			    tdirset != TDIRSET_IS_NOT_SET)
+				dirset = tdirset;
+			/* otherwise dirset == NULL */
+		}
 		for (i = 0; i < n; i++) {
 			pp = &p[i];
 			e_rpc = inode_xattr_list_get_cached_by_patterns(
 			    pp->st.st_ino, attrpatterns, nattrpatterns,
-			    tdirset, &pp->xattrs, &pp->nxattrs);
+			    dirset, &pp->xattrs, &pp->nxattrs);
 			if (e_rpc != GFARM_ERR_NO_ERROR) {
 				pp->xattrs = NULL;
 				pp->nxattrs = 0;

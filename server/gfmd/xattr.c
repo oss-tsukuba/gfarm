@@ -137,7 +137,9 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 		    strcmp("md5", type) != 0 &&
 		    strcmp("acl_access", type) != 0 &&
 		    strcmp("acl_default", type) != 0 &&
-		    strcmp(GFARM_REPATTR_TYPE, type) != 0)
+		    strcmp(GFARM_REPATTR_TYPE, type) != 0 &&
+		    strcmp(GFARM_REPATTR_TYPE, type) != 0 &&
+		    strcmp(GFARM_EA_DIRECTORY_QUOTA + 6, type) != 0)
 			goto not_supp;
 		else if (inode_is_symlink(inode))
 			goto symlink;
