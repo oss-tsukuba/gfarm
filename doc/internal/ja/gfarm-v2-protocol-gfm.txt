@@ -1061,6 +1061,7 @@
 		s:dirset name
 	  出力: i:エラー
 		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:flags (1の場合、利用量が不正確)
 		l:grace_period,
 		l:space, l:space_grace, l:space_soft, l:space_hard,
 		l:num, l:num_grace, l:num_soft, l:num_hard,
@@ -1086,6 +1087,7 @@
 		エラー == GFARM_ERR_NO_ERROR の場合:
 		s:ユーザー名
 		s:dirset name
+		l:flags (1の場合、利用量が不正確)
 		l:grace_period,
 		l:space, l:space_grace, l:space_soft, l:space_hard,
 		l:num, l:num_grace, l:num_soft, l:num_hard,

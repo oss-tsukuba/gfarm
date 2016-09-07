@@ -69,6 +69,7 @@ struct gfm_dirquota_get_closure {
 	struct gfarm_quota_limit_info *limit_info;
 	struct gfarm_quota_subject_info *usage_info;
 	struct gfarm_quota_subject_time *grace_info;
+	gfarm_uint64_t flags;
 };
 
 static gfarm_error_t
@@ -87,7 +88,8 @@ gfm_dirquota_get_result(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_dirquota_get_closure *c = closure;
 	gfarm_error_t e = gfm_client_quota_dir_get_result(gfm_server,
-	    c->dirset_info, c->limit_info, c->usage_info, c->grace_info);
+	    c->dirset_info, c->limit_info, c->usage_info, c->grace_info,
+	    &c->flags);
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
@@ -102,7 +104,8 @@ gfs_dirquota_get(const char *path,
 	struct gfarm_dirset_info *dirset_info,
 	struct gfarm_quota_limit_info *limit_info,
 	struct gfarm_quota_subject_info *usage_info,
-	struct gfarm_quota_subject_time *grace_info)
+	struct gfarm_quota_subject_time *grace_info,
+	gfarm_uint64_t *flagsp)
 {
 	struct gfm_dirquota_get_closure closure;
 	gfarm_error_t e;
@@ -122,6 +125,8 @@ gfs_dirquota_get(const char *path,
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfs_dirquota_get(%s) failed: %s",
 		    path, gfarm_error_string(e));
+	else
+		*flagsp =closure.flags;
 
 	return (e);
 }

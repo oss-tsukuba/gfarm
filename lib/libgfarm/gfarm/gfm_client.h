@@ -340,14 +340,16 @@ gfarm_error_t gfm_client_dirset_info_list(struct gfm_connection *,
 gfarm_error_t gfm_client_quota_dirset_get(struct gfm_connection *,
 	const char *, const char *,
 	struct gfarm_quota_limit_info *,
-	struct gfarm_quota_subject_info *, struct gfarm_quota_subject_time *);
+	struct gfarm_quota_subject_info *, struct gfarm_quota_subject_time *,
+	gfarm_uint64_t *);
 gfarm_error_t gfm_client_quota_dirset_set(struct gfm_connection *,
 	const char *, const char *, const struct gfarm_quota_limit_info *);
 gfarm_error_t gfm_client_quota_dir_get_request(struct gfm_connection *);
 gfarm_error_t gfm_client_quota_dir_get_result(struct gfm_connection *,
 	struct gfarm_dirset_info *,
 	struct gfarm_quota_limit_info *,
-	struct gfarm_quota_subject_info *, struct gfarm_quota_subject_time *);
+	struct gfarm_quota_subject_info *, struct gfarm_quota_subject_time *,
+	gfarm_uint64_t *);
 gfarm_error_t gfm_client_quota_dir_set_request(struct gfm_connection *,
 	const char *, const char *);
 gfarm_error_t gfm_client_quota_dir_set_result(struct gfm_connection *);

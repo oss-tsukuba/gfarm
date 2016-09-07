@@ -609,7 +609,7 @@ usage_tmp_update(struct inode *inode)
 }
 
 static void
-dirquota_usage_update(struct dirset *ds, struct inode *inode)
+dirquota_usage_tmp_update(struct dirset *ds, struct inode *inode)
 {
 	gfarm_off_t size;
 	gfarm_int64_t ncopy;
@@ -623,7 +623,7 @@ dirquota_usage_update(struct dirset *ds, struct inode *inode)
 		ncopy = 0;
 	}
 
-	update_file_add(&dq->qmm.q.usage, size, ncopy);
+	update_file_add(&dq->usage_tmp, size, ncopy);
 }
 
 static void quota_check_retry_if_running(void);
@@ -660,10 +660,9 @@ quota_update_file_add(struct inode *inode, struct dirset *tdirset)
 	}
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
 		struct dirquota *dq = dirset_get_dirquota(tdirset);
-		if (dirquota_is_checked(dq)) {
-			update_file_add(&dq->qmm.q.usage, size, ncopy);
-			dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
-		} else
+		update_file_add(&dq->qmm.q.usage, size, ncopy);
+		dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
+		if (!dirquota_is_checked(dq))
 			dirquota_check_retry_if_running(dq);
 	}
 
@@ -720,11 +719,10 @@ quota_update_file_resize(struct inode *inode, struct dirset *tdirset,
 	}
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
 		struct dirquota *dq = dirset_get_dirquota(tdirset);
-		if (dirquota_is_checked(dq)) {
-			update_file_resize(&dq->qmm.q.usage,
-			    old_size, new_size, ncopy);
-			dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
-		} else
+		update_file_resize(&dq->qmm.q.usage,
+		    old_size, new_size, ncopy);
+		dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
+		if (!dirquota_is_checked(dq))
 			dirquota_check_retry_if_running(dq);
 	}
 
@@ -761,10 +759,9 @@ quota_update_replica_num(struct inode *inode, struct dirset *tdirset,
 	}
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
 		struct dirquota *dq = dirset_get_dirquota(tdirset);
-		if (dirquota_is_checked(dq)) {
-			update_replica_num(&dq->qmm.q.usage, size, n);
-			dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
-		} else
+		update_replica_num(&dq->qmm.q.usage, size, n);
+		dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
+		if (!dirquota_is_checked(dq))
 			dirquota_check_retry_if_running(dq);
 	}
 
@@ -823,10 +820,9 @@ quota_update_file_remove(struct inode *inode, struct dirset *tdirset)
 	}
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
 		struct dirquota *dq = dirset_get_dirquota(tdirset);
-		if (dirquota_is_checked(dq)) {
-			update_file_remove(&dq->qmm.q.usage, size, ncopy);
-			dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
-		} else
+		update_file_remove(&dq->qmm.q.usage, size, ncopy);
+		dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
+		if (!dirquota_is_checked(dq))
 			dirquota_check_retry_if_running(dq);
 	}
 
@@ -849,10 +845,9 @@ dirquota_update_file_add(struct inode *inode, struct dirset *tdirset)
 
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
 		struct dirquota *dq = dirset_get_dirquota(tdirset);
-		if (dirquota_is_checked(dq)) {
-			update_file_add(&dq->qmm.q.usage, size, ncopy);
-			dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
-		} else
+		update_file_add(&dq->qmm.q.usage, size, ncopy);
+		dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
+		if (!dirquota_is_checked(dq))
 			dirquota_check_retry_if_running(dq);
 	}
 
@@ -875,10 +870,9 @@ dirquota_update_file_remove(struct inode *inode, struct dirset *tdirset)
 
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET) {
 		struct dirquota *dq = dirset_get_dirquota(tdirset);
-		if (dirquota_is_checked(dq)) {
-			update_file_remove(&dq->qmm.q.usage, size, ncopy);
-			dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
-		} else
+		update_file_remove(&dq->qmm.q.usage, size, ncopy);
+		dirquota_softlimit_exceed(&dq->qmm.q, tdirset);
+		if (!dirquota_is_checked(dq))
 			dirquota_check_retry_if_running(dq);
 	}
 
@@ -964,8 +958,10 @@ dirquota_is_exceeded(struct timeval *nowp, struct dirquota *dq,
 	int check_logical = 0, check_physical = 0;
 	struct quota_metadata *q;
 
+#if 0 /* check dirquota, even if it is inaccurate */
 	if (!dirquota_is_checked(dq))  /* quota is disabled */
 		return (QUOTA_NOT_EXCEEDED);
+#endif
 	q = &dq->qmm.q;
 
 	/* softlimit */
@@ -1377,7 +1373,7 @@ dirquota_check_per_inode(void *closure, struct inode *inode)
 	}
 
 	if (n == 1) { /* count hard-linked files only at once */
-		dirquota_usage_update(ds, inode);
+		dirquota_usage_tmp_update(ds, inode);
 		++dirquota_check_state.handled_inodes;
 	}
 
@@ -1421,7 +1417,7 @@ dirquota_check_per_dirset(void *closure, struct dirset *ds)
 	}
 
 	dq->dirquota_checking = 1;
-	quota_usage_clear(&dq->qmm.q.usage);
+	quota_usage_clear(&dq->usage_tmp);
 
 	dirquota_check_state.hardlink_counters = uint64_to_uint64_map_new();
 	if (dirquota_check_state.hardlink_counters == NULL) {
@@ -1434,18 +1430,20 @@ dirquota_check_per_dirset(void *closure, struct dirset *ds)
 		    dq->invalidate_requested ||
 		    dirquota_invalidate_all_requested;
 	}
+	dq->dirquota_checking = 0;
 
 	if (interrupted) {
 		++dirquota_check_state.retried_dirsets;
 	} else {
 		++dirquota_check_state.handled_dirsets;
+		dq->qmm.q.usage = dq->usage_tmp;
 		dq->qmm.usage_is_valid = 1;
+		dirquota_softlimit_exceed(&dq->qmm.q, ds);
 	}
 
 	uint64_to_uint64_map_free(dirquota_check_state.hardlink_counters);
 	dirquota_check_state.hardlink_counters = NULL;
 
-	dq->dirquota_checking = 0;
 	return (interrupted);
 }
 

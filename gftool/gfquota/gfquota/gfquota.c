@@ -12,6 +12,7 @@
 
 #include "config.h"
 #include "quota_info.h"
+#include "gfm_proto.h"
 #include "gfm_client.h"
 #include "lookup.h"
 #include "gfs_dirquota.h"
@@ -204,6 +205,7 @@ main(int argc, char **argv)
 	const char *name = "";  /* default: my username */
 	char *nametype, *dirsetname = NULL;
 	struct gfarm_quota_get_info qi;
+	gfarm_uint64_t flags = 0;
 
 	/* for dirquota */
 	struct gfarm_dirset_info di;
@@ -306,7 +308,8 @@ main(int argc, char **argv)
 		if (*name == '\0')
 			name = gfm_client_username(gfm_server);
 		e = gfm_client_quota_dirset_get(gfm_server,
-		    name, dirsetname, &limit_info, &usage_info, &grace_info);
+		    name, dirsetname, &limit_info, &usage_info, &grace_info,
+		    &flags);
 		if (e == GFARM_ERR_NO_ERROR)
 			gfarm_quota_get_info_from_dirquota(
 			    &qi, dirsetname,
@@ -315,7 +318,7 @@ main(int argc, char **argv)
 		break;
 	case OPT_DIR:
 		e = gfs_dirquota_get(name, &di,
-		    &limit_info, &usage_info, &grace_info);
+		    &limit_info, &usage_info, &grace_info, &flags);
 		if (e == GFARM_ERR_NO_ERROR)
 			gfarm_quota_get_info_from_dirquota(
 			    &qi, di.dirsetname,
@@ -341,6 +344,9 @@ main(int argc, char **argv)
 		    program_name, gfarm_error_string(e));
 		exit(EXIT_FAILURE);
 	} else {
+		if ((flags & GFM_PROTO_QUOTA_INACCURATE) != 0)
+			fprintf(stderr,
+			    "warning: quota usage is inaccurate\n");
 		status = quota_check_and_warning(stderr, &qi);
 		if (!opt_quiet) {
 			switch (mode) {

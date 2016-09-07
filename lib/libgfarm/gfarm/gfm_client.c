@@ -3003,12 +3003,13 @@ gfm_client_quota_dirset_get(struct gfm_connection *gfm_server,
 	const char *username, const char *dirsetname,
 	struct gfarm_quota_limit_info *limit_info,
 	struct gfarm_quota_subject_info *usage_info,
-	struct gfarm_quota_subject_time *grace_info)
+	struct gfarm_quota_subject_time *grace_info,
+	gfarm_uint64_t *flagsp)
 {
 	return (gfm_client_rpc(
 	    gfm_server, 0, GFM_PROTO_QUOTA_DIRSET_GET,
-	    "ss/lllllllllllllllll",
-	    username, dirsetname,
+	    "ss/llllllllllllllllll",
+	    username, dirsetname, flagsp,
 
 	    /* the following is same order with user/group quota */
 
@@ -3066,12 +3067,14 @@ gfm_client_quota_dir_get_result(struct gfm_connection *gfm_server,
 	struct gfarm_dirset_info *dirset_info,
 	struct gfarm_quota_limit_info *limit_info,
 	struct gfarm_quota_subject_info *usage_info,
-	struct gfarm_quota_subject_time *grace_info)
+	struct gfarm_quota_subject_time *grace_info,
+	gfarm_uint64_t *flagsp)
 {
-	return (gfm_client_rpc_result(gfm_server, 0, "sslllllllllllllllll",
+	return (gfm_client_rpc_result(gfm_server, 0, "ssllllllllllllllllll",
 
 	    &dirset_info->username,
 	    &dirset_info->dirsetname,
+	    flagsp,
 
 	    /* the following is same order with user/group quota */
 

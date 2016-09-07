@@ -32,7 +32,7 @@ void quota_data_init(struct quota *);
 /* on gfmd memory, and on backend database (only used for dirquota for now) */
 struct quota_metadata {
 	struct gfarm_quota_limit_info limit;
-	struct gfarm_quota_subject_info usage; /* backend is not up-to-date */
+	struct gfarm_quota_subject_info usage; /* DB is not up-to-date */
 	struct gfarm_quota_subject_time exceed;
 };
 
@@ -52,6 +52,7 @@ void quota_metadata_memory_convert_from_db(
 /* on gfmd memory, and for dirquota only even in future */
 struct dirquota {
 	struct quota_metadata_memory qmm;
+	struct gfarm_quota_subject_info usage_tmp; /* when dirquota_checking */
 	int dirquota_checking;
 	int invalidate_requested;
 };

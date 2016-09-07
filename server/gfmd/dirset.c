@@ -13,6 +13,7 @@
 #include "quota_info.h"
 #include "gfp_xdr.h"
 #include "auth.h"
+#include "gfm_proto.h"
 #include "config.h"
 
 #include "quota.h"
@@ -46,7 +47,7 @@ struct dirset {
 struct dirset dirset_is_not_set = {
 	"DIRSET_IS_NOT_SET",
 	NULL,
-	{ { { { 0, {0}, {0} }, {0}, {0} }, 0}, 0, 0},
+	{ { { { 0, {0}, {0} }, {0}, {0} }, 0}, {0}, 0, 0},
 	0,
 	NULL,
 	{ &dirset_is_not_set, &dirset_is_not_set },
@@ -603,6 +604,7 @@ gfm_server_quota_dirset_get(struct peer *peer, int from_client, int skip)
 	struct dirset *ds;
 	struct quota_metadata q;
 	struct gfarm_quota_subject_time grace;
+	gfarm_uint64_t flags = 0;
 	static const char diag[] = "GFM_PROTO_QUOTA_DIRSET_GET";
 
 	e = gfm_server_get_request(peer, diag, "ss", &username, &dirsetname);
@@ -628,11 +630,10 @@ gfm_server_quota_dirset_get(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((ds = user_lookup_dirset(u, dirsetname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-	} else if (!dirquota_is_checked(&ds->dq)) {
-		/* quota_check hasn't been done yet */
-		e = GFARM_ERR_FILE_BUSY;
 	} else {
 		e = GFARM_ERR_NO_ERROR;
+		if (!dirquota_is_checked(&ds->dq))
+			flags |= GFM_PROTO_QUOTA_INACCURATE;
 		q = ds->dq.qmm.q;
 		quota_exceed_to_grace(q.limit.grace_period, &q.exceed, &grace);
 	}
@@ -640,7 +641,8 @@ gfm_server_quota_dirset_get(struct peer *peer, int from_client, int skip)
 	giant_unlock();
 	free(username);
 	free(dirsetname);
-	return (gfm_server_put_reply(peer, diag, e, "lllllllllllllllll",
+	return (gfm_server_put_reply(peer, diag, e, "llllllllllllllllll",
+	    flags,
 	    q.limit.grace_period,
 	    q.usage.space,
 	    grace.space_time,
@@ -663,20 +665,19 @@ gfm_server_quota_dirset_get(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 quota_dirset_put_reply(struct peer *peer, struct dirset *ds, const char *diag)
 {
-	gfarm_error_t e;
 	struct gfarm_quota_subject_time grace;
+	gfarm_uint64_t flags = 0;
 
-	if (!dirquota_is_checked(&ds->dq)) {
-		/* quota_check hasn't been done yet */
-		e = GFARM_ERR_FILE_BUSY;
-	} else {
-		e = GFARM_ERR_NO_ERROR;
-		quota_exceed_to_grace(ds->dq.qmm.q.limit.grace_period,
-		    &ds->dq.qmm.q.exceed, &grace);
-	}
-	return (gfm_server_put_reply(peer, diag, e, "sslllllllllllllllll",
+	if (!dirquota_is_checked(&ds->dq))
+		flags |= GFM_PROTO_QUOTA_INACCURATE;
+	quota_exceed_to_grace(ds->dq.qmm.q.limit.grace_period,
+	    &ds->dq.qmm.q.exceed, &grace);
+
+	return (gfm_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR,
+	    "ssllllllllllllllllll",
 	    user_name(ds->user),
 	    ds->dirsetname,
+	    flags,
 	    ds->dq.qmm.q.limit.grace_period,
 	    ds->dq.qmm.q.usage.space,
 	    grace.space_time,
