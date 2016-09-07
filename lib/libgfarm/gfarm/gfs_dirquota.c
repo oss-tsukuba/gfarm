@@ -126,7 +126,7 @@ gfs_dirquota_get(const char *path,
 		    "gfs_dirquota_get(%s) failed: %s",
 		    path, gfarm_error_string(e));
 	else
-		*flagsp =closure.flags;
+		*flagsp = closure.flags;
 
 	return (e);
 }
