@@ -397,6 +397,7 @@ static gfarm_error_t
 gfarm_none_quota_dirset_add(gfarm_uint64_t seqnum,
 	struct db_quota_dirset_arg *arg)
 {
+	free(arg);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -404,6 +405,7 @@ static gfarm_error_t
 gfarm_none_quota_dirset_modify(gfarm_uint64_t seqnum,
 	struct db_quota_dirset_arg *arg)
 {
+	free(arg);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -411,6 +413,7 @@ static gfarm_error_t
 gfarm_none_quota_dirset_remove(gfarm_uint64_t seqnum,
 	struct gfarm_dirset_info *arg)
 {
+	free(arg);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
