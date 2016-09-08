@@ -334,6 +334,9 @@ main(int argc, char **argv)
 		nametype = "GroupName";
 		break;
 	default:
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+		nametype = NULL;
+#endif
 		usage();
 	}
 
