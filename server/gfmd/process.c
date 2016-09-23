@@ -16,6 +16,7 @@
 #include "gfm_proto.h"
 #include "gfs_proto.h"
 #include "timespec.h"
+#include "config.h"
 
 #include "subr.h"
 #include "rpcsubr.h"
@@ -28,7 +29,6 @@
 
 #define FILETAB_INITIAL		16
 #define FILETAB_MULTIPLY	2
-#define FILETAB_MAX		1024
 
 #define PROCESS_ID_MIN			300
 #define PROCESS_TABLE_INITIAL_SIZE	100
@@ -692,7 +692,7 @@ process_open_file(struct process *process, struct inode *file,
 	gfarm_int32_t *fdp)
 {
 	gfarm_error_t e;
-	int fd, fd2;
+	int fd, fd2, new_nfiles;
 	struct file_opening **p, *fo;
 
 	/* XXX FIXME cache minimum unused fd, and avoid liner search */
@@ -701,20 +701,22 @@ process_open_file(struct process *process, struct inode *file,
 			break;
 	}
 	if (fd >= process->nfiles) {
-		if (fd >= FILETAB_MAX) {
+		if (fd >= gfarm_max_open_files) {
 			gflog_debug(GFARM_MSG_1001623,
 				"too many open files");
 			return (GFARM_ERR_TOO_MANY_OPEN_FILES);
 		}
-		p = realloc(process->filetab,
-		    sizeof(*p) * (process->nfiles * FILETAB_MULTIPLY));
+		new_nfiles = process->nfiles * FILETAB_MULTIPLY;
+		if (new_nfiles > gfarm_max_open_files)
+			new_nfiles = gfarm_max_open_files;
+		p = realloc(process->filetab, sizeof(*p) * new_nfiles);
 		if (p == NULL) {
 			gflog_debug(GFARM_MSG_1001624,
 				"re-allocation of 'process' failed");
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		process->filetab = p;
-		process->nfiles *= FILETAB_MULTIPLY;
+		process->nfiles = new_nfiles;
 		for (fd2 = fd + 1; fd2 < process->nfiles; fd2++)
 			process->filetab[fd2] = NULL;
 	}

@@ -1762,6 +1762,23 @@ disable設定は、通常のファイルシステムにおける"noatime"オプ�
 </varlistentry>
 
 <varlistentry>
+<term><token>max_open_files</token> <parameter moreinfo="none">ファイル数</parameter></term>
+<listitem>
+<para>
+同時にオープンできるファイル数の最大値を指定します。
+デフォルトは1024です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	max_open_files 1024
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>client_digest_check</token> <parameter moreinfo="none">有効性</parameter></term>
 <listitem>
 <para>
@@ -2363,6 +2380,7 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 	&lt;gfsd_connection_timeout_statement&gt; |
 <!--	&lt;record_atime_statement&gt; | -->
 	&lt;atime_statement&gt; |
+	&lt;max_open_files_statement&gt; |
 	&lt;client_digest_check_statement&gt; |
 	&lt;client_file_bufsize_statement&gt; |
 	&lt;client_parallel_copy_statement&gt; |
@@ -2862,6 +2880,11 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 <varlistentry>
 <term>&lt;atime_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"atime" &lt;atime_type&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;max_open_files_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"max_open_files" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
