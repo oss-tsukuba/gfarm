@@ -37,7 +37,7 @@ check_symlink() {
 	read ino_lnk_test bn_lnk_test < $localtmp
 	check_ok
 	echo "check_symlink[$testno]:"\
-	    "ino_tgt=$ino_tgt"
+	    "ino_tgt=$ino_tgt"\
 	    "ino_tgt_test=$ino_tgt_test"\
 	    "ino_lnk=$ino_lnk"\
 	    "ino_lnk_test=$ino_lnk_test"\
