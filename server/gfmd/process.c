@@ -1,4 +1,5 @@
 #include <pthread.h>	/* db_access.h currently needs this */
+#include <stdarg.h>
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -12,6 +13,9 @@
 #include <gfarm/gfs.h>
 
 #include "gfutil.h"
+#include "id_table.h"
+
+#include "gfp_xdr.h"
 #include "auth.h"
 #include "gfm_proto.h"
 #include "gfs_proto.h"
@@ -22,9 +26,9 @@
 #include "rpcsubr.h"
 #include "db_access.h"
 #include "peer.h"
+#include "user.h"
 #include "inode.h"
 #include "process.h"
-#include "id_table.h"
 #include "host.h"
 
 #define FILETAB_INITIAL		16
@@ -1677,6 +1681,321 @@ gfm_server_process_free(struct peer *peer, int from_client, int skip)
 	}
 
 	giant_unlock();
+	return (gfm_server_put_reply(peer, diag, e, ""));
+}
+
+struct process_fd_info {
+	struct user *user;
+	gfarm_pid_t pid;
+	gfarm_uint32_t fd;
+	gfarm_mode_t mode;
+	gfarm_ino_t inum;
+	gfarm_uint64_t igen;
+	int open_flag;
+	unsigned short client_port, gfsd_peer_port; /* optional */
+	gfarm_off_t off; /* optional, DIR and REG only */
+	char *client_host; /* optional */
+	struct host *gfsd_host; /* optional, REG only */
+};
+
+struct process_fd_info_closure {
+	struct peer *peer;
+	char *gfsd_domain;
+	char *user_host_domain;
+	struct user *proc_user;
+	gfarm_uint64_t flags;
+
+	gfarm_int32_t nfds;
+	gfarm_int32_t idx;
+	gfarm_error_t e;
+	struct process_fd_info *fd_info;
+};
+
+static int
+process_fd_info_match(struct file_opening *fo, gfarm_mode_t mode,
+	struct process_fd_info_closure *c)
+{
+	int is_file = GFARM_S_ISREG(mode);
+	int op = accmode_to_op(fo->flag);
+
+	if ((c->flags &
+	     GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_WRITE_NO_OPEN) != 0 &&
+	    (op & GFS_W_OK) == 0)
+		return (0);
+	if ((c->flags &
+	     GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_WRITE_OPEN) != 0 &&
+	    (op & GFS_W_OK) != 0)
+		return (0);
+	if ((c->flags &
+	     GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_READ_NO_OPEN) != 0 &&
+	    (op & GFS_R_OK) == 0)
+		return (0);
+	if ((c->flags &
+	     GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_READ_OPEN) != 0 &&
+	    (op & GFS_R_OK) != 0)
+		return (0);
+
+	if ((c->flags &
+	    GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_CLIENT_DETACH) != 0 &&
+	    fo->opener == NULL)
+		return (0);
+	if ((c->flags &
+	    GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_CLIENT_ATTACH) != 0 &&
+	    fo->opener != NULL)
+		return (0);
+	if (is_file && (c->flags &
+	    GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_GFSD_DETACH) != 0 &&
+	    fo->u.f.spool_opener == NULL)
+		return (0);
+	if (is_file && (c->flags &
+	    GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_GFSD_ATTACH) != 0 &&
+	    fo->u.f.spool_opener != NULL)
+		return (0);
+
+	if ((c->flags &
+	    GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_INODE_DIR) != 0 &&
+	    GFARM_S_ISDIR(mode))
+		return (0);
+	if ((c->flags &
+	    GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_INODE_REG) != 0 &&
+	    GFARM_S_ISREG(mode))
+		return (0);
+	if ((c->flags &
+	    GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_INODE_LNK) != 0 &&
+	    GFARM_S_ISLNK(mode)) /* lookup-mode-open is possible */
+		return (0);
+
+	if (is_file && c->gfsd_domain[0] != '\0' &&
+	    fo->u.f.spool_host != NULL &&
+	    !gfarm_host_is_in_domain(host_name(fo->u.f.spool_host),
+	    c->gfsd_domain))
+		return (0);
+
+	if (c->user_host_domain[0] != '\0' &&
+	    fo->opener != NULL &&
+	    !gfarm_host_is_in_domain(peer_get_hostname(fo->opener),
+	    c->user_host_domain))
+		return (0);
+
+	return (1);
+}
+
+static void
+process_fd_info_count(void *closure, struct gfarm_id_table *idtab,
+	gfarm_int32_t pid, void *proc)
+{
+	struct process_fd_info_closure *c = closure;
+	struct process *process = proc;
+	gfarm_int32_t fd, nfds;
+	struct file_opening *fo;
+
+	if (c->proc_user != NULL && c->proc_user != process->user)
+		return;
+
+	nfds = 0;
+	for (fd = 0; fd < process->nfiles; fd++) {
+		fo = process->filetab[fd];
+		if (fo == NULL)
+			continue;
+
+		if (!process_fd_info_match(fo, inode_get_mode(fo->inode), c))
+			continue;
+
+		++nfds;
+	}
+	c->nfds += nfds;
+}
+
+static  void
+process_fd_info_record(void *closure, struct gfarm_id_table *idtab,
+	gfarm_int32_t pid, void *proc)
+{
+	struct process_fd_info_closure *c = closure;
+	struct process *process = proc;
+	int fd;
+	struct file_opening *fo;
+	gfarm_mode_t mode;
+	int is_file, port;
+	struct process_fd_info *fdi;
+	static const char diag[] = "GFM_PROTO_PROCESS_FD_INFO:record";
+
+	if (c->e != GFARM_ERR_NO_ERROR)
+		return;
+
+	if (c->proc_user != NULL && c->proc_user != process->user)
+		return;
+
+	for (fd = 0; fd < process->nfiles; fd++) {
+		fo = process->filetab[fd];
+		if (fo == NULL)
+			continue;
+
+		mode = inode_get_mode(fo->inode);
+		is_file = GFARM_S_ISREG(mode);
+
+		if (!process_fd_info_match(fo, mode, c))
+			continue;
+
+		fdi = &c->fd_info[c->idx++];
+		fdi->user = process->user;
+		fdi->pid = pid;
+		fdi->fd = fd;
+		fdi->mode = mode;
+		fdi->inum = inode_get_number(fo->inode);
+		fdi->igen = inode_get_gen(fo->inode);
+		fdi->open_flag = (fo->flag & GFARM_FILE_USER_MODE);
+		fdi->off = (GFARM_S_ISDIR(mode) ? fo->u.d.offset :
+		     is_file ? inode_get_size(fo->inode) : 0);
+		if (fo->opener == NULL) {
+			fdi->client_host = NULL;
+			fdi->client_port = 0;
+		} else {
+			fdi->client_host =
+			    strdup_log(peer_get_hostname(fo->opener), diag);
+			if (fdi->client_host == NULL)
+				c->e = GFARM_ERR_NO_MEMORY;
+			if (peer_get_port(fo->opener, &port)
+			    == GFARM_ERR_NO_ERROR)
+				fdi->client_port = port;
+			else
+				fdi->client_port = 0;
+		}
+		if (!is_file || fo->u.f.spool_opener == NULL) {
+			fdi->gfsd_host = NULL;
+			fdi->gfsd_peer_port = 0;
+		} else {
+			fdi->gfsd_host = fo->u.f.spool_host;
+			if (peer_get_port(fo->u.f.spool_opener, &port)
+			    == GFARM_ERR_NO_ERROR)
+				fdi->gfsd_peer_port = port;
+			else
+				fdi->gfsd_peer_port = 0;
+		}
+	}
+}
+
+gfarm_error_t
+gfm_server_process_fd_info(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	struct user *user = peer_get_user(peer), *proc_user;
+	char *gfsd_domain, *user_host_domain, *proc_username;
+	gfarm_uint64_t flags;
+	gfarm_int32_t i;
+	struct process_fd_info *fdi;
+	static const char diag[] = "GFM_PROTO_PROCESS_FD_INFO";
+
+	e = gfm_server_get_request(peer, diag, "sssl",
+	    &gfsd_domain, &user_host_domain, &proc_username, &flags);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s",
+		    diag, gfarm_error_string(e));
+		return (e);
+	}
+	if (skip) {
+		free(gfsd_domain);
+		free(user_host_domain);
+		free(proc_username);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	giant_lock();
+
+	if (proc_username[0] == '\0')
+		proc_user = NULL;
+	else
+		proc_user = user_lookup(proc_username);
+
+	if (!from_client || user == NULL) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s",
+		    diag, gfarm_error_string(e));
+	} else if (!user_is_admin(user) &&
+	    (proc_user == NULL || proc_user != peer_get_user(peer))) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: specified user '%s': %s",
+		    diag, proc_username, gfarm_error_string(e));
+	} else if (proc_username[0] != '\0' && proc_user == NULL) {
+		e = GFARM_ERR_NO_SUCH_USER;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: specified user '%s': %s",
+		    diag, proc_username, gfarm_error_string(e));
+	} else if ((flags & ~GFM_PROTO_PROCESS_FD_FLAG_MASK) != 0) {
+		e = GFARM_ERR_INVALID_ARGUMENT;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: flags: 0x%llx: %s",
+		    diag, (long long)flags, gfarm_error_string(e));
+	} else {
+		struct process_fd_info_closure closure;
+
+		closure.peer = peer;
+		closure.gfsd_domain = gfsd_domain;
+		closure.user_host_domain = user_host_domain;
+		closure.proc_user = proc_user;
+		closure.flags = flags;
+		closure.nfds = 0;
+		closure.idx = 0;
+		closure.e = GFARM_ERR_NO_ERROR;
+		gfarm_id_table_foreach(process_id_table, &closure,
+		    process_fd_info_count);
+
+		/* record reply to avoid too long giant lock */
+		GFARM_MALLOC_ARRAY(closure.fd_info, closure.nfds);
+		if (closure.nfds > 0 && closure.fd_info == NULL)
+			closure.e = GFARM_ERR_NO_MEMORY;
+		else if (closure.nfds > 0)
+			gfarm_id_table_foreach(process_id_table, &closure,
+			    process_fd_info_record);
+
+		giant_unlock();
+
+		if (closure.e == GFARM_ERR_NO_ERROR &&
+		    closure.nfds != closure.idx) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: nfds:%d but %d - inconsistent",
+			    diag, (int)closure.nfds, (int)closure.idx);
+			closure.e = GFARM_ERR_INTERNAL_ERROR;
+		}
+		e = gfm_server_put_reply(peer, diag, closure.e, "i",
+		    closure.nfds);
+
+		if (closure.e == GFARM_ERR_NO_ERROR &&
+		    e == GFARM_ERR_NO_ERROR) {
+			for (i = 0; i < closure.nfds; i++) {
+				fdi = &closure.fd_info[i];
+				e = gfp_xdr_send(peer_get_conn(peer),
+				    "sliillilsisiil", user_name(fdi->user),
+				    (gfarm_uint64_t)fdi->pid, fdi->fd,
+				    (gfarm_uint32_t)fdi->mode,
+				    (gfarm_uint64_t)fdi->inum, fdi->igen,
+				    (gfarm_uint32_t)fdi->open_flag,
+				    (gfarm_uint64_t)fdi->off,
+				    fdi->client_host == NULL ? "" :
+				    fdi->client_host,
+				    (gfarm_uint32_t)fdi->client_port,
+				    fdi->gfsd_host == NULL ? "" :
+				    host_name(fdi->gfsd_host),
+				    (gfarm_uint32_t)
+				    (fdi->gfsd_host == NULL ?
+				     0 : host_port(fdi->gfsd_host)),
+				    (gfarm_uint32_t)fdi->gfsd_peer_port,
+				    (gfarm_uint64_t)0 /* for future use */);
+				if (e != GFARM_ERR_NO_ERROR)
+					break;
+			}
+		}
+		if (closure.fd_info != NULL) {
+			for (i = 0; i < closure.idx; i++)
+				free(closure.fd_info[i].client_host);
+			free(closure.fd_info);
+		}
+		free(gfsd_domain);
+		free(user_host_domain);
+		free(proc_username);
+		return (e);
+	}
+	giant_unlock();
+
+	free(gfsd_domain);
+	free(user_host_domain);
+	free(proc_username);
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
