@@ -6,11 +6,11 @@
 #include <linux/pagemap.h>
 #include <linux/file.h>
 #include <linux/slab.h>
+#include <gfarm/gflog.h>
 #include "gfsk.h"
 #include "gfsk_if.h"
 #include "gfsk_fs.h"
 #include "gfsk_devif.h"
-#include <gfarm/gflog.h>
 #include <unistd.h>
 
 #define GFSK_CONN_FILE(file)	((file)->private_data)
@@ -24,7 +24,8 @@ gfsk_free_conn(struct gfskdev_conn *dc)
 #define WAKE_SEM	1
 #define WAKE_FD	2
 static void
-gfsk_client_connect_proc(int kind, struct gfskdev_conn *dc, struct gfskdev_req *req)
+gfsk_client_connect_proc(int kind, struct gfskdev_conn *dc,
+	struct gfskdev_req *req)
 {
 	struct gfsk_rpl_connect *outarg = req->out.args[0].value;
 	void *ev = req->end_arg;
@@ -148,7 +149,7 @@ gfsk_req_connect_async(int cmd, uid_t uid,
 	req->out.args[0].size = sizeof(*outarg);
 	req->out.args[0].value = outarg;
 	req->end = gfsk_client_connect_fdcb;
-	req->end_arg = (void*)((long)evfd);
+	req->end_arg = (void *)((long)evfd);
 	gfskdev_request_send_background(dc, req);
 	*kevpp = req;
 	return (0);

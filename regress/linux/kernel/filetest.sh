@@ -20,6 +20,8 @@ make -C linux/kernel/src
 
 echo "*** start Linux kernel module (File/Directory I/O) test. some tests issue error messages. ***"
 
+start_mount
+
 echo "*** start create tests ***"
 sudo -u ${TESTUSER} sh -x ./linux/kernel/create.sh
 
@@ -40,6 +42,8 @@ sudo -u ${TESTUSER} sh -x ./linux/kernel/fileio.sh
 
 echo "*** start flock tests ***"
 sudo -u ${TESTUSER} sh -x ./linux/kernel/flock.sh
+
+stop_mount
 
 echo
 echo

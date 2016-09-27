@@ -5,7 +5,7 @@ extern int gfarm_statfs(struct dentry *dentry, struct kstatfs *buf);
 
 extern int gfarm_stat(struct dentry *dentry, struct inode **inodepp);
 extern struct inode *gfarm_stat2inode(struct super_block *sb,
-		struct gfs_stat *stp);
+		struct gfs_stat *stp, int new);
 
 int gfarm_fstat(struct file *file, struct inode *inode);
 
@@ -29,8 +29,10 @@ extern int gfarm_unlink(struct inode *inode, struct dentry *dentry);
 extern int gfarm_openfile(struct inode *inode, struct file *file);
 extern int gfarm_closefile(struct inode *inode, struct file *file);
 
-extern int gfarm_read(struct file *file, loff_t off, char *buff,
-		ssize_t size, int *readlen);
+extern int gfarm_read_page(struct file *file, loff_t off, ssize_t size,
+	int force, gfs_pageio_t cb, void *arg);
+extern int gfarm_read(struct file *file, loff_t off, char *buff, ssize_t size,
+	int *readlen);
 extern int gfarm_write(struct file *file, loff_t off, const char *buff,
 		ssize_t size, int *writelen);
 extern int gfarm_seek(struct file *file, loff_t off, int whence,
@@ -42,19 +44,25 @@ extern int gfarm_fsync(struct file *file, int datasync);
 extern int gfsk_get_localfd(struct file *file, int *fdp);
 extern struct file *gfsk_open_file_get(struct inode *inode);
 
+struct gfs_dirplus;
 struct gfsk_file_private {
 	/* NOTE: attached to file->private_data at gfsk_opendir etc. */
 	union {
-		GFS_DirPlus dirp;
+		struct gfs_dirplus *dirp;
 		GFS_File filp;
 	} f_u;
-	struct {
-		void *entry;
-	} dirinfo;
+	union {
+		int wrote;
+	} u;
 	struct file *f_file;
 	struct list_head f_openlist;
 	struct mutex f_lock;
 };
+struct gfsk_file_private *gfarm_priv_get(struct file *file);
+void gfarm_priv_put(struct file *file);
+void gfarm_priv_wrote(struct file *file);
+
+
 
 #define UNKNOWN_UID	((uid_t)-1)
 #define UNKNOWN_GID	((gid_t)-1)

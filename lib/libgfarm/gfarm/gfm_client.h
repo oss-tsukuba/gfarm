@@ -174,6 +174,9 @@ gfarm_error_t gfm_client_fhopen_request(struct gfm_connection *,
 gfarm_error_t gfm_client_fhopen_result(struct gfm_connection *, gfarm_mode_t *);
 gfarm_error_t gfm_client_close_request(struct gfm_connection *);
 gfarm_error_t gfm_client_close_result(struct gfm_connection *);
+gfarm_error_t gfm_client_close_getgen_request(struct gfm_connection *);
+gfarm_error_t gfm_client_close_getgen_result(struct gfm_connection *,
+		gfarm_uint64_t *);
 gfarm_error_t gfm_client_close_read_request(struct gfm_connection *,
 	gfarm_int64_t, gfarm_int32_t);
 gfarm_error_t gfm_client_close_read_result(struct gfm_connection *);

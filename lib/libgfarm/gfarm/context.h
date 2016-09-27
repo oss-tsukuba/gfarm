@@ -37,6 +37,10 @@ struct gfarm_context {
 	int network_receive_timeout;
 	int file_trace;
 	int fatal_action;
+	int ib_rdma;
+	int rdma_min_size;
+	int rdma_port;
+	char *rdma_device;
 
 	/* platform dependent constant */
 	int getpw_r_bufsz;
@@ -67,6 +71,9 @@ struct gfarm_context {
 	struct gfarm_filesystem_static *filesystem_static;
 
 	struct gfarm_iostat_static *iostat_static;
+#ifdef HAVE_INFINIBAND
+	struct gfs_ib_rdma_static *ib_rdma_static;
+#endif /* HAVE_INFINIBAND */
 };
 #ifndef __KERNEL__	/* gfarm_ctxp */
 extern struct gfarm_context *gfarm_ctxp;
@@ -134,3 +141,7 @@ void          gfarm_filesystem_static_term(struct gfarm_context *);
 
 gfarm_error_t gfarm_iostat_static_init(struct gfarm_context *);
 void          gfarm_iostat_static_term(struct gfarm_context *);
+#ifdef HAVE_INFINIBAND
+gfarm_error_t gfs_ib_rdma_static_init(struct gfarm_context *);
+void          gfs_ib_rdma_static_term(struct gfarm_context *);
+#endif /* HAVE_INFINIBAND */

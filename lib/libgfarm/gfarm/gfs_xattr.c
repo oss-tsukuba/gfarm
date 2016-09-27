@@ -881,7 +881,7 @@ gfs_closexmlattr(struct gfs_xmlattr_ctx *ctxp)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	if (ctxp != NULL) {
-		e = gfm_close_fd(ctxp->gfm_server, ctxp->fd, NULL);
+		e = gfm_close_fd(ctxp->gfm_server, ctxp->fd, NULL, NULL);
 		gfm_client_connection_free(ctxp->gfm_server);
 		gfs_xmlattr_ctx_free(ctxp, 1);
 	} else {

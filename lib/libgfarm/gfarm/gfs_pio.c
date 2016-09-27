@@ -231,6 +231,7 @@ check_connection_in_file_list(GFS_File gf, void *closure)
 #endif
 #endif /* __KERNEL__ */
 
+#ifdef GFARM_USE_OPENSSL
 int
 gfs_pio_md_init(const char *md_type_name, EVP_MD_CTX *md_ctx, char *url)
 {
@@ -296,6 +297,7 @@ gfs_pio_md_finish(GFS_File gf)
 	}
 	return (GFARM_ERR_NO_ERROR);
 }
+#endif /* GFARM_USE_OPENSSL */
 
 /* only gfs_pio_failover.c:gfs_pio_reopen() is allowed to use this function */
 gfarm_error_t
@@ -387,6 +389,7 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 	gf->md.cksum_len = 0;
 	gf->md.cksum_get_flags = 0;
 	gf->md.cksum_set_flags = 0;
+#ifdef GFARM_USE_OPENSSL
 	if (cip == NULL) {
 		/* do not calculate cksum */
 	} else if (!gfs_pio_md_init(cip->cksum_type, &gf->md_ctx, url)) {
@@ -400,6 +403,7 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 		    GFM_PROTO_CKSUM_GET_EXPIRED)) == 0)
 			gf->mode |= GFS_FILE_MODE_DIGEST_CALC;
 	}
+#endif /* GFARM_USE_OPENSSL */
 
 	gf->view_context = NULL;
 	gfs_pio_set_view_default(gf);
@@ -460,7 +464,7 @@ gfs_pio_create_igen(const char *url, int flags, gfarm_mode_t mode,
 			    inum, gen, cip, gfp);
 		if (e != GFARM_ERR_NO_ERROR) {
 			/* ignore result */
-			(void)gfm_close_fd(gfm_server, fd, NULL);
+			(void)gfm_close_fd(gfm_server, fd, NULL, NULL);
 			gfm_client_connection_free(gfm_server);
 			gflog_debug(GFARM_MSG_1001295,
 				"creation of pio for URL (%s) failed: %s",
@@ -531,7 +535,7 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 		if (e != GFARM_ERR_NO_ERROR) {
 			free(real_url);
 			/* ignore result */
-			(void)gfm_close_fd(gfm_server, fd, NULL);
+			(void)gfm_close_fd(gfm_server, fd, NULL, NULL);
 			gfm_client_connection_free(gfm_server);
 			gflog_debug(GFARM_MSG_1001297,
 				"open operation on pio for URL (%s) failed: %s",
@@ -563,6 +567,7 @@ gfs_pio_fhopen(gfarm_ino_t inum, gfarm_uint64_t gen, int flags, GFS_File *gfp)
 	    gfarm_ctxp->client_digest_check ? &ci : NULL;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	GFARM_KERNEL_UNUSE2(t1, t2);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	if ((e = gfm_fhopen_fd(inum, gen, flags, &gfm_server, &fd, &type, cip))
@@ -576,7 +581,7 @@ gfs_pio_fhopen(gfarm_ino_t inum, gfarm_uint64_t gen, int flags, GFS_File *gfp)
 			    inum, gen, cip, gfp);
 		if (e != GFARM_ERR_NO_ERROR) {
 			/* ignore result */
-			(void)gfm_close_fd(gfm_server, fd, NULL);
+			(void)gfm_close_fd(gfm_server, fd, NULL, NULL);
 			gfm_client_connection_free(gfm_server);
 		}
 	}
@@ -609,7 +614,7 @@ gfs_pio_get_nfragment(GFS_File gf, int *nfragmentsp)
 static gfarm_error_t gfs_pio_view_fstat(GFS_File, struct gfs_stat *);
 
 gfarm_error_t
-gfs_pio_close(GFS_File gf)
+gfs_pio_close_getgen(GFS_File gf, gfarm_uint64_t *igenp)
 {
 	gfarm_error_t e, e_save;
 	gfarm_timerval_t t1, t2;
@@ -678,6 +683,7 @@ gfs_pio_close(GFS_File gf)
 
 	gfs_pio_file_list_remove(gfarm_filesystem_opened_file_list(fs), gf);
 
+#ifdef GFARM_USE_OPENSSL
 	if ((gf->mode &
 	    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
 	    (GFS_FILE_MODE_DIGEST_CALC) && gf->md_offset == filesize) {
@@ -716,6 +722,7 @@ gfs_pio_close(GFS_File gf)
 		/* not calculated, but need to do this to avoid memory leak */
 		gfarm_msgdigest_final(md_value, &gf->md_ctx);
 	}
+#endif /* GFARM_USE_OPENSSL */
 
 	/*
 	 * even if gfsd detectes gfmd failover,
@@ -725,7 +732,7 @@ gfs_pio_close(GFS_File gf)
 	 * closed in gfmd when the connection is closed.
 	 */
 	if (gf->fd >= 0) {
-		e = gfm_close_fd(gf->gfm_server, gf->fd, cip);
+		e = gfm_close_fd(gf->gfm_server, gf->fd, igenp, cip);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_debug(GFARM_MSG_1004220,
 				    "gfs_pio_close: close gfmd: %s",
@@ -759,6 +766,11 @@ gfs_pio_close(GFS_File gf)
 	}
 
 	return (e_save);
+}
+gfarm_error_t
+gfs_pio_close(GFS_File gf)
+{
+	return (gfs_pio_close_getgen(gf, NULL));
 }
 
 static gfarm_error_t
@@ -1205,6 +1217,71 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 
 	return (e);
 }
+gfarm_error_t
+gfs_pio_pread_page(GFS_File gf, gfarm_off_t off, int size, int force,
+		gfs_pageio_t cb, void *arg)
+{
+	gfarm_error_t e;
+	gfarm_timerval_t t1, t2;
+	int second = 0;
+
+	GFARM_KERNEL_UNUSE2(t1, t2);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	e = gfs_pio_check_view_default(gf);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Check view default for pio failed: %s",
+			gfarm_error_string(e));
+		return (e);
+	}
+
+	CHECK_READABLE(gf);
+
+	do {
+		if (second || off < gf->offset
+			|| off >= (gf->offset + gf->length)) {
+			if (!force)
+				break;
+			gfs_pio_flush(gf);
+			gfs_pio_purge(gf);
+			gf->offset = off;
+
+			if ((e = gfs_pio_fillbuf(gf, gf->bufsize))
+			    != GFARM_ERR_NO_ERROR) {
+				/* XXX call reconnect, when failover for writing
+				 *     is supported
+				 */
+				if ((gf->mode & GFS_FILE_MODE_READ) == 0 ||
+				    (gf->mode & GFS_FILE_MODE_WRITE) != 0 ||
+				    !IS_CONNECTION_ERROR(e))
+					break;
+				if ((e = gfs_pio_reconnect(gf))
+				    != GFARM_ERR_NO_ERROR)
+					break;
+				continue;
+			}
+			if (gf->error != GFARM_ERR_NO_ERROR) /* EOF or error */
+				break;
+		}
+		off = cb(gf->buffer, gf->offset, gf->length, arg);
+		second++;
+	} while (force && off > 0);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_fillbuf() failed: %s",
+			gfarm_error_string(e));
+		goto finish;
+	}
+
+	e = GFARM_ERR_NO_ERROR;
+ finish:
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(staticp->read_time += gfarm_timerval_sub(&t2, &t1));
+
+	return (e);
+}
 
 gfarm_error_t
 gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
@@ -1294,26 +1371,9 @@ gfarm_error_t
 gfs_pio_pread(GFS_File gf, void *buffer, int size, gfarm_off_t offset, int *np)
 {
 	gfarm_error_t e;
-	gfarm_timerval_t t1, t2;
 
-	GFARM_KERNEL_UNUSE2(t1, t2);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
-	gfs_profile(gfarm_gettimerval(&t1));
-
-	e = gfs_pio_check_view_default(gf);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1003946,
-			"Check view default for pio failed: %s",
-			gfarm_error_string(e));
-		return (e);
-	}
-
-	CHECK_READABLE(gf);
-
-	e = gfs_pio_pread_unbuffer(gf, buffer, size, offset, np);
-
-	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(staticp->read_time += gfarm_timerval_sub(&t2, &t1));
+	if (!(e = gfs_pio_seek(gf, offset, GFARM_SEEK_SET, &offset)))
+		e = gfs_pio_read(gf, buffer, size, np);
 
 	return (e);
 }
@@ -1322,26 +1382,9 @@ gfarm_error_t
 gfs_pio_pwrite(GFS_File gf, void *buffer, int size, gfarm_off_t offset, int *np)
 {
 	gfarm_error_t e;
-	gfarm_timerval_t t1, t2;
 
-	GFARM_KERNEL_UNUSE2(t1, t2);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
-	gfs_profile(gfarm_gettimerval(&t1));
-
-	e = gfs_pio_check_view_default(gf);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1003947,
-			"gfs_pio_check_view_default() failed: %s",
-			gfarm_error_string(e));
-		return (e);
-	}
-
-	CHECK_WRITABLE(gf);
-
-	e = gfs_pio_pwrite_unbuffer(gf, buffer, size, offset, np);
-
-	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(staticp->write_time += gfarm_timerval_sub(&t2, &t1));
+	if (!(e = gfs_pio_seek(gf, offset, GFARM_SEEK_SET, &offset)))
+		e = gfs_pio_write(gf, buffer, size, np);
 
 	return (e);
 }

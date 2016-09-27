@@ -32,6 +32,7 @@ gfarm_msgdigest_name_to_openssl(const char *gfarm_name)
 	return (gfarm_name); /* XXX just same names with OpenSSL for now */
 }
 
+#ifndef __KERNEL__
 int
 gfarm_msgdigest_init(const char *md_type_name, EVP_MD_CTX *md_ctx,
 	int *not_supported_p)
@@ -55,6 +56,16 @@ gfarm_msgdigest_init(const char *md_type_name, EVP_MD_CTX *md_ctx,
 	EVP_DigestInit(md_ctx, md_type);
 	return (1); /* calculate message digest */
 }
+#else /* __KERNEL__ */
+int
+gfarm_msgdigest_init(const char *md_type_name, EVP_MD_CTX *md_ctx,
+	int *not_supported_p)
+{
+	if (not_supported_p != NULL)
+		*not_supported_p = 1;
+	return (0); /* not supported */
+}
+#endif /* __KERNEL__ */
 
 /*
  * md_string should be declared as:

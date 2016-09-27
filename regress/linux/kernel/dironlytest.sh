@@ -16,20 +16,7 @@ export LANG=C
 orgumask=`umask`
 umask 0022
 
-echo "*** start Linux kernel module (directory only) test. some tests issue error messages. ***"
-
-/etc/init.d/gfsk restart
-if [ $? != 0 ]; then
-	exit $exit_fail
-fi
-
-mkdir -p ${MOUNTPOINT}
-mount -t gfarm -o conf_path=${GFARMCONF},luser=${TESTUSER} /dev/gfarm ${MOUNTPOINT}
-if [ $? != 0 ]; then
-	exit $exit_fail
-fi
-
-sleep 3
+start_mount
 
 echo "*** start mkdir tests ***"
 sudo -u ${TESTUSER} gfrm -rf A BB CCC
@@ -55,8 +42,7 @@ sh -x ./linux/kernel/multiuser.sh
 
 sleep 3
 
-umount ${MOUNTPOINT}
-/etc/init.d/gfsk stop
+stop_mount
 
 echo "Test done!"
 

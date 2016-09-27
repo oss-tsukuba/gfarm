@@ -99,6 +99,7 @@ void gflog_assert_message(int, const char *, int, const char *,
 void gflog_initialize(void);
 void gflog_terminate(void);
 void gflog_set_priority_level(int);
+int gflog_get_priority_level(void);
 void gflog_set_identifier(const char *);
 void gflog_set_auxiliary_info(char *);
 char *gflog_get_auxiliary_info(void);

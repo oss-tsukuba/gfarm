@@ -1024,6 +1024,12 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT  60 /* 60 seconds */
 #define GFARM_FILE_TRACE_DEFAULT 0 /* disable */
 #define GFARM_FATAL_ACTION_DEFAULT GFLOG_FATAL_ACTION_ABORT_BACKTRACE
+#ifdef HAVE_INFINIBAND
+#define GFARM_IB_RDMA_DEFAULT 1 /* enable */
+#else /* HAVE_INFINIBAND */
+#define GFARM_IB_RDMA_DEFAULT 0 /* disable */
+#endif /* HAVE_INFINIBAND */
+#define GFARM_RDMA_MIN_SIZE_DEFAULT 1024
 #define GFARM_REPLICA_CHECK_DEFAULT 1 /* enable */
 #define GFARM_REPLICA_CHECK_REMOVE_DEFAULT 1 /* enable */
 #define GFARM_REPLICA_CHECK_REDUCED_LOG_DEFAULT 1 /* enable */
@@ -3239,7 +3245,14 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "fatal_action") == 0) {
 		e = parse_fatal_action(p, &gfarm_ctxp->fatal_action);
 		gflog_set_fatal_action(gfarm_ctxp->fatal_action);
-
+	} else if (strcmp(s, o = "ib_rdma") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_ctxp->ib_rdma);
+	} else if (strcmp(s, o = "rdma_min_size") == 0) {
+		e = parse_set_misc_int(p, &gfarm_ctxp->rdma_min_size);
+	} else if (strcmp(s, o = "rdma_port") == 0) {
+		e = parse_set_misc_int(p, &gfarm_ctxp->rdma_port);
+	} else if (strcmp(s, o = "rdma_device") == 0) {
+		e = parse_set_var(p, &gfarm_ctxp->rdma_device);
 	} else if (strcmp(s, o = "replica_check") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_replica_check);
 	} else if (strcmp(s, o = "replica_check_remove") == 0) {
@@ -3550,6 +3563,10 @@ gfarm_config_set_default_misc(void)
 		gfarm_ctxp->file_trace = GFARM_FILE_TRACE_DEFAULT;
 	if (gfarm_ctxp->fatal_action == GFARM_CONFIG_MISC_DEFAULT)
 		gflog_set_fatal_action(GFARM_FATAL_ACTION_DEFAULT);
+	if (gfarm_ctxp->ib_rdma == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->ib_rdma = GFARM_IB_RDMA_DEFAULT;
+	if (gfarm_ctxp->rdma_min_size == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->rdma_min_size = GFARM_RDMA_MIN_SIZE_DEFAULT;
 	if (gfarm_replica_check == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_replica_check = GFARM_REPLICA_CHECK_DEFAULT;
 	if (gfarm_replica_check_remove == GFARM_CONFIG_MISC_DEFAULT)

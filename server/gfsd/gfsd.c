@@ -88,6 +88,8 @@
 #include "gfsd_subr.h"
 #include "write_verify.h"
 
+#include "gfs_rdma.h"
+
 #define COMPAT_OLD_GFS_PROTOCOL
 
 #define FAILOVER_SIGNAL	SIGUSR1
@@ -172,6 +174,8 @@ static struct gfarm_iostat_spec iostat_spec[] =  {
 static char *iostat_dirbuf;
 static int iostat_dirlen;
 
+struct rdma_context *rdma_ctx = NULL;
+
 static volatile sig_atomic_t write_open_count = 0;
 static volatile sig_atomic_t terminate_flag = 0;
 
@@ -192,6 +196,7 @@ struct accepting_sockets {
 	int tcp_sock, *udp_socks;
 	struct local_socket *local_socks;
 } accepting;
+
 
 /* this routine should be called before the accepting server calls exit(). */
 void
@@ -259,6 +264,9 @@ cleanup(int sighandler)
 	if (!cleanup_started && !sighandler) {
 		cleanup_started = 1; /* prevent recursive close_all_fd() */
 
+#ifdef HAVE_INFINIBAND
+		gfs_rdma_finish(rdma_ctx);
+#endif
 		if (my_type == type_client) {
 			/* may recursivelly call cleanup() */
 			close_all_fd(current_client);
@@ -1450,6 +1458,10 @@ struct file_entry {
 	unsigned nwrite, nread;
 	double write_time, read_time;
 	gfarm_off_t write_size, read_size;
+#ifdef HAVE_INFINIBAND
+	double rdma_write_time, rdma_read_time;
+	gfarm_off_t rdma_write_size, rdma_read_size;
+#endif
 } *file_table;
 
 static void
@@ -1707,9 +1719,13 @@ file_table_add(gfarm_int32_t net_fd,
 	}
 	/* performance data (only available in profile mode) */
 	fe->start_time = *start;
-	fe->nwrite = fe-> nread = 0;
+	fe->nwrite = fe->nread = 0;
 	fe->write_time = fe->read_time = 0;
 	fe->write_size = fe->read_size = 0;
+#ifdef HAVE_INFINIBAND
+	fe->rdma_write_time = fe->rdma_read_time = 0;
+	fe->rdma_write_size = fe->rdma_read_size = 0;
+#endif
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1791,7 +1807,15 @@ file_table_close(gfarm_int32_t net_fd)
 		    (unsigned long long)fe->gen,
 		    (unsigned long long)fe->new_gen,
 		    fe->nwrite, (long long)fe->write_size, fe->write_time,
-		    fe->nread, (long long)fe->read_size, fe->read_time));
+		    fe->nread, (long long)fe->read_size, fe->read_time);
+#ifdef HAVE_INFINIBAND
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "rdma_write size %lld time %g "
+		    "rdma_read size %lld time %g",
+		    (long long)fe->rdma_write_size, fe->rdma_write_time,
+		    (long long)fe->rdma_read_size, fe->rdma_read_time);
+#endif
+			);
 
 	if ((fe->flags & FILE_FLAG_WRITABLE) != 0) {
 		--write_open_count;
@@ -4976,6 +5000,274 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 	return (gfs_async_server_put_reply(conn, xid, diag, e, ""));
 }
 
+static void
+gfs_server_rdma_exch_info(struct gfp_xdr *client)
+{
+	int success = 0;
+	size_t size = 0;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	gfarm_uint32_t client_lid, lid = 0;
+	gfarm_uint32_t client_qpn, qpn = 0;
+	gfarm_uint32_t client_psn, psn = 0;
+	unsigned char buffer[128], *gid = buffer;
+
+	gfs_server_get_request(client, "rdma_exch_info", "iiib",
+		&client_lid, &client_qpn, &client_psn,
+		sizeof(buffer), &size, gid);
+	if (!gfs_rdma_check(rdma_ctx)) {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfs_rdma_check(): failed");
+		size = 0;
+		goto reply;
+	}
+	gfs_rdma_set_remote_lid(rdma_ctx, client_lid);
+	gfs_rdma_set_remote_qpn(rdma_ctx, client_qpn);
+	gfs_rdma_set_remote_psn(rdma_ctx, client_psn);
+	gfs_rdma_set_remote_gid(rdma_ctx, gid);
+
+	if ((e = gfs_rdma_connect(rdma_ctx)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "rdma_connect(): failed");
+		gfs_rdma_disable(rdma_ctx);
+		size = 0;
+	} else {
+		lid = gfs_rdma_get_local_lid(rdma_ctx);
+		qpn = gfs_rdma_get_local_qpn(rdma_ctx);
+		psn = gfs_rdma_get_local_psn(rdma_ctx);
+		gid = gfs_rdma_get_local_gid(rdma_ctx);
+
+		gflog_debug(GFARM_MSG_UNFIXED, "rdma_connect(): success");
+		gfs_rdma_enable(rdma_ctx);
+		size = gfs_rdma_get_gid_size();
+	}
+
+	success = gfs_rdma_check(rdma_ctx);
+reply:
+	gfs_server_put_reply(client, "rdma_exch_info", e, "iiiib", success,
+		lid, qpn, psn, size, gid);
+}
+
+void
+gfs_server_rdma_hello(struct gfp_xdr *client)
+{
+	gfarm_error_t e = GFARM_ERR_DEVICE_NOT_CONFIGURED;
+	int size;
+	gfarm_uint32_t rkey;
+	gfarm_uint64_t addr;
+
+	gfs_server_get_request(client, "rdma_hello", "iil",
+		&rkey, &size, &addr);
+	if (!gfs_rdma_check(rdma_ctx)) {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfs_rdma_check(): failed");
+		goto reply;
+	}
+	if ((e = gfs_rdma_remote_read(rdma_ctx, rkey, addr, size))
+	   != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+					"rdma_remote_read() failed");
+		goto reply;
+	}
+	if (memcmp(gfs_rdma_get_buffer(rdma_ctx),
+		gfs_rdma_get_remote_gid(rdma_ctx), gfs_rdma_get_gid_size())) {
+		e = GFARM_ERR_INVALID_ARGUMENT;
+		gflog_debug(GFARM_MSG_UNFIXED, "data maching failed");
+	}
+reply:
+	if (e != GFARM_ERR_NO_ERROR)
+		gfs_rdma_disable(rdma_ctx);
+
+	gfs_server_put_reply(client, "rdma_hello", e, "");
+}
+
+void
+gfs_server_rdma_pread(struct gfp_xdr *client)
+{
+	gfarm_int32_t fd, size, bsize;
+	gfarm_int64_t offset;
+	gfarm_uint32_t rkey;
+	gfarm_uint64_t addr;
+	ssize_t rv = 0;
+	struct file_entry *fe;
+	gfarm_error_t e = GFARM_ERR_DEVICE_NOT_CONFIGURED;
+	gfarm_timerval_t t1, t2, t3;
+	static const char diag[] = "gfs_server_rdma_pread";
+
+	gfs_server_get_request(client, diag, "iilil",
+		&fd, &size, &offset, &rkey, &addr);
+
+	if (!fd_usable_to_gfmd) {
+		gfs_server_put_reply(client, diag, GFARM_ERR_GFMD_FAILED_OVER,
+			"");
+		return;
+	}
+	if (!gfs_rdma_check(rdma_ctx)) {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfs_rdma_check(): failed");
+		goto reply;
+	}
+	if ((fe = file_table_entry(fd)) == NULL) {
+		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
+		goto reply;
+	}
+	/* We truncatef i/o size bigger than GFS_PROTO_MAX_IOSIZE. */
+	bsize = gfs_rdma_get_bufsize(rdma_ctx);
+	if (size > bsize)
+		size = bsize;
+
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	if ((rv = pread(fe->local_fd, gfs_rdma_get_buffer(rdma_ctx),
+		size, offset)) == -1) {
+		io_error_check_errno(diag);
+		e = gfarm_errno_to_error(errno);
+	} else {
+		file_table_set_read(fd);
+		/* update checksum */
+		if ((fe->flags &
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
+		    FILE_FLAG_DIGEST_CALC) {
+			if (fe->md_offset == offset) {
+				EVP_DigestUpdate(&fe->md_ctx,
+					gfs_rdma_get_buffer(rdma_ctx), rv);
+				fe->md_offset += rv;
+				if (fe->md_offset == fe->size &&
+				    (fe->flags & FILE_FLAG_WRITTEN) == 0)
+					e = digest_finish(client, fd, diag);
+			} else
+				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
+		}
+		e = GFARM_ERR_NO_ERROR;
+	}
+
+	if (rv > 0) {
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RCOUNT, 1);
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RBYTES, rv);
+		gfs_profile(
+			gfarm_gettimerval(&t2);
+			fe->nread++;
+			fe->read_size += rv;
+			fe->read_time += gfarm_timerval_sub(&t2, &t1));
+
+		if ((e = gfs_rdma_remote_write(rdma_ctx, rkey, addr, rv))
+		   != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+						"rdma_remote_write() failed");
+			goto reply;
+		}
+		gfs_profile(
+			gfarm_gettimerval(&t3);
+#ifdef HAVE_INFINIBAND
+			fe->rdma_read_size += rv;
+			fe->rdma_read_time += gfarm_timerval_sub(&t3, &t2)
+#endif
+		);
+	}
+reply:
+	gfs_server_put_reply(client, diag, e, "i", (int)rv);
+}
+
+void
+gfs_server_rdma_pwrite(struct gfp_xdr *client)
+{
+	gfarm_int32_t fd, localfd;
+	size_t size;
+	gfarm_int64_t offset;
+	ssize_t rv = 0;
+	int bsize, save_errno = 0;
+	struct file_entry *fe;
+	gfarm_timerval_t t1, t2, t0;
+	gfarm_error_t e = GFARM_ERR_DEVICE_NOT_CONFIGURED;
+	gfarm_uint32_t rkey;
+	gfarm_uint64_t addr;
+	static const char diag[] = "gfs_server_rdma_pwrite";
+
+	gfs_server_get_request(client, diag, "iilil",
+		&fd, &size, &offset, &rkey, &addr);
+
+	if (!fd_usable_to_gfmd) {
+		gfs_server_put_reply(client, diag, GFARM_ERR_GFMD_FAILED_OVER,
+			"");
+		return;
+	}
+	if (!gfs_rdma_check(rdma_ctx)) {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfs_rdma_check(): failed");
+		gfs_server_put_reply(client, diag,
+			GFARM_ERR_DEVICE_NOT_CONFIGURED, "");
+		return;
+	}
+	if ((fe = file_table_entry(fd)) == NULL) {
+		save_errno = EBADF;
+		goto reply;
+	}
+
+	/*
+	 * We truncate i/o size bigger than GFS_PROTO_MAX_IOSIZE.
+	 * This is inefficient because passed extra data are just
+	 * abandoned. So client should avoid such situation.
+	 */
+	bsize = gfs_rdma_resize_buffer(rdma_ctx, size);
+	if (size > bsize)
+		size = bsize;
+
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t0);
+	gfs_profile(gfarm_gettimerval(&t0));
+	if ((e = gfs_rdma_remote_read(rdma_ctx, rkey, addr, size))
+	   != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+					"rdma_remote_read() failed");
+		gfs_server_put_reply(client, diag, e, "");
+		return;
+	}
+
+	gfs_profile(
+		gfarm_gettimerval(&t1);
+#ifdef HAVE_INFINIBAND
+		fe->rdma_write_size += size;
+		fe->rdma_write_time += gfarm_timerval_sub(&t1, &t0)
+#endif
+	);
+
+	localfd = file_table_get(fd);
+	if (fe->local_flags & O_APPEND) {
+		if ((rv = write(localfd, gfs_rdma_get_buffer(rdma_ctx),
+			size)) != -1)
+			offset = lseek(localfd, 0, SEEK_CUR) - rv;
+	} else
+		rv = pwrite(localfd, gfs_rdma_get_buffer(rdma_ctx),
+			size, offset);
+	if (rv == -1) {
+		io_error_check_errno(diag);
+		save_errno = errno;
+	} else {
+		file_table_set_written(fd);
+		/* update checksum */
+		if ((fe->flags &
+		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
+		    FILE_FLAG_DIGEST_CALC) {
+			if (fe->md_offset == offset) {
+				EVP_DigestUpdate(&fe->md_ctx,
+					gfs_rdma_get_buffer(rdma_ctx), rv);
+				fe->md_offset += rv;
+			} else
+				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
+		} else if ((fe->flags &
+			(FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
+			(FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH))
+			fe->flags &= ~FILE_FLAG_DIGEST_CALC;
+	}
+	if (rv > 0) {
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_WCOUNT, 1);
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_WBYTES, rv);
+		gfs_profile(
+			gfarm_gettimerval(&t2);
+			fe->nwrite++;
+			fe->write_size += rv;
+			fe->write_time += gfarm_timerval_sub(&t2, &t1));
+	}
+
+reply:
+	gfs_server_put_reply_with_errno(client, diag, save_errno,
+					"i", (gfarm_int32_t)rv);
+}
+
 static int got_sigchld;
 
 void
@@ -5278,6 +5570,16 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	gflog_set_auxiliary_info(aux);
 	current_client = client; /* for cleanup() */
 
+#ifdef HAVE_INFINIBAND
+	/* should be after gfarm_authorize()::setuid() */
+	if ((e = gfs_rdma_init(1, &rdma_ctx) != GFARM_ERR_NO_ERROR)) {
+		/* don't care even if rdma is unabailable */
+		gflog_info(GFARM_MSG_UNFIXED, "rdma_init() failed");
+	} else {
+		gflog_debug(GFARM_MSG_UNFIXED, "rdma_init(): success");
+	}
+#endif
+
 	/*
 	 * In GSI authentication, small packets are sent frequently,
 	 * which requires TCP_NODELAY for reasonable performance.
@@ -5305,6 +5607,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 			 * XXX FIXME update metadata of all opened
 			 * file descriptor before exit.
 			 */
+
 			cleanup(0);
 			exit(0);
 		}
@@ -5318,8 +5621,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		case GFS_PROTO_OPEN:	gfs_server_open(client); break;
 		case GFS_PROTO_CLOSE:	gfs_server_close(client); break;
 		case GFS_PROTO_CLOSE_WRITE:
-			gfs_server_close_write(client);
-			break;
+			gfs_server_close_write(client); break;
 		case GFS_PROTO_PREAD:	gfs_server_pread(client); break;
 		case GFS_PROTO_PWRITE:	gfs_server_pwrite(client); break;
 		case GFS_PROTO_WRITE:	gfs_server_write(client); break;
@@ -5329,8 +5631,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		case GFS_PROTO_FSYNC:	gfs_server_fsync(client); break;
 		case GFS_PROTO_FSTAT:	gfs_server_fstat(client); break;
 		case GFS_PROTO_CKSUM:
-			gfs_server_cksum(client);
-			break;
+			gfs_server_cksum(client); break;
 		case GFS_PROTO_STATFS:	gfs_server_statfs(client); break;
 		case GFS_PROTO_REPLICA_ADD_FROM:
 			gfs_server_replica_add_from(client); break;
@@ -5338,6 +5639,14 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 			gfs_server_replica_recv(client, peer_type, 0); break;
 		case GFS_PROTO_REPLICA_RECV_CKSUM:
 			gfs_server_replica_recv(client, peer_type, 1); break;
+		case GFS_PROTO_RDMA_EXCH_INFO:
+			gfs_server_rdma_exch_info(client); break;
+		case GFS_PROTO_RDMA_HELLO:
+			gfs_server_rdma_hello(client); break;
+		case GFS_PROTO_RDMA_PREAD:
+			gfs_server_rdma_pread(client); break;
+		case GFS_PROTO_RDMA_PWRITE:
+			gfs_server_rdma_pwrite(client); break;
 		default:
 			gflog_warning(GFARM_MSG_1000558, "unknown request %d",
 			    (int)request);
@@ -6583,6 +6892,10 @@ main(int argc, char **argv)
 		    gfarm_error_string(e));
 		exit(1);
 	}
+#ifdef HAVE_INFINIBAND
+	gfs_ib_rdma_initialize(0);
+#endif
+
 
 	argc -= optind;
 	argv += optind;
@@ -6917,14 +7230,13 @@ main(int argc, char **argv)
 			    (struct sockaddr*)&client_addr, NULL, &accepting);
 		}
 		for (i = 0; i < accepting.local_socks_count; i++) {
-			if (FD_ISSET(accepting.local_socks[i].sock,&requests)){
+			if (FD_ISSET(accepting.local_socks[i].sock, &requests))
 				start_server(accepting.local_socks[i].sock,
 				    (struct sockaddr *)&client_local_addr,
 				    sizeof(client_local_addr),
 				    (struct sockaddr*)&self_sockaddr_array[i],
 				    canonical_self_name,
 				    &accepting);
-			}
 		}
 		for (i = 0; i < accepting.udp_socks_count; i++) {
 			if (FD_ISSET(accepting.udp_socks[i], &requests))

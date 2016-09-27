@@ -748,9 +748,15 @@ gfarm_errno_to_error(int eno)
 
 	e = gfarm_error_domain_map(gfarm_errno_domain, eno);
 	if (e == GFARM_ERR_UNKNOWN)
+#ifndef __KERNEL__
 		gflog_notice(GFARM_MSG_1003551,
 		    "errno %d:\"%s\" is converted to \"%s\"",
 		    eno, strerror(eno), gfarm_error_string(GFARM_ERR_UNKNOWN));
+#else /* __KERNEL__ */
+		gflog_notice(GFARM_MSG_1003551,
+		    "errno %d: is converted to \"%s\"",
+		    eno, gfarm_error_string(GFARM_ERR_UNKNOWN));
+#endif /* __KERNEL__ */
 	return (e);
 }
 

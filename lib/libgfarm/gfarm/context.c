@@ -94,6 +94,12 @@ static const struct gfarm_context_module_entry module_entries[] = {
 		gfarm_iostat_static_init,
 		gfarm_iostat_static_term
 	},
+#ifdef HAVE_INFINIBAND
+	{
+		gfs_ib_rdma_static_init,
+		gfs_ib_rdma_static_term
+	},
+#endif /* HAVE_INFINIBAND */
 #endif /* __KERNEL__ */
 	{
 		gfarm_filesystem_static_init,
@@ -147,6 +153,10 @@ gfarm_context_init(void)
 	ctxp->client_parallel_max = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->network_receive_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->file_trace = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->ib_rdma = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->rdma_min_size = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->rdma_port = 0;
+	ctxp->rdma_device = NULL;
 	ctxp->on_demand_replication = 0;
 	ctxp->call_rpc_instead_syscall = 0;
 	ctxp->fatal_action = GFARM_CONFIG_MISC_DEFAULT;

@@ -96,6 +96,7 @@ local gfm_command_names = {
    [ 85] = 'GFM_PROTO_VERIFY_TYPE', 
    [ 86] = 'GFM_PROTO_VERIFY_TYPE_NOT', 
    [ 87] = 'GFM_PROTO_REVOKE_GFSD_ACCESS', 
+   [ 89] = 'GFM_PROTO_CLOSE_GETGEN',
    [ 96] = 'GFM_PROTO_FSTAT', 
    [ 97] = 'GFM_PROTO_FUTIMES', 
    [ 98] = 'GFM_PROTO_FCHMOD', 
@@ -1190,6 +1191,25 @@ function parse_gfm_revoke_gfsd_access_response(tvb, pinfo, item, offset)
 end
 
 --
+-- Parse GFM_PROTO_CLOSE_GETGEN.
+--
+function parse_gfm_close_getgen_request(tvb, pinfo, item, offset)
+   -- IN (none)
+   return offset + 4
+end
+
+function parse_gfm_close_getgen_response(tvb, pinfo, item, offset)
+   -- OUT error_code
+   --     (upon success) l:new_gen
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   if err == 0 then
+      offset = parse_xdr(tvb, item, "l", offset, "new_gen")
+   end
+   return offset
+end
+
+--
 -- Parse GFM_PROTO_FSTAT.
 --
 function parse_gfm_fstat_request(tvb, pinfo, item, offset)
@@ -1344,10 +1364,40 @@ end
 -- Parse GFM_PROTO_FGETATTRPLUS.
 --
 function parse_gfm_fgetattrplus_request(tvb, pinfo, item, offset)
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "i", offset, "flags")
+   offset, n_patterns = parse_xdr(tvb, item, "i", offset, "n_patterns")
+   for i = 1, n_patterns do
+         offset = parse_xdr(tvb, item, "s", offset, "pattern")
+   end
+   return offset
 end
 
 function parse_gfm_fgetattrplus_response(tvb, pinfo, item, offset)
-   return nil
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   if err == 0 then
+	offset = parse_xdr(tvb, item, "l", offset, "i_node_number")
+	offset = parse_xdr(tvb, item, "l", offset, "generation")
+	offset = parse_xdr(tvb, item, "i", offset, "mode", base.OCT)
+	offset = parse_xdr(tvb, item, "l", offset, "nlink")
+	offset = parse_xdr(tvb, item, "s", offset, "user")
+	offset = parse_xdr(tvb, item, "s", offset, "group")
+	offset = parse_xdr(tvb, item, "l", offset, "size")
+	offset = parse_xdr(tvb, item, "l", offset, "ncopy")
+	offset = parse_xdr(tvb, item, "l", offset, "atime_sec", format_datetime)
+	offset = parse_xdr(tvb, item, "i", offset, "atime_nsec")
+	offset = parse_xdr(tvb, item, "l", offset, "mtime_sec", format_datetime)
+	offset = parse_xdr(tvb, item, "i", offset, "mtime_nsec")
+	offset = parse_xdr(tvb, item, "l", offset, "ctime_sec", format_datetime)
+	offset = parse_xdr(tvb, item, "i", offset, "ctime_nsec")
+	offset, n_xattrs = parse_xdr(tvb, item, "i", offset, "n_xattrs")
+	for i = 1, n_xattrs do
+		offset = parse_xdr(tvb, item, "s", offset, "name")
+		offset = parse_xdr(tvb, item, "b", offset, "value")
+	end
+   end
+   return offset
 end
 
 --
@@ -1487,10 +1537,36 @@ end
 -- Parse GFM_PROTO_GETDIRENTSPLUS.
 --
 function parse_gfm_getdirentsplus_request(tvb, pinfo, item, offset)
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "i", offset, "n_entries")
+   return offset
 end
 
 function parse_gfm_getdirentsplus_response(tvb, pinfo, item, offset)
-   return nil
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   if err == 0 then
+      local n_stats
+      offset, n_stats = parse_xdr(tvb, item, "i", offset, "n_stats")
+      for i = 1, n_stats do
+         offset = parse_xdr(tvb, item, "s", offset, "name")
+         offset = parse_xdr(tvb, item, "l", offset, "i_node_number")
+         offset = parse_xdr(tvb, item, "l", offset, "generation")
+         offset = parse_xdr(tvb, item, "i", offset, "mode", base.OCT)
+         offset = parse_xdr(tvb, item, "l", offset, "nlink")
+         offset = parse_xdr(tvb, item, "s", offset, "user")
+         offset = parse_xdr(tvb, item, "s", offset, "group")
+         offset = parse_xdr(tvb, item, "l", offset, "size")
+         offset = parse_xdr(tvb, item, "l", offset, "ncopy")
+         offset = parse_xdr(tvb, item, "l", offset, "atime_sec", format_datetime)
+         offset = parse_xdr(tvb, item, "i", offset, "atime_nsec")
+         offset = parse_xdr(tvb, item, "l", offset, "mtime_sec", format_datetime)
+         offset = parse_xdr(tvb, item, "i", offset, "mtime_nsec")
+         offset = parse_xdr(tvb, item, "l", offset, "ctime_sec", format_datetime)
+         offset = parse_xdr(tvb, item, "i", offset, "ctime_nsec")
+      end
+   end
+   return offset
 end
 
 --
@@ -1498,6 +1574,7 @@ end
 --
 function parse_gfm_getdirentsplusxattr_request(tvb, pinfo, item, offset)
   -- IN i:n_entries, i:n_patterns, s[npatterns]:patterns
+   offset = offset + 4
    offset = parse_xdr(tvb, item, "i", offset, "n_entries")
    offset, n_patterns = parse_xdr(tvb, item, "i", offset, "n_patterns")
    for i = 1, n_patterns do
@@ -1544,7 +1621,6 @@ function parse_gfm_getdirentsplusxattr_response(tvb, pinfo, item, offset)
    end
    return offset
 end
-
 --
 -- Parse GFM_PROTO_REOPEN.
 --
@@ -2499,6 +2575,8 @@ local gfm_command_parsers = {
             response = parse_gfm_verify_type_not_response},
    [ 87] = {request  = parse_gfm_revoke_gfsd_access_request,
             response = parse_gfm_revoke_gfsd_access_response},
+   [ 89] = {request  = parse_gfm_close_getgen_request,
+            response = parse_gfm_close_getgen_response},
    [ 96] = {request  = parse_gfm_fstat_request,
             response = parse_gfm_fstat_response},
    [ 97] = {request  = parse_gfm_futimes_request,

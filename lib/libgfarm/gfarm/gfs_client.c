@@ -60,9 +60,12 @@
 #include "gfs_failover.h"
 #include "iostat.h"
 #ifdef __KERNEL__
+#undef HAVE_INFINIBAND
 #include "nanosec.h"
 #include "gfsk_fs.h"
 #endif /* __KERNEL__ */
+
+#include "gfs_rdma.h"
 
 #define GFS_CLIENT_COMMAND_TIMEOUT	20 /* seconds */
 
@@ -84,6 +87,10 @@ struct gfs_connection {
 	void *context; /* work area for RPC (esp. GFS_PROTO_COMMAND) */
 
 	int failover_count; /* compare to gfm_connection.failover_count */
+
+#ifdef HAVE_INFINIBAND
+	struct rdma_context *rdma_ctx; /* for client-gfsd rdma */
+#endif
 };
 
 #define staticp	(gfarm_ctxp->gfs_client_static)
@@ -101,6 +108,10 @@ struct gfs_client_static {
 #define SERVER_HASHTAB_SIZE	3079	/* prime number */
 
 static gfarm_error_t gfs_client_connection_dispose(void *);
+#ifdef HAVE_INFINIBAND
+static void gfs_ib_rdma_connect(struct gfs_connection *gfs_server);
+#endif
+static void gfs_ib_rdma_free(struct gfs_connection *gfs_server);
 
 gfarm_error_t
 gfs_client_static_init(struct gfarm_context *ctxp)
@@ -447,6 +458,15 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
+
+#ifdef HAVE_INFINIBAND
+    /* RDMA */
+	if (!is_local)
+		gfs_rdma_init(0, &gfs_server->rdma_ctx);
+	else
+		gfs_server->rdma_ctx = NULL;
+#endif
+
 	gfs_server->port = ntohs(((struct sockaddr_in *)peer_addr)->sin_port);
 	gfs_server->is_local = is_local;
 	gfs_server->pid = 0;
@@ -506,10 +526,18 @@ gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 				    "is specified, but fails: %s",
 				    gfarm_error_string(e1));
 		}
+
+#ifdef HAVE_INFINIBAND
+		if (!gfs_server->is_local) {
+			/* not __KERNEL__, no need to lock */
+			gfs_ib_rdma_connect(gfs_server);
+		}
+#endif
 		*gfs_serverp = gfs_server;
 	} else {
 		free(gfs_server->hostname);
 		gfp_xdr_free(gfs_server->conn);
+		gfs_ib_rdma_free(gfs_server);
 		free(gfs_server);
 		gflog_debug(GFARM_MSG_1001183,
 			"connection or authentication failed: %s",
@@ -610,6 +638,7 @@ gfs_client_connection_dispose(void *connection_data)
 
 	gfp_uncached_connection_dispose(gfs_server->cache_entry);
 	free(gfs_server->hostname);
+	gfs_ib_rdma_free(gfs_server);
 	/* XXX - gfs_server->context should be NULL here */
 	free(gfs_server);
 	return (e);
@@ -1996,6 +2025,249 @@ gfs_client_statfs_result_multiplexed(struct gfs_client_statfs_state *state,
 	return (e);
 }
 
+/*--------------------------------------------------------*/
+/*
+ * multiplexed version of gfs_ib_rdma()
+ */
+struct gfs_ib_rdma_state {
+	struct gfarm_eventqueue *q;
+	struct gfarm_event *writable, *readable;
+	void (*continuation)(void *);
+	void *closure;
+	struct gfs_connection *gfs_server;
+
+	/* results */
+	gfarm_error_t error;
+	enum rdma_state {RDMA_EXCH_INFO, RDMA_HELLO, RDMA_FIN} state;
+};
+
+static void
+gfs_ib_rdma_send_request(int events, int fd, void *closure,
+	const struct timeval *t)
+{
+	struct gfs_ib_rdma_state *state = closure;
+	int rv;
+	struct timeval timeout;
+	struct rdma_context *ctx = gfs_ib_rdma_context(state->gfs_server);
+
+	switch (state->state) {
+	case RDMA_EXCH_INFO:
+	{
+		gfarm_uint32_t local_lid = gfs_rdma_get_local_lid(ctx);
+		gfarm_uint32_t local_qpn = gfs_rdma_get_local_qpn(ctx);
+		gfarm_uint32_t local_psn = gfs_rdma_get_local_psn(ctx);
+		void *local_gid = gfs_rdma_get_local_gid(ctx);
+		size_t  size = gfs_rdma_get_gid_size();
+
+		state->error = gfs_client_rpc_request(state->gfs_server,
+			GFS_PROTO_RDMA_EXCH_INFO, "iiib", local_lid, local_qpn,
+			local_psn, size, local_gid);
+		break;
+	}
+	case RDMA_HELLO:
+	{
+		gfarm_uint32_t rkey = gfs_rdma_get_rkey(gfs_rdma_get_mr(ctx));
+		unsigned char *buf = gfs_rdma_get_buffer(ctx);
+		int size = gfs_rdma_get_gid_size();
+		memcpy(buf, gfs_rdma_get_local_gid(ctx), size);
+		state->error = gfs_client_rpc_request(state->gfs_server,
+			GFS_PROTO_RDMA_HELLO, "iil", rkey, size, buf);
+		break;
+	}
+	default:
+		gflog_fatal(GFARM_MSG_UNFIXED,
+			"request state error: %d", state->state);
+	}
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"gfs_ib_rdma_send_request:%s state=%d, %s",
+		state->gfs_server->hostname, state->state,
+		gfarm_error_string(state->error));
+	if (state->error == GFARM_ERR_NO_ERROR) {
+		state->error = gfp_xdr_flush(state->gfs_server->conn);
+		if (IS_CONNECTION_ERROR(state->error)) {
+			gfs_client_execute_hook_for_connection_error(
+			    state->gfs_server);
+			gfs_client_purge_from_cache(state->gfs_server);
+		} else if (state->error == GFARM_ERR_NO_ERROR) {
+			timeout.tv_sec = GFS_CLIENT_COMMAND_TIMEOUT;
+			timeout.tv_usec = 0;
+			if ((rv = gfarm_eventqueue_add_event(state->q,
+			    state->readable, &timeout)) == 0) {
+				/* go to gfs_client_statfs_recv_result() */
+				return;
+			}
+			state->error = gfarm_errno_to_error(rv);
+		}
+	}
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"request for client rdma failed: %s",
+		gfarm_error_string(state->error));
+	if (state->continuation != NULL)
+		(*state->continuation)(state->closure);
+}
+
+static void
+gfs_ib_rdma_recv_result(int events, int fd, void *closure,
+	const struct timeval *t)
+{
+	struct gfs_ib_rdma_state *state = closure;
+	struct rdma_context *ctx = gfs_ib_rdma_context(state->gfs_server);
+
+	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
+		assert(events == GFARM_EVENT_TIMEOUT);
+		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
+	} else {
+		assert(events == GFARM_EVENT_READ);
+		switch (state->state) {
+		case RDMA_EXCH_INFO:
+		{
+			gfarm_uint32_t server_lid;
+			gfarm_uint32_t server_qpn;
+			gfarm_uint32_t server_psn;
+			void *server_gid = gfs_rdma_get_remote_gid(ctx);
+			size_t  size = gfs_rdma_get_gid_size();
+			int success;
+
+			state->error = gfs_client_rpc_result(state->gfs_server,
+				0, "iiiib", &success, &server_lid, &server_qpn,
+				&server_psn, size, &size, server_gid);
+			if (state->error == GFARM_ERR_NO_ERROR && success) {
+				gfs_rdma_set_remote_lid(ctx, server_lid);
+				gfs_rdma_set_remote_qpn(ctx, server_qpn);
+				gfs_rdma_set_remote_psn(ctx, server_psn);
+
+				state->error = gfs_rdma_connect(ctx);
+
+			} else if (state->error == GFARM_ERR_NO_ERROR)
+				state->error = GFARM_ERR_DEVICE_NOT_CONFIGURED;
+			break;
+		}
+		case RDMA_HELLO:
+			state->error = gfs_client_rpc_result(state->gfs_server,
+				0, "");
+			break;
+		default:
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			"result state error: %d", state->state);
+		}
+	}
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"gfs_ib_rdma_recv_result:%s state=%d, %s",
+		state->gfs_server->hostname, state->state,
+		gfarm_error_string(state->error));
+	if (state->error == GFARM_ERR_NO_ERROR) {
+		state->state++;
+		if (state->state != RDMA_FIN) {
+			int rv;
+			if ((rv = gfarm_eventqueue_add_event(state->q,
+			    state->writable, NULL)) == 0) {
+				/* go to gfs_ib_rdma_recv_result() */
+				return;
+			}
+			state->error = gfarm_errno_to_error(rv);
+		}
+
+	}
+	if (state->error != GFARM_ERR_NO_ERROR) {
+		gfs_rdma_disable(ctx);
+	}
+	if (state->continuation != NULL)
+		(*state->continuation)(state->closure);
+}
+
+gfarm_error_t
+gfs_ib_rdma_request_multiplexed(struct gfarm_eventqueue *q,
+	struct gfs_connection *gfs_server, void (*continuation)(void *),
+	void *closure, struct gfs_ib_rdma_state **statepp)
+{
+	gfarm_error_t e;
+	int rv;
+	struct gfs_ib_rdma_state *state;
+	struct rdma_context *ctx = gfs_ib_rdma_context(gfs_server);
+
+	if (!gfs_rdma_check(ctx)) {
+		return (GFARM_ERR_DEVICE_NOT_CONFIGURED);
+	}
+
+	GFARM_MALLOC(state);
+	if (state == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of client rdma state failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		goto error_return;
+	}
+
+	state->q = q;
+	state->continuation = continuation;
+	state->closure = closure;
+	state->gfs_server = gfs_server;
+	state->error = GFARM_ERR_NO_ERROR;
+	state->state = RDMA_EXCH_INFO;
+	state->writable = gfarm_fd_event_alloc(GFARM_EVENT_WRITE,
+	    gfs_client_connection_fd(gfs_server),
+	    gfs_ib_rdma_send_request, state);
+	if (state->writable == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of state->writable failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		goto error_free_state;
+	}
+	/*
+	 * We cannot use two independent events (i.e. a fd_event with
+	 * GFARM_EVENT_READ flag and a timer_event) here, because
+	 * it's possible that both event handlers are called at once.
+	 */
+	state->readable = gfarm_fd_event_alloc(
+	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT,
+	    gfs_client_connection_fd(gfs_server),
+	    gfs_ib_rdma_recv_result, state);
+	if (state->readable == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of state->readable failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		goto error_free_writable;
+	}
+	/* go to gfs_ib_rdma_send_request() */
+	rv = gfarm_eventqueue_add_event(q, state->writable, NULL);
+	if (rv != 0) {
+		e = gfarm_errno_to_error(rv);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"adding event to event queue failed: %s",
+			gfarm_error_string(e));
+		goto error_free_readable;
+	}
+	*statepp = state;
+	return (GFARM_ERR_NO_ERROR);
+
+error_free_readable:
+	gfarm_event_free(state->readable);
+error_free_writable:
+	gfarm_event_free(state->writable);
+error_free_state:
+	free(state);
+error_return:
+	return (e);
+}
+
+gfarm_error_t
+gfs_ib_rdma_result_multiplexed(struct gfs_ib_rdma_state *state)
+{
+	gfarm_error_t e = state->error;
+
+	gfarm_event_free(state->writable);
+	gfarm_event_free(state->readable);
+	free(state);
+	return (e);
+}
+/*---------------------------------------------*/
+#ifndef __KERNEL__
+#define GFS_STACK_BUFSIZE  GFS_PROTO_MAX_IOSIZE
+#else /* __KERNEL__  */
+#define GFS_STACK_BUFSIZE 1024
+#endif /* __KERNEL__  */
 /*
  * commonly used by both clients and gfsd
  *
@@ -2020,7 +2292,7 @@ gfs_sendfile_common(struct gfp_xdr *conn, gfarm_int32_t *src_errp,
 	ssize_t rv;
 	off_t sent = 0;
 	int mode_unknown = 1, mode_thread_safe = 1, until_eof = len < 0;
-	char buffer[GFS_PROTO_MAX_IOSIZE];
+	char buffer[GFS_STACK_BUFSIZE];
 #if 0 /* not yet in gfarm v2 */
 	struct gfs_client_rep_rate_info *rinfo = NULL;
 
@@ -2032,9 +2304,9 @@ gfs_sendfile_common(struct gfp_xdr *conn, gfarm_int32_t *src_errp,
 #endif
 	if (until_eof || len > 0) {
 		for (;;) {
-			to_read = until_eof ? GFS_PROTO_MAX_IOSIZE :
-			    len < GFS_PROTO_MAX_IOSIZE ?
-			    len : GFS_PROTO_MAX_IOSIZE;
+			to_read = until_eof ? GFS_STACK_BUFSIZE :
+			    len < GFS_STACK_BUFSIZE ?
+			    len : GFS_STACK_BUFSIZE;
 			if (mode_unknown) {
 				mode_unknown = 0;
 				rv = pread(r_fd, buffer, to_read, r_off);
@@ -2139,7 +2411,7 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 		do {
 			int i, partial;
 			ssize_t rv;
-			char buffer[GFS_PROTO_MAX_IOSIZE];
+			char buffer[GFS_STACK_BUFSIZE];
 
 			/* XXX - FIXME layering violation */
 			e = gfp_xdr_recv_partial(conn, 0,
@@ -2302,7 +2574,6 @@ gfs_client_recvfile(struct gfs_connection *gfs_server,
 			    &src_err);
 			if (e2 == GFARM_ERR_NO_ERROR && eof)
 				e2 = GFARM_ERR_PROTOCOL;
-			
 		}
 		if (IS_CONNECTION_ERROR(e) || IS_CONNECTION_ERROR(e2)) {
 			gfs_client_execute_hook_for_connection_error(
@@ -2686,3 +2957,173 @@ gfs_client_get_load_result_multiplexed(
 	free(state);
 	return (error);
 }
+
+#ifdef HAVE_INFINIBAND
+gfarm_error_t
+gfs_ib_rdma_exch_info(struct gfs_connection *gfs_server)
+{
+	gfarm_error_t e;
+	struct rdma_context *ctx = gfs_ib_rdma_context(gfs_server);
+	int success;
+	gfarm_uint32_t server_lid;
+	gfarm_uint32_t server_qpn;
+	gfarm_uint32_t server_psn;
+	void	*server_gid = gfs_rdma_get_remote_gid(ctx);
+	gfarm_uint32_t local_lid = gfs_rdma_get_local_lid(ctx);
+	gfarm_uint32_t local_qpn = gfs_rdma_get_local_qpn(ctx);
+	gfarm_uint32_t local_psn = gfs_rdma_get_local_psn(ctx);
+	void	*local_gid = gfs_rdma_get_local_gid(ctx);
+	size_t	size = gfs_rdma_get_gid_size();
+
+	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_RDMA_EXCH_INFO,
+		"iiib/iiiib",
+		local_lid, local_qpn, local_psn, size, local_gid,
+		&success, &server_lid, &server_qpn, &server_psn,
+		size, &size, server_gid);
+
+	if (e == GFARM_ERR_NO_ERROR && success) {
+		gfs_rdma_set_remote_lid(ctx, server_lid);
+		gfs_rdma_set_remote_qpn(ctx, server_qpn);
+		gfs_rdma_set_remote_psn(ctx, server_psn);
+
+		gfs_rdma_enable(ctx);
+
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_ib_rdma_exch_info:%s success",
+				gfs_server->hostname);
+	} else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_ib_rdma_exch_info:%s failed, %s",
+				gfs_server->hostname, gfarm_error_string(e));
+		if (e == GFARM_ERR_NO_ERROR)
+			e = GFARM_ERR_DEVICE_NOT_CONFIGURED;
+
+		gfs_rdma_disable(ctx);
+	}
+
+	return (e);
+}
+gfarm_error_t
+gfs_ib_rdma_hello(struct gfs_connection *gfs_server)
+{
+	gfarm_error_t e;
+	struct rdma_context *ctx = gfs_ib_rdma_context(gfs_server);
+	gfarm_uint32_t rkey = gfs_rdma_get_rkey(gfs_rdma_get_mr(ctx));
+	unsigned char *buf;
+	int size;
+
+	buf = gfs_rdma_get_buffer(ctx);
+	size = gfs_rdma_get_gid_size();
+	memcpy(buf, gfs_rdma_get_local_gid(ctx), size);
+
+	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_RDMA_HELLO, "iil/",
+					rkey, size, buf);
+	if (e == GFARM_ERR_NO_ERROR) {
+		gfs_rdma_enable(ctx);
+		gflog_debug(GFARM_MSG_UNFIXED,
+				"gfs_ib_rdma_hello: success");
+	} else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_ib_rdma_hello: failed, %s",
+			gfarm_error_string(e));
+		gfs_rdma_disable(ctx);
+	}
+	return (e);
+}
+
+gfarm_error_t
+gfs_ib_rdma_pread(struct gfs_connection *gfs_server,
+		gfarm_int32_t fd, void *buffer, size_t size,
+		gfarm_off_t off, size_t *np, gfarm_uint32_t rkey)
+{
+	gfarm_error_t e;
+	gfarm_uint64_t addr = (uintptr_t)buffer;
+	gfarm_uint32_t n;
+
+	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_RDMA_PREAD, "iilil/i",
+		fd, (int)size, off, rkey, addr, &n)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+					"gfs_client_rpc() failed: %s",
+					gfarm_error_string(e));
+		return (e);
+	}
+
+	*np = n;
+
+	if (*np > size) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Protocol error in client rdma_pread (%llu)>(%llu)",
+			(unsigned long long)*np, (unsigned long long)size);
+		return (GFARM_ERRMSG_GFS_PROTO_PREAD_PROTOCOL);
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_ib_rdma_pwrite(struct gfs_connection *gfs_server,
+			gfarm_int32_t fd, const void *buffer, size_t size,
+			gfarm_off_t off, size_t *np, gfarm_uint32_t rkey)
+{
+	gfarm_error_t e;
+	gfarm_uint64_t addr = (uintptr_t)buffer;
+	gfarm_uint32_t n;
+
+	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_RDMA_PWRITE, "iilil/i",
+			fd, size, off, rkey, addr, &n)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfs_client_rpc() failed: %s",
+				gfarm_error_string(e));
+		return (e);
+	}
+
+	*np = n;
+
+	if (*np > size) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Protocol error in client rdma_pwrite (%llu)>(%llu)",
+			(unsigned long long)*np, (unsigned long long)size);
+		return (GFARM_ERRMSG_GFS_PROTO_PWRITE_PROTOCOL);
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+struct rdma_context *
+gfs_ib_rdma_context(struct gfs_connection *gfs_server)
+{
+	return (gfs_server->rdma_ctx);
+}
+
+static void
+gfs_ib_rdma_free(struct gfs_connection *gfs_server)
+{
+	if (gfs_server->rdma_ctx) {
+		gfs_rdma_finish(gfs_server->rdma_ctx);
+		gfs_server->rdma_ctx = NULL;
+	}
+}
+
+static void
+gfs_ib_rdma_connect(struct gfs_connection *gfs_server)
+{
+	struct rdma_context *ctx = gfs_ib_rdma_context(gfs_server);
+
+	if (!gfs_rdma_check(ctx))
+		return;
+	if (gfs_ib_rdma_exch_info(gfs_server) != GFARM_ERR_NO_ERROR)
+		return;
+	if (gfs_rdma_connect(ctx) != GFARM_ERR_NO_ERROR)
+		return;
+	gfs_ib_rdma_hello(gfs_server);
+}
+#else
+struct rdma_context *
+gfs_ib_rdma_context(struct gfs_connection *gfs_server)
+{
+	return (NULL);
+}
+static void
+gfs_ib_rdma_free(struct gfs_connection *gfs_server)
+{
+}
+#endif

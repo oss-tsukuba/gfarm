@@ -10,6 +10,7 @@
 #include "lookup.h"
 #include "gfs_io.h"
 #include "gfs_failover.h"
+#include "gfs_dir.h"
 
 /*
  * gfs_opendirplus()/readdirplus()/closedirplus()
@@ -23,6 +24,7 @@ struct gfs_dirplus {
 	struct gfs_dirent buffer[DIRENTSPLUS_BUFCOUNT];
 	struct gfs_stat stbuf[DIRENTSPLUS_BUFCOUNT];
 	int n, index;
+	gfarm_off_t seek_pos;
 	/* remember opened url */
 	char *url;
 	/* remember opened inode num */
@@ -93,6 +95,7 @@ gfs_dirplus_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 	dir->gfm_server = gfm_server;
 	dir->fd = fd;
 	dir->n = dir->index = 0;
+	dir->seek_pos = 0;
 	dir->url = url;
 	dir->ino = ino;
 
@@ -146,7 +149,7 @@ gfs_opendirplus(const char *path, GFS_DirPlus *dirp)
 			path,
 			gfarm_error_string(e));
 
-	(void)gfm_close_fd(gfm_server, fd, NULL); /* ignore result */
+	(void)gfm_close_fd(gfm_server, fd, NULL, NULL); /* ignore result */
 	gfm_client_connection_free(gfm_server);
 	return (e);
 }
@@ -184,8 +187,10 @@ gfs_readdirplus(GFS_DirPlus dir,
 	struct gfs_dirent **entry, struct gfs_stat **status)
 {
 	gfarm_error_t e;
+	int n;
 
 	if (dir->index >= dir->n) {
+		n = dir->n;
 		gfs_dirplus_clear(dir);
 		e = gfm_client_compound_fd_op_readonly(
 		    (struct gfs_failover_file *)dir,
@@ -200,6 +205,7 @@ gfs_readdirplus(GFS_DirPlus dir,
 			    gfarm_error_string(e));
 			return (e);
 		}
+		dir->seek_pos += n;
 		if (dir->n == 0) {
 			*entry = NULL;
 			*status = NULL;
@@ -221,11 +227,43 @@ gfs_readdirplus(GFS_DirPlus dir,
 }
 
 gfarm_error_t
+gfs_seekdirplus(GFS_DirPlus dir, gfarm_off_t off)
+{
+	gfarm_error_t e;
+	struct gfm_seekdir_closure closure;
+
+	if (dir->seek_pos <= off && off <= dir->seek_pos + dir->n) {
+		dir->index = off - dir->seek_pos;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	closure.offset = off;
+	closure.whence = 0;
+	e = gfm_client_compound_fd_op_readonly(
+	    (struct gfs_failover_file *)dir, &failover_file_ops,
+	    gfm_seekdir_request, gfm_seekdir_result, NULL, &closure);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_compound_fd_op_readonly(seek): %s",
+		    gfarm_error_string(e));
+	}
+	gfs_dirplus_clear(dir);
+	dir->seek_pos = closure.offset;
+	return (e);
+}
+
+gfarm_error_t
+gfs_telldirplus(GFS_DirPlus dir, gfarm_off_t *offp)
+{
+	*offp = dir->seek_pos + dir->index;
+	return (GFARM_ERR_NO_ERROR);
+}
+gfarm_error_t
 gfs_closedirplus(GFS_DirPlus dir)
 {
 	gfarm_error_t e;
 
-	if ((e = gfm_close_fd(dir->gfm_server, dir->fd, NULL))
+	if ((e = gfm_close_fd(dir->gfm_server, dir->fd, NULL, NULL))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1003938,
 		    "gfm_close_fd: %s",

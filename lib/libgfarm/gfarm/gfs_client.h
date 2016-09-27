@@ -70,7 +70,7 @@ gfarm_error_t gfs_client_close(struct gfs_connection *, gfarm_int32_t);
 gfarm_error_t gfs_client_close_write(struct gfs_connection *,
 	gfarm_int32_t, gfarm_int32_t);
 gfarm_error_t gfs_client_pread(struct gfs_connection *,
-		       gfarm_int32_t, void *, size_t, gfarm_off_t, size_t *);
+			gfarm_int32_t, void *, size_t, gfarm_off_t, size_t *);
 gfarm_error_t gfs_client_pwrite(struct gfs_connection *,
 			gfarm_int32_t, const void *, size_t, gfarm_off_t,
 			size_t *);
@@ -187,3 +187,17 @@ gfarm_error_t gfs_client_get_load_request_multiplexed(
 	void (*)(void *), void *, struct gfs_client_get_load_state **, int);
 gfarm_error_t gfs_client_get_load_result_multiplexed(
 	struct gfs_client_get_load_state *, struct gfs_client_load *);
+
+struct gfs_ib_rdma_state;
+gfarm_error_t gfs_ib_rdma_request_multiplexed(struct gfarm_eventqueue *q,
+	struct gfs_connection *gfs_server, void (*continuation)(void *),
+	void *closure, struct gfs_ib_rdma_state **statepp);
+gfarm_error_t gfs_ib_rdma_result_multiplexed(struct gfs_ib_rdma_state *state);
+
+gfarm_error_t gfs_client_exch_rdma_info(struct gfs_connection *);
+struct rdma_context * gfs_ib_rdma_context(struct gfs_connection *);
+gfarm_error_t gfs_ib_rdma_pread(struct gfs_connection *,
+	gfarm_int32_t, void *, size_t, gfarm_off_t, size_t *, gfarm_uint32_t);
+gfarm_error_t gfs_ib_rdma_pwrite(struct gfs_connection *, gfarm_int32_t,
+	const void *, size_t, gfarm_off_t, size_t *, gfarm_uint32_t);
+

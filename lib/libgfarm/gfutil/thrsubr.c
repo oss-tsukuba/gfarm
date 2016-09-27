@@ -41,6 +41,7 @@ gfarm_mutex_trylock(pthread_mutex_t *mutex, const char *where,
 	return (err == 0);
 }
 
+#ifndef __KERNEL__
 #ifdef HAVE_PTHREAD_MUTEX_TIMEDLOCK
 /* false: ETIMEDOUT */
 int
@@ -55,6 +56,7 @@ gfarm_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec *timeout,
 	return (err == 0);
 }
 #endif /* HAVE_PTHREAD_MUTEX_TIMEDLOCK */
+#endif /* __KERNEL__ */
 
 void
 gfarm_mutex_unlock(pthread_mutex_t *mutex, const char *where, const char *what)

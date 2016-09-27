@@ -1693,7 +1693,7 @@ subcmd_unconfig_gfarm_slave()
 	check_argc $# 1
 	MASTER_HOSTID="$1"
 	check_hostid gfmd $HOSTID
-	check_gfmd_hostid $MASTER_HOSTID
+	check_hostid gfmd $MASTER_HOSTID
 
 	#
 	# Execute 'config-gfarm -T' on the slave host.

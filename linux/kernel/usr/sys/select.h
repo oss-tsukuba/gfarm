@@ -6,4 +6,3 @@ extern int select(int __nfds, fd_set * __restrict __readfds,
 	struct timeval *__restrict __timeout);
 
 #endif /* _SELECT_H_ */
-

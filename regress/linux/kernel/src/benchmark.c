@@ -18,11 +18,12 @@ static char *writeBuffer;
 static char *readBuffer;
 static int callGfstat = 0;
 
-int init(void) {
+int init(void)
+{
 	writeBuffer = malloc(iosize);
 	if (writeBuffer == NULL) {
 		perror("malloc");
-		return 1;
+		return (1);
 	}
 	memset(writeBuffer, 0x41424344, iosize);
 
@@ -30,26 +31,29 @@ int init(void) {
 	if (readBuffer == NULL) {
 		perror("malloc");
 		free(writeBuffer);
-		return 1;
+		return (1);
 	}
-	return 0;
+	return (0);
 }
 
-void fini(void) {
+void fini(void)
+{
 	free(writeBuffer);
 	free(readBuffer);
 }
 
 struct timeval startTv, endTv;
 
-void start(char *testname) {
+void start(char *testname)
+{
 	printf("START <%s>\n", testname);
 	if (gettimeofday(&startTv, NULL) != 0) {
 		perror("gettimeofday()");
 	}
 }
 
-void end(char *testname) {
+void end(char *testname)
+{
 	printf("END   <%s>\n", testname);
 	if (gettimeofday(&endTv, NULL) == 0) {
 		double elapse = (endTv.tv_sec + 1e-6 * endTv.tv_usec)
@@ -61,7 +65,8 @@ void end(char *testname) {
 	}
 }
 
-void checkGfstat() {
+void checkGfstat()
+{
 	if (callGfstat) {
 		char command[1024];
 		snprintf(command, sizeof(command), "/usr/local/bin/gfstat %s",
@@ -71,13 +76,15 @@ void checkGfstat() {
 	}
 }
 
-void runTest(char *testname, void (*benchfunc)(void)) {
+void runTest(char *testname, void (*benchfunc)(void))
+{
 	start(testname);
 	benchfunc();
 	end(testname);
 }
 
-void createwrite(void) {
+void createwrite(void)
+{
 	int fd = open(filename, O_CREAT | O_RDWR, 0644);
 	if (fd < 0) {
 		perror("open() failed\n");
@@ -95,7 +102,8 @@ void createwrite(void) {
 	}
 }
 
-void openwrite(void) {
+void openwrite(void)
+{
 	int fd = open(filename, O_RDWR);
 	if (fd < 0) {
 		perror("open() failed\n");
@@ -113,7 +121,8 @@ void openwrite(void) {
 	}
 }
 
-void openread(void) {
+void openread(void)
+{
 	int fd = open(filename, O_RDONLY);
 	if (fd < 0) {
 		perror("open() failed\n");
@@ -131,7 +140,8 @@ void openread(void) {
 	}
 }
 
-void openmmapwrite(void) {
+void openmmapwrite(void)
+{
 	int fd = open(filename, O_RDWR);
 	if (fd < 0) {
 		perror("open() failed\n");
@@ -147,12 +157,14 @@ void openmmapwrite(void) {
 		perror("munmap");
 	}
 	checkGfstat();
-	quit: if (close(fd) != 0) {
+quit:
+	if (close(fd) != 0) {
 		perror("close()");
 	}
 }
 
-void openmmapread(void) {
+void openmmapread(void)
+{
 	int fd = open(filename, O_RDWR);
 	if (fd < 0) {
 		perror("open() failed\n");
@@ -168,15 +180,17 @@ void openmmapread(void) {
 		perror("munmap");
 	}
 	checkGfstat();
-	quit: if (close(fd) != 0) {
+quit:
+	if (close(fd) != 0) {
 		perror("close()");
 	}
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	if (argc < 4) {
 		printf("Usage: %s mountpoint filename IOsize_MB [read]\n", argv[0]);
-		return 1;
+		return (1);
 	}
 	snprintf(filename, sizeof(filename), "%s/%s", argv[1], argv[2]);
 	gfarmfile = argv[2];
@@ -187,7 +201,7 @@ int main(int argc, char *argv[]) {
 			doReadTest);
 
 	if (init() != 0) {
-		return 1;
+		return (1);
 	}
 
 	checkGfstat();
@@ -212,6 +226,7 @@ int main(int argc, char *argv[]) {
 	runTest("open,read,close", openread);
 	runTest("open,mmapRead,close", openmmapread);
 
-	quit: fini();
-	return ret;
+quit:
+	fini();
+	return (ret);
 }

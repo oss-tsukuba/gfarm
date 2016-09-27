@@ -1,0 +1,15 @@
+#!/bin/sh
+
+MOD_SYMVERS=${MOD_SYMVERS-:./Module.symvers}
+echo MODULES_DIR=${MODULES_DIR-:./}
+
+if [ -f ${MOD_SYMVERS} -a ! -f ${MOD_SYMVERS}.save ]; then
+	mv ${MOD_SYMVERS} ${MOD_SYMVERS}.save
+fi
+rm -f $MOD_SYMVERS
+
+for mod in $(find ${MODULES_DIR} -name '*.ko') ; do
+   nm -o $mod |grep __crc |sed -e "s@.*:0*@0x@" \
+	-e "s@A __crc_@@" -e "s@.*@& $mod@" -e "s/ [ ]*/\t/g" >> $MOD_SYMVERS
+done
+echo ${MOD_SYMVERS} created.

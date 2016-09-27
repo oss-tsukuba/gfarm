@@ -32,12 +32,26 @@
 #include "gfs_profile.h"
 #include "context.h"
 
+#ifdef HAVE_INFINIBAND
+#ifdef __KERNEL__
+#undef HAVE_INFINIBAND
+#else /* __KERNEL__ */
+#include "gfs_rdma.h"
+#endif /* __KERNEL__ */
+#endif
+
 #define staticp	(gfarm_ctxp->gfs_pio_remote_static)
+#define gfs_rdma_min_size (gfarm_ctxp->rdma_min_size)
 
 struct gfarm_gfs_pio_remote_static {
 	double write_time, read_time;
 	unsigned long long write_size, read_size;
 	unsigned long long write_count, read_count;
+#ifdef HAVE_INFINIBAND
+	double rdma_write_time, rdma_read_time;
+	unsigned long long rdma_write_size, rdma_read_size;
+	unsigned long long rdma_write_count, rdma_read_count;
+#endif
 };
 
 gfarm_error_t
@@ -56,6 +70,15 @@ gfarm_gfs_pio_remote_static_init(struct gfarm_context *ctxp)
 	s->write_count =
 	s->read_count = 0;
 
+#ifdef HAVE_INFINIBAND
+	s->rdma_write_time =
+	s->rdma_read_time = 0;
+	s->rdma_write_size =
+	s->rdma_read_size =
+	s->rdma_write_count =
+	s->rdma_read_count = 0;
+#endif
+
 	ctxp->gfs_pio_remote_static = s;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -72,6 +95,9 @@ gfs_pio_remote_storage_close(GFS_File gf)
 	gfarm_error_t e;
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
+#ifdef HAVE_INFINIBAND
+	struct rdma_context *rdma_context = gfs_ib_rdma_context(gfs_server);
+#endif
 
 	/*
 	 * Do not close remote file from a child process because its
@@ -81,6 +107,16 @@ gfs_pio_remote_storage_close(GFS_File gf)
 	 */
 	if (vc->pid != getpid())
 		return (GFARM_ERR_NO_ERROR);
+
+#ifdef HAVE_INFINIBAND
+	if (gf->mr && (e = gfs_rdma_dereg_mr
+		(rdma_context, &gf->mr)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_rdma_dereg_mr() failed, but continue");
+		gf->mr = NULL;
+	}
+#endif
+
 	e = gfs_client_close(gfs_server, gf->fd);
 	gfarm_schedule_host_unused(
 	    gfs_client_hostname(gfs_server),
@@ -102,13 +138,47 @@ static gfarm_error_t
 gfs_pio_remote_storage_pwrite(GFS_File gf,
 	const char *buffer, size_t size, gfarm_off_t offset, size_t *lengthp)
 {
+
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
+#ifdef HAVE_INFINIBAND
+	struct rdma_context *rdma_context = gfs_ib_rdma_context(gfs_server);
+#endif
 	gfarm_error_t e;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	GFARM_KERNEL_UNUSE2(t1, t2);
 	gfs_profile(gfarm_gettimerval(&t1));
+#ifdef HAVE_INFINIBAND
+	if (gfs_rdma_check(rdma_context) && size >= gfs_rdma_min_size) {
+		if (gf->mr && buffer == gf->buffer) {
+			gfarm_uint32_t rkey = gfs_rdma_get_rkey(gf->mr);
+			e = gfs_ib_rdma_pwrite(gfs_server, gf->fd, buffer, size,
+						offset, lengthp, rkey);
+		} else {
+			void *mr;
+			if ((e = gfs_rdma_reg_mr_remote_read_write(rdma_context,
+			 (char *)buffer, size, &mr) != GFARM_ERR_NO_ERROR)) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				"gfs_rdma_reg_mr_remote_read_write() failed");
+			} else {
+				gfarm_uint32_t rkey = gfs_rdma_get_rkey(mr);
+				e = gfs_ib_rdma_pwrite(gfs_server, gf->fd,
+					buffer, size, offset, lengthp, rkey);
+				gfs_rdma_dereg_mr(rdma_context, &mr);
+			}
+		}
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+		gfs_profile(gfarm_gettimerval(&t2);
+			staticp->rdma_write_time +=
+					gfarm_timerval_sub(&t2, &t1);
+			staticp->rdma_write_size += *lengthp;
+			staticp->rdma_write_count++);
+		return (e);
+	}
+#endif
 	/*
 	 * buffer beyond GFS_PROTO_MAX_IOSIZE are just ignored by gfsd,
 	 * we don't perform such GFS_PROTO_WRITE request, because it's
@@ -117,8 +187,10 @@ gfs_pio_remote_storage_pwrite(GFS_File gf,
 	 */
 	if (size > GFS_PROTO_MAX_IOSIZE)
 		size = GFS_PROTO_MAX_IOSIZE;
+
 	e = gfs_client_pwrite(gfs_server, gf->fd, buffer, size, offset,
-	    lengthp);
+					lengthp);
+
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	gfs_profile(gfarm_gettimerval(&t2));
@@ -152,12 +224,17 @@ static gfarm_error_t
 gfs_pio_remote_storage_pread(GFS_File gf,
 	char *buffer, size_t size, gfarm_off_t offset, size_t *lengthp)
 {
+
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
+#ifdef HAVE_INFINIBAND
+	struct rdma_context *rdma_context = gfs_ib_rdma_context(gfs_server);
+#endif
 	gfarm_error_t e;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	GFARM_KERNEL_UNUSE2(t1, t2);
 	gfs_profile(gfarm_gettimerval(&t1));
 	/*
 	 * Unlike gfs_pio_remote_storage_write(), we don't care
@@ -165,8 +242,26 @@ gfs_pio_remote_storage_pread(GFS_File gf,
 	 * performed by gfsd isn't inefficient for read case.
 	 * Note that upper gfs_pio layer should care the partial read.
 	 */
+
+#ifdef HAVE_INFINIBAND
+
+	if (gfs_rdma_check(rdma_context) && gf->mr
+		&& buffer == gf->buffer && size >= gfs_rdma_min_size) {
+		gfarm_uint32_t rkey = gfs_rdma_get_rkey(gf->mr);
+		e = gfs_ib_rdma_pread(gfs_server, gf->fd, buffer, size,
+					offset, lengthp, rkey);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+		gfs_profile(gfarm_gettimerval(&t2);
+			staticp->rdma_read_time += gfarm_timerval_sub(&t2, &t1);
+			staticp->rdma_read_size += *lengthp;
+			staticp->rdma_read_count++);
+		return (e);
+	}
+#endif
 	e = gfs_client_pread(gfs_server, gf->fd, buffer, size, offset,
-	    lengthp);
+					lengthp);
+
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	gfs_profile(gfarm_gettimerval(&t2));
@@ -185,10 +280,21 @@ gfs_pio_remote_storage_recvfile(GFS_File gf, gfarm_off_t r_off,
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
 	int md_aborted;
+	gfarm_timerval_t t1, t2;
+
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	GFARM_KERNEL_UNUSE2(t1, t2);
+	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_client_recvfile(gfs_server, gf->fd, r_off,
 	    w_fd, w_off, len, (gf->open_flags & GFARM_FILE_APPEND) != 0,
 	    md_ctx, &md_aborted, recvp);
+	if (e == GFARM_ERR_NO_ERROR) {
+		gfs_profile(gfarm_gettimerval(&t2);
+		staticp->read_time += gfarm_timerval_sub(&t2, &t1);
+		staticp->read_size += *recvp;
+		staticp->read_count++);
+	}
 	if (md_aborted)
 		gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
 	return (e);
@@ -202,9 +308,20 @@ gfs_pio_remote_storage_sendfile(GFS_File gf, gfarm_off_t w_off,
 	gfarm_error_t e;
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
+	gfarm_timerval_t t1, t2;
+
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	GFARM_KERNEL_UNUSE2(t1, t2);
+	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_client_sendfile(gfs_server, gf->fd, w_off,
 	    r_fd, r_off, len, md_ctx, sentp);
+	if (e == GFARM_ERR_NO_ERROR) {
+		gfs_profile(gfarm_gettimerval(&t2);
+		staticp->write_time += gfarm_timerval_sub(&t2, &t1);
+		staticp->write_size += *sentp;
+		staticp->write_count++);
+	}
 	if (e != GFARM_ERR_NO_ERROR && md_ctx != NULL) {
 		/*
 		 * re: gfs_client_sendfile():
@@ -300,6 +417,9 @@ gfs_pio_open_remote_section(GFS_File gf, struct gfs_connection *gfs_server)
 {
 	gfarm_error_t e;
 	struct gfs_file_section_context *vc = gf->view_context;
+#ifdef HAVE_INFINIBAND
+	struct rdma_context *rdma_context = gfs_ib_rdma_context(gfs_server);
+#endif
 
 	e = gfs_client_open(gfs_server, gf->fd);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -308,6 +428,19 @@ gfs_pio_open_remote_section(GFS_File gf, struct gfs_connection *gfs_server)
 			gfarm_error_string(e));
 		return (e);
 	}
+
+#ifdef HAVE_INFINIBAND
+	if (gfs_rdma_check(rdma_context)) {
+		if ((e = gfs_rdma_reg_mr_remote_read_write
+			 (rdma_context, gf->buffer, gf->bufsize, &gf->mr)
+			 != GFARM_ERR_NO_ERROR)) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"gfs_rdma_reg_mr_remote_read_write() failed");
+		} else
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"gfs_rdma_reg_mr_remote_read_write() success");
+	}
+#endif
 
 	vc->ops = &gfs_pio_remote_storage_ops;
 	vc->storage_context = gfs_server;
@@ -331,4 +464,18 @@ gfs_pio_remote_display_timers(void)
 	    "remote write size  : %llu", staticp->write_size);
 	gflog_info(GFARM_MSG_1003835,
 	    "remote write count : %llu", staticp->write_count);
+#ifdef HAVE_INFINIBAND
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "rdma read time   : %g sec", staticp->rdma_read_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "rdma read size   : %llu", staticp->rdma_read_size);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "rdma read count  : %llu", staticp->rdma_read_count);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "rdma write time  : %g sec", staticp->rdma_write_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "rdma write size  : %llu", staticp->rdma_write_size);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "rdma write count : %llu", staticp->rdma_write_count);
+#endif
 }

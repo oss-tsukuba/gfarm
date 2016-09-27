@@ -303,7 +303,7 @@ gfs_closedir_internal(GFS_Dir super)
 	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)super;
 	gfarm_error_t e;
 
-	if ((e = gfm_close_fd(dir->gfm_server, dir->fd, NULL))
+	if ((e = gfm_close_fd(dir->gfm_server, dir->fd, NULL, NULL))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1003936,
 		    "gfm_close_fd: %s",
@@ -447,7 +447,7 @@ gfs_opendir(const char *path, GFS_Dir *dirp)
 			path,
 			gfarm_error_string(e));
 
-	(void)gfm_close_fd(gfm_server, fd, NULL); /* ignore result */
+	(void)gfm_close_fd(gfm_server, fd, NULL, NULL); /* ignore result */
 	gfm_client_connection_free(gfm_server);
 	return (e);
 }
@@ -467,7 +467,7 @@ gfs_fhopendir(gfarm_ino_t inum, gfarm_uint64_t gen, GFS_Dir *dirp)
 			e = gfs_dir_alloc(gfm_server, fd, NULL, inum, dirp);
 		if (e != GFARM_ERR_NO_ERROR) {
 			/* ignore result */
-			(void)gfm_close_fd(gfm_server, fd, NULL);
+			(void)gfm_close_fd(gfm_server, fd, NULL, NULL);
 			gfm_client_connection_free(gfm_server);
 		}
 	}

@@ -748,8 +748,8 @@ gfm_server_fhopen(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, "i", mode));
 }
 
-gfarm_error_t
-gfm_server_close(struct peer *peer, int from_client, int skip)
+static gfarm_error_t
+gfm_server_close_gen(struct peer *peer, int from_client, int skip, int getgen)
 {
 	gfarm_error_t e, e2;
 	struct host *spool_host = NULL;
@@ -758,6 +758,7 @@ gfm_server_close(struct peer *peer, int from_client, int skip)
 	int transaction = 0;
 	char *trace_log = NULL;
 	static const char diag[] = "GFM_PROTO_CLOSE";
+	gfarm_uint64_t gen = 0;
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
@@ -784,6 +785,8 @@ gfm_server_close(struct peer *peer, int from_client, int skip)
 		 * closing must be done regardless of the result of db_begin().
 		 * because not closing may cause descriptor leak.
 		 */
+		if (getgen)
+			process_getgen(process, peer, fd, &gen, diag);
 		e = process_close_file(process, peer, fd, &trace_log, diag);
 		if (transaction)
 			db_end(diag);
@@ -792,12 +795,26 @@ gfm_server_close(struct peer *peer, int from_client, int skip)
 	}
 
 	giant_unlock();
-	e2 = gfm_server_put_reply(peer, diag, e, "");
+	if (getgen)
+		e2 = gfm_server_put_reply(peer, diag, e, "l", gen);
+	else
+		e2 = gfm_server_put_reply(peer, diag, e, "");
 	if (gfarm_ctxp->file_trace && trace_log != NULL) {
 		gflog_trace(GFARM_MSG_1003295, "%s", trace_log);
 		free(trace_log);
 	}
 	return (e2);
+}
+
+gfarm_error_t
+gfm_server_close(struct peer *peer, int from_client, int skip)
+{
+	return (gfm_server_close_gen(peer, from_client, skip, 0));
+}
+gfarm_error_t
+gfm_server_close_getgen(struct peer *peer, int from_client, int skip)
+{
+	return (gfm_server_close_gen(peer, from_client, skip, 1));
 }
 
 static gfarm_error_t
@@ -2385,7 +2402,7 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 	if (e_ret == GFARM_ERR_NO_ERROR) {
 		for (i = 0; i < n; i++) {
 			e_ret = gfp_xdr_send(client, "sil",
-			    p[i].name, p[i].type, p[i].inum);
+				p[i].name, p[i].type, p[i].inum);
 			if (e_ret != GFARM_ERR_NO_ERROR) {
 				gflog_warning(GFARM_MSG_1000386,
 				    "%s@%s: getdirents: %s",
@@ -2418,7 +2435,7 @@ gfm_server_getdirentsplus(struct peer *peer, int from_client, int skip)
 		char *name;
 		struct gfs_stat st;
 	} *p = NULL;
-	static const char diag[] = "GFM_PROTO_GETDIRENTSPLUS";
+	static char *diag = "GFM_PROTO_GETDIRENTSPLUS";
 
 	e_ret = gfm_server_get_request(peer, diag, "i", &n);
 	if (e_ret != GFARM_ERR_NO_ERROR)
@@ -2521,7 +2538,7 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 	} *p = NULL, *pp;
 	struct xattr_list *px;
 	struct db_waitctx waitctx;
-	static const char diag[] = "GFM_PROTO_GETDIRENTSPLUSXATTR";
+	static char *diag = "GFM_PROTO_GETDIRENTSPLUSXATTR";
 
 	e_ret = gfm_server_get_request(peer, diag, "ii", &n, &nattrpatterns);
 	if (e_ret != GFARM_ERR_NO_ERROR)
@@ -2743,10 +2760,14 @@ gfm_server_seek(struct peer *peer, int from_client, int skip)
 	} else {
 		max = dir_get_entry_count(dir);
 		switch (whence) {
-		case 0: break;
-		case 1: offset += current; break;
-		case 2: offset += max; break;
-		default: assert(0);
+		case 0:
+			break;
+		case 1:
+			offset += current; break;
+		case 2:
+			offset += max; break;
+		default:
+			assert(0);
 		}
 		if (offset != current) {
 			if (offset < 0)

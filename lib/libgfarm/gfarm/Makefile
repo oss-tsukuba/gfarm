@@ -56,6 +56,7 @@ SRCS = \
 	gfm_conn_follow.c \
 	gfm_schedule.c \
 	lookup.c \
+	gfs_rdma.c \
 	gfs_io.c \
 	gfs_dir.c \
 	gfs_dirplus.c \
@@ -140,6 +141,7 @@ OBJS = \
 	gfm_conn_follow.lo \
 	gfm_schedule.lo \
 	lookup.lo \
+	gfs_rdma.lo \
 	gfs_io.lo \
 	gfs_dir.lo \
 	gfs_dirplus.lo \
@@ -193,7 +195,7 @@ OBJS = \
 CFLAGS = $(pthread_includes) \
 	$(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) -I$(srcdir) \
 	$(globus_cflags) $(metadb_client_includes) $(openssl_includes) \
-	$(optional_cflags) \
+	$(optional_cflags) $(rdma_includes) \
 	-DGFARM_CONFIG='"$(sysconfdir)/gfarm2.conf"'
 
 all: $(LIBRARY)
@@ -287,5 +289,6 @@ sockopt.lo: context.h liberror.h hostspec.h param.h sockopt.h
 stringlist.lo:
 timespec.lo: timespec.h
 url.lo: $(GFUTIL_SRCDIR)/queue.h config.h gfs_pio.h
+gfs_rdma.lo: gfs_rdma.h
 
 include $(optional_rule)

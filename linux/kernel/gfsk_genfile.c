@@ -21,15 +21,30 @@ gfsk_update_attributes(struct file *file, struct inode *inode,
 	struct file *ofile = file;
 	struct gfarm_inode *gi = get_gfarm_inode(inode);
 
+	gflog_verbose(GFARM_MSG_UNFIXED, "ino=%ld actime=%ld",
+			 inode->i_ino, gi->i_actime - get_jiffies_64());
 	if (gi->i_actime < get_jiffies_64()) {
 		if (!file)
 			file = gfsk_open_file_get(inode);
 		if (file)
 			retval = gfarm_fstat(file, inode);
-		else
+		else if (dentry)
 			retval = gfarm_stat(dentry, NULL);
+		else if ((dentry = d_find_alias(inode))) {
+			retval = gfarm_stat(dentry, NULL);
+			dput(dentry);
+		} else {
+			retval = -EINVAL;
+			gflog_warning(GFARM_MSG_UNFIXED, "no dentry ino=%ld",
+					 inode->i_ino);
+		}
 		if (file && !ofile)
 			fput(file);
+		if (retval == -ENOENT)
+			gfsk_iflag_set(inode, GFSK_INODE_STALE);
+		else if (!retval && gfsk_iflag_isset(inode, GFSK_INODE_STALE)) {
+			retval = -ENOENT;
+		}
 	}
 	return (retval);
 }
@@ -49,6 +64,20 @@ gfsk_getattr(struct vfsmount *mnt, struct dentry *dentry,
 		stat->blksize = 4096;
 		stat->blocks = (stat->size + stat->blksize - 1)
 					/ stat->blksize;
+	} else if (retval == -ENOENT && inode) {
+#if 1
+		d_delete(dentry);
+#else
+		gfsk_invalidate_attr(inode);
+		if (S_ISREG(inode->i_mode))
+			gfsk_invalidate_pages(inode);
+		else if (S_ISDIR(inode->i_mode))
+			gfsk_invalidate_dir_pages(inode);
+		gflog_info(GFARM_MSG_UNFIXED, "gfarm:may deleted. "
+			"ino=%lu, ref=%d",
+			inode->i_ino, atomic_read(&dentry->d_count));
+		d_delete(dentry);
+#endif
 	}
 	GFSK_CTX_UNSET();
 	return (retval);
@@ -86,6 +115,7 @@ gfsk_set_cache_invalidate(struct inode *inode)
 void
 gfsk_set_cache_updatetime(struct inode *inode)
 {
+# if 0
 	struct gfarm_inode *gi = get_gfarm_inode(inode);
 	uint64_t jiffies = get_jiffies_64();
 	gflog_debug(GFARM_MSG_UNFIXED, "gfsk_set_cache_updatetime. ino=%lu, "
@@ -100,17 +130,14 @@ gfsk_set_cache_updatetime(struct inode *inode)
 	} else {
 		/* don't update pctime since it's not valid anymore */
 	}
+#endif
 }
 
-int
-gfsk_is_cache_valid(struct inode *inode)
+void
+gfsk_check_cache_pages(struct inode *inode)
 {
-	struct gfarm_inode *gi = get_gfarm_inode(inode);
-	u64 jiffies = get_jiffies_64();
-	gflog_debug(GFARM_MSG_UNFIXED, "gfsk_is_cache_valid done. ino=%lu, "
-		"jiffies=%llu, pctime=%llu",
-		inode->i_ino, jiffies, gi->i_pctime);
-	return ((0 < gi->i_pctime) && (jiffies < gi->i_pctime));
+	if (gfsk_update_attributes(NULL, inode, NULL))
+		gfsk_invalidate_pages(inode);
 }
 
 void

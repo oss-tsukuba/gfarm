@@ -77,6 +77,12 @@ local gfs_command_names = {
    [ 21] = 'GFS_PROTO_STATUS',
    [ 22] = 'GFS_PROTO_REPLICATION_REQUEST',
    [ 23] = 'GFS_PROTO_REPLICATION_CANCEL',
+   [ 24] = 'GFS_PROTO_PROCESS_RESET',
+   [ 25] = 'GFS_PROTO_WRITE',
+   [ 32] = 'GFS_PROTO_RDMA_EXCH_INFO',
+   [ 33] = 'GFS_PROTO_RDMA_HELLO',
+   [ 34] = 'GFS_PROTO_RDMA_PREAD',
+   [ 35] = 'GFS_PROTO_RDMA_PWRITE',
 }
 
 --
@@ -322,6 +328,15 @@ function parse_response_with_error_code_only(tvb, pinfo, item, offset)
    return parse_xdr(tvb, item, "i", offset, "error_code", error_names)
 end
 
+function parse_response_with_error_code_and_length(tvb, pinfo, item, offset)
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   if err == 0 then
+      offset = parse_xdr(tvb, item, "i", offset, "length")
+   end
+   return offset
+end
+
 --
 -- Parse GFS_PROTO_PROCESS_SET.
 --
@@ -358,11 +373,15 @@ end
 -- Parse GFS_PROTO_OPEN.
 --
 function parse_gfs_open_request(tvb, pinfo, item, offset)
-   -- IN 
+   -- IN i:fd
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "i", offset, "fd")
+   return offset
 end
 
 function parse_gfs_open_response(tvb, pinfo, item, offset)
-   -- OUT 
+   -- OUT i:error_code
+   return parse_response_with_error_code_only(tvb, pinfo, item, offset)
 end
 
 --
@@ -415,6 +434,46 @@ function parse_gfs_pwrite_response(tvb, pinfo, item, offset)
    -- OUT i:error_code, i:length
    offset = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
    offset = parse_xdr(tvb, item, "i", offset, "length")
+   return offset
+end
+
+--
+-- Parse GFS_PROTO_WRITE.
+--
+function parse_gfs_write_request(tvb, pinfo, item, offset)
+   -- IN i:fd, b:buffer
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "i", offset, "fd")
+   offset = parse_xdr(tvb, item, "b", offset, "buffer")
+   return offset
+end
+
+function parse_gfs_write_response(tvb, pinfo, item, offset)
+   -- OUT i:error_code, i:length l:offset l:fole_size
+   offset = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   offset = parse_xdr(tvb, item, "i", offset, "length")
+   offset = parse_xdr(tvb, item, "l", offset, "written_offset")
+   offset = parse_xdr(tvb, item, "l", offset, "file_size")
+   return offset
+end
+
+
+--
+-- Parse GFS_PROTO_PROCESS_RESET.
+--
+function parse_gfs_process_reset_request(tvb, pinfo, item, offset)
+   -- IN i:fd, b:buffer
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "i", offset, "keytype")
+   offset = parse_xdr(tvb, item, "b", offset, "sharedkey")
+   offset = parse_xdr(tvb, item, "l", offset, "pid")
+   offset = parse_xdr(tvb, item, "i", offset, "failover_count")
+   return offset
+end
+
+function parse_gfs_process_reset_response(tvb, pinfo, item, offset)
+   -- OUT i:error_code
+   offset = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
    return offset
 end
 
@@ -665,6 +724,88 @@ function parse_gfs_replication_cancel_response(tvb, pinfo, item, offset)
 end
 
 --
+-- Parse GFS_PROTO_RDMA_PREAD.
+--
+function parse_gfs_rdma_pread_request(tvb, pinfo, item, offset)
+   -- IN i:fd, i:size, l:offset
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "i", offset, "fd")
+   offset = parse_xdr(tvb, item, "i", offset, "size")
+   offset = parse_xdr(tvb, item, "l", offset, "offset")
+   offset = parse_xdr(tvb, item, "i", offset, "rkey")
+   offset = parse_xdr(tvb, item, "l", offset, "addr")
+   return offset
+end
+
+function parse_gfs_rdma_pread_response(tvb, pinfo, item, offset)
+   -- OUT i:error_code, l:length
+   return parse_response_with_error_code_and_length(tvb, pinfo, item, offset)
+end
+
+--
+-- Parse GFS_PROTO_RDMA_PWRITE.
+--
+function parse_gfs_rdma_pwrite_request(tvb, pinfo, item, offset)
+   -- IN i:fd, i:size, l:offset
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "i", offset, "fd")
+   offset = parse_xdr(tvb, item, "i", offset, "size")
+   offset = parse_xdr(tvb, item, "l", offset, "offset")
+   offset = parse_xdr(tvb, item, "i", offset, "rkey")
+   offset = parse_xdr(tvb, item, "l", offset, "addr")
+   return offset
+end
+
+function parse_gfs_rdma_pwrite_response(tvb, pinfo, item, offset)
+   -- OUT i:error_code, l:length
+   return parse_response_with_error_code_and_length(tvb, pinfo, item, offset)
+end
+
+--
+-- Parse GFS_PROTO_RDMA_EXCH_INFO.
+--
+function parse_gfs_rdma_pread_request(tvb, pinfo, item, offset)
+   -- IN i:fd, i:size, l:offset
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "i", offset, "lid")
+   offset = parse_xdr(tvb, item, "i", offset, "qpn")
+   offset = parse_xdr(tvb, item, "i", offset, "psn")
+   offset = parse_xdr(tvb, item, "b", offset, "gid")
+   return offset
+end
+
+function parse_gfs_rdma_pread_response(tvb, pinfo, item, offset)
+   -- OUT i:error_code, l:length
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   if err == 0 then
+      offset = parse_xdr(tvb, item, "i", offset, "success")
+      offset = parse_xdr(tvb, item, "i", offset, "lid")
+      offset = parse_xdr(tvb, item, "i", offset, "qpn")
+      offset = parse_xdr(tvb, item, "i", offset, "psn")
+      offset = parse_xdr(tvb, item, "b", offset, "gid")
+   end
+   return offset
+end
+
+--
+-- Parse GFS_PROTO_RDMA_HELLO.
+--
+function parse_gfs_rdma_hello_request(tvb, pinfo, item, offset)
+   -- IN i:fd, i:size, l:offset
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "i", offset, "rkey")
+   offset = parse_xdr(tvb, item, "i", offset, "size")
+   offset = parse_xdr(tvb, item, "l", offset, "addr")
+   return offset
+end
+
+function parse_gfs_rdma_hello_response(tvb, pinfo, item, offset)
+   -- OUT i:error_code, l:length
+   return parse_response_with_error_code_only(tvb, pinfo, item, offset)
+end
+
+--
 -- Parse function for each command.
 --
 local gfs_command_parsers = {
@@ -679,7 +820,7 @@ local gfs_command_parsers = {
    [  4] = {request  = parse_gfs_pread_request,
 	    response = parse_gfs_pread_response},
    [  5] = {request  = parse_gfs_pwrite_request,
-	    nresponse = parse_gfs_pwrite_response},
+	    response = parse_gfs_pwrite_response},
    [  6] = {request  = parse_gfs_ftruncate_request,
 	    response = parse_gfs_ftruncate_response},
    [  7] = {request  = parse_gfs_fsync_request,
@@ -716,6 +857,18 @@ local gfs_command_parsers = {
 	    response = parse_gfs_replication_request_response},
    [ 23] = {request  = parse_gfs_replication_cancel_request,
 	    response = parse_gfs_replication_cancel_response},
+   [ 24] = {request  = parse_gfs_process_reset_request,
+	    response = parse_gfs_process_reset_response},
+   [ 25] = {request  = parse_gfs_write_request,
+	    response = parse_gfs_write_response},
+   [ 32] = {request  = parse_gfs_rdma_exch_info_request,
+	    response = parse_gfs_rdma_exch_info_response},
+   [ 33] = {request  = parse_gfs_rdma_hello_request,
+	    response = parse_gfs_rdma_hello_response},
+   [ 34] = {request  = parse_gfs_rdma_pread_request,
+	    response = parse_gfs_rdma_pread_response},
+   [ 35] = {request  = parse_gfs_rdma_pwrite_request,
+	    response = parse_gfs_rdma_pwrite_response},
 }
 
 --

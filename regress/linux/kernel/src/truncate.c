@@ -11,17 +11,18 @@
 const static char *writedata = "abcdefgh";
 const static size_t writelen = sizeof(writedata);
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	if (argc < 2) {
 		printf("Usage: %s filename\n", argv[0]);
-		return 1;
+		return (1);
 	}
 	char *filename = argv[1];
 
 	int fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, 0644);
 	if (fd < 0) {
 		perror("open() failed\n");
-		return 1;
+		return (1);
 	} else {
 		printf("open(%s, O_CREAT|O_TRUNC) OK\n", filename);
 	}
@@ -34,7 +35,8 @@ int main(int argc, char *argv[]) {
 		perror("pwrite() failed\n");
 		ret = 1;
 	} else {
-		printf("NG writelen=%ld, but wrotelen=%lu\n", writelen, wrotelen);
+		printf("NG writelen=%ld, but wrotelen=%lu\n",
+			writelen, wrotelen);
 		ret = 1;
 	}
 
@@ -98,5 +100,5 @@ int main(int argc, char *argv[]) {
 	}
 
 	printf("ret=%d\n", ret);
-	return ret;
+	return (ret);
 }

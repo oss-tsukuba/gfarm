@@ -5,11 +5,14 @@
 #include <linux/in.h>
 #include <linux/syscalls.h>
 #include <linux/parser.h>
+#include <linux/mount.h>
 #include <gfarm/gfarm.h>
 #include <gfarm/gfarm_config.h>
 #include "context.h"
 #include "config.h"
 #include "gfsk_fs.h"
+#include "gfsk_ccib.h"
+#include "gfsk_proc.h"
 
 #define FILE2INODE(file)	((file)->f_path.dentry->d_inode)
 /*
@@ -201,22 +204,46 @@ enum {
 	OPT_ON_DEMAND_REPLICATION,
 	OPT_CALL_FTRUNCATE,
 	OPT_BLKSIZE,
+	OPT_D_DELETE,
+	OPT_READAHEAD,
+	OPT_RA_ASYNC,
+	OPT_IB_MTU,
+	OPT_IB_GID,
+	OPT_IB_PORT,
+	OPT_IB_SL,
+	OPT_IB_QKEY,
+	OPT_IB_NUM_RRPC,
+	OPT_IB_NUM_SRPC,
+	OPT_IB_DEVNAME,
 	OPT_ERR
 };
 static const match_table_t tokens = {
-	{OPT_RW,		"rw"},
+	{OPT_RW,			"rw"},
 	{OPT_CALL_FTRUNCATE,		"call_ftruncate"},
 	{OPT_ON_DEMAND_REPLICATION,	"on_demand_replication"},
 	{OPT_BLKSIZE,			"blksize=%u"},
+	{OPT_D_DELETE,			"d_delete=%u"},
+	{OPT_READAHEAD,			"readahead=%u"},
+	{OPT_RA_ASYNC,			"ra_async=%u"},
+	{OPT_IB_MTU,			"ib_mtu=%u"},
+	{OPT_IB_GID,			"ib_gid=%u"},
+	{OPT_IB_PORT,			"ib_port=%u"},
+	{OPT_IB_SL,			"ib_sl=%u"},
+	{OPT_IB_QKEY,			"ib_qkey=%u"},
+	{OPT_IB_NUM_RRPC,		"ib_num_rrpc=%u"},
+	{OPT_IB_NUM_SRPC,		"ib_num_srpc=%u"},
+	{OPT_IB_DEVNAME,		"ib_devname=%s"},
 	{OPT_ERR,			NULL}
 };
 static int
-gfsk_mount_options(struct gfsk_mount_data *mdatap)
+gfsk_mount_options(struct gfsk_mount_data *mdatap,  struct gfcc_param *ccp)
 {
 	char *p, *opt = mdatap->m_opt;
 
 	gfsk_fsp->gf_actime = msecs_to_jiffies(gfarm_ctxp->attr_cache_timeout);
 	gfsk_fsp->gf_pctime = msecs_to_jiffies(gfarm_ctxp->page_cache_timeout);
+	gfsk_fsp->gf_ra_async = 1;
+	gfsk_fsp->gf_d_delete = 1;
 
 	gfarm_ctxp->call_rpc_instead_syscall = 1;
 
@@ -242,9 +269,77 @@ gfsk_mount_options(struct gfsk_mount_data *mdatap)
 			if (match_int(&args[0], &value))
 				goto error;
 			break;
+		case OPT_D_DELETE:
+			if (match_int(&args[0], &value))
+				goto error;
+			gfsk_fsp->gf_d_delete = value;
+			break;
+		case OPT_READAHEAD:
+			if (match_int(&args[0], &value))
+				goto error;
+			gfsk_fsp->gf_bdi.ra_pages = value;
+			break;
+		case OPT_RA_ASYNC:
+			if (match_int(&args[0], &value))
+				goto error;
+			gfsk_fsp->gf_ra_async = 0;
+			break;
+		case OPT_IB_MTU:
+			if (match_int(&args[0], &value))
+				goto error;
+			if (ccp)
+				ccp->mtu = value;
+			break;
+		case OPT_IB_GID:
+			if (match_int(&args[0], &value))
+				goto error;
+			if (ccp)
+				ccp->gid_index = value;
+			break;
+		case OPT_IB_PORT:
+			if (match_int(&args[0], &value))
+				goto error;
+			if (ccp)
+				ccp->ib_port = value;
+			break;
+		case OPT_IB_SL:
+			if (match_int(&args[0], &value))
+				goto error;
+			if (ccp)
+				ccp->sl = value;
+			break;
+		case OPT_IB_QKEY:
+			if (match_int(&args[0], &value))
+				goto error;
+			if (ccp)
+				ccp->qkey = value;
+			break;
+		case OPT_IB_NUM_RRPC:
+			if (match_int(&args[0], &value))
+				goto error;
+			if (ccp)
+				ccp->num_rrpc = value;
+			break;
+		case OPT_IB_NUM_SRPC:
+			if (match_int(&args[0], &value))
+				goto error;
+			if (ccp)
+				ccp->num_srpc = value;
+			break;
+		case OPT_IB_DEVNAME:
+			if (ccp) {
+				int len;
+				len = match_strlcpy(ccp->devname, &args[0],
+						sizeof(ccp->devname));
+				if (len >= sizeof(ccp->devname))
+					goto error;
+			}
+			break;
 		default:
-error:
 			gflog_error(GFARM_MSG_UNFIXED, "unknown option %s", p);
+			return (-EINVAL);
+error:
+			gflog_error(GFARM_MSG_UNFIXED, "invalid option %s", p);
 			return (-EINVAL);
 		}
 	}
@@ -252,10 +347,12 @@ error:
 }
 
 int
-gfsk_client_mount(struct super_block *sb, void *arg)
+gfsk_client_mount(struct super_block *sb, void *data)
 {
-	struct gfsk_mount_data	*mdatap = (struct gfsk_mount_data *) arg;
+	struct gfsk_mount_arg	*arg = (struct gfsk_mount_arg *) data;
+	struct gfsk_mount_data	*mdatap = arg->data;
 	struct gfsk_fs_context	*fsp;
+	struct gfcc_param  *param;
 	int	i, err;
 
 	if (mdatap->m_version != GFSK_VER) {
@@ -278,6 +375,7 @@ gfsk_client_mount(struct super_block *sb, void *arg)
 	sb->s_fs_info = fsp;
 	gfsk_fsp = fsp;
 
+	gfsk_fsp->gf_mnt_id = arg->mnt->mnt_id;
 	gfsk_fsp->gf_mdata.m_version = mdatap->m_version;
 	gfsk_fsp->gf_mdata.m_mfd = gfsk_fsp->gf_mdata.m_dfd = -1;
 
@@ -320,6 +418,12 @@ gfsk_client_mount(struct super_block *sb, void *arg)
 			"invalid m_mfd '%d'", mdatap->m_mfd);
 		goto out;
 	}
+	snprintf(fsp->gf_mnt_name, sizeof(fsp->gf_mnt_name),
+			"%d", fsp->gf_mnt_id);
+	if (!(fsp->gf_pde = gfarm_proc_mkdir(NULL, fsp->gf_mnt_name))) {
+		gflog_error(GFARM_MSG_UNFIXED, "proc_mkdir fail");
+		goto out;
+	}
 	gfsk_fsp->gf_mdata.m_mfd = err;
 	memcpy(gfsk_fsp->gf_mdata.m_host, mdatap->m_host,
 				sizeof(mdatap->m_host));
@@ -346,9 +450,16 @@ gfsk_client_mount(struct super_block *sb, void *arg)
 			gfsk_task_ctxp->gk_gfarm_ctxp)
 		fsp->gf_gfarm_ctxp = gfsk_task_ctxp->gk_gfarm_ctxp;
 
-	if ((err = gfsk_mount_options(mdatap))) {
+	fsp->gf_bdi.ra_pages = -1;
+	param = gfcc_param_init();
+	if ((err = gfsk_mount_options(mdatap, param))) {
+		kfree(param);
 		goto out;
 	}
+
+	(void) gfcc_ctx_init(param, &fsp->gf_cc_ctxp);
+	gflog_info(GFARM_MSG_UNFIXED, "%s:fsp=%p ib_ctx=%p",
+		fsp->gf_mnt_name, fsp, fsp->gf_cc_ctxp);
 out:
 	return (err);
 }
@@ -368,6 +479,9 @@ gfsk_client_unmount(void)
 		return;
 	mdatap->m_version = -1;
 
+	gfcc_ctx_fini(gfsk_fsp->gf_cc_ctxp);
+
+	gfarm_proc_rmdir(NULL, gfsk_fsp->gf_mnt_name);
 	gfsk_local_map_fini(gfsk_fsp);
 
 	gfsk_gfarm_fini();
@@ -415,4 +529,6 @@ gfsk_client_fini(void)
 
 	gfsk_conn_fini();
 	gfsk_fdset_fini();
+	kfree(gfsk_fsp);
+	gfsk_fsp = NULL;
 }

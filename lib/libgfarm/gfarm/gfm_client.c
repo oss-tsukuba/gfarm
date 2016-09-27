@@ -494,6 +494,7 @@ gfarm_set_global_user_by_gsi(struct gfm_connection *gfm_server)
 }
 #endif /* HAVE_GSI */
 
+#ifndef __KERNEL__      /* not used */
 static void
 gfm_client_connection_report_error(int fd, const char *hostname, int port,
 	struct gfarm_metadb_server *ms)
@@ -517,6 +518,7 @@ gfm_client_connection_report_error(int fd, const char *hostname, int port,
 		    gfarm_metadb_server_get_port(ms),
 		    strerror(error));
 }
+#endif /* __KERNEL__  not used */
 
 static gfarm_error_t
 gfm_client_connection0(struct gfp_cached_connection *cache_entry,
@@ -775,7 +777,8 @@ retry:
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1000059,
-		    "cannot connect to gfmd at %s:%d, give up: %s",
+		    "cannot connect to gfmd at %s %s:%d, give up: %s",
+			user ? user : "",
 		    hostname, port, gfarm_error_string(e));
 		gfp_cached_connection_purge_from_cache(&staticp->server_cache,
 		    cache_entry);
@@ -792,6 +795,7 @@ gfm_client_connection_acquire(const char *hostname, int port,
 	    gfm_serverp, gfm_client_connect_multiple));
 }
 
+#ifndef __KERNEL__ /* gfm_client_connection_acquire_single :: in user mode */
 gfarm_error_t
 gfm_client_connection_acquire_single(const char *hostname, int port,
 	const char *user, struct gfm_connection **gfm_serverp)
@@ -799,6 +803,7 @@ gfm_client_connection_acquire_single(const char *hostname, int port,
 	return (gfm_client_connection_acquire0(hostname, port, user,
 	    gfm_serverp, gfm_client_connect_single));
 }
+#endif /* __KERNEL__ */
 
 gfarm_error_t
 gfm_client_connection_try_addref(struct gfm_connection *gfm_server)
@@ -2129,9 +2134,22 @@ gfm_client_close_request(struct gfm_connection *gfm_server)
 }
 
 gfarm_error_t
+gfm_client_close_getgen_request(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_CLOSE_GETGEN, ""));
+}
+
+gfarm_error_t
 gfm_client_close_result(struct gfm_connection *gfm_server)
 {
 	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
+gfarm_error_t
+gfm_client_close_getgen_result(struct gfm_connection *gfm_server,
+		gfarm_uint64_t *genp)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "l", genp));
 }
 
 gfarm_error_t

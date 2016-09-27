@@ -1,0 +1,44 @@
+#!/bin/sh
+#
+# find InfiniBand modules
+#
+LANG=C
+mod=`modinfo ib_core |grep filename: |cut -f2 -d":"|sed 's/[ 	]*//g'`
+if [ -z "$mod" ] ; then
+	echo "no infiniband modules"
+	exit 1
+fi
+std=/lib/modules/`uname -r`/kernel/drivers/infiniband/core/ib_core.ko
+if [ "$mod" = "$std" ] ; then
+	echo "Nothing to do"
+	exit 0
+fi
+addr=`nm -o $mod |grep __crc_ib_create_qp \
+	|sed -e "s@.*:0*@0x@" -e "s@[ \t].*@@"`
+tgt=`find /usr/src/ -name Module.symvers |xargs grep \
+	"$addr[ 	]*ib_create_qp" |head -1 |sed 's@/Module.symvers:.*@@'`
+
+if [ -z "$tgt" ] ; then
+	echo "no symvers for crc $addr"
+	pwd=`pwd`
+	dir=`echo $mod|sed 's@/ib_core.ko@@'`
+	export MOD_SYMVERS=$pwd/linux/config/Module.symvers
+	export MODULES_DIR=$dir
+	sh -$- linux/config/create_Module.symvers
+	echo "you can use following option"
+	echo "--with-ib-symvers=$MOD_SYMVERS"
+	ofa=`echo $mod|grep -c ofa_kernel`
+	if [ $ofa = "1" ]; then
+		tgt=`find /usr/src/ofa_kernel -name ib_verbs.h \
+			|sed 's/include.*/include/'`
+		if [ "x$tgt" != "x" ] ; then
+			echo "--with-ib-include=$tgt"
+		fi
+	fi
+	exit 0
+fi
+
+echo "Configure with following options."
+echo "--with-ib-symvers=$tgt/Module.symvers"
+echo "--with-ib-include=$tgt/include"
+exit 0

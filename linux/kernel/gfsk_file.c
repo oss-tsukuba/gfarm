@@ -13,7 +13,7 @@
 #include "gfsk_fs.h"
 #include "gfsk_libgfarm.h"
 #include "gfsk_genfile.h"
-
+#include "gfsk_ccib.h"
 
 const struct inode_operations gfarm_file_inode_operations = {
 	.getattr	= gfsk_getattr,
@@ -51,7 +51,8 @@ gfsk_file_open(struct inode *inode, struct file *file)
 			gflog_error(GFARM_MSG_UNFIXED,
 				"%s: ENOENT inode=%p file=%p",
 				__func__, inode, file);
-			d_delete(file->f_dentry);
+			if (inode)
+				gfsk_iflag_set(inode, GFSK_INODE_STALE);
 		}
 	}
 	GFSK_CTX_UNSET();
@@ -94,9 +95,7 @@ gfsk_aio_read(struct kiocb *iocb, const struct iovec *iov,
 	GFSK_CTX_DECLARE_INODE(inode);
 	GFSK_CTX_SET();
 
-	if (!gfsk_is_cache_valid(inode)) {
-		gfsk_invalidate_pages(inode);
-	}
+	gfsk_check_cache_pages(inode);
 	GFSK_CTX_UNSET();
 	return (generic_file_aio_read(iocb, iov, nr_segs, pos));
 }
@@ -106,7 +105,13 @@ gfsk_aio_write(struct kiocb *iocb, const struct iovec *iov,
 		unsigned long nr_segs, loff_t pos)
 {
 	struct file *file = iocb->ki_filp;
+	struct inode *inode = file->f_path.dentry->d_inode;
+	GFSK_CTX_DECLARE_INODE(inode);
+	GFSK_CTX_SET();
 
+	gfsk_check_cache_pages(inode);
+
+	gfarm_priv_wrote(file);
 	if (file->f_flags & O_APPEND) {
 		int	retval = 0;
 		struct page *page, *tpage = NULL;
@@ -116,12 +121,11 @@ gfsk_aio_write(struct kiocb *iocb, const struct iovec *iov,
 		char *kaddr, *taddr;
 		ssize_t bytes;
 		pgoff_t index;
-		GFSK_CTX_DECLARE_FILE(file);
 
 		if (!(page = alloc_page(GFP_KERNEL))) {
+			GFSK_CTX_UNSET();
 			return (-ENOMEM);
 		}
-		GFSK_CTX_SET();
 
 		iov_iter_init(&it, iov, nr_segs, count, 0);
 		for ( ; (bytes = iov_iter_count(&it)) > 0; ) {
@@ -165,30 +169,8 @@ gfsk_aio_write(struct kiocb *iocb, const struct iovec *iov,
 		__free_page(page);
 		return (wrotelen > 0 ? wrotelen : retval);
 	}
+	GFSK_CTX_UNSET();
 	return (generic_file_aio_write(iocb, iov, nr_segs, pos));
-}
-
-static int
-gfsk_readpage_sync(struct file *file, struct page *page)
-{
-	int retval;
-	char	*buf;
-	loff_t pos = page_offset(page);
-	size_t len = PAGE_CACHE_SIZE;
-	int readlen;
-
-	buf = kmap(page);
-	retval = gfarm_read(file, pos, buf, len, &readlen);
-	if (retval == 0) {
-		if (readlen < len)
-			memset(buf + readlen, 0, len - readlen);
-		flush_dcache_page(page);
-		SetPageUptodate(page);
-		gfsk_set_cache_updatetime(file->f_path.dentry->d_inode);
-	}
-	kunmap(page);
-
-	return (retval);
 }
 
 static int
@@ -210,7 +192,6 @@ gfsk_writepage_sync(struct file *file, struct inode *inode, struct page *page,
 
 	return (retval);
 }
-
 /*
  * We are called with the page locked and we unlock it when done.
  */
@@ -218,16 +199,274 @@ static int
 gfsk_readpage(struct file *file, struct page *page)
 {
 	int retval;
+	char	*buf;
+	loff_t pos = page_offset(page);
+	size_t len = PAGE_CACHE_SIZE;
+	int readlen;
 	GFSK_CTX_DECLARE_FILE(file);
 	GFSK_CTX_SET();
 
 	page_cache_get(page);
-	retval = gfsk_readpage_sync(file, page);
+	buf = kmap(page);
+	retval = gfarm_read(file, pos, buf, len, &readlen);
+	if (retval == 0) {
+		if (readlen < len)
+			memset(buf + readlen, 0, len - readlen);
+		flush_dcache_page(page);
+		SetPageUptodate(page);
+		gfsk_set_cache_updatetime(file->f_path.dentry->d_inode);
+	}
+	kunmap(page);
 	unlock_page(page);
 	page_cache_release(page);
 
 	GFSK_CTX_UNSET();
 	return (retval);
+}
+int
+gfsk_find_pages(struct gfcc_ctx *ctx, int npblk, struct gfcc_pblk *pblk,
+		struct gfcc_pages *pages, int *npagep)
+{
+	struct gfcc_obj *obj = &pages->cp_obj;
+	struct inode *inode;
+	struct address_space *mapping;
+	struct page *page;
+	int i, j, n;
+	pgoff_t index;
+
+	pages->cp_npage = 0;
+	if (!gfsk_fsp)
+		gflog_fatal(GFARM_MSG_UNFIXED, "no fsp");
+
+	inode = gfsk_find_inode(gfsk_fsp->gf_sb, S_IFREG, obj->co_ino,
+			obj->co_gen);
+	if (!inode) {
+		gflog_debug(GFARM_MSG_UNFIXED, "no ino=%ld", obj->co_ino);
+		return (-ENOENT);
+	}
+	if (!(mapping = inode->i_mapping)) {
+		iput(inode);
+		gflog_info(GFARM_MSG_UNFIXED, "no mapping=%ld", obj->co_ino);
+		return (-ENOENT);
+	}
+	gfsk_check_cache_pages(inode);
+	*npagep = n = 0;
+	for (i = 0; i < npblk; i++) {
+		index = pblk[i].cs_index;
+		for (j = pblk[i].cs_npage; j > 0; j--, index++) {
+			if (!(page = find_get_page(mapping, index)))
+				break;
+			if (!PageUptodate(page)) {
+				page_cache_release(page);
+				break;
+			}
+			pages->cp_pages[n++] = page;
+		}
+		if (j) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"no %s page, ino=%lu index=%ld, "
+				"requested from=%ld, found %d",
+				page ? "uptodate" : "",
+				obj->co_ino, index, pblk[0].cs_index, n);
+			break;
+		}
+	}
+	*npagep = pages->cp_npage = n;
+	iput(inode);
+	return (0);
+}
+
+void
+gfsk_validate_pages(struct gfcc_pages *pages, int nvalid, int invalid)
+{
+	struct page *page;
+	int i, j, npage;
+
+	npage = pages->cp_npage;
+	if (pages->cp_inode) {
+		if (nvalid)
+			gfsk_set_cache_updatetime(pages->cp_inode);
+	}
+	for (i = 0; i < npage; i++) {
+		page = pages->cp_pages[i];
+		if (nvalid-- > 0) {
+			SetPageUptodate(page);
+		} else if (!invalid) {
+			pages->cp_npage = npage - i;
+			break;
+		}
+		unlock_page(page);
+		page_cache_release(page);
+	}
+	if (invalid) {
+		pages->cp_npage = 0;
+	} else {
+		if (i) {
+			pages->cp_npage = npage - i;
+			for (j = 0; i < npage; )
+				pages->cp_pages[j++] = pages->cp_pages[i++];
+		}
+	}
+}
+void
+gfsk_release_pages(struct gfcc_pages *pages)
+{
+	struct page *page;
+	int i, npage;
+
+	npage = pages->cp_npage;
+	for (i = 0; i < npage; i++) {
+		page = pages->cp_pages[i];
+		page_cache_release(page);
+	}
+	pages->cp_npage = 0;
+}
+int
+gfsk_cache_pages(struct address_space *mapping, struct list_head *head,
+	unsigned nr_pages, struct gfcc_pages *pages)
+{
+	int n = 0;
+	struct page *page, *next;
+
+	list_for_each_entry_safe_reverse(page, next, head, lru) {
+		list_del(&page->lru);
+		if (add_to_page_cache_lru(page, mapping,
+				page->index, GFP_KERNEL)) {
+			page_cache_release(page);
+		} else {
+			pages->cp_pages[n++] = page;
+			if (n == GFCC_PAGES_MAX)
+				break;
+		}
+	}
+	pages->cp_npage = n;
+	return (n);
+}
+
+static gfarm_off_t
+gfsk_read_page_cb(char *buf, gfarm_off_t off, int size, void *arg)
+{
+	struct gfcc_pages *pages = (struct gfcc_pages *)arg;
+	int i, j, npage, res;
+	int len, eof;
+	loff_t req;
+	char *addr;
+
+	if ((res = ((unsigned long)buf & (PAGE_SIZE - 1)))) {
+		buf += res;
+		off += res;
+		size -= res;
+	}
+	eof =  (off + size >= pages->cp_inode->i_size);
+	req = -1;
+	npage = pages->cp_npage;
+	for (i = j = 0; i < npage; i++) {
+		struct page *page = pages->cp_pages[i];
+		loff_t pos = page_offset(page);
+		loff_t lpos = pos + PAGE_CACHE_SIZE;
+		if (lpos > pages->cp_inode->i_size)
+			lpos = pages->cp_inode->i_size;
+		if (lpos > off + size) {
+			if (req == -1)
+				req = pos;
+			if (i != j)
+				for (; i < npage;) {
+					pages->cp_pages[j++] =
+						pages->cp_pages[i++];
+				}
+			break;
+		}
+		if (pos < off) {
+			if (req == -1)
+				req = pos;
+			pages->cp_pages[j++] = page;
+			continue;
+		}
+		len = size - (pos - off);
+		if (len > PAGE_CACHE_SIZE)
+			len = PAGE_CACHE_SIZE;
+		addr = kmap(page);
+		memcpy(addr, buf + (pos - off), len);
+		if (len < PAGE_CACHE_SIZE) {
+			memset(addr + len, 0, PAGE_CACHE_SIZE - len);
+		}
+		kunmap(page);
+		SetPageUptodate(page);
+		unlock_page(page);
+		page_cache_release(page);
+		pages->cp_npage--;
+	}
+	gflog_debug(GFARM_MSG_UNFIXED, "req=%lx npage=%d",
+			req, pages->cp_npage);
+	return (req);
+}
+static int
+gfsk_readpages(struct file *file, struct address_space *mapping,
+	struct list_head *head, unsigned nr_pages)
+{
+	int err;
+	struct inode *inode = mapping->host;
+	int npage = nr_pages;
+	struct page *page;
+	loff_t	off, eoff;
+	struct gfcc_pages *pages;
+	GFSK_CTX_DECLARE_INODE(inode);
+	GFSK_CTX_SET();
+
+	if (!file && !(file = gfsk_open_file_get(inode))) {
+		pr_err("gfsk_readpages: no file");
+		goto end_ret;
+	}
+	if (!(pages = gfcc_pages_alloc(0))) {
+		pr_err("gfsk_readpages: no pages");
+		goto end_ret;
+	}
+	pages->cp_inode = inode;	/* i_count ?? */
+	npage = gfsk_cache_pages(mapping, head, npage, pages);
+	gflog_debug(GFARM_MSG_UNFIXED, "index=%lx npage=%d",
+		pages->cp_pages[0]->index, npage);
+	if (npage > 0) {
+		page = pages->cp_pages[0];
+		off = (loff_t)page->index << PAGE_CACHE_SHIFT;
+		page = pages->cp_pages[npage - 1];
+		eoff = (loff_t)(page->index + 1) << PAGE_CACHE_SHIFT;
+		err = gfarm_read_page(file, off, eoff - off, 0,
+				gfsk_read_page_cb, pages);
+		npage = pages->cp_npage;
+	}
+	if (npage > 0 && gfsk_fsp->gf_cc_ctxp) {
+		struct gfcc_ibaddr ibaddr;
+		struct gfarm_inode *gi = get_gfarm_inode(inode);
+
+		gflog_debug(GFARM_MSG_UNFIXED, "cc req index=%lx npage=%d",
+			pages->cp_pages[0]->index, npage);
+		pages->cp_obj.co_ino = inode->i_ino;
+		pages->cp_obj.co_gen = gi->i_gen;
+		page = pages->cp_pages[0];
+		pages->cp_obj.co_off = (loff_t)page->index << PAGE_CACHE_SHIFT;
+		pages->cp_obj.co_len = eoff - pages->cp_obj.co_off;
+		if (!gfarm_cc_find_host(&pages->cp_obj, &ibaddr))
+			npage = gfsk_cc_read(gfsk_fsp->gf_cc_ctxp,
+				&ibaddr, pages, gfsk_fsp->gf_ra_async);
+		if (gfsk_fsp->gf_ra_async && !npage) {
+			goto end_ret;
+		}
+	}
+	if (npage > 0) {
+		page = pages->cp_pages[0];
+		off = (loff_t)page->index << PAGE_CACHE_SHIFT;
+		err = gfarm_read_page(file, off, eoff - off, 1,
+				gfsk_read_page_cb, pages);
+		npage = pages->cp_npage;
+	}
+	if (npage) {
+		gfsk_validate_pages(pages, 0, 1);
+	}
+	gfcc_pages_free(pages);
+	gfsk_set_cache_updatetime(inode);
+end_ret:
+	GFSK_CTX_UNSET();
+	return (npage < 0 ? -EIO : 0);
 }
 
 static int
@@ -340,10 +579,10 @@ struct gfsk_local_vmops_struct {
 void
 gfsk_local_map_fini(struct gfsk_fs_context *fsp)
 {
-	struct gfsk_local_vmops_struct *lmp;
+	struct gfsk_local_vmops_struct *lmp, *next;
 
 	mutex_lock(&fsp->gf_lock);
-	list_for_each_entry(lmp, &fsp->gf_locallist, m_locallist) {
+	list_for_each_entry_safe(lmp, next, &fsp->gf_locallist, m_locallist) {
 		list_del(&lmp->m_locallist);
 		mutex_unlock(&fsp->gf_lock);
 
@@ -474,6 +713,7 @@ out:
 
 const struct address_space_operations gfarm_file_aops = {
 	.readpage	= gfsk_readpage,
+	.readpages	= gfsk_readpages,
 	.writepage	= gfsk_writepage,
 	.write_begin	= gfsk_write_begin,
 	.write_end	= gfsk_write_end,

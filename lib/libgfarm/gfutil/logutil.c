@@ -32,8 +32,9 @@ static const char *catalog_file = "gfarm.cat";
 
 static int log_message_verbose;
 #define LOG_VERBOSE_COMPACT	0
-#define LOG_VERBOSE_LINENO	1
-#define LOG_VERBOSE_LINENO_FUNC	2
+#define LOG_VERBOSE_LINENO	(1<<0)
+#define LOG_VERBOSE_FUNC	(1<<1)
+#define LOG_VERBOSE_LINENO_FUNC	(LOG_VERBOSE_LINENO|LOG_VERBOSE_FUNC)
 
 static int fatal_action = 0;
 
@@ -118,8 +119,8 @@ gflog_init_priority_string(void)
 static void
 gflog_out(int priority, const char *str1, const char *str2)
 {
-#ifndef __KERNEL__	/* gflog_out :: printk */
 	pthread_once(&gflog_priority_string_once, gflog_init_priority_string);
+#ifndef __KERNEL__	/* gflog_out :: printk */
 	if (log_use_syslog)
 		syslog(priority, "<%s> %s%s",
 		    gflog_priority_string[priority], str1, str2);
@@ -166,10 +167,15 @@ gflog_vmessage_out(int verbose, int msg_no, int priority,
 
 	do { /* use do {...} while(0) to use break statement to discontinue */
 		GFLOG_SNPRINTF(buf, bp, endp, "[%06d] ", msg_no);
-		if (verbose >= LOG_VERBOSE_LINENO) {
-			GFLOG_SNPRINTF(buf, bp, endp, "(%s:%d", file, line_no);
-			if (verbose >= LOG_VERBOSE_LINENO_FUNC)
-				GFLOG_SNPRINTF(buf, bp, endp, " %s()", func);
+		if (verbose) {
+			GFLOG_SNPRINTF(buf, bp, endp, "(");
+			if (verbose & LOG_VERBOSE_LINENO)
+				GFLOG_SNPRINTF(buf, bp, endp, "%s:%d",
+					file, line_no);
+			if (verbose & LOG_VERBOSE_FUNC)
+				GFLOG_SNPRINTF(buf, bp, endp, "%s%s()",
+				(verbose & LOG_VERBOSE_LINENO) ?
+				" " : "", func);
 			GFLOG_SNPRINTF(buf, bp, endp, ") ");
 		}
 		if (log_auxiliary_info != NULL)
@@ -381,6 +387,11 @@ void
 gflog_set_priority_level(int priority)
 {
 	log_level = priority;
+}
+int
+gflog_get_priority_level(void)
+{
+	return (log_level);
 }
 
 void

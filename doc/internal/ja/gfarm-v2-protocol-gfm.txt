@@ -107,6 +107,14 @@
 		※ タイプとしてディレクトリを指定した場合、
 			エラーは GFARM_ERR_NOT_A_DIRECTORY
 
+	GFM_PROTO_CLOSE_GETGEN
+	  暗黙の入力: i:current file descriptor
+	  入力: なし
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:generation
+	  ※ GFM_PROTO_CLOSE も参照
+
 	GFM_PROTO_REVOKE_GFSD_ACCESS
 	  入力: i:fd
 	  出力: i:エラー

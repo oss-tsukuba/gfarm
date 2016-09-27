@@ -87,6 +87,7 @@ gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfarm/sockopt.o
 gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfarm/stringlist.o
 gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfarm/timespec.o
 gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfarm/url.o
+gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfarm/gfs_rdma.o
 
 gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfutil/alloc.o
 gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfutil/assert.o
@@ -129,6 +130,29 @@ gfarm2-y += gfsk_dir.o
 gfarm2-y += gfsk_file.o
 gfarm2-y += gfsk_genfile.o
 gfarm2-y += gfsk_libgfarm.o
+gfarm2-y += gfsk_ccib.o
+gfarm2-y += gfsk_stack.o
+gfarm2-y += gfsk_proc.o
+
+#
+# run ../config/findIBmodules
+#
+ib_include=@ib_include@
+ib_symvers=@ib_symvers@
+# yes : avoid conflict within kernel headers, kernel.h and printk.h
+ib_includefile=yes
+ifdef ib_include
+ifdef ib_includefile
+EXTRA_CFLAGS += -DRDMA_IB_VERBS_H=\"$(ib_include)/rdma/ib_verbs.h\"
+else
+NOSTDINC_FLAGS += -I$(ib_include)
+endif
+else
+ifdef ib_symvers
+EXTRA_CFLAGS += -DNOIB_INCLUDE
+endif
+endif
+KBUILD_EXTRA_SYMBOLS += $(ib_symvers)
 
 EXTRA_CFLAGS += -std=gnu89
 EXTRA_CFLAGS += -I$(src)/$(GFARMDIR)/include
@@ -146,7 +170,6 @@ PWD   := $(shell pwd)
 
 all:
 	$(MAKE) -C $(REAL_ROOTDIR) M=$(PWD)  KBUILD_VERBOSE=1 modules
-
 install:
 	$(MAKE) -C $(REAL_ROOTDIR) M=$(PWD) modules_install
 

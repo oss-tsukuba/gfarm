@@ -14,7 +14,7 @@ extern int gfsk_setattr(struct dentry *dentry, struct iattr *attr);
 
 extern void gfsk_set_cache_invalidate(struct inode *inode);
 extern void gfsk_set_cache_updatetime(struct inode *inode);
-extern int gfsk_is_cache_valid(struct inode *inode);
+extern void gfsk_check_cache_pages(struct inode *inode);
 extern void gfsk_invalidate_pages(struct inode *inode);
 
 #endif /* _GFSK_GENFILE_H */

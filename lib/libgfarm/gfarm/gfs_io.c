@@ -2,6 +2,7 @@
 #include <stdio.h>	/* config.h needs FILE */
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <openssl/evp.h>
 
@@ -47,6 +48,11 @@ struct gfm_create_fd_closure {
 	gfarm_uint64_t *igenp; /* currentyly only for gfarm_file_trace */
 	char **urlp;
 	struct gfs_pio_internal_cksum_info *cksum_info; /* may be NULL */
+};
+
+struct gfm_close_fd_closure {
+	gfarm_uint64_t *igenp;
+	struct gfs_pio_internal_cksum_info *cksum_info;
 };
 
 static gfarm_error_t
@@ -429,7 +435,9 @@ static gfarm_error_t
 gfm_close_request(struct gfm_connection *gfm_server, void *closure)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	struct gfs_pio_internal_cksum_info *ci = closure;
+	struct gfm_close_fd_closure	*clp = closure;
+	struct gfs_pio_internal_cksum_info *ci = clp ? clp->cksum_info : NULL;
+	gfarm_uint64_t *igenp = clp ? clp->igenp : NULL;
 
 	if (ci != NULL &&
 	    (e = gfm_client_cksum_set_request(gfm_server, ci->cksum_type,
@@ -437,9 +445,13 @@ gfm_close_request(struct gfm_connection *gfm_server, void *closure)
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1003932, "cksum_set() request: %s",
 		    gfarm_error_string(e));
-	} else if ((e = gfm_client_close_request(gfm_server))
+	} else if (!igenp && (e = gfm_client_close_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1000086,
+		    "close request: %s", gfarm_error_string(e));
+	} else if (igenp && (e = gfm_client_close_getgen_request(gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
 		    "close request: %s", gfarm_error_string(e));
 	}
 	return (e);
@@ -449,7 +461,9 @@ static gfarm_error_t
 gfm_close_result(struct gfm_connection *gfm_server, void *closure)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	struct gfs_pio_internal_cksum_info *ci = closure;
+	struct gfm_close_fd_closure	*clp = closure;
+	struct gfs_pio_internal_cksum_info *ci = clp ? clp->cksum_info : NULL;
+	gfarm_uint64_t *igenp = clp ? clp->igenp : NULL;
 
 	if (ci != NULL &&
 	    (e = gfm_client_cksum_set_result(gfm_server))
@@ -458,13 +472,18 @@ gfm_close_result(struct gfm_connection *gfm_server, void *closure)
 		gflog_debug(GFARM_MSG_1003933,
 		    "cksum_set() result: %s", gfarm_error_string(e));
 #endif
-	} else if ((e = gfm_client_close_result(gfm_server))
+	} else if (!igenp && (e = gfm_client_close_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
 #if 1 /* DEBUG */
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_debug(GFARM_MSG_1000087,
 			    "close result: %s", gfarm_error_string(e));
 #endif
+	} else if (igenp && (e = gfm_client_close_getgen_result(gfm_server,
+		igenp)) != GFARM_ERR_NO_ERROR) {
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "close result: %s", gfarm_error_string(e));
 	}
 	return (e);
 }
@@ -478,12 +497,15 @@ gfm_close_result(struct gfm_connection *gfm_server, void *closure)
  */
 gfarm_error_t
 gfm_close_fd(struct gfm_connection *gfm_server, int fd,
-	struct gfs_pio_internal_cksum_info *cksum_info)
+	gfarm_uint64_t *igenp, struct gfs_pio_internal_cksum_info *cksum_info)
 {
 	gfarm_error_t e;
+	struct gfm_close_fd_closure close_info;
 
+	close_info.igenp = igenp;
+	close_info.cksum_info = cksum_info;
 	if ((e = gfm_client_compound_fd_op(gfm_server, fd,
-	    gfm_close_request, gfm_close_result, NULL, cksum_info))
+	    gfm_close_request, gfm_close_result, NULL, &close_info))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1003934,
 		    "gfm_close_fd fd=%d: %s", fd, gfarm_error_string(e));

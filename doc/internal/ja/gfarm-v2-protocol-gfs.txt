@@ -76,6 +76,27 @@ gfsd プロトコル
 			他の gfsd からのアクセス
 			replication manager からのアクセス?
 
+	GFS_PROTO_RDMA_EXCH_INFO,
+	  入力: i:client_lid, i:client_qpn, i:client_psn, b:client_gid
+	  出力:	i:エラー
+		エラー == GFARM_ERR_NOERROR の場合:
+	  	i:success, i:server_lid, i:server_qpn, i:server_psn, b:server_gid
+	GFS_PROTO_RDMA_HELLO,
+	  入力: i:rkey, i:size, l:address
+	  出力:	i:エラー
+
+	GFS_PROTO_RDMA_PREAD,
+	  入力: i:fd, i:size, l:offset, i:rkey, l:address
+	  出力:	i:エラー
+		エラー == GFARM_ERR_NOERROR の場合:
+		i:size
+
+	GFS_PROTO_RDMA_PWRITE,
+	  入力: i:fd, i:size, l:offset, i:rkey, l:address
+	  出力:	i:エラー
+		エラー == GFARM_ERR_NOERROR の場合:
+		i:size
+
 	GFS_PROTO_COMMAND,
 		いまのところ v1 と同じ
 

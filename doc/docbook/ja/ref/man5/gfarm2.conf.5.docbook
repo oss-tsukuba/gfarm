@@ -2289,6 +2289,78 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>ib_rdma</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+クライアントとgfsd がデータ転送の際にrdmaを用いるかを指定します。
+infiniband が装備されているノードでのみ有効です。
+</para>
+<para>
+デフォルトはconfigureの際に--with-clientrdma を指定していれば enable です。
+それ以外はdisableで、enable にしても効果はありません。
+</para>
+<para>
+環境変数で GFARM_RDMA_DISABLE が設定されていればrdma機能は使用されません。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	ib_rdma disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>rdma_device</token> <parameter moreinfo="none">デバイス名</parameter></term>
+<listitem>
+<para>
+クライアントとgfsd とのrdma 転送に使用するデバイスを指定します。
+infiniband が装備されているノードでのみ有効です。
+</para>
+<para>
+デフォルトは ibv_get_device_list() で見つかった最初の有効なデバイスです。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	rdma_device mlx4_1
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>rdma_port</token> <parameter moreinfo="none">ポート番号</parameter></term>
+<listitem>
+<para>
+クライアントとgfsd とのrdma 転送に使用するデバイスのポート番号を指定します。
+infiniband が装備されているノードでのみ有効です。
+</para>
+<para>
+デフォルトは 有効なデバイスの中の最初の有効なポートです。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	rdma_port 2
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>rdma_min_size</token> <parameter moreinfo="none">バイト数</parameter></term>
+<listitem>
+<para>
+クライアントとgfsd とのrdma 転送を行う最小の転送サイズをしています。
+infiniband が装備されているクライアントノードでのみ有効です。
+</para>
+<para>
+デフォルトは1024バイトです。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	rdma_min_size 4096
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -2403,6 +2475,10 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 	&lt;replica_check_host_down_thresh_statement&gt; |
 	&lt;replica_check_sleep_time_statement&gt; |
 	&lt;replica_check_minimum_interval_statement&gt; |
+	&lt;ib_rdma_statement&gt; |
+	&lt;rdma_device_statement&gt; |
+	&lt;rdma_port_statement&gt; |
+	&lt;rdma_min_size_statement&gt; |
 	&lt;write_verify_statement&gt; |
 	&lt;write_verify_interval_statement&gt; |
 	&lt;write_verify_retry_interval_statement&gt; |
@@ -3121,6 +3197,26 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 <term>&lt;fatal_action_name&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"backtrace_and_abort" | "backtrace_and_exit" |
 	"abort" | "exit"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;ib_rdma_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"ib_rdma" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;rdma_device_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"rdma_device" &lt;string&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;rdma_port_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"rdma_port" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;rdma_min_size_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"rdma_min_size" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

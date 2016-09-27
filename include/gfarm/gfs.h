@@ -122,6 +122,7 @@ gfarm_error_t gfs_pio_open(const char *, int, GFS_File *);
 gfarm_error_t gfs_pio_fhopen(gfarm_ino_t, gfarm_uint64_t, int, GFS_File *);
 gfarm_error_t gfs_pio_create(const char *, int, gfarm_mode_t, GFS_File *);
 gfarm_error_t gfs_pio_close(GFS_File);
+gfarm_error_t gfs_pio_close_getgen(GFS_File gf, gfarm_uint64_t *igenp);
 
 int gfs_pio_eof(GFS_File);
 gfarm_error_t gfs_pio_error(GFS_File);
@@ -136,7 +137,9 @@ gfarm_error_t gfs_pio_datasync(GFS_File);
 gfarm_error_t gfs_pio_truncate(GFS_File, gfarm_off_t);
 gfarm_error_t gfs_pio_pread(GFS_File, void *, int, gfarm_off_t, int *);
 gfarm_error_t gfs_pio_pwrite(GFS_File, void *, int, gfarm_off_t, int *);
-
+typedef gfarm_off_t (*gfs_pageio_t)(char *, gfarm_off_t, int, void*);
+gfarm_error_t gfs_pio_pread_page(GFS_File, gfarm_off_t, int, int,
+		gfs_pageio_t,  void*);
 
 int gfs_pio_getc(GFS_File);
 int gfs_pio_ungetc(GFS_File, int);
@@ -193,6 +196,8 @@ gfarm_error_t gfs_opendirplus(const char *, GFS_DirPlus *);
 gfarm_error_t gfs_closedirplus(GFS_DirPlus);
 gfarm_error_t gfs_readdirplus(GFS_DirPlus,
 	struct gfs_dirent **, struct gfs_stat **);
+gfarm_error_t gfs_seekdirplus(GFS_DirPlus dir, gfarm_off_t off);
+gfarm_error_t gfs_teldirplus(GFS_DirPlus dir, gfarm_off_t *off);
 
 gfarm_error_t gfs_realpath(const char *, char **);
 

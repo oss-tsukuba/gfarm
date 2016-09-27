@@ -1592,8 +1592,7 @@ inode_init_dir(struct inode *inode, struct inode *parent)
 	}
 	dir_entry_set_inode(entry, inode);
 
-	entry = dir_enter(inode->u.c.s.d.entries, dotdot, DOTDOT_LEN,
-	    NULL);
+	entry = dir_enter(inode->u.c.s.d.entries, dotdot, DOTDOT_LEN, NULL);
 	if (entry == NULL) {
 		dir_free(inode->u.c.s.d.entries);
 		gflog_debug(GFARM_MSG_1001725,
@@ -2957,8 +2956,8 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			    (unsigned long long)parent->i_number,
 			    (unsigned long long)n->i_number,
 			    gfarm_error_string(e));
-		e = db_direntry_add(
-			n->i_number, dotdot, DOTDOT_LEN, parent->i_number);
+		e = db_direntry_add(n->i_number, dotdot, DOTDOT_LEN,
+			parent->i_number);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000316,
 			    "db_direntry_add(%lld, \"..\", %lld): %s",
@@ -4015,14 +4014,19 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	char **trace_logp, const char *diag)
 {
 	struct inode *inode = fo->inode;
+	int updated;
 
 	inode_cksum_invalidate(fo);
 	inode_cksum_remove(inode);
 
-	return (inode_file_update_common(inode, size, atime, mtime,
+	if ((updated = inode_file_update_common(inode, size, atime, mtime,
 	    want_gen_update, fo->u.f.spool_host,
 	    fo->u.f.replica_spec.desired_number, fo->u.f.replica_spec.repattr,
-	    old_genp, new_genp, trace_logp, diag));
+	    old_genp, (gfarm_int64_t *)&fo->gen, trace_logp, diag))) {
+		if (new_genp)
+			*new_genp = fo->gen;
+	}
+	return (updated);
 }
 
 /* returns TRUE, if generation number is updated. */
@@ -6143,7 +6147,7 @@ dir_entry_add_one(void *closure,
 	gfarm_ino_t dir_inum, char *entry_name, int entry_len,
 	gfarm_ino_t entry_inum)
 {
-	(void)dir_entry_add(dir_inum, entry_name, entry_len, entry_inum);
+	dir_entry_add(dir_inum, entry_name, entry_len, entry_inum);
 
 	/* abandon error */
 	free(entry_name);
@@ -6253,11 +6257,11 @@ inode_init(void)
 
 	/* root directory */
 	dir_entry_add_one(NULL, ROOT_INUMBER,
-	    strdup_ck(dot, "inode_init: \".\""), DOT_LEN,
-	    ROOT_INUMBER);
+		strdup_ck(dot, "inode_init: \".\""), DOT_LEN,
+		ROOT_INUMBER);
 	dir_entry_add_one(NULL, ROOT_INUMBER,
-	    strdup_ck(dotdot, "inode_init: \"..\""), DOTDOT_LEN,
-	    ROOT_INUMBER);
+		strdup_ck(dotdot, "inode_init: \"..\""), DOTDOT_LEN,
+		ROOT_INUMBER);
 	e = db_direntry_add(ROOT_INUMBER, dot, DOT_LEN, ROOT_INUMBER);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000359,

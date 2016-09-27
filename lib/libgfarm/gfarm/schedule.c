@@ -1162,6 +1162,24 @@ search_idle_record(struct search_idle_callback_closure *c)
 
 #ifndef __KERNEL__
 static void
+search_idle_rdma_callback(void *closure)
+{
+	struct search_idle_callback_closure *c = closure;
+	struct search_idle_host_state *h = c->h;
+	gfarm_error_t e;
+
+	e = gfs_ib_rdma_result_multiplexed(c->protocol_state);
+	gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_ib_rdma_result_multiplexed: %s",
+		    gfarm_error_string(e));
+
+	search_idle_record(c); /* completed */
+	gfs_client_connection_free(c->gfs_server);
+	c->state->concurrency--;
+	h->net->ongoing--;
+	free(c);
+}
+static void
 search_idle_statfs_callback(void *closure)
 {
 	struct search_idle_callback_closure *c = closure;
@@ -1171,7 +1189,6 @@ search_idle_statfs_callback(void *closure)
 	gfarm_off_t blocks, bfree, bavail;
 	gfarm_off_t files, ffree, favail;
 
-
 	e = gfs_client_statfs_result_multiplexed(c->protocol_state,
 	    &bsize, &blocks, &bfree, &bavail, &files, &ffree, &favail);
 	if (e == GFARM_ERR_NO_ERROR) {
@@ -1179,6 +1196,19 @@ search_idle_statfs_callback(void *closure)
 		h->statfs_cache_time = h->rtt_cache_time;
 		h->diskused = blocks * bsize;
 		h->diskavail = bavail * bsize;
+#ifndef __KERNEL__
+		{
+			struct gfs_ib_rdma_state *state;
+			e = gfs_ib_rdma_request_multiplexed(
+				c->state->q, c->gfs_server,
+				search_idle_rdma_callback, c, &state);
+			if (e == GFARM_ERR_NO_ERROR) {
+				c->protocol_state = state;
+				return; /* request continues */
+			}
+			/* don't care about rdma error */
+		}
+#endif /* __KERNEL__ */
 		search_idle_record(c); /* completed */
 	}
 	if (e != GFARM_ERR_NO_ERROR) {

@@ -82,6 +82,7 @@ file_opening_alloc(struct inode *inode,
 	fo->inode = inode;
 	fo->flag = flag;
 	fo->opener = peer;
+	fo->gen = inode_get_gen(inode);
 
 	if (inode_is_file(inode)) {
 		if (spool_host == NULL) {
@@ -902,6 +903,23 @@ process_peer_is_the_spool_opener(struct process *process,
 	return (1);
 }
 
+gfarm_error_t
+process_getgen(struct process *process, struct peer *peer, int fd,
+	gfarm_uint64_t *genp, const char *diag)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"process_get_file_opening() failed: %s",
+			gfarm_error_string(e));
+		return (e);
+	}
+	*genp = fo->gen;
+	return (GFARM_ERR_NO_ERROR);
+}
 static gfarm_error_t
 process_close_or_abort_file(struct process *process, struct peer *peer, int fd,
 	char **trace_logp, int aborted, const char *diag)
@@ -1079,10 +1097,8 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	    ((fo->flag & GFARM_FILE_CREATE_REPLICA) == 0 ||
 	    inode_add_replica(fo->inode, fo->u.f.spool_host, 1)
 	    == GFARM_ERR_ALREADY_EXISTS) &&
-
 	    inode_file_update(fo, size, atime, mtime, is_v2_4,
 	    old_genp, new_genp, trace_logp, diag)) {
-
 		flags = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
 	}
 

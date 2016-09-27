@@ -153,7 +153,7 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 		if (real_url != NULL) {
 			free(real_url);
 		}
-		(void)gfm_close_fd(gfm_server, fd, NULL); /* ignore result */
+		(void)gfm_close_fd(gfm_server, fd, NULL, NULL);
 		gf->fd = -1;
 		gf->error = e;
 		gflog_debug(GFARM_MSG_1003381,
@@ -203,7 +203,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 	}
 
 	/* if old gfm_connection is alive, fd must be closed */
-	(void)gfm_close_fd(gf->gfm_server, gf->fd, NULL);
+	(void)gfm_close_fd(gf->gfm_server, gf->fd, NULL, NULL);
 	gf->fd = -1;
 	gfm_client_connection_free(gf->gfm_server);
 	/* ref count of gfm_server is incremented above */

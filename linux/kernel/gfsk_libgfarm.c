@@ -14,6 +14,7 @@
 #include "context.h"
 #include "gfsk_fs.h"
 #include "gfsk_libgfarm.h"
+#include "gfsk_genfile.h"
 #include "ug_idmap.h"
 
 #define GFARM_ERROR_TO_ERRNO(ge)	\
@@ -104,19 +105,38 @@ ktime2gftime(struct timespec *ktime, struct gfarm_timespec *gftime)
 }
 
 static int
-timeequal(struct gfarm_timespec *gftime, struct timespec *ktime) {
+timeequal(struct gfarm_timespec *gftime, struct timespec *ktime)
+{
 	int ret = ((gftime->tv_sec == ktime->tv_sec)
 			&& ((long) gftime->tv_nsec == ktime->tv_nsec));
 	if (!ret)
-		gflog_debug(GFARM_MSG_UNFIXED, "time=%ld.%ld, %ld.%d",
+		gflog_verbose(GFARM_MSG_UNFIXED, "time=%ld.%ld, %ld.%d",
 			ktime->tv_sec, ktime->tv_nsec,
 			gftime->tv_sec, gftime->tv_nsec);
 	return (ret);
 }
 
-static struct gfsk_file_private *
-gfarm_priv_get(struct file *file) {
-	return (struct gfsk_file_private *)file->private_data;
+static inline struct gfsk_file_private *
+gfarm_priv_find(struct file *file)
+{
+	struct gfsk_file_private *priv =
+		(struct gfsk_file_private *)file->private_data;
+	return (priv);
+}
+struct gfsk_file_private *
+gfarm_priv_get(struct file *file)
+{
+	struct gfsk_file_private *priv = gfarm_priv_find(file);
+	if (priv)
+		mutex_lock(&priv->f_lock);
+	return (priv);
+}
+void
+gfarm_priv_put(struct file *file)
+{
+	struct gfsk_file_private *priv = gfarm_priv_find(file);
+	if (priv)
+		mutex_unlock(&priv->f_lock);
 }
 
 static struct gfsk_file_private *
@@ -133,8 +153,16 @@ gfarm_priv_alloc(struct file *file)
 		priv->f_file = file;
 		INIT_LIST_HEAD(&priv->f_openlist);
 		mutex_init(&priv->f_lock);
+		mutex_lock(&priv->f_lock);
 	}
 	return (priv);
+}
+void
+gfarm_priv_wrote(struct file *file)
+{
+	struct gfsk_file_private *priv = gfarm_priv_find(file);
+	if (priv)
+		priv->u.wrote = 1;
 }
 
 struct file *
@@ -143,7 +171,7 @@ gfsk_open_file_get(struct inode *inode)
 	struct file *file = NULL;
 	struct gfarm_inode *gi = get_gfarm_inode(inode);
 
-	mutex_lock(&gfsk_fsp->gf_lock);
+	mutex_lock(&gi->i_mutex);
 	if (!list_empty(&gi->i_openfile)) {
 		struct gfsk_file_private *priv;
 		priv = list_first_entry(&gi->i_openfile,
@@ -151,23 +179,23 @@ gfsk_open_file_get(struct inode *inode)
 		file = priv->f_file;
 		get_file(file);
 	}
-	mutex_unlock(&gfsk_fsp->gf_lock);
+	mutex_unlock(&gi->i_mutex);
 	return (file);
 }
 
 static void
-gfarm_priv_add_openfile(struct inode *inode, struct file *file)
+gfarm_priv_add_openfile(struct inode *inode, struct file *file,
+		struct gfsk_file_private *priv)
 {
 	/* connect write open files for failover */
 	if (file->f_flags & (O_WRONLY | O_RDWR)) {
 		struct gfarm_inode *gi;
-		struct gfsk_file_private *priv = gfarm_priv_get(file);
 		if (list_empty(&priv->f_openlist)) {
 			gi = get_gfarm_inode(inode);
-			mutex_lock(&gfsk_fsp->gf_lock);
+			mutex_lock(&gi->i_mutex);
 			list_add_tail(&priv->f_openlist, &gi->i_openfile);
 			gi->i_wopencnt++;
-			mutex_unlock(&gfsk_fsp->gf_lock);
+			mutex_unlock(&gi->i_mutex);
 			return;
 		}
 	}
@@ -176,7 +204,7 @@ gfarm_priv_add_openfile(struct inode *inode, struct file *file)
 static void
 gfarm_priv_free(struct file *file)
 {
-	struct gfsk_file_private *priv = gfarm_priv_get(file);
+	struct gfsk_file_private *priv = gfarm_priv_find(file);
 	if (priv != NULL) {
 		if (file->f_flags & (O_WRONLY | O_RDWR)) {
 			struct gfarm_inode *gi;
@@ -186,14 +214,14 @@ gfarm_priv_free(struct file *file)
 			} else {
 				gi = NULL;
 			}
-			mutex_lock(&gfsk_fsp->gf_lock);
+			mutex_lock(&gi->i_mutex);
 			if (!list_empty(&priv->f_openlist)) {
 				list_del(&priv->f_openlist);
 				if (gi != NULL) {
 					gi->i_wopencnt--;
 				}
 			}
-			mutex_unlock(&gfsk_fsp->gf_lock);
+			mutex_unlock(&gi->i_mutex);
 		}
 		mutex_destroy(&priv->f_lock);
 		kfree(priv);
@@ -204,7 +232,7 @@ gfarm_priv_free(struct file *file)
 static void
 gfarm_stat_set(struct inode *inode, struct gfs_stat *stp)
 {
-	struct gfarm_inode *gi;
+	struct gfarm_inode *gi = get_gfarm_inode(inode);
 	int ret;
 
 	inode->i_nlink = stp->st_nlink; /* NOTE: uint <== gfarm_uint64_t */
@@ -220,23 +248,28 @@ gfarm_stat_set(struct inode *inode, struct gfs_stat *stp)
 	inode->i_generation = stp->st_gen;
 	gftime2ktime(&stp->st_atimespec, &inode->i_atime);
 	gftime2ktime(&stp->st_ctimespec, &inode->i_ctime);
-	if (!timeequal(&stp->st_mtimespec, &inode->i_mtime)) {
-		gfsk_invalidate_dir_pages(inode);
+	if (S_ISDIR(stp->st_mode)) {
+		if (!timeequal(&stp->st_mtimespec, &inode->i_mtime)) {
+			gfsk_invalidate_dir_pages(inode);
+		}
+	} else if (S_ISREG(stp->st_mode)) {
+		if (gi->i_gen != stp->st_gen) {
+			gfsk_invalidate_pages(inode);
+		}
 	}
 	gftime2ktime(&stp->st_mtimespec, &inode->i_mtime);
 	inode->i_mode = stp->st_mode;
 
-	gi = get_gfarm_inode(inode);
-	gi->i_ncopy = stp->st_ncopy;
 	gi->i_gen = stp->st_gen;
 	gi->i_actime = get_jiffies_64() + gfsk_fsp->gf_actime;
 }
 struct inode *
-gfarm_stat2inode(struct super_block *sb, struct gfs_stat *stp)
+gfarm_stat2inode(struct super_block *sb, struct gfs_stat *stp, int new)
 {
 	struct inode *inode;
 
-	inode = gfsk_get_inode(sb, stp->st_mode, stp->st_ino, stp->st_gen, 0);
+	inode = gfsk_get_inode(sb, stp->st_mode, stp->st_ino,
+			stp->st_gen, new);
 	if (!inode)
 		return (NULL);
 	gfarm_stat_set(inode, stp);
@@ -252,9 +285,11 @@ gfarm_fstat(struct file *file, struct inode *inode)
 	priv = (struct gfsk_file_private *)file->private_data;
 	if (S_ISREG(inode->i_mode) && priv && priv->f_u.filp) {
 		ge = gfs_pio_stat(priv->f_u.filp, &gstat);
-		if (ge == GFARM_ERR_NO_ERROR)
+		if (ge == GFARM_ERR_NO_ERROR) {
 			gfarm_stat_set(inode, &gstat);
-		else
+			if (file->f_dentry)
+				file->f_dentry->d_time = gfsk_gettv(NULL);
+		} else
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"%s: gfs_pio_stat fail, %d",
 				__func__, ge);
@@ -284,11 +319,13 @@ gfarm_stat(struct dentry *dentry, struct inode **inodep)
 	ge = gfs_stat(path, &gstat);
 	kfree(path);
 	if (ge == GFARM_ERR_NO_ERROR) {
-		inode = gfarm_stat2inode(dentry->d_sb, &gstat);
+		inode = gfarm_stat2inode(dentry->d_sb, &gstat,
+			inodep ? 1 : 0);
 		if (!inode) {
 			ge = GFARM_ERR_NO_MEMORY;
 			goto quit;
 		}
+		dentry->d_time = gfsk_gettv(NULL);
 		if (inodep)
 			*inodep = inode;
 		else
@@ -323,6 +360,7 @@ gfarm_setattr(struct dentry *dentry, struct iattr *attr, struct file *file)
 							attr->ia_size);
 			} else
 				ge = GFARM_ERR_INVALID_ARGUMENT;
+			gfarm_priv_put(file);
 		}
 	}
 	if (ge)
@@ -469,6 +507,7 @@ gfarm_opendir(struct inode *inode, struct file *file)
 		if (ge != GFARM_ERR_NO_ERROR) {
 			gfarm_priv_free(file);
 		}
+		gfarm_priv_put(file);
 	}
 	kfree(path);
 	return (GFARM_ERROR_TO_ERRNO(ge));
@@ -485,6 +524,7 @@ gfarm_closedir(struct inode *inode, struct file *file)
 	} else
 		ge = GFARM_ERR_INVALID_ARGUMENT;
 	gfarm_priv_free(file);
+	gfarm_priv_put(file);
 	return (GFARM_ERROR_TO_ERRNO(ge));
 }
 
@@ -531,8 +571,7 @@ gfarm_createfile(struct inode *inode, struct dentry *dentry, int flag,
 	*childp = NULL;
 	path = gfsk_make_path(dentry);
 	if (path != NULL && (priv = gfarm_priv_alloc(file))) {
-		int flags = (gfsk_open_flags_gfarmize(flag)
-			| GFARM_FILE_UNBUFFERED);
+		int flags = gfsk_open_flags_gfarmize(flag);
 		struct inode *child;
 		gfarm_ino_t ino;
 		gfarm_uint64_t gen;
@@ -543,7 +582,7 @@ gfarm_createfile(struct inode *inode, struct dentry *dentry, int flag,
 			child = gfsk_get_inode(inode->i_sb, mode|S_IFREG,
 						ino, gen, 1);
 			if (child) {
-				gfarm_priv_add_openfile(child, file);
+				gfarm_priv_add_openfile(child, file, priv);
 				*childp = child;
 			} else {
 				ge = GFARM_ERR_NO_MEMORY;
@@ -556,6 +595,7 @@ gfarm_createfile(struct inode *inode, struct dentry *dentry, int flag,
 				"%s: gfs_pio_create_igen %s fail, %d",
 				__func__, path, ge);
 		}
+		gfarm_priv_put(file);
 	}
 	kfree(path);
 	return (GFARM_ERROR_TO_ERRNO(ge));
@@ -582,23 +622,23 @@ gfarm_openfile(struct inode *inode, struct file *file)
 	struct dentry *dentry = file->f_path.dentry;
 	struct gfsk_file_private *priv;
 
-	if (gfarm_priv_get(file)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+	if (gfarm_priv_find(file)) {
+		gflog_verbose(GFARM_MSG_UNFIXED,
 			"%s: already open inode=%p file=%p flag=%x",
 			__func__, inode, file, file->f_flags);
 		return (0);
 	}
 	path = gfsk_make_path(dentry);
 	if (path != NULL && (priv = gfarm_priv_alloc(file))) {
-		int flags = gfsk_open_flags_gfarmize(file->f_flags)
-			| GFARM_FILE_UNBUFFERED;
+		int flags = gfsk_open_flags_gfarmize(file->f_flags);
 		ge = gfs_pio_open(path, (flags & ~GFARM_FILE_CREATE),
 			&priv->f_u.filp);
 		if (ge == GFARM_ERR_NO_ERROR) {
-			gfarm_priv_add_openfile(inode, file);
+			gfarm_priv_add_openfile(inode, file, priv);
 		} else {
 			gfarm_priv_free(file);
 		}
+		gfarm_priv_put(file);
 	}
 	kfree(path);
 	return (GFARM_ERROR_TO_ERRNO(ge));
@@ -611,16 +651,22 @@ gfarm_closefile(struct inode *inode, struct file *file)
 	struct gfsk_file_private *priv = gfarm_priv_get(file);
 
 	if (priv && priv->f_u.filp) {
-		ge = gfs_pio_close(priv->f_u.filp);
+		if (priv->u.wrote) {
+			struct gfarm_inode *gi = get_gfarm_inode(inode);
+			ge = gfs_pio_close_getgen(priv->f_u.filp, &gi->i_gen);
+			inode->i_generation = gi->i_gen;
+		} else
+			ge = gfs_pio_close(priv->f_u.filp);
 	} else
 		ge = GFARM_ERR_INVALID_ARGUMENT;
 	gfarm_priv_free(file);
+	gfarm_priv_put(file);
 
 	return (GFARM_ERROR_TO_ERRNO(ge));
 }
 
 int
-gfarm_read(struct file *file, loff_t off, char *buff, ssize_t size,
+gfarm_read(struct file *file,  loff_t off, char *buff, ssize_t size,
 	int *readlen)
 {
 	gfarm_error_t ge;
@@ -631,6 +677,22 @@ gfarm_read(struct file *file, loff_t off, char *buff, ssize_t size,
 				(gfarm_off_t)off, readlen);
 	} else
 		ge = GFARM_ERR_INVALID_ARGUMENT;
+	gfarm_priv_put(file);
+	return (GFARM_ERROR_TO_ERRNO(ge));
+}
+int
+gfarm_read_page(struct file *file, loff_t off, ssize_t size, int force,
+	gfs_pageio_t cb, void *arg)
+{
+	gfarm_error_t ge;
+	struct gfsk_file_private *priv = gfarm_priv_get(file);
+
+	if (priv && priv->f_u.filp) {
+		ge = gfs_pio_pread_page(priv->f_u.filp, off, size,
+				force, cb, arg);
+	} else
+		ge = GFARM_ERR_INVALID_ARGUMENT;
+	gfarm_priv_put(file);
 	return (GFARM_ERROR_TO_ERRNO(ge));
 }
 
@@ -653,6 +715,7 @@ gfarm_write(struct file *file, loff_t off, const char *buff, ssize_t size,
 		}
 	} else
 		ge = GFARM_ERR_INVALID_ARGUMENT;
+	gfarm_priv_put(file);
 	return (GFARM_ERROR_TO_ERRNO(ge));
 }
 int
@@ -673,6 +736,7 @@ gfarm_append(struct file *file, const char *buff, ssize_t size,
 		}
 	} else
 		ge = GFARM_ERR_INVALID_ARGUMENT;
+	gfarm_priv_put(file);
 	return (GFARM_ERROR_TO_ERRNO(ge));
 }
 
@@ -682,7 +746,7 @@ gfsk_get_localfd(struct file *file, int *fdp)
 	gfarm_error_t ge;
 	struct gfsk_file_private *priv;
 
-	priv = (struct gfsk_file_private *)file->private_data;
+	priv = gfarm_priv_find(file);
 	if (priv && priv->f_u.filp) {
 		ge = gfs_pio_view_fd(priv->f_u.filp, fdp);
 	} else
@@ -715,6 +779,7 @@ gfarm_seek(struct file *file, loff_t off, int whence, loff_t *newoff)
 		}
 	} else
 		ge = GFARM_ERR_INVALID_ARGUMENT;
+	gfarm_priv_put(file);
 	return (GFARM_ERROR_TO_ERRNO(ge));
 }
 
@@ -731,7 +796,7 @@ gfarm_truncate(struct inode *inode, loff_t size)
 	if (path == NULL)
 		return (GFARM_ERROR_TO_ERRNO(GFARM_ERR_NO_ERROR));
 
-	ge = gfs_pio_open(path, GFARM_FILE_WRONLY|GFARM_FILE_UNBUFFERED, &gf);
+	ge = gfs_pio_open(path, GFARM_FILE_WRONLY, &gf);
 	if (ge == GFARM_ERR_NO_ERROR) {
 		ge = gfs_pio_truncate(gf, size);
 		gfs_pio_close(gf);
@@ -756,5 +821,6 @@ gfarm_fsync(struct file *file, int datasync)
 		}
 	} else
 		ge = GFARM_ERR_INVALID_ARGUMENT;
+	gfarm_priv_put(file);
 	return (GFARM_ERROR_TO_ERRNO(ge));
 }

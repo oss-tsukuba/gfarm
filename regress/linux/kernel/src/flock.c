@@ -7,10 +7,11 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	if (argc < 4) {
 		printf("Usage: %s filename [se] waitsec\n", argv[0]);
-		return 1;
+		return (1);
 	}
 	char *filename = argv[1];
 	char opech = argv[2][0];
@@ -26,13 +27,13 @@ int main(int argc, char *argv[]) {
 		break;
 	default:
 		printf("unknown opech: %c\n", opech);
-		return 1;
+		return (1);
 	}
 
 	int fd = open(filename, O_CREAT, 0644);
 	if (fd < 0) {
 		perror("open() failed\n");
-		return 1;
+		return (1);
 	} else {
 		printf("open(%s, O_CREAT) OK\n", filename);
 	}
@@ -60,5 +61,5 @@ int main(int argc, char *argv[]) {
 	}
 
 	printf("ret=%d\n", ret);
-	return ret;
+	return (ret);
 }

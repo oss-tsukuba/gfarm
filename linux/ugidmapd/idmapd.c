@@ -3,52 +3,17 @@
  *
  *  Userland daemon for idmap.
  *
- *  Copyright (c) 2002 The Regents of the University of Michigan.
- *  All rights reserved.
- *
- *  Marius Aamodt Eriksen <marius@umich.edu>
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *  1. Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *  3. Neither the name of the University nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
- *  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
- *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- *  DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
- *  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/poll.h>
 #include <sys/socket.h>
-#include <sys/stat.h>
 #include <arpa/inet.h>
 #include <time.h>
-#include <err.h>
 #include <errno.h>
-#include <event.h> /* libevent, http://libevent.org/ */
+#include <sys/select.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <netdb.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -57,7 +22,6 @@
 #include <pwd.h>
 #include <grp.h>
 #include <limits.h>
-#include <ctype.h>
 
 #include "queue.h"
 #include "ug_idmap.h"
@@ -107,27 +71,25 @@ struct idmap_msg {
 #define IC_HOSTADDR_CHAN  IDMAPD_DIR "/" IDMAP_HOSTADDR "/channel"
 #define IC_HOSTADDR_FLUSH IDMAPD_DIR "/" IDMAP_HOSTADDR "/flush"
 
-#define IC_ENTMAX 3
 
 static void idmapdcb(int, short, void *);
 static void hostaddrcb(int, short, void *);
 #define MAXBUFLEN	128
 
+fd_set ic_readfds;
+int ic_maxfd;
 struct idmap_client {
 	short                      ic_which;
 	char                      *ic_id;
 	void			  (*ic_cb)(int, short, void *);
 	char                       *ic_path;
 	int                        ic_fd;
-	int                        ic_dirfd;
-	int                        ic_scanned;
-	struct event               ic_event;
-	TAILQ_ENTRY(idmap_client)  ic_next;
 };
-static struct idmap_client idmapd_ic[3] = {
-	{IC_IDNAME, "idname", idmapdcb, IC_IDNAME_CHAN, -1, -1, 0},
-	{IC_NAMEID, "nameid", idmapdcb, IC_NAMEID_CHAN, -1, -1, 0},
-	{IC_HOSTADDR, "hostaddr",hostaddrcb,  IC_HOSTADDR_CHAN, -1, -1, 0},
+#define IC_ENTMAX 3
+static struct idmap_client idmapd_ic[IC_ENTMAX] = {
+	{IC_IDNAME, "idname", idmapdcb, IC_IDNAME_CHAN, -1 },
+	{IC_NAMEID, "nameid", idmapdcb, IC_NAMEID_CHAN, -1 },
+	{IC_HOSTADDR, "hostaddr", hostaddrcb,  IC_HOSTADDR_CHAN, -1 }
 };
 
 TAILQ_HEAD(idmap_clientq, idmap_client);
@@ -261,13 +223,40 @@ idmapdopenone(struct idmap_client *ic)
 		return (-1);
 	}
 
-	event_set(&ic->ic_event, ic->ic_fd, EV_READ, ic->ic_cb, ic);
-	event_add(&ic->ic_event, NULL);
+	FD_SET(ic->ic_fd, &ic_readfds);
+	if (ic->ic_fd >= ic_maxfd)
+		ic_maxfd = ic->ic_fd + 1;
 
 	if (verbose > 0)
 		idmapd_warnx("Opened %s", ic->ic_path);
 
 	return (0);
+}
+static void
+idmapdloop(void)
+{
+	int n, i;
+	fd_set	readfds;
+	struct idmap_client *ic;
+
+	for (;;) {
+		readfds = ic_readfds;
+
+		n = select(ic_maxfd, &readfds, NULL, NULL, NULL);
+		if (n < 0) {
+			if (errno == EINTR)
+				continue;
+			idmapd_errx(1, "select: %s", strerror(errno));
+			break;
+		}
+		ic = idmapd_ic;
+		for (i = 0; n > 0 && i < IC_ENTMAX; i++, ic++) {
+			if (FD_ISSET(ic->ic_fd, &readfds)) {
+				ic->ic_cb(ic->ic_fd, 0, ic);
+				n--;
+			}
+		}
+	}
 }
 
 
@@ -438,10 +427,10 @@ mydaemon(int nochdir, int noclose)
 	int pid, status, tempfd;
 
 	if (pipe(pipefds) < 0)
-		err(1, "mydaemon: pipe() failed: errno %d", errno);
+		idmapd_errx(1, "mydaemon: pipe() failed: errno %d", errno);
 
 	if ((pid = fork()) < 0)
-		err(1, "mydaemon: fork() failed: errno %d", errno);
+		idmapd_errx(1, "mydaemon: fork() failed: errno %d", errno);
 
 	if (pid != 0) {
 		/*
@@ -457,13 +446,15 @@ mydaemon(int nochdir, int noclose)
 	setsid();
 	if (nochdir == 0) {
 		if (chdir("/") == -1)
-			err(1, "mydaemon: chdir() failed: errno %d", errno);
+			idmapd_errx(1, "mydaemon: chdir() failed: errno %d",
+				errno);
 	}
 
 	while (pipefds[1] <= 2) {
 		pipefds[1] = dup(pipefds[1]);
 		if (pipefds[1] < 0)
-			err(1, "mydaemon: dup() failed: errno %d", errno);
+			idmapd_errx(1, "mydaemon: dup() failed: errno %d",
+				errno);
 	}
 
 	if (noclose == 0) {
@@ -555,7 +546,7 @@ idmapdcb(int fd, short which, void *data)
 		buf1[IDMAP_MAXMSGSZ], *p;
 	unsigned long tmp;
 
-	if (which != EV_READ)
+	if (which != 0)
 		goto out;
 
 	if ((len = read(ic->ic_fd, buf, sizeof(buf))) <= 0) {
@@ -664,7 +655,7 @@ idmapdcb(int fd, short which, void *data)
 			     ic->ic_path, errno, strerror(errno));
 
 out:
-	event_add(&ic->ic_event, NULL);
+	;
 }
 
 static void
@@ -679,7 +670,7 @@ hostaddrcb(int fd, short which, void *data)
 	struct hostent ent, *entp;
 	int i, err, herr, local;
 
-	if (which != EV_READ)
+	if (which != 0)
 		goto out;
 
 	if ((len = read(ic->ic_fd, buf, sizeof(buf))) <= 0) {
@@ -745,7 +736,7 @@ err_out:
 		idmapd_warnx("hostaddr: write(%s) failed: errno %d (%s)",
 			     ic->ic_path, errno, strerror(errno));
 out:
-	event_add(&ic->ic_event, NULL);
+	;
 }
 
 
@@ -768,7 +759,7 @@ main(int argc, char **argv)
 		progname = argv[0];
 	openlog(progname, LOG_PID, LOG_DAEMON);
 
-#define GETOPTSTR "vfd:U:G:P:"
+#define GETOPTSTR "vfP:"
 	opterr = 0; /* Turn off error messages */
 
 	while ((opt = getopt(argc, argv, GETOPTSTR)) != -1) {
@@ -782,12 +773,6 @@ main(int argc, char **argv)
 		case 'P':
 			pidfile = optarg;
 			break;
-		case 'd':
-		case 'U':
-		case 'G':
-			errx(1, "the -d, -U, and -G options have been removed;"
-				" please use the configuration file instead.");
-			break;
 		default:
 			break;
 		}
@@ -796,13 +781,13 @@ main(int argc, char **argv)
 	if (strlen(nobodyuser) >= sizeof(((struct idmap_msg *)0)->im_name))
 		nobodyuser = IDMAP4NOBODY_USER;
 	if ((pw = getpwnam(nobodyuser)) == NULL)
-		errx(1, "Could not find user \"%s\"", nobodyuser);
+		idmapd_errx(1, "Could not find user \"%s\"", nobodyuser);
 	nobodyuid = pw->pw_uid;
 
 	if (strlen(nobodygroup) >= sizeof(((struct idmap_msg *)0)->im_name))
 		nobodygroup = IDMAP4NOBODY_GROUP;
 	if ((gr = getgrnam(nobodygroup)) == NULL)
-		errx(1, "Could not find group \"%s\"", nobodygroup);
+		idmapd_errx(1, "Could not find group \"%s\"", nobodygroup);
 	nobodygid = gr->gr_gid;
 
 	if (!fg)
@@ -814,10 +799,9 @@ main(int argc, char **argv)
 			fprintf(fp, "%d\n", getpid());
 			fclose(fp);
 		} else {
-			errx(1, "cannot write PID to \"%s\"", pidfile);
+			idmapd_errx(1, "cannot write PID to \"%s\"", pidfile);
 		}
 	}
-	event_init();
 
 	if (verbose > 0)
 		idmapd_warnx("Expiration time is %d seconds.",
@@ -835,9 +819,6 @@ main(int argc, char **argv)
 
 	release_parent();
 
-	if (event_dispatch() < 0)
-		idmapd_errx(1, "main: event_dispatch returns errno %d (%s)",
-			    errno, strerror(errno));
-	/* NOTREACHED */
-	return (1);
+	idmapdloop();
+	return (0);
 }

@@ -75,6 +75,7 @@ struct file_opening {
 			char *key;
 		} d;
 	} u;
+	gfarm_uint64_t	gen;
 
 	char *path_for_trace_log; /* XXX FIXME not maintained if "." or ".." */
 };
@@ -123,6 +124,9 @@ gfarm_error_t process_cksum_get(struct process *, struct peer *, int,
 	char **, size_t *, char **, gfarm_int32_t *, const char *);
 gfarm_error_t process_get_file_opening(struct process *, struct peer *, int,
 	struct file_opening **, const char *);
+gfarm_error_t process_getgen(struct process *, struct peer *, int,
+	gfarm_uint64_t *, const char *);
+
 
 struct peer;
 gfarm_error_t gfm_server_process_alloc(struct peer *, int, int);

@@ -71,6 +71,13 @@ enum gfs_proto_command {
 	/* from client */
 
 	GFS_PROTO_CLOSE_WRITE,			/* since gfarm-2.6.0 */
+
+	/* RDMA for gfs-client */
+	GFS_PROTO_RDMA_EXCH_INFO,
+	GFS_PROTO_RDMA_HELLO,
+	GFS_PROTO_RDMA_PREAD,
+	GFS_PROTO_RDMA_PWRITE,
+
 };
 
 #define GFS_PROTO_MAX_IOSIZE	(1024 * 1024)

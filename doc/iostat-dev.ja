@@ -28,7 +28,7 @@
 	書き込みは、サーバの負荷を避けるため、測定ファイルをmmap して行う。
 
 	ganglia plugin モジュールは定期的にこのファイルを読み込み、
-	gangliaサーバ(gmetad) に通知する。 
+	gangliaサーバ(gmetad) に通知する。
 	gmetad はこれを rrd ファイルとして保存し、web では各データの
 	グラフを参照できる。
 
@@ -137,9 +137,9 @@
 
 
 	--iostat-enable=yes であれば、gfmd.conf に以下のエントリが記載される。
-	
+
 	iostat_gfmd_path /ディレクトリパス/iostat-gfmd-ポート/gfmd
-		
+
 
 3.1.2. config-gfsd-iostat
 	config-gfsd-iostat は、Gfarm クラスタ毎にノードで1回限り行う。
@@ -178,7 +178,7 @@
 
 3.3 gfsd
 	ストレージサーバーでは下位ファイルシステムへの成功したIOをカウントする。
-	
+
 	gfsd は 通常のクライアントサービスを行うプロセスと、
 	back channel service を行うプロセスで構成され、
 	それぞれrpc の接続要求毎にプロセスを作成し、要求を処理している。
@@ -251,7 +251,7 @@
 4.1.2. callback
 	callback では項目数を一巡する度に性能測定ファイルを読み込み、
 	前回との差分を集計する。
-	
+
 	指定されたmetric 名についての値を関数値として返す。
 
 5. API
@@ -263,6 +263,7 @@
 
 	void
 	gfarm_iostat_static_term(struct gfarm_context *ctxp)
+
 
 	iostat　は基本的に一つのプログラムで一組の測定情報を収集するので、
 	この管理情報を保持する領域を初期化する。
@@ -365,6 +366,7 @@
 	hint :	0 を指定する。
 	id :	0ではないid で収集データ行のid に記録された値を指定する。
 	ip : 	返却する収集データ行。
+
 
 	データ行のid がクリアされるが、各カラムの値は変更されない。
 	管理情報内の更新時刻が更新される。

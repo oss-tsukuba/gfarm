@@ -21,6 +21,7 @@
 #include "config.h"
 #include "gfpath.h"
 #include "lookup.h"
+#include "gfs_rdma.h"
 #include "gfsk_if.h"
 #include "gfskd.h"
 
@@ -265,7 +266,7 @@ usage(const char *progname, struct gfskd_param *paramsp)
 "    -h   --help             print help\n"
 "    -V   --version          print version\n"
 "\n"
-"GFARM2FS options:\n"
+"GFARM options:\n"
 "    -o conf_path=path       gfarm config file path (default: %s)\n"
 "    -o key_path=path        shared key file path (default: %s)\n"
 "    -o uid=uid              local user uid (default: from luser)\n"
@@ -279,6 +280,11 @@ usage(const char *progname, struct gfskd_param *paramsp)
 "    -o auto_gid_max=N       maximum number of auto gid (default: %d)\n"
 "    -o on_demand_replication        set on-demand replication (default: no)\n"
 "    -o call_ftruncate       call ftruncate instead rpc (default: rpc)\n"
+"    -o ra_async=0           async read ahead operation (default: ON)\n"
+"    -o ib_mtu=N             use specified Infiniband mtu instead of NIC\n"
+"    -o ib_qkey=N            use specified Infiniband qkey\n"
+"    -o ib_num_rrpc=N        number of receiving remote cache rpc\n"
+"    -o ib_num_srpc=N        number of sending remote cache rpc\n"
 		"\n", progname,
 		paramsp->conf_path,
 		paramsp->key_path,
@@ -560,6 +566,28 @@ gfskd_opt_one(char *name, char *val, struct gfskd_param *paramsp)
 		;
 	} else if (!strcmp(name, "call_ftruncate")) {
 		;
+	} else if (!strcmp(name, "d_delete")) {
+		;
+	} else if (!strcmp(name, "readahead")) {
+		;
+	} else if (!strcmp(name, "ra_async")) {
+		;
+	} else if (!strcmp(name, "ib_mtu")) {
+		;
+	} else if (!strcmp(name, "ib_gid")) {
+		;
+	} else if (!strcmp(name, "ib_port")) {
+		;
+	} else if (!strcmp(name, "ib_sl")) {
+		;
+	} else if (!strcmp(name, "ib_qkey")) {
+		;
+	} else if (!strcmp(name, "ib_num_rrpc")) {
+		;
+	} else if (!strcmp(name, "ib_num_srpc")) {
+		;
+	} else if (!strcmp(name, "ib_devname")) {
+		;
 	} else if (!strcmp(name, "rw"))
 		paramsp->mnt_flags &= ~MS_RDONLY;
 	else if (!strcmp(name, "ro"))
@@ -717,7 +745,6 @@ gfskd_arg_parse(int argc, char *argv[],
 	}
 	return (0);
 }
-
 int
 main(int argc, char *argv[])
 {
@@ -755,6 +782,7 @@ main(int argc, char *argv[])
 		fprintf(stderr, "%s: %s\n", *argv, gfarm_error_string(e));
 		exit(1);
 	}
+	gfs_ib_rdma_disable();
 
 	if (params.foreground || params.debug) {
 		params.use_syslog = 0; /* use stderr */

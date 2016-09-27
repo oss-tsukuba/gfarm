@@ -28,6 +28,8 @@
 #include "filesystem.h"
 #include "metadb_server.h"
 
+#include "gfs_rdma.h"
+
 /*
  * the following function is for client,
  * server/daemon process shouldn't call it.
@@ -166,6 +168,9 @@ gfarm_initialize(int *argcp, char ***argvp)
 
 	gfarm_setup_debug_command();
 	gfarm_parse_env_client();
+#ifdef HAVE_INFINIBAND
+	gfs_ib_rdma_initialize(0);
+#endif
 
 	return (GFARM_ERR_NO_ERROR);
 }

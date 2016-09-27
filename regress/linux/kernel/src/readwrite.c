@@ -11,11 +11,12 @@
 const static char *writedata = "abcdefgh";
 const static size_t writelen = sizeof(writedata);
 
-int readwrite_test(char *filename) {
+int readwrite_test(char *filename)
+{
 	int fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, 0644);
 	if (fd < 0) {
 		perror("open() failed\n");
-		return 1;
+		return (1);
 	} else {
 		printf("open(%s, O_CREAT|O_TRUNC) OK\n", filename);
 	}
@@ -24,7 +25,8 @@ int readwrite_test(char *filename) {
 	for (i = 0; i < (int) writelen; i++) {
 		ssize_t wrotelen = write(fd, writedata + i, 1);
 		if (wrotelen == 1) {
-			printf("write() OK, %d: writedata=%c\n", i, writedata[i]);
+			printf("write() OK, %d: writedata=%c\n",
+			i, writedata[i]);
 		} else if (wrotelen < 0) {
 			perror("write() failed\n");
 			ret = 1;
@@ -52,7 +54,7 @@ int readwrite_test(char *filename) {
 	fd = open(filename, O_RDWR);
 	if (fd < 0) {
 		perror("open() failed\n");
-		return 1;
+		return (1);
 	} else {
 		printf("open(%s, O_RDWR) OK\n", filename);
 	}
@@ -79,14 +81,15 @@ int readwrite_test(char *filename) {
 		ret = 1;
 	}
 
-	return ret;
+	return (ret);
 }
 
-int appendwrite_test(char *filename) {
+int appendwrite_test(char *filename)
+{
 	int fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, 0644);
 	if (fd < 0) {
 		perror("open() failed\n");
-		return 1;
+		return (1);
 	} else {
 		printf("open(%s, O_CREAT|O_TRUNC) OK\n", filename);
 	}
@@ -99,7 +102,8 @@ int appendwrite_test(char *filename) {
 		perror("write() failed\n");
 		ret = 1;
 	} else {
-		printf("NG writelen=%ld, but wrotelen=%lu\n", writelen, wrotelen);
+		printf("NG writelen=%ld, but wrotelen=%lu\n",
+			writelen, wrotelen);
 		ret = 1;
 	}
 
@@ -113,7 +117,7 @@ int appendwrite_test(char *filename) {
 	fd = open(filename, O_APPEND | O_RDWR);
 	if (fd < 0) {
 		perror("open() failed\n");
-		return 1;
+		return (1);
 	} else {
 		printf("open(%s, O_APPEND | O_RDWR) OK\n", filename);
 	}
@@ -125,7 +129,8 @@ int appendwrite_test(char *filename) {
 		perror("write()2 failed\n");
 		ret = 1;
 	} else {
-		printf("NG writelen=%ld, but wrotelen=%lu\n", writelen, wrotelen);
+		printf("NG writelen=%ld, but wrotelen=%lu\n",
+			writelen, wrotelen);
 		ret = 1;
 	}
 
@@ -158,15 +163,16 @@ int appendwrite_test(char *filename) {
 		ret = 1;
 	}
 
-	return ret;
+	return (ret);
 }
 
 int readwriteseek_test(char *filename, off_t offset, int whence, off_t ansoff,
-		char *writedata2, char *answerdata) {
+		char *writedata2, char *answerdata)
+{
 	int fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, 0644);
 	if (fd < 0) {
 		perror("open() failed\n");
-		return 1;
+		return (1);
 	} else {
 		printf("open(%s, O_CREAT|O_TRUNC) OK\n", filename);
 	}
@@ -179,7 +185,8 @@ int readwriteseek_test(char *filename, off_t offset, int whence, off_t ansoff,
 		perror("write() failed\n");
 		ret = 1;
 	} else {
-		printf("NG writelen=%ld, but wrotelen=%lu\n", writelen, wrotelen);
+		printf("NG writelen=%ld, but wrotelen=%lu\n",
+			writelen, wrotelen);
 		ret = 1;
 	}
 
@@ -212,8 +219,8 @@ int readwriteseek_test(char *filename, off_t offset, int whence, off_t ansoff,
 
 	seekoff = lseek(fd, offset, whence);
 	if (seekoff == ansoff) {
-		printf("lseek() OK, offset=%ld, whence=%d, seekoff=%ld\n", offset,
-				whence, seekoff);
+		printf("lseek() OK, offset=%ld, whence=%d, seekoff=%ld\n",
+			offset, whence, seekoff);
 	} else {
 		perror("lseek() NG\n");
 		ret = 1;
@@ -227,7 +234,8 @@ int readwriteseek_test(char *filename, off_t offset, int whence, off_t ansoff,
 		perror("write()2 failed\n");
 		ret = 1;
 	} else {
-		printf("writelen2=%ld, but wrotelen2=%lu\n", writelen2, wrotelen2);
+		printf("writelen2=%ld, but wrotelen2=%lu\n",
+			writelen2, wrotelen2);
 		ret = 1;
 	}
 
@@ -247,7 +255,8 @@ int readwriteseek_test(char *filename, off_t offset, int whence, off_t ansoff,
 		perror("pread()2 failed\n");
 		ret = 1;
 	} else {
-		printf("NG readlen2=%ld, but filesize=%lu\n", readlen2, filesize);
+		printf("NG readlen2=%ld, but filesize=%lu\n",
+			readlen2, filesize);
 		ret = 1;
 	}
 
@@ -258,14 +267,15 @@ int readwriteseek_test(char *filename, off_t offset, int whence, off_t ansoff,
 		ret = 1;
 	}
 
-	return ret;
+	return (ret);
 }
 
-int preadwrite_test(char *filename) {
+int preadwrite_test(char *filename)
+{
 	int fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, 0644);
 	if (fd < 0) {
 		perror("open() failed\n");
-		return 1;
+		return (1);
 	} else {
 		printf("open(%s, O_CREAT|O_TRUNC) OK\n", filename);
 	}
@@ -278,7 +288,8 @@ int preadwrite_test(char *filename) {
 		perror("pwrite() failed\n");
 		ret = 1;
 	} else {
-		printf("NG writelen=%ld, but wrotelen=%lu\n", writelen, wrotelen);
+		printf("NG writelen=%ld, but wrotelen=%lu\n",
+			writelen, wrotelen);
 		ret = 1;
 	}
 
@@ -318,7 +329,8 @@ int preadwrite_test(char *filename) {
 		perror("pwrite()2 failed\n");
 		ret = 1;
 	} else {
-		printf("NG writelen2=%ld, but wrotelen2=%lu\n", writelen2, wrotelen2);
+		printf("NG writelen2=%ld, but wrotelen2=%lu\n",
+			writelen2, wrotelen2);
 		ret = 1;
 	}
 
@@ -349,7 +361,8 @@ int preadwrite_test(char *filename) {
 		perror("pread()2 failed\n");
 		ret = 1;
 	} else {
-		printf("NG readlen2=%ld, but filesize=%lu\n", readlen2, filesize);
+		printf("NG readlen2=%ld, but filesize=%lu\n",
+			readlen2, filesize);
 		ret = 1;
 	}
 
@@ -360,13 +373,14 @@ int preadwrite_test(char *filename) {
 		ret = 1;
 	}
 
-	return ret;
+	return (ret);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	if (argc < 2) {
 		printf("Usage: readwrite filename\n");
-		return 1;
+		return (1);
 	}
 	char *filename = argv[1];
 
@@ -376,8 +390,8 @@ int main(int argc, char *argv[]) {
 	ret += appendwrite_test(filename);
 
 	off_t ansoff = writelen - 2;
-	ret += readwriteseek_test(filename, writelen - 2, SEEK_SET, ansoff, "1234",
-			"abcdef1234");
+	ret += readwriteseek_test(filename, writelen - 2, SEEK_SET, ansoff,
+			"1234", "abcdef1234");
 	ret += readwriteseek_test(filename, -2, SEEK_CUR, ansoff, "1234",
 			"abcdef1234");
 	ret += readwriteseek_test(filename, 0, SEEK_END, writelen, "1234",
@@ -385,5 +399,5 @@ int main(int argc, char *argv[]) {
 	ret += preadwrite_test(filename);
 
 	printf("ret=%d\n", ret);
-	return ret;
+	return (ret);
 }

@@ -199,6 +199,7 @@ gfs_pio_local_storage_pwrite(GFS_File gf,
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	GFARM_KERNEL_UNUSE2(t1, t2);
 	gfs_profile(gfarm_gettimerval(&t1));
 	if (gf->open_flags & GFARM_FILE_APPEND)
 		rv = write(vc->fd, buffer, size);
@@ -249,6 +250,7 @@ gfs_pio_local_storage_pread(GFS_File gf,
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	GFARM_KERNEL_UNUSE2(t1, t2);
 	gfs_profile(gfarm_gettimerval(&t1));
 	rv = pread(vc->fd, buffer, size, offset);
 	if (rv == -1) {
@@ -266,7 +268,11 @@ gfs_pio_local_storage_pread(GFS_File gf,
 }
 
 /* GFS_PROTO_MAX_IOSIZE is somewhat too large, and is not a power of 2 */
+#ifndef __KERNEL__
 #define COPYFILE_BUFSIZE	65536
+#else /* __KERNEL__ */
+#define COPYFILE_BUFSIZE	1024
+#endif /* __KERNEL__ */
 
 /*
  * *writtenp: set even if an error happens.
@@ -358,9 +364,11 @@ gfs_pio_local_copyfile(int r_fd, gfarm_off_t r_off,
 				}
 				w_off += rv;
 				written += rv;
+#ifndef __KERNEL__
 				if (md_ctx != NULL)
 					EVP_DigestUpdate(
 					    md_ctx, buffer + i, rv);
+#endif
 			}
 			if (e != GFARM_ERR_NO_ERROR)
 				break;

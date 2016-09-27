@@ -1,11 +1,11 @@
+#include <linux/file.h>
+#include <linux/mutex.h>
 #include <stdlib.h>
-#include "gfsk_fs.h"
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
-#include <linux/file.h>
-#include <linux/mutex.h>
+#include "gfsk_fs.h"
 
 struct file;
 #define FD_ARRAY_SIZE BITS_PER_LONG

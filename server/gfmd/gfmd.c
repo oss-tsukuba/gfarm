@@ -267,6 +267,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_CLOSE:
 		e = gfm_server_close(peer, from_client, skip);
 		break;
+	case GFM_PROTO_CLOSE_GETGEN:
+		e = gfm_server_close_getgen(peer, from_client, skip);
+		break;
 	case GFM_PROTO_VERIFY_TYPE:
 		e = gfm_server_verify_type(peer, from_client, skip);
 		break;

@@ -3,6 +3,7 @@
 #include <gfarm/gfarm_config.h>
 #include "context.h"
 #include "config.h"
+#include "gfsk_fs.h"
 #include "ug_idmap.h"
 
 int
@@ -32,6 +33,7 @@ gfsk_gfarm_init(uid_t uid)
 		goto out;
 	}
 out:
+	gflog_set_message_verbose(2);
 	return (-gfarm_error_to_errno(e));
 }
 
@@ -47,11 +49,13 @@ gfarm_get_local_username(void)
 {
 	static char nobody[] = "Nobody";
 
-	if (!gfsk_task_ctxp->gk_uname[0]
-		&& (ug_map_uid_to_name(getuid(),
-			gfsk_task_ctxp->gk_uname,
-			sizeof(gfsk_task_ctxp->gk_uname)) < 0)) {
-		return (nobody);
+	if (!gfsk_task_ctxp->gk_uname[0]) {
+		uid_t uid = getuid();
+		if (!uid)
+			return (gfsk_fsp->gf_mdata.m_uidname);
+		else if (ug_map_uid_to_name(uid, gfsk_task_ctxp->gk_uname,
+			sizeof(gfsk_task_ctxp->gk_uname)) < 0)
+			return (nobody);
 	}
 
 	return (gfsk_task_ctxp->gk_uname);

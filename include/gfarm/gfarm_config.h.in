@@ -41,9 +41,6 @@
 /* Define to 1 if epoll functions are implemented. */
 #undef HAVE_EPOLL
 
-/* Define to 1 if you have the <event.h> header file. */
-#undef HAVE_EVENT_H
-
 /* Define to 1 if you have the <execinfo.h> header file. */
 #undef HAVE_EXECINFO_H
 
@@ -112,9 +109,6 @@
 
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
-
-/* Define to 1 if you have the `event' library (-levent). */
-#undef HAVE_LIBEVENT
 
 /* Define to 1 if you have the `gen' library (-lgen). */
 #undef HAVE_LIBGEN
@@ -248,6 +242,12 @@
 /* Define to 1 if you have the `utimensat' function. */
 #undef HAVE_UTIMENSAT
 
+/* Define to 1 if support infiniband rdma between clientnt and gfsd */
+#undef HAVE_INFINIBAND
+
+/* Define to number of args of ib_query_gid */
+#undef IB_QUERY_GID_ARG
+
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR
@@ -263,9 +263,6 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
-
-/* Define to the home page for this package. */
-#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION

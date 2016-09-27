@@ -171,7 +171,7 @@ gfs_opendirplusxattr(const char *path, GFS_DirPlusXAttr *dirp)
 			path,
 			gfarm_error_string(e));
 
-	(void)gfm_close_fd(gfm_server, fd, NULL); /* ignore result */
+	(void)gfm_close_fd(gfm_server, fd, NULL, NULL); /* ignore result */
 	gfm_client_connection_free(gfm_server);
 	return (e);
 }
@@ -297,7 +297,7 @@ gfs_closedirplusxattr(GFS_DirPlusXAttr dir)
 {
 	gfarm_error_t e;
 
-	if ((e = gfm_close_fd(dir->gfm_server, dir->fd, NULL))
+	if ((e = gfm_close_fd(dir->gfm_server, dir->fd, NULL, NULL))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1003940,
 		    "gfm_close_fd: %s",
