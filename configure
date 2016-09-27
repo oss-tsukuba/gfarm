@@ -638,6 +638,8 @@ optional_srcs
 optional_rule
 optional_config
 top_private_dir
+ib_include
+ib_symvers
 linuxkernel_targets
 gfvoms_sync_targets
 PYTHON_SPECIFIED
@@ -660,6 +662,8 @@ largefile64_objs
 largefile64_srcs
 largefile_ldflags
 largefile_cflags
+rdma_libs
+rdma_includes
 globus_targets
 globus_cflags
 globus_objs
@@ -784,11 +788,14 @@ with_globus_flavor
 with_globus_libdir
 with_globus
 with_mtsafe_netdb
+with_infiniband
 with_openldap
 with_postgresql
 enable_voms
 enable_xmlattr
 enable_linuxkernel
+with_ib_symvers
+with_ib_include
 with_private_srcdir
 '
       ac_precious_vars='build_alias
@@ -1450,12 +1457,22 @@ Optional Packages:
 				[default=disable]
   --without-mtsafe-netdb	getaddrinfo(3) and getnameinfo(3) are MT-Safe?
 				[default=yes]
+  --with-infiniband=InfiniBand_ROOT		support infiniband rdma between client and gfsd
+   			      	[default=/usr]
   --with-openldap=OpenLDAP_ROOT	openldap root directory
 				[default=guessed]
   --without-openldap			disable openldap
   --with-postgresql=PostgreSQL_ROOT	PostgreSQL root directory
 				[default=guessed]
   --without-postgresql			disable PostgreSQL
+  --with-ib-symvers=PATH	extra infiniband Module.symvers,
+			with --enable-linuxkernel.
+			if you are not sure, run linux/config/findIBmodules
+
+  --with-ib-include=DIR		extra infiniband headers,
+			with --enable-linuxkernel.
+			if you are not sure, run linux/config/findIBmodules
+
   --with-private-srcdir=DIR	private source directory
 
 
@@ -12229,6 +12246,87 @@ $as_echo "#define HAVE_MTSAFE_NETDB 1" >>confdefs.h
 ;;
 esac
 
+###
+### --with-infiniband ...
+###
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking infiniband" >&5
+$as_echo_n "checking infiniband... " >&6; }
+
+# Check whether --with-infiniband was given.
+if test "${with_infiniband+set}" = set; then :
+  withval=$with_infiniband; ib_rdma="${withval}"
+
+else
+  ib_rdma=no
+fi
+
+
+rdma_includes=
+rdma_libs=
+case ${ib_rdma} in
+yes|'')
+	rdma_libs=" -libverbs"
+	rdma_include=
+	ib_rdma=yes
+	;;
+/*)
+	rdma_libs=" -R ${ib_rdma}/lib -L ${ib_rdma}/lib  -libverbs"
+	rdma_includes=" -I ${ib_rdma}/include"
+	ib_rdma=yes
+	;;
+no)
+	ib_rdma=no
+	;;
+*)
+	as_fn_error $? "invalid option \"${ib_rdma}\" options, aborted" "$LINENO" 5
+	;;
+esac
+
+if test ${ib_rdma} = no; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+else
+	CPPFLAGS_SAVE="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $rdma_includes"
+
+	LIBS_SAVE="$LIBS"
+	LIBS="$LIBS $rdma_libs"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <infiniband/verbs.h>
+int
+main ()
+{
+
+struct ibv_device **dev_list;
+dev_list = ibv_get_device_list(NULL);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_INFINIBAND 1" >>confdefs.h
+
+
+else
+
+	LIBS="$LIBS_SAVE"
+	as_fn_error $? "infiniband cannot be linked with \"${rdma_includes} ${rdma_libs}\" options, aborted" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+
+
+
+
 ######
 ###### Checks for libraries.
 ######
@@ -14128,68 +14226,16 @@ fi
 ###  --enable-linuxkernel		support Linux kernel module utils
 ###
 
+may_ib_symvers=''
+may_ib_include=''
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking linuxkernel" >&5
+$as_echo_n "checking linuxkernel... " >&6; }
 # Check whether --enable-linuxkernel was given.
 if test "${enable_linuxkernel+set}" = set; then :
   enableval=$enable_linuxkernel; if test "${enable_linuxkernel}" = "yes"; then
-	# ug_idmapd uses libevent
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for event_init in -levent" >&5
-$as_echo_n "checking for event_init in -levent... " >&6; }
-if ${ac_cv_lib_event_event_init+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-levent  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char event_init ();
-int
-main ()
-{
-return event_init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_event_event_init=yes
-else
-  ac_cv_lib_event_event_init=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_event_event_init" >&5
-$as_echo "$ac_cv_lib_event_event_init" >&6; }
-if test "x$ac_cv_lib_event_event_init" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBEVENT 1
-_ACEOF
-
-  LIBS="-levent $LIBS"
-
-fi
-
-	for ac_header in event.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "event.h" "ac_cv_header_event_h" "$ac_includes_default"
-if test "x$ac_cv_header_event_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_EVENT_H 1
-_ACEOF
-
-fi
-
-done
-
 	linuxkernel_targets='linux'
+	linuxkernel_makefile='linux/kernel/Makefile'
 fi
 else
   linuxkernel_targets=''
@@ -14197,6 +14243,155 @@ fi
 
 
 
+if test "${linuxkernel_targets}" = "linux"; then
+	if test x"$host_os" != x"linux-gnu"; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: host ${host_os} is not linux." >&5
+$as_echo "host ${host_os} is not linux." >&6; }
+		exit 1
+	fi
+	krelease=`uname -r`
+	case $krelease in
+	2.6.32*)
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+		;;
+	*)
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: release ${krelease} is not supported." >&5
+$as_echo "release ${krelease} is not supported." >&6; }
+		exit 1
+		;;
+	esac
+	tmp=`mktemp`
+	linux/config/findIBmodules >$tmp
+	val=$(grep -e --with-ib-symvers $tmp)
+	if test "x${val}" != "x" ; then
+		may_ib_symvers=$(echo $val|sed 's/.*=//')
+	fi
+	val=$(grep -e --with-ib-include $tmp)
+	if test "x${val}" != "x" ; then
+		may_ib_include=$(echo $val|sed 's/.*=//')
+	fi
+	rm -f $tmp
+	###
+	###  --extra-infiniband		infiniband synvers and include
+	###
+	ib_symvers=''
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking use of extra infiniband Module.symvers" >&5
+$as_echo_n "checking use of extra infiniband Module.symvers... " >&6; }
+
+# Check whether --with-ib_symvers was given.
+if test "${with_ib_symvers+set}" = set; then :
+  withval=$with_ib_symvers; ib_symvers="${withval}"
+
+else
+  ib_symvers=""
+
+fi
+
+
+	if test "x${ib_symvers}" = "x"; then
+	  if test "x${may_ib_symvers}" = "x"; then
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not use." >&5
+$as_echo "not use." >&6; }
+	  else
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: using ${may_ib_symvers}" >&5
+$as_echo "using ${may_ib_symvers}" >&6; }
+	    ib_symvers=${may_ib_symvers}
+	  fi
+	else
+	  if test -f "${ib_symvers}"; then
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: use ${ib_symvers}" >&5
+$as_echo "use ${ib_symvers}" >&6; }
+	  else
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${ib_symvers} is not a file." >&5
+$as_echo "${ib_symvers} is not a file." >&6; }
+	    exit 1
+	  fi
+	fi
+
+
+	ib_include=''
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking use of extra infiniband headers" >&5
+$as_echo_n "checking use of extra infiniband headers... " >&6; }
+
+# Check whether --with-ib_include was given.
+if test "${with_ib_include+set}" = set; then :
+  withval=$with_ib_include; ib_include="${withval}"
+
+else
+  ib_include=""
+
+fi
+
+
+	if test "x${ib_include}" = "x"; then
+	  if test "x${may_ib_include}" = "x"; then
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not use." >&5
+$as_echo "not use." >&6; }
+	  else
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: using ${may_ib_include}" >&5
+$as_echo "using ${may_ib_include}" >&6; }
+	    ib_include=${may_ib_include}
+	  fi
+	else
+	  if test -f "${ib_include}/rdma/ib_verbs.h"; then
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: use ${ib_include}" >&5
+$as_echo "use ${ib_include}" >&6; }
+	  else
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no ib_verbs.h in ${ib_include}." >&5
+$as_echo "no ib_verbs.h in ${ib_include}." >&6; }
+	    exit 1
+	  fi
+	fi
+
+
+	if test "x${ib_include}" = "x"; then
+		ib_verbs="<rdma/ib_verbs.h>"
+	else
+		ib_verbs="\"$ib_include/rdma/ib_verbs.h\""
+	fi
+
+	CFLAGS_SAVE="$CFLAGS"
+	CFLAGS=""
+	CPPFLAGS_SAVE="$CPPFLAGS"
+	kbuild="/lib/modules/$krelease/build"
+	CPPFLAGS="-I$kbuild/include -I$kbuild/arch/x86/include -D__KERNEL__"
+	CPPFLAGS="$CPPFLAGS -include $kbuild/include/linux/kconfig.h"
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+	#define _DYNAMIC_DEBUG_H
+	#include $ib_verbs
+
+int
+main ()
+{
+(void)ib_query_gid(NULL, 0, 0, NULL, NULL);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ib_query_gid=5
+else
+  ib_query_gid=4
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ib_query_gid has ${ib_query_gid} args." >&5
+$as_echo "ib_query_gid has ${ib_query_gid} args." >&6; }
+
+cat >>confdefs.h <<_ACEOF
+#define IB_QUERY_GID_ARG ${ib_query_gid}
+_ACEOF
+
+	CPPFLAGS="$CPPFLAGS_SAVE"
+	CFLAGS="$CFLAGS_SAVE"
+else
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
 ###
 ### --with-private-srcdir
 ###
@@ -14268,7 +14463,7 @@ test -d include || mkdir include
 test -d package || mkdir package
 test -d util || mkdir util
 
-ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc makes/build-script ${ns_makefiles} package/solaris/gfmd package/solaris/gfsd"
+ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc makes/build-script ${ns_makefiles} ${linuxkernel_makefile} package/solaris/gfmd package/solaris/gfsd"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -15254,6 +15449,7 @@ do
     "makes/install-doc") CONFIG_FILES="$CONFIG_FILES makes/install-doc" ;;
     "makes/build-script") CONFIG_FILES="$CONFIG_FILES makes/build-script" ;;
     "${ns_makefiles}") CONFIG_FILES="$CONFIG_FILES ${ns_makefiles}" ;;
+    "${linuxkernel_makefile}") CONFIG_FILES="$CONFIG_FILES ${linuxkernel_makefile}" ;;
     "package/solaris/gfmd") CONFIG_FILES="$CONFIG_FILES package/solaris/gfmd" ;;
     "package/solaris/gfsd") CONFIG_FILES="$CONFIG_FILES package/solaris/gfsd" ;;
 

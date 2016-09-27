@@ -1796,6 +1796,63 @@ gfsd uses this setting at its startup by asking gfmd.
 	write_verify_log_interval 3600<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">client_rdma</span> <em class="parameter"><code>validity</code></em></span></dt>
+<dd>
+<p>
+Specify to disable the RDMA data transfer between client and gfsd.
+</p>
+<p>
+Only when --with-clientrdma is specified at configure it is valid.
+The default value is enable.
+</p>
+<p>
+If the environment variable GFARM_RDMA_DISABLE is set, RDMA is disabled.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	client_rdma disable<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">rdma_device</span> <em class="parameter"><code>device_name</code></em></span></dt>
+<dd>
+<p>
+Specify the device to use the RDMA data transfer between client and gfsd.
+</p>
+<p>
+The default device is the first found valid device on ibv_get_device_list().
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	rdma_device mlx4_1<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">rdma_port</span> <em class="parameter"><code>port</code></em></span></dt>
+<dd>
+<p>
+Specify the port number of the device to use the RDMA data transfer
+between client and gfsd.
+</p>
+<p>
+The default port is the first found valid port on the device.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	rdma_port 2<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">rdma_min_size</span> <em class="parameter"><code>size</code></em></span></dt>
+<dd>
+<p>
+Specify the minimum data size to select the RDMA data transfer.
+</p>
+<p>
+The default size is 1024 bytes.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	rdma_min_size 4096<br>
+</p></div>
+</dd>
 </dl></div>
 </div>
 <div class="refsect1">
