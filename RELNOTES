@@ -1,3 +1,15 @@
+Release note for Gfarm 2.6.13
+=============================
+
+[2016.9.27]
+
+New configuration directive
+* max_open_files - specify the maximum number of open files.  Default
+  is 1024.
+
+Updated feature
+* gfmd - keep minimum disk space to reduce no space risk
+
 Release note for Gfarm 2.6.12
 =============================
 
