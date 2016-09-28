@@ -2700,7 +2700,7 @@ parse_metadb_server_list_arguments(char *p, char **op)
 		if (port < 0)
 			port = GFMD_DEFAULT_PORT;
 		if (gfarm_filesystem_get(host, port) != NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004504,
 			    "duplicate metadb server ignored: %s:%d",
 			    host, port);
 			free(host);

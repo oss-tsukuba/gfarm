@@ -244,7 +244,7 @@ gfsd_setup_iostat(const char *name, unsigned int row)
 		e = gfarm_iostat_mmap(iostat_dirbuf, iostat_spec,
 			GFARM_IOSTAT_IO_NITEM, row);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004507,
 				"gfarm_iostat_mmap('%s', %d): %s",
 				iostat_dirbuf, row, gfarm_error_string(e));
 
