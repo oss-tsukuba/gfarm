@@ -4054,6 +4054,83 @@ gfm_client_process_set(struct gfm_connection *gfm_server,
 }
 #endif /* __KERNEL__ */
 
+void
+gfarm_process_fd_info_free(int nfds, struct gfarm_process_fd_info *fd_info)
+{
+	int i;
+
+	for (i = 0; i < nfds; i++) {
+		free(fd_info[i].fd_user);
+		free(fd_info[i].fd_client_host);
+		free(fd_info[i].fd_gfsd_host);
+	}
+	free(fd_info);
+}
+
+gfarm_error_t
+gfm_client_process_fd_info(struct gfm_connection *gfm_server,
+	const char *gfsd_domain, const char *user_host_domain,
+	const char *user, gfarm_uint64_t flags,
+	int *nfdsp, struct gfarm_process_fd_info **fd_infop)
+{
+	gfarm_error_t e;
+	gfarm_int32_t nfds, i;
+	int eof;
+	struct gfarm_process_fd_info *fd_info, fdi;
+
+	gfm_client_connection_lock(gfm_server);
+	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_PROCESS_FD_INFO,
+	    "sssl/i", gfsd_domain, user_host_domain, user, flags, &nfds))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "GFM_PROTO_PROCESS_FD_INFO(%s, %s, 0x%llx): %s",
+		    gfsd_domain, user, (long long)flags,
+		    gfarm_error_string(e));
+	} else {
+		if (nfds <= 0)
+			GFARM_MALLOC_ARRAY(fd_info, 1);
+		else
+			GFARM_MALLOC_ARRAY(fd_info, nfds);
+		for (i = 0; i < nfds; i++) {
+			e = gfm_client_xdr_recv(gfm_server, 0, &eof,
+			    "sliillilsisiil",
+			    &fdi.fd_user, &fdi.fd_pid, &fdi.fd_fd,
+			    &fdi.fd_mode, &fdi.fd_ino, &fdi.fd_gen,
+			    &fdi.fd_open_flags, &fdi.fd_off,
+			    &fdi.fd_client_host,
+			    &fdi.fd_client_port,
+			    &fdi.fd_gfsd_host,
+			    &fdi.fd_gfsd_port,
+			    &fdi.fd_gfsd_peer_port,
+			    &fdi.fd_dummy);
+			if (e != GFARM_ERR_NO_ERROR)
+				break;
+			if (eof) {
+				e = GFARM_ERR_UNEXPECTED_EOF;
+				break;
+			}
+			if (fd_info != NULL) {
+				fd_info[i] = fdi;
+			} else {
+				free(fdi.fd_user);
+				free(fdi.fd_client_host);
+				free(fdi.fd_gfsd_host);
+			}
+		}
+		if (fd_info == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+		} else if (e != GFARM_ERR_NO_ERROR) {
+			assert(fd_info != NULL);
+			gfarm_process_fd_info_free(i, fd_info);
+		} else {
+			*nfdsp = nfds;
+			*fd_infop = fd_info;
+		}
+	}
+	gfm_client_connection_unlock(gfm_server);
+	return (e);
+}
+
 /*
  * compound request - convenience function
  */

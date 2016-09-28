@@ -466,6 +466,27 @@ gfarm_error_t gfm_client_process_free(struct gfm_connection *);
 gfarm_error_t gfm_client_process_set(struct gfm_connection *,
 	gfarm_int32_t, const char *, size_t, gfarm_pid_t);
 
+struct gfarm_process_fd_info {
+	char *fd_user;
+	gfarm_pid_t fd_pid;
+	gfarm_int32_t fd_fd;
+	gfarm_mode_t fd_mode;
+	gfarm_ino_t fd_ino;
+	gfarm_uint64_t fd_gen;
+	gfarm_uint32_t fd_open_flags;
+	gfarm_off_t fd_off;
+	char *fd_client_host;
+	gfarm_uint32_t fd_client_port;
+	char *fd_gfsd_host;
+	gfarm_uint32_t fd_gfsd_port;
+	gfarm_uint32_t fd_gfsd_peer_port;
+	gfarm_uint64_t fd_dummy; /* for future use */
+};
+void gfarm_process_fd_info_free(int, struct gfarm_process_fd_info *);
+gfarm_error_t gfm_client_process_fd_info(struct gfm_connection *,
+	const char *, const char *, const char *, gfarm_uint64_t,
+	int *, struct gfarm_process_fd_info **);
+
 /* compound request - convenience function */
 gfarm_error_t gfm_client_compound_fd_op(struct gfm_connection *, gfarm_int32_t,
 	gfarm_error_t (*)(struct gfm_connection *, void *),

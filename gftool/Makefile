@@ -27,6 +27,7 @@ SUBDIRS = \
 	gfkey \
 	gfln \
 	gfls \
+	gflsof \
 	gfmdhost \
 	gfmkdir \
 	gfmv \

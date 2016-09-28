@@ -1000,6 +1000,17 @@
 	  入力: i:key_type, b:shared_key, l:pid
 	  出力: i:エラー
 
+	GFM_PROTO_PROCESS_FD_INFO
+	  入力: i:gfsd_domain, s:user_host_domain, s:user, l:flags
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_fds
+		下記、n_fds 回の繰り返し
+		s:user, l:pid, i:fd,
+		i:mode, l:inum, l:igen, i:open_flags, l:off,
+		s:client_host, i:client_port,
+		s:gfsd_host, i:gfsd_port, i:gfsd_peer_port, l:reserved
+
   quota 管理系
 
 	GFM_PROTO_QUOTA_USER_GET
