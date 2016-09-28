@@ -1,0 +1,162 @@
+'\" t
+.\"     Title: gflsof
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 27 Sep 2016
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFLSOF" "1" "27 Sep 2016" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gflsof \- list currently opened Gfarm files
+.SH "SYNOPSIS"
+.HP \w'\fBgflsof\fR\ 'u
+\fBgflsof\fR [\-AW] [\-P\ \fIpath\fR] [\-D\ \fIdomainname\-of\-gfsd\fR] [\-U\ \fIdomainname\-of\-user\-host\fR] [\-u\ \fIusername\fR]
+.HP \w'\fBgflsof\fR\ 'u
+\fBgflsof\fR [\-AW] [\-P\ \fIpath\fR] [\-D\ \fIdomainname\-of\-gfsd\fR] [\-U\ \fIdomainname\-of\-user\-host\fR] [\-u\ \fIusername\fR] \-C
+.HP \w'\fBgflsof\fR\ 'u
+\fBgflsof\fR [\-AW] [\-P\ \fIpath\fR] [\-D\ \fIdomainname\-of\-gfsd\fR] [\-U\ \fIdomainname\-of\-user\-host\fR] [\-u\ \fIusername\fR] \-G
+.SH "DESCRIPTION"
+.PP
+Displays information about each Gfarm file descriptors, if neither
+\fB\-C\fR
+nor
+\fB\-G\fR
+is specified\&. The USER field shows username, the GPID field shows Gfarm process ID, the FD field shows Gfarm file descriptor number, if the character just after the descriptor number is \'r\', it means read\-only open, if the character is \'w\', it means write\-only open, and if the character is \'u\', it means read\-write open, the TYPE fields shows the type of the inode (REG is a file, DIR is a directory and LNK is a symbolic link), the INODE field shows the inode number, the GEN field shows the generation number of the inode, the SIZE/OFF shows the seek\-offset value if the inode is a directory, or the file size if the inode is a file, the CLIENT field shows hostname and port number of the client which is connecting to the gfmd, the GFSD field shows hostname and port number of the gfsd which is connecting to the gfmd\&.
+.PP
+If
+\fB\-C\fR
+option is specified, this command shows only hostnames of clients which are opening descriptors\&.
+.PP
+If
+\fB\-G\fR
+option is specified, this command shows only hostnames of gfsd which are opening file replicas\&.
+.SH "OPTIONS"
+.PP
+\fB\-A\fR
+.RS 4
+Display information about all users\&. Only gfarmadm group is allowed to use this option\&.
+.RE
+.PP
+\fB\-W\fR
+.RS 4
+Limit subject descriptors to which are either write\-only opened or read\-write opened\&.
+.RE
+.PP
+\fB\-P\fR \fIpath\fR
+.RS 4
+Specify a pathname or a Gfarm URL to identify metadata server which will be accessed by this command\&. If not specified, "\&." is used as the default value\&.
+.RE
+.PP
+\fB\-D\fR \fIdomainname\-of\-gfsd\fR
+.RS 4
+Limit subject descriptors to which gfsd is currently opening a replica and the gfsd belongs to the specified domain\&.
+.RE
+.PP
+\fB\-U\fR \fIdomainname\-of\-user\-host\fR
+.RS 4
+Limit subject descriptors to which client host belongs to the specified domain\&.
+.RE
+.PP
+\fB\-u\fR \fIusername\fR
+.RS 4
+Limit subject descriptors to which is opened by the specified user\&. Only gfarmadm group is allowed to use this option\&.
+.RE
+.PP
+\fB\-?\fR
+.RS 4
+Displays a list of command options\&.
+.RE
+.SH "EXAMPLES"
+.PP
+\fBExample\ \&1.\ \&list file descriptors which are opened by myself\fR
+.PP
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+gflsof
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.PP
+\fBExample\ \&2.\ \&list all users' file descriptors\fR
+.PP
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+gflsof \-A
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.PP
+\fBExample\ \&3.\ \&list filesystem nodes which are currently opening file replicas in writable mode\fR
+.PP
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+gflsof \-AWG
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.PP
+\fBExample\ \&4.\ \&list descriptors that corresponding gfsd processes are opening file replicas in writable mode\fR
+.PP
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+gflsof \-AW \-D \'\'
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.PP
+\fBExample\ \&5.\ \&list client hosts which belong to example.org domain and user john is opening descriptors on the hosts\fR
+.PP
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+gflsof \-U example\&.org \-u john \-C
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+
