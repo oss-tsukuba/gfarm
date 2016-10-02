@@ -1,23 +1,21 @@
-all: include-all post-all-hook
-install: all include-install post-install-hook
-clean: include-clean post-clean-hook
-veryclean: include-veryclean post-veryclean-hook
-distclean: include-distclean post-distclean-hook
-gfregister: include-gfregister post-gfregister-hook
-man: include-man post-man-hook
-html: include-html post-html-hook
+all: post-all-hook
+install: post-install-hook
+clean: post-clean-hook
+veryclean: post-veryclean-hook
+distclean: post-distclean-hook
+man: post-man-hook
+html: post-html-hook
 msgno: include-msgno
 catalog: include-catalog
 
 
-post-all-hook:
-post-install-hook:
-post-clean-hook:
-post-veryclean-hook:
-post-distclean-hook:
-post-gfregister-hook:
-post-man-hook:
-post-html-hook:
+post-all-hook: include-all
+post-install-hook: include-install
+post-clean-hook: include-clean
+post-veryclean-hook: include-veryclean
+post-distclean-hook: include-distclean
+post-man-hook: include-man
+post-html-hook: include-html
 
 include-all:
 include-install: all
@@ -45,7 +43,6 @@ include-distclean: veryclean
 	-test -z "$(EXEC_INCS)" || $(RM) -f $(EXEC_INCS)
 	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
 
-include-gfregister:
 include-man:
 include-html:
 include-msgno:
