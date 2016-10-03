@@ -1,27 +1,25 @@
-install: all prog-install post-install-hook
-clean: prog-clean post-clean-hook
-veryclean: prog-veryclean post-veryclean-hook
-distclean: prog-distclean post-distclean-hook
-gfregister: prog-gfregister post-gfregister-hook
-man: prog-man post-man-hook
-html: prog-html post-html-hook
+install: post-install-hook
+clean: post-clean-hook
+veryclean: post-veryclean-hook
+distclean: post-distclean-hook
+man: post-man-hook
+html: post-html-hook
 msgno: prog-msgno
 catalog: prog-catalog
 
 include $(top_srcdir)/makes/private-file.mk
 
-post-install-hook:
-post-clean-hook:
-post-veryclean-hook:
-post-distclean-hook:
-post-gfregister-hook:
-post-man-hook:
-post-html-hook:
+post-install-hook: prog-install
+post-clean-hook: prog-clean
+post-veryclean-hook: prog-veryclean
+post-distclean-hook: prog-distclean
+post-man-hook: prog-man
+post-html-hook: prog-html
 
 $(PROGRAM): $(OBJS) $(DEPLIBS)
 	$(LTLINK) $(OBJS) $(LDLIBS)
 
-prog-install:
+prog-install: all
 	@$(MKDIR_P) $(DESTDIR)$(bindir)
 	$(LTINSTALL_PROGRAM) $(PROGRAM) $(DESTDIR)$(bindir)/$(PROGRAM)
 
@@ -34,7 +32,6 @@ prog-veryclean: clean private-finalize
 prog-distclean: veryclean
 	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
 
-prog-gfregister:
 prog-man:
 prog-html:
 prog-msgno:

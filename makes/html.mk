@@ -1,24 +1,22 @@
-all: html-all post-all-hook
-install: html-install post-install-hook
-clean: html-clean post-clean-hook
-veryclean: html-veryclean post-very-clean-hook
-distclean: html-distclean post-distclean-hook
-gfregister: html-gfregister post-gfregister-hook
+all: post-all-hook
+install: post-install-hook
+clean: post-clean-hook
+veryclean: post-veryclean-hook
+distclean: post-distclean-hook
 man: html-man
 html: html-html
 msgno: html-msgno
 catalog: html-catalog
 
-post-all-hook:
-post-install-hook:
-post-clean-hook:
-post-very-clean-hook:
-post-distclean-hook:
-post-gfregister-hook:
+post-all-hook: html-all
+post-install-hook: html-install
+post-clean-hook: html-clean
+post-veryclean-hook: html-veryclean
+post-distclean-hook: html-distclean
 
 html-all:
 
-html-install:
+html-install: all
 	@$(MKDIR_P) $(DESTDIR)$(htmldir)
 	@for i in -- $(HTML); do \
 		case $$i in --) continue;; esac; \
@@ -45,7 +43,6 @@ html-veryclean: clean
 html-distclean: veryclean
 	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
 
-html-gfregister:
 html-man:
 
 $(DOCBOOK2HTML_XSL): $(srcdir)/$(DOCBOOK2HTML_XSL).in
