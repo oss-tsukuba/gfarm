@@ -160,7 +160,8 @@ gfib_post_send(struct ib_qp *qp, struct ib_send_wr *wr)
 	gflog_verbose(GFARM_MSG_UNFIXED, "ib_post_send:%s", pr_sge(buf, wr));
 	err = ib_post_send(qp, wr, &bad_wr);
 	if (err) {
-		gflog_error(GFARM_MSG_UNFIXED, "ib_post_send:err=%d ", err);
+		gflog_error(GFARM_MSG_UNFIXED, "ib_post_send:err=%d %s",
+			err, pr_sge(buf, wr));
 	}
 	return (err);
 }

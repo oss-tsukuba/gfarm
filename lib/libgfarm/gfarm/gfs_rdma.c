@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <gfarm/gfarm.h>
 #include "gfs_rdma.h"
 #include "gfutil.h"
@@ -12,6 +13,7 @@
 
 #if defined(HAVE_INFINIBAND) && !defined(__KERNEL__)
 #include <infiniband/verbs.h>
+#include <stdint.h>
 
 #define gfarm_errno_to_error2(err) \
 	(err) ? gfarm_errno_to_error(err) : GFARM_ERR_UNKNOWN
@@ -239,9 +241,12 @@ gfs_ib_rdma_initialize(int stayopen)
 					dev_name, gfarm_error_string(e));
 				goto cleanup;
 			}
-			if ((port_attr.link_layer != IBV_LINK_LAYER_INFINIBAND)
-			|| !port_attr.lid
-			|| port_attr.state != IBV_PORT_ACTIVE) {
+			if (
+#ifdef IBV_LINK_LAYER_INFINIBAND
+			(port_attr.link_layer != IBV_LINK_LAYER_INFINIBAND) ||
+#endif
+			!port_attr.lid ||
+			port_attr.state != IBV_PORT_ACTIVE) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 					"port %d of %s is not suit state",
 					port, dev_name);
@@ -607,7 +612,7 @@ rdma_wait_completion(struct rdma_context *ctx, enum ibv_wc_opcode op)
 		return (-1);
 	}
 
-	if (wc.wr_id != (uint64_t)ctx) {
+	if (wc.wr_id != (uint64_t)((uintptr_t)ctx)) {
 		gflog_debug(GFARM_MSG_UNFIXED, "ibv_poll_cq() wr_id unmatch");
 		return (-1);
 	}
@@ -632,7 +637,7 @@ gfs_rdma_remote_write(struct rdma_context *ctx, gfarm_uint32_t rkey,
 	};
 
 	struct ibv_send_wr wr = {
-		.wr_id = (uint64_t) ctx,
+		.wr_id = (uint64_t)((uintptr_t) ctx),
 		.sg_list = &list,
 		.num_sge = 1,
 		.opcode = IBV_WR_RDMA_WRITE,
@@ -644,7 +649,8 @@ gfs_rdma_remote_write(struct rdma_context *ctx, gfarm_uint32_t rkey,
 	struct ibv_send_wr *bad_wr;
 
 	if (remote_size > ctx->size) {
-		gflog_error(GFARM_MSG_UNFIXED, "Too big data %ld", remote_size);
+		gflog_error(GFARM_MSG_UNFIXED, "Too big data %ld", 
+			(long)remote_size);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
@@ -676,7 +682,7 @@ gfs_rdma_remote_read(struct rdma_context *ctx, gfarm_uint32_t rkey,
 	};
 
 	struct ibv_send_wr wr = {
-		.wr_id = (uint64_t) ctx,
+		.wr_id = (uint64_t) ((uintptr_t)ctx),
 		.sg_list = &list,
 		.num_sge = 1,
 		.opcode = IBV_WR_RDMA_READ,
@@ -687,7 +693,7 @@ gfs_rdma_remote_read(struct rdma_context *ctx, gfarm_uint32_t rkey,
 	struct ibv_send_wr *bad_wr;
 
 	if (remote_size > ctx->size) {
-		gflog_error(GFARM_MSG_UNFIXED, "Too big data %ld", remote_size);
+		gflog_error(GFARM_MSG_UNFIXED, "Too big data %ld", (long)remote_size);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
@@ -833,7 +839,7 @@ gfs_rdma_get_rkey(struct ibv_mr *mr)
 gfarm_uint64_t
 gfs_rdma_get_addr(struct rdma_context *ctx)
 {
-	return ((gfarm_uint64_t)ctx->buffer);
+	return ((gfarm_uint64_t)((uintptr_t)ctx->buffer));
 }
 
 void
@@ -951,10 +957,10 @@ gfs_rdma_resize_buffer(struct rdma_context *ctx, int size)
 {
 	return (0);
 }
-unsigned char
-*gfs_rdma_get_buffer(struct rdma_context *ctx)
+unsigned char *
+gfs_rdma_get_buffer(struct rdma_context *ctx)
 {
-	return ("");
+	return ((unsigned char *) "");
 }
 int
 gfs_rdma_get_bufsize(struct rdma_context *ctx)

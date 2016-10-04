@@ -653,7 +653,8 @@ gfarm_closefile(struct inode *inode, struct file *file)
 	if (priv && priv->f_u.filp) {
 		if (priv->u.wrote) {
 			struct gfarm_inode *gi = get_gfarm_inode(inode);
-			ge = gfs_pio_close_getgen(priv->f_u.filp, &gi->i_gen);
+			ge = gfs_pio_close_getgen(priv->f_u.filp,
+					(gfarm_uint64_t *)&gi->i_gen);
 			inode->i_generation = gi->i_gen;
 		} else
 			ge = gfs_pio_close(priv->f_u.filp);

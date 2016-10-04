@@ -57,9 +57,8 @@ static void
 gflog_catopen(const char *file)
 {
 	if (file == NULL)
-		catd = catopen(catalog_file, 0);
-	else
-		catd = catopen(file, 0);
+		file = catalog_file;
+	catd = catopen(file, 0);
 }
 
 static void

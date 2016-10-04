@@ -40,7 +40,7 @@ gfpio_write(GFS_File w_gf, gfarm_off_t w_off, int r_fd, gfarm_off_t r_off,
 	int rrv, rv;
 
 	if (len < 0)
-		len = 1L << 62;
+		len = (gfarm_off_t)(1LL << 62);
 	for (; len > 0;) {
 		rlen = len < BUF_SIZE ?  len : BUF_SIZE;
 		rrv = pread(r_fd, buffer, rlen, r_off);

@@ -265,9 +265,9 @@ gfsk_find_pages(struct gfcc_ctx *ctx, int npblk, struct gfcc_pblk *pblk,
 		if (j) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"no %s page, ino=%lu index=%ld, "
-				"requested from=%ld, found %d",
-				page ? "uptodate" : "",
-				obj->co_ino, index, pblk[0].cs_index, n);
+				"requested from=%lu, found %d",
+				page ? "uptodate" : "", obj->co_ino, index,
+				(unsigned long) pblk[0].cs_index, n);
 			break;
 		}
 	}
@@ -397,7 +397,7 @@ gfsk_read_page_cb(char *buf, gfarm_off_t off, int size, void *arg)
 		pages->cp_npage--;
 	}
 	gflog_debug(GFARM_MSG_UNFIXED, "req=%lx npage=%d",
-			req, pages->cp_npage);
+			(unsigned long)req, pages->cp_npage);
 	return (req);
 }
 static int
