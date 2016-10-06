@@ -47,6 +47,8 @@
 --   1. Packet dissection of some gfm commands have not been implemented yet.
 --   2. Fragmentated packet are not dissected correctly.
 --
+
+-- NOTE: comment out the following line, if Wireshark >= 2.0 (i.e. Lua >= 5.2)
 require("bit")
 
 --
@@ -967,9 +969,7 @@ end
 
 function parse_gfm_dirset_info_set_response(tvb, pinfo, item, offset)
    -- OUT error_code
-   local err
-   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
-   return offset
+   return parse_response_with_error_code_only(tvb, pinfo, item, offset)
 end
 
 --
@@ -985,9 +985,7 @@ end
 
 function parse_gfm_dirset_info_remove_response(tvb, pinfo, item, offset)
    -- OUT error_code
-   local err
-   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
-   return offset
+   return parse_response_with_error_code_only(tvb, pinfo, item, offset)
 end
 
 --
@@ -1031,6 +1029,7 @@ end
 function parse_gfm_quota_dirset_get_response(tvb, pinfo, item, offset)
    -- OUT i:error_code
    --     (upon success)
+   --			l:flags
    --			l:grace_period, l:space, l:space_grace,
    --			l:space_soft, l:space_hard, l:num, l:num_grace,
    --			l:num_soft, l:num_hard, l:phy_space,
@@ -1040,23 +1039,24 @@ function parse_gfm_quota_dirset_get_response(tvb, pinfo, item, offset)
    local err
    offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
    if err == 0 then
-      offset = parse_xdr(tvb, item, "i", offset, "grace_period")
-      offset = parse_xdr(tvb, item, "i", offset, "space")
-      offset = parse_xdr(tvb, item, "i", offset, "space_grace")
-      offset = parse_xdr(tvb, item, "i", offset, "space_soft")
-      offset = parse_xdr(tvb, item, "i", offset, "space_hard")
-      offset = parse_xdr(tvb, item, "i", offset, "num")
-      offset = parse_xdr(tvb, item, "i", offset, "num_grace")
-      offset = parse_xdr(tvb, item, "i", offset, "num_soft")
-      offset = parse_xdr(tvb, item, "i", offset, "num_hard")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_space")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_space_grace")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_space_soft")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_space_hard")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_num")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_num_grace")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_num_soft")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_num_hard")
+      offset = parse_xdr(tvb, item, "l", offset, "flags")
+      offset = parse_xdr(tvb, item, "l", offset, "grace_period")
+      offset = parse_xdr(tvb, item, "l", offset, "space")
+      offset = parse_xdr(tvb, item, "l", offset, "space_grace")
+      offset = parse_xdr(tvb, item, "l", offset, "space_soft")
+      offset = parse_xdr(tvb, item, "l", offset, "space_hard")
+      offset = parse_xdr(tvb, item, "l", offset, "num")
+      offset = parse_xdr(tvb, item, "l", offset, "num_grace")
+      offset = parse_xdr(tvb, item, "l", offset, "num_soft")
+      offset = parse_xdr(tvb, item, "l", offset, "num_hard")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_space")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_space_grace")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_space_soft")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_space_hard")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_num")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_num_grace")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_num_soft")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_num_hard")
    end
    return offset
 end
@@ -1069,23 +1069,21 @@ function parse_gfm_quota_dirset_set_request(tvb, pinfo, item, offset)
    offset = offset + 4
    offset = parse_xdr(tvb, item, "s", offset, "username")
    offset = parse_xdr(tvb, item, "s", offset, "dirsetname")
-   offset = parse_xdr(tvb, item, "i", offset, "grace_period")
-   offset = parse_xdr(tvb, item, "i", offset, "space_soft")
-   offset = parse_xdr(tvb, item, "i", offset, "space_hard")
-   offset = parse_xdr(tvb, item, "i", offset, "num_soft")
-   offset = parse_xdr(tvb, item, "i", offset, "num_hard")
-   offset = parse_xdr(tvb, item, "i", offset, "phy_space_soft")
-   offset = parse_xdr(tvb, item, "i", offset, "phy_space_hard")
-   offset = parse_xdr(tvb, item, "i", offset, "phy_num_soft")
-   offset = parse_xdr(tvb, item, "i", offset, "phy_num_hard")
+   offset = parse_xdr(tvb, item, "l", offset, "grace_period")
+   offset = parse_xdr(tvb, item, "l", offset, "space_soft")
+   offset = parse_xdr(tvb, item, "l", offset, "space_hard")
+   offset = parse_xdr(tvb, item, "l", offset, "num_soft")
+   offset = parse_xdr(tvb, item, "l", offset, "num_hard")
+   offset = parse_xdr(tvb, item, "l", offset, "phy_space_soft")
+   offset = parse_xdr(tvb, item, "l", offset, "phy_space_hard")
+   offset = parse_xdr(tvb, item, "l", offset, "phy_num_soft")
+   offset = parse_xdr(tvb, item, "l", offset, "phy_num_hard")
    return offset
 end
 
 function parse_gfm_quota_dirset_set_response(tvb, pinfo, item, offset)
    -- OUT error_code
-   local err
-   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
-   return offset
+   return parse_response_with_error_code_only(tvb, pinfo, item, offset)
 end
 
 --
@@ -1099,6 +1097,7 @@ end
 function parse_gfm_quota_dir_get_response(tvb, pinfo, item, offset)
    -- OUT i:error_code
    --     (upon success)
+   --			l:flags
    --			s:username, s:dirsetname,
    --			l:grace_period, l:space, l:space_grace,
    --			l:space_soft, l:space_hard, l:num, l:num_grace,
@@ -1109,23 +1108,24 @@ function parse_gfm_quota_dir_get_response(tvb, pinfo, item, offset)
    local err
    offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
    if err == 0 then
-      offset = parse_xdr(tvb, item, "i", offset, "grace_period")
-      offset = parse_xdr(tvb, item, "i", offset, "space")
-      offset = parse_xdr(tvb, item, "i", offset, "space_grace")
-      offset = parse_xdr(tvb, item, "i", offset, "space_soft")
-      offset = parse_xdr(tvb, item, "i", offset, "space_hard")
-      offset = parse_xdr(tvb, item, "i", offset, "num")
-      offset = parse_xdr(tvb, item, "i", offset, "num_grace")
-      offset = parse_xdr(tvb, item, "i", offset, "num_soft")
-      offset = parse_xdr(tvb, item, "i", offset, "num_hard")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_space")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_space_grace")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_space_soft")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_space_hard")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_num")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_num_grace")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_num_soft")
-      offset = parse_xdr(tvb, item, "i", offset, "phy_num_hard")
+      offset = parse_xdr(tvb, item, "l", offset, "flags")
+      offset = parse_xdr(tvb, item, "l", offset, "grace_period")
+      offset = parse_xdr(tvb, item, "l", offset, "space")
+      offset = parse_xdr(tvb, item, "l", offset, "space_grace")
+      offset = parse_xdr(tvb, item, "l", offset, "space_soft")
+      offset = parse_xdr(tvb, item, "l", offset, "space_hard")
+      offset = parse_xdr(tvb, item, "l", offset, "num")
+      offset = parse_xdr(tvb, item, "l", offset, "num_grace")
+      offset = parse_xdr(tvb, item, "l", offset, "num_soft")
+      offset = parse_xdr(tvb, item, "l", offset, "num_hard")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_space")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_space_grace")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_space_soft")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_space_hard")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_num")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_num_grace")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_num_soft")
+      offset = parse_xdr(tvb, item, "l", offset, "phy_num_hard")
    end
    return offset
 end
@@ -1143,9 +1143,7 @@ end
 
 function parse_gfm_quota_dir_set_response(tvb, pinfo, item, offset)
    -- OUT error_code
-   local err
-   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
-   return offset
+   return parse_response_with_error_code_only(tvb, pinfo, item, offset)
 end
 
 --

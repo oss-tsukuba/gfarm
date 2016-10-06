@@ -47,6 +47,8 @@
 --   1. Packet dissection of some gfs commands have not been implemented yet.
 --   2. Fragmentated packets are not dissected correctly.
 --
+
+-- NOTE: comment out the following line, if Wireshark >= 2.0 (i.e. Lua >= 5.2)
 require("bit")
 
 --
