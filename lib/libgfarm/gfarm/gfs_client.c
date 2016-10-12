@@ -3010,14 +3010,16 @@ gfs_ib_rdma_hello(struct gfs_connection *gfs_server)
 	struct rdma_context *ctx = gfs_ib_rdma_context(gfs_server);
 	gfarm_uint32_t rkey = gfs_rdma_get_rkey(gfs_rdma_get_mr(ctx));
 	unsigned char *buf;
+	gfarm_uint64_t addr;
 	int size;
 
 	buf = gfs_rdma_get_buffer(ctx);
 	size = gfs_rdma_get_gid_size();
 	memcpy(buf, gfs_rdma_get_local_gid(ctx), size);
+	addr = (uintptr_t)buf;
 
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_RDMA_HELLO, "iil/",
-					rkey, size, buf);
+				rkey, size, addr);
 	if (e == GFARM_ERR_NO_ERROR) {
 		gfs_rdma_enable(ctx);
 		gflog_debug(GFARM_MSG_UNFIXED,
