@@ -980,7 +980,10 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 /* miscellaneous */
 #define GFARM_LOG_MESSAGE_VERBOSE_DEFAULT	0
 #define GFARM_NO_FILE_SYSTEM_NODE_TIMEOUT_DEFAULT 30 /* 30 seconds */
-#define GFARM_GFMD_AUTHENTICATION_TIMEOUT_DEFAULT 25 /* 25 seconds */
+
+/* 35 == 10*3 (failure of primary, secondary, tertiary nameserver) + 5 (RTT) */
+#define GFARM_GFMD_AUTHENTICATION_TIMEOUT_DEFAULT 35 /* 35 seconds */
+
 #define GFARM_GFMD_RECONNECTION_TIMEOUT_DEFAULT 30 /* 30 seconds */
 #define GFARM_GFSD_CONNECTION_TIMEOUT_DEFAULT 30 /* 30 seconds */
 #define GFARM_ATTR_CACHE_LIMIT_DEFAULT		40000 /* 40,000 entries */
