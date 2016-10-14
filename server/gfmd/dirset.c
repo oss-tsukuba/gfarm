@@ -443,6 +443,8 @@ gfm_server_dirset_info_set(struct peer *peer, int from_client, int skip)
 	} else if (u != peer_get_user(peer) &&
 	    !user_is_root(peer_get_user(peer))) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (strlen(dirsetname) > GFARM_DIRSET_NAME_MAX) {
+		e = GFARM_ERR_INVALID_ARGUMENT;
 	} else if ((e = user_enter_dirset(u, dirsetname, 1, &ds))
 	    != GFARM_ERR_NO_ERROR) {
 		;
