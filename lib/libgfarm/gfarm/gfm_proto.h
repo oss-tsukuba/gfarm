@@ -494,6 +494,18 @@ enum gfm_proto_command {
 	GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_GFSD_DETACH| \
 	GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_INODE_ALLMASK)
 
+/*
+ * NOTE about GFM_PROTO_PROCESS_FD_INFO:
+ * - GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_GFSD_DETACH only affects INODE_REG,
+ *   i.e. other inode types aren't affected by this flag.
+ * - input parameter `gfsd_domain' only affects descriptors which are
+ *   GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_GFSD_ATTACH state.
+ * - input parameter `user_host_domain' only affects descriptors which are
+ *   GFM_PROTO_PROCESS_FD_FLAG_EXCLUDE_CLIENT_ATTACH state.
+ * these decisions were made to the search condition flexible.
+ */
+
+
 /* output of GFM_PROTO_METADB_SERVER_GET: Persistent Flags */
 #define GFARM_METADB_SERVER_FLAG_IS_MASTER_CANDIDATE	0x00000001
 #define GFARM_METADB_SERVER_FLAG_IS_DEFAULT_MASTER	0x00000002
