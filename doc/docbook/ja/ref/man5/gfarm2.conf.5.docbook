@@ -2297,7 +2297,7 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 infiniband が装備されているノードでのみ有効です。
 </para>
 <para>
-デフォルトはconfigureの際に--with-clientrdma を指定していれば enable です。
+デフォルトはconfigureの際に--with-infiniband を指定していれば enable です。
 それ以外はdisableで、enable にしても効果はありません。
 </para>
 <para>

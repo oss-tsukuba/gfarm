@@ -2356,7 +2356,7 @@ gfsd uses this setting at its startup by asking gfmd.
 Specify to disable the RDMA data transfer between client and gfsd.
 </para>
 <para>
-Only when --with-clientrdma is specified at configure it is valid.
+Only when --with-infiniband is specified at configure it is valid.
 The default value is enable.
 </para>
 <para>
