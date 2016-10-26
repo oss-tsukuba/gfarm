@@ -1,3 +1,15 @@
+Release note for Gfarm 2.6.14
+=============================
+
+[2016.10.26]
+
+New command
+* gflsof - list current opened Gfarm files
+
+Updated feature
+* increase default timeout to connect to gfmd to 35 seconds to cope
+  with fault of primary and secondary DNS servers
+
 Release note for Gfarm 2.6.13
 =============================
 
