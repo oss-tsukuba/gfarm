@@ -4064,7 +4064,7 @@ gfm_client_process_fd_info(struct gfm_connection *gfm_server,
 	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_PROCESS_FD_INFO,
 	    "sssl/i", gfsd_domain, user_host_domain, user, flags, &nfds))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004508,
 		    "GFM_PROTO_PROCESS_FD_INFO(%s, %s, 0x%llx): %s",
 		    gfsd_domain, user, (long long)flags,
 		    gfarm_error_string(e));
