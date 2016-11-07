@@ -1,22 +1,13 @@
 '\" t
 .\"     Title: gfedquota
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 25 Aug 2015
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 29 Oct 2016
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFEDQUOTA" "1" "25 Aug 2015" "Gfarm" "Gfarm"
-.\" -----------------------------------------------------------------
-.\" * Define some portability stuff
-.\" -----------------------------------------------------------------
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.\" http://bugs.debian.org/507673
-.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.ie \n(.g .ds Aq \(aq
-.el       .ds Aq '
+.TH "GFEDQUOTA" "1" "29 Oct 2016" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -31,15 +22,21 @@
 gfedquota \- edit file limits
 .SH "SYNOPSIS"
 .HP \w'\fBgfedquota\fR\ 'u
-\fBgfedquota\fR [\fIoptions\fR]
+\fBgfedquota\fR [options] \-u\ \fIuser_name\fR
+.HP \w'\fBgfedquota\fR\ 'u
+\fBgfedquota\fR [options] \-g\ \fIgroup_name\fR
+.HP \w'\fBgfedquota\fR\ 'u
+\fBgfedquota\fR [options] \-D\ \fIdirset_name\fR
 .SH "DESCRIPTION"
 .PP
 \fBgfedquota\fR
 is a editor of limits (quotas) for users and groups\&.
 .PP
-There are two kinds of limits which are "soft limit" and "hard limit"\&. Soft limits have a grace period\&. Types of limits are the total number of files, the total space of files, the total number of files include replicas and the total space of files include replicas\&. Setting \*(Aqdisable\*(Aq or \-1 indicates unlimited\&. If no option for limits is specified, no quota is imposed\&.
+There are two kinds of limits which are "soft limit" and "hard limit"\&. Soft limits have a grace period\&. Types of limits are the total number of files, the total space of files, the total number of files include replicas and the total space of files include replicas\&. Setting \'disable\' or \-1 indicates unlimited\&. If no option for limits is specified, no quota is imposed\&.
 .PP
 This command can be executed by an administrator in the gfarmadm group\&.
+.PP
+\-D option is an exception and gfarmroot is used instead of gfarmadm as the administrator group who can specify user name\&.
 .SH "OPTIONS"
 .PP
 \fB\-P NAME, \-\-path=NAME\fR
@@ -49,12 +46,17 @@ Specifies a path name to specify a metadata server instead of the root metadata 
 .PP
 \fB\-u NAME, \-\-user=NAME\fR
 .RS 4
-Specifies a user name to display the current usage and limits\&.
+Specifies a user name to edit limits\&.
 .RE
 .PP
 \fB\-g NAME, \-\-group=NAME\fR
 .RS 4
-Specifies a group name to display the current usage and limits\&.
+Specifies a group name to edit limits\&.
+.RE
+.PP
+\fB\-D NAME, \-\-dirset=NAME\fR
+.RS 4
+Specifies a dirset name to edit limits\&.
 .RE
 .PP
 \fB\-G SECOND, \-\-grace=SECOND\fR
@@ -108,6 +110,9 @@ Displays a list of command options\&.
 .RE
 .SH "SEE ALSO"
 .PP
+
 \fBgfquota\fR(1),
 \fBgfquotacheck\fR(1),
-\fBgfusage\fR(1)
+\fBgfdirquota\fR(1),
+\fBgfusage\fR(1),
+Gfarm Users\' Manual / Directory Quota

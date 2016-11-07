@@ -683,6 +683,22 @@ digestタイプとして disable と指定した場合は、チェックサム�
 	digest md5<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">directory_quota_count_per_user_limit</span> <em class="parameter"><code>数</code></em></span></dt>
+<dd>
+<p>
+一ユーザーあたり作成可能な dirset の最大値を指定します。
+</p>
+<p>
+デフォルトは 100 です。
+</p>
+<p>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	directory_quota_count_per_user_limit 1000<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">sockopt </span><em class="parameter"><code>オプション</code></em><span class="emphasis"><em>[=</em></span><em class="parameter"><code>値</code></em><span class="emphasis"><em>] [<span class="token">LISTENER</span> | <em class="parameter"><code>ホスト指定</code></em>]</em></span></span></dt>
 <dd>
 <p>通信socket(2)に対して、setsockopt(2)システムコールを使って
@@ -1771,6 +1787,7 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 	&lt;auth_statement&gt; |<br>
 	&lt;shared_key_file_statement&gt; |<br>
 	&lt;digest_statement&gt; |<br>
+	&lt;directory_quota_count_per_user_limit_statement&gt; |<br>
 <br>
 	&lt;sockopt_statement&gt; |<br>
 <br>
@@ -1921,6 +1938,8 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 <dd><div class="literallayout"><p>"shared_key_file" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;digest_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"digest" &lt;digest_type&gt;</p></div></dd>
+<dt><span class="term">&lt;directory_quota_count_per_user_limit_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"directory_quota_count_per_user_limit" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;sockopt_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]</p></div></dd>
 <dt><span class="term">&lt;socket_option&gt; ::=</span></dt>

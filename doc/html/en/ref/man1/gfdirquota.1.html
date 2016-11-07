@@ -1,0 +1,84 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfdirquota</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfdirquota">
+<a name="gfdirquota.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfdirquota — configure or display directory quota setting</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfdirquota</code>  [-u <em class="replaceable"><code>user_name</code></em>] [-P <em class="replaceable"><code>path</code></em>]  -c <em class="replaceable"><code>dirset_name</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfdirquota</code>  [-u <em class="replaceable"><code>user_name</code></em>] [-P <em class="replaceable"><code>path</code></em>]  -d <em class="replaceable"><code>dirset_name</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfdirquota</code>  [-u <em class="replaceable"><code>user_name</code></em>]  -a <em class="replaceable"><code>dirset_name</code></em>  [<em class="replaceable"><code>directory</code></em>...]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfdirquota</code>  [ -u <em class="replaceable"><code>user_name</code></em>  |   -A ]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfdirquota</code>  [ -u <em class="replaceable"><code>user_name</code></em>  |   -A ]  -l  [<em class="replaceable"><code>dirset_name</code></em>...]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+The <span class="command"><strong>gfdirquota</strong></span> command
+creates or deletes dirsets, or lists dirsets,
+or adds directories to a dirset.
+</p>
+<p>
+If none of -c, -d, -a, -l option is specified,
+The <span class="command"><strong>gfdirquota</strong></span> command
+displays a list of dirsets which were created by the user.
+</p>
+<p>
+Administrators who have the gfarmroot group privilege
+can specify user name by using the -u option.
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-A</code></span></dt>
+<dd><p>
+Displays all users' dirsets.
+This requires the gfarmroot group privilege.
+</p></dd>
+<dt><span class="term"><code class="option">-P path</code></span></dt>
+<dd><p>
+Specifies a non-default metadata server by using a path name.</p></dd>
+<dt><span class="term"><code class="option">-a dirset_name</code></span></dt>
+<dd><p>
+Adds directories to the dirset.
+</p></dd>
+<dt><span class="term"><code class="option">-c</code></span></dt>
+<dd><p>
+Creates dirsets.
+</p></dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>
+Deletes dirsets.
+</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd><p>
+Lists dirsets and directories which belong to the dirsets.
+</p></dd>
+<dt><span class="term"><code class="option">-u user_name</code></span></dt>
+<dd><p>
+Configures or displays dirsets which were created by the specified user.
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>Displays a list of command options.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfedquota</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfquota</span>(1)</span>,
+  <span class="refentrytitle">
+  Gfarm Users' Manual / Directory Quota
+  </span>
+</p>
+</div>
+</div></body>
+</html>

@@ -1,0 +1,91 @@
+'\" t
+.\"     Title: gfdirquota
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 29 Oct 2016
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFDIRQUOTA" "1" "29 Oct 2016" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfdirquota \- configure or display directory quota setting
+.SH "SYNOPSIS"
+.HP \w'\fBgfdirquota\fR\ 'u
+\fBgfdirquota\fR [\-u\ \fIuser_name\fR] [\-P\ \fIpath\fR] \-c\ \fIdirset_name\fR...
+.HP \w'\fBgfdirquota\fR\ 'u
+\fBgfdirquota\fR [\-u\ \fIuser_name\fR] [\-P\ \fIpath\fR] \-d\ \fIdirset_name\fR...
+.HP \w'\fBgfdirquota\fR\ 'u
+\fBgfdirquota\fR [\-u\ \fIuser_name\fR] \-a\ \fIdirset_name\fR [\fIdirectory\fR...]
+.HP \w'\fBgfdirquota\fR\ 'u
+\fBgfdirquota\fR [\-u\ \fIuser_name\fR | \-A]
+.HP \w'\fBgfdirquota\fR\ 'u
+\fBgfdirquota\fR [\-u\ \fIuser_name\fR | \-A] \-l [\fIdirset_name\fR...]
+.SH "DESCRIPTION"
+.PP
+The
+\fBgfdirquota\fR
+command creates or deletes dirsets, or lists dirsets, or adds directories to a dirset\&.
+.PP
+If none of \-c, \-d, \-a, \-l option is specified, The
+\fBgfdirquota\fR
+command displays a list of dirsets which were created by the user\&.
+.PP
+Administrators who have the gfarmroot group privilege can specify user name by using the \-u option\&.
+.SH "OPTIONS"
+.PP
+\fB\-A\fR
+.RS 4
+Displays all users\' dirsets\&. This requires the gfarmroot group privilege\&.
+.RE
+.PP
+\fB\-P path\fR
+.RS 4
+Specifies a non\-default metadata server by using a path name\&.
+.RE
+.PP
+\fB\-a dirset_name\fR
+.RS 4
+Adds directories to the dirset\&.
+.RE
+.PP
+\fB\-c\fR
+.RS 4
+Creates dirsets\&.
+.RE
+.PP
+\fB\-d\fR
+.RS 4
+Deletes dirsets\&.
+.RE
+.PP
+\fB\-l\fR
+.RS 4
+Lists dirsets and directories which belong to the dirsets\&.
+.RE
+.PP
+\fB\-u user_name\fR
+.RS 4
+Configures or displays dirsets which were created by the specified user\&.
+.RE
+.PP
+\fB\-?\fR
+.RS 4
+Displays a list of command options\&.
+.RE
+.SH "SEE ALSO"
+.PP
+
+\fBgfedquota\fR(1),
+\fBgfquota\fR(1),
+Gfarm Users\' Manual / Directory Quota
