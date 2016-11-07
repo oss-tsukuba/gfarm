@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>23 April 2016</date></refentryinfo>
+<refentryinfo><date>29 Oct 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -873,6 +873,25 @@ digestタイプとして disable と指定した場合は、チェックサム�
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	digest md5
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>directory_quota_count_per_user_limit</token> <parameter moreinfo="none">数</parameter></term>
+<listitem>
+<para>
+一ユーザーあたり作成可能な dirset の最大値を指定します。
+</para>
+<para>
+デフォルトは 100 です。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	directory_quota_count_per_user_limit 1000
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2320,6 +2339,7 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 	&lt;auth_statement&gt; |
 	&lt;shared_key_file_statement&gt; |
 	&lt;digest_statement&gt; |
+	&lt;directory_quota_count_per_user_limit_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
 <!--	&lt;address_use_statement&gt; | -->
@@ -2590,6 +2610,11 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 <varlistentry>
 <term>&lt;digest_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"digest" &lt;digest_type&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;directory_quota_count_per_user_limit_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"directory_quota_count_per_user_limit" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--

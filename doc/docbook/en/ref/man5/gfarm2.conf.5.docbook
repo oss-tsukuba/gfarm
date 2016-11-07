@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>23 April 2016</date></refentryinfo>
+<refentryinfo><date>29 Oct 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -909,6 +909,26 @@ the <token>client_digest_check</token> statement.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	digest md5
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>directory_quota_count_per_user_limit</token> <parameter moreinfo="none">number</parameter></term>
+<listitem>
+<para>
+The <token>directory_quota_count_per_user_limit</token> statement 
+limits maximum number of dirset per user.
+</para>
+<para>
+The default limit is 100.
+</para>
+<para>
+This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	directory_quota_count_per_user_limit 1000
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2380,6 +2400,7 @@ gfsd uses this setting at its startup by asking gfmd.
 	&lt;auth_statement&gt; |
 	&lt;shared_key_file_statement&gt; |
 	&lt;digest_statement&gt; |
+	&lt;directory_quota_count_per_user_limit_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
 <!--	&lt;address_use_statement&gt; | -->
@@ -2650,6 +2671,11 @@ gfsd uses this setting at its startup by asking gfmd.
 <varlistentry>
 <term>&lt;digest_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"digest" &lt;digest_type&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;directory_quota_count_per_user_limit_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"directory_quota_count_per_user_limit" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--

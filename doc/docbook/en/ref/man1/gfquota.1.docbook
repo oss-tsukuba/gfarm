@@ -5,7 +5,7 @@
 
 <refentry id="gfquota.1">
 
-<refentryinfo><date>23 Mar 2011</date></refentryinfo>
+<refentryinfo><date>29 Oct 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfquota</refentrytitle>
@@ -19,10 +19,36 @@
 </refnamediv>
 
 <refsynopsisdiv id="synopsis">
+
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfquota</command>
-    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-qHh</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-u <replaceable>user_name</replaceable></arg>
 </cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfquota</command>
+    <arg choice="opt" rep="norepeat">-qHh</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-g <replaceable>group_name</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfquota</command>
+    <arg choice="opt" rep="norepeat">-qHh</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-D <replaceable>dirset_name</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-u <replaceable>user_name</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfquota</command>
+    <arg choice="opt" rep="norepeat">-qHh</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-d <replaceable>directory</replaceable></arg>
+</cmdsynopsis>
+
 </refsynopsisdiv>
 
 <refsect1 id="description"><title>DESCRIPTION</title>
@@ -30,7 +56,12 @@
 <para><command moreinfo="none">gfquota</command> displays your current usage and
 limits.  An administrator in the gfarmadm group can specify a user or
 a group to display.  If you are a general user, you can specify a
-group which you belong to.</para>
+group which you belong to.
+</para>
+<para>
+-D option is an exception and gfarmroot is used instead of gfarmadm
+as the administrator group who can specify user name.
+</para>
 
 <para>The count of usage and the check of quota are enabled after
 executing <command moreinfo="none">gfedquota</command>
@@ -75,6 +106,23 @@ are displayed only if the current usage exceeds the limits.
 </varlistentry>
 
 <varlistentry>
+<term><option>-D NAME</option></term>
+<listitem>
+<para>Specifies a dirset name to display the current usage and limits.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d NAME</option></term>
+<listitem>
+<para>
+Specifies a directory pathname,  to display the current usage and limits
+of a dirset that the directory belongs to.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-h</option></term>
 <listitem>
 <para>Displays numbers in human readable format by adding a prefix multiplier
@@ -111,8 +159,14 @@ symbol like "M" (mega).  Since this option uses powers of 1000,
   <refentrytitle>gfquotacheck</refentrytitle><manvolnum>1</manvolnum>
   </citerefentry>,
   <citerefentry>
+  <refentrytitle>gfdirquota</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
   <refentrytitle>gfusage</refentrytitle><manvolnum>1</manvolnum>
-  </citerefentry>
+  </citerefentry>,
+  <refentrytitle>
+  Gfarm Users' Manual / Directory Quota
+  </refentrytitle>
 </para>
 </refsect1>
 
