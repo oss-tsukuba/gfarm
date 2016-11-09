@@ -39,7 +39,7 @@ This document describes the directory quota feature of the Gfarm filesystem.
   directory set).
   You can configure quota setting or see current amount of use
   by specifying a dirset.
-<LI>Both creating a dirset and chaning quota setting can be done
+<LI>Both creating a dirset and changing quota setting can be done
   by normal user privilege.
 <LI>In the directory quota feature, gfarmroot group privilege is
 used for administration.
@@ -225,9 +225,9 @@ gfarm://metadata-server:601/home/john-smith/dir-b3: directory not empty
 <H3>directory_quota_rename_error_exdev option of gfarm2fs</H3>
 
 <p>
-Normal user can move a directory by using the mv(1) command,
-if -o directory_quota_rename_error_exdev is specified as an option
-of the gfarm2fs(1) command.
+If -o directory_quota_rename_error_exdev is specified as an option
+of the gfarm2fs(1) command, even normal user can move a directory
+between different dirsets by using the mv(1) command,
 </p>
 <p>
 But the movement may be extremely slow, because the mv(1) command uses
