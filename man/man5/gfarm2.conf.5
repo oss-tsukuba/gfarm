@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 29 Oct 2016
+.\"      Date: 10 November 2016
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "29 Oct 2016" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "10 November 2016" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -1661,7 +1661,7 @@ For example,
 .PP
 gfmd_authentication_timeout \fIseconds\fR
 .RS 4
-After the connection to the metadata server is established, Gfarm client library starts an authentication procedure, but gives up the procedure, if this timeout period is passed without any response from the metadata server\&. This unit of this directive is second, and the default value is 10\&.
+After the connection to the metadata server is established, Gfarm client library starts an authentication procedure, but gives up the procedure, if this timeout period is passed without any response from the metadata server\&. This unit of this directive is second, and the default value is 25\&.
 .sp
 For example,
 .sp
@@ -1669,7 +1669,7 @@ For example,
 .RS 4
 .\}
 .nf
-	gfmd_authentication_timeout 20
+	gfmd_authentication_timeout 35
 .fi
 .if n \{\
 .RE
