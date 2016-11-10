@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %if %{undefined ver}
-%define ver	2.6.13
+%define ver	2.6.14
 %endif
 %if %{undefined rel}
 %define rel	1
@@ -373,6 +373,7 @@ fi
 %{man_prefix}/man1/gfkey.1.gz
 %{man_prefix}/man1/gfln.1.gz
 %{man_prefix}/man1/gfls.1.gz
+%{man_prefix}/man1/gflsof.1.gz
 %{man_prefix}/man1/gfmdhost.1.gz
 %{man_prefix}/man1/gfmkdir.1.gz
 %{man_prefix}/man1/gfmv.1.gz
@@ -557,6 +558,7 @@ fi
 %{man_prefix}/ja/man1/gfkey.1.gz
 %{man_prefix}/ja/man1/gfln.1.gz
 %{man_prefix}/ja/man1/gfls.1.gz
+%{man_prefix}/ja/man1/gflsof.1.gz
 %{man_prefix}/ja/man1/gfmdhost.1.gz
 %{man_prefix}/ja/man1/gfmkdir.1.gz
 %{man_prefix}/ja/man1/gfmv.1.gz
@@ -720,6 +722,7 @@ fi
 %{html_prefix}/en/ref/man1/gfkey.1.html
 %{html_prefix}/en/ref/man1/gfln.1.html
 %{html_prefix}/en/ref/man1/gfls.1.html
+%{html_prefix}/en/ref/man1/gflsof.1.html
 %{html_prefix}/en/ref/man1/gfmdhost.1.html
 %{html_prefix}/en/ref/man1/gfmkdir.1.html
 %{html_prefix}/en/ref/man1/gfmv.1.html
@@ -910,6 +913,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfkey.1.html
 %{html_prefix}/ja/ref/man1/gfln.1.html
 %{html_prefix}/ja/ref/man1/gfls.1.html
+%{html_prefix}/ja/ref/man1/gflsof.1.html
 %{html_prefix}/ja/ref/man1/gfmdhost.1.html
 %{html_prefix}/ja/ref/man1/gfmkdir.1.html
 %{html_prefix}/ja/ref/man1/gfmv.1.html
@@ -1118,6 +1122,7 @@ fi
 %{prefix}/bin/gfkey
 %{prefix}/bin/gfln
 %{prefix}/bin/gfls
+%{prefix}/bin/gflsof
 %{prefix}/bin/gfmdhost
 %{prefix}/bin/gfmkdir
 %{prefix}/bin/gfmv
