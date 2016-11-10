@@ -157,6 +157,9 @@ gfarm_context_init(void)
 	ctxp->rdma_min_size = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->rdma_port = 0;
 	ctxp->rdma_device = NULL;
+	ctxp->rdma_mr_reg_mode = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->rdma_mr_reg_static_min_size = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->rdma_mr_reg_static_max_size = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->on_demand_replication = 0;
 	ctxp->call_rpc_instead_syscall = 0;
 	ctxp->fatal_action = GFARM_CONFIG_MISC_DEFAULT;

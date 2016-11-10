@@ -24,6 +24,7 @@ Table of Contents:
   2.4 Sometimes a gfarm client or gfsd stops without doing anything.
   2.5 The modification time seems to be strange.
   2.6 How can I retrieve a core file of gfmd or gfsd when it aborts?
+  2.7 Though Infiniband is installed, we cannot use RDMA.
 
 3. Security
   3.1 It is safe to use Gfarm in an environment that is NOT protected by
@@ -420,6 +421,24 @@ Table of Contents:
 	(4) When the abrt package is introduced, the core dump of gfmd
 	or gfsd may be failed.  Set up abrt properly, or stop the abrt
 	service.
+
+  2.7 Though Infiniband is installed, we cannot use RDMA.
+
+	. Did you specify the --with-infiniband option at "configure"
+	operation?
+	Pleas check whether libibverbs is used.
+		% ldd /usr/local/lib/libgfarm.so |grep libibverbs.so
+
+	. Did you see the error message
+	"insufficient memlock size(...), please expand memlock size" ?
+	If it appeared, please edit /etc/security/limits.conf and set
+	"* hard memlock unlimited".
+
+	. Did you see the error message "ibv_.... failed, no memory" ?
+	If it appeared, you may try to lock too much memory.
+	Please check how much memory you locked.
+		% ulimit -l
+		% grep VmLck /proc/<pid>/status
 
 3. Security
 ***********

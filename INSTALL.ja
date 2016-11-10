@@ -54,6 +54,18 @@ configure コマンドには，下記のオプションがあります．
   が，--with-globus-flavor="gcc32dbg" のようにして flavor 名を指定する
   ともできます．
 
+・--with-infiniband=ディレクトリ
+
+  クライアントとgfsd との間でInfiniBandが利用可能なときRDMAデータ転送を
+  行うことを可能とします．特別にインストールしたInfiniBandパッケージを
+  利用する場合はそのディレクトリを指定します．ディレクトリを指定しないと
+  システムデフォルトのヘッダファイル等が参照されます．
+
+  RDMA 転送を有効に行うためにはメモリ資源制限(RLIMIT_MEMLOCK)が十分大きく
+  なくてはなりません．/etc/security/limits.conf を編集して下記のように
+  制限解除をすることを勧めます．
+	* hard memlock unlimited
+
 ・--without-mtsafe-netdb
 
   ライブラリ関数 getaddrinfo(3) あるいは getnameinfo(3) が，マルチスレッド・

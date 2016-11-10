@@ -75,7 +75,6 @@ struct gfs_file {
  * GFS_PROTO_MAX_IOSIZE defined in gfs_proto.h.
  */
 	char *buffer;
-	void *mr; /* Memory Region for RDMA */
 
 	int bufsize;
 	int p;

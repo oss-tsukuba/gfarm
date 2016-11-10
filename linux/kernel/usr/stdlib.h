@@ -5,6 +5,7 @@
 
 long int strtol(const char *nptr, char **endptr, int base);
 unsigned long int strtoul(const char *nptr, char **endptr, int base);
+long long strtoll(const char *nptr, char **endptr, int base);
 
 static inline void *
 calloc(size_t nmemb, size_t size)

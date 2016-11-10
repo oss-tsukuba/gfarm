@@ -2069,9 +2069,11 @@ gfs_ib_rdma_send_request(int events, int fd, void *closure,
 		gfarm_uint32_t rkey = gfs_rdma_get_rkey(gfs_rdma_get_mr(ctx));
 		unsigned char *buf = gfs_rdma_get_buffer(ctx);
 		int size = gfs_rdma_get_gid_size();
+		gfarm_uint64_t addr;
 		memcpy(buf, gfs_rdma_get_local_gid(ctx), size);
+		addr = (uintptr_t)buf;
 		state->error = gfs_client_rpc_request(state->gfs_server,
-			GFS_PROTO_RDMA_HELLO, "iil", rkey, size, buf);
+			GFS_PROTO_RDMA_HELLO, "iil", rkey, size, addr);
 		break;
 	}
 	default:

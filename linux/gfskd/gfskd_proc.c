@@ -181,7 +181,7 @@ gfskd_loop(int fd, int bufsize)
 		if (len < sizeof(struct gfskdev_in_header)) {
 			error = GFARM_ERR_INPUT_OUTPUT;
 			gflog_error(GFARM_MSG_UNFIXED, "len:%ld, %s", len,
-				gfarm_error_string(error));
+				 gfarm_error_string(error));
 			break;
 		}
 		gfskd_recv_req(fd, buf, len);

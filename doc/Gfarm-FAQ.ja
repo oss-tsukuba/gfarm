@@ -26,6 +26,7 @@ Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
   2.5 ファイルの更新時刻がおかしいようです．
   2.6 gfmd や gfsd が異常終了した際，どうすればコアファイルを回収
       できますか？
+  2.7 InfiniBand があるのにRDMAができません．
 
 3. セキュリティ
   3.1 Gfarm は firewall に守られていない環境で安全に運用できますか？
@@ -145,7 +146,7 @@ Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 	    sysctl fs.file-max 設定の 75% 未満となるよう制限しています．
 	    このため gfmd.conf の「metadb_server_max_descriptors 131072」
 	    という設定を実際に有効にするには，ファイル /etc/sysctl.conf に
-	    「fs.file-max=180224」といった設定入れた後、リブートするか，
+	    「fs.file-max=180224」といった設定入れた後，リブートするか，
 	    あるいはコマンド「/sbin/sysctl -p」を実行します．
 	NetBSD の場合:
 	    ファイル /etc/sysctl.conf に「kern.maxfiles=180224」といった
@@ -248,7 +249,7 @@ Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 	GSI認証はサポートされていない点にもご注意ください．
 
 	それでも認証エラーが生じる場合は，Gfarm ファイルシステムの管理
-	者に連絡してください．この場合，_gfarmfs ユーザの共有鍵、GSIの
+	者に連絡してください．この場合，_gfarmfs ユーザの共有鍵，GSIの
 	設定が正しくなされていない可能性があります．
 
 	なお，GSI認証においては以下のような点に注意する必要があります．
@@ -286,7 +287,7 @@ Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 	有効期限が切れていませんか？
 
 	(6) gfarm.conf の metadb_serverhost の項で指定しているメタデータ
-	サーバのホスト名は、ホスト証明書に書かれているホスト名と一致して
+	サーバのホスト名は，ホスト証明書に書かれているホスト名と一致して
 	いますか？
 
 	(7) gfhost コマンドで登録するホストの固有識別子は，ホスト証明書
@@ -326,14 +327,14 @@ Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
   2.4 無通信状態で止まっている gfarm クライアントや gfsd が残ることが
      あるのですが？
 
-	ネットワークインターフェースカードの問題や、ネットワーク自体の
-	トラブルで、数分間によって通信が途絶した場合、このようなことが
-	起きる可能性があります。特に広域ネットワークを通して通信して
-	いる場合はこのような可能性が増えます。そのような場合、
-	gfarm.conf に「sockopt keepalive」という設定を加えることで、
+	ネットワークインターフェースカードの問題や，ネットワーク自体の
+	トラブルで，数分間によって通信が途絶した場合，このようなことが
+	起きる可能性があります．特に広域ネットワークを通して通信して
+	いる場合はこのような可能性が増えます．そのような場合，
+	gfarm.conf に「sockopt keepalive」という設定を加えることで，
 	停止したプログラムを自動的にエラーで終了させることができるよう
-	になります。Gfarm 1.3.1 以降の config-gfarm で生成した
-	gfarm.conf は、デフォルトでこの設定を含んでいます。
+	になります．Gfarm 1.3.1 以降の config-gfarm で生成した
+	gfarm.conf は，デフォルトでこの設定を含んでいます．
 
 	あるいは，もし /etc/nsswitch.conf で「ldap」を指定している場合，
 	いくつかの Linux ディストリビューションで，このような問題が
@@ -386,10 +387,10 @@ Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 		/etc/init.d/gfsd restart
 
 	(3) gfmd や gfsd を Red Hat もしくはそれから派生した OS で動作
-	させ、RPM パッケージで導入、あるいは prefix を /usr として導入
+	させ，RPM パッケージで導入，あるいは prefix を /usr として導入
 	している場合は "prelink" という日時ジョブに関する設定を行う必要
 	があります．"/etc/prelink.conf.d/gfarm.conf" というファイルを
-	作成し、以下のような行を足して、prelink の対象外とします．
+	作成し，以下のような行を足して，prelink の対象外とします．
 
 		-b /usr/sbin/gfmd
 		-b /usr/sbin/gfsd
@@ -401,8 +402,27 @@ Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 	man ページを参照してください．
 
 	(4) abrt が導入されている場合はコアファイルの出力に失敗するこ
-	とがあります。abrt の設定を適切に行うか、abrt の起動を停止して
+	とがあります．abrt の設定を適切に行うか，abrt の起動を停止して
 	ください．
+
+  2.7 InfiniBand があるのにRDMAができません．
+
+	・ configure 時にクライアント，gfsd ともに --with-infiniband を
+	指定してありますか．
+	例えば，以下のコマンドでライブラリが表示されますか．
+		% ldd /usr/local/lib/libgfarm.so |grep libibverbs.so
+
+	・"insufficient memlock size(...), please expand memlock size" の
+	エラーメッセージは出ていませんか．
+	出ていれば資源制限を拡張してください．
+	/etc/security/limits.conf を編集して '* hard memlock unlimited' を
+	指定してみてください．
+
+	・"ibv_.... failed, no memory" のエラーメッセージは出ていませんか．
+	出ていれば資源制限がかかっているか，実際にメモリーロックサイズが
+	大きすぎるためで，有効なRDMA利用はできません．
+	当該プロセスのメモリロックサイズを確認してみてください。
+		% grep VmLck /proc/<pid>/status
 
 3. セキュリティ
 ***************

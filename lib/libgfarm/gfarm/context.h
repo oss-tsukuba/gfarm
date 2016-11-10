@@ -41,6 +41,9 @@ struct gfarm_context {
 	int rdma_min_size;
 	int rdma_port;
 	char *rdma_device;
+	int rdma_mr_reg_mode;
+	int rdma_mr_reg_static_min_size;
+	int rdma_mr_reg_static_max_size;
 
 	/* platform dependent constant */
 	int getpw_r_bufsz;

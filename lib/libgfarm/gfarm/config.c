@@ -54,6 +54,7 @@
 #include "conn_hash.h"
 #include "conn_cache.h"
 #include "humanize_number.h"
+#include "gfs_rdma.h"	/* GFARM_RDMA_REG_MR_DEFAULT */
 
 #ifdef SOMAXCONN
 #define LISTEN_BACKLOG_DEFAULT	SOMAXCONN
@@ -1032,7 +1033,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #else /* HAVE_INFINIBAND */
 #define GFARM_IB_RDMA_DEFAULT 0 /* disable */
 #endif /* HAVE_INFINIBAND */
-#define GFARM_RDMA_MIN_SIZE_DEFAULT 1024
+#define GFARM_RDMA_REG_MR_DEFAULT	(GFARM_RDMA_REG_MR_STATIC)
 #define GFARM_REPLICA_CHECK_DEFAULT 1 /* enable */
 #define GFARM_REPLICA_CHECK_REMOVE_DEFAULT 1 /* enable */
 #define GFARM_REPLICA_CHECK_REDUCED_LOG_DEFAULT 1 /* enable */
@@ -2738,6 +2739,45 @@ error:
 	return (e);
 }
 
+static gfarm_error_t
+parse_rdma_mr_reg_mode(char *p, int *vp)
+{
+	gfarm_error_t e;
+	char *arg;
+	int	mode = 0;
+
+	for (;;) {
+		if ((e = gfarm_strtoken(&p, &arg))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			"parsing of rdma_mr_reg_mode argument (%s) failed: %s",
+				    p, gfarm_error_string(e));
+			return (e);
+		}
+		if (!arg)
+			break;
+		if (!strcmp(arg, "static"))
+			mode |= GFARM_RDMA_REG_MR_STATIC;
+		else if (!strcmp(arg, "dynamic"))
+			mode |= GFARM_RDMA_REG_MR_DYNAMIC;
+		else {
+			e = GFARM_ERR_INVALID_ARGUMENT;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			"parsing of rdma_mr_reg_mode argument (%s) failed: %s",
+				    p, gfarm_error_string(e));
+			return (e);
+		}
+	}
+	if (!mode) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "parsing of rdma_mr_reg_mode argument, no args");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+
+	*vp = mode;
+	return (e);
+}
+
 #define CMD_SIZE_UNIT	10
 
 static char *
@@ -3256,6 +3296,14 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_ctxp->rdma_port);
 	} else if (strcmp(s, o = "rdma_device") == 0) {
 		e = parse_set_var(p, &gfarm_ctxp->rdma_device);
+	} else if (strcmp(s, o = "rdma_mr_reg_mode") == 0) {
+		e = parse_rdma_mr_reg_mode(p, &gfarm_ctxp->rdma_mr_reg_mode);
+	} else if (strcmp(s, o = "rdma_mr_reg_static_min_size") == 0) {
+		e = parse_set_misc_int(p,
+			&gfarm_ctxp->rdma_mr_reg_static_min_size);
+	} else if (strcmp(s, o = "rdma_mr_reg_static_max_size") == 0) {
+		e = parse_set_misc_int(p,
+			&gfarm_ctxp->rdma_mr_reg_static_max_size);
 	} else if (strcmp(s, o = "replica_check") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_replica_check);
 	} else if (strcmp(s, o = "replica_check_remove") == 0) {
@@ -3569,7 +3617,17 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->ib_rdma == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->ib_rdma = GFARM_IB_RDMA_DEFAULT;
 	if (gfarm_ctxp->rdma_min_size == GFARM_CONFIG_MISC_DEFAULT)
-		gfarm_ctxp->rdma_min_size = GFARM_RDMA_MIN_SIZE_DEFAULT;
+		gfarm_ctxp->rdma_min_size = GFARM_RDMA_MIN_SIZE;
+	if (gfarm_ctxp->rdma_mr_reg_mode == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->rdma_mr_reg_mode = GFARM_RDMA_REG_MR_DEFAULT;
+	if (gfarm_ctxp->rdma_mr_reg_static_max_size ==
+				GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->rdma_mr_reg_static_max_size =
+				GFARM_RDMA_REG_MAX_SIZE;
+	if (gfarm_ctxp->rdma_mr_reg_static_min_size ==
+				GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->rdma_mr_reg_static_min_size =
+				GFARM_RDMA_REG_MIN_SIZE;
 	if (gfarm_replica_check == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_replica_check = GFARM_REPLICA_CHECK_DEFAULT;
 	if (gfarm_replica_check_remove == GFARM_CONFIG_MISC_DEFAULT)

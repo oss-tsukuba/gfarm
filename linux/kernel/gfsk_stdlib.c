@@ -164,6 +164,11 @@ strtol(const char *nptr, char **endptr, int base)
 
 	return (resl);
 }
+long long
+strtoll(const char *nptr, char **endptr, int base)
+{
+	return (simple_strtoll(nptr, endptr, base));
+}
 void
 swab(const void *from, void *to, ssize_t n)
 {

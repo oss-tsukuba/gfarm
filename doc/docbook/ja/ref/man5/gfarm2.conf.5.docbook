@@ -2348,7 +2348,7 @@ infiniband が装備されているノードでのみ有効です。
 <term><token>rdma_min_size</token> <parameter moreinfo="none">バイト数</parameter></term>
 <listitem>
 <para>
-クライアントとgfsd とのrdma 転送を行う最小の転送サイズをしています。
+クライアントとgfsd とのrdma 転送を行う最小の転送サイズを指定します。
 infiniband が装備されているクライアントノードでのみ有効です。
 </para>
 <para>
@@ -2357,6 +2357,75 @@ infiniband が装備されているクライアントノードでのみ有効で
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	rdma_min_size 4096
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>rdma_mr_reg_mode</token> <parameter moreinfo="none">モード</parameter></term>
+<listitem>
+<para>
+クライアントのRDMA転送バッファの登録方法を指定します。
+指定可能なモードには次のものがあります。
+</para>
+
+<para><token>static</token>　接続したgfsd 毎に一つの転送バッファを登録するモードです。
+</para>
+<para><token>dynamic</token>　転送の度に登録と解除を繰り返すモードです。
+</para>
+
+<para>
+static のほうが登録の回数が少ないので若干速いメリットはありますが、
+登録したバッファがずっとメモリーロックされるため、接続gfsdが多いとメモリ負荷が
+高くなり、登録に失敗する場合もあります。
+
+両方を指定すると、static バッファを登録したうえで、
+そのサイズを越えたIOの場合は dynamic が試みられます。
+</para>
+<para>
+デフォルトは static dynamic バイトです。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	rdma_mr_reg_mode static
+	rdma_mr_reg_mode static dynamic
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>rdma_mr_reg_static_min_size</token> <parameter moreinfo="none">バイト数</parameter></term>
+<listitem>
+<para>
+<constant> rdma_mr_reg_mode </constant>  で <constant> static </constant> を
+指定した時の初期登録サイズを指定します。
+</para>
+<para>
+デフォルトは1メガバイトです。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	rdma_mr_reg_static_min_size 1048576
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>rdma_mr_reg_static_max_size</token> <parameter moreinfo="none">バイト数</parameter></term>
+<listitem>
+<para>
+<constant> rdma_mr_reg_mode </constant>  で <constant> static </constant> を
+指定した時の最大拡張登録サイズを指定します。
+</para>
+<para>
+転送を要求されたサイズが登録サイズより大きい時、このサイズまで拡張します。
+</para>
+<para>
+デフォルトは16メガバイトです。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	rdma_mr_reg_static_max_size 16777216
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2479,6 +2548,9 @@ infiniband が装備されているクライアントノードでのみ有効で
 	&lt;rdma_device_statement&gt; |
 	&lt;rdma_port_statement&gt; |
 	&lt;rdma_min_size_statement&gt; |
+	&lt;rdma_mr_reg_mode_statement&gt; |
+	&lt;rdma_mr_reg_static_min_size_statement&gt; |
+	&lt;rdma_mr_reg_static_max_size_statement&gt; |
 	&lt;write_verify_statement&gt; |
 	&lt;write_verify_interval_statement&gt; |
 	&lt;write_verify_retry_interval_statement&gt; |
@@ -3217,6 +3289,26 @@ infiniband が装備されているクライアントノードでのみ有効で
 <varlistentry>
 <term>&lt;rdma_min_size_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"rdma_min_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;rdma_mr_reg_mode_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"rdma_mr_reg_mode" &lt;mr_reg_mode&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;mr_reg_mode&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"static" | "dynamic" | "static" "dynamic" </literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;rdma_mr_reg_static_min_size_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"rdma_mr_reg_static_min_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;rdma_mr_reg_static_max_size_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"rdma_mr_reg_static_max_size" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

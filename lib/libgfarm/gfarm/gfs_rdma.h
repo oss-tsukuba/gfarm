@@ -6,6 +6,13 @@ struct rdma_context;
 struct ibv_mr;
 
 #define GFS_PROTO_MAX_RDMASIZE 0x1000000
+#define GFARM_RDMA_REG_MR_STATIC	0x1
+#define GFARM_RDMA_REG_MR_DYNAMIC	0x2
+#define GFARM_RDMA_REG_MR_FAIL		0x4
+#define GFARM_RDMA_MIN_SIZE		0x10000
+#define GFARM_RDMA_REG_MAX_SIZE		0x1000000
+#define GFARM_RDMA_REG_MIN_SIZE		0x100000
+#define GFARM_RDMA_REG_MAX_SIZE		0x1000000
 
 gfarm_error_t gfs_ib_rdma_initialize(int stayopen);
 gfarm_error_t gfs_rdma_init(int is_server, struct rdma_context **ctx);
@@ -32,6 +39,10 @@ gfarm_uint64_t gfs_rdma_get_addr(struct rdma_context *ctx);
 int gfs_rdma_resize_buffer(struct rdma_context *ctx, int size);
 unsigned char *gfs_rdma_get_buffer(struct rdma_context *ctx);
 int gfs_rdma_get_bufsize(struct rdma_context *ctx);
+int gfs_rdma_get_bufinfo(struct rdma_context *ctx,
+	void **bufp, int *sizep, gfarm_uint32_t *rkeyp);
+
+unsigned long gfs_rdma_get_mlock_limit(void);
 struct ibv_mr *gfs_rdma_get_mr(struct rdma_context *ctx);
 int gfs_rdma_get_gid_size(void);
 

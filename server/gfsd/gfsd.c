@@ -1810,10 +1810,14 @@ file_table_close(gfarm_int32_t net_fd)
 		    fe->nread, (long long)fe->read_size, fe->read_time);
 #ifdef HAVE_INFINIBAND
 		gflog_info(GFARM_MSG_UNFIXED,
-		    "rdma_write size %lld time %g "
-		    "rdma_read size %lld time %g",
+		    "rdma_write size %lld time %g Bps %g "
+		    "rdma_read size %lld time %g Bps %g",
 		    (long long)fe->rdma_write_size, fe->rdma_write_time,
-		    (long long)fe->rdma_read_size, fe->rdma_read_time);
+			fe->rdma_write_time > 0 ? (fe->rdma_write_size
+			/ fe->rdma_write_time) : fe->rdma_write_time,
+		    (long long)fe->rdma_read_size, fe->rdma_read_time,
+			fe->rdma_read_time > 0 ? (fe->rdma_read_size
+			/ fe->rdma_read_time) : fe->rdma_read_time);
 #endif
 			);
 
@@ -5061,8 +5065,9 @@ gfs_server_rdma_hello(struct gfp_xdr *client)
 	}
 	if ((e = gfs_rdma_remote_read(rdma_ctx, rkey, addr, size))
 	   != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-					"rdma_remote_read() failed");
+		gflog_debug(GFARM_MSG_UNFIXED, "rdma_remote_read() failed,"
+			"rkey=%u size=0x%x addr=0x%lx", rkey, size,
+			(unsigned long)addr);
 		goto reply;
 	}
 	if (memcmp(gfs_rdma_get_buffer(rdma_ctx),
@@ -5107,7 +5112,7 @@ gfs_server_rdma_pread(struct gfp_xdr *client)
 		goto reply;
 	}
 	/* We truncatef i/o size bigger than GFS_PROTO_MAX_IOSIZE. */
-	bsize = gfs_rdma_get_bufsize(rdma_ctx);
+	bsize = gfs_rdma_resize_buffer(rdma_ctx, size);
 	if (size > bsize)
 		size = bsize;
 
@@ -5572,7 +5577,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 
 #ifdef HAVE_INFINIBAND
 	/* should be after gfarm_authorize()::setuid() */
-	if ((e = gfs_rdma_init(1, &rdma_ctx) != GFARM_ERR_NO_ERROR)) {
+	if ((e = gfs_rdma_init(1, &rdma_ctx)) != GFARM_ERR_NO_ERROR) {
 		/* don't care even if rdma is unabailable */
 		gflog_info(GFARM_MSG_UNFIXED, "rdma_init() failed");
 	} else {
