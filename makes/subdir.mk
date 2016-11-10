@@ -1,27 +1,25 @@
-all: private-dir-tree-link subdir-all post-all-hook
-install: subdir-install post-install-hook
-clean: subdir-clean post-clean-hook
-veryclean: subdir-veryclean post-very-clean-hook
-distclean: subdir-distclean subdir-distclean-here post-distclean-hook
-gfregister: subdir-gfregister post-gfregister-hook
+all: post-all-hook
+install: post-install-hook
+clean: post-clean-hook
+veryclean: post-veryclean-hook
+distclean: post-distclean-hook
 man: subdir-man
 html: subdir-html
 msgno: subdir-msgno
 catalog: subdir-catalog
 include $(top_srcdir)/makes/private-subdir.mk
 
-post-all-hook:
-post-install-hook:
-post-clean-hook:
-post-very-clean-hook:
-post-distclean-hook: private-dir-tree-remove
-post-gfregister-hook:
+post-all-hook: private-dir-tree-link subdir-all
+post-install-hook: subdir-install
+post-clean-hook: subdir-clean
+post-veryclean-hook: subdir-veryclean
+post-distclean-hook: private-dir-tree-remove subdir-distclean-here
 
 # The reason why assignments of $(top_srcdir) and $(srcdir) are needed
 # for Makefile.in case too is to prevent variable-inheritance caused by
 # non Makefile.in case.
 
-subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-gfregister subdir-man subdir-html subdir-msgno subdir-catalog:
+subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-man subdir-html subdir-msgno subdir-catalog:
 	@target=`expr $@ : 'subdir-\(.*\)'`; \
 	for dir in -- $(SUBDIRS); do \
 		case $${dir} in --) continue;; esac; \
@@ -56,5 +54,5 @@ subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-
 		fi; \
 	done
 
-subdir-distclean-here:
+subdir-distclean-here: subdir-distclean
 	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
