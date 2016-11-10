@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarm2.conf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfarm2.conf.5"></a><div class="titlepage"></div>
@@ -1787,7 +1787,7 @@ infiniband が装備されているノードでのみ有効です。
 <dt><span class="term"><span class="token">rdma_min_size</span> <em class="parameter"><code>バイト数</code></em></span></dt>
 <dd>
 <p>
-クライアントとgfsd とのrdma 転送を行う最小の転送サイズをしています。
+クライアントとgfsd とのrdma 転送を行う最小の転送サイズを指定します。
 infiniband が装備されているクライアントノードでのみ有効です。
 </p>
 <p>
@@ -1796,6 +1796,64 @@ infiniband が装備されているクライアントノードでのみ有効で
 <p>例:</p>
 <div class="literallayout"><p><br>
 	rdma_min_size 4096<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">rdma_mr_reg_mode</span> <em class="parameter"><code>モード</code></em></span></dt>
+<dd>
+<p>
+クライアントのRDMA転送バッファの登録方法を指定します。
+指定可能なモードには次のものがあります。
+</p>
+<p><span class="token">static</span>　接続したgfsd 毎に一つの転送バッファを登録するモードです。
+</p>
+<p><span class="token">dynamic</span>　転送の度に登録と解除を繰り返すモードです。
+</p>
+<p>
+static のほうが登録の回数が少ないので若干速いメリットはありますが、
+登録したバッファがずっとメモリーロックされるため、接続gfsdが多いとメモリ負荷が
+高くなり、登録に失敗する場合もあります。
+
+両方を指定すると、static バッファを登録したうえで、
+そのサイズを越えたIOの場合は dynamic が試みられます。
+</p>
+<p>
+デフォルトは static dynamic バイトです。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	rdma_mr_reg_mode static<br>
+	rdma_mr_reg_mode static dynamic<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">rdma_mr_reg_static_min_size</span> <em class="parameter"><code>バイト数</code></em></span></dt>
+<dd>
+<p>
+<code class="constant"> rdma_mr_reg_mode </code>  で <code class="constant"> static </code> を
+指定した時の初期登録サイズを指定します。
+</p>
+<p>
+デフォルトは1メガバイトです。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	rdma_mr_reg_static_min_size 1048576<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">rdma_mr_reg_static_max_size</span> <em class="parameter"><code>バイト数</code></em></span></dt>
+<dd>
+<p>
+<code class="constant"> rdma_mr_reg_mode </code>  で <code class="constant"> static </code> を
+指定した時の最大拡張登録サイズを指定します。
+</p>
+<p>
+転送を要求されたサイズが登録サイズより大きい時、このサイズまで拡張します。
+</p>
+<p>
+デフォルトは16メガバイトです。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	rdma_mr_reg_static_max_size 16777216<br>
 </p></div>
 </dd>
 </dl></div>
@@ -1915,6 +1973,9 @@ infiniband が装備されているクライアントノードでのみ有効で
 	&lt;rdma_device_statement&gt; |<br>
 	&lt;rdma_port_statement&gt; |<br>
 	&lt;rdma_min_size_statement&gt; |<br>
+	&lt;rdma_mr_reg_mode_statement&gt; |<br>
+	&lt;rdma_mr_reg_static_min_size_statement&gt; |<br>
+	&lt;rdma_mr_reg_static_max_size_statement&gt; |<br>
 	&lt;write_verify_statement&gt; |<br>
 	&lt;write_verify_interval_statement&gt; |<br>
 	&lt;write_verify_retry_interval_statement&gt; |<br>
@@ -2185,6 +2246,14 @@ infiniband が装備されているクライアントノードでのみ有効で
 <dd><div class="literallayout"><p>"rdma_port" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;rdma_min_size_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"rdma_min_size" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;rdma_mr_reg_mode_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"rdma_mr_reg_mode" &lt;mr_reg_mode&gt;</p></div></dd>
+<dt><span class="term">&lt;mr_reg_mode&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"static" | "dynamic" | "static" "dynamic" </p></div></dd>
+<dt><span class="term">&lt;rdma_mr_reg_static_min_size_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"rdma_mr_reg_static_min_size" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;rdma_mr_reg_static_max_size_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"rdma_mr_reg_static_max_size" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;write_verify_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"write_verify" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;write_verify_interval_statement&gt; ::=</span></dt>

@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarm2.conf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfarm2.conf.5"></a><div class="titlepage"></div>
@@ -1853,6 +1853,57 @@ The default size is 1024 bytes.
 	rdma_min_size 4096<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">rdma_mr_reg_mode</span> <em class="parameter"><code>mode</code></em></span></dt>
+<dd>
+<p>
+Specify the registration method of the RDMA transfer buffer of the client.
+</p>
+<p><span class="token">static</span> mode registers one transfer buffer for every connection with a gfsd.
+</p>
+<p><span class="token">dynamic</span> mode repeats registration and deregistration
+at every transfer.
+</p>
+<p>
+Although the static mode is faster than dynamic mode,
+memory load becomes higher and may fail in registration because the memories are locked through the connections.
+</p>
+<p>
+The default mode is static and dynamic.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	rdma_mr_reg_mode static<br>
+	rdma_mr_reg_mode static dynamic<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">rdma_mr_reg_static_min_size</span> <em class="parameter"><code>size</code></em></span></dt>
+<dd>
+<p>
+Specify the initial buffer size when the static mode is selected
+with rdma_mr_reg_mode.
+</p>
+<p>
+The default size is 1 megabytes.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	rdma_mr_reg_static_min_size 1048576<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">rdma_mr_reg_static_max_size</span> <em class="parameter"><code>size</code></em></span></dt>
+<dd>
+<p>
+Specify the maximum expansion buffer size when the static mode is selected
+with rdma_mr_reg_mode.
+</p>
+<p>
+The default size is 16 megabytes.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	rdma_mr_reg_static_max_size 16777216<br>
+</p></div>
+</dd>
 </dl></div>
 </div>
 <div class="refsect1">
@@ -1966,6 +2017,13 @@ The default size is 1024 bytes.
 	&lt;replica_check_host_down_thresh_statement&gt; |<br>
 	&lt;replica_check_sleep_time_statement&gt; |<br>
 	&lt;replica_check_minimum_interval_statement&gt; |<br>
+	&lt;ib_rdma_statement&gt; |<br>
+	&lt;rdma_device_statement&gt; |<br>
+	&lt;rdma_port_statement&gt; |<br>
+	&lt;rdma_min_size_statement&gt; |<br>
+	&lt;rdma_mr_reg_mode_statement&gt; |<br>
+	&lt;rdma_mr_reg_static_min_size_statement&gt; |<br>
+	&lt;rdma_mr_reg_static_max_size_statement&gt; |<br>
 	&lt;write_verify_statement&gt; |<br>
 	&lt;write_verify_interval_statement&gt; |<br>
 	&lt;write_verify_retry_interval_statement&gt; |<br>
@@ -2228,6 +2286,22 @@ The default size is 1024 bytes.
 <dt><span class="term">&lt;fatal_action_name&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"backtrace_and_abort" | "backtrace_and_exit" |<br>
 	"abort" | "exit"</p></div></dd>
+<dt><span class="term">&lt;ib_rdma_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"ib_rdma" &lt;validity&gt;</p></div></dd>
+<dt><span class="term">&lt;rdma_device_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"rdma_device" &lt;string&gt;</p></div></dd>
+<dt><span class="term">&lt;rdma_port_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"rdma_port" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;rdma_min_size_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"rdma_min_size" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;rdma_mr_reg_mode_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"rdma_mr_reg_mode" &lt;mr_reg_mode&gt;</p></div></dd>
+<dt><span class="term">&lt;mr_reg_mode&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"static" | "dynamic" | "static" "dynamic" </p></div></dd>
+<dt><span class="term">&lt;rdma_mr_reg_static_min_size_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"rdma_mr_reg_static_min_size" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;rdma_mr_reg_static_max_size_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"rdma_mr_reg_static_max_size" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;write_verify_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"write_verify" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;write_verify_interval_statement&gt; ::=</span></dt>
