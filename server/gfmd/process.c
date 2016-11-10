@@ -1889,7 +1889,7 @@ gfm_server_process_fd_info(struct peer *peer, int from_client, int skip)
 	e = gfm_server_get_request(peer, diag, "sssl",
 	    &gfsd_domain, &user_host_domain, &proc_username, &flags);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s",
+		gflog_debug(GFARM_MSG_1004509, "%s: %s",
 		    diag, gfarm_error_string(e));
 		return (e);
 	}
@@ -1908,20 +1908,20 @@ gfm_server_process_fd_info(struct peer *peer, int from_client, int skip)
 
 	if (!from_client || user == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s",
+		gflog_debug(GFARM_MSG_1004510, "%s: %s",
 		    diag, gfarm_error_string(e));
 	} else if (!user_is_admin(user) &&
 	    (proc_user == NULL || proc_user != peer_get_user(peer))) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: specified user '%s': %s",
+		gflog_debug(GFARM_MSG_1004511, "%s: specified user '%s': %s",
 		    diag, proc_username, gfarm_error_string(e));
 	} else if (proc_username[0] != '\0' && proc_user == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: specified user '%s': %s",
+		gflog_debug(GFARM_MSG_1004512, "%s: specified user '%s': %s",
 		    diag, proc_username, gfarm_error_string(e));
 	} else if ((flags & ~GFM_PROTO_PROCESS_FD_FLAG_MASK) != 0) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: flags: 0x%llx: %s",
+		gflog_debug(GFARM_MSG_1004513, "%s: flags: 0x%llx: %s",
 		    diag, (long long)flags, gfarm_error_string(e));
 	} else {
 		struct process_fd_info_closure closure;
@@ -1949,7 +1949,7 @@ gfm_server_process_fd_info(struct peer *peer, int from_client, int skip)
 
 		if (closure.e == GFARM_ERR_NO_ERROR &&
 		    closure.nfds != closure.idx) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004514,
 			    "%s: nfds:%d but %d - inconsistent",
 			    diag, (int)closure.nfds, (int)closure.idx);
 			closure.e = GFARM_ERR_INTERNAL_ERROR;
