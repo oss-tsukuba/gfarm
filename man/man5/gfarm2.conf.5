@@ -1661,7 +1661,7 @@ For example,
 .PP
 gfmd_authentication_timeout \fIseconds\fR
 .RS 4
-After the connection to the metadata server is established, Gfarm client library starts an authentication procedure, but gives up the procedure, if this timeout period is passed without any response from the metadata server\&. This unit of this directive is second, and the default value is 25\&.
+After the connection to the metadata server is established, Gfarm client library starts an authentication procedure, but gives up the procedure, if this timeout period is passed without any response from the metadata server\&. This unit of this directive is second, and the default value is 35\&.
 .sp
 For example,
 .sp
@@ -1669,7 +1669,7 @@ For example,
 .RS 4
 .\}
 .nf
-	gfmd_authentication_timeout 35
+	gfmd_authentication_timeout 45
 .fi
 .if n \{\
 .RE
