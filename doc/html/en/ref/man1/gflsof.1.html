@@ -1,0 +1,153 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gflsof</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gflsof">
+<a name="gflsof.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gflsof — list currently opened Gfarm files</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gflsof</code>  [-AW] [-P <em class="replaceable"><code>path</code></em>] [-D <em class="replaceable"><code>domainname-of-gfsd</code></em>] [-U <em class="replaceable"><code>domainname-of-user-host</code></em>] [-u <em class="replaceable"><code>username</code></em>]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gflsof</code>  [-AW] [-P <em class="replaceable"><code>path</code></em>] [-D <em class="replaceable"><code>domainname-of-gfsd</code></em>] [-U <em class="replaceable"><code>domainname-of-user-host</code></em>] [-u <em class="replaceable"><code>username</code></em>]  -C </p></div>
+<div class="cmdsynopsis"><p><code class="command">gflsof</code>  [-AW] [-P <em class="replaceable"><code>path</code></em>] [-D <em class="replaceable"><code>domainname-of-gfsd</code></em>] [-U <em class="replaceable"><code>domainname-of-user-host</code></em>] [-u <em class="replaceable"><code>username</code></em>]  -G </p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+Displays information about each Gfarm file descriptors,
+if neither <code class="option">-C</code> nor <code class="option">-G</code> is specified.
+The USER field shows username,
+the GPID field shows Gfarm process ID,
+the FD field shows Gfarm file descriptor number,
+if the character just after the descriptor number is 'r',
+it means read-only open,
+if the character is 'w', it means write-only open, and
+if the character is 'u', it means read-write open,
+the TYPE fields shows the type of the inode
+(REG is a file, DIR is a directory and LNK is a symbolic link),
+the INODE field shows the inode number,
+the GEN field shows the generation number of the inode,
+the SIZE/OFF shows
+the seek-offset value if the inode is a directory,
+or the file size if the inode is a file,
+the CLIENT field shows hostname and port number of the client
+which is connecting to the gfmd,
+the GFSD field shows hostname and port number of the gfsd
+which is connecting to the gfmd.
+</p>
+<p>
+If <code class="option">-C</code> option is specified,
+this command shows only hostnames of clients which are opening descriptors.
+</p>
+<p>
+If <code class="option">-G</code> option is specified,
+this command shows only hostnames of gfsd which are opening file replicas.
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-A</code></span></dt>
+<dd><p>
+Display information about all users.
+Only gfarmadm group is allowed to use this option.
+</p></dd>
+<dt><span class="term"><code class="option">-W</code></span></dt>
+<dd><p>
+Limit subject descriptors to which are either write-only opened or read-write opened.
+</p></dd>
+<dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>path</code></em></span></dt>
+<dd><p>
+Specify a pathname or a Gfarm URL to identify metadata server
+which will be accessed by this command.
+If not specified, "." is used as the default value.
+</p></dd>
+<dt><span class="term"><code class="option">-D</code> <em class="parameter"><code>domainname-of-gfsd</code></em></span></dt>
+<dd><p>
+Limit subject descriptors to which gfsd is currently opening a replica
+and the gfsd belongs to the specified domain.
+</p></dd>
+<dt><span class="term"><code class="option">-U</code> <em class="parameter"><code>domainname-of-user-host</code></em></span></dt>
+<dd><p>
+Limit subject descriptors to which client host belongs to the specified domain.
+</p></dd>
+<dt><span class="term"><code class="option">-u</code> <em class="parameter"><code>username</code></em></span></dt>
+<dd><p>
+Limit subject descriptors to which is opened by the specified user.
+Only gfarmadm group is allowed to use this option.
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>Displays a list of command options.</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="EXAMPLES">
+<a name="examples"></a><h2>EXAMPLES</h2>
+<div class="example">
+<a name="idp64128"></a><p class="title"><b>Example 1. list file descriptors which are opened by myself</b></p>
+<div class="example-contents">
+<p>
+</p>
+<pre class="screen">
+gflsof
+</pre>
+<p>
+</p>
+</div>
+</div>
+<br class="example-break"><div class="example">
+<a name="idp66240"></a><p class="title"><b>Example 2. list all users' file descriptors</b></p>
+<div class="example-contents">
+<p>
+</p>
+<pre class="screen">
+gflsof -A
+</pre>
+<p>
+</p>
+</div>
+</div>
+<br class="example-break"><div class="example">
+<a name="idp68400"></a><p class="title"><b>Example 3. list filesystem nodes which are currently opening file replicas in writable mode</b></p>
+<div class="example-contents">
+<p>
+</p>
+<pre class="screen">
+gflsof -AWG
+</pre>
+<p>
+</p>
+</div>
+</div>
+<br class="example-break"><div class="example">
+<a name="idp70608"></a><p class="title"><b>Example 4. list descriptors that corresponding gfsd processes are opening file replicas in writable mode</b></p>
+<div class="example-contents">
+<p>
+</p>
+<pre class="screen">
+gflsof -AW -D ''
+</pre>
+<p>
+</p>
+</div>
+</div>
+<br class="example-break"><div class="example">
+<a name="idp72832"></a><p class="title"><b>Example 5. list client hosts which belong to example.org domain and user john is opening descriptors on the hosts</b></p>
+<div class="example-contents">
+<p>
+</p>
+<pre class="screen">
+gflsof -U example.org -u john -C
+</pre>
+<p>
+</p>
+</div>
+</div>
+<br class="example-break">
+</div>
+</div></body>
+</html>
