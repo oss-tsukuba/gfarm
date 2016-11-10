@@ -1704,11 +1704,11 @@ Gfarmクライアントライブラリはファイルシステムノードが利
 <listitem>
 <para>メタデータサーバへの接続後、認証要求への反応がない場合の
 タイムアウト時間を秒単位で指定します。
-デフォルトは 25秒です。
+デフォルトは 35秒です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
-	gfmd_authentication_timeout 35
+	gfmd_authentication_timeout 45
 </literallayout>
 </listitem>
 </varlistentry>

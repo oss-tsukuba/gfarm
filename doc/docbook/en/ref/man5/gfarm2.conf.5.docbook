@@ -1764,11 +1764,11 @@ The default is 30 seconds.
 Gfarm client library starts an authentication procedure,
 but gives up the procedure, if this timeout period is passed
 without any response from the metadata server.
-This unit of this directive is second, and the default value is 25.
+This unit of this directive is second, and the default value is 35.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
-	gfmd_authentication_timeout 35
+	gfmd_authentication_timeout 45
 </literallayout>
 </listitem>
 </varlistentry>
