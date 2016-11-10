@@ -1371,6 +1371,20 @@ This parameter is only available in gfmd.conf.
 	atime disable<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">max_open_files</span> <em class="parameter"><code>num-of-files</code></em></span></dt>
+<dd>
+<p>
+This directive specifies the maximum number of open files.  The
+default is 1024.
+</p>
+<p>
+This parameter is only available in gfmd.conf.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	max_open_files 1024<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">client_digest_check</span> <em class="parameter"><code>validity</code></em></span></dt>
 <dd>
 <p>When "enable" is specified, the Gfarm client library (libgfarm)
@@ -1394,10 +1408,9 @@ Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
 <dt><span class="term"><span class="token">client_file_bufsize</span> <em class="parameter"><code>bytes</code></em></span></dt>
 <dd>
 <p>This directive specifies the file buffer size in bytes used in
-  the Gfarm client library (libgfarm).  The default size is 1048568
-  bytes (= 1MiB - 8B).  The file buffer size should be less than the
-  default value not for deterioration of remote access performance for
-  version 2.5.0 or earlier.
+  the Gfarm client library (libgfarm).  The default size is 1048576
+  bytes (= 1MiB).  The file buffer size should be less than the
+  default value not for deterioration of remote access performance.
 </p>
 <p>
 This directive is only available for clients in gfarm2.conf.
@@ -1891,6 +1904,7 @@ gfsd uses this setting at its startup by asking gfmd.
 	&lt;gfsd_connection_timeout_statement&gt; |<br>
 <br>
 	&lt;atime_statement&gt; |<br>
+	&lt;max_open_files_statement&gt; |<br>
 	&lt;client_digest_check_statement&gt; |<br>
 	&lt;client_file_bufsize_statement&gt; |<br>
 	&lt;client_parallel_copy_statement&gt; |<br>
@@ -2084,6 +2098,8 @@ gfsd uses this setting at its startup by asking gfmd.
 <dd><div class="literallayout"><p>"gfsd_connection_timeout" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;atime_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"atime" &lt;atime_type&gt;</p></div></dd>
+<dt><span class="term">&lt;max_open_files_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"max_open_files" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;client_digest_check_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"client_digest_check" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;client_file_bufsize_statement&gt; ::=</span></dt>

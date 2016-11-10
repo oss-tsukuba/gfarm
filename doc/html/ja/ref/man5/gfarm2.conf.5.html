@@ -1310,6 +1310,20 @@ Gfarmクライアントライブラリはファイルシステムノードが利
 	atime disable<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">max_open_files</span> <em class="parameter"><code>ファイル数</code></em></span></dt>
+<dd>
+<p>
+同時にオープンできるファイル数の最大値を指定します。
+デフォルトは1024です。
+</p>
+<p>
+この文はgfmd.confのみで有効です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	max_open_files 1024<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">client_digest_check</span> <em class="parameter"><code>有効性</code></em></span></dt>
 <dd>
 <p>
@@ -1332,10 +1346,9 @@ gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します�
 <dt><span class="term"><span class="token">client_file_bufsize</span> <em class="parameter"><code>バイト数</code></em></span></dt>
 <dd>
 <p>Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ
-  サイズをバイト単位で指定します。デフォルトは1048568バイト（= 1MiB -
-  8B）です。Gfarm-2.5.0以前では、ファイルのバッファサイズは、遠隔ファイ
-  ルアクセス性能を極端に低下させないためにも、デフォルト値以下である必
-  要があります。
+  サイズをバイト単位で指定します。デフォルトは1048576バイト（= 1MiB）です。
+  ファイルのバッファサイズは、遠隔ファイルアクセス性能を極端に低下させ
+  ないためにも、デフォルト値以下である必要があります。
 </p>
 <p>
 この文は、クライアントが参照するgfarm2.confのみで有効です。
@@ -1832,6 +1845,7 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 	&lt;gfsd_connection_timeout_statement&gt; |<br>
 <br>
 	&lt;atime_statement&gt; |<br>
+	&lt;max_open_files_statement&gt; |<br>
 	&lt;client_digest_check_statement&gt; |<br>
 	&lt;client_file_bufsize_statement&gt; |<br>
 	&lt;client_parallel_copy_statement&gt; |<br>
@@ -2025,6 +2039,8 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 <dd><div class="literallayout"><p>"gfsd_connection_timeout" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;atime_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"atime" &lt;atime_type&gt;</p></div></dd>
+<dt><span class="term">&lt;max_open_files_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"max_open_files" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;client_digest_check_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"client_digest_check" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;client_file_bufsize_statement&gt; ::=</span></dt>

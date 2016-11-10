@@ -1572,6 +1572,25 @@ atime \fIタイプ\fR
 .\}
 .RE
 .PP
+max_open_files \fIファイル数\fR
+.RS 4
+同時にオープンできるファイル数の最大値を指定します。 デフォルトは1024です。
+.sp
+この文はgfmd\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	max_open_files 1024
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 client_digest_check \fI有効性\fR
 .RS 4
 このオプションがenableの場合、Gfarmクライアントライブラリ (libgfarm)は、 ファイル全体をシーケンシャルにアクセスする際、チェックサムを計算し、 そのファイルのメタデータに設定されているチェックサムと比較して検証します。 また、メタデータにチェックサムが設定されておらず、 書き込みオープンしている場合には、計算したチェックサムをメタデータに設定します。 デフォルトはdiableです。
@@ -1593,7 +1612,7 @@ client_digest_check \fI有効性\fR
 .PP
 client_file_bufsize \fIバイト数\fR
 .RS 4
-Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ サイズをバイト単位で指定します。デフォルトは1048568バイト（= 1MiB \- 8B）です。Gfarm\-2\&.5\&.0以前では、ファイルのバッファサイズは、遠隔ファイ ルアクセス性能を極端に低下させないためにも、デフォルト値以下である必 要があります。
+Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ サイズをバイト単位で指定します。デフォルトは1048576バイト（= 1MiB）です。 ファイルのバッファサイズは、遠隔ファイルアクセス性能を極端に低下させ ないためにも、デフォルト値以下である必要があります。
 .sp
 この文は、クライアントが参照するgfarm2\&.confのみで有効です。 gfsd や gfmd は、gfarm2\&.conf や gfmd\&.conf 中のこの文を無視します。
 .sp
@@ -2191,6 +2210,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<gfsd_connection_timeout_statement> |
 
 	<atime_statement> |
+	<max_open_files_statement> |
 	<client_digest_check_statement> |
 	<client_file_bufsize_statement> |
 	<client_parallel_copy_statement> |
@@ -3368,6 +3388,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "atime" <atime_type>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<max_open_files_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"max_open_files" <number>
 .fi
 .if n \{\
 .RE

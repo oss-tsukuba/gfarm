@@ -1729,6 +1729,25 @@ For example,
 .\}
 .RE
 .PP
+max_open_files \fInum\-of\-files\fR
+.RS 4
+This directive specifies the maximum number of open files\&. The default is 1024\&.
+.sp
+This parameter is only available in gfmd\&.conf\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	max_open_files 1024
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 client_digest_check \fIvalidity\fR
 .RS 4
 When "enable" is specified, the Gfarm client library (libgfarm) calculates checksum while accessing a whole file sequentially, and verify the result against a value which is set in the metadata of the file\&. Also, libgfarm sets the calculated checksum to the metadata, if checksum isn\'t set in the metadata, and the file is opened for writing\&.
@@ -1752,7 +1771,7 @@ For example,
 .PP
 client_file_bufsize \fIbytes\fR
 .RS 4
-This directive specifies the file buffer size in bytes used in the Gfarm client library (libgfarm)\&. The default size is 1048568 bytes (= 1MiB \- 8B)\&. The file buffer size should be less than the default value not for deterioration of remote access performance for version 2\&.5\&.0 or earlier\&.
+This directive specifies the file buffer size in bytes used in the Gfarm client library (libgfarm)\&. The default size is 1048576 bytes (= 1MiB)\&. The file buffer size should be less than the default value not for deterioration of remote access performance\&.
 .sp
 This directive is only available for clients in gfarm2\&.conf\&. Both gfsd and gfmd ignore this setting in gfarm2\&.conf and gfmd\&.conf\&.
 .sp
@@ -2352,6 +2371,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<gfsd_connection_timeout_statement> |
 
 	<atime_statement> |
+	<max_open_files_statement> |
 	<client_digest_check_statement> |
 	<client_file_bufsize_statement> |
 	<client_parallel_copy_statement> |
@@ -3529,6 +3549,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "atime" <atime_type>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<max_open_files_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"max_open_files" <number>
 .fi
 .if n \{\
 .RE
