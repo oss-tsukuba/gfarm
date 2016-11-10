@@ -133,7 +133,7 @@ quota_softlimit_exceed_user(struct quota *q, struct user *u)
 	if (need_db_update && user_is_valid(u)) {
 		e = db_quota_user_set(q, user_name(u));
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004505,
 			    "db_quota_user_set(%s): %s",
 			    user_name(u), gfarm_error_string(e));
 	}
@@ -149,7 +149,7 @@ quota_softlimit_exceed_group(struct quota *q, struct group *g)
 	if (need_db_update && group_is_valid(g)) {
 		e = db_quota_group_set(q, group_name(g));
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004506,
 			    "db_quota_group_set(%s): %s",
 			    group_name(g), gfarm_error_string(e));
 	}
