@@ -1869,10 +1869,9 @@ Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
 <term><token>client_file_bufsize</token> <parameter moreinfo="none">bytes</parameter></term>
 <listitem>
 <para>This directive specifies the file buffer size in bytes used in
-  the Gfarm client library (libgfarm).  The default size is 1048568
-  bytes (= 1MiB - 8B).  The file buffer size should be less than the
-  default value not for deterioration of remote access performance for
-  version 2.5.0 or earlier.
+  the Gfarm client library (libgfarm).  The default size is 1048576
+  bytes (= 1MiB).  The file buffer size should be less than the
+  default value not for deterioration of remote access performance.
 </para>
 <para>
 This directive is only available for clients in gfarm2.conf.
