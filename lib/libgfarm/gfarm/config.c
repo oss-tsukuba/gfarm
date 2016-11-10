@@ -946,6 +946,8 @@ static struct {
 };
 static enum gfarm_atime_type gfarm_atime_type = GFARM_ATIME_DEFAULT;
 static const char *gfarm_atime_type_name = NULL;
+#define GFARM_MAX_OPEN_FILES_DEFAULT	1024
+int gfarm_max_open_files = GFARM_CONFIG_MISC_DEFAULT;
 
 /* LDAP dependent */
 char *gfarm_ldap_server_name = NULL;
@@ -3195,6 +3197,8 @@ parse_one_line(char *s, char *p, char **op)
 			gfarm_atime_type_set(GFARM_ATIME_DISABLE);
 	} else if (strcmp(s, o = "atime") == 0) {
 		e = parse_atime_type(p);
+	} else if (strcmp(s, o = "max_open_files") == 0) {
+		e = parse_set_misc_int(p, &gfarm_max_open_files);
 	} else if (strcmp(s, o = "client_digest_check") == 0) {
 		e = parse_set_misc_enabled(p,
 		    &gfarm_ctxp->client_digest_check);
@@ -3507,6 +3511,8 @@ gfarm_config_set_default_misc(void)
 		    GFARM_METADB_REPLICA_REMOVER_BY_HOST_INODE_STEP_DEFAULT;
 	if (gfarm_atime_type == GFARM_ATIME_DEFAULT)
 		(void)gfarm_atime_type_set(GFARM_ATIME_RELATIVE);
+	if (gfarm_max_open_files == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_max_open_files = GFARM_MAX_OPEN_FILES_DEFAULT;
 	if (gfarm_ctxp->client_digest_check == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->client_digest_check =
 		    GFARM_CLIENT_DIGEST_CHECK_DEFAULT;
@@ -3704,6 +3710,9 @@ const struct gfarm_config_type {
 	{ "client_file_bufsize", 'i', 0, gfarm_config_print_int,
 	  gfarm_config_set_default_int, gfarm_config_validate_true,
 	  NULL, offsetof(struct gfarm_context, client_file_bufsize) },
+	{ "max_open_files", 'i', 1, gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  &gfarm_max_open_files, 0 },
 };
 
 static void *

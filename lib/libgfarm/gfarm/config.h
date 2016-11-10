@@ -39,6 +39,7 @@ enum gfarm_atime_type gfarm_atime_type_get(void);
 const char *gfarm_atime_type_get_by_name(void);
 gfarm_error_t gfarm_atime_type_set(enum gfarm_atime_type);
 gfarm_error_t gfarm_atime_type_set_by_name(const char *);
+extern int gfarm_max_open_files;
 
 enum gfarm_backend_db_type {
 	GFARM_BACKEND_DB_TYPE_UNKNOWN,
