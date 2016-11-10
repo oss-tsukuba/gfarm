@@ -1,0 +1,210 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+
+<refentry id="gflsof.1">
+
+<refentryinfo><date>27 Sep 2016</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gflsof</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id="name">
+<refname>gflsof</refname>
+<refpurpose>list currently opened Gfarm files</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gflsof</command>
+    <arg choice="opt" rep="norepeat">-AW</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>domainname-of-gfsd</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-U <replaceable>domainname-of-user-host</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-u <replaceable>username</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gflsof</command>
+    <arg choice="opt" rep="norepeat">-AW</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>domainname-of-gfsd</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-U <replaceable>domainname-of-user-host</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-u <replaceable>username</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-C</arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gflsof</command>
+    <arg choice="opt" rep="norepeat">-AW</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>domainname-of-gfsd</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-U <replaceable>domainname-of-user-host</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-u <replaceable>username</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-G</arg>
+</cmdsynopsis>
+
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>
+Displays information about each Gfarm file descriptors,
+if neither <option>-C</option> nor <option>-G</option> is specified.
+The USER field shows username,
+the GPID field shows Gfarm process ID,
+the FD field shows Gfarm file descriptor number,
+if the character just after the descriptor number is 'r',
+it means read-only open,
+if the character is 'w', it means write-only open, and
+if the character is 'u', it means read-write open,
+the TYPE fields shows the type of the inode
+(REG is a file, DIR is a directory and LNK is a symbolic link),
+the INODE field shows the inode number,
+the GEN field shows the generation number of the inode,
+the SIZE/OFF shows
+the seek-offset value if the inode is a directory,
+or the file size if the inode is a file,
+the CLIENT field shows hostname and port number of the client
+which is connecting to the gfmd,
+the GFSD field shows hostname and port number of the gfsd
+which is connecting to the gfmd.
+</para>
+<para>
+If <option>-C</option> option is specified,
+this command shows only hostnames of clients which are opening descriptors.
+</para>
+<para>
+If <option>-G</option> option is specified,
+this command shows only hostnames of gfsd which are opening file replicas.
+</para>
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-A</option></term>
+<listitem>
+<para>
+Display information about all users.
+Only gfarmadm group is allowed to use this option.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-W</option></term>
+<listitem>
+<para>
+Limit subject descriptors to which are either write-only opened or read-write opened.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter moreinfo="none">path</parameter></term>
+<listitem>
+<para>
+Specify a pathname or a Gfarm URL to identify metadata server
+which will be accessed by this command.
+If not specified, "." is used as the default value.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-D</option> <parameter moreinfo="none">domainname-of-gfsd</parameter></term>
+<listitem>
+<para>
+Limit subject descriptors to which gfsd is currently opening a replica
+and the gfsd belongs to the specified domain.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-U</option> <parameter moreinfo="none">domainname-of-user-host</parameter></term>
+<listitem>
+<para>
+Limit subject descriptors to which client host belongs to the specified domain.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-u</option> <parameter moreinfo="none">username</parameter></term>
+<listitem>
+<para>
+Limit subject descriptors to which is opened by the specified user.
+Only gfarmadm group is allowed to use this option.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>Displays a list of command options.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="examples"><title>EXAMPLES</title>
+
+<example role="example">
+<title>list file descriptors which are opened by myself</title>
+<para>
+<screen format="linespecific">
+gflsof
+</screen>
+</para>
+</example>
+
+<example role="example">
+<title>list all users' file descriptors</title>
+<para>
+<screen format="linespecific">
+gflsof -A
+</screen>
+</para>
+</example>
+
+
+<example role="example">
+<title>list filesystem nodes which are currently opening file replicas in writable mode</title>
+<para>
+<screen format="linespecific">
+gflsof -AWG
+</screen>
+</para>
+</example>
+
+<example role="example">
+<title>list descriptors that corresponding gfsd processes are opening file replicas in writable mode</title>
+<para>
+<screen format="linespecific">
+gflsof -AW -D ''
+</screen>
+</para>
+</example>
+
+<example role="example">
+<title>list client hosts which belong to example.org domain and user john is opening descriptors on the hosts</title>
+<para>
+<screen format="linespecific">
+gflsof -U example.org -u john -C
+</screen>
+</para>
+</example>
+
+</refsect1>
+
+</refentry>

@@ -140,6 +140,27 @@ gfarm_id_table_set_initial_size(struct gfarm_id_table *idtab, gfarm_int32_t sz)
 	idtab->idx_delta = sz;
 }
 
+void
+gfarm_id_table_foreach(struct gfarm_id_table *idtab, void *closure,
+	void (*callback)(
+		void *, struct gfarm_id_table *, gfarm_int32_t, void *))
+{
+	size_t i;
+
+	for (i = 0; i < idtab->hole_start; i++) {
+		if (idtab->index[i].data != NULL) {
+			callback(closure, idtab,
+			    idtab->index[i].id, idtab->index[i].data);
+		}
+	}
+	for (i = idtab->hole_end; i < idtab->idxsize; i++) {
+		if (idtab->index[i].data != NULL) {
+			callback(closure, idtab,
+			    idtab->index[i].id, idtab->index[i].data);
+		}
+	}
+}
+
 #if 0
 int
 gfarm_id_get_space_from_head(struct gfarm_id_table *idtab)

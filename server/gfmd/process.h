@@ -135,6 +135,7 @@ gfarm_error_t gfm_server_process_alloc(struct peer *, int, int);
 gfarm_error_t gfm_server_process_alloc_child(struct peer *, int, int);
 gfarm_error_t gfm_server_process_free(struct peer *, int, int);
 gfarm_error_t gfm_server_process_set(struct peer *, int, int);
+gfarm_error_t gfm_server_process_fd_info(struct peer *, int, int);
 
 gfarm_error_t gfm_server_bequeath_fd(struct peer *, int, int);
 gfarm_error_t gfm_server_inherit_fd(struct peer *, int, int);

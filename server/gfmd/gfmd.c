@@ -520,6 +520,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_PROCESS_SET:
 		e = gfm_server_process_set(peer, from_client, skip);
 		break;
+	case GFM_PROTO_PROCESS_FD_INFO:
+		e = gfm_server_process_fd_info(peer, from_client, skip);
+		break;
 	case GFJ_PROTO_LOCK_REGISTER:
 		e = gfj_server_lock_register(peer, from_client, skip); break;
 	case GFJ_PROTO_UNLOCK_REGISTER:
