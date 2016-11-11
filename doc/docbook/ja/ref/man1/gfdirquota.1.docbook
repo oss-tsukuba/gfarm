@@ -15,7 +15,7 @@
 
 <refnamediv id="name">
 <refname>gfdirquota</refname>
-<refpurpose>configure or display directory quota setting</refpurpose>
+<refpurpose>directory quota 機能の設定と表示</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id="synopsis">
