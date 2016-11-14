@@ -1095,8 +1095,10 @@ gfs_pio_pread_unbuffer(GFS_File gf, void *buffer, int size,
 		n += length;
 		offset += length;
 		size -= length;
-		if (!length)
+		if (!length) {
+			gf->error = GFARM_ERRMSG_GFS_PIO_IS_EOF;
 			break;
+		}
 	}
 	*np = n;
 	e = GFARM_ERR_NO_ERROR;
@@ -1173,7 +1175,7 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 			gfs_pio_seek(gf, offset + *np, GFARM_SEEK_SET, &result);
 		goto finish;
 	}
-	if (size >= gf->bufsize) {
+	if (size >= gf->bufsize + (gf->length - gf->p)) {
 		if (gf->p < gf->length) {
 			length = gf->length - gf->p;
 			memcpy(p, gf->buffer + gf->p, length);
@@ -1182,18 +1184,18 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 			size -= length;
 			gf->p += length;
 		}
-		e = gfs_pio_flush(gf); /* this does purge too */
-		while (e == GFARM_ERR_NO_ERROR && size >= gf->bufsize) {
+		if ((gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) != 0)
+			e = gfs_pio_flush(gf); /* this does purge too */
+		else
+			e = gfs_pio_purge(gf);
+		if (e == GFARM_ERR_NO_ERROR) {
 			e = gfs_pio_pread_unbuffer(gf, p, size, gf->offset, np);
 			if (e == GFARM_ERR_NO_ERROR) {
-				size -= *np;
-				p += *np;
-				n += *np;
 				gf->offset += *np;
+				n += *np;
 			}
 		}
-	}
-	while (size > 0) {
+	} else while (size > 0) {
 		if ((e = gfs_pio_fillbuf(gf, gf->bufsize))
 		    != GFARM_ERR_NO_ERROR) {
 			/* XXX call reconnect, when failover for writing
