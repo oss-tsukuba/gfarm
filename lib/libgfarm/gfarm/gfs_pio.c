@@ -1195,32 +1195,33 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 				n += *np;
 			}
 		}
-	} else while (size > 0) {
-		if ((e = gfs_pio_fillbuf(gf, gf->bufsize))
-		    != GFARM_ERR_NO_ERROR) {
-			/* XXX call reconnect, when failover for writing
-			 *     is supported
-			 */
-			if ((gf->mode & GFS_FILE_MODE_READ) == 0 ||
-			    (gf->mode & GFS_FILE_MODE_WRITE) != 0 ||
-			    !IS_CONNECTION_ERROR(e))
+	} else
+		while (size > 0) {
+			if ((e = gfs_pio_fillbuf(gf, gf->bufsize))
+			    != GFARM_ERR_NO_ERROR) {
+				/* XXX call reconnect, when failover for writing
+				 *     is supported
+				 */
+				if ((gf->mode & GFS_FILE_MODE_READ) == 0 ||
+				    (gf->mode & GFS_FILE_MODE_WRITE) != 0 ||
+				    !IS_CONNECTION_ERROR(e))
+					break;
+				if ((e = gfs_pio_reconnect(gf))
+				    != GFARM_ERR_NO_ERROR)
+					break;
+				continue;
+			}
+			if (gf->error != GFARM_ERR_NO_ERROR) /* EOF or error */
 				break;
-			if ((e = gfs_pio_reconnect(gf))
-			    != GFARM_ERR_NO_ERROR)
-				break;
-			continue;
+			length = gf->length - gf->p;
+			if (length > size)
+				length = size;
+			memcpy(p, gf->buffer + gf->p, length);
+			p += length;
+			n += length;
+			size -= length;
+			gf->p += length;
 		}
-		if (gf->error != GFARM_ERR_NO_ERROR) /* EOF or error */
-			break;
-		length = gf->length - gf->p;
-		if (length > size)
-			length = size;
-		memcpy(p, gf->buffer + gf->p, length);
-		p += length;
-		n += length;
-		size -= length;
-		gf->p += length;
-	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		/*
 		 * when n > 0, part of data is stored in the buffer,
