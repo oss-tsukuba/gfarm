@@ -740,7 +740,7 @@ gfs_rdma_remote_write(struct rdma_context *ctx, gfarm_uint32_t rkey,
 	struct ibv_send_wr *bad_wr;
 
 	if (remote_size > ctx->size) {
-		gflog_error(GFARM_MSG_UNFIXED, "Too big data %ld", 
+		gflog_error(GFARM_MSG_UNFIXED, "Too big data %ld",
 			(long)remote_size);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}

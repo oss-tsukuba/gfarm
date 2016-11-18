@@ -21,11 +21,11 @@ flock_test() {
 	wait $!
 	end=`date '+%s'`
 	elapse=`expr ${end} - ${start}`
-	
+
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	if [ ${elapse} -ge ${okElapse} ]; then
 		echo "elapse $elapse sec, must be $okElapse";
 		exit $exit_fail

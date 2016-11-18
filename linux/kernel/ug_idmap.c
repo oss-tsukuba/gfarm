@@ -20,6 +20,7 @@
 #include <linux/in.h>
 #include <gfarm/gflog.h>
 #include "ug_idmap.h"
+#include "stdlib.h"
 
 /* Common entry handling */
 
@@ -589,7 +590,7 @@ idtoname_parse(struct cache_detail *cd, char *buf, int buflen)
 	/* ID */
 	if (qword_get(&buf, buf1, PAGE_SIZE) <= 0)
 		goto out;
-	ent.id = simple_strtoul(buf1, &bp, 10);
+	ent.id = strtoul(buf1, &bp, 10);
 	if (bp == buf1)
 		goto out;
 

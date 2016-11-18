@@ -59,7 +59,7 @@ mountGfarm
 rwbench
 readbench
 
-sudo -u ${USER} rm -f ${MOUNTPOINT}/${FILE} 
+sudo -u ${USER} rm -f ${MOUNTPOINT}/${FILE}
 
 umountGfarm
 

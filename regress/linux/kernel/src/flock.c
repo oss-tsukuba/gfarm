@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 	if (ret == 0) {
 		printf("flock(%d, %d) OK, wait %d sec before unlock\n", fd, ope,
 				waitsec);
-		// unlock after waitsec sec
+		/* unlock after waitsec sec */
 		sleep(waitsec);
 		ret = flock(fd, LOCK_UN);
 		if (ret == 0) {

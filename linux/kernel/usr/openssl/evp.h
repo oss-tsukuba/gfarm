@@ -1,5 +1,9 @@
+/*
 typedef void *EVP_MD_CTX;
 typedef void *EVP_MD;
+*/
+#define EVP_MD_CTX void *
+#define EVP_MD void *
 
 #define EVP_md5(void) NULL
 

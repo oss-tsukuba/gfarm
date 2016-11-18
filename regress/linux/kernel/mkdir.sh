@@ -58,7 +58,7 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	# must fail
 	mkdir ${MOUNTPOINT}/${LONGNAME256}
 	if [ $? == 0 ]; then

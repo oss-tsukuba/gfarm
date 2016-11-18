@@ -26,7 +26,7 @@ Gfarm では各種認証機構をサポートしているが、カーネル内�
 \begin{itemize}
 \item	gfarm \par
 	カーネル内ファイルシステム。
-	
+
 \item	mount.gfarm \par
 	ユーザーランドのヘルパーデーモンで、
 	mount コマンドから起動される。
@@ -51,7 +51,7 @@ Gfarm では各種認証機構をサポートしているが、カーネル内�
 	ファイルとファイルシステムを結びつける方法は、
 	アプリケーションがオープンファイルデスクリプタを
 	mount時に通知することで行う。
-	
+
 	この方法は、mountと結びついて安全であるが、他方、アプリケーションが
 	異常終了した際の救済手段を別途考える必要がある。
 
@@ -67,7 +67,7 @@ Gfarm では各種認証機構をサポートしているが、カーネル内�
 	書き込むととに、sunrpcモジュールがキャッシュ機構を提供し、
 	要求応答を一定期間キャッシュし、この検索再利用を可能とさせる
 	仕組みである。
-	
+
 	本システムでは、以下のインタフェースを作成する。
 	\begin{itembox}[l]{/proc}\begin{cprog}
 	/proc/net/rpc/ug.idtoname:	UID,GID から名前への変換
@@ -223,13 +223,13 @@ mountシステムコールを発行するので、接続するユーザーを指
 		\begin{enumerate}
 		\item	mount.gfarm からmount システムコールが発行される。
 		\item	マウントオプションをチェックする。	\par
-		
+
 			mount は複数可能とする。
 			ただし、今期試験は単数のみとする。
 
 			mount の単位は本来 メタサーバ(グループ)毎
 			かもしれないが、nfs 同様、特にチェックはしない。
-			
+
 		\item	ファイルシステム固有データ構造を初期化する。
 		\item	コンフィグレーションファイルに従い初期化する。
 		\item	渡された接続fdでサーバーからroot ディレクトリ情報を
@@ -294,13 +294,13 @@ mountシステムコールを発行するので、接続するユーザーを指
 	\item	struct super_block \par
 		マウント毎のファイルシステム情報。
 
-		fs 用の void *s_fs_info がある。	
+		fs 用の void *s_fs_info がある。
 	\item	struct dentry \par
 		ディレクトリキャッシュでネガティブキャッシュもある。
 		lookup で 作成し、inode_operations.lookup に渡して、
 		inode を結びつけさせる。
-		
-		fs 用の void *d_fsdata がある。	
+
+		fs 用の void *d_fsdata がある。
 	\item	struct inode \par
 		inode_operations.lookup で dentry に結びつける時に fsで
 		作成する。
@@ -308,7 +308,7 @@ mountシステムコールを発行するので、接続するユーザーを指
 		d_iput が定義されていれば呼びだす、inode 解放は fs に任される。
 		d_iput が定義されていなければ inode の参照数を落とし、0なら
 		drop_inodeが定義されていれば削除を任せる。
-		
+
 
 		fs 用の void *i_private もあるが、fs 固有inode に
                 含ませる実装も多い。
@@ -317,7 +317,7 @@ mountシステムコールを発行するので、接続するユーザーを指
 		ファイルオープン時、作成後 file_operations.open を呼び出す。
 		最後のクローズ時、file_operations.release を呼び出す。
 
-		fs 用の void *private_data がある。	
+		fs 用の void *private_data がある。
 
 	\item	struct vm_area_struct \par
 		仮想アドレススペースのメモリとファイルの定義を行う。
@@ -474,7 +474,7 @@ local_group_map	& グローバル/ローカルグループのマップファイ�
 
 		この時、接続したプロセスのコンテキストでfdをfileに変換して
 		fd 管理に登録する。
-	
+
 		カーネルドライバは socket のfile 構造体を保持して送受信を行う。
 		file 構造体から引き継ぐので、作成プロセスが終了しても構わない。
 
@@ -491,7 +491,7 @@ local_group_map	& グローバル/ローカルグループのマップファイ�
 
 \subsection{ファイル管理}
 	Gfarm のファイルは mount 毎に個別のinode に対応させる。
-	即ち、同一mount で複数の接続があっても同じファイルには同じ inode 
+	即ち、同一mount で複数の接続があっても同じファイルには同じ inode
 	を対応させる。
 
 \subsubsection{ファイルキャッシュ}
@@ -514,7 +514,7 @@ local_group_map	& グローバル/ローカルグループのマップファイ�
 \subsubsection{ディレクトリ}
 	Gfarm では、ディレクトリは struct gfs_dir で管理されており、
 	同時にディレクトリキャッシュも持っている。
-	
+
 	本システムでは Gfarm のキャッシュ機構は用いず、
 	linux のページキャッシュを利用する。
 
@@ -571,7 +571,7 @@ local_group_map	& グローバル/ローカルグループのマップファイ�
 
 	カーネルドライバでは Gfarm のキャッシュ機構ではなく、inode による
 	キャッシュを行う。
-	
+
 \subsection{readdir}
 	readdir で得られるエントリー情報はページキャッシュに保存する。
 	ユーザーの読み出しオフセットとページの変換を簡単にするために、
@@ -590,7 +590,7 @@ local_group_map	& グローバル/ローカルグループのマップファイ�
 	後にディレクトリの mtime が変わった場合は、キャッシュを捨てる。
 
 	また、readdir で得られたファイル属性は、dentry と inode に保存する。
-	
+
 \subsection{ホスト名変換}
 	スプールサーバを利用すると、getaddrinfom、 gethostbyname、hethostname
 	関数が呼び出される。 dns に関してはnfsも実装を行っているが
@@ -611,7 +611,7 @@ local_group_map	& グローバル/ローカルグループのマップファイ�
 	\item	接続ロック(gfm_client_connection_lock,
 				gfs_client_connection_lock)	\
 		rpcの要求/応答区間。 compound 要求の場合は begin/end区間。
-		
+
 		rpc 区間だけでは、これを含むrpc 処理をカバー出来ないので、
 		ロックはリカーシブとした。
 	\item	スケジュールロック(SCHED_MUTEX_LOCK)	\
@@ -655,7 +655,7 @@ local_group_map	& グローバル/ローカルグループのマップファイ�
 	Gfarm ではファイルがローカルストレージにもある場合、スプールサーバの
 	ファイルデスプリクターを貰って直接ローカルファイルシステムにアクセス
 	する機能がある。
-	
+
 	カーネルドライバーでもこの機能を実装する、このため以下の処理を行う。
 	\begin{itemize}
 	\item	ファイルデスプリクタの受け取り時にfileをfd に変換して記録する。
@@ -695,7 +695,7 @@ local_group_map	& グローバル/ローカルグループのマップファイ�
 		また、DNSを使うための仕組みが必要などがあり、
 		サーバ接続がユーザー空間にでてしまった。
 %済	\item	浮動小数点はサポートしない。
-%済	
+%済
 %済		このため、スケジューリングなど今後に問題を残している。
 
 	\item	Gfarm 本体ソースに細かなifdef を持ち込まない。

@@ -164,10 +164,36 @@ strtol(const char *nptr, char **endptr, int base)
 
 	return (resl);
 }
+unsigned long long
+strtoull(const char *nptr, char **endptr, int base)
+{
+	unsigned long long res;
+	int	ret;
+
+	if (endptr)
+		*endptr = (char *)nptr;
+	if ((ret = strict_strtoull(nptr, base, &res))) {
+		errno = -ret;
+		res = ULONG_MAX;
+	} else if (endptr) {
+		if (base == 16 && *nptr == '0'
+		&& (*(nptr+1) == 'x' || *(nptr+1) == 'X'))
+			nptr += 2;
+		while (isxdigit(*nptr))
+			nptr++;
+		*endptr = (char *)nptr;
+	}
+	return (res);
+}
+
 long long
 strtoll(const char *nptr, char **endptr, int base)
 {
-	return (simple_strtoll(nptr, endptr, base));
+	unsigned long long res;
+	if (*nptr == '-')
+		return (-strtoull(nptr + 1, endptr, base));
+	else
+		return (strtoull(nptr, endptr, base));
 }
 void
 swab(const void *from, void *to, ssize_t n)

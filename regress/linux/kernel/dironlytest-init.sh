@@ -11,7 +11,7 @@ TMPFILE=/tmp/gfarmtest.tmp
 ADMUSER=gfarmadm
 ADMGROUP=gfarmadm
 
-# fs/gfs.h 
+# fs/gfs.h
 # 	#define	GFS_MAXNAMLEN	255
 # serfer/gfmd/inode.c
 #	if (len > GFS_MAXNAMLEN)

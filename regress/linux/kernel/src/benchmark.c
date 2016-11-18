@@ -189,7 +189,8 @@ quit:
 int main(int argc, char *argv[])
 {
 	if (argc < 4) {
-		printf("Usage: %s mountpoint filename IOsize_MB [read]\n", argv[0]);
+		printf("Usage: %s mountpoint filename IOsize_MB [read]\n",
+			argv[0]);
 		return (1);
 	}
 	snprintf(filename, sizeof(filename), "%s/%s", argv[1], argv[2]);
@@ -197,8 +198,8 @@ int main(int argc, char *argv[])
 	iosizeMB = strtol(argv[3], NULL, 10);
 	iosize = 1024 * 1024 * iosizeMB;
 	int doReadTest = (argc >= 5 && strcmp(argv[4], "read") == 0);
-	printf("filename=%s, I/O size=%lu[MB], doReadTest=%d\n", filename, iosizeMB,
-			doReadTest);
+	printf("filename=%s, I/O size=%lu[MB], doReadTest=%d\n",
+			filename, iosizeMB, doReadTest);
 
 	if (init() != 0) {
 		return (1);
@@ -210,7 +211,8 @@ int main(int argc, char *argv[])
 	if (!doReadTest) {
 		ret = unlink(filename);
 		if (ret == 0) {
-			printf("\"%s\" was removed before benchmark\n", filename);
+			printf("\"%s\" was removed before benchmark\n",
+				filename);
 			checkGfstat();
 		} else if (errno != ENOENT) {
 			perror("unlink()");
@@ -218,7 +220,7 @@ int main(int argc, char *argv[])
 		} else {
 			ret = 0;
 		}
-		//
+
 		runTest("creat,write,close", createwrite);
 		runTest("open,write,close", openwrite);
 		runTest("open,mmapWrite,close", openmmapwrite);

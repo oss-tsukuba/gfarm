@@ -9,6 +9,7 @@
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gflog.h>
 #include "ug_idmap.h"
+#include "stdlib.h"
 
 struct protoent *
 getprotobyname(const char *name)
@@ -151,7 +152,7 @@ getaddrinfo(const char *hostname, const char *servname,
 	}
 	memset(info, 0, sizeof(*info));
 	if (servname) {
-		port = simple_strtoul(servname, &bp, 10);
+		port = strtoul(servname, &bp, 10);
 		if (port < 0 || port >= 0x10000) {
 			gflog_warning(GFARM_MSG_UNFIXED, "invalid port: %s",
 				servname);

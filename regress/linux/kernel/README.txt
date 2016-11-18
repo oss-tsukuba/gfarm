@@ -25,7 +25,7 @@ o Run directory and file tests
 
 	% su
 	# cd gfarm_v2.6/regress
-	
+
 	# sh -x ./linux/kernel/dironlytest.sh
 	# sh -x ./linux/kernel/filetest.sh
 
@@ -34,15 +34,15 @@ o Run simple benchmark test
 
 	- start gfmd, gfsd
 	- mount GfarmFS
-	
+
 	- Write benchmark
 	% linux/kernel/src/benchmark /mnt/gfarm benchfile 100
-	
+
 	- Read benchmark
 	% linux/kernel/src/benchmark /mnt/gfarm benchfile 100 read
-	
+
 	This program write/read/mmap 100[MB] data to /mnt/gfarm/benchfile.
 	You can see elapsed time and I/O bandwidth[MB/sec].
 	To clear all caches, you must umount&mount before read test.
-	
+
 	You can use benchmark.sh also (after setting some parameters).

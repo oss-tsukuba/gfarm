@@ -18,12 +18,12 @@ rename_test_file() {
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	stat ${filesrc}
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	stat ${filedst}
 	if [ $? == 0 ]; then
 		exit $exit_fail
@@ -50,7 +50,7 @@ rename_test_file() {
 	if [ $? == 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	stat ${filedst}
 	if [ $? != 0 ]; then
 		exit $exit_fail
@@ -76,7 +76,7 @@ rename_test_file() {
 
 # rename #1
 {
-	rename_test_file ${MOUNTPOINT} file.src ${MOUNTPOINT} file.dst 	
+	rename_test_file ${MOUNTPOINT} file.src ${MOUNTPOINT} file.dst
 }
 
 # rename #2
@@ -85,13 +85,13 @@ rename_test_file() {
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
-	rename_test_file ${MOUNTPOINT}/dir1 file.src ${MOUNTPOINT} file.dst 	
+
+	rename_test_file ${MOUNTPOINT}/dir1 file.src ${MOUNTPOINT} file.dst
 }
 
 # rename #3
 {
-	rename_test_file ${MOUNTPOINT} file.src ${MOUNTPOINT}/dir1 file.dst 	
+	rename_test_file ${MOUNTPOINT} file.src ${MOUNTPOINT}/dir1 file.dst
 }
 
 ###############################################################
@@ -112,12 +112,12 @@ rename_test_dir() {
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	stat ${filesrc}
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	stat ${filedst}
 	if [ $? == 0 ]; then
 		exit $exit_fail
@@ -144,7 +144,7 @@ rename_test_dir() {
 	if [ $? == 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	stat ${filedst}
 	if [ $? != 0 ]; then
 		exit $exit_fail
@@ -170,7 +170,7 @@ rename_test_dir() {
 
 # rename #4
 {
-	rename_test_dir ${MOUNTPOINT} dir.src ${MOUNTPOINT} dir.dst 	
+	rename_test_dir ${MOUNTPOINT} dir.src ${MOUNTPOINT} dir.dst
 }
 
 # rename #5
@@ -179,11 +179,11 @@ rename_test_dir() {
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
-	rename_test_dir ${MOUNTPOINT}/dir1 dir.src ${MOUNTPOINT} dir.dst 	
+
+	rename_test_dir ${MOUNTPOINT}/dir1 dir.src ${MOUNTPOINT} dir.dst
 }
 
 # rename #6
 {
-	rename_test_dir ${MOUNTPOINT} dir.src ${MOUNTPOINT}/dir1 dir.dst 	
+	rename_test_dir ${MOUNTPOINT} dir.src ${MOUNTPOINT}/dir1 dir.dst
 }

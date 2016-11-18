@@ -7,12 +7,12 @@
 {
 	linksrc=${MOUNTPOINT}/link.src
 	linkdst=${MOUNTPOINT}/link.dst
-	
+
 	rm -f ${linksrc} ${linkdst}
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	touch ${linksrc}
 	if [ $? != 0 ]; then
 		exit $exit_fail
@@ -26,12 +26,12 @@
 		echo "Links is not 1"
 		exit $exit_fail
 	fi
-	
+
 	ln ${linksrc} ${linkdst}
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	stat ${linksrc} > ${TMPFILE}
 	if [ $? != 0 ]; then
 		exit $exit_fail
@@ -59,12 +59,12 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	stat ${linkdst}
 	if [ $? == 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	stat ${linksrc} > ${TMPFILE}
 	if [ $? != 0 ]; then
 		exit $exit_fail
@@ -74,7 +74,7 @@
 		echo "Links is not 1"
 		exit $exit_fail
 	fi
-	
+
 	rm ${linksrc}
 	if [ $? != 0 ]; then
 		exit $exit_fail

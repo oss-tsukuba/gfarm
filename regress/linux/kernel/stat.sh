@@ -52,7 +52,7 @@ stat_test() {
 # stat #1
 {
 	testdir=${MOUNTPOINT}/${DIR1}
-	
+
 	if [ -d "${testdir}" ]; then
 		rm -rf ${testdir}
 	fi
@@ -61,9 +61,9 @@ stat_test() {
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	stat_test ${testdir} "directory" 2 "0755/drwxr-xr-x"
-	
+
 	rm -rf ${testdir}
 	if [ $? != 0 ]; then
 		exit $exit_fail
@@ -73,7 +73,7 @@ stat_test() {
 # stat #2
 {
 	testfile=${MOUNTPOINT}/file
-	
+
 	if [ -e "${testfile}" ]; then
 		rm -rf ${testfile}
 	fi
@@ -82,9 +82,9 @@ stat_test() {
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	stat_test ${testfile} "regular empty file" 1 "0644/-rw-r--r--"
-	
+
 	rm ${testfile}
 	if [ $? != 0 ]; then
 		exit $exit_fail

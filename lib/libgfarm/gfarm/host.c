@@ -41,7 +41,7 @@
 #ifndef __KERNEL__
 #define free_gethost_buff(buf)
 #else /* __KERNEL__ */
-extern void free_gethost_buff(void *buf);
+#define free_gethost_buff(buf) free(buf)
 #endif /* __KERNEL__ */
 
 #define staticp	(gfarm_ctxp->host_static)

@@ -14,7 +14,7 @@ while [ $i -le $n ]; do
 	$op "$prefix$i"
 	if [ $? != 0 ]; then
 		echo "ERROR: $op $prefix$i failed"
-		exit 1 
+		exit 1
 	fi
 	i=`expr $i + 1`
 done

@@ -46,7 +46,7 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	/bin/ls ${MOUNTPOINT}/A
 	if [ $? != 0 ]; then
 		exit $exit_fail
@@ -59,7 +59,7 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	n=`/bin/ls -l --full-time ${MOUNTPOINT} | grep "^drwxr-xr-x.\+2 \+${TESTUSER} \+${TESTGROUP} \+0 ${timestampA} A$" | wc -l`
 	if [ "${n}" -ne 1 ]; then
 		echo "WARN: timestamp maybe incorrect"
@@ -91,7 +91,7 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	/bin/ls ${MOUNTPOINT}/A
 	if [ $? != 0 ]; then
 		exit $exit_fail
@@ -152,7 +152,7 @@
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	/bin/ls ${MOUNTPOINT}/A
 	if [ $? != 0 ]; then
 		exit $exit_fail
@@ -181,6 +181,6 @@
 	if [ $? == 0 ]; then
 		exit $exit_fail
 	fi
-	
+
 	rmdir ${MOUNTPOINT}/A
 }

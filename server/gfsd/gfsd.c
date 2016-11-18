@@ -5953,7 +5953,7 @@ gfs_udp_server(int sock,
 		    memcmp(client_addr, &last_failover_xid_addr,
 			last_failover_xid_addr_size) == 0 &&
 		    memcmp(got_xid, last_failover_xid, GFS_UDP_RPC_XID_SIZE)
-		        == 0) {
+			== 0) {
 			/* XXX gfarm_sockaddr_to_name */
 			gflog_notice(GFARM_MSG_1004177,
 			    "gfs_udp_server(): duplicate xid: "
