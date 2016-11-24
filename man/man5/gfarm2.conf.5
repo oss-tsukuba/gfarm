@@ -2339,6 +2339,72 @@ For example,
 .RE
 .\}
 .RE
+.PP
+rdma_mr_reg_mode \fImode\fR
+.RS 4
+Specify the registration method of the RDMA transfer buffer of the client\&.
+.sp
+static
+mode registers one transfer buffer for every connection with a gfsd\&.
+.sp
+dynamic
+mode repeats registration and deregistration at every transfer\&.
+.sp
+Although the static mode is faster than dynamic mode, memory load becomes higher and may fail in registration because the memories are locked through the connections\&.
+.sp
+The default mode is static and dynamic\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	rdma_mr_reg_mode static
+	rdma_mr_reg_mode static dynamic
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+rdma_mr_reg_static_min_size \fIsize\fR
+.RS 4
+Specify the initial buffer size when the static mode is selected with rdma_mr_reg_mode\&.
+.sp
+The default size is 1 megabytes\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	rdma_mr_reg_static_min_size 1048576
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+rdma_mr_reg_static_max_size \fIsize\fR
+.RS 4
+Specify the maximum expansion buffer size when the static mode is selected with rdma_mr_reg_mode\&.
+.sp
+The default size is 16 megabytes\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	rdma_mr_reg_static_max_size 16777216
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SH "GRAMMAR"
 .PP
 This is a grammar of gfarm2\&.conf described by the BNF notation\&.
@@ -2455,6 +2521,13 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<replica_check_host_down_thresh_statement> |
 	<replica_check_sleep_time_statement> |
 	<replica_check_minimum_interval_statement> |
+	<ib_rdma_statement> |
+	<rdma_device_statement> |
+	<rdma_port_statement> |
+	<rdma_min_size_statement> |
+	<rdma_mr_reg_mode_statement> |
+	<rdma_mr_reg_static_min_size_statement> |
+	<rdma_mr_reg_static_max_size_statement> |
 	<write_verify_statement> |
 	<write_verify_interval_statement> |
 	<write_verify_retry_interval_statement> |
@@ -4205,6 +4278,118 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .nf
 "backtrace_and_abort" | "backtrace_and_exit" |
 	"abort" | "exit"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<ib_rdma_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"ib_rdma" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<rdma_device_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"rdma_device" <string>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<rdma_port_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"rdma_port" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<rdma_min_size_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"rdma_min_size" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<rdma_mr_reg_mode_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"rdma_mr_reg_mode" <mr_reg_mode>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<mr_reg_mode> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"static" | "dynamic" | "static" "dynamic" 
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<rdma_mr_reg_static_min_size_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"rdma_mr_reg_static_min_size" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<rdma_mr_reg_static_max_size_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"rdma_mr_reg_static_max_size" <number>
 .fi
 .if n \{\
 .RE
