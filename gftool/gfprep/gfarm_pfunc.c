@@ -201,9 +201,19 @@ retry:
 	if (pfunc_mode == PFUNC_MODE_MIGRATE) {
 		e = gfs_replica_remove_by_file(url, src_host);
 		if (e == GFARM_ERR_FILE_BUSY) {
-			result = PFUNC_RESULT_BUSY_REMOVE_REPLICA;
-			goto end;
-		} else if (e != GFARM_ERR_NO_ERROR) {
+			sleep(1);
+			e = gfs_replica_remove_by_file(url, src_host);
+			if (e == GFARM_ERR_FILE_BUSY) {
+				result = PFUNC_RESULT_BUSY_REMOVE_REPLICA;
+				fprintf(stderr,
+					"INFO: remove a replica later: "
+					"%s (%s:%d): %s\n",
+					url, src_host, src_port,
+					gfarm_error_string(e));
+				goto end;
+			}
+		}
+		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr,
 			    "ERROR: cannot remove a replica: %s (%s:%d): %s\n",
 			    url, src_host, src_port, gfarm_error_string(e));
