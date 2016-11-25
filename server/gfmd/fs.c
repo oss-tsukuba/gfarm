@@ -307,6 +307,8 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 		transaction = 1;
 		e = inode_create_file(base, name, process, op, mode,
 		    flag & GFARM_FILE_EXCLUSIVE, &inode, &created);
+		if (e == GFARM_ERR_NO_ERROR && tdirset == TDIRSET_IS_NOT_SET)
+			tdirset = inode_search_tdirset(inode);
 
 		if (gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR) {
 			trace_seq_num = trace_log_get_sequence_number();
@@ -336,13 +338,8 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 		}
 	} else {
 		flag &= ~GFARM_FILE_EXCLUSIVE;
-		e = inode_lookup_by_name(base, name, process, op, &inode);
-		if (e == GFARM_ERR_NO_ERROR && tdirset == TDIRSET_IS_NOT_SET) {
-			tdirset = quota_dir_get_dirset_by_inum(
-			    inode_get_number(inode));
-			if (tdirset == NULL)
-				tdirset = TDIRSET_IS_NOT_SET;
-		}
+		e = inode_lookup_for_open(base, name, process, op,
+		    &tdirset, &inode);
 		created = 0;
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -1158,7 +1155,7 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 		struct dirset *tdirset, *dirset = NULL;
 
 		tdirset = inode_get_tdirset(inode);
-		if (tdirset != TDIRSET_IS_UNKNOWN ||
+		if (tdirset != TDIRSET_IS_UNKNOWN &&
 		    tdirset != TDIRSET_IS_NOT_SET)
 			dirset = tdirset;
 

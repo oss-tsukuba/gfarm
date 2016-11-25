@@ -102,8 +102,8 @@ void inode_lookup_all(void *, void (*callback)(void *, struct inode *));
 gfarm_error_t inode_lookup_root(struct process *, int, struct inode **);
 gfarm_error_t inode_lookup_parent(struct inode *, struct process *, int,
 	struct dirset **, struct inode **);
-gfarm_error_t inode_lookup_by_name(struct inode *, const char *,
-	struct process *, int, struct inode **);
+gfarm_error_t inode_lookup_for_open(struct inode *, const char *,
+	struct process *, int, struct dirset **, struct inode **);
 gfarm_error_t inode_create_file(struct inode *, char *,
 	struct process *, int, gfarm_mode_t, int,
 	struct inode **, int *);

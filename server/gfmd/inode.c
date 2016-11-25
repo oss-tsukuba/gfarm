@@ -3106,6 +3106,9 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 
 /* XXX TODO: namei cache */
 /*
+ * lookup relative pathname without permission check
+ * NOTE: inode_lookup_by_name() should be used if permission has to be checked
+ *
  * if (op == INODE_LINK)
  *	(*inp) is an input parameter instead of output.
  * if (op == INODE_CREATE)
@@ -3194,6 +3197,12 @@ inode_lookup_parent(struct inode *base, struct process *process, int op,
 	if (e == GFARM_ERR_NO_ERROR &&
 	    (e = inode_access(inode, user, op)) == GFARM_ERR_NO_ERROR) {
 
+		/* do not allow write-open anyway */
+		if ((op & GFS_W_OK) != 0) {
+			gflog_debug(GFARM_MSG_UNFIXED, "dotdot is directory");
+			return (GFARM_ERR_IS_A_DIRECTORY);
+		}
+
 		tdirset = inode_get_tdirset(base);
 		if (tdirset == TDIRSET_IS_NOT_SET)
 			*tdirsetp = TDIRSET_IS_NOT_SET;
@@ -3211,38 +3220,91 @@ inode_lookup_parent(struct inode *base, struct process *process, int op,
 	return (e);
 }
 
+/*
+ * similar to inode_looukp_by_name(),
+ * but checks write-open against a directory and does quota handling
+ *
+ * *tdirsetp;	input/output parameter
+ * *inp;	output parameter
+ */
 gfarm_error_t
-inode_lookup_by_name(struct inode *base, const char *name,
+inode_lookup_for_open(struct inode *base, const char *name,
 	struct process *process, int op,
-	struct inode **inp)
+	struct dirset **tdirsetp, struct inode **inp)
+{
+	struct inode *inode;
+	struct user *user = process_get_user(process);
+	gfarm_error_t e;
+	struct dirset *tdirset;
+
+	if (strcmp(name, DOTDOT) == 0)
+		return (inode_lookup_parent(base, process, op, tdirsetp, inp));
+
+	e = inode_lookup_relative(base, name, GFS_DT_UNKNOWN,
+	    INODE_LOOKUP, user, 0, NULL, &inode, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if ((op & GFS_W_OK) != 0 && inode_is_dir(inode)) {
+		gflog_debug(GFARM_MSG_1001741,
+			"inode is directory");
+		return (GFARM_ERR_IS_A_DIRECTORY);
+	}
+
+	e = inode_access(inode, user, op);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	tdirset = *tdirsetp;
+	if (inode_is_dir(inode)) {
+		if (tdirset == TDIRSET_IS_UNKNOWN) {
+			tdirset = inode_search_tdirset(inode);
+		} else if (tdirset == TDIRSET_IS_NOT_SET) {
+			tdirset = quota_dir_get_dirset_by_inum(
+			    inode_get_number(inode));
+			if (tdirset == NULL)
+				tdirset = TDIRSET_IS_NOT_SET;
+		}
+	} else if (tdirset == TDIRSET_IS_UNKNOWN)
+		tdirset = inode_search_tdirset(inode);
+
+	if (inode_is_file(inode) && (op & GFS_W_OK) != 0) {
+		e = quota_limit_check(inode_get_user(inode),
+		    inode_get_group(inode), tdirset, 0, 0, 0);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+	}
+
+	*inp = inode;
+	*tdirsetp = tdirset;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * lookup relative pathname with permission check against the inode itself
+ */
+static gfarm_error_t
+inode_lookup_by_name(struct inode *base, const char *name,
+	struct process *process, struct inode **inp)
 {
 	struct inode *inode;
 	struct user *user = process_get_user(process);
 	gfarm_error_t e = inode_lookup_relative(base, name, GFS_DT_UNKNOWN,
 	    INODE_LOOKUP, user, 0, NULL, &inode, NULL);
-	struct dirset *tdirset;
 
-	if (e == GFARM_ERR_NO_ERROR) {
-		if ((op & GFS_W_OK) != 0 && inode_is_dir(inode)) {
-			gflog_debug(GFARM_MSG_1001741,
-				"inode is directory");
-			e = GFARM_ERR_IS_A_DIRECTORY;
-		} else {
-			e = inode_access(inode, user, op);
-		}
-		if (e == GFARM_ERR_NO_ERROR && inode_is_file(inode) &&
-		    (op & GFS_W_OK) != 0) {
-			tdirset = inode_get_tdirset(base);
-			if (tdirset == TDIRSET_IS_UNKNOWN)
-				tdirset = inode_search_tdirset(base);
-			e = quota_limit_check(inode_get_user(inode),
-			    inode_get_group(inode), tdirset, 0, 0, 0);
-		}
-		if (e == GFARM_ERR_NO_ERROR) {
-			*inp = inode;
-		}
-	}
-	return (e);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	/*
+	 * this inode_access() always succeeds with current ACL feature,
+	 * but perhaps may fail with some ACL extension in future?
+	 */
+	e = inode_access(inode, user, 0);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	*inp = inode;
+	return (GFARM_ERR_NO_ERROR);
 }
 
 struct inode *
@@ -4108,7 +4170,7 @@ inode_rename(
 			gfarm_error_string(e));
 		return (e);
 	}
-	if ((e = inode_lookup_by_name(sdir, sname, process, 0, &src))
+	if ((e = inode_lookup_by_name(sdir, sname, process, &src))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001744,
 			"inode_lookup_by_name() failed: %s",
@@ -4146,6 +4208,7 @@ inode_rename(
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
+	/* NOTE: sname is NOT ".." here, is_ok_to_move_to() does check that */
 	src_tdirset = inode_get_tdirset(sdir);
 	if (src_tdirset == TDIRSET_IS_UNKNOWN)
 		src_tdirset = inode_search_tdirset(sdir);
@@ -4227,7 +4290,7 @@ inode_rename(
 		file_opening_free(fo, inode_get_mode(src));
 	}
 
-	e = inode_lookup_by_name(ddir, dname, process, 0, &dst);
+	e = inode_lookup_by_name(ddir, dname, process, &dst);
 	if (e == GFARM_ERR_NO_ERROR) {
 		if (src == dst) {
 			inode_close(fo, NULL, diag);
@@ -4352,7 +4415,7 @@ inode_unlink(struct inode *base, const char *name, struct process *process,
 	int *hlink_removed) /* for gfarm_file_trace */
 {
 	struct inode *inode;
-	gfarm_error_t e = inode_lookup_by_name(base, name, process, 0, &inode);
+	gfarm_error_t e = inode_lookup_by_name(base, name, process, &inode);
 	struct dirset *dirset = NULL;
 
 	if (e != GFARM_ERR_NO_ERROR) {
