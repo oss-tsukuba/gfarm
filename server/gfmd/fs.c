@@ -307,7 +307,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 		transaction = 1;
 		e = inode_create_file(base, name, process, op, mode,
 		    flag & GFARM_FILE_EXCLUSIVE, &inode, &created);
-		if (e == GFARM_ERR_NO_ERROR && tdirset == TDIRSET_IS_NOT_SET)
+		if (e == GFARM_ERR_NO_ERROR && tdirset == TDIRSET_IS_UNKNOWN)
 			tdirset = inode_search_tdirset(inode);
 
 		if (gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR) {
