@@ -4101,8 +4101,18 @@ inode_subtree_fixup_tdirset_per_inode(void *closure, struct inode *inode)
 	struct dirset *tdirset = closure;
 	struct inode_activity *ia = inode->u.c.activity;
 
-	if (ia != NULL)
+	if (ia != NULL) {
+		/* maintain refcount */
+		if (tdirset != TDIRSET_IS_UNKNOWN &&
+		    tdirset != TDIRSET_IS_NOT_SET)
+			dirset_add_ref(tdirset);
+		/* add_ref first, then del_ref */
+		if (ia->tdirset != TDIRSET_IS_UNKNOWN &&
+		    ia->tdirset != TDIRSET_IS_NOT_SET)
+			dirset_del_ref(ia->tdirset);
+
 		ia->tdirset = tdirset;
+	}
 	return (0);
 }
 
@@ -4264,6 +4274,13 @@ inode_rename(
 				return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 			/* we dont care limit_check, because it's gfarmroot */
 			dirquota_root_adjust = 1;
+		} else if (inode_is_file(src) && inode_get_nlink(src) > 1) {
+			/*
+			 * hardlinked file cannot be moved even by gfarmroot.
+			 * state.hardlink_counters above does same check
+			 * for hardlinked file inside the src directory case.
+			 */
+			return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 		} else {
 			if (inode_is_file(src))
 				ncopy = inode_get_ncopy_with_dead_host(src);
@@ -4341,13 +4358,34 @@ inode_rename(
 		/*
 		 * fabricate src tdirset to avoid GFARM_ERR_CROSS_DEVICE_LINK
 		 */
+
+		/* maintain refcount */
+		if (dst_tdirset != TDIRSET_IS_UNKNOWN &&
+		    dst_tdirset != TDIRSET_IS_NOT_SET)
+			dirset_add_ref(dst_tdirset);
+		/* add_ref first, then del_ref */
+		if (src->u.c.activity->tdirset != TDIRSET_IS_UNKNOWN &&
+		    src->u.c.activity->tdirset != TDIRSET_IS_NOT_SET)
+			dirset_del_ref(src->u.c.activity->tdirset);
+
 		src->u.c.activity->tdirset = dst_tdirset;
 	}
 	e = inode_create_link_internal(ddir, dname, user, src);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* undo src tdirset change */
-		if (dirquota_adjust || dirquota_root_adjust)
+		if (dirquota_adjust || dirquota_root_adjust) {
+
+			/* maintain refcount */
+			if (src_tdirset != TDIRSET_IS_UNKNOWN &&
+			    src_tdirset != TDIRSET_IS_NOT_SET)
+				dirset_add_ref(src_tdirset);
+			/* add_ref first, then del_ref */
+			if (src->u.c.activity->tdirset != TDIRSET_IS_UNKNOWN &&
+			    src->u.c.activity->tdirset != TDIRSET_IS_NOT_SET)
+				dirset_del_ref(src->u.c.activity->tdirset);
+
 			src->u.c.activity->tdirset = src_tdirset;
+		}
 
 		/*
 		 * this may fail (e.g. GFARM_ERR_PERMISSION_DENIED),
