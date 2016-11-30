@@ -1105,6 +1105,7 @@ fi
 %{prefix}/bin/gfchown
 %{prefix}/bin/gfcksum
 %{prefix}/bin/gfdirpath
+%{prefix}/bin/gfdirquota
 %{prefix}/bin/gfedquota
 %{prefix}/bin/gfexport
 %{prefix}/bin/gffilepath

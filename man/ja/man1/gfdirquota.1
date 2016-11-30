@@ -1,0 +1,89 @@
+'\" t
+.\"     Title: gfdirquota
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 29 Oct 2016
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFDIRQUOTA" "1" "29 Oct 2016" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfdirquota \- directory quota 機能の設定と表示
+.SH "SYNOPSIS"
+.HP \w'\fBgfdirquota\fR\ 'u
+\fBgfdirquota\fR [\-u\ \fIユーザ名\fR] [\-P\ \fIpath\fR] \-c\ \fIdirset名\fR...
+.HP \w'\fBgfdirquota\fR\ 'u
+\fBgfdirquota\fR [\-u\ \fIユーザ名\fR] [\-P\ \fIpath\fR] \-d\ \fIdirset名\fR...
+.HP \w'\fBgfdirquota\fR\ 'u
+\fBgfdirquota\fR [\-u\ \fIユーザ名\fR] \-a\ \fIdirset名\fR [\fIディレクトリ名\fR...]
+.HP \w'\fBgfdirquota\fR\ 'u
+\fBgfdirquota\fR [\-u\ \fIユーザ名\fR | \-A]
+.HP \w'\fBgfdirquota\fR\ 'u
+\fBgfdirquota\fR [\-u\ \fIユーザ名\fR | \-A] \-l [\fIdirset名\fR...]
+.SH "DESCRIPTION"
+.PP
+
+\fBgfdirquota\fR
+コマンドは、 dirset を作成・削除・表示します。 あるいは、ディレクトリを dirset に追加します。
+.PP
+オプション \-c, \-d, \-a, \-l のいずれも指定しない場合には、 そのユーザが作成した dirset の一覧を表示します。
+.PP
+gfarmroot グループに所属している管理者は、 \-u オプションでユーザ名を指定することができます。
+.SH "OPTIONS"
+.PP
+\fB\-A\fR
+.RS 4
+全ユーザーの dirset の情報を表示します。 gfarmroot グループ権限が必要です。
+.RE
+.PP
+\fB\-P path\fR
+.RS 4
+デフォルト以外のメタデータサーバーを、パス名で指定します。
+.RE
+.PP
+\fB\-a dirset名\fR
+.RS 4
+指定した dirset に、 このオプションに引き続いて指定したディレクトリを追加します。
+.RE
+.PP
+\fB\-c\fR
+.RS 4
+指定した名称の dirset を新規作成します。
+.RE
+.PP
+\fB\-d\fR
+.RS 4
+指定した dirset を削除します。
+.RE
+.PP
+\fB\-l\fR
+.RS 4
+指定した dirset と、その dirset に属するディレクトリの一覧を表示します。
+.RE
+.PP
+\fB\-u ユーザ名\fR
+.RS 4
+指定したユーザ名が作成した dirset を設定ないし表示します。
+.RE
+.PP
+\fB\-?\fR
+.RS 4
+引数オプションを表示します。
+.RE
+.SH "SEE ALSO"
+.PP
+
+\fBgfedquota\fR(1),
+\fBgfquota\fR(1),
+Gfarm ユーザーズマニュアル / Directory Quota 機能

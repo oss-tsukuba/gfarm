@@ -27,7 +27,6 @@
 
 #include "xattr_info.h"
 #include "quota_info.h"
-#include "quota.h"
 #include "metadb_server.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
@@ -38,6 +37,7 @@
 #include "gfm_proto.h"
 
 #include "subr.h"
+#include "quota.h"
 #include "journal_file.h"
 #include "db_access.h"
 #include "db_ops.h"
@@ -219,7 +219,7 @@ db_journal_init(void)
 	    "journal_file_open : %10.5lf sec", ts);
 #endif
 
-	if ((e = db_journal_init_status()) 
+	if ((e = db_journal_init_status())
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_fatal(GFARM_MSG_1003326,
 		    "db_journal_init_status : %s",
@@ -488,6 +488,30 @@ static void
 db_journal_quota_remove_arg_destroy(struct db_quota_remove_arg *arg)
 {
 	free(arg->name);
+	free(arg);
+}
+
+static void
+db_journal_quota_dirset_arg_destroy(struct db_quota_dirset_arg *arg)
+{
+	free(arg->dirset.username);
+	free(arg->dirset.dirsetname);
+	free(arg);
+}
+
+static void
+db_journal_dirset_info_arg_destroy(struct gfarm_dirset_info *arg)
+{
+	free(arg->username);
+	free(arg->dirsetname);
+	free(arg);
+}
+
+static void
+db_journal_inode_dirset_arg_destroy(struct db_inode_dirset_arg *arg)
+{
+	free(arg->dirset.username);
+	free(arg->dirset.dirsetname);
 	free(arg);
 }
 
@@ -2427,7 +2451,6 @@ db_journal_read_direntry(struct gfp_xdr *xdr, enum journal_operation ope,
 	gfarm_error_t e;
 	struct db_direntry_arg *arg;
 	int eof;
-	;
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
@@ -2907,6 +2930,320 @@ db_journal_read_quota_remove(struct gfp_xdr *xdr,
 }
 
 /**********************************************************/
+/* quota_dirset */
+
+#define GFM_JOURNAL_QUOTA_DIRSET_XDR_FMT	"sslllllllllllllllll"
+#define GFM_JOURNAL_DIRSET_INFO_XDR_FMT		"ss"
+
+static gfarm_error_t
+db_journal_write_quota_dirset_size_add(enum journal_operation ope,
+	size_t *sizep, void *arg)
+{
+	gfarm_error_t e;
+	struct db_quota_dirset_arg *qd = arg;
+
+	if ((e = gfp_xdr_send_size_add(sizep,
+	    GFM_JOURNAL_QUOTA_DIRSET_XDR_FMT,
+	    NON_NULL_STR(qd->dirset.username),
+	    NON_NULL_STR(qd->dirset.dirsetname),
+	    qd->q.limit.grace_period,
+	    qd->q.usage.space,
+	    qd->q.exceed.space_time,
+	    qd->q.limit.soft.space,
+	    qd->q.limit.hard.space,
+	    qd->q.usage.num,
+	    qd->q.exceed.num_time,
+	    qd->q.limit.soft.num,
+	    qd->q.limit.hard.num,
+	    qd->q.usage.phy_space,
+	    qd->q.exceed.phy_space_time,
+	    qd->q.limit.soft.phy_space,
+	    qd->q.limit.hard.phy_space,
+	    qd->q.usage.phy_num,
+	    qd->q.exceed.phy_num_time,
+	    qd->q.limit.soft.phy_num,
+	    qd->q.limit.hard.phy_num)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_send_size_add", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_write_quota_dirset_core(enum journal_operation ope, void *arg)
+{
+	gfarm_error_t e;
+	struct db_quota_dirset_arg *qd = arg;
+
+	if ((e = gfp_xdr_send(JOURNAL_W_XDR,
+	    GFM_JOURNAL_QUOTA_DIRSET_XDR_FMT,
+	    NON_NULL_STR(qd->dirset.username),
+	    NON_NULL_STR(qd->dirset.dirsetname),
+	    qd->q.limit.grace_period,
+	    qd->q.usage.space,
+	    qd->q.exceed.space_time,
+	    qd->q.limit.soft.space,
+	    qd->q.limit.hard.space,
+	    qd->q.usage.num,
+	    qd->q.exceed.num_time,
+	    qd->q.limit.soft.num,
+	    qd->q.limit.hard.num,
+	    qd->q.usage.phy_space,
+	    qd->q.exceed.phy_space_time,
+	    qd->q.limit.soft.phy_space,
+	    qd->q.limit.hard.phy_space,
+	    qd->q.usage.phy_num,
+	    qd->q.exceed.phy_num_time,
+	    qd->q.limit.soft.phy_num,
+	    qd->q.limit.hard.phy_num)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_send", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_read_quota_dirset(struct gfp_xdr *xdr, enum journal_operation ope,
+	struct db_quota_dirset_arg **argp)
+{
+	gfarm_error_t e;
+	struct db_quota_dirset_arg *arg;
+	int eof;
+
+	GFARM_MALLOC(arg);
+	if (arg == NULL) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	memset(arg, 0, sizeof(*arg));
+	if ((e = gfp_xdr_recv(xdr, 1, &eof,
+	    GFM_JOURNAL_QUOTA_DIRSET_XDR_FMT,
+	    &arg->dirset.username,
+	    &arg->dirset.dirsetname,
+	    &arg->q.limit.grace_period,
+	    &arg->q.usage.space,
+	    &arg->q.exceed.space_time,
+	    &arg->q.limit.soft.space,
+	    &arg->q.limit.hard.space,
+	    &arg->q.usage.num,
+	    &arg->q.exceed.num_time,
+	    &arg->q.limit.soft.num,
+	    &arg->q.limit.hard.num,
+	    &arg->q.usage.phy_space,
+	    &arg->q.exceed.phy_space_time,
+	    &arg->q.limit.soft.phy_space,
+	    &arg->q.limit.hard.phy_space,
+	    &arg->q.usage.phy_num,
+	    &arg->q.exceed.phy_num_time,
+	    &arg->q.limit.soft.phy_num,
+	    &arg->q.limit.hard.phy_num)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_recv", e, ope);
+	}
+	if (e == GFARM_ERR_NO_ERROR)
+		*argp = arg;
+	else {
+		db_journal_quota_dirset_arg_destroy(arg);
+		*argp = NULL;
+	}
+	return (e);
+}
+
+static gfarm_error_t
+db_journal_write_quota_dirset(gfarm_uint64_t seqnum,
+	enum journal_operation ope, struct db_quota_dirset_arg *arg)
+{
+	return (db_journal_write(seqnum, ope, arg,
+		db_journal_write_quota_dirset_size_add,
+		db_journal_write_quota_dirset_core));
+}
+
+static gfarm_error_t
+db_journal_write_quota_dirset_add(gfarm_uint64_t seqnum,
+	struct db_quota_dirset_arg *arg)
+{
+	return (db_journal_write_quota_dirset(
+	    seqnum, GFM_JOURNAL_QUOTA_DIRSET_ADD, arg));
+}
+
+static gfarm_error_t
+db_journal_write_quota_dirset_modify(gfarm_uint64_t seqnum,
+	struct db_quota_dirset_arg *arg)
+{
+	return (db_journal_write_quota_dirset(
+	    seqnum, GFM_JOURNAL_QUOTA_DIRSET_MODIFY, arg));
+}
+
+static gfarm_error_t
+db_journal_write_dirset_info_size_add(enum journal_operation ope,
+	size_t *sizep, void *arg)
+{
+	gfarm_error_t e;
+	struct gfarm_dirset_info *ds = arg;
+
+	if ((e = gfp_xdr_send_size_add(sizep,
+	    GFM_JOURNAL_DIRSET_INFO_XDR_FMT,
+	    NON_NULL_STR(ds->username),
+	    NON_NULL_STR(ds->dirsetname))) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_send_size_add", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_write_dirset_info_core(enum journal_operation ope, void *arg)
+{
+	gfarm_error_t e;
+	struct gfarm_dirset_info *ds = arg;
+
+	if ((e = gfp_xdr_send(JOURNAL_W_XDR,
+	    GFM_JOURNAL_DIRSET_INFO_XDR_FMT,
+	    NON_NULL_STR(ds->username),
+	    NON_NULL_STR(ds->dirsetname))) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_send", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_read_dirset_info(struct gfp_xdr *xdr, enum journal_operation ope,
+	struct gfarm_dirset_info **argp)
+{
+	gfarm_error_t e;
+	struct gfarm_dirset_info *arg;
+	int eof;
+
+	GFARM_MALLOC(arg);
+	if (arg == NULL) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	memset(arg, 0, sizeof(*arg));
+	if ((e = gfp_xdr_recv(xdr, 1, &eof,
+	    GFM_JOURNAL_DIRSET_INFO_XDR_FMT,
+	    &arg->username,
+	    &arg->dirsetname)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_recv", e, ope);
+	}
+	if (e == GFARM_ERR_NO_ERROR)
+		*argp = arg;
+	else {
+		db_journal_dirset_info_arg_destroy(arg);
+		*argp = NULL;
+	}
+	return (e);
+}
+
+static gfarm_error_t
+db_journal_write_quota_dirset_remove(gfarm_uint64_t seqnum,
+	struct gfarm_dirset_info *arg)
+{
+	return (db_journal_write(seqnum, GFM_JOURNAL_QUOTA_DIRSET_REMOVE, arg,
+		db_journal_write_dirset_info_size_add,
+		db_journal_write_dirset_info_core));
+}
+
+/**********************************************************/
+/* quota_dir */
+
+#define GFM_JOURNAL_INODE_DIRSET_XDR_FMT		"ssl"
+
+static gfarm_error_t
+db_journal_write_inode_dirset_size_add(enum journal_operation ope,
+	size_t *sizep, void *arg)
+{
+	gfarm_error_t e;
+	struct db_inode_dirset_arg *id = arg;
+
+	if ((e = gfp_xdr_send_size_add(sizep,
+	    GFM_JOURNAL_INODE_DIRSET_XDR_FMT,
+	    NON_NULL_STR(id->dirset.username),
+	    NON_NULL_STR(id->dirset.dirsetname),
+	    id->inum)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_send_size_add", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_write_inode_dirset_core(enum journal_operation ope, void *arg)
+{
+	gfarm_error_t e;
+	struct db_inode_dirset_arg *id = arg;
+
+	if ((e = gfp_xdr_send(JOURNAL_W_XDR,
+	    GFM_JOURNAL_INODE_DIRSET_XDR_FMT,
+	    NON_NULL_STR(id->dirset.username),
+	    NON_NULL_STR(id->dirset.dirsetname),
+	    id->inum)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_send", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_read_inode_dirset(struct gfp_xdr *xdr, enum journal_operation ope,
+	struct db_inode_dirset_arg **argp)
+{
+	gfarm_error_t e;
+	struct db_inode_dirset_arg *arg;
+	int eof;
+
+	GFARM_MALLOC(arg);
+	if (arg == NULL) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	memset(arg, 0, sizeof(*arg));
+	if ((e = gfp_xdr_recv(xdr, 1, &eof,
+	    GFM_JOURNAL_INODE_DIRSET_XDR_FMT,
+	    &arg->dirset.username,
+	    &arg->dirset.dirsetname,
+	    &arg->inum)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_recv", e, ope);
+	}
+	if (e == GFARM_ERR_NO_ERROR)
+		*argp = arg;
+	else {
+		db_journal_inode_dirset_arg_destroy(arg);
+		*argp = NULL;
+	}
+	return (e);
+}
+
+static gfarm_error_t
+db_journal_write_quota_dir_add(gfarm_uint64_t seqnum,
+		struct db_inode_dirset_arg *arg)
+{
+	return (db_journal_write(seqnum, GFM_JOURNAL_QUOTA_DIR_ADD, arg,
+		db_journal_write_inode_dirset_size_add,
+		db_journal_write_inode_dirset_core));
+}
+
+static gfarm_error_t
+db_journal_write_quota_dir_remove(gfarm_uint64_t seqnum,
+	struct db_inode_inum_arg *arg)
+{
+	return (db_journal_write_inode_inum(
+	    seqnum, GFM_JOURNAL_QUOTA_DIR_REMOVE, arg));
+}
+
+/**********************************************************/
 /* mdhost */
 
 #define GFM_JOURNAL_MDHOST_CORE_XDR_FMT "sisi"
@@ -3110,7 +3447,7 @@ db_journal_write_mdhost_remove(gfarm_uint64_t seqnum, char *name)
 
  /**********************************************************/
 /* nop */
- 
+
 static gfarm_error_t
 db_journal_read_nop(struct gfp_xdr *xdr,
 	struct db_mdhost_modify_arg **argp)
@@ -3201,6 +3538,16 @@ db_journal_ops_free(void *op_arg, enum journal_operation ope, void *obj)
 	case GFM_JOURNAL_QUOTA_REMOVE:
 		db_journal_quota_remove_arg_destroy(obj);
 		break;
+	case GFM_JOURNAL_QUOTA_DIRSET_ADD:
+	case GFM_JOURNAL_QUOTA_DIRSET_MODIFY:
+		db_journal_quota_dirset_arg_destroy(obj);
+		break;
+	case GFM_JOURNAL_QUOTA_DIRSET_REMOVE:
+		db_journal_dirset_info_arg_destroy(obj);
+		break;
+	case GFM_JOURNAL_QUOTA_DIR_ADD:
+		db_journal_inode_dirset_arg_destroy(obj);
+		break;
 	case GFM_JOURNAL_MDHOST_ADD:
 		db_journal_metadb_server_destroy(obj);
 		break;
@@ -3219,6 +3566,7 @@ db_journal_ops_free(void *op_arg, enum journal_operation ope, void *obj)
 	case GFM_JOURNAL_INODE_CTIME_MODIFY: /* db_inode_timespec_modify_arg */
 	case GFM_JOURNAL_INODE_CKSUM_REMOVE: /* db_inode_inum_arg */
 	case GFM_JOURNAL_SYMLINK_REMOVE: /* db_inode_inum_arg */
+	case GFM_JOURNAL_QUOTA_DIR_REMOVE: /* db_inode_inum_arg */
 	case GFM_JOURNAL_MDHOST_REMOVE: /* char[] */
 		free(obj);
 		break;
@@ -3345,6 +3693,23 @@ db_journal_read_ops(void *op_arg, struct gfp_xdr *xdr,
 		e = db_journal_read_quota_remove(xdr,
 			(struct db_quota_remove_arg **)objp);
 		break;
+	case GFM_JOURNAL_QUOTA_DIRSET_ADD:
+	case GFM_JOURNAL_QUOTA_DIRSET_MODIFY:
+		e = db_journal_read_quota_dirset(xdr, ope,
+			(struct db_quota_dirset_arg **)objp);
+		break;
+	case GFM_JOURNAL_QUOTA_DIRSET_REMOVE:
+		e = db_journal_read_dirset_info(xdr, ope,
+			(struct gfarm_dirset_info **)objp);
+		break;
+	case GFM_JOURNAL_QUOTA_DIR_ADD:
+		e = db_journal_read_inode_dirset(xdr, ope,
+			(struct db_inode_dirset_arg **)objp);
+		break;
+	case GFM_JOURNAL_QUOTA_DIR_REMOVE:
+		e = db_journal_read_inode_inum(xdr, ope,
+			(struct db_inode_inum_arg **)objp);
+		break;
 	case GFM_JOURNAL_MDHOST_ADD:
 		e = db_journal_read_metadb_server(xdr,
 			(struct gfarm_metadb_server **)objp);
@@ -3466,6 +3831,16 @@ db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
 		e = ops->quota_modify(seqnum, obj); break;
 	case GFM_JOURNAL_QUOTA_REMOVE:
 		e = ops->quota_remove(seqnum, obj); break;
+	case GFM_JOURNAL_QUOTA_DIRSET_ADD:
+		e = ops->quota_dirset_add(seqnum, obj); break;
+	case GFM_JOURNAL_QUOTA_DIRSET_MODIFY:
+		e = ops->quota_dirset_modify(seqnum, obj); break;
+	case GFM_JOURNAL_QUOTA_DIRSET_REMOVE:
+		e = ops->quota_dirset_remove(seqnum, obj); break;
+	case GFM_JOURNAL_QUOTA_DIR_ADD:
+		e = ops->quota_dir_add(seqnum, obj); break;
+	case GFM_JOURNAL_QUOTA_DIR_REMOVE:
+		e = ops->quota_dir_remove(seqnum, obj); break;
 	case GFM_JOURNAL_MDHOST_ADD:
 		e = ops->mdhost_add(seqnum, obj); break;
 	case GFM_JOURNAL_MDHOST_MODIFY:
@@ -3539,7 +3914,7 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 
 	/*
 	 * Since the giant lock must be taken preceeded by the journal
-	 * file mutex in order to avoid deadlock, we unlock the journal 
+	 * file mutex in order to avoid deadlock, we unlock the journal
 	 * file mutex once, take the giant lock, and then lock the journal
 	 * file mutex again.
 	 */
@@ -4174,6 +4549,21 @@ db_journal_quota_load(void *closure, int is_group,
 }
 
 static gfarm_error_t
+db_journal_quota_dirset_load(void *closure,
+	void (*callback)(void *,
+	    struct gfarm_dirset_info *, struct quota_metadata *))
+{
+	return (store_ops->quota_dirset_load(closure, callback));
+}
+
+static gfarm_error_t
+db_journal_quota_dir_load(void *closure,
+	void (*callback)(void *, gfarm_ino_t, struct gfarm_dirset_info *))
+{
+	return (store_ops->quota_dir_load(closure, callback));
+}
+
+static gfarm_error_t
 db_journal_seqnum_get(const char *name, gfarm_uint64_t *seqnump)
 {
 	return (store_ops->seqnum_get(name, seqnump));
@@ -4285,6 +4675,15 @@ struct db_ops db_journal_ops = {
 	db_journal_write_quota_modify,
 	db_journal_write_quota_remove,
 	db_journal_quota_load,
+
+	db_journal_write_quota_dirset_add,
+	db_journal_write_quota_dirset_modify,
+	db_journal_write_quota_dirset_remove,
+	db_journal_quota_dirset_load,
+
+	db_journal_write_quota_dir_add,
+	db_journal_write_quota_dir_remove,
+	db_journal_quota_dir_load,
 
 	db_journal_seqnum_get,
 	db_journal_seqnum_add,

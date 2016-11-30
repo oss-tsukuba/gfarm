@@ -9,10 +9,11 @@
 
 #include <gfarm/gfarm.h>
 
+#include "quota_info.h"
 #include "metadb_common.h"
 #include "metadb_server.h"
-#include "quota.h"
 
+#include "quota.h"
 #include "db_access.h"
 #include "db_ops.h"
 #include "db_common.h"
@@ -245,4 +246,94 @@ const struct gfarm_base_generic_info_ops db_base_symlink_arg_ops = {
 	db_symlink_arg_free,
 	db_symlink_arg_clear,
 	db_symlink_arg_validate,
+};
+
+/**********************************************************************/
+
+static void
+db_quota_dirset_arg_free(void *vinfo)
+{
+	struct db_quota_dirset_arg *info = vinfo;
+
+	gfarm_dirset_info_free(&info->dirset);
+}
+
+static void
+db_quota_dirset_arg_clear(void *vinfo)
+{
+	struct db_quota_dirset_arg *info = vinfo;
+
+	memset(info, 0, sizeof(*info));
+}
+
+static int
+db_quota_dirset_arg_validate(void *vinfo)
+{
+	struct db_quota_dirset_arg *info = vinfo;
+
+	return (
+	    info->dirset.username != NULL &&
+	    info->dirset.dirsetname != NULL
+	);
+}
+
+void
+db_quota_dirset_callback_trampoline(void *closure, void *vinfo)
+{
+	struct db_quota_dirset_trampoline_closure *c = closure;
+	struct db_quota_dirset_arg *info = vinfo;
+
+	(*c->callback)(c->closure, &info->dirset, &info->q);
+}
+
+const struct gfarm_base_generic_info_ops db_base_quota_dirset_arg_ops = {
+	sizeof(struct db_quota_dirset_arg),
+	db_quota_dirset_arg_free,
+	db_quota_dirset_arg_clear,
+	db_quota_dirset_arg_validate,
+};
+
+/**********************************************************************/
+
+static void
+db_inode_dirset_arg_free(void *vinfo)
+{
+	struct db_inode_dirset_arg *info = vinfo;
+
+	gfarm_dirset_info_free(&info->dirset);
+}
+
+static void
+db_inode_dirset_arg_clear(void *vinfo)
+{
+	struct db_inode_dirset_arg *info = vinfo;
+
+	memset(info, 0, sizeof(*info));
+}
+
+static int
+db_inode_dirset_arg_validate(void *vinfo)
+{
+	struct db_inode_dirset_arg *info = vinfo;
+
+	return (
+	    info->dirset.username != NULL &&
+	    info->dirset.dirsetname != NULL
+	);
+}
+
+void
+db_quota_dir_callback_trampoline(void *closure, void *vinfo)
+{
+	struct db_quota_dir_trampoline_closure *c = closure;
+	struct db_inode_dirset_arg *info = vinfo;
+
+	(*c->callback)(c->closure, info->inum, &info->dirset);
+}
+
+const struct gfarm_base_generic_info_ops db_base_quota_dir_arg_ops = {
+	sizeof(struct db_inode_dirset_arg),
+	db_inode_dirset_arg_free,
+	db_inode_dirset_arg_clear,
+	db_inode_dirset_arg_validate,
 };

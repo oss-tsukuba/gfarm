@@ -312,7 +312,7 @@ main(int argc, char **argv)
 				fprintf(stderr,
 				    "sleep(%d): slept %d seconds\n",
 				    (int)off, rv - (int)off);
-			break;				   
+			break;
 		case OP_FLUSH:
 			e = gfs_pio_flush(gf);
 			if (e != GFARM_ERR_NO_ERROR) {

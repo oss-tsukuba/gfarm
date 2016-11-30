@@ -27,7 +27,7 @@ char *group_name_with_invalid(struct group *);
 int group_is_invalid(struct group *);
 int group_is_valid(struct group *);
 
-void group_all(void *, void (*)(void *, struct group *), int);
+void group_foreach(void *, void (*)(void *, struct group *), int);
 
 struct gfarm_group_info;
 gfarm_error_t group_info_add(struct gfarm_group_info *);
@@ -37,8 +37,8 @@ gfarm_error_t group_remove_in_cache(const char *);
 
 struct quota;
 struct quota *group_quota(struct group *);
-struct usage;
-struct usage *group_usage_tmp(struct group *);
+struct gfarm_quota_subject_info;
+struct gfarm_quota_subject_info *group_usage_tmp(struct group *);
 
 struct peer;
 gfarm_error_t gfm_server_group_info_get_all(struct peer *, int, int);

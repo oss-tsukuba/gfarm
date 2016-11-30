@@ -116,6 +116,22 @@ gfarm_error_t db_quota_user_load(void *,
 	void (*)(void *, struct gfarm_quota_info *));
 gfarm_error_t db_quota_group_load(void *,
 	void (*)(void *, struct gfarm_quota_info *));
+
+struct gfarm_dirset_info;
+struct quota_metadata;
+gfarm_error_t db_quota_dirset_add(const char *, const char *,
+	const struct quota_metadata *);
+gfarm_error_t db_quota_dirset_modify(const char *, const char *,
+	const struct quota_metadata *);
+gfarm_error_t db_quota_dirset_remove(const char *, const char *);
+gfarm_error_t db_quota_dirset_load(void *,
+	void (*)(void *, struct gfarm_dirset_info *, struct quota_metadata *));
+
+gfarm_error_t db_quota_dir_add(gfarm_ino_t, const char *, const char *);
+gfarm_error_t db_quota_dir_remove(gfarm_ino_t);
+gfarm_error_t db_quota_dir_load(void *,
+	void (*)(void *, gfarm_ino_t, struct gfarm_dirset_info *));
+
 struct db_seqnum_arg;
 gfarm_error_t db_seqnum_add(char *, gfarm_uint64_t);
 gfarm_error_t db_seqnum_modify(char *, gfarm_uint64_t);
@@ -148,6 +164,8 @@ struct db_symlink_arg;
 struct db_xattr_arg;
 struct db_quota_arg;
 struct db_quota_remove_arg;
+struct db_quota_dirset_arg;
+struct db_inode_dirset_arg;
 struct db_mdhost_modify_arg;
 
 void *db_host_dup(const struct gfarm_host_info *, size_t);

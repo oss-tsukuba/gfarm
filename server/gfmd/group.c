@@ -11,6 +11,7 @@
 #include "gfutil.h"
 #include "hash.h"
 
+#include "quota_info.h"
 #include "context.h"
 #include "gfp_xdr.h"
 #include "auth.h"
@@ -30,7 +31,7 @@ struct group {
 	char *groupname;
 	struct group_assignment users;
 	struct quota quota;
-	struct usage usage_tmp;
+	struct gfarm_quota_subject_info usage_tmp;
 	int invalid;	/* set when deleted */
 };
 
@@ -278,15 +279,15 @@ group_quota(struct group *g)
 	return (&g->quota);
 }
 
-struct usage *
+struct gfarm_quota_subject_info *
 group_usage_tmp(struct group *g)
 {
 	return (&g->usage_tmp);
 }
 
 void
-group_all(void *closure, void (*callback)(void *, struct group *),
-	  int valid_only)
+group_foreach(void *closure, void (*callback)(void *, struct group *),
+	int valid_only)
 {
 	struct gfarm_hash_iterator it;
 	struct group **g;

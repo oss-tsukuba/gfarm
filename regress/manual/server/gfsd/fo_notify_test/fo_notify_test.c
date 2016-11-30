@@ -74,7 +74,7 @@ failover_notify_request(int sock,
 
 	namelen = strlen(new_master_host);
 	if (namelen > GFARM_MAXHOSTNAMELEN) { /* sanity */
-		fprintf(stderr, 
+		fprintf(stderr,
 		    "%s: metadb_server_name %s: too long name (%zd > %d)",
 		    program_name, new_master_host,
 		    namelen, GFARM_MAXHOSTNAMELEN);

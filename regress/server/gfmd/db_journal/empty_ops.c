@@ -11,9 +11,11 @@
 
 #include "gfutil.h"
 
-#include "config.h"
-#include "quota.h"
+#include "quota_info.h"
 #include "metadb_server.h"
+#include "config.h"
+
+#include "quota.h"
 #include "db_access.h"
 #include "db_ops.h"
 
@@ -312,6 +314,60 @@ empty_quota_load(void *closure, int is_group,
 /**********************************************************************/
 
 static gfarm_error_t
+empty_quota_dirset_add(gfarm_uint64_t seqnum,
+	struct db_quota_dirset_arg *arg)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+empty_quota_dirset_modify(gfarm_uint64_t seqnum,
+	struct db_quota_dirset_arg *arg)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+empty_quota_dirset_remove(gfarm_uint64_t seqnum,
+	struct gfarm_dirset_info *arg)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+empty_quota_dirset_load(void *closure,
+	void (*callback)(void *,
+	    struct gfarm_dirset_info *, struct quota_metadata *))
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
+empty_quota_dir_add(gfarm_uint64_t seqnum,
+		struct db_inode_dirset_arg *arg)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+empty_quota_dir_remove(gfarm_uint64_t seqnum,
+	struct db_inode_inum_arg *arg)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+empty_quota_dir_load(void *closure,
+	void (*callback)(void *, gfarm_ino_t, struct gfarm_dirset_info *))
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
 empty_seqnum(struct db_seqnum_arg *arg)
 {
 	return (GFARM_ERR_NO_ERROR);
@@ -433,6 +489,15 @@ const struct db_ops empty_ops = {
 	empty_quota,
 	empty_quota_remove,
 	empty_quota_load,
+
+	empty_quota_dirset_add,
+	empty_quota_dirset_modify,
+	empty_quota_dirset_remove,
+	empty_quota_dirset_load,
+
+	empty_quota_dir_add,
+	empty_quota_dir_remove,
+	empty_quota_dir_load,
 
 	empty_seqnum_get,
 	empty_seqnum,

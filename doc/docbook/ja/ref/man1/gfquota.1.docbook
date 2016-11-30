@@ -5,7 +5,7 @@
 
 <refentry id="gfquota.1">
 
-<refentryinfo><date>23 Mar 2011</date></refentryinfo>
+<refentryinfo><date>29 Oct 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfquota</refentrytitle>
@@ -19,10 +19,36 @@
 </refnamediv>
 
 <refsynopsisdiv id="synopsis">
+
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfquota</command>
-    <arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-qHh</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-u <replaceable>ユーザ名</replaceable></arg>
 </cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfquota</command>
+    <arg choice="opt" rep="norepeat">-qHh</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-g <replaceable>グループ名</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfquota</command>
+    <arg choice="opt" rep="norepeat">-qHh</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-D <replaceable>dirset名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-u <replaceable>ユーザ名</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfquota</command>
+    <arg choice="opt" rep="norepeat">-qHh</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-d <replaceable>ディレクトリ</replaceable></arg>
+</cmdsynopsis>
+
 </refsynopsisdiv>
 
 <refsect1 id="description"><title>DESCRIPTION</title>
@@ -33,6 +59,11 @@ gfarmadm グループに所属している管理者は、ユーザ名やグル�
 一般ユーザの場合は、そのユーザが所属するグループ名を指定することができ
 ます。
 </para>
+<para>
+ただし、-D オプション指定時にユーザ名を指定できる管理者グループとしては、
+gfarmadm グループではなく、gfarmroot グループが使われます。
+</para>
+
 <para><command moreinfo="none">gfedquota</command> と <command moreinfo="none">gfquotacheck</command> を
 実行すると使用量のカウントと制限値が有効になり、
 <command moreinfo="none">gfquota</command> で表示できるようになります。</para>
@@ -71,6 +102,20 @@ gfarmadm グループに所属している管理者は、ユーザ名やグル�
 </varlistentry>
 
 <varlistentry>
+<term><option>-D NAME</option></term>
+<listitem>
+<para>指定した dirset名 の使用量と制限値を表示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d NAME</option></term>
+<listitem>
+<para>指定したパス名のディレクトリが所属する dirset の使用量と制限値を表示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-h</option></term>
 <listitem>
 <para>数字を「M(メガ)」のような単位つきで読みやすく表示します。
@@ -105,8 +150,14 @@ gfarmadm グループに所属している管理者は、ユーザ名やグル�
   <refentrytitle>gfquotacheck</refentrytitle><manvolnum>1</manvolnum>
   </citerefentry>,
   <citerefentry>
+  <refentrytitle>gfdirquota</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
   <refentrytitle>gfusage</refentrytitle><manvolnum>1</manvolnum>
-  </citerefentry>
+  </citerefentry>,
+  <refentrytitle>
+  Gfarm ユーザーズマニュアル / Directory Quota 機能
+  </refentrytitle>
 </para>
 </refsect1>
 

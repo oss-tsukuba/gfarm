@@ -254,7 +254,7 @@ display_statfs_nodes(const char *path, const char *domain, int *ndisplayed)
 
 	gfarm_host_sched_info_free(nhosts, hosts);
 	*ndisplayed = nhosts;
- 
+
 	return (GFARM_ERR_NO_ERROR);
 }
 

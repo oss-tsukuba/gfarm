@@ -68,7 +68,7 @@ struct file_opening {
 			struct replica_spec replica_spec;
 
 			/* only used by client initiated replication */
-			struct replication_info *replica_source;
+			struct client_initiated_replication *replica_source;
 		} f;
 		struct opening_dir {
 			gfarm_off_t offset;
@@ -79,6 +79,10 @@ struct file_opening {
 
 	char *path_for_trace_log; /* XXX FIXME not maintained if "." or ".." */
 };
+
+struct file_opening *file_opening_alloc(struct inode *,
+	struct peer *, struct host *, int);
+void file_opening_free(struct file_opening *, gfarm_mode_t);
 
 /*
  * a client opened a file:
@@ -100,8 +104,10 @@ struct file_opening {
  *		file_opening:u.f.spool_opener == gfsd_peer
  */
 
+struct dirset;
 gfarm_error_t process_open_file(struct process *, struct inode *,
-	gfarm_int32_t, int, struct peer *, struct host *, gfarm_int32_t *);
+	gfarm_int32_t, int, struct peer *, struct host *,
+	struct dirset *, gfarm_int32_t *);
 gfarm_error_t process_schedule_file(struct process *,
 	struct peer *, int, gfarm_int32_t *, struct host ***, const char *);
 gfarm_error_t process_reopen_file(struct process *,

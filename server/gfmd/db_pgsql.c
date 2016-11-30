@@ -32,12 +32,12 @@
 #include "gfutil.h"
 
 #include "config.h"
+#include "quota_info.h"
 #include "metadb_common.h"
 #include "xattr_info.h"
-#include "quota_info.h"
 #include "metadb_server.h"
-#include "quota.h"
 
+#include "quota.h"
 #include "db_common.h"
 #include "db_access.h"
 #include "db_ops.h"
@@ -411,7 +411,7 @@ pgsql_should_retry(PGresult *res)
 		 * we execute SQL commands requested by the upper layer
 		 * module anyway, since there is no way to keep consistency
 		 * of the database in such a situation.
-		 * 
+		 *
 		 * We enable 'connection_recovered' flag here.  While the
 		 * flag is enabled, we check 'transaction_nesting' value
 		 * lazily.  Once "START TRANSACTION", "COMMIT" or "ROLLBACK"
@@ -3681,6 +3681,313 @@ gfarm_pgsql_quota_load(void *closure, int is_group,
 /**********************************************************************/
 
 static gfarm_error_t
+pgsql_quota_dirset_call(gfarm_uint64_t seqnum, struct db_quota_dirset_arg *arg,
+	const char *sql, gfarm_pgsql_dml_sn_t op, const char *diag)
+{
+	gfarm_error_t e;
+	const char *paramValues[19];
+
+	char grace_period[GFARM_INT64STRLEN + 1];
+	char space[GFARM_INT64STRLEN + 1];
+	char space_exceed[GFARM_INT64STRLEN + 1];
+	char space_soft[GFARM_INT64STRLEN + 1];
+	char space_hard[GFARM_INT64STRLEN + 1];
+	char num[GFARM_INT64STRLEN + 1];
+	char num_exceed[GFARM_INT64STRLEN + 1];
+	char num_soft[GFARM_INT64STRLEN + 1];
+	char num_hard[GFARM_INT64STRLEN + 1];
+	char phy_space[GFARM_INT64STRLEN + 1];
+	char phy_space_exceed[GFARM_INT64STRLEN + 1];
+	char phy_space_soft[GFARM_INT64STRLEN + 1];
+	char phy_space_hard[GFARM_INT64STRLEN + 1];
+	char phy_num[GFARM_INT64STRLEN + 1];
+	char phy_num_exceed[GFARM_INT64STRLEN + 1];
+	char phy_num_soft[GFARM_INT64STRLEN + 1];
+	char phy_num_hard[GFARM_INT64STRLEN + 1];
+
+	sprintf(grace_period, "%" GFARM_PRId64, arg->q.limit.grace_period);
+	sprintf(space, "%" GFARM_PRId64, arg->q.usage.space);
+	sprintf(space_exceed, "%" GFARM_PRId64, arg->q.exceed.space_time);
+	sprintf(space_soft, "%" GFARM_PRId64, arg->q.limit.soft.space);
+	sprintf(space_hard, "%" GFARM_PRId64, arg->q.limit.hard.space);
+	sprintf(num, "%" GFARM_PRId64, arg->q.usage.num);
+	sprintf(num_exceed, "%" GFARM_PRId64, arg->q.exceed.num_time);
+	sprintf(num_soft, "%" GFARM_PRId64, arg->q.limit.soft.num);
+	sprintf(num_hard, "%" GFARM_PRId64, arg->q.limit.hard.num);
+	sprintf(phy_space, "%" GFARM_PRId64, arg->q.usage.phy_space);
+	sprintf(phy_space_exceed, "%" GFARM_PRId64,
+	    arg->q.exceed.phy_space_time);
+	sprintf(phy_space_soft, "%" GFARM_PRId64, arg->q.limit.soft.phy_space);
+	sprintf(phy_space_hard, "%" GFARM_PRId64, arg->q.limit.hard.phy_space);
+	sprintf(phy_num, "%" GFARM_PRId64, arg->q.usage.phy_num);
+	sprintf(phy_num_exceed, "%" GFARM_PRId64, arg->q.exceed.phy_num_time);
+	sprintf(phy_num_soft, "%" GFARM_PRId64, arg->q.limit.soft.phy_num);
+	sprintf(phy_num_hard, "%" GFARM_PRId64, arg->q.limit.hard.phy_num);
+
+	paramValues[0] = arg->dirset.username;
+	paramValues[1] = arg->dirset.dirsetname;
+	paramValues[2] = grace_period;
+	paramValues[3] = space;
+	paramValues[4] = space_exceed;
+	paramValues[5] = space_soft;
+	paramValues[6] = space_hard;
+	paramValues[7] = num;
+	paramValues[8] = num_exceed;
+	paramValues[9] = num_soft;
+	paramValues[10] = num_hard;
+	paramValues[11] = phy_space;
+	paramValues[12] = phy_space_exceed;
+	paramValues[13] = phy_space_soft;
+	paramValues[14] = phy_space_hard;
+	paramValues[15] = phy_num;
+	paramValues[16] = phy_num_exceed;
+	paramValues[17] = phy_num_soft;
+	paramValues[18] = phy_num_hard;
+
+	e = (*op)(
+		seqnum,
+		sql,
+		19, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0, /* ask for text results */
+		diag);
+
+	free_arg(arg);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_pgsql_quota_dirset_add(gfarm_uint64_t seqnum,
+	struct db_quota_dirset_arg *arg)
+{
+	return (pgsql_quota_dirset_call(seqnum, arg,
+	    "INSERT INTO QuotaDirSet "
+	    "(username, dirSetName, gracePeriod, "
+	    "fileSpace, fileSpaceExceed, fileSpaceSoft, fileSpaceHard, "
+	    "fileNum, fileNumExceed, fileNumSoft, fileNumHard, "
+	    "phySpace, phySpaceExceed, phySpaceSoft, phySpaceHard, "
+	    "phyNum, phyNumExceed, phyNumSoft, phyNumHard) "
+	    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9 ,$10, "
+	    "$11, $12, $13, $14, $15, $16, $17, $18, $19)",
+	     gfarm_pgsql_insert, "pgsql_quota_dirset_add"));
+}
+
+static gfarm_error_t
+gfarm_pgsql_quota_dirset_modify(gfarm_uint64_t seqnum,
+	struct db_quota_dirset_arg *arg)
+{
+	return (pgsql_quota_dirset_call(seqnum, arg,
+	    "UPDATE QuotaDirSet SET gracePeriod = $3, "
+	    "fileSpace = $4, fileSpaceExceed = $5, "
+	    "fileSpaceSoft = $6, fileSpaceHard = $7, "
+	    "fileNum = $8, fileNumExceed = $9, "
+	    "fileNumSoft = $10, fileNumHard = $11, "
+	    "phySpace = $12, phySpaceExceed = $13, "
+	    "phySpaceSoft = $14, phySpaceHard = $15, "
+	    "phyNum = $16, phyNumExceed = $17, "
+	    "phyNumSoft = $18, phyNumHard = $19 "
+	    "WHERE username = $1 AND dirSetName = $2",
+	    gfarm_pgsql_update_or_delete, "pgsql_quota_dirset_modify"));
+}
+
+static gfarm_error_t
+gfarm_pgsql_quota_dirset_remove(gfarm_uint64_t seqnum,
+	struct gfarm_dirset_info *arg)
+{
+	gfarm_error_t e;
+	const char *paramValues[2];
+
+	paramValues[0] = arg->username;
+	paramValues[1] = arg->dirsetname;
+	e = gfarm_pgsql_update_or_delete(
+	    seqnum,
+	    "DELETE FROM QuotaDirSet WHERE username = $1 AND dirSetName = $2",
+	    2, /* number of params */
+	    NULL, /* param types */
+	    paramValues,
+	    NULL, /* param lengths */
+	    NULL, /* param formats */
+	    0, /* ask for text results */
+	    "pgsql_quota_dirset_remove");
+
+	free_arg(arg);
+	return (e);
+}
+
+static void
+quota_dirset_info_set_fields_from_copy_binary(
+	const char *buf, int residual, void *vinfo)
+{
+	struct db_quota_dirset_arg *info = vinfo;
+	uint16_t num_fields;
+
+	COPY_BINARY(num_fields, buf, residual,
+	    "pgsql_quota_dirset_load: field number");
+	num_fields = ntohs(num_fields);
+	if (num_fields < 19) /* allow fields addition in future */
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "pgsql_quota_dirset_load: fields = %d", num_fields);
+
+	info->dirset.username =
+	    get_string_from_copy_binary(&buf, &residual);
+	info->dirset.dirsetname =
+	    get_string_from_copy_binary(&buf, &residual);
+	info->q.limit.grace_period =
+	    get_int64_from_copy_binary(&buf, &residual);
+	info->q.usage.space = get_int64_from_copy_binary(&buf, &residual);
+	info->q.exceed.space_time =
+	    get_int64_from_copy_binary(&buf, &residual);
+	info->q.limit.soft.space = get_int64_from_copy_binary(&buf, &residual);
+	info->q.limit.hard.space = get_int64_from_copy_binary(&buf, &residual);
+	info->q.usage.num = get_int64_from_copy_binary(&buf, &residual);
+	info->q.exceed.num_time = get_int64_from_copy_binary(&buf, &residual);
+	info->q.limit.soft.num = get_int64_from_copy_binary(&buf, &residual);
+	info->q.limit.hard.num = get_int64_from_copy_binary(&buf, &residual);
+	info->q.usage.phy_space = get_int64_from_copy_binary(&buf, &residual);
+	info->q.exceed.phy_space_time = get_int64_from_copy_binary(
+		&buf, &residual);
+	info->q.limit.soft.phy_space = get_int64_from_copy_binary(
+		&buf, &residual);
+	info->q.limit.hard.phy_space = get_int64_from_copy_binary(
+		&buf, &residual);
+	info->q.usage.phy_num = get_int64_from_copy_binary(&buf, &residual);
+	info->q.exceed.phy_num_time = get_int64_from_copy_binary(
+		&buf, &residual);
+	info->q.limit.soft.phy_num =
+	    get_int64_from_copy_binary(&buf, &residual);
+	info->q.limit.hard.phy_num =
+	    get_int64_from_copy_binary(&buf, &residual);
+}
+
+static gfarm_error_t
+gfarm_pgsql_quota_dirset_load(void *closure,
+	void (*callback)(void *,
+	    struct gfarm_dirset_info *, struct quota_metadata *))
+{
+	struct db_quota_dirset_arg tmp_info;
+	struct db_quota_dirset_trampoline_closure c;
+
+	c.closure = closure;
+	c.callback = callback;
+
+	return (gfarm_pgsql_generic_load(
+	    "COPY QuotaDirSet TO STDOUT BINARY",
+	    &tmp_info, db_quota_dirset_callback_trampoline, &c,
+	    &db_base_quota_dirset_arg_ops,
+	    quota_dirset_info_set_fields_from_copy_binary,
+	    "pgsql_quota_dirset_load"));
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
+pgsql_quota_dir_call(gfarm_uint64_t seqnum, struct db_inode_dirset_arg *arg,
+	const char *sql, gfarm_pgsql_dml_sn_t op, const char *diag)
+{
+	gfarm_error_t e;
+	const char *paramValues[3];
+	char inumber[GFARM_INT64STRLEN + 1];
+
+	sprintf(inumber, "%" GFARM_PRId64, arg->inum);
+	paramValues[0] = inumber;
+	paramValues[1] = arg->dirset.username;
+	paramValues[2] = arg->dirset.dirsetname;
+	e = (*op)(
+		seqnum,
+		sql,
+		3, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0, /* ask for text results */
+		diag);
+
+	free_arg(arg);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_pgsql_quota_dir_add(gfarm_uint64_t seqnum,
+	struct db_inode_dirset_arg *arg)
+{
+	return  (pgsql_quota_dir_call(seqnum, arg,
+	    "INSERT INTO QuotaDirectory "
+	    "(inumber, username, dirSetName) VALUES ($1, $2, $3)",
+	     gfarm_pgsql_insert, "pgsql_quota_dir_add"));
+};
+
+static gfarm_error_t
+gfarm_pgsql_quota_dir_remove(gfarm_uint64_t seqnum,
+	struct db_inode_inum_arg *arg)
+{
+	gfarm_error_t e;
+	const char *paramValues[1];
+	char inumber[GFARM_INT64STRLEN + 1];
+
+	sprintf(inumber, "%" GFARM_PRId64, arg->inum);
+	paramValues[0] = inumber;
+
+	e = gfarm_pgsql_update_or_delete(
+	    seqnum,
+	    "DELETE FROM QuotaDirectory WHERE inumber = $1",
+	    1, /* number of params */
+	    NULL, /* param types */
+	    paramValues,
+	    NULL, /* param lengths */
+	    NULL, /* param formats */
+	    0, /* ask for text results */
+	    "pgsql_quota_dir_remove");
+
+	free_arg(arg);
+	return (e);
+}
+
+static void
+quota_dir_info_set_fields_from_copy_binary(
+	const char *buf, int residual, void *vinfo)
+{
+	struct db_inode_dirset_arg *info = vinfo;
+	uint16_t num_fields;
+
+	COPY_BINARY(num_fields, buf, residual,
+	    "pgsql_quota_dir_load: field number");
+	num_fields = ntohs(num_fields);
+	if (num_fields < 3) /* allow fields addition in future */
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "pgsql_quota_dir_load: fields = %d", num_fields);
+
+	info->inum = get_int64_from_copy_binary(&buf, &residual);
+	info->dirset.username =
+	    get_string_from_copy_binary(&buf, &residual);
+	info->dirset.dirsetname =
+	    get_string_from_copy_binary(&buf, &residual);
+}
+
+static gfarm_error_t
+gfarm_pgsql_quota_dir_load(void *closure,
+	void (*callback)(void *, gfarm_ino_t, struct gfarm_dirset_info *))
+{
+	struct db_inode_dirset_arg tmp_info;
+	struct db_quota_dir_trampoline_closure c;
+
+	c.closure = closure;
+	c.callback = callback;
+
+	return (gfarm_pgsql_generic_load(
+	    "COPY QuotaDirectory TO STDOUT BINARY",
+	    &tmp_info, db_quota_dir_callback_trampoline, &c,
+	    &db_base_quota_dir_arg_ops,
+	    quota_dir_info_set_fields_from_copy_binary,
+	    "pgsql_quota_dir_load"));
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
 pgsql_seqnum_call(struct db_seqnum_arg *arg,
 	const char *sql, gfarm_pgsql_dml_t op, const char *diag)
 {
@@ -4031,6 +4338,15 @@ const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_quota_modify,
 	gfarm_pgsql_quota_remove,
 	gfarm_pgsql_quota_load,
+
+	gfarm_pgsql_quota_dirset_add,
+	gfarm_pgsql_quota_dirset_modify,
+	gfarm_pgsql_quota_dirset_remove,
+	gfarm_pgsql_quota_dirset_load,
+
+	gfarm_pgsql_quota_dir_add,
+	gfarm_pgsql_quota_dir_remove,
+	gfarm_pgsql_quota_dir_load,
 
 	gfarm_pgsql_seqnum_get,
 	gfarm_pgsql_seqnum_add,

@@ -65,13 +65,13 @@ static struct gfarm_id_table_entry_ops process_id_table_ops = {
 	sizeof(struct process)
 };
 
-struct replication_info {
+struct client_initiated_replication {
 	gfarm_int64_t gen;
 	struct host *dst;
 	gfarm_int32_t cksum_request_flags;
 };
 
-static struct file_opening *
+struct file_opening *
 file_opening_alloc(struct inode *inode,
 	struct peer *peer, struct host *spool_host, int flag)
 {
@@ -693,7 +693,7 @@ process_new_generation_done(struct process *process, struct peer *peer, int fd,
 gfarm_error_t
 process_open_file(struct process *process, struct inode *file,
 	gfarm_int32_t flag, int created,
-	struct peer *peer, struct host *spool_host,
+	struct peer *peer, struct host *spool_host, struct dirset *tdirset,
 	gfarm_int32_t *fdp)
 {
 	gfarm_error_t e;
@@ -732,7 +732,7 @@ process_open_file(struct process *process, struct inode *file,
 			"file_opening_alloc() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	e = inode_open(fo);
+	e = inode_open(fo, tdirset);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001626,
 			"inode_open() failed: %s",
@@ -1236,7 +1236,8 @@ process_inherit_fd(struct process *process, gfarm_int32_t parent_fd,
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	return (process_open_file(process, fo->inode, fo->flag,
-	    (fo->flag & GFARM_FILE_CREATE) != 0, peer, spool_host, fdp));
+	    (fo->flag & GFARM_FILE_CREATE) != 0, peer, spool_host,
+	    inode_get_tdirset(fo->inode), fdp));
 }
 
 static gfarm_error_t

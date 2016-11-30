@@ -47,7 +47,7 @@ fsngroup_free_tuples(gfarm_int32_t n_tuples, struct fsngroup_tuple *tuples)
 static int
 record_fsngroup_tuple(struct host *h, void *closure, void *elemp)
 {
-	struct fsngroup_tuple *tuple = elemp; 
+	struct fsngroup_tuple *tuple = elemp;
 
 	tuple->hostname = host_name(h);
 	tuple->fsngroupname = strdup(host_fsngroup(h));
@@ -107,7 +107,7 @@ fsngroup_get_hosts(const char *fsngroup, int *nhostsp, struct host ***hostsp)
  */
 gfarm_error_t
 fsngroup_schedule_replication(
-	struct inode *inode, const char *repattr,
+	struct inode *inode, struct dirset *tdirset, const char *repattr,
 	int n_srcs, struct host **srcs,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
 	int *n_being_removedp, struct host **being_removed, const char *diag,
@@ -159,7 +159,7 @@ fsngroup_schedule_replication(
 		num = gfarm_repattr_amount(reps[i]);
 		*total_p = *total_p + num;
 		e = inode_schedule_replication_within_scope(
-		    inode, num, n_srcs, srcs, &next_src_index,
+		    inode, tdirset, num, n_srcs, srcs, &next_src_index,
 		    &n_scope, scope, n_existingp, existing, grace,
 		    n_being_removedp, being_removed, diag);
 		if (e != GFARM_ERR_NO_ERROR &&

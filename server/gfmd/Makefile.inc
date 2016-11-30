@@ -1,4 +1,5 @@
 GFMD_COMMON_SRCS = \
+	$(GFMD_SRCDIR)/uint64_map.c \
 	$(GFMD_SRCDIR)/thrpool.c \
 	$(GFMD_SRCDIR)/callout.c \
 	$(GFMD_SRCDIR)/subr.c \
@@ -23,7 +24,9 @@ GFMD_COMMON_SRCS = \
 	$(GFMD_SRCDIR)/file_copy.c \
 	$(GFMD_SRCDIR)/dead_file_copy.c \
 	$(GFMD_SRCDIR)/quota.c \
+	$(GFMD_SRCDIR)/quota_dir.c \
 	$(GFMD_SRCDIR)/inode.c \
+	$(GFMD_SRCDIR)/dirset.c \
 	$(GFMD_SRCDIR)/process.c \
 	$(GFMD_SRCDIR)/job.c \
 	$(GFMD_SRCDIR)/peer.c \
@@ -32,6 +35,7 @@ GFMD_COMMON_SRCS = \
 	$(GFMD_SRCDIR)/replica_check.c
 
 GFMD_COMMON_OBJS = \
+	$(GFMD_BUILDDIR)/uint64_map.o \
 	$(GFMD_BUILDDIR)/thrpool.o \
 	$(GFMD_BUILDDIR)/callout.o \
 	$(GFMD_BUILDDIR)/subr.o \
@@ -56,7 +60,9 @@ GFMD_COMMON_OBJS = \
 	$(GFMD_BUILDDIR)/file_copy.o \
 	$(GFMD_BUILDDIR)/dead_file_copy.o \
 	$(GFMD_BUILDDIR)/quota.o \
+	$(GFMD_BUILDDIR)/quota_dir.o \
 	$(GFMD_BUILDDIR)/inode.o \
+	$(GFMD_BUILDDIR)/dirset.o \
 	$(GFMD_BUILDDIR)/process.o \
 	$(GFMD_BUILDDIR)/job.o \
 	$(GFMD_BUILDDIR)/peer.o \
@@ -69,6 +75,7 @@ DEPGFMDINC = \
 	$(GFUTIL_SRCDIR)/gflog_reduced.h \
 	$(GFUTIL_SRCDIR)/hash.h \
 	$(GFUTIL_SRCDIR)/id_table.h \
+	$(GFUTIL_SRCDIR)/queue.h \
 	$(GFUTIL_SRCDIR)/tree.h \
 	$(GFUTIL_SRCDIR)/thrsubr.h \
 	$(GFARMLIB_SRCDIR)/context.h \
@@ -81,6 +88,7 @@ DEPGFMDINC = \
 	$(GFARMLIB_SRCDIR)/gfm_proto.h \
 	$(GFARMLIB_SRCDIR)/gfj_client.h \
 	$(GFARMLIB_SRCDIR)/timespec.h \
+	$(GFMD_SRCDIR)/uint64_map.h \
 	$(GFMD_SRCDIR)/thrpool.h \
 	$(GFMD_SRCDIR)/callout.h \
 	$(GFMD_SRCDIR)/subr.h \
@@ -106,7 +114,9 @@ DEPGFMDINC = \
 	$(GFMD_SRCDIR)/file_copy.h \
 	$(GFMD_SRCDIR)/dead_file_copy.h \
 	$(GFMD_SRCDIR)/quota.h \
+	$(GFMD_SRCDIR)/quota_dir.h \
 	$(GFMD_SRCDIR)/inode.h \
+	$(GFMD_SRCDIR)/dirset.h \
 	$(GFMD_SRCDIR)/process.h \
 	$(GFMD_SRCDIR)/protocol_state.h \
 	$(GFMD_SRCDIR)/peer.h \

@@ -9,7 +9,7 @@ extern int	gfarmGetNameOfSocket(int sock, int *portPtr);
 int	gfarmGetPeernameOfSocket(int sock, int *portPtr, char **hostPtr);
 
 extern int	gfarmWaitReadable(int fd, int timtoueMsec);
-extern int	gfarmReadInt8(int fd, gfarm_int8_t *buf, int len, 
+extern int	gfarmReadInt8(int fd, gfarm_int8_t *buf, int len,
 			      int timtoueMsec);
 extern int	gfarmReadInt16(int fd, gfarm_int16_t *buf, int len,
 			      int timtoueMsec);

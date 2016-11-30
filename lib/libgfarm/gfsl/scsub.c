@@ -82,7 +82,7 @@ doServer(int fd, char *hostname, int port, gss_cred_id_t myCred,
      * Now, we can communicate securely.
      */
 
-    x = gfarmSecSessionReceiveInt32(initialSession, &tmpBuf, &n, 
+    x = gfarmSecSessionReceiveInt32(initialSession, &tmpBuf, &n,
 				    GFARM_GSS_TIMEOUT_INFINITE);
     if (x != 1) {
 	fprintf(stderr, "can't receive test buffer size because of:\n");
@@ -93,7 +93,7 @@ doServer(int fd, char *hostname, int port, gss_cred_id_t myCred,
     (void)free(tmpBuf);
     fprintf(stderr, "Receive buffer size: %d\n", tBufSz);
 
-    if (gfarmSecSessionReceiveInt8(initialSession, &rBuf, &rSz, 
+    if (gfarmSecSessionReceiveInt8(initialSession, &rBuf, &rSz,
 				   GFARM_GSS_TIMEOUT_INFINITE) <= 0) {
 	fprintf(stderr, "test buffer receive failed because of:\n");
 	gfarmSecSessionPrintStatus(initialSession);
@@ -116,7 +116,7 @@ doServer(int fd, char *hostname, int port, gss_cred_id_t myCred,
     }
     (void)free(rBuf);
 
-    if (gfarmSecSessionReceiveInt32(initialSession, &tmpBuf, &n, 
+    if (gfarmSecSessionReceiveInt32(initialSession, &tmpBuf, &n,
 				    GFARM_GSS_TIMEOUT_INFINITE) != 1) {
 	fprintf(stderr, "can't receive delegation check flag because of:\n");
 	gfarmSecSessionPrintStatus(initialSession);

@@ -148,6 +148,37 @@ CREATE TABLE QuotaGroup (
 	phyNumHard	INT8	NOT NULL
 );
 
+CREATE TABLE QuotaDirSet (
+	username	VARCHAR(64)	NOT NULL
+		REFERENCES GfarmUser(username) ON DELETE CASCADE,
+	dirSetName	VARCHAR(64)	NOT NULL,
+	gracePeriod	INT8	NOT NULL,
+	fileSpace	INT8	NOT NULL,
+	fileSpaceExceed	INT8	NOT NULL,
+	fileSpaceSoft	INT8	NOT NULL,
+	fileSpaceHard	INT8	NOT NULL,
+	fileNum		INT8	NOT NULL,
+	fileNumExceed	INT8	NOT NULL,
+	fileNumSoft	INT8	NOT NULL,
+	fileNumHard	INT8	NOT NULL,
+	phySpace	INT8	NOT NULL,
+	phySpaceExceed	INT8	NOT NULL,
+	phySpaceSoft	INT8	NOT NULL,
+	phySpaceHard	INT8	NOT NULL,
+	phyNum		INT8	NOT NULL,
+	phyNumExceed	INT8	NOT NULL,
+	phyNumSoft	INT8	NOT NULL,
+	phyNumHard	INT8	NOT NULL,
+	PRIMARY KEY(username, dirSetName)
+);
+
+CREATE TABLE QuotaDirectory (
+	inumber		INT8		PRIMARY KEY
+		REFERENCES INode(inumber) ON DELETE CASCADE,
+	username	VARCHAR(64)	NOT NULL,
+	dirSetName	VARCHAR(64)	NOT NULL
+);
+
 CREATE TABLE SeqNum (
 	name		VARCHAR(256)	PRIMARY KEY,
 	value		INT8	NOT NULL

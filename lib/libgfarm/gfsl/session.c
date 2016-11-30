@@ -48,7 +48,7 @@ static const char acceptorDiag[] = "acceptor";
 static gfarmSecSessionOption acceptorSsOpt = GFARM_SS_DEFAULT_OPTION;
 static gfarmSecSessionOption initiatorSsOpt = GFARM_SS_DEFAULT_OPTION;
 
-static int			canonicSecSessionOpt(int which, 
+static int			canonicSecSessionOpt(int which,
 				      gfarmSecSessionOption *reqPtr,
 				      gfarmSecSessionOption *canPtr);
 static gfarmSecSession *	allocSecSession(int which);
@@ -372,7 +372,7 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 #define NEGO_PARAM_OTHER_CONFIG		4
 #define NEGO_PARAM_OTHER_CONFIG_FORCE	5
 #define NUM_NEGO_PARAM			6
-  
+
     if (sCtx == GSS_C_NO_CONTEXT) {
 	gflog_auth_error(GFARM_MSG_1000661,
 	    "gfarmSecSession:negotiateConfigParam(): "
@@ -389,7 +389,7 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 	    unsigned int iMax;
 	    int iMaxF;
 	    int iConf, iConfF;
-	   
+
 	    if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM,
 		GFARM_GSS_AUTH_TIMEOUT_MSEC) != NUM_NEGO_PARAM) {
 		gsiErrNo = errno;
@@ -406,7 +406,7 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 	    iConf = param[NEGO_PARAM_OTHER_CONFIG];
 	    iConfF = param[NEGO_PARAM_OTHER_CONFIG_FORCE];
 
-	    /* 
+	    /*
 	     * Give precedence to the acceptor on QOP.
 	     */
 	    if (canPtr->qOpForce == 0 && iQOPF == 1) {
@@ -422,7 +422,7 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 	    }
 	    param[NEGO_PARAM_QOP] = retQOP;
 
-	    /* 
+	    /*
 	     * maximum transmission size
 	     */
 	    if (canPtr->maxTransSizeForce == 1) {
@@ -435,7 +435,7 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 		 * Use the initiator's.
 		 */
 		retMaxT = iMax;
-	    } else { 
+	    } else {
 		/*
 		 * Both force flags are off.
 		 * Use larger one.
@@ -445,7 +445,7 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 	    }
 	    param[NEGO_PARAM_MAX_TRANS_SIZE] = retMaxT;
 
-	    /* 
+	    /*
 	     * other configuration flags
 	     */
 	    /* compression, systemconf -  Give precedence to the acceptor. */
@@ -1442,7 +1442,7 @@ gfarmSecSessionSendInt32(gfarmSecSession *ssPtr, gfarm_int32_t *buf, int n)
     for (i = 0; i < n; i++) {
 	lBuf[i] = htonl(buf[i]);
     }
-    
+
     ret = gfarmSecSessionSendInt8(ssPtr, (gfarm_int8_t *)lBuf,
 				  n * GFARM_OCTETS_PER_32BIT);
     (void)free(lBuf);
@@ -1465,7 +1465,7 @@ gfarmSecSessionReceiveInt32(gfarmSecSession *ssPtr, gfarm_int32_t **bufPtr,
     int i;
     int n;
     int ret = gfarmSecSessionReceiveInt8(ssPtr, &lBuf, &len, timeoutMsec);
-    
+
     if (ret <= 0) {
 	goto Done;
     }
@@ -1519,7 +1519,7 @@ gfarmSecSessionSendInt16(gfarmSecSession *ssPtr, gfarm_int16_t *buf, int n)
     for (i = 0; i < n; i++) {
 	lBuf[i] = htons(buf[i]);
     }
-    
+
     ret = gfarmSecSessionSendInt8(ssPtr, (gfarm_int8_t *)lBuf,
 				   n * GFARM_OCTETS_PER_16BIT);
     (void)free(lBuf);
@@ -1542,7 +1542,7 @@ gfarmSecSessionReceiveInt16(gfarmSecSession *ssPtr, gfarm_int16_t **bufPtr,
     int i;
     int n;
     int ret = gfarmSecSessionReceiveInt8(ssPtr, &lBuf, &len, timeoutMsec);
-    
+
     if (ret <= 0) {
 	goto Done;
     }

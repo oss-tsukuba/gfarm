@@ -62,6 +62,7 @@ SRCS = \
 	gfs_dirplus.c \
 	gfs_dirplusxattr.c \
 	gfs_dircache.c \
+	gfs_dirquota.c \
 	gfs_attrplus.c \
 	gfs_pio.c \
 	gfs_pio_section.c \
@@ -147,6 +148,7 @@ OBJS = \
 	gfs_dirplus.lo \
 	gfs_dirplusxattr.lo \
 	gfs_dircache.lo \
+	gfs_dirquota.lo \
 	gfs_attrplus.lo \
 	gfs_pio.lo \
 	gfs_pio_section.lo \
@@ -237,6 +239,7 @@ gfs_dir.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h gfs_profile.h gfm
 gfs_dirplus.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h lookup.h gfs_io.h gfs_failover.h
 gfs_dirplusxattr.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h gfs_io.h gfs_dirplusxattr.h gfs_failover.h
 gfs_dircache.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h context.h config.h gfs_dir.h gfs_dirplusxattr.h gfs_dircache.h gfs_attrplus.h
+gfs_dirquota.lo: quota_info.h gfm_client.h lookup.h gfs_dirquota.h
 gfs_attrplus.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h gfs_attrplus.h
 gfs_io.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h lookup.h gfs_io.h
 gfs_link.lo: context.h gfm_client.h lookup.h

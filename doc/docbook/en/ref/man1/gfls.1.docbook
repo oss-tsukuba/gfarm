@@ -6,7 +6,7 @@
 
 <refentry id="gfls.1">
 
-<refentryinfo><date>27 Apr 2007</date></refentryinfo>
+<refentryinfo><date>11 Nov 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfls</refentrytitle>
@@ -66,6 +66,13 @@
 <term><option>-C</option></term>
 <listitem>
 <para>Multi-column output.  This is the default output format.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-D</option></term>
+<listitem>
+<para>Display dirset name of the directory quota feature.</para>
 </listitem>
 </varlistentry>
 

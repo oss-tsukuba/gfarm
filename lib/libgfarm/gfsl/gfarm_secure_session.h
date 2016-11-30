@@ -92,7 +92,7 @@ typedef struct gfarmSecSession {
  * GSSAPI and other transmission configuration information struct.
  */
 typedef struct {
-    unsigned int optMask;	/* Mask of which options are 
+    unsigned int optMask;	/* Mask of which options are
 				   specified. Or'd belows: */
 #define GFARM_SS_OPT_QOP_MASK	0x1
 #define GFARM_SS_OPT_MAXT_MASK	0x2

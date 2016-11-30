@@ -1,0 +1,17 @@
+GracePeriod              :               disabled
+FileSpace                :                      0
+FileSpaceGracePeriod     :               disabled
+FileSpaceSoftLimit       :               disabled
+FileSpaceHardLimit       :               disabled
+FileNum                  :                      1
+FileNumGracePeriod       :               disabled
+FileNumSoftLimit         :               disabled
+FileNumHardLimit         :               disabled
+PhysicalSpace            :                      0
+PhysicalSpaceGracePeriod :               disabled
+PhysicalSpaceSoftLimit   :               disabled
+PhysicalSpaceHardLimit   :               disabled
+PhysicalNum              :                      0
+PhysicalNumGracePeriod   :               disabled
+PhysicalNumSoftLimit     :               disabled
+PhysicalNumHardLimit     :               disabled

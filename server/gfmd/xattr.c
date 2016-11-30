@@ -113,10 +113,8 @@ error:
 static int
 user_is_owner_or_root(struct inode *inode, struct user *user)
 {
-	if (user == inode_get_user(inode) || user_is_root(inode, user))
-		return (1);
-	else
-		return (0);
+	return (user == inode_get_user(inode) ||
+	    user_is_root_for_inode(user, inode));
 }
 
 #define XATTR_OP_GET	1
@@ -139,7 +137,8 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 		    strcmp("md5", type) != 0 &&
 		    strcmp("acl_access", type) != 0 &&
 		    strcmp("acl_default", type) != 0 &&
-		    strcmp(GFARM_REPATTR_TYPE, type) != 0)
+		    strcmp(GFARM_REPATTR_TYPE, type) != 0 &&
+		    strcmp(GFARM_EA_DIRECTORY_QUOTA + 6, type) != 0)
 			goto not_supp;
 		else if (inode_is_symlink(inode))
 			goto symlink;
@@ -157,7 +156,7 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 			goto not_supp;
 		else if (inode_is_symlink(inode))
 			goto symlink;
-		else if (user_is_root(inode, user))
+		else if (user_is_root_for_inode(user, inode))
 			return (GFARM_ERR_NO_ERROR);
 		else
 			goto not_permit;
@@ -1051,18 +1050,6 @@ inum_path_array_add(struct inum_path_array *array, gfarm_ino_t inum,
 	}
 }
 
-static int
-is_dot_dir(char *name, int namelen)
-{
-	if (name[0] == '.') {
-		if (namelen == 1)
-			return 1;
-		if ((name[1] == '.') && (namelen == 2))
-			return 1;
-	}
-	return 0;
-}
-
 static gfarm_error_t
 findxmlattr_set_restart_path(struct inum_path_array *array,
 	char *path)
@@ -1209,7 +1196,7 @@ findxmlattr_add_subpaths(struct inode *inode, struct user *user,
 		if (entry == NULL)
 			break;
 		name = dir_entry_get_name(entry, &namelen);
-		if (is_dot_dir(name, namelen))
+		if (name_is_dot_or_dotdot(name, namelen))
 			continue;
 		entry_inode = dir_entry_get_inode(entry);
 		is_dir = inode_is_dir(entry_inode);

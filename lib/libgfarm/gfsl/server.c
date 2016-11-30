@@ -54,7 +54,7 @@ ParseArgs(int argc, char **argv)
 	fprintf(stderr, "unknown extra argument %s\n", argv[optind]);
 	return -1;
     }
-    
+
     return 0;
 }
 

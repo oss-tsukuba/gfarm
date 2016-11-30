@@ -667,7 +667,7 @@ struct { \
 #define GFARM_HCIRCLEQ_NEXT(elm, field)	((elm)->field.hcqe_next)
 #define GFARM_HCIRCLEQ_PREV(elm, field)	((elm)->field.hcqe_prev)
 #define GFARM_HCIRCLEQ_FIRST(head, field) \
-	GFARM_HCIRCLEQ_NEXT(&(head), field) 
+	GFARM_HCIRCLEQ_NEXT(&(head), field)
 #define GFARM_HCIRCLEQ_LAST(head, field) \
 	GFARM_HCIRCLEQ_PREV(&(head), field)
 
@@ -684,7 +684,7 @@ struct { \
 	(at)->field.hcqe_prev->field.hcqe_next = (elm); \
 	(at)->field.hcqe_prev = (elm); \
 } while (/*CONSTCOND*/0)
-	
+
 #define GFARM_HCIRCLEQ_INSERT_HEAD(head, elm, field) \
 	GFARM_HCIRCLEQ_INSERT_AFTER(&(head), elm, field)
 
@@ -766,7 +766,7 @@ struct { \
 #define GFARM_HCIRCLEQ_FOREACH_SAFE(var, head, field, tvar) \
 	for ((var) = GFARM_HCIRCLEQ_FIRST(head, field); \
 	    !GFARM_HCIRCLEQ_IS_END(head, var) && \
-	    ((tvar) = GFARM_HCIRCLEQ_NEXT(var, next), 1); \
+	    ((tvar) = GFARM_HCIRCLEQ_NEXT(var, field), 1); \
 	    (var) = (tvar))
 
 #define GFARM_HCIRCLEQ_FOREACH_REVERSE(var, head, field) \

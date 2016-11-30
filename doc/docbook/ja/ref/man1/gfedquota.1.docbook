@@ -5,7 +5,7 @@
 
 <refentry id="gfedquota.1">
 
-<refentryinfo><date>25 Aug 2015</date></refentryinfo>
+<refentryinfo><date>29 Oct 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfedquota</refentrytitle>
@@ -19,10 +19,25 @@
 </refnamediv>
 
 <refsynopsisdiv id="synopsis">
+
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfedquota</command>
-    <arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+    <arg choice="opt" rep="norepeat">オプション</arg>
+    <arg choice="plain" rep="norepeat">-u <replaceable>ユーザ名</replaceable></arg>
 </cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfedquota</command>
+    <arg choice="opt" rep="norepeat">オプション</arg>
+    <arg choice="plain" rep="norepeat">-g <replaceable>グループ名</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfedquota</command>
+    <arg choice="opt" rep="norepeat">オプション</arg>
+    <arg choice="plain" rep="norepeat">-D <replaceable>dirset名</replaceable></arg>
+</cmdsynopsis>
+
 </refsynopsisdiv>
 
 <refsect1 id="description"><title>DESCRIPTION</title>
@@ -40,6 +55,10 @@
 </para>
 <para>
 このコマンドは gfarmadm グループに所属する管理者だけが実行できます。
+</para>
+<para>
+ただし、-D オプション指定の管理者グループとしては、
+gfarmadm グループではなく、gfarmroot グループが使われます。
 </para>
 </refsect1>
 
@@ -64,6 +83,13 @@
 <term><option>-g NAME, --group=NAME</option></term>
 <listitem>
 <para>制限を編集する対象のグループ名を指定します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-D NAME, --dirset=NAME</option></term>
+<listitem>
+<para>制限を編集する対象の dirset名 を指定します。</para>
 </listitem>
 </varlistentry>
 
@@ -151,8 +177,14 @@
   <refentrytitle>gfquotacheck</refentrytitle><manvolnum>1</manvolnum>
   </citerefentry>,
   <citerefentry>
+  <refentrytitle>gfdirquota</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
   <refentrytitle>gfusage</refentrytitle><manvolnum>1</manvolnum>
-  </citerefentry>
+  </citerefentry>,
+  <refentrytitle>
+  Gfarm ユーザーズマニュアル / Directory Quota 機能
+  </refentrytitle>
 </para>
 </refsect1>
 

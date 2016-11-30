@@ -47,6 +47,8 @@
 --   1. Packet dissection of some gfs commands have not been implemented yet.
 --   2. Fragmentated packets are not dissected correctly.
 --
+
+-- NOTE: comment out the following line, if Wireshark >= 2.0 (i.e. Lua >= 5.2)
 require("bit")
 
 --
@@ -190,6 +192,12 @@ local error_names = {
    [ 98] = 'GFARM_ERR_GFMD_FAILED_OVER', 
    [ 99] = 'GFARM_ERR_BAD_INODE_NUMBER', 
    [100] = 'GFARM_ERR_BAD_COOKIE', 
+   [101] = 'GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS',
+   [102] = 'GFARM_ERR_CHECKSUM_MISMATCH',
+   [103] = 'GFARM_ERR_CONFLICT_DETECTED',
+   [104] = 'GFARM_ERR_INVALID_CREDENTIAL',
+   [105] = 'GFARM_ERR_NO_FILESYSTEM_NODE',
+   [106] = 'GFARM_ERR_DIRECTORY_QUOTA_EXISTS',
 }
 
 --

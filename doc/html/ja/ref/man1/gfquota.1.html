@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfquota</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfquota">
 <a name="gfquota.1"></a><div class="titlepage"></div>
@@ -12,7 +12,10 @@
 </div>
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfquota</code>  [<em class="replaceable"><code>オプション</code></em>]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfquota</code>  [-qHh] [-P <em class="replaceable"><code>path</code></em>] [-u <em class="replaceable"><code>ユーザ名</code></em>]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfquota</code>  [-qHh] [-P <em class="replaceable"><code>path</code></em>]  -g <em class="replaceable"><code>グループ名</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfquota</code>  [-qHh] [-P <em class="replaceable"><code>path</code></em>]  -D <em class="replaceable"><code>dirset名</code></em>  [-u <em class="replaceable"><code>ユーザ名</code></em>]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfquota</code>  [-qHh] [-P <em class="replaceable"><code>path</code></em>]  -d <em class="replaceable"><code>ディレクトリ</code></em> </p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
@@ -21,6 +24,10 @@ gfarmadm グループに所属している管理者は、ユーザ名やグル�
 ことができます。
 一般ユーザの場合は、そのユーザが所属するグループ名を指定することができ
 ます。
+</p>
+<p>
+ただし、-D オプション指定時にユーザ名を指定できる管理者グループとしては、
+gfarmadm グループではなく、gfarmroot グループが使われます。
 </p>
 <p><span class="command"><strong>gfedquota</strong></span> と <span class="command"><strong>gfquotacheck</strong></span> を
 実行すると使用量のカウントと制限値が有効になり、
@@ -38,6 +45,10 @@ gfarmadm グループに所属している管理者は、ユーザ名やグル�
 <dd><p>指定したユーザ名の使用量と制限値を表示します。</p></dd>
 <dt><span class="term"><code class="option">-g NAME</code></span></dt>
 <dd><p>指定したグループ名の使用量と制限値を表示します。</p></dd>
+<dt><span class="term"><code class="option">-D NAME</code></span></dt>
+<dd><p>指定した dirset名 の使用量と制限値を表示します。</p></dd>
+<dt><span class="term"><code class="option">-d NAME</code></span></dt>
+<dd><p>指定したパス名のディレクトリが所属する dirset の使用量と制限値を表示します。</p></dd>
 <dt><span class="term"><code class="option">-h</code></span></dt>
 <dd><p>数字を「M(メガ)」のような単位つきで読みやすく表示します。
 単位には2の累乗を用いますので、「M」は 1,048,576 を意味します。</p></dd>
@@ -53,7 +64,11 @@ gfarmadm グループに所属している管理者は、ユーザ名やグル�
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfedquota</span>(1)</span>,
   <span class="citerefentry"><span class="refentrytitle">gfquotacheck</span>(1)</span>,
-  <span class="citerefentry"><span class="refentrytitle">gfusage</span>(1)</span>
+  <span class="citerefentry"><span class="refentrytitle">gfdirquota</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfusage</span>(1)</span>,
+  <span class="refentrytitle">
+  Gfarm ユーザーズマニュアル / Directory Quota 機能
+  </span>
 </p>
 </div>
 </div></body>

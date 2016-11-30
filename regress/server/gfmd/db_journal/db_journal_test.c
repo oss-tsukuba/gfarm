@@ -748,7 +748,7 @@ t_write_blocked(void)
 	 * Note that the writer now starts writing more data.
 	 *
 	 *     |user1|user2|user3|  |
-	 *                 r     
+	 *                 r
 	 */
 	TEST_ASSERT_I("t_write_blocked_num_rec_read",
 	    2, t_write_blocked_num_rec_read);

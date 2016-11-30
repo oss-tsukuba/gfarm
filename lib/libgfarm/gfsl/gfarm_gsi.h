@@ -105,7 +105,7 @@ extern struct gfarmGssInitiateSecurityContextState *
 			OM_uint32 *majStatPtr, OM_uint32 *minStatPtr);
 extern int	gfarmGssInitiateSecurityContextResult(
 			struct gfarmGssInitiateSecurityContextState *state,
-			gss_ctx_id_t *scPtr, 
+			gss_ctx_id_t *scPtr,
 			OM_uint32 *majStatPtr, OM_uint32 *minStatPtr,
 			gss_name_t *remoteNamePtr);
 

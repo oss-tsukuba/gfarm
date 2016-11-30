@@ -1,0 +1,224 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META http-equiv="Content-Style-Type" content="text/css">
+<TITLE>Directory Quota 機能</TITLE>
+
+<STYLE type="text/css">
+<!-- /* BEGIN ... hide style from old browser */
+pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
+     /* END ... hide style from old browser */ -->
+</STYLE>
+
+</HEAD>
+<BODY><A href="http://oss-tsukuba.org/software/gfarm">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<A href="../../index.html">文書集</A> &gt;
+<A href="index.html">ユーザーズマニュアル</A> &gt;
+Directory Quota 機能
+
+<H1>Directory Quota 機能</H1>
+<A href="../../en/user/dirquota.html">English</A> | 日本語
+<p>
+この文書は、Gfarm の directory quota 機能を説明します。
+
+<H2>概要</H2>
+
+<UL>
+<LI>ユーザーが指定したディレクトリの下位階層全体が使用する inode数、使用ファイル容量などの制限を行なう機能です。この時、ファイルの所有者やグループを問わずに全体を合算します。
+<LI>制限可能な項目は、既存のユーザークオータやグループクオータ機能と同一です。
+<LI>ユーザ、グループクオータとは独立に働き、同時に有効にすることができます。
+それらの中で、もっとも厳しい制約を用いて容量が制限されます。
+<LI>単一のディレクトリツリーだけではなく、独立した複数のディレクトリをまとめて、単一の容量制限可能な単位とすることができます。
+この複数のディレクトリ（一つでも良い）をまとめたものを dirset と呼び、dirset を対象にクオータ制限の設定や、現在使用中の容量の確認ができます。
+<LI>dirset 作成やそれに対するクオータ設定は一般ユーザ権限で可能です。
+<LI>directory quota 機能では、管理者権限として gfarmroot グループ権限を用います。
+</UL>
+
+<H2>制限事項</H2>
+
+<UL>
+<LI>ある directory quota に属するディレクトリの下位ディレクトリを、それとは異なる directory quota に属させることはできません。
+<LI>異なる directory quota 間では、ハードリンクがでません。
+<LI>異なる directory quota 間では、ファイルの移動はできますが、ディレクトリの移動はできません。<BR>
+ただし gfarmroot グループ権限があればディレクトリの移動も可能です。しかし移動するディレクトリが含むファイル数が多大な場合、移動後しばらくの間、ディレクトリ容量の再計算のためメタデータサーバーの負荷が上昇します。また再計算が完了するまで正しい容量制限ができず、ディレクトリ移動前の容量で制限が行なわれます。このため、管理者による directory quota をまたいだディレクトリの移動は、メンテナンス期間中に行なうことを想定しています。
+<LI>ディレクトリを dirset に追加するためには、以下の条件を満足する必要があります。
+  <UL>
+  <LI>そのディレクトリが空である
+  <LI>gfdirquota コマンドを実行するユーザーが、そのディレクトリの所有者である
+  <LI>gfdirquota コマンドを実行するユーザーが、その dirset の作成者である
+  </UL>
+ただし gfarmroot グループ権限があれば、これらの条件に関わらずディレクトリを dirset に追加できます。
+しかしそのディレクトリが空ではなく含むファイル数が多大な場合、設定後しばらくの間、ディレクトリ容量の再計算のためメタデータサーバーの負荷が上昇します。また再計算が完了するまでは、正しい容量制限ができず、ディレクトリ追加前の容量で制限が行なわれます。このため、空ではないディレクトリの dirset への追加は、メンテナンス期間に行なうことを想定しています。
+<LI>directory quota 内で、さらにユーザごと、グループごとに細分した制限はできません。
+また directory quota 内で、ユーザごと、グループごとの使用量を容易に求める機能はなく、ディレクトリ全体を走査して集計する必要があります。
+<LI>ディレクトリを、dirset から削除するには、そのディレクトリ自身を削除する必要があります。
+</UL>
+
+<H2>利用例</H2>
+
+dirset-a と dirset-b の 2つの dirset を作成し、前者を 1GB、後者を2GBに容量制限する例です。
+<pre>
+$ gfdirquota -c dirset-a dirset-b
+$ gfedquota -D dirset-a -h 1073741824
+$ gfedquota -D dirset-b -h 2147483648
+</pre>
+
+ディレクトリ /home/john-smith/dir-a を dirset-a に、
+ディレクトリ /home/john-smith/dir-b1 を /home/john-smith/dir-b2 を dirset-b に
+登録して、容量管理下に置く例です。
+<pre>
+$ gfdirquota -a dirset-a /home/john-smith/dir-a
+$ gfdirquota -a dirset-b /home/john-smith/dir-b1 /home/john-smith/dir-b2
+</pre>
+
+上記で設定した内容を確認します。
+<pre>
+$ gfdirquota
+dirset-a
+dirset-b
+% gfdirquota -l
+john-smith:dirset-a:
+/home/john-smith/dir-a
+
+john-smith:dirset-b:
+/home/john-smith/dir-b1
+/home/john-smith/dir-b2
+$ gfquota -D dirset-a
+UserName                 :             john-smith
+DirsetName               :               dirset-a
+GracePeriod              :               disabled
+FileSpace                :                      0
+FileSpaceGracePeriod     :               disabled
+FileSpaceSoftLimit       :               disabled
+FileSpaceHardLimit       :             1073741824
+FileNum                  :                      0
+FileNumGracePeriod       :               disabled
+FileNumSoftLimit         :               disabled
+FileNumHardLimit         :               disabled
+PhysicalSpace            :                      0
+PhysicalSpaceGracePeriod :               disabled
+PhysicalSpaceSoftLimit   :               disabled
+PhysicalSpaceHardLimit   :               disabled
+PhysicalNum              :                      0
+PhysicalNumGracePeriod   :               disabled
+PhysicalNumSoftLimit     :               disabled
+PhysicalNumHardLimit     :               disabled
+$ gfquota -D dirset-b
+UserName                 :             john-smith
+DirsetName               :               dirset-b
+GracePeriod              :               disabled
+FileSpace                :                  49417
+FileSpaceGracePeriod     :               disabled
+FileSpaceSoftLimit       :               disabled
+FileSpaceHardLimit       :             2147483648
+FileNum                  :                     72
+FileNumGracePeriod       :               disabled
+FileNumSoftLimit         :               disabled
+FileNumHardLimit         :               disabled
+PhysicalSpace            :                  98834
+PhysicalSpaceGracePeriod :               disabled
+PhysicalSpaceSoftLimit   :               disabled
+PhysicalSpaceHardLimit   :               disabled
+PhysicalNum              :                    144
+PhysicalNumGracePeriod   :               disabled
+PhysicalNumSoftLimit     :               disabled
+PhysicalNumHardLimit     :               disabled
+</pre>
+
+-d オプションを使うと、dirset名ではなくディレクトリ名を指定して、
+使用量や quota 制限値を確認することができます。
+<pre>
+$ gfquota -d /home/john-smith/dir-b1
+Pathname                 : gfarm://metadata-server:601/home/john-smith/dir-b1
+UserName                 :             john-smith
+DirsetName               :               dirset-b
+GracePeriod              :               disabled
+FileSpace                :                  49417
+FileSpaceGracePeriod     :               disabled
+FileSpaceSoftLimit       :               disabled
+FileSpaceHardLimit       :             2147483648
+FileNum                  :                     72
+FileNumGracePeriod       :               disabled
+FileNumSoftLimit         :               disabled
+FileNumHardLimit         :               disabled
+PhysicalSpace            :                  98834
+PhysicalSpaceGracePeriod :               disabled
+PhysicalSpaceSoftLimit   :               disabled
+PhysicalSpaceHardLimit   :               disabled
+PhysicalNum              :                    144
+PhysicalNumGracePeriod   :               disabled
+PhysicalNumSoftLimit     :               disabled
+PhysicalNumHardLimit     :               disabled
+</pre>
+
+もしも現在ディレクトリ容量の再計算中で、使用量の集計値が不正確な場合、gfquota(1) コマンドは、下記の警告を表示します。
+<pre>
+warning: quota usage is inaccurate
+</pre>
+
+ディレクトリ /home/john-smith/dir-b2 を、dirset-b から削除するには、
+そのディレクトリ自身を削除します。
+<pre>
+$ gfdirquota -l dirset-b
+/home/john-smith/dir-b1
+/home/john-smith/dir-b2
+$ gfrmdir /home/john-smith/dir-b2
+$ gfdirquota -l dirset-b
+/home/john-smith/dir-b1
+</pre>
+
+gfarmroot グループ権限がない場合、異なる directory quota を
+またぐディレクトリの移動はエラーになります。
+<pre>
+$ mkdir dir-a/dir
+$ mv dir-a/dir dir-b1/
+mv: cannot move `dir-a/dir' to `dir-b1/dir': Operation not supported
+</pre>
+
+gfarmroot グループ権限がない場合、
+空でないディレクトリを dirset へ追加しようとすると、エラーになります。
+<pre>
+$ gfmkdir -p /home/john-smith/dir-b3/dir
+$ gfdirquota -a dirset-b /home/john-smith/dir-b3
+gfarm://metadata-server:601/home/john-smith/dir-b3: directory not empty
+</pre>
+
+<H3>gfarm2fs の directory_quota_rename_error_exdev オプション</H3>
+
+<p>
+gfarm2fs 起動時に、-o directory_quota_rename_error_exdev オプションを
+指定した場合、一般ユーザー権限でも mv(1) コマンドによって
+異なる directory quota をまたぐディレクトリの移動ができるようになります。
+</p>
+<p>
+しかしこの場合 mv(1) コマンドは移動を実現するのに、
+ディレクトリの再帰的コピーと、ソース側ディレクトリの削除を用いますので、
+そのディレクトリに含まれるファイル全てについて
+ネットワーク経由でいったんファイルシステムノードからクライアント側にコピーし、
+さらにクライアントが同じ内容をファイルシステムノード側にコピーし直すことになり、
+極めて低速な動作になります。
+また、移動するディレクトリの配下に、アクセス不能なディレクトリや
+ファイルがあった場合、それらについては、移動に失敗してしまいます。
+さらに移動を行なったユーザー以外が所有するファイルについては、ファイルの所有者情報等も失われてしまいます。
+</p>
+<p>
+ディレクトリを指定した移動ではなくファイルを指定した移動であれば、
+メタデータの書き換えだけで済み、ファイル内容のコピーは発生せず高速ですので、
+directory_quota_rename_error_exdev オプションを使うのではなく、
+ソース側と同一のディレクトリ構造を宛先側でも作成し、
+ディレクトリに含まれるファイルを指定して mv(1) で移動させる方法を推奨します。
+</p>
+
+<H2>SEE ALSO</H2>
+<A HREF="../ref/man1/gfdirquota.1.html">gfdirquota(1)</A>,
+<A HREF="../ref/man1/gfedquota.1.html">gfedquota(1)</A>,
+<A HREF="../ref/man1/gfquota.1.html">gfquota(1)</A>,
+<A HREF="../ref/man5/gfarm2.conf.5.html">gfarm2.conf(5)</A>
+
+<HR>
+
+<ADDRESS><A href="http://gfarm.sourceforge.net/">Gfarm File System</A> &lt;<TT>gfarmfs at gmail.com</TT>&gt;</ADDRESS>
+
+</BODY>
+</HTML>

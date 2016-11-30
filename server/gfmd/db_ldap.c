@@ -63,6 +63,7 @@
 #include "gfutil.h"
 
 #include "config.h"
+#include "quota_info.h"
 #include "metadb_common.h"
 #include "xattr_info.h"
 #include "metadb_server.h"
@@ -1093,7 +1094,7 @@ gfarm_ldap_generic_info_get_foreach_withattrs(
 					ldap_memfree(a);
 					continue;
 				}
-						
+
 				vals = ldap_get_values(gfarm_ldap_server, e, a);
 				if (vals == NULL) {
 					gflog_error(GFARM_MSG_1002368,
@@ -3199,6 +3200,71 @@ gfarm_ldap_quota_load(void *closure, int is_group,
 }
 
 /**********************************************************************/
+
+static gfarm_error_t
+gfarm_ldap_quota_dirset_add(gfarm_uint64_t seqnum,
+	struct db_quota_dirset_arg *arg)
+{
+	/* XXX not implemented yet */
+	free(arg);
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+gfarm_ldap_quota_dirset_modify(gfarm_uint64_t seqnum,
+	struct db_quota_dirset_arg *arg)
+{
+	/* XXX not implemented yet */
+	free(arg);
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+gfarm_ldap_quota_dirset_remove(gfarm_uint64_t seqnum,
+	struct gfarm_dirset_info *arg)
+{
+	/* XXX not implemented yet */
+	free(arg);
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+gfarm_ldap_quota_dirset_load(void *closure,
+	void (*callback)(void *,
+	    struct gfarm_dirset_info *, struct quota_metadata *))
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
+gfarm_ldap_quota_dir_add(gfarm_uint64_t seqnum,
+		struct db_inode_dirset_arg *arg)
+{
+	/* XXX not implemented yet */
+	free(arg);
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+gfarm_ldap_quota_dir_remove(gfarm_uint64_t seqnum,
+	struct db_inode_inum_arg *arg)
+{
+	/* XXX not implemented yet */
+	free(arg);
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+gfarm_ldap_quota_dir_load(void *closure,
+	void (*callback)(void *, gfarm_ino_t, struct gfarm_dirset_info *))
+{
+	/* XXX not implemented yet */
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+/**********************************************************************/
 const struct db_ops db_ldap_ops = {
 	gfarm_ldap_initialize,
 	gfarm_ldap_terminate,
@@ -3271,6 +3337,15 @@ const struct db_ops db_ldap_ops = {
 	gfarm_ldap_quota_modify,
 	gfarm_ldap_quota_remove,
 	gfarm_ldap_quota_load,
+
+	gfarm_ldap_quota_dirset_add,
+	gfarm_ldap_quota_dirset_modify,
+	gfarm_ldap_quota_dirset_remove,
+	gfarm_ldap_quota_dirset_load,
+
+	gfarm_ldap_quota_dir_add,
+	gfarm_ldap_quota_dir_remove,
+	gfarm_ldap_quota_dir_load,
 
 	NULL,
 	NULL,

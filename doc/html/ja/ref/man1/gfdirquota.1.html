@@ -1,0 +1,83 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfdirquota</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfdirquota">
+<a name="gfdirquota.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfdirquota — directory quota 機能の設定と表示</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfdirquota</code>  [-u <em class="replaceable"><code>ユーザ名</code></em>] [-P <em class="replaceable"><code>path</code></em>]  -c <em class="replaceable"><code>dirset名</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfdirquota</code>  [-u <em class="replaceable"><code>ユーザ名</code></em>] [-P <em class="replaceable"><code>path</code></em>]  -d <em class="replaceable"><code>dirset名</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfdirquota</code>  [-u <em class="replaceable"><code>ユーザ名</code></em>]  -a <em class="replaceable"><code>dirset名</code></em>  [<em class="replaceable"><code>ディレクトリ名</code></em>...]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfdirquota</code>  [ -u <em class="replaceable"><code>ユーザ名</code></em>  |   -A ]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfdirquota</code>  [ -u <em class="replaceable"><code>ユーザ名</code></em>  |   -A ]  -l  [<em class="replaceable"><code>dirset名</code></em>...]</p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<span class="command"><strong>gfdirquota</strong></span> コマンドは、
+dirset を作成・削除・表示します。
+あるいは、ディレクトリを dirset に追加します。
+</p>
+<p>
+オプション -c, -d, -a, -l のいずれも指定しない場合には、
+そのユーザが作成した dirset の一覧を表示します。
+</p>
+<p>
+gfarmroot グループに所属している管理者は、
+-u オプションでユーザ名を指定することができます。
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-A</code></span></dt>
+<dd><p>
+全ユーザーの dirset の情報を表示します。
+gfarmroot グループ権限が必要です。
+</p></dd>
+<dt><span class="term"><code class="option">-P path</code></span></dt>
+<dd><p>デフォルト以外のメタデータサーバーを、パス名で指定します。</p></dd>
+<dt><span class="term"><code class="option">-a dirset名</code></span></dt>
+<dd><p>
+指定した dirset に、
+このオプションに引き続いて指定したディレクトリを追加します。
+</p></dd>
+<dt><span class="term"><code class="option">-c</code></span></dt>
+<dd><p>
+指定した名称の dirset を新規作成します。
+</p></dd>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>
+指定した dirset を削除します。
+</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd><p>
+指定した dirset と、その dirset に属するディレクトリの一覧を表示します。
+</p></dd>
+<dt><span class="term"><code class="option">-u ユーザ名</code></span></dt>
+<dd><p>
+指定したユーザ名が作成した dirset を設定ないし表示します。
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>引数オプションを表示します。</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="SEE ALSO">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+  <span class="citerefentry"><span class="refentrytitle">gfedquota</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfquota</span>(1)</span>,
+  <span class="refentrytitle">
+  Gfarm ユーザーズマニュアル / Directory Quota 機能
+  </span>
+</p>
+</div>
+</div></body>
+</html>

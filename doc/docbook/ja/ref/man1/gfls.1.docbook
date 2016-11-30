@@ -5,7 +5,7 @@
 
 <refentry id="gfls.1">
 
-<refentryinfo><date>27 Apr 2007</date></refentryinfo>
+<refentryinfo><date>11 Nov 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfls</refentrytitle>
@@ -63,6 +63,13 @@
 <term><option>-C</option></term>
 <listitem>
 <para>マルチカラム出力を行ないます。これはデフォルトの出力形式です。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-D</option></term>
+<listitem>
+<para>directory quota 機能で所属する dirset 名を表示します。</para>
 </listitem>
 </varlistentry>
 

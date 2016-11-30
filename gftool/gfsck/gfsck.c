@@ -241,7 +241,7 @@ gfsck_dir(char *gfarm_dir, char *file)
 		e = gfsck_dir(gfarm_url, gdent->d_name);
 		if (e != NULL) {
 			fprintf(stderr, "%s%s%s: %s\n",
-				gfarm_url, 
+				gfarm_url,
 				strcmp(gfarm_url, GFARM_URL_PREFIX) == 0
 				? "" : "/", gdent->d_name, e);
 			/* it is not necessary to save error */

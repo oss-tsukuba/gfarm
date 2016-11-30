@@ -1,4 +1,5 @@
 #! @RUBY@
+# encoding: ISO-8859-1
 #
 # gfjournaldump - Analyze a journal file of Gfarm metadata server.
 #
@@ -528,6 +529,28 @@ class GFJournalRecordAnalyzer
       record.add_record_data_fields(["LENGTH"], "i", data)
       record.add_octet_field(" PADDING", "", data[4..-1],
 			     GFJournalRecordField::SNIP_DATA_FLAG)
+
+    when OPEID_QUOTA_DIRSET_ADD,
+         OPEID_QUOTA_DIRSET_MODIFY
+      record.add_record_data_fields(["USERNAME", "DIRSETNAME",
+				     "GRACE_PERIOD", "SPACE", "SPACE_EXCEED",
+				     "SPACE_SOFT", "SPACE_HARD", "NUM",
+				     "NUM_EXCEED", "NUM_SOFT", "NUM_HARD",
+				     "PHY_SPACE", "PHY_SPACE_EXCEED",
+				     "PHY_SPACE_SOFT", "PHY_SPACE_HARD",
+				     "PHY_NUM", "PHY_NUM_EXCEED",
+				     "PHY_NUM_SOFT", "PHY_HARD"],
+				    "sslllllllllllllllll", data)
+
+    when OPEID_QUOTA_DIRSET_REMOVE
+      record.add_record_data_fields(["USERNAME", "DIRSETNAME"], "ss", data)
+
+    when OPEID_QUOTA_DIR_ADD
+      record.add_record_data_fields(["USERNAME", "DIRSETNAME", "INUM"],
+				    "ssl", data)
+
+    when OPEID_QUOTA_DIR_REMOVE
+      record.add_record_data_fields(["INUM"], "l", data)
 
     else
       record.add_octet_field("DATA", "", data) if datalen > 0

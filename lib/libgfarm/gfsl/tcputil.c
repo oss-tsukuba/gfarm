@@ -167,7 +167,7 @@ gfarmGetPeernameOfSocket(int sock, int *portPtr, char **hostPtr)
 	     * errno doesn't have
 	     * GFARM_ERR_CANNOT_RESOLVE_AN_IP_ADDRESS_INTO_A_HOSTNAME
 	     */
-	    errno = EINVAL; 
+	    errno = EINVAL;
 	    return (-1);
 	}
 	*hostPtr = strdup(hbuf);
@@ -188,7 +188,7 @@ gfarmGetNameOfSocket(int sock, int *portPtr)
     struct sockaddr_in sin;
     socklen_t slen = sizeof(sin);
     int save_errno;
-    
+
     if (getsockname(sock, (struct sockaddr *)&sin, &slen) != 0) {
 	save_errno = errno;
 	gflog_notice(GFARM_MSG_1000638, "getsockname: %s", strerror(errno));
@@ -262,7 +262,7 @@ gfarmWaitReadable(int fd, int timeoutMsec)
 	}
 	return sel;
     }
-}	
+}
 
 
 int
@@ -363,7 +363,7 @@ gfarmWriteInt16(int fd, gfarm_int16_t *buf, int len)
     int i;
     int n;
     gfarm_int16_t s;
-    
+
     for (i = 0; i < len; i++) {
 	s = htons(buf[i]);
 	n = gfarmWriteInt8(fd, (gfarm_int8_t *)&s, GFARM_OCTETS_PER_16BIT);
@@ -381,7 +381,7 @@ gfarmWriteInt32(int fd, gfarm_int32_t *buf, int len)
     int i;
     int n;
     gfarm_int32_t l;
-    
+
     for (i = 0; i < len; i++) {
 	l = htonl(buf[i]);
 	n = gfarmWriteInt8(fd, (gfarm_int8_t *)&l, GFARM_OCTETS_PER_32BIT);

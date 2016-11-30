@@ -33,7 +33,7 @@ inode_print(char *host)
 		fprintf(stderr, "%s: %s\n", host, e);
 		return (e);
 	}
-	printf("%12.0f%12.0f%12.0f  %3.0f%%  %s\n", 
+	printf("%12.0f%12.0f%12.0f  %3.0f%%  %s\n",
 	    (double)files, (double)files - ffree, (double)favail,
 	    (double)(files - ffree)/(files - (ffree - favail))*100.0, host);
 	return (NULL);
@@ -52,7 +52,7 @@ size_print(char *host)
 		fprintf(stderr, "%s: %s\n", host, e);
 		return (e);
 	}
-	printf("%12.0f%12.0f%12.0f   %3.0f%%   %s\n", 
+	printf("%12.0f%12.0f%12.0f   %3.0f%%   %s\n",
 	    (double)(blocks * bsize) / 1024.0,
 	    (double)(blocks - bfree) * bsize / 1024.,
 	    (double)bavail * bsize / 1024.0,

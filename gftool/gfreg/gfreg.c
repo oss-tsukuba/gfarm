@@ -299,7 +299,7 @@ register_file(char *gfarm_url, char *section, char *hostname, char *filename)
 		register_fragment(0, gfarm_url, 0, 1, hostname, filename,
 			0, 0000);
 		goto finish;
-	}	
+	}
 
 	if (opt_force || section_does_not_exists(gfarm_url, section)) {
 		e = gfs_pio_create(gfarm_url,
@@ -317,7 +317,7 @@ register_file(char *gfarm_url, char *section, char *hostname, char *filename)
 				fprintf(stderr, "%s: missing -a option\n",
 					program_name);
 				exit(EXIT_FAILURE);
-			}	
+			}
 			if ((e = gfs_pio_set_view_section(gf, section,
 			    hostname, 0)) != NULL) {
 				fprintf(stderr, "%s: cannot open %s:%s: %s\n",
@@ -376,7 +376,7 @@ traverse_file_tree(char *cwd, char *path,
 		if (e != NULL) {
 			fprintf(stderr, "%s: traverse_file_tree: %s:\n",
 			    program_name, e);
-			exit(EXIT_FAILURE);			
+			exit(EXIT_FAILURE);
 		}
 		if (chdir(path) == -1) {
 			fprintf(stderr, "%s: cannot change directory %s: %s\n",
@@ -392,7 +392,7 @@ traverse_file_tree(char *cwd, char *path,
 		}
 		while ((entry = readdir(dir)) != NULL) {
 			if (strcmp(entry->d_name, ".") == 0 ||
-			    strcmp(entry->d_name, "..") == 0) { 
+			    strcmp(entry->d_name, "..") == 0) {
 				continue;
 			}
 			if (!traverse_file_tree(dpath, entry->d_name,
@@ -419,7 +419,7 @@ traverse_file_tree(char *cwd, char *path,
 		if (e != NULL) {
 			fprintf(stderr, "%s: traverse_file_tree: %s:\n",
 			    program_name, e);
-			exit(EXIT_FAILURE);			
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -456,7 +456,7 @@ get_lists(char *dir_path,
 		return (0);
 	}
 	while ((entry = readdir(dir)) != NULL) {
-		if (strcmp(entry->d_name, "..") == 0) { 
+		if (strcmp(entry->d_name, "..") == 0) {
 			continue;
 		}
 		if (strcmp(entry->d_name, ".") == 0) {
@@ -492,12 +492,12 @@ get_section(char *hostname, char **section, int *section_alloced) {
 	char *canonical;
 
 	*section_alloced = 0;
-	if (hostname == NULL) {	
+	if (hostname == NULL) {
 		e = gfarm_host_get_self_architecture(&s);
 		if (e == NULL)
 			*section = s;
-		goto finish;		
-	}	
+		goto finish;
+	}
 	e = gfarm_host_get_canonical_name(hostname, &canonical);
 	if (e != NULL) {
 		if (e == GFARM_ERR_NO_SUCH_OBJECT)
@@ -509,15 +509,15 @@ get_section(char *hostname, char **section, int *section_alloced) {
 	if (s == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto finish;
-	}	
+	}
 	*section = s;
 	*section_alloced = 1;
- finish:	
+ finish:
 	if (e != NULL) {
 		fprintf(stderr, "%s: host %s: %s\n",
 			program_name, hostname, e);
 		exit(EXIT_FAILURE);
-	}	
+	}
 }
 
 enum register_mode {
@@ -528,7 +528,7 @@ enum register_mode {
 	RECURSIVE
 };
 
-void foreach_arg(int argc, char *argv[], 
+void foreach_arg(int argc, char *argv[],
 	void (*f)(char *, int, gfarm_mode_t, void *), void *f_a)
 {
 	int i;
@@ -547,7 +547,7 @@ void foreach_arg(int argc, char *argv[],
 		if (fd_needs_close) {
 			close(fd);
 		}
-	}    
+	}
 }
 
 struct check_mode_args {
@@ -609,7 +609,7 @@ check_is_argument_only_one(int argc, char *file_type, char *fragment,
 
 static void
 check_arguments(int argc, char *argv[],
-	char *hostfile, enum register_mode reg_mode, int is_dest_dir, 
+	char *hostfile, enum register_mode reg_mode, int is_dest_dir,
 	char *file_mode_arg)
 {
 	int i;
@@ -643,7 +643,7 @@ check_arguments(int argc, char *argv[],
 					file_mode_arg == NULL ?
 						"" : file_mode_arg);
 				exit(EXIT_FAILURE);
-			}	
+			}
 		}
 		if ((strcmp(argv[i], STDIN_FILENAME)) == 0) {
 			if (is_dest_dir) {
@@ -655,14 +655,14 @@ check_arguments(int argc, char *argv[],
 				fprintf(stderr, "%s: `-' (stdin) is specified "
 				"multiple times\n", program_name);
 				exit(EXIT_FAILURE);
-			}	
-		}	
+			}
+		}
 	}
-}	
+}
 
 struct lists_arg {
 	int is_dest_dir;
-	char *gfarm_url;	
+	char *gfarm_url;
 	gfarm_stringlist *dir_list, *src_file_list, *target_file_list;
 };
 
@@ -671,7 +671,7 @@ add_dir_file_list(char *c_arg, int fd, gfarm_mode_t m, void *f_args)
 {
 	struct lists_arg *a = f_args;
 	char *e;
-	gfarm_stringlist d, f; 
+	gfarm_stringlist d, f;
 	char *target_base_url, *target_url, *src_file;
 	int i;
 
@@ -681,7 +681,7 @@ add_dir_file_list(char *c_arg, int fd, gfarm_mode_t m, void *f_args)
 			exit(EXIT_FAILURE);
 	} else {
 		target_base_url = strdup(a->gfarm_url);
-	}	
+	}
 
 	if (S_ISDIR(m)) {
 		e = gfarm_stringlist_init(&d);
@@ -697,7 +697,7 @@ add_dir_file_list(char *c_arg, int fd, gfarm_mode_t m, void *f_args)
 			if (!concat_dir_name(target_base_url,
 				gfarm_stringlist_elem(&d, i), &target_url)) {
 				exit(EXIT_FAILURE);
-			}	
+			}
 			gfarm_stringlist_add(a->dir_list, target_url);
 		}
 		gfarm_stringlist_free_deeply(&d);
@@ -705,17 +705,17 @@ add_dir_file_list(char *c_arg, int fd, gfarm_mode_t m, void *f_args)
 			if (!concat_dir_name(c_arg,
 				gfarm_stringlist_elem(&f, i), &src_file)) {
 				exit(EXIT_FAILURE);
-			}	
+			}
 			gfarm_stringlist_add(a->src_file_list, src_file);
-			if (!concat_dir_name(a->is_dest_dir ? 
+			if (!concat_dir_name(a->is_dest_dir ?
 					     target_base_url : a->gfarm_url,
 				gfarm_stringlist_elem(&f, i), &target_url)) {
 				exit(EXIT_FAILURE);
-			}	
+			}
 			gfarm_stringlist_add(a->target_file_list, target_url);
 		}
 		gfarm_stringlist_free_deeply(&f);
-	} else {	
+	} else {
 		e = gfarm_stringlist_add(a->src_file_list, c_arg);
 		if (a->is_dest_dir) {
 			if (!concat_dir_name(a->gfarm_url,
@@ -734,7 +734,7 @@ add_dir_file_list(char *c_arg, int fd, gfarm_mode_t m, void *f_args)
 		fprintf(stderr, "%s: add_dir_file_list: %s:\n",
 			program_name, e);
 		exit(EXIT_FAILURE);
-	}	
+	}
 }
 
 static void
@@ -743,17 +743,17 @@ add_file_list(char *c_arg, int fd, gfarm_mode_t m, void *f_args)
 	struct lists_arg *a = f_args;
 	char *e;
 	char *target_url;
-	
+
 	if (S_ISDIR(m)) {
 		fprintf(stderr, "%s: omitting directory `%s'\n",
 			program_name, c_arg);
-	} else {	
+	} else {
 		e = gfarm_stringlist_add(a->src_file_list, c_arg);
 		if (e != NULL) {
 			fprintf(stderr, "%s: add_file_list: %s:\n",
 			    program_name, e);
-			exit(EXIT_FAILURE);			
-		}	
+			exit(EXIT_FAILURE);
+		}
 		if (a->is_dest_dir) {
 			if (!concat_dir_name(a->gfarm_url,
 					     gfarm_path_dir_skip(c_arg),
@@ -785,9 +785,9 @@ get_hosts(int *np, char ***host_table_p)
 			fprintf(stderr, "%s: %s\n",
 				program_name, GFARM_ERR_NO_MEMORY);
 			exit(EXIT_FAILURE);
-		}	
+		}
 		nh = 1;
-	} else if (opt_hostfile != NULL) {	
+	} else if (opt_hostfile != NULL) {
 		e = gfarm_hostlist_read(opt_hostfile, &nh, &h, &error_line);
 		if (e != NULL) {
 			if (error_line != -1)
@@ -799,7 +799,7 @@ get_hosts(int *np, char ***host_table_p)
 					program_name, opt_hostfile, e);
 			exit(EXIT_FAILURE);
 		}
-	} else {	
+	} else {
 		if (opt_domainname == NULL)
 			opt_domainname = "";
 		e = gfarm_hosts_in_domain(&nh, &h, opt_domainname);
@@ -807,7 +807,7 @@ get_hosts(int *np, char ***host_table_p)
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(EXIT_FAILURE);
 		}
-	}	
+	}
 
 	GFARM_MALLOC_ARRAY(hosts, nh);
 	if (hosts == NULL) {
@@ -835,7 +835,7 @@ warning_option_N_ignored(int nfragments)
 		 * `nfragments' copies of gfarm_url:section?
 		 */
 		fprintf(stderr,
-			"%s: warning: option -N is currently ignored\n", 
+			"%s: warning: option -N is currently ignored\n",
 			program_name);
 	}
 }
@@ -882,7 +882,7 @@ register_recursive_mode(int is_dest_dir, int argc, char *argv[],
 		exit(EXIT_FAILURE);
 	}
 	a.is_dest_dir = is_dest_dir;
-	a.gfarm_url = gfarm_url;	
+	a.gfarm_url = gfarm_url;
 	a.dir_list = &dir_list;
 	a.src_file_list = &src_file_list;
 	a.target_file_list = &target_file_list;
@@ -952,7 +952,7 @@ register_program_mode(int is_dest_dir, int argc, char *argv[], char *gfarm_url,
 		exit(EXIT_FAILURE);
 	}
 	a.is_dest_dir = is_dest_dir;
-	a.gfarm_url = gfarm_url;	
+	a.gfarm_url = gfarm_url;
 	a.src_file_list = &src_file_list;
 	a.target_file_list = &target_file_list;
 
@@ -969,7 +969,7 @@ register_program_mode(int is_dest_dir, int argc, char *argv[], char *gfarm_url,
 			gfarm_stringlist_elem(&src_file_list, i));
 		if (j >= nhosts)
 			j = 0;
-	}	
+	}
 	gfarm_strings_free_deeply(nhosts, hosts);
 	gfarm_stringlist_free(&src_file_list);
 	gfarm_stringlist_free(&target_file_list);
@@ -1007,7 +1007,7 @@ register_fragment_mode(int is_dest_dir, int argc, char *argv[],char *gfarm_url,
 static void
 register_auto_index_mode(int is_dest_dir, int argc, char *argv[],
 	char *gfarm_url, int nfragments,
-	char *file_mode_arg, gfarm_mode_t file_mode) 
+	char *file_mode_arg, gfarm_mode_t file_mode)
 {
 	int i, j, nhosts;
 	char **hosts;
@@ -1036,7 +1036,7 @@ register_auto_index_mode(int is_dest_dir, int argc, char *argv[],
 			exit(EXIT_FAILURE);
 		if (fd_needs_close)
 			close(fd);
-	}		
+	}
 
 	get_hosts(&nhosts, &hosts);
 

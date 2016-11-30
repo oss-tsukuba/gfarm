@@ -159,6 +159,9 @@ gftool/gfncopy/gfncopy-C.sh
 gftool/gfncopy/gfncopy-M.sh
 gftool/gfncopy/gfncopy-h-symlink.sh
 gftool/gfncopy/gfncopy-many-attrs.sh
+gftool/gfdirquota/gfdirquota.sh
+gftool/gfdirquota/gfdirquota.non-root.sh
+gftool/gfdirquota/gfdirquota.gfarmrootsh
 gftool/gfusage/gfusage-file.sh
 gftool/gfusage/gfusage-dir.sh
 gftool/gfusage/gfusage-sym.sh

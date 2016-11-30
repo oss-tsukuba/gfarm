@@ -27,8 +27,10 @@
 #include "gfutil.h"
 
 #include "config.h"
-#include "quota.h"
+#include "quota_info.h"
 #include "metadb_server.h"
+
+#include "quota.h"
 #include "db_access.h"
 #include "db_ops.h"
 
@@ -392,6 +394,63 @@ gfarm_none_quota_load(void *closure, int is_group,
 /**********************************************************************/
 
 static gfarm_error_t
+gfarm_none_quota_dirset_add(gfarm_uint64_t seqnum,
+	struct db_quota_dirset_arg *arg)
+{
+	free(arg);
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+gfarm_none_quota_dirset_modify(gfarm_uint64_t seqnum,
+	struct db_quota_dirset_arg *arg)
+{
+	free(arg);
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+gfarm_none_quota_dirset_remove(gfarm_uint64_t seqnum,
+	struct gfarm_dirset_info *arg)
+{
+	free(arg);
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+gfarm_none_quota_dirset_load(void *closure,
+	void (*callback)(void *,
+	    struct gfarm_dirset_info *, struct quota_metadata *))
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
+gfarm_none_quota_dir_add(gfarm_uint64_t seqnum,
+		struct db_inode_dirset_arg *arg)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+gfarm_none_quota_dir_remove(gfarm_uint64_t seqnum,
+	struct db_inode_inum_arg *arg)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+gfarm_none_quota_dir_load(void *closure,
+	void (*callback)(void *, gfarm_ino_t, struct gfarm_dirset_info *))
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
 gfarm_none_seqnum_get(const char *name, gfarm_uint64_t *seqnump)
 {
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -524,6 +583,15 @@ const struct db_ops db_none_ops = {
 	gfarm_none_quota_modify,
 	gfarm_none_quota_remove,
 	gfarm_none_quota_load,
+
+	gfarm_none_quota_dirset_add,
+	gfarm_none_quota_dirset_modify,
+	gfarm_none_quota_dirset_remove,
+	gfarm_none_quota_dirset_load,
+
+	gfarm_none_quota_dir_add,
+	gfarm_none_quota_dir_remove,
+	gfarm_none_quota_dir_load,
 
 	gfarm_none_seqnum_get,
 	gfarm_none_seqnum_add,

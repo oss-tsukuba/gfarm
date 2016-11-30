@@ -193,6 +193,9 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 		#include "tcputil.h"
 		#include "misc.h"
 	  /* gfarm */
+		// basic data structure
+		#include "quota_info.h"
+
 		#include "iobuffer.h"
 		#include "gfp_xdr.h"
 		#include "io_fd.h"

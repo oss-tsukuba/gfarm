@@ -85,7 +85,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	gfs_stat_free(&gstat);
-		
+
 	/* expand the path name */
 	e = gfs_realpath(nwdir, &gfarm_path);
 	if (e != NULL) {
@@ -96,8 +96,8 @@ main(int argc, char **argv)
 	if (shell_type == UNDECIDED) {
 		char *shell = getenv("SHELL");
 		int shell_len = strlen(shell);
-		
-		if (shell_len < 3 || 
+
+		if (shell_len < 3 ||
 		    memcmp(shell + shell_len - 3, "csh", 3) != 0)
 			shell_type = B_SHELL_LIKE;
 		else

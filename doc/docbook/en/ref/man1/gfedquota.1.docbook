@@ -5,7 +5,7 @@
 
 <refentry id="gfedquota.1">
 
-<refentryinfo><date>25 Aug 2015</date></refentryinfo>
+<refentryinfo><date>29 Oct 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfedquota</refentrytitle>
@@ -19,10 +19,25 @@
 </refnamediv>
 
 <refsynopsisdiv id="synopsis">
+
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfedquota</command>
-    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="opt" rep="norepeat">options</arg>
+    <arg choice="plain" rep="norepeat">-u <replaceable>user_name</replaceable></arg>
 </cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfedquota</command>
+    <arg choice="opt" rep="norepeat">options</arg>
+    <arg choice="plain" rep="norepeat">-g <replaceable>group_name</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfedquota</command>
+    <arg choice="opt" rep="norepeat">options</arg>
+    <arg choice="plain" rep="norepeat">-D <replaceable>dirset_name</replaceable></arg>
+</cmdsynopsis>
+
 </refsynopsisdiv>
 
 <refsect1 id="description"><title>DESCRIPTION</title>
@@ -43,6 +58,10 @@ If no option for limits is specified, no quota is imposed.
 This command can be executed by an administrator in the gfarmadm
 group.
 </para>
+<para>
+-D option is an exception and gfarmroot is used instead of gfarmadm
+as the administrator group who can specify user name.
+</para>
 </refsect1>
 
 <refsect1 id="options"><title>OPTIONS</title>
@@ -60,14 +79,21 @@ the root metadata server.
 <varlistentry>
 <term><option>-u NAME, --user=NAME</option></term>
 <listitem>
-<para>Specifies a user name to display the current usage and limits.</para>
+<para>Specifies a user name to edit limits.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-g NAME, --group=NAME</option></term>
 <listitem>
-<para>Specifies a group name to display the current usage and limits.</para>
+<para>Specifies a group name to edit limits.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-D NAME, --dirset=NAME</option></term>
+<listitem>
+<para>Specifies a dirset name to edit limits.</para>
 </listitem>
 </varlistentry>
 
@@ -153,8 +179,14 @@ the root metadata server.
   <refentrytitle>gfquotacheck</refentrytitle><manvolnum>1</manvolnum>
   </citerefentry>,
   <citerefentry>
+  <refentrytitle>gfdirquota</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
   <refentrytitle>gfusage</refentrytitle><manvolnum>1</manvolnum>
-  </citerefentry>
+  </citerefentry>,
+  <refentrytitle>
+  Gfarm Users' Manual / Directory Quota
+  </refentrytitle>
 </para>
 </refsect1>
 
