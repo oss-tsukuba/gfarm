@@ -283,6 +283,9 @@ quota_dir_add_one(
 		    (long long)inum, dirset->username, dirset->dirsetname);
 		return;
 	}
+
+	free(dirset->username);
+	free(dirset->dirsetname);
 }
 
 void

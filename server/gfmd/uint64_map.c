@@ -75,6 +75,7 @@ uint64_to_uint64_map_free(struct uint64_to_uint64_map *map)
 
 	while ((entry = RB_MIN(uint64_to_uint64_head, &map->head)) != NULL)
 		uint64_to_uint64_map_entry_delete(map, entry);
+	free(map);
 }
 
 static struct uint64_to_uint64_map_entry *

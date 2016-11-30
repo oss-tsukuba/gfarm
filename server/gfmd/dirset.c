@@ -798,6 +798,7 @@ dir_reply_quota_dir(void *closure, struct quota_dir *qd)
 		gfp_xdr_send(c->client, "isss",
 		    (gfarm_int32_t)GFARM_ERR_NO_ERROR,
 		    user_name(c->ds->user), c->ds->dirsetname, pathname);
+		free(pathname);
 		return;
 	}
 	gfp_xdr_send(c->client, "i", (gfarm_int32_t)e);
