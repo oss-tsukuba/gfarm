@@ -421,7 +421,7 @@ gfm_server_quota_dir_set(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t fd;
 	struct inode *inode;
 	struct dirset *ds, *existing_tdirset;
-	int transaction;
+	int transaction = 0;
 	static const char diag[] = "GFM_PROTO_QUOTA_DIR_SET";
 
 	e = gfm_server_get_request(peer, diag, "ss", &username, &dirsetname);
