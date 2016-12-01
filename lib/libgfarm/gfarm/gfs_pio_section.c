@@ -126,7 +126,7 @@ gfs_pio_view_section_pwrite(GFS_File gf,
 				gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
 			} else {
 				EVP_DigestUpdate(
-				    &gf->md_ctx, buffer, *lengthp);
+				    gf->md_ctx, buffer, *lengthp);
 				gf->md_offset += *lengthp;
 			}
 		}
@@ -158,7 +158,7 @@ gfs_pio_view_section_write(GFS_File gf,
 				gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
 			} else {
 				EVP_DigestUpdate(
-				    &gf->md_ctx, buffer, *lengthp);
+				    gf->md_ctx, buffer, *lengthp);
 				gf->md_offset += *lengthp;
 			}
 		}
@@ -197,7 +197,7 @@ gfs_pio_view_section_pread(GFS_File gf,
 			 * AVAIL flags for consistency with the gfsd
 			 * implementation.
 			 */
-			EVP_DigestUpdate(&gf->md_ctx, buffer, *lengthp);
+			EVP_DigestUpdate(gf->md_ctx, buffer, *lengthp);
 			gf->md_offset += *lengthp;
 			if (gf->md_offset == gf->md.filesize && (gf->mode &
 			    GFS_FILE_MODE_MODIFIED) == 0)
@@ -223,7 +223,7 @@ gfs_pio_view_section_recvfile(GFS_File gf, gfarm_off_t r_off,
 		if (gf->md_offset != r_off) {
 			gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
 		} else {
-			md_ctx = &gf->md_ctx;
+			md_ctx = gf->md_ctx;
 		}
 	}
 	e = (*vc->ops->storage_recvfile)(gf, r_off, w_fd, w_off, len,
@@ -267,7 +267,7 @@ gfs_pio_view_section_sendfile(GFS_File gf, gfarm_off_t w_off,
 		if (gf->md_offset != w_off) {
 			gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
 		} else {
-			md_ctx = &gf->md_ctx;
+			md_ctx = gf->md_ctx;
 		}
 	}
 	e = (*vc->ops->storage_sendfile)(gf, w_off, r_fd, r_off, len,
@@ -302,8 +302,8 @@ gfs_pio_view_section_ftruncate(GFS_File gf, gfarm_off_t length)
 				if ((gf->mode & GFS_FILE_MODE_DIGEST_FINISH)
 				    == 0) {
 					/* to avoid memory leak */
-					gfarm_msgdigest_final(
-					    md_value, &gf->md_ctx);
+					gfarm_msgdigest_free(
+					    gf->md_ctx, md_value);
 					gf->mode |=
 					    GFS_FILE_MODE_DIGEST_FINISH;
 				}
@@ -862,7 +862,14 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 		goto finish;
 #else /* not yet in gfarm v2  */
 		gf->mode |= GFS_FILE_MODE_CALC_DIGEST;
-		EVP_DigestInit(&vc->md_ctx, GFS_DEFAULT_DIGEST_MODE);
+		vc->md_ctx = gfarm_msgdigest_alloc(GFS_DEFAULT_DIGEST_MODE);
+		if (vc->md_ctx == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "msgdigest allocation failed: %s",
+			    gfarm_error_string(e));
+			goto finish;
+		}
 
 		if (gf->open_flags & GFARM_FILE_APPEND) {
 			e = gfs_pio_seek(gf, 0, SEEK_END, NULL);
@@ -1062,7 +1069,11 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	gf->io_offset = gf->offset = 0;
 
 	gf->mode |= GFS_FILE_MODE_CALC_DIGEST;
-	EVP_DigestInit(&vc->md_ctx, GFS_DEFAULT_DIGEST_MODE);
+	vc->md_ctx = gfarm_msgdigest_alloc(GFS_DEFAULT_DIGEST_MODE);
+	if (vc->md_ctx == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto finish;
+	}
 
 	if (!is_local_host && gfarm_is_active_file_system_node &&
 	    (gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
@@ -1147,7 +1158,7 @@ storage_close:
 		(void)(*vc->ops->storage_close)(gf);
 free_digest:
 	if (e != NULL)
-		EVP_DigestFinal(&vc->md_ctx, md_value, &md_len);
+		md_len = gfarm_msgdigest_free(vc->md_ctx, md_value);
 free_host:
 	if (e != GFARM_ERR_NO_ERROR)
 		free(vc->canonical_hostname);

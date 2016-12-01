@@ -3,8 +3,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+
 #include <openssl/evp.h>
+
 #include <gfarm/gfarm.h>
+
+#define GFARM_USE_OPENSSL
+#include "msgdigest.h"
+
 #include "gfs_proto.h"
 
 char GFS_SERVICE_TAG[] = "gfarm-data";
@@ -15,10 +21,10 @@ char GFS_SERVICE_TAG[] = "gfarm-data";
  */
 int
 gfs_digest_calculate_local(int fd, char *buffer, size_t buffer_size,
-	const EVP_MD *md_type, EVP_MD_CTX *md_ctx,
-	size_t *md_lenp, unsigned char *md_value,
+	const EVP_MD *md_type, size_t *md_lenp, unsigned char *md_value,
 	gfarm_off_t *filesizep)
 {
+	EVP_MD_CTX *md_ctx;
 	int size, save_errno;
 	gfarm_off_t off = 0;
 	unsigned int len;
@@ -30,12 +36,12 @@ gfs_digest_calculate_local(int fd, char *buffer, size_t buffer_size,
 		return (save_errno);
 	}
 
-	EVP_DigestInit(md_ctx, md_type);
+	md_ctx = gfarm_msgdigest_alloc(md_type);
 	while ((size = read(fd, buffer, buffer_size)) > 0) {
 		EVP_DigestUpdate(md_ctx, buffer, size);
 		off += size;
 	}
-	EVP_DigestFinal(md_ctx, md_value, &len);
+	len = gfarm_msgdigest_free(md_ctx, md_value);
 
 	*md_lenp = len;
 	*filesizep = off;
