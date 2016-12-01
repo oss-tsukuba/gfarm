@@ -20,6 +20,12 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
+/* Define to 1 if you have the `CRYPTO_set_id_callback' function. */
+#undef HAVE_CRYPTO_SET_ID_CALLBACK
+
+/* Define to 1 if you have the `CRYPTO_set_locking_callback' function. */
+#undef HAVE_CRYPTO_SET_LOCKING_CALLBACK
+
 /* Define to 1 if you have the <crypt.h> header file. */
 #undef HAVE_CRYPT_H
 
