@@ -174,7 +174,7 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 		e = gfarm_auth_sharedsecret_response_data(
 		    shared_key, challenge, response);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004515,
 			    "calculating challenge-response: %s",
 			    gfarm_error_string(e));
 			/*
@@ -589,7 +589,7 @@ gfarm_auth_request_sharedsecret_receive_challenge(int events, int fd,
 		e = gfarm_auth_sharedsecret_response_data(
 		    state->shared_key, challenge, response);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004516,
 			    "calculating challenge-response: %s",
 			    gfarm_error_string(e));
 			/*

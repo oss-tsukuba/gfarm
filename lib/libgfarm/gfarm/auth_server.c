@@ -189,7 +189,7 @@ gfarm_auth_sharedsecret_compare(
 		    global_username, hostname, diag);
 	} else if (e != GFARM_ERR_NO_ERROR) {
 		error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004517,
 		    "(%s@%s) auth_sharedsecret: "
 		    "calculating challenge-response: %s",
 		    global_username, hostname, gfarm_error_string(e));
