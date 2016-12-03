@@ -1522,6 +1522,9 @@ start_write_verify_controller(void)
 		gflog_error_errno(GFARM_MSG_1004458, "fork");
 		break;
 	case 0: /* child: type_write_verify_controller */
+
+		gflog_set_auxiliary_info(canonical_self_name);
+
 		if (socketpair(PF_UNIX, SOCK_STREAM, 0, sockfds) == -1)
 			fatal(GFARM_MSG_1004459,
 			    "socketpair for write_verify: %s",
