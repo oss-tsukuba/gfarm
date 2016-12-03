@@ -88,7 +88,8 @@ static void
 gfprep_usage()
 {
 	fprintf(stderr,
-"\t[-N <#replica>] [-x (remove surplus replicas)] [-m (migrate)]\n"
+"\t[-N <#replica>] [-x (remove surplus replicas)]\n"
+"[-m (migrate)] [-mm (duplicate replicas to other hosts)]\n"
 "\t<gfarm_url(gfarm:...) or local-path>\n");
 }
 
@@ -935,7 +936,8 @@ timer_end(struct pfunc_cb_data *cbd, double *mbsp, double *secp)
 	*secp = usec / GFARM_SECOND_BY_MICROSEC;
 }
 
-#define RESULT (result == PFUNC_RESULT_OK) ? pfunc_cb_ok : \
+#define RESULT (result == PFUNC_RESULT_OK || \
+	result == PFUNC_RESULT_BUSY_REMOVE_REPLICA) ? pfunc_cb_ok : \
 	(result == PFUNC_RESULT_SKIP) ? pfunc_cb_skip : pfunc_cb_ng
 
 static void
@@ -985,7 +987,8 @@ pfunc_cb_update_default(struct pfunc_cb_data *cbd, enum pfunc_result result)
 		cbd->src_hi->n_using--;
 	if (cbd->dst_hi)
 		cbd->dst_hi->n_using--;
-	if (result == PFUNC_RESULT_OK) {
+	if (result == PFUNC_RESULT_OK ||
+	    result == PFUNC_RESULT_BUSY_REMOVE_REPLICA) {
 		total_ok_filesize += cbd->filesize;
 		total_ok_filenum++;
 	} else if (result == PFUNC_RESULT_SKIP) {
@@ -2522,6 +2525,7 @@ main(int argc, char *argv[])
 	int opt_skip_symlink = 0; /* -k */
 	int opt_n_desire = 1;  /* -N */
 	int opt_migrate = 0; /* -m */
+	int opt_remove_source = 0; /* 1 for -m, 0 for -mm */
 	gfarm_int64_t opt_max_copy_size = -1; /* -M */
 	int opt_remove = 0;  /* -x */
 	int opt_ratio = 1; /* -R */
@@ -2624,6 +2628,10 @@ main(int argc, char *argv[])
 			opt_n_desire = strtol(optarg, NULL, 0);
 			break;
 		case 'm': /* gfprep */
+			if (opt_migrate == 0)
+				opt_remove_source = 1;
+			else
+				opt_remove_source = 0;  /* -mm */
 			opt_migrate = 1;
 			opt_limited_src = 1;
 			break;
@@ -2757,7 +2765,7 @@ main(int argc, char *argv[])
 	if (is_gfpcopy) { /* gfpcopy */
 		if (opt_n_desire > 1) /* -N */
 			gfprep_usage_common(1);
-		if (opt_migrate) /* -m */
+		if (opt_migrate) /* -m or -mm */
 			gfprep_usage_common(1);
 		if (opt_remove) /* -x */
 			gfprep_usage_common(1);
@@ -2783,7 +2791,7 @@ main(int argc, char *argv[])
 		if (opt_force_copy || opt_skip_existing || opt_skip_symlink)
 			gfprep_usage_common(1); /* -f or -e or -k */
 		if (opt_migrate) {
-			if (opt_n_desire > 1) { /* -m and -N */
+			if (opt_n_desire > 1) { /* -m, -mm and -N */
 				gfmsg_error("gfprep needs either -N or -m");
 				exit(EXIT_FAILURE);
 			}
@@ -3585,11 +3593,11 @@ main(int argc, char *argv[])
 				src_hi = NULL;
 			if (is_gfpcopy)
 				gfprep_do_copy(pfunc_handle,
-				    NULL, opt_migrate, entry->src_size,
+				    NULL, opt_remove_source, entry->src_size,
 				    src_url, src_hi, dst_url, dst_hi);
 			else
 				gfprep_do_replicate(pfunc_handle,
-				    NULL, opt_migrate, entry->src_size,
+				    NULL, opt_remove_source, entry->src_size,
 				    src_url, src_hi, dst_hi);
 
 			total_requested_filesize += entry->src_size;
@@ -3693,7 +3701,7 @@ next_entry:
 
 		/* execute jobs from each Connections */
 		e = gfprep_connections_exec(pfunc_handle, is_gfpcopy,
-		    opt_migrate, gfurl_url(src), gfurl_url(dst),
+		    opt_remove_source, gfurl_url(src), gfurl_url(dst),
 		    n_connections, connections, target_hash_src,
 		    n_array_dst, array_dst);
 		gfmsg_fatal_e(e, "gfprep_connections_exec");
