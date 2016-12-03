@@ -1,3 +1,16 @@
+Release note for Gfarm 2.6.15
+=============================
+
+[2016.12.3]
+
+Updated feature
+* OpenSSL 1.1.0 support
+* gfprep - -mm option to keep an original copy in migration mode
+* gfsd - log message of write_verify process includes the hostname
+
+Bug fix
+* gfprep -m may fail due to file busy even though all operations succeed
+
 Release note for Gfarm 2.6.14
 =============================
 
