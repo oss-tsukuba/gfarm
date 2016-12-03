@@ -20,6 +20,12 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
+/* Define to 1 if you have the `CRYPTO_set_id_callback' function. */
+#undef HAVE_CRYPTO_SET_ID_CALLBACK
+
+/* Define to 1 if you have the `CRYPTO_set_locking_callback' function. */
+#undef HAVE_CRYPTO_SET_LOCKING_CALLBACK
+
 /* Define to 1 if you have the <crypt.h> header file. */
 #undef HAVE_CRYPT_H
 
@@ -79,6 +85,9 @@
 
 /* Grid Security Infrastructure exists */
 #undef HAVE_GSI
+
+/* support infiniband rdma between client and gfsd */
+#undef HAVE_INFINIBAND
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -242,10 +251,7 @@
 /* Define to 1 if you have the `utimensat' function. */
 #undef HAVE_UTIMENSAT
 
-/* Define to 1 if support infiniband rdma between clientnt and gfsd */
-#undef HAVE_INFINIBAND
-
-/* Define to number of args of ib_query_gid */
+/* ib_query_gid has ${ib_query_gid} args. */
 #undef IB_QUERY_GID_ARG
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
@@ -263,6 +269,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION

@@ -12940,6 +12940,7 @@ fi
 
 
 ### sanity check whether OpenSSL is really usable or not
+### only OpenSSL-0.9.7 or later is supported since Gfarm-2.6.15
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking openssl" >&5
 $as_echo_n "checking openssl... " >&6; }
@@ -12953,15 +12954,16 @@ LIBS="`echo ${openssl_libs} | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+#include <stdio.h>
 #include <openssl/evp.h>
 int
 main ()
 {
 
-EVP_MD_CTX md_ctx;
+EVP_MD_CTX *md_ctx = EVP_MD_CTX_create();
 EVP_MD *md_type = EVP_get_digestbyname("sha1");
 
-EVP_DigestInit(&md_ctx, md_type);
+EVP_DigestInit_ex(md_ctx, md_type, NULL);
 
   ;
   return 0;
@@ -12977,11 +12979,25 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-CPPFLAGS="$CPPFLAGS_SAVE"
-LIBS="$LIBS_SAVE"
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: using \"${openssl_includes} ${openssl_libs}\"" >&5
 $as_echo "using \"${openssl_includes} ${openssl_libs}\"" >&6; }
+
+# these functions disappeared since OpenSSL-1.1.0
+for ac_func in CRYPTO_set_locking_callback CRYPTO_set_id_callback
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+
+CPPFLAGS="$CPPFLAGS_SAVE"
+LIBS="$LIBS_SAVE"
 
 ###
 ### --with-openldap=OpenLDAP_ROOT
