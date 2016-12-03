@@ -865,7 +865,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 		vc->md_ctx = gfarm_msgdigest_alloc(GFS_DEFAULT_DIGEST_MODE);
 		if (vc->md_ctx == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004519,
 			    "msgdigest allocation failed: %s",
 			    gfarm_error_string(e));
 			goto finish;
