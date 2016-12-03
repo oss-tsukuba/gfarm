@@ -233,17 +233,22 @@ check_connection_in_file_list(GFS_File gf, void *closure)
 
 #ifdef GFARM_USE_OPENSSL
 int
-gfs_pio_md_init(const char *md_type_name, EVP_MD_CTX *md_ctx, char *url)
+gfs_pio_md_init(const char *md_type_name, EVP_MD_CTX **md_ctxp, char *url)
 {
-	int not_supported;
+	EVP_MD_CTX *md_ctx;
+	int cause;
 
-	if (gfarm_msgdigest_init(md_type_name, md_ctx, &not_supported))
+	md_ctx = gfarm_msgdigest_alloc_by_name(md_type_name, &cause);
+	if (md_ctx != NULL) {
+		*md_ctxp = md_ctx;
 		return (1);
+	}
 
-	if (not_supported)
-		gflog_debug(GFARM_MSG_1003941,
-		    "%s: digest type <%s> isn't supported on this host",
-		    url, md_type_name);
+	if (cause)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: digest type <%s> - %s",
+		    url, md_type_name, strerror(cause));
+	*md_ctxp = NULL;
 	return (0);
 }
 
@@ -279,7 +284,7 @@ gfs_pio_md_finish(GFS_File gf)
 	assert((gf->mode & GFS_FILE_MODE_DIGEST_FINISH) == 0);
 	assert((gf->mode & GFS_FILE_MODE_DIGEST_CALC) != 0);
 
-	md_strlen = gfarm_msgdigest_final_string(md_string, &gf->md_ctx);
+	md_strlen = gfarm_msgdigest_to_string_and_free(gf->md_ctx, md_string);
 	gf->mode |= GFS_FILE_MODE_DIGEST_FINISH;
 
 	if ((gf->mode & GFS_FILE_MODE_MODIFIED) != 0 ||
@@ -720,7 +725,7 @@ gfs_pio_close_getgen(GFS_File gf, gfarm_uint64_t *igenp)
 		unsigned char md_value[EVP_MAX_MD_SIZE];
 
 		/* not calculated, but need to do this to avoid memory leak */
-		gfarm_msgdigest_final(md_value, &gf->md_ctx);
+		gfarm_msgdigest_free(gf->md_ctx, md_value);
 	}
 #endif /* GFARM_USE_OPENSSL */
 

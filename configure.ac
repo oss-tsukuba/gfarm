@@ -634,6 +634,7 @@ AC_SUBST(largefile64_cflags)
 AC_SUBST(largefile64_targets)
 
 ### sanity check whether OpenSSL is really usable or not
+### only OpenSSL-0.9.7 or later is supported since Gfarm-2.6.15
 
 AC_MSG_CHECKING([openssl])
 
@@ -644,19 +645,23 @@ CPPFLAGS="${openssl_includes} $CPPFLAGS_SAVE"
 LIBS="`echo ${openssl_libs} | sed 's/-R[[^ ]]*//g'` $LIBS_SAVE"
 
 AC_TRY_LINK([
+#include <stdio.h>
 #include <openssl/evp.h>],[
-EVP_MD_CTX md_ctx;
+EVP_MD_CTX *md_ctx = EVP_MD_CTX_create();
 EVP_MD *md_type = EVP_get_digestbyname("sha1");
 
-EVP_DigestInit(&md_ctx, md_type);
+EVP_DigestInit_ex(md_ctx, md_type, NULL);
 ], [], [
   AC_MSG_ERROR([OpenSSL cannot be linked with \"${openssl_includes} ${openssl_libs}\" options, aborted])
 ])
 
+AC_MSG_RESULT([using \"${openssl_includes} ${openssl_libs}\"])
+
+# these functions disappeared since OpenSSL-1.1.0
+AC_CHECK_FUNCS(CRYPTO_set_locking_callback CRYPTO_set_id_callback)
+
 CPPFLAGS="$CPPFLAGS_SAVE"
 LIBS="$LIBS_SAVE"
-
-AC_MSG_RESULT([using \"${openssl_includes} ${openssl_libs}\"])
 
 ###
 ### --with-openldap=OpenLDAP_ROOT

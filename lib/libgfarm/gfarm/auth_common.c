@@ -25,6 +25,9 @@
 #include "gfutil.h"
 #include "thrsubr.h"
 
+#define GFARM_USE_OPENSSL
+#include "msgdigest.h"
+
 #include "context.h"
 #include "config.h"
 #include "liberror.h"
@@ -327,12 +330,13 @@ finish:
 	return (e);
 }
 
-void
+gfarm_error_t
 gfarm_auth_sharedsecret_response_data(char *shared_key, char *challenge,
 				      char *response)
 {
-	EVP_MD_CTX mdctx;
-	unsigned int md_len;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	EVP_MD_CTX *md_ctx;
+	int md_len = 0;
 	static const char openssl_diag[] = "openssl_mutex";
 	static const char diag[] = "gfarm_auth_sharedsecret_response_data";
 
@@ -343,16 +347,26 @@ gfarm_auth_sharedsecret_response_data(char *shared_key, char *challenge,
 	 */
 
 	gfarm_mutex_lock(&staticp->openssl_mutex, diag, openssl_diag);
-	EVP_DigestInit(&mdctx, EVP_md5());
-	EVP_DigestUpdate(&mdctx, challenge, GFARM_AUTH_CHALLENGE_LEN);
-	EVP_DigestUpdate(&mdctx, shared_key, GFARM_AUTH_SHARED_KEY_LEN);
-	EVP_DigestFinal(&mdctx, (unsigned char *)response, &md_len);
+	md_ctx = gfarm_msgdigest_alloc(EVP_md5());
+	if (md_ctx == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+	} else {
+		EVP_DigestUpdate(md_ctx,
+		    challenge, GFARM_AUTH_CHALLENGE_LEN);
+		EVP_DigestUpdate(md_ctx,
+		    shared_key, GFARM_AUTH_SHARED_KEY_LEN);
+		md_len = gfarm_msgdigest_free(
+		    md_ctx, (unsigned char *)response);
+	}
 	gfarm_mutex_unlock(&staticp->openssl_mutex, diag, openssl_diag);
 
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	if (md_len != GFARM_AUTH_RESPONSE_LEN) {
 		gflog_fatal(GFARM_MSG_1003263,
 			"gfarm_auth_sharedsecret_response_data:"
 			"md5 digest length should be %d, but %d\n",
 			GFARM_AUTH_RESPONSE_LEN, md_len);
 	}
+	return (GFARM_ERR_NO_ERROR);
 }

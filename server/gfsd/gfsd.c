@@ -1364,23 +1364,26 @@ gfs_server_process_reset(struct gfp_xdr *client)
 	gfs_server_put_reply(client, diag, e, "");
 }
 
-static int
-msgdigest_init(const char *md_type_name, EVP_MD_CTX *md_ctx,
+static EVP_MD_CTX *
+gfsd_msgdigest_alloc(const char *md_type_name,
 	const char *diag, gfarm_ino_t diag_ino, gfarm_uint64_t diag_gen)
 {
-	int not_supported;
+	EVP_MD_CTX *md_ctx;
+	int cause;
 
-	if (gfarm_msgdigest_init(md_type_name, md_ctx, &not_supported))
-		return (1);
+	md_ctx = gfarm_msgdigest_alloc_by_name(md_type_name, &cause);
+	if (md_ctx != NULL)
+		return (md_ctx);
 
-	if (not_supported)
-		gflog_warning(GFARM_MSG_1004114,
+	if (cause)
+		gflog_warning(GFARM_MSG_UNFIXED,
 		    "%s: inum %lld gen %lld: "
-		    "digest type <%s> isn't supported on this host",
+		    "digest type <%s> - %s",
 		    diag,
 		    (unsigned long long)diag_ino,
-		    (unsigned long long)diag_gen, md_type_name);
-	return (0);
+		    (unsigned long long)diag_gen, md_type_name,
+		    strerror(cause));
+	return (NULL);
 }
 
 /* with errno */
@@ -1445,7 +1448,7 @@ struct file_entry {
 	off_t md_offset;
 
 	char *md_type_name;
-	EVP_MD_CTX md_ctx;
+	EVP_MD_CTX *md_ctx;
 
 	/* the followings are available if FILE_FLAG_DIGEST_FINISH is set */
 	char md_string[GFARM_MSGDIGEST_STRSIZE];
@@ -1694,7 +1697,8 @@ file_table_add(gfarm_int32_t net_fd,
 		    sizeof(fe->md_string));
 		free(cksum_type);
 		fe->md_type_name = NULL;
-	} else if (!msgdigest_init(cksum_type, &fe->md_ctx, diag, ino, gen)) {
+	} else if ((fe->md_ctx = gfsd_msgdigest_alloc(
+	    cksum_type, diag, ino, gen)) == NULL)  {
 		free(cksum_type);
 		fe->md_type_name = NULL;
 	} else {
@@ -1782,7 +1786,7 @@ file_table_close(gfarm_int32_t net_fd)
 		unsigned char md_value[EVP_MAX_MD_SIZE];
 
 		/* We need to do this to avoid memory leak */
-		gfarm_msgdigest_final(md_value, &fe->md_ctx);
+		gfarm_msgdigest_free(fe->md_ctx, md_value);
 	}
 	free(fe->md_type_name);
 	fe->md_type_name = NULL;
@@ -2738,7 +2742,7 @@ calc_digest(int fd,
 	gfarm_off_t calc_len = 0;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
-	EVP_MD_CTX md_ctx;
+	EVP_MD_CTX *md_ctx;
 	unsigned int md_len;
 	unsigned char md_value[EVP_MAX_MD_SIZE];
 
@@ -2746,11 +2750,12 @@ calc_digest(int fd,
 	if (lseek(fd, 0, SEEK_SET) == -1)
 		return (gfarm_errno_to_error(errno));
 
-	if (!msgdigest_init(md_type_name, &md_ctx, diag, diag_ino, diag_gen))
+	md_ctx = gfsd_msgdigest_alloc(md_type_name, diag, diag_ino, diag_gen);
+	if (md_ctx == NULL)
 		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 
 	while ((sz = read(fd, data_buf, data_bufsize)) > 0) {
-		EVP_DigestUpdate(&md_ctx, data_buf, sz);
+		EVP_DigestUpdate(md_ctx, data_buf, sz);
 		calc_len += sz;
 		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RCOUNT, 1);
 		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RBYTES, sz);
@@ -2759,7 +2764,7 @@ calc_digest(int fd,
 	if (sz == -1)
 		e = gfarm_errno_to_error(errno);
 
-	md_len = gfarm_msgdigest_final(md_value, &md_ctx);
+	md_len = gfarm_msgdigest_free(md_ctx, md_value);
 	if (e == GFARM_ERR_NO_ERROR) {
 		*md_strlenp =
 		    gfarm_msgdigest_to_string(md_string, md_value, md_len);
@@ -2831,7 +2836,7 @@ digest_finish(struct gfp_xdr *client, gfarm_int32_t fd, const char *diag)
 	if ((fe->flags & FILE_FLAG_DIGEST_FINISH) != 0)
 		return (e);
 
-	md_strlen = gfarm_msgdigest_final_string(md_string, &fe->md_ctx);
+	md_strlen = gfarm_msgdigest_to_string_and_free(fe->md_ctx, md_string);
 	fe->flags |= FILE_FLAG_DIGEST_FINISH;
 
 	if ((fe->flags & FILE_FLAG_WRITTEN) != 0 ||
@@ -3316,7 +3321,7 @@ gfs_server_pread(struct gfp_xdr *client)
 		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
 		    FILE_FLAG_DIGEST_CALC) {
 			if (fe->md_offset == offset) {
-				EVP_DigestUpdate(&fe->md_ctx, buffer, rv);
+				EVP_DigestUpdate(fe->md_ctx, buffer, rv);
 				fe->md_offset += rv;
 				if (fe->md_offset == fe->size &&
 				    (fe->flags & FILE_FLAG_WRITTEN) == 0)
@@ -3389,7 +3394,7 @@ gfs_server_pwrite(struct gfp_xdr *client)
 		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
 		    FILE_FLAG_DIGEST_CALC) {
 			if (fe->md_offset == offset) {
-				EVP_DigestUpdate(&fe->md_ctx, buffer, rv);
+				EVP_DigestUpdate(fe->md_ctx, buffer, rv);
 				fe->md_offset += rv;
 			} else
 				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
@@ -3465,7 +3470,7 @@ gfs_server_write(struct gfp_xdr *client)
 		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
 		    FILE_FLAG_DIGEST_CALC) {
 			if (fe->md_offset == written_offset) {
-				EVP_DigestUpdate(&fe->md_ctx, buffer, rv);
+				EVP_DigestUpdate(fe->md_ctx, buffer, rv);
 				fe->md_offset += rv;
 			} else
 				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
@@ -3531,7 +3536,7 @@ gfs_server_bulkread(struct gfp_xdr *client)
 			md_ctx = NULL;
 			fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 		} else {
-			md_ctx = &fe->md_ctx;
+			md_ctx = fe->md_ctx;
 		}
 
 		e = gfs_sendfile_common(client, &src_err,
@@ -3621,7 +3626,7 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 			md_ctx = NULL;
 			fe->flags &= ~FILE_FLAG_DIGEST_CALC;
 		} else {
-			md_ctx = &fe->md_ctx;
+			md_ctx = fe->md_ctx;
 		}
 
 		e = gfs_recvfile_common(client, &dst_err, fe->local_fd, offset,
@@ -3688,12 +3693,13 @@ gfs_server_ftruncate(struct gfp_xdr *client)
 				if ((fe->flags & FILE_FLAG_DIGEST_FINISH)
 				    == 0) {
 					/* to avoid memory leak*/
-					EVP_DigestFinal(&fe->md_ctx,
-					    md_value, &md_len);
+					md_len = gfarm_msgdigest_free(
+					    fe->md_ctx, md_value);
 					fe->flags |= FILE_FLAG_DIGEST_FINISH;
 				}
-				if (!msgdigest_init(fe->md_type_name,
-				    &fe->md_ctx, diag, fe->ino, fe->gen)) {
+				fe->md_ctx = gfsd_msgdigest_alloc(
+				    fe->md_type_name, diag, fe->ino, fe->gen);
+				if (fe->md_ctx == NULL) {
 					free(fe->md_type_name);
 					fe->md_type_name = NULL;
 					fe->flags &= ~FILE_FLAG_DIGEST_CALC;
@@ -4056,8 +4062,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	gfarm_int32_t cksum_request_flags = 0;
 	int issue_cksum_protocol = 0;
 
-	EVP_MD_CTX md_ctx;
-	EVP_MD_CTX *md_ctxp = NULL; /* non-NULL == calculate message-digest */
+	EVP_MD_CTX *md_ctx = NULL; /* non-NULL == calculate message-digest */
 	size_t md_strlen = 0;
 	char md_string[GFARM_MSGDIGEST_STRSIZE];
 
@@ -4115,8 +4120,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		src_err = e; /* invalidate */
 		goto close;
 	}
-	if (msgdigest_init(cksum_type, &md_ctx, diag, ino, gen))
-		md_ctxp = &md_ctx;
+	md_ctx = gfsd_msgdigest_alloc(cksum_type, diag, ino, gen);
 	if ((cksum_request_flags &
 	    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_SRC_SUPPORTS) != 0) {
 		issue_cksum_protocol = 1;
@@ -4126,20 +4130,21 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		    cksum_type, req_cksum_len, req_cksum, cksum_request_flags,
 		    sizeof(src_cksum), &src_cksum_len, src_cksum,
 		    &cksum_result_flags,
-		    local_fd, md_ctxp);
+		    local_fd, md_ctx);
 	} else {
 		issue_cksum_protocol = 0;
 		issue_diag = "GFS_PROTO_REPLICA_RECV";
 		e = gfs_client_replica_recv_md(server,
-		    &src_err, &dst_err, ino, gen, local_fd, md_ctxp);
+		    &src_err, &dst_err, ino, gen, local_fd, md_ctx);
 	}
 
-	if (md_ctxp != NULL) {
+	if (md_ctx != NULL) {
 		/*
 		 * call EVP_DigestFinal() even if an error happens,
 		 * otherwise memory leaks
 		 */
-		md_strlen = gfarm_msgdigest_final_string(md_string, md_ctxp);
+		md_strlen = gfarm_msgdigest_to_string_and_free(
+		    md_ctx, md_string);
 	}
 
 	if (e == GFARM_ERR_NO_ERROR)
@@ -4152,7 +4157,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 			gfarm_error_string(e));
 		goto free_server;
 	}
-	if (md_ctxp != NULL) {
+	if (md_ctx != NULL) {
 		/* dst_err: invalidate */
 		e = dst_err = replication_dst_cksum_verify(
 		    issue_cksum_protocol,
@@ -4224,8 +4229,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	size_t cksum_len = 0;
 	char cksum[GFM_PROTO_CKSUM_MAXLEN];
 	gfarm_int32_t cksum_request_flags;
-	EVP_MD_CTX md_ctx;
-	EVP_MD_CTX *md_ctxp = NULL; /* non-NULL == calculate message-digest */
+	EVP_MD_CTX *md_ctx = NULL; /* non-NULL == calculate message-digest */
 	size_t md_strlen = 0;
 	char md_string[GFARM_MSGDIGEST_STRSIZE];
 	gfarm_int32_t cksum_result_flags = 0;
@@ -4305,9 +4309,8 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 			goto finish;
 		}
 
-		if (msgdigest_init(cksum_type, &md_ctx, diag, ino, gen)) {
-			md_ctxp = &md_ctx;
-		} else {
+		md_ctx = gfsd_msgdigest_alloc(cksum_type, diag, ino, gen);
+		if (md_ctx == NULL) {
 			/*
 			 * do NOT return an error to caller,
 			 * just make cksum_len == 0
@@ -4317,22 +4320,23 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 
 	/* data transfer */
 	error = gfs_sendfile_common(client, &src_err, local_fd, 0, -1,
-	    md_ctxp, &sent);
+	    md_ctx, &sent);
 	io_error_check(src_err, diag);
 
 	/*
 	 * call EVP_DigestFinal() even if an error happens,
 	 * otherwise memory leaks
 	 */
-	if (md_ctxp != NULL)
-		md_strlen = gfarm_msgdigest_final_string(md_string, md_ctxp);
+	if (md_ctx != NULL)
+		md_strlen = gfarm_msgdigest_to_string_and_free(
+		    md_ctx, md_string);
 
 finish:
 	if (error == GFARM_ERR_NO_ERROR)
 		error = src_err;
 	if (cksum_protocol) {
 		if (error == GFARM_ERR_NO_ERROR &&
-		    md_ctxp != NULL && cksum_len > 0 &&
+		    md_ctx != NULL && cksum_len > 0 &&
 		    (cksum_len != md_strlen ||
 		     memcmp(cksum, md_string, md_strlen) != 0)) {
 			(void)replication_src_cksum_error(
@@ -4573,8 +4577,7 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 	gfarm_int32_t dst_err = GFARM_ERR_NO_ERROR;
 	int rv, save_errno;
 
-	EVP_MD_CTX md_ctx;
-	EVP_MD_CTX *md_ctxp = NULL; /* non-NULL == calculate message-digest */
+	EVP_MD_CTX *md_ctx = NULL; /* non-NULL == calculate message-digest */
 	size_t md_strlen = 0;
 	char md_string[GFARM_MSGDIGEST_STRSIZE];
 	size_t src_cksum_len = 0;
@@ -4586,11 +4589,10 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 	    "GFS_PROTO_REPLICA_RECV";
 
 	if (rep->handling_cksum_protocol) {
-		if (msgdigest_init(rep->cksum_type, &md_ctx,
-		    diag, rep->ino, rep->gen)) {
-			md_ctxp = &md_ctx;
-		} else {
-			/* do NOT return an error to caller */
+		md_ctx = gfsd_msgdigest_alloc(
+		    rep->cksum_type, diag, rep->ino, rep->gen);
+		if (md_ctx == NULL) {
+			/* do NOT return an error to caller here */
 		}
 	}
 	if (rep->issue_cksum_protocol) {
@@ -4601,19 +4603,20 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 		    rep->cksum_request_flags,
 		    sizeof(src_cksum), &src_cksum_len, src_cksum,
 		    &cksum_result_flags,
-		    local_fd, md_ctxp);
+		    local_fd, md_ctx);
 	} else {
 		conn_err = gfs_client_replica_recv_md(src_gfsd,
 		    &src_err, &dst_err,
-		    rep->ino, rep->gen, local_fd, md_ctxp);
+		    rep->ino, rep->gen, local_fd, md_ctx);
 	}
 
-	if (md_ctxp != NULL) {
+	if (md_ctx != NULL) {
 		/*
 		 * call EVP_DigestFinal() even if an error happens,
 		 * otherwise memory leaks
 		 */
-		md_strlen = gfarm_msgdigest_final_string(md_string, md_ctxp);
+		md_strlen = gfarm_msgdigest_to_string_and_free(
+		    md_ctx, md_string);
 	}
 
 	if (conn_err != GFARM_ERR_NO_ERROR) {
@@ -4631,7 +4634,7 @@ replica_receive(struct gfarm_hash_entry *q, struct replication_request *rep,
 		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
 		    gfarm_error_string(src_err),
 		    gfarm_error_string(dst_err));
-	} else if (md_ctxp != NULL) { /* no error case */
+	} else if (md_ctx != NULL) { /* no error case */
 		dst_err = replication_dst_cksum_verify(
 		    rep->issue_cksum_protocol,
 		    rep->cksum_len, rep->cksum,
@@ -5130,8 +5133,8 @@ gfs_server_rdma_pread(struct gfp_xdr *client)
 		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
 		    FILE_FLAG_DIGEST_CALC) {
 			if (fe->md_offset == offset) {
-				EVP_DigestUpdate(&fe->md_ctx,
-					gfs_rdma_get_buffer(rdma_ctx), rv);
+				EVP_DigestUpdate(fe->md_ctx,
+				    gfs_rdma_get_buffer(rdma_ctx), rv);
 				fe->md_offset += rv;
 				if (fe->md_offset == fe->size &&
 				    (fe->flags & FILE_FLAG_WRITTEN) == 0)
@@ -5248,8 +5251,8 @@ gfs_server_rdma_pwrite(struct gfp_xdr *client)
 		    (FILE_FLAG_DIGEST_CALC|FILE_FLAG_DIGEST_FINISH)) ==
 		    FILE_FLAG_DIGEST_CALC) {
 			if (fe->md_offset == offset) {
-				EVP_DigestUpdate(&fe->md_ctx,
-					gfs_rdma_get_buffer(rdma_ctx), rv);
+				EVP_DigestUpdate(fe->md_ctx,
+				    gfs_rdma_get_buffer(rdma_ctx), rv);
 				fe->md_offset += rv;
 			} else
 				fe->flags &= ~FILE_FLAG_DIGEST_CALC;
