@@ -100,13 +100,15 @@ struct gfarm_dirset_info {
 
 void gfarm_dirset_info_free(struct gfarm_dirset_info *);
 
+/* only used by gfm_client_dirset_dir_list() */
 struct gfarm_dirset_dir_info {
 	struct gfarm_dirset_info dirset;
-	char *pathname;
+	gfarm_uint32_t n_dirs;
+	struct gfarm_dirset_dir_info_dir {
+		gfarm_uint32_t error;
+		char *dir; /* only set if error == GFARM_ERR_NO_ERROR */
+	} *dirs;
 };
-
-void gfarm_dirset_dir_info_free(struct gfarm_dirset_dir_info *);
-
 
 #define quota_limit_is_valid(val)			\
 	((val >= 0 && val <= GFARM_INT64_MAX) ? 1 : 0)

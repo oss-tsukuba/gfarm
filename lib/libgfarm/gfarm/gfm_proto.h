@@ -71,7 +71,7 @@ enum gfm_proto_command {
 	GFM_PROTO_QUOTA_DIRSET_SET,		/* since gfarm-2.6.XX */
 	GFM_PROTO_QUOTA_DIR_GET,		/* since gfarm-2.6.XX */
 	GFM_PROTO_QUOTA_DIR_SET,		/* since gfarm-2.6.XX */
-	GFM_PROTO_QUOTA_DIR_LIST,		/* since gfarm-2.6.XX */
+	GFM_PROTO_DIRSET_DIR_LIST,		/* since gfarm-2.6.XX */
 	GFM_PROTO_METADATA_RESERVE14,
 	GFM_PROTO_METADATA_RESERVE15,
 

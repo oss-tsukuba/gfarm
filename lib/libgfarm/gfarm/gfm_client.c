@@ -3111,108 +3111,156 @@ gfm_client_quota_dir_set_result(struct gfm_connection *gfm_server)
 	return (gfm_client_rpc_result(gfm_server, 0, ""));
 }
 
+static void
+gfarm_dirset_dir_info_free(struct gfarm_dirset_dir_info *dsi)
+{
+	gfarm_uint32_t j;
+
+	free(dsi->dirset.username);
+	free(dsi->dirset.dirsetname);
+	if (dsi->dirs != NULL) {
+		for (j = 0; j < dsi->n_dirs; j++)
+			free(dsi->dirs[j].dir);
+		free(dsi->dirs);
+	}
+}
+
+void
+gfarm_dirset_dir_list_free(
+	int ndirsets, struct gfarm_dirset_dir_info *dirsets)
+{
+	int i;
+
+	if (dirsets == NULL)
+		return;
+	for (i = 0; i < ndirsets; i++)
+		gfarm_dirset_dir_info_free(&dirsets[i]);
+	free(dirsets);
+}
+
 gfarm_error_t
-gfm_client_quota_dir_list(struct gfm_connection *gfm_server,
+gfm_client_dirset_dir_list(struct gfm_connection *gfm_server,
 	const char *username, const char *dirsetname,
-	int *ndirsetdirsp, gfarm_error_t **errorsp,
-	struct gfarm_dirset_dir_info **dirsetdirsp)
+	int *ndirsetsp, struct gfarm_dirset_dir_info **dirsetsp)
 {
 	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	int eof;
-	gfarm_int32_t i, ndirsetdirs;
-	gfarm_error_t *errors = NULL;
-	struct gfarm_dirset_dir_info *dirsetdirs = NULL;
+	gfarm_int32_t i, j, ndirsets;
+	struct gfarm_dirset_dir_info *dirsets = NULL;
 
 	gfm_client_connection_lock(gfm_server);
 
 	if ((e = gfm_client_rpc_request(gfm_server,
-	    GFM_PROTO_QUOTA_DIR_LIST, "ss", username, dirsetname))
+	    GFM_PROTO_DIRSET_DIR_LIST, "ss", username, dirsetname))
 	    != GFARM_ERR_NO_ERROR) {
 		e_save = e;
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "gfm_client_quota_dir_list() request: %s",
+		    "gfm_client_dirset_dir_list() request: %s",
 		    gfarm_error_string(e));
 	} else if ((e = gfm_client_rpc_result(gfm_server, 0, "i",
-	    &ndirsetdirs)) != GFARM_ERR_NO_ERROR) {
+	    &ndirsets)) != GFARM_ERR_NO_ERROR) {
 		e_save = e;
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "gfm_client_quota_dir_list() result: %s",
+		    "gfm_client_dirset_dir_list() result: %s",
 		    gfarm_error_string(e));
 	} else {
-		struct gfarm_dirset_dir_info dummy;
-		gfarm_int32_t ecode;
+		struct gfarm_dirset_dir_info dsi;
+		struct gfarm_dirset_dir_info_dir dir;
 
-		GFARM_MALLOC_ARRAY(errors, ndirsetdirs);
-		if (errors == NULL && ndirsetdirs != 0) {
+		GFARM_MALLOC_ARRAY(dirsets, ndirsets);
+		if (dirsets == NULL && ndirsets != 0) {
 			e_save = GFARM_ERR_NO_MEMORY;
 			gflog_debug(GFARM_MSG_UNFIXED,
-			    "gfm_client_quota_dir_list(): "
-			    "no memory for %d errors", (int)ndirsetdirs);
-		}
-		GFARM_MALLOC_ARRAY(dirsetdirs, ndirsetdirs);
-		if (dirsetdirs == NULL && ndirsetdirs != 0) {
-			e_save = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
-			    "gfm_client_quota_dir_list(): "
-			    "no memory for %d dirsetdirs", (int)ndirsetdirs);
+			    "gfm_client_dirset_dir_list(): "
+			    "no memory for %d dirsets", (int)ndirsets);
+			/* continue to receive to keep protocol */
 		}
 
-		for (i = 0; i < ndirsetdirs; i++) {
-			e = gfm_client_xdr_recv(gfm_server, 0, &eof, "i",
-			    &ecode);
+		for (i = 0; i < ndirsets; i++) {
+			e = gfm_client_xdr_recv(gfm_server, 0, &eof, "ssi",
+			    &dsi.dirset.username, &dsi.dirset.dirsetname,
+			    &dsi.n_dirs);
 			if (e != GFARM_ERR_NO_ERROR || eof) {
 				if (e == GFARM_ERR_NO_ERROR)
 					e = GFARM_ERR_PROTOCOL;
 				gflog_debug(GFARM_MSG_UNFIXED,
-				    "gfm_client_quota_dir_list() reading error"
-				    "dirsetdirs[%d]: %s",
+				    "gfm_client_dirset_dir_list() "
+				    "reading dirset[%d]: %s",
 				    (int)i, gfarm_error_string(e));
 				if (e_save == GFARM_ERR_NO_ERROR)
 					e_save = e;
-				ndirsetdirs = i;
+				ndirsets = i;
 				break;
 			}
-			if (errors != NULL)
-				errors[i] = ecode;
-			if (ecode != GFARM_ERR_NO_ERROR)
-				continue;
-			e = gfm_client_xdr_recv(gfm_server, 0, &eof, "sss",
-			    dirsetdirs == NULL ? &dummy.dirset.username :
-			    &dirsetdirs[i].dirset.username,
-			    dirsetdirs == NULL ? &dummy.dirset.dirsetname :
-			    &dirsetdirs[i].dirset.dirsetname,
-			    dirsetdirs == NULL ? &dummy.pathname :
-			    &dirsetdirs[i].pathname);
-			if (e != GFARM_ERR_NO_ERROR || eof) {
-				if (e == GFARM_ERR_NO_ERROR)
-					e = GFARM_ERR_PROTOCOL;
+			GFARM_MALLOC_ARRAY(dsi.dirs, dsi.n_dirs);
+			if (dsi.dirs == NULL && dsi.n_dirs != 0) {
+				if (e_save == GFARM_ERR_NO_ERROR)
+					e_save = GFARM_ERR_NO_MEMORY;
 				gflog_debug(GFARM_MSG_UNFIXED,
-				    "gfm_client_quota_dir_list() reading dir"
-				    "dirsetdirs[%d]: %s",
-				    (int)i, gfarm_error_string(e));
-				if (e_save == GFARM_ERR_NO_ERROR)
-					e_save = e;
-				ndirsetdirs = i;
-				break;
+				    "gfm_client_dirset_dir_list(): "
+				    " dirset %s:%s no memory for %d dirs",
+				    dsi.dirset.username, dsi.dirset.dirsetname,
+				    dsi.n_dirs);
+				/* continue to receive to keep protocol */
 			}
-			if (dirsetdirs == NULL)
-				gfarm_dirset_dir_info_free(&dummy);
+			for (j = 0; j < dsi.n_dirs; j++) {
+				e = gfm_client_xdr_recv(gfm_server, 0, &eof,
+				    "i", &dir.error);
+				if (e != GFARM_ERR_NO_ERROR || eof) {
+					if (e == GFARM_ERR_NO_ERROR)
+						e = GFARM_ERR_PROTOCOL;
+					gflog_debug(GFARM_MSG_UNFIXED,
+					    "gfm_client_dirset_dir_list() "
+					    "dirset %s:%s dir[%d]: %s",
+					    dsi.dirset.username,
+					    dsi.dirset.dirsetname,
+					    (int)j, gfarm_error_string(e));
+					if (e_save == GFARM_ERR_NO_ERROR)
+						e_save = e;
+					ndirsets = i;
+					dsi.n_dirs = j;
+					break;
+				}
+				if (dir.error != GFARM_ERR_NO_ERROR)
+					dir.dir = NULL;
+				else if ((e = gfm_client_xdr_recv(gfm_server,
+				    0, &eof, "s", &dir.dir))
+				    != GFARM_ERR_NO_ERROR || eof) {
+					if (e == GFARM_ERR_NO_ERROR)
+						e = GFARM_ERR_PROTOCOL;
+					gflog_debug(GFARM_MSG_UNFIXED,
+					    "gfm_client_dirset_dir_list() "
+					    "dirset %s:%s dir[%d]: %s",
+					    dsi.dirset.username,
+					    dsi.dirset.dirsetname,
+					    (int)j, gfarm_error_string(e));
+					if (e_save == GFARM_ERR_NO_ERROR)
+						e_save = e;
+					ndirsets = i;
+					dsi.n_dirs = j;
+					break;
+				}
+				if (dsi.dirs != NULL) {
+					dsi.dirs[j] = dir;
+				} else {
+					free(dir.dir);
+				}
+			}
+			if (dirsets != NULL) {
+				dirsets[i] = dsi;
+			} else {
+				gfarm_dirset_dir_info_free(&dsi);
+			}
 		}
 	}
 
 	gfm_client_connection_unlock(gfm_server);
 
 	if (e_save == GFARM_ERR_NO_ERROR) {
-		*ndirsetdirsp = ndirsetdirs;
-		*errorsp = errors;
-		*dirsetdirsp = dirsetdirs;
-	} else {
-		free(errors);
-		if (dirsetdirs != NULL) {
-			for (i = 0; i < ndirsetdirs; i++)
-				gfarm_dirset_dir_info_free(&dirsetdirs[i]);
-			free(dirsetdirs);
-		}
+		*ndirsetsp = ndirsets;
+		*dirsetsp = dirsets;
+	} else if (dirsets != NULL) {
+		gfarm_dirset_dir_list_free(ndirsets, dirsets);
 	}
 	return (e_save);
 }

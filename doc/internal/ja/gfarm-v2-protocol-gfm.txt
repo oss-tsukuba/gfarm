@@ -1123,18 +1123,20 @@
 		   file descriptor が指すディレクトリが空ではない
 	  ※ gfarmroot 権限がない限り、dirset の所有ユーザー自身のみが設定可能
 
-	GFM_PROTO_QUOTA_DIR_LIST
+	GFM_PROTO_QUOTA_DIRSET_DIR_LIST
 	  入力: s:ユーザー名 (空文字列は全ユーザーを意味する)
 		s:dirset name (空文字列は全dirsetを意味する)
 	  出力: i:エラー
 		エラー == GFARM_ERR_NO_ERROR の場合:
-	        i:n_dirs
-		下記の、n_dirs 回の繰り返し
-			i:エラー
-			エラー == GFARM_ERR_NO_ERROR の場合:
-				s:ユーザー名
-				s:dirset name
-				s:トップディレクトリのパス名
+	        i:n_directory_quota_name
+		下記の、n_directory_quota_name 回の繰り返し
+			s:ユーザー名
+			s:dirset name
+			l:n_dirs
+			下記の、n_dirs 回の繰り返し
+				i:エラー (例: 権限不足でパス名変換不能など)
+				エラー == GFARM_ERR_NO_ERROR の場合:
+					s:トップディレクトリのパス名
 	  ※ gfarmroot 権限がない限り、dirset の所有ユーザー自身のみが取得可能
 
   メタデータ・レプリケーション系 (gfmd channel)
