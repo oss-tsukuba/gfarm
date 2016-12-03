@@ -4,8 +4,9 @@ int gfarm_msgdigest_name_verify(const char *);
 const char *gfarm_msgdigest_name_to_openssl(const char *);
 
 #ifdef GFARM_USE_OPENSSL /* this requires <openssl/evp.h> */
-int gfarm_msgdigest_init(const char *, EVP_MD_CTX *, int *);
-size_t gfarm_msgdigest_final(unsigned char *md_value, EVP_MD_CTX *md_ctx);
-size_t gfarm_msgdigest_final_string(char *, EVP_MD_CTX *);
+EVP_MD_CTX *gfarm_msgdigest_alloc(const EVP_MD *);
+EVP_MD_CTX *gfarm_msgdigest_alloc_by_name(const char *, int *);
+size_t gfarm_msgdigest_free(EVP_MD_CTX *, unsigned char *);
+size_t gfarm_msgdigest_to_string_and_free(EVP_MD_CTX *, char *);
 #endif
 size_t gfarm_msgdigest_to_string(char *, unsigned char *, size_t);

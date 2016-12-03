@@ -175,17 +175,24 @@ gfarm_auth_sharedsecret_compare(
 	gfarm_uint32_t expire_expected, char *shared_key_expected,
 	const char *diag)
 {
+	gfarm_error_t e;
 	char response_expected[GFARM_AUTH_RESPONSE_LEN];
 	enum gfarm_auth_error error;
 
 	/* may also reach here even if shared_key_expected is expired */
-	gfarm_auth_sharedsecret_response_data(
+	e = gfarm_auth_sharedsecret_response_data(
 	    shared_key_expected, challenge, response_expected);
 	if (expire != expire_expected) {
 		error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
 		gflog_info(GFARM_MSG_1004489,
 		    "(%s@%s) auth_sharedsecret: expire time mismatch%s",
 		    global_username, hostname, diag);
+	} else if (e != GFARM_ERR_NO_ERROR) {
+		error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "(%s@%s) auth_sharedsecret: "
+		    "calculating challenge-response: %s",
+		    global_username, hostname, gfarm_error_string(e));
 	} else if (memcmp(response, response_expected, response_size) != 0) {
 		error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
 		gflog_info(GFARM_MSG_1004490,

@@ -102,7 +102,7 @@ struct gfs_file {
 	 */
 	gfarm_off_t md_offset;
 	struct gfs_pio_internal_cksum_info md;
-	EVP_MD_CTX md_ctx;
+	EVP_MD_CTX *md_ctx;
 
 	/* opening files */
 	GFARM_HCIRCLEQ_ENTRY(gfs_file) hcircleq;
@@ -163,7 +163,7 @@ struct gfs_file_section_context {
  *	io_offset == offset + length
  */
 
-int gfs_pio_md_init(const char *, EVP_MD_CTX *, char *);
+int gfs_pio_md_init(const char *, EVP_MD_CTX **, char *);
 gfarm_error_t gfs_pio_md_finish(GFS_File);
 gfarm_error_t gfs_pio_reopen_fd(GFS_File,
 	struct gfm_connection **, int *, int *,

@@ -149,24 +149,27 @@ calc_digest(const char *file,
 	int fd;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
-	EVP_MD_CTX md_ctx;
-	unsigned int md_len;
+	EVP_MD_CTX *md_ctx;
+	size_t md_len;
 	unsigned char md_value[EVP_MAX_MD_SIZE];
+	int cause;
 
-	if (!gfarm_msgdigest_init(md_type_name, &md_ctx, NULL))
-		gflog_fatal(GFARM_MSG_1004194, "%s: fatal error. "
-		    "digest type <%s> isn't supported on this host",
-		    file, md_type_name);
+	md_ctx = gfarm_msgdigest_alloc_by_name(md_type_name, &cause);
+	if (md_ctx == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: fatal error. "
+		    "digest type <%s> - %s",
+		    file, md_type_name, cause != 0 ? strerror(cause) :
+		    "digest calculation disabled");
 
 	if ((fd = open(file, O_RDONLY)) == -1)
 		return (gfarm_errno_to_error(errno));
 
 	while ((sz = read(fd, buf, sizeof buf)) > 0)
-		EVP_DigestUpdate(&md_ctx, buf, sz);
+		EVP_DigestUpdate(md_ctx, buf, sz);
 	if (sz == -1)
 		e = gfarm_errno_to_error(errno);
 
-	EVP_DigestFinal(&md_ctx, md_value, &md_len);
+	md_len = gfarm_msgdigest_free(md_ctx, md_value);
 	if (e == GFARM_ERR_NO_ERROR)
 		*md_strlenp = gfarm_msgdigest_to_string(
 		    md_string, md_value, md_len);
