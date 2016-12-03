@@ -1368,7 +1368,7 @@ gfsd_msgdigest_alloc(const char *md_type_name,
 		return (md_ctx);
 
 	if (cause)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004520,
 		    "%s: inum %lld gen %lld: "
 		    "digest type <%s> - %s",
 		    diag,

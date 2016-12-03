@@ -244,7 +244,7 @@ gfs_pio_md_init(const char *md_type_name, EVP_MD_CTX **md_ctxp, char *url)
 	}
 
 	if (cause)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004518,
 		    "%s: digest type <%s> - %s",
 		    url, md_type_name, strerror(cause));
 	*md_ctxp = NULL;

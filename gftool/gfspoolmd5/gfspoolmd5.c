@@ -156,7 +156,7 @@ calc_digest(const char *file,
 
 	md_ctx = gfarm_msgdigest_alloc_by_name(md_type_name, &cause);
 	if (md_ctx == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: fatal error. "
+		gflog_fatal(GFARM_MSG_1004521, "%s: fatal error. "
 		    "digest type <%s> - %s",
 		    file, md_type_name, cause != 0 ? strerror(cause) :
 		    "digest calculation disabled");
