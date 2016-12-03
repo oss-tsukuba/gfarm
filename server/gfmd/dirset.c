@@ -445,7 +445,6 @@ gfm_server_dirset_info_set(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (strlen(dirsetname) > GFARM_DIRSET_NAME_MAX) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
-		
 	} else if (*dirsetname == '\0') {
 		/*
 		 * prohibit null string as a dirset, because that means
