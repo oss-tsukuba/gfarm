@@ -22,6 +22,7 @@ enum operation_mode {
 };
 
 static const char ALL_USERS[] = "";
+static char *all_dirsets = "";
 
 static const char *program_name = "gfdirquota";
 
@@ -81,7 +82,7 @@ dirset_delete(struct gfm_connection *gfm_server,
 }
 
 static int
-dirsetdir_cmp(const void *a0, const void *b0)
+dirset_dir_info_cmp(const void *a0, const void *b0)
 {
 	const struct gfarm_dirset_dir_info *a = a0, *b = b0;
 	int cmp;
@@ -89,78 +90,103 @@ dirsetdir_cmp(const void *a0, const void *b0)
 	cmp = strcmp(a->dirset.username, b->dirset.username);
 	if (cmp != 0)
 		return (cmp);
-	cmp = strcmp(a->dirset.dirsetname, b->dirset.dirsetname);
-	if (cmp != 0)
-		return (cmp);
-	return (strcmp(a->pathname, b->pathname));
+	return (strcmp(a->dirset.dirsetname, b->dirset.dirsetname));
 }
 
-static gfarm_error_t
-list_long(struct gfm_connection *gfm_server,
-	const char *username, const char *dirsetname, int print_dirset)
+static int
+dir_cmp(const void *a0, const void *b0)
 {
-	gfarm_error_t e, *errors;
-	int i, ndirsetdirs, print_user = 0;
-	struct gfarm_dirset_dir_info *dirsetdirs, *current, *previous = NULL;
+	const struct gfarm_dirset_dir_info_dir *a = a0, *b = b0;
+	int cmp;
 
-	if (*username == '\0') /* this means all users */
-		print_user = 1;
-	if (*dirsetname == '\0') /* this means all dirsets */
-		print_dirset = 1;
-
-	e = gfm_client_quota_dir_list(gfm_server, username, dirsetname,
-	    &ndirsetdirs, &errors, &dirsetdirs);
-	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s:%s: %s\n",
-		    *username == '\0' ? "(ALL_USER)" : username,
-		    *dirsetname == '\0' ? "(ALL_DIRSET)" : dirsetname,
-		    gfarm_error_string(e));
-		return (e);
+	if (a->dir != NULL && b->dir != NULL) {
+		cmp = strcmp(a->dir, b->dir);
+		if (cmp != 0)
+			return (cmp);
+	} else if (a->dir != NULL || b->dir != NULL) {
+		if (a->dir != NULL)
+			return (-1);
+		else
+			return (1);
 	}
-	qsort(dirsetdirs, ndirsetdirs, sizeof(dirsetdirs[0]), dirsetdir_cmp);
-	for (i = 0; i < ndirsetdirs; i++) {
-		if (errors[i] != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "error: %s\n",
-			    gfarm_error_string(errors[i]));
-			continue;
-		}
-		current = &dirsetdirs[i];
-		if ((print_user || print_dirset) &&
-		    (previous == NULL ||
-		     strcmp(current->dirset.username,
-			    previous->dirset.username) != 0 ||
-		     strcmp(current->dirset.dirsetname,
-			    previous->dirset.dirsetname) != 0)) {
-			if (previous != NULL)
-				printf("\n");
-			printf("%s:%s:\n",
-			    current->dirset.username,
-			    current->dirset.dirsetname);
-			previous = current;
-		}
-		printf("%s\n", current->pathname);
-	}
-	for (i = 0; i < ndirsetdirs; i++) {
-		if (errors[i] == GFARM_ERR_NO_ERROR)
-			gfarm_dirset_dir_info_free(&dirsetdirs[i]);
-	}
-	free(dirsetdirs);
-	free(errors);
-
-	return (e);
+	if (a->error < b->error)
+		return (-1);
+	else if (a->error > b->error)
+		return (1);
+	else
+		return (0);
 }
 
 static gfarm_error_t
 dirset_list_long(struct gfm_connection *gfm_server,
-	const char *username, const char *dirsetname, int print_dirset)
+	const char *username, const char *dirsetname,
+	int print_dirset, int *need_newline)
 {
-	return (list_long(gfm_server, username, dirsetname, print_dirset));
-}
+	gfarm_error_t e;
+	int i, ndirsets = 0;
+	gfarm_uint32_t j;
+	struct gfarm_dirset_dir_info *dirsets = NULL, *ds;
+	struct gfarm_dirset_dir_info_dir *dir;
+	int is_all_users = strcmp(username, ALL_USERS) == 0;
+	int is_all_dirsets = strcmp(dirsetname, all_dirsets) == 0;
 
-static gfarm_error_t
-dirset_list_long_all(struct gfm_connection *gfm_server, const char *username)
-{
-	return (list_long(gfm_server, username, "", 1));
+	print_dirset |= is_all_users || is_all_dirsets;
+
+	e = gfm_client_dirset_dir_list(gfm_server, username, dirsetname,
+	    &ndirsets, &dirsets);
+	if (e == GFARM_ERR_NO_ERROR && ndirsets == 0 &&
+	    !is_all_users && !is_all_dirsets) {
+		/*
+		 * when both user and dirset is specified,
+		 * report if the dirset does not exist.
+		 */
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+		gfarm_dirset_dir_list_free(ndirsets, dirsets);
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		fflush(stdout);
+		if (is_all_dirsets) {
+			fprintf(stderr, "%s: %s\n",
+			    program_name, gfarm_error_string(e));
+		} else if (is_all_users) {
+			fprintf(stderr, "%s: %s\n",
+			    dirsetname, gfarm_error_string(e));
+		} else {
+			fprintf(stderr, "%s:%s: %s\n",
+			    username, dirsetname, gfarm_error_string(e));
+		}
+		return (e);
+	}
+
+	qsort(dirsets, ndirsets, sizeof(dirsets[0]), dirset_dir_info_cmp);
+	for (i = 0; i < ndirsets; i++) {
+		if (*need_newline)
+			printf("\n");
+		else
+			*need_newline = 1;
+
+		ds = &dirsets[i];
+		if (print_dirset)
+			printf("%s:%s:\n",
+			    ds->dirset.username, ds->dirset.dirsetname);
+
+		qsort(ds->dirs, ds->n_dirs, sizeof(ds->dirs[0]), dir_cmp);
+		for (j = 0; j < ds->n_dirs; j++) {
+			dir = &ds->dirs[j];
+			if (dir->error == GFARM_ERR_NO_ERROR) {
+				printf("%s\n", dir->dir);
+			} else {
+				fflush(stdout);
+				fprintf(stderr, "%s:%s: error: %s\n",
+				    ds->dirset.username,
+				    ds->dirset.dirsetname,
+				    gfarm_error_string(dir->error));
+			}
+		}
+	}
+	gfarm_dirset_dir_list_free(ndirsets, dirsets);
+
+	return (e);
 }
 
 static int
@@ -220,7 +246,7 @@ usage(void)
 	    "\t%s [-u <user>] [-P <path>] -d <dirset_name>...\n"
 	    "\t%s [-u <user>] -a <dirset_name> <dir>...\n"
 	    "\t%s [-u <user> | -A] [-P <path>]\n"
-	    "\t%s [-u <user> | -A] [-P <path>] -l <dirset>...\n",
+	    "\t%s [-u <user> | -A] [-P <path>] -l [<dirset>...]\n",
 	    program_name, program_name, program_name,
 	    program_name, program_name);
 	exit(EXIT_FAILURE);
@@ -248,7 +274,7 @@ main(int argc, char **argv)
 	const char *opt_username = NULL;
 	static const char OPT_PATH_DEFAULT[] = ".";
 	const char *opt_path = OPT_PATH_DEFAULT, *opt_dirsetname_to_add = NULL;
-	int c, i, exit_code = EXIT_SUCCESS;
+	int c, i, need_newline = 0, exit_code = EXIT_SUCCESS;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -346,7 +372,7 @@ main(int argc, char **argv)
 			    opt_dirsetname_to_add, argv[i]);
 			if (e != GFARM_ERR_NO_ERROR) {
 				exit_code = EXIT_FAILURE;
-				break;
+				/* do not do "break;" here */
 			}
 		}
 		break;
@@ -355,7 +381,7 @@ main(int argc, char **argv)
 			e = dirset_create(gfm_server, opt_username, argv[i]);
 			if (e != GFARM_ERR_NO_ERROR) {
 				exit_code = EXIT_FAILURE;
-				break;
+				/* do not do "break;" here */
 			}
 		}
 		break;
@@ -364,24 +390,21 @@ main(int argc, char **argv)
 			e = dirset_delete(gfm_server, opt_username, argv[i]);
 			if (e != GFARM_ERR_NO_ERROR) {
 				exit_code = EXIT_FAILURE;
-				break;
+				/* do not do "break;" here */
 			}
 		}
 		break;
 	case OP_LIST_LONG:
 		if (argc == 0) {
-			e = dirset_list_long_all(gfm_server, opt_username);
-			if (e != GFARM_ERR_NO_ERROR)
+			argc = 1;
+			argv = &all_dirsets;
+		}
+		for (i = 0; i < argc; i++) {
+			e = dirset_list_long(gfm_server,
+			    opt_username, argv[i], argc != 1, &need_newline);
+			if (e != GFARM_ERR_NO_ERROR) {
 				exit_code = EXIT_FAILURE;
-		} else {
-			for (i = 0; i < argc; i++) {
-				e = dirset_list_long(gfm_server,
-				    opt_username, argv[i],
-				    opt_username == ALL_USERS || argc > 1);
-				if (e != GFARM_ERR_NO_ERROR) {
-					exit_code = EXIT_FAILURE;
-					/* do not do "break;" here */
-				}
+				/* do not do "break;" here */
 			}
 		}
 		break;

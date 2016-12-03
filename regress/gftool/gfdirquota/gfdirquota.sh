@@ -11,6 +11,7 @@ trap 'gfrm -rf $gftmp; gfdirquota -d $dirset; exit $exit_trap' $trap_sigs
 if gfmkdir $gftmp &&
    gfdirquota -c $dirset &&
    gfdirquota | grep "^${dirset}\$" >/dev/null &&
+   gfdirquota -l | grep "^${gfls_D}:\$" >/dev/null &&
    gfdirquota -a $dirset $gftmp &&
    gfdirquota -l $dirset | sed -n '$p' | grep "^${gftmp}\$" >/dev/null &&
    gfquota -D $dirset | sed 1,2d | cmp -s - $testbase/gfedquota.out.0 &&

@@ -55,4 +55,4 @@ gfarm_error_t quota_dirset_put_reply(struct peer *, struct dirset *,
 	const char *);
 gfarm_error_t gfm_server_quota_dirset_get(struct peer *, int, int);
 gfarm_error_t gfm_server_quota_dirset_set(struct peer *, int, int);
-gfarm_error_t gfm_server_quota_dir_list(struct peer *, int, int);
+gfarm_error_t gfm_server_dirset_dir_list(struct peer *, int, int);

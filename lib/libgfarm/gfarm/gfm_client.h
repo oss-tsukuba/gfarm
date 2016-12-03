@@ -356,9 +356,10 @@ gfarm_error_t gfm_client_quota_dir_get_result(struct gfm_connection *,
 gfarm_error_t gfm_client_quota_dir_set_request(struct gfm_connection *,
 	const char *, const char *);
 gfarm_error_t gfm_client_quota_dir_set_result(struct gfm_connection *);
-gfarm_error_t gfm_client_quota_dir_list(struct gfm_connection *,
+void gfarm_dirset_dir_list_free(int, struct gfarm_dirset_dir_info *);
+gfarm_error_t gfm_client_dirset_dir_list(struct gfm_connection *,
 	const char *, const char *,
-	int *, gfarm_error_t **, struct gfarm_dirset_dir_info **);
+	int *, struct gfarm_dirset_dir_info **);
 
 /* gfs from gfsd */
 gfarm_error_t gfm_client_reopen_request(struct gfm_connection *);

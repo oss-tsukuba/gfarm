@@ -607,8 +607,8 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_QUOTA_DIR_SET:
 		e = gfm_server_quota_dir_set(peer, from_client, skip);
 		break;
-	case GFM_PROTO_QUOTA_DIR_LIST:
-		e = gfm_server_quota_dir_list(peer, from_client, skip);
+	case GFM_PROTO_DIRSET_DIR_LIST:
+		e = gfm_server_dirset_dir_list(peer, from_client, skip);
 		break;
 	case GFM_PROTO_METADB_SERVER_GET:
 		e = gfm_server_metadb_server_get(peer, from_client, skip);
