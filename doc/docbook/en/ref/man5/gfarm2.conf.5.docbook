@@ -917,7 +917,7 @@ the <token>client_digest_check</token> statement.
 <term><token>directory_quota_count_per_user_limit</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>
-The <token>directory_quota_count_per_user_limit</token> statement 
+The <token>directory_quota_count_per_user_limit</token> statement
 limits maximum number of dirset per user.
 </para>
 <para>
@@ -3374,7 +3374,7 @@ The default size is 16 megabytes.
 
 <varlistentry>
 <term>&lt;mr_reg_mode&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"static" | "dynamic" | "static" "dynamic" </literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"static" | "dynamic" | "static" "dynamic"</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

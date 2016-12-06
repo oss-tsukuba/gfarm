@@ -3323,7 +3323,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 
 <varlistentry>
 <term>&lt;mr_reg_mode&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"static" | "dynamic" | "static" "dynamic" </literallayout></listitem>
+<listitem><literallayout format="linespecific" class="normal">"static" | "dynamic" | "static" "dynamic"</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
