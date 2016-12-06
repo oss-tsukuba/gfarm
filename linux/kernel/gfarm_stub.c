@@ -126,13 +126,6 @@ gfarm_msgdigest_name_verify(const char *gfarm_name)
 	gflog_error(GFARM_MSG_UNFIXED, "Not supported");
 	return (0);
 }
-int
-gfarm_msgdigest_init(const char *md_type_name, EVP_MD_CTX *md_ctx,
-	int *not_supported_p)
-{
-	gflog_error(GFARM_MSG_UNFIXED, "Not supported");
-	return (0);
-}
 size_t
 gfarm_msgdigest_to_string(
 	char *md_string, unsigned char *md_value, size_t md_len)
@@ -140,14 +133,27 @@ gfarm_msgdigest_to_string(
 	gflog_error(GFARM_MSG_UNFIXED, "Not supported");
 	return (0);
 }
+EVP_MD_CTX *
+gfarm_msgdigest_alloc_by_name(const char *md_type_name, int *cause_p)
+{
+	gflog_error(GFARM_MSG_UNFIXED, "Not supported");
+	if (md_type_name == NULL || md_type_name[0] == '\0') {
+		if (cause_p != NULL)
+			*cause_p = 0;
+		return (NULL);
+	}
+	if (cause_p != NULL)
+		*cause_p = EOPNOTSUPP;
+	return (NULL);
+}
 size_t
-gfarm_msgdigest_final(unsigned char *md_value, EVP_MD_CTX *md_ctx)
+gfarm_msgdigest_free(EVP_MD_CTX *md_ctx, unsigned char *md_value)
 {
 	gflog_error(GFARM_MSG_UNFIXED, "Not supported");
 	return (0);
 }
 size_t
-gfarm_msgdigest_final_string(char *md_string, EVP_MD_CTX *md_ctx)
+gfarm_msgdigest_to_string_and_free(EVP_MD_CTX *md_ctx, char *md_string)
 {
 	gflog_error(GFARM_MSG_UNFIXED, "Not supported");
 	return (0);
@@ -159,5 +165,4 @@ gfs_client_connect_result_multiplexed
 gfs_client_connection_alloc_and_auth
 gfs_client_connect_request_multiplexed
 gfs_pio_open_local_section
--------------------------------
 */

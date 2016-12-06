@@ -189,7 +189,6 @@ strtoull(const char *nptr, char **endptr, int base)
 long long
 strtoll(const char *nptr, char **endptr, int base)
 {
-	unsigned long long res;
 	if (*nptr == '-')
 		return (-strtoull(nptr + 1, endptr, base));
 	else

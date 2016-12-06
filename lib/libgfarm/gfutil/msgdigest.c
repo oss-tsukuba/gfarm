@@ -46,7 +46,6 @@ gfarm_msgdigest_alloc(const EVP_MD *md_type)
 	return (md_ctx);
 }
 
-#ifndef __KERNEL__
 EVP_MD_CTX *
 gfarm_msgdigest_alloc_by_name(const char *md_type_name, int *cause_p)
 {
@@ -76,15 +75,6 @@ gfarm_msgdigest_alloc_by_name(const char *md_type_name, int *cause_p)
 
 	return (md_ctx); /* calculate message digest */
 }
-#else /* __KERNEL__ */
-EVP_MD_CTX *
-gfarm_msgdigest_alloc_by_name(const char *md_type_name, int *cause_p)
-{
-	if (cause_p != NULL)
-		*cause_p = EOPNOTSUPP; /* not supported */
-	return (NULL);
-}
-#endif /* __KERNEL__ */
 
 /*
  * md_string should be declared as:
