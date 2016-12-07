@@ -28,8 +28,12 @@
 
 <refsect1 id="description"><title>DESCRIPTION</title>
 
-<para><command moreinfo="none">gfquotacheck</command> rebuilds a table
-of the current file usage for users and groups.</para>
+<para>Gfarm 2.6.6 or later basically does not need to execute this
+command, but Gfarm 2.6.12 or later requires to execute only when
+re-registering removed users or groups.</para>
+
+<para><command moreinfo="none">gfquotacheck</command> explicitly
+rebuilds a table of the current file usage for users and groups.</para>
 
 <para>This command can be executed by an administrator in the gfarmadm
 group.</para>

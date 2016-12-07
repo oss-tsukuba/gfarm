@@ -64,8 +64,7 @@ as the administrator group who can specify user name.
 </para>
 
 <para>The count of usage and the check of quota are enabled after
-executing <command moreinfo="none">gfedquota</command>
-and <command moreinfo="none">gfquotacheck</command> command.
+executing <command moreinfo="none">gfedquota</command> command.
 And, <command moreinfo="none">gfquota</command> can display the current usage and
 limits.</para>
 

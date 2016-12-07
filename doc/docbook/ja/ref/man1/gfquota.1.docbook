@@ -64,7 +64,7 @@ gfarmadm グループに所属している管理者は、ユーザ名やグル�
 gfarmadm グループではなく、gfarmroot グループが使われます。
 </para>
 
-<para><command moreinfo="none">gfedquota</command> と <command moreinfo="none">gfquotacheck</command> を
+<para><command moreinfo="none">gfedquota</command> を
 実行すると使用量のカウントと制限値が有効になり、
 <command moreinfo="none">gfquota</command> で表示できるようになります。</para>
 </refsect1>

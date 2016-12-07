@@ -1,10 +1,11 @@
 Quota in Gfarm file system
-2010.3.29
 
 * Description
 
 Administrators in the gfarmadm group can limit the capacity to use
-and/or the number of files to create for a user or a group.  These
+and/or the number of files to create for a user or a group.  Gfarm
+2.7.0 or later supports the directory quota to limit usage under a
+directory set.  See doc/html/en/user/dirquota.html for details.  These
 limits can be specified for files and for file replicas.  The limit
 for file replicas is called the physical limit.  There are soft limit
 and hard limit.  The soft limit can be exceeded within the specified
@@ -19,12 +20,13 @@ file.
 
 ** gfedquota - edit the limit
 
-Usage: gfedquota [-P path] -u username | -g groupname [options]
+Usage: gfedquota [-P path] -u username | -g groupname | -D dirset [options]
 
 Options:
   -P,--path=NAME        Gfarm pathname to specify a metadata server
   -u,--user=NAME        username to edit the limit
   -g,--group=NAME       groupname to edit the limit
+  -D,--dirset=NAME	directory set name to edit the limit
   -G,--grace=SECOND     grace period in second for soft limits
   -s,--softspc=BYTE     soft limit of file space in byte
   -h,--hardspc=BYTE     hard limit of file space in byte
@@ -36,33 +38,40 @@ Options:
   -N,--phyhardnum=NUM   hard limit of physical number incl replicas
   -?,--help     this help message
 
-gfedquota edits the limit for a user or a group.  Each limit can be
-specified by one of above options.  Setting 'disable' or -1 indicates
-unlimited.  If no option for limits is specified, no quota is imposed.
-This command can be executed by an administrator in the gfarmadm
-group.  The quota is enabled after executing the gfquotacheck command.
+gfedquota edits the limit for a user, a group, or a directory set.
+Each limit can be specified by one of above options.  Setting
+'disable' or -1 indicates unlimited.  If no option for limits is
+specified, no quota is imposed.  This command can be executed by an
+administrator in the gfarmadm group except the -D option.  The -D
+option requires the gfarmroot group privilege.
 
 ** gfquotacheck - build a table of current usage and enable the quota check
 
 Usage: gfquotacheck [-P path]
 
 Options:
-  -P,--path=NAME        Gfarm pathname to specify a metadata server
+  -P        Gfarm pathname to specify a metadata server
 
-gfquotacheck builds a table of the current usage for users and groups
-whose quota are edited by gfedquota, and enables the quota check.
-This command can be executed by an administrator in the gfarmadm
-group.
+Gfarm 2.6.6 or later basically does not need to execute this command,
+but Gfarm 2.6.12 or later requires to execute only when re-registering
+removed users or groups.
+
+gfquotacheck explicitly builds a table of the current usage for users
+and groups whose quota are edited by gfedquota, and enables the quota
+check.  This command can be executed by an administrator in the
+gfarmadm group.
 
 ** gfquota - display the current usage and limits
 
-Usage: gfquota [-q] [-P path] [-u username | -g groupname]
+Usage: gfquota [-q] [-P path] [options]
 
 Options:
-  -q                    do not display the current usage and limits.
-  -P,--path=NAME        Gfarm pathname to specify a metadata server
-  -u,--user=NAME        username to display
-  -g,--group=NAME       groupname to display
+  -q        do not display the current usage and limits.
+  -P        Gfarm pathname to specify a metadata server
+  -u        username to display
+  -g        groupname to display
+  -D        directory set name to display
+  -d        directory name to display
 
 gfquota displays the current usage and the limits.  An administrator
 in the gfarmadm group can specify a user or a group to display.
@@ -72,11 +81,11 @@ in the gfarmadm group can specify a user or a group to display.
 Usage: gfusage [-P path] [-g] [name]
 
 Options:
-  -P,--path=NAME        Gfarm pathname to specify a metadata server
-  -g                    display the current usage for groups
+  -P        Gfarm pathname to specify a metadata server
+  -g        display the current usage for groups
 
 gfusage displays the current usage for users.  If name is specified,
 it displays only the specified user.  With the -g option, it displays
 the current usage for groups.  The current usage is available for
 users or groups after building a table of the current usage by
-gfedquota and gfquotacheck.
+gfedquota.

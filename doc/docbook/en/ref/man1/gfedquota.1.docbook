@@ -42,25 +42,21 @@
 
 <refsect1 id="description"><title>DESCRIPTION</title>
 
-<para><command moreinfo="none">gfedquota</command> is a editor of
-limits (quotas) for users and groups.</para>
+<para><command moreinfo="none">gfedquota</command> sets or changes the
+limitation of user, group and directory quota.</para>
 
 <para>There are two kinds of limits which are "soft limit" and "hard
 limit".  Soft limits have a grace period.
 
-Types of limits are the total number of files, the total space of
-files, the total number of files include replicas and the total space
-of files include replicas.
-Setting 'disable' or -1 indicates unlimited.
-If no option for limits is specified, no quota is imposed.
+Limitations can be specified by the total number of files, the total space of
+files, the total number of files including replicas and the total space
+of files including replicas.
+Specifying 'disable' or -1 removes the limitation.
+If no option is specified, no quota is imposed.
 </para>
 <para>
-This command can be executed by an administrator in the gfarmadm
-group.
-</para>
-<para>
--D option is an exception and gfarmroot is used instead of gfarmadm
-as the administrator group who can specify user name.
+This command requires the gfarmadm group privilege except the -D
+option.  The -D option requires the gfarmroot group privilege.
 </para>
 </refsect1>
 
@@ -100,63 +96,63 @@ the root metadata server.
 <varlistentry>
 <term><option>-G SECOND, --grace=SECOND</option></term>
 <listitem>
-<para>Specifies a grace period in second for soft limits.</para>
+<para>Specifies a grace period in seconds for soft limits.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-s BYTE, --softspc=BYTE</option></term>
 <listitem>
-<para>Specifies a soft limit of file space in byte.</para>
+<para>Specifies a soft limit of file space in bytes.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-h BYTE, --hardspc=BYTE</option></term>
 <listitem>
-<para>Specifies a hard limit of file space in byte.</para>
+<para>Specifies a hard limit of file space in bytes.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-m NUM, --softnum=NUM</option></term>
 <listitem>
-<para>Specifies a soft limit of file number.</para>
+<para>Specifies a soft limit of number of files.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-n NUM, --hardnum=NUM</option></term>
 <listitem>
-<para>Specifies a hard limit of file number.</para>
+<para>Specifies a hard limit of number of files.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-S BYTE, --physoftspc=BYTE</option></term>
 <listitem>
-<para>Specifies a soft limit of physical space in byte include replicas.</para>
+<para>Specifies a soft limit of physical file space in bytes including replicas.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-H BYTE, --phyhardspc=BYTE</option></term>
 <listitem>
-<para>Specifies a hard limit of physical space in byte include replicas.</para>
+<para>Specifies a hard limit of physical file space in bytes including replicas.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-M NUM, --physoftnum=NUM</option></term>
 <listitem>
-<para>Specifies a soft limit of physical number include replicas.</para>
+<para>Specifies a soft limit of number of physical files including replicas.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-N NUM, --phyhardnum=NUM</option></term>
 <listitem>
-<para>Specifies a hard limit of physical number include replicas.</para>
+<para>Specifies a hard limit of number of physical files including replicas.</para>
 </listitem>
 </varlistentry>
 
