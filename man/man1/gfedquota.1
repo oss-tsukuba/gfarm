@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: gfedquota
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
 .\"      Date: 29 Oct 2016
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
 .TH "GFEDQUOTA" "1" "29 Oct 2016" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -30,13 +39,11 @@ gfedquota \- edit file limits
 .SH "DESCRIPTION"
 .PP
 \fBgfedquota\fR
-is a editor of limits (quotas) for users and groups\&.
+sets or changes the limitation of user, group and directory quota\&.
 .PP
-There are two kinds of limits which are "soft limit" and "hard limit"\&. Soft limits have a grace period\&. Types of limits are the total number of files, the total space of files, the total number of files include replicas and the total space of files include replicas\&. Setting \'disable\' or \-1 indicates unlimited\&. If no option for limits is specified, no quota is imposed\&.
+There are two kinds of limits which are "soft limit" and "hard limit"\&. Soft limits have a grace period\&. Limitations can be specified by the total number of files, the total space of files, the total number of files including replicas and the total space of files including replicas\&. Specifying \*(Aqdisable\*(Aq or \-1 removes the limitation\&. If no option is specified, no quota is imposed\&.
 .PP
-This command can be executed by an administrator in the gfarmadm group\&.
-.PP
-\-D option is an exception and gfarmroot is used instead of gfarmadm as the administrator group who can specify user name\&.
+This command requires the gfarmadm group privilege except the \-D option\&. The \-D option requires the gfarmroot group privilege\&.
 .SH "OPTIONS"
 .PP
 \fB\-P NAME, \-\-path=NAME\fR
@@ -61,47 +68,47 @@ Specifies a dirset name to edit limits\&.
 .PP
 \fB\-G SECOND, \-\-grace=SECOND\fR
 .RS 4
-Specifies a grace period in second for soft limits\&.
+Specifies a grace period in seconds for soft limits\&.
 .RE
 .PP
 \fB\-s BYTE, \-\-softspc=BYTE\fR
 .RS 4
-Specifies a soft limit of file space in byte\&.
+Specifies a soft limit of file space in bytes\&.
 .RE
 .PP
 \fB\-h BYTE, \-\-hardspc=BYTE\fR
 .RS 4
-Specifies a hard limit of file space in byte\&.
+Specifies a hard limit of file space in bytes\&.
 .RE
 .PP
 \fB\-m NUM, \-\-softnum=NUM\fR
 .RS 4
-Specifies a soft limit of file number\&.
+Specifies a soft limit of number of files\&.
 .RE
 .PP
 \fB\-n NUM, \-\-hardnum=NUM\fR
 .RS 4
-Specifies a hard limit of file number\&.
+Specifies a hard limit of number of files\&.
 .RE
 .PP
 \fB\-S BYTE, \-\-physoftspc=BYTE\fR
 .RS 4
-Specifies a soft limit of physical space in byte include replicas\&.
+Specifies a soft limit of physical file space in bytes including replicas\&.
 .RE
 .PP
 \fB\-H BYTE, \-\-phyhardspc=BYTE\fR
 .RS 4
-Specifies a hard limit of physical space in byte include replicas\&.
+Specifies a hard limit of physical file space in bytes including replicas\&.
 .RE
 .PP
 \fB\-M NUM, \-\-physoftnum=NUM\fR
 .RS 4
-Specifies a soft limit of physical number include replicas\&.
+Specifies a soft limit of number of physical files including replicas\&.
 .RE
 .PP
 \fB\-N NUM, \-\-phyhardnum=NUM\fR
 .RS 4
-Specifies a hard limit of physical number include replicas\&.
+Specifies a hard limit of number of physical files including replicas\&.
 .RE
 .PP
 \fB\-?\fR
@@ -110,9 +117,8 @@ Displays a list of command options\&.
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfquota\fR(1),
 \fBgfquotacheck\fR(1),
 \fBgfdirquota\fR(1),
 \fBgfusage\fR(1),
-Gfarm Users\' Manual / Directory Quota
+Gfarm Users\*(Aq Manual / Directory Quota

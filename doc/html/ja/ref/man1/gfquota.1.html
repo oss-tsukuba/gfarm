@@ -2,22 +2,22 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfquota</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfquota">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfquota.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfquota — 現在の使用量と制限値を表示</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfquota</code>  [-qHh] [-P <em class="replaceable"><code>path</code></em>] [-u <em class="replaceable"><code>ユーザ名</code></em>]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfquota</code>  [-qHh] [-P <em class="replaceable"><code>path</code></em>]  -g <em class="replaceable"><code>グループ名</code></em> </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfquota</code>  [-qHh] [-P <em class="replaceable"><code>path</code></em>]  -D <em class="replaceable"><code>dirset名</code></em>  [-u <em class="replaceable"><code>ユーザ名</code></em>]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfquota</code>  [-qHh] [-P <em class="replaceable"><code>path</code></em>]  -d <em class="replaceable"><code>ディレクトリ</code></em> </p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p><span class="command"><strong>gfquota</strong></span> は、現在の使用量と制限値を表示します。
 gfarmadm グループに所属している管理者は、ユーザ名やグループ名を指定する
@@ -29,13 +29,13 @@ gfarmadm グループに所属している管理者は、ユーザ名やグル�
 ただし、-D オプション指定時にユーザ名を指定できる管理者グループとしては、
 gfarmadm グループではなく、gfarmroot グループが使われます。
 </p>
-<p><span class="command"><strong>gfedquota</strong></span> と <span class="command"><strong>gfquotacheck</strong></span> を
+<p><span class="command"><strong>gfedquota</strong></span> を
 実行すると使用量のカウントと制限値が有効になり、
 <span class="command"><strong>gfquota</strong></span> で表示できるようになります。</p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-P NAME</code></span></dt>
 <dd><p>指定したパス名により特定のメタデータサーバを指定します。</p></dd>
 <dt><span class="term"><code class="option">-q</code></span></dt>
@@ -59,7 +59,7 @@ gfarmadm グループではなく、gfarmroot グループが使われます。
 <dd><p>引数オプションを表示します。</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfedquota</span>(1)</span>,
