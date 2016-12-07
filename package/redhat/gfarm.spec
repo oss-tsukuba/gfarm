@@ -354,6 +354,7 @@ fi
 %{man_prefix}/man1/gfchown.1.gz
 %{man_prefix}/man1/gfcksum.1.gz
 %{man_prefix}/man1/gfdf.1.gz
+%{man_prefix}/man1/gfdirquota.1.gz
 %{man_prefix}/man1/gfedquota.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfexec.1.gz
@@ -539,6 +540,7 @@ fi
 %{man_prefix}/ja/man1/gfchown.1.gz
 %{man_prefix}/ja/man1/gfcksum.1.gz
 %{man_prefix}/ja/man1/gfdf.1.gz
+%{man_prefix}/ja/man1/gfdirquota.1.gz
 %{man_prefix}/ja/man1/gfedquota.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfexec.1.gz
@@ -703,6 +705,7 @@ fi
 %{html_prefix}/en/ref/man1/gfchown.1.html
 %{html_prefix}/en/ref/man1/gfcksum.1.html
 %{html_prefix}/en/ref/man1/gfdf.1.html
+%{html_prefix}/en/ref/man1/gfdirquota.1.html
 %{html_prefix}/en/ref/man1/gfedquota.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfexec.1.html
@@ -894,6 +897,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfchown.1.html
 %{html_prefix}/ja/ref/man1/gfcksum.1.html
 %{html_prefix}/ja/ref/man1/gfdf.1.html
+%{html_prefix}/ja/ref/man1/gfdirquota.1.html
 %{html_prefix}/ja/ref/man1/gfedquota.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfexec.1.html
