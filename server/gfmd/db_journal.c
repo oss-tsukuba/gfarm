@@ -2963,7 +2963,7 @@ db_journal_write_quota_dirset_size_add(enum journal_operation ope,
 	    qd->q.exceed.phy_num_time,
 	    qd->q.limit.soft.phy_num,
 	    qd->q.limit.hard.phy_num)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1004702,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -2997,7 +2997,7 @@ db_journal_write_quota_dirset_core(enum journal_operation ope, void *arg)
 	    qd->q.exceed.phy_num_time,
 	    qd->q.limit.soft.phy_num,
 	    qd->q.limit.hard.phy_num)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1004703,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -3014,7 +3014,7 @@ db_journal_read_quota_dirset(struct gfp_xdr *xdr, enum journal_operation ope,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1004704,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -3040,7 +3040,7 @@ db_journal_read_quota_dirset(struct gfp_xdr *xdr, enum journal_operation ope,
 	    &arg->q.exceed.phy_num_time,
 	    &arg->q.limit.soft.phy_num,
 	    &arg->q.limit.hard.phy_num)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1004705,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -3088,7 +3088,7 @@ db_journal_write_dirset_info_size_add(enum journal_operation ope,
 	    GFM_JOURNAL_DIRSET_INFO_XDR_FMT,
 	    NON_NULL_STR(ds->username),
 	    NON_NULL_STR(ds->dirsetname))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1004706,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -3105,7 +3105,7 @@ db_journal_write_dirset_info_core(enum journal_operation ope, void *arg)
 	    GFM_JOURNAL_DIRSET_INFO_XDR_FMT,
 	    NON_NULL_STR(ds->username),
 	    NON_NULL_STR(ds->dirsetname))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1004707,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -3122,7 +3122,7 @@ db_journal_read_dirset_info(struct gfp_xdr *xdr, enum journal_operation ope,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1004708,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -3131,7 +3131,7 @@ db_journal_read_dirset_info(struct gfp_xdr *xdr, enum journal_operation ope,
 	    GFM_JOURNAL_DIRSET_INFO_XDR_FMT,
 	    &arg->username,
 	    &arg->dirsetname)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1004709,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -3169,7 +3169,7 @@ db_journal_write_inode_dirset_size_add(enum journal_operation ope,
 	    NON_NULL_STR(id->dirset.username),
 	    NON_NULL_STR(id->dirset.dirsetname),
 	    id->inum)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1004710,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -3187,7 +3187,7 @@ db_journal_write_inode_dirset_core(enum journal_operation ope, void *arg)
 	    NON_NULL_STR(id->dirset.username),
 	    NON_NULL_STR(id->dirset.dirsetname),
 	    id->inum)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1004711,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -3204,7 +3204,7 @@ db_journal_read_inode_dirset(struct gfp_xdr *xdr, enum journal_operation ope,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1004712,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -3214,7 +3214,7 @@ db_journal_read_inode_dirset(struct gfp_xdr *xdr, enum journal_operation ope,
 	    &arg->dirset.username,
 	    &arg->dirset.dirsetname,
 	    &arg->inum)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1004713,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)

@@ -2960,13 +2960,13 @@ gfm_client_dirset_info_list(struct gfm_connection *gfm_server,
 	    GFM_PROTO_DIRSET_INFO_LIST, "s", username))
 	    != GFARM_ERR_NO_ERROR) {
 		e_save = e;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004526,
 		    "gfm_client_dirset_info_list() request: %s",
 		    gfarm_error_string(e));
 	} else if ((e = gfm_client_rpc_result(gfm_server, 0, "i", &ndirsets))
 	    != GFARM_ERR_NO_ERROR) {
 		e_save = e;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004527,
 		    "gfm_client_dirset_info_list() result: %s",
 		    gfarm_error_string(e));
 	} else {
@@ -2975,7 +2975,7 @@ gfm_client_dirset_info_list(struct gfm_connection *gfm_server,
 		GFARM_MALLOC_ARRAY(dirsets, ndirsets);
 		if (dirsets == NULL && ndirsets != 0) {
 			e_save = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004528,
 			    "gfm_client_dirset_info_list(): "
 			    "no memory for %d dirsets", (int)ndirsets);
 		}
@@ -2989,7 +2989,7 @@ gfm_client_dirset_info_list(struct gfm_connection *gfm_server,
 			if (e != GFARM_ERR_NO_ERROR || eof) {
 				if (e == GFARM_ERR_NO_ERROR)
 					e = GFARM_ERR_PROTOCOL;
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1004529,
 				    "gfm_client_dirset_info_list() "
 				    "dirsets[%d]: %s",
 				    (int)i, gfarm_error_string(e));
@@ -3172,13 +3172,13 @@ gfm_client_dirset_dir_list(struct gfm_connection *gfm_server,
 	    GFM_PROTO_DIRSET_DIR_LIST, "ss", username, dirsetname))
 	    != GFARM_ERR_NO_ERROR) {
 		e_save = e;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004530,
 		    "gfm_client_dirset_dir_list() request: %s",
 		    gfarm_error_string(e));
 	} else if ((e = gfm_client_rpc_result(gfm_server, 0, "i",
 	    &ndirsets)) != GFARM_ERR_NO_ERROR) {
 		e_save = e;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004531,
 		    "gfm_client_dirset_dir_list() result: %s",
 		    gfarm_error_string(e));
 	} else {
@@ -3188,7 +3188,7 @@ gfm_client_dirset_dir_list(struct gfm_connection *gfm_server,
 		GFARM_MALLOC_ARRAY(dirsets, ndirsets);
 		if (dirsets == NULL && ndirsets != 0) {
 			e_save = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004532,
 			    "gfm_client_dirset_dir_list(): "
 			    "no memory for %d dirsets", (int)ndirsets);
 			/* continue to receive to keep protocol */
@@ -3201,7 +3201,7 @@ gfm_client_dirset_dir_list(struct gfm_connection *gfm_server,
 			if (e != GFARM_ERR_NO_ERROR || eof) {
 				if (e == GFARM_ERR_NO_ERROR)
 					e = GFARM_ERR_PROTOCOL;
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1004533,
 				    "gfm_client_dirset_dir_list() "
 				    "reading dirset[%d]: %s",
 				    (int)i, gfarm_error_string(e));
@@ -3214,7 +3214,7 @@ gfm_client_dirset_dir_list(struct gfm_connection *gfm_server,
 			if (dsi.dirs == NULL && dsi.n_dirs != 0) {
 				if (e_save == GFARM_ERR_NO_ERROR)
 					e_save = GFARM_ERR_NO_MEMORY;
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1004534,
 				    "gfm_client_dirset_dir_list(): "
 				    " dirset %s:%s no memory for %d dirs",
 				    dsi.dirset.username, dsi.dirset.dirsetname,
@@ -3227,7 +3227,7 @@ gfm_client_dirset_dir_list(struct gfm_connection *gfm_server,
 				if (e != GFARM_ERR_NO_ERROR || eof) {
 					if (e == GFARM_ERR_NO_ERROR)
 						e = GFARM_ERR_PROTOCOL;
-					gflog_debug(GFARM_MSG_UNFIXED,
+					gflog_debug(GFARM_MSG_1004535,
 					    "gfm_client_dirset_dir_list() "
 					    "dirset %s:%s dir[%d]: %s",
 					    dsi.dirset.username,
@@ -3246,7 +3246,7 @@ gfm_client_dirset_dir_list(struct gfm_connection *gfm_server,
 				    != GFARM_ERR_NO_ERROR || eof) {
 					if (e == GFARM_ERR_NO_ERROR)
 						e = GFARM_ERR_PROTOCOL;
-					gflog_debug(GFARM_MSG_UNFIXED,
+					gflog_debug(GFARM_MSG_1004536,
 					    "gfm_client_dirset_dir_list() "
 					    "dirset %s:%s dir[%d]: %s",
 					    dsi.dirset.username,

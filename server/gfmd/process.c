@@ -916,7 +916,7 @@ process_getgen(struct process *process, struct peer *peer, int fd,
 	    &fo, diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004701,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);

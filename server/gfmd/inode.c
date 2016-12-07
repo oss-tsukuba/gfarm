@@ -932,7 +932,7 @@ inode_tdirset_check(struct inode *inode, struct dirset *tdirset,
 	const char *diag)
 {
 	if (tdirset == TDIRSET_IS_UNKNOWN) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004666,
 		    "%s: inode %lld: unknown dirset, scheduling quota_check",
 		    diag, (long long)inode_get_number(inode));
 		dirquota_check_schedule();
@@ -945,7 +945,7 @@ inode_tdirset_info(struct inode *inode, struct dirset *tdirset,
 {
 	if (tdirset == TDIRSET_IS_UNKNOWN) {
 		/* DQTODO: change this to gflog_debug() in release version */
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004667,
 		    "%s: inode %lld: unknown dirset",
 		    diag, (long long)inode_get_number(inode));
 	}
@@ -2612,7 +2612,7 @@ inode_new_generation_by_cookie_finish(
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
 		dirset_del_ref(tdirset);
 	if (tdirset == TDIRSET_IS_UNKNOWN) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004668,
 		    "inode %lld: unknown dirset, scheduling quota_check",
 		    (long long)inum);
 		dirquota_check_schedule();
@@ -2899,7 +2899,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			parent_tdirset = inode_search_tdirset(parent);
 		if (target_tdirset == TDIRSET_IS_UNKNOWN ||
 		    parent_tdirset == TDIRSET_IS_UNKNOWN) {
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1004669,
 			    "inode_lookup_basename: unknown dirset: %p vs %p",
 			    target_tdirset, parent_tdirset);
 			return (GFARM_ERR_INTERNAL_ERROR);
@@ -3198,7 +3198,7 @@ inode_lookup_parent(struct inode *base, struct process *process, int op,
 
 		/* do not allow write-open anyway */
 		if ((op & GFS_W_OK) != 0) {
-			gflog_debug(GFARM_MSG_UNFIXED, "dotdot is directory");
+			gflog_debug(GFARM_MSG_1004670, "dotdot is directory");
 			return (GFARM_ERR_IS_A_DIRECTORY);
 		}
 
@@ -3741,7 +3741,7 @@ inode_foreach_in_subtree(struct inode *inode,
 
 	GFARM_MALLOC_ARRAY(dirs, max_depth);
 	if (dirs == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004671,
 		    "%s: no memory for %d depth dir %lld:%lld",
 		    diag, max_depth,
 		    (long long)inode_get_number(inode),
@@ -3782,7 +3782,7 @@ inode_foreach_in_subtree(struct inode *inode,
 					GFARM_REALLOC_ARRAY(
 					    tmp_dirs, dirs, tmp_depth);
 					if (tmp_dirs == NULL) {
-						gflog_error(GFARM_MSG_UNFIXED,
+						gflog_error(GFARM_MSG_1004672,
 						    "%s: no memory for %d "
 						    "depth dir %lld:%lld:",
 						    diag, tmp_depth,
@@ -3864,7 +3864,7 @@ inode_foreach_in_subtree_interruptible(struct inode *inode, void *closure,
 
 	GFARM_MALLOC_ARRAY(dirs, max_depth);
 	if (dirs == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004673,
 		    "%s: no memory for %d depth dir %lld:%lld",
 		    diag, max_depth,
 		    (long long)inode_get_number(inode),
@@ -3936,7 +3936,7 @@ inode_foreach_in_subtree_interruptible(struct inode *inode, void *closure,
 					GFARM_REALLOC_ARRAY(
 					    tmp_dirs, dirs, tmp_depth);
 					if (tmp_dirs == NULL) {
-						gflog_error(GFARM_MSG_UNFIXED,
+						gflog_error(GFARM_MSG_1004674,
 						    "%s: no memory for %d "
 						    "depth dir %lld:%lld:",
 						    diag, tmp_depth,
@@ -4011,7 +4011,7 @@ is_all_hardlinks_within_subtree_per_inode(
 	static const char diag[] = "is_all_hardlinks_within_subtree_per_inode";
 
 	if (inode == NULL) { /* shouldn't happen */
-		gflog_error(GFARM_MSG_UNFIXED, "%s: inum %lld: not found",
+		gflog_error(GFARM_MSG_1004675, "%s: inum %lld: not found",
 		    diag, (long long)inum);
 		return (1); /* interrupted */
 	}
@@ -4055,7 +4055,7 @@ is_ok_to_change_dirset_from_per_inode(void *closure, struct inode *inode)
 	if (inode_is_file(inode) && inode_get_nlink(inode) > 1) {
 		if (!uint64_to_uint64_map_inc_value(state->hardlink_counters,
 		    inode_get_number(inode), NULL)) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004676,
 			    "dirquota_check: no memory for %lld hardlinks",
 			    (long long)uint64_to_uint64_map_size(
 			    state->hardlink_counters));
@@ -4073,7 +4073,7 @@ is_ok_to_change_dirset_from(struct inode *movee, struct dirset *src_tdirset)
 
 	state.hardlink_counters = uint64_to_uint64_map_new();
 	if (state.hardlink_counters == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004677,
 		    "inode_rename: no memory for hardlink counter");
 		return (0);
 	}
@@ -4226,7 +4226,7 @@ inode_rename(
 		dst_tdirset = inode_search_tdirset(ddir);
 	if (src_tdirset == TDIRSET_IS_UNKNOWN ||
 	    dst_tdirset == TDIRSET_IS_UNKNOWN) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004678,
 		    "%s: unknown dirset: %lld:%lld (%p) vs %lld:%lld (%p)",
 		    diag,
 		    (long long)inode_get_number(sdir),
@@ -4300,7 +4300,7 @@ inode_rename(
 		return (GFARM_ERR_NO_MEMORY);
 	e = inode_open(fo, src_tdirset);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004679,
 		    "inode_open() for rename: %s",
 		    gfarm_error_string(e));
 		file_opening_free(fo, inode_get_mode(src));
@@ -4760,7 +4760,7 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 
 	inode_set_size(inode, tdirset, size);
 	if (tdirset == TDIRSET_IS_UNKNOWN) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1004680,
 		    "inode %lld: unknown dirset, scheduling quota_check",
 		    (long long)inode_get_number(inode));
 		dirquota_check_schedule();

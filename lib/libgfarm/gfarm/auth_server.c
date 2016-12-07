@@ -530,7 +530,7 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		sprintf(aux, "%s@%s", global_username, hostname);
 		gflog_set_auxiliary_info(aux);
 
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004525,
 		    "(%s@%s) %s: authorize_sharedsecret: trying setuid...",
 		    global_username, hostname, local_username);
 		/*

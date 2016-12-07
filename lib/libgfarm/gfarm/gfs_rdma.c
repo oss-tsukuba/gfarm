@@ -82,7 +82,7 @@ gfs_ib_rdma_static_init(struct gfarm_context *ctxp)
 
 	GFARM_MALLOC(cr_ctx);
 	if (cr_ctx == NULL) {
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s",
+		gflog_fatal(GFARM_MSG_1004554, "%s",
 				gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		e = GFARM_ERR_NO_MEMORY;
 	} else
@@ -142,11 +142,11 @@ gfs_rdma_print_qp(char *com, struct ibv_qp * qp)
 
 	if ((rc = ibv_query_qp(qp, &xa, mask, &ia))) {
 		e = gfarm_errno_to_error2(rc);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004555,
 			"ibv_query_qp() failed, %s",
 			gfarm_error_string(e));
 	}
-	gflog_info(GFARM_MSG_UNFIXED, "%s: qp=%p "
+	gflog_info(GFARM_MSG_1004556, "%s: qp=%p "
 		"qp_state=0x%x "
 		"cur_qp_state=0x%x "
 		"path_mtu=0x%x "
@@ -187,7 +187,7 @@ gfs_memlock_set(void)
 			e = gfarm_errno_to_error2(errno);
 	} else
 		e = gfarm_errno_to_error2(errno);
-	gflog_debug(GFARM_MSG_UNFIXED, "RLIMIT_MEMLOCK 0x%lx",
+	gflog_debug(GFARM_MSG_1004557, "RLIMIT_MEMLOCK 0x%lx",
 		(long) rlim.rlim_cur);
 	if (rlim.rlim_cur >= (unsigned long)(LONG_MAX))
 		return (LONG_MAX);
@@ -211,11 +211,11 @@ gfs_ib_rdma_initialize(int stayopen)
 
 	staticp->local_rdma_available = 0;
 	if (!gfarm_ctxp->ib_rdma || ib_rdma_disable) {
-		gflog_debug(GFARM_MSG_UNFIXED, "ib_rdma not set");
+		gflog_debug(GFARM_MSG_1004558, "ib_rdma not set");
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (getenv("GFARM_RDMA_DISABLE")) {
-		gflog_debug(GFARM_MSG_UNFIXED, "GFARM_RDMA_DISABLE is set");
+		gflog_debug(GFARM_MSG_1004559, "GFARM_RDMA_DISABLE is set");
 		return (GFARM_ERR_NO_ERROR);
 	}
 	rlimit = gfs_memlock_set();
@@ -225,7 +225,7 @@ gfs_ib_rdma_initialize(int stayopen)
 #define MEM_WRAP	(page_size)
 	rlim = rlimit / PARA_NUM - QP_CQ_PAGE - MEM_WRAP;
 	if (rlim < gfarm_ctxp->rdma_min_size) {
-		gflog_error(GFARM_MSG_UNFIXED, "insufficient memlock size"
+		gflog_error(GFARM_MSG_1004560, "insufficient memlock size"
 			"(0x%lx) for rdma(0x%x), please expand memlock size.\n"
 			"edit /etc/security/limits.conf	and set "
 			"'* hard memlock unlimited'"
@@ -242,24 +242,24 @@ gfs_ib_rdma_initialize(int stayopen)
 	dev_list = ibv_get_device_list(&num);
 	if (!dev_list) {
 		e = gfarm_errno_to_error2(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004561,
 			"ibv_get_device_list() failed, %s",
 			gfarm_error_string(e));
 		return (e);
 	}
-	gflog_debug(GFARM_MSG_UNFIXED, "memlock=0x%lx, rdma_size=0x%lx",
+	gflog_debug(GFARM_MSG_1004562, "memlock=0x%lx, rdma_size=0x%lx",
 			rlimit, rlim);
 
 	for (i = 0; i < num; i++) {
 		ib_dev = dev_list[i];
 		dev_name = (char *)ibv_get_device_name(ib_dev);
 		if (conf_dev != NULL && strcmp(conf_dev, dev_name)) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004563,
 				"device %s is not '%s'", dev_name, conf_dev);
 			continue;
 		}
 		if (ib_dev->transport_type != IBV_TRANSPORT_IB) { /* XXX */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004564,
 				"device %s is not suit type, node=%d xport=%d",
 				dev_name, ib_dev->node_type,
 				ib_dev->transport_type);
@@ -267,21 +267,21 @@ gfs_ib_rdma_initialize(int stayopen)
 		}
 		if ((ib_ctx = ibv_open_device(ib_dev)) == NULL) {
 			e = gfarm_errno_to_error2(errno);
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004565,
 				"ibv_open_device(%s) failed, %s",
 				dev_name, gfarm_error_string(e));
 			goto cleanup;
 		}
 		if ((rc = ibv_query_device(ib_ctx, &device_attr)) != 0) {
 			e = gfarm_errno_to_error2(rc);
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004566,
 				"ibv_query_device(%s) failed, %s",
 				dev_name, gfarm_error_string(e));
 			goto cleanup;
 		}
 		for (port = 1; port <= device_attr.phys_port_cnt; ++port) {
 			if (conf_port != 0 && conf_port != port) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1004567,
 					"device %s port is not %d", dev_name,
 					conf_port);
 				continue;
@@ -289,7 +289,7 @@ gfs_ib_rdma_initialize(int stayopen)
 			if ((rc = ibv_query_port(ib_ctx, port, &port_attr))
 				!= 0) {
 				e = gfarm_errno_to_error2(rc);
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1004568,
 					"ibv_query_port(%s) failed, %s",
 					dev_name, gfarm_error_string(e));
 				goto cleanup;
@@ -300,7 +300,7 @@ gfs_ib_rdma_initialize(int stayopen)
 #endif
 			!port_attr.lid ||
 			port_attr.state != IBV_PORT_ACTIVE) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1004569,
 					"port %d of %s is not suit state",
 					port, dev_name);
 				continue;
@@ -308,7 +308,7 @@ gfs_ib_rdma_initialize(int stayopen)
 			if ((rc = ibv_query_gid(ib_ctx, port, 0,
 						&staticp->gid))) {
 				e = gfarm_errno_to_error2(rc);
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1004570,
 					"ibv_query_gid(%s) failed, %s",
 					dev_name, gfarm_error_string(e));
 				goto cleanup;
@@ -326,7 +326,7 @@ gfs_ib_rdma_initialize(int stayopen)
 			staticp->mlock_limit = rlim;
 			staticp->sl = 0;
 			staticp->local_rdma_available = 1;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004571,
 				"gfs_ib_rdma_initialize:"
 				"device=%s port=%d lid=%d mtu=%d",
 				dev_name, port, staticp->lid, staticp->mtu);
@@ -335,7 +335,7 @@ gfs_ib_rdma_initialize(int stayopen)
 		ibv_close_device(ib_ctx);
 		ib_ctx = NULL;
 	}
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1004572,
 		"No suitable IB device in %d devices",
 		num);
 cleanup:
@@ -358,7 +358,7 @@ gfs_rdma_init(int is_server, struct rdma_context **ctxp)
 	}
 	GFARM_MALLOC(ctx);
 	if (ctx == NULL) {
-		gflog_fatal(GFARM_MSG_UNFIXED, "gfs_rdma_init:%s",
+		gflog_fatal(GFARM_MSG_1004573, "gfs_rdma_init:%s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -369,7 +369,7 @@ gfs_rdma_init(int is_server, struct rdma_context **ctxp)
 	else if (gfarm_ctxp->rdma_mr_reg_mode & GFARM_RDMA_REG_MR_STATIC) {
 		if (gfarm_ctxp->rdma_mr_reg_static_min_size <
 					gfarm_ctxp->rdma_min_size) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1004574,
 				"rdma_mr_reg_static_min_size(%d)"
 				" < rdma_min_size(%d), change size",
 				gfarm_ctxp->rdma_mr_reg_static_min_size,
@@ -384,7 +384,7 @@ gfs_rdma_init(int is_server, struct rdma_context **ctxp)
 	} else
 		size = RDMA_MIN_BUF;
 	if (size > staticp->mlock_limit) {
-		gflog_error(GFARM_MSG_UNFIXED, "insufficient memlock size"
+		gflog_error(GFARM_MSG_1004575, "insufficient memlock size"
 			"(0x%lx), please expand memlock size.\n"
 			"edit /etc/security/limits.conf	and set "
 			"'* hard memlock unlimited'"
@@ -393,7 +393,7 @@ gfs_rdma_init(int is_server, struct rdma_context **ctxp)
 	}
 	GFARM_MALLOC_ARRAY(ctx->buffer, size);
 	if (ctx->buffer == NULL) {
-		gflog_fatal(GFARM_MSG_UNFIXED, "gfs_rdma_init allocate buf:%s",
+		gflog_fatal(GFARM_MSG_1004576, "gfs_rdma_init allocate buf:%s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto clean_context;
 	}
@@ -402,7 +402,7 @@ gfs_rdma_init(int is_server, struct rdma_context **ctxp)
 		ctx->ib_ctx = staticp->ib_ctx;
 	} else if ((ctx->ib_ctx = ibv_open_device(staticp->ib_dev)) == NULL) {
 		e = gfarm_errno_to_error2(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004577,
 			"ibv_open_device(%s) failed, %s",
 			ibv_get_device_name(staticp->ib_dev),
 			gfarm_error_string(e));
@@ -418,7 +418,7 @@ gfs_rdma_init(int is_server, struct rdma_context **ctxp)
 	ctx->pd = ibv_alloc_pd(ctx->ib_ctx);
 	if (!ctx->pd) {
 		e = gfarm_errno_to_error2(errno);
-		gflog_error(GFARM_MSG_UNFIXED, "ibv_alloc_pd(%p) failed, %s",
+		gflog_error(GFARM_MSG_1004578, "ibv_alloc_pd(%p) failed, %s",
 			ctx->ib_ctx, gfarm_error_string(e));
 		goto clean_fd;
 	}
@@ -426,7 +426,7 @@ gfs_rdma_init(int is_server, struct rdma_context **ctxp)
 	ctx->cq = ibv_create_cq(ctx->ib_ctx, 2, NULL, NULL, 0);
 	if (!ctx->cq) {
 		e = gfarm_errno_to_error2(errno);
-		gflog_error(GFARM_MSG_UNFIXED, "ibv_create_cq() failed, %s",
+		gflog_error(GFARM_MSG_1004579, "ibv_create_cq() failed, %s",
 			gfarm_error_string(e));
 		goto clean_pd;
 	}
@@ -438,7 +438,7 @@ gfs_rdma_init(int is_server, struct rdma_context **ctxp)
 			IBV_ACCESS_REMOTE_READ));
 	if (!ctx->mr) {
 		e = gfarm_errno_to_error2(errno);
-		gflog_error(GFARM_MSG_UNFIXED, "ibv_reg_mr() failed, %s",
+		gflog_error(GFARM_MSG_1004580, "ibv_reg_mr() failed, %s",
 			gfarm_error_string(e));
 		goto clean_cq;
 	}
@@ -461,7 +461,7 @@ gfs_rdma_init(int is_server, struct rdma_context **ctxp)
 	ctx->qp = ibv_create_qp(ctx->pd, &attr);
 	if (!ctx->qp) {
 		e = gfarm_errno_to_error2(errno);
-		gflog_error(GFARM_MSG_UNFIXED, "ibv_create_qp() failed, %s",
+		gflog_error(GFARM_MSG_1004581, "ibv_create_qp() failed, %s",
 			gfarm_error_string(e));
 		goto clean_mr;
 	}
@@ -481,7 +481,7 @@ gfs_rdma_init(int is_server, struct rdma_context **ctxp)
 					 IBV_QP_PORT |
 					 IBV_QP_ACCESS_FLAGS)) != 0) {
 		e = gfarm_errno_to_error2(errno);
-		gflog_error(GFARM_MSG_UNFIXED, "ibv_modify_qp() failed, %s",
+		gflog_error(GFARM_MSG_1004582, "ibv_modify_qp() failed, %s",
 			gfarm_error_string(e));
 		gfs_rdma_print_qp("modify INIT fail", ctx->qp);
 		goto clean_qp;
@@ -527,26 +527,26 @@ gfs_rdma_finish(struct rdma_context *ctx)
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if ((rc = ibv_destroy_qp(ctx->qp)) != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED, "ibv_destroy_qp() failed, %s",
+		gflog_debug(GFARM_MSG_1004583, "ibv_destroy_qp() failed, %s",
 			gfarm_error_string(gfarm_errno_to_error2(rc)));
 	}
 
 	if ((rc = ibv_destroy_cq(ctx->cq)) != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED, "ibv_destroy_cq() failed, %s",
+		gflog_debug(GFARM_MSG_1004584, "ibv_destroy_cq() failed, %s",
 			gfarm_error_string(gfarm_errno_to_error2(rc)));
 	}
 
 	if (ctx->mr && (rc = ibv_dereg_mr(ctx->mr)) != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED, "ibv_dereg_mr() failed, %s",
+		gflog_debug(GFARM_MSG_1004585, "ibv_dereg_mr() failed, %s",
 			gfarm_error_string(gfarm_errno_to_error2(rc)));
 	}
 
 	if ((rc = ibv_dealloc_pd(ctx->pd)) != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED, "ibv_dealloc_pd() failed, %s",
+		gflog_debug(GFARM_MSG_1004586, "ibv_dealloc_pd() failed, %s",
 			gfarm_error_string(gfarm_errno_to_error2(rc)));
 	}
 	if (!staticp->ib_ctx && (rc = ibv_close_device(ctx->ib_ctx)) != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED, "ibv_close_device() failed, %s",
+		gflog_debug(GFARM_MSG_1004587, "ibv_close_device() failed, %s",
 			gfarm_error_string(gfarm_errno_to_error2(rc)));
 	}
 
@@ -554,7 +554,7 @@ gfs_rdma_finish(struct rdma_context *ctx)
 		free(ctx->buffer);
 	free(ctx);
 
-	gflog_debug(GFARM_MSG_UNFIXED, "gfs_rdma_finish()");
+	gflog_debug(GFARM_MSG_1004588, "gfs_rdma_finish()");
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -594,7 +594,7 @@ gfs_rdma_connect(struct rdma_context *ctx)
 						IBV_QP_MIN_RNR_TIMER);
 	if (ret) {
 		e = gfarm_errno_to_error2(ret);
-		gflog_error(GFARM_MSG_UNFIXED, "Failed to modify QP to RTR, %s",
+		gflog_error(GFARM_MSG_1004589, "Failed to modify QP to RTR, %s",
 			gfarm_error_string(e));
 		gfs_rdma_print_qp("modify RTR fail", ctx->qp);
 		gfs_rdma_disable(ctx);
@@ -617,7 +617,7 @@ gfs_rdma_connect(struct rdma_context *ctx)
 						IBV_QP_MAX_QP_RD_ATOMIC);
 	if (ret) {
 		e = gfarm_errno_to_error2(ret);
-		gflog_error(GFARM_MSG_UNFIXED, "Failed to modify QP to RTS, %s",
+		gflog_error(GFARM_MSG_1004590, "Failed to modify QP to RTS, %s",
 			gfarm_error_string(e));
 		gfs_rdma_disable(ctx);
 		gfs_rdma_print_qp("modify RTS fail", ctx->qp);
@@ -632,7 +632,7 @@ gfs_rdma_reg_mr_remote_read_write(struct rdma_context *ctx,
 		void *buffer, ssize_t size, void **mrp)
 {
 	if (!ctx) {
-		gflog_error(GFARM_MSG_UNFIXED, "No rdma_context");
+		gflog_error(GFARM_MSG_1004591, "No rdma_context");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (ctx->reg_mr_fail > 0) {
@@ -652,7 +652,7 @@ gfs_rdma_reg_mr_remote_read_write(struct rdma_context *ctx,
 	if (!*mrp) {
 		gfarm_error_t e;
 		e = gfarm_errno_to_error2(errno);
-		gflog_error(GFARM_MSG_UNFIXED, "ibv_reg_mr() failed, %s",
+		gflog_error(GFARM_MSG_1004592, "ibv_reg_mr() failed, %s",
 			gfarm_error_string(e));
 		ctx->reg_mr_fail = GFARM_RDMA_REG_MR_FAIL;
 		return (e);
@@ -666,7 +666,7 @@ gfs_rdma_dereg_mr(struct rdma_context *ctx, void **mrp)
 	int rc;
 
 	if (!ctx || !*mrp) {
-		gflog_error(GFARM_MSG_UNFIXED, "No rdma_context");
+		gflog_error(GFARM_MSG_1004593, "No rdma_context");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if ((rc = ibv_dereg_mr(*mrp)) != 0) {
@@ -692,23 +692,23 @@ rdma_wait_completion(struct rdma_context *ctx, enum ibv_wc_opcode op)
 		gfarm_error_t e;
 		ret = errno;
 		e = gfarm_errno_to_error2(errno);
-		gflog_error(GFARM_MSG_UNFIXED, "ibv_poll_cq() failed, %s",
+		gflog_error(GFARM_MSG_1004594, "ibv_poll_cq() failed, %s",
 			gfarm_error_string(e));
 		return (ret);
 	}
 
 	if (wc.status != IBV_WC_SUCCESS) {
-		gflog_debug(GFARM_MSG_UNFIXED, "Completion error: %s",
+		gflog_debug(GFARM_MSG_1004595, "Completion error: %s",
 				ibv_wc_status_str(wc.status));
 		return (-1);
 	}
 
 	if (wc.wr_id != (uint64_t)((uintptr_t)ctx)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "ibv_poll_cq() wr_id unmatch");
+		gflog_debug(GFARM_MSG_1004596, "ibv_poll_cq() wr_id unmatch");
 		return (-1);
 	}
 	if (wc.opcode != op) {
-		gflog_debug(GFARM_MSG_UNFIXED, "ibv_poll_cq() opcode unmatch");
+		gflog_debug(GFARM_MSG_1004597, "ibv_poll_cq() opcode unmatch");
 		return (-1);
 	}
 
@@ -740,20 +740,20 @@ gfs_rdma_remote_write(struct rdma_context *ctx, gfarm_uint32_t rkey,
 	struct ibv_send_wr *bad_wr;
 
 	if (remote_size > ctx->size) {
-		gflog_error(GFARM_MSG_UNFIXED, "Too big data %ld",
+		gflog_error(GFARM_MSG_1004598, "Too big data %ld",
 			(long)remote_size);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
 	if ((rc = ibv_post_send(ctx->qp, &wr, &bad_wr)) != 0) {
 		e = gfarm_errno_to_error2(rc);
-		gflog_error(GFARM_MSG_UNFIXED, "ibv_post_send() failed, %s",
+		gflog_error(GFARM_MSG_1004599, "ibv_post_send() failed, %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 
 	if (rdma_wait_completion(ctx, IBV_WC_RDMA_WRITE)) {
-		gflog_error(GFARM_MSG_UNFIXED, "rdma_wait_completion() failed");
+		gflog_error(GFARM_MSG_1004600, "rdma_wait_completion() failed");
 		return (GFARM_ERR_UNKNOWN);
 	}
 
@@ -784,20 +784,20 @@ gfs_rdma_remote_read(struct rdma_context *ctx, gfarm_uint32_t rkey,
 	struct ibv_send_wr *bad_wr;
 
 	if (remote_size > ctx->size) {
-		gflog_error(GFARM_MSG_UNFIXED, "Too big data %ld",
+		gflog_error(GFARM_MSG_1004601, "Too big data %ld",
 				(long)remote_size);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
 	if ((rc = ibv_post_send(ctx->qp, &wr, &bad_wr)) != 0) {
 		e = gfarm_errno_to_error2(rc);
-		gflog_error(GFARM_MSG_UNFIXED, "ibv_post_send() failed, %s",
+		gflog_error(GFARM_MSG_1004602, "ibv_post_send() failed, %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 
 	if (rdma_wait_completion(ctx, IBV_WC_RDMA_READ)) {
-		gflog_error(GFARM_MSG_UNFIXED, "rdma_wait_completion() failed");
+		gflog_error(GFARM_MSG_1004603, "rdma_wait_completion() failed");
 		return (GFARM_ERR_UNKNOWN);
 	}
 
@@ -870,7 +870,7 @@ gfs_rdma_resize_buffer(struct rdma_context *ctx, int size)
 
 	GFARM_MALLOC_ARRAY(buf, size);
 	if (buf == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "gfs_rdma_resize_buffer"
+		gflog_error(GFARM_MSG_1004604, "gfs_rdma_resize_buffer"
 			"fail size=%d", size);
 		return (ctx->size);
 	}
@@ -880,7 +880,7 @@ gfs_rdma_resize_buffer(struct rdma_context *ctx, int size)
 			IBV_ACCESS_REMOTE_WRITE |
 			IBV_ACCESS_REMOTE_READ));
 	if (!mr) {
-		gflog_error(GFARM_MSG_UNFIXED, "ibv_reg_mr() failed, %s",
+		gflog_error(GFARM_MSG_1004605, "ibv_reg_mr() failed, %s",
 			gfarm_error_string(gfarm_errno_to_error2(errno)));
 		free(buf);
 		ctx->reg_mr_fail = GFARM_RDMA_REG_MR_FAIL;
@@ -889,7 +889,7 @@ gfs_rdma_resize_buffer(struct rdma_context *ctx, int size)
 	ibv_dereg_mr(ctx->mr);
 	ctx->mr = mr;
 	free(ctx->buffer);
-	gflog_debug(GFARM_MSG_UNFIXED, "gfs_rdma_resize_buffer:resize 0x%x->%x",
+	gflog_debug(GFARM_MSG_1004606, "gfs_rdma_resize_buffer:resize 0x%x->%x",
 		ctx->size, size);
 	ctx->buffer = buf;
 	ctx->size = size;

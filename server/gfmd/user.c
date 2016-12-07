@@ -366,7 +366,7 @@ user_enter_dirset(struct user *u, const char *dirsetname, int limit_check,
 		sets = dirsets_new();
 
 		if (sets == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004633,
 			    "allocation of 'dirsets' for user %s failed",
 			    u->ui.username);
 			return (GFARM_ERR_NO_MEMORY);

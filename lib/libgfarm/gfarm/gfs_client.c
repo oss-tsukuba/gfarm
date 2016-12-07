@@ -2077,10 +2077,10 @@ gfs_ib_rdma_send_request(int events, int fd, void *closure,
 		break;
 	}
 	default:
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1004537,
 			"request state error: %d", state->state);
 	}
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1004538,
 		"gfs_ib_rdma_send_request:%s state=%d, %s",
 		state->gfs_server->hostname, state->state,
 		gfarm_error_string(state->error));
@@ -2101,7 +2101,7 @@ gfs_ib_rdma_send_request(int events, int fd, void *closure,
 			state->error = gfarm_errno_to_error(rv);
 		}
 	}
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1004539,
 		"request for client rdma failed: %s",
 		gfarm_error_string(state->error));
 	if (state->continuation != NULL)
@@ -2149,11 +2149,11 @@ gfs_ib_rdma_recv_result(int events, int fd, void *closure,
 				0, "");
 			break;
 		default:
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1004540,
 			"result state error: %d", state->state);
 		}
 	}
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1004541,
 		"gfs_ib_rdma_recv_result:%s state=%d, %s",
 		state->gfs_server->hostname, state->state,
 		gfarm_error_string(state->error));
@@ -2194,7 +2194,7 @@ gfs_ib_rdma_request_multiplexed(struct gfarm_eventqueue *q,
 	GFARM_MALLOC(state);
 	if (state == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004542,
 			"allocation of client rdma state failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto error_return;
@@ -2211,7 +2211,7 @@ gfs_ib_rdma_request_multiplexed(struct gfarm_eventqueue *q,
 	    gfs_ib_rdma_send_request, state);
 	if (state->writable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004543,
 			"allocation of state->writable failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto error_free_state;
@@ -2227,7 +2227,7 @@ gfs_ib_rdma_request_multiplexed(struct gfarm_eventqueue *q,
 	    gfs_ib_rdma_recv_result, state);
 	if (state->readable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004544,
 			"allocation of state->readable failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto error_free_writable;
@@ -2236,7 +2236,7 @@ gfs_ib_rdma_request_multiplexed(struct gfarm_eventqueue *q,
 	rv = gfarm_eventqueue_add_event(q, state->writable, NULL);
 	if (rv != 0) {
 		e = gfarm_errno_to_error(rv);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004545,
 			"adding event to event queue failed: %s",
 			gfarm_error_string(e));
 		goto error_free_readable;
@@ -2990,11 +2990,11 @@ gfs_ib_rdma_exch_info(struct gfs_connection *gfs_server)
 
 		gfs_rdma_enable(ctx);
 
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004546,
 			"gfs_ib_rdma_exch_info:%s success",
 				gfs_server->hostname);
 	} else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004547,
 			"gfs_ib_rdma_exch_info:%s failed, %s",
 				gfs_server->hostname, gfarm_error_string(e));
 		if (e == GFARM_ERR_NO_ERROR)
@@ -3024,10 +3024,10 @@ gfs_ib_rdma_hello(struct gfs_connection *gfs_server)
 				rkey, size, addr);
 	if (e == GFARM_ERR_NO_ERROR) {
 		gfs_rdma_enable(ctx);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004548,
 				"gfs_ib_rdma_hello: success");
 	} else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004549,
 			"gfs_ib_rdma_hello: failed, %s",
 			gfarm_error_string(e));
 		gfs_rdma_disable(ctx);
@@ -3046,7 +3046,7 @@ gfs_ib_rdma_pread(struct gfs_connection *gfs_server,
 
 	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_RDMA_PREAD, "iilil/i",
 		fd, (int)size, off, rkey, addr, &n)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004550,
 					"gfs_client_rpc() failed: %s",
 					gfarm_error_string(e));
 		return (e);
@@ -3055,7 +3055,7 @@ gfs_ib_rdma_pread(struct gfs_connection *gfs_server,
 	*np = n;
 
 	if (*np > size) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004551,
 			"Protocol error in client rdma_pread (%llu)>(%llu)",
 			(unsigned long long)*np, (unsigned long long)size);
 		return (GFARM_ERRMSG_GFS_PROTO_PREAD_PROTOCOL);
@@ -3075,7 +3075,7 @@ gfs_ib_rdma_pwrite(struct gfs_connection *gfs_server,
 
 	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_RDMA_PWRITE, "iilil/i",
 			fd, size, off, rkey, addr, &n)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfs_client_rpc() failed: %s",
+		gflog_debug(GFARM_MSG_1004552, "gfs_client_rpc() failed: %s",
 				gfarm_error_string(e));
 		return (e);
 	}
@@ -3083,7 +3083,7 @@ gfs_ib_rdma_pwrite(struct gfs_connection *gfs_server,
 	*np = n;
 
 	if (*np > size) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004553,
 			"Protocol error in client rdma_pwrite (%llu)>(%llu)",
 			(unsigned long long)*np, (unsigned long long)size);
 		return (GFARM_ERRMSG_GFS_PROTO_PWRITE_PROTOCOL);

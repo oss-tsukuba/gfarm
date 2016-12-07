@@ -1813,7 +1813,7 @@ file_table_close(gfarm_int32_t net_fd)
 		    fe->nwrite, (long long)fe->write_size, fe->write_time,
 		    fe->nread, (long long)fe->read_size, fe->read_time);
 #ifdef HAVE_INFINIBAND
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004716,
 		    "rdma_write size %lld time %g Bps %g "
 		    "rdma_read size %lld time %g Bps %g",
 		    (long long)fe->rdma_write_size, fe->rdma_write_time,
@@ -5022,7 +5022,7 @@ gfs_server_rdma_exch_info(struct gfp_xdr *client)
 		&client_lid, &client_qpn, &client_psn,
 		sizeof(buffer), &size, gid);
 	if (!gfs_rdma_check(rdma_ctx)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfs_rdma_check(): failed");
+		gflog_debug(GFARM_MSG_1004717, "gfs_rdma_check(): failed");
 		size = 0;
 		goto reply;
 	}
@@ -5032,7 +5032,7 @@ gfs_server_rdma_exch_info(struct gfp_xdr *client)
 	gfs_rdma_set_remote_gid(rdma_ctx, gid);
 
 	if ((e = gfs_rdma_connect(rdma_ctx)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "rdma_connect(): failed");
+		gflog_debug(GFARM_MSG_1004718, "rdma_connect(): failed");
 		gfs_rdma_disable(rdma_ctx);
 		size = 0;
 	} else {
@@ -5041,7 +5041,7 @@ gfs_server_rdma_exch_info(struct gfp_xdr *client)
 		psn = gfs_rdma_get_local_psn(rdma_ctx);
 		gid = gfs_rdma_get_local_gid(rdma_ctx);
 
-		gflog_debug(GFARM_MSG_UNFIXED, "rdma_connect(): success");
+		gflog_debug(GFARM_MSG_1004719, "rdma_connect(): success");
 		gfs_rdma_enable(rdma_ctx);
 		size = gfs_rdma_get_gid_size();
 	}
@@ -5063,12 +5063,12 @@ gfs_server_rdma_hello(struct gfp_xdr *client)
 	gfs_server_get_request(client, "rdma_hello", "iil",
 		&rkey, &size, &addr);
 	if (!gfs_rdma_check(rdma_ctx)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfs_rdma_check(): failed");
+		gflog_debug(GFARM_MSG_1004720, "gfs_rdma_check(): failed");
 		goto reply;
 	}
 	if ((e = gfs_rdma_remote_read(rdma_ctx, rkey, addr, size))
 	   != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "rdma_remote_read() failed,"
+		gflog_debug(GFARM_MSG_1004721, "rdma_remote_read() failed,"
 			"rkey=%u size=0x%x addr=0x%lx", rkey, size,
 			(unsigned long)addr);
 		goto reply;
@@ -5076,7 +5076,7 @@ gfs_server_rdma_hello(struct gfp_xdr *client)
 	if (memcmp(gfs_rdma_get_buffer(rdma_ctx),
 		gfs_rdma_get_remote_gid(rdma_ctx), gfs_rdma_get_gid_size())) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
-		gflog_debug(GFARM_MSG_UNFIXED, "data maching failed");
+		gflog_debug(GFARM_MSG_1004722, "data maching failed");
 	}
 reply:
 	if (e != GFARM_ERR_NO_ERROR)
@@ -5107,7 +5107,7 @@ gfs_server_rdma_pread(struct gfp_xdr *client)
 		return;
 	}
 	if (!gfs_rdma_check(rdma_ctx)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfs_rdma_check(): failed");
+		gflog_debug(GFARM_MSG_1004723, "gfs_rdma_check(): failed");
 		goto reply;
 	}
 	if ((fe = file_table_entry(fd)) == NULL) {
@@ -5156,7 +5156,7 @@ gfs_server_rdma_pread(struct gfp_xdr *client)
 
 		if ((e = gfs_rdma_remote_write(rdma_ctx, rkey, addr, rv))
 		   != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004724,
 						"rdma_remote_write() failed");
 			goto reply;
 		}
@@ -5196,7 +5196,7 @@ gfs_server_rdma_pwrite(struct gfp_xdr *client)
 		return;
 	}
 	if (!gfs_rdma_check(rdma_ctx)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfs_rdma_check(): failed");
+		gflog_debug(GFARM_MSG_1004725, "gfs_rdma_check(): failed");
 		gfs_server_put_reply(client, diag,
 			GFARM_ERR_DEVICE_NOT_CONFIGURED, "");
 		return;
@@ -5219,7 +5219,7 @@ gfs_server_rdma_pwrite(struct gfp_xdr *client)
 	gfs_profile(gfarm_gettimerval(&t0));
 	if ((e = gfs_rdma_remote_read(rdma_ctx, rkey, addr, size))
 	   != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004726,
 					"rdma_remote_read() failed");
 		gfs_server_put_reply(client, diag, e, "");
 		return;
@@ -5582,9 +5582,9 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	/* should be after gfarm_authorize()::setuid() */
 	if ((e = gfs_rdma_init(1, &rdma_ctx)) != GFARM_ERR_NO_ERROR) {
 		/* don't care even if rdma is unabailable */
-		gflog_info(GFARM_MSG_UNFIXED, "rdma_init() failed");
+		gflog_info(GFARM_MSG_1004727, "rdma_init() failed");
 	} else {
-		gflog_debug(GFARM_MSG_UNFIXED, "rdma_init(): success");
+		gflog_debug(GFARM_MSG_1004728, "rdma_init(): success");
 	}
 #endif
 

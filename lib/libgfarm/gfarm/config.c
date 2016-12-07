@@ -2751,7 +2751,7 @@ parse_rdma_mr_reg_mode(char *p, int *vp)
 	for (;;) {
 		if ((e = gfarm_strtoken(&p, &arg))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004522,
 			"parsing of rdma_mr_reg_mode argument (%s) failed: %s",
 				    p, gfarm_error_string(e));
 			return (e);
@@ -2764,14 +2764,14 @@ parse_rdma_mr_reg_mode(char *p, int *vp)
 			mode |= GFARM_RDMA_REG_MR_DYNAMIC;
 		else {
 			e = GFARM_ERR_INVALID_ARGUMENT;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004523,
 			"parsing of rdma_mr_reg_mode argument (%s) failed: %s",
 				    p, gfarm_error_string(e));
 			return (e);
 		}
 	}
 	if (!mode) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004524,
 		    "parsing of rdma_mr_reg_mode argument, no args");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}

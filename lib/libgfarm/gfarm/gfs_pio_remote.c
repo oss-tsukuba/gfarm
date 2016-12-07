@@ -166,7 +166,7 @@ gfs_pio_remote_storage_pwrite(GFS_File gf,
 				msize = size;
 			if ((e = gfs_rdma_reg_mr_remote_read_write(rdma_context,
 			 (char *)buffer, msize, &mr)) != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1004618,
 				"gfs_rdma_reg_mr_remote_read_write(%ld) failed",
 					msize);
 				reg_fail |= GFARM_RDMA_REG_MR_FAIL;
@@ -298,7 +298,7 @@ gfs_pio_remote_storage_pread(GFS_File gf,
 				msize = size;
 			if ((e = gfs_rdma_reg_mr_remote_read_write(rdma_context,
 			 (char *)buffer, msize, &mr)) != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1004619,
 				"gfs_rdma_reg_mr_remote_read_write(%ld) failed",
 					msize);
 				reg_fail |= GFARM_RDMA_REG_MR_FAIL;
@@ -534,31 +534,31 @@ gfs_pio_remote_display_timers(void)
 	    "remote write count : %llu", staticp->write_count);
 #ifdef HAVE_INFINIBAND
 	if (staticp->read_time > 0)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004620,
 		    "remote read Bps   : %g Bps",
 			staticp->read_size / staticp->read_time);
 	if (staticp->write_time > 0)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004621,
 		    "remote write Bps   : %g Bps",
 			staticp->write_size / staticp->write_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1004622,
 	    "rdma read time   : %g sec", staticp->rdma_read_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1004623,
 	    "rdma read size   : %llu", staticp->rdma_read_size);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1004624,
 	    "rdma read count  : %llu", staticp->rdma_read_count);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1004625,
 	    "rdma write time  : %g sec", staticp->rdma_write_time);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1004626,
 	    "rdma write size  : %llu", staticp->rdma_write_size);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1004627,
 	    "rdma write count : %llu", staticp->rdma_write_count);
 	if (staticp->rdma_read_time > 0)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004628,
 		    "rdma read Bps   : %g Bps",
 		staticp->rdma_read_size / staticp->rdma_read_time);
 	if (staticp->rdma_write_time > 0)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004629,
 		    "rdma write Bps   : %g Bps",
 		staticp->rdma_write_size / staticp->rdma_write_time);
 #endif

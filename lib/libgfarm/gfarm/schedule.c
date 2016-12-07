@@ -1169,7 +1169,7 @@ search_idle_rdma_callback(void *closure)
 	gfarm_error_t e;
 
 	e = gfs_ib_rdma_result_multiplexed(c->protocol_state);
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1004630,
 		    "gfs_ib_rdma_result_multiplexed: %s",
 		    gfarm_error_string(e));
 

@@ -59,19 +59,19 @@ quota_dir_enter(gfarm_ino_t inum, struct dirset *ds, struct quota_dir **qdp)
 	entry = gfarm_hash_enter(quota_dir_table,
 	    &inum, sizeof(inum), sizeof(qd), &created);
 	if (entry == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004642,
 		    "quota_dir_enter: gfarm_hash_enter() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if (!created) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004643,
 		    "quota_dir_enter_enter: already exists");
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
 	GFARM_MALLOC(qd);
 	if (qd == NULL) {
 		gfarm_hash_purge(quota_dir_table, &inum, sizeof(inum));
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004644,
 		    "quota_dir_enter: no memory for quota_dir(%lld)",
 		    (long long)inum);
 		return (GFARM_ERR_NO_MEMORY);
@@ -219,7 +219,7 @@ quota_dir_remove(gfarm_ino_t inum)
 
 	e = db_quota_dir_remove(qd->inum);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004645,
 		    "failed to remove quota dir %lld from backend DB: %s",
 		    (long long)qd->inum, gfarm_error_string(e));
 
@@ -265,20 +265,20 @@ quota_dir_add_one(
 
 	u = user_lookup(dirset->username);
 	if (u == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004646,
 		    "%s: unknown user %s", diag, dirset->username);
 		return;
 	}
 	ds = user_lookup_dirset(u, dirset->dirsetname);
 	if (ds == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004647,
 		    "%s: unknown dirset %s:%s",
 		    diag, dirset->username, dirset->dirsetname);
 		return;
 	}
 	e = quota_dir_enter(inum, ds, NULL);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004648,
 		    "%s: cannot enter inode %lld to dirset %s:%s", diag,
 		    (long long)inum, dirset->username, dirset->dirsetname);
 		return;
@@ -298,14 +298,14 @@ quota_dir_init(void)
 	    gfarm_directory_quota_count_per_user_limit * MANAGEMENT_USERS,
 	    gfarm_hash_default, gfarm_hash_key_equal_default);
 	if (quota_dir_table == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1004649,
 		    "quota_dir_init: cannot create hash table (size %d)",
 		    gfarm_directory_quota_count_per_user_limit *
 		    MANAGEMENT_USERS);
 
 	e = db_quota_dir_load(NULL, quota_dir_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004650,
 		    "loading quota_dir: %s", gfarm_error_string(e));
 }
 
@@ -332,31 +332,31 @@ gfm_server_quota_dir_get(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if (!from_client) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004651,
 		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s has no process",
+		gflog_debug(GFARM_MSG_1004652, "%s: %s has no process",
 		    diag, peer_get_username(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((user = process_get_user(process)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: user %s inconsistent",
+		gflog_debug(GFARM_MSG_1004653, "%s: user %s inconsistent",
 		    diag, peer_get_username(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s has no descriptor",
+		gflog_debug(GFARM_MSG_1004654, "%s: %s has no descriptor",
 		    diag, peer_get_username(peer));
 	} else if ((e = process_get_file_inode(process, peer, fd, &inode, diag)
 	    ) != GFARM_ERR_NO_ERROR) {
 		;
 	} else if (user != inode_get_user(inode) &&
 	    !user_is_root_for_inode(user, inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s has no privilege",
+		gflog_debug(GFARM_MSG_1004655, "%s: %s has no privilege",
 		    diag, peer_get_username(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (!inode_is_dir(inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s specified non-dir",
+		gflog_debug(GFARM_MSG_1004656, "%s: %s specified non-dir",
 		    diag, peer_get_username(peer));
 		e = GFARM_ERR_NOT_A_DIRECTORY;
 	} else if ((tdirset = inode_search_tdirset(inode))
@@ -393,7 +393,7 @@ quota_dir_settable(struct inode *inode, struct dirset *ds,
 	 * usually during maintenance.
 	 */
 	if (!user_is_root(user)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004657,
 		    "%s: %s specified non-empty dir %lld:%lld",
 		    diag, user_name(user),
 		    (long long)inode_get_number(inode),
@@ -401,7 +401,7 @@ quota_dir_settable(struct inode *inode, struct dirset *ds,
 		return (GFARM_ERR_DIRECTORY_NOT_EMPTY);
 	} else if (!inode_is_ok_to_set_dirset(inode)) {
 		/* nested quota_dir, or has a hardlink to outside of the dir */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004658,
 		    "%s: %s specified prohibited dir %lld:%lld",
 		    diag, user_name(user),
 		    (long long)inode_get_number(inode),
@@ -435,27 +435,27 @@ gfm_server_quota_dir_set(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if (!from_client) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004659,
 		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s has no process",
+		gflog_debug(GFARM_MSG_1004660, "%s: %s has no process",
 		    diag, peer_get_username(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((user = process_get_user(process)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: user %s inconsistent",
+		gflog_debug(GFARM_MSG_1004661, "%s: user %s inconsistent",
 		    diag, peer_get_username(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s has no descriptor",
+		gflog_debug(GFARM_MSG_1004662, "%s: %s has no descriptor",
 		    diag, peer_get_username(peer));
 	} else if ((e = process_get_file_inode(process, peer, fd, &inode, diag)
 	    ) != GFARM_ERR_NO_ERROR) {
 		;
 	} else if (user != inode_get_user(inode) &&
 	    !user_is_root_for_inode(user, inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s has no privilege",
+		gflog_debug(GFARM_MSG_1004663, "%s: %s has no privilege",
 		    diag, peer_get_username(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((dirset_user = user_lookup(username)) == NULL) {
@@ -466,7 +466,7 @@ gfm_server_quota_dir_set(struct peer *peer, int from_client, int skip)
 	    == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if (!inode_is_dir(inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s specified non-dir",
+		gflog_debug(GFARM_MSG_1004664, "%s: %s specified non-dir",
 		    diag, peer_get_username(peer));
 		e = GFARM_ERR_NOT_A_DIRECTORY;
 	} else if ((existing_tdirset = inode_search_tdirset(inode))
@@ -498,7 +498,7 @@ gfm_server_quota_dir_set(struct peer *peer, int from_client, int skip)
 			db_end(diag);
 
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004665,
 			    "failed to store quota_dir %lld (dirset '%s:%s') "
 			    "to backend DB: %s",
 			    (long long)inode_get_number(inode),

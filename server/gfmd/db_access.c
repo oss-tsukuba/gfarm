@@ -1855,7 +1855,7 @@ db_dirset_dup(const char *username, const char *dirsetname, size_t size)
 	if (!overflow)
 		r = malloc(sz);
 	if (overflow || r == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004631,
 		    "db_dirset_dup(%s, %s, %zd): no memory",
 		    username, dirsetname, size);
 		return (NULL);
@@ -1942,7 +1942,7 @@ db_quota_dir_remove(gfarm_ino_t inum)
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004632,
 			"allocation of 'db_inode_inum_arg' failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}

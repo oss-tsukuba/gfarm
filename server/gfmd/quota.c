@@ -166,7 +166,7 @@ dirquota_softlimit_exceed(struct quota_metadata *q, struct dirset *ds)
 		e = db_quota_dirset_modify(
 		    dirset_get_username(ds), dirset_get_dirsetname(ds), q);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004634,
 			    "db_quota_dirset_modify(%s:%s): %s",
 			    dirset_get_username(ds), dirset_get_dirsetname(ds),
 			    gfarm_error_string(e));
@@ -1048,7 +1048,7 @@ quota_limit_check(struct user *u, struct group *g, struct dirset *tdirset,
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET &&
 	    dirquota_is_exceeded(&now, dirset_get_dirquota(tdirset),
 	    num_file_creating, num_replica_adding, size)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004635,
 		    "dirset_quota(%s:%s) exceeded",
 		    dirset_get_username(tdirset),
 		    dirset_get_dirsetname(tdirset));
@@ -1068,7 +1068,7 @@ dirquota_limit_check(struct dirset *tdirset,
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET &&
 	    dirquota_is_exceeded(&now, dirset_get_dirquota(tdirset),
 	    num_file_creating, num_replica_adding, size)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004636,
 		    "dirset_quota(%s:%s) exceeded",
 		    dirset_get_username(tdirset),
 		    dirset_get_dirsetname(tdirset));
@@ -1364,7 +1364,7 @@ dirquota_check_per_inode(void *closure, struct inode *inode)
 		if (!uint64_to_uint64_map_inc_value(
 		    dirquota_check_state.hardlink_counters,
 		    inode_get_number(inode), &n)) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004637,
 			    "dirquota_check: no memory for %lld hardlinks",
 			    (long long)uint64_to_uint64_map_size(
 			    dirquota_check_state.hardlink_counters));
@@ -1421,7 +1421,7 @@ dirquota_check_per_dirset(void *closure, struct dirset *ds)
 
 	dirquota_check_state.hardlink_counters = uint64_to_uint64_map_new();
 	if (dirquota_check_state.hardlink_counters == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004638,
 		    "dirquota_check: no memory for hardlink counter");
 		interrupted = 1;
 	} else {
@@ -1463,7 +1463,7 @@ dirquota_check_main(struct quota_check_control *ctl)
 {
 	time_t time_start, time_total;
 
-	gflog_info(GFARM_MSG_UNFIXED, "dirquota_check: start");
+	gflog_info(GFARM_MSG_1004639, "dirquota_check: start");
 	time_start = time(NULL);
 
 	giant_lock();
@@ -1481,7 +1481,7 @@ dirquota_check_main(struct quota_check_control *ctl)
 	giant_unlock();
 
 	time_total = time(NULL) - time_start;
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1004640,
 	    "dirquota_check: finished, inodes=%lld, quota_dirs=%lld, "
 	    "dirsets=%lld, dirset_retries=%lld, dirsets_ok=%lld time=%lld",
 	    (long long)dirquota_check_state.handled_inodes,
@@ -1552,7 +1552,7 @@ quota_check_init(void)
 
 	if ((e = create_detached_thread(
 	    quota_check_thread, &dirquota_check_ctl)) != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1004641,
 		    "create_detached_thread(dirquota_check): %s",
 		    gfarm_error_string(e));
 

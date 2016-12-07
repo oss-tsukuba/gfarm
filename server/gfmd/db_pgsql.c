@@ -3828,7 +3828,7 @@ quota_dirset_info_set_fields_from_copy_binary(
 	    "pgsql_quota_dirset_load: field number");
 	num_fields = ntohs(num_fields);
 	if (num_fields < 19) /* allow fields addition in future */
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1004714,
 		    "pgsql_quota_dirset_load: fields = %d", num_fields);
 
 	info->dirset.username =
@@ -3957,7 +3957,7 @@ quota_dir_info_set_fields_from_copy_binary(
 	    "pgsql_quota_dir_load: field number");
 	num_fields = ntohs(num_fields);
 	if (num_fields < 3) /* allow fields addition in future */
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1004715,
 		    "pgsql_quota_dir_load: fields = %d", num_fields);
 
 	info->inum = get_int64_from_copy_binary(&buf, &residual);

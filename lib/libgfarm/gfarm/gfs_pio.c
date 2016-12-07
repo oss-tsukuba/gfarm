@@ -1259,7 +1259,7 @@ gfs_pio_pread_page(GFS_File gf, gfarm_off_t off, int size, int force,
 
 	e = gfs_pio_check_view_default(gf);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004616,
 			"Check view default for pio failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1297,7 +1297,7 @@ gfs_pio_pread_page(GFS_File gf, gfarm_off_t off, int size, int force,
 		second++;
 	} while (force && off > 0);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004617,
 			"gfs_pio_fillbuf() failed: %s",
 			gfarm_error_string(e));
 		goto finish;

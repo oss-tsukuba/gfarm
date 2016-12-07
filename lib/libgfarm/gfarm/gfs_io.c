@@ -451,7 +451,7 @@ gfm_close_request(struct gfm_connection *gfm_server, void *closure)
 		    "close request: %s", gfarm_error_string(e));
 	} else if (igenp && (e = gfm_client_close_getgen_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004607,
 		    "close request: %s", gfarm_error_string(e));
 	}
 	return (e);
@@ -482,7 +482,7 @@ gfm_close_result(struct gfm_connection *gfm_server, void *closure)
 	} else if (igenp && (e = gfm_client_close_getgen_result(gfm_server,
 		igenp)) != GFARM_ERR_NO_ERROR) {
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004608,
 			    "close result: %s", gfarm_error_string(e));
 	}
 	return (e);

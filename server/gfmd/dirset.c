@@ -71,7 +71,7 @@ dirset_new(const char *dirsetname, struct user *u)
 
 	list_head = quota_dir_list_new();
 	if (list_head == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004681,
 		    "dirset_new(%s): no memory for list_head", dirsetname);
 		return (NULL);
 	}
@@ -79,7 +79,7 @@ dirset_new(const char *dirsetname, struct user *u)
 	GFARM_MALLOC(ds);
 	if (ds == NULL) {
 		quota_dir_list_free(list_head);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004682,
 		    "dirset_new(%s): no memory", dirsetname);
 		return (NULL);
 	}
@@ -87,7 +87,7 @@ dirset_new(const char *dirsetname, struct user *u)
 	if (ds->dirsetname == NULL) {
 		quota_dir_list_free(list_head);
 		free(ds);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004683,
 		    "dirset_new(%s): no memory", dirsetname);
 		return (NULL);
 	}
@@ -182,7 +182,7 @@ dirset_add_one(void *closure,
 	struct dirset *ds;
 
 	if (u == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004684,
 		    "dirset_add_one(%s, %s): user doesn't exist",
 		    di->username, di->dirsetname);
 		return;
@@ -190,7 +190,7 @@ dirset_add_one(void *closure,
 	/* do not check gfarm_directory_quota_count_per_user_limit here */
 	e = user_enter_dirset(u, di->dirsetname, 0, &ds);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004685,
 		    "dirset_add_one(%s, %s): %s",
 		    di->username, di->dirsetname, gfarm_error_string(e));
 		return;
@@ -209,7 +209,7 @@ dirset_init(void)
 
 	e = db_quota_dirset_load(NULL, dirset_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004686,
 		    "loading dirset: %s", gfarm_error_string(e));
 }
 
@@ -323,13 +323,13 @@ dirset_enter(struct dirsets *sets, const char *dirsetname, struct user *u,
 	    &created);
 	if (entry == NULL) {
 		dirset_free(ds);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004687,
 		    "dirset_enter: gfarm_hash_enter() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if (!created) {
 		dirset_free(ds);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004688,
 		    "dirset_enter: already exists");
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
@@ -435,7 +435,7 @@ gfm_server_dirset_info_set(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if (!from_client) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004689,
 		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((u = user_lookup(username)) == NULL) {
@@ -458,7 +458,7 @@ gfm_server_dirset_info_set(struct peer *peer, int from_client, int skip)
 		quota_metadata_memory_convert_to_db(&ds->dq.qmm, &q);
 		e = db_quota_dirset_add(username, dirsetname, &q);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004690,
 			    "failed to store dirset '%s:%s' to backend DB: %s",
 			    username, dirsetname, gfarm_error_string(e));
 	}
@@ -488,7 +488,7 @@ gfm_server_dirset_info_remove(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if (!from_client) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004691,
 		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((u = user_lookup(username)) == NULL) {
@@ -502,7 +502,7 @@ gfm_server_dirset_info_remove(struct peer *peer, int from_client, int skip)
 	} else {
 		e = db_quota_dirset_remove(username, dirsetname);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004692,
 			    "failed to remove dirset '%s:%s' from backend DB: "
 			    "%s", username, dirsetname, gfarm_error_string(e));
 	}
@@ -564,7 +564,7 @@ gfm_server_dirset_info_list(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if (!from_client) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004693,
 		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (!all_users && (u = user_lookup(username)) == NULL) {
@@ -628,7 +628,7 @@ gfm_server_quota_dirset_get(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if (!from_client) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004694,
 		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((u = user_lookup(username)) == NULL) {
@@ -737,7 +737,7 @@ gfm_server_quota_dirset_set(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if (!from_client) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004695,
 		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((u = user_lookup(username)) == NULL) {
@@ -753,7 +753,7 @@ gfm_server_quota_dirset_set(struct peer *peer, int from_client, int skip)
 		quota_metadata_memory_convert_to_db(&ds->dq.qmm, &q);
 		e = db_quota_dirset_modify(username, dirsetname, &q);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004696,
 			    "failed to store dirset '%s:%s' to backend DB: %s",
 			    username, dirsetname, gfarm_error_string(e));
 	}
@@ -784,7 +784,7 @@ quota_dir_reply(void *closure, struct quota_dir *qd)
 	char *pathname;
 
 	if (inode == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004697,
 		    "quota_dir %lld in dirset %s:%s does not exist",
 		    (long long)inum,
 		    user_name(c->ds->user), c->ds->dirsetname);
@@ -809,7 +809,7 @@ dirset_reply_dirs(void *closure, struct dirset *ds)
 
 	ndirs = ds->dir_count;
 	if (ndirs != ds->dir_count) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004698,
 		    "GFM_PROTO_DIRSET_DIR_LIST: %s:%s %llu dirs - too many",
 		    user_name(ds->user), ds->dirsetname,
 		    (unsigned long long)ds->dir_count);
@@ -885,11 +885,11 @@ gfm_server_dirset_dir_list(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if (!from_client) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004699,
 		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s has no process",
+		gflog_debug(GFARM_MSG_1004700, "%s: %s has no process",
 		    diag, peer_get_username(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (!all_users && (u = user_lookup(username)) == NULL) {

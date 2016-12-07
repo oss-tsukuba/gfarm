@@ -21,7 +21,7 @@ gfm_dirquota_add_request(struct gfm_connection *gfm_server, void *closure)
 	    c->username, c->dirsetname);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004610,
 		    "quota_dir_set request: %s", gfarm_error_string(e));
 	return (e);
 }
@@ -33,7 +33,7 @@ gfm_dirquota_add_result(struct gfm_connection *gfm_server, void *closure)
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004611,
 		    "quota_dir_set result: %s", gfarm_error_string(e));
 #endif
 	return (e);
@@ -56,7 +56,7 @@ gfs_dirquota_add(const char *path,
 	    &closure);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004612,
 		    "gfs_dirquota_add(%s) failed: %s",
 		    path, gfarm_error_string(e));
 
@@ -78,7 +78,7 @@ gfm_dirquota_get_request(struct gfm_connection *gfm_server, void *closure)
 	gfarm_error_t e = gfm_client_quota_dir_get_request(gfm_server);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004613,
 		    "quota_dir_get request: %s", gfarm_error_string(e));
 	return (e);
 }
@@ -93,7 +93,7 @@ gfm_dirquota_get_result(struct gfm_connection *gfm_server, void *closure)
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004614,
 		    "quota_dir_get result: %s", gfarm_error_string(e));
 #endif
 	return (e);
@@ -122,7 +122,7 @@ gfs_dirquota_get(const char *path,
 	    &closure);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004615,
 		    "gfs_dirquota_get(%s) failed: %s",
 		    path, gfarm_error_string(e));
 	else
