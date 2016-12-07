@@ -25,20 +25,12 @@ This document describes the directory quota of the Gfarm file system.
 <H2>Overview</H2>
 
 <UL>
-<LI>The directory quota limits number of inodes, sum of
-  file sizes, etc under directories which are specified by a normal user.
-  All files under the directories are aimed at the calculation of
-  amount of use, regardless of the owners or the groups of the files.
-<LI>The subjects to be limited by the directory quota are same
-  with the user and group quota.
-<LI>The directory quota can work with the user and group quota
-  at the same time, and the strictest limit of them is applied.
-<LI>Not only single directory tree, but also multiple directory trees
-  can be treated as a single directory quota accounting, and the single unit
-  of multiple directory trees is called a dirset (an abbreviation of
-  directory set).
-  You can configure quota setting or see current amount of use
-  by specifying a dirset.
+<LI>The directory quota limits file usage including number of inodes
+  and total file size, under a set of directories called a dirset.
+<LI>The same type of limitations can be enforced as the user and group
+  quota.
+<LI>It can work with the user and group quota.
+  The strictest limit among them is applied.
 <LI>Both creating a dirset and changing quota setting can be done
   by normal user privilege.
 <LI>In the directory quota, gfarmroot group privilege is
