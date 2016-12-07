@@ -11,7 +11,7 @@ pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
 </STYLE>
 
 </HEAD>
-<BODY><A href="http://oss-tsukuba.org/software/gfarm">
+<BODY><A href="http://oss-tsukuba.org/en/software/gfarm">
 <IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
 <A href="../../index.html">documents</A> &gt;
 <A href="index.html">User's Manual</A> &gt;
@@ -20,28 +20,28 @@ Directory Quota
 <H1>Directory Quota</H1>
 English | <A href="../../ja/user/dirquota.html">Japanese</A>
 <p>
-This document describes the directory quota feature of the Gfarm filesystem.
+This document describes the directory quota of the Gfarm file system.
 
 <H2>Overview</H2>
 
 <UL>
-<LI>The directory quota feature limits number of inodes, sum of
+<LI>The directory quota limits number of inodes, sum of
   file sizes, etc under directories which are specified by a normal user.
   All files under the directories are aimed at the calculation of
-  amount of use, regradless of the owners or the groups of the files.
-<LI>The subjects to be limited by the directory quota feature are same
-  with the user and group quota feature.
-<LI>The directory quota feature can work with the user and group quota feature
+  amount of use, regardless of the owners or the groups of the files.
+<LI>The subjects to be limited by the directory quota are same
+  with the user and group quota.
+<LI>The directory quota can work with the user and group quota
   at the same time, and the strictest limit of them is applied.
 <LI>Not only single directory tree, but also multiple directory trees
-  can be treated as single directroy quota accounting, and the signle unit
+  can be treated as a single directory quota accounting, and the single unit
   of multiple directory trees is called a dirset (an abbreviation of
   directory set).
   You can configure quota setting or see current amount of use
   by specifying a dirset.
 <LI>Both creating a dirset and changing quota setting can be done
   by normal user privilege.
-<LI>In the directory quota feature, gfarmroot group privilege is
+<LI>In the directory quota, gfarmroot group privilege is
 used for administration.
 </UL>
 
@@ -56,10 +56,10 @@ used for administration.
   but you cannot move a directory between different dirsets,
   unless you have the gfarmroot group privilege.<BR>
   Although gfarmroot group members can move a directory
-  between different dirsets, it may make gfarm metadata server's load high
+  between different dirsets, it may make Gfarm metadata server's load high
   during its capacity recalculation
-  if number of files under the directory is a lot,
-  and quota limit check cannot work precisely during the recalculation.
+  if the number of files under the directory is a lot.
+  Moreover, quota limit check cannot work precisely during the recalculation.
   The capacity before the movement is used instead of the real capacity
   until the recalculation is completed.
   Thus, such directory movement is only expected to be done
@@ -74,9 +74,9 @@ used for administration.
   </UL>
   However, if the user has the gfarmroot group privilege, these conditions
   don't have to be satisfied.
-  But the addition may make gfarm metadata server's load high
-  during capacity recalculation if number of files under the directory is a lot,
-  and quota limit check cannot work precisely during the recalculation.
+  But the addition may make Gfarm metadata server's load high
+  during capacity recalculation if the number of files under the directory is a lot.
+  Moreover, quota limit check cannot work precisely during the recalculation.
   The capacity before the addition is used instead of the real capacity
   until the recalculation is completed.
   Thus, such directory addition is only expected to be done
@@ -93,7 +93,7 @@ used for administration.
 <H2>Example</H2>
 
 Create two dirsets named dirset-a and dirset-b, and limit total capacity
-of dirset-a to 1GB, and dirset-b  2GB.
+of dirset-a to 1GiB, and dirset-b to 2GiB.
 <pre>
 $ gfdirquota -c dirset-a dirset-b
 $ gfedquota -D dirset-a -h 1073741824
@@ -233,8 +233,8 @@ between different dirsets by using the mv(1) command,
 But the movement may be extremely slow, because the mv(1) command uses
 recursive file copy and recursive removal of the source directory tree
 to do this, and that means every file contents under the directory is copied
-from filesystem nodes to the client, and copied back from the client
-to filesystem nodes.
+from file system nodes to the client, and copied back from the client
+to file system nodes.
 And because of the behavior, some files and directories may not be
 moved, if you don't have enough access permission.
 Also, if there are files or directories which are not owned by you,
@@ -243,7 +243,7 @@ the owner information will be lost.
 <p>
 Thus, it's not recommended to use the directory_quota_rename_error_exdev option
 in general.
-Rather, it's recommened to create same directory structure to the
+Rather, it's recommended to create same directory structure to the
 destination side, and use mv(1) command against files instead of the directory.
 Using mv(1) command against files is faster, because it only changes
 metadata, and no data copy happens.
