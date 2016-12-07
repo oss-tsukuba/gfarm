@@ -1,3 +1,12 @@
+Release note for Gfarm 2.7.0
+============================
+
+[2016.12.8]
+
+New feature
+* Infiniband RDMA support
+* Directory quota (see doc/html/en/user/dirquota.html for details)
+
 Release note for Gfarm 2.6.15
 =============================
 
