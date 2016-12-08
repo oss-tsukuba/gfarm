@@ -4,8 +4,29 @@ Release note for Gfarm 2.7.0
 [2016.12.8]
 
 New feature
-* Infiniband RDMA support
+* InfiniBand RDMA support
 * Directory quota (see doc/html/en/user/dirquota.html for details)
+
+New command
+* gfdirquota - manage directory set for directory quota
+
+New configuration directive
+* ib_rdma - enables or disables InfiniBand RDMA data transfer.  When
+configuring --with-infiniband, default is enable.
+* rdma_device_name, rdma_port - optional directive to specify device
+  name and port number, respectively, for RDMA data transfer
+* rdma_min_size - minimum size for RDMA data transfer.  Default is
+  1024 bytes
+* rdma_mr_reg_mode - specifies memory registration mode.  Default is
+  static dynamic
+* rdma_mr_reg_static_min_size, rdma_mr_reg_static_max_size - minimum
+  and maximum size for static RDMA buffer for each gfsd connection.
+  Default is 1MiB and 16MiB, respectively
+* directory_quota_count_per_user_limit - maximum number of directory
+  sets for each user.  Default is 100
+
+Updated feature
+* gfedquota, gfquota - -D and -d options for directory quota
 
 Release note for Gfarm 2.6.15
 =============================
