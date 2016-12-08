@@ -447,9 +447,9 @@ esac
 ###
 ### --with-infiniband ...
 ###
-AC_MSG_CHECKING([infiniband])
+AC_MSG_CHECKING([InfiniBand])
 AC_ARG_WITH(infiniband,
-[  --with-infiniband=InfiniBand_ROOT		support infiniband rdma between client and gfsd
+[  --with-infiniband=InfiniBand_ROOT		support InfiniBand RDMA between client and gfsd
    			      	[[default=/usr]]],
 [ib_rdma="${withval}"
 ], [ib_rdma=no])
@@ -489,10 +489,10 @@ struct ibv_device **dev_list;
 dev_list = ibv_get_device_list(NULL);
 ], [
 	AC_MSG_RESULT([yes])
-	AC_DEFINE(HAVE_INFINIBAND, 1, [support infiniband rdma between client and gfsd])
+	AC_DEFINE(HAVE_INFINIBAND, 1, [support InfiniBand RDMA between client and gfsd])
 ], [
 	LIBS="$LIBS_SAVE"
-	AC_MSG_ERROR([infiniband cannot be linked with \"${rdma_includes} ${rdma_libs}\" options, aborted])
+	AC_MSG_ERROR([InfiniBand cannot be linked with \"${rdma_includes} ${rdma_libs}\" options, aborted])
 ])
 fi
 
@@ -1293,12 +1293,12 @@ if test "${linuxkernel_targets}" = "linux"; then
 	fi
 	rm -f $tmp
 	###
-	###  --extra-infiniband		infiniband synvers and include
+	###  --extra-infiniband		InfiniBand synvers and include
 	###
 	ib_symvers=''
-	AC_MSG_CHECKING([use of extra infiniband Module.symvers])
+	AC_MSG_CHECKING([use of extra InfiniBand Module.symvers])
 	AC_ARG_WITH(ib_symvers,
-	[  --with-ib-symvers=PATH	extra infiniband Module.symvers,
+	[  --with-ib-symvers=PATH	extra InfiniBand Module.symvers,
 			with --enable-linuxkernel.
 			if you are not sure, run linux/config/findIBmodules
 	],
@@ -1325,9 +1325,9 @@ if test "${linuxkernel_targets}" = "linux"; then
 	AC_SUBST(ib_symvers)
 
 	ib_include=''
-	AC_MSG_CHECKING([use of extra infiniband headers])
+	AC_MSG_CHECKING([use of extra InfiniBand headers])
 	AC_ARG_WITH(ib_include,
-	[  --with-ib-include=DIR		extra infiniband headers,
+	[  --with-ib-include=DIR		extra InfiniBand headers,
 			with --enable-linuxkernel.
 			if you are not sure, run linux/config/findIBmodules
 	],

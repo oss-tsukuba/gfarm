@@ -24,7 +24,7 @@ Table of Contents:
   2.4 Sometimes a gfarm client or gfsd stops without doing anything.
   2.5 The modification time seems to be strange.
   2.6 How can I retrieve a core file of gfmd or gfsd when it aborts?
-  2.7 Though Infiniband is installed, we cannot use RDMA.
+  2.7 Though InfiniBand is installed, we cannot use RDMA.
 
 3. Security
   3.1 It is safe to use Gfarm in an environment that is NOT protected by
@@ -422,7 +422,7 @@ Table of Contents:
 	or gfsd may be failed.  Set up abrt properly, or stop the abrt
 	service.
 
-  2.7 Though Infiniband is installed, we cannot use RDMA.
+  2.7 Though InfiniBand is installed, we cannot use RDMA.
 
 	. Did you specify the --with-infiniband option at "configure"
 	operation?

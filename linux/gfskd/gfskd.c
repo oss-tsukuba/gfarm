@@ -281,8 +281,8 @@ usage(const char *progname, struct gfskd_param *paramsp)
 "    -o on_demand_replication        set on-demand replication (default: no)\n"
 "    -o call_ftruncate       call ftruncate instead rpc (default: rpc)\n"
 "    -o ra_async=0           async read ahead operation (default: ON)\n"
-"    -o ib_mtu=N             use specified Infiniband mtu instead of NIC\n"
-"    -o ib_qkey=N            use specified Infiniband qkey\n"
+"    -o ib_mtu=N             use specified InfiniBand mtu instead of NIC\n"
+"    -o ib_qkey=N            use specified InfiniBand qkey\n"
 "    -o ib_num_rrpc=N        number of receiving remote cache rpc\n"
 "    -o ib_num_srpc=N        number of sending remote cache rpc\n"
 		"\n", progname,

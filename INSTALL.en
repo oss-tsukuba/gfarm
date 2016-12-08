@@ -55,7 +55,7 @@ Options for configure:
 
   --with-infiniband=directory
 
-  Specifies to use RDMA through InfiniBand. When a original package is
+  Specifies to use RDMA through InfiniBand.  When an original package is
   installed, appoint the directory.
 
   Memory resource limit must be enough to perform RDMA effectively.

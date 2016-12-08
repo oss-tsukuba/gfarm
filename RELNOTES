@@ -12,13 +12,13 @@ New command
 
 New configuration directive
 * ib_rdma - enables or disables InfiniBand RDMA data transfer.  When
-configuring --with-infiniband, default is enable.
+  configuring --with-infiniband, default is enable.
 * rdma_device_name, rdma_port - optional directive to specify device
   name and port number, respectively, for RDMA data transfer
 * rdma_min_size - minimum size for RDMA data transfer.  Default is
-  1024 bytes
+  65536 bytes
 * rdma_mr_reg_mode - specifies memory registration mode.  Default is
-  static dynamic
+  static.
 * rdma_mr_reg_static_min_size, rdma_mr_reg_static_max_size - minimum
   and maximum size for static RDMA buffer for each gfsd connection.
   Default is 1MiB and 16MiB, respectively
