@@ -2371,7 +2371,7 @@ infiniband が装備されているノードでのみ有効です。
 infiniband が装備されているクライアントノードでのみ有効です。
 </para>
 <para>
-デフォルトは1024バイトです。
+デフォルトは65536バイトです。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2402,7 +2402,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 そのサイズを越えたIOの場合は dynamic が試みられます。
 </para>
 <para>
-デフォルトは static です。
+デフォルトは static  です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">

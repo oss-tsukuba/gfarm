@@ -2429,7 +2429,7 @@ The default port is the first found valid port on the device.
 Specify the minimum data size to select the RDMA data transfer.
 </para>
 <para>
-The default size is 1024 bytes.
+The default size is 65536 bytes.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -2454,7 +2454,7 @@ Although the static mode is faster than dynamic mode,
 memory load becomes higher and may fail in registration because the memories are locked through the connections.
 </para>
 <para>
-The default mode is static and dynamic.
+The default mode is static.
 </para>
 
 <para>For example,</para>
