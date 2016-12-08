@@ -884,6 +884,7 @@ fi
 %{html_prefix}/en/user/samba-gfarmfs.html
 %{html_prefix}/en/user/redundancy-tutorial.html
 %{html_prefix}/en/user/cipher-comparison.html
+%{html_prefix}/en/user/dirquota.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/user/nfs-gfarmfs.html
 %endif
@@ -1058,6 +1059,7 @@ fi
 %{html_prefix}/ja/user/smboverssh.html
 %{html_prefix}/ja/user/redundancy-tutorial.html
 %{html_prefix}/ja/user/cipher-comparison.html
+%{html_prefix}/ja/user/dirquota.html
 %{html_prefix}/pic/gfarm-logo.gif
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja

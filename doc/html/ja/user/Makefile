@@ -13,7 +13,8 @@ HTML =	\
 	samba-gfarmfs.html \
 	smboverssh.html \
 	redundancy-tutorial.html \
-	cipher-comparison.html
+	cipher-comparison.html \
+	dirquota.html
 #	export-gfarm.html
 #	nfs-gfarmfs.html
 #	samba-hook.html

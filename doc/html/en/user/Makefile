@@ -11,7 +11,8 @@ htmldir=$(default_htmldir)/en/user
 HTML =	index.html \
 	samba-gfarmfs.html \
 	redundancy-tutorial.html \
-	cipher-comparison.html
+	cipher-comparison.html \
+	dirquota.html
 #	export-gfarm.html
 #	nfs-gfarmfs.html
 #	samba-hook.html
