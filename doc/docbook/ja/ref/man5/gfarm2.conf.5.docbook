@@ -2017,7 +2017,7 @@ gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します�
 <listitem>
 <para>ジャーナルファイルの最大サイズを指定します。
 サイズが大きいほど、gfmdが起動完了するまでの時間が長くなることに注意してください。
-デフォルトは 33554432 (32 MBytes)です。
+デフォルトは 33554432 (32 MiBytes)です。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
@@ -2395,14 +2395,14 @@ infiniband が装備されているクライアントノードでのみ有効で
 
 <para>
 static のほうが登録の回数が少ないので若干速いメリットはありますが、
-登録したバッファがずっとメモリーロックされるため、接続gfsdが多いとメモリ負荷が
+登録したバッファがずっとメモリロックされるため、接続gfsdが多いとメモリ負荷が
 高くなり、登録に失敗する場合もあります。
 
 両方を指定すると、static バッファを登録したうえで、
 そのサイズを越えたIOの場合は dynamic が試みられます。
 </para>
 <para>
-デフォルトは static dynamic バイトです。
+デフォルトは static です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2416,11 +2416,11 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <term><token>rdma_mr_reg_static_min_size</token> <parameter moreinfo="none">バイト数</parameter></term>
 <listitem>
 <para>
-<constant> rdma_mr_reg_mode </constant>  で <constant> static </constant> を
+<constant> rdma_mr_reg_mode </constant> で <constant> static </constant> を
 指定した時の初期登録サイズを指定します。
 </para>
 <para>
-デフォルトは1メガバイトです。
+デフォルトは1 MiBytesです。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -2440,7 +2440,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 転送を要求されたサイズが登録サイズより大きい時、このサイズまで拡張します。
 </para>
 <para>
-デフォルトは16メガバイトです。
+デフォルトは16 MiBytesです。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">

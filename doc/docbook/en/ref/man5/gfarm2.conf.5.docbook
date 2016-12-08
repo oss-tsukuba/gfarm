@@ -1442,9 +1442,9 @@ will be used and the others are ignored.
 required on filesystem nodes. The Gfarm scheduler excludes filesystem nodes
 which have less free space than this parameter, when it
 schedules nodes for jobs which may write files.
-The free space value may have a suffix like ``k'' (kilo bytes), 
-``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
-The default size is 512M bytes.
+The free space value may have a suffix like ``k'' (kibi bytes), 
+``M'' (megi bytes), ``G'' (gibi bytes) and ``T'' (tebi bytes).
+The default size is 512 MiBytes.
 </para>
 <para>
 This directive has to be specified in both gfarm2.conf and gfmd.conf.
@@ -2091,7 +2091,7 @@ This parameter is only available in gfmd.conf.
 <listitem>
 <para>This parameter specifies the max size of the journal file in bytes.
 Beware that the larger the size is, the longer it takes time for the gfmd to complete starting.
-The default is 33554432 (32 MBytes).
+The default is 33554432 (32 MiBytes).
 </para>
 <para>
 This parameter is only available in gfmd.conf.
@@ -2473,7 +2473,7 @@ Specify the initial buffer size when the static mode is selected
 with rdma_mr_reg_mode.
 </para>
 <para>
-The default size is 1 megabytes.
+The default size is 1 MiBytes.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -2490,7 +2490,7 @@ Specify the maximum expansion buffer size when the static mode is selected
 with rdma_mr_reg_mode.
 </para>
 <para>
-The default size is 16 megabytes.
+The default size is 16 MiBytes.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
