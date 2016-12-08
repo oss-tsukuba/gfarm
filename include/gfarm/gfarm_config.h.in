@@ -86,7 +86,7 @@
 /* Grid Security Infrastructure exists */
 #undef HAVE_GSI
 
-/* support infiniband rdma between client and gfsd */
+/* support InfiniBand RDMA between client and gfsd */
 #undef HAVE_INFINIBAND
 
 /* Define to 1 if you have the <inttypes.h> header file. */

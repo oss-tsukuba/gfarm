@@ -1457,7 +1457,7 @@ Optional Packages:
 				[default=disable]
   --without-mtsafe-netdb	getaddrinfo(3) and getnameinfo(3) are MT-Safe?
 				[default=yes]
-  --with-infiniband=InfiniBand_ROOT		support infiniband rdma between client and gfsd
+  --with-infiniband=InfiniBand_ROOT		support InfiniBand RDMA between client and gfsd
    			      	[default=/usr]
   --with-openldap=OpenLDAP_ROOT	openldap root directory
 				[default=guessed]
@@ -1465,11 +1465,11 @@ Optional Packages:
   --with-postgresql=PostgreSQL_ROOT	PostgreSQL root directory
 				[default=guessed]
   --without-postgresql			disable PostgreSQL
-  --with-ib-symvers=PATH	extra infiniband Module.symvers,
+  --with-ib-symvers=PATH	extra InfiniBand Module.symvers,
 			with --enable-linuxkernel.
 			if you are not sure, run linux/config/findIBmodules
 
-  --with-ib-include=DIR		extra infiniband headers,
+  --with-ib-include=DIR		extra InfiniBand headers,
 			with --enable-linuxkernel.
 			if you are not sure, run linux/config/findIBmodules
 
@@ -12249,8 +12249,8 @@ esac
 ###
 ### --with-infiniband ...
 ###
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking infiniband" >&5
-$as_echo_n "checking infiniband... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking InfiniBand" >&5
+$as_echo_n "checking InfiniBand... " >&6; }
 
 # Check whether --with-infiniband was given.
 if test "${with_infiniband+set}" = set; then :
@@ -12317,7 +12317,7 @@ $as_echo "#define HAVE_INFINIBAND 1" >>confdefs.h
 else
 
 	LIBS="$LIBS_SAVE"
-	as_fn_error $? "infiniband cannot be linked with \"${rdma_includes} ${rdma_libs}\" options, aborted" "$LINENO" 5
+	as_fn_error $? "InfiniBand cannot be linked with \"${rdma_includes} ${rdma_libs}\" options, aborted" "$LINENO" 5
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
@@ -14289,11 +14289,11 @@ $as_echo "release ${krelease} is not supported." >&6; }
 	fi
 	rm -f $tmp
 	###
-	###  --extra-infiniband		infiniband synvers and include
+	###  --extra-infiniband		InfiniBand synvers and include
 	###
 	ib_symvers=''
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking use of extra infiniband Module.symvers" >&5
-$as_echo_n "checking use of extra infiniband Module.symvers... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking use of extra InfiniBand Module.symvers" >&5
+$as_echo_n "checking use of extra InfiniBand Module.symvers... " >&6; }
 
 # Check whether --with-ib_symvers was given.
 if test "${with_ib_symvers+set}" = set; then :
@@ -14327,8 +14327,8 @@ $as_echo "${ib_symvers} is not a file." >&6; }
 
 
 	ib_include=''
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking use of extra infiniband headers" >&5
-$as_echo_n "checking use of extra infiniband headers... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking use of extra InfiniBand headers" >&5
+$as_echo_n "checking use of extra InfiniBand headers... " >&6; }
 
 # Check whether --with-ib_include was given.
 if test "${with_ib_include+set}" = set; then :
