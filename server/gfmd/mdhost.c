@@ -1202,7 +1202,7 @@ mdhost_updated(void)
 	GFARM_MALLOC_ARRAY(mss, n);
 	if (mss == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_1002945,
+		gflog_error(GFARM_MSG_1002945,
 		    "%s: %s", diag, gfarm_error_string(e));
 		return (e);
 	}
@@ -1215,12 +1215,16 @@ mdhost_updated(void)
 	}
 	mdhost_global_mutex_unlock(diag);
 	fs = gfarm_filesystem_get_default();
-	gfarm_filesystem_set_metadb_server_list(fs, mss, i);
+	e = gfarm_filesystem_set_metadb_server_list(fs, mss, i);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: gfarm_filesystem_set_metadb_server_list: %s",
+		    diag, gfarm_error_string(e));
 	free(mss);
 	if (mdhost_update_hook_for_journal_send != NULL)
 		(*mdhost_update_hook_for_journal_send)();
 
-	return (GFARM_ERR_NO_ERROR);
+	return (e);
 }
 
 static gfarm_error_t
@@ -1348,9 +1352,9 @@ gfm_server_metadb_server_set(struct peer *peer, int from_client, int skip)
 		ms.name = ms.clustername = NULL;
 	}
 
-	if (e == GFARM_ERR_NO_ERROR)
-		mdhost_updated();
-	else {
+	if (e == GFARM_ERR_NO_ERROR) {
+		e = mdhost_updated();
+	} else {
 		gflog_debug(GFARM_MSG_1002959,
 		    "error occurred during process: %s",
 		    gfarm_error_string(e));
@@ -1419,7 +1423,7 @@ gfm_server_metadb_server_modify(struct peer *peer, int from_client, int skip)
 				    gfarm_error_string(e));
 		}
 		if (e == GFARM_ERR_NO_ERROR)
-			mdhost_updated();
+			e = mdhost_updated();
 	}
 	giant_unlock();
 	gfarm_metadb_server_free(&ms);
