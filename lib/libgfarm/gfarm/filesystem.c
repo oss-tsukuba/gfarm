@@ -198,6 +198,7 @@ gfarm_filesystem_hash_enter(struct gfarm_filesystem *fs,
 	struct gfarm_hash_entry *entry;
 	struct gfarm_filesystem **fsp;
 	struct gfarm_filesystem_hash_id id;
+	static const char diag[] = "gfarm_filesystem_hash_enter";
 
 	id.hostname = gfarm_metadb_server_get_name(ms);
 	entry = gfarm_hash_enter(staticp->ms2fs_hashtab, &id, sizeof(id),
@@ -207,7 +208,11 @@ gfarm_filesystem_hash_enter(struct gfarm_filesystem *fs,
 		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	assert(created);
+	if (!created) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: duplicate host: %s", diag, id.hostname);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
 	/* memory owner of hostname is gfarm_metadb_server */
 	fsp = gfarm_hash_entry_data(entry);
 	*fsp = fs;
