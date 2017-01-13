@@ -5613,23 +5613,32 @@ inode_replicated(struct file_replicating *fr,
 			    inode->i_mode, (long long)inode_get_gen(inode));
 		} else if (
 		    src_errcode != GFARM_ERR_NO_ERROR ||
-		    dst_errcode != GFARM_ERR_NO_ERROR)
-			gflog_notice(GFARM_MSG_1002257,
-			    "error at %lld:%lld replication to %s: "
-			    "src=%d dst=%d",
-			    (long long)inode_get_number(inode),
-			    (long long)fr->igen,
-			    host_name(fr->dst), src_errcode, dst_errcode);
-		if (size != inode_get_size(inode) ||
-		    fr->igen != inode_get_gen(inode))
-			gflog_notice(GFARM_MSG_1003709,
-			    "replication failed. invalid replica (inum=%lld): "
-			    "(gen=%lld, size=%lld) "
-			    "should be (gen=%lld, size=%lld)",
-			    (long long)inode_get_number(inode),
-			    (long long)fr->igen, (long long)size,
-			    (long long)inode_get_gen(inode),
-			    (long long)inode_get_size(inode));
+		    dst_errcode != GFARM_ERR_NO_ERROR) {
+			if ((src_errcode == GFARM_ERR_CHECKSUM_MISMATCH ||
+			     dst_errcode == GFARM_ERR_CHECKSUM_MISMATCH) &&
+			    fr->igen == inode_get_gen(inode) &&
+			    !inode_is_opened_for_writing(inode)) {
+				/* checksum error happened, but it shouldn't */
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "checksum error "
+				    "at %lld:%lld replication to %s: "
+				    "src=<%s> dst=<%s>",
+				    (long long)inode_get_number(inode),
+				    (long long)fr->igen,
+				    host_name(fr->dst),
+				    gfarm_error_string(src_errcode),
+				    gfarm_error_string(dst_errcode));
+			} else {
+				gflog_notice(GFARM_MSG_1002257,
+				    "temporary error "
+				    "at %lld:%lld replication to %s: "
+				    "src=%d dst=%d",
+				    (long long)inode_get_number(inode),
+				    (long long)fr->igen,
+				    host_name(fr->dst), src_errcode,
+				    dst_errcode);
+			}
+		}
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
 	}
 	if (e != GFARM_ERR_NO_ERROR)
