@@ -5619,7 +5619,7 @@ inode_replicated(struct file_replicating *fr,
 			    fr->igen == inode_get_gen(inode) &&
 			    !inode_is_opened_for_writing(inode)) {
 				/* checksum error happened, but it shouldn't */
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1004731,
 				    "checksum error "
 				    "at %lld:%lld replication to %s: "
 				    "src=<%s> dst=<%s>",

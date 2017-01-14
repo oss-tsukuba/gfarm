@@ -209,7 +209,7 @@ gfarm_filesystem_hash_enter(struct gfarm_filesystem *fs,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if (!created) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004729,
 		    "%s: duplicate host: %s", diag, id.hostname);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
