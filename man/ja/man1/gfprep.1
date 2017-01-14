@@ -2,12 +2,12 @@
 .\"     Title: gfprep
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 27 Aug 2015
+.\"      Date: 14 Jan 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPREP" "1" "27 Aug 2015" "Gfarm" "Gfarm"
+.TH "GFPREP" "1" "14 Jan 2017" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 gfprep \- Gfarm ファイル複製を並列に作成する
 .SH "SYNOPSIS"
 .HP \w'\fBgfprep\fR\ 'u
-\fBgfprep\fR [\-nqvdpPU] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-mx] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
+\fBgfprep\fR [\-nqvdpPBU] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-I\ \fIsec\-to\-update\fR] [\-mx] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
 .SH "DESCRIPTION"
 .PP
 \fBgfprep\fR
@@ -70,7 +70,7 @@ gfprep \- Gfarm ファイル複製を並列に作成する
 .PP
 \fB\-m\fR
 .RS 4
-転送元から転送先にファイル複製を移動します。
+転送元から転送先にファイル複製を移動します。 \-mm のように 2 回指定すると、転送元ファイルを削除しません。
 .sp
 \-S または \-h または \-D または \-H いずれかのオプションが必要です。
 .sp
@@ -173,6 +173,22 @@ greedy にすると、\-N や \-m オプションを使用することができ�
 \-w greedy オプションを使用した場合のみ効果があります。
 .sp
 デフォルトは 50 * 1024 キビバイト (50 メビバイト) です。
+.RE
+.PP
+\fB\-I\fR \fIsec\-to\-update\fR
+.RS 4
+gfprep,gfpcopy は gfsd ホストごとのロードアベレージやディスクの空き容量を 定期的に取得します。それらの値を更新する間隔を秒で指定します。
+.sp
+デフォルトは 300 秒です。
+.RE
+.PP
+\fB\-B\fR
+.RS 4
+高負荷な gfsd ホストも書き込み先の対象にします。
+.sp
+デフォルトでは高負荷な gfsd ホストを書き込み先の対象にしません。 デフォルトでは、すべての gfsd ホストが高負荷の場合にファイルを転送しません。
+.sp
+高負荷なホストとは、(ロードアベレージ / CPU 数) が gfarm2\&.conf の schedule_busy_load_thresh よりも高いホストです。 schedule_busy_load_thresh のデフォルト値は gfarm2\&.conf のマニュアルを参照してください。 CPU 数については gfhost のマニュアルを参照してください。
 .RE
 .PP
 \fB\-U\fR
