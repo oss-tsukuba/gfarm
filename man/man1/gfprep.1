@@ -2,12 +2,12 @@
 .\"     Title: gfprep
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 27 Aug 2015
+.\"      Date: 14 Jan 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPREP" "1" "27 Aug 2015" "Gfarm" "Gfarm"
+.TH "GFPREP" "1" "14 Jan 2017" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 gfprep \- replicate Gfarm files in parallel
 .SH "SYNOPSIS"
 .HP \w'\fBgfprep\fR\ 'u
-\fBgfprep\fR [\-nqvdpPU] [\-mx] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
+\fBgfprep\fR [\-nqvdpPBU] [\-mx] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-I\ \fIsec\-to\-update\fR] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
 .SH "DESCRIPTION"
 .PP
 \fBgfprep\fR
@@ -71,7 +71,7 @@ Removes extra file replicas when a set of destination nodes has more file replic
 .PP
 \fB\-m\fR
 .RS 4
-Migrates file replicas within a set of source nodes to destination nodes\&.
+Migrates file replicas within a set of source nodes to destination nodes\&. When specifying twice like \-mm, it leaves the source file replica\&.
 .sp
 This option requires \-S or \-h or \-D or \-H options\&.
 .sp
@@ -180,6 +180,20 @@ Specifies a threshold size/cost(KiB) to flat costs of Connections\&. A Connectio
 This option is effective with \-w greedy\&.
 .sp
 The default value is 50*1024 KiB (50MiB)\&.
+.RE
+.PP
+\fB\-I\fR \fIsec\-to\-update\fR
+.RS 4
+gfprep and gfpcopy collect load average and available capacity regularly\&. This option specifies the interval to collect the information in seconds\&.
+.sp
+Default is 300 seconds\&.
+.RE
+.PP
+\fB\-B\fR
+.RS 4
+Without this option, high loaded file system node is not selected after Gfarm 2\&.6\&.16 or later\&. This option disables this feature\&.
+.sp
+High loaded node is defined by having more CPU load than schedule_busy_load_thresh * number of CPUs\&. For details of schedule_busy_load_thresh, refer to a manual page of gfarm2\&.conf\&.
 .RE
 .PP
 \fB\-U\fR
