@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <time.h>
 #include <errno.h>
 #include <regex.h>
 
@@ -29,6 +30,7 @@
 #include "config.h"
 #include "context.h"
 #include "gfarm_path.h"
+#include "gfm_proto.h"
 #include "gfm_client.h"
 #include "host.h"
 #include "lookup.h"
@@ -58,11 +60,19 @@ struct gfprep_option {
 	int performance;/* -p */
 	int performance_each;/* -P */
 	int max_rw;	/* -c */
+	int check_loadavg;	/* not -B */
 	int check_disk_avail;	/* not -U */
 	int openfile_cost;	/* -C */
+	int update_hostinfo_interval; 	/* -I */
 };
 
-static struct gfprep_option opt = { .check_disk_avail = 1 };
+/* default values */
+static struct gfprep_option opt = {
+	.check_loadavg = 1,	/* enable */
+	.check_disk_avail = 1,	/* enable */
+	.update_hostinfo_interval = 300 /* sec. (5 min.) */
+	/* others = 0 */
+};
 
 /* protection against callback from child process */
 static pthread_mutex_t cb_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -128,6 +138,8 @@ gfprep_usage_common(int error)
 "\t[-W <#KB> (threshold size to flat connections cost)(for -w greedy)]\n"
 "\t[-p (report total performance) | -P (report each and total performance)]\n"
 "\t[-n (not execute)] [-s <#KB/s(simulate)>]\n"
+"\t[-I <sec.(interval of updating loadavg and disk_avail)(default: %d)>]\n"
+"\t[-B (disable checking loadavg)(to write files to BUSY hosts)]\n"
 "\t[-U (disable checking disk_avail)(fast)]\n"
 "\t[-M <#byte(K|M|G|T)(total copied size)(default: unlimited)>]\n"
 "\t[-z <#byte(K|M|G|T)(minimum file size)(default: unlimited)>]\n"
@@ -135,7 +147,7 @@ gfprep_usage_common(int error)
 /* "\t[-R <#ratio (throughput: local=remote*ratio)(for -w greedy)>]\n" */
 "\t[-F <#dirents(readahead)>]\n",
 		program_name,
-		n_para, GFPREP_PARALLEL_DIRTREE
+		n_para, GFPREP_PARALLEL_DIRTREE, opt.update_hostinfo_interval
 		);
 	if (strcmp(program_name, name_gfpcopy) == 0)
 		gfpcopy_usage();
@@ -151,6 +163,7 @@ struct gfprep_host_info {
 	int ncpu;
 	int max_rw;
 	gfarm_int64_t disk_avail;
+	gfarm_int32_t loadavg; /* loadavg_1min * GFM_PROTO_LOADAVG_FSCALE */
 
 	/* locked by cb_mutex */
 	int n_using; /* src:n_reading, dst:n_writing */
@@ -268,10 +281,14 @@ gfprep_create_hostinfohash_all(const char *path, int *nhost_infos_p,
 		hi->ncpu = hsis[i].ncpu;
 		hi->max_rw = opt.max_rw > 0 ? opt.max_rw : hi->ncpu;
 		hi->disk_avail = hsis[i].disk_avail * 1024; /* KB -> Byte */
+		hi->loadavg = hsis[i].loadavg;
 		hi->n_using = 0;
 		hi->failed_size = 0;
 		*hip = hi;
+		gfmsg_debug("loadavg: %s = %.3f", hi->hostname,
+			    (float)hi->loadavg / GFM_PROTO_LOADAVG_FSCALE);
 	}
+
 	gfarm_host_sched_info_free(nhsis, hsis);
 	*nhost_infos_p = nhsis;
 	return (GFARM_ERR_NO_ERROR);
@@ -291,6 +308,57 @@ nomem:
 	gfarm_hash_table_free(*hash_all_p);
 	gfarm_host_sched_info_free(nhsis, hsis);
 	return (GFARM_ERR_NO_MEMORY);
+}
+
+/* update disk_avail and loadavg */
+static gfarm_error_t
+gfprep_update_hostinfohash_all(const char *path,
+			       struct gfarm_hash_table *hash_all)
+{
+	gfarm_error_t e;
+	int nhsis, i;
+	struct gfarm_host_sched_info *hsis;
+	struct gfarm_hash_entry *he;
+	struct timeval now;
+	static time_t next_update = 0;
+
+	gettimeofday(&now, NULL);
+	if (next_update != 0 && now.tv_sec < next_update)
+		return (GFARM_ERR_NO_ERROR);
+	next_update = now.tv_sec + opt.update_hostinfo_interval;
+	if (opt.debug) {
+		struct tm *tp = localtime(&next_update);
+		char s[256];
+
+		strftime(s, sizeof(s), "%Y/%m/%d %H:%M:%S", tp);
+		gfmsg_debug("opt.update_hostinfo_interval = %d",
+		    opt.update_hostinfo_interval);
+		gfmsg_debug("next_update: %s", s);
+	}
+
+	e = gfarm_schedule_hosts_domain_all(path, "", &nhsis, &hsis);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfmsg_warn("cannot update disk_avail and loadavg");
+		return (e);
+	}
+
+	for (i = 0; i < nhsis; i++) {
+		struct gfprep_host_info *hi, **hip;
+		char *hostname = hsis[i].host;
+
+		he = gfarm_hash_lookup(hash_all, &hostname, sizeof(char *));
+		if (he == NULL)
+			continue;
+		hip = gfarm_hash_entry_data(he);
+		hi = *hip;
+		hi->disk_avail = hsis[i].disk_avail * 1024; /* KB -> Byte */
+		hi->loadavg = hsis[i].loadavg;
+		gfmsg_debug("update loadavg: %s = %.3f", hi->hostname,
+			    (float)hi->loadavg / GFM_PROTO_LOADAVG_FSCALE);
+	}
+
+	gfarm_host_sched_info_free(nhsis, hsis);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
@@ -1617,13 +1685,50 @@ retry:
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static long long BUSY_LOAD;
+
+static void
+schedule_busy_load_init()
+{
+	/* schedule_busy_load = value-from-gfarm2.conf * GFARM_F2LL_SCALE */
+	BUSY_LOAD = gfarm_ctxp->schedule_busy_load *
+		GFM_PROTO_LOADAVG_FSCALE / GFARM_F2LL_SCALE;
+}
+
 static gfarm_error_t
-gfprep_check_disk_avail(struct gfprep_host_info *hi, gfarm_off_t src_size)
+gfprep_check_loadavg(struct gfprep_host_info *hi)
+{
+	if (opt.check_loadavg == 0)
+		return (GFARM_ERR_NO_ERROR);
+
+	if (opt.debug) {
+		gfmsg_debug(
+		    "%s: Loadavg=%0.3f, nCPU=%d, L/C=%0.3f, busy_load=%.3f",
+		    hi->hostname,
+		    (float)hi->loadavg / GFM_PROTO_LOADAVG_FSCALE,
+		    hi->ncpu,
+		    (float)hi->loadavg / GFM_PROTO_LOADAVG_FSCALE / hi->ncpu,
+		    (float)BUSY_LOAD / GFM_PROTO_LOADAVG_FSCALE);
+	}
+	/* hi->loadavg = loadavg_1min * GFM_PROTO_LOADAVG_FSCALE */
+	if (hi->loadavg / hi->ncpu <= BUSY_LOAD)
+		return (GFARM_ERR_NO_ERROR);
+	/* ignore busy hosts */
+	return (GFARM_ERR_DEVICE_BUSY);
+}
+
+static gfarm_error_t
+gfprep_check_disk_avail(struct gfprep_host_info *hi, gfarm_off_t src_size,
+			int use_failed_size)
 {
 	gfarm_int64_t failed_size;
 
-	gfprep_get_and_reset_failed_size(hi, &failed_size);
-	hi->disk_avail += failed_size;
+	/* ignore opt.check_disk_avail */
+
+	if (use_failed_size) {
+		gfprep_get_and_reset_failed_size(hi, &failed_size);
+		hi->disk_avail += failed_size;
+	}
 
 	/* to reduce no space risk, keep minimum disk space */
 	if (hi->disk_avail >= src_size + gfarm_get_minimum_free_disk_space())
@@ -1640,7 +1745,7 @@ gfprep_sort_and_check_disk_avail(int n_array_dst,
 	assert(array_dst && n_array_dst > 0);
 	/* disk_avail: large to small */
 	gfprep_host_info_array_sort_by_disk_avail(n_array_dst, array_dst);
-	return (gfprep_check_disk_avail(array_dst[0], src_size));
+	return (gfprep_check_disk_avail(array_dst[0], src_size, 1));
 }
 
 /* for WAY_GREEDY */
@@ -1658,7 +1763,7 @@ gfprep_select_dst(int n_array_dst, struct gfprep_host_info **array_dst,
 	for (i = 0; i < n_array_dst; i++) {
 		hi = array_dst[i];
 		/* XXX should ignore host which has an incomplete replica */
-		e = gfprep_check_disk_avail(hi, src_size);
+		e = gfprep_check_disk_avail(hi, src_size, 1);
 		if (e != GFARM_ERR_NO_ERROR) { /* no spece */
 			gfmsg_warn_e(e, "check_disk_avail(%s)", hi->hostname);
 			continue;
@@ -2551,7 +2656,8 @@ main(int argc, char *argv[])
 	gfmsg_fatal_e(e, "gfarm_list_init");
 
 	while ((ch = getopt(argc, argv,
-	    "N:h:j:w:W:s:S:D:H:R:M:b:J:F:C:c:LekmnpPqvdfUlxX:z:Z:?")) != -1) {
+	    "N:h:j:w:W:s:S:D:H:R:M:b:J:F:C:c:LekmnpPqvdfI:BUlxX:z:Z:?"))
+	    != -1) {
 		switch (ch) {
 		case 'w':
 			opt_way = optarg;
@@ -2608,6 +2714,12 @@ main(int argc, char *argv[])
 			break;
 		case 'F':
 			opt_dirtree_n_fifo = strtol(optarg, NULL, 0);
+			break;
+		case 'I':
+			opt.update_hostinfo_interval = strtol(optarg, NULL, 0);
+			break;
+		case 'B':
+			opt.check_loadavg = 0;
 			break;
 		case 'U':
 			opt.check_disk_avail = 0;
@@ -2702,6 +2814,7 @@ main(int argc, char *argv[])
 		msglevel = GFMSG_LEVEL_WARNING;
 
 	gfmsg_init(program_name, msglevel);
+	schedule_busy_load_init();
 
 	if (strcmp(program_name, name_gfpcopy) == 0) { /* gfpcopy */
 		if (argc != 2)
@@ -3437,11 +3550,16 @@ main(int argc, char *argv[])
 			gfarm_list dst_select_list, dst_exist_list;
 			int found;
 
+			assert(hash_dst);
 			assert(array_dst);
 			e = gfarm_list_init(&dst_select_list);
 			gfmsg_fatal_e(e, "gfarm_list_init");
 			e = gfarm_list_init(&dst_exist_list);
 			gfmsg_fatal_e(e, "gfarm_list_init");
+
+			gfprep_update_hostinfohash_all(gfurl_url(dst),
+						       hash_dst);
+
 			/* select dst hosts those do not have the replica */
 			for (i = 0; i < n_array_dst; i++) {
 				found = 0;
@@ -3463,8 +3581,12 @@ main(int argc, char *argv[])
 					gfmsg_fatal_e(e, "gfarm_list_add");
 					n_dst_exist++;
 				} else {
+					e = gfprep_check_loadavg(array_dst[i]);
+					if (e == GFARM_ERR_DEVICE_BUSY)
+						continue;
 					e = gfprep_check_disk_avail(
-						array_dst[i], entry->src_size);
+						array_dst[i], entry->src_size,
+						0);
 					if (e == GFARM_ERR_NO_SPACE)
 						continue;
 					gfmsg_error_e(e, "check_disk_avail");

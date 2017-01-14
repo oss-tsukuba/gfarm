@@ -19,7 +19,7 @@ fi
 test_copy() {
   SIZE=$1
   filename=COPYFILE
-  OPT="-b 65536 -f -d"
+  OPT="-b 65536 -f -d -B"
   lfile=$local_dir1/$filename
   gfile=$gf_dir1/$filename
   if dd if=/dev/urandom of=$lfile bs=$SIZE count=1 > /dev/null; then
