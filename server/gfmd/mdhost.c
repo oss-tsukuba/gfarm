@@ -1217,7 +1217,7 @@ mdhost_updated(void)
 	fs = gfarm_filesystem_get_default();
 	e = gfarm_filesystem_set_metadb_server_list(fs, mss, i);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004730,
 		    "%s: gfarm_filesystem_set_metadb_server_list: %s",
 		    diag, gfarm_error_string(e));
 	free(mss);
