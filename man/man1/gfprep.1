@@ -1,22 +1,13 @@
 '\" t
 .\"     Title: gfprep
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 27 Aug 2015
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 14 Jan 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPREP" "1" "27 Aug 2015" "Gfarm" "Gfarm"
-.\" -----------------------------------------------------------------
-.\" * Define some portability stuff
-.\" -----------------------------------------------------------------
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.\" http://bugs.debian.org/507673
-.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.ie \n(.g .ds Aq \(aq
-.el       .ds Aq '
+.TH "GFPREP" "1" "14 Jan 2017" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -31,9 +22,10 @@
 gfprep \- replicate Gfarm files in parallel
 .SH "SYNOPSIS"
 .HP \w'\fBgfprep\fR\ 'u
-\fBgfprep\fR [\-nqvdpPU] [\-mx] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
+\fBgfprep\fR [\-nqvdpPBU] [\-mx] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-I\ \fIsec\-to\-update\fR] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
 .SH "DESCRIPTION"
 .PP
+
 \fBgfprep\fR
 creates replicas of Gfarm files in parallel\&.
 .PP
@@ -41,6 +33,7 @@ If the
 \fIpath\fR
 parameter is a directory, files under the directory will be replicated recursively\&.
 .PP
+
 \fIpath\fR
 is a Gfarm URL or a path on a mountpoint of gfarm2fs\&.
 .PP
@@ -50,6 +43,7 @@ Idler filesystem nodes will be selected for source or destination\&. The maximum
 \fBgfhost\fR
 for information about the number of CPUs\&.
 .PP
+
 \fBgfprep\fR
 can also read the directory and get information of the entries in parallel\&.
 .SH "GFPREP OPTIONS"
@@ -71,7 +65,7 @@ Removes extra file replicas when a set of destination nodes has more file replic
 .PP
 \fB\-m\fR
 .RS 4
-Migrates file replicas within a set of source nodes to destination nodes\&.
+Migrates file replicas within a set of source nodes to destination nodes\&. When specifying twice like \-mm, it leaves the source file replica\&.
 .sp
 This option requires \-S or \-h or \-D or \-H options\&.
 .sp
@@ -79,6 +73,7 @@ This option and \-N option are mutually exclusive\&.
 .RE
 .SH "COMMON OPTIONS"
 .PP
+
 \fBgfprep\fR
 has the same options with
 \fBgfpcopy\fR\&.
@@ -100,7 +95,7 @@ Specifies a file of which describes hostnames of file system nodes to replicate 
 \fIsource\-hostfile\fR
 consists of a filesystem node name on each line\&.
 .sp
-If ``\-\*(Aq\*(Aq is specified, standard input is used to read the host list\&.
+If ``\-\'\' is specified, standard input is used to read the host list\&.
 .RE
 .PP
 \fB\-L\fR
@@ -123,7 +118,7 @@ Specifies a file which describes hostnames for destination\&. The
 \fIdestination\-hostfile\fR
 consists of a filesystem node name on each line\&.
 .sp
-If ``\-\*(Aq\*(Aq is specified, standard input is used to read the host list\&.
+If ``\-\'\' is specified, standard input is used to read the host list\&.
 .RE
 .PP
 \fB\-j\fR \fInum\-of\-processes\fR
@@ -166,11 +161,11 @@ The default value is unlimited\&.
 .PP
 \fB\-w\fR \fIway\-of\-scheduling\fR
 .RS 4
-Specifies the name of scheduling way\&. ``noplan\*(Aq\*(Aq replicates/copies while files are found\&. ``greedy\*(Aq\*(Aq schedules greedily the order of replication/copy beforehand\&.
+Specifies the name of scheduling way\&. ``noplan\'\' replicates/copies while files are found\&. ``greedy\'\' schedules greedily the order of replication/copy beforehand\&.
 .sp
-The default behavior is ``noplan\*(Aq\*(Aq\&.
+The default behavior is ``noplan\'\'\&.
 .sp
-``greedy\*(Aq\*(Aq scheduling cannot use the \-N option or \-m option\&.
+``greedy\'\' scheduling cannot use the \-N option or \-m option\&.
 .RE
 .PP
 \fB\-W\fR \fIkibibytes\fR
@@ -180,6 +175,20 @@ Specifies a threshold size/cost(KiB) to flat costs of Connections\&. A Connectio
 This option is effective with \-w greedy\&.
 .sp
 The default value is 50*1024 KiB (50MiB)\&.
+.RE
+.PP
+\fB\-I\fR \fIsec\-to\-update\fR
+.RS 4
+gfprep and gfpcopy collect load average and available capacity regularly\&. This option specifies the interval to collect the information in seconds\&.
+.sp
+Default is 300 seconds\&.
+.RE
+.PP
+\fB\-B\fR
+.RS 4
+Without this option, high loaded file system node is not selected after Gfarm 2\&.6\&.16 or later\&. This option disables this feature\&.
+.sp
+High loaded node is defined by having more CPU load than schedule_busy_load_thresh * number of CPUs\&. For details of schedule_busy_load_thresh, refer to a manual page of gfarm2\&.conf\&.
 .RE
 .PP
 \fB\-U\fR
@@ -285,6 +294,7 @@ $ gfprep \-m \-S gfsd1\&.example\&.com gfarm:///
 .PP
 When the \-L or \-m option is not specified, a source node is not always selected within a set of specified source filesystem nodes\&.
 .PP
+
 \fBgfprep\fR
 command should be executed at the same host of gfmd\&. If the gfmd and
 \fBgfprep\fR
@@ -293,6 +303,7 @@ are far apart, the
 operation is slow\&. Specifying a large value by \-j or \-J options may be effective in such a case\&.
 .SH "SEE ALSO"
 .PP
+
 \fBgfrep\fR(1),
 \fBgfpcopy\fR(1),
 \fBgfhost\fR(1),
