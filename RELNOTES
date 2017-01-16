@@ -1,3 +1,18 @@
+Release note for Gfarm 2.6.16
+=============================
+
+[2017.1.14]
+
+Updated feature
+* gfpcopy, gfprep - do not copy to busy hosts by default.  This will
+  be disabled by -B option
+* gfpcopy, gfprep - -I option to specify interval to collect host
+  information.  Default is 300 seconds.
+* gfsd - adjust log level for non-critical replication failure
+
+Bug fix
+* incorrect metadb_server_list causes assertion failure
+
 Release note for Gfarm 2.6.15
 =============================
 
