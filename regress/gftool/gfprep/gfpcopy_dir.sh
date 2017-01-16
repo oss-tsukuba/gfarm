@@ -45,7 +45,7 @@ check_local_entries() {
   fi
 }
 
-OPT="-d"
+OPT="-d -B"
 
 if gfpcopy $OPT gfarm:$gf_dir1 file:$local_dir1; then
   :
