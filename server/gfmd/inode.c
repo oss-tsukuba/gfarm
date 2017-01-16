@@ -5634,6 +5634,21 @@ inode_replicated(struct file_replicating *fr,
 				    host_name(fr->dst), src_errcode,
 				    dst_errcode);
 			}
+		} else {
+			/* gflog_debug() should be enough, but to be sure */
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "temporary failure of %lld:%lld (size:%lld) "
+			    "replication to %s: "
+			    "mode:0o%o gen:%lld size:%lld writing=%d: "
+			    "src=<%s> dst=<%s>",
+			    (long long)inode_get_number(inode),
+			    (long long)fr->igen, (long long)size,
+			    host_name(fr->dst),
+			    inode->i_mode, (long long)inode_get_gen(inode),
+			    (long long)inode_get_size(inode),
+			    inode_is_opened_for_writing(inode),
+			    gfarm_error_string(src_errcode),
+			    gfarm_error_string(dst_errcode));
 		}
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
 	}
