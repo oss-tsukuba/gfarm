@@ -5596,50 +5596,13 @@ inode_replicated(struct file_replicating *fr,
 			}
 		}
 	} else {
-		if (src_errcode == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY &&
-		    dst_errcode == GFARM_ERR_NO_ERROR &&
-		    (inode->i_mode == INODE_MODE_FREE ||
-		     fr->igen != inode_get_gen(inode))) {
-			/* gflog_debug() should be enough, but to be sure */
-			gflog_info(GFARM_MSG_1003285,
-			    "expected failure of %lld:%lld replication to %s: "
-			    "mode:0o%o gen:%lld",
-			    (long long)inode_get_number(inode),
-			    (long long)fr->igen,
-			    host_name(fr->dst),
-			    inode->i_mode, (long long)inode_get_gen(inode));
-		} else if (
-		    src_errcode != GFARM_ERR_NO_ERROR ||
-		    dst_errcode != GFARM_ERR_NO_ERROR) {
-			if ((src_errcode == GFARM_ERR_CHECKSUM_MISMATCH ||
-			     dst_errcode == GFARM_ERR_CHECKSUM_MISMATCH) &&
-			    fr->igen == inode_get_gen(inode) &&
-			    !inode_is_opened_for_writing(inode)) {
-				/* checksum error happened, but it shouldn't */
-				gflog_warning(GFARM_MSG_1004731,
-				    "checksum error "
-				    "at %lld:%lld replication to %s: "
-				    "src=<%s> dst=<%s>",
-				    (long long)inode_get_number(inode),
-				    (long long)fr->igen,
-				    host_name(fr->dst),
-				    gfarm_error_string(src_errcode),
-				    gfarm_error_string(dst_errcode));
-			} else {
-				gflog_notice(GFARM_MSG_1002257,
-				    "temporary error "
-				    "at %lld:%lld replication to %s: "
-				    "src=%d dst=%d",
-				    (long long)inode_get_number(inode),
-				    (long long)fr->igen,
-				    host_name(fr->dst), src_errcode,
-				    dst_errcode);
-			}
-		} else {
+		if (inode->i_mode == INODE_MODE_FREE ||
+		    fr->igen != inode_get_gen(inode) ||
+		    inode_is_opened_for_writing(inode)) {
 			/* gflog_debug() should be enough, but to be sure */
 			gflog_info(GFARM_MSG_UNFIXED,
-			    "temporary failure of %lld:%lld (size:%lld) "
-			    "replication to %s: "
+			    "canceled - "
+			    "%lld:%lld (size:%lld) replication to %s: "
 			    "mode:0o%o gen:%lld size:%lld writing=%d: "
 			    "src=<%s> dst=<%s>",
 			    (long long)inode_get_number(inode),
@@ -5650,6 +5613,28 @@ inode_replicated(struct file_replicating *fr,
 			    inode_is_opened_for_writing(inode),
 			    gfarm_error_string(src_errcode),
 			    gfarm_error_string(dst_errcode));
+		} else if (
+		     src_errcode == GFARM_ERR_CHECKSUM_MISMATCH ||
+		     dst_errcode == GFARM_ERR_CHECKSUM_MISMATCH) {
+			/* checksum error happened, but it shouldn't */
+			gflog_warning(GFARM_MSG_1004731,
+			    "checksum error "
+			    "at %lld:%lld replication to %s: "
+			    "src=<%s> dst=<%s>",
+			    (long long)inode_get_number(inode),
+			    (long long)fr->igen,
+			    host_name(fr->dst),
+			    gfarm_error_string(src_errcode),
+			    gfarm_error_string(dst_errcode));
+		} else {
+			gflog_notice(GFARM_MSG_1002257,
+			    "temporary error "
+			    "at %lld:%lld replication to %s: "
+			    "src=%d dst=%d",
+			    (long long)inode_get_number(inode),
+			    (long long)fr->igen,
+			    host_name(fr->dst), src_errcode,
+			    dst_errcode);
 		}
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
 	}
