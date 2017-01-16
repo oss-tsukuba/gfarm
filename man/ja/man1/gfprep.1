@@ -1,22 +1,13 @@
 '\" t
 .\"     Title: gfprep
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 27 Aug 2015
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 14 Jan 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFPREP" "1" "27 Aug 2015" "Gfarm" "Gfarm"
-.\" -----------------------------------------------------------------
-.\" * Define some portability stuff
-.\" -----------------------------------------------------------------
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.\" http://bugs.debian.org/507673
-.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.ie \n(.g .ds Aq \(aq
-.el       .ds Aq '
+.TH "GFPREP" "1" "14 Jan 2017" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -31,15 +22,18 @@
 gfprep \- Gfarm ファイル複製を並列に作成する
 .SH "SYNOPSIS"
 .HP \w'\fBgfprep\fR\ 'u
-\fBgfprep\fR [\-nqvdpPU] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-mx] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
+\fBgfprep\fR [\-nqvdpPBU] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-I\ \fIsec\-to\-update\fR] [\-mx] [\-N\ \fInum\-of\-replicas\fR] \fIpath\fR
 .SH "DESCRIPTION"
 .PP
+
 \fBgfprep\fR
 は、 Gfarm ファイル複製を並列に作成します。
 .PP
+
 \fIpath\fR
 がディレクトリの場合、 その下にあるすべてのファイルに対する複製を作成します。
 .PP
+
 \fIpath\fR
 には、 Gfarm URL または gfarm2fs 上のパスを指定できます。
 .PP
@@ -48,6 +42,7 @@ gfprep \- Gfarm ファイル複製を並列に作成する
 なるべく転送中ではないホストを選択して転送開始します。 転送元や転送先 1 ホストあたりの最大並列転送数は、ホストごとの CPU 数です。 CPU 数については、\fBgfhost\fR
 コマンドのマニュアルを参照してください。
 .PP
+
 \fBgfprep\fR
 は、ディレクトリを辿る際に、 ディレクトリエントリ情報も並列に取得します。
 .SH "GFPREP OPTIONS"
@@ -70,7 +65,7 @@ gfprep \- Gfarm ファイル複製を並列に作成する
 .PP
 \fB\-m\fR
 .RS 4
-転送元から転送先にファイル複製を移動します。
+転送元から転送先にファイル複製を移動します。 \-mm のように 2 回指定すると、転送元ファイルを削除しません。
 .sp
 \-S または \-h または \-D または \-H いずれかのオプションが必要です。
 .sp
@@ -78,6 +73,7 @@ gfprep \- Gfarm ファイル複製を並列に作成する
 .RE
 .SH "COMMON OPTIONS"
 .PP
+
 \fBgfprep\fR
 と
 \fBgfpcopy\fR
@@ -85,6 +81,7 @@ gfprep \- Gfarm ファイル複製を並列に作成する
 .PP
 \fB\-X\fR \fIregexp\fR
 .RS 4
+
 \fIregexp\fRで指定した正規表現による パターンと一致する転送元パス名を無視します。 複数個のパターンを指定する場合は、\-X オプションを複数回指定します。
 .RE
 .PP
@@ -97,7 +94,7 @@ gfprep \- Gfarm ファイル複製を並列に作成する
 .RS 4
 転送対象ファイルを選ぶためのホスト名が記述されたリストを指定します。 そのホスト名の範囲に実体が存在するファイルだけを転送対象にします。 そのホスト名のリストには、ファイルシステムノードを一行ずつに記述します。
 .sp
-``\-\*(Aq\*(Aq を指定すると、ホスト名のリストを標準入力から読み込みます。
+``\-\'\' を指定すると、ホスト名のリストを標準入力から読み込みます。
 .RE
 .PP
 \fB\-L\fR
@@ -116,7 +113,7 @@ gfprep \- Gfarm ファイル複製を並列に作成する
 .RS 4
 転送先範囲を示すホスト名が記述されたファイルを指定します。 そのホスト名のリストには、ファイルシステムノードを一行ずつ記述します。
 .sp
-``\-\*(Aq\*(Aq を指定すると、ホスト名のリストを標準入力から読み込みます。
+``\-\'\' を指定すると、ホスト名のリストを標準入力から読み込みます。
 .RE
 .PP
 \fB\-j\fR \fInum\-of\-processes\fR
@@ -173,6 +170,22 @@ greedy にすると、\-N や \-m オプションを使用することができ�
 \-w greedy オプションを使用した場合のみ効果があります。
 .sp
 デフォルトは 50 * 1024 キビバイト (50 メビバイト) です。
+.RE
+.PP
+\fB\-I\fR \fIsec\-to\-update\fR
+.RS 4
+gfprep,gfpcopy は gfsd ホストごとのロードアベレージやディスクの空き容量を 定期的に取得します。それらの値を更新する間隔を秒で指定します。
+.sp
+デフォルトは 300 秒です。
+.RE
+.PP
+\fB\-B\fR
+.RS 4
+高負荷な gfsd ホストも書き込み先の対象にします。
+.sp
+デフォルトでは高負荷な gfsd ホストを書き込み先の対象にしません。 デフォルトでは、すべての gfsd ホストが高負荷の場合にファイルを転送しません。
+.sp
+高負荷なホストとは、(ロードアベレージ / CPU 数) が gfarm2\&.conf の schedule_busy_load_thresh よりも高いホストです。 schedule_busy_load_thresh のデフォルト値は gfarm2\&.conf のマニュアルを参照してください。 CPU 数については gfhost のマニュアルを参照してください。
 .RE
 .PP
 \fB\-U\fR
@@ -278,6 +291,7 @@ $ gfprep \-m \-S gfsd1\&.example\&.com gfarm:///
 .PP
 \-L または \-m オプションを使用しない場合は、指定した転送元範囲の中から ファイルシステムノードが選ばれるとは限りません。
 .PP
+
 \fBgfprep\fR
 コマンドは、
 \fBgfmd\fR
@@ -290,6 +304,7 @@ $ gfprep \-m \-S gfsd1\&.example\&.com gfarm:///
 の動作が遅くなります。 そのような場合には、\-j または \-J オプションに大きな値を指定すると、 性能が改善するかもしれません。
 .SH "SEE ALSO"
 .PP
+
 \fBgfrep\fR(1),
 \fBgfpcopy\fR(1),
 \fBgfhost\fR(1),
