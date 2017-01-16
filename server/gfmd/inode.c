@@ -5600,7 +5600,8 @@ inode_replicated(struct file_replicating *fr,
 		    dst_errcode == GFARM_ERR_NO_ERROR &&
 		    (inode->i_mode == INODE_MODE_FREE ||
 		     fr->igen != inode_get_gen(inode))) {
-			gflog_debug(GFARM_MSG_1003285,
+			/* gflog_debug() should be enough, but to be sure */
+			gflog_info(GFARM_MSG_1003285,
 			    "expected failure of %lld:%lld replication to %s: "
 			    "mode:0o%o gen:%lld",
 			    (long long)inode_get_number(inode),
