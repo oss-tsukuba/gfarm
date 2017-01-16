@@ -6,7 +6,7 @@
 
 <refentry id="gfprep.1">
 
-<refentryinfo><date>27 Aug 2015</date></refentryinfo>
+<refentryinfo><date>14 Jan 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfprep</refentrytitle>
@@ -115,6 +115,7 @@ CPU 数については、<command moreinfo="none">gfhost</command>
 <listitem>
 <para>
 転送元から転送先にファイル複製を移動します。
+-mm のように 2 回指定すると、転送元ファイルを削除しません。
 </para>
 <para>
 -S または -h または -D または -H いずれかのオプションが必要です。
