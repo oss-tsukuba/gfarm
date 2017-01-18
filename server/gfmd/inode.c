@@ -962,7 +962,7 @@ inode_schedule_replication_within_scope(
 	necessary_space = inode_get_size(inode);
 	e = host_schedule_n_except(n_scopep, scope, n_existingp, existing,
 	    grace, n_being_removedp, being_removed,
-	    host_is_disk_available_filter, &necessary_space,
+	    host_is_not_busy_and_disk_available_filter, &necessary_space,
 	    n_desired, &n_targets, &targets, &n_valid);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1003693,

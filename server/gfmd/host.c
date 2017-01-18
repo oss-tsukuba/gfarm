@@ -31,6 +31,7 @@
 #include "gfs_proto.h" /* GFS_PROTOCOL_VERSION */
 #include "auth.h"
 #include "config.h"
+#include "context.h"
 
 #include "callout.h"
 #include "subr.h"
@@ -644,6 +645,22 @@ host_is_up_with_grace(struct host *h, gfarm_time_t grace)
 }
 
 int
+host_is_not_busy(struct host *h)
+{
+	long long load = 0, busy = 0;
+	static const char diag[] = "host_is_not_busy";
+
+	back_channel_mutex_lock(h, diag);
+	if (host_is_up_unlocked(h)) {
+		load = h->status.loadavg_1min * GFARM_F2LL_SCALE;
+		busy = h->hi.ncpu * gfarm_ctxp->schedule_busy_load;
+	}
+	back_channel_mutex_unlock(h, diag);
+
+	return (load < busy);
+}
+
+int
 host_is_disk_available(struct host *h, gfarm_off_t size)
 {
 	gfarm_off_t avail, minfree = gfarm_get_minimum_free_disk_space();
@@ -1143,6 +1160,14 @@ host_except(int *nhostsp, struct host **hosts,
 
 	return (host_exclude(nhostsp, hosts, *n_exceptionsp, exceptions,
 	    filter, closure));
+}
+
+gfarm_error_t
+host_is_not_busy_and_disk_available_filter(struct host *host, void *closure)
+{
+	gfarm_off_t *sizep = closure;
+
+	return (host_is_not_busy(host) && host_is_disk_available(host, *sizep));
 }
 
 gfarm_error_t
