@@ -67,6 +67,7 @@ void host_intersect(int *, struct host **, int *, struct host **);
 gfarm_error_t host_except(int *, struct host **, int *, struct host **,
 	int (*)(struct host *, void *), void *);
 
+gfarm_error_t host_is_not_busy_and_disk_available_filter(struct host *, void *);
 gfarm_error_t host_is_disk_available_filter(struct host *, void *);
 gfarm_error_t host_array_alloc(int *, struct host ***);
 gfarm_error_t host_from_all(int (*)(struct host *, void *), void *,
