@@ -20,8 +20,8 @@ globus_location="@globus_location@"
 POSTGRESQL_TARGETS=postgresql
 LDAP_TARGETS=ldap
 # The order of $backend_candidates is important, it's used to choose default.
-backend_candidates="@postgresql_targets@ @ldap_targets@"
-backend_all="postgresql ldap"
+backend_candidates="@postgresql_targets@ @ldap_targets@ none"
+backend_all="postgresql ldap none"
 backend_default=`echo $backend_candidates | awk '{print $1}'`
 if [ -z "$backend_default" ]; then
 	echo >&2 "$PROGNAME: no usable metadata backend is configured"
@@ -29,6 +29,7 @@ if [ -z "$backend_default" ]; then
 fi
 BACKEND_TYPE=$backend_default
 
+USE_BACKEND=true
 PRIVATE_MODE=false
 
 #
@@ -204,7 +205,6 @@ display_plain_params()
     display_plain_params_backend_optional_$BACKEND_TYPE
 
     echo "rc script for gfmd               : $RC_GFMD"
-    echo "rc script for backend            : $RC_BACKEND"
     echo "gfmd conf file                   : $GFMD_CONF"
     if $PRIVATE_MODE; then
 	echo "gfsd conf file                   : $GFSD_CONF"
@@ -212,8 +212,10 @@ display_plain_params()
     fi
     echo "gfarm client conf file           : $GFARM_CONF"
     echo "gfmd pid file                    : $GFMD_PID_FILE"
-    echo "backend pid file                 : $BACKEND_PID_FILE"
-
+    if $USE_BACKEND; then
+	echo "rc script for backend            : $RC_BACKEND"
+	echo "backend pid file                 : $BACKEND_PID_FILE"
+    fi
     sanity
     exit 0
 }
@@ -240,7 +242,6 @@ display_script_params()
     display_script_params_backend_optional_$BACKEND_TYPE
 
     echo     "GFMD_RC=$RC_GFMD"
-    echo     "BACKEND_RC=$RC_BACKEND"
     echo     "GFMD_CONF=$GFMD_CONF"
     if $PRIVATE_MODE; then
 	echo     "GFSD_CONF=$GFSD_CONF"
@@ -248,8 +249,10 @@ display_script_params()
     fi
     echo     "GFARM_CONF=$GFARM_CONF"
     echo     "GFMD_PID_FILE=$GFMD_PID_FILE"
-    echo     "BACKEND_PID_FILE=$BACKEND_PID_FILE"
-
+    if $USE_BACKEND; then
+	echo     "BACKEND_PID_FILE=$BACKEND_PID_FILE"
+	echo     "BACKEND_RC=$RC_BACKEND"
+    fi
     sanity
     exit 0
 }
@@ -380,6 +383,9 @@ while [ $# -gt 0 ] ; do
 	esac
 	shift
 done
+
+[ X$BACKEND_TYPE = X"none" ] &&
+	USE_BACKEND=false
 
 #
 # search default $BACKEND_PREFIX
@@ -561,21 +567,25 @@ replace()
 
 delete_file_or_directory \
 	"$GFARM_CONF" \
-	"$GFMD_CONF" \
-	"$BACKEND_DATA_DIR" \
-	"$BACKEND_LOG_DIR" \
-	"$RC_BACKEND"
+	"$GFMD_CONF"
+$USE_BACKEND &&
+	delete_file_or_directory \
+		"$BACKEND_DATA_DIR" \
+		"$BACKEND_LOG_DIR" \
+		"$RC_BACKEND"
 $METADATA_REPLICATION && \
 	delete_file_or_directory "$METADATA_JOURNAL_DIR"
 
 # We won't create "$BACKEND_LOG_DIR", otherwise initdb of PostgreSQL fails.
 create_directory \
 	"$GFARM_CONF_DIR" \
-	"$BACKEND_DATA_DIR" \
 	"$RC_DIR" \
 	"$RUN_DIR"
-
-chmod 700 "$BACKEND_DATA_DIR"
+if $USE_BACKEND; then
+	create_directory \
+		"$BACKEND_DATA_DIR"
+	chmod 700 "$BACKEND_DATA_DIR"
+fi
 
 if $METADATA_REPLICATION; then
 	create_directory "$METADATA_JOURNAL_DIR"
@@ -659,14 +669,17 @@ if $PRIVATE_MODE; then
 fi
 
 # create run scripts
-create_run_script "$RC_BACKEND"	replace "$RC_BACKEND_IN"
+if $USE_BACKEND; then
+	create_run_script "$RC_BACKEND"	replace "$RC_BACKEND_IN"
+	$PRIVATE_MODE || service_reg $RC_BACKEND_BASENAME
+fi
 create_run_script "$RC_GFMD"	replace "$RC_GFMD_IN"
-$PRIVATE_MODE || service_reg $RC_BACKEND_BASENAME gfmd
+$PRIVATE_MODE || service_reg gfmd
 
 apply_configuration_$BACKEND_TYPE
 
 if $START_SERVICE; then
-	service_start_$BACKEND_TYPE
+	$USE_BACKEND && service_start_$BACKEND_TYPE
 
 	if [ -f $GFMD_PID_FILE ]; then ctl=restart; else ctl=start; fi
 	service_add gfmd &&

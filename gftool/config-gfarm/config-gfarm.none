@@ -1,0 +1,109 @@
+usage_none()
+{
+	return 1
+}
+
+sanity_none()
+{
+	return 0
+}
+
+display_plain_params_backend_none()
+{
+	:
+}
+
+display_script_params_backend_none()
+{
+	:
+}
+
+display_plain_params_backend_port_none()
+{
+	:
+}
+
+display_script_params_backend_port_none()
+{
+	:
+}
+
+display_plain_params_backend_optional_none()
+{
+	:
+}
+
+display_script_params_backend_optional_none()
+{
+	:
+}
+
+# $argshift is an output parameter, if this function returns success.
+parse_argument_none()
+{
+	:
+}
+
+#
+# search default $BACKEND_PREFIX
+#
+
+set_default_backend_prefix_none()
+{
+	:
+}
+
+#
+# default values
+#
+
+# NOTE: This needs to set $RC_BACKEND_BASENAME, at least.
+set_first_defaults_none()
+{
+	: ${RC_BACKEND_BASENAME=gfarm-none}
+	: ${SUPPORT_XML_TYPE:="no"}
+}
+
+set_last_defaults_none()
+{
+	:
+}
+
+#
+# do configuration
+#
+
+init_replace_none()
+{
+	init_replace_common
+}
+
+make_configuration_directory_none()
+{
+	:
+}
+
+make_configuration_file_none()
+{
+	:
+}
+
+apply_configuration_none()
+{
+	:
+}
+
+service_start_none()
+{
+	:
+}
+
+service_stop_none()
+{
+	:
+}
+
+service_remove_none()
+{
+	:
+}

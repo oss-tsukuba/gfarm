@@ -1720,6 +1720,9 @@ main(int argc, char **argv)
 		    "PostgreSQL is specified, but it's not built in");
 #endif
 		break;
+	case GFARM_BACKEND_DB_TYPE_NONE:
+		db_use(&db_none_ops);
+		break;
 	default:
 		gflog_fatal(GFARM_MSG_1000208,
 		    "neither LDAP or PostgreSQL is specified "

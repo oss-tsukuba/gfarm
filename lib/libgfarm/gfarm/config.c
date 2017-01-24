@@ -934,7 +934,7 @@ int gfarm_write_verify_log_interval = GFARM_CONFIG_MISC_DEFAULT;
 
 /* GFM dependent */
 enum gfarm_backend_db_type gfarm_backend_db_type =
-	GFARM_BACKEND_DB_TYPE_UNKNOWN;
+	GFARM_BACKEND_DB_TYPE_NONE;
 int gfarm_metadb_server_listen_backlog = GFARM_CONFIG_MISC_DEFAULT;
 
 static struct {
@@ -1124,7 +1124,7 @@ set_backend_db_type(enum gfarm_backend_db_type set)
 	if (gfarm_backend_db_type == set)
 		return (GFARM_ERR_NO_ERROR);
 	switch (gfarm_backend_db_type) {
-	case GFARM_BACKEND_DB_TYPE_UNKNOWN:
+	case GFARM_BACKEND_DB_TYPE_NONE:
 		gfarm_backend_db_type = set;
 		return (GFARM_ERR_NO_ERROR);
 	case GFARM_BACKEND_DB_TYPE_LDAP:
