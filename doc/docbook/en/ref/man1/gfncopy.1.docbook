@@ -5,7 +5,7 @@
 
 <refentry id="gfncopy.1">
 
-<refentryinfo><date>18 Jul 2013</date></refentryinfo>
+<refentryinfo><date>25 Jan 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfncopy</refentrytitle>
@@ -92,7 +92,10 @@ repilcas.
 <term><option>-s</option> <parameter moreinfo="none">NCOPY</parameter></term>
 <listitem>
 <para>specifies the attribute for automatic replication represented by
-the number of file replicas to a file or directory.</para>
+the number of file replicas to a file or directory.
+<parameter moreinfo="none">NCOPY</parameter> is stored in the extended
+attribute of gfarm.ncopy.
+</para>
 </listitem>
 </varlistentry>
 
@@ -100,7 +103,10 @@ the number of file replicas to a file or directory.</para>
 <term><option>-S</option> <parameter moreinfo="none">REPATTR</parameter></term>
 <listitem>
 <para>specifies the attribute for automatic replication represented by
-host groups to a file or directory.</para>
+host groups to a file or directory.
+<parameter moreinfo="none">REPATTR</parameter> is stored in the extended
+attribute of gfarm.replicainfo.
+</para>
 <para>
 a <parameter moreinfo="none">REPATTR</parameter> is represented by the following BNF:
 </para>
@@ -210,6 +216,9 @@ Default is 30 seconds.
 <para>
   <citerefentry>
   <refentrytitle>gfhostgroup</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfarm_attr</refentrytitle><manvolnum>5</manvolnum>
   </citerefentry>
 </para>
 </refsect1>

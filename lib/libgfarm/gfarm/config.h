@@ -73,6 +73,7 @@ extern int gfarm_replica_check_reduced_log;
 extern int gfarm_replica_check_host_down_thresh;
 extern int gfarm_replica_check_sleep_time;
 extern int gfarm_replica_check_minimum_interval;
+extern int gfarm_replicainfo_enabled;
 #define GFARM_METADB_STACK_SIZE_DEFAULT 0 /* use OS default */
 #define GFARM_METADB_THREAD_POOL_SIZE_DEFAULT	16  /* quadcore, quadsocket */
 #if 0

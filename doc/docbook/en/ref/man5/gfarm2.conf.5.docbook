@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>1 December 2016</date></refentryinfo>
+<refentryinfo><date>25 Jan 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -2280,6 +2280,32 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term><token>replicainfo</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+When "enable" is specified, the extended attribute of
+gfarm.replicainfo is used in automatic file replication.
+When "disable" is specified, the hostgroups in gfarm.replicainfo is
+not used, but the total number of replicas in gfarm.replicainfo is
+used, if the total number is larger than gfarm.ncopy.
+For detail about the extended attribute of gfarm.replicainfo, refer to
+the manual page of <command moreinfo="none">gfncopy</command>.
+The default is <token>enable</token>.
+</para>
+<para>
+gfstatus -Mm 'replicainfo disable' can disable this temporarily.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	replicainfo disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>write_verify</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>
@@ -2622,6 +2648,7 @@ The default size is 16 MiB.
 	&lt;rdma_mr_reg_mode_statement&gt; |
 	&lt;rdma_mr_reg_static_min_size_statement&gt; |
 	&lt;rdma_mr_reg_static_max_size_statement&gt; |
+	&lt;replicainfo_statement&gt; |
 	&lt;write_verify_statement&gt; |
 	&lt;write_verify_interval_statement&gt; |
 	&lt;write_verify_retry_interval_statement&gt; |
@@ -3385,6 +3412,11 @@ The default size is 16 MiB.
 <varlistentry>
 <term>&lt;rdma_mr_reg_static_max_size_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"rdma_mr_reg_static_max_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replicainfo_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replicainfo" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
