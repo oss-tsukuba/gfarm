@@ -1597,7 +1597,8 @@ gfmd_modules_init_default(int table_size)
 	peer_init(table_size);
 	job_table_init(table_size);
 
-	if (gfarm_backend_db_type == GFARM_BACKEND_DB_TYPE_NONE) {
+	if (gfarm_get_metadb_replication_enabled() &&
+	    gfarm_backend_db_type == GFARM_BACKEND_DB_TYPE_NONE) {
 		/* update in-memory metadata by journal */
 		if ((e = create_detached_thread(db_journal_apply_thread, NULL))
 		    != GFARM_ERR_NO_ERROR)
