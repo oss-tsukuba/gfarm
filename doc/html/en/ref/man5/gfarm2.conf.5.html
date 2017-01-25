@@ -1735,6 +1735,29 @@ This parameter is only available in gfmd.conf.
 	replica_check_minimum_interval 5<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">replicainfo</span> <em class="parameter"><code>validity</code></em></span></dt>
+<dd>
+<p>
+When "enable" is specified, the extended attribute of
+gfarm.replicainfo is used in automatic file replication.
+When "disable" is specified, the hostgroups in gfarm.replicainfo is
+not used, but the total number of replicas in gfarm.replicainfo is
+used, if the total number is larger than gfarm.ncopy.
+For detail about the extended attribute of gfarm.replicainfo, refer to
+the manual page of <span class="command"><strong>gfncopy</strong></span>.
+The default is <span class="token">enable</span>.
+</p>
+<p>
+gfstatus -Mm 'replicainfo disable' can disable this temporarily.
+</p>
+<p>
+This parameter is only available in gfmd.conf.
+</p>
+<p>Example:</p>
+<div class="literallayout"><p><br>
+	replicainfo disable<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">write_verify</span> <em class="parameter"><code>validity</code></em></span></dt>
 <dd>
 <p>
@@ -2042,6 +2065,7 @@ The default size is 16 MiB.
 	&lt;rdma_mr_reg_mode_statement&gt; |<br>
 	&lt;rdma_mr_reg_static_min_size_statement&gt; |<br>
 	&lt;rdma_mr_reg_static_max_size_statement&gt; |<br>
+	&lt;replicainfo_statement&gt; |<br>
 	&lt;write_verify_statement&gt; |<br>
 	&lt;write_verify_interval_statement&gt; |<br>
 	&lt;write_verify_retry_interval_statement&gt; |<br>
@@ -2322,6 +2346,8 @@ The default size is 16 MiB.
 <dd><div class="literallayout"><p>"rdma_mr_reg_static_min_size" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;rdma_mr_reg_static_max_size_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"rdma_mr_reg_static_max_size" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;replicainfo_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"replicainfo" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;write_verify_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"write_verify" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;write_verify_interval_statement&gt; ::=</span></dt>

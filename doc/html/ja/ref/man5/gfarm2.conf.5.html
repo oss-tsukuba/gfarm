@@ -1671,6 +1671,30 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	replica_check_minimum_interval 5<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">replicainfo</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>
+enableと指定した場合、
+gfarm.replicainfo拡張属性に従って複製を自動的に配置します。
+disableと指定した場合、
+gfarm.replicainfo拡張属性のホストグループごとの複製数の指定を無視して、
+その合計数またはgfarm.ncopy拡張属性の値が大きい方を目標の複製数として
+複製を配置します。
+gfarm.replicainfo拡張属性については、
+<span class="command"><strong>gfncopy</strong></span>のマニュアルを参照してください。
+デフォルトは <span class="token">enable</span> です。
+</p>
+<p>
+gfstatus -Mm 'replicainfo disable' により、一時的に無効にすることができます。
+</p>
+<p>
+この文はgfmd.confのみで有効です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	replicainfo disable<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">write_verify</span> <em class="parameter"><code>有効性</code></em></span></dt>
 <dd>
 <p>
@@ -1993,6 +2017,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;rdma_mr_reg_mode_statement&gt; |<br>
 	&lt;rdma_mr_reg_static_min_size_statement&gt; |<br>
 	&lt;rdma_mr_reg_static_max_size_statement&gt; |<br>
+	&lt;replicainfo_statement&gt; |<br>
 	&lt;write_verify_statement&gt; |<br>
 	&lt;write_verify_interval_statement&gt; |<br>
 	&lt;write_verify_retry_interval_statement&gt; |<br>
@@ -2273,6 +2298,8 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <dd><div class="literallayout"><p>"rdma_mr_reg_static_min_size" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;rdma_mr_reg_static_max_size_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"rdma_mr_reg_static_max_size" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;replicainfo_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"replicainfo" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;write_verify_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"write_verify" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;write_verify_interval_statement&gt; ::=</span></dt>

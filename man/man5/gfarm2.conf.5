@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 1 December 2016
+.\"      Date: 25 Jan 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "1 December 2016" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "25 Jan 2017" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -2202,6 +2202,29 @@ Example:
 .\}
 .RE
 .PP
+replicainfo \fIvalidity\fR
+.RS 4
+When "enable" is specified, the extended attribute of gfarm\&.replicainfo is used in automatic file replication\&. When "disable" is specified, the hostgroups in gfarm\&.replicainfo is not used, but the total number of replicas in gfarm\&.replicainfo is used, if the total number is larger than gfarm\&.ncopy\&. For detail about the extended attribute of gfarm\&.replicainfo, refer to the manual page of
+\fBgfncopy\fR\&. The default is
+enable\&.
+.sp
+gfstatus \-Mm \*(Aqreplicainfo disable\*(Aq can disable this temporarily\&.
+.sp
+This parameter is only available in gfmd\&.conf\&.
+.sp
+Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	replicainfo disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 write_verify \fIvalidity\fR
 .RS 4
 This statement enables gfsd\*(Aqs write_verify feature that compares file data checksum by re\-reading the contents of the file sometime after the file is written\&. The default is
@@ -2552,6 +2575,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<rdma_mr_reg_mode_statement> |
 	<rdma_mr_reg_static_min_size_statement> |
 	<rdma_mr_reg_static_max_size_statement> |
+	<replicainfo_statement> |
 	<write_verify_statement> |
 	<write_verify_interval_statement> |
 	<write_verify_retry_interval_statement> |
@@ -4428,6 +4452,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "rdma_mr_reg_static_max_size" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<replicainfo_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"replicainfo" <validity>
 .fi
 .if n \{\
 .RE
