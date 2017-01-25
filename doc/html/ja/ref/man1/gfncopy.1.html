@@ -2,15 +2,15 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfncopy</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfncopy">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfncopy.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfncopy — 自動ファイル複製作成数を操作する。</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfncopy</code>  [-vh]  <em class="replaceable"><code>path</code></em> </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfncopy</code>  [-vh] [ -C  |   -M ]  -s <em class="replaceable"><code>NCOPY</code></em>   <em class="replaceable"><code>path</code></em> </p></div>
@@ -19,7 +19,7 @@
 <div class="cmdsynopsis"><p><code class="command">gfncopy</code>  [-vh]  -c   <em class="replaceable"><code>path</code></em> </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfncopy</code>  [-v]  -w  [-t <em class="replaceable"><code>TIMEOUT</code></em>]  <em class="replaceable"><code>path</code></em>  [<em class="replaceable"><code>path</code></em>...]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 pathに指定したファイルないしディレクトリに関する自動ファイル複製作成数を操作します。
@@ -29,11 +29,14 @@ pathに指定したファイルないしディレクトリに関する自動フ�
 <code class="option">-v</code>オプションを指定すると、自動複製作成数を設定している先祖のディレクトリまでのパス名も含めて表示します。
 </p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>NCOPY</code></em></span></dt>
-<dd><p>ファイルまたはディレクトリに、自動複製作成数を設定します。</p></dd>
+<dd><p>
+ファイルまたはディレクトリに、自動複製作成数を設定します。
+<em class="parameter"><code>NCOPY</code></em>はgfarm.ncopy拡張属性に格納されます。
+</p></dd>
 <dt><span class="term"><code class="option">-S</code> <em class="parameter"><code>REPATTR</code></em></span></dt>
 <dd>
 <p>ファイルまたはディレクトリに、ホストグループごとの自動複製作成数を設定します。</p>
@@ -42,6 +45,7 @@ pathに指定したファイルないしディレクトリに関する自動フ�
 <em class="parameter"><code>REPATTR</code></em>に設定された複製数の合計Nが<em class="parameter"><code>NCOPY</code></em>よりも大きければ、最低でもN個の複製が作成されます。
 そうでなければ、<em class="parameter"><code>REPATTR</code></em>従って複製を作成し、
 さらに、複製数の合計が<em class="parameter"><code>NCOPY</code></em>になるように複製を作成します。
+<em class="parameter"><code>REPATTR</code></em>はgfarm.replicainfo拡張属性に格納されます。
 </p>
 <p>
 <em class="parameter"><code>REPATTR</code></em> の形式を以下の BNF で示します。
@@ -92,10 +96,11 @@ pathにディレクトリを指定すれば、そのディレクトリ以下す�
 <dd><p>引数オプションを表示します。</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
-  <span class="citerefentry"><span class="refentrytitle">gfhostgroup</span>(1)</span>
+  <span class="citerefentry"><span class="refentrytitle">gfhostgroup</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfarm_attr</span>(5)</span>
 </p>
 </div>
 </div></body>

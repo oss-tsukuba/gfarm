@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfncopy
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 18 Jul 2013
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 25 Jan 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFNCOPY" "1" "18 Jul 2013" "Gfarm" "Gfarm"
+.TH "GFNCOPY" "1" "25 Jan 2017" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -51,17 +51,17 @@ pathに指定したファイルないしディレクトリに関する自動フ�
 \fB\-s\fR \fINCOPY\fR
 .RS 4
 ファイルまたはディレクトリに、自動複製作成数を設定します。
+\fINCOPY\fRはgfarm\&.ncopy拡張属性に格納されます。
 .RE
 .PP
 \fB\-S\fR \fIREPATTR\fR
 .RS 4
 ファイルまたはディレクトリに、ホストグループごとの自動複製作成数を設定します。
 .sp
-
 \fINCOPY\fRと\fIREPATTR\fRの両方が設定されている場合、
 \fIREPATTR\fRに設定された複製数の合計Nが\fINCOPY\fRよりも大きければ、最低でもN個の複製が作成されます。 そうでなければ、\fIREPATTR\fR従って複製を作成し、 さらに、複製数の合計が\fINCOPY\fRになるように複製を作成します。
+\fIREPATTR\fRはgfarm\&.replicainfo拡張属性に格納されます。
 .sp
-
 \fIREPATTR\fR
 の形式を以下の BNF で示します。
 .sp
@@ -141,5 +141,5 @@ pathに指定したファイルないしディレクトリに関する自動フ�
 .RE
 .SH "SEE ALSO"
 .PP
-
-\fBgfhostgroup\fR(1)
+\fBgfhostgroup\fR(1),
+\fBgfarm_attr\fR(5)

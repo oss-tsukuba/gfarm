@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfncopy
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 18 Jul 2013
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 25 Jan 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFNCOPY" "1" "18 Jul 2013" "Gfarm" "Gfarm"
+.TH "GFNCOPY" "1" "25 Jan 2017" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -52,11 +52,15 @@ option, it also displays path names up to the ancient directory that specifies t
 \fB\-s\fR \fINCOPY\fR
 .RS 4
 specifies the attribute for automatic replication represented by the number of file replicas to a file or directory\&.
+\fINCOPY\fR
+is stored in the extended attribute of gfarm\&.ncopy\&.
 .RE
 .PP
 \fB\-S\fR \fIREPATTR\fR
 .RS 4
 specifies the attribute for automatic replication represented by host groups to a file or directory\&.
+\fIREPATTR\fR
+is stored in the extended attribute of gfarm\&.replicainfo\&.
 .sp
 a
 \fIREPATTR\fR
@@ -152,5 +156,5 @@ displays a list of command options\&.
 .RE
 .SH "SEE ALSO"
 .PP
-
-\fBgfhostgroup\fR(1)
+\fBgfhostgroup\fR(1),
+\fBgfarm_attr\fR(5)

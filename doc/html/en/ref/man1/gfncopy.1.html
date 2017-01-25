@@ -2,15 +2,15 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfncopy</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfncopy">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfncopy.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfncopy — Manipulate number of file replicas automatically created</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfncopy</code>  [-vh]  <em class="replaceable"><code>path</code></em> </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfncopy</code>  [-vh] [ -C  |   -M ]  -s <em class="replaceable"><code>NCOPY</code></em>   <em class="replaceable"><code>path</code></em> </p></div>
@@ -19,7 +19,7 @@
 <div class="cmdsynopsis"><p><code class="command">gfncopy</code>  [-vh]  -c   <em class="replaceable"><code>path</code></em> </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfncopy</code>  [-v]  -w  [-t <em class="replaceable"><code>TIMEOUT</code></em>]  <em class="replaceable"><code>path</code></em>  [<em class="replaceable"><code>path</code></em>...]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>gfncopy manipulates the number of file replicas automatically
 created.  When no option is specified, it displays the specified
@@ -30,16 +30,22 @@ names up to the ancient directory that specifies the number of file
 repilcas.
 </p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>NCOPY</code></em></span></dt>
 <dd><p>specifies the attribute for automatic replication represented by
-the number of file replicas to a file or directory.</p></dd>
+the number of file replicas to a file or directory.
+<em class="parameter"><code>NCOPY</code></em> is stored in the extended
+attribute of gfarm.ncopy.
+</p></dd>
 <dt><span class="term"><code class="option">-S</code> <em class="parameter"><code>REPATTR</code></em></span></dt>
 <dd>
 <p>specifies the attribute for automatic replication represented by
-host groups to a file or directory.</p>
+host groups to a file or directory.
+<em class="parameter"><code>REPATTR</code></em> is stored in the extended
+attribute of gfarm.replicainfo.
+</p>
 <p>
 a <em class="parameter"><code>REPATTR</code></em> is represented by the following BNF:
 </p>
@@ -101,10 +107,11 @@ Default is 30 seconds.
 <dd><p>displays a list of command options.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
-  <span class="citerefentry"><span class="refentrytitle">gfhostgroup</span>(1)</span>
+  <span class="citerefentry"><span class="refentrytitle">gfhostgroup</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfarm_attr</span>(5)</span>
 </p>
 </div>
 </div></body>
