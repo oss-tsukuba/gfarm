@@ -36,6 +36,29 @@
 
 /**********************************************************************/
 
+static void
+free_arg(void *arg)
+{
+	/*
+	 * - When metadb_replication_enabled() is true, we store objects to
+	 *   the journal file via db_journal_ops.
+	 *   'arg' is allocated in db_*_dup() and freed in db_journal_enter().
+	 *   Functions of db_pgsql_ops are called from
+	 *   db_journal_store_thread().
+	 *   In db_journal_store_thread(), each object to be passed to
+	 *   functions of db_pgsql_ops is allocated in db_journal_read_ops().
+	 *   db_journal_read_ops() allocates each object as multiple chunks
+	 *   different from db_*_dup() functions which allocate each object
+	 *   as single chunk.
+	 *   The objects are possibly reused for retrying to call functions
+	 *   of db_pgsql_ops and freed in db_journal_ops_free() called from
+	 *   db_journal_free_rec_list().
+	 *
+	 */
+	if (!gfarm_get_metadb_replication_enabled())
+		free(arg);
+}
+
 gfarm_error_t
 gfarm_none_initialize(void)
 {
@@ -59,7 +82,7 @@ gfarm_none_nop(gfarm_uint64_t seqnum, void *arg)
 static gfarm_error_t
 gfarm_none_string_free(gfarm_uint64_t seqnum, char *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -68,21 +91,21 @@ gfarm_none_string_free(gfarm_uint64_t seqnum, char *arg)
 static gfarm_error_t
 gfarm_none_host_add(gfarm_uint64_t seqnum, struct gfarm_host_info *info)
 {
-	free(info);
+	free_arg(info);
 	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
 gfarm_none_host_modify(gfarm_uint64_t seqnum, struct db_host_modify_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
 gfarm_none_host_remove(gfarm_uint64_t seqnum, char *hostname)
 {
-	free(hostname);
+	free_arg(hostname);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -99,7 +122,7 @@ static gfarm_error_t
 gfarm_none_fsngroup_modify(gfarm_uint64_t seqnum,
 	struct db_fsngroup_modify_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -108,21 +131,21 @@ gfarm_none_fsngroup_modify(gfarm_uint64_t seqnum,
 static gfarm_error_t
 gfarm_none_user_add(gfarm_uint64_t seqnum, struct gfarm_user_info *info)
 {
-	free(info);
+	free_arg(info);
 	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
 gfarm_none_user_modify(gfarm_uint64_t seqnum, struct db_user_modify_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
 gfarm_none_user_remove(gfarm_uint64_t seqnum, char *username)
 {
-	free(username);
+	free_arg(username);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -138,7 +161,7 @@ gfarm_none_user_load(void *closure,
 static gfarm_error_t
 gfarm_none_group_add(gfarm_uint64_t seqnum, struct gfarm_group_info *info)
 {
-	free(info);
+	free_arg(info);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -146,14 +169,14 @@ static gfarm_error_t
 gfarm_none_group_modify(gfarm_uint64_t seqnum,
 	struct db_group_modify_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
 gfarm_none_group_remove(gfarm_uint64_t seqnum, char *groupname)
 {
-	free(groupname);
+	free_arg(groupname);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -169,7 +192,7 @@ gfarm_none_group_load(void *closure,
 static gfarm_error_t
 gfarm_none_inode_stat_free(gfarm_uint64_t seqnum, struct gfs_stat *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -177,7 +200,7 @@ static gfarm_error_t
 gfarm_none_inode_int64_free(gfarm_uint64_t seqnum,
 	struct db_inode_uint64_modify_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -185,7 +208,7 @@ static gfarm_error_t
 gfarm_none_inode_int32_free(gfarm_uint64_t seqnum,
 	struct db_inode_uint32_modify_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -193,7 +216,7 @@ static gfarm_error_t
 gfarm_none_inode_string_free(gfarm_uint64_t seqnum,
 	struct db_inode_string_modify_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -201,7 +224,7 @@ static gfarm_error_t
 gfarm_none_inode_timespec_free(gfarm_uint64_t seqnum,
 	struct db_inode_timespec_modify_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -219,7 +242,7 @@ static gfarm_error_t
 gfarm_none_inode_cksum_free(gfarm_uint64_t seqnum,
 	struct db_inode_cksum_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -227,7 +250,7 @@ static gfarm_error_t
 gfarm_none_inode_inum_free(gfarm_uint64_t seqnum,
 	struct db_inode_inum_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -244,7 +267,7 @@ gfarm_none_inode_cksum_load(
 static gfarm_error_t
 gfarm_none_filecopy_free(gfarm_uint64_t seqnum, struct db_filecopy_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -262,7 +285,7 @@ static gfarm_error_t
 gfarm_none_deadfilecopy_free(gfarm_uint64_t seqnum,
 	struct db_deadfilecopy_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -279,14 +302,14 @@ gfarm_none_deadfilecopy_load(
 static gfarm_error_t
 gfarm_none_direntry_add(gfarm_uint64_t seqnum, struct db_direntry_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
 gfarm_none_direntry_remove(gfarm_uint64_t seqnum, struct db_direntry_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -303,7 +326,7 @@ gfarm_none_direntry_load(
 static gfarm_error_t
 gfarm_none_symlink_free(gfarm_uint64_t seqnum, struct db_symlink_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -318,23 +341,9 @@ gfarm_none_symlink_load(
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_none_xattr_add(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
+gfarm_none_xattr_free_arg(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 {
-	free(arg);
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static gfarm_error_t
-gfarm_none_xattr_modify(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
-{
-	free(arg);
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static gfarm_error_t
-gfarm_none_xattr_remove(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
-{
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -365,14 +374,14 @@ gfarm_none_xmlattr_find(gfarm_uint64_t seqnum,
 static gfarm_error_t
 gfarm_none_quota_add(gfarm_uint64_t seqnum, struct db_quota_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
 gfarm_none_quota_modify(gfarm_uint64_t seqnum, struct db_quota_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -380,7 +389,7 @@ static gfarm_error_t
 gfarm_none_quota_remove(gfarm_uint64_t seqnum,
 	struct db_quota_remove_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -397,7 +406,7 @@ static gfarm_error_t
 gfarm_none_quota_dirset_add(gfarm_uint64_t seqnum,
 	struct db_quota_dirset_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -405,7 +414,7 @@ static gfarm_error_t
 gfarm_none_quota_dirset_modify(gfarm_uint64_t seqnum,
 	struct db_quota_dirset_arg *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -413,7 +422,7 @@ static gfarm_error_t
 gfarm_none_quota_dirset_remove(gfarm_uint64_t seqnum,
 	struct gfarm_dirset_info *arg)
 {
-	free(arg);
+	free_arg(arg);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -571,10 +580,10 @@ const struct db_ops db_none_ops = {
 	gfarm_none_inode_inum_free,
 	gfarm_none_symlink_load,
 
-	gfarm_none_xattr_add,
-	gfarm_none_xattr_modify,
-	gfarm_none_xattr_remove,
-	NULL, // gfarm_none_xattr_removeall not supported
+	gfarm_none_xattr_free_arg,
+	gfarm_none_xattr_free_arg,
+	gfarm_none_xattr_free_arg,
+	gfarm_none_xattr_free_arg,
 	gfarm_none_xattr_get,
 	gfarm_none_xattr_load,
 	gfarm_none_xmlattr_find,
