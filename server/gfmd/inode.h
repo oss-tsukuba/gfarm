@@ -1,5 +1,7 @@
 void inode_init(void);
+void inode_initial_entry(void);
 void dir_entry_init(void);
+void dir_entry_initial_entry(void);
 void symlink_init(void);
 void xattr_init(void);
 

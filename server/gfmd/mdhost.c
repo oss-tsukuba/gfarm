@@ -586,7 +586,7 @@ mdhost_lookup_master(void)
 	m = mdhost_master;
 	mdhost_master_mutex_unlock(diag);
 	if (m == NULL)
-		gflog_fatal(GFARM_MSG_1003324, "%s: no master, abort", diag);
+		gflog_notice(GFARM_MSG_UNFIXED, "%s: no master", diag);
 	return (m);
 }
 
@@ -602,6 +602,10 @@ mdhost_self_is_master(void)
 {
 	struct mdhost *m = mdhost_lookup_self();
 
+	if (m == NULL) {
+		gflog_notice(GFARM_MSG_UNFIXED, "self is not initialized");
+		return (0);
+	}
 	return (mdhost_is_master(m));
 }
 
@@ -706,6 +710,8 @@ mdhost_is_sync_replication(struct mdhost *mh)
 {
 	struct mdhost *mmh = mdhost_lookup_master();
 
+	if (mmh == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED, "no master, abort");
 	assert(mh != mmh);
 	return (mh->cluster == mmh->cluster);
 }
@@ -725,7 +731,7 @@ mdhost_has_async_replication_target(void)
 	static const char diag[] = "mdhost_has_async_replication_target";
 	int ret = 0;
 
-	if (mdhost_get_count() == 1)
+	if (mmh == NULL || mdhost_get_count() == 1)
 		return (ret);
 	mdhost_global_mutex_lock(diag);
 	FOREACH_MDHOST(it) {
@@ -842,6 +848,8 @@ mdhost_update_replication_type(struct mdhost *mh,
 		 * Also the replication type of the slave may be changed.
 		 */
 		m = mdhost_lookup_master();
+		if (m == NULL)
+			gflog_fatal(GFARM_MSG_UNFIXED, "no master, abort");
 		mdhost_mutex_lock(m, diag);
 		was_sync = (strcmp(m->ms.clustername, old_clustername) == 0);
 		is_sync  = (strcmp(m->ms.clustername, new_clustername) == 0);
@@ -1484,13 +1492,7 @@ gfm_server_metadb_server_remove(struct peer *peer, int from_client, int skip)
 void
 mdhost_init(void)
 {
-	struct mdhost *self;
-	struct gfarm_metadb_server ms;
 	gfarm_error_t e;
-	struct mdhost *mh;
-	struct gfarm_hash_iterator it;
-	static const char diag[] = "mdhost_init";
-	char *metadb_server_name = gfarm_ctxp->metadb_server_name;
 
 	if (gfarm_get_metadb_replication_enabled())
 		mdcluster_init();
@@ -1508,6 +1510,19 @@ mdhost_init(void)
 			gflog_fatal(GFARM_MSG_1002971,
 			    "%s", gfarm_error_string(e));
 	}
+}
+
+void
+mdhost_initial_entry(void)
+{
+	struct mdhost *self;
+	struct gfarm_metadb_server ms;
+	gfarm_error_t e;
+	struct mdhost *mh;
+	struct gfarm_hash_iterator it;
+	static const char diag[] = "mdhost_initial_entry";
+	char *metadb_server_name = gfarm_ctxp->metadb_server_name;
+
 	if ((self = mdhost_lookup(metadb_server_name)) == NULL) {
 		ms.name = strdup_ck(metadb_server_name, diag);
 		ms.port = gfmd_port;

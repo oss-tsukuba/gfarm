@@ -1,4 +1,5 @@
 void group_init(void);
+void group_initial_entry(void);
 
 struct user;
 struct group;

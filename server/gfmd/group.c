@@ -429,9 +429,6 @@ void
 group_init(void)
 {
 	gfarm_error_t e;
-	struct group *admin;
-	struct gfarm_group_info gi;
-	static const char diag[] = "group_init";
 
 	group_hashtab =
 	    gfarm_hash_table_alloc(GROUP_HASHTAB_SIZE,
@@ -443,6 +440,15 @@ group_init(void)
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000248,
 		    "loading groups: %s", gfarm_error_string(e));
+}
+
+void
+group_initial_entry(void)
+{
+	gfarm_error_t e;
+	struct group *admin;
+	struct gfarm_group_info gi;
+	static const char diag[] = "group_init";
 
 	if ((admin = group_lookup(ADMIN_GROUP_NAME)) == NULL) {
 		gflog_info(GFARM_MSG_1000249,

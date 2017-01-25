@@ -653,7 +653,11 @@ user_init(void)
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000237,
 		    "loading users: %s", gfarm_error_string(e));
+}
 
+void
+user_initial_entry(void)
+{
 	/*
 	 * there is no removed (invalid) user since the hash is
 	 * just created.

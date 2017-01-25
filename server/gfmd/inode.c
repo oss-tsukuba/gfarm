@@ -7087,8 +7087,6 @@ void
 inode_init(void)
 {
 	gfarm_error_t e;
-	struct inode *root;
-	struct gfs_stat st;
 
 	if (!inode_free_list_initialized)
 		inode_free_list_init();
@@ -7101,6 +7099,14 @@ inode_init(void)
 	if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_SUCH_OBJECT /* XXX */)
 		gflog_error(GFARM_MSG_1000356,
 		    "loading inode cksum: %s", gfarm_error_string(e));
+}
+
+void
+inode_initial_entry(void)
+{
+	gfarm_error_t e;
+	struct inode *root;
+	struct gfs_stat st;
 
 	root = inode_lookup(ROOT_INUMBER);
 	if (root != NULL)
@@ -7380,12 +7386,17 @@ void
 dir_entry_init(void)
 {
 	gfarm_error_t e;
-	struct inode *root;
 
 	e = db_direntry_load(NULL, dir_entry_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000363,
 		    "loading direntry: %s", gfarm_error_string(e));
+}
+
+void
+dir_entry_initial_entry(void)
+{
+	struct inode *root;
 
 	/* setup root->u.c.s.d.parent_dir */
 	root = inode_lookup(ROOT_INUMBER);

@@ -1,4 +1,5 @@
 void user_init(void);
+void user_initial_entry(void);
 
 struct user;
 struct user *user_lookup_including_invalid(const char *);

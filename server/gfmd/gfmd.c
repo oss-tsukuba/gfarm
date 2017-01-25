@@ -1243,6 +1243,8 @@ transform_to_master(void)
 	}
 
 	master = mdhost_lookup_master();
+	if (master == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED, "no master, abort");
 	if (mdhost_is_up(master))
 		mdhost_disconnect_request(master, NULL);
 	gflog_info(GFARM_MSG_1002730,
@@ -1545,6 +1547,8 @@ db_journal_store_failure(void)
 void
 gfmd_modules_init_default(int table_size)
 {
+	gfarm_error_t e;
+
 	peer_watcher_set_default_nfd(table_size);
 	sync_protocol_watcher = peer_watcher_alloc(
 	    gfarm_metadb_thread_pool_size, gfarm_metadb_job_queue_length,
@@ -1565,7 +1569,9 @@ gfmd_modules_init_default(int table_size)
 		db_journal_apply_init();
 		gflog_info(GFARM_MSG_1004201, "start reading db journal");
 		db_journal_init();
-		boot_apply_db_journal();
+		/* not apply here in case of none backend */
+		if (gfarm_backend_db_type !=  GFARM_BACKEND_DB_TYPE_NONE)
+			boot_apply_db_journal();
 	}
 	gflog_info(GFARM_MSG_1004202, "start initializing modules and "
 	    "loading database");
@@ -1588,11 +1594,29 @@ gfmd_modules_init_default(int table_size)
 	dirset_init();
 	quota_dir_init();
 
-	/* must be after hosts and filesystem */
-	dead_file_copy_init(mdhost_self_is_master());
-
 	peer_init(table_size);
 	job_table_init(table_size);
+
+	if (gfarm_backend_db_type == GFARM_BACKEND_DB_TYPE_NONE) {
+		/* update in-memory metadata by journal */
+		if ((e = create_detached_thread(db_journal_apply_thread, NULL))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "create_detached_thread(db_journal_apply_thread): "
+			    "%s", gfarm_error_string(e));
+		db_journal_wait_for_apply_thread();
+		/* this updates seqnum */
+		boot_apply_db_journal();
+	}
+	/* initial entry */
+	mdhost_initial_entry();
+	user_initial_entry();
+	group_initial_entry();
+	inode_initial_entry();
+	dir_entry_initial_entry();
+
+	/* must be after hosts, filesystem and mdhost_initial_entry */
+	dead_file_copy_init(mdhost_self_is_master());
 }
 
 /* this interface is made as a hook for a private extension */

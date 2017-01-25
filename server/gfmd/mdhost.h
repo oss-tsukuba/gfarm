@@ -18,6 +18,7 @@ void mdhost_set_switch_to_sync_hook(mdhost_modify_hook_t closure);
 void mdhost_set_switch_to_async_hook(mdhost_modify_hook_t closure);
 
 void mdhost_init(void);
+void mdhost_initial_entry(void);
 const char *mdhost_get_name(struct mdhost *);
 int mdhost_get_port(struct mdhost *);
 int mdhost_is_self(struct mdhost *);

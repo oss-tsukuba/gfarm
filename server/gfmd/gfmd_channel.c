@@ -943,6 +943,8 @@ gfmdc_connect(void)
 	static const char diag[] = "gfmdc_connect";
 
 	master = mdhost_lookup_master();
+	if (master == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED, "no master, abort");
 	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_METADATA_HOST);
 	hostname = mdhost_get_name(master);
 	port = mdhost_get_port(master);
@@ -1070,6 +1072,8 @@ gfmdc_is_master_gfmd_running(void)
 	struct gfarm_metadb_server *real_server;
 
 	master = mdhost_lookup_master();
+	if (master == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED, "no master, abort");
 	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_METADATA_HOST);
 	hostname = mdhost_get_name(master);
 	port = mdhost_get_port(master);
@@ -1212,6 +1216,8 @@ gfmdc_connect_thread(void *arg)
 
 	for (;;) {
 		mh = mdhost_lookup_master();
+		if (mh == NULL)
+			gflog_fatal(GFARM_MSG_UNFIXED, "no master, abort");
 		peer = mdhost_get_peer(mh); /* increment refcount */
 		if (peer != NULL) { /* already connected to the master? */
 			mdhost_put_peer(mh, peer); /* decrement refcount */
