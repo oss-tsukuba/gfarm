@@ -13,6 +13,7 @@
 #include "hash.h"
 #include "thrsubr.h"
 
+#include "config.h"
 #include "auth.h"
 #include "gfm_proto.h"
 #include "gfutil.h"
@@ -139,34 +140,42 @@ fsngroup_schedule_replication(
 		gflog_error(GFARM_MSG_1004052,
 		    "%s: can't parse a repattr: '%s'.", diag, repattr);
 		/* fall through */
-		e = GFARM_ERR_NO_ERROR;
 	}
 
-	for (i = 0; i < nreps; i++) {
-		int num;
-		const char *group = gfarm_repattr_group(reps[i]);
+	if (gfarm_replicainfo_enabled) {
+		for (i = 0; i < nreps; i++) {
+			const char *group = gfarm_repattr_group(reps[i]);
+			int num = gfarm_repattr_amount(reps[i]);
 
-		e = fsngroup_get_hosts(group, &n_scope, &scope);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_notice(GFARM_MSG_1004053,
-			    "%s: fsngroup_get_hosts(%s): %s",
-			    diag, group, gfarm_error_string(e));
-			if (save_e == GFARM_ERR_NO_ERROR ||
-			    e == GFARM_ERR_NO_MEMORY)
+			*total_p = *total_p + num;
+
+			e = fsngroup_get_hosts(group, &n_scope, &scope);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_notice(GFARM_MSG_1004053,
+				    "%s: fsngroup_get_hosts(%s): %s",
+				    diag, group, gfarm_error_string(e));
+				if (save_e == GFARM_ERR_NO_ERROR ||
+				    e == GFARM_ERR_NO_MEMORY)
+					save_e = e;
+				continue;
+			}
+			e = inode_schedule_replication_within_scope(
+			    inode, num, n_srcs, srcs, &next_src_index,
+			    &n_scope, scope, n_existingp, existing, grace,
+			    n_being_removedp, being_removed, diag);
+			if (e != GFARM_ERR_NO_ERROR &&
+			    (save_e == GFARM_ERR_NO_ERROR ||
+			     e == GFARM_ERR_NO_MEMORY))
 				save_e = e;
-			continue;
+			free(scope);
 		}
-		num = gfarm_repattr_amount(reps[i]);
-		*total_p = *total_p + num;
-		e = inode_schedule_replication_within_scope(
-		    inode, num, n_srcs, srcs, &next_src_index,
-		    &n_scope, scope, n_existingp, existing, grace,
-		    n_being_removedp, being_removed, diag);
-		if (e != GFARM_ERR_NO_ERROR &&
-		    (save_e == GFARM_ERR_NO_ERROR ||
-		     e == GFARM_ERR_NO_MEMORY))
-			save_e = e;
-		free(scope);
+	} else {
+		/* ignore hostgroups, but the total number is used. */
+		for (i = 0; i < nreps; i++) {
+			int num = gfarm_repattr_amount(reps[i]);
+
+			*total_p = *total_p + num;
+		}
 	}
 
 	gfarm_repattr_free_all(nreps, reps);

@@ -5068,6 +5068,15 @@ can_remove_replica(struct inode *inode, struct file_copy *copy,
 			return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
 		}
 
+		if (!gfarm_replicainfo_enabled) {
+			/*
+			 * ignore 'n_desired' for the hostgroup
+			 * (use 'total' only)
+			 */
+			gfarm_repattr_free_all(nreps, reps);
+			return (GFARM_ERR_NO_ERROR); /* removable */
+		}
+
 		/* no desired number for the host */
 		if (n_desired <= 0) {
 			gfarm_repattr_free_all(nreps, reps);

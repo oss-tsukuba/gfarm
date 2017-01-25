@@ -1033,6 +1033,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_REPLICA_CHECK_HOST_DOWN_THRESH_DEFAULT 10800 /* 3 hours */
 #define GFARM_REPLICA_CHECK_SLEEP_TIME_DEFAULT 100000 /* nanosec. */
 #define GFARM_REPLICA_CHECK_MINIMUM_INTERVAL_DEFAULT 10 /* 10 sec. */
+#define GFARM_REPLICAINFO_ENABLED_DEFAULT	1 /* enable */
 
 char *gfarm_digest = NULL;
 int gfarm_simultaneous_replication_receivers = GFARM_CONFIG_MISC_DEFAULT;
@@ -1068,6 +1069,7 @@ int gfarm_replica_check_reduced_log = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_host_down_thresh = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_sleep_time = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_minimum_interval = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_replicainfo_enabled = GFARM_CONFIG_MISC_DEFAULT;
 
 void
 gfarm_config_clear(void)
@@ -3242,7 +3244,6 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "fatal_action") == 0) {
 		e = parse_fatal_action(p, &gfarm_ctxp->fatal_action);
 		gflog_set_fatal_action(gfarm_ctxp->fatal_action);
-
 	} else if (strcmp(s, o = "replica_check") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_replica_check);
 	} else if (strcmp(s, o = "replica_check_remove") == 0) {
@@ -3257,7 +3258,8 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "replica_check_minimum_interval") == 0) {
 		e = parse_set_misc_int(
 		    p, &gfarm_replica_check_minimum_interval);
-
+	} else if (strcmp(s, o = "replicainfo") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_replicainfo_enabled);
 	} else {
 		o = s;
 		gflog_debug(GFARM_MSG_1000974,
@@ -3574,6 +3576,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_iostat_max_client == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_iostat_max_client = GFARM_IOSTAT_MAX_CLIENT;
 
+	if (gfarm_replicainfo_enabled == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_replicainfo_enabled = GFARM_REPLICAINFO_ENABLED_DEFAULT;
+
 	gfarm_config_set_default_metadb_server();
 }
 
@@ -3706,6 +3711,9 @@ const struct gfarm_config_type {
 	{ "max_open_files", 'i', 1, gfarm_config_print_int,
 	  gfarm_config_set_default_int, gfarm_config_validate_true,
 	  &gfarm_max_open_files, 0 },
+	{ "replicainfo", 'i', 1, gfarm_config_print_enabled,
+	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
+	  &gfarm_replicainfo_enabled, 0 },
 };
 
 static void *

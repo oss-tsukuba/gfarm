@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>28 September 2016</date></refentryinfo>
+<refentryinfo><date>25 Jan 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -2195,6 +2195,33 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 </varlistentry>
 
 <varlistentry>
+<term><token>replicainfo</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+enableと指定した場合、
+gfarm.replicainfo拡張属性に従って複製を自動的に配置します。
+disableと指定した場合、
+gfarm.replicainfo拡張属性のホストグループごとの複製数の指定を無視して、
+その合計数またはgfarm.ncopy拡張属性の値が大きい方を目標の複製数として
+複製を配置します。
+gfarm.replicainfo拡張属性については、
+<command moreinfo="none">gfncopy</command>のマニュアルを参照してください。
+デフォルトは <token>enable</token> です。
+</para>
+<para>
+gfstatus -Mm 'replicainfo disable' により、一時的に無効にすることができます。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	replicainfo disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>write_verify</token> <parameter moreinfo="none">有効性</parameter></term>
 <listitem>
 <para>
@@ -2403,6 +2430,7 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 	&lt;replica_check_host_down_thresh_statement&gt; |
 	&lt;replica_check_sleep_time_statement&gt; |
 	&lt;replica_check_minimum_interval_statement&gt; |
+	&lt;replicainfo_statement&gt; |
 	&lt;write_verify_statement&gt; |
 	&lt;write_verify_interval_statement&gt; |
 	&lt;write_verify_retry_interval_statement&gt; |
@@ -3121,6 +3149,11 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 <term>&lt;fatal_action_name&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"backtrace_and_abort" | "backtrace_and_exit" |
 	"abort" | "exit"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replicainfo_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replicainfo" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
