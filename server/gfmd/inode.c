@@ -94,6 +94,7 @@ struct file_copy {
 
 static const char xattr_md5[] = "gfarm.md5";
 static const char xattr_ncopy[] = "gfarm.ncopy";
+static const char xattr_all[] = "*";
 
 struct xattr_entry {
 	struct xattr_entry *prev, *next;
@@ -7540,6 +7541,13 @@ xattr_add_one(void *closure, struct xattr_info *info)
 				"cannot add attrname %s to %lld",
 				info->attrname, (unsigned long long)info->inum);
 	}
+}
+
+void
+xattr_init_cache_all(void)
+{
+	if (!gfarm_xattr_caching(xattr_all))
+		gfarm_xattr_caching_pattern_add(xattr_all);
 }
 
 void

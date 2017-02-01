@@ -1589,6 +1589,8 @@ gfmd_modules_init_default(int table_size)
 	dir_entry_init();
 	file_copy_init();
 	symlink_init();
+	if (gfarm_backend_db_type == GFARM_BACKEND_DB_TYPE_NONE)
+		xattr_init_cache_all();
 	xattr_init();
 	quota_init();
 	dirset_init();
