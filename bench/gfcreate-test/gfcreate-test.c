@@ -15,6 +15,7 @@
 #include <gfarm/gfarm.h>
 
 #include "gfarm_path.h"
+#include "gfs_pio.h" /* for gfs_pio_internal_set_view_section() */
 
 char *program_name = "gfcreate-test";
 
@@ -25,6 +26,7 @@ char *program_name = "gfcreate-test";
 #define DEFAULT_NUM_PARA 2
 
 static int verbose = 0;
+static char *hostname = NULL;
 
 #define VERBOSE(...)						   \
 	{							   \
@@ -39,7 +41,8 @@ usage(void)
 {
 	fprintf(stderr,
 	    "Usage: %s [-v(verbose)] [-d num_dir(%d)] [-f num_file(%d)]\n"
-	    "\t[-s file_size(%lld)] [-p num_parallel(%d)] new_directory\n",
+	    "\t[-s file_size(%lld)] [-p num_parallel(%d)] new_directory\n"
+	    "\t[-h hostname] new_directory\n",
 	    program_name, DEFAULT_NUM_DIR, DEFAULT_NUM_FILE, DEFAULT_NUM_SIZE,
 	    DEFAULT_NUM_PARA);
 }
@@ -50,7 +53,7 @@ make_a_file(const char *gfpath, long long size)
 	GFS_File gf;
 	char buf[BUFSIZE];
 	int bufsize, sz;
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 
 	e = gfs_pio_create(gfpath, GFARM_FILE_WRONLY,
 	    0644 & GFARM_S_ALLPERM, &gf);
@@ -58,6 +61,21 @@ make_a_file(const char *gfpath, long long size)
 		fprintf(stderr, "%s: gfs_pio_create(%s): %s\n",
 		    program_name, gfpath, gfarm_error_string(e));
 		return (e);
+	}
+	if (hostname != NULL) {
+		/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
+		e = gfs_pio_internal_set_view_section(gf, hostname);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr,
+			    "%s: gfs_pio_internal_set_view_section: %s\n",
+			    gfpath, gfarm_error_string(e));
+			e2 = gfs_pio_close(gf);
+			if (e2 != GFARM_ERR_NO_ERROR)
+				fprintf(stderr, "%s: gfs_pio_close: %s\n",
+				    program_name, gfarm_error_string(e2));
+			gfs_unlink(gfpath);
+			return (e);
+		}
 	}
 	memset(buf, 0, BUFSIZE);
 	while  (size > 0) {
@@ -149,7 +167,7 @@ main(int argc, char **argv)
 	if (argc > 0)
 		program_name = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "d:f:p:s:hv?")) != -1) {
+	while ((c = getopt(argc, argv, "d:f:p:s:h:v?")) != -1) {
 		switch (c) {
 		case 'd':
 			n_dir = atoi(optarg);
@@ -163,10 +181,12 @@ main(int argc, char **argv)
 		case 's':
 			size = atoll(optarg);
 			break;
+		case 'h':
+			hostname = optarg;
+			break;
 		case 'v':
 			verbose = 1;
 			break;
-		case 'h':
 		case '?':
 		default:
 			usage();
