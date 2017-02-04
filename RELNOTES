@@ -1,3 +1,16 @@
+Release note for Gfarm 2.6.17
+=============================
+
+[2017.2.4]
+
+New configuration directive
+* replicainfo - disables file system group based replica location
+  control feature.  Only number of file replicas is maintained.  This
+  directive is available for gfmd
+
+Updated feature
+* gfmd - do not create file replicas in busy file system nodes
+
 Release note for Gfarm 2.6.16
 =============================
 
