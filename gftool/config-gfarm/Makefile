@@ -23,6 +23,7 @@ DATA =	$(srcdir)/config-gfarm.common \
 	$(srcdir)/config-gfarm.iostat \
 	$(srcdir)/config-gfarm-update.postgresql \
 	$(srcdir)/config-gfarm-update.ldap \
+	$(srcdir)/config-gfarm-update.none \
 	$(srcdir)/unconfig-gfarm.sh.in \
 	$(srcdir)/unconfig-gfsd.sh.in \
 	$(srcdir)/gfarm.conf-postgresql.in \

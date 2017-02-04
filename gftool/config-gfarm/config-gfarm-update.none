@@ -1,0 +1,34 @@
+update_usage_none()
+{
+	return 1 # backend-specific option doesn't exist
+}
+
+update_postprocess_none()
+{
+	:
+}
+
+update_first_set_param_none()
+{
+	: ${SUPPORT_XML_TYPE:=no}
+}
+
+update_last_set_param_none()
+{
+	:
+}
+
+update_sanity_none()
+{
+	return 0
+}
+
+update_none()
+{
+	:
+}
+
+update_access_db_none()
+{
+	:
+}

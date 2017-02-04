@@ -256,8 +256,7 @@ elif grep '^[ 	]*ldap_server_host[ 	]' ${GFMD_CONF} >/dev/null
 then
 	BACKEND_TYPE=ldap
 else
-	echo >&2 "${PROGNAME}: cannot determine the backend type"
-	exit 1
+	BACKEND_TYPE=none
 fi
 
 # load backend-dependent functions
