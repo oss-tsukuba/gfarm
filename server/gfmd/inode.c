@@ -5605,7 +5605,7 @@ inode_replicated(struct file_replicating *fr,
 		    fr->igen != inode_get_gen(inode) ||
 		    inode_is_opened_for_writing(inode)) {
 			/* gflog_debug() should be enough, but to be sure */
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1004736,
 			    "canceled - "
 			    "%lld:%lld (size:%lld) replication to %s: "
 			    "mode:0o%o gen:%lld size:%lld writing=%d: "

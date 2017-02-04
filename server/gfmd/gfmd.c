@@ -1244,7 +1244,7 @@ transform_to_master(void)
 
 	master = mdhost_lookup_master();
 	if (master == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED, "no master, abort");
+		gflog_fatal(GFARM_MSG_1004740, "no master, abort");
 	if (mdhost_is_up(master))
 		mdhost_disconnect_request(master, NULL);
 	gflog_info(GFARM_MSG_1002730,
@@ -1604,7 +1604,7 @@ gfmd_modules_init_default(int table_size)
 		/* update in-memory metadata by journal */
 		if ((e = create_detached_thread(db_journal_apply_thread, NULL))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1004741,
 			    "create_detached_thread(db_journal_apply_thread): "
 			    "%s", gfarm_error_string(e));
 		db_journal_wait_for_apply_thread();

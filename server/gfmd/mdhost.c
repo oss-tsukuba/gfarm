@@ -586,7 +586,7 @@ mdhost_lookup_master(void)
 	m = mdhost_master;
 	mdhost_master_mutex_unlock(diag);
 	if (m == NULL)
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: no master", diag);
+		gflog_notice(GFARM_MSG_1004732, "%s: no master", diag);
 	return (m);
 }
 
@@ -603,7 +603,7 @@ mdhost_self_is_master(void)
 	struct mdhost *m = mdhost_lookup_self();
 
 	if (m == NULL) {
-		gflog_notice(GFARM_MSG_UNFIXED, "self is not initialized");
+		gflog_notice(GFARM_MSG_1004733, "self is not initialized");
 		return (0);
 	}
 	return (mdhost_is_master(m));
@@ -711,7 +711,7 @@ mdhost_is_sync_replication(struct mdhost *mh)
 	struct mdhost *mmh = mdhost_lookup_master();
 
 	if (mmh == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED, "no master, abort");
+		gflog_fatal(GFARM_MSG_1004734, "no master, abort");
 	assert(mh != mmh);
 	return (mh->cluster == mmh->cluster);
 }
@@ -849,7 +849,7 @@ mdhost_update_replication_type(struct mdhost *mh,
 		 */
 		m = mdhost_lookup_master();
 		if (m == NULL)
-			gflog_fatal(GFARM_MSG_UNFIXED, "no master, abort");
+			gflog_fatal(GFARM_MSG_1004735, "no master, abort");
 		mdhost_mutex_lock(m, diag);
 		was_sync = (strcmp(m->ms.clustername, old_clustername) == 0);
 		is_sync  = (strcmp(m->ms.clustername, new_clustername) == 0);
