@@ -3,7 +3,7 @@ Gfarm FAQ - Frequently Asked Questions about Gfarm
 Copyright (c) 2003-2008 National Institute of Advanced Industrial
 Science and Technology (AIST).  All Rights Reserved.
 
-Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
+Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 
 Table of Contents:
 ******************
@@ -56,9 +56,11 @@ Table of Contents:
 	Current source code can be obtained by
 
 	Gfarm 2.5.X
-		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.5 gfarm_v2
+		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.5 gfarm-2.5
 	Gfarm 2.6.X
-		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.6 gfarm_v2
+		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.6 gfarm-2.6
+	Gfarm 2.7.X
+		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.7 gfarm-2.7
 	Development version
 		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/trunk gfarm_v2
 	Gfarm2fs

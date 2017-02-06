@@ -55,9 +55,11 @@ Copyright (c) 2006-2013 Osamu Tatebe.  All Rights Reserved.
 
 	なお，最新のソースコードは以下のコマンドで入手できます．
 	Gfarm 2.5.8系
-		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.5 gfarm_v2
+		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.5 gfarm-2.5
 	Gfarm 2.6系
-		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.6 gfarm_v2
+		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.6 gfarm-2.6
+	Gfarm 2.7系
+		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.7 gfarm-2.7
 	開発版
 		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/trunk gfarm_v2
 	Gfarm2fs
