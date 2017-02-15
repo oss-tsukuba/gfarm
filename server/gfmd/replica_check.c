@@ -836,6 +836,14 @@ replica_check_start_fsngroup_modify(void)
 	replica_check_cond_signal(diag, 60);  /* 60 sec. */
 }
 
+void
+replica_check_start_host_is_not_busy(void)
+{
+	static const char diag[] = "replica_check_start_host_is_not_busy";
+
+	replica_check_cond_signal(diag, 0);
+}
+
 #define ENABLE  1
 #define DISABLE 0
 
