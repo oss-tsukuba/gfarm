@@ -1227,6 +1227,7 @@ CPU負荷が高いとみなされるCPU負荷を指定します。
 </para>
 <para>
 この文はクライアントおよびgfmdで有効です。
+</para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	schedule_busy_load_thresh 0.5
