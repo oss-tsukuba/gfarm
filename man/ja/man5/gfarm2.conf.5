@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 25 Jan 2017
+.\"      Date: 15 Feb 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "25 Jan 2017" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "15 Feb 2017" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -1058,6 +1058,8 @@ schedule_idle_load_thresh \fICPU負荷\fR
 schedule_busy_load_thresh \fICPU負荷\fR
 .RS 4
 ファイルシステムノードのスケジューリング時に、 CPU負荷が高いとみなされるCPU負荷を指定します。 ここで指定されるCPU負荷より高いCPU負荷のファイルシステムノードは 当初スケジュール対象となりません。 デフォルト値は0\&.5です。
+.sp
+この文はクライアントおよびgfmdで有効です。
 .sp
 例:
 .sp
