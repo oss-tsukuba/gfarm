@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 25 Jan 2017
+.\"      Date: 15 Feb 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "25 Jan 2017" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "15 Feb 2017" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -1185,6 +1185,8 @@ For example,
 schedule_busy_load_thresh \fIload\-average\fR
 .RS 4
 This directive specifies the threshold of CPU load average to be considered busy\&. The file system nodes whose CPU load average is above the specified CPU load average are to be scheduled lastly\&. The default load average is 0\&.5\&.
+.sp
+This directive is available for clients and gfmd\&.
 .sp
 For example,
 .sp
