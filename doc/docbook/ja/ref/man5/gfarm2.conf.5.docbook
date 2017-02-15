@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>25 Jan 2017</date></refentryinfo>
+<refentryinfo><date>15 Feb 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1244,6 +1244,8 @@ CPU負荷が高いとみなされるCPU負荷を指定します。
 当初スケジュール対象となりません。
 デフォルト値は0.5です。
 </para>
+<para>
+この文はクライアントおよびgfmdで有効です。
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	schedule_busy_load_thresh 0.5
