@@ -11,6 +11,7 @@ void replica_check_start_move(void);
 void replica_check_start_rep_request_failed(void);
 void replica_check_start_rep_result_failed(void);
 void replica_check_start_fsngroup_modify(void);
+void replica_check_start_host_is_not_busy(void);
 
 void replica_check_info(void);
 

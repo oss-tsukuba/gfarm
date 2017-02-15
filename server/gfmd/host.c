@@ -644,20 +644,31 @@ host_is_up_with_grace(struct host *h, gfarm_time_t grace)
 	return (rv);
 }
 
-int
-host_is_not_busy(struct host *h)
+static int
+host_is_busy_unlocked(struct host *h)
 {
 	long long load = 0, busy = 0;
-	static const char diag[] = "host_is_not_busy";
 
-	back_channel_mutex_lock(h, diag);
 	if (host_is_up_unlocked(h)) {
 		load = h->status.loadavg_1min * GFARM_F2LL_SCALE;
 		busy = h->hi.ncpu * gfarm_ctxp->schedule_busy_load;
-	}
+	} else
+		return (0);
+
+	return (load >= busy);
+}
+
+static int
+host_is_busy(struct host *h)
+{
+	int busy = 0;
+	static const char diag[] = "host_is_busy";
+
+	back_channel_mutex_lock(h, diag);
+	busy = host_is_busy_unlocked(h);
 	back_channel_mutex_unlock(h, diag);
 
-	return (load < busy);
+	return (busy);
 }
 
 int
@@ -782,6 +793,7 @@ void
 host_status_update(struct host *host, struct host_status *status)
 {
 	gfarm_uint64_t saved_used = 0, saved_avail = 0;
+	int saved_busy = 0, busy = 0;
 	const char diag[] = "status_update";
 
 	back_channel_mutex_lock(host, diag);
@@ -791,6 +803,7 @@ host_status_update(struct host *host, struct host_status *status)
 	if (host->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
 		saved_used = host->status.disk_used;
 		saved_avail = host->status.disk_avail;
+		saved_busy = host_is_busy_unlocked(host);
 	}
 
 	host->last_report = time(NULL);
@@ -800,11 +813,15 @@ host_status_update(struct host *host, struct host_status *status)
 	host->status = *status;
 	host->status.disk_used_in_byte = status->disk_used * 1024;
 	host->status.disk_avail_in_byte = status->disk_avail * 1024;
+	busy = host_is_busy_unlocked(host);
 
 	back_channel_mutex_unlock(host, diag);
 
 	host_total_disk_update(saved_used, saved_avail,
 	    status->disk_used, status->disk_avail);
+
+	if (saved_busy && !busy)
+		replica_check_start_host_is_not_busy();
 }
 
 void
@@ -1167,7 +1184,7 @@ host_is_not_busy_and_disk_available_filter(struct host *host, void *closure)
 {
 	gfarm_off_t *sizep = closure;
 
-	return (host_is_not_busy(host) && host_is_disk_available(host, *sizep));
+	return (!host_is_busy(host) && host_is_disk_available(host, *sizep));
 }
 
 gfarm_error_t
