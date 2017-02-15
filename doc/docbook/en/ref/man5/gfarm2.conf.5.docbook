@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>25 Jan 2017</date></refentryinfo>
+<refentryinfo><date>15 Feb 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1268,6 +1268,9 @@ The default load average is 0.1.
 considered busy.  The file system nodes whose CPU load average
 is above the specified CPU load average are to be scheduled lastly.
 The default load average is 0.5.
+</para>
+<para>
+This directive is available for clients and gfmd.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
