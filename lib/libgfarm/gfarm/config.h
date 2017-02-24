@@ -61,6 +61,7 @@ extern int gfarm_metadb_max_descriptors;
 extern int gfarm_metadb_stack_size;
 extern int gfarm_metadb_thread_pool_size;
 extern int gfarm_metadb_job_queue_length;
+extern int gfarm_metadb_remover_queue_length;
 extern int gfarm_metadb_heartbeat_interval;
 extern int gfarm_metadb_dbq_size;
 extern int gfarm_metadb_server_back_channel_sndbuf_limit;
@@ -78,8 +79,10 @@ extern int gfarm_replicainfo_enabled;
 #define GFARM_METADB_THREAD_POOL_SIZE_DEFAULT	16  /* quadcore, quadsocket */
 #if 0
 #define GFARM_METADB_JOB_QUEUE_LENGTH_DEFAULT	160 /* THREAD_POOL * 10 */
+#define GFARM_METADB_REMOVER_QUEUE_LENGTH_DEFAULT	16
 #else /* XXX FIXME: until bcworkq is implemented */
 #define GFARM_METADB_JOB_QUEUE_LENGTH_DEFAULT	16000
+#define GFARM_METADB_REMOVER_QUEUE_LENGTH_DEFAULT	160
 #endif
 #define GFARM_METADB_HEARTBEAT_INTERVAL_DEFAULT 180 /* 3 min */
 #define GFARM_METADB_DBQ_SIZE_DEFAULT	65536
