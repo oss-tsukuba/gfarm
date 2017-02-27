@@ -157,11 +157,14 @@ gfprep_usage_common(int error)
 		exit(EXIT_FAILURE);
 }
 
+#define GFPREP_COUNT_WRITE_STEP 1000
+
 struct gfprep_host_info {
 	char *hostname;
 	int port;
 	int ncpu;
 	int max_rw;
+	long long count_write;
 	gfarm_int64_t disk_avail;
 	gfarm_int32_t loadavg; /* loadavg_1min * GFM_PROTO_LOADAVG_FSCALE */
 
@@ -235,6 +238,12 @@ gfprep_in_hostinfohash(struct gfarm_hash_table *hash, const char *hostname)
 	return (hi != NULL ? 1 : 0);
 }
 
+static long long
+gfprep_count_write_init()
+{
+	return (gfarm_random() % GFPREP_COUNT_WRITE_STEP);
+}
+
 static gfarm_error_t
 gfprep_create_hostinfohash_all(const char *path, int *nhost_infos_p,
 			       struct gfarm_hash_table **hash_all_p)
@@ -279,6 +288,7 @@ gfprep_create_hostinfohash_all(const char *path, int *nhost_infos_p,
 		hi->hostname = hostname;
 		hi->port = hsis[i].port;
 		hi->ncpu = hsis[i].ncpu;
+		hi->count_write = gfprep_count_write_init();
 		hi->max_rw = opt.max_rw > 0 ? opt.max_rw : hi->ncpu;
 		hi->disk_avail = hsis[i].disk_avail * 1024; /* KB -> Byte */
 		hi->loadavg = hsis[i].loadavg;
@@ -551,16 +561,10 @@ gfprep_host_info_compare_for_dst(const void *p1, const void *p2)
 {
 	struct gfprep_host_info *hi1 = *(struct gfprep_host_info **) p1;
 	struct gfprep_host_info *hi2 = *(struct gfprep_host_info **) p2;
-	float ratio1 = (float)hi1->n_using / (float)hi1->max_rw;
-	float ratio2 = (float)hi2->n_using / (float)hi2->max_rw;
 
-	if (ratio1 < ratio2)
+	if (hi1->count_write < hi2->count_write)
 		return (-1); /* high priority */
-	else if (ratio1 > ratio2)
-		return (1);
-	else if (hi1->disk_avail > hi2->disk_avail)
-		return (-1); /* high priority */
-	else if (hi1->disk_avail < hi2->disk_avail)
+	if (hi1->count_write > hi2->count_write)
 		return (1);
 	else
 		return (0);
@@ -570,12 +574,8 @@ static void
 gfprep_host_info_array_sort_for_dst(int nhost_infos,
 	struct gfprep_host_info **host_infos)
 {
-	static const char diag[] = "gfprep_host_info_array_sort_for_dst";
-
-	gfarm_mutex_lock(&cb_mutex, diag, CB_MUTEX_DIAG);
 	qsort(host_infos, nhost_infos, sizeof(struct gfprep_host_info *),
 	      gfprep_host_info_compare_for_dst);
-	gfarm_mutex_unlock(&cb_mutex, diag, CB_MUTEX_DIAG);
 }
 
 static gfarm_error_t
@@ -1855,6 +1855,7 @@ gfprep_do_copy(
 
 		/* update disk_avail for next scheduling */
 		dst_hi->disk_avail -= size;
+		dst_hi->count_write += GFPREP_COUNT_WRITE_STEP;
 	}
 	e = gfarm_pfunc_copy(
 	    pfunc_handle,
@@ -1890,6 +1891,7 @@ gfprep_do_replicate(
 	gfmsg_fatal_e(e, "gfarm_pfunc_replicate_from_to");
 	/* update disk_avail for next scheduling */
 	dst_hi->disk_avail -= size;
+	dst_hi->count_write += GFPREP_COUNT_WRITE_STEP;
 }
 
 static void
@@ -2584,6 +2586,113 @@ gfpcopy_prepare_dir(
 		}
 	}
 	*new_dstp = new_dst;
+}
+
+static void
+gfprep_filter_enough_disk_avail(
+	struct gfprep_host_info **array_dst, int n_array_dst,
+	gfarm_list *target_listp, int n_para,
+	struct gfprep_host_info ***resultp, int *n_resultp)
+{
+	gfarm_error_t e;
+	struct gfprep_host_info *hi, *largest_hi = NULL, *most_used_hi = NULL;
+	gfarm_list enough_list;
+	int i;
+#define GFPREP_ENOUGH_THRESH		0.8  /* 20% difference */
+	gfarm_int64_t enough_thresh;
+
+	/* desired number to avoid selecting limited hosts */
+#define GFPREP_ENOUGH_HOSTS_NUM		(n_para * 2)
+	/* to increase small count_write */
+#define GFPREP_ENOUGH_MAX_DIFF		(GFPREP_COUNT_WRITE_STEP * 3)
+
+	/* array_dst: all hosts for destination */
+	/* target_listp: selected destination hosts for a file */
+
+	/* find largest disk_avail and largest count_write */
+	/* assert(n_array_dst > 0); */
+	largest_hi = most_used_hi = array_dst[0];
+	for (i = 1; i < n_array_dst; i++) {
+		hi = array_dst[i];
+		if (hi->disk_avail > largest_hi->disk_avail)
+			largest_hi = hi;
+		if (hi->count_write > most_used_hi->count_write)
+			most_used_hi = hi;
+	}
+
+	/*
+	 * find hosts which are not often used and update count_write
+	 * of the hosts to avoid selecting only limited hosts for a
+	 * long time.
+	 */
+	for (i = 0; i < n_array_dst; i++) {
+		hi = array_dst[i];
+		if (hi->count_write + GFPREP_ENOUGH_MAX_DIFF
+		    < most_used_hi->count_write) {
+			hi->count_write = most_used_hi->count_write
+				- GFPREP_ENOUGH_MAX_DIFF
+				+ gfprep_count_write_init();
+			gfmsg_debug("too small count_write, "
+				    "increasing: %s: %lld",
+				    hi->hostname, hi->count_write);
+		}
+	}
+
+	/*
+	 * use all hosts of target_listp, if there is not enough
+	 * number of target_listp.
+	 */
+	if (gfarm_list_length(target_listp) < GFPREP_ENOUGH_HOSTS_NUM) {
+		gfmsg_debug("desired hosts=%d, candidate for dst=%d",
+		     GFPREP_ENOUGH_HOSTS_NUM, gfarm_list_length(target_listp));
+		*resultp = gfarm_array_alloc_from_list(target_listp);
+		if (*resultp == NULL)
+			gfmsg_fatal("no memory");
+		*n_resultp = gfarm_list_length(target_listp);
+		return;
+	}
+
+	e = gfarm_list_init(&enough_list);
+	gfmsg_fatal_e(e, "gfarm_list_init");
+
+	enough_thresh = largest_hi->disk_avail * GFPREP_ENOUGH_THRESH;
+	gfmsg_debug("largest disk_avail: host=%s, disk_avail=%lld",
+	    largest_hi->hostname, (long long)largest_hi->disk_avail);
+
+	/* find hosts which have enough free space */
+	for (i = 0; i < gfarm_list_length(target_listp); i++) {
+		hi = gfarm_list_elem(target_listp, i);
+		if (hi->disk_avail >= enough_thresh) {
+			gfmsg_debug("[%d] %s: %lld > %lld",
+				    i, hi->hostname,
+				    (long long)hi->disk_avail,
+				    (long long)enough_thresh);
+			gfarm_list_add(&enough_list, hi);
+		}
+	}
+
+	/*
+	 * use all hosts of target_listp, if there is not enough
+	 * number of enough_list
+	 */
+	if (gfarm_list_length(&enough_list) < GFPREP_ENOUGH_HOSTS_NUM) {
+		gfmsg_debug("desired hosts=%d, enough hosts=%d",
+		     GFPREP_ENOUGH_HOSTS_NUM, gfarm_list_length(&enough_list));
+		gfarm_list_free(&enough_list);
+		*resultp = gfarm_array_alloc_from_list(target_listp);
+		if (*resultp == NULL)
+			gfmsg_fatal("no memory");
+		*n_resultp = gfarm_list_length(target_listp);
+		return;
+	}
+
+	*resultp = gfarm_array_alloc_from_list(&enough_list);
+	if (*resultp == NULL)
+		gfmsg_fatal("no memory");
+	*n_resultp = gfarm_list_length(&enough_list);
+	gfarm_list_free(&enough_list);
+
+	return;
 }
 
 #define simulation_enabled (opt_simulate_KBs > 0)
@@ -3576,6 +3685,7 @@ main(int argc, char *argv[])
 					}
 				}
 				if (found) {
+					/* exclude exisiting replicas */
 					e = gfarm_list_add(&dst_exist_list,
 							   array_dst[i]);
 					gfmsg_fatal_e(e, "gfarm_list_add");
@@ -3615,15 +3725,13 @@ main(int argc, char *argv[])
 				dst_select_array = NULL;
 				gfarm_list_free(&dst_select_list);
 			} else {
-				dst_select_array =
-					gfarm_array_alloc_from_list(
-						&dst_select_list);
+				/* select hosts which have enough free space */
+				gfprep_filter_enough_disk_avail(
+				    array_dst, n_array_dst,
+				    &dst_select_list, opt_n_para,
+				    &dst_select_array, &n_dst_select);
 				gfarm_list_free(&dst_select_list);
-				if (dst_select_array == NULL)
-					gfmsg_fatal("no memory");
-				/* prefer unbusy and much disk_avail */
-				gfprep_host_info_array_sort_for_dst(
-					n_dst_select, dst_select_array);
+
 				n_desire = opt_n_desire - n_dst_exist;
 				if (gfprep_check_busy_and_wait(
 					    src_url, entry, n_desire,
@@ -3640,8 +3748,26 @@ main(int argc, char *argv[])
 					gfarm_dirtree_pending(dirtree_handle);
 					continue; /* pending */
 				}
+
+				/* prefer hosts which have small count_write */
+				gfprep_host_info_array_sort_for_dst(
+					n_dst_select, dst_select_array);
+
+#if 0 /* for debug */
+				for (i = 0; i < n_dst_select; i++) {
+					gfmsg_debug(
+					"sorted dst[%d]: %s: "
+					"count=%lld, avail=%lld",
+					i,
+					dst_select_array[i]->hostname,
+					dst_select_array[i]->count_write,
+					(long long)
+					dst_select_array[i]->disk_avail);
+				}
+#endif
 			}
 		}
+
 		if (is_gfpcopy) { /* gfpcopy */
 			assert(gfurl_is_gfarm(src) ? n_src_select > 0 : 1);
 			if (gfurl_is_gfarm(dst) && n_dst_select <= 0) {
