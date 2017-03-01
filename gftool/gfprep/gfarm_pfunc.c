@@ -137,8 +137,8 @@ pfunc_check_disk_avail(
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	avail = bavail * bsize;
-	if (avail >= filesize &&
-	    avail >= gfarm_get_minimum_free_disk_space())
+	/* to reduce no space risk, keep minimum disk space */
+	if (avail >= filesize + gfarm_get_minimum_free_disk_space())
 		return (GFARM_ERR_NO_ERROR);
 	return (GFARM_ERR_NO_SPACE);
 }
