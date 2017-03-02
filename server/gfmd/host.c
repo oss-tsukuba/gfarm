@@ -822,6 +822,9 @@ host_status_update(struct host *host, struct host_status *status)
 
 	if (saved_busy && !busy)
 		replica_check_start_host_is_not_busy();
+	if (saved_busy != busy)
+		gflog_info(GFARM_MSG_UNFIXED, "%s becomes %s", host_name(host),
+		    busy ? "busy" : "not busy");
 }
 
 void
