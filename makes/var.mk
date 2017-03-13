@@ -87,7 +87,7 @@ LTLINK = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LTLDFLAGS) $(LDFLAGS) -o $@
 LTCLEAN = $(LIBTOOL) --mode=clean $(RM) -f
 # the use of the following operations should honor $(DESTDIR)
 LTINSTALL_PROGRAM = $(LIBTOOL) --mode=install $(INSTALL_PROGRAM)
-LTINSTALL_LIBRARY = $(LIBTOOL) --mode=install $(INSTALL_DATA)
+LTINSTALL_LIBRARY = $(LIBTOOL) --mode=install $(INSTALL_PROGRAM)
 
 # private src
 
