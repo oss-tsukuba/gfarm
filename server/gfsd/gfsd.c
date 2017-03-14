@@ -1596,10 +1596,6 @@ move_to_local_lost_found(char *path, const char *diag)
 	free(p);
 }
 
-#ifndef ACCESSPERMS
-#define ACCESSPERMS (S_IRWXU|S_IRWXG|S_IRWXO)
-#endif
-
 static gfarm_error_t
 file_table_add(gfarm_int32_t net_fd,
 	int flags, gfarm_ino_t ino, gfarm_uint64_t gen, char *cksum_type,
@@ -1631,10 +1627,10 @@ file_table_add(gfarm_int32_t net_fd,
 	}
 	if (r < 0 && fstat(local_fd, &st) < 0)
 		fatal_errno(GFARM_MSG_1000463, "%s: %s", diag, path);
-	if ((flags & ACCESSPERMS) != GFARM_FILE_WRONLY) {
+	if ((flags & O_ACCMODE) != O_WRONLY) {
 		local_fd_rdonly = -1;
 	} else if ((local_fd_rdonly = open_data(path,
-	    (flags & ~ACCESSPERMS) | O_RDONLY)) == -1) {
+	    (flags & ~O_ACCMODE) | O_RDONLY)) == -1) {
 		save_errno = errno;
 		close(local_fd);
 		free(path);
@@ -2165,7 +2161,7 @@ gfsd_copy_file(int fd, gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
 #define COPY_BLOCK_SIZE 65536
 	char buf[COPY_BLOCK_SIZE], *path;
 	ssize_t sz, rv;
-	int dst, i;
+	int dst, i, save_e;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
 	if (lseek(fd, 0, SEEK_SET) == -1)
@@ -2173,8 +2169,9 @@ gfsd_copy_file(int fd, gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
 	gfsd_local_path(inum, gen, diag, &path);
 	dst = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
 	if (dst < 0) {
+		save_e = errno;
 		free(path);
-		return (gfarm_errno_to_error(errno));
+		return (gfarm_errno_to_error(save_e));
 	}
 	if (!confirm_local_path(inum, gen, diag)) {
 		close(dst);
