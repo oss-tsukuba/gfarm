@@ -78,7 +78,8 @@ gfarm_mutex_destroy(pthread_mutex_t *mutex, const char *where, const char *what)
 		    where, what, strerror(err));
 }
 
-#ifndef __KERNEL__	/* gfarm_cond_xxx */
+
+#ifndef __KERNEL__	/* gfarm_cond_*, gfarm_rwlock_* */
 
 void
 gfarm_cond_init(pthread_cond_t *cond, const char *where, const char *what)
@@ -153,4 +154,61 @@ gfarm_cond_destroy(pthread_cond_t *cond, const char *where, const char *what)
 		gflog_fatal(GFARM_MSG_1001489, "%s: %s cond destroy: %s",
 		    where, what, strerror(err));
 }
+
+
+void
+gfarm_rwlock_init(
+	pthread_rwlock_t *rwlock, const char *where, const char *what)
+{
+	int err = pthread_rwlock_init(rwlock, NULL);
+
+	if (err != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s rwlock init: %s",
+		    where, what, strerror(err));
+}
+
+void
+gfarm_rwlock_rdlock(
+	pthread_rwlock_t *rwlock, const char *where, const char *what)
+{
+	int err = pthread_rwlock_rdlock(rwlock);
+
+	if (err != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s rwlock rdlock: %s",
+		    where, what, strerror(err));
+}
+
+void
+gfarm_rwlock_wrlock(
+	pthread_rwlock_t *rwlock, const char *where, const char *what)
+{
+	int err = pthread_rwlock_wrlock(rwlock);
+
+	if (err != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s rwlock wrlock: %s",
+		    where, what, strerror(err));
+}
+
+void
+gfarm_rwlock_unlock(
+	pthread_rwlock_t *rwlock, const char *where, const char *what)
+{
+	int err = pthread_rwlock_unlock(rwlock);
+
+	if (err != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s rwlock unlock: %s",
+		    where, what, strerror(err));
+}
+
+void
+gfarm_rwlock_destroy(
+	pthread_rwlock_t *rwlock, const char *where, const char *what)
+{
+	int err = pthread_rwlock_destroy(rwlock);
+
+	if (err != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s rwlock destroy: %s",
+		    where, what, strerror(err));
+}
+
 #endif /* __KERNEL__ */

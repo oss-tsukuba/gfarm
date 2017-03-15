@@ -59,9 +59,9 @@ struct mdhost {
 };
 static const char MDHOST_MUTEX_DIAG[]		= "mdhost_mutex";
 
-/* global mutex is for mdhost_hashtab */
-pthread_mutex_t mdhost_global_mutex = PTHREAD_MUTEX_INITIALIZER;
-static const char MDHOST_GLOBAL_MUTEX_DIAG[]	= "mdhost_global_mutex";
+/* mdhost_table_rwlock is for mdhost_hashtab */
+pthread_rwlock_t mdhost_table_rwlock = PTHREAD_RWLOCK_INITIALIZER;
+static const char MDHOST_TABLE_RWLOCK_DIAG[]	= "mdhost_table_rwlock";
 static struct gfarm_hash_table *mdhost_hashtab;
 
 /* no need to protect since it is only updated in mdhost_init() */
@@ -124,16 +124,24 @@ mdhost_mutex_unlock(struct mdhost *m, const char *diag)
 }
 
 static void
-mdhost_global_mutex_lock(const char *diag)
+mdhost_table_rwlock_rdlock(const char *diag)
 {
-	gfarm_mutex_lock(&mdhost_global_mutex, diag, MDHOST_GLOBAL_MUTEX_DIAG);
+	gfarm_rwlock_rdlock(&mdhost_table_rwlock,
+	    diag, MDHOST_TABLE_RWLOCK_DIAG);
 }
 
 static void
-mdhost_global_mutex_unlock(const char *diag)
+mdhost_table_rwlock_wrlock(const char *diag)
 {
-	gfarm_mutex_unlock(&mdhost_global_mutex, diag,
-		MDHOST_GLOBAL_MUTEX_DIAG);
+	gfarm_rwlock_wrlock(&mdhost_table_rwlock,
+	    diag, MDHOST_TABLE_RWLOCK_DIAG);
+}
+
+static void
+mdhost_table_rwlock_unlock(const char *diag)
+{
+	gfarm_rwlock_unlock(&mdhost_table_rwlock,
+	    diag, MDHOST_TABLE_RWLOCK_DIAG);
 }
 
 static void
@@ -275,13 +283,13 @@ mdhost_foreach(int (*func)(struct mdhost *, void *), void *closure)
 	struct mdhost *self = mdhost_lookup_self();
 	static const char diag[] = "mdhost_foreach";
 
-	mdhost_global_mutex_lock(diag);
+	mdhost_table_rwlock_rdlock(diag);
 	FOREACH_MDHOST(it) {
 		m = mdhost_iterator_access(&it);
 		if (mdhost_is_valid(m) && m != self && func(m, closure) == 0)
 			break;
 	}
-	mdhost_global_mutex_unlock(diag);
+	mdhost_table_rwlock_unlock(diag);
 }
 
 static int
@@ -540,10 +548,10 @@ mdhost_lookup_internal(const char *hostname)
 	struct gfarm_hash_entry *entry;
 	static const char diag[] = "mdhost_lookup_internal";
 
-	mdhost_global_mutex_lock(diag);
+	mdhost_table_rwlock_rdlock(diag);
 	entry = gfarm_hash_lookup(mdhost_hashtab, &hostname,
 		sizeof(hostname));
-	mdhost_global_mutex_unlock(diag);
+	mdhost_table_rwlock_unlock(diag);
 	if (entry == NULL)
 		return (NULL);
 	return (*(struct mdhost **)gfarm_hash_entry_data(entry));
@@ -564,7 +572,7 @@ mdhost_lookup_metadb_server(struct gfarm_metadb_server *ms)
 	struct mdhost *m, *mm = NULL;
 	static const char diag[] = "mdhost_lookup_metadb_server";
 
-	mdhost_global_mutex_lock(diag);
+	mdhost_table_rwlock_rdlock(diag);
 	FOREACH_MDHOST(it) {
 		m = mdhost_iterator_access(&it);
 		if (mdhost_is_valid(m) && &m->ms == ms) {
@@ -572,7 +580,7 @@ mdhost_lookup_metadb_server(struct gfarm_metadb_server *ms)
 			break;
 		}
 	}
-	mdhost_global_mutex_unlock(diag);
+	mdhost_table_rwlock_unlock(diag);
 	return (mm);
 }
 
@@ -649,6 +657,7 @@ mdhost_enter(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 	int created;
 	struct mdhost *mh;
 	gfarm_error_t e;
+	static const char diag[] = "mdhost_enter";
 
 	mh = mdhost_lookup_internal(ms->name);
 	if (mh) {
@@ -682,9 +691,11 @@ mdhost_enter(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 		free(mh);
 		return (e);
 	}
+	mdhost_table_rwlock_wrlock(diag);
 	entry = gfarm_hash_enter(mdhost_hashtab,
 	    &mh->ms.name, sizeof(mh->ms.name),
 	    sizeof(struct mdhost *), &created);
+	mdhost_table_rwlock_unlock(diag);
 	if (entry == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		gflog_error(GFARM_MSG_1002930,
@@ -733,7 +744,7 @@ mdhost_has_async_replication_target(void)
 
 	if (mmh == NULL || mdhost_get_count() == 1)
 		return (ret);
-	mdhost_global_mutex_lock(diag);
+	mdhost_table_rwlock_rdlock(diag);
 	FOREACH_MDHOST(it) {
 		mh = mdhost_iterator_access(&it);
 		if (mdhost_is_valid(mh) && mh != mmh &&
@@ -742,7 +753,7 @@ mdhost_has_async_replication_target(void)
 			break;
 		}
 	}
-	mdhost_global_mutex_unlock(diag);
+	mdhost_table_rwlock_unlock(diag);
 	return (ret);
 }
 
@@ -782,7 +793,7 @@ mdhost_update_replication_type(struct mdhost *mh,
 		 * The cluster name of the master has been changed.
 		 * It may cause changes of the replication types of slaves.
 		 */
-		mdhost_global_mutex_lock(diag);
+		mdhost_table_rwlock_rdlock(diag);
 		array_len = 0;
 		FOREACH_MDHOST(it) {
 			if (mdhost_is_valid(mdhost_iterator_access(&it)))
@@ -793,7 +804,7 @@ mdhost_update_replication_type(struct mdhost *mh,
 			e = GFARM_ERR_NO_MEMORY;
 			gflog_error(GFARM_MSG_1004225, "%s",
 			    gfarm_error_string(e));
-			mdhost_global_mutex_unlock(diag);
+			mdhost_table_rwlock_unlock(diag);
 			return (e);
 		}
 		GFARM_MALLOC_ARRAY(to_async_array, array_len);
@@ -802,7 +813,7 @@ mdhost_update_replication_type(struct mdhost *mh,
 			gflog_error(GFARM_MSG_1004226, "%s",
 			    gfarm_error_string(e));
 			free(to_sync_array);
-			mdhost_global_mutex_unlock(diag);
+			mdhost_table_rwlock_unlock(diag);
 			return (e);
 		}
 
@@ -819,7 +830,7 @@ mdhost_update_replication_type(struct mdhost *mh,
 			else if (was_sync && !is_sync)
 				to_async_array[to_async_len++] = m;
 		}
-		mdhost_global_mutex_unlock(diag);
+		mdhost_table_rwlock_unlock(diag);
 
 		if (mdhost_switch_to_sync_hook != NULL) {
 			for (i = 0; i < to_sync_len; i++) {
@@ -979,12 +990,12 @@ mdhost_get_count(void)
 	int n = 0;
 	static const char diag[] = "mdhost_get_count";
 
-	mdhost_global_mutex_lock(diag);
+	mdhost_table_rwlock_rdlock(diag);
 	FOREACH_MDHOST(it) {
 		if (mdhost_is_valid(mdhost_iterator_access(&it)))
 			++n;
 	}
-	mdhost_global_mutex_unlock(diag);
+	mdhost_table_rwlock_unlock(diag);
 	return (n);
 }
 
@@ -1010,7 +1021,7 @@ metadb_server_get0(struct peer *peer, int (*match_op)(
 		    "%s", gfarm_error_string(e));
 	} else {
 		i = 0;
-		mdhost_global_mutex_lock(diag);
+		mdhost_table_rwlock_rdlock(diag);
 		FOREACH_MDHOST(it) {
 			if (i >= nhosts) /* always false due to giant_lock */
 				break;
@@ -1018,7 +1029,7 @@ metadb_server_get0(struct peer *peer, int (*match_op)(
 			if (mdhost_is_valid(mh) && match_op(mh, closure))
 				match[i++] = mh;
 		}
-		mdhost_global_mutex_unlock(diag);
+		mdhost_table_rwlock_unlock(diag);
 		nmatch = i;
 		e = GFARM_ERR_NO_ERROR;
 	}
@@ -1177,7 +1188,7 @@ mdhost_fix_default_master(struct mdhost *new_mmh, const char *diag)
 	struct gfarm_hash_iterator it;
 	struct mdhost *mh;
 
-	mdhost_global_mutex_lock(diag);
+	mdhost_table_rwlock_rdlock(diag);
 	FOREACH_MDHOST(it) {
 		mh = mdhost_iterator_access(&it);
 		if (!mdhost_is_valid(mh))
@@ -1192,7 +1203,7 @@ mdhost_fix_default_master(struct mdhost *new_mmh, const char *diag)
 			break;
 		}
 	}
-	mdhost_global_mutex_unlock(diag);
+	mdhost_table_rwlock_unlock(diag);
 	return (e);
 }
 
@@ -1215,13 +1226,13 @@ mdhost_updated(void)
 		return (e);
 	}
 	i = 0;
-	mdhost_global_mutex_lock(diag);
+	mdhost_table_rwlock_rdlock(diag);
 	FOREACH_MDHOST(it) {
 		mh = mdhost_iterator_access(&it);
 		if (mdhost_is_valid(mh) && i < n)
 			mss[i++] = &mh->ms;
 	}
-	mdhost_global_mutex_unlock(diag);
+	mdhost_table_rwlock_unlock(diag);
 	fs = gfarm_filesystem_get_default();
 	e = gfarm_filesystem_set_metadb_server_list(fs, mss, i);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1548,6 +1559,7 @@ mdhost_initial_entry(void)
 	mdhost_self = self;
 	mdhost_set_is_self(mdhost_self, 1);
 	if (gfarm_get_metadb_replication_enabled()) {
+		mdhost_table_rwlock_rdlock(diag);
 		FOREACH_MDHOST(it) {
 			mh = mdhost_iterator_access(&it);
 			if (!mdhost_is_valid(mh))
@@ -1557,6 +1569,7 @@ mdhost_initial_entry(void)
 				break;
 			}
 		}
+		mdhost_table_rwlock_unlock(diag);
 		if ((e = mdhost_updated()) != GFARM_ERR_NO_ERROR)
 			gflog_fatal(GFARM_MSG_1002975,
 			    "Failed to update mdhost: %s",
