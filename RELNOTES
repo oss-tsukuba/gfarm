@@ -1,3 +1,18 @@
+Release note for Gfarm 2.6.18
+=============================
+
+[2017.3.26]
+
+Update feature
+* gfprep, gfpcopy - a new scheduling to mitigate destination conflict
+  under concurrent gfprep and gfpcopy executions
+* start replica check when a busy host becomes idle
+
+Bug fix
+* gfmd may not respond when sending journal logs to async slaves
+* write only files may not be moved to lost+found
+* Gfarm RPM packages cannot be installed on RHEL7 or CentOS7
+
 Release note for Gfarm 2.6.17
 =============================
 
