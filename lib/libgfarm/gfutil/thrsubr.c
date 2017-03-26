@@ -161,7 +161,7 @@ gfarm_rwlock_init(
 	int err = pthread_rwlock_init(rwlock, NULL);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s rwlock init: %s",
+		gflog_fatal(GFARM_MSG_1004742, "%s: %s rwlock init: %s",
 		    where, what, strerror(err));
 }
 
@@ -172,7 +172,7 @@ gfarm_rwlock_rdlock(
 	int err = pthread_rwlock_rdlock(rwlock);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s rwlock rdlock: %s",
+		gflog_fatal(GFARM_MSG_1004743, "%s: %s rwlock rdlock: %s",
 		    where, what, strerror(err));
 }
 
@@ -183,7 +183,7 @@ gfarm_rwlock_wrlock(
 	int err = pthread_rwlock_wrlock(rwlock);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s rwlock wrlock: %s",
+		gflog_fatal(GFARM_MSG_1004744, "%s: %s rwlock wrlock: %s",
 		    where, what, strerror(err));
 }
 
@@ -194,7 +194,7 @@ gfarm_rwlock_unlock(
 	int err = pthread_rwlock_unlock(rwlock);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s rwlock unlock: %s",
+		gflog_fatal(GFARM_MSG_1004745, "%s: %s rwlock unlock: %s",
 		    where, what, strerror(err));
 }
 
@@ -205,7 +205,7 @@ gfarm_rwlock_destroy(
 	int err = pthread_rwlock_destroy(rwlock);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s rwlock destroy: %s",
+		gflog_fatal(GFARM_MSG_1004746, "%s: %s rwlock destroy: %s",
 		    where, what, strerror(err));
 }
 
