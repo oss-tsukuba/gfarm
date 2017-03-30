@@ -34,7 +34,7 @@ usage(void)
 }
 
 static gfarm_error_t
-add_file(char *file, struct gfs_stat *st, void *arg)
+add_all_file(char *file, struct gfs_stat *st, void *arg)
 {
 	struct files *a = arg;
 	char *f;
@@ -44,6 +44,14 @@ add_file(char *file, struct gfs_stat *st, void *arg)
 		return (GFARM_ERR_NO_MEMORY);
 
 	return (gfarm_stringlist_add(&a->files, f));
+}
+
+static gfarm_error_t
+add_reg_file(char *file, struct gfs_stat *st, void *arg)
+{
+	if (!GFARM_S_ISREG(st->st_mode))
+		return (GFARM_ERR_NO_ERROR);
+	return (add_all_file(file, st, arg));
 }
 
 static gfarm_error_t
@@ -174,6 +182,7 @@ main(int argc, char **argv)
 	struct files files;
 	struct options options;
 	gfarm_error_t (*op_dir_before)(char *, struct gfs_stat *, void *);
+	gfarm_error_t (*add_file)(char *, struct gfs_stat *, void *);
 
 	options.host =
 	options.domain = NULL;
@@ -215,6 +224,10 @@ main(int argc, char **argv)
 		op_dir_before = is_valid_dir;
 	else
 		op_dir_before = do_not_add_dir;
+	if (options.host != NULL)
+		add_file = add_reg_file;
+	else
+		add_file = add_all_file;
 	e = gfarm_stringlist_init(&files.files);
 	error_check(e);
 
