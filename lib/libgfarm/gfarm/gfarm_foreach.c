@@ -73,9 +73,9 @@ gfarm_foreach_directory(
 		free(path);
 	}
 	e2 = gfs_closedir(dir);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e == GFARM_ERR_NO_ERROR)
 		e = e_save;
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e == GFARM_ERR_NO_ERROR)
 		e = e2;
 	return (e);
 }
