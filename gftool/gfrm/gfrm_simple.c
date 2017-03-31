@@ -41,7 +41,10 @@ is_valid_dir(char *file, struct gfs_stat *st, void *arg)
 static gfarm_error_t
 err_is_a_dir(char *file, struct gfs_stat *st, void *arg)
 {
-	return (GFARM_ERR_IS_A_DIRECTORY);
+	gfarm_error_t e = GFARM_ERR_IS_A_DIRECTORY;
+
+	fprintf(stderr, "%s: %s\n", file, gfarm_error_string(e));
+	return (e);
 }
 
 static gfarm_error_t
@@ -86,12 +89,12 @@ remove_file(char *file, struct gfs_stat *st, void *arg)
 	else
 		e = gfs_unlink(file);
 
-	if (e != GFARM_ERR_NO_ERROR &&
-	    (!options->force || e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) &&
-	    (!options->recursive || e != GFARM_ERR_NO_SUCH_OBJECT)) {
-		fprintf(stderr, "%s: %s: %s\n",
-			program_name, file, gfarm_error_string(e));
-	}
+	if (options->force &&
+	    (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY ||
+	     e == GFARM_ERR_NO_SUCH_OBJECT))
+		e = GFARM_ERR_NO_ERROR;
+	if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "%s: %s\n", file, gfarm_error_string(e));
 	return (e);
 }
 
@@ -109,11 +112,10 @@ remove_dir(char *dir, struct gfs_stat *st, void *arg)
 	else
 		e = gfs_rmdir(dir);
 
-	if (e != GFARM_ERR_NO_ERROR &&
-	    (!options->force || e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)) {
-		fprintf(stderr, "%s: %s: %s\n",
-			program_name, dir, gfarm_error_string(e));
-	}
+	if (options->force && e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
+		e = GFARM_ERR_NO_ERROR;
+	if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "%s: %s\n", dir, gfarm_error_string(e));
 	return (e);
 }
 
@@ -190,20 +192,23 @@ main(int argc, char **argv)
 	n = gfarm_stringlist_length(&paths);
 	for (i = 0; i < n; i++) {
 		char *file = gfarm_stringlist_elem(&paths, i), *rpath = NULL;
+		struct gfs_stat st;
 
 		e = gfarm_realpath_by_gfarm2fs(file, &rpath);
 		if (e == GFARM_ERR_NO_ERROR)
 			file = rpath;
-		e = gfarm_foreach_directory_hierarchy(
-			remove_file, is_dir, remove_dir, file, &options);
-
-		if (e != GFARM_ERR_NO_ERROR &&
-		    (!options.force ||
-		     e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)) {
-			fprintf(stderr, "%s: %s: %s\n",
-			    program_name, file, gfarm_error_string(e));
+		if ((e = gfs_lstat(file, &st)) == GFARM_ERR_NO_ERROR) {
+			e = gfarm_foreach_directory_hierarchy(remove_file,
+				is_dir, remove_dir, file, &options);
+			gfs_stat_free(&st);
+		} else if (options.force &&
+			   e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
+			e = GFARM_ERR_NO_ERROR;
+		else
+			fprintf(stderr, "%s: %s\n", file,
+			    gfarm_error_string(e));
+		if (e != GFARM_ERR_NO_ERROR)
 			status = 1;
-		}
 		free(rpath);
 	}
 	gfarm_stringlist_free_deeply(&paths);
