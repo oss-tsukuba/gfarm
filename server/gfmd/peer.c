@@ -1221,6 +1221,7 @@ peer_set_host(struct peer *peer, char *hostname)
 {
 	struct host *h;
 	struct mdhost *m;
+	char *aux;
 
 	switch (peer->id_type) {
 	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
@@ -1256,10 +1257,24 @@ peer_set_host(struct peer *peer, char *hostname)
 	}
 
 	if (peer->hostname != NULL) {
+		gflog_info(GFARM_MSG_UNFIXED, "%s: set to %s",
+		    peer->hostname, hostname);
 		free(peer->hostname);
 		peer->hostname = NULL;
 	}
-
+	aux = gflog_get_auxiliary_info();
+	if (aux != NULL) {
+		free(aux);
+		GFARM_MALLOC_ARRAY(aux,
+		    strlen(peer->username) + 1 + strlen(hostname) + 1);
+		if (aux == NULL) {
+			gflog_error(GFARM_MSG_UNFIXED, "no memory: "
+			    "gflog_set_auxiliary_info(%s@%s)",
+			    peer->username, hostname);
+		} else
+			sprintf(aux, "%s@%s", peer->username, hostname);
+		gflog_set_auxiliary_info(aux);
+	}
 	gflog_debug(GFARM_MSG_1002772,
 	    "%s connected from %s",
 	    peer_get_service_name(peer), abstract_host_get_name(peer->host));
