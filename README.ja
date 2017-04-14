@@ -54,8 +54,9 @@
 
 - SETUP.private.en (英語)
   SETUP.private.ja (日本語)
-	Gfarm をユーザ権限で動作させる方法を説明します．
-	この場合，設定したユーザ専用となります．
+	Gfarm を root 権限ではなくユーザ権限で動作させる方法を説明します．
+	ただしこの場合，設定したユーザ専用となりますので通常はこちらでは
+	なく SETUP.en / SETUP.ja の方を参照することを推奨します．
 
 - KNOWN_PROBLEMS.en (英語)
   KNOWN_PROBLEMS.ja (日本語)
