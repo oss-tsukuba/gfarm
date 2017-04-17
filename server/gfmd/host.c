@@ -652,9 +652,7 @@ host_is_busy_unlocked(struct host *h)
 	if (host_is_up_unlocked(h)) {
 		load = h->status.loadavg_1min * GFARM_F2LL_SCALE;
 		busy = h->hi.ncpu * gfarm_ctxp->schedule_busy_load;
-	} else
-		return (0);
-
+	}
 	return (load >= busy);
 }
 
