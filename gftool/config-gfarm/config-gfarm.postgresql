@@ -364,6 +364,7 @@ _EOF_
 	echo "#host	$DB_NAME		$BACKEND_USER	0.0.0.0/0	md5"
 	echo "# TYPE	DATABASE	USER	IP-ADDRESS IP-MASK	METHOD"
 	echo "host	$DB_NAME		$BACKEND_USER	0.0.0.0	0.0.0.0	md5"
+	echo "host	$DB_NAME		$BACKEND_USER	::/0	md5"
 	) > "$BACKEND_DATA_DIR"/pg_hba.conf
 }
 
