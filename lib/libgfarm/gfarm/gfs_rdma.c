@@ -187,6 +187,9 @@ gfs_memlock_set(void)
 			e = gfarm_errno_to_error2(errno);
 	} else
 		e = gfarm_errno_to_error2(errno);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED, "gfs_memlock_set: %s",
+			gfarm_error_string(e));
 	gflog_debug(GFARM_MSG_1004557, "RLIMIT_MEMLOCK 0x%lx",
 		(long) rlim.rlim_cur);
 	if (rlim.rlim_cur >= (unsigned long)(LONG_MAX))
