@@ -272,6 +272,7 @@ t_write_cyclic(void)
 		&self_jf, GFARM_JOURNAL_RDWR));
 	reader = journal_file_main_reader(self_jf);
 	writer = journal_file_writer(self_jf);
+	(void)writer; /* shutup gcc warning - set but not used */
 	setup_write();
 	for (i = 0; i < 3; ++i) {
 		ui = t_new_user_info(
@@ -672,6 +673,7 @@ t_write_add_op(void *arg)
 
 	setup_write();
 	writer = journal_file_writer(self_jf);
+	(void)writer; /* shutup gcc warning - set but not used */
 	for (i = 0; i < GFARM_ARRAY_LENGTH(names); ++i) {
 		ui = t_new_user_info(
 		    names[i].username, names[i].realname);
