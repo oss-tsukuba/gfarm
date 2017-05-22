@@ -688,7 +688,7 @@ gfarm_error_string(gfarm_error_t error)
 #undef HAVE_SYS_NERR
 #endif /* __KERNEL__ */
 
-#if defined(HAVE_SYS_NERR)
+#if defined(HAVE_SYS_NERR) && !defined(WARNING_SYS_NERR)
 # define ERRNO_NUMBER sys_nerr
 #elif defined(ELAST)
 # define ERRNO_NUMBER (ELAST + 1)
