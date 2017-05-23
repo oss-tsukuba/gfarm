@@ -1052,16 +1052,33 @@ fi
 
 ### Solaris no longer defines sys_nerr/sys_errlist
 
+ax_cv_warning_sys_nerr=no
+
 AC_MSG_CHECKING([sys_nerr])
 AC_TRY_LINK([
 #include <stdio.h>
 #include <errno.h>],[
-int i = sys_nerr;
-], [ax_cv_have_sys_nerr=yes], [ax_cv_have_sys_nerr=no])
+printf("%d\n", (int)sys_nerr);
+], [
+  ax_cv_have_sys_nerr=yes
+
+  # hack to detect "warning: `sys_nerr' is deprecated"  
+  if $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 2>&1 | grep warning >/dev/null; then
+    ax_cv_warning_sys_nerr=yes
+  fi
+
+], [ax_cv_have_sys_nerr=no])
 AC_MSG_RESULT([$ax_cv_have_sys_nerr])
 if test "$ax_cv_have_sys_nerr" = yes; then
   AC_DEFINE(HAVE_SYS_NERR, 1, [sys_nerr is defined])
 fi
+
+AC_MSG_CHECKING([whether sys_nerr causes warning or not])
+AC_MSG_RESULT([$ax_cv_warning_sys_nerr])
+if test "$ax_cv_warning_sys_nerr" = yes; then
+  AC_DEFINE(WARNING_SYS_NERR, 1, [using sys_nerr causes warning])
+fi
+
 
 ###### Checks for system services.
 # empty for now
