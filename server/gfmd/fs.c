@@ -743,7 +743,8 @@ gfm_server_fhopen(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_INVALID_ARGUMENT;
 		msg = "invalid flag";
 	} else if ((e = process_open_file(process, inode, flag, 0, peer,
-	    NULL, NULL, &fd)) != GFARM_ERR_NO_ERROR)
+	    NULL, TDIRSET_IS_UNKNOWN /* XXX unavoidable */, &fd))
+	    != GFARM_ERR_NO_ERROR)
 		msg = "process_open_file";
 	else {
 		peer_fdpair_set_current(peer, fd, diag);

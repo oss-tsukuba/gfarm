@@ -3576,6 +3576,38 @@ inode_dir_check_and_repair_dotdot(struct inode *dir_inode,
 }
 
 static gfarm_error_t
+inode_create_link_orphan_inode(struct inode *base, const char *name,
+	struct user *user, struct inode *inode, struct dirset *tdirset)
+{
+	gfarm_error_t e;
+	struct inode_activity *ia;
+
+	ia = inode_activity_alloc_or_update(&inode->u.c.activity, tdirset);
+	if (ia == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_activity_alloc() failed");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	e = inode_create_link_internal(base, name, user, inode);
+
+	/* inode_activity_free_try() may free tdirset, so we need protection */
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
+		dirset_add_ref(tdirset);
+
+	if (inode_activity_free_try(inode))
+		inode_remove_try(inode, tdirset);
+
+	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
+		dirset_del_ref(tdirset);
+
+	return (e);
+}
+
+/*
+ * NOTE: it's disallowed to call this from outside of inode_check_and_repair()
+ */
+static gfarm_error_t
 inode_link_to_lost_found(struct inode *inode)
 {
 	gfarm_error_t e;
@@ -3595,7 +3627,14 @@ inode_link_to_lost_found(struct inode *inode)
 	snprintf(name, name_len, "%016llX%016llX",
 	    (unsigned long long)inode_get_number(inode),
 	    (unsigned long long)inode_get_gen(inode));
-	e = inode_create_link_internal(base, name, admin, inode);
+	/*
+	 * this functiopn is only called from inode_check_and_repair(), and
+	 * inode_check_and_repair() is called before the first invocation of
+	 * dirquota_check_main() which is called from quota_check_init().
+	 * thus, TDIRSET_IS_NOT_SET is OK in this phase.
+	 */
+	e = inode_create_link_orphan_inode(base, name, admin, inode,
+	    TDIRSET_IS_NOT_SET);
 	if (e == GFARM_ERR_NO_ERROR) {
 		inode->i_nlink_ini++;
 		if (inode_is_dir(inode)) {
@@ -3641,7 +3680,9 @@ inode_create_file_in_lost_found(
 	snprintf(fname, (int)sizeof(fname), "%016llX%016llX-%s",
 	    (unsigned long long)inum_old,
 	    (unsigned long long)gen_old, host_name(host));
-	e = inode_create_link_internal(lf, fname, admin, n); /* i_nlink++ */
+	/* `n' is logically a new file, thus TDIRSET_IS_NOT_SET is OK */
+	e = inode_create_link_orphan_inode(lf, fname, admin, n,
+	    TDIRSET_IS_NOT_SET); /* i_nlink++ */
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1003477,
 		    "inode %lld:%lld on %s -> %lld:%lld: "
