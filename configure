@@ -14063,60 +14063,6 @@ $as_echo "#define HAVE_GETSPNAM_R 1" >>confdefs.h
 
 fi
 
-### Solaris no longer defines sys_nerr/sys_errlist
-
-ax_cv_warning_sys_nerr=no
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking sys_nerr" >&5
-$as_echo_n "checking sys_nerr... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <stdio.h>
-#include <errno.h>
-int
-main ()
-{
-
-printf("%d\n", (int)sys_nerr);
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-
-  ax_cv_have_sys_nerr=yes
-
-  # hack to detect "warning: `sys_nerr' is deprecated"
-  if $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 2>&1 | grep warning >/dev/null; then
-    ax_cv_warning_sys_nerr=yes
-  fi
-
-
-else
-  ax_cv_have_sys_nerr=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_have_sys_nerr" >&5
-$as_echo "$ax_cv_have_sys_nerr" >&6; }
-if test "$ax_cv_have_sys_nerr" = yes; then
-
-$as_echo "#define HAVE_SYS_NERR 1" >>confdefs.h
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether sys_nerr causes warning or not" >&5
-$as_echo_n "checking whether sys_nerr causes warning or not... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_warning_sys_nerr" >&5
-$as_echo "$ax_cv_warning_sys_nerr" >&6; }
-if test "$ax_cv_warning_sys_nerr" = yes; then
-
-$as_echo "#define WARNING_SYS_NERR 1" >>confdefs.h
-
-fi
-
 
 ###### Checks for system services.
 # empty for now
