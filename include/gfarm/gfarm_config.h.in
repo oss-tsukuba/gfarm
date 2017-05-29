@@ -236,9 +236,6 @@
 /* Define to 1 if you have the <sys/loadavg.h> header file. */
 #undef HAVE_SYS_LOADAVG_H
 
-/* sys_nerr is defined */
-#undef HAVE_SYS_NERR
-
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
 
@@ -285,9 +282,6 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* using sys_nerr causes warning */
-#undef WARNING_SYS_NERR
-
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
 #if defined AC_APPLE_UNIVERSAL_BUILD
@@ -317,9 +311,6 @@
 
 /* 5 arguments getspnam_r() exists */
 #undef HAVE_GETSPNAM_R
-
-/* sys_nerr is defined */
-#undef HAVE_SYS_NERR
 
 /* 3rd argument type of bind(2)/connect(2), if <sys/socket.h> doesn't define */
 #undef socklen_t
