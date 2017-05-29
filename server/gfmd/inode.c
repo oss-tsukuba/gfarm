@@ -3628,7 +3628,7 @@ inode_link_to_lost_found(struct inode *inode)
 	    (unsigned long long)inode_get_number(inode),
 	    (unsigned long long)inode_get_gen(inode));
 	/*
-	 * this functiopn is only called from inode_check_and_repair(), and
+	 * this function is only called from inode_check_and_repair(), and
 	 * inode_check_and_repair() is called before the first invocation of
 	 * dirquota_check_main() which is called from quota_check_init().
 	 * thus, TDIRSET_IS_NOT_SET is OK in this phase.
