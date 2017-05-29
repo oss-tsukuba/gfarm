@@ -3638,7 +3638,6 @@ gfs_server_ftruncate(struct gfp_xdr *client)
 	struct file_entry *fe;
 	int save_errno = 0;
 	unsigned char md_value[EVP_MAX_MD_SIZE];
-	unsigned int md_len;
 	static const char diag[] = "GFS_PROTO_FTRUNCATE";
 
 	gfs_server_get_request(client, diag, "il", &fd, &length);
@@ -3662,7 +3661,7 @@ gfs_server_ftruncate(struct gfp_xdr *client)
 				if ((fe->flags & FILE_FLAG_DIGEST_FINISH)
 				    == 0) {
 					/* to avoid memory leak*/
-					md_len = gfarm_msgdigest_free(
+					gfarm_msgdigest_free(
 					    fe->md_ctx, md_value);
 					fe->flags |= FILE_FLAG_DIGEST_FINISH;
 				}
