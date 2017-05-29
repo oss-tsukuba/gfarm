@@ -1105,35 +1105,6 @@ if test "$ax_cv_have_getspnam_r" = yes; then
   AC_DEFINE(HAVE_GETSPNAM_R, 1, [5 arguments getspnam_r() exists])
 fi
 
-### Solaris no longer defines sys_nerr/sys_errlist
-
-ax_cv_warning_sys_nerr=no
-
-AC_MSG_CHECKING([sys_nerr])
-AC_TRY_LINK([
-#include <stdio.h>
-#include <errno.h>],[
-printf("%d\n", (int)sys_nerr);
-], [
-  ax_cv_have_sys_nerr=yes
-
-  # hack to detect "warning: `sys_nerr' is deprecated"  
-  if $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 2>&1 | grep warning >/dev/null; then
-    ax_cv_warning_sys_nerr=yes
-  fi
-
-], [ax_cv_have_sys_nerr=no])
-AC_MSG_RESULT([$ax_cv_have_sys_nerr])
-if test "$ax_cv_have_sys_nerr" = yes; then
-  AC_DEFINE(HAVE_SYS_NERR, 1, [sys_nerr is defined])
-fi
-
-AC_MSG_CHECKING([whether sys_nerr causes warning or not])
-AC_MSG_RESULT([$ax_cv_warning_sys_nerr])
-if test "$ax_cv_warning_sys_nerr" = yes; then
-  AC_DEFINE(WARNING_SYS_NERR, 1, [using sys_nerr causes warning])
-fi
-
 
 ###### Checks for system services.
 # empty for now
@@ -1160,9 +1131,6 @@ AH_BOTTOM([
 
 /* 5 arguments getspnam_r() exists */
 #undef HAVE_GETSPNAM_R
-
-/* sys_nerr is defined */
-#undef HAVE_SYS_NERR
 
 /* 3rd argument type of bind(2)/connect(2), if <sys/socket.h> doesn't define */
 #undef socklen_t

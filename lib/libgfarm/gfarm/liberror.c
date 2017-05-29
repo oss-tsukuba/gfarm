@@ -684,13 +684,7 @@ gfarm_error_string(gfarm_error_t error)
 	return (errcode_string[GFARM_ERR_UNKNOWN]);
 }
 
-#ifdef __KERNEL__	/* HAVE_SYS_NERR :: not defined in kernel */
-#undef HAVE_SYS_NERR
-#endif /* __KERNEL__ */
-
-#if defined(HAVE_SYS_NERR) && !defined(WARNING_SYS_NERR)
-# define ERRNO_NUMBER sys_nerr
-#elif defined(ELAST)
+#ifdef ELAST
 # define ERRNO_NUMBER (ELAST + 1)
 #else
 # define ERRNO_NUMBER 256 /* XXX */
