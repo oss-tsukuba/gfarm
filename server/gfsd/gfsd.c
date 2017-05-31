@@ -3115,6 +3115,10 @@ fhclose_fd(struct gfp_xdr *client, struct file_entry *fe, const char *diag)
 				    "for writing after gfmd failover: %s",
 				    (long long)fe->ino, (long long)fe->gen,
 				    gfarm_error_string(e));
+			if (!IS_CONNECTION_ERROR(e)) {
+				/* e.g. GFARM_ERR_STALE_FILE_HANDLE */
+				copy_to_lost_found(fe);
+			}
 		}
 	} else if (gen_update_result != -1) {
 		if ((e2 = gfm_client_generation_updated_by_cookie_request(
