@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>24 Feb 2017</date></refentryinfo>
+<refentryinfo><date>9 Jun 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -947,6 +947,29 @@ This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	directory_quota_count_per_user_limit 1000
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>directory_quota_check_start_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+The <token>directory_quota_check_start_interval</token> statement
+specifies interval to start re-calculation of directory quota,
+when such re-calculation becomes necessary.
+This parameter is to reduce number of multiple re-calculation to once
+during the interval.
+</para>
+<para>
+The default value is 60 seconds.
+</para>
+<para>
+This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	directory_quota_check_start_interval 120
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2596,6 +2619,7 @@ The default size is 16 MiB.
 	&lt;shared_key_file_statement&gt; |
 	&lt;digest_statement&gt; |
 	&lt;directory_quota_count_per_user_limit_statement&gt; |
+	&lt;directory_quota_check_start_interval_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
 <!--	&lt;address_use_statement&gt; | -->
@@ -2885,6 +2909,11 @@ The default size is 16 MiB.
 <varlistentry>
 <term>&lt;directory_quota_count_per_user_limit_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"directory_quota_count_per_user_limit" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;directory_quota_check_start_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"directory_quota_check_start_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--
@@ -3547,3 +3576,4 @@ sockopt keepalive
   <citerefentry><refentrytitle>setsockopt</refentrytitle><manvolnum>2</manvolnum></citerefentry></para>
 </refsect1>
 </refentry>
+

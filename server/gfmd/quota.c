@@ -11,10 +11,12 @@
 
 #include <gfarm/gfarm.h>
 
+#include "gfutil.h"
 #include "thrsubr.h"
 
 #include "auth.h"
 #include "quota_info.h"
+#include "config.h"
 
 #include "uint64_map.h"
 #include "peer.h"
@@ -1112,6 +1114,7 @@ struct quota_check_control {
 	pthread_mutex_t mutex;
 	pthread_cond_t wakeup;
 	pthread_cond_t end;
+	time_t target_time;
 	int needed;
 	int running;
 
@@ -1121,14 +1124,21 @@ struct quota_check_control {
 };
 
 static void
-quota_check_start(struct quota_check_control *ctl)
+quota_check_schedule(struct quota_check_control *ctl, time_t target_time)
 {
-	static const char diag[] = "quota_check_start";
+	static const char diag[] = "quota_check_schedule";
 
 	gfarm_mutex_lock(&ctl->mutex, diag, ctl->mutex_diag);
 	ctl->needed = 1;
+	ctl->target_time = target_time;
 	gfarm_cond_signal(&ctl->wakeup, diag, ctl->wakeup_diag);
 	gfarm_mutex_unlock(&ctl->mutex, diag, ctl->mutex_diag);
+}
+
+static void
+quota_check_start(struct quota_check_control *ctl)
+{
+	quota_check_schedule(ctl, time(NULL));
 }
 
 static void
@@ -1146,6 +1156,7 @@ static void *
 quota_check_thread(void *arg)
 {
 	struct quota_check_control *ctl = arg;
+	time_t t;
 	static const char diag[] = "quota_check_thread";
 
 	(void)gfarm_pthread_set_priority_minimum(diag);
@@ -1159,6 +1170,16 @@ quota_check_thread(void *arg)
 			gfarm_cond_wait(&ctl->wakeup, &ctl->mutex,
 			    diag, ctl->wakeup_diag);
 
+		for (;;) {
+			t = time(NULL);
+			if (ctl->target_time <= t)
+				break;
+			t = ctl->target_time - t;
+			gfarm_mutex_unlock(&ctl->mutex, diag, ctl->mutex_diag);
+			gfarm_sleep(t);
+			gfarm_mutex_lock(&ctl->mutex, diag, ctl->mutex_diag);
+		}
+
 		ctl->needed = 0;
 		ctl->running = 1;
 		gfarm_mutex_unlock(&ctl->mutex, diag, ctl->mutex_diag);
@@ -1167,6 +1188,19 @@ quota_check_thread(void *arg)
 	}
 
 	return (NULL);
+}
+
+static gfarm_error_t
+quota_check_at_the_start(struct quota_check_control *ctl)
+{
+	gfarm_error_t e = create_detached_thread(quota_check_thread, ctl);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	quota_check_start(ctl);
+	quota_check_wait_for_end(ctl);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*
@@ -1180,6 +1214,7 @@ static struct quota_check_control quota_check_ctl = {
 	PTHREAD_MUTEX_INITIALIZER,
 	PTHREAD_COND_INITIALIZER,
 	PTHREAD_COND_INITIALIZER,
+	0,
 	0,
 	0,
 	"quota_check_mutex",
@@ -1499,6 +1534,7 @@ static struct quota_check_control dirquota_check_ctl = {
 	PTHREAD_COND_INITIALIZER,
 	0,
 	0,
+	0,
 	"dirquota_check_mutex",
 	"dirquota_check_wakeup",
 	"dirquota_check_end",
@@ -1518,9 +1554,8 @@ dirquota_invalidate(struct dirset *tdirset)
 void
 dirquota_fixup_schedule(void)
 {
-	/* DQTODO - delay before starting to reduce retries */
-
-	quota_check_start(&dirquota_check_ctl);
+	quota_check_schedule(&dirquota_check_ctl,
+	    time(NULL) +  gfarm_directory_quota_check_start_interval);
 }
 
 /* PREREQUISITE: giant_lock */
@@ -1541,23 +1576,17 @@ quota_check_init(void)
 {
 	gfarm_error_t e;
 
-	if ((e = create_detached_thread(
-	    quota_check_thread, &quota_check_ctl)) != GFARM_ERR_NO_ERROR)
+	e = quota_check_at_the_start(&quota_check_ctl);
+	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1004299,
 		    "create_detached_thread(quota_check): %s",
 		    gfarm_error_string(e));
 
-	quota_check_start(&quota_check_ctl);
-	quota_check_wait_for_end(&quota_check_ctl);
-
-	if ((e = create_detached_thread(
-	    quota_check_thread, &dirquota_check_ctl)) != GFARM_ERR_NO_ERROR)
+	e = quota_check_at_the_start(&dirquota_check_ctl);
+	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1004641,
 		    "create_detached_thread(dirquota_check): %s",
 		    gfarm_error_string(e));
-
-	quota_check_start(&dirquota_check_ctl);
-	quota_check_wait_for_end(&dirquota_check_ctl);
 }
 
 /*
