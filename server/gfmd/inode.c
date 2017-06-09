@@ -933,7 +933,7 @@ inode_tdirset_check(struct inode *inode, struct dirset *tdirset,
 	const char *diag)
 {
 	if (tdirset == TDIRSET_IS_UNKNOWN) {
-		gflog_error(GFARM_MSG_1004666,
+		gflog_warning(GFARM_MSG_1004666,
 		    "%s: inode %lld: unknown dirset, scheduling quota_check",
 		    diag, (long long)inode_get_number(inode));
 		dirquota_check_schedule();
