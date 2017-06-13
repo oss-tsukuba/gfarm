@@ -349,7 +349,6 @@ db_getfreenum(void)
 	return (freenum);
 }
 
-/* PREREQUISITE: mdhost_global_mutex */
 static gfarm_error_t
 db_journal_enter(dbq_entry_func_t func, void *data, int with_seqnum)
 {
