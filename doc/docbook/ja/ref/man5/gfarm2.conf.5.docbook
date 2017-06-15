@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>6 Jun 2017</date></refentryinfo>
+<refentryinfo><date>15 Jun 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -914,11 +914,11 @@ digestタイプとして disable と指定した場合は、チェックサム�
 </varlistentry>
 
 <varlistentry>
-<term><token>directory_quota_check_start_interval</token> <parameter moreinfo="none">秒</parameter></term>
+<term><token>directory_quota_check_start_delay</token> <parameter moreinfo="none">秒</parameter></term>
 <listitem>
 <para>
 directory quota の再集計が必要となったときに、
-実際に再集計を開始するまでの時間間隔(秒)を指定します。
+実際に再集計を開始するまでの遅延時間(秒)を指定します。
 再集計が複数回必要になった場合、何秒以内であればそれを集約して一回の集計で
 済ませるかを設定します。
 </para>
@@ -930,7 +930,7 @@ directory quota の再集計が必要となったときに、
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
-	directory_quota_check_start_interval 120
+	directory_quota_check_start_delay 120
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2567,7 +2567,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;shared_key_file_statement&gt; |
 	&lt;digest_statement&gt; |
 	&lt;directory_quota_count_per_user_limit_statement&gt; |
-	&lt;directory_quota_check_start_interval_statement&gt; |
+	&lt;directory_quota_check_start_delay_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
 <!--	&lt;address_use_statement&gt; | -->
@@ -2860,8 +2860,8 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 </varlistentry>
 
 <varlistentry>
-<term>&lt;directory_quota_check_start_interval_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"directory_quota_check_start_interval" &lt;number&gt;</literallayout></listitem>
+<term>&lt;directory_quota_check_start_delay_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"directory_quota_check_start_delay" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--

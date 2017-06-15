@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>9 Jun 2017</date></refentryinfo>
+<refentryinfo><date>15 Jun 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -952,14 +952,14 @@ This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>directory_quota_check_start_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<term><token>directory_quota_check_start_delay</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>
-The <token>directory_quota_check_start_interval</token> statement
-specifies interval to start re-calculation of directory quota,
+The <token>directory_quota_check_start_delay</token> statement
+specifies the delay until starting re-calculation of directory quota,
 when such re-calculation becomes necessary.
 This parameter is to reduce number of multiple re-calculation to once
-during the interval.
+during the delay period.
 </para>
 <para>
 The default value is 60 seconds.
@@ -969,7 +969,7 @@ This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
-	directory_quota_check_start_interval 120
+	directory_quota_check_start_delay 120
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2619,7 +2619,7 @@ The default size is 16 MiB.
 	&lt;shared_key_file_statement&gt; |
 	&lt;digest_statement&gt; |
 	&lt;directory_quota_count_per_user_limit_statement&gt; |
-	&lt;directory_quota_check_start_interval_statement&gt; |
+	&lt;directory_quota_check_start_delay_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
 <!--	&lt;address_use_statement&gt; | -->
@@ -2912,8 +2912,8 @@ The default size is 16 MiB.
 </varlistentry>
 
 <varlistentry>
-<term>&lt;directory_quota_check_start_interval_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"directory_quota_check_start_interval" &lt;number&gt;</literallayout></listitem>
+<term>&lt;directory_quota_check_start_delay_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"directory_quota_check_start_delay" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--

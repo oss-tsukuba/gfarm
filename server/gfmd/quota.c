@@ -1555,7 +1555,7 @@ void
 dirquota_fixup_schedule(void)
 {
 	quota_check_schedule(&dirquota_check_ctl,
-	    time(NULL) +  gfarm_directory_quota_check_start_interval);
+	    time(NULL) +  gfarm_directory_quota_check_start_delay);
 }
 
 /* PREREQUISITE: giant_lock */
