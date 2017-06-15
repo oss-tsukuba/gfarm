@@ -756,14 +756,14 @@ This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
 	directory_quota_count_per_user_limit 1000<br>
 </p></div>
 </dd>
-<dt><span class="term"><span class="token">directory_quota_check_start_interval</span> <em class="parameter"><code>seconds</code></em></span></dt>
+<dt><span class="term"><span class="token">directory_quota_check_start_delay</span> <em class="parameter"><code>seconds</code></em></span></dt>
 <dd>
 <p>
-The <span class="token">directory_quota_check_start_interval</span> statement
-specifies interval to start re-calculation of directory quota,
+The <span class="token">directory_quota_check_start_delay</span> statement
+specifies the delay until starting re-calculation of directory quota,
 when such re-calculation becomes necessary.
 This parameter is to reduce number of multiple re-calculation to once
-during the interval.
+during the delay period.
 </p>
 <p>
 The default value is 60 seconds.
@@ -773,7 +773,7 @@ This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
-	directory_quota_check_start_interval 120<br>
+	directory_quota_check_start_delay 120<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">sockopt </span><em class="parameter"><code>option</code></em><span class="emphasis"><em>[=</em></span><em class="parameter"><code>value</code></em><span class="emphasis"><em>] [<span class="token">LISTENER</span> | <em class="parameter"><code>Host_specification</code></em>]</em></span></span></dt>
@@ -2030,7 +2030,7 @@ The default size is 16 MiB.
 	&lt;shared_key_file_statement&gt; |<br>
 	&lt;digest_statement&gt; |<br>
 	&lt;directory_quota_count_per_user_limit_statement&gt; |<br>
-	&lt;directory_quota_check_start_interval_statement&gt; |<br>
+	&lt;directory_quota_check_start_delay_statement&gt; |<br>
 <br>
 	&lt;sockopt_statement&gt; |<br>
 <br>
@@ -2194,8 +2194,8 @@ The default size is 16 MiB.
 <dd><div class="literallayout"><p>"digest" &lt;digest_type&gt;</p></div></dd>
 <dt><span class="term">&lt;directory_quota_count_per_user_limit_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"directory_quota_count_per_user_limit" &lt;number&gt;</p></div></dd>
-<dt><span class="term">&lt;directory_quota_check_start_interval_statement&gt; ::=</span></dt>
-<dd><div class="literallayout"><p>"directory_quota_check_start_interval" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;directory_quota_check_start_delay_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"directory_quota_check_start_delay" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;sockopt_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]</p></div></dd>
 <dt><span class="term">&lt;socket_option&gt; ::=</span></dt>

@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 6 Jun 2017
+.\"      Date: 15 Jun 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "6 Jun 2017" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "15 Jun 2017" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -841,9 +841,9 @@ directory_quota_count_per_user_limit \fI数\fR
 .\}
 .RE
 .PP
-directory_quota_check_start_interval \fI秒\fR
+directory_quota_check_start_delay \fI秒\fR
 .RS 4
-directory quota の再集計が必要となったときに、 実際に再集計を開始するまでの時間間隔(秒)を指定します。 再集計が複数回必要になった場合、何秒以内であればそれを集約して一回の集計で 済ませるかを設定します。
+directory quota の再集計が必要となったときに、 実際に再集計を開始するまでの遅延時間(秒)を指定します。 再集計が複数回必要になった場合、何秒以内であればそれを集約して一回の集計で 済ませるかを設定します。
 .sp
 デフォルトは60秒です。
 .sp
@@ -855,7 +855,7 @@ directory quota の再集計が必要となったときに、 実際に再集計
 .RS 4
 .\}
 .nf
-	directory_quota_check_start_interval 120
+	directory_quota_check_start_delay 120
 .fi
 .if n \{\
 .RE
@@ -2385,7 +2385,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<shared_key_file_statement> |
 	<digest_statement> |
 	<directory_quota_count_per_user_limit_statement> |
-	<directory_quota_check_start_interval_statement> |
+	<directory_quota_check_start_delay_statement> |
 
 	<sockopt_statement> |
 
@@ -3059,14 +3059,14 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
-<directory_quota_check_start_interval_statement> ::=
+<directory_quota_check_start_delay_statement> ::=
 .RS 4
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-"directory_quota_check_start_interval" <number>
+"directory_quota_check_start_delay" <number>
 .fi
 .if n \{\
 .RE
