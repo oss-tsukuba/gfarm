@@ -3,6 +3,7 @@
  */
 
 #include <pthread.h>
+#include <sys/types.h>
 #include <sys/param.h>
 #include <stdlib.h>
 #include <string.h>

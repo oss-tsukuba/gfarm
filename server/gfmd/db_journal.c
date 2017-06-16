@@ -12,9 +12,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <sys/param.h>
-#ifdef DEBUG_JOURNAL
 #include <sys/time.h>
-#endif
 
 #include <gfarm/gfarm.h>
 

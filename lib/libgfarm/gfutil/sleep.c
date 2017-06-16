@@ -5,7 +5,7 @@
 #include "gfutil.h"
 
 void
-gfarm_sleep(long sec)
+gfarm_sleep(time_t sec)
 {
 	struct timespec ts;
 

@@ -5,7 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/types.h>
+
 #include <gfarm/gfarm.h>
+
 #include "gfs_rdma.h"
 #include "gfutil.h"
 #include "context.h"
