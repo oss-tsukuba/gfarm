@@ -11,6 +11,8 @@
 #include <memory.h>
 #include <string.h>
 #include <assert.h>
+#include <sys/types.h>
+
 #include <gfarm/gfarm.h>
 
 #include "bool.h"

@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <errno.h>
 #include <ctype.h>
+#include <sys/types.h>
 
 #define GFARM_INTERNAL_USE /* GFARM_FILE_LOOKUP, gfs_mode_to_type(), etc. */
 #include <gfarm/gflog.h>

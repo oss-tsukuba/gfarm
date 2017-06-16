@@ -7,7 +7,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/types.h>
 #include <netinet/in.h> /* ntoh[ls]()/hton[ls]() on glibc */
+
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>

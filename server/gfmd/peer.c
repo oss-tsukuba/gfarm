@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/types.h>
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>

@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <unistd.h>
+#include <sys/types.h>
 
 #include <gfarm/gflog.h>
 

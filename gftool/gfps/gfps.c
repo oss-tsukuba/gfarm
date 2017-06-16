@@ -2,9 +2,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <sys/types.h>
+
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
+
 #include "gfj_client.h"
 #include "auth.h"
 #include "gfutil.h"

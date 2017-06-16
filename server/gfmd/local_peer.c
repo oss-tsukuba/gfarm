@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <netdb.h> /* for NI_MAXHOST, NI_NUMERICHOST, etc */
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 

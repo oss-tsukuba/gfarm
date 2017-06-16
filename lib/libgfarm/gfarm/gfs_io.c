@@ -2,6 +2,7 @@
 #include <stdio.h>	/* config.h needs FILE */
 #include <unistd.h>
 #include <string.h>
+#include <sys/types.h>
 
 #define GFARM_INTERNAL_USE /* GFARM_FILE_LOOKUP */
 #include <gfarm/gfarm.h>
