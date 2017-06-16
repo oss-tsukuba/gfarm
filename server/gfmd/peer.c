@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <signal.h> /* for sig_atomic_t */
 #include <netinet/in.h>

@@ -2,6 +2,7 @@
 #include <stdio.h>	/* config.h needs FILE */
 #include <unistd.h>
 #include <string.h>
+#include <sys/types.h>
 
 #include <openssl/evp.h>
 
