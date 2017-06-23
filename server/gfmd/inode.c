@@ -3680,9 +3680,20 @@ inode_create_file_in_lost_found(
 	snprintf(fname, (int)sizeof(fname), "%016llX%016llX-%s",
 	    (unsigned long long)inum_old,
 	    (unsigned long long)gen_old, host_name(host));
+
+
+	/*
+	 * protect `n' from being incorrectly removed by inode_remove_try() in
+	 * inode_create_link_orphan_inode()
+	 */
+	n->i_nlink++;
+
 	/* `n' is logically a new file, thus TDIRSET_IS_NOT_SET is OK */
 	e = inode_create_link_orphan_inode(lf, fname, admin, n,
 	    TDIRSET_IS_NOT_SET); /* i_nlink++ */
+
+	n->i_nlink--; /* undo the protection above */
+
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1003477,
 		    "inode %lld:%lld on %s -> %lld:%lld: "
