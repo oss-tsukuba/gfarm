@@ -1505,6 +1505,28 @@ file_table_is_available(gfarm_int32_t net_fd)
 		return (0);
 }
 
+/*
+ * confirm_local_path() should never return 0,
+ * so this function is purely for sanity check.
+ *
+ * the reason why this never returns 0 is:
+ * - gfmd ensures that only one gfsd process can create a new replica
+ *   by using the `to_create' result of GFM_PROTO_REOPEN RPC.
+ *   (`to_create' result will be converted to O_CREAT flag for open(2))
+ *   simultaneously running other gfsd processes fail to open the replica
+ *   before the creation due to the lack of the O_CREAT flag, and
+ *   the gfsd processes retry opening the replica in gfs_server_open_common().
+ *   gflog_debug(GFARM_MSG_1002299, ...) will be called in the case of
+ *   the retry.
+ * - if a replication is ongoing, file creation won't be scheduled.
+ *   gfmd ensures this by its FILE_COPY_IS_VALID() check.
+ * - if a dead file copy of the replica remains, any replica creation or any
+ *   replication won't be scheduled to the gfsd which has the dead file copy.
+ *   gfmd ensures this by its FILE_COPY_IS_BEING_REMOVED() check.
+ * - simultaneous replication, file creation, file deletion won't happen.
+ *   gfmd ensures this by its FILE_COPY_IS_VALID() check and
+ *   FILE_COPY_IS_BEING_REMOVED() check.
+ */
 static int
 confirm_local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag)
 {
