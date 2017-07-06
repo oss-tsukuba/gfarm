@@ -630,6 +630,24 @@ mdhost_disconnect_request(struct mdhost *m, struct peer *peer)
 	return (abstract_host_disconnect_request(&m->ah, peer, diag));
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ *
+ * peer may be NULL.
+ */
+void
+mdhost_master_disconnect_request(struct peer *peer)
+{
+	struct mdhost *m = mdhost_lookup_master();
+	static const char diag[] = "mdhost_master_disconnect_request";
+
+	if (m == NULL) {
+		gflog_notice(GFARM_MSG_UNFIXED, "%s: no master", diag);
+		return;
+	}
+	mdhost_disconnect_request(m, peer);
+}
+
 /* PREREQUISITE: giant_lock */
 void
 mdhost_set_self_as_master(void)
