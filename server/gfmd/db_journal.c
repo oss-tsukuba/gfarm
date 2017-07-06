@@ -175,8 +175,16 @@ db_journal_init_seqnum(void)
 	}
 }
 
+/*
+ * the reason why we use this hook instead of directly calling
+ * mdhost_master_disconnect_request() is
+ * because db_journal.c is used by programs other than gfmd,
+ * and we want to keep such programs independent from mdhost.c
+ */
+static void (*master_disconnect_request)(struct peer *);
+
 void
-db_journal_init(void)
+db_journal_init(void (*disconnect_request)(struct peer *))
 {
 	gfarm_error_t e;
 	char path[MAXPATHLEN + 1];
@@ -185,6 +193,8 @@ db_journal_init(void)
 	gfarm_timerval_t t1, t2;
 	double ts;
 #endif
+
+	master_disconnect_request = disconnect_request;
 
 	if (journal_dir == NULL) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
@@ -3964,6 +3974,7 @@ db_journal_recvq_delete(struct db_journal_recv_info **rip)
 
 	next_sn = db_journal_get_current_seqnum() + 1;
 
+retry_from_locking:
 	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 retry:
 	while (journal_recvq_nelems <= 0 && journal_recvq_cancel == 0)
@@ -3984,7 +3995,22 @@ retry:
 			    (unsigned long long)next_sn);
 			free(ri->recs);
 			free(ri);
-			goto retry;
+			if (ri->from_sn < next_sn)
+				goto retry;
+
+			/* something is going wrong, disconnect & restart */
+			gfarm_mutex_unlock(
+			    &journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
+
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "got seqnum %llu > expected seqnum %llu, "
+			    "disconnecting master",
+			    (unsigned long long)ri->from_sn,
+			    (unsigned long long)next_sn);
+			giant_lock();
+			(*master_disconnect_request)(NULL);
+			giant_unlock();
+			goto retry_from_locking;
 		}
 	}
 	gfarm_mutex_unlock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);

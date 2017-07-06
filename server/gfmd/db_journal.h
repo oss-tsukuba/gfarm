@@ -34,5 +34,6 @@ void *db_journal_recvq_thread(void *);
 void *db_journal_apply_thread(void *);
 void db_journal_reset_slave_transaction_nesting(void);
 void db_journal_init_seqnum(void);
-void db_journal_init(void);
+struct peer;
+void db_journal_init(void (*)(struct peer *));
 gfarm_error_t db_journal_init_status(void); /* currently only for regress */

@@ -69,6 +69,7 @@ void mdhost_activate(struct mdhost *);
 void mdhost_set_peer(struct mdhost *, struct peer *, int);
 int mdhost_is_up(struct mdhost *);
 void mdhost_disconnect_request(struct mdhost *, struct peer *);
+void mdhost_master_disconnect_request(struct peer *);
 gfarm_error_t mdhost_enter(struct gfarm_metadb_server *, struct mdhost **);
 gfarm_error_t mdhost_modify_in_cache(struct mdhost *,
 	struct gfarm_metadb_server *);

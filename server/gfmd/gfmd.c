@@ -1534,7 +1534,7 @@ gfmd_modules_init_default(int table_size)
 		db_journal_set_fail_store_op(db_journal_store_failure);
 		db_journal_apply_init();
 		gflog_info(GFARM_MSG_1004201, "start reading db journal");
-		db_journal_init();
+		db_journal_init(mdhost_master_disconnect_request);
 		boot_apply_db_journal();
 	}
 	gflog_info(GFARM_MSG_1004202, "start initializing modules and "
