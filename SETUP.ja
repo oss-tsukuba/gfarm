@@ -141,7 +141,7 @@ root 権限が必要です．以下の設定は root 権限で行います．
   ザが管理者となります．この場合，指定した Subject DN のエントリを
   /etc/grid-security/grid-mapfile に追加します．
   GSI認証を用いるには，Gfarm バイナリのビルド前に あらかじめ Globus を
-  インストールし，さらに Gfarm ビルド時の configure コマンドに 
+  インストールし，さらに Gfarm ビルド時の configure コマンドに
   --with-globusオプションを指定して Globus の利用を有効にしておく必要が
   あります．
 

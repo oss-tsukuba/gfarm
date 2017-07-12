@@ -157,7 +157,7 @@ sure the default setting with the -t option.  With the -t option,
 nothing is really executed except for the display of the settings for
 configuration.
 
-   In case of sharedsecret: 
+   In case of sharedsecret:
 
 	# config-gfarm -t -A <global_admin_name>
 
@@ -181,9 +181,9 @@ You can modify any default parameter with the option shown in [ ].
 When you have confirmed the parameter, run 'config-gfarm' by the root
 user without the -t option.
 
-   In case of sharedsecret: 
+   In case of sharedsecret:
 
-	# config-gfarm -t -A <global_admin_name>
+	# config-gfarm -A <global_admin_name>
 
    In case of GSI:
 
