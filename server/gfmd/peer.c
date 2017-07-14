@@ -1258,7 +1258,7 @@ peer_set_host(struct peer *peer, char *hostname)
 	}
 
 	if (peer->hostname != NULL) {
-		gflog_info(GFARM_MSG_UNFIXED, "%s: set to %s",
+		gflog_info(GFARM_MSG_1004751, "%s: set to %s",
 		    peer->hostname, hostname);
 		free(peer->hostname);
 		peer->hostname = NULL;
@@ -1269,7 +1269,7 @@ peer_set_host(struct peer *peer, char *hostname)
 		GFARM_MALLOC_ARRAY(aux,
 		    strlen(peer->username) + 1 + strlen(hostname) + 1);
 		if (aux == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED, "no memory: "
+			gflog_error(GFARM_MSG_1004752, "no memory: "
 			    "gflog_set_auxiliary_info(%s@%s)",
 			    peer->username, hostname);
 		} else

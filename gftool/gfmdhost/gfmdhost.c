@@ -88,7 +88,7 @@ do_set_or_modify(int op, const char *hostname, int port,
 	    gfm_client_metadb_server_set :
 	    gfm_client_metadb_server_modify;
 	if ((e = rpc_op(gfm_conn, ms)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004756,
 		    "%s: rpc failed: %s", diag, gfarm_error_string(e));
 	}
 	return (e);
@@ -123,7 +123,7 @@ do_modify(const char *hostname, int port, const char *clustername,
 
 	if ((e = gfm_client_metadb_server_get(gfm_conn, hostname, &ms))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004757,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
