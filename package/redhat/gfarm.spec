@@ -179,7 +179,7 @@ Development header files and libraries for Gfarm file system
 * Mon Apr 22 2013 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.8-1
 - Gfarm version 2.5.8 released
 
-* Thu Jan 15 2013 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.8rc2-1
+* Tue Jan  8 2013 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.8rc2-1
 - Gfarm version 2.5.8 released candidate 2
 - gfruntest, gfservice and systest are included in the client package
 
@@ -191,10 +191,10 @@ Development header files and libraries for Gfarm file system
 * Mon Sep  3 2012 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.7-1
 - Gfarm version 2.5.7 released
 
-* Tue Feb 25 2012 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.4.1-1
+* Sat Feb 25 2012 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.4.1-1
 - Gfarm version 2.5.4.1 released
 
-* Tue Feb 22 2012 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.4-1
+* Wed Feb 22 2012 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.4-1
 - Gfarm version 2.5.4 released
 
 * Mon Dec 19 2011 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.2-1
@@ -203,7 +203,7 @@ Development header files and libraries for Gfarm file system
 * Wed Sep 14 2011 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.1-1
 - Gfarm version 2.5.1 released
 
-* Thu Apr 22 2011 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.4.2-1
+* Fri Apr 22 2011 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.4.2-1
 - Gfarm version 2.4.2 released
 
 * Thu Jul 22 2010 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.4.0-1
@@ -221,13 +221,13 @@ Development header files and libraries for Gfarm file system
 * Thu Jul  1 2010 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.3.2-1
 - Gfarm version 2.3.2 released
 
-* Fri Nov 28 2007 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.0.0-1
+* Wed Nov 28 2007 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.0.0-1
 - first release of Gfarm file system version 2
 
 * Tue Aug  8 2006 SODA Noriyuki <soda@sra.co.jp>
 - restart gfsd, gfmd and gfarm_agent at update, if they are already running.
 
-* Fri Apr 24 2003 Tohru Sotoyama <sotoyama@sra.co.jp>
+* Thu Apr 24 2003 Tohru Sotoyama <sotoyama@sra.co.jp>
 - first public release for version 1.0b1
 
 * Wed Nov 27 2002 Tohru Sotoyama <sotoyama@sra.co.jp>
