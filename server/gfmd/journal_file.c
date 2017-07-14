@@ -1025,9 +1025,6 @@ journal_find_rw_pos0(FILE *file, int has_writer, size_t file_size,
 	/*
 	 * Check 'max_seqnum' and 'min_seqnum'.
 	 *
-	 * - '!has_writer' means that this function is called for creating
-	 *   a reader which is used for sending records to a slave gfmd.
-	 *
 	 * - 'db_seqnum != GFARM_METADB_SERVER_SEQNUM_INVALID' means that
 	 *   gfmd is about to start.  In case of gfjournal command,
 	 *   'db_seqnum' is always 0.
@@ -1048,7 +1045,7 @@ journal_find_rw_pos0(FILE *file, int has_writer, size_t file_size,
 	 * - 'max_seqnum < db_seqnum' means that database, the journal
 	 *   file or both are corrupted.
 	 */
-	if (!has_writer && db_seqnum != max_seqnum &&
+	if (db_seqnum != max_seqnum &&
 	    db_seqnum != GFARM_METADB_SERVER_SEQNUM_INVALID &&
 	    max_seqnum != GFARM_METADB_SERVER_SEQNUM_INVALID &&
 	    (min_seqnum == GFARM_UINT64_MAX || db_seqnum + 1 < min_seqnum ||

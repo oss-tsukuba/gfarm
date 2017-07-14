@@ -375,6 +375,7 @@ db_use(const struct db_ops *o)
 		db_enter_op = &db_journal_enter;
 	} else {
 		ops = o;
+		db_enter_op = dbq_enter1;
 	}
 	return (GFARM_ERR_NO_ERROR);
 }

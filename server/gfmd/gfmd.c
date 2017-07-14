@@ -1537,6 +1537,37 @@ usage(void)
 }
 
 static void
+set_db_ops(void)
+{
+	switch (gfarm_backend_db_type) {
+	case GFARM_BACKEND_DB_TYPE_LDAP:
+#ifdef HAVE_LDAP
+		db_use(&db_ldap_ops);
+#else
+		gflog_fatal(GFARM_MSG_1000206,
+		    "LDAP DB is specified, but it's not built in");
+#endif
+		break;
+	case GFARM_BACKEND_DB_TYPE_POSTGRESQL:
+#ifdef HAVE_POSTGRESQL
+		db_use(&db_pgsql_ops);
+#else
+		gflog_fatal(GFARM_MSG_1000207,
+		    "PostgreSQL is specified, but it's not built in");
+#endif
+		break;
+	case GFARM_BACKEND_DB_TYPE_NONE:
+		db_use(&db_none_ops);
+		break;
+	default:
+		gflog_fatal(GFARM_MSG_1000208,
+		    "neither LDAP or PostgreSQL is specified "
+		    "in configuration");
+		break;
+	}
+}
+
+static void
 db_journal_store_failure(void)
 {
 	gflog_fatal(GFARM_MSG_1003397,
@@ -1565,13 +1596,22 @@ gfmd_modules_init_default(int table_size)
 	callout_module_init(CALLOUT_NTHREADS);
 
 	if (gfarm_get_metadb_replication_enabled()) {
+		char *diag = "db_journal_init";
+
 		db_journal_set_fail_store_op(db_journal_store_failure);
 		db_journal_apply_init();
-		gflog_info(GFARM_MSG_1004201, "start reading db journal");
-		db_journal_init(mdhost_master_disconnect_request);
-		/* not apply here in case of none backend */
-		if (gfarm_backend_db_type !=  GFARM_BACKEND_DB_TYPE_NONE)
+		e = db_journal_init(mdhost_master_disconnect_request);
+		if (gfarm_backend_db_type != GFARM_BACKEND_DB_TYPE_NONE) {
+			if (e != GFARM_ERR_NO_ERROR)
+				gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s",
+					diag, gfarm_error_string(e));
 			boot_apply_db_journal();
+		} else if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED, "%s: %s, replication "
+				"disabled", diag, gfarm_error_string(e));
+			gfarm_set_metadb_replication_enabled(0);
+			set_db_ops();
+		}
 	}
 	gflog_info(GFARM_MSG_1004202, "start initializing modules and "
 	    "loading database");
@@ -1730,32 +1770,7 @@ main(int argc, char **argv)
 	 * We do this before calling gfarm_daemon()
 	 * to print the error message to stderr.
 	 */
-	switch (gfarm_backend_db_type) {
-	case GFARM_BACKEND_DB_TYPE_LDAP:
-#ifdef HAVE_LDAP
-		db_use(&db_ldap_ops);
-#else
-		gflog_fatal(GFARM_MSG_1000206,
-		    "LDAP DB is specified, but it's not built in");
-#endif
-		break;
-	case GFARM_BACKEND_DB_TYPE_POSTGRESQL:
-#ifdef HAVE_POSTGRESQL
-		db_use(&db_pgsql_ops);
-#else
-		gflog_fatal(GFARM_MSG_1000207,
-		    "PostgreSQL is specified, but it's not built in");
-#endif
-		break;
-	case GFARM_BACKEND_DB_TYPE_NONE:
-		db_use(&db_none_ops);
-		break;
-	default:
-		gflog_fatal(GFARM_MSG_1000208,
-		    "neither LDAP or PostgreSQL is specified "
-		    "in configuration");
-		break;
-	}
+	set_db_ops();
 
 	/*
 	 * This initializes dbq, thus, should be called before

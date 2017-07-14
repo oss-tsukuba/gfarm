@@ -183,7 +183,7 @@ db_journal_init_seqnum(void)
  */
 static void (*master_disconnect_request)(struct peer *);
 
-void
+gfarm_error_t
 db_journal_init(void (*disconnect_request)(struct peer *))
 {
 	gfarm_error_t e;
@@ -213,9 +213,11 @@ db_journal_init(void (*disconnect_request)(struct peer *))
 	gfs_profile_set();
 	gfarm_gettimerval(&t1);
 #endif
-	if ((e = journal_file_open(path, gfarm_get_journal_max_size(),
-	    journal_seqnum, &self_jf, GFARM_JOURNAL_RDWR))
-	    != GFARM_ERR_NO_ERROR) {
+	e = journal_file_open(path, gfarm_get_journal_max_size(),
+		journal_seqnum, &self_jf, GFARM_JOURNAL_RDWR);
+	if (e == GFARM_ERR_EXPIRED)
+		return (e);
+	else if (e != GFARM_ERR_NO_ERROR) {
 		gflog_fatal(GFARM_MSG_1003041,
 		    "gfm_server_journal_file_open : %s",
 		    gfarm_error_string(e));
@@ -233,6 +235,7 @@ db_journal_init(void (*disconnect_request)(struct peer *))
 		    "db_journal_init_status : %s",
 		    gfarm_error_string(e));
 	}
+	return (e);
 }
 
 void
