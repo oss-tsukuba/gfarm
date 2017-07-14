@@ -3584,7 +3584,7 @@ inode_create_link_orphan_inode(struct inode *base, const char *name,
 
 	ia = inode_activity_alloc_or_update(&inode->u.c.activity, tdirset);
 	if (ia == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004750,
 			"inode_activity_alloc() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}

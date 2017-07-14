@@ -1603,11 +1603,11 @@ gfmd_modules_init_default(int table_size)
 		e = db_journal_init(mdhost_master_disconnect_request);
 		if (gfarm_backend_db_type != GFARM_BACKEND_DB_TYPE_NONE) {
 			if (e != GFARM_ERR_NO_ERROR)
-				gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s",
+				gflog_fatal(GFARM_MSG_1004754, "%s: %s",
 					diag, gfarm_error_string(e));
 			boot_apply_db_journal();
 		} else if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED, "%s: %s, replication "
+			gflog_error(GFARM_MSG_1004755, "%s: %s, replication "
 				"disabled", diag, gfarm_error_string(e));
 			gfarm_set_metadb_replication_enabled(0);
 			set_db_ops();

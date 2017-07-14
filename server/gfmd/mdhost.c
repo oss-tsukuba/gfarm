@@ -642,7 +642,7 @@ mdhost_master_disconnect_request(struct peer *peer)
 	static const char diag[] = "mdhost_master_disconnect_request";
 
 	if (m == NULL) {
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: no master", diag);
+		gflog_notice(GFARM_MSG_1004749, "%s: no master", diag);
 		return;
 	}
 	mdhost_disconnect_request(m, peer);

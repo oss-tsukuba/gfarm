@@ -4380,7 +4380,7 @@ retry:
 			gfarm_mutex_unlock(
 			    &journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004753,
 			    "got seqnum %llu > expected seqnum %llu, "
 			    "disconnecting master",
 			    (unsigned long long)ri->from_sn,
