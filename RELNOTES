@@ -1,9 +1,26 @@
+Release note for Gfarm 2.6.19
+=============================
+
+[2017.7.14]
+
+Updated feature
+* gfrm - do not try to remove symlinks with the -h option
+* gfmd - more log in peer_set_host
+* postgresql backend - accept IPv6 connection, which is required in
+  CentOS 7.3.1611
+
+Bug fix
+* recursive option does not return error properly
+* compilation error on FreeBSD-10.2/amd64
+* gfsd - invalid file remains when fhclose fails
+* gfmd does not recover from the warning of abandon invalid journal
+
 Release note for Gfarm 2.6.18
 =============================
 
 [2017.3.26]
 
-Update feature
+Updated feature
 * gfprep, gfpcopy - a new scheduling to mitigate destination conflict
   under concurrent gfprep and gfpcopy executions
 * start replica check when a busy host becomes idle
