@@ -57,15 +57,13 @@
 #include "peer.h" /* peer_reset_pending_new_generation() */
 #include "gfmd.h" /* resuming_*() */
 
-#define MAX_DIR_DEPTH			1024	/* == GFARM_PATH_MAX */
+#define DIR_DEPTH_BUF_INIT			1024	/* == GFARM_PATH_MAX */
 
 #define ROOT_INUMBER			2
 #define INODE_TABLE_SIZE_INITIAL	1024
 #define INODE_TABLE_SIZE_MULTIPLY	2
 
 #define INODE_MODE_FREE			0	/* struct inode:i_mode */
-
-#define GFS_MAX_DIR_DEPTH		256
 
 struct file_copy {
 	struct file_copy *host_next;
@@ -3786,7 +3784,7 @@ inode_foreach_in_subtree(struct inode *inode,
 		Dir dir;
 		DirCursor cursor;
 	} *dirs, *tmp_dirs;
-	int depth = 0, max_depth = MAX_DIR_DEPTH;
+	int depth = 0, max_depth = DIR_DEPTH_BUF_INIT;
 
 	interrupted = (*callback)(closure, inode);
 	if (interrupted || !inode_is_dir(inode))
@@ -3892,7 +3890,7 @@ inode_foreach_in_subtree_interruptible(struct inode *inode, void *closure,
 		gfarm_uint64_t dir_igen;
 		gfarm_off_t cursor_pos;
 	} *dirs, *tmp_dirs;
-	int depth = 0, max_depth = MAX_DIR_DEPTH;
+	int depth = 0, max_depth = DIR_DEPTH_BUF_INIT;
 
 	scan_choice = (*callback)(closure, inode);
 	if (scan_choice == INODE_SCAN_INTERRUPT)
@@ -4176,10 +4174,11 @@ inode_subtree_fixup_tdirset(struct inode *inode, struct dirset *tdirset)
 }
 
 static int
-is_ok_to_move_to(struct inode *movee, struct inode *dir)
+is_ok_to_move_to(struct inode *movee, struct inode *dst_dir)
 {
 	DirEntry entry;
 	int depth = 0;
+	struct inode *dir = dst_dir;
 
 	for (;;) {
 		if (movee == dir) /* movee is an ancestor of dir */
@@ -4197,8 +4196,18 @@ is_ok_to_move_to(struct inode *movee, struct inode *dir)
 		dir = dir_entry_get_inode(entry);
 
 		/* this check is not strictly necessary, but... */
-		if (++depth >= MAX_DIR_DEPTH)
+		if (++depth >= gfarm_max_directory_depth) {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "moving inode %lld:%lld to directory %lld:%lld "
+			    "is requested, but the dir depth reaches %d",
+			    (long long)movee->i_number,
+			    (long long)movee->i_gen,
+			    (long long)dst_dir->i_number,
+			    (long long)dst_dir->i_gen,
+			    gfarm_max_directory_depth);
+
 			return (0);
+		}
 	}
 }
 
@@ -5047,7 +5056,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 	Dir dir;
 	DirEntry entry;
 	DirCursor cursor;
-	char *s, *name, *names[GFS_MAX_DIR_DEPTH];
+	char *s, *name, *names[gfarm_max_directory_depth];
 	int i, namelen, depth = 0;
 	size_t totallen = 0;
 	int overflow = 0;
@@ -5089,7 +5098,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 		}
 		name = dir_entry_get_name(entry, &namelen);
 		GFARM_MALLOC_ARRAY(s, namelen + 1);
-		if (depth >= GFS_MAX_DIR_DEPTH || s == NULL) {
+		if (depth >= gfarm_max_directory_depth || s == NULL) {
 			for (i = 0; i < depth; i++)
 				free(names[i]);
 			if (s == NULL)

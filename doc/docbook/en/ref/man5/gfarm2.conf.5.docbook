@@ -974,6 +974,28 @@ This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>max_directory_depth</token> <parameter moreinfo="none">number</parameter></term>
+<listitem>
+<para>
+The <token>max_directory_depth</token> statement
+specifies the maximum depth of directories.
+Note that this setting is not always strict, and some processing
+allows deeper than this setting.
+</para>
+<para>
+The default value is 100.
+</para>
+<para>
+This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	max_directory_depth 500
+</literallayout>
+</listitem>
+</varlistentry>
+
 <!--
 <varlistentry>
 <term><token>netparam</token> <parameter moreinfo="none">parameter</parameter><emphasis>=</emphasis><parameter moreinfo="none">value</parameter> <emphasis>[</emphasis><parameter moreinfo="none">Host_specification</parameter><emphasis>]</emphasis></term>
@@ -2620,6 +2642,7 @@ The default size is 16 MiB.
 	&lt;digest_statement&gt; |
 	&lt;directory_quota_count_per_user_limit_statement&gt; |
 	&lt;directory_quota_check_start_delay_statement&gt; |
+	&lt;max_directory_depth_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
 <!--	&lt;address_use_statement&gt; | -->
@@ -2914,6 +2937,11 @@ The default size is 16 MiB.
 <varlistentry>
 <term>&lt;directory_quota_check_start_delay_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"directory_quota_check_start_delay" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;max_directory_depth_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"max_directory_depth" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--
