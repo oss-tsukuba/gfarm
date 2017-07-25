@@ -979,6 +979,29 @@ For example,
 .\}
 .RE
 .PP
+max_directory_depth \fInumber\fR
+.RS 4
+The
+max_directory_depth
+statement specifies the maximum depth of directories\&. Note that this setting is not always strict, and some processing allows deeper than this setting\&.
+.sp
+The default value is 100\&.
+.sp
+This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	max_directory_depth 500
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 sockopt \fIoption\fR\fI[=\fR\fIvalue\fR\fI] [\fR\fILISTENER\fR\fI | \fR\fI\fIHost_specification\fR\fR\fI]\fR
 .RS 4
 The
@@ -2540,6 +2563,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<digest_statement> |
 	<directory_quota_count_per_user_limit_statement> |
 	<directory_quota_check_start_delay_statement> |
+	<max_directory_depth_statement> |
 
 	<sockopt_statement> |
 
@@ -3221,6 +3245,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "directory_quota_check_start_delay" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<max_directory_depth_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"max_directory_depth" <number>
 .fi
 .if n \{\
 .RE

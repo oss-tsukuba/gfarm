@@ -862,6 +862,27 @@ directory quota の再集計が必要となったときに、 実際に再集計
 .\}
 .RE
 .PP
+max_directory_depth \fI数\fR
+.RS 4
+directory の深さとして許される最大値を設定します。 ただし、深さの検査は厳密ではないので、この設定よりも深いディレクトリを 許容する処理もあります。
+.sp
+デフォルトは100です。
+.sp
+この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	max_directory_depth 200
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 sockopt \fIオプション\fR\fI[=\fR\fI値\fR\fI] [\fR\fILISTENER\fR\fI | \fR\fI\fIホスト指定\fR\fR\fI]\fR
 .RS 4
 通信socket(2)に対して、setsockopt(2)システムコールを使って ソケット・オプションを指定します。
@@ -2386,6 +2407,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<digest_statement> |
 	<directory_quota_count_per_user_limit_statement> |
 	<directory_quota_check_start_delay_statement> |
+	<max_directory_depth_statement> |
 
 	<sockopt_statement> |
 
@@ -3067,6 +3089,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "directory_quota_check_start_delay" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<max_directory_depth_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"max_directory_depth" <number>
 .fi
 .if n \{\
 .RE
