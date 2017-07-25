@@ -631,17 +631,28 @@ gfmdc_server_journal_send(struct mdhost *mh, struct peer *peer,
 	size_t recs_len;
 	static const char diag[] = "GFM_PROTO_JOURNAL_SEND";
 
-	if ((er = gfmdc_server_get_request(peer, size, diag, "llB",
-	    &from_sn, &to_sn, &recs_len, &recs))
-	    == GFARM_ERR_NO_ERROR)
-		er = db_journal_recvq_enter(from_sn, to_sn, recs_len, recs);
+	e = gfmdc_server_get_request(peer, size, diag, "llB",
+	    &from_sn, &to_sn, &recs_len, &recs);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED, "from %s : %s: %s",
+		    mdhost_get_name(mh), diag, gfarm_error_string(e));
+		return (e);
+	}
+
+	er = db_journal_recvq_enter(from_sn, to_sn, recs_len, recs);
+	if (er != GFARM_ERR_NO_ERROR) { /* probably GFARM_ERR_NO_MEMORY */
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "from %s : %s: db_journal_recvq_enter(): %s",
+		    mdhost_get_name(mh), diag, gfarm_error_string(e));
+	} else {
 #ifdef DEBUG_JOURNAL
-	if (er == GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1002979,
 		    "from %s : recv journal %llu to %llu",
 		    mdhost_get_name(mh), (unsigned long long)from_sn,
 		    (unsigned long long)to_sn);
 #endif
+	}
+
 	e = gfmdc_server_put_reply(mh, peer, xid, diag, er, "");
 	return (e);
 }
@@ -673,10 +684,31 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 		if ((e = db_journal_reader_reopen_if_needed(host, &reader,
 		    gfmdc_peer_get_last_fetch_seqnum(gfmdc_peer), &inited))
 		    == GFARM_ERR_NO_ERROR) {
-			if (seqnum == db_journal_get_current_seqnum())
+			gfarm_uint64_t to_sn = db_journal_get_current_seqnum();
+
+			if (seqnum == to_sn) {
 				mdhost_set_seqnum_ok(mh);
-			else
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "slave %s: already sync at seqnum %llu",
+				    host, (unsigned long long)seqnum);
+			} else if (seqnum < to_sn) {
 				mdhost_set_seqnum_behind(mh);
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "slave %s is behind: "
+				    "target seqnum %llu, current %llu",
+				    host,
+				    (unsigned long long)to_sn,
+				    (unsigned long long)seqnum);
+			} else {
+				mdhost_set_seqnum_state_by_error(mh,
+				   GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN);
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "slave %s reported invalid seqnum: "
+				    "master %llu, slave %llu",
+				    host,
+				    (unsigned long long)to_sn,
+				    (unsigned long long)seqnum);
+			}
 		} else {
 			mdhost_set_seqnum_state_by_error(mh, e);
 			gflog_error(GFARM_MSG_1002981,
@@ -1438,20 +1470,40 @@ gfmdc_journal_first_sync_thread(void *closure)
 	gfarm_error_t e;
 	struct peer *peer = closure;
 	struct gfmdc_peer_record *gfmdc_peer = peer_get_gfmdc_record(peer);
+	int do_first_sync = 0;
 	int exist_recs = 0;
 	struct mdhost *mh = peer_get_mdhost(peer);
+	gfarm_uint64_t lf_sn, to_sn;
 
-#ifdef DEBUG_JOURNAL
-	gflog_debug(GFARM_MSG_1003006,
-	    "%s : first sync start", mdhost_get_name(mh));
-#endif
-	if (gfmdc_peer_get_last_fetch_seqnum(gfmdc_peer) <
-	    db_journal_get_current_seqnum()) {
+	lf_sn = gfmdc_peer_get_last_fetch_seqnum(gfmdc_peer);
+	to_sn = db_journal_get_current_seqnum();
+	if (lf_sn < to_sn) {
 		/* it's still unknown whether seqnum is ok or out_of_sync */
-		if (!gfmdc_peer_journal_file_reader_is_expired(gfmdc_peer))
+		if (!gfmdc_peer_journal_file_reader_is_expired(gfmdc_peer)) {
+			do_first_sync = 1;
 			exist_recs = 1;
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "%s: first sync started. "
+			    "till seqnum %llu, currently %llu",
+			    mdhost_get_name(mh),
+			    (unsigned long long)to_sn,
+			    (unsigned long long)lf_sn);
+		} else {
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "%s: first sync failed due to expiration. "
+			    "master seqnum %llu, slave %llu",
+			    mdhost_get_name(mh),
+			    (unsigned long long)to_sn,
+			    (unsigned long long)lf_sn);
+		}
 	} else {
 		mdhost_set_seqnum_ok(mh);
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: first sync is unnecessary. "
+		    "master seqnum %llu, slave %llu",
+		    mdhost_get_name(mh),
+		    (unsigned long long)to_sn,
+		    (unsigned long long)lf_sn);
 	}
 
 	while (exist_recs) {
@@ -1463,10 +1515,20 @@ gfmdc_journal_first_sync_thread(void *closure)
 			break;
 		}
 	}
-#ifdef DEBUG_JOURNAL
-	gflog_debug(GFARM_MSG_1003008,
-	    "%s : first sync end", mdhost_get_name(mh));
-#endif
+
+	if (do_first_sync) {
+		lf_sn = gfmdc_peer_get_last_fetch_seqnum(gfmdc_peer);
+		if (exist_recs)
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "%s: first sync aborted at seqnum %llu",
+			    mdhost_get_name(mh),
+			    (unsigned long long)lf_sn);
+		else
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "%s: first sync completed at seqnum %llu",
+			    mdhost_get_name(mh),
+			    (unsigned long long)lf_sn);
+	}
 
 	gfmdc_peer_set_first_sync_completed(gfmdc_peer, 1);
 	peer_del_ref(peer); /* decrement refcount */
