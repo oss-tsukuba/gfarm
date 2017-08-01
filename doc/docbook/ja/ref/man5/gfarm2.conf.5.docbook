@@ -877,6 +877,27 @@ digestタイプとして disable と指定した場合は、チェックサム�
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>max_directory_depth</token> <parameter moreinfo="none">数</parameter></term>
+<listitem>
+<para>
+directory の深さとして許される最大値を設定します。
+ただし、深さの検査は厳密ではないので、この設定よりも深いディレクトリを
+許容する処理もあります。
+</para>
+<para>
+デフォルトは100です。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	max_directory_depth 200
+</literallayout>
+</listitem>
+</varlistentry>
+
 <!--
 <varlistentry>
 <term><token>netparam</token> <parameter moreinfo="none">パラメータ</parameter><emphasis>=</emphasis><parameter moreinfo="none">値</parameter> <emphasis>[</emphasis><parameter moreinfo="none">ホスト指定</parameter><emphasis>]</emphasis></term>
@@ -2366,6 +2387,7 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 	&lt;auth_statement&gt; |
 	&lt;shared_key_file_statement&gt; |
 	&lt;digest_statement&gt; |
+	&lt;max_directory_depth_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
 <!--	&lt;address_use_statement&gt; | -->
@@ -2638,6 +2660,11 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 <varlistentry>
 <term>&lt;digest_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"digest" &lt;digest_type&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;max_directory_depth_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"max_directory_depth" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--

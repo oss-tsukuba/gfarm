@@ -1515,7 +1515,9 @@ gfm_server_findxmlattr(struct peer *peer, int from_client, int skip)
 		goto quit;
 	}
 	ctxp->expr = expr;
-	ctxp->depth = depth;
+	ctxp->depth =
+	    depth < gfarm_max_directory_depth ?
+	    depth : gfarm_max_directory_depth;
 	ctxp->cookie_path = ck_path;
 	ctxp->cookie_attrname = ck_name;
 

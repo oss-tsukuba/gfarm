@@ -1004,6 +1004,9 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_SIMULTANEOUS_REPLICATION_RECEIVERS_DEFAULT	20
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
+#define GFARM_MAX_DIRECTORY_DEPTH_DEFAULT	100
+#define GFARM_MAX_DIRECTORY_DEPTH_MINIMUM	16
+#define GFARM_MAX_DIRECTORY_DEPTH_MAXIMUM	65536
 #define GFARM_METADB_MAX_DESCRIPTORS_DEFAULT	(2*65536)
 #define GFARM_METADB_REPLICA_REMOVER_BY_HOST_SLEEP_TIME_DEFAULT	20000000
 							/* nanosec. */
@@ -1039,6 +1042,7 @@ char *gfarm_digest = NULL;
 int gfarm_simultaneous_replication_receivers = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xmlattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_max_directory_depth = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_version_major = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_version_minor = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_version_teeny = GFARM_CONFIG_MISC_DEFAULT;
@@ -3160,6 +3164,17 @@ parse_one_line(char *s, char *p, char **op)
 			e = GFARM_ERR_VALUE_TOO_LARGE_TO_BE_STORED_IN_DATA_TYPE;
 			gfarm_xmlattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
 		}
+	} else if (strcmp(s, o = "max_directory_depth")
+	    == 0) {
+		e = parse_set_misc_int(p, &gfarm_max_directory_depth);
+		if (gfarm_max_directory_depth <
+		    GFARM_MAX_DIRECTORY_DEPTH_MINIMUM ||
+		    gfarm_max_directory_depth >
+		    GFARM_MAX_DIRECTORY_DEPTH_MAXIMUM) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "max_directory_depth out of range");
+			e = GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN;
+		}
 	} else if (strcmp(s, o = "metadb_server_max_descriptors") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_max_descriptors);
 	} else if (strcmp(s, o = "metadb_server_stack_size") == 0) {
@@ -3480,6 +3495,8 @@ gfarm_config_set_default_misc(void)
 		gfarm_xattr_size_limit = GFARM_XATTR_SIZE_MAX_DEFAULT;
 	if (gfarm_xmlattr_size_limit == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_xmlattr_size_limit = GFARM_XMLATTR_SIZE_MAX_DEFAULT;
+	if (gfarm_max_directory_depth == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_max_directory_depth = GFARM_MAX_DIRECTORY_DEPTH_DEFAULT;
 	if (gfarm_metadb_max_descriptors == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_max_descriptors =
 		    GFARM_METADB_MAX_DESCRIPTORS_DEFAULT;
@@ -3615,6 +3632,17 @@ gfarm_config_validate_false(union gfarm_config_storage *storage)
 }
 
 int
+gfarm_config_validate_max_directory_depth(union gfarm_config_storage *storage)
+{
+	/*
+	 * allow at least 16 level,
+	 * do not allow more than 4096 level.
+	 */
+	return (GFARM_MAX_DIRECTORY_DEPTH_MINIMUM <= storage->i &&
+	    storage->i <= GFARM_MAX_DIRECTORY_DEPTH_MAXIMUM);
+}
+
+int
 gfarm_config_print_enabled(void *addr, char *string, size_t sz)
 {
 	int *enabledp = addr;
@@ -3711,6 +3739,11 @@ const struct gfarm_config_type {
 	{ "max_open_files", 'i', 1, gfarm_config_print_int,
 	  gfarm_config_set_default_int, gfarm_config_validate_true,
 	  &gfarm_max_open_files, 0 },
+	{ "max_directory_depth", 'i', 1,
+	  gfarm_config_print_int,
+	  gfarm_config_set_default_int,
+	  gfarm_config_validate_max_directory_depth,
+	  &gfarm_max_directory_depth, 0 },
 	{ "replicainfo", 'i', 1, gfarm_config_print_enabled,
 	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
 	  &gfarm_replicainfo_enabled, 0 },
