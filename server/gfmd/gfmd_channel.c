@@ -700,8 +700,8 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 				    (unsigned long long)to_sn,
 				    (unsigned long long)seqnum);
 			} else {
-				mdhost_set_seqnum_state_by_error(mh,
-				   GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN);
+				e = GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN;
+				mdhost_set_seqnum_state_by_error(mh, e);
 				gflog_error(GFARM_MSG_UNFIXED,
 				    "slave %s reported invalid seqnum: "
 				    "master %llu, slave %llu",
