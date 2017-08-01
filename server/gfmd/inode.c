@@ -4180,10 +4180,21 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 	Dir dir;
 	DirEntry entry;
 	DirCursor cursor;
-	char *s, *name, *names[gfarm_max_directory_depth];
-	int i, namelen, depth = 0;
+	char *s, *name, **names;
+	int i, namelen, depth = 0, max_depth = DIR_DEPTH_BUF_INIT;
 	size_t totallen = 0;
 	int overflow = 0;
+	static const char diag[] = "inode_getdirpath";
+
+	GFARM_MALLOC_ARRAY(names, max_depth);
+	if (names == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: no memory for %d depth dir %lld:%lld",
+		    diag, max_depth,
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode));
+		return (GFARM_ERR_NO_MEMORY);
+	}
 
 	for (; inode != root; inode = parent) {
 		e = inode_lookup_relative(inode, dotdot, GFS_DT_DIR,
@@ -4192,14 +4203,14 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 			gflog_debug(GFARM_MSG_1001757,
 				"inode_lookup_relative() failed: %s",
 				gfarm_error_string(e));
-			return (e);
+			goto error_exit;
 		}
 		e = inode_access(parent, user, GFS_R_OK|GFS_X_OK);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001758,
 				"inode_access() failed: %s",
 				gfarm_error_string(e));
-			return (e);
+			goto error_exit;
 		}
 		/* search the inode in the parent directory. */
 		/* XXX this is slow. should we create a reverse index? */
@@ -4222,15 +4233,35 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 		}
 		name = dir_entry_get_name(entry, &namelen);
 		GFARM_MALLOC_ARRAY(s, namelen + 1);
-		if (depth >= gfarm_max_directory_depth || s == NULL) {
-			for (i = 0; i < depth; i++)
-				free(names[i]);
-			if (s == NULL)
-				gflog_error(GFARM_MSG_1004339, "no memory");
-			else
-				gflog_debug(GFARM_MSG_1001759,
-				    "directory too deep");
-			return (GFARM_ERR_NO_MEMORY); /* directory too deep */
+		if (depth >= max_depth || s == NULL) {
+			if (s != NULL) { /* i.e. depth >= max_depth */
+				int tmp_depth = max_depth + max_depth;
+				char **tmp_names;
+
+				GFARM_REALLOC_ARRAY(tmp_names,
+				    names, tmp_depth);
+				if (tmp_names == NULL) {
+					/* directory too deep */
+					gflog_error(GFARM_MSG_UNFIXED,
+					    "%s: no memory for %d "
+					    "depth dir %lld:%lld:",
+					    diag, tmp_depth,
+					    (long long)
+					    inode_get_number(inode),
+					    (long long)
+					    inode_get_gen(inode));
+				}
+				names = tmp_names;
+				max_depth = tmp_depth;
+			}
+			if (depth >= max_depth || s == NULL) {
+				if (s == NULL)
+					gflog_error(GFARM_MSG_1004339,
+					    "no memory");
+				free(s);
+				e = GFARM_ERR_NO_MEMORY;
+				goto error_exit;
+			}
 		}
 		memcpy(s, name, namelen);
 		s[namelen] = '\0';
@@ -4240,9 +4271,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 	if (depth == 0)
 		GFARM_MALLOC_ARRAY(s, 1 + 1);
 	else {
-#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
 		s = NULL;
-#endif
 		totallen = gfarm_size_add(&overflow, totallen, depth + 1);
 		if (!overflow)
 			GFARM_MALLOC_ARRAY(s, totallen);
@@ -4255,6 +4284,14 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 		strcpy(s, "/");
 		*namep = s;
 		e = GFARM_ERR_NO_ERROR;
+	} else if (overflow) {
+		assert(s == NULL);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: pathname length %zu too long for dir %lld:%lld:",
+		    diag, totallen,
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode));
+		e = GFARM_ERR_NO_MEMORY;
 	} else {
 		totallen = 0;
 		for (i = depth - 1; i >= 0; --i) {
@@ -4265,8 +4302,10 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 		*namep = s;
 		e = GFARM_ERR_NO_ERROR;
 	}
+error_exit:
 	for (i = 0; i < depth; i++)
 		free(names[i]);
+	free(names);
 	return (e);
 }
 
