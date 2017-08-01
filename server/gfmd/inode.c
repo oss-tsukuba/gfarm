@@ -4250,9 +4250,10 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 					    inode_get_number(inode),
 					    (long long)
 					    inode_get_gen(inode));
+				} else {
+					names = tmp_names;
+					max_depth = tmp_depth;
 				}
-				names = tmp_names;
-				max_depth = tmp_depth;
 			}
 			if (depth >= max_depth || s == NULL) {
 				if (s == NULL)
