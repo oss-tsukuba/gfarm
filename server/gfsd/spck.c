@@ -628,6 +628,8 @@ gfsd_spool_check()
 		    gfarm_hash_default, gfarm_hash_key_equal_default);
 		if (hash_ok == NULL)
 			fatal(GFARM_MSG_1003560, "no memory for spool_check");
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "spool_check: metadata check started");
 		check_metadata(hash_ok);
 		break;
 	case GFARM_SPOOL_CHECK_LEVEL_DISPLAY:
@@ -643,8 +645,11 @@ gfsd_spool_check()
 		if (chdir(gfarm_spool_root[i]) == -1)
 			gflog_fatal_errno(GFARM_MSG_1004484, "chdir(%s)",
 			    gfarm_spool_root[i]);
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "spool_check: directory check #%d started", i);
 		(void)check_spool("data", hash_ok);
 	}
 	if (hash_ok)
 		gfarm_hash_table_free(hash_ok);
+	gflog_info(GFARM_MSG_UNFIXED, "spool_check: completed");
 }
