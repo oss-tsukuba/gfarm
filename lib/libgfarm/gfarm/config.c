@@ -3230,7 +3230,7 @@ parse_one_line(char *s, char *p, char **op)
 		    GFARM_MAX_DIRECTORY_DEPTH_MINIMUM ||
 		    gfarm_max_directory_depth >
 		    GFARM_MAX_DIRECTORY_DEPTH_MAXIMUM) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004758,
 			    "max_directory_depth out of range");
 			e = GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN;
 		}

@@ -634,14 +634,14 @@ gfmdc_server_journal_send(struct mdhost *mh, struct peer *peer,
 	e = gfmdc_server_get_request(peer, size, diag, "llB",
 	    &from_sn, &to_sn, &recs_len, &recs);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED, "from %s : %s: %s",
+		gflog_error(GFARM_MSG_1004763, "from %s : %s: %s",
 		    mdhost_get_name(mh), diag, gfarm_error_string(e));
 		return (e);
 	}
 
 	er = db_journal_recvq_enter(from_sn, to_sn, recs_len, recs);
 	if (er != GFARM_ERR_NO_ERROR) { /* probably GFARM_ERR_NO_MEMORY */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004764,
 		    "from %s : %s: db_journal_recvq_enter(): %s",
 		    mdhost_get_name(mh), diag, gfarm_error_string(e));
 	} else {
@@ -688,12 +688,12 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 
 			if (seqnum == to_sn) {
 				mdhost_set_seqnum_ok(mh);
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1004765,
 				    "slave %s: already sync at seqnum %llu",
 				    host, (unsigned long long)seqnum);
 			} else if (seqnum < to_sn) {
 				mdhost_set_seqnum_behind(mh);
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1004766,
 				    "slave %s is behind: "
 				    "target seqnum %llu, current %llu",
 				    host,
@@ -702,7 +702,7 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 			} else {
 				e = GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN;
 				mdhost_set_seqnum_state_by_error(mh, e);
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1004767,
 				    "slave %s reported invalid seqnum: "
 				    "master %llu, slave %llu",
 				    host,
@@ -1488,14 +1488,14 @@ gfmdc_journal_first_sync_thread(void *closure)
 		if (!gfmdc_peer_journal_file_reader_is_expired(gfmdc_peer)) {
 			do_first_sync = 1;
 			exist_recs = 1;
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1004768,
 			    "%s: first sync started. "
 			    "till seqnum %llu, currently %llu",
 			    mdhost_get_name(mh),
 			    (unsigned long long)to_sn,
 			    (unsigned long long)lf_sn);
 		} else {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1004769,
 			    "%s: first sync failed due to expiration. "
 			    "master seqnum %llu, slave %llu",
 			    mdhost_get_name(mh),
@@ -1504,7 +1504,7 @@ gfmdc_journal_first_sync_thread(void *closure)
 		}
 	} else {
 		mdhost_set_seqnum_ok(mh);
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1004770,
 		    "%s: first sync is unnecessary. "
 		    "master seqnum %llu, slave %llu",
 		    mdhost_get_name(mh),
@@ -1525,12 +1525,12 @@ gfmdc_journal_first_sync_thread(void *closure)
 	if (do_first_sync) {
 		lf_sn = gfmdc_peer_get_last_fetch_seqnum(gfmdc_peer);
 		if (exist_recs)
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1004771,
 			    "%s: first sync aborted at seqnum %llu",
 			    mdhost_get_name(mh),
 			    (unsigned long long)lf_sn);
 		else
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1004772,
 			    "%s: first sync completed at seqnum %llu",
 			    mdhost_get_name(mh),
 			    (unsigned long long)lf_sn);
