@@ -1,3 +1,11 @@
+Release note for Gfarm 2.7.5
+============================
+
+[2017.8.9]
+
+New configuration directive
+* max_directory_depth - maximum directory depth.  Default is 100.
+
 Release note for Gfarm 2.7.4
 ============================
 
