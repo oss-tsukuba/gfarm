@@ -76,7 +76,7 @@ gfsk_d_revalidate(struct dentry *dentry, struct nameidata *nd)
 			valid = -3;
 	}
 	if (valid < 0)
-		gflog_debug(GFARM_MSG_UNFIXED, "%s/%s %s  valid=%d",
+		gflog_debug(GFARM_MSG_1004901, "%s/%s %s  valid=%d",
 			dentry->d_parent->d_name.name, dentry->d_name.name,
 			dentry->d_inode ? "" : "(Neg)", valid);
 
@@ -261,7 +261,7 @@ gfsk_dirperm(struct inode *inode, int mask)
 	err = generic_permission(inode, mask, NULL);
 
 	if (err)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004902,
 		"%s:%d:mask=o%d inode->ino=%lu i_flags=0x%x mode=0%o , ret=%d",
 		__func__, __LINE__, mask, inode->i_ino, inode->i_flags,
 			inode->i_mode, -err);
@@ -304,7 +304,7 @@ gfsk_dir_close(struct inode *inode, struct file *file)
 	GFSK_CTX_SET();
 	retval = gfarm_closedir(inode, file);
 	if (!file->f_dentry->d_inode)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1004903,
 			"%s: no inode inode=%p file=%p",
 			__func__, inode, file);
 

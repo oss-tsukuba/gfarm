@@ -36,7 +36,7 @@ gfsk_inode_eq(struct inode *inode, void *data)
 		else if (!S_ISREG(inode->i_mode))
 			valid = 0;
 		else if (!gi->i_gen || !idata->new) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004958,
 				"%s:ino=%lld gen=my %lld:%lld"
 				", but asume same. new=%d\n", __func__,
 				 idata->ino, gi->i_gen, idata->gen, idata->new);
@@ -44,20 +44,20 @@ gfsk_inode_eq(struct inode *inode, void *data)
 			if (idata->gen > gi->i_gen)
 				gfsk_iflag_set(inode, GFSK_INODE_MAYSTALE);
 		} else if (idata->maybe && (idata->gen <= gi->i_gen)) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004959,
 				"%s:ino=%lld gen=my %lld:%lld"
 				", but maybe same. new=%d\n", __func__,
 				 idata->ino, gi->i_gen, idata->gen, idata->new);
 			valid = 1;
 		} else if (list_empty(&inode->i_dentry)) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1004960,
 				"%s:ino=%lld gen=my %lld:%lld"
 				", but set same. new=%d\n", __func__,
 				 idata->ino, gi->i_gen, idata->gen, idata->new);
 			valid = 1;
 			gfsk_iflag_set(inode, GFSK_INODE_MAYSTALE);
 		} else {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1004961,
 				"%s:ino=%lld gen=my %lld:%lld"
 				", so different. new=%d\n", __func__,
 				 idata->ino, gi->i_gen, idata->gen, idata->new);

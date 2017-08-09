@@ -48,7 +48,7 @@ gfsk_file_open(struct inode *inode, struct file *file)
 		if (retval == 0 && (file->f_flags & O_DIRECT)) {
 			invalidate_inode_pages2(inode->i_mapping);
 		} else if (retval == -ENOENT) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004910,
 				"%s: ENOENT inode=%p file=%p",
 				__func__, inode, file);
 			if (inode)
@@ -80,7 +80,7 @@ gfsk_file_close(struct inode *inode, struct file *file)
 
 	retval = gfarm_closefile(inode, file);
 	if (!file->f_dentry->d_inode)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1004911,
 			"%s: no inode inode=%p file=%p",
 			__func__, inode, file);
 	GFSK_CTX_UNSET();
@@ -236,17 +236,17 @@ gfsk_find_pages(struct gfcc_ctx *ctx, int npblk, struct gfcc_pblk *pblk,
 
 	pages->cp_npage = 0;
 	if (!gfsk_fsp)
-		gflog_fatal(GFARM_MSG_UNFIXED, "no fsp");
+		gflog_fatal(GFARM_MSG_1004912, "no fsp");
 
 	inode = gfsk_find_inode(gfsk_fsp->gf_sb, S_IFREG, obj->co_ino,
 			obj->co_gen);
 	if (!inode) {
-		gflog_debug(GFARM_MSG_UNFIXED, "no ino=%ld", obj->co_ino);
+		gflog_debug(GFARM_MSG_1004913, "no ino=%ld", obj->co_ino);
 		return (-ENOENT);
 	}
 	if (!(mapping = inode->i_mapping)) {
 		iput(inode);
-		gflog_info(GFARM_MSG_UNFIXED, "no mapping=%ld", obj->co_ino);
+		gflog_info(GFARM_MSG_1004914, "no mapping=%ld", obj->co_ino);
 		return (-ENOENT);
 	}
 	gfsk_check_cache_pages(inode);
@@ -263,7 +263,7 @@ gfsk_find_pages(struct gfcc_ctx *ctx, int npblk, struct gfcc_pblk *pblk,
 			pages->cp_pages[n++] = page;
 		}
 		if (j) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004915,
 				"no %s page, ino=%lu index=%ld, "
 				"requested from=%lu, found %d",
 				page ? "uptodate" : "", obj->co_ino, index,
@@ -396,7 +396,7 @@ gfsk_read_page_cb(char *buf, gfarm_off_t off, int size, void *arg)
 		page_cache_release(page);
 		pages->cp_npage--;
 	}
-	gflog_debug(GFARM_MSG_UNFIXED, "req=%lx npage=%d",
+	gflog_debug(GFARM_MSG_1004916, "req=%lx npage=%d",
 			(unsigned long)req, pages->cp_npage);
 	return (req);
 }
@@ -423,7 +423,7 @@ gfsk_readpages(struct file *file, struct address_space *mapping,
 	}
 	pages->cp_inode = inode;	/* i_count ?? */
 	npage = gfsk_cache_pages(mapping, head, npage, pages);
-	gflog_debug(GFARM_MSG_UNFIXED, "index=%lx npage=%d",
+	gflog_debug(GFARM_MSG_1004917, "index=%lx npage=%d",
 		pages->cp_pages[0]->index, npage);
 	if (npage > 0) {
 		page = pages->cp_pages[0];
@@ -438,7 +438,7 @@ gfsk_readpages(struct file *file, struct address_space *mapping,
 		struct gfcc_ibaddr ibaddr;
 		struct gfarm_inode *gi = get_gfarm_inode(inode);
 
-		gflog_debug(GFARM_MSG_UNFIXED, "cc req index=%lx npage=%d",
+		gflog_debug(GFARM_MSG_1004918, "cc req index=%lx npage=%d",
 			pages->cp_pages[0]->index, npage);
 		pages->cp_obj.co_ino = inode->i_ino;
 		pages->cp_obj.co_gen = gi->i_gen;

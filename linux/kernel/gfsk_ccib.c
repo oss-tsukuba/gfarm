@@ -44,7 +44,7 @@ gfib_dma_map_single(struct ib_device *dev,
 
 	a = ib_dma_map_single(dev, cpu_addr, size, direction);
 	if (ib_dma_mapping_error(dev, a)) {
-		gflog_error(GFARM_MSG_UNFIXED, "ib_dma_map_single fail");
+		gflog_error(GFARM_MSG_1004820, "ib_dma_map_single fail");
 		a = 0;
 	}
 	return (a);
@@ -57,7 +57,7 @@ gfib_dma_map_page(struct ib_device *dev, struct page *page,
 
 	a = ib_dma_map_page(dev, page, offset, size, direction);
 	if (ib_dma_mapping_error(dev, a)) {
-		gflog_error(GFARM_MSG_UNFIXED, "ib_dma_map_page fail");
+		gflog_error(GFARM_MSG_1004821, "ib_dma_map_page fail");
 		a = 0;
 	}
 	return (a);
@@ -144,7 +144,7 @@ gfib_modify_qp(struct ib_qp *qp, struct ib_qp_attr *attr, int mask)
 	int	err;
 	err = ib_modify_qp(qp, attr, mask);
 	if (err) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004822,
 			"Failed modify QP mask=0x%x err=%d\n",
 			mask, err);
 	}
@@ -157,10 +157,10 @@ gfib_post_send(struct ib_qp *qp, struct ib_send_wr *wr)
 	int err;
 	char buf[256];
 
-	gflog_verbose(GFARM_MSG_UNFIXED, "ib_post_send:%s", pr_sge(buf, wr));
+	gflog_verbose(GFARM_MSG_1004823, "ib_post_send:%s", pr_sge(buf, wr));
 	err = ib_post_send(qp, wr, &bad_wr);
 	if (err) {
-		gflog_error(GFARM_MSG_UNFIXED, "ib_post_send:err=%d %s",
+		gflog_error(GFARM_MSG_1004824, "ib_post_send:err=%d %s",
 			err, pr_sge(buf, wr));
 	}
 	return (err);
@@ -172,11 +172,11 @@ gfib_post_recv(struct ib_qp *qp, struct ib_recv_wr *wr)
 	char buf[128];
 	int err;
 
-	gflog_verbose(GFARM_MSG_UNFIXED, "ib_post_recv:%s",
+	gflog_verbose(GFARM_MSG_1004825, "ib_post_recv:%s",
 		pr_sge(buf, (struct ib_send_wr *)wr));
 	err = ib_post_recv(qp, wr, &bad_wr);
 	if (err) {
-		gflog_error(GFARM_MSG_UNFIXED, "ib_post_recv:err=%d %s"
+		gflog_error(GFARM_MSG_1004826, "ib_post_recv:err=%d %s"
 			, err, pr_sge(buf, (struct ib_send_wr *)wr));
 	}
 	return (err);
@@ -189,7 +189,7 @@ gfib_create_ah(struct ib_pd *pd, struct ib_ah_attr *attr)
 	if (IS_ERR(ah))
 		ah = NULL;
 	if (!ah) {
-		gflog_error(GFARM_MSG_UNFIXED, "create_ah");
+		gflog_error(GFARM_MSG_1004827, "create_ah");
 	}
 	return (ah);
 }
@@ -199,7 +199,7 @@ gfib_destroy_ah(struct ib_ah *ah)
 	int	err;
 	err = ib_destroy_ah(ah);
 	if (err) {
-		gflog_error(GFARM_MSG_UNFIXED, "destroy_ah err=%d", err);
+		gflog_error(GFARM_MSG_1004828, "destroy_ah err=%d", err);
 	}
 	return (err);
 }
@@ -211,7 +211,7 @@ gfib_create_qp(struct ib_pd *pd, struct ib_qp_init_attr *attr)
 	if (IS_ERR(qp))
 		qp = NULL;
 	if (!qp) {
-		gflog_error(GFARM_MSG_UNFIXED, "create_qp fail");
+		gflog_error(GFARM_MSG_1004829, "create_qp fail");
 	}
 	return (qp);
 }
@@ -221,7 +221,7 @@ gfib_destroy_qp(struct ib_qp *qp)
 	int	err;
 	err = ib_destroy_qp(qp);
 	if (err) {
-		gflog_error(GFARM_MSG_UNFIXED, "destroy_qp err=%d", err);
+		gflog_error(GFARM_MSG_1004830, "destroy_qp err=%d", err);
 	}
 	return (err);
 }
@@ -231,7 +231,7 @@ gfib_destroy_cq(struct ib_cq *cq)
 	int	err;
 	err = ib_destroy_cq(cq);
 	if (err) {
-		gflog_error(GFARM_MSG_UNFIXED, "destroy_cq err=%d", err);
+		gflog_error(GFARM_MSG_1004831, "destroy_cq err=%d", err);
 	}
 	return (err);
 }
@@ -241,7 +241,7 @@ gfib_req_notify_cq(struct ib_cq *cq, int flags)
 	int	err;
 	err = ib_req_notify_cq(cq, flags);
 	if (err) {
-		gflog_error(GFARM_MSG_UNFIXED, "req_notify_cq err=%d", err);
+		gflog_error(GFARM_MSG_1004832, "req_notify_cq err=%d", err);
 	}
 	return (err);
 }
@@ -252,7 +252,7 @@ gfib_query_port(struct gfcc_ib_device *context, uint8_t port_num,
 	int err;
 	err = ib_query_port(context->device, port_num, port_attr);
 	if (err) {
-		gflog_error(GFARM_MSG_UNFIXED, "query_port %d", err);
+		gflog_error(GFARM_MSG_1004833, "query_port %d", err);
 	}
 	return (err);
 }
@@ -267,7 +267,7 @@ gfib_query_gid(struct gfcc_ib_device *context, uint8_t port_num,
 	err = ib_query_gid(context->device, port_num, index, gid);
 #endif
 	if (err) {
-		gflog_error(GFARM_MSG_UNFIXED, "query_gid %d", err);
+		gflog_error(GFARM_MSG_1004834, "query_gid %d", err);
 	}
 	return (err);
 }
@@ -279,7 +279,7 @@ gfib_alloc_pd(struct gfcc_ib_device *context)
 	if (IS_ERR(pd))
 		pd = NULL;
 	if (!pd) {
-		gflog_error(GFARM_MSG_UNFIXED, "ib_alloc_pd fail");
+		gflog_error(GFARM_MSG_1004835, "ib_alloc_pd fail");
 	}
 	return (pd);
 }
@@ -289,7 +289,7 @@ gfib_dereg_mr(struct ib_mr *mr)
 	int err;
 	err = ib_dereg_mr(mr);
 	if (err) {
-		gflog_error(GFARM_MSG_UNFIXED, "dereg_mr err=%d", err);
+		gflog_error(GFARM_MSG_1004836, "dereg_mr err=%d", err);
 	}
 	return (err);
 }
@@ -299,7 +299,7 @@ gfib_dealloc_pd(struct ib_pd *pd)
 	int err;
 	err = ib_dealloc_pd(pd);
 	if (err) {
-		gflog_error(GFARM_MSG_UNFIXED, "dealloc_pd err=%d", err);
+		gflog_error(GFARM_MSG_1004837, "dealloc_pd err=%d", err);
 	}
 	return (err);
 }
@@ -309,7 +309,7 @@ gfib_open_device(struct ib_device *device, struct gfcc_ctx *ctx)
 	struct gfcc_ib_device *context;
 	context = gfcc_open_device(device, ctx);
 	if (!context) {
-		gflog_error(GFARM_MSG_UNFIXED, "open_device fail");
+		gflog_error(GFARM_MSG_1004838, "open_device fail");
 	}
 	return (context);
 }
@@ -319,7 +319,7 @@ gfib_close_device(struct gfcc_ib_device *context, struct gfcc_ctx *ctx)
 	int err = 0;
 	gfcc_close_device(context, ctx);
 	if (err) {
-		gflog_error(GFARM_MSG_UNFIXED, "close_device err=%d", err);
+		gflog_error(GFARM_MSG_1004839, "close_device err=%d", err);
 	}
 	return (err);
 }
@@ -678,7 +678,7 @@ gfcc_wc_status_pr(struct ib_wc *wc, int *errp, char *msg)
 	char str[16];
 	sprintf(str, "%d", wc->status);
 
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1004840,
 		"%s, wr_id %lx opcode=%x syndrom 0x%x status:%s ",
 		msg, (long)wc->wr_id, wc->opcode, wc->vendor_err, str);
 
@@ -701,7 +701,7 @@ gfcc_ib_mtu2byte(int mtu)
 	case IB_MTU_4096:
 		byte = 4096; break;
 	default:
-		gflog_error(GFARM_MSG_UNFIXED, "bad mtu %d\n", mtu);
+		gflog_error(GFARM_MSG_1004841, "bad mtu %d\n", mtu);
 		byte = 2048;
 	}
 	return (byte);
@@ -728,7 +728,7 @@ gfcc_pr_rpc(char *str, struct gfcc_rpc *rpc)
 {
 	struct gfcc_rpc3_req *rpc3 = &rpc->r_rpc3;
 	struct gfcc_rpc4_req *rpc4 = &rpc->r_rpc4;
-	gflog_error(GFARM_MSG_UNFIXED, "%s: rpc=%p ref=%d\n"
+	gflog_error(GFARM_MSG_1004842, "%s: rpc=%p ref=%d\n"
 		"r3_cmd=%d cb=%p status=%d err=%d nwr=%d done=%d\n"
 		"r4_cmd=%d cb=%p status=%d npage=%d\n",
 		str, rpc, atomic_read(&rpc->r_ref),
@@ -744,7 +744,7 @@ gfcc_rpc_find(struct gfcc_ctx *ctx, uint64_t wr_id)
 		r_magic, GFCC_RPC_MAGIC, strlen(GFCC_RPC_MAGIC))) {
 		return ((struct gfcc_rpc *) wr_id);
 	}
-	gflog_error(GFARM_MSG_UNFIXED, "not found wr_id %lx", (long)wr_id);
+	gflog_error(GFARM_MSG_1004843, "not found wr_id %lx", (long)wr_id);
 	return (NULL);
 }
 /*------------------------------------------------------------*/
@@ -766,7 +766,7 @@ gfcc_create_ah(struct gfcc_ctx *ctx, struct gfcc_ibaddr *ibaddr)
 	ah_attr.src_path_bits = 0;
 	ah_attr.port_num   = ctx->param->ib_port;
 	if (!(ah = gfib_create_ah(ctx->pd, &ah_attr))) {
-		gflog_error(GFARM_MSG_UNFIXED, "ib_create_ah fail");
+		gflog_error(GFARM_MSG_1004844, "ib_create_ah fail");
 	}
 	return (ah);
 }
@@ -796,7 +796,7 @@ loop:
 	if (new) {
 		gfib_destroy_ah(new);
 		if (!ah) {
-			gflog_error(GFARM_MSG_UNFIXED, "too many ibaddr");
+			gflog_error(GFARM_MSG_1004845, "too many ibaddr");
 			goto end_err;
 		}
 	}
@@ -1040,7 +1040,7 @@ static void
 gfcc_rpc_free(struct gfcc_rpc *rpc)
 {
 	if (rpc) {
-		gflog_verbose(GFARM_MSG_UNFIXED, "rpc %p", rpc);
+		gflog_verbose(GFARM_MSG_1004846, "rpc %p", rpc);
 		gfcc_rpc_unset(rpc);
 		gfcc_stack_put(rpc, &rpc->r_ctx->rpc_pool);
 	}
@@ -1080,7 +1080,7 @@ gfcc_rpc_alloc(struct gfcc_ctx *ctx, int nowait)
 		goto err_end;
 	}
 	if ((err = atomic_read(&rpc->r_ref)) != 0) {
-		gflog_error(GFARM_MSG_UNFIXED, "rpc %p ref=%d", rpc, err);
+		gflog_error(GFARM_MSG_1004847, "rpc %p ref=%d", rpc, err);
 		goto err_end;
 	}
 	atomic_set(&rpc->r_ref, 1);
@@ -1113,7 +1113,7 @@ gfcc_rpc_alloc(struct gfcc_ctx *ctx, int nowait)
 	iattr.qp_type = IB_QPT_UD;
 	iattr.sq_sig_type = IB_SIGNAL_REQ_WR;
 	if (!(rpc->r_rpc3.r3_qp = gfib_create_qp(ctx->pd, &iattr))) {
-		gflog_error(GFARM_MSG_UNFIXED, "Couldn't create QP\n");
+		gflog_error(GFARM_MSG_1004848, "Couldn't create QP\n");
 		err = EINVAL;
 		goto err_end1;
 	}
@@ -1133,7 +1133,7 @@ gfcc_rpc_alloc(struct gfcc_ctx *ctx, int nowait)
 	if (!rpc->r_resdma) {
 		goto err_end1;
 	}
-	gflog_verbose(GFARM_MSG_UNFIXED, "rpc %p", rpc);
+	gflog_verbose(GFARM_MSG_1004849, "rpc %p", rpc);
 	return (rpc);
 err_end1:
 	gfcc_rpc_unset0(rpc);
@@ -1159,7 +1159,7 @@ gfcc_set_link_layer(struct gfcc_ctx *ctx)
 	int byte, mtu;
 
 	if (gfib_query_port(ctx->context, ctx->param->ib_port, &port_attr)) {
-		gflog_info(GFARM_MSG_UNFIXED, "Unable to query port\n");
+		gflog_info(GFARM_MSG_1004850, "Unable to query port\n");
 		return (-1);
 	}
 	if (!(byte = ctx->param->mtu))
@@ -1167,12 +1167,12 @@ gfcc_set_link_layer(struct gfcc_ctx *ctx)
 	else {
 		mtu = gfcc_ib_byte2mtu(byte);
 		if (mtu > port_attr.max_mtu) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1004851,
 			"mtu(%d) shrink to %d\n", mtu, port_attr.max_mtu);
 			mtu = port_attr.max_mtu;
 		}
 		if (mtu > port_attr.active_mtu) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1004852,
 			"Please change active_mtu(%d) to %d\n",
 					port_attr.active_mtu, mtu);
 			mtu = port_attr.active_mtu;
@@ -1184,7 +1184,7 @@ gfcc_set_link_layer(struct gfcc_ctx *ctx)
 	if (gfib_query_gid(ctx->context, ctx->param->ib_port,
 		ctx->param->gid_index,
 		(union ib_gid *) &ctx->my_ibaddr.ca_gid)) {
-		gflog_error(GFARM_MSG_UNFIXED, "Fail query_gid");
+		gflog_error(GFARM_MSG_1004853, "Fail query_gid");
 	}
 
 	return (0);
@@ -1194,7 +1194,7 @@ gfcc_param_init(void)
 {
 	struct gfcc_param *param;
 	if (!(param = kmalloc(sizeof(*param), GFP_KERNEL))) {
-		gflog_error(GFARM_MSG_UNFIXED, "malloc fail");
+		gflog_error(GFARM_MSG_1004854, "malloc fail");
 		return (NULL);
 	}
 	memset(param, 0, sizeof(*param));
@@ -1228,7 +1228,7 @@ gfcc_ctx_init(struct gfcc_param *param, struct gfcc_ctx **ctxp)
 		return (-ENOENT);
 
 	if (!(ctx = kmalloc(sizeof(*ctx), GFP_KERNEL))) {
-		gflog_error(GFARM_MSG_UNFIXED, "malloc fail");
+		gflog_error(GFARM_MSG_1004855, "malloc fail");
 		return (-ENOMEM);
 	}
 	memset(ctx, 0, sizeof(*ctx));
@@ -1241,25 +1241,25 @@ gfcc_ctx_init(struct gfcc_param *param, struct gfcc_ctx **ctxp)
 
 	ctx->context = gfib_open_device(ib_dev, ctx);
 	if (!ctx->context) {
-		gflog_error(GFARM_MSG_UNFIXED, "Couldn't get context for %s\n",
+		gflog_error(GFARM_MSG_1004856, "Couldn't get context for %s\n",
 			devname ? devname : "");
 		goto end_err;
 	}
 	/* Finds the link type and configure the HCA accordingly. */
 	if (gfcc_set_link_layer(ctx)) {
-		gflog_error(GFARM_MSG_UNFIXED, "Couldn't set the link layer\n");
+		gflog_error(GFARM_MSG_1004857, "Couldn't set the link layer\n");
 		goto end_err;
 	}
 
 	ctx->iosize = ctx->param->mtu - GFCC_UD_GRH;
 	/* <p|page|p> <page|p> <p|p> */
 	ctx->send_sge = (ctx->iosize + (page_size - 1) * 2) / page_size;
-	gflog_info(GFARM_MSG_UNFIXED, "mtu=%d iosize=%d send_sge=%d",
+	gflog_info(GFARM_MSG_1004858, "mtu=%d iosize=%d send_sge=%d",
 		ctx->param->mtu, ctx->iosize, ctx->send_sge);
 
 	ctx->pd = gfib_alloc_pd(ctx->context);
 	if (!ctx->pd) {
-		gflog_error(GFARM_MSG_UNFIXED, "Couldn't allocate PD\n");
+		gflog_error(GFARM_MSG_1004859, "Couldn't allocate PD\n");
 		goto end_err;
 	}
 
@@ -1270,14 +1270,14 @@ gfcc_ctx_init(struct gfcc_param *param, struct gfcc_ctx **ctxp)
 		ctx->mr = NULL;
 	}
 	if (!ctx->mr) {
-		gflog_error(GFARM_MSG_UNFIXED, "Couldn't allocate MR %d", err);
+		gflog_error(GFARM_MSG_1004860, "Couldn't allocate MR %d", err);
 		goto end_err;
 	}
 
 	/* Create the CQ according to Client/Server or Duplex setting. */
 	depth = param->num_rrpc +
 		param->num_srpc * gfcc_page2seg(ctx, GFCC_PAGES_MAX);
-	gflog_info(GFARM_MSG_UNFIXED, "num_comp_vectors=%d depth=%d",
+	gflog_info(GFARM_MSG_1004861, "num_comp_vectors=%d depth=%d",
 		num_comp_vectors, depth);
 	/* vec = num_comp_vectors -1 :: works bad */
 	vec = 0;
@@ -1302,7 +1302,7 @@ gfcc_ctx_init(struct gfcc_param *param, struct gfcc_ctx **ctxp)
 	} else
 		gfib_req_notify_cq(ctx->rcq, IB_CQ_NEXT_COMP);
 	if (ctx->scq == NULL || ctx->rcq == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "Couldn't create CQ %d\n", err);
+		gflog_error(GFARM_MSG_1004862, "Couldn't create CQ %d\n", err);
 		goto end_err;
 	}
 
@@ -1318,7 +1318,7 @@ gfcc_ctx_init(struct gfcc_param *param, struct gfcc_ctx **ctxp)
 
 	ctx->qp = gfib_create_qp(ctx->pd, &iattr);
 	if (!ctx->qp)  {
-		gflog_error(GFARM_MSG_UNFIXED, "Couldn't create QP\n");
+		gflog_error(GFARM_MSG_1004863, "Couldn't create QP\n");
 		goto end_err;
 	}
 	ctx->my_ibaddr.ca_qpn = ctx->qp->qp_num;
@@ -1329,25 +1329,25 @@ gfcc_ctx_init(struct gfcc_param *param, struct gfcc_ctx **ctxp)
 	if ((err = gfcc_stack_init(&ctx->rpc_pool,
 		ctx->param->num_rrpc + ctx->param->num_srpc,
 		sizeof(struct gfcc_rpc), NULL, 1))) {
-		gflog_error(GFARM_MSG_UNFIXED, "Couldn't create cc_cachep\n");
+		gflog_error(GFARM_MSG_1004864, "Couldn't create cc_cachep\n");
 		goto end_err;
 	}
 	ctx->proc_ibaddr = procop_ibaddr;
 	ctx->proc_ibaddr.ctx = ctx;
 	if ((err = gfarm_procop_create(gfsk_fsp->gf_pde, &ctx->proc_ibaddr))) {
-		gflog_error(GFARM_MSG_UNFIXED, "Couldn't create proc\n");
+		gflog_error(GFARM_MSG_1004865, "Couldn't create proc\n");
 	}
 	ctx->proc_stat = procop_prstat;
 	ctx->proc_stat.ctx = ctx;
 	if ((err = gfarm_procop_create(gfsk_fsp->gf_pde, &ctx->proc_stat))) {
-		gflog_error(GFARM_MSG_UNFIXED, "Couldn't create proc\n");
+		gflog_error(GFARM_MSG_1004866, "Couldn't create proc\n");
 	}
 	ctx->status = GFCC_ST_ACTIVE;
 	if ((err = rpc3_listen(ctx))) {
 		goto end_err;
 	}
 	if (gfarm_cc_register(&ctx->my_ibaddr)) {
-		gflog_error(GFARM_MSG_UNFIXED, "gfarm_cc_register fail");
+		gflog_error(GFARM_MSG_1004867, "gfarm_cc_register fail");
 		err = -EINVAL;
 		goto end_err;
 	}
@@ -1376,7 +1376,7 @@ gfcc_ctx_fini(struct gfcc_ctx *ctx)
 		if (!ctx->peer[i].ah)
 			break;
 		if (gfib_destroy_ah(ctx->peer[i].ah)) {
-			gflog_error(GFARM_MSG_UNFIXED, "faile to destroy AH");
+			gflog_error(GFARM_MSG_1004868, "faile to destroy AH");
 		}
 		ctx->peer[i].ah = NULL;
 	}
@@ -1390,23 +1390,23 @@ gfcc_ctx_fini(struct gfcc_ctx *ctx)
 	gfcc_stack_fini(&ctx->rpc_pool, gfcc_rpc_dtr);
 
 	if (gfib_destroy_cq(ctx->scq)) {
-		gflog_error(GFARM_MSG_UNFIXED, "failed to destroy SCQ\n");
+		gflog_error(GFARM_MSG_1004869, "failed to destroy SCQ\n");
 	}
 	if (gfib_destroy_cq(ctx->rcq)) {
-		gflog_error(GFARM_MSG_UNFIXED, "failed to destroy RCQ\n");
+		gflog_error(GFARM_MSG_1004870, "failed to destroy RCQ\n");
 	}
 
 	if (gfib_dereg_mr(ctx->mr)) {
-		gflog_error(GFARM_MSG_UNFIXED, "failed to destroy MR\n");
+		gflog_error(GFARM_MSG_1004871, "failed to destroy MR\n");
 	}
 
 	if (gfib_dealloc_pd(ctx->pd)) {
-		gflog_error(GFARM_MSG_UNFIXED, "failed to destroy PD\n");
+		gflog_error(GFARM_MSG_1004872, "failed to destroy PD\n");
 	}
 
 
 	if (gfib_close_device(ctx->context, ctx)) {
-		gflog_error(GFARM_MSG_UNFIXED, "failed to close context\n");
+		gflog_error(GFARM_MSG_1004873, "failed to close context\n");
 	}
 	GFCC_MUTEX_DESTROY(&ctx->ib_lock);
 	kfree(ctx->param);
@@ -1524,7 +1524,7 @@ gfcc_post_recv_pages(struct gfcc_rpc *rpc)
 	}
 	rpc->r_rpc3.r3_nwr = nseg;
 	rpc->r_rpc3.r3_nrecv = nseg;
-	gflog_debug(GFARM_MSG_UNFIXED, "npage=%d nseg=%d", npage, nseg);
+	gflog_debug(GFARM_MSG_1004874, "npage=%d nseg=%d", npage, nseg);
 	return (err);
 }
 static int
@@ -1596,11 +1596,11 @@ gfcc_post_send_pages(struct gfcc_rpc *rpc, int npage, struct ib_ah *ah)
 		gfcc_rpc_put(rpc);	/* no IB_SEND_SIGNALED */
 	}
 	if (rpc->r_rpc3.r3_nwr != nseg) {
-		gflog_error(GFARM_MSG_UNFIXED, "invalid nseg %d:%d",
+		gflog_error(GFARM_MSG_1004875, "invalid nseg %d:%d",
 			rpc->r_rpc3.r3_nwr, nseg);
 	}
 	rpc->r_rpc3.r3_nsend = nseg;
-	gflog_debug(GFARM_MSG_UNFIXED, "npage=%d nseg=%d", npage, nseg);
+	gflog_debug(GFARM_MSG_1004876, "npage=%d nseg=%d", npage, nseg);
 	return (err);
 }
 static int
@@ -1636,7 +1636,7 @@ gfcc_map_recv_pages(struct gfcc_ctx *ctx, int npage, uint64_t *addr,
 			pblk[j].cs_npage++;
 		else {
 			if (j + 1 == *npblk) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1004877,
 					"too many pblk %d", j);
 				break;
 			}
@@ -1645,7 +1645,7 @@ gfcc_map_recv_pages(struct gfcc_ctx *ctx, int npage, uint64_t *addr,
 			pblk[j].cs_npage = 1;
 		}
 		if (++i == npage) {
-			gflog_verbose(GFARM_MSG_UNFIXED, "too many page %d",
+			gflog_verbose(GFARM_MSG_1004878, "too many page %d",
 						j);
 			break;
 		}
@@ -1668,11 +1668,11 @@ rpc3_listen_cb(struct gfcc_rpc *rpc, struct ib_wc *wc)
 	rpc->r_rpc2 = rpc2 = (struct gfcc_rpc2_req *)
 		(rpc->r_reqbuf + GFCC_UD_GRH);
 	if (memcmp(rpc2->r2_ver, GFCC_RPC2_VER, strlen(GFCC_RPC2_VER))) {
-		gflog_error(GFARM_MSG_UNFIXED, "version is different");
+		gflog_error(GFARM_MSG_1004879, "version is different");
 		goto end_reuse;
 	}
 	if (rpc2->r2_cmd != GFCC_RPC_READ_REQ) {
-		gflog_error(GFARM_MSG_UNFIXED, "unknown command");
+		gflog_error(GFARM_MSG_1004880, "unknown command");
 		goto end_reuse;
 	}
 	atomic64_inc(&rpc->r_ctx->r_recv_req);
@@ -1694,7 +1694,7 @@ end_reuse:
 	rpc->r_rpc3.r3_status = GFCC_RPCST_WAIT;
 	rpc->r_rpc3.r3_nrecv = 1;
 	if (gfcc_post_recv(rpc, rpc->r_ctx->qp)) {
-		gflog_error(GFARM_MSG_UNFIXED, "post fail");
+		gflog_error(GFARM_MSG_1004881, "post fail");
 		rpc3_post_listen(rpc->r_ctx);
 	}
 end_ret:
@@ -1716,7 +1716,7 @@ rpc3_post_listen(struct gfcc_ctx *ctx)
 	rpc3->r3_cmd = GFCC_RPC_LISTEN;
 
 	if ((err = gfcc_post_recv(rpc, ctx->qp))) {
-		gflog_error(GFARM_MSG_UNFIXED, "post fail");
+		gflog_error(GFARM_MSG_1004882, "post fail");
 	}
 	gfcc_rpc_put(rpc);	/* for allocator */
 	return (0);
@@ -1733,7 +1733,7 @@ rpc3_listen(struct gfcc_ctx *ctx)
 		if (rpc3_post_listen(ctx))
 			break;
 	}
-	gflog_info(GFARM_MSG_UNFIXED, "post_recv %d", i);
+	gflog_info(GFARM_MSG_1004883, "post_recv %d", i);
 	if (!i)
 		err = ENOMEM;
 err_end:
@@ -1747,7 +1747,7 @@ rpc2_poll(struct gfcc_ctx *ctx, struct ib_cq *cq)
 #define GFCCC_NUM_COMP	8
 	struct ib_wc wc[GFCCC_NUM_COMP];
 
-	gflog_debug(GFARM_MSG_UNFIXED, "rpc poll %p", cq);
+	gflog_debug(GFARM_MSG_1004884, "rpc poll %p", cq);
 	for (; ctx->status == GFCC_ST_ACTIVE &&
 		(ne = ib_poll_cq(cq, GFCCC_NUM_COMP, wc)) > 0;) {
 		for (i = 0; i < ne; i++) {
@@ -1761,12 +1761,12 @@ rpc2_poll(struct gfcc_ctx *ctx, struct ib_cq *cq)
 			if (!(rpc = gfcc_rpc_find(ctx, wc[i].wr_id)))
 				continue;
 			rpc3 = &rpc->r_rpc3;
-			gflog_verbose(GFARM_MSG_UNFIXED, "rpc=%p done=%d",
+			gflog_verbose(GFARM_MSG_1004885, "rpc=%p done=%d",
 				rpc, rpc3->r3_done);
 			if (rpc3->r3_status != GFCC_RPCST_WAIT
 			&&  rpc3->r3_status != GFCC_RPCST_ASYNC) {
 				atomic64_inc(&ctx->r_err);
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1004886,
 				"Not waiting(%p) %d ", rpc3, rpc3->r3_status);
 				continue;
 			}
@@ -1787,7 +1787,7 @@ rpc2_poll(struct gfcc_ctx *ctx, struct ib_cq *cq)
 			break;
 	}
 	if (ne < 0) {
-		gflog_error(GFARM_MSG_UNFIXED, "poll CQ failed %d\n", ne);
+		gflog_error(GFARM_MSG_1004887, "poll CQ failed %d\n", ne);
 		return (EIO);
 	}
 	return (0);
@@ -1796,7 +1796,7 @@ static int
 rpc3_send_read_res_cb(struct gfcc_rpc *rpc, struct ib_wc *wc)
 {
 	struct gfcc_rpc3_req *rpc3 = &rpc->r_rpc3;
-	gflog_debug(GFARM_MSG_UNFIXED, "rpc3(%p) done=%d nwr=%d", rpc3,
+	gflog_debug(GFARM_MSG_1004888, "rpc3(%p) done=%d nwr=%d", rpc3,
 		rpc3->r3_done, rpc3->r3_nwr);
 	if (rpc3->r3_nwr == rpc3->r3_done || rpc3->r3_done) {
 		uint64_t tm = get_cycles();
@@ -1818,7 +1818,7 @@ rpc3_send_read_res(struct gfcc_rpc *rpc, int ans)
 	struct ib_ah *ah = NULL;
 	struct gfcc_rpc2_res *res;
 
-	gflog_debug(GFARM_MSG_UNFIXED, "rpc3(%p) sending", rpc3);
+	gflog_debug(GFARM_MSG_1004889, "rpc3(%p) sending", rpc3);
 	rpc3->r3_status = GFCC_RPCST_INIT;
 	rpc3->r3_cmd = GFCC_RPC_READ_RES;
 	rpc3->r3_cb = rpc3_send_read_res_cb;
@@ -1865,17 +1865,17 @@ rpc3_send_read_req_cb(struct gfcc_rpc *rpc, struct ib_wc *wc)
 	}
 	if (wc->opcode == IB_WC_SEND) {
 		if (rpc3->r3_done != 1) {
-			gflog_verbose(GFARM_MSG_UNFIXED,
+			gflog_verbose(GFARM_MSG_1004890,
 				"%p done is %d not 1, opcode=%x expected=%x",
 				rpc, rpc3->r3_done, wc->opcode, IB_WC_SEND);
 		}
-		gflog_debug(GFARM_MSG_UNFIXED, "rpc3(%p) send done", rpc3);
+		gflog_debug(GFARM_MSG_1004891, "rpc3(%p) send done", rpc3);
 	}
-	gflog_verbose(GFARM_MSG_UNFIXED, "rpc(%p) done=%d", rpc, rpc3->r3_done);
+	gflog_verbose(GFARM_MSG_1004892, "rpc(%p) done=%d", rpc, rpc3->r3_done);
 	if (rpc3->r3_done == 2) {
 		res = (struct gfcc_rpc2_res *) (rpc->r_resbuf + GFCC_UD_GRH);
 		if (res->r2_id != (uint64_t) rpc) {
-			gflog_error(GFARM_MSG_UNFIXED, "invalid r2_id");
+			gflog_error(GFARM_MSG_1004893, "invalid r2_id");
 			rpc3->r3_err = EPROTO;
 			goto end_err;
 		}
@@ -1883,12 +1883,12 @@ rpc3_send_read_req_cb(struct gfcc_rpc *rpc, struct ib_wc *wc)
 			char buf[128];
 			rpc3->r3_err = res->r2_err;
 			pr_cc_obj(buf, sizeof(buf), &rpc->r_rpc2->r2_obj);
-			gflog_debug(GFARM_MSG_UNFIXED, "rpc obj:%s err=%d",
+			gflog_debug(GFARM_MSG_1004894, "rpc obj:%s err=%d",
 				buf, (int)res->r2_err);
 			goto end_err;
 		}
 		if (res->r2_npage != rpc->r_rpc2->r2_npage) {
-			gflog_debug(GFARM_MSG_UNFIXED, "%p return page %d < %d",
+			gflog_debug(GFARM_MSG_1004895, "%p return page %d < %d",
 				rpc, res->r2_npage, rpc->r_rpc2->r2_npage);
 			rpc3->r3_nwr = res->r2_nseg;
 			rpc3->r3_flags |= GFCC_RPCFL_RESET;
@@ -1913,7 +1913,7 @@ end_err:
 	rpc3->r3_flags |= GFCC_RPCFL_RESET;
 end_done:
 	gfcc_rpc_list_del(rpc, rpc->r_ctx);
-	gflog_debug(GFARM_MSG_UNFIXED, "rpc3(%p) done", rpc3);
+	gflog_debug(GFARM_MSG_1004896, "rpc3(%p) done", rpc3);
 	GFCC_MUTEX_LOCK(&rpc3->r3_lock);
 	if (rpc4->r4_cb)
 		rpc4->r4_cb(rpc, rpc3->r3_err);
@@ -1942,7 +1942,7 @@ rpc3_send_read_req(struct gfcc_rpc *rpc)
 		goto err_end;
 	if (rpc4->r4_npage > GFCC_PAGES_MAX) {
 		npage = GFCC_PAGES_MAX;
-		gflog_warning(GFARM_MSG_UNFIXED, "shrink page %d -> %d",
+		gflog_warning(GFARM_MSG_1004897, "shrink page %d -> %d",
 			rpc4->r4_npage, GFCC_PAGES_MAX);
 	} else
 		npage = rpc4->r4_npage;
@@ -1950,7 +1950,7 @@ rpc3_send_read_req(struct gfcc_rpc *rpc)
 	if ((npage = gfcc_map_recv_pages(rpc->r_ctx, npage, rpc3->r3_dma_page,
 		&rpc2->r2_npblk, rpc2->r2_pblk, rpc4->r4_pages,
 				DMA_FROM_DEVICE)) < 1) {
-		gflog_error(GFARM_MSG_UNFIXED, "can't map");
+		gflog_error(GFARM_MSG_1004898, "can't map");
 		err = ENOMEM;
 		goto err_end;
 	}
@@ -2006,7 +2006,7 @@ rpc4_recv_read_req_cb(struct gfcc_rpc *rpc, int err)
 {
 	struct gfcc_rpc4_req *rpc4 = &rpc->r_rpc4;
 
-	gflog_debug(GFARM_MSG_UNFIXED, "rpc4(%p) err=%d", rpc4, err);
+	gflog_debug(GFARM_MSG_1004899, "rpc4(%p) err=%d", rpc4, err);
 	return (0);
 }
 

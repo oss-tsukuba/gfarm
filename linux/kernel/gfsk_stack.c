@@ -50,7 +50,7 @@ gfcc_stack_fini(struct gfcc_stack *stp, void (*dtr)(void *))
 	int i, j;
 	if (stp) {
 		if (stp->s_num != stp->s_free) {
-			gflog_warning(GFARM_MSG_UNFIXED, "still used %d/%d",
+			gflog_warning(GFARM_MSG_1004983, "still used %d/%d",
 					stp->s_free, stp->s_num);
 		}
 		for (i = 0; i < stp->s_ause; i++) {
@@ -119,7 +119,7 @@ gfcc_stack_put(void *data, struct gfcc_stack *stp)
 
 	GFCC_MUTEX_LOCK(&stp->s_lock);
 	if (stp->s_free + 1 > stp->s_num) {
-		gflog_error(GFARM_MSG_UNFIXED, "too many put");
+		gflog_error(GFARM_MSG_1004984, "too many put");
 		err = -EINVAL;
 	} else {
 		stp->s_stack[stp->s_free++] = data;

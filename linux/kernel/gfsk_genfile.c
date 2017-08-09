@@ -21,7 +21,7 @@ gfsk_update_attributes(struct file *file, struct inode *inode,
 	struct file *ofile = file;
 	struct gfarm_inode *gi = get_gfarm_inode(inode);
 
-	gflog_verbose(GFARM_MSG_UNFIXED, "ino=%ld actime=%ld",
+	gflog_verbose(GFARM_MSG_1004919, "ino=%ld actime=%ld",
 			 inode->i_ino, gi->i_actime - get_jiffies_64());
 	if (gi->i_actime < get_jiffies_64()) {
 		if (!file)
@@ -35,7 +35,7 @@ gfsk_update_attributes(struct file *file, struct inode *inode,
 			dput(dentry);
 		} else {
 			retval = -EINVAL;
-			gflog_warning(GFARM_MSG_UNFIXED, "no dentry ino=%ld",
+			gflog_warning(GFARM_MSG_1004920, "no dentry ino=%ld",
 					 inode->i_ino);
 		}
 		if (file && !ofile)
@@ -73,7 +73,7 @@ gfsk_getattr(struct vfsmount *mnt, struct dentry *dentry,
 			gfsk_invalidate_pages(inode);
 		else if (S_ISDIR(inode->i_mode))
 			gfsk_invalidate_dir_pages(inode);
-		gflog_info(GFARM_MSG_UNFIXED, "gfarm:may deleted. "
+		gflog_info(GFARM_MSG_1004921, "gfarm:may deleted. "
 			"ino=%lu, ref=%d",
 			inode->i_ino, atomic_read(&dentry->d_count));
 		d_delete(dentry);
@@ -118,13 +118,13 @@ gfsk_set_cache_updatetime(struct inode *inode)
 # if 0
 	struct gfarm_inode *gi = get_gfarm_inode(inode);
 	uint64_t jiffies = get_jiffies_64();
-	gflog_debug(GFARM_MSG_UNFIXED, "gfsk_set_cache_updatetime. ino=%lu, "
+	gflog_debug(GFARM_MSG_1004922, "gfsk_set_cache_updatetime. ino=%lu, "
 			"pctime=%llu, jiffies=%llu",
 			inode->i_ino, gi->i_pctime, jiffies);
 	if ((gi->i_pctime == 0) || (jiffies < gi->i_pctime)) {
 		/* expand cache valid period */
 		gi->i_pctime = jiffies + gfsk_fsp->gf_pctime;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004923,
 			"gfsk_set_cache_updatetime updated."
 			" ino=%lu, pctime=%llu", inode->i_ino, gi->i_pctime);
 	} else {
@@ -144,7 +144,7 @@ void
 gfsk_invalidate_pages(struct inode *inode)
 {
 	invalidate_inode_pages2(inode->i_mapping);
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1004924,
 		"gfsk_invalidate_pages done. ino=%lu", inode->i_ino);
 	gfsk_set_cache_invalidate(inode);
 }
