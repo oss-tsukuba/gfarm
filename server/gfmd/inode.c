@@ -3515,7 +3515,7 @@ is_ok_to_move_to(struct inode *movee, struct inode *dst_dir)
 
 		/* this check is not strictly necessary, but... */
 		if (++depth >= gfarm_max_directory_depth) {
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1004759,
 			    "moving inode %lld:%lld to directory %lld:%lld "
 			    "is requested, but the dir depth reaches %d",
 			    (long long)movee->i_number,
@@ -4188,7 +4188,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 
 	GFARM_MALLOC_ARRAY(names, max_depth);
 	if (names == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004760,
 		    "%s: no memory for %d depth dir %lld:%lld",
 		    diag, max_depth,
 		    (long long)inode_get_number(inode),
@@ -4242,7 +4242,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 				    names, tmp_depth);
 				if (tmp_names == NULL) {
 					/* directory too deep */
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_error(GFARM_MSG_1004761,
 					    "%s: no memory for %d "
 					    "depth dir %lld:%lld:",
 					    diag, tmp_depth,
@@ -4287,7 +4287,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 		e = GFARM_ERR_NO_ERROR;
 	} else if (overflow) {
 		assert(s == NULL);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004762,
 		    "%s: pathname length %zu too long for dir %lld:%lld:",
 		    diag, totallen,
 		    (long long)inode_get_number(inode),
