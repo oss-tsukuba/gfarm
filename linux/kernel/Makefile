@@ -160,3 +160,12 @@ clean:
 	rm -f $(GFARMDIR)/lib/libgfarm/gfutil/.*.o.*
 
 distclean: clean
+
+top_builddir = $(GFARMDIR)
+top_srcdir = $(top_builddir)
+srcdir = .
+
+SRCS = *.c
+
+include $(top_srcdir)/makes/var.mk
+include $(top_srcdir)/makes/gflog.mk
