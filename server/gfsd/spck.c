@@ -646,7 +646,8 @@ gfsd_spool_check()
 			gflog_fatal_errno(GFARM_MSG_1004484, "chdir(%s)",
 			    gfarm_spool_root[i]);
 		gflog_info(GFARM_MSG_UNFIXED,
-		    "spool_check: directory check #%d started", i);
+		    "spool_check: directory check #%d started at %s", i,
+		    gfarm_spool_root[i]);
 		(void)check_spool("data", hash_ok);
 	}
 	if (hash_ok)
