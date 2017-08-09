@@ -48,7 +48,7 @@ gfsk_file_open(struct inode *inode, struct file *file)
 		if (retval == 0 && (file->f_flags & O_DIRECT)) {
 			invalidate_inode_pages2(inode->i_mapping);
 		} else if (retval == -ENOENT) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004910,
 				"%s: ENOENT inode=%p file=%p",
 				__func__, inode, file);
 			d_delete(file->f_dentry);
@@ -79,7 +79,7 @@ gfsk_file_close(struct inode *inode, struct file *file)
 
 	retval = gfarm_closefile(inode, file);
 	if (!file->f_dentry->d_inode)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1004911,
 			"%s: no inode inode=%p file=%p",
 			__func__, inode, file);
 	GFSK_CTX_UNSET();

@@ -30,7 +30,7 @@
 static void
 warn_no_idmapd(struct cache_detail *detail, int has_died)
 {
-	gflog_error(GFARM_MSG_UNFIXED, "ugidmap: ID mapping failed: "
+	gflog_error(GFARM_MSG_1005009, "ugidmap: ID mapping failed: "
 			"has idmapd %s?", has_died ? "died" : "started");
 }
 

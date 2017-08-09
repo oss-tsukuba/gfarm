@@ -23,16 +23,16 @@ gfsk_fd_set(int usrfd, int type)
 	struct file *file;
 
 	if (!(file = fget(usrfd))) {
-		gflog_error(GFARM_MSG_UNFIXED, "invalid fd=%d\n", usrfd);
+		gflog_error(GFARM_MSG_1004928, "invalid fd=%d\n", usrfd);
 		goto out;
 	}
 	if (type && ((FILE2INODE(file)->i_mode) & S_IFMT) != type) {
-		gflog_error(GFARM_MSG_UNFIXED, "invalid type=%x:%x\n",
+		gflog_error(GFARM_MSG_1004929, "invalid type=%x:%x\n",
 			FILE2INODE(file)->i_mode, type);
 		goto out_fput;
 	}
 	if ((err = gfsk_fd_file_set(file)) < 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004930,
 			"fail gfsk_fd_file_set %d\n", err);
 		goto out_fput;
 	}
@@ -48,16 +48,16 @@ gfsk_localfd_set(int usrfd, int type)
 	struct file *file;
 
 	if (!(file = fget(usrfd))) {
-		gflog_error(GFARM_MSG_UNFIXED, "invalid fd=%d\n", usrfd);
+		gflog_error(GFARM_MSG_1004931, "invalid fd=%d\n", usrfd);
 		goto out;
 	}
 	if (type && ((FILE2INODE(file)->i_mode) & S_IFMT) != type) {
-		gflog_error(GFARM_MSG_UNFIXED, "invalid type=%x:%x\n",
+		gflog_error(GFARM_MSG_1004932, "invalid type=%x:%x\n",
 			FILE2INODE(file)->i_mode, type);
 		goto out_fput;
 	}
 	if ((err = gfsk_fd_file_set(file)) < 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004933,
 			"fail gfsk_fd_file_set %d\n", err);
 		goto out_fput;
 	}
@@ -81,7 +81,7 @@ gfsk_gfmd_connect(const char *hostname, int port, const char *source_ip,
 
 	*sock = -1;
 	if (strlen(hostname) >= sizeof(inarg.r_hostname)) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004934,
 			"hostname(%s) too long\n", hostname);
 		goto out;
 	}
@@ -93,21 +93,21 @@ gfsk_gfmd_connect(const char *hostname, int port, const char *source_ip,
 			err = 0;
 			goto out;
 		}
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004935,
 			"(host,user)=(%s,%s) != mount.arg(%s,%s)",
 			hostname, user, gfsk_fsp->gf_mdata.m_host,
 			gfsk_fsp->gf_mdata.m_uidname);
 	}
 	if (strlen(user) >= sizeof(inarg.r_global)) {
-		gflog_error(GFARM_MSG_UNFIXED, "user(%s) too long\n", user);
+		gflog_error(GFARM_MSG_1004936, "user(%s) too long\n", user);
 		goto out;
 	}
 	if (ug_map_name_to_uid(user, strlen(user), &inarg.r_uid)) {
-		gflog_error(GFARM_MSG_UNFIXED, "invalid user(%s)\n", user);
+		gflog_error(GFARM_MSG_1004937, "invalid user(%s)\n", user);
 		goto out;
 	}
 	if (source_ip && strlen(source_ip) >= sizeof(inarg.r_source_ip)) {
-		gflog_error(GFARM_MSG_UNFIXED, "source_ip(%s) too long\n",
+		gflog_error(GFARM_MSG_1004938, "source_ip(%s) too long\n",
 						source_ip);
 		goto out;
 	}
@@ -118,7 +118,7 @@ gfsk_gfmd_connect(const char *hostname, int port, const char *source_ip,
 	strcpy(inarg.r_global, user);
 	if ((err = gfsk_req_connect_sync(GFSK_OP_CONNECT_GFMD,
 		inarg.r_uid, &inarg, &outarg))) {
-		gflog_error(GFARM_MSG_UNFIXED, "connect fail err=%d\n", err);
+		gflog_error(GFARM_MSG_1004939, "connect fail err=%d\n", err);
 		goto out;
 	}
 	/* fd is converted into fsfd from taskfd */
@@ -141,7 +141,7 @@ gfsk_gfsd_connect(const char *hostname,  struct sockaddr *peer_addr,
 	struct sockaddr_in *inp = (struct sockaddr_in *)peer_addr;
 
 	if (!(inarg = kmalloc(sizeof(*inarg) + sizeof(*outarg), GFP_KERNEL))) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004940,
 			"can't alloc args %ld", sizeof(*inarg)
 						+ sizeof(*outarg));
 		err = -ENOMEM;
@@ -150,21 +150,21 @@ gfsk_gfsd_connect(const char *hostname,  struct sockaddr *peer_addr,
 	memset(inarg, 0, sizeof(*inarg) + sizeof(*outarg));
 	outarg = (struct gfsk_rpl_connect *)(inarg + 1);
 	if (strlen(hostname) >= sizeof(inarg->r_hostname)) {
-		gflog_error(GFARM_MSG_UNFIXED, "hostname(%s) too long\n",
+		gflog_error(GFARM_MSG_1004941, "hostname(%s) too long\n",
 			hostname);
 		goto out;
 	}
 	if (strlen(user) >= sizeof(inarg->r_global)) {
-		gflog_error(GFARM_MSG_UNFIXED, "user(%s) too long\n", user);
+		gflog_error(GFARM_MSG_1004942, "user(%s) too long\n", user);
 		goto out;
 	}
 	if (source_ip && strlen(source_ip) >= sizeof(inarg->r_source_ip)) {
-		gflog_error(GFARM_MSG_UNFIXED, "source_ip(%s) too long\n",
+		gflog_error(GFARM_MSG_1004943, "source_ip(%s) too long\n",
 			source_ip);
 		goto out;
 	}
 	if (peer_addr->sa_family != AF_INET) {
-		gflog_error(GFARM_MSG_UNFIXED, "peer_addr is not AF_INET, %d\n",
+		gflog_error(GFARM_MSG_1004944, "peer_addr is not AF_INET, %d\n",
 			peer_addr->sa_family);
 		goto out;
 	}
@@ -178,14 +178,14 @@ gfsk_gfsd_connect(const char *hostname,  struct sockaddr *peer_addr,
 	if (kevpp) {
 		if ((err = gfsk_req_connect_async(GFSK_OP_CONNECT_GFSD,
 			inarg->r_uid, inarg, outarg, kevpp, evfd))) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004945,
 				"connect_async fail err=%d\n", err);
 			goto out;
 		}
 	} else {
 		if ((err = gfsk_req_connect_sync(GFSK_OP_CONNECT_GFSD,
 			inarg->r_uid, inarg, outarg))) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004946,
 				"connect_sync fail err=%d\n", err);
 			goto out;
 		} else
@@ -244,7 +244,7 @@ gfsk_mount_options(struct gfsk_mount_data *mdatap)
 			break;
 		default:
 error:
-			gflog_error(GFARM_MSG_UNFIXED, "unknown option %s", p);
+			gflog_error(GFARM_MSG_1004947, "unknown option %s", p);
 			return (-EINVAL);
 		}
 	}
@@ -259,14 +259,14 @@ gfsk_client_mount(struct super_block *sb, void *arg)
 	int	i, err;
 
 	if (mdatap->m_version != GFSK_VER) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004949,
 			"version is expected %x, but %x", GFSK_VER,
 				mdatap->m_version);
 		err = -EINVAL;
 		goto out;
 	}
 	if (!(fsp = kmalloc(sizeof(*fsp), GFP_KERNEL))) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004950,
 			"can't alloc gfsk_fs_context %ld", sizeof(*fsp));
 		err = -ENOMEM;
 		goto out;
@@ -297,7 +297,7 @@ gfsk_client_mount(struct super_block *sb, void *arg)
 			continue;
 		if (!(tbp->f_name.d_buf = memdup_user(fbp->f_name.d_buf,
 			fbp->f_name.d_len))) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004951,
 				"Can't allocate for %i name, size %d",
 					i, fbp->f_name.d_len);
 			goto out;
@@ -305,7 +305,7 @@ gfsk_client_mount(struct super_block *sb, void *arg)
 		tbp->f_name.d_len = fbp->f_name.d_len;
 		if (!(tbp->f_buf.d_buf = memdup_user(fbp->f_buf.d_buf,
 			fbp->f_buf.d_len))) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004952,
 				"Can't allocate for %i name, size %d",
 					i, fbp->f_buf.d_len);
 			goto out;
@@ -316,7 +316,7 @@ gfsk_client_mount(struct super_block *sb, void *arg)
 	err = -EINVAL;
 	if (mdatap->m_mfd < 0
 		|| (err = gfsk_fd_set(mdatap->m_mfd, S_IFSOCK)) < 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004953,
 			"invalid m_mfd '%d'", mdatap->m_mfd);
 		goto out;
 	}
@@ -326,14 +326,14 @@ gfsk_client_mount(struct super_block *sb, void *arg)
 	err = -EINVAL;
 	if (mdatap->m_dfd < 0
 		|| (err = gfsk_fd_set(mdatap->m_dfd, S_IFCHR)) < 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004955,
 			"invalid m_dfd '%d'", mdatap->m_dfd);
 		goto out;
 	}
 	gfsk_fsp->gf_mdata.m_dfd = err;
 
 	if ((err = gfsk_conn_init(err))) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004956,
 			"conn_init fail '%d'", mdatap->m_dfd);
 		goto out;
 	}

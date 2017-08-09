@@ -40,7 +40,7 @@ gfskd_send_iov(struct gfskd_req_t *req, gfarm_error_t error,
 	iov[0].iov_base = &out;
 	iov[0].iov_len = sizeof(struct gfskdev_out_header);
 	out.len = iov_length((const struct iovec *)iov, count);
-	gflog_debug(GFARM_MSG_UNFIXED, "unique=%llu, gfarm_error=%d, "
+	gflog_debug(GFARM_MSG_1004795, "unique=%llu, gfarm_error=%d, "
 		"out.error=%d, len=%d", out.unique, error, out.error, out.len);
 
 	error = GFARM_ERR_NO_ERROR;
@@ -50,7 +50,7 @@ gfskd_send_iov(struct gfskd_req_t *req, gfarm_error_t error,
 		if (len >= 0)
 			errno = EIO;
 		error = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004796,
 			"writev fail req=%d : %ld, %s", out.len, len,
 			gfarm_error_string(error));
 
@@ -106,7 +106,7 @@ gfskd_recv_req(int fd, const char *buf, size_t len)
 		GFARM_MALLOC_ARRAY(bufp, len);
 		if (!reqp || !bufp) {
 			error = GFARM_ERR_NO_MEMORY;
-			gflog_error(GFARM_MSG_UNFIXED, "len:%ld, %s", len,
+			gflog_error(GFARM_MSG_1004797, "len:%ld, %s", len,
 				gfarm_error_string(error));
 			if (reqp)
 				free(reqp);
@@ -156,7 +156,7 @@ gfskd_loop(int fd, int bufsize)
 	GFARM_MALLOC_ARRAY(buf, bufsize);
 	if (!buf) {
 		error = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004798,
 			"buf=%d : %s", bufsize, gfarm_error_string(error));
 		return (error);
 	}
@@ -172,7 +172,7 @@ gfskd_loop(int fd, int bufsize)
 				continue;
 			default:
 				error = gfarm_errno_to_error(err);
-				gflog_error(GFARM_MSG_UNFIXED, "read fail, %s",
+				gflog_error(GFARM_MSG_1004799, "read fail, %s",
 						 gfarm_error_string(error));
 				break;
 			}
@@ -180,7 +180,7 @@ gfskd_loop(int fd, int bufsize)
 		}
 		if (len < sizeof(struct gfskdev_in_header)) {
 			error = GFARM_ERR_INPUT_OUTPUT;
-			gflog_error(GFARM_MSG_UNFIXED, "len:%ld, %s", len,
+			gflog_error(GFARM_MSG_1004800, "len:%ld, %s", len,
 				gfarm_error_string(error));
 			break;
 		}

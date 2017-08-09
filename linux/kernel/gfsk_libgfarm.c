@@ -40,7 +40,7 @@ gfarm_statfs(struct dentry *dentry, struct kstatfs *buf)
 	buf->f_fsid.val[1] = 0;
 	buf->f_namelen = GFS_MAXNAMLEN;
 
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1004963,
 		"gfarm_statfs: type=0x%lx, bsize=%ld, blocks=%llu, "
 		"bfree=%llu, bavail=%llu, files=%llu, ffree=%llu, "
 		"fsid=0x%x:%x, namelen=%ld\n",
@@ -108,7 +108,7 @@ timeequal(struct gfarm_timespec *gftime, struct timespec *ktime) {
 	int ret = ((gftime->tv_sec == ktime->tv_sec)
 			&& ((long) gftime->tv_nsec == ktime->tv_nsec));
 	if (!ret)
-		gflog_debug(GFARM_MSG_UNFIXED, "time=%ld.%ld, %ld.%d",
+		gflog_debug(GFARM_MSG_1004964, "time=%ld.%ld, %ld.%d",
 			ktime->tv_sec, ktime->tv_nsec,
 			gftime->tv_sec, gftime->tv_nsec);
 	return (ret);
@@ -255,7 +255,7 @@ gfarm_fstat(struct file *file, struct inode *inode)
 		if (ge == GFARM_ERR_NO_ERROR)
 			gfarm_stat_set(inode, &gstat);
 		else
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004965,
 				"%s: gfs_pio_stat fail, %d",
 				__func__, ge);
 		return (GFARM_ERROR_TO_ERRNO(ge));
@@ -272,7 +272,7 @@ gfarm_stat(struct dentry *dentry, struct inode **inodep)
 	struct inode *inode;
 
 	if (!dentry) {
-		gflog_fatal(GFARM_MSG_UNFIXED, "dentry NULL");
+		gflog_fatal(GFARM_MSG_1004966, "dentry NULL");
 	}
 	if (inodep)
 		*inodep = NULL;
@@ -552,7 +552,7 @@ gfarm_createfile(struct inode *inode, struct dentry *dentry, int flag,
 			}
 		} else {
 			gfarm_priv_free(file);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004967,
 				"%s: gfs_pio_create_igen %s fail, %d",
 				__func__, path, ge);
 		}
@@ -583,7 +583,7 @@ gfarm_openfile(struct inode *inode, struct file *file)
 	struct gfsk_file_private *priv;
 
 	if (gfarm_priv_get(file)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004968,
 			"%s: already open inode=%p file=%p flag=%x",
 			__func__, inode, file, file->f_flags);
 		return (0);

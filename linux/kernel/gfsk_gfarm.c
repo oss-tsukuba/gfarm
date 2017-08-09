@@ -12,14 +12,14 @@ gfsk_gfarm_init(uid_t uid)
 
 	e = gfarm_context_init();
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004925,
 			"gfarm_context_init failed: %s",
 			gfarm_error_string(e));
 		goto out;
 	}
 	e = gfarm_set_local_user_for_this_uid(uid);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004926,
 			"gfarm_set_local_user_for_this_uid failed: %s",
 			gfarm_error_string(e));
 		goto out;
@@ -27,7 +27,7 @@ gfsk_gfarm_init(uid_t uid)
 	gflog_initialize();
 	e = gfarm_config_read();
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004927,
 		    "gfarm_config_read() failed: %s", gfarm_error_string(e));
 		goto out;
 	}
