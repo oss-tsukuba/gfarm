@@ -902,6 +902,12 @@ gfarm_set_local_user_for_this_uid(uid_t uid)
  * value at gfarm_config_set_default*().
  */
 /* GFS dependent */
+#define GFARM_SPOOL_CHECK_PARALLEL_DEFAULT	\
+	GFARM_SPOOL_CHECK_PARALLEL_AUTOMATIC
+#define GFARM_SPOOL_CHECK_PARALLEL_MAX_DEFAULT	64
+#define GFARM_SPOOL_CHECK_PARALLEL_STEP_DEFAULT	1
+#define GFARM_SPOOL_CHECK_PARALLEL_PER_CAPACITY_DEFAULT \
+	(64LL*1024*1024*1024*1024) /* one process per 64TB */
 #define GFARM_SPOOL_BASE_LOAD_DEFAULT	0.0F
 #define GFARM_SPOOL_DIGEST_ERROR_CHECK_DEFAULT	1 /* enable */
 #define GFARM_WRITE_VERIFY_DEFAULT 0 /* disable */
@@ -925,6 +931,11 @@ static struct {
 static enum gfarm_spool_check_level gfarm_spool_check_level =
 	GFARM_SPOOL_CHECK_LEVEL_DEFAULT;
 static const char *gfarm_spool_check_level_name = NULL;
+int gfarm_spool_check_parallel = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_spool_check_parallel_max = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_spool_check_parallel_step = GFARM_CONFIG_MISC_DEFAULT;
+gfarm_off_t gfarm_spool_check_parallel_per_capacity =
+    GFARM_CONFIG_MISC_DEFAULT;
 float gfarm_spool_base_load = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_spool_digest_error_check = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_write_verify = GFARM_CONFIG_MISC_DEFAULT;
@@ -2994,6 +3005,15 @@ parse_one_line(char *s, char *p, char **op)
 		    &gfarm_spool_server_back_channel_rcvbuf_limit);
 	} else if (strcmp(s, o = "spool_check_level") == 0) {
 		e = parse_spool_check_level(p);
+	} else if (strcmp(s, o = "spool_check_parallel") == 0) {
+		e = parse_set_misc_int(p, &gfarm_spool_check_parallel);
+	} else if (strcmp(s, o = "spool_check_parallel_max") == 0) {
+		e = parse_set_misc_int(p, &gfarm_spool_check_parallel_max);
+	} else if (strcmp(s, o = "spool_check_parallel_step") == 0) {
+		e = parse_set_misc_int(p, &gfarm_spool_check_parallel_step);
+	} else if (strcmp(s, o = "spool_check_parallel_per_capacity") == 0) {
+		e = parse_set_misc_offset(p,
+		    &gfarm_spool_check_parallel_per_capacity);
 	} else if (strcmp(s, o = "spool_base_load") == 0) {
 		e = parse_set_misc_float(p, &gfarm_spool_base_load);
 	} else if (strcmp(s, o = "spool_digest_error_check") == 0) {
@@ -3459,6 +3479,19 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_spool_check_level == GFARM_SPOOL_CHECK_LEVEL_DEFAULT)
 		(void)gfarm_spool_check_level_set(
 			GFARM_SPOOL_CHECK_LEVEL_LOST_FOUND);
+	if (gfarm_spool_check_parallel == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_spool_check_parallel =
+		    GFARM_SPOOL_CHECK_PARALLEL_DEFAULT;
+	if (gfarm_spool_check_parallel_max == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_spool_check_parallel_max =
+		    GFARM_SPOOL_CHECK_PARALLEL_MAX_DEFAULT;
+	if (gfarm_spool_check_parallel_step == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_spool_check_parallel_step =
+		    GFARM_SPOOL_CHECK_PARALLEL_STEP_DEFAULT;
+	if (gfarm_spool_check_parallel_per_capacity ==
+	    GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_spool_check_parallel_per_capacity =
+		    GFARM_SPOOL_CHECK_PARALLEL_PER_CAPACITY_DEFAULT;
 	if (gfarm_spool_base_load == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_spool_base_load = GFARM_SPOOL_BASE_LOAD_DEFAULT;
 	if (gfarm_spool_digest_error_check == GFARM_CONFIG_MISC_DEFAULT)

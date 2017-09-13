@@ -4269,35 +4269,42 @@ gfm_client_replica_add_result(struct gfm_connection *gfm_server)
 }
 
 gfarm_error_t
-gfm_client_replica_get_my_entries_request(struct gfm_connection *gfm_server,
-	gfarm_ino_t inum, int n)
+gfm_client_replica_get_my_entries_range_request(
+	struct gfm_connection *gfm_server,
+	gfarm_ino_t inum, gfarm_ino_t n_inum, int n_req)
 {
 	return (gfm_client_rpc_request(gfm_server,
-	    GFM_PROTO_REPLICA_GET_MY_ENTRIES2, "li", inum, n));
+	    GFM_PROTO_REPLICA_GET_MY_ENTRIES_RANGE, "lli",
+	    inum, n_inum, n_req));
 }
 
 gfarm_error_t
-gfm_client_replica_get_my_entries_result(
-	struct gfm_connection *gfm_server, int *np,
+gfm_client_replica_get_my_entries_range_result(
+	struct gfm_connection *gfm_server, int *np, gfarm_uint32_t *flagsp,
 	gfarm_ino_t **inumsp, gfarm_uint64_t **gensp, gfarm_off_t **sizesp)
 {
 	gfarm_error_t e;
-	int i, n, eof;
+	int i, n, alloc_n, eof;
+	gfarm_uint32_t flags;
 	gfarm_ino_t *inums;
 	gfarm_uint64_t *gens;
 	gfarm_off_t *sizes;
 
-	e = gfm_client_rpc_result(gfm_server, 0, "i", &n);
+	e = gfm_client_rpc_result(gfm_server, 0, "ii", &n, &flags);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003451,
 		    "gfm_client_rpc_result(): %s", gfarm_error_string(e));
 		return (e);
-	} else if (n <= 0)
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+	}
 
-	GFARM_MALLOC_ARRAY(inums, n);
-	GFARM_MALLOC_ARRAY(gens, n);
-	GFARM_MALLOC_ARRAY(sizes, n);
+	if (n <= 0)
+		alloc_n = 1; /* malloc(0) is not portable */
+	else
+		alloc_n = n;
+
+	GFARM_MALLOC_ARRAY(inums, alloc_n);
+	GFARM_MALLOC_ARRAY(gens, alloc_n);
+	GFARM_MALLOC_ARRAY(sizes, alloc_n);
 	if (inums == NULL || gens == NULL || sizes == NULL) {
 		free(inums);
 		free(gens);
@@ -4321,6 +4328,7 @@ gfm_client_replica_get_my_entries_result(
 		}
 	}
 	*np = n;
+	*flagsp = flags;
 	*inumsp = inums;
 	*gensp = gens;
 	*sizesp = sizes;

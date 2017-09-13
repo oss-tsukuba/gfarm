@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -23,11 +24,25 @@
 
 #include "config.h"
 #include "gfp_xdr.h"
+#include "gfm_proto.h"
 #include "gfm_client.h"
 
 #include "gfsd_subr.h"
 
+#define DIR8_ENTRIES	256			/* level 4 dir */
+#define DIR16_ENTRIES	(256*DIR8_ENTRIES)	/* level 3 dir */
+#define DIR24_ENTRIES	(256*DIR16_ENTRIES)	/* level 2 dir */
+#define DIR32_ENTRIES	(256*DIR24_ENTRIES)	/* level 1 dir */
+
+#define ALLOT_LEVEL	3
+#define ALLOT_ENTRIES	DIR16_ENTRIES		/* level 3 dir */
+
 static enum gfarm_spool_check_level spool_check_level;
+
+static int gfs_spool_check_parallel_index = -1;
+static pid_t *gfs_spool_check_parallel_pids;
+
+static gfarm_ino_t inum_step_per_process, inum_step;
 
 static gfarm_error_t
 gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
@@ -49,17 +64,20 @@ gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 }
 
 static gfarm_error_t
-gfm_client_replica_get_my_entries(gfarm_ino_t start_inum, int *np,
+gfm_client_replica_get_my_entries_range(
+	gfarm_ino_t start_inum, gfarm_ino_t n_inum,
+	int *np, gfarm_uint32_t *flagsp,
 	gfarm_ino_t **inumsp, gfarm_uint64_t **gensp, gfarm_off_t **sizesp)
 {
 	gfarm_error_t e;
 	static const char diag[] = "replica_get_my_entries2";
 
-	if ((e = gfm_client_replica_get_my_entries_request(
-	    gfm_server, start_inum, *np)) != GFARM_ERR_NO_ERROR)
+	if ((e = gfm_client_replica_get_my_entries_range_request(
+	    gfm_server, start_inum, n_inum, *np)) != GFARM_ERR_NO_ERROR)
 		fatal_metadb_proto(GFARM_MSG_1003516, "request", diag, e);
-	else if ((e = gfm_client_replica_get_my_entries_result(
-	    gfm_server, np, inumsp, gensp, sizesp)) != GFARM_ERR_NO_ERROR) {
+	else if ((e = gfm_client_replica_get_my_entries_range_result(
+	    gfm_server, np, flagsp, inumsp, gensp, sizesp))
+	    != GFARM_ERR_NO_ERROR) {
 		if (debug_mode)
 			gflog_info(GFARM_MSG_1003517, "%s result: %s", diag,
 			    gfarm_error_string(e));
@@ -318,18 +336,40 @@ get_inum_gen(const char *path, gfarm_ino_t *inump, gfarm_uint64_t *genp)
 	return (0);
 }
 
+static int
+is_my_duty(const char *path)
+{
+	unsigned int inum32, inum24, inum16;
+	gfarm_ino_t inum;
+
+	if (sscanf(path, "data/%08X/%02X/%02X", &inum32, &inum24, &inum16)
+	    != 3)
+		return (0);
+
+	inum = ((gfarm_ino_t)inum32 << 32) + (inum24 << 24) +
+		(inum16 << 16);
+	return ((inum / inum_step_per_process) % gfarm_spool_check_parallel
+	    == gfs_spool_check_parallel_index);
+}
+
+
 static gfarm_error_t
 dir_foreach(
 	gfarm_error_t (*op_file)(char *, struct stat *, void *),
 	gfarm_error_t (*op_dir1)(char *, struct stat *, void *),
 	gfarm_error_t (*op_dir2)(char *, struct stat *, void *),
-	char *dir, void *arg)
+	char *dir, void *arg, int level)
 {
 	DIR *dirp;
 	struct dirent *dp;
 	struct stat st;
 	gfarm_error_t e;
 	char *dir1;
+
+	if (level == ALLOT_LEVEL) { /* this dir has ALLOT_ENTRIES at maximum */
+		if (!is_my_duty(dir))
+			return (GFARM_ERR_NO_ERROR);
+	}
 
 	if (lstat(dir, &st))
 		return (gfarm_errno_to_error(errno));
@@ -382,7 +422,8 @@ dir_foreach(
 		if (strcmp(dir, ""))
 			strcat(dir1, "/");
 		strcat(dir1, dp->d_name);
-		(void)dir_foreach(op_file, op_dir1, op_dir2, dir1, arg);
+		(void)dir_foreach(op_file, op_dir1, op_dir2, dir1, arg,
+		    level + 1);
 		free(dir1);
 	}
 	if (closedir(dirp))
@@ -492,7 +533,7 @@ check_file(char *file, struct stat *stp, void *arg)
 static gfarm_error_t
 check_spool(char *dir, struct gfarm_hash_table *hash_ok)
 {
-	return (dir_foreach(check_file, NULL, NULL, dir, hash_ok));
+	return (dir_foreach(check_file, NULL, NULL, dir, hash_ok, 0));
 }
 
 static void
@@ -567,27 +608,34 @@ check_existing(
 	free(path);
 }
 
-#define REQUEST_NUM 10000
+#define REQUEST_NUM 16384
 
 static gfarm_error_t
 check_metadata(struct gfarm_hash_table *hash_ok)
 {
 	gfarm_error_t e;
-	gfarm_ino_t inum, *inums;
+	gfarm_ino_t inum_base, inum_end, inum, *inums;
+	gfarm_uint32_t flags;
 	gfarm_uint64_t *gens;
 	gfarm_off_t *sizes;
 	int i, n;
 
-	for (inum = 0;; inum++) {
+	inum_base = gfs_spool_check_parallel_index * inum_step_per_process;
+	inum_end = inum_base + inum_step_per_process;
+	inum = inum_base;
+	for (;;) {
 		n = REQUEST_NUM;
-		e = gfm_client_replica_get_my_entries(
-		    inum, &n, &inums, &gens, &sizes);
+		e = gfm_client_replica_get_my_entries_range(
+		    inum, inum_end - inum, &n,
+		    &flags, &inums, &gens, &sizes);
 		if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			return (GFARM_ERR_NO_ERROR); /* end */
 		else if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1003538,
-			    "replica_get_my_entries(%llu, %d): %s",
-			    (unsigned long long)inum, REQUEST_NUM,
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "replica_get_my_entries(%llu, %llu, %d): %s",
+			    (unsigned long long)inum,
+			    (unsigned long long)inum_step_per_process,
+			    REQUEST_NUM,
 			    gfarm_error_string(e));
 			return (e);
 		}
@@ -598,9 +646,132 @@ check_metadata(struct gfarm_hash_table *hash_ok)
 		free(inums);
 		free(gens);
 		free(sizes);
-		if (n < REQUEST_NUM)
+		if (flags & GFM_PROTO_REPLICA_GET_MY_ENTRIES_END_OF_INODE)
 			return (GFARM_ERR_NO_ERROR); /* end */
+
+
+		inum++;
+		if (flags & GFM_PROTO_REPLICA_GET_MY_ENTRIES_END_OF_RANGE ||
+		    inum >= inum_end) {
+			inum_base += inum_step;
+			inum_end = inum_base + inum_step_per_process;
+			inum = inum_base;
+		}
 	}
+}
+
+static void
+gfs_spool_check_parallel_fork(void)
+{
+	gfarm_error_t e;
+	int i;
+	pid_t pid;
+
+	if (gfarm_spool_check_parallel < 0)
+		fatal(GFARM_MSG_UNFIXED,
+		    "spool_check_parallel configuration %d is invalid",
+		    gfarm_spool_check_parallel);
+	if (gfarm_spool_check_parallel ==
+	    GFARM_SPOOL_CHECK_PARALLEL_AUTOMATIC) {
+		gfarm_int32_t bsize;
+		gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
+		int readonly;
+
+		gfsd_statfs_all(&bsize, &blocks, &bfree, &bavail,
+		    &files, &ffree, &favail, &readonly);
+		gfarm_spool_check_parallel = blocks * bsize /
+		    gfarm_spool_check_parallel_per_capacity;
+		if (gfarm_spool_check_parallel >
+		    gfarm_spool_check_parallel_max) {
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "spool_check: automatically calculated "
+			    "number of parallel processes %d exceeds max (%d)",
+			    gfarm_spool_check_parallel,
+			    gfarm_spool_check_parallel_max);
+			gfarm_spool_check_parallel =
+			    gfarm_spool_check_parallel_max;
+		}
+	}
+	if (gfarm_spool_check_parallel <= 0)
+		gfarm_spool_check_parallel = 1;
+	GFARM_MALLOC_ARRAY(gfs_spool_check_parallel_pids,
+	    gfarm_spool_check_parallel);
+	if (gfs_spool_check_parallel_pids == NULL)
+		fatal(GFARM_MSG_UNFIXED, "could not remember %d pids",
+		    gfarm_spool_check_parallel);
+
+	/* gfarm_spool_check_parallel has to be fixed here */
+	inum_step_per_process =
+	    (gfarm_ino_t)gfarm_spool_check_parallel_step * ALLOT_ENTRIES;
+	inum_step = inum_step_per_process * gfarm_spool_check_parallel;
+
+	gfs_spool_check_parallel_pids[0] = getpid();
+	for (i = 1; i < gfarm_spool_check_parallel; i++) {
+		/*
+		 * do not use do_fork(), because gfsd is not ready
+		 * for failover_notify in the spool_check phase.
+		 */
+		pid = fork();
+		if (pid == 0) { /* child */
+			static const char base[] = "spool_check()";
+			char diag[sizeof(base) + GFARM_INT32STRLEN + 1];
+
+			snprintf(diag, sizeof diag, "spool_check(%d)", i);
+			free_gfm_server(); /* to make sure to avoid race */
+			e = connect_gfm_server(diag);
+			if (e != GFARM_ERR_NO_ERROR)
+				fatal(GFARM_MSG_UNFIXED, "die");
+
+			/* children shouldn't access this */
+			free(gfs_spool_check_parallel_pids);
+			gfs_spool_check_parallel_pids = NULL;
+
+			gfs_spool_check_parallel_index = i;
+			return;
+		}
+		/* parent */
+		if (pid == -1) {
+			/*
+			 * this is fatal, because gfarm_spool_check_parallel
+			 * has to be fixed before fork()
+			 */
+			fatal(GFARM_MSG_UNFIXED,
+			    "spool_check: cannot fork %dth child", i);
+			break;
+		}
+		gfs_spool_check_parallel_pids[i] = pid;
+	}
+	gfs_spool_check_parallel_index = 0;
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "spool_check: parallel process: %d",
+	    gfarm_spool_check_parallel);
+
+}
+
+static void
+gfs_spool_check_parallel_wait(void)
+{
+	int i, status;
+	pid_t pid;
+
+	for (i = 1; i < gfarm_spool_check_parallel; i++) {
+		pid = waitpid(gfs_spool_check_parallel_pids[i], &status, 0);
+		if (pid == -1)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "spool_check: wait %dth child (%d)",
+			    i, (int)gfs_spool_check_parallel_pids[i]);
+		else if (WIFSIGNALED(status))
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "spool_check: %dth child exited with signal %d%s",
+			    i, (int)WTERMSIG(status),
+			    WCOREDUMP(status) ? " (core dumped)" : "");
+		else if (WEXITSTATUS(status) != 0)
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "spool_check: %dth child exited with status %d",
+			    i, (int)WEXITSTATUS(status));
+	}
+	free(gfs_spool_check_parallel_pids);
+	gfs_spool_check_parallel_pids = NULL;
 }
 
 #define HASH_OK_SIZE 999983
@@ -622,14 +793,18 @@ gfsd_spool_check()
 	    gfarm_spool_check_level_get_by_name());
 
 	spool_check_level = gfarm_spool_check_level_get();
+
+	gfs_spool_check_parallel_fork();
+
 	switch (spool_check_level) {
 	case GFARM_SPOOL_CHECK_LEVEL_LOST_FOUND:
 		hash_ok = gfarm_hash_table_alloc(HASH_OK_SIZE,
 		    gfarm_hash_default, gfarm_hash_key_equal_default);
 		if (hash_ok == NULL)
 			fatal(GFARM_MSG_1003560, "no memory for spool_check");
-		gflog_info(GFARM_MSG_1004773,
-		    "spool_check: metadata check started");
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "spool_check(%d): metadata check started",
+		    gfs_spool_check_parallel_index);
 		check_metadata(hash_ok);
 		break;
 	case GFARM_SPOOL_CHECK_LEVEL_DISPLAY:
@@ -645,12 +820,21 @@ gfsd_spool_check()
 		if (chdir(gfarm_spool_root[i]) == -1)
 			gflog_fatal_errno(GFARM_MSG_1004484, "chdir(%s)",
 			    gfarm_spool_root[i]);
-		gflog_info(GFARM_MSG_1004774,
-		    "spool_check: directory check #%d started at %s", i,
-		    gfarm_spool_root[i]);
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "spool_check(%d): directory check #%d started at %s",
+		    gfs_spool_check_parallel_index, i, gfarm_spool_root[i]);
 		(void)check_spool("data", hash_ok);
 	}
 	if (hash_ok)
 		gfarm_hash_table_free(hash_ok);
+
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "spool_check(%d): finished", gfs_spool_check_parallel_index);
+
+	if (gfs_spool_check_parallel_index == 0)
+		gfs_spool_check_parallel_wait();
+	else
+		exit(0);
+
 	gflog_info(GFARM_MSG_1004775, "spool_check: completed");
 }

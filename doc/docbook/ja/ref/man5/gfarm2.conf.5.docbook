@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>15 Jun 2017</date></refentryinfo>
+<refentryinfo><date>31 Aug 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -353,6 +353,97 @@ gfsd起動時のスプールチェックを有効にします。スプールチ�
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	spool_check_level disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel</token> <parameter moreinfo="none">並列度</parameter></term>
+<listitem>
+<para>
+gfsd起動時のスプールチェック並列度を数字で設定します。
+</para>
+<para>
+デフォルトでは spool_check_parallel_per_capacity 設定を用いて
+並列度を自動的に決定します。
+</para>
+<para>
+この文はgfsdが参照するgfarm2.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel 16
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel_max</token> <parameter moreinfo="none">並列度</parameter></term>
+<listitem>
+<para>
+spool_check_parallel_per_capacity 設定を用いて並列度を自動的に決定する際の
+上限値を指定します。
+自動設定の場合にはこの上限よりも大きな並列度にはなりません。
+spool_check_parallel で並列度が指定されていた場合は、
+こちらの設定は無視されます。
+</para>
+<para>
+デフォルトは64です。
+</para>
+<para>
+この文はgfsdが参照するgfarm2.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel_max 128
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel_per_capacity</token> <parameter moreinfo="none">バイト数</parameter></term>
+<listitem>
+<para>
+gfsd のスプール領域のディスク容量を、この設定値で割った値を、
+gfsd起動時のスプールチェック並列度として用います。
+ただし、spool_check_parallel で並列度が指定されていた場合は、
+こちらの設定は無視されます。
+指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定
+することで、それぞれ1KiB／1MiB／1GiB／1TiBを単位とする
+ことができます。
+</para>
+<para>
+デフォルトは64TiBです。
+</para>
+<para>
+この文はgfsdが参照するgfarm2.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel_per_capacity 10T
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel_step</token> <parameter moreinfo="none">数</parameter></term>
+<listitem>
+<para>
+gfsd起動時のスプールチェック並列処理において、
+各プロセスが一度に処理する単位を設定します。
+通常、この値を調整する必要はありませんが、
+gfmd との間の通信遅延が大きい場合は、この値を大きくすることによって
+性能が改善する可能性があります。
+</para>
+<para>
+デフォルトは 1 です。
+</para>
+<para>
+この文はgfsdが参照するgfarm2.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel_step 16
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2556,6 +2647,10 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;spool_server_cred_name_statement&gt; |
 	&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; |
 	&lt;spool_check_level_statement&gt; |
+	&lt;spool_check_parallel_statement&gt; |
+	&lt;spool_check_parallel_max_statement&gt; |
+	&lt;spool_check_parallel_per_capacity_statement&gt; |
+	&lt;spool_check_parallel_step_statement&gt; |
 	&lt;spool_base_load_statement&gt; |
 	&lt;spool_digest_error_check_statement&gt; |
 	&lt;metadb_server_host_statement&gt; |
@@ -2709,6 +2804,26 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <varlistentry>
 <term>&lt;spool_check_level_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"spool_check_level" &lt;spck_level&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_max_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel_max" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_per_capacity_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel_per_capacity" &lt;size&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_step_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel_step" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
