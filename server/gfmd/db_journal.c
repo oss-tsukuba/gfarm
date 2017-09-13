@@ -4354,7 +4354,6 @@ db_journal_recvq_delete(struct db_journal_recv_info **rip)
 
 retry_from_locking:
 	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
-retry:
 	while (journal_recvq_nelems <= 0 && journal_recvq_cancel == 0)
 		gfarm_cond_wait(&journal_recvq_nonempty_cond,
 		    &journal_recvq_mutex, diag, RECVQ_NONEMPTY_COND_DIAG);
@@ -4367,24 +4366,19 @@ retry:
 		gfarm_cond_signal(&journal_recvq_nonfull_cond, diag,
 		    RECVQ_NONFULL_COND_DIAG);
 		if (ri->from_sn != next_sn) {
-			gflog_warning(GFARM_MSG_1004280,
+			/* something is going wrong, disconnect & restart */
+
+			gflog_error(GFARM_MSG_1004280,
 			    "abandon invalid journal: seqnum %llu "
-			    "should be %llu", (unsigned long long)ri->from_sn,
+			    "should be %llu, disconnect/reconnecting master",
+			    (unsigned long long)ri->from_sn,
 			    (unsigned long long)next_sn);
 			free(ri->recs);
 			free(ri);
-			if (ri->from_sn < next_sn)
-				goto retry;
 
-			/* something is going wrong, disconnect & restart */
 			gfarm_mutex_unlock(
 			    &journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 
-			gflog_error(GFARM_MSG_1004753,
-			    "got seqnum %llu > expected seqnum %llu, "
-			    "disconnecting master",
-			    (unsigned long long)ri->from_sn,
-			    (unsigned long long)next_sn);
 			giant_lock();
 			(*master_disconnect_request)(NULL);
 			giant_unlock();
