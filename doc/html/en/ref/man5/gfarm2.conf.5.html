@@ -2,15 +2,15 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarm2.conf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm2.conf">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfarm2.conf.5"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfarm2.conf — Gfarm configuration file</p>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 gfarm2.conf is a text file that contains a Gfarm configuration.  
@@ -36,11 +36,11 @@ line.  A word beginning with ``#'' causes that word and all remaining
 characters on that line to be ignored.
 </p>
 </div>
-<div class="refsect1" title="Host_specification">
+<div class="refsect1">
 <a name="hostspecification"></a><h2>Host_specification</h2>
 <p><em class="parameter"><code>Host_specification</code></em> has the following
 forms.</p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><em class="parameter"><code>III.JJJ.KKK.LLL</code></em></span></dt>
 <dd><p>Specifies an IP address with four octets from 0 to 255, separated
 by ".".</p></dd>
@@ -55,10 +55,10 @@ from 0 to 31 separated by "/".</p></dd>
 <dd><p>Specifies all hosts.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="Statement">
+<div class="refsect1">
 <a name="statement"></a><h2>Statement</h2>
 <p>The following statements are supported.</p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><span class="token">spool</span> <em class="parameter"><code>directory</code></em></span></dt>
 <dd>
 <p>The <span class="token">spool</span> statement specifies a spool directory
@@ -135,7 +135,7 @@ The possible types of <em class="parameter"><code>cred_type</code></em> are
 And those are used with the <span class="token">spool_server_cred_service</span>
 and <span class="token">spool_server_cred_name</span> statements as follows:
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><span class="token">self</span></span></dt>
 <dd><p>
 This keyword specifies that the certificate that the user currently
@@ -295,12 +295,12 @@ the spool_check_parallel_per_capacity directive.
 <p>
 This directive is only available for gfsd in gfarm2.conf.
 </p>
-<p>例:</p>
+<p>For example,</p>
 <div class="literallayout"><p><br>
 	spool_check_parallel 16<br>
 </p></div>
 </dd>
-<dt><span class="term"><span class="token">spool_check_parallel_max</span> <em class="parameter"><code>並列度</code></em></span></dt>
+<dt><span class="term"><span class="token">spool_check_parallel_max</span> <em class="parameter"><code>num-of-parallel</code></em></span></dt>
 <dd>
 <p>
 This directive specifies upper limit of number of processes of gfsd spool_check.
@@ -314,7 +314,7 @@ The default value is 64.
 <p>
 This directive is only available for gfsd in gfarm2.conf.
 </p>
-<p>例:</p>
+<p>For example,</p>
 <div class="literallayout"><p><br>
 	spool_check_parallel_max 128<br>
 </p></div>
@@ -335,12 +335,12 @@ The default value is 64 tebibytes.
 <p>
 This directive is only available for gfsd in gfarm2.conf.
 </p>
-<p>例:</p>
+<p>For example,</p>
 <div class="literallayout"><p><br>
 	spool_check_parallel_per_capacity 10T<br>
 </p></div>
 </dd>
-<dt><span class="term"><span class="token">spool_check_parallel_step</span> <em class="parameter"><code>数</code></em></span></dt>
+<dt><span class="term"><span class="token">spool_check_parallel_step</span> <em class="parameter"><code>number</code></em></span></dt>
 <dd>
 <p>
 This directive specifies number of processing unit of each spool_check process.
@@ -354,7 +354,7 @@ The default value is 1.
 <p>
 This directive is only available for gfsd in gfarm2.conf.
 </p>
-<p>例:</p>
+<p>For example,</p>
 <div class="literallayout"><p><br>
 	spool_check_parallel_step 16<br>
 </p></div>
@@ -1390,7 +1390,7 @@ For example,
 <p>
 The following actions are supported:
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><span class="token">backtrace_and_abort</span></span></dt>
 <dd><p>
 Print a backtrace, and then call
@@ -2079,10 +2079,10 @@ The default size is 16 MiB.
 </dd>
 </dl></div>
 </div>
-<div class="refsect1" title="GRAMMAR">
+<div class="refsect1">
 <a name="grammar"></a><h2>GRAMMAR</h2>
 <p>This is a grammar of gfarm2.conf described by the BNF notation.</p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">&lt;statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p><br>
 	&lt;spool_statement&gt; |<br>
@@ -2512,7 +2512,7 @@ The default size is 16 MiB.
 <dd><div class="literallayout"><p>"write_verify_log_interval" &lt;number&gt;</p></div></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="EXAMPLES">
+<div class="refsect1">
 <a name="examples"></a><h2>EXAMPLES</h2>
 <p>
 The following is an example of gfarm2.conf to use sharedsecret authentication.
@@ -2562,16 +2562,16 @@ admin_user_gsi_dn "/C=JP/ST=Tokyo/L=Chuo-ku/O=Example, Inc./OU=Example Divisi
 sockopt keepalive<br>
 </p></div>
 </div>
-<div class="refsect1" title="FILES">
+<div class="refsect1">
 <a name="files"></a><h2>FILES</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code></span></dt>
 <dd><p></p></dd>
 <dt><span class="term"><code class="filename">$HOME/.gfarm2rc</code></span></dt>
 <dd><p></p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfmd</span>(8)</span>,
