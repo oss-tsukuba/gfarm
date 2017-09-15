@@ -375,7 +375,7 @@ the spool_check_parallel_per_capacity directive.
 <para>
 This directive is only available for gfsd in gfarm2.conf.
 </para>
-<para>例:</para>
+<para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	spool_check_parallel 16
 </literallayout>
@@ -383,7 +383,7 @@ This directive is only available for gfsd in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_check_parallel_max</token> <parameter moreinfo="none">並列度</parameter></term>
+<term><token>spool_check_parallel_max</token> <parameter moreinfo="none">num-of-parallel</parameter></term>
 <listitem>
 <para>
 This directive specifies upper limit of number of processes of gfsd spool_check.
@@ -397,7 +397,7 @@ The default value is 64.
 <para>
 This directive is only available for gfsd in gfarm2.conf.
 </para>
-<para>例:</para>
+<para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	spool_check_parallel_max 128
 </literallayout>
@@ -421,7 +421,7 @@ The default value is 64 tebibytes.
 <para>
 This directive is only available for gfsd in gfarm2.conf.
 </para>
-<para>例:</para>
+<para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	spool_check_parallel_per_capacity 10T
 </literallayout>
@@ -429,7 +429,7 @@ This directive is only available for gfsd in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_check_parallel_step</token> <parameter moreinfo="none">数</parameter></term>
+<term><token>spool_check_parallel_step</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>
 This directive specifies number of processing unit of each spool_check process.
@@ -443,7 +443,7 @@ The default value is 1.
 <para>
 This directive is only available for gfsd in gfarm2.conf.
 </para>
-<para>例:</para>
+<para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	spool_check_parallel_step 16
 </literallayout>
