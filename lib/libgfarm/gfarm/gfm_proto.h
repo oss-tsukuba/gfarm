@@ -255,7 +255,7 @@ enum gfm_proto_command {
 	GFM_PROTO_REPLICA_OPEN_STATUS,		/* since gfarm-2.6.6 */
 	GFM_PROTO_REPLICA_GET_CKSUM,		/* since gfarm-2.6.8 */
 	GFM_PROTO_FHSET_CKSUM,			/* since gfarm-2.6.8 */
-	GFM_PROTO_REPLICA_GET_MY_ENTRIES_RANGE,	/* since gfarm-2.6.21 */
+	GFM_PROTO_REPLICA_MNG_RESERVE15,
 
 	/* job management */
 
@@ -400,11 +400,6 @@ enum gfm_proto_command {
  * just same with cksum_result_flags of GFS_PROTO_REPLICA_RECV_CKSUM,
  * and currently always 0.
  */
-
-/* GFM_PROTO_REPLICA_GET_MY_ENTRIES_RANGE result flags */
-#define GFM_PROTO_REPLICA_GET_MY_ENTRIES_END_OF_INODE	0x00000001
-#define GFM_PROTO_REPLICA_GET_MY_ENTRIES_END_OF_RANGE	0x00000002
-
 
 /*
  * data size limits:

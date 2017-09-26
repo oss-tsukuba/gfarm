@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 31 Aug 2017
+.\"      Date: 15 Feb 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "31 Aug 2017" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "15 Feb 2017" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -291,90 +291,6 @@ For example,
 .\}
 .nf
 	spool_check_level disable
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-spool_check_parallel \fInum\-of\-parallel\fR
-.RS 4
-This directive specifies number of processes of gfsd spool_check\&.
-.sp
-By default, the number of processes is automatically determined by the spool_check_parallel_per_capacity directive\&.
-.sp
-This directive is only available for gfsd in gfarm2\&.conf\&.
-.sp
-例:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-	spool_check_parallel 16
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-spool_check_parallel_max \fI並列度\fR
-.RS 4
-This directive specifies upper limit of number of processes of gfsd spool_check\&. This is only effective when the number is automatically determined\&. If the number is specified by the spool_check_parallel directive, spool_check_parallel_max is ignored\&.
-.sp
-The default value is 64\&.
-.sp
-This directive is only available for gfsd in gfarm2\&.conf\&.
-.sp
-例:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-	spool_check_parallel_max 128
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-spool_check_parallel_per_capacity \fIbytes\fR
-.RS 4
-If the number of process of gfsd spool_check is not specified by the spool_check_parallel directive, the number will be total disk capacity of the gfsd spool partition divided by this setting\&. The bytes value may have a suffix like ``k\'\' (kibibyte), ``M\'\' (mebibyte), ``G\'\' (gibibyte) and ``T\'\' (tebibyte)\&.
-.sp
-The default value is 64 tebibytes\&.
-.sp
-This directive is only available for gfsd in gfarm2\&.conf\&.
-.sp
-例:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-	spool_check_parallel_per_capacity 10T
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-spool_check_parallel_step \fI数\fR
-.RS 4
-This directive specifies number of processing unit of each spool_check process\&. This parameter doesn\'t have to be configured usually, but if network latency between gfmd is high, increasing this value may make spool_check performance better\&.
-.sp
-The default value is 1\&.
-.sp
-This directive is only available for gfsd in gfarm2\&.conf\&.
-.sp
-例:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-	spool_check_parallel_step 16
 .fi
 .if n \{\
 .RE
@@ -1426,7 +1342,7 @@ For example,
 .PP
 minimum_free_disk_space \fIbytes\fR
 .RS 4
-This directive specifies free disk space (in bytes) which is required on filesystem nodes\&. The Gfarm scheduler excludes filesystem nodes which have less free space than this parameter, when it schedules nodes for jobs which may write files\&. The free space value may have a suffix like ``k\'\' (kibibyte), ``M\'\' (mebibyte), ``G\'\' (gibibyte) and ``T\'\' (tebibyte)\&. The default size is 512 MiB\&.
+This directive specifies free disk space (in bytes) which is required on filesystem nodes\&. The Gfarm scheduler excludes filesystem nodes which have less free space than this parameter, when it schedules nodes for jobs which may write files\&. The free space value may have a suffix like ``k\'\' (kilo bytes), ``M\'\' (mega bytes), ``G\'\' (giga bytes) and ``T\'\' (tera bytes)\&. The default size is 512M bytes\&.
 .sp
 This directive has to be specified in both gfarm2\&.conf and gfmd\&.conf\&. After restarting the gfmd and the Gfarm client, it is effective\&.
 .sp
@@ -2405,10 +2321,6 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<spool_server_cred_name_statement> |
 	<spool_server_back_channel_rcvbuf_limit_statement> |
 	<spool_check_level_statement> |
-	<spool_check_parallel_statement> |
-	<spool_check_parallel_max_statement> |
-	<spool_check_parallel_per_capacity_statement> |
-	<spool_check_parallel_step_statement> |
 	<spool_base_load_statement> |
 	<spool_digest_error_check_statement> |
 	<metadb_server_host_statement> |
@@ -2624,62 +2536,6 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "spool_check_level" <spck_level>
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-<spool_check_parallel_statement> ::=
-.RS 4
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-"spool_check_parallel" <number>
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-<spool_check_parallel_max_statement> ::=
-.RS 4
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-"spool_check_parallel_max" <number>
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-<spool_check_parallel_per_capacity_statement> ::=
-.RS 4
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-"spool_check_parallel_per_capacity" <size>
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-<spool_check_parallel_step_statement> ::=
-.RS 4
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-"spool_check_parallel_step" <number>
 .fi
 .if n \{\
 .RE

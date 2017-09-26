@@ -442,11 +442,10 @@ gfarm_error_t gfm_client_replica_lost_result(struct gfm_connection *);
 gfarm_error_t gfm_client_replica_add_request(struct gfm_connection *,
 	gfarm_ino_t, gfarm_uint64_t, gfarm_off_t);
 gfarm_error_t gfm_client_replica_add_result(struct gfm_connection *);
-gfarm_error_t gfm_client_replica_get_my_entries_range_request(
-	struct gfm_connection *, gfarm_ino_t, gfarm_ino_t, int);
-gfarm_error_t gfm_client_replica_get_my_entries_range_result(
-	struct gfm_connection *, int *, gfarm_uint32_t *,
-	gfarm_ino_t **, gfarm_uint64_t **, gfarm_off_t **);
+gfarm_error_t gfm_client_replica_get_my_entries_request(
+	struct gfm_connection *, gfarm_ino_t, int);
+gfarm_error_t gfm_client_replica_get_my_entries_result(struct gfm_connection *,
+	int *, gfarm_ino_t **, gfarm_uint64_t **, gfarm_off_t **);
 gfarm_error_t gfm_client_replica_create_file_in_lost_found_request(
 	struct gfm_connection *, gfarm_ino_t, gfarm_uint64_t, gfarm_off_t,
 	const struct gfarm_timespec *);

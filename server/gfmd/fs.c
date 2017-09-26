@@ -4775,14 +4775,12 @@ gfm_server_replica_add(struct peer *peer, int from_client, int skip)
 static gfarm_error_t
 gfm_server_replica_get_my_entries_common(
 	const char *diag, struct peer *peer,
-	int from_client, int skip, int with_size, int with_range)
+	int from_client, int skip, int with_size)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e_ret, e_rpc;
-	gfarm_ino_t start_inum, end_inum, n_inum = GFARM_UINT64_MAX;
-	gfarm_ino_t inum, table_size;
+	gfarm_ino_t start_inum, inum, table_size;
 	int i, n_req, n_ret = 0;
-	gfarm_uint32_t oflags = 0;
 	struct host *spool_host;
 	struct inode *inode;
 	struct entry_result {
@@ -4792,12 +4790,7 @@ gfm_server_replica_get_my_entries_common(
 		int flags;
 	} *ents = NULL;
 
-	if (with_range)
-		e_ret = gfm_server_get_request(peer, diag, "lli",
-		    &start_inum, &n_inum, &n_req);
-	else
-		e_ret = gfm_server_get_request(peer, diag, "li",
-		    &start_inum, &n_req);
+	e_ret = gfm_server_get_request(peer, diag, "li", &start_inum, &n_req);
 	if (e_ret != GFARM_ERR_NO_ERROR)
 		return (e_ret);
 	if (skip)
@@ -4811,9 +4804,6 @@ gfm_server_replica_get_my_entries_common(
 		gflog_debug(GFARM_MSG_1003491,
 		    "not permitted: peer_get_host() failed");
 		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (n_inum <= 0) {
-		gflog_debug(GFARM_MSG_UNFIXED, "n_inum is 0");
-		e_rpc = GFARM_ERR_INVALID_ARGUMENT;
 	} else if (n_req <= 0) {
 		gflog_debug(GFARM_MSG_1003492, "n_req is 0");
 		e_rpc = GFARM_ERR_INVALID_ARGUMENT;
@@ -4824,19 +4814,8 @@ gfm_server_replica_get_my_entries_common(
 		if (start_inum < inode_root_number())
 			start_inum = inode_root_number();
 		table_size = inode_table_current_size();
-		if (!with_range) {
-			e_rpc = GFARM_ERR_NO_SUCH_OBJECT;
-			end_inum = table_size;
-		} else {
-			end_inum = start_inum + n_inum;
-			if (end_inum < table_size) {
-				e_rpc = GFARM_ERR_NO_ERROR;
-			} else {
-				e_rpc = GFARM_ERR_NO_SUCH_OBJECT;
-				end_inum = table_size;;
-			}
-		}
-		for (inum = start_inum; inum < end_inum && n_ret < n_req;
+		e_rpc = GFARM_ERR_NO_SUCH_OBJECT;
+		for (inum = start_inum; inum < table_size && n_ret < n_req;
 		    inum++) {
 			inode = inode_lookup(inum);
 			if (inode && inode_is_file(inode) &&
@@ -4848,20 +4827,10 @@ gfm_server_replica_get_my_entries_common(
 				n_ret++;
 			}
 		}
-		if (inum >= end_inum)
-			oflags |=
-			    GFM_PROTO_REPLICA_GET_MY_ENTRIES_END_OF_RANGE;
-		if (inum >= table_size)
-			oflags |=
-			    GFM_PROTO_REPLICA_GET_MY_ENTRIES_END_OF_INODE;
 	}
 	giant_unlock();
 
-	if (with_range)
-		e_ret = gfm_server_put_reply(peer, diag, e_rpc, "ii",
-		    n_ret, oflags);
-	else
-		e_ret = gfm_server_put_reply(peer, diag, e_rpc, "i", n_ret);
+	e_ret = gfm_server_put_reply(peer, diag, e_rpc, "i", n_ret);
 	/* if network error doesn't happen, e_ret == e_rpc here */
 	if (e_ret == GFARM_ERR_NO_ERROR)
 		for (i = 0; i < n_ret; i++) {
@@ -4890,7 +4859,7 @@ gfm_server_replica_get_my_entries(
 	static const char diag[] = "GFM_PROTO_REPLICA_GET_MY_ENTRIES";
 
 	return (gfm_server_replica_get_my_entries_common(
-	    diag, peer, from_client, skip, 0, 0));
+	    diag, peer, from_client, skip, 0));
 }
 
 gfarm_error_t
@@ -4900,17 +4869,7 @@ gfm_server_replica_get_my_entries2(
 	static const char diag[] = "GFM_PROTO_REPLICA_GET_MY_ENTRIES2";
 
 	return (gfm_server_replica_get_my_entries_common(
-	    diag, peer, from_client, skip, 1, 0));
-}
-
-gfarm_error_t
-gfm_server_replica_get_my_entries_range(
-	struct peer *peer, int from_client, int skip)
-{
-	static const char diag[] = "GFM_PROTO_REPLICA_GET_MY_ENTRIES_RANGE";
-
-	return (gfm_server_replica_get_my_entries_common(
-	    diag, peer, from_client, skip, 1, 1));
+	    diag, peer, from_client, skip, 1));
 }
 
 gfarm_error_t

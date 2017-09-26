@@ -21,11 +21,6 @@ enum gfarm_spool_check_level gfarm_spool_check_level_get(void);
 const char *gfarm_spool_check_level_get_by_name(void);
 gfarm_error_t gfarm_spool_check_level_set(enum gfarm_spool_check_level);
 gfarm_error_t gfarm_spool_check_level_set_by_name(const char *);
-#define GFARM_SPOOL_CHECK_PARALLEL_AUTOMATIC	0
-extern int gfarm_spool_check_parallel;
-extern int gfarm_spool_check_parallel_max;
-extern int gfarm_spool_check_parallel_step;
-extern gfarm_off_t gfarm_spool_check_parallel_per_capacity;
 extern float gfarm_spool_base_load;
 extern int gfarm_spool_digest_error_check;
 extern int gfarm_write_verify;

@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 31 Aug 2017
+.\"      Date: 15 Feb 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "31 Aug 2017" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "15 Feb 2017" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -259,90 +259,6 @@ gfsd起動時のスプールチェックを有効にします。スプールチ�
 .\}
 .nf
 	spool_check_level disable
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-spool_check_parallel \fI並列度\fR
-.RS 4
-gfsd起動時のスプールチェック並列度を数字で設定します。
-.sp
-デフォルトでは spool_check_parallel_per_capacity 設定を用いて 並列度を自動的に決定します。
-.sp
-この文はgfsdが参照するgfarm2\&.confのみで有効です。
-.sp
-例:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-	spool_check_parallel 16
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-spool_check_parallel_max \fI並列度\fR
-.RS 4
-spool_check_parallel_per_capacity 設定を用いて並列度を自動的に決定する際の 上限値を指定します。 自動設定の場合にはこの上限よりも大きな並列度にはなりません。 spool_check_parallel で並列度が指定されていた場合は、 こちらの設定は無視されます。
-.sp
-デフォルトは64です。
-.sp
-この文はgfsdが参照するgfarm2\&.confのみで有効です。
-.sp
-例:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-	spool_check_parallel_max 128
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-spool_check_parallel_per_capacity \fIバイト数\fR
-.RS 4
-gfsd のスプール領域のディスク容量を、この設定値で割った値を、 gfsd起動時のスプールチェック並列度として用います。 ただし、spool_check_parallel で並列度が指定されていた場合は、 こちらの設定は無視されます。 指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定 することで、それぞれ1KiB／1MiB／1GiB／1TiBを単位とする ことができます。
-.sp
-デフォルトは64TiBです。
-.sp
-この文はgfsdが参照するgfarm2\&.confのみで有効です。
-.sp
-例:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-	spool_check_parallel_per_capacity 10T
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-spool_check_parallel_step \fI数\fR
-.RS 4
-gfsd起動時のスプールチェック並列処理において、 各プロセスが一度に処理する単位を設定します。 通常、この値を調整する必要はありませんが、 gfmd との間の通信遅延が大きい場合は、この値を大きくすることによって 性能が改善する可能性があります。
-.sp
-デフォルトは 1 です。
-.sp
-この文はgfsdが参照するgfarm2\&.confのみで有効です。
-.sp
-例:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-	spool_check_parallel_step 16
 .fi
 .if n \{\
 .RE
@@ -2245,10 +2161,6 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<spool_server_cred_name_statement> |
 	<spool_server_back_channel_rcvbuf_limit_statement> |
 	<spool_check_level_statement> |
-	<spool_check_parallel_statement> |
-	<spool_check_parallel_max_statement> |
-	<spool_check_parallel_per_capacity_statement> |
-	<spool_check_parallel_step_statement> |
 	<spool_base_load_statement> |
 	<spool_digest_error_check_statement> |
 	<metadb_server_host_statement> |
@@ -2464,62 +2376,6 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "spool_check_level" <spck_level>
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-<spool_check_parallel_statement> ::=
-.RS 4
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-"spool_check_parallel" <number>
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-<spool_check_parallel_max_statement> ::=
-.RS 4
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-"spool_check_parallel_max" <number>
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-<spool_check_parallel_per_capacity_statement> ::=
-.RS 4
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-"spool_check_parallel_per_capacity" <size>
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-<spool_check_parallel_step_statement> ::=
-.RS 4
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-"spool_check_parallel_step" <number>
 .fi
 .if n \{\
 .RE

@@ -283,82 +283,6 @@ gfsd(8).  The level "disable" disables the consistency check.
 	spool_check_level disable<br>
 </p></div>
 </dd>
-<dt><span class="term"><span class="token">spool_check_parallel</span> <em class="parameter"><code>num-of-parallel</code></em></span></dt>
-<dd>
-<p>
-This directive specifies number of processes of gfsd spool_check.
-</p>
-<p>
-By default, the number of processes is automatically determined by
-the spool_check_parallel_per_capacity directive.
-</p>
-<p>
-This directive is only available for gfsd in gfarm2.conf.
-</p>
-<p>例:</p>
-<div class="literallayout"><p><br>
-	spool_check_parallel 16<br>
-</p></div>
-</dd>
-<dt><span class="term"><span class="token">spool_check_parallel_max</span> <em class="parameter"><code>並列度</code></em></span></dt>
-<dd>
-<p>
-This directive specifies upper limit of number of processes of gfsd spool_check.
-This is only effective when the number is automatically determined.
-If the number is specified by the spool_check_parallel directive,
-spool_check_parallel_max is ignored.
-</p>
-<p>
-The default value is 64.
-</p>
-<p>
-This directive is only available for gfsd in gfarm2.conf.
-</p>
-<p>例:</p>
-<div class="literallayout"><p><br>
-	spool_check_parallel_max 128<br>
-</p></div>
-</dd>
-<dt><span class="term"><span class="token">spool_check_parallel_per_capacity</span> <em class="parameter"><code>bytes</code></em></span></dt>
-<dd>
-<p>
-If the number of process of gfsd spool_check is not specified by
-the spool_check_parallel directive, the number will be
-total disk capacity of the gfsd spool partition
-divided by this setting.
-The bytes value may have a suffix like ``k'' (kibibyte),
-``M'' (mebibyte), ``G'' (gibibyte) and ``T'' (tebibyte).
-</p>
-<p>
-The default value is 64 tebibytes.
-</p>
-<p>
-This directive is only available for gfsd in gfarm2.conf.
-</p>
-<p>例:</p>
-<div class="literallayout"><p><br>
-	spool_check_parallel_per_capacity 10T<br>
-</p></div>
-</dd>
-<dt><span class="term"><span class="token">spool_check_parallel_step</span> <em class="parameter"><code>数</code></em></span></dt>
-<dd>
-<p>
-This directive specifies number of processing unit of each spool_check process.
-This parameter doesn't have to be configured usually,
-but if network latency between gfmd is high,
-increasing this value may make spool_check performance better.
-</p>
-<p>
-The default value is 1.
-</p>
-<p>
-This directive is only available for gfsd in gfarm2.conf.
-</p>
-<p>例:</p>
-<div class="literallayout"><p><br>
-	spool_check_parallel_step 16<br>
-</p></div>
-</dd>
 <dt><span class="term"><span class="token">spool_base_load</span> <em class="parameter"><code>load-average</code></em></span></dt>
 <dd>
 <p>
@@ -1155,9 +1079,9 @@ will be used and the others are ignored.
 required on filesystem nodes. The Gfarm scheduler excludes filesystem nodes
 which have less free space than this parameter, when it
 schedules nodes for jobs which may write files.
-The free space value may have a suffix like ``k'' (kibibyte),
-``M'' (mebibyte), ``G'' (gibibyte) and ``T'' (tebibyte).
-The default size is 512 MiB.
+The free space value may have a suffix like ``k'' (kilo bytes), 
+``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
+The default size is 512M bytes.
 </p>
 <p>
 This directive has to be specified in both gfarm2.conf and gfmd.conf.
@@ -1933,10 +1857,6 @@ gfsd uses this setting at its startup by asking gfmd.
 	&lt;spool_server_cred_name_statement&gt; |<br>
 	&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; |<br>
 	&lt;spool_check_level_statement&gt; |<br>
-	&lt;spool_check_parallel_statement&gt; |<br>
-	&lt;spool_check_parallel_max_statement&gt; |<br>
-	&lt;spool_check_parallel_per_capacity_statement&gt; |<br>
-	&lt;spool_check_parallel_step_statement&gt; |<br>
 	&lt;spool_base_load_statement&gt; |<br>
 	&lt;spool_digest_error_check_statement&gt; |<br>
 	&lt;metadb_server_host_statement&gt; |<br>
@@ -2056,14 +1976,6 @@ gfsd uses this setting at its startup by asking gfmd.
 <dd><div class="literallayout"><p>"spool_server_back_channel_rcvbuf_limit" &lt;size_limit&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_check_level_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool_check_level" &lt;spck_level&gt;</p></div></dd>
-<dt><span class="term">&lt;spool_check_parallel_statement&gt; ::=</span></dt>
-<dd><div class="literallayout"><p>"spool_check_parallel" &lt;number&gt;</p></div></dd>
-<dt><span class="term">&lt;spool_check_parallel_max_statement&gt; ::=</span></dt>
-<dd><div class="literallayout"><p>"spool_check_parallel_max" &lt;number&gt;</p></div></dd>
-<dt><span class="term">&lt;spool_check_parallel_per_capacity_statement&gt; ::=</span></dt>
-<dd><div class="literallayout"><p>"spool_check_parallel_per_capacity" &lt;size&gt;</p></div></dd>
-<dt><span class="term">&lt;spool_check_parallel_step_statement&gt; ::=</span></dt>
-<dd><div class="literallayout"><p>"spool_check_parallel_step" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_base_load_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool_base_load" &lt;load&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_digest_error_check_statement&gt; ::=</span></dt>
