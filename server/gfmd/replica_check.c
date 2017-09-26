@@ -391,6 +391,11 @@ replica_check_giant_unlock_yield(void)
 
 static void (*replica_check_giant_unlock)(void) = giant_unlock;
 
+static int replica_check_ctrl_enabled(void);
+
+static gfarm_ino_t info_inum, info_table_size;
+static time_t info_time_start;
+
 static int
 replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 {
@@ -405,6 +410,7 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 
 	while (!eod) {
 		replica_check_giant_lock();
+		info_inum = inum;
 		dir_ino = inode_lookup(inum);
 		if (dir_ino == NULL) {
 			replica_check_giant_unlock();
@@ -467,8 +473,7 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 	return (need_to_retry);
 }
 
-static gfarm_ino_t info_inum, info_table_size;
-static time_t info_time_start;
+#define REPLICA_CHECK_INTERRUPT_STEP 10000
 
 static int
 replica_check_main(void)
@@ -490,9 +495,12 @@ replica_check_main(void)
 	    replica_check_reduced_log_enabled() ? "enable" : "disable");
 
 	for (inum = root_inum;;) {
-		replica_check_giant_lock();
-		info_inum = inum;
-		replica_check_giant_unlock();
+		if (inum % REPLICA_CHECK_INTERRUPT_STEP == 0 &&
+		    !replica_check_ctrl_enabled()) {
+			RC_LOG_INFO(GFARM_MSG_UNFIXED,
+			    "replica_check: stopped (interrupted)");
+			break;
+		}
 
 		if (replica_check_main_dir(inum, &count))
 			need_to_retry = 1;
@@ -853,6 +861,21 @@ replica_check_ctrl_set(int ctrl)
 	    REPLICA_CHECK_CTRL_DIAG);
 	gfarm_mutex_unlock(&replica_check_ctrl_mutex, diag,
 	    REPLICA_CHECK_CTRL_DIAG);
+}
+
+static int
+replica_check_ctrl_enabled(void)
+{
+	static const char diag[] = "replica_check_ctrl_enabled";
+	int ctrl;
+
+	gfarm_mutex_lock(&replica_check_ctrl_mutex, diag,
+			 REPLICA_CHECK_CTRL_DIAG);
+	ctrl = replica_check_ctrl;
+	gfarm_mutex_unlock(&replica_check_ctrl_mutex, diag,
+			   REPLICA_CHECK_CTRL_DIAG);
+
+	return (ctrl == ENABLE);
 }
 
 static void
