@@ -81,6 +81,7 @@ struct replication_info {
 	struct dirset *tdirset;
 };
 
+static int replica_check_ctrl_enabled(void);
 static int replica_check_remove_enabled(void);
 static int replica_check_reduced_log_enabled(void);
 
@@ -407,13 +408,11 @@ replica_check_giant_unlock_yield(void)
 
 static void (*replica_check_giant_unlock)(void) = giant_unlock;
 
-static int replica_check_ctrl_enabled(void);
-
 static gfarm_ino_t info_inum, info_table_size;
 static time_t info_time_start;
 
 static int
-replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
+replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp, int *stopped)
 {
 	gfarm_error_t e;
 	struct inode *dir_ino, *file_ino;
@@ -425,6 +424,7 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 	struct replication_info rep_info;
 	int need_to_retry = 0, eod = 0, i;
 
+	*stopped = 0;
 	while (!eod) {
 		replica_check_giant_lock();
 		info_inum = inum;
@@ -435,6 +435,11 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 		}
 		dir = inode_get_dir(dir_ino); /* include inode_is_dir() */
 		if (dir == NULL) {
+			replica_check_giant_unlock();
+			return (need_to_retry);
+		}
+		if (!replica_check_ctrl_enabled()) { /* gfrepcheck stop */
+			*stopped = 1;
 			replica_check_giant_unlock();
 			return (need_to_retry);
 		}
@@ -499,7 +504,7 @@ replica_check_main(void)
 {
 	gfarm_ino_t inum, table_size, count = 0;
 	gfarm_ino_t root_inum = inode_root_number();
-	int need_to_retry = 0;
+	int need_to_retry = 0, stopped;
 	time_t time_total, time_start;
 
 	replica_check_giant_lock();
@@ -515,14 +520,19 @@ replica_check_main(void)
 
 	for (inum = root_inum;;) {
 		if (inum % REPLICA_CHECK_INTERRUPT_STEP == 0 &&
-		    !replica_check_ctrl_enabled()) {
+		    !replica_check_ctrl_enabled()) { /* gfrepcheck stop */
 			RC_LOG_INFO(GFARM_MSG_UNFIXED,
 			    "replica_check: stopped (interrupted)");
 			break;
 		}
 
-		if (replica_check_main_dir(inum, &count))
+		if (replica_check_main_dir(inum, &count, &stopped))
 			need_to_retry = 1;
+		if (stopped) { /* gfrepcheck stop */
+			RC_LOG_INFO(GFARM_MSG_UNFIXED,
+			    "replica_check: stopped (interrupted)");
+			break;
+		}
 		inum++; /* a next directory */
 		if (inum >= table_size) {
 			replica_check_giant_lock();
