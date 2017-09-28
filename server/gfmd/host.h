@@ -74,6 +74,7 @@ gfarm_error_t host_from_all(int (*)(struct host *, void *), void *,
 	gfarm_int32_t *, struct host ***);
 int host_number();
 
+int host_select_one(int, struct host **, const char *);
 gfarm_error_t host_from_all_except(int *, struct host **,
 	int (*)(struct host *, void *),	void *,
 	gfarm_int32_t *, struct host ***);

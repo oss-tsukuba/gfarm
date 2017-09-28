@@ -1287,6 +1287,23 @@ select_hosts(int nhosts, struct host **hosts,
 }
 
 /*
+ * just select randomly		XXX FIXME: needs to improve
+ */
+int
+host_select_one(int nhosts, struct host **hosts, const char *diag)
+{
+	if (nhosts > 1) {
+		return (gfarm_random() % nhosts);
+	}
+	if (nhosts <= 0) {
+		/* shouldn't happen */
+		gflog_warning(GFARM_MSG_UNFIXED, "%s: nhosts=%d",
+		    diag, nhosts);
+	}
+	return (0);
+}
+
+/*
  * this function modifies *n_exceptionsp and exceptions[],
  * but they may be abled to be used later.
  */

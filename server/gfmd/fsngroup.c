@@ -117,7 +117,7 @@ fsngroup_schedule_replication(
 	int *total_p)
 {
 	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
-	int i, n_scope, next_src_index = 0;
+	int i, n_scope;
 	size_t nreps = 0;
 	gfarm_repattr_t *reps = NULL;
 	struct host **scope;
@@ -145,6 +145,8 @@ fsngroup_schedule_replication(
 	}
 
 	if (gfarm_replicainfo_enabled) {
+		int next_src_index = host_select_one(n_srcs, srcs, diag);
+
 		for (i = 0; i < nreps; i++) {
 			const char *group = gfarm_repattr_group(reps[i]);
 			int num = gfarm_repattr_amount(reps[i]);
