@@ -1141,7 +1141,7 @@ inode_schedule_replication_from_all(
 	int *n_being_removedp, struct host **being_removed, const char *diag)
 {
 	gfarm_error_t e;
-	int nhosts, next_src_index = 0;
+	int nhosts, next_src_index;
 	struct host **hosts;
 
 	e = host_array_alloc(&nhosts, &hosts);
@@ -1154,6 +1154,7 @@ inode_schedule_replication_from_all(
 		    n_desired, *n_existingp, gfarm_error_string(e));
 		return (e);
 	}
+	next_src_index = host_select_one(n_srcs, srcs, diag);
 	e = inode_schedule_replication_within_scope(
 	    inode, tdirset, n_desired, n_srcs, srcs, &next_src_index,
 	    &nhosts, hosts, n_existingp, existing, grace,
