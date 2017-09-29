@@ -1014,6 +1014,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(512 * 1024 * 1024) /* 512MB */
 #define GFARM_DIRECT_LOCAL_ACCESS_DEFAULT	1 /* enable */
 #define GFARM_SIMULTANEOUS_REPLICATION_RECEIVERS_DEFAULT	20
+#define GFARM_REPLICATION_BUSY_HOST_DEFAULT	1
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
 #define GFARM_DIRECTORY_QUOTA_COUNT_PER_USER_LIMIT_DEFAULT	100
@@ -1062,6 +1063,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 
 char *gfarm_digest = NULL;
 int gfarm_simultaneous_replication_receivers = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_replication_busy_host = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xmlattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_directory_quota_count_per_user_limit = GFARM_CONFIG_MISC_DEFAULT;
@@ -3243,6 +3245,8 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "simultaneous_replication_receivers") == 0) {
 		e = parse_set_misc_int(p,
 		    &gfarm_simultaneous_replication_receivers);
+	} else if (strcmp(s, o = "replication_busy_host") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_replication_busy_host);
 	} else if (strcmp(s, o = "gfsd_connection_cache") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->gfsd_connection_cache);
 	} else if (strcmp(s, o = "gfmd_connection_cache") == 0) {
@@ -3628,6 +3632,9 @@ gfarm_config_set_default_misc(void)
 	    GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_simultaneous_replication_receivers =
 		    GFARM_SIMULTANEOUS_REPLICATION_RECEIVERS_DEFAULT;
+	if (gfarm_replication_busy_host == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_replication_busy_host =
+		    GFARM_REPLICATION_BUSY_HOST_DEFAULT;
 	if (gfarm_ctxp->gfsd_connection_cache == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->gfsd_connection_cache =
 		    GFARM_GFSD_CONNECTION_CACHE_DEFAULT;
@@ -3938,6 +3945,9 @@ const struct gfarm_config_type {
 	  gfarm_config_print_int,
 	  gfarm_config_set_default_int, gfarm_config_validate_true,
 	  &gfarm_replica_check_remove_grace_time, 0 },
+	{ "replication_busy_host", 'i', 1, gfarm_config_print_enabled,
+	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
+	  &gfarm_replication_busy_host, 0 },
 };
 
 static void *

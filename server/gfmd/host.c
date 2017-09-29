@@ -1193,19 +1193,18 @@ host_except(int *nhostsp, struct host **hosts,
 }
 
 gfarm_error_t
-host_is_not_busy_and_disk_available_filter(struct host *host, void *closure)
-{
-	gfarm_off_t *sizep = closure;
-
-	return (!host_is_busy(host) && host_is_disk_available(host, *sizep));
-}
-
-gfarm_error_t
 host_is_disk_available_filter(struct host *host, void *closure)
 {
 	gfarm_off_t *sizep = closure;
 
 	return (host_is_disk_available(host, *sizep));
+}
+
+gfarm_error_t
+host_is_not_busy_and_disk_available_filter(struct host *host, void *closure)
+{
+	return ((gfarm_replication_busy_host || !host_is_busy(host))
+		&& host_is_disk_available_filter(host, closure));
 }
 
 gfarm_error_t
