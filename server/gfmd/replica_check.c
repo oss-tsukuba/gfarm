@@ -28,6 +28,7 @@
 #include "auth.h"
 #include "repattr.h"
 #include "gfm_proto.h"
+#include "timespec.h"
 
 #include "db_access.h"
 #include "rpcsubr.h"
@@ -101,17 +102,80 @@ static int replica_check_reduced_log_enabled(void);
 			gflog_info(msg_no, __VA_ARGS__);		\
 	}
 
+
+/*
+ * 0: The replica should not be removed.
+ * 1: The replica may be removed. (try inode_remove_replica_protected)
+ */
+static int
+replica_check_remove_grace_is_over(struct inode *inode,
+	struct host *replica_host)
+{
+	float used_space;
+	struct gfarm_timespec *atime = inode_get_atime(inode);
+	struct gfarm_timespec sub;
+	struct gfarm_timespec grace_time;
+	struct timespec now_timespec;
+
+	used_space = host_status_get_disk_usage_percent(replica_host);
+	if (used_space <=
+	    (float)gfarm_replica_check_remove_grace_used_space_ratio)
+		return (0);
+
+#ifdef DEBUG_REPLICA_CHECK
+	RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+	    "replica_check_remove_grace_is_over: "
+	    "inum=%lld, replica=%s, used_space=%f, grace_used_space_ratio=%d",
+	    (long long)inode_get_number(inode),
+	    host_name(replica_host), used_space,
+	    gfarm_replica_check_remove_grace_used_space_ratio);
+#endif
+
+	grace_time.tv_sec = gfarm_replica_check_remove_grace_time;
+	grace_time.tv_nsec = 0;
+
+	gfarm_gettime(&now_timespec);
+	sub.tv_sec = now_timespec.tv_sec;
+	sub.tv_nsec = now_timespec.tv_nsec;
+
+	gfarm_timespec_sub(&sub, atime);
+	if (gfarm_timespec_cmp(&sub, &grace_time) > 0) {
+		/* (now - atime) > grace_time */
+#ifdef DEBUG_REPLICA_CHECK
+		RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+		    "replica_check_remove_grace_is_over: "
+		    "inum=%lld, replica=%s: may be removed",
+		    (long long)inode_get_number(inode),
+		    host_name(replica_host));
+#endif
+		return (1); /* remove a surplus replica immediately */
+	}
+
+	return (0);
+}
+
+static int
+replica_check_remove_grace_disabled(struct inode *inode,
+	struct host *replica_host)
+{
+	return (1); /* remove all surplus replicas immediately */
+}
+
 static gfarm_error_t
 replica_check_remove_replicas(struct inode *inode,
 	int n_srcs, struct host **srcs, struct replication_info *info)
 {
 	gfarm_error_t e, e2;
 	int i;
+	int (*grace_is_over_func)(struct inode *, struct host *);
 
 	if (n_srcs <= 1)
 		return (GFARM_ERR_NO_ERROR); /* skip */
 	if (n_srcs <= info->replica_spec.desired_number)
 		return (GFARM_ERR_NO_ERROR); /* skip */
+	if (gfarm_replica_check_remove_grace_used_space_ratio >= 100)
+		return (GFARM_ERR_NO_ERROR); /* skip */
+
 	if (inode_get_nlink(inode) >= 2) {
 		char *repattr;
 		int desired_number;
@@ -132,6 +196,13 @@ replica_check_remove_replicas(struct inode *inode,
 	/* prefer a host which has few disk_avail */
 	host_sort_to_remove_replicas(n_srcs, srcs);
 
+	/* shortcut */
+	if (gfarm_replica_check_remove_grace_used_space_ratio <= 0 &&
+	    gfarm_replica_check_remove_grace_time <= 0)
+		grace_is_over_func = replica_check_remove_grace_disabled;
+	else
+		grace_is_over_func = replica_check_remove_grace_is_over;
+
 	e = GFARM_ERR_NO_ERROR;
 	/* srcs are available replicas */
 	for (i = 0; i < n_srcs; i++) {
@@ -146,6 +217,9 @@ replica_check_remove_replicas(struct inode *inode,
 		    i, host_name(srcs[i]), (long long)used, (long long)avail);
 #endif
 #endif
+		if (grace_is_over_func(inode, srcs[i]) == 0)
+			continue; /* skip */
+
 		/* remove a replica only when it is excessive */
 		e2 = inode_remove_replica_protected(inode, srcs[i],
 		    &info->replica_spec, info->tdirset);
@@ -499,6 +573,8 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp, int *stopped)
 
 #define REPLICA_CHECK_INTERRUPT_STEP 10000
 
+#define ENABLE_STR(b) ((b) ? "enable" : "disable")
+
 static int
 replica_check_main(void)
 {
@@ -515,8 +591,13 @@ replica_check_main(void)
 	RC_LOG_INFO(GFARM_MSG_1003632, "replica_check: start");
 	RC_LOG_INFO(GFARM_MSG_1004277,
 	    "replica_check: remove=%s, reduced_log=%s",
-	    replica_check_remove_enabled() ? "enable" : "disable",
-	    replica_check_reduced_log_enabled() ? "enable" : "disable");
+	    ENABLE_STR(replica_check_remove_enabled()),
+	    ENABLE_STR(replica_check_reduced_log_enabled()));
+	RC_LOG_INFO(GFARM_MSG_UNFIXED,
+	    "replica_check: remove_grace_used_space_ratio=%s, "
+	    "remove_grace_time=%s",
+	    ENABLE_STR(gfarm_replica_check_remove_grace_used_space_ratio),
+	    ENABLE_STR(gfarm_replica_check_remove_grace_time));
 
 	for (inum = root_inum;;) {
 		if (inum % REPLICA_CHECK_INTERRUPT_STEP == 0 &&

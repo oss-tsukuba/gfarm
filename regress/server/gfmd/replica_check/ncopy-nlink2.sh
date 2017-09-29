@@ -3,32 +3,29 @@
 # this test may fail, if number of files which don't have enough
 # replicas are too many.
 
-. ./regress.conf
-tmpf=$gftmp/foo
 base=`dirname $0`
 . ${base}/replica_check-common.sh
+setup_test
 
-check_supported_env
-trap 'clean_test; exit $exit_trap' $trap_sigs
-clean_test
-setup_test_ncopy
-
-# nlink=2
+# setup: create a nlink=2 file
 hardlink $tmpf ${tmpf}.lnk
 set_ncopy $NCOPY1 $gftmp
-wait_for_rep $NCOPY1 $tmpf false
+# wait replica_check_minimum_interval
+wait_for_rep $NCOPY1 $tmpf false "#1 setup nlink=2"  ### not timeout
 
-# directory
+# set ncopy to the parent dirctory: do not decrease replicas
 set_ncopy $NCOPY2 $gftmp
 SAVE_TIMEOUT=$NCOPY_TIMEOUT
-NCOPY_TIMEOUT=10  ### 10 sec.
-wait_for_rep $NCOPY2 $tmpf true  ### timeout
+NCOPY_TIMEOUT=12
+# wait 12 sec.
+wait_for_rep $NCOPY2 $tmpf true "#2 parent dir"  ### timeout
 NCOPY_TIMEOUT=$SAVE_TIMEOUT
 
-# file
+# set ncopy itself: can decrease replicas
 set_ncopy $NCOPY2 $tmpf
-wait_for_rep $NCOPY2 $tmpf false ### not timeout
+# wait replica_check_minimum_interval
+wait_for_rep $NCOPY2 $tmpf false "#3 file" ### not timeout
+
 
 clean_test
-
 exit $exit_code

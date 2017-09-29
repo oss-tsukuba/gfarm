@@ -90,6 +90,7 @@ int host_status_reply_is_waiting(struct host *);
 void host_status_update(struct host *, struct host_status *);
 
 void host_status_get_disk_usage(struct host *, gfarm_off_t *, gfarm_off_t *);
+float host_status_get_disk_usage_percent(struct host *);
 void host_status_update_disk_usage(struct host *, gfarm_off_t);
 
 struct gfarm_host_info;

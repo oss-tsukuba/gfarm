@@ -839,6 +839,18 @@ host_status_get_disk_usage(struct host *host,
 	back_channel_mutex_unlock(host, diag);
 }
 
+/* 0 - 100 % */
+float
+host_status_get_disk_usage_percent(struct host *host)
+{
+	gfarm_off_t used;
+	gfarm_off_t avail;
+
+	host_status_get_disk_usage(host, &used, &avail);
+
+	return (100 * (float)used / (float)(used + avail));
+}
+
 void
 host_status_update_disk_usage(struct host *host, gfarm_off_t filesize)
 {
