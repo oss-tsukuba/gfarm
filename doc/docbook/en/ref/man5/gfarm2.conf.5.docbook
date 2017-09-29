@@ -1503,6 +1503,20 @@ The default is 20.
 </varlistentry>
 
 <varlistentry>
+<term><token>replication_busy_host</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>This directive specifies whether destination of gfmd-initiated
+  replication includes busy hosts or not.  When it is disabled, a file
+  replica is not created to busy hosts.  The default is enabled.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	replication_busy_host disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>gfsd_connection_cache</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>This directive specifies maximum number of cached gfsd connections.
@@ -2510,6 +2524,7 @@ gfsd uses this setting at its startup by asking gfmd.
 	&lt;minimum_free_disk_space_statement&gt; |
 	&lt;direct_local_access_statement&gt; |
 	&lt;simultaneous_replication_receivers_statement&gt; |
+	&lt;replication_busy_host_statement&gt; |
 	&lt;gfsd_connection_cache_statement&gt; |
 	&lt;xmlattr_size_limit_statement&gt; |
 	&lt;xattr_size_limit_statement&gt; |
@@ -2942,6 +2957,11 @@ gfsd uses this setting at its startup by asking gfmd.
 <varlistentry>
 <term>&lt;simultaneous_replication_receivers_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"simultaneous_replication_receivers" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replication_busy_host_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replication_busy_host" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

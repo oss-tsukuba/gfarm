@@ -119,6 +119,7 @@ extern int gfarm_iostat_max_client;
 /* miscellaneous configurations */
 extern char *gfarm_digest;
 extern int gfarm_simultaneous_replication_receivers;
+extern int gfarm_replication_busy_host;
 
 gfarm_error_t gfarm_get_global_username_by_host_for_connection_cache(
 	const char *, int, char **);
