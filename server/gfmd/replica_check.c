@@ -125,7 +125,7 @@ replica_check_remove_grace_is_over(struct inode *inode,
 		return (0);
 
 #ifdef DEBUG_REPLICA_CHECK
-	RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+	RC_LOG_DEBUG(GFARM_MSG_1005013,
 	    "replica_check_remove_grace_is_over: "
 	    "inum=%lld, replica=%s, used_space=%f, grace_used_space_ratio=%d",
 	    (long long)inode_get_number(inode),
@@ -144,7 +144,7 @@ replica_check_remove_grace_is_over(struct inode *inode,
 	if (gfarm_timespec_cmp(&sub, &grace_time) > 0) {
 		/* (now - atime) > grace_time */
 #ifdef DEBUG_REPLICA_CHECK
-		RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+		RC_LOG_DEBUG(GFARM_MSG_1005014,
 		    "replica_check_remove_grace_is_over: "
 		    "inum=%lld, replica=%s: may be removed",
 		    (long long)inode_get_number(inode),
@@ -598,7 +598,7 @@ replica_check_main(void)
 	    "replica_check: remove=%s, reduced_log=%s",
 	    ENABLE_STR(replica_check_remove_enabled()),
 	    ENABLE_STR(replica_check_reduced_log_enabled()));
-	RC_LOG_INFO(GFARM_MSG_UNFIXED,
+	RC_LOG_INFO(GFARM_MSG_1005015,
 	    "replica_check: remove_grace_used_space_ratio=%s, "
 	    "remove_grace_time=%s",
 	    ENABLE_STR(gfarm_replica_check_remove_grace_used_space_ratio),
@@ -607,7 +607,7 @@ replica_check_main(void)
 	for (inum = root_inum;;) {
 		if (inum % REPLICA_CHECK_INTERRUPT_STEP == 0 &&
 		    !replica_check_ctrl_enabled()) { /* gfrepcheck stop */
-			RC_LOG_INFO(GFARM_MSG_UNFIXED,
+			RC_LOG_INFO(GFARM_MSG_1005016,
 			    "replica_check: stopped (interrupted)");
 			break;
 		}
@@ -615,7 +615,7 @@ replica_check_main(void)
 		if (replica_check_main_dir(inum, &count, &stopped))
 			need_to_retry = 1;
 		if (stopped) { /* gfrepcheck stop */
-			RC_LOG_INFO(GFARM_MSG_UNFIXED,
+			RC_LOG_INFO(GFARM_MSG_1005017,
 			    "replica_check: stopped (interrupted)");
 			break;
 		}
