@@ -1408,6 +1408,23 @@ For example,
 .\}
 .RE
 .PP
+replication_busy_host \fIvalidity\fR
+.RS 4
+This directive specifies whether destination of gfmd\-initiated replication includes busy hosts or not\&. When it is disabled, a file replica is not created to busy hosts\&. The default is enabled\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	replication_busy_host disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 gfsd_connection_cache \fInumber\fR
 .RS 4
 This directive specifies maximum number of cached gfsd connections\&. The default is 16\&.
@@ -2427,6 +2444,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<minimum_free_disk_space_statement> |
 	<direct_local_access_statement> |
 	<simultaneous_replication_receivers_statement> |
+	<replication_busy_host_statement> |
 	<gfsd_connection_cache_statement> |
 	<xmlattr_size_limit_statement> |
 	<xattr_size_limit_statement> |
@@ -3386,6 +3404,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "simultaneous_replication_receivers" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<replication_busy_host_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"replication_busy_host" <validity>
 .fi
 .if n \{\
 .RE

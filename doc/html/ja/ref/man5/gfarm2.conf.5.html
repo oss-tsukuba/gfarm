@@ -1070,6 +1070,17 @@ gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します�
 	simultaneous_replication_receivers 40<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">replication_busy_host</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>gfmd主導の複製先にbusyホストを含むかどうか設定します。
+disableにすると、busyホストには複製は作成されません。
+デフォルトはenableです。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	replication_busy_host disable<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">gfsd_connection_cache</span> <em class="parameter"><code>コネクション数</code></em></span></dt>
 <dd>
 <p>gfarmライブラリがgfsdとの通信に用いるコネクションを、いくつ
@@ -1902,6 +1913,7 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 	&lt;minimum_free_disk_space_statement&gt; |<br>
 	&lt;direct_local_access_statement&gt; |<br>
 	&lt;simultaneous_replication_receivers_statement&gt; |<br>
+	&lt;replication_busy_host_statement&gt; |<br>
 	&lt;gfsd_connection_cache_statement&gt; |<br>
 	&lt;xmlattr_size_limit_statement&gt; |<br>
 	&lt;xattr_size_limit_statement&gt; |<br>
@@ -2081,6 +2093,8 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 <dd><div class="literallayout"><p>"direct_local_access" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;simultaneous_replication_receivers_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"simultaneous_replication_receivers" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;replication_busy_host_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"replication_busy_host" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;gfsd_connection_cache_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"gfsd_connection_cache" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;xmlattr_size_limit_statement&gt; ::=</span></dt>

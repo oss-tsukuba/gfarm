@@ -1126,6 +1126,17 @@ The default is 20.
 	simultaneous_replication_receivers 40<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">replication_busy_host</span> <em class="parameter"><code>validity</code></em></span></dt>
+<dd>
+<p>This directive specifies whether destination of gfmd-initiated
+  replication includes busy hosts or not.  When it is disabled, a file
+  replica is not created to busy hosts.  The default is enabled.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	replication_busy_host disable<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">gfsd_connection_cache</span> <em class="parameter"><code>number</code></em></span></dt>
 <dd>
 <p>This directive specifies maximum number of cached gfsd connections.
@@ -1944,6 +1955,7 @@ gfsd uses this setting at its startup by asking gfmd.
 	&lt;minimum_free_disk_space_statement&gt; |<br>
 	&lt;direct_local_access_statement&gt; |<br>
 	&lt;simultaneous_replication_receivers_statement&gt; |<br>
+	&lt;replication_busy_host_statement&gt; |<br>
 	&lt;gfsd_connection_cache_statement&gt; |<br>
 	&lt;xmlattr_size_limit_statement&gt; |<br>
 	&lt;xattr_size_limit_statement&gt; |<br>
@@ -2123,6 +2135,8 @@ gfsd uses this setting at its startup by asking gfmd.
 <dd><div class="literallayout"><p>"direct_local_access" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;simultaneous_replication_receivers_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"simultaneous_replication_receivers" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;replication_busy_host_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"replication_busy_host" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;gfsd_connection_cache_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"gfsd_connection_cache" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;xmlattr_size_limit_statement&gt; ::=</span></dt>
