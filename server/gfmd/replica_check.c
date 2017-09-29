@@ -102,6 +102,8 @@ static int replica_check_reduced_log_enabled(void);
 			gflog_info(msg_no, __VA_ARGS__);		\
 	}
 
+static double lock_sleep_time;
+static double retry_sleep_time;
 
 /*
  * 0: The replica should not be removed.
@@ -461,6 +463,7 @@ replica_check_giant_lock_default(void)
 		    "replica_check: cannot get lock, sleep");
 #endif
 		gfarm_nanosleep(gfarm_replica_check_sleep_time);
+		lock_sleep_time += .000000001 * gfarm_replica_check_sleep_time;
 		giant_lock();
 	}
 }
@@ -554,6 +557,7 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp, int *stopped)
 					break; /* success or error */
 				/* retry */
 				gfarm_nanosleep(sl);
+				retry_sleep_time += .000000001 * sl;
 				if (sl < GFARM_SECOND_BY_NANOSEC)
 					sl *= 2; /* 2,4,8,...,512,1024,1024 */
 			}
@@ -588,6 +592,7 @@ replica_check_main(void)
 	info_time_start = time_start = time(NULL);
 	replica_check_giant_unlock();
 
+	lock_sleep_time = retry_sleep_time = 0;
 	RC_LOG_INFO(GFARM_MSG_1003632, "replica_check: start");
 	RC_LOG_INFO(GFARM_MSG_1004277,
 	    "replica_check: remove=%s, reduced_log=%s",
@@ -626,8 +631,10 @@ replica_check_main(void)
 	}
 	time_total = time(NULL) - time_start;
 	RC_LOG_INFO(GFARM_MSG_1003633,
-	    "replica_check: finished, files=%llu, time=%lld",
-	    (unsigned long long)count, (long long)time_total);
+	    "replica_check: finished, files=%llu, time=%lld, "
+	    "lock sleep=%g, retry sleep=%g",
+	    (unsigned long long)count, (long long)time_total,
+	    lock_sleep_time, retry_sleep_time);
 
 	replica_check_giant_lock();
 	info_time_start = 0;
