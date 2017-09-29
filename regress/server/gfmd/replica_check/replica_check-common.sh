@@ -1,7 +1,29 @@
 NCOPY1=3
 NCOPY2=2
-NCOPY_TIMEOUT=60  # sec.
+NCOPY_TIMEOUT=20  # sec.
 hostgroupfile=/tmp/.hostgroup.$$
+
+GRACE_SPACE_RATIO=
+GRACE_TIME=
+
+setup_test() {
+  . ./regress.conf
+  tmpf=$gftmp/foo
+  check_supported_env
+  trap 'clean_test; exit $exit_trap' $trap_sigs
+  clean_test
+  gfmkdir $gftmp || exit $exit_fail
+  backup_hostgroup
+  backup_grace
+  setup_test_ncopy
+  setup_test_repattr
+}
+
+clean_test() {
+  restore_hostgroup
+  restore_grace
+  gfrm -rf $gftmp
+}
 
 check_supported_env() {
   hosts=`gfsched -w`
@@ -36,16 +58,29 @@ restore_hostgroup() {
   fi
 }
 
-clean_test() {
-  gfrm -rf $gftmp
+backup_grace() {
+  GRACE_SPACE_RATIO=`gfstatus -M "replica_check_remove_grace_used_space_ratio"`
+  GRACE_TIME=`gfstatus -M "replica_check_remove_grace_time"`
+}
+
+restore_grace() {
+  if [ -n "$GRACE_SPACE_RATIO" ]; then
+    gfstatus -Mm \
+      "replica_check_remove_grace_used_space_ratio $GRACE_SPACE_RATIO"
+    GRACE_SPACE_RATIO=
+  fi
+  if [ -n "$GRACE_TIME" ]; then
+    gfstatus -Mm "replica_check_remove_grace_time $GRACE_TIME"
+    GRACE_TIME=
+  fi
 }
 
 setup_test_ncopy() {
-  if gfmkdir $gftmp &&
-    set_ncopy 1 $gftmp &&  ### avoid looking parent gfarm.ncopy
+  if set_ncopy 1 $gftmp &&  ### avoid looking parent gfarm.ncopy
     gfreg $data/1byte $tmpf; then
     :
   else
+    clean_test
     exit $exit_fail
   fi
 }
@@ -55,28 +90,48 @@ setup_test_repattr() {
     if gfhostgroup -s $h test0; then
       :
     else
-      restore_hostgroup
+      clean_test
       exit $exit_fail
     fi
   done
 
-  if gfmkdir $gftmp &&
-    gfncopy -S test0:1 $gftmp && # avoid looking parent gfarm.replicainfo
+  if gfncopy -S test0:1 $gftmp && # avoid looking parent gfarm.replicainfo
     gfreg $data/1byte $tmpf; then
     :
   else
-    restore_hostgroup
+    clean_test
     exit $exit_fail
   fi
 }
 
 wait_for_rep() {
-  WAIT_TIME=0
   num=$1
   file=$2
   expect_timeout=$3
+  diag=$4
+  WAIT_TIME=0
+
+  if gfrepcheck stop; then
+    :
+  else
+    clean_test
+    exit $exit_fail
+  fi
+  if gfrepcheck start; then
+    :
+  else
+    clean_test
+    exit $exit_fail
+  fi
   while
     if [ `gfncopy -c $file` -eq $num ]; then
+      if [ $expect_timeout = 'true' ]; then
+        echo -n "replicas: "
+        gfwhere $file
+        echo "unexpected: Timeout must occur."
+        clean_test
+        exit $exit_fail
+      fi
       exit_code=$exit_pass
       false # exit from this loop
     else
@@ -85,7 +140,7 @@ wait_for_rep() {
   do
     WAIT_TIME=`expr $WAIT_TIME + 1`
     if [ $WAIT_TIME -gt $NCOPY_TIMEOUT ]; then
-      echo replication timeout
+      echo "replication timeout: ${diag}"
       if [ $expect_timeout = 'true' ]; then
         return
       fi
@@ -118,6 +173,52 @@ set_repattr() {
 hardlink() {
   gfln $1 $2
   if [ $? -ne 0 ]; then
+    clean_test
+    exit $exit_fail
+  fi
+}
+
+gfprep_n() {
+  NCOPY=$1
+  FILE=$2
+  if gfprep $GFPREP_OPT -N $NCOPY gfarm:${FILE}; then
+    :
+  else
+    echo failed: gfprep $GFPREP_OPT -N $NCOPY gfarm:${FILE}
+    clean_test
+    exit $exit_fail
+  fi
+}
+
+set_grace_used_space_ratio() {
+  RATIO=$1
+  if gfstatus -Mm "replica_check_remove_grace_used_space_ratio ${RATIO}"; then
+    :
+  else
+    echo failed: "replica_check_remove_grace_used_space_ratio ${RATIO}"
+    clean_test
+    exit $exit_fail
+  fi
+}
+
+set_grace_time() {
+  SEC=$1
+  if gfstatus -Mm "replica_check_remove_grace_time ${SEC}"; then
+    :
+  else
+    echo failed: "replica_check_remove_grace_time ${SEC}"
+    clean_test
+    exit $exit_fail
+  fi
+}
+
+replica_check_remove_switch()
+{
+  FLAG=$1
+  if gfrepcheck remove $FLAG; then
+    :
+  else
+    echo failed: "gfrepcheck remove $FLAG"
     clean_test
     exit $exit_fail
   fi

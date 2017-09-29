@@ -2213,6 +2213,42 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term><token>replica_check_remove_grace_used_space_ratio</token> <parameter moreinfo="none">percent</parameter></term>
+<listitem>
+<para>
+This behavior can be chagned by
+the <command moreinfo="none">gfstatus -Mm "replica_check_remove_grace_used_space_ratio {value}"</command> command in
+online.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_remove_grace_used_space_ratio 70
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replica_check_remove_grace_time</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+This behavior can be chagned by
+the <command moreinfo="none">gfstatus -Mm "replica_check_remove_grace_time {value}"</command> command in
+online.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_remove_grace_time 604800
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>replica_check_reduced_log</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>

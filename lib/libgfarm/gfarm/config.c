@@ -1032,6 +1032,8 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_FATAL_ACTION_DEFAULT GFLOG_FATAL_ACTION_ABORT_BACKTRACE
 #define GFARM_REPLICA_CHECK_DEFAULT 1 /* enable */
 #define GFARM_REPLICA_CHECK_REMOVE_DEFAULT 1 /* enable */
+#define GFARM_REPLICA_CHECK_REMOVE_GRACE_USED_SPACE_RATIO_DEFAULT 0 /* 0 % */
+#define GFARM_REPLICA_CHECK_REMOVE_GRACE_TIME_DEFAULT 0 /* 0 second */
 #define GFARM_REPLICA_CHECK_REDUCED_LOG_DEFAULT 1 /* enable */
 #define GFARM_REPLICA_CHECK_HOST_DOWN_THRESH_DEFAULT 10800 /* 3 hours */
 #define GFARM_REPLICA_CHECK_SLEEP_TIME_DEFAULT 100000 /* nanosec. */
@@ -1069,6 +1071,9 @@ static int metadb_server_slave_max_size = GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_server_force_slave = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_remove = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_replica_check_remove_grace_used_space_ratio =
+	GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_replica_check_remove_grace_time = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_reduced_log = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_host_down_thresh = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_sleep_time = GFARM_CONFIG_MISC_DEFAULT;
@@ -2196,6 +2201,27 @@ parse_set_misc_int(char *p, int *vp)
 }
 
 static gfarm_error_t
+parse_set_misc_percentage(char *p, int *vp)
+{
+	gfarm_error_t e;
+
+	e = parse_set_misc_int(p, vp);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"parse_set_misc_int failed (%s): %s",
+			p, gfarm_error_string(e));
+		return (e);
+	}
+	if (*vp > 100 || *vp < 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"parse_set_misc_percentage: invalid value (%s): %d",
+			p, *vp);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 parse_set_sockbuf_limit_int(char *p, int *vp)
 {
 	gfarm_error_t e;
@@ -3263,6 +3289,13 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_enabled(p, &gfarm_replica_check);
 	} else if (strcmp(s, o = "replica_check_remove") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_replica_check_remove);
+	} else if (strcmp(s,
+		   o = "replica_check_remove_grace_used_space_ratio") == 0) {
+		e = parse_set_misc_percentage(
+		    p, &gfarm_replica_check_remove_grace_used_space_ratio);
+	} else if (strcmp(s, o = "replica_check_remove_grace_time") == 0) {
+		e = parse_set_misc_int(
+		    p, &gfarm_replica_check_remove_grace_time);
 	} else if (strcmp(s, o = "replica_check_reduced_log") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_replica_check_reduced_log);
 	} else if (strcmp(s, o = "replica_check_host_down_thresh") == 0) {
@@ -3577,6 +3610,13 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_replica_check_remove == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_replica_check_remove =
 		    GFARM_REPLICA_CHECK_REMOVE_DEFAULT;
+	if (gfarm_replica_check_remove_grace_used_space_ratio ==
+	    GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_replica_check_remove_grace_used_space_ratio =
+		    GFARM_REPLICA_CHECK_REMOVE_GRACE_USED_SPACE_RATIO_DEFAULT;
+	if (gfarm_replica_check_remove_grace_time == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_replica_check_remove_grace_time =
+		    GFARM_REPLICA_CHECK_REMOVE_GRACE_TIME_DEFAULT;
 	if (gfarm_replica_check_reduced_log == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_replica_check_reduced_log =
 		    GFARM_REPLICA_CHECK_REDUCED_LOG_DEFAULT;
@@ -3747,6 +3787,14 @@ const struct gfarm_config_type {
 	{ "replicainfo", 'i', 1, gfarm_config_print_enabled,
 	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
 	  &gfarm_replicainfo_enabled, 0 },
+	{ "replica_check_remove_grace_used_space_ratio", 'i', 1,
+	  gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  &gfarm_replica_check_remove_grace_used_space_ratio, 0 },
+	{ "replica_check_remove_grace_time", 'i', 1,
+	  gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  &gfarm_replica_check_remove_grace_time, 0 },
 };
 
 static void *

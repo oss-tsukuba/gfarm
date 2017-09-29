@@ -2141,6 +2141,58 @@ enableと指定した場合、gfmd内のreplica_check機能が
 </varlistentry>
 
 <varlistentry>
+<term><token>replica_check_remove_grace_used_space_ratio</token> <parameter moreinfo="none">パーセント</parameter></term>
+<listitem>
+<para>
+<token>replica_check_remove enable</token>にしている場合でも、なるべく
+余剰ファイル複製を削除せずに残しておくために、猶予容量使用率を指定しま
+す。猶予容量使用率は、gfsdごとのディスク使用率を百分率(パーセント,0か
+ら100の整数)で指定します。ここで指定した使用率を超えたgfsd上にある余剰
+ファイル複製のうち、<token>replica_check_remove_grace_time</token>の時
+間を経過している場合に削除されます。0を指定すると、ディスク使用率に関
+わらず<token>replica_check_remove_grace_time</token>次第で削除されます。
+100を指定すると、<token>replica_check_remove disable</token>と同等にな
+ります。デフォルトは0です。
+</para>
+<para>
+<command moreinfo="none">gfstatus -Mm "replica_check_remove_grace_used_space_ratio {値}"</command> コマンドを使うと、
+この挙動をオンライン状態で変更できます。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_remove_grace_used_space_ratio 70
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replica_check_remove_grace_time</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>
+猶予容量使用率
+が<token>replica_check_remove_grace_used_space_ratio</token>を超えた場
+合に、余剰ファイル複製削除の猶予期間を指定します。猶予期間としてファイ
+ルのアクセス時間(atime)からの経過時間を秒数で指定します。デフォルトは
+0です。
+</para>
+<para>
+<command moreinfo="none">gfstatus -Mm "replica_check_remove_grace_time {値}"</command> コマンドを使うと、
+この挙動をオンライン状態で変更できます。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_remove_grace_time 604800
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>replica_check_reduced_log</token> <parameter moreinfo="none">有効性</parameter></term>
 <listitem>
 <para>
