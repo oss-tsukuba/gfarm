@@ -2187,11 +2187,10 @@ This parameter is only available in gfmd.conf.
 <term><token>replica_check</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>
-When "enable" is specified, the replica_check system in gfmd can check
-and fix the number and placement of file replicas automatically.  The
-replica_check works only when necessary.  The default value is
-"enable".  This behavior can be chagned by
-the <command moreinfo="none">gfrepcheck</command> command in online.
+A replica check patrols the file system when it is necessary, and
+creates missing file replicas.  The default is enable.  This feature
+can be dynamically enabled or disabled by
+the <command moreinfo="none">gfrepcheck</command> command.
 </para>
 <para>
 This parameter is only available in gfmd.conf.
@@ -2207,14 +2206,13 @@ This parameter is only available in gfmd.conf.
 <term><token>replica_check_remove</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>
-When "enable" is specified, the replica_check system in gfmd can
-remove excessive file rpelicas automatically.  As an exception, when a
-file has hard-links (nlink >= 2) and replication attributes
-(gfarm.ncopy or gfarm.replicainfo) in the file itself is not set, the
-excessive file replicas does not remove automatically.  The default
-value is "enable".  This behavior can be chagned by
-the <command moreinfo="none">gfrepcheck remove</command> command in
-online.
+This directive is effective when replica_check is enabled.  When
+replica_check_remove is enabled, the replica check removes unnecessary
+file replicas unless it has two or more link counts.  It leaves file
+replicas for files without replica information such as gfarm.ncopy and
+gfarm.replicainfo.  The default is enable.  This feature can be
+dynamically enabled or disabled by
+the <command moreinfo="none">gfrepcheck remove</command> command.
 </para>
 <para>
 This parameter is only available in gfmd.conf.
@@ -2227,13 +2225,23 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>replica_check_remove_grace_used_space_ratio</token> <parameter moreinfo="none">percent</parameter></term>
+<term><token>replica_check_remove_grace_used_space_ratio</token> <parameter moreinfo="none">percentage</parameter></term>
 <listitem>
 <para>
-This behavior can be chagned by
-the <command moreinfo="none">gfstatus -Mm "replica_check_remove_grace_used_space_ratio {value}"</command> command in
-online.
+This directive is effective when replica_check_remove is enabled.
+Unnecessary file replicas are removed only when a percentage of the
+used capacity is more than the specified percent value.  The
+percentage can be specified by an integer value between 0 and 100.
+When 100 is specified, unnecessary file replicas are not removed.
+The default is 0.
 </para>
+<para>
+The percentage can be dynamically changed by the gfstatus command.  The
+following example changes to 50%.
+</para>
+<literallayout format="linespecific" class="normal">
+	% gfstatus -Mm "replica_check_remove_grace_used_space_ratio 50"
+</literallayout>
 <para>
 This parameter is only available in gfmd.conf.
 </para>
@@ -2248,10 +2256,17 @@ This parameter is only available in gfmd.conf.
 <term><token>replica_check_remove_grace_time</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>
-This behavior can be chagned by
-the <command moreinfo="none">gfstatus -Mm "replica_check_remove_grace_time {value}"</command> command in
-online.
+This directive is effective when replica_check_remove is enabled.
+Unnecessary file replicas are removed only when it is not accessed for
+more than the specified seconds.  The default is 0.
 </para>
+<para>
+The grace time can be dynamically changed by the gfstatus command.
+The following example changes to 1 week (= 604800 seconds).
+</para>
+<literallayout format="linespecific" class="normal">
+	% gfstatus -Mm "replica_check_remove_grace_time 604800"
+</literallayout>
 <para>
 This parameter is only available in gfmd.conf.
 </para>
