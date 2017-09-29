@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
 .\"      Date: 31 Aug 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -1396,6 +1396,23 @@ gfmd 主導の複製処理を、単一複製作成ホストに対して、 同�
 .\}
 .RE
 .PP
+replication_busy_host \fI有効性\fR
+.RS 4
+gfmd主導の複製先にbusyホストを含むかどうか設定します。 disableにすると、busyホストには複製は作成されません。 デフォルトはenableです。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	replication_busy_host disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 gfsd_connection_cache \fIコネクション数\fR
 .RS 4
 gfarmライブラリがgfsdとの通信に用いるコネクションを、いくつ までキャッシュするかを指定します。 デフォルトは16コネクションです。
@@ -2567,6 +2584,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<minimum_free_disk_space_statement> |
 	<direct_local_access_statement> |
 	<simultaneous_replication_receivers_statement> |
+	<replication_busy_host_statement> |
 	<gfsd_connection_cache_statement> |
 	<xmlattr_size_limit_statement> |
 	<xattr_size_limit_statement> |
@@ -3631,6 +3649,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "simultaneous_replication_receivers" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<replication_busy_host_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"replication_busy_host" <validity>
 .fi
 .if n \{\
 .RE
