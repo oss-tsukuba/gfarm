@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
 .\"      Date: 31 Aug 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -2269,6 +2269,48 @@ Example:
 .\}
 .nf
 	replica_check_remove disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+replica_check_remove_grace_used_space_ratio \fIpercent\fR
+.RS 4
+This behavior can be chagned by the
+\fBgfstatus \-Mm "replica_check_remove_grace_used_space_ratio {value}"\fR
+command in online\&.
+.sp
+This parameter is only available in gfmd\&.conf\&.
+.sp
+Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	replica_check_remove_grace_used_space_ratio 70
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+replica_check_remove_grace_time \fIseconds\fR
+.RS 4
+This behavior can be chagned by the
+\fBgfstatus \-Mm "replica_check_remove_grace_time {value}"\fR
+command in online\&.
+.sp
+This parameter is only available in gfmd\&.conf\&.
+.sp
+Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	replica_check_remove_grace_time 604800
 .fi
 .if n \{\
 .RE

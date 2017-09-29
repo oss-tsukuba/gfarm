@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarm2.conf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfarm2.conf.5"></a><div class="titlepage"></div>
@@ -1806,6 +1806,36 @@ This parameter is only available in gfmd.conf.
 <p>Example:</p>
 <div class="literallayout"><p><br>
 	replica_check_remove disable<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">replica_check_remove_grace_used_space_ratio</span> <em class="parameter"><code>percent</code></em></span></dt>
+<dd>
+<p>
+This behavior can be chagned by
+the <span class="command"><strong>gfstatus -Mm "replica_check_remove_grace_used_space_ratio {value}"</strong></span> command in
+online.
+</p>
+<p>
+This parameter is only available in gfmd.conf.
+</p>
+<p>Example:</p>
+<div class="literallayout"><p><br>
+	replica_check_remove_grace_used_space_ratio 70<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">replica_check_remove_grace_time</span> <em class="parameter"><code>seconds</code></em></span></dt>
+<dd>
+<p>
+This behavior can be chagned by
+the <span class="command"><strong>gfstatus -Mm "replica_check_remove_grace_time {value}"</strong></span> command in
+online.
+</p>
+<p>
+This parameter is only available in gfmd.conf.
+</p>
+<p>Example:</p>
+<div class="literallayout"><p><br>
+	replica_check_remove_grace_time 604800<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">replica_check_reduced_log</span> <em class="parameter"><code>validity</code></em></span></dt>

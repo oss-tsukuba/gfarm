@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarm2.conf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfarm2.conf.5"></a><div class="titlepage"></div>
@@ -1736,6 +1736,52 @@ enableと指定した場合、gfmd内のreplica_check機能が
 <p>例:</p>
 <div class="literallayout"><p><br>
 	replica_check_remove disable<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">replica_check_remove_grace_used_space_ratio</span> <em class="parameter"><code>パーセント</code></em></span></dt>
+<dd>
+<p>
+<span class="token">replica_check_remove enable</span>にしている場合でも、なるべく
+余剰ファイル複製を削除せずに残しておくために、猶予容量使用率を指定しま
+す。猶予容量使用率は、gfsdごとのディスク使用率を百分率(パーセント,0か
+ら100の整数)で指定します。ここで指定した使用率を超えたgfsd上にある余剰
+ファイル複製のうち、<span class="token">replica_check_remove_grace_time</span>の時
+間を経過している場合に削除されます。0を指定すると、ディスク使用率に関
+わらず<span class="token">replica_check_remove_grace_time</span>次第で削除されます。
+100を指定すると、<span class="token">replica_check_remove disable</span>と同等にな
+ります。デフォルトは0です。
+</p>
+<p>
+<span class="command"><strong>gfstatus -Mm "replica_check_remove_grace_used_space_ratio {値}"</strong></span> コマンドを使うと、
+この挙動をオンライン状態で変更できます。
+</p>
+<p>
+この文はgfmd.confのみで有効です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	replica_check_remove_grace_used_space_ratio 70<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">replica_check_remove_grace_time</span> <em class="parameter"><code>秒数</code></em></span></dt>
+<dd>
+<p>
+猶予容量使用率
+が<span class="token">replica_check_remove_grace_used_space_ratio</span>を超えた場
+合に、余剰ファイル複製削除の猶予期間を指定します。猶予期間としてファイ
+ルのアクセス時間(atime)からの経過時間を秒数で指定します。デフォルトは
+0です。
+</p>
+<p>
+<span class="command"><strong>gfstatus -Mm "replica_check_remove_grace_time {値}"</strong></span> コマンドを使うと、
+この挙動をオンライン状態で変更できます。
+</p>
+<p>
+この文はgfmd.confのみで有効です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	replica_check_remove_grace_time 604800<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">replica_check_reduced_log</span> <em class="parameter"><code>有効性</code></em></span></dt>
