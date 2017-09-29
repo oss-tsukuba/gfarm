@@ -2209,13 +2209,13 @@ parse_set_misc_percentage(char *p, int *vp)
 
 	e = parse_set_misc_int(p, vp);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005010,
 			"parse_set_misc_int failed (%s): %s",
 			p, gfarm_error_string(e));
 		return (e);
 	}
 	if (*vp > 100 || *vp < 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005011,
 			"parse_set_misc_percentage: invalid value (%s): %d",
 			p, *vp);
 		return (GFARM_ERR_INVALID_ARGUMENT);

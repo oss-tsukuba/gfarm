@@ -1308,7 +1308,7 @@ host_select_one(int nhosts, struct host **hosts, const char *diag)
 	}
 	if (nhosts <= 0) {
 		/* shouldn't happen */
-		gflog_warning(GFARM_MSG_UNFIXED, "%s: nhosts=%d",
+		gflog_warning(GFARM_MSG_1005012, "%s: nhosts=%d",
 		    diag, nhosts);
 	}
 	return (0);
