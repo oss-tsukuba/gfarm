@@ -678,7 +678,7 @@ host_is_disk_available(struct host *h, gfarm_off_t size)
 	back_channel_mutex_lock(h, diag);
 
 	if (host_is_up_unlocked(h))
-		avail = h->status.disk_avail * 1024;
+		avail = h->status.disk_avail_in_byte;
 	else
 		avail = 0;
 	back_channel_mutex_unlock(h, diag);
@@ -857,8 +857,10 @@ host_status_update_disk_usage(struct host *host, gfarm_off_t filesize)
 	const char diag[] = "host_status_update_disk_usage";
 
 	back_channel_mutex_lock(host, diag);
-	host->status.disk_used_in_byte += filesize ;
+	host->status.disk_used_in_byte += filesize;
 	host->status.disk_avail_in_byte -= filesize;
+	host->status.disk_used = host->status.disk_used_in_byte / 1024;
+	host->status.disk_avail = host->status.disk_avail_in_byte / 1024;
 	back_channel_mutex_unlock(host, diag);
 }
 
