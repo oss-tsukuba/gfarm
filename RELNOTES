@@ -1,7 +1,7 @@
 Release note for Gfarm 2.7.6
 ============================
 
-[2017.9.30]
+[2017.10.1]
 
 New configuration directive
 * replication_busy_host - specify whether destinations of
