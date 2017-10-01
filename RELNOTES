@@ -12,12 +12,8 @@ New configuration directive
 * replica_check_remove_grace_used_space_ratio,
   replica_check_remove_grace_time - specify grace space ratio and
   grace time for replica check remove
-* spool_check_parallel, spool_check_parallel_max,
-  spool_check_parallel_per_capacity, spool_check_parallel_step -
-  specifies the number of parallelism and granularity of spool check
 
 Updated feature
-* gfsd - parallel spool check for faster spool check processing
 * gfmd - gfmd-initiated replication selects a file replica to be
   replicated randomly to avoid concentration
 * gfmd - more rigit disk available check to avoid no space error
