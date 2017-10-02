@@ -485,6 +485,10 @@ replica_check_giant_unlock_yield(void)
 
 static void (*replica_check_giant_unlock)(void) = giant_unlock;
 
+/*
+ * these variables are protected by giant lock since they are also
+ * accessed by a signal handler
+ */
 static gfarm_ino_t info_inum, info_table_size;
 static time_t info_time_start;
 
@@ -643,6 +647,7 @@ replica_check_main(void)
 	return (need_to_retry);
 }
 
+/* this function is called from sigs_handler() in gfmd.c */
 void
 replica_check_info(void)
 {
