@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>15 Feb 2017</date></refentryinfo>
+<refentryinfo><date>31 Aug 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -358,6 +358,94 @@ gfsd(8).  The level "disable" disables the consistency check.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	spool_check_level disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel</token> <parameter moreinfo="none">num-of-parallel</parameter></term>
+<listitem>
+<para>
+This directive specifies number of processes of gfsd spool_check.
+</para>
+<para>
+By default, the number of processes is automatically determined by
+the spool_check_parallel_per_capacity directive.
+</para>
+<para>
+This directive is only available for gfsd in gfarm2.conf.
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel 16
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel_max</token> <parameter moreinfo="none">並列度</parameter></term>
+<listitem>
+<para>
+This directive specifies upper limit of number of processes of gfsd spool_check.
+This is only effective when the number is automatically determined.
+If the number is specified by the spool_check_parallel directive,
+spool_check_parallel_max is ignored.
+</para>
+<para>
+The default value is 64.
+</para>
+<para>
+This directive is only available for gfsd in gfarm2.conf.
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel_max 128
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel_per_capacity</token> <parameter moreinfo="none">bytes</parameter></term>
+<listitem>
+<para>
+If the number of process of gfsd spool_check is not specified by
+the spool_check_parallel directive, the number will be
+total disk capacity of the gfsd spool partition
+divided by this setting.
+The bytes value may have a suffix like ``k'' (kibibyte),
+``M'' (mebibyte), ``G'' (gibibyte) and ``T'' (tebibyte).
+</para>
+<para>
+The default value is 64 tebibytes.
+</para>
+<para>
+This directive is only available for gfsd in gfarm2.conf.
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel_per_capacity 10T
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel_step</token> <parameter moreinfo="none">数</parameter></term>
+<listitem>
+<para>
+This directive specifies number of processing unit of each spool_check process.
+This parameter doesn't have to be configured usually,
+but if network latency between gfmd is high,
+increasing this value may make spool_check performance better.
+</para>
+<para>
+The default value is 1.
+</para>
+<para>
+This directive is only available for gfsd in gfarm2.conf.
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel_step 16
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1447,9 +1535,9 @@ will be used and the others are ignored.
 required on filesystem nodes. The Gfarm scheduler excludes filesystem nodes
 which have less free space than this parameter, when it
 schedules nodes for jobs which may write files.
-The free space value may have a suffix like ``k'' (kilo bytes), 
-``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
-The default size is 512M bytes.
+The free space value may have a suffix like ``k'' (kibibyte),
+``M'' (mebibyte), ``G'' (gibibyte) and ``T'' (tebibyte).
+The default size is 512 MiB.
 </para>
 <para>
 This directive has to be specified in both gfarm2.conf and gfmd.conf.
@@ -2482,6 +2570,10 @@ gfsd uses this setting at its startup by asking gfmd.
 	&lt;spool_server_cred_name_statement&gt; |
 	&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; |
 	&lt;spool_check_level_statement&gt; |
+	&lt;spool_check_parallel_statement&gt; |
+	&lt;spool_check_parallel_max_statement&gt; |
+	&lt;spool_check_parallel_per_capacity_statement&gt; |
+	&lt;spool_check_parallel_step_statement&gt; |
 	&lt;spool_base_load_statement&gt; |
 	&lt;spool_digest_error_check_statement&gt; |
 	&lt;metadb_server_host_statement&gt; |
@@ -2626,6 +2718,26 @@ gfsd uses this setting at its startup by asking gfmd.
 <varlistentry>
 <term>&lt;spool_check_level_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"spool_check_level" &lt;spck_level&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_max_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel_max" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_per_capacity_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel_per_capacity" &lt;size&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_step_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel_step" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

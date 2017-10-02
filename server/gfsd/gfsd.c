@@ -3809,8 +3809,8 @@ gfs_server_cksum(struct gfp_xdr *client)
 	gfs_server_put_reply(client, "cksum", e, "b", len, cksum);
 }
 
-static void
-statfs_all(gfarm_int32_t *bsizep,
+void
+gfsd_statfs_all(gfarm_int32_t *bsizep,
 	gfarm_off_t *blocksp, gfarm_off_t *bfreep, gfarm_off_t *bavailp,
 	gfarm_off_t *filesp, gfarm_off_t *ffreep, gfarm_off_t *favailp,
 	int *readonlyp)
@@ -3882,8 +3882,8 @@ gfs_server_statfs(struct gfp_xdr *client)
 	gfs_server_get_request(client, "statfs", "s", &dir);
 	free(dir);
 
-	statfs_all(&bsize, &blocks, &bfree, &bavail, &files, &ffree, &favail,
-	    &readonly);
+	gfsd_statfs_all(&bsize, &blocks, &bfree, &bavail,
+	    &files, &ffree, &favail, &readonly);
 
 	gfs_server_put_reply_with_errno(client, "statfs", save_errno,
 	    "illllll", bsize, blocks, bfree, bavail, files, ffree, favail);
@@ -4445,8 +4445,8 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 		gflog_warning(GFARM_MSG_1000520,
 		    "%s: cannot get load average", diag);
 	} else {
-		statfs_all(&bsize, &blocks, &bfree, &bavail, &files, &ffree,
-		    &favail, &readonly);
+		gfsd_statfs_all(&bsize, &blocks, &bfree, &bavail,
+		    &files, &ffree, &favail, &readonly);
 		used = (blocks - bfree) * bsize / 1024;
 		avail = bavail * bsize / 1024;
 	}
