@@ -4812,7 +4812,7 @@ gfm_server_replica_get_my_entries_common(
 		    "not permitted: peer_get_host() failed");
 		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (n_inum <= 0) {
-		gflog_debug(GFARM_MSG_UNFIXED, "n_inum is 0");
+		gflog_debug(GFARM_MSG_1005018, "n_inum is 0");
 		e_rpc = GFARM_ERR_INVALID_ARGUMENT;
 	} else if (n_req <= 0) {
 		gflog_debug(GFARM_MSG_1003492, "n_req is 0");

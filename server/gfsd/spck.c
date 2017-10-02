@@ -631,7 +631,7 @@ check_metadata(struct gfarm_hash_table *hash_ok)
 		if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			return (GFARM_ERR_NO_ERROR); /* end */
 		else if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005019,
 			    "replica_get_my_entries(%llu, %llu, %d): %s",
 			    (unsigned long long)inum,
 			    (unsigned long long)inum_step_per_process,
@@ -668,7 +668,7 @@ gfs_spool_check_parallel_fork(void)
 	pid_t pid;
 
 	if (gfarm_spool_check_parallel < 0)
-		fatal(GFARM_MSG_UNFIXED,
+		fatal(GFARM_MSG_1005020,
 		    "spool_check_parallel configuration %d is invalid",
 		    gfarm_spool_check_parallel);
 	if (gfarm_spool_check_parallel ==
@@ -683,7 +683,7 @@ gfs_spool_check_parallel_fork(void)
 		    gfarm_spool_check_parallel_per_capacity;
 		if (gfarm_spool_check_parallel >
 		    gfarm_spool_check_parallel_max) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1005021,
 			    "spool_check: automatically calculated "
 			    "number of parallel processes %d exceeds max (%d)",
 			    gfarm_spool_check_parallel,
@@ -697,7 +697,7 @@ gfs_spool_check_parallel_fork(void)
 	GFARM_MALLOC_ARRAY(gfs_spool_check_parallel_pids,
 	    gfarm_spool_check_parallel);
 	if (gfs_spool_check_parallel_pids == NULL)
-		fatal(GFARM_MSG_UNFIXED, "could not remember %d pids",
+		fatal(GFARM_MSG_1005022, "could not remember %d pids",
 		    gfarm_spool_check_parallel);
 
 	/* gfarm_spool_check_parallel has to be fixed here */
@@ -720,7 +720,7 @@ gfs_spool_check_parallel_fork(void)
 			free_gfm_server(); /* to make sure to avoid race */
 			e = connect_gfm_server(diag);
 			if (e != GFARM_ERR_NO_ERROR)
-				fatal(GFARM_MSG_UNFIXED, "die");
+				fatal(GFARM_MSG_1005023, "die");
 
 			/* children shouldn't access this */
 			free(gfs_spool_check_parallel_pids);
@@ -735,14 +735,14 @@ gfs_spool_check_parallel_fork(void)
 			 * this is fatal, because gfarm_spool_check_parallel
 			 * has to be fixed before fork()
 			 */
-			fatal(GFARM_MSG_UNFIXED,
+			fatal(GFARM_MSG_1005024,
 			    "spool_check: cannot fork %dth child", i);
 			break;
 		}
 		gfs_spool_check_parallel_pids[i] = pid;
 	}
 	gfs_spool_check_parallel_index = 0;
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1005025,
 	    "spool_check: parallel process: %d",
 	    gfarm_spool_check_parallel);
 
@@ -757,16 +757,16 @@ gfs_spool_check_parallel_wait(void)
 	for (i = 1; i < gfarm_spool_check_parallel; i++) {
 		pid = waitpid(gfs_spool_check_parallel_pids[i], &status, 0);
 		if (pid == -1)
-			gflog_error_errno(GFARM_MSG_UNFIXED,
+			gflog_error_errno(GFARM_MSG_1005026,
 			    "spool_check: wait %dth child (%d)",
 			    i, (int)gfs_spool_check_parallel_pids[i]);
 		else if (WIFSIGNALED(status))
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005027,
 			    "spool_check: %dth child exited with signal %d%s",
 			    i, (int)WTERMSIG(status),
 			    WCOREDUMP(status) ? " (core dumped)" : "");
 		else if (WEXITSTATUS(status) != 0)
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005028,
 			    "spool_check: %dth child exited with status %d",
 			    i, (int)WEXITSTATUS(status));
 	}
@@ -802,7 +802,7 @@ gfsd_spool_check()
 		    gfarm_hash_default, gfarm_hash_key_equal_default);
 		if (hash_ok == NULL)
 			fatal(GFARM_MSG_1003560, "no memory for spool_check");
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1005029,
 		    "spool_check(%d): metadata check started",
 		    gfs_spool_check_parallel_index);
 		check_metadata(hash_ok);
@@ -820,7 +820,7 @@ gfsd_spool_check()
 		if (chdir(gfarm_spool_root[i]) == -1)
 			gflog_fatal_errno(GFARM_MSG_1004484, "chdir(%s)",
 			    gfarm_spool_root[i]);
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1005030,
 		    "spool_check(%d): directory check #%d started at %s",
 		    gfs_spool_check_parallel_index, i, gfarm_spool_root[i]);
 		(void)check_spool("data", hash_ok);
@@ -828,7 +828,7 @@ gfsd_spool_check()
 	if (hash_ok)
 		gfarm_hash_table_free(hash_ok);
 
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1005031,
 	    "spool_check(%d): finished", gfs_spool_check_parallel_index);
 
 	if (gfs_spool_check_parallel_index == 0)
