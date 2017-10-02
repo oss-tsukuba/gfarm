@@ -364,7 +364,7 @@ gfsd起動時のスプールチェックを有効にします。スプールチ�
 gfsd起動時のスプールチェック並列度を数字で設定します。
 </para>
 <para>
-デフォルトでは spool_check_parallel_per_capacity 設定を用いて
+デフォルトでは spool_check_parallel_per_capacity を用いて
 並列度を自動的に決定します。
 </para>
 <para>
@@ -381,7 +381,7 @@ gfsd起動時のスプールチェック並列度を数字で設定します。
 <term><token>spool_check_parallel_max</token> <parameter moreinfo="none">並列度</parameter></term>
 <listitem>
 <para>
-spool_check_parallel_per_capacity 設定を用いて並列度を自動的に決定する際の
+spool_check_parallel_per_capacity を用いて並列度を自動的に決定する際の
 上限値を指定します。
 自動設定の場合にはこの上限よりも大きな並列度にはなりません。
 spool_check_parallel で並列度が指定されていた場合は、
