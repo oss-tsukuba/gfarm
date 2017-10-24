@@ -302,11 +302,11 @@ AC_ARG_WITH(globus,
 	globus_includes=`$GLOBUS_PKG_CONFIG_PATH pkg-config --cflags globus-gssapi-gsi`
 	AC_MSG_RESULT([found])
  else
- # Grid Packaging Tools (GPT)
- GLBlocation_candidates=${globus_location:-/usr/grid}
- if test -n "$globus_flavor"; then
+   # Grid Packaging Tools (GPT)
+   GLBlocation_candidates=${globus_location:-/usr/grid}
+   if test -n "$globus_flavor"; then
 	GLBflavor_candidates="$globus_flavor"
- else
+   else
 	GLBflavor_candidates=
 	if test x"$GCC" = x"yes"; then
 		tmp='gcc vendorcc'
@@ -323,9 +323,9 @@ AC_ARG_WITH(globus,
 			done
 		done
 	done
- fi
- globus_found=
- for d in ${GLBlocation_candidates}; do
+   fi
+   globus_found=
+   for d in ${GLBlocation_candidates}; do
 	for f in ${GLBflavor_candidates}; do
 		if test -f "$d/include/$f/gssapi.h"; then
 			globus_location=$d
@@ -335,8 +335,8 @@ AC_ARG_WITH(globus,
 		fi
 	done
 	if test x"$globus_found" = x"yes"; then break; fi
- done
- if test x"$globus_found" != x"yes"; then
+   done
+   if test x"$globus_found" != x"yes"; then
 	AC_MSG_RESULT([not found])
 	AC_MSG_RESULT([searched directories are: ${GLBlocation_candidates}])
 	AC_MSG_RESULT([searched flavors are: ${GLBflavor_candidates}])
@@ -346,59 +346,58 @@ AC_ARG_WITH(globus,
 		AC_MSG_ERROR([cannot automatically find include/\${GLOBUS_FLAVOR}/gssapi.h under ${GLBlocation_candidates}, please specify the flavor by --with-globus-flavor=GLOBUS_FLAVOR])
 	fi
 	exit 1
- fi
- f_pthr=`expr "$globus_flavor" : '.*\(pthr\)'`
- if test x"$f_pthr" != xpthr; then
+   fi
+   f_pthr=`expr "$globus_flavor" : '.*\(pthr\)'`
+   if test x"$f_pthr" != xpthr; then
 	AC_MSG_RESULT([bad flavor \"$globus_flavor\"])
 	AC_MSG_ERROR([MT-safe flavor required])
 	exit 1
- fi
- AC_MSG_RESULT([found in \"${globus_location}\" with \"${globus_flavor}\" flavor])
+   fi
+   AC_MSG_RESULT([found in \"${globus_location}\" with \"${globus_flavor}\" flavor])
 
- globus_includes="-I${globus_location}/include/${globus_flavor}"
- if test x"$globus_libdir" = x; then
+   globus_includes="-I${globus_location}/include/${globus_flavor}"
+   if test x"$globus_libdir" = x; then
 	globus_libdir="${globus_location}/lib"
- fi
+   fi
 
- cfgmhtmp=/tmp/cfgmh$$
- AC_MSG_CHECKING([globus library names])
- if	case ${globus_static} in
+   cfgmhtmp=/tmp/cfgmh$$
+   AC_MSG_CHECKING([globus library names])
+   if	case ${globus_static} in
 	yes)	env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-makefile-header -static -flavor=${globus_flavor} globus_gssapi_gsi;;
 	*)	env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-makefile-header         -flavor=${globus_flavor} globus_gssapi_gsi;;
 	esac > $cfgmhtmp
- then
+   then
 	AC_MSG_RESULT([done])
- else
+   else
 	rm -f $cfgmhtmp
 	AC_MSG_RESULT([failed to call ${globus_location}/bin/globus-makefile-header command.])
 	AC_MSG_RESULT([Please run \${GPT_LOCATION}/sbin/gpt-postinstall, if it is not invoked yet.])
 	AC_MSG_ERROR([Globus installation is incomplete, aborted.])
- fi
- globus_gssapi_libs=`sed -n '/^GLOBUS_PKG_LIBS *=/s///p' $cfgmhtmp`
- rm -f $cfgmhtmp
- case ${globus_static} in
- yes)	:;;
- *)	globus_gssapi_libs="-R${globus_libdir} -L${globus_libdir} $globus_gssapi_libs"
- esac
-
- # replace openssl library with that included in globus
- if test -x ${globus_location}/bin/globus-version; then
-   globus_version=`env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-version`
-   case ${globus_version} in
-   4.0*|3*|2*)
-     openssl_includes="${globus_includes}"
-     case ${globus_static} in
-     yes) openssl_libs="${globus_libdir}/libssl_${globus_flavor}.a ${globus_libdir}/libcrypto_${globus_flavor}.a"
-	AC_MSG_RESULT([using globus static library: yes]);;
-     *)	  openssl_libs="-R${globus_libdir} -L${globus_libdir} -lssl_${globus_flavor} -lcrypto_${globus_flavor}"
-	AC_MSG_RESULT([using globus static library: no]);;
-     esac;;
-   *) # after 4.2.0, globus does not include openssl libarary.
-     ;;
+   fi
+   globus_gssapi_libs=`sed -n '/^GLOBUS_PKG_LIBS *=/s///p' $cfgmhtmp`
+   rm -f $cfgmhtmp
+   case ${globus_static} in
+   yes)	:;;
+   *)	globus_gssapi_libs="-R${globus_libdir} -L${globus_libdir} $globus_gssapi_libs"
    esac
- fi
- # End of Grid Packaging Tools (GPT)
- fi
+
+   # replace openssl library with that included in globus
+   if test -x ${globus_location}/bin/globus-version; then
+     globus_version=`env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-version`
+     case ${globus_version} in
+     4.0*|3*|2*)
+       openssl_includes="${globus_includes}"
+       case ${globus_static} in
+       yes) openssl_libs="${globus_libdir}/libssl_${globus_flavor}.a ${globus_libdir}/libcrypto_${globus_flavor}.a"
+	  AC_MSG_RESULT([using globus static library: yes]);;
+       *)	  openssl_libs="-R${globus_libdir} -L${globus_libdir} -lssl_${globus_flavor} -lcrypto_${globus_flavor}"
+	  AC_MSG_RESULT([using globus static library: no]);;
+       esac;;
+     *) # after 4.2.0, globus does not include openssl libarary.
+       ;;
+     esac
+   fi
+ fi # End of Grid Packaging Tools (GPT)
 
  # for conditional compilation which depends on whether globus is enabled or not
  globus_srcs='${GLOBUS_SRCS}'
