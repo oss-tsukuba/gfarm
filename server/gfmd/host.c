@@ -752,7 +752,34 @@ host_disabled(struct abstract_host *ah, struct peer *peer)
 	netsendq_host_becomes_down(abstract_host_get_sendq(ah));
 }
 
-/* giant_lock should be held before calling this */
+/*
+ * PREREQUISITE: nothing
+ * LOCKS:
+ *  - abstract_host_mutex
+ *    in abstract_host_disconnect_request()
+ *  - callout_module::mutex
+ *    in host_unset_peer()
+ *    which is called from abstract_host_peer_unset()
+ *    which is called from abstract_host_disconnect_request()
+ *  - host::back_channel_mutex
+ *    in abstract_host::ops::disable() == host_disable()
+ *    which is called from abstract_host::ops::disable() == host_disable()
+ *  - total_disk_mutex
+ *    in abstract_host::ops::disable() == host_disable()
+ *    which is called from abstract_host::ops::disable() == host_disable()
+ *  - XXX
+ *    in replica_check_signal_host_down()
+ *    which is called from abstract_host::ops::disable() == host_disable()
+ *  - netsendq_workq::mutex ->
+ *	netsendq::readq_mutex, netsendq_manager:hostq_mutex
+ *    in abstract_host::ops::disabled() == host_disabled()
+ *    which is called from abstract_host_disconnect_request()
+ *  - peer_closing_queue.mutex
+ *    in peer_del_ref()
+ *    which is called from abstract_host_disconnect_request()
+ *
+ * NOTE: peer may be NULL.
+ */
 void
 host_disconnect_request(struct host *h, struct peer *peer)
 {
