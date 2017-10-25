@@ -618,9 +618,25 @@ mdhost_self_is_master(void)
 }
 
 /*
- * PREREQUISITE: giant_lock
+ * PREREQUISITE: nothing
+ * LOCKS:
+ *  - abstract_host_mutex
+ *    in abstract_host_disconnect_request()
+ *  - nothing
+ *    in mdhost_unset_peer()
+ *    which is called from abstract_host_peer_unset()
+ *    which is called from abstract_host_disconnect_request()
+ *  - nothing
+ *    in abstract_host::ops::disable() == mdhost_disable()
+ *    which is called from abstract_host_disconnect_request()
+ *  - nothing
+ *    in abstract_host::ops::disabled() == mdhost_disabled()
+ *    which is called from abstract_host_disconnect_request()
+ *  - peer_closing_queue.mutex
+ *    in peer_del_ref()
+ *    which is called from abstract_host_disconnect_request()
  *
- * peer may be NULL.
+ * NOTE: peer may be NULL.
  */
 void
 mdhost_disconnect_request(struct mdhost *m, struct peer *peer)
@@ -631,9 +647,13 @@ mdhost_disconnect_request(struct mdhost *m, struct peer *peer)
 }
 
 /*
- * PREREQUISITE: giant_lock
+ * PREREQUISITE: nothing
+ * LOCKS:
+ *  - mdhost_master_mutex
+ *    in mdhost_lookup_master()
+ *  - see LOCKS in mdhost_disconnect_request()
  *
- * peer may be NULL.
+ * NOTE: peer may be NULL.
  */
 void
 mdhost_master_disconnect_request(struct peer *peer)
