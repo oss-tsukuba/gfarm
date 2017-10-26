@@ -4164,6 +4164,59 @@ gfm_client_replica_check_ctrl_reduced_log_disable(
 	    GFM_PROTO_REPLICA_CHECK_CTRL_REDUCED_LOG_DISABLE));
 }
 
+static gfarm_error_t
+gfm_client_replica_check_status(struct gfm_connection *gfm_server,
+	gfarm_int32_t status_target, gfarm_int32_t *statusp)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+	    GFM_PROTO_REPLICA_CHECK_STATUS, "i/i", status_target, statusp));
+}
+
+const char *
+gfm_client_replica_check_status_string(gfarm_int32_t status)
+{
+	switch (status) {
+	case GFM_PROTO_REPLICA_CHECK_STATUS_ENABLE:
+		return ("enable");
+	case GFM_PROTO_REPLICA_CHECK_STATUS_DISABLE:
+		return ("disable");
+	case GFM_PROTO_REPLICA_CHECK_STATUS_ENABLE_RUNNING:
+		return ("enable / running");
+	case GFM_PROTO_REPLICA_CHECK_STATUS_ENABLE_STOPPED:
+		return ("enable / stopped");
+	case GFM_PROTO_REPLICA_CHECK_STATUS_DISABLE_RUNNING:
+		return ("disable / running");
+	case GFM_PROTO_REPLICA_CHECK_STATUS_DISABLE_STOPPED:
+		return ("disable / stopped");
+	default:
+		return ("<UNEXPECTED REPLICA CHECK STATUS>");
+	}
+}
+
+gfarm_error_t
+gfm_client_replica_check_status_mainctrl(struct gfm_connection *gfm_server,
+	gfarm_int32_t *statusp)
+{
+	return (gfm_client_replica_check_status(gfm_server,
+	    GFM_PROTO_REPLICA_CHECK_STATUS_MAINCTRL, statusp));
+}
+
+gfarm_error_t
+gfm_client_replica_check_status_remove(struct gfm_connection *gfm_server,
+	gfarm_int32_t *statusp)
+{
+	return (gfm_client_replica_check_status(gfm_server,
+	    GFM_PROTO_REPLICA_CHECK_STATUS_REMOVE, statusp));
+}
+
+gfarm_error_t
+gfm_client_replica_check_status_reduced_log(struct gfm_connection *gfm_server,
+	gfarm_int32_t *statusp)
+{
+	return (gfm_client_replica_check_status(gfm_server,
+	    GFM_PROTO_REPLICA_CHECK_STATUS_REDUCED_LOG, statusp));
+}
+
 /*
  * replica management from gfsd
  */
