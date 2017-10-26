@@ -12044,31 +12044,39 @@ if test "${with_globus+set}" = set; then :
 
  # try pkg-config first
  try_pkgconfig=true
- if test -f $globus_libdir/pkgconfig/globus-gssapi-gsi.pc; then
-    GLOBUS_PKG_CONFIG_PATH="env PKG_CONFIG_PATH=$globus_libdir/pkgconfig"
- elif test x"$globus_location" != x; then
-    globus_pkgconfig=`find $globus_location -name globus-gssapi-gsi.pc | head -1`
-    if test x"$globus_pkgconfig" != x; then
-	GLOBUS_PKG_CONFIG_PATH="env PKG_CONFIG_PATH=`dirname $globus_pkgconfig`"
-    else
-	try_pkgconfig=false
-    fi
+ if test x"$globus_libdir" != x &&
+      test -f "$globus_libdir/pkgconfig/globus-gssapi-gsi.pc"
+ then
+    GLOBUS_PKG_CONFIG_ENV="env PKG_CONFIG_PATH=$globus_libdir/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
+ elif test x"$globus_location" = x; then
+    : # nothing to do
+ elif test -f "$globus_location/lib/pkgconfig/globus-gssapi-gsi.pc"; then
+    GLOBUS_PKG_CONFIG_ENV="env PKG_CONFIG_PATH=$globus_location/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
+ elif globus_pkg_config=`
+	find $globus_location -name globus-gssapi-gsi.pc -print | head -1`
+      test x"$globus_pkg_config" != x
+ then
+    GLOBUS_PKG_CONFIG_ENV="env PKG_CONFIG_PATH=`dirname $globus_pkg_config`${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
+ else
+    # if --with-globus=DIR is specified, but globus-gssapi-gsi.pc doesn't
+    # exist in the DIR, do not try "pkg-config globus-gssapi-gsi"
+    try_pkgconfig=false
  fi
- if $try_pkgconfig && $GLOBUS_PKG_CONFIG_PATH pkg-config globus-gssapi-gsi; then
+ if $try_pkgconfig && $GLOBUS_PKG_CONFIG_ENV pkg-config globus-gssapi-gsi; then
 	case ${globus_static} in
 	yes) globus_static=--static;;
 	*)   globus_static=        ;;
 	esac
-	globus_gssapi_libs=`$GLOBUS_PKG_CONFIG_PATH pkg-config ${globus_static} --libs globus-gssapi-gsi`
-	globus_includes=`$GLOBUS_PKG_CONFIG_PATH pkg-config --cflags globus-gssapi-gsi`
+	globus_gssapi_libs=`$GLOBUS_PKG_CONFIG_ENV pkg-config ${globus_static} --libs globus-gssapi-gsi`
+	globus_includes=`$GLOBUS_PKG_CONFIG_ENV pkg-config --cflags globus-gssapi-gsi`
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: found" >&5
 $as_echo "found" >&6; }
  else
- # Grid Packaging Tools (GPT)
- GLBlocation_candidates=${globus_location:-/usr/grid}
- if test -n "$globus_flavor"; then
+   # Grid Packaging Tools (GPT)
+   GLBlocation_candidates=${globus_location:-/usr/grid}
+   if test -n "$globus_flavor"; then
 	GLBflavor_candidates="$globus_flavor"
- else
+   else
 	GLBflavor_candidates=
 	if test x"$GCC" = x"yes"; then
 		tmp='gcc vendorcc'
@@ -12085,9 +12093,9 @@ $as_echo "found" >&6; }
 			done
 		done
 	done
- fi
- globus_found=
- for d in ${GLBlocation_candidates}; do
+   fi
+   globus_found=
+   for d in ${GLBlocation_candidates}; do
 	for f in ${GLBflavor_candidates}; do
 		if test -f "$d/include/$f/gssapi.h"; then
 			globus_location=$d
@@ -12097,8 +12105,8 @@ $as_echo "found" >&6; }
 		fi
 	done
 	if test x"$globus_found" = x"yes"; then break; fi
- done
- if test x"$globus_found" != x"yes"; then
+   done
+   if test x"$globus_found" != x"yes"; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: searched directories are: ${GLBlocation_candidates}" >&5
@@ -12111,67 +12119,66 @@ $as_echo "searched flavors are: ${GLBflavor_candidates}" >&6; }
 		as_fn_error $? "cannot automatically find include/\${GLOBUS_FLAVOR}/gssapi.h under ${GLBlocation_candidates}, please specify the flavor by --with-globus-flavor=GLOBUS_FLAVOR" "$LINENO" 5
 	fi
 	exit 1
- fi
- f_pthr=`expr "$globus_flavor" : '.*\(pthr\)'`
- if test x"$f_pthr" != xpthr; then
+   fi
+   f_pthr=`expr "$globus_flavor" : '.*\(pthr\)'`
+   if test x"$f_pthr" != xpthr; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: bad flavor \"$globus_flavor\"" >&5
 $as_echo "bad flavor \"$globus_flavor\"" >&6; }
 	as_fn_error $? "MT-safe flavor required" "$LINENO" 5
 	exit 1
- fi
- { $as_echo "$as_me:${as_lineno-$LINENO}: result: found in \"${globus_location}\" with \"${globus_flavor}\" flavor" >&5
+   fi
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: found in \"${globus_location}\" with \"${globus_flavor}\" flavor" >&5
 $as_echo "found in \"${globus_location}\" with \"${globus_flavor}\" flavor" >&6; }
 
- globus_includes="-I${globus_location}/include/${globus_flavor}"
- if test x"$globus_libdir" = x; then
+   globus_includes="-I${globus_location}/include/${globus_flavor}"
+   if test x"$globus_libdir" = x; then
 	globus_libdir="${globus_location}/lib"
- fi
+   fi
 
- cfgmhtmp=/tmp/cfgmh$$
- { $as_echo "$as_me:${as_lineno-$LINENO}: checking globus library names" >&5
+   cfgmhtmp=/tmp/cfgmh$$
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking globus library names" >&5
 $as_echo_n "checking globus library names... " >&6; }
- if	case ${globus_static} in
+   if	case ${globus_static} in
 	yes)	env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-makefile-header -static -flavor=${globus_flavor} globus_gssapi_gsi;;
 	*)	env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-makefile-header         -flavor=${globus_flavor} globus_gssapi_gsi;;
 	esac > $cfgmhtmp
- then
+   then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: done" >&5
 $as_echo "done" >&6; }
- else
+   else
 	rm -f $cfgmhtmp
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed to call ${globus_location}/bin/globus-makefile-header command." >&5
 $as_echo "failed to call ${globus_location}/bin/globus-makefile-header command." >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Please run \${GPT_LOCATION}/sbin/gpt-postinstall, if it is not invoked yet." >&5
 $as_echo "Please run \${GPT_LOCATION}/sbin/gpt-postinstall, if it is not invoked yet." >&6; }
 	as_fn_error $? "Globus installation is incomplete, aborted." "$LINENO" 5
- fi
- globus_gssapi_libs=`sed -n '/^GLOBUS_PKG_LIBS *=/s///p' $cfgmhtmp`
- rm -f $cfgmhtmp
- case ${globus_static} in
- yes)	:;;
- *)	globus_gssapi_libs="-R${globus_libdir} -L${globus_libdir} $globus_gssapi_libs"
- esac
-
- # replace openssl library with that included in globus
- if test -x ${globus_location}/bin/globus-version; then
-   globus_version=`env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-version`
-   case ${globus_version} in
-   4.0*|3*|2*)
-     openssl_includes="${globus_includes}"
-     case ${globus_static} in
-     yes) openssl_libs="${globus_libdir}/libssl_${globus_flavor}.a ${globus_libdir}/libcrypto_${globus_flavor}.a"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: using globus static library: yes" >&5
-$as_echo "using globus static library: yes" >&6; };;
-     *)	  openssl_libs="-R${globus_libdir} -L${globus_libdir} -lssl_${globus_flavor} -lcrypto_${globus_flavor}"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: using globus static library: no" >&5
-$as_echo "using globus static library: no" >&6; };;
-     esac;;
-   *) # after 4.2.0, globus does not include openssl libarary.
-     ;;
+   fi
+   globus_gssapi_libs=`sed -n '/^GLOBUS_PKG_LIBS *=/s///p' $cfgmhtmp`
+   rm -f $cfgmhtmp
+   case ${globus_static} in
+   yes)	:;;
+   *)	globus_gssapi_libs="-R${globus_libdir} -L${globus_libdir} $globus_gssapi_libs"
    esac
- fi
- # End of Grid Packaging Tools (GPT)
- fi
+
+   # replace openssl library with that included in globus
+   if test -x ${globus_location}/bin/globus-version; then
+     globus_version=`env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-version`
+     case ${globus_version} in
+     4.0*|3*|2*)
+       openssl_includes="${globus_includes}"
+       case ${globus_static} in
+       yes) openssl_libs="${globus_libdir}/libssl_${globus_flavor}.a ${globus_libdir}/libcrypto_${globus_flavor}.a"
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: result: using globus static library: yes" >&5
+$as_echo "using globus static library: yes" >&6; };;
+       *)	  openssl_libs="-R${globus_libdir} -L${globus_libdir} -lssl_${globus_flavor} -lcrypto_${globus_flavor}"
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: result: using globus static library: no" >&5
+$as_echo "using globus static library: no" >&6; };;
+       esac;;
+     *) # after 4.2.0, globus does not include openssl libarary.
+       ;;
+     esac
+   fi
+ fi # End of Grid Packaging Tools (GPT)
 
  # for conditional compilation which depends on whether globus is enabled or not
  globus_srcs='${GLOBUS_SRCS}'
