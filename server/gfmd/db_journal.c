@@ -4379,9 +4379,7 @@ retry_from_locking:
 			gfarm_mutex_unlock(
 			    &journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 
-			giant_lock();
 			(*master_disconnect_request)(NULL);
-			giant_unlock();
 			goto retry_from_locking;
 		}
 	}
