@@ -25,6 +25,7 @@ DOCBOOK = \
 	gfquotacheck.1 \
 	gfreg.1 \
 	gfrep.1 \
+	gfrepcheck.1 \
 	gfrm.1 \
 	gfrmdir.1 \
 	gfsched.1 \
