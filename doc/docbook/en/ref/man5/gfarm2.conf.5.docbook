@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>31 Aug 2017</date></refentryinfo>
+<refentryinfo><date>26 Oct 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -2385,11 +2385,11 @@ When 100 is specified, unnecessary file replicas are not removed.
 The default is 0.
 </para>
 <para>
-The percentage can be dynamically changed by the gfstatus command.  The
-following example changes to 50%.
+The percentage can be dynamically changed by the gfrepcheck command.
+The following example changes to 50%.
 </para>
 <literallayout format="linespecific" class="normal">
-	% gfstatus -Mm "replica_check_remove_grace_used_space_ratio 50"
+	% gfrepcheck remove_grace_used_space_ratio 50
 </literallayout>
 <para>
 This parameter is only available in gfmd.conf.
@@ -2410,11 +2410,11 @@ Unnecessary file replicas are removed only when it is not accessed for
 more than the specified seconds.  The default is 0.
 </para>
 <para>
-The grace time can be dynamically changed by the gfstatus command.
+The grace time can be dynamically changed by the gfrepcheck command.
 The following example changes to 1 week (= 604800 seconds).
 </para>
 <literallayout format="linespecific" class="normal">
-	% gfstatus -Mm "replica_check_remove_grace_time 604800"
+	% gfrepcheck remove_grace_time 604800
 </literallayout>
 <para>
 This parameter is only available in gfmd.conf.
@@ -2431,9 +2431,9 @@ This parameter is only available in gfmd.conf.
 <listitem>
 <para>
 When "enable" is specified, log messages from the replica_check may be
-reduced.  The default value is "enable".  This behavior can be chagned
-by the <command moreinfo="none">gfrepcheck reduced_log</command>
-command in online.
+reduced.  The default value is "enable".  This behavior can be
+dynamically chagned by the
+<command moreinfo="none">gfrepcheck reduced_log</command> command.
 </para>
 <para>
 This parameter is only available in gfmd.conf.
@@ -2451,6 +2451,8 @@ This parameter is only available in gfmd.conf.
 <para>
 This statement specifies an interval to start replica check after a
 gfsd is down.  The default value is 10800 seconds (3 hours).
+This behavior can be dynamically chagned by the
+<command moreinfo="none">gfrepcheck host_down_thresh</command> command.
 </para>
 <para>
 This parameter is only available in gfmd.conf.
@@ -2470,6 +2472,8 @@ This statement specifies the sleep time in nanoseconds during the
 replica check when gfmd is busy.  The default value is 100000
 nanoseconds (0.1 millisecond).  The maximum value is 1000000000
 nanoseconds (1 second).
+This behavior can be dynamically chagned by the
+<command moreinfo="none">gfrepcheck sleep_time</command> command.
 </para>
 <para>
 This parameter is only available in gfmd.conf.
@@ -2487,6 +2491,8 @@ This parameter is only available in gfmd.conf.
 <para>
 This statement specifies the minimum interval in seconds, to start the
 next replica check.  The default value is 10 seconds.
+This behavior can be dynamically chagned by the
+<command moreinfo="none">gfrepcheck minimum_interval</command> command.
 </para>
 <para>
 This parameter is only available in gfmd.conf.
@@ -2864,6 +2870,8 @@ The default size is 16 MiB.
 	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |
 	&lt;replica_check_statement&gt; |
 	&lt;replica_check_remove_statement&gt; |
+	&lt;replica_check_remove_grace_used_space_ratio_statement&gt; |
+	&lt;replica_check_remove_grace_time_statement&gt; |
 	&lt;replica_check_reduced_log_statement&gt; |
 	&lt;replica_check_host_down_thresh_statement&gt; |
 	&lt;replica_check_sleep_time_statement&gt; |
@@ -3499,6 +3507,16 @@ The default size is 16 MiB.
 <varlistentry>
 <term>&lt;replica_check_remove_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"replica_check_remove" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_remove_grace_used_space_ratio_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_remove_grace_used_space_ratio" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_remove_grace_time&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_remove_grace_time" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

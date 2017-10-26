@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>31 Aug 2017</date></refentryinfo>
+<refentryinfo><date>26 Oct 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -2259,14 +2259,32 @@ gfmdが忙しい場合に処理を休む時間をナノ秒で指定します。
 <term><token>replica_check</token> <parameter moreinfo="none">有効性</parameter></term>
 <listitem>
 <para>
-enableと指定した場合、gfmd内のreplica_check機能が
-ファイル複製の数と配置を自動的にチェックし、修復します。
-replica_checkは必要なときにだけ動作します。
+enableと指定した場合、gfmd内のreplica_check機能が、必要なときに自動的に
+ファイル複製の数と配置を監視し、不足しているファイル複製があれば増やします。
 デフォルトはenableです。
 </para>
 <para>
-<command moreinfo="none">gfrepcheck</command>コマンドを使うと、
-この挙動をオンライン状態で変更できます。
+下記のイベントが発生するとreplica_checkが開始します。
+<literallayout format="linespecific" class="normal">
+  - gfsd起動時
+  - gfsd停止からreplica_check_host_down_thresh秒後
+  - gfncopyで複製数設定を変更時
+  - ディレクトリ名変更時、またはファイルを別ディレクトリへ移動時
+    (同一ディレクトリ内で改名した場合は開始しない)
+    (ファイル自身に複製数が設定されている場合は開始しない)
+  - ファイルclose時ファイル複製自動作成要求がエラー時
+  - ファイルclose時ファイル複製自動作成処理中にエラー時
+  - gfsdが忙しくなくなった場合
+    (ロードアベレージがschedule_busy_load_thresh以下に変化時)
+  - replica_check処理中にエラーが起きた場合、チェック完了後にリトライ
+</literallayout>
+</para>
+<para>
+<command moreinfo="none">gfrepcheck</command> コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
+<command moreinfo="none">gfrepcheck enable</command> は即座に開始します。
+<command moreinfo="none">gfrepcheck disable</command> は即座に停止します。
+startはenableと同等、stopはdisableと同等です。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
@@ -2282,16 +2300,16 @@ replica_checkは必要なときにだけ動作します。
 <term><token>replica_check_remove</token> <parameter moreinfo="none">有効性</parameter></term>
 <listitem>
 <para>
-enableと指定した場合、gfmd内のreplica_check機能が
-余剰ファイル複製を自動的に削除します。
-例外として、ファイルにハードリンクが設定されていて (nlink >= 2)、
-そのファイル自身に複製数の設定 (gfarm.ncopy または gfarm.replicainfo)
-がされていない場合、そのファイルの余剰ファイル複製は削除されません。
-デフォルトはenableです。
+<token>replica_check enable</token>の場合に効果があります。enableと指定
+した場合、replica_check機能が余剰ファイル複製を自動的に削除します。例
+外として、ファイルがハードリンクされていて (nlink >= 2)、そのファイル
+自身に複製数の設定 (gfarm.ncopyまたはgfarm.replicainfo)がされていない
+場合、そのファイルの余剰ファイル複製は削除されません。デフォルトは
+enableです。
 </para>
 <para>
-<command moreinfo="none">gfrepcheck remove</command>コマンドを使うと、
-この挙動をオンライン状態で変更できます。
+<command moreinfo="none">gfrepcheck remove</command> コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
@@ -2307,19 +2325,21 @@ enableと指定した場合、gfmd内のreplica_check機能が
 <term><token>replica_check_remove_grace_used_space_ratio</token> <parameter moreinfo="none">パーセント</parameter></term>
 <listitem>
 <para>
-<token>replica_check_remove enable</token>にしている場合でも、なるべく
-余剰ファイル複製を削除せずに残しておくために、猶予容量使用率を指定しま
-す。猶予容量使用率は、gfsdごとのディスク使用率を百分率(パーセント,0か
-ら100の整数)で指定します。ここで指定した使用率を超えたgfsd上にある余剰
-ファイル複製のうち、<token>replica_check_remove_grace_time</token>の時
-間を経過している場合に削除されます。0を指定すると、ディスク使用率に関
-わらず<token>replica_check_remove_grace_time</token>次第で削除されます。
+<token>replica_check_remove</token>が有効な場合に効果があります。
+なるべく余剰ファイル複製を削除せず残しておくために、猶予容量使用率を指
+定します。猶予容量使用率は、gfsdごとのディスク使用率を百分率(パーセン
+ト, 0から100の整数)で指定します。ここで指定した使用率を超えているgfsd上に
+ある余剰ファイル複製のうち、
+<token>replica_check_remove_grace_time</token>の時間を経過している場合
+に削除されます。0を指定すると、ディスク使用率に関わら
+ず<token>replica_check_remove_grace_time</token>次第で削除されます。
 100を指定すると、<token>replica_check_remove disable</token>と同等にな
 ります。デフォルトは0です。
 </para>
 <para>
-<command moreinfo="none">gfstatus -Mm "replica_check_remove_grace_used_space_ratio {値}"</command> コマンドを使うと、
-この挙動をオンライン状態で変更できます。
+<command moreinfo="none">gfrepcheck remove_grace_used_space_ratio</command>
+コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
@@ -2335,15 +2355,17 @@ enableと指定した場合、gfmd内のreplica_check機能が
 <term><token>replica_check_remove_grace_time</token> <parameter moreinfo="none">秒数</parameter></term>
 <listitem>
 <para>
-猶予容量使用率
-が<token>replica_check_remove_grace_used_space_ratio</token>を超えた場
-合に、余剰ファイル複製削除の猶予期間を指定します。猶予期間としてファイ
-ルのアクセス時間(atime)からの経過時間を秒数で指定します。デフォルトは
-0です。
+<token>replica_check_remove</token>が有効な場合に効果があります。
+猶予容量使用率が
+<token>replica_check_remove_grace_used_space_ratio</token>を超えた場
+合に、余剰ファイル複製が削除されるまでの猶予期間を指定します。
+猶予期間としてファイルのアクセス時間(atime)からの経過時間を秒数で指定します。
+デフォルトは0です。
 </para>
 <para>
-<command moreinfo="none">gfstatus -Mm "replica_check_remove_grace_time {値}"</command> コマンドを使うと、
-この挙動をオンライン状態で変更できます。
+<command moreinfo="none">gfrepcheck remove_grace_time</command>
+コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
@@ -2360,12 +2382,12 @@ enableと指定した場合、gfmd内のreplica_check機能が
 <listitem>
 <para>
 enableと指定した場合、
-replica_check機能が出力するログメッセージが抑制されることがあります。
+replica_check機能が出力するログメッセージの数を削減することができます。
 デフォルトはenableです。
 </para>
 <para>
-<command moreinfo="none">gfrepcheck reduced_log</command>コマンドを使うと、
-この挙動をオンライン状態で変更できます。
+<command moreinfo="none">gfrepcheck reduced_log</command> コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
@@ -2381,9 +2403,14 @@ replica_check機能が出力するログメッセージが抑制されること�
 <term><token>replica_check_host_down_thresh</token> <parameter moreinfo="none">秒数</parameter></term>
 <listitem>
 <para>
-gfsdが停止した場合、replica_checkは指定した秒数までそのgfsdが停止してい
-ないとみなします。これはgfsdを保守するために有用です。
-デフォルトは10800秒(3時間)です。
+gfsdが停止した場合、ここで指定した秒数までそのgfsdが停止していない(そ
+のgfsd上のファイル複製は正常である)とreplica_checkがみなします。これは
+gfsdを保守するために有用です。デフォルトは10800秒(3時間)です。
+</para>
+<para>
+<command moreinfo="none">gfrepcheck host_down_thresh</command>
+コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
@@ -2399,11 +2426,19 @@ gfsdが停止した場合、replica_checkは指定した秒数までそのgfsd�
 <term><token>replica_check_sleep_time</token> <parameter moreinfo="none">ナノ秒</parameter></term>
 <listitem>
 <para>
-この値を増やすと、replica_checkはgfmdが忙しい場合に限り、ゆっくり動作します。
+この値を増やすと、gfmdが忙しい場合に限り、replica_checkがゆっくり動作します。
+クライアントからのアクセスへの応答を優先するために有用です。
 gfmdが忙しくない場合、replica_checkは全力で動作します。
-replica_check内でスリープする時間をナノ秒で指定します。
+
+replica_check以外の処理が多いと検出した場合に、replica_checkの処理を一
+時的に停止する時間をナノ秒で指定します。
+
 デフォルトは100000ナノ秒(0.1ミリ秒)です。
 最大値は1000000000ナノ秒(1秒)です。
+</para>
+<para>
+<command moreinfo="none">gfrepcheck sleep_time</command> コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
@@ -2419,9 +2454,13 @@ replica_check内でスリープする時間をナノ秒で指定します。
 <term><token>replica_check_minimum_interval</token> <parameter moreinfo="none">秒</parameter></term>
 <listitem>
 <para>
-replica_checkが動作するための最小間隔(秒)を指定します。
+replica_checkが次回動作するまでの最小間隔(秒)を指定します。
 デフォルトは10秒です。
-つまり、replica_checkは10秒間に最大1回動作することができます。
+</para>
+<para>
+<command moreinfo="none">gfrepcheck minimum_interval</command>
+コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
@@ -2815,6 +2854,8 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |
 	&lt;replica_check_statement&gt; |
 	&lt;replica_check_remove_statement&gt; |
+	&lt;replica_check_remove_grace_used_space_ratio_statement&gt; |
+	&lt;replica_check_remove_grace_time_statement&gt; |
 	&lt;replica_check_reduced_log_statement&gt; |
 	&lt;replica_check_host_down_thresh_statement&gt; |
 	&lt;replica_check_sleep_time_statement&gt; |
@@ -3450,6 +3491,16 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <varlistentry>
 <term>&lt;replica_check_remove_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"replica_check_remove" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_remove_grace_used_space_ratio_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_remove_grace_used_space_ratio" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_remove_grace_time&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_remove_grace_time" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
