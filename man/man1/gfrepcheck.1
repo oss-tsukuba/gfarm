@@ -1,0 +1,72 @@
+'\" t
+.\"     Title: gfrepcheck
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 26 Oct 2017
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFREPCHECK" "1" "26 Oct 2017" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfrepcheck \- control replica_check
+.SH "SYNOPSIS"
+.HP \w'\fBgfrepcheck\fR\ 'u
+\fBgfrepcheck\fR [\-P\ \fIpath\fR] {start(or\ enable) | stop(or\ disable) | status}
+.HP \w'\fBgfrepcheck\fR\ 'u
+\fBgfrepcheck\fR [\-P\ \fIpath\fR] {remove | reduced_log | remove_grace_used_space_ratio | remove_grace_time | host_down_thresh | sleep_time | minimum_interval} {\fIVALUE\fR | status}
+.SH "DESCRIPTION"
+.PP
+Displays the current settings and modifies the settings for replica_check\&.
+.PP
+When "status" is specified as an argument, the current settings are displayed\&. "gfrepcheck status" displays not only the current setting but also the current status of processing\&.
+.PP
+When a value for the configuration directive is specified as an argument, the setting is dynamically changed\&. gfarm2\&.conf should be edited to persist the settings\&.
+.PP
+Please see the manual page of gfarm2\&.conf(5) for details of the following configuration directives\&.
+.PP
+gfrepcheck * : "replica_check" directive
+.PP
+gfrepcheck remove * : "replica_check_remove" directive
+.PP
+gfrepcheck reduced_log * : "replica_check_reduced_log" directive
+.PP
+gfrepcheck remove_grace_used_space_ratio * : "replica_check_remove_grace_used_space_ratio" directive
+.PP
+gfrepcheck remove_grace_time * : "replica_check_remove_grace_time" directive
+.PP
+gfrepcheck host_down_thresh * : "replica_check_host_down_thresh" directive
+.PP
+gfrepcheck sleep_time * : "replica_check_sleep_time" directive
+.PP
+gfrepcheck minimum_interval * : "replica_check_minimum_interval" directive
+.SH "OPTIONS"
+.PP
+\fB\-P\fR \fIpath\fR
+.RS 4
+This option specifies a pathname or a Gfarm URL to identify a metadata server which will be accessed by this command\&. If not specified, "/" is used as the default value\&.
+.RE
+.PP
+\fB\-?\fR
+.RS 4
+Prints usage\&.
+.RE

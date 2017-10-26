@@ -1,0 +1,72 @@
+'\" t
+.\"     Title: gfrepcheck
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 26 Oct 2017
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFREPCHECK" "1" "26 Oct 2017" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfrepcheck \- replica_check の設定を制御する
+.SH "SYNOPSIS"
+.HP \w'\fBgfrepcheck\fR\ 'u
+\fBgfrepcheck\fR [\-P\ \fIpath\fR] {start(or\ enable) | stop(or\ disable) | status}
+.HP \w'\fBgfrepcheck\fR\ 'u
+\fBgfrepcheck\fR [\-P\ \fIpath\fR] {remove | reduced_log | remove_grace_used_space_ratio | remove_grace_time | host_down_thresh | sleep_time | minimum_interval} {\fI値\fR | status}
+.SH "DESCRIPTION"
+.PP
+replica_check に関する各設定状態の取得や、各設定を変更します。
+.PP
+設定項目ごとにstatusを指定すると、現在の設定値を取得できます。 gfrepcheck statusは、現在の設定値だけでなく現在処理中かどうかも表 示します。
+.PP
+設定項目ごとの値を指定すると、設定を動的に(一時的に)変更できま す。設定を永続的に保存するにはgfmd\&.confを編集してください。
+.PP
+設定項目ごとの詳細は、gfarm2\&.confのマニュアルに記載されている 下記項目の説明をそれぞれ参照してください。
+.PP
+gfrepcheck *はreplica_checkの説明を参照してください。
+.PP
+gfrepcheck remove *はreplica_check_removeの説明を参照してくだ さい。
+.PP
+gfrepcheck reduced_log *はreplica_check_reduced_logの説明を参 照してください。
+.PP
+gfrepcheck remove_grace_used_space_ratio *は replica_check_remove_grace_used_space_ratioの説明を参照してくださ い。
+.PP
+gfrepcheck remove_grace_time *は replica_check_remove_grace_timeの説明を参照してください。
+.PP
+gfrepcheck host_down_thresh *はreplica_check_host_down_thresh の説明を参照してください。
+.PP
+gfrepcheck sleep_time *はreplica_check_sleep_timeの説明を参照 してください。
+.PP
+gfrepcheck minimum_interval *はreplica_check_minimum_interval の説明を参照してください。
+.SH "OPTIONS"
+.PP
+\fB\-P\fR \fIパス名\fR
+.RS 4
+このコマンドがアクセスするメタデータサーバを特定するための パス名または Gfarm URL を指定します。 省略した場合は、「/」を指定したのと同じ意味になります。
+.RE
+.PP
+\fB\-?\fR
+.RS 4
+引数オプションを表示します。
+.RE
