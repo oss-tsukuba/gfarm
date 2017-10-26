@@ -283,23 +283,31 @@ AC_ARG_WITH(globus,
 
  # try pkg-config first
  try_pkgconfig=true
- if test -f $globus_libdir/pkgconfig/globus-gssapi-gsi.pc; then
-    GLOBUS_PKG_CONFIG_PATH="env PKG_CONFIG_PATH=$globus_libdir/pkgconfig"
- elif test x"$globus_location" != x; then
-    globus_pkgconfig=`find $globus_location -name globus-gssapi-gsi.pc | head -1`
-    if test x"$globus_pkgconfig" != x; then
-	GLOBUS_PKG_CONFIG_PATH="env PKG_CONFIG_PATH=`dirname $globus_pkgconfig`"
-    else
-	try_pkgconfig=false
-    fi
- fi
- if $try_pkgconfig && $GLOBUS_PKG_CONFIG_PATH pkg-config globus-gssapi-gsi; then
+ if test x"$globus_libdir" != x &&
+      test -f "$globus_libdir/pkgconfig/globus-gssapi-gsi.pc"
+ then
+    GLOBUS_PKG_CONFIG_ENV="env PKG_CONFIG_PATH=$globus_libdir/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
+ elif test x"$globus_location" = x; then
+    : # nothing to do
+ elif test -f "$globus_location/lib/pkgconfig/globus-gssapi-gsi.pc"; then
+    GLOBUS_PKG_CONFIG_ENV="env PKG_CONFIG_PATH=$globus_location/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
+ elif globus_pkg_config=`
+	find $globus_location -name globus-gssapi-gsi.pc -print | head -1`
+      test x"$globus_pkg_config" != x
+ then
+    GLOBUS_PKG_CONFIG_ENV="env PKG_CONFIG_PATH=`dirname $globus_pkg_config`${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
+ else
+    # if --with-globus=DIR is specified, but globus-gssapi-gsi.pc doesn't
+    # exist in the DIR, do not try "pkg-config globus-gssapi-gsi"
+    try_pkgconfig=false
+ fi  
+ if $try_pkgconfig && $GLOBUS_PKG_CONFIG_ENV pkg-config globus-gssapi-gsi; then
 	case ${globus_static} in
 	yes) globus_static=--static;;
 	*)   globus_static=        ;;
 	esac
-	globus_gssapi_libs=`$GLOBUS_PKG_CONFIG_PATH pkg-config ${globus_static} --libs globus-gssapi-gsi`
-	globus_includes=`$GLOBUS_PKG_CONFIG_PATH pkg-config --cflags globus-gssapi-gsi`
+	globus_gssapi_libs=`$GLOBUS_PKG_CONFIG_ENV pkg-config ${globus_static} --libs globus-gssapi-gsi`
+	globus_includes=`$GLOBUS_PKG_CONFIG_ENV pkg-config --cflags globus-gssapi-gsi`
 	AC_MSG_RESULT([found])
  else
    # Grid Packaging Tools (GPT)
