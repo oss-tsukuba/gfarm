@@ -5,6 +5,10 @@ void giant_lock(void);
 int giant_trylock(void);
 void giant_unlock(void);
 
+void config_var_init(void);
+void config_var_lock(void);
+void config_var_unlock(void);
+
 gfarm_error_t create_detached_thread(void *(*)(void *), void *);
 gfarm_error_t gfarm_pthread_set_priority_minimum(const char *);
 

@@ -4025,7 +4025,9 @@ gfm_server_config_set(struct peer *peer, int from_client, int skip)
 		    diag, name, gfarm_config_type_get_format(type), fmt,
 		    gfarm_error_string(e));
 	} else {
+		config_var_lock();
 		e = gfarm_config_copyin(type, &storage);
+		config_var_unlock();
 	}
 
 	giant_unlock();

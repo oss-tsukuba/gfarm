@@ -3875,6 +3875,7 @@ gfarm_config_validate_digest(union gfarm_config_storage *storage)
 	return (gfarm_msgdigest_name_verify(storage->s));
 }
 
+/* These variables require giant_lock() or config_var_lock() in gfmd */
 const struct gfarm_config_type {
 	const char *name;
 	char fmt;

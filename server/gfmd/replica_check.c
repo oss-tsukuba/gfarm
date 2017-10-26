@@ -91,9 +91,9 @@ replica_check_remove_grace_used_space_ratio_locked(void)
 {
 	int rv;
 
-	giant_lock();
+	config_var_lock();
 	rv = gfarm_replica_check_remove_grace_used_space_ratio;
-	giant_unlock();
+	config_var_unlock();
 	return (rv);
 }
 
@@ -102,35 +102,33 @@ replica_check_remove_grace_time_locked(void)
 {
 	int rv;
 
-	giant_lock();
+	config_var_lock();
 	rv = gfarm_replica_check_remove_grace_time;
-	giant_unlock();
+	config_var_unlock();
 	return (rv);
 }
 
-#if 0  /* unused */
 static int
 replica_check_host_down_thresh_locked(void)
 {
 	int rv;
 
-	giant_lock();
+	config_var_lock();
 	rv = gfarm_replica_check_host_down_thresh;
-	giant_unlock();
+	config_var_unlock();
 	if (rv < 0)
 		rv = 0;
 	return (rv);
 }
-#endif
 
 static int
 replica_check_sleep_time_locked(void)
 {
 	int rv;
 
-	giant_lock();
+	config_var_lock();
 	rv = gfarm_replica_check_sleep_time;
-	giant_unlock();
+	config_var_unlock();
 	if (rv < 0)
 		rv = 0;
 	return (rv);
@@ -141,9 +139,9 @@ replica_check_minimum_interval_locked(void)
 {
 	int rv;
 
-	giant_lock();
+	config_var_lock();
 	rv = gfarm_replica_check_minimum_interval;
-	giant_unlock();
+	config_var_unlock();
 	if (rv < 0)
 		rv = 0;
 	return (rv);
@@ -192,10 +190,17 @@ replica_check_remove_grace_is_over(struct inode *inode,
 	    host_name(replica_host), used_space,
 	    gfarm_replica_check_remove_grace_used_space_ratio);
 #endif
+	/*
+	 * gfarm_replica_check_remove_grace_used_space_ratio is
+	 * giant_lock()ed.
+	 */
 	if (used_space <=
 	    (float)gfarm_replica_check_remove_grace_used_space_ratio)
 		return (0);
 
+	/*
+	 * gfarm_replica_check_remove_grace_time is giant_lock()ed.
+	 */
 	grace_time.tv_sec = gfarm_replica_check_remove_grace_time;
 	grace_time.tv_nsec = 0;
 
@@ -261,6 +266,10 @@ replica_check_remove_replicas(struct inode *inode,
 	/* prefer a host which has few disk_avail */
 	host_sort_to_remove_replicas(n_srcs, srcs);
 
+	/*
+	 * gfarm_replica_check_remove_grace_used_space_ratio and
+	 * gfarm_replica_check_remove_grace_time are giant_lock()ed.
+	 */
 	/* shortcut */
 	if (gfarm_replica_check_remove_grace_used_space_ratio <= 0 &&
 	    gfarm_replica_check_remove_grace_time <= 0)
@@ -539,6 +548,7 @@ replica_check_giant_lock(void)
 		lock_sleep_time += .000000001 * sleep_time;
 
 		giant_lock();
+		/* gfarm_replica_check_sleep_time is giant_lock()ed */
 		sleep_time_update(gfarm_replica_check_sleep_time);
 	}
 }
@@ -996,7 +1006,8 @@ replica_check_start_host_down(void)
 {
 	static const char diag[] = "replica_check_start_host_down";
 
-	replica_check_cond_signal(diag, gfarm_replica_check_host_down_thresh);
+	replica_check_cond_signal(diag,
+	    replica_check_host_down_thresh_locked());
 	/* NOTE: execute replica_check_main() twice after restarting gfsd */
 }
 

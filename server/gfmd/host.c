@@ -949,7 +949,7 @@ host_disabled(struct abstract_host *ah, struct peer *peer)
  *  - total_disk_mutex
  *    in abstract_host::ops::disable() == host_disable()
  *    which is called from abstract_host::ops::disable() == host_disable()
- *  - XXX
+ *  - replica_check_mutex and config_var_mutex
  *    in replica_check_signal_host_down()
  *    which is called from abstract_host::ops::disable() == host_disable()
  *  - removal_pendingq:mutex -> dead_file_copy::mutex
@@ -1228,6 +1228,12 @@ host_is_disk_available_filter(struct host *host, void *closure)
 	return (host_is_disk_available(host, *sizep));
 }
 
+/*
+ * PREREQUISITE: giant_lock (for gfarm_replication_busy_host)
+ * LOCKS:
+ *  - host::back_channel_mutex
+ *    in host_is_busy() and host_is_disk_available()
+ */
 gfarm_error_t
 host_is_not_busy_and_disk_available_filter(struct host *host, void *closure)
 {
