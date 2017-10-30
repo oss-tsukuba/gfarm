@@ -2,15 +2,15 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarm2.conf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm2.conf">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfarm2.conf.5"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfarm2.conf — Gfarm configuration file</p>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 gfarm2.conf is a text file that contains a Gfarm configuration.  
@@ -36,11 +36,11 @@ line.  A word beginning with ``#'' causes that word and all remaining
 characters on that line to be ignored.
 </p>
 </div>
-<div class="refsect1" title="Host_specification">
+<div class="refsect1">
 <a name="hostspecification"></a><h2>Host_specification</h2>
 <p><em class="parameter"><code>Host_specification</code></em> has the following
 forms.</p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><em class="parameter"><code>III.JJJ.KKK.LLL</code></em></span></dt>
 <dd><p>Specifies an IP address with four octets from 0 to 255, separated
 by ".".</p></dd>
@@ -55,10 +55,10 @@ from 0 to 31 separated by "/".</p></dd>
 <dd><p>Specifies all hosts.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="Statement">
+<div class="refsect1">
 <a name="statement"></a><h2>Statement</h2>
 <p>The following statements are supported.</p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><span class="token">spool</span> <em class="parameter"><code>directory</code></em></span></dt>
 <dd>
 <p>The <span class="token">spool</span> statement specifies a spool directory
@@ -135,7 +135,7 @@ The possible types of <em class="parameter"><code>cred_type</code></em> are
 And those are used with the <span class="token">spool_server_cred_service</span>
 and <span class="token">spool_server_cred_name</span> statements as follows:
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><span class="token">self</span></span></dt>
 <dd><p>
 This keyword specifies that the certificate that the user currently
@@ -1349,7 +1349,7 @@ For example,
 <p>
 The following actions are supported:
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><span class="token">backtrace_and_abort</span></span></dt>
 <dd><p>
 Print a backtrace, and then call
@@ -1776,11 +1776,11 @@ When 100 is specified, unnecessary file replicas are not removed.
 The default is 0.
 </p>
 <p>
-The percentage can be dynamically changed by the gfstatus command.  The
-following example changes to 50%.
+The percentage can be dynamically changed by the gfrepcheck command.
+The following example changes to 50%.
 </p>
 <div class="literallayout"><p><br>
-	% gfstatus -Mm "replica_check_remove_grace_used_space_ratio 50"<br>
+	% gfrepcheck remove_grace_used_space_ratio 50<br>
 </p></div>
 <p>
 This parameter is only available in gfmd.conf.
@@ -1798,11 +1798,11 @@ Unnecessary file replicas are removed only when it is not accessed for
 more than the specified seconds.  The default is 0.
 </p>
 <p>
-The grace time can be dynamically changed by the gfstatus command.
+The grace time can be dynamically changed by the gfrepcheck command.
 The following example changes to 1 week (= 604800 seconds).
 </p>
 <div class="literallayout"><p><br>
-	% gfstatus -Mm "replica_check_remove_grace_time 604800"<br>
+	% gfrepcheck remove_grace_time 604800<br>
 </p></div>
 <p>
 This parameter is only available in gfmd.conf.
@@ -1816,9 +1816,9 @@ This parameter is only available in gfmd.conf.
 <dd>
 <p>
 When "enable" is specified, log messages from the replica_check may be
-reduced.  The default value is "enable".  This behavior can be chagned
-by the <span class="command"><strong>gfrepcheck reduced_log</strong></span>
-command in online.
+reduced.  The default value is "enable".  This behavior can be
+dynamically chagned by the
+<span class="command"><strong>gfrepcheck reduced_log</strong></span> command.
 </p>
 <p>
 This parameter is only available in gfmd.conf.
@@ -1833,6 +1833,8 @@ This parameter is only available in gfmd.conf.
 <p>
 This statement specifies an interval to start replica check after a
 gfsd is down.  The default value is 10800 seconds (3 hours).
+This behavior can be dynamically chagned by the
+<span class="command"><strong>gfrepcheck host_down_thresh</strong></span> command.
 </p>
 <p>
 This parameter is only available in gfmd.conf.
@@ -1849,6 +1851,8 @@ This statement specifies the sleep time in nanoseconds during the
 replica check when gfmd is busy.  The default value is 100000
 nanoseconds (0.1 millisecond).  The maximum value is 1000000000
 nanoseconds (1 second).
+This behavior can be dynamically chagned by the
+<span class="command"><strong>gfrepcheck sleep_time</strong></span> command.
 </p>
 <p>
 This parameter is only available in gfmd.conf.
@@ -1863,6 +1867,8 @@ This parameter is only available in gfmd.conf.
 <p>
 This statement specifies the minimum interval in seconds, to start the
 next replica check.  The default value is 10 seconds.
+This behavior can be dynamically chagned by the
+<span class="command"><strong>gfrepcheck minimum_interval</strong></span> command.
 </p>
 <p>
 This parameter is only available in gfmd.conf.
@@ -1975,10 +1981,10 @@ gfsd uses this setting at its startup by asking gfmd.
 </dd>
 </dl></div>
 </div>
-<div class="refsect1" title="GRAMMAR">
+<div class="refsect1">
 <a name="grammar"></a><h2>GRAMMAR</h2>
 <p>This is a grammar of gfarm2.conf described by the BNF notation.</p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">&lt;statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p><br>
 	&lt;spool_statement&gt; |<br>
@@ -2088,6 +2094,8 @@ gfsd uses this setting at its startup by asking gfmd.
 	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |<br>
 	&lt;replica_check_statement&gt; |<br>
 	&lt;replica_check_remove_statement&gt; |<br>
+	&lt;replica_check_remove_grace_used_space_ratio_statement&gt; |<br>
+	&lt;replica_check_remove_grace_time_statement&gt; |<br>
 	&lt;replica_check_reduced_log_statement&gt; |<br>
 	&lt;replica_check_host_down_thresh_statement&gt; |<br>
 	&lt;replica_check_sleep_time_statement&gt; |<br>
@@ -2315,6 +2323,10 @@ gfsd uses this setting at its startup by asking gfmd.
 <dd><div class="literallayout"><p>"replica_check" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;replica_check_remove_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"replica_check_remove" &lt;validity&gt;</p></div></dd>
+<dt><span class="term">&lt;replica_check_remove_grace_used_space_ratio_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"replica_check_remove_grace_used_space_ratio" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;replica_check_remove_grace_time&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"replica_check_remove_grace_time" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;replica_check_reduced_log_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"replica_check_reduced_log" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;replica_check_host_down_thresh_statement&gt; ::=</span></dt>
@@ -2379,7 +2391,7 @@ gfsd uses this setting at its startup by asking gfmd.
 <dd><div class="literallayout"><p>"write_verify_log_interval" &lt;number&gt;</p></div></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="EXAMPLES">
+<div class="refsect1">
 <a name="examples"></a><h2>EXAMPLES</h2>
 <p>
 The following is an example of gfarm2.conf to use sharedsecret authentication.
@@ -2429,16 +2441,16 @@ admin_user_gsi_dn "/C=JP/ST=Tokyo/L=Chuo-ku/O=Example, Inc./OU=Example Divisi
 sockopt keepalive<br>
 </p></div>
 </div>
-<div class="refsect1" title="FILES">
+<div class="refsect1">
 <a name="files"></a><h2>FILES</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code></span></dt>
 <dd><p></p></dd>
 <dt><span class="term"><code class="filename">$HOME/.gfarm2rc</code></span></dt>
 <dd><p></p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfmd</span>(8)</span>,

@@ -1,0 +1,62 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfrepcheck</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="gfrepcheck.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfrepcheck — replica_check の設定を制御する</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfrepcheck</code>  [-P <em class="replaceable"><code>path</code></em>] { start(or enable)  |   stop(or disable)  |   status }</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfrepcheck</code>  [-P <em class="replaceable"><code>path</code></em>] { remove  |   reduced_log  |   remove_grace_used_space_ratio  |   remove_grace_time  |   host_down_thresh  |   sleep_time  |   minimum_interval } { <em class="replaceable"><code>値</code></em>  |   status }</p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>replica_check に関する各設定状態の取得や、各設定を変更します。
+  </p>
+<p>設定項目ごとにstatusを指定すると、現在の設定値を取得できます。
+    gfrepcheck statusは、現在の設定値だけでなく現在処理中かどうかも表
+    示します。</p>
+<p>設定項目ごとの値を指定すると、設定を動的に(一時的に)変更できま
+    す。設定を永続的に保存するにはgfmd.confを編集してください。
+    </p>
+<p>設定項目ごとの詳細は、gfarm2.confのマニュアルに記載されている
+    下記項目の説明をそれぞれ参照してください。</p>
+<p>gfrepcheck *はreplica_checkの説明を参照してください。
+  </p>
+<p>gfrepcheck remove *はreplica_check_removeの説明を参照してくだ
+    さい。</p>
+<p>gfrepcheck reduced_log *はreplica_check_reduced_logの説明を参
+    照してください。</p>
+<p>gfrepcheck remove_grace_used_space_ratio *は
+    replica_check_remove_grace_used_space_ratioの説明を参照してくださ
+    い。</p>
+<p>gfrepcheck remove_grace_time *は
+    replica_check_remove_grace_timeの説明を参照してください。</p>
+<p>gfrepcheck host_down_thresh *はreplica_check_host_down_thresh
+    の説明を参照してください。</p>
+<p>gfrepcheck sleep_time *はreplica_check_sleep_timeの説明を参照
+    してください。</p>
+<p>gfrepcheck minimum_interval *はreplica_check_minimum_interval
+    の説明を参照してください。</p>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>パス名</code></em></span></dt>
+<dd><p>
+	このコマンドがアクセスするメタデータサーバを特定するための
+	パス名または Gfarm URL を指定します。
+	省略した場合は、「/」を指定したのと同じ意味になります。
+      </p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>引数オプションを表示します。</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>
