@@ -726,6 +726,7 @@ replica_check_main(void)
 	return (need_to_retry);
 }
 
+/* this function is called from sigs_handler() in gfmd.c */
 void
 replica_check_info(void)
 {
