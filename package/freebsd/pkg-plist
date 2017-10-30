@@ -32,6 +32,7 @@ bin/gfq_setup.sh
 bin/gfrcmd
 bin/gfreg
 bin/gfrep
+bin/gfrepcheck
 bin/gfrm
 bin/gfrmdir
 bin/gfront
@@ -103,6 +104,7 @@ man/ja/man1/gfpwd.1
 man/ja/man1/gfrcmd.1
 man/ja/man1/gfreg.1
 man/ja/man1/gfrep.1
+man/ja/man1/gfrepcheck.1
 man/ja/man1/gfrm.1
 man/ja/man1/gfrmdir.1
 man/ja/man1/gfront.1
@@ -198,6 +200,7 @@ man/man1/gfpwd.1
 man/man1/gfrcmd.1
 man/man1/gfreg.1
 man/man1/gfrep.1
+man/man1/gfrepcheck.1
 man/man1/gfrm.1
 man/man1/gfrmdir.1
 man/man1/gfront.1
@@ -307,6 +310,7 @@ share/doc/gfarm/html/en/ref/man1/gfpwd.1.html
 share/doc/gfarm/html/en/ref/man1/gfrcmd.1.html
 share/doc/gfarm/html/en/ref/man1/gfreg.1.html
 share/doc/gfarm/html/en/ref/man1/gfrep.1.html
+share/doc/gfarm/html/en/ref/man1/gfrepcheck.1.html
 share/doc/gfarm/html/en/ref/man1/gfrm.1.html
 share/doc/gfarm/html/en/ref/man1/gfrmdir.1.html
 share/doc/gfarm/html/en/ref/man1/gfront.1.html
@@ -394,6 +398,7 @@ share/doc/gfarm/html/ja/ref/man1/gfpwd.1.html
 share/doc/gfarm/html/ja/ref/man1/gfrcmd.1.html
 share/doc/gfarm/html/ja/ref/man1/gfreg.1.html
 share/doc/gfarm/html/ja/ref/man1/gfrep.1.html
+share/doc/gfarm/html/ja/ref/man1/gfrepcheck.1.html
 share/doc/gfarm/html/ja/ref/man1/gfrm.1.html
 share/doc/gfarm/html/ja/ref/man1/gfrmdir.1.html
 share/doc/gfarm/html/ja/ref/man1/gfront.1.html

@@ -389,6 +389,7 @@ fi
 %{man_prefix}/man1/gfquotacheck.1.gz
 %{man_prefix}/man1/gfreg.1.gz
 %{man_prefix}/man1/gfrep.1.gz
+%{man_prefix}/man1/gfrepcheck.1.gz
 %{man_prefix}/man1/gfrm.1.gz
 %{man_prefix}/man1/gfrmdir.1.gz
 %{man_prefix}/man1/gfsched.1.gz
@@ -574,6 +575,7 @@ fi
 %{man_prefix}/ja/man1/gfquotacheck.1.gz
 %{man_prefix}/ja/man1/gfreg.1.gz
 %{man_prefix}/ja/man1/gfrep.1.gz
+%{man_prefix}/ja/man1/gfrepcheck.1.gz
 %{man_prefix}/ja/man1/gfrm.1.gz
 %{man_prefix}/ja/man1/gfrmdir.1.gz
 %{man_prefix}/ja/man1/gfsched.1.gz
@@ -738,6 +740,7 @@ fi
 %{html_prefix}/en/ref/man1/gfquotacheck.1.html
 %{html_prefix}/en/ref/man1/gfreg.1.html
 %{html_prefix}/en/ref/man1/gfrep.1.html
+%{html_prefix}/en/ref/man1/gfrepcheck.1.html
 %{html_prefix}/en/ref/man1/gfrm.1.html
 %{html_prefix}/en/ref/man1/gfrmdir.1.html
 %{html_prefix}/en/ref/man1/gfsched.1.html
@@ -929,6 +932,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfquotacheck.1.html
 %{html_prefix}/ja/ref/man1/gfreg.1.html
 %{html_prefix}/ja/ref/man1/gfrep.1.html
+%{html_prefix}/ja/ref/man1/gfrepcheck.1.html
 %{html_prefix}/ja/ref/man1/gfrm.1.html
 %{html_prefix}/ja/ref/man1/gfrmdir.1.html
 %{html_prefix}/ja/ref/man1/gfsched.1.html
