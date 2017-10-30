@@ -1673,6 +1673,7 @@ main(int argc, char **argv)
 	write_pid();
 
 	giant_init();
+	config_var_init();
 
 	/*
 	 * We do this before calling gfarm_daemon()

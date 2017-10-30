@@ -49,6 +49,27 @@ giant_unlock(void)
 	gfarm_mutex_unlock(&giant_mutex, "giant_unlock", "giant");
 }
 
+static pthread_mutex_t config_var_mutex;
+
+void
+config_var_init(void)
+{
+	gfarm_mutex_init(&config_var_mutex, "config_var_init", "config_var");
+}
+
+void
+config_var_lock(void)
+{
+	gfarm_mutex_lock(&config_var_mutex, "config_var_lock", "config_var");
+}
+
+void
+config_var_unlock(void)
+{
+	gfarm_mutex_unlock(&config_var_mutex, "config_var_unlock",
+	    "config_var");
+}
+
 static void
 gfarm_pthread_attr_setstacksize(pthread_attr_t *attr)
 {
