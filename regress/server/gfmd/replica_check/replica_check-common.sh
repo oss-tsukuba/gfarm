@@ -1,28 +1,39 @@
-NCOPY1=3
-NCOPY2=2
-NCOPY_TIMEOUT=20  # sec.
+NCOPY1=3  # NCOPY1 >= 3
+NCOPY2=2  # NCOPY2 < NCOPY1
+NCOPY_TIMEOUT=10  # sec.
 hostgroupfile=/tmp/.hostgroup.$$
 
+MAINCTRL=
+REPREMOVE=
+REDUCED_LOG=
 GRACE_SPACE_RATIO=
 GRACE_TIME=
+HOST_DOWN_THRESH=
+SLEEP_TIME=
+MINIMUM_INTERVAL=
 
 setup_test() {
   . ./regress.conf
   tmpf=$gftmp/foo
   check_supported_env
   trap 'clean_test; exit $exit_trap' $trap_sigs
-  clean_test
+  del_testdir
   gfmkdir $gftmp || exit $exit_fail
   backup_hostgroup
-  backup_grace
+  backup_repcheck_conf
   setup_test_ncopy
   setup_test_repattr
+  setup_test_conf
+}
+
+del_testdir() {
+  gfrm -rf $gftmp
 }
 
 clean_test() {
   restore_hostgroup
-  restore_grace
-  gfrm -rf $gftmp
+  restore_repcheck_conf
+  del_testdir
 }
 
 check_supported_env() {
@@ -58,21 +69,54 @@ restore_hostgroup() {
   fi
 }
 
-backup_grace() {
-  GRACE_SPACE_RATIO=`gfstatus -M "replica_check_remove_grace_used_space_ratio"`
-  GRACE_TIME=`gfstatus -M "replica_check_remove_grace_time"`
+backup_repcheck_conf() {
+  MAINCTRL=`gfrepcheck status | awk '{print $1}'`
+  REPREMOVE=`gfrepcheck remove status`
+  REDUCED_LOG=`gfrepcheck reduced_log status`
+  GRACE_SPACE_RATIO=`gfrepcheck remove_grace_used_space_ratio status`
+  GRACE_TIME=`gfrepcheck remove_grace_time status`
+  HOST_DOWN_THRESH=`gfrepcheck host_down_thresh status`
+  SLEEP_TIME=`gfrepcheck sleep_time status`
+  MINIMUM_INTERVAL=`gfrepcheck minimum_interval status`
+
+  if [ -z "$MAINCTRL" -o -z "$REPREMOVE" -o -z "$REDUCED_LOG" -o \
+       -z "$GRACE_SPACE_RATIO" -o -z "$GRACE_TIME" -o \
+       -z "$HOST_DOWN_THRESH" -o -z "$SLEEP_TIME" -o \
+       -z "MINIMUM_INTERVAL" ]; then
+      echo "gfrepcheck cannot get current status."
+      exit $exit_fail
+  fi
 }
 
-restore_grace() {
-  if [ -n "$GRACE_SPACE_RATIO" ]; then
-    gfstatus -Mm \
-      "replica_check_remove_grace_used_space_ratio $GRACE_SPACE_RATIO"
-    GRACE_SPACE_RATIO=
+restore_common() {
+  CONF=$1
+  VAL=$2
+  if [ -n "$VAL" ]; then
+    if [ -z "$CONF" ]; then
+      gfrepcheck "$VAL"
+    else
+      gfrepcheck "$CONF" "$VAL"
+    fi
   fi
-  if [ -n "$GRACE_TIME" ]; then
-    gfstatus -Mm "replica_check_remove_grace_time $GRACE_TIME"
-    GRACE_TIME=
-  fi
+}
+
+restore_repcheck_conf() {
+  restore_common "" "$MAINCTRL"
+  MAINCTRL=
+  restore_common "remove" "$REPREMOVE"
+  REPREMOVE=
+  restore_common "reduced_log" "$REDUCED_LOG"
+  REDUCED_LOG=
+  restore_common "remove_grace_used_space_ratio" "$GRACE_SPACE_RATIO"
+  GRACE_SPACE_RATIO=
+  restore_common "remove_grace_time" "$GRACE_TIME"
+  GRACE_TIME=
+  restore_common "host_down_thresh" "$HOST_DOWN_THRESH"
+  HOST_DOWN_THRESH=
+  restore_common "sleep_time" "$SLEEP_TIME"
+  SLEEP_TIME=
+  restore_common "minimum_interval" "$MINIMUM_INTERVAL"
+  MINIMUM_INTERVAL=
 }
 
 setup_test_ncopy() {
@@ -103,6 +147,21 @@ setup_test_repattr() {
     exit $exit_fail
   fi
 }
+
+setup_test_conf() {
+  if gfrepcheck enable && \
+     gfrepcheck sleep_time 0 && \
+     gfrepcheck minimum_interval 1 && \
+     gfrepcheck remove enable && \
+     gfrepcheck remove_grace_used_space_ratio 0 && \
+     gfrepcheck remove_grace_time 0; then
+    :
+  else
+    clean_test
+    exit $exit_fail
+  fi
+}
+
 
 wait_for_rep() {
   num=$1

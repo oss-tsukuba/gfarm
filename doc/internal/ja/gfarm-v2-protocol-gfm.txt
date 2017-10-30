@@ -684,6 +684,12 @@
 	  入力: i:ctrl
 	  出力: i:エラー
 
+	GFM_PROTO_REPLICA_CHECK_STATUS
+	  入力: i:status_target
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:status
+
 	GFM_PROTO_FHSET_CKSUM
 	  入力: l:i_node_number, l:generation
 		s:cksum_type, b:cksum

@@ -16,3 +16,4 @@ void replica_check_start_host_is_not_busy(void);
 void replica_check_info(void);
 
 gfarm_error_t gfm_server_replica_check_ctrl(struct peer *, int, int);
+gfarm_error_t gfm_server_replica_check_status(struct peer *, int, int);

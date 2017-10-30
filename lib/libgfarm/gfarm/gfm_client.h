@@ -417,6 +417,13 @@ gfarm_error_t gfm_client_replica_check_ctrl_reduced_log_enable(
 	struct gfm_connection *);
 gfarm_error_t gfm_client_replica_check_ctrl_reduced_log_disable(
 	struct gfm_connection *);
+const char *gfm_client_replica_check_status_string(gfarm_int32_t);
+gfarm_error_t gfm_client_replica_check_status_mainctrl(struct gfm_connection *,
+	gfarm_int32_t *);
+gfarm_error_t gfm_client_replica_check_status_remove(struct gfm_connection *,
+	gfarm_int32_t *);
+gfarm_error_t gfm_client_replica_check_status_reduced_log(
+	struct gfm_connection *, gfarm_int32_t *);
 
 /* replica management from gfsd */
 gfarm_error_t gfm_client_replica_adding_request(struct gfm_connection *,

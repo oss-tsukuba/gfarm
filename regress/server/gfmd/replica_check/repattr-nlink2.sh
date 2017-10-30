@@ -15,11 +15,7 @@ wait_for_rep $NCOPY1 $tmpf false "#1 setup nlink=2"  ### not timeout
 
 # set repattr to the parent dirctory: do not decrease replicas
 set_repattr $NCOPY2 $gftmp
-SAVE_TIMEOUT=$NCOPY_TIMEOUT
-NCOPY_TIMEOUT=12
-# wait 12 sec.
 wait_for_rep $NCOPY2 $tmpf true "#2 parent dir"  ### timeout
-NCOPY_TIMEOUT=$SAVE_TIMEOUT
 
 # set repattr to the file: can decrease replicas
 set_repattr $NCOPY2 $tmpf

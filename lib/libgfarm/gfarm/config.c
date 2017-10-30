@@ -3827,9 +3827,10 @@ const struct gfarm_config_type {
 	{ "replicainfo", 'i', 1, gfarm_config_print_enabled,
 	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
 	  &gfarm_replicainfo_enabled, 0 },
-	{ "replica_check_sleep_time", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
-	  &gfarm_replica_check_sleep_time, 0 },
+	/*
+	 * replica_check, replica_check_remove and replica_check_reduced_log
+	 * are treated in replica_check.c to maintain compatibility.
+	 */
 	{ "replica_check_remove_grace_used_space_ratio", 'i', 1,
 	  gfarm_config_print_int,
 	  gfarm_config_set_default_int, gfarm_config_validate_true,
@@ -3838,6 +3839,15 @@ const struct gfarm_config_type {
 	  gfarm_config_print_int,
 	  gfarm_config_set_default_int, gfarm_config_validate_true,
 	  &gfarm_replica_check_remove_grace_time, 0 },
+	{ "replica_check_host_down_thresh", 'i', 1, gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  &gfarm_replica_check_host_down_thresh, 0 },
+	{ "replica_check_sleep_time", 'i', 1, gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  &gfarm_replica_check_sleep_time, 0 },
+	{ "replica_check_minimum_interval", 'i', 1, gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  &gfarm_replica_check_minimum_interval, 0 },
 	{ "replication_busy_host", 'i', 1, gfarm_config_print_enabled,
 	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
 	  &gfarm_replication_busy_host, 0 },

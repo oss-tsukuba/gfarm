@@ -84,6 +84,70 @@ static int replica_check_ctrl_enabled(void);
 static int replica_check_remove_enabled(void);
 static int replica_check_reduced_log_enabled(void);
 
+static int
+replica_check_remove_grace_used_space_ratio_locked(void)
+{
+	int rv;
+
+	giant_lock();
+	rv = gfarm_replica_check_remove_grace_used_space_ratio;
+	giant_unlock();
+	return (rv);
+}
+
+static int
+replica_check_remove_grace_time_locked(void)
+{
+	int rv;
+
+	giant_lock();
+	rv = gfarm_replica_check_remove_grace_time;
+	giant_unlock();
+	return (rv);
+}
+
+#if 0  /* unused */
+static int
+replica_check_host_down_thresh_locked(void)
+{
+	int rv;
+
+	giant_lock();
+	rv = gfarm_replica_check_host_down_thresh;
+	giant_unlock();
+	if (rv < 0)
+		rv = 0;
+	return (rv);
+}
+#endif
+
+static int
+replica_check_sleep_time_locked(void)
+{
+	int rv;
+
+	giant_lock();
+	rv = gfarm_replica_check_sleep_time;
+	giant_unlock();
+	if (rv < 0)
+		rv = 0;
+	return (rv);
+}
+
+static int
+replica_check_minimum_interval_locked(void)
+{
+	int rv;
+
+	giant_lock();
+	rv = gfarm_replica_check_minimum_interval;
+	giant_unlock();
+	if (rv < 0)
+		rv = 0;
+	return (rv);
+}
+
+
 #define REDUCED_WARN(msg_no, state, ...)				\
 	{								\
 		if (replica_check_reduced_log_enabled())		\
@@ -100,8 +164,9 @@ static int replica_check_reduced_log_enabled(void);
 			gflog_info(msg_no, __VA_ARGS__);		\
 	}
 
-static double lock_sleep_time;
-static double retry_sleep_time;
+static int sleep_time;  /* from gfarm_replica_check_sleep_time */
+static double lock_sleep_time;  /* total */
+static double retry_sleep_time; /* total */
 
 /*
  * 0: The replica should not be removed.
@@ -111,16 +176,11 @@ static int
 replica_check_remove_grace_is_over(struct inode *inode,
 	struct host *replica_host)
 {
-	float used_space;
+	float used_space = host_status_get_disk_usage_percent(replica_host);
 	struct gfarm_timespec *atime = inode_get_atime(inode);
 	struct gfarm_timespec sub;
 	struct gfarm_timespec grace_time;
 	struct timespec now_timespec;
-
-	used_space = host_status_get_disk_usage_percent(replica_host);
-	if (used_space <=
-	    (float)gfarm_replica_check_remove_grace_used_space_ratio)
-		return (0);
 
 #ifdef DEBUG_REPLICA_CHECK
 	RC_LOG_DEBUG(GFARM_MSG_1005013,
@@ -130,6 +190,9 @@ replica_check_remove_grace_is_over(struct inode *inode,
 	    host_name(replica_host), used_space,
 	    gfarm_replica_check_remove_grace_used_space_ratio);
 #endif
+	if (used_space <=
+	    (float)gfarm_replica_check_remove_grace_used_space_ratio)
+		return (0);
 
 	grace_time.tv_sec = gfarm_replica_check_remove_grace_time;
 	grace_time.tv_nsec = 0;
@@ -363,7 +426,7 @@ replica_check_fix(struct replication_info *info)
 	    inode, 1,
 	    info->replica_spec.desired_number, info->replica_spec.repattr,
 	    n_srcs, srcs, &n_existing, existing,
-	    gfarm_replica_check_host_down_thresh,
+	    gfarm_replica_check_host_down_thresh, /* giant_lock()ed */
 	    &n_being_removed, being_removed, diag);
 
 	if (e == GFARM_ERR_NO_ERROR && replica_check_remove_enabled())
@@ -439,20 +502,30 @@ replica_check_stack_pop(struct replication_info *infop)
 }
 
 static void
-replica_check_giant_lock_default(void)
+sleep_time_update(int sec)
+{
+	sleep_time = sec;
+	if (sleep_time > GFARM_SECOND_BY_NANOSEC)
+		sleep_time = GFARM_SECOND_BY_NANOSEC;
+	else if (sleep_time < 0)
+		sleep_time = 0;
+}
+
+static void
+replica_check_giant_lock(void)
 {
 	if (!giant_trylock()) {
 #ifdef DEBUG_REPLICA_CHECK
 		RC_LOG_DEBUG(GFARM_MSG_1004276,
 		    "replica_check: cannot get lock, sleep");
 #endif
-		gfarm_nanosleep(gfarm_replica_check_sleep_time);
-		lock_sleep_time += .000000001 * gfarm_replica_check_sleep_time;
+		gfarm_nanosleep(sleep_time);
+		lock_sleep_time += .000000001 * sleep_time;
+
 		giant_lock();
+		sleep_time_update(gfarm_replica_check_sleep_time);
 	}
 }
-
-static void (*replica_check_giant_lock)(void);
 
 #define YIELD_INTERVAL 0  /* 0: every time */
 static int yield_count = 0;
@@ -469,6 +542,25 @@ replica_check_giant_unlock_yield(void)
 
 static void (*replica_check_giant_unlock)(void) = giant_unlock;
 
+static void
+replica_check_giant_lock_init()
+{
+	gfarm_error_t e;
+
+	e = gfarm_pthread_set_priority_minimum("replica_check");
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_info(GFARM_MSG_1004279,
+		    "replica_check: use sched_yield()");
+		replica_check_giant_unlock = replica_check_giant_unlock_yield;
+	}
+
+	sleep_time_update(replica_check_sleep_time_locked());
+}
+
+/*
+ * these variables are protected by giant lock since they are also
+ * accessed by a signal handler
+ */
 static gfarm_ino_t info_inum, info_table_size;
 static time_t info_time_start;
 
@@ -582,8 +674,8 @@ replica_check_main(void)
 	RC_LOG_INFO(GFARM_MSG_1005015,
 	    "replica_check: remove_grace_used_space_ratio=%s, "
 	    "remove_grace_time=%s",
-	    ENABLE_STR(gfarm_replica_check_remove_grace_used_space_ratio),
-	    ENABLE_STR(gfarm_replica_check_remove_grace_time));
+	    ENABLE_STR(replica_check_remove_grace_used_space_ratio_locked()),
+	    ENABLE_STR(replica_check_remove_grace_time_locked()));
 
 	for (inum = root_inum;;) {
 		if (inum % REPLICA_CHECK_INTERRUPT_STEP == 0 &&
@@ -618,7 +710,7 @@ replica_check_main(void)
 	    lock_sleep_time, retry_sleep_time);
 
 	replica_check_giant_lock();
-	info_time_start = 0;
+	info_time_start = 0;  /* stopped */
 	replica_check_giant_unlock();
 
 	return (need_to_retry);
@@ -689,6 +781,7 @@ replica_check_targets_init(void)
 	return (1);
 }
 
+/* do not call giant_lock() in this */
 static void
 replica_check_targets_add(time_t sec)
 {
@@ -711,9 +804,11 @@ replica_check_targets_add(time_t sec)
 #endif
 }
 
-/* not delete */
+/* do not call giant_lock() in this */
+/* next target is not deleted */
 static int
-replica_check_targets_next(struct timeval *next, const struct timeval *now)
+replica_check_targets_next(struct timeval *next, const struct timeval *now,
+	int minimum_interval)
 {
 	size_t i;
 	struct timeval now2;
@@ -742,7 +837,7 @@ replica_check_targets_next(struct timeval *next, const struct timeval *now)
 	now2 = *now;
 
 	/* integrate near target times */
-	now2.tv_sec += gfarm_replica_check_minimum_interval;
+	now2.tv_sec += minimum_interval;
 
 	/* assert(targets_num >= 2); */
 	for (i = targets_num - 1;; i--) {
@@ -795,11 +890,14 @@ replica_check_cond_wait(void)
 {
 	static const char diag[] = "replica_check_cond_wait";
 	struct timeval next, now;
+	int minimum_interval = replica_check_minimum_interval_locked();
 
 	gfarm_mutex_lock(&replica_check_mutex, diag, REPLICA_CHECK_DIAG);
+	/* do not call giant_lock() in replica_check_mutex */
 	for (;;) {
 		gettimeofday(&now, NULL);
-		if (replica_check_targets_next(&next, &now)) {
+		if (replica_check_targets_next(
+		    &next, &now, minimum_interval)) {
 #ifdef DEBUG_REPLICA_CHECK
 			{
 				struct timeval after;
@@ -833,8 +931,7 @@ replica_check_cond_wait(void)
 		 */
 		gfarm_mutex_unlock(
 		    &replica_check_mutex, diag, REPLICA_CHECK_DIAG);
-		gfarm_nanosleep(
-		    (unsigned long long)gfarm_replica_check_minimum_interval *
+		gfarm_nanosleep((unsigned long long)minimum_interval *
 		    GFARM_SECOND_BY_NANOSEC);
 		gfarm_mutex_lock(
 		    &replica_check_mutex, diag, REPLICA_CHECK_DIAG);
@@ -848,6 +945,7 @@ static void
 replica_check_cond_signal(const char *diag, long sec)
 {
 	gfarm_mutex_lock(&replica_check_mutex, diag, REPLICA_CHECK_DIAG);
+	/* do not call giant_lock() in replica_check_mutex */
 	if (replica_check_initialized) {
 #ifdef DEBUG_REPLICA_CHECK
 		RC_LOG_DEBUG(GFARM_MSG_1003639,
@@ -878,8 +976,7 @@ replica_check_start_host_down(void)
 {
 	static const char diag[] = "replica_check_start_host_down";
 
-	replica_check_cond_signal(
-	    diag, gfarm_replica_check_host_down_thresh);
+	replica_check_cond_signal(diag, gfarm_replica_check_host_down_thresh);
 	/* NOTE: execute replica_check_main() twice after restarting gfsd */
 }
 
@@ -942,6 +1039,7 @@ static int replica_check_ctrl = DISABLE;
 static int replica_check_remove = DISABLE;
 static int replica_check_reduced_log = DISABLE;
 
+/* MAINCTRL */
 static void
 replica_check_ctrl_set(int ctrl)
 {
@@ -961,6 +1059,7 @@ replica_check_ctrl_set(int ctrl)
 	    REPLICA_CHECK_CTRL_DIAG);
 }
 
+/* MAINCTRL */
 static int
 replica_check_ctrl_enabled(void)
 {
@@ -976,6 +1075,7 @@ replica_check_ctrl_enabled(void)
 	return (ctrl == ENABLE);
 }
 
+/* MAINCTRL */
 static void
 replica_check_ctrl_wait(void)
 {
@@ -1093,10 +1193,10 @@ gfm_server_replica_check_ctrl(struct peer *peer, int from_client, int skip)
 		    "replica_check: ctrl=%s",
 		    replica_check_ctrl_string(ctrl));
 		switch (ctrl) {
-		case GFM_PROTO_REPLICA_CHECK_CTRL_START:
+		case GFM_PROTO_REPLICA_CHECK_CTRL_START: /* MAINCTRL */
 			replica_check_ctrl_set(ENABLE);
 			break;
-		case GFM_PROTO_REPLICA_CHECK_CTRL_STOP:
+		case GFM_PROTO_REPLICA_CHECK_CTRL_STOP: /* MAINCTRL */
 			replica_check_ctrl_set(DISABLE);
 			break;
 		case GFM_PROTO_REPLICA_CHECK_CTRL_REMOVE_ENABLE:
@@ -1121,6 +1221,94 @@ gfm_server_replica_check_ctrl(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
+static const char *
+replica_check_status_target_string(gfarm_int32_t status_target)
+{
+	switch (status_target) {
+	case GFM_PROTO_REPLICA_CHECK_STATUS_MAINCTRL:
+		return ("MAINCTRL");
+	case GFM_PROTO_REPLICA_CHECK_STATUS_REMOVE:
+		return ("REMOVE");
+	case GFM_PROTO_REPLICA_CHECK_STATUS_REDUCED_LOG:
+		return ("REDUCED_LOG");
+	default:
+		return ("<UNKNOWN>");
+	}
+}
+
+static gfarm_int32_t
+replica_check_status_mainctrl(void) {
+	gfarm_int32_t rv;
+
+	if (replica_check_ctrl_enabled()) {
+		/* info_time_start needs giant_lock() */
+		if (info_time_start != 0)
+			rv = GFM_PROTO_REPLICA_CHECK_STATUS_ENABLE_RUNNING;
+		else
+			rv = GFM_PROTO_REPLICA_CHECK_STATUS_ENABLE_STOPPED;
+	} else {
+		/* info_time_start needs giant_lock() */
+		if (info_time_start != 0)
+			rv = GFM_PROTO_REPLICA_CHECK_STATUS_DISABLE_RUNNING;
+		else
+			rv = GFM_PROTO_REPLICA_CHECK_STATUS_DISABLE_STOPPED;
+	}
+	return (rv);
+}
+
+gfarm_error_t
+gfm_server_replica_check_status(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_int32_t status_target;
+	gfarm_int32_t status = -1;
+	struct user *user;
+	static const char diag[] = "GFM_PROTO_REPLICA_CHECK_STATUS";
+
+	e = gfm_server_get_request(peer, diag, "i", &status_target);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	giant_lock();
+	if (!from_client || (user = peer_get_user(peer)) == NULL ||
+	    !user_is_admin(user)) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s", gfarm_error_string(e));
+	} else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "replica_check_status: target=%s",
+		    replica_check_status_target_string(status_target));
+		switch (status_target) {
+		case GFM_PROTO_REPLICA_CHECK_STATUS_MAINCTRL:
+			status = replica_check_status_mainctrl();
+			break;
+		case GFM_PROTO_REPLICA_CHECK_STATUS_REMOVE:
+			status = replica_check_remove_enabled() ?
+			    GFM_PROTO_REPLICA_CHECK_STATUS_ENABLE :
+			    GFM_PROTO_REPLICA_CHECK_STATUS_DISABLE;
+			break;
+		case GFM_PROTO_REPLICA_CHECK_STATUS_REDUCED_LOG:
+			status = replica_check_reduced_log_enabled() ?
+			    GFM_PROTO_REPLICA_CHECK_STATUS_ENABLE :
+			    GFM_PROTO_REPLICA_CHECK_STATUS_DISABLE;
+			break;
+		default:
+			e = GFARM_ERR_INVALID_ARGUMENT;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "replica_check_status: %s: target=%d",
+			    gfarm_error_string(e), status_target);
+		}
+	}
+	giant_unlock();
+	if (e != GFARM_ERR_NO_ERROR)
+		e = gfm_server_put_reply(peer, diag, e, "");
+	else
+		e = gfm_server_put_reply(peer, diag, e, "i", status);
+	return (e);
+}
+
 /* workaround for #406 - obsolete replicas remain existing */
 #define DFC_SCAN_INTERVAL 21600 /* 6 hours */
 
@@ -1128,25 +1316,12 @@ static void *
 replica_check_thread(void *arg)
 {
 	time_t dfc_scan_time = 0;
-	gfarm_error_t e;
 
-	e = gfarm_pthread_set_priority_minimum(REPLICA_CHECK_DIAG);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_1004279,
-		    "replica_check: use sched_yield()");
-		replica_check_giant_unlock = replica_check_giant_unlock_yield;
-	}
-
-	if (gfarm_replica_check_sleep_time > 0)
-		replica_check_giant_lock = replica_check_giant_lock_default;
-	else
-		replica_check_giant_lock = giant_lock;
-
-	if (gfarm_replica_check_sleep_time > GFARM_SECOND_BY_NANOSEC)
-		gfarm_replica_check_sleep_time = GFARM_SECOND_BY_NANOSEC;
+	replica_check_giant_lock_init();
 
 	for (;;) {
-		time_t t = time(NULL) + gfarm_replica_check_minimum_interval;
+		time_t t = time(NULL) +
+		    replica_check_minimum_interval_locked();
 
 		replica_check_cond_wait();
 		replica_check_ctrl_wait(); /* if the ctrl is stop, wait here */
