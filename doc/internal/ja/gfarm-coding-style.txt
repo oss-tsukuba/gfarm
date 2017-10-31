@@ -36,6 +36,25 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 	プリフィックスをつけ、ユーザー・アプリケーションのシンボルと
 	重ならないようにします。
 
+	accessor (getter) / mutator (setter) として用いる関数は、それぞれ
+	"オブジェクト型_get_メンバー名()" および
+	"オブジェクト型_set_メンバー名()" という名称とします。
+	例:
+	gfarm_metadb_server_get_clustername()
+	gfarm_metadb_server_set_clustername()
+
+	ただし、mutator を提供せず accessor のみを提供する場合には
+	"オブジェクト型_メンバー名()" という関数名も許します。
+	例:
+	gfp_cached_connection_hostname()
+
+■ 関数引数について
+
+	引数は (入力引数, &入出力引数, &出力引数) の順序とします。
+	ただし構築済のオブジェクト型を対象とするメソッドについては、
+	第一引数に対象オブジェクトを渡し、
+	第二引数以降をこの順序とします。
+
 ■ エラーコードについて
 
 	将来に渡って、決してエラーを返さないことが確定している
