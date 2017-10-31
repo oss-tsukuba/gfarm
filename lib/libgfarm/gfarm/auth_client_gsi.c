@@ -24,6 +24,7 @@
 #include "gfp_xdr.h"
 #include "io_fd.h"
 #include "io_gfsl.h"
+#include "sockopt.h"
 #include "auth.h"
 #include "auth_gsi.h"
 
@@ -118,8 +119,8 @@ gfarm_gsi_acquire_client_credential(const char *hostname,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
-gfarm_auth_request_gsi(struct gfp_xdr *conn,
+static gfarm_error_t
+gfarm_auth_request_gsi_common(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
 	enum gfarm_auth_id_type self_type, const char *user,
 	struct passwd *pwd)
@@ -267,6 +268,39 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	return (e);
 }
 
+static void
+gfarm_auth_gsi_fixup(struct gfp_xdr *conn)
+{
+	/*
+	 * In GSI authentication, small packets are sent frequently,
+	 * which requires TCP_NODELAY for reasonable performance.
+	 */
+	gfarm_error_t e = gfarm_sockopt_set_option(
+	    gfp_xdr_fd(conn), "tcp_nodelay");
+
+	if (e == GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_1003371, "tcp_nodelay is "
+		    "specified for performance in GSI");
+	else
+		gflog_debug(GFARM_MSG_1003372, "tcp_nodelay is "
+		    "specified, but fails: %s",
+		    gfarm_error_string(e));
+}
+
+gfarm_error_t
+gfarm_auth_request_gsi(struct gfp_xdr *conn,
+	const char *service_tag, const char *hostname,
+	enum gfarm_auth_id_type self_type, const char *user,
+	struct passwd *pwd)
+{
+	gfarm_error_t e = gfarm_auth_request_gsi_common(conn,
+	    service_tag, hostname, self_type, user, pwd);
+
+	if (e == GFARM_ERR_NO_ERROR)
+		gfarm_auth_gsi_fixup(conn);
+	return (e);
+}
+
 /*
  * multiplexed version of gfarm_auth_request_gsi() for parallel authentication
  */
@@ -376,8 +410,9 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
 	enum gfarm_auth_id_type self_type, const char *user,
+	struct passwd *pwd,
 	void (*continuation)(void *), void *closure,
-	void **statepp, struct passwd *pwd)
+	void **statepp)
 {
 	gfarm_error_t e;
 	struct gfarm_auth_request_gsi_state *state;
@@ -512,8 +547,8 @@ error_free_state:
 	return (e);
 }
 
-gfarm_error_t
-gfarm_auth_result_gsi_multiplexed(void *sp)
+static gfarm_error_t
+gfarm_auth_result_gsi_multiplexed_common(void *sp)
 {
 	struct gfarm_auth_request_gsi_state *state = sp;
 	gfarm_error_t e = state->error;
@@ -522,6 +557,20 @@ gfarm_auth_result_gsi_multiplexed(void *sp)
 		gfarmGssDeleteName(&state->acceptor_name, NULL, NULL);
 	gfarm_event_free(state->readable);
 	free(state);
+	return (e);
+}
+
+gfarm_error_t
+gfarm_auth_result_gsi_multiplexed(void *sp)
+{
+	struct gfarm_auth_request_gsi_state *state = sp;
+	/* sp will be free'ed in gfarm_auth_result_gsi_multiplexed_common().
+	 * state->conn should be saved before calling it. */
+	struct gfp_xdr *conn = state->conn;
+	gfarm_error_t e = gfarm_auth_result_gsi_multiplexed_common(sp);
+
+	if (e == GFARM_ERR_NO_ERROR)
+		gfarm_auth_gsi_fixup(conn);
 	return (e);
 }
 
@@ -535,7 +584,7 @@ gfarm_auth_request_gsi_auth(struct gfp_xdr *conn,
 	enum gfarm_auth_id_type self_type, const char *user,
 	struct passwd *pwd)
 {
-	gfarm_error_t e = gfarm_auth_request_gsi(conn,
+	gfarm_error_t e = gfarm_auth_request_gsi_common(conn,
 	    service_tag, hostname, self_type, user, pwd);
 
 	if (e == GFARM_ERR_NO_ERROR)
@@ -548,22 +597,23 @@ gfarm_auth_request_gsi_auth_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
 	enum gfarm_auth_id_type self_type, const char *user,
+	struct passwd *pwd,
 	void (*continuation)(void *), void *closure,
-	void **statepp, struct passwd *pwd)
+	void **statepp)
 {
 	return (gfarm_auth_request_gsi_multiplexed(q, conn,
-	    service_tag, hostname, self_type, user,
-	    continuation, closure, statepp, pwd));
+	    service_tag, hostname, self_type, user, pwd,
+	    continuation, closure, statepp));
 }
 
 gfarm_error_t
 gfarm_auth_result_gsi_auth_multiplexed(void *sp)
 {
 	struct gfarm_auth_request_gsi_state *state = sp;
-	/* sp will be free'ed in gfarm_auth_result_gsi_multiplexed().
+	/* sp will be free'ed in gfarm_auth_result_gsi_multiplexed_common().
 	 * state->conn should be saved before calling it. */
 	struct gfp_xdr *conn = state->conn;
-	gfarm_error_t e = gfarm_auth_result_gsi_multiplexed(sp);
+	gfarm_error_t e = gfarm_auth_result_gsi_multiplexed_common(sp);
 
 	if (e == GFARM_ERR_NO_ERROR)
 		gfp_xdr_downgrade_to_insecure_session(conn);

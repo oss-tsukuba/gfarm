@@ -995,8 +995,8 @@ gfmdc_connect(void)
 
 	for (;;) {
 		/* try connecting to multiple destinations */
-		e = gfm_client_connect_with_seteuid(hostname, port,
-		    service_user, &gfm_server, NULL, pwd, 1);
+		e = gfm_client_connect(hostname, port, service_user, pwd, NULL,
+		    &gfm_server);
 		if (e == GFARM_ERR_NO_ERROR)
 			break;
 		gflog_error(GFARM_MSG_1002993,
@@ -1124,8 +1124,8 @@ gfmdc_is_master_gfmd_running(void)
 	free(local_user);
 
 	/* try connecting to multiple destinations */
-	e = gfm_client_connect_with_seteuid(hostname, port,
-	    service_user, &gfm_server, NULL, pwd, 1);
+	e = gfm_client_connect(hostname, port, service_user, pwd, NULL,
+	    &gfm_server);
 	if (e == GFARM_ERR_NO_ERROR) {
 		real_server =
 		    gfm_client_connection_get_real_server(gfm_server);

@@ -36,6 +36,7 @@
 #endif
 
 #include "gfutil.h"
+#include "fdutil.h"
 #include "gfevent.h"
 #include "hash.h"
 #include "lru_cache.h"
@@ -299,6 +300,7 @@ gfs_client_connect_unix(struct sockaddr *peer_addr, int *sockp)
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
 	memset(&peer_un, 0, sizeof(peer_un));
 	/* XXX inet_ntoa() is not MT-safe on some platforms */
@@ -334,60 +336,10 @@ gfs_client_connect_inet(const char *canonical_hostname,
 	struct sockaddr *peer_addr,
 	int *connection_in_progress_p, int *sockp, const char *source_ip)
 {
-	int rv, sock, save_errno;
-	gfarm_error_t e;
-
-	sock = socket(PF_INET, SOCK_STREAM, 0);
-	if (sock == -1 && (errno == ENFILE || errno == EMFILE)) {
-		gfs_client_connection_gc(); /* XXX FIXME: GC all descriptors */
-		sock = socket(PF_INET, SOCK_STREAM, 0);
-	}
-	if (sock == -1) {
-		save_errno = errno;
-		gflog_debug(GFARM_MSG_1001174,
-			"Creation of inet socket failed: %s",
-			strerror(save_errno));
-		return (gfarm_errno_to_error(save_errno));
-	}
-
-	/* XXX - how to report setsockopt(2) failure ? */
-	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, peer_addr);
-
-	/*
-	 * this fcntl should never fail, or even if this fails, that's OK
-	 * because its only effect is that TCP timeout becomes longer.
-	 */
-	fcntl(sock, F_SETFL, O_NONBLOCK);
-
-	if (source_ip != NULL) {
-		e = gfarm_bind_source_ip(sock, source_ip);
-		if (e != GFARM_ERR_NO_ERROR) {
-			close(sock);
-			gflog_debug(GFARM_MSG_1001175,
-				"bind() with inet socket (%s) failed: %s",
-				source_ip,
-				gfarm_error_string(e));
-			return (e);
-		}
-	}
-
-	rv = connect(sock, peer_addr, sizeof(*peer_addr));
-	if (rv < 0) {
-		if (errno != EINPROGRESS) {
-			save_errno = errno;
-			close(sock);
-			gflog_debug(GFARM_MSG_1001176,
-				"connect() with inet socket failed: %s",
-				strerror(save_errno));
-			return (gfarm_errno_to_error(save_errno));
-		}
-		*connection_in_progress_p = 1;
-	} else {
-		*connection_in_progress_p = 0;
-	}
-	fcntl(sock, F_SETFL, 0); /* clear O_NONBLOCK, this should never fail */
-	*sockp = sock;
-	return (GFARM_ERR_NO_ERROR);
+	return (gfarm_nonblocking_connect(PF_INET, SOCK_STREAM, 0,
+	    peer_addr, sizeof(*peer_addr), canonical_hostname, source_ip,
+	    gfs_client_connection_gc /* XXX FIXME: GC all descriptors */,
+	    connection_in_progress_p, sockp));
 }
 
 static gfarm_error_t
@@ -430,7 +382,6 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 			return (e);
 		}
 	}
-	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
 	GFARM_MALLOC(gfs_server);
 	if (gfs_server == NULL) {
@@ -490,7 +441,7 @@ gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 	int failover_count)
 {
 	gfarm_error_t e;
-	int connection_in_progress;
+	int save_errno, connection_in_progress;
 	struct gfs_connection *gfs_server;
 
 	e = gfs_client_connection_alloc(canonical_hostname, peer_addr,
@@ -502,31 +453,16 @@ gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 			gfarm_error_string(e));
 		return (e);
 	}
-	if (connection_in_progress)
-		e = gfarm_connect_wait(gfp_xdr_fd(gfs_server->conn),
-		    gfarm_ctxp->gfsd_connection_timeout);
+	if (connection_in_progress) {
+		save_errno = gfarm_fd_wait(gfp_xdr_fd(gfs_server->conn), 0, 1,
+		    gfarm_ctxp->gfsd_connection_timeout, canonical_hostname);
+		e = gfarm_errno_to_error(save_errno);
+	}
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfarm_auth_request(gfs_server->conn, GFS_SERVICE_TAG,
 		    gfs_server->hostname, peer_addr, gfarm_get_auth_id_type(),
-		    user, &gfs_server->auth_method, NULL);
+		    user, NULL, &gfs_server->auth_method);
 	if (e == GFARM_ERR_NO_ERROR) {
-		/*
-		 * In GSI authentication, small packets are sent frequently,
-		 * which requires TCP_NODELAY for reasonable performance.
-		 */
-		if (gfs_server->auth_method == GFARM_AUTH_METHOD_GSI) {
-			gfarm_error_t e1 = gfarm_sockopt_set_option(
-			    gfp_xdr_fd(gfs_server->conn), "tcp_nodelay");
-
-			if (e1 == GFARM_ERR_NO_ERROR)
-				gflog_debug(GFARM_MSG_1003373, "tcp_nodelay "
-				    "is specified for performance in GSI");
-			else
-				gflog_debug(GFARM_MSG_1003374, "tcp_nodelay "
-				    "is specified, but fails: %s",
-				    gfarm_error_string(e1));
-		}
-
 #ifdef HAVE_INFINIBAND
 		if (!gfs_server->is_local) {
 			/* not __KERNEL__, no need to lock */
@@ -1034,29 +970,10 @@ static void
 gfs_client_connect_end_auth(void *closure)
 {
 	struct gfs_client_connect_state *state = closure;
-	gfarm_error_t e;
 
 	state->error = gfarm_auth_result_multiplexed(
 	    state->auth_state,
 	    &state->gfs_server->auth_method);
-	if (state->error == GFARM_ERR_NO_ERROR) {
-		/*
-		 * In GSI authentication, small packets are sent frequently,
-		 * which requires TCP_NODELAY for reasonable performance.
-		 */
-		if (state->gfs_server->auth_method == GFARM_AUTH_METHOD_GSI) {
-			e = gfarm_sockopt_set_option(
-			    gfp_xdr_fd(state->gfs_server->conn), "tcp_nodelay");
-			if (e == GFARM_ERR_NO_ERROR)
-				gflog_debug(GFARM_MSG_1003375, "tcp_nodelay "
-				    "is specified for performance in GSI");
-			else
-				gflog_debug(GFARM_MSG_1003376, "tcp_nodelay "
-				    "is specified, but fails: %s",
-				    gfarm_error_string(e));
-		}
-
-	}
 	if (state->continuation != NULL)
 		(*state->continuation)(state->closure);
 }
@@ -1066,13 +983,9 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 	const struct timeval *t)
 {
 	struct gfs_client_connect_state *state = closure;
-	int error;
-	socklen_t error_size = sizeof(error);
-	int rv = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &error_size);
+	int error = gfarm_socket_get_errno(fd);
 
-	if (rv == -1) { /* Solaris, see UNP by rstevens */
-		state->error = gfarm_errno_to_error(errno);
-	} else if (error != 0) {
+	if (error != 0) {
 		state->error = gfarm_errno_to_error(error);
 	} else { /* successfully connected */
 		state->error = gfarm_auth_request_multiplexed(state->q,
@@ -1080,9 +993,9 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 		    state->gfs_server->hostname,
 		    &state->peer_addr,
 		    gfarm_get_auth_id_type(),
-		    gfs_client_username(state->gfs_server),
+		    gfs_client_username(state->gfs_server), NULL,
 		    gfs_client_connect_end_auth, state,
-		    &state->auth_state, NULL);
+		    &state->auth_state);
 		if (state->error == GFARM_ERR_NO_ERROR) {
 			/*
 			 * call auth_request,
@@ -1209,9 +1122,9 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 		e = gfarm_auth_request_multiplexed(q,
 		    gfs_server->conn, GFS_SERVICE_TAG,
 		    gfs_server->hostname, &state->peer_addr,
-		    gfarm_get_auth_id_type(), user,
+		    gfarm_get_auth_id_type(), user, NULL,
 		    gfs_client_connect_end_auth, state,
-		    &state->auth_state, NULL);
+		    &state->auth_state);
 		if (e == GFARM_ERR_NO_ERROR) {
 			*statepp = state;
 			/*

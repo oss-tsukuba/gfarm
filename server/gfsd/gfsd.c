@@ -786,8 +786,8 @@ connect_gfm_server0(int n_config_vars, void **config_vars, const char *diag)
 
 	for (;;) {
 		e = gfm_client_connect(gfarm_ctxp->metadb_server_name,
-		    gfarm_ctxp->metadb_server_port, GFSD_USERNAME,
-		    &gfm_server, listen_addrname);
+		    gfarm_ctxp->metadb_server_port, GFSD_USERNAME, NULL,
+		    listen_addrname, &gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_reduced_notice(GFARM_MSG_1004101, &connlog,
 			    "%s: connecting to gfmd at %s:%d failed, "

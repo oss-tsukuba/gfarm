@@ -15,8 +15,8 @@ gfarm_error_t gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *,
 	struct gfarm_metadb_server **, int);
 struct gfarm_metadb_server **gfarm_filesystem_get_metadb_server_list(
 	struct gfarm_filesystem *, int *);
-struct gfarm_metadb_server *gfarm_filesystem_get_metadb_server_first(
-	struct gfarm_filesystem *);
+struct gfarm_metadb_server *gfarm_filesystem_get_metadb_server(
+	struct gfarm_filesystem *, const char *, int);
 int gfarm_filesystem_is_initialized(void);
 struct gfs_file_list *gfarm_filesystem_opened_file_list(
 	struct gfarm_filesystem *);

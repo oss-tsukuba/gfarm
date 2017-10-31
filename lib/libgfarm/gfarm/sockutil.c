@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <errno.h>
-#include <sys/time.h>
-#include <sys/select.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
@@ -10,57 +10,13 @@
 #include <gfarm/error.h>
 #include <gfarm/gflog.h>
 
+#include "gfutil.h"
 #include "gfnetdb.h"
 
+#include "sockopt.h"
 #include "sockutil.h"
 
-gfarm_error_t
-gfarm_connect_wait(int s, int timeout_seconds)
-{
-	fd_set wset;
-	struct timeval timeout;
-	int rv, error, save_errno;
-	socklen_t error_size;
-
-	for (;;) {
-		FD_ZERO(&wset);
-		FD_SET(s, &wset);
-		timeout.tv_sec = timeout_seconds;
-		timeout.tv_usec = 0;
-
-		/* XXX shouldn't use select(2), since wset may overflow. */
-		rv = select(s + 1, NULL, &wset, NULL, &timeout);
-		if (rv == 0)
-			return (gfarm_errno_to_error(ETIMEDOUT));
-		if (rv < 0) {
-			if (errno == EINTR)
-				continue;
-			save_errno = errno;
-			gflog_debug(GFARM_MSG_1001458, "select() failed: %s",
-				strerror(save_errno));
-			return (gfarm_errno_to_error(save_errno));
-		}
-		break;
-	}
-
-	error_size = sizeof(error);
-	rv = getsockopt(s, SOL_SOCKET, SO_ERROR, &error, &error_size);
-	if (rv == -1) {
-		save_errno = errno;
-		gflog_debug(GFARM_MSG_1001459, "getsocket() failed: %s",
-			strerror(save_errno));
-		return (gfarm_errno_to_error(save_errno));
-	}
-	if (error != 0) {
-		gflog_debug(GFARM_MSG_1001460,
-			"error occurred at socket: %s",
-			gfarm_error_string(gfarm_errno_to_error(error)));
-		return (gfarm_errno_to_error(error));
-	}
-	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
+static gfarm_error_t
 gfarm_bind_source_ip(int sock, const char *source_ip)
 {
 	struct addrinfo shints, *sres;
@@ -87,5 +43,66 @@ gfarm_bind_source_ip(int sock, const char *source_ip)
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_nonblocking_connect(int proto_family, int sock_type, int protocol,
+	struct sockaddr *addr, socklen_t addrlen,
+	const char *canonical_hostname,
+	const char *source_ip, void (*descriptor_gc)(void),
+	int *connection_in_progress_p, int *sockp)
+{
+	gfarm_error_t e;
+	int sock, rv, save_errno, connection_in_progress;
+
+	sock = socket(proto_family, sock_type, protocol);
+	if (sock == -1 && (errno == ENFILE || errno == EMFILE)) {
+		(*descriptor_gc)();
+		sock = socket(proto_family, sock_type, protocol);
+	}
+	if (sock == -1) {
+		save_errno = errno;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "creation of socket(%d, %d, %d) failed: %s",
+		    proto_family, sock_type, protocol, strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
+	}
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
+	fcntl(sock, F_SETFL, O_NONBLOCK); /* this should never fail */
+
+	/* XXX - how to report setsockopt(2) failure ? */
+	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, addr);
+
+	if (source_ip != NULL) {
+		e = gfarm_bind_source_ip(sock, source_ip);
+		if (e != GFARM_ERR_NO_ERROR) {
+			close(sock);
+			gflog_debug(GFARM_MSG_1001095,
+			    "bind(%s) failed: %s",
+			    source_ip, gfarm_error_string(e));
+			return (e);
+		}
+	}
+
+	rv = connect(sock, addr, addrlen);
+	if (rv < 0) {
+		if (errno != EINPROGRESS) {
+			save_errno = errno;
+			close(sock);
+			gflog_debug(GFARM_MSG_1001096, "connect failed: %s",
+			    strerror(save_errno));
+			return (gfarm_errno_to_error(save_errno));
+		}
+		/* returns GFARM_ERR_NO_ERROR, if EINPROGRESS */
+		connection_in_progress = 1;
+	} else {
+		connection_in_progress = 0;
+	}
+	fcntl(sock, F_SETFL, 0); /* clear O_NONBLOCK, this should never fail */
+
+	if (connection_in_progress_p != NULL)
+		*connection_in_progress_p = connection_in_progress;
+	*sockp = sock;
 	return (GFARM_ERR_NO_ERROR);
 }

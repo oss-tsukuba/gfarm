@@ -390,11 +390,29 @@ gfarm_filesystem_get_metadb_server_list(struct gfarm_filesystem *fs, int *np)
 	return (fs->servers);
 }
 
-struct gfarm_metadb_server*
-gfarm_filesystem_get_metadb_server_first(struct gfarm_filesystem *fs)
+struct gfarm_metadb_server *
+gfarm_filesystem_get_metadb_server(struct gfarm_filesystem *fs,
+	const char *hostname, int port)
 {
+	int i;
+
 	assert(fs->nservers > 0);
-	return (fs->servers[0]);
+
+	for (i = 0; i < fs->nservers; ++i) {
+		if (strcasecmp(gfarm_metadb_server_get_name(fs->servers[i]),
+		    hostname) == 0 &&
+		    gfarm_metadb_server_get_port(fs->servers[i]) == port)
+			return (fs->servers[i]);
+	}
+
+	/* XXX FIXME staticp->ms2fs_hashtab currently only checks hostname */
+	for (i = 0; i < fs->nservers; ++i) {
+		if (strcasecmp(gfarm_metadb_server_get_name(fs->servers[i]),
+		    hostname) == 0)
+			return (fs->servers[i]);
+	}
+
+	return (NULL);
 }
 
 struct gfs_file_list *
