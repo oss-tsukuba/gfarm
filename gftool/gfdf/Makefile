@@ -7,8 +7,8 @@ srcdir = .
 include $(top_srcdir)/makes/var.mk
 
 PROGRAM = gfdf
-SRCS = gfdf_simple.c
-OBJS = gfdf_simple.o
+SRCS = gfdf.c
+OBJS = gfdf.o
 CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR) $(openssl_includes)
 LDLIBS = $(COMMON_LDLIBS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
