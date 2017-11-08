@@ -19,6 +19,7 @@
 
 #if 0
 
+#include <pthread.h>
 #include <unistd.h>
 
 double gfarm_timerval_calibration;
@@ -32,8 +33,8 @@ gfarm_get_cycles(void)
 	return (rv);
 }
 
-void
-gfarm_timerval_calibrate(void)
+static void
+gfarm_timerval_calibrate_once(void)
 {
 	gfarm_timerval_t t1, t2;
 	struct timeval s1, s2;
@@ -52,6 +53,14 @@ gfarm_timerval_calibrate(void)
 		((s2.tv_sec - s1.tv_sec) +
 		 (s2.tv_usec - s1.tv_usec) * .000001) /
 		(t2 - t1);
+}
+
+void
+gfarm_timerval_calibrate(void)
+{
+	static pthread_once_t calibrated = PTHREAD_ONCE_INIT;
+
+	pthread_once(&calibrated, gfarm_timerval_calibrate_once);
 }
 
 #else /* gettimeofday */
