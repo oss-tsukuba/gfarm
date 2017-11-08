@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* sprintf */
 #include <ctype.h>
+#include <time.h>
 #include <sys/time.h>
 #include <pthread.h>
 #include <errno.h>
@@ -5577,6 +5578,9 @@ file_replicating_new(struct inode *inode, struct host *dst,
 	fr->igen = inode_get_gen(inode);
 	fr->cleanup = deferred_cleanup;
 
+	/* record this always, because gfarm_ctxp->profile may be changed */
+	gfarm_gettime(&fr->queue_time);
+
 	*frp = fr;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -5653,6 +5657,24 @@ inode_replicated(struct file_replicating *fr,
 	int transaction = 0;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	static const char diag[] = "inode_replicated";
+
+	/* log even if generation updated */
+	if (src_errcode == GFARM_ERR_NO_ERROR &&
+	    dst_errcode == GFARM_ERR_NO_ERROR &&
+	    gfarm_ctxp->profile) {
+		struct timespec now;
+		double t;
+
+		gfarm_gettime(&now);
+		t = now.tv_sec - fr->queue_time.tv_sec +
+		    (double)(now.tv_nsec - fr->queue_time.tv_nsec)
+		    / GFARM_SECOND_BY_NANOSEC;
+		gflog_info(GFARM_MSG_UNFIXED, "inode %lld:%lld to %s: "
+		    "size %lld time %g second speed %g Mb/s",
+		    (long long)inode_get_number(inode),
+		    (long long)fr->igen, host_name(fr->dst), (long long)size,
+		     t, t != 0 ? size / t : 0.0);
+	}
 
 	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 		transaction = 1;
