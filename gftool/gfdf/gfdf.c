@@ -298,7 +298,7 @@ statfsnode(const char *path, const char *domain,
 	for (i = 0; i < n_host_info; i++) {
 		gfarm_int32_t bsize;
 		gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
-		
+
 		hi = &host_info[i];
 		e = gfs_statfsnode_by_path(path, hi->hostname, hi->port,
 		    &bsize, &blocks, &bfree, &bavail, &files, &ffree, &favail);
@@ -767,5 +767,5 @@ main(int argc, char *argv[])
 	}
 	if (ndisplayed == 0)
 		exit(1);
-	exit (0);
+	exit(0);
 }
