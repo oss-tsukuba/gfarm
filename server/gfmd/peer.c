@@ -55,6 +55,17 @@
 #include "protocol_state.h"
 
 
+static int
+simultaneous_replication_receivers_limit(void)
+{
+	int rv;
+
+	config_var_lock();
+	rv = gfarm_simultaneous_replication_receivers;
+	config_var_unlock();
+	return (rv);
+}
+
 /*
  * peer_watcher
  */
@@ -288,7 +299,7 @@ peer_replicating_new(struct peer *peer, struct host *dst,
 
 	gfarm_mutex_lock(&peer->replication_mutex, diag, replication_diag);
 	if (peer->simultaneous_replication_receivers >=
-	    gfarm_simultaneous_replication_receivers) {
+	    simultaneous_replication_receivers_limit()) {
 		free(fr);
 		fr = NULL;
 	} else {
