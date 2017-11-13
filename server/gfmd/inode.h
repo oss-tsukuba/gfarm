@@ -141,17 +141,17 @@ gfarm_error_t inode_schedule_replication_within_scope(
 	int, struct host **, int *,
 	int *, struct host **,
 	int *, struct host **, gfarm_time_t,
-	int *, struct host **, const char *);
+	int *, struct host **, const char *, int *);
 gfarm_error_t inode_schedule_replication_from_all(
 	struct inode *, int,
 	int, struct host **,
 	int *, struct host **, gfarm_time_t,
-	int *, struct host **, const char *);
+	int *, struct host **, const char *, int *);
 gfarm_error_t inode_schedule_replication(
 	struct inode *, int, int, const char *,
 	int, struct host **,
 	int *, struct host **, gfarm_time_t,
-	int *, struct host **, const char *);
+	int *, struct host **, const char *, int *);
 
 gfarm_error_t inode_open(struct file_opening *);
 void inode_close(struct file_opening *, char **, const char *);
