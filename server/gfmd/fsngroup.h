@@ -15,7 +15,7 @@ gfarm_error_t fsngroup_schedule_replication(
 	struct inode *, struct dirset *tdirset,
 	const char *, int, struct host **,
 	int *, struct host **, gfarm_time_t, int *, struct host **,
-	const char *, int *);
+	const char *, int *, int *);
 
 /*
  * Server side RPC stubs:
