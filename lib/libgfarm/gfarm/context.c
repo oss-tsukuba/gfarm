@@ -154,7 +154,7 @@ gfarm_context_init(void)
 		ctxp->getpw_r_bufsz = BUFSIZE_MAX;
 
 	/* gfs_profile.c */
-	ctxp->profile = 0;
+	ctxp->profile = GFARM_CONFIG_MISC_DEFAULT;
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(module_entries); i++) {
 		e = (module_entries[i].init)(ctxp);
