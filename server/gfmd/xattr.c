@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <errno.h>
+#include <time.h>
 #include <sys/types.h> /* fd_set for "filetab.h" */
 
 #include <gfarm/gfarm.h>
