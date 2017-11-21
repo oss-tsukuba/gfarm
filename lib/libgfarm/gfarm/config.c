@@ -1075,6 +1075,7 @@ int gfarm_metadb_stack_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_thread_pool_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_job_queue_length = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_remover_queue_length = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_remove_scan_time_inverse_ratio = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_heartbeat_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_dbq_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_server_back_channel_sndbuf_limit = GFARM_CONFIG_MISC_DEFAULT;
@@ -3300,6 +3301,10 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_metadb_job_queue_length);
 	} else if (strcmp(s, o = "metadb_server_remover_queue_length") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_remover_queue_length);
+	} else if (strcmp(s,
+	    o = "metadb_server_remove_scan_time_inverse_ratio") == 0) {
+		e = parse_set_misc_int(p,
+		    &gfarm_metadb_remove_scan_time_inverse_ratio);
 	} else if (strcmp(s, o = "metadb_server_heartbeat_interval") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_heartbeat_interval);
 	} else if (strcmp(s, o = "metadb_server_dbq_size") == 0) {
@@ -3678,6 +3683,10 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_metadb_heartbeat_interval == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_heartbeat_interval =
 		    GFARM_METADB_HEARTBEAT_INTERVAL_DEFAULT;
+	if (gfarm_metadb_remove_scan_time_inverse_ratio
+	    == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_metadb_remove_scan_time_inverse_ratio =
+		    GFARM_METADB_REMOVE_SCAN_TIME_INVERSE_RATIO_DEFAULT;
 	if (gfarm_metadb_dbq_size == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_dbq_size = GFARM_METADB_DBQ_SIZE_DEFAULT;
 	if (gfarm_metadb_replica_remover_by_host_sleep_time
@@ -3820,6 +3829,12 @@ gfarm_config_validate_false(union gfarm_config_storage *storage)
 }
 
 int
+gfarm_config_validate_positive_int(union gfarm_config_storage *storage)
+{
+	return (storage->i > 0);
+}
+
+int
 gfarm_config_validate_max_directory_depth(union gfarm_config_storage *storage)
 {
 	/*
@@ -3920,42 +3935,43 @@ const struct gfarm_config_type {
 	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
 	  &gfarm_write_verify, 0 },
 	{ "write_verify_interval", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
 	  &gfarm_write_verify_interval, 0 },
 	{ "write_verify_retry_interval", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
 	  &gfarm_write_verify_retry_interval, 0 },
 	{ "write_verify_log_interval", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
 	  &gfarm_write_verify_log_interval, 0 },
 	{ "direct_local_access", 'i', 0, gfarm_config_print_enabled,
 	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
 	  NULL, offsetof(struct gfarm_context, direct_local_access) },
-	{ "simultaneous_replication_receivers", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
-	  &gfarm_simultaneous_replication_receivers, 0 },
 	{ "client_digest_check", 'i', 0, gfarm_config_print_enabled,
 	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
 	  NULL, offsetof(struct gfarm_context, client_digest_check) },
 	{ "client_file_bufsize", 'i', 0, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
 	  NULL, offsetof(struct gfarm_context, client_file_bufsize) },
 	{ "max_open_files", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
 	  &gfarm_max_open_files, 0 },
 	{ "directory_quota_count_per_user_limit", 'i', 1,
 	  gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
 	  &gfarm_directory_quota_count_per_user_limit, 0 },
 	{ "directory_quota_check_start_delay", 'i', 1,
 	  gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
 	  &gfarm_directory_quota_check_start_delay, 0 },
 	{ "max_directory_depth", 'i', 1,
 	  gfarm_config_print_int,
 	  gfarm_config_set_default_int,
 	  gfarm_config_validate_max_directory_depth,
 	  &gfarm_max_directory_depth, 0 },
+	{ "metadb_server_remove_scan_time_inverse_ratio", 'i', 1,
+	  gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
+	  &gfarm_metadb_remove_scan_time_inverse_ratio, 0 },
 	{ "profile", 'i', 1, gfarm_config_print_enabled,
 	  gfarm_config_set_default_enabled, gfarm_config_validate_profile,
 	  NULL, offsetof(struct gfarm_context, profile) },
