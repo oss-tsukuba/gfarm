@@ -554,6 +554,15 @@ dead_file_copy_lookup(gfarm_ino_t inum, gfarm_uint64_t igen, struct host *host,
 	return (found ? dfc : NULL);
 }
 
+static struct gfarm_timespec remove_scan_log_time = { 0, 0 };
+static struct gfarm_timespec remove_scan_max_time = { 0, 0 };
+static struct gfarm_timespec remove_scan_total_time = { 0, 0 };
+static unsigned long long remove_scan_max_process_count = 0;
+static unsigned long long remove_scan_max_scan_count = 0;
+static unsigned long long remove_scan_total_process_count = 0;
+static unsigned long long remove_scan_total_scan_count = 0;
+static unsigned long long remove_scan_total_calls = 0;
+
 /*
  * PREREQUISITE: giant_lock
  * LOCKS: dfc_allq.mutex, removal_pendingq.mutex
@@ -563,7 +572,7 @@ dead_file_copy_lookup(gfarm_ino_t inum, gfarm_uint64_t igen, struct host *host,
  *
  * dead_file_copy_is_removable() needs giant_lock, and may sleep.
  */
-static void
+static long long
 dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
 	int (*filter)(struct dead_file_copy *, gfarm_ino_t, struct host *),
 	const char *diag)
@@ -572,6 +581,11 @@ dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
 	time_t now = time(NULL);
 	int busy, already_removed;
 	enum dead_file_copy_state state;
+	struct timespec t1, t2;
+	struct gfarm_timespec gt1, gt2, elapsed, next_log_time;
+	unsigned long long process_count = 0, scan_count = 0;
+
+	gfarm_gettime(&t1);
 
 	gfarm_mutex_lock(&dfc_allq.mutex, diag, "lock");
 
@@ -579,6 +593,7 @@ dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
 	for (dfc = dfc_allq.q.allq_next; dfc != &dfc_allq.q;
 	     dfc = dfc->allq_next) {
 
+		++scan_count;
 		gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
 		state = dfc->state;
 		gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
@@ -602,6 +617,7 @@ dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
 		gfarm_mutex_unlock(&dfc_allq.mutex,
 		    diag, "unlock before sleeping");
 
+		++process_count;
 		if (already_removed) {
 			removal_finishedq_enqueue(dfc, GFARM_ERR_NO_ERROR);
 		} else {
@@ -615,6 +631,64 @@ dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
 	}
 
 	gfarm_mutex_unlock(&dfc_allq.mutex, diag, "unlock");
+
+	/* the static variables below are protected by giant_lock */
+
+	gfarm_gettime(&t2);
+	gt1.tv_sec = t1.tv_sec; gt1.tv_nsec = t1.tv_nsec;
+	gt2.tv_sec = t2.tv_sec; gt2.tv_nsec = t2.tv_nsec;
+
+	elapsed = gt2;
+	gfarm_timespec_sub(&elapsed, &gt1);
+
+	if (gfarm_timespec_cmp(&remove_scan_max_time, &elapsed) < 0) {
+		remove_scan_max_time = elapsed;
+		remove_scan_max_process_count = process_count;
+		remove_scan_max_scan_count = scan_count;
+	}
+
+	gfarm_timespec_add(&remove_scan_total_time, &elapsed);
+	remove_scan_total_process_count += process_count;
+	remove_scan_total_scan_count += scan_count;
+	remove_scan_total_calls++;
+
+	/*
+	 * calculate next_log_time here to immediately reflect the change to
+	 * gfarm_metadb_remove_scan_log_interval by "gfstatus -Mm"
+	 */
+	next_log_time = remove_scan_log_time;
+	next_log_time.tv_sec += gfarm_metadb_remove_scan_log_interval;
+	if (gfarm_timespec_cmp(&gt2, &next_log_time) >= 0) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "dead_file_copy scan: "
+		    "max: %g seconds (%llu scans %llu processed), "
+		    "%llu times average: %g seconds (%g scans %g processed)",
+		    remove_scan_max_time.tv_sec +
+		    (double)remove_scan_max_time.tv_nsec
+		    / GFARM_SECOND_BY_NANOSEC,
+		    remove_scan_max_scan_count,
+		    remove_scan_max_process_count,
+		    remove_scan_total_calls,
+		    (remove_scan_total_time.tv_sec +
+		     (double)remove_scan_total_time.tv_nsec
+		     / GFARM_SECOND_BY_NANOSEC) / remove_scan_total_calls,
+		    (double)remove_scan_total_scan_count
+		    / remove_scan_total_calls,
+		    (double)remove_scan_total_process_count
+		    / remove_scan_total_calls);
+		remove_scan_log_time = gt2;
+		remove_scan_max_time.tv_sec = 0;
+		remove_scan_max_time.tv_nsec = 0;
+		remove_scan_max_process_count = 0;
+		remove_scan_max_scan_count = 0;
+		remove_scan_total_time.tv_sec = 0;
+		remove_scan_total_time.tv_nsec = 0;
+		remove_scan_total_process_count = 0;
+		remove_scan_total_scan_count = 0;
+		remove_scan_total_calls = 0;
+	}
+	return ((long long)(t2.tv_sec - t1.tv_sec) * GFARM_SECOND_BY_NANOSEC
+	    + (t2.tv_nsec - t1.tv_nsec));
 }
 
 static int
@@ -631,12 +705,13 @@ transparent_filter(struct dead_file_copy *dfc,
  *	but dfc_allq.mutex and removal_pendingq.mutex
  *	won't be blocked while sleeping.
  */
-static void
+static long long
 dead_file_copy_scan_deferred_all_run(void)
 {
 	static const char diag[] = "dead_file_copy_scan_deferred_all_run";
 
-	dead_file_copy_scan_deferred(0, NULL, transparent_filter, diag);
+	return (dead_file_copy_scan_deferred(
+	    0, NULL, transparent_filter, diag));
 
 	/* leave the host_busyq as is, because it will be handled shortly. */
 }
@@ -670,7 +745,7 @@ dead_file_copy_host_becomes_down(struct host *host)
  *	but dfc_allq.mutex and removal_pendingq.mutex
  *	won't be blocked while sleeping.
  */
-static void
+static long long
 dead_file_copy_host_becomes_up_run(struct host *host)
 {
 	static const char diag[] = "dead_file_copy_host_becomes_up_run";
@@ -687,7 +762,8 @@ dead_file_copy_host_becomes_up_run(struct host *host)
 	 *	have pending dead_file_copy entries which processing is
 	 *	deferred because only owner of the newest replica is down.
 	 */
-	dead_file_copy_scan_deferred(0, NULL, transparent_filter, diag);
+	return (dead_file_copy_scan_deferred(
+	    0, NULL, transparent_filter, diag));
 
 	/* leave the host_busyq as is, because it will be handled shortly. */
 }
@@ -769,12 +845,13 @@ inode_and_host_filter(struct dead_file_copy *dfc,
  * this assumes that the number of dead file copies is small enough,
  * otherwise this is too slow.
  */
-static void
+static long long
 dead_file_copy_replica_status_changed_run(gfarm_ino_t inum, struct host *host)
 {
 	static const char diag[] = "dead_file_copy_replica_status_changed_run";
 
-	dead_file_copy_scan_deferred(inum, host, inode_and_host_filter, diag);
+	return (dead_file_copy_scan_deferred(
+	    inum, host, inode_and_host_filter, diag));
 }
 
 static int
@@ -795,12 +872,13 @@ inode_filter(struct dead_file_copy *dfc,
  * this assumes that the number of dead file copies is small enough,
  * otherwise this is too slow.
  */
-static void
+static long long
 dead_file_copy_inode_status_changed_run(gfarm_ino_t inum)
 {
 	static const char diag[] = "dead_file_copy_inode_status_changed_run";
 
-	dead_file_copy_scan_deferred(inum, NULL, inode_filter, diag);
+	return (dead_file_copy_scan_deferred(
+	    inum, NULL, inode_filter, diag));
 }
 
 static struct {
@@ -934,7 +1012,6 @@ dead_file_copy_scanner(void *arg)
 	static const char diag[] = "dead_file_copy_scanner";
 	gfarm_ino_t inum;
 	struct host *host;
-	struct timespec t1, t2;
 	long long t;
 	int interval_factor;
 
@@ -965,25 +1042,22 @@ dead_file_copy_scanner(void *arg)
 
 		giant_lock();
 
-		gfarm_gettime(&t1);
 		if (inum != 0 && host != NULL) {
-			dead_file_copy_replica_status_changed_run(inum, host);
+			t = dead_file_copy_replica_status_changed_run(
+			    inum, host);
 		} else if (inum != 0) {
-			dead_file_copy_inode_status_changed_run(inum);
+			t = dead_file_copy_inode_status_changed_run(inum);
 		} else if (host != NULL) {
-			dead_file_copy_host_becomes_up_run(host);
+			t = dead_file_copy_host_becomes_up_run(host);
 		} else {
-			dead_file_copy_scan_deferred_all_run();
+			t = dead_file_copy_scan_deferred_all_run();
 		}
-		gfarm_gettime(&t2);
 
 		/* giant_lock is needed for GFM_PROTO_CONFIG_SET */
 		interval_factor = gfarm_metadb_remove_scan_interval_factor;
 
 		giant_unlock();
 
-		t = (long long)(t2.tv_sec - t1.tv_sec)
-		    * GFARM_SECOND_BY_NANOSEC + (t2.tv_nsec - t1.tv_nsec);
 		if (t <= 0)
 			t = 1;
 		gfarm_nanosleep(t * interval_factor);
