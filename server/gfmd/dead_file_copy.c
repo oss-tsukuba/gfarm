@@ -7,7 +7,9 @@
 #include <gfarm/gfarm.h>
 
 #include "thrsubr.h"
+#include "nanosec.h"
 
+#include "timespec.h"
 #include "context.h"
 #include "config.h"
 #include "gfm_proto.h"
@@ -201,6 +203,7 @@ dfc_workq_host_remove(struct dfc_workq *q, struct host *host, const char *diag)
 
 	gfarm_mutex_lock(&q->mutex, diag, "lock");
 
+	/* dfc_allq.mutex prevents dfc from being freed */
 	for (dfc = q->q.workq_next; dfc != &q->q; dfc = next) {
 		next = dfc->workq_next;
 
@@ -328,6 +331,15 @@ handle_removal_result(struct dead_file_copy *dfc)
 static void *
 removal_finalizer(void *arg)
 {
+	gfarm_error_t e;
+	static const char diag[] = "removal_finalizer";
+
+	e = gfarm_pthread_set_priority_minimum(diag);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: set_priority_minimum: %s",
+		    diag, gfarm_error_string(e));
+
 	for (;;) {
 		handle_removal_result(removal_finishedq_dequeue());
 	}
@@ -419,6 +431,7 @@ dead_file_copy_host_busyq_scan(void)
 
 	now = time(NULL);
 
+	/* dfc_allq.mutex prevents dfc from being freed */
 	for (dfc = host_busyq.q.workq_next; dfc != &host_busyq.q; dfc = next) {
 		next = dfc->workq_next;
 
@@ -618,10 +631,10 @@ transparent_filter(struct dead_file_copy *dfc,
  *	but dfc_allq.mutex and removal_pendingq.mutex
  *	won't be blocked while sleeping.
  */
-void
-dead_file_copy_scan_deferred_all(void)
+static void
+dead_file_copy_scan_deferred_all_run(void)
 {
-	static const char diag[] = "dead_file_copy_scan_deferred_all";
+	static const char diag[] = "dead_file_copy_scan_deferred_all_run";
 
 	dead_file_copy_scan_deferred(0, NULL, transparent_filter, diag);
 
@@ -657,10 +670,10 @@ dead_file_copy_host_becomes_down(struct host *host)
  *	but dfc_allq.mutex and removal_pendingq.mutex
  *	won't be blocked while sleeping.
  */
-void
-dead_file_copy_host_becomes_up(struct host *host)
+static void
+dead_file_copy_host_becomes_up_run(struct host *host)
 {
-	static const char diag[] = "dead_file_copy_host_becomes_up";
+	static const char diag[] = "dead_file_copy_host_becomes_up_run";
 
 	/*
 	 * in this case, we have to check dead_file_copy data for *all* hosts,
@@ -756,10 +769,10 @@ inode_and_host_filter(struct dead_file_copy *dfc,
  * this assumes that the number of dead file copies is small enough,
  * otherwise this is too slow.
  */
-void
-dead_file_copy_replica_status_changed(gfarm_ino_t inum, struct host *host)
+static void
+dead_file_copy_replica_status_changed_run(gfarm_ino_t inum, struct host *host)
 {
-	static const char diag[] = "dead_file_copy_replica_status_changed";
+	static const char diag[] = "dead_file_copy_replica_status_changed_run";
 
 	dead_file_copy_scan_deferred(inum, host, inode_and_host_filter, diag);
 }
@@ -782,13 +795,200 @@ inode_filter(struct dead_file_copy *dfc,
  * this assumes that the number of dead file copies is small enough,
  * otherwise this is too slow.
  */
+static void
+dead_file_copy_inode_status_changed_run(gfarm_ino_t inum)
+{
+	static const char diag[] = "dead_file_copy_inode_status_changed_run";
+
+	dead_file_copy_scan_deferred(inum, NULL, inode_filter, diag);
+}
+
+static struct {
+	pthread_mutex_t mutex;
+	pthread_cond_t requested;
+	int need_to_run;
+	gfarm_ino_t inum;
+	struct host *host;
+} dead_file_copy_scan = {
+	PTHREAD_MUTEX_INITIALIZER,
+	PTHREAD_COND_INITIALIZER,
+	0,
+	0,
+	NULL
+};
+
+static const char dead_file_copy_scan_diag[] = "dead_file_copy_scan";
+static const char dead_file_copy_scan_requested_diag[] =
+	"dead_file_copy_scan_requested";
+
+void
+dead_file_copy_scan_deferred_all(void)
+{
+	static const char diag[] = "dead_file_copy_scan_deferred_all";
+
+	gfarm_mutex_lock(&dead_file_copy_scan.mutex,
+	    diag, dead_file_copy_scan_diag);
+
+	/* scan all */
+	dead_file_copy_scan.inum = 0;
+	dead_file_copy_scan.host = NULL;
+
+	dead_file_copy_scan.need_to_run = 1;
+	gfarm_cond_signal(
+	    &dead_file_copy_scan.requested, diag,
+	    dead_file_copy_scan_requested_diag);
+
+	gfarm_mutex_unlock(&dead_file_copy_scan.mutex,
+	    diag, dead_file_copy_scan_diag);
+}
+
+void
+dead_file_copy_host_becomes_up(struct host *host)
+{
+	static const char diag[] = "dead_file_copy_host_becomes_up";
+
+	gfarm_mutex_lock(&dead_file_copy_scan.mutex,
+	    diag, dead_file_copy_scan_diag);
+
+	if (!dead_file_copy_scan.need_to_run ||
+	    dead_file_copy_scan.host == host) {
+		/* only this host */
+		dead_file_copy_scan.inum = 0;
+		dead_file_copy_scan.host = host;
+	} else { /* otherwise scan all */
+		dead_file_copy_scan.inum = 0;
+		dead_file_copy_scan.host = NULL;
+	}
+
+	dead_file_copy_scan.need_to_run = 1;
+	gfarm_cond_signal(
+	    &dead_file_copy_scan.requested, diag,
+	    dead_file_copy_scan_requested_diag);
+
+	gfarm_mutex_unlock(&dead_file_copy_scan.mutex,
+	    diag, dead_file_copy_scan_diag);
+}
+
+void
+dead_file_copy_replica_status_changed(gfarm_ino_t inum, struct host *host)
+{
+	static const char diag[] = "dead_file_copy_replica_status_changed";
+
+	gfarm_mutex_lock(&dead_file_copy_scan.mutex,
+	    diag, dead_file_copy_scan_diag);
+
+	if (!dead_file_copy_scan.need_to_run ||
+	    (dead_file_copy_scan.inum == inum &&
+	     dead_file_copy_scan.host == host)) {
+		/* only this replica */
+		dead_file_copy_scan.inum = inum;
+		dead_file_copy_scan.host = host;
+	} else if (dead_file_copy_scan.inum == inum) {
+		/* only this inode */
+		dead_file_copy_scan.host = NULL;
+	} else { /* otherwise scan all */
+		dead_file_copy_scan.inum = 0;
+		dead_file_copy_scan.host = NULL;
+	}
+
+	dead_file_copy_scan.need_to_run = 1;
+	gfarm_cond_signal(
+	    &dead_file_copy_scan.requested, diag,
+	    dead_file_copy_scan_requested_diag);
+
+	gfarm_mutex_unlock(&dead_file_copy_scan.mutex,
+	    diag, dead_file_copy_scan_diag);
+}
+
 void
 dead_file_copy_inode_status_changed(gfarm_ino_t inum)
 {
 	static const char diag[] = "dead_file_copy_inode_status_changed";
 
-	dead_file_copy_scan_deferred(inum, NULL, inode_filter, diag);
+	gfarm_mutex_lock(&dead_file_copy_scan.mutex,
+	    diag, dead_file_copy_scan_diag);
+
+	if (!dead_file_copy_scan.need_to_run ||
+	    dead_file_copy_scan.inum == inum) {
+		/* only this inode */
+		dead_file_copy_scan.inum = inum;
+		dead_file_copy_scan.host = NULL;
+	} else { /* otherwise scan all */
+		dead_file_copy_scan.inum = 0;
+		dead_file_copy_scan.host = NULL;
+	}
+
+	dead_file_copy_scan.need_to_run = 1;
+	gfarm_cond_signal(
+	    &dead_file_copy_scan.requested, diag,
+	    dead_file_copy_scan_requested_diag);
+
+	gfarm_mutex_unlock(&dead_file_copy_scan.mutex,
+	    diag, dead_file_copy_scan_diag);
 }
+
+static void *
+dead_file_copy_scanner(void *arg)
+{
+	gfarm_error_t e;
+	static const char diag[] = "dead_file_copy_scanner";
+	gfarm_ino_t inum;
+	struct host *host;
+	struct timespec t1, t2;
+	long long t;
+	int inverse_ratio;
+
+	e = gfarm_pthread_set_priority_minimum(diag);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: set_priority_minimum: %s",
+		    diag, gfarm_error_string(e));
+
+	for (;;) {
+		gfarm_mutex_lock(&dead_file_copy_scan.mutex,
+		    diag, dead_file_copy_scan_diag);
+
+		while (!dead_file_copy_scan.need_to_run)
+			gfarm_cond_wait(
+			    &dead_file_copy_scan.requested,
+			    &dead_file_copy_scan.mutex, diag,
+			    dead_file_copy_scan_requested_diag);
+		inum = dead_file_copy_scan.inum;
+		host = dead_file_copy_scan.host;
+
+		gfarm_mutex_unlock(&dead_file_copy_scan.mutex,
+		    diag, dead_file_copy_scan_diag);
+
+		giant_lock();
+
+		gfarm_gettime(&t1);
+		if (inum != 0 && host != NULL) {
+			dead_file_copy_replica_status_changed_run(inum, host);
+		} else if (inum != 0) {
+			dead_file_copy_inode_status_changed_run(inum);
+		} else if (host != NULL) {
+			dead_file_copy_host_becomes_up_run(host);
+		} else {
+			dead_file_copy_scan_deferred_all_run();
+		}
+		gfarm_gettime(&t2);
+
+		/* giant_lock is needed for GFM_PROTO_CONFIG_SET */
+		inverse_ratio = gfarm_metadb_remove_scan_time_inverse_ratio;
+
+		giant_unlock();
+
+		t = (long long)(t2.tv_sec - t1.tv_sec)
+		    * GFARM_SECOND_BY_NANOSEC + (t2.tv_nsec - t1.tv_nsec);
+		if (t <= 0)
+			t = 1;
+		gfarm_nanosleep(t * inverse_ratio);
+	}
+
+	/*NOTREACHED*/
+	return (NULL);
+}
+
 
 /* used for deferred -> kept: prevent dfc from moved to removal_pendingq */
 void
@@ -885,6 +1085,7 @@ dead_file_copy_count_by_inode(gfarm_ino_t inum, gfarm_uint64_t igen,
 
 	gfarm_mutex_lock(&dfc_allq.mutex, diag, "lock");
 
+	/* dfc_allq.mutex prevents dfc from being freed */
 	for (dfc = dfc_allq.q.allq_next; dfc != &dfc_allq.q;
 	     dfc = dfc->allq_next) {
 
@@ -921,6 +1122,7 @@ dead_file_copy_info_by_inode(gfarm_ino_t inum, gfarm_uint64_t igen, int up_only,
 
 	gfarm_mutex_lock(&dfc_allq.mutex, diag, "lock");
 
+	/* dfc_allq.mutex prevents dfc from being freed */
 	for (dfc = dfc_allq.q.allq_next; dfc != &dfc_allq.q;
 	     dfc = dfc->allq_next) {
 		if (i >= n)
@@ -1192,4 +1394,9 @@ dead_file_copy_init(int is_master)
 		    "create_detached_thread(removal_finalizer): %s",
 		    gfarm_error_string(e));
 
+	e = create_detached_thread(dead_file_copy_scanner, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "create_detached_thread(dead_file_copy_scanner): %s",
+		    gfarm_error_string(e));
 }
