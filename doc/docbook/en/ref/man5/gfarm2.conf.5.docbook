@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>26 Oct 2017</date></refentryinfo>
+<refentryinfo><date>22 Nov 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -670,6 +670,42 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	metadb_server_remover_queue_length 40
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_remove_scan_log_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>This directive specifies the log output interval in seconds
+about gfmd removal queue processing.
+Default is 3600 seconds.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_remove_scan_log_interval 86400
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_remove_scan_interval_factor</token> <parameter moreinfo="none">number</parameter></term>
+<listitem>
+<para>This directive specifies the parameter about how much CPU time
+can be used for gfmd removal queue processing.
+The processing can use 1 / (metadb_server_remove_scan_interval_factor + 1)
+of the CPU time at most.
+Default is 5.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_remove_scan_interval_factor 2
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2785,6 +2821,8 @@ The default size is 16 MiB.
 	&lt;metadb_server_thread_pool_size_statement&gt; |
 	&lt;metadb_server_job_queue_length_statement&gt; |
 	&lt;metadb_server_remover_queue_length_statement&gt; |
+	&lt;metadb_server_remove_scan_log_interval_statement&gt; |
+	&lt;metadb_server_remove_scan_interval_factor_statement&gt; |
 	&lt;metadb_server_heartbeat_interval_statement&gt; |
 	&lt;metadb_server_dbq_size_statement&gt; |
 	&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; |
@@ -3013,6 +3051,16 @@ The default size is 16 MiB.
 <varlistentry>
 <term>&lt;metadb_server_remover_queue_length_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_server_remover_queue_length" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_remove_scan_log_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_remove_scan_log_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_remove_scan_interval_factor_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_remove_scan_interval_factor" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
