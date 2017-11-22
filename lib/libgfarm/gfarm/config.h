@@ -69,7 +69,7 @@ extern int gfarm_metadb_stack_size;
 extern int gfarm_metadb_thread_pool_size;
 extern int gfarm_metadb_job_queue_length;
 extern int gfarm_metadb_remover_queue_length;
-extern int gfarm_metadb_remove_scan_time_inverse_ratio;
+extern int gfarm_metadb_remove_scan_interval_factor;
 extern int gfarm_metadb_heartbeat_interval;
 extern int gfarm_metadb_dbq_size;
 extern int gfarm_metadb_server_back_channel_sndbuf_limit;
@@ -94,7 +94,7 @@ extern int gfarm_replicainfo_enabled;
 #define GFARM_METADB_JOB_QUEUE_LENGTH_DEFAULT	16000
 #define GFARM_METADB_REMOVER_QUEUE_LENGTH_DEFAULT	160
 #endif
-#define GFARM_METADB_REMOVE_SCAN_TIME_INVERSE_RATIO_DEFAULT 5 /* 1/5 */
+#define GFARM_METADB_REMOVE_SCAN_INTERVAL_FACTOR_DEFAULT 5 /* 1/5 */
 #define GFARM_METADB_HEARTBEAT_INTERVAL_DEFAULT 180 /* 3 min */
 #define GFARM_METADB_DBQ_SIZE_DEFAULT	65536
 #define GFARM_SYMLINK_LEVEL_MAX			20
