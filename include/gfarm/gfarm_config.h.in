@@ -173,6 +173,9 @@
 /* Define to 1 if you have the `pthread_mutex_timedlock' function. */
 #undef HAVE_PTHREAD_MUTEX_TIMEDLOCK
 
+/* PTHREAD_PRIO_INHERIT is usable */
+#undef HAVE_PTHREAD_PRIO_INHERIT
+
 /* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
 
