@@ -936,7 +936,7 @@ dead_file_copy_scanner(void *arg)
 	struct host *host;
 	struct timespec t1, t2;
 	long long t;
-	int inverse_ratio;
+	int interval_factor;
 
 	e = gfarm_pthread_set_priority_minimum(diag);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -974,7 +974,7 @@ dead_file_copy_scanner(void *arg)
 		gfarm_gettime(&t2);
 
 		/* giant_lock is needed for GFM_PROTO_CONFIG_SET */
-		inverse_ratio = gfarm_metadb_remove_scan_time_inverse_ratio;
+		interval_factor = gfarm_metadb_remove_scan_interval_factor;
 
 		giant_unlock();
 
@@ -982,7 +982,7 @@ dead_file_copy_scanner(void *arg)
 		    * GFARM_SECOND_BY_NANOSEC + (t2.tv_nsec - t1.tv_nsec);
 		if (t <= 0)
 			t = 1;
-		gfarm_nanosleep(t * inverse_ratio);
+		gfarm_nanosleep(t * interval_factor);
 	}
 
 	/*NOTREACHED*/
