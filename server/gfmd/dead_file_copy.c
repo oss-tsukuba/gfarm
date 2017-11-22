@@ -956,6 +956,10 @@ dead_file_copy_scanner(void *arg)
 		inum = dead_file_copy_scan.inum;
 		host = dead_file_copy_scan.host;
 
+		dead_file_copy_scan.need_to_run = 0;
+		dead_file_copy_scan.inum = 0;
+		dead_file_copy_scan.host = NULL;
+
 		gfarm_mutex_unlock(&dead_file_copy_scan.mutex,
 		    diag, dead_file_copy_scan_diag);
 
