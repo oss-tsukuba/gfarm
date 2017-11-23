@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([gfarm], [2.6.21])
+AC_INIT([gfarm], [2.6.22])
 AC_CONFIG_SRCDIR(RELNOTES)
 AC_CONFIG_AUX_DIR(makes)
 AC_CONFIG_HEADER(include/gfarm/gfarm_config.h)
@@ -300,7 +300,7 @@ AC_ARG_WITH(globus,
     # if --with-globus=DIR is specified, but globus-gssapi-gsi.pc doesn't
     # exist in the DIR, do not try "pkg-config globus-gssapi-gsi"
     try_pkgconfig=false
- fi  
+ fi
  if $try_pkgconfig && $GLOBUS_PKG_CONFIG_ENV pkg-config globus-gssapi-gsi; then
 	case ${globus_static} in
 	yes) globus_static=--static;;
