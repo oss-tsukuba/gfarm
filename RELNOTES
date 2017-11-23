@@ -1,3 +1,23 @@
+Release note for Gfarm 2.7.7
+============================
+
+[2017.11.24]
+
+New configuration directive
+* metadb_server_remove_scan_log_interval - interval to log statistical
+  information about removed file scan
+* metadb_server_remove_scan_interval_factor - interval between removed
+  file scans
+
+Documentation
+* manual pages - gfsrepcheck(1)
+
+Updated feature
+* gfmd - improve response time even under too many gfmd-initiated
+  replications, file removals and updates
+* gfdf - -i option to print number of inodes
+* gfrepcheck - status command to obtain the current status
+
 Release note for Gfarm 2.7.6
 ============================
 
