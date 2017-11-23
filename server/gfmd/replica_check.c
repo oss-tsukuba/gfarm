@@ -744,7 +744,7 @@ replica_check_main(void)
 		}
 	}
 	time_total = time(NULL) - time_start;
-	RC_LOG_INFO(GFARM_MSG_UNFIXED,
+	RC_LOG_INFO(GFARM_MSG_1005040,
 	    "replica_check: finished, table=%llu, inum=%llu, file=%llu, "
 	    "rep num=%llu, rep size=%llu, remove num=%llu, remove size=%llu, "
 	    "time=%lld (%.3fh), lock sleep=%g, retry sleep=%g",
@@ -1326,9 +1326,9 @@ gfm_server_replica_check_status(struct peer *peer, int from_client, int skip)
 	if (!from_client || (user = peer_get_user(peer)) == NULL ||
 	    !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s", gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_1005041, "%s", gfarm_error_string(e));
 	} else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005042,
 		    "replica_check_status: target=%s",
 		    replica_check_status_target_string(status_target));
 		switch (status_target) {
@@ -1347,7 +1347,7 @@ gfm_server_replica_check_status(struct peer *peer, int from_client, int skip)
 			break;
 		default:
 			e = GFARM_ERR_INVALID_ARGUMENT;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005043,
 			    "replica_check_status: %s: target=%d",
 			    gfarm_error_string(e), status_target);
 		}
