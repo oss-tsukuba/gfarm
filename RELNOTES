@@ -1,7 +1,7 @@
 Release note for Gfarm 2.7.7
 ============================
 
-[2017.11.24]
+[2017.11.26]
 
 New configuration directive
 * metadb_server_remove_scan_log_interval - interval to log statistical
