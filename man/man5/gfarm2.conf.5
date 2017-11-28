@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 22 Nov 2017
+.\"      Date: 28 Nov 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "22 Nov 2017" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "28 Nov 2017" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -571,7 +571,13 @@ For example,
 .PP
 metadb_server_job_queue_length \fIlength\fR
 .RS 4
-This directive specifies the length of job queue in the gfmd\&. It is effective to specify around the maximum number of clients that access the Gfarm file system at the same time\&. Default is 16000\&.
+This directive specifies the length of job queue in the gfmd\&.
+.sp
+It is effective to specify a value which is greater than the maximum number of clients that access the Gfarm file system at the same time\&.
+.sp
+Because this value has to be greater than metadb_server_remover_queue_length + (simultaneous_replication_receivers + 1) * (number of filesystem nodes) , you have to configure this setting, if number of filesystem nodes exceeds 754\&.
+.sp
+Default is 16000\&.
 .sp
 This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
 .sp
@@ -581,7 +587,26 @@ For example,
 .RS 4
 .\}
 .nf
-	metadb_server_job_queue_length 160
+	metadb_server_job_queue_length 21664
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+metadb_server_remover_queue_length \fIlength\fR
+.RS 4
+This directive specifies the length of job queue which gfmd uses for sending replica removal requests to gfsd\&. This value should be less than metadb_server_job_queue_length\&. Default is 160\&.
+.sp
+This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_server_remover_queue_length 40
 .fi
 .if n \{\
 .RE
@@ -2544,6 +2569,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<metadb_server_stack_size_statement> |
 	<metadb_server_thread_pool_size_statement> |
 	<metadb_server_job_queue_length_statement> |
+	<metadb_server_remover_queue_length_statement> |
 	<metadb_server_remove_scan_log_interval_statement> |
 	<metadb_server_remove_scan_interval_factor_statement> |
 	<metadb_server_heartbeat_interval_statement> |
@@ -2976,6 +3002,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "metadb_server_job_queue_length" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<metadb_server_remover_queue_length_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_server_remover_queue_length" <number>
 .fi
 .if n \{\
 .RE

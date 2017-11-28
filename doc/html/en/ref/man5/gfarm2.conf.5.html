@@ -510,15 +510,42 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 <dt><span class="term"><span class="token">metadb_server_job_queue_length</span> <em class="parameter"><code>length</code></em></span></dt>
 <dd>
 <p>This directive specifies the length of job queue in the gfmd.
-It is effective to specify around the maximum number of clients that
-access the Gfarm file system at the same time.  Default is 16000.
+</p>
+<p>
+It is effective to specify a value which is greater than the maximum number
+of clients that access the Gfarm file system at the same time.
+</p>
+<p>
+Because this value has to be greater than
+metadb_server_remover_queue_length +
+ (simultaneous_replication_receivers + 1) * (number of filesystem nodes)
+, you have to configure this setting,
+if number of filesystem nodes exceeds 754.
+</p>
+<p>
+Default is 16000.
 </p>
 <p>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </p>
 <p>For example,</p>
 <div class="literallayout"><p><br>
-	metadb_server_job_queue_length 160<br>
+	metadb_server_job_queue_length 21664<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">metadb_server_remover_queue_length</span> <em class="parameter"><code>length</code></em></span></dt>
+<dd>
+<p>This directive specifies the length of job queue which gfmd uses
+for sending replica removal requests to gfsd.
+This value should be less than metadb_server_job_queue_length.
+Default is 160.
+</p>
+<p>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	metadb_server_remover_queue_length 40<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">metadb_server_remove_scan_log_interval</span> <em class="parameter"><code>seconds</code></em></span></dt>
@@ -2041,6 +2068,7 @@ gfsd uses this setting at its startup by asking gfmd.
 	&lt;metadb_server_stack_size_statement&gt; |<br>
 	&lt;metadb_server_thread_pool_size_statement&gt; |<br>
 	&lt;metadb_server_job_queue_length_statement&gt; |<br>
+	&lt;metadb_server_remover_queue_length_statement&gt; |<br>
 	&lt;metadb_server_remove_scan_log_interval_statement&gt; |<br>
 	&lt;metadb_server_remove_scan_interval_factor_statement&gt; |<br>
 	&lt;metadb_server_heartbeat_interval_statement&gt; |<br>
@@ -2185,6 +2213,8 @@ gfsd uses this setting at its startup by asking gfmd.
 <dd><div class="literallayout"><p>"metadb_server_thread_pool_size" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_job_queue_length_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_server_job_queue_length" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;metadb_server_remover_queue_length_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"metadb_server_remover_queue_length" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_remove_scan_log_interval_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_server_remove_scan_log_interval" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_remove_scan_interval_factor_statement&gt; ::=</span></dt>

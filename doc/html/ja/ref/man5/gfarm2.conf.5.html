@@ -495,8 +495,18 @@ gfmd が
 </dd>
 <dt><span class="term"><span class="token">metadb_server_job_queue_length</span> <em class="parameter"><code>キュー長</code></em></span></dt>
 <dd>
-<p>メタデータサーバgfmdのジョブキューのキュー長を指定します。
-一度に接続する最大クライアントの数くらいに設定すると効果的です。
+<p>
+メタデータサーバgfmdのジョブキューのキュー長を指定します。
+一度に接続する最大クライアントの数より多い値に設定すると効果的です。
+</p>
+<p>
+この値は
+metadb_server_remover_queue_length +
+ (simultaneous_replication_receivers + 1) * ファイルシステムノード数
+ よりも大きな値に設定する必要がありますので、
+ファイルシステムノード数が 754 を越えた場合には、設定が必須となります。
+</p>
+<p>
 デフォルト値は16000です。
 </p>
 <p>
@@ -504,7 +514,21 @@ gfmd が
 </p>
 <p>例:</p>
 <div class="literallayout"><p><br>
-	metadb_server_job_queue_length 160<br>
+	metadb_server_job_queue_length 21664<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">metadb_server_remover_queue_length</span> <em class="parameter"><code>キュー長</code></em></span></dt>
+<dd>
+<p>メタデータサーバgfmdが、gfsdへ複製削除要求を送るジョブキューのキュー長を指定します。
+metadb_server_job_queue_length よりは少ない値を設定します。
+デフォルト値は160です。
+</p>
+<p>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	metadb_server_remover_queue_length 40<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">metadb_server_remove_scan_log_interval</span> <em class="parameter"><code>秒数</code></em></span></dt>
@@ -2023,6 +2047,7 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 	&lt;metadb_server_stack_size_statement&gt; |<br>
 	&lt;metadb_server_thread_pool_size_statement&gt; |<br>
 	&lt;metadb_server_job_queue_length_statement&gt; |<br>
+	&lt;metadb_server_remover_queue_length_statement&gt; |<br>
 	&lt;metadb_server_remove_scan_log_interval_statement&gt; |<br>
 	&lt;metadb_server_remove_scan_interval_factor_statement&gt; |<br>
 	&lt;metadb_server_heartbeat_interval_statement&gt; |<br>
@@ -2167,6 +2192,8 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 <dd><div class="literallayout"><p>"metadb_server_thread_pool_size" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_job_queue_length_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_server_job_queue_length" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;metadb_server_remover_queue_length_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"metadb_server_remover_queue_length" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_remove_scan_log_interval_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_server_remove_scan_log_interval" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_remove_scan_interval_factor_statement&gt; ::=</span></dt>
