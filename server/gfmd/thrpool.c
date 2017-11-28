@@ -21,7 +21,7 @@ struct thread_job {
 struct thread_jobq {
 	pthread_mutex_t mutex;
 	pthread_cond_t nonfull, nonempty;
-	int size, n, in, out;
+	int size, n, in, out, low_priority_limit;
 	struct thread_job *entries;
 };
 
@@ -34,6 +34,7 @@ thrjobq_init(struct thread_jobq *q, int size)
 	gfarm_cond_init(&q->nonempty, diag, "nonempty");
 	gfarm_cond_init(&q->nonfull, diag, "nonfull");
 	q->size = size;
+	q->low_priority_limit = size;
 	q->n = q->in = q->out = 0;
 	GFARM_MALLOC_ARRAY(q->entries, size);
 	if (q->entries == NULL)
@@ -41,15 +42,21 @@ thrjobq_init(struct thread_jobq *q, int size)
 		    "%s: jobq size: %s", diag, strerror(ENOMEM));
 }
 
+void
+thrjobq_set_jobq_low_priority_limit(struct thread_jobq *q, int limit)
+{
+	q->low_priority_limit = limit;
+}
 
 void
-thrjobq_add_job(struct thread_jobq *q, void *(*thread_main)(void *), void *arg)
+thrjobq_add_job(struct thread_jobq *q, int low_priority,
+	void *(*thread_main)(void *), void *arg)
 {
 	static const char diag[] = "thrjobq_add_job";
 
 	gfarm_mutex_lock(&q->mutex, diag, "thrjobq");
 
-	while (q->n >= q->size) {
+	while (q->n >= (low_priority ? q->low_priority_limit : q->size)) {
 		gfarm_cond_wait(&q->nonfull, &q->mutex, diag, "nonfull");
 	}
 	q->entries[q->in].thread_main = thread_main;
@@ -77,7 +84,7 @@ thrjobq_get_job(struct thread_jobq *q, struct thread_job *job)
 	if (q->out >= q->size)
 		q->out = 0;
 	q->n--;
-	gfarm_cond_signal(&q->nonfull, diag, "nonfull");
+	gfarm_cond_broadcast(&q->nonfull, diag, "nonfull");
 
 	gfarm_mutex_unlock(&q->mutex, diag, "thrjobq");
 }
@@ -149,8 +156,9 @@ thrpool_worker(void *arg)
 }
 
 
-void
-thrpool_add_job(struct thread_pool *p, void *(*thread_main)(void *), void *arg)
+static void
+thrpool_add_job0(struct thread_pool *p, int low_priority,
+	void *(*thread_main)(void *), void *arg)
 {
 	static const char diag[] = "thrpool_add_job";
 	gfarm_error_t e;
@@ -169,7 +177,26 @@ thrpool_add_job(struct thread_pool *p, void *(*thread_main)(void *), void *arg)
 	}
 	gfarm_mutex_unlock(&p->mutex, diag, "thrpool");
 
-	thrjobq_add_job(&p->jobq, thread_main, arg);
+	thrjobq_add_job(&p->jobq, low_priority, thread_main, arg);
+}
+
+void
+thrpool_add_job(struct thread_pool *p, void *(*thread_main)(void *), void *arg)
+{
+	thrpool_add_job0(p, 0, thread_main, arg);
+}
+
+void
+thrpool_add_job_low_priority(struct thread_pool *p,
+	void *(*thread_main)(void *), void *arg)
+{
+	thrpool_add_job0(p, 1, thread_main, arg);
+}
+
+void
+thrpool_set_jobq_low_priority_limit(struct thread_pool *p, int n)
+{
+	thrjobq_set_jobq_low_priority_limit(&p->jobq, n);
 }
 
 void

@@ -322,7 +322,8 @@ remover(void *closure)
 	for (;;) {
 		dfc = removal_pendingq_dequeue();
 		if (host_is_up(dead_file_copy_get_host(dfc)))
-			thrpool_add_job(back_channel_send_thread_pool,
+			thrpool_add_job_low_priority(
+			    back_channel_send_thread_pool,
 			    gfs_client_fhremove_request, dfc);
 		else /* make this dfcstate_deferred */
 			removal_finishedq_enqueue(dfc,
@@ -886,6 +887,8 @@ back_channel_init(void)
 		    "%d, queue length:%d: no memory",
 		    gfarm_metadb_thread_pool_size,
 		    gfarm_metadb_job_queue_length);
+	thrpool_set_jobq_low_priority_limit(back_channel_send_thread_pool,
+	    gfarm_metadb_remover_queue_length);
 
 	proto_status_send_thread_pool = thrpool_new(
 	    /* XXX FIXME: use different config parameter */

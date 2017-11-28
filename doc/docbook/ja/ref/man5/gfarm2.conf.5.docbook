@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>22 Nov 2017</date></refentryinfo>
+<refentryinfo><date>28 Nov 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -643,6 +643,23 @@ gfmd が
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	metadb_server_job_queue_length 160
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_remover_queue_length</token> <parameter moreinfo="none">キュー長</parameter></term>
+<listitem>
+<para>メタデータサーバgfmdが、gfsdへ複製削除要求を送るジョブキューのキュー長を指定します。
+metadb_server_job_queue_length よりは少ない値を設定します。
+デフォルト値は160です。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_remover_queue_length 40
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2606,6 +2623,7 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 	&lt;metadb_server_stack_size_statement&gt; |
 	&lt;metadb_server_thread_pool_size_statement&gt; |
 	&lt;metadb_server_job_queue_length_statement&gt; |
+	&lt;metadb_server_remover_queue_length_statement&gt; |
 	&lt;metadb_server_remove_scan_log_interval_statement&gt; |
 	&lt;metadb_server_remove_scan_interval_factor_statement&gt; |
 	&lt;metadb_server_heartbeat_interval_statement&gt; |
@@ -2822,6 +2840,11 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 <varlistentry>
 <term>&lt;metadb_server_job_queue_length_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_server_job_queue_length" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_remover_queue_length_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_remover_queue_length" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

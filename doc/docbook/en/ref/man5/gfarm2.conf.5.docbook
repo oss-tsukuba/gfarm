@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>22 Nov 2017</date></refentryinfo>
+<refentryinfo><date>28 Nov 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -652,6 +652,24 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	metadb_server_job_queue_length 160
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_remover_queue_length</token> <parameter moreinfo="none">length</parameter></term>
+<listitem>
+<para>This directive specifies the length of job queue which gfmd uses
+for sending replica removal requests to gfsd.
+This value should be less than metadb_server_job_queue_length.
+Default is 160.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_remover_queue_length 40
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2628,6 +2646,7 @@ gfsd uses this setting at its startup by asking gfmd.
 	&lt;metadb_server_stack_size_statement&gt; |
 	&lt;metadb_server_thread_pool_size_statement&gt; |
 	&lt;metadb_server_job_queue_length_statement&gt; |
+	&lt;metadb_server_remover_queue_length_statement&gt; |
 	&lt;metadb_server_remove_scan_log_interval_statement&gt; |
 	&lt;metadb_server_remove_scan_interval_factor_statement&gt; |
 	&lt;metadb_server_heartbeat_interval_statement&gt; |
@@ -2844,6 +2863,11 @@ gfsd uses this setting at its startup by asking gfmd.
 <varlistentry>
 <term>&lt;metadb_server_job_queue_length_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_server_job_queue_length" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_remover_queue_length_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_remover_queue_length" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
