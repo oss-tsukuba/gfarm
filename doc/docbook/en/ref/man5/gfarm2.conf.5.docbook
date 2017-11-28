@@ -663,7 +663,7 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
-	metadb_server_job_queue_length 160
+	metadb_server_job_queue_length 21664
 </literallayout>
 </listitem>
 </varlistentry>
