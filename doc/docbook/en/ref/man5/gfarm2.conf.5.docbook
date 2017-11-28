@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>22 Nov 2017</date></refentryinfo>
+<refentryinfo><date>28 Nov 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -643,8 +643,20 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 <term><token>metadb_server_job_queue_length</token> <parameter moreinfo="none">length</parameter></term>
 <listitem>
 <para>This directive specifies the length of job queue in the gfmd.
-It is effective to specify around the maximum number of clients that
-access the Gfarm file system at the same time.  Default is 16000.
+</para>
+<para>
+It is effective to specify a value which is greater than the maximum number
+of clients that access the Gfarm file system at the same time.
+</para>
+<para>
+Because this value has to be greater than
+metadb_server_remover_queue_length +
+ (simultaneous_replication_receivers + 1) * (number of filesystem nodes)
+, you have to configure this setting,
+if number of filesystem nodes exceeds 754.
+</para>
+<para>
+Default is 16000.
 </para>
 <para>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.

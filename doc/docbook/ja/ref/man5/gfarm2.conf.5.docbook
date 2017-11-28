@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>22 Nov 2017</date></refentryinfo>
+<refentryinfo><date>28 Nov 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -633,8 +633,18 @@ gfmd が
 <varlistentry>
 <term><token>metadb_server_job_queue_length</token> <parameter moreinfo="none">キュー長</parameter></term>
 <listitem>
-<para>メタデータサーバgfmdのジョブキューのキュー長を指定します。
-一度に接続する最大クライアントの数くらいに設定すると効果的です。
+<para>
+メタデータサーバgfmdのジョブキューのキュー長を指定します。
+一度に接続する最大クライアントの数より多い値に設定すると効果的です。
+</para>
+<para>
+この値は
+metadb_server_remover_queue_length +
+ (simultaneous_replication_receivers + 1) * ファイルシステムノード数
+ よりも大きな値に設定する必要がありますので、
+ファイルシステムノード数が 754 を越えた場合には、設定が必須となります。
+</para>
+<para>
 デフォルト値は16000です。
 </para>
 <para>
@@ -642,7 +652,7 @@ gfmd が
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
-	metadb_server_job_queue_length 160
+	metadb_server_job_queue_length 21664
 </literallayout>
 </listitem>
 </varlistentry>
