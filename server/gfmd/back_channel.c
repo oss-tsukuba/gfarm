@@ -782,9 +782,6 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		    "%s: protocol flush: %s",
 		    diag, gfarm_error_string(e2));
 	else if (e == GFARM_ERR_NO_ERROR) {
-		peer_set_async(peer, async);
-		peer_set_watcher(peer, back_channel_recv_watcher);
-
 		if (host_is_up(host)) /* throw away old connetion */ {
 			gflog_warning(GFARM_MSG_1002440,
 			    "back_channel(%s): switching to new connection",
@@ -792,15 +789,22 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 			host_disconnect_request(host, NULL);
 		}
 
+		/*
+		 * SF.net #1019
+		 * need giant_lock during transition to back channel
+		 */
 		giant_lock();
+		peer_set_async(peer, async);
+		peer_set_watcher(peer, back_channel_recv_watcher);
 		abstract_host_set_peer(host_to_abstract_host(host),
 		    peer, version);
-		giant_unlock();
 
 		(void)gfarm_sockbuf_apply_limit(peer_get_fd(peer),
 		    SO_SNDBUF, gfarm_metadb_server_back_channel_sndbuf_limit,
 		    "metadb_server_back_channel_sndbuf_limit");
 		peer_watch_access(peer);
+		giant_unlock();
+
 		callout_setfunc(host_status_callout(host),
 		    proto_status_send_thread_pool,
 		    gfs_client_status_request, host);
