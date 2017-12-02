@@ -9,6 +9,15 @@
 #include "gfutil.h"
 #include "thrsubr.h"
 
+/*
+ * SF.net #1022:
+ * HAVE_PTHREAD_PRIO_INHERIT is unstable with
+ * kernel-2.6.32-504.el6.x86_64.rpm
+ * glibc-2.12-1.166.el6_7.7.x86_64.rpm
+ * on CentOS 6.6
+ */
+#undef HAVE_PTHREAD_PRIO_INHERIT
+
 #ifdef HAVE_PTHREAD_PRIO_INHERIT
 
 static pthread_mutexattr_t mutexattr_prio_inherit;
