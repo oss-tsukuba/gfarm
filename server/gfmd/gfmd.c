@@ -1412,6 +1412,7 @@ sigs_handler(void *p)
 		case SIGUSR2:
 			thrpool_info();
 			replica_check_info();
+			replication_info();
 			continue;
 
 		/* some of these will be never delivered due to `*sigs' */
