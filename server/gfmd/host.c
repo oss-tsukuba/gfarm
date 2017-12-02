@@ -71,7 +71,7 @@ struct host {
 	 */
 	char *fsngroupname;
 
-	pthread_mutex_t back_channel_mutex;
+	/* the following members are protected by abstract_host_mutex */
 
 #ifdef COMPAT_GFARM_2_3
 	/* used by synchronous protocol (i.e. until gfarm-2.3.0) only */
@@ -519,19 +519,8 @@ host_supports_cksum_protocols(struct host *h)
 		>= GFS_PROTOCOL_VERSION_V2_6);
 }
 
-static void
-back_channel_mutex_lock(struct host *h, const char *diag)
-{
-	gfarm_mutex_lock(&h->back_channel_mutex, diag, BACK_CHANNEL_DIAG);
-}
-
-static void
-back_channel_mutex_unlock(struct host *h, const char *diag)
-{
-	gfarm_mutex_unlock(&h->back_channel_mutex, diag, BACK_CHANNEL_DIAG);
-}
-
 #ifdef COMPAT_GFARM_2_3
+
 void
 host_set_callback(struct abstract_host *ah, struct peer *peer,
 	result_callback_t result_callback,
@@ -542,12 +531,12 @@ host_set_callback(struct abstract_host *ah, struct peer *peer,
 	static const char diag[] = "host_set_callback";
 
 	/* XXX FIXME sanity check? */
-	back_channel_mutex_lock(h, diag);
+	abstract_host_mutex_lock(ah, diag);
 	h->back_channel_result = result_callback;
 	h->back_channel_disconnect = disconnect_callback;
 	h->back_channel_callback_peer = peer;
 	h->back_channel_callback_closure = closure;
-	back_channel_mutex_unlock(h, diag);
+	abstract_host_mutex_unlock(ah, diag);
 }
 
 int
@@ -557,7 +546,7 @@ host_get_result_callback(struct host *h, struct peer *peer,
 	int ok;
 	static const char diag[] = "host_get_result_callback";
 
-	back_channel_mutex_lock(h, diag);
+	abstract_host_mutex_lock(&h->ah, diag);
 
 	if (h->back_channel_result == NULL ||
 	    h->back_channel_callback_peer != peer) {
@@ -572,7 +561,7 @@ host_get_result_callback(struct host *h, struct peer *peer,
 		ok = 1;
 	}
 
-	back_channel_mutex_unlock(h, diag);
+	abstract_host_mutex_unlock(&h->ah, diag);
 	return (ok);
 }
 
@@ -584,7 +573,7 @@ host_get_disconnect_callback(struct host *h,
 	int ok;
 	static const char diag[] = "host_get_disconnect_callback";
 
-	back_channel_mutex_lock(h, diag);
+	abstract_host_mutex_lock(&h->ah, diag);
 
 	if (h->back_channel_disconnect == NULL) {
 		ok = 0;
@@ -599,14 +588,14 @@ host_get_disconnect_callback(struct host *h,
 		ok = 1;
 	}
 
-	back_channel_mutex_unlock(h, diag);
+	abstract_host_mutex_unlock(&h->ah, diag);
 	return (ok);
 }
 
-#endif
+#endif /* COMPAT_GFARM_2_3 */
 
 /*
- * PREREQUISITE: host::back_channel_mutex
+ * PREREQUISITE: abstract_host::mutex
  * LOCKS: nothing
  * SLEEPS: no
  */
@@ -618,7 +607,7 @@ host_is_up_unlocked(struct host *h)
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: host::back_channel_mutex
+ * LOCKS: host::acstract_host::mutex
  * SLEEPS: no
  */
 int
@@ -638,9 +627,9 @@ host_is_up_with_grace(struct host *h, gfarm_time_t grace)
 	if (grace <= 0)
 		return (0);
 
-	back_channel_mutex_lock(h, diag);
+	abstract_host_mutex_lock(&h->ah, diag);
 	rv = h->disconnect_time + grace > time(NULL) ? 1 : 0;
-	back_channel_mutex_unlock(h, diag);
+	abstract_host_mutex_unlock(&h->ah, diag);
 	return (rv);
 }
 
@@ -662,9 +651,9 @@ host_is_busy(struct host *h)
 	int busy = 0;
 	static const char diag[] = "host_is_busy";
 
-	back_channel_mutex_lock(h, diag);
+	abstract_host_mutex_lock(&h->ah, diag);
 	busy = host_is_busy_unlocked(h);
-	back_channel_mutex_unlock(h, diag);
+	abstract_host_mutex_unlock(&h->ah, diag);
 
 	return (busy);
 }
@@ -675,13 +664,13 @@ host_is_disk_available(struct host *h, gfarm_off_t size)
 	gfarm_off_t avail, minfree = gfarm_get_minimum_free_disk_space();
 	static const char diag[] = "host_is_disk_available";
 
-	back_channel_mutex_lock(h, diag);
+	abstract_host_mutex_lock(&h->ah, diag);
 
 	if (host_is_up_unlocked(h))
 		avail = h->status.disk_avail_in_byte;
 	else
 		avail = 0;
-	back_channel_mutex_unlock(h, diag);
+	abstract_host_mutex_unlock(&h->ah, diag);
 
 	/* to reduce no space risk, keep minimum disk space */
 	return (avail >= minfree + size);
@@ -741,9 +730,9 @@ host_status_reply_waiting_set(struct host *host)
 {
 	static const char diag[] = "host_status_reply_waiting_set";
 
-	back_channel_mutex_lock(host, diag);
+	abstract_host_mutex_lock(&host->ah, diag);
 	host->status_reply_waiting = 1;
-	back_channel_mutex_unlock(host, diag);
+	abstract_host_mutex_unlock(&host->ah, diag);
 }
 
 void
@@ -751,9 +740,9 @@ host_status_reply_waiting_reset(struct host *host)
 {
 	static const char diag[] = "host_status_reply_waiting_reset";
 
-	back_channel_mutex_lock(host, diag);
+	abstract_host_mutex_lock(&host->ah, diag);
 	host->status_reply_waiting = 0;
-	back_channel_mutex_unlock(host, diag);
+	abstract_host_mutex_unlock(&host->ah, diag);
 }
 
 int
@@ -762,9 +751,9 @@ host_status_reply_is_waiting(struct host *host)
 	int waiting;
 	static const char diag[] = "host_status_reply_is_waiting";
 
-	back_channel_mutex_lock(host, diag);
+	abstract_host_mutex_lock(&host->ah, diag);
 	waiting = host->status_reply_waiting;
-	back_channel_mutex_unlock(host, diag);
+	abstract_host_mutex_unlock(&host->ah, diag);
 
 	return (waiting);
 }
@@ -794,7 +783,7 @@ host_status_update(struct host *host, struct host_status *status)
 	int saved_busy = 0, busy = 0;
 	const char diag[] = "status_update";
 
-	back_channel_mutex_lock(host, diag);
+	abstract_host_mutex_lock(&host->ah, diag);
 
 	host->status_reply_waiting = 0;
 
@@ -813,7 +802,7 @@ host_status_update(struct host *host, struct host_status *status)
 	host->status.disk_avail_in_byte = status->disk_avail * 1024;
 	busy = host_is_busy_unlocked(host);
 
-	back_channel_mutex_unlock(host, diag);
+	abstract_host_mutex_unlock(&host->ah, diag);
 
 	host_total_disk_update(saved_used, saved_avail,
 	    status->disk_used, status->disk_avail);
@@ -831,12 +820,12 @@ host_status_get_disk_usage(struct host *host,
 {
 	const char diag[] = "host_status_get_disk_usage";
 
-	back_channel_mutex_lock(host, diag);
+	abstract_host_mutex_lock(&host->ah, diag);
 	if (used)
 		*used = host->status.disk_used_in_byte;
 	if (avail)
 		*avail = host->status.disk_avail_in_byte;
-	back_channel_mutex_unlock(host, diag);
+	abstract_host_mutex_unlock(&host->ah, diag);
 }
 
 /* 0 - 100 % */
@@ -856,19 +845,19 @@ host_status_update_disk_usage(struct host *host, gfarm_off_t filesize)
 {
 	const char diag[] = "host_status_update_disk_usage";
 
-	back_channel_mutex_lock(host, diag);
+	abstract_host_mutex_lock(&host->ah, diag);
 	host->status.disk_used_in_byte += filesize;
 	host->status.disk_avail_in_byte -= filesize;
 	host->status.disk_used = host->status.disk_used_in_byte / 1024;
 	host->status.disk_avail = host->status.disk_avail_in_byte / 1024;
-	back_channel_mutex_unlock(host, diag);
+	abstract_host_mutex_unlock(&host->ah, diag);
 }
 
 /*
  * PREREQUISITE: giant_lock
- * LOCKS: host::back_channel_mutex, dfc_allq.mutex, removal_pendingq.mutex
+ * LOCKS: abstract_host::mutex, dfc_allq.mutex, removal_pendingq.mutex
  * SLEEPS: maybe (see the comment of dead_file_copy_host_becomes_up())
- *	but host::back_channel_mutex, dfc_allq.mutex and removal_pendingq.mutex
+ *	but abstract_host::mutex, dfc_allq.mutex and removal_pendingq.mutex
  *	won't be blocked while sleeping.
  */
 static void
@@ -893,7 +882,7 @@ host_set_peer_unlocked(struct abstract_host *ah, struct peer *p)
 }
 
 /*
- * PREREQUISITE: host::back_channel_mutex
+ * PREREQUISITE: abstract_host::mutex
  * LOCKS: removal_pendingq.mutex, host_busyq.mutex
  * SLEEPS: no
  */
@@ -903,14 +892,14 @@ host_unset_peer(struct abstract_host *ah, struct peer *peer)
 	callout_stop(abstract_host_to_host(ah)->status_callout);
 }
 
+/*
+ * PREREQUISITE: abstract_host::mutex
+ */
 static void
 host_disable(struct abstract_host *ah)
 {
 	struct host *h = abstract_host_to_host(ah);
 	gfarm_uint64_t saved_used, saved_avail;
-	static const char diag[] = "host_disable";
-
-	back_channel_mutex_lock(h, diag);
 
 	if (h->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
 		saved_used = h->status.disk_used;
@@ -922,30 +911,27 @@ host_disable(struct abstract_host *ah)
 	h->report_flags = 0;
 	h->disconnect_time = time(NULL);
 
-	back_channel_mutex_unlock(h, diag);
-
 	host_total_disk_update(saved_used, saved_avail, 0, 0);
-	replica_check_start_host_down();
 }
 
 static void
 host_disabled(struct abstract_host *ah, struct peer *peer)
 {
+	replica_check_start_host_down();
 	dead_file_copy_host_becomes_down(abstract_host_to_host(ah));
 }
 
 /*
  * PREREQUISITE: nothing
  * LOCKS:
- *  - abstract_host_mutex
+ *  - abstract_host::mutex
  *    in abstract_host_disconnect_request()
+ *    in abstract_host::ops::disable() == host_disable()
+ *    which is called from abstract_host::ops::disable() == host_disable()
  *  - callout_module::mutex
  *    in host_unset_peer()
  *    which is called from abstract_host_peer_unset()
  *    which is called from abstract_host_disconnect_request()
- *  - host::back_channel_mutex
- *    in abstract_host::ops::disable() == host_disable()
- *    which is called from abstract_host::ops::disable() == host_disable()
  *  - total_disk_mutex
  *    in abstract_host::ops::disable() == host_disable()
  *    which is called from abstract_host::ops::disable() == host_disable()
@@ -990,10 +976,9 @@ host_new(struct gfarm_host_info *hi, struct callout *callout)
 	GFARM_MALLOC(h);
 	if (h == NULL)
 		return (NULL);
-	abstract_host_init(&h->ah, &host_ops, "host_new");
+	abstract_host_init(&h->ah, &host_ops, diag);
 	h->hi = *hi;
 	h->fsngroupname = NULL;
-	gfarm_mutex_init(&h->back_channel_mutex, diag, BACK_CHANNEL_DIAG);
 #ifdef COMPAT_GFARM_2_3
 	h->back_channel_result = NULL;
 	h->back_channel_disconnect = NULL;
@@ -1231,7 +1216,7 @@ host_is_disk_available_filter(struct host *host, void *closure)
 /*
  * PREREQUISITE: giant_lock (for gfarm_replication_busy_host)
  * LOCKS:
- *  - host::back_channel_mutex
+ *  - abstract_host::mutex
  *    in host_is_busy() and host_is_disk_available()
  */
 gfarm_error_t
@@ -1296,7 +1281,7 @@ host_from_all(int (*filter)(struct host *, void *), void *closure,
 
 /*
  * PREREQUISITE: giant_lock
- * LOCKS: host::back_channel_mutex
+ * LOCKS: abstract_host::mutex
  * SLEEPS: no
  */
 int
@@ -1562,9 +1547,9 @@ host_init(void)
 
 /*
  * PREREQUISITE: giant_lock
- * LOCKS: host::back_channel_mutex
+ * LOCKS: abstract_host::mutex
  * SLEEPS: maybe
- *	but host::back_channel_mutex won't be blocked while sleeping.
+ *	but abstract_host::mutex won't be blocked while sleeping.
  */
 static gfarm_error_t
 gfm_server_host_generic_get(struct peer *peer,
@@ -2100,11 +2085,11 @@ host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 	gfarm_time_t last_report;
 	gfarm_int32_t report_flags;
 
-	back_channel_mutex_lock(h, diag);
+	abstract_host_mutex_lock(&h->ah, diag);
 	status = h->status;
 	last_report = h->last_report;
 	report_flags = h->report_flags;
-	back_channel_mutex_unlock(h, diag);
+	abstract_host_mutex_unlock(&h->ah, diag);
 	return (gfp_xdr_send(peer_get_conn(peer), "siiillllii",
 	    h->hi.hostname, h->hi.port, h->hi.ncpu,
 	    (gfarm_int32_t)(status.loadavg_1min * GFM_PROTO_LOADAVG_FSCALE),
