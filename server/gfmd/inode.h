@@ -210,6 +210,7 @@ extern gfarm_error_t (*inode_schedule_file)(struct file_opening *,
 	struct peer *, gfarm_int32_t *, struct host ***);
 
 struct file_replicating;
+void replication_info(void);
 gfarm_error_t file_replicating_new(
 	struct inode *, struct host *, struct dead_file_copy *,
 	struct dirset *, struct file_replicating **);
