@@ -7,10 +7,10 @@ Updated feature
 * show the number of ongoing replications by SIGUSR2
 
 Bug fix
-* spool_check_level disable makes gfsd unstable, which is introduced
-  since the version 2.7.6
+* spool_check_level disable makes gfsd unstable, which has been
+  introduced since the version 2.7.6
 * fix data race when switching gfsd or gfmd connections, that may make
-  segfalut
+  segfault
 * fix data race about gfsd status
 
 Release note for Gfarm 2.7.7
