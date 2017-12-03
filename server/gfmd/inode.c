@@ -5541,7 +5541,7 @@ replication_info(void)
 	giant_lock();
 	count = file_replicating_count;
 	giant_unlock();
-	gflog_info(GFARM_MSG_UNFIXED, "number of ongoing replications: %llu",
+	gflog_info(GFARM_MSG_1005044, "number of ongoing replications: %llu",
 	    count);
 }
 
