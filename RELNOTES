@@ -1,3 +1,23 @@
+Release note for Gfarm 2.6.23
+=============================
+
+[2017.12.03]
+
+New configuration directive
+* metadb_server_remover_queue_length - queue length for remove
+  requests to make it a low priority not to prevent from replication
+  requests
+
+Updated feature
+* show the number of ongoing replications by SIGUSR2
+
+Bug fix
+* spool_check_level disable makes gfsd unstable, which has been
+  introduced since the version 2.6.22
+* fix data race when switching gfsd or gfmd connections, that may make
+  segfault
+* fix data race about gfsd status
+
 Release note for Gfarm 2.6.22
 =============================
 
