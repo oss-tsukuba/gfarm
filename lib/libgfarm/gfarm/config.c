@@ -3843,6 +3843,18 @@ gfarm_config_validate_positive_int(union gfarm_config_storage *storage)
 }
 
 int
+gfarm_config_validate_non_negative_int(union gfarm_config_storage *storage)
+{
+	return (storage->i >= 0);
+}
+
+int
+gfarm_config_validate_percentage(union gfarm_config_storage *storage)
+{
+	return (storage->i >= 0 && storage->i <= 100);
+}
+
+int
 gfarm_config_validate_max_directory_depth(union gfarm_config_storage *storage)
 {
 	/*
@@ -3884,7 +3896,7 @@ gfarm_config_validate_profile(union gfarm_config_storage *storage)
 	if (!gfarm_config_validate_enabled(storage))
 		return (0);
 
-	/* XXX abuse about the role of gfarm_config_type::validater() */
+	/* XXX abuse about the role of gfarm_config_type::validator() */
 	eval_profile(storage->i);
 
 	return (1);
@@ -3923,7 +3935,7 @@ const struct gfarm_config_type {
 	int for_metadb;
 	int (*printer)(void *, char *, size_t);
 	void (*set_default)(void *);
-	int (*validater)(union gfarm_config_storage *);
+	int (*validator)(union gfarm_config_storage *);
 	void *addr; /* maybe NULL, if it's in gfarm_ctxp-> */
 	size_t offset; /* only available if it's in gfarm_ctxp-> */
 } config_types[] = {
@@ -3999,20 +4011,20 @@ const struct gfarm_config_type {
 	 */
 	{ "replica_check_remove_grace_used_space_ratio", 'i', 1,
 	  gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  gfarm_config_set_default_int, gfarm_config_validate_percentage,
 	  &gfarm_replica_check_remove_grace_used_space_ratio, 0 },
 	{ "replica_check_remove_grace_time", 'i', 1,
 	  gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
 	  &gfarm_replica_check_remove_grace_time, 0 },
 	{ "replica_check_host_down_thresh", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
 	  &gfarm_replica_check_host_down_thresh, 0 },
 	{ "replica_check_sleep_time", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
 	  &gfarm_replica_check_sleep_time, 0 },
 	{ "replica_check_minimum_interval", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
 	  &gfarm_replica_check_minimum_interval, 0 },
 	{ "replication_busy_host", 'i', 1, gfarm_config_print_enabled,
 	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
@@ -4124,7 +4136,7 @@ gfarm_config_copyin(const struct gfarm_config_type *type,
 	if (addr == NULL)
 		return (GFARM_ERR_BAD_ADDRESS);
 
-	if (!(*type->validater)(storage))
+	if (!(*type->validator)(storage))
 		return (GFARM_ERR_INVALID_ARGUMENT);
 
 	switch (type->fmt) {
