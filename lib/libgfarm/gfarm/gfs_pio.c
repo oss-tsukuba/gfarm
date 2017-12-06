@@ -446,7 +446,7 @@ gfs_pio_create_igen(const char *url, int flags, gfarm_mode_t mode,
 	struct gfm_connection *gfm_server;
 	int fd, type;
 	gfarm_timerval_t t1, t2;
-	char *real_url;
+	char *real_url = NULL;
 	/* for gfarm_file_trace */
 	int src_port;
 	gfarm_ino_t inum;
@@ -468,6 +468,7 @@ gfs_pio_create_igen(const char *url, int flags, gfarm_mode_t mode,
 			e = gfs_file_alloc(gfm_server, fd, flags, real_url,
 			    inum, gen, cip, gfp);
 		if (e != GFARM_ERR_NO_ERROR) {
+			free(real_url);
 			/* ignore result */
 			(void)gfm_close_fd(gfm_server, fd, NULL, NULL);
 			gfm_client_connection_free(gfm_server);
