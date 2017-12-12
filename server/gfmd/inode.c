@@ -935,19 +935,8 @@ inode_tdirset_check(struct inode *inode, struct dirset *tdirset,
 		gflog_warning(GFARM_MSG_1004666,
 		    "%s: inode %lld: unknown dirset, scheduling quota_check",
 		    diag, (long long)inode_get_number(inode));
+		gfarm_log_backtrace_symbols();
 		dirquota_check_schedule();
-	}
-}
-
-static void
-inode_tdirset_info(struct inode *inode, struct dirset *tdirset,
-	const char *diag)
-{
-	if (tdirset == TDIRSET_IS_UNKNOWN) {
-		/* DQTODO: change this to gflog_debug() in release version */
-		gflog_info(GFARM_MSG_1004667,
-		    "%s: inode %lld: unknown dirset",
-		    diag, (long long)inode_get_number(inode));
 	}
 }
 
@@ -5561,30 +5550,40 @@ file_replicating_new(struct inode *inode, struct host *dst,
 
 	if (!host_is_disk_available(dst, inode_get_size(inode)))
 		return (GFARM_ERR_NO_SPACE);
-	if ((e = inode_add_replica(inode, dst, 0)) != GFARM_ERR_NO_ERROR)
+
+	ia_alloc_tried = (inode->u.c.activity == NULL);
+	ia = inode_activity_alloc_or_update(&inode->u.c.activity, tdirset);
+	if (ia == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	if ((e = inode_add_replica(inode, dst, 0)) != GFARM_ERR_NO_ERROR) {
+		if (ia_alloc_tried)
+			inode_activity_free_try(inode);
 		return (e);
-	if (frp == NULL) /* client initiated replication case */
+	}
+	if (frp == NULL) { /* client initiated replication case */
+		if (ia_alloc_tried)
+			inode_activity_free_try(inode);
 		return (GFARM_ERR_NO_ERROR);
+	}
 
 	if ((e = host_replicating_new(dst, &fr)) != GFARM_ERR_NO_ERROR) {
 		(void)inode_remove_replica_in_cache(inode, dst);
 		/* abandon error */
+		if (ia_alloc_tried)
+			inode_activity_free_try(inode);
 		return (e);
 	}
-	ia_alloc_tried = (inode->u.c.activity == NULL);
-	ia = inode_activity_alloc_or_update(&inode->u.c.activity, tdirset);
-	irs = ia != NULL ? ia->u.f.rstate : NULL;
-	if (ia == NULL || irs == NULL) {
-		if (ia != NULL) {
-			GFARM_MALLOC(irs);
-			if (irs == NULL)
-				gflog_error(GFARM_MSG_1004343, "no memory");
-		}
-		if (ia == NULL || irs == NULL) {
+
+	irs = ia->u.f.rstate;
+	if (irs == NULL) {
+		GFARM_MALLOC(irs);
+		if (irs == NULL) {
+			gflog_error(GFARM_MSG_1004343, "no memory");
 			peer_replicating_free(fr);
 			(void)inode_remove_replica_in_cache(inode, dst);
 			/* abandon error */
-			if (ia != NULL && ia_alloc_tried)
+			if (ia_alloc_tried)
 				inode_activity_free_try(inode);
 			return (GFARM_ERR_NO_MEMORY);
 		}
@@ -5891,7 +5890,7 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 		e = quota_limit_check(inode_get_user(inode),
 		    inode_get_group(inode), tdirset, 0, 1,
 		    inode_get_size(inode));
-		inode_tdirset_info(inode, tdirset, diag);
+		inode_tdirset_check(inode, tdirset, diag);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001767,
 				"checking of limits of the replica failed");
