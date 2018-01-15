@@ -1,6 +1,7 @@
 extern int debug_mode;
 
 void giant_init(void);
+void giant_type_log(void);
 void giant_lock(void);
 int giant_trylock(void);
 void giant_unlock(void);

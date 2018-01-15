@@ -151,7 +151,7 @@ gfarm_mutex_destroy(pthread_mutex_t *mutex, const char *where, const char *what)
 }
 
 
-#ifndef __KERNEL__	/* gfarm_cond_*, gfarm_rwlock_* */
+#ifndef __KERNEL__	/* gfarm_cond_*, gfarm_rwlock_*, gfarm_ticketlock_* */
 
 void
 gfarm_cond_init(pthread_cond_t *cond, const char *where, const char *what)
@@ -261,6 +261,19 @@ gfarm_rwlock_wrlock(
 		    where, what, strerror(err));
 }
 
+/* false: EBUSY */
+int
+gfarm_rwlock_trywrlock(
+	pthread_rwlock_t *rwlock, const char *where, const char *what)
+{
+	int err = pthread_rwlock_trywrlock(rwlock);
+
+	if (err != 0 && err != EBUSY)
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s rwlock trywrlock: %s",
+		    where, what, strerror(err));
+	return (err == 0);
+}
+
 void
 gfarm_rwlock_unlock(
 	pthread_rwlock_t *rwlock, const char *where, const char *what)
@@ -281,6 +294,68 @@ gfarm_rwlock_destroy(
 	if (err != 0)
 		gflog_fatal(GFARM_MSG_1004746, "%s: %s rwlock destroy: %s",
 		    where, what, strerror(err));
+}
+
+/*
+ * ticket lock implementation from:
+ * https://stackoverflow.com/questions/6449732/fair-critical-section-linux
+ * by caf (https://stackoverflow.com/users/134633/caf)
+ * 2011-06-23 12:24
+ */
+
+void
+gfarm_ticketlock_init(struct gfarm_ticketlock *tl,
+	const char *where, const char *what)
+{
+	gfarm_mutex_init(&tl->mutex, where, what);
+	gfarm_cond_init(&tl->unlocked, where, what);
+	tl->queue_head = tl->queue_tail = 0;
+}
+
+int
+gfarm_ticketlock_trylock(struct gfarm_ticketlock *tl,
+	const char *where, const char *what)
+{
+	int locked;
+
+	gfarm_mutex_lock(&tl->mutex, where, what);
+	locked = tl->queue_tail == tl->queue_head;
+	if (locked)
+		tl->queue_tail++;
+	gfarm_mutex_unlock(&tl->mutex, where, what);
+	return (locked);
+}
+
+void
+gfarm_ticketlock_lock(struct gfarm_ticketlock *tl,
+	const char *where, const char *what)
+{
+	unsigned long queue_me;
+
+	gfarm_mutex_lock(&tl->mutex, where, what);
+	queue_me = tl->queue_tail++;
+	while (queue_me != tl->queue_head) {
+		gfarm_cond_wait(&tl->unlocked, &tl->mutex, where, what);
+	}
+	gfarm_mutex_unlock(&tl->mutex, where, what);
+}
+
+void
+gfarm_ticketlock_unlock(struct gfarm_ticketlock *tl,
+	const char *where, const char *what)
+{
+	gfarm_mutex_lock(&tl->mutex, where, what);
+	tl->queue_head++;
+	gfarm_cond_broadcast(&tl->unlocked, where, what);
+	gfarm_mutex_unlock(&tl->mutex, where, what);
+}
+
+void
+gfarm_ticketlock_destroy(struct gfarm_ticketlock *tl,
+	const char *where, const char *what)
+{
+	gfarm_cond_destroy(&tl->unlocked, where, what);
+	gfarm_mutex_destroy(&tl->mutex, where, what);
 }
 
 #endif /* __KERNEL__ */
