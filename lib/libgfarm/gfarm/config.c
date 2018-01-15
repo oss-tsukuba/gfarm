@@ -1037,6 +1037,8 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_METADB_SERVER_SLAVE_MAX_SIZE_DEFAULT	16
 #define GFARM_METADB_SERVER_FORCE_SLAVE_DEFAULT		0
 #define GFARM_METADB_SERVER_NFS_ROOT_SQUASH_SUPPORT_DEFAULT	1 /* enable */
+#define GFARM_METADB_SERVER_LONG_TERM_LOCK_TYPE_DEFAULT	\
+	GFARM_LOCK_TYPE_TICKETLOCK
 #define GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT  60 /* 60 seconds */
 #define GFARM_FILE_TRACE_DEFAULT 0 /* disable */
 #define GFARM_FATAL_ACTION_DEFAULT GFLOG_FATAL_ACTION_ABORT_BACKTRACE
@@ -1047,6 +1049,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_REPLICA_CHECK_REDUCED_LOG_DEFAULT 1 /* enable */
 #define GFARM_REPLICA_CHECK_HOST_DOWN_THRESH_DEFAULT 10800 /* 3 hours */
 #define GFARM_REPLICA_CHECK_SLEEP_TIME_DEFAULT 100000 /* nanosec. */
+#define GFARM_REPLICA_CHECK_YIELD_TIME_DEFAULT 0 /* nanosec. (disabled) */
 #define GFARM_REPLICA_CHECK_MINIMUM_INTERVAL_DEFAULT 10 /* 10 sec. */
 #define GFARM_REPLICAINFO_ENABLED_DEFAULT	1 /* enable */
 
@@ -1070,6 +1073,7 @@ int gfarm_metadb_heartbeat_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_dbq_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_server_back_channel_sndbuf_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_server_nfs_root_squash_support = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_server_long_term_lock_type = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_replica_remover_by_host_sleep_time =
 	GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_replica_remover_by_host_inode_step =
@@ -1091,6 +1095,7 @@ int gfarm_replica_check_remove_grace_time = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_reduced_log = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_host_down_thresh = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_sleep_time = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_replica_check_yield_time = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_minimum_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replicainfo_enabled = GFARM_CONFIG_MISC_DEFAULT;
 
@@ -2491,6 +2496,59 @@ parse_digest_type(char *p, char **rv)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+struct gfarm_name_value_tuple {
+	const char *name;
+	int value;
+};
+
+static gfarm_error_t
+parse_set_misc_name_value_table(char *p, int *vp,
+	struct gfarm_name_value_tuple *table, size_t table_size,
+	const char *table_name)
+{
+	gfarm_error_t e;
+	char *s;
+	size_t i;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "get_one_argument failed "
+		    "when parsing %s(%s): %s",
+		    table_name, p, gfarm_error_string(e));
+		return (e);
+	}
+
+	for (i = 0; i < table_size; i++) {
+		if (strcmp(s, table[i].name) == 0)
+			break;
+	}
+	if (i >= table_size) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s(%s): unknown %s", table_name, s, table_name);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+
+	if (*vp != GFARM_CONFIG_MISC_DEFAULT) /* first line has precedence */
+		return (GFARM_ERR_NO_ERROR);
+	*vp = table[i].value;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static struct gfarm_name_value_tuple lock_type_name_table[] = {
+	{ "mutex", GFARM_LOCK_TYPE_MUTEX },
+	{ "ticketlock", GFARM_LOCK_TYPE_TICKETLOCK },
+};
+
+static gfarm_error_t
+parse_set_misc_lock_type(char *p, int *vp)
+{
+	return (parse_set_misc_name_value_table(p, vp,
+	    lock_type_name_table, GFARM_ARRAY_LENGTH(lock_type_name_table),
+	    "lock_type"));
+}
+
 static gfarm_error_t
 parse_log_level(char *p, int *vp)
 {
@@ -3264,6 +3322,9 @@ parse_one_line(char *s, char *p, char **op)
 	    == 0) {
 		e = parse_set_misc_enabled(p,
 		    &gfarm_metadb_server_nfs_root_squash_support);
+	} else if (strcmp(s, o = "metadb_server_long_term_lock_type") == 0) {
+		e = parse_set_misc_lock_type(p,
+		    &gfarm_metadb_server_long_term_lock_type);
 	} else if (strcmp(s, o = "metadb_replica_remover_by_host_sleep_time")
 	     == 0) {
 		e = parse_set_misc_int(p,
@@ -3346,6 +3407,8 @@ parse_one_line(char *s, char *p, char **op)
 		    p, &gfarm_replica_check_host_down_thresh);
 	} else if (strcmp(s, o = "replica_check_sleep_time") == 0) {
 		e = parse_set_misc_int(p, &gfarm_replica_check_sleep_time);
+	} else if (strcmp(s, o = "replica_check_yield_time") == 0) {
+		e = parse_set_misc_int(p, &gfarm_replica_check_yield_time);
 	} else if (strcmp(s, o = "replica_check_minimum_interval") == 0) {
 		e = parse_set_misc_int(
 		    p, &gfarm_replica_check_minimum_interval);
@@ -3667,6 +3730,10 @@ gfarm_config_set_default_misc(void)
 	    == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_server_nfs_root_squash_support =
 		    GFARM_METADB_SERVER_NFS_ROOT_SQUASH_SUPPORT_DEFAULT;
+	if (gfarm_metadb_server_long_term_lock_type
+	    == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_metadb_server_long_term_lock_type =
+		    GFARM_METADB_SERVER_LONG_TERM_LOCK_TYPE_DEFAULT;
 	if (gfarm_ctxp->network_receive_timeout == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->network_receive_timeout =
 		    GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT;
@@ -3695,6 +3762,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_replica_check_sleep_time == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_replica_check_sleep_time =
 		    GFARM_REPLICA_CHECK_SLEEP_TIME_DEFAULT;
+	if (gfarm_replica_check_yield_time == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_replica_check_yield_time =
+		    GFARM_REPLICA_CHECK_YIELD_TIME_DEFAULT;
 	if (gfarm_replica_check_minimum_interval == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_replica_check_minimum_interval =
 		    GFARM_REPLICA_CHECK_MINIMUM_INTERVAL_DEFAULT;
@@ -3919,6 +3989,9 @@ const struct gfarm_config_type {
 	{ "replica_check_sleep_time", 'i', 1, gfarm_config_print_int,
 	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
 	  &gfarm_replica_check_sleep_time, 0 },
+	{ "replica_check_yield_time", 'i', 1, gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
+	  &gfarm_replica_check_yield_time, 0 },
 	{ "replica_check_minimum_interval", 'i', 1, gfarm_config_print_int,
 	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
 	  &gfarm_replica_check_minimum_interval, 0 },

@@ -1721,6 +1721,8 @@ main(int argc, char **argv)
 		if (gfarm_daemon(0, 0) == -1)
 			gflog_warning_errno(GFARM_MSG_1001487, "daemon");
 	}
+	giant_type_log();
+
 	/*
 	 * We do this after calling gfarm_daemon(),
 	 * because it changes pid.

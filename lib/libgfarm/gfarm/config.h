@@ -72,6 +72,14 @@ extern int gfarm_metadb_heartbeat_interval;
 extern int gfarm_metadb_dbq_size;
 extern int gfarm_metadb_server_back_channel_sndbuf_limit;
 extern int gfarm_metadb_server_nfs_root_squash_support;
+
+enum gfarm_lock_type {
+	GFARM_LOCK_TYPE_MUTEX,
+	GFARM_LOCK_TYPE_TICKETLOCK,
+	GFARM_LOCK_TYPE_LIMIT
+};
+extern int gfarm_metadb_server_long_term_lock_type;
+
 extern int gfarm_metadb_replica_remover_by_host_sleep_time;
 extern int gfarm_metadb_replica_remover_by_host_inode_step;
 extern int gfarm_replica_check;
@@ -81,6 +89,7 @@ extern int gfarm_replica_check_remove_grace_time;
 extern int gfarm_replica_check_reduced_log;
 extern int gfarm_replica_check_host_down_thresh;
 extern int gfarm_replica_check_sleep_time;
+extern int gfarm_replica_check_yield_time;
 extern int gfarm_replica_check_minimum_interval;
 extern int gfarm_replicainfo_enabled;
 #define GFARM_METADB_STACK_SIZE_DEFAULT 0 /* use OS default */

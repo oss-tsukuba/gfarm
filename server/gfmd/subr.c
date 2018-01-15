@@ -24,30 +24,120 @@ int debug_mode = 0;
 
 static pthread_mutex_t giant_mutex;
 
+static void
+giant_mutex_init(void)
+{
+	gfarm_mutex_init(&giant_mutex, "giant_init", "giant");
+}
+
+static void
+giant_mutex_lock(void)
+{
+	gfarm_mutex_lock(&giant_mutex, "giant_lock", "giant");
+}
+
+/* false: busy */
+static int
+giant_mutex_trylock(void)
+{
+	return (gfarm_mutex_trylock(&giant_mutex, "giant_trylock", "giant"));
+}
+
+static void
+giant_mutex_unlock(void)
+{
+	gfarm_mutex_unlock(&giant_mutex, "giant_unlock", "giant");
+}
+
+static struct gfarm_ticketlock giant_ticketlock;
+
+static void
+giant_ticketlock_init(void)
+{
+	gfarm_ticketlock_init(&giant_ticketlock, "giant_init", "giant");
+}
+
+static void
+giant_ticketlock_lock(void)
+{
+	gfarm_ticketlock_lock(&giant_ticketlock, "giant_lock", "giant");
+}
+
+/* false: busy */
+static int
+giant_ticketlock_trylock(void)
+{
+	return (gfarm_ticketlock_trylock(
+	    &giant_ticketlock, "giant_trylock", "giant"));
+}
+
+static void
+giant_ticketlock_unlock(void)
+{
+	gfarm_ticketlock_unlock(&giant_ticketlock, "giant_unlock", "giant");
+}
+
+static struct giant_lock_sw_entry {
+	const char *name;
+	void (*init)(void);
+	void (*lock)(void);
+	int (*trylock)(void);
+	void (*unlock)(void);
+} giant_lock_sw_table[] = {
+	/* GFARM_LOCK_TYPE_MUTEX */
+	{
+		"mutex",
+		giant_mutex_init,
+		giant_mutex_lock,
+		giant_mutex_trylock,
+		giant_mutex_unlock,
+	},
+	/* GFARM_LOCK_TYPE_TICKETLOCK */
+	{
+		"ticketlock",
+		giant_ticketlock_init,
+		giant_ticketlock_lock,
+		giant_ticketlock_trylock,
+		giant_ticketlock_unlock,
+	},
+};
+
+static struct giant_lock_sw_entry *giant_lock_sw;
+
 void
 giant_init(void)
 {
-	gfarm_mutex_init(&giant_mutex, "giant_init", "giant");
+	giant_lock_sw =
+	    &giant_lock_sw_table[gfarm_metadb_server_long_term_lock_type];
+	giant_lock_sw->init();
+}
+
+void
+giant_type_log(void)
+{
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "giant lock type = %s", giant_lock_sw->name);
 }
 
 void
 giant_lock(void)
 {
-	gfarm_mutex_lock(&giant_mutex, "giant_lock", "giant");
+	giant_lock_sw->lock();
 }
 
 /* false: busy */
 int
 giant_trylock(void)
 {
-	return (gfarm_mutex_trylock(&giant_mutex, "giant_trylock", "giant"));
+	return (giant_lock_sw->trylock());
 }
 
 void
 giant_unlock(void)
 {
-	gfarm_mutex_unlock(&giant_mutex, "giant_unlock", "giant");
+	giant_lock_sw->unlock();
 }
+
 
 static pthread_mutex_t config_var_mutex;
 
