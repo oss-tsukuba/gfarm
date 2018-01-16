@@ -295,6 +295,9 @@ gfarm_rwlock_destroy(
 }
 
 /*
+ * to avoid unfair scheduling about long-term holding mutex/rwlock/
+ * POSIX semaphore on Linux (at least on RHEL6 / RHEL7 multicore machine)
+ *
  * ticket lock implementation from:
  * https://stackoverflow.com/questions/6449732/fair-critical-section-linux
  * by caf (https://stackoverflow.com/users/134633/caf)
