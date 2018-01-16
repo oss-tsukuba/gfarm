@@ -1,3 +1,18 @@
+Release note for Gfarm 2.7.9
+============================
+
+[2018.1.16]
+
+Updated feature
+* gfmd - improve response time during replica check when enabling
+  replica info.  By default, use a ticket lock for FIFO thread
+  scheduling instead of a stock mutex lock.
+
+Bug fix
+* replica check does not honor directory quota 
+* fix deadlock or segfault when reading files using InfiniBand RDMA if
+  reconnection happens
+
 Release note for Gfarm 2.7.8
 ============================
 
