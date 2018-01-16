@@ -1,3 +1,13 @@
+Release note for Gfarm 2.6.24
+=============================
+
+[2018.1.16]
+
+Updated feature
+* gfmd - improve response time during replica check when enabling
+  replica info.  By default, use a ticket lock for FIFO thread
+  scheduling instead of a stock mutex lock.
+
 Release note for Gfarm 2.6.23
 =============================
 
