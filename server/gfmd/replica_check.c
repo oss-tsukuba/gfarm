@@ -742,7 +742,7 @@ replica_check_main(void)
 	    (long long)time_total, (float)time_total / 60 / 60,
 	    lock_sleep_time, retry_sleep_time);
 	if (total_yield_time != 0) { /* hide undocumented unless it's set */
-		RC_LOG_INFO(GFARM_MSG_UNFIXED,
+		RC_LOG_INFO(GFARM_MSG_1005049,
 		    "replica_check: yield sleep=%g",
 		    total_yield_time);
 	}

@@ -120,7 +120,7 @@ giant_init(void)
 void
 giant_type_log(void)
 {
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1005048,
 	    "giant lock type = %s", giant_lock_sw->name);
 }
 
