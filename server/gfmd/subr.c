@@ -285,7 +285,7 @@ gfarm_pthread_set_priority_minimum(const char *thread_name)
 	if (save_errno != 0) {
 		gflog_warning(GFARM_MSG_1004252,
 		    "%s: pthread_get_schedparam(): %s",
-		    thread_name, strerror(errno));
+		    thread_name, strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
 
@@ -311,7 +311,7 @@ gfarm_pthread_set_priority_minimum(const char *thread_name)
 	if (save_errno != 0) {
 		gflog_warning(GFARM_MSG_1004255,
 		    "%s: pthread_set_schedparam(%d, %d): %s",
-		    thread_name, policy, min_prio, strerror(errno));
+		    thread_name, policy, min_prio, strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
 
