@@ -79,6 +79,7 @@ extern int gfarm_metadb_server_nfs_root_squash_support;
 enum gfarm_lock_type {
 	GFARM_LOCK_TYPE_MUTEX,
 	GFARM_LOCK_TYPE_TICKETLOCK,
+	GFARM_LOCK_TYPE_QUEUELOCK,
 	GFARM_LOCK_TYPE_LIMIT
 };
 extern int gfarm_metadb_server_long_term_lock_type;
