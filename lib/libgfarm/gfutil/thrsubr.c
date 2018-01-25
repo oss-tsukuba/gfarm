@@ -1,5 +1,7 @@
+#include <assert.h>
 #include <pthread.h>
 #include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -149,7 +151,7 @@ gfarm_mutex_destroy(pthread_mutex_t *mutex, const char *where, const char *what)
 }
 
 
-#ifndef __KERNEL__	/* gfarm_cond_*, gfarm_rwlock_*, gfarm_ticketlock_* */
+#ifndef __KERNEL__ /* gfarm_{cond,rwlock,ticketlock,queuelock}_* */
 
 void
 gfarm_cond_init(pthread_cond_t *cond, const char *where, const char *what)
@@ -305,12 +307,21 @@ gfarm_rwlock_destroy(
  */
 
 void
-gfarm_ticketlock_init(struct gfarm_ticketlock *tl,
+gfarm_ticketlock_init(struct gfarm_ticketlock *tl, int cond_number,
 	const char *where, const char *what)
 {
+	int i;
+
 	gfarm_mutex_init(&tl->mutex, where, what);
-	gfarm_cond_init(&tl->unlocked, where, what);
 	tl->queue_head = tl->queue_tail = 0;
+	GFARM_MALLOC_ARRAY(tl->unlocked, cond_number);
+	if (tl->unlocked == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "%s: %s %d ticketlocks: no memory",
+		    where, what, cond_number);
+	for (i = 0; i < cond_number; i++)
+		gfarm_cond_init(&tl->unlocked[i], where, what);
+	tl->cond_number = cond_number;
 }
 
 int
@@ -335,8 +346,17 @@ gfarm_ticketlock_lock(struct gfarm_ticketlock *tl,
 
 	gfarm_mutex_lock(&tl->mutex, where, what);
 	queue_me = tl->queue_tail++;
-	while (queue_me != tl->queue_head) {
-		gfarm_cond_wait(&tl->unlocked, &tl->mutex, where, what);
+	if (queue_me != tl->queue_head) {
+		for (;;) {
+			gfarm_cond_wait(
+			    &tl->unlocked[queue_me % tl->cond_number],
+			    &tl->mutex, where, what);
+			if (queue_me == tl->queue_head)
+				break;
+			gfarm_cond_signal(
+			    &tl->unlocked[queue_me % tl->cond_number],
+			    where, what);
+		}
 	}
 	gfarm_mutex_unlock(&tl->mutex, where, what);
 }
@@ -347,7 +367,8 @@ gfarm_ticketlock_unlock(struct gfarm_ticketlock *tl,
 {
 	gfarm_mutex_lock(&tl->mutex, where, what);
 	tl->queue_head++;
-	gfarm_cond_broadcast(&tl->unlocked, where, what);
+	gfarm_cond_signal(&tl->unlocked[tl->queue_head % tl->cond_number],
+	    where, what);
 	gfarm_mutex_unlock(&tl->mutex, where, what);
 }
 
@@ -355,8 +376,100 @@ void
 gfarm_ticketlock_destroy(struct gfarm_ticketlock *tl,
 	const char *where, const char *what)
 {
-	gfarm_cond_destroy(&tl->unlocked, where, what);
+	int i;
+
+	/* assertion */
+	if (tl->queue_tail != tl->queue_head)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "destroying ticketlock w/ waiters: head=%lu tail=%lu",
+		     tl->queue_head, tl->queue_head);
+
+	for (i = 0; i < tl->cond_number; i++)
+		gfarm_cond_destroy(&tl->unlocked[i], where, what);
+	free(tl->unlocked);
 	gfarm_mutex_destroy(&tl->mutex, where, what);
+}
+
+struct gfarm_queuelock_waiter {
+	struct gfarm_queuelock_waiter *next;
+	pthread_cond_t unlocked;
+};
+
+void
+gfarm_queuelock_init(struct gfarm_queuelock *ql,
+	const char *where, const char *what)
+{
+	gfarm_mutex_init(&ql->mutex, where, what);
+	ql->head = NULL;
+	ql->tail = &ql->head;
+	ql->locked = 0;
+}
+
+int
+gfarm_queuelock_trylock(struct gfarm_queuelock *ql,
+	const char *where, const char *what)
+{
+	int locked;
+
+	gfarm_mutex_lock(&ql->mutex, where, what);
+	/* unlocked AND there is no waiter */
+	locked = !ql->locked && ql->head == NULL;
+	if (locked)
+		ql->locked = 1;
+	gfarm_mutex_unlock(&ql->mutex, where, what);
+	return (locked);
+}
+
+void
+gfarm_queuelock_lock(struct gfarm_queuelock *ql,
+	const char *where, const char *what)
+{
+	struct gfarm_queuelock_waiter me;
+
+	gfarm_mutex_lock(&ql->mutex, where, what);
+	if (ql->locked || ql->head != NULL) {
+		gfarm_cond_init(&me.unlocked, where, what);
+		me.next = NULL;
+		*ql->tail = &me;
+		ql->tail = &me.next;
+		do {
+			gfarm_cond_wait(&me.unlocked, &ql->mutex,
+			    where, what);
+			/* "ql->head != me" is necessary for spurious wakeup */
+		} while (ql->locked || ql->head != &me);
+		ql->head = me.next;
+		if (ql->head == NULL)
+			ql->tail = &ql->head;
+		gfarm_cond_destroy(&me.unlocked, where, what);
+	}
+	ql->locked = 1;
+	gfarm_mutex_unlock(&ql->mutex, where, what);
+}
+
+void
+gfarm_queuelock_unlock(struct gfarm_queuelock *ql,
+	const char *where, const char *what)
+{
+	gfarm_mutex_lock(&ql->mutex, where, what);
+	assert(ql->locked);
+	ql->locked = 0;
+	if (ql->head != NULL)
+		gfarm_cond_signal(
+		    &ql->head->unlocked, where, what);
+	gfarm_mutex_unlock(&ql->mutex, where, what);
+}
+
+void
+gfarm_queuelock_destroy(struct gfarm_queuelock *ql,
+	const char *where, const char *what)
+{
+	/* assertion */
+	if (ql->locked || ql->head != NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "destroying queuelock while using: locked:%d head:%p",
+		     ql->locked, ql->head);
+
+	gfarm_mutex_destroy(&ql->mutex, where, what);
 }
 
 #endif /* __KERNEL__ */

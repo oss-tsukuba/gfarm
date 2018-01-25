@@ -50,6 +50,37 @@ giant_mutex_unlock(void)
 }
 
 /*
+ * NUM_THREAD_POOLS: 7
+ *	back_channel_recv_watcher
+ *	back_channel_send_thread_pool
+ *	proto_status_send_thread_pool
+ *	sync_protocol_watcher
+ *	authentication_thread_pool
+ *	gfmdc_recv_watcher
+ *	gfmdc_send_thread_pool
+ * NUM_THREADS: 10
+ * 	back_channel remover
+ *	dead_file_copy removal_finalizer
+ *	dead_file_copy_scanner
+ *	file_copy_by_host_remover
+ *	db_journal_apply_thread
+ *	resumer
+ *	peer_closer
+ *	quota_check
+ *	replica_check_thread
+ *	sigs_handler
+ *   but does not include the following threads:
+ * 	callout_main
+ *	db_journal_store_thread
+ *	db_journal_recvq_thread
+ *	gfmdc_journal_asyncsend_thread
+ *	gfmdc_connect_thread
+ *	db_thread
+ */
+#define NUM_THREAD_POOLS	7
+#define NUM_THREADS		10
+
+/*
  * unlike mutex, ticketlock can be unlocked by a thread other than the owner.
  * so, be careful of misuse.
  */
@@ -59,7 +90,9 @@ static struct gfarm_ticketlock giant_ticketlock;
 static void
 giant_ticketlock_init(void)
 {
-	gfarm_ticketlock_init(&giant_ticketlock, "giant_init", "giant");
+	gfarm_ticketlock_init(&giant_ticketlock,
+	    gfarm_metadb_thread_pool_size * NUM_THREAD_POOLS + NUM_THREADS,
+	    "giant_init", "giant");
 }
 
 static void
@@ -80,6 +113,35 @@ static void
 giant_ticketlock_unlock(void)
 {
 	gfarm_ticketlock_unlock(&giant_ticketlock, "giant_unlock", "giant");
+}
+
+static struct gfarm_queuelock giant_queuelock;
+
+static void
+giant_queuelock_init(void)
+{
+	gfarm_queuelock_init(&giant_queuelock, "giant_init", "giant");
+	    
+}
+
+static void
+giant_queuelock_lock(void)
+{
+	gfarm_queuelock_lock(&giant_queuelock, "giant_lock", "giant");
+}
+
+/* false: busy */
+static int
+giant_queuelock_trylock(void)
+{
+	return (gfarm_queuelock_trylock(
+	    &giant_queuelock, "giant_trylock", "giant"));
+}
+
+static void
+giant_queuelock_unlock(void)
+{
+	gfarm_queuelock_unlock(&giant_queuelock, "giant_unlock", "giant");
 }
 
 static struct giant_lock_sw_entry {
@@ -104,6 +166,14 @@ static struct giant_lock_sw_entry {
 		giant_ticketlock_lock,
 		giant_ticketlock_trylock,
 		giant_ticketlock_unlock,
+	},
+	/* GFARM_LOCK_TYPE_QUEUELOCK */
+	{
+		"queuelock",
+		giant_queuelock_init,
+		giant_queuelock_lock,
+		giant_queuelock_trylock,
+		giant_queuelock_unlock,
 	},
 };
 
