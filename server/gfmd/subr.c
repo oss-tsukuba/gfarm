@@ -121,7 +121,6 @@ static void
 giant_queuelock_init(void)
 {
 	gfarm_queuelock_init(&giant_queuelock, "giant_init", "giant");
-	    
 }
 
 static void
