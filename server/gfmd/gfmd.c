@@ -1475,8 +1475,12 @@ gfmd_terminate(const char *diag)
 	 */
 	peer_shutdown_all();
 
-	db_journal_cancel_recvq();
-	gfmdc_journal_transfer_wait();
+	if (gfarm_get_metadb_replication_enabled() &&
+	    gfmd_startup_state_is_ready()) {
+		if (!mdhost_self_is_master())
+			db_journal_cancel_recvq();
+		gfmdc_journal_transfer_wait();
+	}
 
 	/* save all pending transactions */
 	/* db_terminate() needs giant_lock(), see comment in dbq_enter() */
