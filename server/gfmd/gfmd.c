@@ -1507,7 +1507,6 @@ gfmd_terminate(const char *diag)
 	 */
 	peer_shutdown_all();
 
-	db_journal_cancel_recvq();
 	gfmdc_journal_transfer_wait();
 
 	/* save all pending transactions */
