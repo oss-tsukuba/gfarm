@@ -346,17 +346,10 @@ gfarm_ticketlock_lock(struct gfarm_ticketlock *tl,
 
 	gfarm_mutex_lock(&tl->mutex, where, what);
 	queue_me = tl->queue_tail++;
-	if (queue_me != tl->queue_head) {
-		for (;;) {
-			gfarm_cond_wait(
-			    &tl->unlocked[queue_me % tl->cond_number],
-			    &tl->mutex, where, what);
-			if (queue_me == tl->queue_head)
-				break;
-			gfarm_cond_signal(
-			    &tl->unlocked[queue_me % tl->cond_number],
-			    where, what);
-		}
+	while (queue_me != tl->queue_head) {
+		gfarm_cond_wait(
+		    &tl->unlocked[queue_me % tl->cond_number],
+		    &tl->mutex, where, what);
 	}
 	gfarm_mutex_unlock(&tl->mutex, where, what);
 }
@@ -367,7 +360,7 @@ gfarm_ticketlock_unlock(struct gfarm_ticketlock *tl,
 {
 	gfarm_mutex_lock(&tl->mutex, where, what);
 	tl->queue_head++;
-	gfarm_cond_signal(&tl->unlocked[tl->queue_head % tl->cond_number],
+	gfarm_cond_broadcast(&tl->unlocked[tl->queue_head % tl->cond_number],
 	    where, what);
 	gfarm_mutex_unlock(&tl->mutex, where, what);
 }
