@@ -317,6 +317,8 @@ gfarm_error_t gfs_replica_list_by_name(const char *, int *, char ***);
 gfarm_error_t gfs_replica_remove_by_file(const char *, const char *);
 gfarm_error_t gfs_replicate_to_local(GFS_File, char *, int);
 
+gfarm_error_t gfs_statfs_by_path(const char *,
+	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
 gfarm_error_t gfs_statfs(gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
 gfarm_error_t gfs_statfsnode_by_path(const char *, char *, int,
 	gfarm_int32_t *, gfarm_off_t *, gfarm_off_t *,
