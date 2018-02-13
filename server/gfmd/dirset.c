@@ -43,6 +43,9 @@ struct dirset {
 	gfarm_uint64_t refcount;
 	int valid;
 
+	/* to resolve conflict between replica_check and inode_rename() */
+	gfarm_uint64_t busy_count;
+	int changed_during_busy;
 };
 
 struct dirset dirset_is_not_set = {
@@ -98,9 +101,14 @@ dirset_new(const char *dirsetname, struct user *u)
 	dirquota_init(&ds->dq);
 	ds->dir_count = 0;
 	ds->dir_list = list_head;
+
 	/* ds->dirsets_node is initialized in dirset_enter() */
 	ds->refcount = 1;
 	ds->valid = 1;
+
+	ds->busy_count = 0;
+	ds->changed_during_busy = 0;
+
 	return (ds);
 }
 
@@ -159,6 +167,39 @@ dirset_del_ref(struct dirset *ds)
 	GFARM_HCIRCLEQ_REMOVE(ds, dirsets_node);
 	dirset_free(ds);
 	return (0); /* freed */
+}
+
+void
+dirset_inc_busy_count(struct dirset *ds)
+{
+	dirset_add_ref(ds);
+
+	++ds->busy_count;
+}
+
+void
+dirset_dec_busy_count(struct dirset *ds)
+{
+	if (--ds->busy_count == 0 && ds->changed_during_busy) {
+		ds->changed_during_busy = 0;
+		dirquota_invalidate(ds);
+		dirquota_fixup_schedule();
+	}
+
+	dirset_del_ref(ds);
+}
+
+void
+tdirset_notify_changed(struct dirset *tdirset)
+{
+	if (tdirset == TDIRSET_IS_UNKNOWN ||
+	    tdirset == TDIRSET_IS_NOT_SET)
+		return;
+
+	if (tdirset->busy_count == 0)
+		return;
+
+	tdirset->changed_during_busy = 1;
 }
 
 void

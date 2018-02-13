@@ -4470,9 +4470,11 @@ inode_rename(
 		 * opening processes.
 		 */
 		dirquota_update_file_add(src, dst_tdirset);
+		tdirset_notify_changed(dst_tdirset); /* may delay */
 	} else if (dirquota_root_adjust) {
 		inode_subtree_fixup_tdirset(src, dst_tdirset);
 		dirquota_invalidate(dst_tdirset);
+		tdirset_notify_changed(dst_tdirset); /* may delay */
 	}
 
 	e = inode_lookup_relative(sdir, sname, GFS_DT_UNKNOWN, INODE_REMOVE,
@@ -4491,11 +4493,13 @@ inode_rename(
 				    "rename(%s, %s): failed to reparent: %s",
 				    sname, dname, gfarm_error_string(e));
 		}
-		if (dirquota_adjust)
+		if (dirquota_adjust) {
 			dirquota_update_file_remove(src, src_tdirset);
-		else if (dirquota_root_adjust) {
+			tdirset_notify_changed(src_tdirset); /* may delay */
+		} else if (dirquota_root_adjust) {
 			dirquota_invalidate(src_tdirset);
 			dirquota_fixup_schedule();
+			tdirset_notify_changed(src_tdirset); /* may delay */
 		}
 
 		if (sdir != ddir && (inode_is_dir(src) || inode_is_file(src))

@@ -26,6 +26,9 @@ void dirset_set_quota_metadata_in_cache(struct dirset *,
 /* for functions which refer dirset across giant lock */
 void dirset_add_ref(struct dirset *);
 int dirset_del_ref(struct dirset *);
+void dirset_inc_busy_count(struct dirset *);
+void dirset_dec_busy_count(struct dirset *);
+void tdirset_notify_changed(struct dirset *);
 
 /* private interface between quota_dir and dirset */
 struct quota_dir;
