@@ -1,3 +1,17 @@
+Release note for Gfarm 2.6.25
+=============================
+
+[2018.2.22]
+
+Updated feature
+* gfdf - -i option to print number of inodes
+* gfmd - improve ticket lock performance, which is introduced since
+  the version 2.6.24
+
+Bug fix
+* slave gfmd may crash when it is stopped during busy metadata updates
+* gfmd crashes when it is stopped at early boot stage
+
 Release note for Gfarm 2.6.24
 =============================
 
@@ -43,7 +57,7 @@ New configuration directive
   specifies the number of parallelism and granularity of spool check
 
 Documentation
-* manual pages - gfsrepcheck(1)
+* manual pages - gfrepcheck(1)
 
 Updated feature
 * gfsd - parallel spool check for faster spool check processing
