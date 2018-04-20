@@ -7,11 +7,11 @@ GFNCOPY_TIMEOUT=60
 
 #####################################################################
 
-dir=/tmp/autoreplica-test.$$
+dir=$gftmp/autoreplica-test.$$
 file=${dir}/file.$$
 gfs_pio_test=`dirname $testbin`/gfs_pio_test/gfs_pio_test
-tmpfile=/tmp/.autoreplica-test.junk.$$
-hostgroupfile=/tmp/.hostgroup.$$
+tmpfile=$localtop/.autoreplica-test.junk.$$
+hostgroupfile=$localtop/.hostgroup.$$
 
 mod="over written"
 
