@@ -1,3 +1,5 @@
+. ./regress.conf
+
 NCOPY1=3  # NCOPY1 >= 3
 NCOPY2=2  # NCOPY2 < NCOPY1
 NCOPY_TIMEOUT=10  # sec.
@@ -13,7 +15,6 @@ SLEEP_TIME=
 MINIMUM_INTERVAL=
 
 setup_test() {
-  . ./regress.conf
   tmpf=$gftmp/foo
   check_supported_env
   trap 'clean_test; exit $exit_trap' $trap_sigs
