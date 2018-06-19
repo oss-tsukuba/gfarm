@@ -16,7 +16,7 @@ error() {
 
 setup() {
     gfmkdir $gftmp || error "gfmkdir"
-    gfncopy -r $gftmp > /dev/null 2>&1 # ignore
+    gfncopy -s 1 $gftmp > /dev/null 2>&1 # ignore
 
     FILE=$gftmp/file
 
