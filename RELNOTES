@@ -1,3 +1,12 @@
+Release note for Gfarm 2.6.26
+=============================
+
+[2018.6.25]
+
+Updated feature
+* change default of gfsd_connection_cache from 16 to 256.
+* adjust log level
+
 Release note for Gfarm 2.6.25
 =============================
 
