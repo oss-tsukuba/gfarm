@@ -798,7 +798,7 @@ gfm_client_connection_multiple_cancel_others(void *closure)
 
 	for (i = 0; i < multiple_state->nmsl; i++) {
 		mc_state = &multiple_state->mc_states[i];
-		if (!mc_state->finished)
+		if (!mc_state->finished && mc_state->conn_state != NULL)
 			gfm_client_connect_cancel(mc_state->conn_state);
 	}
 }
@@ -866,6 +866,7 @@ gfm_client_connection_multiple(
 		mc_state->multiple_state = &multiple_state;
 		mc_state->finished = 0;
 		mc_state->gfm_server = NULL;
+		mc_state->conn_state = NULL;
 		mc_state->error = gfm_client_connect_request_multiplexed(q,
 		    msl[i], user, pwd, source_ip, fs,
 		    gfm_client_connection_multiple_finish, mc_state,
