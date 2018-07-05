@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfhost</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfhost">
 <a name="gfhost.1"></a><div class="titlepage"></div>
@@ -12,7 +12,7 @@
 </div>
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfhost</code>  [ -H  |   -l  |   -M ] [-iLprUv] [-P <em class="replaceable"><code>path</code></em>] [-a <em class="replaceable"><code>architecture</code></em>] [-D <em class="replaceable"><code>domain-name</code></em>] [-j <em class="replaceable"><code>concurrency</code></em>] [<em class="replaceable"><code>hostname</code></em>...]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfhost</code>  [ -H  |   -l  |   -M ] [-LprUv] [-P <em class="replaceable"><code>path</code></em>] [-a <em class="replaceable"><code>architecture</code></em>] [-D <em class="replaceable"><code>domain-name</code></em>] [-j <em class="replaceable"><code>concurrency</code></em>] [<em class="replaceable"><code>hostname</code></em>...]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfhost</code>   -c  [-P <em class="replaceable"><code>path</code></em>]  -a <em class="replaceable"><code>architecture</code></em>   -p <em class="replaceable"><code>port-number</code></em>  [-n <em class="replaceable"><code>number-of-CPUs</code></em>]  <em class="replaceable"><code>hostname</code></em> </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfhost</code>   -m  [-P <em class="replaceable"><code>path</code></em>] [-a <em class="replaceable"><code>architecture</code></em>] [-p <em class="replaceable"><code>port-number</code></em>] [-n <em class="replaceable"><code>number-of-CPUs</code></em>] [-A]  <em class="replaceable"><code>hostname</code></em> </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfhost</code>   -d  [-P <em class="replaceable"><code>path</code></em>]  <em class="replaceable"><code>hostname</code></em>... </p></div>
@@ -45,7 +45,7 @@ the default function of <span class="command"><strong>gfhost</strong></span>.
   Display functions other than -M also access <span class="command"><strong>gfsd</strong></span>,
   which is running on filesystem nodes. For functions which access
   <span class="command"><strong>gfhost</strong></span>, the access option can be specified
-  by options -i, -j, -U and -v.
+  by options -j, -U and -v.
 </p>
 <p>
   You don't have to specify hostnames for display functions.
@@ -201,15 +201,6 @@ the default function of <span class="command"><strong>gfhost</strong></span>.
 <dd><p>
 	This option is used with the -H, -l, -M function or the default
 	function to limit hosts to the specified domain.
-      </p></dd>
-<dt><span class="term"><code class="option">-i</code></span></dt>
-<dd><p>
-	There is an "address_use" directive in %%SYSCONFDIR%%/gfarm2.conf and
-	$HOME/.gfarm2rc to give priorities of network addresses
-	for gfarm access.
-	This directive works with the <span class="command"><strong>gfhost</strong></span> command,
-	but will be ignored, if you specified the -i option with
-	<span class="command"><strong>gfhost</strong></span>.
       </p></dd>
 <dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>concurrency</code></em></span></dt>
 <dd><p>

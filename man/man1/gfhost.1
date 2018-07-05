@@ -1,22 +1,13 @@
 '\" t
 .\"     Title: gfhost
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
 .\"      Date: 20 Jan 2010
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
 .TH "GFHOST" "1" "20 Jan 2010" "Gfarm" "Gfarm"
-.\" -----------------------------------------------------------------
-.\" * Define some portability stuff
-.\" -----------------------------------------------------------------
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.\" http://bugs.debian.org/507673
-.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.ie \n(.g .ds Aq \(aq
-.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -31,7 +22,7 @@
 gfhost \- Gfarm host maintenance command
 .SH "SYNOPSIS"
 .HP \w'\fBgfhost\fR\ 'u
-\fBgfhost\fR [\-H | \-l | \-M] [\-iLprUv] [\-P\ \fIpath\fR] [\-a\ \fIarchitecture\fR] [\-D\ \fIdomain\-name\fR] [\-j\ \fIconcurrency\fR] [\fIhostname\fR...]
+\fBgfhost\fR [\-H | \-l | \-M] [\-LprUv] [\-P\ \fIpath\fR] [\-a\ \fIarchitecture\fR] [\-D\ \fIdomain\-name\fR] [\-j\ \fIconcurrency\fR] [\fIhostname\fR...]
 .HP \w'\fBgfhost\fR\ 'u
 \fBgfhost\fR \-c [\-P\ \fIpath\fR] \-a\ \fIarchitecture\fR \-p\ \fIport\-number\fR [\-n\ \fInumber\-of\-CPUs\fR] \fIhostname\fR
 .HP \w'\fBgfhost\fR\ 'u
@@ -55,19 +46,19 @@ If \-H, \-l or \-M is specified, or none of the functions are specified,
 \fBgfhost\fR
 displays filesystem node information\&. The \-M function only accesses information in the metadata server\&. Display functions other than \-M also access
 \fBgfsd\fR, which is running on filesystem nodes\&. For functions which access
-\fBgfhost\fR, the access option can be specified by options \-i, \-j, \-U and \-v\&.
+\fBgfhost\fR, the access option can be specified by options \-j, \-U and \-v\&.
 .PP
-You don\*(Aqt have to specify hostnames for display functions\&. In that case, all hosts which are registered in metadata will be displayed, but you can limit the type of hosts displayed by the \-a or \-D option\&. By default, hosts are displayed in alphabetical order, but you can change this by the \-L, \-p, or \-r options\&. Although the \-L option is ignored in the \-M function
+You don\'t have to specify hostnames for display functions\&. In that case, all hosts which are registered in metadata will be displayed, but you can limit the type of hosts displayed by the \-a or \-D option\&. By default, hosts are displayed in alphabetical order, but you can change this by the \-L, \-p, or \-r options\&. Although the \-L option is ignored in the \-M function
 and in the default function\&.
 \&.
 .PP
 The following is a list of the functions of the
 \fBgfhost\fR
-command\&. You shouldn\*(Aqt specify more than one functions at a time\&.
+command\&. You shouldn\'t specify more than one functions at a time\&.
 .PP
 <none>
 .RS 4
-If you don\*(Aqt specify any of the functions,
+If you don\'t specify any of the functions,
 \fBgfhost\fR
 accesses
 \fBgfsd\fR, and displays the names of hosts which are currently available as its default function\&. Hostnames are displayed in alphabetical order, by default\&.
@@ -99,7 +90,7 @@ If the host cannot be accessed due to a machine down or network problem, etc\&.,
 \fBgfsd\fR
 on the host cannot be accessed, \-\&.\-\-/\-\&.\-\-/\-\&.\-\- will be displayed\&.
 .sp
-The next field is the authentication method used with the host\&. `G\*(Aq in this field means GSI authentication and encryption, `g\*(Aq means only authentication is performed by GSI and actual communication is unprotected plain data (gsi_auth), `s\*(Aq means gfarm sharedsecret authentication, `x\*(Aq means that the authentication failed, and `\-\*(Aq means that the authentication wasn\*(Aqt actually tried\&. If the \-U option is specified, this authentication method field won\*(Aqt be provided\&.
+The next field is the authentication method used with the host\&. `G\' in this field means GSI authentication and encryption, `g\' means only authentication is performed by GSI and actual communication is unprotected plain data (gsi_auth), `s\' means gfarm sharedsecret authentication, `x\' means that the authentication failed, and `\-\' means that the authentication wasn\'t actually tried\&. If the \-U option is specified, this authentication method field won\'t be provided\&.
 .sp
 Hostnames are displayed in alphabetical order, by default\&.
 .RE
@@ -113,7 +104,7 @@ If the host cannot be accessed due to a machine down or network problem, etc\&.,
 \fBgfsd\fR
 on the host cannot be accessed , \-\&.\-\-/\-\&.\-\-/\-\&.\-\- will be displayed\&.
 .sp
-The next field is the authentication method used with the host\&. `G\*(Aq in this field means GSI authentication and encryption, `g\*(Aq means only authentication is performed by GSI and actual communication is unprotected plain data (gsi_auth), `s\*(Aq means gfarm sharedsecret authentication, `x\*(Aq means that the authentication failed, and `\-\*(Aq means that the authentication wasn\*(Aqt actually tried\&. If that \-U option is specified, this authentication method field won\*(Aqt be provided\&.
+The next field is the authentication method used with the host\&. `G\' in this field means GSI authentication and encryption, `g\' means only authentication is performed by GSI and actual communication is unprotected plain data (gsi_auth), `s\' means gfarm sharedsecret authentication, `x\' means that the authentication failed, and `\-\' means that the authentication wasn\'t actually tried\&. If that \-U option is specified, this authentication method field won\'t be provided\&.
 .sp
 Hostnames are displayed in alphabetical order, by default\&.
 .RE
@@ -147,14 +138,6 @@ This option specifies the CPU architecture using a format like sparc\-sun\-solar
 \fB\-D\fR \fIdomain\-name\fR
 .RS 4
 This option is used with the \-H, \-l, \-M function or the default function to limit hosts to the specified domain\&.
-.RE
-.PP
-\fB\-i\fR
-.RS 4
-There is an "address_use" directive in %%SYSCONFDIR%%/gfarm2\&.conf and $HOME/\&.gfarm2rc to give priorities of network addresses for gfarm access\&. This directive works with the
-\fBgfhost\fR
-command, but will be ignored, if you specified the \-i option with
-\fBgfhost\fR\&.
 .RE
 .PP
 \fB\-j\fR \fIconcurrency\fR
@@ -200,12 +183,12 @@ answers\&.
 .PP
 \fB\-U\fR
 .RS 4
-Suppresses authentication attempts by TCP, and only queries load average by UDP\&. This option only makes sense if you specified the \-H or \-l function, or if you didn\*(Aqt specify any function\&. This option makes the gfhost command run faster\&. If the \-H or \-l function is specified, this option makes the authentication method field disappear\&.
+Suppresses authentication attempts by TCP, and only queries load average by UDP\&. This option only makes sense if you specified the \-H or \-l function, or if you didn\'t specify any function\&. This option makes the gfhost command run faster\&. If the \-H or \-l function is specified, this option makes the authentication method field disappear\&.
 .RE
 .PP
 \fB\-v\fR
 .RS 4
-The \-H, \-l function and the default function don\*(Aqt produce error reports on
+The \-H, \-l function and the default function don\'t produce error reports on
 \fBgfsd\fR
 accesses; these error reports will be produced by this option\&.
 .RE

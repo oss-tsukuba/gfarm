@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfhost</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfhost">
 <a name="gfhost.1"></a><div class="titlepage"></div>
@@ -41,7 +41,7 @@
   それ以外の機能はファイルシステムノードで動作している
   <span class="command"><strong>gfsd</strong></span> にもアクセスします。
   <span class="command"><strong>gfsd</strong></span> にアクセスする機能に関しては、そのアクセスに
-  関するオプションを -i, -j, -U, -v で指定できます。
+  関するオプションを -j, -U, -v で指定できます。
 </p>
 <p>
   表示機能に関しては、ホスト名の指定を省略することができます。この場合、
@@ -173,14 +173,6 @@
 	-H, -l, -M および特に機能を指定しなかった場合で、かつ
 	ホスト名を省略した場合に、このオプションで、表示するドメイン名を
 	限定できます。
-      </p></dd>
-<dt><span class="term"><code class="option">-i</code></span></dt>
-<dd><p>
-	%%SYSCONFDIR%%/gfarm2.conf ないし $HOME/.gfarm2rc 中で「address_use」を指定すると、
-	アクセスに用いるネットワークアドレスに優先順位をつけることができます。
-	gfhost コマンドに対しても、この優先順位は影響しますが、-i オプションを
-	つけると、この指定を無視して <span class="command"><strong>gfsd</strong></span> にアクセス
-	するようになります。
       </p></dd>
 <dt><span class="term"><code class="option">-j</code> <em class="parameter"><code>並列度</code></em></span></dt>
 <dd><p>
