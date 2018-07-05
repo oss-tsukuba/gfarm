@@ -337,7 +337,7 @@ removal_finalizer(void *arg)
 
 	e = gfarm_pthread_set_priority_minimum(diag);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1005035,
 		    "%s: set_priority_minimum: %s",
 		    diag, gfarm_error_string(e));
 
@@ -660,7 +660,7 @@ dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
 	next_log_time = remove_scan_log_time;
 	next_log_time.tv_sec += gfarm_metadb_remove_scan_log_interval;
 	if (gfarm_timespec_cmp(&gt2, &next_log_time) >= 0) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1005036,
 		    "dead_file_copy scan: "
 		    "max: %g seconds (%llu scans %llu processed), "
 		    "%llu times average: %g seconds (%g scans %g processed)",
@@ -1018,7 +1018,7 @@ dead_file_copy_scanner(void *arg)
 
 	e = gfarm_pthread_set_priority_minimum(diag);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1005037,
 		    "%s: set_priority_minimum: %s",
 		    diag, gfarm_error_string(e));
 
@@ -1475,7 +1475,7 @@ dead_file_copy_init(int is_master)
 
 	e = create_detached_thread(dead_file_copy_scanner, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005038,
 		    "create_detached_thread(dead_file_copy_scanner): %s",
 		    gfarm_error_string(e));
 }

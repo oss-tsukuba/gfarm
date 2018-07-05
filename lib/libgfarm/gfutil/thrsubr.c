@@ -21,14 +21,14 @@ mutexattr_init(void)
 
 	err = pthread_mutexattr_init(&mutexattr_prio_inherit);
 	if (err != 0) {
-		gflog_notice(GFARM_MSG_UNFIXED, "pthread_mutexattr_init: %s",
+		gflog_notice(GFARM_MSG_1005032, "pthread_mutexattr_init: %s",
 		    strerror(err));
 		return;
 	}
 	err = pthread_mutexattr_setprotocol(&mutexattr_prio_inherit,
 	    PTHREAD_PRIO_INHERIT);
 	if (err != 0) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1005033,
 		    "pthread_mutexattr_setprotocol"
 		    "(, PTHREAD_PRIO_INHERIT): %s",
 		    strerror(err));
@@ -51,7 +51,7 @@ static int mutex_init_w_attr_error_errno;
 static void
 mutex_init_w_attr_error(void)
 {
-	gflog_notice(GFARM_MSG_UNFIXED,
+	gflog_notice(GFARM_MSG_1005034,
 	    "pthread_mutex_init(, PTHREAD_PRIO_INHERIT): %s",
 	    strerror(mutex_init_w_attr_error_errno));
 }

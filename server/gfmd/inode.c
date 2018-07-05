@@ -5678,7 +5678,7 @@ inode_replicated(struct file_replicating *fr,
 		t = now.tv_sec - fr->queue_time.tv_sec +
 		    (double)(now.tv_nsec - fr->queue_time.tv_nsec)
 		    / GFARM_SECOND_BY_NANOSEC;
-		gflog_info(GFARM_MSG_UNFIXED, "inode %lld:%lld to %s: "
+		gflog_info(GFARM_MSG_1005039, "inode %lld:%lld to %s: "
 		    "size %lld time %g second speed %g Mb/s",
 		    (long long)inode_get_number(inode),
 		    (long long)fr->igen, host_name(fr->dst), (long long)size,
