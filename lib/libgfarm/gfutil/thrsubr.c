@@ -9,11 +9,73 @@
 #include "gfutil.h"
 #include "thrsubr.h"
 
+#ifdef HAVE_PTHREAD_PRIO_INHERIT
+
+static pthread_mutexattr_t mutexattr_prio_inherit;
+static pthread_mutexattr_t *mutexattr_prio_inherit_p = NULL;
+
+static void
+mutexattr_init(void)
+{
+	int err;
+
+	err = pthread_mutexattr_init(&mutexattr_prio_inherit);
+	if (err != 0) {
+		gflog_notice(GFARM_MSG_UNFIXED, "pthread_mutexattr_init: %s",
+		    strerror(err));
+		return;
+	}
+	err = pthread_mutexattr_setprotocol(&mutexattr_prio_inherit,
+	    PTHREAD_PRIO_INHERIT);
+	if (err != 0) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "pthread_mutexattr_setprotocol"
+		    "(, PTHREAD_PRIO_INHERIT): %s",
+		    strerror(err));
+		return;
+	}
+	mutexattr_prio_inherit_p = &mutexattr_prio_inherit;
+}
+
+static pthread_mutexattr_t *
+mutex_prio_inherit(void)
+{
+	static pthread_once_t attr_init_once = PTHREAD_ONCE_INIT;
+
+	pthread_once(&attr_init_once, mutexattr_init);
+	return (mutexattr_prio_inherit_p);
+}
+
+static int mutex_init_w_attr_error_errno;
+
+static void
+mutex_init_w_attr_error(void)
+{
+	gflog_notice(GFARM_MSG_UNFIXED,
+	    "pthread_mutex_init(, PTHREAD_PRIO_INHERIT): %s",
+	    strerror(mutex_init_w_attr_error_errno));
+}
+
+#endif /* HAVE_PTHREAD_PRIO_INHERIT */
+
 void
 gfarm_mutex_init(pthread_mutex_t *mutex, const char *where, const char *what)
 {
-	int err = pthread_mutex_init(mutex, NULL);
+	int err;
+#ifdef HAVE_PTHREAD_PRIO_INHERIT
+	pthread_mutexattr_t *attr = mutex_prio_inherit();
+	static pthread_once_t report_once = PTHREAD_ONCE_INIT;
 
+	if (attr != NULL) {
+		err = pthread_mutex_init(mutex, attr);
+		if (err == 0)
+			return;
+		mutex_init_w_attr_error_errno = err;
+		pthread_once(&report_once, mutex_init_w_attr_error);
+		/* ignore error, and try again with attr == NULL */
+	}
+#endif
+	err = pthread_mutex_init(mutex, NULL);
 	if (err != 0)
 		gflog_fatal(GFARM_MSG_1000212, "%s: %s mutex init: %s",
 		    where, what, strerror(err));

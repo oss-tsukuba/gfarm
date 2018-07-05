@@ -1112,6 +1112,21 @@ if test "$ax_cv_have_getspnam_r" = yes; then
   AC_DEFINE(HAVE_GETSPNAM_R, 1, [5 arguments getspnam_r() exists])
 fi
 
+### Check whether PTHREAD_PRIO_INHERIT is usable or not
+
+AC_MSG_CHECKING([PTHREAD_PRIO_INHERIT])
+AC_TRY_COMPILE([
+#define _GNU_SOURCE /* CentOS 6 needs this, although CentOS 7 doesn't */
+#include <pthread.h>],[
+pthread_mutexattr_t attr;
+
+pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
+], [ax_cv_have_pthread_prio_inherit=yes], [ax_cv_have_pthread_prio_inherit=no])
+AC_MSG_RESULT([$ax_cv_have_pthread_prio_inherit])
+if test "$ax_cv_have_pthread_prio_inherit" = yes; then
+  AC_DEFINE(HAVE_PTHREAD_PRIO_INHERIT, 1, [PTHREAD_PRIO_INHERIT is usable])
+fi
+
 
 ###### Checks for system services.
 # empty for now
