@@ -86,7 +86,6 @@ struct gfarm_config_static {
 	/* static configuration variables */
 	int log_message_verbose;
 	gfarm_int64_t minimum_free_disk_space;
-	int profile;
 	char **debug_command_argv;
 	char *argv0;
 };
@@ -108,7 +107,6 @@ gfarm_config_static_init(struct gfarm_context *ctxp)
 	s->local_homedir = NULL;
 	s->log_message_verbose = GFARM_CONFIG_MISC_DEFAULT;
 	s->minimum_free_disk_space = GFARM_CONFIG_MISC_DEFAULT;
-	s->profile = GFARM_CONFIG_MISC_DEFAULT;
 	s->debug_command_argv = NULL;
 	s->argv0 = NULL;
 
@@ -2687,6 +2685,15 @@ parse_local_usergroup_map_arguments(char *p, char **op, int is_user)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static void
+eval_profile(int enabled)
+{
+	if (enabled)
+		gfs_profile_set();
+	else
+		gfs_profile_unset();
+}
+
 static gfarm_error_t
 parse_profile(char *p, int *vp)
 {
@@ -2694,10 +2701,9 @@ parse_profile(char *p, int *vp)
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (*vp == 1)
-		gfs_profile_set();
-	else
-		gfs_profile_unset();
+
+	eval_profile(*vp);
+
 	return (e);
 }
 
@@ -3335,7 +3341,7 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "client_parallel_max") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->client_parallel_max);
 	} else if (strcmp(s, o = "profile") == 0) {
-		e = parse_profile(p, &staticp->profile);
+		e = parse_profile(p, &gfarm_ctxp->profile);
 	} else if (strcmp(s, o = "iostat_gfmd_path") == 0) {
 		e = parse_set_var(p, &gfarm_iostat_gfmd_path);
 	} else if (strcmp(s, o = "iostat_gfsd_path") == 0) {
@@ -3699,8 +3705,8 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->client_parallel_max == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->client_parallel_max =
 		    GFARM_CLIENT_PARALLEL_MAX_DEFAULT;
-	if (staticp->profile == GFARM_CONFIG_MISC_DEFAULT)
-		staticp->profile = GFARM_PROFILE_DEFAULT;
+	if (gfarm_ctxp->profile == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->profile = GFARM_PROFILE_DEFAULT;
 	if (metadb_replication_enabled == GFARM_CONFIG_MISC_DEFAULT)
 		metadb_replication_enabled =
 		    GFARM_METADB_REPLICATION_ENABLED_DEFAULT;
@@ -3851,6 +3857,18 @@ gfarm_config_validate_enabled(union gfarm_config_storage *storage)
 }
 
 int
+gfarm_config_validate_profile(union gfarm_config_storage *storage)
+{
+	if (!gfarm_config_validate_enabled(storage))
+		return (0);
+
+	/* XXX abuse about the role of gfarm_config_type::validater() */
+	eval_profile(storage->i);
+
+	return (1);
+}
+
+int
 gfarm_config_print_string(void *addr, char *string, size_t sz)
 {
 	char **sp = addr;
@@ -3936,6 +3954,9 @@ const struct gfarm_config_type {
 	  gfarm_config_set_default_int,
 	  gfarm_config_validate_max_directory_depth,
 	  &gfarm_max_directory_depth, 0 },
+	{ "profile", 'i', 1, gfarm_config_print_enabled,
+	  gfarm_config_set_default_enabled, gfarm_config_validate_profile,
+	  NULL, offsetof(struct gfarm_context, profile) },
 	{ "replicainfo", 'i', 1, gfarm_config_print_enabled,
 	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
 	  &gfarm_replicainfo_enabled, 0 },
@@ -4144,6 +4165,9 @@ gfm_client_config_name_to_string(
 	const struct gfarm_config_type *type;
 	void *addr;
 
+	/* hack to prevent unwanted gfs_display_timers() output */
+	int profile_save = gfarm_ctxp->profile;
+
 	e = gfarm_config_type_by_name(name, &type);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -4159,6 +4183,9 @@ gfm_client_config_name_to_string(
 	if ((*type->printer)(addr, string, sz) >= sz)
 		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
 
+	/* hack to prevent unwanted gfs_display_timers() output */
+	gfarm_ctxp->profile = profile_save;
+
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -4170,6 +4197,9 @@ gfm_client_config_set_by_string(
 	const struct gfarm_config_type *type = NULL;
 	void *addr;
 	char *s, *p, *o = NULL;
+
+	/* hack to prevent unwanted gfs_display_timers() output */
+	int profile_save = gfarm_ctxp->profile;
 
 	p = string;
 	e = gfarm_strtoken(&p, &s);
@@ -4192,11 +4222,16 @@ gfm_client_config_set_by_string(
 		gflog_debug(GFARM_MSG_1004465,
 		    "gfm_client_config_set_by_string(): %s: %s: %s",
 		    o == NULL ? "" : o, p, gfarm_error_string(e));
-		return (e);
+	} else {
+
+		e = gfm_client_config_set(gfm_server,
+		    type->name, type->fmt, addr);
 	}
 
-	return (gfm_client_config_set(gfm_server, type->name, type->fmt,
-	    addr));
+	/* hack to prevent unwanted gfs_display_timers() output */
+	gfarm_ctxp->profile = profile_save;
+
+	return (e);
 }
 
 gfarm_error_t
