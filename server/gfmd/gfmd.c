@@ -6,6 +6,7 @@
 
 #include <pthread.h>
 
+#include <assert.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -23,6 +24,11 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <time.h>
+#include <netdb.h>
+#include <poll.h>
+#ifndef INFTIM
+#define INFTIM -1
+#endif
 
 #include <gfarm/error.h>
 #include <gfarm/gflog.h>
@@ -32,6 +38,7 @@
 
 #include "gfutil.h"
 #include "gflog_reduced.h"
+#include "gfnetdb.h"
 #include "thrsubr.h"
 
 #include "quota_info.h"
@@ -977,9 +984,8 @@ peer_authorize(struct peer *peer)
 	enum gfarm_auth_id_type id_type;
 	char *username = NULL, *hostname;
 	enum gfarm_auth_method auth_method;
-	struct sockaddr addr;
+	struct sockaddr_storage addr;
 	socklen_t addrlen = sizeof(addr);
-	char addr_string[GFARM_SOCKADDR_STRLEN];
 	static const char diag[] = "peer_authorize";
 
 	/* without TCP_NODELAY, gfmd is too slow at least on NetBSD-3.0 */
@@ -992,34 +998,34 @@ peer_authorize(struct peer *peer)
 		gflog_debug(GFARM_MSG_1003396, "tcp_nodelay option is "
 		    "specified, but fails: %s", gfarm_error_string(e));
 
-	rv = getpeername(gfp_xdr_fd(peer_get_conn(peer)), &addr, &addrlen);
+	rv = getpeername(gfp_xdr_fd(peer_get_conn(peer)),
+	    (struct sockaddr *)&addr, &addrlen);
 	if (rv == -1) {
 		saved_errno = errno;
 		gflog_error(GFARM_MSG_1000184,
 		    "authorize: getpeername: %s", strerror(errno));
 		return (gfarm_errno_to_error(saved_errno));
 	}
-	e = gfarm_sockaddr_to_name(&addr, &hostname);
+	e = gfarm_sockaddr_to_log_string((struct sockaddr *)&addr, addrlen,
+	    &hostname);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gfarm_sockaddr_to_string(&addr,
-		    addr_string, GFARM_SOCKADDR_STRLEN);
-		gflog_info(GFARM_MSG_1000185,
-		    "gfarm_sockaddr_to_name(%s): %s",
-		    gfarm_error_string(e), addr_string);
-		hostname = strdup_log(addr_string, diag);
-		if (hostname == NULL)
-			return (GFARM_ERR_NO_MEMORY);
+		/* `e' should be a fatal error */
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: converting a client address to string: %s",
+		    diag, gfarm_error_string(e));
+		return (e);
 	}
 	e = gfarm_authorize(peer_get_conn(peer), 0, GFM_SERVICE_TAG,
-	    hostname, &addr, auth_uid_to_global_username, NULL,
+	    hostname, (struct sockaddr *)&addr,
+	    auth_uid_to_global_username, NULL,
 	    &id_type, &username, &auth_method);
 	if (e == GFARM_ERR_NO_ERROR) {
 		protocol_state_init(peer_get_protocol_state(peer));
 
 		giant_lock();
 		peer_authorized(peer,
-		    id_type, username, hostname, &addr, auth_method,
-		    sync_protocol_watcher);
+		    id_type, username, hostname, (struct sockaddr *)&addr,
+		    auth_method, sync_protocol_watcher);
 		giant_unlock();
 	} else {
 		gflog_notice(GFARM_MSG_1002474,
@@ -1063,73 +1069,149 @@ struct gflog_reduced_state emfile_state = GFLOG_REDUCED_STATE_INITIALIZER(
 	SAME_WARNING_DURATION,
 	SAME_WARNING_INTERVAL);
 
-void
-accepting_loop(int accepting_socket)
+static void
+accept_one(int accepting_socket)
 {
 	gfarm_error_t e;
 	int client_socket;
-	struct sockaddr_in client_addr;
-	socklen_t client_addr_size;
+	struct sockaddr_storage client_addr;
+	socklen_t client_addr_size = sizeof(client_addr);
 	struct peer *peer;
 
-	for (;;) {
-		client_addr_size = sizeof(client_addr);
-		client_socket = accept(accepting_socket,
-		   (struct sockaddr *)&client_addr, &client_addr_size);
-		if (client_socket < 0) {
-			if (errno == EMFILE) {
-				gflog_reduced_warning(GFARM_MSG_1003607,
-				    &emfile_state,
-				    "accept: %s", strerror(EMFILE));
-			} else if (errno == ENFILE) {
-				gflog_reduced_warning(GFARM_MSG_1003608,
-				    &enfile_state,
-				    "accept: %s", strerror(ENFILE));
-			} else if (errno != EINTR) {
-				gflog_warning_errno(GFARM_MSG_1000189,
-				    "accept");
-			}
-		} else if ((e = peer_alloc(client_socket, &peer)) !=
-		    GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_1000190,
-			    "peer_alloc: %s", gfarm_error_string(e));
-			close(client_socket);
-		} else {
-			thrpool_add_job(authentication_thread_pool,
-			    try_auth, peer);
+	client_socket = accept(accepting_socket,
+	   (struct sockaddr *)&client_addr, &client_addr_size);
+	if (client_socket < 0) {
+		if (errno == EMFILE) {
+			gflog_reduced_warning(GFARM_MSG_1003607,
+			    &emfile_state,
+			    "accept: %s", strerror(EMFILE));
+		} else if (errno == ENFILE) {
+			gflog_reduced_warning(GFARM_MSG_1003608,
+			    &enfile_state,
+			    "accept: %s", strerror(ENFILE));
+		} else if (errno != EINTR) {
+			gflog_warning_errno(GFARM_MSG_1000189,
+			    "accept");
 		}
+	} else if ((e = peer_alloc(client_socket, &peer)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_1000190,
+		    "peer_alloc: %s", gfarm_error_string(e));
+		close(client_socket);
+	} else {
+		thrpool_add_job(authentication_thread_pool,
+		    try_auth, peer);
+	}
+}
+
+#define MAX_LISTENING_SOCKETS	64
+
+static void
+accepting_loop(int nsocks, int *socks)
+{
+	struct pollfd pollfds[MAX_LISTENING_SOCKETS], *pfd;
+	int i, rv;
+
+	assert(nsocks <= MAX_LISTENING_SOCKETS);
+	for (;;) {
+		for (i = 0; i < nsocks; i++) {
+			pfd = &pollfds[i];
+			pfd->fd = socks[i];
+			pfd->events = POLLIN;
+			pfd->revents = 0;
+		}
+		rv = poll(pollfds, nsocks, INFTIM);
+		if (rv == -1) {
+			if (errno == EINTR)
+				continue;
+			gflog_warning_errno(GFARM_MSG_UNFIXED,
+			    "poll accepting sockts");
+			continue;
+		}
+		for (i = 0; i < nsocks; i++) {
+			pfd = &pollfds[i];
+			if (pfd->revents)
+				accept_one(socks[i]);
+		}
+
 	}
 }
 
 static int
-open_accepting_socket(int port)
+open_accepting_sockets(int port, int *socks)
 {
 	gfarm_error_t e;
-	struct sockaddr_in self_addr;
-	socklen_t self_addr_size;
-	int sock, sockopt;
+	char portnumber[NI_MAXSERV];
+	struct addrinfo hints, *res, *res0;
+	int rv, nsocks, sock, sockopt;
 
-	memset(&self_addr, 0, sizeof(self_addr));
-	self_addr.sin_family = AF_INET;
-	self_addr.sin_addr.s_addr = INADDR_ANY;
-	self_addr.sin_port = htons(port);
-	self_addr_size = sizeof(self_addr);
-	sock = socket(PF_INET, SOCK_STREAM, 0);
-	if (sock < 0)
-		gflog_fatal_errno(GFARM_MSG_1000191, "accepting socket");
-	sockopt = 1;
-	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-	    &sockopt, sizeof(sockopt)) == -1)
-		gflog_warning_errno(GFARM_MSG_1000192, "SO_REUSEADDR");
-	if (bind(sock, (struct sockaddr *)&self_addr, self_addr_size) < 0)
-		gflog_fatal_errno(GFARM_MSG_1000193, "bind accepting socket");
-	e = gfarm_sockopt_apply_listener(sock);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1000194,
-		    "setsockopt: %s", gfarm_error_string(e));
-	if (listen(sock, gfarm_metadb_server_listen_backlog) < 0)
-		gflog_fatal_errno(GFARM_MSG_1000195, "listen");
-	return (sock);
+	snprintf(portnumber, sizeof(portnumber), "%u", port);
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE | AI_NUMERICSERV;
+	rv = gfarm_getaddrinfo(NULL, portnumber, &hints, &res0);
+	if (rv != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED, "getaddrinfo(%s): %s",
+		    portnumber, gai_strerror(rv));
+
+	nsocks = 0;
+	for (res = res0; res != NULL; res = res->ai_next) {
+		if (nsocks >= MAX_LISTENING_SOCKETS)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "number of listening socksts exceeds %d",
+			    MAX_LISTENING_SOCKETS);
+		sock =
+		    socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+		if (sock < 0)
+			gflog_fatal_errno(GFARM_MSG_UNFIXED,
+			    "creating socket(%d, %d, %d)",
+			    res->ai_family, res->ai_socktype,
+			    res->ai_protocol);
+
+
+#ifdef IPV6_V6ONLY
+		sockopt = 1;
+		if (res->ai_family == AF_INET6 &&
+		    setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+		    &sockopt, sizeof(sockopt)) == -1)
+			gflog_warning_errno(GFARM_MSG_UNFIXED,
+			    "setsockopt(IPPROTO_IPV6, IPV6_V6ONLY)");
+#endif
+
+		sockopt = 1;
+		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+		    &sockopt, sizeof(sockopt)) == -1)
+			gflog_warning_errno(GFARM_MSG_1000192, "SO_REUSEADDR");
+
+		if (bind(sock, res->ai_addr, res->ai_addrlen) < 0)
+			gflog_fatal_errno(GFARM_MSG_1000193,
+			    "bind accepting socket");
+		e = gfarm_sockopt_apply_listener(sock);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_warning(GFARM_MSG_1000194,
+			    "setsockopt: %s", gfarm_error_string(e));
+		if (listen(sock, gfarm_metadb_server_listen_backlog) < 0)
+			gflog_fatal_errno(GFARM_MSG_1000195, "listen");
+
+
+		/*
+		 * To deal with race condition which may be caused by RST,
+		 * listening socket must be O_NONBLOCK, if the socket will be
+		 * used as a file descriptor for select(2)/poll(2) .
+		 * See section 16.6 of "UNIX NETWORK PROGRAMMING, Volume1,
+		 * Third Edition" by W. Richard Stevens, for detail.
+		 */
+		if (fcntl(sock, F_SETFL,
+		    fcntl(sock, F_GETFL, NULL) | O_NONBLOCK) == -1)
+			gflog_warning_errno(GFARM_MSG_UNFIXED,
+			    "accepting TCP socket O_NONBLOCK");
+
+		socks[nsocks++] = sock;
+	}
+	gfarm_freeaddrinfo(res0);
+	return (nsocks);
 }
 
 static void
@@ -1288,7 +1370,7 @@ transform_to_master(void)
 }
 
 static int
-wait_transform_to_master(int port)
+wait_transform_to_master(int port, int *socks)
 {
 	static const char diag[] = "accepting_loop";
 
@@ -1302,7 +1384,7 @@ wait_transform_to_master(int port)
 		gfarm_cond_wait(&transform_cond, &transform_mutex, diag,
 		    TRANSFORM_COND_DIAG);
 	gfarm_mutex_unlock(&transform_mutex, diag, TRANSFORM_MUTEX_DIAG);
-	return (open_accepting_socket(port));
+	return (open_accepting_sockets(port, socks));
 }
 
 static struct {
@@ -1683,7 +1765,7 @@ main(int argc, char **argv)
 	char *config_file = NULL, *port_number = NULL;
 	int syslog_level = -1;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
-	int ch, sock, table_size;
+	int ch, table_size, nsocks, socks[MAX_LISTENING_SOCKETS];
 	sigset_t sigs;
 	int is_master, replication_enabled;
 	int file_trace = 0;
@@ -1918,18 +2000,18 @@ main(int argc, char **argv)
 		start_gfmdc_threads();
 		gfmd_startup_state_notify_ready();
 		if (is_master)
-			sock = open_accepting_socket(gfmd_port);
+			nsocks = open_accepting_sockets(gfmd_port, socks);
 		else
-			sock = wait_transform_to_master(gfmd_port);
+			nsocks = wait_transform_to_master(gfmd_port, socks);
 	} else
-		sock = open_accepting_socket(gfmd_port);
+		nsocks = open_accepting_sockets(gfmd_port, socks);
 
 	/* master */
 
 	failover_notify();
 	quota_check_init();
 	replica_check_init();
-	accepting_loop(sock);
+	accepting_loop(nsocks, socks);
 
 	/*NOTREACHED*/
 	return (0); /* to shut up warning */

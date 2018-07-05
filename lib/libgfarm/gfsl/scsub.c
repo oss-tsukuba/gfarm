@@ -65,16 +65,12 @@ doServer(int fd, char *hostname, int port, gss_cred_id_t myCred,
     free(name);
     aePtr = gfarmSecSessionGetInitiatorInfo(initialSession);
     fprintf(stderr, "Accept => Initiator: '%s' -> '%s'\n",
-	    aePtr->distName,
-	    (aePtr->authType == GFARM_AUTH_USER) ?
-	    aePtr->authData.userAuth.localName :
-	    aePtr->authData.hostAuth.FQDN);
+	    gfarmAuthGetDistName(aePtr),
+	    gfarmAuthGetPrintableName(aePtr));
 
     if (gfarmSecSessionDedicate(initialSession) < 0) {
 	fprintf(stderr, "Can't dedicate to '%s'.\n",
-		(aePtr->authType == GFARM_AUTH_USER) ?
-		aePtr->authData.userAuth.localName :
-		aePtr->authData.hostAuth.FQDN);
+		gfarmAuthGetPrintableName(aePtr));
 	goto Done;
     }
 

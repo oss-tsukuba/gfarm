@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>26 Oct 2017</date></refentryinfo>
+<refentryinfo><date>27 Mar 2018</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -62,7 +62,7 @@ gfarm2.confは、一行に一文の形式で設定します。
 <term><parameter moreinfo="none">III.JJJ.KKK.LLL</parameter></term>
 <listitem>
 <para>
-"."で区切られた0〜255までの数字4つで、IPアドレスを指定します。
+"."で区切られた0〜255までの数字4つで、IPv4アドレスを指定します。
 </para>
 </listitem>
 </varlistentry>
@@ -71,7 +71,28 @@ gfarm2.confは、一行に一文の形式で設定します。
 <term><parameter moreinfo="none">III.JJJ.KKK.LLL</parameter>/<parameter moreinfo="none">MM</parameter></term>
 <listitem>
 <para>
-IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワークを
+IPv4アドレスと、"/"で区切られた0〜31までの数字で、ネットワークを
+指定します。"/"以降の数字はnetmaskのビット長です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">[ "[" ] IIII:JJJJ:KKKK:LLLL:MMMM:NNNN:OOOO:PPPP [ "]" ]</parameter></term>
+<listitem>
+<para>
+":"で区切られた4桁までの16進数8つで、IPv6アドレスを指定します。
+アドレスのうち 0 が連続する1箇所に限って、"::" と略記できます。
+また全体を "[" 〜 "]" で囲うこともできます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">[ "[" ] IIII:JJJJ:KKKK:LLLL:MMMM:NNNN:OOOO:PPPP [ "]" ]</parameter>/<parameter moreinfo="none">MMM</parameter></term>
+<listitem>
+<para>
+IPv6アドレスと、"/"で区切られた0〜127までの数字で、ネットワークを
 指定します。"/"以降の数字はnetmaskのビット長です。
 </para>
 </listitem>
@@ -105,6 +126,9 @@ IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワ
 <para>
 全て大文字で"LISTENER"と記述すると、通信する相手に関係なく、
 サーバー側(着呼側)のソケットを意味します。
+</para>
+<para>
+この指定は、sockopt 文でのみ有効です。
 </para>
 </listitem>
 </varlistentry>

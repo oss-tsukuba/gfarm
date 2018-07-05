@@ -4,6 +4,7 @@
 
 #include <gfarm/gfarm_config.h>
 
+#include <pthread.h>
 #include <assert.h>
 #include <stddef.h>
 #include <string.h>
@@ -36,6 +37,8 @@
 #include "context.h"
 #include "hostspec.h"
 #include "gfm_client.h"
+#define GFARM_HOST_ADDRESS_INTERNAL
+#include "host_address.h"
 #include "host.h"
 
 #ifndef __KERNEL__
@@ -56,13 +59,18 @@ struct gfarm_host_static {
 	struct known_network **known_network_list_last;
 
 	/* gfarm_host_get_self_name() */
-	int initialized;
-	char hostname[MAXHOSTNAMELEN + 1];
+	int self_name_initialized;
+	char self_name[MAXHOSTNAMELEN + 1];
 
 	/* gfm_host_get_canonical_self_name() */
 	char *canonical_self_name;
 	int port;
 	gfarm_error_t error_save;
+
+	/* gfarm_host_is_local() and gfarm_host_address_is_local() */
+	int self_ifinfos_asked;
+	int self_ifinfos_count;
+	struct gfarm_ifinfo **self_ifinfos;
 };
 
 gfarm_error_t
@@ -77,11 +85,16 @@ gfarm_host_static_init(struct gfarm_context *ctxp)
 	s->known_network_list = NULL;
 	s->known_network_list_last = &s->known_network_list;
 
-	s->initialized = 0;
-	memset(s->hostname, 0, sizeof(s->hostname));
+	s->self_name_initialized = 0;
+	memset(s->self_name, 0, sizeof(s->self_name));
+
 	s->canonical_self_name = NULL;
 	s->port = 0;
 	s->error_save = GFARM_ERR_NO_ERROR;
+
+	s->self_ifinfos_asked = 0;
+	s->self_ifinfos_count = 0;
+	s->self_ifinfos = NULL;
 
 	ctxp->host_static = s;
 	return (GFARM_ERR_NO_ERROR);
@@ -101,8 +114,13 @@ gfarm_host_static_term(struct gfarm_context *ctxp)
 		gfarm_hostspec_free(n->network);
 		free(n);
 	}
+
 	free(s->canonical_self_name);
+
+	gfarm_free_ifinfos(s->self_ifinfos_count, s->self_ifinfos);
+
 	free(s);
+	ctxp->host_static = NULL;
 }
 
 static gfarm_error_t
@@ -206,16 +224,16 @@ gfm_host_get_canonical_name(struct gfm_connection *gfm_server,
 char *
 gfarm_host_get_self_name(void)
 {
-	if (!staticp->initialized) {
-		staticp->hostname[0] = staticp->hostname[MAXHOSTNAMELEN] = 0;
+	if (!staticp->self_name_initialized) {
+		staticp->self_name[0] = staticp->self_name[MAXHOSTNAMELEN] = 0;
 		/* gethostname(2) almost shouldn't fail */
-		gethostname(staticp->hostname, MAXHOSTNAMELEN);
-		if (staticp->hostname[0] == '\0')
-			strcpy(staticp->hostname, "hostname-not-set");
-		staticp->initialized = 1;
+		gethostname(staticp->self_name, MAXHOSTNAMELEN);
+		if (staticp->self_name[0] == '\0')
+			strcpy(staticp->self_name, "hostname-not-set");
+		staticp->self_name_initialized = 1;
 	}
 
-	return (staticp->hostname);
+	return (staticp->self_name);
 }
 
 /*
@@ -425,15 +443,40 @@ gfm_host_is_local(struct gfm_connection *gfm_server, const char *hostname)
 	return (is_local);
 }
 
+struct gfarm_ifinfo_ipv4 {
+	struct gfarm_ifinfo ifinfo; /* must be first member */
+	struct sockaddr_in addr;
+	struct sockaddr_in netmask;
+};
+
+struct gfarm_ifinfo_ipv6 {
+	struct gfarm_ifinfo ifinfo; /* must be first member */
+	struct sockaddr_in6 addr;
+	struct sockaddr_in6 netmask;
+};
+
+void
+gfarm_free_ifinfos(int count, struct gfarm_ifinfo **ifinfos)
+{
+	int i;
+
+	for (i = 0; i < count; i++)
+		free(ifinfos[i]);
+	free(ifinfos);
+}
+
 #ifndef __KERNEL__
 #ifdef HAVE_GETIFADDRS
 
 gfarm_error_t
-gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
+gfarm_get_ifinfos(int *countp, struct gfarm_ifinfo ***ifinfos_p)
 {
+	gfarm_error_t e;
 	struct ifaddrs *ifa_head, *ifa;
 	int i, n, save_errno;
-	struct in_addr *addresses;
+	struct gfarm_ifinfo **ifinfos, *ifinfo;
+	struct gfarm_ifinfo_ipv4 *ifi_ipv4;
+	struct gfarm_ifinfo_ipv6 *ifi_ipv6;
 
 	if (getifaddrs(&ifa_head) == -1) {
 		save_errno = errno;
@@ -441,27 +484,88 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 		return (gfarm_errno_to_error(save_errno));
 	}
 	for (n = 0, ifa = ifa_head; ifa != NULL; ifa = ifa->ifa_next) {
-		if (ifa->ifa_addr->sa_family == AF_INET &&
-		    (ifa->ifa_flags & IFF_UP) != 0) {
+		if ((ifa->ifa_flags & IFF_UP) != 0 &&
+		    (ifa->ifa_addr->sa_family == AF_INET ||
+		     ifa->ifa_addr->sa_family == AF_INET6)
+		    ) {
 			n++;
 		}
 	}
-	GFARM_MALLOC_ARRAY(addresses,  n);
-	if (addresses == NULL) {
+	if (n == 0)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	GFARM_MALLOC_ARRAY(ifinfos,  n);
+	if (ifinfos == NULL) {
 		gflog_debug(GFARM_MSG_1002523,
-		    "gfarm_get_ip_addresses: no memory for %d IPs", n);
+		    "gfarm_get_ifinfo: no memory for %d ifinfos", n);
 		freeifaddrs(ifa_head);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	for (i = 0, ifa = ifa_head; ifa != NULL; ifa = ifa->ifa_next) {
-		if (ifa->ifa_addr->sa_family == AF_INET &&
-		    (ifa->ifa_flags & IFF_UP) != 0) {
-			addresses[i++] =
-			    ((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+		if ((ifa->ifa_flags & IFF_UP) == 0 ||
+		    (ifa->ifa_addr->sa_family != AF_INET &&
+		     ifa->ifa_addr->sa_family != AF_INET6))
+			continue;
+		e = GFARM_ERR_NO_ERROR;
+		if (ifa->ifa_addr->sa_family !=
+		    ifa->ifa_netmask->sa_family) {
+			e = GFARM_ERR_INTERNAL_ERROR;
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "getifaddrs/%d family mismatch %d vs %d", i,
+			    ifa->ifa_addr->sa_family,
+			    ifa->ifa_netmask->sa_family);
+#ifdef __GNUC__ /* shut up warning by gcc */
+			ifinfo = NULL;
+#endif
+		} else {
+			switch (ifa->ifa_addr->sa_family) {
+			case AF_INET:
+				GFARM_MALLOC(ifi_ipv4);
+				if (ifi_ipv4 == NULL) {
+					e = GFARM_ERR_NO_MEMORY;
+					break;
+				}
+				ifinfo = &ifi_ipv4->ifinfo;
+				ifinfo->ifi_addr =
+				    (struct sockaddr *)&ifi_ipv4->addr;
+				ifinfo->ifi_netmask =
+				    (struct sockaddr *)&ifi_ipv4->netmask;
+				memcpy(&ifi_ipv4->addr, ifa->ifa_addr,
+				    sizeof(ifi_ipv4->addr));
+				memcpy(&ifi_ipv4->netmask, ifa->ifa_netmask,
+				    sizeof(ifi_ipv4->netmask));
+				ifinfo->ifi_addrlen = sizeof(ifi_ipv4->addr);
+				break;
+			case AF_INET6:
+				GFARM_MALLOC(ifi_ipv6);
+				if (ifi_ipv6 == NULL) {
+					e = GFARM_ERR_NO_MEMORY;
+					break;
+				}
+				ifinfo = &ifi_ipv6->ifinfo;
+				ifinfo->ifi_addr =
+				    (struct sockaddr *)&ifi_ipv6->addr;
+				ifinfo->ifi_netmask =
+				    (struct sockaddr *)&ifi_ipv6->netmask;
+				memcpy(&ifi_ipv6->addr, ifa->ifa_addr,
+				    sizeof(ifi_ipv6->addr));
+				memcpy(&ifi_ipv6->netmask, ifa->ifa_netmask,
+				    sizeof(ifi_ipv6->netmask));
+				ifinfo->ifi_addrlen = sizeof(ifi_ipv6->addr);
+				break;
+			default:
+				continue;
+			}
 		}
+		if (e != GFARM_ERR_NO_ERROR) {
+			while (--i >= 0)
+				free(ifinfos[i]);
+			free(ifinfos);
+			return (e);
+		}
+		ifinfos[i++] = ifinfo;
 	}
 	freeifaddrs(ifa_head);
-	*ip_addressesp = addresses;
+	*ifinfos_p = ifinfos;
 	*countp = n;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -477,12 +581,14 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 #define ADDRESSES_DELTA 16
 #define IFCBUFFER_SIZE	8192
 
+/* XXX SIOCGIFCONF version only supports IPv4 */
+
 gfarm_error_t
-gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
+gfarm_get_ifinfos(int *countp, struct gfarm_ifinfo ***ifinfos_p)
 {
 	gfarm_error_t e = GFARM_ERR_NO_MEMORY;
 	int fd;
-	int size, count;
+	int size, n;
 #ifdef NEW_SOCKADDR
 	int i;
 #endif
@@ -492,6 +598,18 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 	struct ifconf ifc; /* buffer for interface addresses */
 	char ifcbuffer[IFCBUFFER_SIZE];
 	struct ifreq ifreq; /* buffer for interface flag */
+	struct gfarm_ifinfo **ifinfos, *ifinfo;
+	struct gfarm_ifinfo_ipv4 *ifi_ipv4;
+	struct sockaddr_in ipv4_netmask_24;
+
+	/* XXX fixed /24 netmask */
+	memset(&ipv4_netmask_24, 0, sizeof(ipv4_netmask_24));
+#ifdef SUN_LEN
+	ipv4_netmask_24.sin_len = sizeof(ipv4_netmask_24);
+#endif
+	ipv4_netmask_24.sin_family = AF_INET;
+	ipv4_netmask_24.sin_port = 0;
+	ipv4_netmask_24.sin_port = htonl(0xffffff00);
 
 	fd = socket(PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
@@ -511,16 +629,7 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 		return (gfarm_errno_to_error(save_errno));
 	}
 
-	count = 0;
-	size = 2; /* ethernet address + loopback interface address */
-	GFARM_MALLOC_ARRAY(addresses,  size);
-	if (addresses == NULL) {
-		gflog_debug(GFARM_MSG_1000873,
-			"allocation of 'addresses' failed: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		goto err;
-	}
-
+	n = 0;
 #ifdef NEW_SOCKADDR
 	ifreq.ifr_name[0] = '\0';
 
@@ -549,52 +658,106 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 				gflog_debug(GFARM_MSG_1000874,
 					"ioctl() on socket failed: %s",
 					strerror(save_errno));
-				goto err;
+				break;
 			}
 		}
 		if ((ifreq.ifr_flags & IFF_UP) == 0)
 			continue;
 
-		if (count + 1 > size) {
-			size += ADDRESSES_DELTA;
-			GFARM_REALLOC_ARRAY(p, addresses, size);
-			if (p == NULL) {
-				gflog_debug(GFARM_MSG_1000875,
-					"re-allocation of 'addresses' failed:"
-					" %s",
-					gfarm_error_string(
-						GFARM_ERR_NO_MEMORY));
-				goto err;
-			}
-			addresses = p;
-		}
-		addresses[count++] =
-			((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr;
-
+		n++;
 	}
-	if (count == 0) {
-		free(addresses);
-		addresses = NULL;
-	} else if (size != count) {
-		GFARM_REALLOC_ARRAY(p, addresses, count);
+	if (n == 0) {
+		close(fd);
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	}
+
+	GFARM_MALLOC_ARRAY(ifinfos,  n);
+	if (ifinfos == NULL) {
+		gflog_debug(GFARM_MSG_1002523,
+		    "gfarm_get_ifinfo: no memory for %d ifinfos", n);
+		close(fd);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	size = n;
+
+	n = 0;
+#ifdef NEW_SOCKADDR
+	ifreq.ifr_name[0] = '\0';
+
+	for (i = 0; i < ifc.ifc_len; )
+#else
+	for (ifr = ifc.ifc_req; (char *)ifr < ifc.ifc_buf+ifc.ifc_len; ifr++)
+#endif
+	{
+#ifdef NEW_SOCKADDR
+		ifr = (struct ifreq *)((char *)ifc.ifc_req + i);
+		i += sizeof(ifr->ifr_name) +
+			((ifr->ifr_addr.sa_len > sizeof(struct sockaddr) ?
+			  ifr->ifr_addr.sa_len : sizeof(struct sockaddr)));
+#endif
+		if (ifr->ifr_addr.sa_family != AF_INET)
+			continue;
+#ifdef NEW_SOCKADDR
+		if (strncmp(ifreq.ifr_name, ifr->ifr_name,
+			    sizeof(ifr->ifr_name)) != 0)
+#endif
+		{
+			/* if this is first entry of the interface, get flag */
+			ifreq = *ifr;
+			if (ioctl(fd, SIOCGIFFLAGS, &ifreq) < 0) {
+				save_errno = errno;
+				gflog_debug(GFARM_MSG_1000874,
+					"ioctl() on socket failed: %s",
+					strerror(save_errno));
+				break;
+			}
+		}
+		if ((ifreq.ifr_flags & IFF_UP) == 0)
+			continue;
+
+		if (n >= size) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "number of interface address increased from %d",
+			    n);
+			break;
+		}
+		GFARM_MALLOC(ifi_ipv4);
+		if (ifi_ipv4 == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			break;
+		}
+		memcpy(&ifi_ipv4->addr, (struct sockaddr_in *)&ifr->ifr_addr,
+		    sizeof(ifi_ipv4->addr));
+		/* XXX fixed /24 netmask */
+		memcpy(&ifi_ipv4->netmask, &ipv4_netmask_24,
+		    sizeof(ifi_ipv4->netmask));
+		ifinfo = &ifi_ipv4->ifinfo;
+		ininfo->ifi_addr = (struct sockaddr *)&ifi_ipv4->addr;
+		ininfo->ifi_netmask = (struct sockaddr *)&ifi_ipv4->netmask;
+		ininfo->ifi_addrlen = sizeof(ifi_ipv4->addr);
+		ifinfos[n++] = ifinfo;
+	}
+	close(fd);
+	if (n == 0) {
+		free(ifinfos);
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	}
+	if (size != n) {
+		GFARM_REALLOC_ARRAY(p, ifinfos, n);
 		if (p == NULL) {
 			gflog_debug(GFARM_MSG_1000876,
-				"re-allocation of 'addresses' failed: %s",
-				gfarm_error_string(GFARM_ERR_NO_MEMORY));
-			goto err;
+			    "re-allocation of 'ifinfos' failed: %s",
+			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
+			while (--n >= 0)
+				free(ifinfos[i]);
+			free(ifinfos);
+			return (GFARM_ERR_NO_MEMORY);
 		}
-		addresses = p;
+		ifinfos = p;
 	}
-	*ip_addressesp = addresses;
-	*countp = count;
-	close(fd);
+	*ifinfos_p = ifinfos;
+	*countp = n;
 	return (GFARM_ERR_NO_ERROR);
-
-err:
-	if (addresses != NULL)
-		free(addresses);
-	close(fd);
-	return (e);
 }
 
 #endif /* HAVE_GETIFADDRS */
@@ -634,6 +797,79 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 	return (GFARM_ERR_NO_ERROR);
 }
 #endif /* __KERNEL__ */
+
+gfarm_error_t
+gfarm_self_address_get(int port,
+	int *self_addresses_count_p,
+	struct gfarm_host_address ***self_addresses_p)
+{
+	gfarm_error_t e;
+	struct gfarm_ifinfo **ifinfos, *ifi;
+	int i, j, addr_count;
+	struct gfarm_host_address **addr_array, *sa;
+	struct gfarm_host_address_ipv4 *sa_ipv4;
+	struct gfarm_host_address_ipv6 *sa_ipv6;
+
+	e = gfarm_get_ifinfos(&addr_count, &ifinfos);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	GFARM_MALLOC_ARRAY(addr_array, addr_count);
+	if (addr_array == NULL) {
+		gfarm_free_ifinfos(addr_count, ifinfos);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	j = 0;
+	for (i = 0; i < addr_count; i++) {
+		ifi = ifinfos[i];
+		switch (ifi->ifi_addr->sa_family) {
+		case AF_INET:
+			GFARM_MALLOC(sa_ipv4);
+			if (sa_ipv4 == NULL) {
+				sa = NULL;
+				break;
+			}
+			memset(sa_ipv4, 0, sizeof(*sa_ipv4));
+			memcpy(&sa_ipv4->sa_addr, ifi->ifi_addr,
+			    sizeof(sa_ipv4->sa_addr));
+			sa_ipv4->sa_family = AF_INET;
+			sa_ipv4->sa_addrlen = sizeof(sa_ipv4->sa_addr);
+			sa_ipv4->sa_addr.sin_port = htons(port);
+			sa = (struct gfarm_host_address *)sa_ipv4;
+			break;
+		case AF_INET6:
+			GFARM_MALLOC(sa_ipv6);
+			if (sa_ipv6 == NULL) {
+				sa = NULL;
+				break;
+			}
+			memset(sa_ipv6, 0, sizeof(*sa_ipv6));
+			memcpy(&sa_ipv6->sa_addr, ifi->ifi_addr,
+			    sizeof(sa_ipv6->sa_addr));
+			sa_ipv6->sa_family = AF_INET6;
+			sa_ipv6->sa_addrlen = sizeof(sa_ipv6->sa_addr);
+			sa_ipv6->sa_addr.sin6_port = htons(port);
+			sa = (struct gfarm_host_address *)sa_ipv6;
+			break;
+		default:
+			/* i.e. af_not_supported */
+			continue;
+		}
+		if (sa == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			gfarm_host_address_free(j, addr_array);
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "self_addresses_from_ifinfos(): %s",
+			    gfarm_error_string(e));
+			gfarm_free_ifinfos(addr_count, ifinfos);
+			return (e);
+		}
+		addr_array[j++] = sa;
+	}
+	gfarm_free_ifinfos(addr_count, ifinfos);
+	*self_addresses_count_p = j;
+	*self_addresses_p = addr_array;
+	return (GFARM_ERR_NO_ERROR);
+}
 
 #if 0 /* "address_use" directive is disabled for now */
 
@@ -678,22 +914,25 @@ always_match(struct gfarm_hostspec *hostspecp,
 	return (1);
 }
 
-/* XXX should try to connect all IP addresses. i.e. this interface is wrong. */
 static gfarm_error_t
 host_address_get(const char *name, int port,
 	int (*match)(struct gfarm_hostspec *, const char *, struct sockaddr *),
 	struct gfarm_hostspec *hostspec,
-	struct sockaddr *peer_addr, char **if_hostnamep)
+	int *addr_countp, struct gfarm_host_address ***addr_arrayp)
 {
 	gfarm_error_t e;
 	struct addrinfo hints, *res, *res0;
 	int error;
-	char *n, sbuf[NI_MAXSERV];
+	char sbuf[NI_MAXSERV];
 	int af_not_supported = 0;
+	int i, addr_count = 0;
+	struct gfarm_host_address **addr_array, *sa;
+	struct gfarm_host_address_ipv4 *sa_ipv4;
+	struct gfarm_host_address_ipv6 *sa_ipv6;
 
 	snprintf(sbuf, sizeof(sbuf), "%u", port);
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
+	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM; /* XXX maybe used for SOCK_DGRAM */
 	error = gfarm_getaddrinfo(name, sbuf, &hints, &res0);
 	if (error != 0) {
@@ -705,73 +944,124 @@ host_address_get(const char *name, int port,
 	}
 
 	for (res = res0; res != NULL; res = res->ai_next) {
-		if ((*match)(hostspec, name, res->ai_addr)) {
-			/* to be sure */
-			if (res->ai_addr->sa_family != AF_INET ||
-			    res->ai_addrlen > sizeof(*peer_addr)) {
-				af_not_supported = 1;
-				continue;
-			}
-			if (if_hostnamep != NULL) {
-				/* XXX - or strdup(res->ai_canonname)? */
-				n = strdup(name);
-				if (n == NULL) {
-					gfarm_freeaddrinfo(res0);
-					gflog_debug(GFARM_MSG_1000880,
-						"allocation of hostname failed"
-						": %s",
-						gfarm_error_string(
-							GFARM_ERR_NO_MEMORY));
-					return (GFARM_ERR_NO_MEMORY);
-				}
-				*if_hostnamep = n;
-			}
-			memset(peer_addr, 0, sizeof(*peer_addr));
-			memcpy(peer_addr, res->ai_addr, sizeof(*peer_addr));
-			gfarm_freeaddrinfo(res0);
-			return (GFARM_ERR_NO_ERROR);
+		if (!(*match)(hostspec, name, res->ai_addr))
+			continue;
+		if (res->ai_addr->sa_family != AF_INET &&
+		    res->ai_addr->sa_family != AF_INET6) {
+			af_not_supported = 1;
+			continue;
 		}
+		++addr_count;
+	}
+	if (addr_count == 0) {
+		if (af_not_supported) {
+			e = GFARM_ERR_ADDRESS_FAMILY_NOT_SUPPORTED_BY_PROTOCOL_FAMILY;
+			gflog_debug(GFARM_MSG_1000879,
+			    "Address family not supported "
+			    "by protocol family (%s): %s",
+			    name, gfarm_error_string(e));
+		} else {
+			e = GFARM_ERR_NO_SUCH_OBJECT;
+			gflog_debug(GFARM_MSG_1000881,
+			    "failed to get host address (%s): %s",
+			    name, gfarm_error_string(e));
+		}
+		gfarm_freeaddrinfo(res0);
+		return (e);
+	}
+
+	GFARM_MALLOC_ARRAY(addr_array, addr_count);
+	if (addr_array == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "host address (%s): %s",
+		    name, gfarm_error_string(e));
+		gfarm_freeaddrinfo(res0);
+		return (e);
+	}
+
+	i = 0;
+	for (res = res0; res != NULL; res = res->ai_next) {
+		if (!(*match)(hostspec, name, res->ai_addr))
+			continue;
+		switch (res->ai_addr->sa_family) {
+		case AF_INET:
+			GFARM_MALLOC(sa_ipv4);
+			if (sa_ipv4 == NULL) {
+				sa = NULL;
+				break;
+			}
+			memset(sa_ipv4, 0, sizeof(*sa_ipv4));
+			memcpy(&sa_ipv4->sa_addr, res->ai_addr,
+			    sizeof(sa_ipv4->sa_addr));
+			sa_ipv4->sa_family = AF_INET;
+			sa_ipv4->sa_addrlen = sizeof(sa_ipv4->sa_addr);
+			sa = (struct gfarm_host_address *)sa_ipv4;
+			break;
+		case AF_INET6:
+			GFARM_MALLOC(sa_ipv6);
+			if (sa_ipv6 == NULL) {
+				sa = NULL;
+				break;
+			}
+			memset(sa_ipv6, 0, sizeof(*sa_ipv6));
+			memcpy(&sa_ipv6->sa_addr, res->ai_addr,
+			    sizeof(sa_ipv6->sa_addr));
+			sa_ipv6->sa_family = AF_INET6;
+			sa_ipv6->sa_addrlen = sizeof(sa_ipv6->sa_addr);
+			sa = (struct gfarm_host_address *)sa_ipv6;
+			break;
+		default:
+			/* i.e. af_not_supported */
+			continue;
+		}
+		if (sa == NULL || i >= addr_count) {
+			if (sa == NULL) {
+				e = GFARM_ERR_NO_MEMORY;
+			} else {
+				e = GFARM_ERR_INTERNAL_ERROR;
+				free(sa);
+			}
+			gfarm_host_address_free(i, addr_array);
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "host address (%s): %s",
+			    name, gfarm_error_string(e));
+			gfarm_freeaddrinfo(res0);
+			return (e);
+		}
+		addr_array[i] = sa;
 	}
 	gfarm_freeaddrinfo(res0);
-	if (af_not_supported) {
-		e = GFARM_ERR_ADDRESS_FAMILY_NOT_SUPPORTED_BY_PROTOCOL_FAMILY;
-		gflog_debug(GFARM_MSG_1000879,
-		    "Address family not supported by protocol family (%s): %s",
-		    name, gfarm_error_string(e));
-	} else {
-		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_debug(GFARM_MSG_1000881,
-		    "failed to get host address (%s): %s",
-		    name, gfarm_error_string(e));
-	}
-	return (e);
+	*addr_countp = addr_count;
+	*addr_arrayp = addr_array;
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
 host_address_get_matched(const char *name, int port,
 	struct gfarm_hostspec *hostspec,
-	struct sockaddr *peer_addr, char **if_hostnamep)
+	int *addr_countp, struct gfarm_host_address ***addr_arrayp)
 {
 	return (host_address_get(name, port,
 	    hostspec == NULL ? always_match : gfarm_hostspec_match, hostspec,
-	    peer_addr, if_hostnamep));
+	    addr_countp, addr_arrayp));
 }
 
 static gfarm_error_t
 host_info_address_get_matched(struct gfarm_host_info *info, int port,
 	struct gfarm_hostspec *hostspec,
-	struct sockaddr *peer_addr, char **if_hostnamep)
+	int *addr_countp, struct gfarm_host_address ***addr_arrayp)
 {
 	gfarm_error_t e;
 	int i;
 
 	e = host_address_get_matched(info->hostname, port, hostspec,
-	    peer_addr, if_hostnamep);
+	    addr_countp, addr_arrayp);
 	if (e == GFARM_ERR_NO_ERROR)
 		return (GFARM_ERR_NO_ERROR);
 	for (i = 0; i < info->nhostaliases; i++) {
 		e = host_address_get_matched(info->hostaliases[i], port,
-		    hostspec, peer_addr, if_hostnamep);
+		    hostspec, addr_countp, addr_arrayp);
 		if (e == GFARM_ERR_NO_ERROR)
 			return (GFARM_ERR_NO_ERROR);
 	}
@@ -792,12 +1082,12 @@ static gfarm_error_t
 address_get_matched(struct gfm_connection *gfm_server,
 	const char *name, struct host_info_rec *hir, int port,
 	struct gfarm_hostspec *hostspec,
-	struct sockaddr *peer_addr, char **if_hostnamep)
+	int *addr_countp, struct gfarm_host_address ***addr_arrayp)
 {
 	gfarm_error_t e;
 
 	e = host_address_get_matched(name, port, hostspec,
-	    peer_addr, if_hostnamep);
+	    addr_countp, addr_arrayp);
 	if (e == GFARM_ERR_NO_ERROR)
 		return (GFARM_ERR_NO_ERROR);
 	if (!hir->tried) {
@@ -808,7 +1098,7 @@ address_get_matched(struct gfm_connection *gfm_server,
 	}
 	if (hir->got) {
 		e = host_info_address_get_matched(hir->info, port, hostspec,
-		    peer_addr, if_hostnamep);
+		    addr_countp, addr_arrayp);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1000883,
@@ -821,7 +1111,7 @@ address_get_matched(struct gfm_connection *gfm_server,
 static gfarm_error_t
 address_get(struct gfm_connection *gfm_server, const char *name,
 	struct host_info_rec *hir, int port,
-	struct sockaddr *peer_addr, char **if_hostnamep)
+	int *addr_countp, struct gfarm_host_address ***addr_arrayp)
 {
 #if 0 /* "address_use" directive is disabled for now */
 	if (gfarm_host_address_use_config_list != NULL) {
@@ -837,7 +1127,7 @@ address_get(struct gfm_connection *gfm_server, const char *name,
 	}
 #endif /* "address_use" directive is disabled for now */
 	return (address_get_matched(gfm_server, name, hir, port, NULL,
-	    peer_addr, if_hostnamep));
+	    addr_countp, addr_arrayp));
 }
 
 /* NOTE: the caller should check gfmd failover */
@@ -845,21 +1135,21 @@ gfarm_error_t
 gfm_host_info_address_get(struct gfm_connection *gfm_server,
 	const char *host, int port,
 	struct gfarm_host_info *info,
-	struct sockaddr *peer_addr, char **if_hostnamep)
+	int *addr_countp, struct gfarm_host_address ***addr_arrayp)
 {
 	struct host_info_rec hir;
 
 	hir.info = info;
 	hir.tried = hir.got = 1;
-	return (address_get(gfm_server, host, &hir, port, peer_addr,
-	    if_hostnamep));
+	return (address_get(gfm_server, host, &hir, port,
+	    addr_countp, addr_arrayp));
 }
 
 /* NOTE: the caller should check gfmd failover */
 gfarm_error_t
 gfm_host_address_get(struct gfm_connection *gfm_server,
 	const char *host, int port,
-	struct sockaddr *peer_addr, char **if_hostnamep)
+	int *addr_countp, struct gfarm_host_address ***addr_arrayp)
 {
 	gfarm_error_t e;
 	struct gfarm_host_info info;
@@ -867,59 +1157,80 @@ gfm_host_address_get(struct gfm_connection *gfm_server,
 
 	hir.info = &info;
 	hir.tried = hir.got = 0;
-	e = address_get(gfm_server, host, &hir, port, peer_addr, if_hostnamep);
+	e = address_get(gfm_server, host, &hir, port,
+	    addr_countp, addr_arrayp);
 	if (hir.got)
 		gfarm_host_info_free(&info);
 	return (e);
 }
 
-/*
- * `*widendep' is only set, when this function returns True.
- * `*widendep' means:
- * -1: the addr is adjacent to the lower bound of the min address.
- *  0: the addr is between min and max.
- *  1: the addr is adjacent to the upper bound of the max address.
- *
- * XXX mostly works, but by somewhat haphazard way, if wild_guess is set.
- */
 int
-gfarm_addr_is_same_net(struct sockaddr *addr,
-	struct sockaddr *min, struct sockaddr *max, int wild_guess,
-	int *widenedp)
+gfarm_sockaddr_is_local(struct sockaddr *peer_addr)
 {
-	gfarm_uint32_t addr_in, min_in, max_in;
-	gfarm_uint32_t addr_net, min_net, max_net;
+	struct sockaddr *ifi_addr;
+	struct sockaddr_in *peer_in, *ifi_in;
+	struct sockaddr_in6 *peer_in6, *ifi_in6;
+	int i;
 
-	assert(addr->sa_family == AF_INET &&
-	    min->sa_family == AF_INET &&
-	    max->sa_family == AF_INET);
-	addr_in = ntohl(((struct sockaddr_in *)addr)->sin_addr.s_addr);
-	min_in = ntohl(((struct sockaddr_in *)min)->sin_addr.s_addr);
-	max_in = ntohl(((struct sockaddr_in *)max)->sin_addr.s_addr);
-	if (min_in <= addr_in && addr_in <= max_in) {
-		*widenedp = 0;
-		return (1);
+	if (!staticp->self_ifinfos_asked) {
+		staticp->self_ifinfos_asked = 1;
+		if (gfarm_get_ifinfos(&staticp->self_ifinfos_count,
+		    &staticp->self_ifinfos) != GFARM_ERR_NO_ERROR) {
+			/* self_ifinfos_count remains 0 */
+			return (0);
+		}
 	}
-	if (!wild_guess) /* `*widenedp' is always false, if !wild_guess */
+	/* XXX if there are lots of IP addresses on this host, this is slow */
+	switch (peer_addr->sa_family) {
+	case AF_INET:
+		peer_in = (struct sockaddr_in *)peer_addr;
+		for (i = 0; i < staticp->self_ifinfos_count; i++) {
+			ifi_addr = staticp->self_ifinfos[i]->ifi_addr;
+			if (ifi_addr->sa_family != AF_INET)
+				continue;
+			ifi_in = (struct sockaddr_in *)ifi_addr;
+			if (peer_in->sin_addr.s_addr ==
+			    ifi_in->sin_addr.s_addr)
+				return (1);
+		}
 		return (0);
-	/* do wild guess */
-
-	/* XXX - get IPv4 C class part */
-	addr_net = (addr_in >> 8) & 0xffffff;
-	min_net = (min_in >> 8) & 0xffffff;
-	max_net = (max_in >> 8) & 0xffffff;
-	/* adjacent or same IPv4 C class? */
-	if (addr_net == min_net - 1 ||
-	    (addr_net == min_net && addr_in < min_in)) {
-		*widenedp = -1;
-		return (1);
-	}
-	if (addr_net == max_net + 1 ||
-	    (addr_net == max_net && addr_in > max_in)) {
-		*widenedp = 1;
-		return (1);
+	case AF_INET6:
+		peer_in6 = (struct sockaddr_in6 *)peer_addr;
+		for (i = 0; i < staticp->self_ifinfos_count; i++) {
+			ifi_addr = staticp->self_ifinfos[i]->ifi_addr;
+			if (ifi_addr->sa_family != AF_INET6)
+				continue;
+			ifi_in6 = (struct sockaddr_in6 *)ifi_addr;
+			if (memcmp(&peer_in6->sin6_addr, &ifi_in6->sin6_addr,
+			    sizeof(ifi_in6->sin6_addr)) == 0)
+				return (1);
+		}
+		return (0);
+	default:
+		break;
 	}
 	return (0);
+}
+
+int
+gfarm_host_is_local(struct gfm_connection *gfm_server,
+	const char *hostname, int port)
+{
+	int addr_count, i, is_local = 0;
+	struct gfarm_host_address **addr_array;
+	gfarm_error_t e = gfm_host_address_get(gfm_server, hostname, port,
+	    &addr_count, &addr_array);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (0);
+	for (i = 0; i < addr_count; i++) {
+		if (gfarm_sockaddr_is_local(&addr_array[i]->sa_addr)) {
+			is_local = 1;
+			break;
+		}
+	}
+	gfarm_host_address_free(addr_count, addr_array);
+	return (is_local);
 }
 
 void
@@ -954,35 +1265,34 @@ gfarm_error_t
 gfarm_known_network_list_add_local_host(void)
 {
 	int count, i;
-	struct in_addr *self_ip;
-	gfarm_uint32_t addr_in, mask = 0xffffffff;
+	struct gfarm_ifinfo **ifinfos;
 	struct gfarm_hostspec *net;
 	gfarm_error_t e;
 
-	e = gfarm_get_ip_addresses(&count, &self_ip);
+	e = gfarm_get_ifinfos(&count, &ifinfos);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	for (i = 0; i < count; ++i) {
-		addr_in = self_ip[i].s_addr;
-		e = gfarm_hostspec_af_inet4_new(addr_in & mask, mask, &net);
+		e = gfarm_hostspec_ifinfo_new(ifinfos[i], &net);
 		if (e == GFARM_ERR_NO_ERROR) {
 			e = gfarm_known_network_list_add(net);
 			if (e != GFARM_ERR_NO_ERROR)
 				break;
 		}
 	}
-	free(self_ip);
+	gfarm_free_ifinfos(count, ifinfos);
 	return (e);
 }
 
+
 gfarm_error_t
-gfarm_addr_network_get(struct sockaddr *addr,
+gfarm_addr_netmask_network_get(struct sockaddr *addr, struct sockaddr *mask,
 	struct gfarm_hostspec **networkp)
 {
-	gfarm_uint32_t addr_in;
 	struct known_network *n;
 	struct gfarm_hostspec *network;
-	gfarm_uint32_t mask;
+	gfarm_uint32_t addr_ipv4, mask_ipv4;
+	unsigned char *addr_ipv6, *mask_ipv6;
 	gfarm_error_t e;
 
 	/* search in the known network list */
@@ -993,12 +1303,30 @@ gfarm_addr_network_get(struct sockaddr *addr,
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
-	/* XXX - assume IPv4 class C network */
-	assert(addr->sa_family == AF_INET);
-	addr_in = ntohl(((struct sockaddr_in *)addr)->sin_addr.s_addr);
-	mask = 0xffffff00;
-	e = gfarm_hostspec_af_inet4_new(htonl(addr_in & mask), htonl(mask),
-	    &network);
+	if (addr->sa_family != mask->sa_family) {
+		/* verbose, but this is probably a bug */
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "gfarm_addr_netmask_network_get(): "
+		    "address family %d != netmask address family %d",
+		    addr->sa_family, mask->sa_family);
+		return (GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN);
+	}
+	switch (addr->sa_family) {
+	case AF_INET:
+		addr_ipv4 = ((struct sockaddr_in *)addr)->sin_addr.s_addr;
+		mask_ipv4 = ((struct sockaddr_in *)mask)->sin_addr.s_addr;
+		e = gfarm_hostspec_af_inet4_new(addr_ipv4, mask_ipv4,
+		    &network);
+		break;
+	case AF_INET6:
+		addr_ipv6 = ((struct sockaddr_in6 *)addr)->sin6_addr.s6_addr;
+		mask_ipv6 = ((struct sockaddr_in6 *)mask)->sin6_addr.s6_addr;
+		e = gfarm_hostspec_af_inet6_new(addr_ipv6, mask_ipv6,
+		    &network);
+		break;
+	default:
+		e = GFARM_ERR_ADDRESS_FAMILY_NOT_SUPPORTED_BY_PROTOCOL_FAMILY;
+	}
 	if (e == GFARM_ERR_NO_ERROR) {
 		e = gfarm_known_network_list_add(network);
 		if (e == GFARM_ERR_NO_ERROR)
@@ -1006,4 +1334,51 @@ gfarm_addr_network_get(struct sockaddr *addr,
 				*networkp = network;
 	}
 	return (e);
+}
+
+gfarm_error_t
+gfarm_addr_network_get(struct sockaddr *addr,
+	struct gfarm_hostspec **networkp)
+{
+	struct sockaddr_in mask_ipv4;
+	struct sockaddr_in6 mask_ipv6;
+	struct sockaddr *mask;
+
+	switch (addr->sa_family) {
+	case AF_INET:
+		/* XXX - assume IPv4 class C network */
+		memset(&mask_ipv4, 0, sizeof(mask_ipv4));
+		mask_ipv4.sin_family = AF_INET;
+		mask_ipv4.sin_addr.s_addr = htonl(0xffffff00);
+		mask = (struct sockaddr *)&mask_ipv4;
+		break;
+
+	case AF_INET6:
+		/* XXX - assume IPv6 /64 network */
+		memset(&mask_ipv6, 0, sizeof(mask_ipv6));
+		mask_ipv6.sin6_family = AF_INET6;
+		mask_ipv6.sin6_addr.s6_addr[ 0] = 0xff;;
+		mask_ipv6.sin6_addr.s6_addr[ 1] = 0xff;;
+		mask_ipv6.sin6_addr.s6_addr[ 2] = 0xff;;
+		mask_ipv6.sin6_addr.s6_addr[ 3] = 0xff;;
+		mask_ipv6.sin6_addr.s6_addr[ 4] = 0xff;;
+		mask_ipv6.sin6_addr.s6_addr[ 5] = 0xff;;
+		mask_ipv6.sin6_addr.s6_addr[ 6] = 0xff;;
+		mask_ipv6.sin6_addr.s6_addr[ 7] = 0xff;;
+		mask_ipv6.sin6_addr.s6_addr[ 8] = 0;
+		mask_ipv6.sin6_addr.s6_addr[ 9] = 0;
+		mask_ipv6.sin6_addr.s6_addr[10] = 0;
+		mask_ipv6.sin6_addr.s6_addr[11] = 0;
+		mask_ipv6.sin6_addr.s6_addr[12] = 0;
+		mask_ipv6.sin6_addr.s6_addr[13] = 0;
+		mask_ipv6.sin6_addr.s6_addr[14] = 0;
+		mask_ipv6.sin6_addr.s6_addr[15] = 0;
+		mask = (struct sockaddr *)&mask_ipv6;
+		break;
+
+	default:
+		return (
+		    GFARM_ERR_ADDRESS_FAMILY_NOT_SUPPORTED_BY_PROTOCOL_FAMILY);
+	}
+	return (gfarm_addr_netmask_network_get(addr, mask, networkp));
 }

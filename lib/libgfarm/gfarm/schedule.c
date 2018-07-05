@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -31,13 +32,15 @@
 
 #include "gfutil.h"	/* timeval */
 #include "gfevent.h"
+#include "gfnetdb.h"
 #include "hash.h"
 #include "timer.h"
 
 #include "context.h"
 #include "liberror.h"
 #include "conn_hash.h"
-#include "host.h" /* gfarm_host_info_address_get() */
+#include "host_address.h"
+#include "host.h" /* gfm_host_info_address_get() */
 #include "hostspec.h"
 #include "config.h"
 #include "gfm_proto.h"
@@ -122,7 +125,7 @@
  *
  * 4. search networks by RTT order.
  *	for each: current network ... a network which RTT <
- 			min(current*RTT_THRESH_RATIO, current+RTT_THRESH_DIFF)
+ *			min(current*RTT_THRESH_RATIO, current+RTT_THRESH_DIFF)
  *		search_idle_in_networks(the networks)
  *		proceed current network pointer to next RTT level
  *
@@ -339,7 +342,11 @@ struct search_idle_host_state {
 #endif
 	int port, ncpu;
 	struct timeval addr_cache_time;	/* always available */
-	struct sockaddr addr;		/* if HOST_STATE_FLAG_ADDR_AVAIL */
+	union {
+		struct sockaddr addr;	/* if HOST_STATE_FLAG_ADDR_AVAIL */
+		struct sockaddr_storage addr_storage;
+	} u;
+	socklen_t addrlen;
 
 	struct search_idle_network *net;
 
@@ -438,8 +445,8 @@ search_idle_network_is_local(struct search_idle_network *net)
 }
 
 static gfarm_error_t
-search_idle_network_list_add0(struct sockaddr *addr, int flags,
-	struct search_idle_network **netp)
+search_idle_network_list_add0(struct sockaddr *addr, struct sockaddr *netmask,
+	int flags, struct search_idle_network **netp)
 {
 	struct search_idle_network *net;
 	gfarm_error_t e;
@@ -451,8 +458,13 @@ search_idle_network_list_add0(struct sockaddr *addr, int flags,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	net->rtt_usec = 0; /* local or unknown */
-	/* XXX - gfarm_addr_network_get() may assume IPv4 class C network */
-	e = gfarm_addr_network_get(addr, &net->network);
+	if (netmask != NULL) {
+		e = gfarm_addr_netmask_network_get(addr, netmask,
+		     &net->network);
+	} else {
+		/* XXX - gfarm_addr_network_get() may use incorrect netmask */
+		e = gfarm_addr_network_get(addr, &net->network);
+	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(net);
 		gflog_debug(GFARM_MSG_1003590,
@@ -473,15 +485,16 @@ search_idle_network_list_add0(struct sockaddr *addr, int flags,
 }
 
 static gfarm_error_t
-search_idle_network_list_local_host_init(void)
+search_idle_network_list_init(void)
 {
 	int count, i, j;
-	struct in_addr *self_ip;
+	struct gfarm_ifinfo **self_ip;
 	struct search_idle_network *net;
 	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
-	struct sockaddr_in addr_in;
 
-	e = gfarm_get_ip_addresses(&count, &self_ip);
+	assert(staticp->search_idle_network_list == NULL);
+
+	e = gfarm_get_ifinfos(&count, &self_ip);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	GFARM_MALLOC_ARRAY(staticp->search_idle_local_host, count);
@@ -490,65 +503,18 @@ search_idle_network_list_local_host_init(void)
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	for (i = 0, j = 0; i < count; ++i) {
-		addr_in.sin_family = AF_INET;
-		addr_in.sin_addr = self_ip[i];
-		e = search_idle_network_list_add0((struct sockaddr *)&addr_in,
-			NET_FLAG_NETMASK_KNOWN | NET_FLAG_RTT_AVAIL, &net);
+		e = search_idle_network_list_add0(
+		    self_ip[i]->ifi_addr, self_ip[i]->ifi_netmask,
+		    NET_FLAG_NETMASK_KNOWN | NET_FLAG_RTT_AVAIL, &net);
 		if (e == GFARM_ERR_NO_ERROR) {
 			staticp->search_idle_local_host[j++] = net;
 			search_idle_network_set_local(net);
 		} else if (save_e == GFARM_ERR_NO_ERROR)
 			save_e = e;
 	}
-	free(self_ip);
+	gfarm_free_ifinfos(count, self_ip);
 	staticp->search_idle_local_host_count = j;
 	return (j > 0 ? GFARM_ERR_NO_ERROR : save_e);
-}
-
-static gfarm_error_t
-search_idle_network_list_init(struct gfm_connection *gfm_server)
-{
-	gfarm_error_t e;
-	char *self_name;
-	struct search_idle_network *net;
-	struct sockaddr peer_addr;
-	int port;
-
-	assert(staticp->search_idle_network_list == NULL);
-
-	e = search_idle_network_list_local_host_init();
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-
-	e = gfm_host_get_canonical_self_name(gfm_server,
-	    &self_name, &port);
-	if (e != GFARM_ERR_NO_ERROR)
-		self_name = gfarm_host_get_self_name();
-	/*
-	 * XXX FIXME
-	 * This is a suspicious part.
-	 * Maybe the peer_addr is not same among different metadata servers.
-	 *
-	 * Probably it's better to create the `net' variable by using
-	 * the results of gfarm_get_ip_addresses().
-	 */
-	/* XXX FIXME this port number (0) is dummy */
-	e = gfm_host_address_get(gfm_server, self_name, 0,
-	    &peer_addr, NULL);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1000171,
-		    "gfarm search_idle_network_list_init: "
-		    "self address_get(%s): %s",
-		    self_name, gfarm_error_string(e));
-		return (e);
-	}
-	e = search_idle_network_list_add0(&peer_addr,
-		NET_FLAG_NETMASK_KNOWN | NET_FLAG_RTT_AVAIL, &net);
-	if (e == GFARM_ERR_NO_ERROR) {
-		staticp->search_idle_local_net = net;
-		search_idle_network_set_local(net);
-	}
-	return (e);
 }
 
 static void
@@ -580,7 +546,7 @@ search_idle_network_list_add(struct sockaddr *addr,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	/* first host in the network */
-	return (search_idle_network_list_add0(addr,
+	return (search_idle_network_list_add0(addr, NULL,
 		NET_FLAG_NETMASK_KNOWN, netp));
 }
 
@@ -599,7 +565,7 @@ search_idle_host_state_init(struct gfm_connection *gfm_server)
 	}
 
 	/* ignore any error here */
-	e = search_idle_network_list_init(gfm_server);
+	e = search_idle_network_list_init();
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_notice(GFARM_MSG_1004312, "%s: network_list_init: %s",
 		    diag, gfarm_error_string(e));
@@ -618,7 +584,8 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 {
 	gfarm_error_t e;
 	char *hostname = info->host;
-	int created;
+	int created, addr_count;
+	struct gfarm_host_address **addr_array;
 	struct gfarm_hash_entry *entry;
 	struct search_idle_host_state *h;
 
@@ -681,7 +648,7 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 			h->net = NULL;
 		}
 		e = gfm_host_address_get(gfm_server,
-		    hostname, h->port, &h->addr, NULL);
+		    hostname, h->port, &addr_count, &addr_array);
 		gettimeofday(&h->addr_cache_time, NULL);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001431,
@@ -690,8 +657,13 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 			    hostname, gfarm_error_string(e));
 			return (e);
 		}
+		/* XXX only addr_array[0] is tried, should try all addresses */
+		assert(sizeof(h->u) >= addr_array[0]->sa_addrlen);
+		h->addrlen = addr_array[0]->sa_addrlen;
+		memcpy(&h->u.addr, &addr_array[0]->sa_addr, h->addrlen);
+		gfarm_host_address_free(addr_count, addr_array);
 		h->flags |= HOST_STATE_FLAG_ADDR_AVAIL;
-		e = search_idle_network_list_add(&h->addr, &h->net);
+		e = search_idle_network_list_add(&h->u.addr, &h->net);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001432,
 			    "search_idle_host_state_add_host_sched_info: "
@@ -702,7 +674,7 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 		}
 	} else if (h->net == NULL) {
 		/* search_idle_network_list_add() failed at the last time */
-		e = search_idle_network_list_add(&h->addr, &h->net);
+		e = search_idle_network_list_add(&h->u.addr, &h->net);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001433,
 			    "search_idle_host_state_add_host_sched_info: "
@@ -1233,7 +1205,7 @@ search_idle_connect_callback(void *closure)
 #endif
 	struct gfs_client_statfs_state *ss;
 
-	e = gfs_client_connect_result_multiplexed(c->protocol_state,
+	e = gfs_client_connect_addr_result_multiplexed(c->protocol_state,
 	    &c->gfs_server);
 	if (e == GFARM_ERR_NO_ERROR) {
 		/* The following may fail, if it's already in the cache */
@@ -1266,7 +1238,7 @@ search_idle_connect_callback(void *closure)
 	} else {
 		gflog_debug(GFARM_MSG_1001441,
 		    "search_idle_connect_callback: "
-		    "gfs_client_connect_result_multiplexed: %s",
+		    "gfs_client_connect_addr_result_multiplexed: %s",
 		    gfarm_error_string(e));
 	}
 	c->state->concurrency--;
@@ -1312,10 +1284,10 @@ search_idle_load_callback(void *closure)
 #if 0 /* not actully used */
 			c->h->flags |= HOST_STATE_FLAG_AUTH_TRIED;
 #endif
-			e = gfs_client_connect_request_multiplexed(c->state->q,
-			    c->h->return_value, c->h->port,
+			e = gfs_client_connect_addr_request_multiplexed(
+			    c->state->q, c->h->return_value, c->h->port,
 			    gfm_client_username(s->gfm_server),
-			    &c->h->addr, s->filesystem,
+			    &c->h->u.addr, c->h->addrlen, s->filesystem,
 			    search_idle_connect_callback, c,
 			    &cs);
 			if (e == GFARM_ERR_NO_ERROR) {
@@ -1345,7 +1317,7 @@ search_idle_connect_and_get_rtt_callback(void *closure)
 	gfarm_error_t e;
 	struct search_idle_callback_closure *c = closure;
 
-	e = gfs_client_connect_result_multiplexed(c->protocol_state,
+	e = gfs_client_connect_addr_result_multiplexed(c->protocol_state,
 	    &c->gfs_server);
 	if (e == GFARM_ERR_NO_ERROR) {
 		struct tcp_info info;
@@ -1383,7 +1355,7 @@ search_idle_connect_and_get_rtt_callback(void *closure)
 	} else {
 		gflog_debug(GFARM_MSG_1003990,
 		    "search_idle_connect_and_get_rtt_callback: "
-		    "gfs_client_connect_result_multiplexed: %s",
+		    "gfs_client_connect_addr_result_multiplexed: %s",
 		    gfarm_error_string(e));
 	}
 	gfs_client_connection_free(c->gfs_server);
@@ -1542,13 +1514,14 @@ search_idle_try_host(struct search_idle_state *s,
 	    HOST_STATE_FLAG_RTT_TRIED;
 	gettimeofday(&h->rtt_cache_time, NULL);
 #ifndef __KERNEL__
-	e = gfs_client_get_load_request_multiplexed(s->q, &h->addr,
+	e = gfs_client_get_load_request_multiplexed(s->q,
+	    &h->u.addr, h->addrlen,
 	    search_idle_load_callback, c, &gls, 1);
 #else /* __KERNEL__ */
 	e = gfs_client_connect_request_multiplexed(s->q,
 			    h->return_value, h->port,
 			    gfm_client_username(s->gfm_server),
-			    &h->addr, s->filesystem,
+			    &h->u.addr, s->filesystem,
 			    search_idle_connect_and_get_rtt_callback, c,
 			    (struct gfs_client_connect_state **)&gls);
 #endif /* __KERNEL__ */
@@ -2181,28 +2154,6 @@ gfarm_schedule_host_unused(const char *hostname, int port, const char *username,
 		--h->scheduled;
 }
 
-/* this function shouldn't belong to this file, but... */
-int
-gfm_host_is_in_local_net(struct gfm_connection *gfm_server, const char *host)
-{
-	gfarm_error_t e;
-	struct sockaddr addr;
-
-	/* XXX it's desirable to use struct sockaddr in the scheduling cache */
-
-	/* XXX FIXME this port number (0) is dummy */
-	e = gfm_host_address_get(gfm_server, host, 0, &addr, NULL);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (0);
-
-	if (staticp->search_idle_local_net == NULL &&
-	    search_idle_network_list_init(gfm_server) != GFARM_ERR_NO_ERROR)
-		return (0);
-
-	return (gfarm_hostspec_match(staticp->search_idle_local_net->network,
-	    NULL, &addr));
-}
-
 /*
  * the following dump functions are for debuging purpose.
  */
@@ -2234,7 +2185,9 @@ gfarm_schedule_host_cache_dump(void)
 	struct gfarm_hash_iterator it;
 	struct gfarm_hash_entry *entry;
 	struct search_idle_host_state *h;
-	char hostbuf[80];
+	char hbuf[NI_MAXHOST];
+	char sbuf[NI_MAXSERV];
+	char hostbuf[NI_MAXHOST + NI_MAXSERV + 80];
 	char rttbuf[80];
 	char loadbuf[80];
 	char diskbuf[80];
@@ -2256,13 +2209,22 @@ gfarm_schedule_host_cache_dump(void)
 		h = gfarm_hash_entry_data(entry);
 
 		if (h->flags & HOST_STATE_FLAG_ADDR_AVAIL) {
-			unsigned char *ip = (unsigned char *)
-			    &((struct sockaddr_in *)&h->addr)->sin_addr.s_addr;
-			snprintf(hostbuf, sizeof hostbuf,
-			    "%s(%d.%d.%d.%d):%d %s",
-			    gfp_conn_hash_hostname(entry),
-			    ip[0], ip[1], ip[2], ip[3],
-			    h->port, gfp_conn_hash_username(entry));
+			int rv = gfarm_getnameinfo(&h->u.addr, h->addrlen,
+			    hbuf, sizeof hbuf, sbuf, sizeof sbuf,
+			    NI_NUMERICHOST | NI_NUMERICSERV);
+
+			if (rv == 0) {
+				snprintf(hostbuf, sizeof hostbuf,
+				    "%s(%s):%s %s",
+				    gfp_conn_hash_hostname(entry), hbuf, sbuf,
+				    gfp_conn_hash_username(entry));
+			} else {
+				snprintf(hostbuf, sizeof hostbuf,
+				    "%s(%s):%d %s",
+				    gfp_conn_hash_hostname(entry),
+				    gai_strerror(rv), h->port,
+				    gfp_conn_hash_username(entry));
+			}
 		} else {
 			snprintf(hostbuf, sizeof hostbuf, "%s:%d %s",
 			    gfp_conn_hash_hostname(entry),
@@ -2708,7 +2670,7 @@ statfsnode(char *canonical_hostname, int use_cache,
 			return (GFARM_ERR_UNKNOWN_HOST);
 
 		e = gfs_client_statfs_with_reconnect_addr(
-		    canonical_hostname, &h->addr, ".", NULL, &e2,
+		    canonical_hostname, &h->u.addr, ".", NULL, &e2,
 		    &h->bsize,
 		    &h->blocks, &h->bfree, &h->bavail,
 		    &h->files, &h->ffree, &h->favail);

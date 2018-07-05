@@ -29,6 +29,8 @@ extern uid_t	gfarmAuthGetUid(gfarmAuthEntry *aePtr);
 extern gid_t	gfarmAuthGetGid(gfarmAuthEntry *aePtr);
 extern char *gfarmAuthGetHomeDir(gfarmAuthEntry *aePtr);
 extern char *gfarmAuthGetFQDN(gfarmAuthEntry *aePtr);
+extern char *gfarmAuthGetPrintableName(gfarmAuthEntry *aePtr);
+
 extern int	gfarmAuthGetAuthEntryType(gfarmAuthEntry *aePtr);
 
 extern void	gfarmAuthMakeThisAlone(gfarmAuthEntry *laePtr);

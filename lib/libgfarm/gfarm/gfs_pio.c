@@ -5,6 +5,7 @@
 #include <sys/types.h> /* mode_t */
 #include <sys/stat.h> /* umask() */
 #include <sys/time.h>
+#include <sys/socket.h>
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>

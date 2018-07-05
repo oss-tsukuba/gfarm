@@ -5,7 +5,7 @@
 
 <refentry id="gfhost.1">
 
-<refentryinfo><date>20 Jan 2010</date></refentryinfo>
+<refentryinfo><date>27 Mar 2010</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfhost</refentrytitle>
@@ -78,6 +78,7 @@
     -f		XXX NOTYET ??? force ???, for -d
     -H		<function moreinfo="none"> display information replied from the hosts
     -i		ignore "address_use" directive, for (default)/-H/-l
+	... this option is removed for #1010 (IPv6)
     -j <number>	concurrency, for (default)/-H/-l
     -L		display by load average order, for (default)/-H/-l
     -l		<function moreinfo="none"> display with long format
@@ -132,7 +133,7 @@
   それ以外の機能はファイルシステムノードで動作している
   <command moreinfo="none">gfsd</command> にもアクセスします。
   <command moreinfo="none">gfsd</command> にアクセスする機能に関しては、そのアクセスに
-  関するオプションを -i, -j, -U, -v で指定できます。
+  関するオプションを -j, -U, -v で指定できます。
 </para>
 <para>
   表示機能に関しては、ホスト名の指定を省略することができます。この場合、
@@ -322,6 +323,7 @@
     </listitem>
   </varlistentry>
 
+<!-- this option is removed for #1010 (IPv6)
   <varlistentry>
     <term><option>-i</option></term>
     <listitem>
@@ -334,6 +336,7 @@
       </para>
     </listitem>
   </varlistentry>
+-->
 
   <varlistentry>
     <term><option>-j</option> <parameter moreinfo="none">並列度</parameter></term>

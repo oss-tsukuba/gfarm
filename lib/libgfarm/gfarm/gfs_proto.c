@@ -1,57 +1,47 @@
-#include <sys/types.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <limits.h>
 #include <string.h>
-
-#include <openssl/evp.h>
+#include <netdb.h>
+#include <stdio.h>
 
 #include <gfarm/gfarm.h>
 
-#define GFARM_USE_OPENSSL
-#include "msgdigest.h"
+#include "gfnetdb.h"
 
 #include "gfs_proto.h"
 
 char GFS_SERVICE_TAG[] = "gfarm-data";
 
-/*
- * Not really public interface,
- * but common routine called from both client and server.
- */
-int
-gfs_digest_calculate_local(int fd, char *buffer, size_t buffer_size,
-	const EVP_MD *md_type, size_t *md_lenp, unsigned char *md_value,
-	gfarm_off_t *filesizep)
+gfarm_error_t
+gfs_sockaddr_to_local_addr(struct sockaddr *addr, socklen_t addrlen, int port,
+	struct sockaddr_un *local_addr, char **dirp)
 {
-	EVP_MD_CTX *md_ctx;
-	int size, save_errno;
-	gfarm_off_t off = 0;
-	unsigned int len;
+	int rv;
+	char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV], dir_buf[PATH_MAX], *dir;
 
-	if (lseek(fd, (off_t)0, 0) == -1) {
-		save_errno = errno;
-		gflog_debug(GFARM_MSG_1001020, "lseek() failed: %s",
-			strerror(save_errno));
-		return (save_errno);
+	/* port number in `addr' and sbuf are not actually used */
+	rv = gfarm_getnameinfo(addr, addrlen, hbuf, sizeof hbuf,
+	    sbuf, sizeof sbuf, NI_NUMERICHOST | NI_NUMERICSERV);
+	if (rv != 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_local_socket_addr_init: %s",
+		    gai_strerror(rv));
+		return (GFARM_ERR_INTERNAL_ERROR);
+	}
+	memset(local_addr, 0, sizeof(*local_addr));
+	local_addr->sun_family = AF_UNIX;
+	snprintf(local_addr->sun_path, sizeof local_addr->sun_path,
+	    GFSD_LOCAL_SOCKET_NAME, hbuf, port);
+
+	if (dirp != NULL) {
+		snprintf(dir_buf, sizeof dir_buf,
+		    GFSD_LOCAL_SOCKET_DIR, hbuf, port);
+		dir = strdup(dir_buf);
+		if (dir == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		*dirp = dir;
 	}
 
-	md_ctx = gfarm_msgdigest_alloc(md_type);
-	while ((size = read(fd, buffer, buffer_size)) > 0) {
-		EVP_DigestUpdate(md_ctx, buffer, size);
-		off += size;
-	}
-	len = gfarm_msgdigest_free(md_ctx, md_value);
-
-	*md_lenp = len;
-	*filesizep = off;
-
-	if (size == -1) {
-		save_errno = errno;
-		gflog_debug(GFARM_MSG_1001021, "read() failed: %s",
-			strerror(save_errno));
-		return (save_errno);
-	}
-
-	return (0);
+	return (GFARM_ERR_NO_ERROR);
 }

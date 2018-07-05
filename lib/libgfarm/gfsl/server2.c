@@ -53,9 +53,9 @@ int
 main(int argc, char **argv)
 {
     int ret = 1;
-    int bindFd = -1;
-    struct sockaddr_in remote;
-    socklen_t remLen = sizeof(struct sockaddr_in);
+    int numBindFds, *bindFds;
+    struct sockaddr_storage remote;
+    socklen_t remLen;
     int fd0 = -1;
     int fd1 = -1;
     int gsiErrNo;
@@ -64,7 +64,7 @@ main(int argc, char **argv)
     gfarmSecSession *ss0 = NULL;
     gfarmSecSession *ss1 = NULL;
     int sel;
-    char *buf;
+    char *buf, *addr;
     int n;
     int i;
 
@@ -107,15 +107,20 @@ main(int argc, char **argv)
     /*
      * Create a channel.
      */
-    bindFd = gfarmTCPBindPort(port);
-    if (bindFd < 0) {
+    if (gfarmTCPBindPort(port, &numBindFds, &bindFds) < 0) {
 	fprintf(stderr, "Failed to bind port (%d)", port);
 	goto Done;
     }
-    (void)gfarmGetNameOfSocket(bindFd, &port);
-    fprintf(stderr, "Accepting port: %d\n", port);
+    for (i = 0; i < numBindFds; i++) {
+	(void)gfarmGetNameOfSocket(bindFds[i], &port, &addr);
+	fprintf(stderr, "Accepting port: [%s]:%d\n",
+		addr, port);
+	free(addr);
+    }
 
-    fd0 = accept(bindFd, (struct sockaddr *)&remote, &remLen);
+    remLen = sizeof(remote);
+    fd0 = gfarmAcceptFds(numBindFds, bindFds,
+			 (struct sockaddr *)&remote, &remLen);
     if (fd0 < 0) {
 	perror("accept");
 	goto Done;
@@ -133,7 +138,9 @@ main(int argc, char **argv)
 	goto Done;
     }
 
-    fd1 = accept(bindFd, (struct sockaddr *)&remote, &remLen);
+    remLen = sizeof(remote);
+    fd1 = gfarmAcceptFds(numBindFds, bindFds,
+			 (struct sockaddr *)&remote, &remLen);
     if (fd1 < 0) {
 	perror("accept");
 	goto Done;
@@ -209,7 +216,7 @@ main(int argc, char **argv)
     ret = 0;
 
     Done:
-    (void)close(bindFd);
+    gfarmCloseFds(numBindFds, bindFds);
     if (ss0 != NULL) {
 	(void)close(fd0);
 	gfarmSecSessionTerminate(ss0);

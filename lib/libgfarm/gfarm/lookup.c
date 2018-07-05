@@ -26,7 +26,7 @@ static gfarm_error_t
 gfarm_get_hostname_by_url0(const char **pathp,
 	char **hostnamep, int *portp)
 {
-	const char *p, *path = pathp ? *pathp : NULL;
+	const char *p, *end_host, *path = pathp ? *pathp : NULL;
 	char *ep, *hostname;
 	unsigned long port;
 	int nohost = 1, noport = 1;
@@ -47,30 +47,55 @@ gfarm_get_hostname_by_url0(const char **pathp,
 		goto finish;
 	}
 	path += 2; /* skip "//" */
-	for (p = path;
-	    *p != '\0' &&
-	    (isalnum(*(unsigned char *)p) || *p == '-' || *p == '.');
-	    p++)
-		;
-	if (p == path) {
-		gflog_debug(GFARM_MSG_1001255,
-			"Host missing in url (%s): %s", *pathp,
-			gfarm_error_string(
-				GFARM_ERR_GFARM_URL_HOST_IS_MISSING));
-		goto finish;
+	if (path[0] == '[') {
+		path++; /* skip "[" */
+		for (p = path; *p != '\0' && *p != ']' && *p != '/'; p++)
+			;
+		if (*p != ']') {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "Closing ']' missing in url (%s)", *pathp);
+			return (GFARM_ERR_GFARM_URL_HOST_IS_MISSING);
+		}
+		end_host = p;
+		p++; /* skip "]" */
+	} else {
+		for (p = path;
+		    *p != '\0' &&
+		    (isalnum(*(unsigned char *)p) || *p == '-' || *p == '.');
+		    p++)
+			;
+		if (p == path) {
+			if (*p != '\0' && *p != '/') {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "Host missing in url (%s)", *pathp);
+				return (GFARM_ERR_GFARM_URL_HOST_IS_MISSING);
+			}
+			gflog_debug(GFARM_MSG_1001255,
+				"Host missing in url (%s): %s", *pathp,
+				gfarm_error_string(
+					GFARM_ERR_GFARM_URL_HOST_IS_MISSING));
+			goto finish;
+		}
+		end_host = p;
 	}
-	GFARM_MALLOC_ARRAY(hostname, p - path + 1);
+	GFARM_MALLOC_ARRAY(hostname, end_host - path + 1);
 	if (hostname == NULL) {
 		gflog_debug(GFARM_MSG_1002312,
 		    "allocating gfm server name for '%s': "
 		    "no memory", *pathp);
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	memcpy(hostname, path, p - path);
-	hostname[p - path] = '\0';
+	memcpy(hostname, path, end_host - path);
+	hostname[end_host - path] = '\0';
 	nohost = 0;
 
 	if (*p != ':') {
+		if (*p != '\0' && *p != '/') {
+			free(hostname);
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "Host missing in url (%s)", *pathp);
+			return (GFARM_ERR_GFARM_URL_HOST_IS_MISSING);
+		}
 		gflog_debug(GFARM_MSG_1001256,
 		    "Port missing in url (%s): %s", *pathp,
 		    gfarm_error_string(GFARM_ERR_GFARM_URL_PORT_IS_MISSING));

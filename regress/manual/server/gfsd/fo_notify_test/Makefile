@@ -18,6 +18,7 @@ include $(top_srcdir)/makes/prog.mk
 ###
 
 $(OBJS): $(DEPGFARMINC) \
+	$(GFARMLIB_SRCDIR)/host_address.h \
 	$(GFARMLIB_SRCDIR)/host.h \
 	$(GFARMLIB_SRCDIR)/gfs_proto.h \
 	$(GFARMLIB_SRCDIR)/lookup.h

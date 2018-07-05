@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <sys/time.h>
+#include <sys/socket.h>
 #include <string.h>
 #include <syslog.h>
 #include <sched.h>

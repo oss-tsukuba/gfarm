@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <sys/socket.h>
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/gflog.h>

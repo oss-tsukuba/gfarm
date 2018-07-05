@@ -22,6 +22,7 @@ include $(top_srcdir)/makes/prog.mk
 $(OBJS): $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/gfevent.h \
 	$(GFARMLIB_SRCDIR)/liberror.h \
+	$(GFARMLIB_SRCDIR)/host_address.h \
 	$(GFARMLIB_SRCDIR)/host.h \
 	$(GFARMLIB_SRCDIR)/auth.h \
 	$(GFARMLIB_SRCDIR)/gfm_client.h \

@@ -13,6 +13,7 @@
 
 #include <gfarm/gfarm.h>
 
+#include "context.h"
 #include "liberror.h"
 #include "host.h"
 #include "gfm_client.h"
@@ -31,22 +32,6 @@
 
 char *program_name = "gfsched";
 char *default_opt_domain = "";
-
-static gfarm_error_t
-get_local(struct gfm_connection *gfm_server,
-	struct gfarm_host_sched_info *host, int *localp)
-{
-	gfarm_error_t e;
-	struct sockaddr peer_addr;
-
-	e = gfm_host_address_get(gfm_server, host->host, host->port,
-	    &peer_addr, NULL);
-	if (e != GFARM_ERR_NO_ERROR)
-		return e;
-
-	*localp = gfs_client_sockaddr_is_local(&peer_addr);
-	return (GFARM_ERR_NO_ERROR);
-}
 
 void
 usage(void)
@@ -223,7 +208,7 @@ main(int argc, char **argv)
 
 	if (opt_host_type != all_host) {
 		struct gfm_connection *gfm_server;
-		int j, local;
+		int j;
 
 		if ((e = gfm_client_connection_and_process_acquire_by_path(
 		    opt_mount_point, &gfm_server)) != GFARM_ERR_NO_ERROR) {
@@ -239,10 +224,10 @@ main(int argc, char **argv)
 		 */
 		j = 0;
 		for (i = 0; i < available_nhosts; i++) {
-			if (get_local(gfm_server, &available_hosts[i], &local)
-			    != GFARM_ERR_NO_ERROR)
-				continue;
-			if (local) {
+			if (gfarm_ctxp->direct_local_access &&
+			    gfarm_host_is_local(gfm_server,
+			    available_hosts[i].host,
+			    available_hosts[i].port)) {
 				if (opt_host_type == remote_host)
 					continue;
 			} else {

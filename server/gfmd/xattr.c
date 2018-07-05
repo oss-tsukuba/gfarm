@@ -12,6 +12,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <sys/types.h> /* fd_set for "filetab.h" */
+#include <sys/socket.h>
 
 #include <gfarm/gfarm.h>
 

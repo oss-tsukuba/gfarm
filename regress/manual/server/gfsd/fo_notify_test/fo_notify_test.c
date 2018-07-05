@@ -5,10 +5,12 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include <gfarm/gfarm.h>
 
 #include "gfs_proto.h"
+#include "host_address.h"
 #include "host.h"
 #include "lookup.h"
 
@@ -23,22 +25,25 @@ int
 udp_connect_to(const char *hostname, int port)
 {
 	gfarm_error_t e;
-	int sock;
-	struct sockaddr peer_addr;
+	int sock, addr_count;
+	struct gfarm_host_address **addr_array, *peer_addr;
 
 	if ((e = gfm_host_address_get(gfm_server, hostname, port,
-	    &peer_addr, NULL)) != GFARM_ERR_NO_ERROR) {
+	    &addr_count, &addr_array)) != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s:%d: %s",
 		    program_name, hostname, port, gfarm_error_string(e));
 		exit(1);
 	}
-	sock = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(addr_count > 0);
+	peer_addr = addr_array[0]; /* XXX */
+	sock = socket(peer_addr->sa_family, SOCK_DGRAM, 0);
 	if (sock == -1) {
 		fprintf(stderr, "%s: socket() for %s:%d: %s",
 		    program_name, hostname, port, strerror(errno));
 		exit(1);
 	}
-	if (connect(sock, &peer_addr, sizeof(peer_addr)) == -1) {
+	if (connect(sock, &peer_addr->sa_addr, peer_addr->sa_addrlen)
+	    == -1) {
 		fprintf(stderr, "%s: connect(%s:%d): %s",
 		    program_name, hostname, port, strerror(errno));
 		exit(1);

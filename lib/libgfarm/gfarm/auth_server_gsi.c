@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <grp.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <time.h>
 #include <pwd.h>
 

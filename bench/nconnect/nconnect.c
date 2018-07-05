@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 1993-2000 by Software Research Associates, Inc.
- *	1-1-1 Hirakawa-cho, Chiyoda-ku, Tokyo 102-8605, Japan
+ * Copyright (C) 1993-2018 by Software Research Associates, Inc.
+ *	2-32-8, Minami-Ikebukuro, Toshima-ku, Tokyo 171-8513, Japan
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,140 +27,43 @@
  * to promote the sale, use or other dealings in this Software without
  * prior written authorization from the Software Research Associates.
  *
- * Id: nconnect.c,v 1.21 2002/09/19 06:43:57 soda Exp 
+ * $Id$
  *
  */
 
-#include <sys/types.h>
-#include <sys/param.h>		/* ntohs(), ... for BSD direct descendant */
 #include <sys/socket.h>
-#include <sys/un.h>		/* PF_UNIX */
-#include <netinet/in.h>		/* PF_INET */
-#include <netinet/tcp.h>	/* TCP_NODELAY */
-#include <arpa/inet.h>		/* inet_addr(), inet_ntoa() */
-#include <netdb.h>		/* gethostbyname(), getservbyname(), ... */
-#include <stdio.h>
-#include <ctype.h>
-#include <signal.h>		/* SIGPIPE */
-#include <errno.h>
-extern int errno;		/* some <errno.h> doesn't define `errno' */
-#ifdef __STDC__
-#include <string.h>		/* strlen(), ... & bzero()/bcopy()/bcmp() */
-#include <stdlib.h>		/* atoi(), ... */
-#endif
-#ifndef NO_UNISTD_H
+#include <sys/select.h>
+#include <netinet/in.h>
+#include <poll.h>
+#include <netdb.h>
 #include <unistd.h>
-#endif
-#include <sys/wait.h>		/* waitpid()/wait3() */
 
-#ifdef _AIX
-#include <sys/select.h>		/* fd_set, ... */
-#endif
+#include <errno.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+#include <signal.h>
 
-#include <gfarm/gfarm_config.h>
-
-/* 2nd argument of shutdown(2) */
-#define	SHUTDOWN_RECV	0	/* shutdown receive */
-#define	SHUTDOWN_SEND	1	/* shutdown send */
-#define	SHUTDOWN_SOCK	2	/* shutdown send & receive */
-
-/* 2nd argument of listen(2) */
-#define	LISTEN_BACKLOG	5
-
-/*** portable ************************************************/
-
-#ifdef POSIX
-# define NO_BSTRING
-# define NO_INDEX
+#ifndef INFTIM
+#define INFTIM	(-1)
 #endif
 
-#ifdef NO_BSTRING
-#define	bcmp(a, b, length)	memcmp(a, b, length)
-#define	bcopy(s, d, length)	memcpy(d, s, length)
-#define	bzero(b, length)	memset(b, 0, length)
-#endif
+#define MAX_SOCKETS 256
 
-extern char *index(), *rindex();
+enum exit_code {
+	EXIT_OK		= 0,
+	EXIT_NETERR	= 1,
+	EXIT_USAGE	= 2,
+	EXIT_SYSERR	= 3,
+	EXIT_TIMEOUT	= 4,
+	EXIT_AI_ERROR	= 5,
+};
 
-#ifdef NO_INDEX
-extern char *strchr(), *strrchr();
+static char *progname = "nconnect_simple";
 
-#define	index(string, c)	strchr(string, c)
-#define	rindex(string, c)	strrchr(string, c)
-#endif
-
-#ifdef NO_SIZE_T
-typedef int size_t;
-#endif
-
-#ifdef __STDC__
-typedef void *Pointer;
-#else
-typedef char *Pointer;
-#define	const
-#define	volatile
-#endif
-
-extern Pointer malloc();
-
-#ifndef POSIX
-# if !defined(SIGTSTP) || defined(SV_BSDSIG) || defined(SA_OLDSTYLE) || (defined(SA_NOCLDWAIT) && defined(SIGCLD))
-		/* SysV3 or earlier || HP-UX || AIX || SVR4 */
-#  define CAN_IGNORE_ZOMBIE
-#  define SIGNAL signal
-# else /* guarantee reliable signal */
-void (*reliable_signal(sig, handler))()
-	int sig;
-	void (*handler)();
-{
-	struct sigvec sv, osv;
-
-	sv.sv_handler = handler;
-	sv.sv_mask = 0;
-	sv.sv_flags = 0; /* XXX - no singal stack */
-	if (sigvec(sig, &sv, &osv) < 0)
-		return (void (*)())-1;
-	return osv.sv_handler;
-}
-#  define SIGNAL reliable_signal
-# endif
-#else /* POSIX - don't use undefined behavior */
-/*
- * This function installs reliable signal handler, but not (always)
- * BSD signal compatible. Because interrupted system call is not
- * always restarted.
- * At least, BSD Net/2 or later and SVR4 and AIX (SA_RESTART is not
- * specified) and HP-UX (struct sigcontext::sc_syscall_action ==
- * SIG_RETURN) are not BSD compatible. On SunOS4, this function is BSD
- * signal compatible (because SA_INTERRUPT is not specifed).
- */
-void (*reliable_signal(sig, handler))()
-	int sig;
-	void (*handler)();
-{
-	struct sigaction sa, osa;
-
-	sa.sa_handler = handler;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = 0;
-	if (sigaction(sig, &sa, &osa) < 0)
-		return (void (*)())-1;
-	return osa.sa_handler;
-}
-# define SIGNAL	reliable_signal
-#endif /* POSIX */
-
-/*** miscellaneous *******************************************/
-
-#define	ARRAY_LENGTH(array)	(sizeof(array)/sizeof(array[0]))
-
-typedef int Bool;
-#define	YES	1
-#define	NO	0
-
-static char *progname = "nconnect";
-
-static Bool debug_flag = NO;
+static bool debug_flag = false;
 
 #define	debug(statement) \
 	{ \
@@ -169,273 +72,161 @@ static Bool debug_flag = NO;
 		} \
 	}
 
-#define	EXIT_OK		0
-#define	EXIT_USAGE	2
-#define	EXIT_NETERR	1
-#define	EXIT_SYSERR	3
+#ifdef __GNUC__
+static void
+fatal_errno(char *fmt, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+#endif
 
-void fatal(message)
-	char *message;
+static void
+fatal_errno(char *fmt, ...)
 {
-	perror(message);
+	int save_errno = errno;
+	va_list ap;
+
+	va_start(ap, fmt);
+	fprintf(stderr, "%s: ", progname);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fprintf(stderr, ": %s\n", strerror(save_errno));
 	exit(EXIT_NETERR);
 }
 
-Pointer emalloc(size)
-	size_t size;
-{
-	Pointer p = malloc(size);
+#ifdef __GNUC__
+static void
+numeric_printf(FILE *fp, const struct sockaddr *sa, socklen_t salen,
+	char *fmt, ...)
+	__attribute__((__format__(__printf__, 4, 5)));
+#endif
 
-	if (p == NULL) {
-		fprintf(stderr, "%s: no memory\n", progname);
-		exit(EXIT_SYSERR);
+static void
+numeric_printf(FILE *fp, const struct sockaddr *sa, socklen_t salen,
+	char *fmt, ...)
+{
+	va_list ap;
+	int ai_error;
+	char host[NI_MAXHOST], service[NI_MAXSERV];
+
+	va_start(ap, fmt);
+
+	ai_error = getnameinfo(sa, salen,
+	    host, sizeof(host), service, sizeof(service),
+	    NI_NUMERICHOST | NI_NUMERICSERV);
+	if (ai_error != 0) {
+		fprintf(stderr, "getnameinfo(): %s\n", gai_strerror(ai_error));
+		vfprintf(fp, fmt, ap);
+	}  else {
+		fprintf(fp, "%s <%s>: ", host, service);
+		vfprintf(fp, fmt, ap);
 	}
-	return p;
+
+	va_end(ap);
 }
 
-/*** sockaddr ************************************************/
-
-union generic_sockaddr {
-	struct sockaddr address;
-	struct sockaddr_un un;
-	struct sockaddr_in in;
-};
-
-size_t make_unix_address(address, pathname)
-	struct sockaddr_un *address;
-	char *pathname;
+static void
+numeric_report(const struct sockaddr *sa, socklen_t salen)
 {
-	size_t len = strlen(pathname);
+	numeric_printf(stderr, sa, salen, "\n");
+}
 
-	if (len >= sizeof(address->sun_path)) {
-		fputs(pathname, stderr);
-		fputs(": socket name too long\n", stderr);
+static void
+numeric_error(struct addrinfo *res, const char *cause, int saved_errno)
+{
+	numeric_printf(stderr, res->ai_addr, res->ai_addrlen, "%s: %s\n",
+	    cause, strerror(saved_errno));
+}
+
+static int
+make_family_type(const char *name)
+{
+	if (strcmp(name, "unspec") == 0)
+		return AF_UNSPEC;
+	else if (strcmp(name, "unix") == 0)
+		return AF_UNIX;
+#ifdef AF_LOCAL
+	else if (strcmp(name, "local") == 0)
+		return AF_LOCAL;
+#endif
+	else if (strcmp(name, "inet") == 0)
+		return AF_INET;
+#ifdef AF_INET6
+	else if (strcmp(name, "inet6") == 0)
+		return AF_INET6;
+#endif
+#ifdef AF_BLUETOOTH
+	else if (strcmp(name, "bluetooth") == 0)
+		return AF_BLUETOOTH;
+#endif
+	else {
+		fprintf(stderr, "%s: unknown family name \"%s\"\n",
+			progname, name);
 		exit(EXIT_USAGE);
 	}
-	bzero((char *)address, sizeof(*address)); /* needless ? */
-	bcopy(pathname, address->sun_path, len + 1);
-	address->sun_family = AF_UNIX;
-#ifdef SUN_LEN /* derived from 4.4BSD */
-	return SUN_LEN(address);
-#else
-	return sizeof(*address) - sizeof(address->sun_path) + len;
-#endif
 }
 
-/*
- * make Internet address
- * argument `ip_address' is network byte order IP-address,
- *	or htonl(INADDR_ANY), or htonl(INADDR_BROADCAST).
- * argument `port' is network byte order port-number or 0.
- *	0 is for bind(2). bind(2) automagically allocates port number.
- */
-size_t make_inet_address(address, ip_address, port)
-	struct sockaddr_in *address;
-	unsigned long ip_address;
-	int port;
-{
-	bzero((char *)address, sizeof(*address));
-	address->sin_addr.s_addr = ip_address;
-	address->sin_family = AF_INET;
-	address->sin_port = port;
-	return sizeof(*address);
-}
-
-size_t make_inet_address_by_string(address, host, port)
-	struct sockaddr_in *address;
-	char *host;
-	int port;
-{
-	struct hostent *hp;
-	struct in_addr in;
-
-	if ((in.s_addr = inet_addr(host)) != (unsigned long)-1)
-		return make_inet_address(address, in.s_addr, port);
-	if ((hp = gethostbyname(host)) != NULL) {
-		bzero((char *)address, sizeof(*address));
-		bcopy(hp->h_addr, (char *)&address->sin_addr,
-		      sizeof(address->sin_addr));
-		address->sin_family = hp->h_addrtype;
-		address->sin_port = port;
-		return sizeof(*address);
-	}
-	/*
-	 * BUG:
-	 *	if (hp == NULL && h_errno == TRY_AGAIN)
-	 *		we must try again;
-	 */
-	fputs(host, stderr); fputs(": unknown host\n", stderr);
-	exit(EXIT_USAGE);
-}
-
-int make_inet_port_by_string(portname, protocol)
-	char *portname, *protocol;
-{
-	struct servent *sp;
-
-	if (isdigit(portname[0])) {
-		return htons(atoi(portname));
-	} else {
-		if (protocol == NULL) {
-			fprintf(stderr, "%s: need port number\n", portname);
-			exit(EXIT_SYSERR);
-		}
-		if ((sp = getservbyname(portname, protocol)) == NULL) {
-			fprintf(stderr, "%s/%s: unknown service\n",
-				portname, protocol);
-			exit(EXIT_SYSERR);
-		}
-		return sp->s_port;
-	}
-}
-
-size_t make_socket_address(address, name, socket_type)
-	union generic_sockaddr *address;
-	char *name;
-	int socket_type;
-{
-	int rv;
-
-	if (bcmp(name, "unix/", (size_t)5) == 0) {		/* AF_UNIX */
-		return make_unix_address(&address->un, name + 5);
-	} else {						/* AF_INET */
-		char *colon = index(name, ':'), *protocol;
-		int port;
-
-		if (colon == NULL) {
-			port = 0;
-		} else {
-			*colon = '\0';	/* XXX - breaks *name */
-			switch (socket_type) {
-			case SOCK_STREAM:
-				protocol = "tcp";
-				break;
-			case SOCK_DGRAM:
-				protocol = "udp";
-				break;
-			default:
-				protocol = NULL;
-				break;
-			}
-			port = make_inet_port_by_string(colon + 1, protocol);
-		}
-		rv = *name == '\0' ?
-			make_inet_address(&address->in,
-				htonl(INADDR_ANY), port) :
-			make_inet_address_by_string(&address->in,
-				name, port);
-		if (colon != NULL)
-			*colon = ':';	/* XXX - restore *name */
-		return rv;
-	}
-}
-
-int make_socket_type(name)
-	char *name;
+static int
+make_socket_type(const char *name)
 {
 	if (strcmp(name, "stream") == 0)
 		return SOCK_STREAM;
 	else if (strcmp(name, "dgram") == 0 || strcmp(name, "datagram") == 0)
 		return SOCK_DGRAM;
-#ifdef USE_RAW_SOCKET
+#ifdef SOCK_RAW
 	else if (strcmp(name, "raw") == 0)
 		return SOCK_RAW;
 #endif
+#ifdef SOCK_RDM
 	else if (strcmp(name, "rdm") == 0) /* reliably-delivered message */
 		return SOCK_RDM;
+#endif
+#ifdef SOCK_SEQPACKET
 	else if (strcmp(name, "seqpacket") == 0) /* sequenced packet stream */
 		return SOCK_SEQPACKET;
+#endif
+#ifdef SOCK_DCCP
+	else if (strcmp(name, "dccp") == 0)
+		return SOCK_DCCP; /* Datagram Congestion Control Protocol */
+#endif
 	else {
 		fprintf(stderr, "%s: unknown socket type \"%s\"\n",
 			progname, name);
-		exit(EXIT_NETERR);
+		exit(EXIT_USAGE);
 	}
 }
 
-Bool socket_type_is_stream(socket_type)
-	int socket_type;
+static bool
+socket_type_needs_listen(int socket_type)
 {
 	switch (socket_type) {
 	case SOCK_STREAM:
-		return YES;
+	case SOCK_SEQPACKET:
+		return true;
 	default:
-		return NO;
+		return false;
 	}
 }
 
-void print_sockaddr(fp, address, addr_size)
-	FILE *fp;
-	struct sockaddr *address;
-	size_t addr_size;
+static int
+my_socket(int domain, int type, int protocol)
 {
-	union generic_sockaddr *p = (union generic_sockaddr *)address;
+	int rv = socket(domain, type, protocol);
 
-	switch (p->address.sa_family) {
-	case AF_UNIX:
-		fputs("AF_UNIX: pathname = \"", fp);
-		fwrite(p->un.sun_path, sizeof(char),
-		       addr_size - (sizeof(p->un) - sizeof(p->un.sun_path)),
-		       fp);
-		fputs("\"\n", fp);
-		break;
-	case AF_INET:
-		fprintf(fp, "AF_INET: address = %s, port = %d\n",
-			inet_ntoa(p->in.sin_addr), ntohs(p->in.sin_port));
-		break;
-	default:
-		fprintf(fp,"%s: unknown address family %d\n",
-			progname, p->address.sa_family);
-		break;
+	if (rv < 0)
+		return (rv);
+#ifdef IPV6_V6ONLY
+	if (domain == PF_INET6) {
+		int save_errno = errno, opt = 1;
+
+		if (setsockopt(rv, IPPROTO_IPV6, IPV6_V6ONLY,
+		    &opt, sizeof(opt)) < 0) {
+			fprintf(stderr, "%s: setsockopt(, "
+			    "IPPROTO_IPV6, IPV6_V6ONLY): %s\n",
+			    progname, strerror(errno));
+		}
+		errno = save_errno;
 	}
-}
-
-void print_sockname(fd)
-	int fd;
-{
-	union generic_sockaddr generic;
-	socklen_t addr_size = sizeof(generic);
-
-	if (getsockname(fd, &generic.address, &addr_size) < 0) {
-		perror("getsockname");
-		/* exit(EXIT_NETERR); */
-	} else {
-		print_sockaddr(stderr, &generic.address, (size_t)addr_size);
-	}
-}
-
-void print_peername(fd)
-	int fd;
-{
-	union generic_sockaddr generic;
-	socklen_t addr_size = sizeof(generic);
-
-	if (getpeername(fd, &generic.address, &addr_size) < 0) {
-		perror("getpeername");
-		/* exit(EXIT_NETERR); */
-	} else {
-		print_sockaddr(stderr, &generic.address, (size_t)addr_size);
-	}
-}
-
-void print_sockport(fp, fd)
-	FILE *fp;
-	int fd;
-{
-	union generic_sockaddr generic;
-	socklen_t addr_size = sizeof(generic);
-
-	if (getsockname(fd, &generic.address, &addr_size) < 0) {
-		fatal("getsockname");
-	}
-	switch (generic.address.sa_family) {
-	case AF_INET:
-		fprintf(fp, "%d\n", ntohs(generic.in.sin_port));
-		break;
-	default:
-		fprintf(fp,"%s: cannot print port for address family %d\n",
-			progname, generic.address.sa_family);
-		exit(EXIT_SYSERR);
-	}
+#endif
+	return (rv);
 }
 
 /*** Queue ***************************************************/
@@ -446,48 +237,46 @@ typedef struct Queue {
 	char buffer[QBUFSIZE];
 	int length;
 	int point;
-	char *tag;
+	const char *tag;
 }	Queue;
 
-char *session_log = NULL;	/* default - do not log session */
-FILE *session_log_fp = NULL;	/* default - log file is not opened */
+static char *session_log = NULL;	/* default - do not log session */
+static FILE *session_log_fp = NULL;	/* default - log file is not opened */
 
-void makeQueue(q, tag)
-	Queue *q;
-	char *tag;
+static void
+makeQueue(Queue *q, const char *tag)
 {
 	q->length = 0;
 	q->point = 0;
 	q->tag = tag;
 }
 
-Bool queueIsEmpty(q)
-	Queue *q;
+static bool
+queueIsEmpty(const Queue *q)
 {
 	return q->point >= q->length;
 }
 
-Bool queueIsFull(q)
-	Queue *q;
+static bool
+queueIsFull(const Queue *q)
 {
     /* this queue is NOT true queue */
 	return !queueIsEmpty(q);
 }
 
-Bool enqueue(q, fd)		/* if success (not end-of-file) then YES */
-	Queue *q;
-	int fd;
+static bool
+enqueue(Queue *q, int fd)	/* if success (not end-of-file) then YES */
 {
 	int done;
 
 	if (queueIsFull(q))
-		return YES;
+		return true;
 	done = read(fd, q->buffer, QBUFSIZE);
 	debug(fprintf(stderr, "\tread() - %d\n", done));
 	if (done < 0) {
 		if (errno == EINTR)
-			return YES;
-		fatal("enqueue");
+			return true;
+		fatal_errno("enqueue");
 	}
 	q->point = 0;
 	q->length = done;
@@ -513,11 +302,8 @@ Bool enqueue(q, fd)		/* if success (not end-of-file) then YES */
 	return done > 0;
 }
 
-int sync_rate = 0;
-
-void dequeue(q, fd)
-	Queue *q;
-	int fd;
+static void
+dequeue(Queue *q, int fd)
 {
 	int done;
 
@@ -528,137 +314,15 @@ void dequeue(q, fd)
 	if (done < 0) {
 		if (errno == EINTR)
 			return;
-		fatal("dequeue");
+		fatal_errno("dequeue");
 	}
 	q->point += done;
-	if (sync_rate != 0 && fd == 1) { /* only for stdout */
-		static int written = 0;
-
-		written += done;
-		if (written >= sync_rate) {
-			written -= sync_rate;
-			fdatasync(fd);
-		}
-	}
-}
-
-/*** sockopts ************************************************/
-
-static struct sockopt_table {
-	char *name, *proto;
-	int level, option, default_value;
-} sockopt_tab[] = {
-	{ "debug",	NULL, SOL_SOCKET,	SO_DEBUG,	1, },
-	{ "reuseaddr",	NULL, SOL_SOCKET,	SO_REUSEADDR,	1, },
-	{ "keepalive",	NULL, SOL_SOCKET,	SO_KEEPALIVE,	1, },
-	{ "dontroute",	NULL, SOL_SOCKET,	SO_DONTROUTE,	1, },
-	{ "broadcast",	NULL, SOL_SOCKET,	SO_BROADCAST,	1, },
-#if defined(SO_USELOOPBACK)
-	{ "useloopback",NULL, SOL_SOCKET,	SO_USELOOPBACK,	1, },
-#endif
-	{ "linger",	NULL, SOL_SOCKET,	SO_LINGER,	1, },
-	{ "oobinline",	NULL, SOL_SOCKET,	SO_OOBINLINE,	1, },
-#if defined(SO_REUSEPORT)
-	{ "reuseport",	NULL, SOL_SOCKET,	SO_REUSEPORT,	1, },
-#endif
-	{ "sndbuf",	NULL, SOL_SOCKET,	SO_SNDBUF,	16384, },
-	{ "rcvbuf",	NULL, SOL_SOCKET,	SO_RCVBUF,	16384, },
-	{ "sndlowat",	NULL, SOL_SOCKET,	SO_SNDLOWAT,	2048, },
-	{ "rcvlowat",	NULL, SOL_SOCKET,	SO_RCVLOWAT,	1, },
-#if 0 /* typeof(option) == struct timeval */
-	{ "sndtimeo",	NULL, SOL_SOCKET,	SO_SNDTIMEO,	, },
-	{ "rcvtimeo",	NULL, SOL_SOCKET,	SO_RCVTIMEO,	, },
-#endif
-	{ "tcp_nodelay","tcp", 0,		TCP_NODELAY,	1, },
-};
-
-#define	MAX_SOCKOPTS	ARRAY_LENGTH(sockopt_tab)
-
-int nsockopts = 0;
-
-struct socket_option {
-	char *string;
-	int level, option, value;
-} sockopts[MAX_SOCKOPTS];
-
-void record_sockopt(option)
-	char *option;
-{
-	/*
-	 * SO_TYPE and SO_ERROR are used for
-	 * getsockopt() only.
-	 * SO_ACCEPTCONN, ...
-	 */
-	struct sockopt_table *tab;
-	char *equal;
-	struct protoent *proto;
-
-	equal = strchr(option, '=');
-	if (equal != NULL)
-		*equal = '\0';
-	for (tab = sockopt_tab; tab < &sockopt_tab[MAX_SOCKOPTS]; tab++) {
-		if (strcmp(option, tab->name) == 0) {
-			if (nsockopts >= MAX_SOCKOPTS) {
-				fprintf(stderr, "%s: too many socket options",
-					progname);
-				exit(EXIT_USAGE);
-			}
-			sockopts[nsockopts].string = option;
-			if (tab->proto == NULL) {
-				sockopts[nsockopts].level = tab->level;
-			} else {
-				proto = getprotobyname(tab->proto);
-				if (proto == NULL) {
-					fprintf(stderr,
-					 "%s: getprotobyname(\"%s\") failed\n",
-						progname, tab->proto);
-					exit(EXIT_SYSERR);
-				}
-				sockopts[nsockopts].level = proto->p_proto;
-			}
-			sockopts[nsockopts].option = tab->option;
-			if (equal == NULL)
-				sockopts[nsockopts].value = tab->default_value;
-			else
-				sockopts[nsockopts].value = atol(equal + 1);
-			nsockopts++;
-			if (equal != NULL)
-				*equal = '=';
-			return;
-		}
-	}
-	fprintf(stderr, "%s: unknown socket option \"%s\"\n",
-		progname, option);
-	exit(EXIT_USAGE);
-}
-
-void apply_sockopts(fd)
-	int fd;
-{
-	int i;
-
-	for (i = 0; i < nsockopts; i++) {
-		if (setsockopt(fd, sockopts[i].level, sockopts[i].option,
-				&sockopts[i].value, sizeof(sockopts[i].value))
-		    == -1) {
-			fatal(sockopts[i].string);
-		}
-	}
 }
 
 /*** main  ***************************************************/
 
-void broken_pipe_handler(sig)
-	int sig;
-{
-	fprintf(stderr, "%s: Broken pipe or socket\n", progname);
-	exit(EXIT_NETERR);
-}
-
-void set_fd(set, fd, available)
-	fd_set *set;
-	int fd;
-	Bool available;
+static void
+set_fd(fd_set *set, int fd, bool available)
 {
 	if (available)
 		FD_SET(fd, set);
@@ -666,34 +330,28 @@ void set_fd(set, fd, available)
 		FD_CLR(fd, set);
 }
 
-enum SocketMode { sock_sendrecv, sock_send, sock_recv };
+enum SocketMode { SOCK_SENDRECV, SOCK_SEND, SOCK_RECV };
 
-void transfer(fd, socket_mode, one_eof_exit)
-	int fd;
-	enum SocketMode socket_mode;
-	Bool one_eof_exit;
+void
+transfer(int fd, enum SocketMode socket_mode, bool one_eof_exit)
 {
 	fd_set	readfds, writefds, exceptfds;
 	int	nfds = fd + 1,
 		nfound;
-	Bool	eof_stdin  = NO,
-		eof_socket = NO;
+	bool	eof_stdin  = false,
+		eof_socket = false;
 	Queue	sendq, recvq;
 
-	debug(SIGNAL(SIGPIPE, broken_pipe_handler));
-
 	switch (socket_mode) {
-	case sock_recv:
-		eof_stdin = YES;
+	case SOCK_RECV:
+		eof_stdin = true;
 		break;
-	case sock_send:
-		eof_socket = YES;
+	case SOCK_SEND:
+		eof_socket = true;
 		break;
-#ifdef __GNUC__ /* workaround gcc warning: enumeration value not handled */
-	case sock_sendrecv:
+	case SOCK_SENDRECV:
 		/* nothing to do */
 		break;
-#endif
 	}
 	FD_ZERO(&readfds);
 	FD_ZERO(&writefds);
@@ -718,31 +376,31 @@ void transfer(fd, socket_mode, one_eof_exit)
 		if (nfound < 0) {
 			if (errno == EINTR)
 				continue;
-			fatal("select");
+			fatal_errno("select");
 		}
 		if (FD_ISSET(0, &readfds)) {
 			if (!enqueue(&sendq, 0)) {
 				if (one_eof_exit)
-					eof_socket = YES;
-				eof_stdin = YES;
+					eof_socket = true;
+				eof_stdin = true;
 				if (queueIsEmpty(&sendq)) {
-					if (shutdown(fd, SHUTDOWN_SEND) < 0)
-						fatal("shutdown");
+					if (shutdown(fd, SHUT_WR) < 0)
+						fatal_errno("shutdown");
 				}
 			}
 		}
 		if (FD_ISSET(fd, &writefds) && !queueIsEmpty(&sendq)) {
 			dequeue(&sendq, fd);
 			if (eof_stdin && queueIsEmpty(&sendq)) {
-				if (shutdown(fd, SHUTDOWN_SEND) < 0)
-					fatal("shutdown");
+				if (shutdown(fd, SHUT_WR) < 0)
+					fatal_errno("shutdown");
 			}
 		}
 		if (FD_ISSET(fd, &readfds)) {
 			if (!enqueue(&recvq, fd)) {
 				if (one_eof_exit)
-					eof_stdin = YES;
-				eof_socket = YES;
+					eof_stdin = true;
+				eof_socket = true;
 			}
 		}
 		if (FD_ISSET(1, &writefds)) {
@@ -757,338 +415,295 @@ void transfer(fd, socket_mode, one_eof_exit)
 	}
 }
 
-void putenv_address(generic, addr_size, prefix)
-	union generic_sockaddr *generic;
-	int addr_size;
-	char *prefix;
-{
-	struct hostent *hp;
-	char buffer[BUFSIZ];
-
-	switch (generic->address.sa_family) {
-	case AF_INET:
-		sprintf(buffer, "%s_ADDR=%s", prefix,
-			inet_ntoa(generic->in.sin_addr));
-		putenv(strdup(buffer));
-		sprintf(buffer, "%s_PORT=%d", prefix,
-			ntohs(generic->in.sin_port));
-		putenv(strdup(buffer));
-		hp = gethostbyaddr((char *) &generic->in.sin_addr,
-			(int)sizeof(generic->in.sin_addr), AF_INET);
-		if (hp != NULL) {
-			sprintf(buffer, "%s_NAME=%s", prefix, hp->h_name);
-			putenv(strdup(buffer));
-		}
-		break;
-	}
-}
-
-void env_setup(fd)
-	int fd;
-{
-	union generic_sockaddr generic;
-	socklen_t addr_size = sizeof(generic);
-
-	if (getsockname(fd, &generic.address, &addr_size) == 0)
-		putenv_address(&generic, addr_size, "SOCK");
-	if (getpeername(fd, &generic.address, &addr_size) == 0)
-		putenv_address(&generic, addr_size, "PEER");
-}
-
-void doit(argv, fd, socket_mode, one_eof_exit)
-	int fd;
-	enum SocketMode socket_mode;
-	char **argv;
-	Bool one_eof_exit;
+static void
+doit(int fd, enum SocketMode socket_mode, bool one_eof_exit)
 {
 	switch (socket_mode) {
-	case sock_recv:
-		if (shutdown(fd, SHUTDOWN_SEND) < 0)
-			fatal("shutdown");
+	case SOCK_RECV:
+		if (shutdown(fd, SHUT_WR) < 0)
+			fatal_errno("shutdown");
 		break;
-	case sock_send:
+	case SOCK_SEND:
 		/*
 		 * This shutdown(2) has no effect, I THINK.
 		 */
-		if (shutdown(fd, SHUTDOWN_RECV) < 0)
-			fatal("shutdown");
+		if (shutdown(fd, SHUT_RD) < 0)
+			fatal_errno("shutdown");
 		break;
-#ifdef __GNUC__ /* workaround gcc warning: enumeration value not handled */
-	case sock_sendrecv:
+	case SOCK_SENDRECV:
 		/* nothing to do */
 		break;
-#endif
 	}
-	if (argv == NULL) {
-		transfer(fd, socket_mode, one_eof_exit);
-		close(fd);
-		exit(EXIT_OK);
-	} else {
-		env_setup(fd);
-		if (socket_mode != sock_send) {
-			close(0); dup2(fd, 0);
-		}
-		if (socket_mode != sock_recv) {
-			close(1); dup2(fd, 1);
-		}
-		close(fd);
-		execvp(argv[0], argv);
-		fatal(argv[0]);
-	}
+	transfer(fd, socket_mode, one_eof_exit);
+	close(fd);
+	exit(EXIT_OK);
 }
 
-#ifndef CAN_IGNORE_ZOMBIE
-void child_exit_handler(sig)
-	int sig;
+static void
+initiate(const char *host, const char *service,
+	const char *bind_host, const char *bind_service,
+	struct addrinfo *hints,
+	enum SocketMode socket_mode, bool one_eof_exit, bool verbose)
 {
-#ifdef POSIX
-	while (waitpid(-1, NULL, WNOHANG) > 0)
-		;
-#else
-	while (wait3(NULL, WNOHANG, NULL) > 0)
-		;
-#endif
-}
-#endif /* CAN_IGNORE_ZOMBIE */
+	int ai_error;
+	struct addrinfo *res, *res0;
 
-void usage()
+	ai_error = getaddrinfo(host, service, hints, &res0);
+	if (service == NULL)
+		service = "(null)";
+	if (ai_error != 0) {
+		fprintf(stderr, "%s:%s: %s\n",
+		    host, service, gai_strerror(ai_error));
+		exit(EXIT_AI_ERROR);
+	}
+	for (res = res0; res != NULL; res = res->ai_next) {
+		int sock = my_socket(res->ai_family,
+		    res->ai_socktype, res->ai_protocol);
+
+		if (sock < 0) {
+			numeric_error(res, "socket", errno);
+			continue;
+		}
+		if (connect(sock, res->ai_addr, res->ai_addrlen) < 0) {
+			numeric_error(res, "connect", errno);
+			continue;
+		}
+		/* OK */
+		if (verbose)
+			numeric_report(res->ai_addr, res->ai_addrlen);
+		doit(sock, socket_mode, one_eof_exit);
+	}
+	freeaddrinfo(res0);
+	exit(EXIT_SYSERR);
+}
+
+static void
+respond(int listen_backlog,
+	const char *bind_host, const char *bind_service,
+	struct addrinfo *hints,
+	enum SocketMode socket_mode, bool one_eof_exit, bool verbose)
+{
+	int ai_error;
+	struct addrinfo *res, *res0, *ai[MAX_SOCKETS];
+	int nsocks = 0, socks[MAX_SOCKETS];
+
+	hints->ai_flags = AI_PASSIVE;
+	ai_error = getaddrinfo(bind_host, bind_service, hints, &res0);
+	if (bind_service == NULL)
+		bind_service = "(null)";
+	if (ai_error != 0) {
+		fprintf(stderr, "<%s>: %s\n",
+		    bind_service, gai_strerror(ai_error));
+		exit(EXIT_AI_ERROR);
+	}
+	for (res = res0; res != NULL; res = res->ai_next) {
+		if (nsocks >= MAX_SOCKETS) {
+			fprintf(stderr, "number of addresses exceeds "
+			    "%d, please increase MAX_SOCKETS\n",
+			    nsocks);
+			exit(EXIT_SYSERR);
+		}
+		socks[nsocks] = my_socket(res->ai_family,
+		    res->ai_socktype, res->ai_protocol);
+		if (socks[nsocks] < 0) {
+			numeric_error(res, "socket", errno);
+			continue;
+		}
+		if (bind(socks[nsocks], res->ai_addr, res->ai_addrlen) < 0) {
+			numeric_error(res, "bind", errno);
+			continue;
+		}
+		if (socket_type_needs_listen(hints->ai_socktype) &&
+		    listen(socks[nsocks], listen_backlog) < 0) {
+			numeric_error(res, "listen", errno);
+			continue;
+		}
+		ai[nsocks] = res;
+		nsocks++;
+	}
+	if (nsocks == 0)
+		exit(EXIT_SYSERR);
+	for (;;) {
+		struct pollfd pollfds[MAX_SOCKETS];
+		int i, rv;
+
+		for (i = 0; i < nsocks; i++) {
+			struct pollfd *pfd = &pollfds[i];
+
+			pfd->fd = socks[i];
+			pfd->events = POLLIN;
+			pfd->revents = 0;
+		}
+		while ((rv = poll(pollfds, nsocks, INFTIM)) == -1 &&
+		    errno == EINTR)
+			continue;
+		for (i = 0; i < nsocks; i++) {
+			if (pollfds[i].revents == 0)
+				continue;
+
+			if (!socket_type_needs_listen(hints->ai_socktype)) {
+				if (verbose)
+					numeric_report(
+					    ai[i]->ai_addr, ai[i]->ai_addrlen);
+				doit(socks[i], socket_mode, one_eof_exit);
+				exit(EXIT_OK);
+			} else {
+				struct sockaddr_storage ss;
+				struct sockaddr *const sa =
+				    (struct sockaddr *)&ss;
+				socklen_t socklen = sizeof(ss);
+				int sock = accept(socks[i], sa, &socklen);
+
+				if (sock < 0) {
+					numeric_error(ai[i], "accept", errno);
+					continue;
+				}
+				if (verbose)
+					numeric_report(sa, socklen);
+				doit(sock, socket_mode, one_eof_exit);
+				exit(EXIT_OK);
+			}
+		}
+	}
+	/*NOTREACHED*/
+}
+
+static void
+parse_host_service(char *s, char **hostp, char **servicep)
+{
+	char *p;
+
+	if (*s == '\0') {
+		/* "" -> NULL:NULL */
+		*hostp = NULL;
+		*servicep = NULL;
+		return;
+	} else if (*s == '[') {
+		p = strchr(s + 1, ']');
+		if (p == NULL) {
+			fprintf(stderr, "%s: \"%s\": closing-] not found\n",
+			    progname, s);
+			exit(EXIT_USAGE);
+		}
+		*p = '\0';
+		*hostp = s + 1;
+		if (p[1] == '\0') {
+			/* "[host]" -> host:NULL */
+			*servicep = NULL;
+			return;
+		}
+		if (p[1] != ':') {
+			fprintf(stderr,
+			    "%s: \"%s\": unexpected char at \"%s\"\n",
+			    progname, s, p);
+			exit(EXIT_USAGE);
+		}
+		/* "[host]:*" -> host:* */
+		s = p + 2;
+	} else if (*s == ':') {
+		/* ":*" -> NULL:* */
+		*hostp = NULL;
+		s++;
+	} else {
+		*hostp = s;
+		p = strchr(s + 1, ':');
+		if (p == NULL) {
+			/* "host" -> host:NULL */
+			*servicep = NULL;
+			return;
+		}
+		/* "host:*" -> host:* */
+		*p = '\0';
+		s = p + 1;
+	}
+	if (*s == '\0')
+		*servicep = NULL;
+	else
+		*servicep = s;
+}
+
+static void
+usage(void)
 {
 	fprintf(stderr, "Usage: %s [-srk] [-b <address>] <address>\n",
 		progname);
 	fprintf(stderr, "       %s [-srk] -b <address>\n", progname);
-	fprintf(stderr,	      "\t\t<address> format is :\n");
-	fprintf(stderr,	      "\t\t\tunix/pathname\t- unix domain socket\n");
-	fprintf(stderr,	      "\t\t\t[host]:port\t- inet domain socket\n");
+	fprintf(stderr,	"\t\t<address> format is :\n");
+	fprintf(stderr,	"\t\t\tunix/pathname\t\t- unix domain socket\n");
+	fprintf(stderr, "\t\t\t[host][:port[:port]]\t- inet domain socket\n");
 	exit(EXIT_USAGE);
 }
 
-int main(argc, argv)
-	int argc;
-	char **argv;
+int
+main(int argc, char **argv)
 {
-	union generic_sockaddr peer_addr, self_addr;
-	size_t peer_addr_size, self_addr_size;
-	int fd;
-	int socket_type = SOCK_STREAM;
-	enum SocketMode socket_mode = sock_sendrecv;
-	char *bind_to = NULL;
-	char *connect_to = NULL;
-	char **shell_command = NULL; /* if NULL: only data transfer */
-	Bool one_eof_exit = YES;
-	Bool accept_one_client = YES;
-	FILE *port_output = stderr;
+	int c;
+	struct addrinfo hints;
+	enum SocketMode socket_mode = SOCK_SENDRECV;
+	char *bind_host = NULL, *bind_service = NULL;
+	bool one_eof_exit = true;
+	bool verbose = false;
+	int listen_backlog = SOMAXCONN;
 
-#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
-	peer_addr_size = 0;
-#endif
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
 
-	if (argc >= 1)
-		progname = argv[0];
-	while (--argc > 0) {
-		char *s;
-
-		if ((s = *++argv)[0] != '-')
+	while ((c = getopt(argc, argv, "b:f:ikLRst:v")) != -1) {
+		switch (c) {
+		case 'b':
+			parse_host_service(optarg, &bind_host, &bind_service);
 			break;
-		while (*++s) {
-			static char end_loop[] = ".";
-
-			switch(*s) {
-			case 'S':
-				if (s[1] != '\0') {
-					sync_rate = strtol(&s[1], NULL, 0);
-				} else {
-					if (--argc <= 0)
-						usage();
-					sync_rate = strtol(*++argv, NULL, 0);
-				}
-				s = end_loop;
-				break;
-			case 'd':
-				debug_flag = YES;
-				break;
-			case 'b': /* bind sockname */
-				if (s[1] != '\0') {
-					bind_to = &s[1];
-				} else {
-					if (--argc <= 0)
-						usage();
-					bind_to = *++argv;
-				}
-				s = end_loop;
-				break;
-			case 't':
-				if (s[1] != '\0') {
-					socket_type = make_socket_type(&s[1]);
-				} else {
-					if (--argc <= 0)
-						usage();
-					socket_type = make_socket_type(*++argv);
-				}
-				s = end_loop;
-				break;
-			case 's':
-				socket_mode = sock_send;
-				break;
-			case 'r':
-				socket_mode = sock_recv;
-				break;
-			case 'k': /* keep */
-				one_eof_exit = NO;
-				break;
-			case 'i': /* interactive (like `telnet') */
-				one_eof_exit = YES;
-				break;
-			case 'l': /* log session - not work if shell_command */
-				if (s[1] != '\0') {
-					session_log = &s[1];
-				} else {
-					if (--argc <= 0)
-						usage();
-					session_log = *++argv;
-				}
-				s = end_loop;
-				break;
-			case 'n': /* nowait && accept number of clients */
-				accept_one_client = NO;
-				break;
-			case 'o':
-				if (s[1] != '\0') {
-					record_sockopt(&s[1]);
-				} else {
-					if (--argc <= 0)
-						usage();
-					record_sockopt(*++argv);
-				}
-				s = end_loop;
-				break;
-			case 'p':
-				if (s[1] != '\0') {
-					s = &s[1];
-				} else {
-					if (--argc <= 0)
-						usage();
-					s = *++argv;
-				}
-				if ((port_output = fopen(s, "w")) == NULL)
-					fatal(s);
-				s = end_loop;
-				break;
-			case 'c':
-				if (s[1] != '\0') {
-					connect_to = &s[1];
-				} else {
-					if (--argc <= 0)
-						usage();
-					connect_to = *++argv;
-				}
-				s = end_loop;
-				break;
-			case 'e':
-			case 'f':
-				shell_command = argv - 1;
-				shell_command[0] = "/bin/sh";
-				shell_command[1] = *s == 'f' ? "-f" : "-c";
-				argv += argc - 1;
-				argc = 1; /* i.e. argc -= argc - 1; */
-				break;
-			default:
-				usage();
-			}
-		}
-	}
-	switch (argc) {
-	case 0:
-		if (bind_to == NULL && connect_to == NULL)
+		case 'f':
+			hints.ai_family = make_family_type(optarg);
+			break;
+		case 'i': /* interactive (like `telnet') */
+			one_eof_exit = true;
+			break;
+		case 'k': /* keep */
+			one_eof_exit = false;
+			break;
+		case 'L':
+			listen_backlog = atoi(optarg);
+			break;
+		case 'r':
+			socket_mode = SOCK_RECV;
+			break;
+		case 's':
+			socket_mode = SOCK_SEND;
+			break;
+		case 't':
+			hints.ai_socktype = make_socket_type(optarg);
+			break;
+		case 'v':
+			verbose = true;
+			break;
+		case '?':
+		default:
 			usage();
-		break;
-	case 1:
-		connect_to = argv[0];
-		break;
-	default:
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (argc >= 2)
 		usage();
-	}
-	if (connect_to != NULL) {
-		peer_addr_size =
-			make_socket_address(&peer_addr,connect_to,socket_type);
-	}
-	if (bind_to == NULL) {
-		fd = socket(peer_addr.address.sa_family, socket_type, 0);
-		if (fd < 0)
-			fatal("socket");
-		apply_sockopts(fd);
-	} else {
-		Bool print_port;
 
-		self_addr_size =
-			make_socket_address(&self_addr, bind_to, socket_type);
-		print_port =
-			self_addr.in.sin_family == AF_INET &&
-			self_addr.in.sin_port == 0;
-		fd = socket(self_addr.address.sa_family, socket_type, 0);
-		if (fd < 0)
-			fatal("socket");
-		switch (self_addr.address.sa_family) {
-		case AF_UNIX:
-			unlink(self_addr.un.sun_path);
-			break;
-		case AF_INET:
-			break;
+	signal(SIGPIPE, SIG_IGN);
+
+	if (argc == 1) {
+		char *host, *service;
+
+		if (bind_host != NULL || bind_service != NULL) {
+			fprintf(stderr, "%s: -b option for initiator mode "
+			    "isn't supported yet\n", progname);
+			exit(EXIT_USAGE);
 		}
-		apply_sockopts(fd);
-		if (bind(fd, &self_addr.address, (int)self_addr_size) < 0)
-			fatal("bind");
-		debug(print_sockname(fd));
-		if (print_port)
-			print_sockport(port_output, fd);
-		if (port_output != stderr)
-			fclose(port_output);
-	}
-	if (connect_to == NULL && socket_type_is_stream(socket_type)) {
-		int client;
-
-#ifdef CAN_IGNORE_ZOMBIE
-		SIGNAL(SIGCLD, SIG_IGN);
-#else
-		reliable_signal(SIGCHLD, child_exit_handler);
-#endif
-		if (listen(fd, accept_one_client ? 1 : LISTEN_BACKLOG) < 0)
-			fatal("listen");
-		for (;;) {
-			union generic_sockaddr client_addr;
-			socklen_t client_addr_size = sizeof(client_addr);
-
-			client = accept(fd, &client_addr.address,
-					&client_addr_size);
-			if (client < 0) {
-				if (errno == EINTR)
-					continue;
-				fatal("accept");
-			}
-			if (accept_one_client)
-				break;
-			switch (fork()) {
-			case -1:
-				fatal("fork");
-			case 0:
-				close(fd);
-				debug(print_peername(client));
-				doit(shell_command, client, socket_mode,
-				     one_eof_exit);
-			default:
-				close(client);
-				break;
-			}
-		}
-		close(fd);
-		debug(print_peername(client));
-		doit(shell_command, client, socket_mode, one_eof_exit);
-	} else if (connect_to == NULL) {
-		doit(shell_command, fd, socket_mode, one_eof_exit);
+		parse_host_service(argv[0], &host, &service);
+		initiate(host, service, bind_host, bind_service, &hints,
+		    socket_mode, one_eof_exit, verbose);
 	} else {
-		if (connect(fd, &peer_addr.address, (int)peer_addr_size) < 0)
-			fatal("connect");
-		debug(print_peername(fd));
-		doit(shell_command, fd, socket_mode, one_eof_exit);
+		respond(listen_backlog, bind_host, bind_service, &hints,
+		    socket_mode, one_eof_exit, verbose);
 	}
 	/*NOTREACHED*/
 	return EXIT_SYSERR;

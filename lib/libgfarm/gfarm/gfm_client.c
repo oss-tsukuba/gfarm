@@ -50,6 +50,7 @@
 #endif
 #include "sockopt.h"
 #include "sockutil.h"
+#include "host_address.h"
 #include "host.h"
 #include "auth.h"
 #include "config.h"
@@ -193,17 +194,21 @@ gfm_client_port(struct gfm_connection *gfm_server)
 gfarm_error_t
 gfm_client_source_port(struct gfm_connection *gfm_server, int *portp)
 {
-	struct sockaddr_in sin;
-	socklen_t slen = sizeof(sin);
+	gfarm_error_t e;
+	struct sockaddr_storage sa;
+	socklen_t sa_len = sizeof(sa);
 
 	if (getsockname(gfm_client_connection_fd(gfm_server),
-	    (struct sockaddr *)&sin, &slen) != 0) {
+	    (struct sockaddr *)&sa, &sa_len) != 0) {
 		*portp = 0;
 		return (gfarm_errno_to_error(errno));
-	} else {
-		*portp = (int)ntohs(sin.sin_port);
-		return (GFARM_ERR_NO_ERROR);
 	}
+	e = gfarm_sockaddr_get_port((struct sockaddr *)&sa, sa_len, portp);
+	if (e != GFARM_ERR_NO_ERROR) {
+		*portp = 0;
+		return (e);
+	}
+	return (e);
 }
 
 struct gfarm_metadb_server*
@@ -290,7 +295,7 @@ gfm_filesystem_acquire(const char *hostname, int port,
 
 	snprintf(sbuf, sizeof(sbuf), "%u", port);
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
+	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
 	fs = gfarm_filesystem_get(hostname, port);
@@ -474,28 +479,34 @@ gfm_client_connection_single(const char *hostname, int port, const char *user,
 	struct passwd *pwd, const char *source_ip,
 	struct gfm_connection **gfm_serverp)
 {
-	gfarm_error_t e;
-	int sock, save_errno;
+	gfarm_error_t e = GFARM_ERR_UNKNOWN;
+	int sock = -1, save_errno;
 	const char *canonical_hostname;
-	struct addrinfo *res;
+	struct addrinfo *res0, *res;
 	struct gfarm_metadb_server *ms;
 	struct gfarm_filesystem *fs;
 	struct gfm_connection *gfm_server;
 
-	e = gfm_filesystem_acquire(hostname, port, &res, &ms, &fs);
+	e = gfm_filesystem_acquire(hostname, port, &res0, &ms, &fs);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	canonical_hostname = gfarm_metadb_server_get_name(ms);
 	port = gfarm_metadb_server_get_port(ms);
 
-	e = gfarm_nonblocking_connect(
-	    res->ai_family, res->ai_socktype, res->ai_protocol,
-	    res->ai_addr, res->ai_addrlen, canonical_hostname, source_ip,
-	    gfm_client_connection_gc /* XXX FIXME: GC all descriptors */,
-	    NULL, &sock);
-	if (e != GFARM_ERR_NO_ERROR) {
+	for (res = res0; res != NULL; res = res->ai_next) {
+		e = gfarm_nonblocking_connect(
+		    res->ai_family, res->ai_socktype, res->ai_protocol,
+		    res->ai_addr, res->ai_addrlen,
+		    canonical_hostname, source_ip,
+		    gfm_client_connection_gc
+			/* XXX FIXME: GC all descriptors */,
+		    NULL, &sock);
+		if (e == GFARM_ERR_NO_ERROR)
+			break;
+	}
+	if (sock == -1) {
 		gflog_debug(GFARM_MSG_1002572, "%s", gfarm_error_string(e));
-		gfarm_freeaddrinfo(res);
+		gfarm_freeaddrinfo(res0);
 		return (e);
 	}
 
@@ -505,14 +516,14 @@ gfm_client_connection_single(const char *hostname, int port, const char *user,
 		gfm_client_connection_report_error(canonical_hostname,
 		    port, gfarm_errno_to_error(save_errno));
 		close(sock);
-		gfarm_freeaddrinfo(res);
+		gfarm_freeaddrinfo(res0);
 		return (gfarm_errno_to_error(save_errno));
 	}
 
 	e = gfm_connection_alloc(sock, user, ms, fs, &gfm_server);
 	if (e != GFARM_ERR_NO_ERROR) {
 		close(sock);
-		gfarm_freeaddrinfo(res);
+		gfarm_freeaddrinfo(res0);
 		return (e);
 	}
 
@@ -520,7 +531,7 @@ gfm_client_connection_single(const char *hostname, int port, const char *user,
 	    GFM_SERVICE_TAG, canonical_hostname, res->ai_addr,
 	    gfarm_get_auth_id_type(), user, pwd,
 	    &gfm_server->auth_method);
-	gfarm_freeaddrinfo(res);
+	gfarm_freeaddrinfo(res0);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001099,
 		    "auth request failed: %s", gfarm_error_string(e));
@@ -541,7 +552,9 @@ struct gfm_client_connect_state {
 	const char *user;
 	struct passwd *pwd;
 
-	struct addrinfo *res;
+	struct sockaddr *addr;
+	socklen_t addrlen;
+
 	struct gfm_connection *gfm_server;
 	struct gfarm_auth_request_state *auth_state;
 	int connecting;
@@ -591,7 +604,7 @@ gfm_client_connect_start_auth(int events, int fd, void *closure,
 	} else { /* successfully connected */
 		state->error = gfarm_auth_request_multiplexed(state->q,
 		    state->gfm_server->conn, GFM_SERVICE_TAG,
-		    canonical_hostname, state->res->ai_addr,
+		    canonical_hostname, state->addr,
 		    gfarm_get_auth_id_type(), state->user, state->pwd,
 		    gfm_client_connect_end_auth, state,
 		    &state->auth_state);
@@ -611,8 +624,9 @@ gfm_client_connect_start_auth(int events, int fd, void *closure,
 }
 
 static gfarm_error_t
-gfm_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
+gfm_client_connect_addr_request_multiplexed(struct gfarm_eventqueue *q,
 	struct gfarm_metadb_server *ms, const char *user, struct passwd *pwd,
+	struct sockaddr *addr, socklen_t addrlen,
 	const char *source_ip, struct gfarm_filesystem *fs,
 	void (*continuation)(void *), void *closure,
 	struct gfm_client_connect_state **statepp)
@@ -620,9 +634,7 @@ gfm_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	gfarm_error_t e;
 	struct gfm_client_connect_state *state;
 	const char *canonical_hostname = gfarm_metadb_server_get_name(ms);
-	int ai_ecode, rv, sock, port = gfarm_metadb_server_get_port(ms);
-	struct addrinfo hints, *res;
-	char sbuf[NI_MAXSERV];
+	int rv, sock, port = gfarm_metadb_server_get_port(ms);
 	struct timeval timeout;
 
 	/* clone of gfm_client_connection_single() */
@@ -631,35 +643,22 @@ gfm_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	if (state == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "allocation of gfm client connect state failed: %s",
+		    "allocation of gfm client connect addr state failed: %s",
 		    gfarm_error_string(e));
 		return (e);
 	}
 
-	snprintf(sbuf, sizeof(sbuf), "%u", port);
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = 0;
-	ai_ecode = gfarm_getaddrinfo(canonical_hostname, sbuf, &hints, &res);
-	if (ai_ecode != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "getaddrinfo(%s) failed: %s",
-		    canonical_hostname, gai_strerror(ai_ecode));
-		free(state);;
-		return (GFARM_ERR_UNKNOWN_HOST);
-	}
-	state->res = res;
+	state->addr = addr;
+	state->addrlen = addrlen;
 
 	e = gfarm_nonblocking_connect(
-	    res->ai_family, res->ai_socktype, res->ai_protocol,
-	    res->ai_addr, res->ai_addrlen, canonical_hostname, source_ip,
+	    addr->sa_family, SOCK_STREAM, 0, addr, addrlen,
+	    canonical_hostname, source_ip,
 	    gfm_client_connection_gc /* XXX FIXME: GC all descriptors */,
 	    NULL, &sock);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s", gfarm_error_string(e));
-		gfarm_freeaddrinfo(res);
 		free(state);;
 		return (e);
 	}
@@ -667,7 +666,6 @@ gfm_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	e = gfm_connection_alloc(sock, user, ms, fs, &state->gfm_server);
 	if (e != GFARM_ERR_NO_ERROR) {
 		close(sock);
-		gfarm_freeaddrinfo(res);
 		free(state);;
 		return (e);
 	}
@@ -706,7 +704,6 @@ gfm_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	/* this does close(sock) too */
 	gfm_client_connection_dispose(state->gfm_server);
 
-	gfarm_freeaddrinfo(res);
 	free(state);
 	gflog_debug(GFARM_MSG_UNFIXED,
 	   "multiplexed gfmd client connect %s:%d failed: %s",
@@ -739,7 +736,7 @@ gfm_client_connect_cancel(struct gfm_client_connect_state *state)
 }
 
 static gfarm_error_t
-gfm_client_connect_result_multiplexed(
+gfm_client_connect_addr_result_multiplexed(
 	struct gfm_client_connect_state *state,
 	struct gfm_connection **gfm_serverp)
 {
@@ -747,7 +744,6 @@ gfm_client_connect_result_multiplexed(
 	struct gfm_connection *gfm_server = state->gfm_server;
 
 	gfarm_event_free(state->readable);
-	gfarm_freeaddrinfo(state->res);
 	free(state);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (gfm_server != NULL) {
@@ -764,12 +760,137 @@ gfm_client_connect_result_multiplexed(
 	return (GFARM_ERR_NO_ERROR);
 }
 
+struct gfm_client_connect_host_state {
+	struct gfarm_eventqueue *q;
+	void (*continuation)(void *);
+	void *closure;
+
+	struct gfarm_metadb_server *ms;
+	const char *user;
+	struct passwd *pwd;
+	const char *source_ip;
+	struct gfarm_filesystem *fs;
+
+	struct addrinfo hints, *res0, *res;
+	struct gfm_client_connect_state *connect_addr_state;
+
+	/* results */
+	struct gfm_connection *gfm_server;
+	gfarm_error_t e;
+};
+
+static void
+gfm_client_connect_addr_connected(void *closure)
+{
+	struct gfm_client_connect_host_state *state = closure;
+
+	state->e = gfm_client_connect_addr_result_multiplexed(
+	    state->connect_addr_state, &state->gfm_server);
+	if (IS_CONNECTION_ERROR(state->e)) {
+		state->res = state->res->ai_next;
+		if (state->res != NULL) {
+			state->e = gfm_client_connect_addr_request_multiplexed(
+			    state->q, state->ms, state->user, state->pwd,
+			    state->res->ai_addr, state->res->ai_addrlen,
+			    state->source_ip, state->fs,
+			    gfm_client_connect_addr_connected, state,
+			    &state->connect_addr_state);
+			if (state->e == GFARM_ERR_NO_ERROR)
+				return;
+		}
+	}
+	if (state->continuation != NULL)
+		(*state->continuation)(state->closure);
+}
+
+static gfarm_error_t
+gfm_client_connect_host_request_multiplexed(struct gfarm_eventqueue *q,
+	struct gfarm_metadb_server *ms, const char *user, struct passwd *pwd,
+	const char *source_ip, struct gfarm_filesystem *fs,
+	void (*continuation)(void *), void *closure,
+	struct gfm_client_connect_host_state **statepp)
+{
+	gfarm_error_t e;
+	struct gfm_client_connect_host_state *state;
+	const char *canonical_hostname = gfarm_metadb_server_get_name(ms);
+	int ai_ecode, port = gfarm_metadb_server_get_port(ms);
+	struct addrinfo hints, *res0;
+	char sbuf[NI_MAXSERV];
+
+	snprintf(sbuf, sizeof(sbuf), "%u", port);
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = 0;
+	ai_ecode = gfarm_getaddrinfo(canonical_hostname, sbuf, &hints, &res0);
+	if (ai_ecode != 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "getaddrinfo(%s) failed: %s",
+		    canonical_hostname, gai_strerror(ai_ecode));
+		return (GFARM_ERR_UNKNOWN_HOST);
+	}
+
+	GFARM_MALLOC(state);
+	if (state == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "allocation of gfm client connect host state failed: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+
+	state->q = q;
+	state->continuation = continuation;
+	state->closure = closure;
+	state->ms = ms;
+	state->user = user;
+	state->pwd = pwd;
+	state->source_ip = source_ip;
+	state->fs = fs;
+
+	state->res0 = res0;
+	state->res = res0;
+
+	state->gfm_server = NULL;
+	state->e = GFARM_ERR_UNKNOWN;
+
+	e = gfm_client_connect_addr_request_multiplexed(q,
+	    ms, user, pwd, state->res->ai_addr, state->res->ai_addrlen,
+	    source_ip, fs, gfm_client_connect_addr_connected, state,
+	    &state->connect_addr_state);
+	if (e == GFARM_ERR_NO_ERROR) {
+		*statepp = state;
+		/* try each host in res0 */
+		return (GFARM_ERR_NO_ERROR);
+	}
+	gfarm_freeaddrinfo(res0);
+	free(state);
+	gflog_debug(GFARM_MSG_UNFIXED,
+	    "request for multiplexed client connect addr failed: %s",
+	    gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_client_connect_host_result_multiplexed(
+	struct gfm_client_connect_host_state *state,
+	struct gfm_connection **gfm_serverp)
+{
+	gfarm_error_t e = state->e;
+
+	if (e == GFARM_ERR_NO_ERROR)
+		*gfm_serverp = state->gfm_server;
+	gfarm_freeaddrinfo(state->res0);
+	free(state);
+	return (e);
+}
+
 struct gfm_client_connection_multiple_conn_state {
 	struct gfarm_metadb_server *ms;
 	struct gfm_client_connection_multiple_state *multiple_state;
 
 	int finished;
-	struct gfm_client_connect_state *conn_state;
+	struct gfm_client_connect_host_state *conn_state;
 
 	/* results */
 	gfarm_error_t error;
@@ -799,7 +920,8 @@ gfm_client_connection_multiple_cancel_others(void *closure)
 	for (i = 0; i < multiple_state->nmsl; i++) {
 		mc_state = &multiple_state->mc_states[i];
 		if (!mc_state->finished && mc_state->conn_state != NULL)
-			gfm_client_connect_cancel(mc_state->conn_state);
+			gfm_client_connect_cancel(
+			    mc_state->conn_state->connect_addr_state);
 	}
 }
 
@@ -808,7 +930,7 @@ gfm_client_connection_multiple_finish(void *closure)
 {
 	struct gfm_client_connection_multiple_conn_state *mc_state = closure;
 
-	mc_state->error = gfm_client_connect_result_multiplexed(
+	mc_state->error = gfm_client_connect_host_result_multiplexed(
 	    mc_state->conn_state, &mc_state->gfm_server);
 	mc_state->finished = 1;
 	if (mc_state->error == GFARM_ERR_NO_ERROR) {
@@ -867,8 +989,8 @@ gfm_client_connection_multiple(
 		mc_state->finished = 0;
 		mc_state->gfm_server = NULL;
 		mc_state->conn_state = NULL;
-		mc_state->error = gfm_client_connect_request_multiplexed(q,
-		    msl[i], user, pwd, source_ip, fs,
+		mc_state->error = gfm_client_connect_host_request_multiplexed(
+		    q, msl[i], user, pwd, source_ip, fs,
 		    gfm_client_connection_multiple_finish, mc_state,
 		    &mc_state->conn_state);
 	}
@@ -1058,7 +1180,7 @@ gfm_client_connection_cache_lookup_multiple(const char *hostname, int port,
 
 		snprintf(sbuf, sizeof(sbuf), "%u", port);
 		memset(&hints, 0, sizeof(hints));
-		hints.ai_family = AF_INET;
+		hints.ai_family = AF_UNSPEC;
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_flags = AI_CANONNAME;
 		ai_ecode = gfarm_getaddrinfo(hostname, sbuf, &hints, &res);
@@ -1132,7 +1254,7 @@ gfm_client_connection_cache_lookup_single(const char *hostname, int port,
 
 		snprintf(sbuf, sizeof(sbuf), "%u", port);
 		memset(&hints, 0, sizeof(hints));
-		hints.ai_family = AF_INET;
+		hints.ai_family = AF_UNSPEC;
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_flags = AI_CANONNAME;
 		ai_ecode = gfarm_getaddrinfo(hostname, sbuf, &hints, &res);

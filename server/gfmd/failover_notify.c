@@ -15,6 +15,7 @@
 
 #include "gfnetdb.h"
 
+#include "host_address.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
 #include "context.h"
@@ -167,20 +168,106 @@ gfs_client_failover_notify_result(int sock, int retry_count, const char *xid,
 	return (got_rpc_result);
 }
 
+static int
+udp_connect_to(const char *hostname, int port, struct gfarm_host_address *addr)
+{
+	int save_errno, error, sock;
+	char addr_string[NI_MAXHOST], serv_string[NI_MAXSERV];
+
+	if (addr->sa_family != AF_INET &&
+	    addr->sa_family != AF_INET6)
+		return (-1);
+	if ((addr->sa_family == AF_INET &&
+	     addr->sa_addrlen != sizeof(struct sockaddr_in)) ||
+	    (addr->sa_family == AF_INET6 &&
+	     addr->sa_addrlen != sizeof(struct sockaddr_in6))) {
+		gflog_error(GFARM_MSG_1004080,
+		    "failover_notify: resolved hostname `%s': "
+		    "unexpected address length %d, should be %zd",
+		    hostname,
+		    (int)addr->sa_addrlen,
+		    addr->sa_family == AF_INET ?
+		    sizeof(struct sockaddr_in) :
+		    addr->sa_family == AF_INET6 ?
+		    sizeof(struct sockaddr_in6) : 0);
+		return (-1);
+	}
+	/*
+	 * use different socket for each peer,
+	 * to identify error code
+	 */
+	sock = socket(addr->sa_family, SOCK_DGRAM, 0);
+	if (sock == -1) {
+		gflog_error(GFARM_MSG_1004077,
+		    "failover_notify: socket(%s): %s",
+		    hostname, strerror(errno));
+		return (-1);
+	}
+	/*
+	 * workaround linux UDP behavior
+	 * that select(2)/poll(2)/epoll(2) returns
+	 * that the socket is readable, but it may be not.
+	 *
+	 * from http://stackoverflow.com/questions/4381430/
+	 * What are the WONTFIX bugs on GNU/Linux and how to
+	 * work around them?
+	 *
+	 * The Linux UDP select bug: select (and related interfaces)
+	 * flag a UDP socket file descriptor ready
+	 * for reading as soon as a packet has been received,
+	 * without confirming the checksum. On subsequent
+	 * recv/read/etc., if the checksum was invalid, the
+	 * call will block.
+	 * Working around this requires always setting UDP sockets to
+	 * non-blocking mode and dealing with
+	 * the EWOULDBLOCK condition.
+	 */
+	if (fcntl(sock, F_SETFL, O_NONBLOCK) == -1)
+		gflog_warning(GFARM_MSG_1004078,
+		    "failover_notify(%s): set nonblock: %s",
+		    hostname, strerror(errno));
+
+	if (connect(sock, &addr->sa_addr, addr->sa_addrlen) == -1) {
+		save_errno = errno;
+		error = gfarm_getnameinfo(
+		    &addr->sa_addr, addr->sa_addrlen,
+		    addr_string, sizeof(addr_string),
+		    serv_string, sizeof(serv_string),
+		    NI_NUMERICHOST | NI_NUMERICSERV);
+		if (error != 0) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "failover_notify: "
+			    "UDP connect(%s:%d): %s (%s)",
+			    hostname, port, strerror(save_errno),
+			    gai_strerror(error));
+		} else {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "failover_notify: "
+			    "UDP connect(%s/[%s]:%s): %s",
+			    hostname, addr_string, serv_string,
+			    strerror(save_errno));
+		}
+		close(sock);
+		return (-1);
+	}
+	return (sock);
+}
 
 struct failover_notify_closure {
 	struct host *fsnode;
-	struct watcher_event *result_event;
+	struct gfarm_host_address **addrs;
+	int naddrs, addrs_index;
 
+	struct watcher_event *result_event;
 	int socket;
 	int retry_count;
 	char xid[GFS_UDP_RPC_XID_SIZE];
 };
 
 static struct failover_notify_closure *
-failover_notify_closure_alloc(struct host *h, int sock)
+failover_notify_closure_alloc(struct host *h,
+	int naddrs, struct gfarm_host_address **addrs)
 {
-	gfarm_error_t e;
 	struct failover_notify_closure *fnc;
 
 	GFARM_MALLOC(fnc);
@@ -190,26 +277,18 @@ failover_notify_closure_alloc(struct host *h, int sock)
 		return (NULL);
 	}
 
-	if ((e = watcher_fd_readable_or_timeout_event_alloc(sock,
-	    &fnc->result_event)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1004071,
-		    "failover_notify(%s): "
-		    "watcher_fd_readable_or_timeout_event_alloc: %s",
-		    host_name(h), gfarm_error_string(e));
-	} else {
-		fnc->fsnode = h;
-		fnc->socket = sock;
-		fnc->retry_count = 0;
-		/* use gfarm_auth_random() for security */
-		gfarm_auth_random(fnc->xid, sizeof(fnc->xid));
+	fnc->fsnode = h;
+	fnc->addrs = addrs;
+	fnc->naddrs = naddrs;
+	fnc->addrs_index = 0;
 
-		return (fnc);
-	}
-	free(fnc);
-	return (NULL);
+	fnc->result_event = NULL;
+	fnc->socket = -1;
+	fnc->retry_count = 0;
+	/* failover_notify_start() will initialize fnc->xid */
+
+	return (fnc);
 }
-
-static void *failover_notify_result(void *);
 
 static void
 failover_notify_finish(struct failover_notify_closure *fnc)
@@ -219,10 +298,37 @@ failover_notify_finish(struct failover_notify_closure *fnc)
 		    "failover notifiy: finish for %s",
 		    host_name(fnc->fsnode));
 
-	watcher_event_free(fnc->result_event);
-	close(fnc->socket);
+	if (fnc->result_event != NULL)
+		watcher_event_free(fnc->result_event);
+	if (fnc->socket != -1)
+		close(fnc->socket);
+	gfarm_host_address_free(fnc->naddrs, fnc->addrs);
 	free(fnc);
 }
+
+static void failover_notify_start(struct failover_notify_closure *);
+
+static void
+failover_notify_next_addr(struct failover_notify_closure *fnc)
+{
+
+	assert(fnc->result_event != NULL);
+	watcher_event_free(fnc->result_event);
+	fnc->result_event = NULL;
+
+	assert(fnc->socket != -1);
+	close(fnc->socket);
+	fnc->socket = -1;
+
+	fnc->addrs_index++;
+	if (debug_mode)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "failover notifiy(%s): next address %d/%d",
+		    host_name(fnc->fsnode), fnc->addrs_index, fnc->naddrs);
+	failover_notify_start(fnc);
+}
+
+static void *failover_notify_result(void *);
 
 static void
 failover_notify_got_reply(struct failover_notify_closure *fnc)
@@ -251,7 +357,8 @@ failover_notify_got_reply(struct failover_notify_closure *fnc)
 static void
 failover_notify_timeout(struct failover_notify_closure *fnc)
 {
-	int error;
+	int error, gai_err;
+	char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
 
 	if (debug_mode)
 		gflog_info(GFARM_MSG_1004074,
@@ -259,22 +366,51 @@ failover_notify_timeout(struct failover_notify_closure *fnc)
 		     host_name(fnc->fsnode));
 
 	if (++fnc->retry_count >= gfs_client_datagram_ntimeouts) {
-		gflog_notice(GFARM_MSG_1004075,
-		    "failover_notify(%s): "
-		    "retry_count exceeds %d times - timedout",
-		    host_name(fnc->fsnode), fnc->retry_count);
+		gai_err = gfarm_getnameinfo(
+		    &fnc->addrs[fnc->addrs_index]->sa_addr,
+		    fnc->addrs[fnc->addrs_index]->sa_addrlen,
+		    hbuf, sizeof(hbuf), sbuf, sizeof(sbuf),
+		    NI_NUMERICHOST | NI_NUMERICSERV);
+		if (gai_err != 0) {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "failover_notify(%s): "
+			    "retry_count exceeds %d times - timedout (%s)",
+			    host_name(fnc->fsnode), fnc->retry_count,
+			    gai_strerror(gai_err));
+		} else {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "failover_notify(%s/[%s]:%s): "
+			    "retry_count exceeds %d times - timedout",
+			    host_name(fnc->fsnode), hbuf, sbuf,
+			    fnc->retry_count);
+		}
 
-		failover_notify_finish(fnc);
+		failover_notify_next_addr(fnc);
 	} else if ((error = gfs_client_failover_notify_request(
 	    fnc->socket, fnc->retry_count, fnc->xid,
 	    host_name(fnc->fsnode))) != 0 &&
 	    (error != EWOULDBLOCK ||
 	     fnc->retry_count >= gfs_client_datagram_ntimeouts - 1)) {
-		gflog_notice(GFARM_MSG_1004076,
-		    "failover_notify(%s): %d time(s) retried, but failed: %s",
-		    host_name(fnc->fsnode), fnc->retry_count, strerror(error));
+		gai_err = gfarm_getnameinfo(
+		    &fnc->addrs[fnc->addrs_index]->sa_addr,
+		    fnc->addrs[fnc->addrs_index]->sa_addrlen,
+		    hbuf, sizeof(hbuf), sbuf, sizeof(sbuf),
+		    NI_NUMERICHOST | NI_NUMERICSERV);
+		if (gai_err != 0) {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "failover_notify(%s): "
+			    "%d time(s) retried, but failed: %s (%s)",
+			    host_name(fnc->fsnode), fnc->retry_count,
+			    strerror(error), gai_strerror(gai_err));
+		} else {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "failover_notify(%s/[%s]:%s): "
+			    "%d time(s) retried, but failed: %s",
+			    host_name(fnc->fsnode), hbuf, sbuf,
+			    fnc->retry_count, strerror(error));
+		}
 
-		failover_notify_finish(fnc);
+		failover_notify_next_addr(fnc);
 	} else {
 		/* do retry in case of a retry or EWOULDBLOCK */
 		watcher_add_event_with_timeout(back_channel_watcher(),
@@ -319,83 +455,46 @@ failover_notify_send(struct failover_notify_closure *fnc)
 	    back_channel_recv_thrpool(), failover_notify_result, fnc);
 }
 
-static int
-udp_connect_to(const char *hostname, int port)
+static void
+failover_notify_start(struct failover_notify_closure *fnc)
 {
-	int error, sock;
-	struct addrinfo hints, *res, *res0;
-	char sbuf[NI_MAXSERV];
-	char addr_string[GFARM_SOCKADDR_STRLEN];
+	gfarm_error_t e;
 
-	/* use different socket for each peer, to identify error code */
-	sock = socket(PF_INET, SOCK_DGRAM, 0);
-	if (sock == -1) {
-		gflog_error(GFARM_MSG_1004077,
-		    "failover_notify: getaddrinfo(%s): %s",
-		    hostname, strerror(errno));
-		return (-1);
-	}
-	/*
-	 * workaround linux UDP behavior that select(2)/poll(2)/epoll(2)
-	 * returns that the socket is readable, but it may be not.
-	 *
-	 * from http://stackoverflow.com/questions/4381430/
-	 * What are the WONTFIX bugs on GNU/Linux and how to work around them?
-	 *
-	 * The Linux UDP select bug: select (and related interfaces) flag a
-	 * UDP socket file descriptor ready for reading as soon as a packet
-	 * has been received, without confirming the checksum. On subsequent
-	 * recv/read/etc., if the checksum was invalid, the call will block.
-	 * Working around this requires always setting UDP sockets to
-	 * non-blocking mode and dealing with the EWOULDBLOCK condition.
-	 */
-	if (fcntl(sock, F_SETFL, O_NONBLOCK) == -1)
-		gflog_warning(GFARM_MSG_1004078,
-		    "failover_notify(%s): set nonblock: %s",
-		    hostname, strerror(errno));
+	for (;;) {
+		const char *hostname = host_name(fnc->fsnode);
 
-	snprintf(sbuf, sizeof(sbuf), "%u", port);
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_DGRAM;
-	error = gfarm_getaddrinfo(hostname, sbuf, &hints, &res0);
-	if (error != 0) {
-		gflog_warning(GFARM_MSG_1004079,
-		    "failover_notify: getaddrinfo(%s): %s",
-		    hostname, gai_strerror(error));
-		return (-1);
-	}
-
-	for (res = res0; res != NULL; res = res->ai_next) {
-		if (res->ai_addr->sa_family != AF_INET)
-			continue;
-		if (res->ai_addrlen != sizeof(struct sockaddr_in)) {
-			gflog_error(GFARM_MSG_1004080,
-			    "failover_notify: getaddrinfo(%s): "
-			    "unexpected address length %d, should be %zd",
-			    hostname,
-			    (int)res->ai_addrlen, sizeof(struct sockaddr_in));
+		if (fnc->addrs_index >= fnc->naddrs) {
+			gflog_warning(GFARM_MSG_1004082,
+			    "failover_notify(%s): UDP connect failed",
+			    hostname);
+			failover_notify_finish(fnc);
+			return;
+		}
+		fnc->socket = udp_connect_to(hostname, host_port(fnc->fsnode),
+		    fnc->addrs[fnc->addrs_index]);
+		if (fnc->socket == -1) {
+			fnc->addrs_index++;
 			continue;
 		}
-		if (connect(sock, res->ai_addr, res->ai_addrlen) == -1) {
-			gfarm_sockaddr_to_string(res->ai_addr,
-			    addr_string, GFARM_SOCKADDR_STRLEN);
-			gflog_warning(GFARM_MSG_1004081,
-			    "failover_notify: UDP connect(%s/%s): %s",
-			    hostname, addr_string,
-			    strerror(errno));
-			continue;
+		e = watcher_fd_readable_or_timeout_event_alloc(fnc->socket,
+		    &fnc->result_event);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_1004071,
+			    "failover_notify(%s): "
+			    "watcher_fd_readable_or_timeout_event_alloc: %s",
+			    hostname, gfarm_error_string(e));
+			/* fatal, do not try next address */
+			failover_notify_finish(fnc);
+			return;
 		}
-		/* XXX only first connected address is used */
-		/* XXX "address_use" directive is not available in gfarm_v2 */
-		gfarm_freeaddrinfo(res0);
-		return (sock);
+
+		fnc->retry_count = 0;
+		/* use gfarm_auth_random() for security */
+		gfarm_auth_random(fnc->xid, sizeof(fnc->xid));
+
+		failover_notify_send(fnc);
+		return;
 	}
-	gflog_warning(GFARM_MSG_1004082,
-	    "failover_notify(%s): UDP connect failed", hostname);
-	gfarm_freeaddrinfo(res0);
-	close(sock);
-	return (-1);
 }
 
 static int
@@ -414,8 +513,9 @@ failover_notify(void)
 	struct host **fsnodes;
 	size_t i, nfsnodes;
 	void *tmp;
+	int naddrs;
+	struct gfarm_host_address **addrs;
 	struct failover_notify_closure *fnc;
-	int sock;
 
 	giant_lock();
 	e = host_iterate(record_fsnode, NULL, sizeof(*fsnodes),
@@ -430,14 +530,17 @@ failover_notify(void)
 	fsnodes = tmp;
 
 	for (i = 0; i < nfsnodes; i++) {
-		if ((sock = udp_connect_to(
-		    host_name(fsnodes[i]), host_port(fsnodes[i]))) == -1)
-			;
-		else if ((fnc = failover_notify_closure_alloc(
-		    fsnodes[i], sock)) == NULL)
-			close(sock);
-		else
-			failover_notify_send(fnc);
+		if ((e = gfarm_host_address_get(
+		    host_name(fsnodes[i]), host_port(fsnodes[i]),
+		    &naddrs, &addrs)) != GFARM_ERR_NO_ERROR) {
+			gflog_warning(GFARM_MSG_1004079,
+			    "failover_notify: resolving hostname `%s': %s",
+			    host_name(fsnodes[i]), gfarm_error_string(e));
+		} else if ((fnc = failover_notify_closure_alloc(
+		    fsnodes[i], naddrs, addrs)) == NULL) {
+			gfarm_host_address_free(naddrs, addrs);
+		} else
+			failover_notify_start(fnc);
 	}
 	free(fsnodes);
 }

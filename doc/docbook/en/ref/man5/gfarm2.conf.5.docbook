@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>26 Oct 2017</date></refentryinfo>
+<refentryinfo><date>27 Mar 2018</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -57,7 +57,7 @@ forms.</para>
 <varlistentry>
 <term><parameter moreinfo="none">III.JJJ.KKK.LLL</parameter></term>
 <listitem>
-<para>Specifies an IP address with four octets from 0 to 255, separated
+<para>Specifies an IPv4 address with four octets from 0 to 255, separated
 by ".".</para>
 </listitem>
 </varlistentry>
@@ -65,8 +65,28 @@ by ".".</para>
 <varlistentry>
 <term><parameter moreinfo="none">III.JJJ.KKK.LLL</parameter>/<parameter moreinfo="none">MM</parameter></term>
 <listitem>
-<para>Specifies a network address with an IP address and a netmask
+<para>Specifies a network address with an IPv4 address and a netmask
 from 0 to 31 separated by "/".</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">[ "[" ] IIII:JJJJ:KKKK:LLLL:MMMM:NNNN:OOOO:PPPP [ "]" ]</parameter></term>
+<listitem>
+<para>
+Specifies an IPv6 address with 8 hexadecimal numbers (upto 4 characters each),
+separated by ":".
+You can replace consecutive zeros only once by "::".
+You can also enclose an IPv6 address by "[" ... "]".
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">[ "[" ] IIII:JJJJ:KKKK:LLLL:MMMM:NNNN:OOOO:PPPP [ "]" ]</parameter>/<parameter moreinfo="none">MMM</parameter></term>
+<listitem>
+<para>Specifies a network address with an IPv6 address and a netmask
+from 0 to 127 separated by "/".</para>
 </listitem>
 </varlistentry>
 
@@ -88,6 +108,19 @@ from 0 to 31 separated by "/".</para>
 <term><emphasis>*</emphasis></term>
 <listitem>
 <para>Specifies all hosts.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><emphasis>LISTENER</emphasis></term>
+<listitem>
+<para>
+"LISTENER" in all capital letters means that
+this setting is for server side (i.e. connection responder),
+</para>
+<para>
+This setting is only effective in the <token>sockopt</token> statement.
+</para>
 </listitem>
 </varlistentry>
 

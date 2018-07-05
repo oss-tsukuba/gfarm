@@ -26,7 +26,7 @@
       <arg choice="plain" rep="norepeat">-l</arg>
       <arg choice="plain" rep="norepeat">-M</arg>
     </group>
-    <arg choice="opt" rep="norepeat">-iLprUv</arg>
+    <arg choice="opt" rep="norepeat">-LprUv</arg>
     <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
     <arg choice="opt" rep="norepeat">-a <replaceable>architecture</replaceable></arg>
     <arg choice="opt" rep="norepeat">-D <replaceable>domain-name</replaceable></arg>
@@ -78,6 +78,7 @@
     -f		XXX NOTYET ??? force ???, for -d
     -H		<function moreinfo="none"> display information replied from the hosts
     -i		ignore "address_use" directive, for (default)/-H/-l
+	... this option is removed for #1010 (IPv6)
     -j <number>	concurrency, for (default)/-H/-l
     -L		display by load average order, for (default)/-H/-l
     -l		<function moreinfo="none"> display with long format
@@ -136,7 +137,7 @@ the default function of <command moreinfo="none">gfhost</command>.
   Display functions other than -M also access <command moreinfo="none">gfsd</command>,
   which is running on filesystem nodes. For functions which access
   <command moreinfo="none">gfhost</command>, the access option can be specified
-  by options -i, -j, -U and -v.
+  by options -j, -U and -v.
 </para>
 <para>
   You don't have to specify hostnames for display functions.
@@ -348,6 +349,7 @@ the default function of <command moreinfo="none">gfhost</command>.
     </listitem>
   </varlistentry>
 
+<!-- this option is removed for #1010 (IPv6)
   <varlistentry>
     <term><option>-i</option></term>
     <listitem>
@@ -361,6 +363,7 @@ the default function of <command moreinfo="none">gfhost</command>.
       </para>
     </listitem>
   </varlistentry>
+-->
 
   <varlistentry>
     <term><option>-j</option> <parameter moreinfo="none">concurrency</parameter></term>

@@ -66,12 +66,12 @@ void	doServer(int fd, char *host, int port, gss_cred_id_t myCred,
 int
 main(int argc, char **argv)
 {
-    int bindFd = -1;
-    struct sockaddr_in remote;
-    socklen_t remLen = sizeof(struct sockaddr_in);
-    int fd = -1;
+    int numBindFds, *bindFds;
+    struct sockaddr_storage remote;
+    socklen_t remLen;
+    int i, fd = -1;
     OM_uint32 majStat, minStat;
-    char myHostname[4096];
+    char myHostname[4096], *addr;
     gss_cred_id_t myCred;
 
     if (hostname == NULL) {
@@ -130,14 +130,16 @@ main(int argc, char **argv)
     /*
      * Create a channel.
      */
-    bindFd = gfarmTCPBindPort(port);
-    if (bindFd < 0) {
+    if (gfarmTCPBindPort(port, &numBindFds, &bindFds) < 0) {
 	gfarmSecSessionFinalizeBoth();
 	fprintf(stderr, "Failed to bind port (%d)", port);
 	return 1;
     }
-    (void)gfarmGetNameOfSocket(bindFd, &port);
-    fprintf(stderr, "Accepting port: %d\n", port);
+    for (i = 0; i < numBindFds; i++) {
+	(void)gfarmGetNameOfSocket(bindFds[i], &port, &addr);
+	fprintf(stderr, "Accepting port: [%s]:%d\n", addr, port);
+	free(addr);
+    }
 
     /*
      * Accept-fork loop.
@@ -146,10 +148,12 @@ main(int argc, char **argv)
 	pid_t pid;
 	char hbuf[NI_MAXHOST];
 
-	fd = accept(bindFd, (struct sockaddr *)&remote, &remLen);
+	remLen = sizeof(remote);
+	fd = gfarmAcceptFds(numBindFds, bindFds,
+	    (struct sockaddr *)&remote, &remLen);
 	if (fd < 0) {
 	    perror("accept");
-	    (void)close(bindFd);
+	    (void)gfarmCloseFds(numBindFds, bindFds);
 	    return 1;
 	}
 	if (gfarm_getnameinfo((struct sockaddr *)&remote, remLen,
@@ -158,11 +162,11 @@ main(int argc, char **argv)
 	pid = fork();
 	if (pid < 0) {
 	    (void)close(fd);
-	    (void)close(bindFd);
+	    (void)gfarmCloseFds(numBindFds, bindFds);
 	    perror("fork");
 	    return 1;
 	} else if (pid == 0) {
-	    (void)close(bindFd);
+	    (void)gfarmCloseFds(numBindFds, bindFds);
 	    doServer(fd, hostname, port, myCred, acceptorName);
 	    (void)close(fd);
 	    exit(0);

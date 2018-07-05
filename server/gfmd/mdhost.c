@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
+#include <sys/socket.h>
 
 #include <gfarm/gfarm.h>
 

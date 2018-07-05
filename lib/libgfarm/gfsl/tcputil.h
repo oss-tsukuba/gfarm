@@ -4,10 +4,13 @@
 #define	GFARM_OCTETS_PER_16BIT	2	/* 16/8 */
 
 extern int	gfarmTCPConnectPortByHost(char *, int port);
-extern int	gfarmTCPBindPort(int port);
-extern int	gfarmGetNameOfSocket(int sock, int *portPtr);
-int	gfarmGetPeernameOfSocket(int sock, int *portPtr, char **hostPtr);
-
+extern int	gfarmTCPBindPort(int port, int *numSocksPtr, int **socksPtr);
+extern int	gfarmAcceptFds(int numSocks, int *socks,
+			       struct sockaddr *sa, socklen_t *sa_lenp);
+extern void	gfarmCloseFds(int numSocks, int *socks);
+extern int	gfarmGetPeernameOfSocket(int sock,
+					 int *portPtr, char **hostPtr);
+extern int	gfarmGetNameOfSocket(int sock, int *portPtr, char **hostPtr);
 extern int	gfarmWaitReadable(int fd, int timtoueMsec);
 extern int	gfarmReadInt8(int fd, gfarm_int8_t *buf, int len,
 			      int timtoueMsec);

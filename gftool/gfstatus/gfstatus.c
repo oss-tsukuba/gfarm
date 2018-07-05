@@ -7,6 +7,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <sys/socket.h>
+
 #include <gfarm/gfarm.h>
 
 #include "context.h"

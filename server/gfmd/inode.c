@@ -8,6 +8,7 @@
 #include <stdio.h> /* sprintf */
 #include <ctype.h>
 #include <sys/time.h>
+#include <sys/socket.h>
 #include <pthread.h>
 #include <errno.h>
 

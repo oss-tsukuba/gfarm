@@ -174,6 +174,28 @@ gfarmAuthGetFQDN(gfarmAuthEntry *aePtr)
 	return (fqdn);
 }
 
+char *
+gfarmAuthGetPrintableName(gfarmAuthEntry *aePtr)
+{
+	char *name = NULL;
+	static const char diag[] = "gfarmAuthGetPrintableName";
+
+	gfarm_mutex_lock(&aePtr->mutex, diag, authEntryDiag);
+	switch (aePtr->authType) {
+	case GFARM_AUTH_HOST:
+		name = aePtr->authData.hostAuth.FQDN;
+		break;
+	case GFARM_AUTH_USER:
+		name = aePtr->authData.userAuth.localName;
+		break;
+	default:
+		name = "unknown auth entry type";
+		break;
+	}
+	gfarm_mutex_unlock(&aePtr->mutex, diag, authEntryDiag);
+	return (name);
+}
+
 #if 0
 static void
 dumpAuthEntry(gfarmAuthEntry *aePtr)

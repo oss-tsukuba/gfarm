@@ -17,13 +17,13 @@
 #include "sockutil.h"
 
 static gfarm_error_t
-gfarm_bind_source_ip(int sock, const char *source_ip)
+gfarm_bind_source_ip(int proto_family, int sock, const char *source_ip)
 {
 	struct addrinfo shints, *sres;
 	int rv, save_errno;
 
 	memset(&shints, 0, sizeof(shints));
-	shints.ai_family = AF_INET;
+	shints.ai_family = proto_family;
 	shints.ai_socktype = SOCK_STREAM;
 	shints.ai_flags = AI_PASSIVE;
 	if (gfarm_getaddrinfo(source_ip, NULL, &shints, &sres) != 0) {
@@ -75,7 +75,7 @@ gfarm_nonblocking_connect(int proto_family, int sock_type, int protocol,
 	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, addr);
 
 	if (source_ip != NULL) {
-		e = gfarm_bind_source_ip(sock, source_ip);
+		e = gfarm_bind_source_ip(proto_family, sock, source_ip);
 		if (e != GFARM_ERR_NO_ERROR) {
 			close(sock);
 			gflog_debug(GFARM_MSG_1001095,

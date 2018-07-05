@@ -30,6 +30,7 @@
 #include "queue.h"
 #include "gfnetdb.h"
 
+#include "host_address.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
 #include "auth.h"
@@ -897,7 +898,7 @@ peer_authorized(struct peer *peer,
 		/*FALLTHROUGH*/
 
 	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
-		h = host_addr_lookup(hostname, addr);
+		h = host_lookup(hostname);
 		if (h == NULL) {
 			peer->host = NULL;
 		} else {
@@ -954,14 +955,14 @@ peer_authorized(struct peer *peer,
 static int
 peer_get_numeric_name(struct peer *peer, char *hostbuf, size_t hostlen)
 {
-	struct sockaddr_in sin;
-	socklen_t slen = sizeof(sin);
+	struct sockaddr_storage sa;
+	socklen_t sa_len = sizeof(sa);
 
 	if (getpeername(peer_get_fd(peer),
-	    (struct sockaddr *)&sin, &slen) != 0)
+	    (struct sockaddr *)&sa, &sa_len) != 0)
 		return (errno);
 
-	return (gfarm_getnameinfo((struct sockaddr *)&sin, slen,
+	return (gfarm_getnameinfo((struct sockaddr *)&sa, sa_len,
 	    hostbuf, hostlen, NULL, 0, NI_NUMERICHOST | NI_NUMERICSERV));
 }
 
@@ -973,7 +974,7 @@ peer_get_numeric_name(struct peer *peer, char *hostbuf, size_t hostlen)
 void
 peer_free(struct peer *peer)
 {
-	int err;
+	int gai_err;
 	char *username;
 	const char *hostname;
 	int transaction = 0;
@@ -994,14 +995,15 @@ peer_free(struct peer *peer)
 		 * IP address must be logged instead of (maybe faked) hostname
 		 * in case of an authentication failure.
 		 */
-		err = peer_get_numeric_name(peer, hostbuf, sizeof(hostbuf));
-		if (err == 0) {
+		gai_err =
+		    peer_get_numeric_name(peer, hostbuf, sizeof(hostbuf));
+		if (gai_err == 0) {
 			hostname = hostbuf;
 		} else {
 			hostname = "<not-socket>";
 			gflog_info(GFARM_MSG_1003276,
 			    "unable to convert peer address to string: %s",
-			    strerror(err));
+			    gai_strerror(gai_err));
 		}
 	}
 	gflog_notice(GFARM_MSG_1000286,
@@ -1736,19 +1738,22 @@ peer_findxmlattrctx_get(struct peer *peer)
 gfarm_error_t
 peer_get_port(struct peer *peer, int *portp)
 {
-	struct sockaddr_in sin;
-	socklen_t slen = sizeof(sin);
+	gfarm_error_t e;
+	int rv;
+	struct sockaddr_storage sa;
+	socklen_t sa_len = sizeof(sa);
 
-	if (getpeername(peer_get_fd(peer), (struct sockaddr *)&sin, &slen) != 0) {
+	rv = getpeername(peer_get_fd(peer), (struct sockaddr *)&sa, &sa_len);
+	if (rv != 0) {
 		*portp = 0;
 		return (gfarm_errno_to_error(errno));
-	} else if (sin.sin_family != AF_INET) {
-		*portp = 0;
-		return (GFARM_ERR_ADDRESS_FAMILY_NOT_SUPPORTED_BY_PROTOCOL_FAMILY);
-	} else {
-		*portp = (int)ntohs(sin.sin_port);
-		return (GFARM_ERR_NO_ERROR);
 	}
+	e = gfarm_sockaddr_get_port((struct sockaddr *)&sa, sa_len, portp);
+	if (e != GFARM_ERR_NO_ERROR) {
+		*portp = 0;
+		return (e);
+	}
+	return (e);
 }
 
 void

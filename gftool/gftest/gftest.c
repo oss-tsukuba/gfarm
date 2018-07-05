@@ -6,7 +6,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <strings.h>
+#include <sys/socket.h>
+
 #include <gfarm/gfarm.h>
+
 #include "gfm_client.h"
 #include "lookup.h"
 #include "host.h"

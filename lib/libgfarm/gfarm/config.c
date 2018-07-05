@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/wait.h>
+#include <sys/socket.h>
 #include <signal.h>
 #include <stddef.h>
 #include <stdio.h>

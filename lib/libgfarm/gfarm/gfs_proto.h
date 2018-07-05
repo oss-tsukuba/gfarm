@@ -150,7 +150,13 @@ enum gfs_proto_close_flags {
 /* used for both gfsd local privilege and global username of sharedsecret */
 #define GFSD_USERNAME	"_gfarmfs"
 
-#define GFSD_LOCAL_SOCKET_DIR	"/tmp/.gfarm-gfsd%s-%d"
+/*
+ * sizeof(sockaddr_un::sun_path) is 104 or 108 (this depends on OS),
+ * and the length of GFSD_LOCAL_SOCKET name is
+ * 16("/tmp/.gfarm-gfsd") + 48(=GFARM_SOCKADDR_STRLEN:%s) + 1("-") + 5 (%u)
+ * + 5 ("/sock") + 1 ('\0') = 76, thus sockaddr_un::sun_path can contain this.
+ */
+#define GFSD_LOCAL_SOCKET_DIR	"/tmp/.gfarm-gfsd%s-%u"
 #define GFSD_LOCAL_SOCKET_NAME	GFSD_LOCAL_SOCKET_DIR "/sock"
 
 #define GFSD_MAX_PASSING_FD 5
@@ -190,3 +196,8 @@ extern char GFS_SERVICE_TAG[];
 #define GFS_UDP_PROTO_FAILOVER_NOTIFY	0x00000001
 
 #define GFARM_MAXHOSTNAMELEN		256
+
+struct sockaddr;
+struct sockaddr_un;
+gfarm_error_t gfs_sockaddr_to_local_addr(struct sockaddr *, socklen_t, int,
+	struct sockaddr_un *, char **);

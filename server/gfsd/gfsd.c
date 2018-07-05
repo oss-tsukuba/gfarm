@@ -60,6 +60,7 @@
 
 #include "gfutil.h"
 #include "gflog_reduced.h"
+#include "gfnetdb.h"
 #include "hash.h"
 #define GFARM_USE_OPENSSL
 #include "msgdigest.h"
@@ -72,6 +73,7 @@
 #include "io_fd.h"
 #include "sockopt.h"
 #include "hostspec.h"
+#include "host_address.h"
 #include "host.h"
 #include "conn_hash.h"
 #include "auth.h"
@@ -192,8 +194,8 @@ struct local_socket {
 };
 
 struct accepting_sockets {
-	int local_socks_count, udp_socks_count;
-	int tcp_sock, *udp_socks;
+	int local_socks_count, tcp_socks_count, udp_socks_count;
+	int *tcp_socks, *udp_socks;
 	struct local_socket *local_socks;
 } accepting;
 
@@ -322,15 +324,11 @@ cleanup_handler(int signo)
 static int
 connection_is_down(int socket)
 {
-	union {
-		struct sockaddr generic;
-		struct sockaddr_in in;
-		struct sockaddr_un un;
-	} addr;
+	struct sockaddr_storage addr;
 	int err;
 	socklen_t addr_size = sizeof(addr), err_size = sizeof(err);
 
-	if (getpeername(socket, &addr.generic, &addr_size) == -1)
+	if (getpeername(socket, (struct sockaddr *)&addr, &addr_size) == -1)
 		return (1);
 	if (getsockopt(socket, SOL_SOCKET, SO_ERROR, &err, &err_size) == -1)
 		return (1);
@@ -934,12 +932,14 @@ do_fork(enum gfsd_type new_type)
 			gfarm_iostat_set_local_ip(statp);
 		}
 		if (my_type == type_listener) {
+			for (i = 0; i < accepting.tcp_socks_count; i++) {
+				close(accepting.tcp_socks[i]);
+				accepting.tcp_socks[i] = -1;
+			}
 			for (i = 0; i < accepting.local_socks_count; i++) {
 				close(accepting.local_socks[i].sock);
 				accepting.local_socks[i].sock = -1;
 			}
-			close(accepting.tcp_sock);
-			accepting.tcp_sock = -1;
 			for (i = 0; i < accepting.udp_socks_count; i++) {
 				close(accepting.udp_socks[i]);
 				accepting.udp_socks[i] = -1;
@@ -4133,11 +4133,11 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		e = dst_err = GFARM_ERR_INTERNAL_ERROR;
 		goto close;
 	}
-	e = gfs_client_connection_acquire_by_host(gfm_server, host, port,
-	    &server, listen_addrname);
+	e = gfs_client_connection_acquire(gfm_server, host, port,
+	    listen_addrname, &server);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002177,
-			"gfs_client_connection_acquire_by_host() failed: %s",
+			"gfs_client_connection_acquire() failed: %s",
 			gfarm_error_string(e));
 		src_err = e; /* invalidate */
 		goto close;
@@ -4737,7 +4737,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 
 	/*
 	 * XXX FIXME:
-	 * gfs_client_connection_acquire_by_host() needs timeout, otherwise
+	 * gfs_client_connection_acquire() needs timeout, otherwise
 	 * the remote gfsd (or its kernel) can block this backchannel gfsd.
 	 * See http://sourceforge.net/apps/trac/gfarm/ticket/130
 	 */
@@ -4756,9 +4756,9 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		gflog_error(GFARM_MSG_1004499, "%s: %lld:%lld: race detected",
 		    diag, (long long)rep->ino, (long long)rep->gen);
 		close(local_fd);
-	} else if ((conn_err = gfs_client_connection_acquire_by_host(
+	} else if ((conn_err = gfs_client_connection_acquire(
 	    gfm_server, gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
-	    &src_gfsd, listen_addrname)) != GFARM_ERR_NO_ERROR) {
+	    listen_addrname, &src_gfsd)) != GFARM_ERR_NO_ERROR) {
 		gflog_notice(GFARM_MSG_1002184, "%s: connecting to %s:%d: %s",
 		    diag,
 		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
@@ -5541,13 +5541,14 @@ wait_fd_with_failover_pipe(int waiting_fd, const char *diag)
 }
 
 void
-server(int client_fd, char *client_name, struct sockaddr *client_addr)
+server(int client_fd, char *client_name,
+	struct sockaddr *client_addr, socklen_t client_addr_size)
 {
 	gfarm_error_t e;
 	struct gfp_xdr *client;
 	int eof;
 	gfarm_int32_t request;
-	char *aux, addr_string[GFARM_SOCKADDR_STRLEN];
+	char *aux;
 	enum gfarm_auth_id_type peer_type;
 	enum gfarm_auth_method auth_method;
 
@@ -5558,16 +5559,13 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		char *s;
 		int port;
 
-		e = gfarm_sockaddr_to_name(client_addr, &client_name);
+		e = gfarm_sockaddr_to_log_string(client_addr, client_addr_size,
+		    &client_name);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gfarm_sockaddr_to_string(client_addr,
-			    addr_string, GFARM_SOCKADDR_STRLEN);
-			gflog_notice(GFARM_MSG_1000552, "%s: %s", addr_string,
+			/* `e' should be a fatal error */
+			fatal(GFARM_MSG_UNFIXED,
+			    "converting a client address to string: %s",
 			    gfarm_error_string(e));
-			client_name = strdup(addr_string);
-			if (client_name == NULL)
-				fatal(GFARM_MSG_1000553, "%s: no memory",
-				    addr_string);
 		}
 		e = gfm_host_get_canonical_name(gfm_server, client_name,
 		    &s, &port);
@@ -5701,15 +5699,15 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 
 void
 start_server(int accepting_sock,
-	struct sockaddr *client_addr_storage, socklen_t client_addr_size,
-	struct sockaddr *client_addr, char *client_name,
-	struct accepting_sockets *accepting)
+	struct sockaddr *client_addr_storage, socklen_t *storage_size_p,
+	struct sockaddr *client_addr, socklen_t *client_addr_size_p,
+	char *client_name)
 {
 #ifndef GFSD_DEBUG
 	pid_t pid = 0;
 #endif
 	int client = accept(accepting_sock,
-	   client_addr_storage, &client_addr_size);
+	   client_addr_storage, storage_size_p);
 
 	if (client < 0) {
 		if (errno == EINTR || errno == ECONNABORTED ||
@@ -5724,7 +5722,7 @@ start_server(int accepting_sock,
 	switch ((pid = do_fork(type_client))) {
 	case 0:
 #endif
-		server(client, client_name, client_addr);
+		server(client, client_name, client_addr, *client_addr_size_p);
 		/*NOTREACHED*/
 #ifndef GFSD_DEBUG
 	case -1:
@@ -5842,7 +5840,7 @@ gfs_udp_server_failover_notify(int sock,
 
 	if (reqlen < GFS_UDP_PROTO_FAILOVER_NOTIFY_REQUEST_MIN_SIZE
 	    - GFS_UDP_RPC_HEADER_SIZE) {
-		/* XXX gfarm_sockaddr_to_name */
+		/* XXX gfarm_sockaddr_to_log_string */
 		gflog_warning(GFARM_MSG_1004169,
 		    "%s: too short: %d bytes", diag,
 		    GFS_UDP_RPC_HEADER_SIZE + reqlen);
@@ -5915,13 +5913,22 @@ gfs_udp_server(int sock,
 	unsigned char *got_xid, *p = request;
 	gfarm_uint32_t u32, got_rpc_magic;
 	gfarm_uint32_t got_rpc_type, got_retry_count, got_request_type;
-	char addr_str[GFARM_SOCKADDR_STRLEN];
-	int addr_strlen = GFARM_SOCKADDR_STRLEN;
+	char addr_str[NI_MAXHOST], serv_str[NI_MAXSERV];
 
 	if (reqlen < GFS_UDP_RPC_HEADER_SIZE) {
-		gfarm_sockaddr_to_string(client_addr, addr_str, addr_strlen);
-		gflog_warning(GFARM_MSG_1004323, "UDP request: too short: "
-		    "%d bytes from %s", reqlen, addr_str);
+		int rv = gfarm_getnameinfo(client_addr, client_addr_size,
+		    addr_str, sizeof addr_str, serv_str, sizeof serv_str,
+		    NI_NUMERICHOST | NI_NUMERICSERV);
+
+		if (rv != 0) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "UDP request: too short: %d bytes: %s",
+			    reqlen, gai_strerror(rv));
+		} else {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "UDP request: too short: %d bytes from [%s]:%s",
+			    reqlen, addr_str, serv_str);
+		}
 		return;
 	}
 
@@ -5940,7 +5947,7 @@ gfs_udp_server(int sock,
 	got_request_type = ntohl(u32);
 
 	if (debug_mode) {
-		/* XXX gfarm_sockaddr_to_name */
+		/* XXX gfarm_sockaddr_to_log_string */
 		gflog_info(GFARM_MSG_1004175,
 		    "gfs_udp_server(): got udp request: "
 		    "type=0x%08x, retry_count=%d, "
@@ -5953,7 +5960,7 @@ gfs_udp_server(int sock,
 	if (got_rpc_magic != GFS_UDP_RPC_MAGIC ||
 	    got_rpc_type != GFS_UDP_RPC_TYPE_REQUEST ||
 	    got_retry_count > GFS_UDP_RPC_RETRY_COUNT_SANITY) {
-		/* XXX gfarm_sockaddr_to_name */
+		/* XXX gfarm_sockaddr_to_log_string */
 		gflog_notice(GFARM_MSG_1004176,
 		    "gfs_udp_server(): invalid packet: "
 		    "type=0x%08x, retry_count=0x%08x (should be <= 0x%08x), "
@@ -5968,7 +5975,7 @@ gfs_udp_server(int sock,
 
 	if (got_request_type == GFS_UDP_PROTO_FAILOVER_NOTIFY) {
 		static int last_failover_xid_available = 0;
-		static struct sockaddr last_failover_xid_addr; /* XXX IPv6 */
+		static struct sockaddr_storage last_failover_xid_addr;
 		static socklen_t last_failover_xid_addr_size;
 		static unsigned char last_failover_xid[GFS_UDP_RPC_XID_SIZE];
 		static gfarm_error_t last_failover_xid_result;
@@ -5979,7 +5986,7 @@ gfs_udp_server(int sock,
 			last_failover_xid_addr_size) == 0 &&
 		    memcmp(got_xid, last_failover_xid, GFS_UDP_RPC_XID_SIZE)
 			== 0) {
-			/* XXX gfarm_sockaddr_to_name */
+			/* XXX gfarm_sockaddr_to_log_string */
 			gflog_notice(GFARM_MSG_1004177,
 			    "gfs_udp_server(): duplicate xid: "
 			    "type=0x%08x, retry_count=%d, "
@@ -6011,7 +6018,7 @@ gfs_udp_server(int sock,
 			}
 		}
 	} else {
-		/* XXX gfarm_sockaddr_to_name */
+		/* XXX gfarm_sockaddr_to_log_string */
 		gflog_notice(GFARM_MSG_1004179,
 		    "gfs_udp_server(): unknown request: "
 		    "type=0x%08x, retry_count=0x%08x, "
@@ -6064,7 +6071,7 @@ gfs_udp_server_old_loadav(int sock,
 	rv = sendto(sock, nloadavg, sizeof(nloadavg), 0,
 	    client_addr, client_addr_size);
 	if (rv == -1) {
-		/* XXX gfarm_sockaddr_to_name */
+		/* XXX gfarm_sockaddr_to_log_string */
 		gflog_warning_errno(GFARM_MSG_1004181,
 		    "UDP loadav: sendto");
 	}
@@ -6075,7 +6082,7 @@ void
 datagram_server(int sock)
 {
 	int rv;
-	struct sockaddr_in client_addr;
+	struct sockaddr_storage client_addr;
 	socklen_t client_addr_size = sizeof(client_addr);
 	unsigned char buffer[GFS_UDP_RPC_SIZE_MAX];
 
@@ -6599,58 +6606,103 @@ start_back_channel_server(void)
 }
 
 int
-open_accepting_tcp_socket(struct in_addr address, int port)
+open_accepting_tcp_socket(int sa_family, struct sockaddr *sa, socklen_t sa_len)
 {
 	gfarm_error_t e;
-	struct sockaddr_in self_addr;
-	socklen_t self_addr_size;
 	int sock, sockopt;
 
-	memset(&self_addr, 0, sizeof(self_addr));
-	self_addr.sin_family = AF_INET;
-	self_addr.sin_addr = address;
-	self_addr.sin_port = htons(port);
-	self_addr_size = sizeof(self_addr);
-	sock = socket(PF_INET, SOCK_STREAM, 0);
+	sock = socket(sa_family, SOCK_STREAM, 0);
 	if (sock < 0)
 		accepting_fatal_errno(GFARM_MSG_1000568, "accepting socket");
+
+#ifdef IPV6_V6ONLY
+	sockopt = 1;
+	if (sa_family == AF_INET6 &&
+	    setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+	    &sockopt, sizeof(sockopt)) == -1)
+		gflog_warning_errno(GFARM_MSG_UNFIXED,
+		    "setsockopt(IPPROTO_IPV6, IPV6_V6ONLY)");
+#endif
+
 	sockopt = 1;
 	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 	    &sockopt, sizeof(sockopt)) == -1)
 		gflog_warning_errno(GFARM_MSG_1000569, "SO_REUSEADDR");
-	if (bind(sock, (struct sockaddr *)&self_addr, self_addr_size) < 0)
-		accepting_fatal_errno(GFARM_MSG_1000570,
-		    "bind accepting socket");
+
+	if (bind(sock, sa, sa_len) < 0) {
+		int save_errno = errno;
+		char *host;
+		int e = gfarm_sockaddr_to_log_string(sa, sa_len, &host);
+
+		if (e != GFARM_ERR_NO_ERROR)
+			accepting_fatal(GFARM_MSG_UNFIXED,
+			    "TCP socket bind(): %s", gfarm_error_string(e));
+		accepting_fatal(GFARM_MSG_UNFIXED,
+		    "accepting TCP socket bind(%s): %s",
+		    host, strerror(save_errno));
+		/*NOTREACHED*/
+		/* since it's fatal, free(host) is unnecessary */
+	}
 	e = gfarm_sockopt_apply_listener(sock);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000571, "setsockopt: %s",
 		    gfarm_error_string(e));
 	if (listen(sock, gfarm_spool_server_listen_backlog) < 0)
 		accepting_fatal_errno(GFARM_MSG_1000572, "listen");
+
+	/*
+	 * To deal with race condition which may be caused by RST,
+	 * listening socket must be O_NONBLOCK, if the socket will be
+	 * used as a file descriptor for select(2)/poll(2) .
+	 * See section 16.6 of "UNIX NETWORK PROGRAMMING, Volume1,
+	 * Third Edition" by W. Richard Stevens, for detail.
+	 */
+	if (fcntl(sock, F_SETFL,
+	    fcntl(sock, F_GETFL, NULL) | O_NONBLOCK) == -1)
+		gflog_warning_errno(GFARM_MSG_1000599,
+		    "accepting TCP socket O_NONBLOCK");
+
 	return (sock);
 }
 
-void
-open_accepting_local_socket(struct in_addr address, int port,
-	struct local_socket *result)
+int *
+open_accepting_tcp_sockets(
+	int self_addresses_count, struct gfarm_host_address **self_addresses)
 {
+	int i, *sockets;
+	struct gfarm_host_address *sa;
+
+	GFARM_MALLOC_ARRAY(sockets, self_addresses_count);
+	if (sockets == NULL)
+		accepting_fatal(GFARM_MSG_UNFIXED,
+		    "no memory for %d tcp sockets",
+		    self_addresses_count);
+	for (i = 0; i < self_addresses_count; i++) {
+		sa = self_addresses[i];
+		sockets[i] = open_accepting_tcp_socket(
+		    sa->sa_family, &sa->sa_addr, sa->sa_addrlen);
+	}
+	return (sockets);
+}
+
+void
+open_accepting_local_socket(struct sockaddr *addr, socklen_t addrlen,
+	int port, struct local_socket *result)
+{
+	gfarm_error_t e;
 	struct sockaddr_un self_addr;
 	socklen_t self_addr_size;
 	int sock, save_errno;
-	char *sock_name, *sock_dir, dir_buf[PATH_MAX];
+	char *sock_name, *sock_dir;
 	struct stat st;
 
-	memset(&self_addr, 0, sizeof(self_addr));
-	self_addr.sun_family = AF_UNIX;
-	snprintf(self_addr.sun_path, sizeof self_addr.sun_path,
-	    GFSD_LOCAL_SOCKET_NAME, inet_ntoa(address), port);
+	e = gfs_sockaddr_to_local_addr(addr, addrlen, port,
+	    &self_addr, &sock_dir);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "gfs_sockaddr_to_local_addr(): %s", gfarm_error_string(e));
 	self_addr_size = sizeof(self_addr);
-
-	snprintf(dir_buf, sizeof dir_buf,
-	    GFSD_LOCAL_SOCKET_DIR, inet_ntoa(address), port);
-
 	sock_name = strdup(self_addr.sun_path);
-	sock_dir = strdup(dir_buf);
 	if (sock_name == NULL || sock_dir == NULL)
 		accepting_fatal(GFARM_MSG_1000573, "not enough memory");
 
@@ -6738,10 +6790,12 @@ open_accepting_local_socket(struct in_addr address, int port,
 
 void
 open_accepting_local_sockets(
-	int self_addresses_count, struct in_addr *self_addresses, int port,
+	int self_addresses_count, struct gfarm_host_address **self_addresses,
+	int port,
 	struct accepting_sockets *accepting)
 {
 	int i;
+	struct gfarm_host_address *sa;
 
 	GFARM_MALLOC_ARRAY(accepting->local_socks, self_addresses_count);
 	if (accepting->local_socks == NULL)
@@ -6749,7 +6803,8 @@ open_accepting_local_sockets(
 		    "not enough memory for UNIX sockets");
 
 	for (i = 0; i < self_addresses_count; i++) {
-		open_accepting_local_socket(self_addresses[i], port,
+		sa = self_addresses[i];
+		open_accepting_local_socket(&sa->sa_addr, sa->sa_addrlen, port,
 		    &accepting->local_socks[i]);
 
 		/* for cleanup_accepting() */
@@ -6758,40 +6813,69 @@ open_accepting_local_sockets(
 }
 
 int
-open_udp_socket(struct in_addr address, int port)
+open_udp_socket(int sa_family, struct sockaddr *sa, socklen_t sa_len)
 {
-	struct sockaddr_in bind_addr;
-	socklen_t bind_addr_size;
 	int s;
 
-	memset(&bind_addr, 0, sizeof(bind_addr));
-	bind_addr.sin_family = AF_INET;
-	bind_addr.sin_addr = address;
-	bind_addr.sin_port = ntohs(port);
-	bind_addr_size = sizeof(bind_addr);
-	s = socket(PF_INET, SOCK_DGRAM, 0);
+	s = socket(sa_family, SOCK_DGRAM, 0);
 	if (s < 0)
 		accepting_fatal_errno(GFARM_MSG_1000582, "UDP socket");
-	if (bind(s, (struct sockaddr *)&bind_addr, bind_addr_size) < 0)
-		accepting_fatal_errno(GFARM_MSG_1000583,
-		    "UDP socket bind(%s, %d)",
-		    inet_ntoa(address), port);
+	if (bind(s, sa, sa_len) < 0) {
+		int save_errno = errno;
+		char *host;
+		int e = gfarm_sockaddr_to_log_string(sa, sa_len, &host);
+
+		if (e != GFARM_ERR_NO_ERROR)
+			accepting_fatal(GFARM_MSG_UNFIXED,
+			    "UDP socket bind(): %s", gfarm_error_string(e));
+		accepting_fatal(GFARM_MSG_UNFIXED,
+		    "UDP socket bind(%s): %s",
+		    host, strerror(save_errno));
+		/*NOTREACHED*/
+		/* since it's fatal, free(host) is unnecessary */
+	}
+	/*
+	 * workaround linux UDP behavior
+	 * that select(2)/poll(2)/epoll(2) returns
+	 * that the socket is readable, but it may be not.
+	 *
+	 * from http://stackoverflow.com/questions/4381430/
+	 * What are the WONTFIX bugs on GNU/Linux and how to
+	 * work around them?
+	 *
+	 * The Linux UDP select bug: select (and related interfaces)
+	 * flag a UDP socket file descriptor ready
+	 * for reading as soon as a packet has been received,
+	 * without confirming the checksum. On subsequent
+	 * recv/read/etc., if the checksum was invalid, the
+	 * call will block.
+	 * Working around this requires always setting UDP sockets to
+	 * non-blocking mode and dealing with
+	 * the EWOULDBLOCK condition.
+	 */
+	if (fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "open_udp_socket(): set nonblock: %s", strerror(errno));
 	return (s);
 }
 
 int *
 open_datagram_service_sockets(
-	int self_addresses_count, struct in_addr *self_addresses, int port)
+	int self_addresses_count, struct gfarm_host_address **self_addresses)
 {
 	int i, *sockets;
+	struct gfarm_host_address *sa;
 
 	GFARM_MALLOC_ARRAY(sockets, self_addresses_count);
 	if (sockets == NULL)
 		accepting_fatal(GFARM_MSG_1000584,
 		    "no memory for %d datagram sockets",
 		    self_addresses_count);
-	for (i = 0; i < self_addresses_count; i++)
-		sockets[i] = open_udp_socket(self_addresses[i], port);
+	for (i = 0; i < self_addresses_count; i++) {
+		sa = self_addresses[i];
+		sockets[i] = open_udp_socket(
+		    sa->sa_family, &sa->sa_addr, sa->sa_addrlen);
+	}
 	return (sockets);
 }
 
@@ -6822,10 +6906,14 @@ int
 main(int argc, char **argv)
 {
 	/* specify static, to shut up valgrind */
-	static struct sockaddr_in *self_sockaddr_array;
+	static struct gfarm_host_address **self_addresses;
+	int self_addresses_count;
+	static struct gfarm_host_address **passive_addresses;
+	int passive_addresses_count;
 
-	struct sockaddr_in client_addr;
-	struct sockaddr_un client_local_addr;
+	struct sockaddr_storage client_addr_storage;
+	socklen_t storage_size;
+
 	gfarm_error_t e, e2;
 	char *config_file = NULL, *pid_file = NULL;
 	char *local_gfsd_user;
@@ -6834,8 +6922,7 @@ main(int argc, char **argv)
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int syslog_level = -1;
-	struct in_addr *self_addresses, listen_address;
-	int table_size, self_addresses_count, ch, i, nfound, max_fd, p;
+	int table_size, ch, i, nfound, max_fd, p;
 	int save_errno;
 	struct sigaction sa;
 	fd_set requests;
@@ -7086,28 +7173,24 @@ main(int argc, char **argv)
 
 	if (listen_addrname == NULL)
 		listen_addrname = gfarm_spool_server_listen_address;
-	if (listen_addrname == NULL) {
-		e = gfarm_get_ip_addresses(
+	/* maybe listen_addrname == NULL here */
+	e = gfarm_passive_address_get(listen_addrname, self_info.port,
+	    &passive_addresses_count, &passive_addresses);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_1000594,
+		    "listen address can't be resolved: %s",
+		    listen_addrname);
+	if (listen_addrname != NULL) {
+		self_addresses_count = passive_addresses_count;
+		self_addresses = passive_addresses;
+	} else {
+		e = gfarm_self_address_get(self_info.port,
 		    &self_addresses_count, &self_addresses);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_1000593, "get_ip_addresses: %s",
+			gflog_fatal(GFARM_MSG_1000593, "self_address_get: %s",
 			    gfarm_error_string(e));
-		listen_address.s_addr = INADDR_ANY;
-	} else {
-		struct hostent *hp = gethostbyname(listen_addrname);
-
-		if (hp == NULL || hp->h_addrtype != AF_INET)
-			gflog_fatal(GFARM_MSG_1000594,
-			    "listen address can't be resolved: %s",
-			    listen_addrname);
-		self_addresses_count = 1;
-		GFARM_MALLOC(self_addresses);
-		if (self_addresses == NULL)
-			gflog_fatal(GFARM_MSG_1000595, "%s",
-			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		memcpy(self_addresses, hp->h_addr, sizeof(*self_addresses));
-		listen_address = *self_addresses;
 	}
+
 	if (gfarm_iostat_gfsd_path) {
 		int len;
 
@@ -7135,29 +7218,23 @@ main(int argc, char **argv)
 					"chown:%s", iostat_dirbuf);
 		}
 	}
-	GFARM_MALLOC_ARRAY(self_sockaddr_array, self_addresses_count);
-	if (self_sockaddr_array == NULL)
-		gflog_fatal(GFARM_MSG_1000596, "%s",
-			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
-	for (i = 0; i < self_addresses_count; i++) {
-		memset(&self_sockaddr_array[i], 0,
-		    sizeof(self_sockaddr_array[i]));
-		self_sockaddr_array[i].sin_family = AF_INET;
-		self_sockaddr_array[i].sin_addr = self_addresses[i];
-		self_sockaddr_array[i].sin_port = htons(self_info.port);
-	}
 
-	accepting.tcp_sock = open_accepting_tcp_socket(
-	    listen_address, self_info.port);
+	accepting.tcp_socks = open_accepting_tcp_sockets(
+	    passive_addresses_count, passive_addresses);
+	accepting.tcp_socks_count = passive_addresses_count;
 	/* sets accepting.local_socks_count and accepting.local_socks */
 	open_accepting_local_sockets(
 	    self_addresses_count, self_addresses, self_info.port,
 	    &accepting);
 	accepting.udp_socks = open_datagram_service_sockets(
-	    self_addresses_count, self_addresses, self_info.port);
+	    self_addresses_count, self_addresses);
 	accepting.udp_socks_count = self_addresses_count;
 
-	max_fd = accepting.tcp_sock;
+	max_fd = -1;
+	for (i = 0; i < accepting.tcp_socks_count; i++) {
+		if (max_fd < accepting.tcp_socks[i])
+			max_fd = accepting.tcp_socks[i];
+	}
 	for (i = 0; i < accepting.local_socks_count; i++) {
 		if (max_fd < accepting.local_socks[i].sock)
 			max_fd = accepting.local_socks[i].sock;
@@ -7223,21 +7300,10 @@ main(int argc, char **argv)
 	if (sigaction(SIGCHLD, &sa, NULL) == -1)
 		gflog_fatal_errno(GFARM_MSG_1002406, "sigaction(SIGCHLD)");
 
-	/*
-	 * To deal with race condition which may be caused by RST,
-	 * listening socket must be O_NONBLOCK, if the socket will be
-	 * used as a file descriptor for select(2) .
-	 * See section 16.6 of "UNIX NETWORK PROGRAMMING, Volume1,
-	 * Third Edition" by W. Richard Stevens, for detail.
-	 */
-	if (fcntl(accepting.tcp_sock, F_SETFL,
-	    fcntl(accepting.tcp_sock, F_GETFL, NULL) | O_NONBLOCK) == -1)
-		gflog_warning_errno(GFARM_MSG_1000599,
-		    "accepting TCP socket O_NONBLOCK");
-
 	for (;;) {
 		FD_ZERO(&requests);
-		FD_SET(accepting.tcp_sock, &requests);
+		for (i = 0; i < accepting.tcp_socks_count; i++)
+			FD_SET(accepting.tcp_socks[i], &requests);
 		for (i = 0; i < accepting.local_socks_count; i++)
 			FD_SET(accepting.local_socks[i].sock, &requests);
 		for (i = 0; i < accepting.udp_socks_count; i++)
@@ -7254,19 +7320,27 @@ main(int argc, char **argv)
 			fatal_errno(GFARM_MSG_1000600, "select");
 		}
 
-		if (FD_ISSET(accepting.tcp_sock, &requests)) {
-			start_server(accepting.tcp_sock,
-			    (struct sockaddr*)&client_addr,sizeof(client_addr),
-			    (struct sockaddr*)&client_addr, NULL, &accepting);
+		for (i = 0; i < accepting.tcp_socks_count; i++) {
+			if (FD_ISSET(accepting.tcp_socks[i], &requests)) {
+				storage_size = sizeof(client_addr_storage);
+				start_server(accepting.tcp_socks[i],
+				    (struct sockaddr *)&client_addr_storage,
+				    &storage_size,
+				    (struct sockaddr *)&client_addr_storage,
+				    &storage_size, NULL);
+			}
 		}
 		for (i = 0; i < accepting.local_socks_count; i++) {
-			if (FD_ISSET(accepting.local_socks[i].sock, &requests))
+			if (FD_ISSET(accepting.local_socks[i].sock,
+			    &requests)) {
+				storage_size = sizeof(client_addr_storage);
 				start_server(accepting.local_socks[i].sock,
-				    (struct sockaddr *)&client_local_addr,
-				    sizeof(client_local_addr),
-				    (struct sockaddr*)&self_sockaddr_array[i],
-				    canonical_self_name,
-				    &accepting);
+				    (struct sockaddr *)&client_addr_storage,
+				    &storage_size,
+				    &self_addresses[i]->sa_addr,
+				    &self_addresses[i]->sa_addrlen,
+				    canonical_self_name);
+			}
 		}
 		for (i = 0; i < accepting.udp_socks_count; i++) {
 			if (FD_ISSET(accepting.udp_socks[i], &requests))

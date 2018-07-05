@@ -6,6 +6,7 @@
 #include <time.h>
 #include <stdio.h> /* for sprintf(), snprintf() */
 #include <sys/time.h> /* for gettimeofday() */
+#include <sys/socket.h>
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/gflog.h>

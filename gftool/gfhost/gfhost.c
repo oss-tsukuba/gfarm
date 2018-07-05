@@ -23,6 +23,7 @@
 
 #include "liberror.h"
 
+#include "host_address.h"
 #include "host.h" /* gfm_host_info_address_get() */
 #include "auth.h"
 #include "gfm_client.h"
@@ -425,67 +426,6 @@ register_db(void)
 }
 
 /*
- * Handle the case where opt_use_metadb == 0.
- * In that case, the host_info is faked, and all members in the info structure
- * except info->hostname are not valid. (see list_gfsd_info())
- */
-gfarm_error_t
-resolv_addr_without_metadb(
-	const char *hostname, int port, struct gfarm_host_info *info,
-	struct sockaddr *addr, char **if_hostnamep)
-{
-	/* sizeof(struct sockaddr_in) == sizeof(struct sockaddr) */
-	struct sockaddr_in *addr_in = (struct sockaddr_in *)addr;
-	struct hostent *hp;
-
-	hp = gethostbyname(hostname);
-	if (hp == NULL || hp->h_addrtype != AF_INET)
-		return (GFARM_ERR_UNKNOWN_HOST);
-	memset(addr_in, 0, sizeof(*addr_in));
-	memcpy(&addr_in->sin_addr, hp->h_addr,
-	    sizeof(addr_in->sin_addr));
-	addr_in->sin_family = hp->h_addrtype;
-	addr_in->sin_port = htons(port);
-	if (if_hostnamep != NULL) {
-		*if_hostnamep = strdup(hostname);
-		if (*if_hostnamep == NULL)
-			return (GFARM_ERR_NO_MEMORY);
-	}
-	return (GFARM_ERR_NO_ERROR);
-}
-
-/*
- * handle option "-i" (ignore "address_use" directive in gfarm.conf(5))
- */
-gfarm_error_t
-resolv_addr_without_address_use(
-	const char *hostname, int port, struct gfarm_host_info *info,
-	struct sockaddr *addr, char **if_hostnamep)
-{
-	gfarm_error_t e = resolv_addr_without_metadb(hostname, port, NULL,
-	    addr, if_hostnamep);
-	int i;
-
-	if (e == GFARM_ERR_NO_ERROR)
-		return (GFARM_ERR_NO_ERROR);
-	for (i = 0; i < info->nhostaliases; i++) {
-		e = resolv_addr_without_metadb(
-		    info->hostaliases[i], port, NULL, addr, if_hostnamep);
-		if (e == GFARM_ERR_NO_ERROR)
-			return (GFARM_ERR_NO_ERROR);
-	}
-	return (e);
-}
-
-gfarm_error_t (*opt_resolv_addr)(const char *, int, struct gfarm_host_info *,
-    struct sockaddr *, char **) =
-#if 0 /* XXX FIXME not yet in v2 */
-	gfarm_host_info_address_get;
-#else
-	resolv_addr_without_address_use;
-#endif
-
-/*
  * extend the result of gfarm_auth_method_mnemonic()
  */
 
@@ -510,7 +450,6 @@ mnemonic(struct gfs_connection *gfs_server, struct gfs_client_load *load)
 struct output {
 	void *closure;
 	char *canonical_hostname;
-	struct sockaddr peer_addr;
 	struct gfs_client_load load;
 	char auth_mnemonic;
 	gfarm_error_t error;
@@ -599,7 +538,7 @@ output_add(struct output *o)
 
 void
 output_process(void *closure,
-	char *canonical_hostname, struct sockaddr *peer_addr,
+	char *canonical_hostname,
 	struct gfs_client_load *load, struct gfs_connection *gfs_server,
 	gfarm_error_t error)
 {
@@ -607,8 +546,6 @@ output_process(void *closure,
 
 	o.closure = closure;
 	o.canonical_hostname = canonical_hostname;
-	if (peer_addr != NULL)
-		o.peer_addr = *peer_addr;
 	if (load != NULL)
 		o.load = *load;
 	o.auth_mnemonic = mnemonic(gfs_server, load);
@@ -634,7 +571,6 @@ struct gfarm_paraccess {
 		void *closure;
 		char *canonical_hostname;
 		int port;
-		struct sockaddr peer_addr;
 		struct gfs_client_load load;
 
 		void *protocol_state;
@@ -690,7 +626,7 @@ gfarm_paraccess_callback(struct gfarm_paraccess *pa, struct gfarm_access *a,
 	struct gfs_client_load *load, struct gfs_connection *gfs_server,
 	gfarm_error_t e)
 {
-	output_process(a->closure, a->canonical_hostname, &a->peer_addr,
+	output_process(a->closure, a->canonical_hostname,
 	    load, gfs_server, e);
 
 	/* bring this back to the free slot list */
@@ -718,7 +654,7 @@ gfarm_paraccess_connect_finish(void *closure)
 	gfarm_error_t e;
 	struct gfs_connection *gfs_server;
 
-	e = gfs_client_connect_result_multiplexed(a->protocol_state,
+	e = gfs_client_connect_host_result_multiplexed(a->protocol_state,
 	    &gfs_server);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfarm_paraccess_callback(a->pa, a, &a->load, NULL, e);
@@ -733,7 +669,7 @@ gfarm_paraccess_connect_request(void *closure)
 {
 	struct gfarm_access *a = closure;
 	gfarm_error_t e;
-	struct gfs_client_connect_state *cs;
+	struct gfs_client_connect_host_state *cs;
 	struct gfarm_filesystem *fs =
 	    gfarm_filesystem_get_by_connection(gfm_server);
 
@@ -743,9 +679,9 @@ gfarm_paraccess_connect_request(void *closure)
 		gfarm_paraccess_callback(a->pa, a, NULL, NULL, e);
 		return;
 	}
-	e = gfs_client_connect_request_multiplexed(a->pa->q,
+	e = gfs_client_connect_host_request_multiplexed(a->pa->q, gfm_server,
 	    a->canonical_hostname, a->port, gfm_client_username(gfm_server),
-	    &a->peer_addr, fs, gfarm_paraccess_connect_finish, a, &cs);
+	    fs, gfarm_paraccess_connect_finish, a, &cs);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfarm_paraccess_callback(a->pa, a, &a->load, NULL, e);
 		return;
@@ -755,10 +691,10 @@ gfarm_paraccess_connect_request(void *closure)
 
 gfarm_error_t
 gfarm_paraccess_request(struct gfarm_paraccess *pa,
-	void *closure, char *canonical_hostname, int port,
-	struct sockaddr *peer_addr)
+	void *closure, char *canonical_hostname, int port)
 {
-	int rv;
+	int rv, addr_count;
+	struct gfarm_host_address **addr_array;
 	gfarm_error_t e;
 	struct gfarm_access *a;
 	struct gfs_client_get_load_state *gls;
@@ -776,6 +712,15 @@ gfarm_paraccess_request(struct gfarm_paraccess *pa,
 		}
 	}
 
+
+	e = gfm_host_address_get(gfm_server, canonical_hostname, port,
+	    &addr_count, &addr_array);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED, "getaddrinfo(%s, %d): %s",
+		    canonical_hostname, port, gfarm_error_string(e));
+		return (e);
+	}
+
 	/* acquire free slot */
 	a = pa->free_list;
 	pa->free_list = a->next;
@@ -784,9 +729,9 @@ gfarm_paraccess_request(struct gfarm_paraccess *pa,
 	a->closure = closure;
 	a->canonical_hostname = canonical_hostname;
 	a->port = port;
-	a->peer_addr = *peer_addr;
 
-	e = gfs_client_get_load_request_multiplexed(pa->q, &a->peer_addr,
+	e = gfs_client_get_load_request_multiplexed(pa->q,
+	    &addr_array[0]->sa_addr, addr_array[0]->sa_addrlen,
 	    pa->try_auth ?
 	    gfarm_paraccess_connect_request :
 	    gfarm_paraccess_load_finish,
@@ -845,16 +790,12 @@ print_loadavg_authinfo(struct output *o)
 void
 callback_gfsd_info(struct output *o)
 {
-	char *if_hostname = o->closure;
-	struct sockaddr_in *addr_in = (struct sockaddr_in *)&o->peer_addr;
-
 	print_loadavg_authinfo(o);
-	printf("%s(%s)\n", if_hostname, inet_ntoa(addr_in->sin_addr));
+	printf("%s\n", o->canonical_hostname);
 	if (opt_verbose && o->error != GFARM_ERR_NO_ERROR)
-		fprintf(stderr, "%s: %s\n", if_hostname,
+		fprintf(stderr, "%s: %s\n", o->canonical_hostname,
 		    gfarm_error_string(o->error));
 	free(o->canonical_hostname);
-	free(if_hostname);
 }
 
 /*
@@ -867,30 +808,20 @@ request_gfsd_info(struct gfarm_host_info *info,
 	struct gfarm_paraccess *pa)
 {
 	gfarm_error_t e;
-	struct sockaddr addr;
-	char *canonical_hostname, *if_hostname;
+	char *canonical_hostname;
 
 	canonical_hostname = strdup(info->hostname);
 	if (canonical_hostname == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-	} else {
-		e = (*opt_resolv_addr)(
-		    canonical_hostname, info->port, info,
-		    &addr, &if_hostname);
-	}
-	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", info->hostname,
 		    gfarm_error_string(e));
-		if (canonical_hostname != NULL)
-			free(canonical_hostname);
 		return (e);
 	}
 	return (gfarm_paraccess_request(pa,
-	    if_hostname, canonical_hostname, info->port, &addr));
+	    NULL, canonical_hostname, info->port));
 }
 
 struct long_format_parameter {
-	char *if_hostname;
 	struct gfarm_host_info info;
 };
 
@@ -898,39 +829,21 @@ void
 callback_long_format(struct output *o)
 {
 	struct long_format_parameter *param = o->closure;
-	char *if_hostname = param->if_hostname;
 	struct gfarm_host_info *info = &param->info;
-	/* sizeof(struct sockaddr_in) == sizeof(struct sockaddr) */
-	struct sockaddr_in *addr_in = (struct sockaddr_in *)&o->peer_addr;
-	int i, print_ifaddr = if_hostname != NULL;
+	int i;
 
 	print_loadavg_authinfo(o);
 	printf("%s %d %s %d %d",
 	    info->architecture, info->ncpu,
 	    o->canonical_hostname, info->port, info->flags);
-	if (print_ifaddr &&
-	    strcasecmp(o->canonical_hostname, if_hostname) == 0) {
-		print_ifaddr = 0;
-		printf("(%s)", inet_ntoa(addr_in->sin_addr));
-	}
 	for (i = 0; i < info->nhostaliases; i++) {
 		printf(" %s", info->hostaliases[i]);
-		if (print_ifaddr &&
-		    strcasecmp(info->hostaliases[i], if_hostname) == 0) {
-			print_ifaddr = 0;
-			printf("(%s)", inet_ntoa(addr_in->sin_addr));
-		}
-	}
-	if (print_ifaddr) {
-		printf(" [%s(%s)]", if_hostname, inet_ntoa(addr_in->sin_addr));
 	}
 	putchar('\n');
 	if (opt_verbose && o->error != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "%s: %s\n", o->canonical_hostname,
 		    gfarm_error_string(o->error));
 	gfarm_host_info_free(info);
-	if (if_hostname != NULL)
-		free(if_hostname);
 	free(param);
 }
 
@@ -939,7 +852,6 @@ request_long_format(struct gfarm_host_info *host_info,
 	struct gfarm_paraccess *pa)
 {
 	gfarm_error_t e;
-	struct sockaddr addr;
 	struct long_format_parameter *param;
 	struct gfarm_host_info *info;
 
@@ -975,16 +887,8 @@ request_long_format(struct gfarm_host_info *host_info,
 		return (e);
 	}
 
-	param->if_hostname = NULL;
-	e = (*opt_resolv_addr)(info->hostname, info->port, info,
-	    &addr, &param->if_hostname);
-	if (e != GFARM_ERR_NO_ERROR) {
-		output_process(param, info->hostname, NULL, NULL, NULL, e);
-		return (e);
-	}
-
-	return (gfarm_paraccess_request(pa, param, info->hostname, info->port,
-	    &addr));
+	return (gfarm_paraccess_request(pa, param, info->hostname, info->port
+	    ));
 }
 
 void
@@ -1004,7 +908,6 @@ request_nodename(struct gfarm_host_info *host_info,
 {
 	gfarm_error_t e;
 	char *canonical_hostname;
-	struct sockaddr addr;
 
 	/* dup `host_info->hostname' -> `hostname' */
 	canonical_hostname = strdup(host_info->hostname);
@@ -1015,16 +918,8 @@ request_nodename(struct gfarm_host_info *host_info,
 		return (e);
 	}
 
-	e = (*opt_resolv_addr)(
-	    canonical_hostname, host_info->port, host_info,
-	    &addr, NULL);
-	if (e != GFARM_ERR_NO_ERROR) {
-		output_process(NULL, canonical_hostname, NULL, NULL, NULL, e);
-		return (e);
-	}
-
 	return (gfarm_paraccess_request(pa, NULL,
-	    canonical_hostname, host_info->port, &addr));
+	    canonical_hostname, host_info->port));
 }
 
 gfarm_error_t
@@ -1282,7 +1177,7 @@ main(int argc, char **argv)
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
-	while ((c = getopt(argc, argv, "AD:HLMP:RUa:cdf:ij:lmn:p:ruv?"))
+	while ((c = getopt(argc, argv, "AD:HLMP:RUa:cdf:j:lmn:p:ruv?"))
 	    != -1) {
 		switch (c) {
 		case 'A':
@@ -1324,9 +1219,6 @@ main(int argc, char **argv)
 				    program_name, *s, opt_domainname);
 				exit(1);
 			}
-			break;
-		case 'i':
-			opt_resolv_addr = resolv_addr_without_address_use;
 			break;
 		case 'j':
 			opt_concurrency = parse_opt_long(optarg,
@@ -1413,8 +1305,7 @@ main(int argc, char **argv)
 	}
 
 	e = gfarm_initialize(&argc_save, &argv_save);
-	if (opt_operation == OP_LIST_GFSD_INFO && argc > 0 &&
-	    opt_resolv_addr == resolv_addr_without_address_use) {
+	if (opt_operation == OP_LIST_GFSD_INFO && argc > 0) {
 		/*
 		 * An implicit feature to access gfsd directly
 		 * without having working gfmd.
@@ -1424,7 +1315,6 @@ main(int argc, char **argv)
 		 *	or use explicit and different option?
 		 */
 		opt_use_metadb = 0;
-		opt_resolv_addr = resolv_addr_without_metadb;
 	} else if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
 		    gfarm_error_string(e));

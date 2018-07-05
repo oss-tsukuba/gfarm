@@ -243,48 +243,6 @@ host_lookup_at_loading(const char *hostname)
 }
 
 struct host *
-host_addr_lookup(const char *hostname, struct sockaddr *addr)
-{
-	struct host *h = host_lookup(hostname);
-#if 0
-	struct gfarm_hash_iterator it;
-	struct sockaddr_in *addr_in;
-	struct hostent *hp;
-	int i;
-#endif
-
-	if (h != NULL)
-		return (h);
-	if (addr->sa_family != AF_INET)
-		return (NULL);
-
-#if 0
-	/*
-	 * skip the following case since it is extraordinarily slow
-	 * when there are some nodes that cannot be resolved.
-	 */
-	addr_in = (struct sockaddr_in *)addr;
-
-	/* XXX FIXME - this is too damn slow */
-
-	HOST_FOREACH(&it) {
-		h = host_iterator_access(&it);
-		if (!host_is_valid(h))
-			continue;
-		hp = gethostbyname(h->hi.hostname);
-		if (hp == NULL || hp->h_addrtype != AF_INET)
-			continue;
-		for (i = 0; hp->h_addr_list[i] != NULL; i++) {
-			if (memcmp(hp->h_addr_list[i], &addr_in->sin_addr,
-			    sizeof(addr_in->sin_addr)) == 0)
-				return (h);
-		}
-	}
-#endif
-	return (NULL);
-}
-
-struct host *
 host_namealiases_lookup(const char *hostname)
 {
 	struct host *h = host_lookup(hostname);

@@ -28,6 +28,7 @@ include $(top_srcdir)/makes/gflog.mk
 $(OBJS): $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/gfutil.h \
 	$(GFUTIL_SRCDIR)/gflog_reduced.h \
+	$(GFUTIL_SRCDIR)/gfnetdb.h \
 	$(GFUTIL_SRCDIR)/msgdigest.h \
 	$(GFUTIL_SRCDIR)/nanosec.h \
 	$(GFUTIL_SRCDIR)/hash.h \
@@ -38,6 +39,7 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/io_fd.h \
 	$(GFARMLIB_SRCDIR)/sockopt.h \
 	$(GFARMLIB_SRCDIR)/hostspec.h \
+	$(GFARMLIB_SRCDIR)/host_address.h \
 	$(GFARMLIB_SRCDIR)/host.h \
 	$(GFARMLIB_SRCDIR)/conn_hash.h \
 	$(GFARMLIB_SRCDIR)/auth.h \
