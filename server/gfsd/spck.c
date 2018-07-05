@@ -13,6 +13,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
@@ -793,6 +794,8 @@ gfsd_spool_check()
 	    gfarm_spool_check_level_get_by_name());
 
 	spool_check_level = gfarm_spool_check_level_get();
+	if (spool_check_level == GFARM_SPOOL_CHECK_LEVEL_DISABLE)
+		return;
 
 	gfs_spool_check_parallel_fork();
 
@@ -812,6 +815,8 @@ gfsd_spool_check()
 		hash_ok = NULL;
 		break;
 	default:
+		assert(0);
+		/*NOTREACHED*/
 		return;
 	}
 	for (i = 0; i < gfarm_spool_root_num; ++i) {
