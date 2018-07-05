@@ -3948,7 +3948,7 @@ const struct gfarm_config_type {
 	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
 	  NULL, offsetof(struct gfarm_context, direct_local_access) },
 	{ "simultaneous_replication_receivers", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_true,
+	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
 	  &gfarm_simultaneous_replication_receivers, 0 },
 	{ "client_digest_check", 'i', 0, gfarm_config_print_enabled,
 	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
