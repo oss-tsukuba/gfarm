@@ -902,18 +902,25 @@ switch_gfmd_channel(struct peer *peer, int from_client,
 	}
 	giant_unlock();
 	if (e == GFARM_ERR_NO_ERROR) {
-		peer_set_async(peer, async);
-		peer_set_watcher(peer, gfmdc_recv_watcher);
-		peer_set_gfmdc_record(peer, gfmdc_peer);
-
 		if (mdhost_is_up(mh)) { /* throw away old connection */
 			gflog_warning(GFARM_MSG_1002986,
 			    "gfmd_channel(%s): switching to new connection",
 			    mdhost_get_name(mh));
 			mdhost_disconnect_request(mh, NULL);
 		}
+
+		/*
+		 * SF.net #1019
+		 * need giant_lock during transition to gfmd channel
+		 */
+		giant_lock();
+		peer_set_async(peer, async);
+		peer_set_watcher(peer, gfmdc_recv_watcher);
+		peer_set_gfmdc_record(peer, gfmdc_peer);
 		mdhost_set_peer(mh, peer, version);
+
 		peer_watch_access(peer);
+		giant_unlock();
 	}
 	return (e);
 }
