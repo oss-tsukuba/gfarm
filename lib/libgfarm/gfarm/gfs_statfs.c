@@ -23,10 +23,11 @@ statfs_rpc(struct gfm_connection **gfm_serverp, void *closure)
 	gfarm_error_t e;
 	struct statfs_info *si = closure;
 
-	if ((e = gfarm_url_parse_metadb(&si->path, gfm_serverp))
-	    != GFARM_ERR_NO_ERROR) {
+	e = gfm_client_connection_and_process_acquire_by_path(
+	    si->path, gfm_serverp);
+	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003977,
-		    "gfarm_url_parse_metadb: %s",
+		    "gfm_client_connection_and_process_acquire_by_path: %s",
 		    gfarm_error_string(e));
 		return (e);
 	}
@@ -56,12 +57,19 @@ statfs_exit(struct gfm_connection *gfm_server, gfarm_error_t e,
 }
 
 gfarm_error_t
-gfs_statfs(gfarm_off_t *used, gfarm_off_t *avail, gfarm_off_t *files)
+gfs_statfs_by_path(const char *path,
+	gfarm_off_t *used, gfarm_off_t *avail, gfarm_off_t *files)
 {
 	struct statfs_info si = {
-		GFARM_PATH_ROOT, used, avail, files
+		path, used, avail, files
 	};
 
 	return (gfm_client_rpc_with_failover(statfs_rpc, statfs_post_failover,
 	    statfs_exit, NULL, &si));
+}
+
+gfarm_error_t
+gfs_statfs(gfarm_off_t *used, gfarm_off_t *avail, gfarm_off_t *files)
+{
+	return (gfs_statfs_by_path(GFARM_PATH_ROOT, used, avail, files));
 }
