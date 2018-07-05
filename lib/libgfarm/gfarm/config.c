@@ -1076,6 +1076,7 @@ int gfarm_metadb_stack_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_thread_pool_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_job_queue_length = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_remover_queue_length = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_remove_scan_log_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_remove_scan_interval_factor = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_heartbeat_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_dbq_size = GFARM_CONFIG_MISC_DEFAULT;
@@ -3303,6 +3304,10 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "metadb_server_remover_queue_length") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_remover_queue_length);
 	} else if (strcmp(s,
+	    o = "metadb_server_remove_scan_log_interval") == 0) {
+		e = parse_set_misc_int(p,
+		    &gfarm_metadb_remove_scan_log_interval);
+	} else if (strcmp(s,
 	    o = "metadb_server_remove_scan_interval_factor") == 0) {
 		e = parse_set_misc_int(p,
 		    &gfarm_metadb_remove_scan_interval_factor);
@@ -3684,6 +3689,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_metadb_heartbeat_interval == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_heartbeat_interval =
 		    GFARM_METADB_HEARTBEAT_INTERVAL_DEFAULT;
+	if (gfarm_metadb_remove_scan_log_interval == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_metadb_remove_scan_log_interval =
+		    GFARM_METADB_REMOVE_SCAN_LOG_INTERVAL_DEFAULT;
 	if (gfarm_metadb_remove_scan_interval_factor
 	    == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_remove_scan_interval_factor =
@@ -3972,6 +3980,10 @@ const struct gfarm_config_type {
 	  gfarm_config_set_default_int,
 	  gfarm_config_validate_max_directory_depth,
 	  &gfarm_max_directory_depth, 0 },
+	{ "metadb_server_remove_scan_log_interval", 'i', 1,
+	  gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
+	  &gfarm_metadb_remove_scan_log_interval, 0 },
 	{ "metadb_server_remove_scan_interval_factor", 'i', 1,
 	  gfarm_config_print_int,
 	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
