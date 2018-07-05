@@ -714,10 +714,10 @@ replica_check_main(void)
 	    ENABLE_STR(replica_check_remove_enabled()),
 	    ENABLE_STR(replica_check_reduced_log_enabled()));
 	RC_LOG_INFO(GFARM_MSG_1005015,
-	    "replica_check: remove_grace_used_space_ratio=%s, "
-	    "remove_grace_time=%s",
-	    ENABLE_STR(replica_check_remove_grace_used_space_ratio_locked()),
-	    ENABLE_STR(replica_check_remove_grace_time_locked()));
+	    "replica_check: remove_grace_used_space_ratio=%d, "
+	    "remove_grace_time=%d",
+	    replica_check_remove_grace_used_space_ratio_locked(),
+	    replica_check_remove_grace_time_locked());
 
 	for (inum = root_inum;;) {
 		if (inum % REPLICA_CHECK_INTERRUPT_STEP == 0 &&
