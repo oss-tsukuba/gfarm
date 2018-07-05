@@ -153,6 +153,9 @@ struct file_replicating {
 
 	/* GFS_PROTO_REPLICATION_CKSUM_REQUEST */
 	gfarm_int32_t cksum_request_flags;
+
+	/* for gfs_profile() */
+	struct timespec queue_time;
 };
 
 void file_replicating_set_handle(struct file_replicating *, gfarm_int64_t);

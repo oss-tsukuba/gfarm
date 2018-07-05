@@ -9,8 +9,9 @@
 #include <assert.h>
 #include <errno.h>
 #include <pthread.h>
-#include <sys/time.h>
 #include <sys/socket.h>
+#include <sys/time.h>
+#include <time.h>
 #include <string.h>
 #include <syslog.h>
 #include <sched.h>

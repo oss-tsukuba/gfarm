@@ -18,6 +18,7 @@
 #include <signal.h> /* for sig_atomic_t */
 #include <netinet/in.h>
 #include <netdb.h> /* for NI_MAXHOST, NI_NUMERICHOST, etc */
+#include <time.h>
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
