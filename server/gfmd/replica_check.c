@@ -170,6 +170,9 @@ static int sleep_time;  /* from gfarm_replica_check_sleep_time */
 static double lock_sleep_time;  /* total */
 static double retry_sleep_time; /* total */
 
+static gfarm_uint64_t req_ok_num_total, req_ok_size_total;
+static gfarm_uint64_t remove_num_total, remove_size_total;
+
 /*
  * 0: The replica should not be removed.
  * 1: The replica may be removed. (try inode_remove_replica_protected)
@@ -305,6 +308,8 @@ replica_check_remove_replicas(struct inode *inode,
 			    (long long)info->inum, (long long)info->gen,
 			    user_name(inode_get_user(inode)),
 			    host_name(srcs[i]));
+			remove_num_total++;
+			remove_size_total += inode_get_size(inode);
 		}
 
 		/* ignore error except GFARM_ERR_FILE_BUSY */
@@ -356,6 +361,7 @@ replica_check_fix(struct replication_info *info)
 	struct inode *inode = inode_lookup(info->inum);
 	int n_srcs, n_existing, n_being_removed, transaction = 0;
 	struct host **srcs, **existing, **being_removed;
+	int req_ok_num = 0;
 	static const char diag[] = "replica_check_fix";
 
 	if (inode == NULL || !inode_is_file(inode) ||
@@ -440,11 +446,14 @@ replica_check_fix(struct replication_info *info)
 	    info->replica_spec.desired_number, info->replica_spec.repattr,
 	    n_srcs, srcs, &n_existing, existing,
 	    gfarm_replica_check_host_down_thresh, /* giant_lock()ed */
-	    &n_being_removed, being_removed, diag);
+	    &n_being_removed, being_removed, diag, &req_ok_num);
 
 	if (e == GFARM_ERR_NO_ERROR && replica_check_remove_enabled())
 		/* remove excessive number of replicas */
 		e = replica_check_remove_replicas(inode, n_srcs, srcs, info);
+
+	req_ok_num_total += req_ok_num;
+	req_ok_size_total += inode_get_size(inode) * req_ok_num;
 
 	if (transaction)
 		db_end(diag);
@@ -697,6 +706,8 @@ replica_check_main(void)
 	replica_check_giant_unlock();
 
 	lock_sleep_time = retry_sleep_time = 0;
+	req_ok_num_total = req_ok_size_total = 0;
+	remove_num_total = remove_size_total = 0;
 	RC_LOG_INFO(GFARM_MSG_1003632, "replica_check: start");
 	RC_LOG_INFO(GFARM_MSG_1004277,
 	    "replica_check: remove=%s, reduced_log=%s",
@@ -734,10 +745,18 @@ replica_check_main(void)
 		}
 	}
 	time_total = time(NULL) - time_start;
-	RC_LOG_INFO(GFARM_MSG_1003633,
-	    "replica_check: finished, files=%llu, time=%lld, "
-	    "lock sleep=%g, retry sleep=%g",
-	    (unsigned long long)count, (long long)time_total,
+	RC_LOG_INFO(GFARM_MSG_UNFIXED,
+	    "replica_check: finished, table=%llu, inum=%llu, file=%llu, "
+	    "rep num=%llu, rep size=%llu, remove num=%llu, remove size=%llu, "
+	    "time=%lld (%.3fh), lock sleep=%g, retry sleep=%g",
+	    (unsigned long long)table_size,
+	    (unsigned long long)inum,
+	    (unsigned long long)count,
+	    (unsigned long long)req_ok_num_total,
+	    (unsigned long long)req_ok_size_total,
+	    (unsigned long long)remove_num_total,
+	    (unsigned long long)remove_size_total,
+	    (long long)time_total, (float)time_total / 60 / 60,
 	    lock_sleep_time, retry_sleep_time);
 
 	replica_check_giant_lock();

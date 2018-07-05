@@ -1005,7 +1005,8 @@ inode_schedule_replication_within_scope(
 	int n_srcs, struct host **srcs, int *next_src_indexp,
 	int *n_scopep, struct host **scope,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
-	int *n_being_removedp, struct host **being_removed, const char *diag)
+	int *n_being_removedp, struct host **being_removed, const char *diag,
+	int *req_ok_nump)
 {
 	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
 	struct host **targets, *src, *dst;
@@ -1108,6 +1109,8 @@ inode_schedule_replication_within_scope(
 	}
 	free(targets);
 
+	*req_ok_nump += n_success;
+
 	if (busy) /* retry immediately in replica_check */
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 
@@ -1140,7 +1143,8 @@ inode_schedule_replication_from_all(
 	struct inode *inode, struct dirset *tdirset, int n_desired,
 	int n_srcs, struct host **srcs,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
-	int *n_being_removedp, struct host **being_removed, const char *diag)
+	int *n_being_removedp, struct host **being_removed, const char *diag,
+	int *req_ok_nump)
 {
 	gfarm_error_t e;
 	int nhosts, next_src_index;
@@ -1160,7 +1164,7 @@ inode_schedule_replication_from_all(
 	e = inode_schedule_replication_within_scope(
 	    inode, tdirset, n_desired, n_srcs, srcs, &next_src_index,
 	    &nhosts, hosts, n_existingp, existing, grace,
-	    n_being_removedp, being_removed, diag);
+	    n_being_removedp, being_removed, diag, req_ok_nump);
 	free(hosts);
 	return (e);
 }
@@ -1177,7 +1181,8 @@ inode_schedule_replication(
 	int n_desired, const char *repattr,
 	int n_srcs, struct host **srcs,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
-	int *n_being_removedp, struct host **being_removed, const char *diag)
+	int *n_being_removedp, struct host **being_removed, const char *diag,
+	int *req_ok_nump)
 {
 	gfarm_error_t e;
 	int total_repattr;
@@ -1194,7 +1199,8 @@ inode_schedule_replication(
 		e = fsngroup_schedule_replication(
 		    inode, tdirset, repattr, n_srcs, srcs,
 		    n_existingp, existing, grace,
-		    n_being_removedp, being_removed, diag, &total_repattr);
+		    n_being_removedp, being_removed, diag, &total_repattr,
+		    req_ok_nump);
 		if (is_replica_check &&
 		    e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 			/* retry in replica_check */
@@ -1299,7 +1305,8 @@ inode_schedule_replication(
 			e = inode_schedule_replication_from_all(
 			    inode, tdirset, n_desired,
 			    n_srcs, srcs, &n_existing2, existing2, grace,
-			    &n_being_removed2, being_removed2, diag);
+			    &n_being_removed2, being_removed2, diag,
+			    req_ok_nump);
 			free(existing2);
 			free(being_removed2);
 		}
@@ -1317,7 +1324,7 @@ inode_schedule_replication(
 		e = inode_schedule_replication_from_all(
 		    inode, tdirset, n_desired,
 		    n_srcs, srcs, n_existingp, existing, grace,
-		    n_being_removedp, being_removed, diag);
+		    n_being_removedp, being_removed, diag, req_ok_nump);
 	}
 
 	return (e);
@@ -1339,6 +1346,7 @@ make_replicas_except(struct inode *inode, struct dirset *tdirset,
 	int n_being_removed = 0;
 	struct host *srcs[1];
 	struct file_copy *copy;
+	int req_ok_num = 0;
 	static const char diag[] = "make_replicas_except";
 
 	for (copy = exception_list; copy != NULL; copy = copy->host_next) {
@@ -1385,7 +1393,7 @@ make_replicas_except(struct inode *inode, struct dirset *tdirset,
 	e = inode_schedule_replication(
 	    inode, tdirset, 0, desired_replica_number, repattr,
 	    1, srcs, &n_existing, existing, 0,
-	    &n_being_removed, being_removed, diag);
+	    &n_being_removed, being_removed, diag, &req_ok_num);
 
 	free(existing);
 	free(being_removed);
