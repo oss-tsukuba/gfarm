@@ -533,7 +533,11 @@ metadb_server_thread_pool_size \fIスレッド数\fR
 .PP
 metadb_server_job_queue_length \fIキュー長\fR
 .RS 4
-メタデータサーバgfmdのジョブキューのキュー長を指定します。 一度に接続する最大クライアントの数くらいに設定すると効果的です。 デフォルト値は16000です。
+メタデータサーバgfmdのジョブキューのキュー長を指定します。 一度に接続する最大クライアントの数より多い値に設定すると効果的です。
+.sp
+この値は metadb_server_remover_queue_length + (simultaneous_replication_receivers + 1) * ファイルシステムノード数 よりも大きな値に設定する必要がありますので、 ファイルシステムノード数が 754 を越えた場合には、設定が必須となります。
+.sp
+デフォルト値は16000です。
 .sp
 この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
 .sp
@@ -543,7 +547,7 @@ metadb_server_job_queue_length \fIキュー長\fR
 .RS 4
 .\}
 .nf
-	metadb_server_job_queue_length 160
+	metadb_server_job_queue_length 21664
 .fi
 .if n \{\
 .RE
