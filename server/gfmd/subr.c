@@ -49,6 +49,11 @@ giant_mutex_unlock(void)
 	gfarm_mutex_unlock(&giant_mutex, "giant_unlock", "giant");
 }
 
+/*
+ * unlike mutex, ticketlock can be unlocked by a thread other than the owner.
+ * so, be careful of misuse.
+ */
+
 static struct gfarm_ticketlock giant_ticketlock;
 
 static void
