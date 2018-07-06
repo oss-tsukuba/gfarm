@@ -1,7 +1,7 @@
 NCOPY1=3  # NCOPY1 >= 3
 NCOPY2=2  # NCOPY2 < NCOPY1
 NCOPY_TIMEOUT=10  # sec.
-hostgroupfile=/tmp/.hostgroup.$$
+hostgroupfile=$localtop/.hostgroup.$$
 
 MAINCTRL=
 REPREMOVE=
@@ -37,6 +37,12 @@ clean_test() {
 }
 
 check_supported_env() {
+  if $regress/bin/am_I_gfarmadm; then
+    # can use "gfhostgroup -s/-r" and gfrepcheck
+    :
+  else
+    exit $exit_unsupported
+  fi
   hosts=`gfsched -w`
   if [ $? -ne 0 -o "X${hosts}" = "X" ]; then
     exit $exit_fail
