@@ -3556,6 +3556,9 @@ t_apply(void)
 	char msg[BUFSIZ];
 	int i;
 
+	giant_init();
+	config_var_init();
+
 	unlink_test_file(filepath);
 	TEST_ASSERT_NOERR("journal_file_open",
 	    journal_file_open(filepath, TEST_FILE_MAX_SIZE, 0,
