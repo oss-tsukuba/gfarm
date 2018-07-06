@@ -324,7 +324,8 @@ gfs_pio_remote_storage_pread(GFS_File gf,
 				bsize = size;
 			e = gfs_ib_rdma_pread(gfs_server, gf->fd, buf, bsize,
 						offset, lengthp, rkey);
-			memcpy(buffer, buf, *lengthp);
+			if (e == GFARM_ERR_NO_ERROR)
+				memcpy(buffer, buf, *lengthp);
 		} else {
 			goto notrdma;
 		}
