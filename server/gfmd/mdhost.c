@@ -284,6 +284,15 @@ mdhost_foreach(int (*func)(struct mdhost *, void *), void *closure)
 	struct mdhost *self = mdhost_lookup_self();
 	static const char diag[] = "mdhost_foreach";
 
+	if (mdhost_self == NULL || mdhost_hashtab == NULL) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "mdhost_foreach() is called at too early stage.  "
+		    "mdhost_self:%p mdhost_hashtab:%p",
+		    mdhost_self, mdhost_hashtab);
+		gfarm_log_backtrace_symbols();
+		return;
+	}
+
 	mdhost_table_rwlock_rdlock(diag);
 	FOREACH_MDHOST(it) {
 		m = mdhost_iterator_access(&it);
