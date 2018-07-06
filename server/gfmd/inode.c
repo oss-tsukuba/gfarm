@@ -5532,6 +5532,23 @@ inode_remove_replica_in_cache(struct inode *inode, struct host *spool_host)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static unsigned long long file_replicating_count = 0;
+
+void
+replication_info(void)
+{
+	unsigned long long count;
+
+	giant_lock();
+	count = file_replicating_count;
+	giant_unlock();
+	gflog_info(GFARM_MSG_UNFIXED, "number of ongoing replications: %llu",
+	    count);
+}
+
+/*
+ * PREREQUISITE: giant_lock
+ */
 gfarm_error_t
 file_replicating_new(struct inode *inode, struct host *dst,
 	struct dead_file_copy *deferred_cleanup, struct dirset *tdirset,
@@ -5590,10 +5607,15 @@ file_replicating_new(struct inode *inode, struct host *dst,
 	/* record this always, because gfarm_ctxp->profile may be changed */
 	gfarm_gettime(&fr->queue_time);
 
+	++file_replicating_count;
+
 	*frp = fr;
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * PREREQUISITE: giant_lock
+ */
 void
 file_replicating_free(struct file_replicating *fr)
 {
@@ -5624,6 +5646,8 @@ file_replicating_free(struct file_replicating *fr)
 
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
 		dirset_del_ref(tdirset);
+
+	--file_replicating_count;
 }
 
 /*
