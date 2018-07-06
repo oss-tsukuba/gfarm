@@ -174,7 +174,7 @@ gfarm2fs_realurl(const char *path, char **url_p, char **root_url_p)
 
 	metadb_len = strlen(metadb);
 	port_len = port_size(port);
-	/* gfarm://host:port/*/
+	/* gfarm://host:port/ */
 	root_url_len = 8 + metadb_len + 1 + port_len + 1;
 	GFARM_MALLOC_ARRAY(root_url, root_url_len);
 	if (root_url == NULL) {
