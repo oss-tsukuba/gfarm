@@ -5,12 +5,12 @@
 
 . ./regress.conf
 
+$regress/bin/is_digest_enabled || exit $exit_unsupported
+
 gfs_pio_test=$testbin/../../lib/libgfarm/gfarm/gfs_pio_test/gfs_pio_test
 gftmpfile=$gftmp/file
 
 trap 'gfrm -rf $gftmp; rm -f $localtmp; exit $exit_code' 0 $trap_sigs
-
-$regress/bin/is_digest_enabled || exit $exit_unsupported
 exit_code=$exit_trap
 
 if
