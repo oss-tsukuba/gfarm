@@ -54,6 +54,8 @@ void abstract_host_validate(struct abstract_host *);
 int abstract_host_is_invalid_unlocked(struct abstract_host *);
 int abstract_host_is_valid_unlocked(struct abstract_host *);
 int abstract_host_is_valid(struct abstract_host *, const char *);
+void abstract_host_mutex_lock(struct abstract_host *, const char *);
+void abstract_host_mutex_unlock(struct abstract_host *, const char *);
 void abstract_host_activate(struct abstract_host *, const char *);
 int abstract_host_is_up_unlocked(struct abstract_host *);
 int abstract_host_is_up(struct abstract_host *);

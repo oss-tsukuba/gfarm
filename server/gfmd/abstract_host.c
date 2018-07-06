@@ -101,13 +101,13 @@ abstract_host_is_valid_unlocked(struct abstract_host *h)
 	return (h->invalid == 0);
 }
 
-static void
+void
 abstract_host_mutex_lock(struct abstract_host *h, const char *diag)
 {
 	gfarm_mutex_lock(&h->mutex, diag, ABSTRACT_HOST_MUTEX_DIAG);
 }
 
-static void
+void
 abstract_host_mutex_unlock(struct abstract_host *h, const char *diag)
 {
 	gfarm_mutex_unlock(&h->mutex, diag, ABSTRACT_HOST_MUTEX_DIAG);
