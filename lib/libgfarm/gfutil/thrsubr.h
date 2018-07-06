@@ -20,8 +20,25 @@ void gfarm_cond_destroy(pthread_cond_t *, const char *, const char *);
 void gfarm_rwlock_init(pthread_rwlock_t *, const char *, const char *);
 void gfarm_rwlock_rdlock(pthread_rwlock_t *, const char *, const char *);
 void gfarm_rwlock_wrlock(pthread_rwlock_t *, const char *, const char *);
+int gfarm_rwlock_trywrlock(pthread_rwlock_t *, const char *, const char *);
 void gfarm_rwlock_unlock(pthread_rwlock_t *, const char *, const char *);
 void gfarm_rwlock_destroy(pthread_rwlock_t *, const char *, const char *);
+
+struct gfarm_ticketlock {
+	pthread_mutex_t mutex;
+	pthread_cond_t unlocked;
+	unsigned long queue_head, queue_tail;
+};
+void gfarm_ticketlock_init(struct gfarm_ticketlock *,
+	const char *, const char *);
+void gfarm_ticketlock_lock(struct gfarm_ticketlock *,
+	const char *, const char *);
+int gfarm_ticketlock_trylock(struct gfarm_ticketlock *,
+	const char *, const char *);
+void gfarm_ticketlock_unlock(struct gfarm_ticketlock *,
+	const char *, const char *);
+void gfarm_ticketlock_destroy(struct gfarm_ticketlock *,
+	const char *, const char *);
 
 #ifdef __KERNEL__	/* PTHREAD_MUTEX_INITIALIZER */
 #define GFARM_MUTEX_INITIALIZER(name)   __MUTEX_INITIALIZER(name)

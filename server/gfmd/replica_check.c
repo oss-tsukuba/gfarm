@@ -124,19 +124,6 @@ replica_check_host_down_thresh_locked(void)
 }
 
 static int
-replica_check_sleep_time_locked(void)
-{
-	int rv;
-
-	config_var_lock();
-	rv = gfarm_replica_check_sleep_time;
-	config_var_unlock();
-	if (rv < 0)
-		rv = 0;
-	return (rv);
-}
-
-static int
 replica_check_minimum_interval_locked(void)
 {
 	int rv;
@@ -169,6 +156,9 @@ replica_check_minimum_interval_locked(void)
 static int sleep_time;  /* from gfarm_replica_check_sleep_time */
 static double lock_sleep_time;  /* total */
 static double retry_sleep_time; /* total */
+
+static int yield_time;  /* from gfarm_replica_check_yield_time */
+static double total_yield_time;
 
 static gfarm_uint64_t req_ok_num_total, req_ok_size_total;
 static gfarm_uint64_t remove_num_total, remove_size_total;
@@ -538,18 +528,23 @@ replication_info_free(struct replication_info *rep_info)
 }
 
 static void
-sleep_time_update(int sec)
+sleep_time_update(int *varp, int nanosec)
 {
-	sleep_time = sec;
-	if (sleep_time > GFARM_SECOND_BY_NANOSEC)
-		sleep_time = GFARM_SECOND_BY_NANOSEC;
-	else if (sleep_time < 0)
-		sleep_time = 0;
+	if (nanosec > GFARM_SECOND_BY_NANOSEC)
+		nanosec = GFARM_SECOND_BY_NANOSEC;
+	else if (nanosec < 0)
+		nanosec = 0;
+
+	*varp = nanosec;
 }
 
 static void
 replica_check_giant_lock(void)
 {
+	if (yield_time > 0) {
+		gfarm_nanosleep(yield_time);
+		total_yield_time += .000000001 * yield_time;
+	}
 	if (!giant_trylock()) {
 #ifdef DEBUG_REPLICA_CHECK
 		RC_LOG_DEBUG(GFARM_MSG_1004276,
@@ -560,7 +555,8 @@ replica_check_giant_lock(void)
 
 		giant_lock();
 		/* gfarm_replica_check_sleep_time is giant_lock()ed */
-		sleep_time_update(gfarm_replica_check_sleep_time);
+		sleep_time_update(&sleep_time, gfarm_replica_check_sleep_time);
+		sleep_time_update(&yield_time, gfarm_replica_check_yield_time);
 	}
 }
 
@@ -583,6 +579,7 @@ static void
 replica_check_giant_lock_init()
 {
 	gfarm_error_t e;
+	int stime, ytime;
 
 	e = gfarm_pthread_set_priority_minimum("replica_check");
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -591,7 +588,12 @@ replica_check_giant_lock_init()
 		replica_check_giant_unlock = replica_check_giant_unlock_yield;
 	}
 
-	sleep_time_update(replica_check_sleep_time_locked());
+	config_var_lock();
+	stime = gfarm_replica_check_sleep_time;
+	ytime = gfarm_replica_check_yield_time;
+	config_var_unlock();
+	sleep_time_update(&sleep_time, stime);
+	sleep_time_update(&yield_time, ytime);
 }
 
 /*
@@ -706,6 +708,7 @@ replica_check_main(void)
 	replica_check_giant_unlock();
 
 	lock_sleep_time = retry_sleep_time = 0;
+	total_yield_time = 0;
 	req_ok_num_total = req_ok_size_total = 0;
 	remove_num_total = remove_size_total = 0;
 	RC_LOG_INFO(GFARM_MSG_1003632, "replica_check: start");
@@ -758,6 +761,11 @@ replica_check_main(void)
 	    (unsigned long long)remove_size_total,
 	    (long long)time_total, (float)time_total / 60 / 60,
 	    lock_sleep_time, retry_sleep_time);
+	if (total_yield_time != 0) { /* hide undocumented unless it's set */
+		RC_LOG_INFO(GFARM_MSG_UNFIXED,
+		    "replica_check: yield sleep=%g", 
+		    total_yield_time);
+	}
 
 	replica_check_giant_lock();
 	info_time_start = 0;  /* stopped */
