@@ -1,3 +1,18 @@
+Release note for Gfarm 2.7.10
+=============================
+
+[2018.2.22]
+
+Updated feature
+* gfmd - improve ticket lock performance, which is introduced since
+  the version 2.7.9
+
+Bug fix
+* directory quota may be incorrect when moving a file during the
+  replica check
+* slave gfmd may crash when it is stopped during busy metadata updates
+* gfmd crashes when it is stopped at early boot stage
+
 Release note for Gfarm 2.7.9
 ============================
 
@@ -40,7 +55,7 @@ New configuration directive
   file scans
 
 Documentation
-* manual pages - gfsrepcheck(1)
+* manual pages - gfrepcheck(1)
 
 Updated feature
 * gfmd - improve response time even under too many gfmd-initiated
