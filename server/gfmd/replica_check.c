@@ -503,7 +503,7 @@ replica_check_stack_push(struct inode *dir_ino, struct inode *file_ino,
 	replica_check_desired_set(dir_ino, file_ino, rep_info);
 	rep_info->tdirset = tdirset;
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
-		dirset_add_ref(tdirset);
+		dirset_inc_busy_count(tdirset);
 
 	replica_check_stack_index++;
 }
@@ -523,7 +523,7 @@ replication_info_free(struct replication_info *rep_info)
 {
 	if (rep_info->tdirset != TDIRSET_IS_UNKNOWN &&
 	    rep_info->tdirset != TDIRSET_IS_NOT_SET)
-		dirset_del_ref(rep_info->tdirset);
+		dirset_dec_busy_count(rep_info->tdirset);
 	replica_spec_free(&rep_info->replica_spec);
 }
 
