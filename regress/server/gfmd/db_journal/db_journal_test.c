@@ -3609,13 +3609,20 @@ t_apply(void)
 int
 main(int argc, char **argv)
 {
+	gfarm_error_t e;
 	int c, op = 0;
 
 	/* XXX: settings in gfmd.conf doesn't work in this case */
 	char *config  = getenv("GFARM_CONFIG_FILE");
 
 	debug_mode = 1;
-	gfarm_server_initialize(config, &argc, &argv);
+	e = gfarm_server_initialize(config, &argc, &argv);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: gfarm_server_initialize: %s\n",
+		    argv[0], gfarm_error_string(e));
+		fprintf(stderr, "%s: aborting\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
 	gflog_set_priority_level(LOG_DEBUG);
 	gflog_set_message_verbose(99);
 
