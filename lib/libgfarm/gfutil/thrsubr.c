@@ -269,7 +269,7 @@ gfarm_rwlock_trywrlock(
 	int err = pthread_rwlock_trywrlock(rwlock);
 
 	if (err != 0 && err != EBUSY)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s rwlock trywrlock: %s",
+		gflog_fatal(GFARM_MSG_1005045, "%s: %s rwlock trywrlock: %s",
 		    where, what, strerror(err));
 	return (err == 0);
 }

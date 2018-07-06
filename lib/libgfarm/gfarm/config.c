@@ -2524,7 +2524,7 @@ parse_set_misc_name_value_table(char *p, int *vp,
 
 	e = get_one_argument(p, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005046,
 		    "get_one_argument failed "
 		    "when parsing %s(%s): %s",
 		    table_name, p, gfarm_error_string(e));
@@ -2536,7 +2536,7 @@ parse_set_misc_name_value_table(char *p, int *vp,
 			break;
 	}
 	if (i >= table_size) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005047,
 		    "%s(%s): unknown %s", table_name, s, table_name);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
