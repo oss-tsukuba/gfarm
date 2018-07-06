@@ -318,7 +318,7 @@ gfarm_ticketlock_init(struct gfarm_ticketlock *tl, int cond_number,
 	tl->queue_head = tl->queue_tail = 0;
 	GFARM_MALLOC_ARRAY(tl->unlocked, cond_number);
 	if (tl->unlocked == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005050,
 		    "%s: %s %d ticketlocks: no memory",
 		    where, what, cond_number);
 	for (i = 0; i < cond_number; i++)
@@ -375,7 +375,7 @@ gfarm_ticketlock_destroy(struct gfarm_ticketlock *tl,
 
 	/* assertion */
 	if (tl->queue_tail != tl->queue_head)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005051,
 		    "destroying ticketlock w/ waiters: head=%lu tail=%lu",
 		     tl->queue_head, tl->queue_head);
 
@@ -460,7 +460,7 @@ gfarm_queuelock_destroy(struct gfarm_queuelock *ql,
 {
 	/* assertion */
 	if (ql->locked || ql->head != NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005052,
 		    "destroying queuelock while using: locked:%d head:%p",
 		     ql->locked, ql->head);
 
