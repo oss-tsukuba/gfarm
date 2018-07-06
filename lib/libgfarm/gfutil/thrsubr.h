@@ -26,10 +26,11 @@ void gfarm_rwlock_destroy(pthread_rwlock_t *, const char *, const char *);
 
 struct gfarm_ticketlock {
 	pthread_mutex_t mutex;
-	pthread_cond_t unlocked;
 	unsigned long queue_head, queue_tail;
+	pthread_cond_t *unlocked;
+	int cond_number;
 };
-void gfarm_ticketlock_init(struct gfarm_ticketlock *,
+void gfarm_ticketlock_init(struct gfarm_ticketlock *, int,
 	const char *, const char *);
 void gfarm_ticketlock_lock(struct gfarm_ticketlock *,
 	const char *, const char *);
@@ -38,6 +39,23 @@ int gfarm_ticketlock_trylock(struct gfarm_ticketlock *,
 void gfarm_ticketlock_unlock(struct gfarm_ticketlock *,
 	const char *, const char *);
 void gfarm_ticketlock_destroy(struct gfarm_ticketlock *,
+	const char *, const char *);
+
+struct gfarm_queuelock_waiter;
+struct gfarm_queuelock {
+	pthread_mutex_t mutex;
+	struct gfarm_queuelock_waiter *head, **tail;
+	int locked;
+};
+void gfarm_queuelock_init(struct gfarm_queuelock *,
+	const char *, const char *);
+void gfarm_queuelock_lock(struct gfarm_queuelock *,
+	const char *, const char *);
+int gfarm_queuelock_trylock(struct gfarm_queuelock *,
+	const char *, const char *);
+void gfarm_queuelock_unlock(struct gfarm_queuelock *,
+	const char *, const char *);
+void gfarm_queuelock_destroy(struct gfarm_queuelock *,
 	const char *, const char *);
 
 #ifdef __KERNEL__	/* PTHREAD_MUTEX_INITIALIZER */

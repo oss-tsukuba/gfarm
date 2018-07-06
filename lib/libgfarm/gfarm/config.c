@@ -2551,6 +2551,7 @@ parse_set_misc_name_value_table(char *p, int *vp,
 static struct gfarm_name_value_tuple lock_type_name_table[] = {
 	{ "mutex", GFARM_LOCK_TYPE_MUTEX },
 	{ "ticketlock", GFARM_LOCK_TYPE_TICKETLOCK },
+	{ "queuelock", GFARM_LOCK_TYPE_QUEUELOCK },
 };
 
 static gfarm_error_t
