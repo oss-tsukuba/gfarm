@@ -42,7 +42,7 @@ timerval_calibrate(void)
 	gettimerval(&t2);
 	gettimeofday(&s2, NULL);
 
-	timerval_calibration = 
+	timerval_calibration =
 		((s2.tv_sec - s1.tv_sec) +
 		 (s2.tv_usec - s1.tv_usec) * .000001) /
 		(t2 - t1);
