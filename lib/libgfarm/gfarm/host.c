@@ -1357,22 +1357,22 @@ gfarm_addr_network_get(struct sockaddr *addr,
 		/* XXX - assume IPv6 /64 network */
 		memset(&mask_ipv6, 0, sizeof(mask_ipv6));
 		mask_ipv6.sin6_family = AF_INET6;
-		mask_ipv6.sin6_addr.s6_addr[ 0] = 0xff;;
-		mask_ipv6.sin6_addr.s6_addr[ 1] = 0xff;;
-		mask_ipv6.sin6_addr.s6_addr[ 2] = 0xff;;
-		mask_ipv6.sin6_addr.s6_addr[ 3] = 0xff;;
-		mask_ipv6.sin6_addr.s6_addr[ 4] = 0xff;;
-		mask_ipv6.sin6_addr.s6_addr[ 5] = 0xff;;
-		mask_ipv6.sin6_addr.s6_addr[ 6] = 0xff;;
-		mask_ipv6.sin6_addr.s6_addr[ 7] = 0xff;;
-		mask_ipv6.sin6_addr.s6_addr[ 8] = 0;
-		mask_ipv6.sin6_addr.s6_addr[ 9] = 0;
-		mask_ipv6.sin6_addr.s6_addr[10] = 0;
-		mask_ipv6.sin6_addr.s6_addr[11] = 0;
-		mask_ipv6.sin6_addr.s6_addr[12] = 0;
-		mask_ipv6.sin6_addr.s6_addr[13] = 0;
-		mask_ipv6.sin6_addr.s6_addr[14] = 0;
-		mask_ipv6.sin6_addr.s6_addr[15] = 0;
+		mask_ipv6.sin6_addr.s6_addr[0x0] = 0xff;
+		mask_ipv6.sin6_addr.s6_addr[0x1] = 0xff;
+		mask_ipv6.sin6_addr.s6_addr[0x2] = 0xff;
+		mask_ipv6.sin6_addr.s6_addr[0x3] = 0xff;
+		mask_ipv6.sin6_addr.s6_addr[0x4] = 0xff;
+		mask_ipv6.sin6_addr.s6_addr[0x5] = 0xff;
+		mask_ipv6.sin6_addr.s6_addr[0x6] = 0xff;
+		mask_ipv6.sin6_addr.s6_addr[0x7] = 0xff;
+		mask_ipv6.sin6_addr.s6_addr[0x8] = 0;
+		mask_ipv6.sin6_addr.s6_addr[0x9] = 0;
+		mask_ipv6.sin6_addr.s6_addr[0xa] = 0;
+		mask_ipv6.sin6_addr.s6_addr[0xb] = 0;
+		mask_ipv6.sin6_addr.s6_addr[0xc] = 0;
+		mask_ipv6.sin6_addr.s6_addr[0xd] = 0;
+		mask_ipv6.sin6_addr.s6_addr[0xe] = 0;
+		mask_ipv6.sin6_addr.s6_addr[0xf] = 0;
 		mask = (struct sockaddr *)&mask_ipv6;
 		break;
 
