@@ -1029,7 +1029,7 @@ host_address_get(const char *name, int port,
 			gfarm_freeaddrinfo(res0);
 			return (e);
 		}
-		addr_array[i] = sa;
+		addr_array[i++] = sa;
 	}
 	gfarm_freeaddrinfo(res0);
 	*addr_countp = addr_count;
