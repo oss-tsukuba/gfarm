@@ -995,8 +995,12 @@ peer_authorize(struct peer *peer)
 	rv = getpeername(gfp_xdr_fd(peer_get_conn(peer)), &addr, &addrlen);
 	if (rv == -1) {
 		saved_errno = errno;
-		gflog_error(GFARM_MSG_1000184,
-		    "authorize: getpeername: %s", strerror(errno));
+		if (saved_errno == ENOTCONN) /* known race conditioni */
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "authorize: getpeername: %s", strerror(errno));
+		else
+			gflog_error(GFARM_MSG_1000184,
+			    "authorize: getpeername: %s", strerror(errno));
 		return (gfarm_errno_to_error(saved_errno));
 	}
 	e = gfarm_sockaddr_to_name(&addr, &hostname);
