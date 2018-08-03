@@ -24,15 +24,6 @@
 %define gfarm_v2_not_yet 0
 
 #
-# If you see errors during rpmbuild like follows,
-# set environment variable QA_RPATHS=3
-#
-# ERROR   0001: file '/usr/gfarm/sbin/gfmd' contains a standard rpath '/usr/lib64' in [/usr/gfarm/lib64:/usr/lib64]
-# ERROR   0002: file '/usr/gfarm/bin/gfkey' contains an invalid rpath '/usr/gfarm/lib64' in [/usr/gfarm/lib64]
-# error: Bad exit status from /var/tmp/rpm-tmp.KfPRD6 (%install)
-#
-
-#
 # check && enable/disable Globus
 #
 # do the followings to build gfarm-gsi-*.rpm:
@@ -261,6 +252,12 @@ mkdir -p $RPM_BUILD_ROOT
 	--with-postgresql=/usr \
 	--with-openssl=/usr \
 	${GFARM_CONFIGURE_OPTION}
+
+: ${GFARM_ENABLE_RPATH:=false}
+if ! ${GFARM_ENABLE_RPATH}; then
+sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool
+sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
+fi
 
 make
 
