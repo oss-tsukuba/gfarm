@@ -367,7 +367,7 @@ peer_replicated(struct peer *peer,
 	gfarm_mutex_unlock(&peer->replication_mutex, diag, replication_diag);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1002410,
+		gflog_notice(GFARM_MSG_1002410,
 		    "orphan replication (%s, %lld:%lld): s=%d d=%d size:%lld "
 		    "maybe the connection had a problem?",
 		    host_name(host), (long long)ino, (long long)gen,

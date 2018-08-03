@@ -775,7 +775,7 @@ gfm_server_channel_disconnect_request(struct abstract_host *host,
 {
 	static const char diag[] = "gfm_server_channel_disconnect_request";
 
-	gflog_notice(GFARM_MSG_1002787,
+	gflog_warning(GFARM_MSG_1002787,
 	    "%s(%s) %s %s: disconnecting: %s",
 	    back_channel_type_name(peer), abstract_host_get_name(host),
 	    proto, op, condition);
