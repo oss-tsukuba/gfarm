@@ -1002,8 +1002,12 @@ peer_authorize(struct peer *peer)
 	    (struct sockaddr *)&addr, &addrlen);
 	if (rv == -1) {
 		saved_errno = errno;
-		gflog_error(GFARM_MSG_1000184,
-		    "authorize: getpeername: %s", strerror(errno));
+		if (saved_errno == ENOTCONN) /* known race conditioni */
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "authorize: getpeername: %s", strerror(errno));
+		else
+			gflog_error(GFARM_MSG_1000184,
+			    "authorize: getpeername: %s", strerror(errno));
 		return (gfarm_errno_to_error(saved_errno));
 	}
 	e = gfarm_sockaddr_to_log_string((struct sockaddr *)&addr, addrlen,
