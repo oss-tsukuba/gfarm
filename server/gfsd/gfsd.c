@@ -1078,7 +1078,7 @@ static void
 io_error_check_errno(const char *diag)
 {
 	/* if input/output error occurs, die */
-	if (errno == EIO || errno == ESTALE) {
+	if (errno == EIO || errno == ESTALE || errno == EUCLEAN) {
 		kill_master_gfsd = 1;
 		fatal(GFARM_MSG_1004213, "%s: %s, die", diag, strerror(errno));
 	}
