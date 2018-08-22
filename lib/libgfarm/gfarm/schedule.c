@@ -499,7 +499,7 @@ search_idle_network_list_init(void)
 		return (e);
 	GFARM_MALLOC_ARRAY(staticp->search_idle_local_host, count);
 	if (staticp->search_idle_local_host == NULL) {
-		free(self_ip);
+		gfarm_free_ifinfos(count, self_ip);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	for (i = 0, j = 0; i < count; ++i) {
