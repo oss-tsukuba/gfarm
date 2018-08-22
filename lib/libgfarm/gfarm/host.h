@@ -54,3 +54,5 @@ gfarm_error_t gfarm_addr_netmask_network_get(
 	struct sockaddr *, struct sockaddr *, struct gfarm_hostspec **);
 gfarm_error_t gfarm_addr_network_get(struct sockaddr *,
 	struct gfarm_hostspec **);
+
+int gfarm_sockaddr_addr_cmp(struct sockaddr *, struct sockaddr *);

@@ -1382,3 +1382,38 @@ gfarm_addr_network_get(struct sockaddr *addr,
 	}
 	return (gfarm_addr_netmask_network_get(addr, mask, networkp));
 }
+
+int
+gfarm_sockaddr_addr_cmp(struct sockaddr *a, struct sockaddr *b)
+{
+	struct sockaddr_in *a_ipv4, *b_ipv4;
+	struct sockaddr_in6 *a_ipv6, *b_ipv6;
+	int cmp;
+
+	cmp = a->sa_family - b->sa_family;
+	if (cmp != 0)
+		return (cmp);
+
+	switch (a->sa_family) {
+	case AF_INET:
+		a_ipv4 = (struct sockaddr_in *)a;
+		b_ipv4 = (struct sockaddr_in *)b;
+		return (memcmp(
+		    &a_ipv4->sin_addr.s_addr,
+		    &b_ipv4->sin_addr.s_addr,
+		    sizeof(a_ipv4->sin_addr.s_addr)));
+
+	case AF_INET6:
+		a_ipv6 = (struct sockaddr_in6 *)a;
+		b_ipv6 = (struct sockaddr_in6 *)b;
+		return (memcmp(
+		    &a_ipv6->sin6_addr,
+		    &b_ipv6->sin6_addr,
+		    sizeof(a_ipv6->sin6_addr)));
+
+	default:
+		assert(0);
+	}
+	 /* NOTREACHED */
+	return (-1);
+}
