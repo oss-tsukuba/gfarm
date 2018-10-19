@@ -377,6 +377,13 @@ fatal_full(int msg_no, int priority, const char *file,
 	gflog_vmessage(msg_no, priority, file, line_no, func, format, ap);
 	va_end(ap);
 
+	/*
+	 * gflog_fatal() shows similar message, but it's not called here,
+	 * thus we need this too.
+	 */
+	gflog_error(GFARM_MSG_UNFIXED,
+	    "gfsd is now aborting due to the message [%06d]", msg_no);
+
 	if (!shutting_down) {
 		shutting_down = 1;
 		cleanup(0);
