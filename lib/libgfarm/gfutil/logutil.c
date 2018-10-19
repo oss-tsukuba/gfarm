@@ -274,8 +274,11 @@ gflog_fatal_action_name_to_number(const char *name)
 }
 
 void
-gfarm_log_fatal_action(void)
+gfarm_log_fatal_action(int msg_no)
 {
+	gflog_error(GFARM_MSG_UNFIXED,
+	    "now aborting due to the message [%06d]", msg_no);
+
 	switch (gflog_get_fatal_action()) {
 	case GFLOG_FATAL_ACTION_EXIT_BACKTRACE:
 		gfarm_log_backtrace_symbols();
@@ -302,7 +305,7 @@ gflog_fatal_message(int msg_no, int priority, const char *file, int line_no,
 	gflog_vmessage(msg_no, priority, file, line_no, func, format, ap);
 	va_end(ap);
 
-	gfarm_log_fatal_action();
+	gfarm_log_fatal_action(msg_no);
 }
 
 void
@@ -360,7 +363,7 @@ gflog_fatal_message_errno(int msg_no, int priority, const char *file,
 	gflog_vmessage_errno(msg_no, priority, file, line_no, func, format, ap);
 	va_end(ap);
 
-	gfarm_log_fatal_action();
+	gfarm_log_fatal_action(msg_no);
 }
 
 void
@@ -374,7 +377,7 @@ gflog_assert_message(int msg_no, const char *file, int line_no,
 	    msg_no, LOG_ERR, file, line_no, func, format, ap);
 	va_end(ap);
 
-	gfarm_log_fatal_action();
+	gfarm_log_fatal_action(msg_no);
 }
 
 void
