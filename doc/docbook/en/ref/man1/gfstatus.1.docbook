@@ -5,7 +5,7 @@
 
 <refentry id="gfstatus.1">
 
-<refentryinfo><date>27 Jan 2016</date></refentryinfo>
+<refentryinfo><date>24 Oct 2018</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfstatus</refentrytitle>
@@ -24,6 +24,19 @@
     <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
     <arg choice="opt" rep="norepeat">-d</arg>
  </cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfstatus</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-d</arg>
+      <arg choice="plain" rep="norepeat">-M</arg>
+    </group>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-l</arg>
+      <arg choice="plain" rep="norepeat">-L</arg>
+    </group>
+</cmdsynopsis>
 
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfstatus</command>
@@ -55,10 +68,23 @@
 <refsect1 id="description"><title>DESCRIPTION</title>
 
 <para>
-When no configuration directive is specified as an argument,
+When no argument is specified, and neither -l nor -L option is specified,
 <command moreinfo="none">gfstatus</command> displays information about the
 Gfarm file system.
 </para>
+
+<para>
+When -l option is specified, configuration names are listed.
+When -L option is specified, configuration names and their values are listed.
+Both -l and -L options can be combined with the -M option to choose
+whether gfmd configuration or client configuration is listed.
+NOTE: Currently, only limited set of configuration names can be listed..
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	$ gfstatus -L
+	$ gfstatus -LM
+</literallayout>
 
 <para>
 When any configuration name is specified as an argument,
@@ -66,7 +92,7 @@ When any configuration name is specified as an argument,
 setting of the configuration.
 If -M option is specified, it asks gfmd about the setting,
 otherwise it displays the setting on localhost.
-NOTE: Currently, only limited set of directives can be specified.
+NOTE: Currently, only limited set of configuration names can be specified.
 </para>
 <para>Example:</para>
 <literallayout format="linespecific" class="normal">
@@ -98,10 +124,21 @@ NOTE: Currently, only limited set of directives can be specified.
 </varlistentry>
 
 <varlistentry>
-<term><option>-M</option></term>
+<term><option>-l</option></term>
 <listitem>
 <para>
-Performs specified operation against gfmd.
+Lists configuration names.
+This option can be used with the -M option.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>
+Lists configuration names and their values.
+This option can be used with the -M option.
 </para>
 </listitem>
 </varlistentry>
@@ -112,6 +149,15 @@ Performs specified operation against gfmd.
 <para>
 Modifies configuration setting.
 This option should be used with the -M option.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-M</option></term>
+<listitem>
+<para>
+Performs specified operation against gfmd.
 </para>
 </listitem>
 </varlistentry>

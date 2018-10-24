@@ -183,6 +183,10 @@ gfarm_error_t gfarm_config_copyout(const struct gfarm_config_type *,
 	union gfarm_config_storage *);
 
 gfarm_error_t gfarm_config_local_name_to_string(const char *, char *, size_t);
+gfarm_error_t gfarm_config_name_foreach(
+	gfarm_error_t (*)(void *, const char *), void *, int);
+#define GFARM_CONFIG_NAME_FLAG_FOR_METADB	1
+#define GFARM_CONFIG_NAME_FLAG_FOR_CLIENT	2
 
 struct gfm_connection;
 gfarm_error_t gfm_client_config_name_to_string(struct gfm_connection *,
