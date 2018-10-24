@@ -2,12 +2,12 @@
 .\"     Title: gfstatus
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 27 Jan 2016
+.\"      Date: 24 Oct 2018
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSTATUS" "1" "27 Jan 2016" "Gfarm" "Gfarm"
+.TH "GFSTATUS" "1" "24 Oct 2018" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -24,6 +24,8 @@ gfstatus \- display Gfarm configuration status
 .HP \w'\fBgfstatus\fR\ 'u
 \fBgfstatus\fR [\-P\ \fIpath\fR] [\-d]
 .HP \w'\fBgfstatus\fR\ 'u
+\fBgfstatus\fR [\-P\ \fIpath\fR] [\-d | \-M] [\-l | \-L]
+.HP \w'\fBgfstatus\fR\ 'u
 \fBgfstatus\fR [\-P\ \fIpath\fR] [\-d | \-M] \fIconfiguration_name\fR...
 .HP \w'\fBgfstatus\fR\ 'u
 \fBgfstatus\fR \-Mm [\-P\ \fIpath\fR] [\-d] \fIconfiguration_directive\fR...
@@ -31,13 +33,28 @@ gfstatus \- display Gfarm configuration status
 \fBgfstatus\fR \-V
 .SH "DESCRIPTION"
 .PP
-When no configuration directive is specified as an argument,
+When no argument is specified, and neither \-l nor \-L option is specified,
 \fBgfstatus\fR
 displays information about the Gfarm file system\&.
 .PP
+When \-l option is specified, configuration names are listed\&. When \-L option is specified, configuration names and their values are listed\&. Both \-l and \-L options can be combined with the \-M option to choose whether gfmd configuration or client configuration is listed\&. NOTE: Currently, only limited set of configuration names can be listed\&.\&.
+.PP
+Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	$ gfstatus \-L
+	$ gfstatus \-LM
+.fi
+.if n \{\
+.RE
+.\}
+.PP
 When any configuration name is specified as an argument,
 \fBgfstatus\fR
-displays the current setting of the configuration\&. If \-M option is specified, it asks gfmd about the setting, otherwise it displays the setting on localhost\&. NOTE: Currently, only limited set of directives can be specified\&.
+displays the current setting of the configuration\&. If \-M option is specified, it asks gfmd about the setting, otherwise it displays the setting on localhost\&. NOTE: Currently, only limited set of configuration names can be specified\&.
 .PP
 Example:
 .sp
@@ -73,14 +90,24 @@ Example:
 Displays debug messages\&.
 .RE
 .PP
-\fB\-M\fR
+\fB\-l\fR
 .RS 4
-Performs specified operation against gfmd\&.
+Lists configuration names\&. This option can be used with the \-M option\&.
+.RE
+.PP
+\fB\-l\fR
+.RS 4
+Lists configuration names and their values\&. This option can be used with the \-M option\&.
 .RE
 .PP
 \fB\-m\fR
 .RS 4
 Modifies configuration setting\&. This option should be used with the \-M option\&.
+.RE
+.PP
+\fB\-M\fR
+.RS 4
+Performs specified operation against gfmd\&.
 .RE
 .PP
 \fB\-P\fR \fIpath\fR

@@ -2,12 +2,12 @@
 .\"     Title: gfstatus
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 27 Jan 2016
+.\"      Date: 24 Oct 2018
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSTATUS" "1" "27 Jan 2016" "Gfarm" "Gfarm"
+.TH "GFSTATUS" "1" "24 Oct 2018" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -24,6 +24,8 @@ gfstatus \- Gfarmファイルシステムの情報を表示する
 .HP \w'\fBgfstatus\fR\ 'u
 \fBgfstatus\fR [\-P\ \fIpath\fR] [\-d]
 .HP \w'\fBgfstatus\fR\ 'u
+\fBgfstatus\fR [\-P\ \fIpath\fR] [\-d | \-M] [\-l | \-L]
+.HP \w'\fBgfstatus\fR\ 'u
 \fBgfstatus\fR [\-P\ \fIpath\fR] [\-d | \-M] \fI設定名称\fR...
 .HP \w'\fBgfstatus\fR\ 'u
 \fBgfstatus\fR \-Mm [\-P\ \fIpath\fR] [\-d] \fI設定ディレクティブ\fR...
@@ -31,9 +33,24 @@ gfstatus \- Gfarmファイルシステムの情報を表示する
 \fBgfstatus\fR \-V
 .SH "DESCRIPTION"
 .PP
-引数に，設定ディレクティブを指定しない場合， Gfarmファイルシステムの情報を表示します．
+引数が指定されず，\-l オプションも \-L オプションも指定されていない場合， Gfarmファイルシステムの情報を表示します．
 .PP
-引数に，設定名称を指定した場合，その設定値を表示します． \-M オプションを指定した場合は，gfmd に設定を問い合わせ， 指定しない場合は，ローカルホストでの設定値を表示します． ただし，今のところ，ごく限られたディレクティブのみが指定できます．
+オプション \-l を指定した場合は設定名称の一覧を， オプション \-L を指定した場合は設定名称とその設定値の一覧を表示します． どちらのオプションも \-M オプションと組み合わせることにより， gfmd の扱う設定名称の一覧を得るか，あるいはローカルホストでの設定名称 の一覧を得るかを選択できます． ただし今のところ，設定名称のうちごく限られたもののみが一覧できます．
+.PP
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	$ gfstatus \-L
+	$ gfstatus \-LM
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+引数に，設定名称を指定した場合，その設定値を表示します． \-M オプションを指定した場合は，gfmd に設定を問い合わせ， 指定しない場合は，ローカルホストでの設定値を表示します． ただし，今のところ，ごく限られた設定名称のみが指定できます．
 .PP
 例:
 .sp
@@ -69,14 +86,24 @@ gfstatus \- Gfarmファイルシステムの情報を表示する
 デバッグメッセージを表示します．
 .RE
 .PP
-\fB\-M\fR
+\fB\-l\fR
 .RS 4
-設定値の問い合わせや，設定の変更を，gfmd に対して行ないます．
+設定名称の一覧を表示します。 \-M オプションと組み合わせて使うことができます．
+.RE
+.PP
+\fB\-L\fR
+.RS 4
+設定名称のとその値の一覧を表示します。 \-M オプションと組み合わせて使うことができます．
 .RE
 .PP
 \fB\-m\fR
 .RS 4
 設定の変更を行ないます． \-M オプションと組み合わせて使います．
+.RE
+.PP
+\fB\-M\fR
+.RS 4
+設定値の問い合わせや，設定の変更を，gfmd に対して行ないます．
 .RE
 .PP
 \fB\-P\fR \fIパス名\fR

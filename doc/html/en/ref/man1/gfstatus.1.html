@@ -13,6 +13,7 @@
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [-P <em class="replaceable"><code>path</code></em>] [-d]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [-P <em class="replaceable"><code>path</code></em>] [ -d  |   -M ] [ -l  |   -L ]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [-P <em class="replaceable"><code>path</code></em>] [ -d  |   -M ]  <em class="replaceable"><code>configuration_name</code></em>... </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfstatus</code>   -Mm  [-P <em class="replaceable"><code>path</code></em>] [-d]  <em class="replaceable"><code>configuration_directive</code></em>... </p></div>
 <div class="cmdsynopsis"><p><code class="command">gfstatus</code>   -V </p></div>
@@ -20,17 +21,29 @@
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
-When no configuration directive is specified as an argument,
+When no argument is specified, and neither -l nor -L option is specified,
 <span class="command"><strong>gfstatus</strong></span> displays information about the
 Gfarm file system.
 </p>
+<p>
+When -l option is specified, configuration names are listed.
+When -L option is specified, configuration names and their values are listed.
+Both -l and -L options can be combined with the -M option to choose
+whether gfmd configuration or client configuration is listed.
+NOTE: Currently, only limited set of configuration names can be listed..
+</p>
+<p>Example:</p>
+<div class="literallayout"><p><br>
+	$ gfstatus -L<br>
+	$ gfstatus -LM<br>
+</p></div>
 <p>
 When any configuration name is specified as an argument,
 <span class="command"><strong>gfstatus</strong></span> displays the current
 setting of the configuration.
 If -M option is specified, it asks gfmd about the setting,
 otherwise it displays the setting on localhost.
-NOTE: Currently, only limited set of directives can be specified.
+NOTE: Currently, only limited set of configuration names can be specified.
 </p>
 <p>Example:</p>
 <div class="literallayout"><p><br>
@@ -53,14 +66,24 @@ NOTE: Currently, only limited set of directives can be specified.
 <div class="variablelist"><dl>
 <dt><span class="term"><code class="option">-d</code></span></dt>
 <dd><p>Displays debug messages.</p></dd>
-<dt><span class="term"><code class="option">-M</code></span></dt>
+<dt><span class="term"><code class="option">-l</code></span></dt>
 <dd><p>
-Performs specified operation against gfmd.
+Lists configuration names.
+This option can be used with the -M option.
+</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd><p>
+Lists configuration names and their values.
+This option can be used with the -M option.
 </p></dd>
 <dt><span class="term"><code class="option">-m</code></span></dt>
 <dd><p>
 Modifies configuration setting.
 This option should be used with the -M option.
+</p></dd>
+<dt><span class="term"><code class="option">-M</code></span></dt>
+<dd><p>
+Performs specified operation against gfmd.
 </p></dd>
 <dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>path</code></em></span></dt>
 <dd><p>
