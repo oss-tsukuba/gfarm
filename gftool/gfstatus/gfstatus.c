@@ -21,13 +21,21 @@
 
 char *program_name = "gfstatus";
 
+enum gfstatus_operation {
+	OP_PRINT = '\0',
+	OP_MODIFY = 'm',
+	OP_LIST = 'l',
+	OP_LIST_WITH_VALUE = 'L',
+};
+
 void
 error_check(char *msg, gfarm_error_t e)
 {
 	if (e == GFARM_ERR_NO_ERROR)
 		return;
 
-	fprintf(stderr, "%s: %s\n", msg, gfarm_error_string(e));
+	fprintf(stderr, "%s: %s: %s\n",
+	    program_name, msg, gfarm_error_string(e));
 	exit(EXIT_FAILURE);
 }
 
@@ -54,56 +62,117 @@ print_user_config_file(char *msg)
 }
 
 static gfarm_error_t
-do_config(struct gfm_connection *gfm_server, char *config,
-	int ask_gfmd, int modify_mode, int print_config_name)
+do_config(struct gfm_connection *gfm_server, char *config, int ask_gfmd)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	if (!ask_gfmd) {
+		fprintf(stderr, "%s: %s: does not make sense "
+		    "without -M option\n", program_name, config);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	e = gfm_client_config_set_by_string(gfm_server, config);
+	if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "%s: %s: %s\n", program_name, config,
+		    gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+show_config(struct gfm_connection *gfm_server, const char *config_name,
+	int ask_gfmd, int print_config_name)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	char buffer[2048];
 
-	if (modify_mode) {
-		if (!ask_gfmd) {
-			fprintf(stderr, "%s: does not make sense "
-			    "without -M option\n", config);
-			return (GFARM_ERR_INVALID_ARGUMENT);
-		}
-		e = gfm_client_config_set_by_string(gfm_server, config);
-		if (e != GFARM_ERR_NO_ERROR)
-			fprintf(stderr, "%s: %s\n", config,
-			    gfarm_error_string(e));
-		return (e);
-	}
-
 	if (ask_gfmd) {
 		e = gfm_client_config_name_to_string(gfm_server,
-		    config, buffer, sizeof buffer);
+		    config_name, buffer, sizeof buffer);
 	} else {
 		e = gfarm_config_local_name_to_string(
-		    config, buffer, sizeof buffer);
+		    config_name, buffer, sizeof buffer);
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
 		if (print_config_name)
-			printf("%s: %s\n", config, buffer);
+			printf("%s: %s\n", config_name, buffer);
 		else
 			printf("%s\n", buffer);
 	} else if (e == GFARM_ERR_OPERATION_NOT_PERMITTED) {
-		fprintf(stderr, "%s: not available%s\n", config,
-		    ask_gfmd ? " in gfmd" : "");
+		fprintf(stderr, "%s: %s: not available%s\n",
+		    program_name, config_name, ask_gfmd ? " in gfmd" : "");
 	} else {
-		fprintf(stderr, "%s: %s\n", config, gfarm_error_string(e));
+		fprintf(stderr, "%s: %s: %s\n",
+		    program_name, config_name, gfarm_error_string(e));
+	}
+	return (e);
+}
+
+struct each_config_name_callback_closure {
+	struct gfm_connection *gfm_server;
+	enum gfstatus_operation op;
+	int ask_gfmd;
+};
+
+static gfarm_error_t
+each_config_name_callback(void *closure, const char *config_name)
+{
+	struct each_config_name_callback_closure *c = closure;
+	gfarm_error_t e;
+
+	switch (c->op) {
+	case OP_LIST:
+		printf("%s\n", config_name);
+		e = GFARM_ERR_NO_ERROR;
+		break;
+	case OP_LIST_WITH_VALUE:
+		e = show_config(c->gfm_server, config_name, c->ask_gfmd, 1);
+		break;
+	default:
+		e = GFARM_ERR_INTERNAL_ERROR;
+		break;
 	}
 	return (e);
 }
 
 static gfarm_error_t
 do_configurations(struct gfm_connection *gfm_server, int argc, char **argv,
-	int ask_gfmd, int modify_mode)
+	int ask_gfmd, enum gfstatus_operation op)
 {
 	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	int i, print_config_name = (argc > 1);
 
+	if (op == OP_LIST || op == OP_LIST_WITH_VALUE) {
+		struct each_config_name_callback_closure c;
+
+		if (argc > 0) {
+			fprintf(stderr,
+			    "%s: option -%c does not take any argument\n",
+			    program_name, op);
+			exit(1);
+		}
+		c.gfm_server = gfm_server;
+		c.op = op;
+		c.ask_gfmd = ask_gfmd;
+		return (gfarm_config_name_foreach(
+		    each_config_name_callback, &c,
+		    ask_gfmd ?
+		    GFARM_CONFIG_NAME_FLAG_FOR_METADB :
+		    GFARM_CONFIG_NAME_FLAG_FOR_CLIENT));
+	}
+
 	for (i = 0; i < argc; i++) {
-		e = do_config(gfm_server, argv[i],
-		    ask_gfmd, modify_mode, print_config_name);
+		switch (op) {
+		case OP_MODIFY:
+			e = do_config(gfm_server, argv[i], ask_gfmd);
+			break;
+		case OP_PRINT:
+			e = show_config(gfm_server, argv[i], ask_gfmd,
+			    print_config_name);
+			break;
+		default:
+			e = GFARM_ERR_INTERNAL_ERROR;
+			break;
+		}
 		if (e != GFARM_ERR_NO_ERROR && e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 	}
@@ -126,7 +195,8 @@ int
 main(int argc, char *argv[])
 {
 	gfarm_error_t e, e2;
-	int port, c, debug_mode = 0, ask_gfmd = 0, modify_mode = 0;
+	int port, c, debug_mode = 0, ask_gfmd = 0;
+	enum gfstatus_operation op = OP_PRINT;
 	char *canonical_hostname, *hostname, *realpath = NULL;
 	const char *user = NULL, *gfmd_hostname;
 	const char *path = ".";
@@ -139,7 +209,7 @@ main(int argc, char *argv[])
 	if (argc > 0)
 		program_name = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "dMmP:V?"))
+	while ((c = getopt(argc, argv, "dlLmMP:V?"))
 	    != -1) {
 		switch (c) {
 		case 'd':
@@ -147,11 +217,13 @@ main(int argc, char *argv[])
 			gflog_set_priority_level(LOG_DEBUG);
 			gflog_auth_set_verbose(1);
 			break;
+		case 'l':
+		case 'L':
+		case 'm':
+			op = c;
+			break;
 		case 'M':
 			ask_gfmd = 1;
-			break;
-		case 'm':
-			modify_mode = 1;
 			break;
 		case 'P':
 			path = optarg;
@@ -183,13 +255,13 @@ main(int argc, char *argv[])
 			if ((e2 = gfarm_get_hostname_by_url(path,
 			    &hostname, &port)) != GFARM_ERR_NO_ERROR)
 				fprintf(stderr,
-				    "cannot get metadata server name"
-				    " represented by `%s': %s\n",
+				    "%s: cannot get metadata server name"
+				    " represented by `%s': %s\n", program_name,
 				    path, gfarm_error_string(e2));
 			else {
 				fprintf(stderr,
-				    "metadata server `%s', port %d: %s\n",
-				    hostname, port,
+				    "%s: metadata server `%s', port %d: %s\n",
+				    program_name, hostname, port,
 				    gfarm_error_string(e));
 				free(hostname);
 			}
@@ -198,9 +270,8 @@ main(int argc, char *argv[])
 		user = gfm_client_username(gfm_server);
 	}
 
-	if (argc > 0) {
-		e = do_configurations(gfm_server, argc, argv,
-		    ask_gfmd, modify_mode);
+	if (argc > 0 || op == OP_LIST || op == OP_LIST_WITH_VALUE) {
+		e = do_configurations(gfm_server, argc, argv, ask_gfmd, op);
 		e2 = gfarm_terminate();
 		error_check("gfarm_terminate", e2);
 
@@ -238,9 +309,9 @@ main(int argc, char *argv[])
 	if (ms == NULL) {
 		if ((e = gfarm_get_hostname_by_url(
 		    path, &hostname, &port)) != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "cannot get metadata server name"
+			fprintf(stderr, "%s: cannot get metadata server name"
 			    " represented by `%s': %s\n",
-			    path, gfarm_error_string(e));
+			    program_name, path, gfarm_error_string(e));
 			exit(EXIT_FAILURE);
 		}
 		gfmd_hostname = hostname;
