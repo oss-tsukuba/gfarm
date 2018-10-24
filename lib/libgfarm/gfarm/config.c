@@ -4202,6 +4202,27 @@ gfarm_config_local_name_to_string(const char *name, char *string, size_t sz)
 }
 
 gfarm_error_t
+gfarm_config_name_foreach(gfarm_error_t (*callback)(void *, const char *),
+	void *closure, int flags)
+{
+	gfarm_error_t e, e_save;
+	int for_metadb = flags == GFARM_CONFIG_NAME_FLAG_FOR_METADB;
+	int i;
+
+	e = e_save = GFARM_ERR_NO_ERROR;
+	for (i = 0; i < GFARM_ARRAY_LENGTH(config_types); i++) {
+		const struct gfarm_config_type *type = &config_types[i];
+
+		if (type->for_metadb == for_metadb) {
+			e = callback(closure, type->name);
+			if (e_save == GFARM_ERR_NO_ERROR)
+				e_save = e;
+		}
+	}
+	return (e);
+}
+
+gfarm_error_t
 gfarm_config_copyin(const struct gfarm_config_type *type,
 	union gfarm_config_storage *storage)
 {
