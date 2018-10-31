@@ -42,6 +42,56 @@ error_check(char *msg, gfarm_error_t e)
 }
 
 void
+check_version(struct gfm_connection *gfm_server)
+{
+	static void *config_vars[] = {
+		&gfarm_metadb_version_major,
+		&gfarm_metadb_version_minor,
+		&gfarm_metadb_version_teeny,
+	};
+	gfarm_error_t e;
+	int n_config_vars = GFARM_ARRAY_LENGTH(config_vars);
+
+	if ((e = gfm_client_config_get_vars_request(
+	    gfm_server, n_config_vars, config_vars)) != GFARM_ERR_NO_ERROR)
+		error_check("asking gfmd about protocol version", e);
+	else if ((e = gfm_client_config_get_vars_result(
+	    gfm_server, n_config_vars, config_vars)) != GFARM_ERR_NO_ERROR)
+		error_check("asked gfmd about protocol version", e);
+	else {
+		int major_version = gfarm_version_major();
+		int minor_version = gfarm_version_minor();
+		int teeny_version = gfarm_version_teeny();
+
+		if (gfarm_metadb_version_major < major_version ||
+		    (gfarm_metadb_version_major == major_version &&
+		     (gfarm_metadb_version_minor < minor_version ||
+		      (gfarm_metadb_version_minor == minor_version &&
+		       gfarm_metadb_version_teeny < teeny_version)))) {
+			fprintf(stderr, "%s: warning: "
+			    "gfmd version %s or later is expected, "
+			    "but it's %d.%d.%d\n",
+			    program_name, gfarm_version(),
+			    gfarm_metadb_version_major,
+			    gfarm_metadb_version_minor,
+			    gfarm_metadb_version_teeny);
+		}
+#if 0 /* this is harmless, and not worth reporting */
+		else if (gfarm_metadb_version_major != major_version ||
+		     gfarm_metadb_version_minor != minor_version ||
+		     gfarm_metadb_version_teeny != teeny_version)
+			fprintf(stderr, "%s: info: "
+			    "client version %s is older than "
+			    "gfmd version %d.%d.%d\n",
+			    program_name, gfarm_version(),
+			    gfarm_metadb_version_major,
+			    gfarm_metadb_version_minor,
+			    gfarm_metadb_version_teeny);
+#endif
+	}
+}
+
+void
 print_msg(char *msg, const char *status)
 {
 	if (msg != NULL && status != NULL)
@@ -202,7 +252,7 @@ main(int argc, char *argv[])
 	char *canonical_hostname, *hostname, *realpath = NULL;
 	const char *user = NULL, *gfmd_hostname;
 	const char *path = ".";
-	struct gfm_connection *gfm_server;
+	struct gfm_connection *gfm_server = NULL;
 	struct gfarm_metadb_server *ms;
 #ifdef HAVE_GSI
 	char *cred;
@@ -270,6 +320,7 @@ main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 		user = gfm_client_username(gfm_server);
+		check_version(gfm_server);
 	}
 
 	if (argc > 0 || op == OP_LIST || op == OP_LIST_WITH_VALUE) {
@@ -280,6 +331,7 @@ main(int argc, char *argv[])
 		exit(e == GFARM_ERR_NO_ERROR ? 0 : 1);
 	}
 
+	print_msg("client version    ", gfarm_version());
 	print_user_config_file("user config file  ");
 	print_msg("system config file", gfarm_config_get_filename());
 
@@ -326,6 +378,10 @@ main(int argc, char *argv[])
 	printf("gfmd server port: %d\n", port);
 	print_msg("gfmd admin user", gfarm_ctxp->metadb_admin_user);
 	print_msg("gfmd admin dn  ", gfarm_ctxp->metadb_admin_user_gsi_dn);
+	printf("gfmd version    : %d.%d.%d\n",
+	    gfarm_metadb_version_major,
+	    gfarm_metadb_version_minor,
+	    gfarm_metadb_version_teeny);
 
 	gfm_client_connection_free(gfm_server);
 
