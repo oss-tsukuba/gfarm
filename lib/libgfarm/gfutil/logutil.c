@@ -273,7 +273,7 @@ gflog_fatal_action_name_to_number(const char *name)
 	return (GFLOG_ERROR_INVALID_FATAL_ACTION_NAME); /* not found */
 }
 
-void
+static void
 gfarm_log_fatal_action(int msg_no)
 {
 	gflog_error(GFARM_MSG_UNFIXED,
