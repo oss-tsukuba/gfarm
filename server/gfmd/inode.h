@@ -49,8 +49,6 @@ void inode_set_group_by_name_in_cache(struct inode *, const char *);
 int inode_has_no_replica(struct inode *);
 gfarm_int64_t inode_get_ncopy(struct inode *);
 gfarm_int64_t inode_get_ncopy_with_dead_host(struct inode *);
-gfarm_error_t inode_count_replicas(
-	struct inode *, int, int, gfarm_time_t, int, struct host **, int *);
 
 gfarm_mode_t inode_get_mode(struct inode *);
 gfarm_error_t inode_set_mode(struct inode *, gfarm_mode_t);
@@ -141,22 +139,18 @@ void inode_remove_replica_in_cache_for_invalid_host(gfarm_ino_t);
 int inode_is_updated(struct inode *, struct gfarm_timespec *);
 gfarm_error_t dir_entry_add(gfarm_ino_t, char *, int, gfarm_ino_t);
 
+struct hostset;
 gfarm_error_t inode_schedule_replication_within_scope(
 	struct inode *, struct dirset *, int,
 	int, struct host **, int *,
-	int *, struct host **,
-	int *, struct host **, gfarm_time_t,
-	int *, struct host **, const char *, int *);
-gfarm_error_t inode_schedule_replication_from_all(
-	struct inode *, struct dirset *, int,
-	int, struct host **,
-	int *, struct host **, gfarm_time_t,
-	int *, struct host **, const char *, int *);
+	int *, struct hostset *,
+	int *, struct hostset *, gfarm_time_t,
+	int *, struct hostset *, const char *, int *);
 gfarm_error_t inode_schedule_replication(
 	struct inode *, struct dirset *, int, int, const char *,
 	int, struct host **,
-	int *, struct host **, gfarm_time_t,
-	int *, struct host **, const char *, int *);
+	int *, struct hostset *, gfarm_time_t,
+	int *, struct hostset *, const char *, int *);
 
 gfarm_error_t inode_open(struct file_opening *, struct dirset *);
 struct dirset *inode_get_tdirset(struct inode *);
@@ -228,9 +222,9 @@ void inode_replication_get_cksum_mode(struct inode *, struct host *,
 gfarm_error_t inode_replication_request(struct host *, struct host *,
 	struct inode *, struct file_replicating *, const char *);
 
-gfarm_error_t inode_replica_hosts(
-	struct inode *, gfarm_int32_t *, struct host ***,
-	gfarm_int32_t *, struct host ***);
+gfarm_error_t inode_replica_hostset(
+	struct inode *, gfarm_int32_t *, struct hostset **,
+	gfarm_int32_t *, struct hostset **);
 gfarm_error_t inode_replica_hosts_valid(struct inode *,
 	gfarm_int32_t *, struct host ***);
 

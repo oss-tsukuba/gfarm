@@ -1065,6 +1065,20 @@ fi
 
 AC_CHECK_FUNCS(clock_gettime getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin sigtimedwait strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long backtrace_symbols futimes futimesat utimensat)
 
+### Check gcc builtin __builtin_popcountll()
+
+# AC_CHECK_FUNCS(__builtin_popcountll) doesn't work w/ autoconf-2.69+gcc-2.8.5
+
+AC_MSG_CHECKING([for __builtin_popcountll])
+AC_TRY_LINK([],[
+return (__builtin_popcountll(~0ULL) == 64);
+], [ax_cv___builtin_popcountll=yes], [ax_cv___builtin_popcountll=no])
+AC_MSG_RESULT([$ax_cv___builtin_popcountll])
+if test "$ax_cv___builtin_popcountll" = yes; then
+  AC_DEFINE(HAVE___BUILTIN_POPCOUNTLL, 1,
+	[Define to 1 if you have the `__builtin_popcountll' function.])
+fi
+
 ### Check epoll_create really implemented
 
 AC_MSG_CHECKING([for epoll])
