@@ -1794,7 +1794,7 @@ inode_get_ncopy_with_dead_host(struct inode *inode)
 }
 
 /* if valid_only == 0, incomplete replicas are included */
-static int
+int
 inode_count_replicas_within_scope(
 	struct inode *inode, int valid_only, int up_only,
 	gfarm_time_t host_down_grace, struct hostset *scope)
@@ -6012,8 +6012,6 @@ static gfarm_error_t
 inode_replica_is_removable(struct inode *inode, struct file_copy *copy,
 	struct replica_spec *replica_spec, int current_num, int up_only)
 {
-	gfarm_error_t e;
-
 	if (current_num <= 1)
 		return (GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA);
 
@@ -6021,73 +6019,9 @@ inode_replica_is_removable(struct inode *inode, struct file_copy *copy,
 		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
 
 	if (replica_spec->repattr != NULL) {
-		int n_scope;
-		struct hostset *scope;
-		int ncopy, n_desired, total, found;
-		size_t i, nreps = 0;
-		gfarm_repattr_t *reps = NULL;
-		char *fsng;
-
-		e = gfarm_repattr_parse(replica_spec->repattr, &reps, &nreps);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1004025,
-			    "gfarm_repattr_parse(%s): %s",
-			    replica_spec->repattr, gfarm_error_string(e));
-			return (e);
-		}
-
-		fsng = host_fsngroup(copy->host);
-		n_desired = 0;
-		total = 0;
-		found = 0;
-		for (i = 0; i < nreps; i++) {
-			int num = gfarm_repattr_amount(reps[i]);
-
-			total += num;
-			if (!found &&
-			    strcmp(gfarm_repattr_group(reps[i]), fsng) == 0) {
-				n_desired = num;
-				found = 1;
-			}
-		}
-		gfarm_repattr_free_all(nreps, reps);
-
-		if (current_num <= total)
-			return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
-
-		if (!gfarm_replicainfo_enabled) {
-			/*
-			 * ignore 'n_desired' for the hostgroup
-			 * (use 'total' only)
-			 */
-			return (GFARM_ERR_NO_ERROR); /* removable */
-		}
-
-		/* no desired number for the host */
-		if (n_desired <= 0)
-			return (GFARM_ERR_NO_ERROR); /* removable */
-
-		scope = hostset_of_fsngroup_alloc(fsng, &n_scope);
-		if (scope == NULL) {
-			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_1004026,
-			    "fsngroup_get_hosts(%s): %s",
-			    fsng, gfarm_error_string(e));
-			return (e);
-		}
-		if (n_scope == 0) { /* unexpected */
-			hostset_free(scope);
-			return (GFARM_ERR_NO_ERROR);
-		}
-
-		ncopy = inode_count_replicas_within_scope(
-		    inode, 1, up_only, 0, scope);
-
-		hostset_free(scope);
-
-		if (ncopy > n_desired)
-			return (GFARM_ERR_NO_ERROR); /* removable */
-		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
+		return (fsngroup_has_spare_for_repattr(inode, current_num,
+		    host_fsngroup(copy->host), replica_spec->repattr,
+		    up_only));
 	}
 
 	return (GFARM_ERR_NO_ERROR); /* removable */
