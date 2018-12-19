@@ -36,8 +36,6 @@ static char *wait_time = NULL;
 static char *group_name = "unknown";
 static int stop_waiting = 60;
 
-#define NCOPY_KEY "gfarm.ncopy"
-
 static
 gfarm_error_t
 set_ncopy()
@@ -51,9 +49,9 @@ set_ncopy()
 
 	num_len = snprintf(num_str, sizeof(num_str), "%d", replicate);
 
-	gfs_removexattr(testdir, NCOPY_KEY);
+	gfs_removexattr(testdir, GFARM_EA_NCOPY);
 
-	e = gfs_setxattr(testdir, NCOPY_KEY, num_str, num_len,
+	e = gfs_setxattr(testdir, GFARM_EA_NCOPY, num_str, num_len,
 			 GFS_XATTR_CREATE);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "can not set gfarm.ncopy! (%s)\n",
@@ -72,7 +70,7 @@ del_ncopy()
 	if (replicate <= 1)
 		return (GFARM_ERR_NO_ERROR);
 
-	e = gfs_removexattr(testdir, NCOPY_KEY);
+	e = gfs_removexattr(testdir, GFARM_EA_NCOPY);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 

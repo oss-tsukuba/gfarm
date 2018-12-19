@@ -446,10 +446,11 @@ do_posix_setxattr(struct directory_names *names)
 	set_number(&r, names->n);
 	set_start(&r);
 #ifdef __APPLE_CC__
-	e = setxattr(names->names[0], XATTR_KEY, value, val_len,
+	e = setxattr(names->names[0], GFARM_EA_NCOPY, value, val_len,
 		     0, XATTR_CREATE);
 #else
-	e = setxattr(names->names[0], XATTR_KEY, value, val_len, XATTR_CREATE);
+	e = setxattr(names->names[0], GFARM_EA_NCOPY, value, val_len,
+		     XATTR_CREATE);
 #endif
 	if (e != 0) {
 		saved_errno = errno;
@@ -460,10 +461,10 @@ do_posix_setxattr(struct directory_names *names)
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 #ifdef __APPLE_CC__
-		e = setxattr(names->names[i], XATTR_KEY, value, val_len,
+		e = setxattr(names->names[i], GFARM_EA_NCOPY, value, val_len,
 			     0, XATTR_CREATE);
 #else
-		e = setxattr(names->names[i], XATTR_KEY, value, val_len,
+		e = setxattr(names->names[i], GFARM_EA_NCOPY, value, val_len,
 			     XATTR_CREATE);
 #endif
 		if (e != 0) {
@@ -496,10 +497,10 @@ do_posix_getxattr(struct directory_names *names)
 	set_number(&r, names->n);
 	set_start(&r);
 #ifdef __APPLE_CC__
-	e = getxattr(names->names[0], XATTR_KEY, buf, sizeof(buf),
+	e = getxattr(names->names[0], GFARM_EA_NCOPY, buf, sizeof(buf),
 		     0, XATTR_NOFOLLOW);
 #else
-	e = getxattr(names->names[0], XATTR_KEY, buf, sizeof(buf));
+	e = getxattr(names->names[0], GFARM_EA_NCOPY, buf, sizeof(buf));
 #endif
 	if (e < 0) {
 		saved_errno = errno;
@@ -510,10 +511,11 @@ do_posix_getxattr(struct directory_names *names)
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 #ifdef __APPLE_CC__
-		e = getxattr(names->names[i], XATTR_KEY, buf, sizeof(buf),
-			     0, XATTR_NOFOLLOW);
+		e = getxattr(names->names[i], GFARM_EA_NCOPY,
+			     buf, sizeof(buf), 0, XATTR_NOFOLLOW);
 #else
-		e = getxattr(names->names[i], XATTR_KEY, buf, sizeof(buf));
+		e = getxattr(names->names[i], GFARM_EA_NCOPY,
+			     buf, sizeof(buf));
 #endif
 		if (e < 0) {
 			saved_errno = errno;
@@ -544,9 +546,9 @@ do_posix_removexattr(struct directory_names *names)
 	set_number(&r, names->n);
 	set_start(&r);
 #ifdef __APPLE_CC__
-	e = removexattr(names->names[0], XATTR_KEY, XATTR_NOFOLLOW);
+	e = removexattr(names->names[0], GFARM_EA_NCOPY, XATTR_NOFOLLOW);
 #else
-	e = removexattr(names->names[0], XATTR_KEY);
+	e = removexattr(names->names[0], GFARM_EA_NCOPY);
 #endif
 	if (e != 0) {
 		saved_errno = errno;
@@ -557,9 +559,10 @@ do_posix_removexattr(struct directory_names *names)
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 #ifdef __APPLE_CC__
-		e = removexattr(names->names[i], XATTR_KEY, XATTR_NOFOLLOW);
+		e = removexattr(names->names[i], GFARM_EA_NCOPY
+				XATTR_NOFOLLOW);
 #else
-		e = removexattr(names->names[i], XATTR_KEY);
+		e = removexattr(names->names[i], GFARM_EA_NCOPY);
 #endif
 		if (e != 0) {
 			saved_errno = errno;
