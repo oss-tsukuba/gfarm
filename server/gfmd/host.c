@@ -2296,6 +2296,31 @@ hostset_delete_host(struct hostset *hs, struct host *h)
 	hs->words[word_index] &= ~(1ULL << bit_index);
 }
 
+static gfarm_error_t
+hostset_union(struct hostset *hs, struct hostset *hs2)
+{
+	size_t i;
+
+	if (hs->nwords < hs2->nwords) {
+		size_t i, new_nwords = hs2->nwords;
+		hostset_word_t *new_words;
+
+		GFARM_REALLOC_ARRAY(new_words, hs->words, new_nwords);
+		if (new_words == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		for (i = hs->nwords; i < new_nwords; i++)
+			new_words[i] = 0;
+		hs->nwords = new_nwords;
+		hs->words = new_words;
+	}
+
+	assert(hs->nwords >= hs2->nwords);
+
+	for (i = 0; i < hs2->nwords; i++)
+		hs->words[i] |= hs2->words[i];
+	return (GFARM_ERR_NO_ERROR);
+}
+
 void
 hostset_intersect(struct hostset *hs, struct hostset *hs2)
 {
@@ -2691,8 +2716,8 @@ struct hostset_cache_entry {
 };
 
 /* PREREQUISITE: giant_lock */
-struct hostset *
-hostset_of_fsngroup_alloc(const char *fsngroup, int *n_hostsp)
+struct hostset_cache_entry *
+hostset_of_fsngroup_cache_enter(const char *fsngroup)
 {
 	size_t fsng_size = strlen(fsngroup) + 1;
 	struct gfarm_hash_entry *entry;
@@ -2727,9 +2752,7 @@ hostset_of_fsngroup_alloc(const char *fsngroup, int *n_hostsp)
 			return (NULL); /* GFARM_ERR_NO_MEMORY */
 		}
 	}
-	if (n_hostsp != NULL)
-		*n_hostsp = hce->nhosts;
-	return (hostset_dup(hce->hs));
+	return (hce);
 }
 
 /* PREREQUISITE: giant_lock */
@@ -2758,4 +2781,39 @@ hostset_of_fsngroup_cache_purge(const char *fsngroup)
 		    "unexpected error: fsngroup %s doesn't "
 		    "exist in fsngroup_hostset_hashtab", fsngroup);
 	}
+}
+
+/* PREREQUISITE: giant_lock */
+struct hostset *
+hostset_of_fsngroup_alloc(const char *fsngroup, int *n_hostsp)
+{
+	struct hostset_cache_entry *hce =
+	    hostset_of_fsngroup_cache_enter(fsngroup);
+
+	if (hce == NULL)
+		return (NULL); /* GFARM_ERR_NO_MEMORY */
+
+	if (n_hostsp != NULL)
+		*n_hostsp = hce->nhosts;
+	return (hostset_dup(hce->hs));
+}
+
+/* PREREQUISITE: giant_lock */
+gfarm_error_t
+hostset_union_fsngroup(struct hostset *hs, int *n_hostsp, const char *fsngroup)
+{
+	gfarm_error_t e;
+	struct hostset_cache_entry *hce =
+	    hostset_of_fsngroup_cache_enter(fsngroup);
+
+	if (hce == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	e = hostset_union(hs, hce->hs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (n_hostsp != NULL)
+		*n_hostsp += hce->nhosts;
+	return (GFARM_ERR_NO_ERROR);
 }

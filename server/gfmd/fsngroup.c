@@ -134,6 +134,64 @@ gfarm_repattr_parse_cached(const char *fsng,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static int
+is_fsng_in_fsnset(const char *fsng, const char *fsnset)
+{
+	const char *p;
+	size_t fsng_len = strlen(fsng);
+
+	p = strchr(fsnset, '+');
+	while (p != NULL) {
+		if (p - fsnset == fsng_len &&
+		    memcmp(fsnset, fsng, fsng_len) == 0)
+			return (1);
+		fsnset = p + 1;
+		p = strchr(fsnset, '+');
+	}
+	return (strcmp(fsnset, fsng) == 0);
+}
+
+static gfarm_error_t
+hostset_of_fsnset_alloc(const char *fsnset_string,
+	struct hostset **hsp, int *n_hostsp)
+{
+	gfarm_error_t e;
+	char *fsnset = (char *)fsnset_string; /* XXX - UNCONST */
+	char *p;
+	struct hostset *hs;
+	int n_hosts;
+
+	p = strchr(fsnset, '+');
+	if (p != NULL) {
+		/* XXX temporarily breaks fsnset */
+		*p = '\0';
+	}
+	hs = hostset_of_fsngroup_alloc(fsnset, &n_hosts);
+	if (hs == NULL) {
+		if (p != NULL)
+			*p = '+'; /* recover fsnset */
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	while (p != NULL) {
+		*p = '+'; /* recover fsnset */
+		fsnset = p + 1;
+		p = strchr(fsnset, '+');
+		if (p != NULL) {
+			/* XXX temporarily breaks fsnset */
+			*p = '\0';
+		}
+		e = hostset_union_fsngroup(hs, &n_hosts, fsnset);
+		if (e != GFARM_ERR_NO_ERROR) {
+			hostset_free(hs);
+			return (e);
+		}
+	}
+	*hsp = hs;
+	*n_hostsp = n_hosts;
+	return (GFARM_ERR_NO_ERROR);
+}
+
 /*
  * Make us sure our having the giant_lock acquired.
  */
@@ -185,9 +243,9 @@ fsngroup_schedule_replication(
 
 			*total_p = *total_p + num;
 
-			scope = hostset_of_fsngroup_alloc(group, &n_scope);
-			if (scope == NULL) {
-				save_e = GFARM_ERR_NO_MEMORY;
+			e = hostset_of_fsnset_alloc(group, &scope, &n_scope);
+			if (e != GFARM_ERR_NO_ERROR) {
+				save_e = e; /* must be GFARM_ERR_NO_MEMORY */
 				gflog_notice(GFARM_MSG_1004053,
 				    "%s: hostset_of_fsngroup(%s): %s",
 				    diag, group, gfarm_error_string(save_e));
@@ -227,6 +285,7 @@ fsngroup_has_spare_for_repattr(struct inode *inode, int current_copy_count,
 	gfarm_error_t e;
 	int n_scope;
 	struct hostset *scope;
+	const char *fsnset = NULL;
 	int ncopy, n_desired, total, found;
 	size_t i, nreps = 0;
 	gfarm_repattr_t *reps = NULL;
@@ -247,17 +306,23 @@ fsngroup_has_spare_for_repattr(struct inode *inode, int current_copy_count,
 
 		total += num;
 		if (!found &&
-		    strcmp(gfarm_repattr_group(reps[i]), fsng) == 0) {
+		    is_fsng_in_fsnset(fsng, gfarm_repattr_group(reps[i]))) {
+			fsnset = gfarm_repattr_group(reps[i]);
 			n_desired = num;
 			found = 1;
 		}
 	}
-	/* gfarm_repattr_free_all(nreps, reps); -- shouldn't call (cached) */
 
-	if (current_copy_count <= total)
+	if (current_copy_count <= total) {
+		/* shouldn't call the following, because it's cached */
+		/* gfarm_repattr_free_all(nreps, reps); */
 		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
+	}
 
 	if (!gfarm_replicainfo_enabled) {
+		/* shouldn't call the following, because it's cached */
+		/* gfarm_repattr_free_all(nreps, reps); */
+
 		/*
 		 * ignore 'n_desired' for the hostgroup
 		 * (use 'total' only)
@@ -266,12 +331,19 @@ fsngroup_has_spare_for_repattr(struct inode *inode, int current_copy_count,
 	}
 
 	/* no desired number for the host */
-	if (n_desired <= 0)
+	if (n_desired <= 0) {
+		/* shouldn't call the following, because it's cached */
+		/* gfarm_repattr_free_all(nreps, reps); */
 		return (GFARM_ERR_NO_ERROR); /* has spare */
+	}
 
-	scope = hostset_of_fsngroup_alloc(fsng, &n_scope);
-	if (scope == NULL) {
-		e = GFARM_ERR_NO_MEMORY;
+	e = hostset_of_fsnset_alloc(fsnset, &scope, &n_scope);
+
+	/* shouldn't call the following, because it's cached */
+	/* gfarm_repattr_free_all(nreps, reps); */
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		/* e must be GFARM_ERR_NO_MEMORY */
 		gflog_debug(GFARM_MSG_1004026,
 		    "fsngroup_get_hosts(%s): %s",
 		    fsng, gfarm_error_string(e));
