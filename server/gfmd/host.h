@@ -62,28 +62,20 @@ gfarm_error_t host_replicating_new(struct host *, struct file_replicating **);
 struct inode;
 
 void host_sort_to_remove_replicas(int, struct host **);
-int host_unique_sort(int, struct host **);
-void host_intersect(int *, struct host **, int *, struct host **);
-gfarm_error_t host_except(int *, struct host **, int *, struct host **,
-	int (*)(struct host *, void *), void *);
 
 gfarm_error_t host_is_not_busy_and_disk_available_filter(struct host *, void *);
 gfarm_error_t host_is_disk_available_filter(struct host *, void *);
 gfarm_error_t host_array_alloc(int *, struct host ***);
 gfarm_error_t host_from_all(int (*)(struct host *, void *), void *,
 	gfarm_int32_t *, struct host ***);
+struct hostset;
+gfarm_error_t host_from_all_except(int (*)(struct host *, void *), void *,
+	struct hostset *,
+	gfarm_int32_t *, struct host ***);
 int host_number();
 
 int host_select_one(int, struct host **, const char *);
-gfarm_error_t host_from_all_except(int *, struct host **,
-	int (*)(struct host *, void *),	void *,
-	gfarm_int32_t *, struct host ***);
-gfarm_error_t host_schedule_n_except(
-	int *, struct host **,
-	int *, struct host **, gfarm_time_t,
-	int *, struct host **,
-	int (*)(struct host *, void *), void *,
-	int, int *, struct host ***, int *);
+
 void host_status_reply_waiting_set(struct host *);
 void host_status_reply_waiting_reset(struct host *);
 int host_status_reply_is_waiting(struct host *);
@@ -125,3 +117,22 @@ struct gfp_xdr;
 gfarm_error_t host_info_send(struct gfp_xdr *, struct host *);
 gfarm_error_t host_info_remove_default(const char *, const char *);
 extern gfarm_error_t (*host_info_remove)(const char *, const char *);
+
+/*
+ * struct hostset
+ */
+struct hostset;
+
+void hostset_free(struct hostset *);
+struct hostset *hostset_empty_alloc(void);
+struct hostset *hostset_of_all_hosts_alloc(int *);
+struct hostset *hostset_of_fsngroup_alloc(const char *, int *);
+int hostset_has_host(struct hostset *, struct host *);
+gfarm_error_t hostset_add_host(struct hostset *, struct host *);
+void hostset_intersect(struct hostset *, struct hostset *);
+gfarm_error_t hostset_schedule_n_except(struct hostset *,
+	struct hostset *, gfarm_time_t grace,
+	struct hostset *,
+	int (*)(struct host *, void *), void *,
+	int,
+	int *, struct host ***, int *);

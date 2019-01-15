@@ -10,9 +10,10 @@ gfarm_error_t fsngroup_get_hosts(const char *, int *, struct host ***);
  */
 struct inode;
 struct file_copy;
+struct hostset;
 gfarm_error_t fsngroup_schedule_replication(
 	struct inode *, const char *, int, struct host **,
-	int *, struct host **, gfarm_time_t, int *, struct host **,
+	int *, struct hostset *, gfarm_time_t, int *, struct hostset *,
 	const char *, int *, int *);
 
 /*

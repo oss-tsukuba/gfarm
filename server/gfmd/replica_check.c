@@ -347,7 +347,8 @@ replica_check_fix(struct replication_info *info)
 	gfarm_error_t e;
 	struct inode *inode = inode_lookup(info->inum);
 	int n_srcs, n_existing, n_being_removed, transaction = 0;
-	struct host **srcs, **existing, **being_removed;
+	struct host **srcs;
+	struct hostset *existing, *being_removed;
 	int req_ok_num = 0;
 	static const char diag[] = "replica_check_fix";
 
@@ -367,7 +368,7 @@ replica_check_fix(struct replication_info *info)
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
 
-	e = inode_replica_hosts(
+	e = inode_replica_hostset(
 	    inode, &n_existing, &existing, &n_being_removed, &being_removed);
 	if (e != GFARM_ERR_NO_ERROR) { /* no memory */
 		gflog_error(GFARM_MSG_1003692,
@@ -377,8 +378,8 @@ replica_check_fix(struct replication_info *info)
 		return (e); /* retry */
 	}
 	if (n_existing == 0) {
-		free(existing);
-		free(being_removed);
+		hostset_free(existing);
+		hostset_free(being_removed);
 		if (inode_get_size(inode) == 0)
 			return (GFARM_ERR_NO_ERROR); /* normally */
 		gflog_error(GFARM_MSG_1003624,
@@ -391,8 +392,8 @@ replica_check_fix(struct replication_info *info)
 	/* available replicas for source */
 	e = inode_replica_hosts_valid(inode, &n_srcs, &srcs);
 	if (e != GFARM_ERR_NO_ERROR) { /* no memory */
-		free(existing);
-		free(being_removed);
+		hostset_free(existing);
+		hostset_free(being_removed);
 		gflog_error(GFARM_MSG_1003628,
 		    "replica_check: %lld:%lld:%s: replica_list: %s",
 		    (long long)info->inum, (long long)info->gen,
@@ -402,8 +403,8 @@ replica_check_fix(struct replication_info *info)
 
 	/* n_srcs may be 0, because host_is_up() may change */
 	if (n_srcs <= 0) { /* hosts are down, no available replica */
-		free(existing);
-		free(being_removed);
+		hostset_free(existing);
+		hostset_free(being_removed);
 		free(srcs);
 		REDUCED_WARN(GFARM_MSG_1004274, &hosts_down_state,
 		    "replica_check: %lld:%lld:%s: no available replica",
@@ -414,8 +415,8 @@ replica_check_fix(struct replication_info *info)
 
 	if (info->replica_spec.repattr == NULL &&
 	    info->replica_spec.desired_number <= 0) { /* disabled */
-		free(existing);
-		free(being_removed);
+		hostset_free(existing);
+		hostset_free(being_removed);
 		free(srcs);
 		return (GFARM_ERR_NO_ERROR); /* skip */
 	}
@@ -444,8 +445,8 @@ replica_check_fix(struct replication_info *info)
 
 	if (transaction)
 		db_end(diag);
-	free(existing);
-	free(being_removed);
+	hostset_free(existing);
+	hostset_free(being_removed);
 	free(srcs);
 	return (e);
 }
