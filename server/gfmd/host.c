@@ -3,6 +3,7 @@
  */
 
 #include <assert.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +54,12 @@ static pthread_mutex_t total_disk_mutex = PTHREAD_MUTEX_INITIALIZER;
 static gfarm_off_t total_disk_used, total_disk_avail;
 static const char total_disk_diag[] = "total_disk";
 
+static int host_id_count = 0;
+
+static struct host **host_id_to_host = NULL;
+static size_t host_id_to_host_size = 0;
+#define HOST_ID_TO_HOST_INITIAL_SIZE	64
+
 /* in-core gfarm_host_info */
 struct host {
 	/* abstract_host is common data between
@@ -63,6 +70,8 @@ struct host {
 	 * resources which are protected by the giant_lock()
 	 */
 	struct gfarm_host_info hi;
+
+	int host_id;
 
 	/*
 	 * This should be included in the struct gfarm_host_info as a
@@ -359,6 +368,36 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 		host_free(h);
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
+
+	if (host_id_to_host_size < host_id_count + 1) {
+		size_t new_size;
+		struct host **new_array;
+
+		if (host_id_to_host_size == 0)
+			new_size = HOST_ID_TO_HOST_INITIAL_SIZE;
+		else
+			new_size = host_id_to_host_size * 2;
+
+		GFARM_REALLOC_ARRAY(new_array, host_id_to_host, new_size);
+		if (new_array == NULL) {
+			if (!gfarm_hash_purge(host_hashtab,
+			    &h->hi.hostname, sizeof(h->hi.hostname))) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "unexpected error: "
+				    "host %s doesn't exist in host_hashtab",
+				    h->hi.hostname);
+			}
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		host_id_to_host_size = new_size;
+		host_id_to_host = new_array;
+	}
+
+	/* increase id_count here, to deal with gfarm_hash_enter() failure */
+	h->host_id = host_id_count;
+	host_id_to_host[host_id_count] = h;
+	host_id_count++;
+
 	*(struct host **)gfarm_hash_entry_data(entry) = h;
 	host_validate(h);
 	if (hpp != NULL)
@@ -978,6 +1017,7 @@ host_new(struct gfarm_host_info *hi, struct callout *callout)
 		return (NULL);
 	abstract_host_init(&h->ah, &host_ops, diag);
 	h->hi = *hi;
+	h->host_id = -1; /* initialized by host_enter(). see comment there */
 	h->fsngroupname = NULL;
 #ifdef COMPAT_GFARM_2_3
 	h->back_channel_result = NULL;
@@ -1021,28 +1061,6 @@ host_replicating_new(struct host *dst, struct file_replicating **frp)
 }
 
 static int
-host_order(const void *a, const void *b)
-{
-	const struct host *const *h1 = a, *const *h2 = b;
-
-	if (*h1 < *h2)
-		return (-1);
-	else if (*h1 > *h2)
-		return (1);
-	else
-		return (0);
-}
-
-static void
-host_sort(int nhosts, struct host **hosts)
-{
-	if (nhosts <= 0) /* 2nd parameter of qsort(3) is unsigned */
-		return;
-
-	qsort(hosts, nhosts, sizeof(*hosts), host_order);
-}
-
-static int
 host_order_by_disk_avail(const void *a, const void *b)
 {
 	const struct host *const *h1 = a, *const *h2 = b;
@@ -1068,142 +1086,6 @@ host_sort_to_remove_replicas(int nhosts, struct host **hosts)
 	qsort(hosts, nhosts, sizeof(*hosts), host_order_by_disk_avail);
 }
 
-/*
- * remove duplicated hosts.
- * NOTE: this function assumes that hosts[] is sorted by host_order()
- */
-static int
-host_unique(int nhosts, struct host **hosts)
-{
-	int l, r;
-
-	if (nhosts <= 0)
-		return (0);
-	l = 0;
-	r = l + 1;
-	for (;;) {
-		for (;;) {
-			if (r >= nhosts)
-				return (l + 1);
-			if (hosts[l] != hosts[r])
-				break;
-			r++;
-		}
-		++l;
-		hosts[l] = hosts[r]; /* maybe l == r here */
-		++r;
-	}
-}
-
-int
-host_unique_sort(int nhosts, struct host **hosts)
-{
-	host_sort(nhosts, hosts);
-	return (host_unique(nhosts, hosts));
-}
-
-/*
- * calculate hosts1[] = intersect(hosts1[], hosts2[])
- *
- * this function modifies *nhosts1p, hosts1[], *nhosts2 and hosts2[]
- * i.e. duplicate hosts may be removed, host order may be sorted.
- */
-void
-host_intersect(int *nhosts1p, struct host **hosts1,
-	int *nhosts2p, struct host **hosts2)
-{
-	int nhosts1 = *nhosts1p, nhosts2 = *nhosts2p;
-	int cmp, i, j, n;
-
-	if (nhosts1 <= 0 || nhosts2 <= 0) { /* short cut */
-		*nhosts1p = 0;
-		return;
-	}
-
-	nhosts1 = host_unique_sort(nhosts1, hosts1);
-	nhosts2 = host_unique_sort(nhosts2, hosts2);
-	i = j = n = 0;
-	while (i < nhosts1 && j < nhosts2) {
-		cmp = host_order(&hosts1[i], &hosts2[j]);
-		if (cmp < 0) {
-			i++;
-		} else if (cmp == 0) {
-			hosts1[n++] = hosts1[i++]; /* maybe n == i here */
-			j++;
-		} else /* cmp > 0 */ {
-			j++;
-		}
-	}
-	*nhosts1p = n;
-	*nhosts2p = nhosts2;
-}
-
-/* NOTE: both hosts[] and exceptions[] must be host_unique_sort()ed */
-static gfarm_error_t
-host_exclude(int *nhostsp, struct host **hosts,
-	int n_exceptions, struct host **exceptions,
-	int (*filter)(struct host *, void *), void *closure)
-{
-	int cmp, i, j, nhosts = *nhostsp;
-	unsigned char *candidates;
-
-	GFARM_MALLOC_ARRAY(candidates, nhosts > 0 ? nhosts : 1);
-	if (candidates == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
-	memset(candidates, 1, nhosts);
-
-	if (n_exceptions > 0) {
-		/* exclude exceptions[] from hosts[] */
-		i = j = 0;
-		while (i < nhosts && j < n_exceptions) {
-			cmp = host_order(&hosts[i], &exceptions[j]);
-			if (cmp < 0) {
-				i++;
-			} else if (cmp == 0) {
-				candidates[i++] = 0;
-			} else if (cmp > 0) {
-				j++;
-			}
-		}
-	}
-
-	if (filter != NULL) {
-		for (i = 0; i < nhosts; i++) {
-			if (!candidates[i])
-				continue;
-			if (!filter(hosts[i], closure))
-				candidates[i] = 0;
-		}
-	}
-
-	/* compaction */
-	j = 0;
-	for (i = 0; i < nhosts; i++) {
-		if (candidates[i])
-			hosts[j++] = hosts[i];
-	}
-	free(candidates);
-
-	*nhostsp = j;
-	return (GFARM_ERR_NO_ERROR);
-}
-
-/*
- * this function modifies *nhostsp, hosts[], *n_exceptionsp and exceptions[],
- * but they may be abled to be used later.
- */
-gfarm_error_t
-host_except(int *nhostsp, struct host **hosts,
-	int *n_exceptionsp, struct host **exceptions,
-	int (*filter)(struct host *, void *), void *closure)
-{
-	*n_exceptionsp = host_unique_sort(*n_exceptionsp, exceptions);
-	*nhostsp = host_unique_sort(*nhostsp, hosts);
-
-	return (host_exclude(nhostsp, hosts, *n_exceptionsp, exceptions,
-	    filter, closure));
-}
 
 gfarm_error_t
 host_is_disk_available_filter(struct host *host, void *closure)
@@ -1279,6 +1161,30 @@ host_from_all(int (*filter)(struct host *, void *), void *closure,
 	return (e);
 }
 
+gfarm_error_t
+host_from_all_except(int (*filter)(struct host *, void *), void *closure,
+	struct hostset *exceptions,
+	gfarm_int32_t *nhostsp, struct host ***hostsp)
+{
+	gfarm_error_t e;
+	int i, j, nhosts;
+	struct host **hosts;
+
+	e = host_array_alloc(&nhosts, &hosts);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	j = 0;
+	for (i = 0; i < nhosts; i++) {
+		if (!hostset_has_host(exceptions, hosts[i]) &&
+		    (*filter)(hosts[i], closure))
+			hosts[j++] = hosts[i];
+	}
+	*nhostsp = j;
+	*hostsp = hosts;
+	return (e);
+}
+
 /*
  * PREREQUISITE: giant_lock
  * LOCKS: abstract_host::mutex
@@ -1302,23 +1208,6 @@ host_number()
 /*
  * just select randomly		XXX FIXME: needs to improve
  */
-static void
-select_hosts(int nhosts, struct host **hosts,
-	int nresults, struct host **results)
-{
-	int i, j;
-
-	assert(nhosts > nresults);
-	for (i = 0; i < nresults; i++) {
-		j = gfarm_random() % nhosts;
-		results[i] = hosts[j];
-		hosts[j] = hosts[--nhosts];
-	}
-}
-
-/*
- * just select randomly		XXX FIXME: needs to improve
- */
 int
 host_select_one(int nhosts, struct host **hosts, const char *diag)
 {
@@ -1331,119 +1220,6 @@ host_select_one(int nhosts, struct host **hosts, const char *diag)
 		    diag, nhosts);
 	}
 	return (0);
-}
-
-/*
- * this function modifies *n_exceptionsp and exceptions[],
- * but they may be abled to be used later.
- */
-gfarm_error_t
-host_from_all_except(int *n_exceptionsp, struct host **exceptions,
-	int (*filter)(struct host *, void *), void *closure,
-	gfarm_int32_t *nhostsp, struct host ***hostsp)
-{
-	gfarm_error_t e;
-	int nhosts;
-	struct host **hosts;
-
-	e = host_array_alloc(&nhosts, &hosts);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-
-	e = host_except(&nhosts, hosts, n_exceptionsp, exceptions,
-	    filter, closure);
-
-	if (e == GFARM_ERR_NO_ERROR) {
-		*nhostsp = nhosts;
-		*hostsp = hosts;
-	} else {
-		free(hosts);
-	}
-	return (e);
-}
-
-/*
- * this function breaks *nhostsp and hosts[], and they cannot be used later.
- * this function modifies *n_existing, existing[], *n_being_removed
- * and being_removed[], but they may be abled to be used later.
- *
- * n_desired >= *n_validp + *n_taregetsp
- * *n_validp > n_desired: too enough
- * n_desired > *n_validp + *n_taregetsp: shortage
- */
-gfarm_error_t
-host_schedule_n_except(
-	int *nhostsp, struct host **hosts,
-	int *n_existingp, struct host **existing, gfarm_time_t grace,
-	int *n_being_removedp, struct host **being_removed,
-	int (*filter)(struct host *, void *), void *closure,
-	int n_desired, int *n_targetsp, struct host ***targetsp, int *n_validp)
-{
-	gfarm_error_t e;
-	int i, n_before, nhosts, n_shortage, n_up = 0, n_down = 0, n_zero = 0;
-	struct host **targets, **up, **down;
-
-	e = host_except(nhostsp, hosts, n_being_removedp, being_removed,
-	    NULL, NULL);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-
-	GFARM_MALLOC_ARRAY(up, *n_existingp);
-	GFARM_MALLOC_ARRAY(down, *n_existingp);
-	if (up == NULL || down == NULL) {
-		free(up);
-		free(down);
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	for (i = 0; i < *n_existingp; i++) {
-		if (host_is_up_with_grace(existing[i], grace))
-			up[n_up++] = existing[i];
-		else
-			down[n_down++] = existing[i];
-	}
-	e = host_except(nhostsp, hosts, &n_down, down, NULL, NULL);
-	if (e != GFARM_ERR_NO_ERROR) {
-		free(up);
-		free(down);
-		return (e);
-	}
-	n_before = *nhostsp;
-	e = host_except(nhostsp, hosts, &n_up, up, NULL, NULL);
-	if (e != GFARM_ERR_NO_ERROR) {
-		free(up);
-		free(down);
-		return (e);
-	}
-	*n_validp = n_before - *nhostsp; /* existing valid replicas */
-	free(up);
-	free(down);
-
-	/* search available hosts */
-	e = host_except(nhostsp, hosts, &n_zero, NULL, filter, closure);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-
-	nhosts = *nhostsp;
-	n_shortage = n_desired - *n_validp;
-	if (n_shortage <= 0) { /* sufficient */
-		*n_targetsp = 0;
-		*targetsp = NULL;
-		return (GFARM_ERR_NO_ERROR);
-	}
-	GFARM_MALLOC_ARRAY(targets, n_shortage);
-	if (targets == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
-	if (nhosts <= n_shortage) { /* just enough or shortage */
-		for (i = 0; i < nhosts; i++)
-			targets[i] = hosts[i];
-		*n_targetsp = nhosts;
-	} else { /* too enough targets */
-		select_hosts(nhosts, hosts, n_shortage, targets);
-		*n_targetsp = n_shortage;
-	}
-	*targetsp = targets;
-	return (GFARM_ERR_NO_ERROR);
 }
 
 #ifdef NOT_USED
@@ -2262,4 +2038,574 @@ host_iterate(
 	*nelemp = nmatches;
 	*arrayp = ret;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * hostset
+ */
+
+typedef unsigned long long hostset_word_t;
+#define HOSTSET_WORD_BITS	(sizeof(hostset_word_t) * CHAR_BIT)
+#define HOSTSET_NUM_WORDS(bits)	\
+	(((bits) + HOSTSET_WORD_BITS - 1) / HOSTSET_WORD_BITS)
+
+struct hostset {
+	size_t nwords;
+	hostset_word_t *words; /* maybe realloc'ed, see hostset_add_host() */
+};
+
+void
+hostset_free(struct hostset *hs)
+{
+	free(hs->words);
+	free(hs);
+}
+
+static struct hostset *
+hostset_dup(struct hostset *hs)
+{
+	struct hostset *new_hs;
+	size_t i, nwords = hs->nwords;
+
+	GFARM_MALLOC(new_hs);
+	if (new_hs == NULL)
+		return (NULL); /* GFARM_ERR_NO_MEMORY */
+
+	new_hs->nwords = nwords;
+	GFARM_MALLOC_ARRAY(new_hs->words, nwords);
+	if (new_hs->words == NULL) {
+		free(new_hs);
+		return (NULL); /* GFARM_ERR_NO_MEMORY */
+	}
+	for (i = 0; i < nwords; i++)
+		new_hs->words[i] = hs->words[i];
+
+	return (new_hs);
+
+}
+
+static struct hostset *
+hostset_alloc(void)
+{
+	struct hostset *hs;
+
+	/* popcount64() implementation assumes this */
+	assert(HOSTSET_WORD_BITS == 64);
+
+	GFARM_MALLOC(hs);
+	if (hs == NULL)
+		return (NULL); /* GFARM_ERR_NO_MEMORY */
+
+	hs->nwords = HOSTSET_NUM_WORDS(host_id_count);
+	if (hs->nwords == 0)
+		hs->nwords = 1;
+	GFARM_MALLOC_ARRAY(hs->words, hs->nwords);
+	if (hs->words == NULL) {
+		free(hs);
+		return (NULL); /* GFARM_ERR_NO_MEMORY */
+	}
+
+	return (hs);
+}
+
+struct hostset *
+hostset_empty_alloc(void)
+{
+	struct hostset *hs = hostset_alloc();
+	size_t i;
+
+	if (hs == NULL)
+		return (NULL); /* GFARM_ERR_NO_MEMORY */
+	for (i = 0; i < hs->nwords; i++)
+		hs->words[i] = 0ULL;
+	return (hs);
+}
+
+/* should be used only when (*filter)() is true for nearly half of the hosts */
+static struct hostset *
+hostset_alloc_by(int (*filter)(struct host *, void *), void *closure,
+	int *n_hostsp)
+{
+	size_t i;
+	int j, n_hosts = 0, host_index = 0;
+	hostset_word_t bits;
+	struct hostset *hs = hostset_alloc();
+
+	if (hs == NULL)
+		return (NULL); /* GFARM_ERR_NO_MEMORY */
+
+	for (i = 0; i < hs->nwords; i++) {
+		hs->words[i] = 0ULL;
+		bits = 1ULL;
+		for (j = 0;
+		    j < HOSTSET_WORD_BITS && host_index < host_id_count;
+		    j++, host_index++) {
+			if (filter(host_id_to_host[host_index], closure)) {
+				hs->words[i] |= bits;
+				n_hosts++;
+			}
+			bits <<= 1;
+		}
+	}
+	if (n_hostsp != NULL)
+		*n_hostsp = n_hosts;
+	return (hs);
+}
+
+static int
+host_valid_filter(struct host *h, void *closure)
+{
+	return (!host_is_invalid_unlocked(h));
+}
+
+struct hostset *
+hostset_of_all_hosts_alloc(int *n_all_hostsp)
+{
+	return (hostset_alloc_by(host_valid_filter, NULL, n_all_hostsp));
+}
+
+static int
+host_fsngroup_filter(struct host *h, void *closure)
+{
+	const char *fsngroup = closure;
+
+	return (!host_is_invalid_unlocked(h) &&
+		strcmp(host_fsngroup(h), fsngroup) == 0);
+}
+
+struct hostset *
+hostset_of_fsngroup_alloc(const char *fsngroup, int *n_hostsp)
+{
+	return (hostset_alloc_by(
+	    host_fsngroup_filter, (void *)fsngroup /*UNCONST*/,
+	    n_hostsp));
+}
+
+int
+hostset_has_host(struct hostset *hs, struct host *h)
+{
+	unsigned int host_id = h->host_id;
+	unsigned int word_index = host_id / HOSTSET_WORD_BITS;
+	unsigned int bit_index = host_id % HOSTSET_WORD_BITS;
+
+	if (hs->nwords <= word_index)
+		return (0); /* dosn't have the host */
+	return ((hs->words[word_index] & (1ULL << bit_index)) != 0);
+}
+
+gfarm_error_t
+hostset_add_host(struct hostset *hs, struct host *h)
+{
+	unsigned int host_id = h->host_id;
+	unsigned int word_index = host_id / HOSTSET_WORD_BITS;
+	unsigned int bit_index = host_id % HOSTSET_WORD_BITS;
+
+	if (hs->nwords <= word_index) {
+		size_t i, new_nwords = hs->nwords * 2;
+		hostset_word_t *new_words;
+
+		while (new_nwords <= word_index)
+			new_nwords *= 2;
+		GFARM_REALLOC_ARRAY(new_words, hs->words, new_nwords);
+		if (new_words == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		for (i = hs->nwords; i < new_nwords; i++)
+			new_words[i] = 0;
+		hs->nwords = new_nwords;
+		hs->words = new_words;
+	}
+	hs->words[word_index] |= 1ULL << bit_index;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static void
+hostset_delete_host(struct hostset *hs, struct host *h)
+{
+	unsigned int host_id = h->host_id;
+	unsigned int word_index = host_id / HOSTSET_WORD_BITS;
+	unsigned int bit_index = host_id % HOSTSET_WORD_BITS;
+
+	if (hs->nwords <= word_index)
+		return; /* nothing to do */
+	hs->words[word_index] &= ~(1ULL << bit_index);
+}
+
+void
+hostset_intersect(struct hostset *hs, struct hostset *hs2)
+{
+	size_t i;
+
+	for (i = 0; i < hs->nwords && i < hs2->nwords; i++)
+		hs->words[i] &= hs2->words[i];
+}
+
+static void
+hostset_except(struct hostset *hs, struct hostset *except)
+{
+	size_t i;
+
+	for (i = 0; i < hs->nwords && i < except->nwords; i++)
+		hs->words[i] &= ~except->words[i];
+}
+
+/*
+ * this implementation is optimized for the case
+ * where number of hosts in hs is relatively smaller
+ */
+static void
+hostset_foreach(struct hostset *hs,
+	void (*f)(struct host *, void *), void *closure)
+{
+	int i, j;
+	int host_index = 0;
+
+	for (i = 0; i < hs->nwords; i++, host_index += HOSTSET_WORD_BITS) {
+		hostset_word_t bit, w = hs->words[i];
+
+		if (w == 0ULL)
+			continue;
+		if (w & 0x00000000ffffffffULL) {
+			if (w & 0x000000000000ffffULL) {
+				if (w & 0x00000000000000ffULL) {
+					for (bit = 1ULL,
+					    j = 0;
+					    j < 8 &&
+					    host_index + j < host_id_count;
+					    j++, bit <<= 1)
+						if (w & bit)
+							f(host_id_to_host[
+							  host_index + j],
+							  closure);
+				}
+				if (w & 0x000000000000ff00ULL) {
+					for (bit = 0x100ULL,
+					    j =  8;
+					    j < 16 &&
+					    host_index + j < host_id_count;
+					    j++, bit <<= 1)
+						if (w & bit)
+							f(host_id_to_host[
+							  host_index + j],
+							  closure);
+				}
+			}
+			if (w & 0x00000000ffff0000ULL) {
+				if (w & 0x0000000000ff0000ULL) {
+					for (bit = 0x10000ULL,
+					    j = 16;
+					    j < 24 &&
+					    host_index + j < host_id_count;
+					    j++, bit <<= 1)
+						if (w & bit)
+							f(host_id_to_host[
+							  host_index + j],
+							  closure);
+				}
+				if (w & 0x00000000ff000000ULL) {
+					for (bit = 0x1000000ULL,
+					    j = 24;
+					    j < 32 &&
+					    host_index + j < host_id_count;
+					    j++, bit <<= 1)
+						if (w & bit)
+							f(host_id_to_host[
+							  host_index + j],
+							  closure);
+				}
+			}
+		}
+		if (w & 0xffffffff00000000ULL) {
+			if (w & 0x0000ffff00000000ULL) {
+				if (w & 0x000000ff00000000ULL) {
+					for (bit = 0x100000000ULL,
+					    j = 32;
+					    j < 40 &&
+					    host_index + j < host_id_count;
+					    j++, bit <<= 1)
+						if (w & bit)
+							f(host_id_to_host[
+							  host_index + j],
+							  closure);
+				}
+				if (w & 0x0000ff0000000000ULL) {
+					for (bit = 0x10000000000ULL,
+					    j = 40;
+					    j < 48 &&
+					    host_index + j < host_id_count;
+					    j++, bit <<= 1)
+						if (w & bit)
+							f(host_id_to_host[
+							  host_index + j],
+							  closure);
+				}
+			}
+			if (w & 0xffff000000000000ULL) {
+				if (w & 0x00ff000000000000ULL) {
+					for (bit = 0x1000000000000ULL,
+					    j = 48;
+					    j < 56 &&
+					    host_index + j < host_id_count;
+					    j++, bit <<= 1)
+						if (w & bit)
+							f(host_id_to_host[
+							  host_index + j],
+							  closure);
+				}
+				if (w & 0xff00000000000000ULL) {
+					for (bit = 0x100000000000000ULL,
+					    j = 56;
+					    j < 64 &&
+					    host_index + j < host_id_count;
+					    j++, bit <<= 1)
+						if (w & bit)
+							f(host_id_to_host[
+							  host_index + j],
+							  closure);
+				}
+			}
+		}
+	}
+}
+
+struct hostset_filter_closure {
+	struct hostset *hs;
+	int (*filter)(struct host *, void *);
+	void *closure;
+};
+
+static void
+hostset_filter_apply(struct host *h, void *closure)
+{
+	struct hostset_filter_closure *c = closure;
+
+	if (!(*c->filter)(h, c->closure))
+		hostset_delete_host(c->hs, h);
+}
+
+static void
+hostset_filter(struct hostset *hs,
+	int (*filter)(struct host *, void *), void *closure)
+{
+	struct hostset_filter_closure c;
+
+	c.hs = hs;
+	c.filter = filter;
+	c.closure = closure;
+	hostset_foreach(hs, hostset_filter_apply, &c);
+}
+
+static int
+popcount64(unsigned long long bits)
+{
+#ifdef HAVE___BUILTIN_POPCOUNTLL
+	return (__builtin_popcountll(bits)); /* gcc extension */
+#else /* 64bit version of HAKMEM #169 */
+	bits = ((bits >>  1) & 0x5555555555555555) +
+		(bits        & 0x5555555555555555);
+	bits = ((bits >>  2) & 0x3333333333333333) +
+		(bits        & 0x3333333333333333);
+	bits = ((bits >>  4) & 0x0f0f0f0f0f0f0f0f) + 
+		(bits        & 0x0f0f0f0f0f0f0f0f);
+	bits = ((bits >>  8) & 0x00ff00ff00ff00ff) +
+		(bits        & 0x00ff00ff00ff00ff);
+	bits = ((bits >> 16) & 0x0000ffff0000ffff) + 
+		(bits        & 0x0000ffff0000ffff);
+	bits = ((bits >> 32) & 0x00000000ffffffff) + 
+		(bits        & 0x00000000ffffffff);
+	return ((int)bits);
+#endif
+}
+
+static int
+hostset_count_hosts(struct hostset *hs)
+{
+	size_t i;
+	int count = 0;
+
+	for (i = 0; i < hs->nwords; i++)
+		count += popcount64(hs->words[i]);
+	return (count);
+}
+
+struct host_count_up_closure {
+	gfarm_time_t grace;
+	int n_up;
+};
+
+static void
+host_count_up(struct host *h, void *closure)
+{
+	struct host_count_up_closure *c = closure;
+
+	if (host_is_up_with_grace(h, c->grace))
+		c->n_up++;
+}
+
+int
+hostset_count_hosts_up(struct hostset *hs, gfarm_time_t grace)
+{
+	struct host_count_up_closure c;
+
+	c.grace = grace;
+	c.n_up = 0;
+	hostset_foreach(hs, host_count_up, &c);
+	return (c.n_up);
+}
+
+struct hostset_to_hosts_closure {
+	struct host **hosts;
+	int index;
+};
+
+static void
+hostset_to_host_record(struct host *h, void *closure)
+{
+	struct hostset_to_hosts_closure *c = closure;
+
+	c->hosts[c->index++] = h;
+}
+
+static void
+hostset_to_hosts(struct hostset *hs, struct host **hosts)
+{
+	struct hostset_to_hosts_closure c;
+
+	c.hosts = hosts;
+	c.index = 0;
+	hostset_foreach(hs, hostset_to_host_record, &c);
+}
+
+struct hostset_collect_host_id_closure {
+	int *host_id_array;
+	int index;
+};
+
+static void
+hostset_collect_host_id_each(struct host *h, void *closure)
+{
+	struct hostset_collect_host_id_closure *c = closure;
+
+	c->host_id_array[c->index++] = h->host_id;
+}
+
+static void
+hostset_collect_host_id(struct hostset *hs, int *host_id_array)
+{
+	struct hostset_collect_host_id_closure c;
+
+	c.host_id_array = host_id_array;
+	c.index = 0;
+	hostset_foreach(hs, hostset_collect_host_id_each, &c);
+}
+
+
+/*
+ * just select randomly		XXX FIXME: needs to improve
+ */
+static void
+select_hosts(int nsrc, int *src, int nresults, int *results)
+{
+	int i, j;
+
+	assert(nsrc > nresults);
+	for (i = 0; i < nresults; i++) {
+		j = gfarm_random() % nsrc;
+		results[i] = src[j];
+		src[j] = src[--nsrc];
+	}
+}
+
+static gfarm_error_t
+hostset_select_n(struct hostset *scope, int n_shortage,
+	int *n_targetsp, struct host ***targetsp)
+{
+	int n_scope = hostset_count_hosts(scope);
+	int i;
+	struct host **targets;
+	int *scope_host_id_array, *target_host_id_array;
+
+	if (n_scope <= n_shortage) { /* just enough or shortage */
+		GFARM_MALLOC_ARRAY(targets, n_scope);
+		if (targets == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		hostset_to_hosts(scope, targets);
+		*n_targetsp = n_scope;
+
+	} else { /* too enough targets */
+
+		GFARM_MALLOC_ARRAY(scope_host_id_array, n_scope);
+		if (scope_host_id_array == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+
+		GFARM_MALLOC_ARRAY(target_host_id_array, n_shortage);
+		if (target_host_id_array == NULL) {
+			free(scope_host_id_array);
+			return (GFARM_ERR_NO_MEMORY);
+		}
+
+		GFARM_MALLOC_ARRAY(targets, n_shortage);
+		if (targets == NULL) {
+			free(target_host_id_array);
+			free(scope_host_id_array);
+			return (GFARM_ERR_NO_MEMORY);
+		}
+
+		hostset_collect_host_id(scope, scope_host_id_array);
+		select_hosts(n_scope, scope_host_id_array,
+		    n_shortage, target_host_id_array);
+		free(scope_host_id_array);
+
+		for (i = 0; i < n_shortage; i++)
+			targets[i] = host_id_to_host[target_host_id_array[i]];
+		free(target_host_id_array);
+
+		*n_targetsp = n_shortage;
+	}
+	*targetsp = targets;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * this function breaks `scope', and it cannot be used later.
+ * this function does not modify `existing' and `being_removed',
+ * and they may be able to be used later.
+ *
+ * *n_validp > n_desired: already too enough
+ * n_desired <= *n_validp + *n_taregetsp: will be enough
+ * n_desired >  *n_validp + *n_taregetsp: shortage
+ */
+gfarm_error_t
+hostset_schedule_n_except(
+	struct hostset *scope,
+	struct hostset *existing, gfarm_time_t grace,
+	struct hostset *being_removed,
+	int (*filter)(struct host *, void *), void *closure,
+	int n_desired,
+	int *n_targetsp, struct host ***targetsp, int *n_validp)
+{
+	int n_shortage, n_up = 0;
+	struct hostset *existing_within_scope;
+
+	hostset_except(scope, being_removed);
+
+	existing_within_scope = hostset_dup(scope);
+	if (existing_within_scope == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	hostset_intersect(existing_within_scope, existing);
+	n_up = hostset_count_hosts_up(existing_within_scope, grace);
+	hostset_free(existing_within_scope);
+
+	*n_validp = n_up; /* existing valid replicas */
+
+	if (n_desired <= n_up) { /* sufficient */
+		*n_targetsp = 0;
+		*targetsp = NULL;
+		return (GFARM_ERR_NO_ERROR);
+	}
+	n_shortage = n_desired - n_up;
+
+	hostset_except(scope, existing);
+
+	hostset_filter(scope, filter, closure);
+	return (hostset_select_n(scope, n_shortage, n_targetsp, targetsp));
 }

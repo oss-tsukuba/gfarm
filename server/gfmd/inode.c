@@ -991,9 +991,9 @@ gfarm_error_t
 inode_schedule_replication_within_scope(
 	struct inode *inode, struct dirset *tdirset, int n_desired,
 	int n_srcs, struct host **srcs, int *next_src_indexp,
-	int *n_scopep, struct host **scope,
-	int *n_existingp, struct host **existing, gfarm_time_t grace,
-	int *n_being_removedp, struct host **being_removed, const char *diag,
+	int *n_scopep, struct hostset *scope,
+	int *n_existingp, struct hostset *existing, gfarm_time_t grace,
+	int *n_being_removedp, struct hostset *being_removed, const char *diag,
 	int *req_ok_nump)
 {
 	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
@@ -1003,8 +1003,7 @@ inode_schedule_replication_within_scope(
 	gfarm_off_t necessary_space;
 
 	necessary_space = inode_get_size(inode);
-	e = host_schedule_n_except(n_scopep, scope, n_existingp, existing,
-	    grace, n_being_removedp, being_removed,
+	e = hostset_schedule_n_except(scope, existing, grace, being_removed,
 	    host_is_not_busy_and_disk_available_filter, &necessary_space,
 	    n_desired, &n_targets, &targets, &n_valid);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -1092,8 +1091,16 @@ inode_schedule_replication_within_scope(
 			if (save_e == GFARM_ERR_NO_ERROR ||
 			    e == GFARM_ERR_NO_MEMORY)
 				save_e = e;
-		} else
+		} else if ((e = hostset_add_host(existing, dst)) !=
+		    GFARM_ERR_NO_ERROR) {
+			/* prefer GFARM_ERR_NO_MEMORY to the first error */
+			if (save_e == GFARM_ERR_NO_ERROR ||
+			    e == GFARM_ERR_NO_MEMORY)
+				save_e = e;
+		} else {
+			(*n_existingp)++;
 			n_success++;
+		}
 	}
 	free(targets);
 
@@ -1126,20 +1133,21 @@ inode_schedule_replication_within_scope(
  *
  * srcs[] must be different from existing[].
  */
-gfarm_error_t
+static gfarm_error_t
 inode_schedule_replication_from_all(
 	struct inode *inode, struct dirset *tdirset, int n_desired,
 	int n_srcs, struct host **srcs,
-	int *n_existingp, struct host **existing, gfarm_time_t grace,
-	int *n_being_removedp, struct host **being_removed, const char *diag,
+	int *n_existingp, struct hostset *existing, gfarm_time_t grace,
+	int *n_being_removedp, struct hostset *being_removed, const char *diag,
 	int *req_ok_nump)
 {
 	gfarm_error_t e;
-	int nhosts, next_src_index;
-	struct host **hosts;
+	int n_all_hosts, next_src_index;
+	struct hostset *all_hosts;
 
-	e = host_array_alloc(&nhosts, &hosts);
-	if (e != GFARM_ERR_NO_ERROR) {
+	all_hosts = hostset_of_all_hosts_alloc(&n_all_hosts);
+	if (all_hosts == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
 		gflog_warning(GFARM_MSG_1003646, "%s: inode %lld:%lld: "
 		    "cannot create %d replicas except %d: %s",
 		    diag,
@@ -1151,9 +1159,9 @@ inode_schedule_replication_from_all(
 	next_src_index = host_select_one(n_srcs, srcs, diag);
 	e = inode_schedule_replication_within_scope(
 	    inode, tdirset, n_desired, n_srcs, srcs, &next_src_index,
-	    &nhosts, hosts, n_existingp, existing, grace,
+	    &n_all_hosts, all_hosts, n_existingp, existing, grace,
 	    n_being_removedp, being_removed, diag, req_ok_nump);
-	free(hosts);
+	hostset_free(all_hosts);
 	return (e);
 }
 
@@ -1168,8 +1176,8 @@ inode_schedule_replication(
 	struct inode *inode, struct dirset *tdirset, int is_replica_check,
 	int n_desired, const char *repattr,
 	int n_srcs, struct host **srcs,
-	int *n_existingp, struct host **existing, gfarm_time_t grace,
-	int *n_being_removedp, struct host **being_removed, const char *diag,
+	int *n_existingp, struct hostset *existing, gfarm_time_t grace,
+	int *n_being_removedp, struct hostset *being_removed, const char *diag,
 	int *req_ok_nump)
 {
 	gfarm_error_t e;
@@ -1192,128 +1200,27 @@ inode_schedule_replication(
 		if (is_replica_check &&
 		    e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 			/* retry in replica_check */
-		} else {
-			int n_existing2, n_being_removed2;
-			struct host **existing2, **being_removed2;
-
-			/*
-			 * count inode->u.c.s.f.copies again,
-			 * because replicas may have been created.
-			 */
-			e = inode_replica_hosts(
-			    inode, &n_existing2, &existing2,
-			    &n_being_removed2, &being_removed2);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_1004015,
-				    "%s: %lld:%lld:%s: replica_hosts: %s",
-				    diag,
-				    (long long)inode_get_number(inode),
-				    (long long)inode_get_gen(inode),
-				    user_name(inode_get_user(inode)),
-				    gfarm_error_string(e));
-				return (e);
-			}
-
-			/* gfarm.ncopy vs gfarm.replicainfo */
-			if (total_repattr > n_desired)
-				n_desired = total_repattr;
-
-			if (!is_replica_check) { /* replication at close */
-				int n_existing3, n_being_removed3, i, j;
-				struct host **existing3, **being_removed3;
-
-				/*
-				 * existings[] are excepted from
-				 * inode->u.c.s.f.copies.
-				 */
-				if (*n_existingp > 0) {
-					n_existing3 =
-					    *n_existingp + n_existing2;
-					GFARM_MALLOC_ARRAY(
-					    existing3, n_existing3);
-					if (existing3 == NULL) {
-						gflog_error(GFARM_MSG_1004016,
-						    "no memory");
-						return (GFARM_ERR_NO_MEMORY);
-					}
-
-					/* same host is OK (host_unique()ed) */
-					j = 0;
-					for (i = 0; i < *n_existingp; i++, j++)
-						existing3[j] = existing[i];
-					for (i = 0; i < n_existing2; i++, j++)
-						existing3[j] = existing2[i];
-
-					free(existing2);
-					existing2 = existing3;
-					n_existing2 = n_existing3;
-				}
-
-				/*
-				 * being_removed[] are excepted from
-				 * inode->u.c.s.f.copies.
-				 */
-				if (*n_being_removedp > 0) {
-					n_being_removed3 =
-					    *n_being_removedp
-					    + n_being_removed2;
-					GFARM_MALLOC_ARRAY(
-					    being_removed3, n_being_removed3);
-					if (being_removed3 == NULL) {
-						gflog_error(GFARM_MSG_1004017,
-						    "no memory");
-						return (GFARM_ERR_NO_MEMORY);
-					}
-					j = 0;
-					for (i = 0; i < *n_being_removedp;
-					    i++, j++)
-						being_removed3[j] =
-						    being_removed[i];
-					for (i = 0; i < n_being_removed2;
-					    i++, j++)
-						being_removed3[j] =
-						    being_removed2[i];
-
-					free(being_removed2);
-					being_removed2 = being_removed3;
-					n_being_removed2 = n_being_removed3;
-				}
-			}
-
-			gflog_debug(GFARM_MSG_1004018,
-			    "%s: about to schedule "
-			    "ncopy-based replication for inode %lld:%lld@%s. "
-			    "number = %d (= %d - %d + %d)", diag,
-			    (long long)inode_get_number(inode),
-			    (long long)inode_get_gen(inode),
-			    host_name(srcs[0]),
-			    n_desired - n_existing2,
-			    n_desired, n_existing2 + n_being_removed2,
-			    n_being_removed2);
-			e = inode_schedule_replication_from_all(
-			    inode, tdirset, n_desired,
-			    n_srcs, srcs, &n_existing2, existing2, grace,
-			    &n_being_removed2, being_removed2, diag,
-			    req_ok_nump);
-			free(existing2);
-			free(being_removed2);
+			return (e);
 		}
-	} else {
-		gflog_debug(GFARM_MSG_1003648,
-		    "%s: about to schedule "
-		    "ncopy-based replication for inode %lld:%lld@%s. "
-		    "number = %d (= %d - %d + %d)", diag,
-		    (long long)inode_get_number(inode),
-		    (long long)inode_get_gen(inode),
-		    host_name(srcs[0]),
-		    n_desired - *n_existingp,
-		    n_desired, *n_existingp + *n_being_removedp,
-		    *n_being_removedp);
-		e = inode_schedule_replication_from_all(
-		    inode, tdirset, n_desired,
-		    n_srcs, srcs, n_existingp, existing, grace,
-		    n_being_removedp, being_removed, diag, req_ok_nump);
+
+		/* gfarm.ncopy vs gfarm.replicainfo */
+		if (n_desired < total_repattr)
+			n_desired = total_repattr;
 	}
+	gflog_debug(GFARM_MSG_1003648,
+	    "%s: about to schedule "
+	    "ncopy-based replication for inode %lld:%lld@%s. "
+	    "number = %d (= %d - %d + %d)", diag,
+	    (long long)inode_get_number(inode),
+	    (long long)inode_get_gen(inode),
+	    host_name(srcs[0]),
+	    n_desired - *n_existingp,
+	    n_desired, *n_existingp + *n_being_removedp,
+	    *n_being_removedp);
+	e = inode_schedule_replication_from_all(
+	    inode, tdirset, n_desired,
+	    n_srcs, srcs, n_existingp, existing, grace,
+	    n_being_removedp, being_removed, diag, req_ok_nump);
 
 	return (e);
 }
@@ -1329,7 +1236,7 @@ make_replicas_except(struct inode *inode, struct dirset *tdirset,
 	struct file_copy *exception_list)
 {
 	gfarm_error_t e;
-	struct host **existing, **being_removed;
+	struct hostset *existing, *being_removed;
 	int n_existing = 1; /* +1 is for spool_host */
 	int n_being_removed = 0;
 	struct host *srcs[1];
@@ -1337,43 +1244,49 @@ make_replicas_except(struct inode *inode, struct dirset *tdirset,
 	int req_ok_num = 0;
 	static const char diag[] = "make_replicas_except";
 
-	for (copy = exception_list; copy != NULL; copy = copy->host_next) {
-		if (copy->host != spool_host) {
-			if (FILE_COPY_IS_BEING_REMOVED(copy))
-				++n_being_removed;
-			else
-				++n_existing; /* include replicating */
-		}
-	}
-	GFARM_MALLOC_ARRAY(existing, n_existing);
+	existing = hostset_empty_alloc();
 	if (existing == NULL) {
-		gflog_warning(GFARM_MSG_1003696,
-		    "%s: no memory to schedule replicas: existing %d hosts",
-		    diag, n_existing);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: no memory to schedule replicas: existing hostset",
+		    diag);
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	if (n_being_removed > 0) {
-		GFARM_MALLOC_ARRAY(being_removed, n_being_removed);
-		if (being_removed == NULL) {
-			free(existing);
-			gflog_warning(GFARM_MSG_1003697,
-			    "%s: no memory to schedule replicas: "
-			    "being_removed %d hosts",
-			    diag, n_being_removed);
-			return (GFARM_ERR_NO_MEMORY);
-		}
-	} else
-		being_removed = NULL;
+	being_removed = hostset_empty_alloc();
+	if (being_removed == NULL) {
+		hostset_free(existing);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: no memory to schedule replicas: "
+		    "being_removed hostset",
+		    diag);
+		return (GFARM_ERR_NO_MEMORY);
+	}
 
-	n_existing = 0;
-	n_being_removed = 0;
-	existing[n_existing++] = spool_host;
+	e = hostset_add_host(existing, spool_host);
+	if (e != GFARM_ERR_NO_ERROR) {
+		hostset_free(existing);
+		hostset_free(being_removed);
+		return (e);
+	}
+
+	/*
+	 * this is usually faster than calling hostset_alloc_by(), because
+	 * number of replicas is usually far fewer than number of hosts
+	 */
 	for (copy = exception_list; copy != NULL; copy = copy->host_next) {
 		if (copy->host != spool_host) {
-			if (FILE_COPY_IS_BEING_REMOVED(copy))
-				being_removed[n_being_removed++] = copy->host;
-			else
-				existing[n_existing++] = copy->host;
+			if (FILE_COPY_IS_BEING_REMOVED(copy)) {
+				++n_being_removed;
+				e = hostset_add_host(being_removed,
+				    copy->host);
+			} else {
+				++n_existing; /* include replicating */
+				e = hostset_add_host(existing, copy->host);
+			}
+			if (e != GFARM_ERR_NO_ERROR) {
+				hostset_free(existing);
+				hostset_free(being_removed);
+				return (e);
+			}
 		}
 	}
 
@@ -1383,8 +1296,8 @@ make_replicas_except(struct inode *inode, struct dirset *tdirset,
 	    1, srcs, &n_existing, existing, 0,
 	    &n_being_removed, being_removed, diag, &req_ok_num);
 
-	free(existing);
-	free(being_removed);
+	hostset_free(existing);
+	hostset_free(being_removed);
 
 	return (e);
 }
@@ -1518,7 +1431,8 @@ update_replicas(struct inode *inode, struct host *spool_host,
 			    != GFARM_ERR_NO_ERROR) {
 				/*
 				 * in this case,
-				 * inode_replication_request() may sleep
+				 * inode_replication_request() may sleep,
+				 * and it frees `fr' internally.
 				 */
 
 				/*
@@ -1879,56 +1793,40 @@ inode_get_ncopy_with_dead_host(struct inode *inode)
 	return (inode_get_ncopy_common(inode, 1, 0));
 }
 
-/* This function modifies scope[]. Do not use scope[] later */
-/* if is_valid == 0, incomplete replicas are included */
-gfarm_error_t
-inode_count_replicas(
-	struct inode *inode, int is_valid, int is_up,
-	gfarm_time_t host_down_grace,
-	int n_scope, struct host **scope, int *ncopyp)
+/* if valid_only == 0, incomplete replicas are included */
+static int
+inode_count_replicas_within_scope(
+	struct inode *inode, int valid_only, int up_only,
+	gfarm_time_t host_down_grace, struct hostset *scope)
 {
-	gfarm_error_t e;
-	struct file_copy *copy, *copies = inode->u.c.s.f.copies;
-	int count = 0, n_includes = 0, n_before;
-	struct host **includes;
+	int count = 0;
+	struct file_copy *copy;
 
-	for (copy = copies; copy != NULL; copy = copy->host_next)
-		count++;
-
-	GFARM_MALLOC_ARRAY(includes, count);
-	if (includes == NULL) {
-		gflog_error(GFARM_MSG_1004334, "no memory");
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	for (copy = copies; copy != NULL; copy = copy->host_next) {
-		if ((is_valid ?
+	/*
+	 * this is usually faster than calling hostset_alloc_by(host_is_up,)
+	 * then calling hostset_intersect() and hostset_count_hosts(), because
+	 * number of replicas is usually far fewer than number of hosts.
+	 */
+	for (copy = inode->u.c.s.f.copies;
+	    copy != NULL; copy = copy->host_next) {
+		if ((valid_only ?
 		     FILE_COPY_IS_VALID(copy) :
 		     !FILE_COPY_IS_BEING_REMOVED(copy))
 		    &&
-		    (is_up ?
-		     host_is_up_with_grace(copy->host, host_down_grace) : 1))
-			includes[n_includes++] = copy->host;
+		    (!up_only ||
+		     host_is_up_with_grace(copy->host, host_down_grace))
+		    &&
+		    hostset_has_host(scope, copy->host))
+			++count;
 	}
-
-	if (n_scope <= 0 || scope == NULL) {
-		free(includes);
-		*ncopyp = n_includes;
-		return (GFARM_ERR_NO_ERROR);
-	}
-
-	n_before = n_scope;
-	e = host_except(&n_scope, scope, &n_includes, includes, NULL, NULL);
-	free(includes);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-
-	*ncopyp = n_before - n_scope;
-	return (GFARM_ERR_NO_ERROR);
+	return (count);
 }
 
+/* if scope != NULL, only hosts in scope is selected, otherwise don't care */
 static gfarm_error_t
-inode_alloc_file_copy_hosts(struct inode *inode,
+inode_alloc_file_copy_hosts_within_scope(struct inode *inode,
 	int (*filter)(struct file_copy *, void *), void *closure,
+	struct hostset *scope,
 	gfarm_int32_t *np, struct host ***hostsp)
 {
 	struct file_copy *copy;
@@ -1962,7 +1860,8 @@ inode_alloc_file_copy_hosts(struct inode *inode,
 	    copy = copy->host_next) {
 		if (i >= nhosts)
 			break;
-		if ((*filter)(copy, closure))
+		if ((scope == NULL || hostset_has_host(scope, copy->host)) &&
+		    (*filter)(copy, closure))
 			hosts[i++] = copy->host;
 	}
 	*np = i; /* NOTE: this may be 0 */
@@ -1970,50 +1869,138 @@ inode_alloc_file_copy_hosts(struct inode *inode,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
-inode_replica_hosts(
-	struct inode *inode,
-	gfarm_int32_t *n_existingp, struct host ***existingp,
-	gfarm_int32_t *n_removingp, struct host ***removingp)
+static gfarm_error_t
+inode_alloc_file_copy_hosts(struct inode *inode,
+	int (*filter)(struct file_copy *, void *), void *closure,
+	gfarm_int32_t *np, struct host ***hostsp)
 {
+	return (inode_alloc_file_copy_hosts_within_scope(
+	    inode, filter, closure, NULL, np, hostsp));
+}
+
+static gfarm_error_t
+hostset_of_file_copy_alloc(struct inode *inode,
+	int (*filter)(struct file_copy *, void *), void *closure,
+	const char *diag,
+	struct hostset **hsp)
+{
+	gfarm_error_t e;
+	struct hostset *hs = hostset_empty_alloc();
+	struct file_copy *copy;
+
+	if (hs == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: no memory of file_copy hostset", diag);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	for (copy = inode->u.c.s.f.copies; copy != NULL;
+	    copy = copy->host_next) {
+		if ((*filter)(copy, closure)) {
+			e = hostset_add_host(hs, copy->host);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "%s: add host(%s): %s",
+				    diag, host_name(copy->host),
+				    gfarm_error_string(e));
+				hostset_free(hs);
+				return (e);
+			}
+		}
+	}
+	*hsp = hs;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+hostset_of_file_opening_alloc(struct inode *inode,
+	int (*filter)(struct host *, void *), void *closure, const char *diag,
+	struct hostset **hsp)
+{
+	gfarm_error_t e;
+	struct hostset *hs = hostset_empty_alloc();
+	struct inode_activity *ia = inode->u.c.activity;
+	struct file_opening *fo;
+
+	if (hs == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: no memory of file opening hostset", diag);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	if (ia == NULL) {
+		*hsp = hs; /* empty hostset */
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	fo = ia->openings.opening_next;
+	if (fo == &ia->openings) {
+		*hsp = hs; /* empty hostset */
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	for (; fo != &ia->openings; fo = fo->opening_next) {
+		if (fo->u.f.spool_host != NULL &&
+		    (*filter)(fo->u.f.spool_host, closure)) {
+			e = hostset_add_host(hs, fo->u.f.spool_host);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "%s: add host(%s): %s",
+				    diag, host_name(fo->u.f.spool_host),
+				    gfarm_error_string(e));
+				hostset_free(hs);
+				return (e);
+			}
+		}
+	}
+	*hsp = hs;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/* NOTE: `existing' includes incomplete replicas as well */
+gfarm_error_t
+inode_replica_hostset(
+	struct inode *inode,
+	gfarm_int32_t *n_existingp, struct hostset **existingp,
+	gfarm_int32_t *n_removingp, struct hostset **removingp)
+{
+	gfarm_error_t e;
 	struct file_copy *copy;
 	int n_existing, n_removing;
-	struct host **existing = NULL, **removing = NULL;
+	struct hostset *existing, *removing;
 
 	assert(inode_is_file(inode));
 
+	existing = hostset_empty_alloc();
+	if (existing == NULL) {
+		gflog_error(GFARM_MSG_1004336, "no memory");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	removing = hostset_empty_alloc();
+	if (removing == NULL) {
+		hostset_free(existing);
+		gflog_error(GFARM_MSG_1004337, "no memory");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
 	n_existing = 0;
 	n_removing = 0;
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
-		if (FILE_COPY_IS_BEING_REMOVED(copy))
+		if (FILE_COPY_IS_BEING_REMOVED(copy)) {
+			e = hostset_add_host(removing, copy->host);
 			n_removing++;
-		else
+		} else {
+			e = hostset_add_host(existing, copy->host);
 			n_existing++;
-	}
-	if (n_existing > 0) {
-		GFARM_MALLOC_ARRAY(existing, n_existing);
-		if (existing == NULL) {
-			gflog_error(GFARM_MSG_1004336, "no memory");
-			return (GFARM_ERR_NO_MEMORY);
 		}
-	}
-	if (n_removing > 0) {
-		GFARM_MALLOC_ARRAY(removing, n_removing);
-		if (removing == NULL) {
-			free(existing);
-			gflog_error(GFARM_MSG_1004337, "no memory");
-			return (GFARM_ERR_NO_MEMORY);
+		if (e != GFARM_ERR_NO_ERROR) {
+			hostset_free(removing);
+			hostset_free(existing);
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "inode_replica_hostset: %s",
+			    gfarm_error_string(e));
+			return (e);
 		}
-	}
-	n_existing = 0;
-	n_removing = 0;
-	for (copy = inode->u.c.s.f.copies; copy != NULL;
-	    copy = copy->host_next) {
-		if (FILE_COPY_IS_BEING_REMOVED(copy))
-			removing[n_removing++] = copy->host;
-		else
-			existing[n_existing++] = copy->host;
 	}
 	*n_existingp = n_existing;
 	*n_removingp = n_removing;
@@ -5300,9 +5287,10 @@ inode_schedule_file_default(struct file_opening *opening,
 	gfarm_error_t e;
 	struct inode_activity *ia = opening->inode->u.c.activity;
 	struct file_opening *fo;
-	int n, nhosts, n_opening_hosts, write_mode, truncate_flag;
-	struct host **hosts, **opening_hosts;
+	int n, nhosts, write_mode, truncate_flag;
+	struct host **hosts;
 	gfarm_off_t necessary_space = 0; /* i.e. use default value */
+	static const char diag[] = "inode_schedule_file_default";
 
 	/* XXX FIXME too long giant lock */
 
@@ -5368,35 +5356,22 @@ inode_schedule_file_default(struct file_opening *opening,
 			 * host_is_up()/host_is_disk_available() may change
 			 * even while the giant lock is held.
 			 */
-			GFARM_MALLOC_ARRAY(opening_hosts, n);
-			if (opening_hosts == NULL) {
-				gflog_error(GFARM_MSG_1004342, "no memory");
-				return (GFARM_ERR_NO_MEMORY);
-			}
-			n_opening_hosts = 0;
-			for (fo = ia->openings.opening_next;
-			    fo != &ia->openings; fo = fo->opening_next) {
-				if (fo->u.f.spool_host != NULL &&
-				    host_is_disk_available(
-				    fo->u.f.spool_host, 0)) {
-					assert(n_opening_hosts < n);
-					opening_hosts[n_opening_hosts++] =
-					    fo->u.f.spool_host;
-				}
-			}
+			struct hostset *opening_hostset;
 
-			e = inode_alloc_file_copy_hosts(opening->inode,
-			    file_copy_is_valid_and_disk_available,
-			    &necessary_space, &nhosts, &hosts);
-			if (e != GFARM_ERR_NO_ERROR) {
-				free(opening_hosts);
+			e = hostset_of_file_opening_alloc(opening->inode,
+			    host_is_disk_available_filter, &necessary_space,
+			    diag, &opening_hostset);
+			if (e != GFARM_ERR_NO_ERROR)
 				return (e);
-			}
 
-			/* opening_hosts may only have an obsolete replica */
-			host_intersect(&nhosts, hosts,
-			    &n_opening_hosts, opening_hosts);
-			free(opening_hosts);
+			e = inode_alloc_file_copy_hosts_within_scope(
+			    opening->inode,
+			    file_copy_is_valid_and_disk_available,
+			    &necessary_space, opening_hostset,
+			    &nhosts, &hosts);
+			hostset_free(opening_hostset);
+			if (e != GFARM_ERR_NO_ERROR)
+				return (e);
 			if (nhosts > 0) {
 				*np = nhosts;
 				*hostsp = hosts;
@@ -5432,17 +5407,19 @@ inode_schedule_file_default(struct file_opening *opening,
 			 * cf. http://sourceforge.net/apps/trac/gfarm/ticket/68
 			 * (measures against disk full for a file overwriting)
 			 */
+			struct hostset *incomplete_hostset;
 
 			/* exclude hosts which are during a replication */
-			e = inode_alloc_file_copy_hosts(opening->inode,
-			    file_copy_is_invalid, NULL, &nhosts, &hosts);
+			e = hostset_of_file_copy_alloc(opening->inode,
+			    file_copy_is_invalid, NULL, diag,
+			    &incomplete_hostset);
 			if (e != GFARM_ERR_NO_ERROR)
 				return (e);
 
-			e = host_from_all_except(&nhosts, hosts,
-				host_is_disk_available_filter,
-				&necessary_space, np, hostsp);
-			free(hosts);
+			e = host_from_all_except(
+			    host_is_disk_available_filter, &necessary_space,
+			    incomplete_hostset, np, hostsp);
+			hostset_free(incomplete_hostset);
 			return (e);
 		}
 	}
@@ -5716,6 +5693,7 @@ inode_replicated(struct file_replicating *fr,
 
 	if (src_errcode == GFARM_ERR_NO_ERROR &&
 	    dst_errcode == GFARM_ERR_NO_ERROR &&
+	    inode_is_file(inode) &&
 	    size == inode_get_size(inode) &&
 	    fr->igen == inode_get_gen(inode)) {
 		if (cksum_enabled &&
@@ -6031,20 +6009,20 @@ inode_remove_replica_completed(gfarm_ino_t inum, gfarm_int64_t igen,
 }
 
 static gfarm_error_t
-can_remove_replica(struct inode *inode, struct file_copy *copy,
-	struct replica_spec *replica_spec, int num, int is_up)
+inode_replica_is_removable(struct inode *inode, struct file_copy *copy,
+	struct replica_spec *replica_spec, int current_num, int up_only)
 {
 	gfarm_error_t e;
 
-	if (num <= 1)
+	if (current_num <= 1)
 		return (GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA);
 
-	if (num <= replica_spec->desired_number)
+	if (current_num <= replica_spec->desired_number)
 		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
 
 	if (replica_spec->repattr != NULL) {
-		int nhosts;
-		struct host **hosts;
+		int n_scope;
+		struct hostset *scope;
 		int ncopy, n_desired, total, found;
 		size_t i, nreps = 0;
 		gfarm_repattr_t *reps = NULL;
@@ -6066,60 +6044,46 @@ can_remove_replica(struct inode *inode, struct file_copy *copy,
 			int num = gfarm_repattr_amount(reps[i]);
 
 			total += num;
-			if (found == 0 &&
+			if (!found &&
 			    strcmp(gfarm_repattr_group(reps[i]), fsng) == 0) {
 				n_desired = num;
 				found = 1;
 			}
 		}
+		gfarm_repattr_free_all(nreps, reps);
 
-		if (num <= total) {
-			gfarm_repattr_free_all(nreps, reps);
+		if (current_num <= total)
 			return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
-		}
 
 		if (!gfarm_replicainfo_enabled) {
 			/*
 			 * ignore 'n_desired' for the hostgroup
 			 * (use 'total' only)
 			 */
-			gfarm_repattr_free_all(nreps, reps);
 			return (GFARM_ERR_NO_ERROR); /* removable */
 		}
 
 		/* no desired number for the host */
-		if (n_desired <= 0) {
-			gfarm_repattr_free_all(nreps, reps);
+		if (n_desired <= 0)
 			return (GFARM_ERR_NO_ERROR); /* removable */
-		}
 
-		e = fsngroup_get_hosts(fsng, &nhosts, &hosts);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gfarm_repattr_free_all(nreps, reps);
+		scope = hostset_of_fsngroup_alloc(fsng, &n_scope);
+		if (scope == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
 			gflog_debug(GFARM_MSG_1004026,
 			    "fsngroup_get_hosts(%s): %s",
 			    fsng, gfarm_error_string(e));
 			return (e);
 		}
-		if (nhosts == 0) { /* unexpected */
-			free(hosts);
-			gfarm_repattr_free_all(nreps, reps);
+		if (n_scope == 0) { /* unexpected */
+			hostset_free(scope);
 			return (GFARM_ERR_NO_ERROR);
 		}
 
-		e = inode_count_replicas(
-		    inode, 0, is_up, 0, nhosts, hosts, &ncopy);
-		if (e != GFARM_ERR_NO_ERROR) {
-			free(hosts);
-			gfarm_repattr_free_all(nreps, reps);
-			gflog_debug(GFARM_MSG_1004027,
-			    "inode_count_replicas: %s",
-			    gfarm_error_string(e));
-			return (e);
-		}
+		ncopy = inode_count_replicas_within_scope(
+		    inode, 1, up_only, 0, scope);
 
-		free(hosts);
-		gfarm_repattr_free_all(nreps, reps);
+		hostset_free(scope);
 
 		if (ncopy > n_desired)
 			return (GFARM_ERR_NO_ERROR); /* removable */
@@ -6163,11 +6127,11 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 			int is_up = host_is_up(copy->host);
 			int num = is_up ? num_up : num_valid;
 
-			e = can_remove_replica(inode, copy,
+			e = inode_replica_is_removable(inode, copy,
 			    replica_spec, num, is_up);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1003698,
-				    "can_remove_replica: %s",
+				    "replica_is_removable: %s",
 				    gfarm_error_string(e));
 				return (e);
 			}

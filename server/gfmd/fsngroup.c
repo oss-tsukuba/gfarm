@@ -83,21 +83,6 @@ fsngroup_get_tuples(gfarm_int32_t *n_tuples, struct fsngroup_tuple **tuplesp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static int
-fsngroup_filter(struct host *h, void *closure)
-{
-	const char *fsngroup = closure;
-
-	return (strcmp(host_fsngroup(h), fsngroup) == 0);
-}
-
-gfarm_error_t
-fsngroup_get_hosts(const char *fsngroup, int *nhostsp, struct host ***hostsp)
-{
-	return (host_from_all(fsngroup_filter, (char *)fsngroup, /* UNCONST */
-	    nhostsp, hostsp));
-}
-
 /*****************************************************************************/
 /*
  * Replication scheduler:
@@ -113,15 +98,15 @@ gfarm_error_t
 fsngroup_schedule_replication(
 	struct inode *inode, struct dirset *tdirset, const char *repattr,
 	int n_srcs, struct host **srcs,
-	int *n_existingp, struct host **existing, gfarm_time_t grace,
-	int *n_being_removedp, struct host **being_removed, const char *diag,
+	int *n_existingp, struct hostset *existing, gfarm_time_t grace,
+	int *n_being_removedp, struct hostset *being_removed, const char *diag,
 	int *total_p, int *req_ok_nump)
 {
 	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
 	int i, n_scope;
 	size_t nreps = 0;
 	gfarm_repattr_t *reps = NULL;
-	struct host **scope;
+	struct hostset *scope;
 
 	assert(repattr != NULL && srcs != NULL);
 
@@ -154,26 +139,26 @@ fsngroup_schedule_replication(
 
 			*total_p = *total_p + num;
 
-			e = fsngroup_get_hosts(group, &n_scope, &scope);
-			if (e != GFARM_ERR_NO_ERROR) {
+			scope = hostset_of_fsngroup_alloc(group, &n_scope);
+			if (scope == NULL) {
+				save_e = GFARM_ERR_NO_MEMORY;
 				gflog_notice(GFARM_MSG_1004053,
-				    "%s: fsngroup_get_hosts(%s): %s",
-				    diag, group, gfarm_error_string(e));
-				if (save_e == GFARM_ERR_NO_ERROR ||
-				    e == GFARM_ERR_NO_MEMORY)
-					save_e = e;
-				continue;
+				    "%s: hostset_of_fsngroup(%s): %s",
+				    diag, group, gfarm_error_string(save_e));
+				break;
 			}
 			e = inode_schedule_replication_within_scope(
 			    inode, tdirset, num, n_srcs, srcs, &next_src_index,
 			    &n_scope, scope, n_existingp, existing, grace,
 			    n_being_removedp, being_removed, diag,
 			    req_ok_nump);
-			if (e != GFARM_ERR_NO_ERROR &&
-			    (save_e == GFARM_ERR_NO_ERROR ||
-			     e == GFARM_ERR_NO_MEMORY))
+			hostset_free(scope);
+			if (e == GFARM_ERR_NO_MEMORY) {
 				save_e = e;
-			free(scope);
+				break;
+			}
+			if (save_e == GFARM_ERR_NO_ERROR)
+				save_e = e;
 		}
 	} else {
 		/* ignore hostgroups, but the total number is used. */
