@@ -88,6 +88,52 @@ fsngroup_get_tuples(gfarm_int32_t *n_tuples, struct fsngroup_tuple **tuplesp)
  * Replication scheduler:
  */
 
+static gfarm_error_t
+gfarm_repattr_parse_cached(const char *fsng,
+	gfarm_repattr_t **repsp, size_t *nrepsp)
+{
+	/* cache */
+	static char *last_fsng = NULL;
+	static gfarm_repattr_t *last_reps = NULL;
+	static size_t last_nreps = 0;
+
+	gfarm_error_t e;
+	char *fsng_tmp;
+	static gfarm_repattr_t *reps_tmp;
+	static size_t nreps_tmp;
+
+	if (last_fsng != NULL && strcmp(fsng, last_fsng) == 0) {
+		/* cache hit */
+		*repsp = last_reps;
+		*nrepsp = last_nreps;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	e = gfarm_repattr_parse(fsng, &reps_tmp, &nreps_tmp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	/* update the cache */
+
+	fsng_tmp = strdup(fsng);
+	if (fsng_tmp == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED, "no memory for '%s'", fsng);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	if (last_reps != NULL)
+		gfarm_repattr_free_all(last_nreps, last_reps);
+	free(last_fsng);
+
+	last_fsng = fsng_tmp;
+	last_reps = reps_tmp;
+	last_nreps = nreps_tmp;
+
+	*repsp = last_reps;
+	*nrepsp = last_nreps;
+	return (GFARM_ERR_NO_ERROR);
+}
+
 /*
  * Make us sure our having the giant_lock acquired.
  */
@@ -118,7 +164,7 @@ fsngroup_schedule_replication(
 
 	*total_p = 0;
 
-	e = gfarm_repattr_parse(repattr, &reps, &nreps);
+	e = gfarm_repattr_parse_cached(repattr, &reps, &nreps);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1004051,
 		    "%s: %s", diag, gfarm_error_string(e));
@@ -169,7 +215,7 @@ fsngroup_schedule_replication(
 		}
 	}
 
-	gfarm_repattr_free_all(nreps, reps);
+	/* gfarm_repattr_free_all(nreps, reps); -- shouldn't call (cached) */
 	return (save_e);
 }
 
@@ -185,7 +231,7 @@ fsngroup_has_spare_for_repattr(struct inode *inode, int current_copy_count,
 	size_t i, nreps = 0;
 	gfarm_repattr_t *reps = NULL;
 
-	e = gfarm_repattr_parse(repattr, &reps, &nreps);
+	e = gfarm_repattr_parse_cached(repattr, &reps, &nreps);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1004025,
 		    "gfarm_repattr_parse(%s): %s",
@@ -206,7 +252,7 @@ fsngroup_has_spare_for_repattr(struct inode *inode, int current_copy_count,
 			found = 1;
 		}
 	}
-	gfarm_repattr_free_all(nreps, reps);
+	/* gfarm_repattr_free_all(nreps, reps); -- shouldn't call (cached) */
 
 	if (current_copy_count <= total)
 		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
