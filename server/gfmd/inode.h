@@ -45,6 +45,9 @@ void inode_set_group_by_name_in_cache(struct inode *, const char *);
 int inode_has_no_replica(struct inode *);
 gfarm_int64_t inode_get_ncopy(struct inode *);
 gfarm_int64_t inode_get_ncopy_with_dead_host(struct inode *);
+struct hostset;
+int inode_count_replicas_within_scope(
+	struct inode *, int, int, gfarm_time_t, struct hostset *);
 
 gfarm_mode_t inode_get_mode(struct inode *);
 gfarm_error_t inode_set_mode(struct inode *, gfarm_mode_t);

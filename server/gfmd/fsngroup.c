@@ -172,6 +172,84 @@ fsngroup_schedule_replication(
 	gfarm_repattr_free_all(nreps, reps);
 	return (save_e);
 }
+
+/* return GFARM_ERR_NO_ERROR, if there is a spare */
+gfarm_error_t
+fsngroup_has_spare_for_repattr(struct inode *inode, int current_copy_count,
+	const char *fsng, const char *repattr, int up_only)
+{
+	gfarm_error_t e;
+	int n_scope;
+	struct hostset *scope;
+	int ncopy, n_desired, total, found;
+	size_t i, nreps = 0;
+	gfarm_repattr_t *reps = NULL;
+
+	e = gfarm_repattr_parse(repattr, &reps, &nreps);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_1004025,
+		    "gfarm_repattr_parse(%s): %s",
+		    repattr, gfarm_error_string(e));
+		return (e); /* report shortage, for safety */
+	}
+
+	n_desired = 0;
+	total = 0;
+	found = 0;
+	for (i = 0; i < nreps; i++) {
+		int num = gfarm_repattr_amount(reps[i]);
+
+		total += num;
+		if (!found &&
+		    strcmp(gfarm_repattr_group(reps[i]), fsng) == 0) {
+			n_desired = num;
+			found = 1;
+		}
+	}
+	gfarm_repattr_free_all(nreps, reps);
+
+	if (current_copy_count <= total)
+		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
+
+	if (!gfarm_replicainfo_enabled) {
+		/*
+		 * ignore 'n_desired' for the hostgroup
+		 * (use 'total' only)
+		 */
+		return (GFARM_ERR_NO_ERROR); /* has spare */
+	}
+
+	/* no desired number for the host */
+	if (n_desired <= 0)
+		return (GFARM_ERR_NO_ERROR); /* has spare */
+
+	scope = hostset_of_fsngroup_alloc(fsng, &n_scope);
+	if (scope == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_1004026,
+		    "fsngroup_get_hosts(%s): %s",
+		    fsng, gfarm_error_string(e));
+		return (e); /* report shortage, for safety */
+	}
+	if (n_scope == 0) { /* unexpected */
+		hostset_free(scope);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "no host in fsngroup %s: unexpected", fsng);
+
+		/* report shortage, for safety */
+		return (GFARM_ERR_INTERNAL_ERROR);
+	}
+
+	ncopy = inode_count_replicas_within_scope(
+	    inode, 1, up_only, 0, scope);
+
+	hostset_free(scope);
+
+	if (ncopy > n_desired)
+		return (GFARM_ERR_NO_ERROR); /* has spare */
+	return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS); /* shortage */
+}
+
 /*****************************************************************************/
 /*
  * Server side RPC stubs:
