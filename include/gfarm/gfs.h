@@ -239,6 +239,15 @@ gfarm_error_t gfs_access(const char *, int);
 #define GFS_W_OK	2
 #define GFS_R_OK	4
 
+/* gfarm xattr */
+#define GFARM_EA_PREFIX		"gfarm."
+#define GFARM_EA_PREFIX_LEN	6
+
+#define GFARM_EA_NCOPY_TYPE	"ncopy"
+#define GFARM_EA_NCOPY		GFARM_EA_PREFIX GFARM_EA_NCOPY_TYPE
+#define GFARM_EA_REPATTR_TYPE	"replicainfo"
+#define GFARM_EA_REPATTR	GFARM_EA_PREFIX GFARM_EA_REPATTR_TYPE
+
 /* 5th argument (flags) of gfs_setxattr() and gfs_fsetxattr() */
 #define GFS_XATTR_CREATE    0x1     /* set value, fail if attr already exists */
 #define GFS_XATTR_REPLACE   0x2     /* set value, fail if attr does not exist */

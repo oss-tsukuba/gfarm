@@ -3022,7 +3022,7 @@ t_apply_xattr_add_cached(void)
 {
 	struct inode *i;
 	struct db_xattr_arg m;
-	const char *attrname = "gfarm.ncopy";
+	const char *attrname = GFARM_EA_NCOPY;
 	const char *value = "2";
 	void *value1;
 	size_t value_len;
@@ -3076,7 +3076,7 @@ t_apply_xattr_modify_cached(void)
 {
 	struct inode *i;
 	struct db_xattr_arg m;
-	const char *attrname = "gfarm.ncopy";
+	const char *attrname = GFARM_EA_NCOPY;
 	const char *value = "3";
 	void *value1;
 	size_t value_len;
@@ -3126,7 +3126,7 @@ t_apply_xattr_remove_cached(void)
 {
 	struct inode *i;
 	struct db_xattr_arg m;
-	const char *attrname = "gfarm.ncopy";
+	const char *attrname = GFARM_EA_NCOPY;
 	void *value;
 	size_t value_len;
 
@@ -3152,7 +3152,7 @@ t_apply_xattr_removeall(void)
 	struct inode *i;
 	struct db_xattr_arg m;
 	const char *attrname1 = "attrname";
-	const char *attrname2 = "gfarm.ncopy";
+	const char *attrname2 = GFARM_EA_NCOPY;
 	const char *value1 = "value";
 	const char *value2 = "2";
 	void *value;

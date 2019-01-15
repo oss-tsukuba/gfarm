@@ -41,7 +41,6 @@
 #include "auth.h"
 #include "config.h"
 #include "gfm_proto.h"
-#include "repattr.h"
 
 #include "subr.h"
 #include "thrpool.h"

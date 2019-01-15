@@ -11,7 +11,6 @@
 
 #define MKDIR_MODE 0755
 #define CHMOD_MODE 0700
-#define XATTR_KEY "gfarm.ncopy"
 #define BUF_SIZE 1024
 
 #define UNIT_OPS "ops"
