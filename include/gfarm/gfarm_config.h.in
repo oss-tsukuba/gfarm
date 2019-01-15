@@ -254,6 +254,9 @@
 /* Define to 1 if you have the `utimensat' function. */
 #undef HAVE_UTIMENSAT
 
+/* Define to 1 if you have the `__builtin_popcountll' function. */
+#undef HAVE___BUILTIN_POPCOUNTLL
+
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR
