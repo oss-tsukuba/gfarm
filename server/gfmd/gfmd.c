@@ -825,6 +825,45 @@ protocol_main(void *arg)
 	return (NULL);
 }
 
+struct event_waiter {
+	struct event_waiter *next;
+
+	struct peer *peer;
+	gfarm_error_t (*action)(struct peer *, void *, int *);
+	void *arg;
+};
+
+gfarm_error_t
+event_waiter_alloc(struct peer *peer,
+	gfarm_error_t (*action)(struct peer *, void *, int *),
+	void *arg, struct event_waiter **listp)
+{
+	struct event_waiter *waiter;
+
+	GFARM_MALLOC(waiter);
+	if (waiter == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	/* XXX FIXME should call peer_add_ref(peer) */
+
+	waiter->peer = peer;
+	waiter->action = action;
+	waiter->arg = arg;
+
+	waiter->next = *listp;
+	*listp = waiter;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static void
+event_waiter_free(struct event_waiter *waiter)
+{
+	/* XXX FIXME should call peer_del_ref(waiter->peer) */
+
+	free(waiter);
+}
+
 struct resuming_queue {
 	pthread_mutex_t mutex;
 	pthread_cond_t nonempty;
@@ -835,7 +874,7 @@ struct resuming_queue {
 	NULL
 };
 
-void
+static void
 resuming_enqueue(struct event_waiter *entry)
 {
 	struct resuming_queue *q = &resuming_pendings;
@@ -848,7 +887,7 @@ resuming_enqueue(struct event_waiter *entry)
 	gfarm_mutex_unlock(&q->mutex, diag, "mutex");
 }
 
-struct event_waiter *
+static struct event_waiter *
 resuming_dequeue(struct resuming_queue *q, const char *diag)
 {
 	struct event_waiter *entry;
@@ -862,7 +901,19 @@ resuming_dequeue(struct resuming_queue *q, const char *diag)
 	return (entry);
 }
 
-void *
+/* "list = NULL;" should be done after calling this function */
+void
+event_waiters_signal(struct event_waiter *list)
+{
+	struct event_waiter *next;
+
+	for (; list != NULL; list = next) {
+		next = list->next;
+		resuming_enqueue(list);
+	}
+}
+
+static void *
 resuming_thread(void *arg)
 {
 	gfarm_error_t e;
@@ -874,7 +925,7 @@ resuming_thread(void *arg)
 	static const char diag[] = "resuming_thread";
 
 	e = (*entry->action)(peer, entry->arg, &suspended);
-	free(entry);
+	event_waiter_free(entry);
 	if (suspended)
 		return (NULL);
 
@@ -914,7 +965,7 @@ resuming_thread(void *arg)
 	return (NULL);
 }
 
-void *
+static void *
 resumer(void *arg)
 {
 	struct event_waiter *entry;

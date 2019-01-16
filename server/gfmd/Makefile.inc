@@ -121,4 +121,5 @@ DEPGFMDINC = \
 	$(GFMD_SRCDIR)/protocol_state.h \
 	$(GFMD_SRCDIR)/peer.h \
 	$(GFMD_SRCDIR)/back_channel.h \
-	$(GFMD_SRCDIR)/gfmd_channel.h
+	$(GFMD_SRCDIR)/gfmd_channel.h \
+	$(GFMD_SRCDIR)/gfmd.h

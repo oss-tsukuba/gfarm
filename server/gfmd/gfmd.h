@@ -1,15 +1,12 @@
 extern int gfmd_port;
 
 struct peer;
-struct event_waiter {
-	struct event_waiter *next;
 
-	struct peer *peer;
-	gfarm_error_t (*action)(struct peer *, void *, int *);
-	void *arg;
-};
-
-void resuming_enqueue(struct event_waiter *);
+struct event_waiter;
+gfarm_error_t event_waiter_alloc(struct peer *,
+	gfarm_error_t (*)(struct peer *, void *, int *),
+	void *, struct event_waiter **);
+void event_waiters_signal(struct event_waiter *);
 
  /*
   * The following part exports hook points for a private extension.

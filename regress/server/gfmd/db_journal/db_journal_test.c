@@ -24,13 +24,21 @@
 #include "inode.h"
 #include "file_copy.h"
 #include "dir.h"
+#include "gfmd.h"
 #include "db_journal_test.h"
 #include "db_journal_apply.h"
 
 /* XXX FIXME - dummy definitions to link successfully without gfmd.o */
 struct thread_pool *sync_protocol_get_thrpool(void) { return NULL; }
-void resuming_enqueue(void *entry) {}
-void gfmd_terminate(void) {}
+gfarm_error_t
+event_waiter_alloc(struct peer *peer,
+	gfarm_error_t (*action)(struct peer *, void *, int *),
+	void *arg, struct event_waiter **listp)
+{
+	return (GFARM_ERR_NO_MEMORY);
+}
+void event_waiters_signal(struct event_waiter *list) {}
+void gfmd_terminate(const char *diag) {}
 int gfmd_port;
 
 static char *program_name = "db_journal_test";

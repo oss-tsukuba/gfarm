@@ -2500,16 +2500,12 @@ static void
 inode_new_generation_finish_event_post(struct inode *inode)
 {
 	struct inode_activity *ia = inode->u.c.activity;
-	struct event_waiter *waiter, *next;
 
-	waiter = ia->u.f.event_waiters;
-	for (; waiter != NULL; waiter = next) {
-		next = waiter->next;
-		resuming_enqueue(waiter);
-	}
+	event_waiters_signal(ia->u.f.event_waiters);
+	ia->u.f.event_waiters = NULL;
+
 	ia->u.f.event_type = EVENT_NONE;
 	ia->u.f.event_source = NULL;
-	ia->u.f.event_waiters = NULL;
 }
 
 gfarm_error_t
@@ -2610,8 +2606,8 @@ gfarm_error_t
 inode_new_generation_wait(struct inode *inode, struct peer *peer,
 	gfarm_error_t (*action)(struct peer *, void *, int *), void *arg)
 {
+	gfarm_error_t e;
 	struct inode_activity *ia;
-	struct event_waiter *waiter;
 	static const char diag[] = "inode_new_generation_wait";
 
 	if (!inode_is_file(inode)) {
@@ -2629,20 +2625,11 @@ inode_new_generation_wait(struct inode *inode, struct peer *peer,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 
-	GFARM_MALLOC(waiter);
-	if (waiter == NULL) {
-		gflog_warning(GFARM_MSG_1002256, "%s: no memory", diag);
-		return (GFARM_ERR_NO_MEMORY);
-	}
-
-	waiter->peer = peer;
-	waiter->action = action;
-	waiter->arg = arg;
-
-	waiter->next = ia->u.f.event_waiters;
-	ia->u.f.event_waiters = waiter;
-
-	return (GFARM_ERR_NO_ERROR);
+	e = event_waiter_alloc(peer, action, arg, &ia->u.f.event_waiters);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "%s: %s",
+		    diag, gfarm_error_string(e));
+	return (e);
 }
 
 #define check_mode(mode, mask) ((mode & mask) == mask ? \
