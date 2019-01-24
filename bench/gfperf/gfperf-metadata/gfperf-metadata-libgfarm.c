@@ -461,8 +461,8 @@ do_libgfarm_setxattr(struct directory_names *names)
 
 	set_number(&r, names->n);
 	set_start(&r);
-	e = gfs_setxattr(names->names[0], XATTR_KEY, value, val_len,
-			 GFS_XATTR_CREATE);
+	e = gfs_setxattr(names->names[0], GFARM_EA_NCOPY,
+			 value, val_len, GFS_XATTR_CREATE);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "setxattr: %s\n",
 			gfarm_error_string(e));
@@ -470,8 +470,8 @@ do_libgfarm_setxattr(struct directory_names *names)
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
-		e = gfs_setxattr(names->names[i], XATTR_KEY, value, val_len,
-				 GFS_XATTR_CREATE);
+		e = gfs_setxattr(names->names[i], GFARM_EA_NCOPY,
+				 value, val_len, GFS_XATTR_CREATE);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "setxattr: %s\n",
 				gfarm_error_string(e));
@@ -503,7 +503,7 @@ do_libgfarm_getxattr(struct directory_names *names)
 	set_number(&r, names->n);
 	set_start(&r);
 	size = sizeof(value);
-	e = gfs_getxattr(names->names[0], XATTR_KEY, value, &size);
+	e = gfs_getxattr(names->names[0], GFARM_EA_NCOPY, value, &size);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "getxattr: %s\n",
 			gfarm_error_string(e));
@@ -512,7 +512,8 @@ do_libgfarm_getxattr(struct directory_names *names)
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		size = sizeof(value);
-		e = gfs_getxattr(names->names[i], XATTR_KEY, value, &size);
+		e = gfs_getxattr(names->names[i], GFARM_EA_NCOPY,
+				 value, &size);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "getxattr: %s\n",
 				gfarm_error_string(e));
@@ -541,7 +542,7 @@ do_libgfarm_removexattr(struct directory_names *names)
 
 	set_number(&r, names->n);
 	set_start(&r);
-	e = gfs_removexattr(names->names[0], XATTR_KEY);
+	e = gfs_removexattr(names->names[0], GFARM_EA_NCOPY);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "removexattr: %s\n",
 			gfarm_error_string(e));
@@ -549,7 +550,7 @@ do_libgfarm_removexattr(struct directory_names *names)
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
-		e = gfs_removexattr(names->names[i], XATTR_KEY);
+		e = gfs_removexattr(names->names[i], GFARM_EA_NCOPY);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "removexattr: %s\n",
 				gfarm_error_string(e));

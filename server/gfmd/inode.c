@@ -49,7 +49,6 @@
 #include "back_channel.h"
 #include "acl.h"
 #include "xattr.h"
-#include "repattr.h"
 #include "fsngroup.h"
 #include "dirset.h"
 #include "quota_dir.h"
@@ -93,7 +92,8 @@ struct file_copy {
  */
 
 static const char xattr_md5[] = "gfarm.md5";
-static const char xattr_ncopy[] = "gfarm.ncopy";
+static const char xattr_ncopy[] = GFARM_EA_NCOPY;
+static const char xattr_repattr[] = GFARM_EA_REPATTR;
 static const char xattr_all[] = "*";
 
 struct xattr_entry {
@@ -7628,8 +7628,8 @@ xattr_init(void)
 		gfarm_xattr_caching_pattern_add(xattr_ncopy);
 	if (!gfarm_xattr_caching(xattr_md5))
 		gfarm_xattr_caching_pattern_add(xattr_md5);
-	if (!gfarm_xattr_caching(GFARM_REPATTR_NAME))
-		gfarm_xattr_caching_pattern_add(GFARM_REPATTR_NAME);
+	if (!gfarm_xattr_caching(xattr_repattr))
+		gfarm_xattr_caching_pattern_add(xattr_repattr);
 
 	xmlMode = 0;
 	e = db_xattr_load(&xmlMode, xattr_add_one);
@@ -8043,7 +8043,7 @@ inode_has_repattr(struct inode *inode, char **repattrp)
 	void *repattr = NULL;
 	size_t size = 0;
 
-	if (inode_xattr_get_cache(inode, 0, GFARM_REPATTR_NAME,
+	if (inode_xattr_get_cache(inode, 0, GFARM_EA_REPATTR,
 		&repattr, &size) != GFARM_ERR_NO_ERROR)
 		return (0);
 

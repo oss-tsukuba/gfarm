@@ -28,7 +28,6 @@
 
 #include "config.h"
 #include "auth.h"
-#include "repattr.h"
 #include "gfm_proto.h"
 #include "timespec.h"
 

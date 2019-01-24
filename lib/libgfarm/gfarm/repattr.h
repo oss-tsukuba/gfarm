@@ -2,9 +2,6 @@
  * $Id$
  */
 
-#define GFARM_REPATTR_TYPE	"replicainfo"
-#define GFARM_REPATTR_NAME	"gfarm." GFARM_REPATTR_TYPE
-
 struct gfarm_repattr;
 typedef struct gfarm_repattr *gfarm_repattr_t;
 

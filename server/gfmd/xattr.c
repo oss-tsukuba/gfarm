@@ -133,14 +133,14 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 		return (inode_access(inode, user, op_inode));
 	}
 
-	if (strncmp("gfarm.", attrname, 6) == 0) {
-		const char *type = attrname + 6;
-		if (strcmp("ncopy", type) != 0 &&
-		    strcmp("md5", type) != 0 &&
-		    strcmp("acl_access", type) != 0 &&
-		    strcmp("acl_default", type) != 0 &&
-		    strcmp(GFARM_REPATTR_TYPE, type) != 0 &&
-		    strcmp(GFARM_EA_DIRECTORY_QUOTA + 6, type) != 0)
+	if (strncmp(attrname, GFARM_EA_PREFIX, GFARM_EA_PREFIX_LEN) == 0) {
+		const char *type = attrname + GFARM_EA_PREFIX_LEN;
+		if (strcmp(type, GFARM_EA_NCOPY_TYPE) != 0 &&
+		    strcmp(type, "md5") != 0 &&
+		    strcmp(type, "acl_access") != 0 &&
+		    strcmp(type, "acl_default") != 0 &&
+		    strcmp(type, GFARM_EA_REPATTR_TYPE) != 0 &&
+		    strcmp(type, GFARM_EA_DIRECTORY_QUOTA_TYPE) != 0)
 			goto not_supp;
 		else if (inode_is_symlink(inode))
 			goto symlink;
@@ -275,12 +275,12 @@ xattr_check_ncopy(
 	}
 	num_new = n; /* uint to int */
 	if (num_new < 0) {
-		gflog_debug(GFARM_MSG_1003658, "overflow for gfarm.ncopy");
+		gflog_debug(GFARM_MSG_1003658, "overflow for " GFARM_EA_NCOPY);
 		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
 	}
 	if (!all_digit) {
 		gflog_debug(GFARM_MSG_1003659,
-		    "invalid format for gfarm.ncopy");
+		    "invalid format for " GFARM_EA_NCOPY);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (inode_has_desired_number(inode, &num_old) && num_new == num_old) {
@@ -298,11 +298,11 @@ xattr_check_replica_spec(
 	struct inode *inode, const char *attrname,
 	void **valuep, size_t *sizep, int *have, int *change)
 {
-	if (strcmp("gfarm.ncopy", attrname) == 0) {
+	if (strcmp(attrname, GFARM_EA_NCOPY) == 0) {
 		*have = 1;
 		return (xattr_check_ncopy(
 		    inode, attrname, *valuep, *sizep, change));
-	} else if (strcmp(GFARM_REPATTR_NAME, attrname) == 0) {
+	} else if (strcmp(attrname, GFARM_EA_REPATTR) == 0) {
 		*have = 1;
 		return (xattr_check_repattr(
 		    inode, attrname, valuep, sizep, change));
@@ -800,8 +800,8 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 	giant_unlock();
 
 	if (e == GFARM_ERR_NO_ERROR && !xmlMode &&
-	    (strcmp("gfarm.ncopy", attrname) == 0 ||
-	     strcmp(GFARM_REPATTR_NAME, attrname) == 0))
+	    (strcmp(attrname, GFARM_EA_NCOPY) == 0 ||
+	     strcmp(attrname, GFARM_EA_REPATTR) == 0))
 		replica_check_start_xattr_update();
 
 	free(attrname);
