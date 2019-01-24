@@ -51,7 +51,8 @@
 #define HOST_HASHTAB_SIZE	3079	/* prime number */
 
 static pthread_mutex_t total_disk_mutex = PTHREAD_MUTEX_INITIALIZER;
-static gfarm_off_t total_disk_used, total_disk_avail;
+static gfarm_off_t total_disk_used = 0, total_disk_avail = 0;
+static gfarm_off_t total_disk_used_change_in_byte = 0; /* in-memory only */
 static const char total_disk_diag[] = "total_disk";
 
 static int host_id_count = 0;
@@ -80,7 +81,11 @@ struct host {
 	 */
 	char *fsngroupname;
 
-	/* the following members are protected by abstract_host_mutex */
+	struct host *removed_host_next;
+
+	/*
+	 * the following members are protected by abstract_host_mutex
+	 */
 
 #ifdef COMPAT_GFARM_2_3
 	/* used by synchronous protocol (i.e. until gfarm-2.3.0) only */
@@ -93,11 +98,10 @@ struct host {
 	int status_reply_waiting;
 	gfarm_int32_t report_flags;
 	struct host_status status;
+	gfarm_off_t disk_used_change_in_byte; /* in-memory only */
 	struct callout *status_callout;
 	gfarm_time_t last_report;
 	gfarm_time_t disconnect_time;
-
-	struct host *removed_host_next;
 };
 
 static struct gfarm_hash_table *host_hashtab = NULL;
@@ -721,7 +725,8 @@ host_is_disk_available(struct host *h, gfarm_off_t size)
 	abstract_host_mutex_lock(&h->ah, diag);
 
 	if (host_is_up_unlocked(h))
-		avail = h->status.disk_avail_in_byte;
+		avail = h->status.disk_avail * 1024 -
+		    h->disk_used_change_in_byte;
 	else
 		avail = 0;
 	abstract_host_mutex_unlock(&h->ah, diag);
@@ -820,6 +825,7 @@ host_status_reply_is_waiting(struct host *host)
 static void
 host_total_disk_update(
 	gfarm_uint64_t old_used, gfarm_uint64_t old_avail,
+	gfarm_off_t old_used_change_in_byte,
 	gfarm_uint64_t new_used, gfarm_uint64_t new_avail)
 {
 	static const char diag[] = "host_total_disk_update";
@@ -827,6 +833,7 @@ host_total_disk_update(
 	gfarm_mutex_lock(&total_disk_mutex, diag, total_disk_diag);
 	total_disk_used += new_used - old_used;
 	total_disk_avail += new_avail - old_avail;
+	total_disk_used_change_in_byte -= old_used_change_in_byte;
 	gfarm_mutex_unlock(&total_disk_mutex, diag, total_disk_diag);
 }
 
@@ -834,6 +841,7 @@ void
 host_status_update(struct host *host, struct host_status *status)
 {
 	gfarm_uint64_t saved_used = 0, saved_avail = 0;
+	gfarm_off_t saved_used_change_in_byte;
 	int saved_busy = 0, busy = 0;
 	const char diag[] = "status_update";
 
@@ -846,19 +854,20 @@ host_status_update(struct host *host, struct host_status *status)
 		saved_avail = host->status.disk_avail;
 		saved_busy = host_is_busy_unlocked(host);
 	}
+	saved_used_change_in_byte = host->disk_used_change_in_byte;
 
 	host->last_report = time(NULL);
 	host->report_flags =
 		GFM_PROTO_SCHED_FLAG_HOST_AVAIL |
 		GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL;
 	host->status = *status;
-	host->status.disk_used_in_byte = status->disk_used * 1024;
-	host->status.disk_avail_in_byte = status->disk_avail * 1024;
+	host->disk_used_change_in_byte = 0;
 	busy = host_is_busy_unlocked(host);
 
 	abstract_host_mutex_unlock(&host->ah, diag);
 
 	host_total_disk_update(saved_used, saved_avail,
+	    saved_used_change_in_byte,
 	    status->disk_used, status->disk_avail);
 
 	if (saved_busy && !busy)
@@ -876,9 +885,11 @@ host_status_get_disk_usage(struct host *host,
 
 	abstract_host_mutex_lock(&host->ah, diag);
 	if (used)
-		*used = host->status.disk_used_in_byte;
+		*used = host->status.disk_used * 1024 +
+		    host->disk_used_change_in_byte;
 	if (avail)
-		*avail = host->status.disk_avail_in_byte;
+		*avail = host->status.disk_avail * 1024 -
+		    host->disk_used_change_in_byte;
 	abstract_host_mutex_unlock(&host->ah, diag);
 }
 
@@ -900,11 +911,12 @@ host_status_update_disk_usage(struct host *host, gfarm_off_t filesize)
 	const char diag[] = "host_status_update_disk_usage";
 
 	abstract_host_mutex_lock(&host->ah, diag);
-	host->status.disk_used_in_byte += filesize;
-	host->status.disk_avail_in_byte -= filesize;
-	host->status.disk_used = host->status.disk_used_in_byte / 1024;
-	host->status.disk_avail = host->status.disk_avail_in_byte / 1024;
+	host->disk_used_change_in_byte += filesize;
 	abstract_host_mutex_unlock(&host->ah, diag);
+
+	gfarm_mutex_lock(&total_disk_mutex, diag, total_disk_diag);
+	total_disk_used_change_in_byte += filesize;
+	gfarm_mutex_unlock(&total_disk_mutex, diag, total_disk_diag);
 }
 
 /*
@@ -954,6 +966,7 @@ host_disable(struct abstract_host *ah)
 {
 	struct host *h = abstract_host_to_host(ah);
 	gfarm_uint64_t saved_used, saved_avail;
+	gfarm_off_t saved_used_change_in_byte;
 
 	if (h->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
 		saved_used = h->status.disk_used;
@@ -962,10 +975,14 @@ host_disable(struct abstract_host *ah)
 		saved_used = 0;
 		saved_avail = 0;
 	}
+	saved_used_change_in_byte = h->disk_used_change_in_byte;
+
 	h->report_flags = 0;
 	h->disconnect_time = time(NULL);
+	h->disk_used_change_in_byte = 0;
 
-	host_total_disk_update(saved_used, saved_avail, 0, 0);
+	host_total_disk_update(saved_used, saved_avail,
+	    saved_used_change_in_byte, 0, 0);
 }
 
 static void
@@ -1045,10 +1062,9 @@ host_new(struct gfarm_host_info *hi, struct callout *callout)
 	h->status.loadavg_1min =
 	h->status.loadavg_5min =
 	h->status.loadavg_15min = 0.0;
-	h->status.disk_used_in_byte =
-	h->status.disk_avail_in_byte =
 	h->status.disk_used =
 	h->status.disk_avail = 0;
+	h->disk_used_change_in_byte = 0;
 	h->status_callout = callout;
 	h->last_report = 0;
 	h->disconnect_time = time(NULL);
@@ -1891,11 +1907,13 @@ gfarm_error_t
 host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 {
 	struct host_status status;
+	gfarm_off_t disk_used_change;
 	gfarm_time_t last_report;
 	gfarm_int32_t report_flags;
 
 	abstract_host_mutex_lock(&h->ah, diag);
 	status = h->status;
+	disk_used_change = h->disk_used_change_in_byte / 1024;
 	last_report = h->last_report;
 	report_flags = h->report_flags;
 	abstract_host_mutex_unlock(&h->ah, diag);
@@ -1903,7 +1921,8 @@ host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 	    h->hi.hostname, h->hi.port, h->hi.ncpu,
 	    (gfarm_int32_t)(status.loadavg_1min * GFM_PROTO_LOADAVG_FSCALE),
 	    last_report,
-	    status.disk_used, status.disk_avail,
+	    (gfarm_int64_t)(status.disk_used + disk_used_change),
+	    (gfarm_int64_t)(status.disk_avail - disk_used_change),
 	    (gfarm_int64_t)0 /* rtt_cache_time */,
 	    (gfarm_int32_t)0 /* rtt_usec */,
 	    report_flags));
@@ -1989,6 +2008,7 @@ gfarm_error_t
 gfm_server_statfs(struct peer *peer, int from_client, int skip)
 {
 	gfarm_uint64_t used, avail, files;
+	gfarm_off_t used_change;
 	static const char diag[] = "GFM_PROTO_STATFS";
 
 	if (skip)
@@ -1996,8 +2016,9 @@ gfm_server_statfs(struct peer *peer, int from_client, int skip)
 
 	files = inode_total_num();
 	gfarm_mutex_lock(&total_disk_mutex, diag, total_disk_diag);
-	used = total_disk_used;
-	avail = total_disk_avail;
+	used_change = total_disk_used_change_in_byte / 1024;
+	used = total_disk_used + used_change;
+	avail = total_disk_avail - used_change;
 	gfarm_mutex_unlock(&total_disk_mutex, diag, total_disk_diag);
 
 	return (gfm_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR, "lll",
