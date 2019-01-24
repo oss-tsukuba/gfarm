@@ -251,6 +251,9 @@
 /* Define to 1 if you have the `utimensat' function. */
 #undef HAVE_UTIMENSAT
 
+/* Define to 1 if you have the `__builtin_popcountll' function. */
+#undef HAVE___BUILTIN_POPCOUNTLL
+
 /* ib_query_gid has ${ib_query_gid} args. */
 #undef IB_QUERY_GID_ARG
 
