@@ -864,6 +864,7 @@ gfarm_set_local_user_for_this_local_account(void)
 {
 	return (gfarm_set_local_user_for_this_uid(geteuid()));
 }
+
 gfarm_error_t
 gfarm_set_local_user_for_this_uid(uid_t uid)
 {
@@ -879,7 +880,7 @@ gfarm_set_local_user_for_this_uid(uid_t uid)
 		return (error);
 	}
 	if (getpwuid_r(uid, &pwbuf, buf, gfarm_ctxp->getpw_r_bufsz,
-	    &pwd) != 0) {
+	    &pwd) != 0 || pwd == NULL) {
 		gflog_error(GFARM_MSG_1000012, "local account doesn't exist");
 		error = GFARM_ERR_NO_SUCH_OBJECT;
 		goto error;
