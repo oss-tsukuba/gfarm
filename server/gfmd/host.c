@@ -2671,10 +2671,7 @@ hostset_of_fsngroup_alloc(const char *fsngroup, int *n_hostsp)
 		return (NULL); /* GFARM_ERR_NO_MEMORY */
 
 	hce = gfarm_hash_entry_data(entry);
-	if (!created) {
-		if (n_hostsp != NULL)
-			*n_hostsp = hce->nhosts;
-	} else {
+	if (created) {
 		hce->hs = hostset_of_fsngroup_alloc_internal(
 		    fsngroup, &hce->nhosts);
 		if (hce->hs == NULL) { /* GFARM_ERR_NO_MEMORY */
@@ -2688,6 +2685,8 @@ hostset_of_fsngroup_alloc(const char *fsngroup, int *n_hostsp)
 			return (NULL); /* GFARM_ERR_NO_MEMORY */
 		}
 	}
+	if (n_hostsp != NULL)
+		*n_hostsp = hce->nhosts;
 	return (hostset_dup(hce->hs));
 }
 
