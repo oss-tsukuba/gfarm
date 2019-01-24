@@ -262,6 +262,8 @@ host_namealiases_lookup(const char *hostname)
 	return ((h == NULL || host_is_invalid_unlocked(h)) ? NULL : h);
 }
 
+static void hostset_of_fsngroup_cache_purge(const char *);
+
 /* XXX FIXME missing hostaliases */
 gfarm_error_t
 host_enter(struct gfarm_host_info *hi, struct host **hpp)
@@ -292,6 +294,9 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 			gfarm_host_info_free_except_hostname(&h->hi);
 
 			h->hi = *hi;
+
+			hostset_of_fsngroup_cache_purge(host_fsngroup(h));
+
 			return (GFARM_ERR_NO_ERROR);
 		} else
 			return (GFARM_ERR_ALREADY_EXISTS);
@@ -358,6 +363,9 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 
 	*(struct host **)gfarm_hash_entry_data(entry) = h;
 	host_validate(h);
+
+	hostset_of_fsngroup_cache_purge(host_fsngroup(h));
+
 	if (hpp != NULL)
 		*hpp = h;
 	return (GFARM_ERR_NO_ERROR);
@@ -376,6 +384,9 @@ host_remove_internal(const char *hostname, int update_deadfilecopy)
 		    "host_remove(%s): not exist", hostname);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
+
+	hostset_of_fsngroup_cache_purge(host_fsngroup(h));
+
 	host_invalidate(h);
 
 	if (!gfarm_hash_purge(host_hashtab,
@@ -1230,6 +1241,12 @@ host_add_one(void *closure,
 		    "host_add_one: %s", gfarm_error_string(e));
 
 	if (h != NULL) {
+		/*
+		 * usually hostset_of_fsngroup_cache_purge() is done in
+		 * host_enter(), but this is for e == GFARM_ERR_ALREADY_EXISTS
+		 */
+		hostset_of_fsngroup_cache_purge(host_fsngroup(h));
+
 		if (hi->fsngroupname != NULL)
 			/*
 			 * Not strdup() but just change the ownership.
@@ -1237,6 +1254,9 @@ host_add_one(void *closure,
 			h->fsngroupname = hi->fsngroupname;
 		else
 			h->fsngroupname = NULL;
+
+		/* this is for new fsngroupname */
+		hostset_of_fsngroup_cache_purge(host_fsngroup(h));
 	}
 }
 
@@ -1671,9 +1691,13 @@ host_fsngroup_modify(struct host *h, const char *fsngroupname,
 	else if ((g = strdup_log(fsngroupname, diag)) == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
+	hostset_of_fsngroup_cache_purge(host_fsngroup(h));
+
 	if (h->fsngroupname != NULL)
 		free(h->fsngroupname);
 	h->fsngroupname = g;
+
+	hostset_of_fsngroup_cache_purge(host_fsngroup(h));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -2131,8 +2155,8 @@ host_fsngroup_filter(struct host *h, void *closure)
 		strcmp(host_fsngroup(h), fsngroup) == 0);
 }
 
-struct hostset *
-hostset_of_fsngroup_alloc(const char *fsngroup, int *n_hostsp)
+static struct hostset *
+hostset_of_fsngroup_alloc_internal(const char *fsngroup, int *n_hostsp)
 {
 	return (hostset_alloc_by(
 	    host_fsngroup_filter, (void *)fsngroup /*UNCONST*/,
@@ -2566,4 +2590,89 @@ hostset_schedule_n_except(
 
 	hostset_filter(scope, filter, closure);
 	return (hostset_select_n(scope, n_shortage, n_targetsp, targetsp));
+}
+
+/*
+ * hostset cache by fsngroup
+ */
+
+#define FSNGROUP_HASHTAB_SIZE	31	/* prime number */
+
+/* protected by giant_lock */
+static struct gfarm_hash_table *fsngroup_hostset_hashtab = NULL;
+
+struct hostset_cache_entry {
+	struct hostset *hs;
+	int nhosts;
+};
+
+/* PREREQUISITE: giant_lock */
+struct hostset *
+hostset_of_fsngroup_alloc(const char *fsngroup, int *n_hostsp)
+{
+	size_t fsng_size = strlen(fsngroup) + 1;
+	struct gfarm_hash_entry *entry;
+	struct hostset_cache_entry *hce;
+	int created;
+
+	if (fsngroup_hostset_hashtab == NULL) {
+		fsngroup_hostset_hashtab = gfarm_hash_table_alloc(
+		    FSNGROUP_HASHTAB_SIZE,
+		    gfarm_hash_default, gfarm_hash_key_equal_default);
+		if (fsngroup_hostset_hashtab == NULL)
+			return (NULL); /* GFARM_ERR_NO_MEMORY */
+	}
+
+	entry = gfarm_hash_enter(fsngroup_hostset_hashtab,
+	    fsngroup, fsng_size, sizeof(*hce), &created);
+	if (entry == NULL)
+		return (NULL); /* GFARM_ERR_NO_MEMORY */
+
+	hce = gfarm_hash_entry_data(entry);
+	if (!created) {
+		if (n_hostsp != NULL)
+			*n_hostsp = hce->nhosts;
+	} else {
+		hce->hs = hostset_of_fsngroup_alloc_internal(
+		    fsngroup, &hce->nhosts);
+		if (hce->hs == NULL) { /* GFARM_ERR_NO_MEMORY */
+			if (!gfarm_hash_purge(fsngroup_hostset_hashtab,
+			    fsngroup, fsng_size)) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "unexpected error: fsngroup %s doesn't "
+				    "exist in fsngroup_hostset_hashtab",
+				    fsngroup);
+			}
+			return (NULL); /* GFARM_ERR_NO_MEMORY */
+		}
+	}
+	return (hostset_dup(hce->hs));
+}
+
+/* PREREQUISITE: giant_lock */
+static void
+hostset_of_fsngroup_cache_purge(const char *fsngroup)
+{
+	size_t fsng_size = strlen(fsngroup) + 1;
+	struct gfarm_hash_entry *entry;
+	struct hostset_cache_entry *hce;
+
+	if (fsngroup_hostset_hashtab == NULL)
+		return; /* not cached */
+
+	entry = gfarm_hash_lookup(fsngroup_hostset_hashtab,
+	    fsngroup, fsng_size);
+	if (entry == NULL)
+		return;; /* not cached */
+
+	/* uncache */
+
+	hce = gfarm_hash_entry_data(entry);
+	hostset_free(hce->hs);
+
+	if (!gfarm_hash_purge(fsngroup_hostset_hashtab, fsngroup, fsng_size)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "unexpected error: fsngroup %s doesn't "
+		    "exist in fsngroup_hostset_hashtab", fsngroup);
+	}
 }
