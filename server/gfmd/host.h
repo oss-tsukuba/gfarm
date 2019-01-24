@@ -14,7 +14,6 @@ struct dead_file_copy;
 struct host_status {
 	double loadavg_1min, loadavg_5min, loadavg_15min;
 	gfarm_off_t disk_used, disk_avail;
-	gfarm_off_t disk_used_in_byte, disk_avail_in_byte;
 };
 
 struct abstract_host *host_to_abstract_host(struct host *);
