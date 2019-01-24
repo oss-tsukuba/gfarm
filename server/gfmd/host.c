@@ -262,6 +262,7 @@ host_namealiases_lookup(const char *hostname)
 	return ((h == NULL || host_is_invalid_unlocked(h)) ? NULL : h);
 }
 
+static void all_host_hostset_cache_purge(void);
 static void hostset_of_fsngroup_cache_purge(const char *);
 
 /* XXX FIXME missing hostaliases */
@@ -295,6 +296,7 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 
 			h->hi = *hi;
 
+			all_host_hostset_cache_purge();
 			hostset_of_fsngroup_cache_purge(host_fsngroup(h));
 
 			return (GFARM_ERR_NO_ERROR);
@@ -364,6 +366,7 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	*(struct host **)gfarm_hash_entry_data(entry) = h;
 	host_validate(h);
 
+	all_host_hostset_cache_purge();
 	hostset_of_fsngroup_cache_purge(host_fsngroup(h));
 
 	if (hpp != NULL)
@@ -385,6 +388,7 @@ host_remove_internal(const char *hostname, int update_deadfilecopy)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
 
+	all_host_hostset_cache_purge();
 	hostset_of_fsngroup_cache_purge(host_fsngroup(h));
 
 	host_invalidate(h);
@@ -1241,6 +1245,11 @@ host_add_one(void *closure,
 		    "host_add_one: %s", gfarm_error_string(e));
 
 	if (h != NULL) {
+		/*
+		 * all_host_hostset_cache_purge() is not needed,
+		 * because it's done in host_enter()
+		 */
+
 		/*
 		 * usually hostset_of_fsngroup_cache_purge() is done in
 		 * host_enter(), but this is for e == GFARM_ERR_ALREADY_EXISTS
@@ -2141,9 +2150,42 @@ host_valid_filter(struct host *h, void *closure)
 }
 
 struct hostset *
-hostset_of_all_hosts_alloc(int *n_all_hostsp)
+hostset_of_all_hosts_alloc_internal(int *n_all_hostsp)
 {
 	return (hostset_alloc_by(host_valid_filter, NULL, n_all_hostsp));
+}
+
+static struct hostset *all_host_hostset_cache = NULL;
+static int all_host_nhosts = 0;
+
+struct hostset *
+hostset_of_all_hosts_alloc(int *n_all_hostsp)
+{
+	struct hostset *hs;
+
+	if (all_host_hostset_cache == NULL) {
+		all_host_hostset_cache =
+		    hostset_of_all_hosts_alloc_internal(&all_host_nhosts);
+		if (all_host_hostset_cache == NULL)
+			return (NULL); /* GFARM_ERR_NO_MEMORY */
+	}
+
+	hs = hostset_dup(all_host_hostset_cache);
+	if (hs == NULL)
+		return (hs);
+
+	if (n_all_hostsp != NULL)
+		*n_all_hostsp = all_host_nhosts;
+	return (hs);
+}
+
+static void
+all_host_hostset_cache_purge(void)
+{
+	if (all_host_hostset_cache != NULL)
+		hostset_free(all_host_hostset_cache);
+	all_host_hostset_cache = NULL;
+	all_host_nhosts = 0;
 }
 
 static int
