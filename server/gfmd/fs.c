@@ -847,7 +847,7 @@ gfm_server_close_gen(struct peer *peer, int from_client, int skip, int getgen)
 		e2 = gfm_server_put_reply(peer, diag, e, "");
 	/*
 	 * report close error.  note that generation number does not
-	 * chenge if error happens.
+	 * change if error happens.
 	 */
 	if (e_save == GFARM_ERR_NO_ERROR)
 		close_error_check(peer, saved_inum, saved_igen, e, diag);
