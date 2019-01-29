@@ -44,6 +44,7 @@ struct gfarm_filesystem {
 
 struct gfarm_filesystem_hash_id {
 	const char *hostname;
+	int port;
 };
 
 #define staticp	(gfarm_ctxp->filesystem_static)
@@ -104,7 +105,7 @@ gfarm_filesystem_hash_index(const void *key, int keylen)
 	const struct gfarm_filesystem_hash_id *id = key;
 	const char *hostname = id->hostname;
 
-	return (gfarm_hash_casefold(hostname, strlen(hostname)));
+	return (gfarm_hash_casefold(hostname, strlen(hostname)) + id->port * 3);
 }
 
 static int
@@ -114,7 +115,8 @@ gfarm_filesystem_hash_equal(const void *key1, int key1len,
 	const struct gfarm_filesystem_hash_id *id1 = key1;
 	const struct gfarm_filesystem_hash_id *id2 = key2;
 
-	return (strcasecmp(id1->hostname, id2->hostname) == 0);
+	return (strcasecmp(id1->hostname, id2->hostname) == 0 &&
+	    id1->port == id2->port);
 }
 
 gfarm_error_t
@@ -201,6 +203,7 @@ gfarm_filesystem_hash_enter(struct gfarm_filesystem *fs,
 	static const char diag[] = "gfarm_filesystem_hash_enter";
 
 	id.hostname = gfarm_metadb_server_get_name(ms);
+	id.port = gfarm_metadb_server_get_port(ms);
 	entry = gfarm_hash_enter(staticp->ms2fs_hashtab, &id, sizeof(id),
 	    sizeof(fs), &created);
 	if (entry == NULL) {
@@ -227,6 +230,7 @@ gfarm_filesystem_hash_purge(struct gfarm_filesystem *fs,
 	int r;
 
 	id.hostname = gfarm_metadb_server_get_name(ms);
+	id.port = gfarm_metadb_server_get_port(ms);
 	r = gfarm_hash_purge(staticp->ms2fs_hashtab, &id, sizeof(id));
 	assert(r);
 	(void)r;
@@ -265,6 +269,7 @@ gfarm_filesystem_get(const char *hostname, int port)
 	if (staticp->ms2fs_hashtab == NULL)
 		return (NULL);
 	id.hostname = (char *)hostname; /* UNCONST */
+	id.port = port;
 	entry = gfarm_hash_lookup(staticp->ms2fs_hashtab, &id, sizeof(id));
 	return (entry ?
 	    *(struct gfarm_filesystem **)gfarm_hash_entry_data(entry) : NULL);
