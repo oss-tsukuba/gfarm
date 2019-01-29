@@ -2481,6 +2481,7 @@ hostset_filter(struct hostset *hs,
 	hostset_foreach(hs, hostset_filter_apply, &c);
 }
 
+#ifndef HAVE_POPCOUNT64
 static int
 popcount64(unsigned long long bits)
 {
@@ -2500,8 +2501,9 @@ popcount64(unsigned long long bits)
 	bits = ((bits >> 32) & 0x00000000ffffffff) + 
 		(bits        & 0x00000000ffffffff);
 	return ((int)bits);
-#endif
+#endif /* !defined(HAVE___BUILTIN_POPCOUNTLL) */
 }
+#endif /* !defined(HAVE_POPCOUNT64) */
 
 static int
 hostset_count_hosts(struct hostset *hs)
