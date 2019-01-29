@@ -559,7 +559,7 @@ do_posix_removexattr(struct directory_names *names)
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 #ifdef __APPLE_CC__
-		e = removexattr(names->names[i], GFARM_EA_NCOPY
+		e = removexattr(names->names[i], GFARM_EA_NCOPY,
 				XATTR_NOFOLLOW);
 #else
 		e = removexattr(names->names[i], GFARM_EA_NCOPY);
