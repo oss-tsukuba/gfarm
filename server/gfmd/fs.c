@@ -803,6 +803,11 @@ gfm_server_close_gen(struct peer *peer, int from_client, int skip, int getgen)
 	gfarm_ino_t saved_inum;
 	gfarm_uint64_t saved_igen;
 
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	saved_inum = 0;
+	saved_igen = 0;
+#endif
+
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
