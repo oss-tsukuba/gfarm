@@ -1008,7 +1008,7 @@ fi
 ###### Checks for library functions.
 ######
 
-AC_CHECK_FUNCS(clock_gettime getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin sigtimedwait strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long backtrace_symbols futimes futimesat utimensat)
+AC_CHECK_FUNCS(clock_gettime getdents fdatasync fdopendir poll popcount64 pread pwrite snprintf getpassphrase mkdtemp setlogin sigtimedwait strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long backtrace_symbols futimes futimesat utimensat)
 
 ### Check gcc builtin __builtin_popcountll()
 
