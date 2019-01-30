@@ -111,6 +111,12 @@
 
 #define HOST_HASHTAB_SIZE	3079	/* prime number */
 
+#ifdef HAVE_INFINIBAND
+#define IF_INFINIBAND(statements)	statements
+#else
+#define IF_INFINIBAND(statements)
+#endif
+
 /*
  * set initial sleep_interval to 1 sec for quick recovery
  * at gfmd failover.
@@ -1841,18 +1847,22 @@ file_table_close(gfarm_int32_t net_fd)
 		    (unsigned long long)fe->new_gen,
 		    fe->nwrite, (long long)fe->write_size, fe->write_time,
 		    fe->nread, (long long)fe->read_size, fe->read_time);
-#ifdef HAVE_INFINIBAND
-		gflog_info(GFARM_MSG_1004716,
-		    "rdma_write size %lld time %g Bps %g "
-		    "rdma_read size %lld time %g Bps %g",
-		    (long long)fe->rdma_write_size, fe->rdma_write_time,
-			fe->rdma_write_time > 0 ? (fe->rdma_write_size
-			/ fe->rdma_write_time) : fe->rdma_write_time,
-		    (long long)fe->rdma_read_size, fe->rdma_read_time,
-			fe->rdma_read_time > 0 ? (fe->rdma_read_size
-			/ fe->rdma_read_time) : fe->rdma_read_time);
-#endif
-			);
+		IF_INFINIBAND(
+			gflog_info(GFARM_MSG_1004716,
+			    "rdma_write size %lld time %g Bps %g "
+			    "rdma_read size %lld time %g Bps %g",
+			    (long long)fe->rdma_write_size,
+			    fe->rdma_write_time,
+			    fe->rdma_write_time > 0 ?
+			    ? (fe->rdma_write_size / fe->rdma_write_time)
+			    : fe->rdma_write_time,
+			    (long long)fe->rdma_read_size,
+			    fe->rdma_read_time,
+			    fe->rdma_read_time > 0
+			    ? (fe->rdma_read_size / fe->rdma_read_time)
+			    : fe->rdma_read_time);
+		)
+	);
 
 	if ((fe->flags & FILE_FLAG_WRITABLE) != 0) {
 		--write_open_count;
@@ -5209,10 +5219,11 @@ gfs_server_rdma_pread(struct gfp_xdr *client)
 		}
 		gfs_profile(
 			gfarm_gettimerval(&t3);
-#ifdef HAVE_INFINIBAND
-			fe->rdma_read_size += rv;
-			fe->rdma_read_time += gfarm_timerval_sub(&t3, &t2)
-#endif
+			IF_INFINIBAND(
+				fe->rdma_read_size += rv;
+				fe->rdma_read_time +=
+				    gfarm_timerval_sub(&t3, &t2);
+			)
 		);
 	}
 reply:
@@ -5274,10 +5285,10 @@ gfs_server_rdma_pwrite(struct gfp_xdr *client)
 
 	gfs_profile(
 		gfarm_gettimerval(&t1);
-#ifdef HAVE_INFINIBAND
-		fe->rdma_write_size += size;
-		fe->rdma_write_time += gfarm_timerval_sub(&t1, &t0)
-#endif
+		IF_INFINIBAND(
+			fe->rdma_write_size += size;
+			fe->rdma_write_time += gfarm_timerval_sub(&t1, &t0);
+		)
 	);
 
 	localfd = file_table_get(fd);
