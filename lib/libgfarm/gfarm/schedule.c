@@ -359,7 +359,7 @@ struct search_idle_host_state {
 	gfarm_off_t files, ffree, favail;
 	gfarm_int32_t bsize;
 #else
-	gfarm_off_t diskused, diskavail;
+	gfarm_uint64_t diskused, diskavail;
 #endif
 
 	gfarm_uint64_t scheduled_age;
@@ -1419,8 +1419,8 @@ davail_compare(const void *a, const void *b)
 	struct search_idle_host_state *const *bb = b;
 	const struct search_idle_host_state *p = *aa;
 	const struct search_idle_host_state *q = *bb;
-	const gfarm_off_t df1 = p->diskavail;
-	const gfarm_off_t df2 = q->diskavail;
+	const gfarm_uint64_t df1 = p->diskavail;
+	const gfarm_uint64_t df2 = q->diskavail;
 
 	if (df1 > df2)
 		return (-1);
