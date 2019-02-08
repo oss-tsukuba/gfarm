@@ -83,11 +83,26 @@ gfs_unlink(const char *path)
 	return (gfs_remove(path));
 }
 
+struct gfs_profile_list unlink_profile_items[] = {
+	{ "unlink_time", "gfs_unlink time  : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_unlink_static, unlink_time) },
+	{ "unlink_count", "gfs_unlink count : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_unlink_static, unlink_count) },
+};
+
 void
 gfs_unlink_display_timers(void)
 {
-	gflog_info(GFARM_MSG_1000157,
-	    "gfs_unlink time  : %g sec", staticp->unlink_time);
-	gflog_info(GFARM_MSG_1003837,
-	    "gfs_unlink count : %llu", staticp->unlink_count);
+	int n = GFARM_ARRAY_LENGTH(unlink_profile_items);
+
+	gfs_profile_display_timers(n, unlink_profile_items, staticp);
+}
+
+gfarm_error_t
+gfs_unlink_profile_value(const char *name, char *value, size_t *sizep)
+{
+	int n = GFARM_ARRAY_LENGTH(unlink_profile_items);
+
+	return (gfs_profile_value(name, n, unlink_profile_items,
+		    staticp, value, sizep));
 }

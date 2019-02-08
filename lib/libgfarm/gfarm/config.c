@@ -4481,6 +4481,37 @@ gfs_display_timers(void)
 #endif /* __KERNEL__ */
 }
 
+gfarm_error_t
+gfarm_config_profile_value(const char *name, char *value, size_t *sizep)
+{
+#ifndef __KERNEL__	/*  gfarm_config_profile_value :: profile */
+	gfarm_error_t err;
+
+	if ((err = gfs_pio_profile_value(name, value, sizep)) ==
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((err = gfs_pio_section_profile_value(name, value, sizep)) ==
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((err = gfs_pio_local_profile_value(name, value, sizep)) ==
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((err = gfs_pio_remote_profile_value(name, value, sizep)) ==
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((err = gfs_stat_profile_value(name, value, sizep)) ==
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((err = gfs_unlink_profile_value(name, value, sizep)) ==
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((err = gfs_xattr_profile_value(name, value, sizep)) ==
+	    GFARM_ERR_NO_ERROR)
+		;
+	return (err);
+#endif /* __KERNEL__ */
+}
+
 struct config_get_set {
 	char *name;
 	void *addr;

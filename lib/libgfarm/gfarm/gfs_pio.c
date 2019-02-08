@@ -2295,61 +2295,73 @@ gfs_pio_file_list_foreach(struct gfs_file_list *gfl,
 	    GFS_FILE_LIST_MUTEX);
 }
 
+struct gfs_profile_list profile_items[] = {
+	{ "create_time", "gfs_pio_create time  : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_static, create_time) },
+	{ "create_count", "gfs_pio_create count : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_static, create_count) },
+	{ "open_time", "gfs_pio_open time   : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_static, open_time) },
+	{ "open_count", "gfs_pio_open count  : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_static, open_count) },
+	{ "close_time", "gfs_pio_close time  : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_static, close_time) },
+	{ "close_count", "gfs_pio_close count : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_static, close_count) },
+	{ "seek_time", "gfs_pio_seek time   : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_static, seek_time) },
+	{ "seek_count", "gfs_pio_seek count  : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_static, seek_count) },
+	{ "truncate_time", "gfs_pio_truncate time  : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_static, truncate_time) },
+	{ "truncate_count", "gfs_pio_truncate count : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_static, truncate_count) },
+	{ "read_time", "gfs_pio_read time   : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_static, read_time) },
+	{ "read_size", "gfs_pio_read size   : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_static, read_size) },
+	{ "read_count", "gfs_pio_read count  : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_static, read_count) },
+	{ "write_time", "gfs_pio_write time  : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_static, write_time) },
+	{ "write_size", "gfs_pio_write size  : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_static, write_size) },
+	{ "write_count", "gfs_pio_write count : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_static, write_count) },
+	{ "sync_time", "gfs_pio_sync time   : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_static, sync_time) },
+	{ "sync_count", "gfs_pio_sync count  : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_static, sync_count) },
+	{ "datasync_time", "gfs_pio_datasync time  : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_static, datasync_time) },
+	{ "datasync_count", "gfs_pio_datasync count : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_static, datasync_count) },
+	{ "getline_time", "gfs_pio_getline time  : %g sec (this calls getc)",
+	  "%g", 'd', offsetof(struct gfarm_gfs_pio_static, getline_time) },
+	{ "getline_count", "gfs_pio_getline count : %llu (this calls getc)",
+	  "%llu", 'l', offsetof(struct gfarm_gfs_pio_static, getline_count) },
+	{ "getc_time", "gfs_pio_getc time  : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_static, getc_time) },
+	{ "getc_count", "gfs_pio_getc count : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_static, getc_count) },
+	{ "putc_time", "gfs_pio_putc time  : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_static, putc_time) },
+	{ "putc_count",  "gfs_pio_putc count : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_static, putc_count) },
+};
+
 void
 gfs_pio_display_timers(void)
 {
-	gflog_info(GFARM_MSG_1000095,
-	    "gfs_pio_create time  : %g sec", staticp->create_time);
-	gflog_info(GFARM_MSG_1003807,
-	    "gfs_pio_create count : %llu", staticp->create_count);
-	gflog_info(GFARM_MSG_1000096,
-	    "gfs_pio_open time   : %g sec", staticp->open_time);
-	gflog_info(GFARM_MSG_1003808,
-	    "gfs_pio_open count  : %llu", staticp->open_count);
-	gflog_info(GFARM_MSG_1000097,
-	    "gfs_pio_close time  : %g sec", staticp->close_time);
-	gflog_info(GFARM_MSG_1003809,
-	    "gfs_pio_close count : %llu", staticp->close_count);
-	gflog_info(GFARM_MSG_1000098,
-	    "gfs_pio_seek time   : %g sec", staticp->seek_time);
-	gflog_info(GFARM_MSG_1003810,
-	    "gfs_pio_seek count  : %llu", staticp->seek_count);
-	gflog_info(GFARM_MSG_1000099,
-	    "gfs_pio_truncate time  : %g sec", staticp->truncate_time);
-	gflog_info(GFARM_MSG_1003811,
-	    "gfs_pio_truncate count : %llu", staticp->truncate_count);
-	gflog_info(GFARM_MSG_1000100,
-	    "gfs_pio_read time   : %g sec", staticp->read_time);
-	gflog_info(GFARM_MSG_1003812,
-	    "gfs_pio_read size   : %llu", staticp->read_size);
-	gflog_info(GFARM_MSG_1003813,
-	    "gfs_pio_read count  : %llu", staticp->read_count);
-	gflog_info(GFARM_MSG_1000101,
-	    "gfs_pio_write time  : %g sec", staticp->write_time);
-	gflog_info(GFARM_MSG_1003814,
-	    "gfs_pio_write size  : %llu", staticp->write_size);
-	gflog_info(GFARM_MSG_1003815,
-	    "gfs_pio_write count : %llu", staticp->write_count);
-	gflog_info(GFARM_MSG_1000102,
-	    "gfs_pio_sync time   : %g sec", staticp->sync_time);
-	gflog_info(GFARM_MSG_1003816,
-	    "gfs_pio_sync count  : %llu", staticp->sync_count);
-	gflog_info(GFARM_MSG_1003817,
-	    "gfs_pio_datasync time  : %g sec", staticp->datasync_time);
-	gflog_info(GFARM_MSG_1003818,
-	    "gfs_pio_datasync count : %llu", staticp->datasync_count);
-	gflog_info(GFARM_MSG_1000103,
-	    "gfs_pio_getline time  : %g sec (this calls getc)",
-			staticp->getline_time);
-	gflog_info(GFARM_MSG_1003819,
-	    "gfs_pio_getline count : %llu (this calls getc)",
-			staticp->getline_count);
-	gflog_info(GFARM_MSG_1000104,
-	    "gfs_pio_getc time  : %g sec", staticp->getc_time);
-	gflog_info(GFARM_MSG_1003820,
-	    "gfs_pio_getc count : %llu", staticp->getc_count);
-	gflog_info(GFARM_MSG_1000105,
-	    "gfs_pio_putc time  : %g sec", staticp->putc_time);
-	gflog_info(GFARM_MSG_1003821,
-	    "gfs_pio_putc count : %llu", staticp->putc_count);
+	int n = GFARM_ARRAY_LENGTH(profile_items);
+
+	gfs_profile_display_timers(n, profile_items, staticp);
+}
+
+gfarm_error_t
+gfs_pio_profile_value(const char *name, char *v, size_t *sp)
+{
+	int n = GFARM_ARRAY_LENGTH(profile_items);
+
+	return (gfs_profile_value(name, n, profile_items, staticp, v, sp));
 }

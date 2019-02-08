@@ -4,6 +4,7 @@
  * $Id$
  */
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -518,49 +519,48 @@ gfs_pio_open_remote_section(GFS_File gf, struct gfs_connection *gfs_server)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+struct gfs_profile_list remote_profile_items[] = {
+	{ "remote_read_time", "remote read time   : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_remote_static, read_time) },
+	{ "remote_read_size", "remote read size   : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_remote_static, read_size) },
+	{ "remote_read_count", "remote read count  : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_remote_static, read_count) },
+	{ "remote_write_time", "remote write time  : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_remote_static, write_time) },
+	{ "remote_write_size",  "remote write size  : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_remote_static, write_size) },
+	{ "remote_write_count", "remote write count : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_remote_static, write_count) },
+#ifdef HAVE_INFINIBAND
+	{ "rdma_read_time", "rdma read time   : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_remote_static, rdma_read_time) },
+	{ "rdma_read_size", "rdma read size   : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_remote_static, rdma_read_size) },
+	{ "rdma_read_count", "rdma read count  : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_remote_static, rdma_read_count) },
+	{ "rdma_write_time", "rdma write time  : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_remote_static, rdma_write_time) },
+	{ "rdma_write_size", "rdma write size  : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_remote_static, rdma_write_size) },
+	{ "rdma_write_count", "rdma write count : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_remote_static, rdma_write_count) },
+#endif
+};
+
 void
 gfs_pio_remote_display_timers(void)
 {
-	gflog_info(GFARM_MSG_1003830,
-	    "remote read time   : %g sec", staticp->read_time);
-	gflog_info(GFARM_MSG_1003831,
-	    "remote read size   : %llu", staticp->read_size);
-	gflog_info(GFARM_MSG_1003832,
-	    "remote read count  : %llu", staticp->read_count);
-	gflog_info(GFARM_MSG_1003833,
-	    "remote write time  : %g sec", staticp->write_time);
-	gflog_info(GFARM_MSG_1003834,
-	    "remote write size  : %llu", staticp->write_size);
-	gflog_info(GFARM_MSG_1003835,
-	    "remote write count : %llu", staticp->write_count);
-#ifdef HAVE_INFINIBAND
-	if (staticp->read_time > 0)
-		gflog_info(GFARM_MSG_1004620,
-		    "remote read Bps   : %g Bps",
-			staticp->read_size / staticp->read_time);
-	if (staticp->write_time > 0)
-		gflog_info(GFARM_MSG_1004621,
-		    "remote write Bps   : %g Bps",
-			staticp->write_size / staticp->write_time);
-	gflog_info(GFARM_MSG_1004622,
-	    "rdma read time   : %g sec", staticp->rdma_read_time);
-	gflog_info(GFARM_MSG_1004623,
-	    "rdma read size   : %llu", staticp->rdma_read_size);
-	gflog_info(GFARM_MSG_1004624,
-	    "rdma read count  : %llu", staticp->rdma_read_count);
-	gflog_info(GFARM_MSG_1004625,
-	    "rdma write time  : %g sec", staticp->rdma_write_time);
-	gflog_info(GFARM_MSG_1004626,
-	    "rdma write size  : %llu", staticp->rdma_write_size);
-	gflog_info(GFARM_MSG_1004627,
-	    "rdma write count : %llu", staticp->rdma_write_count);
-	if (staticp->rdma_read_time > 0)
-		gflog_info(GFARM_MSG_1004628,
-		    "rdma read Bps   : %g Bps",
-		staticp->rdma_read_size / staticp->rdma_read_time);
-	if (staticp->rdma_write_time > 0)
-		gflog_info(GFARM_MSG_1004629,
-		    "rdma write Bps   : %g Bps",
-		staticp->rdma_write_size / staticp->rdma_write_time);
-#endif
+	int n = GFARM_ARRAY_LENGTH(remote_profile_items);
+
+	gfs_profile_display_timers(n, remote_profile_items, staticp);
+}
+
+gfarm_error_t
+gfs_pio_remote_profile_value(const char *name, char *value, size_t *sizep)
+{
+	int n = GFARM_ARRAY_LENGTH(remote_profile_items);
+
+	return (gfs_profile_value(name, n, remote_profile_items,
+		    staticp, value, sizep));
 }

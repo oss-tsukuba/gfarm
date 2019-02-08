@@ -5,6 +5,7 @@
  */
 
 #include <assert.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -1275,13 +1276,29 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gfp)
 
 #endif /* not yet in gfarm v2 */
 
+struct gfs_profile_list section_profile_items[] = {
+	{ "set_view_section", "gfs_pio_set_view_section  : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_section_static, set_view_section_time)
+	},
+	{ "open_local_count", "gfs_pio_open_local_count  : %lld", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_section_static, open_local_count) },
+	{ "open_remote_count", "gfs_pio_open_remote_count : %lld", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_section_static, open_remote_count) },
+};
+
 void
 gfs_pio_section_display_timers(void)
 {
-	gflog_info(GFARM_MSG_1000113, "gfs_pio_set_view_section  : %f sec",
-		staticp->set_view_section_time);
-	gflog_info(GFARM_MSG_1003712, "gfs_pio_open_local_count  : %lld",
-		(unsigned long long)staticp->open_local_count);
-	gflog_info(GFARM_MSG_1003713, "gfs_pio_open_remote_count : %lld",
-		(unsigned long long)staticp->open_remote_count);
+	int n = GFARM_ARRAY_LENGTH(section_profile_items);
+
+	gfs_profile_display_timers(n, section_profile_items, staticp);
+}
+
+gfarm_error_t
+gfs_pio_section_profile_value(const char *name, char *value, size_t *sizep)
+{
+	int n = GFARM_ARRAY_LENGTH(section_profile_items);
+
+	return (gfs_profile_value(name, n, section_profile_items,
+		    staticp, value, sizep));
 }
