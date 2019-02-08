@@ -975,6 +975,14 @@ process_close_or_abort_file(struct process *process, struct peer *peer, int fd,
 			return (GFARM_ERR_NO_ERROR);
 		}
 	} else {
+		if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 && aborted) {
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "(%s@%s) aborted without closing a write-opened "
+			    "file %llu:%llu",
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    (unsigned long long)inode_get_number(fo->inode),
+			    (unsigned long long)inode_get_gen(fo->inode));
+		}
 		if (GFARM_S_ISREG(mode) &&
 		    fo->u.f.spool_opener != NULL &&
 		    fo->u.f.spool_opener != peer) {
