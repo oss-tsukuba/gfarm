@@ -958,7 +958,7 @@ process_close_or_abort_file(struct process *process, struct peer *peer, int fd,
 		}
 	} else {
 		if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 && aborted) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1005068,
 			    "(%s@%s) aborted without closing a write-opened "
 			    "file %llu:%llu",
 			    peer_get_username(peer), peer_get_hostname(peer),

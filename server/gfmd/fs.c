@@ -773,7 +773,7 @@ close_error_check(struct peer *peer, gfarm_ino_t inum, gfarm_uint64_t igen,
 {
 	if (e == GFARM_ERR_NO_ERROR)
 		return;
-	gflog_warning(GFARM_MSG_UNFIXED, "%s (%s@%s) %llu:%llu: %s", diag,
+	gflog_warning(GFARM_MSG_1005069, "%s (%s@%s) %llu:%llu: %s", diag,
 		peer_get_username(peer), peer_get_hostname(peer),
 		(unsigned long long)inum, (unsigned long long)igen,
 		gfarm_error_string(e));

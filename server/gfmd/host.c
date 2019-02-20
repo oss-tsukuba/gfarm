@@ -393,7 +393,7 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 		if (new_array == NULL) {
 			if (!gfarm_hash_purge(host_hashtab,
 			    &h->hi.hostname, sizeof(h->hi.hostname))) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1005056,
 				    "unexpected error: "
 				    "host %s doesn't exist in host_hashtab",
 				    h->hi.hostname);
@@ -2742,7 +2742,7 @@ hostset_of_fsngroup_alloc(const char *fsngroup, int *n_hostsp)
 		if (hce->hs == NULL) { /* GFARM_ERR_NO_MEMORY */
 			if (!gfarm_hash_purge(fsngroup_hostset_hashtab,
 			    fsngroup, fsng_size)) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1005057,
 				    "unexpected error: fsngroup %s doesn't "
 				    "exist in fsngroup_hostset_hashtab",
 				    fsngroup);
@@ -2777,7 +2777,7 @@ hostset_of_fsngroup_cache_purge(const char *fsngroup)
 	hostset_free(hce->hs);
 
 	if (!gfarm_hash_purge(fsngroup_hostset_hashtab, fsngroup, fsng_size)) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005058,
 		    "unexpected error: fsngroup %s doesn't "
 		    "exist in fsngroup_hostset_hashtab", fsngroup);
 	}
