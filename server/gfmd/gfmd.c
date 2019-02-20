@@ -1008,7 +1008,7 @@ peer_authorize(struct peer *peer)
 		    addr_string, GFARM_SOCKADDR_STRLEN);
 		gflog_info(GFARM_MSG_1000185,
 		    "gfarm_sockaddr_to_name(%s): %s",
-		    gfarm_error_string(e), addr_string);
+		    addr_string, gfarm_error_string(e));
 		hostname = strdup_log(addr_string, diag);
 		if (hostname == NULL)
 			return (GFARM_ERR_NO_MEMORY);
