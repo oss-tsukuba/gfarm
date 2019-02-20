@@ -3349,6 +3349,18 @@ reply:
 	gfs_server_put_reply(client, diag, e, "b", rv, buffer);
 }
 
+/*
+ * FUSE client does not report close error.  log write error since it
+ * is called during the close process.
+ */
+static void
+log_write_error(struct file_entry *fe, int eno, const char *diag)
+{
+	gflog_warning(GFARM_MSG_UNFIXED, "%s (%llu:%llu): %s", diag,
+		(unsigned long long)fe->ino, (unsigned long long)fe->gen,
+		strerror(eno));
+}
+
 void
 gfs_server_pwrite(struct gfp_xdr *client)
 {
@@ -3393,6 +3405,7 @@ gfs_server_pwrite(struct gfp_xdr *client)
 	if (rv == -1) {
 		io_error_check_errno(diag);
 		save_errno = errno;
+		log_write_error(fe, save_errno, diag);
 	} else {
 		file_table_set_written(fd);
 		/* update checksum */
@@ -3467,6 +3480,7 @@ gfs_server_write(struct gfp_xdr *client)
 	if ((rv = write(localfd, buffer, size)) == -1) {
 		io_error_check_errno(diag);
 		save_errno = errno;
+		log_write_error(fe, save_errno, diag);
 	} else {
 		written_offset = lseek(localfd, 0, SEEK_CUR) - rv;
 		total_file_size = lseek(localfd, 0, SEEK_END);
