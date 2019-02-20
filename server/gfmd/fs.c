@@ -748,16 +748,49 @@ gfm_server_fhopen(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, "i", mode));
 }
 
+/* FUSE client does not report close error */
+static gfarm_error_t
+save_inum_for_close_check(struct process *process, struct peer *peer,
+	gfarm_int32_t fd, gfarm_ino_t *inump, gfarm_uint64_t *igenp,
+	const char *diag)
+{
+	struct file_opening *fo = NULL;
+	gfarm_error_t e;
+
+	e = process_get_file_opening(process, peer, fd, &fo, diag);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (inump != NULL)
+		*inump = inode_get_number(fo->inode);
+	if (igenp != NULL)
+		*igenp = inode_get_gen(fo->inode);
+	return (e);
+}
+
+static void
+close_error_check(struct peer *peer, gfarm_ino_t inum, gfarm_uint64_t igen,
+	gfarm_error_t e, const char *diag)
+{
+	if (e == GFARM_ERR_NO_ERROR)
+		return;
+	gflog_warning(GFARM_MSG_UNFIXED, "%s (%s@%s) %llu:%llu: %s", diag,
+		peer_get_username(peer), peer_get_hostname(peer),
+		(unsigned long long)inum, (unsigned long long)igen,
+		gfarm_error_string(e));
+}
+
 gfarm_error_t
 gfm_server_close(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e, e2, e_save = GFARM_ERR_INVALID_ARGUMENT;
 	struct host *spool_host = NULL;
 	struct process *process;
 	gfarm_int32_t fd = -1;
 	int transaction = 0;
 	char *trace_log = NULL;
 	static const char diag[] = "GFM_PROTO_CLOSE";
+	gfarm_ino_t saved_inum;
+	gfarm_uint64_t saved_igen;
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
@@ -778,6 +811,9 @@ gfm_server_close(struct peer *peer, int from_client, int skip)
 			"peer_fdpair_get_current() failed: %s",
 			gfarm_error_string(e));
 	} else {
+		e_save = save_inum_for_close_check(process, peer, fd,
+			&saved_inum, &saved_igen, diag);
+
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
 		/*
@@ -793,6 +829,12 @@ gfm_server_close(struct peer *peer, int from_client, int skip)
 
 	giant_unlock();
 	e2 = gfm_server_put_reply(peer, diag, e, "");
+	/*
+	 * report close error.  note that generation number does not
+	 * change if error happens.
+	 */
+	if (e_save == GFARM_ERR_NO_ERROR)
+		close_error_check(peer, saved_inum, saved_igen, e, diag);
 	if (gfarm_ctxp->file_trace && trace_log != NULL) {
 		gflog_trace(GFARM_MSG_1003295, "%s", trace_log);
 		free(trace_log);
