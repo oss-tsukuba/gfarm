@@ -1,3 +1,19 @@
+Release note for Gfarm 2.6.27
+=============================
+
+[2019.2.20]
+
+Documentation
+* failover and disaster recovery documents
+
+Updated feature
+* gfmd - improve replica check process especially using replicainfo
+  that means file system group based replica location control feature
+* gfstatus - -l and -L options to list configuration names
+
+Bug fix
+* gfdf - fix output with -a option
+
 Release note for Gfarm 2.6.26
 =============================
 
