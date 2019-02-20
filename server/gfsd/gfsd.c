@@ -387,7 +387,7 @@ fatal_full(int msg_no, int priority, const char *file,
 	 * gflog_fatal() shows similar message, but it's not called here,
 	 * thus we need this too.
 	 */
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1005071,
 	    "gfsd is now aborting due to the message [%06d]", msg_no);
 
 	if (!shutting_down) {
@@ -3394,7 +3394,7 @@ reply:
 static void
 log_write_error(struct file_entry *fe, int eno, const char *diag)
 {
-	gflog_warning(GFARM_MSG_UNFIXED, "%s (%llu:%llu): %s", diag,
+	gflog_warning(GFARM_MSG_1005072, "%s (%llu:%llu): %s", diag,
 		(unsigned long long)fe->ino, (unsigned long long)fe->gen,
 		strerror(eno));
 }

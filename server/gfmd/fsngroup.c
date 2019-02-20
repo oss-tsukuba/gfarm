@@ -117,7 +117,7 @@ gfarm_repattr_parse_cached(const char *fsng,
 
 	fsng_tmp = strdup(fsng);
 	if (fsng_tmp == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no memory for '%s'", fsng);
+		gflog_error(GFARM_MSG_1005059, "no memory for '%s'", fsng);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
@@ -279,7 +279,7 @@ fsngroup_has_spare_for_repattr(struct inode *inode, int current_copy_count,
 	}
 	if (n_scope == 0) { /* unexpected */
 		hostset_free(scope);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005060,
 		    "no host in fsngroup %s: unexpected", fsng);
 
 		/* report shortage, for safety */

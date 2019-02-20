@@ -36,10 +36,10 @@ gfs_profile_display_timers(int n, struct gfs_profile_list list[], void *sp)
 
 		switch (list[i].type) {
 		case 'd':
-			gflog_info(GFARM_MSG_UNFIXED, format, *(double *)value);
+			gflog_info(GFARM_MSG_1005054, format, *(double *)value);
 			break;
 		case 'l':
-			gflog_info(GFARM_MSG_UNFIXED, format,
+			gflog_info(GFARM_MSG_1005055, format,
 				   *(unsigned long long *)value);
 			break;
 		}
