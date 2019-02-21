@@ -2451,13 +2451,13 @@ popcount64(unsigned long long bits)
 		(bits        & 0x5555555555555555);
 	bits = ((bits >>  2) & 0x3333333333333333) +
 		(bits        & 0x3333333333333333);
-	bits = ((bits >>  4) & 0x0f0f0f0f0f0f0f0f) + 
+	bits = ((bits >>  4) & 0x0f0f0f0f0f0f0f0f) +
 		(bits        & 0x0f0f0f0f0f0f0f0f);
 	bits = ((bits >>  8) & 0x00ff00ff00ff00ff) +
 		(bits        & 0x00ff00ff00ff00ff);
-	bits = ((bits >> 16) & 0x0000ffff0000ffff) + 
+	bits = ((bits >> 16) & 0x0000ffff0000ffff) +
 		(bits        & 0x0000ffff0000ffff);
-	bits = ((bits >> 32) & 0x00000000ffffffff) + 
+	bits = ((bits >> 32) & 0x00000000ffffffff) +
 		(bits        & 0x00000000ffffffff);
 	return ((int)bits);
 #endif /* !defined(HAVE___BUILTIN_POPCOUNTLL) */
