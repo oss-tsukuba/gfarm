@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %if %{undefined ver}
-%define ver	2.7.11
+%define ver	2.7.12
 %endif
 %if %{undefined rel}
 %define rel	1
@@ -1098,6 +1098,9 @@ fi
 %{doc_prefix}/Gfarm-FAQ.ja
 %{doc_prefix}/KNOWN_PROBLEMS.en
 %{doc_prefix}/KNOWN_PROBLEMS.ja
+%{doc_prefix}/quota.en
+%{doc_prefix}/failover.ja
+%{doc_prefix}/disaster.ja
 %{doc_prefix}/gfperf/CONFIG-gfperf.en
 %{doc_prefix}/gfperf/README-gfperf.en
 %{doc_prefix}/gfperf/SETUP-gfperf.en
