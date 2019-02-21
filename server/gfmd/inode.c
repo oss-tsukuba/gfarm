@@ -1247,7 +1247,7 @@ make_replicas_except(struct inode *inode, struct dirset *tdirset,
 
 	existing = hostset_empty_alloc();
 	if (existing == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005061,
 		    "%s: no memory to schedule replicas: existing hostset",
 		    diag);
 		return (GFARM_ERR_NO_MEMORY);
@@ -1255,7 +1255,7 @@ make_replicas_except(struct inode *inode, struct dirset *tdirset,
 	being_removed = hostset_empty_alloc();
 	if (being_removed == NULL) {
 		hostset_free(existing);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005062,
 		    "%s: no memory to schedule replicas: "
 		    "being_removed hostset",
 		    diag);
@@ -1890,7 +1890,7 @@ hostset_of_file_copy_alloc(struct inode *inode,
 	struct file_copy *copy;
 
 	if (hs == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005063,
 		    "%s: no memory of file_copy hostset", diag);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1899,7 +1899,7 @@ hostset_of_file_copy_alloc(struct inode *inode,
 		if ((*filter)(copy, closure)) {
 			e = hostset_add_host(hs, copy->host);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1005064,
 				    "%s: add host(%s): %s",
 				    diag, host_name(copy->host),
 				    gfarm_error_string(e));
@@ -1923,7 +1923,7 @@ hostset_of_file_opening_alloc(struct inode *inode,
 	struct file_opening *fo;
 
 	if (hs == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005065,
 		    "%s: no memory of file opening hostset", diag);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1944,7 +1944,7 @@ hostset_of_file_opening_alloc(struct inode *inode,
 		    (*filter)(fo->u.f.spool_host, closure)) {
 			e = hostset_add_host(hs, fo->u.f.spool_host);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1005066,
 				    "%s: add host(%s): %s",
 				    diag, host_name(fo->u.f.spool_host),
 				    gfarm_error_string(e));
@@ -1997,7 +1997,7 @@ inode_replica_hostset(
 		if (e != GFARM_ERR_NO_ERROR) {
 			hostset_free(removing);
 			hostset_free(existing);
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1005067,
 			    "inode_replica_hostset: %s",
 			    gfarm_error_string(e));
 			return (e);
