@@ -281,7 +281,7 @@ gflog_fatal_action_name_to_number(const char *name)
 static void
 gfarm_log_fatal_action(int msg_no)
 {
-	gflog_error(GFARM_MSG_1005053,
+	gflog_notice(GFARM_MSG_1005053,
 	    "now aborting due to the message [%06d]", msg_no);
 
 	switch (gflog_get_fatal_action()) {

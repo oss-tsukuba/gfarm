@@ -385,7 +385,7 @@ fatal_full(int msg_no, int priority, const char *file,
 	 * gflog_fatal() shows similar message, but it's not called here,
 	 * thus we need this too.
 	 */
-	gflog_error(GFARM_MSG_1005071,
+	gflog_notice(GFARM_MSG_1005071,
 	    "gfsd is now aborting due to the message [%06d]", msg_no);
 
 	if (!shutting_down) {
