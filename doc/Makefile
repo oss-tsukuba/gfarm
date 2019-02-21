@@ -13,8 +13,9 @@ DOC =	../LICENSE ../RELNOTES \
 	../INSTALL.Debian.en ../INSTALL.Debian.ja \
 	../SETUP.en ../SETUP.ja SETUP.private.en SETUP.private.ja \
 	Gfarm-FAQ.en Gfarm-FAQ.ja \
-	KNOWN_PROBLEMS.en KNOWN_PROBLEMS.ja
-
+	KNOWN_PROBLEMS.en KNOWN_PROBLEMS.ja \
+	quota.en \
+	failover.ja disaster.ja
 
 include $(top_srcdir)/makes/subdir.mk
 
