@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include <stddef.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -556,19 +557,34 @@ gfs_pio_open_local_section(GFS_File gf, struct gfs_connection *gfs_server)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+struct gfs_profile_list local_profile_items[] = {
+	{ "local_read_time", "local read time   : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_local_static, read_time) },
+	{ "local_read_size", "local read size   : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_local_static, read_size) },
+	{ "local_read_count", "local read count  : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_local_static, read_count) },
+	{ "local_write_time", "local write time  : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_pio_local_static, write_time) },
+	{ "local_write_size", "local write size  : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_local_static, write_size) },
+	{ "local_write_count", "local write count : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_pio_local_static, write_count) },
+};
+
 void
 gfs_pio_local_display_timers(void)
 {
-	gflog_info(GFARM_MSG_1003824,
-	    "local read time   : %g sec", staticp->read_time);
-	gflog_info(GFARM_MSG_1003825,
-	    "local read size   : %llu", staticp->read_size);
-	gflog_info(GFARM_MSG_1003826,
-	    "local read count  : %llu", staticp->read_count);
-	gflog_info(GFARM_MSG_1003827,
-	    "local write time  : %g sec", staticp->write_time);
-	gflog_info(GFARM_MSG_1003828,
-	    "local write size  : %llu", staticp->write_size);
-	gflog_info(GFARM_MSG_1003829,
-	    "local write count : %llu", staticp->write_count);
+	int n = GFARM_ARRAY_LENGTH(local_profile_items);
+
+	gfs_profile_display_timers(n, local_profile_items, staticp);
+}
+
+gfarm_error_t
+gfs_pio_local_profile_value(const char *name, char *value, size_t *sizep)
+{
+	int n = GFARM_ARRAY_LENGTH(local_profile_items);
+
+	return (gfs_profile_value(name, n, local_profile_items,
+		    staticp, value, sizep));
 }

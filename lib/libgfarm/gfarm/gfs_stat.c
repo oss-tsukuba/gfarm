@@ -311,11 +311,26 @@ gfs_stat_cksum_free(struct gfs_stat_cksum *s)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+struct gfs_profile_list stat_profile_items[] = {
+	{ "stat_time", "gfs_stat time  : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_stat_static, stat_time) },
+	{ "stat_count", "gfs_stat count : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_stat_static, stat_count) },
+};
+
 void
 gfs_stat_display_timers(void)
 {
-	gflog_info(GFARM_MSG_1000132,
-	    "gfs_stat time  : %g sec", staticp->stat_time);
-	gflog_info(GFARM_MSG_1003836,
-	    "gfs_stat count : %llu", staticp->stat_count);
+	int n = GFARM_ARRAY_LENGTH(stat_profile_items);
+
+	gfs_profile_display_timers(n, stat_profile_items, staticp);
+}
+
+gfarm_error_t
+gfs_stat_profile_value(const char *name, char *value, size_t *sizep)
+{
+	int n = GFARM_ARRAY_LENGTH(stat_profile_items);
+
+	return (gfs_profile_value(name, n, stat_profile_items,
+		    staticp, value, sizep));
 }

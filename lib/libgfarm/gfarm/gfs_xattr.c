@@ -4,6 +4,7 @@
  */
 
 #include <stdio.h>	/* config.h needs FILE */
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
@@ -902,11 +903,26 @@ gfs_closexmlattr(struct gfs_xmlattr_ctx *ctxp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+struct gfs_profile_list xattr_profile_items[] = {
+	{ "xattr_time", "gfs_xattr time  : %g sec", "%g", 'd',
+	  offsetof(struct gfarm_gfs_xattr_static, xattr_time) },
+	{ "xattr_count", "gfs_xattr count : %llu", "%llu", 'l',
+	  offsetof(struct gfarm_gfs_xattr_static, xattr_count) },
+};
+
 void
 gfs_xattr_display_timers(void)
 {
-	gflog_info(GFARM_MSG_1000170,
-	    "gfs_xattr time  : %g sec", staticp->xattr_time);
-	gflog_info(GFARM_MSG_1003838,
-	    "gfs_xattr count : %llu", staticp->xattr_count);
+	int n = GFARM_ARRAY_LENGTH(xattr_profile_items);
+
+	gfs_profile_display_timers(n, xattr_profile_items, staticp);
+}
+
+gfarm_error_t
+gfs_xattr_profile_value(const char *name, char *value, size_t *sizep)
+{
+	int n = GFARM_ARRAY_LENGTH(xattr_profile_items);
+
+	return (gfs_profile_value(name, n, xattr_profile_items,
+		    staticp, value, sizep));
 }

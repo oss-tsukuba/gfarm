@@ -222,3 +222,6 @@ size_t gfarm_humanize_signed_number(char *, size_t, long long, int);
 #define gfarm_stat_atime_nsec(st) ((st)->st_atime_nsec)
 #define gfarm_stat_ctime_nsec(st) ((st)->st_ctime_nsec)
 #endif /* __KERNEL__ */
+
+/* profile */
+gfarm_error_t gfarm_config_profile_value(const char *, char *, size_t *);

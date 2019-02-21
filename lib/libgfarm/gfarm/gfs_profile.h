@@ -14,6 +14,15 @@ void gfs_profile_set(void);
 void gfs_profile_unset(void);
 
 /* profile related subroutines: called from gfs_pio_display() */
+struct gfs_profile_list {
+	char *name, *format, *format_value, type;
+	size_t offset;
+};
+
+void gfs_profile_display_timers(int, struct gfs_profile_list[], void *);
+gfarm_error_t gfs_profile_value(const char *, int, struct gfs_profile_list[],
+	void *, char *, size_t *);
+
 void gfs_pio_display_timers(void);
 void gfs_pio_section_display_timers(void);
 void gfs_pio_local_display_timers(void);
@@ -21,3 +30,11 @@ void gfs_pio_remote_display_timers(void);
 void gfs_stat_display_timers(void);
 void gfs_unlink_display_timers(void);
 void gfs_xattr_display_timers(void);
+
+gfarm_error_t gfs_pio_profile_value(const char *, char *, size_t *);
+gfarm_error_t gfs_pio_section_profile_value(const char *, char *, size_t *);
+gfarm_error_t gfs_pio_local_profile_value(const char *, char *, size_t *);
+gfarm_error_t gfs_pio_remote_profile_value(const char *, char *, size_t *);
+gfarm_error_t gfs_stat_profile_value(const char *, char *, size_t *);
+gfarm_error_t gfs_unlink_profile_value(const char *, char *, size_t *);
+gfarm_error_t gfs_xattr_profile_value(const char *, char *, size_t *);
