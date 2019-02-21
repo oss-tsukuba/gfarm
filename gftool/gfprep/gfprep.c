@@ -166,7 +166,7 @@ struct gfprep_host_info {
 	int ncpu;
 	int max_rw;
 	long long count_write;
-	gfarm_int64_t disk_avail;
+	gfarm_uint64_t disk_avail;
 	gfarm_int32_t loadavg; /* loadavg_1min * GFM_PROTO_LOADAVG_FSCALE */
 
 	/* locked by cb_mutex */

@@ -51,7 +51,7 @@
 #define HOST_HASHTAB_SIZE	3079	/* prime number */
 
 static pthread_mutex_t total_disk_mutex = PTHREAD_MUTEX_INITIALIZER;
-static gfarm_off_t total_disk_used = 0, total_disk_avail = 0;
+static gfarm_uint64_t total_disk_used = 0, total_disk_avail = 0;
 static gfarm_off_t total_disk_used_change_in_byte = 0; /* in-memory only */
 static const char total_disk_diag[] = "total_disk";
 
@@ -677,7 +677,8 @@ host_is_busy(struct host *h)
 int
 host_is_disk_available(struct host *h, gfarm_off_t size)
 {
-	gfarm_off_t avail, minfree = gfarm_get_minimum_free_disk_space();
+	gfarm_uint64_t avail;
+	gfarm_off_t minfree = gfarm_get_minimum_free_disk_space();
 	static const char diag[] = "host_is_disk_available";
 
 	abstract_host_mutex_lock(&h->ah, diag);
@@ -835,9 +836,9 @@ host_status_update(struct host *host, struct host_status *status)
 		    busy ? "busy" : "not busy");
 }
 
-void
+static void
 host_status_get_disk_usage(struct host *host,
-	gfarm_off_t *used, gfarm_off_t *avail)
+	gfarm_uint64_t *used, gfarm_uint64_t *avail)
 {
 	const char diag[] = "host_status_get_disk_usage";
 
@@ -855,8 +856,8 @@ host_status_get_disk_usage(struct host *host,
 float
 host_status_get_disk_usage_percent(struct host *host)
 {
-	gfarm_off_t used;
-	gfarm_off_t avail;
+	gfarm_uint64_t used;
+	gfarm_uint64_t avail;
 
 	host_status_get_disk_usage(host, &used, &avail);
 
@@ -1053,7 +1054,7 @@ static int
 host_order_by_disk_avail(const void *a, const void *b)
 {
 	const struct host *const *h1 = a, *const *h2 = b;
-	gfarm_off_t h1_avail, h2_avail;
+	gfarm_uint64_t h1_avail, h2_avail;
 
 	host_status_get_disk_usage((struct host *)*h1, NULL, &h1_avail);
 	host_status_get_disk_usage((struct host *)*h2, NULL, &h2_avail);

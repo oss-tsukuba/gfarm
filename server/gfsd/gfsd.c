@@ -4487,6 +4487,16 @@ gfs_async_server_fhremove(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	    "fhremove", save_errno, ""));
 }
 
+/* a * b / 1024 */
+static gfarm_off_t
+multiply_and_divide_by_1024(gfarm_off_t a, gfarm_off_t b)
+{
+	/* assume b is a power of 2 */
+	if (b >= 1024)
+		return (a * (b / 1024));
+	return (a / (1024 / b));
+}
+
 gfarm_error_t
 gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 {
@@ -4510,8 +4520,8 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	} else {
 		gfsd_statfs_all(&bsize, &blocks, &bfree, &bavail,
 		    &files, &ffree, &favail, &readonly);
-		used = (blocks - bfree) * bsize / 1024;
-		avail = bavail * bsize / 1024;
+		used = multiply_and_divide_by_1024(blocks - bfree, bsize);
+		avail = multiply_and_divide_by_1024(bavail, bsize);
 	}
 	/* add base load */
 	loadavg[0] += gfarm_spool_base_load;

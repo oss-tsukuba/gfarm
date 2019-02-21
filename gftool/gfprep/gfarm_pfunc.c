@@ -129,7 +129,8 @@ pfunc_check_disk_avail(
 	gfarm_error_t e;
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files;
-	gfarm_off_t ffree, favail, avail;
+	gfarm_off_t ffree, favail;
+	gfarm_uint64_t avail;
 
 	e = gfs_statfsnode_by_path(
 		url, hostname, port, &bsize, &blocks, &bfree, &bavail,

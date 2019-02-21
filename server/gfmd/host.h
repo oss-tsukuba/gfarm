@@ -13,7 +13,7 @@ struct dead_file_copy;
 
 struct host_status {
 	double loadavg_1min, loadavg_5min, loadavg_15min;
-	gfarm_off_t disk_used, disk_avail;
+	gfarm_uint64_t disk_used, disk_avail;
 };
 
 struct abstract_host *host_to_abstract_host(struct host *);
@@ -79,7 +79,6 @@ void host_status_reply_waiting_reset(struct host *);
 int host_status_reply_is_waiting(struct host *);
 void host_status_update(struct host *, struct host_status *);
 
-void host_status_get_disk_usage(struct host *, gfarm_off_t *, gfarm_off_t *);
 float host_status_get_disk_usage_percent(struct host *);
 void host_status_update_disk_usage(struct host *, gfarm_off_t);
 
