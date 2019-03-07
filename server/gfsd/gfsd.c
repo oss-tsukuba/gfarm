@@ -1853,7 +1853,7 @@ file_table_close(gfarm_int32_t net_fd)
 			    "rdma_read size %lld time %g Bps %g",
 			    (long long)fe->rdma_write_size,
 			    fe->rdma_write_time,
-			    fe->rdma_write_time > 0 ?
+			    fe->rdma_write_time > 0
 			    ? (fe->rdma_write_size / fe->rdma_write_time)
 			    : fe->rdma_write_time,
 			    (long long)fe->rdma_read_size,
