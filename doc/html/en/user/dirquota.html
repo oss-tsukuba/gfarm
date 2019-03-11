@@ -157,7 +157,9 @@ PhysicalNumHardLimit     :               disabled
 </pre>
 
 You can use a directory name instead of a dirset name
-by using the -d option to see the quota limits and current amounts of use.
+by using the -d option to see the quota limits and current amounts of use.<br>
+With -D option, only the owner of the dirset can see the quota limits.<br>
+With -d option, users who can write the directory can see them.
 <pre>
 $ gfquota -d /home/john-smith/dir-b1
 Pathname                 : gfarm://metadata-server:601/home/john-smith/dir-b1
