@@ -352,10 +352,11 @@ gfm_server_quota_dir_get(struct peer *peer, int from_client, int skip)
 	    ) != GFARM_ERR_NO_ERROR) {
 		;
 	} else if (user != inode_get_user(inode) &&
-	    !user_is_root_for_inode(user, inode)) {
+	    !user_is_root_for_inode(user, inode) &&
+	    (e = inode_access(inode, user, GFS_X_OK|GFS_W_OK))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1004655, "%s: %s has no privilege",
 		    diag, peer_get_username(peer));
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (!inode_is_dir(inode)) {
 		gflog_debug(GFARM_MSG_1004656, "%s: %s specified non-dir",
 		    diag, peer_get_username(peer));
