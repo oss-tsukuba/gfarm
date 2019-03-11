@@ -56,15 +56,15 @@ pre { background:#e0ffff; margin-left: 2em; margin-right: 2em }
 
 <H2>利用例</H2>
 
-dirset-a と dirset-b の 2つのディレクトリセットを作成し、前者を 1GiB、後者を2GiBに利用制限する例です。
+dirset-a と dirset-b の 2つのディレクトリ セットを作成し、前者を 1GiB、後者を2GiBに利用制限する例です。
 <pre>
 $ gfdirquota -c dirset-a dirset-b
 $ gfedquota -D dirset-a -h 1073741824
 $ gfedquota -D dirset-b -h 2147483648
 </pre>
 
-ディレクトリ /home/john-smith/dir-a をディレクトリセット dirset-a に、
-ディレクトリ /home/john-smith/dir-b1 と /home/john-smith/dir-b2 をディレクトリセット dirset-b に
+ディレクトリ /home/john-smith/dir-a をディレクトリ セット dirset-a に、
+ディレクトリ /home/john-smith/dir-b1 と /home/john-smith/dir-b2 をディレクトリ セット dirset-b に
 登録して、利用量管理下に置く例です。
 <pre>
 $ gfdirquota -a dirset-a /home/john-smith/dir-a
@@ -125,8 +125,10 @@ PhysicalNumSoftLimit     :               disabled
 PhysicalNumHardLimit     :               disabled
 </pre>
 
--d オプションを使うと、ディレクトリセット名ではなくディレクトリ名を指定して、
-利用量やクオータ制限値を確認することができます。
+-d オプションを使うと、dirset 名ではなくディレクトリ名を指定して、
+利用量やクオータ制限値を確認することができます。<br>
+-D オプションでは dirset を作成したユーザーしかクオータ制限値を確認できませんが、<br>
+-d オプションの場合はそのディレクトリへ書き込みできるユーザーであれば誰でも確認できます。
 <pre>
 $ gfquota -d /home/john-smith/dir-b1
 Pathname                 : gfarm://metadata-server:601/home/john-smith/dir-b1
