@@ -24,7 +24,7 @@ gfarm_metadb_server_new(struct gfarm_metadb_server **m,
 	(*m)->clustername = NULL;
 	(*m)->port = port;
 	(*m)->flags = 0;
-	(*m)->tflags = 0;
+	(*m)->tflags = GFARM_METADB_SERVER_FLAG_IS_MEMORY_OWNED_BY_FS;
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -227,6 +227,20 @@ gfarm_metadb_server_set_seqnum_is_behind(struct gfarm_metadb_server *m)
 {
 	m->tflags = (m->tflags & ~GFARM_METADB_SERVER_FLAG_SEQNUM_MASK) |
 	    GFARM_METADB_SERVER_FLAG_SEQNUM_IS_BEHIND;
+}
+
+int
+gfarm_metadb_server_is_memory_owned_by_fs(struct gfarm_metadb_server *m)
+{
+	return ((m->tflags & GFARM_METADB_SERVER_FLAG_IS_MEMORY_OWNED_BY_FS)
+		!= 0);
+}
+
+void
+gfarm_metadb_server_set_is_memory_owned_by_fs(struct gfarm_metadb_server *m,
+	int enable)
+{
+	set_tflag(m, GFARM_METADB_SERVER_FLAG_IS_MEMORY_OWNED_BY_FS, enable);
 }
 
 int

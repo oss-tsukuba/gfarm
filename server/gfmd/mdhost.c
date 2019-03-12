@@ -568,14 +568,20 @@ mdhost_lookup(const char *hostname)
 struct mdhost *
 mdhost_lookup_metadb_server(struct gfarm_metadb_server *ms)
 {
-	struct mdhost *m = mdhost_lookup(ms->name);
+	struct gfarm_hash_iterator it;
+	struct mdhost *m, *mm = NULL;
+	static const char diag[] = "mdhost_lookup_metadb_server";
 
-	if (m == NULL)
-		return (NULL);
-	if (m->ms.port != ms->port)
-		return (NULL);
-
-	return (m);
+	mdhost_table_rwlock_rdlock(diag);
+	FOREACH_MDHOST(it) {
+		m = mdhost_iterator_access(&it);
+		if (mdhost_is_valid(m) && &m->ms == ms) {
+			mm = m;
+			break;
+		}
+	}
+	mdhost_table_rwlock_unlock(diag);
+	return (mm);
 }
 
 struct mdhost *
@@ -705,6 +711,7 @@ mdhost_enter(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 		if (gfarm_get_metadb_replication_enabled())
 			free(mh->ms.clustername);
 		mh->ms = *ms;
+		gfarm_metadb_server_set_is_memory_owned_by_fs(&mh->ms, 0);
 		return (GFARM_ERR_NO_ERROR);
 	}
 
@@ -1241,10 +1248,40 @@ mdhost_fix_default_master(struct mdhost *new_mmh, const char *diag)
 static gfarm_error_t
 mdhost_updated(void)
 {
+	gfarm_error_t e;
+	int i, n = mdhost_get_count();
+	struct mdhost *mh;
+	struct gfarm_metadb_server **mss;
+	struct gfarm_filesystem *fs;
+	struct gfarm_hash_iterator it;
+	static const char diag[] = "mdhost_updated";
+
+	GFARM_MALLOC_ARRAY(mss, n);
+	if (mss == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_error(GFARM_MSG_1002945,
+		    "%s: %s", diag, gfarm_error_string(e));
+		return (e);
+	}
+	i = 0;
+	mdhost_table_rwlock_rdlock(diag);
+	FOREACH_MDHOST(it) {
+		mh = mdhost_iterator_access(&it);
+		if (mdhost_is_valid(mh) && i < n)
+			mss[i++] = &mh->ms;
+	}
+	mdhost_table_rwlock_unlock(diag);
+	fs = gfarm_filesystem_get_default();
+	e = gfarm_filesystem_set_metadb_server_list(fs, mss, i);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_1004730,
+		    "%s: gfarm_filesystem_set_metadb_server_list: %s",
+		    diag, gfarm_error_string(e));
+	free(mss);
 	if (mdhost_update_hook_for_journal_send != NULL)
 		(*mdhost_update_hook_for_journal_send)();
 
-	return (GFARM_ERR_NO_ERROR);
+	return (e);
 }
 
 static gfarm_error_t
