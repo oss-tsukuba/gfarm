@@ -75,6 +75,15 @@ gfarm_filesystem_static_init(struct gfarm_context *ctxp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static void
+gfarm_filesystem_m2fs_hashtab_free(void)
+{
+	if (staticp->ms2fs_hashtab != NULL) {
+		gfarm_hash_table_free(staticp->ms2fs_hashtab);
+		staticp->ms2fs_hashtab = NULL;
+	}
+}
+
 void
 gfarm_filesystem_static_term(struct gfarm_context *ctxp)
 {
@@ -84,8 +93,7 @@ gfarm_filesystem_static_term(struct gfarm_context *ctxp)
 	if (s == NULL)
 		return;
 
-	if (staticp->ms2fs_hashtab != NULL)
-		gfarm_hash_table_free(staticp->ms2fs_hashtab);
+	gfarm_filesystem_m2fs_hashtab_free();
 	for (;;) {
 		fs = staticp->filesystems.next;
 		if (fs == &staticp->filesystems)
@@ -282,9 +290,10 @@ gfarm_filesystem_get_by_connection(struct gfm_connection *gfm_server)
 	    gfm_client_port(gfm_server)));
 }
 
-gfarm_error_t
-gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *fs,
-	struct gfarm_metadb_server **metadb_servers, int n)
+static gfarm_error_t
+gfarm_filesystem_update_metadb_server_list(struct gfarm_filesystem *fs,
+	struct gfarm_metadb_server **metadb_servers, int n,
+	int do_purge)
 {
 	gfarm_error_t e;
 	int i;
@@ -304,7 +313,8 @@ gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *fs,
 
 	for (i = 0; i < fs->nservers; ++i) {
 		gfarm_metadb_server_set_is_removed(fs->servers[i], 1);
-		gfarm_filesystem_hash_purge(fs, fs->servers[i]);
+		if (do_purge)
+			gfarm_filesystem_hash_purge(fs, fs->servers[i]);
 	}
 	for (i = 0; i < n; ++i)
 		gfarm_metadb_server_set_is_removed(metadb_servers[i], 0);
@@ -332,6 +342,31 @@ gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *fs,
 	}
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *fs,
+	struct gfarm_metadb_server **metadb_servers, int n)
+{
+	return (gfarm_filesystem_update_metadb_server_list(
+	    fs, metadb_servers, n, 1));
+}
+
+gfarm_error_t
+gfarm_filesystem_replace_metadb_server_list(struct gfarm_filesystem *fs,
+	struct gfarm_metadb_server **metadb_servers, int n)
+{
+	/*
+	 * we cannot call gfarm_filesystem_hash_purge() by each fs->servers[i],
+	 * because gfarm_metadb_server_get_port(fs->servers[i]) may be
+	 * already broken by "gfmdhost -m -p <port>",
+	 * when this is called from mdhost_updated() in gfmd.
+	 */
+	gfarm_filesystem_m2fs_hashtab_free();
+
+	/* do_purge == false due to the reason above */
+	return (gfarm_filesystem_update_metadb_server_list(
+	    fs, metadb_servers, n, 0));
 }
 
 gfarm_error_t

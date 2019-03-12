@@ -11,7 +11,11 @@ gfarm_error_t gfarm_filesystem_add(const char *, int,
 	struct gfarm_filesystem **);
 struct gfarm_filesystem *gfarm_filesystem_get_by_connection(
 	struct gfm_connection *);
-gfarm_error_t gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *,
+gfarm_error_t gfarm_filesystem_set_metadb_server_list(
+	struct gfarm_filesystem *,
+	struct gfarm_metadb_server **, int);
+gfarm_error_t gfarm_filesystem_replace_metadb_server_list(
+	struct gfarm_filesystem *,
 	struct gfarm_metadb_server **, int);
 struct gfarm_metadb_server **gfarm_filesystem_get_metadb_server_list(
 	struct gfarm_filesystem *, int *);
