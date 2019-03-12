@@ -685,13 +685,13 @@ mdhost_set_self_as_master(void)
 }
 
 gfarm_error_t
-mdhost_enter(struct gfarm_metadb_server *ms, struct mdhost **mpp)
+mdhost_enter_internal(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 {
 	struct gfarm_hash_entry *entry;
 	int created;
 	struct mdhost *mh;
 	gfarm_error_t e;
-	static const char diag[] = "mdhost_enter";
+	static const char diag[] = "mdhost_enter_internal";
 
 	mh = mdhost_lookup_internal(ms->name);
 	if (mh) {
@@ -750,6 +750,20 @@ mdhost_enter(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+gfarm_error_t
+mdhost_enter(struct gfarm_metadb_server *ms, struct mdhost **mpp)
+{
+	gfarm_error_t e = mdhost_enter_internal(ms, mpp);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if ((e = mdhost_updated()) != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+	return (e);
+}
+
 int
 mdhost_is_sync_replication(struct mdhost *mh)
 {
@@ -789,14 +803,16 @@ mdhost_has_async_replication_target(void)
 	return (ret);
 }
 
-void
+static void
 mdhost_add_one(void *closure, struct gfarm_metadb_server *ms)
 {
-	gfarm_error_t e = mdhost_enter(ms, NULL);
+	gfarm_error_t e = mdhost_enter_internal(ms, NULL);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1002932,
 		    "mdhost_add_one: %s", gfarm_error_string(e));
+
+	/* mdhost_updated() will be called by mdhost_init() */
 }
 
 static gfarm_error_t
@@ -908,14 +924,15 @@ mdhost_update_replication_type(struct mdhost *mh,
 	return (e);
 }
 
-gfarm_error_t
-mdhost_modify_in_cache(struct mdhost *mh, struct gfarm_metadb_server *ms)
+static gfarm_error_t
+mdhost_modify_in_cache_internal(
+	struct mdhost *mh, struct gfarm_metadb_server *ms)
 {
 	int cluster_changed;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	char *old_clustername = NULL;
 	char *new_clustername;
-	static const char diag[] = "mdhost_modify_in_cache";
+	static const char diag[] = "mdhost_modify_in_cache_internal";
 
 	mdhost_mutex_lock(mh, diag);
 	cluster_changed = strcmp(mh->ms.clustername, ms->clustername) != 0;
@@ -946,6 +963,20 @@ mdhost_modify_in_cache(struct mdhost *mh, struct gfarm_metadb_server *ms)
 	}
 end:
 	free(old_clustername);
+	return (e);
+}
+
+gfarm_error_t
+mdhost_modify_in_cache(struct mdhost *mh, struct gfarm_metadb_server *ms)
+{
+	gfarm_error_t e = mdhost_modify_in_cache_internal(mh, ms);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if ((e = mdhost_updated()) != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
 	return (e);
 }
 
@@ -1366,7 +1397,8 @@ gfm_server_metadb_server_set(struct peer *peer, int from_client, int skip)
 	} else if ((e = metadb_server_verify(&ms, diag))
 	    != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
-	} else if ((e = mdhost_enter(&ms, &mh)) != GFARM_ERR_NO_ERROR) {
+	} else if ((e = mdhost_enter_internal(&ms, &mh))
+	    != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
 	} else if (gfarm_metadb_server_is_default_master(&ms)) {
 		if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
@@ -1457,7 +1489,7 @@ gfm_server_metadb_server_modify(struct peer *peer, int from_client, int skip)
 		   != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
 	} else {
-		mdhost_modify_in_cache(mh, &ms);
+		mdhost_modify_in_cache_internal(mh, &ms);
 		if (isdm) {
 			e = mdhost_db_modify_default_master(mh, &ms, diag);
 			if (e != GFARM_ERR_NO_ERROR)
@@ -1567,7 +1599,8 @@ mdhost_init(void)
 		gfarm_metadb_server_set_is_master(&ms, 1);
 		gfarm_metadb_server_set_is_master_candidate(&ms, 1);
 		gfarm_metadb_server_set_is_default_master(&ms, 1);
-		if ((e = mdhost_enter(&ms, &self)) != GFARM_ERR_NO_ERROR)
+		if ((e = mdhost_enter_internal(&ms, &self))
+		    != GFARM_ERR_NO_ERROR)
 			gflog_fatal(GFARM_MSG_1002972,
 			    "Failed to add self mdhost");
 		else if (gfarm_get_metadb_replication_enabled()) {
