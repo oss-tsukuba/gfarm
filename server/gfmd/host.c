@@ -96,7 +96,8 @@ struct host {
 #endif
 
 	int status_reply_waiting;
-	gfarm_int32_t report_flags;
+	gfarm_int32_t report_flags; /* exclude GFM_PROTO_SCHED_FLAG_READONLY */
+	int is_readonly;	/* in-memory only */
 	struct host_status status;
 	gfarm_off_t disk_used_change_in_byte; /* in-memory only */
 	struct callout *status_callout;
@@ -577,6 +578,14 @@ host_supports_cksum_protocols(struct host *h)
 		>= GFS_PROTOCOL_VERSION_V2_6);
 }
 
+/* support GFS_PROTO_STATUS2 */
+int
+host_supports_status2_protocols(struct host *h)
+{
+	return (abstract_host_get_protocol_version(&h->ah)
+		>= GFS_PROTOCOL_VERSION_V2_7_13);
+}
+
 #ifdef COMPAT_GFARM_2_3
 
 void
@@ -691,13 +700,17 @@ host_is_up_with_grace(struct host *h, gfarm_time_t grace)
 	return (rv);
 }
 
+static void host_status_get_unlocked(struct host *, struct host_status *, int);
+
 static int
 host_is_busy_unlocked(struct host *h)
 {
 	long long load = 0, busy = 0;
+	struct host_status status;
 
+	host_status_get_unlocked(h, &status, 0);
 	if (host_is_up_unlocked(h)) {
-		load = h->status.loadavg_1min * GFARM_F2LL_SCALE;
+		load = status.loadavg_1min * GFARM_F2LL_SCALE;
 		busy = h->hi.ncpu * gfarm_ctxp->schedule_busy_load;
 	}
 	return (load >= busy);
@@ -716,20 +729,79 @@ host_is_busy(struct host *h)
 	return (busy);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: host::acstract_host::mutex
+ * SLEEPS: no
+ */
+int
+host_is_readonly(struct host *h)
+{
+	int is_readonly;
+	static const char diag[] = "host_is_readonly";
+
+	abstract_host_mutex_lock(&h->ah, diag);
+	is_readonly = h->is_readonly;
+	abstract_host_mutex_unlock(&h->ah, diag);
+
+	return (is_readonly);
+}
+
+/*
+ * PREREQUISITE: giant_lock (for h->hi)
+ * LOCKS: host::acstract_host::mutex
+ * SLEEPS: no
+ */
+static void
+host_is_readonly_update(struct host *h)
+{
+	static const char diag[] = "host_is_readonly_update";
+
+	abstract_host_mutex_lock(&h->ah, diag);
+	h->is_readonly = host_info_is_readonly(&h->hi);
+	abstract_host_mutex_unlock(&h->ah, diag);
+}
+
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: host::acstract_host::mutex
+ * SLEEPS: no
+ */
+int
+host_is_file_removable(struct host *h)
+{
+	int is_file_removable;
+	static const char diag[] = "host_is_file_removable";
+
+	abstract_host_mutex_lock(&h->ah, diag);
+	is_file_removable = (!h->is_readonly && host_is_up_unlocked(h));
+	abstract_host_mutex_unlock(&h->ah, diag);
+
+	return (is_file_removable);
+}
+
+/*
+ * PREREQUISITE: giant_lock (for gfarm_get_minimum_free_disk_space())
+ * LOCKS: host::acstract_host::mutex
+ * SLEEPS: no
+ */
 int
 host_is_disk_available(struct host *h, gfarm_off_t size)
 {
 	gfarm_uint64_t avail;
 	gfarm_off_t minfree = gfarm_get_minimum_free_disk_space();
+	struct host_status status;
 	static const char diag[] = "host_is_disk_available";
 
 	abstract_host_mutex_lock(&h->ah, diag);
-
-	if (host_is_up_unlocked(h))
-		avail = h->status.disk_avail * 1024 -
+	if (host_is_up_unlocked(h)) {
+		host_status_get_unlocked(h, &status, 0);
+		/* disk_avail of readonly-host is 0 */
+		avail = status.disk_avail * 1024 -
 		    h->disk_used_change_in_byte;
-	else
+	} else {
 		avail = 0;
+	}
 	abstract_host_mutex_unlock(&h->ah, diag);
 
 	/* to reduce no space risk, keep minimum disk space */
@@ -838,6 +910,63 @@ host_total_disk_update(
 	gfarm_mutex_unlock(&total_disk_mutex, diag, total_disk_diag);
 }
 
+static int
+host_use_real_disk_space(int flags)
+{
+	return ((flags & HOST_STATUS_FLAG_USE_REAL_DISK_SPACE) != 0);
+}
+
+/*
+ * PREREQUISITE: host::acstract_host::mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
+static int
+host_readonly_behaves_no_disk_space(struct host *h, int host_status_flags)
+{
+	return (h->is_readonly &&
+		!host_use_real_disk_space(host_status_flags));
+}
+
+/*
+ * PREREQUISITE: host::acstract_host::mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
+static void
+host_status_get_unlocked(struct host *host, struct host_status *status,
+	int host_status_flags)
+{
+	*status = host->status; /* copy */
+	if (host_readonly_behaves_no_disk_space(host, host_status_flags)) {
+		status->disk_used = status->disk_used + status->disk_avail;
+		status->disk_avail = 0;
+	}
+}
+
+#if 0
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: host::acstract_host::mutex
+ * SLEEPS: no
+ */
+void
+host_status_get(struct host *host, struct host_status *status,
+	int host_status_flags)
+{
+	const char diag[] = "host_status_get";
+
+	abstract_host_mutex_lock(&host->ah, diag);
+	host_status_get_unlocked(host, status, host_status_flags);
+	abstract_host_mutex_unlock(&host->ah, diag);
+}
+#endif
+
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: host::acstract_host::mutex
+ * SLEEPS: no
+ */
 void
 host_status_update(struct host *host, struct host_status *status)
 {
@@ -882,14 +1011,16 @@ static void
 host_status_get_disk_usage(struct host *host,
 	gfarm_uint64_t *used, gfarm_uint64_t *avail)
 {
+	struct host_status status;
 	const char diag[] = "host_status_get_disk_usage";
 
 	abstract_host_mutex_lock(&host->ah, diag);
+	host_status_get_unlocked(host, &status, 0);
 	if (used)
-		*used = host->status.disk_used * 1024 +
+		*used = status.disk_used * 1024 +
 		    host->disk_used_change_in_byte;
 	if (avail)
-		*avail = host->status.disk_avail * 1024 -
+		*avail = status.disk_avail * 1024 -
 		    host->disk_used_change_in_byte;
 	abstract_host_mutex_unlock(&host->ah, diag);
 }
@@ -1008,7 +1139,7 @@ host_disabled(struct abstract_host *ah, struct peer *peer)
  *    in abstract_host::ops::disable() == host_disable()
  *    which is called from abstract_host::ops::disable() == host_disable()
  *  - replica_check_mutex and config_var_mutex
- *    in replica_check_signal_host_down()
+ *    in replica_check_start_host_down()
  *    which is called from abstract_host::ops::disable() == host_disable()
  *  - removal_pendingq:mutex -> dead_file_copy::mutex
  *    in abstract_host::ops::disabled() == host_disabled()
@@ -1060,6 +1191,7 @@ host_new(struct gfarm_host_info *hi, struct callout *callout)
 #endif
 	h->status_reply_waiting = 0;
 	h->report_flags = 0;
+	h->is_readonly = host_info_is_readonly(hi);
 	h->status.loadavg_1min =
 	h->status.loadavg_5min =
 	h->status.loadavg_15min = 0.0;
@@ -1739,6 +1871,7 @@ host_modify(struct host *h, struct gfarm_host_info *hi)
 	h->hi.ncpu = hi->ncpu;
 	h->hi.port = hi->port;
 	h->hi.flags = hi->flags;
+	host_is_readonly_update(h);
 }
 
 gfarm_error_t
@@ -1778,7 +1911,7 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t ncpu, port, flags;
 	struct gfarm_host_info hi;
 	struct host *h;
-	int needs_free = 0;
+	int needs_free = 0, is_readonly_old, is_file_removable;
 	static const char diag[] = "GFM_PROTO_HOST_INFO_MODIFY";
 
 	e = gfm_server_get_request(peer, diag, "ssiii",
@@ -1820,8 +1953,26 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 			gfarm_error_string(e));
 		needs_free = 1;
 	} else {
+		is_readonly_old = host_is_readonly(h);
+
 		host_modify(h, &hi);
 		free(hi.hostname);
+
+		is_file_removable = host_is_file_removable(h);
+		if (is_readonly_old) {
+			if (is_file_removable)
+				dead_file_copy_host_becomes_up(h);
+			/*
+			 * Calling replica_check_start_*() here to
+			 * remove surplus replicas is unnecessary,
+			 * because surplus replicas does not need to
+			 * be removed immediately and replica_check
+			 * starts sometime later.
+			 */
+		} else {
+			if (!is_file_removable)
+				dead_file_copy_host_becomes_down(h);
+		}
 	}
 	if (needs_free) {
 		free(hi.hostname);
@@ -1903,9 +2054,10 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
-/* called from fs.c:gfm_server_schedule_file() as well */
-gfarm_error_t
-host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
+
+static gfarm_error_t
+host_schedule_reply_common(struct host *h, struct peer *peer,
+	int host_status_flags, const char *diag)
 {
 	struct host_status status;
 	gfarm_off_t disk_used_change;
@@ -1913,10 +2065,12 @@ host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 	gfarm_int32_t report_flags;
 
 	abstract_host_mutex_lock(&h->ah, diag);
-	status = h->status;
+	host_status_get_unlocked(h, &status, host_status_flags);
 	disk_used_change = h->disk_used_change_in_byte / 1024;
 	last_report = h->last_report;
 	report_flags = h->report_flags;
+	if (h->is_readonly)
+		report_flags |= GFM_PROTO_SCHED_FLAG_READONLY;
 	abstract_host_mutex_unlock(&h->ah, diag);
 	return (gfp_xdr_send(peer_get_conn(peer), "siiillllii",
 	    h->hi.hostname, h->hi.port, h->hi.ncpu,
@@ -1929,11 +2083,30 @@ host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 	    report_flags));
 }
 
+/* called from fs.c:gfm_server_schedule_file() as well */
+gfarm_error_t
+host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
+{
+	return (host_schedule_reply_common(h, peer, 0, diag));
+}
+
+static gfarm_error_t
+host_schedule_reply_use_real_disk_space(struct host *h, struct peer *peer,
+	const char *diag)
+{
+	return (host_schedule_reply_common(h, peer,
+	    HOST_STATUS_FLAG_USE_REAL_DISK_SPACE, diag));
+}
+
 gfarm_error_t
 host_schedule_reply_all(struct peer *peer,
-	int (*filter)(struct host *, void *), void *closure, const char *diag)
+	int (*filter)(struct host *, void *), void *closure,
+	int use_real_disk_space,  const char *diag)
 {
-	return (gfm_server_host_generic_get(peer, host_schedule_reply,
+	return (gfm_server_host_generic_get(peer,
+	    use_real_disk_space ?
+	    host_schedule_reply_use_real_disk_space :
+	    host_schedule_reply,
 	    filter, closure, 1, diag));
 }
 
@@ -1977,18 +2150,18 @@ up_and_domain_filter(struct host *h, void *d)
 	    gfarm_host_is_in_domain(host_name(h), domain));
 }
 
-gfarm_error_t
-gfm_server_schedule_host_domain(struct peer *peer, int from_client, int skip)
+static gfarm_error_t
+gfm_server_schedule_host_domain_common(struct peer *peer, int from_client,
+	int skip, int use_real_disk_space, const char *diag)
 {
 	gfarm_int32_t e;
 	char *domain;
-	static const char diag[] = "GFM_PROTO_SCHEDULE_HOST_DOMAIN";
 
 	e = gfm_server_get_request(peer, diag, "s", &domain);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001579,
-			"schedule_host_domain request failure: %s",
-			gfarm_error_string(e));
+			"%s request failure: %s",
+			diag, gfarm_error_string(e));
 		return (e);
 	}
 	if (skip) {
@@ -1998,11 +2171,32 @@ gfm_server_schedule_host_domain(struct peer *peer, int from_client, int skip)
 
 	/* XXX FIXME too long giant lock */
 	giant_lock();
-	e = host_schedule_reply_all(peer, up_and_domain_filter, domain, diag);
+	e = host_schedule_reply_all(peer, up_and_domain_filter, domain,
+	    use_real_disk_space, diag);
 	giant_unlock();
 	free(domain);
 
 	return (e);
+}
+
+gfarm_error_t
+gfm_server_schedule_host_domain(struct peer *peer, int from_client, int skip)
+{
+	static const char diag[] = "GFM_PROTO_SCHEDULE_HOST_DOMAIN";
+
+	return (gfm_server_schedule_host_domain_common(peer, from_client, skip,
+	    0, diag));
+}
+
+gfarm_error_t
+gfm_server_schedule_host_domain_use_real_disk_space(struct peer *peer,
+	int from_client, int skip)
+{
+	static const char diag[] =
+		"GFM_PROTO_SCHEDULE_HOST_DOMAIN_USE_REAL_DISK_SPACE";
+
+	return (gfm_server_schedule_host_domain_common(peer, from_client, skip,
+	    1, diag));
 }
 
 gfarm_error_t
@@ -2022,6 +2216,7 @@ gfm_server_statfs(struct peer *peer, int from_client, int skip)
 	avail = total_disk_avail - used_change;
 	gfarm_mutex_unlock(&total_disk_mutex, diag, total_disk_diag);
 
+	/* use real used and avail even if readonly-hosts exists */
 	return (gfm_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR, "lll",
 		    used, avail, files));
 }

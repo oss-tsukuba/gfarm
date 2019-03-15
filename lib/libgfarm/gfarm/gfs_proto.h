@@ -13,11 +13,13 @@
  * 1: protocol until gfarm 2.3
  * 2: protocol since gfarm 2.4
  * 3: protocol since gfarm 2.6
+ * 4: protocol since gfarm 2.7.13
  */
 #define GFS_PROTOCOL_VERSION_V2_3	1
 #define GFS_PROTOCOL_VERSION_V2_4	2
 #define GFS_PROTOCOL_VERSION_V2_6	3
-#define GFS_PROTOCOL_VERSION		GFS_PROTOCOL_VERSION_V2_6
+#define GFS_PROTOCOL_VERSION_V2_7_13	4
+#define GFS_PROTOCOL_VERSION		GFS_PROTOCOL_VERSION_V2_7_13
 
 enum gfs_proto_command {
 	/* from client */
@@ -77,6 +79,9 @@ enum gfs_proto_command {
 	GFS_PROTO_RDMA_HELLO,
 	GFS_PROTO_RDMA_PREAD,
 	GFS_PROTO_RDMA_PWRITE,
+
+	/* from gfmd (i.e. back channel) */
+	GFS_PROTO_STATUS2,			/* since gfarm-2.7.13 */
 
 };
 

@@ -4646,8 +4646,25 @@ inode_open(struct file_opening *fo, struct dirset *tdirset)
 			"inode_activity_alloc() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0) {
+		if (inode_get_size(inode) > 0 &&
+		    (fo->flag & GFARM_FILE_TRUNC) == 0 &&
+		    !inode_has_no_replica(inode) &&
+		    !inode_has_writable_replica(inode)) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "inode_open: NO_SPACE or READ_ONLY_FILE_SYSTEM");
+			return (GFARM_ERR_NO_SPACE);
+		}
+		/*
+		 * else...
+		 *   inode_get_size(inode) == 0
+		 *   || (fo->flag & GFARM_FILE_TRUNC) != 0
+		 *   || inode_has_no_replica(inode) != 0
+		 *   || inode_has_writable_replica(inode)) != 0
+		 * related function: inode_schedule_file_default()
+		 */
 		++ia->u.f.writers;
+	}
 	if ((fo->flag & GFARM_FILE_TRUNC) != 0) {
 		/* do not change the metadata for close-to-open consistency */
 		fo->flag |= GFARM_FILE_TRUNC_PENDING;
@@ -5033,6 +5050,20 @@ inode_has_replica(struct inode *inode, struct host *spool_host)
 	if (copy == NULL)
 		return (0);
 	return (FILE_COPY_IS_VALID(copy));
+}
+
+int
+inode_has_writable_replica(struct inode *inode)
+{
+	struct file_copy *copy;
+
+	for (copy = inode->u.c.s.f.copies; copy != NULL;
+	    copy = copy->host_next) {
+		if (FILE_COPY_IS_VALID(copy) &&
+		    host_is_disk_available(copy->host, 0))
+			return (1);
+	}
+	return (0);
 }
 
 gfarm_error_t
@@ -6010,16 +6041,24 @@ inode_remove_replica_completed(gfarm_ino_t inum, gfarm_int64_t igen,
 
 static gfarm_error_t
 inode_replica_is_removable(struct inode *inode, struct file_copy *copy,
-	struct replica_spec *replica_spec, int current_num, int up_only)
+	struct replica_spec *replica_spec, int current_num, int readonly_num,
+	int up_only)
 {
+	int not_readonly_num;
+
 	if (current_num <= 1)
 		return (GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA);
 
-	if (current_num <= replica_spec->desired_number)
+	if (host_is_readonly(copy->host))
+		return (GFARM_ERR_READ_ONLY_FILE_SYSTEM);
+
+	/* replicas on readonly-host are not spare */
+	not_readonly_num = current_num - readonly_num;
+	if (not_readonly_num <= replica_spec->desired_number)
 		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
 
 	if (replica_spec->repattr != NULL) {
-		return (fsngroup_has_spare_for_repattr(inode, current_num,
+		return (fsngroup_has_spare_for_repattr(inode, not_readonly_num,
 		    host_fsngroup(copy->host), replica_spec->repattr,
 		    up_only));
 	}
@@ -6037,6 +6076,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 	struct file_copy **copyp, *copy, **foundp = NULL;
 	gfarm_error_t e;
 	int num_valid = 0, num_up = 0, num_incomplete = 0;
+	int num_valid_ro = 0, num_up_ro = 0, is_ro;
 
 	if (gen == inode->i_gen) {
 		for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;
@@ -6045,8 +6085,14 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 				foundp = copyp;
 			if (FILE_COPY_IS_VALID(copy)) {
 				++num_valid; /* include down hosts */
-				if (host_is_up(copy->host))
+				/* replicas on readonly-host are not spare */
+				is_ro = host_is_readonly(copy->host);
+				if (host_is_up(copy->host)) {
 					++num_up; /* available replicas */
+					if (is_ro)
+						++num_up_ro;
+				} else if (is_ro)
+					++num_valid_ro;
 			} else if (!FILE_COPY_IS_BEING_REMOVED(copy))
 				++num_incomplete;
 			/* else: FILE_COPY_IS_BEING_REMOVED */
@@ -6060,9 +6106,10 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 		if (replica_spec != NULL && FILE_COPY_IS_VALID(copy)) {
 			int is_up = host_is_up(copy->host);
 			int num = is_up ? num_up : num_valid;
+			int num_ro = is_up ? num_up_ro : num_valid_ro;
 
 			e = inode_replica_is_removable(inode, copy,
-			    replica_spec, num, is_up);
+			    replica_spec, num, num_ro, is_up);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1003698,
 				    "replica_is_removable: %s",

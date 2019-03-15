@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>28 Nov 2017</date></refentryinfo>
+<refentryinfo><date>14 Mar 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1623,6 +1623,29 @@ gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します�
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	direct_local_access disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replication_at_write_open</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+既存ファイルを更新する際、その実ファイルが置かれたファイルシステムノードの
+ディスクに空きがない場合(読込専用状態も含む)、つまり書き込み不可な
+ファイル複製だとしても更新できるようにします。
+
+enable にすると、その他のファイルシステムノードにファイル複製を自動的に作成
+してから、ファイルを更新します。
+
+デフォルトは<token>enable</token>です。
+</para>
+<para>
+この文は、Gfarmクライアントが参照するgfarm2.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+       replication_at_write_open enable
 </literallayout>
 </listitem>
 </varlistentry>

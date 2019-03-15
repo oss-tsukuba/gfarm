@@ -1194,8 +1194,11 @@ search_idle_statfs_callback(void *closure)
 	if (e == GFARM_ERR_NO_ERROR) {
 		h->flags |= HOST_STATE_FLAG_STATFS_AVAIL;
 		h->statfs_cache_time = h->rtt_cache_time;
+#if 0		/* NOTE: gfarm v2 does not use disk{used,avail} from gfsd */
 		h->diskused = blocks * bsize;
 		h->diskavail = bavail * bsize;
+#endif
+
 #ifndef __KERNEL__
 		{
 			struct gfs_ib_rdma_state *state;

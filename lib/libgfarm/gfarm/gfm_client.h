@@ -257,6 +257,9 @@ gfarm_error_t gfm_client_schedule_file_with_program_result(
 	struct gfm_connection *, int *, struct gfarm_host_sched_info **);
 gfarm_error_t gfm_client_schedule_host_domain(struct gfm_connection *,
 	const char *, int *, struct gfarm_host_sched_info **);
+gfarm_error_t gfm_client_schedule_host_domain_use_real_disk_space(
+	struct gfm_connection *,
+	const char *, int *, struct gfarm_host_sched_info **);
 gfarm_error_t gfm_client_remove_request(struct gfm_connection *, const char *);
 gfarm_error_t gfm_client_remove_result(struct gfm_connection *);
 gfarm_error_t gfm_client_rename_request(struct gfm_connection *,

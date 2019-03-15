@@ -194,6 +194,7 @@ gfarm_uint64_t inode_get_open_status_by_host(struct inode *, struct host *);
 struct file_copy * inode_get_file_copy(struct inode *, struct host *);
 int inode_has_file_copy(struct inode *, struct host *);
 int inode_has_replica(struct inode *, struct host *);
+int inode_has_writable_replica(struct inode *);
 gfarm_error_t inode_getdirpath(struct inode *, struct process *, char **);
 struct host *inode_schedule_host_for_read(struct inode *, struct host *);
 struct host *inode_schedule_host_for_write(struct inode *, struct host *);

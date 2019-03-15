@@ -145,6 +145,7 @@ gfarm_context_init(void)
 	ctxp->schedule_write_target_domain = NULL;
 	ctxp->schedule_write_local_priority = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->direct_local_access = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->replication_at_write_open = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->gfsd_connection_cache = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->gfmd_connection_cache = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->client_digest_check = GFARM_CONFIG_MISC_DEFAULT;

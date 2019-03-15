@@ -137,8 +137,6 @@
 	accepting_fatal_errno_full(msg_no, __FILE__, __LINE__, __func__,\
 				   __VA_ARGS__)
 
-const char READONLY_CONFIG_FILE[] = ".readonly";
-
 const char *program_name = "gfsd";
 
 int debug_mode = 0;
@@ -1966,35 +1964,6 @@ gfs_open_flags_localize(int open_flags)
 	return (local_flags);
 }
 
-static int
-is_readonly_mode(int i)
-{
-	struct stat st;
-	int length;
-	static char **p = NULL;
-	static const char diag[] = "is_readonly_mode";
-
-	if (i < 0 || i >= gfarm_spool_root_num)
-		fatal(GFARM_MSG_1004476, "%s: internal error: %d / %d", diag,
-		    i, gfarm_spool_root_num);
-	if (p == NULL) {
-		GFARM_CALLOC_ARRAY(p, gfarm_spool_root_num);
-		if (p == NULL)
-			fatal(GFARM_MSG_1004477, "%s: no memory for %d bytes",
-			    diag, gfarm_spool_root_num);
-	}
-	if (p[i] == NULL) {
-		length = gfarm_spool_root_len[i] + 1 +
-			sizeof(READONLY_CONFIG_FILE);
-		GFARM_MALLOC_ARRAY(p[i], length);
-		if (p[i] == NULL)
-			fatal(GFARM_MSG_1000503, "%s: no memory for %d bytes",
-			    diag, length);
-		snprintf(p[i], length, "%s/%s", gfarm_spool_root[i],
-			 READONLY_CONFIG_FILE);
-	}
-	return (stat(p[i], &st) == 0);
-}
 
 char *
 gfsd_make_path(const char *relpath, const char *diag)
@@ -2087,7 +2056,7 @@ gfsd_local_path2(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
 			break;
 		if (statvfs(r, &fsb))
 			gflog_fatal_errno(GFARM_MSG_1004478, "%d %s", i, r);
-		if (is_readonly_mode(i)) {
+		if (gfsd_is_readonly_mode(i)) {
 			/* pretend to be disk full to make gfsd read-only */
 			fsb.f_bavail = fsb.f_bfree = 0;
 		}
@@ -3873,7 +3842,7 @@ gfs_server_cksum(struct gfp_xdr *client)
 }
 
 void
-gfsd_statfs_all(gfarm_int32_t *bsizep,
+gfsd_statfs_all(int ronly_behaves_disk_full, gfarm_int32_t *bsizep,
 	gfarm_off_t *blocksp, gfarm_off_t *bfreep, gfarm_off_t *bavailp,
 	gfarm_off_t *filesp, gfarm_off_t *ffreep, gfarm_off_t *favailp,
 	int *readonlyp)
@@ -3890,14 +3859,11 @@ gfsd_statfs_all(gfarm_int32_t *bsizep,
 	for (i = 0; i < gfarm_spool_root_num; ++i) {
 		if (gfarm_spool_root[i] == NULL)
 			break;
-		err = gfsd_statfs(gfarm_spool_root[i], &bsize,
+		err = gfsd_statfs_readonly(i, &bsize,
 		    &blocks, &bfree, &bavail, &files, &ffree, &favail, &ronly);
 		if (err)
 			gflog_fatal_errno(GFARM_MSG_1004482, "statfs");
-		if (ronly)
-			gflog_error(GFARM_MSG_1003715,
-			    "%s: read only file system", gfarm_spool_root[i]);
-		if (ronly || is_readonly_mode(i)) {
+		if (ronly && ronly_behaves_disk_full) {
 			/* pretend to be disk full to make gfsd read-only */
 			bavail = bfree = 0;
 		}
@@ -3929,6 +3895,7 @@ gfsd_statfs_all(gfarm_int32_t *bsizep,
 	*readonlyp = readonly;
 }
 
+/* for client */
 void
 gfs_server_statfs(struct gfp_xdr *client)
 {
@@ -3945,7 +3912,8 @@ gfs_server_statfs(struct gfp_xdr *client)
 	gfs_server_get_request(client, "statfs", "s", &dir);
 	free(dir);
 
-	gfsd_statfs_all(&bsize, &blocks, &bfree, &bavail,
+	gfsd_statfs_all(1 /* readonly mode behaves disk-full */,
+	    &bsize, &blocks, &bfree, &bavail,
 	    &files, &ffree, &favail, &readonly);
 
 	gfs_server_put_reply_with_errno(client, "statfs", save_errno,
@@ -4497,19 +4465,26 @@ multiply_and_divide_by_1024(gfarm_off_t a, gfarm_off_t b)
 	return (a / (1024 / b));
 }
 
-gfarm_error_t
-gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
+static gfarm_error_t
+gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size,
+	int use_host_info_flags)
 {
 	gfarm_error_t e;
-	int save_errno = 0, readonly;
+	int save_errno = 0, readonly, host_info_flags;
 	double loadavg[3];
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
 	gfarm_off_t used = 0, avail = 0;
 	static const char diag[] = "gfs_server_status";
 
-	/* just check that size == 0 */
-	e = gfs_async_server_get_request(conn, size, "status", "");
+	if (use_host_info_flags) {
+		e = gfs_async_server_get_request(conn, size, "status", "i",
+		    &host_info_flags);
+		gfsd_readonly_config_update(host_info_flags);
+	} else {
+		/* just check that size == 0 */
+		e = gfs_async_server_get_request(conn, size, "status", "");
+	}
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -4518,7 +4493,8 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 		gflog_warning(GFARM_MSG_1000520,
 		    "%s: cannot get load average", diag);
 	} else {
-		gfsd_statfs_all(&bsize, &blocks, &bfree, &bavail,
+		/* use real disk space even if readonly mode is enabled */
+		gfsd_statfs_all(0, &bsize, &blocks, &bfree, &bavail,
 		    &files, &ffree, &favail, &readonly);
 		used = multiply_and_divide_by_1024(blocks - bfree, bsize);
 		avail = multiply_and_divide_by_1024(bavail, bsize);
@@ -6579,7 +6555,11 @@ back_channel_server(void)
 				break;
 			case GFS_PROTO_STATUS:
 				e = gfs_async_server_status(
-				    bc_conn, xid, size);
+				    bc_conn, xid, size, 0);
+				break;
+			case GFS_PROTO_STATUS2:
+				e = gfs_async_server_status(
+				    bc_conn, xid, size, 1 /* use flags */);
 				break;
 			case GFS_PROTO_REPLICATION_REQUEST:
 				e = gfs_async_server_replication_request(
@@ -7192,6 +7172,8 @@ main(int argc, char **argv)
 		self_sockaddr_array[i].sin_addr = self_addresses[i];
 		self_sockaddr_array[i].sin_port = htons(self_info.port);
 	}
+
+	gfsd_readonly_config_init(self_info.port);
 
 	accepting.tcp_sock = open_accepting_tcp_socket(
 	    listen_address, self_info.port);

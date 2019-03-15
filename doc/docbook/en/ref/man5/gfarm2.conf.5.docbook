@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>28 Nov 2017</date></refentryinfo>
+<refentryinfo><date>14 Mar 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1681,6 +1681,29 @@ Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	direct_local_access disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replication_at_write_open</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+Even if the filesystem node of the file replica has no disk space
+(implying readonly) (= non-writable replica) when a existing file is
+over-written, the file can be updated by this directive.
+
+When this directive is enabled, a non-writable replica will be
+automatically replicated to another filesystem node before write-open.
+
+The default is <token>enable</token>.
+</para>
+<para>
+This directive is only available for clients in gfarm2.conf.
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+       replication_at_write_open enable
 </literallayout>
 </listitem>
 </varlistentry>

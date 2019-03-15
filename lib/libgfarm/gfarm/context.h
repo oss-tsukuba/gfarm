@@ -26,6 +26,7 @@ struct gfarm_context {
 	char *schedule_write_target_domain;
 	int schedule_write_local_priority;
 	int direct_local_access;
+	int replication_at_write_open;
 	int gfmd_connection_cache;
 	int gfsd_connection_cache;
 	int client_digest_check;

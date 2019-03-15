@@ -25,6 +25,7 @@
 #include "queue.h"
 #include "thrsubr.h"
 
+#include "config.h"
 #include "context.h"
 #include "liberror.h"
 #include "filesystem.h"
@@ -438,6 +439,136 @@ gfs_file_free(GFS_File gf)
 	free(gf);
 }
 
+static gfarm_error_t
+count_incomplete(const char *url, int *np)
+{
+	gfarm_error_t e;
+	struct gfs_replica_info *ri;
+	int i, n, num_incomplete = 0;
+
+	e = gfs_replica_info_by_name(url,
+	    GFS_REPLICA_INFO_INCLUDING_INCOMPLETE_COPY, &ri);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_replica_info_by_name(%s): %s",
+		    url, gfarm_error_string(e));
+		return (e);
+	}
+	n = gfs_replica_info_number(ri);
+	for (i = 0; i < n; i++)
+		if (gfs_replica_info_nth_is_incomplete(ri, i))
+			++num_incomplete;
+	gfs_replica_info_free(ri);
+	*np = num_incomplete;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+wait_for_replication(const char *url)
+{
+	gfarm_error_t e;
+	int n;
+
+	for (;;) {
+		e = count_incomplete(url, &n);
+		if (e == GFARM_ERR_NO_ERROR) {
+			if (n <= 0)
+				break;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "wait_for_replication(%s): count_incomplete=%d",
+			    url, n);
+			sleep(1);
+		} else {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "wait_for_replication(%s), count_incomplete: %s",
+			    url, gfarm_error_string(e));
+		}
+	}
+	return (e);
+}
+
+static gfarm_error_t
+replicate_to_writable_host(const char *url)
+{
+	gfarm_error_t e;
+	int i, available_nhosts, nhosts, *ports;
+	struct gfarm_host_sched_info *available_hosts;
+	char **hosts;
+
+	e = gfarm_schedule_hosts_domain_all(url, "", &available_nhosts,
+	    &available_hosts);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	nhosts = available_nhosts;
+	GFARM_MALLOC_ARRAY(hosts, nhosts);
+	GFARM_MALLOC_ARRAY(ports, nhosts);
+	if (hosts == NULL || ports == NULL) {
+		gfarm_host_sched_info_free(available_nhosts, available_hosts);
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "allocation of hosts and ports failed: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+
+	e = gfarm_schedule_hosts_acyclic_to_write(url,
+	    available_nhosts, available_hosts,
+	    &nhosts, hosts, ports);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_schedule_hosts_acyclic_to_write: %s",
+		    gfarm_error_string(e));
+	} else {
+		for (i = 0; i < nhosts; i++) {
+			/* UNCONST */
+			e = gfs_replicate_to((char *)url, hosts[i], ports[i]);
+			if (e == GFARM_ERR_NO_ERROR ||
+			    e == GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS)
+				break;
+			else
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfs_replicate_to: %s",
+				    gfarm_error_string(e));
+		}
+	}
+	gfarm_host_sched_info_free(available_nhosts, available_hosts);
+	free(hosts);
+	free(ports);
+	return (e);
+}
+
+static gfarm_error_t
+open_common(int create,
+	const char *path, int flags, gfarm_mode_t mode,
+	struct gfm_connection **gfm_serverp, int *fdp, int *typep,
+	gfarm_ino_t *inump, gfarm_uint64_t *igenp, char **urlp,
+	struct gfs_pio_internal_cksum_info *cksum_info)
+{
+	gfarm_error_t e;
+
+retry:
+	if (create)
+		e = gfm_create_fd(path, flags, mode, gfm_serverp, fdp, typep,
+		    inump, igenp, urlp, cksum_info);
+	else
+		e = gfm_open_fd(path, flags, gfm_serverp, fdp, typep,
+		    urlp, inump, igenp, cksum_info);
+	if (e == GFARM_ERR_NO_SPACE && gfarm_ctxp->replication_at_write_open) {
+		gfarm_error_t e2 = replicate_to_writable_host(path);
+
+		if (e2 == GFARM_ERR_NO_ERROR)
+			goto retry;
+		else if (e2 == GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS) {
+			e2 = wait_for_replication(path);
+			if (e2 == GFARM_ERR_NO_ERROR)
+				goto retry;
+		}
+		/* GFARM_ERR_NO_SPACE when e2 is error */
+	}
+	return (e);
+}
+
 gfarm_error_t
 gfs_pio_create_igen(const char *url, int flags, gfarm_mode_t mode,
 	GFS_File *gfp, gfarm_ino_t *inop, gfarm_uint64_t *genp)
@@ -458,8 +589,9 @@ gfs_pio_create_igen(const char *url, int flags, gfarm_mode_t mode,
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfm_create_fd(url, flags, mode, &gfm_server, &fd, &type,
-	    &inum, &gen, &real_url, cip)) == GFARM_ERR_NO_ERROR) {
+	e = open_common(1, url, flags, mode, &gfm_server, &fd, &type,
+	    &inum, &gen, &real_url, cip);
+	if (e == GFARM_ERR_NO_ERROR) {
 		if (type != GFS_DT_REG) {
 			e = type == GFS_DT_DIR ? GFARM_ERR_IS_A_DIRECTORY :
 			    type == GFS_DT_LNK ? GFARM_ERR_IS_A_SYMBOLIC_LINK :
@@ -529,8 +661,9 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfm_open_fd(url, flags, &gfm_server, &fd, &type,
-	    &real_url, &ino, &gen, cip)) == GFARM_ERR_NO_ERROR) {
+	e = open_common(0, url, flags, 0, &gfm_server, &fd, &type,
+	    &ino, &gen, &real_url, cip);
+	if (e == GFARM_ERR_NO_ERROR) {
 		if (type != GFS_DT_REG) {
 			e = type == GFS_DT_DIR ? GFARM_ERR_IS_A_DIRECTORY :
 			    type == GFS_DT_LNK ? GFARM_ERR_IS_A_SYMBOLIC_LINK :

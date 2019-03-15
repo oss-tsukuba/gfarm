@@ -5,7 +5,7 @@
 
 <refentry id="gfhost.1">
 
-<refentryinfo><date>20 Jan 2010</date></refentryinfo>
+<refentryinfo><date>14 Mar 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfhost</refentrytitle>
@@ -247,6 +247,9 @@
 	この認証手段の表示欄はなくなります。
       </para>
       <para>
+	IP アドレスの直前に表示される数値については -f オプションの項目をご覧ください。
+      </para>
+      <para>
 	デフォールトでは、ホスト名のアルファベット順で表示します。
       </para>
     </listitem>
@@ -257,6 +260,7 @@
     <listitem>
       <para>
 	メタデータに登録されているホスト情報を表示します。
+	各行末尾に表示される数値については -f オプションの項目をご覧ください。
 	デフォールトでは、ホスト名のアルファベット順で表示します。
       </para>
     </listitem>
@@ -374,6 +378,23 @@
 	そのホストの <command moreinfo="none">gfsd</command> が用いるポート番号を指定します。
       </para>
     </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-f</option> <parameter moreinfo="none">フラグ値</parameter></term>
+    <listitem>
+      <para>
+	-c および -m 機能で、ホスト情報を追加・変更する際に、
+	そのホストの <command moreinfo="none">gfsd</command> にフラグ値を設定します。
+	フラグ値には以下の数値の bitwise-or を 10 進非負整数で指定します。
+      </para>
+    </listitem>
+    <variablelist>
+      <varlistentry>
+	<term><constant>1</constant></term>
+	<listitem><para>読込専用にします。</para></listitem>
+      </varlistentry>
+    </variablelist>
   </varlistentry>
 
   <varlistentry>

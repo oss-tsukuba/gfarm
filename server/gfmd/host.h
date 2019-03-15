@@ -16,6 +16,9 @@ struct host_status {
 	gfarm_uint64_t disk_used, disk_avail;
 };
 
+/* for host_status_get() */
+#define HOST_STATUS_FLAG_USE_REAL_DISK_SPACE	1
+
 struct abstract_host *host_to_abstract_host(struct host *);
 
 struct host *host_lookup(const char *);
@@ -26,6 +29,7 @@ struct host *host_addr_lookup(const char *, struct sockaddr *);
 int host_status_callout_retry(struct host *);
 void host_disconnect_request(struct host *, struct peer *);
 struct callout *host_status_callout(struct host *);
+/* void host_status_get(struct host *, struct host_status *, int); */
 struct peer *host_get_peer(struct host *);
 void host_put_peer(struct host *, struct peer *);
 void host_put_peer_for_replication(struct host *, struct peer *);
@@ -38,7 +42,10 @@ int host_flags(struct host *);
 char *host_fsngroup(struct host *);
 int host_supports_async_protocols(struct host *);
 int host_supports_cksum_protocols(struct host *);
+int host_supports_status2_protocols(struct host *);
 int host_is_disk_available(struct host *, gfarm_off_t);
+int host_is_readonly(struct host *);
+int host_is_file_removable(struct host *);
 
 #ifdef COMPAT_GFARM_2_3
 void host_set_callback(struct abstract_host *, struct peer *,
@@ -103,10 +110,12 @@ gfarm_error_t gfm_server_host_info_remove(struct peer *, int, int);
 
 gfarm_error_t host_schedule_reply(struct host *, struct peer *, const char *);
 gfarm_error_t host_schedule_reply_all(struct peer *,
-	int (*)(struct host *, void *), void *, const char *);
+	int (*)(struct host *, void *), void *, int, const char *);
 
 gfarm_error_t gfm_server_hostname_set(struct peer *, int, int);
 gfarm_error_t gfm_server_schedule_host_domain(struct peer *, int, int);
+gfarm_error_t gfm_server_schedule_host_domain_use_real_disk_space(
+	struct peer *, int, int);
 gfarm_error_t gfm_server_statfs(struct peer *, int, int);
 
 

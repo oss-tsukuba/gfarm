@@ -45,6 +45,18 @@ const struct gfarm_base_generic_info_ops gfarm_base_host_info_ops = {
 	gfarm_base_host_info_validate,
 };
 
+int
+host_info_flags_is_readonly(int flags)
+{
+	return ((flags & GFARM_HOST_INFO_FLAG_READONLY) != 0);
+}
+
+int
+host_info_is_readonly(struct gfarm_host_info *info)
+{
+	return (host_info_flags_is_readonly(info->flags));
+}
+
 /*
  * see the comment in server/gfmd/host.c:host_enter()
  * to see why this interface is necessary only for gfmd.

@@ -33,6 +33,7 @@ static int option_formatting_flags = 0;
 #if 0
 static int option_concurrency;
 #endif
+static int option_use_real_disk_space = 0;
 
 struct formatter {
 	char *summary_title_format;
@@ -108,9 +109,9 @@ usage(void)
 {
 	fprintf(stderr,
 #if 0
-	    "Usage: %s [-ahiHnruSUV] [-P path] [-D domain] [-j concurrency] "
+	    "Usage: %s [-ahiHnruRSUV] [-P path] [-D domain] [-j concurrency] "
 #else
-	    "Usage: %s [-ahiHnruSUV] [-P path] [-D domain] "
+	    "Usage: %s [-ahiHnruRSUV] [-P path] [-D domain] "
 #endif
 	    "[<host>...]\n",
 	    program_name);
@@ -443,8 +444,11 @@ schedule_host_domain(const char *path, const char *domain,
 	    &gfm_server)) != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	e = gfm_client_schedule_host_domain(gfm_server, domain,
-	    &nscheds, &scheds);
+	e = option_use_real_disk_space ?
+	    gfm_client_schedule_host_domain_use_real_disk_space(gfm_server,
+		domain, &nscheds, &scheds) :
+	    gfm_client_schedule_host_domain(gfm_server, domain,
+		&nscheds, &scheds);
 	gfm_client_connection_free(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -686,7 +690,7 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "ahiHnruD:P:SUV?")) != -1) {
+	while ((c = getopt(argc, argv, "ahiHnruD:P:RSUV?")) != -1) {
 		switch (c) {
 		case 'a':
 			statfs_sw = display_statfs_total;
@@ -725,6 +729,9 @@ main(int argc, char *argv[])
 			break;
 		case 'P':
 			path = optarg;
+			break;
+		case 'R':
+			option_use_real_disk_space = 1;
 			break;
 		case 'S':
 			option_sort_order = SO_SIZE;

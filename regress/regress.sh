@@ -95,7 +95,7 @@ while read line; do
 
 	if [ -x $regress/$tst ]; then
 
-		sh $regress/$tst >>$log 2>&1
+		sh $regress/$tst < /dev/null >>$log 2>&1
 		exit_code=$?
 		elapsed_time=`expr \`date +%s\` - $start_time`
 
