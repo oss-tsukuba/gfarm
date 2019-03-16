@@ -4,6 +4,15 @@ HOST_INFO_FLAG_READONLY=1
 N_REQUIRED_SDHOSTS=2
 HOST_FLAGS_MAP_FILE="${localtmp}/readonly-common-host-flags.txt"
 
+GFS_PIO_TEST_P=${base}/../../../lib/libgfarm/gfarm/gfs_pio_test/gfs_pio_test
+update_file() {
+  V="-v"
+  #V=""
+  echo "echo 12345 | $GFS_PIO_TEST_P $V -w -W 5 $@"
+  echo 12345 | $GFS_PIO_TEST_P $V -w -W 5 $@
+  return $?
+}
+
 del_testdir() {
   rm -rf "$localtmp"
   gfrm -rf "$gftmp"
@@ -46,7 +55,8 @@ restore_host_flags() {
     gfhost -m -f "$flag" "$host"
     if [ "$?" -ne 0 ]; then
       echo "failed: ${diag}"
-      exit "$exit_trap"
+      exit_code="$exit_trap"
+      exit
     fi
   done < "$HOST_FLAGS_MAP_FILE"
   rm -rf "$HOST_FLAGS_MAP_FILE"
@@ -107,11 +117,47 @@ test_unset_readonly_flag() {
   test_readonly_flag_common "$1" "$(unset_readonly_flag "$2")" "$3" "$diag"
 }
 
+# expect metadb_server_heartbeat_interval in gfmd.conf
+metadb_server_heartbeat_interval=180
+
+rep_retry() {
+   cmd=$1
+   shift
+   sleep_time=2
+   timeout=`expr $metadb_server_heartbeat_interval + 2`
+
+   opts=
+   if [ "$cmd" = "gfprep" ]; then
+     opts="-U -B"   # -U: workaround to ignore /tmp/gfsd-readonly-*
+   fi
+   sec=0
+   while :; do
+      $cmd -q $opts $@ && return 0
+      [ $sec -ge $timeout ] && break
+      sec=`expr $sec + ${sleep_time}`
+      #echo $cmd -q $opts $@
+      echo "[${sec}] ${cmd}_retry: wait for removing /tmp/gfsd-readonly-*"
+      #gfdf -ih
+      #gfdf -h
+      sleep ${sleep_time}
+   done
+   echo "${cmd}_retry: timeout (${timeout})"
+   return 1
+}
+
+gfrep_retry() {
+   rep_retry gfrep $@
+}
+
+gfprep_retry() {
+   rep_retry gfprep $@
+}
+
 test_gfrep_1_to_2() {
   cmd_gfrep="$1"
   test_file="$2"
   diag="${3}: test_gfrep_1_to_2"
-  "$cmd_gfrep" -N 2 "$test_file"
+  "$cmd_gfrep"_retry -N 2 "$test_file"
   if [ "$?" -ne 0 ]; then
     echo "failed: ${diag}: ${cmd_gfrep}"
     exit
@@ -122,7 +168,7 @@ test_gfrep_2_to_1() {
   cmd_gfrep="$1"
   test_file="$2"
   diag="${3}: test_gfrep_2_to_1"
-  "$cmd_gfrep" -x -N 1 "$test_file"
+  "$cmd_gfrep"_retry -x -N 1 "$test_file"
   if [ "$?" -ne 0 ]; then
     echo "failed: ${diag}: ${cmd_gfrep}"
     exit
@@ -135,7 +181,7 @@ test_gfrep_common() {
   diag="${3}: test_gfrep_common"
   gf_test_file="gfarm://${gftmp}/test"
 
-  rohosts="$(gfsched -w | tail -n +3)"
+  rohosts="$(gfsched -w | tail -n +3)"  # except 2 host
   save_IFS="$IFS"
   IFS='
 '
@@ -149,6 +195,11 @@ test_gfrep_common() {
   done
   IFS="$save_IFS"
 
+  nhosts="$(gfsched -w | wc -l)"
+  if [ "$nhosts" -ne 2 ]; then
+    echo "unexpected condition: require writable hosts at least 2"
+    exit
+  fi
   rohost="$(gfsched -w | head -n 1)"
   flags="$(query_host_flags "$rohost")"
   gfreg -h "$rohost" "${data}/1byte" "$gf_test_file"
@@ -165,7 +216,7 @@ test_gfrep_common() {
     fi
   fi
   test_gfrep_1_to_2 "$cmd_gfrep" "$gf_test_file" "$diag"
-  if ! "ro_before_rep"; then
+  if ! "$ro_before_rep"; then
     gfhost -m -f "$(set_readonly_flag "$flags")" "$rohost"
     if [ "$?" -ne 0 ]; then
       echo "failed: ${diag}: gfhost"

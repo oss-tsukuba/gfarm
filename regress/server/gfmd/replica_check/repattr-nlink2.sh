@@ -5,7 +5,7 @@
 
 base=`dirname $0`
 . ${base}/replica_check-common.sh
-setup_test
+replica_check_setup_test
 
 # setup: create a nlink=2 file
 hardlink $tmpf ${tmpf}.lnk
@@ -22,5 +22,4 @@ set_repattr $NCOPY2 $tmpf
 # wait replica_check_minimum_interval
 wait_for_rep $NCOPY2 $tmpf false "#3 file" ### not timeout
 
-clean_test
-exit $exit_code
+exit_code=$exit_pass

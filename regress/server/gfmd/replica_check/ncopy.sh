@@ -5,7 +5,7 @@
 
 base=`dirname $0`
 . ${base}/replica_check-common.sh
-setup_test
+replica_check_setup_test
 
 set_ncopy $NCOPY1 $gftmp
 # wait replica_check_minimum_interval
@@ -15,5 +15,4 @@ set_ncopy $NCOPY2 $gftmp
 # wait replica_check_minimum_interval
 wait_for_rep $NCOPY2 $tmpf false "#2 decrease"
 
-clean_test
-exit $exit_code
+exit_code=$exit_pass

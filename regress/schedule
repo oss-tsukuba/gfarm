@@ -171,12 +171,11 @@ gftool/gfusage/gfusage-chown.sh
 
 # server/gfmd
 server/gfmd/readonly/gfhost-readonly.sh
-server/gfmd/readonly/gfhost-readonly-restart-gfmd.sh
 server/gfmd/readonly/readonly-gfreg.sh
 server/gfmd/readonly/readonly-gfrm.sh
-server/gfmd/readonly/readonly-gfrep.sh
+server/gfmd/readonly/readonly-gfrep.sh  # may take a long time
 server/gfmd/readonly/readonly-gfprep.sh
-server/gfmd/readonly/readonly-gfrep-ro-before-rep.sh
+#server/gfmd/readonly/readonly-gfrep-ro-before-rep.sh  # XFAIL and long time
 server/gfmd/readonly/readonly-gfprep-ro-before-rep.sh
 server/gfmd/readonly/readonly-replica_check_remove.sh
 server/gfmd/readonly/replication_at_write_open.sh
@@ -188,9 +187,9 @@ server/gfmd/db_journal/db_journal_apply.sh
 ## schedule_busy_load_thresh.
 server/gfmd/replica_check/ncopy.sh
 server/gfmd/replica_check/repattr.sh
-server/gfmd/replica_check/ncopy-nlink2.sh   ### wait at least 10 seconds
-server/gfmd/replica_check/repattr-nlink2.sh ### wait at least 10 seconds
-server/gfmd/replica_check/remove_grace.sh   ### wait at least 12 seconds
+server/gfmd/replica_check/ncopy-nlink2.sh
+server/gfmd/replica_check/repattr-nlink2.sh
+server/gfmd/replica_check/remove_grace.sh
 
 # manual test: see log file when the result is UNSUPPORTED
 manual/server/gfsd/spool_check/lost_found.sh
