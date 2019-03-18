@@ -729,6 +729,9 @@ host_is_busy(struct host *h)
 	return (busy);
 }
 
+/* in case of readonly, not change the available capacity */
+#define AVAIL_SUB(a, b)	((a) > 0 ? (a) - (b) : 0)
+
 /*
  * PREREQUISITE: nothing
  * LOCKS: host::acstract_host::mutex
@@ -797,8 +800,8 @@ host_is_disk_available(struct host *h, gfarm_off_t size)
 	if (host_is_up_unlocked(h)) {
 		host_status_get_unlocked(h, &status, 0);
 		/* disk_avail of readonly-host is 0 */
-		avail = status.disk_avail * 1024 -
-		    h->disk_used_change_in_byte;
+		avail = AVAIL_SUB(status.disk_avail * 1024,
+		    h->disk_used_change_in_byte);
 	} else {
 		avail = 0;
 	}
@@ -1020,8 +1023,8 @@ host_status_get_disk_usage(struct host *host,
 		*used = status.disk_used * 1024 +
 		    host->disk_used_change_in_byte;
 	if (avail)
-		*avail = status.disk_avail * 1024 -
-		    host->disk_used_change_in_byte;
+		*avail = AVAIL_SUB(status.disk_avail * 1024,
+		    host->disk_used_change_in_byte);
 	abstract_host_mutex_unlock(&host->ah, diag);
 }
 
@@ -2077,7 +2080,7 @@ host_schedule_reply_common(struct host *h, struct peer *peer,
 	    (gfarm_int32_t)(status.loadavg_1min * GFM_PROTO_LOADAVG_FSCALE),
 	    last_report,
 	    (gfarm_int64_t)(status.disk_used + disk_used_change),
-	    (gfarm_int64_t)(status.disk_avail - disk_used_change),
+	    (gfarm_int64_t)AVAIL_SUB(status.disk_avail, disk_used_change),
 	    (gfarm_int64_t)0 /* rtt_cache_time */,
 	    (gfarm_int32_t)0 /* rtt_usec */,
 	    report_flags));
@@ -2213,7 +2216,7 @@ gfm_server_statfs(struct peer *peer, int from_client, int skip)
 	gfarm_mutex_lock(&total_disk_mutex, diag, total_disk_diag);
 	used_change = total_disk_used_change_in_byte / 1024;
 	used = total_disk_used + used_change;
-	avail = total_disk_avail - used_change;
+	avail = AVAIL_SUB(total_disk_avail, used_change);
 	gfarm_mutex_unlock(&total_disk_mutex, diag, total_disk_diag);
 
 	/* use real used and avail even if readonly-hosts exists */
