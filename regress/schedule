@@ -166,6 +166,8 @@ gftool/gfusage/gfusage-file.sh
 gftool/gfusage/gfusage-dir.sh
 gftool/gfusage/gfusage-sym.sh
 gftool/gfusage/gfusage-chown.sh
+# should be last
+gftool/gfdf/gfdf-a.sh
 
 # gftool/gfkey
 
