@@ -964,7 +964,7 @@ peer_authorize(struct peer *peer)
 	rv = getpeername(gfp_xdr_fd(peer_get_conn(peer)), &addr, &addrlen);
 	if (rv == -1) {
 		saved_errno = errno;
-		if (saved_errno == ENOTCONN) /* known race conditioni */
+		if (saved_errno == ENOTCONN) /* known race condition */
 			gflog_notice(GFARM_MSG_1005070,
 			    "authorize: getpeername: %s", strerror(errno));
 		else
