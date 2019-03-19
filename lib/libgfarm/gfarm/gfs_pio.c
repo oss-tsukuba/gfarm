@@ -482,6 +482,7 @@ wait_for_replication(const char *url)
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "wait_for_replication(%s), count_incomplete: %s",
 			    url, gfarm_error_string(e));
+			break;
 		}
 	}
 	return (e);
