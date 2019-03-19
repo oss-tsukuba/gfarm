@@ -15,7 +15,7 @@ before_tst ()
 
 	printf -- "$account_bgfmt" "$tst" "BEGIN" >>$log
 	date +'@@_ start at %s - %Y-%m-%d %H:%M:%S' >>$log
-} 
+}
 
 after_tst ()
 {
@@ -36,11 +36,11 @@ after_tst ()
 	if [ X"$jenkins_classname" != X"" ]; then
 		printf -- "$testcase_fmt_begin" "$jenkins_classname" "$tst" $elapsed_time >>$jenkins_file
 	    	case $result in
-		"FAIL"|"TRAP"|"XPASS")    
+		"FAIL"|"TRAP"|"XPASS")
 			printf -- "$failure_fmt"    "$result" >>$jenkins_file
-		esac    
+		esac
 		printf -- "$testcase_fmt_end" >>$jenkins_file
-	fi    
+	fi
 
 	printf -- "$account_lgfmt" "$tst" "$result" >>$log
 	date +'@@~  end  at %s - %Y-%m-%d %H:%M:%S' >>$log
@@ -126,7 +126,7 @@ while read line; do
 			n_trap=`expr $n_trap + 1`
 			break;;
 		*)
-			echo                              
+			echo
 			after_tst $tst $log "exit($exit_code)" $elapsed_time "$jenkins_classname" $jenkins_file
 			n_trap=`expr $n_trap + 1`
 			break;;
@@ -136,7 +136,7 @@ while read line; do
 			n_untested=`expr $n_untested + 1`
 	fi
 
-	
+
 done < $schedule
 
 if [ X"$jenkins_classname" != X"" ]; then
