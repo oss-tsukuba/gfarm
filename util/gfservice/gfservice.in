@@ -1636,6 +1636,11 @@ subcmd_config_client()
 	[ "X`get_auth_type $HOSTID`" = Xsharedsecret ] \
 		&& copy_shared_key $MASTER_HOSTID $HOSTID
 
+	#
+	# Copy 'gfarm2.conf' from $MASTER_HOSTID to the client host.
+	#
+	copy_gfarm_conf $MASTER_HOSTID $HOSTID
+
 	log_debug "end subcmd_config_client"
 }
 
