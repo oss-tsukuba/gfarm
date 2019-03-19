@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfdf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 30 Dec 2010
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 14 Mar 2019
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFDF" "1" "30 Dec 2010" "Gfarm" "Gfarm"
+.TH "GFDF" "1" "14 Mar 2019" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -34,7 +34,6 @@ gfdf \- display disk free space of Gfarm file system
 \fBgfdf\fR [\fIoptions\fR]
 .SH "DESCRIPTION"
 .PP
-
 \fBgfdf\fR
 displays disk usage and free space of Gfarm file system\&.
 .SH "OPTIONS"
@@ -79,12 +78,25 @@ Specifies a path name to specify a metadata server instead of the root metadata 
 Specifies a domain name of filesystem nodes to list the status of disk free space\&.
 .RE
 .PP
+\fB\-R\fR
+.RS 4
+Displays real disk spaces even if some Gfarm file system nodes are readonly\&. Please see also the following NOTES\&.
+.RE
+.PP
 \fB\-?\fR
 .RS 4
 Displays a list of command options\&.
 .RE
+.SH "NOTES"
+.PP
+Filesystem nodes may be changed to a read\-only mode by the
+\fBgfhost\fR
+command\&. The read\-only filesystem nodes are internally treated as disk full not to create a new file\&. That is why
+\fBgfdf\fR
+shows these read\-only filesystem nodes have no available capacity\&. With the \-R option,
+\fBgfdf\fR
+shows the real disk usage\&. The \-a option is not affected by this behavior, which shows the real disk usage always\&.
 .SH "SEE ALSO"
 .PP
-
 \fBgfhost\fR(1),
 \fBgfarm2.conf\fR(5)

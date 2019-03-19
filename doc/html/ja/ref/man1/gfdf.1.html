@@ -2,27 +2,27 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfdf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfdf">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfdf.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfdf — ディスク空き容量取得</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfdf</code>  [<em class="replaceable"><code>オプション</code></em>]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p><span class="command"><strong>gfdf</strong></span> は、Gfarmファイルシステムの
 ディスク空き容量を表示します。
 </p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-a</code></span></dt>
 <dd><p>Gfarmファイルシステム全体のディスク空き容量を表示します。</p></dd>
 <dt><span class="term"><code class="option">-h</code></span></dt>
@@ -46,11 +46,28 @@
 <dd><p>
 指定したドメイン名に含まれるファイルシステムノードの状態を表示します。
 </p></dd>
+<dt><span class="term"><code class="option">-R</code></span></dt>
+<dd><p>
+読込専用のファイルシステムノードも実際の空き容量を表示します。
+本書 NOTES も参照してください。
+</p></dd>
 <dt><span class="term"><code class="option">-?</code></span></dt>
 <dd><p>引数オプションを表示します。</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
+<a name="notes"></a><h2>NOTES</h2>
+<p>
+<span class="command"><strong>gfhost</strong></span> により、
+読込専用と指定されれると、
+Gfarmファイルシステム内部ではそれらのノードはディスクフルと扱われ、
+空き容量が 0 で表示されます。
+-R オプションを用いることにより、実際の空き容量を表示することができます。
+また、-a オプションによるファイルシステム全体の空き容量は、
+-R オプションをつけたときと同様に実際の空き容量が表示されます。
+</p>
+</div>
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfhost</span>(1)</span>,

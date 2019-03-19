@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 28 Nov 2017
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 14 Mar 2019
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "28 Nov 2017" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "14 Mar 2019" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -26,7 +35,7 @@ gfarm2\&.confファイルは、gfarmプログラムの設定ファイルです�
 .PP
 アプリケーションプログラムは、環境変数GFARM_CONFIG_FILEで 指定したファイルと、%%SYSCONFDIR%%/gfarm2\&.confを、設定ファイル として参照します。この二つのファイルでは、環境変数GFARM_CONFIG_FILEで 指定したファイルの設定の方が先に読み込まれます。 どちらの設定ファイルも、同一の文法で記述します。 同一の指定文が複数あった場合には、先に指定されていた方が優先されます。 環境変数GFARM_CONFIG_FILEが設定されてない場合、代わりに ユーザのホームディレクトリにある\&.gfarm2rcファイルを使用します。
 .PP
-gfarm2\&.confは、一行に一文の形式で設定します。 ただし、行末に文字``\e\'\'を記述することによって、行を継続させることが できます。また、文字``#\'\'から行末までは、コメントとして扱われ、無視 されます。
+gfarm2\&.confは、一行に一文の形式で設定します。 ただし、行末に文字``\e\*(Aq\*(Aqを記述することによって、行を継続させることが できます。また、文字``#\*(Aq\*(Aqから行末までは、コメントとして扱われ、無視 されます。
 .SH "ホスト指定"
 .PP
 引数として、\fIホスト指定\fRを記述できる文がいくつかありますが、 この場合、ホスト指定には、下記のいずれかを記述できます。
@@ -156,7 +165,7 @@ spool_server_cred_nameの 指定を行ってはいけません。
 host
 .RS 4
 ホスト証明書あるいはサービス証明書を用いることを示します。 サービス証明書を用いる場合、そのサービスの名前を
-spool_server_cred_serviceで指定します。 サービス名に「host」を指定した場合、 ファイル``/etc/grid\-security/hostcert\&.pem\'\'に あるホスト証明書を用います。 それ以外のサービス名を指定した場合、 ファイル``/etc/grid\-security/サービス/サービスcert\&.pem\'\' にあるサービス証明書を用います。 サービス名を省略した場合、「host」が指定されたとみなします。 ホスト証明書およびサービス証明書の場合、証明書のCommon Name欄のみを 比較します。Common Nameは、「CN=サービス名/ホスト名」の形式である必要が あります。また、ホスト名は、\fBgfhost\fRコマンドで指定した 正式名と正確に一致している必要があります。ホスト別名は許されません。
+spool_server_cred_serviceで指定します。 サービス名に「host」を指定した場合、 ファイル``/etc/grid\-security/hostcert\&.pem\*(Aq\*(Aqに あるホスト証明書を用います。 それ以外のサービス名を指定した場合、 ファイル``/etc/grid\-security/サービス/サービスcert\&.pem\*(Aq\*(Aq にあるサービス証明書を用います。 サービス名を省略した場合、「host」が指定されたとみなします。 ホスト証明書およびサービス証明書の場合、証明書のCommon Name欄のみを 比較します。Common Nameは、「CN=サービス名/ホスト名」の形式である必要が あります。また、ホスト名は、\fBgfhost\fRコマンドで指定した 正式名と正確に一致している必要があります。ホスト別名は許されません。
 .sp
 これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_HOSTBASED_SERVICEに 対応する機能です。
 .sp
@@ -178,7 +187,7 @@ user
 .RS 4
 ユーザ証明書を用いることを示します。 ユーザのアカウント名をspool_server_cred_nameで指定します。 アカウント名を省略した場合には、そのコマンドを起動したユーザ名が使われます。 この指定を利用する際には、spool_server_cred_serviceの 指定を行ってはいけません。
 .sp
-ユーザ名と証明書のDistinguished Nameの対応をとるため、 ``/etc/grid\-security/grid\-mapfile\'\'を用います。 このため、このファイルが存在しなかったり、あるいはこのファイルに登録 されてないユーザは、この機能を用いることができません。
+ユーザ名と証明書のDistinguished Nameの対応をとるため、 ``/etc/grid\-security/grid\-mapfile\*(Aq\*(Aqを用います。 このため、このファイルが存在しなかったり、あるいはこのファイルに登録 されてないユーザは、この機能を用いることができません。
 .sp
 これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_USER_NAMEに対応する機能です。
 .sp
@@ -1412,6 +1421,25 @@ direct_local_access文の説明を参照してください。 デフォルトは
 .\}
 .RE
 .PP
+replication_at_write_open \fI有効性\fR
+.RS 4
+既存ファイルを更新する際、その実ファイルが置かれたファイルシステムノードの ディスクに空きがない場合(読込専用状態も含む)、つまり書き込み不可な ファイル複製だとしても更新できるようにします。 enable にすると、その他のファイルシステムノードにファイル複製を自動的に作成 してから、ファイルを更新します。 デフォルトはenableです。
+.sp
+この文は、Gfarmクライアントが参照するgfarm2\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+       replication_at_write_open enable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 simultaneous_replication_receivers \fI同時処理数\fR
 .RS 4
 gfmd 主導の複製処理を、単一複製作成ホストに対して、 同時にいくつまで並行して行なうことを許すかを設定します。 デフォルトは 20です。
@@ -1628,7 +1656,6 @@ fatal_action \fI動作名\fR
 \fIbacktrace_and_abort\fR
 です。
 .sp
-
 例:
 .sp
 .if n \{\
@@ -1659,14 +1686,12 @@ backtrace_and_exit
 .PP
 abort
 .RS 4
-
 \fBabort\fR(3)
 を呼びます。
 .RE
 .PP
 exit
 .RS 4
-
 \fBexit\fR(3)
 を呼びます。
 .RE
@@ -2142,7 +2167,6 @@ enableと指定した場合、gfmd内のreplica_check機能が、必要なとき
 .RE
 .\}
 .sp
-
 \fBgfrepcheck\fR
 コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
 \fBgfrepcheck enable\fR
@@ -2167,10 +2191,8 @@ enableと指定した場合、gfmd内のreplica_check機能が、必要なとき
 .PP
 replica_check_remove \fI有効性\fR
 .RS 4
-
 replica_check enableの場合に効果があります。enableと指定 した場合、replica_check機能が余剰ファイル複製を自動的に削除します。例 外として、ファイルがハードリンクされていて (nlink >= 2)、そのファイル 自身に複製数の設定 (gfarm\&.ncopyまたはgfarm\&.replicainfo)がされていない 場合、そのファイルの余剰ファイル複製は削除されません。デフォルトは enableです。
 .sp
-
 \fBgfrepcheck remove\fR
 コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
 .sp
@@ -2191,11 +2213,9 @@ replica_check enableの場合に効果があります。enableと指定 した�
 .PP
 replica_check_remove_grace_used_space_ratio \fIパーセント\fR
 .RS 4
-
 replica_check_removeが有効な場合に効果があります。 なるべく余剰ファイル複製を削除せず残しておくために、猶予容量使用率を指 定します。猶予容量使用率は、gfsdごとのディスク使用率を百分率(パーセン ト, 0から100の整数)で指定します。ここで指定した使用率を超えているgfsd上に ある余剰ファイル複製のうち、
 replica_check_remove_grace_timeの時間を経過している場合 に削除されます。0を指定すると、ディスク使用率に関わら ずreplica_check_remove_grace_time次第で削除されます。 100を指定すると、replica_check_remove disableと同等にな ります。デフォルトは0です。
 .sp
-
 \fBgfrepcheck remove_grace_used_space_ratio\fR
 コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
 .sp
@@ -2216,11 +2236,9 @@ replica_check_remove_grace_timeの時間を経過している場合 に削除さ
 .PP
 replica_check_remove_grace_time \fI秒数\fR
 .RS 4
-
 replica_check_removeが有効な場合に効果があります。 猶予容量使用率が
 replica_check_remove_grace_used_space_ratioを超えた場 合に、余剰ファイル複製が削除されるまでの猶予期間を指定します。 猶予期間としてファイルのアクセス時間(atime)からの経過時間を秒数で指定します。 デフォルトは0です。
 .sp
-
 \fBgfrepcheck remove_grace_time\fR
 コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
 .sp
@@ -2243,7 +2261,6 @@ replica_check_reduced_log \fI有効性\fR
 .RS 4
 enableと指定した場合、 replica_check機能が出力するログメッセージの数を削減することができます。 デフォルトはenableです。
 .sp
-
 \fBgfrepcheck reduced_log\fR
 コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
 .sp
@@ -2266,7 +2283,6 @@ replica_check_host_down_thresh \fI秒数\fR
 .RS 4
 gfsdが停止した場合、ここで指定した秒数までそのgfsdが停止していない(そ のgfsd上のファイル複製は正常である)とreplica_checkがみなします。これは gfsdを保守するために有用です。デフォルトは10800秒(3時間)です。
 .sp
-
 \fBgfrepcheck host_down_thresh\fR
 コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
 .sp
@@ -2289,7 +2305,6 @@ replica_check_sleep_time \fIナノ秒\fR
 .RS 4
 この値を増やすと、gfmdが忙しい場合に限り、replica_checkがゆっくり動作します。 クライアントからのアクセスへの応答を優先するために有用です。 gfmdが忙しくない場合、replica_checkは全力で動作します。 replica_check以外の処理が多いと検出した場合に、replica_checkの処理を一 時的に停止する時間をナノ秒で指定します。 デフォルトは100000ナノ秒(0\&.1ミリ秒)です。 最大値は1000000000ナノ秒(1秒)です。
 .sp
-
 \fBgfrepcheck sleep_time\fR
 コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
 .sp
@@ -2312,7 +2327,6 @@ replica_check_minimum_interval \fI秒\fR
 .RS 4
 replica_checkが次回動作するまでの最小間隔(秒)を指定します。 デフォルトは10秒です。
 .sp
-
 \fBgfrepcheck minimum_interval\fR
 コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
 .sp
@@ -2338,7 +2352,7 @@ enableと指定した場合、 gfarm\&.replicainfo拡張属性に従って複製
 enable
 です。
 .sp
-gfstatus \-Mm \'replicainfo disable\' により、一時的に無効にすることができます。
+gfstatus \-Mm \*(Aqreplicainfo disable\*(Aq により、一時的に無効にすることができます。
 .sp
 この文はgfmd\&.confのみで有効です。
 .sp
@@ -2545,7 +2559,6 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 .PP
 rdma_mr_reg_static_min_size \fIバイト数\fR
 .RS 4
-
 \fB rdma_mr_reg_mode \fR
 で
 \fB static \fR
@@ -2568,7 +2581,6 @@ rdma_mr_reg_static_min_size \fIバイト数\fR
 .PP
 rdma_mr_reg_static_max_size \fIバイト数\fR
 .RS 4
-
 \fB rdma_mr_reg_mode \fR
 で
 \fB static \fR
@@ -2674,6 +2686,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<write_target_domain_statement> |
 	<minimum_free_disk_space_statement> |
 	<direct_local_access_statement> |
+	<replication_at_write_open_statement> |
 	<simultaneous_replication_receivers_statement> |
 	<replication_busy_host_statement> |
 	<gfsd_connection_cache_statement> |
@@ -3756,6 +3769,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "direct_local_access" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<replication_at_write_open_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"replication_at_write_open" <validity>
 .fi
 .if n \{\
 .RE
@@ -4918,7 +4945,6 @@ $HOME/\&.gfarm2rc
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfmd\fR(8),
 \fBgfsd\fR(8),
 \fBsetsockopt\fR(2)

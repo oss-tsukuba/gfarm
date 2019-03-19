@@ -2,28 +2,28 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfdf</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfdf">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfdf.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfdf — display disk free space of Gfarm file system</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfdf</code>  [<em class="replaceable"><code>options</code></em>]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 <span class="command"><strong>gfdf</strong></span> displays disk usage and free space of
 Gfarm file system.
 </p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-a</code></span></dt>
 <dd><p>Displays only summary information of the Gfarm file system.</p></dd>
 <dt><span class="term"><code class="option">-h</code></span></dt>
@@ -51,11 +51,29 @@ option.
 Specifies a domain name of filesystem nodes to list the status
 of disk free space. 
 </p></dd>
+<dt><span class="term"><code class="option">-R</code></span></dt>
+<dd><p>
+Displays real disk spaces even if some Gfarm file system nodes are readonly.
+Please see also the following NOTES.
+</p></dd>
 <dt><span class="term"><code class="option">-?</code></span></dt>
 <dd><p>Displays a list of command options.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
+<a name="notes"></a><h2>NOTES</h2>
+<p>
+Filesystem nodes may be changed to a read-only mode by the
+<span class="command"><strong>gfhost</strong></span> command.  The read-only
+filesystem nodes are internally treated as disk full not to create a
+new file.  That is why <span class="command"><strong>gfdf</strong></span> shows
+these read-only filesystem nodes have no available capacity.  With the
+-R option, <span class="command"><strong>gfdf</strong></span> shows the real disk
+usage.  The -a option is not affected by this behavior, which shows
+the real disk usage always.
+</p>
+</div>
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfhost</span>(1)</span>,
