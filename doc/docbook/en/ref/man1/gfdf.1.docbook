@@ -37,9 +37,7 @@ Gfarm file system.
 <varlistentry>
 <term><option>-a</option></term>
 <listitem>
-<para>Displays only summary information of the Gfarm file system.
-Please see also the following NOTES.
-</para>
+<para>Displays only summary information of the Gfarm file system.</para>
 </listitem>
 </varlistentry>
 
@@ -124,9 +122,14 @@ Please see also the following NOTES.
 
 <refsect1 id="notes"><title>NOTES</title>
 <para>
-Without -R or -a option, Gfarm file system nodes in readonly mode
-behave disk full.  Since Gfarm version 2.7.13, the gfhost command can
-set the readonly-flag to Gfarm file system nodes.
+Filesystem nodes may be changed to a read-only mode by the
+<command moreinfo="none">gfhost</command> command.  The read-only
+filesystem nodes are internally treated as disk full not to create a
+new file.  That is why <command moreinfo="none">gfdf</command> shows
+these read-only filesystem nodes have no available capacity.  With the
+-R option, <command moreinfo="none">gfdf</command> shows the real disk
+usage.  The -a option is not affected by this behavior, which shows
+the real disk usage always.
 </para>
 </refsect1>
 
