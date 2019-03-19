@@ -36,14 +36,14 @@ gfsd_readonly_config_init(int port)
 
 	GFARM_MALLOC_ARRAY(tmp_path, len);
 	if (tmp_path == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1005084,
 		    "readonly_config_init: %s",
 		    gfarm_error_string(GFARM_ERR_NO_MEMORY));
 
 	snprintf(tmp_path, len, "%s/%s%s_%d",
 	    READONLY_CONFIG_TMP_DIR, prefix, canonical_self_name, port);
 	READONLY_CONFIG_TMP_FILE = tmp_path;
-	gflog_info(GFARM_MSG_UNFIXED, "READONLY_CONFIG_TMP_FILE=%s",
+	gflog_info(GFARM_MSG_1005085, "READONLY_CONFIG_TMP_FILE=%s",
 	    READONLY_CONFIG_TMP_FILE);
 }
 
@@ -57,22 +57,22 @@ gfsd_readonly_config_update(int host_info_flags)
 		if ((rv = open(READONLY_CONFIG_TMP_FILE,
 			       O_RDONLY|O_CREAT|O_EXCL, 0400)) != -1) {
 			close(rv);
-			gflog_info(GFARM_MSG_UNFIXED, "%s(enabled), %s",
+			gflog_info(GFARM_MSG_1005086, "%s(enabled), %s",
 			    diag, READONLY_CONFIG_TMP_FILE);
 		} else if (errno == EEXIST)
 			;
 		else
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005087,
 			    "%s(enabled), %s: %s",
 			    diag, READONLY_CONFIG_TMP_FILE, strerror(errno));
 	} else {
 		if ((rv = unlink(READONLY_CONFIG_TMP_FILE)) != -1)
-			gflog_info(GFARM_MSG_UNFIXED, "%s(disabled), %s",
+			gflog_info(GFARM_MSG_1005088, "%s(disabled), %s",
 			    diag, READONLY_CONFIG_TMP_FILE);
 		else if (errno == ENOENT)
 			;
 		else
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1005089,
 			    "%s(disabled), %s: %s",
 			    diag, READONLY_CONFIG_TMP_FILE, strerror(errno));
 	}

@@ -240,7 +240,7 @@ gfs_client_status_request(void *arg)
 		diag = proto_status1;
 		result_callback = gfs_client_status_result;
 	}
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1005082,
 	    "gfs_client_status_request(host=%s) uses %s",
 	     host_name(host), diag);
 
@@ -278,7 +278,7 @@ gfs_client_status_request(void *arg)
 		    GFM_CLIENT_CHANNEL_TIMEOUT_INFINITY, GFS_PROTO_STATUS, "");
 	if (e != GFARM_ERR_NO_ERROR) {
 		host_status_reply_waiting_reset(host);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005083,
 		    "gfs_client_status_request(host=%s, %s): %s",
 		    host_name(host), diag, gfarm_error_string(e));
 	}
