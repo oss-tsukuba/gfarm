@@ -1,8 +1,5 @@
 #!/bin/sh
 
-# this test may fail, if number of files which don't have enough
-# replicas are too many.
-
 base=`dirname $0`
 . ${base}/replica_check-common.sh
 replica_check_setup_test

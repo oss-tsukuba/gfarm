@@ -1,8 +1,5 @@
 #!/bin/sh
 
-# this test may fail, if number of files which don't have enough
-# replicas are too many.
-
 base=`dirname $0`
 . ${base}/replica_check-common.sh
 replica_check_setup_test
@@ -19,7 +16,6 @@ wait_for_rep $NCOPY2 $tmpf true "#2 parent dir"  ### timeout
 
 # set ncopy itself: can decrease replicas
 set_ncopy $NCOPY2 $tmpf
-# wait replica_check_minimum_interval
 wait_for_rep $NCOPY2 $tmpf false "#3 file" ### not timeout
 
 exit_code=$exit_pass

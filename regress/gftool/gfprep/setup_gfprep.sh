@@ -5,6 +5,9 @@ local_dir2=$localtmp/dir2
 local_tmpfile1=$localtmp/tmpfile1
 local_tmpfile2=$localtmp/tmpfile2
 
+GFPREP=$regress/bin/gfprep_for_test
+GFPCOPY=$regress/bin/gfpcopy_for_test
+
 clean_test() {
   rm -rf $localtmp
   gfrm -rf $gftmp

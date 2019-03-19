@@ -19,7 +19,7 @@ fi
 test_copy() {
   SIZE=$1
   filename=COPYFILE
-  OPT="-b 65536 -f -d -B"
+  OPT="-b 65536 -f -d"
   lfile=$local_dir1/$filename
   gfile=$gf_dir1/$filename
   if dd if=/dev/urandom of=$lfile bs=$SIZE count=1 > /dev/null; then
@@ -29,14 +29,14 @@ test_copy() {
     clean_test
     exit $exit_fail
   fi
-  if gfpcopy $OPT file:$lfile gfarm:$gf_dir1; then
+  if $GFPCOPY $OPT file:$lfile gfarm:$gf_dir1; then
     :
   else
     echo gfpcopy failed [local to gfarm]
     clean_test
     exit $exit_fail
   fi
-  if gfpcopy $OPT gfarm:$gfile file:$local_dir2; then
+  if $GFPCOPY $OPT gfarm:$gfile file:$local_dir2; then
     :
   else
     echo gfpcopy failed [gfarm to local]
