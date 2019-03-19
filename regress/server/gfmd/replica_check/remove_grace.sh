@@ -1,7 +1,7 @@
 #!/bin/sh
 
-LONG_TEST=0
-GRACE_TIME_DIFF=7  # sec.
+LONG_TEST=1
+GRACE_TIME_DIFF=30  # sec.
 
 GFPREP_OPT=''
 
@@ -11,15 +11,16 @@ replica_check_setup_test
 # $tmpf was created
 ATIME=`date +%s`  # XXX - should update atime just before wait_for_rep
 
+gfrepcheck stop
 set_ncopy $NCOPY2 $gftmp  ### ncopy=2
-wait_for_rep $NCOPY2 $tmpf false "#0"  ### not timeout
+gfprep_n $NCOPY1 $tmpf  ### increase replicas: -> 3
+c=`gfncopy -c $tmpf` || exit
+[ $c -eq $NCOPY1 ] || exit
 
 set_grace_used_space_ratio 0
 
 GRACE_TIME=`expr $NCOPY_TIMEOUT + $GRACE_TIME_DIFF`
 set_grace_time $GRACE_TIME
-
-gfprep_n $NCOPY1 $tmpf  ### increase replicas: 2 -> 3
 
 echo -n "before test#1 replicas: "
 gfwhere ${tmpf}
@@ -30,12 +31,10 @@ echo "         (timeout is expected) ($NCOPY_TIMEOUT sec.)"
 wait_for_rep $NCOPY2 $tmpf true  "#1"  ### timeout
 
 NOW=`date +%s`
-sleep_time=`expr $GRACE_TIME - $NOW + $ATIME + 1`
-if [ $sleep_time -ge 0 ]; then
-  echo "sleep($sleep_time) for grace_time"
-  sleep $sleep_time
-fi
-### reach grace time
+elapse=`expr $NOW - $ATIME - 1`
+
+echo elapse=$elapse
+set_grace_time $elapse
 
 echo "test #2: A surplus replica is removed." ### decrease replicas: 3 -> 2
 wait_for_rep $NCOPY2 $tmpf false "#2"  ### not timeout
