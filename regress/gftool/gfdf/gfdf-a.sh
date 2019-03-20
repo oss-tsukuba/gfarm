@@ -3,13 +3,19 @@
 . ./regress.conf
 
 allout=$(gfdf -a | tail -1)
-read allblocks allused allavail allrest <<< $allout
+read allblocks allused allavail allrest <<EOF
+$allout
+EOF
 
 out=$(gfdf -R | tail -1)
-read blocks used avail rest <<< $out
+read blocks used avail rest <<EOF
+$out
+EOF
 
 allout2=$(gfdf -a | tail -1)
-read allblocks2 allused2 allavail2 allrest2 <<< $allout2
+read allblocks2 allused2 allavail2 allrest2 <<EOF
+$allout2
+EOF
 
 if [ $allblocks = $blocks ] &&
    [ $allused = $used ] && [ $allavail = $avail ]; then
