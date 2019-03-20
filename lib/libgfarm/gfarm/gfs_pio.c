@@ -473,8 +473,8 @@ wait_for_replication(const char *url)
 		if (n == 0)
 			break;
 		gflog_info(GFARM_MSG_1005074,
-		    "wait_for_replication(%s): count_incomplete=%d, "
-		    "sleep 1 sec", url, n);
+		    "%s: wait for %d replica creation%s, "
+		    "sleep 1 sec", url, n, n > 1 ? "s" : "");
 		sleep(1);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
