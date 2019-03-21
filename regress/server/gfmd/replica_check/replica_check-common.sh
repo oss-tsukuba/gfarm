@@ -153,30 +153,6 @@ replica_check_setup_test_repattr() {
   gfncopy -S test0:1 $gftmp || exit # avoid looking parent gfarm.replicainfo
 }
 
-# wait until "gfrepcheck start" can start replica_check immediately.
-adjust_minimum_interval0() {
-  count=0
-  ok=0
-  OK_NUM=2
-  while :; do
-    gfrepcheck start || exit
-    status=$(gfrepcheck status) || exit
-    if [ "$status" = "enable / running" ]; then
-      ok=$(expr ${ok} + 1)
-    else
-      ok=0 # reset
-    fi
-    [ $ok -ge ${OK_NUM} ] && break
-    gfrepcheck stop || exit
-    if [ $ok -eq 0 ]; then
-       count=$(expr ${count} + 1)
-       echo "sleep [${count}]: retry adjust_minimum_interval0"
-       sleep 1
-    fi # ok != 0: not sleep
-  done
-  # echo "ready to use gfrepcheck start"
-}
-
 replica_check_setup_test_conf() {
   if gfrepcheck enable && \
      gfrepcheck sleep_time 0 && \
@@ -188,7 +164,6 @@ replica_check_setup_test_conf() {
   else
     exit
   fi
-  adjust_minimum_interval0
 }
 
 wait_for_expected_status() {
