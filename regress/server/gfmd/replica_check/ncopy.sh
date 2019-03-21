@@ -5,11 +5,9 @@ base=`dirname $0`
 replica_check_setup_test
 
 set_ncopy $NCOPY1 $gftmp
-# wait replica_check_minimum_interval
 wait_for_rep $NCOPY1 $tmpf false "#1 increase"
 
 set_ncopy $NCOPY2 $gftmp
-# wait replica_check_minimum_interval
 wait_for_rep $NCOPY2 $tmpf false "#2 decrease"
 
 exit_code=$exit_pass

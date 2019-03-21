@@ -2,7 +2,7 @@
 
 NCOPY1=3  # NCOPY1 >= 3
 NCOPY2=2  # NCOPY2 < NCOPY1
-NCOPY_TIMEOUT=3  # sec. (wait for replication after replica_check is finished)
+NCOPY_TIMEOUT=2  # sec. (wait for replication after replica_check is finished)
 hostgroupfile=$localtop/.hostgroup.$$
 
 GFPREP=$regress/bin/gfprep_for_test
@@ -19,17 +19,22 @@ MINIMUM_INTERVAL=
 replica_check_setup_test() {
   tmpf=$gftmp/foo
 
+  replica_check_setup_trap
   replica_check_check_supported_env
-  trap 'replica_check_clean_test; exit $exit_trap' $trap_sigs
-  trap 'replica_check_clean_test; exit $exit_code' 0
   replica_check_del_testdir
-  gfmkdir $gftmp || { exit_code=$exit_fail; exit; }
   replica_check_backup_hostgroup
   replica_check_backup_repcheck_conf
+  replica_check_setup_test_conf
+
+  gfmkdir $gftmp || exit
   replica_check_setup_test_ncopy
   replica_check_setup_test_repattr
-  replica_check_setup_test_conf
   gfreg $data/1byte $tmpf || exit
+}
+
+replica_check_setup_trap() {
+  trap 'replica_check_clean_test; exit $exit_trap' $trap_sigs
+  trap 'replica_check_clean_test; exit $exit_code' 0
 }
 
 replica_check_del_testdir() {
@@ -107,10 +112,12 @@ replica_check_restore_common() {
   VAL=$2
   if [ -n "$VAL" ]; then
     if [ -z "$CONF" ]; then
-      gfrepcheck "$VAL"
+      gfrepcheck "$VAL" || exit
     else
-      gfrepcheck "$CONF" "$VAL"
+      gfrepcheck "$CONF" "$VAL" || exit
     fi
+  else
+    echo "warning: unexpected: no value"
   fi
 }
 
@@ -146,6 +153,30 @@ replica_check_setup_test_repattr() {
   gfncopy -S test0:1 $gftmp || exit # avoid looking parent gfarm.replicainfo
 }
 
+# wait until "gfrepcheck start" can start replica_check immediately.
+adjust_minimum_interval0() {
+  count=0
+  ok=0
+  OK_NUM=2
+  while :; do
+    gfrepcheck start || exit
+    status=$(gfrepcheck status) || exit
+    if [ "$status" = "enable / running" ]; then
+      ok=$(expr ${ok} + 1)
+    else
+      ok=0 # reset
+    fi
+    [ $ok -ge ${OK_NUM} ] && break
+    gfrepcheck stop || exit
+    if [ $ok -eq 0 ]; then
+       count=$(expr ${count} + 1)
+       echo "sleep [${count}]: retry adjust_minimum_interval0"
+       sleep 1
+    fi # ok != 0: not sleep
+  done
+  # echo "ready to use gfrepcheck start"
+}
+
 replica_check_setup_test_conf() {
   if gfrepcheck enable && \
      gfrepcheck sleep_time 0 && \
@@ -157,6 +188,7 @@ replica_check_setup_test_conf() {
   else
     exit
   fi
+  adjust_minimum_interval0
 }
 
 wait_for_expected_status() {
