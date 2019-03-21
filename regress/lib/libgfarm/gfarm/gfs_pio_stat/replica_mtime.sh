@@ -6,6 +6,7 @@
 . ./regress.conf
 exit_code=$exit_xfail
 gfs_pio_test=`dirname $testbin`/gfs_pio_test/gfs_pio_test
+GFPREP=$regress/bin/gfprep_for_test
 
 trap 'gfrm -f $gftmp; rm -f $localtmp; exit $exit_trap' $trap_sigs
 
@@ -20,7 +21,7 @@ if
    sleep 1 &&
 
    gfncopy -s 2 $gftmp &&
-   gfrep -N 2 $gftmp &&
+   $GFPREP -N 2 gfarm://${gftmp} &&
    gfstat $gftmp >$localtmp &&
 
    host1=`gfwhere $gftmp | awk '{print $1}'` &&

@@ -15,7 +15,7 @@ test_file() {
     echo "***** gfreg *****"
     gfreg $data/1byte $FILE || error "gfreg"
     echo "***** gfrep -N $ncopy *****"
-    gfrep -N $ncopy $FILE > /dev/null || error "gfrep -N $ncopy"
+    $GFPREP -N $ncopy $GF_URL > /dev/null || error "gfrep -N $ncopy"
 
 #    gfls -l $FILE
 #    gfwhere -la $FILE
