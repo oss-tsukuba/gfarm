@@ -54,6 +54,11 @@ int host_is_up(struct host *);
 int host_is_up_with_grace(struct host *, gfarm_time_t);
 int host_is_valid(struct host *);
 
+void host_profile_add_sent(struct host *, gfarm_off_t, double,
+	gfarm_uint64_t *, gfarm_uint64_t *, double *);
+void host_profile_add_received(struct host *, gfarm_off_t, double,
+	gfarm_uint64_t *, gfarm_uint64_t *, double *);
+
 int host_check_busy(struct host *host, gfarm_int64_t);
 
 struct file_replicating;

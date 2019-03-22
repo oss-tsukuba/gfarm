@@ -172,6 +172,13 @@ struct inode_replicating_state {
 	struct file_replicating replicating_hosts; /* dummy header */
 };
 
+static gfarm_error_t file_replicating_new(
+	struct inode *, struct host *, struct host *, struct dead_file_copy *,
+	struct file_replicating **);
+static void file_replicating_free(struct file_replicating *);
+static void file_replicating_free_by_error_before_request(
+	struct file_replicating *);
+
 struct inode **inode_table = NULL;
 gfarm_ino_t inode_table_size = 0;
 gfarm_ino_t inode_free_index = ROOT_INUMBER;
@@ -190,6 +197,11 @@ static char dotdot[] = "..";
 #define DOTDOT_LEN	(sizeof(dotdot) - 1)
 
 static char lost_found[] = "lost+found";
+
+/* for gfs_profile */
+static gfarm_uint64_t cumulative_replicated_files = 0;
+static gfarm_uint64_t cumulative_replicated_bytes = 0;
+static double cumulative_replicated_time = 0.0;
 
 void
 inode_for_each_file_copies(
@@ -1001,7 +1013,7 @@ inode_schedule_replication_within_scope(
 		src = srcs[*next_src_indexp];
 		dst = targets[i];
 
-		e = file_replicating_new(inode, dst, NULL, &fr);
+		e = file_replicating_new(inode, dst, src, NULL, &fr);
 		if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 			busy = 1;
 			gflog_reduced_debug(
@@ -1040,7 +1052,7 @@ inode_schedule_replication_within_scope(
 			if (save_e == GFARM_ERR_NO_ERROR ||
 			    e == GFARM_ERR_NO_MEMORY)
 				save_e = e;
-		} else if ((e = inode_replication_request(src, dst, inode, fr,
+		} else if ((e = inode_replication_request(inode, fr,
 		    diag)) != GFARM_ERR_NO_ERROR) {
 			/* this case, inode_replication_request() may sleep */
 
@@ -1361,7 +1373,7 @@ update_replicas(struct inode *inode, struct host *spool_host,
 			    FILE_COPY_IS_VALID(copy), &deferred_cleanup);
 			/* abandon `e' */
 
-			e = file_replicating_new(inode, copy->host,
+			e = file_replicating_new(inode, copy->host, spool_host,
 			    deferred_cleanup, &fr);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_notice(GFARM_MSG_1002245,
@@ -1382,8 +1394,7 @@ update_replicas(struct inode *inode, struct host *spool_host,
 				    e == GFARM_ERR_NO_MEMORY)
 					save_e = e;
 			} else if ((e = inode_replication_request(
-			    spool_host, copy->host, inode, fr, diag))
-			    != GFARM_ERR_NO_ERROR) {
+			    inode, fr, diag)) != GFARM_ERR_NO_ERROR) {
 				/*
 				 * in this case,
 				 * inode_replication_request() may sleep,
@@ -4630,19 +4641,29 @@ void
 replication_info(void)
 {
 	unsigned long long count;
+	gfarm_uint64_t files;
+	gfarm_uint64_t bytes;
+	double t;
 
 	giant_lock();
 	count = file_replicating_count;
+	files = cumulative_replicated_files;
+	bytes = cumulative_replicated_bytes;
+	t = cumulative_replicated_time;
 	giant_unlock();
 	gflog_info(GFARM_MSG_1005044, "number of ongoing replications: %llu",
 	    count);
+	gflog_info(GFARM_MSG_UNFIXED, "cumulative replication progress: "
+	    "%llu bytes / %llu files %g seconds",
+	    (unsigned long long)bytes,
+	    (unsigned long long)files, t);
 }
 
 /*
  * PREREQUISITE: giant_lock
  */
-gfarm_error_t
-file_replicating_new(struct inode *inode, struct host *dst,
+static gfarm_error_t
+file_replicating_new(struct inode *inode, struct host *dst, struct host *src,
 	struct dead_file_copy *deferred_cleanup,
 	struct file_replicating **frp)
 {
@@ -4698,6 +4719,7 @@ file_replicating_new(struct inode *inode, struct host *dst,
 	irs->replicating_hosts.next_host = fr;
 	fr->next_host->prev_host = fr;
 
+	fr->src = src;
 	fr->inode = inode;
 	fr->igen = inode_get_gen(inode);
 	fr->cleanup = deferred_cleanup;
@@ -4714,7 +4736,7 @@ file_replicating_new(struct inode *inode, struct host *dst,
 /*
  * PREREQUISITE: giant_lock
  */
-void
+static void
 file_replicating_free(struct file_replicating *fr)
 {
 	struct inode *inode = fr->inode;
@@ -4743,7 +4765,7 @@ file_replicating_free(struct file_replicating *fr)
  * this does not generate dead_file_copy, thus, only can be used
  * for an error at async_back_channel_replication_request().
  */
-void
+static void
 file_replicating_free_by_error_before_request(struct file_replicating *fr)
 {
 	/*
@@ -4782,20 +4804,52 @@ inode_replicated(struct file_replicating *fr,
 
 	/* log even if generation updated */
 	if (src_errcode == GFARM_ERR_NO_ERROR &&
-	    dst_errcode == GFARM_ERR_NO_ERROR &&
-	    gfarm_ctxp->profile) {
+	    dst_errcode == GFARM_ERR_NO_ERROR) {
 		struct timespec now;
-		double t;
+		double t, src_t, dst_t;
+		gfarm_uint64_t src_files, dst_files;
+		gfarm_uint64_t src_bytes, dst_bytes;
+
+		/*
+		 * record these values always,
+		 * because gfarm_ctxp->profile may be changed
+		 */
 
 		gfarm_gettime(&now);
 		t = now.tv_sec - fr->queue_time.tv_sec +
 		    (double)(now.tv_nsec - fr->queue_time.tv_nsec)
 		    / GFARM_SECOND_BY_NANOSEC;
-		gflog_info(GFARM_MSG_1005039, "inode %lld:%lld to %s: "
-		    "size %lld time %g second speed %g byte/s",
-		    (long long)inode_get_number(inode),
-		    (long long)fr->igen, host_name(fr->dst), (long long)size,
-		     t, t != 0 ? size / t : 0.0);
+
+		host_profile_add_sent(fr->src, size, t,
+		    &src_files, &src_bytes, &src_t);
+		host_profile_add_received(fr->dst, size, t,
+		    &dst_files, &dst_bytes, &dst_t);
+		cumulative_replicated_files++;
+		cumulative_replicated_bytes += size;
+		cumulative_replicated_time += t;
+
+		if (gfarm_ctxp->profile) {
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "inode %lld:%lld from %s to %s: "
+			    "size %lld time %g second speed %g byte/s, "
+			    "cumulative since boot: "
+			    "src %llu bytes / %llu files %g second, "
+			    "dst %llu bytes / %llu files %g second, "
+			    "total %llu bytes / %llu files %g second",
+			    (long long)inode_get_number(inode),
+			    (long long)fr->igen,
+			    host_name(fr->src), host_name(fr->dst),
+			    (long long)size,
+			     t, t != 0 ? size / t : 0.0,
+			    (unsigned long long)src_bytes,
+			    (unsigned long long)src_files, src_t,
+			    (unsigned long long)dst_bytes,
+			    (unsigned long long)dst_files, dst_t,
+			    (unsigned long long)cumulative_replicated_bytes,
+			    (unsigned long long)cumulative_replicated_files,
+			    cumulative_replicated_time
+			);
+		}
 	}
 
 	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
@@ -5334,7 +5388,7 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	if ((flags & GFS_REPLICATE_FILE_FORCE) == 0 &&
 	    inode_is_opened_for_writing(inode))
 		return (GFARM_ERR_FILE_BUSY); /* src is busy */
-	else if ((e = file_replicating_new(inode, dst, NULL, frp)) !=
+	else if ((e = file_replicating_new(inode, dst, src, NULL, frp)) !=
 	    GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -5417,11 +5471,13 @@ inode_replication_get_cksum_mode(struct inode *inode, struct host *src,
  * NOTE: the memory owner of `fr' is changed to this callee function.
  */
 gfarm_error_t
-inode_replication_request(struct host *src, struct host *dst,
+inode_replication_request(
 	struct inode *inode, struct file_replicating *fr, const char *diag)
 {
 	gfarm_error_t e;
 	struct checksum *cs = inode->u.c.s.f.cksum;
+	struct host *src = fr->src;
+	struct host *dst = fr->dst;
 
 	if (!host_supports_cksum_protocols(dst) ||
 	    (cs == NULL && !host_supports_cksum_protocols(src))) {

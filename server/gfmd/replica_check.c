@@ -702,6 +702,8 @@ replica_check_main(void)
 	    replica_check_remove_grace_used_space_ratio_locked(),
 	    replica_check_remove_grace_time_locked());
 
+	replication_info(); /* acquires giant_lock internally */
+
 	for (inum = root_inum;;) {
 		if (inum % REPLICA_CHECK_INTERRUPT_STEP == 0 &&
 		    !replica_check_ctrl_enabled()) { /* gfrepcheck stop */
@@ -746,6 +748,7 @@ replica_check_main(void)
 		    "replica_check: yield sleep=%g",
 		    total_yield_time);
 	}
+	replication_info(); /* acquires giant_lock internally */
 
 	replica_check_giant_lock();
 	info_time_start = 0;  /* stopped */
