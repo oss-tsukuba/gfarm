@@ -1300,7 +1300,7 @@ process_replication_request(struct process *process, struct peer *peer,
 
 	if ((e = process_prepare_to_replicate(process, peer, src, dst,
 	    fd, flags, &fr, &inode, diag)) == GFARM_ERR_NO_ERROR)
-		e = inode_replication_request(src, dst, inode, fr, diag);
+		e = inode_replication_request(inode, fr, diag);
 	return (e);
 }
 

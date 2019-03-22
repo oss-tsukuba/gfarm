@@ -133,7 +133,7 @@ struct file_replicating {
 	struct file_replicating *prev_host, *next_host;
 
 	struct peer *peer;
-	struct host *dst;
+	struct host *dst, *src;
 
 	/*
 	 * gfmd initialited replication: pid of destination side worker
