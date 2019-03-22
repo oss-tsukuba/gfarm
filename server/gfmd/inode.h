@@ -209,11 +209,6 @@ extern gfarm_error_t (*inode_schedule_file)(struct file_opening *,
 
 struct file_replicating;
 void replication_info(void);
-gfarm_error_t file_replicating_new(
-	struct inode *, struct host *, struct dead_file_copy *,
-	struct dirset *, struct file_replicating **);
-void file_replicating_free(struct file_replicating *);
-void file_replicating_free_by_error_before_request(struct file_replicating *);
 gfarm_int64_t file_replicating_get_gen(struct file_replicating *);
 gfarm_error_t inode_replicated(struct file_replicating *,
 	gfarm_int32_t, gfarm_int32_t, gfarm_off_t,
@@ -223,7 +218,7 @@ gfarm_error_t inode_prepare_to_replicate(struct inode *, struct user *,
 	struct file_replicating **);
 void inode_replication_get_cksum_mode(struct inode *, struct host *,
 	char **, size_t *, char **, gfarm_int32_t *);
-gfarm_error_t inode_replication_request(struct host *, struct host *,
+gfarm_error_t inode_replication_request(
 	struct inode *, struct file_replicating *, const char *);
 
 gfarm_error_t inode_replica_hostset(

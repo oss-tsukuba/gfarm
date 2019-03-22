@@ -83,6 +83,11 @@ struct host {
 
 	struct host *removed_host_next;
 
+	/* for gfs_profile, protected by giant_lock just like above */
+	gfarm_uint64_t files_sent, files_received;
+	gfarm_uint64_t bytes_sent, bytes_received;
+	double time_sent, time_received;
+
 	/*
 	 * the following members are protected by abstract_host_mutex
 	 */
@@ -176,6 +181,42 @@ int
 host_is_valid(struct host *h)
 {
 	return (abstract_host_is_valid(&h->ah, BACK_CHANNEL_DIAG));
+}
+
+static void
+host_profile_clear(struct host *h)
+{
+	h->files_sent = h->files_received = 0;
+	h->bytes_sent = h->bytes_received = 0;
+	h->time_sent = h->time_received = 0.0;
+}
+
+void
+host_profile_add_sent(struct host *h, gfarm_off_t size, double t,
+	gfarm_uint64_t *cumulative_files_p, gfarm_uint64_t *cumulative_bytes_p,
+	double *cumulative_time_p)
+{
+	h->files_sent++;
+	h->bytes_sent += size;
+	h->time_sent += t;
+
+	*cumulative_files_p = h->files_sent;
+	*cumulative_bytes_p = h->bytes_sent;
+	*cumulative_time_p = h->time_sent;
+}
+
+void
+host_profile_add_received(struct host *h, gfarm_off_t size, double t,
+	gfarm_uint64_t *cumulative_files_p, gfarm_uint64_t *cumulative_bytes_p,
+	double *cumulative_time_p)
+{
+	h->files_received++;
+	h->bytes_received += size;
+	h->time_received += t;
+
+	*cumulative_files_p = h->files_received;
+	*cumulative_bytes_p = h->bytes_received;
+	*cumulative_time_p = h->time_received;
 }
 
 /*
@@ -342,6 +383,7 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 			gfarm_host_info_free_except_hostname(&h->hi);
 
 			h->hi = *hi;
+			host_profile_clear(h);
 
 			all_host_hostset_cache_purge();
 			hostset_of_fsngroup_cache_purge(host_fsngroup(h));
@@ -412,6 +454,8 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 
 	*(struct host **)gfarm_hash_entry_data(entry) = h;
 	host_validate(h);
+
+	host_profile_clear(h);
 
 	all_host_hostset_cache_purge();
 	hostset_of_fsngroup_cache_purge(host_fsngroup(h));
