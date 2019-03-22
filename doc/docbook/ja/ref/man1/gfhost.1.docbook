@@ -370,13 +370,13 @@
 	そのホストの <command moreinfo="none">gfsd</command> にフラグ値を設定します。
 	フラグ値には以下の数値の bitwise-or を 10 進非負整数で指定します。
       </para>
-    </listitem>
-    <variablelist>
+      <variablelist>
       <varlistentry>
 	<term><constant>1</constant></term>
 	<listitem><para>読込専用にします。</para></listitem>
       </varlistentry>
-    </variablelist>
+      </variablelist>
+    </listitem>
   </varlistentry>
 
   <varlistentry>
