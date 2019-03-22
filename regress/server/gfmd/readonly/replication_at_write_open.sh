@@ -180,7 +180,9 @@ simultaneous_common() {
   cleanup_file
   if [ $remove = 'true' ]; then
     if [ "$r1" -eq 0 -a "$r2" -eq 0 ]; then
-      echo "unexpected success: ${diag}"
+      echo "XFAIL: error is not occurred: ${diag}"
+      echo "Threre is a possibility that two update_file exit before gfrm."
+      exit_code="$exit_xfail"
       exit
     fi
     # one update_file may succeed
@@ -203,8 +205,6 @@ test_rawo_enable_writeopen_simultaneous_and_remove() {
 
 ### rawo: replication_at_write_open
 
-test_rawo_enable_writeopen_simultaneous
-test_rawo_enable_writeopen_simultaneous_and_remove
 test_rawo_disable_1B_writeopen
 test_rawo_disable_1B_create
 test_rawo_disable_0B_writeopen
@@ -215,5 +215,7 @@ test_rawo_enable_1B_specified_host_writeopen
 test_rawo_enable_1B_specified_host_create
 test_rawo_enable_1B_writeopen
 test_rawo_enable_1B_create
+test_rawo_enable_writeopen_simultaneous
+test_rawo_enable_writeopen_simultaneous_and_remove  # may be XFAIL
 
 exit_code="$exit_pass"
