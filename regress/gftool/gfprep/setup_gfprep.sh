@@ -28,7 +28,6 @@ set_ncopy() {
 setup_test() {
   if mkdir $localtmp &&
     gfmkdir $gftmp &&
-    set_ncopy 1 $gftmp &&  ### disable automatic replication
     gfmkdir $gf_dir1 &&
     gfmkdir $gf_dir1/dir &&
     gfreg $data/0byte $gf_dir1/dir/0byte &&
@@ -54,7 +53,8 @@ check_N() {
   if [ `awk '/Ncopy/{print $NF}' $local_tmpfile2` -eq $N ]; then
     :
   else
-    echo unexpected the number of replicas
+    echo "unexpected the number of replicas (not $N)"
+    gfwhere -al $P
     cat $local_tmpfile2
     clean_test
     exit $exit_fail
