@@ -235,9 +235,9 @@ gfs_client_status_request(void *arg)
 	    GFM_CLIENT_CHANNEL_TIMEOUT_INFINITY, GFS_PROTO_STATUS, "");
 	if (e != GFARM_ERR_NO_ERROR) {
 		host_status_reply_waiting_reset(host);
-		gflog_error(GFARM_MSG_1001986,
-		    "gfs_client_status_request: %s",
-		    gfarm_error_string(e));
+		gflog_error(GFARM_MSG_1005083,
+		    "gfs_client_status_request(host=%s, %s): %s",
+		    host_name(host), diag, gfarm_error_string(e));
 	}
 
 	host_put_peer(host, peer); /* decrement refcount */
