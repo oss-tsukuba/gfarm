@@ -193,11 +193,17 @@
 	そのホストの <span class="command"><strong>gfsd</strong></span> が用いるポート番号を指定します。
       </p></dd>
 <dt><span class="term"><code class="option">-f</code> <em class="parameter"><code>フラグ値</code></em></span></dt>
-<dd><p>
+<dd>
+<p>
 	-c および -m 機能で、ホスト情報を追加・変更する際に、
 	そのホストの <span class="command"><strong>gfsd</strong></span> にフラグ値を設定します。
 	フラグ値には以下の数値の bitwise-or を 10 進非負整数で指定します。
-      </p></dd>
+      </p>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="constant">1</code></span></dt>
+<dd><p>読込専用にします。</p></dd>
+</dl></div>
+</dd>
 <dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>パス名</code></em></span></dt>
 <dd><p>
 	このコマンドがアクセスするメタデータサーバを特定するための
