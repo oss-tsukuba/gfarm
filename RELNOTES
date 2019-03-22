@@ -1,3 +1,12 @@
+Release note for Gfarm 2.6.28
+=============================
+
+[2019.3.22]
+
+Bug fix
+* gfmd failover does not work, which was introduced by the version
+  2.6.27
+
 Release note for Gfarm 2.6.27
 =============================
 
