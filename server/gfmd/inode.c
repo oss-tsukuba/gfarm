@@ -6130,8 +6130,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 {
 	struct file_copy **copyp, *copy, **foundp = NULL;
 	gfarm_error_t e;
-	int num_valid = 0, num_up = 0, num_incomplete = 0;
-	int num_valid_ro = 0, num_up_ro = 0, is_ro;
+	int num_up = 0, num_up_ro = 0, num_incomplete = 0;
 
 	if (gen == inode->i_gen) {
 		for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;
@@ -6139,15 +6138,12 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 			if (copy->host == spool_host)
 				foundp = copyp;
 			if (FILE_COPY_IS_VALID(copy)) {
-				++num_valid; /* include down hosts */
 				/* replicas on readonly-host are not spare */
-				is_ro = host_is_readonly(copy->host);
 				if (host_is_up(copy->host)) {
 					++num_up; /* available replicas */
-					if (is_ro)
+					if (host_is_readonly(copy->host))
 						++num_up_ro;
-				} else if (is_ro)
-					++num_valid_ro;
+				}
 			} else if (!FILE_COPY_IS_BEING_REMOVED(copy))
 				++num_incomplete;
 			/* else: FILE_COPY_IS_BEING_REMOVED */
@@ -6159,12 +6155,8 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 		}
 		copy = *foundp;
 		if (replica_spec != NULL && FILE_COPY_IS_VALID(copy)) {
-			int is_up = host_is_up(copy->host);
-			int num = is_up ? num_up : num_valid;
-			int num_ro = is_up ? num_up_ro : num_valid_ro;
-
 			e = inode_replica_is_removable(inode, copy,
-			    replica_spec, num, num_ro, is_up);
+			    replica_spec, num_up, num_up_ro, 1);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1003698,
 				    "replica_is_removable: %s",
