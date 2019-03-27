@@ -2014,8 +2014,10 @@ main(int argc, char **argv)
 			nsocks = open_accepting_sockets(gfmd_port, socks);
 		else
 			nsocks = wait_transform_to_master(gfmd_port, socks);
-	} else
+	} else {
+		gflog_info(GFARM_MSG_UNFIXED, "metadata replication disabled");
 		nsocks = open_accepting_sockets(gfmd_port, socks);
+	}
 
 	/* master */
 
