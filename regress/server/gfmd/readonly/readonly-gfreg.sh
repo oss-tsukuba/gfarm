@@ -121,7 +121,7 @@ test_one_writable_host() {
   fi
 }
 
-test_readonly_enable "$rohost" "$flags"
+#test_readonly_enable "$rohost" "$flags"
 test_readonly_disable "$rohost" "$flags"
 test_readonly_enable_all_host # retrying due to "no filesystem node"
 test_one_writable_host

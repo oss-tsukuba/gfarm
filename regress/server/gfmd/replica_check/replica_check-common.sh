@@ -1,8 +1,10 @@
 . ./regress.conf
 
+#TODO move this to ../replica_check/replica_check-common.sh
+
 NCOPY1=3  # NCOPY1 >= 3
 NCOPY2=2  # NCOPY2 < NCOPY1
-NCOPY_TIMEOUT=10  # sec.
+NCOPY_TIMEOUT=3  # sec. (wait for replication after replica_check is finished)
 hostgroupfile=$localtop/.hostgroup.$$
 
 MAINCTRL=
@@ -14,56 +16,59 @@ HOST_DOWN_THRESH=
 SLEEP_TIME=
 MINIMUM_INTERVAL=
 
-setup_test() {
+replica_check_setup_test() {
   tmpf=$gftmp/foo
-  check_supported_env
-  trap 'clean_test; exit $exit_trap' $trap_sigs
-  del_testdir
-  gfmkdir $gftmp || exit $exit_fail
-  backup_hostgroup
-  backup_repcheck_conf
-  setup_test_ncopy
-  setup_test_repattr
-  setup_test_conf
+  replica_check_check_supported_env
+  trap 'replica_check_clean_test; exit $exit_trap' $trap_sigs
+  trap 'replica_check_clean_test; exit $exit_code' 0
+  replica_check_del_testdir
+  gfmkdir $gftmp || { exit_code=$exit_fail; exit; }
+  replica_check_backup_hostgroup
+  replica_check_backup_repcheck_conf
+  replica_check_setup_test_ncopy
+  replica_check_setup_test_repattr
+  replica_check_setup_test_conf
 }
 
-del_testdir() {
+replica_check_del_testdir() {
   gfrm -rf $gftmp
 }
 
-clean_test() {
-  restore_hostgroup
-  restore_repcheck_conf
-  del_testdir
+replica_check_clean_test() {
+  replica_check_restore_hostgroup
+  replica_check_restore_repcheck_conf
+  replica_check_del_testdir
 }
 
-check_supported_env() {
+replica_check_check_supported_env() {
   if $regress/bin/am_I_gfarmadm; then
     # can use "gfhostgroup -s/-r" and gfrepcheck
     :
   else
-    exit $exit_unsupported
+    exit_code=$exit_unsupported
+    exit
   fi
   hosts=`gfsched -w`
   if [ $? -ne 0 -o "X${hosts}" = "X" ]; then
-    exit $exit_fail
+    exit
   fi
   nhosts=`echo ${hosts} | wc -w`
   if [ $nhosts -lt $NCOPY1 ]; then
     echo 2>&1 "nhosts = $nhosts < $NCOPY1"
-    exit $exit_unsupported
+    exit_code=$exit_unsupported
+    exit
   fi
 }
 
-backup_hostgroup() {
+replica_check_backup_hostgroup() {
   if (gfhostgroup | sed 's/:/ /' > ${hostgroupfile}); then
     :
   else
-    exit $exit_fail
+    exit
   fi
 }
 
-restore_hostgroup() {
+replica_check_restore_hostgroup() {
   if [ -r $hostgroupfile ]; then
     while read h g; do
       if [ "X${g}" != "X" ]; then
@@ -76,7 +81,7 @@ restore_hostgroup() {
   fi
 }
 
-backup_repcheck_conf() {
+replica_check_backup_repcheck_conf() {
   MAINCTRL=`gfrepcheck status | awk '{print $1}'`
   REPREMOVE=`gfrepcheck remove status`
   REDUCED_LOG=`gfrepcheck reduced_log status`
@@ -89,13 +94,13 @@ backup_repcheck_conf() {
   if [ -z "$MAINCTRL" -o -z "$REPREMOVE" -o -z "$REDUCED_LOG" -o \
        -z "$GRACE_SPACE_RATIO" -o -z "$GRACE_TIME" -o \
        -z "$HOST_DOWN_THRESH" -o -z "$SLEEP_TIME" -o \
-       -z "MINIMUM_INTERVAL" ]; then
+       -z "$MINIMUM_INTERVAL" ]; then
       echo "gfrepcheck cannot get current status."
-      exit $exit_fail
+      exit
   fi
 }
 
-restore_common() {
+replica_check_restore_common() {
   CONF=$1
   VAL=$2
   if [ -n "$VAL" ]; then
@@ -107,42 +112,41 @@ restore_common() {
   fi
 }
 
-restore_repcheck_conf() {
-  restore_common "" "$MAINCTRL"
+replica_check_restore_repcheck_conf() {
+  replica_check_restore_common "" "$MAINCTRL"
   MAINCTRL=
-  restore_common "remove" "$REPREMOVE"
+  replica_check_restore_common "remove" "$REPREMOVE"
   REPREMOVE=
-  restore_common "reduced_log" "$REDUCED_LOG"
+  replica_check_restore_common "reduced_log" "$REDUCED_LOG"
   REDUCED_LOG=
-  restore_common "remove_grace_used_space_ratio" "$GRACE_SPACE_RATIO"
+  replica_check_restore_common "remove_grace_used_space_ratio" \
+    "$GRACE_SPACE_RATIO"
   GRACE_SPACE_RATIO=
-  restore_common "remove_grace_time" "$GRACE_TIME"
+  replica_check_restore_common "remove_grace_time" "$GRACE_TIME"
   GRACE_TIME=
-  restore_common "host_down_thresh" "$HOST_DOWN_THRESH"
+  replica_check_restore_common "host_down_thresh" "$HOST_DOWN_THRESH"
   HOST_DOWN_THRESH=
-  restore_common "sleep_time" "$SLEEP_TIME"
+  replica_check_restore_common "sleep_time" "$SLEEP_TIME"
   SLEEP_TIME=
-  restore_common "minimum_interval" "$MINIMUM_INTERVAL"
+  replica_check_restore_common "minimum_interval" "$MINIMUM_INTERVAL"
   MINIMUM_INTERVAL=
 }
 
-setup_test_ncopy() {
+replica_check_setup_test_ncopy() {
   if set_ncopy 1 $gftmp &&  ### avoid looking parent gfarm.ncopy
     gfreg $data/1byte $tmpf; then
     :
   else
-    clean_test
-    exit $exit_fail
+    exit
   fi
 }
 
-setup_test_repattr() {
+replica_check_setup_test_repattr() {
   for h in $hosts; do
     if gfhostgroup -s $h test0; then
       :
     else
-      clean_test
-      exit $exit_fail
+      exit
     fi
   done
 
@@ -150,12 +154,11 @@ setup_test_repattr() {
     gfreg $data/1byte $tmpf; then
     :
   else
-    clean_test
-    exit $exit_fail
+    exit
   fi
 }
 
-setup_test_conf() {
+replica_check_setup_test_conf() {
   if gfrepcheck enable && \
      gfrepcheck sleep_time 0 && \
      gfrepcheck minimum_interval 1 && \
@@ -164,11 +167,46 @@ setup_test_conf() {
      gfrepcheck remove_grace_time 0; then
     :
   else
-    clean_test
-    exit $exit_fail
+    exit
   fi
 }
 
+wait_for_expected_status() {
+  expected="$1"
+  count=0
+  while true; do
+    status=`gfrepcheck status`
+    if [ $? -ne 0 ]; then
+      exit
+    fi
+    if [ "$status" = "$expected" ]; then
+      break
+    fi
+    count=`expr ${count} + 1`
+    echo "sleep [${count}]: waiting for '${expected}' of 'gfrepcheck status'"
+    sleep 1
+  done
+}
+
+wait_for_replica_check_finished() {
+  if gfrepcheck stop; then
+    :
+  else
+    exit
+  fi
+  wait_for_expected_status "disable / stopped"
+  if gfrepcheck start; then
+    :
+  else
+    exit
+  fi
+  minimum_interval=`gfrepcheck minimum_interval status`
+  if [ $? -ne 0 ]; then
+    exit
+  fi
+  sleep ${minimum_interval}
+  wait_for_expected_status "enable / stopped"
+}
 
 wait_for_rep() {
   num=$1
@@ -177,28 +215,15 @@ wait_for_rep() {
   diag=$4
   WAIT_TIME=0
 
-  if gfrepcheck stop; then
-    :
-  else
-    clean_test
-    exit $exit_fail
-  fi
-  if gfrepcheck start; then
-    :
-  else
-    clean_test
-    exit $exit_fail
-  fi
+  wait_for_replica_check_finished
   while
     if [ `gfncopy -c $file` -eq $num ]; then
       if [ $expect_timeout = 'true' ]; then
         echo -n "replicas: "
         gfwhere $file
-        echo "unexpected: Timeout must occur."
-        clean_test
-        exit $exit_fail
+        echo "unexpected: Timeout must occur: ${diag}"
+        exit
       fi
-      exit_code=$exit_pass
       false # exit from this loop
     else
       true
@@ -206,12 +231,12 @@ wait_for_rep() {
   do
     WAIT_TIME=`expr $WAIT_TIME + 1`
     if [ $WAIT_TIME -gt $NCOPY_TIMEOUT ]; then
-      echo "replication timeout: ${diag}"
       if [ $expect_timeout = 'true' ]; then
+        echo "expected replication timeout: ${diag}"
         return
       fi
-      clean_test
-      exit $exit_fail
+      echo "unexpected replication timeout: ${diag}"
+      exit
     fi
     sleep 1
   done
@@ -222,8 +247,7 @@ set_ncopy() {
     :
    else
     echo gfncopy -s failed
-    clean_test
-    exit $exit_fail
+    exit
   fi
 }
 
@@ -231,28 +255,25 @@ set_repattr() {
   gfncopy -S test0:$1 $2
   if [ $? -ne 0 ]; then
     echo gfncopy -S failed
-    clean_test
-    exit $exit_fail
+    exit
   fi
 }
 
 hardlink() {
   gfln $1 $2
   if [ $? -ne 0 ]; then
-    clean_test
-    exit $exit_fail
+    exit
   fi
 }
 
 gfprep_n() {
   NCOPY=$1
   FILE=$2
-  if gfprep $GFPREP_OPT -N $NCOPY gfarm:${FILE}; then
+  if gfprep -B $GFPREP_OPT -N $NCOPY gfarm:${FILE}; then
     :
   else
     echo failed: gfprep $GFPREP_OPT -N $NCOPY gfarm:${FILE}
-    clean_test
-    exit $exit_fail
+    exit
   fi
 }
 
@@ -262,8 +283,7 @@ set_grace_used_space_ratio() {
     :
   else
     echo failed: "replica_check_remove_grace_used_space_ratio ${RATIO}"
-    clean_test
-    exit $exit_fail
+    exit
   fi
 }
 
@@ -273,8 +293,7 @@ set_grace_time() {
     :
   else
     echo failed: "replica_check_remove_grace_time ${SEC}"
-    clean_test
-    exit $exit_fail
+    exit
   fi
 }
 
@@ -285,7 +304,6 @@ replica_check_remove_switch()
     :
   else
     echo failed: "gfrepcheck remove $FLAG"
-    clean_test
-    exit $exit_fail
+    exit
   fi
 }

@@ -6,10 +6,6 @@ base="$(dirname "$0")"
 ROHOST="$(gfsched -w | head -n 1)"
 FLAGS="$(query_host_flags "$ROHOST")"
 GF_TEST_FILE="${gftmp}/test"
-GFS_PIO_TEST="${base}/../../../lib/libgfarm/gfarm/gfs_pio_test/gfs_pio_test"
-#GFS_PIO_TEST_V="-v"
-GFS_PIO_TEST_V=""
-
 REP_ENABLE_CONF_FILE="${localtmp}/enable.gfarm2.conf"
 REP_DISABLE_CONF_FILE="${localtmp}/disable.gfarm2.conf"
 cat << __EOF__ > "$REP_ENABLE_CONF_FILE" || exit
@@ -23,6 +19,12 @@ __EOF__
 
 prepare_file() {
   srcfile="$1"
+  gfrm -f "$GF_TEST_FILE"
+  gfhost -M "$ROHOST"
+  #gfsched -w
+  #gfdf -h
+  #gfdf -ih
+  #echo gfreg -h "$ROHOST" "$srcfile" "$GF_TEST_FILE"
   gfreg -h "$ROHOST" "$srcfile" "$GF_TEST_FILE" || exit
   gfhost -m -f "$(set_readonly_flag "$FLAGS")" "$ROHOST" || exit
 }
@@ -33,15 +35,11 @@ cleanup_file() {
 }
 
 test_rawo_disable_1B_common() {
-  is_create="$1"
+  opts="$1"
   diag="$2"
-  opts=
-  if "$is_create"; then
-    opts=-c
-  fi
   export GFARM_CONFIG_FILE="$REP_DISABLE_CONF_FILE"
   prepare_file "${data}/1byte"
-  echo 12345 | "$GFS_PIO_TEST" $GFS_PIO_TEST_V -w $opts "$GF_TEST_FILE"
+  update_file $opts "$GF_TEST_FILE"
   if [ "$?" -eq 0 ]; then
     echo "unexpected success: ${diag}"
     exit
@@ -52,24 +50,20 @@ test_rawo_disable_1B_common() {
 
 test_rawo_disable_1B_writeopen() {
   diag=test_rawo_disable_1B_writeopen
-  test_rawo_disable_1B_common false "$diag"
+  test_rawo_disable_1B_common "" "$diag"
 }
 
 test_rawo_disable_1B_create() {
   diag=test_rawo_disable_1B_create
-  test_rawo_disable_1B_common true "$diag"
+  test_rawo_disable_1B_common "-c" "$diag"
 }
 
 test_rawo_disable_0B_common() {
-  is_create="$1"
+  opts="$1"
   diag="$2"
-  opts=
-  if "$is_create"; then
-    opts=-c
-  fi
   export GFARM_CONFIG_FILE="$REP_DISABLE_CONF_FILE"
   prepare_file "${data}/0byte"
-  echo 12345 | "$GFS_PIO_TEST" $GFS_PIO_TEST_V -w $opt "$GF_TEST_FILE"
+  update_file $opts "$GF_TEST_FILE"
   if [ "$?" -ne 0 ]; then
     echo "failed: ${diag}"
     exit
@@ -80,24 +74,20 @@ test_rawo_disable_0B_common() {
 
 test_rawo_disable_0B_writeopen() {
   diag=test_rawo_disable_0B_writeopen
-  test_rawo_disable_0B_common false "$diag"
+  test_rawo_disable_0B_common "" "$diag"
 }
 
 test_rawo_disable_0B_create() {
   diag=test_rawo_disable_0B_create
-  test_rawo_disable_0B_common true "$diag"
+  test_rawo_disable_0B_common "-c" "$diag"
 }
 
 test_rawo_disable_1B_truncate_common() {
-  is_create="$1"
+  opts="$1"
   diag="$2"
-  opts=
-  if "$is_create"; then
-    opts=-c
-  fi
   export GFARM_CONFIG_FILE="$REP_DISABLE_CONF_FILE"
   prepare_file "${data}/1byte"
-  echo 12345 | "$GFS_PIO_TEST" $GFS_PIO_TEST_V -t -w $opt "$GF_TEST_FILE"
+  update_file -t $opts "$GF_TEST_FILE"
   if [ "$?" -ne 0 ]; then
     echo "failed: ${diag}"
     exit
@@ -108,25 +98,20 @@ test_rawo_disable_1B_truncate_common() {
 
 test_rawo_disable_1B_truncate_writeopen() {
   diag=test_rawo_disable_1B_truncate_writeopen
-  test_rawo_disable_1B_truncate_common false "$diag"
+  test_rawo_disable_1B_truncate_common "" "$diag"
 }
 
 test_rawo_disable_1B_truncate_create() {
   diag=test_rawo_disable_1B_truncate_create
-  test_rawo_disable_1B_truncate_common true "$diag"
+  test_rawo_disable_1B_truncate_common "-c" "$diag"
 }
 
 test_rawo_enable_1B_specified_host_common() {
-  is_create="$1"
+  opts="$1"
   diag="$2"
-  opts=
-  if "$is_create"; then
-    opts=-c
-  fi
   export GFARM_CONFIG_FILE="$REP_ENABLE_CONF_FILE"
   prepare_file "${data}/1byte"
-  echo 12345 \
-  | "$GFS_PIO_TEST" $GFS_PIO_TEST_V -h "$ROHOST" -w $opt "$GF_TEST_FILE"
+  update_file -h "$ROHOST" $opts "$GF_TEST_FILE"
   if [ "$?" -eq 0 ]; then
     echo "unexpected success: ${diag}"
     exit
@@ -137,24 +122,20 @@ test_rawo_enable_1B_specified_host_common() {
 
 test_rawo_enable_1B_specified_host_writeopen() {
   diag=test_rawo_enable_1B_specified_host_writeopen
-  test_rawo_enable_1B_specified_host_common false "$diag"
+  test_rawo_enable_1B_specified_host_common "" "$diag"
 }
 
 test_rawo_enable_1B_specified_host_create() {
   diag=test_rawo_enable_1B_specified_host_create
-  test_rawo_enable_1B_specified_host_common true "$diag"
+  test_rawo_enable_1B_specified_host_common "-c" "$diag"
 }
 
 test_rawo_enable_1B_common() {
-  is_create="$1"
+  opts="$1"
   diag="$2"
-  opts=
-  if "$is_create"; then
-    opts=-c
-  fi
   export GFARM_CONFIG_FILE="$REP_ENABLE_CONF_FILE"
   prepare_file "${data}/1byte"
-  echo 12345 | "$GFS_PIO_TEST" $GFS_PIO_TEST_V -w $opt "$GF_TEST_FILE"
+  update_file $opts "$GF_TEST_FILE"
   if [ "$?" -ne 0 ]; then
     echo "failed: ${diag}"
     exit
@@ -165,27 +146,33 @@ test_rawo_enable_1B_common() {
 
 test_rawo_enable_1B_writeopen() {
   diag=test_rawo_enable_1B_writeopen
-  test_rawo_enable_1B_common false "$diag"
+  test_rawo_enable_1B_common "" "$diag"
 }
 
 test_rawo_enable_1B_create() {
   diag=test_rawo_enable_1B_create
-  test_rawo_enable_1B_common true "$diag"
+  test_rawo_enable_1B_common "-c" "$diag"
 }
 
 test_rawo_enable_writeopen_simultaneous() {
   diag=test_rep_enable_writeopen_simultaneous
   export GFARM_CONFIG_FILE="$REP_ENABLE_CONF_FILE"
-  srcfile="${localtmp}/2GB"
-  dd if=/dev/zero "of=${srcfile}" bs=1M count=2000
+  srcfile="${localtmp}/bigfile"
+  dd if=/dev/zero "of=${srcfile}" bs=1M count=500
   prepare_file "$srcfile"
-  echo 12345 | "$GFS_PIO_TEST" $GFS_PIO_TEST_V -w "$GF_TEST_FILE" &
-  echo 12345 | "$GFS_PIO_TEST" $GFS_PIO_TEST_V -w "$GF_TEST_FILE"
-  if [ "$?" -ne 0 ]; then
+  update_file "$GF_TEST_FILE" &
+  p1=$!
+  update_file "$GF_TEST_FILE" &
+  p2=$!
+  wait $p1
+  r1=$?
+  wait $p2
+  r2=$?
+  cleanup_file
+  if [ "$r1" -ne 0 -o "$r2" -ne 0 ]; then
     echo "failed: ${diag}"
     exit
   fi
-  wait
   unset GFARM_CONFIG_FILE
 }
 

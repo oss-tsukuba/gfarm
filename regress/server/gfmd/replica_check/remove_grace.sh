@@ -3,15 +3,14 @@
 # this test may fail, if number of files which don't have enough
 # replicas are too many.
 
-LONG_TEST=0
+LONG_TEST=1
 GRACE_TIME_DIFF=2  # sec.
 
-GFPREP_OPT='-d -B'
+GFPREP_OPT=''
 
 base=`dirname $0`
 . ${base}/replica_check-common.sh
-setup_test
-
+replica_check_setup_test
 
 set_ncopy $NCOPY2 $gftmp  ### ncopy=2
 
@@ -37,8 +36,8 @@ wait_for_rep $NCOPY2 $tmpf false "#2"  ### not timeout
 
 ### short test
 if [ $LONG_TEST -eq 0 ]; then
-  clean_test  ### include restore_grace
-  exit $exit_code
+  exit_code=$exit_pass
+  exit
 fi
 
 ##########################################################################
@@ -59,6 +58,4 @@ gfprep_n $NCOPY1 $tmpf  ### increase replicas: 2 -> 3
 # decrease replicas
 wait_for_rep $NCOPY2 $tmpf true "#4"  ### timeout
 
-
-clean_test  ### include restore_grace
-exit $exit_code
+exit_code=$exit_pass
