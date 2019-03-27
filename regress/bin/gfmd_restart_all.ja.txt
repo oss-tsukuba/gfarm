@@ -1,0 +1,12 @@
+gfmd_restart_all について:
+
+全てのgfmdを再起動するための処理をgfmd_restart_allとして作成してください。
+成功時に0、失敗時に0以外を返して終了するようにします。
+実行権限が必要です。
+
+gfmd_restart_all.gfservice.shは、gfserviceを使ってgfmdを再起動します。
+ln -s gfmd_restart_all.gfservice.sh gfmd_restart_all
+とすることで利用できます。
+
+gfmd_restart_allを用意していない場合、gfmd_restart_allを使用するテスト
+はUNSUPPORTEDになります。

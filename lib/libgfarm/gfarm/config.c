@@ -1013,6 +1013,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT 1 /* enable */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(512 * 1024 * 1024) /* 512MB */
 #define GFARM_DIRECT_LOCAL_ACCESS_DEFAULT	1 /* enable */
+#define GFARM_REPLICATION_AT_WRITE_OPEN_DEFAULT	1 /* enable */
 #define GFARM_SIMULTANEOUS_REPLICATION_RECEIVERS_DEFAULT	20
 #define GFARM_REPLICATION_BUSY_HOST_DEFAULT	1
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT	256 /* 256 free connections */
@@ -3311,6 +3312,9 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "direct_local_access") == 0) {
 		e = parse_set_misc_enabled(p,
 		    &gfarm_ctxp->direct_local_access);
+	} else if (strcmp(s, o = "replication_at_write_open") == 0) {
+		e = parse_set_misc_enabled(p,
+		    &gfarm_ctxp->replication_at_write_open);
 	} else if (strcmp(s, o = "simultaneous_replication_receivers") == 0) {
 		e = parse_set_misc_int(p,
 		    &gfarm_simultaneous_replication_receivers);
@@ -3710,6 +3714,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->direct_local_access == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->direct_local_access =
 		    GFARM_DIRECT_LOCAL_ACCESS_DEFAULT;
+	if (gfarm_ctxp->replication_at_write_open == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->replication_at_write_open =
+		    GFARM_REPLICATION_AT_WRITE_OPEN_DEFAULT;
 	if (gfarm_simultaneous_replication_receivers ==
 	    GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_simultaneous_replication_receivers =
@@ -4039,6 +4046,9 @@ const struct gfarm_config_type {
 	{ "direct_local_access", 'i', 0, gfarm_config_print_enabled,
 	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
 	  NULL, offsetof(struct gfarm_context, direct_local_access) },
+	{ "replication_at_write_open", 'i', 0, gfarm_config_print_enabled,
+	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
+	  NULL, offsetof(struct gfarm_context, replication_at_write_open) },
 	{ "simultaneous_replication_receivers", 'i', 1, gfarm_config_print_int,
 	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
 	  &gfarm_simultaneous_replication_receivers, 0 },

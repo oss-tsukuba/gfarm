@@ -5,7 +5,7 @@
 
 <refentry id="gfhost.1">
 
-<refentryinfo><date>20 Jan 2010</date></refentryinfo>
+<refentryinfo><date>14 Mar 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfhost</refentrytitle>
@@ -275,6 +275,9 @@ the default function of <command moreinfo="none">gfhost</command>.
 	won't be provided.
       </para>
       <para>
+	See also -f option about the value before IP address.
+      </para>
+      <para>
 	Hostnames are displayed in alphabetical order, by default.
       </para>
     </listitem>
@@ -285,6 +288,7 @@ the default function of <command moreinfo="none">gfhost</command>.
     <listitem>
       <para>
 	The metadata information of the hosts will be displayed.
+	See also -f option about the last value of each lines.
 	Hostnames are displayed in alphabetical order, by default.
       </para>
     </listitem>
@@ -404,6 +408,24 @@ the default function of <command moreinfo="none">gfhost</command>.
 	the port number of <command moreinfo="none">gfsd</command> on the host.
       </para>
     </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-f</option> <parameter moreinfo="none">flags</parameter></term>
+    <listitem>
+      <para>
+	This option is used with -c or -m function, and specifies
+	the flags of <command moreinfo="none">gfsd</command> on the host.
+	Values of flags are constructed by a bitwise-or of the
+	following list.
+      </para>
+    </listitem>
+    <variablelist>
+      <varlistentry>
+	<term><constant>1</constant></term>
+	<listitem><para>readonly</para></listitem>
+      </varlistentry>
+    </variablelist>
   </varlistentry>
 
   <varlistentry>

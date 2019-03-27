@@ -207,7 +207,7 @@ enum gfm_proto_command {
 	GFM_PROTO_STATFS,
 	GFM_PROTO_CONFIG_GET,			/* since gfarm-2.6.8 */
 	GFM_PROTO_CONFIG_SET,			/* since gfarm-2.6.9 */
-	GFM_PROTO_MISC_RESERVE5,
+	GFM_PROTO_SCHEDULE_HOST_DOMAIN_USE_REAL_DISK_SPACE, /* since 2.7.13 */
 	GFM_PROTO_MISC_RESERVE6,
 	GFM_PROTO_MISC_RESERVE7,
 	GFM_PROTO_MISC_RESERVE8,
@@ -418,7 +418,6 @@ enum gfm_proto_command {
 #define GFM_PROTO_REPLICA_GET_MY_ENTRIES_END_OF_INODE	0x00000001
 #define GFM_PROTO_REPLICA_GET_MY_ENTRIES_END_OF_RANGE	0x00000002
 
-
 /*
  * data size limits:
  *
@@ -472,6 +471,7 @@ enum gfm_proto_command {
 #define GFM_PROTO_SCHED_FLAG_HOST_AVAIL		1 /* always TRUE for now */
 #define GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL	2 /* always TRUE for now */
 #define GFM_PROTO_SCHED_FLAG_RTT_AVAIL		4 /* always FALSE for now */
+#define GFM_PROTO_SCHED_FLAG_READONLY		8 /* since 2.7.13 */
 #define GFM_PROTO_LOADAVG_FSCALE 		2048
 
 /* output of GFM_PROTO_CLOSE_WRITE_V2_4 */

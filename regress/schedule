@@ -170,6 +170,16 @@ gftool/gfusage/gfusage-chown.sh
 # gftool/gfkey
 
 # server/gfmd
+server/gfmd/readonly/gfhost-readonly.sh
+server/gfmd/readonly/gfhost-readonly-restart-gfmd.sh
+server/gfmd/readonly/readonly-gfreg.sh
+server/gfmd/readonly/readonly-gfrm.sh
+server/gfmd/readonly/readonly-gfrep.sh
+server/gfmd/readonly/readonly-gfprep.sh
+server/gfmd/readonly/readonly-gfrep-ro-before-rep.sh
+server/gfmd/readonly/readonly-gfprep-ro-before-rep.sh
+server/gfmd/readonly/readonly-replica_check_remove.sh
+server/gfmd/readonly/replication_at_write_open.sh
 server/gfmd/db_journal/db_journal_open.sh
 server/gfmd/db_journal/db_journal_write.sh
 server/gfmd/db_journal/db_journal_ops.sh
@@ -184,3 +194,9 @@ server/gfmd/replica_check/remove_grace.sh   ### wait at least 12 seconds
 
 # manual test: see log file when the result is UNSUPPORTED
 manual/server/gfsd/spool_check/lost_found.sh
+
+
+### sleep(metadb_server_heartbeat_interval) after bin/gfmd_restart_all
+### is required due to waiting for starting replica_check
+server/gfmd/readonly/gfhost-readonly-restart-gfmd.sh
+#sleep 30

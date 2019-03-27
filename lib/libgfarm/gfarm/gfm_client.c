@@ -2951,15 +2951,14 @@ gfm_client_schedule_file_with_program_result(struct gfm_connection *gfm_server,
 	return (gfm_client_get_schedule_result(gfm_server, nhostsp, infosp));
 }
 
-gfarm_error_t
-gfm_client_schedule_host_domain(struct gfm_connection *gfm_server,
-	const char *domain,
+static gfarm_error_t
+gfm_client_schedule_host_domain_common(struct gfm_connection *gfm_server,
+	int op, const char *domain,
 	int *nhostsp, struct gfarm_host_sched_info **infosp)
 {
 	gfarm_error_t e;
 
-	e = gfm_client_rpc_request(gfm_server,
-		GFM_PROTO_SCHEDULE_HOST_DOMAIN, "s", domain);
+	e = gfm_client_rpc_request(gfm_server, op, "s", domain);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001150,
 			"gfm_client_rpc() request failed: %s",
@@ -2967,6 +2966,25 @@ gfm_client_schedule_host_domain(struct gfm_connection *gfm_server,
 		return (e);
 	}
 	return (gfm_client_get_schedule_result(gfm_server, nhostsp, infosp));
+}
+
+gfarm_error_t
+gfm_client_schedule_host_domain(struct gfm_connection *gfm_server,
+	const char *domain,
+	int *nhostsp, struct gfarm_host_sched_info **infosp)
+{
+	return (gfm_client_schedule_host_domain_common(gfm_server,
+	    GFM_PROTO_SCHEDULE_HOST_DOMAIN, domain, nhostsp, infosp));
+}
+
+gfarm_error_t
+gfm_client_schedule_host_domain_use_real_disk_space(
+	struct gfm_connection *gfm_server, const char *domain,
+	int *nhostsp, struct gfarm_host_sched_info **infosp)
+{
+	return (gfm_client_schedule_host_domain_common(gfm_server,
+	    GFM_PROTO_SCHEDULE_HOST_DOMAIN_USE_REAL_DISK_SPACE,
+	    domain, nhostsp, infosp));
 }
 
 gfarm_error_t

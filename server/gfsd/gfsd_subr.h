@@ -2,7 +2,7 @@
 
 extern int debug_mode;
 extern struct gfm_connection *gfm_server;
-extern const char READONLY_CONFIG_FILE[];
+extern const char READONLY_CONFIG_SPOOL_FILE[];
 extern int gfarm_spool_root_len[];
 extern int gfarm_spool_root_num;
 extern char *canonical_self_name;
@@ -11,11 +11,15 @@ extern char *canonical_self_name;
 int getloadavg(double *, int);
 #endif
 
-int gfsd_statfs(char *, gfarm_int32_t *,
+void gfsd_readonly_config_init(int);
+void gfsd_readonly_config_update(int);
+int gfsd_is_readonly_mode(int);
+
+int gfsd_statfs_readonly(int, gfarm_int32_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,
 	int *);
-void gfsd_statfs_all(gfarm_int32_t *,
+void gfsd_statfs_all(int, gfarm_int32_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,
 	int *);

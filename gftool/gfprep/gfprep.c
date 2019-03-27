@@ -168,6 +168,7 @@ struct gfprep_host_info {
 	long long count_write;
 	gfarm_uint64_t disk_avail;
 	gfarm_int32_t loadavg; /* loadavg_1min * GFM_PROTO_LOADAVG_FSCALE */
+	int is_readonly;
 
 	/* locked by cb_mutex */
 	int n_using; /* src:n_reading, dst:n_writing */
@@ -293,6 +294,8 @@ gfprep_create_hostinfohash_all(const char *path, int *nhost_infos_p,
 		hi->max_rw = opt.max_rw > 0 ? opt.max_rw : hi->ncpu;
 		hi->disk_avail = hsis[i].disk_avail * 1024; /* KB -> Byte */
 		hi->loadavg = hsis[i].loadavg;
+		hi->is_readonly = ((hsis[i].flags &
+				    GFM_PROTO_SCHED_FLAG_READONLY) != 0);
 		hi->n_using = 0;
 		hi->failed_size = 0;
 		*hip = hi;
@@ -364,8 +367,13 @@ gfprep_update_hostinfohash_all(const char *path,
 		hi = *hip;
 		hi->disk_avail = hsis[i].disk_avail * 1024; /* KB -> Byte */
 		hi->loadavg = hsis[i].loadavg;
-		gfmsg_debug("update loadavg: %s = %.3f", hi->hostname,
-			    (float)hi->loadavg / GFM_PROTO_LOADAVG_FSCALE);
+		hi->is_readonly = ((hsis[i].flags &
+				    GFM_PROTO_SCHED_FLAG_READONLY) != 0);
+		gfmsg_debug("update(host=%s): "
+			    "loadavg=%.3f, is_readonly=%d, disk_avail=%lld",
+			    hi->hostname,
+			    (float)hi->loadavg / GFM_PROTO_LOADAVG_FSCALE,
+			    hi->is_readonly, (long long)hi->disk_avail);
 	}
 
 	gfarm_host_sched_info_free(nhsis, hsis);
@@ -3800,6 +3808,8 @@ main(int argc, char *argv[])
 				gfprep_count_skip_file(entry->src_size);
 				goto next_entry;
 			} else if (n_desire < 0) {
+				int n_readonly = 0;
+
 				gfmsg_info("skip: too many replicas(num=%d):"
 				    " %s", -n_desire, src_url);
 				if (!opt_remove) {
@@ -3808,14 +3818,34 @@ main(int argc, char *argv[])
 				}
 				/* disk_avail: small to large */
 				for (i = n_dst_exist - 1; i >= 0; i--) {
-					gfprep_do_remove_replica(
-					    pfunc_handle, NULL,
-					    entry->src_size,
-					    src_url, dst_exist_array[i]);
-					n_desire++;
+					struct gfprep_host_info *hi =
+						dst_exist_array[i];
+
+					if (hi->is_readonly) {
+						gfmsg_debug(
+						    "%s@%s: replica on "
+						    "readonly-host is not "
+						    "removed",
+						    src_url, hi->hostname);
+						++n_readonly;
+					} else {
+						gfprep_do_remove_replica(
+						    pfunc_handle, NULL,
+						    entry->src_size, src_url,
+						    hi);
+						n_desire++;
+					}
 					if (n_desire >= 0)
 						break;
 				}
+				if (n_desire < 0 &&
+				    n_readonly + n_desire < 0)
+					gfmsg_warn(
+					    "%s: surplus replicas "
+					    "are not removed "
+					    "(desired=%d, current=%d)",
+					    src_url, opt_n_desire,
+					    opt_n_desire - n_desire);
 				goto next_entry;
 			} else if (n_dst_select < n_desire) {/* n_desire > 0 */
 				gfmsg_error(

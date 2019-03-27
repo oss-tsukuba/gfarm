@@ -259,6 +259,10 @@ replica_check_remove_replicas(struct inode *inode,
 
 	/* prefer a host which has few disk_avail */
 	host_sort_to_remove_replicas(n_srcs, srcs);
+	/*
+	 * disk_avail of readonly-host is 0, but replicas on
+	 * readonly-host is not removed.
+	 */
 
 	/*
 	 * gfarm_replica_check_remove_grace_used_space_ratio and

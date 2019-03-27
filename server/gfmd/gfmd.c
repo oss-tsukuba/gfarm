@@ -453,6 +453,10 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_CONFIG_SET:
 		e = gfm_server_config_set(peer, from_client, skip);
 		break;
+	case GFM_PROTO_SCHEDULE_HOST_DOMAIN_USE_REAL_DISK_SPACE:
+		e = gfm_server_schedule_host_domain_use_real_disk_space(peer,
+		    from_client, skip);
+		break;
 	case GFM_PROTO_REPLICA_LIST_BY_NAME:
 		e = gfm_server_replica_list_by_name(peer, from_client, skip);
 		break;

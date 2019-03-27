@@ -487,8 +487,8 @@ check_file(char *file, struct stat *stp, void *arg)
 	struct gfarm_hash_table *hash_ok = arg;
 	struct gfarm_hash_entry *hash_ent;
 
-	/* READONLY_CONFIG_FILE should be skipped */
-	if (strcmp(file, READONLY_CONFIG_FILE) == 0)
+	/* READONLY_CONFIG_SPOOL_FILE should be skipped */
+	if (strcmp(file, READONLY_CONFIG_SPOOL_FILE) == 0)
 		return (GFARM_ERR_NO_ERROR);
 
 	if (get_inum_gen(file, &inum, &gen))
@@ -678,8 +678,10 @@ gfs_spool_check_parallel_fork(void)
 		gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
 		int readonly;
 
-		gfsd_statfs_all(&bsize, &blocks, &bfree, &bavail,
+		/* use real disk space even if readonly mode is enabled */
+		gfsd_statfs_all(0, &bsize, &blocks, &bfree, &bavail,
 		    &files, &ffree, &favail, &readonly);
+		/* bavail and bfree are not used */
 		gfarm_spool_check_parallel = blocks * bsize /
 		    gfarm_spool_check_parallel_per_capacity;
 		if (gfarm_spool_check_parallel >

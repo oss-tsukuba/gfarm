@@ -150,16 +150,16 @@ gfs_client_recv_result(struct peer *peer, struct host *host,
 }
 
 static gfarm_int32_t
-gfs_client_status_result(void *p, void *arg, size_t size)
+gfs_client_status_result_common(void *p, void *arg, size_t size,
+	const char *proto_diag)
 {
 	gfarm_error_t e;
 	struct peer *peer = p;
 	struct host *host = arg;
 	struct host_status st;
-	static const char diag[] = "GFS_PROTO_STATUS";
 
 	e = gfs_client_recv_result(peer, host,
-	    size, diag, "fffll",
+	    size, proto_diag, "fffll",
 	    &st.loadavg_1min, &st.loadavg_5min, &st.loadavg_15min,
 	    &st.disk_used, &st.disk_avail);
 	if (e == GFARM_ERR_NO_ERROR) {
@@ -167,9 +167,25 @@ gfs_client_status_result(void *p, void *arg, size_t size)
 	} else {
 		/* this gfsd is not working correctly, thus, disconnect it */
 		gfs_client_status_disconnect_or_message(host, peer,
-		    diag, "result", gfarm_error_string(e));
+		    proto_diag, "result", gfarm_error_string(e));
 	}
 	return (e);
+}
+
+static gfarm_int32_t
+gfs_client_status_result(void *p, void *arg, size_t size)
+{
+	static const char diag[] = "GFS_PROTO_STATUS";
+
+	return (gfs_client_status_result_common(p, arg, size, diag));
+}
+
+static gfarm_int32_t
+gfs_client_status2_result(void *p, void *arg, size_t size)
+{
+	static const char diag[] = "GFS_PROTO_STATUS2";
+
+	return (gfs_client_status_result_common(p, arg, size, diag));
 }
 
 /* both giant_lock and peer_table_lock are held before calling this function */
@@ -212,7 +228,21 @@ gfs_client_status_request(void *arg)
 	gfarm_error_t e;
 	struct host *host = arg;
 	struct peer *peer = host_get_peer(host); /* increment refcount */
-	static const char diag[] = "GFS_PROTO_STATUS";
+	static const char proto_status1[] = "GFS_PROTO_STATUS";
+	static const char proto_status2[] = "GFS_PROTO_STATUS2";
+	const char *diag;
+	gfarm_int32_t (*result_callback)(void *, void *, size_t);
+
+	if (host_supports_status2_protocols(host)) {
+		diag = proto_status2;
+		result_callback = gfs_client_status2_result;
+	} else {
+		diag = proto_status1;
+		result_callback = gfs_client_status_result;
+	}
+	gflog_debug(GFARM_MSG_UNFIXED,
+	    "gfs_client_status_request(host=%s) uses %s",
+	     host_name(host), diag);
 
 	if (host_status_reply_is_waiting(host)) {
 		gfs_client_status_disconnect_or_message(host, peer,
@@ -230,14 +260,27 @@ gfs_client_status_request(void *arg)
 	    gfarm_metadb_heartbeat_interval * 1000000);
 
 	host_status_reply_waiting_set(host);
-	e = gfs_client_send_request(host, NULL, diag,
-	    gfs_client_status_result, gfs_client_status_free, host,
-	    GFM_CLIENT_CHANNEL_TIMEOUT_INFINITY, GFS_PROTO_STATUS, "");
+
+	if (diag == proto_status2) {
+		int flags;
+
+		giant_lock();
+		flags = host_flags(host);
+		giant_unlock();
+
+		e = gfs_client_send_request(host, NULL, diag,
+		    result_callback, gfs_client_status_free, host,
+		    GFM_CLIENT_CHANNEL_TIMEOUT_INFINITY, GFS_PROTO_STATUS2,
+		    "i", flags);
+	} else
+		e = gfs_client_send_request(host, NULL, diag,
+		    result_callback, gfs_client_status_free, host,
+		    GFM_CLIENT_CHANNEL_TIMEOUT_INFINITY, GFS_PROTO_STATUS, "");
 	if (e != GFARM_ERR_NO_ERROR) {
 		host_status_reply_waiting_reset(host);
-		gflog_error(GFARM_MSG_1001986,
-		    "gfs_client_status_request: %s",
-		    gfarm_error_string(e));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "gfs_client_status_request(host=%s, %s): %s",
+		    host_name(host), diag, gfarm_error_string(e));
 	}
 
 	host_put_peer(host, peer); /* decrement refcount */
@@ -321,7 +364,7 @@ remover(void *closure)
 
 	for (;;) {
 		dfc = removal_pendingq_dequeue();
-		if (host_is_up(dead_file_copy_get_host(dfc)))
+		if (host_is_file_removable(dead_file_copy_get_host(dfc)))
 			thrpool_add_job_low_priority(
 			    back_channel_send_thread_pool,
 			    gfs_client_fhremove_request, dfc);
@@ -753,7 +796,7 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (is_async ? (
 	    version <  GFS_PROTOCOL_VERSION_V2_4 ||
-	    version >  GFS_PROTOCOL_VERSION_V2_6) :
+	    version >  GFS_PROTOCOL_VERSION_V2_7_13) :
 	    version != GFS_PROTOCOL_VERSION_V2_3) {
 		e = GFARM_ERR_PROTOCOL_NOT_SUPPORTED;
 		gflog_info(GFARM_MSG_1004037,
