@@ -1734,7 +1734,7 @@ The default is <token>enable</token>.
 <para>
 This directive is only available for clients in gfarm2.conf.
 </para>
-<para>例:</para>
+<para>For example,</para>
 <literallayout format="linespecific" class="normal">
        replication_at_write_open enable
 </literallayout>
