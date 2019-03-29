@@ -956,7 +956,7 @@ replica_check_cond_wait(void)
 {
 	static const char diag[] = "replica_check_cond_wait";
 	struct timeval next, now;
-	int minimum_interval = replica_check_minimum_interval_locked();
+	int minimum_interval = replica_check_minimum_interval_locked(), t;
 
 	gfarm_mutex_lock(&replica_check_mutex, diag, REPLICA_CHECK_DIAG);
 	/* do not call giant_lock() in replica_check_mutex */
@@ -997,8 +997,18 @@ replica_check_cond_wait(void)
 		 */
 		gfarm_mutex_unlock(
 		    &replica_check_mutex, diag, REPLICA_CHECK_DIAG);
-		gfarm_nanosleep((unsigned long long)minimum_interval *
-		    GFARM_SECOND_BY_NANOSEC);
+
+		t = minimum_interval;
+		while (t > 0) {
+			gfarm_sleep(1);
+			t -= 1;
+			/* use latest minimum_interval */
+			minimum_interval =
+				replica_check_minimum_interval_locked();
+			if (t > minimum_interval)
+				t = minimum_interval;
+		}
+
 		gfarm_mutex_lock(
 		    &replica_check_mutex, diag, REPLICA_CHECK_DIAG);
 	}
@@ -1105,6 +1115,34 @@ static int replica_check_ctrl_waiting = 0;
 static int replica_check_ctrl = DISABLE;
 static int replica_check_remove = DISABLE;
 static int replica_check_reduced_log = DISABLE;
+static int is_running = 0;
+
+static int
+replica_check_is_running(void)
+{
+	static const char diag[] = "replica_check_is_running";
+	int is;
+
+	gfarm_mutex_lock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+	is = is_running;
+	gfarm_mutex_unlock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+
+	return (is);
+}
+
+static void
+replica_check_is_running_update(int is)
+{
+	static const char diag[] = "replica_check_is_running_update";
+
+	gfarm_mutex_lock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+	is_running = is;
+	gfarm_mutex_unlock(&replica_check_ctrl_mutex, diag,
+	    REPLICA_CHECK_CTRL_DIAG);
+}
 
 /* MAINCTRL */
 static void
@@ -1118,6 +1156,8 @@ replica_check_ctrl_set(int ctrl)
 	/* escape from replica_check_cond_wait() */
 	if (replica_check_ctrl_waiting == 0)
 		replica_check_cond_signal(diag, 0);
+	if (ctrl == ENABLE)
+		is_running = 1;
 
 	replica_check_ctrl = ctrl;
 	gfarm_cond_signal(&replica_check_ctrl_cond, diag,
@@ -1308,13 +1348,13 @@ replica_check_status_mainctrl(void) {
 	gfarm_int32_t rv;
 
 	if (replica_check_ctrl_enabled()) {
-		/* info_time_start needs giant_lock() */
-		if (info_time_start != 0)
+		if (replica_check_is_running())
 			rv = GFM_PROTO_REPLICA_CHECK_STATUS_ENABLE_RUNNING;
 		else
 			rv = GFM_PROTO_REPLICA_CHECK_STATUS_ENABLE_STOPPED;
 	} else {
-		/* info_time_start needs giant_lock() */
+		/* report the status of replica_check_main() */
+		/* info_time_start is protected by giant_lock */
 		if (info_time_start != 0)
 			rv = GFM_PROTO_REPLICA_CHECK_STATUS_DISABLE_RUNNING;
 		else
@@ -1392,9 +1432,11 @@ replica_check_thread(void *arg)
 
 		replica_check_cond_wait();
 		replica_check_ctrl_wait(); /* if the ctrl is stop, wait here */
+		replica_check_is_running_update(1);
 		if (replica_check_main()) /* error occured, retry */
 			replica_check_cond_signal("retry_by_error",
 			    gfarm_metadb_heartbeat_interval);
+		replica_check_is_running_update(0);
 
 		/* call dead_file_copy_scan_deferred_all */
 		if (time(NULL) >= dfc_scan_time) {
@@ -1410,8 +1452,13 @@ replica_check_thread(void *arg)
 			    " next=%ld", (long)dfc_scan_time);
 		}
 		t = t - time(NULL);
-		if (t > 0)
-			gfarm_sleep(t);
+		while (t > 0) {
+			gfarm_sleep(1);
+			t -= 1;
+			/* use latest minimum_interval */
+			if (t > replica_check_minimum_interval_locked())
+				t = replica_check_minimum_interval_locked();
+		}
 	}
 	/*NOTREACHED*/
 	return (NULL);
