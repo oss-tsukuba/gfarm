@@ -195,8 +195,7 @@ server/gfmd/readonly/readonly-replica_check_remove.sh
 # manual test: see log file when the result is UNSUPPORTED
 manual/server/gfsd/spool_check/lost_found.sh
 
-
-### sleep(metadb_server_heartbeat_interval) after bin/gfmd_restart_all
-### is required due to waiting for starting replica_check
+### When loop.sh runs, a test of replica_check will sleep for a long
+### time (almost metadb_server_heartbeat_interval) just after
+### bin/gfmd_restart_all.
 server/gfmd/readonly/gfhost-readonly-restart-gfmd.sh
-#sleep 180
