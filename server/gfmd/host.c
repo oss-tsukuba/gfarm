@@ -944,7 +944,7 @@ host_status_get_unlocked(struct host *host, struct host_status *status,
 {
 	*status = host->status; /* copy */
 	if (host_readonly_behaves_no_disk_space(host, host_status_flags)) {
-		status->disk_used = status->disk_used + status->disk_avail;
+		status->disk_used += status->disk_avail;
 		status->disk_avail = 0;
 	}
 }
@@ -2218,7 +2218,7 @@ gfm_server_statfs(struct peer *peer, int from_client, int skip)
 	gfarm_mutex_lock(&total_disk_mutex, diag, total_disk_diag);
 	used_change = total_disk_used_change_in_byte / 1024;
 	used = total_disk_used + used_change;
-	avail = AVAIL_SUB(total_disk_avail, used_change);
+	avail = total_disk_avail - used_change;
 	gfarm_mutex_unlock(&total_disk_mutex, diag, total_disk_diag);
 
 	/* use real used and avail even if readonly-hosts exists */
