@@ -502,8 +502,6 @@ pfor(struct action *act, int nfinfo, struct file_info **finfo,
 		return ("no destination node");
 	if (nsrc <= 0)
 		return ("no source node");
-	if (ndst < opt_nrep)
-		return ("not enough number of destination nodes");
 	if (nfinfo <= 0)
 		return (NULL); /* no file */
 	/* sort 'sinfo' in descending order wrt file size */
