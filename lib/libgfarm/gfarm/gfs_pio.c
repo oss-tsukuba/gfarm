@@ -461,7 +461,7 @@ count_incomplete(const char *url, int *np)
 			++num_incomplete;
 	gfs_replica_info_free(ri);
 	*np = num_incomplete;
-	return (GFARM_ERR_NO_ERROR);
+	return (e);
 }
 
 static gfarm_error_t
@@ -470,21 +470,18 @@ wait_for_replication(const char *url)
 	gfarm_error_t e;
 	int n;
 
-	for (;;) {
-		e = count_incomplete(url, &n);
-		if (e == GFARM_ERR_NO_ERROR) {
-			if (n <= 0)
-				break;
-			gflog_debug(GFARM_MSG_1005074,
-			    "wait_for_replication(%s): count_incomplete=%d",
-			    url, n);
-			sleep(1);
-		} else {
-			gflog_debug(GFARM_MSG_1005075,
-			    "wait_for_replication(%s), count_incomplete: %s",
-			    url, gfarm_error_string(e));
+	while ((e = count_incomplete(url, &n)) == GFARM_ERR_NO_ERROR) {
+		if (n == 0)
 			break;
-		}
+		gflog_info(GFARM_MSG_1005074,
+		    "wait_for_replication(%s): count_incomplete=%d, "
+		    "sleep 1 sec", url, n);
+		sleep(1);
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1005075,
+		    "wait_for_replication(%s), count_incomplete: %s",
+		    url, gfarm_error_string(e));
 	}
 	return (e);
 }
@@ -506,17 +503,14 @@ replicate_to_writable_host(const char *url)
 	GFARM_MALLOC_ARRAY(hosts, nhosts);
 	GFARM_MALLOC_ARRAY(ports, nhosts);
 	if (hosts == NULL || ports == NULL) {
-		gfarm_host_sched_info_free(available_nhosts, available_hosts);
 		e = GFARM_ERR_NO_MEMORY;
 		gflog_debug(GFARM_MSG_1005076,
 		    "allocation of hosts and ports failed: %s",
 		    gfarm_error_string(e));
-		return (e);
+		goto finish;
 	}
-
 	e = gfarm_schedule_hosts_acyclic_to_write(url,
-	    available_nhosts, available_hosts,
-	    &nhosts, hosts, ports);
+	    available_nhosts, available_hosts, &nhosts, hosts, ports);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1005077,
 		    "gfarm_schedule_hosts_acyclic_to_write: %s",
@@ -534,6 +528,7 @@ replicate_to_writable_host(const char *url)
 				    gfarm_error_string(e));
 		}
 	}
+finish:
 	gfarm_host_sched_info_free(available_nhosts, available_hosts);
 	free(hosts);
 	free(ports);
