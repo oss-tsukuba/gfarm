@@ -175,6 +175,7 @@ gftool/gfdf/gfdf-a.sh
 server/gfmd/readonly/gfhost-readonly.sh
 server/gfmd/readonly/readonly-gfreg.sh
 server/gfmd/readonly/readonly-gfrm.sh
+server/gfmd/readonly/readonly-gfdf-R.sh
 server/gfmd/readonly/readonly-gfrep.sh  # may take a long time
 server/gfmd/readonly/readonly-gfprep.sh
 server/gfmd/readonly/readonly-gfrep-ro-before-rep.sh
