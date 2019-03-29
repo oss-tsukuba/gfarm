@@ -7,7 +7,6 @@ replica_check_setup_test
 # setup: create a nlink=2 file
 hardlink $tmpf ${tmpf}.lnk
 set_ncopy $NCOPY1 $gftmp
-# wait replica_check_minimum_interval
 wait_for_rep $NCOPY1 $tmpf false "#1 setup nlink=2"  ### not timeout
 
 # set ncopy to the parent dirctory: do not decrease replicas
