@@ -419,13 +419,13 @@ the default function of <command moreinfo="none">gfhost</command>.
 	Values of flags are constructed by a bitwise-or of the
 	following list.
       </para>
-    </listitem>
-    <variablelist>
+      <variablelist>
       <varlistentry>
 	<term><constant>1</constant></term>
 	<listitem><para>readonly</para></listitem>
       </varlistentry>
-    </variablelist>
+      </variablelist>
+    </listitem>
   </varlistentry>
 
   <varlistentry>
