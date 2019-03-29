@@ -15,7 +15,7 @@ test_chown() {
     echo "***** gfreg *****"
     gfreg $data/1byte $FILE || error "gfreg"
     echo "***** gfrep -N $ncopy *****"
-    gfrep -N $ncopy $FILE > /dev/null || error "gfrep -N $ncopy"
+    $GFPREP -N $ncopy $GF_URL > /dev/null || error "gfrep -N $ncopy"
 
     allquota2=`get_quota_all`
     allusage2=`get_usage_all`

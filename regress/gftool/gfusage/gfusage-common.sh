@@ -2,6 +2,8 @@
 
 # XXX FIXME: runnig this script simultaneously is not safe
 
+GFPREP=$regress/bin/gfprep_for_test
+
 cleanup() {
     gfrm -rf $gftmp
 }
@@ -19,6 +21,7 @@ setup() {
     gfncopy -s 1 $gftmp > /dev/null 2>&1 # ignore
 
     FILE=$gftmp/file
+    GF_URL=gfarm://${FILE}
 
     gfreg $data/1byte $FILE || error "gfreg"
 
