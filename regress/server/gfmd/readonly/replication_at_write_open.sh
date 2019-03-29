@@ -20,7 +20,7 @@ __EOF__
 prepare_file() {
   srcfile="$1"
   gfrm -f "$GF_TEST_FILE"
-  gfhost -M "$ROHOST"
+  #gfhost -M "$ROHOST"
   #gfsched -w
   #gfdf -h
   #gfdf -ih
@@ -154,31 +154,57 @@ test_rawo_enable_1B_create() {
   test_rawo_enable_1B_common "-c" "$diag"
 }
 
-test_rawo_enable_writeopen_simultaneous() {
+simultaneous_common() {
+  remove=$1
+
   diag=test_rep_enable_writeopen_simultaneous
+  if [ $remove = 'true' ]; then
+    diag=${diag}_and_remove
+  fi
   export GFARM_CONFIG_FILE="$REP_ENABLE_CONF_FILE"
   srcfile="${localtmp}/bigfile"
-  dd if=/dev/zero "of=${srcfile}" bs=1M count=500
+  dd if=/dev/zero "of=${srcfile}" bs=1M count=500 2> /dev/null
   prepare_file "$srcfile"
   update_file "$GF_TEST_FILE" &
   p1=$!
   update_file "$GF_TEST_FILE" &
   p2=$!
+  sleep 1
+  if [ $remove = 'true' ]; then
+    gfrm "$GF_TEST_FILE" || exit
+  fi
   wait $p1
   r1=$?
   wait $p2
   r2=$?
   cleanup_file
-  if [ "$r1" -ne 0 -o "$r2" -ne 0 ]; then
-    echo "failed: ${diag}"
-    exit
+  if [ $remove = 'true' ]; then
+    if [ "$r1" -eq 0 -a "$r2" -eq 0 ]; then
+      echo "unexpected success: ${diag}"
+      exit
+    fi
+    # one update_file may succeed
+  else
+    if [ "$r1" -ne 0 -o "$r2" -ne 0 ]; then
+      echo "failed: ${diag}"
+      exit
+    fi
   fi
   unset GFARM_CONFIG_FILE
 }
 
+test_rawo_enable_writeopen_simultaneous() {
+    simultaneous_common false
+}
+
+test_rawo_enable_writeopen_simultaneous_and_remove() {
+    simultaneous_common true
+}
 
 ### rawo: replication_at_write_open
 
+test_rawo_enable_writeopen_simultaneous
+test_rawo_enable_writeopen_simultaneous_and_remove
 test_rawo_disable_1B_writeopen
 test_rawo_disable_1B_create
 test_rawo_disable_0B_writeopen
@@ -189,6 +215,5 @@ test_rawo_enable_1B_specified_host_writeopen
 test_rawo_enable_1B_specified_host_create
 test_rawo_enable_1B_writeopen
 test_rawo_enable_1B_create
-test_rawo_enable_writeopen_simultaneous
 
 exit_code="$exit_pass"
