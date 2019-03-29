@@ -1296,6 +1296,12 @@ search_idle_statfs_callback(void *closure)
 #if 0		/* NOTE: gfarm v2 does not use disk{used,avail} from gfsd */
 		h->diskused = blocks * bsize;
 		h->diskavail = bavail * bsize;
+		/*
+		 * If h->disk{used,avail} are updated here, gfsched -w
+		 * may include readonly hosts, because
+		 * READONLY_CONFIG_TMP_FILE is not created yet until
+		 * next heartbeat (GFS_PROTO_STATUS2).
+		 */
 #endif
 
 #ifndef __KERNEL__
