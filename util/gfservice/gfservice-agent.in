@@ -496,7 +496,8 @@ slavestart_gfmd()
 	if [ -x /bin/systemctl ]; then
 		log_debug "slavestart_gfmd: execute gfservice-timeout $1" \
 			"systemctl start `basename $GFMD_RC`"
-		gfservice-timeout $1 systemctl slavestart \
+		# NOTE: "systemctl slavestart" is not defined.
+		gfservice-timeout $1 systemctl start \
 			`basename $GFMD_RC` > /dev/null 2>&1
 	else
 		log_debug "slavestart_gfmd: execute gfservice-timeout $1" \
@@ -518,7 +519,7 @@ stop_gfmd()
 	TIMEOUT=`get_param timeout || echo 'no'`
 
 	if [ -x /bin/systemctl ]; then
-		log_debug "start_gfmd: execute gfservice-timeout $1" \
+		log_debug "stop_gfmd: execute gfservice-timeout $1" \
 			"systemctl stop `basename $GFMD_RC`"
 		gfservice-timeout $1 systemctl stop \
 			`basename $GFMD_RC` > /dev/null 2>&1
@@ -826,7 +827,7 @@ subcmd_stop_gfsd()
 	log_debug "subcmd_stop_gfsd"
 
 	TIMEOUT=`get_param timeout || echo 'no'`
-	stop_gfmd $TIMEOUT
+	stop_gfsd $TIMEOUT
 	log_debug "end subcmd_stop_gfsd"
 }
 
@@ -844,8 +845,12 @@ subcmd_config_gfarm()
 	[ $? -ne 0 ] && log_error "config-gfarm failed"
 
 	case $AUTH_TYPE in
-	gsi|gsi_auth) set_conf $GFMD_CONF auth 'enable sharedsecret *';;
+	gsi|gsi_auth) set_conf $GFMD_CONF 'auth enable sharedsecret' '*';;
 	esac
+
+	TIMEOUT=`get_param timeout || echo 'no'`
+	stop_gfmd $TIMEOUT
+	start_gfmd $TIMEOUT
 
 	log_debug "end subcmd_config_gfarm"
 }
@@ -865,11 +870,15 @@ subcmd_config_gfarm_master()
 
 	unset_conf $GFMD_CONF metadb_server_force_slave
 	case $AUTH_TYPE in
-	gsi|gsi_auth) set_conf $GFMD_CONF auth 'enable sharedsecret *';;
+	gsi|gsi_auth) set_conf $GFMD_CONF 'auth enable sharedsecret' '*';;
 	esac
 
 	set_conf $GFARM_CONF metadb_server_list \
 		"${BACKEND_HOSTNAME}:${GFMD_PORT}"
+
+	TIMEOUT=`get_param timeout || echo 'no'`
+	stop_gfmd $TIMEOUT
+	start_gfmd $TIMEOUT
 
 	log_debug "end subcmd_config_gfarm_master"
 }
