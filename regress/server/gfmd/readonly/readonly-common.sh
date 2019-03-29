@@ -4,6 +4,8 @@ HOST_INFO_FLAG_READONLY=1
 N_REQUIRED_SDHOSTS=2
 HOST_FLAGS_MAP_FILE="${localtmp}/readonly-common-host-flags.txt"
 
+GFPREP=$regress/bin/gfprep_for_test
+
 GFS_PIO_TEST_P=${base}/../../../lib/libgfarm/gfarm/gfs_pio_test/gfs_pio_test
 update_file() {
   V="-v"
@@ -126,17 +128,13 @@ rep_retry() {
    sleep_time=2
    timeout=`expr $metadb_server_heartbeat_interval + 2`
 
-   opts=
-   if [ "$cmd" = "gfprep" ]; then
-     opts="-U -B"   # -U: workaround to ignore /tmp/gfsd-readonly-*
-   fi
    sec=0
    while :; do
       $cmd -q $opts $@ && return 0
       [ $sec -ge $timeout ] && break
       sec=`expr $sec + ${sleep_time}`
       #echo $cmd -q $opts $@
-      echo "[${sec}] ${cmd}_retry: wait for removing /tmp/gfsd-readonly-*"
+      echo "[${sec}] rep_retry(${cmd}): wait for removing /tmp/gfsd-readonly-*"
       #gfdf -ih
       #gfdf -h
       sleep ${sleep_time}
@@ -150,7 +148,7 @@ gfrep_retry() {
 }
 
 gfprep_retry() {
-   rep_retry gfprep $@
+   rep_retry "$GFPREP" $@
 }
 
 test_gfrep_1_to_2() {

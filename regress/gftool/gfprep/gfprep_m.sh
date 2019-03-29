@@ -17,8 +17,8 @@ else
   exit $exit_fail
 fi
 
-OPT='-d -B'
-if cat $local_tmpfile1 | gfprep $OPT -m -h - gfarm:${gf_dir1}; then
+OPT=""
+if cat $local_tmpfile1 | $GFPREP $OPT -m -h - gfarm:${gf_dir1}; then
   :
 else
   echo failed: gfprep $OPT -m

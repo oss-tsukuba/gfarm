@@ -1,11 +1,11 @@
 . ./regress.conf
 
-#TODO move this to ../replica_check/replica_check-common.sh
-
 NCOPY1=3  # NCOPY1 >= 3
 NCOPY2=2  # NCOPY2 < NCOPY1
 NCOPY_TIMEOUT=3  # sec. (wait for replication after replica_check is finished)
 hostgroupfile=$localtop/.hostgroup.$$
+
+GFPREP=$regress/bin/gfprep_for_test
 
 MAINCTRL=
 REPREMOVE=
@@ -18,6 +18,7 @@ MINIMUM_INTERVAL=
 
 replica_check_setup_test() {
   tmpf=$gftmp/foo
+
   replica_check_check_supported_env
   trap 'replica_check_clean_test; exit $exit_trap' $trap_sigs
   trap 'replica_check_clean_test; exit $exit_code' 0
@@ -28,6 +29,7 @@ replica_check_setup_test() {
   replica_check_setup_test_ncopy
   replica_check_setup_test_repattr
   replica_check_setup_test_conf
+  gfreg $data/1byte $tmpf || exit
 }
 
 replica_check_del_testdir() {
@@ -133,35 +135,21 @@ replica_check_restore_repcheck_conf() {
 }
 
 replica_check_setup_test_ncopy() {
-  if set_ncopy 1 $gftmp &&  ### avoid looking parent gfarm.ncopy
-    gfreg $data/1byte $tmpf; then
-    :
-  else
-    exit
-  fi
+  set_ncopy 1 $gftmp || exit  ### avoid looking parent gfarm.ncopy
 }
 
 replica_check_setup_test_repattr() {
   for h in $hosts; do
-    if gfhostgroup -s $h test0; then
-      :
-    else
-      exit
-    fi
+    gfhostgroup -s $h test0 || exit
   done
 
-  if gfncopy -S test0:1 $gftmp && # avoid looking parent gfarm.replicainfo
-    gfreg $data/1byte $tmpf; then
-    :
-  else
-    exit
-  fi
+  gfncopy -S test0:1 $gftmp || exit # avoid looking parent gfarm.replicainfo
 }
 
 replica_check_setup_test_conf() {
   if gfrepcheck enable && \
      gfrepcheck sleep_time 0 && \
-     gfrepcheck minimum_interval 1 && \
+     gfrepcheck minimum_interval 0 && \
      gfrepcheck remove enable && \
      gfrepcheck remove_grace_used_space_ratio 0 && \
      gfrepcheck remove_grace_time 0; then
@@ -174,37 +162,22 @@ replica_check_setup_test_conf() {
 wait_for_expected_status() {
   expected="$1"
   count=0
-  while true; do
-    status=`gfrepcheck status`
-    if [ $? -ne 0 ]; then
-      exit
-    fi
-    if [ "$status" = "$expected" ]; then
-      break
-    fi
+  while :; do
+    status=`gfrepcheck status` || exit
+    [ "$status" = "$expected" ] && break
     count=`expr ${count} + 1`
-    echo "sleep [${count}]: waiting for '${expected}' of 'gfrepcheck status'"
+    echo "sleep [${count}]: waiting for '${expected}': (now) ${status}"
     sleep 1
   done
 }
 
 wait_for_replica_check_finished() {
-  if gfrepcheck stop; then
-    :
-  else
-    exit
-  fi
+  gfrepcheck stop || exit
   wait_for_expected_status "disable / stopped"
-  if gfrepcheck start; then
-    :
-  else
-    exit
-  fi
-  minimum_interval=`gfrepcheck minimum_interval status`
-  if [ $? -ne 0 ]; then
-    exit
-  fi
-  sleep ${minimum_interval}
+  gfrepcheck start || exit
+  ### minimum_interval is 0
+  #minimum_interval=`gfrepcheck minimum_interval status` || exit
+  #sleep ${minimum_interval}
   wait_for_expected_status "enable / stopped"
 }
 
@@ -215,13 +188,15 @@ wait_for_rep() {
   diag=$4
   WAIT_TIME=0
 
-  wait_for_replica_check_finished
+  wait_for_replica_check_finished   # may take a long time
+  start_time=`date +%s`
+  end_time=`expr $start_time + $NCOPY_TIMEOUT`
   while
-    if [ `gfncopy -c $file` -eq $num ]; then
+    if [ "`gfncopy -c $file`" -eq $num ]; then
       if [ $expect_timeout = 'true' ]; then
         echo -n "replicas: "
         gfwhere $file
-        echo "unexpected: Timeout must occur: ${diag}"
+        echo "unexpected success: Timeout must occur: ${diag}"
         exit
       fi
       false # exit from this loop
@@ -229,13 +204,16 @@ wait_for_rep() {
       true
     fi
   do
-    WAIT_TIME=`expr $WAIT_TIME + 1`
-    if [ $WAIT_TIME -gt $NCOPY_TIMEOUT ]; then
+    now=`date +%s`
+    if [ $now -gt $end_time ]; then
       if [ $expect_timeout = 'true' ]; then
         echo "expected replication timeout: ${diag}"
         return
       fi
       echo "unexpected replication timeout: ${diag}"
+      gfwhere $file
+      gfhost -M
+      gfdf -h
       exit
     fi
     sleep 1
@@ -245,7 +223,7 @@ wait_for_rep() {
 set_ncopy() {
   if gfncopy -s $1 $2; then
     :
-   else
+  else
     echo gfncopy -s failed
     exit
   fi
@@ -269,7 +247,7 @@ hardlink() {
 gfprep_n() {
   NCOPY=$1
   FILE=$2
-  if gfprep -B $GFPREP_OPT -N $NCOPY gfarm:${FILE}; then
+  if $GFPREP -B $GFPREP_OPT -N $NCOPY gfarm:${FILE}; then
     :
   else
     echo failed: gfprep $GFPREP_OPT -N $NCOPY gfarm:${FILE}

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# -U: ignore /tmp/gfsd-readonly-*
+# -B: ignore high load average
+
+gfpcopy -U -B $@
