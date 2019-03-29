@@ -1,3 +1,27 @@
+Release note for Gfarm 2.7.13
+=============================
+
+[2019.3.22]
+
+New configuration directive
+* replication_at_write_open - if this directive is enabled, even when
+  all file replicas of a file are stored at read-only filesystem
+  nodes, it can be updated by replicating it to a read-write
+  filesystem node before opening in the write mode.  Default is
+  enable.
+
+Updated feature
+* read-only mode - filesystem node can be changed to read only by
+  gfhost -m -f 1 hostname
+* gfdf - -R option to know real disk usage
+
+Bug fix
+* gfmd failover does not work, which was introduced by the version
+  2.7.12
+* compilation error with InfiniBand, which was introduced by the
+  version 2.7.12
+* gfquota -d does not work against a writable directory
+
 Release note for Gfarm 2.7.12
 =============================
 
