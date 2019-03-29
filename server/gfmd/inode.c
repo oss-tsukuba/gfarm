@@ -4664,7 +4664,7 @@ inode_open(struct file_opening *fo, struct dirset *tdirset)
 		    (fo->flag & GFARM_FILE_TRUNC) == 0 &&
 		    !inode_has_no_replica(inode) &&
 		    !inode_has_writable_replica(inode)) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005081,
 			    "inode_open: NO_SPACE or READ_ONLY_FILE_SYSTEM");
 			return (GFARM_ERR_NO_SPACE);
 		}

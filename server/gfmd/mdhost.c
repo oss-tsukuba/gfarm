@@ -764,7 +764,7 @@ mdhost_enter(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 		return (e);
 
 	if ((e = mdhost_updated()) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005079,
 		    "%s", gfarm_error_string(e));
 	return (e);
 }
@@ -984,7 +984,7 @@ mdhost_modify_in_cache(struct mdhost *mh, struct gfarm_metadb_server *ms)
 		return (e);
 
 	if ((e = mdhost_updated()) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005080,
 		    "%s", gfarm_error_string(e));
 	return (e);
 }

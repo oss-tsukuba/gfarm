@@ -450,7 +450,7 @@ count_incomplete(const char *url, int *np)
 	e = gfs_replica_info_by_name(url,
 	    GFS_REPLICA_INFO_INCLUDING_INCOMPLETE_COPY, &ri);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005073,
 		    "gfs_replica_info_by_name(%s): %s",
 		    url, gfarm_error_string(e));
 		return (e);
@@ -475,12 +475,12 @@ wait_for_replication(const char *url)
 		if (e == GFARM_ERR_NO_ERROR) {
 			if (n <= 0)
 				break;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005074,
 			    "wait_for_replication(%s): count_incomplete=%d",
 			    url, n);
 			sleep(1);
 		} else {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005075,
 			    "wait_for_replication(%s), count_incomplete: %s",
 			    url, gfarm_error_string(e));
 			break;
@@ -508,7 +508,7 @@ replicate_to_writable_host(const char *url)
 	if (hosts == NULL || ports == NULL) {
 		gfarm_host_sched_info_free(available_nhosts, available_hosts);
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005076,
 		    "allocation of hosts and ports failed: %s",
 		    gfarm_error_string(e));
 		return (e);
@@ -518,7 +518,7 @@ replicate_to_writable_host(const char *url)
 	    available_nhosts, available_hosts,
 	    &nhosts, hosts, ports);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005077,
 		    "gfarm_schedule_hosts_acyclic_to_write: %s",
 		    gfarm_error_string(e));
 	} else {
@@ -529,7 +529,7 @@ replicate_to_writable_host(const char *url)
 			    e == GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS)
 				break;
 			else
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1005078,
 				    "gfs_replicate_to: %s",
 				    gfarm_error_string(e));
 		}
