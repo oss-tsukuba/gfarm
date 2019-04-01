@@ -36,9 +36,7 @@
 <varlistentry>
 <term><option>-a</option></term>
 <listitem>
-<para>Gfarmファイルシステム全体のディスク空き容量を表示します。
-本書 NOTES も参照してください。
-</para>
+<para>Gfarmファイルシステム全体のディスク空き容量を表示します。</para>
 </listitem>
 </varlistentry>
 
@@ -102,7 +100,7 @@
 <term><option>-R</option></term>
 <listitem>
 <para>
-読込専用のファイルシステムノードだとしても、実際の空き容量を表示します。
+読込専用のファイルシステムノードも実際の空き容量を表示します。
 本書 NOTES も参照してください。
 </para>
 </listitem>
@@ -119,10 +117,13 @@
 
 <refsect1 id="notes"><title>NOTES</title>
 <para>
--R または -a を指定しない場合、読込専用化されたファイルシステムノードは
-ディスク使用率が 100% (空きが 0) として見えます。
-Gfarm バージョン 2.7.13 から、gfhost コマンドを使って
-ファイルシステムノードを読込専用に変更可能になりました。
+<command moreinfo="none">gfhost</command> により、
+読込専用と指定されれると、
+Gfarmファイルシステム内部ではそれらのノードはディスクフルと扱われ、
+空き容量が 0 で表示されます。
+-R オプションを用いることにより、実際の空き容量を表示することができます。
+また、-a オプションによるファイルシステム全体の空き容量は、
+-R オプションをつけたときと同様に実際の空き容量が表示されます。
 </para>
 </refsect1>
 

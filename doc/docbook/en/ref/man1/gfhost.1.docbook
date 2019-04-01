@@ -186,8 +186,10 @@ is the default function of <command moreinfo="none">gfhost</command>.
 	the port number of <command moreinfo="none">gfsd</command> on
 	the filesystem node.
 	The -n option is optional, which specifies the number of CPUs
-	of the filesystem node.  When the -n option is omitted, 1 CPU
-	is assumed.
+	of the filesystem node.  When it is omitted, 1 CPU is
+	assumed.
+	The -f option is optional, which specifies the flag of the
+	file system node.  When it is omitted, 0 is assumed.
       </para>
     </listitem>
   </varlistentry>

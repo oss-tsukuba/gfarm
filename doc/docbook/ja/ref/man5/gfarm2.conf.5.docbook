@@ -2911,6 +2911,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;write_target_domain_statement&gt; |
 	&lt;minimum_free_disk_space_statement&gt; |
 	&lt;direct_local_access_statement&gt; |
+	&lt;replication_at_write_open_statement&gt; |
 	&lt;simultaneous_replication_receivers_statement&gt; |
 	&lt;replication_busy_host_statement&gt; |
 	&lt;gfsd_connection_cache_statement&gt; |
@@ -3394,6 +3395,11 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <varlistentry>
 <term>&lt;direct_local_access_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"direct_local_access" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replication_at_write_open_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replication_at_write_open" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

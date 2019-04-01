@@ -1722,13 +1722,10 @@ Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
 <term><token>replication_at_write_open</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>
-Even if the filesystem node of the file replica has no disk space
-(implying readonly) (= non-writable replica) when a existing file is
-over-written, the file can be updated by this directive.
-
-When this directive is enabled, a non-writable replica will be
-automatically replicated to another filesystem node before write-open.
-
+When all file replicas of a file are stored at read-only filesystem
+nodes, it cannot be updated.  When this directive is enabled, it is
+replicated to a read-write filesystem node before opening in the
+write mode to make it possible to open in the write mode.
 The default is <token>enable</token>.
 </para>
 <para>
@@ -2937,6 +2934,7 @@ The default size is 16 MiB.
 	&lt;write_target_domain_statement&gt; |
 	&lt;minimum_free_disk_space_statement&gt; |
 	&lt;direct_local_access_statement&gt; |
+	&lt;replication_at_write_open_statement&gt; |
 	&lt;simultaneous_replication_receivers_statement&gt; |
 	&lt;replication_busy_host_statement&gt; |
 	&lt;gfsd_connection_cache_statement&gt; |
@@ -3420,6 +3418,11 @@ The default size is 16 MiB.
 <varlistentry>
 <term>&lt;direct_local_access_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"direct_local_access" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replication_at_write_open_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replication_at_write_open" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
