@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfdf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 30 Dec 2010
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 14 Mar 2019
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFDF" "1" "30 Dec 2010" "Gfarm" "Gfarm"
+.TH "GFDF" "1" "14 Mar 2019" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -78,12 +78,20 @@ Gfarmファイルシステム全体のディスク空き容量を表示します
 指定したドメイン名に含まれるファイルシステムノードの状態を表示します。
 .RE
 .PP
+\fB\-R\fR
+.RS 4
+読込専用のファイルシステムノードも実際の空き容量を表示します。 本書 NOTES も参照してください。
+.RE
+.PP
 \fB\-?\fR
 .RS 4
 引数オプションを表示します。
 .RE
+.SH "NOTES"
+.PP
+\fBgfhost\fR
+により、 読込専用と指定されれると、 Gfarmファイルシステム内部ではそれらのノードはディスクフルと扱われ、 空き容量が 0 で表示されます。 \-R オプションを用いることにより、実際の空き容量を表示することができます。 また、\-a オプションによるファイルシステム全体の空き容量は、 \-R オプションをつけたときと同様に実際の空き容量が表示されます。
 .SH "SEE ALSO"
 .PP
-
 \fBgfhost\fR(1),
 \fBgfarm2.conf\fR(5)
