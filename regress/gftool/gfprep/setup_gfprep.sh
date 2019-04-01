@@ -53,7 +53,7 @@ check_N() {
   if [ `awk '/Ncopy/{print $NF}' $local_tmpfile2` -eq $N ]; then
     :
   else
-    echo "unexpected the number of replicas (not $N)"
+    echo "unexpected number of replicas (not $N)"
     gfwhere -al $P
     cat $local_tmpfile2
     clean_test
