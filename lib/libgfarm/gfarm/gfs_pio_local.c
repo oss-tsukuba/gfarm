@@ -313,8 +313,8 @@ gfs_pio_local_copyfile(int r_fd, gfarm_off_t r_off,
 			if (read_mode_unknown) {
 				read_mode_unknown = 0;
 				rv = pread(r_fd, buffer, to_read, r_off);
-				if (rv == -1 && errno == ESPIPE &&
-				    r_off <= 0) {
+				if (rv == -1 && (errno == ESPIPE ||
+				    errno == ENXIO) && r_off <= 0) {
 					read_mode_thread_safe = 0;
 					rv = read(r_fd, buffer, to_read);
 				}
