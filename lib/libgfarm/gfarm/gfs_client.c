@@ -2431,7 +2431,8 @@ gfs_recvfile_common(struct gfp_xdr *conn, gfarm_int32_t *dst_errp,
 					mode_unknown = 0;
 					rv = pwrite(w_fd,
 					    buffer + i, partial - i, w_off);
-					if (rv == -1 && errno == ESPIPE &&
+					if (rv == -1 && (errno == ESPIPE ||
+						errno == ENXIO) &&
 					    w_off <= 0) {
 						mode_thread_safe = 0;
 						rv = write(w_fd,
