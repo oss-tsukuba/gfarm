@@ -124,12 +124,12 @@ END {
 		if (verbose) {
 			others = sprintf("%-11s", all[test, 1])
 			for (j = 2; j <= n_logfile; j++)
-				others = sprintf("%s/%-11s",
+				others = sprintf("%s|%-11s",
 				    others, all[test, j])
 		} else if (others == "SHOW-ALL") {
 			others = all[test, 1]
 			for (j = 2; j <= n_logfile; j++)
-				others = others "/" all[test, j]
+				others = others "|" all[test, j]
 		}
 
 		display[test] = others
@@ -170,4 +170,5 @@ END {
 		if (n_unsupported > 0)
 			print "  unsupported        : ", n_unsupported
 	}
+	exit n_fail == 0 && n_unresolved == 0 ? 0 : 1
 }' $schedule $*
