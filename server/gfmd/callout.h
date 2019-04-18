@@ -7,6 +7,8 @@
  * callout_startup(9):	callout_module_init()
  * callout_init(9)	callout_new()
  * callout_destroy(9):	callout_free()
+ *
+ * Also, calling callout_ack() is unnecessary, it's automaically done.
  */
 
 struct callout;
@@ -21,5 +23,5 @@ void callout_reset(struct callout *, int,
 void callout_setfunc(struct callout *,
 	struct thread_pool *, void *(*)(void *), void *);
 int callout_stop(struct callout *);
+int callout_halt(struct callout *, pthread_mutex_t *);
 int callout_invoking(struct callout *);
-void callout_ack(struct callout *);
