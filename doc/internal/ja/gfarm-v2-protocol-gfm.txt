@@ -698,6 +698,16 @@
 		エラー == GFARM_ERR_NO_ERROR の場合:
 		i:status
 
+	GFM_PROTO_REPLICA_FIX
+	  暗黙の入力: i:current file descriptor
+	  入力: l:iflags, i:timeout_seconds
+			iflags の下位第0ビットが 1 の場合、複製処理要求を出す
+			iflags の下位第1ビットが 1 の場合、複製処理完了を待つ
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:oflags
+			oflags の下位第0ビットが 1 の場合、複製の一部が実施不能
+
 	GFM_PROTO_FHSET_CKSUM
 	  入力: l:i_node_number, l:generation
 		s:cksum_type, b:cksum
