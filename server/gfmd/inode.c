@@ -159,12 +159,12 @@ struct inode_activity {
 	union inode_state_type_specific {
 		struct inode_state_file {
 			enum {
-				EVENT_NONE,
-				EVENT_GEN_UPDATED,
-				EVENT_GEN_UPDATED_BY_COOKIE
-			} event_type;
-			struct event_waiter *event_waiters;
-			struct peer *event_source;
+				GEN_UPDATE_NULL,
+				GEN_UPDATE_DONE,
+				GEN_UPDATE_DONE_BY_COOKIE
+			} gen_update_type;
+			struct event_waiter *gen_update_waiters;
+			struct peer *gen_update_source;
 
 			struct gfarm_timespec last_update;
 			int writers, spool_writers;
@@ -718,9 +718,9 @@ inode_activity_alloc(struct dirset *tdirset)
 	ia->u.f.spool_writers = 0;
 	ia->u.f.replication_pending = 0;
 
-	ia->u.f.event_waiters = NULL;
-	ia->u.f.event_source = NULL;
-	ia->u.f.event_type = EVENT_NONE;
+	ia->u.f.gen_update_waiters = NULL;
+	ia->u.f.gen_update_source = NULL;
+	ia->u.f.gen_update_type = GEN_UPDATE_NULL;
 
 	ia->u.f.last_update.tv_sec = 0;
 	ia->u.f.last_update.tv_nsec = 0;
@@ -768,7 +768,7 @@ inode_activity_free_try(struct inode *inode)
 	struct inode_activity *ia = inode->u.c.activity;
 
 	if (ia->openings.opening_next == &ia->openings &&
-	    ia->u.f.event_type == EVENT_NONE &&
+	    ia->u.f.gen_update_type == GEN_UPDATE_NULL &&
 	    ia->u.f.rstate == NULL) {
 		inode_activity_free(ia);
 		inode->u.c.activity = NULL;
@@ -2448,7 +2448,7 @@ inode_new_generation_is_pending(struct inode *inode)
 		gflog_debug(GFARM_MSG_1002247, "%s: not opened", diag);
 		return (0);
 	}
-	return (ia->u.f.event_type != EVENT_NONE);
+	return (ia->u.f.gen_update_type != GEN_UPDATE_NULL);
 }
 
 void
@@ -2457,8 +2457,8 @@ inode_new_generation_by_fd_start(struct inode *inode, struct peer *peer)
 	struct inode_activity *ia = inode->u.c.activity;
 
 	assert(ia != NULL);
-	ia->u.f.event_type = EVENT_GEN_UPDATED;
-	ia->u.f.event_source = peer;
+	ia->u.f.gen_update_type = GEN_UPDATE_DONE;
+	ia->u.f.gen_update_source = peer;
 }
 
 gfarm_error_t
@@ -2466,7 +2466,7 @@ inode_new_generation_by_cookie_start(struct inode *inode,
 	struct peer *peer, gfarm_uint64_t cookie)
 {
 	/*
-	 * EVENT_GEN_UPDATED_BY_COOKIE is one of special cases:
+	 * GEN_UPDATE_DONE_BY_COOKIE is one of special cases:
 	 * inode_activity is allocated without file_opening.
 	 */
 	struct inode_activity *ia = inode_activity_alloc_or_update(
@@ -2477,8 +2477,8 @@ inode_new_generation_by_cookie_start(struct inode *inode,
 		    "unable to track inode generation");
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	ia->u.f.event_type = EVENT_GEN_UPDATED_BY_COOKIE;
-	ia->u.f.event_source = peer;
+	ia->u.f.gen_update_type = GEN_UPDATE_DONE_BY_COOKIE;
+	ia->u.f.gen_update_source = peer;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -2501,11 +2501,11 @@ inode_new_generation_finish_event_post(struct inode *inode)
 {
 	struct inode_activity *ia = inode->u.c.activity;
 
-	event_waiters_signal(ia->u.f.event_waiters);
-	ia->u.f.event_waiters = NULL;
+	event_waiters_signal(ia->u.f.gen_update_waiters);
+	ia->u.f.gen_update_waiters = NULL;
 
-	ia->u.f.event_type = EVENT_NONE;
-	ia->u.f.event_source = NULL;
+	ia->u.f.gen_update_type = GEN_UPDATE_NULL;
+	ia->u.f.gen_update_source = NULL;
 }
 
 gfarm_error_t
@@ -2521,16 +2521,16 @@ inode_new_generation_by_fd_finish(struct inode *inode, struct peer *peer,
 		return (e);
 
 	ia = inode->u.c.activity;
-	if (ia->u.f.event_type != EVENT_GEN_UPDATED) {
+	if (ia->u.f.gen_update_type != GEN_UPDATE_DONE) {
 		gflog_warning(GFARM_MSG_1004020,
 		    "%s: not pending generation update: %d",
-		    diag, ia->u.f.event_type);
+		    diag, ia->u.f.gen_update_type);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
-	assert(ia->u.f.event_source != NULL);
+	assert(ia->u.f.gen_update_source != NULL);
 	if (peer == NULL) {
-		peer = ia->u.f.event_source;
-	} else if (peer != ia->u.f.event_source) {
+		peer = ia->u.f.gen_update_source;
+	} else if (peer != ia->u.f.gen_update_source) {
 		gflog_warning(GFARM_MSG_1002252, "%s: different peer", diag);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
@@ -2562,16 +2562,16 @@ inode_new_generation_by_cookie_finish(
 		return (e);
 
 	ia = inode->u.c.activity;
-	if (ia->u.f.event_type != EVENT_GEN_UPDATED_BY_COOKIE) {
+	if (ia->u.f.gen_update_type != GEN_UPDATE_DONE_BY_COOKIE) {
 		gflog_warning(GFARM_MSG_1004021,
 		    "%s: not pending generation update by cookie: %d",
-		    diag, ia->u.f.event_type);
+		    diag, ia->u.f.gen_update_type);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
-	assert(ia->u.f.event_source != NULL);
+	assert(ia->u.f.gen_update_source != NULL);
 	if (peer == NULL) {
-		peer = ia->u.f.event_source;
-	} else if (peer != ia->u.f.event_source) {
+		peer = ia->u.f.gen_update_source;
+	} else if (peer != ia->u.f.gen_update_source) {
 		gflog_warning(GFARM_MSG_1002252, "%s: different peer", diag);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
@@ -2620,12 +2620,12 @@ inode_new_generation_wait(struct inode *inode, struct peer *peer,
 		    diag, (long long)inode_get_number(inode));
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
-	if (ia->u.f.event_type == EVENT_NONE) {
+	if (ia->u.f.gen_update_type == GEN_UPDATE_NULL) {
 		gflog_warning(GFARM_MSG_1002255, "%s: not pending", diag);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 
-	e = event_waiter_alloc(peer, action, arg, &ia->u.f.event_waiters);
+	e = event_waiter_alloc(peer, action, arg, &ia->u.f.gen_update_waiters);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_UNFIXED, "%s: %s",
 		    diag, gfarm_error_string(e));
