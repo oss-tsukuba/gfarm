@@ -225,11 +225,10 @@ void inode_replication_get_cksum_mode(struct inode *, struct host *,
 gfarm_error_t inode_replication_request(struct host *, struct host *,
 	struct inode *, struct file_replicating *, const char *);
 
-gfarm_error_t inode_replica_hostset(
-	struct inode *, gfarm_int32_t *, struct hostset **,
-	gfarm_int32_t *, struct hostset **);
-gfarm_error_t inode_replica_hosts_valid(struct inode *,
-	gfarm_int32_t *, struct host ***);
+gfarm_error_t
+inode_replica_fix_prepare(struct inode *, const char *,
+	int *, struct host ***,
+	int *, struct hostset **, int *, struct hostset **);
 
 gfarm_error_t inode_replica_list_by_name(struct inode *,
 	gfarm_int32_t *, char ***);

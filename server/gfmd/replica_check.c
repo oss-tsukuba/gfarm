@@ -353,67 +353,57 @@ replica_check_fix(struct replication_info *info)
 	int req_ok_num = 0;
 	static const char diag[] = "replica_check_fix";
 
-	if (inode == NULL || !inode_is_file(inode) ||
-	    inode_get_gen(inode) != info->gen) {
+	if (inode == NULL || inode_get_gen(inode) != info->gen) {
 		gflog_debug(GFARM_MSG_1003623,
 		    "replica_check: %lld:%lld was changed, ignore",
 		    (long long)info->inum, (long long)info->gen);
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
-	if (inode_is_opened_for_writing(inode)) {
-		gflog_debug(GFARM_MSG_1003627,
-		    "replica_check: %lld:%lld:%s: "
-		    "opened in write mode, ignored",
-		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)));
-		return (GFARM_ERR_NO_ERROR); /* ignore */
-	}
 
-	e = inode_replica_hostset(
-	    inode, &n_existing, &existing, &n_being_removed, &being_removed);
-	if (e != GFARM_ERR_NO_ERROR) { /* no memory */
-		gflog_error(GFARM_MSG_1003692,
-		    "replica_check: %lld:%lld:%s: replica_hosts: %s",
+	e = inode_replica_fix_prepare(inode, diag,
+	    &n_srcs, &srcs,
+	    &n_existing, &existing,
+	    &n_being_removed, &being_removed);
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_NO_SUCH_OBJECT) /* 0byte file */
+			return (GFARM_ERR_NO_ERROR); /* already OK */
+		if (e == GFARM_ERR_NOT_A_REGULAR_FILE /* inode changed */ ||
+		    e == GFARM_ERR_FILE_BUSY /* currently writing */) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "replica_check: %lld:%lld:%s: ignored: %s",
+			    (long long)info->inum, (long long)info->gen,
+			    user_name(inode_get_user(inode)),
+			    gfarm_error_string(e));
+			return (GFARM_ERR_NO_ERROR); /* ignore */
+		}
+		if (e == GFARM_ERR_INPUT_OUTPUT) { /* lost all reaplica */
+			gflog_error(GFARM_MSG_1003624,
+			    "replica_check: %lld:%lld:%s: lost all replicas",
+			    (long long)info->inum, (long long)info->gen,
+			    user_name(inode_get_user(inode)));
+			return (GFARM_ERR_NO_ERROR); /* error, ignore */
+		}
+		if (e == GFARM_ERR_NO_FILESYSTEM_NODE) {
+			/* all of gfsd are down, no available replica */
+			REDUCED_WARN(GFARM_MSG_1004274, &hosts_down_state,
+			    "replica_check: %lld:%lld:%s: "
+			    "no available replica",
+			    (long long)info->inum, (long long)info->gen,
+			    user_name(inode_get_user(inode)));
+			return (GFARM_ERR_NO_ERROR); /* ignore */
+		}
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "replica_check: %lld:%lld:%s: %s",
 		    (long long)info->inum, (long long)info->gen,
 		    user_name(inode_get_user(inode)), gfarm_error_string(e));
-		return (e); /* retry */
-	}
-	if (n_existing == 0) {
-		hostset_free(existing);
-		hostset_free(being_removed);
-		if (inode_get_size(inode) == 0)
-			return (GFARM_ERR_NO_ERROR); /* normally */
-		gflog_error(GFARM_MSG_1003624,
-		    "replica_check: %lld:%lld:%s: lost all replicas",
-		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)));
-		return (GFARM_ERR_NO_ERROR); /* error, ignore */
+		return (e); /* probably GFARM_ERR_NO_MEMORY: retry */
 	}
 
-	/* available replicas for source */
-	e = inode_replica_hosts_valid(inode, &n_srcs, &srcs);
-	if (e != GFARM_ERR_NO_ERROR) { /* no memory */
-		hostset_free(existing);
-		hostset_free(being_removed);
-		gflog_error(GFARM_MSG_1003628,
-		    "replica_check: %lld:%lld:%s: replica_list: %s",
-		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)), gfarm_error_string(e));
-		return (e); /* retry */
-	}
-
-	/* n_srcs may be 0, because host_is_up() may change */
-	if (n_srcs <= 0) { /* hosts are down, no available replica */
-		hostset_free(existing);
-		hostset_free(being_removed);
-		free(srcs);
-		REDUCED_WARN(GFARM_MSG_1004274, &hosts_down_state,
-		    "replica_check: %lld:%lld:%s: no available replica",
-		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)));
-		return (GFARM_ERR_NO_ERROR); /* ignore */
-	}
-
+	/*
+	 * it's faster to check this before inode_replica_fix_prepare(),
+	 * but we do this after the function,
+	 * because "lost all replica" cannot be detected otherwise.
+	 */
 	if (info->replica_spec.repattr == NULL &&
 	    info->replica_spec.desired_number <= 0) { /* disabled */
 		hostset_free(existing);

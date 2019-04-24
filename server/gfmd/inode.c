@@ -1225,6 +1225,10 @@ inode_schedule_replication(
 	return (e);
 }
 
+static gfarm_error_t inode_replica_hostset(struct inode *, struct file_copy *,
+	gfarm_int32_t *, struct hostset **,
+	gfarm_int32_t *, struct hostset **);
+
 /*
  * NOTE: excluding_list may or may not include spool_host.
  *	it doesn't if this is called from update_replicas(), but
@@ -1237,57 +1241,25 @@ make_replicas_except(struct inode *inode, struct dirset *tdirset,
 {
 	gfarm_error_t e;
 	struct hostset *existing, *being_removed;
-	int n_existing = 1; /* +1 is for spool_host */
-	int n_being_removed = 0;
+	int n_existing;
+	int n_being_removed;
 	struct host *srcs[1];
-	struct file_copy *copy;
 	int req_ok_num = 0;
 	static const char diag[] = "make_replicas_except";
 
-	existing = hostset_empty_alloc();
-	if (existing == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s: no memory to schedule replicas: existing hostset",
-		    diag);
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	being_removed = hostset_empty_alloc();
-	if (being_removed == NULL) {
-		hostset_free(existing);
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s: no memory to schedule replicas: "
-		    "being_removed hostset",
-		    diag);
-		return (GFARM_ERR_NO_MEMORY);
-	}
-
-	e = hostset_add_host(existing, spool_host);
-	if (e != GFARM_ERR_NO_ERROR) {
-		hostset_free(existing);
-		hostset_free(being_removed);
+	e = inode_replica_hostset(inode, exception_list,
+	    &n_existing, &existing, &n_being_removed, &being_removed);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 
-	/*
-	 * this is usually faster than calling hostset_alloc_by(), because
-	 * number of replicas is usually far fewer than number of hosts
-	 */
-	for (copy = exception_list; copy != NULL; copy = copy->host_next) {
-		if (copy->host != spool_host) {
-			if (FILE_COPY_IS_BEING_REMOVED(copy)) {
-				++n_being_removed;
-				e = hostset_add_host(being_removed,
-				    copy->host);
-			} else {
-				++n_existing; /* include replicating */
-				e = hostset_add_host(existing, copy->host);
-			}
-			if (e != GFARM_ERR_NO_ERROR) {
-				hostset_free(existing);
-				hostset_free(being_removed);
-				return (e);
-			}
+	if (!hostset_has_host(existing, spool_host)) {
+		e = hostset_add_host(existing, spool_host);
+		if (e != GFARM_ERR_NO_ERROR) { /* no memory */
+			hostset_free(existing);
+			hostset_free(being_removed);
+			return (e);
 		}
+		n_existing++;
 	}
 
 	srcs[0] = spool_host;
@@ -1957,9 +1929,8 @@ hostset_of_file_opening_alloc(struct inode *inode,
 }
 
 /* NOTE: `existing' includes incomplete replicas as well */
-gfarm_error_t
-inode_replica_hostset(
-	struct inode *inode,
+static gfarm_error_t
+inode_replica_hostset(struct inode *inode, struct file_copy *copy_list,
 	gfarm_int32_t *n_existingp, struct hostset **existingp,
 	gfarm_int32_t *n_removingp, struct hostset **removingp)
 {
@@ -1982,10 +1953,13 @@ inode_replica_hostset(
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
+	/*
+	 * this is usually faster than calling hostset_alloc_by(), because
+	 * number of replicas is usually far fewer than number of hosts
+	 */
 	n_existing = 0;
 	n_removing = 0;
-	for (copy = inode->u.c.s.f.copies; copy != NULL;
-	    copy = copy->host_next) {
+	for (copy = copy_list; copy != NULL; copy = copy->host_next) {
 		if (FILE_COPY_IS_BEING_REMOVED(copy)) {
 			e = hostset_add_host(removing, copy->host);
 			n_removing++;
@@ -6569,6 +6543,62 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 		*gensp = gens;
 		*oflagsp = oflags;
 	}
+	return (e);
+}
+
+gfarm_error_t
+inode_replica_fix_prepare(struct inode *inode, const char *diag,
+	int *n_srcsp, struct host ***srcsp,
+	int *n_existingp, struct hostset **existingp,
+	int *n_being_removedp, struct hostset **being_removedp)
+{
+	gfarm_error_t e;
+	int n_srcs, n_existing, n_being_removed;
+	struct host **srcs;
+	struct hostset *existing, *being_removed;
+
+	if (!inode_is_file(inode))
+		return (GFARM_ERR_NOT_A_REGULAR_FILE);
+
+	if (inode_is_opened_for_writing(inode))
+		return (GFARM_ERR_FILE_BUSY); /* currently writing */
+
+	if (inode_get_size(inode) == 0) /* replication is not necessary */
+		return (GFARM_ERR_NO_SUCH_OBJECT); /* 0byte file */
+
+	e = inode_replica_hostset(inode, inode->u.c.s.f.copies,
+	    &n_existing, &existing, &n_being_removed, &being_removed);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e); /* no memory */
+
+	if (n_existing == 0) {
+		hostset_free(existing);
+		hostset_free(being_removed);
+		return (GFARM_ERR_INPUT_OUTPUT); /* lost all replica */
+	}
+
+	/* available replicas for source */
+	e = inode_replica_hosts_valid(inode, &n_srcs, &srcs);
+	if (e != GFARM_ERR_NO_ERROR) {
+		hostset_free(existing);
+		hostset_free(being_removed);
+		return (e); /* no memory */
+	}
+
+	/* n_srcs may be 0, because host_is_up() may change */
+	if (n_srcs <= 0) { /* all of gfsd are down */
+		hostset_free(existing);
+		hostset_free(being_removed);
+		free(srcs);
+		return (GFARM_ERR_NO_FILESYSTEM_NODE); /*no available replica*/
+	}
+
+	*n_srcsp = n_srcs;
+	*srcsp = srcs;
+	*n_existingp = n_existing;
+	*existingp = existing;
+	*n_being_removedp = n_being_removed;
+	*being_removedp = being_removed;
 	return (e);
 }
 
