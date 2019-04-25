@@ -83,6 +83,7 @@ SRCS = \
 	gfs_remove.c \
 	gfs_rename.c \
 	gfs_replica.c \
+	gfs_replica_fix.c \
 	gfs_replica_info.c \
 	gfs_replicate.c \
 	gfs_rmdir.c \
@@ -169,6 +170,7 @@ OBJS = \
 	gfs_remove.lo \
 	gfs_rename.lo \
 	gfs_replica.lo \
+	gfs_replica_fix.lo \
 	gfs_replica_info.lo \
 	gfs_replicate.lo \
 	gfs_rmdir.lo \
@@ -259,6 +261,7 @@ gfs_rename.lo: context.h gfm_client.h lookup.h
 gfs_replica.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_replica_info.lo: gfm_proto.h gfm_client.h lookup.h
 gfs_replicate.lo: config.h host.h gfm_client.h gfs_client.h lookup.h schedule.h gfs_misc.h gfs_failover.h
+gfs_replica_fix.lo: gfm_client.h lookup.h gfs_replica_fix.h
 gfs_rmdir.lo:
 gfs_stat.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/queue.h $(GFUTIL_SRCDIR)/timer.h context.h gfs_profile.h gfm_client.h lookup.h gfs_pio.h gfs_misc.h gfs_failover.h
 gfs_statfs.lo: gfm_client.h lookup.h config.h gfs_failover.h

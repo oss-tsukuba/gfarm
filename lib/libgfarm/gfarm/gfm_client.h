@@ -459,6 +459,12 @@ gfarm_error_t gfm_client_replica_check_status_remove(struct gfm_connection *,
 	gfarm_int32_t *);
 gfarm_error_t gfm_client_replica_check_status_reduced_log(
 	struct gfm_connection *, gfarm_int32_t *);
+gfarm_error_t gfm_client_replica_fix_request(struct gfm_connection *,
+	gfarm_uint64_t, gfarm_int32_t);
+gfarm_error_t gfm_client_replica_fix_result_notimeout(struct gfm_connection *,
+	gfarm_uint64_t *);
+gfarm_error_t gfm_client_replica_fix_result_timeout(struct gfm_connection *,
+	gfarm_uint64_t *);
 
 /* replica management from gfsd */
 gfarm_error_t gfm_client_replica_adding_request(struct gfm_connection *,

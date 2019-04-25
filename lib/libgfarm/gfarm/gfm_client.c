@@ -1115,10 +1115,9 @@ gfm_client_rpc_request(struct gfm_connection *gfm_server, int command,
 }
 
 gfarm_error_t
-gfm_client_rpc_result(struct gfm_connection *gfm_server, int just,
-		      const char *format, ...)
+gfm_client_vrpc_result(struct gfm_connection *gfm_server, int just,
+		       int do_timeout, const char *format, va_list *app)
 {
-	va_list ap;
 	gfarm_error_t e;
 	int errcode;
 
@@ -1135,10 +1134,8 @@ gfm_client_rpc_result(struct gfm_connection *gfm_server, int just,
 		return (e);
 	}
 
-	va_start(ap, format);
-	e = gfp_xdr_vrpc_result(gfm_server->conn, just, 1,
-	    &errcode, &format, &ap);
-	va_end(ap);
+	e = gfp_xdr_vrpc_result(gfm_server->conn, just, do_timeout,
+	    &errcode, &format, app);
 
 	check_connection_or_purge(gfm_server, e);
 
@@ -1161,6 +1158,32 @@ gfm_client_rpc_result(struct gfm_connection *gfm_server, int just,
 		return (errcode);
 	}
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfm_client_rpc_result(struct gfm_connection *gfm_server, int just,
+		      const char *format, ...)
+{
+	gfarm_error_t e;
+	va_list ap;
+
+	va_start(ap, format);
+	e = gfm_client_vrpc_result(gfm_server, just, 1, format, &ap);
+	va_end(ap);
+	return (e);
+}
+
+gfarm_error_t
+gfm_client_rpc_result_notimeout(struct gfm_connection *gfm_server, int just,
+		      const char *format, ...)
+{
+	gfarm_error_t e;
+	va_list ap;
+
+	va_start(ap, format);
+	e = gfm_client_vrpc_result(gfm_server, just, 0, format, &ap);
+	va_end(ap);
+	return (e);
 }
 
 gfarm_error_t
@@ -4215,6 +4238,28 @@ gfm_client_replica_check_status_reduced_log(struct gfm_connection *gfm_server,
 {
 	return (gfm_client_replica_check_status(gfm_server,
 	    GFM_PROTO_REPLICA_CHECK_STATUS_REDUCED_LOG, statusp));
+}
+
+gfarm_error_t
+gfm_client_replica_fix_request(struct gfm_connection *gfm_server,
+	gfarm_uint64_t iflags, gfarm_int32_t timeout)
+{
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_REPLICA_FIX,
+	    "li", iflags, timeout));
+}
+
+gfarm_error_t
+gfm_client_replica_fix_result_notimeout(struct gfm_connection *gfm_server,
+	gfarm_uint64_t *oflagsp)
+{
+	return (gfm_client_rpc_result_notimeout(gfm_server, 0, "l", oflagsp));
+}
+
+gfarm_error_t
+gfm_client_replica_fix_result_timeout(struct gfm_connection *gfm_server,
+	gfarm_uint64_t *oflagsp)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "l", oflagsp));
 }
 
 /*
