@@ -1,0 +1,36 @@
+Index: gftool/config-gfarm/config-gfarm.postgresql
+===================================================================
+--- gftool/config-gfarm/config-gfarm.postgresql	(revision 11112)
++++ gftool/config-gfarm/config-gfarm.postgresql	(working copy)
+@@ -500,12 +500,12 @@
+ 	while if $PGSQL_BINDIR/psql -l; then false; else true; fi >/dev/null 2>&1
+ 	do
+ 		iter=\`expr \$iter + 1\`
+-		if [ \$iter -gt 6 ]; then
++		if [ \$iter -gt 30 ]; then
+ 			echo give up
+ 			exit 1
+ 		fi
+-		echo wait 5 seconds for postmaster to start up
+-		sleep 5
++		echo wait 1 seconds for postmaster to start up
++		sleep 1
+ 	done
+ 	# -q option for createuser and createdb is obsolete in 8.4
+ 	$PGSQL_BINDIR/createuser $createuser_option -A -D $BACKEND_USER
+Index: util/gfservice/gfservice.in
+===================================================================
+--- util/gfservice/gfservice.in	(revision 11112)
++++ util/gfservice/gfservice.in	(working copy)
+@@ -869,8 +869,9 @@
+ #
+ sleep_postmaster_startup()
+ {
+-	echo "wait 5 seconds for postmaster to start up"
+-	sleep 5
++	echo
++	#echo "wait 5 seconds for postmaster to start up"
++	#sleep 5
+ }
+ 
+ #

@@ -1,0 +1,9 @@
+set -x
+
+cd ~/gfarm/regress
+gfmkdir /tmp
+gfchmod 777 /tmp
+if ! [ -e bin/gfmd_restart_all ]; then
+  ln -s gfmd_restart_all.gfservice.sh bin/gfmd_restart_all
+fi
+make check

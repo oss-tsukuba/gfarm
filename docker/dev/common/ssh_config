@@ -1,0 +1,5 @@
+StrictHostKeyChecking no
+IdentityFile ~/.ssh/key-gfarm
+ControlPath ~/.ssh/ControlMasters/%r@%h:%p
+ControlMaster auto
+ControlPersist 1h
