@@ -1,0 +1,8 @@
+set -ux
+
+: $GFDOCKER_PRIMARY_USER
+
+cd ~/gfarm/systest
+gfgroup -a -m gfarmroot "$GFDOCKER_PRIMARY_USER"
+gfruntest gfarm2fs::make_dir  # using test case
+gfruntest -s gfarm2fs/file_dir_operations  # using scenario file

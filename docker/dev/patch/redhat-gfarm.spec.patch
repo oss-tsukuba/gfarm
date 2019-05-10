@@ -1,0 +1,26 @@
+Index: package/redhat/gfarm.spec
+===================================================================
+--- package/redhat/gfarm.spec	(revision 11182)
++++ package/redhat/gfarm.spec	(working copy)
+@@ -12,6 +12,10 @@
+ 
+ %define prefix		%{_prefix}
+ %define lib_prefix	%{_libdir}
++
++# for openSUSE
++%define _libexecdir     %{_prefix}/libexec
++
+ %define libexec_prefix	%{_libexecdir}
+ %define man_prefix	%{_mandir}
+ %define share_prefix	%{_prefix}/share/%{pkg}
+@@ -266,7 +270,9 @@ sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_l
+ sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
+ fi
+ 
+-make
++make -j 4 || exit 1
++cat /var/tmp/rpm-tmp.*
++exit 0
+ 
+ %install
+ make DESTDIR=${RPM_BUILD_ROOT} \
