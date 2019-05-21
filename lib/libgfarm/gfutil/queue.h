@@ -645,8 +645,8 @@ struct {								\
  */
 #define GFARM_HCIRCLEQ_HEAD(type)	struct type
 
-#define GFARM_HCIRCLEQ_HEAD_ENTRY_INITIALIZER(head) \
-	{ &(head), &(head) }
+#define GFARM_HCIRCLEQ_HEAD_ENTRY_INITIALIZER(head, field) \
+	{ .field = { &(head), &(head) } }
 
 #define GFARM_HCIRCLEQ_ENTRY(type) \
 struct { \

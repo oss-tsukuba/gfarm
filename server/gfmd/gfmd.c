@@ -30,6 +30,7 @@
 #include <gfarm/gfs.h>
 #include <gfarm/gfarm_iostat.h>
 
+#include "queue.h"
 #include "gfutil.h"
 #include "gflog_reduced.h"
 #include "thrsubr.h"
@@ -64,6 +65,7 @@
 #include "quota.h"
 #include "dirset.h"
 #include "quota_dir.h"
+#define USE_EVENT_WAITER
 #include "gfmd.h"
 #include "process.h"
 #include "fs.h"
@@ -84,9 +86,11 @@
  * this is number of thread pools which are used by callouts,
  * so thrpool_add_job() in callout_main() won't be blocked for long time.
  *
- * currently, only back_channel_send_thread_pool is called from callouts.
+ * currently, the following thread pools are called from callouts:
+ *  - back_channel_send_thread_pool
+ *  - sync_protocol thrpool (for GFM_PROTO_REPLICA_FIX)
  */
-#define CALLOUT_NTHREADS	1
+#define CALLOUT_NTHREADS	2
 #endif
 
 char *program_name = "gfmd";
@@ -470,6 +474,10 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_REPLICA_CHECK_STATUS:
 		e = gfm_server_replica_check_status(peer, from_client, skip);
 		break;
+	case GFM_PROTO_REPLICA_FIX:
+		e = gfm_server_replica_fix(peer, from_client, skip,
+		    suspendedp);
+		break;
 	case GFM_PROTO_REPLICA_ADDING:
 		e = gfm_server_replica_adding(peer, from_client, skip,
 		    suspendedp);
@@ -826,17 +834,26 @@ protocol_main(void *arg)
 }
 
 struct event_waiter {
-	struct event_waiter *next;
+	struct event_waiter_link super; /* should be first member of struct */
 
 	struct peer *peer;
-	gfarm_error_t (*action)(struct peer *, void *, int *);
+	struct callout *callout;
+	gfarm_error_t (*action)(struct peer *, void *, int *, gfarm_error_t);
 	void *arg;
+	gfarm_error_t result;
 };
+
+void
+event_waiter_list_init(struct event_waiter_list *list)
+{
+	GFARM_HCIRCLEQ_INIT(list->head, event_link);
+}
+
 
 gfarm_error_t
 event_waiter_alloc(struct peer *peer,
-	gfarm_error_t (*action)(struct peer *, void *, int *),
-	void *arg, struct event_waiter **listp)
+	gfarm_error_t (*action)(struct peer *, void *, int *, gfarm_error_t),
+	void *arg, struct event_waiter_list *list)
 {
 	struct event_waiter *waiter;
 
@@ -847,11 +864,12 @@ event_waiter_alloc(struct peer *peer,
 	/* XXX FIXME should call peer_add_ref(peer) */
 
 	waiter->peer = peer;
+	waiter->callout = NULL;
 	waiter->action = action;
 	waiter->arg = arg;
+	waiter->result = GFARM_ERR_NO_ERROR;
 
-	waiter->next = *listp;
-	*listp = waiter;
+	GFARM_HCIRCLEQ_INSERT_TAIL(list->head, &waiter->super, event_link);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -861,17 +879,25 @@ event_waiter_free(struct event_waiter *waiter)
 {
 	/* XXX FIXME should call peer_del_ref(waiter->peer) */
 
+	if (waiter->callout != NULL) {
+		callout_halt(waiter->callout, NULL);
+		callout_free(waiter->callout);
+	}
+
 	free(waiter);
 }
 
 struct resuming_queue {
 	pthread_mutex_t mutex;
 	pthread_cond_t nonempty;
-	struct event_waiter *queue;
+	struct event_waiter_list queue;
 } resuming_pendings = {
 	PTHREAD_MUTEX_INITIALIZER,
 	PTHREAD_COND_INITIALIZER,
-	NULL
+	{
+		GFARM_HCIRCLEQ_HEAD_ENTRY_INITIALIZER(
+		    resuming_pendings.queue.head, event_link)
+	}
 };
 
 static void
@@ -881,8 +907,7 @@ resuming_enqueue(struct event_waiter *entry)
 	static const char diag[] = "resuming_enqueue";
 
 	gfarm_mutex_lock(&q->mutex, diag, "mutex");
-	entry->next = q->queue;
-	q->queue = entry;
+	GFARM_HCIRCLEQ_INSERT_TAIL(q->queue.head, &entry->super, event_link);
 	gfarm_cond_signal(&q->nonempty, diag, "nonempty");
 	gfarm_mutex_unlock(&q->mutex, diag, "mutex");
 }
@@ -890,27 +915,93 @@ resuming_enqueue(struct event_waiter *entry)
 static struct event_waiter *
 resuming_dequeue(struct resuming_queue *q, const char *diag)
 {
+	struct event_waiter_link *link;
 	struct event_waiter *entry;
 
 	gfarm_mutex_lock(&q->mutex, diag, "mutex");
-	while  (q->queue == NULL)
+	while (GFARM_HCIRCLEQ_EMPTY(q->queue.head, event_link))
 		gfarm_cond_wait(&q->nonempty, &q->mutex, diag, "nonempty");
-	entry = q->queue;
-	q->queue = entry->next;
+	link = GFARM_HCIRCLEQ_FIRST(q->queue.head, event_link);
+	entry = (struct event_waiter *)link; /* downcast */
+	GFARM_HCIRCLEQ_REMOVE_HEAD(q->queue.head, event_link);
 	gfarm_mutex_unlock(&q->mutex, diag, "mutex");
 	return (entry);
 }
 
-/* "list = NULL;" should be done after calling this function */
-void
-event_waiters_signal(struct event_waiter *list)
+static void
+event_waiter_signal(struct event_waiter *waiter, gfarm_error_t result)
 {
-	struct event_waiter *next;
+	waiter->result = result;
+	resuming_enqueue(waiter);
+}
 
-	for (; list != NULL; list = next) {
-		next = list->next;
-		resuming_enqueue(list);
+/*
+ * PREREQUISITE: giant_lock
+ */
+void
+event_waiters_signal(struct event_waiter_list *list, gfarm_error_t result)
+{
+	struct event_waiter_link *t, *next;
+	struct event_waiter *entry;
+
+	GFARM_HCIRCLEQ_FOREACH_SAFE(t, list->head, event_link, next) {
+		entry = (struct event_waiter *)t; /* downcast */
+		event_waiter_signal(entry, result);
 	}
+	event_waiter_list_init(list);
+}
+
+static void *
+event_waiter_timeout(void *closure)
+{
+	struct event_waiter *waiter = closure;
+	struct event_waiter_link *link = closure;
+
+	giant_lock();
+
+	GFARM_HCIRCLEQ_REMOVE(link, event_link);
+
+	/*
+	 * we cannot use GFARM_ERR_OPERATION_TIMED_OUT for this error,
+	 * because it matches with IS_CONNECTION_ERROR() and
+	 * causes gfmd failover on the client.
+	 */
+	event_waiter_signal(waiter, GFARM_ERR_EXPIRED);
+
+	giant_unlock();
+
+	return (NULL);
+}
+
+gfarm_error_t
+event_waiter_with_timeout_alloc(struct peer *peer, int timeout,
+	gfarm_error_t (*action)(struct peer *, void *, int *, gfarm_error_t),
+	void *arg, struct event_waiter_list *list)
+{
+	gfarm_error_t e = event_waiter_alloc(peer, action, arg, list);
+	struct event_waiter_link *recently_allocated;
+	struct event_waiter *waiter;
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	/*
+	 * XXX layering violation, this assumes event_waiter_alloc() linked
+	 * this waiter by GFARM_HCIRCLEQ_INSERT_TAIL()
+	 */
+	recently_allocated = GFARM_HCIRCLEQ_LAST(list->head, event_link);
+
+	waiter = (struct event_waiter *)recently_allocated; /* downcast */
+	waiter->callout = callout_new();
+	if (waiter->callout == NULL) {
+		GFARM_HCIRCLEQ_REMOVE(&waiter->super, event_link);
+		event_waiter_free(waiter);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	callout_reset(waiter->callout, timeout, sync_protocol_get_thrpool(),
+	    event_waiter_timeout, waiter);
+
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static void *
@@ -924,7 +1015,7 @@ resuming_thread(void *arg)
 	int suspended = 0;
 	static const char diag[] = "resuming_thread";
 
-	e = (*entry->action)(peer, entry->arg, &suspended);
+	e = (*entry->action)(peer, entry->arg, &suspended, entry->result);
 	event_waiter_free(entry);
 	if (suspended)
 		return (NULL);

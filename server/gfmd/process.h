@@ -8,7 +8,8 @@ struct replication_info;
 struct process *process_lookup(gfarm_pid_t);
 
 gfarm_error_t process_new_generation_wait(struct peer *, int,
-	gfarm_error_t (*)(struct peer *, void *, int *), void *, const char *);
+	gfarm_error_t (*)(struct peer *, void *, int *, gfarm_error_t),
+	void *, const char *);
 gfarm_error_t process_new_generation_done(struct process *, struct peer *,
 	int, gfarm_int32_t, const char *);
 
@@ -146,6 +147,12 @@ gfarm_error_t gfm_server_inherit_fd(struct peer *, int, int);
 
 gfarm_error_t process_replication_request(struct process *, struct peer *,
 	struct host *, struct host *, int, gfarm_int32_t, const char *);
+gfarm_error_t process_replica_fix(struct process *, struct peer *,
+	int, gfarm_uint64_t, const char *, gfarm_uint64_t *);
+gfarm_error_t process_replica_fix_wait(struct process *, struct peer *, int,
+	int, gfarm_error_t (*)(struct peer *, void *, int *, gfarm_error_t),
+	void *, const char *);
+
 gfarm_error_t process_replica_adding(struct process *, struct peer *, int,
 	struct host *, struct host *, int, struct inode **,
 	char **, size_t *, char *, gfarm_int32_t *, const char *);

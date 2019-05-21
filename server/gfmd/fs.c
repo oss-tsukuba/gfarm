@@ -1,5 +1,6 @@
 #include <pthread.h>	/* db_access.h currently needs this */
 #include <assert.h>
+#include <limits.h>
 #include <stdarg.h> /* for "gfp_xdr.h" */
 #include <stdlib.h>
 #include <string.h>
@@ -2828,7 +2829,8 @@ struct reopen_resume_arg {
 };
 
 gfarm_error_t
-reopen_resume(struct peer *peer, void *closure, int *suspendedp)
+reopen_resume(struct peer *peer, void *closure, int *suspendedp,
+	gfarm_error_t result)
 {
 	gfarm_error_t e;
 	struct reopen_resume_arg *arg = closure;
@@ -3043,7 +3045,8 @@ struct close_v2_4_resume_arg {
 };
 
 gfarm_error_t
-close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
+close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp,
+	gfarm_error_t result)
 {
 	gfarm_error_t e_ret, e_rpc;
 	struct close_v2_4_resume_arg *arg = closure;
@@ -3367,7 +3370,8 @@ struct fhclose_write_resume_arg {
 };
 
 gfarm_error_t
-fhclose_write_resume(struct peer *peer, void *closure, int *suspendedp)
+fhclose_write_resume(struct peer *peer, void *closure, int *suspendedp,
+	gfarm_error_t result)
 {
 	gfarm_error_t e;
 	struct fhclose_write_resume_arg *arg = closure;
@@ -4320,6 +4324,110 @@ gfm_server_replicate_file_from_to(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
+struct replica_fix_wait_resume {
+	int fd;
+	gfarm_uint64_t oflags;
+};
+
+
+static gfarm_error_t
+replica_fix_wait_resume(struct peer *peer, void *closure, int *suspendedp,
+	gfarm_error_t result)
+{
+	gfarm_error_t e;
+	struct replica_fix_wait_resume *arg = closure;
+	struct process *process;
+	gfarm_uint64_t oflags = 0;
+	static const char diag[] = "replica_fix_wait_resume";
+
+	giant_lock();
+
+	if ((process = peer_get_process(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_process() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else {
+		/* db_begin()/db_end is not necessary */
+		e = result;
+		oflags = arg->oflags;
+	}
+	free(arg);
+	giant_unlock();
+
+	return (gfm_server_put_reply(peer, diag, e, "l", oflags));
+}
+
+gfarm_error_t
+gfm_server_replica_fix(struct peer *peer, int from_client, int skip,
+	int *suspendedp)
+{
+	gfarm_error_t e;
+	gfarm_uint64_t iflags, oflags = 0;
+	gfarm_int32_t timeout;
+	int timeout_microsec;
+	struct process *process;
+	gfarm_int32_t cfd;
+	struct replica_fix_wait_resume *arg;
+	static const char diag[] = "GFM_PROTO_REPLICA_FIX";
+
+	e = gfm_server_get_request(peer, diag, "li", &iflags, &timeout);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	giant_lock();
+
+	if ((process = peer_get_process(peer)) == NULL) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_process() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((e = peer_fdpair_get_current(peer, &cfd)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"peer_fdpair_get_current() failed: %s",
+			gfarm_error_string(e));
+	} else if ((iflags &
+	     ~(GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_REQUEST|
+	       GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_WAIT)) != 0) {
+		e = GFARM_ERR_INVALID_ARGUMENT;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: user %s requested invalid iflags: 0x%llx", diag,
+		    user_name(process_get_user(process)), (long long)iflags);
+	} else if (timeout < -1 ||
+		   timeout > (INT_MAX / GFARM_SECOND_BY_MICROSEC)) {
+		 e = GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: user %s requested too long timeout: %d",
+		    diag, user_name(process_get_user(process)), (int)timeout);
+	} else if ((e = process_replica_fix(process, peer,
+	    cfd, iflags, diag, &oflags)) ==
+	    GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+		GFARM_MALLOC(arg);
+		if (arg == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+		} else {
+			timeout_microsec = timeout == -1 ? -1 :
+			    timeout * GFARM_SECOND_BY_MICROSEC;
+			arg->fd = cfd;
+			arg->oflags = oflags;
+			if ((e = process_replica_fix_wait(process, peer, cfd,
+			    timeout_microsec,
+			    replica_fix_wait_resume, arg, diag))
+			    == GFARM_ERR_NO_ERROR) {
+				*suspendedp = 1;
+				giant_unlock();
+				return (GFARM_ERR_NO_ERROR);
+			}
+		}
+	}
+
+	giant_unlock();
+
+	return (gfm_server_put_reply(peer, diag, e, "l", oflags));
+}
+
 struct replica_adding_resume_arg {
 	int fd;
 	char *src_host;
@@ -4327,7 +4435,8 @@ struct replica_adding_resume_arg {
 };
 
 gfarm_error_t
-replica_adding_resume(struct peer *peer, void *closure, int *suspendedp)
+replica_adding_resume(struct peer *peer, void *closure, int *suspendedp,
+	gfarm_error_t result)
 {
 	gfarm_error_t e;
 	struct replica_adding_resume_arg *arg = closure;

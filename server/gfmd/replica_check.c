@@ -368,7 +368,7 @@ replica_check_fix(struct replication_info *info)
 		if (e == GFARM_ERR_NO_SUCH_OBJECT) /* 0byte file */
 			return (GFARM_ERR_NO_ERROR); /* already OK */
 		if (e == GFARM_ERR_NOT_A_REGULAR_FILE /* inode changed */ ||
-		    e == GFARM_ERR_FILE_BUSY /* currently writing */) {
+		    e == GFARM_ERR_TEXT_FILE_BUSY /* currently writing */) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "replica_check: %lld:%lld:%s: ignored: %s",
 			    (long long)info->inum, (long long)info->gen,

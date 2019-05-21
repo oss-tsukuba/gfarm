@@ -631,8 +631,8 @@ process_does_match(gfarm_pid_t pid,
 
 gfarm_error_t
 process_new_generation_wait(struct peer *peer, int fd,
-	gfarm_error_t (*action)(struct peer *, void *, int *), void *arg,
-	const char *diag)
+	gfarm_error_t (*action)(struct peer *, void *, int *, gfarm_error_t),
+	void *arg, const char *diag)
 {
 	struct process *process;
 	struct file_opening *fo;
@@ -1524,6 +1524,76 @@ process_replica_added(struct process *process,
 	fo->u.f.replica_source = NULL;
 	e2 = process_close_file_read(process, peer, fd, NULL, diag);
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
+}
+
+gfarm_error_t
+process_replica_fix(struct process *process, struct peer *peer,
+	int fd, gfarm_uint64_t iflags, const char *diag,
+	gfarm_uint64_t *oflagsp)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: invalid file descriptor %d: %s", diag, fd,
+		    gfarm_error_string(e));
+		return (e);
+	}
+	if (!inode_is_file(fo->inode)) { /* i.e. is a directory */
+		e = GFARM_ERR_NOT_A_REGULAR_FILE;
+		gflog_info(GFARM_MSG_UNFIXED, "%s: inode %lld: %s",
+		    diag, (long long)inode_get_number(fo->inode),
+		    gfarm_error_string(e));
+		return (e);
+	}
+	if ((iflags & GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_REQUEST) != 0) {
+		e = inode_replica_fix_request(fo->inode,
+		    fo->u.f.replica_spec.desired_number,
+		    fo->u.f.replica_spec.repattr);
+		if (e == GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS) {
+			/* don't report this as an error, but by oflags */
+			e = GFARM_ERR_NO_ERROR;
+			*oflagsp |=
+			    GFM_PROTO_REPLICA_FIX_OFLAG_REPLICATION_SHORTAGE;
+		} else if (e != GFARM_ERR_NO_ERROR) {
+			/*
+			 * GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE is used
+			 * for resume/wait, so we have to use a different error
+			 */
+			if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE)
+				e = GFARM_ERR_TOO_MANY_JOBS;
+			return (e);
+		}
+	}
+	if ((iflags & GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_WAIT) != 0) {
+		if (!inode_is_replication_ongoing(fo->inode))
+			return (GFARM_ERR_NO_ERROR);
+
+		/* let the caller invoke process_replica_fix_wait() */
+		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
+	}
+	return (e);
+}
+
+gfarm_error_t
+process_replica_fix_wait(
+	struct process *process, struct peer *peer, int fd, int timeout,
+	gfarm_error_t (*action)(struct peer *, void *, int *, gfarm_error_t),
+	void *arg, const char *diag)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: invalid file descriptor %d: %s", diag, fd,
+		    gfarm_error_string(e));
+		return (e);
+	}
+	return (inode_replica_fix_wait(fo->inode, peer, timeout, action, arg));
 }
 
 /*

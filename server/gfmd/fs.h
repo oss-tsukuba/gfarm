@@ -77,6 +77,7 @@ gfarm_error_t gfm_server_replica_remove_by_host(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_remove_by_file(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_info_get(struct peer *, int, int);
 gfarm_error_t gfm_server_replicate_file_from_to(struct peer *, int, int);
+gfarm_error_t gfm_server_replica_fix(struct peer *, int, int, int *);
 
 /* replica management from gfsd */
 gfarm_error_t gfm_server_replica_adding(struct peer *, int, int, int *);

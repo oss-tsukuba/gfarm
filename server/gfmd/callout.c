@@ -95,17 +95,20 @@ callout_main(void *arg)
 	struct callout *c;
 	struct thread_pool *thrpool;
 	int rv;
-	struct timespec now;
+	struct timespec now, target;
 
 	for (;;) {
 		gfarm_mutex_lock(&cm->mutex, module_name, "main lock");
 		c = cm->pendings.next;
-		if (c == &cm->pendings)
+		if (c == &cm->pendings) {
 			rv = pthread_cond_wait(&cm->have_things_to_run,
 			    &cm->mutex);
-		else
+		} else {
+			/* c may be freed during pthread_cond_timedwait() */
+			target = c->target_time; /* so copy it */
 			rv = pthread_cond_timedwait(&cm->have_things_to_run,
-			    &cm->mutex, &c->target_time);
+			    &cm->mutex, &target);
+		}
 		if (rv != 0 && rv != ETIMEDOUT) {
 			gflog_fatal(GFARM_MSG_1001490, "s: %s cond wait: %s",
 			    module_name, strerror(rv));

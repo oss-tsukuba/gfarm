@@ -62,7 +62,8 @@ gfs_replica_fix(
 	closure.iflags = iflags;
 	closure.timeout = timeout;;
 	closure.oflags = 0;
-	e = gfm_inode_op_modifiable(file, GFARM_FILE_LOOKUP,
+	e = gfm_inode_op_modifiable(file,
+	    GFARM_FILE_LOOKUP|GFARM_FILE_REPLICA_SPEC,
 	    gfm_replica_fix_request,
 	    gfm_replica_fix_result,
 	    gfm_inode_success_op_connection_free,

@@ -19,6 +19,7 @@ GFMD_COMMON_SRCS = \
 	$(GFMD_SRCDIR)/host.c \
 	$(GFMD_SRCDIR)/fsngroup.c \
 	$(GFMD_SRCDIR)/xattr.c \
+	$(GFMD_SRCDIR)/repattr.c \
 	$(GFMD_SRCDIR)/acl.c \
 	$(GFMD_SRCDIR)/dir.c \
 	$(GFMD_SRCDIR)/file_copy.c \
@@ -55,6 +56,7 @@ GFMD_COMMON_OBJS = \
 	$(GFMD_BUILDDIR)/host.o \
 	$(GFMD_BUILDDIR)/fsngroup.o \
 	$(GFMD_BUILDDIR)/xattr.o \
+	$(GFMD_BUILDDIR)/repattr.o \
 	$(GFMD_BUILDDIR)/acl.o \
 	$(GFMD_BUILDDIR)/dir.o \
 	$(GFMD_BUILDDIR)/file_copy.o \
@@ -109,6 +111,7 @@ DEPGFMDINC = \
 	$(GFMD_SRCDIR)/host.h \
 	$(GFMD_SRCDIR)/fsngroup.h \
 	$(GFMD_SRCDIR)/xattr.h \
+	$(GFMD_SRCDIR)/repattr.h \
 	$(GFMD_SRCDIR)/acl.h \
 	$(GFMD_SRCDIR)/dir.h \
 	$(GFMD_SRCDIR)/file_copy.h \
@@ -120,6 +123,7 @@ DEPGFMDINC = \
 	$(GFMD_SRCDIR)/process.h \
 	$(GFMD_SRCDIR)/protocol_state.h \
 	$(GFMD_SRCDIR)/peer.h \
+	$(GFMD_SRCDIR)/job.h \
 	$(GFMD_SRCDIR)/back_channel.h \
 	$(GFMD_SRCDIR)/gfmd_channel.h \
 	$(GFMD_SRCDIR)/gfmd.h

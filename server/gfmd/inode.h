@@ -93,8 +93,12 @@ gfarm_error_t inode_new_generation_by_fd_finish(
 gfarm_error_t inode_new_generation_by_cookie_finish(struct inode *,
 	gfarm_off_t, gfarm_uint64_t, struct peer *, gfarm_error_t);
 gfarm_error_t inode_new_generation_wait(struct inode *, struct peer *,
-	gfarm_error_t (*)(struct peer *, void *, int *), void *);
+	gfarm_error_t (*)(struct peer *, void *, int *, gfarm_error_t),
+	void *);
 
+gfarm_error_t inode_replica_fix_wait(struct inode *, struct peer *, int,
+	gfarm_error_t (*)(struct peer *, void *, int *, gfarm_error_t),
+	void *);
 
 gfarm_error_t inode_access(struct inode *, struct user *, int);
 
@@ -208,6 +212,7 @@ extern gfarm_error_t (*inode_schedule_file)(struct file_opening *,
 
 struct file_replicating;
 void replication_info(void);
+int inode_is_replication_ongoing(struct inode *);
 gfarm_error_t file_replicating_new(
 	struct inode *, struct host *, struct dead_file_copy *,
 	struct dirset *, struct file_replicating **);
@@ -225,17 +230,17 @@ void inode_replication_get_cksum_mode(struct inode *, struct host *,
 gfarm_error_t inode_replication_request(struct host *, struct host *,
 	struct inode *, struct file_replicating *, const char *);
 
-gfarm_error_t
-inode_replica_fix_prepare(struct inode *, const char *,
-	int *, struct host ***,
-	int *, struct hostset **, int *, struct hostset **);
-
 gfarm_error_t inode_replica_list_by_name(struct inode *,
 	gfarm_int32_t *, char ***);
 gfarm_error_t inode_replica_list_by_name_with_dead_host(struct inode *,
 	gfarm_int32_t *, char ***);
 gfarm_error_t inode_replica_info_get(struct inode *, gfarm_int32_t,
 	gfarm_int32_t *, char ***, gfarm_int64_t **, gfarm_int32_t **);
+
+gfarm_error_t inode_replica_fix_prepare(struct inode *, const char *,
+	int *, struct host ***,
+	int *, struct hostset **, int *, struct hostset **);
+gfarm_error_t inode_replica_fix_request(struct inode *, int, const char *);
 
 gfarm_error_t inode_xattr_add(struct inode *, int, const char *,
 	void *, size_t);

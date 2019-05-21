@@ -102,7 +102,6 @@ SRCS = \
 	sockutil.c \
 	timespec.c \
 	url.c \
-	repattr.c \
 	iostat.c \
 	$(globus_srcs) \
 	$(optional_srcs)
@@ -189,7 +188,6 @@ OBJS = \
 	sockutil.lo \
 	timespec.lo \
 	url.lo \
-	repattr.lo \
 	iostat.lo \
 	$(globus_objs) \
 	$(optional_objs)

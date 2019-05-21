@@ -18,6 +18,7 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 
+#include "queue.h"
 #include "gflog_reduced.h"
 #include "gfutil.h"
 #include "nanosec.h"
@@ -55,6 +56,7 @@
 
 #include "auth.h" /* for "peer.h" */
 #include "peer.h" /* peer_reset_pending_new_generation() */
+#define USE_EVENT_WAITER
 #include "gfmd.h" /* resuming_*() */
 
 #define DIR_DEPTH_BUF_INIT			1024	/* == GFARM_PATH_MAX */
@@ -161,9 +163,10 @@ struct inode_activity {
 			enum {
 				EVENT_NONE,
 				EVENT_GEN_UPDATED,
-				EVENT_GEN_UPDATED_BY_COOKIE
+				EVENT_GEN_UPDATED_BY_COOKIE,
+				EVENT_REPLICA_FIXED
 			} event_type;
-			struct event_waiter *event_waiters;
+			struct event_waiter_list event_waiters;
 			struct peer *event_source;
 
 			struct gfarm_timespec last_update;
@@ -718,7 +721,7 @@ inode_activity_alloc(struct dirset *tdirset)
 	ia->u.f.spool_writers = 0;
 	ia->u.f.replication_pending = 0;
 
-	ia->u.f.event_waiters = NULL;
+	event_waiter_list_init(&ia->u.f.event_waiters);
 	ia->u.f.event_source = NULL;
 	ia->u.f.event_type = EVENT_NONE;
 
@@ -986,6 +989,25 @@ static struct gflog_reduced_state rep_fixed_state =
  * and being_removed[] but they may be abled to be used later.
  *
  * srcs[] must be different from existing[].
+ *
+ * ERRORS:
+ *	GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE
+ *		temporary error due to simultaneous_replication_receivers
+ *		should retry the replication
+ *		some replication may be already scheduled
+ *	GFARM_ERR_FILE_BUSY
+ *		temporary error due to replica removal
+ *		should retry the replication
+ *		some replication may be already scheduled
+ *	GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS
+ *		permanent error due to insufficient number of gfsd
+ *		should NOT retry
+ *		some replication may be already scheduled
+ *	GFARM_ERR_DISK_QUOTA_EXCEEDED
+ *		should NOT retry
+ *	GFARM_ERR_NO_MEMORY
+ *		should NOT retry
+ *	and maybe other errors
  */
 gfarm_error_t
 inode_schedule_replication_within_scope(
@@ -1109,7 +1131,10 @@ inode_schedule_replication_within_scope(
 	if (busy) /* retry immediately in replica_check */
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 
-	if (shortage > n_success)
+	if (shortage > n_success) {
+		if (save_e == GFARM_ERR_NO_ERROR)
+			save_e =
+			    GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS;
 		gflog_reduced_notice(GFARM_MSG_1003694, &rep_fewer_state,
 		    "%s: %lld:%lld:%s: fewer replicas, "
 		    "increase=%d/before=%d/desire=%d", diag,
@@ -1117,12 +1142,13 @@ inode_schedule_replication_within_scope(
 		    (long long)inode_get_gen(inode),
 		    user_name(inode_get_user(inode)),
 		    n_success, n_valid, n_desired);
-	else
+	} else {
 		gflog_reduced_debug(GFARM_MSG_1003695, &rep_fixed_state,
 		    "%s: %lld:%lld:%s: will be fixed, increase=%d/desire=%d",
 		    diag, (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
 		    user_name(inode_get_user(inode)), n_success, n_desired);
+	}
 
 	return (save_e);
 }
@@ -1170,6 +1196,25 @@ inode_schedule_replication_from_all(
  * and being_removed[] but they may be abled to be used later.
  *
  * srcs[] must be different from existing[].
+ *
+ * ERRORS:
+ *	GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE
+ *		temporary error due to simultaneous_replication_receivers
+ *		should retry the replication
+ *		some replication may be already scheduled
+ *	GFARM_ERR_FILE_BUSY
+ *		temporary error due to replica removal
+ *		should retry the replication
+ *		some replication may be already scheduled
+ *	GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS
+ *		permanent error due to insufficient number of gfsd
+ *		should NOT retry
+ *		some replication may be already scheduled
+ *	GFARM_ERR_DISK_QUOTA_EXCEEDED
+ *		should NOT retry
+ *	GFARM_ERR_NO_MEMORY
+ *		should NOT retry
+ *	and maybe other errors
  */
 gfarm_error_t
 inode_schedule_replication(
@@ -1230,6 +1275,25 @@ static gfarm_error_t inode_replica_hostset(struct inode *, struct file_copy *,
 	gfarm_int32_t *, struct hostset **);
 
 /*
+ * ERRORS:
+ *	GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE
+ *		temporary error due to simultaneous_replication_receivers
+ *		should retry the replication
+ *		some replication may be already scheduled
+ *	GFARM_ERR_FILE_BUSY
+ *		temporary error due to replica removal
+ *		should retry the replication
+ *		some replication may be already scheduled
+ *	GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS
+ *		permanent error due to insufficient number of gfsd
+ *		should NOT retry
+ *		some replication may be already scheduled
+ *	GFARM_ERR_DISK_QUOTA_EXCEEDED
+ *		should NOT retry
+ *	GFARM_ERR_NO_MEMORY
+ *		should NOT retry
+ *	and maybe other errors
+ *
  * NOTE: excluding_list may or may not include spool_host.
  *	it doesn't if this is called from update_replicas(), but
  *	it does if this this is called from inode_check_pending_replication().
@@ -1345,9 +1409,13 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	 * the above loop obsoletes all replicas except one on the spool_host.
 	 *
 	 */
-	if (start_replication && spool_host != NULL)
+	if (start_replication && spool_host != NULL) {
 		save_e = make_replicas_except(inode, tdirset, spool_host,
 		    desired_replica_number, repattr, to_be_excluded);
+		/* replica_check_start_rep_request_failed() is unnecessary */
+		if (save_e == GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS)
+			save_e = GFARM_ERR_NO_ERROR;
+	}
 
 	/*
 	 * After scheduling replica creation to new hosts, start
@@ -2412,6 +2480,40 @@ inode_desired_dead_file_copy(gfarm_ino_t inum)
 	return (1); /* XXX FIXME: use xattr gfarm:ncopy */
 }
 
+static void
+log_unexpected_event_state(struct inode *inode, struct peer *peer,
+	const char *diag)
+{
+	struct inode_activity *ia;
+	ia = inode->u.c.activity;
+
+	gflog_warning(GFARM_MSG_UNFIXED,
+	    "%s: inode %llu:%llu user %s: unexpected event state %d", diag,
+	    (long long)inode_get_number(inode),
+	    (long long)inode_get_gen(inode),
+	    peer_get_username(peer), (int)ia->u.f.event_type);
+}
+
+static void
+inode_finish_event_post(struct inode *inode, gfarm_error_t result)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+
+	event_waiters_signal(&ia->u.f.event_waiters, result);
+
+	ia->u.f.event_type = EVENT_NONE;
+	ia->u.f.event_source = NULL;
+}
+
+static void
+inode_check_replica_fixed_event(struct inode *inode, gfarm_error_t result)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+
+	if (ia->u.f.event_type == EVENT_REPLICA_FIXED)
+		inode_finish_event_post(inode, result);
+}
+
 int
 inode_new_generation_is_pending(struct inode *inode)
 {
@@ -2422,15 +2524,22 @@ inode_new_generation_is_pending(struct inode *inode)
 		gflog_debug(GFARM_MSG_1002247, "%s: not opened", diag);
 		return (0);
 	}
-	return (ia->u.f.event_type != EVENT_NONE);
+	return (
+	    ia->u.f.event_type == EVENT_GEN_UPDATED ||
+	    ia->u.f.event_type == EVENT_GEN_UPDATED_BY_COOKIE);
 }
 
 void
 inode_new_generation_by_fd_start(struct inode *inode, struct peer *peer)
 {
 	struct inode_activity *ia = inode->u.c.activity;
+	static const char diag[] = "inode_new_generation_by_fd_start";
 
 	assert(ia != NULL);
+	/* GFM_PROTO_REPLICA_FIX currently writing: GFARM_ERR_TEXT_FILE_BUSY */
+	inode_check_replica_fixed_event(inode, GFARM_ERR_TEXT_FILE_BUSY);
+	if (ia->u.f.event_type != EVENT_NONE)
+		log_unexpected_event_state(inode, peer, diag);
 	ia->u.f.event_type = EVENT_GEN_UPDATED;
 	ia->u.f.event_source = peer;
 }
@@ -2445,12 +2554,17 @@ inode_new_generation_by_cookie_start(struct inode *inode,
 	 */
 	struct inode_activity *ia = inode_activity_alloc_or_update(
 	    &inode->u.c.activity, TDIRSET_IS_UNKNOWN);
+	static const char diag[] = "inode_new_generation_by_cookie_start";
 
 	if (ia == NULL) {
 		gflog_error(GFARM_MSG_1004019,
 		    "unable to track inode generation");
 		return (GFARM_ERR_NO_MEMORY);
 	}
+	/* GFM_PROTO_REPLICA_FIX currently writing: GFARM_ERR_TEXT_FILE_BUSY */
+	inode_check_replica_fixed_event(inode, GFARM_ERR_TEXT_FILE_BUSY);
+	if (ia->u.f.event_type != EVENT_NONE)
+		log_unexpected_event_state(inode, peer, diag);
 	ia->u.f.event_type = EVENT_GEN_UPDATED_BY_COOKIE;
 	ia->u.f.event_source = peer;
 	return (GFARM_ERR_NO_ERROR);
@@ -2473,13 +2587,7 @@ inode_new_generation_finish_precondition(struct inode *inode, const char *diag)
 static void
 inode_new_generation_finish_event_post(struct inode *inode)
 {
-	struct inode_activity *ia = inode->u.c.activity;
-
-	event_waiters_signal(ia->u.f.event_waiters);
-	ia->u.f.event_waiters = NULL;
-
-	ia->u.f.event_type = EVENT_NONE;
-	ia->u.f.event_source = NULL;
+	inode_finish_event_post(inode, GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
@@ -2496,9 +2604,7 @@ inode_new_generation_by_fd_finish(struct inode *inode, struct peer *peer,
 
 	ia = inode->u.c.activity;
 	if (ia->u.f.event_type != EVENT_GEN_UPDATED) {
-		gflog_warning(GFARM_MSG_1004020,
-		    "%s: not pending generation update: %d",
-		    diag, ia->u.f.event_type);
+		log_unexpected_event_state(inode, peer, diag);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	assert(ia->u.f.event_source != NULL);
@@ -2537,9 +2643,7 @@ inode_new_generation_by_cookie_finish(
 
 	ia = inode->u.c.activity;
 	if (ia->u.f.event_type != EVENT_GEN_UPDATED_BY_COOKIE) {
-		gflog_warning(GFARM_MSG_1004021,
-		    "%s: not pending generation update by cookie: %d",
-		    diag, ia->u.f.event_type);
+		log_unexpected_event_state(inode, peer, diag);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	assert(ia->u.f.event_source != NULL);
@@ -2578,7 +2682,8 @@ inode_new_generation_by_cookie_finish(
 
 gfarm_error_t
 inode_new_generation_wait(struct inode *inode, struct peer *peer,
-	gfarm_error_t (*action)(struct peer *, void *, int *), void *arg)
+	gfarm_error_t (*action)(struct peer *, void *, int *, gfarm_error_t),
+	void *arg)
 {
 	gfarm_error_t e;
 	struct inode_activity *ia;
@@ -2594,14 +2699,64 @@ inode_new_generation_wait(struct inode *inode, struct peer *peer,
 		    diag, (long long)inode_get_number(inode));
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
-	if (ia->u.f.event_type == EVENT_NONE) {
-		gflog_warning(GFARM_MSG_1002255, "%s: not pending", diag);
+	if (ia->u.f.event_type != EVENT_GEN_UPDATED &&
+	    ia->u.f.event_type != EVENT_GEN_UPDATED_BY_COOKIE) {
+		log_unexpected_event_state(inode, peer, diag);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 
 	e = event_waiter_alloc(peer, action, arg, &ia->u.f.event_waiters);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_UNFIXED, "%s: %s",
+		    diag, gfarm_error_string(e));
+	return (e);
+}
+
+gfarm_error_t
+inode_replica_fix_wait(struct inode *inode, struct peer *peer, int timeout,
+	gfarm_error_t (*action)(struct peer *, void *, int *, gfarm_error_t),
+	void *arg)
+{
+	gfarm_error_t e;
+	struct inode_activity *ia;
+	const char diag[] = "inode_replica_fix_wait";
+
+	if (!inode_is_file(inode)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: inode %llu:%llu user %s: not a file", diag,
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    peer_get_username(peer));
+		return (GFARM_ERR_NOT_A_REGULAR_FILE);
+	}
+	if (!inode_is_replication_ongoing(inode)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: inode %llu:%llu user %s: no activity", diag,
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    peer_get_username(peer));
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
+	ia = inode->u.c.activity;
+	assert(ia != NULL); /* because inode_is_replication_ongoing */
+	if (ia->u.f.event_type == EVENT_NONE) {
+		ia->u.f.event_type = EVENT_REPLICA_FIXED;
+	} else if (ia->u.f.event_type != EVENT_REPLICA_FIXED) {
+		log_unexpected_event_state(inode, peer, diag);
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	}
+
+	if (timeout == -1) {
+		e = event_waiter_alloc(peer,
+		    action, arg, &ia->u.f.event_waiters);
+	} else {
+		if (timeout == 0)
+			timeout = 1;
+		e = event_waiter_with_timeout_alloc(peer, timeout,
+		    action, arg, &ia->u.f.event_waiters);
+	}
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "%s: cannot alloc event: %s",
 		    diag, gfarm_error_string(e));
 	return (e);
 }
@@ -4745,7 +4900,9 @@ inode_check_pending_replication(struct file_opening *fo)
 		 * replication is failure
 		 */
 		/* avoid calling replica_check if GFARM_ERR_NO_MEMORY occurs */
-		if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_MEMORY)
+		if (e != GFARM_ERR_NO_ERROR &&
+		    e != GFARM_ERR_NO_MEMORY &&
+		    e != GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS)
 			replica_check_start_rep_request_failed();
 	}
 }
@@ -5476,6 +5633,28 @@ replication_info(void)
 	    count);
 }
 
+int
+inode_is_replication_ongoing(struct inode *inode)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+	struct inode_replicating_state *irs;
+
+	if (ia == NULL)
+		return (0);
+	irs = ia->u.f.rstate;
+	if (irs == NULL)
+		return (0);
+	if (irs->replicating_hosts.next_host == &irs->replicating_hosts) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inode %llu:%llu: bad replicating_state", 
+		    (unsigned long long)inode_get_number(inode),
+		    (unsigned long long)inode_get_gen(inode));
+		return (0);
+	}
+
+	return (1);
+}
+
 /*
  * PREREQUISITE: giant_lock
  */
@@ -5760,6 +5939,7 @@ inode_replicated(struct file_replicating *fr,
 		    fr->dst);
 	}
 
+	inode_check_replica_fixed_event(inode, e);
 	file_replicating_free(fr);
 
 	if (transaction)
@@ -6370,7 +6550,7 @@ inode_is_updated(struct inode *inode, struct gfarm_timespec *mtime)
 	    gfarm_timespec_cmp(mtime, &ia->u.f.last_update) >= 0);
 }
 
-gfarm_error_t
+static gfarm_error_t
 inode_replica_hosts_valid(
 	struct inode *inode, gfarm_int32_t *np, struct host ***hostsp)
 {
@@ -6560,8 +6740,14 @@ inode_replica_fix_prepare(struct inode *inode, const char *diag,
 	if (!inode_is_file(inode))
 		return (GFARM_ERR_NOT_A_REGULAR_FILE);
 
+	/*
+	 * inode_schedule_replication() is already using GFARM_ERR_FILE_BUSY
+	 * for a temporary error due to replica removal,
+	 * so use GFARM_ERR_TEXT_FILE_BUSY for GFM_PROTO_REPLICA_FIX
+	 * and replica_check
+	 */
 	if (inode_is_opened_for_writing(inode))
-		return (GFARM_ERR_FILE_BUSY); /* currently writing */
+		return (GFARM_ERR_TEXT_FILE_BUSY); /* currently writing */
 
 	if (inode_get_size(inode) == 0) /* replication is not necessary */
 		return (GFARM_ERR_NO_SUCH_OBJECT); /* 0byte file */
@@ -6599,6 +6785,49 @@ inode_replica_fix_prepare(struct inode *inode, const char *diag,
 	*existingp = existing;
 	*n_being_removedp = n_being_removed;
 	*being_removedp = being_removed;
+	return (e);
+}
+
+gfarm_error_t
+inode_replica_fix_request(
+	struct inode *inode, int desired_number, const char *repattr)
+{
+	gfarm_error_t e;
+	int n_srcs, n_existing, n_being_removed, transaction = 0;
+	struct host **srcs;
+	struct hostset *existing, *being_removed;
+	int req_ok_num = 0;
+	static const char diag[] = "inode_replica_fix_request";
+
+	e = inode_replica_fix_prepare(inode, diag,
+	    &n_srcs, &srcs,
+	    &n_existing, &existing,
+	    &n_being_removed, &being_removed);
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_NO_SUCH_OBJECT) /* 0 byte file */
+			return (GFARM_ERR_NO_ERROR);
+		return (e);
+	}
+
+	e = db_begin(diag);
+	if (e == GFARM_ERR_NO_ERROR)
+		transaction = 1;
+	else
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: db_begin(): %s", diag, gfarm_error_string(e));
+
+	e = inode_schedule_replication(
+	    inode, inode_get_tdirset(inode), 1 /* replica_check mode */,
+	    desired_number, repattr,
+	    n_srcs, srcs, &n_existing, existing, /* grace time */ 0,
+	    &n_being_removed, being_removed, diag, &req_ok_num);
+
+	if (transaction)
+		db_end(diag);
+	hostset_free(existing);
+	hostset_free(being_removed);
+	free(srcs);
+
 	return (e);
 }
 

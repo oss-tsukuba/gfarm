@@ -257,11 +257,18 @@ fsngroup_schedule_replication(
 			    n_being_removedp, being_removed, diag,
 			    req_ok_nump);
 			hostset_free(scope);
+			if (e == GFARM_ERR_NO_ERROR)
+				continue;
 			if (e == GFARM_ERR_NO_MEMORY) {
 				save_e = e;
 				break;
 			}
-			if (save_e == GFARM_ERR_NO_ERROR)
+			/*
+			 * GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS has
+			 * the lowest priority
+			 */
+			if (save_e == GFARM_ERR_NO_ERROR ||
+			    save_e == GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS)
 				save_e = e;
 		}
 	} else {
