@@ -36,6 +36,7 @@
 #include "quota.h"
 #include "subr.h"
 #include "inum_string_list.h"
+#include "event_waiter.h"
 #include "db_access.h"
 #include "host.h"
 #include "user.h"
