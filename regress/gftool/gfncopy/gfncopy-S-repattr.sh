@@ -8,10 +8,10 @@ if test $? -ne 0; then
 fi
 
 dir=$gftmp
-pat="g0:1, g1:1, g0:2, g2:1, g0:3"
+pat="g0:6, g1:1, g2:3"
 g0s=g0:6
 g1s=g1:1
-g2s=g2:1
+g2s=g2:3
 
 setup() {
     gfmkdir ${dir}
@@ -36,6 +36,26 @@ cleanup() {
 trap 'cleanup; exit $exit_trap' $trap_sigs
 
 setup
+
+# specified fsngroup should exist
+if gfncopy -S "XaXbXcShouldNotExist:1" ${dir} 2>&1 |
+    grep 'no such group' >/dev/null
+then
+    :
+else
+    cleanup
+    exit $exit_fail
+fi
+
+# each fsngroup is allowed to appear at most once
+if gfncopy -S "g0:1,g0:1" ${dir} 2>&1 |
+    grep 'invalid argument' >/dev/null
+then
+    :
+else
+    cleanup
+    exit $exit_fail
+fi
 
 gfncopy -S "${pat}" ${dir}
 if [ $? -ne 0 ]; then

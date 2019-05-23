@@ -89,27 +89,23 @@ fsngroup_get_tuples(gfarm_int32_t *n_tuples, struct fsngroup_tuple **tuplesp)
  */
 
 static gfarm_error_t
-gfarm_repattr_parse_cached(const char *fsng,
-	gfarm_repattr_t **repsp, size_t *nrepsp)
+repattr_parse_to_repspec_cached(const char *fsng, struct repspec **repsp)
 {
 	/* cache */
 	static char *last_fsng = NULL;
-	static gfarm_repattr_t *last_reps = NULL;
-	static size_t last_nreps = 0;
+	static struct repspec *last_reps = NULL;
 
 	gfarm_error_t e;
 	char *fsng_tmp;
-	static gfarm_repattr_t *reps_tmp;
-	static size_t nreps_tmp;
+	static struct repspec *reps_tmp;
 
 	if (last_fsng != NULL && strcmp(fsng, last_fsng) == 0) {
 		/* cache hit */
 		*repsp = last_reps;
-		*nrepsp = last_nreps;
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	e = gfarm_repattr_parse(fsng, &reps_tmp, &nreps_tmp);
+	e = repattr_parse_to_repspec(fsng, &reps_tmp);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -122,69 +118,54 @@ gfarm_repattr_parse_cached(const char *fsng,
 	}
 
 	if (last_reps != NULL)
-		gfarm_repattr_free_all(last_nreps, last_reps);
+		repspec_free(last_reps);
 	free(last_fsng);
 
 	last_fsng = fsng_tmp;
 	last_reps = reps_tmp;
-	last_nreps = nreps_tmp;
 
 	*repsp = last_reps;
-	*nrepsp = last_nreps;
 	return (GFARM_ERR_NO_ERROR);
 }
 
 static int
-is_fsng_in_fsnset(const char *fsng, const char *fsnset)
+is_fsng_in_fsnset(const char *fsng, struct repplace *fsnset)
 {
-	const char *p;
-	size_t fsng_len = strlen(fsng);
+	int i, n_fsngroups = repplace_get_fsngroup_number(fsnset);
 
-	p = strchr(fsnset, '+');
-	while (p != NULL) {
-		if (p - fsnset == fsng_len &&
-		    memcmp(fsnset, fsng, fsng_len) == 0)
+	for (i = 0; i < n_fsngroups; i++) {
+		if (strcmp(fsng, repplace_get_fsngroup(fsnset, i)) == 0)
 			return (1);
-		fsnset = p + 1;
-		p = strchr(fsnset, '+');
 	}
-	return (strcmp(fsnset, fsng) == 0);
+	return (0);
 }
 
 static gfarm_error_t
-hostset_of_fsnset_alloc(const char *fsnset_string,
+hostset_of_fsnset_alloc(struct repplace *repplace,
 	struct hostset **hsp, int *n_hostsp)
 {
 	gfarm_error_t e;
-	char *fsnset = (char *)fsnset_string; /* XXX - UNCONST */
-	char *p;
+	int n_fsngroups = repplace_get_fsngroup_number(repplace);
 	struct hostset *hs;
-	int n_hosts;
+	int i, n_hosts;
 
-	p = strchr(fsnset, '+');
-	if (p != NULL) {
-		/* XXX temporarily breaks fsnset */
-		*p = '\0';
-	}
-	hs = hostset_of_fsngroup_alloc(fsnset, &n_hosts);
-	if (hs == NULL) {
-		if (p != NULL)
-			*p = '+'; /* recover fsnset */
-		return (GFARM_ERR_NO_MEMORY);
-	}
-
-	while (p != NULL) {
-		*p = '+'; /* recover fsnset */
-		fsnset = p + 1;
-		p = strchr(fsnset, '+');
-		if (p != NULL) {
-			/* XXX temporarily breaks fsnset */
-			*p = '\0';
-		}
-		e = hostset_union_fsngroup(hs, &n_hosts, fsnset);
-		if (e != GFARM_ERR_NO_ERROR) {
-			hostset_free(hs);
-			return (e);
+	if (n_fsngroups == 0) { /* shouldn't happen. purely for safty */
+		hs = hostset_empty_alloc();
+		if (hs == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		n_hosts = 0;
+	} else {
+		hs = hostset_of_fsngroup_alloc(
+		    repplace_get_fsngroup(repplace, 0), &n_hosts);
+		if (hs == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		for (i = 1; i < n_fsngroups; i++) {
+			e = hostset_union_fsngroup(hs, &n_hosts,
+			    repplace_get_fsngroup(repplace, i));
+			if (e != GFARM_ERR_NO_ERROR) {
+				hostset_free(hs);
+				return (e);
+			}
 		}
 	}
 	*hsp = hs;
@@ -209,7 +190,7 @@ fsngroup_schedule_replication(
 	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
 	int i, n_scope;
 	size_t nreps = 0;
-	gfarm_repattr_t *reps = NULL;
+	struct repspec *reps = NULL;
 	struct hostset *scope;
 
 	assert(repattr != NULL && srcs != NULL);
@@ -222,15 +203,18 @@ fsngroup_schedule_replication(
 
 	*total_p = 0;
 
-	e = gfarm_repattr_parse_cached(repattr, &reps, &nreps);
+	e = repattr_parse_to_repspec_cached(repattr, &reps);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1004051,
-		    "%s: %s", diag, gfarm_error_string(e));
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: can't parse a repattr '%s': %s", diag, repattr,
+		    gfarm_error_string(e));
 		return (e);
 	}
+	nreps = repspec_get_repplace_number(reps);
 	if (nreps == 0) {
-		gflog_error(GFARM_MSG_1004052,
-		    "%s: can't parse a repattr: '%s'.", diag, repattr);
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: repattr '%s': invalid number of repplaces",
+		    diag, repattr);
 		/* fall through */
 	}
 
@@ -238,17 +222,19 @@ fsngroup_schedule_replication(
 		int next_src_index = host_select_one(n_srcs, srcs, diag);
 
 		for (i = 0; i < nreps; i++) {
-			const char *group = gfarm_repattr_group(reps[i]);
-			int num = gfarm_repattr_amount(reps[i]);
+			struct repplace *repplace =
+			    repspec_get_repplace(reps, i);
+			int num = repplace_get_amount(repplace);
 
 			*total_p = *total_p + num;
 
-			e = hostset_of_fsnset_alloc(group, &scope, &n_scope);
+			e = hostset_of_fsnset_alloc(repplace,
+			    &scope, &n_scope);
 			if (e != GFARM_ERR_NO_ERROR) {
 				save_e = e; /* must be GFARM_ERR_NO_MEMORY */
 				gflog_notice(GFARM_MSG_1004053,
 				    "%s: hostset_of_fsngroup(%s): %s",
-				    diag, group, gfarm_error_string(save_e));
+				    diag, repattr, gfarm_error_string(save_e));
 				break;
 			}
 			e = inode_schedule_replication_within_scope(
@@ -273,14 +259,10 @@ fsngroup_schedule_replication(
 		}
 	} else {
 		/* ignore hostgroups, but the total number is used. */
-		for (i = 0; i < nreps; i++) {
-			int num = gfarm_repattr_amount(reps[i]);
-
-			*total_p = *total_p + num;
-		}
+		*total_p = repspec_get_total_amount(reps);
 	}
 
-	/* gfarm_repattr_free_all(nreps, reps); -- shouldn't call (cached) */
+	/* repspec_free(reps); -- shouldn't call this, because it's cached */
 	return (save_e);
 }
 
@@ -292,29 +274,31 @@ fsngroup_has_spare_for_repattr(struct inode *inode, int current_copy_count,
 	gfarm_error_t e;
 	int n_scope;
 	struct hostset *scope;
-	const char *fsnset = NULL;
-	int ncopy, n_desired, total, found;
-	size_t i, nreps = 0;
-	gfarm_repattr_t *reps = NULL;
+	struct repplace *fsnset = NULL;
+	int nreps, ncopy, n_desired, total, found;
+	size_t i;
+	struct repspec *reps = NULL;
 
-	e = gfarm_repattr_parse_cached(repattr, &reps, &nreps);
+	e = repattr_parse_to_repspec_cached(repattr, &reps);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1004025,
-		    "gfarm_repattr_parse(%s): %s",
+		    "can't parse a repattr '%s': %s",
 		    repattr, gfarm_error_string(e));
 		return (e); /* report shortage, for safety */
 	}
+	nreps = repspec_get_repplace_number(reps);
 
 	n_desired = 0;
 	total = 0;
 	found = 0;
 	for (i = 0; i < nreps; i++) {
-		int num = gfarm_repattr_amount(reps[i]);
+		struct repplace *place = repspec_get_repplace(reps, i);
+		int num = repplace_get_amount(place);
 
 		total += num;
 		if (!found &&
-		    is_fsng_in_fsnset(fsng, gfarm_repattr_group(reps[i]))) {
-			fsnset = gfarm_repattr_group(reps[i]);
+		    is_fsng_in_fsnset(fsng, place)) {
+			fsnset = place;
 			n_desired = num;
 			found = 1;
 		}
@@ -322,13 +306,13 @@ fsngroup_has_spare_for_repattr(struct inode *inode, int current_copy_count,
 
 	if (current_copy_count <= total) {
 		/* shouldn't call the following, because it's cached */
-		/* gfarm_repattr_free_all(nreps, reps); */
+		/* repspec_free(nreps, reps); */
 		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
 	}
 
 	if (!gfarm_replicainfo_enabled) {
 		/* shouldn't call the following, because it's cached */
-		/* gfarm_repattr_free_all(nreps, reps); */
+		/* repspec_free(nreps, reps); */
 
 		/*
 		 * ignore 'n_desired' for the hostgroup
@@ -340,14 +324,14 @@ fsngroup_has_spare_for_repattr(struct inode *inode, int current_copy_count,
 	/* no desired number for the host */
 	if (n_desired <= 0) {
 		/* shouldn't call the following, because it's cached */
-		/* gfarm_repattr_free_all(nreps, reps); */
+		/* repspec_free(nreps, reps); */
 		return (GFARM_ERR_NO_ERROR); /* has spare */
 	}
 
 	e = hostset_of_fsnset_alloc(fsnset, &scope, &n_scope);
 
 	/* shouldn't call the following, because it's cached */
-	/* gfarm_repattr_free_all(nreps, reps); */
+	/* repspec_free(nreps, reps); */
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* e must be GFARM_ERR_NO_MEMORY */

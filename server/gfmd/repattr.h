@@ -2,13 +2,28 @@
  * $Id$
  */
 
-struct gfarm_repattr;
-typedef struct gfarm_repattr *gfarm_repattr_t;
+/*
+ * fsngroup := [-_0-9A-Za-z]*
+ *
+ * fsnset := fsngroup | fsngroup '+' fsnset
+ *
+ * repplace := fsnset ':' number
+ *
+ * repspec := repplace | repplace ',' repspec
+ */
 
-gfarm_error_t gfarm_repattr_parse(const char *, gfarm_repattr_t **, size_t *);
-void gfarm_repattr_free(gfarm_repattr_t);
-void gfarm_repattr_free_all(size_t, gfarm_repattr_t *);
-const char *gfarm_repattr_group(gfarm_repattr_t);
-size_t gfarm_repattr_amount(gfarm_repattr_t);
-gfarm_error_t gfarm_repattr_stringify(gfarm_repattr_t *, size_t, char **);
-gfarm_error_t gfarm_repattr_reduce(const char *, gfarm_repattr_t **, size_t *);
+struct repspec; /* abstact syntax struct of repattr */
+struct repplace;
+
+gfarm_error_t repattr_parse_to_repspec(const char *, struct repspec **);
+void repspec_free(struct repspec *);
+int repspec_get_total_amount(struct repspec *);
+gfarm_error_t repspec_validate(struct repspec *);
+gfarm_error_t repspec_to_string(struct repspec *, char **);
+
+int repspec_get_repplace_number(struct repspec *);
+struct repplace *repspec_get_repplace(struct repspec *, int);
+
+int repplace_get_fsngroup_number(struct repplace *);
+const char *repplace_get_fsngroup(struct repplace *, int);
+int repplace_get_amount(struct repplace *);

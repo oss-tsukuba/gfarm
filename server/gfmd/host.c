@@ -2707,7 +2707,7 @@ hostset_schedule_n_except(
  * hostset cache by fsngroup
  */
 
-#define FSNGROUP_HASHTAB_SIZE	31	/* prime number */
+#define FSNGROUP_HASHTAB_SIZE	317	/* prime number */
 
 /* protected by giant_lock */
 static struct gfarm_hash_table *fsngroup_hostset_hashtab = NULL;
@@ -2818,4 +2818,18 @@ hostset_union_fsngroup(struct hostset *hs, int *n_hostsp, const char *fsngroup)
 	if (n_hostsp != NULL)
 		*n_hostsp += hce->nhosts;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+/* PREREQUISITE: giant_lock */
+gfarm_error_t
+fsngroup_does_exist(const char *fsngroup)
+{
+	struct hostset_cache_entry *hce =
+	    hostset_of_fsngroup_cache_enter(fsngroup);
+
+	if (hce == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	return (hce->nhosts > 0 ?
+	    GFARM_ERR_NO_ERROR :
+	    GFARM_ERR_NO_SUCH_GROUP);
 }

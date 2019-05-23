@@ -137,3 +137,5 @@ gfarm_error_t hostset_schedule_n_except(struct hostset *,
 	int (*)(struct host *, void *), void *,
 	int,
 	int *, struct host ***, int *);
+
+gfarm_error_t fsngroup_does_exist(const char *);

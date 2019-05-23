@@ -8,12 +8,12 @@ if test $? -ne 0; then
 fi
 
 dir=$gftmp
-pat="g0:1, g1:1, g0:2, g2:1, g0:3"
+pat="g0:6, g1:1, g2:3"
 g0s=g0:6
 g1s=g1:1
-g2s=g2:1
+g2s=g2:3
 
-patfail="g0:1, g1:1, g0:2, g2:1, g0:3, g3:1"
+patfail="g0:5, g1:1, g2:3, g3:2"
 
 setup() {
     gfmkdir ${dir}
