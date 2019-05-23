@@ -36,6 +36,7 @@
 #include "quota.h"
 #include "subr.h"
 #include "inum_string_list.h"
+#include "event_waiter.h"
 #include "db_access.h"
 #include "host.h"
 #include "user.h"
@@ -56,7 +57,6 @@
 
 #include "auth.h" /* for "peer.h" */
 #include "peer.h" /* peer_reset_pending_new_generation() */
-#define USE_EVENT_WAITER
 #include "gfmd.h" /* resuming_*() */
 
 #define DIR_DEPTH_BUF_INIT			1024	/* == GFARM_PATH_MAX */
