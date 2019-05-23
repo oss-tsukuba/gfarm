@@ -2,6 +2,28 @@ extern int gfmd_port;
 
 struct peer;
 
+#ifdef USE_EVENT_WAITER
+
+struct event_waiter_link {
+	GFARM_HCIRCLEQ_ENTRY(event_waiter_link) event_link;
+};
+
+struct event_waiter_list {
+	GFARM_HCIRCLEQ_HEAD(event_waiter_link) head;
+};
+
+struct event_waiter;
+void event_waiter_list_init(struct event_waiter_list *);
+gfarm_error_t event_waiter_alloc(struct peer *,
+	gfarm_error_t (*)(struct peer *, void *, int *, gfarm_error_t),
+	void *, struct event_waiter_list *);
+gfarm_error_t event_waiter_with_timeout_alloc(struct peer *, int,
+	gfarm_error_t (*)(struct peer *, void *, int *, gfarm_error_t),
+	void *, struct event_waiter_list *);
+void event_waiters_signal(struct event_waiter_list *, gfarm_error_t);
+
+#endif /* USE_EVENT_WAITER */
+
  /*
   * The following part exports hook points for a private extension.
   *

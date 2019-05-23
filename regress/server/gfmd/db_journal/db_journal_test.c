@@ -30,7 +30,27 @@
 #include "db_journal_apply.h"
 
 /* XXX FIXME - dummy definitions to link successfully without gfmd.o */
-struct thread_pool *sync_protocol_get_thrpool(void) { return (NULL); }
+void
+event_waiter_list_init(struct event_waiter_list *list)
+{
+	abort();
+}
+struct thread_pool *sync_protocol_get_thrpool(void) { return NULL; }
+gfarm_error_t
+event_waiter_alloc(struct peer *peer,
+	gfarm_error_t (*action)(struct peer *, void *, int *, gfarm_error_t),
+	void *arg, struct event_waiter_list *list)
+{
+	return (GFARM_ERR_NO_MEMORY);
+}
+gfarm_error_t
+event_waiter_with_timeout_alloc(struct peer *peer, int timeout,
+	gfarm_error_t (*action)(struct peer *, void *, int *, gfarm_error_t),
+	void *arg, struct event_waiter_list *list)
+{
+	return (GFARM_ERR_NO_MEMORY);
+}
+void event_waiters_signal(struct event_waiter_list *list, gfarm_error_t e) {}
 void gfmd_terminate(const char *diag) {}
 int gfmd_port;
 

@@ -5,7 +5,6 @@ GFMD_COMMON_SRCS = \
 	$(GFMD_SRCDIR)/subr.c \
 	$(GFMD_SRCDIR)/inum_string_list.c \
 	$(GFMD_SRCDIR)/rpcsubr.c \
-	$(GFMD_SRCDIR)/event_waiter.c \
 	$(GFMD_SRCDIR)/watcher.c \
 	$(GFMD_SRCDIR)/journal_file.c \
 	$(GFMD_SRCDIR)/db_access.c \
@@ -43,7 +42,6 @@ GFMD_COMMON_OBJS = \
 	$(GFMD_BUILDDIR)/subr.o \
 	$(GFMD_BUILDDIR)/inum_string_list.o \
 	$(GFMD_BUILDDIR)/rpcsubr.o \
-	$(GFMD_BUILDDIR)/event_waiter.o \
 	$(GFMD_BUILDDIR)/watcher.o \
 	$(GFMD_BUILDDIR)/journal_file.o \
 	$(GFMD_BUILDDIR)/db_access.o \
@@ -98,7 +96,6 @@ DEPGFMDINC = \
 	$(GFMD_SRCDIR)/subr.h \
 	$(GFMD_SRCDIR)/inum_string_list.h \
 	$(GFMD_SRCDIR)/rpcsubr.h \
-	$(GFMD_SRCDIR)/event_waiter.h \
 	$(GFMD_SRCDIR)/watcher.h \
 	$(GFMD_SRCDIR)/journal_file.h \
 	$(GFMD_SRCDIR)/db_access.h \
