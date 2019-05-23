@@ -305,8 +305,9 @@ repspec_there_is_no_duplicate_fsngroup(struct repspec *repspec)
 }
 
 /*
- * repspec_validate() is for validating RPC request from users,
- * and validating metadata loading at startup is NOT intended.
+ * repspec_validate() is for validating RPC requests from users.
+ * this does NOT intend to be used for validating metadata loading
+ * at gfmd startup.
  *
  * especially, repspec_all_fsngroups_are_valid() check may not
  * be appropriate in case of temporary removal of filesystem nodes. 
@@ -323,6 +324,60 @@ repspec_validate(struct repspec *repspec)
 	e = repspec_there_is_no_duplicate_fsngroup(repspec);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static int
+strptr_compare(const void *a, const void *b)
+{
+	char *const *aa = a;
+	char *const *bb = b;
+
+	return (strcmp(*aa, *bb));
+}
+
+static int
+repplace_compare(const void *a, const void *b)
+{
+	const struct repplace *aa = a;
+	const struct repplace *bb = b;
+	static int first = 1;
+
+	if (aa->fsngroup_number <= 0 ||
+	    bb->fsngroup_number <= 0) {
+		/* this should not happen */
+		if (first) {
+			first = 0;
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "repplace_compare: invalid repspec, %d vs %d",
+			    aa->fsngroup_number,
+			    bb->fsngroup_number);
+		}
+		if (aa->fsngroup_number != 0)
+			return (1);
+		else if (aa->fsngroup_number != 0)
+			return (-1);
+		else
+			return (0);
+	}
+	return (strcmp(aa->fsngroup_names[0], bb->fsngroup_names[0]));
+}
+
+gfarm_error_t
+repspec_normalize(struct repspec *repspec)
+{
+	int i, n_repplaces, n_fsngroups;
+
+	n_repplaces = repspec->repplace_number;
+	for (i = 0; i < n_repplaces; i++) {
+		n_fsngroups = repspec->repplaces[i].fsngroup_number;
+		qsort(repspec->repplaces[i].fsngroup_names, n_fsngroups,
+		    sizeof(*repspec->repplaces[i].fsngroup_names),
+		    strptr_compare);
+	}
+	qsort(repspec->repplaces, n_repplaces, sizeof(*repspec->repplaces),
+	    repplace_compare);
 
 	return (GFARM_ERR_NO_ERROR);
 }

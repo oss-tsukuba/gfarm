@@ -233,6 +233,10 @@ xattr_check_repattr(
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "repspec_validate(%s): %s",
 		    (char *)*valuep, gfarm_error_string(e));
+	} else if ((e = repspec_normalize(reps)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "repspec_normalize(%s): %s",
+		    (char *)*valuep, gfarm_error_string(e));
 	} else if ((e = repspec_to_string(reps, &repattr))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1004042,
