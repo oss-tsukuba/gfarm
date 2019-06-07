@@ -362,6 +362,7 @@ fi
 %{man_prefix}/man1/gfarm_agent.1*
 %{man_prefix}/man1/gfcd.1*
 %endif
+%{man_prefix}/man1/gfarmbb.1*
 %{man_prefix}/man1/gfchgrp.1*
 %{man_prefix}/man1/gfchmod.1*
 %{man_prefix}/man1/gfchown.1*
@@ -549,6 +550,7 @@ fi
 %{man_prefix}/ja/man1/gfarm_agent.1*
 %{man_prefix}/ja/man1/gfcd.1*
 %endif
+%{man_prefix}/ja/man1/gfarmbb.1*
 %{man_prefix}/ja/man1/gfchgrp.1*
 %{man_prefix}/ja/man1/gfchmod.1*
 %{man_prefix}/ja/man1/gfchown.1*
@@ -715,6 +717,7 @@ fi
 %{html_prefix}/en/ref/man1/gfarm_agent.1.html
 %{html_prefix}/en/ref/man1/gfcd.1.html
 %endif
+%{html_prefix}/en/ref/man1/gfarmbb.1.html
 %{html_prefix}/en/ref/man1/gfchgrp.1.html
 %{html_prefix}/en/ref/man1/gfchmod.1.html
 %{html_prefix}/en/ref/man1/gfchown.1.html
@@ -909,6 +912,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfarm_agent.1.html
 %{html_prefix}/ja/ref/man1/gfcd.1.html
 %endif
+%{html_prefix}/ja/ref/man1/gfarmbb.1.html
 %{html_prefix}/ja/ref/man1/gfchgrp.1.html
 %{html_prefix}/ja/ref/man1/gfchmod.1.html
 %{html_prefix}/ja/ref/man1/gfchown.1.html
@@ -1128,11 +1132,12 @@ fi
 %{prefix}/bin/gfarm-pcp
 %{prefix}/bin/gfarm-prun
 %{prefix}/bin/gfarm-ptool
-%{prefix}/bin/gfdf
+%{prefix}/bin/gfarmbb
 %{prefix}/bin/gfchgrp
 %{prefix}/bin/gfchmod
 %{prefix}/bin/gfchown
 %{prefix}/bin/gfcksum
+%{prefix}/bin/gfdf
 %{prefix}/bin/gfdirpath
 %{prefix}/bin/gfdirquota
 %{prefix}/bin/gfedquota

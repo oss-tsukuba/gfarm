@@ -9,6 +9,7 @@ PRIVATE_TARGETS = $(PRIVATE_GFTOOL_SUBDIRS)
 PUBLIC_TARGETS =
 
 SUBDIRS = \
+	gfarmbb \
 	gfchmod \
 	gfchown \
 	gfcksum \

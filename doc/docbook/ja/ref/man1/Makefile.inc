@@ -1,4 +1,5 @@
 DOCBOOK = \
+	gfarmbb.1 \
 	gfchgrp.1 \
 	gfchmod.1 \
 	gfchown.1 \
