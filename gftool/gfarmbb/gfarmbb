@@ -1,0 +1,101 @@
+#! /bin/sh
+#
+# $Id$
+
+set -e
+
+PROGRAM=gfarmbb
+TMPDIR=/tmp/gfarmbb-scratch
+PERIOD=-1
+
+usage() {
+    echo "usage: $PROGRAM [-h hostfile] [-scr scratch_dir] [-m mount_point] start | stop"
+    echo ""
+    echo "options:"
+    echo "        -h hostfile"
+    echo "            specifies a hostfile."
+    echo "        -scr scratch_dir"
+    echo "            specifies a scratch directory. ($TMPDIR)"
+    echo "        -m mount_point"
+    echo "            specifies a mount point."
+    echo "        -p period"
+    echo "            specifies a period for a Gfarm shared key in second."
+    echo "            Default is 86400 seconds (1 day)."
+    exit 1
+}
+
+err() {
+    [ $# -gt 0 ] && echo >&2 $*
+    exit 1
+}
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        start) mode=start ;;
+	stop) mode=stop ;;
+	-h) shift; HOSTFILE=$1 ;;
+	-scr) shift; TMPDIR=$1 ;;
+	-m) shift; MDIR=$1 ;;
+	-p) shift; PERIOD=$1 ;;
+	-*) echo "unknown option: $1"
+	    usage ;;
+	*) usage ;;
+	esac
+	shift
+done
+
+: ${USER:=`whoami`}
+
+if [ X"$HOSTFILE" != X ]; then
+    [ -e $HOSTFILE ] || err $HOSTFILE: no such host file
+
+    alias prun="gfarm-prun -a -p -h $HOSTFILE"
+    alias pcp="gfarm-pcp -p -h $HOSTFILE"
+else
+    alias prun=""
+    alias pcp=":"
+fi
+
+start() {
+    [ -d $TMPDIR ] || mkdir -p $TMPDIR
+    [ -d $TMPDIR ] || err $TMPDIR: no such scratch directory
+
+    export GFARM_CONFIG_FILE=$TMPDIR/etc/gfarm2.conf
+    SHARED_KEY_FILE=$TMPDIR/etc/.gfarm_shared_key
+    prun mkdir -p $TMPDIR/etc
+    config-gfarm --prefix $TMPDIR -S -N -A $USER -b none > /dev/null
+    echo shared_key_file $SHARED_KEY_FILE >> $TMPDIR/etc/gfmd.conf
+    echo shared_key_file $SHARED_KEY_FILE >> $TMPDIR/etc/gfsd.conf
+    echo shared_key_file $SHARED_KEY_FILE >> $GFARM_CONFIG_FILE
+    #cp -p $GFARM_CONFIG_FILE $HOME/.gfarm2rc
+    gfkey -c -p $PERIOD
+    $TMPDIR/etc/init.d/gfmd start
+    pcp $GFARM_CONFIG_FILE $TMPDIR/etc/gfsd.conf $TMPDIR/etc/usermap $SHARED_KEY_FILE $TMPDIR/etc
+    prun config-gfsd --prefix $TMPDIR -S > /dev/null
+    [ X"$MDIR" = X ] || prun mount.gfarm2fs $GFARM_CONFIG_FILE $MDIR || :
+    echo export GFARM_CONFIG_FILE=$GFARM_CONFIG_FILE
+}
+
+stop() {
+    [ -d $TMPDIR ] || err $TMPDIR: no such scratch directory
+
+    prun umount.gfarm2fs > /dev/null 2>&1 || :
+    prun $TMPDIR/etc/unconfig-gfsd.sh -f
+    $TMPDIR/etc/unconfig-gfarm.sh -f > /dev/null
+    prun rm -rf $TMPDIR
+    #rm -f $HOME/.gfarm2rc
+}
+
+which config-gfarm > /dev/null 2>&1 || err no gfarm installation
+#which mount.gfarm2fs > /dev/null 2>&1 || err no gfarm2fs installation
+
+case $mode in
+start)
+    start ;;
+stop)
+    stop ;;
+*)
+    usage ;;
+esac
+
+exit 0
