@@ -772,10 +772,10 @@ parse_fix_flags(const char *option)
 		return (GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_REQUEST);
 	else if (strcmp(option, "replication_wait") == 0)
 		return (GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_WAIT);
-	else if (strcmp(option, "retry_when_afford") == 0)
-		return (GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_AFFORD);
-	else if (strcmp(option, "retry_when_closed") == 0)
-		return (GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_CLOSED);
+	else if (strcmp(option, "retry") == 0)
+		return (GFM_PROTO_REPLICA_FIX_IFLAG_RETRY);
+	else if (strcmp(option, "retry_when_writing") == 0)
+		return (GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_WRITING);
 	else {
 		fprintf(stderr, "%s: unknown -F flag \"%s\"\n",
 		    program_name, option);
@@ -854,7 +854,7 @@ main(int argc, char **argv)
 			fix_flags |=
 			    GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_REQUEST|
 			    GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_WAIT|
-			    GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_AFFORD;
+			    GFM_PROTO_REPLICA_FIX_IFLAG_RETRY;
 			break;
 		case 't':
 			opt_timeout = atoi(optarg);

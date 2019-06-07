@@ -1530,15 +1530,16 @@ int
 process_replica_fix_should_retry(gfarm_error_t e, gfarm_uint64_t iflags)
 {
 	/* see the "ERRORS:" comment of process_replica_fix() for detail */
+
 	switch (e) {
 	case GFARM_ERR_TEXT_FILE_BUSY:
 		return ((iflags &
-		    GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_CLOSED) != 0);
+		    GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_WRITING) != 0);
 	case GFARM_ERR_TOO_MANY_JOBS:
 		/*FALLTHROUGH*/
 	case GFARM_ERR_FILE_BUSY:
 		return ((iflags &
-		    GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_AFFORD) != 0);
+		    GFM_PROTO_REPLICA_FIX_IFLAG_RETRY) != 0);
 	default:
 		return (0);
 	}

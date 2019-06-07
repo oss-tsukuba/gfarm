@@ -4378,7 +4378,7 @@ replica_fix_wait_resume(struct peer *peer, void *closure, int *suspendedp,
 		    "%s: peer_get_process() failed", diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (result == GFARM_ERR_TEXT_FILE_BUSY &&
-	    (arg->iflags & GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_CLOSED) !=0
+	    (arg->iflags & GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_WRITING) !=0
 	    && (!arg->check_expiration ||
 		!gfarm_timeval_is_expired(&arg->expiration_time))) {
 		/* EVENT_REPLICA_FIXED is canceled by generation update */
@@ -4518,8 +4518,8 @@ gfm_server_replica_fix(struct peer *peer, int from_client, int skip,
 	} else if ((iflags &
 	     ~(GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_REQUEST|
 	       GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_WAIT|
-	       GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_AFFORD|
-	       GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_CLOSED)) != 0) {
+	       GFM_PROTO_REPLICA_FIX_IFLAG_RETRY|
+	       GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_WRITING)) != 0) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: user %s requested invalid iflags: 0x%llx", diag,
