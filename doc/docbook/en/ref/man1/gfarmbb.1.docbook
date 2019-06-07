@@ -1,0 +1,99 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<!-- $Id: gfls.1.docbook 10309 2016-11-30 23:32:30Z n-soda $ -->
+
+<refentry id="gfarmbb.1">
+
+<refentryinfo><date>7 Jun 2019</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarmbb</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>gfarmbb</refname>
+<refpurpose>start and stop Gfarm/BB (Gfarm for node-local burst buffer)</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfarmbb</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>mode</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>
+Gfarm/BB is an on-demand user-level file system for node-local
+storages on compute nodes.  <command moreinfo="none">gfarmbb</command>
+starts a Gfarm/BB and stops it.
+The <parameter moreinfo="none">mode</parameter> should be start or
+stop.  When the mode is start, it displays the environment variable
+that should be eval'ed to use Gfarm commands as follows;
+</para>
+<para>
+% eval `gfarmbb start`
+</para>
+
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+
+<variablelist>
+
+<varlistentry>
+<term><option>-h</option> <parameter moreinfo="none">hostfile</parameter></term>
+<listitem>
+<para>
+specifies a <parameter moreinfo="none">hostfile</parameter> that
+contains a list of hostnames of compute nodes.  It is necessary to
+specify the same hostfile for gfarmbb start and gfarmbb stop.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-scr</option> <parameter moreinfo="none">scratch_dir</parameter></term>
+<listitem>
+<para>
+specifies a scratch directory on each compute node for Gfarm/BB.  If
+it does not exist, it is created.  This directory will be removed by
+gfarmbb stop.  It is necessary to specify the same directory for
+gfarmbb start and gfarmbb stop.  Default is /tmp/gfarmbb-scratch.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option> <parameter moreinfo="none">mount_point</parameter></term>
+<listitem>
+<para>
+When this option is specified, a Gfarm/BB is mounted at the specified
+mount point on each compute node.  mount.gfarm2fs is required.  This
+option is available only for gfarmbb start.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-p</option> <parameter moreinfo="none">period</parameter></term>
+<listitem>
+<para>
+specifies the period of a shared secret key in seconds for Gfarm/BB.
+This period should be longer than the job execution duration.  Default
+is 86400 seconds (1 day).
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+</refentry>
+
