@@ -75,13 +75,13 @@ service_unconfig()
 		TEST_OPT=$1
 	fi
 
-	service_stop_$BACKEND_TYPE $TEST_OPT gfmd
+	service_ctl $TEST_OPT gfmd stop
 	service_stop_$BACKEND_TYPE $TEST_OPT $RC_BACKEND_BASENAME
 
 	delete_file_or_directory -f $TEST_OPT "$GFMD_CONF"
 	delete_file_or_directory -f $TEST_OPT "$GFARM_CONF"
 
-	service_remove_$BACKEND_TYPE $TEST_OPT gfmd
+	service_remove $TEST_OPT gfmd
 	service_remove_$BACKEND_TYPE $TEST_OPT "$RC_BACKEND_BASENAME"
 
 	delete_file_or_directory -f $TEST_OPT "$RC_GFMD"
