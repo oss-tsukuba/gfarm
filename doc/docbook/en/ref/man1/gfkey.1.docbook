@@ -6,7 +6,7 @@
 
 <refentry id="gfkey.1">
 
-<refentryinfo><date>25 Feb 2010</date></refentryinfo>
+<refentryinfo><date>6 Jun 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfkey</refentrytitle>
@@ -33,7 +33,10 @@
 <filename moreinfo="none">$HOME/.gfarm_shared_key</filename>,
 that is used for user authentication by a shared secret key
 in a trusted environment when
-connecting to gfsd and/or gfmd.</para>
+connecting to gfsd and/or gfmd.
+The location of the seesion key file can be specified by
+shared_key_file in gfarm2.conf.
+</para>
 
 <para>When the home directory is shared among filesystem nodes, it is not
 necessary to use this command.  If not, it is necessary to distribute
@@ -66,7 +69,7 @@ key already exists.</para>
 <term><option>-p</option> <parameter moreinfo="none">period</parameter></term>
 <listitem>
 <para>Specifies the term of validity in seconds.  This option has to be
-used with the -c or -f option.</para>
+used with the -c or -f option.  Default is 86400 seconds (1 day).</para>
 </listitem>
 </varlistentry>
 
