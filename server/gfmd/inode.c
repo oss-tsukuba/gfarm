@@ -161,6 +161,17 @@ struct inode_activity {
 	union inode_state_type_specific {
 		struct inode_state_file {
 			enum {
+				/*
+				 * if the inode is during generation update,
+				 * no one will wait for EVENT_REPLICA_FIXED,
+				 * because either the inode is opened for
+				 * writing, or previous EVENT_REPLICA_FIXED
+				 * state must be canceled via
+				 * inode_check_replica_fixed_event()
+				 * which is called from
+				 * inode_new_generation_by_cookie_start()
+				 * in case of GFM_PROTO_FHCLOSE_WRITE.
+				 */
 				EVENT_NONE,
 				EVENT_GEN_UPDATED,
 				EVENT_GEN_UPDATED_BY_COOKIE,
@@ -1004,9 +1015,9 @@ static struct gflog_reduced_state rep_fixed_state =
  *		should NOT retry
  *		some replication may be already scheduled
  *	GFARM_ERR_DISK_QUOTA_EXCEEDED
- *		should NOT retry
+ *		should NOT retry(?)
  *	GFARM_ERR_NO_MEMORY
- *		should NOT retry
+ *		should NOT retry(?)
  *	and maybe other errors
  */
 gfarm_error_t
@@ -1211,9 +1222,9 @@ inode_schedule_replication_from_all(
  *		should NOT retry
  *		some replication may be already scheduled
  *	GFARM_ERR_DISK_QUOTA_EXCEEDED
- *		should NOT retry
+ *		should NOT retry(?)
  *	GFARM_ERR_NO_MEMORY
- *		should NOT retry
+ *		should NOT retry(?)
  *	and maybe other errors
  */
 gfarm_error_t
@@ -1289,9 +1300,9 @@ static gfarm_error_t inode_replica_hostset(struct inode *, struct file_copy *,
  *		should NOT retry
  *		some replication may be already scheduled
  *	GFARM_ERR_DISK_QUOTA_EXCEEDED
- *		should NOT retry
+ *		should NOT retry(?)
  *	GFARM_ERR_NO_MEMORY
- *		should NOT retry
+ *		should NOT retry(?)
  *	and maybe other errors
  *
  * NOTE: excluding_list may or may not include spool_host.
@@ -5939,11 +5950,17 @@ inode_replicated(struct file_replicating *fr,
 		    fr->dst);
 	}
 
-	inode_check_replica_fixed_event(inode, e);
 	file_replicating_free(fr);
 
 	if (transaction)
 		db_end(diag);
+
+	/*
+	 * call inode_check_replica_fixed_event()
+	 * when all replication is completed, or an error occurs
+	 */
+	if (e != GFARM_ERR_NO_ERROR || !inode_is_replication_ongoing(inode))
+		inode_check_replica_fixed_event(inode, e);
 
 	if (e == GFARM_ERR_INVALID_FILE_REPLICA &&
 	    src_errcode != GFARM_ERR_INVALID_FILE_REPLICA &&
@@ -6726,6 +6743,27 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 	return (e);
 }
 
+/*
+ * ERRORS:
+ *	GFARM_ERR_NO_SUCH_OBJECT
+ *		already OK, because it's a 0-byte file.
+ *		should NOT retry
+ *	GFARM_ERR_NOT_A_REGULAR_FILE
+ *		this inode is not a file
+ *		should NOT retry
+ *	GFARM_ERR_TEXT_FILE_BUSY
+ *		this file is currently opened for writing
+ *		should NOT retry (when it's updated, replication will happen)
+ *	GFARM_ERR_INPUT_OUTPUT
+ *		lost all replica
+ *		should NOT retry
+ *	GFARM_ERR_NO_FILESYSTEM_NODE
+ *		no available replica (some filesystem nodes are down)
+ *		should NOT retry (when it's up, replicaion will happen)
+ *	GFARM_ERR_NO_MEMORY
+ *		should NOT retry(?)
+ *	and maybe other errors
+ */
 gfarm_error_t
 inode_replica_fix_prepare(struct inode *inode, const char *diag,
 	int *n_srcsp, struct host ***srcsp,
@@ -6788,6 +6826,38 @@ inode_replica_fix_prepare(struct inode *inode, const char *diag,
 	return (e);
 }
 
+/*
+ * ERRORS:
+ *	GFARM_ERR_NOT_A_REGULAR_FILE
+ *		this inode is not a file
+ *		should NOT retry
+ *	GFARM_ERR_TEXT_FILE_BUSY
+ *		this file is currently opened for writing
+ *		should NOT retry (when it's updated, replication will happen)
+ *	GFARM_ERR_INPUT_OUTPUT
+ *		lost all replica
+ *		should NOT retry
+ *	GFARM_ERR_NO_FILESYSTEM_NODE
+ *		no available replica (some filesystem nodes are down)
+ *		should NOT retry (when it's up, replicaion will happen)
+ *	GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE
+ *		temporary error due to simultaneous_replication_receivers
+ *		should retry the replication
+ *		some replication may be already scheduled
+ *	GFARM_ERR_FILE_BUSY
+ *		temporary error due to replica removal
+ *		should retry the replication
+ *		some replication may be already scheduled
+ *	GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS
+ *		permanent error due to insufficient number of gfsd
+ *		should NOT retry
+ *		some replication may be already scheduled
+ *	GFARM_ERR_DISK_QUOTA_EXCEEDED
+ *		should NOT retry(?)
+ *	GFARM_ERR_NO_MEMORY
+ *		should NOT retry(?)
+ *	and maybe other errors
+ */
 gfarm_error_t
 inode_replica_fix_request(
 	struct inode *inode, int desired_number, const char *repattr)
