@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfkey
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 25 Feb 2010
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 6 Jun 2019
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFKEY" "1" "25 Feb 2010" "Gfarm" "Gfarm"
+.TH "GFKEY" "1" "6 Jun 2019" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -36,7 +36,7 @@ gfkey \- management of Gfarm session keys
 .PP
 \fBgfkey\fR
 manages the session key file,
-$HOME/\&.gfarm_shared_key, that is used for user authentication by a shared secret key in a trusted environment when connecting to gfsd and/or gfmd\&.
+$HOME/\&.gfarm_shared_key, that is used for user authentication by a shared secret key in a trusted environment when connecting to gfsd and/or gfmd\&. The location of the seesion key file can be specified by shared_key_file in gfarm2\&.conf\&.
 .PP
 When the home directory is shared among filesystem nodes, it is not necessary to use this command\&. If not, it is necessary to distribute a session key created with the \-c or \-f option to every filesystem node, in advance\&.
 .SH "OPTIONS"
@@ -53,7 +53,7 @@ Forces the creation of a new session key, even if a valid session key already ex
 .PP
 \fB\-p\fR \fIperiod\fR
 .RS 4
-Specifies the term of validity in seconds\&. This option has to be used with the \-c or \-f option\&.
+Specifies the term of validity in seconds\&. This option has to be used with the \-c or \-f option\&. Default is 86400 seconds (1 day)\&.
 .RE
 .PP
 \fB\-l\fR
