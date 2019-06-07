@@ -73,13 +73,11 @@ test_readonly_enable_all_host() {
   done
   IFS="$_IFS"
 
-  export GFARM_CONFIG_FILE="$SHORT_TIMEOUT_CONF_FILE"
-  gfreg "${data}/1byte" "${gftmp}/test3"
+  GFARM_CONFIG_FILE="$SHORT_TIMEOUT_CONF_FILE" gfreg "${data}/1byte" "${gftmp}/test3"
   if [ "$?" -eq 0 ]; then
     echo "unexpected success: ${diag}: gfreg"
     exit
   fi
-  unset GFARM_CONFIG_FILE
 }
 
 test_one_writable_host() {

@@ -8,10 +8,12 @@ GFPREP=$regress/bin/gfprep_for_test
 
 GFS_PIO_TEST_P=${base}/../../../lib/libgfarm/gfarm/gfs_pio_test/gfs_pio_test
 update_file() {
+  CONFIG_FILE="$1"
+  shift
   #V="-v"
   V=""
   #echo "echo 12345 | $GFS_PIO_TEST_P $V -w -W 5 $@"
-  echo 12345 | $GFS_PIO_TEST_P $V -w -W 5 $@
+  echo 12345 | GFARM_CONFIG_FILE="$CONFIG_FILE" $GFS_PIO_TEST_P $V -w -W 5 $@
   return $?
 }
 

@@ -18,34 +18,35 @@ replication_at_write_open disable
 __EOF__
 
 prepare_file() {
+  CONFIG_FILE="$1"
+  shift
   srcfile="$1"
-  gfrm -f "$GF_TEST_FILE"
+  GFARM_CONFIG_FILE="$CONFIG_FILE" gfrm -f "$GF_TEST_FILE"
   #gfhost -M "$ROHOST"
   #gfsched -w
   #gfdf -h
   #gfdf -ih
   #echo gfreg -h "$ROHOST" "$srcfile" "$GF_TEST_FILE"
-  gfreg -h "$ROHOST" "$srcfile" "$GF_TEST_FILE" || exit
-  gfhost -m -f "$(set_readonly_flag "$FLAGS")" "$ROHOST" || exit
+  GFARM_CONFIG_FILE="$CONFIG_FILE" gfreg -h "$ROHOST" "$srcfile" "$GF_TEST_FILE" || exit
+  GFARM_CONFIG_FILE="$CONFIG_FILE" gfhost -m -f "$(set_readonly_flag "$FLAGS")" "$ROHOST" || exit
 }
 
 cleanup_file() {
-  gfhost -m -f "$(unset_readonly_flag "$FLAGS")" "$ROHOST" || exit
-  gfrm -f "$GF_TEST_FILE"
+  CONFIG_FILE="$1"
+  GFARM_CONFIG_FILE="$CONFIG_FILE" gfhost -m -f "$(unset_readonly_flag "$FLAGS")" "$ROHOST" || exit
+  GFARM_CONFIG_FILE="$CONFIG_FILE" gfrm -f "$GF_TEST_FILE"
 }
 
 test_rawo_disable_1B_common() {
   opts="$1"
   diag="$2"
-  export GFARM_CONFIG_FILE="$REP_DISABLE_CONF_FILE"
-  prepare_file "${data}/1byte"
-  update_file $opts "$GF_TEST_FILE"
+  prepare_file "$REP_DISABLE_CONF_FILE" "${data}/1byte"
+  update_file "$REP_DISABLE_CONF_FILE" $opts "$GF_TEST_FILE"
   if [ "$?" -eq 0 ]; then
     echo "unexpected success: ${diag}"
     exit
   fi
-  cleanup_file
-  unset GFARM_CONFIG_FILE
+  cleanup_file "$REP_DISABLE_CONF_FILE"
 }
 
 test_rawo_disable_1B_writeopen() {
@@ -61,15 +62,13 @@ test_rawo_disable_1B_create() {
 test_rawo_disable_0B_common() {
   opts="$1"
   diag="$2"
-  export GFARM_CONFIG_FILE="$REP_DISABLE_CONF_FILE"
-  prepare_file "${data}/0byte"
-  update_file $opts "$GF_TEST_FILE"
+  prepare_file "$REP_DISABLE_CONF_FILE" "${data}/0byte"
+  update_file "$REP_DISABLE_CONF_FILE" $opts "$GF_TEST_FILE"
   if [ "$?" -ne 0 ]; then
     echo "failed: ${diag}"
     exit
   fi
-  cleanup_file
-  unset GFARM_CONFIG_FILE
+  cleanup_file "$REP_DISABLE_CONF_FILE"
 }
 
 test_rawo_disable_0B_writeopen() {
@@ -85,15 +84,13 @@ test_rawo_disable_0B_create() {
 test_rawo_disable_1B_truncate_common() {
   opts="$1"
   diag="$2"
-  export GFARM_CONFIG_FILE="$REP_DISABLE_CONF_FILE"
-  prepare_file "${data}/1byte"
-  update_file -t $opts "$GF_TEST_FILE"
+  prepare_file "$REP_DISABLE_CONF_FILE" "${data}/1byte"
+  update_file "$REP_DISABLE_CONF_FILE" -t $opts "$GF_TEST_FILE"
   if [ "$?" -ne 0 ]; then
     echo "failed: ${diag}"
     exit
   fi
-  cleanup_file
-  unset GFARM_CONFIG_FILE
+  cleanup_file "$REP_DISABLE_CONF_FILE"
 }
 
 test_rawo_disable_1B_truncate_writeopen() {
@@ -109,15 +106,13 @@ test_rawo_disable_1B_truncate_create() {
 test_rawo_enable_1B_specified_host_common() {
   opts="$1"
   diag="$2"
-  export GFARM_CONFIG_FILE="$REP_ENABLE_CONF_FILE"
-  prepare_file "${data}/1byte"
-  update_file -h "$ROHOST" $opts "$GF_TEST_FILE"
+  prepare_file "$REP_ENABLE_CONF_FILE" "${data}/1byte"
+  update_file "$REP_ENABLE_CONF_FILE" -h "$ROHOST" $opts "$GF_TEST_FILE"
   if [ "$?" -eq 0 ]; then
     echo "unexpected success: ${diag}"
     exit
   fi
-  cleanup_file
-  unset GFARM_CONFIG_FILE
+  cleanup_file "$REP_ENABLE_CONF_FILE"
 }
 
 test_rawo_enable_1B_specified_host_writeopen() {
@@ -133,15 +128,13 @@ test_rawo_enable_1B_specified_host_create() {
 test_rawo_enable_1B_common() {
   opts="$1"
   diag="$2"
-  export GFARM_CONFIG_FILE="$REP_ENABLE_CONF_FILE"
-  prepare_file "${data}/1byte"
-  update_file $opts "$GF_TEST_FILE"
+  prepare_file "$REP_ENABLE_CONF_FILE" "${data}/1byte"
+  update_file "$REP_ENABLE_CONF_FILE" $opts "$GF_TEST_FILE"
   if [ "$?" -ne 0 ]; then
     echo "failed: ${diag}"
     exit
   fi
-  cleanup_file
-  unset GFARM_CONFIG_FILE
+  cleanup_file "$REP_ENABLE_CONF_FILE"
 }
 
 test_rawo_enable_1B_writeopen() {
@@ -161,23 +154,22 @@ simultaneous_common() {
   if [ $remove = 'true' ]; then
     diag=${diag}_and_remove
   fi
-  export GFARM_CONFIG_FILE="$REP_ENABLE_CONF_FILE"
   srcfile="${localtmp}/bigfile"
   dd if=/dev/zero "of=${srcfile}" bs=1M count=500 2> /dev/null
-  prepare_file "$srcfile"
-  update_file "$GF_TEST_FILE" &
+  prepare_file "$REP_ENABLE_CONF_FILE" "$srcfile"
+  update_file "$REP_ENABLE_CONF_FILE" "$GF_TEST_FILE" &
   p1=$!
-  update_file "$GF_TEST_FILE" &
+  update_file "$REP_ENABLE_CONF_FILE" "$GF_TEST_FILE" &
   p2=$!
   sleep 1
   if [ $remove = 'true' ]; then
-    gfrm "$GF_TEST_FILE" || exit
+    GFARM_CONFIG_FILE="$REP_ENABLE_CONF_FILE" gfrm "$GF_TEST_FILE" || exit
   fi
   wait $p1
   r1=$?
   wait $p2
   r2=$?
-  cleanup_file
+  cleanup_file "$REP_ENABLE_CONF_FILE"
   if [ $remove = 'true' ]; then
     if [ "$r1" -eq 0 -a "$r2" -eq 0 ]; then
       echo "XFAIL: error is not occurred: ${diag}"
@@ -192,7 +184,6 @@ simultaneous_common() {
       exit
     fi
   fi
-  unset GFARM_CONFIG_FILE
 }
 
 test_rawo_enable_writeopen_simultaneous() {
