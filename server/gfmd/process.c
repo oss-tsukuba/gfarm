@@ -1526,6 +1526,58 @@ process_replica_added(struct process *process,
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
 
+int
+process_replica_fix_should_retry(gfarm_error_t e, gfarm_uint64_t iflags)
+{
+	/* see the "ERRORS:" comment of process_replica_fix() for detail */
+	switch (e) {
+	case GFARM_ERR_TEXT_FILE_BUSY:
+		return ((iflags &
+		    GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_CLOSED) != 0);
+	case GFARM_ERR_TOO_MANY_JOBS:
+		/*FALLTHROUGH*/
+	case GFARM_ERR_FILE_BUSY:
+		return ((iflags &
+		    GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_AFFORD) != 0);
+	default:
+		return (0);
+	}
+}
+
+/*
+ * ERRORS:
+ *	GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE
+ *		inode_replica_fix_wait() should be called later.
+ *	GFARM_ERR_NOT_A_REGULAR_FILE
+ *		this inode is not a file
+ *		should NOT retry
+ *	GFARM_ERR_TEXT_FILE_BUSY
+ *		this file is currently opened for writing
+ *		should NOT retry (when it's updated, replication will happen)
+ *	GFARM_ERR_INPUT_OUTPUT
+ *		lost all replica
+ *		should NOT retry
+ *	GFARM_ERR_NO_FILESYSTEM_NODE
+ *		no available replica (some filesystem nodes are down)
+ *		should NOT retry (when it's up, replicaion will happen)
+ *	GFARM_ERR_TOO_MANY_JOBS
+ *		temporary error due to simultaneous_replication_receivers
+ *		should retry the replication
+ *		some replication may be already scheduled
+ *	GFARM_ERR_FILE_BUSY
+ *		temporary error due to replica removal
+ *		should retry the replication
+ *		some replication may be already scheduled
+ *	GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS
+ *		permanent error due to insufficient number of gfsd
+ *		should NOT retry
+ *		some replication may be already scheduled
+ *	GFARM_ERR_DISK_QUOTA_EXCEEDED
+ *		should NOT retry
+ *	GFARM_ERR_NO_MEMORY
+ *		should NOT retry
+ *	and maybe other errors
+ */
 gfarm_error_t
 process_replica_fix(struct process *process, struct peer *peer,
 	int fd, gfarm_uint64_t iflags, const char *diag,
@@ -1542,8 +1594,9 @@ process_replica_fix(struct process *process, struct peer *peer,
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) { /* i.e. is a directory */
+		/* detect this even without inode_replica_fix_request() */
 		e = GFARM_ERR_NOT_A_REGULAR_FILE;
-		gflog_info(GFARM_MSG_UNFIXED, "%s: inode %lld: %s",
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: inode %lld: %s",
 		    diag, (long long)inode_get_number(fo->inode),
 		    gfarm_error_string(e));
 		return (e);

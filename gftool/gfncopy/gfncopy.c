@@ -765,6 +765,26 @@ handle_args(
 	return (n_error);
 }
 
+static gfarm_uint64_t
+parse_fix_flags(const char *option)
+{
+	if (strcmp(option, "replication_request") == 0)
+		return (GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_REQUEST);
+	else if (strcmp(option, "replication_wait") == 0)
+		return (GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_WAIT);
+	else if (strcmp(option, "retry_when_afford") == 0)
+		return (GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_AFFORD);
+	else if (strcmp(option, "retry_when_closed") == 0)
+		return (GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_CLOSED);
+	else {
+		fprintf(stderr, "%s: unknown -F flag \"%s\"\n",
+		    program_name, option);
+		usage();
+		/*NOTREACHED*/
+		return (0);
+	}
+}
+
 int
 main(int argc, char **argv)
 {
@@ -787,7 +807,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "s:S:CMrckwt:vh?")) != -1) {
+	while ((c = getopt(argc, argv, "s:S:CMrcF:wt:vh?")) != -1) {
 		switch (c) {
 		case 's':
 			if (opt_mode != MODE_NONE)
@@ -821,19 +841,20 @@ main(int argc, char **argv)
 				usage();
 			opt_mode = MODE_COUNT;
 			break;
-		case 'k': /* kick */
+		case 'F':
 			if (opt_mode != MODE_NONE && opt_mode != MODE_WAIT)
 				usage();
 			opt_mode = MODE_WAIT;
-			fix_flags |=
-			    GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_REQUEST;
+			fix_flags |= parse_fix_flags(optarg);
 			break;
 		case 'w':
 			if (opt_mode != MODE_NONE && opt_mode != MODE_WAIT)
 				usage();
 			opt_mode = MODE_WAIT;
 			fix_flags |=
-			    GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_WAIT;
+			    GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_REQUEST|
+			    GFM_PROTO_REPLICA_FIX_IFLAG_REPLICATION_WAIT|
+			    GFM_PROTO_REPLICA_FIX_IFLAG_RETRY_WHEN_AFFORD;
 			break;
 		case 't':
 			opt_timeout = atoi(optarg);

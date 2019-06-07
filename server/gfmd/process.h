@@ -147,6 +147,7 @@ gfarm_error_t gfm_server_inherit_fd(struct peer *, int, int);
 
 gfarm_error_t process_replication_request(struct process *, struct peer *,
 	struct host *, struct host *, int, gfarm_int32_t, const char *);
+int process_replica_fix_should_retry(gfarm_error_t, gfarm_uint64_t);
 gfarm_error_t process_replica_fix(struct process *, struct peer *,
 	int, gfarm_uint64_t, const char *, gfarm_uint64_t *);
 gfarm_error_t process_replica_fix_wait(struct process *, struct peer *, int,
