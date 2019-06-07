@@ -439,6 +439,8 @@ replica_check_fix(struct replication_info *info)
 	hostset_free(existing);
 	hostset_free(being_removed);
 	free(srcs);
+	if (e == GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS)
+		return (GFARM_ERR_NO_ERROR); /* do not retry */
 	return (e);
 }
 
