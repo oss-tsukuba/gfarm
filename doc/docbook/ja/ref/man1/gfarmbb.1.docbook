@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<!-- $Id: gfls.1.docbook 10309 2016-11-30 23:32:30Z n-soda $ -->
+
+<refentry id="gfarmbb.1">
+
+<refentryinfo><date>7 Jun 2019</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarmbb</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id="name">
+<refname>gfarmbb</refname>
+<refpurpose>Gfarm/BB（Gfarm burst buffer）を構築・撤去する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfarmbb</command>
+    <arg choice="opt" rep="norepeat"><replaceable>options</replaceable></arg>
+    <arg choice="plain" rep="norepeat"><replaceable>mode</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>
+Gfarm/BBは計算ノードのローカルストレージを用いる、一時的なオンデマンド
+ユーザレベルファイルシステムです。
+<command moreinfo="none">gfarmbb</command>はGfarm/BBの構築、撤去を行い
+ます。<parameter moreinfo="none">mode</parameter>には、startかstopを指定します。mode
+がstartのとき、環境変数が
+表示されます。Gfarm/BBに対しGfarmコマンドを用いるためには、次のように環
+境変数を評価します。
+</para>
+<para>
+% eval `gfarmbb start`
+</para>
+
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+
+<variablelist>
+
+<varlistentry>
+<term><option>-h</option> <parameter moreinfo="none">hostfile</parameter></term>
+<listitem>
+<para>
+計算ノードのホスト名のリストを含む
+<parameter moreinfo="none">hostfile</parameter>を指定します。startと
+stopで同じホストファイルを指定してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-scr</option> <parameter moreinfo="none">scratch_dir</parameter></term>
+<listitem>
+<para>
+Gfarm/BBを構成するための各計算ノードのスクラッチディレクトリを指定し
+ます。指定されたディレクトリが存在しない場合は作成されます。またこの
+ディレクトリ以下のファイルはgfarmbb stopで削除されます。startとstop
+で同じディレクトリを指定してください。デフォルトは
+/tmp/gfarmbb-scratchです。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option> <parameter moreinfo="none">mount_point</parameter></term>
+<listitem>
+<para>
+このオプションが指定されたとき、構築したGfarm/BBは指定されたマウント
+ポイントにマウントされます。mount.gfarm2fsが必要です。また、本オプ
+ションはstartのときだけ有効です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-p</option> <parameter moreinfo="none">period</parameter></term>
+<listitem>
+<para>
+Gfarm/BBの共有鍵の有効期間を秒単位で指定します。有効時間はジョブ実行
+時間より長くする必要があります。デフォルトは86400秒（1日）です。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+</refentry>
+
