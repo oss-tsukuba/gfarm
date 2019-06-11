@@ -5,7 +5,7 @@
 
 <refentry id="gfkey.1">
 
-<refentryinfo><date>25 Feb 2010</date></refentryinfo>
+<refentryinfo><date>6 Jun 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfkey</refentrytitle>
@@ -29,8 +29,10 @@
 <refsect1 id="description"><title>DESCRIPTION</title>
 <para>信頼された環境で gfsd、gfmd を共有秘密鍵認証でアクセスするのに
 必要なセッション・キー・ファイル 
-<option>$HOME/.gfarm_shared_key</option>
-を扱うコマンドです。</para>
+<filename moreinfo="none">$HOME/.gfarm_shared_key</filename>
+を扱うコマンドです。
+セッション・キー・ファイルのパス名は gfarm2.conf の shared_key_file
+により変更可能です。</para>
 
 <para>ホーム・ディレクトリを共有している環境では、このコマンドを使う必要性
 はあまりありませんが、そうでない環境では、このコマンドでキーを生成し
@@ -61,7 +63,9 @@
 <listitem>
 <para>セッション・キーの有効期限を指定します。単位は秒です。
 このオプションは -c オプションあるいは -f
-オプションと同時に指定する必要があります。</para>
+オプションと同時に指定する必要があります。
+デフォルトは86400秒（1日）です。
+</para>
 </listitem>
 </varlistentry>
 <varlistentry>
