@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 #
 # $Id$
 
@@ -7,9 +7,10 @@ set -e
 PROGRAM=gfarmbb
 TMPDIR=/tmp/gfarmbb-scratch
 PERIOD=-1
+SHELL_TYPE=bsh
 
 usage() {
-    echo "usage: $PROGRAM [-h hostfile] [-scr scratch_dir] [-m mount_point] start | stop"
+    echo "usage: $PROGRAM [-c|-s] [-h hostfile] [-scr scratch_dir] [-m mount_point] start | stop"
     echo ""
     echo "options:"
     echo "        -h hostfile"
@@ -21,6 +22,11 @@ usage() {
     echo "        -p period"
     echo "            specifies a period for a Gfarm shared key in second."
     echo "            Default is 86400 seconds (1 day)."
+    echo "        -c"
+    echo "            Generate C-shell commands on stdout."
+    echo "        -s"
+    echo "            Generate Bourne shell commands on stdout."
+    echo "            This is default."
     exit 1
 }
 
@@ -37,6 +43,8 @@ while [ $# -gt 0 ]; do
 	-scr) shift; TMPDIR=$1 ;;
 	-m) shift; MDIR=$1 ;;
 	-p) shift; PERIOD=$1 ;;
+	-c) SHELL_TYPE=csh ;;
+	-s) SHELL_TYPE=bsh ;;
 	-*) echo "unknown option: $1"
 	    usage ;;
 	*) usage ;;
@@ -60,7 +68,8 @@ start() {
     [ -d $TMPDIR ] || mkdir -p $TMPDIR
     [ -d $TMPDIR ] || err $TMPDIR: no such scratch directory
 
-    export GFARM_CONFIG_FILE=$TMPDIR/etc/gfarm2.conf
+    GFARM_CONFIG_FILE=$TMPDIR/etc/gfarm2.conf
+    export GFARM_CONFIG_FILE
     SHARED_KEY_FILE=$TMPDIR/etc/.gfarm_shared_key
     prun mkdir -p $TMPDIR/etc
     config-gfarm --prefix $TMPDIR -S -N -A $USER -b none > /dev/null
@@ -73,7 +82,11 @@ start() {
     pcp $GFARM_CONFIG_FILE $TMPDIR/etc/gfsd.conf $TMPDIR/etc/usermap $SHARED_KEY_FILE $TMPDIR/etc
     prun config-gfsd --prefix $TMPDIR -S > /dev/null
     [ X"$MDIR" = X ] || prun mount.gfarm2fs $GFARM_CONFIG_FILE $MDIR > /dev/null || :
-    echo export GFARM_CONFIG_FILE=$GFARM_CONFIG_FILE
+    if [ $SHELL_TYPE = bsh ]; then
+	echo "GFARM_CONFIG_FILE=$GFARM_CONFIG_FILE; export GFARM_CONFIG_FILE;"
+    else
+	echo "setenv GFARM_CONFIG_FILE $GFARM_CONFIG_FILE;"
+    fi
 }
 
 stop() {

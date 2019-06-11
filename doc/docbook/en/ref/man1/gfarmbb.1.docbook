@@ -6,7 +6,7 @@
 
 <refentry id="gfarmbb.1">
 
-<refentryinfo><date>7 Jun 2019</date></refentryinfo>
+<refentryinfo><date>11 Jun 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarmbb</refentrytitle>
@@ -93,7 +93,26 @@ is 86400 seconds (1 day).
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><option>-c</option></term>
+<listitem>
+<para>
+Generates C-shell commands.  This option is available only for gfarmbb
+start.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-s</option></term>
+<listitem>
+<para>
+Generates Bourne shell commands.  This option is available only for
+gfarmbb start.  This is default.
+</para>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 </refentry>
-

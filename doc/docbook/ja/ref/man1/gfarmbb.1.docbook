@@ -6,7 +6,7 @@
 
 <refentry id="gfarmbb.1">
 
-<refentryinfo><date>7 Jun 2019</date></refentryinfo>
+<refentryinfo><date>11 Jun 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarmbb</refentrytitle>
@@ -94,7 +94,25 @@ Gfarm/BBの共有鍵の有効期間を秒単位で指定します。有効時間
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><option>-c</option></term>
+<listitem>
+<para>
+Cシェルのコマンドを出力します。本オプションはstartのときだけ有効です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-s</option></term>
+<listitem>
+<para>
+Bourneシェルのコマンドを出力します。本オプションはstartのときだけ有効です。
+デフォルト設定です。
+</para>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 </refentry>
-
