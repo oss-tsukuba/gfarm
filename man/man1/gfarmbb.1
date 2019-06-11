@@ -2,12 +2,12 @@
 .\"     Title: gfarmbb
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 7 Jun 2019
+.\"      Date: 11 Jun 2019
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARMBB" "1" "7 Jun 2019" "Gfarm" "Gfarm"
+.TH "GFARMBB" "1" "11 Jun 2019" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -63,4 +63,14 @@ When this option is specified, a Gfarm/BB is mounted at the specified mount poin
 \fB\-p\fR \fIperiod\fR
 .RS 4
 specifies the period of a shared secret key in seconds for Gfarm/BB\&. This period should be longer than the job execution duration\&. Default is 86400 seconds (1 day)\&.
+.RE
+.PP
+\fB\-c\fR
+.RS 4
+Generates C\-shell commands\&. This option is available only for gfarmbb start\&.
+.RE
+.PP
+\fB\-s\fR
+.RS 4
+Generates Bourne shell commands\&. This option is available only for gfarmbb start\&. This is default\&.
 .RE
