@@ -1,0 +1,62 @@
+'\" t
+.\"     Title: gfarmbb
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 7 Jun 2019
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFARMBB" "1" "7 Jun 2019" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfarmbb \- Gfarm/BB（Gfarm burst buffer）を構築・撤去する
+.SH "SYNOPSIS"
+.HP \w'\fBgfarmbb\fR\ 'u
+\fBgfarmbb\fR [\fIoptions\fR] \fImode\fR
+.SH "DESCRIPTION"
+.PP
+Gfarm/BBは計算ノードのローカルストレージを用いる、一時的なオンデマンド ユーザレベルファイルシステムです。
+\fBgfarmbb\fRはGfarm/BBの構築、撤去を行い ます。\fImode\fRには、startかstopを指定します。mode がstartのとき、環境変数が 表示されます。Gfarm/BBに対しGfarmコマンドを用いるためには、次のように環 境変数を評価します。
+.PP
+% eval `gfarmbb start`
+.SH "OPTIONS"
+.PP
+\fB\-h\fR \fIhostfile\fR
+.RS 4
+計算ノードのホスト名のリストを含む
+\fIhostfile\fRを指定します。startと stopで同じホストファイルを指定してください。
+.RE
+.PP
+\fB\-scr\fR \fIscratch_dir\fR
+.RS 4
+Gfarm/BBを構成するための各計算ノードのスクラッチディレクトリを指定し ます。指定されたディレクトリが存在しない場合は作成されます。またこの ディレクトリ以下のファイルはgfarmbb stopで削除されます。startとstop で同じディレクトリを指定してください。デフォルトは /tmp/gfarmbb\-scratchです。
+.RE
+.PP
+\fB\-m\fR \fImount_point\fR
+.RS 4
+このオプションが指定されたとき、構築したGfarm/BBは指定されたマウント ポイントにマウントされます。mount\&.gfarm2fsが必要です。また、本オプ ションはstartのときだけ有効です。
+.RE
+.PP
+\fB\-p\fR \fIperiod\fR
+.RS 4
+Gfarm/BBの共有鍵の有効期間を秒単位で指定します。有効時間はジョブ実行 時間より長くする必要があります。デフォルトは86400秒（1日）です。
+.RE

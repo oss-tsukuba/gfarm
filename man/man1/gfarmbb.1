@@ -1,0 +1,66 @@
+'\" t
+.\"     Title: gfarmbb
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 7 Jun 2019
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFARMBB" "1" "7 Jun 2019" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfarmbb \- start and stop Gfarm/BB (Gfarm for node\-local burst buffer)
+.SH "SYNOPSIS"
+.HP \w'\fBgfarmbb\fR\ 'u
+\fBgfarmbb\fR [\fIoptions\fR] \fImode\fR
+.SH "DESCRIPTION"
+.PP
+Gfarm/BB is an on\-demand user\-level file system for node\-local storages on compute nodes\&.
+\fBgfarmbb\fR
+starts a Gfarm/BB and stops it\&. The
+\fImode\fR
+should be start or stop\&. When the mode is start, it displays the environment variable that should be eval\*(Aqed to use Gfarm commands as follows;
+.PP
+% eval `gfarmbb start`
+.SH "OPTIONS"
+.PP
+\fB\-h\fR \fIhostfile\fR
+.RS 4
+specifies a
+\fIhostfile\fR
+that contains a list of hostnames of compute nodes\&. It is necessary to specify the same hostfile for gfarmbb start and gfarmbb stop\&.
+.RE
+.PP
+\fB\-scr\fR \fIscratch_dir\fR
+.RS 4
+specifies a scratch directory on each compute node for Gfarm/BB\&. If it does not exist, it is created\&. This directory will be removed by gfarmbb stop\&. It is necessary to specify the same directory for gfarmbb start and gfarmbb stop\&. Default is /tmp/gfarmbb\-scratch\&.
+.RE
+.PP
+\fB\-m\fR \fImount_point\fR
+.RS 4
+When this option is specified, a Gfarm/BB is mounted at the specified mount point on each compute node\&. mount\&.gfarm2fs is required\&. This option is available only for gfarmbb start\&.
+.RE
+.PP
+\fB\-p\fR \fIperiod\fR
+.RS 4
+specifies the period of a shared secret key in seconds for Gfarm/BB\&. This period should be longer than the job execution duration\&. Default is 86400 seconds (1 day)\&.
+.RE

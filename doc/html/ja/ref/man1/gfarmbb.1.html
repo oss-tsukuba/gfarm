@@ -1,0 +1,63 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfarmbb</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="gfarmbb.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfarmbb — Gfarm/BB（Gfarm burst buffer）を構築・撤去する</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfarmbb</code>  [<em class="replaceable"><code>options</code></em>]  <em class="replaceable"><code>mode</code></em> </p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+Gfarm/BBは計算ノードのローカルストレージを用いる、一時的なオンデマンド
+ユーザレベルファイルシステムです。
+<span class="command"><strong>gfarmbb</strong></span>はGfarm/BBの構築、撤去を行い
+ます。<em class="parameter"><code>mode</code></em>には、startかstopを指定します。mode
+がstartのとき、環境変数が
+表示されます。Gfarm/BBに対しGfarmコマンドを用いるためには、次のように環
+境変数を評価します。
+</p>
+<p>
+% eval `gfarmbb start`
+</p>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>hostfile</code></em></span></dt>
+<dd><p>
+計算ノードのホスト名のリストを含む
+<em class="parameter"><code>hostfile</code></em>を指定します。startと
+stopで同じホストファイルを指定してください。
+</p></dd>
+<dt><span class="term"><code class="option">-scr</code> <em class="parameter"><code>scratch_dir</code></em></span></dt>
+<dd><p>
+Gfarm/BBを構成するための各計算ノードのスクラッチディレクトリを指定し
+ます。指定されたディレクトリが存在しない場合は作成されます。またこの
+ディレクトリ以下のファイルはgfarmbb stopで削除されます。startとstop
+で同じディレクトリを指定してください。デフォルトは
+/tmp/gfarmbb-scratchです。
+</p></dd>
+<dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>mount_point</code></em></span></dt>
+<dd><p>
+このオプションが指定されたとき、構築したGfarm/BBは指定されたマウント
+ポイントにマウントされます。mount.gfarm2fsが必要です。また、本オプ
+ションはstartのときだけ有効です。
+</p></dd>
+<dt><span class="term"><code class="option">-p</code> <em class="parameter"><code>period</code></em></span></dt>
+<dd><p>
+Gfarm/BBの共有鍵の有効期間を秒単位で指定します。有効時間はジョブ実行
+時間より長くする必要があります。デフォルトは86400秒（1日）です。
+</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

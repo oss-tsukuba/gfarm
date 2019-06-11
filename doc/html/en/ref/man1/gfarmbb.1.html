@@ -1,0 +1,62 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfarmbb</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="gfarmbb.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfarmbb — start and stop Gfarm/BB (Gfarm for node-local burst buffer)</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfarmbb</code>  [<em class="replaceable"><code>options</code></em>]  <em class="replaceable"><code>mode</code></em> </p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+Gfarm/BB is an on-demand user-level file system for node-local
+storages on compute nodes.  <span class="command"><strong>gfarmbb</strong></span>
+starts a Gfarm/BB and stops it.
+The <em class="parameter"><code>mode</code></em> should be start or
+stop.  When the mode is start, it displays the environment variable
+that should be eval'ed to use Gfarm commands as follows;
+</p>
+<p>
+% eval `gfarmbb start`
+</p>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>hostfile</code></em></span></dt>
+<dd><p>
+specifies a <em class="parameter"><code>hostfile</code></em> that
+contains a list of hostnames of compute nodes.  It is necessary to
+specify the same hostfile for gfarmbb start and gfarmbb stop.
+</p></dd>
+<dt><span class="term"><code class="option">-scr</code> <em class="parameter"><code>scratch_dir</code></em></span></dt>
+<dd><p>
+specifies a scratch directory on each compute node for Gfarm/BB.  If
+it does not exist, it is created.  This directory will be removed by
+gfarmbb stop.  It is necessary to specify the same directory for
+gfarmbb start and gfarmbb stop.  Default is /tmp/gfarmbb-scratch.
+</p></dd>
+<dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>mount_point</code></em></span></dt>
+<dd><p>
+When this option is specified, a Gfarm/BB is mounted at the specified
+mount point on each compute node.  mount.gfarm2fs is required.  This
+option is available only for gfarmbb start.
+</p></dd>
+<dt><span class="term"><code class="option">-p</code> <em class="parameter"><code>period</code></em></span></dt>
+<dd><p>
+specifies the period of a shared secret key in seconds for Gfarm/BB.
+This period should be longer than the job execution duration.  Default
+is 86400 seconds (1 day).
+</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>
