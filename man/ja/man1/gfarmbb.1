@@ -2,12 +2,12 @@
 .\"     Title: gfarmbb
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 7 Jun 2019
+.\"      Date: 11 Jun 2019
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARMBB" "1" "7 Jun 2019" "Gfarm" "Gfarm"
+.TH "GFARMBB" "1" "11 Jun 2019" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -59,4 +59,14 @@ Gfarm/BBを構成するための各計算ノードのスクラッチディレク
 \fB\-p\fR \fIperiod\fR
 .RS 4
 Gfarm/BBの共有鍵の有効期間を秒単位で指定します。有効時間はジョブ実行 時間より長くする必要があります。デフォルトは86400秒（1日）です。
+.RE
+.PP
+\fB\-c\fR
+.RS 4
+Cシェルのコマンドを出力します。本オプションはstartのときだけ有効で す。
+.RE
+.PP
+\fB\-s\fR
+.RS 4
+Bourneシェルのコマンドを出力します。本オプションはstartのときだけ有 効です。デフォルト設定です。
 .RE
