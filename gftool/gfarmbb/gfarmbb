@@ -72,7 +72,7 @@ start() {
     $TMPDIR/etc/init.d/gfmd start
     pcp $GFARM_CONFIG_FILE $TMPDIR/etc/gfsd.conf $TMPDIR/etc/usermap $SHARED_KEY_FILE $TMPDIR/etc
     prun config-gfsd --prefix $TMPDIR -S > /dev/null
-    [ X"$MDIR" = X ] || prun mount.gfarm2fs $GFARM_CONFIG_FILE $MDIR || :
+    [ X"$MDIR" = X ] || prun mount.gfarm2fs $GFARM_CONFIG_FILE $MDIR > /dev/null || :
     echo export GFARM_CONFIG_FILE=$GFARM_CONFIG_FILE
 }
 
