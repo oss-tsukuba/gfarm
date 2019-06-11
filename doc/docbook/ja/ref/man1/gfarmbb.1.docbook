@@ -98,7 +98,8 @@ Gfarm/BBの共有鍵の有効期間を秒単位で指定します。有効時間
 <term><option>-c</option></term>
 <listitem>
 <para>
-Cシェルのコマンドを出力します。本オプションはstartのときだけ有効です。
+Cシェルのコマンドを出力します。本オプションはstartのときだけ有効で
+す。
 </para>
 </listitem>
 </varlistentry>
@@ -107,8 +108,8 @@ Cシェルのコマンドを出力します。本オプションはstartのと�
 <term><option>-s</option></term>
 <listitem>
 <para>
-Bourneシェルのコマンドを出力します。本オプションはstartのときだけ有効です。
-デフォルト設定です。
+Bourneシェルのコマンドを出力します。本オプションはstartのときだけ有
+効です。デフォルト設定です。
 </para>
 </listitem>
 </varlistentry>
