@@ -2,34 +2,37 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfkey</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfkey">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfkey.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfkey — management of Gfarm session keys</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfkey</code>  [<em class="replaceable"><code>options</code></em>]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p><span class="command"><strong>gfkey</strong></span> manages the session key file,
 <code class="filename">$HOME/.gfarm_shared_key</code>,
 that is used for user authentication by a shared secret key
 in a trusted environment when
-connecting to gfsd and/or gfmd.</p>
+connecting to gfsd and/or gfmd.
+The location of the seesion key file can be specified by
+shared_key_file in gfarm2.conf.
+</p>
 <p>When the home directory is shared among filesystem nodes, it is not
 necessary to use this command.  If not, it is necessary to distribute
 a session key  created with
 the -c or -f option to every filesystem node, in advance.
 </p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-c</code></span></dt>
 <dd><p>Creates a new session key when there is no valid session key.  If
 a valid session key already exists, no operation is performed.</p></dd>
@@ -38,7 +41,7 @@ a valid session key already exists, no operation is performed.</p></dd>
 key already exists.</p></dd>
 <dt><span class="term"><code class="option">-p</code> <em class="parameter"><code>period</code></em></span></dt>
 <dd><p>Specifies the term of validity in seconds.  This option has to be
-used with the -c or -f option.</p></dd>
+used with the -c or -f option.  Default is 86400 seconds (1 day).</p></dd>
 <dt><span class="term"><code class="option">-l</code></span></dt>
 <dd><p>Displays the current key.</p></dd>
 <dt><span class="term"><code class="option">-e</code></span></dt>
@@ -54,9 +57,9 @@ this option.</p></dd>
 <dd><p>Displays a list of command options.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="FILES">
+<div class="refsect1">
 <a name="files"></a><h2>FILES</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="filename">$HOME/.gfarm_shared_key</code></span></dt>
 <dd><p>a file for a session key</p></dd>
 </dl></div>

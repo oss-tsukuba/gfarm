@@ -2,31 +2,33 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfkey</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfkey">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfkey.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfkey — Gfarm セッション・キー管理コマンド</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfkey</code>  [<em class="replaceable"><code>オプション</code></em>]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>信頼された環境で gfsd、gfmd を共有秘密鍵認証でアクセスするのに
 必要なセッション・キー・ファイル 
-<code class="option">$HOME/.gfarm_shared_key</code>
-を扱うコマンドです。</p>
+<code class="filename">$HOME/.gfarm_shared_key</code>
+を扱うコマンドです。
+セッション・キー・ファイルのパス名は gfarm2.conf の shared_key_file
+により変更可能です。</p>
 <p>ホーム・ディレクトリを共有している環境では、このコマンドを使う必要性
 はあまりありませんが、そうでない環境では、このコマンドでキーを生成し
 た後、全ファイルシステムノードにキーを配付する必要があります。</p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-c</code></span></dt>
 <dd><p>このオプションを指定すると、有効なセッション・キーがない場合に、セッ
 ション・キー・ファイルを作成します。既に有効なセッション・キーが存
@@ -38,7 +40,9 @@
 <dt><span class="term"><code class="option">-p</code> <em class="parameter"><code>period</code></em></span></dt>
 <dd><p>セッション・キーの有効期限を指定します。単位は秒です。
 このオプションは -c オプションあるいは -f
-オプションと同時に指定する必要があります。</p></dd>
+オプションと同時に指定する必要があります。
+デフォルトは86400秒（1日）です。
+</p></dd>
 <dt><span class="term"><code class="option">-l</code></span></dt>
 <dd><p>現在のキーを表示します。</p></dd>
 <dt><span class="term"><code class="option">-e</code></span></dt>
@@ -53,9 +57,9 @@
 <dd><p>引数オプションを表示します。</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="FILES">
+<div class="refsect1">
 <a name="files"></a><h2>FILES</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="filename">$HOME/.gfarm_shared_key</code></span></dt>
 <dd><p>セッション・キー・ファイルです。</p></dd>
 </dl></div>
