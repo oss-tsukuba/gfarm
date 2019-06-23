@@ -74,6 +74,8 @@ start() {
     SHARED_KEY_FILE=$TMPDIR/etc/.gfarm_shared_key
     prun mkdir -p $TMPDIR/etc
     config-gfarm --prefix $TMPDIR -S -N -A $USER -b none > /dev/null
+    echo metadb_server_listen_backlog 1024 >> $TMPDIR/etc/gfmd.conf
+    echo metadb_server_max_descriptors 65536 >> $TMPDIR/etc/gfmd.conf
     echo shared_key_file $SHARED_KEY_FILE >> $TMPDIR/etc/gfmd.conf
     echo shared_key_file $SHARED_KEY_FILE >> $TMPDIR/etc/gfsd.conf
     echo shared_key_file $SHARED_KEY_FILE >> $GFARM_CONFIG_FILE
