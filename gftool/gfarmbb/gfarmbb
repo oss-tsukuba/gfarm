@@ -84,7 +84,10 @@ start() {
     $TMPDIR/etc/init.d/gfmd start
     pcp $GFARM_CONFIG_FILE $TMPDIR/etc/gfsd.conf $TMPDIR/etc/usermap $SHARED_KEY_FILE $TMPDIR/etc
     prun config-gfsd --prefix $TMPDIR -S > /dev/null
-    [ X"$MDIR" = X ] || prun mount.gfarm2fs $GFARM_CONFIG_FILE $MDIR $MOPTIONS > /dev/null || :
+    if [ X"$MDIR" != X ]; then
+	gfmkdir -p $MDIR || :
+	prun env GFARMFS_ROOT=$MDIR mount.gfarm2fs $GFARM_CONFIG_FILE $MDIR $MOPTIONS > /dev/null || :
+    fi
     if [ $SHELL_TYPE = bsh ]; then
 	echo "GFARM_CONFIG_FILE=$GFARM_CONFIG_FILE; export GFARM_CONFIG_FILE;"
     else
