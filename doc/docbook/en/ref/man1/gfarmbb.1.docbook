@@ -97,7 +97,7 @@ is 86400 seconds (1 day).
 <term><option>-c</option></term>
 <listitem>
 <para>
-Generates C-shell commands.  This option is available only for gfarmbb
+generates C-shell commands.  This option is available only for gfarmbb
 start.
 </para>
 </listitem>
@@ -107,8 +107,21 @@ start.
 <term><option>-s</option></term>
 <listitem>
 <para>
-Generates Bourne shell commands.  This option is available only for
+generates Bourne shell commands.  This option is available only for
 gfarmbb start.  This is default.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>
+enables access to Gfarm/BB from login nodes.  With this option, the
+Gfarm/BB configuration file $HOME/.gfarm2rc-$ID is created in the home
+directory.  ID consists of the hostname of the master compute node and
+the process ID.  To access to Gfarm/BB, specify it by
+GFARM_CONFIG_FILE environment variable.
 </para>
 </listitem>
 </varlistentry>
