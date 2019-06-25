@@ -35,9 +35,9 @@ Gfarm/BBは計算ノードのローカルストレージを用いる、一時的
 ユーザレベルファイルシステムです。
 <command moreinfo="none">gfarmbb</command>はGfarm/BBの構築、撤去を行い
 ます。<parameter moreinfo="none">mode</parameter>には、startかstopを指定します。mode
-がstartのとき、環境変数が
-表示されます。Gfarm/BBに対しGfarmコマンドを用いるためには、次のように環
-境変数を評価します。
+がstartのとき、環境変数
+が表示されます。Gfarm/BBに対しGfarmコマンドを用いるためには、次のよう
+に環境変数を評価します。
 </para>
 <para>
 % eval `gfarmbb start`
@@ -64,10 +64,10 @@ stopで同じホストファイルを指定してください。
 <term><option>-scr</option> <parameter moreinfo="none">scratch_dir</parameter></term>
 <listitem>
 <para>
-Gfarm/BBを構成するための各計算ノードのスクラッチディレクトリを指定し
-ます。指定されたディレクトリが存在しない場合は作成されます。またこの
-ディレクトリ以下のファイルはgfarmbb stopで削除されます。startとstop
-で同じディレクトリを指定してください。デフォルトは
+Gfarm/BBを構成するための各計算ノードのスクラッチディレクトリを指定
+します。指定されたディレクトリが存在しない場合は作成されます。また
+このディレクトリ以下のファイルはgfarmbb stopで削除されます。
+startとstopで同じディレクトリを指定してください。デフォルトは
 /tmp/gfarmbb-scratchです。
 </para>
 </listitem>
@@ -77,9 +77,9 @@ Gfarm/BBを構成するための各計算ノードのスクラッチディレク
 <term><option>-m</option> <parameter moreinfo="none">mount_point</parameter></term>
 <listitem>
 <para>
-このオプションが指定されたとき、構築したGfarm/BBは指定されたマウント
-ポイントにマウントされます。mount.gfarm2fsが必要です。また、本オプ
-ションはstartのときだけ有効です。
+このオプションが指定されたとき、構築したGfarm/BBは指定されたマウン
+トポイントにマウントされます。mount.gfarm2fsが必要です。また、本
+オプションはstartのときだけ有効です。
 </para>
 </listitem>
 </varlistentry>
@@ -88,8 +88,8 @@ Gfarm/BBを構成するための各計算ノードのスクラッチディレク
 <term><option>-p</option> <parameter moreinfo="none">period</parameter></term>
 <listitem>
 <para>
-Gfarm/BBの共有鍵の有効期間を秒単位で指定します。有効時間はジョブ実行
-時間より長くする必要があります。デフォルトは86400秒（1日）です。
+Gfarm/BBの共有鍵の有効期間を秒単位で指定します。有効時間はジョブ実
+行時間より長くする必要があります。デフォルトは86400秒（1日）です。
 </para>
 </listitem>
 </varlistentry>
@@ -108,8 +108,21 @@ Cシェルのコマンドを出力します。本オプションはstartのと�
 <term><option>-s</option></term>
 <listitem>
 <para>
-Bourneシェルのコマンドを出力します。本オプションはstartのときだけ有
-効です。デフォルト設定です。
+Bourneシェルのコマンドを出力します。本オプションはstartのときだけ
+有効です。デフォルト設定です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>
+ログインノードからGfarm/BBのアクセスを可能とします。このオプション
+をつけるとホームディレクトリにGfarm/BBの設定ファイルを作成します。
+設定ファイルのパス名は$HOME/.gfarm2rc-$IDとなります。IDは計算ノー
+ドのホスト名とプロセスIDで構成されます。Gfarm/BBをアクセスする場合
+は、この設定ファイルをGFARM_CONFIG_FILE環境変数で指定します。
 </para>
 </listitem>
 </varlistentry>
