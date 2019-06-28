@@ -49,6 +49,18 @@ that should be eval'ed to use Gfarm commands as follows;
 <variablelist>
 
 <varlistentry>
+<term><option>-e</option></term>
+<listitem>
+<para>
+excludes Gfmd node from file system nodes.  Gfmd is executed on the
+node where gfarmbb is executed.  With this option, gfsd is not
+executed on that node.  This option expects there are N + 1 node
+allocations, and gfarmbb is executed on the last host in the hostfile.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-h</option> <parameter moreinfo="none">hostfile</parameter></term>
 <listitem>
 <para>
@@ -67,6 +79,19 @@ specifies a scratch directory on each compute node for Gfarm/BB.  If
 it does not exist, it is created.  This directory will be removed by
 gfarmbb stop.  It is necessary to specify the same directory for
 gfarmbb start and gfarmbb stop.  Default is /tmp/gfarmbb-scratch.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>
+enables access to Gfarm/BB from login nodes.  With this option, the
+Gfarm/BB configuration file $HOME/.gfarm2rc-$ID is created in the home
+directory.  ID consists of the hostname of the master compute node and
+the process ID.  To access to Gfarm/BB, specify it by
+GFARM_CONFIG_FILE environment variable.
 </para>
 </listitem>
 </varlistentry>
@@ -109,19 +134,6 @@ start.
 <para>
 generates Bourne shell commands.  This option is available only for
 gfarmbb start.  This is default.
-</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><option>-l</option></term>
-<listitem>
-<para>
-enables access to Gfarm/BB from login nodes.  With this option, the
-Gfarm/BB configuration file $HOME/.gfarm2rc-$ID is created in the home
-directory.  ID consists of the hostname of the master compute node and
-the process ID.  To access to Gfarm/BB, specify it by
-GFARM_CONFIG_FILE environment variable.
 </para>
 </listitem>
 </varlistentry>

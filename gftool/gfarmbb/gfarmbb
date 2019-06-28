@@ -11,15 +11,20 @@ SHELL_TYPE=bsh
 MOPTIONS=direct_io
 LOGIN_NODE_ACCESS=false
 ID=`hostname`-$$
+EXCLUDE_GFMD=-a
 
 usage() {
     echo "usage: $PROGRAM [-c|-s] [-h hostfile] [-scr scratch_dir] [-m mount_point] [-l] start | stop"
     echo ""
     echo "options:"
+    echo "        -e"
+    echo "            Exclude Gfmd node from file system nodes."
     echo "        -h hostfile"
     echo "            specifies a hostfile."
     echo "        -scr scratch_dir"
     echo "            specifies a scratch directory. ($TMPDIR)"
+    echo "        -l"
+    echo "            Enable Gfarm/BB access from login nodes."
     echo "        -m mount_point"
     echo "            specifies a mount point."
     echo "        -p period"
@@ -30,8 +35,6 @@ usage() {
     echo "        -s"
     echo "            Generate Bourne shell commands on stdout."
     echo "            This is default."
-    echo "        -l"
-    echo "            Enable Gfarm/BB access from login nodes."
     exit 1
 }
 
@@ -44,6 +47,7 @@ while [ $# -gt 0 ]; do
     case $1 in
         start) mode=start ;;
 	stop) mode=stop ;;
+	-e) EXCLUDE_GFMD= ;;
 	-h) shift; HOSTFILE=$1 ;;
 	-scr) shift; TMPDIR=$1 ;;
 	-m) shift; MDIR=$1 ;;
@@ -63,7 +67,7 @@ done
 if [ X"$HOSTFILE" != X ]; then
     [ -e $HOSTFILE ] || err $HOSTFILE: no such host file
 
-    alias prun="gfarm-prun -a -p -h $HOSTFILE"
+    alias prun="gfarm-prun $EXCLUDE_GFMD -p -h $HOSTFILE"
     alias pcp="gfarm-pcp -p -h $HOSTFILE"
 else
     alias prun=""
@@ -111,7 +115,9 @@ start() {
 stop() {
     [ -d $TMPDIR ] || err $TMPDIR: no such scratch directory
 
-    prun umount.gfarm2fs > /dev/null 2>&1 || :
+    if [ X"$MDIR" != X ]; then
+	prun umount.gfarm2fs $MDIR > /dev/null 2>&1 || :
+    fi
     prun $TMPDIR/etc/unconfig-gfsd.sh -f
     $TMPDIR/etc/unconfig-gfarm.sh -f > /dev/null
     prun rm -rf $TMPDIR
