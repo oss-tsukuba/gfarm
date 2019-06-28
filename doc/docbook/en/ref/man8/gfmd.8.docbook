@@ -52,6 +52,15 @@ on a client node.</para>
 <variablelist>
 
 <varlistentry>
+<term><option>-F</option> <parameter moreinfo="none">log-file</parameter></term>
+<listitem>
+<para>
+Specifies a log file.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-L</option> <parameter moreinfo="none">log-level</parameter></term>
 <listitem>
 <para>Specifies a log priority level.  The log output, which priority

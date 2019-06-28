@@ -122,7 +122,7 @@ gfarm_error_t gfs_pio_open(const char *, int, GFS_File *);
 gfarm_error_t gfs_pio_fhopen(gfarm_ino_t, gfarm_uint64_t, int, GFS_File *);
 gfarm_error_t gfs_pio_create(const char *, int, gfarm_mode_t, GFS_File *);
 gfarm_error_t gfs_pio_close(GFS_File);
-gfarm_error_t gfs_pio_close_getgen(GFS_File gf, gfarm_uint64_t *igenp);
+gfarm_error_t gfs_pio_close_getgen(GFS_File, gfarm_uint64_t *);
 
 int gfs_pio_eof(GFS_File);
 gfarm_error_t gfs_pio_error(GFS_File);
