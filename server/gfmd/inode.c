@@ -958,6 +958,20 @@ inode_tdirset_check(struct inode *inode, struct dirset *tdirset,
 #define SAME_WARNING_DURATION	600	/* seconds to measure the limit */
 #define SAME_WARNING_INTERVAL	60	/* seconds: interval of reduced log */
 
+static struct gflog_reduced_state rep_removing_retry_state =
+	GFLOG_REDUCED_STATE_INITIALIZER(
+		SAME_WARNING_TRIGGER,
+		SAME_WARNING_THRESHOLD,
+		SAME_WARNING_DURATION,
+		SAME_WARNING_INTERVAL);
+
+static struct gflog_reduced_state rep_unsatisfied_state =
+	GFLOG_REDUCED_STATE_INITIALIZER(
+		SAME_WARNING_TRIGGER,
+		SAME_WARNING_THRESHOLD,
+		SAME_WARNING_DURATION,
+		SAME_WARNING_INTERVAL);
+
 static struct gflog_reduced_state rep_rtunavail_state =
 	GFLOG_REDUCED_STATE_INITIALIZER(
 		SAME_WARNING_TRIGGER,
@@ -1034,20 +1048,33 @@ inode_schedule_replication_within_scope(
 	if (shortage <= 0)
 		return (GFARM_ERR_NO_ERROR); /* sufficient */
 
-	/*
-	 * #674 - automatic replication may fail when many replicas of
-	 * a file are being removed
-	 */
-	if (shortage > n_targets &&
-	    *n_being_removedp >= shortage - n_targets) {
-		gflog_debug(GFARM_MSG_1003704,
-		    "%s: inode %lld:%lld: many replicas are being removed: "
-		    "desired=%d/scope=%d/existing=%d/being_removed=%d/"
-		    "target=%d",
-		    diag, (long long)inode_get_number(inode),
-		    (long long)inode_get_gen(inode), n_desired, *n_scopep,
-		    *n_existingp, *n_being_removedp, n_targets);
-		save_e = GFARM_ERR_FILE_BUSY; /* retry */
+	if (shortage > n_targets) {
+		if (*n_being_removedp >= shortage - n_targets) {
+			/*
+			 * #674 - automatic replication may fail
+			 * when many replicas of a file are being removed
+			 */
+			gflog_reduced_info(GFARM_MSG_UNFIXED,
+			    &rep_removing_retry_state, "%s: inode %lld:%lld: "
+			    "many replicas are being removed: "
+			    "desired=%d/scope=%d/existing=%d/being_removed=%d/"
+			    "valid=%d/target=%d",
+			    diag, (long long)inode_get_number(inode),
+			    (long long)inode_get_gen(inode),
+			    n_desired, *n_scopep, *n_existingp,
+			    *n_being_removedp, n_valid, n_targets);
+			save_e = GFARM_ERR_FILE_BUSY; /* retry */
+		} else {
+			gflog_reduced_info(GFARM_MSG_UNFIXED,
+			    &rep_unsatisfied_state, "%s: inode %lld:%lld: "
+			    "could not satisfy number of desired replicas: "
+			    "desired=%d/scope=%d/existing=%d/being_removed=%d/"
+			    "valid=%d/target=%d",
+			    diag, (long long)inode_get_number(inode),
+			    (long long)inode_get_gen(inode),
+			    n_desired, *n_scopep, *n_existingp,
+			    *n_being_removedp, n_valid, n_targets);
+		}
 	}
 	/* but, retry is unnecessary when n_desired is too large */
 
