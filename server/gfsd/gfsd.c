@@ -6826,6 +6826,7 @@ usage(void)
 {
 	fprintf(stderr, "Usage: %s [option]\n", program_name);
 	fprintf(stderr, "option:\n");
+	fprintf(stderr, "\t-F <log-file>\n");
 	fprintf(stderr, "\t-L <syslog-priority-level>\n");
 	fprintf(stderr, "\t-P <pid-file>\n");
 	fprintf(stderr, "\t-c\t\t\t\t... check and display invalid files\n");
@@ -6860,6 +6861,7 @@ main(int argc, char **argv)
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int syslog_level = -1;
+	char *syslog_file = NULL;
 	struct in_addr *self_addresses, listen_address;
 	int table_size, self_addresses_count, ch, i, nfound, max_fd, p;
 	int save_errno;
@@ -6873,8 +6875,11 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "L:P:cdf:h:l:r:s:v")) != -1) {
+	while ((ch = getopt(argc, argv, "F:L:P:cdf:h:l:r:s:v")) != -1) {
 		switch (ch) {
+		case 'F':
+			syslog_file = optarg;
+			break;
 		case 'L':
 			syslog_level = gflog_syslog_name_to_priority(optarg);
 			if (syslog_level == -1)
@@ -7029,7 +7034,12 @@ main(int argc, char **argv)
 	}
 
 	if (!debug_mode) {
-		gflog_syslog_open(LOG_PID, syslog_facility);
+		if (syslog_file != NULL) {
+			if (gflog_file_open(syslog_file) == NULL)
+				gflog_fatal_errno(GFARM_MSG_UNFIXED,
+				    "%s", syslog_file);
+		} else
+			gflog_syslog_open(LOG_PID, syslog_facility);
 		if (gfarm_daemon(0, 0) == -1)
 			gflog_warning_errno(GFARM_MSG_1002203, "daemon");
 	}

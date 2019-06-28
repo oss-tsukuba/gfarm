@@ -52,6 +52,15 @@ metadb_server_portでポート番号を指定する必要がありま
 <variablelist>
 
 <varlistentry>
+<term><option>-F</option> <parameter moreinfo="none">ログファイル</parameter></term>
+<listitem>
+<para>
+ログファイルを指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-L</option> <parameter moreinfo="none">ログレベル</parameter></term>
 <listitem>
 <para>

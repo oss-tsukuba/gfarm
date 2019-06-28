@@ -104,6 +104,7 @@ void gflog_set_identifier(const char *);
 void gflog_set_auxiliary_info(char *);
 char *gflog_get_auxiliary_info(void);
 void gflog_syslog_open(int, int);
+void *gflog_file_open(const char *);
 int gflog_syslog_enabled(void);
 int gflog_set_message_verbose(int);
 

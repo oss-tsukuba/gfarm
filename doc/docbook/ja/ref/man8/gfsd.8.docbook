@@ -51,6 +51,15 @@ gfsdはユーザ権限で動作させることも可能ですが，この場合�
 <variablelist>
 
 <varlistentry>
+<term><option>-F</option> <parameter moreinfo="none">ログファイル</parameter></term>
+<listitem>
+<para>
+ログファイルを指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-L</option> <parameter moreinfo="none">ログレベル</parameter></term>
 <listitem>
 <para>

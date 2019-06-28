@@ -24,7 +24,12 @@
 
 static const char *log_identifier = "libgfarm";
 static char *log_auxiliary_info = NULL;
-static int log_use_syslog = 0;
+static enum {
+	use_stderr,
+	use_syslog,
+	use_file
+} syslog_output = use_stderr;
+static FILE *log_file = NULL;
 static int log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
 
 static nl_catd catd = (nl_catd)-1;
@@ -50,7 +55,7 @@ gflog_set_message_verbose(int new)
 int
 gflog_syslog_enabled(void)
 {
-	return (log_use_syslog);
+	return (syslog_output == use_syslog);
 }
 
 static void
@@ -77,6 +82,8 @@ void
 gflog_terminate(void)
 {
 	gflog_catclose();
+	if (log_file != NULL)
+		fclose(log_file);
 }
 
 #define GFLOG_PRIORITY_SIZE	8
@@ -120,17 +127,29 @@ gflog_out(int priority, const char *str1, const char *str2)
 {
 	pthread_once(&gflog_priority_string_once, gflog_init_priority_string);
 #ifndef __KERNEL__	/* gflog_out :: printk */
-	if (log_use_syslog)
+	switch (syslog_output) {
+	case use_syslog:
 		syslog(priority, "<%s> %s%s",
 		    gflog_priority_string[priority], str1, str2);
-	else
+		break;
+	case use_stderr:
 		fprintf(stderr, "%s: <%s> %s%s\n", log_identifier,
 		    gflog_priority_string[priority], str1, str2);
+		break;
+	case use_file:
+		fprintf(log_file, "%s: <%s> %s%s\n", log_identifier,
+		    gflog_priority_string[priority], str1, str2);
+		break;
+	}
 #else /* __KERNEL__ */
-	if (log_use_syslog)
+	switch (syslog_output) {
+	case use_syslog:
 		printk("<%d>%s%s\n", priority, str1, str2);
-	else
+		break;
+	case use_stderr:
 		printk("%s%s\n", str1, str2);
+		break;
+	}
 #endif /* __KERNEL__ */
 }
 
@@ -418,7 +437,18 @@ void
 gflog_syslog_open(int syslog_option, int syslog_facility)
 {
 	openlog(log_identifier, syslog_option, syslog_facility);
-	log_use_syslog = 1;
+	syslog_output = use_syslog;
+}
+
+void *
+gflog_file_open(const char *path)
+{
+	log_file = fopen(path, "a");
+	if (log_file != NULL) {
+		syslog_output = use_file;
+		setbuf(log_file, NULL);
+	}
+	return (log_file);
 }
 
 #ifndef __KERNEL__	/* gflog_syslog_name_to_facility :: not use */

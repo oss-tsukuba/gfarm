@@ -1545,6 +1545,7 @@ usage(void)
 {
 	fprintf(stderr, "Usage: %s [option]\n", program_name);
 	fprintf(stderr, "option:\n");
+	fprintf(stderr, "\t-F <log-file>\n");
 	fprintf(stderr, "\t-L <syslog-priority-level>\n");
 	fprintf(stderr, "\t-P <pid-file>\n");
 	fprintf(stderr, "\t-d\t\t\t\t... debug mode\n");
@@ -1696,6 +1697,7 @@ main(int argc, char **argv)
 	char *config_file = NULL, *port_number = NULL;
 	int syslog_level = -1;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
+	char *syslog_file = NULL;
 	int ch, sock, table_size;
 	sigset_t sigs;
 	int is_master, replication_enabled;
@@ -1705,8 +1707,11 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "L:P:df:p:Ss:tv")) != -1) {
+	while ((ch = getopt(argc, argv, "F:L:P:df:p:Ss:tv")) != -1) {
 		switch (ch) {
+		case 'F':
+			syslog_file = optarg;
+			break;
 		case 'L':
 			syslog_level = gflog_syslog_name_to_priority(optarg);
 			if (syslog_level == -1)
@@ -1806,7 +1811,12 @@ main(int argc, char **argv)
 	}
 
 	if (!debug_mode) {
-		gflog_syslog_open(LOG_PID, syslog_facility);
+		if (syslog_file != NULL) {
+			if (gflog_file_open(syslog_file) == NULL)
+				gflog_fatal_errno(GFARM_MSG_UNFIXED,
+				    "%s", syslog_file);
+		} else
+			gflog_syslog_open(LOG_PID, syslog_facility);
 		if (gfarm_daemon(0, 0) == -1)
 			gflog_warning_errno(GFARM_MSG_1001487, "daemon");
 	}
