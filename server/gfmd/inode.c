@@ -5959,7 +5959,9 @@ inode_replicated(struct file_replicating *fr,
 	 * call inode_check_replica_fixed_event()
 	 * when all replication is completed, or an error occurs
 	 */
-	if (e != GFARM_ERR_NO_ERROR || !inode_is_replication_ongoing(inode))
+	if (e != GFARM_ERR_NO_ERROR ||
+	    (inode->u.c.activity != NULL &&
+	     !inode_is_replication_ongoing(inode)))
 		inode_check_replica_fixed_event(inode, e);
 
 	if (e == GFARM_ERR_INVALID_FILE_REPLICA &&
