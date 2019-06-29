@@ -1821,6 +1821,15 @@ The default is 1000, i.e. 1 second.
 </varlistentry>
 
 <varlistentry>
+<term><token>log_file</token> <parameter moreinfo="none">pathname</parameter></term>
+<listitem>
+<para>
+This directive specifies a log file.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>log_level</token> <parameter moreinfo="none">priority_level</parameter></term>
 <listitem>
 <para>This directive specifies a level of log priority.
@@ -2910,6 +2919,7 @@ The default size is 16 MiB.
 	&lt;attr_cache_limit_statement&gt; |
 	&lt;attr_cache_timeout_statement&gt; |
 	&lt;page_cache_timeout_statement&gt; |
+	&lt;log_file_statement&gt; |
 	&lt;log_level_statement&gt; |
 	&lt;log_message_verbose_level_statement&gt; |
 	&lt;log_auth_verbose_statement&gt; |
@@ -3430,6 +3440,11 @@ The default size is 16 MiB.
 <varlistentry>
 <term>&lt;page_cache_timeout_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"page_cache_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;log_file_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"log_file" &lt;pathname&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

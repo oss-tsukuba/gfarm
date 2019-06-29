@@ -2593,6 +2593,28 @@ parse_log_level(char *p, int *vp)
 }
 
 static gfarm_error_t
+parse_log_file(char *p)
+{
+	gfarm_error_t e;
+	char *s;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"get_one_argument failed "
+			"when parsing log file (%s): %s",
+			p, gfarm_error_string(e));
+		return (e);
+	}
+	if (gflog_file_open(s) == NULL) {
+		e = gfarm_errno_to_error(errno);
+		gflog_debug(GFARM_MSG_UNFIXED, "Invalid log file (%s)", s);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 parse_spool_check_level(char *p)
 {
 	gfarm_error_t e;
@@ -3243,6 +3265,8 @@ parse_one_line(char *s, char *p, char **op)
 
 	} else if (strcmp(s, o = "digest") == 0) {
 		e = parse_digest_type(p, &gfarm_digest);
+	} else if (strcmp(s, o = "log_file") == 0) {
+		e = parse_log_file(p);
 	} else if (strcmp(s, o = "log_level") == 0) {
 		e = parse_log_level(p, &gfarm_ctxp->log_level);
 	} else if (strcmp(s, o = "log_message_verbose_level") == 0) {
