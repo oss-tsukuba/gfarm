@@ -1869,6 +1869,15 @@ disableにすると、busyホストには複製は作成されません。
 </varlistentry>
 
 <varlistentry>
+<term><token>log_file</token> <parameter moreinfo="none">パス名</parameter></term>
+<listitem>
+<para>
+ログファイルを指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>log_level</token> <parameter moreinfo="none">優先度レベル</parameter></term>
 <listitem>
 <para>
@@ -3023,6 +3032,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;attr_cache_limit_statement&gt; |
 	&lt;attr_cache_timeout_statement&gt; |
 	&lt;page_cache_timeout_statement&gt; |
+	&lt;log_file_statement&gt; |
 	&lt;log_level_statement&gt; |
 	&lt;log_message_verbose_level_statement&gt; |
 	&lt;log_auth_verbose_statement&gt; |
@@ -3559,6 +3569,11 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <varlistentry>
 <term>&lt;page_cache_timeout_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"page_cache_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;log_file_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"log_file" &lt;pathname&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

@@ -436,6 +436,8 @@ gflog_get_auxiliary_info(void)
 void
 gflog_syslog_open(int syslog_option, int syslog_facility)
 {
+	if (syslog_output != use_stderr)
+		return;
 	openlog(log_identifier, syslog_option, syslog_facility);
 	syslog_output = use_syslog;
 }
@@ -443,11 +445,15 @@ gflog_syslog_open(int syslog_option, int syslog_facility)
 void *
 gflog_file_open(const char *path)
 {
-	log_file = fopen(path, "a");
-	if (log_file != NULL) {
-		syslog_output = use_file;
-		setbuf(log_file, NULL);
+	if (syslog_output == use_file) {
+		syslog_output = use_stderr;
+		fclose(log_file);
 	}
+	log_file = fopen(path, "a");
+	if (log_file == NULL)
+		return (NULL);
+	syslog_output = use_file;
+	setbuf(log_file, NULL);
 	return (log_file);
 }
 
