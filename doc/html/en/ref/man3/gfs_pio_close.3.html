@@ -2,39 +2,39 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfs_pio_close</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfs_pio_close">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfs-pio-close.3"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfs_pio_close — close a file in the Gfarm file system</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="funcsynopsis">
 <pre class="funcsynopsisinfo">
 #include &lt;gfarm/gfarm.h&gt;
 </pre>
-<table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" class="funcprototype-table"><tr>
+<table border="0" class="funcprototype-table" summary="Function synopsis" style="cellspacing: 0; cellpadding: 0;"><tr>
 <td><code class="funcdef"><b class="fsfunc">gfarm_error_t gfs_pio_close</b>(</code></td>
 <td>
-<var class="pdparam">gfp</var><code>)</code>;</td>
+<var class="pdparam">gf</var><code>)</code>;</td>
 <td> </td>
 </tr></table>
 <div class="paramdef-list">
-<code>GFS_File <var class="pdparam">gfp</var></code>;</div>
+<code>GFS_File <var class="pdparam">gf</var></code>;</div>
 <div class="funcprototype-spacer"> </div>
 </div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
-<p><code class="function">gfs_pio_close()</code> closes a file <em class="parameter"><code>gfp</code></em>, so that it no longer
+<p><code class="function">gfs_pio_close()</code> closes a file <em class="parameter"><code>gf</code></em>, so that it no longer
 refers to any file and may be reused.</p>
 </div>
-<div class="refsect1" title="RETURN VALUES">
+<div class="refsect1">
 <a name="return-values"></a><h2>RETURN VALUES</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="constant">GFARM_ERR_NO_ERROR</code></span></dt>
 <dd><p>The function terminated successfully.</p></dd>
 <dt><span class="term"><code class="constant">GFARM_ERR_BAD_FILE_DESCRIPTOR</code></span></dt>
@@ -47,7 +47,7 @@ not a valid open file descriptor.</p></dd>
 <span class="citerefentry"><span class="refentrytitle">gfarm_error_string</span>(3)</span>.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
 <span class="citerefentry"><span class="refentrytitle">gfs_pio_create</span>(3)</span>,

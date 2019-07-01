@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfs_pio_close
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 27 Jun 2010
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 20 Jun 2019
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFS_PIO_CLOSE" "3" "27 Jun 2010" "Gfarm" "Gfarm"
+.TH "GFS_PIO_CLOSE" "3" "20 Jun 2019" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -37,11 +37,11 @@ gfs_pio_close \- Gfarmファイルシステムのファイルのクローズ
 .fi
 .ft
 .HP \w'gfarm_error_t\ gfs_pio_close('u
-.BI "gfarm_error_t\ gfs_pio_close(GFS_File\ " "gfp" ");"
+.BI "gfarm_error_t\ gfs_pio_close(GFS_File\ " "gf" ");"
 .SH "DESCRIPTION"
 .PP
 ファイル
-\fIgfp\fR
+\fIgf\fR
 をクローズします。
 .SH "RETURN VALUES"
 .PP
@@ -52,7 +52,7 @@ gfs_pio_close \- Gfarmファイルシステムのファイルのクローズ
 .PP
 \fBGFARM_ERR_BAD_FILE_DESCRIPTOR\fR
 .RS 4
-\fIgfp\fR
+\fIgf\fR
 で指定されるファイルディスクリプタが不正です。
 .RE
 .PP
@@ -69,6 +69,5 @@ gfs_pio_close \- Gfarmファイルシステムのファイルのクローズ
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfs_pio_create\fR(3),
 \fBgfs_pio_open\fR(3)

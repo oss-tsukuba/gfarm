@@ -31,6 +31,13 @@ that should be eval'ed to use Gfarm commands as follows;
 <div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
 <div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-e</code></span></dt>
+<dd><p>
+excludes Gfmd node from file system nodes.  Gfmd is executed on the
+node where gfarmbb is executed.  With this option, gfsd is not
+executed on that node.  This option expects there are N + 1 node
+allocations, and gfarmbb is executed on the last host in the hostfile.
+</p></dd>
 <dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>hostfile</code></em></span></dt>
 <dd><p>
 specifies a <em class="parameter"><code>hostfile</code></em> that
@@ -43,6 +50,14 @@ specifies a scratch directory on each compute node for Gfarm/BB.  If
 it does not exist, it is created.  This directory will be removed by
 gfarmbb stop.  It is necessary to specify the same directory for
 gfarmbb start and gfarmbb stop.  Default is /tmp/gfarmbb-scratch.
+</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd><p>
+enables access to Gfarm/BB from login nodes.  With this option, the
+Gfarm/BB configuration file $HOME/.gfarm2rc-$ID is created in the home
+directory.  ID consists of the hostname of the master compute node and
+the process ID.  To access to Gfarm/BB, specify it by
+GFARM_CONFIG_FILE environment variable.
 </p></dd>
 <dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>mount_point</code></em></span></dt>
 <dd><p>
@@ -58,12 +73,12 @@ is 86400 seconds (1 day).
 </p></dd>
 <dt><span class="term"><code class="option">-c</code></span></dt>
 <dd><p>
-Generates C-shell commands.  This option is available only for gfarmbb
+generates C-shell commands.  This option is available only for gfarmbb
 start.
 </p></dd>
 <dt><span class="term"><code class="option">-s</code></span></dt>
 <dd><p>
-Generates Bourne shell commands.  This option is available only for
+generates Bourne shell commands.  This option is available only for
 gfarmbb start.  This is default.
 </p></dd>
 </dl></div>

@@ -1,181 +1,58 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->gfs_rmdir</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFS-RMDIR.3"
-></A
->gfs_rmdir</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfs_rmdir&nbsp;--&nbsp;delete a directory</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><DIV
-CLASS="FUNCSYNOPSIS"
-><P
-></P
-><A
-NAME="AEN12"
-></A
-><TABLE
-BORDER="0"
-BGCOLOR="#E0E0E0"
-WIDTH="100%"
-><TR
-><TD
-><PRE
-CLASS="FUNCSYNOPSISINFO"
->#include &#60;gfarm/gfarm.h&#62;</PRE
-></TD
-></TR
-></TABLE
-><P
-><CODE
-><CODE
-CLASS="FUNCDEF"
-><TT
-CLASS="FUNCTION"
-><SPAN
-CLASS="RETURNVALUE"
->char *</SPAN
->gfs_rmdir</TT
-></CODE
->(char * <TT
-CLASS="PARAMETER"
-><I
->gfarm_url</I
-></TT
->);</CODE
-></P
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
-><TT
-CLASS="FUNCTION"
->gfs_rmdir()</TT
-> deletes a directory whose name
-is the string specified by <TT
-CLASS="PARAMETER"
-><I
->gfarm_url</I
-></TT
->.  The
-directory must be empty.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="RETURN-VALUES"
-></A
-><H2
->RETURN VALUES</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><CODE
-CLASS="CONSTANT"
->NULL</CODE
-></DT
-><DD
-><P
->The function terminated successfully.</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_MEMORY</CODE
-></DT
-><DD
-><P
->Insufficient memory was available.</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_PERMISSION_DENIED</CODE
-></DT
-><DD
-><P
-><TT
-CLASS="PARAMETER"
-><I
->gfarm_url</I
-></TT
->
-points outside your accessible address space.</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_DIRECTORY_NOT_EMPTY</CODE
-></DT
-><DD
-><P
->Directory is not empty.</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NO_SUCH_OBJECT</CODE
-></DT
-><DD
-><P
->Directory does not exist.</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_NOT_A_DIRECTORY</CODE
-></DT
-><DD
-><P
->A component of the path prefix is not a directory.</P
-></DD
-><DT
->Others</DT
-><DD
-><P
->An error except the above occurred.  The reason is shown by its
-pointed strings.</P
-></DD
-></DL
-></DIV
-></DIV
-></BODY
-></HTML
->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfs_rmdir</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="gfs-rmdir.3"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfs_rmdir — delete a directory</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="funcsynopsis">
+<pre class="funcsynopsisinfo">
+#include &lt;gfarm/gfarm.h&gt;
+</pre>
+<table border="0" class="funcprototype-table" summary="Function synopsis" style="cellspacing: 0; cellpadding: 0;"><tr>
+<td><code class="funcdef"><b class="fsfunc">gfarm_error_t gfs_rmdir</b>(</code></td>
+<td>
+<var class="pdparam">gfarm_url</var><code>)</code>;</td>
+<td> </td>
+</tr></table>
+<div class="paramdef-list">
+<code>const char * <var class="pdparam">gfarm_url</var></code>;</div>
+<div class="funcprototype-spacer"> </div>
+</div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p><code class="function">gfs_rmdir()</code> deletes a directory whose name
+is the string specified by <em class="parameter"><code>gfarm_url</code></em>.  The
+directory must be empty.</p>
+</div>
+<div class="refsect1">
+<a name="return-values"></a><h2>RETURN VALUES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_ERROR</code></span></dt>
+<dd><p>The function terminated successfully.</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_MEMORY</code></span></dt>
+<dd><p>Insufficient memory was available.</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_PERMISSION_DENIED</code></span></dt>
+<dd><p><em class="parameter"><code>gfarm_url</code></em>
+points outside your accessible address space.</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_DIRECTORY_NOT_EMPTY</code></span></dt>
+<dd><p>Directory is not empty.</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_SUCH_OBJECT</code></span></dt>
+<dd><p>Directory does not exist.</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NOT_A_DIRECTORY</code></span></dt>
+<dd><p>A component of the path prefix is not a directory.</p></dd>
+<dt><span class="term">Others</span></dt>
+<dd><p>An error except the above occurred.  The reason is shown by
+<span class="citerefentry"><span class="refentrytitle">gfarm_error_string</span>(3)</span>.</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

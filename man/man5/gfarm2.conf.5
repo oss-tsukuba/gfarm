@@ -1744,6 +1744,11 @@ For example,
 .\}
 .RE
 .PP
+log_file \fIpathname\fR
+.RS 4
+This directive specifies a log file\&.
+.RE
+.PP
 log_level \fIpriority_level\fR
 .RS 4
 This directive specifies a level of log priority\&. The log output, which priority is inferior to this level, will not be sent to syslog or standard error\&. The priority levels are "emerg", "alert", "crit", "err", "warning", "notice", "info" and "debug" in highest first order\&. The default level is "info"\&. It\*(Aqs not recommended to specify a level higher or equal to "crit"\&.
@@ -2844,6 +2849,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<attr_cache_limit_statement> |
 	<attr_cache_timeout_statement> |
 	<page_cache_timeout_statement> |
+	<log_file_statement> |
 	<log_level_statement> |
 	<log_message_verbose_level_statement> |
 	<log_auth_verbose_statement> |
@@ -4044,6 +4050,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "page_cache_timeout" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<log_file_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"log_file" <pathname>
 .fi
 .if n \{\
 .RE

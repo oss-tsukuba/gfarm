@@ -43,6 +43,11 @@ should be start or stop\&. When the mode is start, it displays the environment v
 % eval `gfarmbb start`
 .SH "OPTIONS"
 .PP
+\fB\-e\fR
+.RS 4
+excludes Gfmd node from file system nodes\&. Gfmd is executed on the node where gfarmbb is executed\&. With this option, gfsd is not executed on that node\&. This option expects there are N + 1 node allocations, and gfarmbb is executed on the last host in the hostfile\&.
+.RE
+.PP
 \fB\-h\fR \fIhostfile\fR
 .RS 4
 specifies a
@@ -53,6 +58,11 @@ that contains a list of hostnames of compute nodes\&. It is necessary to specify
 \fB\-scr\fR \fIscratch_dir\fR
 .RS 4
 specifies a scratch directory on each compute node for Gfarm/BB\&. If it does not exist, it is created\&. This directory will be removed by gfarmbb stop\&. It is necessary to specify the same directory for gfarmbb start and gfarmbb stop\&. Default is /tmp/gfarmbb\-scratch\&.
+.RE
+.PP
+\fB\-l\fR
+.RS 4
+enables access to Gfarm/BB from login nodes\&. With this option, the Gfarm/BB configuration file $HOME/\&.gfarm2rc\-$ID is created in the home directory\&. ID consists of the hostname of the master compute node and the process ID\&. To access to Gfarm/BB, specify it by GFARM_CONFIG_FILE environment variable\&.
 .RE
 .PP
 \fB\-m\fR \fImount_point\fR
@@ -67,10 +77,10 @@ specifies the period of a shared secret key in seconds for Gfarm/BB\&. This peri
 .PP
 \fB\-c\fR
 .RS 4
-Generates C\-shell commands\&. This option is available only for gfarmbb start\&.
+generates C\-shell commands\&. This option is available only for gfarmbb start\&.
 .RE
 .PP
 \fB\-s\fR
 .RS 4
-Generates Bourne shell commands\&. This option is available only for gfarmbb start\&. This is default\&.
+generates Bourne shell commands\&. This option is available only for gfarmbb start\&. This is default\&.
 .RE

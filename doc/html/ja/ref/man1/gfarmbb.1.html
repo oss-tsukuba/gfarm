@@ -21,9 +21,9 @@ Gfarm/BBは計算ノードのローカルストレージを用いる、一時的
 ユーザレベルファイルシステムです。
 <span class="command"><strong>gfarmbb</strong></span>はGfarm/BBの構築、撤去を行い
 ます。<em class="parameter"><code>mode</code></em>には、startかstopを指定します。mode
-がstartのとき、環境変数が
-表示されます。Gfarm/BBに対しGfarmコマンドを用いるためには、次のように環
-境変数を評価します。
+がstartのとき、環境変数
+が表示されます。Gfarm/BBに対しGfarmコマンドを用いるためには、次のよう
+に環境変数を評価します。
 </p>
 <p>
 % eval `gfarmbb start`
@@ -32,6 +32,13 @@ Gfarm/BBは計算ノードのローカルストレージを用いる、一時的
 <div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
 <div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-e</code></span></dt>
+<dd><p>
+Gfmdを別ノードで実行します。Gfmdはgfarmbbを実行したホストで実行さ
+れますが、gfmdを起動したノードではgfsdを起動しません。本オプション
+は、N+1ホストが割り当てられ、ホストファイルの最後のノードでgfarmbb
+を起動することを想定しています。
+</p></dd>
 <dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>hostfile</code></em></span></dt>
 <dd><p>
 計算ノードのホスト名のリストを含む
@@ -40,22 +47,30 @@ stopで同じホストファイルを指定してください。
 </p></dd>
 <dt><span class="term"><code class="option">-scr</code> <em class="parameter"><code>scratch_dir</code></em></span></dt>
 <dd><p>
-Gfarm/BBを構成するための各計算ノードのスクラッチディレクトリを指定し
-ます。指定されたディレクトリが存在しない場合は作成されます。またこの
-ディレクトリ以下のファイルはgfarmbb stopで削除されます。startとstop
-で同じディレクトリを指定してください。デフォルトは
+Gfarm/BBを構成するための各計算ノードのスクラッチディレクトリを指定
+します。指定されたディレクトリが存在しない場合は作成されます。また
+このディレクトリ以下のファイルはgfarmbb stopで削除されます。
+startとstopで同じディレクトリを指定してください。デフォルトは
 /tmp/gfarmbb-scratchです。
+</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd><p>
+ログインノードからGfarm/BBのアクセスを可能とします。このオプション
+をつけるとホームディレクトリにGfarm/BBの設定ファイルを作成します。
+設定ファイルのパス名は$HOME/.gfarm2rc-$IDとなります。IDは計算ノー
+ドのホスト名とプロセスIDで構成されます。Gfarm/BBをアクセスする場合
+は、この設定ファイルをGFARM_CONFIG_FILE環境変数で指定します。
 </p></dd>
 <dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>mount_point</code></em></span></dt>
 <dd><p>
-このオプションが指定されたとき、構築したGfarm/BBは指定されたマウント
-ポイントにマウントされます。mount.gfarm2fsが必要です。また、本オプ
-ションはstartのときだけ有効です。
+このオプションが指定されたとき、構築したGfarm/BBは指定されたマウン
+トポイントにマウントされます。mount.gfarm2fsが必要です。また、本
+オプションはstartのときだけ有効です。
 </p></dd>
 <dt><span class="term"><code class="option">-p</code> <em class="parameter"><code>period</code></em></span></dt>
 <dd><p>
-Gfarm/BBの共有鍵の有効期間を秒単位で指定します。有効時間はジョブ実行
-時間より長くする必要があります。デフォルトは86400秒（1日）です。
+Gfarm/BBの共有鍵の有効期間を秒単位で指定します。有効時間はジョブ実
+行時間より長くする必要があります。デフォルトは86400秒（1日）です。
 </p></dd>
 <dt><span class="term"><code class="option">-c</code></span></dt>
 <dd><p>
@@ -64,8 +79,8 @@ Cシェルのコマンドを出力します。本オプションはstartのと�
 </p></dd>
 <dt><span class="term"><code class="option">-s</code></span></dt>
 <dd><p>
-Bourneシェルのコマンドを出力します。本オプションはstartのときだけ有
-効です。デフォルト設定です。
+Bourneシェルのコマンドを出力します。本オプションはstartのときだけ
+有効です。デフォルト設定です。
 </p></dd>
 </dl></div>
 </div>
