@@ -5,7 +5,7 @@
 
 <refentry id="gfs-pio-sync.3">
 
-<refentryinfo><date>1 Jun 2005</date></refentryinfo>
+<refentryinfo><date>20 Jun 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_sync</refentrytitle>
@@ -24,7 +24,7 @@
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_pio_sync</function></funcdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t </returnvalue>gfs_pio_sync</function></funcdef>
     <paramdef>GFS_File <parameter moreinfo="none">gf</parameter></paramdef>
 </funcprototype>
 
@@ -51,7 +51,7 @@
 <refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
-<term><constant>NULL</constant></term>
+<term><constant>GFARM_ERR_NO_ERROR</constant></term>
 <listitem>
 <para>正常終了を示します．</para>
 </listitem>

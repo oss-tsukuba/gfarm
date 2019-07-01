@@ -5,7 +5,7 @@
 
 <refentry id="gfs-pio-close.3">
 
-<refentryinfo><date>27 Jun 2010</date></refentryinfo>
+<refentryinfo><date>20 Jun 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_close</refentrytitle>
@@ -25,7 +25,7 @@
 
 <funcprototype>
   <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfs_pio_close</function></funcdef>
-    <paramdef>GFS_File <parameter moreinfo="none">gfp</parameter></paramdef>
+    <paramdef>GFS_File <parameter moreinfo="none">gf</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -35,7 +35,7 @@
 
 <refsect1 id="description"><title>DESCRIPTION</title>
 <para>ファイル
-<parameter moreinfo="none">gfp</parameter>
+<parameter moreinfo="none">gf</parameter>
 をクローズします。</para>
 
 </refsect1>
@@ -51,7 +51,7 @@
 <varlistentry>
 <term><constant>GFARM_ERR_BAD_FILE_DESCRIPTOR</constant></term>
 <listitem>
-<para><parameter moreinfo="none">gfp</parameter>
+<para><parameter moreinfo="none">gf</parameter>
 で指定されるファイルディスクリプタが不正です。</para>
 </listitem>
 </varlistentry>

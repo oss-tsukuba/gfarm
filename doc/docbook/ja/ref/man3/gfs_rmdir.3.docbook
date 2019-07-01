@@ -5,7 +5,7 @@
 
 <refentry id="gfs-rmdir.3">
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>23 Jun 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_rmdir</refentrytitle>
@@ -24,8 +24,8 @@
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_rmdir</function></funcdef>
-    <paramdef>char * <parameter moreinfo="none">gfarm_url</parameter></paramdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t </returnvalue>gfs_rmdir</function></funcdef>
+    <paramdef>const char * <parameter moreinfo="none">gfarm_url</parameter></paramdef>
 </funcprototype>
 
 
@@ -35,16 +35,16 @@
 <!-- body begins here -->
 
 <refsect1 id="description"><title>DESCRIPTION</title>
-<para>引数
-<parameter moreinfo="none">gfarm_url</parameter>
-に指定した名前のディレクトリを削除します。</para>
+<para>引数<parameter moreinfo="none">gfarm_url</parameter>に指定した名前のディレクトリを削除します。削除するディレ
+クトリは空である必要があります。
+</para>
 
 </refsect1>
 
 <refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
-<term><constant>NULL</constant></term>
+<term><constant>GFARM_ERR_NO_ERROR</constant></term>
 <listitem>
 <para>正常終了を示します。</para>
 </listitem>
@@ -82,8 +82,8 @@
 <varlistentry>
 <term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
 <listitem>
-<para>指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
-示します。</para>
+<para>指定したパス名の親ディレクトリが、実際にはディレクトリでなかったこ
+とを示します。</para>
 </listitem>
 </varlistentry>
 
@@ -99,10 +99,12 @@
 <varlistentry>
 <term>その他</term>
 <listitem>
-<para>上記以外のエラーが生じたことを示します。</para>
+<para>上記以外のエラーが生じたことを示します。
+<citerefentry><refentrytitle>gfarm_error_string</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+によりエラーの原因を文字列に変換することができます。
+</para>
 </listitem>
 </varlistentry>
 </variablelist>
 </refsect1>
 </refentry>
-

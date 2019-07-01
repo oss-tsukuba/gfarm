@@ -6,7 +6,7 @@
 
 <refentry id="gfs-pio-close.3">
 
-<refentryinfo><date>27 Jun 2010</date></refentryinfo>
+<refentryinfo><date>20 Jun 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_close</refentrytitle>
@@ -26,7 +26,7 @@
 
 <funcprototype>
   <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t</returnvalue> gfs_pio_close</function></funcdef>
-    <paramdef>GFS_File <parameter moreinfo="none">gfp</parameter></paramdef>
+    <paramdef>GFS_File <parameter moreinfo="none">gf</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -35,7 +35,7 @@
 <!-- body begins here -->
 
 <refsect1 id="description"><title>DESCRIPTION</title>
-<para><function moreinfo="none">gfs_pio_close()</function> closes a file <parameter moreinfo="none">gfp</parameter>, so that it no longer
+<para><function moreinfo="none">gfs_pio_close()</function> closes a file <parameter moreinfo="none">gf</parameter>, so that it no longer
 refers to any file and may be reused.</para>
 
 </refsect1>
