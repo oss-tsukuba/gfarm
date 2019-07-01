@@ -5,7 +5,7 @@
 
 <refentry id="gfs-stat.3">
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>24 Jun 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_stat</refentrytitle>
@@ -24,7 +24,7 @@
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_stat</function></funcdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t </returnvalue>gfs_stat</function></funcdef>
     <paramdef>const char * <parameter moreinfo="none">gfarm_url</parameter></paramdef>
     <paramdef>struct gfs_stat * <parameter moreinfo="none">status</parameter></paramdef>
 </funcprototype>
@@ -41,18 +41,17 @@
 のファイル属性を
 <parameter moreinfo="none">status</parameter>
 の指す先に取得します。
-
-<parameter moreinfo="none">status</parameter></para>
-<para>には、動的に確保されたメモリへのポインタが含まれるので、
-この後、gfs_stat_free(3) を使ってそのメモリを解放する必要が
-あります。</para>
+<parameter moreinfo="none">status</parameter>
+には、動的に確保されたメモリへのポインタが含まれるので、この後、
+gfs_stat_free(3) を使ってそのメモリを解放する必要があります。
+</para>
 
 </refsect1>
 
 <refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
-<term><constant>NULL</constant></term>
+<term><constant>GFARM_ERR_NO_ERROR</constant></term>
 <listitem>
 <para>正常終了を示します。</para>
 </listitem>

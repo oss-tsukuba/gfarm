@@ -5,7 +5,7 @@
 
 <refentry id="gfs-pio-flush.3">
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>20 Jun 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_flush</refentrytitle>
@@ -24,7 +24,7 @@
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function moreinfo="none"><returnvalue>char *</returnvalue>gfs_pio_flush</function></funcdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t </returnvalue>gfs_pio_flush</function></funcdef>
     <paramdef>GFS_File <parameter moreinfo="none">gf</parameter></paramdef>
 </funcprototype>
 
@@ -36,15 +36,15 @@
 
 <refsect1 id="description"><title>DESCRIPTION</title>
 <para>書き込み用にオープンしているファイル
-<parameter moreinfo="none">gf</parameter>
-の、書き込みバッファに溜まっているデータを実際にディスクに書き込みます。</para>
+<parameter moreinfo="none">gf</parameter>の、書き込みバッファに溜まって
+いるデータを実際にディスクに書き込みます。</para>
 
 </refsect1>
 
 <refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
-<term><constant>NULL</constant></term>
+<term><constant>GFARM_ERR_NO_ERROR</constant></term>
 <listitem>
 <para>正常終了を示します。</para>
 </listitem>

@@ -5,7 +5,7 @@
 
 <refentry id="gfs-pio-seek.3">
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>20 Jun 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_seek</refentrytitle>
@@ -24,11 +24,11 @@
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function moreinfo="none"><returnvalue>char * </returnvalue>gfs_pio_seek</function></funcdef>
+  <funcdef><function moreinfo="none"><returnvalue>gfarm_error_t </returnvalue>gfs_pio_seek</function></funcdef>
     <paramdef>GFS_File <parameter moreinfo="none">gf</parameter></paramdef>
-    <paramdef>file_offset_t <parameter moreinfo="none">offset</parameter></paramdef>
+    <paramdef>gfarm_off_t <parameter moreinfo="none">offset</parameter></paramdef>
     <paramdef>int <parameter moreinfo="none">whence</parameter></paramdef>
-    <paramdef>file_offset_t * <parameter moreinfo="none">result</parameter></paramdef>
+    <paramdef>gfarm_off_t * <parameter moreinfo="none">result</parameter></paramdef>
 </funcprototype>
 
 
@@ -50,9 +50,9 @@
 は、
 <parameter moreinfo="none">whence</parameter>
 が
-0 の場合にはファイル先頭から、
-1 の場合には現在のシーク位置から、
-2 の場合にはファイル末尾からのオフセットです。</para>
+GFARM_SEEK_SET の場合にはファイル先頭から、
+GFARM_SEEK_CUR の場合には現在のシーク位置から、
+GFARM_SEEK_END の場合にはファイル末尾からのオフセットです。</para>
 
 <para>引数
 <parameter moreinfo="none">result</parameter>
@@ -67,7 +67,7 @@
 <refsect1 id="return-values"><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
-<term><constant>NULL</constant></term>
+<term><constant>GFARM_ERR_NO_ERROR</constant></term>
 <listitem>
 <para>正常終了を示します。</para>
 </listitem>
@@ -79,9 +79,18 @@
 </listitem>
 </varlistentry>
 <varlistentry>
+<term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
+<listitem>
+<para>指定されたwhenceとoffsetが不正な値です。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
 <term>その他</term>
 <listitem>
-<para>上記以外のエラーが生じたことを示します。</para>
+<para>上記以外のエラーが生じたことを示します。
+<citerefentry><refentrytitle>gfarm_error_string</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+によりエラーの原因を文字列に変換することができます。
+</para>
 </listitem>
 </varlistentry>
 </variablelist>

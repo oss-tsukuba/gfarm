@@ -1,4 +1,4 @@
- <?xml version="1.0"?>
+<?xml version="1.0"?>
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
   "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
 
@@ -6,7 +6,7 @@
 
 <refentry id="gfs-stat-free.3">
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>24 Jun 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_stat_free</refentrytitle>
@@ -36,7 +36,7 @@
 <!-- body begins here -->
 
 <refsect1 id="description"><title>DESCRIPTION</title>
-<para><function moreinfo="none">gfs_stat_free()</function> frees frees the memory space of file status
+<para><function moreinfo="none">gfs_stat_free()</function> frees the memory space of file status
 <parameter moreinfo="none">status</parameter> allocated by gfs_stat(3).</para>
 
 </refsect1>
