@@ -35,10 +35,15 @@ gfarmbb \- Gfarm/BB（Gfarm burst buffer）を構築・撤去する
 .SH "DESCRIPTION"
 .PP
 Gfarm/BBは計算ノードのローカルストレージを用いる、一時的なオンデマンド ユーザレベルファイルシステムです。
-\fBgfarmbb\fRはGfarm/BBの構築、撤去を行い ます。\fImode\fRには、startかstopを指定します。mode がstartのとき、環境変数が 表示されます。Gfarm/BBに対しGfarmコマンドを用いるためには、次のように環 境変数を評価します。
+\fBgfarmbb\fRはGfarm/BBの構築、撤去を行い ます。\fImode\fRには、startかstopを指定します。mode がstartのとき、環境変数 が表示されます。Gfarm/BBに対しGfarmコマンドを用いるためには、次のよう に環境変数を評価します。
 .PP
 % eval `gfarmbb start`
 .SH "OPTIONS"
+.PP
+\fB\-e\fR
+.RS 4
+Gfmdを別ノードで実行します。Gfmdはgfarmbbを実行したホストで実行さ れますが、gfmdを起動したノードではgfsdを起動しません。本オプション は、N+1ホストが割り当てられ、ホストファイルの最後のノードでgfarmbb を起動することを想定しています。
+.RE
 .PP
 \fB\-h\fR \fIhostfile\fR
 .RS 4
@@ -48,17 +53,22 @@ Gfarm/BBは計算ノードのローカルストレージを用いる、一時的
 .PP
 \fB\-scr\fR \fIscratch_dir\fR
 .RS 4
-Gfarm/BBを構成するための各計算ノードのスクラッチディレクトリを指定し ます。指定されたディレクトリが存在しない場合は作成されます。またこの ディレクトリ以下のファイルはgfarmbb stopで削除されます。startとstop で同じディレクトリを指定してください。デフォルトは /tmp/gfarmbb\-scratchです。
+Gfarm/BBを構成するための各計算ノードのスクラッチディレクトリを指定 します。指定されたディレクトリが存在しない場合は作成されます。また このディレクトリ以下のファイルはgfarmbb stopで削除されます。 startとstopで同じディレクトリを指定してください。デフォルトは /tmp/gfarmbb\-scratchです。
+.RE
+.PP
+\fB\-l\fR
+.RS 4
+ログインノードからGfarm/BBのアクセスを可能とします。このオプション をつけるとホームディレクトリにGfarm/BBの設定ファイルを作成します。 設定ファイルのパス名は$HOME/\&.gfarm2rc\-$IDとなります。IDは計算ノー ドのホスト名とプロセスIDで構成されます。Gfarm/BBをアクセスする場合 は、この設定ファイルをGFARM_CONFIG_FILE環境変数で指定します。
 .RE
 .PP
 \fB\-m\fR \fImount_point\fR
 .RS 4
-このオプションが指定されたとき、構築したGfarm/BBは指定されたマウント ポイントにマウントされます。mount\&.gfarm2fsが必要です。また、本オプ ションはstartのときだけ有効です。
+このオプションが指定されたとき、構築したGfarm/BBは指定されたマウン トポイントにマウントされます。mount\&.gfarm2fsが必要です。また、本 オプションはstartのときだけ有効です。
 .RE
 .PP
 \fB\-p\fR \fIperiod\fR
 .RS 4
-Gfarm/BBの共有鍵の有効期間を秒単位で指定します。有効時間はジョブ実行 時間より長くする必要があります。デフォルトは86400秒（1日）です。
+Gfarm/BBの共有鍵の有効期間を秒単位で指定します。有効時間はジョブ実 行時間より長くする必要があります。デフォルトは86400秒（1日）です。
 .RE
 .PP
 \fB\-c\fR
@@ -68,5 +78,5 @@ Cシェルのコマンドを出力します。本オプションはstartのと�
 .PP
 \fB\-s\fR
 .RS 4
-Bourneシェルのコマンドを出力します。本オプションはstartのときだけ有 効です。デフォルト設定です。
+Bourneシェルのコマンドを出力します。本オプションはstartのときだけ 有効です。デフォルト設定です。
 .RE

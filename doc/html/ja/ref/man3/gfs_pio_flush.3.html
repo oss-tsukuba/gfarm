@@ -1,166 +1,56 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
-<HTML
-><HEAD
-><TITLE
->gfs_pio_flush</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
-><BODY
-CLASS="REFENTRY"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><H1
-><A
-NAME="GFS-PIO-FLUSH.3"
-></A
->gfs_pio_flush</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="NAME"
-></A
-><H2
->Name</H2
->gfs_pio_flush&nbsp;--&nbsp;書き込みをフラッシュする。</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="SYNOPSIS"
-></A
-><H2
->Synopsis</H2
-><DIV
-CLASS="FUNCSYNOPSIS"
-><A
-NAME="AEN12"
-></A
-><P
-></P
-><TABLE
-BORDER="0"
-BGCOLOR="#E0E0E0"
-WIDTH="100%"
-><TR
-><TD
-><PRE
-CLASS="FUNCSYNOPSISINFO"
->#include &#60;gfarm/gfarm.h&#62;</PRE
-></TD
-></TR
-></TABLE
-><P
-><CODE
-><CODE
-CLASS="FUNCDEF"
-><TT
-CLASS="FUNCTION"
-><SPAN
-CLASS="RETURNVALUE"
->char *</SPAN
->gfs_pio_flush</TT
-></CODE
->(GFS_File <TT
-CLASS="PARAMETER"
-><I
->gf</I
-></TT
->);</CODE
-></P
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="DESCRIPTION"
-></A
-><H2
->DESCRIPTION</H2
-><P
->書き込み用にオープンしているファイル
-<TT
-CLASS="PARAMETER"
-><I
->gf</I
-></TT
->
-の、書き込みバッファに溜まっているデータを実際にディスクに書き込みます。</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="RETURN-VALUES"
-></A
-><H2
->RETURN VALUES</H2
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><DL
-><DT
-><TT
-CLASS="CONSTANT"
->NULL</TT
-></DT
-><DD
-><P
->正常終了を示します。</P
-></DD
-><DT
-><TT
-CLASS="CONSTANT"
->GFARM_ERR_NO_MEMORY</TT
-></DT
-><DD
-><P
->メモリ不足のため処理を中止しました。</P
-></DD
-><DT
->その他</DT
-><DD
-><P
->上記以外のエラーが生じたことを示します。</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_create</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_open</SPAN
->(3)</SPAN
->,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_write</SPAN
->(3)</SPAN
-></P
-></DIV
-></BODY
-></HTML
->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfs_pio_flush</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="gfs-pio-flush.3"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfs_pio_flush — 書き込みをフラッシュする。</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="funcsynopsis">
+<pre class="funcsynopsisinfo">
+#include &lt;gfarm/gfarm.h&gt;
+</pre>
+<table border="0" class="funcprototype-table" summary="Function synopsis" style="cellspacing: 0; cellpadding: 0;"><tr>
+<td><code class="funcdef"><b class="fsfunc">gfarm_error_t gfs_pio_flush</b>(</code></td>
+<td>
+<var class="pdparam">gf</var><code>)</code>;</td>
+<td> </td>
+</tr></table>
+<div class="paramdef-list">
+<code>GFS_File <var class="pdparam">gf</var></code>;</div>
+<div class="funcprototype-spacer"> </div>
+</div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>書き込み用にオープンしているファイル
+<em class="parameter"><code>gf</code></em>の、書き込みバッファに溜まって
+いるデータを実際にディスクに書き込みます。</p>
+</div>
+<div class="refsect1">
+<a name="return-values"></a><h2>RETURN VALUES</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_ERROR</code></span></dt>
+<dd><p>正常終了を示します。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_ERR_NO_MEMORY</code></span></dt>
+<dd><p>メモリ不足のため処理を中止しました。</p></dd>
+<dt><span class="term">その他</span></dt>
+<dd><p>上記以外のエラーが生じたことを示します。</p></dd>
+</dl></div>
+</div>
+<div class="refsect1">
+<a name="see-also"></a><h2>SEE ALSO</h2>
+<p>
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_create</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_open</span>(3)</span>,
+<span class="citerefentry"><span class="refentrytitle">gfs_pio_write</span>(3)</span>
+</p>
+</div>
+</div></body>
+</html>

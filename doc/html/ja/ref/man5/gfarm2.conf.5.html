@@ -1425,6 +1425,10 @@ disableにすると、busyホストには複製は作成されません。
 	page_cache_timeout 3600000<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">log_file</span> <em class="parameter"><code>パス名</code></em></span></dt>
+<dd><p>
+ログファイルを指定します。
+</p></dd>
 <dt><span class="term"><span class="token">log_level</span> <em class="parameter"><code>優先度レベル</code></em></span></dt>
 <dd>
 <p>
@@ -2366,6 +2370,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;attr_cache_limit_statement&gt; |<br>
 	&lt;attr_cache_timeout_statement&gt; |<br>
 	&lt;page_cache_timeout_statement&gt; |<br>
+	&lt;log_file_statement&gt; |<br>
 	&lt;log_level_statement&gt; |<br>
 	&lt;log_message_verbose_level_statement&gt; |<br>
 	&lt;log_auth_verbose_statement&gt; |<br>
@@ -2588,6 +2593,8 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <dd><div class="literallayout"><p>"attr_cache_timeout" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;page_cache_timeout_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"page_cache_timeout" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;log_file_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"log_file" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;log_level_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"log_level" &lt;log_priority&gt;</p></div></dd>
 <dt><span class="term">&lt;log_message_verbose_level_statement&gt; ::=</span></dt>

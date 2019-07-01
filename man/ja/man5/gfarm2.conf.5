@@ -1660,6 +1660,11 @@ gfarmカーネルドライバにのみ関連する値で、ファイルデータ
 .\}
 .RE
 .PP
+log_file \fIパス名\fR
+.RS 4
+ログファイルを指定します。
+.RE
+.PP
 log_level \fI優先度レベル\fR
 .RS 4
 どの優先度レベル以上のログを出力するかを指定します。 ここで指定したレベル未満の優先度のログは、syslogや標準エラーへ 送られません。 レベルは、優先度の高い順に"emerg", "alert", "crit", "err", "warning", "notice", "info", "debug"です。 デフォルトの出力レベルは"info"です。 "crit"以上の優先度を指定することは、お勧めできません。
@@ -2778,6 +2783,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<attr_cache_limit_statement> |
 	<attr_cache_timeout_statement> |
 	<page_cache_timeout_statement> |
+	<log_file_statement> |
 	<log_level_statement> |
 	<log_message_verbose_level_statement> |
 	<log_auth_verbose_statement> |
@@ -4020,6 +4026,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "page_cache_timeout" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<log_file_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"log_file" <pathname>
 .fi
 .if n \{\
 .RE
