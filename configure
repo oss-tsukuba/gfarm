@@ -12886,6 +12886,32 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking Linux sendfile" >&5
+$as_echo_n "checking Linux sendfile... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/sendfile.h>
+int
+main ()
+{
+sendfile(0, 0, 0, 0)
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_LINUX_SENDFILE 1" >>confdefs.h
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
 ### use 64bit off_t, if possible.
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking Large File extention for 64bit off_t" >&5
