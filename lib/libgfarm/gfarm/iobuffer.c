@@ -499,12 +499,26 @@ gfarm_iobuffer_flush_write(struct gfarm_iobuffer *b)
 		gfarm_iobuffer_write(b, NULL);
 }
 
+static int
+gfarm_iobuffer_write_direct(struct gfarm_iobuffer *b, void *data, int len)
+{
+	return ((*b->write_func)(b, b->write_cookie, b->write_fd, data, len));
+}
+
 int
 gfarm_iobuffer_put_write(struct gfarm_iobuffer *b, const void *data, int len)
 {
 	const char *p;
 	int rv, residual;
+	void *d = (void *)data;
 
+	if (!b->pindown && len > gfarm_iobuffer_get_size(b)) {
+		gfarm_iobuffer_flush_write(b);
+		if (gfarm_iobuffer_get_error(b))
+			return (0);
+		rv = gfarm_iobuffer_write_direct(b, d, len);
+		return (rv < 0 ? 0 : rv);
+	}
 	for (p = data, residual = len; residual > 0; residual -= rv, p += rv) {
 		if (!b->pindown && IOBUFFER_IS_FULL(b))
 			gfarm_iobuffer_write(b, NULL);
