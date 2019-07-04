@@ -45,16 +45,16 @@ err() {
 
 while [ $# -gt 0 ]; do
     case $1 in
-        start) mode=start ;;
+	start) mode=start ;;
 	stop) mode=stop ;;
 	-e) EXCLUDE_GFMD= ;;
 	-h) shift; HOSTFILE=$1 ;;
 	-scr) shift; TMPDIR=$1 ;;
+	-l) LOGIN_NODE_ACCESS=true ;;
 	-m) shift; MDIR=$1 ;;
 	-p) shift; PERIOD=$1 ;;
 	-c) SHELL_TYPE=csh ;;
 	-s) SHELL_TYPE=bsh ;;
-	-l) LOGIN_NODE_ACCESS=true ;;
 	-*) echo "unknown option: $1"
 	    usage ;;
 	*) usage ;;
