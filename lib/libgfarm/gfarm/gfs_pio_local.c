@@ -4,12 +4,17 @@
  * $Id$
  */
 
+#include <gfarm/gfarm_config.h>
+
 #include <stdlib.h>
 #include <stddef.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h> /* gfs_client.h needs socklen_t */
+#ifdef HAVE_LINUX_SENDFILE
+#include <sys/sendfile.h>
+#endif
 #include <sys/time.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -300,7 +305,18 @@ gfs_pio_local_copyfile(int r_fd, gfarm_off_t r_off,
 	ssize_t rv, i, to_write;
 	gfarm_off_t written = 0;
 	char buffer[COPYFILE_BUFSIZE];
+#ifdef HAVE_LINUX_SENDFILE
+	off_t sendfile_offset = r_off;
 
+	if (md_ctx == NULL && w_off == 0) {
+		written = sendfile(w_fd, r_fd, &sendfile_offset, len);
+		if (written != -1) {
+			if (writtenp != NULL)
+				*writtenp = written;
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+#endif
 	if (append_mode) {
 		write_mode_unknown = 0;
 		write_mode_thread_safe = 0;

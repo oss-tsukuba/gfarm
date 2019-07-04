@@ -586,6 +586,14 @@ void init(void){}],[
 	LIBS="${LIBS} ${pthread_libs}"
 ])
 
+AC_MSG_CHECKING([Linux sendfile])
+AC_TRY_LINK(
+  [#include <sys/sendfile.h>],
+  [sendfile(0, 0, 0, 0)],
+  [AC_MSG_RESULT([yes])
+   AC_DEFINE(HAVE_LINUX_SENDFILE, 1, [support Linux sendfile])],
+  [AC_MSG_RESULT([no])])
+
 ### use 64bit off_t, if possible.
 
 AC_MSG_CHECKING([Large File extention for 64bit off_t])
