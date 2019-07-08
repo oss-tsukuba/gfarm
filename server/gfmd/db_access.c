@@ -107,6 +107,10 @@ db_enter(dbq_entry_func_t func, void *data, int with_seqnum)
 	gfarm_error_t e;
 	int transaction = 0;
 
+	if (gfarm_is_db_access_type_none()) {
+		free(data);
+		return (GFARM_ERR_NO_ERROR);
+	}
 	if (with_seqnum && transaction_nesting == 0) {
 		transaction = 1;
 		if ((e = db_enter_op(ops->begin, NULL, with_seqnum))
@@ -140,6 +144,10 @@ dbq_enter0(struct dbq *q, dbq_entry_func_t func, void *data, int with_seqnum)
 	static const char diag[] = "dbq_enter";
 	struct dbq_entry *ent;
 
+	if (gfarm_is_db_access_type_none()) {
+		free(data);
+		return (GFARM_ERR_NO_ERROR);
+	}
 	assert(!gfarm_get_metadb_replication_enabled() || with_seqnum == 0);
 
 	gfarm_mutex_lock(&q->mutex, diag, "mutex");
@@ -211,6 +219,10 @@ dbq_enter_withcallback(dbq_entry_func_t func, void *data,
 	gfarm_error_t e;
 	struct dbq_callback_arg *arg;
 
+	if (gfarm_is_db_access_type_none()) {
+		free(data);
+		return (GFARM_ERR_NO_ERROR);
+	}
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
 		gflog_debug(GFARM_MSG_1002000,
@@ -234,6 +246,8 @@ db_waitctx_init(struct db_waitctx *ctx)
 {
 	static const char diag[] = "db_waitctx_init";
 
+	if (gfarm_is_db_access_type_none())
+		return;
 	if (ctx != NULL) {
 		gfarm_mutex_init(&ctx->lock, diag, "lock");
 		gfarm_cond_init(&ctx->cond, diag, "cond");
@@ -246,6 +260,8 @@ db_waitctx_fini(struct db_waitctx *ctx)
 {
 	static const char diag[] = "db_waitctx_fini";
 
+	if (gfarm_is_db_access_type_none())
+		return;
 	if (ctx != NULL) {
 		gfarm_cond_destroy(&ctx->cond, diag, "cond");
 		gfarm_mutex_destroy(&ctx->lock, diag, "lock");
@@ -272,7 +288,7 @@ dbq_waitret(struct db_waitctx *ctx)
 	gfarm_error_t e;
 	static const char diag[] = "dbq_waitret";
 
-	if (ctx == NULL)
+	if (gfarm_is_db_access_type_none() || ctx == NULL)
 		return (GFARM_ERR_NO_ERROR);
 
 	gfarm_mutex_lock(&ctx->lock, diag, "lock");
@@ -301,7 +317,7 @@ gfarm_dbq_enter_for_waitret(
 	return (dbq_enter_for_waitret(func, data, ctx));
 }
 
-gfarm_error_t
+static gfarm_error_t
 dbq_delete(struct dbq *q, struct dbq_entry *entp)
 {
 	gfarm_error_t e;
@@ -336,6 +352,8 @@ db_getfreenum(void)
 	int freenum;
 	static const char diag[] = "db_getfreenum";
 
+	if (gfarm_is_db_access_type_none())
+		return (0);
 	/*
 	 * This function is made only for gfm_server_findxmlattr().
 	 */
@@ -383,6 +401,9 @@ db_use(const struct db_ops *o)
 gfarm_error_t
 db_initialize(void)
 {
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
 	dbq_init(&dbq);
 	if (gfarm_get_metadb_replication_enabled())
 		return ((*store_ops->initialize)());
@@ -395,6 +416,9 @@ db_terminate(void)
 {
 	gfarm_error_t e;
 	static const char diag[] = "db_terminate";
+
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
 
 	gflog_info(GFARM_MSG_1000406, "try to stop database syncer");
 	dbq_wait_to_finish(&dbq);
@@ -417,6 +441,9 @@ db_thread(void *arg)
 	gfarm_error_t e;
 	struct dbq_entry ent;
 	static const char diag[] = "db_thread";
+
+	if (gfarm_is_db_access_type_none())
+		return (NULL);
 
 	for (;;) {
 		e = dbq_delete(&dbq, &ent);
@@ -446,6 +473,9 @@ db_begin(const char *diag)
 {
 	gfarm_error_t e;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
 	assert(transaction_nesting == 0);
 
 	if (transaction_nesting == 0) {
@@ -465,6 +495,9 @@ gfarm_error_t
 db_end(const char *diag)
 {
 	gfarm_error_t e;
+
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
 
 	assert(transaction_nesting == 1);
 
@@ -728,7 +761,6 @@ db_user_load(void *closure, void (*callback)(void *, struct gfarm_user_info *))
 	return (e);
 }
 
-
 void *
 db_group_dup(const struct gfarm_group_info *gi, size_t size)
 {
@@ -927,8 +959,12 @@ db_inode_dup(const struct gfs_stat *st, size_t size)
 gfarm_error_t
 db_inode_add(const struct gfs_stat *st)
 {
-	struct gfs_stat *i = db_inode_dup(st, sizeof(*i));
+	struct gfs_stat *i;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
+	i = db_inode_dup(st, sizeof(*i));
 	if (i == NULL) {
 		gflog_debug(GFARM_MSG_1002014, "db_inode_dup() failed");
 		return (GFARM_ERR_NO_MEMORY);
@@ -939,8 +975,12 @@ db_inode_add(const struct gfs_stat *st)
 gfarm_error_t
 db_inode_modify(const struct gfs_stat *st)
 {
-	struct gfs_stat *i = db_inode_dup(st, sizeof(*i));
+	struct gfs_stat *i;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
+	i = db_inode_dup(st, sizeof(*i));
 	if (i == NULL) {
 		gflog_debug(GFARM_MSG_1002015, "db_inode_dup() failed");
 		return (GFARM_ERR_NO_MEMORY);
@@ -952,6 +992,9 @@ gfarm_error_t
 db_inode_gen_modify(gfarm_ino_t inum, gfarm_uint64_t gen)
 {
 	struct db_inode_uint64_modify_arg *arg;
+
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
@@ -969,6 +1012,9 @@ db_inode_nlink_modify(gfarm_ino_t inum, gfarm_uint64_t nlink)
 {
 	struct db_inode_uint64_modify_arg *arg;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
 		gflog_debug(GFARM_MSG_1002016,
@@ -985,6 +1031,9 @@ db_inode_size_modify(gfarm_ino_t inum, gfarm_off_t size)
 {
 	struct db_inode_uint64_modify_arg *arg;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
 		gflog_debug(GFARM_MSG_1002017,
@@ -1000,6 +1049,9 @@ gfarm_error_t
 db_inode_mode_modify(gfarm_ino_t inum, gfarm_mode_t mode)
 {
 	struct db_inode_uint32_modify_arg *arg;
+
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
@@ -1038,9 +1090,12 @@ db_inode_string_modify_arg_alloc(gfarm_ino_t inum, const char *str)
 gfarm_error_t
 db_inode_user_modify(gfarm_ino_t inum, const char *user)
 {
-	struct db_inode_string_modify_arg *arg =
-	    db_inode_string_modify_arg_alloc(inum, user);
+	struct db_inode_string_modify_arg *arg;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
+	arg = db_inode_string_modify_arg_alloc(inum, user);
 	if (arg == NULL) {
 		gflog_debug(GFARM_MSG_1003022,
 		    "db_inode_string_modify_arg_alloc failed");
@@ -1052,9 +1107,12 @@ db_inode_user_modify(gfarm_ino_t inum, const char *user)
 gfarm_error_t
 db_inode_group_modify(gfarm_ino_t inum, const char *group)
 {
-	struct db_inode_string_modify_arg *arg =
-	    db_inode_string_modify_arg_alloc(inum, group);
+	struct db_inode_string_modify_arg *arg;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
+	arg = db_inode_string_modify_arg_alloc(inum, group);
 	if (arg == NULL) {
 		gflog_debug(GFARM_MSG_1003023,
 		    "db_inode_string_modify_arg_alloc failed");
@@ -1068,6 +1126,9 @@ db_inode_time_modify(gfarm_ino_t inum, struct gfarm_timespec *t,
 	dbq_entry_func_t op)
 {
 	struct db_inode_timespec_modify_arg *arg;
+
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
@@ -1149,9 +1210,12 @@ gfarm_error_t
 db_inode_cksum_add(gfarm_ino_t inum,
 	const char *type, size_t len, const char *sum)
 {
-	struct db_inode_cksum_arg *arg =
-	    db_inode_cksum_arg_alloc(inum, type, len, sum);
+	struct db_inode_cksum_arg *arg;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
+	arg = db_inode_cksum_arg_alloc(inum, type, len, sum);
 	if (arg == NULL) {
 		gflog_debug(GFARM_MSG_1002025,
 			"db_inode_cksum_arg_alloc() failed");
@@ -1164,9 +1228,12 @@ gfarm_error_t
 db_inode_cksum_modify(gfarm_ino_t inum,
 	const char *type, size_t len, const char *sum)
 {
-	struct db_inode_cksum_arg *arg =
-	    db_inode_cksum_arg_alloc(inum, type, len, sum);
+	struct db_inode_cksum_arg *arg;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
+	arg = db_inode_cksum_arg_alloc(inum, type, len, sum);
 	if (arg == NULL) {
 		gflog_debug(GFARM_MSG_1002026,
 			"db_inode_cksum_arg_alloc() failed");
@@ -1179,6 +1246,9 @@ gfarm_error_t
 db_inode_cksum_remove(gfarm_ino_t inum)
 {
 	struct db_inode_inum_arg *arg;
+
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
@@ -1233,9 +1303,12 @@ db_filecopy_arg_alloc(gfarm_ino_t inum, const char *hostname)
 gfarm_error_t
 db_filecopy_add(gfarm_ino_t inum, const char *hostname)
 {
-	struct db_filecopy_arg *arg =
-	    db_filecopy_arg_alloc(inum, hostname);
+	struct db_filecopy_arg *arg;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
+	arg = db_filecopy_arg_alloc(inum, hostname);
 	if (arg == NULL) {
 		gflog_debug(GFARM_MSG_1002029,
 			"db_filecopy_arg_alloc() failed");
@@ -1247,9 +1320,12 @@ db_filecopy_add(gfarm_ino_t inum, const char *hostname)
 gfarm_error_t
 db_filecopy_remove(gfarm_ino_t inum, const char *hostname)
 {
-	struct db_filecopy_arg *arg =
-	    db_filecopy_arg_alloc(inum, hostname);
+	struct db_filecopy_arg *arg;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
+	arg = db_filecopy_arg_alloc(inum, hostname);
 	if (arg == NULL) {
 		gflog_debug(GFARM_MSG_1002030,
 			"db_filecopy_arg_alloc() failed");
@@ -1284,7 +1360,6 @@ db_filecopy_load(void *closure,
 	return (e);
 }
 
-
 struct db_deadfilecopy_arg *
 db_deadfilecopy_arg_alloc(gfarm_ino_t inum, gfarm_uint64_t igen,
 	const char *hostname)
@@ -1318,9 +1393,12 @@ gfarm_error_t
 db_deadfilecopy_add(gfarm_ino_t inum, gfarm_uint64_t igen,
 	const char *hostname)
 {
-	struct db_deadfilecopy_arg *arg =
-	    db_deadfilecopy_arg_alloc(inum, igen, hostname);
+	struct db_deadfilecopy_arg *arg;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
+	arg = db_deadfilecopy_arg_alloc(inum, igen, hostname);
 	if (arg == NULL) {
 		gflog_debug(GFARM_MSG_1002032,
 			"db_deadfilecopy_arg_alloc() failed");
@@ -1333,9 +1411,12 @@ gfarm_error_t
 db_deadfilecopy_remove(gfarm_ino_t inum, gfarm_uint64_t igen,
 	const char *hostname)
 {
-	struct db_deadfilecopy_arg *arg =
-	    db_deadfilecopy_arg_alloc(inum, igen, hostname);
+	struct db_deadfilecopy_arg *arg;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
+	arg = db_deadfilecopy_arg_alloc(inum, igen, hostname);
 	if (arg == NULL) {
 		gflog_debug(GFARM_MSG_1002033,
 			"db_deadfilecopy_arg_alloc() failed");
@@ -1406,9 +1487,13 @@ gfarm_error_t
 db_direntry_add(gfarm_ino_t dir_inum, const char *entry_name, int entry_len,
 	gfarm_ino_t entry_inum)
 {
-	struct db_direntry_arg *arg =
-	    db_direntry_arg_alloc(dir_inum, entry_name, entry_len, entry_inum);
+	struct db_direntry_arg *arg;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
+	arg =
+	    db_direntry_arg_alloc(dir_inum, entry_name, entry_len, entry_inum);
 	if (arg == NULL) {
 		gflog_debug(GFARM_MSG_1002035,
 			"db_direntry_arg_alloc() failed");
@@ -1420,9 +1505,12 @@ db_direntry_add(gfarm_ino_t dir_inum, const char *entry_name, int entry_len,
 gfarm_error_t
 db_direntry_remove(gfarm_ino_t dir_inum, const char *entry_name, int entry_len)
 {
-	struct db_direntry_arg *arg =
-	    db_direntry_arg_alloc(dir_inum, entry_name, entry_len, 0);
+	struct db_direntry_arg *arg;
 
+	if (gfarm_is_db_access_type_none())
+		return (GFARM_ERR_NO_ERROR);
+
+	arg = db_direntry_arg_alloc(dir_inum, entry_name, entry_len, 0);
 	if (arg == NULL) {
 		gflog_debug(GFARM_MSG_1002036,
 			"db_direntry_arg_alloc() failed");

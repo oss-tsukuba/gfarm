@@ -25,6 +25,8 @@ usage() {
     echo "            specifies a scratch directory. ($TMPDIR)"
     echo "        -l"
     echo "            Enable Gfarm/BB access from login nodes."
+    echo "        -L log_dir"
+    echo "            specifies a log directory. ($TMPDIR/log)"
     echo "        -m mount_point"
     echo "            specifies a mount point."
     echo "        -p period"
@@ -51,6 +53,7 @@ while [ $# -gt 0 ]; do
 	-h) shift; HOSTFILE=$1 ;;
 	-scr) shift; TMPDIR=$1 ;;
 	-l) LOGIN_NODE_ACCESS=true ;;
+	-L) shift; LOGDIR=$1 ;;
 	-m) shift; MDIR=$1 ;;
 	-p) shift; PERIOD=$1 ;;
 	-c) SHELL_TYPE=csh ;;
@@ -62,6 +65,7 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
+: ${LOGDIR:=$TMPDIR/log}
 : ${USER:=`whoami`}
 
 if [ X"$HOSTFILE" != X ]; then
@@ -77,22 +81,31 @@ fi
 start() {
     [ -d $TMPDIR ] || mkdir -p $TMPDIR
     [ -d $TMPDIR ] || err $TMPDIR: no such scratch directory
+    [ -d $LOGDIR ] || mkdir -p $LOGDIR
+    [ -d $LOGDIR ] || err $LOGDIR: no such log directory
 
     GFARM_CONFIG_FILE=$TMPDIR/etc/gfarm2.conf
     export GFARM_CONFIG_FILE
     SHARED_KEY_FILE=$TMPDIR/etc/.gfarm_shared_key
     prun mkdir -p $TMPDIR/etc
     config-gfarm --prefix $TMPDIR -S -N -A $USER -b none > /dev/null
+
     echo metadb_server_listen_backlog 2048 >> $TMPDIR/etc/gfmd.conf
     echo metadb_server_max_descriptors 262144 >> $TMPDIR/etc/gfmd.conf
+    echo metadb_db_access_type none >> $TMPDIR/etc/gfmd.conf
     echo schedule_idle_load_thresh 100 >> $TMPDIR/etc/gfmd.conf
     echo atime disable >> $TMPDIR/etc/gfmd.conf
     echo replica_check disable >> $TMPDIR/etc/gfmd.conf
+    echo log_file $LOGDIR/gfmd-$ID.log >> $TMPDIR/etc/gfmd.conf
     echo shared_key_file $SHARED_KEY_FILE >> $TMPDIR/etc/gfmd.conf
+
+    echo log_file $LOGDIR/gfsd-$ID.log >> $TMPDIR/etc/gfsd.conf
     echo shared_key_file $SHARED_KEY_FILE >> $TMPDIR/etc/gfsd.conf
-    echo shared_key_file $SHARED_KEY_FILE >> $GFARM_CONFIG_FILE
+
     echo schedule_idle_load_thresh 100 >> $GFARM_CONFIG_FILE
     echo gfsd_connection_cache 256 >> $GFARM_CONFIG_FILE
+    echo shared_key_file $SHARED_KEY_FILE >> $GFARM_CONFIG_FILE
+
     gfkey -c -p $PERIOD
     if $LOGIN_NODE_ACCESS; then
 	sed 's|'$SHARED_KEY_FILE'|'$HOME/.gfarm_shared_key-$ID'|' $GFARM_CONFIG_FILE > $HOME/.gfarm2rc-$ID
