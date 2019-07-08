@@ -59,6 +59,12 @@ directory.  ID consists of the hostname of the master compute node and
 the process ID.  To access to Gfarm/BB, specify it by
 GFARM_CONFIG_FILE environment variable.
 </p></dd>
+<dt><span class="term"><code class="option">-L</code> <em class="parameter"><code>log_dir</code></em></span></dt>
+<dd><p>
+specifies a log directory.  If it does not exist, it is created.  Log
+file names of gfmd and gfsd are gfmd-$ID.log and gfsd-$ID.log,
+respectively.  Default directory is scratch_dir/log.
+</p></dd>
 <dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>mount_point</code></em></span></dt>
 <dd><p>
 When this option is specified, a Gfarm/BB is mounted at the specified

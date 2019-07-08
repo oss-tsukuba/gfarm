@@ -65,6 +65,11 @@ specifies a scratch directory on each compute node for Gfarm/BB\&. If it does no
 enables access to Gfarm/BB from login nodes\&. With this option, the Gfarm/BB configuration file $HOME/\&.gfarm2rc\-$ID is created in the home directory\&. ID consists of the hostname of the master compute node and the process ID\&. To access to Gfarm/BB, specify it by GFARM_CONFIG_FILE environment variable\&.
 .RE
 .PP
+\fB\-L\fR \fIlog_dir\fR
+.RS 4
+specifies a log directory\&. If it does not exist, it is created\&. Log file names of gfmd and gfsd are gfmd\-$ID\&.log and gfsd\-$ID\&.log, respectively\&. Default directory is scratch_dir/log\&.
+.RE
+.PP
 \fB\-m\fR \fImount_point\fR
 .RS 4
 When this option is specified, a Gfarm/BB is mounted at the specified mount point on each compute node\&. mount\&.gfarm2fs is required\&. This option is available only for gfarmbb start\&.
