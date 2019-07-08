@@ -192,6 +192,7 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	"local group name redefined",
 	"global group name redefined",
 	"missing second field (local user)",
+	"db_access_type is none but backend database is specified",
 	"inconsistent configuration, LDAP is specified as metadata backend before",
 	"inconsistent configuration, PostgreSQL is specified as metadata backend before",
 	"inconsistent configuration, localfs is specified as metadata backend before",

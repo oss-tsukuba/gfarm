@@ -944,8 +944,8 @@ int gfarm_write_verify_retry_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_write_verify_log_interval = GFARM_CONFIG_MISC_DEFAULT;
 
 /* GFM dependent */
-enum gfarm_backend_db_type gfarm_backend_db_type =
-	GFARM_BACKEND_DB_TYPE_NONE;
+enum gfarm_backend_db_type gfarm_backend_db_type = GFARM_BACKEND_DB_TYPE_NONE;
+enum gfarm_db_access_type gfarm_db_access_type = GFARM_DB_ACCESS_TYPE_DBQ;
 int gfarm_metadb_server_listen_backlog = GFARM_CONFIG_MISC_DEFAULT;
 
 static struct {
@@ -1164,6 +1164,8 @@ gfarm_config_clear(void)
 static gfarm_error_t
 set_backend_db_type(enum gfarm_backend_db_type set)
 {
+	if (gfarm_is_db_access_type_none() && set != GFARM_BACKEND_DB_TYPE_NONE)
+		return (GFARM_ERRMSG_DB_ACCESS_TYPE_IS_NONE);
 	if (gfarm_backend_db_type == set)
 		return (GFARM_ERR_NO_ERROR);
 	switch (gfarm_backend_db_type) {
@@ -1352,13 +1354,34 @@ gfarm_setup_debug_command(void)
 int
 gfarm_get_metadb_replication_enabled(void)
 {
-	return (metadb_replication_enabled);
+	return (metadb_replication_enabled ||
+	    gfarm_db_access_type == GFARM_DB_ACCESS_TYPE_JOURNAL);
+}
+
+int
+gfarm_is_db_access_type_none()
+{
+	return (gfarm_db_access_type == GFARM_DB_ACCESS_TYPE_NONE);
+}
+
+static gfarm_error_t
+gfarm_set_db_access_type(enum gfarm_db_access_type type)
+{
+	gfarm_db_access_type = type;
+	if (gfarm_is_db_access_type_none() &&
+	    gfarm_backend_db_type != GFARM_BACKEND_DB_TYPE_NONE)
+		return (GFARM_ERRMSG_DB_ACCESS_TYPE_IS_NONE);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 void
 gfarm_set_metadb_replication_enabled(int enable)
 {
 	metadb_replication_enabled = enable;
+	if (enable)
+		gfarm_set_db_access_type(GFARM_DB_ACCESS_TYPE_JOURNAL);
+	else
+		gfarm_set_db_access_type(GFARM_DB_ACCESS_TYPE_DBQ);
 }
 
 const char *
@@ -2890,6 +2913,28 @@ error:
 }
 
 static gfarm_error_t
+parse_db_access_type(char *p)
+{
+	gfarm_error_t e;
+	char *s;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (strcmp(s, "dbq") == 0)
+		e = gfarm_set_db_access_type(GFARM_DB_ACCESS_TYPE_DBQ);
+	else if (strcmp(s, "journal") == 0)
+		e = gfarm_set_db_access_type(GFARM_DB_ACCESS_TYPE_JOURNAL);
+	else if (strcmp(s, "none") == 0)
+		e = gfarm_set_db_access_type(GFARM_DB_ACCESS_TYPE_NONE);
+	else
+		e = GFARM_ERR_INVALID_ARGUMENT;
+
+	return (e);
+}
+
+static gfarm_error_t
 parse_rdma_mr_reg_mode(char *p, int *vp)
 {
 	gfarm_error_t e;
@@ -3176,6 +3221,8 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "metadb_server_cred_name") == 0) {
 		e = parse_cred_config(p, GFM_SERVICE_TAG,
 		    gfarm_auth_server_cred_name_set);
+	} else if (strcmp(s, o = "metadb_db_access_type") == 0) {
+		e = parse_db_access_type(p);
 
 	} else if (strcmp(s, o = "ldap_server_host") == 0) {
 		e = parse_set_var(p, &gfarm_ldap_server_name);

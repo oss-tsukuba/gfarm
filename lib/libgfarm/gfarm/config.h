@@ -55,6 +55,13 @@ enum gfarm_backend_db_type {
 };
 extern enum gfarm_backend_db_type gfarm_backend_db_type;
 
+enum gfarm_db_access_type {
+	GFARM_DB_ACCESS_TYPE_DBQ,
+	GFARM_DB_ACCESS_TYPE_JOURNAL,
+	GFARM_DB_ACCESS_TYPE_NONE
+};
+extern enum gfarm_db_access_type gfarm_db_access_type;
+
 extern int gfarm_xattr_size_limit;
 extern int gfarm_xmlattr_size_limit;
 extern int gfarm_directory_quota_count_per_user_limit;
@@ -170,6 +177,7 @@ int gfarm_get_metadb_server_slave_replication_timeout(void);
 int gfarm_get_metadb_server_slave_max_size(void);
 int gfarm_get_metadb_server_force_slave(void);
 void gfarm_set_metadb_server_force_slave(int);
+int gfarm_is_db_access_type_none(void);
 
 /* configuration manipulation */
 

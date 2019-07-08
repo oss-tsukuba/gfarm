@@ -97,6 +97,17 @@ GFARM_CONFIG_FILE environment variable.
 </varlistentry>
 
 <varlistentry>
+<term><option>-L</option> <parameter moreinfo="none">log_dir</parameter></term>
+<listitem>
+<para>
+specifies a log directory.  If it does not exist, it is created.  Log
+file names of gfmd and gfsd are gfmd-$ID.log and gfsd-$ID.log,
+respectively.  Default directory is scratch_dir/log.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-m</option> <parameter moreinfo="none">mount_point</parameter></term>
 <listitem>
 <para>

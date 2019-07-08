@@ -99,6 +99,17 @@ startとstopで同じディレクトリを指定してください。デフォ�
 </varlistentry>
 
 <varlistentry>
+<term><option>-L</option> <parameter moreinfo="none">log_dir</parameter></term>
+<listitem>
+<para>
+ログディレクトリを指定します。指定されたディレクトリが存在しない場
+合は作成されます。gfmd, gfsdのログファイル名はそれぞれgfmd-$ID.log,
+gfsd-$ID.logです。デフォルトはスクラッチディレクトリ/logです。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-m</option> <parameter moreinfo="none">mount_point</parameter></term>
 <listitem>
 <para>
