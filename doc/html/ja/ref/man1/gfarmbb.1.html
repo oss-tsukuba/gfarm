@@ -61,6 +61,12 @@ startとstopで同じディレクトリを指定してください。デフォ�
 ドのホスト名とプロセスIDで構成されます。Gfarm/BBをアクセスする場合
 は、この設定ファイルをGFARM_CONFIG_FILE環境変数で指定します。
 </p></dd>
+<dt><span class="term"><code class="option">-L</code> <em class="parameter"><code>log_dir</code></em></span></dt>
+<dd><p>
+ログディレクトリを指定します。指定されたディレクトリが存在しない場
+合は作成されます。gfmd, gfsdのログファイル名はそれぞれgfmd-$ID.log,
+gfsd-$ID.logです。デフォルトはスクラッチディレクトリ/logです。
+</p></dd>
 <dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>mount_point</code></em></span></dt>
 <dd><p>
 このオプションが指定されたとき、構築したGfarm/BBは指定されたマウン
