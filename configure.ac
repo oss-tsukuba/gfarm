@@ -929,15 +929,6 @@ AC_SUBST(postgresql_objs)
 AC_SUBST(postgresql_cflags)
 AC_SUBST(postgresql_targets)
 
-###
-### sanity check. We need either PostgreSQL or LDAP.
-###
-
-if test x"${ldap_usable}" != x"yes" && test x"${postgresql_usable}" != x"yes"
-then
-	AC_MSG_RESULT([WARNING: neither LDAP or PostgreSQL is found])
-fi
-
 ######
 ###### Checks for header files.
 ######
