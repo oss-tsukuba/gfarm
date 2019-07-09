@@ -13397,16 +13397,6 @@ esac
 
 
 
-###
-### sanity check. We need either PostgreSQL or LDAP.
-###
-
-if test x"${ldap_usable}" != x"yes" && test x"${postgresql_usable}" != x"yes"
-then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: WARNING: neither LDAP or PostgreSQL is found" >&5
-$as_echo "WARNING: neither LDAP or PostgreSQL is found" >&6; }
-fi
-
 ######
 ###### Checks for header files.
 ######
