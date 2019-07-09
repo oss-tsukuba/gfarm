@@ -154,6 +154,8 @@ gfimport_from_to(const char *ifile, char *gfarm_url,
 			perror("fstat");
 			return (gfarm_errno_to_error(save_errno));
 		}
+		if (size < 0)
+			size = st.st_size;
 	}
 	e = gfimport_to(ifd, gfarm_url, st.st_mode & 0777, host, off, size);
 	if (ifd != STDIN_FILENO)

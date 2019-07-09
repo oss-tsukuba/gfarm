@@ -19,15 +19,23 @@ gfexport(char *gfarm_url, char *host, FILE *ofp,
 	gfarm_off_t off, gfarm_off_t size)
 {
 	gfarm_error_t e, e2;
+	struct gfs_stat st;
 	GFS_File gf;
 
 	e = gfs_pio_open(gfarm_url, GFARM_FILE_RDONLY, &gf);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	e = gfs_fstat(gf, &st);
+	if (e != GFARM_ERR_NO_ERROR)
+		goto err;
+	if (size < 0)
+		size = st.st_size;
+	gfs_stat_free(&st);
 	/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 	e = gfs_pio_internal_set_view_section(gf, host);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfs_pio_recvfile(gf, off, STDOUT_FILENO, 0, size, NULL);
+err:
 	e2 = gfs_pio_close(gf);
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
