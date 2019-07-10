@@ -92,6 +92,8 @@ start() {
 
     echo metadb_server_listen_backlog 2048 >> $TMPDIR/etc/gfmd.conf
     echo metadb_server_max_descriptors 262144 >> $TMPDIR/etc/gfmd.conf
+    echo metadb_server_long_term_lock_type mutex >> $TMPDIR/etc/gfmd.conf
+    echo metadb_server_nfs_root_squash_support disable >> $TMPDIR/etc/gfmd.conf
     echo metadb_db_access_type none >> $TMPDIR/etc/gfmd.conf
     echo schedule_idle_load_thresh 100 >> $TMPDIR/etc/gfmd.conf
     echo atime disable >> $TMPDIR/etc/gfmd.conf
