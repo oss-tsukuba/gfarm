@@ -121,6 +121,8 @@ static int write_verify_request_send_fd = -1;
 /* used by type_write_verify_controller */
 static int write_verify_request_recv_fd = -1;
 
+static int write_verify_controller_cleanup_started = 0;
+
 /* called from type_client and type_replication */
 void
 write_verify_request(gfarm_ino_t ino, gfarm_uint64_t gen, time_t mtime,
@@ -162,7 +164,7 @@ write_verify_request(gfarm_ino_t ino, gfarm_uint64_t gen, time_t mtime,
 	}
 }
 
-static void
+static int
 write_verify_request_recv(struct write_verify_req *req, const char *diag)
 {
 	ssize_t rv;
@@ -175,11 +177,13 @@ write_verify_request_recv(struct write_verify_req *req, const char *diag)
 	if (rv == 0) {
 		gflog_notice(GFARM_MSG_1004399,
 		    "%s: all clients finished", diag);
+		if (write_verify_controller_cleanup_started)
+			return (0);
 		cleanup(0);
 		exit(0);
 	}
 	if (rv == sizeof(*req))
-		return;
+		return (1);
 
 	if (rv == -1) {
 		fatal(GFARM_MSG_1004400,
@@ -190,6 +194,8 @@ write_verify_request_recv(struct write_verify_req *req, const char *diag)
 		    "%s: receiving write_verify request: "
 		    "partial read %zd bytes", diag, rv);
 	}
+	/*NOTREACHED*/
+	return (0);
 }
 
 /*
@@ -1308,14 +1314,15 @@ write_verify_start_report(struct write_verify_entry *todo_entry)
 	    ringbuf_n_entries, ringbuf_max_entries);
 }
 
-static void
+static int
 write_verify_request_get(const char *diag)
 {
 	struct write_verify_entry entry;
 
 	assert(ringbuf_has_room());
 
-	write_verify_request_recv(&entry.req, diag);
+	if (!write_verify_request_recv(&entry.req, diag))
+		return (0);
 
 	entry.schedule = entry.req.mtime + gfarm_write_verify_interval;
 	ringbuf_enqueue(&entry);
@@ -1325,31 +1332,49 @@ write_verify_request_get(const char *diag)
 	write_verify_state_snapshot();
 
 	write_verify_requests_report(0);
+
+	return (1);
 }
 
-static void
+static int
 write_verify_request_abandon(const char *diag)
 {
+	int got;
 	struct write_verify_entry entry;
 
-	write_verify_request_recv(&entry.req, diag);
+	got = write_verify_request_recv(&entry.req, diag);
 	gflog_error(GFARM_MSG_1004485,
 	    "please run gfspooldigest: inode %lld:%lld is written at %lld, "
 	    "but not write_verified due to memory shortage",
 	    (long long)entry.req.ino, (long long)entry.req.gen,
 	    (long long)entry.req.mtime);
+	return (got);
 }
 
 void
 write_verify_controller_cleanup(void)
 {
+	int got;
 	const char diag[] = "write_verify_controller_cleanup";
 
+	if (write_verify_controller_cleanup_started)
+		return;
+	write_verify_controller_cleanup_started = 1;
+
 	while (fd_is_ready(write_verify_request_recv_fd, diag)) {
+		/*
+		 * NOTE: there was race condition here if all other gfsd
+		 * processes except type_write_verify are already dead,
+		 * write_verify_request_get() called cleanup()+exit() again,
+		 * at the age when the write_verify_controller_cleanup_started
+		 * variable didn't exist.
+		 */
 		if (ringbuf_has_room())
-			write_verify_request_get(diag);
+			got = write_verify_request_get(diag);
 		else
-			write_verify_request_abandon(diag);
+			got = write_verify_request_abandon(diag);
+		if (!got)
+			break;
 	}
 	/*
 	 * NOTE: there is race condition here that the requests
@@ -1453,7 +1478,7 @@ write_verify_controller(void)
 			    write_verify_job_controller_fd,
 			    cleanup_notify_recv_fd, diag);
 			if ((rv & 1) != 0)
-				write_verify_request_get(diag);
+				(void)write_verify_request_get(diag);
 			if ((rv & 2) != 0) {
 				write_verify_job_done(&todo, mtime_rec);
 				state = WRITE_VERIFY_IDLE;
@@ -1467,7 +1492,7 @@ write_verify_controller(void)
 			    state == WRITE_VERIFY_IDLE ? TIMEDWAIT_INFINITE :
 			    todo.schedule - now, diag);
 			if ((rv & 1) != 0)
-				write_verify_request_get(diag);
+				(void)write_verify_request_get(diag);
 			if ((rv & 2) != 0)
 				break;
 		} else if (state == WRITE_VERIFY_RUNNING) {
