@@ -194,6 +194,8 @@ write_verify_request_recv(struct write_verify_req *req, const char *diag)
 		    "%s: receiving write_verify request: "
 		    "partial read %zd bytes", diag, rv);
 	}
+	/*NOTREACHED*/
+	return (0);
 }
 
 /*
