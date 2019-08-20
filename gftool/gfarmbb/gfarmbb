@@ -10,7 +10,7 @@ PERIOD=-1
 SHELL_TYPE=bsh
 MOPTIONS=direct_io
 LOGIN_NODE_ACCESS=false
-ID=`hostname`-$$
+ID=`hostname`
 EXCLUDE_GFMD=-a
 
 usage() {
@@ -79,15 +79,15 @@ else
 fi
 
 start() {
-    [ -d $TMPDIR ] || mkdir -p $TMPDIR
-    [ -d $TMPDIR ] || err $TMPDIR: no such scratch directory
+    [ -d $TMPDIR/etc ] || mkdir -p $TMPDIR/etc
+    [ -d $TMPDIR/etc ] || err $TMPDIR: no such scratch directory
     [ -d $LOGDIR ] || mkdir -p $LOGDIR
     [ -d $LOGDIR ] || err $LOGDIR: no such log directory
 
     GFARM_CONFIG_FILE=$TMPDIR/etc/gfarm2.conf
     export GFARM_CONFIG_FILE
     SHARED_KEY_FILE=$TMPDIR/etc/.gfarm_shared_key
-    prun mkdir -p $TMPDIR/etc
+    prun mkdir -p $TMPDIR/etc $LOGDIR
     config-gfarm --prefix $TMPDIR -S -N -A $USER -b none > /dev/null
 
     echo metadb_server_listen_backlog 2048 >> $TMPDIR/etc/gfmd.conf
