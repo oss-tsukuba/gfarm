@@ -1,3 +1,22 @@
+Release note for Gfarm 2.7.14
+=============================
+
+[2019.8.20]
+
+New command
+* gfarmbb - start and stop scripts for Gfarm/BB node-local on-demand
+  file system
+
+New configuration directive
+* log_file - specify a log file
+
+Updated feature
+* gfmd, gfsd - -F option to specify a log file
+
+Bug fix
+* gfsd - fix race condition to terminate that may fail to record the
+  write verify information
+
 Release note for Gfarm 2.7.13
 =============================
 
