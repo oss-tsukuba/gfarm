@@ -4242,12 +4242,12 @@ void
 gfs_server_replica_recv(struct gfp_xdr *client,
 	enum gfarm_auth_id_type peer_type, int cksum_protocol)
 {
-	gfarm_error_t e, error = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e, error;
 	gfarm_int32_t src_err;
 	gfarm_ino_t ino;
 	gfarm_uint64_t gen;
 	char *path;
-	int local_fd = -1;
+	int local_fd = -1, rv;
 
 	gfarm_int64_t filesize = 0;
 	char *cksum_type = NULL;
@@ -4309,9 +4309,11 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 		    (unsigned long long)msl * GFARM_MILLISEC_BY_NANOSEC);
 		total_msl += msl;
 		msl *= 2;
+#if 0	/* too many logs */
 		gflog_info(GFARM_MSG_1003512,
 		    "retry open_data(%lld:%lld): sleep %lld msec.",
 		    (long long) ino, (long long) gen, (long long) total_msl);
+#endif
 	}
 	free(path);
 
@@ -4343,8 +4345,9 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 		}
 	}
 
+	error = GFARM_ERR_NO_ERROR;
 	/* data transfer */
-	error = gfs_sendfile_common(client, &src_err, local_fd, 0, -1,
+	e = gfs_sendfile_common(client, &src_err, local_fd, 0, -1,
 	    md_ctx, &sent);
 	io_error_check(src_err, diag);
 
@@ -4357,6 +4360,9 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 		    md_ctx, md_string);
 
 finish:
+	if (IS_CONNECTION_ERROR(e))
+		conn_fatal(GFARM_MSG_UNFIXED, "%s sendfile: %s",
+		    diag, gfarm_error_string(e));
 	if (error == GFARM_ERR_NO_ERROR)
 		error = src_err;
 	if (cksum_protocol) {
@@ -4378,17 +4384,17 @@ finish:
 #endif
 		}
 		if (local_fd >= 0) {
-			e = close(local_fd);
-			if (error == GFARM_ERR_NO_ERROR)
-				error = e;
+			rv = close(local_fd);
+			if (rv == -1 && error == GFARM_ERR_NO_ERROR)
+				error = gfarm_errno_to_error(errno);
 		}
 		gfs_server_put_reply(client, diag, error, "bi",
 		    md_strlen, md_string, cksum_result_flags);
 	} else {
 		if (local_fd >= 0) {
-			e = close(local_fd);
-			if (error == GFARM_ERR_NO_ERROR)
-				error = e;
+			rv = close(local_fd);
+			if (rv == -1 && error == GFARM_ERR_NO_ERROR)
+				error = gfarm_errno_to_error(errno);
 		}
 		gfs_server_put_reply(client, diag, error, "");
 	}
