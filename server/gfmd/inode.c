@@ -1055,7 +1055,7 @@ inode_schedule_replication_within_scope(
 			 * #674 - automatic replication may fail
 			 * when many replicas of a file are being removed
 			 */
-			gflog_reduced_info(GFARM_MSG_UNFIXED,
+			gflog_reduced_info(GFARM_MSG_1005096,
 			    &rep_removing_retry_state, "%s: inode %lld:%lld: "
 			    "many replicas are being removed: "
 			    "desired=%d/scope=%d/existing=%d/being_removed=%d/"
@@ -1066,7 +1066,7 @@ inode_schedule_replication_within_scope(
 			    *n_being_removedp, n_valid, n_targets);
 			save_e = GFARM_ERR_FILE_BUSY; /* retry */
 		} else {
-			gflog_reduced_info(GFARM_MSG_UNFIXED,
+			gflog_reduced_info(GFARM_MSG_1005097,
 			    &rep_unsatisfied_state, "%s: inode %lld:%lld: "
 			    "could not satisfy number of desired replicas: "
 			    "desired=%d/scope=%d/existing=%d/being_removed=%d/"
@@ -5590,7 +5590,7 @@ replication_info(void)
 	giant_unlock();
 	gflog_info(GFARM_MSG_1005044, "number of ongoing replications: %llu",
 	    count);
-	gflog_info(GFARM_MSG_UNFIXED, "cumulative replication progress: "
+	gflog_info(GFARM_MSG_1005098, "cumulative replication progress: "
 	    "%llu bytes / %llu files %g seconds",
 	    (unsigned long long)bytes,
 	    (unsigned long long)files, t);
@@ -5779,7 +5779,7 @@ inode_replicated(struct file_replicating *fr,
 		cumulative_replicated_time += t;
 
 		if (gfarm_ctxp->profile) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1005099,
 			    "inode %lld:%lld from %s to %s: "
 			    "size %lld time %g second speed %g byte/s, "
 			    "cumulative since boot: "

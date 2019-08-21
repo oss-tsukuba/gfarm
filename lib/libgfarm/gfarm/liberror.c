@@ -792,7 +792,7 @@ gfarm_error_to_errno(gfarm_error_t error)
 	pthread_once(&gfarm_error_to_errno_initialized,
 	    gfarm_error_to_errno_initialize);
 	if (error < 0 || error >= GFARM_ERR_NUMBER) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1005090,
 		    "gfarm_error_to_errno: invalid error: %d", error);
 		return (EINVAL);
 	}

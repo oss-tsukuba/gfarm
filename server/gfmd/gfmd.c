@@ -1895,7 +1895,7 @@ main(int argc, char **argv)
 	if (!debug_mode) {
 		if (syslog_file != NULL) {
 			if (gflog_file_open(syslog_file) == NULL)
-				gflog_fatal_errno(GFARM_MSG_UNFIXED,
+				gflog_fatal_errno(GFARM_MSG_1005100,
 				    "%s", syslog_file);
 		} else
 			gflog_syslog_open(LOG_PID, syslog_facility);
@@ -2029,7 +2029,7 @@ main(int argc, char **argv)
 		else
 			nsocks = wait_transform_to_master(gfmd_port, socks);
 	} else {
-		gflog_info(GFARM_MSG_UNFIXED, "metadata replication disabled");
+		gflog_info(GFARM_MSG_1005101, "metadata replication disabled");
 		nsocks = open_accepting_sockets(gfmd_port, socks);
 	}
 

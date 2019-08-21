@@ -4361,7 +4361,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 
 finish:
 	if (IS_CONNECTION_ERROR(e))
-		conn_fatal(GFARM_MSG_UNFIXED, "%s sendfile: %s",
+		conn_fatal(GFARM_MSG_1005102, "%s sendfile: %s",
 		    diag, gfarm_error_string(e));
 	if (error == GFARM_ERR_NO_ERROR)
 		error = src_err;
@@ -7128,7 +7128,7 @@ main(int argc, char **argv)
 	if (!debug_mode) {
 		if (syslog_file != NULL) {
 			if (gflog_file_open(syslog_file) == NULL)
-				gflog_fatal_errno(GFARM_MSG_UNFIXED,
+				gflog_fatal_errno(GFARM_MSG_1005103,
 				    "%s", syslog_file);
 		} else
 			gflog_syslog_open(LOG_PID, syslog_facility);

@@ -2632,7 +2632,7 @@ parse_log_file(char *p)
 
 	e = get_one_argument(p, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1005091,
 			"get_one_argument failed "
 			"when parsing log file (%s): %s",
 			p, gfarm_error_string(e));
@@ -2640,7 +2640,7 @@ parse_log_file(char *p)
 	}
 	if (gflog_file_open(s) == NULL) {
 		e = gfarm_errno_to_error(errno);
-		gflog_debug(GFARM_MSG_UNFIXED, "Invalid log file (%s)", s);
+		gflog_debug(GFARM_MSG_1005092, "Invalid log file (%s)", s);
 		return (e);
 	}
 	return (GFARM_ERR_NO_ERROR);
