@@ -60,7 +60,7 @@ static const struct gfarm_auth_client_method {
 		const char *, struct passwd *);
 	gfarm_error_t (*request_multiplexed)(struct gfarm_eventqueue *,
 		struct gfp_xdr *, const char *, const char *,
-		enum gfarm_auth_id_type, const char *, struct passwd *,
+		enum gfarm_auth_id_type, const char *, struct passwd *, int,
 		void (*)(void *), void *, void **);
 	gfarm_error_t (*result_multiplexed)(void *);
 } gfarm_auth_trial_table[] = {
@@ -406,6 +406,7 @@ struct gfarm_auth_request_sharedsecret_state {
 	struct gfarm_event *readable, *writable;
 	struct gfp_xdr *conn;
 	struct passwd *pwd;
+	int auth_timeout;
 	void (*continuation)(void *);
 	void *closure;
 
@@ -500,7 +501,7 @@ gfarm_auth_request_sharedsecret_send_giveup(int events, int fd,
 	    (state->error = gfp_xdr_flush(state->conn)) == GFARM_ERR_NO_ERROR) {
 		gfarm_fd_event_set_callback(state->readable,
 		    gfarm_auth_request_sharedsecret_receive_fin, state);
-		timeout.tv_sec = GFARM_AUTH_TIMEOUT; timeout.tv_usec = 0;
+		timeout.tv_sec = state->auth_timeout; timeout.tv_usec = 0;
 		if ((rv = gfarm_eventqueue_add_event(state->q,
 		    state->readable, &timeout)) == 0) {
 			/* go to
@@ -606,7 +607,7 @@ gfarm_auth_request_sharedsecret_receive_challenge(int events, int fd,
 			gfarm_fd_event_set_callback(state->readable,
 			   gfarm_auth_request_sharedsecret_receive_result,
 			   state);
-			timeout.tv_sec = GFARM_AUTH_TIMEOUT;
+			timeout.tv_sec = state->auth_timeout;
 			timeout.tv_usec = 0;
 			rv = gfarm_eventqueue_add_event(state->q,
 			    state->readable, &timeout);
@@ -656,7 +657,7 @@ gfarm_auth_request_sharedsecret_receive_keytype(int events, int fd,
 			gfarm_fd_event_set_callback(state->readable,
 			   gfarm_auth_request_sharedsecret_receive_challenge,
 			   state);
-			timeout.tv_sec = GFARM_AUTH_TIMEOUT;
+			timeout.tv_sec = state->auth_timeout;
 			timeout.tv_usec = 0;
 			rv = gfarm_eventqueue_add_event(state->q,
 			    state->readable, &timeout);
@@ -701,7 +702,7 @@ gfarm_auth_request_sharedsecret_send_keytype(int events, int fd,
 	    GFARM_AUTH_SHAREDSECRET_MD5);
 	if (state->error == GFARM_ERR_NO_ERROR &&
 	    (state->error = gfp_xdr_flush(state->conn)) == GFARM_ERR_NO_ERROR) {
-		timeout.tv_sec = GFARM_AUTH_TIMEOUT; timeout.tv_usec = 0;
+		timeout.tv_sec = state->auth_timeout; timeout.tv_usec = 0;
 		if ((rv = gfarm_eventqueue_add_event(state->q,
 		    state->readable, &timeout)) == 0) {
 			/* go to gfarm_auth_request_sharedsecret
@@ -719,7 +720,7 @@ gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
 	enum gfarm_auth_id_type self_type, const char *user,
-	struct passwd *pwd,
+	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
@@ -789,6 +790,7 @@ gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	state->q = q;
 	state->conn = conn;
 	state->pwd = pwd;
+	state->auth_timeout = auth_timeout;
 	state->continuation = continuation;
 	state->closure = closure;
 	state->home = home;
@@ -832,6 +834,7 @@ struct gfarm_auth_request_state {
 	struct sockaddr *addr;
 	enum gfarm_auth_id_type self_type;
 	struct passwd *pwd;
+	int auth_timeout;
 	void (*continuation)(void *);
 	void *closure;
 
@@ -912,7 +915,7 @@ gfarm_auth_request_dispatch_method(int events, int fd, void *closure,
 			    (*gfarm_auth_trial_table[state->auth_method_index].
 			    request_multiplexed)(state->q, state->conn,
 			    state->service_tag, state->name, state->self_type,
-			    state->user, state->pwd,
+			    state->user, state->pwd, state->auth_timeout,
 			    gfarm_auth_request_dispatch_result, state,
 			    &state->method_state);
 			if (state->last_error == GFARM_ERR_NO_ERROR) {
@@ -961,7 +964,7 @@ gfarm_auth_request_loop_ask_method(int events, int fd, void *closure,
 	    (state->error = gfp_xdr_flush(state->conn)) == GFARM_ERR_NO_ERROR) {
 		gfarm_fd_event_set_callback(state->readable,
 		    gfarm_auth_request_dispatch_method, state);
-		timeout.tv_sec = GFARM_AUTH_TIMEOUT; timeout.tv_usec = 0;
+		timeout.tv_sec = state->auth_timeout; timeout.tv_usec = 0;
 		if ((rv = gfarm_eventqueue_add_event(state->q,
 		    state->readable, &timeout)) == 0) {
 			/* go to gfarm_auth_request_dispatch_method() */
@@ -1023,7 +1026,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *name, struct sockaddr *addr,
 	enum gfarm_auth_id_type self_type, const char *user,
-	struct passwd *pwd,
+	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	struct gfarm_auth_request_state **statepp)
 {
@@ -1083,7 +1086,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 		goto error_free_writable;
 	}
 	/* go to gfarm_auth_request_receive_server_methods() */
-	timeout.tv_sec = GFARM_AUTH_TIMEOUT; timeout.tv_usec = 0;
+	timeout.tv_sec = auth_timeout; timeout.tv_usec = 0;
 	rv = gfarm_eventqueue_add_event(q, state->readable, &timeout);
 	if (rv != 0) {
 		e = gfarm_errno_to_error(rv);
@@ -1109,6 +1112,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	state->addr = addr;
 	state->self_type = self_type;
 	state->pwd = pwd;
+	state->auth_timeout = auth_timeout;
 	state->methods = methods;
 	state->continuation = continuation;
 	state->closure = closure;

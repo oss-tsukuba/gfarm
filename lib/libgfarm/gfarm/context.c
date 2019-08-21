@@ -133,6 +133,7 @@ gfarm_context_init(void)
 	ctxp->attr_cache_limit = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->attr_cache_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->page_cache_timeout = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->schedule_rpc_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->schedule_cache_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->schedule_concurrency = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->schedule_concurrency_per_net = GFARM_CONFIG_MISC_DEFAULT;

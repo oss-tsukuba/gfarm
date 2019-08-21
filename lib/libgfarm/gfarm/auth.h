@@ -36,8 +36,6 @@ enum gfarm_auth_cred_type {
 
 #define GFARM_AUTH_METHOD_ALL	GFARM_AUTH_METHOD_NONE
 
-#define GFARM_AUTH_TIMEOUT	60	/* seconds */
-
 /*
  * GFARM_AUTH_METHOD_SHAREDSECRET dependent constants.
  * 	note that this is too weak authentication for the Internet.
@@ -93,7 +91,7 @@ gfarm_error_t gfarm_auth_request(struct gfp_xdr *,
 	enum gfarm_auth_method *);
 gfarm_error_t gfarm_auth_request_multiplexed(struct gfarm_eventqueue *,
 	struct gfp_xdr *, const char *, const char *, struct sockaddr *,
-	enum gfarm_auth_id_type, const char *, struct passwd *,
+	enum gfarm_auth_id_type, const char *, struct passwd *, int,
 	void (*)(void *), void *, struct gfarm_auth_request_state **);
 gfarm_error_t gfarm_auth_result_multiplexed(struct gfarm_auth_request_state *,
 	enum gfarm_auth_method *);
@@ -144,7 +142,7 @@ gfarm_error_t gfarm_auth_request_sharedsecret(struct gfp_xdr *,
 gfarm_error_t gfarm_auth_request_sharedsecret_multiplexed(
 	struct gfarm_eventqueue *,
 	struct gfp_xdr *, const char *, const char *, enum gfarm_auth_id_type,
-	const char *, struct passwd *, void (*)(void *), void *, void **);
+	const char *, struct passwd *, int, void (*)(void *), void *, void **);
 gfarm_error_t gfarm_auth_result_sharedsecret_multiplexed(void *);
 
 /* auth_client_gsi */
@@ -153,7 +151,7 @@ gfarm_error_t gfarm_auth_request_gsi(struct gfp_xdr *,
 	struct passwd *);
 gfarm_error_t gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *,
 	struct gfp_xdr *, const char *, const char *, enum gfarm_auth_id_type,
-	const char *, struct passwd *, void (*)(void *), void *, void **);
+	const char *, struct passwd *, int, void (*)(void *), void *, void **);
 gfarm_error_t gfarm_auth_result_gsi_multiplexed(void *);
 
 char *gfarm_gsi_client_cred_name(void);
@@ -165,7 +163,7 @@ gfarm_error_t gfarm_auth_request_gsi_auth(struct gfp_xdr *,
 gfarm_error_t gfarm_auth_request_gsi_auth_multiplexed(
 	struct gfarm_eventqueue *,
 	struct gfp_xdr *, const char *, const char *, enum gfarm_auth_id_type,
-	const char *, struct passwd *, void (*)(void *), void *, void **);
+	const char *, struct passwd *, int, void (*)(void *), void *, void **);
 gfarm_error_t gfarm_auth_result_gsi_auth_multiplexed(void *);
 
 /* auth_server_sharedsecret */

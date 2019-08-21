@@ -67,8 +67,6 @@
 
 #include "gfs_rdma.h"
 
-#define GFS_CLIENT_COMMAND_TIMEOUT	20 /* seconds */
-
 #define XAUTH_NEXTRACT_MAXLEN	512
 
 struct gfs_connection {
@@ -1018,6 +1016,7 @@ struct gfs_client_connect_state {
 	struct gfarm_eventqueue *q;
 	struct gfarm_event *writable;
 	struct sockaddr peer_addr;
+	int connect_timeout;
 	void (*continuation)(void *);
 	void *closure;
 
@@ -1081,6 +1080,7 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 		    &state->peer_addr,
 		    gfarm_get_auth_id_type(),
 		    gfs_client_username(state->gfs_server), NULL,
+		    state->connect_timeout,
 		    gfs_client_connect_end_auth, state,
 		    &state->auth_state);
 		if (state->error == GFARM_ERR_NO_ERROR) {
@@ -1130,6 +1130,7 @@ gfarm_error_t
 gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	const char *canonical_hostname, int port, const char *user,
 	struct sockaddr *peer_addr, struct gfarm_filesystem *fs,
+	int connect_timeout,
 	void (*continuation)(void *), void *closure,
 	struct gfs_client_connect_state **statepp)
 {
@@ -1183,6 +1184,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 
 	state->q = q;
 	state->peer_addr = *peer_addr;
+	state->connect_timeout = connect_timeout;
 	state->continuation = continuation;
 	state->closure = closure;
 	state->gfs_server = gfs_server;
@@ -1209,7 +1211,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 		e = gfarm_auth_request_multiplexed(q,
 		    gfs_server->conn, GFS_SERVICE_TAG,
 		    gfs_server->hostname, &state->peer_addr,
-		    gfarm_get_auth_id_type(), user, NULL,
+		    gfarm_get_auth_id_type(), user, NULL, connect_timeout,
 		    gfs_client_connect_end_auth, state,
 		    &state->auth_state);
 		if (e == GFARM_ERR_NO_ERROR) {
@@ -1866,6 +1868,7 @@ struct gfs_client_statfs_state {
 	void *closure;
 	struct gfs_connection *gfs_server;
 	char *path;
+	int statfs_timeout;
 
 	/* results */
 	gfarm_error_t error;
@@ -1892,7 +1895,7 @@ gfs_client_statfs_send_request(int events, int fd, void *closure,
 			gfs_client_purge_from_cache(state->gfs_server);
 		}
 		if (state->error == GFARM_ERR_NO_ERROR) {
-			timeout.tv_sec = GFS_CLIENT_COMMAND_TIMEOUT;
+			timeout.tv_sec = state->statfs_timeout;
 			timeout.tv_usec = 0;
 			if ((rv = gfarm_eventqueue_add_event(state->q,
 			    state->readable, &timeout)) == 0) {
@@ -1942,7 +1945,7 @@ gfs_client_statfs_recv_result(int events, int fd, void *closure,
 
 gfarm_error_t
 gfs_client_statfs_request_multiplexed(struct gfarm_eventqueue *q,
-	struct gfs_connection *gfs_server, char *path,
+	struct gfs_connection *gfs_server, char *path, int statfs_timeout,
 	void (*continuation)(void *), void *closure,
 	struct gfs_client_statfs_state **statepp)
 {
@@ -1964,6 +1967,7 @@ gfs_client_statfs_request_multiplexed(struct gfarm_eventqueue *q,
 	state->closure = closure;
 	state->gfs_server = gfs_server;
 	state->path = path;
+	state->statfs_timeout = statfs_timeout;
 	state->error = GFARM_ERR_NO_ERROR;
 	state->writable = gfarm_fd_event_alloc(GFARM_EVENT_WRITE,
 	    gfs_client_connection_fd(gfs_server),
@@ -2046,6 +2050,7 @@ struct gfs_ib_rdma_state {
 	void (*continuation)(void *);
 	void *closure;
 	struct gfs_connection *gfs_server;
+	int ib_rdma_timeout;
 
 	/* results */
 	gfarm_error_t error;
@@ -2102,7 +2107,7 @@ gfs_ib_rdma_send_request(int events, int fd, void *closure,
 			    state->gfs_server);
 			gfs_client_purge_from_cache(state->gfs_server);
 		} else if (state->error == GFARM_ERR_NO_ERROR) {
-			timeout.tv_sec = GFS_CLIENT_COMMAND_TIMEOUT;
+			timeout.tv_sec = state->ib_rdma_timeout;
 			timeout.tv_usec = 0;
 			if ((rv = gfarm_eventqueue_add_event(state->q,
 			    state->readable, &timeout)) == 0) {
@@ -2200,8 +2205,9 @@ gfs_ib_rdma_recv_result(int events, int fd, void *closure,
 
 gfarm_error_t
 gfs_ib_rdma_request_multiplexed(struct gfarm_eventqueue *q,
-	struct gfs_connection *gfs_server, void (*continuation)(void *),
-	void *closure, struct gfs_ib_rdma_state **statepp)
+	struct gfs_connection *gfs_server, int ib_rdma_timeout,
+	void (*continuation)(void *), void *closure,
+	struct gfs_ib_rdma_state **statepp)
 {
 	gfarm_error_t e;
 	int rv;
@@ -2225,6 +2231,7 @@ gfs_ib_rdma_request_multiplexed(struct gfarm_eventqueue *q,
 	state->continuation = continuation;
 	state->closure = closure;
 	state->gfs_server = gfs_server;
+	state->ib_rdma_timeout = ib_rdma_timeout;
 	state->error = GFARM_ERR_NO_ERROR;
 	state->state = RDMA_EXCH_INFO;
 	state->writable = gfarm_fd_event_alloc(GFARM_EVENT_WRITE,
