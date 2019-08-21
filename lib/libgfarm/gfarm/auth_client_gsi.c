@@ -376,8 +376,9 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
 	enum gfarm_auth_id_type self_type, const char *user,
+	struct passwd *pwd,
 	void (*continuation)(void *), void *closure,
-	void **statepp, struct passwd *pwd)
+	void **statepp)
 {
 	gfarm_error_t e;
 	struct gfarm_auth_request_gsi_state *state;
@@ -548,12 +549,13 @@ gfarm_auth_request_gsi_auth_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
 	enum gfarm_auth_id_type self_type, const char *user,
+	struct passwd *pwd,
 	void (*continuation)(void *), void *closure,
-	void **statepp, struct passwd *pwd)
+	void **statepp)
 {
 	return (gfarm_auth_request_gsi_multiplexed(q, conn,
-	    service_tag, hostname, self_type, user,
-	    continuation, closure, statepp, pwd));
+	    service_tag, hostname, self_type, user, pwd,
+	    continuation, closure, statepp));
 }
 
 gfarm_error_t
