@@ -1924,7 +1924,7 @@ gfs_client_statfs_recv_result(int events, int fd, void *closure,
 		gfs_client_purge_from_cache(state->gfs_server);
 		e = gfp_xdr_shutdown(state->gfs_server->conn);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005093,
 			    "gfs_client_statfs_recv_result: shutdown: %s",
 			    gfarm_error_string(e));
 		}
@@ -2135,7 +2135,7 @@ gfs_ib_rdma_recv_result(int events, int fd, void *closure,
 		gfs_client_purge_from_cache(state->gfs_server);
 		e = gfp_xdr_shutdown(state->gfs_server->conn);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1005094,
 			    "gfs_ib_rdma_recv_result: shutdown: %s",
 			    gfarm_error_string(e));
 		}
