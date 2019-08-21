@@ -1914,10 +1914,21 @@ gfs_client_statfs_recv_result(int events, int fd, void *closure,
 	const struct timeval *t)
 {
 	struct gfs_client_statfs_state *state = closure;
+	gfarm_error_t e;
 
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
 		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
+		gfs_client_execute_hook_for_connection_error(
+		    state->gfs_server);
+		gfs_client_purge_from_cache(state->gfs_server);
+		e = gfp_xdr_shutdown(state->gfs_server->conn);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_client_statfs_recv_result: shutdown: %s",
+			    gfarm_error_string(e));
+		}
+
 	} else {
 		assert(events == GFARM_EVENT_READ);
 		state->error = gfs_client_rpc_result(state->gfs_server, 0,
@@ -2112,12 +2123,22 @@ static void
 gfs_ib_rdma_recv_result(int events, int fd, void *closure,
 	const struct timeval *t)
 {
+	gfarm_error_t e;
 	struct gfs_ib_rdma_state *state = closure;
 	struct rdma_context *ctx = gfs_ib_rdma_context(state->gfs_server);
 
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
 		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
+		gfs_client_execute_hook_for_connection_error(
+		    state->gfs_server);
+		gfs_client_purge_from_cache(state->gfs_server);
+		e = gfp_xdr_shutdown(state->gfs_server->conn);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_ib_rdma_recv_result: shutdown: %s",
+			    gfarm_error_string(e));
+		}
 	} else {
 		assert(events == GFARM_EVENT_READ);
 		switch (state->state) {

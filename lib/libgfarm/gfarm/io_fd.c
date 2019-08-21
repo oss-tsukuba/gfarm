@@ -210,6 +210,13 @@ gfp_iobuffer_close_fd_op(void *cookie, int fd)
 }
 
 gfarm_error_t
+gfp_iobuffer_shutdown_fd_op(void *cookie, int fd)
+{
+	return (shutdown(fd, SHUT_RDWR) == -1 ? gfarm_errno_to_error(errno) :
+	    GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
 gfp_iobuffer_export_credential_fd_op(void *cookie)
 {
 	/* it's already exported, or no way to export it. */
@@ -230,6 +237,7 @@ gfp_iobuffer_env_for_credential_fd_op(void *cookie)
 
 struct gfp_iobuffer_ops gfp_xdr_socket_iobuffer_ops = {
 	gfp_iobuffer_close_fd_op,
+	gfp_iobuffer_shutdown_fd_op,
 	gfp_iobuffer_export_credential_fd_op,
 	gfp_iobuffer_delete_credential_fd_op,
 	gfp_iobuffer_env_for_credential_fd_op,
