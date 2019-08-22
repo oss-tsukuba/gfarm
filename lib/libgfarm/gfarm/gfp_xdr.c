@@ -167,6 +167,12 @@ gfp_xdr_recvbuffer_clear_read_eof(struct gfp_xdr *conn)
 }
 
 gfarm_error_t
+gfp_xdr_shutdown(struct gfp_xdr *conn)
+{
+	return ((*conn->iob_ops->shutdown)(conn->cookie, conn->fd));
+}
+
+gfarm_error_t
 gfp_xdr_export_credential(struct gfp_xdr *conn)
 {
 	return ((*conn->iob_ops->export_credential)(conn->cookie));
