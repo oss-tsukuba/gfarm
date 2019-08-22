@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 
 #include <gssapi.h>
 
@@ -173,6 +174,18 @@ gfp_iobuffer_close_secsession_op(void *cookie, int fd)
 }
 
 gfarm_error_t
+gfp_iobuffer_shutdown_secsession_op(void *cookie, int fd)
+{
+	int rv;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	rv = shutdown(fd, SHUT_RDWR);
+	if (rv == -1)
+		e = gfarm_errno_to_error(errno);
+	return (e);
+}
+
+gfarm_error_t
 gfp_iobuffer_export_credential_secsession_op(void *cookie)
 {
 	struct io_gfsl *io = cookie;
@@ -212,6 +225,7 @@ gfp_iobuffer_env_for_credential_secsession_op(void *cookie)
 
 struct gfp_iobuffer_ops gfp_xdr_secsession_iobuffer_ops = {
 	gfp_iobuffer_close_secsession_op,
+	gfp_iobuffer_shutdown_secsession_op,
 	gfp_iobuffer_export_credential_secsession_op,
 	gfp_iobuffer_delete_credential_secsession_op,
 	gfp_iobuffer_env_for_credential_secsession_op,
@@ -287,6 +301,7 @@ gfarm_iobuffer_write_close_secsession_op(struct gfarm_iobuffer *b,
 
 static struct gfp_iobuffer_ops gfp_xdr_insecure_gsi_session_iobuffer_ops = {
 	gfp_iobuffer_close_secsession_op,
+	gfp_iobuffer_shutdown_secsession_op,
 	gfp_iobuffer_export_credential_secsession_op,
 	gfp_iobuffer_delete_credential_secsession_op,
 	gfp_iobuffer_env_for_credential_secsession_op,

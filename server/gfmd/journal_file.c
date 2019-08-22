@@ -1137,6 +1137,14 @@ journal_close_fd_op(void *cookie, int fd)
 }
 
 static gfarm_error_t
+journal_shutdown_fd_op(void *cookie, int fd)
+{
+	gflog_error(GFARM_MSG_UNFIXED,
+	    "journal_shutdown_fd_op: this function shouldn't be called");
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 journal_export_credential_fd_op(void *cookie)
 {
 	/* it's already exported, or no way to export it. */
@@ -1278,6 +1286,7 @@ error:
 
 static struct gfp_iobuffer_ops journal_iobuffer_ops = {
 	journal_close_fd_op,
+	journal_shutdown_fd_op,
 	journal_export_credential_fd_op,
 	journal_delete_credential_fd_op,
 	journal_env_for_credential_fd_op,

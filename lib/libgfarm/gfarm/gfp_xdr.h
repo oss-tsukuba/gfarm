@@ -2,6 +2,7 @@ struct gfarm_iobuffer;
 
 struct gfp_iobuffer_ops {
 	gfarm_error_t (*close)(void *, int);
+	gfarm_error_t (*shutdown)(void *, int);
 	gfarm_error_t (*export_credential)(void *);
 	gfarm_error_t (*delete_credential)(void *, int);
 	char *(*env_for_credential)(void *);
@@ -45,6 +46,7 @@ void gfp_xdr_recvbuffer_clear_read_eof(struct gfp_xdr *);
 void gfp_xdr_set(struct gfp_xdr *,
 	struct gfp_iobuffer_ops *, void *, int);
 
+gfarm_error_t gfp_xdr_shutdown(struct gfp_xdr *);
 gfarm_error_t gfp_xdr_export_credential(struct gfp_xdr *);
 gfarm_error_t gfp_xdr_delete_credential(struct gfp_xdr *, int);
 char *gfp_xdr_env_for_credential(struct gfp_xdr *);
