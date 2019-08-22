@@ -488,7 +488,7 @@ gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfarm_auth_request(gfs_server->conn, GFS_SERVICE_TAG,
 		    gfs_server->hostname, peer_addr, gfarm_get_auth_id_type(),
-		    user, &gfs_server->auth_method, NULL);
+		    user, NULL, &gfs_server->auth_method);
 	if (e == GFARM_ERR_NO_ERROR) {
 		/*
 		 * In GSI authentication, small packets are sent frequently,
@@ -1051,9 +1051,9 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 		    state->gfs_server->hostname,
 		    &state->peer_addr,
 		    gfarm_get_auth_id_type(),
-		    gfs_client_username(state->gfs_server),
+		    gfs_client_username(state->gfs_server), NULL,
 		    gfs_client_connect_end_auth, state,
-		    &state->auth_state, NULL);
+		    &state->auth_state);
 		if (state->error == GFARM_ERR_NO_ERROR) {
 			/*
 			 * call auth_request,
@@ -1180,9 +1180,9 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 		e = gfarm_auth_request_multiplexed(q,
 		    gfs_server->conn, GFS_SERVICE_TAG,
 		    gfs_server->hostname, &state->peer_addr,
-		    gfarm_get_auth_id_type(), user,
+		    gfarm_get_auth_id_type(), user, NULL,
 		    gfs_client_connect_end_auth, state,
-		    &state->auth_state, NULL);
+		    &state->auth_state);
 		if (e == GFARM_ERR_NO_ERROR) {
 			*statepp = state;
 			/*
