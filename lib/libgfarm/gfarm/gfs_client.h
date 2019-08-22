@@ -51,7 +51,7 @@ gfarm_error_t gfs_client_connection_enter_cache_tail(struct gfs_connection *);
 struct gfarm_filesystem;
 gfarm_error_t gfs_client_connect_request_multiplexed(
 	struct gfarm_eventqueue *, const char *, int, const char *,
-	struct sockaddr *, struct gfarm_filesystem *fs,
+	struct sockaddr *, struct gfarm_filesystem *fs, int,
 	void (*)(void *), void *, struct gfs_client_connect_state **);
 gfarm_error_t gfs_client_connect_result_multiplexed(
 	struct gfs_client_connect_state *,
@@ -118,7 +118,7 @@ gfarm_error_t gfs_client_statfs(struct gfs_connection *, char *,
 
 struct gfs_client_statfs_state;
 gfarm_error_t gfs_client_statfs_request_multiplexed(struct gfarm_eventqueue *,
-	struct gfs_connection *, char *, void (*)(void *), void *,
+	struct gfs_connection *, char *, int, void (*)(void *), void *,
 	struct gfs_client_statfs_state **);
 gfarm_error_t gfs_client_statfs_result_multiplexed(
 	struct gfs_client_statfs_state *,

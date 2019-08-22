@@ -14,6 +14,7 @@ struct gfarm_context {
 	int attr_cache_limit;
 	int attr_cache_timeout;
 	int page_cache_timeout;
+	int schedule_rpc_timeout;
 	int schedule_cache_timeout;
 	int schedule_concurrency;
 	int schedule_concurrency_per_net;

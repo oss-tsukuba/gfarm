@@ -745,7 +745,8 @@ gfarm_paraccess_connect_request(void *closure)
 	}
 	e = gfs_client_connect_request_multiplexed(a->pa->q,
 	    a->canonical_hostname, a->port, gfm_client_username(gfm_server),
-	    &a->peer_addr, fs, gfarm_paraccess_connect_finish, a, &cs);
+	    &a->peer_addr, fs, gfarm_ctxp->schedule_rpc_timeout,
+	    gfarm_paraccess_connect_finish, a, &cs);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfarm_paraccess_callback(a->pa, a, &a->load, NULL, e);
 		return;
