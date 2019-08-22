@@ -1001,6 +1001,10 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_ATTR_CACHE_LIMIT_DEFAULT		40000 /* 40,000 entries */
 #define GFARM_ATTR_CACHE_TIMEOUT_DEFAULT	1000 /* 1,000 milli second */
 #define GFARM_PAGE_CACHE_TIMEOUT_DEFAULT	1000 /* 1,000 milli second */
+
+/* same with GFARM_GFMD_AUTHENTICATION_TIMEOUT_DEFAULT */
+#define GFARM_SCHEDULE_RPC_TIMEOUT_DEFAULT 35 /* 35 seconds */
+
 #define GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
 #define GFARM_SCHEDULE_CONCURRENCY_DEFAULT	10
 #define GFARM_SCHEDULE_CONCURRENCY_PER_NET_DEFAULT	3
@@ -3273,6 +3277,9 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_ctxp->attr_cache_timeout);
 	} else if (strcmp(s, o = "page_cache_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->page_cache_timeout);
+	} else if (strcmp(s, o = "schedule_rpc_timeout") == 0) {
+		e = parse_set_misc_int(
+		    p, &gfarm_ctxp->schedule_rpc_timeout);
 	} else if (strcmp(s, o = "schedule_cache_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->schedule_cache_timeout);
 	} else if (strcmp(s, o = "schedule_concurrency") == 0) {
@@ -3676,6 +3683,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->page_cache_timeout == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->page_cache_timeout =
 		    GFARM_PAGE_CACHE_TIMEOUT_DEFAULT;
+	if (gfarm_ctxp->schedule_rpc_timeout == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->schedule_rpc_timeout =
+		    GFARM_SCHEDULE_RPC_TIMEOUT_DEFAULT;
 	if (gfarm_ctxp->schedule_cache_timeout == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->schedule_cache_timeout =
 		    GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT;

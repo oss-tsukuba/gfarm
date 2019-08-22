@@ -1308,8 +1308,9 @@ search_idle_statfs_callback(void *closure)
 		{
 			struct gfs_ib_rdma_state *state;
 			e = gfs_ib_rdma_request_multiplexed(
-				c->state->q, c->gfs_server,
-				search_idle_rdma_callback, c, &state);
+			    c->state->q, c->gfs_server,
+			    gfarm_ctxp->schedule_rpc_timeout,
+			    search_idle_rdma_callback, c, &state);
 			if (e == GFARM_ERR_NO_ERROR) {
 				c->protocol_state = state;
 				return; /* request continues */
@@ -1356,7 +1357,9 @@ search_idle_connect_callback(void *closure)
 		} else {
 #endif
 			e = gfs_client_statfs_request_multiplexed(c->state->q,
-			    c->gfs_server, ".", search_idle_statfs_callback, c,
+			    c->gfs_server, ".",
+			    gfarm_ctxp->schedule_rpc_timeout,
+			    search_idle_statfs_callback, c,
 			    &ss);
 			if (e == GFARM_ERR_NO_ERROR) {
 				c->protocol_state = ss;
@@ -1432,6 +1435,7 @@ search_idle_load_callback(void *closure)
 			    c->state->q, h->return_value, h->port,
 			    gfm_client_username(s->gfm_server),
 			    &a->u.addr, a->addrlen, s->filesystem,
+			    gfarm_ctxp->schedule_rpc_timeout,
 			    search_idle_connect_callback, c,
 			    &cs);
 			if (e == GFARM_ERR_NO_ERROR) {
@@ -1658,11 +1662,10 @@ search_idle_try_addr(struct search_idle_state *s,
 	    search_idle_load_callback, c, &gls, 1);
 #else /* __KERNEL__ */
 	e = gfs_client_connect_request_multiplexed(s->q,
-			    h->return_value, h->port,
-			    gfm_client_username(s->gfm_server),
-			    &h->u.addr, s->filesystem,
-			    search_idle_connect_and_get_rtt_callback, c,
-			    (struct gfs_client_connect_state **)&gls);
+	    h->return_value, h->port, gfm_client_username(s->gfm_server),
+	    &h->u.addr, s->filesystem, gfarm_ctxp->schedule_rpc_timeout,
+	    search_idle_connect_and_get_rtt_callback, c,
+	    (struct gfs_client_connect_state **)&gls);
 #endif /* __KERNEL__ */
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001446,

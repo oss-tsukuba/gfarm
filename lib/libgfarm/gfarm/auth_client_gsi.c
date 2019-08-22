@@ -310,6 +310,7 @@ struct gfarm_auth_request_gsi_state {
 	struct gfarm_eventqueue *q;
 	struct gfarm_event *readable;
 	struct gfp_xdr *conn;
+	int auth_timeout;
 	void (*continuation)(void *);
 	void *closure;
 
@@ -388,7 +389,7 @@ gfarm_auth_request_gsi_wait_result(void *closure)
 		state->error = GFARM_ERR_OPERATION_NOT_PERMITTED;
 #endif
 	} else {
-		timeout.tv_sec = GFARM_AUTH_TIMEOUT; timeout.tv_usec = 0;
+		timeout.tv_sec = state->auth_timeout; timeout.tv_usec = 0;
 		rv = gfarm_eventqueue_add_event(state->q,
 		    state->readable, &timeout);
 		if (rv == 0) {
@@ -411,7 +412,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
 	enum gfarm_auth_id_type self_type, const char *user,
-	struct passwd *pwd,
+	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
@@ -523,6 +524,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 
 	state->q = q;
 	state->conn = conn;
+	state->auth_timeout = auth_timeout;
 	state->continuation = continuation;
 	state->closure = closure;
 	state->error = GFARM_ERR_NO_ERROR;
@@ -598,12 +600,12 @@ gfarm_auth_request_gsi_auth_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
 	enum gfarm_auth_id_type self_type, const char *user,
-	struct passwd *pwd,
+	struct passwd *pwd, int auth_timeout,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
 	return (gfarm_auth_request_gsi_multiplexed(q, conn,
-	    service_tag, hostname, self_type, user, pwd,
+	    service_tag, hostname, self_type, user, pwd, auth_timeout,
 	    continuation, closure, statepp));
 }
 

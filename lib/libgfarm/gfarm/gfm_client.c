@@ -606,6 +606,7 @@ gfm_client_connect_start_auth(int events, int fd, void *closure,
 		    state->gfm_server->conn, GFM_SERVICE_TAG,
 		    canonical_hostname, state->addr,
 		    gfarm_get_auth_id_type(), state->user, state->pwd,
+		    gfarm_ctxp->gfmd_authentication_timeout,
 		    gfm_client_connect_end_auth, state,
 		    &state->auth_state);
 		if (state->error == GFARM_ERR_NO_ERROR) {
