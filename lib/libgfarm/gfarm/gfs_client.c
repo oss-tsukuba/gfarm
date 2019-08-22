@@ -474,7 +474,7 @@ gfs_client_connection_alloc_and_auth(struct gfm_connection *gfm_server,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfarm_auth_request(gfs_server->conn, GFS_SERVICE_TAG,
 		    gfs_server->hostname, (struct sockaddr *)&ss,
-		     gfarm_get_auth_id_type(), user, NULL,
+		    gfarm_get_auth_id_type(), user, NULL,
 		    &gfs_server->auth_method);
 	if (e == GFARM_ERR_NO_ERROR) {
 #ifdef HAVE_INFINIBAND

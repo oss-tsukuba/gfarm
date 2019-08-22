@@ -405,11 +405,11 @@ struct gfarm_auth_request_sharedsecret_state {
 	struct gfarm_eventqueue *q;
 	struct gfarm_event *readable, *writable;
 	struct gfp_xdr *conn;
+	struct passwd *pwd;
 	void (*continuation)(void *);
 	void *closure;
 
 	char *home;
-	struct passwd *pwd;
 
 	/* for loop */
 	int try;
@@ -788,10 +788,10 @@ gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 
 	state->q = q;
 	state->conn = conn;
+	state->pwd = pwd;
 	state->continuation = continuation;
 	state->closure = closure;
 	state->home = home;
-	state->pwd = pwd;
 	state->try = 0;
 	state->error = state->error_save = GFARM_ERR_NO_ERROR;
 	*statepp = state;
@@ -829,9 +829,9 @@ struct gfarm_auth_request_state {
 	const char *service_tag;
 	const char *name;
 	char *user;
-	struct passwd *pwd;
 	struct sockaddr *addr;
 	enum gfarm_auth_id_type self_type;
+	struct passwd *pwd;
 	void (*continuation)(void *);
 	void *closure;
 
@@ -1106,9 +1106,9 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	state->conn = conn;
 	state->service_tag = service_tag;
 	state->name = name;
-	state->pwd = pwd;
 	state->addr = addr;
 	state->self_type = self_type;
+	state->pwd = pwd;
 	state->methods = methods;
 	state->continuation = continuation;
 	state->closure = closure;
