@@ -8,8 +8,8 @@ before_tst ()
 	log=$2
 	jenkins_classname=$3
 
-	account_fmt="%-60.60s ... "
-	account_bgfmt="--- %-60.60s %s\n"
+	account_fmt="%-${width}.${width}s ... "
+	account_bgfmt="--- %-${width}s %s\n"
 
 	printf -- "$account_fmt"   "$tst"
 
@@ -29,7 +29,7 @@ after_tst ()
 	testcase_fmt_begin="    <testcase classname=\"%s\" name=\"%s\" time=\"%d\">\n"
 	failure_fmt="        <failure message=\"%s\"/>\n"
 	testcase_fmt_end="    </testcase>\n"
-	account_lgfmt="@:= %-60.60s %s\n"
+	account_lgfmt="@:= %-${width}s %s\n"
 
 	echo $result
 
@@ -53,15 +53,26 @@ account_fin="--- ------------------------------------------------------------ --
 log=log
 rm -f $log
 
-while getopts j: OPT; do
+while getopts j:l:w: OPT; do
 	case $OPT in
-	"j") jenkins_classname=$OPTARG;
-	     jenkins_file=TEST-$jenkins_classname.xml
-	     rm -f $jenkins_file;;
+	j)	jenkins_classname=$OPTARG
+		jenkins_file=TEST-$jenkins_classname.xml
+		rm -f $jenkins_file;;
+	l)	log=$OPTARG;;
+	w)	COLUMNS=$OPTARG;;
+	?)	echo >&2 "Usage: $0 [-j <classname>] [-l <log>] [-w <width>]"
+		exit 2;;
 	esac
 done
-
 shift `expr $OPTIND - 1`
+
+# determine number of columns of the terminal
+case ${COLUMNS+set} in
+set)	width=$COLUMNS;;
+*)	if [ -t 2 ] && width=`tput cols`; then :; else width=80; fi;;
+esac
+width=`expr $width - 20`
+if [ $width -lt 1 ]; then width=1; fi;
 
 case $# in
 0)	schedule=$regress/schedule;;
@@ -144,9 +155,10 @@ if [ X"$jenkins_classname" != X"" ]; then
 fi
 
 echo ""
-echo "Total test: `expr $n_pass + $n_fail`"
-echo "  success            : $n_pass"
-echo "  failure            : $n_fail"
+echo     "Total test           :" `
+				expr $n_pass + $n_fail + $n_xpass + $n_xfail`
+echo     "  success            : $n_pass"
+echo     "  failure            : $n_fail"
 
 if [ $n_xpass -gt 0 ]; then
     echo "  unexpected success : $n_xpass"
