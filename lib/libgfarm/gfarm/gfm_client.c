@@ -579,6 +579,7 @@ static void
 gfm_client_connect_start_auth(int events, int fd, void *closure,
 	const struct timeval *t)
 {
+	gfarm_error_t e;
 	struct gfm_client_connect_state *state = closure;
 	struct gfarm_metadb_server *ms = state->gfm_server->real_server;
 	const char *canonical_hostname = gfarm_metadb_server_get_name(ms);
@@ -593,6 +594,15 @@ gfm_client_connect_start_auth(int events, int fd, void *closure,
 		    "gfmd %s:%d receiving server auth methods failed: %s",
 		    canonical_hostname, port,
 		    gfarm_error_string(state->error));
+
+		gfm_client_purge_from_cache(state->gfm_server);
+		e = gfp_xdr_shutdown(state->gfm_server->conn);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfm_client_connect_start_auth: shutdown: %s",
+			    gfarm_error_string(e));
+		}
+
 		if (state->continuation != NULL)
 			(*state->continuation)(state->closure);
 		return;
