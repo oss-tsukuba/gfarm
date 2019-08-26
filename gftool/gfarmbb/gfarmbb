@@ -72,7 +72,7 @@ if [ X"$HOSTFILE" != X ]; then
     [ -e $HOSTFILE ] || err $HOSTFILE: no such host file
 
     alias prun="gfarm-prun $PRUN_ARGS $EXCLUDE_GFMD -p -h $HOSTFILE"
-    alias pcp="gfarm-pcp -p -h $HOSTFILE"
+    alias pcp="gfarm-pcp $PCP_ARGS -p -h $HOSTFILE"
 else
     alias prun=""
     alias pcp=":"
