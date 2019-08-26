@@ -71,7 +71,7 @@ done
 if [ X"$HOSTFILE" != X ]; then
     [ -e $HOSTFILE ] || err $HOSTFILE: no such host file
 
-    alias prun="gfarm-prun $EXCLUDE_GFMD -p -h $HOSTFILE"
+    alias prun="gfarm-prun $PRUN_ARGS $EXCLUDE_GFMD -p -h $HOSTFILE"
     alias pcp="gfarm-pcp -p -h $HOSTFILE"
 else
     alias prun=""
@@ -79,6 +79,8 @@ else
 fi
 
 start() {
+    [ X"$GFARMBB_START_HOOK" != X ] && prun $GFARMBB_START_HOOK
+
     [ -d $TMPDIR/etc ] || mkdir -p $TMPDIR/etc
     [ -d $TMPDIR/etc ] || err $TMPDIR: no such scratch directory
     [ -d $LOGDIR ] || mkdir -p $LOGDIR
@@ -118,6 +120,7 @@ start() {
     prun config-gfsd --prefix $TMPDIR -S > /dev/null
     if [ X"$MDIR" != X ]; then
 	gfmkdir -p $MDIR || :
+	prun umount.gfarm2fs $MDIR > /dev/null 2>&1 || :
 	prun env GFARMFS_ROOT=$MDIR mount.gfarm2fs $GFARM_CONFIG_FILE $MDIR $MOPTIONS > /dev/null || :
     fi
     if [ $SHELL_TYPE = bsh ]; then
@@ -139,6 +142,7 @@ stop() {
     if $LOGIN_NODE_ACCESS; then
 	rm -f $HOME/.gfarm2rc-$ID $HOME/.gfarm_shared_key-$ID
     fi
+    [ X"$GFARMBB_STOP_HOOK" != X ] && prun $GFARMBB_STOP_HOOK
 }
 
 which config-gfarm > /dev/null 2>&1 || err no gfarm installation
