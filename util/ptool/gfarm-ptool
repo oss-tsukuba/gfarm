@@ -10,7 +10,8 @@ fi
 PRUN_DEFAULT_RSH="ssh"
 PRUN_DEFAULT_RCP="scp -pr"
 PRUN_DEFAULT_HOSTFILE=$HOME/.nodelist
-PRUN_DEFAULT_HOSTNAME=`hostname`
+hostname -I > /dev/null 2>&1 && HS=`hostname -I`
+PRUN_DEFAULT_HOSTNAME="`hostname` $HS"
 
 [ "X$PRUN_RCP" = X ]      && PRUN_RCP=$PRUN_DEFAULT_RCP
 [ "X$PRUN_RSH" = X ]      && PRUN_RSH=$PRUN_DEFAULT_RSH
@@ -24,7 +25,7 @@ PRUN_STDIN=
 while [ $# -gt 0 ]; do
 	case $1 in
 	    -h) shift; PRUN_HOSTFILE=$1 ;;
-	    -rsh) shift; PRUN_RSH=$1 ;;
+	    -rsh) shift; PRUN_RSH=$1; PRUN_RCP=no ;;
 	    -rcp) shift; PRUN_RCP=$1 ;;
 	    -stdin) shift; PRUN_STDIN="$PRUN_STDIN $1" ;;
 	    -p) PRUN_PARALLEL=yes ;;
@@ -101,14 +102,25 @@ if [ "X$PRUN_PARALLEL" != Xyes -a "X$PRUN_VERBOSE" = Xyes ]; then
 fi
 
 for host in `sed -e 's/#.*//' -e '/^[ 	]*$/d' $hostfile`; do
-    [ "X$host" = X$PRUN_HOSTNAME -a "X$PRUN_ALL_INCLUDE_MYSELF" != Xyes ] &&
-    	continue
+    [ "X$PRUN_ALL_INCLUDE_MYSELF" != Xyes ] &&
+	echo $PRUN_HOSTNAME | grep $host > /dev/null && continue
     $MESSAGE $host
-    case $PRUN_PARALLEL$PRUN_STDIN in
-	no) $CMD $host$HOSTSUF $ARG ;;
-	no*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG ;;
-	yes) $CMD $host$HOSTSUF $ARG & ;;
-	yes*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG & ;;
+    case $PRUN_RCP in
+	no)
+	for f in $rcpargs; do
+	    $MESSAGE $f
+	    case $PRUN_PARALLEL in
+		no) cat $f | $PRUN_RSH $host "cat > $f" ;;
+		yes) cat $f | $PRUN_RSH $host "cat > $f" & ;;
+	    esac
+	done ;;
+	*)
+	case $PRUN_PARALLEL$PRUN_STDIN in
+	    no) $CMD $host$HOSTSUF $ARG ;;
+	    no*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG ;;
+	    yes) $CMD $host$HOSTSUF $ARG & ;;
+	    yes*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG & ;;
+	esac ;;
     esac
 done
 wait
