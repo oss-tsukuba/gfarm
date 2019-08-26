@@ -25,7 +25,9 @@ PRUN_STDIN=
 while [ $# -gt 0 ]; do
 	case $1 in
 	    -h) shift; PRUN_HOSTFILE=$1 ;;
-	    -rsh) shift; PRUN_RSH=$1; PRUN_RCP=no ;;
+	    -rsh) shift; PRUN_RSH=$1;
+		[ $program = gfarm-pcp ] && PRUN_RCP=no
+		;;
 	    -rcp) shift; PRUN_RCP=$1 ;;
 	    -stdin) shift; PRUN_STDIN="$PRUN_STDIN $1" ;;
 	    -p) PRUN_PARALLEL=yes ;;
@@ -105,7 +107,7 @@ for host in `sed -e 's/#.*//' -e '/^[ 	]*$/d' $hostfile`; do
     [ "X$PRUN_ALL_INCLUDE_MYSELF" != Xyes ] &&
 	echo $PRUN_HOSTNAME | grep $host > /dev/null && continue
     $MESSAGE $host
-    case $PRUN_RCP in
+    case "$PRUN_RCP" in
 	no)
 	for f in $rcpargs; do
 	    $MESSAGE $f
