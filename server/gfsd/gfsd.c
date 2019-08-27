@@ -3661,7 +3661,7 @@ gfs_server_bulkwrite(struct gfp_xdr *client)
 		    &written);
 		io_error_check(dst_err, diag);
 		if (IS_CONNECTION_ERROR(e))
-			conn_fatal(GFARM_MSG_1004142, "%s recvdfile: %s",
+			conn_fatal(GFARM_MSG_1004142, "%s recvfile: %s",
 			    diag, gfarm_error_string(e));
 		if (written > 0)
 			file_table_set_written(fd);
