@@ -47,10 +47,10 @@ There is a script "addup.sh" to make summary of multiple test outputs.
 Thus, you can run all tests by the following procedure:
   1. on a host which is NOT a filesystem node,
      run tests by a privileged user who is in the gfarmroot privilege, e.g.
-	$ ./regress.sh -l log.w_root.remote
+	$ LANG=C ./regress.sh -l log.w_root.remote
   2. on a file system node which has a replica of $GFARM_TEST_CKSUM_MISMATCH,
      run tests by a non-privileged user who is NOT in the gfarmroot group, e.g.
-	$ ./regress.sh -l log.wo_root.local
+	$ LANG=C ./regress.sh -l log.wo_root.local
   3. make summary of the log outputs, e.g.
 	$ ./addup.sh log.w_root.remote log.wo_root.local
      you can specify "-v" option to addup.sh to see whole test result matrix.
