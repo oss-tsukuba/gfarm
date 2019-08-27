@@ -1163,30 +1163,23 @@ gfm_client_rpc_result(struct gfm_connection *gfm_server, int just,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
-gfm_client_rpc(struct gfm_connection *gfm_server, int just, int command,
-	const char *format, ...)
+static gfarm_error_t
+gfm_client_vrpc(struct gfm_connection *gfm_server, int just, int do_timeout,
+	int command, const char *format, va_list *app)
 {
-	va_list ap;
 	gfarm_error_t e;
 	int errcode;
 
 	gfm_client_connection_used(gfm_server);
-	gfm_client_connection_lock(gfm_server);
 
-	va_start(ap, format);
-	e = gfp_xdr_vrpc(gfm_server->conn, just, 1,
-	    command, &errcode, &format, &ap);
-	va_end(ap);
+	e = gfp_xdr_vrpc(gfm_server->conn, just, do_timeout,
+	    command, &errcode, &format, app);
 
-	gfm_client_connection_unlock(gfm_server);
 	check_connection_or_purge(gfm_server, e);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001108,
-			"gfp_xdr_vrpc(%d) failed: %s",
-		command,
-			gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_1001108, "gfp_xdr_vrpc(%d) failed: %s",
+		    command, gfarm_error_string(e));
 		return (e);
 	}
 	if (errcode != 0) {
@@ -1194,12 +1187,47 @@ gfm_client_rpc(struct gfm_connection *gfm_server, int just, int command,
 		 * We just use gfarm_error_t as the errcode,
 		 * Note that GFARM_ERR_NO_ERROR == 0.
 		 */
-		gflog_debug(GFARM_MSG_1001109,
-			"gfp_xdr_vrpc() failed: errcode=%d",
-			errcode);
+		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_vrpc(%d): errcode=%d",
+		    command, errcode);
 		return (errcode);
 	}
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfm_client_rpc(struct gfm_connection *gfm_server, int just,
+	int command, const char *format, ...)
+{
+	gfarm_error_t e;
+	va_list ap;
+
+	gfm_client_connection_lock(gfm_server);
+
+	va_start(ap, format);
+	e = gfm_client_vrpc(gfm_server, just, 1, command, format, &ap);
+	va_end(ap);
+
+	gfm_client_connection_unlock(gfm_server);
+
+	return (e);
+}
+
+static gfarm_error_t
+gfm_client_rpc_notimeout(struct gfm_connection *gfm_server, int just,
+	int command, const char *format, ...)
+{
+	gfarm_error_t e;
+	va_list ap;
+
+	gfm_client_connection_lock(gfm_server);
+
+	va_start(ap, format);
+	e = gfm_client_vrpc(gfm_server, just, 0, command, format, &ap);
+	va_end(ap);
+
+	gfm_client_connection_unlock(gfm_server);
+
+	return (e);
 }
 
 /*
@@ -2939,7 +2967,8 @@ gfm_client_quota_group_set(struct gfm_connection *gfm_server,
 gfarm_error_t
 gfm_client_quota_check(struct gfm_connection *gfm_server)
 {
-	return (gfm_client_rpc(gfm_server, 0, GFM_PROTO_QUOTA_CHECK, "/"));
+	return (gfm_client_rpc_notimeout(gfm_server, 0,
+	    GFM_PROTO_QUOTA_CHECK, "/"));
 }
 
 /*
