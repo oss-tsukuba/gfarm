@@ -25,9 +25,7 @@ PRUN_STDIN=
 while [ $# -gt 0 ]; do
 	case $1 in
 	    -h) shift; PRUN_HOSTFILE=$1 ;;
-	    -rsh) shift; PRUN_RSH=$1;
-		[ $program = gfarm-pcp ] && PRUN_RCP=no
-		;;
+	    -rsh) shift; PRUN_RSH=$1 ;;
 	    -rcp) shift; PRUN_RCP=$1 ;;
 	    -stdin) shift; PRUN_STDIN="$PRUN_STDIN $1" ;;
 	    -p) PRUN_PARALLEL=yes ;;
@@ -80,22 +78,45 @@ if [ "X$PRUN_STDIN" != X ]; then
 fi
 PRUN_STDIN=$prun_stdin
 
+rcp_by_rsh() {
+    host="$1"
+    shift
+    files=
+    while [ $# -gt 1 ]; do
+	files="$files $1"
+	shift
+    done
+    dst=$1
+    for f in $files; do
+	b=`basename $f`
+	case $PRUN_PARALLEL in
+	    no) cat $f | $PRUN_RSH $host "cat > $dst/$b" ;;
+	    yes) cat $f | $PRUN_RSH $host "cat > $dst/$b" & ;;
+	esac
+    done
+}
+
 case $program in
     gfarm-prun)
 	CMD="$ECHO $PRUN_RSH"
 	[ "X$PRUN_STDIN" = X ] && CMD="$CMD -n"
 	ARG="$*" ;;
     gfarm-pcp)
-	rcpargs=
-	while [ $# -gt 1 ]; do
+	if [ X"$PRUN_RCP" = Xno ]; then
+	    CMD="$ECHO rcp_by_rsh"
+	    ARG="$*"
+	else
+	    rcpargs=
+	    while [ $# -gt 1 ]; do
 		rcpargs="$rcpargs $1"
 		shift
-	done
-	CMD="$ECHO $PRUN_RCP $rcpargs"
-	HOSTSUF=:$1 ;;
+	    done
+	    CMD="$ECHO $PRUN_RCP $rcpargs"
+	    HOSTSUF=:$1
+	fi ;;
     *)
 	echo unknown program: $program
-	exit 1
+	exit 1 ;;
 esac
 
 MESSAGE=true
@@ -107,22 +128,11 @@ for host in `sed -e 's/#.*//' -e '/^[ 	]*$/d' $hostfile`; do
     [ "X$PRUN_ALL_INCLUDE_MYSELF" != Xyes ] &&
 	echo $PRUN_HOSTNAME | grep $host > /dev/null && continue
     $MESSAGE $host
-    case "$PRUN_RCP" in
-	no)
-	for f in $rcpargs; do
-	    $MESSAGE $f
-	    case $PRUN_PARALLEL in
-		no) cat $f | $PRUN_RSH $host "cat > $f" ;;
-		yes) cat $f | $PRUN_RSH $host "cat > $f" & ;;
-	    esac
-	done ;;
-	*)
-	case $PRUN_PARALLEL$PRUN_STDIN in
-	    no) $CMD $host$HOSTSUF $ARG ;;
-	    no*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG ;;
-	    yes) $CMD $host$HOSTSUF $ARG & ;;
-	    yes*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG & ;;
-	esac ;;
+    case $PRUN_PARALLEL$PRUN_STDIN in
+	no) $CMD $host$HOSTSUF $ARG ;;
+	no*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG ;;
+	yes) $CMD $host$HOSTSUF $ARG & ;;
+	yes*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG & ;;
     esac
 done
 wait

@@ -10,17 +10,18 @@ usage() {
 	echo "            cmd args ..."
 	echo ""
 	echo "options:"
+	echo "        -a  execute on all nodes listed in the hostfile including myself."
 	echo "        -h hostfile"
 	echo "            specifies a hostfile.  '-' for the standard input"
 	echo "            ($PRUN_DEFAULT_HOSTFILE)"
+	echo "        -n  print the commands that would be executed, but do not execute them."
+	echo "        -p  execute in the background in parallel."
+	echo "        -rsh rsh_command"
+	echo "            specifies a remote shell command. ($PRUN_DEFAULT_RSH)"
 	echo "        -stdin file"
 	echo "            specifies a stdin file.  It can be specified multiple times."
 	echo "            '-' for the standard input"
-	echo "        -rsh rsh_command"
-	echo "            specifies a remote shell command. ($PRUN_DEFAULT_RSH)"
-	echo "        -p  execute in the background in parallel."
-	echo "        -a  execute on all nodes listed in the hostfile including myself."
-	echo "        -n  print the commands that would be executed, but do not execute them."
+	echo "        -v  print hostname before execution."
 	exit 1
 }
 
