@@ -33,6 +33,29 @@ optional conditions:
 	- the $GFARM_TEST_CKSUM_MISMATCH is larger than client_file_bufsize
 	- whether $GFARM_TEST_MDS* is set or not
 
+
+TO RUN ALL TESTS
+
+to run all tests, the following conditions have to be tested.
+  * with or without the gfarmroot gruop privilege
+  * run tests on a host which is NOT a filesystem node, and
+    run tests on a file system node which has a replica of
+    the $GFARM_TEST_CKSUM_MISMATCH file.
+    
+There is a script "addup.sh" to make summary of multiple test outputs.
+
+Thus, you can run all tests by the following procedure:
+  1. on a host which is NOT a filesystem node,
+     run tests by a privileged user who is in the gfarmroot privilege, e.g.
+	$ ./regress.sh -l log.w_root.remote
+  2. on a file system node which has a replica of $GFARM_TEST_CKSUM_MISMATCH,
+     run tests by a non-privileged user who is NOT in the gfarmroot group, e.g.
+	$ ./regress.sh -l log.wo_root.local
+  3. make summary of the log outputs, e.g.
+	$ ./addup.sh log.w_root.remote log.wo_root.local
+     you can specify "-v" option to addup.sh to see whole test result matrix.
+
+
 TO WRITE TEST
 - each test should be independent from other test.
 i.e.
