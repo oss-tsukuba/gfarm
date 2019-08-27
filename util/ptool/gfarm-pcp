@@ -12,14 +12,15 @@ usage() {
 	echo "           filename ... directory"
 	echo ""
 	echo "options:"
+	echo "        -a  execute on all nodes listed in the hostfile including myself."
 	echo "        -h hostfile"
 	echo "            specifies a hostfile.  '-' for the standard input"
 	echo "            ($PRUN_DEFAULT_HOSTFILE)"
+	echo "        -n  print the commands that would be executed, but do not execute them."
+	echo "        -p  execute in the background in parallel."
 	echo "        -rcp rcp_command"
 	echo "            specifies a remote copy command. ($PRUN_DEFAULT_RCP)"
-	echo "        -a  execute on all nodes listed in the hostfile including myself."
 	echo "        -v  print hostname before copying."
-	echo "        -n  print the commands that would be executed, but do not execute them."
 	exit 1
 }
 
