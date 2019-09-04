@@ -14,17 +14,17 @@ ID=`hostname`
 EXCLUDE_GFMD=-a
 
 usage() {
-    echo "usage: $PROGRAM [-c|-s] [-h hostfile] [-scr scratch_dir] [-m mount_point] [-l] start | stop"
+    echo "usage: $PROGRAM [-h hostfile] [-scr scratch_dir] [-m mount_point] [options] start | stop"
     echo ""
     echo "options:"
     echo "        -e"
-    echo "            Exclude Gfmd node from file system nodes."
+    echo "            excludes Gfmd node from file system nodes."
     echo "        -h hostfile"
     echo "            specifies a hostfile."
     echo "        -scr scratch_dir"
     echo "            specifies a scratch directory. ($TMPDIR)"
     echo "        -l"
-    echo "            Enable Gfarm/BB access from login nodes."
+    echo "            enables Gfarm/BB access from login nodes."
     echo "        -L log_dir"
     echo "            specifies a log directory. ($TMPDIR/log)"
     echo "        -m mount_point"
@@ -33,9 +33,9 @@ usage() {
     echo "            specifies a period for a Gfarm shared key in second."
     echo "            Default is 86400 seconds (1 day)."
     echo "        -c"
-    echo "            Generate C-shell commands on stdout."
+    echo "            generates C-shell commands on stdout."
     echo "        -s"
-    echo "            Generate Bourne shell commands on stdout."
+    echo "            generates Bourne shell commands on stdout."
     echo "            This is default."
     exit 1
 }
@@ -97,7 +97,7 @@ start() {
     echo metadb_server_long_term_lock_type mutex >> $TMPDIR/etc/gfmd.conf
     echo metadb_server_nfs_root_squash_support disable >> $TMPDIR/etc/gfmd.conf
     echo metadb_db_access_type none >> $TMPDIR/etc/gfmd.conf
-    echo schedule_idle_load_thresh 100 >> $TMPDIR/etc/gfmd.conf
+    echo schedule_idle_load_thresh 200 >> $TMPDIR/etc/gfmd.conf
     echo atime disable >> $TMPDIR/etc/gfmd.conf
     echo replica_check disable >> $TMPDIR/etc/gfmd.conf
     echo log_file $LOGDIR/gfmd-$ID.log >> $TMPDIR/etc/gfmd.conf
@@ -106,8 +106,11 @@ start() {
     echo log_file $LOGDIR/gfsd-$ID.log >> $TMPDIR/etc/gfsd.conf
     echo shared_key_file $SHARED_KEY_FILE >> $TMPDIR/etc/gfsd.conf
 
-    echo schedule_idle_load_thresh 100 >> $GFARM_CONFIG_FILE
+    echo schedule_idle_load_thresh 200 >> $GFARM_CONFIG_FILE
     echo gfsd_connection_cache 256 >> $GFARM_CONFIG_FILE
+    echo gfmd_authentication_timeout 120 >> $GFARM_CONFIG_FILE
+    echo schedule_rpc_timeout 120 >> $GFARM_CONFIG_FILE
+    echo network_receive_timeout 120 >> $GFARM_CONFIG_FILE
     echo shared_key_file $SHARED_KEY_FILE >> $GFARM_CONFIG_FILE
 
     gfkey -c -p $PERIOD
