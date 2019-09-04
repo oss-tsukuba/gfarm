@@ -16,6 +16,8 @@ usage() {
 	echo "        -h hostfile"
 	echo "            specifies a hostfile.  '-' for the standard input"
 	echo "            ($PRUN_DEFAULT_HOSTFILE)"
+	echo "        -m max_jobs"
+	echo "            specifies the maximum number of parallel jobs. ($PRUN_DEFAULT_MAX_JOBS)"
 	echo "        -n  print the commands that would be executed, but do not execute them."
 	echo "        -p  execute in the background in parallel."
 	echo "        -rcp rcp_command"
