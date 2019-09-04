@@ -12,11 +12,13 @@ PRUN_DEFAULT_RCP="scp -pr"
 PRUN_DEFAULT_HOSTFILE=$HOME/.nodelist
 hostname -I > /dev/null 2>&1 && HS=`hostname -I`
 PRUN_DEFAULT_HOSTNAME="`hostname` $HS"
+PRUN_DEFAULT_MAX_JOBS=16
 
 [ "X$PRUN_RCP" = X ]      && PRUN_RCP=$PRUN_DEFAULT_RCP
 [ "X$PRUN_RSH" = X ]      && PRUN_RSH=$PRUN_DEFAULT_RSH
 [ "X$PRUN_HOSTFILE" = X ] && PRUN_HOSTFILE=$PRUN_DEFAULT_HOSTFILE
 [ "X$PRUN_HOSTNAME" = X ] && PRUN_HOSTNAME=$PRUN_DEFAULT_HOSTNAME
+[ "X$PRUN_MAX_JOBS" = X ] && PRUN_MAX_JOBS=$PRUN_DEFAULT_MAX_JOBS
 [ "X$PRUN_PARALLEL" = X ] && PRUN_PARALLEL=no
 [ "X$PRUN_ALL_INCLUDE_MYSELF" = X ] && PRUN_ALL_INCLUDE_MYSELF=no
 [ "X$PRUN_VERBOSE" = X ]  && PRUN_VERBOSE=no
@@ -31,6 +33,7 @@ while [ $# -gt 0 ]; do
 	    -p) PRUN_PARALLEL=yes ;;
 	    -a) PRUN_ALL_INCLUDE_MYSELF=yes ;;
 	    -v) PRUN_VERBOSE=yes ;;
+	    -m) shift; PRUN_MAX_JOBS=$1 ;;
 	    -n) ECHO=echo ;;
 	    -*) echo "unknown option: $1"
 		usage ;;
@@ -124,6 +127,7 @@ if [ "X$PRUN_PARALLEL" != Xyes -a "X$PRUN_VERBOSE" = Xyes ]; then
     MESSAGE=echo
 fi
 
+p=0
 for host in `sed -e 's/#.*//' -e '/^[ 	]*$/d' $hostfile`; do
     [ "X$PRUN_ALL_INCLUDE_MYSELF" != Xyes ] &&
 	echo $PRUN_HOSTNAME | grep $host > /dev/null && continue
@@ -134,6 +138,11 @@ for host in `sed -e 's/#.*//' -e '/^[ 	]*$/d' $hostfile`; do
 	yes) $CMD $host$HOSTSUF $ARG & ;;
 	yes*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG & ;;
     esac
+    p=$((p + 1))
+    if [ $p -ge $PRUN_MAX_JOBS ]; then
+	p=0
+	wait
+    fi
 done
 wait
 
