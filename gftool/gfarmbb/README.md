@@ -52,6 +52,11 @@ GFARMBB_STOP_HOOK
 ```
 ## Recommended Linux kernel parameter change
 
+The number of file descriptors and listen backlogs are set to 262144
+and 2048, respectively, by the gfarmbb script.  To reflect the setting,
+the kernel parameter may need to be changed.  On the other hand, if
+you need more, please change the gfarmbb script.
+
 ### the number of file descriptors
 
 262144 or greater is recommended.

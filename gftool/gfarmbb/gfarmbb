@@ -100,12 +100,15 @@ start() {
     echo schedule_idle_load_thresh 200 >> $TMPDIR/etc/gfmd.conf
     echo atime disable >> $TMPDIR/etc/gfmd.conf
     echo replica_check disable >> $TMPDIR/etc/gfmd.conf
+    echo log_level warning >> $TMPDIR/etc/gfmd.conf
     echo log_file $LOGDIR/gfmd-$ID.log >> $TMPDIR/etc/gfmd.conf
     echo shared_key_file $SHARED_KEY_FILE >> $TMPDIR/etc/gfmd.conf
 
+    echo log_level warning >> $TMPDIR/etc/gfsd.conf
     echo log_file $LOGDIR/gfsd-$ID.log >> $TMPDIR/etc/gfsd.conf
     echo shared_key_file $SHARED_KEY_FILE >> $TMPDIR/etc/gfsd.conf
 
+    echo log_level warning >> $GFARM_CONFIG_FILE
     echo schedule_idle_load_thresh 200 >> $GFARM_CONFIG_FILE
     echo gfsd_connection_cache 256 >> $GFARM_CONFIG_FILE
     echo gfmd_authentication_timeout 120 >> $GFARM_CONFIG_FILE
