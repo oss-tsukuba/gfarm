@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>28 Nov 2017</date></refentryinfo>
+<refentryinfo><date>6 Sep 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1028,6 +1028,33 @@ digestタイプとして disable と指定した場合は、チェックサム�
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	digest md5
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>quota_check_retry_interval</token> <parameter moreinfo="none">秒</parameter></term>
+<listitem>
+<para>
+quota の集計がメタデータ更新のために中断した時に、
+集計を再開するまでの時間間隔(秒)を指定します。
+</para>
+<para>
+メタデータ更新は通常連続して起きるため、間隔をおかずに再開しても
+すぐにまた中断し結果を捨ててやり直すこととなり集計作業が無駄になります。
+また無駄な集計処理のために、並行して動作する replica_check の実行が
+きわめて遅くなります。
+このパラメータに従って再開までに間隔をおくことにより、その問題を緩和します。
+</para>
+<para>
+デフォルトは60秒です。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	quota_check_retry_interval 120
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2654,6 +2681,7 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 	&lt;auth_statement&gt; |
 	&lt;shared_key_file_statement&gt; |
 	&lt;digest_statement&gt; |
+	&lt;quota_check_retry_interval_statement&gt; |
 	&lt;max_directory_depth_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
@@ -2965,6 +2993,11 @@ gfsd はその起動時に、gfmd に対して、この設定を問い合わせ�
 <varlistentry>
 <term>&lt;digest_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"digest" &lt;digest_type&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;quota_check_retry_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"quota_check_retry_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

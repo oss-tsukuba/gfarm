@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>28 Nov 2017</date></refentryinfo>
+<refentryinfo><date>6 Sep 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1063,6 +1063,35 @@ the <token>client_digest_check</token> statement.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	digest md5
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>quota_check_retry_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+The <token>quota_check_retry_interval</token> statement
+specifies interval until restarting quota re-calculation
+which was interrupted by a metadata update.
+</para>
+<para>
+Because metadata updates usually occur continuously,
+restarting without interval will make re-calculation interrupted immediately,
+thus the re-calculation will be wasted.
+In addition, the wasted re-calculation makes replia_check processing
+too slow.
+This parameter mitigates the problem by leaving an interval before restart.
+</para>
+<para>
+The default value is 60 seconds.
+</para>
+<para>
+This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	quota_check_retry_interval 120
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2679,6 +2708,7 @@ gfsd uses this setting at its startup by asking gfmd.
 	&lt;auth_statement&gt; |
 	&lt;shared_key_file_statement&gt; |
 	&lt;digest_statement&gt; |
+	&lt;quota_check_retry_interval_statement&gt; |
 	&lt;max_directory_depth_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
@@ -2990,6 +3020,11 @@ gfsd uses this setting at its startup by asking gfmd.
 <varlistentry>
 <term>&lt;digest_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"digest" &lt;digest_type&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;quota_check_retry_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"quota_check_retry_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
