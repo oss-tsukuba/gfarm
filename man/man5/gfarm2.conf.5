@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 14 Mar 2019
+.\"      Date: 6 Sep 2019
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "14 Mar 2019" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "6 Sep 2019" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -1110,6 +1110,56 @@ For example,
 .\}
 .nf
 	directory_quota_check_start_delay 120
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+directory_quota_check_retry_interval \fIseconds\fR
+.RS 4
+The
+directory_quota_check_retry_interval
+statement specifies interval until restarting directory quota re\-calculation which was interrupted by a metadata update\&.
+.sp
+Because metadata updates usually occur continuously, restarting without interval will make re\-calculation interrupted immediately, thus the re\-calculation will be wasted\&. In addition, the wasted re\-calculation makes replia_check processing too slow\&. This parameter mitigates the problem by leaving an interval before restart\&.
+.sp
+The default value is 60 seconds\&.
+.sp
+This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	directory_quota_check_retry_interval 120
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+quota_check_retry_interval \fIseconds\fR
+.RS 4
+The
+quota_check_retry_interval
+statement specifies interval until restarting quota re\-calculation which was interrupted by a metadata update\&.
+.sp
+Because metadata updates usually occur continuously, restarting without interval will make re\-calculation interrupted immediately, thus the re\-calculation will be wasted\&. In addition, the wasted re\-calculation makes replia_check processing too slow\&. This parameter mitigates the problem by leaving an interval before restart\&.
+.sp
+The default value is 60 seconds\&.
+.sp
+This directive is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	quota_check_retry_interval 120
 .fi
 .if n \{\
 .RE
@@ -2814,6 +2864,8 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<digest_statement> |
 	<directory_quota_count_per_user_limit_statement> |
 	<directory_quota_check_start_delay_statement> |
+	<directory_quota_check_retry_interval_statement> |
+	<quota_check_retry_interval_statement> |
 	<max_directory_depth_statement> |
 
 	<sockopt_statement> |
@@ -3585,6 +3637,34 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "directory_quota_check_start_delay" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<directory_quota_check_retry_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"directory_quota_check_retry_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<quota_check_retry_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"quota_check_retry_interval" <number>
 .fi
 .if n \{\
 .RE
