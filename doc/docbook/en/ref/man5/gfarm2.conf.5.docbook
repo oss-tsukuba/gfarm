@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>14 Mar 2019</date></refentryinfo>
+<refentryinfo><date>6 Sep 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1139,6 +1139,64 @@ This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	directory_quota_check_start_delay 120
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>directory_quota_check_retry_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+The <token>directory_quota_check_retry_interval</token> statement
+specifies interval until restarting directory quota re-calculation
+which was interrupted by a metadata update.
+</para>
+<para>
+Because metadata updates usually occur continuously,
+restarting without interval will make re-calculation interrupted immediately,
+thus the re-calculation will be wasted.
+In addition, the wasted re-calculation makes replia_check processing
+too slow.
+This parameter mitigates the problem by leaving an interval before restart.
+</para>
+<para>
+The default value is 60 seconds.
+</para>
+<para>
+This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	directory_quota_check_retry_interval 120
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>quota_check_retry_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+The <token>quota_check_retry_interval</token> statement
+specifies interval until restarting quota re-calculation
+which was interrupted by a metadata update.
+</para>
+<para>
+Because metadata updates usually occur continuously,
+restarting without interval will make re-calculation interrupted immediately,
+thus the re-calculation will be wasted.
+In addition, the wasted re-calculation makes replia_check processing
+too slow.
+This parameter mitigates the problem by leaving an interval before restart.
+</para>
+<para>
+The default value is 60 seconds.
+</para>
+<para>
+This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	quota_check_retry_interval 120
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2908,6 +2966,8 @@ The default size is 16 MiB.
 	&lt;digest_statement&gt; |
 	&lt;directory_quota_count_per_user_limit_statement&gt; |
 	&lt;directory_quota_check_start_delay_statement&gt; |
+	&lt;directory_quota_check_retry_interval_statement&gt; |
+	&lt;quota_check_retry_interval_statement&gt; |
 	&lt;max_directory_depth_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
@@ -3237,6 +3297,16 @@ The default size is 16 MiB.
 <varlistentry>
 <term>&lt;directory_quota_check_start_delay_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"directory_quota_check_start_delay" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;directory_quota_check_retry_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"directory_quota_check_retry_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;quota_check_retry_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"quota_check_retry_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
