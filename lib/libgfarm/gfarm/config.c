@@ -1022,7 +1022,9 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT	256 /* 256 free connections */
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT	8   /*   8 free connections */
 #define GFARM_DIRECTORY_QUOTA_COUNT_PER_USER_LIMIT_DEFAULT	100
-#define GFARM_DIRECTORY_QUOTA_CHECK_START_DELAY_DEFAULT	60 /*seconds*/
+#define GFARM_DIRECTORY_QUOTA_CHECK_START_DELAY_DEFAULT	60	/*seconds*/
+#define GFARM_DIRECTORY_QUOTA_CHECK_RETRY_INTERVAL_DEFAULT 60	/*seconds*/
+#define GFARM_QUOTA_CHECK_RETRY_INTERVAL_DEFAULT 60	/*seconds*/
 #define GFARM_MAX_DIRECTORY_DEPTH_DEFAULT	100
 #define GFARM_MAX_DIRECTORY_DEPTH_MINIMUM	16
 #define GFARM_MAX_DIRECTORY_DEPTH_MAXIMUM	65536
@@ -1075,6 +1077,8 @@ int gfarm_xattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xmlattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_directory_quota_count_per_user_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_directory_quota_check_start_delay = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_directory_quota_check_retry_interval = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_quota_check_retry_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_max_directory_depth = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_version_major = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_version_minor = GFARM_CONFIG_MISC_DEFAULT;
@@ -3423,6 +3427,12 @@ parse_one_line(char *s, char *p, char **op)
 	    == 0) {
 		e = parse_set_misc_int(p,
 		    &gfarm_directory_quota_check_start_delay);
+	} else if (strcmp(s, o = "directory_quota_check_retry_interval")
+	    == 0) {
+		e = parse_set_misc_int(p,
+		    &gfarm_directory_quota_check_retry_interval);
+	} else if (strcmp(s, o = "quota_check_retry_interval") == 0) {
+		e = parse_set_misc_int(p, &gfarm_quota_check_retry_interval);
 	} else if (strcmp(s, o = "max_directory_depth")
 	    == 0) {
 		e = parse_set_misc_int(p, &gfarm_max_directory_depth);
@@ -3817,11 +3827,18 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_directory_quota_count_per_user_limit
 	    == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_directory_quota_count_per_user_limit =
-			GFARM_DIRECTORY_QUOTA_COUNT_PER_USER_LIMIT_DEFAULT;
+		    GFARM_DIRECTORY_QUOTA_COUNT_PER_USER_LIMIT_DEFAULT;
 	if (gfarm_directory_quota_check_start_delay
 	    == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_directory_quota_check_start_delay =
-			GFARM_DIRECTORY_QUOTA_CHECK_START_DELAY_DEFAULT;
+		    GFARM_DIRECTORY_QUOTA_CHECK_START_DELAY_DEFAULT;
+	if (gfarm_directory_quota_check_retry_interval
+	    == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_directory_quota_check_retry_interval =
+		    GFARM_DIRECTORY_QUOTA_CHECK_RETRY_INTERVAL_DEFAULT;
+	if (gfarm_quota_check_retry_interval == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_quota_check_retry_interval =
+		    GFARM_QUOTA_CHECK_RETRY_INTERVAL_DEFAULT;
 	if (gfarm_max_directory_depth == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_max_directory_depth = GFARM_MAX_DIRECTORY_DEPTH_DEFAULT;
 	if (gfarm_metadb_max_descriptors == GFARM_CONFIG_MISC_DEFAULT)
@@ -4147,8 +4164,16 @@ const struct gfarm_config_type {
 	  &gfarm_directory_quota_count_per_user_limit, 0 },
 	{ "directory_quota_check_start_delay", 'i', 1,
 	  gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
 	  &gfarm_directory_quota_check_start_delay, 0 },
+	{ "directory_quota_check_retry_interval", 'i', 1,
+	  gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
+	  &gfarm_directory_quota_check_retry_interval, 0 },
+	{ "quota_check_retry_interval", 'i', 1,
+	  gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
+	  &gfarm_quota_check_retry_interval, 0 },
 	{ "max_directory_depth", 'i', 1,
 	  gfarm_config_print_int,
 	  gfarm_config_set_default_int,

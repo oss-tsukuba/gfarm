@@ -1309,10 +1309,20 @@ static void
 quota_check_main_loop(struct quota_check_control *ctl)
 {
 	static const char diag[] = "quota_check_main_loop";
+	int interval;
 
 	gflog_info(GFARM_MSG_1004297, "quota_check: start");
 	while (quota_check_main()) {
 		quota_check_needed_clear(diag);
+		config_var_lock();
+		interval = gfarm_quota_check_retry_interval;
+		config_var_unlock();
+		if (interval > 0) {
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "quota_check: delay retry for %d seconds",
+			    interval);
+			gfarm_sleep(interval);
+		}
 		gflog_info(GFARM_MSG_1004298, "quota_check: retry");
 	}
 }
@@ -1381,7 +1391,7 @@ dirquota_invalidate_per_dirset(void *closure, struct dirset *ds)
 	struct dirquota *dq = dirset_get_dirquota(ds);
 
 	dq->invalidate_requested = 1;
-	return (0);
+	return (0); /* never interrupt */
 }
 
 static enum inode_scan_choice
@@ -1498,6 +1508,7 @@ static void
 dirquota_check_main(struct quota_check_control *ctl)
 {
 	time_t time_start, time_total;
+	int interval;
 
 	gflog_info(GFARM_MSG_1004639, "dirquota_check: start");
 	time_start = time(NULL);
@@ -1511,8 +1522,24 @@ dirquota_check_main(struct quota_check_control *ctl)
 	dirquota_check_state.retried_dirsets = 0;
 	dirquota_check_state.skipped_dirsets = 0;
 
-	while (dirquota_check_needed())
-		dirquota_check_run();
+	if (dirquota_check_needed()) {
+		for (;;) {
+			dirquota_check_run();
+			if (!dirquota_check_needed())
+				break;
+
+			config_var_lock();
+			interval = gfarm_directory_quota_check_retry_interval;
+			config_var_unlock();
+			if (interval > 0) {
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "dirquota_check: "
+				    "delay retry for %d seconds", interval);
+				gfarm_sleep(interval);
+			}
+			gflog_info(GFARM_MSG_UNFIXED, "dirquota_check: retry");
+		}
+	}
 
 	giant_unlock();
 
@@ -1552,6 +1579,7 @@ dirquota_invalidate(struct dirset *tdirset)
 	}
 }
 
+/* PREREQUISITE: giant_lock or config_var_lock*/
 void
 dirquota_fixup_schedule(void)
 {
