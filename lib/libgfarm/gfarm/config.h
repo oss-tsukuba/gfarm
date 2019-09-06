@@ -59,6 +59,8 @@ extern int gfarm_xattr_size_limit;
 extern int gfarm_xmlattr_size_limit;
 extern int gfarm_directory_quota_count_per_user_limit;
 extern int gfarm_directory_quota_check_start_delay;
+extern int gfarm_directory_quota_check_retry_interval;
+extern int gfarm_quota_check_retry_interval;
 extern int gfarm_max_directory_depth;
 extern int gfarm_metadb_server_listen_backlog;
 extern int gfarm_metadb_version_major;
