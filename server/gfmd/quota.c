@@ -12,10 +12,12 @@
 
 #include <gfarm/gfarm.h>
 
+#include "gfutil.h"
 #include "thrsubr.h"
 
 #include "auth.h"
 #include "quota_info.h"
+#include "config.h"
 
 #include "peer.h"
 #include "subr.h"
@@ -817,6 +819,7 @@ static void *
 quota_check(void *arg)
 {
 	static const char diag[] = "quota_check";
+	int interval;
 
 	(void)gfarm_pthread_set_priority_minimum(diag);
 
@@ -839,6 +842,17 @@ quota_check(void *arg)
 		quota_check_needed_clear(diag);
 		while (quota_check_main()) {
 			quota_check_needed_clear(diag);
+
+			config_var_lock();
+			interval = gfarm_quota_check_retry_interval;
+			config_var_unlock();
+			if (interval > 0) {
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "quota_check: delay retry for %d seconds",
+				    interval);
+				gfarm_sleep(interval);
+			}
+
 			gflog_info(GFARM_MSG_1004298, "quota_check: retry");
 		}
 	}

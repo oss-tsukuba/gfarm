@@ -1019,6 +1019,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_REPLICATION_BUSY_HOST_DEFAULT	1
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT	256 /* 256 free connections */
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT	8   /*   8 free connections */
+#define GFARM_QUOTA_CHECK_RETRY_INTERVAL_DEFAULT 60	/*seconds*/
 #define GFARM_MAX_DIRECTORY_DEPTH_DEFAULT	100
 #define GFARM_MAX_DIRECTORY_DEPTH_MINIMUM	16
 #define GFARM_MAX_DIRECTORY_DEPTH_MAXIMUM	65536
@@ -1063,6 +1064,7 @@ int gfarm_simultaneous_replication_receivers = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replication_busy_host = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xmlattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_quota_check_retry_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_max_directory_depth = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_version_major = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_version_minor = GFARM_CONFIG_MISC_DEFAULT;
@@ -3290,6 +3292,8 @@ parse_one_line(char *s, char *p, char **op)
 			e = GFARM_ERR_VALUE_TOO_LARGE_TO_BE_STORED_IN_DATA_TYPE;
 			gfarm_xmlattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
 		}
+	} else if (strcmp(s, o = "quota_check_retry_interval") == 0) {
+		e = parse_set_misc_int(p, &gfarm_quota_check_retry_interval);
 	} else if (strcmp(s, o = "max_directory_depth")
 	    == 0) {
 		e = parse_set_misc_int(p, &gfarm_max_directory_depth);
@@ -3662,6 +3666,9 @@ gfarm_config_set_default_misc(void)
 		gfarm_xattr_size_limit = GFARM_XATTR_SIZE_MAX_DEFAULT;
 	if (gfarm_xmlattr_size_limit == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_xmlattr_size_limit = GFARM_XMLATTR_SIZE_MAX_DEFAULT;
+	if (gfarm_quota_check_retry_interval == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_quota_check_retry_interval =
+		    GFARM_QUOTA_CHECK_RETRY_INTERVAL_DEFAULT;
 	if (gfarm_max_directory_depth == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_max_directory_depth = GFARM_MAX_DIRECTORY_DEPTH_DEFAULT;
 	if (gfarm_metadb_max_descriptors == GFARM_CONFIG_MISC_DEFAULT)
@@ -3964,6 +3971,10 @@ const struct gfarm_config_type {
 	{ "max_open_files", 'i', 1, gfarm_config_print_int,
 	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
 	  &gfarm_max_open_files, 0 },
+	{ "quota_check_retry_interval", 'i', 1,
+	  gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
+	  &gfarm_quota_check_retry_interval, 0 },
 	{ "max_directory_depth", 'i', 1,
 	  gfarm_config_print_int,
 	  gfarm_config_set_default_int,
