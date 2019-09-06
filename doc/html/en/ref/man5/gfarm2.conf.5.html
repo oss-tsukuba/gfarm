@@ -914,6 +914,58 @@ This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
 	directory_quota_check_start_delay 120<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">directory_quota_check_retry_interval</span> <em class="parameter"><code>seconds</code></em></span></dt>
+<dd>
+<p>
+The <span class="token">directory_quota_check_retry_interval</span> statement
+specifies interval until restarting directory quota re-calculation
+which was interrupted by a metadata update.
+</p>
+<p>
+Because metadata updates usually occur continuously,
+restarting without interval will make re-calculation interrupted immediately,
+thus the re-calculation will be wasted.
+In addition, the wasted re-calculation makes replia_check processing
+too slow.
+This parameter mitigates the problem by leaving an interval before restart.
+</p>
+<p>
+The default value is 60 seconds.
+</p>
+<p>
+This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	directory_quota_check_retry_interval 120<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">quota_check_retry_interval</span> <em class="parameter"><code>seconds</code></em></span></dt>
+<dd>
+<p>
+The <span class="token">quota_check_retry_interval</span> statement
+specifies interval until restarting quota re-calculation
+which was interrupted by a metadata update.
+</p>
+<p>
+Because metadata updates usually occur continuously,
+restarting without interval will make re-calculation interrupted immediately,
+thus the re-calculation will be wasted.
+In addition, the wasted re-calculation makes replia_check processing
+too slow.
+This parameter mitigates the problem by leaving an interval before restart.
+</p>
+<p>
+The default value is 60 seconds.
+</p>
+<p>
+This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	quota_check_retry_interval 120<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">max_directory_depth</span> <em class="parameter"><code>number</code></em></span></dt>
 <dd>
 <p>
@@ -2273,6 +2325,8 @@ The default size is 16 MiB.
 	&lt;digest_statement&gt; |<br>
 	&lt;directory_quota_count_per_user_limit_statement&gt; |<br>
 	&lt;directory_quota_check_start_delay_statement&gt; |<br>
+	&lt;directory_quota_check_retry_interval_statement&gt; |<br>
+	&lt;quota_check_retry_interval_statement&gt; |<br>
 	&lt;max_directory_depth_statement&gt; |<br>
 <br>
 	&lt;sockopt_statement&gt; |<br>
@@ -2455,6 +2509,10 @@ The default size is 16 MiB.
 <dd><div class="literallayout"><p>"directory_quota_count_per_user_limit" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;directory_quota_check_start_delay_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"directory_quota_check_start_delay" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;directory_quota_check_retry_interval_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"directory_quota_check_retry_interval" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;quota_check_retry_interval_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"quota_check_retry_interval" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;max_directory_depth_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"max_directory_depth" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;sockopt_statement&gt; ::=</span></dt>

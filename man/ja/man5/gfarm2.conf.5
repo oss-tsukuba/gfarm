@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 14 Mar 2019
+.\"      Date: 6 Sep 2019
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "14 Mar 2019" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "6 Sep 2019" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -1003,6 +1003,52 @@ directory quota の再集計が必要となったときに、 実際に再集計
 .\}
 .nf
 	directory_quota_check_start_delay 120
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+directory_quota_check_retry_interval \fI秒\fR
+.RS 4
+directory quota の集計がメタデータ更新のために中断した時に、 集計を再開するまでの時間間隔(秒)を指定します。
+.sp
+メタデータ更新は通常連続して起きるため、間隔をおかずに再開しても すぐにまた中断し結果を捨ててやり直すこととなり集計作業が無駄になります。 また無駄な集計処理のために、並行して動作する replica_check の実行が きわめて遅くなります。 このパラメータに従って再開までに間隔をおくことにより、その問題を緩和します。
+.sp
+デフォルトは60秒です。
+.sp
+この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	directory_quota_check_retry_interval 120
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+quota_check_retry_interval \fI秒\fR
+.RS 4
+quota の集計がメタデータ更新のために中断した時に、 集計を再開するまでの時間間隔(秒)を指定します。
+.sp
+メタデータ更新は通常連続して起きるため、間隔をおかずに再開しても すぐにまた中断し結果を捨ててやり直すこととなり集計作業が無駄になります。 また無駄な集計処理のために、並行して動作する replica_check の実行が きわめて遅くなります。 このパラメータに従って再開までに間隔をおくことにより、その問題を緩和します。
+.sp
+デフォルトは60秒です。
+.sp
+この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	quota_check_retry_interval 120
 .fi
 .if n \{\
 .RE
@@ -2672,6 +2718,8 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<digest_statement> |
 	<directory_quota_count_per_user_limit_statement> |
 	<directory_quota_check_start_delay_statement> |
+	<directory_quota_check_retry_interval_statement> |
+	<quota_check_retry_interval_statement> |
 	<max_directory_depth_statement> |
 
 	<sockopt_statement> |
@@ -3442,6 +3490,34 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "directory_quota_check_start_delay" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<directory_quota_check_retry_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"directory_quota_check_retry_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<quota_check_retry_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"quota_check_retry_interval" <number>
 .fi
 .if n \{\
 .RE
