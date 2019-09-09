@@ -126,7 +126,6 @@ start() {
     prun config-gfsd --prefix $TMPDIR -S > /dev/null
     if [ X"$MDIR" != X ]; then
 	gfmkdir -p $MDIR || :
-	prun umount.gfarm2fs $MDIR > /dev/null 2>&1 || :
 	prun env GFARMFS_ROOT=$MDIR mount.gfarm2fs $GFARM_CONFIG_FILE $MDIR $MOPTIONS > /dev/null || :
     fi
     if [ $SHELL_TYPE = bsh ]; then
