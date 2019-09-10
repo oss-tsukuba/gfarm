@@ -1134,7 +1134,7 @@ journal_close_fd_op(void *cookie, int fd)
 static gfarm_error_t
 journal_shutdown_fd_op(void *cookie, int fd)
 {
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1005095,
 	    "journal_shutdown_fd_op: this function shouldn't be called");
 	return (GFARM_ERR_NO_ERROR);
 }

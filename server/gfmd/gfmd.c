@@ -1856,7 +1856,7 @@ main(int argc, char **argv)
 		else
 			sock = wait_transform_to_master(gfmd_port);
 	} else {
-		gflog_info(GFARM_MSG_UNFIXED, "metadata replication disabled");
+		gflog_info(GFARM_MSG_1005101, "metadata replication disabled");
 		sock = open_accepting_socket(gfmd_port);
 	}
 
