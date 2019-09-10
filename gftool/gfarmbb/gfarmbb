@@ -81,6 +81,7 @@ fi
 start() {
     [ X"$GFARMBB_START_HOOK" != X ] && prun $GFARMBB_START_HOOK
 
+    [ -d $TMPDIR ] && rm -rf $TMPDIR
     [ -d $TMPDIR/etc ] || mkdir -p $TMPDIR/etc
     [ -d $TMPDIR/etc ] || err $TMPDIR: no such scratch directory
     [ -d $LOGDIR ] || mkdir -p $LOGDIR
@@ -89,6 +90,7 @@ start() {
     GFARM_CONFIG_FILE=$TMPDIR/etc/gfarm2.conf
     export GFARM_CONFIG_FILE
     SHARED_KEY_FILE=$TMPDIR/etc/.gfarm_shared_key
+    prun rm -rf $TMPDIR
     prun mkdir -p $TMPDIR/etc $LOGDIR
     config-gfarm --prefix $TMPDIR -S -N -A $USER -b none > /dev/null
 
@@ -127,6 +129,7 @@ start() {
     prun config-gfsd --prefix $TMPDIR -S > /dev/null
     if [ X"$MDIR" != X ]; then
 	gfmkdir -p $MDIR || :
+	prun rm -rf $MDIR
 	prun env GFARMFS_ROOT=$MDIR mount.gfarm2fs $GFARM_CONFIG_FILE $MDIR $MOPTIONS > /dev/null || :
     fi
     if [ $SHELL_TYPE = bsh ]; then
