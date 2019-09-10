@@ -1076,6 +1076,27 @@ Globus GridFTPのGfarm DSIなどで利用されます。
 	schedule_cache_timeout 60<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">schedule_rpc_timeout</span> <em class="parameter"><code>秒数</code></em></span></dt>
+<dd>
+<p>gfarmクライアントがファイルシステムノードをスケジューリングする際の
+RPC通信のタイムアウト時間を秒数で指定します。
+ファイルシステムノードの負荷が極めて高く、
+ファイルにアクセスできない状況が発生する場合には、
+このタイムアウトを伸ばしてください。
+</p>
+<p>
+この値は <span class="command"><strong>gfhost</strong></span>コマンドが
+ファイルシステムノードを並行アクセスする際の
+通信のタイムアウト時間としても用いられます。
+</p>
+<p>
+デフォルトは35秒です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	schedule_rpc_timeout 60<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">schedule_concurrency</span> <em class="parameter"><code>並列度</code></em></span></dt>
 <dd>
 <p>ファイルシステムノードを、スケジューリングのために並列検索する際の
@@ -2310,6 +2331,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;local_user_map_statement&gt; |<br>
 	&lt;local_group_map_statement&gt; |<br>
 	&lt;schedule_cache_timeout_statement&gt; |<br>
+	&lt;schedule_rpc_timeout_statement&gt; |<br>
 	&lt;schedule_concurrency_statement&gt; |<br>
 	&lt;schedule_concurrency_per_net_statement&gt; |<br>
 	&lt;schedule_idle_load_thresh_statement&gt; |<br>
@@ -2509,6 +2531,8 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 		&lt;pathname&gt; &lt;hostname&gt; ":" &lt;portnumber&gt;</p></div></dd>
 <dt><span class="term">&lt;schedule_cache_timeout_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"schedule_cache_timeout" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;schedule_rpc_timeout_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"schedule_rpc_timeout" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;schedule_concurrency_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"schedule_concurrency" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;schedule_concurrency_per_net_statement&gt; ::=</span></dt>

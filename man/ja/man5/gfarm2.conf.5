@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 6 Sep 2019
+.\"      Date: 10 Sep 2019
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "6 Sep 2019" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "10 Sep 2019" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -1231,6 +1231,28 @@ gfarmライブラリが内部的に保持している、ファイルシステム
 .\}
 .nf
 	schedule_cache_timeout 60
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+schedule_rpc_timeout \fI秒数\fR
+.RS 4
+gfarmクライアントがファイルシステムノードをスケジューリングする際の RPC通信のタイムアウト時間を秒数で指定します。 ファイルシステムノードの負荷が極めて高く、 ファイルにアクセスできない状況が発生する場合には、 このタイムアウトを伸ばしてください。
+.sp
+この値は
+\fBgfhost\fRコマンドが ファイルシステムノードを並行アクセスする際の 通信のタイムアウト時間としても用いられます。
+.sp
+デフォルトは35秒です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	schedule_rpc_timeout 60
 .fi
 .if n \{\
 .RE
@@ -2726,6 +2748,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<local_user_map_statement> |
 	<local_group_map_statement> |
 	<schedule_cache_timeout_statement> |
+	<schedule_rpc_timeout_statement> |
 	<schedule_concurrency_statement> |
 	<schedule_concurrency_per_net_statement> |
 	<schedule_idle_load_thresh_statement> |
@@ -3669,6 +3692,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "schedule_cache_timeout" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<schedule_rpc_timeout_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"schedule_rpc_timeout" <number>
 .fi
 .if n \{\
 .RE
