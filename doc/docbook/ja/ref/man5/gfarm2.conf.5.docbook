@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>6 Sep 2019</date></refentryinfo>
+<refentryinfo><date>10 Sep 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1430,6 +1430,30 @@ Globus GridFTPのGfarm DSIなどで利用されます。
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	schedule_cache_timeout 60
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_rpc_timeout</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>gfarmクライアントがファイルシステムノードをスケジューリングする際の
+RPC通信のタイムアウト時間を秒数で指定します。
+ファイルシステムノードの負荷が極めて高く、
+ファイルにアクセスできない状況が発生する場合には、
+このタイムアウトを伸ばしてください。
+</para>
+<para>
+この値は <command moreinfo="none">gfhost</command>コマンドが
+ファイルシステムノードを並行アクセスする際の
+通信のタイムアウト時間としても用いられます。
+</para>
+<para>
+デフォルトは35秒です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	schedule_rpc_timeout 60
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2939,6 +2963,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;local_user_map_statement&gt; |
 	&lt;local_group_map_statement&gt; |
 	&lt;schedule_cache_timeout_statement&gt; |
+	&lt;schedule_rpc_timeout_statement&gt; |
 	&lt;schedule_concurrency_statement&gt; |
 	&lt;schedule_concurrency_per_net_statement&gt; |
 	&lt;schedule_idle_load_thresh_statement&gt; |
@@ -3382,6 +3407,11 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <varlistentry>
 <term>&lt;schedule_cache_timeout_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"schedule_cache_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;schedule_rpc_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"schedule_rpc_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
