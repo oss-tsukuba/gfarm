@@ -1,7 +1,7 @@
 Release note for Gfarm 2.7.14
 =============================
 
-[2019.8.20]
+[2019.9.10]
 
 New command
 * gfarmbb - start and stop scripts for Gfarm/BB node-local on-demand
@@ -9,11 +9,17 @@ New command
 
 New configuration directive
 * log_file - specify a log file
+* quota_check_retry_interval, directory_quota_check_retry_interval -
+  specifies the interval to re-calculate the quota.  This is
+  introduced to make replica check progress.  Default is 60 seconds.
+* schedule_rpc_timeout - specifies the timeout for RPC.
 
 Updated feature
 * gfmd, gfsd - -F option to specify a log file
 
 Bug fix
+* gfquotacheck - may fail due to timeout
+* libgfarm - too high CPU load may cause gfsd protocol mismatch
 * gfsd - fix race condition to terminate that may fail to record the
   write verify information
 
