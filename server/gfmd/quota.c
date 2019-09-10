@@ -847,7 +847,7 @@ quota_check(void *arg)
 			interval = gfarm_quota_check_retry_interval;
 			config_var_unlock();
 			if (interval > 0) {
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1005106,
 				    "quota_check: delay retry for %d seconds",
 				    interval);
 				gfarm_sleep(interval);
