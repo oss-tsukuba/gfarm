@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>6 Sep 2019</date></refentryinfo>
+<refentryinfo><date>10 Sep 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1413,6 +1413,29 @@ The default time is 600 seconds, i.e. ten minutes.
 </varlistentry>
 
 <varlistentry>
+<term><token>schedule_rpc_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>This directive specifies the timeout value (in seconds)
+of RPCs for filesystem node scheduling.
+Increase this value, if some files cannot be accessed
+due to high load average of filesystem nodes.
+</para>
+<para>
+This value is also used for timeout value of
+the <command moreinfo="none">gfhost</command> command
+when it accesses filesystem nodes concurrently.
+</para>
+<para>
+The default time is 35 seconds.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	schedule_rpc_timeout 60
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>schedule_concurrency</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>
@@ -2722,6 +2745,7 @@ gfsd uses this setting at its startup by asking gfmd.
 	&lt;local_user_map_statement&gt; |
 	&lt;local_group_map_statement&gt; |
 	&lt;schedule_cache_timeout_statement&gt; |
+	&lt;schedule_rpc_timeout_statement&gt; |
 	&lt;schedule_concurrency_statement&gt; |
 	&lt;schedule_concurrency_per_net_statement&gt; |
 	&lt;schedule_idle_load_thresh_statement&gt; |
@@ -3141,6 +3165,11 @@ gfsd uses this setting at its startup by asking gfmd.
 <varlistentry>
 <term>&lt;schedule_cache_timeout_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"schedule_cache_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;schedule_rpc_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"schedule_rpc_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
