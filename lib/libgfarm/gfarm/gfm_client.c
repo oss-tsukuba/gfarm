@@ -1661,7 +1661,7 @@ gfm_client_vrpc(struct gfm_connection *gfm_server, int just, int do_timeout,
 		 * We just use gfarm_error_t as the errcode,
 		 * Note that GFARM_ERR_NO_ERROR == 0.
 		 */
-		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_vrpc(%d): errcode=%d",
+		gflog_debug(GFARM_MSG_1005104, "gfp_xdr_vrpc(%d): errcode=%d",
 		    command, errcode);
 		return (errcode);
 	}

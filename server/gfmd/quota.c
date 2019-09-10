@@ -1318,7 +1318,7 @@ quota_check_main_loop(struct quota_check_control *ctl)
 		interval = gfarm_quota_check_retry_interval;
 		config_var_unlock();
 		if (interval > 0) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1005105,
 			    "quota_check: delay retry for %d seconds",
 			    interval);
 			gfarm_sleep(interval);
@@ -1532,12 +1532,12 @@ dirquota_check_main(struct quota_check_control *ctl)
 			interval = gfarm_directory_quota_check_retry_interval;
 			config_var_unlock();
 			if (interval > 0) {
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1005106,
 				    "dirquota_check: "
 				    "delay retry for %d seconds", interval);
 				gfarm_sleep(interval);
 			}
-			gflog_info(GFARM_MSG_UNFIXED, "dirquota_check: retry");
+			gflog_info(GFARM_MSG_1005107, "dirquota_check: retry");
 		}
 	}
 
