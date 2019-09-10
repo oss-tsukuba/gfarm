@@ -5,7 +5,7 @@
 
 <refentry id="gfquotacheck.1">
 
-<refentryinfo><date>25 Aug 2015</date></refentryinfo>
+<refentryinfo><date>10 Sep 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfquotacheck</refentrytitle>
@@ -28,13 +28,8 @@
 
 <refsect1 id="description"><title>DESCRIPTION</title>
 
-<para>
-Gfarm 2.6.6 以降は、基本的にこのコマンドを実行する必要がなくなりましたが、
-Gfarm 2.6.12 以降では、一度消去したユーザやグループを再登録したときには実行する必要があります。
-</para>
-
-<para><command moreinfo="none">gfquotacheck</command> は、
-ユーザやグループごとのファイル数とファイルサイズの合計をカウントしなおします。
+<para><command moreinfo="none">gfquotacheck</command>は、ユーザやグループごとのファイル数とファイルサイズの
+合計をカウントしなおします。
 </para>
 
 <para>このコマンドは gfarmadm グループに所属している管理者が実行できます。

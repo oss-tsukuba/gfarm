@@ -5,7 +5,7 @@
 
 <refentry id="gfquotacheck.1">
 
-<refentryinfo><date>25 Aug 2015</date></refentryinfo>
+<refentryinfo><date>10 Sep 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfquotacheck</refentrytitle>
@@ -27,10 +27,6 @@
 </refsynopsisdiv>
 
 <refsect1 id="description"><title>DESCRIPTION</title>
-
-<para>Gfarm 2.6.6 or later basically does not need to execute this
-command, but Gfarm 2.6.12 or later requires to execute only when
-re-registering removed users or groups.</para>
 
 <para><command moreinfo="none">gfquotacheck</command> explicitly
 rebuilds a table of the current file usage for users and groups.</para>
