@@ -114,6 +114,7 @@ start() {
     echo gfmd_authentication_timeout 120 >> $GFARM_CONFIG_FILE
     echo schedule_rpc_timeout 120 >> $GFARM_CONFIG_FILE
     echo network_receive_timeout 120 >> $GFARM_CONFIG_FILE
+    echo rdma_mr_reg_mode dynamic >> $GFARM_CONFIG_FILE
     echo shared_key_file $SHARED_KEY_FILE >> $GFARM_CONFIG_FILE
 
     gfkey -c -p $PERIOD
