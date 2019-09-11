@@ -5,6 +5,7 @@
 struct rdma_context;
 struct ibv_mr;
 
+#define	IBV_GID_SIZE	16	/* sizeof(union ibv_gid) */
 #define GFS_PROTO_MAX_RDMASIZE 0x1000000
 #define GFARM_RDMA_REG_MR_STATIC	0x1
 #define GFARM_RDMA_REG_MR_DYNAMIC	0x2
@@ -12,6 +13,7 @@ struct ibv_mr;
 #define GFARM_RDMA_MIN_SIZE		0x10000
 #define GFARM_RDMA_REG_MIN_SIZE		0x100000
 #define GFARM_RDMA_REG_MAX_SIZE		0x1000000
+#define GFARM_RDMA_GID_NOT_USE		(-1)
 
 gfarm_error_t gfs_ib_rdma_initialize(int stayopen);
 gfarm_error_t gfs_rdma_init(int is_server, struct rdma_context **ctx);
@@ -32,6 +34,7 @@ gfarm_uint32_t gfs_rdma_get_local_lid(struct rdma_context *);
 gfarm_uint32_t gfs_rdma_get_local_qpn(struct rdma_context *);
 gfarm_uint32_t gfs_rdma_get_local_psn(struct rdma_context *);
 void *gfs_rdma_get_local_gid(struct rdma_context *ctx);
+void *gfs_rdma_get_local_gid_iff_global(struct rdma_context *ctx);
 gfarm_uint32_t gfs_rdma_get_rkey(struct ibv_mr *);
 gfarm_uint64_t gfs_rdma_get_addr(struct rdma_context *ctx);
 

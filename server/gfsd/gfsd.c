@@ -5059,7 +5059,7 @@ gfs_server_rdma_exch_info(struct gfp_xdr *client)
 	gfarm_uint32_t client_lid, lid = 0;
 	gfarm_uint32_t client_qpn, qpn = 0;
 	gfarm_uint32_t client_psn, psn = 0;
-	unsigned char buffer[128], *gid = buffer;
+	unsigned char buffer[IBV_GID_SIZE], *gid = buffer;
 
 	gfs_server_get_request(client, "rdma_exch_info", "iiib",
 		&client_lid, &client_qpn, &client_psn,
@@ -5082,7 +5082,7 @@ gfs_server_rdma_exch_info(struct gfp_xdr *client)
 		lid = gfs_rdma_get_local_lid(rdma_ctx);
 		qpn = gfs_rdma_get_local_qpn(rdma_ctx);
 		psn = gfs_rdma_get_local_psn(rdma_ctx);
-		gid = gfs_rdma_get_local_gid(rdma_ctx);
+		gid = gfs_rdma_get_local_gid_iff_global(rdma_ctx);
 
 		gflog_debug(GFARM_MSG_1004719, "rdma_connect(): success");
 		gfs_rdma_enable(rdma_ctx);
@@ -5219,8 +5219,7 @@ reply:
 void
 gfs_server_rdma_pwrite(struct gfp_xdr *client)
 {
-	gfarm_int32_t fd, localfd;
-	size_t size;
+	gfarm_int32_t fd, localfd, size;
 	gfarm_int64_t offset;
 	ssize_t rv = 0;
 	int bsize, save_errno = 0;

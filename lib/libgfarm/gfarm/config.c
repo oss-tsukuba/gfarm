@@ -3477,6 +3477,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_ctxp->rdma_min_size);
 	} else if (strcmp(s, o = "rdma_port") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->rdma_port);
+	} else if (strcmp(s, o = "rdma_gid_index") == 0) {
+		e = parse_set_misc_int(p, &gfarm_ctxp->rdma_gid_index);
 	} else if (strcmp(s, o = "rdma_device") == 0) {
 		e = parse_set_var(p, &gfarm_ctxp->rdma_device);
 	} else if (strcmp(s, o = "rdma_mr_reg_mode") == 0) {
