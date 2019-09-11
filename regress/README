@@ -41,7 +41,7 @@ to run all tests, the following conditions have to be tested.
   * run tests on a host which is NOT a filesystem node, and
     run tests on a file system node which has a replica of
     the $GFARM_TEST_CKSUM_MISMATCH file.
-    
+
 There is a script "addup.sh" to make summary of multiple test outputs.
 
 Thus, you can run all tests by the following procedure:
