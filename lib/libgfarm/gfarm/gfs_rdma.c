@@ -55,8 +55,9 @@ struct rdma_context {
 
 	void *buffer;	/* for gfsd */
 	int size;
-	int is_server;
-	int rdma_available;
+	unsigned int	rdma_available:1,
+		is_server:1,
+		is_global:1;
 	int reg_mr_fail;
 };
 
@@ -69,6 +70,7 @@ struct gfs_ib_rdma_static {
 	enum	ibv_mtu mtu;
 	int	sl;
 	int	local_rdma_available;
+	int	gid_index;
 	union ibv_gid gid;
 	struct ibv_device **dev_list;
 	struct ibv_device *ib_dev;
@@ -159,6 +161,7 @@ gfs_rdma_print_qp(char *com, struct ibv_qp * qp)
 		"sq_psn=0x%x "
 		"dest_qp_num=0x%x "
 		"port_num=0x%x "
+		"is_global=%d "
 		, com, qp
 		, xa.qp_state
 		, xa.cur_qp_state
@@ -169,6 +172,7 @@ gfs_rdma_print_qp(char *com, struct ibv_qp * qp)
 		, xa.sq_psn
 		, xa.dest_qp_num
 		, xa.port_num
+		, xa.ah_attr.is_global
 	);
 }
 gfarm_error_t
@@ -183,11 +187,16 @@ gfs_memlock_set(void)
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	struct rlimit rlim = {0, 0};
 
-	if (!getrlimit(RLIMIT_MEMLOCK, &rlim)
-		&& rlim.rlim_cur < rlim.rlim_max) {
-		rlim.rlim_cur = rlim.rlim_max;
-		if (setrlimit(RLIMIT_MEMLOCK, &rlim))
-			e = gfarm_errno_to_error2(errno);
+	if (!getrlimit(RLIMIT_MEMLOCK, &rlim)) {
+		if (rlim.rlim_cur < rlim.rlim_max) {
+			struct rlimit xlim = rlim;
+
+			xlim.rlim_cur = xlim.rlim_max;
+			if (!setrlimit(RLIMIT_MEMLOCK, &xlim))
+				rlim.rlim_cur = xlim.rlim_cur;
+			else
+				e = gfarm_errno_to_error2(errno);
+		}
 	} else
 		e = gfarm_errno_to_error2(errno);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -256,6 +265,8 @@ gfs_ib_rdma_initialize(int stayopen)
 	gflog_debug(GFARM_MSG_1004562, "memlock=0x%lx, rdma_size=0x%lx",
 			rlimit, rlim);
 
+	if (gfarm_ctxp->rdma_gid_index >= 0)
+		staticp->gid_index = gfarm_ctxp->rdma_gid_index;
 	for (i = 0; i < num; i++) {
 		ib_dev = dev_list[i];
 		dev_name = (char *)ibv_get_device_name(ib_dev);
@@ -311,12 +322,13 @@ gfs_ib_rdma_initialize(int stayopen)
 					port, dev_name);
 				continue;
 			}
-			if ((rc = ibv_query_gid(ib_ctx, port, 0,
-						&staticp->gid))) {
+			if ((rc = ibv_query_gid(ib_ctx, port,
+				staticp->gid_index, &staticp->gid))) {
 				e = gfarm_errno_to_error2(rc);
 				gflog_error(GFARM_MSG_1004570,
-					"ibv_query_gid(%s) failed, %s",
-					dev_name, gfarm_error_string(e));
+					"ibv_query_gid(%s, %d, %d) failed, %s",
+					dev_name, port, staticp->gid_index,
+					gfarm_error_string(e));
 				goto cleanup;
 			}
 			if (stayopen) {
@@ -498,7 +510,8 @@ gfs_rdma_init(int is_server, struct rdma_context **ctxp)
 
 	ctx->rdma_available = 1;
 	ctx->is_server = is_server;
-
+	if (gfarm_ctxp->rdma_gid_index >= 0)
+		ctx->is_global = 1;
 	*ctxp = ctx;
 
 	return (e);
@@ -578,8 +591,13 @@ gfs_rdma_connect(struct rdma_context *ctx)
 		.max_dest_rd_atomic	= 1,
 		.min_rnr_timer	= RDMA_MIN_RNR_TIMER,
 		.ah_attr	= {
-			.is_global	= 0,
+			.is_global	= ctx->is_global,
 			.dlid	= ctx->remote_lid, /* LID */
+			.grh = {
+				.hop_limit = 2,
+				.dgid = ctx->remote_gid,
+				.sgid_index = staticp->gid_index,
+			},
 			.sl	= staticp->sl,
 			.src_path_bits	= 0,
 			.port_num	= ctx->port,
@@ -598,9 +616,13 @@ gfs_rdma_connect(struct rdma_context *ctx)
 						IBV_QP_RQ_PSN |
 						IBV_QP_MAX_DEST_RD_ATOMIC |
 						IBV_QP_MIN_RNR_TIMER);
+	gflog_debug(GFARM_MSG_UNFIXED, "is_global=%d sgid_index=%d",
+		ctx->is_global, staticp->gid_index);
 	if (ret) {
 		e = gfarm_errno_to_error2(ret);
-		gflog_error(GFARM_MSG_1004589, "Failed to modify QP to RTR, %s",
+		gflog_error(GFARM_MSG_1004589, "Failed to modify QP to RTR, "
+			"is_global=%d sgid_index=%d, %s",
+			ctx->is_global, staticp->gid_index,
 			gfarm_error_string(e));
 		gfs_rdma_print_qp("modify RTR fail", ctx->qp);
 		gfs_rdma_disable(ctx);
@@ -831,6 +853,13 @@ void
 gfs_rdma_set_remote_gid(struct rdma_context *ctx, void *buf)
 {
 	memcpy(&ctx->remote_gid, buf, sizeof(union ibv_gid));
+	if (!ctx->is_server) {
+		if (ctx->remote_gid.global.subnet_prefix == 0
+			&& ctx->remote_gid.global.interface_id == 0)
+			ctx->is_global = 0;
+		else
+			ctx->is_global = 1;
+	}
 }
 void *
 gfs_rdma_get_remote_gid(struct rdma_context *ctx)
@@ -939,6 +968,15 @@ void *
 gfs_rdma_get_local_gid(struct rdma_context *ctx)
 {
 	return (&ctx->local_gid);
+}
+static union ibv_gid	zero_gid;
+void *
+gfs_rdma_get_local_gid_iff_global(struct rdma_context *ctx)
+{
+	if (ctx->is_global)
+		return (&ctx->local_gid);
+	else
+		return (&zero_gid);
 }
 int
 gfs_rdma_get_gid_size(void)
@@ -1055,6 +1093,11 @@ gfs_rdma_get_local_psn(struct rdma_context *ctx)
 	return (0);
 }
 void *gfs_rdma_get_local_gid(struct rdma_context *ctx)
+{
+	return ("");
+}
+void *
+gfs_rdma_get_local_gid_iff_global(struct rdma_context *ctx)
 {
 	return ("");
 }

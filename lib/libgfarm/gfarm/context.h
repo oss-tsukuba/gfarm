@@ -42,6 +42,7 @@ struct gfarm_context {
 	int ib_rdma;
 	int rdma_min_size;
 	int rdma_port;
+	int rdma_gid_index;
 	char *rdma_device;
 	int rdma_mr_reg_mode;
 	int rdma_mr_reg_static_min_size;

@@ -2152,7 +2152,7 @@ gfs_ib_rdma_recv_result(int events, int fd, void *closure,
 			gfarm_uint32_t server_lid;
 			gfarm_uint32_t server_qpn;
 			gfarm_uint32_t server_psn;
-			void *server_gid = gfs_rdma_get_remote_gid(ctx);
+			char server_gid[IBV_GID_SIZE];
 			size_t  size = gfs_rdma_get_gid_size();
 			int success;
 
@@ -2163,6 +2163,7 @@ gfs_ib_rdma_recv_result(int events, int fd, void *closure,
 				gfs_rdma_set_remote_lid(ctx, server_lid);
 				gfs_rdma_set_remote_qpn(ctx, server_qpn);
 				gfs_rdma_set_remote_psn(ctx, server_psn);
+				gfs_rdma_set_remote_gid(ctx, server_gid);
 
 				state->error = gfs_rdma_connect(ctx);
 
@@ -2999,7 +3000,7 @@ gfs_ib_rdma_exch_info(struct gfs_connection *gfs_server)
 	gfarm_uint32_t server_lid;
 	gfarm_uint32_t server_qpn;
 	gfarm_uint32_t server_psn;
-	void	*server_gid = gfs_rdma_get_remote_gid(ctx);
+	char server_gid[IBV_GID_SIZE];
 	gfarm_uint32_t local_lid = gfs_rdma_get_local_lid(ctx);
 	gfarm_uint32_t local_qpn = gfs_rdma_get_local_qpn(ctx);
 	gfarm_uint32_t local_psn = gfs_rdma_get_local_psn(ctx);
@@ -3016,6 +3017,7 @@ gfs_ib_rdma_exch_info(struct gfs_connection *gfs_server)
 		gfs_rdma_set_remote_lid(ctx, server_lid);
 		gfs_rdma_set_remote_qpn(ctx, server_qpn);
 		gfs_rdma_set_remote_psn(ctx, server_psn);
+		gfs_rdma_set_remote_gid(ctx, server_gid);
 
 		gfs_rdma_enable(ctx);
 
@@ -3103,7 +3105,7 @@ gfs_ib_rdma_pwrite(struct gfs_connection *gfs_server,
 	gfarm_uint32_t n;
 
 	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_RDMA_PWRITE, "iilil/i",
-			fd, size, off, rkey, addr, &n)) != GFARM_ERR_NO_ERROR) {
+		fd, (int)size, off, rkey, addr, &n)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1004552, "gfs_client_rpc() failed: %s",
 				gfarm_error_string(e));
 		return (e);
