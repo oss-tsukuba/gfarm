@@ -3905,7 +3905,6 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 </varlistentry>
 
 <varlistentry>
-<varlistentry>
 <term>&lt;rdma_gid_index_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"rdma_gid_index" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
