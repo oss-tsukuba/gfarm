@@ -2230,6 +2230,22 @@ The default port is the first found valid port on the device.
 	rdma_port 2<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">rdma_gid_index</span> <em class="parameter"><code>gid index</code></em></span></dt>
+<dd>
+<p>
+Specify that the rdma transfer is to be performed using GRH and specify the gid index in that case.
+</p>
+<p>
+The default is -1 that means RDMA transfers with lid.
+</p>
+<p>
+This parameter is only available in gfsd.conf.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	rdma_gid_index 0<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">rdma_min_size</span> <em class="parameter"><code>size</code></em></span></dt>
 <dd>
 <p>
@@ -2428,6 +2444,7 @@ The default size is 16 MiB.
 	&lt;ib_rdma_statement&gt; |<br>
 	&lt;rdma_device_statement&gt; |<br>
 	&lt;rdma_port_statement&gt; |<br>
+	&lt;rdma_gid_index_statement&gt; |<br>
 	&lt;rdma_min_size_statement&gt; |<br>
 	&lt;rdma_mr_reg_mode_statement&gt; |<br>
 	&lt;rdma_mr_reg_static_min_size_statement&gt; |<br>
@@ -2737,6 +2754,8 @@ The default size is 16 MiB.
 <dd><div class="literallayout"><p>"rdma_device" &lt;string&gt;</p></div></dd>
 <dt><span class="term">&lt;rdma_port_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"rdma_port" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;rdma_gid_index_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"rdma_gid_index" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;rdma_min_size_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"rdma_min_size" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;rdma_mr_reg_mode_statement&gt; ::=</span></dt>

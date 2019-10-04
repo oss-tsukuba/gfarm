@@ -2764,6 +2764,27 @@ For example,
 .\}
 .RE
 .PP
+rdma_gid_index \fIgid index\fR
+.RS 4
+Specify that the rdma transfer is to be performed using GRH and specify the gid index in that case\&.
+.sp
+The default is \-1 that means RDMA transfers with lid\&.
+.sp
+This parameter is only available in gfsd\&.conf\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	rdma_gid_index 0
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 rdma_min_size \fIsize\fR
 .RS 4
 Specify the minimum data size to select the RDMA data transfer\&.
@@ -2985,6 +3006,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<ib_rdma_statement> |
 	<rdma_device_statement> |
 	<rdma_port_statement> |
+	<rdma_gid_index_statement> |
 	<rdma_min_size_statement> |
 	<rdma_mr_reg_mode_statement> |
 	<rdma_mr_reg_static_min_size_statement> |
@@ -5034,6 +5056,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "rdma_port" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<rdma_gid_index_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"rdma_gid_index" <number>
 .fi
 .if n \{\
 .RE

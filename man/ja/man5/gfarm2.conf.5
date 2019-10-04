@@ -2597,6 +2597,27 @@ rdma_port \fIポート番号\fR
 .\}
 .RE
 .PP
+rdma_gid_index \fIgid インデクス番号\fR
+.RS 4
+クライアントとgfsd とのrdma 転送をGRHを用いて行うことを指定すると同時に、 その場合の gid のインデクスを指定します。 InfiniBand が装備されているノードでのみ有効です。
+.sp
+デフォルトは \-1 でGRH を使わずローカルIDで転送します。
+.sp
+この文は gfsd\&.conf のみで有効です。 gfarm2\&.confでは無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	rdma_gid_index 0
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 rdma_min_size \fIバイト数\fR
 .RS 4
 クライアントとgfsd とのrdma 転送を行う最小の転送サイズを指定します。 InfiniBand が装備されているクライアントノードでのみ有効です。
@@ -2824,6 +2845,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<ib_rdma_statement> |
 	<rdma_device_statement> |
 	<rdma_port_statement> |
+	<rdma_gid_index_statement> |
 	<rdma_min_size_statement> |
 	<rdma_mr_reg_mode_statement> |
 	<rdma_mr_reg_static_min_size_statement> |
@@ -4873,6 +4895,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "rdma_port" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<rdma_gid_index_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"rdma_gid_index" <number>
 .fi
 .if n \{\
 .RE

@@ -2205,6 +2205,25 @@ InfiniBand が装備されているノードでのみ有効です。
 	rdma_port 2<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">rdma_gid_index</span> <em class="parameter"><code>gid インデクス番号</code></em></span></dt>
+<dd>
+<p>
+クライアントとgfsd とのrdma 転送をGRHを用いて行うことを指定すると同時に、
+その場合の gid のインデクスを指定します。
+InfiniBand が装備されているノードでのみ有効です。
+</p>
+<p>
+デフォルトは -1 でGRH を使わずローカルIDで転送します。
+</p>
+<p>
+この文は gfsd.conf のみで有効です。
+gfarm2.confでは無視されます。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	rdma_gid_index 0<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">rdma_min_size</span> <em class="parameter"><code>バイト数</code></em></span></dt>
 <dd>
 <p>
@@ -2411,6 +2430,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;ib_rdma_statement&gt; |<br>
 	&lt;rdma_device_statement&gt; |<br>
 	&lt;rdma_port_statement&gt; |<br>
+	&lt;rdma_gid_index_statement&gt; |<br>
 	&lt;rdma_min_size_statement&gt; |<br>
 	&lt;rdma_mr_reg_mode_statement&gt; |<br>
 	&lt;rdma_mr_reg_static_min_size_statement&gt; |<br>
@@ -2720,6 +2740,8 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <dd><div class="literallayout"><p>"rdma_device" &lt;string&gt;</p></div></dd>
 <dt><span class="term">&lt;rdma_port_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"rdma_port" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;rdma_gid_index_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"rdma_gid_index" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;rdma_min_size_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"rdma_min_size" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;rdma_mr_reg_mode_statement&gt; ::=</span></dt>
