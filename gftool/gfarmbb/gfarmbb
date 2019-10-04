@@ -158,9 +158,9 @@ status() {
     echo "[df]"
     prun-verb "df -t fuse.gfarm2fs 2> /dev/null || :"
     echo "[ls -lAR]"
-    prun-verb "ls -lAR $TMPDIR || :"
+    prun-verb "ls -lAR $TMPDIR 2> /dev/null || :"
     echo "[ps]"
-    prun-verb "ps -ef | grep gf | egrep -v grep"
+    prun-verb "ps -ef | grep gf | egrep -v '(grep|status)'"
     echo "[netstat]"
     prun-verb "netstat -apn 2> /dev/null | grep gf"
 }
