@@ -3895,7 +3895,6 @@ The default size is 16 MiB.
 </varlistentry>
 
 <varlistentry>
-<varlistentry>
 <term>&lt;rdma_gid_index_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"rdma_gid_index" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
