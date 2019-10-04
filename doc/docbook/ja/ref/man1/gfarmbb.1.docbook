@@ -6,7 +6,7 @@
 
 <refentry id="gfarmbb.1">
 
-<refentryinfo><date>11 Jun 2019</date></refentryinfo>
+<refentryinfo><date>4 Oct 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarmbb</refentrytitle>
@@ -34,15 +34,16 @@
 Gfarm/BBは計算ノードのローカルストレージを用いる、一時的なオンデマンド
 ユーザレベルファイルシステムです。
 <command moreinfo="none">gfarmbb</command>はGfarm/BBの構築、撤去を行い
-ます。<parameter moreinfo="none">mode</parameter>には、startかstopを指定します。mode
-がstartのとき、環境変数
-が表示されます。Gfarm/BBに対しGfarmコマンドを用いるためには、次のよう
-に環境変数を評価します。
+ます。<parameter moreinfo="none">mode</parameter>には、startかstopかstatusを指定します。modeがstartのとき、
+Gfarm/BBを利用するための環境変数が表示されます。Gfarm/BBに対しGfarmコ
+マンドを用いるためには、次のように環境変数を評価します。
 </para>
 <para>
 % eval `gfarmbb start`
 </para>
-
+<para>
+原則的に、start, stop, statusについて同じオプションを指定して下さい。
+</para>
 </refsect1>
 
 <refsect1 id="options"><title>OPTIONS</title>
@@ -53,10 +54,10 @@ Gfarm/BBは計算ノードのローカルストレージを用いる、一時的
 <term><option>-e</option></term>
 <listitem>
 <para>
-Gfmdを別ノードで実行します。Gfmdはgfarmbbを実行したホストで実行さ
+gfmdを別ノードで実行します。gfmdはgfarmbbを実行したホストで実行さ
 れますが、gfmdを起動したノードではgfsdを起動しません。本オプション
 は、N+1ホストが割り当てられ、ホストファイルの最後のノードでgfarmbb
-を起動することを想定しています。
+を起動することを想定しています。本オプションはstartの時だけ有効です。
 </para>
 </listitem>
 </varlistentry>
@@ -66,8 +67,7 @@ Gfmdを別ノードで実行します。Gfmdはgfarmbbを実行したホスト�
 <listitem>
 <para>
 計算ノードのホスト名のリストを含む
-<parameter moreinfo="none">hostfile</parameter>を指定します。startと
-stopで同じホストファイルを指定してください。
+<parameter moreinfo="none">hostfile</parameter>を指定します。
 </para>
 </listitem>
 </varlistentry>
@@ -79,8 +79,7 @@ stopで同じホストファイルを指定してください。
 Gfarm/BBを構成するための各計算ノードのスクラッチディレクトリを指定
 します。指定されたディレクトリが存在しない場合は作成されます。また
 このディレクトリ以下のファイルはgfarmbb stopで削除されます。
-startとstopで同じディレクトリを指定してください。デフォルトは
-/tmp/gfarmbb-scratchです。
+デフォルトは/tmp/gfarmbb-scratchです。
 </para>
 </listitem>
 </varlistentry>
@@ -104,7 +103,8 @@ startとstopで同じディレクトリを指定してください。デフォ�
 <para>
 ログディレクトリを指定します。指定されたディレクトリが存在しない場
 合は作成されます。gfmd, gfsdのログファイル名はそれぞれgfmd-$ID.log,
-gfsd-$ID.logです。デフォルトはスクラッチディレクトリ/logです。
+gfsd-$ID.logです。デフォルトはスクラッチディレクトリ/logです。本オ
+プションはstartの時だけ有効です。
 </para>
 </listitem>
 </varlistentry>
@@ -114,8 +114,8 @@ gfsd-$ID.logです。デフォルトはスクラッチディレクトリ/logで�
 <listitem>
 <para>
 このオプションが指定されたとき、構築したGfarm/BBは指定されたマウン
-トポイントにマウントされます。mount.gfarm2fsが必要です。また、本
-オプションはstartのときだけ有効です。
+トポイントにマウントされます。mount.gfarm2fsが必要です。また、本オ
+プションはstartの時だけ有効です。
 </para>
 </listitem>
 </varlistentry>
@@ -126,6 +126,7 @@ gfsd-$ID.logです。デフォルトはスクラッチディレクトリ/logで�
 <para>
 Gfarm/BBの共有鍵の有効期間を秒単位で指定します。有効時間はジョブ実
 行時間より長くする必要があります。デフォルトは86400秒（1日）です。
+本オプションはstartの時だけ有効です。
 </para>
 </listitem>
 </varlistentry>
@@ -134,8 +135,7 @@ Gfarm/BBの共有鍵の有効期間を秒単位で指定します。有効時間
 <term><option>-c</option></term>
 <listitem>
 <para>
-Cシェルのコマンドを出力します。本オプションはstartのときだけ有効で
-す。
+Cシェルのコマンドを出力します。本オプションはstartの時だけ有効です。
 </para>
 </listitem>
 </varlistentry>
@@ -144,8 +144,8 @@ Cシェルのコマンドを出力します。本オプションはstartのと�
 <term><option>-s</option></term>
 <listitem>
 <para>
-Bourneシェルのコマンドを出力します。本オプションはstartのときだけ
-有効です。デフォルト設定です。
+Bourneシェルのコマンドを出力します。本オプションはstartの時だけ有
+効です。デフォルト設定です。
 </para>
 </listitem>
 </varlistentry>

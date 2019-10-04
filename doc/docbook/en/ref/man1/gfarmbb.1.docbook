@@ -6,7 +6,7 @@
 
 <refentry id="gfarmbb.1">
 
-<refentryinfo><date>11 Jun 2019</date></refentryinfo>
+<refentryinfo><date>4 Oct 2019</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarmbb</refentrytitle>
@@ -34,12 +34,15 @@
 Gfarm/BB is an on-demand user-level file system for node-local
 storages on compute nodes.  <command moreinfo="none">gfarmbb</command>
 starts a Gfarm/BB and stops it.
-The <parameter moreinfo="none">mode</parameter> should be start or
-stop.  When the mode is start, it displays the environment variable
-that should be eval'ed to use Gfarm commands as follows;
+The <parameter moreinfo="none">mode</parameter> should be start, stop
+or status.  When the mode is start, it displays the environment
+variable that should be eval'ed to use Gfarm commands as follows;
 </para>
 <para>
 % eval `gfarmbb start`
+</para>
+<para>
+Basically, specify the same option for start, stop and status.
 </para>
 
 </refsect1>
@@ -56,6 +59,7 @@ excludes Gfmd node from file system nodes.  Gfmd is executed on the
 node where gfarmbb is executed.  With this option, gfsd is not
 executed on that node.  This option expects there are N + 1 node
 allocations, and gfarmbb is executed on the last host in the hostfile.
+This option is available only for gfarmbb start.
 </para>
 </listitem>
 </varlistentry>
@@ -65,8 +69,7 @@ allocations, and gfarmbb is executed on the last host in the hostfile.
 <listitem>
 <para>
 specifies a <parameter moreinfo="none">hostfile</parameter> that
-contains a list of hostnames of compute nodes.  It is necessary to
-specify the same hostfile for gfarmbb start and gfarmbb stop.
+contains a list of hostnames of compute nodes.
 </para>
 </listitem>
 </varlistentry>
@@ -77,8 +80,7 @@ specify the same hostfile for gfarmbb start and gfarmbb stop.
 <para>
 specifies a scratch directory on each compute node for Gfarm/BB.  If
 it does not exist, it is created.  This directory will be removed by
-gfarmbb stop.  It is necessary to specify the same directory for
-gfarmbb start and gfarmbb stop.  Default is /tmp/gfarmbb-scratch.
+gfarmbb stop.  Default is /tmp/gfarmbb-scratch.
 </para>
 </listitem>
 </varlistentry>
@@ -103,6 +105,7 @@ GFARM_CONFIG_FILE environment variable.
 specifies a log directory.  If it does not exist, it is created.  Log
 file names of gfmd and gfsd are gfmd-$ID.log and gfsd-$ID.log,
 respectively.  Default directory is scratch_dir/log.
+This option is available only for gfarmbb start.
 </para>
 </listitem>
 </varlistentry>
@@ -125,6 +128,7 @@ option is available only for gfarmbb start.
 specifies the period of a shared secret key in seconds for Gfarm/BB.
 This period should be longer than the job execution duration.  Default
 is 86400 seconds (1 day).
+This option is available only for gfarmbb start.
 </para>
 </listitem>
 </varlistentry>
