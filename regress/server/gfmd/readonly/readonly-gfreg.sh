@@ -73,10 +73,17 @@ test_readonly_enable_all_host() {
   done
   IFS="$_IFS"
 
+  if [ X"$GFARM_CONFIG_FILE" != X ]; then
+    save_exit_code=$exit_code
+    exit_code=$exit_xfail
+  fi
   GFARM_CONFIG_FILE="$SHORT_TIMEOUT_CONF_FILE" gfreg "${data}/1byte" "${gftmp}/test3"
   if [ "$?" -eq 0 ]; then
     echo "unexpected success: ${diag}: gfreg"
     exit
+  fi
+  if [ X"$GFARM_CONFIG_FILE" != X ]; then
+    exit_code=$save_exit_code
   fi
 }
 

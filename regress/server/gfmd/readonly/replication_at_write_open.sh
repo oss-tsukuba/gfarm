@@ -16,6 +16,9 @@ cat << __EOF__ > "$REP_DISABLE_CONF_FILE" || exit
 replication_at_write_open disable
 #log_level debug
 __EOF__
+if [ X"$GFARM_CONFIG_FILE" != X ]; then
+  exit_code=$exit_xfail
+fi
 
 prepare_file() {
   CONFIG_FILE="$1"
