@@ -20,12 +20,15 @@
 Gfarm/BB is an on-demand user-level file system for node-local
 storages on compute nodes.  <span class="command"><strong>gfarmbb</strong></span>
 starts a Gfarm/BB and stops it.
-The <em class="parameter"><code>mode</code></em> should be start or
-stop.  When the mode is start, it displays the environment variable
-that should be eval'ed to use Gfarm commands as follows;
+The <em class="parameter"><code>mode</code></em> should be start, stop
+or status.  When the mode is start, it displays the environment
+variable that should be eval'ed to use Gfarm commands as follows;
 </p>
 <p>
 % eval `gfarmbb start`
+</p>
+<p>
+Basically, specify the same option for start, stop and status.
 </p>
 </div>
 <div class="refsect1">
@@ -37,19 +40,18 @@ excludes Gfmd node from file system nodes.  Gfmd is executed on the
 node where gfarmbb is executed.  With this option, gfsd is not
 executed on that node.  This option expects there are N + 1 node
 allocations, and gfarmbb is executed on the last host in the hostfile.
+This option is available only for gfarmbb start.
 </p></dd>
 <dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>hostfile</code></em></span></dt>
 <dd><p>
 specifies a <em class="parameter"><code>hostfile</code></em> that
-contains a list of hostnames of compute nodes.  It is necessary to
-specify the same hostfile for gfarmbb start and gfarmbb stop.
+contains a list of hostnames of compute nodes.
 </p></dd>
 <dt><span class="term"><code class="option">-scr</code> <em class="parameter"><code>scratch_dir</code></em></span></dt>
 <dd><p>
 specifies a scratch directory on each compute node for Gfarm/BB.  If
 it does not exist, it is created.  This directory will be removed by
-gfarmbb stop.  It is necessary to specify the same directory for
-gfarmbb start and gfarmbb stop.  Default is /tmp/gfarmbb-scratch.
+gfarmbb stop.  Default is /tmp/gfarmbb-scratch.
 </p></dd>
 <dt><span class="term"><code class="option">-l</code></span></dt>
 <dd><p>
@@ -64,6 +66,7 @@ GFARM_CONFIG_FILE environment variable.
 specifies a log directory.  If it does not exist, it is created.  Log
 file names of gfmd and gfsd are gfmd-$ID.log and gfsd-$ID.log,
 respectively.  Default directory is scratch_dir/log.
+This option is available only for gfarmbb start.
 </p></dd>
 <dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>mount_point</code></em></span></dt>
 <dd><p>
@@ -76,6 +79,7 @@ option is available only for gfarmbb start.
 specifies the period of a shared secret key in seconds for Gfarm/BB.
 This period should be longer than the job execution duration.  Default
 is 86400 seconds (1 day).
+This option is available only for gfarmbb start.
 </p></dd>
 <dt><span class="term"><code class="option">-c</code></span></dt>
 <dd><p>
