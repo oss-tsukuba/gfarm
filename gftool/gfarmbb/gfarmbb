@@ -143,8 +143,8 @@ start() {
 
 stop() {
     prun-all "umount.gfarm2fs > /dev/null 2>&1 || :"
-    prun-all "killall gfsd > /dev/null 2>&1 || :"
-    prun-all "killall gfmd > /dev/null 2>&1 || :"
+    prun-all "pkill gfsd > /dev/null 2>&1 || :"
+    prun-all "pkill gfmd > /dev/null 2>&1 || :"
     prun-all "rm -rf $TMPDIR > /dev/null 2>&1 || :"
     if $LOGIN_NODE_ACCESS; then
 	rm -f $HOME/.gfarm2rc-$ID $HOME/.gfarm_shared_key-$ID
