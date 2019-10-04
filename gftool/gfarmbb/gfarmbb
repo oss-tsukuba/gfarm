@@ -14,7 +14,7 @@ ID=`hostname`
 EXCLUDE_GFMD=-a
 
 usage() {
-    echo "usage: $PROGRAM [-h hostfile] [-scr scratch_dir] [-m mount_point] [options] start | stop"
+    echo "usage: $PROGRAM [-h hostfile] [-scr scratch_dir] [-m mount_point] [options] start | stop | status"
     echo ""
     echo "options:"
     echo "        -e"
@@ -49,6 +49,7 @@ while [ $# -gt 0 ]; do
     case $1 in
 	start) mode=start ;;
 	stop) mode=stop ;;
+	status) mode=status ;;
 	-e) EXCLUDE_GFMD= ;;
 	-h) shift; HOSTFILE=$1 ;;
 	-scr) shift; TMPDIR=$1 ;;
@@ -72,16 +73,19 @@ if [ X"$HOSTFILE" != X ]; then
     [ -e $HOSTFILE ] || err $HOSTFILE: no such host file
 
     alias prun="gfarm-prun $EXCLUDE_GFMD -p -h $HOSTFILE"
+    alias prun-all="gfarm-prun -a -p -h $HOSTFILE"
+    alias prun-verb="gfarm-prun -a -v -h $HOSTFILE"
     alias pcp="gfarm-pcp -p -h $HOSTFILE"
 else
-    alias prun=""
+    alias prun="sh -c"
+    alias prun-all="sh -c"
+    alias prun-verb="sh -c"
     alias pcp=":"
 fi
 
 start() {
-    [ X"$GFARMBB_START_HOOK" != X ] && prun $GFARMBB_START_HOOK
+    [ X"$GFARMBB_START_HOOK" != X ] && prun-all "$GFARMBB_START_HOOK"
 
-    [ -d $TMPDIR ] && rm -rf $TMPDIR || :
     [ -d $TMPDIR/etc ] || mkdir -p $TMPDIR/etc
     [ -d $TMPDIR/etc ] || err $TMPDIR: no such scratch directory
     [ -d $LOGDIR ] || mkdir -p $LOGDIR
@@ -90,8 +94,7 @@ start() {
     GFARM_CONFIG_FILE=$TMPDIR/etc/gfarm2.conf
     export GFARM_CONFIG_FILE
     SHARED_KEY_FILE=$TMPDIR/etc/.gfarm_shared_key
-    prun rm -rf $TMPDIR || :
-    prun mkdir -p $TMPDIR/etc $LOGDIR
+    prun "mkdir -p $TMPDIR/etc $LOGDIR"
     config-gfarm --prefix $TMPDIR -S -N -A $USER -b none > /dev/null
 
     echo metadb_server_listen_backlog 2048 >> $TMPDIR/etc/gfmd.conf
@@ -125,12 +128,11 @@ start() {
 	cp -p $SHARED_KEY_FILE $HOME/.gfarm_shared_key-$ID
     fi
     $TMPDIR/etc/init.d/gfmd start
-    pcp $GFARM_CONFIG_FILE $TMPDIR/etc/gfsd.conf $TMPDIR/etc/usermap $SHARED_KEY_FILE $TMPDIR/etc
-    prun config-gfsd --prefix $TMPDIR -S > /dev/null
+    pcp $GFARM_CONFIG_FILE $TMPDIR/etc/gfsd.conf $TMPDIR/etc/usermap $SHARED_KEY_FILE $TMPDIR/etc > /dev/null
+    prun "config-gfsd --prefix $TMPDIR -S > /dev/null"
     if [ X"$MDIR" != X ]; then
 	gfmkdir -p $MDIR || :
-	prun rm -rf $MDIR
-	prun env GFARMFS_ROOT=$MDIR mount.gfarm2fs $GFARM_CONFIG_FILE $MDIR $MOPTIONS > /dev/null || :
+	prun "env GFARMFS_ROOT=$MDIR mount.gfarm2fs $GFARM_CONFIG_FILE $MDIR $MOPTIONS > /dev/null || :"
     fi
     if [ $SHELL_TYPE = bsh ]; then
 	echo "GFARM_CONFIG_FILE=$GFARM_CONFIG_FILE; export GFARM_CONFIG_FILE;"
@@ -140,18 +142,27 @@ start() {
 }
 
 stop() {
-    [ -d $TMPDIR ] || err $TMPDIR: no such scratch directory
-
-    if [ X"$MDIR" != X ]; then
-	prun umount.gfarm2fs $MDIR > /dev/null 2>&1 || :
-    fi
-    prun $TMPDIR/etc/unconfig-gfsd.sh -f
-    $TMPDIR/etc/unconfig-gfarm.sh -f > /dev/null
-    prun rm -rf $TMPDIR || :
+    prun-all "umount.gfarm2fs > /dev/null 2>&1 || :"
+    prun-all "killall gfsd > /dev/null 2>&1 || :"
+    prun-all "killall gfmd > /dev/null 2>&1 || :"
+    prun-all "rm -rf $TMPDIR > /dev/null 2>&1 || :"
     if $LOGIN_NODE_ACCESS; then
 	rm -f $HOME/.gfarm2rc-$ID $HOME/.gfarm_shared_key-$ID
     fi
-    [ X"$GFARMBB_STOP_HOOK" != X ] && prun $GFARMBB_STOP_HOOK
+    if [ X"$GFARMBB_STOP_HOOK" != X ]; then
+	prun-all "$GFARMBB_STOP_HOOK || :"
+    fi
+}
+
+status() {
+    echo "[df]"
+    prun-verb "df -t fuse.gfarm2fs 2> /dev/null || :"
+    echo "[ls -lAR]"
+    prun-verb "ls -lAR $TMPDIR || :"
+    echo "[ps]"
+    prun-verb "ps -ef | grep gf | egrep -v grep"
+    echo "[netstat]"
+    prun-verb "netstat -apn 2> /dev/null | grep gf"
 }
 
 which config-gfarm > /dev/null 2>&1 || err no gfarm installation
@@ -159,9 +170,12 @@ which config-gfarm > /dev/null 2>&1 || err no gfarm installation
 
 case $mode in
 start)
+    stop > /dev/null 2>&1
     start ;;
 stop)
     stop ;;
+status)
+    status ;;
 *)
     usage ;;
 esac
