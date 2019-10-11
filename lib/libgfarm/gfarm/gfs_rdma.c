@@ -34,7 +34,7 @@
 #define RDMA_RNR_RETRY		7
 
 static int page_size;
-#define roundup_page(x)	(((x) + (page_size - 1)) & ~page_size)
+#define roundup_page(x)	(((x) + (page_size - 1)) & ~(page_size - 1))
 
 struct rdma_context {
 	struct ibv_context *ib_ctx;
