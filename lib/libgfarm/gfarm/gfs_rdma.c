@@ -616,7 +616,7 @@ gfs_rdma_connect(struct rdma_context *ctx)
 						IBV_QP_RQ_PSN |
 						IBV_QP_MAX_DEST_RD_ATOMIC |
 						IBV_QP_MIN_RNR_TIMER);
-	gflog_debug(GFARM_MSG_UNFIXED, "is_global=%d sgid_index=%d",
+	gflog_debug(GFARM_MSG_1005108, "is_global=%d sgid_index=%d",
 		ctx->is_global, staticp->gid_index);
 	if (ret) {
 		e = gfarm_errno_to_error2(ret);
