@@ -1,3 +1,18 @@
+Release note for Gfarm 2.7.15
+=============================
+
+[2019.10.24]
+
+New configuration directive
+* rdma_gid_index - specify the gid index to use GRH
+
+Updated feature
+* gfarmbb - status command to check process, network and directory
+  status for Gfarm/BB
+
+Bug fix
+* Remote write may fail due to completion error when using InfiniBand
+
 Release note for Gfarm 2.7.14
 =============================
 
