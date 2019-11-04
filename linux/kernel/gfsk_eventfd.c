@@ -188,11 +188,11 @@ gfsk_evfd_create(unsigned int count)
 	file = gfsk_evfd_file_create(count);
 	if (IS_ERR(file)) {
 		fd = PTR_ERR(file);
-		gflog_error(GFARM_MSG_UNFIXED, "fail gfsk_evfd_file_create %d"
+		gflog_error(GFARM_MSG_1004904, "fail gfsk_evfd_file_create %d"
 			, fd);
 	} else {
 		if ((fd = gfsk_fd_file_set(file)) < 0)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004905,
 				"fail gfsk_fd_file_set %d", fd);
 		fput(file);
 	}

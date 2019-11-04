@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfncopy</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfncopy">
 <a name="gfncopy.1"></a><div class="titlepage"></div>
@@ -33,7 +33,10 @@ pathに指定したファイルないしディレクトリに関する自動フ�
 <a name="options"></a><h2>OPTIONS</h2>
 <div class="variablelist"><dl>
 <dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>NCOPY</code></em></span></dt>
-<dd><p>ファイルまたはディレクトリに、自動複製作成数を設定します。</p></dd>
+<dd><p>
+ファイルまたはディレクトリに、自動複製作成数を設定します。
+<em class="parameter"><code>NCOPY</code></em>はgfarm.ncopy拡張属性に格納されます。
+</p></dd>
 <dt><span class="term"><code class="option">-S</code> <em class="parameter"><code>REPATTR</code></em></span></dt>
 <dd>
 <p>ファイルまたはディレクトリに、ホストグループごとの自動複製作成数を設定します。</p>
@@ -42,6 +45,7 @@ pathに指定したファイルないしディレクトリに関する自動フ�
 <em class="parameter"><code>REPATTR</code></em>に設定された複製数の合計Nが<em class="parameter"><code>NCOPY</code></em>よりも大きければ、最低でもN個の複製が作成されます。
 そうでなければ、<em class="parameter"><code>REPATTR</code></em>従って複製を作成し、
 さらに、複製数の合計が<em class="parameter"><code>NCOPY</code></em>になるように複製を作成します。
+<em class="parameter"><code>REPATTR</code></em>はgfarm.replicainfo拡張属性に格納されます。
 </p>
 <p>
 <em class="parameter"><code>REPATTR</code></em> の形式を以下の BNF で示します。
@@ -95,7 +99,8 @@ pathにディレクトリを指定すれば、そのディレクトリ以下す�
 <div class="refsect1" title="SEE ALSO">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
-  <span class="citerefentry"><span class="refentrytitle">gfhostgroup</span>(1)</span>
+  <span class="citerefentry"><span class="refentrytitle">gfhostgroup</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfarm_attr</span>(5)</span>
 </p>
 </div>
 </div></body>

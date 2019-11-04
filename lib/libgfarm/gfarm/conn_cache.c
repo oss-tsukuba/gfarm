@@ -159,7 +159,7 @@ gfp_connection_unlock(struct gfp_cached_connection *connection)
 	int err;
 	err = GFSP_CONN_UNLOCK(connection);
 	if (err != 0) {
-		gflog_fatal(GFARM_MSG_UNFIXED, "owner=%d count=%d",
+		gflog_fatal(GFARM_MSG_1003871, "owner=%d count=%d",
 			connection->conn_lock.r_owner,
 			connection->conn_lock.r_locked);
 	}
@@ -468,6 +468,18 @@ gfp_cached_or_uncached_connection_free(struct gfp_conn_cache *cache,
 		(*cache->dispose_connection)(connection->connection_data);
 	else
 		gfp_cached_connection_gc_internal(cache, *cache->num_cachep);
+}
+
+void
+gfp_cached_connection_addref(struct gfp_conn_cache *cache,
+	struct gfp_cached_connection *connection)
+{
+	static const char diag[] = "gfp_cached_connection_addref";
+
+	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
+	gfarm_lru_cache_addref_entry(&cache->lru_list,
+	    &connection->lru_entry);
+	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
 }
 
 /*

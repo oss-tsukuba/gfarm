@@ -1,0 +1,71 @@
+#!/bin/sh
+#
+# this program requires additional index on direntry table:
+#
+# create index direntrybyentryinode on direntry (entryinumber);
+
+${DEBUG:="false"} && set -xu
+PROGNAME=`basename $0`
+
+usage()
+{
+	echo >&2 "usage: $PROGNAME [--prefix prefix]"
+	echo >&2 "	[-P backend_prefix] [-l metadata_directory] inum ..."
+	exit 1
+}
+
+dirpath()
+{
+	inum=$1
+	if [ X"$inum" = X2 ]; then
+		fullpath="/$fullpath"
+		return
+	fi
+	pinum=`echo "select entryinumber from direntry where dirinumber = $inum and entryname = '..'" | config-gfarm-update -o '-tAF/' $options`
+	if [ X"$pinum" = X ]; then
+		echo >&2 "$pinum: no such object"
+	else
+		name=`echo "select entryname from direntry where dirinumber = $pinum and entryinumber = $inum" | config-gfarm-update -o '-tAF/' $options`
+		if [ X"$name" = X ]; then
+			echo >&2 "$name: no such object"
+		else
+			fullpath="$name/$fullpath"
+			dirpath $pinum
+		fi
+	fi
+}
+
+filepath()
+{
+	inum=$1
+	out=`echo "select dirinumber, entryname from direntry where entryinumber = $inum and entryname != '.' and entryname != '..' limit 1" | config-gfarm-update -o '-tAF/' $options`
+	if [ X"$out" = X ]; then
+		echo >&2 "$inum: no such object"
+	else
+		inum=`echo $out | awk -F/ '{ printf $1 }'`
+		name=`echo $out | awk -F/ '{ printf $2 }'`
+		fullpath="$name"
+		dirpath $inum
+	fi
+}
+
+while [ $# -gt 0 ]; do
+	case $1 in
+	--prefix|-P|-l) [ $# -ge 2 ] || usage
+		options="$options $1 $2"
+		shift
+		;;
+	-*)	usage
+		;;
+	*)	break
+		;;
+	esac
+	shift
+done
+
+while [ $# -gt 0 ]; do
+	filepath $1
+	echo $fullpath
+	fullpath=
+	shift
+done

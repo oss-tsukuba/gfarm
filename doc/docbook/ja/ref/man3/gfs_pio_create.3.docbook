@@ -5,7 +5,7 @@
 
 <refentry id="gfs-pio-create.3">
 
-<refentryinfo><date>27 Jun 2010</date></refentryinfo>
+<refentryinfo><date>3 Sep 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_create</refentrytitle>
@@ -57,14 +57,12 @@
 <parameter moreinfo="none">GFARM_FILE_WRONLY</parameter>、
 <parameter moreinfo="none">GFARM_FILE_RDWR</parameter>
 のいずれか一つのフラグを必ず指定しなければならない点も同じです。
-<!--
 ただし、
 <function moreinfo="none">gfs_pio_create()</function>
 に特有のフラグとして、
 <parameter moreinfo="none">GFARM_FILE_EXCLUSIVE</parameter>
 を指定することができます。この指定を行なった場合、
 ファイルが既に存在する場合は、ファイルのオープンに失敗します。
- -->
 </para>
 <para>
 引数
@@ -202,7 +200,6 @@
 <para>メタデータサーバに対する認証に失敗しました。</para>
 </listitem>
 </varlistentry>
-<!--
 <varlistentry>
 <term><constant>GFARM_ERR_ALREADY_EXISTS</constant></term>
 <listitem>
@@ -212,7 +209,6 @@
 </para>
 </listitem>
 </varlistentry>
- -->
 
 <!--
 <varlistentry>

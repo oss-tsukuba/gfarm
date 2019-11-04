@@ -5,8 +5,6 @@
 NetBSD KNF:
 http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=text/x-cvsweb-markup
 
-この規約には明記されていませんが、継続行のインデント幅は空白4つ分です。
-
 ただし、以下のような、NetBSD 固有の習慣には従っていません。
 ・#ifndef _lint
 ・__COPYRIGHT
@@ -93,12 +91,6 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 	gfmd や gfsd, gftool については、汎用ライブラリでは
 	ありませんから、このような制約はありません。
 
-	gfsd のうち listen しているプロセスおよび back channel プロセス、
-	および gfmd は、fatal 関数を呼んで自殺してはいけません。
-	例えば malloc() に失敗した場合もクライアントに対してメモリ不足
-	エラーを返す必要があります。ただし、プロセス起動時だけは例外で、
-	起動中であれば、自殺して構いません。
-
 	https://sourceforge.net/apps/trac/gfarm/changeset/4418
 	で、ほぼ全てのエラー・ケースについて、gflog_debug() で
 	デバッグ・ログを出力するになりました。
@@ -111,6 +103,12 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 	変更していしまっています…)。もちろん、呼ばれた側のエラーログには
 	含まれていない情報を、呼び出し側でつけ加える場合には、冗長では
 	ありませんので出力しても問題ありません。
+
+	gfsd のうち listen しているプロセスおよび back channel プロセス、
+	および gfmd は、malloc() に失敗しても fatal 関数を呼んで自殺して
+	はいけません。クライアントに対してメモリ不足を返す必要があります。
+	ただし、プロセス起動時の初期化プロセスだけは例外で、起動中の
+	メモリ不足であれば、自殺して構いません。
 
 ■ 定数定義について
 
@@ -182,6 +180,8 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 	・具体的には下記の通り。
 	  /* gfutil */
 		#include "hash.h"
+		#include "nanosec.h"
+		#include "thrsubr.h"
 		#include "gfevent.h"
 		#include "gfutil.h"
 	  /* gfsl public */

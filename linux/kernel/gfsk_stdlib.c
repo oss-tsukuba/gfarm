@@ -44,9 +44,9 @@ fopen(const char *path, const char *mode)
 	int	i, err = -EINVAL;
 	FILE	*fp = NULL;
 	if (!path) {
-		gflog_error(GFARM_MSG_UNFIXED, "no path");
+		gflog_error(GFARM_MSG_1004985, "no path");
 	} else if (*mode != 'r') {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004986,
 			"support only read mode but '%s'", mode);
 	} else {
 		for (i = 0; i < GFSK_FBUF_MAX; i++) {

@@ -52,7 +52,7 @@ can enable the following features of the backend database:
 .sp -1
 .IP \(bu 2.3
 .\}
-XML Path Language (XPath) support
+XML Path Language (XPath) support [\-X]
 .RE
 .sp
 .RS 4
@@ -63,21 +63,24 @@ XML Path Language (XPath) support
 .sp -1
 .IP \(bu 2.3
 .\}
-Metadata replication among metadata servers
+Metadata replication among metadata servers [\-r]
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Checksum calculation [\-d]
 .RE
 .PP
 Whether the backend database supports those features or not is initially configured by
 \fBconfig\-gfarm\fR\&. If you would like to enable a feature after the configuration, run
 \fBconfig\-gfarm\-update \-\-update\fR
-with
-\fB\-X\fR
-and/or
-\fB\-r\fR
-options\&. The option
-\fB\-X\fR
-enables XPath support and the option
-\fB\-r\fR
-enables metadata replication\&.
+with an option surrounded by [ ] in the list above\&.
 .PP
 \fBconfig\-gfarm\-update\fR
 is also used for upgrading the backend database\&. Sometimes Gfarm contains incompatible changes against older releases\&. With
@@ -119,6 +122,7 @@ postgresql data checksum support
 portmaster port              [\-p]: 10602
 metadata replication         [\-r]: yes
 metadata journal directory   [\-j]: /var/gfarm\-metadata/journal
+digest type                  [\-d]: md5
 .fi
 .if n \{\
 .RE
@@ -244,6 +248,13 @@ option is specified\&.
 Enable metadata replication among metadata servers\&. This option takes effect only when also
 \fB\-\-update\fR
 option is specified\&.
+.RE
+.PP
+\fB\-d\fR
+.RS 4
+Enable checksum calculation and specify the digest type of the checksum\&. The
+\fIdigest_type\fR
+argument is a lower\-case name which is supported by the OpenSSL library on the host, such as "md5"\&.
 .RE
 .PP
 \fB\-X\fR

@@ -216,6 +216,20 @@ gfarm_metadb_server_set_seqnum_is_error(struct gfarm_metadb_server *m)
 }
 
 int
+gfarm_metadb_server_seqnum_is_behind(struct gfarm_metadb_server *m)
+{
+	return ((m->tflags & GFARM_METADB_SERVER_FLAG_SEQNUM_MASK) ==
+	    GFARM_METADB_SERVER_FLAG_SEQNUM_IS_BEHIND);
+}
+
+void
+gfarm_metadb_server_set_seqnum_is_behind(struct gfarm_metadb_server *m)
+{
+	m->tflags = (m->tflags & ~GFARM_METADB_SERVER_FLAG_SEQNUM_MASK) |
+	    GFARM_METADB_SERVER_FLAG_SEQNUM_IS_BEHIND;
+}
+
+int
 gfarm_metadb_server_is_memory_owned_by_fs(struct gfarm_metadb_server *m)
 {
 	return ((m->tflags & GFARM_METADB_SERVER_FLAG_IS_MEMORY_OWNED_BY_FS)

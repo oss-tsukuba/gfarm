@@ -14,6 +14,11 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <signal.h> /* for sig_atomic_t */
+#include <netinet/in.h>
+#include <netdb.h> /* for NI_MAXHOST, NI_NUMERICHOST, etc */
+#include <time.h>
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
@@ -24,19 +29,23 @@
 #include "gfutil.h"
 #include "thrsubr.h"
 #include "queue.h"
+#include "gfnetdb.h"
 
 #include "gfp_xdr.h"
+#include "io_fd.h"
 #include "auth.h"
+#include "config.h" /* gfarm_simultaneous_replication_receivers */
+#include "gfs_proto.h"
 
 #include "subr.h"
+#include "thrpool.h"
 #include "watcher.h"
+#include "db_access.h"
 #include "user.h"
 #include "abstract_host.h"
 #include "host.h"
 #include "mdhost.h"
-#include "gfm_proto.h" /* for GFARM_DESCRIPTOR_INVALID */
 #include "gfmd_channel.h"
-#include "peer_watcher.h"
 #include "peer.h"
 #include "inode.h"
 #include "process.h"
@@ -44,8 +53,73 @@
 #include "iostat.h"
 
 #include "protocol_state.h"
-#include "peer_impl.h"
 
+
+/*
+ * peer_watcher
+ */
+
+struct peer_watcher {
+	struct watcher *w;
+	struct thread_pool *thrpool;
+	void *(*readable_handler)(void *);
+};
+
+static int peer_watcher_nfd_hint_default;
+
+void
+peer_watcher_set_default_nfd(int nfd_hint_default)
+{
+	peer_watcher_nfd_hint_default = nfd_hint_default;
+}
+
+/* this function never fails, but aborts. */
+struct peer_watcher *
+peer_watcher_alloc(int thrpool_size, int thrqueue_length,
+	void *(*readable_handler)(void *),
+	const char *diag)
+{
+	gfarm_error_t e;
+	struct peer_watcher *pw;
+
+	GFARM_MALLOC(pw);
+	if (pw == NULL)
+		gflog_fatal(GFARM_MSG_1002763, "peer_watcher %s: no memory",
+		    diag);
+
+	e = watcher_alloc(peer_watcher_nfd_hint_default, &pw->w);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_1002764, "watcher(%d) %s: no memory",
+		    peer_watcher_nfd_hint_default, diag);
+
+	pw->thrpool = thrpool_new(thrpool_size, thrqueue_length, diag);
+	if (pw->thrpool == NULL)
+		gflog_fatal(GFARM_MSG_1002765, "thrpool(%d, %d) %s: no memory",
+		    thrpool_size, thrqueue_length, diag);
+
+	pw->readable_handler = readable_handler;
+
+	return (pw);
+}
+
+struct watcher *
+peer_watcher_get_watcher(struct peer_watcher *pw)
+{
+	return (pw->w);
+}
+
+struct thread_pool *
+peer_watcher_get_thrpool(struct peer_watcher *pw)
+{
+	return (pw->thrpool);
+}
+
+/*
+ * peer
+ */
+
+#define BACK_CHANNEL_DIAG(peer) (peer_get_auth_id_type(peer) == \
+	GFARM_AUTH_ID_TYPE_SPOOL_HOST ? "back_channel" : "gfmd_channel")
 static const char PROTOCOL_ERROR_MUTEX_DIAG[] = "protocol_error_mutex";
 
 struct peer_closing_queue {
@@ -60,17 +134,346 @@ struct peer_closing_queue {
 	&peer_closing_queue.head
 };
 
+struct pending_new_generation_by_cookie {
+	struct inode *inode;
+	gfarm_uint64_t id;
+	gfarm_off_t old_size;
+	GFARM_HCIRCLEQ_ENTRY(pending_new_generation_by_cookie) cookie_link;
+};
+
+struct peer {
+	/*
+	 * protected by peer_closing_queue.mutex
+	 */
+	struct peer *next_close;
+	int refcount;
+	int replication_refcount;
+
+	/*
+	 * connection structure
+	 */
+	struct gfp_xdr *conn;
+	gfp_xdr_async_peer_t async; /* used by {back|gfmd}_channel */
+	struct peer_watcher *watcher;
+	struct watcher_event *readable_event;
+
+	/*
+	 * followings (except protocol_error) are protected by giant lock
+	 */
+
+	enum gfarm_auth_id_type id_type;
+	char *username, *hostname;
+	struct user *user;
+	struct abstract_host *host;
+
+	/*
+	 * only used by foreground channel
+	 */
+
+	struct process *process;
+	int protocol_error;
+	pthread_mutex_t protocol_error_mutex;
+
+	struct protocol_state pstate;
+
+	gfarm_int32_t fd_current, fd_saved;
+	int flags;
+#define PEER_FLAGS_FD_CURRENT_EXTERNALIZED	1
+#define PEER_FLAGS_FD_SAVED_EXTERNALIZED	2
+
+	void *findxmlattrctx;
+
+	/* only one pending GFM_PROTO_GENERATION_UPDATED per peer is allowed */
+	struct inode *pending_new_generation;
+	/* GFM_PROTO_GENERATION_UPDATED_BY_COOKIE */
+	GFARM_HCIRCLEQ_HEAD(pending_new_generation_by_cookie)
+	    pending_new_generation_cookies;
+
+	union {
+		struct {
+			/* only used by "gfrun" client */
+			struct job_table_entry *jobs;
+		} client;
+	} u;
+
+	struct gfarm_iostat_items *iostatp;
+
+	/*
+	 * only used by gfsd back channel
+	 */
+	pthread_mutex_t replication_mutex;
+	int simultaneous_replication_receivers;
+	struct file_replicating replicating_inodes; /* dummy header */
+
+	/*
+	 * only used by gfmd channel
+	 */
+	struct gfmdc_peer_record *gfmdc_record;
+};
+
+static struct peer *peer_table;
+static int peer_table_size, peer_initialized;
+static pthread_mutex_t peer_table_mutex = PTHREAD_MUTEX_INITIALIZER;
+static const char peer_table_diag[] = "peer_table";
+
 static const char peer_seqno_diag[] = "peer_seqno_mutex";
 static pthread_mutex_t peer_seqno_mutex = PTHREAD_MUTEX_INITIALIZER;
 static gfarm_uint64_t cookie_seqno = 1;
-static gfarm_int64_t private_peer_id_seqno = 1;
+
+static void (*peer_async_free)(struct peer *, gfp_xdr_async_peer_t) = NULL;
 
 void
-peer_closer_wakeup(struct peer *peer)
+peer_set_free_async(void (*async_free)(struct peer *, gfp_xdr_async_peer_t))
 {
-	if (peer->free_requested)
-		gfarm_cond_signal(&peer_closing_queue.ready_to_close,
-		    "peer_closer_wakeup", "connection can be freed");
+	peer_async_free = async_free;
+}
+
+void
+file_replicating_set_handle(struct file_replicating *fr, gfarm_int64_t handle)
+{
+	fr->handle = handle;
+}
+
+void
+file_replicating_set_cksum_request_flags(struct file_replicating *fr,
+	gfarm_int32_t cksum_request_flags)
+{
+	fr->cksum_request_flags = cksum_request_flags;
+}
+
+gfarm_int64_t
+file_replicating_get_handle(struct file_replicating *fr)
+{
+	return (fr->handle);
+}
+
+gfarm_int32_t
+file_replicating_get_cksum_request_flags(struct file_replicating *fr)
+{
+	return (fr->cksum_request_flags);
+}
+
+struct peer *
+file_replicating_get_peer(struct file_replicating *fr)
+{
+	return (fr->peer);
+}
+
+static const char replication_diag[] = "replication";
+
+/* only host_replicating_new() is allowed to call this routine */
+gfarm_error_t
+peer_replicating_new(struct peer *peer, struct host *dst,
+	struct file_replicating **frp)
+{
+	struct file_replicating *fr;
+	static const char diag[] = "peer_replicating_new";
+
+	GFARM_MALLOC(fr);
+	if (fr == NULL) {
+		/* decrement replication_refcount */
+		host_put_peer_for_replication(dst, peer);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	fr->peer = peer;
+	fr->dst = dst;
+	fr->handle = GFS_PROTO_REPLICATION_HANDLE_INVALID;
+
+	/* the followings should be initialized by inode_replicating() */
+	fr->prev_host = fr;
+	fr->next_host = fr;
+
+	fr->cksum_request_flags = 0;
+
+	gfarm_mutex_lock(&peer->replication_mutex, diag, replication_diag);
+	if (peer->simultaneous_replication_receivers >=
+	    gfarm_simultaneous_replication_receivers) {
+		free(fr);
+		fr = NULL;
+	} else {
+		++peer->simultaneous_replication_receivers;
+		fr->prev_inode = &peer->replicating_inodes;
+		fr->next_inode = peer->replicating_inodes.next_inode;
+		peer->replicating_inodes.next_inode = fr;
+		fr->next_inode->prev_inode = fr;
+	}
+	gfarm_mutex_unlock(&peer->replication_mutex, diag, replication_diag);
+
+	if (fr == NULL) {
+		/* decrement replication_refcount */
+		host_put_peer_for_replication(dst, peer);
+		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
+	}
+	*frp = fr;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/* only file_replicating_free() is allowed to call this routine */
+void
+peer_replicating_free(struct file_replicating *fr)
+{
+	struct peer *peer = fr->peer;
+	static const char diag[] = "peer_replicating_free";
+
+	gfarm_mutex_lock(&peer->replication_mutex, diag, replication_diag);
+	--peer->simultaneous_replication_receivers;
+	fr->prev_inode->next_inode = fr->next_inode;
+	fr->next_inode->prev_inode = fr->prev_inode;
+	gfarm_mutex_unlock(&peer->replication_mutex, diag, replication_diag);
+
+	/* decrement replication_refcount */
+	host_put_peer_for_replication(fr->dst, fr->peer);
+
+	free(fr);
+}
+
+gfarm_error_t
+peer_replicated(struct peer *peer,
+	struct host *host, gfarm_ino_t ino, gfarm_int64_t gen,
+	gfarm_int64_t handle,
+	gfarm_int32_t src_errcode, gfarm_int32_t dst_errcode, gfarm_off_t size,
+	int cksum_protocol, char *cksum_type, size_t cksum_len, char *cksum,
+	gfarm_int32_t cksum_result_flags)
+{
+	gfarm_error_t e;
+	struct file_replicating *fr;
+	static const char diag[] = "peer_replicated";
+
+	gfarm_mutex_lock(&peer->replication_mutex, diag, replication_diag);
+
+	if (handle == GFS_PROTO_REPLICATION_HANDLE_INVALID) {
+		for (fr = peer->replicating_inodes.next_inode;
+		    fr != &peer->replicating_inodes; fr = fr->next_inode) {
+			if (fr->igen == gen &&
+			    inode_get_number(fr->inode) == ino)
+				break;
+		}
+	} else {
+		for (fr = peer->replicating_inodes.next_inode;
+		    fr != &peer->replicating_inodes; fr = fr->next_inode) {
+			if (fr->handle == handle &&
+			    fr->igen == gen &&
+			    inode_get_number(fr->inode) == ino)
+				break;
+		}
+	}
+	if (fr == &peer->replicating_inodes)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	else
+		e = GFARM_ERR_NO_ERROR;
+
+	gfarm_mutex_unlock(&peer->replication_mutex, diag, replication_diag);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_1002410,
+		    "orphan replication (%s, %lld:%lld): s=%d d=%d size:%lld "
+		    "maybe the connection had a problem?",
+		    host_name(host), (long long)ino, (long long)gen,
+		    src_errcode, dst_errcode, (long long)size);
+	} else {
+		int cksum_enabled = (fr->cksum_request_flags &
+		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED) != 0;
+
+		if (cksum_enabled != cksum_protocol)
+			gflog_error(GFARM_MSG_1004008,
+			    "mismatch of %s vs %s in replication "
+			    "(%s, %lld:%lld): s=%d d=%d size:%lld",
+			    cksum_enabled ?
+			    "GFS_PROTO_REPLICATION_CKSUM_REQUEST" :
+			    "GFS_PROTO_REPLICATION_REQUEST",
+			    cksum_protocol ?
+			    "GFM_PROTO_REPLICATION_CKSUM_RESULT" :
+			    "GFM_PROTO_REPLICATION_RESULT",
+			    host_name(host), (long long)ino, (long long)gen,
+			    src_errcode, dst_errcode, (long long)size);
+		e = inode_replicated(fr, src_errcode, dst_errcode, size,
+		    cksum_protocol, fr->cksum_request_flags,
+		    cksum_type, cksum_len, cksum, cksum_result_flags);
+	}
+	return (e);
+}
+
+/*
+ * this frees file_replicating structures with the following condition:
+ * GFS_PROTO_REPLICATION_REQUEST is successfully done,
+ * but gfmd hasn't received GFM_PROTO_REPLICATION_RESULT.
+ *
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function should NOT call db_begin()/db_end() around this
+ */
+static void
+peer_replicating_free_all_waiting_result(struct peer *peer)
+{
+	gfarm_error_t e;
+	struct file_replicating *fr;
+	int found = 0;
+	struct host *dst = NULL;
+	gfarm_ino_t ino = 0;
+	gfarm_int64_t gen = 0;
+	static const char diag[] = "peer_replicating_free_all_waiting_result";
+
+	for (;;) {
+		found = 0;
+
+		gfarm_mutex_lock(&peer->replication_mutex,
+		    diag, replication_diag);
+		for (fr = peer->replicating_inodes.next_inode;
+		    fr != &peer->replicating_inodes; fr = fr->next_inode) {
+			if (fr->handle !=
+			    GFS_PROTO_REPLICATION_HANDLE_INVALID) {
+				found = 1;
+				dst = fr->dst;
+				ino = inode_get_number(fr->inode);
+				gen = fr->igen;
+				break;
+			}
+		}
+		gfarm_mutex_unlock(&peer->replication_mutex,
+		    diag, replication_diag);
+
+		if (!found)
+			break;
+
+		e = inode_replicated(fr, 0, GFARM_ERR_CONNECTION_ABORTED, -1,
+		    (fr->cksum_request_flags &
+		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED) != 0,
+		    fr->cksum_request_flags, NULL, 0, NULL, 0);
+		gflog_debug(GFARM_MSG_1003612,
+		    "%s: (%s, %lld:%lld): connection aborted: %s",
+		    diag, host_name(dst), (long long)ino, (long long)gen,
+		    gfarm_error_string(e));
+	}
+}
+
+/*
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function should NOT call db_begin()/db_end() around this
+ */
+static void
+peer_replicating_free_all(struct peer *peer)
+{
+	struct file_replicating *fr;
+	static const char diag[] = "peer_replicating_free_all";
+
+	gfarm_mutex_lock(&peer->replication_mutex, diag, "loop");
+
+	while ((fr = peer->replicating_inodes.next_inode) !=
+	    &peer->replicating_inodes) {
+		gfarm_mutex_unlock(&peer->replication_mutex, diag, "settle");
+		(void)inode_replicated(fr, GFARM_ERR_NO_ERROR,
+		    GFARM_ERR_CONNECTION_ABORTED, -1,
+		    (fr->cksum_request_flags &
+		    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED) != 0,
+		    fr->cksum_request_flags, NULL, 0, NULL, 0);
+		/* abandon error */
+		/* assert(e == GFARM_ERR_INVALID_FILE_REPLICA); */
+		gfarm_mutex_lock(&peer->replication_mutex, diag, "settle");
+	}
+
+	gfarm_mutex_unlock(&peer->replication_mutex, diag, "loop");
 }
 
 void
@@ -110,7 +513,8 @@ peer_del_ref(struct peer *peer)
 		referenced = 1;
 	} else {
 		referenced = 0;
-		peer_closer_wakeup(peer);
+		gfarm_cond_signal(&peer_closing_queue.ready_to_close,
+		    diag, "ready to close");
 	}
 #ifdef PEER_REFCOUNT_DEBUG
 	gflog_info(GFARM_MSG_1003614, "%s(%d):%s(): peer_del_ref(%p):%d",
@@ -123,10 +527,46 @@ peer_del_ref(struct peer *peer)
 	return (referenced);
 }
 
+void
+peer_add_ref_for_replication(struct peer *peer)
+{
+	static const char diag[] = "peer_add_ref_for_replication";
+
+	gfarm_mutex_lock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
+	++peer->replication_refcount;
+	gfarm_mutex_unlock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
+}
+
+int
+peer_del_ref_for_replication(struct peer *peer)
+{
+	int referenced;
+	static const char diag[] = "peer_del_ref_for_replication";
+
+	gfarm_mutex_lock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
+
+	if (--peer->replication_refcount > 0) {
+		referenced = 1;
+	} else {
+		referenced = 0;
+		gfarm_cond_signal(&peer_closing_queue.ready_to_close,
+		    diag, "ready to close");
+	}
+
+	gfarm_mutex_unlock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
+
+	return (referenced);
+}
+
 void *
 peer_closer(void *arg)
 {
 	struct peer *peer, **prev;
+	int do_async_free;
 	static const char diag[] = "peer_closer";
 
 	gfarm_mutex_lock(&peer_closing_queue.mutex, diag,
@@ -138,10 +578,16 @@ peer_closer(void *arg)
 			    &peer_closing_queue.mutex,
 			    diag, "queue is not empty");
 
+		do_async_free = 0;
 		for (prev = &peer_closing_queue.head;
 		    (peer = *prev) != NULL; prev = &peer->next_close) {
-			if (peer->refcount == 0) {
-				if (!(*peer->ops->is_busy)(peer)) {
+			if (peer->refcount == 0 &&
+			    !watcher_event_is_active(peer->readable_event)) {
+				if (peer->async != NULL &&
+				    peer_async_free != NULL) {
+					do_async_free = 1;
+					break;
+				} else if (peer->replication_refcount == 0) {
 					*prev = peer->next_close;
 					if (peer_closing_queue.tail ==
 					    &peer->next_close)
@@ -165,39 +611,53 @@ peer_closer(void *arg)
 		 * NOTE: this shouldn't need db_begin()/db_end()
 		 * at least for now,
 		 * because only externalized descriptor needs the calls.
-		 * XXX FIXME: is this still true?
 		 */
-		peer_free(peer);
+		if (do_async_free) {
+			/* async rpc cleanup should be done before freeing peer */
+			(*peer_async_free)(peer, peer->async);
+			peer->async = NULL;
+
+			/* there is no chance to receive result any more */
+			peer_replicating_free_all_waiting_result(peer);
+
+			/*
+			 * this peer cannot be freed yet,
+			 * wait until peer->replication_refcount becomes 0.
+			 * see the problem 2 of
+			 * https://sourceforge.net/apps/trac/gfarm/ticket/408
+			 */
+		} else {
+			peer_free(peer);
+		}
 		giant_unlock();
 
 		gfarm_mutex_lock(&peer_closing_queue.mutex,
 		    diag, "after giant");
 	}
 
-	/*NOTREACHED*/
-#ifdef __GNUC__ /* shut up stupid warning by gcc */
 	gfarm_mutex_unlock(&peer_closing_queue.mutex,
 	    diag, "peer_closing_queue");
-	return (NULL);
-#endif
 }
 
 void
 peer_free_request(struct peer *peer)
 {
+	int fd = peer_get_fd(peer), rv;
 	static const char diag[] = "peer_free_request";
 
 	gfarm_mutex_lock(&peer_closing_queue.mutex,
 	    diag, "peer_closing_queue");
-
-	peer->free_requested = 1;
 
 	/*
 	 * wake up threads which may be sleeping at read() or write(), because
 	 * they may be holding host_sender_lock() or host_receiver_lock(), but
 	 * without closing the descriptor, because that leads race condition.
 	 */
-	(*peer->ops->shutdown)(peer);
+	rv = shutdown(fd, SHUT_RDWR);
+	if (rv == -1)
+		gflog_info(GFARM_MSG_1002766,
+		    "%s(%s) : shutdown(%d): %s", BACK_CHANNEL_DIAG(peer),
+		    peer_get_hostname(peer), fd, strerror(errno));
 
 	*peer_closing_queue.tail = peer;
 	peer->next_close = NULL;
@@ -208,30 +668,150 @@ peer_free_request(struct peer *peer)
 }
 
 void
-peer_init(void)
+peer_init(int max_peers)
 {
+	int i;
+	struct peer *peer;
 	gfarm_error_t e;
+	static const char diag[] = "peer_init";
+
+	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
+
+	GFARM_MALLOC_ARRAY(peer_table, max_peers);
+	if (peer_table == NULL)
+		gflog_fatal(GFARM_MSG_1000278,
+		    "peer table: %s", strerror(ENOMEM));
+	peer_table_size = max_peers;
+
+	for (i = 0; i < peer_table_size; i++) {
+		peer = &peer_table[i];
+		peer->next_close = NULL;
+		peer->refcount = 0;
+		peer->replication_refcount = 0;
+
+		peer->conn = NULL;
+		peer->async = NULL;
+		peer->readable_event = NULL;
+
+		peer->username = NULL;
+		peer->hostname = NULL;
+		peer->user = NULL;
+		peer->host = NULL;
+
+		/*
+		 * foreground channel
+		 */
+
+		peer->process = NULL;
+		peer->protocol_error = 0;
+		gfarm_mutex_init(&peer->protocol_error_mutex,
+		    "peer_init", "peer:protocol_error_mutex");
+
+		peer->fd_current = -1;
+		peer->fd_saved = -1;
+		peer->flags = 0;
+		peer->findxmlattrctx = NULL;
+		peer->pending_new_generation = NULL;
+		peer->u.client.jobs = NULL;
+
+		/* generation update, or generation update by cookie */
+		peer->pending_new_generation = NULL;
+		GFARM_HCIRCLEQ_INIT(peer->pending_new_generation_cookies,
+		    cookie_link);
+
+		peer->iostatp = NULL;
+
+		/* gfsd back channel */
+		gfarm_mutex_init(&peer->replication_mutex,
+		    "peer_init", "replication");
+		peer->simultaneous_replication_receivers = 0;
+		/* make circular list `replicating_inodes' empty */
+		peer->replicating_inodes.prev_inode =
+		peer->replicating_inodes.next_inode =
+		    &peer->replicating_inodes;
+
+		/* gfmd channel */
+		peer->gfmdc_record = NULL;
+	}
 
 	e = create_detached_thread(peer_closer, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1000282,
 		    "create_detached_thread(peer_closer): %s",
 			    gfarm_error_string(e));
+
+	peer_initialized = 1;
+
+	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 }
 
-void
-peer_clear_common(struct peer *peer)
+static gfarm_error_t
+peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 {
+	gfarm_error_t e;
+	struct peer *peer;
+	int sockopt, conn_alloced = 0;
+	static const char diag[] = "peer_alloc";
+
+	if (fd < 0) {
+		gflog_debug(GFARM_MSG_1001580,
+			"invalid argument 'fd'");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	if (fd >= peer_table_size) {
+		gflog_debug(GFARM_MSG_1001581,
+			"too many open files: fd >= peer_table_size");
+		return (GFARM_ERR_TOO_MANY_OPEN_FILES);
+	}
+
+	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
+	peer = &peer_table[fd];
+	if (peer->conn != NULL) { /* must be an implementation error */
+		gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
+		gflog_debug(GFARM_MSG_1001582,
+			"bad file descriptor: conn is not NULL");
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
+
 	peer->next_close = NULL;
 	peer->refcount = 0;
-	peer->free_requested = 0;
+	peer->replication_refcount = 0;
+
+	/* XXX FIXME gfp_xdr requires too much memory */
+	if (conn == NULL) {
+		e = gfp_xdr_new_socket(fd, &conn);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001583,
+			    "gfp_xdr_new_socket() failed: %s",
+			    gfarm_error_string(e));
+			gfarm_mutex_unlock(&peer_table_mutex, diag,
+			    peer_table_diag);
+			return (e);
+		}
+		conn_alloced = 1;
+	}
+	peer->conn = conn;
+	peer->async = NULL; /* synchronous protocol by default */
+	peer->watcher = NULL;
+	if (peer->readable_event == NULL) {
+		e = watcher_fd_readable_event_alloc(fd,
+		    &peer->readable_event);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_warning(GFARM_MSG_1002767,
+			    "peer watching %d: %s", fd, gfarm_error_string(e));
+			if (conn_alloced)
+				gfp_xdr_free(peer->conn);
+			peer->conn = NULL;
+			gfarm_mutex_unlock(&peer_table_mutex, diag,
+			    peer_table_diag);
+			return (e);
+		}
+	}
 
 	peer->username = NULL;
 	peer->hostname = NULL;
 	peer->user = NULL;
 	peer->host = NULL;
-	peer->peer_type = peer_type_foreground_channel;
-	peer->private_peer_id = 0;
 
 	/*
 	 * foreground channel
@@ -239,8 +819,9 @@ peer_clear_common(struct peer *peer)
 
 	peer->process = NULL;
 	peer->protocol_error = 0;
-	peer->fd_current = GFARM_DESCRIPTOR_INVALID;
-	peer->fd_saved = GFARM_DESCRIPTOR_INVALID;
+
+	peer->fd_current = -1;
+	peer->fd_saved = -1;
 	peer->flags = 0;
 	peer->findxmlattrctx = NULL;
 	peer->u.client.jobs = NULL;
@@ -249,47 +830,185 @@ peer_clear_common(struct peer *peer)
 	peer->pending_new_generation = NULL;
 	GFARM_HCIRCLEQ_INIT(peer->pending_new_generation_cookies, cookie_link);
 
-	peer->iostatp = NULL;
+	if (peer->iostatp == NULL)
+		peer->iostatp = gfarm_iostat_get_ip(fd);
 
-	/* gfmd channel */
-	peer->gfmdc_record = NULL;
+	/* deal with reboots or network problems */
+	sockopt = 1;
+	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &sockopt, sizeof(sockopt))
+	    == -1)
+		gflog_warning_errno(GFARM_MSG_1000283, "SO_KEEPALIVE");
+
+	*peerp = peer;
+	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-void
-peer_construct_common(struct peer *peer, struct peer_ops *ops,
-	const char *diag)
+gfarm_error_t
+peer_alloc(int fd, struct peer **peerp)
 {
-	peer_clear_common(peer);
-	peer->ops = ops;
+	return (peer_alloc0(fd, peerp, NULL));
+}
 
-	gfarm_mutex_init(&peer->protocol_error_mutex,
-	    diag, "peer:protocol_error_mutex");
+gfarm_error_t
+peer_alloc_with_connection(struct peer **peerp, struct gfp_xdr *conn,
+	struct abstract_host *host, int id_type)
+{
+	gfarm_error_t e;
+
+	if ((e = peer_alloc0(gfp_xdr_fd(conn), peerp, conn))
+	    == GFARM_ERR_NO_ERROR) {
+		(*peerp)->host = host;
+		(*peerp)->id_type = GFARM_AUTH_ID_TYPE_METADATA_HOST;
+	}
+	return (e);
 }
 
 const char *
 peer_get_service_name(struct peer *peer)
 {
-	return (peer == NULL ? "<null>" :
+	return (peer == NULL ? "" :
 	    ((peer)->id_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST ?  "gfsd" :
 	    ((peer)->id_type == GFARM_AUTH_ID_TYPE_METADATA_HOST ?
-	    "gfmd" : "client")));
+	    "gfmd" : "")));
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
+/* caller should allocate the storage for username and hostname */
 void
-peer_free_common(struct peer *peer, const char *diag)
+peer_authorized(struct peer *peer,
+	enum gfarm_auth_id_type id_type, char *username, char *hostname,
+	struct sockaddr *addr, enum gfarm_auth_method auth_method,
+	struct peer_watcher *watcher)
 {
+	struct host *h;
+	struct mdhost *m;
+
+	peer->id_type = id_type;
+	peer->user = NULL;
+	peer->username = username;
+
+	switch (id_type) {
+	case GFARM_AUTH_ID_TYPE_USER:
+		peer->user = user_lookup(username);
+		if (peer->user != NULL) {
+			free(username);
+			peer->username = NULL;
+		} else
+			peer->username = username;
+		/*FALLTHROUGH*/
+
+	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+		h = host_addr_lookup(hostname, addr);
+		if (h == NULL) {
+			peer->host = NULL;
+		} else {
+			peer->host = host_to_abstract_host(h);
+		}
+		break;
+
+	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+		m = mdhost_lookup(hostname);
+		if (m == NULL) {
+			peer->host = NULL;
+		} else {
+			peer->host = mdhost_to_abstract_host(m);
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	if (peer->host != NULL) {
+		free(hostname);
+		peer->hostname = NULL;
+	} else {
+		peer->hostname = hostname;
+	}
+
+	switch (id_type) {
+	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+		if (peer->host == NULL)
+			gflog_notice(GFARM_MSG_1000284,
+			    "unknown host: %s", hostname);
+		else
+			gflog_debug(GFARM_MSG_1002768,
+			    "%s connected from %s",
+			    peer_get_service_name(peer),
+			    abstract_host_get_name(peer->host));
+		break;
+	default:
+		break;
+	}
+	/* We don't record auth_method for now */
+
+	peer->watcher = watcher;
+
+	if (gfp_xdr_recv_is_ready(peer_get_conn(peer)))
+		thrpool_add_job(watcher->thrpool,
+		    watcher->readable_handler, peer);
+	else
+		peer_watch_access(peer);
+}
+
+static int
+peer_get_numeric_name(struct peer *peer, char *hostbuf, size_t hostlen)
+{
+	struct sockaddr_in sin;
+	socklen_t slen = sizeof(sin);
+
+	if (getpeername(peer_get_fd(peer),
+	    (struct sockaddr *)&sin, &slen) != 0)
+		return (errno);
+
+	return (gfarm_getnameinfo((struct sockaddr *)&sin, slen,
+	    hostbuf, hostlen, NULL, 0, NI_NUMERICHOST | NI_NUMERICSERV));
+}
+
+/*
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function should NOT call db_begin()/db_end() around this
+ */
+void
+peer_free(struct peer *peer)
+{
+	int err;
 	char *username;
+	const char *hostname;
+	int transaction = 0;
+	static const char diag[] = "peer_free";
+	char hostbuf[NI_MAXHOST];
+
+	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 
 	username = peer_get_username(peer);
+	hostname = peer_get_hostname(peer);
 
 	/*
 	 * both username and hostname may be null,
-	 * if peer_authorized() hasn't been called in a local peer case.
-	 *	(== authentication failed)
+	 * if peer_authorized() hasn't been called. (== authentication failed)
 	 */
-	(*peer->ops->notice_disconnected)(peer, peer_get_hostname(peer),
-	    username != NULL ? username : "<unauthorized>");
+	if (hostname == NULL) {
+		/*
+		 * IP address must be logged instead of (maybe faked) hostname
+		 * in case of an authentication failure.
+		 */
+		err = peer_get_numeric_name(peer, hostbuf, sizeof(hostbuf));
+		if (err == 0) {
+			hostname = hostbuf;
+		} else {
+			hostname = "<not-socket>";
+			gflog_info(GFARM_MSG_1003276,
+			    "unable to convert peer address to string: %s",
+			    strerror(err));
+		}
+	}
+	gflog_notice(GFARM_MSG_1000286,
+	    "(%s@%s) disconnected",
+	    username != NULL ? username : "<unauthorized>",
+	    hostname != NULL ? hostname : hostbuf);
 
 	/*
 	 * free resources for gfmd channel
@@ -298,6 +1017,12 @@ peer_free_common(struct peer *peer, const char *diag)
 		gfmdc_peer_record_free(peer->gfmdc_record, diag);
 		peer->gfmdc_record = NULL;
 	}
+
+	/*
+	 * free resources for gfsd back channel
+	 */
+	/* this must be called after (*peer_async_free)() */
+	peer_replicating_free_all(peer);
 
 	/*
 	 * free resources for foreground channel
@@ -314,21 +1039,25 @@ peer_free_common(struct peer *peer, const char *diag)
 		    &peer->u.client.jobs);
 	peer->u.client.jobs = NULL;
 
+	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		transaction = 1;
+
 	peer_unset_pending_new_generation(peer, GFARM_ERR_CONNECTION_ABORTED);
 
 	peer->findxmlattrctx = NULL;
 
 	peer->protocol_error = 0;
 	if (peer->process != NULL) {
-		process_detach_peer(peer->process, peer);
+		process_detach_peer(peer->process, peer, diag);
 		peer->process = NULL;
 	}
+
+	if (transaction)
+		db_end(diag);
 
 	/*
 	 * free common resources
 	 */
-
-	peer->private_peer_id = 0;
 
 	peer->user = NULL;
 	peer->host = NULL;
@@ -339,75 +1068,162 @@ peer_free_common(struct peer *peer, const char *diag)
 		free(peer->hostname); peer->hostname = NULL;
 	}
 
+	peer->watcher = NULL;
+	/* We don't free peer->readable_event. */
+	if (peer->conn) {
+		gfp_xdr_free(peer->conn);
+		peer->conn = NULL;
+	}
+
 	peer->next_close = NULL;
 	peer->refcount = 0;
-	peer->free_requested = 0;
+	peer->replication_refcount = 0;
+
+	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */
 void
-peer_free(struct peer *peer)
+peer_shutdown_all(void)
 {
-	(*peer->ops->free)(peer);
+	int i;
+	struct peer *peer;
+	int needs_cleanup = 0, transaction = 0;
+	static const char diag[] = "peer_shutdown_all";
+
+	/* We never unlock this mutex any more */
+	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
+
+	if (!peer_initialized) {
+		gflog_info(GFARM_MSG_1003473,
+		    "peer module is not initialized yet, "
+		    "skip to shutdown connections");
+		return;
+	}
+
+	/*
+	 * check whether we need to close some peer or not at first,
+	 * to avoid unnecessary db_begin()/db_end().
+	 */
+	for (i = 0; i < peer_table_size; i++) {
+		peer = &peer_table[i];
+		if (peer->process != NULL) {
+			needs_cleanup = 1;
+			break;
+		}
+	}
+	if (!needs_cleanup)
+		return;
+
+	/*
+	 * We do db_begin()/db_end() here instead of the caller of
+	 * this function, to avoid SF.net #736
+	 */
+	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		transaction = 1;
+	for (i = 0; i < peer_table_size; i++) {
+		peer = &peer_table[i];
+		if (peer->process == NULL)
+			continue;
+
+		gflog_notice(GFARM_MSG_1000287, "(%s@%s) shutting down",
+		    peer->username, peer->hostname);
+		peer_unset_pending_new_generation(peer,
+		    GFARM_ERR_GFMD_FAILED_OVER); /* we do this for logging */
+		process_detach_peer(peer->process, peer, diag);
+		peer->process = NULL;
+	}
+	if (transaction)
+		db_end(diag);
 }
 
-struct local_peer *
-peer_to_local_peer(struct peer *peer)
+/* XXX FIXME - rename this to peer_readable_invoked() */
+void
+peer_invoked(struct peer *peer)
 {
-	return ((*peer->ops->peer_to_local_peer)(peer));
+	watcher_event_ack(peer->readable_event);
+	peer_del_ref(peer);
+
+	gfarm_cond_signal(&peer_closing_queue.ready_to_close,
+	    "peer_invoked", "connection can be freed");
 }
 
-struct remote_peer *
-peer_to_remote_peer(struct peer *peer)
+/* XXX FIXME - rename this to peer_readable_watch() */
+void
+peer_watch_access(struct peer *peer)
 {
-	return ((*peer->ops->peer_to_remote_peer)(peer));
+	peer_add_ref(peer);
+	watcher_add_event(peer->watcher->w, peer->readable_event,
+	    peer->watcher->thrpool, peer->watcher->readable_handler, peer);
 }
+
+#if 0
+
+struct peer *
+peer_by_fd(int fd)
+{
+	static const char diag[] = "peer_by_fd";
+
+	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
+	if (fd < 0 || fd >= peer_table_size || peer_table[fd].conn == NULL)
+		return (NULL);
+	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
+	return (&peer_table[fd]);
+}
+
+/* NOTE: caller of this function should acquire giant_lock as well */
+gfarm_error_t
+peer_free_by_fd(int fd)
+{
+	struct peer *peer = peer_by_fd(fd);
+
+	if (peer == NULL)
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	peer_free(peer);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+#endif /* 0 */
 
 struct gfp_xdr *
 peer_get_conn(struct peer *peer)
 {
-	return ((*peer->ops->get_conn)(peer));
+	return (peer->conn);
+}
+
+int
+peer_get_fd(struct peer *peer)
+{
+	int fd = peer - peer_table;
+
+	if (fd < 0 || fd >= peer_table_size)
+		gflog_fatal(GFARM_MSG_1000288,
+		    "peer_get_fd: invalid peer pointer");
+	return (fd);
+}
+
+void
+peer_set_async(struct peer *peer, gfp_xdr_async_peer_t async)
+{
+	peer->async = async;
 }
 
 gfp_xdr_async_peer_t
 peer_get_async(struct peer *peer)
 {
-	return ((*peer->ops->get_async)(peer));
+	return (peer->async);
 }
 
-gfarm_error_t
-peer_get_port(struct peer *peer, int *portp)
-{
-	return ((*peer->ops->get_port)(peer, portp));
-}
-
-gfarm_int64_t
-peer_get_private_peer_id(struct peer *peer)
-{
-	return (peer->private_peer_id);
-}
-
-void
-peer_set_private_peer_id(struct peer *peer)
-{
-	static const char diag[] = "peer_set_private_peer_id";
-
-	gfarm_mutex_lock(&peer_seqno_mutex, diag, peer_seqno_diag);
-	peer->private_peer_id = private_peer_id_seqno++;
-	gfarm_mutex_unlock(&peer_seqno_mutex, diag, peer_seqno_diag);
-}
-
-struct peer *
-peer_get_parent(struct peer *peer)
-{
-	return ((*peer->ops->get_parent)(peer));
-}
-
+/*
+ * This funciton is experimentally introduced to accept a host in
+ * private networks.
+ */
 gfarm_error_t
 peer_set_host(struct peer *peer, char *hostname)
 {
 	struct host *h;
 	struct mdhost *m;
+	char *aux;
 
 	switch (peer->id_type) {
 	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
@@ -443,10 +1259,24 @@ peer_set_host(struct peer *peer, char *hostname)
 	}
 
 	if (peer->hostname != NULL) {
+		gflog_info(GFARM_MSG_1004751, "%s: set to %s",
+		    peer->hostname, hostname);
 		free(peer->hostname);
 		peer->hostname = NULL;
 	}
-
+	aux = gflog_get_auxiliary_info();
+	if (aux != NULL) {
+		free(aux);
+		GFARM_MALLOC_ARRAY(aux,
+		    strlen(peer->username) + 1 + strlen(hostname) + 1);
+		if (aux == NULL) {
+			gflog_error(GFARM_MSG_1004752, "no memory: "
+			    "gflog_set_auxiliary_info(%s@%s)",
+			    peer->username, hostname);
+		} else
+			sprintf(aux, "%s@%s", peer->username, hostname);
+		gflog_set_auxiliary_info(aux);
+	}
 	gflog_debug(GFARM_MSG_1002772,
 	    "%s connected from %s",
 	    peer_get_service_name(peer), abstract_host_get_name(peer->host));
@@ -503,95 +1333,8 @@ peer_get_host(struct peer *peer)
 struct mdhost *
 peer_get_mdhost(struct peer *peer)
 {
-	return (*peer->ops->get_mdhost)(peer);
-}
-
-enum peer_type
-peer_get_peer_type(struct peer *peer)
-{
-	return (peer->peer_type);
-}
-
-void
-peer_set_peer_type(struct peer *peer, enum peer_type peer_type)
-{
-	peer->peer_type = peer_type;
-}
-
-static void
-protocol_state_init(struct protocol_state *ps)
-{
-	ps->nesting_level = 0;
-}
-
-void
-peer_authorized_common(struct peer *peer,
-	enum gfarm_auth_id_type id_type, char *username, char *hostname,
-	struct sockaddr *addr, enum gfarm_auth_method auth_method)
-{
-	struct host *h;
-	struct mdhost *m;
-
-	protocol_state_init(&peer->pstate);
-
-	peer->id_type = id_type;
-	peer->user = NULL;
-	peer->username = username;
-
-	switch (id_type) {
-	case GFARM_AUTH_ID_TYPE_USER:
-		peer->user = user_lookup(username);
-		if (peer->user != NULL) {
-			free(username);
-			peer->username = NULL;
-		} else
-			peer->username = username;
-		/*FALLTHROUGH*/
-
-	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
-		h = addr != NULL ?
-		    host_addr_lookup(hostname, addr) : host_lookup(hostname);
-		if (h == NULL)
-			peer->host = NULL;
-		else
-			peer->host = host_to_abstract_host(h);
-		break;
-
-	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
-		m = mdhost_lookup(hostname);
-		if (m == NULL)
-			peer->host = NULL;
-		else
-			peer->host = mdhost_to_abstract_host(m);
-		break;
-
-	default:
-		break;
-	}
-
-	if (peer->host != NULL) {
-		free(hostname);
-		peer->hostname = NULL;
-	} else
-		peer->hostname = hostname;
-
-	switch (id_type) {
-	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
-	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
-		if (peer->host == NULL)
-			gflog_notice(GFARM_MSG_1000284,
-			    "unknown host: %s", hostname);
-		else
-			gflog_debug(GFARM_MSG_1002768,
-			    "%s connected from %s",
-			    peer_get_service_name(peer),
-			    abstract_host_get_name(peer->host));
-		break;
-	default:
-		break;
-	}
-
-	/* We don't record auth_method for now */
+	return (peer->host == NULL ? NULL :
+	    abstract_host_to_mdhost(peer->host));
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */
@@ -608,14 +1351,25 @@ peer_reset_pending_new_generation_by_fd(struct peer *peer)
 	peer->pending_new_generation = NULL;
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function should NOT call db_begin()/db_end() around this
+ */
 static void
 peer_unset_pending_new_generation_by_fd(
 	struct peer *peer, gfarm_error_t reason)
 {
-	if (peer->pending_new_generation != NULL) {
-		inode_new_generation_by_fd_finish(peer->pending_new_generation,
-		    peer, reason);
+	struct inode *inode = peer->pending_new_generation;
+
+	if (inode != NULL) {
+		gflog_error(GFARM_MSG_1004009,
+		    "gfsd connection is lost during GFM_PROTO_CLOSE_WRITE: "
+		    "inode %lld:%lld may be lost. (new size:%lld)",
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    (long long)inode_get_size(inode));
+		inode_new_generation_by_fd_finish(inode, peer, reason);
 		peer->pending_new_generation = NULL;
 	}
 }
@@ -623,9 +1377,10 @@ peer_unset_pending_new_generation_by_fd(
 /* NOTE: caller of this function should acquire giant_lock as well */
 gfarm_error_t
 peer_add_pending_new_generation_by_cookie(
-	struct peer *peer, struct inode *inode, gfarm_uint64_t *cookiep)
+	struct peer *peer, struct inode *inode, gfarm_off_t old_size,
+	gfarm_uint64_t *cookiep)
 {
-	static const char diag[] = "peer_add_cookie";
+	static const char *diag = "peer_add_cookie";
 	struct pending_new_generation_by_cookie *cookie;
 	gfarm_uint64_t result;
 
@@ -640,6 +1395,7 @@ peer_add_pending_new_generation_by_cookie(
 	gfarm_mutex_unlock(&peer_seqno_mutex, diag, peer_seqno_diag);
 
 	cookie->inode = inode;
+	cookie->old_size = old_size;
 	*cookiep = cookie->id = result;
 	GFARM_HCIRCLEQ_INSERT_HEAD(peer->pending_new_generation_cookies,
 	    cookie, cookie_link);
@@ -650,9 +1406,10 @@ peer_add_pending_new_generation_by_cookie(
 /* NOTE: caller of this function should acquire giant_lock as well */
 int
 peer_remove_pending_new_generation_by_cookie(
-	struct peer *peer, gfarm_uint64_t cookie_id, struct inode **inodep)
+	struct peer *peer, gfarm_uint64_t cookie_id,
+	struct inode **inodep, gfarm_off_t *old_sizep)
 {
-	static const char diag[] = "peer_delete_cookie";
+	static const char *diag = "peer_delete_cookie";
 	struct pending_new_generation_by_cookie *cookie;
 	int found = 0;
 
@@ -661,6 +1418,8 @@ peer_remove_pending_new_generation_by_cookie(
 		if (cookie->id == cookie_id) {
 			if (inodep != NULL)
 				*inodep = cookie->inode;
+			if (old_sizep != NULL)
+				*old_sizep = cookie->old_size;
 			GFARM_HCIRCLEQ_REMOVE(cookie, cookie_link);
 			free(cookie);
 			found = 1;
@@ -674,26 +1433,45 @@ peer_remove_pending_new_generation_by_cookie(
 	return (found);
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
 static void
 peer_unset_pending_new_generation_by_cookie(
 	struct peer *peer, gfarm_error_t reason)
 {
 	struct pending_new_generation_by_cookie *cookie;
+	struct inode *inode;
 
 	while (!GFARM_HCIRCLEQ_EMPTY(peer->pending_new_generation_cookies,
 	    cookie_link)) {
 		cookie = GFARM_HCIRCLEQ_FIRST(
 		    peer->pending_new_generation_cookies, cookie_link);
+		inode = cookie->inode;
+		gflog_error(GFARM_MSG_1004010,
+		    "gfsd connection is lost during GFM_PROTO_FHCLOSE_WRITE: "
+		    "inode %lld:%lld may be lost. "
+		    "(new size:%lld, old size:%lld)",
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    (long long)inode_get_size(inode),
+		    (long long)cookie->old_size);
+		/*
+		 * We don't know actual size in this case,
+		 * but assume new size here, just because the generation
+		 * is incremented in metadata.
+		 * Perhaps cookie->old_size is right, though.
+		 */
 		inode_new_generation_by_cookie_finish(
-		    cookie->inode, cookie->id, peer, reason);
+		    inode, inode_get_size(inode), cookie->id, peer, reason);
 		GFARM_HCIRCLEQ_REMOVE(cookie, cookie_link);
 		free(cookie);
 	}
 	GFARM_HCIRCLEQ_INIT(peer->pending_new_generation_cookies, cookie_link);
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function SHOULD call db_begin()/db_end() around this
+ */
 void
 peer_unset_pending_new_generation(struct peer *peer, gfarm_error_t reason)
 {
@@ -721,9 +1499,13 @@ peer_set_process(struct peer *peer, struct process *process)
 	process_attach_peer(process, peer);
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * NOTE:
+ * - caller of this function should acquire giant_lock as well
+ * - caller of this function SHOULD call db_begin()/db_end() around this
+ */
 void
-peer_unset_process(struct peer *peer)
+peer_unset_process(struct peer *peer, const char *diag)
 {
 	if (peer->process == NULL)
 		gflog_fatal(GFARM_MSG_1000292,
@@ -732,9 +1514,9 @@ peer_unset_process(struct peer *peer)
 	peer_unset_pending_new_generation_by_fd(
 	    peer, GFARM_ERR_NO_SUCH_PROCESS);
 
-	peer_fdpair_clear(peer);
+	peer_fdpair_clear(peer, diag);
 
-	process_detach_peer(peer->process, peer);
+	process_detach_peer(peer->process, peer, diag);
 	peer->process = NULL;
 	peer->user = NULL;
 }
@@ -765,6 +1547,12 @@ peer_had_protocol_error(struct peer *peer)
 	return (e);
 }
 
+void
+peer_set_watcher(struct peer *peer, struct peer_watcher *watcher)
+{
+	peer->watcher = watcher;
+}
+
 struct protocol_state *
 peer_get_protocol_state(struct peer *peer)
 {
@@ -783,26 +1571,25 @@ peer_get_jobs_ref(struct peer *peer)
  * because only externalized descriptor needs the calls.
  */
 void
-peer_fdpair_clear(struct peer *peer)
+peer_fdpair_clear(struct peer *peer, const char *diag)
 {
 	if (peer->process == NULL) {
-		assert(peer->fd_current == GFARM_DESCRIPTOR_INVALID &&
-		    peer->fd_saved == GFARM_DESCRIPTOR_INVALID);
+		assert(peer->fd_current == -1 && peer->fd_saved == -1);
 		return;
 	}
-	if (peer->fd_current != GFARM_DESCRIPTOR_INVALID &&
+	if (peer->fd_current != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
-	    peer->fd_current != peer->fd_saved /* prevent double close */ &&
-	    (mdhost_self_is_master() || FD_IS_SLAVE_ONLY(peer->fd_current))) {
-		process_close_file(peer->process, peer, peer->fd_current, NULL);
+	    peer->fd_current != peer->fd_saved) { /* prevent double close */
+		process_close_file(peer->process, peer, peer->fd_current, NULL,
+		    diag);
 	}
-	if (peer->fd_saved != GFARM_DESCRIPTOR_INVALID &&
-	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0 &&
-	    (mdhost_self_is_master() || FD_IS_SLAVE_ONLY(peer->fd_saved))) {
-		process_close_file(peer->process, peer, peer->fd_saved, NULL);
+	if (peer->fd_saved != -1 &&
+	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0) {
+		process_close_file(peer->process, peer, peer->fd_saved, NULL,
+		    diag);
 	}
-	peer->fd_current = GFARM_DESCRIPTOR_INVALID;
-	peer->fd_saved = GFARM_DESCRIPTOR_INVALID;
+	peer->fd_current = -1;
+	peer->fd_saved = -1;
 	peer->flags &= ~(
 	    PEER_FLAGS_FD_CURRENT_EXTERNALIZED |
 	    PEER_FLAGS_FD_SAVED_EXTERNALIZED);
@@ -811,7 +1598,7 @@ peer_fdpair_clear(struct peer *peer)
 gfarm_error_t
 peer_fdpair_externalize_current(struct peer *peer)
 {
-	if (peer->fd_current == GFARM_DESCRIPTOR_INVALID) {
+	if (peer->fd_current == -1) {
 		gflog_debug(GFARM_MSG_1001587,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
@@ -825,17 +1612,17 @@ peer_fdpair_externalize_current(struct peer *peer)
 gfarm_error_t
 peer_fdpair_close_current(struct peer *peer)
 {
-	if (peer->fd_current == GFARM_DESCRIPTOR_INVALID) {
+	if (peer->fd_current == -1) {
 		gflog_debug(GFARM_MSG_1001588,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	if (peer->fd_current == peer->fd_saved) {
 		peer->flags &= ~PEER_FLAGS_FD_SAVED_EXTERNALIZED;
-		peer->fd_saved = GFARM_DESCRIPTOR_INVALID;
+		peer->fd_saved = -1;
 	}
 	peer->flags &= ~PEER_FLAGS_FD_CURRENT_EXTERNALIZED;
-	peer->fd_current = GFARM_DESCRIPTOR_INVALID;
+	peer->fd_current = -1;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -845,13 +1632,13 @@ peer_fdpair_close_current(struct peer *peer)
  * because only externalized descriptor needs the calls.
  */
 void
-peer_fdpair_set_current(struct peer *peer, gfarm_int32_t fd)
+peer_fdpair_set_current(struct peer *peer, gfarm_int32_t fd, const char *diag)
 {
-	if (peer->fd_current != GFARM_DESCRIPTOR_INVALID &&
+	if (peer->fd_current != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
-	    peer->fd_current != peer->fd_saved /* prevent double close */ &&
-	    (mdhost_self_is_master() || FD_IS_SLAVE_ONLY(peer->fd_current))) {
-		process_close_file(peer->process, peer, peer->fd_current, NULL);
+	    peer->fd_current != peer->fd_saved) { /* prevent double close */
+		process_close_file(peer->process, peer, peer->fd_current, NULL,
+		diag);
 	}
 	peer->flags &= ~PEER_FLAGS_FD_CURRENT_EXTERNALIZED;
 	peer->fd_current = fd;
@@ -860,7 +1647,7 @@ peer_fdpair_set_current(struct peer *peer, gfarm_int32_t fd)
 gfarm_error_t
 peer_fdpair_get_current(struct peer *peer, gfarm_int32_t *fdp)
 {
-	if (peer->fd_current == GFARM_DESCRIPTOR_INVALID) {
+	if (peer->fd_current == -1) {
 		gflog_debug(GFARM_MSG_1001589,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
@@ -872,7 +1659,7 @@ peer_fdpair_get_current(struct peer *peer, gfarm_int32_t *fdp)
 gfarm_error_t
 peer_fdpair_get_saved(struct peer *peer, gfarm_int32_t *fdp)
 {
-	if (peer->fd_saved == GFARM_DESCRIPTOR_INVALID) {
+	if (peer->fd_saved == -1) {
 		gflog_debug(GFARM_MSG_1001590,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
@@ -887,19 +1674,19 @@ peer_fdpair_get_saved(struct peer *peer, gfarm_int32_t *fdp)
  * because only externalized descriptor needs the calls.
  */
 gfarm_error_t
-peer_fdpair_save(struct peer *peer)
+peer_fdpair_save(struct peer *peer, const char *diag)
 {
-	if (peer->fd_current == GFARM_DESCRIPTOR_INVALID) {
+	if (peer->fd_current == -1) {
 		gflog_debug(GFARM_MSG_1001591,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 
-	if (peer->fd_saved != GFARM_DESCRIPTOR_INVALID &&
+	if (peer->fd_saved != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0 &&
-	    peer->fd_saved != peer->fd_current /* prevent double close */ &&
-	    (mdhost_self_is_master() || FD_IS_SLAVE_ONLY(peer->fd_saved))) {
-		process_close_file(peer->process, peer, peer->fd_saved, NULL);
+	    peer->fd_saved != peer->fd_current) { /* prevent double close */
+		process_close_file(peer->process, peer, peer->fd_saved, NULL,
+		    diag);
 	}
 	peer->fd_saved = peer->fd_current;
 	peer->flags = (peer->flags & ~PEER_FLAGS_FD_SAVED_EXTERNALIZED) |
@@ -914,19 +1701,19 @@ peer_fdpair_save(struct peer *peer)
  * because only externalized descriptor needs the calls.
  */
 gfarm_error_t
-peer_fdpair_restore(struct peer *peer)
+peer_fdpair_restore(struct peer *peer, const char *diag)
 {
-	if (peer->fd_saved == GFARM_DESCRIPTOR_INVALID) {
+	if (peer->fd_saved == -1) {
 		gflog_debug(GFARM_MSG_1001592,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 
-	if (peer->fd_current != GFARM_DESCRIPTOR_INVALID &&
+	if (peer->fd_current != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
-	    peer->fd_current != peer->fd_saved /* prevent double close */ &&
-	    (mdhost_self_is_master() || FD_IS_SLAVE_ONLY(peer->fd_current))) {
-		process_close_file(peer->process, peer, peer->fd_current, NULL);
+	    peer->fd_current != peer->fd_saved) { /* prevent double close */
+		process_close_file(peer->process, peer, peer->fd_current, NULL,
+		    diag);
 	}
 	peer->fd_current = peer->fd_saved;
 	peer->flags = (peer->flags & ~PEER_FLAGS_FD_CURRENT_EXTERNALIZED) |
@@ -936,15 +1723,33 @@ peer_fdpair_restore(struct peer *peer)
 }
 
 void
-peer_findxmlattrctx_set(struct peer *peer, struct inum_path_array *ctx)
+peer_findxmlattrctx_set(struct peer *peer, void *ctx)
 {
 	peer->findxmlattrctx = ctx;
 }
 
-struct inum_path_array *
+void *
 peer_findxmlattrctx_get(struct peer *peer)
 {
-	return (peer->findxmlattrctx);
+	return peer->findxmlattrctx;
+}
+
+gfarm_error_t
+peer_get_port(struct peer *peer, int *portp)
+{
+	struct sockaddr_in sin;
+	socklen_t slen = sizeof(sin);
+
+	if (getpeername(peer_get_fd(peer), (struct sockaddr *)&sin, &slen) != 0) {
+		*portp = 0;
+		return (gfarm_errno_to_error(errno));
+	} else if (sin.sin_family != AF_INET) {
+		*portp = 0;
+		return (GFARM_ERR_ADDRESS_FAMILY_NOT_SUPPORTED_BY_PROTOCOL_FAMILY);
+	} else {
+		*portp = (int)ntohs(sin.sin_port);
+		return (GFARM_ERR_NO_ERROR);
+	}
 }
 
 void

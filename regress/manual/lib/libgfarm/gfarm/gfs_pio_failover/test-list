@@ -11,6 +11,8 @@ readlink
 stat
 lstat
 fstat
+stat_cksum
+fstat_cksum
 utimes
 lutimes
 remove
@@ -36,23 +38,36 @@ seekdirplusxattr
 sched-read
 sched-open-write
 sched-create-write
+sched-recvfile
+sched-open-sendfile
+sched-create-sendfile
 close
 close-open
 close-open2
+fhopen-file
 read
 read-stat
 open-read-loop
+recvfile
+recvfile-stat
+open-recvfile-loop
 getc
 seek
 seek-dirty
 write
 write-stat
+sendfile
+sendfile-stat
 putc
 truncate
 flush
 sync
 datasync
+pio_cksum
+read-close-read
+recvfile-close-recvfile
 write-long-loop
+sendfile-long-loop
 
 # xattr/xmlattr
 getxattr

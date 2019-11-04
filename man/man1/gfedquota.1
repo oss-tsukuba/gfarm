@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfedquota
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 23 Mar 2011
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 25 Aug 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFEDQUOTA" "1" "23 Mar 2011" "Gfarm" "Gfarm"
+.TH "GFEDQUOTA" "1" "25 Aug 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -28,7 +28,7 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-gfedquota \- edit the limits
+gfedquota \- edit file limits
 .SH "SYNOPSIS"
 .HP \w'\fBgfedquota\fR\ 'u
 \fBgfedquota\fR [\fIoptions\fR]
@@ -40,11 +40,6 @@ is a editor of limits (quotas) for users and groups\&.
 There are two kinds of limits which are "soft limit" and "hard limit"\&. Soft limits have a grace period\&. Types of limits are the total number of files, the total space of files, the total number of files include replicas and the total space of files include replicas\&. Setting \*(Aqdisable\*(Aq or \-1 indicates unlimited\&. If no option for limits is specified, no quota is imposed\&.
 .PP
 This command can be executed by an administrator in the gfarmadm group\&.
-.PP
-The count of usage and the check of quota are enabled after executiing
-\fBgfedquota\fR
-and
-\fBgfquotacheck \fRcommand\&.
 .SH "OPTIONS"
 .PP
 \fB\-P NAME, \-\-path=NAME\fR
@@ -113,7 +108,6 @@ Displays a list of command options\&.
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfquota\fR(1),
 \fBgfquotacheck\fR(1),
 \fBgfusage\fR(1)

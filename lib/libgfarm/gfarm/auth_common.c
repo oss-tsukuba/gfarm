@@ -25,6 +25,9 @@
 #include "gfutil.h"
 #include "thrsubr.h"
 
+#define GFARM_USE_OPENSSL
+#include "msgdigest.h"
+
 #include "context.h"
 #include "config.h"
 #include "liberror.h"
@@ -36,8 +39,6 @@
 #define staticp	(gfarm_ctxp->auth_common_static)
 
 struct gfarm_auth_common_static {
-	pthread_mutex_t privilege_mutex;
-
 	/* gfarm_auth_sharedsecret_response_data() */
 	pthread_mutex_t openssl_mutex;
 };
@@ -51,8 +52,6 @@ gfarm_auth_common_static_init(struct gfarm_context *ctxp)
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	gfarm_mutex_init(&s->privilege_mutex,
-	    "gfarm_auth_common_static_init", "privilege mutex");
 	gfarm_mutex_init(&s->openssl_mutex,
 	    "gfarm_auth_common_static_init", "openssl mutex");
 
@@ -68,8 +67,6 @@ gfarm_auth_common_static_term(struct gfarm_context *ctxp)
 	if (s == NULL)
 		return;
 
-	gfarm_mutex_destroy(&s->privilege_mutex,
-	    "gfarm_auth_common_static_term", "privilege mutex");
 	gfarm_mutex_destroy(&s->openssl_mutex,
 	    "gfarm_auth_common_static_term", "openssl mutex");
 	free(s);
@@ -163,24 +160,16 @@ gfarm_auth_random(void *buffer, size_t length)
 	}
 }
 
-static const char privilege_diag[] = "privilege_mutex";
-
 /*
- * Lock mutex for setuid(), setegid().
+ * server only configuration.
+ * constant in clients, thus, gfarm_ctxp is not necessary
  */
-void
-gfarm_auth_privilege_lock(const char *diag)
-{
-	gfarm_mutex_lock(&staticp->privilege_mutex, diag, privilege_diag);
-}
+static int gfarm_auth_root_squash_support = 1; /* always true in clients */
 
-/*
- * Unlock mutex for setuid(), setegid().
- */
 void
-gfarm_auth_privilege_unlock(const char *diag)
+gfarm_auth_root_squash_support_disable(void)
 {
-	gfarm_mutex_unlock(&staticp->privilege_mutex, diag, privilege_diag);
+	gfarm_auth_root_squash_support = 0;
 }
 
 /*
@@ -226,8 +215,8 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 		strcat(keyfilename, keyfile_basename);
 		allocbuf = keyfilename;
 	}
-	if (pwd != NULL) {
-		gfarm_auth_privilege_lock(diag);
+	if (pwd != NULL && gfarm_auth_root_squash_support) {
+		gfarm_privilege_lock(diag);
 		o_gid = getegid();
 		o_uid = geteuid();
 		if (seteuid(0) == 0) /* recover root privilege */
@@ -269,7 +258,7 @@ create:
 	if (fp == NULL) {
 		if (e != GFARM_ERR_NO_ERROR &&
 		    e != GFARM_ERRMSG_SHAREDSECRET_KEY_FILE_NOT_EXIST) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1003703,
 			    "%s, create the key again: %s",
 			    gfarm_error_string(e), keyfilename);
 			e = GFARM_ERR_NO_ERROR;
@@ -317,7 +306,7 @@ create:
 	}
 finish:
 	free(allocbuf);
-	if (pwd != NULL) {
+	if (pwd != NULL && gfarm_auth_root_squash_support) {
 		if (seteuid(0) == -1 && is_root) /* recover root privilege */
 			gflog_error_errno(GFARM_MSG_1002342, "seteuid(0)");
 		/* abandon group privileges */
@@ -331,7 +320,7 @@ finish:
 		if (seteuid(o_uid) == -1 && is_root)
 			gflog_error_errno(GFARM_MSG_1002345,
 			    "seteuid(%d)", (int)o_uid);
-		gfarm_auth_privilege_unlock(diag);
+		gfarm_privilege_unlock(diag);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001024,
@@ -341,12 +330,13 @@ finish:
 	return (e);
 }
 
-void
+gfarm_error_t
 gfarm_auth_sharedsecret_response_data(char *shared_key, char *challenge,
 				      char *response)
 {
-	EVP_MD_CTX mdctx;
-	unsigned int md_len;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	EVP_MD_CTX *md_ctx;
+	int md_len = 0;
 	static const char openssl_diag[] = "openssl_mutex";
 	static const char diag[] = "gfarm_auth_sharedsecret_response_data";
 
@@ -357,16 +347,26 @@ gfarm_auth_sharedsecret_response_data(char *shared_key, char *challenge,
 	 */
 
 	gfarm_mutex_lock(&staticp->openssl_mutex, diag, openssl_diag);
-	EVP_DigestInit(&mdctx, EVP_md5());
-	EVP_DigestUpdate(&mdctx, challenge, GFARM_AUTH_CHALLENGE_LEN);
-	EVP_DigestUpdate(&mdctx, shared_key, GFARM_AUTH_SHARED_KEY_LEN);
-	EVP_DigestFinal(&mdctx, (unsigned char *)response, &md_len);
+	md_ctx = gfarm_msgdigest_alloc(EVP_md5());
+	if (md_ctx == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+	} else {
+		EVP_DigestUpdate(md_ctx,
+		    challenge, GFARM_AUTH_CHALLENGE_LEN);
+		EVP_DigestUpdate(md_ctx,
+		    shared_key, GFARM_AUTH_SHARED_KEY_LEN);
+		md_len = gfarm_msgdigest_free(
+		    md_ctx, (unsigned char *)response);
+	}
 	gfarm_mutex_unlock(&staticp->openssl_mutex, diag, openssl_diag);
 
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	if (md_len != GFARM_AUTH_RESPONSE_LEN) {
 		gflog_fatal(GFARM_MSG_1003263,
 			"gfarm_auth_sharedsecret_response_data:"
 			"md5 digest length should be %d, but %d\n",
 			GFARM_AUTH_RESPONSE_LEN, md_len);
 	}
+	return (GFARM_ERR_NO_ERROR);
 }

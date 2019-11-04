@@ -55,7 +55,9 @@ List of Documents
 - SETUP.private.en (in English)
   SETUP.private.ja (in Japanese)
 	This document describes how to setup a private Gfarm file
-	system by a non privileged user.
+	system by a non-privileged user instead of the root privilege.
+	Note that only the user can use Gfarm in this case, thus
+	it's recommended to use SETUP.en / SETUP.ja usually.
 
 - KNOWN_PROBLEMS.en (in English)
   KNOWN_PROBLEMS.ja (in Japanese)

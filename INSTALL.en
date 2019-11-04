@@ -31,41 +31,37 @@ Options for configure:
   option is not specified, the installation directory is searched for
   automatically.
 
-
   --with-postgresql=directory
 
   Specifies an installation directory for PostgreSQL.  When this
   option is not specified, the installation directory is searched for
   automatically.
 
-
   --with-openssl=directory
 
   Specifies an installation directory for OpenSSL.  The default
   directory is /usr.
 
-
   --with-globus=directory
 
   Specifies an installation directory for the Globus Toolkit to utilize the
-  GSI authentication  method.  When a directory is not specified, the
-  environment variable, GLOBUS_LOCATION is used.  This is optional.
-  The flavor of the Globus library is searched for automatically.
+  GSI authentication method.  When a directory is not specified,
+  pkg-config is tried at first, and then the environment variable
+  GLOBUS_LOCATION is tried.
+  This is optional.  The flavor of the Globus library is searched for
+  automatically.
   If you need to specify a flavor, specify it with the
   --with-globus-flavor=flavor option.
-
 
   --without-mtsafe-netdb
 
   Specifies if either getaddrinfo(3) or getnameinfo(3) library function
   is not multi-thread safe.
 
-
   --prefix=directory
 
   Specifies a destination directory for installation.  The default is
   /usr/local directory.  This is optional.
-
 
   --sysconfdir=directory
 
@@ -74,7 +70,6 @@ Options for configure:
   specified in the above --prefix option.  This document assumes
   that --sysconfdir=/etc is specified.  This is optional.
 
-
   --enable-voms
 
   Enables to compile the gfvoms-sync command to synchronize Gfarm
@@ -82,7 +77,6 @@ Options for configure:
   servers.  This option requires Python and ZSI (Zolera SOAP
   Infrastructure).
   This is optional.
-
 
   --enable-xmlattr
 
@@ -96,6 +90,7 @@ Options for configure:
   This is optional.
 
   --enable-linuxkernel
+
   Enables to compile the Gfarm kernel driver on linux kernel 2.6.
 
 When you need to specify a compiler program explicitly, use the
@@ -111,7 +106,15 @@ Required Package
 openssl-devel
 openldap-devel
 postgresql-devel
+globus-gssapi-gsi-devel(*), pkgconfig	(required for --with-globus option)
+postgresql, postgresql-server		(required to execute config-gfarm)
+fuse-devel				(required to build gfarm2fs)
 ganglia-gmond-python		(required to execute config-gf[ms]d-iostat)
+
+(*) It is necessary to install Globus configuration file.  See
+    http://toolkit.globus.org/toolkit/downloads/latest-stable/
+    Here is an example in case of CentOS 6 or 7 and Globus 6.0.
+    # rpm -Uvh http://toolkit.globus.org/ftppub/gt6/installers/repo/globus-toolkit-repo-latest.noarch.rpm
 
 * Debian Package
 

@@ -5,7 +5,7 @@
 
 <refentry id="gfstatus.1">
 
-<refentryinfo><date>19 Dec 2008</date></refentryinfo>
+<refentryinfo><date>27 Jan 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfstatus</refentrytitle>
@@ -21,15 +21,64 @@
 <refsynopsisdiv id="synopsis">
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfstatus</command>
-    <arg choice="opt" rep="norepeat"><replaceable>オプション</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-d</arg>
+ </cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfstatus</command>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-d</arg>
+      <arg choice="plain" rep="norepeat">-M</arg>
+    </group>
+    <arg choice="plain" rep="repeat"><replaceable>設定名称</replaceable></arg>
 </cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfstatus</command>
+    <arg choice="plain" rep="norepeat">-Mm</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-d</arg>
+    <arg choice="plain" rep="repeat"><replaceable>設定ディレクティブ</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfstatus</command>
+    <arg choice="plain" rep="norepeat">-V</arg>
+</cmdsynopsis>
+
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id="description"><title>DESCRIPTION</title>
 
-<para>Gfarmファイルシステムの情報を表示します．</para>
+<para>引数に，設定ディレクティブを指定しない場合，
+Gfarmファイルシステムの情報を表示します．</para>
+
+<para>引数に，設定名称を指定した場合，その設定値を表示します．
+-M オプションを指定した場合は，gfmd に設定を問い合わせ，
+指定しない場合は，ローカルホストでの設定値を表示します．
+ただし，今のところ，ごく限られたディレクティブのみが指定できます．
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	$ gfstatus -M digest
+</literallayout>
+
+<para>
+オプションに -Mm を指定した場合，
+<command moreinfo="none">gfstatus</command> コマンドは，
+引数を gfarm2.conf と同じ文法の設定ディレクティブと見なし，
+gfmd 上のその設定を書き換えます．
+ただし，今のところ，ごく限られたディレクティブのみが指定できます．
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	$ gfstatus -Mm 'digest sha1'
+</literallayout>
+
 
 </refsect1>
 
@@ -44,6 +93,25 @@
 </varlistentry>
 
 <varlistentry>
+<term><option>-M</option></term>
+<listitem>
+<para>
+設定値の問い合わせや，設定の変更を，gfmd に対して行ないます．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option></term>
+<listitem>
+<para>
+設定の変更を行ないます．
+-M オプションと組み合わせて使います．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-P</option> <parameter moreinfo="none">パス名</parameter></term>
 <listitem>
 <para>
@@ -53,9 +121,16 @@
 </varlistentry>
 
 <varlistentry>
+<term><option>-V</option></term>
+<listitem>
+<para>Gfarm のバージョンを表示します．</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>引数オプションを表示します。</para>
+<para>引数オプションを表示します．</para>
 </listitem>
 </varlistentry>
 

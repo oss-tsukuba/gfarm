@@ -1,0 +1,114 @@
+'\" t
+.\"     Title: gfs_acl_to_any_text
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 14 Feb 2011
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFS_ACL_TO_ANY_TEXT" "3" "14 Feb 2011" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfs_acl_to_any_text \- convert a Gfarm ACL to text
+.SH "SYNOPSIS"
+.sp
+.ft B
+.nf
+#include <gfarm/gfarm\&.h>
+.fi
+.ft
+.HP \w'gfarm_error_t\ gfs_acl_to_any_text('u
+.BI "gfarm_error_t\ gfs_acl_to_any_text(gfarm_acl_t\ " "acl" ", const\ char\ *" "prefix" ", char\ " "separator" ", int\ " "options" ", char\ **" "str_p" ");"
+.SH "INPUT ARGUMENTS"
+.PP
+\fIacl\fR
+.RS 4
+An ACL structure type\&.
+.RE
+.PP
+\fIprefix\fR
+.RS 4
+If the argument
+\fIprefix\fR
+is not NULL, each entry can have this character string\&.
+.RE
+.PP
+\fIseparator\fR
+.RS 4
+ACL entries are separeted by this
+\fIseparator\fR
+character\&.
+.RE
+.PP
+\fIoptions\fR
+.RS 4
+Bitwise combinations of the following OPTIONS section\&.
+.RE
+.PP
+\fIstr_p\fR
+.RS 4
+A pointer to the long text form string of the ACL\&.
+.RE
+.SH "OPTIONS"
+.PP
+\fIGFARM_ACL_TEXT_ABBREVIATE\fR
+.RS 4
+Instead of the full tag type keywords, single letter abbreviations are used\&.
+.RE
+.PP
+\fIGFARM_ACL_TEXT_SOME_EFFECTIVE\fR
+.RS 4
+A comment containing the effective permissions in some ACL entries\&.
+.RE
+.PP
+\fIGFARM_ACL_TEXT_ALL_EFFECTIVE\fR
+.RS 4
+A comment containing the effective permissions in all ACL entries\&.
+.RE
+.PP
+\fIGFARM_ACL_TEXT_SMART_INDENT\fR
+.RS 4
+If this option is used with the GFARM_ACL_TEXT_SOME_EFFECTIVE or GFARM_ACL_TEXT_ALL_EFFECTIVE option, the effective comment is aligned to column 40\&.
+.RE
+.SH "RETURN VALUES"
+.PP
+\fBGFARM_ERR_NO_ERROR\fR
+.RS 4
+The function terminated successfully\&.
+.RE
+.PP
+\fBGFARM_ERR_NO_MEMORY\fR
+.RS 4
+Insufficient memory was available\&.
+.RE
+.PP
+Others
+.RS 4
+An error except the above occurred\&. The reason is shown by
+\fBgfarm_error_string\fR(3)\&.
+.RE
+.SH "SEE ALSO"
+.PP
+
+\fBgfs_acl_free\fR(3),
+\fBgfs_acl_to_text\fR(3),
+\fBgfs_acl_from_text\fR(3)

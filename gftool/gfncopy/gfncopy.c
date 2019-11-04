@@ -16,8 +16,11 @@
 
 #include <gfarm/gfarm.h>
 
+#include "hash.h"
+
 #include "gfarm_foreach.h"
 #include "gfarm_path.h"
+#include "fsngroup_info.h"
 #include "gfm_client.h"
 #include "lookup.h"
 #include "metadb_server.h"
@@ -694,6 +697,76 @@ set_ncopy(
 }
 
 static gfarm_error_t
+check_node_group(const char *url, size_t nreps, gfarm_repattr_t *reps)
+{
+	struct gfarm_fsngroup_info *nginfos = NULL;
+#define NGROUP_HASH_SIZE 47
+	struct gfarm_hash_table *ngroup;
+	struct gfm_connection *gfm_server;
+	size_t n = 0, i;
+	const char *g = NULL;
+	gfarm_error_t e;
+
+	ngroup = gfarm_hash_table_alloc(NGROUP_HASH_SIZE,
+	    gfarm_hash_default, gfarm_hash_key_equal_default);
+	if (ngroup == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	if ((e = gfm_client_connection_and_process_acquire_by_path(
+		     url, &gfm_server)) != GFARM_ERR_NO_ERROR)
+		goto error;
+	e = gfm_client_fsngroup_get_all(gfm_server, &n, &nginfos);
+	gfm_client_connection_free(gfm_server);
+	if (e != GFARM_ERR_NO_ERROR)
+		goto error;
+	for (i = 0; i < n; ++i) {
+		g = nginfos[i].fsngroupname;
+		if (g == NULL || g[0] == '\0')
+			continue;
+		if (gfarm_hash_enter(ngroup, g, strlen(g), 0, NULL) == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			goto error;
+		}
+	}
+	for (i = 0; i < nreps; ++i) {
+		g = gfarm_repattr_group(reps[i]);
+		if (g == NULL || g[0] == '\0')
+			continue;
+		if (gfarm_hash_lookup(ngroup, g, strlen(g)) == NULL) {
+			e = GFARM_ERR_NO_SUCH_GROUP;
+			goto error;
+		}
+	}
+error:
+	if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "%s: %s\n", g != NULL ? g : url,
+		    gfarm_error_string(e));
+	gfarm_hash_table_free(ngroup);
+	if (nginfos != NULL) {
+		for (i = 0; i < n; ++i) {
+			free(nginfos[i].hostname);
+			free(nginfos[i].fsngroupname);
+		}
+		free(nginfos);
+	}
+	return (e);
+}
+
+static gfarm_error_t
+check_repattr(const char *url, const char *repattr)
+{
+	gfarm_repattr_t *reps;
+	size_t nreps;
+	gfarm_error_t e;
+
+	e = gfarm_repattr_reduce(repattr, &reps, &nreps);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = check_node_group(url, nreps, reps);
+	gfarm_repattr_free_all(nreps, reps);
+	return (e);
+}
+
+static gfarm_error_t
 set_repattr(
 	const char *url, const char *root_url, struct gfs_stat *st, void *val)
 {
@@ -709,6 +782,9 @@ set_repattr(
 		ERR("%s: not a file or directory", url);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
+	e = check_repattr(url, repattr);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
 	e = gfncopy_setxattr(url, XATTR_REPATTR, repattr,
 	    strlen(repattr) + 1, set_flags);
@@ -834,10 +910,9 @@ handle_arg1(
 	gfncopy_func func,
 	int argc, char **argv, int enable_recursive, int file_only, void *val)
 {
-	if (argc != 1) {
+	if (argc != 1)
 		usage();
-		return (1);
-	}
+
 	return (do_func(func, argv[0], enable_recursive, file_only, val));
 }
 
@@ -848,10 +923,8 @@ handle_args(
 {
 	gfarm_int64_t n_error = 0;
 
-	if (argc <= 0) {
+	if (argc <= 0)
 		usage();
-		return (1);
-	}
 
 	while (argc > 0) {
 		n_error += do_func(
@@ -901,16 +974,14 @@ main(int argc, char **argv)
 			repattr = optarg;
 			break;
 		case 'C':
-			if (set_flags == 0)
-				set_flags = GFS_XATTR_CREATE;
-			else
+			if (set_flags != 0)
 				usage();
+			set_flags = GFS_XATTR_CREATE;
 			break;
 		case 'M':
-			if (set_flags == 0)
-				set_flags = GFS_XATTR_REPLACE;
-			else
+			if (set_flags != 0)
 				usage();
+			set_flags = GFS_XATTR_REPLACE;
 			break;
 		case 'r':
 			if (opt_mode != MODE_NONE)
@@ -988,7 +1059,6 @@ main(int argc, char **argv)
 		break;
 	default:
 		usage();
-		exit(1);
 	}
 
 	e = gfarm_terminate();

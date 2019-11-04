@@ -23,6 +23,7 @@ LOCKFILE="@config_gfarm_lock_dir@/$FILE"
 OPTIONS="@config_gfarm_gfmd_option@"
 warning_facility=local0
 warning_priority=notice
+export GLOBUS_THREAD_MODEL=pthread
 
 # pull in sysconfig settings
 [ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"

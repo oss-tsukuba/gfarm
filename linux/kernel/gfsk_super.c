@@ -71,7 +71,7 @@ gfsk_umount_begin(struct super_block *sb)
 	GFSK_CTX_DECLARE_SB(sb);
 
 	GFSK_CTX_SET();
-	gflog_debug(GFARM_MSG_UNFIXED, "gfsk_umount_begin() called");
+	gflog_debug(GFARM_MSG_1004987, "gfsk_umount_begin() called");
 	gfskdev_abort_conn(gfsk_fsp->gf_dc);
 	GFSK_CTX_UNSET();
 }
@@ -80,7 +80,7 @@ gfsk_umount_begin(struct super_block *sb)
 static void
 gfsk_put_super(struct super_block *sb)
 {
-	gflog_debug(GFARM_MSG_UNFIXED, "gfsk_put_super() called");
+	gflog_debug(GFARM_MSG_1004988, "gfsk_put_super() called");
 }
 
 static const struct super_operations gfarm_ops = {
@@ -152,10 +152,10 @@ gfarm_kill_sb(struct super_block *sb)
 	GFSK_CTX_DECLARE_SB(sb);
 
 	GFSK_CTX_SET();
-	gflog_debug(GFARM_MSG_UNFIXED, "gfarm_kill_sb() start");
+	gflog_debug(GFARM_MSG_1004995, "gfarm_kill_sb() start");
 	gfsk_client_fini();
 	generic_shutdown_super(sb);
-	gflog_debug(GFARM_MSG_UNFIXED, "gfarm_kill_sb() end");
+	gflog_debug(GFARM_MSG_1004996, "gfarm_kill_sb() end");
 	GFSK_CTX_UNSET();
 }
 
@@ -179,24 +179,24 @@ init_gfarm_fs(void)
 	int ret;
 
 	gflog_set_priority_level(gflog_level);
-	gflog_info(GFARM_MSG_UNFIXED, "init_gfarm_fs() start");
+	gflog_info(GFARM_MSG_1004997, "init_gfarm_fs() start");
 
 	ret = gfskdev_init();
 
 	if (ret) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004998,
 			"gfsk_dev_init() failed. ret=%d", ret);
 		return (ret);
 	}
 	ret = ug_idmap_init();
 	if (ret) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004999,
 			"ug_idmap_init() failed. ret=%d", ret);
 		goto quit1;
 	}
 	ret = register_filesystem(&gfarm_fs_type);
 	if (ret) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005000,
 			"register_filesystem() failed. ret=%d", ret);
 		goto quit2;
 	}
@@ -205,11 +205,11 @@ init_gfarm_fs(void)
 					      0, SLAB_HWCACHE_ALIGN,
 					      gfarm_inode_init_once);
 	if (!gfarm_inode_cachep) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1005001,
 			"kmem_cache_create(gfarm_inode) failed.");
 		goto quit3;
 	}
-	gflog_info(GFARM_MSG_UNFIXED, "init_gfarm_fs() end");
+	gflog_info(GFARM_MSG_1005006, "init_gfarm_fs() end");
 	return (0);
 quit3:
 	unregister_filesystem(&gfarm_fs_type);
@@ -223,13 +223,13 @@ quit1:
 static void __exit
 exit_gfarm_fs(void)
 {
-	gflog_info(GFARM_MSG_UNFIXED, "exit_gfarm_fs() start");
+	gflog_info(GFARM_MSG_1005007, "exit_gfarm_fs() start");
 	if (gfarm_inode_cachep)
 		kmem_cache_destroy(gfarm_inode_cachep);
 	unregister_filesystem(&gfarm_fs_type);
 	ug_idmap_exit();
 	gfskdev_fini();
-	gflog_info(GFARM_MSG_UNFIXED, "exit_gfarm_fs() end");
+	gflog_info(GFARM_MSG_1005008, "exit_gfarm_fs() end");
 }
 
 module_init(init_gfarm_fs)

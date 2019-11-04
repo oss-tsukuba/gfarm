@@ -87,7 +87,7 @@ void
 gfarm_sockopt_static_term(struct gfarm_context *ctxp)
 {
 	struct gfarm_sockopt_static *s = ctxp->sockopt_static;
-	
+
 	if (s == NULL)
 		return;
 

@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>27 Aug 2015</date></refentryinfo>
+<refentryinfo><date>22 Nov 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -102,7 +102,8 @@ from 0 to 31 separated by "/".</para>
 <term><token>spool</token> <parameter moreinfo="none">directory</parameter></term>
 <listitem>
 <para>The <token>spool</token> statement specifies a spool directory
-for a Gfarm filesystem on this filesystem node.</para>
+for a Gfarm filesystem on this filesystem node.
+This statement can be specified multiple times to specify multiple spool directories up to five.</para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	spool /var/spool/gfarm
@@ -110,7 +111,7 @@ for a Gfarm filesystem on this filesystem node.</para>
 </listitem>
 </varlistentry>
   
-  <varlistentry>
+<varlistentry>
 <term><token>spool_server_listen_address</token> <parameter moreinfo="none">IP-address</parameter></term>
 <listitem>
 <para>The <token>spool_server_listen_address</token> statement specifies
@@ -320,6 +321,29 @@ statement for details.
 </varlistentry>
 
 <varlistentry>
+<term><token>spool_server_back_channel_rcvbuf_limit</token> <parameter moreinfo="none">size_limit</parameter></term>
+<listitem>
+<para>This directive specifies the upper limit of SO_RCVBUF
+for the back channel socket of gfsd.
+By decreasing this value, the number of outstanding requests from gfmd to gfsd
+can be limited, and the problem of gfsd back channel disconnection
+will be mitigated.
+If <token>disable</token> keyword is specified as the parameter,
+no limit is applied.
+The default limit is 4096 bytes.
+</para>
+<para>
+This parameter is only available in gfarm2.conf which is referred by gfsd,
+and ignored clients, and ignored in gfmd.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	spool_server_back_channel_rcvbuf_limit 16384
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>spool_check_level</token> <parameter moreinfo="none">level</parameter></term>
 <listitem>
 <para>
@@ -334,6 +358,132 @@ gfsd(8).  The level "disable" disables the consistency check.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	spool_check_level disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel</token> <parameter moreinfo="none">num-of-parallel</parameter></term>
+<listitem>
+<para>
+This directive specifies number of processes of gfsd spool_check.
+</para>
+<para>
+By default, the number of processes is automatically determined by
+the spool_check_parallel_per_capacity directive.
+</para>
+<para>
+This directive is only available for gfsd in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel 16
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel_max</token> <parameter moreinfo="none">num-of-parallel</parameter></term>
+<listitem>
+<para>
+This directive specifies upper limit of number of processes of gfsd spool_check.
+This is only effective when the number is automatically determined.
+If the number is specified by the spool_check_parallel directive,
+spool_check_parallel_max is ignored.
+</para>
+<para>
+The default value is 64.
+</para>
+<para>
+This directive is only available for gfsd in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel_max 128
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel_per_capacity</token> <parameter moreinfo="none">bytes</parameter></term>
+<listitem>
+<para>
+If the number of process of gfsd spool_check is not specified by
+the spool_check_parallel directive, the number will be
+total disk capacity of the gfsd spool partition
+divided by this setting.
+The bytes value may have a suffix like ``k'' (kibibyte),
+``M'' (mebibyte), ``G'' (gibibyte) and ``T'' (tebibyte).
+</para>
+<para>
+The default value is 64 tebibytes.
+</para>
+<para>
+This directive is only available for gfsd in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel_per_capacity 10T
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel_step</token> <parameter moreinfo="none">number</parameter></term>
+<listitem>
+<para>
+This directive specifies number of processing unit of each spool_check process.
+This parameter doesn't have to be configured usually,
+but if network latency between gfmd is high,
+increasing this value may make spool_check performance better.
+</para>
+<para>
+The default value is 1.
+</para>
+<para>
+This directive is only available for gfsd in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel_step 16
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_base_load</token> <parameter moreinfo="none">load-average</parameter></term>
+<listitem>
+<para>
+This statement specifies the CPU load adding to the real CPU load.
+This option is only available for a gfsd node (or a file system node).
+The default base load is 0.0.  This option can be used to pretend to
+be busy or idle to change the scheduling priority.
+</para>
+<para>For example,</para>
+<literallayout>
+	spool_base_load 1.0
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_digest_error_check</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+When digest calculation is enabled by the digest directive, the digest
+is calculated when reading a whole replica.  If the digest is
+incorrect, i.e. the replica is damaged, the damaged replica is moved
+to lost+found directory to automatically fix this problem.  This
+statement is used to disable this feature.  When it is disabled, the
+damaged raplica remains in the spool directory.
+</para>
+<para>
+This option is only available for a gfsd node (or a file system
+node).  The default is <token>enable</token>.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	spool_digest_error_check disable
 </literallayout>
 </listitem>
 </varlistentry>
@@ -507,6 +657,42 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_server_remove_scan_log_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>This directive specifies the log output interval in seconds
+about gfmd removal queue processing.
+Default is 3600 seconds.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_remove_scan_log_interval 86400
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_remove_scan_interval_factor</token> <parameter moreinfo="none">number</parameter></term>
+<listitem>
+<para>This directive specifies the parameter about how much CPU time
+can be used for gfmd removal queue processing.
+The processing can use 1 / (metadb_server_remove_scan_interval_factor + 1)
+of the CPU time at most.
+Default is 5.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_remove_scan_interval_factor 2
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>metadb_server_heartbeat_interval</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>This directive specifies the interval of heartbeat in seconds
@@ -540,6 +726,55 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	metadb_server_dbq_size 65536
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_back_channel_sndbuf_limit</token> <parameter moreinfo="none">size_limit</parameter></term>
+<listitem>
+<para>This directive specifies the upper limit of SO_SNDBUF
+for the socket that the metadata server connects to the gfsd back channel.
+By decreasing this value, the number of outstanding requests from gfmd to gfsd
+can be limited, and the problem of gfsd back channel disconnection
+will be mitigated.
+If <token>disable</token> keyword is specified as the parameter,
+no limit is applied.
+The default limit is 4096 bytes.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_back_channel_sndbuf_limit 16384
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_nfs_root_squash_support</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+When gfmd tries to read .gfarm_shared_key file in a home directory,
+gfmd will use the privilege of the owner of the home directory,
+if this configuration setting is "enable".
+If "disable" is specified, it will use the root privilege to do so.
+</para>
+<para>
+If any gfarm users is using sharedsecret authentication,
+and the user's home directory is shared by NFS
+which is not using the no_root_squash export option,
+this setting has to be "enable".
+The default is "enable", but you can slightly decrease the CPU load of
+gfmd by setting this parameter to "disable" if situation allows.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_nfs_root_squash_support disable
 </literallayout>
 </listitem>
 </varlistentry>
@@ -752,6 +987,75 @@ and all other hosts will be authenticated by
 <token>gsi</token>.  Note that two hosts, 192.168.0.100 and
 192.168.0.101, will be tested for authentication by gsi only.</para>
 
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>shared_key_file</token> <parameter moreinfo="none">pathname</parameter></term>
+<listitem>
+<para>The <token>shared_key_file</token> statement specifies a
+  pathname of the shared secret key file in sharedsecret
+  authentication.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>digest</token> <parameter moreinfo="none">digest_type</parameter></term>
+<listitem>
+<para>
+The <token>digest</token> statement enables the checksum
+calculation, and specifies the digest type of the checksum.
+The digest_type parameter is a lower-case name which is supported
+by the OpenSSL library on the filesystem nodes.
+For example, "md5", "sha256".
+Or, if <token>client_digest_check</token> is enabled,
+the digest_type has to be supported on clients as well.
+</para>
+<para>
+Specifying "disable" as digest_type disables the checksum calculation.
+</para>
+<para>
+This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>
+NOTE:
+Even if checksum calculation is enabled by this directive,
+the digest checksum is not calculated when a client accesses a file replica
+which is managed by a local gfsd.
+This is because only gfsd calculates the checksum by default, but
+the client directly reads/writes the file replica in the local access case.
+To calculate the checksum of local files,
+You have to either disable the direct access feature by
+the <token>direct_local_access</token> statement,
+or enable the client-side checksum calculation feature by
+the <token>client_digest_check</token> statement.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	digest md5
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>max_directory_depth</token> <parameter moreinfo="none">number</parameter></term>
+<listitem>
+<para>
+The <token>max_directory_depth</token> statement
+specifies the maximum depth of directories.
+Note that this setting is not always strict, and some processing
+allows deeper than this setting.
+</para>
+<para>
+The default value is 100.
+</para>
+<para>
+This directive is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	max_directory_depth 500
+</literallayout>
 </listitem>
 </varlistentry>
 
@@ -1111,6 +1415,9 @@ considered busy.  The file system nodes whose CPU load average
 is above the specified CPU load average are to be scheduled lastly.
 The default load average is 0.5.
 </para>
+<para>
+This directive is available for clients and gfmd.
+</para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	schedule_busy_load_thresh 0.5
@@ -1264,9 +1571,9 @@ will be used and the others are ignored.
 required on filesystem nodes. The Gfarm scheduler excludes filesystem nodes
 which have less free space than this parameter, when it
 schedules nodes for jobs which may write files.
-The free space value may have a suffix like ``k'' (kilo bytes), 
-``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
-The default size is 128M bytes.
+The free space value may have a suffix like ``k'' (kibibyte),
+``M'' (mebibyte), ``G'' (gibibyte) and ``T'' (tebibyte).
+The default size is 512 MiB.
 </para>
 <para>
 This directive has to be specified in both gfarm2.conf and gfmd.conf.
@@ -1280,30 +1587,27 @@ After restarting the gfmd and the Gfarm client, it is effective.
 </varlistentry>
 
 <varlistentry>
-<term><token>gfs_proto_fhremove_request_window</token> <parameter moreinfo="none">number</parameter></term>
+<term><token>direct_local_access</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
-<para>This directive specifies maximum number of
-outstanding replica removal requests from gfmd to gfsd.
-The default is 50.
+<para>
+When a Gfarm client accesses a file replica which is stored by the local gfsd,
+the client bypasses the gfsd and directly accesses the file replica
+for reading/writing the file contents to reduce the overhead.
+This directive is used to disable this feature.
+It is useful to make the local gfsd calculate the checksum of
+the local file replica.
+Please see the <token>digest</token> directive for detail.
+</para>
+<para>
+The default is <token>enable</token>.
+</para>
+<para>
+This directive is only available for clients in gfarm2.conf.
+Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
-	gfs_proto_fhremove_request_window 50
-</literallayout>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><token>gfs_proto_replication_request_window</token> <parameter moreinfo="none">number</parameter></term>
-<listitem>
-<para>This directive specifies maximum number of
-outstanding gfmd-initiated replication requests
-from gfmd to destination-side gfsd.
-The default is 20.
-</para>
-<para>For example,</para>
-<literallayout format="linespecific" class="normal">
-	gfs_proto_replication_request_window 20
+	direct_local_access disable
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1311,30 +1615,27 @@ The default is 20.
 <varlistentry>
 <term><token>simultaneous_replication_receivers</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
-<para>This directive is just an alias of
-the gfs_proto_replication_request_window directive since gfarm-2.6.
-Please use that directive instead.
-This directive remains for compatibility with older versions.
+<para>This directive specifies maximum number of simultaneous
+gfmd-initiated replications to same host.
 The default is 20.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
-	simultaneous_replication_receivers 20
+	simultaneous_replication_receivers 40
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>outstanding_file_replication_limit</token> <parameter moreinfo="none">number</parameter></term>
+<term><token>replication_busy_host</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
-<para>This directive specifies maximum number of
-outstanding gfmd-initiated replication requests in whole system.
-This exists to prevent memory shortage of gfmd.
-The default is 4194304 and this value corresponds to approximately 512MB memory.
+<para>This directive specifies whether destination of gfmd-initiated
+  replication includes busy hosts or not.  When it is disabled, a file
+  replica is not created to busy hosts.  The default is enabled.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
-	outstanding_file_replication_limit 4194304
+	replication_busy_host disable
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1421,7 +1722,7 @@ The default is 1000, i.e. 1 second.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
-        page_cache_timeout 3600000
+	page_cache_timeout 3600000
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1600,6 +1901,22 @@ The default is 30 seconds.
 </varlistentry>
 
 <varlistentry>
+<term><token>gfmd_authentication_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>After the connection to the metadata server is established,
+Gfarm client library starts an authentication procedure,
+but gives up the procedure, if this timeout period is passed
+without any response from the metadata server.
+This unit of this directive is second, and the default value is 35.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	gfmd_authentication_timeout 45
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>gfmd_reconnection_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>If the connection to the metadata server is disconnected,
@@ -1610,6 +1927,20 @@ The default is 30 seconds.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	gfmd_reconnection_timeout 30
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>gfsd_connection_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+This directive specifies the timeout to connect to a gfsd.  The
+default is 30 seconds.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	gfsd_connection_timeout 30
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1655,13 +1986,56 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term><token>max_open_files</token> <parameter moreinfo="none">num-of-files</parameter></term>
+<listitem>
+<para>
+This directive specifies the maximum number of open files.  The
+default is 1024.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	max_open_files 1024
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>client_digest_check</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>When "enable" is specified, the Gfarm client library (libgfarm)
+calculates checksum while accessing a whole file sequentially,
+and verify the result against a value which is set in the metadata of the file.
+Also, libgfarm sets the calculated checksum to the metadata,
+if checksum isn't set in the metadata, and the file is opened for writing.
+</para>
+<para>
+The default value is disable.
+</para>
+<para>
+This directive is only available for clients in gfarm2.conf.
+Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	client_digest_check enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>client_file_bufsize</token> <parameter moreinfo="none">bytes</parameter></term>
 <listitem>
 <para>This directive specifies the file buffer size in bytes used in
-  the Gfarm client library (libgfarm).  The default size is 1048568
-  bytes (= 1MiB - 8B).  The file buffer size should be less than the
-  default value not for deterioration of remote access performance for
-  version 2.5.0 or earlier.
+  the Gfarm client library (libgfarm).  The default size is 1048576
+  bytes (= 1MiB).  The file buffer size should be less than the
+  default value not for deterioration of remote access performance.
+</para>
+<para>
+This directive is only available for clients in gfarm2.conf.
+Both gfsd and gfmd ignore this setting in gfarm2.conf and gfmd.conf.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -1804,27 +2178,6 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_slave_listen</token> <parameter moreinfo="none">validity</parameter></term>
-<listitem>
-<para>When "enable" is specified, even if the gfmd is set to slave,
-it receives requests from clients.
-The default is "disable".
-</para>
-<para>
-NOTE: Please do not set this directive for ordinary use,
-because this feature is only for development.
-</para>
-<para>
-This parameter is only available in gfmd.conf.
-</para>
-<para>Example:</para>
-<literallayout format="linespecific" class="normal">
-	metadb_server_slave_listen enable
-</literallayout>
-</listitem>
-</varlistentry>
-
-<varlistentry>
 <term><token>metadb_server_slave_max_size</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>This parameter specifies the maximum number of slave gfmds.
@@ -1836,6 +2189,25 @@ This parameter is only available in gfmd.conf.
 <para>Example:</para>
 <literallayout format="linespecific" class="normal">
 	metadb_server_slave_max_size 40
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_slave_replication_timeout</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>This parameter specifies timeout in seconds to wait for completion of
+  metadata replication at gfmd shutdown caused by a SIGTERM signal.
+If the timeout period passed,
+master gfmd gives up metadata replication to slave gfmd.
+The default is 120 seconds.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_slave_replication_timeout 180
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1895,13 +2267,54 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_replica_remover_by_host_sleep_time</token> <parameter moreinfo="none">nanoseconds</parameter></term>
+<listitem>
+<para>
+This statement specifies the sleep time of replica remover,
+which is invoked by a removal of a filesystem node,
+in nanoseconds when gfmd is busy.
+If this value is increased, the processing runs more slowly.
+The default value is 20000000 nanoseconds (20 milliseconds).
+The maximum value is 1000000000 nanoseconds (1 second).
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_replica_remover_by_host_sleep_time 20000000
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_replica_remover_by_host_inode_step</token> <parameter moreinfo="none">number</parameter></term>
+<listitem>
+<para>
+This statement specifies the number of i-node that replica remover,
+which is invoked by a removal of a filesystem node,
+processes in each step.
+If this value is decreased, the remover runs more slowly.
+The default value is 1024.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_replica_remover_by_host_inode_step 1024
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>replica_check</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>
-When "enable" is specified, the replica_check system in gfmd can check
-and fix the number and placement of file replicas automatically.  The
-replica_check works only when necessary.  The default value is
-"enable".
+A replica check patrols the file system when it is necessary, and
+creates missing file replicas.  The default is enable.  This feature
+can be dynamically enabled or disabled by
+the <command moreinfo="none">gfrepcheck</command> command.
 </para>
 <para>
 This parameter is only available in gfmd.conf.
@@ -1914,12 +2327,107 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term><token>replica_check_remove</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+This directive is effective when replica_check is enabled.  When
+replica_check_remove is enabled, the replica check removes unnecessary
+file replicas unless it has two or more link counts.  It leaves file
+replicas for files without replica information such as gfarm.ncopy and
+gfarm.replicainfo.  The default is enable.  This feature can be
+dynamically enabled or disabled by
+the <command moreinfo="none">gfrepcheck remove</command> command.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_remove disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replica_check_remove_grace_used_space_ratio</token> <parameter moreinfo="none">percentage</parameter></term>
+<listitem>
+<para>
+This directive is effective when replica_check_remove is enabled.
+Unnecessary file replicas are removed only when a percentage of the
+used capacity is more than the specified percent value.  The
+percentage can be specified by an integer value between 0 and 100.
+When 100 is specified, unnecessary file replicas are not removed.
+The default is 0.
+</para>
+<para>
+The percentage can be dynamically changed by the gfrepcheck command.
+The following example changes to 50%.
+</para>
+<literallayout format="linespecific" class="normal">
+	% gfrepcheck remove_grace_used_space_ratio 50
+</literallayout>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_remove_grace_used_space_ratio 70
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replica_check_remove_grace_time</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+This directive is effective when replica_check_remove is enabled.
+Unnecessary file replicas are removed only when it is not accessed for
+more than the specified seconds.  The default is 0.
+</para>
+<para>
+The grace time can be dynamically changed by the gfrepcheck command.
+The following example changes to 1 week (= 604800 seconds).
+</para>
+<literallayout format="linespecific" class="normal">
+	% gfrepcheck remove_grace_time 604800
+</literallayout>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_remove_grace_time 604800
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replica_check_reduced_log</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+When "enable" is specified, log messages from the replica_check may be
+reduced.  The default value is "enable".  This behavior can be
+dynamically chagned by the
+<command moreinfo="none">gfrepcheck reduced_log</command> command.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_reduced_log disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>replica_check_host_down_thresh</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>
-If a gfsd is down, the replica_check assumes that the gfsd is not down
-until the specified seconds.  This is useful to maintain a gfsd.  The
-default value is 10800 seconds (3 hours).
+This statement specifies an interval to start replica check after a
+gfsd is down.  The default value is 10800 seconds (3 hours).
+This behavior can be dynamically chagned by the
+<command moreinfo="none">gfrepcheck host_down_thresh</command> command.
 </para>
 <para>
 This parameter is only available in gfmd.conf.
@@ -1935,12 +2443,12 @@ This parameter is only available in gfmd.conf.
 <term><token>replica_check_sleep_time</token> <parameter moreinfo="none">nanoseconds</parameter></term>
 <listitem>
 <para>
-If this value is increased, the replica_check works more slowly only
-when the gfmd is busy.  When the gfmd is not busy, the replica_check
-works at full speed.  This directive specifies the nanoseconds to
-sleep in the replica_check.  The default value is 100000 nanoseconds
-(0.1 millisecond).  The maximum value is 1000000000 nanoseconds (1
-second).
+This statement specifies the sleep time in nanoseconds during the
+replica check when gfmd is busy.  The default value is 100000
+nanoseconds (0.1 millisecond).  The maximum value is 1000000000
+nanoseconds (1 second).
+This behavior can be dynamically chagned by the
+<command moreinfo="none">gfrepcheck sleep_time</command> command.
 </para>
 <para>
 This parameter is only available in gfmd.conf.
@@ -1956,9 +2464,10 @@ This parameter is only available in gfmd.conf.
 <term><token>replica_check_minimum_interval</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>
-This directive specifies the minimum interval in seconds, for the
-replica_check to work.  The default value is 10 seconds, i.e. the
-replica_check can work up to one time every 10 seconds.
+This statement specifies the minimum interval in seconds, to start the
+next replica check.  The default value is 10 seconds.
+This behavior can be dynamically chagned by the
+<command moreinfo="none">gfrepcheck minimum_interval</command> command.
 </para>
 <para>
 This parameter is only available in gfmd.conf.
@@ -1966,6 +2475,122 @@ This parameter is only available in gfmd.conf.
 <para>Example:</para>
 <literallayout format="linespecific" class="normal">
 	replica_check_minimum_interval 5
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replicainfo</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+When "enable" is specified, the extended attribute of
+gfarm.replicainfo is used in automatic file replication.
+When "disable" is specified, the hostgroups in gfarm.replicainfo is
+not used, but the total number of replicas in gfarm.replicainfo is
+used, if the total number is larger than gfarm.ncopy.
+For detail about the extended attribute of gfarm.replicainfo, refer to
+the manual page of <command moreinfo="none">gfncopy</command>.
+The default is <token>enable</token>.
+</para>
+<para>
+gfstatus -Mm 'replicainfo disable' can disable this temporarily.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	replicainfo disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_verify</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+This statement enables gfsd's write_verify feature that compares file data
+checksum by re-reading the contents of the file sometime after the file
+is written.
+The default is <token>disable</token>.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+gfsd uses this setting at its startup by asking gfmd.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	write_verify enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_verify_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+This statement specifies how long to wait before starting the write_verify
+feature after a file is written.
+The default value is 21600 seconds (6 hours).
+</para>
+<para>
+The write_verify feature uses direct I/O on OSes which have the O_DIRECT flag.
+But it does not flush caches on disk controllers and kernel metadata.
+Thus, it's recommended to specify long enough period in this parameter.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+gfsd uses this setting at its startup by asking gfmd.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	write_verify_interval 21600
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_verify_retry_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+This statement specifies how long to wait until retring the write_verify
+feature, if previous try was postponed, because the file was opened
+for writing at that time.
+</para>
+<para>
+It's recommended to keep this value smaller enough than
+the write_verify_interval setting.
+The default value is 600 seconds (10 minutes).
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+gfsd uses this setting at its startup by asking gfmd.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	write_verify_retry_interval 600
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_verify_log_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+This statement specifies interval to record write_verify statistics in log.
+When this interval passes and then a file is updated on a filesystem node,
+statistics information will be recorded in the log on the filesystem node.
+</para>
+<para>
+The default value is 3600 seconds (1 hour).
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+gfsd uses this setting at its startup by asking gfmd.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	write_verify_log_interval 3600
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1978,13 +2603,21 @@ This parameter is only available in gfmd.conf.
 <variablelist>
 <varlistentry>
 <term>&lt;statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">&lt;spool_statement&gt; |
+<listitem><literallayout format="linespecific" class="normal">
+	&lt;spool_statement&gt; |
 	&lt;spool_server_listen_address_statement&gt; |
 	&lt;spool_server_listen_backlog_statement&gt; |
 	&lt;spool_server_cred_type_statement&gt; |
 	&lt;spool_server_cred_service_statement&gt; |
 	&lt;spool_server_cred_name_statement&gt; |
+	&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; |
 	&lt;spool_check_level_statement&gt; |
+	&lt;spool_check_parallel_statement&gt; |
+	&lt;spool_check_parallel_max_statement&gt; |
+	&lt;spool_check_parallel_per_capacity_statement&gt; |
+	&lt;spool_check_parallel_step_statement&gt; |
+	&lt;spool_base_load_statement&gt; |
+	&lt;spool_digest_error_check_statement&gt; |
 	&lt;metadb_server_host_statement&gt; |
 	&lt;metadb_server_port_statement&gt; |
 	&lt;metadb_server_cred_type_statement&gt; |
@@ -1995,8 +2628,12 @@ This parameter is only available in gfmd.conf.
 	&lt;metadb_server_stack_size_statement&gt; |
 	&lt;metadb_server_thread_pool_size_statement&gt; |
 	&lt;metadb_server_job_queue_length_statement&gt; |
+	&lt;metadb_server_remove_scan_log_interval_statement&gt; |
+	&lt;metadb_server_remove_scan_interval_factor_statement&gt; |
 	&lt;metadb_server_heartbeat_interval_statement&gt; |
 	&lt;metadb_server_dbq_size_statement&gt; |
+	&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; |
+	&lt;metadb_server_nfs_root_squash_support_statement&gt; |
 	&lt;ldap_server_host_statement&gt; |
 	&lt;ldap_server_port_statement&gt; |
 	&lt;ldap_base_dn_statement&gt; |
@@ -2009,6 +2646,9 @@ This parameter is only available in gfmd.conf.
 	&lt;postgresql_password_statement&gt; |
 	&lt;postgresql_conninfo_statement&gt; |
 	&lt;auth_statement&gt; |
+	&lt;shared_key_file_statement&gt; |
+	&lt;digest_statement&gt; |
+	&lt;max_directory_depth_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
 <!--	&lt;address_use_statement&gt; | -->
@@ -2033,10 +2673,9 @@ This parameter is only available in gfmd.conf.
 	&lt;write_local_priority_statement&gt; |
 	&lt;write_target_domain_statement&gt; |
 	&lt;minimum_free_disk_space_statement&gt; |
-	&lt;gfs_proto_fhremove_request_window_statement&gt; |
-	&lt;gfs_proto_replication_request_window_statement&gt; |
+	&lt;direct_local_access_statement&gt; |
 	&lt;simultaneous_replication_receivers_statement&gt; |
-	&lt;outstanding_file_replication_limit_statement&gt; |
+	&lt;replication_busy_host_statement&gt; |
 	&lt;gfsd_connection_cache_statement&gt; |
 	&lt;xmlattr_size_limit_statement&gt; |
 	&lt;xattr_size_limit_statement&gt; |
@@ -2049,8 +2688,14 @@ This parameter is only available in gfmd.conf.
 	&lt;file_trace_statement&gt; |
 	&lt;fatal_action_statement&gt; |
 	&lt;debug_command_statement&gt; |
+	&lt;no_file_system_node_timeout_statement&gt; |
+	&lt;gfmd_authentication_timeout_statement&gt; |
+	&lt;gfmd_reconnection_timeout_statement&gt; |
+	&lt;gfsd_connection_timeout_statement&gt; |
 <!--	&lt;record_atime_statement&gt; | -->
 	&lt;atime_statement&gt; |
+	&lt;max_open_files_statement&gt; |
+	&lt;client_digest_check_statement&gt; |
 	&lt;client_file_bufsize_statement&gt; |
 	&lt;client_parallel_copy_statement&gt; |
 	&lt;profile_statement&gt; |
@@ -2059,15 +2704,26 @@ This parameter is only available in gfmd.conf.
 	&lt;synchronous_replication_timeout_statement&gt; |
 	&lt;synchronous_journaling_statement&gt; |
 	&lt;metadb_server_force_slave_statement&gt; |
-	&lt;metadb_server_slave_listen_statement&gt; |
 	&lt;metadb_server_slave_max_size_statement&gt; |
+	&lt;metadb_server_slave_replication_timeout_statement&gt; |
 	&lt;metadb_journal_dir_statement&gt; |
 	&lt;metadb_journal_max_size_statement&gt; |
 	&lt;metadb_journal_recvq_size_statement&gt; |
+	&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; |
+	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |
 	&lt;replica_check_statement&gt; |
+	&lt;replica_check_remove_statement&gt; |
+	&lt;replica_check_remove_grace_used_space_ratio_statement&gt; |
+	&lt;replica_check_remove_grace_time_statement&gt; |
+	&lt;replica_check_reduced_log_statement&gt; |
 	&lt;replica_check_host_down_thresh_statement&gt; |
 	&lt;replica_check_sleep_time_statement&gt; |
-	&lt;replica_check_minimum_interval_statement&gt;</literallayout></listitem>
+	&lt;replica_check_minimum_interval_statement&gt; |
+	&lt;replicainfo_statement&gt; |
+	&lt;write_verify_statement&gt; |
+	&lt;write_verify_interval_statement&gt; |
+	&lt;write_verify_retry_interval_statement&gt; |
+	&lt;write_verify_log_interval_statement&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2101,8 +2757,43 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term>&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_server_back_channel_rcvbuf_limit" &lt;size_limit&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
 <term>&lt;spool_check_level_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"spool_check_level" &lt;spck_level&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_max_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel_max" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_per_capacity_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel_per_capacity" &lt;size&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_step_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel_step" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_base_load_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_base_load" &lt;load&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_digest_error_check_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_digest_error_check" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2156,6 +2847,16 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term>&lt;metadb_server_remove_scan_log_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_remove_scan_log_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_remove_scan_interval_factor_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_remove_scan_interval_factor" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
 <term>&lt;metadb_server_heartbeat_interval_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_server_heartbeat_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
@@ -2163,6 +2864,16 @@ This parameter is only available in gfmd.conf.
 <varlistentry>
 <term>&lt;metadb_server_dbq_size_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_server_dbq_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_back_channel_sndbuf_limit" &lt;size_limit&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_nfs_root_squash_support_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_nfs_root_squash_support" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2233,6 +2944,21 @@ This parameter is only available in gfmd.conf.
 <varlistentry>
 <term>&lt;auth_method&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"gsi" | "gsi_auth" | "sharedsecret"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;shared_key_file_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"shared_key_file" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;digest_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"digest" &lt;digest_type&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;max_directory_depth_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"max_directory_depth" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--
@@ -2407,13 +3133,8 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term>&lt;gfs_proto_fhremove_request_window_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"gfs_proto_fhremove_request_window" &lt;number&gt;</literallayout></listitem>
-</varlistentry>
-
-<varlistentry>
-<term>&lt;gfs_proto_replication_request_window_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"gfs_proto_replication_request_window" &lt;number&gt;</literallayout></listitem>
+<term>&lt;direct_local_access_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"direct_local_access" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2422,8 +3143,8 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term>&lt;outstanding_file_replication_limit_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"outstanding_file_replication_limit" &lt;number&gt;</literallayout></listitem>
+<term>&lt;replication_busy_host_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replication_busy_host" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2492,8 +3213,18 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term>&lt;gfmd_authentication_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"gfmd_authentication_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
 <term>&lt;gfmd_reconnection_timeout_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"gfmd_reconnection_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;gfsd_connection_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"gfsd_connection_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--
@@ -2506,6 +3237,16 @@ This parameter is only available in gfmd.conf.
 <varlistentry>
 <term>&lt;atime_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"atime" &lt;atime_type&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;max_open_files_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"max_open_files" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;client_digest_check_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"client_digest_check" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2555,13 +3296,13 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term>&lt;metadb_server_slave_listen_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"metadb_server_slave_listen" &lt;validity&gt;</literallayout></listitem>
+<term>&lt;metadb_server_slave_max_size_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_slave_max_size" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
-<term>&lt;metadb_server_slave_max_size_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"metadb_server_slave_max_size" &lt;number&gt;</literallayout></listitem>
+<term>&lt;metadb_server_slave_replication_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_slave_replication_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2580,8 +3321,38 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term>&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_replica_remover_by_host_sleep_time" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_replica_remover_by_host_inode_step_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_replica_remover_by_host_inode_step" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
 <term>&lt;replica_check_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"replica_check" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_remove_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_remove" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_remove_grace_used_space_ratio_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_remove_grace_used_space_ratio" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_remove_grace_time&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_remove_grace_time" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_reduced_log_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_reduced_log" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2658,6 +3429,11 @@ This parameter is only available in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term>&lt;size_limit&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">&lt;number&gt; | "disable" </literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
 <term>&lt;string&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">""" &lt;double_quoted_character&gt;* """</literallayout></listitem>
 </varlistentry>
@@ -2712,6 +3488,31 @@ This parameter is only available in gfmd.conf.
 <term>&lt;fatal_action_name&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"backtrace_and_abort" | "backtrace_and_exit" |
 	"abort" | "exit"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replicainfo_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replicainfo" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_retry_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify_retry_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_log_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify_log_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 </variablelist>

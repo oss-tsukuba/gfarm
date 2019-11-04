@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfsd
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 08 Nov 2012
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 5 March 2016
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSD" "8" "08 Nov 2012" "Gfarm" "Gfarm"
+.TH "GFSD" "8" "5 March 2016" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -55,11 +55,9 @@ gfsdのprocess IDを、指定したファイルに記録します。
 .RS 4
 起動時に、スプールディレクトリの検査を行います。ファイルシステムノード のホスト名が変わったときに利用すると、正しく格納されているファイルをメ タデータサーバに登録することができます。
 .sp
-
 \fB\-c\fRオプションを2回指定すると(または
 \fB\-cc\fRオプション)、メタデータサーバに登録されていない無効 なファイルを消去することができます。
 .sp
-
 \fB\-c\fRオプションを3回指定すると(または
 \fB\-ccc\fRオプション)、メタデータサーバに登録されていない無 効なファイルをGfarmファイルシステムのlost+foundディクトリに移動すること ができます。さらに、ファイルシステムノード上に存在しないファイルを指し ている、無効なメタデータを削除します。標準でこの動作です。
 .RE
@@ -88,7 +86,7 @@ gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定しま�
 .PP
 \fB\-r\fR \fIスプール・ディレクトリ\fR
 .RS 4
-gfsdが、ファイルの実体を保持するディレクトリ名を指定します。
+gfsdが、ファイルの実体を保持するディレクトリ名を指定します。 このオプションを複数回（最大5回まで）指定することにより複数のディレクトリを指定可能です。
 .RE
 .PP
 \fB\-s\fR \fIsyslogファシリティ\fR
@@ -113,5 +111,4 @@ gfsdが参照する設定ファイルです。
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfarm2.conf\fR(5)

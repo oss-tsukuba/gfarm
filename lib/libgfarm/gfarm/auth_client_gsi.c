@@ -32,6 +32,92 @@
  * client side authentication
  */
 
+static gfarm_error_t
+gfarm_gsi_acquire_client_credential(const char *hostname,
+	enum gfarm_auth_id_type self_type,
+	gss_cred_id_t *output_cred, gss_name_t *output_name)
+{
+	enum gfarm_auth_cred_type spool_service_type;
+	char *spool_service_name = NULL;
+	gss_name_t desired_name = GSS_C_NO_NAME;
+	gss_name_t initiator_name = GSS_C_NO_NAME;
+	gss_cred_id_t cred;
+	gfarm_error_t e;
+	int ret;
+	OM_uint32 e_major, e_minor;
+
+	switch (self_type) {
+	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+		/*
+		 * If spool_server_cred_service is specified,
+		 * a service certificate is used.
+		 */
+		spool_service_type = gfarm_auth_server_cred_type_get(
+			GFS_SERVICE_TAG);
+		spool_service_name = gfarm_auth_server_cred_service_get(
+			GFS_SERVICE_TAG);
+		e = gfarm_gsi_cred_config_convert_to_name(
+			spool_service_type != GFARM_AUTH_CRED_TYPE_DEFAULT ?
+			spool_service_type : GFARM_AUTH_CRED_TYPE_HOST,
+			spool_service_name, NULL,
+			(char *)hostname, &desired_name);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_auth_error(GFARM_MSG_1000698,
+			    "Service credential configuration for %s: %s",
+			    spool_service_name, gfarm_error_string(e));
+			return (e);
+		}
+		break;
+	case GFARM_AUTH_ID_TYPE_USER: /* from client */
+		break;
+	default:
+		break;
+	}
+
+	/*
+	 * always re-acquire my credential, otherwise we cannot deal
+	 * with credential expiration.
+	 */
+	ret = gfarmGssAcquireCredential(&cred, desired_name, GSS_C_INITIATE,
+		&e_major, &e_minor, &initiator_name);
+	if (desired_name != GSS_C_NO_NAME)
+		gfarmGssDeleteName(&desired_name, NULL, NULL);
+	if (ret < 0) {
+		if (gflog_auth_get_verbose()) {
+			gflog_error(GFARM_MSG_1000699,
+			    "Can't acquire my credential because of:");
+			gfarmGssPrintMajorStatus(e_major);
+			gfarmGssPrintMinorStatus(e_minor);
+		}
+#if 0
+		return (GFARM_ERR_AUTHENTICATION);
+#else
+		/*
+		 * We don't return GFARM_ERR_AUTHENTICATION or
+		 * GFARM_ERR_EXPIRED here for now,
+		 * to prevent the caller -- gfarm_auth_request()
+		 * -- from trying next auth_method, because current
+		 * server side implmenetation doesn't allow us to
+		 * continue gracefully in this case.
+		 * So, just kill this connection.
+		 */
+		gflog_debug(GFARM_MSG_1001466,
+		    "acquirement of client credential failed");
+		gfarm_auth_set_gsi_auth_error(1);
+		return (GFARM_ERR_INVALID_CREDENTIAL);
+#endif
+	}
+	if (output_cred != NULL)
+		*output_cred = cred;
+	else
+		gfarmGssDeleteCredential(&cred, NULL, NULL);
+	if (output_name != NULL)
+		*output_name = initiator_name;
+	else
+		gfarmGssDeleteName(&initiator_name, NULL, NULL);
+	return (GFARM_ERR_NO_ERROR);
+}
+
 gfarm_error_t
 gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	const char *service_tag, const char *hostname,
@@ -44,16 +130,15 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	    gfarm_auth_server_cred_type_get(service_tag);
 	char *serv_service = gfarm_auth_server_cred_service_get(service_tag);
 	char *serv_name = gfarm_auth_server_cred_name_get(service_tag);
-	enum gfarm_auth_cred_type spool_servicetype;
-	char *spool_servicename = NULL;
 	gss_name_t acceptor_name = GSS_C_NO_NAME;
 	gss_name_t initiator_name = GSS_C_NO_NAME;
+	char *initiator_dn = NULL;
 	gss_cred_id_t cred;
 	OM_uint32 e_major;
 	OM_uint32 e_minor;
 	gfarmSecSession *session;
 	gfarm_int32_t error; /* enum gfarm_auth_error */
-	int eof, cred_acquired = 0;
+	int eof, gsi_errno = 0, cred_acquired = 0;
 
 	e = gfarm_gsi_client_initialize();
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -66,9 +151,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	e = gfarm_gsi_cred_config_convert_to_name(
 	    serv_type != GFARM_AUTH_CRED_TYPE_DEFAULT ?
 	    serv_type : GFARM_AUTH_CRED_TYPE_HOST,
-	    serv_service, serv_name,
-	    (char *)hostname,
-	    &acceptor_name);
+	    serv_service, serv_name, (char *)hostname, &acceptor_name);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_auth_error(GFARM_MSG_1000697,
 		    "Server credential configuration for %s:%s: %s",
@@ -76,88 +159,62 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 		return (e);
 	}
 	cred = gfarm_gsi_get_delegated_cred();
-
 	if (cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
-		switch (self_type) {
-		case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
-			/*
-			 * If spool_server_cred_service is specified,
-			 * a service certificate is used.
-			 */
-			spool_servicetype = gfarm_auth_server_cred_type_get(
-						GFS_SERVICE_TAG);
-			spool_servicename = gfarm_auth_server_cred_service_get(
-						GFS_SERVICE_TAG);
-			e = gfarm_gsi_cred_config_convert_to_name(
-			    spool_servicetype != GFARM_AUTH_CRED_TYPE_DEFAULT ?
-			    spool_servicetype : GFARM_AUTH_CRED_TYPE_HOST,
-			    spool_servicename, NULL,
-			    (char *)hostname,
-			    &initiator_name);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_auth_error(GFARM_MSG_1000698,
-				    "Service credential configuration for "
-				    "%s: %s",
-				    spool_servicename, gfarm_error_string(e));
-				return (e);
-			}
-			break;
-		case GFARM_AUTH_ID_TYPE_USER: /* from client */
-			break;
-		default:
-			break;
-		}
-
-		/*
-		 * always re-acquire my credential, otherwise we cannot deal
-		 * with credential expiration.
-		 */
-		if (gfarmGssAcquireCredential(&cred,
-		    initiator_name, GSS_C_INITIATE,
-		    &e_major, &e_minor, NULL) < 0) {
+		e = gfarm_gsi_acquire_client_credential(hostname, self_type,
+		    &cred, &initiator_name);
+		/* error message already displayed */
+		cred_acquired = 1;
+	} else {
+		if (gfarmGssNewCredentialName(&initiator_name, cred,
+		    &e_major, &e_minor) < 0) {
+			gfarm_auth_set_gsi_auth_error(1);
+			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
-				gflog_error(GFARM_MSG_1000699,
-				    "Can't acquire my credential "
-				    "because of:");
+				gflog_error(GFARM_MSG_1004245,
+				    "cannot obtain initiator name");
 				gfarmGssPrintMajorStatus(e_major);
 				gfarmGssPrintMinorStatus(e_minor);
 			}
-			if (acceptor_name != GSS_C_NO_NAME)
-				gfarmGssDeleteName(&acceptor_name, NULL, NULL);
-			if (initiator_name != GSS_C_NO_NAME)
-				gfarmGssDeleteName(&initiator_name, NULL, NULL);
-#if 0
-			return (GFARM_ERR_AUTHENTICATION);
-#else
-			/*
-			 * We don't return GFARM_ERR_AUTHENTICATION or
-			 * GFARM_ERR_EXPIRED here for now,
-			 * to prevent the caller -- gfarm_auth_request()
-			 * -- from trying next auth_method, because current
-			 * server side implmenetation doesn't allow us to
-			 * continue gracefully in this case.
-			 * So, just kill this connection.
-			 */
-			gflog_debug(GFARM_MSG_1001466,
-				"acquirement of client credential failed");
-			return (GFARM_ERRMSG_CANNOT_ACQUIRE_CLIENT_CRED);
-#endif
 		}
-		if (initiator_name != GSS_C_NO_NAME)
-			gfarmGssDeleteName(&initiator_name, NULL, NULL);
-		cred_acquired = 1;
+	}
+	if (e == GFARM_ERR_NO_ERROR) {
+		initiator_dn = gfarmGssNewDisplayName(initiator_name,
+		    &e_major, &e_minor, NULL);
+		if (initiator_dn == NULL) {
+			gfarm_auth_set_gsi_auth_error(1);
+			e = GFARM_ERR_INVALID_CREDENTIAL;
+			if (gflog_auth_get_verbose()) {
+				gflog_error(GFARM_MSG_1004246,
+				    "cannot obtain initiator dn");
+				gfarmGssPrintMajorStatus(e_major);
+				gfarmGssPrintMinorStatus(e_minor);
+			}
+		}
+	}
+	if (initiator_name != GSS_C_NO_NAME)
+		gfarmGssDeleteName(&initiator_name, NULL, NULL);
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (acceptor_name != GSS_C_NO_NAME)
+			gfarmGssDeleteName(&acceptor_name, NULL, NULL);
+		return (e);
 	}
 	/* XXX NOTYET deal with self_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
 	session = gfarmSecSessionInitiate(fd, acceptor_name, cred,
-	    GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG, NULL, &e_major, &e_minor);
+	    GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG, NULL,
+	    &gsi_errno, &e_major, &e_minor);
 	if (acceptor_name != GSS_C_NO_NAME)
 		gfarmGssDeleteName(&acceptor_name, NULL, NULL);
 	if (session == NULL) {
 		if (gflog_auth_get_verbose()) {
 			gflog_notice(GFARM_MSG_1000700,
 			    "Can't initiate session because of:");
-			gfarmGssPrintMajorStatus(e_major);
-			gfarmGssPrintMinorStatus(e_minor);
+			if (gsi_errno != 0) {
+				gflog_info(GFARM_MSG_1004002, "%s",
+				    strerror(gsi_errno));
+			} else {
+				gfarmGssPrintMajorStatus(e_major);
+				gfarmGssPrintMinorStatus(e_minor);
+			}
 		}
 		if (cred_acquired &&
 		    gfarmGssDeleteCredential(&cred, &e_major, &e_minor) < 0 &&
@@ -167,6 +224,9 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
+		free(initiator_dn);
+		if (gsi_errno != 0)
+			return (gfarm_errno_to_error(gsi_errno));
 #if 0
 		/* XXX e_major/e_minor should be used */
 		return (GFARM_ERR_AUTHENTICATION);
@@ -185,7 +245,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 #endif
 	}
 	gfp_xdr_set_secsession(conn, session,
-	    cred_acquired ? cred : GSS_C_NO_CREDENTIAL);
+	    cred_acquired ? cred : GSS_C_NO_CREDENTIAL, initiator_dn);
 
 	e = gfp_xdr_recv(conn, 1, &eof, "i", &error);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -220,6 +280,7 @@ struct gfarm_auth_request_gsi_state {
 
 	gss_name_t acceptor_name;
 	gss_cred_id_t cred;
+	char *initiator_dn;
 	int cred_acquired;
 	struct gfarmSecSessionInitiateState *gfsl_state;
 	gfarmSecSession *session;
@@ -299,7 +360,8 @@ gfarm_auth_request_gsi_wait_result(void *closure)
 			gfp_xdr_set_secsession(state->conn,
 			    state->session,
 			    state->cred_acquired ?
-			    state->cred : GSS_C_NO_CREDENTIAL);
+			    state->cred : GSS_C_NO_CREDENTIAL,
+			    state->initiator_dn);
 			/* go to gfarm_auth_request_gsi_receive_result() */
 			return;
 		}
@@ -323,6 +385,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	    gfarm_auth_server_cred_type_get(service_tag);
 	char *serv_service = gfarm_auth_server_cred_service_get(service_tag);
 	char *serv_name = gfarm_auth_server_cred_name_get(service_tag);
+	gss_name_t initiator_name = GSS_C_NO_NAME;
 	OM_uint32 e_major, e_minor;
 
 	e = gfarm_gsi_client_initialize();
@@ -360,9 +423,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	e = gfarm_gsi_cred_config_convert_to_name(
 	    serv_type != GFARM_AUTH_CRED_TYPE_DEFAULT ?
 	    serv_type : GFARM_AUTH_CRED_TYPE_HOST,
-	    serv_service, serv_name,
-	    (char *)hostname,
-	    &state->acceptor_name);
+	    serv_service, serv_name, (char *)hostname, &state->acceptor_name);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_auth_error(GFARM_MSG_1000703,
 		    "Server credential configuration for %s:%s: %s",
@@ -373,40 +434,42 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	state->cred_acquired = 0;
 	state->cred = gfarm_gsi_get_delegated_cred();
 	if (state->cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
-		/*
-		 * always re-acquire my credential, otherwise we cannot deal
-		 * with credential expiration.
-		 */
-		if (gfarmGssAcquireCredential(&state->cred,
-		    GSS_C_NO_NAME, GSS_C_INITIATE,
-		    &e_major, &e_minor, NULL) < 0) {
+		e = gfarm_gsi_acquire_client_credential(hostname, self_type,
+		    &state->cred, &initiator_name);
+		/* error message already displayed */
+		state->cred_acquired = 1;
+	} else {
+		if (gfarmGssNewCredentialName(&initiator_name,
+		    state->cred, &e_major, &e_minor) < 0) {
+			gfarm_auth_set_gsi_auth_error(1);
+			e = GFARM_ERR_INVALID_CREDENTIAL;
 			if (gflog_auth_get_verbose()) {
-				gflog_error(GFARM_MSG_1000704,
-				    "Can't acquire my credential "
-				    "because of:");
+				gflog_error(GFARM_MSG_1004247,
+				    "cannot obtain initiator name");
 				gfarmGssPrintMajorStatus(e_major);
 				gfarmGssPrintMinorStatus(e_minor);
 			}
-#if 0
-			e = GFARM_ERR_AUTHENTICATION;
-#else
-			/*
-			 * We don't return GFARM_ERR_AUTHENTICATION or
-			 * GFARM_ERR_EXPIRED here for now, to prevent
-			 * the caller -- gfarm_auth_request_next_method()
-			 * -- from trying next auth_method, because current
-			 * server side implmenetation doesn't allow us to
-			 * continue gracefully in this case.
-			 * So, just kill this connection.
-			 */
-			gflog_debug(GFARM_MSG_1001475,
-				"acquirement of client credential failed");
-			e = GFARM_ERRMSG_CANNOT_ACQUIRE_CLIENT_CRED;
-#endif
-			goto error_free_acceptor_name;
 		}
-		state->cred_acquired = 1;
 	}
+	state->initiator_dn = NULL;
+	if (e == GFARM_ERR_NO_ERROR) {
+		state->initiator_dn = gfarmGssNewDisplayName(
+		    initiator_name, &e_major, &e_minor, NULL);
+		if (state->initiator_dn == NULL) {
+			gfarm_auth_set_gsi_auth_error(1);
+			e = GFARM_ERR_INVALID_CREDENTIAL;
+			if (gflog_auth_get_verbose()) {
+				gflog_error(GFARM_MSG_1004248,
+				    "cannot obtain initiator dn");
+				gfarmGssPrintMajorStatus(e_major);
+				gfarmGssPrintMinorStatus(e_minor);
+			}
+		}
+	}
+	if (initiator_name != GSS_C_NO_NAME)
+		gfarmGssDeleteName(&initiator_name, NULL, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		goto error_free_cred;
 
 	/* XXX NOTYET deal with self_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
 	state->gfsl_state = gfarmSecSessionInitiateRequest(q,
@@ -439,7 +502,7 @@ error_free_cred:
 		gfarmGssPrintMajorStatus(e_major);
 		gfarmGssPrintMinorStatus(e_minor);
 	}
-error_free_acceptor_name:
+	free(state->initiator_dn);
 	if (state->acceptor_name != GSS_C_NO_NAME)
 		gfarmGssDeleteName(&state->acceptor_name, NULL, NULL);
 error_free_readable:

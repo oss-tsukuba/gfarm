@@ -20,18 +20,23 @@
 #include "timer.h"
 #include "gfutil.h"
 #include "queue.h"
+#define GFARM_USE_OPENSSL
+#include "msgdigest.h"
 
 #include "context.h"
 #include "liberror.h"
 #include "gfs_profile.h"
 #include "host.h"
 #include "config.h"
+#include "gfm_proto.h"
 #include "gfm_client.h"
 #include "gfm_schedule.h"
 #include "gfs_client.h"
 #include "gfs_proto.h"
+#define GFARM_USE_GFS_PIO_INTERNAL_CKSUM_INFO
 #include "gfs_io.h"
 #include "gfs_pio.h"
+#include "gfs_pio_impl.h"
 #include "schedule.h"
 #include "filesystem.h"
 #include "gfs_failover.h"
@@ -40,6 +45,8 @@
 
 struct gfarm_gfs_pio_section_static {
 	double set_view_section_time;
+	unsigned long long open_local_count;
+	unsigned long long open_remote_count;
 };
 
 gfarm_error_t
@@ -52,6 +59,8 @@ gfarm_gfs_pio_section_static_init(struct gfarm_context *ctxp)
 		return (GFARM_ERR_NO_MEMORY);
 
 	s->set_view_section_time = 0;
+	s->open_local_count =
+	s->open_remote_count = 0;
 
 	ctxp->gfs_pio_section_static = s;
 	return (GFARM_ERR_NO_ERROR);
@@ -68,148 +77,6 @@ gfs_pio_view_section_close(GFS_File gf)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR, e_save = GFARM_ERR_NO_ERROR;
-
-#if 0 /* not yet in gfarm v2 */
-	int md_calculated = 0;
-	file_offset_t filesize;
-	size_t md_len;
-	unsigned char md_value[EVP_MAX_MD_SIZE];
-	char md_value_string[EVP_MAX_MD_SIZE * 2 + 1];
-	struct gfarm_file_section_info fi, fi1;
-	unsigned int len;
-	int i;
-
-#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
-	filesize = 0;
-	md_len = 0;
-#endif
-	/* calculate checksum */
-	/*
-	 * EVP_DigestFinal should be called always to clean up
-	 * allocated memory by EVP_DigestInit.
-	 */
-	EVP_DigestFinal(&vc->md_ctx, md_value, &len);
-
-	if (gfs_pio_check_calc_digest(gf)) {
-		if (((gf->mode & GFS_FILE_MODE_WRITE) != 0 &&
-		     (gf->open_flags & GFARM_FILE_TRUNC) == 0) ||
-		    ((gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
-		     (gf->error != GFARM_ERRMSG_GFS_PIO_IS_EOF) &&
-		     (gf->mode & GFS_FILE_MODE_UPDATE_METADATA) != 0)) {
-			/* we have to read rest of the file in this case */
-#if 0
-			/* XXX - not supported for now */
-			gflog_fatal(GFARM_MSG_UNFIXED,
-			    "writing without truncation isn't supported yet\n");
-#endif
-#if 0
-			/* re-read whole file to calculate digest value */
-			e = (*vc->ops->storage_calculate_digest)(gf,
-			    GFS_DEFAULT_DIGEST_NAME, sizeof(md_value),
-			    &md_len, md_value, &filesize);
-			if (gfs_client_is_connection_error(e) &&
-			    gfs_pio_view_section_try_to_switch_replica(gf) ==
-			    NULL) {
-				e = (*vc->ops->storage_calculate_digest)(gf,
-				    GFS_DEFAULT_DIGEST_NAME, sizeof(md_value),
-				    &md_len, md_value, &filesize);
-			}
-			if (e != GFARM_ERR_NO_ERROR) {
-				md_calculated = 0;
-				if (e_save == GFARM_ERR_NO_ERROR)
-					e_save = e;
-			}
-			md_calculated = 1;
-#endif
-		} else if ((gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
-		    (gf->error != GFARM_ERRMSG_GFS_PIO_IS_EOF)) {
-			/*
-			 * sequential and read-only case, but
-			 * either error occurred or gf doesn't reach EOF,
-			 * we don't confirm checksum in this case.
-			 */
-			md_calculated = 0;
-		} else {
-			md_len = len;
-			filesize = gf->offset + gf->length;
-			md_calculated = 1;
-		}
-	} else {
-		if ((gf->mode & GFS_FILE_MODE_UPDATE_METADATA) == 0) {
-			/*
-			 * random-access and read-only case,
-			 * we don't confirm checksum for this case,
-			 * because of its high overhead.
-			 */
-			md_calculated = 0;
-		} else {
-#if 0
-			/*
-			 * re-read whole file to calculate digest value
-			 * for writing.
-			 * note that this effectively breaks file offset.
-			 */
-			e = (*vc->ops->storage_calculate_digest)(gf,
-			    GFS_DEFAULT_DIGEST_NAME, sizeof(md_value),
-			    &md_len, md_value, &filesize);
-			if (gfs_client_is_connection_error(e) &&
-			    gfs_pio_view_section_try_to_switch_replica(gf) ==
-			    GFARM_ERR_NO_ERROR) {
-				e = (*vc->ops->storage_calculate_digest)(gf,
-				    GFS_DEFAULT_DIGEST_NAME, sizeof(md_value),
-				    &md_len, md_value, &filesize);
-			}
-			if (e != GFARM_ERR_NO_ERROR) {
-				md_calculated = 0;
-				if (e_save == GFARM_ERR_NO_ERROR)
-					e_save = e;
-			}
-			md_calculated = 1;
-#endif
-		}
-	}
-
-	if (md_calculated == 1) {
-		for (i = 0; i < md_len; i++)
-			sprintf(&md_value_string[i + i], "%02x", md_value[i]);
-	}
-
-	if (gf->mode & GFS_FILE_MODE_UPDATE_METADATA) {
-		if (md_calculated == 1) {
-			fi1.filesize = filesize;
-			fi1.checksum_type = GFS_DEFAULT_DIGEST_NAME;
-			fi1.checksum = md_value_string;
-
-			e = gfarm_file_section_info_replace(
-				gf->pi.pathname, vc->section, &fi1);
-		} else
-			e = gfs_pio_view_section_set_checksum_unknown(gf);
-	} else if (md_calculated == 1 &&
-		(e = gfarm_file_section_info_get(gf->pi.pathname,
-		    vc->section, &fi)) == GFARM_ERR_NO_ERROR) {
-		if (gfs_file_section_info_check_busy(&fi))
-			/* skip check*/;
-		else if (gfs_file_section_info_check_checksum_unknown(&fi)) {
-			fi1.filesize = filesize;
-			fi1.checksum_type = GFS_DEFAULT_DIGEST_NAME;
-			fi1.checksum = md_value_string;
-
-			e = gfarm_file_section_info_replace(
-				gf->pi.pathname, vc->section, &fi1);
-		} else {
-			if (filesize != fi.filesize)
-				e = "filesize mismatch";
-			else if (strcasecmp(fi.checksum_type,
-					    GFS_DEFAULT_DIGEST_NAME) != 0 ||
-				 strcasecmp(fi.checksum, md_value_string) != 0)
-				e = "checksum mismatch";
-		}
-		gfarm_file_section_info_free(&fi);
-	}
-	if (e_save == GFARM_ERR_NO_ERROR)
-		e_save = e;
-
-#endif /* not yet in gfarm v2 */
 
 	e = (*vc->ops->storage_close)(gf);
 	if (e_save == GFARM_ERR_NO_ERROR)
@@ -236,18 +103,34 @@ gfs_pio_view_section_pwrite(GFS_File gf,
 	gfarm_error_t e = (*vc->ops->storage_pwrite)(gf,
 	    buffer, size, offset, lengthp);
 
-#if 0 /* not yet in gfarm v2  */ 
-	if (e == GFARM_ERR_NO_ERROR && *lengthp > 0 &&
-	    (gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0)
-		EVP_DigestUpdate(&vc->md_ctx, buffer, *lengthp);
-#endif
-
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001347,
 			"storage_pwrite() failed: %s",
 			gfarm_error_string(e));
+	} else if (*lengthp > 0) {
+		gf->mode |= GFS_FILE_MODE_MODIFIED;
+		/*
+		 * gf->md.filesize may be incorrect, if this file is
+		 * simultaneously written via multiple descriptors,
+		 * but we don't have to care such case, because
+		 * the cksum will be invalidated by gfmd.
+		 */
+		if ((gf->open_flags & GFARM_FILE_APPEND) != 0)
+			offset = gf->md.filesize;
+		if (gf->md.filesize < offset + *lengthp)
+			gf->md.filesize = offset + *lengthp;
+		if ((gf->mode &
+		    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
+		    (GFS_FILE_MODE_DIGEST_CALC)) {
+			if (gf->md_offset != offset) {
+				gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+			} else {
+				EVP_DigestUpdate(
+				    gf->md_ctx, buffer, *lengthp);
+				gf->md_offset += *lengthp;
+			}
+		}
 	}
-
 	return (e);
 }
 
@@ -260,17 +143,27 @@ gfs_pio_view_section_write(GFS_File gf,
 	gfarm_error_t e = (*vc->ops->storage_write)(gf,
 	    buffer, size, lengthp, offsetp, total_sizep);
 
-#if 0 /* not yet in gfarm v2  */
-	if (e == GFARM_ERR_NO_ERROR && *lengthp > 0 &&
-	    (gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0)
-		EVP_DigestUpdate(&vc->md_ctx, buffer, *lengthp);
-#endif
-
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003689,
 			"storage_write() failed: %s",
 			gfarm_error_string(e));
+	} else if (*lengthp > 0) {
+		gf->mode |= GFS_FILE_MODE_MODIFIED;
+		if (gf->md.filesize < *offsetp + *lengthp)
+			gf->md.filesize = *offsetp + *lengthp;
+		if ((gf->mode &
+		    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
+		    (GFS_FILE_MODE_DIGEST_CALC)) {
+			if (gf->md_offset != *offsetp) {
+				gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+			} else {
+				EVP_DigestUpdate(
+				    gf->md_ctx, buffer, *lengthp);
+				gf->md_offset += *lengthp;
+			}
+		}
 	}
+
 	return (e);
 }
 
@@ -282,17 +175,114 @@ gfs_pio_view_section_pread(GFS_File gf,
 	gfarm_error_t e = (*vc->ops->storage_pread)(gf,
 	    buffer, size, offset, lengthp);
 
-#if 0 /* not yet in gfarm v2  */ 
-	if (e == GFARM_ERR_NO_ERROR && *lengthp > 0 &&
-	    (gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0)
-		EVP_DigestUpdate(&vc->md_ctx, buffer, *lengthp);
-#endif
-
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001348,
 			"storage_pread failed: %s",
 			gfarm_error_string(e));
+	} else if (*lengthp > 0 && (gf->mode &
+	    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
+	    (GFS_FILE_MODE_DIGEST_CALC)) {
+		if (gf->md_offset != offset) {
+			gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+		} else {
+			/*
+			 * There is alternative strategy that we calls
+			 * gfs_pio_md_finish() only if
+			 * the GFS_FILE_MODE_DIGEST_AVAIL flags is set.
+			 * With that strategy, we may be able to set
+			 * new checksum, if the actual filesize is larger
+			 * than the metadata due to file modification by
+			 * other processes.
+			 * But that's a rare case and we don't check the
+			 * AVAIL flags for consistency with the gfsd
+			 * implementation.
+			 */
+			EVP_DigestUpdate(gf->md_ctx, buffer, *lengthp);
+			gf->md_offset += *lengthp;
+			if (gf->md_offset == gf->md.filesize && (gf->mode &
+			    GFS_FILE_MODE_MODIFIED) == 0)
+				e = gfs_pio_md_finish(gf);
+		}
 	}
+
+	return (e);
+}
+
+static gfarm_error_t
+gfs_pio_view_section_recvfile(GFS_File gf, gfarm_off_t r_off,
+	int w_fd, gfarm_off_t w_off, gfarm_off_t len, gfarm_off_t *recvp)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	EVP_MD_CTX *md_ctx = NULL;
+	gfarm_error_t e;
+	gfarm_off_t recv = 0;
+
+	if ((gf->mode &
+	    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
+	    (GFS_FILE_MODE_DIGEST_CALC)) {
+		if (gf->md_offset != r_off) {
+			gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+		} else {
+			md_ctx = gf->md_ctx;
+		}
+	}
+	e = (*vc->ops->storage_recvfile)(gf, r_off, w_fd, w_off, len,
+	    md_ctx, &recv);
+
+	/* recv is set even if e != GFARM_ERR_NO_ERROR */
+	if (md_ctx != NULL) {
+		gf->md_offset += recv;
+		if (e == GFARM_ERR_NO_ERROR &&
+		    gf->md_offset == gf->md.filesize && (gf->mode &
+		    (GFS_FILE_MODE_MODIFIED|GFS_FILE_MODE_DIGEST_AVAIL))
+		    == GFS_FILE_MODE_DIGEST_AVAIL)
+			e = gfs_pio_md_finish(gf);
+	}
+	if (recvp != NULL)
+		*recvp = recv;
+
+	return (e);
+}
+
+static gfarm_error_t
+gfs_pio_view_section_sendfile(GFS_File gf, gfarm_off_t w_off,
+	int r_fd, gfarm_off_t r_off, gfarm_off_t len, gfarm_off_t *sentp)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	EVP_MD_CTX *md_ctx = NULL;
+	gfarm_error_t e;
+	gfarm_off_t sent = 0;
+
+	if ((gf->mode &
+	    (GFS_FILE_MODE_DIGEST_CALC|GFS_FILE_MODE_DIGEST_FINISH)) ==
+	    (GFS_FILE_MODE_DIGEST_CALC)) {
+		/*
+		 * gf->md.filesize may be incorrect, if this file is
+		 * simultaneously written via multiple descriptors,
+		 * but we don't have to care such case, because
+		 * the cksum will be invalidated by gfmd.
+		 */
+		if ((gf->open_flags & GFARM_FILE_APPEND) != 0)
+			w_off = gf->md.filesize;
+		if (gf->md_offset != w_off) {
+			gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+		} else {
+			md_ctx = gf->md_ctx;
+		}
+	}
+	e = (*vc->ops->storage_sendfile)(gf, w_off, r_fd, r_off, len,
+	    md_ctx, &sent);
+
+	/* sent is set even if e != GFARM_ERR_NO_ERROR */
+	if (sent > 0) {
+		gf->mode |= GFS_FILE_MODE_MODIFIED;
+		if (gf->md.filesize < w_off + sent)
+			gf->md.filesize = w_off + sent;
+	}
+	if (md_ctx != NULL) 
+		gf->md_offset += sent;
+	if (sentp != NULL)
+		*sentp = sent;
 
 	return (e);
 }
@@ -301,8 +291,39 @@ static gfarm_error_t
 gfs_pio_view_section_ftruncate(GFS_File gf, gfarm_off_t length)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
+	gfarm_error_t e;
+	unsigned char md_value[EVP_MAX_MD_SIZE];
 
-	return ((*vc->ops->storage_ftruncate)(gf, length));
+	e = (*vc->ops->storage_ftruncate)(gf, length);
+	if (e == GFARM_ERR_NO_ERROR) {
+		gf->mode |= GFS_FILE_MODE_MODIFIED;
+		if ((gf->mode & GFS_FILE_MODE_DIGEST_CALC) != 0) {
+			if (length == 0) {
+				if ((gf->mode & GFS_FILE_MODE_DIGEST_FINISH)
+				    == 0) {
+					/* to avoid memory leak */
+					gfarm_msgdigest_free(
+					    gf->md_ctx, md_value);
+					gf->mode |=
+					    GFS_FILE_MODE_DIGEST_FINISH;
+				}
+				if (!gfs_pio_md_init(gf->md.cksum_type,
+				    &gf->md_ctx, gfs_pio_url(gf))) {
+					free(gf->md.cksum_type);
+					gf->md.cksum_type = NULL;
+					gf->mode &=
+					    ~GFS_FILE_MODE_DIGEST_CALC;
+				} else {
+					gf->mode &=
+					    ~GFS_FILE_MODE_DIGEST_FINISH;
+					gf->md_offset = 0;
+				}
+			} else if (length < gf->md_offset)
+				gf->mode &= ~GFS_FILE_MODE_DIGEST_CALC;
+		}
+		gf->md.filesize = length;
+	}
+	return (e);
 }
 
 static gfarm_error_t
@@ -319,6 +340,34 @@ gfs_pio_view_section_fstat(GFS_File gf, struct gfs_stat *st)
 	struct gfs_file_section_context *vc = gf->view_context;
 
 	return ((*vc->ops->storage_fstat)(gf, st));
+}
+
+static gfarm_error_t
+gfs_pio_view_section_cksum(GFS_File gf, const char *type,
+	struct gfs_stat_cksum *sum)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	char cksum[GFM_PROTO_CKSUM_MAXLEN], *tmp_type, *tmp_cksum;
+	size_t size = sizeof cksum, len;
+	gfarm_error_t e;
+
+	e = (*vc->ops->storage_cksum)(gf, type, cksum, size, &len);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	tmp_type = strdup(type);
+	tmp_cksum = malloc(len + 1);
+	if (tmp_type == NULL || tmp_cksum == NULL) {
+		free(tmp_type);
+		free(tmp_cksum);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	sum->type = tmp_type;
+	sum->len = len;
+	sum->cksum = tmp_cksum;
+	sum->flags = 0;
+	memcpy(sum->cksum, cksum, len);
+	sum->cksum[len] = '\0';
+	return (e);
 }
 
 static gfarm_error_t
@@ -347,6 +396,9 @@ struct gfs_pio_ops gfs_pio_view_section_ops = {
 	gfs_pio_view_section_fstat,
 	gfs_pio_view_section_reopen,
 	gfs_pio_view_section_write,
+	gfs_pio_view_section_cksum,
+	gfs_pio_view_section_recvfile,
+	gfs_pio_view_section_sendfile,
 };
 
 
@@ -391,22 +443,45 @@ static gfarm_error_t
 gfs_pio_open_section(GFS_File gf, struct gfs_connection *gfs_server)
 {
 	gfarm_error_t e;
-	int nretry = 1;
+	int nretry = GFS_FAILOVER_RETRY_COUNT;
 	int is_local = gfs_client_connection_is_local(gfs_server);
 
 retry:
 	if ((e = is_local ?
 	    gfs_pio_open_local_section(gf, gfs_server) :
-	    gfs_pio_open_remote_section(gf, gfs_server)) == GFARM_ERR_NO_ERROR)
+	    gfs_pio_open_remote_section(gf, gfs_server))
+	    == GFARM_ERR_NO_ERROR) {
+		gfs_profile(
+			if (is_local)
+				++staticp->open_local_count;
+			else
+				++staticp->open_remote_count);
 		return (e);
+	}
 
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003953,
 	    "gfs_pio_open_%s_section: %s",
 	    is_local ? "local" : "remote", gfarm_error_string(e));
 
-	if (gfs_pio_should_failover(gf, e) && nretry-- > 0) {
+	/*
+	 * We use gfs_pio_should_failover_at_gfs_open() instead of
+	 * gfs_pio_should_failover() here to avoid the following case:
+	 * (1) gfs_pio_open(..., &gf1) is called.
+	 * (2) gfs_pio_open(..., &gf2) is called.
+	 * (3) gfs_pio_read(gf1, ...) is called and
+	 *    this client connects gfsd-1.
+	 * (4) gfs_pio_read(gf2, ...) is called and gfsd-1 is scheduled.
+	 * (5) for some reason, the connection between this client and gfmd
+	 *    is lost (e.g. TCP ACK packets from this client are all lost),
+	 *    but the connection between gfsd-1 and gfmd is kept.
+	 * (6) To deal with (4), this function requests of gfsd-1 that
+	 *   it should open gf2->fd, but because gf2->fd is closed
+	 *   in the gfmd side due to (5), gfs_pio_open_{local,remote}_section()
+	 *   call above fails with GFARM_ERR_BAD_FILE_DESCRIPTOR.
+	 */
+	if (gfs_pio_should_failover_at_gfs_open(gf, e) && nretry-- > 0) {
 		if ((e = gfs_pio_failover(gf)) != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003954,
 			    "gfs_pio_failover: %s", gfarm_error_string(e));
 			return (e);
 		}
@@ -418,11 +493,11 @@ retry:
 			 * in gfarm_filesystem. so gfs_server did not fail
 			 * over.
 			 */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003955,
 			    "reset_process");
 			if ((e = gfarm_client_process_reset(gfs_server,
 			    gf->gfm_server)) != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003956,
 				    "gfarm_client_process_reset: %s",
 				    gfarm_error_string(e));
 				return (e);
@@ -441,7 +516,7 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 	int nretry = 1;
 	gfarm_timerval_t t1, t2, t3;
 
-	GFARM_KERNEL_UNUSE3(t1,t2,t3);
+	GFARM_KERNEL_UNUSE3(t1, t2, t3);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
@@ -449,8 +524,11 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 retry:
-	if ((e = gfs_client_connection_and_process_acquire(&gf->gfm_server,
-	    hostname, port, &gfs_server, NULL)) != GFARM_ERR_NO_ERROR) {
+	gfm_client_connection_addref(gf->gfm_server);
+	e = gfs_client_connection_and_process_acquire(&gf->gfm_server,
+	    hostname, port, &gfs_server, NULL);
+	gfm_client_connection_delref(gf->gfm_server);
+	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001350,
 		    "acquirement of client connection failed: %s",
 		    gfarm_error_string(e));
@@ -460,7 +538,7 @@ retry:
 	gfs_profile(gfarm_gettimerval(&t2));
 
 	if ((e = gfs_pio_open_section(gf, gfs_server)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003957,
 		    "gfs_pio_open_section: %s",
 		    gfarm_error_string(e));
 		gfs_client_connection_free(gfs_server);
@@ -473,7 +551,7 @@ retry:
 
 	gfs_profile(
 		gfarm_gettimerval(&t3);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003958,
 		    "(connect_and_open) connection_acquire/process_set %f, "
 			   "open %f",
 			   gfarm_timerval_sub(&t2, &t1),
@@ -518,7 +596,7 @@ gfarm_schedule_file_cache(GFS_File gf, char **hostp, gfarm_int32_t *portp,
 	/*
 	 * XXX FIXME: Or, call replicate_section_to_local(), if that's prefered
 	 */
-	GFARM_KERNEL_UNUSE3(t1,t2,t3);
+	GFARM_KERNEL_UNUSE3(t1, t2, t3);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
@@ -552,20 +630,26 @@ gfarm_schedule_file_cache(GFS_File gf, char **hostp, gfarm_int32_t *portp,
 		    (gf->mode & GFS_FILE_MODE_WRITE) != 0, &host, &port);
 	}
 	/* in case of no file system node, clear status of connection cache */
-	if (e == GFARM_ERRMSG_NO_FILESYSTEM_NODE)
+	if (e == GFARM_ERR_NO_FILESYSTEM_NODE)
 		gfarm_schedule_host_cache_reset(gf->gfm_server, nhosts, infos);
 	gfarm_host_sched_info_free(nhosts, infos);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1001354, "schedule_select_host: %s",
+		gflog_debug(GFARM_MSG_1001354, "schedule_select_host: %s",
 		    gfarm_error_string(e));
 
 	/* on-demand replication */
 	if (gfarm_ctxp->on_demand_replication &&
 	    e == GFARM_ERR_NO_ERROR &&
-	    !gfm_host_is_local(gf->gfm_server, host)) {
+	    !gfm_canonical_hostname_is_local(gf->gfm_server, host)) {
 		e = gfs_replicate_to_local(gf, host, port);
 		if (e == GFARM_ERR_NO_ERROR) {
 			free(host);
+			/*
+			 * We don't have to check gfmd failover here.
+			 * because gfs_replicate_to_local() already called
+			 * gfm_host_get_canonical_self_nam(), and the result
+			 * was internally cached.
+			 */
 			e = gfm_host_get_canonical_self_name(
 			    gf->gfm_server, &host, &port);
 			host = strdup(host);
@@ -603,7 +687,7 @@ gfarm_schedule_file_cache(GFS_File gf, char **hostp, gfarm_int32_t *portp,
 gfarm_error_t
 gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 {
-	return gfarm_schedule_file_cache(gf, hostp, portp, NULL);
+	return (gfarm_schedule_file_cache(gf, hostp, portp, NULL));
 }
 
 static gfarm_error_t
@@ -633,9 +717,9 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 		if (host == NULL) {
 			e = gfarm_schedule_file_cache(gf, &host, &port, &nc);
 			/* reschedule another host */
-			if (e == GFARM_ERRMSG_NO_FILESYSTEM_NODE &&
+			if (e == GFARM_ERR_NO_FILESYSTEM_NODE &&
 			    !gfarm_timeval_is_expired(&expiration_time)) {
-				gflog_warning(GFARM_MSG_1001359,
+				gflog_info(GFARM_MSG_1001359,
 				    "sleep %d sec: %s", sleep_interval,
 				    gfarm_error_string(e));
 				gfs_client_connection_cache_change(-nc);
@@ -664,7 +748,7 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 			 * reschedule another host unless host is
 			 * explicitly specified
 			 */
-			if ((e == GFARM_ERRMSG_NO_FILESYSTEM_NODE ||
+			if ((e == GFARM_ERR_NO_FILESYSTEM_NODE ||
 			     e == GFARM_ERR_FILE_MIGRATED ||
 			     e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE ||
 			    gfs_client_is_connection_error(e)) &&
@@ -675,7 +759,7 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 					    "file migrated");
 					continue;
 				}
-				gflog_warning(GFARM_MSG_1001360,
+				gflog_info(GFARM_MSG_1001360,
 				    "sleep %d sec: %s", sleep_interval,
 				    gfarm_error_string(e));
 				sleep(sleep_interval);
@@ -698,7 +782,7 @@ gfs_file_section_context_alloc(void)
 	GFARM_MALLOC(vc);
 	if (vc == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003959,
 		    "allocation of file section context failed: %s",
 		    gfarm_error_string(e));
 		return (NULL);
@@ -718,7 +802,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 	gfarm_timerval_t t1, t2;
 	gfarm_int32_t port = 0;
 
-	GFARM_KERNEL_UNUSE2(t1,t2);
+	GFARM_KERNEL_UNUSE2(t1, t2);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
@@ -732,17 +816,31 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 
 	if (host != NULL) { /* this is slow, but not usually used */
 		struct gfarm_host_info hinfo;
+		int nretries = GFS_FAILOVER_RETRY_COUNT;
 
-		e = gfm_host_info_get_by_name_alias(gf->gfm_server, host,
-		    &hinfo);
-		if (e != GFARM_ERR_NO_ERROR) {
+		for (;;) {
+			e = gfm_host_info_get_by_name_alias(gf->gfm_server,
+			    host, &hinfo);
+			if (e == GFARM_ERR_NO_ERROR) {
+				port = hinfo.port;
+				gfarm_host_info_free(&hinfo);
+				break;
+			}
+			if (gfm_client_connection_should_failover(
+			    gf->gfm_server, e) && nretries-- > 0) {
+				if ((e = gfs_pio_failover(gf))
+				    == GFARM_ERR_NO_ERROR)
+					continue;
+				gflog_debug(GFARM_MSG_1003960,
+				    "gfs_pio_failover: %s",
+				    gfarm_error_string(e));
+				goto finish;
+			}
 			gflog_debug(GFARM_MSG_1001357,
 				"gfm_host_info_get_by_name_alias() failed: %s",
 				gfarm_error_string(e));
 			goto finish;
 		}
-		port = hinfo.port;
-		gfarm_host_info_free(&hinfo);
 	}
 
 	vc = gfs_file_section_context_alloc();
@@ -764,7 +862,14 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 		goto finish;
 #else /* not yet in gfarm v2  */
 		gf->mode |= GFS_FILE_MODE_CALC_DIGEST;
-		EVP_DigestInit(&vc->md_ctx, GFS_DEFAULT_DIGEST_MODE);
+		vc->md_ctx = gfarm_msgdigest_alloc(GFS_DEFAULT_DIGEST_MODE);
+		if (vc->md_ctx == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_1004519,
+			    "msgdigest allocation failed: %s",
+			    gfarm_error_string(e));
+			goto finish;
+		}
 
 		if (gf->open_flags & GFARM_FILE_APPEND) {
 			e = gfs_pio_seek(gf, 0, SEEK_END, NULL);
@@ -809,9 +914,15 @@ gfs_pio_reconnect(GFS_File gf)
 		return (e);
 	}
 
-	if ((e = gfm_client_revoke_gfsd_access(gf->gfm_server, gf->fd))
+	if ((e = gfm_client_revoke_gfsd_access_request(gf->gfm_server, gf->fd))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002660,
+		    "%s", gfarm_error_string(e));
+		return (e);
+	}
+	if ((e = gfm_client_revoke_gfsd_access_result(gf->gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1002661,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
@@ -958,7 +1069,11 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	gf->io_offset = gf->offset = 0;
 
 	gf->mode |= GFS_FILE_MODE_CALC_DIGEST;
-	EVP_DigestInit(&vc->md_ctx, GFS_DEFAULT_DIGEST_MODE);
+	vc->md_ctx = gfarm_msgdigest_alloc(GFS_DEFAULT_DIGEST_MODE);
+	if (vc->md_ctx == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto finish;
+	}
 
 	if (!is_local_host && gfarm_is_active_file_system_node &&
 	    (gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
@@ -1043,7 +1158,7 @@ storage_close:
 		(void)(*vc->ops->storage_close)(gf);
 free_digest:
 	if (e != NULL)
-		EVP_DigestFinal(&vc->md_ctx, md_value, &md_len);
+		md_len = gfarm_msgdigest_free(vc->md_ctx, md_value);
 free_host:
 	if (e != GFARM_ERR_NO_ERROR)
 		free(vc->canonical_hostname);
@@ -1135,7 +1250,6 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gfp)
 	if (e != NULL)
 		return (e);
 
-	/* XXX doesn't work with v2, because this returns remote descriptor */
 	nfd = gfs_pio_fileno(gf);
 	if (nfd == -1)
 		return (gfarm_errno_to_error(errno));
@@ -1164,6 +1278,10 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gfp)
 void
 gfs_pio_section_display_timers(void)
 {
-	gflog_info(GFARM_MSG_1000113, "gfs_pio_set_view_section : %f sec",
+	gflog_info(GFARM_MSG_1000113, "gfs_pio_set_view_section  : %f sec",
 		staticp->set_view_section_time);
+	gflog_info(GFARM_MSG_1003712, "gfs_pio_open_local_count  : %lld",
+		(unsigned long long)staticp->open_local_count);
+	gflog_info(GFARM_MSG_1003713, "gfs_pio_open_remote_count : %lld",
+		(unsigned long long)staticp->open_remote_count);
 }

@@ -1,43 +1,23 @@
-'\" t
-.\"     Title: gfrm
-.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 25 Dec 2014
-.\"    Manual: Gfarm
-.\"    Source: Gfarm
-.\"  Language: English
-.\"
+.\" ** You probably do not want to edit this file directly **
+.\" It was generated using the DocBook XSL Stylesheets (version 1.69.1).
+.\" Instead of manually editing it, you probably should edit the DocBook XML
+.\" source for it and then use the DocBook XSL Stylesheets to regenerate it.
 .TH "GFRM" "1" "25 Dec 2014" "Gfarm" "Gfarm"
-.\" -----------------------------------------------------------------
-.\" * Define some portability stuff
-.\" -----------------------------------------------------------------
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.\" http://bugs.debian.org/507673
-.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.ie \n(.g .ds Aq \(aq
-.el       .ds Aq '
-.\" -----------------------------------------------------------------
-.\" * set default formatting
-.\" -----------------------------------------------------------------
 .\" disable hyphenation
 .nh
 .\" disable justification (adjust text to left margin only)
 .ad l
-.\" -----------------------------------------------------------------
-.\" * MAIN CONTENT STARTS HERE *
-.\" -----------------------------------------------------------------
 .SH "NAME"
 gfrm \- remove Gfarm files, directories, or file replicas
 .SH "SYNOPSIS"
-.HP \w'\fBgfrm\fR\ 'u
+.HP 5
 \fBgfrm\fR [\-frn] [\-h\ \fIfilesystem\-node\fR] [\-D\ \fIdomain\-name\fR] \fIgfarm\-URL\fR...
 .SH "DESCRIPTION"
 .PP
 \fBgfrm\fR
-removes each specified file\&. It does not remove directories unless the
+removes each specified file. It does not remove directories unless the
 \fB\-r\fR
-option is specified\&.
+option is specified.
 .PP
 With the
 \fB\-h\fR
@@ -45,40 +25,27 @@ or
 \fB\-D\fR
 option,
 \fBgfrm\fR
-removes file replicas on the specified filesystem node(s)\&. A file replica cannot be removed when the number of replicas is less than gfarm\&.ncopy or gfarm\&.replicainfo extended attribute\&.
+removes file replicas on the specified filesystem node(s). A file replica cannot be removed when the number of replicas is less than gfarm.ncopy or gfarm.replicainfo extended attribute.
 .SH "OPTIONS"
-.PP
+.TP
 \fB\-f\fR
-.RS 4
-Ignores no such file or directory error\&.
-.RE
-.PP
+Ignores no such file or directory error.
+.TP
 \fB\-n\fR
-.RS 4
-Prints file names to be deleted, but does not delete them\&.
-.RE
-.PP
+Prints file names to be deleted, but does not delete them.
+.TP
 \fB\-r\fR
-.RS 4
-Removes all entries under the directories specified by the command\-line argument recursively\&.
-.RE
-.PP
+Removes all entries under the directories specified by the command\-line argument recursively.
+.TP
 \fB\-h\fR \fIfilesystem\-node\fR
-.RS 4
-Specifies a filesystem node from which file replicas will be removed\&.
-.RE
-.PP
+Specifies a filesystem node from which file replicas will be removed.
+.TP
 \fB\-D\fR \fIdomain\-name\fR
-.RS 4
-Specifies a domain name of filesystem nodes on which file replicas will be removed\&.
-.RE
-.PP
+Specifies a domain name of filesystem nodes on which file replicas will be removed.
+.TP
 \fB\-?\fR
-.RS 4
-Displays a list of command options\&.
-.RE
+Displays a list of command options.
 .SH "SEE ALSO"
 .PP
-
 \fBgfncopy\fR(1),
 \fBgfarm_attr\fR(5)

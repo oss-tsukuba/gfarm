@@ -23,7 +23,8 @@ gfs_statfsnode_by_path(const char *path, char *host, int port,
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
 	struct gfs_connection *gfs_server;
-	int nretry = 1;
+	int gfsd_nretries = GFS_CONN_RETRY_COUNT;
+	int failover_nretries = GFS_FAILOVER_RETRY_COUNT;
 
 	if ((e = gfm_client_connection_and_process_acquire_by_path(path,
 	    &gfm_server)) != GFARM_ERR_NO_ERROR) {
@@ -36,8 +37,8 @@ gfs_statfsnode_by_path(const char *path, char *host, int port,
 retry:
 	if ((e = gfs_client_connection_and_process_acquire(&gfm_server,
 	    host, port, &gfs_server, NULL)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "gfs_client_connection_acquire_by_host: %s",
+		gflog_debug(GFARM_MSG_1003979,
+		    "gfs_client_connection_and_process_acquire: %s",
 		    gfarm_error_string(e));
 		gfm_client_connection_free(gfm_server);
 		return (e);
@@ -48,11 +49,21 @@ retry:
 		bfree, bavail, files, ffree, favail);
 	gfs_client_connection_free(gfs_server);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003980,
 		    "gfs_client_statfs: %s",
 		    gfarm_error_string(e));
-		if (gfs_client_is_connection_error(e) && nretry-- > 0)
+		if (gfs_client_is_connection_error(e) &&
+		    --gfsd_nretries >= 0)
 			goto retry;
+		if (e == GFARM_ERR_GFMD_FAILED_OVER &&
+		    --failover_nretries >= 0) {
+			if ((e = gfm_client_connection_failover(
+			    gfm_server)) == GFARM_ERR_NO_ERROR)
+				goto retry;
+			gflog_debug(GFARM_MSG_1003981,
+			    "gfm_client_connection_failover: "
+			    "%s", gfarm_error_string(e));
+		}
 	}
 	gfm_client_connection_free(gfm_server);
 

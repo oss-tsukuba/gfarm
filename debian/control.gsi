@@ -1,13 +1,3 @@
-Package: gfarm-gsi-gfptool
-Section: utils
-Architecture: i386 amd64
-Depends: gfarm-gsi-client (= ${Source-Version})
-Conflicts: gfarm-gfptool
-Description: Parallel tools installed under the Gfarm filesystem with GSI
- Registration the Gfarm parallel commands such as a parallel file copy command
- and a parallel grep command to the Gfarm filesystem by the
- 'gfregister' command.
-
 Package: gfmd-gsi
 Section: net
 Architecture: i386 amd64

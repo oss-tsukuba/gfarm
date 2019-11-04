@@ -3,6 +3,7 @@
  */
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -20,8 +21,6 @@
 #include "thrsubr.h"
 
 #include "config.h"
-#include "queue.h" /* for gfs_pio.h */
-#include <openssl/evp.h> /* for gfs_pio.h */
 #include "gfs_pio.h"
 
 #include "gfurl.h"
@@ -138,8 +137,8 @@ pfunc_check_disk_avail(
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	avail = bavail * bsize;
-	if (avail >= filesize &&
-	    avail >= gfarm_get_minimum_free_disk_space())
+	/* to reduce no space risk, keep minimum disk space */
+	if (avail >= filesize + gfarm_get_minimum_free_disk_space())
 		return (GFARM_ERR_NO_ERROR);
 	return (GFARM_ERR_NO_SPACE);
 }
@@ -189,7 +188,7 @@ retry:
 			"ERROR: cannot replicate: %s (%s:%d, %s:%d): %s\n",
 			url, src_host, src_port, dst_host, dst_port,
 			gfarm_error_string(e));
-		if (retry >= RETRY_MAX) {
+		if (retry >= RETRY_MAX || e == GFARM_ERR_DISK_QUOTA_EXCEEDED) {
 			result = PFUNC_RESULT_NG;
 			goto end;
 		}
@@ -202,9 +201,19 @@ retry:
 	if (pfunc_mode == PFUNC_MODE_MIGRATE) {
 		e = gfs_replica_remove_by_file(url, src_host);
 		if (e == GFARM_ERR_FILE_BUSY) {
-			result = PFUNC_RESULT_BUSY_REMOVE_REPLICA;
-			goto end;
-		} else if (e != GFARM_ERR_NO_ERROR) {
+			sleep(1);
+			e = gfs_replica_remove_by_file(url, src_host);
+			if (e == GFARM_ERR_FILE_BUSY) {
+				result = PFUNC_RESULT_BUSY_REMOVE_REPLICA;
+				fprintf(stderr,
+					"INFO: remove a replica later: "
+					"%s (%s:%d): %s\n",
+					url, src_host, src_port,
+					gfarm_error_string(e));
+				goto end;
+			}
+		}
+		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr,
 			    "ERROR: cannot remove a replica: %s (%s:%d): %s\n",
 			    url, src_host, src_port, gfarm_error_string(e));
@@ -448,6 +457,54 @@ pfunc_unlink(const char *url)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static gfarm_error_t
+pfunc_copy_io(
+	gfarm_pfunc_t *handle,
+	const char *src_url, struct pfunc_file *src_fp,
+	const char *dst_url, struct pfunc_file *dst_fp)
+{
+	gfarm_error_t e;
+	int rsize, wsize;
+
+	if (src_fp->gfarm != NULL && dst_fp->gfarm == NULL) {
+		/* gfarm -> local */
+		e = gfs_pio_recvfile(src_fp->gfarm, 0, dst_fp->fd, 0, -1, NULL);
+		if (e != GFARM_ERR_NO_ERROR)
+			fprintf(stderr, "ERROR: gfs_pio_recvfile(%s): %s\n",
+			    src_url, gfarm_error_string(e));
+		return (e);
+	} else if (src_fp->gfarm == NULL && dst_fp->gfarm != NULL) {
+		/* local -> gfarm */
+		e = gfs_pio_sendfile(dst_fp->gfarm, 0, src_fp->fd, 0, -1, NULL);
+		if (e != GFARM_ERR_NO_ERROR)
+			fprintf(stderr, "ERROR: gfs_pio_sendfile(%s): %s\n",
+			    dst_url, gfarm_error_string(e));
+		return (e);
+	}
+
+	/* 'gfarm -> gfarm' or 'local -> local' */
+	while ((e = pfunc_read(src_fp, handle->copy_buf,
+	    handle->copy_bufsize, &rsize)) == GFARM_ERR_NO_ERROR) {
+		if (rsize == 0) /* EOF */
+			return (GFARM_ERR_NO_ERROR);
+		e = pfunc_write(dst_fp, handle->copy_buf, rsize, &wsize);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "ERROR: write(%s): %s\n",
+			    dst_url, gfarm_error_string(e));
+			return (e);
+		}
+		if (rsize != wsize) {
+			fprintf(stderr, "ERROR: write(%s): rsize!=wsize\n",
+			    dst_url);
+			return (GFARM_ERR_INPUT_OUTPUT);
+		}
+	}
+	if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "ERROR: read(%s): %s\n",
+		    src_url, gfarm_error_string(e));
+	return (e);
+}
+
 struct send_to_cmd_arg {
 	gfarm_pfunc_t *handle;
 	struct pfunc_file *fp;
@@ -460,7 +517,6 @@ gfarm_to_hpss(int cmd_in, void *arg)
 	struct send_to_cmd_arg *a = arg;
 
 	assert(a->fp->gfarm);
-#if 0  /* XXX gfs_pio_recvfile() is not merged */
 	e = gfs_pio_recvfile(a->fp->gfarm, 0, cmd_in, 0, -1, NULL);
 	close(cmd_in);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -468,42 +524,6 @@ gfarm_to_hpss(int cmd_in, void *arg)
 		    a->fp->url, gfarm_error_string(e));
 		return (-1);
 	}
-#else
-	for (;;) {
-		int rlen, wlen, copy_bufsize = a->handle->copy_bufsize;
-		char *b = a->handle->copy_buf;
-
-		e = gfs_pio_read(a->fp->gfarm, b, copy_bufsize, &rlen);
-		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "ERROR: read(%s) to copy to HPSS: %s\n",
-				a->fp->url, gfarm_error_string(e));
-			close(cmd_in);
-			return (-1);
-		}
-		if (rlen == 0) {
-			close(cmd_in);
-			return (0); /* EOF */
-		}
-		while ((wlen = write(cmd_in, b, rlen)) > 0) {
-			if (wlen == rlen)
-				break;
-			b += wlen;
-			rlen -= wlen;
-		}
-		if (wlen == 0) {
-			errno = ENOSPC;
-			fprintf(stderr, "ERROR: write() to HPSS from %s: %s\n",
-				a->fp->url, strerror(errno));
-			close(cmd_in);
-			return (-1);
-		} else if (wlen == -1) {
-			fprintf(stderr, "ERROR: write() to HPSS from %s: %s\n",
-				a->fp->url, strerror(errno));
-			close(cmd_in);
-			return (-1);
-		}
-	}
-#endif
 	return (0);
 }
 
@@ -584,12 +604,10 @@ pfunc_copy_to_hpss(gfarm_pfunc_t *handle, FILE *to_parent,
 			e = gfs_pio_internal_set_view_section(
 			    src_fp.gfarm, src_host);
 			if (e != GFARM_ERR_NO_ERROR) {
-				(void)pfunc_close(&src_fp);
-				fprintf(stderr,
-				  "ERROR: copy failed: set_view(%s, %s): %s\n",
-				src_url, src_host, gfarm_error_string(e));
-				result = PFUNC_RESULT_NG;
-				goto end;
+				fprintf(stderr, "INFO: set_view(%s, %s): %s, "
+				    "do not specify source host\n", src_url,
+				    src_host, gfarm_error_string(e));
+				gfs_pio_clearerr(src_fp.gfarm);
 			}
 		}
 		send_to_cmd = gfarm_to_hpss;
@@ -620,7 +638,6 @@ pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
 	gfarm_error_t e;
 	int result = PFUNC_RESULT_OK, retv;
 	char *tmp_url;
-	int rsize, wsize;
 	struct pfunc_file src_fp, dst_fp;
 	struct pfunc_stat src_st;
 	int flags;
@@ -695,9 +712,12 @@ pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
 		if (handle->skip_existing && e == GFARM_ERR_ALREADY_EXISTS) {
 			result = PFUNC_RESULT_SKIP;
 		} else {
+			if (e == GFARM_ERR_DISK_QUOTA_EXCEEDED)
+				result = PFUNC_RESULT_NG_NOT_RETRY;
+			else
+				result = PFUNC_RESULT_NG;
 			fprintf(stderr, "ERROR: copy failed: open(%s): %s\n",
 			    tmp_url, gfarm_error_string(e));
-			result = PFUNC_RESULT_NG;
 		}
 		goto end;
 	}
@@ -706,46 +726,25 @@ pfunc_copy_to_gfarm_or_local(gfarm_pfunc_t *handle, FILE *to_parent,
 		/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 		e = gfs_pio_internal_set_view_section(src_fp.gfarm, src_host);
 		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr,
-				"ERROR: copy failed: set_view(%s, %s): %s\n",
-				src_url, src_host, gfarm_error_string(e));
-			result = PFUNC_RESULT_NG;
-			goto close;
+			fprintf(stderr, "INFO: set_view(%s, %s): %s, "
+			    "do not specify source host\n", src_url,
+			    src_host, gfarm_error_string(e));
+			gfs_pio_clearerr(src_fp.gfarm);
 		}
 	}
 	if (src_st.size > 0 && dst_fp.gfarm && strcmp(dst_host, "") != 0) {
 		/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 		e = gfs_pio_internal_set_view_section(dst_fp.gfarm, dst_host);
 		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr,
-				"ERROR: copy failed: set_view(%s, %s): %s\n",
-				tmp_url, dst_host, gfarm_error_string(e));
-			result = PFUNC_RESULT_NG;
-			goto close;
+			fprintf(stderr, "INFO: set_view(%s, %s): %s, "
+			    "do not specify destination host\n", tmp_url,
+			    dst_host, gfarm_error_string(e));
+			gfs_pio_clearerr(dst_fp.gfarm);
 		}
 	}
-	while ((e = pfunc_read(&src_fp, handle->copy_buf,
-			       handle->copy_bufsize, &rsize))
-	       == GFARM_ERR_NO_ERROR) {
-		if (rsize == 0) /* EOF */
-			break;
-		e = pfunc_write(&dst_fp, handle->copy_buf, rsize, &wsize);
-		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "ERROR: copy failed: write(%s): %s\n",
-				tmp_url, gfarm_error_string(e));
-			result = PFUNC_RESULT_NG;
-			goto close;
-		}
-		if (rsize != wsize) {
-			fprintf(stderr,
-				"ERROR: copy failed: write(%s): "
-				"rsize!=wsize\n", tmp_url);
-			result = PFUNC_RESULT_NG;
-			goto close;
-		}
-	}
+	e = pfunc_copy_io(handle, src_url, &src_fp, tmp_url, &dst_fp);
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "ERROR: copy failed: read(%s): %s\n",
+		fprintf(stderr, "ERROR: copy failed: %s: %s\n",
 			src_url, gfarm_error_string(e));
 		result = PFUNC_RESULT_NG;
 		goto close;
@@ -792,6 +791,7 @@ end:
 				"ERROR: cannot remove tmp-file: %s: %s\n",
 			tmp_url, gfarm_error_string(e));
 	}
+	free(tmp_url);
 	return (result);
 }
 
@@ -830,6 +830,10 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 			result = pfunc_copy_to_gfarm_or_local(handle, to_parent,
 			    src_url, src_host, src_port, src_size,
 			    dst_url, dst_host, dst_port, check_disk_avail);
+		if (result == PFUNC_RESULT_NG_NOT_RETRY) {
+			result = PFUNC_RESULT_NG;
+			break;
+		}
 		if (result != PFUNC_RESULT_NG || retry >= RETRY_MAX)
 			break;
 		retry++;

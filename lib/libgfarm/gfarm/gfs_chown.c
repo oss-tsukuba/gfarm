@@ -19,11 +19,10 @@ struct gfm_chown_closure {
 };
 
 static gfarm_error_t
-gfm_chown_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_chown_request(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_chown_closure *c = closure;
-	gfarm_error_t e = gfm_client_fchown_request(gfm_server, ctx,
+	gfarm_error_t e = gfm_client_fchown_request(gfm_server,
 	    c->username, c->groupname);
 
 	if (e != GFARM_ERR_NO_ERROR)
@@ -33,10 +32,9 @@ gfm_chown_request(struct gfm_connection *gfm_server,
 }
 
 static gfarm_error_t
-gfm_chown_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_chown_result(struct gfm_connection *gfm_server, void *closure)
 {
-	gfarm_error_t e = gfm_client_fchown_result(gfm_server, ctx);
+	gfarm_error_t e = gfm_client_fchown_result(gfm_server);
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)

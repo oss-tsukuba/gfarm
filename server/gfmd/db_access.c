@@ -4,7 +4,6 @@
 
 #include <pthread.h>
 #include <assert.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -13,12 +12,9 @@
 
 #include <gfarm/gfarm.h>
 
-#include "internal_host_info.h"
-
 #include "gfutil.h"
 #include "thrsubr.h"
 
-#include "gfp_xdr.h"
 #include "config.h"
 
 #include "subr.h"
@@ -611,7 +607,7 @@ db_fsngroup_modify_arg_alloc(const char *hostname, const char *fsngroupname)
 		arg = (struct db_fsngroup_modify_arg *)malloc(sz);
 alloc_check:
 	if (arg == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004038,
 			"allocation of 'db_fsngroup_modify_arg' failed.");
 		return (NULL);
 	}
@@ -1143,7 +1139,8 @@ db_inode_cksum_arg_alloc(gfarm_ino_t inum,
 
 	arg->inum = inum;
 	strcpy(arg->type, type);
-	memcpy(arg->sum, sum, len + 1);
+	memcpy(arg->sum, sum, len);
+	arg->sum[len] = '\0';
 	return (arg);
 }
 
@@ -1261,6 +1258,19 @@ db_filecopy_remove(gfarm_ino_t inum, const char *hostname)
 }
 
 gfarm_error_t
+db_filecopy_remove_by_host(const char *hostname)
+{
+	char *arg = strdup_log(hostname, "db_filecopy_remove_by_host");
+
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	/* only called at initialization, bypass journal */
+	return (db_enter_nosn(
+	    (dbq_entry_func_t)ops->filecopy_remove_by_host, arg));
+}
+
+gfarm_error_t
 db_filecopy_load(void *closure,
 	void (*callback)(void *, gfarm_ino_t, char *))
 {
@@ -1331,6 +1341,20 @@ db_deadfilecopy_remove(gfarm_ino_t inum, gfarm_uint64_t igen,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	return (db_enter_sn((dbq_entry_func_t)ops->deadfilecopy_remove, arg));
+}
+
+/* only called at initialization, bypass journal */
+gfarm_error_t
+db_deadfilecopy_remove_by_host(const char *hostname)
+{
+	char *arg = strdup_log(hostname, "db_deadfilecopy_remove_by_host");
+
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	/* bypass journal */
+	return (db_enter_nosn(
+	    (dbq_entry_func_t)ops->deadfilecopy_remove_by_host, arg));
 }
 
 gfarm_error_t
@@ -1592,7 +1616,7 @@ db_xattr_modify(int xmlMode, gfarm_ino_t inum, char *attrname,
 }
 
 gfarm_error_t
-db_xattr_remove(int xmlMode, gfarm_ino_t inum, char *attrname)
+db_xattr_remove(int xmlMode, gfarm_ino_t inum, const char *attrname)
 {
 	struct db_xattr_arg *arg = db_xattr_arg_alloc(xmlMode, inum,
 	    attrname, NULL, 0);

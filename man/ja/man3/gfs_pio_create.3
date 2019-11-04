@@ -2,12 +2,12 @@
 .\"     Title: gfs_pio_create
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 27 Jun 2010
+.\"      Date: 3 Sep 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFS_PIO_CREATE" "3" "27 Jun 2010" "Gfarm" "Gfarm"
+.TH "GFS_PIO_CREATE" "3" "3 Sep 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -58,7 +58,11 @@ gfs_pio_create \- Gfarmファイルシステムのファイルの作成
 \fIGFARM_FILE_RDONLY\fR、
 \fIGFARM_FILE_WRONLY\fR、
 \fIGFARM_FILE_RDWR\fR
-のいずれか一つのフラグを必ず指定しなければならない点も同じです。
+のいずれか一つのフラグを必ず指定しなければならない点も同じです。 ただし、
+\fBgfs_pio_create()\fR
+に特有のフラグとして、
+\fIGFARM_FILE_EXCLUSIVE\fR
+を指定することができます。この指定を行なった場合、 ファイルが既に存在する場合は、ファイルのオープンに失敗します。
 .PP
 引数
 \fIflags\fR
@@ -165,6 +169,12 @@ gfs_pio_create \- Gfarmファイルシステムのファイルの作成
 \fBGFARM_ERR_AUTHENTICATION\fR
 .RS 4
 メタデータサーバに対する認証に失敗しました。
+.RE
+.PP
+\fBGFARM_ERR_ALREADY_EXISTS\fR
+.RS 4
+\fIflags\fR引数に
+\fBGFARM_FILE_EXCLUSIVE\fRフラグが指定されたが、 ファイルが既に存在しました。
 .RE
 .PP
 その他

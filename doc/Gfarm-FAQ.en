@@ -3,7 +3,7 @@ Gfarm FAQ - Frequently Asked Questions about Gfarm
 Copyright (c) 2003-2008 National Institute of Advanced Industrial
 Science and Technology (AIST).  All Rights Reserved.
 
-Copyright (c) 2006-2012 Osamu Tatebe.  All Rights Reserved.
+Copyright (c) 2006-2017 Osamu Tatebe.  All Rights Reserved.
 
 Table of Contents:
 ******************
@@ -55,7 +55,15 @@ Table of Contents:
 
 	Current source code can be obtained by
 
+	Gfarm 2.5.X
+		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.5 gfarm-2.5
+	Gfarm 2.6.X
+		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.6 gfarm-2.6
+	Gfarm 2.7.X
+		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/branches/2.7 gfarm-2.7
+	Development version
 		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm_v2/trunk gfarm_v2
+	Gfarm2fs
 		$ svn co https://svn.code.sf.net/p/gfarm/code/gfarm2fs/trunk gfarm2fs
 
   1.3 How much memory does gfmd require?
@@ -83,7 +91,6 @@ Table of Contents:
 		  align(24 + OH)
 		= 32
 
-
 	Thus, bytes per file, directory, and symbolic link requires
 	the following size, if the number of xattr is small enough:	
 
@@ -107,7 +114,6 @@ Table of Contents:
 		  + 32 * number_of_replicas
 		= 240 + align(strlen(basename(pathname)) + OH)
 		  + 32 * number_of_replicas
-
 
 	Under an assumption that the length of last component of pathname
 	is 14 characters, and the number of file replica is 3, and the length
@@ -233,6 +239,11 @@ Table of Contents:
 	to set up a shared secret key or the GSI configuration
 	correctly.
 
+	When executing gfsd with an additional -dv option, gfsd will be
+	executed in the foreground and output verbose messages, which may
+	help you to find the reason why the authentication error
+	happens.
+
 	Regarding the shared secret authentication, make sure the same
 	shared secret key file (~/.gfarm_shared_key) is located on a
 	home directory on all file system nodes.
@@ -303,18 +314,34 @@ Table of Contents:
 	provided by Globus fails to authenticate these properly when
 	the time difference is more than five minutes.
 
-  2.3 Due to a disk crash, all files in a filesystem node are lost.
+  2.3 Due to a disk crash, all files in a file system node are lost.
      What do we have to do?
 
-	When a filesystem node is down, there is nothing you have to
-	do when there is at least one file copy, since the unavailable
-	filesystem node is not used.
+	When setting two or more file replicas by the gfncopy command,
+	there is no problem.
 
-	However, when you re-join the filesystem node that loses files
-	to the Gfarm file system, a problem occurs since invalid
-	metadata of lost file replicas remains in a metadata database.
-	We have a plan to provide an administration command to re-join
-	the filesystem node.
+	Even if an application is accessing a file replica stored in a
+	crashed file system node in read mode, it can continue the
+	execution since it changes the accessed file system node
+	automatically after an interval specified by
+	network_receive_timeout directive in gfarm2.conf.
+
+	If an application is accessing a file replica stored in a
+	crashed file system node in write mode, it fails to execution
+	due to the write error.
+
+	After replica_check_host_down_thresh seconds from the crash,
+	specified number of file replicas by gfncopy are automatically
+	created.  Default interval is 3 hours.
+
+	When not setting two or more file replicas, files only stored
+	in a crashed file system node cannot be accessed except
+	truncating files.
+
+	When the crashed file system node is recovered, the
+	consistency check between the spool directory and the file
+	system metadata is done at the start up time.  Inconsistent
+	files are moved to /lost+found directory.
 
   2.4 Sometimes a gfarm client or gfsd stops without doing anything.
 
@@ -392,13 +419,16 @@ Table of Contents:
 	to know which directory will be prelinked.  See prelink(8) for
 	further information.
 
+	(4) When the abrt package is introduced, the core dump of gfmd
+	or gfsd may be failed.  Set up abrt properly, or stop the abrt
+	service.
 
 3. Security
 ***********
   3.1 It is safe to use Gfarm in an environment that is NOT protected by
      a firewall?
 
-	Gfarm-2.x supports three authentication methods, namely,
+	Gfarm supports three authentication methods, namely,
 	sharedsecret authentication, the gsi_auth method,
 	and gsi authentication.
 	The sharedsecret authentication and gsi_auth methods are

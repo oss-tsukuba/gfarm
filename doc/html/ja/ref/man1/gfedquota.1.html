@@ -2,44 +2,39 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfedquota</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfedquota">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfedquota.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
-<p>gfedquota — ファイルの制限を編集</p>
+<p>gfedquota — ファイル制限を編集</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfedquota</code>  [<em class="replaceable"><code>オプション</code></em>]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
-<p><span class="command"><strong>gfedquota</strong></span> は、ユーザやグループに対するファイル
-制限を編集できます。
+<p><span class="command"><strong>gfedquota</strong></span> は、
+ユーザやグループに対するファイル制限を編集できます。
 </p>
 <p>
 制限の種類には、ソフトリミットとハードリミットがあります。
 ソフトリミットには猶予期間を設定できます。
-制限する対象は、ファイル数の合計とファイルサイズの合計、レプリカを含め
-た実ファイル数の合計と実ファイルサイズの合計です。
+制限する対象は、ファイル数の合計とファイルサイズの合計、
+レプリカを含めた実ファイル数の合計と実ファイルサイズの合計です。
 制限値に 'disable' または -1  を指定すると、無制限になります。
-制限するためのオプションを指定しなければ、割り当て量 (quota) は変わりま
-せん。
+制限するためのオプションを指定しなければ、
+割り当て量 (quota) は変わりません。
 </p>
 <p>
 このコマンドは gfarmadm グループに所属する管理者だけが実行できます。
 </p>
-<p>
-<span class="command"><strong>gfedquota</strong></span> コマンド実行後
-に <span class="command"><strong>gfquotacheck</strong></span> コマンドを実行すると quota が有効に
-なります。
-</p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-P NAME, --path=NAME</code></span></dt>
 <dd><p>指定したパス名により特定のメタデータサーバを指定します。</p></dd>
 <dt><span class="term"><code class="option">-u NAME, --user=NAME</code></span></dt>
@@ -70,7 +65,7 @@
 <dd><p>引数オプションを表示します。</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfquota</span>(1)</span>,

@@ -17,11 +17,8 @@ enum gfarm_auth_id_type {
 
 enum gfarm_auth_method {
 	GFARM_AUTH_METHOD_NONE, /* never used */
-	GFARM_AUTH_METHOD_SHAREDSECRET_V2, /* used until gfarm v2 */
-	GFARM_AUTH_METHOD_GSI_OLD, /* not supported since 2003/07/09 */
-	GFARM_AUTH_METHOD_GSI_V2, /* used until gfarm v2 */
-	GFARM_AUTH_METHOD_GSI_AUTH_V2, /* used until gfarm v2 */
 	GFARM_AUTH_METHOD_SHAREDSECRET,
+	GFARM_AUTH_METHOD_GSI_OLD, /* not supported since 2003/07/09 */
 	GFARM_AUTH_METHOD_GSI,
 	GFARM_AUTH_METHOD_GSI_AUTH,
 
@@ -47,8 +44,9 @@ enum gfarm_auth_cred_type {
  */
 
 void gfarm_auth_random(void *, size_t);
-void gfarm_auth_sharedsecret_response_data(char *, char *, char *);
+gfarm_error_t gfarm_auth_sharedsecret_response_data(char *, char *, char *);
 
+void gfarm_auth_root_squash_support_disable(void);
 struct passwd;
 gfarm_error_t gfarm_auth_shared_key_get(unsigned int *, char *,
 	char *, struct passwd *, int, int);
@@ -80,10 +78,6 @@ void gfarm_gsi_client_finalize(void);
 #define GFARM_IS_AUTH_GSI(auth) \
 	(((auth) == GFARM_AUTH_METHOD_GSI) || \
 	 ((auth) == GFARM_AUTH_METHOD_GSI_AUTH))
-
-/* privilege mutex */
-void gfarm_auth_privilege_lock(const char *);
-void gfarm_auth_privilege_unlock(const char *);
 
 /* auth_client */
 
@@ -200,3 +194,7 @@ gfarm_error_t gfarm_auth_uid_to_global_username_sharedsecret(void *,
 /* auth_server_uid_gsi */
 gfarm_error_t gfarm_auth_uid_to_global_username_gsi(void *,
 	const char *, char **);
+
+/* gsi_auth_error */
+void gfarm_auth_set_gsi_auth_error(int);
+gfarm_error_t gfarm_auth_check_gsi_auth_error(void);

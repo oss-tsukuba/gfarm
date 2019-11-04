@@ -1,4 +1,4 @@
-#define GFARM_IOSTAT_MAGIC	0x53544154
+#define GFARM_IOSTAT_MAGIC	0x53544132
 #define GFARM_IOSTAT_NAME_MAX	30
 #define GFARM_IOSTAT_TYPE_TOTAL	1
 #define GFARM_IOSTAT_TYPE_CURRENT	2
@@ -19,6 +19,8 @@ struct gfarm_iostat_head {
 	unsigned int	s_rowcur;	/* maximum valid # row */
 	unsigned int	s_rowmax;	/* maximum # row */
 	unsigned int	s_item_size;
+	unsigned int	s_ncolumn;
+	unsigned int	s_dummy;
 	gfarm_uint64_t	s_start_sec;
 	gfarm_uint64_t	s_update_sec;
 	gfarm_uint64_t	s_item_off;

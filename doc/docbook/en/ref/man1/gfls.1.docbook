@@ -94,6 +94,15 @@ If 0 is specified, attributes won't be cached.
 </varlistentry>
 
 <varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>Display numbers in human readable format by adding a prefix multiplier
+symbol like "M" (mega).  Since this option uses powers of 1024,
+"M" means 1,048,576.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-i</option></term>
 <listitem>
 <para>Display inode number.</para>

@@ -16,6 +16,7 @@ DEPLIBS = $(DEPGFARMLIB)
 all: $(PROGRAM)
 
 include $(top_srcdir)/makes/prog.mk
+include $(top_srcdir)/makes/gflog.mk
 
 ###
 

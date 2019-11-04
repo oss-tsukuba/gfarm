@@ -766,7 +766,7 @@ struct { \
 #define GFARM_HCIRCLEQ_FOREACH_SAFE(var, head, field, tvar) \
 	for ((var) = GFARM_HCIRCLEQ_FIRST(head, field); \
 	    !GFARM_HCIRCLEQ_IS_END(head, var) && \
-	    ((tvar) = GFARM_HCIRCLEQ_NEXT(var, field), 1); \
+	    ((tvar) = GFARM_HCIRCLEQ_NEXT(var, next), 1); \
 	    (var) = (tvar))
 
 #define GFARM_HCIRCLEQ_FOREACH_REVERSE(var, head, field) \

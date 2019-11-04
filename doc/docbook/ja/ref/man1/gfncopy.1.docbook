@@ -5,7 +5,7 @@
 
 <refentry id="gfncopy.1">
 
-<refentryinfo><date>18 Jul 2013</date></refentryinfo>
+<refentryinfo><date>25 Jan 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfncopy</refentrytitle>
@@ -90,7 +90,10 @@ pathに指定したファイルないしディレクトリに関する自動フ�
 <varlistentry>
 <term><option>-s</option> <parameter moreinfo="none">NCOPY</parameter></term>
 <listitem>
-<para>ファイルまたはディレクトリに、自動複製作成数を設定します。</para>
+<para>
+ファイルまたはディレクトリに、自動複製作成数を設定します。
+<parameter moreinfo="none">NCOPY</parameter>はgfarm.ncopy拡張属性に格納されます。
+</para>
 </listitem>
 </varlistentry>
 
@@ -104,6 +107,7 @@ pathに指定したファイルないしディレクトリに関する自動フ�
 <parameter moreinfo="none">REPATTR</parameter>に設定された複製数の合計Nが<parameter moreinfo="none">NCOPY</parameter>よりも大きければ、最低でもN個の複製が作成されます。
 そうでなければ、<parameter moreinfo="none">REPATTR</parameter>従って複製を作成し、
 さらに、複製数の合計が<parameter moreinfo="none">NCOPY</parameter>になるように複製を作成します。
+<parameter moreinfo="none">REPATTR</parameter>はgfarm.replicainfo拡張属性に格納されます。
 </para>
 
 <para>
@@ -208,6 +212,9 @@ pathにディレクトリを指定すれば、そのディレクトリ以下す�
 <para>
   <citerefentry>
   <refentrytitle>gfhostgroup</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfarm_attr</refentrytitle><manvolnum>5</manvolnum>
   </citerefentry>
 </para>
 </refsect1>

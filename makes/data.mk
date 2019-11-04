@@ -1,26 +1,24 @@
-all: data-all post-all-hook
-install: all data-install post-install-hook
-clean: data-clean post-clean-hook
-veryclean: data-veryclean post-veryclean-hook
-distclean: data-distclean post-distclean-hook
-gfregister: data-gfregister post-gfregister-hook
-man: data-man post-man-hook
-html: data-html post-html-hook
+all: post-all-hook
+install: post-install-hook
+clean: post-clean-hook
+veryclean: post-veryclean-hook
+distclean: post-distclean-hook
+man: post-man-hook
+html: post-html-hook
 msgno: data-msgno
 catalog: data-catalog
 
-post-all-hook:
-post-install-hook:
-post-clean-hook:
-post-veryclean-hook:
-post-distclean-hook:
-post-gfregister-hook:
-post-man-hook:
-post-html-hook:
+post-all-hook: data-all
+post-install-hook: data-install
+post-clean-hook: data-clean
+post-veryclean-hook: data-veryclean
+post-distclean-hook: data-distclean
+post-man-hook: data-man
+post-html-hook: data-html
 
 data-all:
 
-data-install:
+data-install: all
 	@$(MKDIR_P) $(DESTDIR)$(datadir)
 	@for i in -- $(DATA); do \
 		case $$i in --) continue;; esac; \
@@ -38,7 +36,6 @@ data-veryclean: clean
 data-distclean: veryclean
 	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
 
-data-gfregister:
 data-man:
 data-html:
 data-msgno:

@@ -2,10 +2,20 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+
 #include <gfarm/gfarm_config.h>
+
+#ifdef HAVE_GSI
+#include <gssapi.h>
+#endif
+
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+
+#ifdef HAVE_GSI
+#include "gfarm_gsi.h"
+#endif
 
 #include "context.h"
 #include "liberror.h"
@@ -50,6 +60,9 @@ struct gfarm_auth_config_static {
 	struct gfarm_auth_config *auth_config_list;
 	struct gfarm_auth_config **auth_config_last;
 	struct gfarm_auth_cred_config *auth_server_cred_config_list;
+
+	/* authentication status */
+	int gsi_auth_error;
 };
 
 gfarm_error_t
@@ -64,6 +77,7 @@ gfarm_auth_config_static_init(struct gfarm_context *ctxp)
 	s->auth_config_list = NULL;
 	s->auth_config_last = &s->auth_config_list;
 	s->auth_server_cred_config_list = NULL;
+	s->gsi_auth_error = 0;
 
 	ctxp->auth_config_static = s;
 	return (GFARM_ERR_NO_ERROR);
@@ -214,6 +228,21 @@ gfarm_auth_method_get_enabled_by_name_addr(
 	return (enabled);
 }
 
+gfarm_error_t
+gfarm_auth_method_gsi_available(void)
+{
+#ifdef HAVE_GSI
+	if (gfarmGssAcquireCredential(NULL, GSS_C_NO_NAME, GSS_C_INITIATE,
+		NULL, NULL, NULL) < 0) {
+		gfarm_auth_set_gsi_auth_error(1);
+		return (GFARM_ERR_INVALID_CREDENTIAL);
+	}
+	return (GFARM_ERR_NO_ERROR);
+#else
+	return (GFARM_ERRMSG_AUTH_METHOD_NOT_AVAILABLE_FOR_THE_HOST);
+#endif
+}
+
 gfarm_int32_t
 gfarm_auth_method_get_available(void)
 {
@@ -240,6 +269,26 @@ gfarm_auth_method_get_available(void)
 		}
 	}
 	return (methods);
+}
+
+void
+gfarm_auth_set_gsi_auth_error(int s)
+{
+	staticp->gsi_auth_error = s;
+}
+
+gfarm_error_t
+gfarm_auth_check_gsi_auth_error(void)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	if (staticp->gsi_auth_error) {
+		e = gfarm_auth_method_gsi_available();
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+	}
+	gfarm_auth_set_gsi_auth_error(0);
+	return (e);
 }
 
 /*

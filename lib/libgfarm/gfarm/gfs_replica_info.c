@@ -18,11 +18,11 @@ struct gfm_replica_info_get_closure {
 
 static gfarm_error_t
 gfm_replica_info_get_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+	void *closure)
 {
 	struct gfm_replica_info_get_closure *c = closure;
 	gfarm_error_t e = gfm_client_replica_info_get_request(
-	    gfm_server, ctx, c->inflags);
+	    gfm_server, c->inflags);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1001384,
@@ -33,10 +33,10 @@ gfm_replica_info_get_request(struct gfm_connection *gfm_server,
 
 static gfarm_error_t
 gfm_replica_info_get_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+	void *closure)
 {
 	struct gfm_replica_info_get_closure *c = closure;
-	gfarm_error_t e = gfm_client_replica_info_get_result(gfm_server, ctx,
+	gfarm_error_t e = gfm_client_replica_info_get_result(gfm_server,
 	    &c->n, &c->hosts, &c->gens, &c->outflags);
 
 #if 0 /* DEBUG */

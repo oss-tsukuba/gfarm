@@ -2,19 +2,19 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfsd</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfsd">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfsd.8"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfsd — Gfarmファイルシステム・デーモン</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfsd</code>  [<em class="replaceable"><code>オプション</code></em>]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 gfsdは、Gfarmライブラリと協調して動作し、Gfarmファイルシステ
@@ -31,9 +31,9 @@ gfsdはユーザ権限で動作させることも可能ですが，この場合�
 詳細はSETUP.private.jaを参照してください。
 </p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-L</code> <em class="parameter"><code>ログレベル</code></em></span></dt>
 <dd><p>
 このオプションで指定したレベル以上の優先度のログを出力します。
@@ -83,6 +83,7 @@ gfsdはユーザ権限で動作させることも可能ですが，この場合�
 </p></dd>
 <dt><span class="term"><code class="option">-r</code> <em class="parameter"><code>スプール・ディレクトリ</code></em></span></dt>
 <dd><p>gfsdが、ファイルの実体を保持するディレクトリ名を指定します。
+このオプションを複数回（最大5回まで）指定することにより複数のディレクトリを指定可能です。
 </p></dd>
 <dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>syslogファシリティ</code></em></span></dt>
 <dd><p>gfsdがエラー報告に用いるsyslogのファシリティを指定します。省略
@@ -96,14 +97,14 @@ GSI認証の問題を解決する場合に有用なオプションです。
 <dd><p>引数オプションを表示します。</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="FILES">
+<div class="refsect1">
 <a name="files"></a><h2>FILES</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="filename">%%SYSCONFDIR%%/gfarm2.conf</code></span></dt>
 <dd><p>gfsdが参照する設定ファイルです。</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
 <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>

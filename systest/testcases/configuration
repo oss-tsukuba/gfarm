@@ -19,7 +19,7 @@ setup_configuration()
 {
 	# default parameter
 	GFARM_HOME=${GFARM_HOME-"/"}
-	RETRY_COUNT=${RETRY_COUNT-"10"}
+	RETRY_COUNT=${RETRY_COUNT-"120"}
 	FILE_SIZE=${FILE_SIZE-"1024"}
 
 	# prepare: check whether required hosts are defined
@@ -77,7 +77,7 @@ test_configuration()
 	# step: config-gfarm-slave
 	$GFSERVICE config-gfarm-slave gfmd2 gfmd1
 	if [ $? -ne 0 ]; then
-		log_warn "$TESTNAME: config-gfarm-slave on gfsd1 failed"
+		log_warn "$TESTNAME: config-gfarm-slave on gfmd2 failed"
 		set_result RESULT $RESULT_FAIL
 	fi
 

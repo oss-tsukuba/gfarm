@@ -2,15 +2,15 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfmdhost</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfmdhost">
 <a name="gfmdhost.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfmdhost — gfarm メタデータサーバ管理コマンド</p>
 </div>
-<div class="refsynopsisdiv">
+<div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  [-l] [-P <em class="replaceable"><code>path</code></em>] [-1]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  [-N] [-P <em class="replaceable"><code>path</code></em>] [-1]</p></div>
@@ -19,7 +19,7 @@
   ] {<em class="replaceable"><code>メタデータサーバ名</code></em>}</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  {-d} [-P <em class="replaceable"><code>path</code></em>] [-1] {<em class="replaceable"><code>メタデータサーバ名</code></em>}</p></div>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p><span class="command"><strong>gfmdhost</strong></span> は
 gfarm のメタデータサーバの冗長化機能に関連する情報の表示や管理を行います。
@@ -30,13 +30,13 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
 デフォルトの機能である gfmd ホスト名の一覧表示が行われます。
 </p>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="FUNCTIONS">
 <a name="functions"></a><h2>FUNCTIONS</h2>
 <p>
   下記は、<span class="command"><strong>gfmdhost</strong></span>コマンドの機能一覧です。二つ以上の機能を同時に
   指定することはできません。
 </p>
-<div class="variablelist"><dl class="variablelist">
+<div class="variablelist"><dl>
 <dt><span class="term">無指定</span></dt>
 <dd><p>
 	登録されているgfmdホストのホスト名一覧を、
@@ -52,9 +52,14 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
 <p>
         詳細情報は次の順に表示されます。
       </p>
-<p><code class="option">接続状態 (+|-|?|x|e)</code></p>
+<p><code class="option">接続状態 (+|||-|?|x|e|u)</code></p>
 <p>
-        "+" はマスター gfmd と正常に接続していることを表します。
+        "+" はマスター gfmd と正常に接続し、現在メタデータが同期している
+	ことを表します。
+        "|" はマスター gfmd と正常に接続しているが、メタデータの同期が
+        完了していないことを表します。これは、たとえ同期スレーブサーバで
+	あっても、接続開始時には起きますし、いったん同期が完了した後で
+	も、メタデータ転送の瞬間には起きることがあります。
         "-" は接続していないことを表します。
 	"?" は、マスター gfmd と接続直後でまだ状態が判明してないか、あるいは
 	Gfarm-2.5.0 の gfmd に対して、Gfarm-2.5.1 以降の gfmdhost コマンド
@@ -65,6 +70,10 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
 	"e" は何らかのエラーが生じ、ログの調査が必要なことを表します。
 	"x" および "e" については、そのスレーブgfmdが停止した後でも、
 	表示が続きます。
+	"u" は、マスター gfmd と接続しているが、この gfmdhost コマンドでは
+	サポートしていない状態にあることを示します。
+	Gfarm-2.5.0 の gfmd に対して、Gfarm-2.5.1 以降の gfmdhost コマンド
+	から接続した場合に表示されます。
         マスター gfmd は常に "+" です。
       </p>
 <p><code class="option">サーバ種別 (master|slave)</code></p>
@@ -111,9 +120,9 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
 <dd><p>引数オプションを表示します。</p></dd>
 </dl></div>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="OPTIONS">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl class="variablelist">
+<div class="variablelist"><dl>
 <dt><span class="term"><code class="option">-C</code> <em class="parameter"><code>クラスタ名</code></em></span></dt>
 <dd>
 <p>
@@ -133,7 +142,7 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
         -c, -m 機能で gfmd のポート番号を指定します。
 	省略した場合、デフォルトのポート番号 601 を指定したことになります。
       </p></dd>
-<dt><span class="term">-t {m|c|s}</span></dt>
+<dt><span class="term"><code class="option">-t</code> {m|c|s}</span></dt>
 <dd><p>
 	-c, -m 機能でマスター候補の設定を指定します。
         m はデフォルトのマスター、c はマスター候補、
@@ -162,7 +171,7 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表�
       </p></dd>
 </dl></div>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="SEE ALSO">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>

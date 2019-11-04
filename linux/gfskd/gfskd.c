@@ -66,14 +66,14 @@ gfskd_connection_acquire(const char *path,
 
 	if ((error = gfarm_get_hostname_by_url(path, &hostname, &port))
 			!= GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004776,
 		    "gfarm_get_hostname_by_url0 failed: %s",
 		    gfarm_error_string(error));
 		return (error);
 	}
 	if ((error = gfarm_get_global_username_by_host(
 		hostname, port, &user)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004777,
 		    "gfarm_get_global_username_by_host: %s",
 		    gfarm_error_string(error));
 		return (error);
@@ -92,7 +92,7 @@ gfmd_connect(struct gfsk_req_connect *req, struct gfsk_rpl_connect *rpl,
 
 	error = gfskd_connection_acquire(GFARM_PATH_ROOT, gfm_serverp);
 	if (error != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004778,
 		    "connecting to gfmd at %s:%d: %s\n",
 		    gfarm_ctxp->metadb_server_name,
 		    gfarm_ctxp->metadb_server_port,
@@ -120,7 +120,7 @@ gfskd_req_connect_gfmd(struct gfskd_req_t *reqctx, void *arg)
 	case -1:
 		err = errno;
 		error = gfarm_errno_to_error(err);
-		gflog_debug(GFARM_MSG_UNFIXED, "fork: %s", strerror(err));
+		gflog_debug(GFARM_MSG_1004779, "fork: %s", strerror(err));
 		/* fall through */
 	default:
 		return (error);
@@ -133,7 +133,7 @@ gfskd_req_connect_gfmd(struct gfskd_req_t *reqctx, void *arg)
 		setuid(orguid);
 		gfarm_set_local_user_for_this_uid(orguid);
 	}
-	gflog_debug(GFARM_MSG_UNFIXED, "uid=%d, err=%d", req->r_uid, err);
+	gflog_debug(GFARM_MSG_1004780, "uid=%d, err=%d", req->r_uid, err);
 
 	if (err) {
 		gfskd_send_reply(reqctx, err, NULL, 0);
@@ -159,7 +159,7 @@ gfsd_connect(struct gfsk_req_connect *req, struct gfsk_rpl_connect *rpl,
 		(struct sockaddr *)&in, gfs_serverp);
 
 	if (error != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004781,
 		    "connecting to gfsd at %s:%d: %s\n",
 		    req->r_hostname, req->r_port,
 		    gfarm_error_string(error));
@@ -184,7 +184,7 @@ gfskd_req_connect_gfsd(struct gfskd_req_t *reqctx, void *arg)
 	case -1:
 		err = errno;
 		error = gfarm_errno_to_error(err);
-		gflog_debug(GFARM_MSG_UNFIXED, "fork: %s", strerror(err));
+		gflog_debug(GFARM_MSG_1004782, "fork: %s", strerror(err));
 		/* fall through */
 	default:
 		return (error);
@@ -197,7 +197,7 @@ gfskd_req_connect_gfsd(struct gfskd_req_t *reqctx, void *arg)
 		setuid(orguid);
 		gfarm_set_local_user_for_this_uid(orguid);
 	}
-	gflog_debug(GFARM_MSG_UNFIXED, "uid=%d, err=%d", req->r_uid, err);
+	gflog_debug(GFARM_MSG_1004783, "uid=%d, err=%d", req->r_uid, err);
 
 	if (err) {
 		gfskd_send_reply(reqctx, err, NULL, 0);
@@ -232,7 +232,7 @@ set_signal_handler(int sig, void (*handler)(int))
 
 	if (sigaction(sig, &sa, NULL) == -1) {
 		error = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004784,
 			"sigaction, %s", gfarm_error_string(error));
 		return (error);
 	}
@@ -346,21 +346,21 @@ gfskd_mount(struct gfsk_mount_data *mdatap, struct gfskd_param *paramsp)
 
 	if (stat(paramsp->mnt_point, &stbuf) < 0) {
 		error = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004785,
 		    "stat %s, %s", paramsp->mnt_point,
 		    gfarm_error_string(error));
 		return (error);
 	}
 	if (paramsp->key_path) {
 		if (setenv("GFARM_SHARED_KEY", paramsp->key_path, 1)) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1004786,
 			    "setenv fail for '%s'", paramsp->key_path);
 			return (GFARM_ERR_NO_MEMORY);
 		}
 	}
 	error = gfskd_connection_acquire(GFARM_PATH_ROOT, &gfm_server);
 	if (error != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004787,
 		    "connecting to gfmd at %s:%d: %s\n",
 		    gfarm_ctxp->metadb_server_name,
 		    gfarm_ctxp->metadb_server_port,
@@ -375,7 +375,7 @@ gfskd_mount(struct gfsk_mount_data *mdatap, struct gfskd_param *paramsp)
 	mdatap->m_dfd = open(paramsp->dev_name, O_RDWR);
 	if (mdatap->m_dfd < 0) {
 		error = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004788,
 		    "open %s, %s", paramsp->dev_name,
 		    gfarm_error_string(error));
 		goto out_conn;
@@ -393,7 +393,7 @@ gfskd_mount(struct gfsk_mount_data *mdatap, struct gfskd_param *paramsp)
 	if (mount(paramsp->mnt_dev, paramsp->mnt_point, GFARM_FSNAME,
 		paramsp->mnt_flags|MS_NODEV, mdatap) < 0) {
 		error = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004789,
 		    "mount %s, %s", paramsp->mnt_point,
 		    gfarm_error_string(error));
 		goto out_dev;
@@ -405,7 +405,7 @@ gfskd_mount(struct gfsk_mount_data *mdatap, struct gfskd_param *paramsp)
 			"-f", "-t", GFARM_FSNAME, "-o", mdatap->m_opt,
 			paramsp->mnt_dev, paramsp->mnt_point, NULL);
 		error = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004790,
 		    "/bin/mount fail,%s", gfarm_error_string(error));
 		exit(1);
 	case -1:
@@ -433,7 +433,7 @@ gfskd_initialize(struct gfskd_param *paramsp)
 
 	e = gfarm_context_init();
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004791,
 			"gfarm_context_init failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -442,13 +442,13 @@ gfskd_initialize(struct gfskd_param *paramsp)
 
 	e = gfarm_set_local_user_for_this_uid(paramsp->local_uid);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004792,
 		    "gfskd_set_local_user_for_this_local_account() failed: %s",
 		    gfarm_error_string(e));
 		return (e);
 	}
 	if (setenv("GFARM_CONFIG_FILE", "/dev/null", 1)) { /* empty file */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004793,
 		    "setenv fail for '/dev/null'");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -460,7 +460,7 @@ gfskd_initialize(struct gfskd_param *paramsp)
 
 	e = gfarm_config_read();
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004794,
 		    "gfarm_config_read() failed: %s", gfarm_error_string(e));
 		return (e);
 	}

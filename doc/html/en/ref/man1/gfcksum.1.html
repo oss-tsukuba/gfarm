@@ -1,0 +1,66 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfcksum</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="gfcksum.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfcksum — print checksum</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfcksum</code>  [-rl] [ -T  |   -t ]  <em class="replaceable"><code>path</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfcksum</code>   -c  [-rlv] [-h <em class="replaceable"><code>host</code></em>]  <em class="replaceable"><code>path</code></em>... </p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<span class="command"><strong>gfcksum</strong></span> prints checksum of
+specified files.  When -r option is specified, it prints checksum of
+subentries in the specified directories recursively.
+</p>
+<p>
+When -t option is specified, only checksum type which is currently set
+to the file is printed.
+When -T option is specified, which checksum type will be calculated is printed.
+</p>
+<p>
+When the -c option is specified, it calculates the checksum of the
+specified files, and compares it with the checksum stored in the
+metadata.  The -h option specifies the location of the file replica to
+be calculated.  With the -v option, the verbose information including
+modification time of the file replica is displayed.
+</p>
+<p>
+If the -l option is present, <span class="command"><strong>gfcksum</strong></span>
+displays a path for each file.
+By default, gfcksum shows its basename only.
+</p>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd><p>Displays subdirectories recursively.</p></dd>
+<dt><span class="term"><code class="option">-c</code></span></dt>
+<dd><p>Calculates the checksum of the specified files, and compares it with
+the checksum stored in the metadata.</p></dd>
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>host</code></em></span></dt>
+<dd><p>Specifies the location of the file replica, when the -c option
+is specified.</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>Displays the verbose information including modification time of
+the file replica, when the -c option is specified.</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd><p>Displays a path for each file.
+By default, gfcksum shows its basename only.
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>Displays a list of command options.</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

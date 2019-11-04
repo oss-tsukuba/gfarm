@@ -41,7 +41,7 @@ test_file() {
 setup
 test_file 1
 
-n=`gfsched | wc -l`
+n=`gfsched -w | wc -l`
 [ $n -le 0 ] && error "no filesystem node"
 test_file $n
 

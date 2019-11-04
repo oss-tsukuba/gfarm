@@ -1,6 +1,4 @@
 This document only describes some important problems.
-Please refer the following URL for more detail:
-	https://sourceforge.net/apps/trac/gfarm/report/1
 
 *** General problems with Gfarm
 
@@ -54,40 +52,15 @@ Please refer the following URL for more detail:
 	for the changes in the RPM:
 		http://rhn.redhat.com/errata/RHBA-2009-0241.html
 
-- gfmd-initiated replication (either an automatic replication by the
-  extended attribute gfarm.ncopy, or a replication which is requested by
-  gfs_replicate_file_to_request()/gfs_replicate_file_from_to_request())
-  may be canceled in some cases, for example, under a heavy load.
-	https://sourceforge.net/apps/trac/gfarm/ticket/245
-
-  Plans for fixes:
-	We are planning a fix until December 2011.
-
 - gfs_pio_sync() doesn't really update the metadata now.
 
   Plans for fixes:
 	Not determined yet.
 
-- When a gfsd is stopped unexpectedly while the gfsd is being used to access
-  a file via an OPEN operation, the access stops working.
-
-  You have to reopen the file to access it again.
-
-  For example, this symptom happens when the filesystem node, which is
-  running the gfsd, is rebooted.
+- File view supported by Gfarm 1.X is not implemented.
 
   Plans for fixes:
-	Not determined yet.
-
-- File view is not implemented.
-
-  Plans for fixes:
-	Not determined yet.
-
-- The stat API doesn't return the exact file size until the file is closed.
-
-  Plans for fixes:
-	Not determined yet.
+	No plan to support.
 
 - If a program, which has already begun to use the gfarm library, makes a
   fork(2) system call, either the parent process or child process is allowed
@@ -127,8 +100,7 @@ call
 - There is no way to stop a replication process.
 
   Even if you kill a gfrep command, a network copy process cannot be
-  stopped until the copy completes for the ongoing file fragment.
-  The metadata for the replica won't be updated, though.
+  stopped until the ongoing copy completes.
 
   Plans for fixes:
 	Not determined yet.
@@ -173,11 +145,6 @@ command.
 	Solaris 2.6			Linux 2.4.18 (RedHat 8)
 	NetBSD 3.0			Linux 2.4.18 (RedHat 8)
 
-- We don't have manual pages about environment variables supported by Gfarm.
-
-  Plans for fixes:
-	Not determined yet.
-
 - There is small window that gfs_getxattr()/gfs_setxmlattr()/etc return
   old data just after an update by gfs_setxattr()/gfs_setxmlattr()/etc,
   if gfmd is recording metadata in a journaling file.
@@ -204,7 +171,6 @@ command.
 
 - The GSI authentication is not supported for the inter-gfmd
   communication which is used for the redundant configuration of gfmd.
-	https://sourceforge.net/apps/trac/gfarm/ticket/233
 
   Plans for fixes:
 	Not determined yet.
@@ -216,7 +182,6 @@ command.
 	Not determined yet.
 
 - The quota feature is not supported, if LDAP is used as the backend database.
-	https://sourceforge.net/apps/trac/gfarm/ticket/26
 
   Plans for fixes:
 	Not determined yet.
@@ -226,16 +191,14 @@ command.
 
 - The following commands are not provided yet:
 
-  gfdump, gfcd, gfpwd, gfsck, gftest
+  gfdump, gfcd, gfpwd
 
   Plans for fixes:
 	Not determined yet.
 
 - There is no reference manual for the following commands:
 
-  config-gfarm, config-gfarm-update, config-gfsd, gfarm.arch.guess,
-  gfrm, gfarm-pcp, gfarm-prun,
-  gfvoms-sync
+  gfarm.arch.guess, gfarm-pcp, gfarm-prun, gfvoms-sync
 
   Plans for fixes:
 	Not determined yet.
@@ -243,24 +206,4 @@ command.
 
 *** Problems with gfarm2fs commands
 
-- When multiple different open(2) calls are made against same file,
-  the consistency which is usually expected in read(2)/write(2) system
-  calls is not always achieved.
-  This is because gfarm2fs uses distinct gfs_pio_open() call or
-  gfs_pio_create() call for each open(2) call, and as the result,
-  the gfarm library and the kernel network layer use different buffers
-  for the calls.  For example, database files for PostgreSQL cannot be
-  provided by gfarm2fs due to this problem.
-
-  Plans for fixes:
-	Not determined yet.
-
-- After a ftruncate(2) system call, a read(2) system call against same
-  file may return short size than expected.
-  This is because FUSE uses the "getattr" entry point (instead of
-  "fgetattr") in this case, and the read(2) size will be affected by
-  the problem that "the stat API doesn't return the exact file size
-  until the file is closed" which is described above.
-
-  Plans for fixes:
-	We are planning a fix.
+No known problem

@@ -2,6 +2,8 @@
  * $Id$
  */
 
+#define GFS_CONN_RETRY_COUNT	1	/* retry for gfsd connection error */
+
 struct sockaddr;
 struct timeval;
 struct gfarm_eventqueue;
@@ -40,6 +42,7 @@ void gfs_client_connection_free(struct gfs_connection *);
 gfarm_error_t gfs_client_connect(const char *, int, const char *,
 	struct sockaddr *, struct gfs_connection **);
 void gfs_client_connection_gc(void);
+int gfs_client_sockaddr_is_local(struct sockaddr *);
 int gfs_client_connection_is_local(struct gfs_connection *);
 
 gfarm_error_t gfs_client_connection_enter_cache(struct gfs_connection *);
@@ -64,6 +67,8 @@ gfarm_error_t gfs_client_open(struct gfs_connection *, gfarm_int32_t);
 gfarm_error_t gfs_client_open_local(struct gfs_connection *, gfarm_int32_t,
 	int *);
 gfarm_error_t gfs_client_close(struct gfs_connection *, gfarm_int32_t);
+gfarm_error_t gfs_client_close_write(struct gfs_connection *,
+	gfarm_int32_t, gfarm_int32_t);
 gfarm_error_t gfs_client_pread(struct gfs_connection *,
 		       gfarm_int32_t, void *, size_t, gfarm_off_t, size_t *);
 gfarm_error_t gfs_client_pwrite(struct gfs_connection *,
@@ -80,6 +85,8 @@ gfarm_error_t gfs_client_fstat(struct gfs_connection *, gfarm_int32_t,
 	gfarm_off_t *,
 	gfarm_int64_t *, gfarm_int32_t *,
 	gfarm_int64_t *, gfarm_int32_t *);
+gfarm_error_t gfs_client_cksum(struct gfs_connection *,
+	gfarm_int32_t, const char *, char *, size_t, size_t *);
 gfarm_error_t gfs_client_cksum_set(struct gfs_connection *, gfarm_int32_t,
 	const char *, size_t, const char *);
 gfarm_error_t gfs_client_lock(struct gfs_connection *, gfarm_int32_t,
@@ -93,9 +100,17 @@ gfarm_error_t gfs_client_lock_info(struct gfs_connection *, gfarm_int32_t,
 	gfarm_off_t *, gfarm_off_t *, gfarm_int32_t *, char**, gfarm_pid_t **);
 gfarm_error_t gfs_client_replica_add_from(struct gfs_connection *,
 	char *, gfarm_int32_t, gfarm_int32_t);
-gfarm_error_t gfs_client_replica_recv(struct gfs_connection *,
-	gfarm_ino_t, gfarm_uint64_t, gfarm_int32_t,
-	gfarm_error_t *, gfarm_error_t *);
+#ifdef GFARM_USE_OPENSSL /* this requires <openssl/evp.h> */
+gfarm_error_t gfs_client_replica_recv_cksum_md(struct gfs_connection *,
+	gfarm_int32_t *, gfarm_int32_t *,
+	gfarm_ino_t, gfarm_uint64_t, gfarm_int64_t,
+	const char *, size_t, const char *, gfarm_int32_t,
+	size_t, size_t *, char *, gfarm_int32_t *,
+	int, EVP_MD_CTX *);
+gfarm_error_t gfs_client_replica_recv_md(struct gfs_connection *,
+	gfarm_int32_t *, gfarm_int32_t *,
+	gfarm_ino_t, gfarm_uint64_t, int, EVP_MD_CTX *);
+#endif
 gfarm_error_t gfs_client_statfs(struct gfs_connection *, char *,
 	gfarm_int32_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,
@@ -110,6 +125,22 @@ gfarm_error_t gfs_client_statfs_result_multiplexed(
 	gfarm_int32_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
+
+#ifdef GFARM_USE_OPENSSL /* this requires <openssl/evp.h> */
+gfarm_error_t gfs_client_sendfile(struct gfs_connection *,
+	gfarm_int32_t, gfarm_off_t, int, gfarm_off_t, gfarm_off_t,
+	EVP_MD_CTX *, gfarm_off_t *);
+gfarm_error_t gfs_client_recvfile(struct gfs_connection *,
+	gfarm_int32_t, gfarm_off_t, int, gfarm_off_t, gfarm_off_t,
+	int, EVP_MD_CTX *, int *, gfarm_off_t *);
+
+/* commonly used by both clients and gfsd */
+struct gfp_xdr;
+gfarm_error_t gfs_sendfile_common(struct gfp_xdr *, gfarm_int32_t *,
+	int, gfarm_off_t, gfarm_off_t, EVP_MD_CTX *, gfarm_off_t *);
+gfarm_error_t gfs_recvfile_common(struct gfp_xdr *, gfarm_int32_t *,
+	int, gfarm_off_t, int, EVP_MD_CTX *, int *, gfarm_off_t *);
+#endif
 
 #define GFS_CLIENT_COMMAND_FLAG_STDIN_EOF	0x01
 #define GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND	0x02

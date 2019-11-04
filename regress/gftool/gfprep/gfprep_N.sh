@@ -8,7 +8,7 @@ GFPREP_DIR=`dirname $0`
 [ `gfsched -w | wc -l` -ge 2 ] || exit $exit_unsupported
 setup_test
 
-OPT='-d'
+OPT='-d -B'
 if gfprep $OPT -N 2 gfarm:${gf_dir1}; then
   :
 else

@@ -3,7 +3,6 @@
  */
 
 #include <libgen.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,15 +23,15 @@
 #include "nanosec.h"
 #include "gfutil.h"
 
-#include "gfp_xdr.h"
+#include "context.h"
 #include "config.h"
 #include "metadb_common.h"
 #include "metadb_server.h"
 #include "xattr_info.h"
 #include "quota_info.h"
 #include "gfm_proto.h"
-
 #include "quota.h"
+
 #include "journal_file.h"
 #include "db_common.h"
 #include "db_ops.h"
@@ -492,6 +491,7 @@ main(int argc, char **argv)
 	if (argc > 0)
 		program_name = basename(argv[0]);
 	gflog_initialize();
+	gfarm_context_init();
 
 	while ((c = getopt(argc, argv, "dhlmrv?")) != -1) {
 		switch (c) {
@@ -575,6 +575,7 @@ main(int argc, char **argv)
 	}
 end:
 	journal_file_close(jf);
+	gfarm_context_term();
 	gflog_terminate();
 	return (exit_code);
 }

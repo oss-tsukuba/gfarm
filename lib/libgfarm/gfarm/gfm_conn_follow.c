@@ -11,20 +11,18 @@ struct gfm_conn_follow_closure {
 };
 
 static gfarm_error_t
-gfm_conn_follow_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_conn_follow_request(struct gfm_connection *gfm_server, void *closure)
 {
 	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
-gfm_conn_follow_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_conn_follow_result(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_conn_follow_closure *c = closure;
 	gfarm_error_t e;
 
-	e = gfm_client_connection_addref(gfm_server);
+	e = gfm_client_connection_try_addref(gfm_server);
 	if (e == GFARM_ERR_NO_ERROR)
 		c->gfm_server = gfm_server;
 	return (e);

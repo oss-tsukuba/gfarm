@@ -11,24 +11,26 @@
 #include <sys/time.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <openssl/evp.h>
 #include <assert.h>
+
+#include <openssl/evp.h>
 
 #include <gfarm/gfarm.h>
 
-#include "queue.h"
+#include "queue.h"	/* gfs_pio_impl.h */
 
 #include "config.h"
-#include "gfm_proto.h"
+#include "gfm_proto.h"	/* for GFARM_USE_GFS_PIO_INTERNAL_CKSUM_INFO */
 #include "gfm_client.h"
 #include "gfs_client.h"
+#define GFARM_USE_GFS_PIO_INTERNAL_CKSUM_INFO
 #include "gfs_io.h"
 #include "gfs_pio.h"
+#include "gfs_pio_impl.h"
 #include "filesystem.h"
 #include "gfs_failover.h"
 #include "gfs_file_list.h"
 #include "gfs_misc.h"
-
 
 static struct gfs_connection *
 get_storage_context(struct gfs_file_section_context *vc)
@@ -53,6 +55,7 @@ gfm_client_connection_should_failover(struct gfm_connection *gfm_server,
 	return (0);
 #endif /* __KERNEL__ */
 }
+
 int
 gfs_pio_should_failover(GFS_File gf, gfarm_error_t e)
 {
@@ -71,6 +74,43 @@ gfs_pio_should_failover(GFS_File gf, gfarm_error_t e)
 #endif /* __KERNEL__ */
 }
 
+int
+gfs_pio_should_failover_at_gfs_open(GFS_File gf, gfarm_error_t e)
+{
+#ifndef __KERNEL__	/* failover */
+	struct gfarm_filesystem *fs;
+
+	fs = gfarm_filesystem_get_by_connection(gfs_pio_metadb(gf));
+	if (gfarm_filesystem_in_failover_process(fs))
+		return (0);
+	return (gfarm_filesystem_failover_detected(fs) ||
+	    e == GFARM_ERR_GFMD_FAILED_OVER ||
+	    e == GFARM_ERR_BAD_FILE_DESCRIPTOR);
+#else /* __KERNEL__ */
+	return (0);
+#endif /* __KERNEL__ */
+}
+
+/*
+ * callers should retry their operation, if this function returns true.
+ */
+int
+gfs_pio_failover_check_retry(GFS_File gf, gfarm_error_t *ep)
+{
+	gfarm_error_t e;
+
+	if (gfs_pio_should_failover(gf, *ep)) {
+		if ((e = gfs_pio_failover(gf)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1003962,
+			    "gfs_pio_failover: %s", gfarm_error_string(e));
+			*ep = e;
+			return (0);
+		}
+		return (1); /* caller should retry */
+	}
+	return (0); /* DO NOT touch *ep */
+}
+
 static gfarm_error_t
 gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 {
@@ -78,19 +118,19 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 	struct gfm_connection *gfm_server;
 	int fd, type;
 	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 	char *real_url = NULL;
 
-	/* avoid failover in gfm_open_fd_with_ino() */
+	/* avoid failover in gfm_open_fd() */
 	gfarm_filesystem_set_failover_detected(fs, 0);
 
 	/* increment ref count of gfm_server */
-	if ((e = gfm_open_fd_with_ino(gf->url,
-	    gf->open_flags & (~GFARM_FILE_TRUNC),
-	    &gfm_server, &fd, &type, &real_url, &ino)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfs_pio_reopen_fd(gf, &gfm_server, &fd, &type, &real_url,
+	    &ino, &gen)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003380,
 		    "reopen operation on file descriptor for URL (%s) "
 		    "failed: %s",
-		    gf->url,
+		    gfs_pio_url(gf),
 		    gfarm_error_string(e));
 		free(real_url);
 		return (e);
@@ -113,8 +153,8 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 		if (real_url != NULL) {
 			free(real_url);
 		}
-		(void)gfm_close_fd(gfm_server, fd); /* ignore result */
-		gf->fd = GFARM_DESCRIPTOR_INVALID;
+		(void)gfm_close_fd(gfm_server, fd, NULL); /* ignore result */
+		gf->fd = -1;
 		gf->error = e;
 		gflog_debug(GFARM_MSG_1003381,
 		    "reopen operation on pio for URL (%s) failed: %s",
@@ -163,8 +203,8 @@ reset_and_reopen(GFS_File gf, void *closure)
 	}
 
 	/* if old gfm_connection is alive, fd must be closed */
-	(void)gfm_close_fd(gf->gfm_server, gf->fd);
-	gf->fd = GFARM_DESCRIPTOR_INVALID;
+	(void)gfm_close_fd(gf->gfm_server, gf->fd, NULL);
+	gf->fd = -1;
 	gfm_client_connection_free(gf->gfm_server);
 	/* ref count of gfm_server is incremented above */
 	gf->gfm_server = gfm_server;
@@ -253,7 +293,7 @@ acquire_valid_connection(struct gfm_connection *gfm_server, const char *host,
 
 		if ((e = gfm_client_connection_and_process_acquire(
 		    host, port, user, &gfm_server)) != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003963,
 			    "gfm_client_connection_and_process_acquire: %s",
 			    gfarm_error_string(e));
 			return (e);
@@ -280,7 +320,7 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 		fs = gfarm_filesystem_get_by_connection(gfm_server);
 		if (gfarm_filesystem_in_failover_process(fs)) {
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003964,
 			    "gfmd connection failover process called "
 			    "recursively");
 			goto error_all;
@@ -312,7 +352,7 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 		assert(fs != NULL);
 		if (gfarm_filesystem_in_failover_process(fs)) {
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003965,
 			    "gfmd connection failover process called "
 			    "recursively");
 			goto error_all;
@@ -321,13 +361,13 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 		fc = gfarm_filesystem_failover_count(fs);
 		if ((host = strdup(host0)) ==  NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003966,
 			    "%s", gfarm_error_string(e));
 			goto error_all;
 		}
 		if ((user = strdup(user0)) ==  NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003967,
 			    "%s", gfarm_error_string(e));
 			goto error_all;
 		}
@@ -344,10 +384,16 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 
 	for (i = 0; i < NUM_FAILOVER_RETRY; ++i) {
 		/* reconnect to gfmd */
-		if ((e = gfm_client_connection_and_process_acquire(
-		    host, port, user, &gfm_server)) != GFARM_ERR_NO_ERROR) {
+		e = gfm_client_connection_and_process_acquire(
+			host, port, user, &gfm_server);
+		if (e == GFARM_ERR_EXPIRED ||
+		    e == GFARM_ERR_INVALID_CREDENTIAL) {
+			gflog_notice(GFARM_MSG_1004244, "%s:%d:%s: %s",
+			    host, port, user, gfarm_error_string(e));
+			break;
+		} else if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1003390,
-			    "gfm_client_connection_acquire failed : %s",
+			    "gfm_client_connection_acquire failed: %s",
 			    gfarm_error_string(e));
 			continue;
 		}
@@ -382,9 +428,10 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 		    "connection to metadb server was failed over successfully");
 	} else {
 		gfarm_filesystem_set_failover_detected(fs, 1);
-		e = GFARM_ERR_OPERATION_TIMED_OUT;
+		if (e == GFARM_ERR_NO_ERROR)
+			e = GFARM_ERR_OPERATION_TIMED_OUT;
 		gflog_debug(GFARM_MSG_1003392,
-		    "falied to fail over: %s", gfarm_error_string(e));
+		    "failover failed: %s", gfarm_error_string(e));
 	}
 end:
 	free(host);
@@ -418,6 +465,16 @@ gfm_client_connection_failover_pre_connect(const char *host, int port,
 	return (failover0(NULL, host, port, user));
 }
 
+/*
+ * Callers of this function should
+ * either
+ * - acquire (or addref) gfm_server before calling this,
+ *   and free (or delref) after calling this.
+ * or
+ * - should not access gfm_server after calling this,
+ *   because it may be abandoned in this function,
+ *   if it's pointed by gf->gfm_server (gf is a GFS_File).
+ */
 gfarm_error_t
 gfm_client_connection_failover(struct gfm_connection *gfm_server)
 {
@@ -452,12 +509,12 @@ retry:
 	if (nretry > 0 && gfm_client_connection_should_failover(
 	    gfm_server, e)) {
 		if ((e = failover(gfm_server)) != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003968,
 			    "failover: %s", gfarm_error_string(e));
 		} else if (post_failover_op &&
 		    (e = post_failover_op(gfm_server, closure))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003969,
 			    "post_failover_op: %s", gfarm_error_string(e));
 			if (gfm_client_is_connection_error(e) &&
 			    post_nretry > 0) {
@@ -475,12 +532,12 @@ retry:
 			goto retry;
 		}
 	} else if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "gfm_client_rpc_with_failover: rpc_op: %s",
+		gflog_debug(GFARM_MSG_1003970,
+		    "gfm_client_rpc_with_failover: rpc_op %s",
 		    gfarm_error_string(e));
 		if (nretry == 0 && must_be_warned_op &&
 		    must_be_warned_op(e, closure))
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1003971,
 			    "error ocurred at retry for the operation after "
 			    "connection to metadb server was failed over, "
 			    "so the operation possibly succeeded in the server."
@@ -496,10 +553,8 @@ retry:
 struct compound_fd_op_info {
 	struct gfs_failover_file *file;
 	struct gfs_failover_file_ops *ops;
-	gfarm_error_t (*request_op)(struct gfm_connection *,
-	    struct gfp_xdr_context *, void *);
-	gfarm_error_t (*result_op)(struct gfm_connection *,
-	    struct gfp_xdr_context *, void *);
+	gfarm_error_t (*request_op)(struct gfm_connection *, void *);
+	gfarm_error_t (*result_op)(struct gfm_connection *, void *);
 	void (*cleanup_op)(struct gfm_connection *, void *);
 	int (*must_be_warned_op)(gfarm_error_t, void *);
 	void *closure;
@@ -523,16 +578,20 @@ compound_fd_op_post_failover(struct gfm_connection *gfm_server, void *closure)
 	int fd, type;
 	char *url;
 	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 	struct compound_fd_op_info *ci = closure;
 	void *file = ci->file;
 	struct gfs_failover_file_ops *ops = ci->ops;
 	const char *url0 = ops->get_url(file);
 
+	if (url0 == NULL) /* XXX - try fhopen()? */
+		return (GFARM_ERR_STALE_FILE_HANDLE); /* XXX */
 	/* reopen */
-	if ((e = gfm_open_fd_with_ino(url0, GFARM_FILE_RDONLY,
-	    &gfm_server, &fd, &type, &url, &ino)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "gfm_open_fd_with_ino(%s) failed: %s",
+	if ((e = gfm_open_fd(url0, GFARM_FILE_RDONLY,
+	    &gfm_server, &fd, &type, &url, &ino, &gen, NULL))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1003972,
+		    "gfm_open_fd(%s) failed: %s",
 		    url0, gfarm_error_string(e));
 		/*
 		 * any error except connection error means that the file
@@ -569,10 +628,8 @@ compound_fd_op_must_be_warned(gfarm_error_t e, void *closure)
 static gfarm_error_t
 compound_fd_op(struct gfs_failover_file *file,
 	struct gfs_failover_file_ops *ops,
-	gfarm_error_t (*request_op)(struct gfm_connection *,
-	    struct gfp_xdr_context *, void *),
-	gfarm_error_t (*result_op)(struct gfm_connection *,
-	    struct gfp_xdr_context *, void *),
+	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
 	void (*cleanup_op)(struct gfm_connection *, void *),
 	int (*must_be_warned_op)(gfarm_error_t, void *),
 	void *closure)
@@ -594,10 +651,8 @@ compound_fd_op(struct gfs_failover_file *file,
 gfarm_error_t
 gfm_client_compound_fd_op_readonly(struct gfs_failover_file *file,
 	struct gfs_failover_file_ops *ops,
-	gfarm_error_t (*request_op)(struct gfm_connection *,
-	    struct gfp_xdr_context *, void *),
-	gfarm_error_t (*result_op)(struct gfm_connection *,
-	    struct gfp_xdr_context *, void *),
+	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
 	void (*cleanup_op)(struct gfm_connection *, void *),
 	void *closure)
 {
@@ -605,17 +660,15 @@ gfm_client_compound_fd_op_readonly(struct gfs_failover_file *file,
 	    cleanup_op, NULL, closure);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003973,
 		    "compound_fd_op: %s", gfarm_error_string(e));
 	return (e);
 }
 
 struct compound_file_op_info {
 	GFS_File gf;
-	gfarm_error_t (*request_op)(struct gfm_connection *,
-		struct gfp_xdr_context *, void *);
-	gfarm_error_t (*result_op)(struct gfm_connection *,
-		struct gfp_xdr_context *, void *);
+	gfarm_error_t (*request_op)(struct gfm_connection *, void *);
+	gfarm_error_t (*result_op)(struct gfm_connection *, void *);
 	void (*cleanup_op)(struct gfm_connection *, void *);
 	int (*must_be_warned_op)(gfarm_error_t, void *);
 	void *closure;
@@ -643,10 +696,8 @@ compound_file_op_must_be_warned_op(gfarm_error_t e, void *closure)
 
 static gfarm_error_t
 compound_file_op(GFS_File gf,
-	gfarm_error_t (*request_op)(struct gfm_connection *,
-	    struct gfp_xdr_context *, void *),
-	gfarm_error_t (*result_op)(struct gfm_connection *,
-	    struct gfp_xdr_context *, void *),
+	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
 	void (*cleanup_op)(struct gfm_connection *, void *),
 	int (*must_be_warned_op)(gfarm_error_t, void *),
 	void *closure)
@@ -665,10 +716,8 @@ compound_file_op(GFS_File gf,
 
 gfarm_error_t
 gfm_client_compound_file_op_readonly(GFS_File gf,
-	gfarm_error_t (*request_op)(struct gfm_connection *,
-	    struct gfp_xdr_context *, void *),
-	gfarm_error_t (*result_op)(struct gfm_connection *,
-	    struct gfp_xdr_context *, void *),
+	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
 	void (*cleanup_op)(struct gfm_connection *, void *),
 	void *closure)
 {
@@ -676,17 +725,15 @@ gfm_client_compound_file_op_readonly(GFS_File gf,
 	    cleanup_op, NULL, closure);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003974,
 		    "compound_file_op: %s", gfarm_error_string(e));
 	return (e);
 }
 
 gfarm_error_t
 gfm_client_compound_file_op_modifiable(GFS_File gf,
-	gfarm_error_t (*request_op)(struct gfm_connection *,
-	    struct gfp_xdr_context *, void *),
-	gfarm_error_t (*result_op)(struct gfm_connection *,
-	    struct gfp_xdr_context *, void *),
+	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
 	void (*cleanup_op)(struct gfm_connection *, void *),
 	int (*must_be_warned_op)(gfarm_error_t, void *),
 	void *closure)
@@ -695,7 +742,7 @@ gfm_client_compound_file_op_modifiable(GFS_File gf,
 	    cleanup_op, must_be_warned_op, closure);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003975,
 		    "compound_file_op: %s", gfarm_error_string(e));
 	return (e);
 }

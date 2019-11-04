@@ -17,12 +17,16 @@
 
 char *program_name = "gfusage";
 
-struct gfm_connection *gfm_server;
+static struct gfm_connection *gfm_server;
+static int opt_format_flags = 0;
+static int opt_humanize_number = 0;
+
+static struct gfarm_quota_get_info total_qi;
 
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage:\t%s [-P <path>] [-g] [name]\n", program_name);
+	fprintf(stderr, "Usage: %s [-P <path>] [-gHh] [name]\n", program_name);
 	exit(1);
 }
 
@@ -35,33 +39,89 @@ static const char head_phy_num[] = "PhysicalNum";
 
 static const char header_format[] = "#  %s : %15s %11s %15s %11s\n";
 
-static gfarm_error_t
-print_usage_common(const char *name, int opt_group)
+static char *
+humanize(long long num)
 {
-	struct gfarm_quota_get_info qi;
-	gfarm_error_t e;
+	static char buf[GFARM_INT64STRLEN];
 
-	if (opt_group)
-		e = gfm_client_quota_group_get(gfm_server, name, &qi);
-	else
-		e = gfm_client_quota_user_get(gfm_server, name, &qi);
+	gfarm_humanize_number(buf, sizeof buf, num, opt_format_flags);
+	return (buf);
+}
+
+static gfarm_error_t
+print_usage(const char *name, struct gfarm_quota_get_info *qip)
+{
+	printf("%12s : ", name);
+	if (opt_humanize_number) {
+		printf("%15s ", humanize(qip->space));
+		printf("%11s ", humanize(qip->num));
+		printf("%15s ", humanize(qip->phy_space));
+		printf("%11s\n", humanize(qip->phy_num));
+	} else
+		printf("%15"GFARM_PRId64" %11"GFARM_PRId64
+		       " %15"GFARM_PRId64" %11"GFARM_PRId64"\n",
+		       qip->space, qip->num, qip->phy_space, qip->phy_num);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+print_usage_total(void)
+{
+	printf("-------------------------------------------");
+	printf("---------------------------\n");
+	return (print_usage("TOTAL", &total_qi));
+}
+
+static gfarm_error_t
+quota_get(gfarm_error_t (*get)(
+	struct gfm_connection *, const char *, struct gfarm_quota_get_info *),
+	const char *name, struct gfarm_quota_get_info *qip)
+{
+	gfarm_error_t e = get(gfm_server, name, qip);
+
 	if (e == GFARM_ERR_OPERATION_NOT_PERMITTED) /* not report here */
-		return (e);
-	else if (e == GFARM_ERR_NO_SUCH_OBJECT) { /* not enabled */
-		fprintf(stderr, "%s : quota is not enabled.\n", name);
-		return (e);
-	} else if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s: %s : %s\n",
+		;
+	else if (e == GFARM_ERR_NO_SUCH_OBJECT) /* not enabled */
+		fprintf(stderr, "%s: quota is not enabled.\n", name);
+	else if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "%s: %s: %s\n",
 			program_name, name, gfarm_error_string(e));
+	return (e);
+}
+
+
+static gfarm_error_t
+print_usage_common(gfarm_error_t (*get)(
+	struct gfm_connection *, const char *, struct gfarm_quota_get_info *),
+	const char *name)
+{
+	gfarm_error_t e;
+	struct gfarm_quota_get_info qi;
+
+	e = quota_get(get, name, &qi);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	} else {
-		printf("%12s :"
-		       " %15"GFARM_PRId64" %11"GFARM_PRId64
-		       " %15"GFARM_PRId64" %11"GFARM_PRId64"\n"
-		       , name, qi.space, qi.num, qi.phy_space, qi.phy_num);
-		gfarm_quota_get_info_free(&qi);
-		return (GFARM_ERR_NO_ERROR);
+	e = print_usage(name, &qi);
+	if (e == GFARM_ERR_NO_ERROR) {
+		total_qi.space += qi.space;
+		total_qi.num += qi.num;
+		total_qi.phy_space += qi.phy_space;
+		total_qi.phy_num += qi.phy_num;
 	}
+	gfarm_quota_get_info_free(&qi);
+	return (e);
+}
+
+static gfarm_error_t
+print_usage_user(const char *name)
+{
+	return (print_usage_common(gfm_client_quota_user_get, name));
+}
+
+static gfarm_error_t
+print_usage_group(const char *name)
+{
+	return (print_usage_common(gfm_client_quota_group_get, name));
 }
 
 static void
@@ -76,18 +136,6 @@ print_header_group()
 {
 	printf(header_format, head_group, head_space, head_num,
 	       head_phy_space, head_phy_num);
-}
-
-static gfarm_error_t
-print_usage_user(const char *name)
-{
-	return (print_usage_common(name, 0));
-}
-
-static gfarm_error_t
-print_usage_group(const char *name)
-{
-	return (print_usage_common(name, 1));
 }
 
 static gfarm_error_t
@@ -135,7 +183,7 @@ usage_user_all()
 	free(users);
 
 	if (success > 0)
-		return (GFARM_ERR_NO_ERROR);
+		return (print_usage_total());
 	else
 		return (e_save);
 }
@@ -171,7 +219,7 @@ usage_group_all()
 	free(groups);
 
 	if (success > 0)
-		return (GFARM_ERR_NO_ERROR);
+		return (print_usage_total());
 	else
 		return (e_save);
 }
@@ -194,7 +242,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "P:gh?")) != -1) {
+	while ((c = getopt(argc, argv, "P:gHh?")) != -1) {
 		switch (c) {
 		case 'P':
 			path = optarg;
@@ -202,7 +250,14 @@ main(int argc, char **argv)
 		case 'g':
 			opt_group = 1;
 			break;
+		case 'H':
+			opt_humanize_number = 1;
+			opt_format_flags = 0;
+			break;
 		case 'h':
+			opt_humanize_number = 1;
+			opt_format_flags = GFARM_HUMANIZE_BINARY;
+			break;
 		case '?':
 		default:
 			usage();

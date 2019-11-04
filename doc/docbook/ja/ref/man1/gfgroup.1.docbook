@@ -35,6 +35,8 @@
 <cmdsynopsis sepchar=" ">
   <command moreinfo="none">gfgroup</command>
     <arg choice="opt" rep="norepeat">-P <replaceable>path</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-a</arg>
+    <arg choice="opt" rep="norepeat">-r</arg>
     <arg choice="plain" rep="norepeat">-m</arg>
     <arg choice="plain" rep="norepeat">groupname</arg>
     <arg choice="opt" rep="repeat"><replaceable>user</replaceable></arg>
@@ -100,6 +102,30 @@ Gfarmの管理者が実行可能です．
 <para>
 グループメンバの変更を行います．
 変更したいグループ名とメンバのリスト指定します．
+Gfarmの管理者が実行可能です．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-a</option></term>
+<listitem>
+<para>
+このオプションは<option>-m</option>と一緒に用いることにより
+グループメンバの追加を行います．
+変更したいグループ名と追加メンバのリストを指定します．
+Gfarmの管理者が実行可能です．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>
+このオプションは<option>-m</option>と一緒に用いることにより
+グループメンバの削除を行います．
+変更したいグループ名と削除メンバのリストを指定します．
 Gfarmの管理者が実行可能です．
 </para>
 </listitem>

@@ -9,14 +9,14 @@ include $(srcdir)/../Makefile.inc
 
 # $(pthread_includes): ctime_r() needs -D_POSIX_PTHREAD_SEMANTICS on Solaris
 CFLAGS = $(pthread_includes) $(COMMON_CFLAGS) \
-	-I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
+	-I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) $(openssl_includes) \
 	-DGFARM_DEFAULT_BINDIR=\"$(default_bindir)\"
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
 PROGRAM = gfsd
-SRCS =	gfsd.c loadavg.c statfs.c spck.c
-OBJS =	gfsd.o loadavg.o statfs.o spck.o
+SRCS =	gfsd.c loadavg.c statfs.c spck.c write_verify.c
+OBJS =	gfsd.o loadavg.o statfs.o spck.o write_verify.o
 
 all: $(PROGRAM)
 
@@ -28,8 +28,11 @@ include $(top_srcdir)/makes/gflog.mk
 $(OBJS): $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/gfutil.h \
 	$(GFUTIL_SRCDIR)/gflog_reduced.h \
+	$(GFUTIL_SRCDIR)/msgdigest.h \
+	$(GFUTIL_SRCDIR)/nanosec.h \
 	$(GFUTIL_SRCDIR)/hash.h \
 	$(GFUTIL_SRCDIR)/timer.h \
+	$(GFUTIL_SRCDIR)/tree.h \
 	$(GFARMLIB_SRCDIR)/context.h \
 	$(GFARMLIB_SRCDIR)/gfp_xdr.h \
 	$(GFARMLIB_SRCDIR)/io_fd.h \
@@ -44,4 +47,5 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/gfm_proto.h \
 	$(GFARMLIB_SRCDIR)/gfm_client.h \
 	$(GFARMLIB_SRCDIR)/gfs_profile.h \
-	$(srcdir)/gfsd_subr.h
+	$(srcdir)/gfsd_subr.h \
+	$(srcdir)/write_verify.h

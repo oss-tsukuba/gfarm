@@ -17,8 +17,8 @@ gfarm_error_t db_journal_read(struct journal_file_reader *, void *,
 	gfarm_error_t (*)(void *, gfarm_uint64_t, enum journal_operation,
 	void *, void *, size_t, int *), void *, int *);
 void db_journal_wait_for_apply_thread(void);
-gfarm_error_t db_journal_reader_reopen_if_needed(struct journal_file_reader **,
-	gfarm_uint64_t, int *);
+gfarm_error_t db_journal_reader_reopen_if_needed(const char *,
+	struct journal_file_reader **, gfarm_uint64_t, int *);
 gfarm_error_t db_journal_fetch(struct journal_file_reader *, gfarm_uint64_t,
 	char **, int *, gfarm_uint64_t *, gfarm_uint64_t *, int *,
 	const char *);
@@ -27,8 +27,6 @@ gfarm_error_t db_journal_recvq_enter(gfarm_uint64_t, gfarm_uint64_t, int,
 void db_journal_cancel_recvq();
 void db_journal_set_sync_op(gfarm_error_t (*func)(gfarm_uint64_t));
 gfarm_error_t db_journal_file_writer_sync(void);
-void db_journal_set_remove_db_update_info_op(void (*)(gfarm_uint64_t,
-	const char *));
 void db_journal_wait_until_readable(void);
 
 void *db_journal_store_thread(void *);
@@ -36,5 +34,6 @@ void *db_journal_recvq_thread(void *);
 void *db_journal_apply_thread(void *);
 void db_journal_reset_slave_transaction_nesting(void);
 void db_journal_init_seqnum(void);
-void db_journal_init(void);
+struct peer;
+void db_journal_init(void (*)(struct peer *));
 gfarm_error_t db_journal_init_status(void); /* currently only for regress */

@@ -5,7 +5,7 @@
 
 <refentry id="gfedquota.1">
 
-<refentryinfo><date>23 Mar 2011</date></refentryinfo>
+<refentryinfo><date>25 Aug 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfedquota</refentrytitle>
@@ -15,7 +15,7 @@
 
 <refnamediv id="name">
 <refname>gfedquota</refname>
-<refpurpose>ファイルの制限を編集</refpurpose>
+<refpurpose>ファイル制限を編集</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id="synopsis">
@@ -26,25 +26,20 @@
 </refsynopsisdiv>
 
 <refsect1 id="description"><title>DESCRIPTION</title>
-<para><command moreinfo="none">gfedquota</command> は、ユーザやグループに対するファイル
-制限を編集できます。
+<para><command moreinfo="none">gfedquota</command> は、
+ユーザやグループに対するファイル制限を編集できます。
 </para>
 <para>
 制限の種類には、ソフトリミットとハードリミットがあります。
 ソフトリミットには猶予期間を設定できます。
-制限する対象は、ファイル数の合計とファイルサイズの合計、レプリカを含め
-た実ファイル数の合計と実ファイルサイズの合計です。
+制限する対象は、ファイル数の合計とファイルサイズの合計、
+レプリカを含めた実ファイル数の合計と実ファイルサイズの合計です。
 制限値に 'disable' または -1  を指定すると、無制限になります。
-制限するためのオプションを指定しなければ、割り当て量 (quota) は変わりま
-せん。
+制限するためのオプションを指定しなければ、
+割り当て量 (quota) は変わりません。
 </para>
 <para>
 このコマンドは gfarmadm グループに所属する管理者だけが実行できます。
-</para>
-<para>
-<command moreinfo="none">gfedquota</command> コマンド実行後
-に <command moreinfo="none">gfquotacheck</command> コマンドを実行すると quota が有効に
-なります。
 </para>
 </refsect1>
 

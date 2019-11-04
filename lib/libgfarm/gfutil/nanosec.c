@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <string.h>
+#include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -43,15 +44,34 @@ gfarm_nanosleep(unsigned long long nsec)
 void
 gfarm_gettime(struct timespec *ts)
 {
-#ifdef HAVE_CLOCK_GETTIME
-	clock_gettime(CLOCK_REALTIME, ts);
-#else
-	struct timeval tv;
+	int rv;
+	static int gettimeofday_ok = 1;
 
-	gettimeofday(&tv, NULL);
-	ts->tv_sec = tv.tv_sec;
-	ts->tv_nsec = tv.tv_usec * GFARM_MICROSEC_BY_NANOSEC;
+#ifdef HAVE_CLOCK_GETTIME
+	static int clock_gettime_ok = 1;
+
+	if (clock_gettime_ok) {
+		rv = clock_gettime(CLOCK_REALTIME, ts);
+		if (rv == 0)
+			return;
+		gflog_notice_errno(GFARM_MSG_1004227, "clock_gettime");
+		clock_gettime_ok = 0;
+	}
 #endif
+	if (gettimeofday_ok) {
+		struct timeval tv;
+
+		rv = gettimeofday(&tv, NULL);
+		if (rv == 0) {
+			ts->tv_sec = tv.tv_sec;
+			ts->tv_nsec = tv.tv_usec * GFARM_MICROSEC_BY_NANOSEC;
+			return;
+		}
+		gflog_notice_errno(GFARM_MSG_1004228, "gettimeofday");
+		gettimeofday_ok = 0;
+	}
+	ts->tv_sec = time(NULL);
+	ts->tv_nsec = 0;
 }
 
 #ifdef HAVE_UTIMENSAT

@@ -21,25 +21,19 @@ struct thread_pool;
 extern struct thread_pool *authentication_thread_pool;
 struct thread_pool *sync_protocol_get_thrpool(void);
 
-#define PROTO_UNKNOWN		-1
-#define PROTO_HANDLED_BY_SLAVE	0x01
-#define PROTO_USE_FD_CURRENT	0x02
-#define PROTO_USE_FD_SAVED	0x04
-#define PROTO_SET_FD_CURRENT	0x08
-#define PROTO_SET_FD_SAVED	0x10
-int gfm_server_protocol_type_extension_default(gfarm_int32_t);
-extern int (*gfm_server_protocol_type_extension)(gfarm_int32_t);
-
-gfarm_error_t gfm_server_protocol_extension_default(
-	struct peer *, gfp_xdr_xid_t, size_t *,
+gfarm_error_t gfm_server_protocol_extension_default(struct peer *,
 	int, int, int, gfarm_int32_t, gfarm_int32_t *, gfarm_error_t *);
-extern gfarm_error_t (*gfm_server_protocol_extension)(
-	struct peer *, gfp_xdr_xid_t, size_t *,
+extern gfarm_error_t (*gfm_server_protocol_extension)(struct peer *,
 	int, int, int, gfarm_int32_t, gfarm_int32_t *, gfarm_error_t *);
 
-int protocol_service(struct peer *, gfp_xdr_xid_t, size_t *);
+int protocol_service(struct peer *);
 void *protocol_main(void *);
 void gfmd_terminate(const char *);
 
 void gfmd_modules_init_default(int);
 extern void (*gfmd_modules_init)(int);
+
+/* faillover_notify.c */
+void failover_notify(void);
+
+  

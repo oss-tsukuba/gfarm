@@ -51,11 +51,15 @@ following features of the backend database:
 
   <itemizedlist>
   <listitem>
-  <para>XML Path Language (XPath) support</para>
+  <para>XML Path Language (XPath) support [-X]</para>
   </listitem>
 
   <listitem>
-  <para>Metadata replication among metadata servers</para>
+  <para>Metadata replication among metadata servers [-r]</para>
+  </listitem>
+
+  <listitem>
+  <para>Checksum calculation [-d]</para>
   </listitem>
   </itemizedlist>
 
@@ -64,9 +68,7 @@ Whether the backend database supports those features or not is
 initially configured by <command moreinfo="none">config-gfarm</command>.
 If you would like to enable a feature after the configuration, run
 <command moreinfo="none">config-gfarm-update --update</command> with
-<option>-X</option> and/or <option>-r</option> options.
-The option <option>-X</option> enables XPath support and the option
-<option>-r</option> enables metadata replication.
+an option surrounded by [ ] in the list above.
 </para>
 
 <para>
@@ -111,6 +113,7 @@ postgresql data checksum support
 portmaster port              [-p]: 10602
 metadata replication         [-r]: yes
 metadata journal directory   [-j]: /var/gfarm-metadata/journal
+digest type                  [-d]: md5
 </screen>
 
 <para>
@@ -263,6 +266,18 @@ is specified.
 Enable metadata replication among metadata servers.
 This option takes effect only when also <option>--update</option> option
 is specified.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>
+Enable checksum calculation and specify the digest type of the checksum.
+The <parameter moreinfo="none">digest_type</parameter> argument is a
+lower-case name which is supported by the OpenSSL library on the host,
+such as "md5".
 </para>
 </listitem>
 </varlistentry>

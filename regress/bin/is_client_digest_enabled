@@ -1,0 +1,10 @@
+#!/bin/sh
+
+. ./regress.conf
+
+if [ X"`gfstatus client_digest_check`" = X"enabled" \
+  -a X"`gfstatus direct_local_access`" = X"enabled" ]; then
+	$regress/bin/is_digest_enabled
+else
+	exit $exit_fail
+fi

@@ -22,6 +22,7 @@ SRCS =	alloc.c \
 	logutil.c \
 	lru_cache.c \
 	nanosec.c \
+	privlock.c \
 	random.c \
 	send_no_sigpipe.c \
 	sleep.c \
@@ -42,7 +43,9 @@ OBJS =	alloc.lo \
 	limit.lo \
 	logutil.lo \
 	lru_cache.lo \
+	msgdigest.lo \
 	nanosec.lo \
+	privlock.lo \
 	random.lo \
 	send_no_sigpipe.lo \
 	sleep.lo \
@@ -52,7 +55,8 @@ OBJS =	alloc.lo \
 	timeval.lo \
 	utf8.lo
 
-CFLAGS = $(pthread_includes) $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR)
+CFLAGS = $(pthread_includes) $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) \
+	$(openssl_includes)
 
 all: $(LIBRARY)
 
@@ -72,7 +76,9 @@ hash_strptr.lo: hash.h
 limit.lo: gfutil.h
 logutil.lo: gfutil.h gflog_reduced.h
 lru_cache.lo: lru_cache.h
+msgdigest.lo: msgdigest.h
 nanosec.lo: nanosec.h
+privlock.lo: nanosec.h thrsubr.h gfutil.h
 random.lo: thrsubr.h
 sleep.lo: nanosec.h gfutil.h
 timer.lo: timer.h

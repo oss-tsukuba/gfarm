@@ -7,6 +7,8 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <time.h>
 #include <sys/types.h>
 
 #include <gfarm/gfarm.h>
@@ -14,6 +16,7 @@
 #include "hash.h"
 #include "thrsubr.h"
 
+#include "config.h"
 #include "auth.h"
 #include "gfm_proto.h"
 #include "gfutil.h"
@@ -25,10 +28,10 @@
 #include "host.h"
 #include "inode.h"
 #include "peer.h"
-#include "relay.h"
 #include "rpcsubr.h"
 #include "subr.h"
 #include "user.h"
+#include "replica_check.h"
 
 struct fsngroup_tuple {
 	char *hostname;
@@ -111,11 +114,11 @@ fsngroup_schedule_replication(
 	struct inode *inode, const char *repattr,
 	int n_srcs, struct host **srcs,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
-	int *n_being_removedp, struct host **being_removed,
-	const char *diag, int *n_successp, int *total_p)
+	int *n_being_removedp, struct host **being_removed, const char *diag,
+	int *total_p, int *req_ok_nump)
 {
 	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
-	int i, n_scope, next_src_index = 0;
+	int i, n_scope;
 	size_t nreps = 0;
 	gfarm_repattr_t *reps = NULL;
 	struct host **scope;
@@ -123,7 +126,7 @@ fsngroup_schedule_replication(
 	assert(repattr != NULL && srcs != NULL);
 
 	if (debug_mode)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004050,
 		    "%s: replicate inode %lld:%lld to fsngroup '%s'.",
 		    diag, (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode), repattr);
@@ -132,42 +135,53 @@ fsngroup_schedule_replication(
 
 	e = gfarm_repattr_parse(repattr, &reps, &nreps);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004051,
 		    "%s: %s", diag, gfarm_error_string(e));
 		return (e);
 	}
 	if (nreps == 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004052,
 		    "%s: can't parse a repattr: '%s'.", diag, repattr);
 		/* fall through */
-		e = GFARM_ERR_NO_ERROR;
 	}
 
-	for (i = 0; i < nreps; i++) {
-		int num;
-		const char *group = gfarm_repattr_group(reps[i]);
+	if (gfarm_replicainfo_enabled) {
+		int next_src_index = host_select_one(n_srcs, srcs, diag);
 
-		e = fsngroup_get_hosts(group, &n_scope, &scope);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_notice(GFARM_MSG_UNFIXED,
-			    "%s: fsngroup_get_hosts(%s): %s",
-			    diag, group, gfarm_error_string(e));
-			if (save_e == GFARM_ERR_NO_ERROR ||
-			    e == GFARM_ERR_NO_MEMORY)
+		for (i = 0; i < nreps; i++) {
+			const char *group = gfarm_repattr_group(reps[i]);
+			int num = gfarm_repattr_amount(reps[i]);
+
+			*total_p = *total_p + num;
+
+			e = fsngroup_get_hosts(group, &n_scope, &scope);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_notice(GFARM_MSG_1004053,
+				    "%s: fsngroup_get_hosts(%s): %s",
+				    diag, group, gfarm_error_string(e));
+				if (save_e == GFARM_ERR_NO_ERROR ||
+				    e == GFARM_ERR_NO_MEMORY)
+					save_e = e;
+				continue;
+			}
+			e = inode_schedule_replication_within_scope(
+			    inode, num, n_srcs, srcs, &next_src_index,
+			    &n_scope, scope, n_existingp, existing, grace,
+			    n_being_removedp, being_removed, diag,
+			    req_ok_nump);
+			if (e != GFARM_ERR_NO_ERROR &&
+			    (save_e == GFARM_ERR_NO_ERROR ||
+			     e == GFARM_ERR_NO_MEMORY))
 				save_e = e;
-			continue;
+			free(scope);
 		}
-		num = gfarm_repattr_amount(reps[i]);
-		*total_p = *total_p + num;
-		e = inode_schedule_replication_within_scope(
-		    inode, num, n_srcs, srcs, &next_src_index,
-		    &n_scope, scope, n_existingp, existing, grace,
-		    n_being_removedp, being_removed, diag, n_successp);
-		if (e != GFARM_ERR_NO_ERROR &&
-		    (save_e == GFARM_ERR_NO_ERROR ||
-		     e == GFARM_ERR_NO_MEMORY))
-			save_e = e;
-		free(scope);
+	} else {
+		/* ignore hostgroups, but the total number is used. */
+		for (i = 0; i < nreps; i++) {
+			int num = gfarm_repattr_amount(reps[i]);
+
+			*total_p = *total_p + num;
+		}
 	}
 
 	gfarm_repattr_free_all(nreps, reps);
@@ -180,7 +194,7 @@ fsngroup_schedule_replication(
 
 gfarm_error_t
 gfm_server_fsngroup_get_all(
-	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	struct peer *peer,
 	int from_client, int skip)
 {
 	/*
@@ -194,9 +208,7 @@ gfm_server_fsngroup_get_all(
 	 *		tuple{hostname::string, fsngroupname::string}[n]
 	 */
 
-	struct peer *mhpeer;
 	gfarm_error_t e;
-	int size_pos;
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_int32_t i, n = 0;
 	struct fsngroup_tuple *t = NULL;
@@ -205,27 +217,25 @@ gfm_server_fsngroup_get_all(
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	e = wait_db_update_info(peer, DBUPDATE_HOST, diag);
-	if (e == GFARM_ERR_NO_ERROR) {
+	{ /* XXX */
 		giant_lock();
 		e = fsngroup_get_tuples(&n, &t);
 		giant_unlock();
 
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004054,
 			    "%s: get_fsngroup_tuples(): %s",
 			    diag, gfarm_error_string(e));
 	}
 
-	e = gfm_server_put_reply_begin(peer, &mhpeer, xid, &size_pos, diag,
-	    e, "i", n);
+	e = gfm_server_put_reply(peer, diag, e, "i", n);
 
 	if (e == GFARM_ERR_NO_ERROR) {
 		for (i = 0; i < n; i++) {
 			e = gfp_xdr_send(client, "ss",
 				t[i].hostname, t[i].fsngroupname);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1004055,
 				    "%s@%s: %s: gfp_xdr_send() failed: %s",
 				    peer_get_username(peer),
 				    peer_get_hostname(peer),
@@ -233,7 +243,6 @@ gfm_server_fsngroup_get_all(
 				break;
 			}
 		}
-		gfm_server_put_reply_end(peer, mhpeer, diag, size_pos);
 	}
 
 	if (t != NULL)
@@ -244,7 +253,7 @@ gfm_server_fsngroup_get_all(
 
 gfarm_error_t
 gfm_server_fsngroup_get_by_hostname(
-	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	struct peer *peer,
 	int from_client, int skip)
 {
 	/*
@@ -261,13 +270,11 @@ gfm_server_fsngroup_get_by_hostname(
 	char *hostname = NULL;		/* Always need to be free'd */
 	char *fsngroupname = NULL;	/* Always need to be free'd */
 	static const char diag[] = "GFM_PROTO_FSNGROUP_GET_BY_HOSTNAME";
-	struct relayed_request *relay = NULL;
 
 	(void)from_client;
 
-	e = gfm_server_relay_get_request(
-		peer, sizep, skip, &relay, diag,
-		GFM_PROTO_FSNGROUP_GET_BY_HOSTNAME,
+	e = gfm_server_get_request(
+		peer, diag,
 		"s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR)
 		goto bailout;
@@ -276,18 +283,7 @@ gfm_server_fsngroup_get_by_hostname(
 		goto bailout;
 	}
 
-	/*
-	 * XXX FIXME:
-	 *
-	 *	We should take good care of the case like: The h is
-	 *	valid in mode != RELAY_TRANSFER but not valid in mode
-	 *	== RELAY_TRANSFER. Need a context like
-	 *	GFM_PROTO_SCHEDULE_HOST_DOMAIN.
-	 */
-	if (relay == NULL) {
-
-		/* do not relay RPC to master gfmd */
-
+	{
 		if (hostname != NULL && hostname[0] != '\0') {
 			struct host *h = NULL;
 
@@ -300,13 +296,13 @@ gfm_server_fsngroup_get_by_hostname(
 			giant_unlock();
 
 			if (h == NULL) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1004056,
 					"host \"%s\" does not exist.",
 					hostname);
 				e = GFARM_ERR_NO_SUCH_OBJECT;
 			}
 		} else {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004057,
 				"an invalid hostname parameter (nul).");
 			e = GFARM_ERR_INVALID_ARGUMENT;
 		}
@@ -314,11 +310,11 @@ gfm_server_fsngroup_get_by_hostname(
 	}
 
 	if (fsngroupname != NULL)
-		e = gfm_server_relay_put_reply(
-			peer, xid, sizep, relay, diag, &e, "s", &fsngroupname);
+		e = gfm_server_put_reply(
+			peer, diag, e, "s", fsngroupname);
 	else
-		e = gfm_server_relay_put_reply(
-			peer, xid, sizep, relay, diag, &e, "");
+		e = gfm_server_put_reply(
+			peer, diag, e, "");
 
 bailout:
 	free(hostname);
@@ -329,7 +325,7 @@ bailout:
 
 gfarm_error_t
 gfm_server_fsngroup_modify(
-	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	struct peer *peer,
 	int from_client, int skip)
 {
 	/*
@@ -343,13 +339,10 @@ gfm_server_fsngroup_modify(
 
 	static const char diag[] = "GFM_PROTO_FSNGROUP_MODIFY";
 	gfarm_error_t e;
-	struct relayed_request *relay;
 	char *hostname;
 	char *fsngroupname;
 
-	e = gfm_server_relay_get_request(
-		peer, sizep, skip, &relay, diag,
-		GFM_PROTO_FSNGROUP_MODIFY,
+	e = gfm_server_get_request(peer, diag,
 		"ss", &hostname, &fsngroupname);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -358,19 +351,18 @@ gfm_server_fsngroup_modify(
 		goto bailout;
 	}
 
-	if (relay == NULL) {
-		/* do not relay RPC to master gfmd */
+	{
 		struct host *h = NULL;
 		struct user *user = peer_get_user(peer);
 
 		giant_lock();
 
 		if (!from_client || user == NULL || !user_is_admin(user)) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004058,
 			    "operation is not permitted");
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else if ((h = host_lookup(hostname)) == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004059,
 				"host does not exists");
 			e = GFARM_ERR_NO_SUCH_OBJECT;
 		} else if ((e = host_fsngroup_modify(h, fsngroupname, diag)) !=
@@ -378,16 +370,18 @@ gfm_server_fsngroup_modify(
 			;
 		} else if ((e = db_fsngroup_modify(hostname, fsngroupname)) !=
 		    GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1004060,
 				"db_fsngroup_modify failed: %s",
 				gfarm_error_string(e));
 			/* XXX - need to revert the change in memory? */
 		}
 
 		giant_unlock();
+
+		if (e == GFARM_ERR_NO_ERROR)
+			replica_check_start_fsngroup_modify();
 	}
-	e = gfm_server_relay_put_reply(
-		peer, xid, sizep, relay, diag, &e, "");
+	e = gfm_server_put_reply(peer, diag, e, "");
 
 bailout:
 	free(hostname);

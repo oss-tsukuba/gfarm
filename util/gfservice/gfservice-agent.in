@@ -149,6 +149,12 @@ set_gfmd_params()
 		&& log_error "failed to get gfmd port"
 	log_debug "set_gfmd_params: set GFMD_PORT=$GFMD_PORT"
 
+	AUTH_TYPE=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne '/^AUTH_TYPE=/s/^[^=]*=//p'`
+	[ "X$AUTH_TYPE" = X ] \
+		&& log_error "failed to get auth type"
+	log_debug "set_gfmd_params: set AUTH_TYPE=$AUTH_TYPE"
+
 	GFARM_CONF=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne '/^GFARM_CONF=/s/^[^=]*=//p'`
 	[ "X$GFARM_CONF" = X ] \
@@ -321,15 +327,18 @@ unset_conf()
 #
 restore_file()
 {
-	log_debug "replace_file: FILE=$1"
+	log_debug "replace_file: FILE=$1 UMASK=$2"
 
 	mkdir -p `dirname $GFARM_CONF`
 	trap "rm -f $1.tmp; exit 1" 1 2 3 15
 	rm -f $1.tmp
+	(
+	umask $2
 	cp -f $1 $1.tmp
 	cat /dev/null > $1.tmp
 
 	cat > $1.tmp && mv -f $1.tmp $1
+	)
 	[ $? -ne 0 ] && log_error "failed to replace $1"
 	rm -f $1.tmp
 
@@ -834,6 +843,10 @@ subcmd_config_gfarm()
 	eval config-gfarm $CONFIG_GFARM_OPTIONS
 	[ $? -ne 0 ] && log_error "config-gfarm failed"
 
+	case $AUTH_TYPE in
+	gsi|gsi_auth) set_conf $GFMD_CONF auth 'enable sharedsecret *';;
+	esac
+
 	log_debug "end subcmd_config_gfarm"
 }
 
@@ -851,6 +864,10 @@ subcmd_config_gfarm_master()
 	[ $? -ne 0 ] && log_error "config-gfarm failed"
 
 	unset_conf $GFMD_CONF metadb_server_force_slave
+	case $AUTH_TYPE in
+	gsi|gsi_auth) set_conf $GFMD_CONF auth 'enable sharedsecret *';;
+	esac
+
 	set_conf $GFARM_CONF metadb_server_list \
 		"${BACKEND_HOSTNAME}:${GFMD_PORT}"
 
@@ -1208,8 +1225,7 @@ subcmd_restore_gfmd_conf()
 {
 	log_debug "subcmd_restore_gfmd_conf"
 
-	umask 077
-	restore_file $GFMD_CONF 
+	restore_file $GFMD_CONF 077
 
 	log_debug "end subcmd_restore_gfmd_conf"
 }
@@ -1222,8 +1238,7 @@ subcmd_restore_gfarm_conf()
 {
 	log_debug "subcmd_restore_gfarm_conf"
 
-	umask 022
-	restore_file $GFARM_CONF 
+	restore_file $GFARM_CONF 022
 
 	log_debug "end subcmd_restore_gfarm_conf"
 }
@@ -1237,8 +1252,7 @@ subcmd_restore_gfsd_conf()
 	log_debug "subcmd_restore_gfsd_conf"
 
 	[ "X$GFSD_CONF" = X ] && log_error "not private mode"
-	umask 022
-	restore_file $GFSD_CONF
+	restore_file $GFSD_CONF 022
 
 	log_debug "end subcmd_restore_gfsd_conf"
 }
@@ -1252,8 +1266,7 @@ subcmd_restore_usermap()
 	log_debug "subcmd_restore_usermap"
 
 	[ "X$USERMAP_FILE" = X ] && log_error "not private mode"
-	umask 022
-	restore_file $USERMAP_FILE
+	restore_file $USERMAP_FILE 022
 
 	log_debug "end subcmd_restore_usermap"
 }
@@ -1266,8 +1279,7 @@ subcmd_restore_shared_key()
 {
 	log_debug "subcmd_restore_shared_key"
 
-	umask 077
-	restore_file $SHARED_KEY_FILE
+	restore_file $SHARED_KEY_FILE 077
 
 	log_debug "end subcmd_restore_shared_key"
 }

@@ -1,22 +1,13 @@
 '\" t
 .\"     Title: gfstatus
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 19 Dec 2008
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 27 Jan 2016
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSTATUS" "1" "19 Dec 2008" "Gfarm" "Gfarm"
-.\" -----------------------------------------------------------------
-.\" * Define some portability stuff
-.\" -----------------------------------------------------------------
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.\" http://bugs.debian.org/507673
-.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.ie \n(.g .ds Aq \(aq
-.el       .ds Aq '
+.TH "GFSTATUS" "1" "27 Jan 2016" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -31,10 +22,46 @@
 gfstatus \- Gfarmファイルシステムの情報を表示する
 .SH "SYNOPSIS"
 .HP \w'\fBgfstatus\fR\ 'u
-\fBgfstatus\fR [\fIオプション\fR]
+\fBgfstatus\fR [\-P\ \fIpath\fR] [\-d]
+.HP \w'\fBgfstatus\fR\ 'u
+\fBgfstatus\fR [\-P\ \fIpath\fR] [\-d | \-M] \fI設定名称\fR...
+.HP \w'\fBgfstatus\fR\ 'u
+\fBgfstatus\fR \-Mm [\-P\ \fIpath\fR] [\-d] \fI設定ディレクティブ\fR...
+.HP \w'\fBgfstatus\fR\ 'u
+\fBgfstatus\fR \-V
 .SH "DESCRIPTION"
 .PP
-Gfarmファイルシステムの情報を表示します．
+引数に，設定ディレクティブを指定しない場合， Gfarmファイルシステムの情報を表示します．
+.PP
+引数に，設定名称を指定した場合，その設定値を表示します． \-M オプションを指定した場合は，gfmd に設定を問い合わせ， 指定しない場合は，ローカルホストでの設定値を表示します． ただし，今のところ，ごく限られたディレクティブのみが指定できます．
+.PP
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	$ gfstatus \-M digest
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+オプションに \-Mm を指定した場合，
+\fBgfstatus\fR
+コマンドは， 引数を gfarm2\&.conf と同じ文法の設定ディレクティブと見なし， gfmd 上のその設定を書き換えます． ただし，今のところ，ごく限られたディレクティブのみが指定できます．
+.PP
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	$ gfstatus \-Mm \'digest sha1\'
+.fi
+.if n \{\
+.RE
+.\}
 .SH "OPTIONS"
 .PP
 \fB\-d\fR
@@ -42,12 +69,27 @@ Gfarmファイルシステムの情報を表示します．
 デバッグメッセージを表示します．
 .RE
 .PP
+\fB\-M\fR
+.RS 4
+設定値の問い合わせや，設定の変更を，gfmd に対して行ないます．
+.RE
+.PP
+\fB\-m\fR
+.RS 4
+設定の変更を行ないます． \-M オプションと組み合わせて使います．
+.RE
+.PP
 \fB\-P\fR \fIパス名\fR
 .RS 4
 指定したパス名により特定のメタデータサーバを指定します．
 .RE
 .PP
+\fB\-V\fR
+.RS 4
+Gfarm のバージョンを表示します．
+.RE
+.PP
 \fB\-?\fR
 .RS 4
-引数オプションを表示します。
+引数オプションを表示します．
 .RE

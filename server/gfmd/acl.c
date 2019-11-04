@@ -3,14 +3,11 @@
  */
 
 #include <sys/types.h>
-#include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/gfarm.h>
-
-#include "gfp_xdr.h"
 
 #include "inode.h"
 #include "user.h"

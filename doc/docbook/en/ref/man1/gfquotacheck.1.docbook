@@ -5,7 +5,7 @@
 
 <refentry id="gfquotacheck.1">
 
-<refentryinfo><date>23 Mar 2011</date></refentryinfo>
+<refentryinfo><date>25 Aug 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfquotacheck</refentrytitle>
@@ -15,7 +15,7 @@
 
 <refnamediv id="name">
 <refname>gfquotacheck</refname>
-<refpurpose>build a table of current usage and enable the quota check
+<refpurpose>rebuild a table of file usage
 </refpurpose>
 </refnamediv>
 
@@ -28,9 +28,8 @@
 
 <refsect1 id="description"><title>DESCRIPTION</title>
 
-<para><command moreinfo="none">gfquotacheck</command> builds a table of the current
-usage for users and groups whose quota are edited by gfedquota, and
-enables the quota check.</para>
+<para><command moreinfo="none">gfquotacheck</command> rebuilds a table
+of the current file usage for users and groups.</para>
 
 <para>This command can be executed by an administrator in the gfarmadm
 group.</para>

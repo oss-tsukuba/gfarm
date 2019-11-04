@@ -20,15 +20,7 @@
 #include "gfpath.h"
 #define GFARM_USE_STDIO
 #include "config.h"
-
-static void
-gfarm_config_set_default_spool_on_server(void)
-{
-	if (gfarm_spool_root == NULL) {
-		/* XXX - this case is not recommended. */
-		gfarm_spool_root = GFARM_SPOOL_ROOT;
-	}
-}
+#include "config_openssl.h"
 
 /* the following function is for server. */
 gfarm_error_t
@@ -39,7 +31,6 @@ gfarm_server_config_read(void)
 	FILE *config;
 	char *config_file = gfarm_config_get_filename();
 
-	gfarm_init_config();
 	if ((config = fopen(config_file, "r")) == NULL) {
 		gflog_debug(GFARM_MSG_1000976,
 			"open operation on server config file (%s) failed",
@@ -66,11 +57,12 @@ gfarm_server_initialize(char *config_file, int *argcp, char ***argvp)
 	gfarm_error_t e;
 
 	if ((e = gfarm_context_init()) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003865,
 			"gfarm_context_init failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
+	gfarm_openssl_initialize();
 	gflog_initialize();
 	if (argvp)
 		gfarm_config_set_argv0(**argvp);
@@ -86,8 +78,6 @@ gfarm_server_initialize(char *config_file, int *argcp, char ***argvp)
 	}
 
 	gfarm_setup_debug_command();
-
-	gfarm_config_set_default_spool_on_server();
 
 	return (GFARM_ERR_NO_ERROR);
 }

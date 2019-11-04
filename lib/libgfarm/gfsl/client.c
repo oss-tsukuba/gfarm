@@ -9,6 +9,7 @@
 #include <limits.h>
 
 #include <gfarm/error.h>
+#include <gfarm/gflog.h>
 
 #include "gfutil.h"
 

@@ -6,7 +6,7 @@
 
 <refentry id="gfsd.8">
 
-<refentryinfo><date>08 Nov 2012</date></refentryinfo>
+<refentryinfo><date>5 March 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsd</refentrytitle>
@@ -133,6 +133,8 @@ to provide multiple spool directories on the host.
 <listitem>
 <para>Specifies a spool directory
 for a Gfarm filesystem on this filesystem node.
+This option can be specified multiple times to specify multiple spool
+directories up to five.
 </para>
 </listitem>
 </varlistentry>

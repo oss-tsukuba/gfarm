@@ -22,6 +22,26 @@ lib/libgfarm/gfarm/gfs_pio_open/file_trunc.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc_read.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc_not_writable.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc_not_writable_rdonly.sh
+lib/libgfarm/gfarm/gfs_pio_open/0byte_no_replica.sh
+lib/libgfarm/gfarm/gfs_pio_open/gfs_pio_recvfile.remote.sh
+lib/libgfarm/gfarm/gfs_pio_open/gfs_pio_recvfile.local.sh
+lib/libgfarm/gfarm/gfs_pio_open/gfs_pio_sendfile.remote.sh
+lib/libgfarm/gfarm/gfs_pio_open/gfs_pio_sendfile.local.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_basic.local.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_basic.remote.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_mismatch.local.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_mismatch.remote.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_mismatch_bufsize.local.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_mismatch_bufsize.remote.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_no_check.local.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_no_check.remote.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_mixed.local.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_mixed.remote.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_simultaneous.local.sh
+lib/libgfarm/gfarm/gfs_pio_open/cksum_simultaneous.remote.sh
+lib/libgfarm/gfarm/gfs_pio_stat/gfs_stat_pio_stat_consistency.sh
+lib/libgfarm/gfarm/gfs_pio_stat/gfs_pio_stat_mtime.sh
+lib/libgfarm/gfarm/gfs_pio_stat/replica_mtime.sh
 lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/file_busy/file_busy.sh
 lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/in_progress/in_progress.sh
 lib/libgfarm/gfarm/gfs_stat_cached/purge.sh
@@ -43,6 +63,7 @@ lib/libgfarm/gfarm/gfs_realpath/realpath.sh
 lib/libgfarm/gfarm/gfs_realpath/realpath_mds2.sh
 
 # gftool/config-gfarm
+gftool/gfmdhost/gfmdhost.sh
 gftool/gfhost/gfhost-c.sh
 gftool/gfhost/gfhost-c.name.toolong.sh
 gftool/gfhost/gfhost-c.arch.toolong.sh
@@ -61,7 +82,6 @@ gftool/gfuser/gfuser-m.sh
 gftool/gfuser/gfuser-m.gsi_dn.toolong.sh
 gftool/gfuser/gfuser-m.self.realname.sh
 gftool/gfuser/gfuser.not-exist.sh
-gftool/gfgroup/gfgroup.sh
 gftool/gfgroup/gfgroup.not-exist.sh
 gftool/gfgroup/gfgroup.0-nusers.sh
 gftool/gfjournal/bad_record_crc1.sh
@@ -84,6 +104,7 @@ gftool/gfln/gfln-s_toolong.sh
 gftool/gfls/root.sh
 gftool/gfls/notexist.sh
 gftool/gfls/unknownhost.sh
+gftool/gflsof/gflsof-G.sh
 gftool/gfmkdir/mkdir.sh
 gftool/gfmkdir/mkdir_toolong.sh
 gftool/gfmkdir/dir_nlink.sh
@@ -104,6 +125,9 @@ gftool/gfrm/1byte.sh
 #gftool/gfsetfacl/acl.sh
 gftool/gfsetfacl/acl-light.sh
 gftool/gfstat/gfstat.sh
+gftool/gftest/gftest_reg.sh
+gftool/gftest/gftest_dir.sh
+gftool/gftest/gftest_symlink.sh
 gftool/gfexport/0byte.sh
 gftool/gfexport/1byte.sh
 gftool/gfexport/gfexport_top_rel_symlink.sh
@@ -119,10 +143,15 @@ gftool/gfchmod/gfchmod_symlink.sh
 gftool/gfchmod/gfchmod-h.sh
 gftool/gfchown/gfchown.sh
 gftool/gfchown/gfchown-h.sh
+gftool/gfcksum/gfcksum-c.sh
+gftool/gfcksum/gfcksum-c.mismatch.sh
 gftool/gfstatus/gfstatus_mds2.sh
 gftool/gfwhoami/gfwhoami.sh
 gftool/gfwhoami/gfwhoami_mds2.sh
+gftool/gfxattr/gfxattr-long-value.sh
 gftool/gfxattr/gfxattr-xml-long-value.sh
+gftool/gfxattr/gfxattr-size-limit.sh
+gftool/gfxattr/gfxattr-xml-size-limit.sh
 gftool/gfxattr/gfxattr-xml-non-utf8-value.sh
 gftool/gfncopy/gfncopy-s.sh
 gftool/gfncopy/gfncopy-S-repattr.sh
@@ -142,8 +171,13 @@ server/gfmd/db_journal/db_journal_open.sh
 server/gfmd/db_journal/db_journal_write.sh
 server/gfmd/db_journal/db_journal_ops.sh
 server/gfmd/db_journal/db_journal_apply.sh
-server/gfmd/replica_check/ncopy.sh   ### wait at least 10 seconds
-server/gfmd/replica_check/repattr.sh ### wait at least 10 seconds
+## Tests for replica_check may fail when gfsd load average exceeds
+## schedule_busy_load_thresh.
+server/gfmd/replica_check/ncopy.sh
+server/gfmd/replica_check/repattr.sh
+server/gfmd/replica_check/ncopy-nlink2.sh   ### wait at least 10 seconds
+server/gfmd/replica_check/repattr-nlink2.sh ### wait at least 10 seconds
+server/gfmd/replica_check/remove_grace.sh   ### wait at least 12 seconds
 
 # manual test: see log file when the result is UNSUPPORTED
 manual/server/gfsd/spool_check/lost_found.sh

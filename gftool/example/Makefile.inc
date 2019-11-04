@@ -1,1 +1,0 @@
-bindir = $(example_bindir)

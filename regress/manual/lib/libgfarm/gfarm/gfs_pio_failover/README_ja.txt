@@ -35,24 +35,29 @@
     アクセスしてきても、クライアント側は connection resuse を検知して
     リトライするので、sleep等を入れる必要はない。
 
-    gfmd を gfservice(1) を使用してフェイルオーバさせるには
-    gfmd-failover-local-gfservice.sh が利用できる。
+    フェイルオーバーに利用する制御するアカウントに対し ssh でアクセスが
+    可能な場合には、gfmd-failover-local.ssh.sh が利用できる。
+    このスクリプトを利用するためには、環境変数 CONFIG_PREFIX に、
+    config-gfarm 時に指定したプリフィックスを設定しておくこと。
+    このスクリプトでは、マスターgfmdの他に、同期スレーブgfmdが
+    少なくとも1台は存在することを仮定し、マスターと同期スレーブのうち
+    1台を、交互にフェイルオーバーさせる。
 
+    あるいは gfmd を gfservice(1) を使用してフェイルオーバさせるには
+    gfmd-failover-local.gfservice.sh が利用できる。
     gfservice の設定ファイルである gfservice.conf をテストに用いる
     Gfarm環境に合せて用意し、~/.gfserviceとして保存するか、環境変数
     GFSERVICE_CONF に gfservice.conf のパスを設定して、テストを実行す
     る。gfservice および gfservice.conf についてはそれぞれmanを参照の
     こと。
-
-    gfmd-failover-local-gfservice.sh では master 1台、slave 2台でGfarm
+    gfmd-failover-local.gfservice.sh では master 1台、slave 2台でGfarm
     環境が構築されていることを前提にし、gfmd1 と gfmd2 を交互にフェイ
-    ルオーバさせる。 gfmd-failover-local-gfservice.sh では"master"およ
+    ルオーバさせる。 gfmd-failover-local.gfservice.sh では"master"およ
     び"slave"というファイルにそれぞれ、現在の master gfmdと slave
     gfmd を保存する。 "master"ファイルが存在しない場合、gfmd1をマスタ
     としてフェイルオーバを実行する。
-
     スレーブの台数が上記とは異なる場合、メタデータのバックアップ/リス
-    トア処理を台数に合せて gfmd-failover-local-gfservice.shを修正する
+    トア処理を台数に合せて gfmd-failover-local.gfservice.shを修正する
     必要がある。
 
   - テスト用データの setup/cleanup は test-all.sh 内で実行されるため、

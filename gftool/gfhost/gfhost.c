@@ -1076,7 +1076,7 @@ list_all(const char *architecture, const char *domainname,
 
 	if (nhosts == 0 || ndisplayed == 0) {
 		fprintf(stderr, "%s: %s\n",  program_name,
-		    gfarm_error_string(GFARM_ERRMSG_NO_FILESYSTEM_NODE));
+		    gfarm_error_string(GFARM_ERR_NO_FILESYSTEM_NODE));
 		return (GFARM_ERR_UNKNOWN_HOST);
 	}
 

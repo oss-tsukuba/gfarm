@@ -10,6 +10,7 @@ DAEMON="@config_gfarm_prefix@/sbin/$NAME"
 PIDFILE="@config_gfarm_gfmd_pid_file@"
 CONF="@config_gfarm_gfmd_config@"
 OPTIONS="@config_gfarm_gfmd_option@"
+export GLOBUS_THREAD_MODEL=pthread
 
 trap "" 1
 export LANG=C

@@ -1,24 +1,22 @@
-all: man-all post-all-hook
-install: man-install post-install-hook
-clean: man-clean post-clean-hook
-veryclean: man-veryclean post-very-clean-hook
-distclean: man-distclean post-distclean-hook
-gfregister: man-gfregister post-gfregister-hook
+all: post-all-hook
+install: post-install-hook
+clean: post-clean-hook
+veryclean: post-veryclean-hook
+distclean: post-distclean-hook
 man: man-man
 html: man-html
 msgno: man-msgno
 catalog: man-catalog
 
-post-all-hook:
-post-install-hook:
-post-clean-hook:
-post-very-clean-hook:
-post-distclean-hook:
-post-gfregister-hook:
+post-all-hook: man-all
+post-install-hook: man-install
+post-clean-hook: man-clean
+post-veryclean-hook: man-veryclean
+post-distclean-hook: man-distclean
 
 man-all:
 
-man-install:
+man-install: all
 	@for i in -- $(MAN); do \
 		case $$i in --) continue;; esac; \
 		suffix=`expr $$i : '.*\.\([^.]*\)$$'`; \
@@ -39,8 +37,6 @@ man-veryclean: clean
 
 man-distclean: veryclean
 	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
-
-man-gfregister:
 
 $(DOCBOOK2MAN_XSL): $(srcdir)/$(DOCBOOK2MAN_XSL).in
 	for i in -- $(DOCBOOK_XSLDIRS); do \

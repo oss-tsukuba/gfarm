@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfncopy</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfncopy">
 <a name="gfncopy.1"></a><div class="titlepage"></div>
@@ -35,11 +35,17 @@ repilcas.
 <div class="variablelist"><dl>
 <dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>NCOPY</code></em></span></dt>
 <dd><p>specifies the attribute for automatic replication represented by
-the number of file replicas to a file or directory.</p></dd>
+the number of file replicas to a file or directory.
+<em class="parameter"><code>NCOPY</code></em> is stored in the extended
+attribute of gfarm.ncopy.
+</p></dd>
 <dt><span class="term"><code class="option">-S</code> <em class="parameter"><code>REPATTR</code></em></span></dt>
 <dd>
 <p>specifies the attribute for automatic replication represented by
-host groups to a file or directory.</p>
+host groups to a file or directory.
+<em class="parameter"><code>REPATTR</code></em> is stored in the extended
+attribute of gfarm.replicainfo.
+</p>
 <p>
 a <em class="parameter"><code>REPATTR</code></em> is represented by the following BNF:
 </p>
@@ -104,7 +110,8 @@ Default is 30 seconds.
 <div class="refsect1" title="SEE ALSO">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
-  <span class="citerefentry"><span class="refentrytitle">gfhostgroup</span>(1)</span>
+  <span class="citerefentry"><span class="refentrytitle">gfhostgroup</span>(1)</span>,
+  <span class="citerefentry"><span class="refentrytitle">gfarm_attr</span>(5)</span>
 </p>
 </div>
 </div></body>

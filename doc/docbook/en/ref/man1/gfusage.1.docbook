@@ -49,6 +49,24 @@ by <command moreinfo="none">gfedquota</command> and
 </varlistentry>
 
 <varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>Displays numbers in human readable format by adding a prefix multiplier
+symbol like "M" (mega).  Since this option uses powers of 1024,
+"M" means 1,048,576.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-H</option></term>
+<listitem>
+<para>Displays numbers in human readable format by adding a prefix multiplier
+symbol like "M" (mega).  Since this option uses powers of 1000,
+"M" means 1,000,000.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>Displays a list of command options.</para>

@@ -3,7 +3,6 @@
  */
 
 #include <pthread.h>	/* db_access.h currently needs this */
-#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -13,11 +12,9 @@
 
 #include "gfutil.h"
 
-#include "gfp_xdr.h"
 #include "config.h"
-#include "metadb_server.h"
-
 #include "quota.h"
+#include "metadb_server.h"
 #include "db_access.h"
 #include "db_ops.h"
 
@@ -202,6 +199,12 @@ empty_filecopy(gfarm_uint64_t seqnum, struct db_filecopy_arg *arg)
 }
 
 static gfarm_error_t
+empty_filecopy_remove_by_host(gfarm_uint64_t seqnum, char *hostname)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 empty_filecopy_load(
 	void *closure,
 	void (*callback)(void *, gfarm_ino_t, char *))
@@ -213,6 +216,12 @@ empty_filecopy_load(
 
 static gfarm_error_t
 empty_deadfilecopy(gfarm_uint64_t seqnum, struct db_deadfilecopy_arg *arg)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+empty_deadfilecopy_remove_by_host(gfarm_uint64_t seqnum, char *hostname)
 {
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -397,10 +406,12 @@ const struct db_ops empty_ops = {
 
 	empty_filecopy,
 	empty_filecopy,
+	empty_filecopy_remove_by_host,
 	empty_filecopy_load,
 
 	empty_deadfilecopy,
 	empty_deadfilecopy,
+	empty_deadfilecopy_remove_by_host,
 	empty_deadfilecopy_load,
 
 	empty_direntry,

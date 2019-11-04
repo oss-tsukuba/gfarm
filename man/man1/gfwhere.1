@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: gfwhere
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 17 Nov 2015
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 12 Mar 2016
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFWHERE" "1" "17 Nov 2015" "Gfarm" "Gfarm"
+.TH "GFWHERE" "1" "12 Mar 2016" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -44,7 +53,12 @@ Displays replicas on filesystem nodes which are currently down as well\&.
 .PP
 \fB\-F\fR
 .RS 4
-Displays the following indicators just after each hostname\&. If the replica has been logically removed, but may still remain phisically, ";" and the replica\'s generation number are displayed\&. If the replica is incomplete because it\'s in the midst of replication, "?" is displayed\&. If the host is currently down, "\-" is displayed\&.
+Displays the following indicators just after each hostname\&. If the replica has been logically removed, but may still remain phisically, ";" and the replica\*(Aqs generation number are displayed\&. If the replica is incomplete because it\*(Aqs in the midst of replication, "?" is displayed\&. If the host is currently down, "\-" is displayed\&.
+.RE
+.PP
+\fB\-h\fR \fIhost\fR
+.RS 4
+Only displays files stored on the specified host\&. When the \-h option is specified multiple times, it displays files stored on all specified hosts\&. When the host A and host B are specified, it displays files stored on both host A and host B\&. The \-h option can be specified up to three times\&.
 .RE
 .PP
 \fB\-i\fR
@@ -81,6 +95,11 @@ If
 option or
 \fB\-a\fR
 option is specified, this displays an indicator which shows whether this replica is obsolete (o) or not (\-) at next column\&. In the former case, this replica has been logicall removed\&.
+.RE
+.PP
+\fB\-m\fR \fIN\fR
+.RS 4
+Only displays files having less than or equal to N replicas and having greater than 0 bytes\&.
 .RE
 .PP
 \fB\-o\fR

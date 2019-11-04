@@ -28,12 +28,11 @@ struct gfm_replicate_file_from_to_closure {
 
 static gfarm_error_t
 gfm_replicate_file_from_to_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx,
 	void *closure)
 {
 	struct gfm_replicate_file_from_to_closure *c = closure;
 	gfarm_error_t e = gfm_client_replicate_file_from_to_request(
-	    gfm_server, ctx, c->srchost, c->dsthost, c->flags);
+	    gfm_server, c->srchost, c->dsthost, c->flags);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1001386,
@@ -44,10 +43,9 @@ gfm_replicate_file_from_to_request(struct gfm_connection *gfm_server,
 
 static gfarm_error_t
 gfm_replicate_file_from_to_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+	void *closure)
 {
-	gfarm_error_t e = gfm_client_replicate_file_from_to_result(
-	    gfm_server, ctx);
+	gfarm_error_t e = gfm_client_replicate_file_from_to_result(gfm_server);
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
@@ -136,13 +134,16 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server = gfs_pio_metadb(gf);
 	struct gfs_connection *gfs_server;
-	int nretry = 1, gfsd_retried = 0, failover_retried = 0;
+	int gfsd_nretries = GFS_CONN_RETRY_COUNT;
+	int failover_nretries = GFS_FAILOVER_RETRY_COUNT;
 
 retry:
 	gfm_server = gfs_pio_metadb(gf);
-	if ((e = gfs_client_connection_and_process_acquire(
-	    &gfm_server, dsthost, dstport, &gfs_server, NULL))
-		!= GFARM_ERR_NO_ERROR) {
+	gfm_client_connection_addref(gfm_server);
+	e = gfs_client_connection_and_process_acquire(
+	    &gfm_server, dsthost, dstport, &gfs_server, NULL);
+	gfm_client_connection_delref(gfm_server);
+	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001388,
 			"acquirement of client connection failed: %s",
 			gfarm_error_string(e));
@@ -153,38 +154,34 @@ retry:
 	    gfs_pio_fileno(gf));
 	gfs_client_connection_free(gfs_server);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003982,
 		    "gfs_client_replica_add_from: %s",
 		    gfarm_error_string(e));
-		if (nretry-- > 0) {
-			if (gfs_client_is_connection_error(e)) {
-				gfsd_retried = 1;
+		if (gfs_client_is_connection_error(e) &&
+		    --gfsd_nretries >= 0)
+			goto retry;
+		if (gfs_pio_should_failover(gf, e) &&
+		    --failover_nretries >= 0) {
+			if ((e = gfs_pio_failover(gf)) == GFARM_ERR_NO_ERROR)
 				goto retry;
-			}
-			if (gfs_pio_should_failover(gf, e)) {
-				if ((e = gfs_pio_failover(gf))
-				    != GFARM_ERR_NO_ERROR) {
-					gflog_debug(GFARM_MSG_UNFIXED,
-					    "gfs_pio_failover: %s",
-					    gfarm_error_string(e));
-				} else {
-					failover_retried = 1;
-					goto retry;
-				}
-			}
+			gflog_debug(GFARM_MSG_1003983,
+			    "gfs_pio_failover: %s",
+			    gfarm_error_string(e));
 		}
 	}
 	if ((e == GFARM_ERR_ALREADY_EXISTS || e == GFARM_ERR_FILE_BUSY) &&
-	    (gfsd_retried || failover_retried)) {
+	    (gfsd_nretries != GFS_CONN_RETRY_COUNT ||
+	     failover_nretries != GFS_FAILOVER_RETRY_COUNT)) {
 		gflog_notice(GFARM_MSG_1003453,
 		    "error ocurred at retry for the operation after "
 		    "connection to %s, "
 		    "so the operation possibly succeeded in the server."
 		    " error='%s'",
-		    gfsd_retried && failover_retried ?
+		    (gfsd_nretries != GFS_CONN_RETRY_COUNT &&
+		     failover_nretries != GFS_FAILOVER_RETRY_COUNT) ?
 		    "gfsd was disconnected and connection to "
 		    "gfmd was failed over" :
-		    gfsd_retried ?
+		    gfsd_nretries != GFS_CONN_RETRY_COUNT ?
 		    "gfsd was disconnected" :
 		    "gfmd was failed over" ,
 		    gfarm_error_string(e));
@@ -241,9 +238,21 @@ gfs_replicate_to_local(GFS_File gf, char *srchost, int srcport)
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server = gfs_pio_metadb(gf);
 	char *self;
-	int port;
+	int port, nretries = GFS_FAILOVER_RETRY_COUNT;
 
-	e = gfm_host_get_canonical_self_name(gfm_server, &self, &port);
+	for (;;) {
+		e = gfm_host_get_canonical_self_name(gfm_server, &self, &port);
+		if (e == GFARM_ERR_NO_ERROR)
+			break;
+		if (!gfm_client_connection_should_failover(
+		    gfs_pio_metadb(gf), e) || nretries-- <= 0)
+			break;
+		if ((e = gfs_pio_failover(gf)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1003984,
+			    "gfs_pio_failover: %s", gfarm_error_string(e));
+			break;
+		}
+	}
 	if (e == GFARM_ERR_NO_ERROR) {
 		e = gfs_replicate_from_to_internal(gf, srchost, srcport,
 		    self, port);

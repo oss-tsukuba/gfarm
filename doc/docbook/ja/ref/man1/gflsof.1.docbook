@@ -1,0 +1,211 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+
+<refentry id="gflsof.1">
+
+<refentryinfo><date>27 Sep 2016</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gflsof</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id="name">
+<refname>gflsof</refname>
+<refpurpose>現在オープンされている Gfarm ファイルのリストを表示する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gflsof</command>
+    <arg choice="opt" rep="norepeat">-AW</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>パス名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>gfsdのドメイン名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-U <replaceable>ユーザーホストのドメイン名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-u <replaceable>ユーザー名</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gflsof</command>
+    <arg choice="opt" rep="norepeat">-AW</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>パス名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>gfsdのドメイン名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-U <replaceable>ユーザーホストのドメイン名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-u <replaceable>ユーザー名</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-C</arg>
+</cmdsynopsis>
+
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gflsof</command>
+    <arg choice="opt" rep="norepeat">-AW</arg>
+    <arg choice="opt" rep="norepeat">-P <replaceable>パス名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-D <replaceable>gfsdのドメイン名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-U <replaceable>ユーザーホストのドメイン名</replaceable></arg>
+    <arg choice="opt" rep="norepeat">-u <replaceable>ユーザー名</replaceable></arg>
+    <arg choice="plain" rep="norepeat">-G</arg>
+</cmdsynopsis>
+
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>
+<option>-C</option> オプションや <option>-G</option> を指定しない場合、
+現在オープン中の Gfarm ファイルについて、ファイルディスクリプタ毎の情報を
+表示します。
+表示の
+USER 欄はユーザー名、
+GPID 欄は Gfarm プロセスID、
+FD 欄は Gfarm ファイルディスクリプタ番号、
+ファイルディスクリプタ番号の直後の文字が 'r' の場合 read-only オープン、
+ファイルディスクリプタ番号の直後の文字が 'w' の場合 write-only オープン、
+ファイルディスクリプタ番号の直後の文字が 'u' の場合 read-write オープン、
+TYPE 欄はファイル (REG) / ディレクトリ (DIR) / シンボリックリンク (LNK) の種別、
+INODE 欄は inode 番号、
+GEN 欄は inode の世代番号、
+SIZE/OFF 欄は
+ディレクトリの場合であればシーク・オフセット値、
+ファイルの場合であればファイル・サイズ、
+CLIENT 欄は gfmd に接続しているクライアントのホスト名とポート番号、
+GFSD 欄は gfmd に接続している gfsd のホスト名とポート番号
+です。
+</para>
+<para>
+<option>-C</option> オプションを指定した場合には、
+ディスクリプタをオープンしているクライアントのホスト名のみを表示します。
+</para>
+<para>
+<option>-G</option> オプションを指定した場合には、
+実体ファイルをオープンしている gfsd のホスト名のみを表示します。
+</para>
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-A</option></term>
+<listitem>
+<para>
+全ユーザーについて表示します。
+このオプションの利用には、gfarmadm グループ権限が必要です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-W</option></term>
+<listitem>
+<para>
+書き込みオープンされているディスクリプタに関する情報のみを表示します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter moreinfo="none">パス名</parameter></term>
+<listitem>
+<para>
+このコマンドがアクセスするメタデータサーバを特定するための
+パス名または Gfarm URL を指定します。
+省略した場合は、「.」を指定したのと同じ意味になります。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-D</option> <parameter moreinfo="none">gfsdのドメイン名</parameter></term>
+<listitem>
+<para>
+表示対象のディスクリプタを、
+指定したドメイン名ないしホスト名のgfsdが
+実体ファイルをオープンしているものに限定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-U</option> <parameter moreinfo="none">ユーザーホストのドメイン名</parameter></term>
+<listitem>
+<para>
+表示対象のディスクリプタを、
+指定したドメイン名ないしホスト名で動作しているクライアントが
+オープンしているものに限定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-u</option> <parameter moreinfo="none">ユーザー名</parameter></term>
+<listitem>
+<para>
+指定したユーザーがオープンしているディスクリプタについて表示を行ないます。
+このオプションの利用には、gfarmadm グループ権限が必要です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id="examples"><title>EXAMPLES</title>
+
+<example role="example">
+<title>自身のオープンしているファイルディスクリプタ一覧を表示する</title>
+<para>
+<screen format="linespecific">
+gflsof
+</screen>
+</para>
+</example>
+
+<example role="example">
+<title>ファイルディスクリプタ全ての一覧を表示する</title>
+<para>
+<screen format="linespecific">
+gflsof -A
+</screen>
+</para>
+</example>
+
+<example role="example">
+<title>gfsd が実体ファイルを書き込みオープンしているファイルシステムノード全ての一覧を表示する</title>
+<para>
+<screen format="linespecific">
+gflsof -AWG
+</screen>
+</para>
+</example>
+
+<example role="example">
+<title>gfsdが実体ファイルを書き込みオープンしているファイルディスクリプタ全ての一覧を表示する</title>
+<para>
+<screen format="linespecific">
+gflsof -AW -D ''
+</screen>
+</para>
+</example>
+
+<example role="example">
+<title>example.org ドメインに属し、かつユーザー john がディスクリプタをオープン中のクライアントホストの一覧を表示する</title>
+<para>
+<screen format="linespecific">
+gflsof -U example.org -u john -C
+</screen>
+</para>
+</example>
+
+</refsect1>
+
+</refentry>

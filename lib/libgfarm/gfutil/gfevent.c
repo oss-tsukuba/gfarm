@@ -80,7 +80,7 @@ struct gfarm_event {
 #ifndef HAVE_EPOLL
 static int gfarm_eventqueue_alloc_fd_set(struct gfarm_eventqueue *q,
 	int fd, fd_set **fd_setpp);
-#endif
+#endif /* HAVE_EPOLL */
 
 struct gfarm_event *
 gfarm_fd_event_alloc(int filter, int fd,
@@ -192,7 +192,6 @@ struct gfarm_eventqueue {
 	int evfd;
 #endif /* __KERNEL__ */
 };
-
 int
 gfarm_eventqueue_alloc(int ndesc_hint, struct gfarm_eventqueue **qp)
 {
@@ -230,7 +229,7 @@ gfarm_eventqueue_alloc(int ndesc_hint, struct gfarm_eventqueue **qp)
 		return (errno);
 	}
 	if (!gfarm_eventqueue_alloc_fd_set(q, q->evfd, &q->read_fd_set)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003844,
 			"allocation of 'q->read_fd_set' failed");
 		close(q->evfd);
 		free(q);
@@ -336,7 +335,7 @@ gfarm_eventqueue_alloc_fd_set(struct gfarm_eventqueue *q, int fd,
 			return (0); /* failure */
 		}
 		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes, fds_bytes,
-		    &q->read_fd_set)) {
+			&q->read_fd_set)) {
 			gflog_debug(GFARM_MSG_1000771,
 				"re-allocation of 'q->read_fd_set' failed");
 			return (0); /* failure */
@@ -582,7 +581,8 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 			if (timeout == NULL) {
 				timeout = &timeout_value;
 				timeout_value = ev->timeout;
-			} else if (gfarm_timeval_cmp(&ev->timeout,timeout) <0){
+			} else if (gfarm_timeval_cmp(&ev->timeout, timeout)
+				< 0) {
 				timeout_value = ev->timeout;
 			}
 		}
@@ -720,7 +720,7 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 					    ev->closure, &end_time);
 				}
 				break;
-			default :
+			default:
 				break;
 			}
 		}
@@ -946,7 +946,6 @@ proto1_request_multiplexed(struct gfarm_eventqueue *q, int peer_socket,
 	}
 	free(state);
 	return (rv);
-	
 }
 
 int

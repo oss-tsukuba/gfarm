@@ -22,14 +22,9 @@
 #include "auth.h"
 #include "auth_gsi.h"
 
-static const char gsi_initialize_diag[] = "gsi_initialize_mutex";
-
 #define staticp	(gfarm_ctxp->auth_common_gsi_static)
 
 struct gfarm_auth_common_gsi_static {
-	pthread_mutex_t gsi_init_mutex;
-	int gsi_initialized;
-	int gsi_server_initialized;
 	gss_cred_id_t delegated_cred;
 
 	/* gfarm_gsi_client_cred_name() */
@@ -42,18 +37,15 @@ gfarm_error_t
 gfarm_auth_common_gsi_static_init(struct gfarm_context *ctxp)
 {
 	struct gfarm_auth_common_gsi_static *s;
+	static const char diag[] = "gfarm_auth_common_gsi_static_init";
 
 	GFARM_MALLOC(s);
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	gfarm_mutex_init(&s->gsi_init_mutex,
-	    "gfarm_host_static_init", "gsi_initialize");
-	s->gsi_initialized = 0;
-	s->gsi_server_initialized = 0;
 	s->delegated_cred = GSS_C_NO_CREDENTIAL;
 	gfarm_mutex_init(&s->client_cred_init_mutex,
-	    "gfarm_host_static_init", "client_cred_initialize");
+	    diag, "client_cred_initialize");
 	s->client_cred_initialized = 0;
 	s->client_dn = NULL;
 
@@ -65,50 +57,28 @@ void
 gfarm_auth_common_gsi_static_term(struct gfarm_context *ctxp)
 {
 	struct gfarm_auth_common_gsi_static *s = ctxp->auth_common_gsi_static;
+	static const char diag[] = "gfarm_auth_common_gsi_static_term";
 
 	if (s == NULL)
 		return;
 
-	gfarm_mutex_destroy(&s->gsi_init_mutex,
-	    "gfarm_host_static_term", "gsi_initialize");
 	gfarm_mutex_destroy(&s->client_cred_init_mutex,
-	    "gfarm_host_static_term", "client_cred_initialize");
+	    diag, "client_cred_initialize");
 	free(s->client_dn);
 	free(s);
-}
-
-static void
-gfarm_gsi_client_finalize_unlocked(void)
-{
-	gfarmSecSessionFinalizeInitiator();
-	staticp->gsi_initialized = 0;
 }
 
 void
 gfarm_gsi_client_finalize(void)
 {
-	static const char diag[] = "gfarm_gsi_client_finalize";
-
-	gfarm_mutex_lock(&staticp->gsi_init_mutex, diag, gsi_initialize_diag);
-	if (staticp->gsi_initialized)
-		gfarm_gsi_client_finalize_unlocked();
-	gfarm_mutex_unlock(&staticp->gsi_init_mutex, diag, gsi_initialize_diag);
+	gfarmSecSessionFinalizeInitiator();
 }
 
 gfarm_error_t
 gfarm_gsi_client_initialize(void)
 {
-	OM_uint32 e_major;
-	OM_uint32 e_minor;
+	OM_uint32 e_major, e_minor;
 	int rv;
-	static const char diag[] = "gfarm_gsi_client_initialize";
-
-	gfarm_mutex_lock(&staticp->gsi_init_mutex, diag, gsi_initialize_diag);
-	if (staticp->gsi_initialized) {
-		gfarm_mutex_unlock(&staticp->gsi_init_mutex,
-		    diag, gsi_initialize_diag);
-		return (GFARM_ERR_NO_ERROR);
-	}
 
 	rv = gfarmSecSessionInitializeInitiator(NULL, GRID_MAPFILE,
 	    &e_major, &e_minor);
@@ -119,15 +89,10 @@ gfarm_gsi_client_initialize(void)
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
-		gfarm_gsi_client_finalize_unlocked();
-		gfarm_mutex_unlock(&staticp->gsi_init_mutex,
-		    diag, gsi_initialize_diag);
+		gfarm_gsi_client_finalize();
 
 		return (GFARM_ERRMSG_GSI_CREDENTIAL_INITIALIZATION_FAILED);
 	}
-	staticp->gsi_initialized = 1;
-	staticp->gsi_server_initialized = 0;
-	gfarm_mutex_unlock(&staticp->gsi_init_mutex, diag, gsi_initialize_diag);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -149,19 +114,12 @@ gfarm_gsi_client_cred_name(void)
 		return (client_dn);
 	}
 
-	if (cred == GSS_C_NO_CREDENTIAL &&
-	    gfarmSecSessionGetInitiatorInitialCredential(&cred) < 0) {
+	if (gfarmGssNewCredentialName(&name, cred, &e_major, &e_minor) < 0) {
 		staticp->client_dn = NULL;
-		gflog_auth_error(GFARM_MSG_1000707,
+		gflog_auth_notice(GFARM_MSG_1004249,
 		    "gfarm_gsi_client_cred_name(): "
-		    "not initialized as an initiator");
-	} else if (gfarmGssNewCredentialName(&name, cred, &e_major, &e_minor)
-	    < 0) {
-		staticp->client_dn = NULL;
+		    "cannot acquire initiator credential");
 		if (gflog_auth_get_verbose()) {
-			gflog_error(GFARM_MSG_1000708,
-			    "cannot convert initiator credential "
-			    "to name");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
@@ -176,69 +134,24 @@ gfarm_gsi_client_cred_name(void)
 			gfarmGssPrintMinorStatus(e_minor);
 		}
 		gfarmGssDeleteName(&name, NULL, NULL);
+		staticp->client_cred_initialized = 1;
 	}
-	staticp->client_cred_initialized = 1;
 	client_dn = staticp->client_dn;
 	gfarm_mutex_unlock(&staticp->client_cred_init_mutex, diag, mutex_name);
 	return (client_dn);
 }
 
-static void
-gfarm_gsi_server_finalize_unlocked(void)
-{
-	gfarmSecSessionFinalizeBoth();
-	staticp->gsi_initialized = 0;
-	staticp->gsi_server_initialized = 0;
-}
-
 void
 gfarm_gsi_server_finalize(void)
 {
-	static const char diag[] = "gfarm_gsi_server_finalize";
-
-	gfarm_mutex_lock(&staticp->gsi_init_mutex, diag, gsi_initialize_diag);
-	if (staticp->gsi_initialized && staticp->gsi_server_initialized)
-		gfarm_gsi_server_finalize_unlocked();
-	gfarm_mutex_unlock(&staticp->gsi_init_mutex, diag, gsi_initialize_diag);
+	gfarmSecSessionFinalizeBoth();
 }
 
 gfarm_error_t
 gfarm_gsi_server_initialize(void)
 {
-	OM_uint32 e_major;
-	OM_uint32 e_minor;
+	OM_uint32 e_major, e_minor;
 	int rv;
-	static const char diag[] = "gfarm_gsi_server_initialize";
-
-	gfarm_mutex_lock(&staticp->gsi_init_mutex, diag, gsi_initialize_diag);
-	if (staticp->gsi_initialized) {
-		if (staticp->gsi_server_initialized) {
-			/*
-			 * check whether the initial acceptor
-			 * credential is valid or not.  Unfortunately,
-			 * this check cannot be used for the
-			 * expiration of CA and CRL.
-			 */
-			if (gfarmSecSessionAcceptorCredIsValid(
-				&e_major, &e_minor)) {
-				/* already initialized */
-				gfarm_mutex_unlock(&staticp->gsi_init_mutex,
-				    diag, gsi_initialize_diag);
-
-				return (GFARM_ERR_NO_ERROR);
-			}
-			if (gflog_auth_get_verbose() &&
-				e_major != GSS_S_COMPLETE) {
-				gflog_info(GFARM_MSG_1002722,
-				    "initial acceptor certificate is not valid "
-				    "because of:");
-				gfarmGssPrintMajorStatus(e_major);
-				gfarmGssPrintMinorStatus(e_minor);
-			}
-			gfarm_gsi_server_finalize_unlocked();
-		} else
-			gfarm_gsi_client_finalize_unlocked();
-	}
 
 	rv = gfarmSecSessionInitializeBoth(NULL, NULL, GRID_MAPFILE,
 	    &e_major, &e_minor);
@@ -249,14 +162,10 @@ gfarm_gsi_server_initialize(void)
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
-		gfarm_gsi_server_finalize_unlocked();
-		gfarm_mutex_unlock(&staticp->gsi_init_mutex,
-		    diag, gsi_initialize_diag);
+		gfarm_gsi_server_finalize();
+
 		return (GFARM_ERRMSG_GSI_INITIALIZATION_FAILED);
 	}
-	staticp->gsi_initialized = 1;
-	staticp->gsi_server_initialized = 1;
-	gfarm_mutex_unlock(&staticp->gsi_init_mutex, diag, gsi_initialize_diag);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -264,6 +173,10 @@ gfarm_gsi_server_initialize(void)
  * Delegated credential
  */
 
+/*
+ * XXX - thread-unsafe interface.  this assumes a single thread server
+ * like gfsd and gfarm_gridftp_dsi.  this is not for gfmd.
+ */
 void
 gfarm_gsi_set_delegated_cred(gss_cred_id_t cred)
 {
@@ -307,7 +220,6 @@ gfarm_gsi_cred_config_convert_to_name(
 	int rv;
 	OM_uint32 e_major;
 	OM_uint32 e_minor;
-	gss_cred_id_t cred;
 
 	switch (type) {
 	case GFARM_AUTH_CRED_TYPE_DEFAULT:
@@ -361,10 +273,8 @@ gfarm_gsi_cred_config_convert_to_name(
 			return (GFARM_ERRMSG_CRED_TYPE_SELF_CRED_INVALID_CRED_NAME);
 		if (service != NULL)
 			return (GFARM_ERRMSG_CRED_TYPE_SELF_CRED_INVALID_CRED_SERVICE);
-		if (gfarmSecSessionGetInitiatorInitialCredential(&cred) < 0 ||
-		    cred == GSS_C_NO_CREDENTIAL)
-			return (GFARM_ERRMSG_CRED_TYPE_SELF_NOT_INITIALIZED_AS_AN_INITIATOR);
-		rv = gfarmGssNewCredentialName(namep, cred, &e_major, &e_minor);
+		rv = gfarmGssAcquireCredential(NULL, GSS_C_NO_NAME,
+			GSS_C_INITIATE, &e_major, &e_minor, namep);
 		break;
 	default:
 		return (GFARM_ERRMSG_INVALID_CRED_TYPE);

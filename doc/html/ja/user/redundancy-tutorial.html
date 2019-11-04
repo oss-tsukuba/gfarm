@@ -23,20 +23,16 @@ host-a / host-bのそれぞれにおいて、Gfarmのインストールを行い
 
 <H2>2. セットアップ</H2>
 <H3>2.1 マスターメタデータサーバの設定</H3>
-メタデータサーバ間の接続で利用される_gfarmmdユーザと共有鍵を作成します。
+<p>
+メタデータサーバ間の接続で利用される権限である_gfarmmdユーザを作成します。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # useradd -c "Gfarm gfmd" -m _gfarmmd
-# su _gfarmmd
-$ gfkey -f -p 31536000
 </PRE></TD></TR></TBODY></TABLE>
-<UL><LI>補足1<BR>
-メタデータサーバ間の認証は、共有鍵認証のみサポートしています。
-</UL>
 
-次にメタデータサーバのセットアップをrootユーザで行います。
-メタデータ冗長化を有効にするため config-gfarmに-rオプションをつけます。
-config-gfarmに関しては、SETUPドキュメントを参照してください。
+メタデータサーバのセットアップをrootユーザで行います。
+メタデータ冗長化を有効にするため，SETUP.ja で解説されている
+config-gfarm実行の手順において、オプションに-rを追加してください。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # config-gfarm -r
@@ -81,6 +77,17 @@ gfdump.postgresql に対しても同じオプションを与えてください�
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # gfdump.postgresql -d -f gfarm-pgsql.dmp
 </PRE></TD></TR></TBODY></TABLE>
+
+<p>
+メタデータサーバ間の接続で利用される_gfarmmdユーザの共有鍵を作成します。
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# su _gfarmmd
+$ gfkey -f -p 31536000
+</PRE></TD></TR></TBODY></TABLE>
+<UL><LI>補足1<BR>
+メタデータサーバ間の認証は、共有鍵認証のみサポートしています。
+</UL>
 
 <H3>2.2 スレーブメタデータサーバの設定</H3>
 

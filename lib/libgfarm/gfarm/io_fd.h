@@ -9,7 +9,6 @@ void gfarm_iobuffer_write_close_fd_op(struct gfarm_iobuffer *, void *, int);
 struct gfp_xdr;
 
 gfarm_error_t gfp_xdr_new_socket(int, struct gfp_xdr **);
-gfarm_error_t gfp_xdr_new_client_socket(int, struct gfp_xdr **);
 gfarm_error_t gfp_xdr_set_socket(struct gfp_xdr *, int);
 
 /* the followings are refered from "gsi_auth" method implementation */

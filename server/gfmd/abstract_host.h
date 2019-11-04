@@ -2,7 +2,41 @@ struct abstract_host;
 struct host;
 struct mdhost;
 struct peer;
-struct netsendq;
+
+struct abstract_host_ops {
+	/* downcast functions */
+	struct host *(*abstract_host_to_host)(struct abstract_host *);
+	struct mdhost *(*abstract_host_to_mdhost)(struct abstract_host *);
+
+	const char *(*get_name)(struct abstract_host *);
+	int (*get_port)(struct abstract_host *);
+	void (*set_peer_locked)(struct abstract_host *, struct peer *);
+	void (*set_peer_unlocked)(struct abstract_host *, struct peer *);
+	void (*unset_peer)(struct abstract_host *, struct peer *);
+	void (*disable)(struct abstract_host *);
+	void (*disabled)(struct abstract_host *, struct peer *);
+};
+
+/* common struct of host and mdhost */
+struct abstract_host {
+	struct abstract_host_ops *ops;
+
+	int invalid;	/* set when deleted */
+
+	pthread_mutex_t mutex;
+	/*
+	 * resources which are protected by the abstrac_host::mutex
+	 */
+	pthread_cond_t ready_to_send, ready_to_receive;
+
+	int can_send, can_receive;
+
+	struct peer *peer;
+	int protocol_version;
+	int is_active;
+
+	gfarm_time_t busy_time;
+};
 
 #ifdef COMPAT_GFARM_2_3
 typedef void (*host_set_callback_t)(struct abstract_host *, struct peer *,
@@ -12,6 +46,8 @@ typedef void (*host_set_callback_t)(struct abstract_host *, struct peer *,
 struct host *abstract_host_to_host(struct abstract_host *);
 struct mdhost *abstract_host_to_mdhost(struct abstract_host *);
 
+void abstract_host_init(struct abstract_host *, struct abstract_host_ops *,
+	const char *diag);
 int abstract_host_get_protocol_version(struct abstract_host *);
 void abstract_host_invalidate(struct abstract_host *);
 void abstract_host_validate(struct abstract_host *);
@@ -23,85 +59,42 @@ int abstract_host_is_up_unlocked(struct abstract_host *);
 int abstract_host_is_up(struct abstract_host *);
 const char *abstract_host_get_name(struct abstract_host *);
 int abstract_host_get_port(struct abstract_host *);
+int abstract_host_check_busy(struct abstract_host *, gfarm_int64_t,
+	const char *);
 struct peer *abstract_host_get_peer(struct abstract_host *, const char *);
-struct peer *abstract_host_get_peer_with_id(struct abstract_host *,
-	gfarm_int64_t, const char *);
 void abstract_host_put_peer(struct abstract_host *, struct peer *);
 void abstract_host_set_peer(struct abstract_host *, struct peer *, int);
-struct netsendq *abstract_host_get_sendq(struct abstract_host *);
 void abstract_host_disconnect_request(struct abstract_host *, struct peer *,
 	const char *);
 
 typedef gfarm_error_t (*channel_protocol_switch_t)(struct abstract_host *,
 	struct peer *, int, gfp_xdr_xid_t, size_t, int *);
 
-struct local_peer;
-gfarm_error_t async_channel_protocol_switch(struct abstract_host *,
-	struct peer *, gfp_xdr_xid_t, size_t, channel_protocol_switch_t);
-
-void *async_server_main(struct local_peer *,
+void *gfm_server_channel_main(void *arg,
 	channel_protocol_switch_t
 #ifdef COMPAT_GFARM_2_3
 	,void (*)(struct abstract_host *),
 	gfarm_error_t (*)(struct abstract_host *, struct peer *)
 #endif
 	);
-void async_server_disconnect_request(struct abstract_host *,
+void gfm_server_channel_disconnect_request(struct abstract_host *,
 	struct peer *, const char *, const char *, const char *);
-void async_server_already_disconnected_message(struct abstract_host *,
+void gfm_server_channel_already_disconnected_message(struct abstract_host *,
 	const char *, const char *, const char *);
-gfarm_error_t async_server_vget_request(struct peer *, size_t,
+gfarm_error_t gfm_server_channel_vget_request(struct peer *, size_t,
 	const char *, const char *, va_list *);
-gfarm_error_t async_server_vput_reply(struct abstract_host *,
-	struct peer *, gfp_xdr_xid_t,
-	const char *, gfarm_error_t, const char *, va_list *);
-gfarm_error_t async_server_put_reply(struct abstract_host *,
-	struct peer *, gfp_xdr_xid_t,
-	const char *, gfarm_error_t, const char *, ...);
-gfarm_error_t async_server_vput_wrapped_reply_unlocked(struct abstract_host *,
-	gfp_xdr_xid_t, int, const char *,
-	gfarm_error_t, const char *, va_list *,
-	gfarm_error_t, const char *, va_list *);
-gfarm_error_t async_server_vput_wrapped_reply(struct abstract_host *,
-	struct peer *, gfp_xdr_xid_t, int, const char *,
-	gfarm_error_t, const char *, va_list *,
-	gfarm_error_t, const char *, va_list *);
+gfarm_error_t gfm_server_channel_vput_reply(struct abstract_host *,
+	struct peer *, gfp_xdr_xid_t, const char *, gfarm_error_t,
+	char *, va_list *);
 
-gfarm_error_t async_client_vsend_wrapped_request_unlocked(
-	struct abstract_host *,
-	const char *, result_callback_t, disconnect_callback_t,
-	void *,
-#ifdef COMPAT_GFARM_2_3
-	host_set_callback_t,
-#endif
-	const char *, va_list *,
-	gfarm_int32_t, const char *, va_list *, int);
-gfarm_error_t async_client_vsend_wrapped_request(struct abstract_host *,
+#define GFM_CLIENT_CHANNEL_TIMEOUT_INFINITY	-1
+gfarm_error_t gfm_client_channel_vsend_request(struct abstract_host *,
 	struct peer *, const char *, result_callback_t, disconnect_callback_t,
 	void *,
 #ifdef COMPAT_GFARM_2_3
 	host_set_callback_t,
 #endif
-	const char *, va_list *,
-	gfarm_int32_t, const char *, va_list *, int);
-gfarm_error_t async_client_vsend_request(struct abstract_host *,
-	struct peer *, const char *, result_callback_t, disconnect_callback_t,
-	void *,
-#ifdef COMPAT_GFARM_2_3
-	host_set_callback_t,
-#endif
-	gfarm_int32_t, const char *, va_list *);
-gfarm_error_t async_client_send_raw_request(struct abstract_host *,
-	struct peer *, const char *, result_callback_t,
-	disconnect_callback_t, void *, size_t, void *);
-gfarm_error_t async_client_vrecv_result(struct peer *,
+	long, gfarm_int32_t, const char *, va_list *);
+gfarm_error_t gfm_client_channel_vrecv_result(struct peer *,
 	struct abstract_host *, size_t, const char *, const char **,
 	gfarm_error_t *, va_list *);
-gfarm_error_t async_client_vrecv_wrapped_result(struct peer *,
-	struct abstract_host *, size_t, const char *,
-	gfarm_error_t *, const char *, va_list *,
-	gfarm_error_t *, const char **, va_list *);
-gfarm_error_t abstract_host_sender_lock(struct abstract_host *,
-    struct peer *, struct peer **, const char *);
-void abstract_host_sender_unlock(struct abstract_host *, struct peer *,
-	const char *);

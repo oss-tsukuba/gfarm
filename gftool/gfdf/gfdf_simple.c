@@ -85,7 +85,7 @@ const struct formatter *formatter = &precise_formatter;
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-ahHnrS] [-P path] [-D domain]\n",
+	fprintf(stderr, "Usage: %s [-ahHnrSV] [-P path] [-D domain]\n",
 		program_name);
 	exit(1);
 }
@@ -249,7 +249,7 @@ display_statfs_nodes(const char *path, const char *domain, int *ndisplayed)
 		       "");
 	} else {
 		fprintf(stderr, "%s\n",
-		    gfarm_error_string(GFARM_ERRMSG_NO_FILESYSTEM_NODE));
+		    gfarm_error_string(GFARM_ERR_NO_FILESYSTEM_NODE));
 	}
 
 	gfarm_host_sched_info_free(nhosts, hosts);
@@ -299,7 +299,7 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "ahHnrD:P:S?")) != -1) {
+	while ((c = getopt(argc, argv, "ahHnrD:P:SV?")) != -1) {
 		switch (c) {
 		case 'a':
 			statfs = display_statfs;
@@ -327,6 +327,9 @@ main(int argc, char *argv[])
 		case 'S':
 			option_sort_order = SO_SIZE;
 			break;
+		case 'V':
+			fprintf(stderr, "Gfarm version %s\n", gfarm_version());
+			exit(0);
 		case '?':
 		default:
 			usage();

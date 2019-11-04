@@ -91,7 +91,7 @@ gfarm_humanize_number_to_int64(gfarm_int64_t *vp, const char *str)
 			return (GFARM_ERRMSG_INVALID_CHARACTER);
 		}
 	}
-	gflog_debug(GFARM_MSG_UNFIXED, "%s = %lld", str, (long long)*vp);
+	gflog_debug(GFARM_MSG_1003707, "%s = %lld", str, (long long)*vp);
 
 	return (GFARM_ERR_NO_ERROR);
 }

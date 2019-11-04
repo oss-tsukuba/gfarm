@@ -86,7 +86,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # wait for replication.
-gfncopy -v -w ${file}
+gfncopy -v -w ${file} -t $GFNCOPY_TIMEOUT
 if [ $? -ne 0 ]; then
     onexit
     echo gfncopy -w ${file} failed

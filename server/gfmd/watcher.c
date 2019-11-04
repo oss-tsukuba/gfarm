@@ -23,31 +23,25 @@
  * watcher_event
  */
 
-enum watcher_event_type {
-	WATCHER_READABLE_EVENT,
-	WATCHER_WRITABLE_EVENT,
-	WATCHER_CLOSING_EVENT
-};
-
 struct watcher_event {
 	/* for watcher_request_queue::list */
 	struct watcher_event *prev, *next;
 
-	struct watcher_event *next_closing; /* watcher_event::closing_events */
-
 	struct gfarm_event *gev;
 
-	enum watcher_event_type type;
-	struct thread_pool *thrpool; /* not used for WATCHER_CLOSING_EVENT */
+	int gfevent_filter;
+	struct thread_pool *thrpool;
 	void *(*handler)(void *);
 	void *closure;
 #define WATCHER_EVENT_IN_QUEUE	1 /* in watcher_request_queue */
 #define WATCHER_EVENT_WATCHING	2 /* in gfarm_eventqueue */
-#define WATCHER_EVENT_INVOKING	4
+#define WATCHER_EVENT_INVOKING	4 /* in (*wev->handler)() */
 	int flags;
 
-	/* WATCHER_CLOSING_EVENT only */
-	struct watcher_event *closing_events, **closing_tail;
+	/* GFARM_EVENT_TIMEOUT case only */
+	struct timeval timeout;
+
+	int gfevent_happened;
 
 	pthread_mutex_t mutex;
 };
@@ -64,6 +58,7 @@ watcher_event_callback(int events, int fd, void *closure,
 	void *c;
 
 	gfarm_mutex_lock(&wev->mutex, module_name, "event callback");
+	wev->gfevent_happened = events;
 	wev->flags &= ~WATCHER_EVENT_WATCHING;
 	wev->flags |= WATCHER_EVENT_INVOKING;
 	p = wev->thrpool; wev->thrpool = NULL;
@@ -73,40 +68,39 @@ watcher_event_callback(int events, int fd, void *closure,
 	thrpool_add_job(p, h, c);
 }
 
-static gfarm_error_t
-watcher_fd_event_alloc(int fd, enum watcher_event_type type,
-	struct watcher_event **wevp)
+static void
+watcher_event_init(struct watcher_event *wev,
+	int filter, struct gfarm_event *gev)
 {
-	struct watcher_event *wev;
-	
-	GFARM_MALLOC(wev);
-	if (wev == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
-	if (type == WATCHER_CLOSING_EVENT) {
-		wev->gev = NULL;
-	} else if ((wev->gev = gfarm_fd_event_alloc(
-	    type == WATCHER_READABLE_EVENT ? GFARM_EVENT_READ :
-	    type == WATCHER_WRITABLE_EVENT ? GFARM_EVENT_WRITE :
-	    (assert(0), 0),
-	    fd, watcher_event_callback, wev)) == NULL) {
-		free(wev);
-		return (GFARM_ERR_NO_MEMORY);
-	}
-
+	wev->gev = gev;
 	wev->prev = wev->next = NULL;
-	wev->next_closing = NULL;
-	wev->type = type;
+	wev->gfevent_filter = filter;
 	wev->flags = 0;
 
 	wev->thrpool = NULL;
 	wev->handler = NULL;
 	wev->closure = NULL;
 
-	wev->closing_events = NULL;
-	wev->closing_tail = &wev->closing_events;
+	wev->timeout.tv_sec = wev->timeout.tv_usec = 0;
 
 	gfarm_mutex_init(&wev->mutex, module_name, "watcher_event");
+}
+
+static gfarm_error_t
+watcher_fd_event_alloc(int filter, int fd, struct watcher_event **wevp)
+{
+	struct watcher_event *wev;
+	struct gfarm_event *gev;
+
+	GFARM_MALLOC(wev);
+	if (wev == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	gev = gfarm_fd_event_alloc(filter, fd, watcher_event_callback, wev);
+	if (gev == NULL) {
+		free(wev);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	watcher_event_init(wev, filter, gev);
 	*wevp = wev;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -114,30 +108,37 @@ watcher_fd_event_alloc(int fd, enum watcher_event_type type,
 gfarm_error_t
 watcher_fd_readable_event_alloc(int fd, struct watcher_event **wevp)
 {
-	return (watcher_fd_event_alloc(fd, WATCHER_READABLE_EVENT, wevp));
+	return (watcher_fd_event_alloc(GFARM_EVENT_READ, fd, wevp));
 }
 
 gfarm_error_t
 watcher_fd_writable_event_alloc(int fd, struct watcher_event **wevp)
 {
-	return (watcher_fd_event_alloc(fd, WATCHER_WRITABLE_EVENT, wevp));
+	return (watcher_fd_event_alloc(GFARM_EVENT_WRITE, fd, wevp));
 }
 
 gfarm_error_t
-watcher_fd_closing_event_alloc(int fd, struct watcher_event **wevp)
+watcher_fd_readable_or_timeout_event_alloc(int fd, struct watcher_event **wevp)
 {
-	return (watcher_fd_event_alloc(fd, WATCHER_CLOSING_EVENT, wevp));
+	return (watcher_fd_event_alloc(GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT,
+	    fd, wevp));
 }
 
 void
-watcher_fd_closing_event_add_relevant_event(
-	struct watcher_event *closing_event, struct watcher_event *wev)
+watcher_event_free(struct watcher_event *wev)
 {
-	assert(closing_event->type == WATCHER_CLOSING_EVENT);
+	if (wev->gev != NULL)
+		gfarm_event_free(wev->gev);
 
-	wev->next_closing = NULL;
-	*closing_event->closing_tail = wev;
-	closing_event->closing_tail = &wev->next_closing;
+	gfarm_mutex_destroy(&wev->mutex, module_name, "watcher_event");
+
+	free(wev);
+}
+
+int
+watcher_event_is_readable(struct watcher_event *wev)
+{
+	return ((wev->gfevent_happened & GFARM_EVENT_READ) != 0);
 }
 
 int
@@ -158,7 +159,6 @@ watcher_event_ack(struct watcher_event *wev)
 	wev->flags &= ~WATCHER_EVENT_INVOKING;
 	gfarm_mutex_unlock(&wev->mutex, module_name, "ack unlock");
 }
-
 
 /*
  * watcher_request_queue
@@ -206,7 +206,7 @@ watcher_request_queue_get_fd(struct watcher_request_queue *wrq)
 
 static void
 watcher_request_enqueue(struct watcher_request_queue *wrq,
-	struct watcher_event *wev,
+	struct watcher_event *wev, const struct timeval *timeout,
 	struct thread_pool *thrpool, void *(*handler)(void *), void *closure)
 {
 	int rv, was_empty;
@@ -222,8 +222,9 @@ watcher_request_enqueue(struct watcher_request_queue *wrq,
 	wev->next = &wrq->head;
 	wev->prev = wrq->head.prev;
 
-	assert(wev->type == WATCHER_CLOSING_EVENT ?
-	    thrpool == NULL : thrpool != NULL);
+	if (timeout != NULL)
+		wev->timeout = *timeout;
+
 	wev->thrpool = thrpool;
 	wev->handler = handler;
 	wev->closure = closure;
@@ -294,80 +295,35 @@ watcher_control_callback(int events, int fd, void *closure,
 	const struct timeval *t)
 {
 	struct watcher *w = closure;
-	struct watcher_event *list0, *list, *wev;
+	struct watcher_event *list0, *wev;
 	int err;
 
 	assert(events == GFARM_EVENT_READ);
 
 	list0 = watcher_request_queue_dequeue(&w->wrq);
-	assert(list0 != NULL);
+	assert(list0 != NULL); /* doubly linked circular list */
 
-	/* handle closing events first */
-	list = list0;
+	wev = list0;
 	do {
-		if (list->type == WATCHER_CLOSING_EVENT) {
-			for (wev = list->closing_events;
-			    wev != NULL; wev = wev->next_closing) {
+		err = gfarm_eventqueue_add_event(w->q, wev->gev,
+		    (wev->gfevent_filter & GFARM_EVENT_TIMEOUT) ?
+		    &wev->timeout : NULL);
 
-				gfarm_mutex_lock(&wev->mutex, module_name,
-				    "event removal");
-
-				if ((wev->flags & WATCHER_EVENT_IN_QUEUE) != 0){
-					wev->flags &= ~WATCHER_EVENT_IN_QUEUE;
-					if (list0 == wev)
-						list0 = wev->next;
-					wev->next->prev = wev->prev;
-					wev->prev->next = wev->next;
-				}
-				if ((wev->flags & WATCHER_EVENT_WATCHING) != 0){
-					wev->flags &= ~WATCHER_EVENT_WATCHING;
-
-					err = gfarm_eventqueue_delete_event(
-					    w->q, wev->gev);
-					if (err != 0) {
-						gflog_error(GFARM_MSG_1002741,
-						    "delete_event(type:%d, "
-						    "handler:%p): %s",
-						    wev->type, wev->handler,
-						    strerror(err));
-					}
-					wev->thrpool = NULL;
-					wev->handler = NULL;
-					wev->closure = NULL;
-				}
-				gfarm_mutex_unlock(&wev->mutex, module_name,
-				    "event removal");
-
-			}
-
-			/* calling the handler without using a thread pool */
-			list->flags &= ~WATCHER_EVENT_INVOKING;
-			(*wev->handler)(wev->closure);
-		}
-		list = list->next;
-	} while (list != list0);
-
-	list = list0;
-	do {
-		if (list->type != WATCHER_CLOSING_EVENT) {
-			err = gfarm_eventqueue_add_event(w->q, list->gev, NULL);
-			if (err == 0) {
-				list->flags |= WATCHER_EVENT_WATCHING;
-			} else {
-				gflog_error(GFARM_MSG_1002742,
-				    "add_event(type:%d, handler:%p): %s",
-				    list->type, list->handler, strerror(err));
-			}
+		if (err == 0) {
+			wev->flags |= WATCHER_EVENT_WATCHING;
+		} else {
+			gflog_error(GFARM_MSG_1002742,
+			    "add_event(filter:0x%x, handler:%p): %s",
+			    wev->gfevent_filter, wev->handler, strerror(err));
 		}
 		/*
 		 * the following flags must be cleared after adding
 		 * the WATCHER_EVENT_WATCHING flag above.
 		 * otherwise the race condition of SF.net #616 appears.
 		 */
-		list->flags &= ~(WATCHER_EVENT_IN_QUEUE|WATCHER_EVENT_INVOKING);
-
-		list = list->next;
-	} while (list != list0);
+		wev->flags &= ~(WATCHER_EVENT_IN_QUEUE|WATCHER_EVENT_INVOKING);
+		wev = wev->next;
+	} while (wev != list0);
 
 	err = gfarm_eventqueue_add_event(w->q, w->control_gev, NULL);
 	if (err != 0) {
@@ -458,13 +414,29 @@ void
 watcher_add_event(struct watcher *w, struct watcher_event *wev,
 	struct thread_pool *thrpool, void *(*handler)(void *), void *closure)
 {
-	watcher_request_enqueue(&w->wrq, wev, thrpool, handler, closure);
+	assert((wev->gfevent_filter & GFARM_EVENT_TIMEOUT) == 0);
+
+	watcher_request_enqueue(&w->wrq, wev, NULL, thrpool, handler, closure);
 }
 
-#if 0
-gfarm_error_t
+void
 watcher_add_event_with_timeout(struct watcher *w, struct watcher_event *wev,
-	const struct timeval *timeout, void *(*timeout_handler)(void *))
+	long timeout_millisec,
+	struct thread_pool *thrpool, void *(*handler)(void *), void *closure)
 {
+	struct timeval tv;
+
+	assert((wev->gfevent_filter & GFARM_EVENT_TIMEOUT) != 0);
+
+	/*
+	 * this is inaccurate, because there is delay until
+	 * gfarm_eventqueue_add_event() is called.
+	 *
+	 * but it's not big deal to make it accurate at least for now.
+	 */
+	tv.tv_sec = tv.tv_usec = 0;
+	gfarm_timeval_add_microsec(&tv,
+	    timeout_millisec * GFARM_MILLISEC_BY_MICROSEC);
+
+	watcher_request_enqueue(&w->wrq, wev, &tv, thrpool, handler, closure);
 }
-#endif

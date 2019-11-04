@@ -3,6 +3,7 @@
 # XXX FIXME: runnig this script simultaneously is not safe
 
 . ./regress.conf
+GFNCOPY_TIMEOUT=60
 
 #####################################################################
 
@@ -82,6 +83,13 @@ setup() {
     fi
 
     gfreg /etc/group ${file}
+    ret=$?
+    if [ ${ret} -ne 0 ]; then
+	return ${ret}
+    fi
+
+    # the mode of /etc/group may be 444
+    gfchmod 644 ${file}
     ret=$?
     if [ ${ret} -ne 0 ]; then
 	return ${ret}

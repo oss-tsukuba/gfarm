@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfquotacheck
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 23 Mar 2011
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 25 Aug 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFQUOTACHECK" "1" "23 Mar 2011" "Gfarm" "Gfarm"
+.TH "GFQUOTACHECK" "1" "25 Aug 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -28,14 +28,14 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-gfquotacheck \- build a table of current usage and enable the quota check
+gfquotacheck \- rebuild a table of file usage
 .SH "SYNOPSIS"
 .HP \w'\fBgfquotacheck\fR\ 'u
 \fBgfquotacheck\fR [\fIoptions\fR]
 .SH "DESCRIPTION"
 .PP
 \fBgfquotacheck\fR
-builds a table of the current usage for users and groups whose quota are edited by gfedquota, and enables the quota check\&.
+rebuilds a table of the current file usage for users and groups\&.
 .PP
 This command can be executed by an administrator in the gfarmadm group\&.
 .SH "OPTIONS"
@@ -51,7 +51,6 @@ Displays a list of command options\&.
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfedquota\fR(1),
 \fBgfquota\fR(1),
 \fBgfusage\fR(1)

@@ -1,22 +1,13 @@
 '\" t
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 27 Aug 2015
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 22 Nov 2017
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "27 Aug 2015" "Gfarm" "Gfarm"
-.\" -----------------------------------------------------------------
-.\" * Define some portability stuff
-.\" -----------------------------------------------------------------
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.\" http://bugs.debian.org/507673
-.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
-.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.ie \n(.g .ds Aq \(aq
-.el       .ds Aq '
+.TH "GFARM2\&.CONF" "5" "22 Nov 2017" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -35,7 +26,7 @@ gfarm2\&.confファイルは、gfarmプログラムの設定ファイルです�
 .PP
 アプリケーションプログラムは、環境変数GFARM_CONFIG_FILEで 指定したファイルと、%%SYSCONFDIR%%/gfarm2\&.confを、設定ファイル として参照します。この二つのファイルでは、環境変数GFARM_CONFIG_FILEで 指定したファイルの設定の方が先に読み込まれます。 どちらの設定ファイルも、同一の文法で記述します。 同一の指定文が複数あった場合には、先に指定されていた方が優先されます。 環境変数GFARM_CONFIG_FILEが設定されてない場合、代わりに ユーザのホームディレクトリにある\&.gfarm2rcファイルを使用します。
 .PP
-gfarm2\&.confは、一行に一文の形式で設定します。 ただし、行末に文字``\e\*(Aq\*(Aqを記述することによって、行を継続させることが できます。また、文字``#\*(Aq\*(Aqから行末までは、コメントとして扱われ、無視 されます。
+gfarm2\&.confは、一行に一文の形式で設定します。 ただし、行末に文字``\e\'\'を記述することによって、行を継続させることが できます。また、文字``#\'\'から行末までは、コメントとして扱われ、無視 されます。
 .SH "ホスト指定"
 .PP
 引数として、\fIホスト指定\fRを記述できる文がいくつかありますが、 この場合、ホスト指定には、下記のいずれかを記述できます。
@@ -75,7 +66,7 @@ IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワ
 .PP
 spool \fIgfsdスプール・ディレクトリ\fR
 .RS 4
-gfsdが、gfarmファイルの実体を保持するディレクトリ名を 指定します。
+gfsdが、gfarmファイルの実体を保持するディレクトリ名を 指定します。 複数回（最大5回まで）指定することで複数のディレクトリを指定可能です。
 .sp
 例:
 .sp
@@ -165,7 +156,7 @@ spool_server_cred_nameの 指定を行ってはいけません。
 host
 .RS 4
 ホスト証明書あるいはサービス証明書を用いることを示します。 サービス証明書を用いる場合、そのサービスの名前を
-spool_server_cred_serviceで指定します。 サービス名に「host」を指定した場合、 ファイル``/etc/grid\-security/hostcert\&.pem\*(Aq\*(Aqに あるホスト証明書を用います。 それ以外のサービス名を指定した場合、 ファイル``/etc/grid\-security/サービス/サービスcert\&.pem\*(Aq\*(Aq にあるサービス証明書を用います。 サービス名を省略した場合、「host」が指定されたとみなします。 ホスト証明書およびサービス証明書の場合、証明書のCommon Name欄のみを 比較します。Common Nameは、「CN=サービス名/ホスト名」の形式である必要が あります。また、ホスト名は、\fBgfhost\fRコマンドで指定した 正式名と正確に一致している必要があります。ホスト別名は許されません。
+spool_server_cred_serviceで指定します。 サービス名に「host」を指定した場合、 ファイル``/etc/grid\-security/hostcert\&.pem\'\'に あるホスト証明書を用います。 それ以外のサービス名を指定した場合、 ファイル``/etc/grid\-security/サービス/サービスcert\&.pem\'\' にあるサービス証明書を用います。 サービス名を省略した場合、「host」が指定されたとみなします。 ホスト証明書およびサービス証明書の場合、証明書のCommon Name欄のみを 比較します。Common Nameは、「CN=サービス名/ホスト名」の形式である必要が あります。また、ホスト名は、\fBgfhost\fRコマンドで指定した 正式名と正確に一致している必要があります。ホスト別名は許されません。
 .sp
 これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_HOSTBASED_SERVICEに 対応する機能です。
 .sp
@@ -187,7 +178,7 @@ user
 .RS 4
 ユーザ証明書を用いることを示します。 ユーザのアカウント名をspool_server_cred_nameで指定します。 アカウント名を省略した場合には、そのコマンドを起動したユーザ名が使われます。 この指定を利用する際には、spool_server_cred_serviceの 指定を行ってはいけません。
 .sp
-ユーザ名と証明書のDistinguished Nameの対応をとるため、 ``/etc/grid\-security/grid\-mapfile\*(Aq\*(Aqを用います。 このため、このファイルが存在しなかったり、あるいはこのファイルに登録 されてないユーザは、この機能を用いることができません。
+ユーザ名と証明書のDistinguished Nameの対応をとるため、 ``/etc/grid\-security/grid\-mapfile\'\'を用います。 このため、このファイルが存在しなかったり、あるいはこのファイルに登録 されてないユーザは、この機能を用いることができません。
 .sp
 これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_USER_NAMEに対応する機能です。
 .sp
@@ -238,6 +229,25 @@ GSI認証において、spool_server_cred_typeで指定した値に 応じて、
 sharedsecret利用時には、この指定は単に無視されます。 詳しくはspool_server_cred_typeの項を参照してください。
 .RE
 .PP
+spool_server_back_channel_rcvbuf_limit \fIサイズ制限値\fR
+.RS 4
+gfsd の back channel ソケットの、SO_RCVBUF サイズの上限を指定します。 バッファ長を短くすると，メタデータサーバからの要求が過度に溜らなくなり、 gfsd の back channel 接続が切れてしまう問題を緩和できます。 引数にdisableと指定すると、制限がかからなくなります。 デフォルトの制限値は 4096バイトです。
+.sp
+この文は gfsd が参照する gfarm2\&.conf のみで有効であり、 クライアントや gfmd\&.conf では無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_server_back_channel_rcvbuf_limit 16384
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 spool_check_level \fIレベル\fR
 .RS 4
 gfsd起動時のスプールチェックを有効にします。スプールチェックでは、 メタデータに登録されている情報との一貫性を検査します。レベルはgfsdの\-c オプションを指定する数に相当し、"display"は\-cオプション、"delete"は\-cc オプション、"lost_found"は\-cccオプションと同等です。詳細はgfsdの マニュアルページを参照ください。レベル"disable"にすると、スプールチェックを 行いません。デフォルト値は"lost_found"です。
@@ -249,6 +259,126 @@ gfsd起動時のスプールチェックを有効にします。スプールチ�
 .\}
 .nf
 	spool_check_level disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+spool_check_parallel \fI並列度\fR
+.RS 4
+gfsd起動時のスプールチェック並列度を数字で設定します。
+.sp
+デフォルトでは spool_check_parallel_per_capacity を用いて 並列度を自動的に決定します。
+.sp
+この文はgfsdが参照するgfarm2\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_check_parallel 16
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+spool_check_parallel_max \fI並列度\fR
+.RS 4
+spool_check_parallel_per_capacity を用いて並列度を自動的に決定する際の 上限値を指定します。 自動設定の場合にはこの上限よりも大きな並列度にはなりません。 spool_check_parallel で並列度が指定されていた場合は、 こちらの設定は無視されます。
+.sp
+デフォルトは64です。
+.sp
+この文はgfsdが参照するgfarm2\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_check_parallel_max 128
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+spool_check_parallel_per_capacity \fIバイト数\fR
+.RS 4
+gfsd のスプール領域のディスク容量を、この設定値で割った値を、 gfsd起動時のスプールチェック並列度として用います。 ただし、spool_check_parallel で並列度が指定されていた場合は、 こちらの設定は無視されます。 指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定 することで、それぞれ1KiB／1MiB／1GiB／1TiBを単位とする ことができます。
+.sp
+デフォルトは64TiBです。
+.sp
+この文はgfsdが参照するgfarm2\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_check_parallel_per_capacity 10T
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+spool_check_parallel_step \fI数\fR
+.RS 4
+gfsd起動時のスプールチェック並列処理において、 各プロセスが一度に処理する単位を設定します。 通常、この値を調整する必要はありませんが、 gfmd との間の通信遅延が大きい場合は、この値を大きくすることによって 性能が改善する可能性があります。
+.sp
+デフォルトは 1 です。
+.sp
+この文はgfsdが参照するgfarm2\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_check_parallel_step 16
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+spool_base_load \fICPU負荷\fR
+.RS 4
+指定されたCPU負荷をgfsdのCPU負荷に加えます。 このオプションはgfsdノード（ファイルシステムノード）でのみ有効です。 デフォルトは0\&.0です。 このオプションにより、スケジューリングの優先度を変更することができます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_base_load 1\&.0
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+spool_digest_error_check \fI有効性\fR
+.RS 4
+digest文によりチェックサム計算が有効となっている場合、 ファイル読込時にチェックサムが計算されます。 チェックサムが異なる場合、つまり、ファイルが損傷している場合は lost+foundディレクトリに移動し、損傷したファイルは自動的に除かれます。 この文でdisableと指定することによって、 この移動を抑制することができます。
+.sp
+このオプションはgfsdノード（ファイルシステムノード）でのみ有効です。 デフォルトはenableです。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_digest_error_check disable
 .fi
 .if n \{\
 .RE
@@ -408,6 +538,44 @@ metadb_server_job_queue_length \fIキュー長\fR
 .\}
 .RE
 .PP
+metadb_server_remove_scan_log_interval \fI秒数\fR
+.RS 4
+メタデータサーバgfmdの削除キュー処理に関する統計情報ログの、 記録頻度を秒数で指定します。 デフォルト値は3600秒です。
+.sp
+この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_server_remove_scan_log_interval 86400
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+metadb_server_remove_scan_interval_factor \fI数字\fR
+.RS 4
+メタデータサーバgfmdの削除キュー処理が、 CPU時間をどの程度使用してよいかを調整するパラメータを指定します。 削除キュー処理は、最大でCPU時間の 1 / (metadb_server_remove_scan_interval_factor + 1) を使用することになります。 デフォルト値は5です。
+.sp
+この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_server_remove_scan_interval_factor 2
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 metadb_server_heartbeat_interval \fI秒数\fR
 .RS 4
 メタデータサーバgfmdが各ファイルシステムサーバgfsd に対し動作確認を行うハートビートの間隔を秒数で指定します。 デフォルト値は180秒です。
@@ -440,6 +608,46 @@ metadb_server_dbq_size \fIキュー長\fR
 .\}
 .nf
 	metadb_server_dbq_size 65536
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+metadb_server_back_channel_sndbuf_limit \fIサイズ制限値\fR
+.RS 4
+メタデータサーバが gfsd back channel への接続に用いるソケットの SO_SNDBUF サイズの上限を指定します。 バッファ長を短くすると，メタデータサーバからの要求が過度に溜らなくなり、 gfsd の back channel 接続が切れてしまう問題を緩和できます。 引数にdisableと指定すると、制限がかからなくなります。 デフォルトの制限値は 4096バイトです。
+.sp
+この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_server_back_channel_sndbuf_limit 16384
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+metadb_server_nfs_root_squash_support \fI有効性\fR
+.RS 4
+enable の場合、gfmd はホームディレクトリの \&.gfarm_shared_key ファイルを 読む際に、そのホームディレクトリのオーナー権限を用います。 disable の場合、root 権限のままで読みます。
+.sp
+sharedsecret 認証を行なう Gfarm ユーザーのホームディレクトリを、 no_root_squash エクスポート・オプションなしの NFS を用いて共有している場合、 enable にしておく必要があります。 デフォルトはenableですが、利用環境が許すのであれば disableに変更すると、 gfmdのCPU負荷を若干低減できます。
+.sp
+この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
+.sp
+Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_server_nfs_root_squash_support disable
 .fi
 .if n \{\
 .RE
@@ -684,6 +892,58 @@ gsiの両方を、 それ以外の全てのホストにはgsi認証のみを試�
 gsi認証のみを試みることになります。
 .RE
 .PP
+shared_key_file \fIパス名\fR
+.RS 4
+sharedsecret認証に用いる秘密鍵ファイルのパス名を指定します。
+.RE
+.PP
+digest \fIdigestタイプ\fR
+.RS 4
+チェックサム計算を有効にし、 digestタイプで指定されたチェックサムを計算します。 digestタイプとしては、チェックサム計算を実行するファイルシステムノード上の OpenSSL ライブラリがサポートしているタイプを、小文字で、 例えば md5 や sha256 のように指定します。 あるいは
+client_digest_check文でenableを指定して いる場合は、このdigstタイプをクライアント上の OpenSSL ライブラリもサポート している必要があります。
+.sp
+digestタイプとして disable と指定した場合は、チェックサム計算を抑制します。
+.sp
+この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
+.sp
+注: たとえこの設定でチェックサム計算を有効にしても、 ローカルホストの gfsd が管理するファイル複製にクライアントがアクセスする 場合には、そのままではチェックサムが計算されません。 これは、デフォルト設定だと gfsd のみがチェックサム計算を行なうのに対し、 ローカルアクセスについては、クライアントがファイルを直接読み書きするためです。 ローカルアクセスについてもチェックサム計算を行うためには、
+direct_local_access文でdisableを指定して、 ローカルアクセスの場合の直接読み書きを抑制するか、 あるいは
+client_digest_check文でenableを指定して、 チェックサム計算をクライアント側でも行なうようにする必要があります。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	digest md5
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+max_directory_depth \fI数\fR
+.RS 4
+directory の深さとして許される最大値を設定します。 ただし、深さの検査は厳密ではないので、この設定よりも深いディレクトリを 許容する処理もあります。
+.sp
+デフォルトは100です。
+.sp
+この文はgfmd\&.confのみで有効であり、gfarm2\&.confでは無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	max_directory_depth 200
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 sockopt \fIオプション\fR\fI[=\fR\fI値\fR\fI] [\fR\fILISTENER\fR\fI | \fR\fI\fIホスト指定\fR\fR\fI]\fR
 .RS 4
 通信socket(2)に対して、setsockopt(2)システムコールを使って ソケット・オプションを指定します。
@@ -912,6 +1172,8 @@ schedule_busy_load_thresh \fICPU負荷\fR
 .RS 4
 ファイルシステムノードのスケジューリング時に、 CPU負荷が高いとみなされるCPU負荷を指定します。 ここで指定されるCPU負荷より高いCPU負荷のファイルシステムノードは 当初スケジュール対象となりません。 デフォルト値は0\&.5です。
 .sp
+この文はクライアントおよびgfmdで有効です。
+.sp
 例:
 .sp
 .if n \{\
@@ -1048,7 +1310,7 @@ gfarmがファイルを書き込むノードを決める際、できる限りこ
 .PP
 minimum_free_disk_space \fIバイト数\fR
 .RS 4
-ファイルシステムノードで必要な最小限度のディスク空き容量を指定 します。このサイズ以下の空き容量しかないファイルシステムノードは、 ファイル書き込みを行う可能性のある操作を行う際に、選択されにくくなります。 指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定 することで、それぞれ1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする ことができます。 デフォルトは128Mバイトです。
+ファイルシステムノードで必要な最小限度のディスク空き容量を指定 します。このサイズ以下の空き容量しかないファイルシステムノードは、 ファイル書き込みを行う可能性のある操作を行う際に、選択されにくくなります。 指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定 することで、それぞれ1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする ことができます。 デフォルトは512Mバイトです。
 .sp
 このパラメータは、gfarm2\&.confとgfmd\&.confの両方で指定する必要があります。 有効にするためには gfmd および Gfarmクライアントを再起動する必要があります。
 .sp
@@ -1065,9 +1327,12 @@ minimum_free_disk_space \fIバイト数\fR
 .\}
 .RE
 .PP
-gfs_proto_fhremove_request_window \fI同時処理数\fR
+direct_local_access \fI有効性\fR
 .RS 4
-gfmd から gfsd に対する複製ファイル削除を、 同時にいくつまで並行して要求できるかを設定します。 デフォルトは 50 です。
+ローカルホストの gfsd が管理するファイル複製にクライアントがアクセスする場合、 オーバヘッドを削減するため、ファイルの読み書きに関しては、 通常 gfsd をバイパスして直接アクセスします。 この文でdisableと指定することによって、 このバイパスを無効化することができます。 この無効化機能は、ローカルホストのファイルアクセスに対して、 gfsdによるチェックサム計算を行うために用意されています。 詳しくは
+direct_local_access文の説明を参照してください。 デフォルトはenableです。
+.sp
+この文は、クライアントが参照するgfarm2\&.confのみで有効です。 gfsd や gfmd は、gfarm2\&.conf や gfmd\&.conf 中のこの文を無視します。
 .sp
 例:
 .sp
@@ -1075,24 +1340,7 @@ gfmd から gfsd に対する複製ファイル削除を、 同時にいくつ�
 .RS 4
 .\}
 .nf
-	gfs_proto_fhremove_request_window 50
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-gfs_proto_replication_request_window \fI同時処理数\fR
-.RS 4
-gfmd 主導の複製処理を、gfmd から複製作成側の gfsd に対して、 同時にいくつまで並行して要求できるかを設定します。 デフォルトは 20 です。
-.sp
-例:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-	gfs_proto_replication_request_window 20
+	direct_local_access disable
 .fi
 .if n \{\
 .RE
@@ -1101,7 +1349,7 @@ gfmd 主導の複製処理を、gfmd から複製作成側の gfsd に対して�
 .PP
 simultaneous_replication_receivers \fI同時処理数\fR
 .RS 4
-gfarm\-2\&.6 以降では、 このパラメータは gfs_proto_replication_request_window と同じ意味となりますので、 そちらを利用してください。 このパラメータは以前のバージョンとの互換性のために残されています。 デフォルトは 20です。
+gfmd 主導の複製処理を、単一複製作成ホストに対して、 同時にいくつまで並行して行なうことを許すかを設定します。 デフォルトは 20です。
 .sp
 例:
 .sp
@@ -1109,16 +1357,16 @@ gfarm\-2\&.6 以降では、 このパラメータは gfs_proto_replication_requ
 .RS 4
 .\}
 .nf
-	simultaneous_replication_receivers 20
+	simultaneous_replication_receivers 40
 .fi
 .if n \{\
 .RE
 .\}
 .RE
 .PP
-outstanding_file_replication_limit \fI同時処理数\fR
+replication_busy_host \fI有効性\fR
 .RS 4
-gfmd 主導の複製処理要求を、システム全体で、 同時にいくつまで未了のまま保持しておけるかを設定します。 このパラメータは、大量の複製要求によるメモリ不足を防ぐために存在します。 デフォルトは 4194304 であり、これはおよそ 512MB のメモリに対応します。
+gfmd主導の複製先にbusyホストを含むかどうか設定します。 disableにすると、busyホストには複製は作成されません。 デフォルトはenableです。
 .sp
 例:
 .sp
@@ -1126,7 +1374,7 @@ gfmd 主導の複製処理要求を、システム全体で、 同時にいく�
 .RS 4
 .\}
 .nf
-	outstanding_file_replication_limit 4194304
+	replication_busy_host disable
 .fi
 .if n \{\
 .RE
@@ -1315,6 +1563,7 @@ fatal_action \fI動作名\fR
 \fIbacktrace_and_abort\fR
 です。
 .sp
+
 例:
 .sp
 .if n \{\
@@ -1345,12 +1594,14 @@ backtrace_and_exit
 .PP
 abort
 .RS 4
+
 \fBabort\fR(3)
 を呼びます。
 .RE
 .PP
 exit
 .RS 4
+
 \fBexit\fR(3)
 を呼びます。
 .RE
@@ -1392,6 +1643,23 @@ no_file_system_node_timeout \fI秒数\fR
 .\}
 .RE
 .PP
+gfmd_authentication_timeout \fI秒数\fR
+.RS 4
+メタデータサーバへの接続後、認証要求への反応がない場合の タイムアウト時間を秒単位で指定します。 デフォルトは 35秒です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	gfmd_authentication_timeout 45
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 gfmd_reconnection_timeout \fI秒数\fR
 .RS 4
 メタデータサーバへの接続が切断された場合， メタデータサーバへの再接続を繰り返しますが， そのタイムアウト時間を秒単位で指定します。 デフォルトは 30秒です。
@@ -1403,6 +1671,23 @@ gfmd_reconnection_timeout \fI秒数\fR
 .\}
 .nf
 	gfmd_reconnection_timeout 30
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+gfsd_connection_timeout \fI秒数\fR
+.RS 4
+ファイルシステムノードへの接続タイムアウトを指定します。 デフォルトは 30秒です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	gfsd_connection_timeout 30
 .fi
 .if n \{\
 .RE
@@ -1428,9 +1713,49 @@ atime \fIタイプ\fR
 .\}
 .RE
 .PP
+max_open_files \fIファイル数\fR
+.RS 4
+同時にオープンできるファイル数の最大値を指定します。 デフォルトは1024です。
+.sp
+この文はgfmd\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	max_open_files 1024
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+client_digest_check \fI有効性\fR
+.RS 4
+このオプションがenableの場合、Gfarmクライアントライブラリ (libgfarm)は、 ファイル全体をシーケンシャルにアクセスする際、チェックサムを計算し、 そのファイルのメタデータに設定されているチェックサムと比較して検証します。 また、メタデータにチェックサムが設定されておらず、 書き込みオープンしている場合には、計算したチェックサムをメタデータに設定します。 デフォルトはdiableです。
+.sp
+この文は、クライアントが参照するgfarm2\&.confのみで有効です。 gfsd や gfmd は、gfarm2\&.conf や gfmd\&.conf 中のこの文を無視します。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	client_digest_check enable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 client_file_bufsize \fIバイト数\fR
 .RS 4
-Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ サイズをバイト単位で指定します。デフォルトは1048568バイト（= 1MiB \- 8B）です。Gfarm\-2\&.5\&.0以前では、ファイルのバッファサイズは、遠隔ファイ ルアクセス性能を極端に低下させないためにも、デフォルト値以下である必 要があります。
+Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ サイズをバイト単位で指定します。デフォルトは1048576バイト（= 1MiB）です。 ファイルのバッファサイズは、遠隔ファイルアクセス性能を極端に低下させ ないためにも、デフォルト値以下である必要があります。
+.sp
+この文は、クライアントが参照するgfarm2\&.confのみで有効です。 gfsd や gfmd は、gfarm2\&.conf や gfmd\&.conf 中のこの文を無視します。
 .sp
 例:
 .sp
@@ -1593,27 +1918,6 @@ enable のとき、デフォルトのマスターgfmdとして設定されてい
 .\}
 .RE
 .PP
-metadb_server_slave_listen \fI有効性\fR
-.RS 4
-enable のとき、スレーブgfmdとして設定されている場合でも、クライアントからの要求を受け付けます。 デフォルトはdisableです。
-.sp
-注意: この機能は開発用に用意されていますので、通常の用途では設定しないでください。
-.sp
-この文はgfmd\&.confのみで有効です。
-.sp
-例:
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-	metadb_server_slave_listen enable
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
 metadb_server_slave_max_size \fIノード数\fR
 .RS 4
 スレーブgfmdの最大ノード数を指定します。デフォルトは16です。
@@ -1627,6 +1931,25 @@ metadb_server_slave_max_size \fIノード数\fR
 .\}
 .nf
 	metadb_server_slave_max_size 40
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+metadb_server_slave_replication_timeout \fI秒数\fR
+.RS 4
+gfmd が SIGTERM シグナルを受けて停止する際に、 スレーブ gfmd へのメタデータ・レプリケーション完了を待つ タイムアウト時間を秒単位で設定します。 タイムアウト時間を過ぎた場合、スレーブ gfmd へのレプリケーションを諦めます。 デフォルトは 120 秒です。
+.sp
+この文はgfmd\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_server_slave_replication_timeout 180
 .fi
 .if n \{\
 .RE
@@ -1690,9 +2013,77 @@ metadb_journal_recvq_size \fIキュー長\fR
 .\}
 .RE
 .PP
+metadb_replica_remover_by_host_sleep_time \fIナノ秒\fR
+.RS 4
+ファイルシステムノード削除時のレプリカ削除処理が、 gfmdが忙しい場合に処理を休む時間をナノ秒で指定します。 この値を増やすと、この処理の優先度が下がり、ゆっくり動作します。 デフォルトは20000000ナノ秒(20ミリ秒)です。 最大値は1000000000ナノ秒(1秒)です。
+.sp
+この文はgfmd\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_replica_remover_by_host_sleep_time 20000000
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+metadb_replica_remover_by_host_inode_step \fI個数\fR
+.RS 4
+ファイルシステムノード削除時のレプリカ削除処理が、 一度に処理するi\-nodeの数を指定します。 この値を減らすと、この処理の優先度が下がり、ゆっくり動作します。 デフォルトは1024個です。
+.sp
+この文はgfmd\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	metadb_replica_remover_by_host_inode_step 1024
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 replica_check \fI有効性\fR
 .RS 4
-enableと指定した場合、gfmd内のreplica_check機能が自動的に、 ファイル複製の数と配置をチェックし、修復します。 replica_checkは必要なときにしか動作しません。 デフォルトはenableです。
+enableと指定した場合、gfmd内のreplica_check機能が、必要なときに自動的に ファイル複製の数と配置を監視し、不足しているファイル複製があれば増やします。 デフォルトはenableです。
+.sp
+下記のイベントが発生するとreplica_checkが開始します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  \- gfsd起動時
+  \- gfsd停止からreplica_check_host_down_thresh秒後
+  \- gfncopyで複製数設定を変更時
+  \- ディレクトリ名変更時、またはファイルを別ディレクトリへ移動時
+    (同一ディレクトリ内で改名した場合は開始しない)
+    (ファイル自身に複製数が設定されている場合は開始しない)
+  \- ファイルclose時ファイル複製自動作成要求がエラー時
+  \- ファイルclose時ファイル複製自動作成処理中にエラー時
+  \- gfsdが忙しくなくなった場合
+    (ロードアベレージがschedule_busy_load_thresh以下に変化時)
+  \- replica_check処理中にエラーが起きた場合、チェック完了後にリトライ
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+\fBgfrepcheck\fR
+コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
+\fBgfrepcheck enable\fR
+は即座に開始します。
+\fBgfrepcheck disable\fR
+は即座に停止します。 startはenableと同等、stopはdisableと同等です。
 .sp
 この文はgfmd\&.confのみで有効です。
 .sp
@@ -1709,9 +2100,110 @@ enableと指定した場合、gfmd内のreplica_check機能が自動的に、 �
 .\}
 .RE
 .PP
+replica_check_remove \fI有効性\fR
+.RS 4
+
+replica_check enableの場合に効果があります。enableと指定 した場合、replica_check機能が余剰ファイル複製を自動的に削除します。例 外として、ファイルがハードリンクされていて (nlink >= 2)、そのファイル 自身に複製数の設定 (gfarm\&.ncopyまたはgfarm\&.replicainfo)がされていない 場合、そのファイルの余剰ファイル複製は削除されません。デフォルトは enableです。
+.sp
+
+\fBgfrepcheck remove\fR
+コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
+.sp
+この文はgfmd\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	replica_check_remove disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+replica_check_remove_grace_used_space_ratio \fIパーセント\fR
+.RS 4
+
+replica_check_removeが有効な場合に効果があります。 なるべく余剰ファイル複製を削除せず残しておくために、猶予容量使用率を指 定します。猶予容量使用率は、gfsdごとのディスク使用率を百分率(パーセン ト, 0から100の整数)で指定します。ここで指定した使用率を超えているgfsd上に ある余剰ファイル複製のうち、
+replica_check_remove_grace_timeの時間を経過している場合 に削除されます。0を指定すると、ディスク使用率に関わら ずreplica_check_remove_grace_time次第で削除されます。 100を指定すると、replica_check_remove disableと同等にな ります。デフォルトは0です。
+.sp
+
+\fBgfrepcheck remove_grace_used_space_ratio\fR
+コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
+.sp
+この文はgfmd\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	replica_check_remove_grace_used_space_ratio 70
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+replica_check_remove_grace_time \fI秒数\fR
+.RS 4
+
+replica_check_removeが有効な場合に効果があります。 猶予容量使用率が
+replica_check_remove_grace_used_space_ratioを超えた場 合に、余剰ファイル複製が削除されるまでの猶予期間を指定します。 猶予期間としてファイルのアクセス時間(atime)からの経過時間を秒数で指定します。 デフォルトは0です。
+.sp
+
+\fBgfrepcheck remove_grace_time\fR
+コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
+.sp
+この文はgfmd\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	replica_check_remove_grace_time 604800
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+replica_check_reduced_log \fI有効性\fR
+.RS 4
+enableと指定した場合、 replica_check機能が出力するログメッセージの数を削減することができます。 デフォルトはenableです。
+.sp
+
+\fBgfrepcheck reduced_log\fR
+コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
+.sp
+この文はgfmd\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	replica_check_reduced_log disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 replica_check_host_down_thresh \fI秒数\fR
 .RS 4
-gfsdが停止した場合、replica_checkは指定した秒数までそのgfsdが停止してい ないとみなします。これはgfsdを保守するために有用です。 デフォルトは10800秒(3時間)です。
+gfsdが停止した場合、ここで指定した秒数までそのgfsdが停止していない(そ のgfsd上のファイル複製は正常である)とreplica_checkがみなします。これは gfsdを保守するために有用です。デフォルトは10800秒(3時間)です。
+.sp
+
+\fBgfrepcheck host_down_thresh\fR
+コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
 .sp
 この文はgfmd\&.confのみで有効です。
 .sp
@@ -1730,7 +2222,11 @@ gfsdが停止した場合、replica_checkは指定した秒数までそのgfsd�
 .PP
 replica_check_sleep_time \fIナノ秒\fR
 .RS 4
-この値を増やすと、replica_checkはgfmdが忙しい場合に限り、ゆっくり動作します。 gfmdが忙しくない場合、replica_checkは全力で動作します。 replica_check内でスリープする時間をナノ秒で指定します。 デフォルトは100000ナノ秒(0\&.1ミリ秒)です。 最大値は1000000000ナノ秒(1秒)です。
+この値を増やすと、gfmdが忙しい場合に限り、replica_checkがゆっくり動作します。 クライアントからのアクセスへの応答を優先するために有用です。 gfmdが忙しくない場合、replica_checkは全力で動作します。 replica_check以外の処理が多いと検出した場合に、replica_checkの処理を一 時的に停止する時間をナノ秒で指定します。 デフォルトは100000ナノ秒(0\&.1ミリ秒)です。 最大値は1000000000ナノ秒(1秒)です。
+.sp
+
+\fBgfrepcheck sleep_time\fR
+コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
 .sp
 この文はgfmd\&.confのみで有効です。
 .sp
@@ -1749,7 +2245,11 @@ replica_check_sleep_time \fIナノ秒\fR
 .PP
 replica_check_minimum_interval \fI秒\fR
 .RS 4
-replica_checkが動作するための最小間隔(秒)を指定します。 デフォルトは10秒です。 つまり、replica_checkは10秒間に最大1回動作することができます。
+replica_checkが次回動作するまでの最小間隔(秒)を指定します。 デフォルトは10秒です。
+.sp
+
+\fBgfrepcheck minimum_interval\fR
+コマンドを使うと、 この値を動的に変更したり、statusで現在の値を取得できます。
 .sp
 この文はgfmd\&.confのみで有効です。
 .sp
@@ -1760,6 +2260,114 @@ replica_checkが動作するための最小間隔(秒)を指定します。 デ�
 .\}
 .nf
 	replica_check_minimum_interval 5
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+replicainfo \fI有効性\fR
+.RS 4
+enableと指定した場合、 gfarm\&.replicainfo拡張属性に従って複製を自動的に配置します。 disableと指定した場合、 gfarm\&.replicainfo拡張属性のホストグループごとの複製数の指定を無視して、 その合計数またはgfarm\&.ncopy拡張属性の値が大きい方を目標の複製数として 複製を配置します。 gfarm\&.replicainfo拡張属性については、
+\fBgfncopy\fRのマニュアルを参照してください。 デフォルトは
+enable
+です。
+.sp
+gfstatus \-Mm \'replicainfo disable\' により、一時的に無効にすることができます。
+.sp
+この文はgfmd\&.confのみで有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	replicainfo disable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+write_verify \fI有効性\fR
+.RS 4
+enableと指定した場合、 ファイル書き込み後しばらく後に、gfsd がデータを読み直してチェックサムを 再確認する write_verify 機能が有効になります。 デフォルトは
+disable
+です。
+.sp
+この文は gfmd\&.conf のみで有効です。 gfarm2\&.confでは無視されます。 gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	write_verify enable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+write_verify_interval \fI秒数\fR
+.RS 4
+ファイルへの書き込み完了後、どの程度時間をおいて、write_verify を実施するか、 秒数で指定します。 デフォルトは 21600秒 (6時間) です。
+.sp
+write_verify のための読み込みは、O_DIRECT 機能が存在する OS では、 direct I/O を用います。しかし、ディスクコントローラ内のキャッシュや、 メタデータ・キャッシュのクリアは行ないませんので、write_verify_interval には、十分長い時間を指定することを推奨します。
+.sp
+この文は gfmd\&.conf のみで有効です。 gfarm2\&.confでは無視されます。 gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	write_verify_interval 21600
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+write_verify_retry_interval \fI秒数\fR
+.RS 4
+write_verify を試みたが、対象ファイルが書き込みオープンされていて 実施できなかった場合に、どれだけの時間待ってから、再度 write_verify を 試みるかを指定します。
+.sp
+この設定値は、write_verify_interval で指定した時間より十分短い時間と することを推奨します。 デフォルトは 600秒 (10分) です。
+.sp
+この文は gfmd\&.conf のみで有効です。 gfarm2\&.confでは無視されます。 gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	write_verify_retry_interval 600
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+write_verify_log_interval \fI秒数\fR
+.RS 4
+write_verify に関する統計情報をログ出力する間隔を指定します。 設定した値以上の時間が経過して、ファイルシステムノードでファイルが 更新されると、統計情報がそのファイルシステムノードのログに記録されます。
+.sp
+デフォルトは 3600秒 (1時間) です。
+.sp
+この文は gfmd\&.conf のみで有効です。 gfarm2\&.confでは無視されます。 gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	write_verify_log_interval 3600
 .fi
 .if n \{\
 .RE
@@ -1776,13 +2384,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .RS 4
 .\}
 .nf
-<spool_statement> |
+	<spool_statement> |
 	<spool_server_listen_address_statement> |
 	<spool_server_listen_backlog_statement> |
 	<spool_server_cred_type_statement> |
 	<spool_server_cred_service_statement> |
 	<spool_server_cred_name_statement> |
+	<spool_server_back_channel_rcvbuf_limit_statement> |
 	<spool_check_level_statement> |
+	<spool_check_parallel_statement> |
+	<spool_check_parallel_max_statement> |
+	<spool_check_parallel_per_capacity_statement> |
+	<spool_check_parallel_step_statement> |
+	<spool_base_load_statement> |
+	<spool_digest_error_check_statement> |
 	<metadb_server_host_statement> |
 	<metadb_server_port_statement> |
 	<metadb_server_cred_type_statement> |
@@ -1793,8 +2408,12 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<metadb_server_stack_size_statement> |
 	<metadb_server_thread_pool_size_statement> |
 	<metadb_server_job_queue_length_statement> |
+	<metadb_server_remove_scan_log_interval_statement> |
+	<metadb_server_remove_scan_interval_factor_statement> |
 	<metadb_server_heartbeat_interval_statement> |
 	<metadb_server_dbq_size_statement> |
+	<metadb_server_back_channel_sndbuf_limit_statement> |
+	<metadb_server_nfs_root_squash_support_statement> |
 	<ldap_server_host_statement> |
 	<ldap_server_port_statement> |
 	<ldap_base_dn_statement> |
@@ -1807,6 +2426,9 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<postgresql_password_statement> |
 	<postgresql_conninfo_statement> |
 	<auth_statement> |
+	<shared_key_file_statement> |
+	<digest_statement> |
+	<max_directory_depth_statement> |
 
 	<sockopt_statement> |
 
@@ -1831,10 +2453,9 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<write_local_priority_statement> |
 	<write_target_domain_statement> |
 	<minimum_free_disk_space_statement> |
-	<gfs_proto_fhremove_request_window_statement> |
-	<gfs_proto_replication_request_window_statement> |
+	<direct_local_access_statement> |
 	<simultaneous_replication_receivers_statement> |
-	<outstanding_file_replication_limit_statement> |
+	<replication_busy_host_statement> |
 	<gfsd_connection_cache_statement> |
 	<xmlattr_size_limit_statement> |
 	<xattr_size_limit_statement> |
@@ -1847,8 +2468,14 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<file_trace_statement> |
 	<fatal_action_statement> |
 	<debug_command_statement> |
+	<no_file_system_node_timeout_statement> |
+	<gfmd_authentication_timeout_statement> |
+	<gfmd_reconnection_timeout_statement> |
+	<gfsd_connection_timeout_statement> |
 
 	<atime_statement> |
+	<max_open_files_statement> |
+	<client_digest_check_statement> |
 	<client_file_bufsize_statement> |
 	<client_parallel_copy_statement> |
 	<profile_statement> |
@@ -1857,15 +2484,26 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<synchronous_replication_timeout_statement> |
 	<synchronous_journaling_statement> |
 	<metadb_server_force_slave_statement> |
-	<metadb_server_slave_listen_statement> |
 	<metadb_server_slave_max_size_statement> |
+	<metadb_server_slave_replication_timeout_statement> |
 	<metadb_journal_dir_statement> |
 	<metadb_journal_max_size_statement> |
 	<metadb_journal_recvq_size_statement> |
+	<metadb_replica_remover_by_host_sleep_time_statement> |
+	<metadb_replica_remover_by_host_inode_step_statement> |
 	<replica_check_statement> |
+	<replica_check_remove_statement> |
+	<replica_check_remove_grace_used_space_ratio_statement> |
+	<replica_check_remove_grace_time_statement> |
+	<replica_check_reduced_log_statement> |
 	<replica_check_host_down_thresh_statement> |
 	<replica_check_sleep_time_statement> |
-	<replica_check_minimum_interval_statement>
+	<replica_check_minimum_interval_statement> |
+	<replicainfo_statement> |
+	<write_verify_statement> |
+	<write_verify_interval_statement> |
+	<write_verify_retry_interval_statement> |
+	<write_verify_log_interval_statement>
 .fi
 .if n \{\
 .RE
@@ -1956,6 +2594,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
+<spool_server_back_channel_rcvbuf_limit_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"spool_server_back_channel_rcvbuf_limit" <size_limit>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <spool_check_level_statement> ::=
 .RS 4
 .sp
@@ -1964,6 +2616,90 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "spool_check_level" <spck_level>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<spool_check_parallel_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"spool_check_parallel" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<spool_check_parallel_max_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"spool_check_parallel_max" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<spool_check_parallel_per_capacity_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"spool_check_parallel_per_capacity" <size>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<spool_check_parallel_step_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"spool_check_parallel_step" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<spool_base_load_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"spool_base_load" <load>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<spool_digest_error_check_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"spool_digest_error_check" <validity>
 .fi
 .if n \{\
 .RE
@@ -2110,6 +2846,34 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
+<metadb_server_remove_scan_log_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_server_remove_scan_log_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<metadb_server_remove_scan_interval_factor_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_server_remove_scan_interval_factor" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <metadb_server_heartbeat_interval_statement> ::=
 .RS 4
 .sp
@@ -2132,6 +2896,34 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "metadb_server_dbq_size" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<metadb_server_back_channel_sndbuf_limit_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_server_back_channel_sndbuf_limit" <size_limit>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<metadb_server_nfs_root_squash_support_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_server_nfs_root_squash_support" <validity>
 .fi
 .if n \{\
 .RE
@@ -2328,6 +3120,48 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "gsi" | "gsi_auth" | "sharedsecret"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<shared_key_file_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"shared_key_file" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<digest_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"digest" <digest_type>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<max_directory_depth_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"max_directory_depth" <number>
 .fi
 .if n \{\
 .RE
@@ -2645,28 +3479,14 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
-<gfs_proto_fhremove_request_window_statement> ::=
+<direct_local_access_statement> ::=
 .RS 4
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-"gfs_proto_fhremove_request_window" <number>
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-<gfs_proto_replication_request_window_statement> ::=
-.RS 4
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-"gfs_proto_replication_request_window" <number>
+"direct_local_access" <validity>
 .fi
 .if n \{\
 .RE
@@ -2687,14 +3507,14 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
-<outstanding_file_replication_limit_statement> ::=
+<replication_busy_host_statement> ::=
 .RS 4
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-"outstanding_file_replication_limit" <number>
+"replication_busy_host" <validity>
 .fi
 .if n \{\
 .RE
@@ -2883,6 +3703,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
+<gfmd_authentication_timeout_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"gfmd_authentication_timeout" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <gfmd_reconnection_timeout_statement> ::=
 .RS 4
 .sp
@@ -2897,6 +3731,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
+<gfsd_connection_timeout_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"gfsd_connection_timeout" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <atime_statement> ::=
 .RS 4
 .sp
@@ -2905,6 +3753,34 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "atime" <atime_type>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<max_open_files_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"max_open_files" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<client_digest_check_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"client_digest_check" <validity>
 .fi
 .if n \{\
 .RE
@@ -3038,20 +3914,6 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
-<metadb_server_slave_listen_statement> ::=
-.RS 4
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-"metadb_server_slave_listen" <validity>
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
 <metadb_server_slave_max_size_statement> ::=
 .RS 4
 .sp
@@ -3060,6 +3922,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "metadb_server_slave_max_size" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<metadb_server_slave_replication_timeout_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_server_slave_replication_timeout" <number>
 .fi
 .if n \{\
 .RE
@@ -3108,6 +3984,34 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
+<metadb_replica_remover_by_host_sleep_time_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_replica_remover_by_host_sleep_time" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<metadb_replica_remover_by_host_inode_step_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"metadb_replica_remover_by_host_inode_step" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <replica_check_statement> ::=
 .RS 4
 .sp
@@ -3116,6 +4020,62 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "replica_check" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<replica_check_remove_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"replica_check_remove" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<replica_check_remove_grace_used_space_ratio_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"replica_check_remove_grace_used_space_ratio" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<replica_check_remove_grace_time> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"replica_check_remove_grace_time" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<replica_check_reduced_log_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"replica_check_reduced_log" <validity>
 .fi
 .if n \{\
 .RE
@@ -3321,6 +4281,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .RE
 .PP
+<size_limit> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<number> | "disable" 
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 <string> ::=
 .RS 4
 .sp
@@ -3421,6 +4395,76 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .RE
 .\}
 .RE
+.PP
+<replicainfo_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"replicainfo" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<write_verify_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"write_verify" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<write_verify_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"write_verify_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<write_verify_retry_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"write_verify_retry_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<write_verify_log_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"write_verify_log_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SH "EXAMPLES"
 .PP
 以下は sharedsecret認証を使う gfarm2\&.conf の例です。
@@ -3493,6 +4537,7 @@ $HOME/\&.gfarm2rc
 .RE
 .SH "SEE ALSO"
 .PP
+
 \fBgfmd\fR(8),
 \fBgfsd\fR(8),
 \fBsetsockopt\fR(2)

@@ -115,8 +115,8 @@ enum gfarm_errmsg {
 	/* refered only from gfarm/glob.c */
 	GFARM_ERRMSG_GFS_GLOB_NOT_PROPERLY_INITIALIZED,
 
-	/* refered only from gfarm/schedule.c */
-	GFARM_ERRMSG_NO_FILESYSTEM_NODE,
+	/* OBSOLETE: should be able to be removed, but kept for safety */
+	GFARM_ERRMSG_NO_FILESYSTEM_NODE_OBSOLETE,
 
 	/* refered only from gfarm/auth_common_gsi.c */
 	GFARM_ERRMSG_CRED_TYPE_DEFAULT_INVALID_CRED_NAME,
@@ -136,6 +136,9 @@ enum gfarm_errmsg {
 	/* refered only from gfarm/import_help.c */
 	GFARM_ERRMSG_HOSTNAME_EXPECTED,
 	GFARM_ERRMSG_EMPTY_FILE,
+
+	/* refered only from gfarm/config.c */
+	GFARM_ERRMSG_INVALID_DIGEST_TYPE,
 
 	GFARM_ERRMSG_END
 };

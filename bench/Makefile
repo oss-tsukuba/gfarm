@@ -9,7 +9,6 @@ SUBDIRS = \
 	nconnect \
 	thput-fsstripe \
 	thput-fsys \
-	thput-gfpio \
-	gfiops
+	thput-gfpio
 
 include $(top_srcdir)/makes/subdir.mk

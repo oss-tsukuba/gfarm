@@ -70,11 +70,14 @@ gfarm_error_t db_inode_cksum_load(void *,
 
 gfarm_error_t db_filecopy_add(gfarm_ino_t, const char *);
 gfarm_error_t db_filecopy_remove(gfarm_ino_t, const char *);
+gfarm_error_t db_filecopy_remove_by_host(const char *);	/* bypass journal */
 gfarm_error_t db_filecopy_load(void *, void (*)(void *, gfarm_ino_t, char *));
 
 gfarm_error_t db_deadfilecopy_add(gfarm_ino_t, gfarm_uint64_t, const char *);
 gfarm_error_t db_deadfilecopy_remove(gfarm_ino_t, gfarm_uint64_t,
 	const char *);
+gfarm_error_t db_deadfilecopy_remove_by_host(const char *);
+							/* bypass journal */
 gfarm_error_t db_deadfilecopy_load(void *,
 	void (*)(void *, gfarm_ino_t, gfarm_uint64_t, char *));
 
@@ -93,7 +96,7 @@ gfarm_error_t db_xattr_add(int, gfarm_ino_t, char *, void *, size_t,
 	struct db_waitctx *);
 gfarm_error_t db_xattr_modify(int, gfarm_ino_t, char *, void *, size_t,
 	struct db_waitctx *);
-gfarm_error_t db_xattr_remove(int, gfarm_ino_t, char *);
+gfarm_error_t db_xattr_remove(int, gfarm_ino_t, const char *);
 gfarm_error_t db_xattr_removeall(int, gfarm_ino_t);
 gfarm_error_t db_xattr_get(int, gfarm_ino_t, char *, void **, size_t *,
 	struct db_waitctx *);

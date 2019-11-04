@@ -1,3 +1,970 @@
+Release note for Gfarm 2.6.22
+=============================
+
+[2017.11.26]
+
+New configuration directive
+* metadb_server_remove_scan_log_interval - interval to log statistical
+  information about removed file scan
+* metadb_server_remove_scan_interval_factor - interval between removed
+  file scans
+* spool_check_parallel, spool_check_parallel_max,
+  spool_check_parallel_per_capacity, spool_check_parallel_step -
+  specifies the number of parallelism and granularity of spool check
+
+Documentation
+* manual pages - gfsrepcheck(1)
+
+Updated feature
+* gfsd - parallel spool check for faster spool check processing
+* gfmd - improve response time even under too many gfmd-initiated
+  replications, file removals and updates
+* gfrepcheck - status command to obtain the current status
+
+Release note for Gfarm 2.6.21
+=============================
+
+[2017.10.1]
+
+New configuration directive
+* replication_busy_host - specify whether destinations of
+  gfmd-initiated replication include busy hosts or not.  Default is
+  enable.  Note that file replica creation to busy file system nodes
+  is disabled since 2.6.17.  To keep this behavior, specify
+  replication_busy_host disable
+* replica_check_remove_grace_used_space_ratio,
+  replica_check_remove_grace_time - specify grace space ratio and
+  grace time for replica check remove
+
+Updated feature
+* gfmd - gfmd-initiated replication selects a file replica to be
+  replicated randomly to avoid concentration
+* gfmd - more rigit disk available check to avoid no space error
+* gfrepcheck - gfrepcheck stop stops replica check processing
+  soon.
+
+Release note for Gfarm 2.6.20
+=============================
+
+[2017.8.9]
+
+New configuration directive
+* max_directory_depth - maximum directory depth.  Default is 100.
+
+Release note for Gfarm 2.6.19
+=============================
+
+[2017.7.14]
+
+Updated feature
+* gfrm - do not try to remove symlinks with the -h option
+* gfmd - more log in peer_set_host
+* postgresql backend - accept IPv6 connection, which is required in
+  CentOS 7.3.1611
+
+Bug fix
+* recursive option does not return error properly
+* compilation error on FreeBSD-10.2/amd64
+* gfsd - invalid file remains when fhclose fails
+* gfmd does not recover from the warning of abandon invalid journal
+
+Release note for Gfarm 2.6.18
+=============================
+
+[2017.3.26]
+
+Updated feature
+* gfprep, gfpcopy - a new scheduling to mitigate destination conflict
+  under concurrent gfprep and gfpcopy executions
+* start replica check when a busy host becomes idle
+
+Bug fix
+* gfmd may not respond when sending journal logs to async slaves
+* write only files may not be moved to lost+found
+* Gfarm RPM packages cannot be installed on RHEL7 or CentOS7
+
+Release note for Gfarm 2.6.17
+=============================
+
+[2017.2.4]
+
+New configuration directive
+* replicainfo - disables file system group based replica location
+  control feature.  Only number of file replicas is maintained.  This
+  directive is available for gfmd
+
+Updated feature
+* gfmd - do not create file replicas in busy file system nodes
+
+Release note for Gfarm 2.6.16
+=============================
+
+[2017.1.14]
+
+Updated feature
+* gfpcopy, gfprep - do not copy to busy hosts by default.  This will
+  be disabled by -B option
+* gfpcopy, gfprep - -I option to specify interval to collect host
+  information.  Default is 300 seconds.
+* gfsd - adjust log level for non-critical replication failure
+
+Bug fix
+* incorrect metadb_server_list causes assertion failure
+
+Release note for Gfarm 2.6.15
+=============================
+
+[2016.12.3]
+
+Updated feature
+* OpenSSL 1.1.0 support
+* gfprep - -mm option to keep an original copy in migration mode
+* gfsd - log message of write_verify process includes the hostname
+
+Bug fix
+* gfprep -m may fail due to file busy even though all operations succeed
+
+Release note for Gfarm 2.6.14
+=============================
+
+[2016.10.26]
+
+New command
+* gflsof - list current opened Gfarm files
+
+Updated feature
+* increase default timeout to connect to gfmd to 35 seconds to cope
+  with fault of primary and secondary DNS servers
+
+Release note for Gfarm 2.6.13
+=============================
+
+[2016.9.27]
+
+New configuration directive
+* max_open_files - specify the maximum number of open files.  Default
+  is 1024.
+
+Updated feature
+* gfmd - keep minimum disk space to reduce no space risk
+
+Release note for Gfarm 2.6.12
+=============================
+
+[2016.8.16]
+
+New feature
+* symbolic link support for master-slave redundant metadata servers -
+  metadb_server_list directive can be used several times to specify
+  several metadata server groups
+
+Updated feature
+* iostat - new data format that aligns the cache line to avoid
+  unnecessary false sharing.  This requires ganglia plugin update by
+  config-{gfsd,gfmd}-iostat -f
+
+Bug fix
+* fix compilation error on Linux/alpha.  This patch is contributed by
+  Michael Cree via Dmitry Smirnov [https://bugs.debian.org/827021]
+* gfpcopy - plug memory leak, which was introduced in Gfarm 2.6.6
+* gfmd - quota is not effective just after gfmd start-up or failover
+* gfmd - incorrect grace period for soft quota after gfmd restart or
+  failover
+* gfsd - may give up to reconnect to gfmd
+* gfsd - incorrect period for write_verify is reported at gfsd crash
+  on Linux 2.6.22 or before
+
+Release note for Gfarm 2.6.11
+=============================
+
+[2016.6.2]
+
+Bug fix
+* gfpcopy does not tolerate file migration or file replica removal
+* gfs_pio_close() returns GFARM_ERR_BAD_FILE_DESCRIPTOR when it is
+  called against a never accessed 0-byte file
+* gfmd may deadlock in GSI when using Globus Toolkit 6.0 or later
+* multi spool directories - directories having the same prefix cannot
+  be specified
+
+Release note for Gfarm 2.6.10
+=============================
+
+[2016.4.25]
+
+New configuration directive
+* metadb_server_nfs_root_squash_support - disables nfs root squash
+  support to improve the metadata performance if it is not necessary
+* write_verify_log_interval - specifies the interval to record
+  statistics of write verify 
+
+Updated feature
+* profile and progress logging support for write verify
+
+Bug fix
+* when gfmd is down, gfsd may not log failed close operation at exit
+* multiple spool directories may cause inconsistent file creation.  If
+  this happens, alert and move it to the spool top directory.
+
+Release note for Gfarm 2.6.9
+============================
+
+[2016.4.3]
+
+New configuration directive
+* spool_server_back_channel_rcvbuf_limit and
+  metadb_server_back_channel_sndbuf_limit - limits outstanding
+  requests between gfsd and gfmd to reduce risk of the disconnection.
+  Default is 4096 bytes.
+
+Updated feature
+* gfsd - support multiple spool directories
+* most available disk space is selected when creating files
+* gfwhere - -m option to select files having the specified number or
+  less number of replicas
+* gfwhere - -h option to select files that stored on the specified
+  host
+* gfstatus - -m option to change the configuration parameter in gfmd
+  with -M option.  Currently, 'digest', 'write_verify',
+  'write_verify_interval', 'write_verify_retry_interval' can be
+  changed.  Note that write_verify is enabled only after gfsd is
+  restarted.
+* write_verify process of gfsd terminates and dumps file information
+  to be verified by TERM signal
+* gfspoolpath - -I option to specify inode number and generation
+  number instead of a filename
+
+Bug fix
+* updated files during the connection between gfsd and gfmd is
+  disconnected cannot be accessed
+* master gfmd may crash when connecting from an expired slave gfmd
+  [sf.net ticket #947]
+* delete metadata when a copy cannot be created due to no space error
+* mtime of gfs_pio_stat() and gfs_stat() is inconsistent, which may
+  cause failure to extract symbolic links from tar files
+
+Release note for Gfarm 2.6.8
+============================
+
+[2016.1.16]
+
+New feature
+* write verify - detect silent data corruption by re-reading files
+
+New configuration directive
+* write_verify - enables the write verify feature
+* write_verify_interval - specifies the wait time in seconds of the
+  write verify after the file creation.  Default is 21600 seconds (6
+  hours).
+* write_verify_retry_interval - specifies the wait time in seconds to
+  retry write verify when the file is opened for writing at the write
+  verify time.  Default is 600 seconds (10 minutes).
+
+Updated feature
+* gfstatus - -M option to ask configuration, e.g. write_verify or
+  digest, in gfmd
+* gfmd reports file names opened for writing when gfsd exits without
+  closing them
+* quota check for file replication, chown, and chgrp
+
+Bug fix
+* gfmd crashes when quota prevents file creation [sf.net ticket #936]
+* gfsd - plug memory leak at gfmd-initiated replication, which was
+  introduced by Gfarm 2.6.0
+
+Release note for Gfarm 2.6.7
+============================
+
+[2015.11.28]
+
+Updated feature
+* make gfarm2fs return EIO instead of EINVAL, when no replica is
+  available [sf.net ticket #924]
+
+Bug fix
+* gfrep and gfprep may create incomplete replica when network error
+  happens, which is introduced by Gfarm 2.6.0 [sf.net ticket #926]
+* local host is not selected when reading a file at first operation,
+  which was introduced by Gfarm 2.6.0
+* When a file system node crashes during receiving a file replica, the
+  metadata remains [sf.net ticket #913]
+* client_digest_check does not return an error even when checksum
+  mismatch happens [sf.net ticket #915, #916]
+* gfarm clients may access uninitialized data, and may dump core, if
+  $HOME/.gfarm2rc does not exist [sf.net ticket #912]
+* changing gfmd port number by "gfmdhost -m -p" makes gfmd crash
+  [sf.net ticket #918]
+* When trying to modify a file stored at a file server with no space
+  or in read-only mode, return no space immediately instead of
+  retrying for a while
+
+Release note for Gfarm 2.6.6
+============================
+
+[2015.8.29]
+
+New configuration directive
+* client_parallel_max - the maximum number of parallel operations that
+  can be specified by gfpcopy and gfprep
+
+Documentation
+* manual pages - gfs_pio_sendfile(3), gfs_pio_recvfile(3)
+* manual pages - gfarm_environ(7) that describes environment variables
+  for Gfarm including ciphers in GSI communication
+* user manual - cipher-comparison.html that describes the performance
+  of each cipher in typical architectures
+
+Updated feature
+* gfpcopy, gfprep - -k option not to copy symlinks [sf.net ticket
+  #904]
+* gfpcopy, gfprep - -X option to exclude files or directories [sf.net
+  ticket #901]
+* gfpcopy, gfprep - retry if copy or replication fails [sf.net ticket
+  #903]
+* gfmv - more like mv(1) not just calling gfs_rename(2) [sf.net ticket
+  #897]
+* automatic quota check - gfquotacheck is not needed to be called
+  explicitly [sf.net ticket #902]
+* gfcksum - -l option to show a long path for each file [sf.net ticket
+  #879]
+* adjust log level [sf.net ticket #876, #877]
+* gfjournal - performance improvement [sf.net ticket #872]
+* automatic repair at replication when the file is corrupted [sf.net
+  ticket #836]
+* gfjournaldump - support ruby 1.9 or later
+
+Bug fix
+* gfjournal - fix incorrect output for offset [sf.net ticket #878]
+* gfjournaldump - fix incorrect output [sf.net ticket #870]
+* gfmd may crash when gfedquota is executed after gfmd failover
+  [sf.net ticket #906]
+
+Release note for Gfarm 2.6.5.1
+==============================
+
+[2015.7.5]
+
+Bug fix
+* initialization for thread-safe OpenSSL is not called at the
+  beginning
+* when specifying the same entry for rename, the entry is unlinked
+  [sf.net ticket #450]
+* gfrmdir / returns 'is a directory' [sf.net ticket #451]
+* file system node is not removed in the backend database when it has
+  no file replica, which was introduced by Gfarm 2.6.5 [sf.net ticket
+  #868]
+* replica check does not start when the file system node group is
+  changed [sf.net ticket #866]
+* replica check does not start when gfarm.replicainfo is removed
+  [sf.net ticket #867]
+
+Release note for Gfarm 2.6.5
+============================
+
+[2015.6.25]
+
+New feature
+* automatic removal of excessive number of file replicas
+* gfrepcheck - remove and reduce_log commands to control automatic
+  replica removal and log summary output features
+* gfpcopy - HPSS support
+* gfprep, gfpcopy - -z and -Z options to specify the minimum and
+  maximum file size to copy, respectively
+
+New configuration directive
+* replica_check_remove - disables automatic replica removal feature
+* replica_check_reduced_log - disables log summary output feature in
+  replica check
+* metadb_replica_remover_by_host_sleep_time
+* metadb_replica_remover_by_host_inode_step
+
+Updated feature
+* file replicas can be removed only when available number of replicas
+  is greater than required [sf.net ticket #857]
+* gfexport - accept multiple input files [sf.net ticket #853]
+* gfspooldigest - show statistics at the end
+* libgfarm - do not connect to servers when client certificate is
+  expired
+* gfhost -d removes file replicas stored on the deleted host [sf.net
+  ticket #860]
+* gfjournal -m - performance improvement
+* gfmd - SIGHUP is not needed to reload CA certificate and CRL
+* slave gfmd - do not exit when journal receive queue overflows
+
+Bug fix
+* gfmd may crash in GSI [sf.net ticket #854]
+* gfmd - replica check does not create required replicas when gfsd is
+  up [sf.net ticket #856]
+* client may block when GSI authentication fails
+* client may crash when connection problem happens [sf.net ticket
+  #852]
+* slave gfmd may exit when connection problem happens [sf.net ticket
+  #851]
+* gfmkdir - fix invalid memory reference in error case
+
+Release note for Gfarm 2.6.4.1
+==============================
+
+[2015.4.30]
+
+Updated feature
+* gfspooldigest - -M option to select files modified older than the
+  specified days ago
+* make progress of replica check
+
+Bug fix
+* gfspooldigest - segfault when gfmd failover happens [sf.net ticket
+  #848]
+
+Release note for Gfarm 2.6.4
+============================
+
+[2015.4.26]
+
+Updated feature
+* gfpcopy - overwrite files when having no file replica
+* gfspooldigest (aka gfspoolmd5) - -G option to read files in a spool
+  directory in Gfarm API, which is useful to move corrupted files to
+  lost+found
+* gffilepath - -l and -P options to specify the metadata directory and
+  the backend database path, respectively
+* master gfmd stops after all journal transfer for safe failover to an
+  asynchronous slave server [sf.net ticket #845]
+* adjust log level
+
+Bug fix
+* cannot build on Mac OS X and NetBSD since Gfarm 2.6.1 [sf.net ticket
+  #846]
+* gffilepath - it does not support hardlinked files
+
+Release note for Gfarm 2.6.3
+============================
+
+[2015.4.13]
+
+Bug fix
+* gfs_pio_sendfile/recvfile may generate incorrect digest
+* when a slave gfmd is changed from asynchronous to synchronous, it
+  stops to work [sf.net ticket #829]
+
+Release note for Gfarm 2.6.2
+============================
+
+[2015.3.27]
+
+Updated feature
+* unconfig scripts are generated by config-gfarm and config-gfsd to
+  undo the configuration process [sf.net ticket #819]
+
+Bug fix
+* mtime becomes Jan 1, 1970 when client_digest_check is enabled, which
+  was introduced by Gfarm 2.6.1 [sf.net ticket #832]
+* missing checksum check during automatic replication when a file is
+  created [sf.net ticket #835]
+* fix lost update problem that happens concurrent read and write cases
+* gfreg - leaves an empty file incorrectly when a diskfull host is
+  specified by -h option [sf.net ticket #842]
+* config-gfarm, config-gfsd - fix permission of configuration file of
+  systemd [sf.net ticket #830]
+* fix infinite loop of replica check due to file size or checksum
+  mismatch
+
+Release note for Gfarm 2.6.1
+============================
+
+[2015.3.2]
+
+New feature
+* move corrupted replica to lost+found when checksum error happens
+  [sf.net ticket #802]
+
+Documentation
+* SETUP - update firewall setting [sf.net ticket #816]
+* SETUP - user registration setting required on metadata servers and
+  file system nodes [sf.net ticket #803]
+* manual pages - gfrm(1), config-gfarm(8), config-gfarm-update(8),
+  config-gfsd(8) and gfdump.postgresql(8) [sf.net ticket #799]
+* Gfarm-FAQ - gfsd -dv may help to find a reason of authentication
+  error
+
+Updated feature
+* gfprep, gfpcopy - keep minimum disk space to reduce no space risk
+* config-gfarm, config-gfarm-update - -d digest_type option to enable
+  digest check
+* config-gfarm - -E option to enable data checksum support in a
+  backend database.  PostgreSQL 9.3 or later is required to use this
+  option [sf.net ticket #804]
+* gfmd - performance improvement of initialization process [sf.net
+  ticket #808]
+* gfmd - multi-master check at the startup process [sf.net ticket
+  #807]
+* configure - support GNU hurd for host_os_name [sf.net ticket #806]
+
+Bug fix
+* gfpcopy - count skipped files correctly [sf.net ticket #810]
+* gfs_pio_sendfile() may set incorrect check sum when it is opened in
+  GFARM_FILE_APPEND [sf.net ticket #812]
+* gfsd - failover notification may delay [sf.net ticket #792]
+
+Release note for Gfarm 2.6.0
+============================
+
+[2014.12.17]
+
+New feature
+* end-to-end data integrity for silent data corruption [sf.net ticket
+  #774]
+* checksum during replication [sf.net tickets #769 and #771]
+* replica locations specified by file system node groups [sf.net
+  tickets #494 and #711]
+* gfhostgroup - manage file system node group
+* fast failover by notifying to gfsd [sf.net ticket #721]
+* client transparent failover [sf.net ticket #527]
+* support sticky bit of directories [sf.net ticket #762]
+
+New configuration directive
+* client_digest_check - enables end-to-end data integrity
+
+New API
+* gfs_pio_sendfile, gfs_pio_recvfile - bulk data transfer
+
+Updated feature
+* gfncopy - -S option to specify replica locations by node groups
+  [sf.net ticket #712]
+* gfpcopy, gfexport, gfreg - performance improvement [sf.net ticket
+  #728]
+* support sha256 digest type [sf.net ticket #757]
+* gfmdhost - introduce a new state under synchronization [sf.net
+  ticket #752]
+
+Bug fix
+* fix race condition when updating files during a failover [sf.net
+  ticket #341]
+* file metadata may not be updated when using direct access feature on
+  a file system node [sf.net ticket #461]
+
+Release note for Gfarm 2.5.8.13
+===============================
+
+[2014.12.16]
+
+Updated feature
+* config-gfarm - CentOS 7 support [sf.net ticket #787]
+* gfprep - suppress insufficient number of replicas error since it is
+  norm when -x option is specified 
+* gfmdhost - -N and -1 options for health check purpose [sf.net ticket
+  #779]
+
+Bug fix
+* GFARM_FILE_APPEND does not work on Mac OS X [sf.net ticket #789]
+
+Release note for Gfarm 2.5.8.12
+===============================
+
+[2014.10.24]
+
+Updated feature
+* gfmd - do not start master mode when another master gfmd running to
+  avoid unexpected misconfiguration [sf.net ticket #777]
+
+Release note for Gfarm 2.5.8.11
+===============================
+
+[2014.10.2]
+
+Updated feature
+* show local access time, remote access time and API counts when
+  profiling feature enabled
+
+Bug fix
+* memory leak in slave gfmd, when a symbolic link is created [sf.net
+  ticket #776]
+
+Release note for Gfarm 2.5.8.10
+===============================
+
+[2014.8.21]
+
+Updated feature
+* return EIO instead of EINVAL when checksum mismatch happens
+* gfdf, gfsched, gfhost - exit with non-zero code when no filesystem
+  node is available
+
+Bug fix
+* gfstat - -r option may cause file migrated or no filesystem node
+  when filesystem nodes are full
+
+Release note for Gfarm 2.5.8.9
+==============================
+
+[2014.7.27]
+
+Updated feature
+* checksum calculation support for ftruncate
+
+Bug fix
+* gfprep - migration may fail when the destination domain is specified
+
+Release note for Gfarm 2.5.8.8
+==============================
+
+[2014.6.29]
+
+Updated feature
+* gfpcopy - do not overwrite new files when the size is different
+* gfls - print setuid/setgid/sticky bits [sf.net ticket #761]
+* gfstat - -r and -h option to obtain file size of file data not
+  metadata
+* gfhost - can be executed by _gfarmfs user
+* config-gfarm - support PostgreSQL 9.3 or later [sf.net ticket #764]
+* gfs_chown and gfs_lchown - return success, if the owner is not
+  actually changed [sf.net ticket #758]
+
+Bug fix
+* fix lost replica when disconnection happens during close
+* gfs_chmod and gfs_lchmod - lacks some posix semantics [sf.net ticket
+  #760]
+* gfstatus - -d option does not work
+
+Release note for Gfarm 2.5.8.7
+==============================
+
+[2014.4.27]
+
+New configuration directive
+* direct_local_access - disables direct local access when accessing
+  the local files
+* gfsd_connection_timeout - specify timeout to connect gfsd.  The
+  default is 30 seconds.
+
+Updated feature
+* gfspoolmd5 - -n option to add checksum for files whose checksum is
+  not calculated yet.
+* set checksum when the gfmd failover happens
+* gfs_fstat_cksum_set() - only gfarmroot can set the checksum
+
+Bug fix
+* gfspoolmd5 - skip incomplete replicas
+* authentication faild error may be incorrectly displayed when using
+  two and more authentication method
+
+Release note for Gfarm 2.5.8.6
+==============================
+
+[2014.3.24]
+
+Bug fix
+* sharedsecret configuration allows unauthenticated access in a
+  certain case, which is introduced by Gfarm 2.5.8.5 [sf.net ticket
+  #754]
+
+Release note for Gfarm 2.5.8.5
+==============================
+
+[2014.3.23]
+
+New command
+* gfcksum - print and calculate checksum
+* gfrepcheck - start or suspend the replica check thread
+* gfspoolinum, gfspoolgen - obtain inode number or generation number
+  from the spool path or lost+found filename
+* gfdirpath - return path name in Gfarm from directory inode number
+* gffilepath - return path name in Gfarm from inode number
+* gfspoolmd5 - check md5 checksum of all files in spool directory
+
+New configuration directive
+* digest - enables data integrity check by checksum calculation and
+  specify the digest type
+
+New API
+* gfs_stat_cksum, gfs_fstat_cksum and gfs_stat_cksum_free - obtain
+  checksum
+* gfs_pio_cksum - calculate checksum
+* gfs_fstat_cksum_set - set checksum from client
+* gfs_pio_fhopen, gfs_pio_fhopendir - open a file or a directory from
+  inode number and generation number
+* gfs_fgetdirpath - return path name from GFS_Dir
+
+Updated feature
+* gfusage - optput total
+* return checksum mismatch error when reading entire file or closed
+* print the progress of replica_check when gfmd catches SIGUSR2
+* gfxattr - -I option to manipulate the extended attribute by inode
+  number
+* grid-proxy-agent - -bits option to specify the number of bits in key
+* adjust log level
+
+Bug fix
+* gfmd may crash when SIGHUP is caught
+* gfpcopy - invalid files may remain when close fails
+* clients may not retry to connect to gfmd in shared secret
+  authentication [sf.net ticket #740]
+* gfs_pio_stat() does not obtain file info in a file system node when
+  it is called just after gfs_pio_open()
+
+Release note for Gfarm 2.5.8.4
+==============================
+
+[2014.1.18]
+
+New command
+* gfsudo - execute a command in gfarmroot privilege
+
+Updated feature
+* support GFARM_FILE_EXCLUSIVE
+* gfrm - -D option to specify a domain name of file replicas to be
+  deleted
+* gfls - -h option to display in human readable format
+* gfusage, gfquota - -h and -H options to display in human readable format
+* gfpcopy - -e option to enable multiple gfpcopy executions for the
+  same target directory
+* gfncopy - -w option to wait until replicas are created
+* gfgroup - -a and -r options to add and remove group members
+* replica check also checks files whose gfarm.ncopy is not set [sf.net
+  trac #733]
+* increase error level when all replicas are lost and when all hosts
+  are down [sf.net trac #732]
+* gfsd - tolerate read-only file system error and no space left on
+  device error
+
+Bug fix
+* gfmd crash when gfmd is stopped during the startup process [sf.net
+  trac #736, #737]
+* gfmd may crash when a write error happens in the startup process
+  [sf.net trac #734]
+
+Release note for Gfarm 2.5.8.3
+==============================
+
+[2013.10.2]
+
+Updated feature
+* gfprep, gfpcopy - -J option to specify the number of processes to
+  read directories [sf.net trac #726]
+
+Bug fix
+* PhysicalSpace and PhysicalNum in quota are incorrect when removing
+  files, which is introduced by Gfarm 2.5.8.2 [sf.net trac #730]
+
+Release note for Gfarm 2.5.8.2
+==============================
+
+[2013.7.29]
+
+New configuration directive
+* spool_base_load - additional CPU load for gfsd to pretend to be busy
+* shared_key_file - specify a pathname of the shared key file
+
+Updated feature
+* Japanese documents including manual pages and HTML documents are
+  encoded in UTF-8 [sf.net trac #698]
+* all entries are included in FileNum in quota [sf.net trac #717]
+* gfprep, gfpcopy - -M option to limit the total file size to be
+  copied [sf.net trac #707]
+
+Bug fix
+* slave gfmd fails to restart after gfhost -d [sf.net trac #697]
+* gfprep -m cannot migrate replicas when two or more source nodes are
+  specified [sf.net trac #709]
+* gfprep -m removes a new valid replica when the source replica cannot
+  be removed [sf.net trac #708]
+* recursive operations for gfarm:// and gfarm://host:port do not work
+* gfdump -r and config-gfarm-update do not work in private mode in
+  debian
+* plug memory leak when file trace enabled [sf.net trac #703]
+* 0-byte file can be created when using gfarm2fs 1.2.8 or later
+  [sf.net trac #702]
+
+Release note for Gfarm 2.5.8.1
+==============================
+
+[2013.5.22]
+
+Updated feature
+* gftest - support relative path and multiple Gfarm file systems when
+  mounted by gfarm2fs
+
+Bug fix
+* gfmd - fix assertion error when the sequence number of operations is
+  larger than 4G
+* gfprep - -x option may cause "file busy" [sf.net trac #689]
+* invalid replica may remain when a replication fails [sf.net trac
+  #680]
+* gfdump.postgresql - fix bashism
+
+Release note for Gfarm 2.5.8
+============================
+
+[2013.4.22]
+
+New command
+* gftest - check entry type
+
+New feature
+* gfprep, gfpcopy - honor write_target_domain directive
+
+Updated feature
+* gfmd init script - kill to immediately stop the gfmd
+* log level adjustment to make ZABBIX alerts usable - step 3 [sf.net
+  trac #679]
+* gfpcopy - preserve the modification time of directories, and honor
+  umask [sf.net trac #662 and #663]
+
+Bug fix
+* no filesystem node happens when updating a file not stored in
+  write_target_domain
+* operation not permitted happens when creating the same sequence of
+  files at the same time [sf.net trac #643]
+* private mode in ubuntu does not work since gfarm-2.5.8-rc3 [sf.net
+  trac #661]
+* replica_check_host_down_thresh does not work [sf.net trac #655]
+* "protocol error" is incorrectly reported even when it is a network
+  error [sf.net trac #658]
+* postgres server for gfarm may not correctly start up on Ubuntu 12.04
+  [sf.net trac #652]
+* gfpcopy cannot copy read-only directories [sf.net trac #660]
+* gfrm -h can remove a replica that may be used for replication
+  [sf.net trac #676]
+* write-mode open may fail due to inappropriate replica scheduling
+  [sf.net trac #682]
+
+Release note for Gfarm 2.5.8-rc3
+================================
+
+[2013.3.27]
+
+New feature
+* support GFARM_FILE_APPEND
+* gfpcopy - copy missing or obsolete files when the target directory
+  exists [sf.net trac #632]
+* gfstress.rb - -T and --timeout option to specify the time for the
+  stress test in seconds.  Default is infinite.
+
+Updated feature
+* gfreg - performance improvement [sf.net trac #484]
+
+Bug fix
+* gfpcopy-test.sh does not report throughput [sf.net trac #628]
+* libgfarm - gfs_realpath() may crash [sf.net trac #591]
+* gfsd - terminates even when there are still opening files in write
+  mode if two or more files are opened in write mode
+* gfsd fails to start when the connection to gfmd is disconnected
+  during the spool check [sf.net trac #587]
+* gfsd - die when unexpected error happens in gfs_server_status since
+  gfmd disconnects the connection [sf.net trac #595]
+* number of replicas may increase when opened in the truncate mode,
+  which is introduced by Gfarm 2.5.7.1  [sf.net trac #583]
+* gfmd crashes when gfmd-initiated replication is invoked against a
+  filesystem node which is down, which is introduced by Gfarm
+  2.5.8-rc1 [sf.net trac #601]
+* potential deadlock in gfmd [sf.net trac #614]
+* gfmd may crash when gfsd is down [sf.net trac #589, #616]
+* fix gfmd slavestart in SuSE and default [sf.net trac #627]
+* failover does not work after accessed by a Gfarm URL [sf.net trac
+  #625]
+* gfmd executed by slavestart (force_slave) crashes when promoting to
+  the master [sf.net trac #635]
+* invalid free() in libgfarm at network interface down, which is
+  introduced by Gfarm 2.5.8-rc2 [sf.net trac #640]
+* replica check may fail by device busy or by already in progress
+  [sf.net trac #648]
+* gfmdhost command can make gfmd crash [sf.net trac #594]
+
+Release note for Gfarm 2.5.8-rc2
+================================
+
+[2013.1.8]
+
+Bug fix
+* libgfarm - gfm_host_is_local() may crash when gfmd connection is
+  disconnected [sf.net trac #580]
+* gfmd - segfault when executing gfwhere against a file including
+  unnecessary copies [sf.net trac #575]
+* gfmd - fix invalid strdup_ck() calls [sf.net trac #460]
+* search from all hosts when there is no candidate in the target
+  domain specified by "write_target_domain"
+* ls fails once after restart or failover of gfmd [sf.net trac #578]
+* master should log a message when a slave is expired [sf.net trac
+  #566]
+* any authenticated user can change metadata server configuration
+  [sf.net trac #572]
+* gfmdhost shows "?" (unknown) when an async slave reconnects [sf.net
+  trac #568]
+* gfprep stops when there there are less available destination hosts
+  than desired [sf.net trac #574]
+
+Release note for Gfarm 2.5.8-rc1
+================================
+
+[2012.12.3]
+
+New feature
+* replica_check - automatic replica creation in case of file system
+  node failure, changing gfarm.ncopy and moving a directory 
+* ganglia plugin to monitor performance
+* gfncopy - set and display NCOPY of file [sf.net trac #497]
+* gfchmod, gfchown, gfchgrp - -R option to operate recursively
+* libgfarm - select near filesystem nodes more reliably [sf.net trac
+  #535]
+* gfspoolpath - show a physical pathname in a spool directory on a
+  filesystem node [st.net trac #493]
+* gfservice - control Gfarm servers from a remote host
+* config-gfmd-iostat, config-gfsd-iostat - set up performance
+  monitoring environment
+
+New configuration directive
+* atime - specify access time update type.  default is relative.
+  [sf.net trac #523]
+* write_local_priority - enables or disables local host affinity
+  scheduling [sf.net trac #125]
+* write_target_domain - specify a target domain for new files to
+  stored
+* spool_check_level - specify spool check level for gfsd [sf.net trac
+  #502]
+* replica_check_minimum_interval - specify the minimum interval for
+  replica_check [sf.net trac #453]
+* schedule_rtt_thresh_diff, schedule_rtt_thresh_ratio - scheduling
+  parameter to decide local networks [sf.net trac #535]
+
+Updated feature
+* support nanosecond for atime, mtime and ctime [sf.net trac #529]
+* gfarm clients - support relative path and multiple Gfarm file
+  systems when mounted by gfarm2fs
+* gfls, gfdf, gfstatus, gfsched - -V option to show Gfarm version
+* gfsd - spool directory consistency check at start-up
+* gfstat - print inum+gen in hex that will help to find files in
+  lost+found
+* gfrm -h, gfrep -x, gfprep -x - prevent to remove file replicas when
+  the total number is less than specified by gfarm.ncopy
+* log level adjustment to make ZABBIX alerts usable - steps 1 and 2
+  [sf.net trac #511, #542]
+* gfmd init script - slavestart to start in slave mode
+* support 1024 or greater number of filesystem nodes [sf.net trac
+  #477]
+
+Bug fix
+* invalid XML value causes gfmd crash [sf.net trac #549]
+* gfmd aborts in journal_file_read_serialized() to send journal to
+  asynchronous slave [sf.net trac #513]
+* cannot set an empty default ACL [sf.net trac #517]
+* incomplete replica is left [sf.net trac #408]
+* obsolete replicas remain existing [sf.net trac #406]
+* local replica may not be selected if there are replicas in the same
+  network [sf.net trac #141]
+* master gfmd incorrectly diagnoses "expired" state about slave gfmd
+  [sf.net trac #374]
+* async slave gfmd loses a connection with master gfmd [sf.net trac
+  #550]
+* unnecessary automatic replication when a file is opened for writing
+  multiple times simultaneously [sf.net trac #438]
+* gfsd stops to work with a message "<err> ![1000551] cannot set
+  canonical hostname of this node", when gfmd is overloaded [sf.net
+  trac #504] 
+* gfls - fix space padding in multicolumn format
+* overflow when parsing int value in the configuration file [sf.net
+  trac #546]
+* installation errors on Mac OS X [sf.net trac #552]
+
 Release note for Gfarm 2.5.7.2
 ==============================
 
@@ -39,7 +1006,8 @@ Bug fix
   condition between creating and reading the same file [sf.net trac
   #455]
 * gfmd, gfsd - gfsd -ccc (or -c, -cc) cannot fix invalid files having
-  inconsistent file size on the spool, introduced in 2.5.6
+  inconsistent file size on the spool, introduced in 2.5.6 [sf.net
+  trac #439]
 * gfmd - potential gfmd memory corruption when scheduling file system
   nodes [sf.net trac #449]
 * libgfarm - log original errno if it is not known [sf.net trac #469]
@@ -338,7 +1306,7 @@ Updated feature
 * failover during reading files against the gfsd failure
 * config-gfarm, config-gfarm-update - -r option to support replicated
   metadata servers, and -j option to specify a journal directory
-* upgrading to a master gfmd by sinding SIGUSR1 signal to a slave gfmd
+* upgrading to a master gfmd by sending SIGUSR1 signal to a slave gfmd
 * initialize GSI environment by sending SIGHUP signal to a gfmd
 * Globus debian package support
 

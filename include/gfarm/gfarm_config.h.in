@@ -20,6 +20,12 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
+/* Define to 1 if you have the `CRYPTO_set_id_callback' function. */
+#undef HAVE_CRYPTO_SET_ID_CALLBACK
+
+/* Define to 1 if you have the `CRYPTO_set_locking_callback' function. */
+#undef HAVE_CRYPTO_SET_LOCKING_CALLBACK
+
 /* Define to 1 if you have the <crypt.h> header file. */
 #undef HAVE_CRYPT_H
 
@@ -52,6 +58,12 @@
 
 /* Define to 1 if you have the `fdopendir' function. */
 #undef HAVE_FDOPENDIR
+
+/* Define to 1 if you have the `futimes' function. */
+#undef HAVE_FUTIMES
+
+/* Define to 1 if you have the `futimesat' function. */
+#undef HAVE_FUTIMESAT
 
 /* Define to 1 if you have the `getdents' function. */
 #undef HAVE_GETDENTS
@@ -158,6 +170,12 @@
 /* Define to 1 if you have the `pthread_barrier_wait' function. */
 #undef HAVE_PTHREAD_BARRIER_WAIT
 
+/* Define to 1 if you have the `pthread_mutex_timedlock' function. */
+#undef HAVE_PTHREAD_MUTEX_TIMEDLOCK
+
+/* PTHREAD_PRIO_INHERIT is usable */
+#undef HAVE_PTHREAD_PRIO_INHERIT
+
 /* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
 
@@ -172,6 +190,9 @@
 
 /* Define to 1 if you have the <shadow.h> header file. */
 #undef HAVE_SHADOW_H
+
+/* Define to 1 if you have the `sigtimedwait' function. */
+#undef HAVE_SIGTIMEDWAIT
 
 /* Define to 1 if you have the `snprintf' function. */
 #undef HAVE_SNPRINTF
@@ -217,9 +238,6 @@
 
 /* Define to 1 if you have the <sys/loadavg.h> header file. */
 #undef HAVE_SYS_LOADAVG_H
-
-/* sys_nerr is defined */
-#undef HAVE_SYS_NERR
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
@@ -296,9 +314,6 @@
 
 /* 5 arguments getspnam_r() exists */
 #undef HAVE_GETSPNAM_R
-
-/* sys_nerr is defined */
-#undef HAVE_SYS_NERR
 
 /* 3rd argument type of bind(2)/connect(2), if <sys/socket.h> doesn't define */
 #undef socklen_t

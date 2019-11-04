@@ -23,10 +23,9 @@ struct gfm_replica_list_by_name_closure {
 
 static gfarm_error_t
 gfm_replica_list_by_name_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+	void *closure)
 {
-	gfarm_error_t e = gfm_client_replica_list_by_name_request(
-	    gfm_server, ctx);
+	gfarm_error_t e = gfm_client_replica_list_by_name_request(gfm_server);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000151,
@@ -37,11 +36,11 @@ gfm_replica_list_by_name_request(struct gfm_connection *gfm_server,
 
 static gfarm_error_t
 gfm_replica_list_by_name_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+	void *closure)
 {
 	struct gfm_replica_list_by_name_closure *c = closure;
 	gfarm_error_t e = gfm_client_replica_list_by_name_result(
-		gfm_server, ctx, &c->n, &c->hosts);
+		gfm_server, &c->n, &c->hosts);
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
@@ -96,11 +95,11 @@ struct gfm_replica_remove_by_file_closure {
 
 static gfarm_error_t
 gfm_replica_remove_by_file_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+	void *closure)
 {
 	struct gfm_replica_remove_by_file_closure *c = closure;
 	gfarm_error_t e = gfm_client_replica_remove_by_file_request(gfm_server,
-	    ctx, c->host);
+	    c->host);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000153,
@@ -111,10 +110,9 @@ gfm_replica_remove_by_file_request(struct gfm_connection *gfm_server,
 
 static gfarm_error_t
 gfm_replica_remove_by_file_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+	void *closure)
 {
-	gfarm_error_t e = gfm_client_replica_remove_by_file_result(
-	    gfm_server, ctx);
+	gfarm_error_t e = gfm_client_replica_remove_by_file_result(gfm_server);
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)

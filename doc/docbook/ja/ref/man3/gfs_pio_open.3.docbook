@@ -5,7 +5,7 @@
 
 <refentry id="gfs-pio-open.3">
 
-<refentryinfo><date>26 Jun 2010</date></refentryinfo>
+<refentryinfo><date>3 Sep 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_open</refentrytitle>
@@ -77,14 +77,12 @@ gfarm://metaserver:port/path/name
 <para>ファイルが存在し、レギュラーファイルで書込みが許される場合、ファイルサイズを0にします。</para>
 </listitem>
 </varlistentry>
-<!--
 <varlistentry>
 <term><constant>GFARM_FILE_APPEND</constant></term>
 <listitem>
 <para>ファイルをアペンドモードでオープンします。</para>
 </listitem>
 </varlistentry>
- -->
 </variablelist>
 
 <!--

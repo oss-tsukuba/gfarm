@@ -34,6 +34,12 @@ enum gflog_fatal_actions {
 void gflog_set_fatal_action(int);
 int gflog_fatal_action_name_to_number(const char *);
 
+/* privlock */
+
+void gfarm_privilege_lock_disable(void);
+void gfarm_privilege_lock(const char *);
+void gfarm_privilege_unlock(const char *);
+
 /* random */
 
 long gfarm_random(void);
@@ -51,6 +57,7 @@ void gfarm_sleep(time_t);
 
 #define GFARM_MILLISEC_BY_MICROSEC	1000
 #define GFARM_SECOND_BY_MICROSEC	1000000
+#define GFARM_SECOND_BY_MILLISEC	1000
 
 struct timeval;
 int gfarm_timeval_cmp(const struct timeval *, const struct timeval *);

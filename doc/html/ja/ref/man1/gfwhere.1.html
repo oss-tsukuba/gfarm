@@ -2,28 +2,28 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfwhere</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfwhere">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfwhere.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfwhere — Gfarm ファイルのレプリカの所在を表示する。</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfwhere</code>  [<em class="replaceable"><code>オプション</code></em>]  <em class="replaceable"><code>path</code></em>... </p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 指定したファイルについて、そのファイルのレプリカを保持する
 ファイルシステムノードのホスト名を表示します。
 </p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-a</code></span></dt>
 <dd><p>
 全てのレプリカに関する情報を表示します。
@@ -40,6 +40,12 @@
 「;世代番号」、
 複製途中の不完全なレプリカの場合「?」、
 停止中のファイルシステムノードの場合「-」。
+</p></dd>
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>host</code></em></span></dt>
+<dd><p>
+指定されたhostに複製が格納されているファイルについて複製情報を表示します。
+複数回指定された場合は、指定された全てのホストに格納されているファイルについて複製情報が表示されます。
+指定されるホスト数は最大3です。
 </p></dd>
 <dt><span class="term"><code class="option">-i</code></span></dt>
 <dd><p>
@@ -73,6 +79,10 @@
 論理的に削除済の場合は「o」、削除されていない場合は「-」となります。
 </p>
 </dd>
+<dt><span class="term"><code class="option">-m</code> <em class="parameter"><code>N</code></em></span></dt>
+<dd><p>
+複製数がN以下でサイズが0以上のファイルについて複製情報を表示します。
+</p></dd>
 <dt><span class="term"><code class="option">-o</code></span></dt>
 <dd><p>
 論理的には削除されているが、物理的にはまだ存在している可能性があるレプリカの

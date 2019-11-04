@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfstatus</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfstatus">
 <a name="gfstatus.1"></a><div class="titlepage"></div>
@@ -12,22 +12,64 @@
 </div>
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [<em class="replaceable"><code>options</code></em>]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [-P <em class="replaceable"><code>path</code></em>] [-d]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [-P <em class="replaceable"><code>path</code></em>] [ -d  |   -M ]  <em class="replaceable"><code>configuration_name</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfstatus</code>   -Mm  [-P <em class="replaceable"><code>path</code></em>] [-d]  <em class="replaceable"><code>configuration_directive</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfstatus</code>   -V </p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
-<p><span class="command"><strong>gfstatus</strong></span> displays information about the
-Gfarm file system.</p>
+<p>
+When no configuration directive is specified as an argument,
+<span class="command"><strong>gfstatus</strong></span> displays information about the
+Gfarm file system.
+</p>
+<p>
+When any configuration name is specified as an argument,
+<span class="command"><strong>gfstatus</strong></span> displays the current
+setting of the configuration.
+If -M option is specified, it asks gfmd about the setting,
+otherwise it displays the setting on localhost.
+NOTE: Currently, only limited set of directives can be specified.
+</p>
+<p>Example:</p>
+<div class="literallayout"><p><br>
+	$ gfstatus -M digest<br>
+</p></div>
+<p>
+When -Mm option is specified, the <span class="command"><strong>gfstatus</strong></span>
+command treats its arguments as configuration directives
+which are same syntax with gfarm2.conf,
+and modifies the setting on gfmd.
+NOTE: Currently, only limited set of directives can be specified.
+</p>
+<p>Example:</p>
+<div class="literallayout"><p><br>
+	$ gfstatus -Mm 'digest sha1'<br>
+</p></div>
 </div>
 <div class="refsect1" title="OPTIONS">
 <a name="options"></a><h2>OPTIONS</h2>
 <div class="variablelist"><dl>
 <dt><span class="term"><code class="option">-d</code></span></dt>
 <dd><p>Displays debug messages.</p></dd>
+<dt><span class="term"><code class="option">-M</code></span></dt>
+<dd><p>
+Performs specified operation against gfmd.
+</p></dd>
+<dt><span class="term"><code class="option">-m</code></span></dt>
+<dd><p>
+Modifies configuration setting.
+This option should be used with the -M option.
+</p></dd>
 <dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>path</code></em></span></dt>
 <dd><p>
 Specifies a path name to specify a metadata server instead of the root
 metadata server.
+</p></dd>
+<dt><span class="term"><code class="option">-V</code></span></dt>
+<dd><p>
+Displays Gfarm version.
 </p></dd>
 <dt><span class="term"><code class="option">-?</code></span></dt>
 <dd><p>Displays a list of command options.</p></dd>

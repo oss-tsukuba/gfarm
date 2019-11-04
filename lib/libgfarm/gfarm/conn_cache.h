@@ -69,4 +69,6 @@ gfarm_error_t gfp_cached_connection_acquire(struct gfp_conn_cache *,
 	int *);
 void gfp_cached_or_uncached_connection_free(struct gfp_conn_cache *,
 	struct gfp_cached_connection *);
+void gfp_cached_connection_addref(struct gfp_conn_cache *,
+	struct gfp_cached_connection *);
 void gfp_cached_connection_terminate(struct gfp_conn_cache *);

@@ -414,7 +414,7 @@ remove_replicas(struct file_info *fi, int ncopy, int nhost, char **host)
 				else if (e == GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS) {
 					e_save = e;
 					break;
-				} else {
+				}else {
 					/* error is always overwritten */
 					e_save = e;
 					fprintf(stderr, "%s: %s\n",

@@ -28,7 +28,6 @@ gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfarm/gfm_client.o
 gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfarm/gfm_conn_follow.o
 gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfarm/gfm_schedule.o
 gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfarm/gfp_xdr.o
-gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfarm/gfp_xdr_client.o
 ##s gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfarm/gfp_xdr_server.o
 ##a gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfarm/gfs_acl.o
 gfarm2-y += $(GFARMDIR)/lib/libgfarm/gfarm/gfs_attrplus.o
@@ -161,3 +160,12 @@ clean:
 	rm -f $(GFARMDIR)/lib/libgfarm/gfutil/.*.o.*
 
 distclean: clean
+
+top_builddir = $(GFARMDIR)
+top_srcdir = $(top_builddir)
+srcdir = .
+
+SRCS = *.c
+
+include $(top_srcdir)/makes/var.mk
+include $(top_srcdir)/makes/gflog.mk

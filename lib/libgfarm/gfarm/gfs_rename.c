@@ -15,12 +15,10 @@ struct gfm_rename_closure {
 };
 
 static gfarm_error_t
-gfm_rename_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure,
+gfm_rename_request(struct gfm_connection *gfm_server, void *closure,
 	const char *sname, const char *dname)
 {
-	gfarm_error_t e = gfm_client_rename_request(gfm_server, ctx,
-	    sname, dname);
+	gfarm_error_t e = gfm_client_rename_request(gfm_server, sname, dname);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1002670,
 		    "rename(%s, %s) request: %s", sname, dname,
@@ -29,13 +27,12 @@ gfm_rename_request(struct gfm_connection *gfm_server,
 }
 
 static gfarm_error_t
-gfm_rename_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_rename_result(struct gfm_connection *gfm_server, void *closure)
 {
 	int src_port;
 	struct gfm_rename_closure *c = closure;
 
-	gfarm_error_t e = gfm_client_rename_result(gfm_server, ctx);
+	gfarm_error_t e = gfm_client_rename_result(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002671,
 		    "rename result: %s",

@@ -142,8 +142,10 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"bad inode number",
 	"bad cookie",
 	"insufficient number of file replicas",
-	"invalid remote peer",
-	"RPC request ignored",
+	"checksum mismatch",
+	"conflict detected",
+	"invalid credential",
+	"no filesystem node",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
@@ -256,8 +258,8 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	/* refered only from gfarm/glob.c */
 	"gfs_glob(): gfarm library isn't properly initialized",
 
-	/* refered only from gfarm/schedule.c */
-	"no filesystem node",
+	/* OBSOLETE: should be able to be removed, but kept for safety */
+	"no filesystem node (obsolete)",
 
 	/* refered only from gfarm/auth_common_gsi.c */
 	"cred_type is not set, but cred_name is set",
@@ -277,6 +279,9 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	/* refered only from gfarm/import_help.c */
 	"hostname expected",
 	"empty file",
+
+	/* refered only from gfarm/config.c */
+	"invalid digest type",
 };
 
 /*
@@ -293,6 +298,7 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
  * (because that means errno is more detailed than gfarm_error_t).
  */
 
+/* UNIX errno <-> gfarm_error_t */
 static struct gfarm_errno_error_map {
 	int unix_errno;
 	gfarm_error_t gfarm_error;
@@ -362,7 +368,7 @@ static struct gfarm_errno_error_map {
 	{ EOPNOTSUPP,	GFARM_ERR_OPERATION_NOT_SUPPORTED },
 	{ EAFNOSUPPORT,	GFARM_ERR_ADDRESS_FAMILY_NOT_SUPPORTED_BY_PROTOCOL_FAMILY },
 	{ EADDRINUSE,	GFARM_ERR_ADDRESS_ALREADY_IN_USE },
-	{ EADDRNOTAVAIL,GFARM_ERR_CANNOT_ASSIGN_REQUESTED_ADDRESS },
+	{ EADDRNOTAVAIL, GFARM_ERR_CANNOT_ASSIGN_REQUESTED_ADDRESS },
 	/* X/Open - ipc/network software -- operational errors */
 	{ ENETDOWN,	GFARM_ERR_NETWORK_IS_DOWN },
 	{ ENETUNREACH,	GFARM_ERR_NETWORK_IS_UNREACHABLE },
@@ -426,6 +432,26 @@ static struct gfarm_errno_error_map {
 	/*		GFARM_ERR_NOT_A_REGULAR_FILE */
 	/*		GFARM_ERR_IS_A_REGULAR_FILE */
 	/*		GFARM_ERR_IS_PATH_ROOT */
+	/*		GFARM_ERR_INTERNAL_ERROR */
+	/*		GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED */
+	/*		GFARM_ERR_TOO_MANY_HOSTS */
+	/*		GFARM_ERR_GFMD_FAILED_OVER */
+	/*		GFARM_ERR_BAD_INODE_NUMBER */
+	/*		GFARM_ERR_BAD_COOKIE */
+	/*		GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS */
+	/*		GFARM_ERR_CHECKSUM_MISMATCH */
+	/*		GFARM_ERR_CONFLICT_DETECTED */
+	/*		GFARM_ERR_INVALID_CREDENTIAL */
+	/*		GFARM_ERR_NO_FILESYSTEM_NODE */
+};
+
+/* gfarm_error_t -> UNIX errno */
+static struct gfarm_error_errno_map {
+	int unix_errno;
+	gfarm_error_t gfarm_error;
+} gfarm_error_errno_map_table[] = {
+	{ EIO,		GFARM_ERR_CHECKSUM_MISMATCH },
+	{ EIO,		GFARM_ERR_NO_FILESYSTEM_NODE },
 };
 
 struct gfarm_error_domain {
@@ -656,13 +682,7 @@ gfarm_error_string(gfarm_error_t error)
 	return (errcode_string[GFARM_ERR_UNKNOWN]);
 }
 
-#ifdef __KERNEL__	/* HAVE_SYS_NERR :: not defined in kernel */
-#undef HAVE_SYS_NERR
-#endif /* __KERNEL__ */
-
-#if defined(HAVE_SYS_NERR)
-# define ERRNO_NUMBER sys_nerr
-#elif defined(ELAST)
+#ifdef ELAST
 # define ERRNO_NUMBER (ELAST + 1)
 #else
 # define ERRNO_NUMBER 256 /* XXX */
@@ -735,11 +755,17 @@ static void
 gfarm_error_to_errno_initialize(void)
 {
 	int i;
-	struct gfarm_errno_error_map *map;
+	struct gfarm_errno_error_map *map1;
+	struct gfarm_error_errno_map *map2;
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_errno_error_map_table); i++) {
-		map = &gfarm_errno_error_map_table[i];
-		gfarm_error_to_errno_map[map->gfarm_error] = map->unix_errno;
+		map1 = &gfarm_errno_error_map_table[i];
+		gfarm_error_to_errno_map[map1->gfarm_error] = map1->unix_errno;
+	}
+	/* error_errno_map takes priority over errno_error_map */
+	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_error_errno_map_table); i++) {
+		map2 = &gfarm_error_errno_map_table[i];
+		gfarm_error_to_errno_map[map2->gfarm_error] = map2->unix_errno;
 	}
 	for (i = 1; i < GFARM_ARRAY_LENGTH(gfarm_error_to_errno_map); i++) {
 		if (gfarm_error_to_errno_map[i] == 0)

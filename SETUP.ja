@@ -140,18 +140,34 @@ root 権限が必要です．以下の設定は root 権限で行います．
   GSI 認証の場合は，ここで設定した Subject DN のユーザ証明書を持つユー
   ザが管理者となります．この場合，指定した Subject DN のエントリを
   /etc/grid-security/grid-mapfile に追加します．
+  GSI認証を用いるには，Gfarm バイナリのビルド前に あらかじめ Globus を
+  インストールし，さらに Gfarm ビルド時の configure コマンドに
+  --with-globusオプションを指定して Globus の利用を有効にしておく必要が
+  あります．
+
+  なお -A オプションに ユーザー _gfarmmd やユーザー _gfarmfs を指定し
+  てはいけません．この2つのユーザーは gfmd デーモンおよび gfsd デーモン
+  が共有鍵のアクセスのために用いる特別なユーザーですので，通常の Gfarm
+  アクセスや管理用アクセスで用いることはできません．
 
 メタデータサーバ上で以下のコマンドを実行して，これから行う設定に関して，
 適切なデフォルト値が設定されているか確認します．ここで指定している
 -t オプションは，設定値やデフォルトの確認のみ行ない，設定の実行は
 しないことを意味するオプションです．
 
+   共有鍵認証を利用する場合:
+
+	# config-gfarm -t -A <global_admin_name>
+
+   GSI 認証を用いる場合:
+
 	# config-gfarm -t -A <global_admin_name> -a gsi_auth -D <Subject DN>
 
--a オプション，-D オプションは GSI 認証を利用しない場合は必要ありません．
--a オプションは，Gfarm における認証方式を指定するものです．デフォルトは
-sharedsecret（共有鍵認証）となります．認証方式に関する詳細は gfarm2.conf(5)
-のマニュアルページあるいは Gfarm-FAQ.ja を参照してください．
+-a オプションは，Gfarm における認証方式を指定するものです．省略した場合
+sharedsecret（共有鍵認証）となります．GSI 認証の場合は -a gsi ないし
+-a gsi_auth を指定します．指定認証方式に関する詳細は gfarm2.conf(5) の
+マニュアルページあるいは Gfarm-FAQ.ja を参照してください．
+-D オプションは GSI 認証を用いる場合のみ必要です．
 
 XPath による検索が可能な XML 拡張属性を利用する際には，-X オプションを
 指定する必要があります．
@@ -164,13 +180,21 @@ XPath による検索が可能な XML 拡張属性を利用する際には，-X 
 定を変更できます．適切な設定になったら，config-gfarm コマンドのオプショ
 ンから -t を取り除いて実行します．
 
+   共有鍵認証を利用する場合:
+
+	# config-gfarm -A <global_admin_name>
+
+   GSI 認証を用いる場合:
+
 	# config-gfarm -A <global_admin_name> -a gsi_auth -D <Subject DN>
 
 config-gfarm は，順番に次の処理を行います．
 
-  1. バックエンド DB の設定を行います．
-  2. Gfarm の設定ファイル <sysconfdir>/gfarm2.conf および
-     <sysconfdir>/gfmd.conf を作成します．
+  1. バックエンド DB 用のディレクトリを作成し，設定ファイルを自動生成し，
+     バックエンド DB を構築します．
+
+  2. Gfarm 用のディレクトリを生成し，設定ファイル <sysconfdir>/gfarm2.conf
+     および <sysconfdir>/gfmd.conf を自動生成します．
 
        ここで <sysconfdir> は，Gfarm をコンパイルした際に，configure の
        --sysconfdir オプションとして指定した値 (詳しくは INSTALL.ja 参照)
@@ -188,7 +212,7 @@ config-gfarm は，順番に次の処理を行います．
        されていますので，適宜読みかえてください．
 
   3. バックエンド DB およびメタデータサーバ gfmd の起動/停止スクリプト
-     (ないし設定ファイル) を配置します．
+     (ないし設定ファイル) を自動生成して配置します．
 
        ほとんどのシステムでは，config-gfarm は起動/停止スクリプト
        'gfmd' および 'gfarm-pgsql' を /etc/init.d または /etc/rc.d/init.d
@@ -223,6 +247,17 @@ config-gfarm は，順番に次の処理を行います．
 共有鍵認証を用いる場合で，Gfarm の利用者のオペレーティングシステム上での
 アカウント名が，Gfarm のグローバルユーザ名と異なる場合には，gfmd.conf と
 gfarm2.conf に local_user_map の設定も行ない，gfmd を再起動しておきます．
+
+共有鍵認証を利用するユーザーのホームディレクトリをNFSで共有していないか，
+共有していても NFS サーバー側の export オプションとして no_root_squash を
+指定している場合，gfmd.conf に次の設定を入れて gfmd を再起動しておくと，
+gfmd の CPU 負荷をいくぶん低減することができます．
+	metadb_server_nfs_root_squash_support disable
+no_root_squash なしで NFS 共有している場合は，この設定をしてはいけません．
+
+GSI認証を用いるためには，ホスト証明書やクライアント証明書を用意した上で
+Globus 用の各種の設定を行なう必要がありますが，ここではその説明を省略し
+ますので http://www.globus.org/ で「GSI C Admin Guide」を参照して下さい．
 
 以上で，メタデータサーバー上での設定は完了です．
 下記を実行して，gfmd が動作していることを確認してください．
@@ -666,7 +701,7 @@ Gfarm ファイルシステムでは，ファイルはどこかのファイル�
 以下は /（root ディレクトリ）の拡張属性 gfarm.ncopy に 2 を指定する例
 です．
 
-	$ echo -n 2 | gfxattr -s / gfarm.ncopy
+	$ gfncopy -s 2 /
 
 このとき，自動的にファイル複製が二つ作成されます．ファイルシステムノー
 ドが故障して，必要な複製数が足りなくなった場合，

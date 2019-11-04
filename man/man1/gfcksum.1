@@ -1,0 +1,79 @@
+'\" t
+.\"     Title: gfcksum
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 3 Mar 2014
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFCKSUM" "1" "3 Mar 2014" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gfcksum \- print checksum
+.SH "SYNOPSIS"
+.HP \w'\fBgfcksum\fR\ 'u
+\fBgfcksum\fR [\-rl] [\-T | \-t] \fIpath\fR...
+.HP \w'\fBgfcksum\fR\ 'u
+\fBgfcksum\fR \-c [\-rlv] [\-h\ \fIhost\fR] \fIpath\fR...
+.SH "DESCRIPTION"
+.PP
+\fBgfcksum\fR
+prints checksum of specified files\&. When \-r option is specified, it prints checksum of subentries in the specified directories recursively\&.
+.PP
+When \-t option is specified, only checksum type which is currently set to the file is printed\&. When \-T option is specified, which checksum type will be calculated is printed\&.
+.PP
+When the \-c option is specified, it calculates the checksum of the specified files, and compares it with the checksum stored in the metadata\&. The \-h option specifies the location of the file replica to be calculated\&. With the \-v option, the verbose information including modification time of the file replica is displayed\&.
+.PP
+If the \-l option is present,
+\fBgfcksum\fR
+displays a path for each file\&. By default, gfcksum shows its basename only\&.
+.SH "OPTIONS"
+.PP
+\fB\-r\fR
+.RS 4
+Displays subdirectories recursively\&.
+.RE
+.PP
+\fB\-c\fR
+.RS 4
+Calculates the checksum of the specified files, and compares it with the checksum stored in the metadata\&.
+.RE
+.PP
+\fB\-h\fR \fIhost\fR
+.RS 4
+Specifies the location of the file replica, when the \-c option is specified\&.
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+Displays the verbose information including modification time of the file replica, when the \-c option is specified\&.
+.RE
+.PP
+\fB\-l\fR
+.RS 4
+Displays a path for each file\&. By default, gfcksum shows its basename only\&.
+.RE
+.PP
+\fB\-?\fR
+.RS 4
+Displays a list of command options\&.
+.RE

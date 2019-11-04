@@ -94,6 +94,8 @@ off_t journal_file_tail(struct journal_file *);
 off_t journal_file_size(struct journal_file *);
 void journal_file_mutex_lock(struct journal_file *, const char *);
 void journal_file_mutex_unlock(struct journal_file *, const char *);
+void journal_file_nonfull_cond_signal(struct journal_file_reader *,
+	const char *);
 gfarm_error_t journal_file_open(const char *, size_t,
 	gfarm_uint64_t, struct journal_file **, int);
 void journal_file_close(struct journal_file *);
@@ -133,7 +135,7 @@ void journal_file_reader_disable_block_writer(struct journal_file_reader *);
 void journal_file_reader_invalidate(struct journal_file_reader *);
 void journal_file_reader_close(struct journal_file_reader *);
 gfarm_error_t journal_file_reader_reopen_if_needed(struct journal_file *,
-	struct journal_file_reader **, gfarm_uint64_t, int *);
+	const char *, struct journal_file_reader **, gfarm_uint64_t, int *);
 
 const char *journal_operation_name(enum journal_operation);
 

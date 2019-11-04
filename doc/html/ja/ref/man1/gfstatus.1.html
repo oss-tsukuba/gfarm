@@ -2,7 +2,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfstatus</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfstatus">
 <a name="gfstatus.1"></a><div class="titlepage"></div>
@@ -12,23 +12,58 @@
 </div>
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [<em class="replaceable"><code>オプション</code></em>]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [-P <em class="replaceable"><code>path</code></em>] [-d]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfstatus</code>  [-P <em class="replaceable"><code>path</code></em>] [ -d  |   -M ]  <em class="replaceable"><code>設定名称</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfstatus</code>   -Mm  [-P <em class="replaceable"><code>path</code></em>] [-d]  <em class="replaceable"><code>設定ディレクティブ</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfstatus</code>   -V </p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
-<p>Gfarmファイルシステムの情報を表示します．</p>
+<p>引数に，設定ディレクティブを指定しない場合，
+Gfarmファイルシステムの情報を表示します．</p>
+<p>引数に，設定名称を指定した場合，その設定値を表示します．
+-M オプションを指定した場合は，gfmd に設定を問い合わせ，
+指定しない場合は，ローカルホストでの設定値を表示します．
+ただし，今のところ，ごく限られたディレクティブのみが指定できます．
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	$ gfstatus -M digest<br>
+</p></div>
+<p>
+オプションに -Mm を指定した場合，
+<span class="command"><strong>gfstatus</strong></span> コマンドは，
+引数を gfarm2.conf と同じ文法の設定ディレクティブと見なし，
+gfmd 上のその設定を書き換えます．
+ただし，今のところ，ごく限られたディレクティブのみが指定できます．
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	$ gfstatus -Mm 'digest sha1'<br>
+</p></div>
 </div>
 <div class="refsect1" title="OPTIONS">
 <a name="options"></a><h2>OPTIONS</h2>
 <div class="variablelist"><dl>
 <dt><span class="term"><code class="option">-d</code></span></dt>
 <dd><p>デバッグメッセージを表示します．</p></dd>
+<dt><span class="term"><code class="option">-M</code></span></dt>
+<dd><p>
+設定値の問い合わせや，設定の変更を，gfmd に対して行ないます．
+</p></dd>
+<dt><span class="term"><code class="option">-m</code></span></dt>
+<dd><p>
+設定の変更を行ないます．
+-M オプションと組み合わせて使います．
+</p></dd>
 <dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>パス名</code></em></span></dt>
 <dd><p>
 指定したパス名により特定のメタデータサーバを指定します．
 </p></dd>
+<dt><span class="term"><code class="option">-V</code></span></dt>
+<dd><p>Gfarm のバージョンを表示します．</p></dd>
 <dt><span class="term"><code class="option">-?</code></span></dt>
-<dd><p>引数オプションを表示します。</p></dd>
+<dd><p>引数オプションを表示します．</p></dd>
 </dl></div>
 </div>
 </div></body>

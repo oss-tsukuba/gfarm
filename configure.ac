@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT
+AC_INIT([gfarm], [2.6.22])
 AC_CONFIG_SRCDIR(RELNOTES)
 AC_CONFIG_AUX_DIR(makes)
 AC_CONFIG_HEADER(include/gfarm/gfarm_config.h)
@@ -35,6 +35,7 @@ if test x"$GCC" = x"yes"; then # CFLAGS='-g -O2'
 else # CFLAGS='-g'
   CFLAGS="-O" # don't use -g, but use -O
 fi
+AC_OPENMP
 
 # Check whether gcc accepts '-rdynamic' option
 # This check is performed for backtrace_symbols() function of glibc.
@@ -282,30 +283,38 @@ AC_ARG_WITH(globus,
 
  # try pkg-config first
  try_pkgconfig=true
- if test -f $globus_libdir/pkgconfig/globus-gssapi-gsi.pc; then
-    GLOBUS_PKG_CONFIG_PATH="env PKG_CONFIG_PATH=$globus_libdir/pkgconfig"
- elif test x"$globus_location" != x; then
-    globus_pkgconfig=`find $globus_location -name globus-gssapi-gsi.pc | head -1`
-    if test x"$globus_pkgconfig" != x; then
-	GLOBUS_PKG_CONFIG_PATH="env PKG_CONFIG_PATH=`dirname $globus_pkgconfig`"
-    else
-	try_pkgconfig=false
-    fi
+ if test x"$globus_libdir" != x &&
+      test -f "$globus_libdir/pkgconfig/globus-gssapi-gsi.pc"
+ then
+    GLOBUS_PKG_CONFIG_ENV="env PKG_CONFIG_PATH=$globus_libdir/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
+ elif test x"$globus_location" = x; then
+    : # nothing to do
+ elif test -f "$globus_location/lib/pkgconfig/globus-gssapi-gsi.pc"; then
+    GLOBUS_PKG_CONFIG_ENV="env PKG_CONFIG_PATH=$globus_location/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
+ elif globus_pkg_config=`
+	find $globus_location -name globus-gssapi-gsi.pc -print | head -1`
+      test x"$globus_pkg_config" != x
+ then
+    GLOBUS_PKG_CONFIG_ENV="env PKG_CONFIG_PATH=`dirname $globus_pkg_config`${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
+ else
+    # if --with-globus=DIR is specified, but globus-gssapi-gsi.pc doesn't
+    # exist in the DIR, do not try "pkg-config globus-gssapi-gsi"
+    try_pkgconfig=false
  fi
- if $try_pkgconfig && $GLOBUS_PKG_CONFIG_PATH pkg-config globus-gssapi-gsi; then
+ if $try_pkgconfig && $GLOBUS_PKG_CONFIG_ENV pkg-config globus-gssapi-gsi; then
 	case ${globus_static} in
 	yes) globus_static=--static;;
 	*)   globus_static=        ;;
 	esac
-	globus_gssapi_libs=`$GLOBUS_PKG_CONFIG_PATH pkg-config ${globus_static} --libs globus-gssapi-gsi`
-	globus_includes=`$GLOBUS_PKG_CONFIG_PATH pkg-config --cflags globus-gssapi-gsi`
+	globus_gssapi_libs=`$GLOBUS_PKG_CONFIG_ENV pkg-config ${globus_static} --libs globus-gssapi-gsi`
+	globus_includes=`$GLOBUS_PKG_CONFIG_ENV pkg-config --cflags globus-gssapi-gsi`
 	AC_MSG_RESULT([found])
  else
- # Grid Packaging Tools (GPT)
- GLBlocation_candidates=${globus_location:-/usr/grid}
- if test -n "$globus_flavor"; then
+   # Grid Packaging Tools (GPT)
+   GLBlocation_candidates=${globus_location:-/usr/grid}
+   if test -n "$globus_flavor"; then
 	GLBflavor_candidates="$globus_flavor"
- else
+   else
 	GLBflavor_candidates=
 	if test x"$GCC" = x"yes"; then
 		tmp='gcc vendorcc'
@@ -322,9 +331,9 @@ AC_ARG_WITH(globus,
 			done
 		done
 	done
- fi
- globus_found=
- for d in ${GLBlocation_candidates}; do
+   fi
+   globus_found=
+   for d in ${GLBlocation_candidates}; do
 	for f in ${GLBflavor_candidates}; do
 		if test -f "$d/include/$f/gssapi.h"; then
 			globus_location=$d
@@ -334,8 +343,8 @@ AC_ARG_WITH(globus,
 		fi
 	done
 	if test x"$globus_found" = x"yes"; then break; fi
- done
- if test x"$globus_found" != x"yes"; then
+   done
+   if test x"$globus_found" != x"yes"; then
 	AC_MSG_RESULT([not found])
 	AC_MSG_RESULT([searched directories are: ${GLBlocation_candidates}])
 	AC_MSG_RESULT([searched flavors are: ${GLBflavor_candidates}])
@@ -345,59 +354,58 @@ AC_ARG_WITH(globus,
 		AC_MSG_ERROR([cannot automatically find include/\${GLOBUS_FLAVOR}/gssapi.h under ${GLBlocation_candidates}, please specify the flavor by --with-globus-flavor=GLOBUS_FLAVOR])
 	fi
 	exit 1
- fi
- f_pthr=`expr "$globus_flavor" : '.*\(pthr\)'`
- if test x"$f_pthr" != xpthr; then
+   fi
+   f_pthr=`expr "$globus_flavor" : '.*\(pthr\)'`
+   if test x"$f_pthr" != xpthr; then
 	AC_MSG_RESULT([bad flavor \"$globus_flavor\"])
 	AC_MSG_ERROR([MT-safe flavor required])
 	exit 1
- fi
- AC_MSG_RESULT([found in \"${globus_location}\" with \"${globus_flavor}\" flavor])
+   fi
+   AC_MSG_RESULT([found in \"${globus_location}\" with \"${globus_flavor}\" flavor])
 
- globus_includes="-I${globus_location}/include/${globus_flavor}"
- if test x"$globus_libdir" = x; then
+   globus_includes="-I${globus_location}/include/${globus_flavor}"
+   if test x"$globus_libdir" = x; then
 	globus_libdir="${globus_location}/lib"
- fi
+   fi
 
- cfgmhtmp=/tmp/cfgmh$$
- AC_MSG_CHECKING([globus library names])
- if	case ${globus_static} in
+   cfgmhtmp=/tmp/cfgmh$$
+   AC_MSG_CHECKING([globus library names])
+   if	case ${globus_static} in
 	yes)	env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-makefile-header -static -flavor=${globus_flavor} globus_gssapi_gsi;;
 	*)	env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-makefile-header         -flavor=${globus_flavor} globus_gssapi_gsi;;
 	esac > $cfgmhtmp
- then
+   then
 	AC_MSG_RESULT([done])
- else
+   else
 	rm -f $cfgmhtmp
 	AC_MSG_RESULT([failed to call ${globus_location}/bin/globus-makefile-header command.])
 	AC_MSG_RESULT([Please run \${GPT_LOCATION}/sbin/gpt-postinstall, if it is not invoked yet.])
 	AC_MSG_ERROR([Globus installation is incomplete, aborted.])
- fi
- globus_gssapi_libs=`sed -n '/^GLOBUS_PKG_LIBS *=/s///p' $cfgmhtmp`
- rm -f $cfgmhtmp
- case ${globus_static} in
- yes)	:;;
- *)	globus_gssapi_libs="-R${globus_libdir} -L${globus_libdir} $globus_gssapi_libs"
- esac
-
- # replace openssl library with that included in globus
- if test -x ${globus_location}/bin/globus-version; then
-   globus_version=`env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-version`
-   case ${globus_version} in
-   4.0*|3*|2*)
-     openssl_includes="${globus_includes}"
-     case ${globus_static} in
-     yes) openssl_libs="${globus_libdir}/libssl_${globus_flavor}.a ${globus_libdir}/libcrypto_${globus_flavor}.a"
-	AC_MSG_RESULT([using globus static library: yes]);;
-     *)	  openssl_libs="-R${globus_libdir} -L${globus_libdir} -lssl_${globus_flavor} -lcrypto_${globus_flavor}"
-	AC_MSG_RESULT([using globus static library: no]);;
-     esac;;
-   *) # after 4.2.0, globus does not include openssl libarary.
-     ;;
+   fi
+   globus_gssapi_libs=`sed -n '/^GLOBUS_PKG_LIBS *=/s///p' $cfgmhtmp`
+   rm -f $cfgmhtmp
+   case ${globus_static} in
+   yes)	:;;
+   *)	globus_gssapi_libs="-R${globus_libdir} -L${globus_libdir} $globus_gssapi_libs"
    esac
- fi
- # End of Grid Packaging Tools (GPT)
- fi
+
+   # replace openssl library with that included in globus
+   if test -x ${globus_location}/bin/globus-version; then
+     globus_version=`env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-version`
+     case ${globus_version} in
+     4.0*|3*|2*)
+       openssl_includes="${globus_includes}"
+       case ${globus_static} in
+       yes) openssl_libs="${globus_libdir}/libssl_${globus_flavor}.a ${globus_libdir}/libcrypto_${globus_flavor}.a"
+	  AC_MSG_RESULT([using globus static library: yes]);;
+       *)	  openssl_libs="-R${globus_libdir} -L${globus_libdir} -lssl_${globus_flavor} -lcrypto_${globus_flavor}"
+	  AC_MSG_RESULT([using globus static library: no]);;
+       esac;;
+     *) # after 4.2.0, globus does not include openssl libarary.
+       ;;
+     esac
+   fi
+ fi # End of Grid Packaging Tools (GPT)
 
  # for conditional compilation which depends on whether globus is enabled or not
  globus_srcs='${GLOBUS_SRCS}'
@@ -499,7 +507,7 @@ yes)
     ])
 
   # Checks for library functions with pthread enabled
-  AC_CHECK_FUNCS(pthread_barrier_wait)
+  AC_CHECK_FUNCS(pthread_barrier_wait pthread_mutex_timedlock)
 
   CPPFLAGS="$CPPFLAGS_SAVE"
   LIBS="$LIBS_SAVE"
@@ -578,6 +586,7 @@ AC_SUBST(largefile64_cflags)
 AC_SUBST(largefile64_targets)
 
 ### sanity check whether OpenSSL is really usable or not
+### only OpenSSL-0.9.7 or later is supported since Gfarm-2.6.15
 
 AC_MSG_CHECKING([openssl])
 
@@ -588,19 +597,23 @@ CPPFLAGS="${openssl_includes} $CPPFLAGS_SAVE"
 LIBS="`echo ${openssl_libs} | sed 's/-R[[^ ]]*//g'` $LIBS_SAVE"
 
 AC_TRY_LINK([
+#include <stdio.h>
 #include <openssl/evp.h>],[
-EVP_MD_CTX md_ctx;
+EVP_MD_CTX *md_ctx = EVP_MD_CTX_create();
 EVP_MD *md_type = EVP_get_digestbyname("sha1");
 
-EVP_DigestInit(&md_ctx, md_type);
+EVP_DigestInit_ex(md_ctx, md_type, NULL);
 ], [], [
   AC_MSG_ERROR([OpenSSL cannot be linked with \"${openssl_includes} ${openssl_libs}\" options, aborted])
 ])
 
+AC_MSG_RESULT([using \"${openssl_includes} ${openssl_libs}\"])
+
+# these functions disappeared since OpenSSL-1.1.0
+AC_CHECK_FUNCS(CRYPTO_set_locking_callback CRYPTO_set_id_callback)
+
 CPPFLAGS="$CPPFLAGS_SAVE"
 LIBS="$LIBS_SAVE"
-
-AC_MSG_RESULT([using \"${openssl_includes} ${openssl_libs}\"])
 
 ###
 ### --with-openldap=OpenLDAP_ROOT
@@ -995,7 +1008,7 @@ fi
 ###### Checks for library functions.
 ######
 
-AC_CHECK_FUNCS(clock_gettime getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long backtrace_symbols utimensat)
+AC_CHECK_FUNCS(clock_gettime getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin sigtimedwait strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long backtrace_symbols futimes futimesat utimensat)
 
 ### Check epoll_create really implemented
 
@@ -1044,18 +1057,21 @@ if test "$ax_cv_have_getspnam_r" = yes; then
   AC_DEFINE(HAVE_GETSPNAM_R, 1, [5 arguments getspnam_r() exists])
 fi
 
-### Solaris no longer defines sys_nerr/sys_errlist
+### Check whether PTHREAD_PRIO_INHERIT is usable or not
 
-AC_MSG_CHECKING([sys_nerr])
-AC_TRY_LINK([
-#include <stdio.h>
-#include <errno.h>],[
-int i = sys_nerr;
-], [ax_cv_have_sys_nerr=yes], [ax_cv_have_sys_nerr=no])
-AC_MSG_RESULT([$ax_cv_have_sys_nerr])
-if test "$ax_cv_have_sys_nerr" = yes; then
-  AC_DEFINE(HAVE_SYS_NERR, 1, [sys_nerr is defined])
+AC_MSG_CHECKING([PTHREAD_PRIO_INHERIT])
+AC_TRY_COMPILE([
+#define _GNU_SOURCE /* CentOS 6 needs this, although CentOS 7 doesn't */
+#include <pthread.h>],[
+pthread_mutexattr_t attr;
+
+pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
+], [ax_cv_have_pthread_prio_inherit=yes], [ax_cv_have_pthread_prio_inherit=no])
+AC_MSG_RESULT([$ax_cv_have_pthread_prio_inherit])
+if test "$ax_cv_have_pthread_prio_inherit" = yes; then
+  AC_DEFINE(HAVE_PTHREAD_PRIO_INHERIT, 1, [PTHREAD_PRIO_INHERIT is usable])
 fi
+
 
 ###### Checks for system services.
 # empty for now
@@ -1082,9 +1098,6 @@ AH_BOTTOM([
 
 /* 5 arguments getspnam_r() exists */
 #undef HAVE_GETSPNAM_R
-
-/* sys_nerr is defined */
-#undef HAVE_SYS_NERR
 
 /* 3rd argument type of bind(2)/connect(2), if <sys/socket.h> doesn't define */
 #undef socklen_t
@@ -1264,7 +1277,6 @@ AC_SUBST(optional_targets)
 # The following is for --srcdir option.
 # AC_OUTPUT() assumes that parent directory of the Makefile exists
 test -d include || mkdir include
-test -d gfptool || mkdir gfptool
 test -d package || mkdir package
 test -d util || mkdir util
 

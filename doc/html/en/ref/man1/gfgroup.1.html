@@ -14,7 +14,7 @@
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfgroup</code>  [-P <em class="replaceable"><code>path</code></em>] [-l] [<em class="replaceable"><code>group</code></em>...]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfgroup</code>  [-P <em class="replaceable"><code>path</code></em>]  -c   groupname  [<em class="replaceable"><code>user</code></em>...]</p></div>
-<div class="cmdsynopsis"><p><code class="command">gfgroup</code>  [-P <em class="replaceable"><code>path</code></em>]  -m   groupname  [<em class="replaceable"><code>user</code></em>...]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfgroup</code>  [-P <em class="replaceable"><code>path</code></em>] [-a] [-r]  -m   groupname  [<em class="replaceable"><code>user</code></em>...]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfgroup</code>  [-P <em class="replaceable"><code>path</code></em>]  -d   groupname </p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
@@ -46,7 +46,19 @@ This option can be used by Gfarm administrators.
 </p></dd>
 <dt><span class="term"><code class="option">-m</code></span></dt>
 <dd><p>
-Replaces group members of the group with new group members.
+Replaces all group members of the existing group.
+This option can be used by Gfarm administrators.
+</p></dd>
+<dt><span class="term"><code class="option">-a</code></span></dt>
+<dd><p>
+Adds group members to the existing group.  This option is only
+available with <code class="option">-m</code> option.
+This option can be used by Gfarm administrators.
+</p></dd>
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd><p>
+Removes group members from the existing group.  This option is only
+available with <code class="option">-m</code> option.
 This option can be used by Gfarm administrators.
 </p></dd>
 <dt><span class="term"><code class="option">-d</code></span></dt>

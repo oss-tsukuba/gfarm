@@ -648,6 +648,10 @@ watch_stderr(void *arg)
 	FD_ZERO(&fdset_orig);
 	for (i = 0; i < watch_stderr_arg.n_procs; i++) {
 		fd = fileno(procs[i].recv_stderr);
+#if 1 /* shut up "warning: array subscript is above array bounds" on NetBSD */
+		if (fd < 0)
+			continue;
+#endif
 		FD_SET(fd, &fdset_orig);
 		if (fd > maxfd)
 			maxfd = fd;

@@ -33,17 +33,19 @@
 	グラフを参照できる。
 
 2.1 性能測定ファイル
-	性能測定ファイルは、各性能項目に関して、測定主体ごとのカラムを持つ。
+	性能測定ファイルは、各性能項目に関して、測定主体ごとのデータ行を持つ。
 	測定主体とは、各プロセスのスレッドなどである。
-	これは、計測時に排他制御などを行わないためで、参照者は各カラムを
+	これは、計測時に排他制御などを行わないためで、参照者は各データ行を
 	合計して値を得るなどしなければならない。
+
+	データ行はキャッシュラインサイズの倍数にアラインされるように配置する。
 
 	性能測定ファイルの定義は include/gfarm/gfarm_iostat.h にある。
 
 	 * ファイル全体
-	+--------------+---------------------+----------------------------+
-	| iostat_head　| iostat_spec * nitem | (valid | val * nitem) * row|
-	+--------------+---------------------+----------------------------+
+	+--------------+---------------------+-+----------------------------+
+	| iostat_head　| iostat_spec * nitem |G| (valid | val * nitem) * row|
+	+--------------+---------------------+-+----------------------------+
 
 	struct gfarm_iostat_head {
 		unsigned int    s_magic;        /* GFARM_IOSTAT_MAGIC */
@@ -58,6 +60,9 @@
 			性能項目の値が有効であった最大の行番号
 		unsigned int    s_item_size;
 			1行のサイズ(バイト数)
+		unsigned int    s_ncolumn;
+			1行のカラム数(64ビットのカラムが1行にいくつあるか)
+		unsigned int    s_dummy;
 		gfarm_uint64_t  s_start_sec;
 			測定開始時刻
 		gfarm_uint64_t  s_update_sec;
@@ -81,17 +86,20 @@
 	}; s_nitem 個 続く
 
 
-	 * 項目リスト
-                  1          2          3           nitem
-	+-------+----------+----------+-----||---+----------+
-	| id  0 | value1   | value2   | valu||   | valuen   |
-	+-------+----------+----------+-----||---+----------+
-	| id  1 | value1   | value2   | valu||   | valuen   |
-	+-------+----------+----------+-----||---+----------+
+	 * ギャップ
+		データ行をアラインするため s_item_off に至るまでギャップがある。
+
+	 * データ行
+                  1          2          3           nitem     ncolumn
+	+-------+----------+----------+-----||---+----------+----||--+
+	| id  0 | value1   | value2   | valu||   | valuen   | gap||  |
+	+-------+----------+----------+-----||---+----------+----||--+
+	| id  1 | value1   | value2   | valu||   | valuen   | gap||  |
+	+-------+----------+----------+-----||---+----------+----||--+
 	struct gfarm_iostat_items {
 		gfarm_uint64_t  s_valid;
 			現在測定中の測定主体ID
-		gfarm_int64_t   s_vals[1];      /* [s_nitem] */
+		gfarm_int64_t   s_vals[1];      /* [s_ncolumn - 1] */
 			測定値
 	}; s_row 行 続く
 
@@ -99,14 +107,15 @@
 	０が設定される。s_vals 配列は測定主体が変わってもクリアすることなく、
 	前回の値を初期値として始める。
 	そうでないと、参照側で積算値を知ることができない。
+	s_vals は領域としてはs_ncolumn - 1 個あるが、有効な値はs_nitem個である。
 
 2.1.1 性能測定ファイル 命名規則
 	性能測定ファイルは、そのディレクトリパスを指定すると、
 	gfmd, gfsd について以下のようにパス名が生成される。
 
 	gfmd: ディレクトリパス/iostat-gfmd-ポート/gfmd
-	gfsd: ディレクトリパス/iostat-gfsd-ポート/{gfsd,bcs}
-	      ディレクトリパス/iostat-gfsd-リスンアドレス-ポート/{gfsd,bcs}
+	gfsd: ディレクトリパス/iostat-gfsd-ポート/{gfsd,bcs,wv}
+	      ディレクトリパス/iostat-gfsd-リスンアドレス-ポート/{gfsd,bcs,wv}
 
 3. gfarm 性能測定
 3.1 パラメタ設定
@@ -133,7 +142,7 @@
 		
 
 3.1.2. config-gfsd-iostat
-	config-gfsd-iostat は、Gfarm クラスタ毎にノードで1階限り行う。
+	config-gfsd-iostat は、Gfarm クラスタ毎にノードで1回限り行う。
 	config-gfsd-iostat では、以下の設定が行われる。
 
 	--iostat-enable		性能測定を行うか否か
@@ -173,19 +182,22 @@
 	gfsd は 通常のクライアントサービスを行うプロセスと、
 	back channel service を行うプロセスで構成され、
 	それぞれrpc の接続要求毎にプロセスを作成し、要求を処理している。
+	また、write verify を指示するプロセスと実行するプロセスも存在する。
 
 	測定主体は各プロセスとする。
 	main プロセスがリスンアドレスとポートからディレクトリを作成する。
-	性能測定ファイルは、gfsd と bcs の二つを作成する。
-	それぞれ、accept を行う親プロセスが、測定行を管理し、
+	性能測定ファイルは、gfsd と bcs, wv の三つを作成する。
+	それぞれ、accept  または要求を受け付ける親プロセスが、測定行を管理し、
 	子プロセスに割り当てる。
 	親プロセスはfork 前に子プロセスのための空き測定行を確保し、
 	fork 後、pid をs_valid に記載する。
 	子プロセスが終了した時はpidを鍵に該当行を探し、s_valid をクリアする。
 
 	計測は以下の箇所で行う。
-		gfs_server_pread, gfs_server_pwrite
-		gfs_server_replica_recv, gfs_client_replica_recv
+		gfs_server_pread, gfs_server_pwrite,
+		gfs_server_write,
+		gfs_recvfile_common, gfs_sendfile_common,
+		calc_digest
 
 3.4　iostat
 	性能測定ファイルの操作は lib/libgfarm/gfarm/iostat.c 内で行っている。
@@ -213,10 +225,10 @@
 	'iostat-gf?d*' 毎に異なるメトリックとして報告される。
 
 	gfmd: ディレクトリパス/iostat-gfmd-ポート/gfmd
-	gfsd: ディレクトリパス/iostat-gfsd-ポート/{gfsd,bcs}
-	      ディレクトリパス/iostat-gfsd-ポート-リスンアドレス/{gfsd,bcs}
+	gfsd: ディレクトリパス/iostat-gfsd-ポート/{gfsd,bcs,wv}
+	      ディレクトリパス/iostat-gfsd-ポート-リスンアドレス/{gfsd,bcs,wv}
 
-	当該ディレクトリ配下の複数のファイル {gfsd, bcs} は同一の
+	当該ディレクトリ配下の複数のファイル {gfsd, bcs, wv} は同一の
 	メトリックとして合算される。
 
 	集計は各ファイルの同一測定行について、今回値から前回値を引いた差を
@@ -241,4 +253,182 @@
 	前回との差分を集計する。
 	
 	指定されたmetric 名についての値を関数値として返す。
+
+5. API
+5.1. gfarm_iostat_static_init
+	iostat グローバル情報の初期化と終了を行う。
+
+	gfarm_error_t
+	gfarm_iostat_static_init(struct gfarm_context *ctxp)
+
+	void
+	gfarm_iostat_static_term(struct gfarm_context *ctxp)
+
+	iostat　は基本的に一つのプログラムで一組の測定情報を収集するので、
+	この管理情報を保持する領域を初期化する。
+	プログラムの開始と終了時に1回限り呼びださなければならない。
+
+	【戻り値】
+	GFARM_ERR_NO_MEMORY
+
+5.2.  gfarm_iostat_mmap
+	測定に先立って測定準備を行う。
+
+	gfarm_error_t
+	gfarm_iostat_mmap(char *path, struct gfarm_iostat_spec *specp,
+			unsigned int nitem, unsigned int row)
+
+	【呼び出し条件】
+	測定に先立って1回限り呼び出す。
+
+	【引数】
+	path	: 測定情報を書き込むファイルパスで、必要なサイズで作成される。
+		当該プロセスにmmap され、そのアドレスはiostat グローバル情報に
+		記録される。
+	specp :	収集する統計情報の表示名とタイプを指定する。
+		参照するのは統計表示プログラムである。
+
+		タイプには以下のものがある。
+		GFARM_IOSTAT_TYPE_TOTAL カラムの値は加算されていく値である。
+		GFARM_IOSTAT_TYPE_CURRENT カラムの値は現在値である。
+	nitem :	統計情報のカラム数を指定する。
+	row :	統計情報の最大行数を指定する。このサイズを超えた収集指定は
+		エラーとなる。
+
+	一つのプロセスが収集できる測定情報は一組のみである。
+	gfmd は1プロセスで一組の測定情報を収集し、
+	gfsd-server は親プロセスと子プロセス群で一組、
+	gfsd-back_channel_server、write_verify_controller
+	も親プロセスと子プロセス群で一組の
+	収集を行うので、親プロセスが1回限り本関数を呼び出す。
+
+	【戻り値】
+	open(2) の失敗
+	ftruncate(2) の失敗
+	write(2) の失敗
+	mmap(2) の失敗
+
+5.3.  gfarm_iostat_find_space, gfarm_iostat_get_ip
+	収集データ行の取得
+
+	struct gfarm_iostat_items*
+	gfarm_iostat_find_space(unsigned int hint)
+	void
+	gfarm_iostat_set_id(struct gfarm_iostat_items *ip, gfarm_uint64_t id)
+
+	struct gfarm_iostat_items*
+	gfarm_iostat_get_ip(unsigned int indx)
+
+	【呼び出し条件】
+	管理情報へのアクセス競合を避けなければならない。
+
+	gfmd はpeer_table_mutexで排他されている。
+	gfsd はアクセスが親プロセスに限定されている。
+
+	【引数】
+	hint :	0 を指定する。
+	id :	0ではない値で収集データ行のidを書き換える。
+	indx :	0ではない値で収集データ行のインデクスを指定する。
+		gfarm_iostat_mmap で指定したrowより小さくなければならない。
+		この値で収集データ行のidを書き換える。
+
+	gfarm_iostat_find_space()はデータ行のid が０であるものを探して、
+	これを使用中とした上で返す。
+	gfarm_iostat_set_id()はgfarm_iostat_find_space()で得られたデータ行の
+	id を設定する。
+
+	gfarm_iostat_get_ip()は指定されたデータ行にindxを記録して、これを返す。
+	既に使用中であるかはチェックしない。
+
+	データ行の各カラムの値は元のままである。
+	管理情報内の最大使用行番号、更新時刻が更新される。
+
+	【戻り値】
+	NULL	: 空きがない、またはidがrow以上である。
+
+5.4.  gfarm_iostat_clear_id, gfarm_iostat_clear_ip
+	収集データ行の返却
+
+	void
+	gfarm_iostat_clear_id(gfarm_uint64_t id, unsigned int hint)
+	void
+	gfarm_iostat_clear_ip(struct gfarm_iostat_items *ip)
+
+
+	【呼び出し条件】
+	管理情報へのアクセス競合を避けなければならない。
+
+	gfmd はpeer_table_mutexで排他されている。
+	gfsd はアクセスが親プロセスに限定されている。
+
+	【引数】
+	hint :	0 を指定する。
+	id :	0ではないid で収集データ行のid に記録された値を指定する。
+	ip : 	返却する収集データ行。
+
+	データ行のid がクリアされるが、各カラムの値は変更されない。
+	管理情報内の更新時刻が更新される。
+
+
+5.5.  gfarm_iostat_set_local_ip
+	収集データ行をグローバル情報に設定する。
+
+	void
+	gfarm_iostat_set_local_ip(struct gfarm_iostat_items *ip)
+
+	【引数】
+	ip :	gfarm_iostat_set_id()で取得したデータ行のアドレス
+
+	gfsd のように子プロセスが1データ行を保持して更新する場合に、
+	そのアドレスをグローバルに登録し、gfarm_iostat_local_add()で
+	データカラムを更新できるようにする。
+	スレッドセーフではない。
+
+5.6.  gfarm_iostat_stat_add, gfarm_iostat_local_add
+	指定カラムの値を加算する
+
+	void
+	gfarm_iostat_stat_add(struct gfarm_iostat_items *ip, unsigned int cat, int val)
+	void
+	gfarm_iostat_local_add(unsigned int cat, int val)
+
+	【呼び出し条件】
+	ip へのアクセス競合を避けなければならない。
+
+	gfmd はpeer 操作スレッドに、
+	gfsd はip 保持プロセスに限定されている。
+
+	【引数】
+	ip :	gfarm_iostat_get_ip()で取得したデータ行
+	cat :	データ行内のカラムインデクス。gfarm_iostat_mmap()で指定した
+		nitem より小さくなければならない。
+	val :	cat で指定したカラムに加算する値。っっｋ
+
+
+6. iostat データアクセス競合
+
+	iostat ファイルは管理部とデータ部に分かれ、データ部は
+	計測主体毎のデータ行から成る。
+	データ部が計測主体毎のデータ行に分かれているのは計測時に他の
+	計測主体との加算処理を行わないためで、
+	性能監視プログラムがデータ行の値を合算、あるいは平均して
+	レポートを作成する。
+
+	データ行の取得/返却処理は管理部情報の参照と更新を伴うが、
+	この排他制御は呼び出し側に任されている。
+	gfmd では、呼び出し側がpeer_table_mutexをとることで保証している。
+	gfsd では親プロセスのみが操作することで保証している。
+
+	データ行を参照更新する計測主体は、更新のある管理部情報を
+	参照することはない。
+
+	データ行のカラムはデータ行の取得/返却を跨いでも
+	クリアされることなく更新が重ねられていく。
+
+
+	このmmapされたiostatファイルは 定期的に性能監視プログラムが
+	read する。
+	性能監視プログラムは基本的に管理部の更新時刻と全データ行を参照して
+	集計するが、このメモリ同期については放置されている。
+
 								-- 以上 --

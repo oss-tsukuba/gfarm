@@ -18,10 +18,12 @@ fi
 case "$type" in
 
 realpath|rename|statfs|chmod|lchmod|chown|lchown|\
-stat|lstat|fstat|utimes|lutimes|remove|unlink|link|symlink|\
-sched-read|sched-open-write|sched-create-write|close|close-open|close-open2|\
+stat|lstat|fstat|stat_cksum|fstat_cksum|pio_cksum|\
+utimes|lutimes|remove|unlink|link|symlink|\
+sched-read|sched-open-write|sched-create-write|\
+close|close-open|close-open2|fhopen-file|\
 read|read-stat|open-read-loop|getc|seek|seek-dirty|\
-write|write-stat|putc|truncate|flush|sync|datasync|\
+write|write-stat|putc|truncate|flush|sync|datasync|read-close-read|\
 getxattr|lgetxattr|getattrplus|lgetattrplus|setxattr|lsetxattr|\
 removexattr|lremovexattr|fgetxattr|fsetxattr|fremovexattr|\
 listxattr|llistxattr|getxmlattr|lgetxmlattr|setxmlattr|lsetxmlattr|\
@@ -31,8 +33,26 @@ shhosts-domainfile|rep-info|rep-list)
 	$PROG $autoopt $type $GF_TMPF
 	;;
 
+recvfile|recvfile-stat|recvfile-close-recvfile)
+	$PROG $autoopt $type $GF_TMPF $TMPD
+	;;
+
+open-recvfile-loop)
+	$PROG $autoopt $type $GF_TMPF $TMPD/0
+	;;
+
+sched-recvfile|\
+sched-open-sendfile|sched-create-sendfile|\
+sendfile|sendfile-stat)
+	$PROG $autoopt $type $GF_TMPF $TMPF
+	;;
+
 write-long-loop)
 	$PROG $autoopt $type $GF_TMPF 120 10 1
+	;;
+
+sendfile-long-loop)
+	$PROG $autoopt $type $GF_TMPF $TMPF 120 10 1
 	;;
 
 statfsnode)

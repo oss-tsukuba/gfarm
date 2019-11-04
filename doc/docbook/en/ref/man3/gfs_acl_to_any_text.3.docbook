@@ -13,7 +13,7 @@
 </refmeta>
 
 <refnamediv id="name">
-<refname>gfs_acl_to_text</refname>
+<refname>gfs_acl_to_any_text</refname>
 <refpurpose>convert a Gfarm ACL to text</refpurpose>
 </refnamediv>
 <refsynopsisdiv id="synopsis">

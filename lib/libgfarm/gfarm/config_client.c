@@ -21,6 +21,7 @@
 #include "gfpath.h"
 #define GFARM_USE_STDIO
 #include "config.h"
+#include "config_openssl.h"
 #include "gfm_client.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
@@ -64,7 +65,6 @@ gfarm_config_read(void)
 		sprintf(rc, "%s/%s", home, gfarm_client_rc);
 		rc_need_free = 1;
 	}
-	gfarm_init_config();
 	if ((config = fopen(rc, "r")) == NULL) {
 		user_config_errno = errno;
 	} else {
@@ -134,11 +134,12 @@ gfarm_initialize(int *argcp, char ***argvp)
 
 	e = gfarm_context_init();
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003866,
 			"gfarm_context_init failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
+	gfarm_openssl_initialize();
 	gflog_initialize();
 	if (argvp)
 		gfarm_config_set_argv0(**argvp);
@@ -220,7 +221,6 @@ gfarm_error_t
 gfarm_terminate(void)
 {
 	gfs_profile(gfs_display_timers());
-	gfarm_free_config();
 	gfs_client_terminate();
 	gfm_client_terminate();
 	gflog_terminate();
@@ -233,6 +233,7 @@ gfarm_terminate(void)
 main()
 {
 	gfarm_error_t e;
+	int i;
 
 	e = gfarm_set_local_user_for_this_local_account();
 	if (e) {
@@ -246,7 +247,11 @@ main()
 		fprintf(stderr, "gfarm_config_read(): %s\n", e);
 		exit(1);
 	}
-	printf("gfarm_spool_root = <%s>\n", gfarm_spool_root);
+	for (i = 0; i < GFARM_SPOOL_ROOT_NUM; ++i) {
+		if (gfarm_spool_root[i] == NULL)
+			break;
+		printf("gfarm_spool_root = <%s>\n", gfarm_spool_root[i]);
+	}
 	printf("gfarm_spool_server_port = <%d>\n", gfarm_spool_server_port);
 	printf("gfarm_metadb_server_name = <%s>\n", gfarm_metadb_server_name);
 	printf("gfarm_metadb_server_port = <%d>\n", gfarm_metadb_server_name);

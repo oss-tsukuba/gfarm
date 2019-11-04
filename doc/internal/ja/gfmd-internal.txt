@@ -47,28 +47,9 @@ host_*() となっている。
 継承するため、構造体定義は abstract_host_impl.h にあり、モジュール内の
 関数名は abstract_host_*() となっている。
 
-■ 各モジュールの役割
-
-○ watcher.c
-  gfevent.c を用いて、ソケットの監視 (select(2) ないし epoll(2)) を行なう。
-  このモジュールの担当する役割は、 
-  epoll_wait()/EPOLL_CTL_ADD/EPOLL_CTL_DEL/close() といった処理を、
-  監視専用の単一のスレッドである watcher() に任せることにより、
-  それまで起きていた以下のような問題を、（メッセージを抑制するのではなく）、
-  エラー自体が発生しないように解決すること。
-    SF.net #80 - close(2) との競合で epoll_ctl() が EBADF で失敗する
-    SF.net #113 - close(2) 後にディスクリプタが、ファイルアクセス用に
-	再利用されたため EPOLL_CTL_DEL が EPERM で失敗する
-  watcher() スレッドへの通知は、socketpair(2) で行なう。このため
-  watcher() スレッドは epoll_wait() でディスクリプタのみ監視していれば良い。
-  通知を socketpair(2) で行なうことにより、SF.net #229 (イベント監視のために
-  定期的なポーリングを行なっていた) という問題も解決している。
-  イベント通知用 socketpair(2) の監視処理は watcher_control_callback()
-  にある。
-
 ■ データ構造
 
-struct mdhost, struct host, struct user, struct group へのポインタは、
+struct host, struct user, struct group へのポインタは、
 gfmd が動作している間、常に有効であり、継続して利用できる。
 
 ただし、削除されたホスト/ユーザー/グループも存在するので、
@@ -88,39 +69,6 @@ giant_lock とは別のロックで保護されているため、giant_lock 保�
 　 コーディング規約としては、それを仮定していない。
 　 giant_lock を手放している区間を経由して inode を利用する場合は、
    struct inode へのポインタではなく、i-node 番号を用いる必要がある。
-
-○ データ寿命管理
-
-永続的に使えるもの
-	上述の通り user, group, host, mdhost は、寿命を気にせず利用できる
-
-inode
-	現在の実装では、struct inode へのポインタは決して解放されないが、
-	それに依存したコードを書いてはならない。
-	以下の条件がすべて成立した場合、inode は論理的には削除される。
-	(1) オープンされていない
-	(2) レプリケーション処理の途中ではない
-	(3) nlink が 0
-	ただし、このうち条件 (3) は削除される可能性がある。
-	(すなわち、現在はすべての inode 情報をメモリに保持しているが、
-	 将来的に、(1)+(2)+キャッシュしか保持しないようになる可能性がある)
-	このため、(3) に依存して良いのは inode.c と dir.c のみとする。
-	条件 (1), (2) は当面の間、仮定していて良い。	
-	現在 struct process や struct peer には struct inode へのポインタが
-	存在するが、このポインタは (1), (2) の条件に基づいている。
-
-peer
-	foreground プロトコルは、制御構造で寿命管理している。
-
-	background プロトコル (gfsd back_channel および gfmd channel) は、
-	peer_addref()/peer_delref() で寿命管理している。
-	host_sender_lock()/host_receiver_lock() している間は、
-	これらが内部で peer_addref() しているため、安全にアクセスできる。
-	原則として、struct peer * へのポインタは、struct に格納しては
-	ならない。さもないと、以下のようなメモリリークが発生する。
-	https://sourceforge.net/apps/trac/gfarm/ticket/479
-	struct abstruct_host は例外で、この構造体に保持されている間は、
-	peer_addref() されている。
 
 ■ mutex 一覧
 
@@ -727,8 +675,6 @@ https://xi.lab.sphere.ad.jp/trac/gfarm/ticket/62
 
 ■ RPC プロトコル・ハンドラーについて
 
-○ エラーコード
-
 gfmd.c:protocol_switch() から呼び出される、各RPC のプロトコル・ハンドラーの
 戻り値 gfarm_error_t には、下記のような仕様がある。
 
@@ -762,79 +708,6 @@ RPC要求の処理エラーの２つを、別々の変数に保持したい場�
 この場合、もし変数 e は、一時変数として使う。
 （ただし、e_ret と e_rpc を区別する必要があることは稀であるし、
 　またそれに加えて一時変数 e が必要となることは、さらに稀であるが…）
-
-○ RPC forwarding に対するプロトコルごとの処理
-
-各プロトコルハンドラが、処理を自前で行なう (処理を自前で行なった上で
-マスターに転送する場合も、これに含む) か、あるいはマスターに転送する
-かは、gfmd.c:protocol_type() 関数に記述する。
-各プロトコルハンドラを修正した場合、この protocol_type() の記述も
-正しく更新する必要がある。
-
-■ gfmd channel プロトコルハンドラに関する特記事項
-
-gfmd channel プロトコルハンドラは、そのスレッド自身で
-ジャーナルファイルへの書き込みをしてはならない。
-したがって、バックエンドデータベースへの書き込みもしては
-いけない。
-もしこれらが必要となる場合は、別スレッドに切り離して行なう必要がある。
-
-さもないと、r6632 で修正された以下のようなデッドロックが、
-同期スレーブgfmd に対して発生する:
-
-[Switching to thread 17 (Thread 0x4a118940 (LWP 19639))]#0  0x00000038e9e0ad09 in pthread_cond_wait@@GLIBC_2.3.2 () from /lib64/libpthread.so.0
-(gdb) bt
-#0  0x00000038e9e0ad09 in pthread_cond_wait@@GLIBC_2.3.2 ()
-   from /lib64/libpthread.so.0
-#1  0x0000000000490d9b in gfarm_cond_wait (cond=0x7220a0, mutex=0x722078,
-    where=0x4e29f0 "gfmdc_journal_sync_multiple",
-    what=0x4e1f20 "jorunal_sync_info.sync_end_cond") at ./thrsubr.c:67
-#2  0x0000000000465146 in gfmdc_wait_journal_recv_threads (
-    diag=0x4e29f0 "gfmdc_journal_sync_multiple") at gfmd_channel.c:1281
-#3  0x00000000004653ec in gfmdc_journal_sync_multiple (seqnum=142)
-    at gfmd_channel.c:1351
-#4  0x000000000047431d in db_journal_write (seqnum=142, ope=GFM_JOURNAL_END,
-    arg=0x0, size_add_op=0x4744f6 <db_journal_write_transaction_size_add>,
-    send_op=0x47450c <db_journal_write_transaction>) at db_journal.c:554
-#5  0x000000000047461e in db_journal_write_end (seqnum=142, arg=0x0)
-    at db_journal.c:658
-#6  0x00000000004692d8 in db_journal_enter (
-    func=0x47459a <db_journal_write_end>, data=0x0, with_seqnum=1)
-    at db_access.c:360
-#7  0x0000000000468b91 in db_enter (func=0x4759d2 <db_journal_write_user_add>,
-    data=0x87ebdb0, with_seqnum=1) at db_access.c:123
-#8  0x0000000000468be5 in db_enter_sn (
-    func=0x4759d2 <db_journal_write_user_add>, data=0x87ebdb0)
-    at db_access.c:137
-#9  0x0000000000469f05 in db_user_add (ui=0x4a117cd0) at db_access.c:685
-#10 0x0000000000429390 in gfm_server_user_info_set (peer=0x87e8c10, xid=4,
-    sizep=0x4a117e38, from_client=1, skip=0) at user.c:873
-#11 0x0000000000422001 in protocol_switch (peer=0x87e8c10, xid=4,
-    sizep=0x4a117e38, from_client=1, skip=0, level=0, requestp=0x4a117de8,
-    on_errorp=0x4a117dec, suspendedp=0x4a117de4) at gfmd.c:205
-#12 0x00000000004231f7 in protocol_service (peer=0x87e8c10, xid=4,
-    sizep=0x4a117e38) at gfmd.c:694
-#13 0x00000000004642fb in gfmdc_server_remote_rpc (mh=0x87b1710,
-    peer=0x2aaaaac26608, xid=4, size=0) at gfmd_channel.c:835
-#14 0x00000000004643dd in gfmdc_protocol_switch (h=0x87b1710,
-    peer=0x2aaaaac26608, request=277, xid=4, size=41,
-    unknown_request=0x4a117f48) at gfmd_channel.c:868
-#15 0x00000000004338a6 in async_channel_protocol_switch (host=0x87b1710,
-    peer=0x2aaaaac26608, xid=4, size=41,
-    channel_protocol_switch=0x464311 <gfmdc_protocol_switch>)
-    at abstract_host.c:492
-#16 0x00000000004339ee in async_channel_service (host=0x87b1710,
-    peer=0x2aaaaac26608, async=0x87e4660,
-    channel_protocol_switch=0x464311 <gfmdc_protocol_switch>)
-    at abstract_host.c:524
-#17 0x0000000000433d82 in async_server_main (local_peer0=0x2aaaaac26608,
-    channel_protocol_switch=0x464311 <gfmdc_protocol_switch>,
-    channel_free=0x4643f8 <gfmdc_channel_free>, sync_channel_service=0)
-    at abstract_host.c:619
-#18 0x000000000046442e in gfmdc_main (arg=0x2aaaaac26608) at gfmd_channel.c:890
-#19 0x000000000042544a in thrpool_worker (arg=0x87ba3a0) at thrpool.c:142
-#20 0x00000038e9e06617 in start_thread () from /lib64/libpthread.so.0
-#21 0x0000003026ed3c2d in clone () from /lib64/libc.so.6
 
 ■ XXX 未記載 TO-DO
 

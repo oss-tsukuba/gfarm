@@ -8,8 +8,9 @@
 #include <gfarm/gfarm.h>
 
 #include "nanosec.h"
-
 #include "timespec.h"
+
+#define GFARM_SECOND_BY_NANOSEC	1000000000
 
 int
 gfarm_timespec_cmp(

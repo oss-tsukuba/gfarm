@@ -18,17 +18,17 @@
 #include "gfm_client.h"
 #include "lookup.h"
 #include "gfs_io.h"
-#include "gfs_misc.h"
+#include "gfs_pio.h"
 #include "gfs_profile.h"
 #include "gfs_failover.h"
-
+#include "gfs_misc.h"
 #include "xattr_info.h"
 
 #define staticp	(gfarm_ctxp->gfs_xattr_static)
 
 struct gfarm_gfs_xattr_static {
 	double xattr_time;
-
+	unsigned long long xattr_count;
 };
 
 gfarm_error_t
@@ -41,6 +41,7 @@ gfarm_gfs_xattr_static_init(struct gfarm_context *ctxp)
 		return (GFARM_ERR_NO_MEMORY);
 
 	s->xattr_time = 0;
+	s->xattr_count = 0;
 
 	ctxp->gfs_xattr_static = s;
 	return (GFARM_ERR_NO_ERROR);
@@ -61,11 +62,10 @@ struct gfm_setxattr0_closure {
 };
 
 static gfarm_error_t
-gfm_setxattr0_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_setxattr0_request(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_setxattr0_closure *c = closure;
-	gfarm_error_t e = gfm_client_setxattr_request(gfm_server, ctx,
+	gfarm_error_t e = gfm_client_setxattr_request(gfm_server,
 	    c->xmlMode, c->name, c->value, c->size, c->flags);
 
 	if (e != GFARM_ERR_NO_ERROR)
@@ -75,10 +75,9 @@ gfm_setxattr0_request(struct gfm_connection *gfm_server,
 }
 
 static gfarm_error_t
-gfm_setxattr0_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_setxattr0_result(struct gfm_connection *gfm_server, void *closure)
 {
-	gfarm_error_t e = gfm_client_setxattr_result(gfm_server, ctx);
+	gfarm_error_t e = gfm_client_setxattr_result(gfm_server);
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
@@ -124,6 +123,7 @@ gfs_setxattr0(int xmlMode, int cflags, const char *path, const char *name,
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001398,
@@ -190,9 +190,10 @@ gfs_fsetxattr(GFS_File gf, const char *name, const void *value,
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003985,
 		    "gfm_client_compound_file_op_modifiable: %s",
 		    gfarm_error_string(e));
 	}
@@ -208,11 +209,10 @@ struct gfm_getxattr_proccall_closure {
 };
 
 static gfarm_error_t
-gfm_getxattr_proccall_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_getxattr_proccall_request(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_getxattr_proccall_closure *c = closure;
-	gfarm_error_t e = gfm_client_getxattr_request(gfm_server, ctx,
+	gfarm_error_t e = gfm_client_getxattr_request(gfm_server,
 	    c->xmlMode, c->name);
 
 	if (e != GFARM_ERR_NO_ERROR)
@@ -222,11 +222,10 @@ gfm_getxattr_proccall_request(struct gfm_connection *gfm_server,
 }
 
 static gfarm_error_t
-gfm_getxattr_proccall_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_getxattr_proccall_result(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_getxattr_proccall_closure *c = closure;
-	gfarm_error_t e = gfm_client_getxattr_result(gfm_server, ctx,
+	gfarm_error_t e = gfm_client_getxattr_result(gfm_server,
 	    c->xmlMode, c->valuep, c->sizep);
 
 #if 1 /* DEBUG */
@@ -262,6 +261,7 @@ gfs_getxattr_proccall(int xmlMode, int cflags, const char *path,
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001400,
@@ -296,9 +296,10 @@ gfs_fgetxattr_proccall(int xmlMode, GFS_File gf, const char *name,
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003986,
 		    "gfm_client_compound_file_op_readonly: %s",
 		    gfarm_error_string(e));
 	}
@@ -320,8 +321,10 @@ gfs_getxattr0(int xmlMode, const char *path, GFS_File gf, int cflags,
 		e = gfs_fgetxattr_proccall(xmlMode, gf, name, &v, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001402,
-			"getxattr/fgetxattr_proccall() failed: %s",
-			gfarm_error_string(e));
+		    "%sgetxattr_proccall(%s, %s) failed: %s",
+		    path != NULL ? "" : "f",
+		    path != NULL ? path : gfs_pio_url(gf), name,
+		    gfarm_error_string(e));
 		return (e);
 	}
 
@@ -379,12 +382,10 @@ struct gfm_listxattr_proccall_closure {
 };
 
 static gfarm_error_t
-gfm_listxattr_proccall_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_listxattr_proccall_request(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_listxattr_proccall_closure *c = closure;
-	gfarm_error_t e = gfm_client_listxattr_request(
-	    gfm_server, ctx, c->xmlMode);
+	gfarm_error_t e = gfm_client_listxattr_request(gfm_server, c->xmlMode);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000164,
@@ -393,11 +394,10 @@ gfm_listxattr_proccall_request(struct gfm_connection *gfm_server,
 }
 
 static gfarm_error_t
-gfm_listxattr_proccall_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_listxattr_proccall_result(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_listxattr_proccall_closure *c = closure;
-	gfarm_error_t e = gfm_client_listxattr_result(gfm_server, ctx,
+	gfarm_error_t e = gfm_client_listxattr_result(gfm_server,
 	    c->listp, c->sizep);
 
 #if 1 /* DEBUG */
@@ -431,6 +431,7 @@ gfs_listxattr_proccall(int xmlMode, int cflags, const char *path,
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001404,
@@ -505,11 +506,10 @@ struct gfm_removexattr0_closure {
 };
 
 static gfarm_error_t
-gfm_removexattr0_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_removexattr0_request(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_removexattr0_closure *c = closure;
-	gfarm_error_t e = gfm_client_removexattr_request(gfm_server, ctx,
+	gfarm_error_t e = gfm_client_removexattr_request(gfm_server,
 	    c->xmlMode, c->name);
 
 	if (e != GFARM_ERR_NO_ERROR)
@@ -519,10 +519,9 @@ gfm_removexattr0_request(struct gfm_connection *gfm_server,
 }
 
 static gfarm_error_t
-gfm_removexattr0_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_removexattr0_result(struct gfm_connection *gfm_server, void *closure)
 {
-	gfarm_error_t e = gfm_client_removexattr_result(gfm_server, ctx);
+	gfarm_error_t e = gfm_client_removexattr_result(gfm_server);
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
@@ -561,6 +560,7 @@ gfs_removexattr0(int xmlMode, int cflags, const char *path, const char *name)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001407,
@@ -614,9 +614,10 @@ gfs_fremovexattr(GFS_File gf, const char *name)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003987,
 		    "gfm_client_compound_file_op_modifiable: %s",
 		    gfarm_error_string(e));
 	}
@@ -690,6 +691,7 @@ gfs_findxmlattr(const char *path, const char *expr,
 	struct gfs_xmlattr_ctx *ctxp;
 	char *url;
 	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
@@ -700,12 +702,12 @@ gfs_findxmlattr(const char *path, const char *expr,
 		gflog_debug(GFARM_MSG_1001409,
 			"allococation of 'gfs_xmlattr_ctx' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
-	} else if ((e = gfm_open_fd_with_ino(path, GFARM_FILE_RDONLY,
-	    &ctxp->gfm_server, &ctxp->fd, &ctxp->type, &url, &ino))
+	} else if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY,
+	    &ctxp->gfm_server, &ctxp->fd, &ctxp->type, &url, &ino, &gen, NULL))
 		!= GFARM_ERR_NO_ERROR) {
 		gfs_xmlattr_ctx_free(ctxp, 1);
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "gfm_open_fd_with_ino(%s) failed: %s",
+		gflog_debug(GFARM_MSG_1003988,
+		    "gfm_open_fd(%s) failed: %s",
 		    path, gfarm_error_string(e));
 	} else {
 		free(url);
@@ -718,17 +720,16 @@ gfs_findxmlattr(const char *path, const char *expr,
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->xattr_count++);
 
 	return (e);
 }
 
 static gfarm_error_t
-gfm_findxmlattr_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_findxmlattr_request(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfs_xmlattr_ctx *ctxp = closure;
-	gfarm_error_t e = gfm_client_findxmlattr_request(
-	    gfm_server, ctx, ctxp);
+	gfarm_error_t e = gfm_client_findxmlattr_request(gfm_server, ctxp);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000168, "find_xml_attr request: %s",
@@ -737,11 +738,10 @@ gfm_findxmlattr_request(struct gfm_connection *gfm_server,
 }
 
 static gfarm_error_t
-gfm_findxmlattr_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_findxmlattr_result(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfs_xmlattr_ctx *ctxp = closure;
-	gfarm_error_t e = gfm_client_findxmlattr_result(gfm_server, ctx, ctxp);
+	gfarm_error_t e = gfm_client_findxmlattr_result(gfm_server, ctxp);
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
@@ -860,6 +860,7 @@ gfs_getxmlent(struct gfs_xmlattr_ctx *ctxp, char **fpathp, char **namep)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001411,
@@ -880,7 +881,7 @@ gfs_closexmlattr(struct gfs_xmlattr_ctx *ctxp)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	if (ctxp != NULL) {
-		e = gfm_close_fd(ctxp->gfm_server, ctxp->fd);
+		e = gfm_close_fd(ctxp->gfm_server, ctxp->fd, NULL);
 		gfm_client_connection_free(ctxp->gfm_server);
 		gfs_xmlattr_ctx_free(ctxp, 1);
 	} else {
@@ -889,6 +890,7 @@ gfs_closexmlattr(struct gfs_xmlattr_ctx *ctxp)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->xattr_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->xattr_count++);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001412,
@@ -904,5 +906,7 @@ void
 gfs_xattr_display_timers(void)
 {
 	gflog_info(GFARM_MSG_1000170,
-	    "gfs_xattr      : %g sec", staticp->xattr_time);
+	    "gfs_xattr time  : %g sec", staticp->xattr_time);
+	gflog_info(GFARM_MSG_1003838,
+	    "gfs_xattr count : %llu", staticp->xattr_count);
 }

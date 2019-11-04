@@ -5,7 +5,7 @@
 
 <refentry id="gfquotacheck.1">
 
-<refentryinfo><date>23 Mar 2011</date></refentryinfo>
+<refentryinfo><date>25 Aug 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfquotacheck</refentrytitle>
@@ -15,7 +15,7 @@
 
 <refnamediv id="name">
 <refname>gfquotacheck</refname>
-<refpurpose>現在の使用量管理表を構築し、quota チェックを有効にする
+<refpurpose>ファイル使用量管理表を再構築する
 </refpurpose>
 </refnamediv>
 
@@ -28,10 +28,8 @@
 
 <refsect1 id="description"><title>DESCRIPTION</title>
 
-<para><command moreinfo="none">gfquotacheck</command> は、すべてのユーザのファイル数と
-ファイルサイズを数えなおします。
-そして、まだ有効になっていないユーザやグループに対する quota によるファ
-イル制限を有効にします。
+<para><command moreinfo="none">gfquotacheck</command> は、
+ユーザやグループごとのファイル数とファイルサイズの合計をカウントしなおします。
 </para>
 
 <para>このコマンドは gfarmadm グループに所属している管理者が実行できます。

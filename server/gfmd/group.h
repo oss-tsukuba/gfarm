@@ -23,6 +23,7 @@ struct group *group_lookup(const char *);
 gfarm_error_t grpassign_add(struct user *, struct group *);
 void grpassign_remove(struct group_assignment *);
 char *group_name(struct group *);
+char *group_name_with_invalid(struct group *);
 int group_is_invalid(struct group *);
 int group_is_valid(struct group *);
 
@@ -36,24 +37,18 @@ gfarm_error_t group_remove_in_cache(const char *);
 
 struct quota;
 struct quota *group_quota(struct group *);
+struct usage;
+struct usage *group_usage_tmp(struct group *);
 
 struct peer;
-gfarm_error_t gfm_server_group_info_get_all(
-	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
-gfarm_error_t gfm_server_group_info_get_by_names(
-	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
-gfarm_error_t gfm_server_group_info_set(
-	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
-gfarm_error_t gfm_server_group_info_modify(
-	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
-gfarm_error_t gfm_server_group_info_remove(
-	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
-gfarm_error_t gfm_server_group_info_add_users(
-	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
-gfarm_error_t gfm_server_group_info_remove_users(
-	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
-gfarm_error_t gfm_server_group_names_get_by_users(
-	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
+gfarm_error_t gfm_server_group_info_get_all(struct peer *, int, int);
+gfarm_error_t gfm_server_group_info_get_by_names(struct peer *, int, int);
+gfarm_error_t gfm_server_group_info_set(struct peer *, int, int);
+gfarm_error_t gfm_server_group_info_modify(struct peer *, int, int);
+gfarm_error_t gfm_server_group_info_remove(struct peer *, int, int);
+gfarm_error_t gfm_server_group_info_add_users(struct peer *, int, int);
+gfarm_error_t gfm_server_group_info_remove_users(struct peer *, int, int);
+gfarm_error_t gfm_server_group_names_get_by_users(struct peer *, int, int);
 
 
 /* exported for a use from a private extension */

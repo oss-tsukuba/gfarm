@@ -1,20 +1,18 @@
-all: catalog-all post-all-hook
-install: catalog-install post-install-hook
-clean: catalog-clean post-clean-hook
-veryclean: catalog-veryclean post-very-clean-hook
-distclean: catalog-distclean post-distclean-hook
-gfregister: catalog-gfregister post-gfregister-hook
+all: post-all-hook
+install: post-install-hook
+clean: post-clean-hook
+veryclean: post-veryclean-hook
+distclean: post-distclean-hook
 man: gflog-man
 html: gflog-html
 msgno: catalog-msgno
 catalog: catalog-catalog
 
-post-all-hook:
-post-install-hook:
-post-clean-hook:
-post-very-clean-hook:
-post-distclean-hook:
-post-gfregister-hook:
+post-all-hook: catalog-all
+post-install-hook: catalog-install
+post-clean-hook: catalog-clean
+post-veryclean-hook: catalog-veryclean
+post-distclean-hook: catalog-distclean
 
 catalog-all: catalog-catalog
 catalog-install:
@@ -33,7 +31,6 @@ catalog-veryclean: clean
 catalog-distclean: veryclean
 	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
 
-catalog-gfregister:
 catalog-man:
 catalog-html:
 catalog-msgno:

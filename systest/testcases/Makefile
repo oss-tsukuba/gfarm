@@ -11,6 +11,7 @@ DATA =	$(srcdir)/configuration \
 	$(srcdir)/failover_by_kill \
 	$(srcdir)/failover_by_reboot \
 	$(srcdir)/failover_in_read \
-	$(srcdir)/failover_in_write
+	$(srcdir)/failover_in_write \
+	$(srcdir)/failover_in_mkdir
 
 include $(top_srcdir)/makes/data.mk

@@ -24,11 +24,10 @@ struct gfm_getattrplus_closure {
 };
 
 static gfarm_error_t
-gfm_getattrplus_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_getattrplus_request(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_getattrplus_closure *c = closure;
-	gfarm_error_t e = gfm_client_fgetattrplus_request(gfm_server, ctx,
+	gfarm_error_t e = gfm_client_fgetattrplus_request(gfm_server,
 		c->patterns, c->npatterns, c->flags);
 
 	if (e != GFARM_ERR_NO_ERROR)
@@ -38,11 +37,10 @@ gfm_getattrplus_request(struct gfm_connection *gfm_server,
 }
 
 static gfarm_error_t
-gfm_getattrplus_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_getattrplus_result(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_getattrplus_closure *c = closure;
-	gfarm_error_t e = gfm_client_fgetattrplus_result(gfm_server, ctx,
+	gfarm_error_t e = gfm_client_fgetattrplus_result(gfm_server,
 		c->st, c->nattrsp,
 		c->attrnamesp, c->attrvaluesp, c->attrsizesp);
 

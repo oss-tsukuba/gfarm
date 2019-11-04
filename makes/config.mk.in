@@ -32,6 +32,7 @@ localedir = $(default_localedir)
 
 CC = @CC@
 OPTFLAGS = @CFLAGS@
+OMPCFLAGS = @OPENMP_CFLAGS@
 LEX = @LEX@
 LEXLIB = @LEXLIB@
 YACC = @YACC@

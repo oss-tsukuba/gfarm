@@ -2,15 +2,15 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfmdhost</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfmdhost">
 <a name="gfmdhost.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfmdhost — Gfarm metadata server host maintenance command</p>
 </div>
-<div class="refsynopsisdiv">
+<div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  [-l] [-P <em class="replaceable"><code>path</code></em>] [-1]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  [-N] [-P <em class="replaceable"><code>path</code></em>] [-1]</p></div>
@@ -19,7 +19,7 @@
   ] {<em class="replaceable"><code>metadata-server-name</code></em>}</p></div>
 <div class="cmdsynopsis"><p><code class="command">gfmdhost</code>  {-d} [-P <em class="replaceable"><code>path</code></em>] [-1] {<em class="replaceable"><code>metadata-server-name</code></em>}</p></div>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p><span class="command"><strong>gfmdhost</strong></span> is used to display and maintain
 the information about synchronous and asynchronous replicated metadata
@@ -32,12 +32,12 @@ If none of them is specified, registered metadata server (gfmd host)
 names will be listed.
 </p>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="FUNCTIONS">
 <a name="functions"></a><h2>FUNCTIONS</h2>
 <p>
   The functions of <span class="command"><strong>gfmdhost</strong></span> command are listed in following.
 </p>
-<div class="variablelist"><dl class="variablelist">
+<div class="variablelist"><dl>
 <dt><span class="term">&lt;none&gt;</span></dt>
 <dd><p>
         If no function is specified,
@@ -53,9 +53,15 @@ names will be listed.
 <p>
         The detailed information is displayed in the following order.
       </p>
-<p><code class="option">Connection State (+|-|?|x|e)</code></p>
+<p><code class="option">Connection State (+|||-|?|x|e|u)</code></p>
 <p>
-        "+" means that the gfmd is connected to the master gfmd.
+        "+" means that the gfmd is connected to the master gfmd, and
+	its metadata are synchronized.
+	"|" means that the gfmd is connected to the master gfmd, but
+	its metadata have not been synchronized yet. Note that this
+	may happen even on a synchronous slave gfmd, when the slave
+	is just connecting to the master, or in the middle of metadata
+	transfer even if it has been already synchronized.
         "-" means that the gfmd is not connected to the master gfmd.
 	"?" means either the gfmd state is unknown because it's just
 	after the connection was established, or the master gfmd is
@@ -67,6 +73,8 @@ names will be listed.
 	"e" means an error happened, and log file must be checked manually.
 	In the case of "x" or "e", it may be displayed even when the
 	slave gfmd is down.
+        "u" means that the slave gfmd is connected to the master gfmd, but
+	the state is not supported by this gfmdhost command.
 	This column for the master gfmd is always "+".
       </p>
 <p><code class="option">Server Type (master|slave)</code></p>
@@ -116,9 +124,9 @@ names will be listed.
 <dd><p>Prints usage.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="OPTIONS">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl class="variablelist">
+<div class="variablelist"><dl>
 <dt><span class="term"><code class="option">-C</code> <em class="parameter"><code>cluster-name</code></em></span></dt>
 <dd>
 <p>
@@ -141,7 +149,7 @@ names will be listed.
 	If it is not specified, 601 is assumed.
 	This option is only available with -c or -m option.
       </p></dd>
-<dt><span class="term">-t {m|c|s}</span></dt>
+<dt><span class="term"><code class="option">-t</code> {m|c|s}</span></dt>
 <dd><p>
         This option specifies a configuration of master candidate.
         It is only available with -c or -m option.
@@ -169,7 +177,7 @@ names will be listed.
       </p></dd>
 </dl></div>
 </div>
-<div class="refsect1">
+<div class="refsect1" title="SEE ALSO">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfarm2.conf</span>(5)</span>

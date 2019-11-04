@@ -16,18 +16,29 @@
 #include "gfarm_path.h"
 
 char *program_name = "gfquota";
+static int opt_format_flags = 0;
+static int opt_humanize_number = 0;
 
 static void
 usage(void)
 {
 	fprintf(stderr,
-		"Usage:\t%s [-q] [-P <path>] [-u username | -g groupname]\n",
+		"Usage:\t%s [-qHh] [-P <path>] [-u username | -g groupname]\n",
 		program_name);
 	exit(EXIT_FAILURE);
 }
 
 #define EXCEEDED(f, type) fprintf(f, "warning: %s exceeded\n", type)
 #define EXPIRED(f, type) fprintf(f, "warning: %s expired\n", type)
+
+static char *
+humanize(long long num)
+{
+	static char buf[GFARM_INT64STRLEN];
+
+	gfarm_humanize_number(buf, sizeof buf, num, opt_format_flags);
+	return (buf);
+}
 
 static int
 quota_check_and_warning(FILE *f, struct gfarm_quota_get_info *q)
@@ -101,10 +112,14 @@ quota_check_and_warning(FILE *f, struct gfarm_quota_get_info *q)
 
 #define PRINT(f, s, v)							\
 	{								\
+		fprintf(f, "%s : ", s);					\
 		if (quota_limit_is_valid(v))				\
-			fprintf(f, "%s : %22"GFARM_PRId64"\n", s, v);	\
+			if (opt_humanize_number)			\
+				fprintf(f, "%22s\n", humanize(v));	\
+			else						\
+				fprintf(f, "%22"GFARM_PRId64"\n", v);	\
 		else							\
-			fprintf(f, "%s : %22s\n", s, "disabled");	\
+			fprintf(f, "%22s\n", "disabled");		\
 	}
 
 static void
@@ -169,7 +184,7 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	while ((c = getopt(argc, argv, "P:g:hqu:?")) != -1) {
+	while ((c = getopt(argc, argv, "P:g:Hhqu:?")) != -1) {
 		switch (c) {
 		case 'P':
 			path = optarg;
@@ -185,7 +200,14 @@ main(int argc, char **argv)
 		case 'q':
 			opt_quiet = 1;
 			break;
+		case 'H':
+			opt_humanize_number = 1;
+			opt_format_flags = 0;
+			break;
 		case 'h':
+			opt_humanize_number = 1;
+			opt_format_flags = GFARM_HUMANIZE_BINARY;
+			break;
 		case '?':
 		default:
 			usage();

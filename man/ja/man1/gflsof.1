@@ -1,0 +1,162 @@
+'\" t
+.\"     Title: gflsof
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 27 Sep 2016
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFLSOF" "1" "27 Sep 2016" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gflsof \- 現在オープンされている Gfarm ファイルのリストを表示する。
+.SH "SYNOPSIS"
+.HP \w'\fBgflsof\fR\ 'u
+\fBgflsof\fR [\-AW] [\-P\ \fIパス名\fR] [\-D\ \fIgfsdのドメイン名\fR] [\-U\ \fIユーザーホストのドメイン名\fR] [\-u\ \fIユーザー名\fR]
+.HP \w'\fBgflsof\fR\ 'u
+\fBgflsof\fR [\-AW] [\-P\ \fIパス名\fR] [\-D\ \fIgfsdのドメイン名\fR] [\-U\ \fIユーザーホストのドメイン名\fR] [\-u\ \fIユーザー名\fR] \-C
+.HP \w'\fBgflsof\fR\ 'u
+\fBgflsof\fR [\-AW] [\-P\ \fIパス名\fR] [\-D\ \fIgfsdのドメイン名\fR] [\-U\ \fIユーザーホストのドメイン名\fR] [\-u\ \fIユーザー名\fR] \-G
+.SH "DESCRIPTION"
+.PP
+
+\fB\-C\fR
+オプションや
+\fB\-G\fR
+を指定しない場合、 現在オープン中の Gfarm ファイルについて、ファイルディスクリプタ毎の情報を 表示します。 表示の USER 欄はユーザー名、 GPID 欄は Gfarm プロセスID、 FD 欄は Gfarm ファイルディスクリプタ番号、 ファイルディスクリプタ番号の直後の文字が \'r\' の場合 read\-only オープン、 ファイルディスクリプタ番号の直後の文字が \'w\' の場合 write\-only オープン、 ファイルディスクリプタ番号の直後の文字が \'u\' の場合 read\-write オープン、 TYPE 欄はファイル (REG) / ディレクトリ (DIR) / シンボリックリンク (LNK) の種別、 INODE 欄は inode 番号、 GEN 欄は inode の世代番号、 SIZE/OFF 欄は ディレクトリの場合であればシーク・オフセット値、 ファイルの場合であればファイル・サイズ、 CLIENT 欄は gfmd に接続しているクライアントのホスト名とポート番号、 GFSD 欄は gfmd に接続している gfsd のホスト名とポート番号 です。
+.PP
+
+\fB\-C\fR
+オプションを指定した場合には、 ディスクリプタをオープンしているクライアントのホスト名のみを表示します。
+.PP
+
+\fB\-G\fR
+オプションを指定した場合には、 実体ファイルをオープンしている gfsd のホスト名のみを表示します。
+.SH "OPTIONS"
+.PP
+\fB\-A\fR
+.RS 4
+全ユーザーについて表示します。 このオプションの利用には、gfarmadm グループ権限が必要です。
+.RE
+.PP
+\fB\-W\fR
+.RS 4
+書き込みオープンされているディスクリプタに関する情報のみを表示します。
+.RE
+.PP
+\fB\-P\fR \fIパス名\fR
+.RS 4
+このコマンドがアクセスするメタデータサーバを特定するための パス名または Gfarm URL を指定します。 省略した場合は、「\&.」を指定したのと同じ意味になります。
+.RE
+.PP
+\fB\-D\fR \fIgfsdのドメイン名\fR
+.RS 4
+表示対象のディスクリプタを、 指定したドメイン名ないしホスト名のgfsdが 実体ファイルをオープンしているものに限定します。
+.RE
+.PP
+\fB\-U\fR \fIユーザーホストのドメイン名\fR
+.RS 4
+表示対象のディスクリプタを、 指定したドメイン名ないしホスト名で動作しているクライアントが オープンしているものに限定します。
+.RE
+.PP
+\fB\-u\fR \fIユーザー名\fR
+.RS 4
+指定したユーザーがオープンしているディスクリプタについて表示を行ないます。 このオプションの利用には、gfarmadm グループ権限が必要です。
+.RE
+.PP
+\fB\-?\fR
+.RS 4
+引数オプションを表示します。
+.RE
+.SH "EXAMPLES"
+.PP
+\fBExample\ \&1.\ \&自身のオープンしているファイルディスクリプタ一覧を表示する\fR
+.PP
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+gflsof
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.PP
+\fBExample\ \&2.\ \&ファイルディスクリプタ全ての一覧を表示する\fR
+.PP
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+gflsof \-A
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.PP
+\fBExample\ \&3.\ \&gfsd が実体ファイルを書き込みオープンしているファイルシステムノード全ての一覧を表示する\fR
+.PP
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+gflsof \-AWG
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.PP
+\fBExample\ \&4.\ \&gfsdが実体ファイルを書き込みオープンしているファイルディスクリプタ全ての一覧を表示する\fR
+.PP
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+gflsof \-AW \-D \'\'
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.PP
+\fBExample\ \&5.\ \&example.org ドメインに属し、かつユーザー john がディスクリプタをオープン中のクライアントホストの一覧を表示する\fR
+.PP
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+gflsof \-U example\&.org \-u john \-C
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+

@@ -319,9 +319,11 @@ lists which backend databases are available\&.
 PostgreSQL is chosen by default if "postgresql" is in the list\&. If the available backend is "ldap" only, it is still chosen by default\&. Note that you need to recompile Gfarm if you\*(Aqd like to make Gfarm on your system support a backend database not in the list\&.
 .RE
 .PP
-\fB\-d\fR \fIdomainname\fR
+\fB\-d\fR \fIdigest_type\fR
 .RS 4
-This option is used to specify a base DN of metadata\&. This option takes an effect only when the backend database is LDAP\&. The default is the fully qualified domainname of the host on DNS\&.
+Enable checksum calculation and specify the digest type of the checksum\&. The
+\fIdigest_type\fR
+argument is a lower\-case name which is supported by the OpenSSL library on the host, such as "md5"\&.
 .RE
 .PP
 \fB\-U\fR \fIusername\fR

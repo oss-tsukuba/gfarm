@@ -237,7 +237,7 @@ gflog_message(int msg_no, int priority, const char *file, int line_no,
 }
 
 /*
- * fatal action 
+ * fatal action
  */
 void
 gflog_set_fatal_action(int action)
@@ -248,7 +248,7 @@ gflog_set_fatal_action(int action)
 static int
 gflog_get_fatal_action(void)
 {
-	return(fatal_action);
+	return (fatal_action);
 }
 
 static struct {

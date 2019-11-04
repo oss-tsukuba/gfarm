@@ -26,7 +26,7 @@ close_write でクローズすることにより、発生する。
 これについては、inode_file_read() 時に、GFARM_FILE_TRUNC_PENDING を調べ、
 まだ pending であれば、inode_file_update() を呼んで世代番号を増やしている。
 この時、spool_host は NULL となり、ファイル実体は存在しないので要注意。
-
+ 
 この世代番号の増加には、gfsd が管理するファイル実体の改名が必要となる。
 この改名処理中は、実体へのアクセスが不可能になる。
 また、複数の gfsd が同時に世代番号を行なってもいけない。

@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <libgen.h>
+#include <string.h>
 #include <assert.h>
 
 #include <gfarm/gfarm.h>
@@ -33,14 +34,92 @@ usage(void)
 	    program_name);
 	fprintf(stderr, "\t%s [-P <path>] -c groupname user1 user2 ...\n",
 	    program_name);
-	fprintf(stderr, "\t%s [-P <path>] -m groupname user1 user2 ...\n",
+	fprintf(stderr, "\t%s [-P <path>] [-ar] -m groupname user1 user2 ...\n",
 	    program_name);
 	fprintf(stderr, "\t%s [-P <path>] -d groupname\n", program_name);
 	exit(1);
 }
 
+static int
+is_member(struct gfarm_group_info *group, char *user)
+{
+	int i;
+
+	for (i = 0; i < group->nusers; ++i)
+		if (strcmp(group->usernames[i], user) == 0)
+			break;
+	return (i < group->nusers);
+}
+
+static gfarm_error_t
+add_entry(struct gfarm_group_info *group, char *user)
+{
+	char **usernames;
+
+	if (is_member(group, user))
+		return (GFARM_ERR_ALREADY_EXISTS);
+	GFARM_REALLOC_ARRAY(usernames, group->usernames, group->nusers + 1);
+	if (usernames == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	usernames[group->nusers] = strdup(user);
+	if (usernames[group->nusers] == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	group->usernames = usernames;
+	group->nusers++;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+remove_entry(struct gfarm_group_info *group, char *user)
+{
+	int i;
+
+	for (i = 0; i < group->nusers; ++i)
+		if (strcmp(group->usernames[i], user) == 0)
+			break;
+	if (i == group->nusers)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	free(group->usernames[i]);
+	for (; i < group->nusers - 1; ++i)
+		group->usernames[i] = group->usernames[i + 1];
+	group->nusers--;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+modify_entry(int flag, const char *name, int nusers, char **users)
+{
+	gfarm_error_t e, errs[1];
+	struct gfarm_group_info gr[1];
+	int i;
+
+	e = gfm_client_group_info_get_by_names(gfm_server, 1, &name, errs, gr);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (errs[0] != GFARM_ERR_NO_ERROR)
+		return (errs[0]);
+	for (i = 0; i < nusers; ++i) {
+		switch (flag) {
+		case OP_ADD_ENTRY:
+			e = add_entry(gr, users[i]);
+			break;
+		case OP_REMOVE_ENTRY:
+			e = remove_entry(gr, users[i]);
+			break;
+		default:
+			e = GFARM_ERR_INVALID_ARGUMENT;
+		}
+		if (e != GFARM_ERR_NO_ERROR)
+			break;
+	}
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfm_client_group_info_modify(gfm_server, gr);
+	gfarm_group_info_free(gr);
+	return (e);
+}
+
 gfarm_error_t
-create_group(int op, char *groupname, int nusers, char **users)
+create_group(int op, int flag, char *groupname, int nusers, char **users)
 {
 	struct gfarm_group_info group;
 	gfarm_error_t e;
@@ -54,7 +133,15 @@ create_group(int op, char *groupname, int nusers, char **users)
 		e = gfm_client_group_info_set(gfm_server, &group);
 		break;
 	case OP_MODIFY_GROUP:
-		e = gfm_client_group_info_modify(gfm_server, &group);
+		switch (flag) {
+		case OP_ADD_ENTRY:
+		case OP_REMOVE_ENTRY:
+			e = modify_entry(flag, groupname, nusers, users);
+			break;
+		default:
+			e = gfm_client_group_info_modify(gfm_server, &group);
+			break;
+		}
 		break;
 	default:
 		e = GFARM_ERR_INVALID_ARGUMENT;
@@ -138,10 +225,9 @@ int
 main(int argc, char *argv[])
 {
 	gfarm_error_t e;
-	char op = OP_GROUPNAME, *groupname;
-	int c;
+	int c, op = OP_GROUPNAME, modify_flag = 0;
+	char *groupname, *realpath = NULL;
 	const char *path = ".";
-	char *realpath = NULL;
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -150,7 +236,7 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "P:cdlm?")) != -1) {
+	while ((c = getopt(argc, argv, "P:acdlmr?")) != -1) {
 		switch (c) {
 		case 'P':
 			path = optarg;
@@ -160,6 +246,10 @@ main(int argc, char *argv[])
 		case OP_MODIFY_GROUP:
 		case OP_LIST_LONG:
 			op = c;
+			break;
+		case OP_ADD_ENTRY:
+		case OP_REMOVE_ENTRY:
+			modify_flag = c;
 			break;
 		case '?':
 		default:
@@ -193,7 +283,7 @@ main(int argc, char *argv[])
 			usage();
 		groupname = *argv++;
 		--argc;
-		e = create_group(op, groupname, argc, argv);
+		e = create_group(op, modify_flag, groupname, argc, argv);
 		break;
 	case OP_DELETE_GROUP:
 		if (argc != 1)

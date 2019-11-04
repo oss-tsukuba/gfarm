@@ -8,11 +8,10 @@
 #include <sys/stat.h>
 #include <ctype.h>
 #include <pwd.h>
+#include <gssapi.h>
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
-
-#include "gssapi.h"
 
 #include "gfevent.h"
 #include "gfutil.h"
@@ -25,9 +24,6 @@
 #if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
 #include "gfarm_auth.h"
 #endif
-
-static pthread_mutex_t gss_mutex = PTHREAD_MUTEX_INITIALIZER;
-static const char gssDiag[] = "gss_mutex";
 
 static char **gssCrackStatus(OM_uint32 statValue, int statType);
 
@@ -303,11 +299,24 @@ gfarmGssNewCredentialName(gss_name_t *outputNamePtr, gss_cred_id_t cred,
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
+    static const char diag[] = "gfarmGssNewCredentialName";
 
+    /*
+     * gss_inquire_cred() may call gss_acquire_cred() internally
+     *
+     * NOTE: this code may be called from a client,
+     * and that means we access a static variable (i.e. privilege_lock mutex)
+     * instead of a per-kernel-module variable (i.e. gfarm_ctxp->...).
+     * But that's OK, because the in-kernel implementation doesn't support GSI
+     * for now, and libgfarm/gfsl/ itself has lots of such static variables.
+     */
+    gfarm_privilege_lock(diag);
     majStat = gss_inquire_cred(&minStat, cred, outputNamePtr,
 			       NULL,	/* lifetime */
 			       NULL,	/* usage */
 			       NULL	/* supported mech */);
+    gfarm_privilege_unlock(diag);
+
     if (majStatPtr != NULL) {
 	*majStatPtr = majStat;
     }
@@ -370,9 +379,9 @@ gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
     OM_uint32 minStat = 0;
     int ret = -1;
     gss_cred_id_t cred;
+    static const char diag[] = "gfarmGssAcquireCredential";
     
-    *credPtr = GSS_C_NO_CREDENTIAL;
-
+    gfarm_privilege_lock(diag);
     majStat = gss_acquire_cred(&minStat,
 			       desiredName,
 			       GSS_C_INDEFINITE,
@@ -381,8 +390,12 @@ gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
 			       &cred,
 			       NULL,
 			       NULL);
-#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
-    if (majStat != GSS_S_COMPLETE) {
+#if !GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+    gfarm_privilege_unlock(diag);
+#else
+    if (majStat == GSS_S_COMPLETE) {
+	gfarm_privilege_unlock(diag);
+    } else {
 	OM_uint32 majStat2, majStat3;
 	OM_uint32 minStat2, minStat3;
 
@@ -399,6 +412,8 @@ gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
 				    &cred,
 				    NULL,
 				    NULL);
+	gfarm_privilege_unlock(diag);
+
 	if (majStat2 == GSS_S_COMPLETE) {
 	    gss_name_t credName;
 
@@ -486,13 +501,18 @@ int
 gfarmGssSendToken(int fd, gss_buffer_t gsBuf)
 {
     gfarm_int32_t iLen = gsBuf->length;
+    int save_errno;
 
     if (gfarmWriteInt32(fd, &iLen, 1) != 1) {
+	save_errno = errno;
 	gflog_debug(GFARM_MSG_1000792, "gfarmWriteInt32() failed");
+	errno = save_errno;
 	return -1;
     }
     if (gfarmWriteInt8(fd, gsBuf->value, iLen) != iLen) {
+	save_errno = errno;
 	gflog_debug(GFARM_MSG_1000793, "gfarmWriteInt8() failed");
+	errno = save_errno;
 	return -1;
     }
     return iLen;
@@ -504,12 +524,15 @@ gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf, int timeoutMsec)
 {
     gfarm_int32_t iLen;
     gfarm_int8_t *buf;
+    int save_errno;
 
     gsBuf->length = 0;
     gsBuf->value = NULL;
 
     if (gfarmReadInt32(fd, &iLen, 1, timeoutMsec) != 1) {
+	save_errno = errno;
 	gflog_debug(GFARM_MSG_1000794, "gfarmReadInt32() failed");
+	errno = save_errno;
 	return -1;
     }
 
@@ -521,11 +544,14 @@ gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf, int timeoutMsec)
     GFARM_MALLOC_ARRAY(buf, iLen);
     if (buf == NULL) {
 	gflog_debug(GFARM_MSG_1000795, "allocation of buffer failed");
+	errno = ENOMEM;
 	return -1;
     }
     if (gfarmReadInt8(fd, buf, iLen, timeoutMsec) != iLen) {
+	save_errno = errno;
 	free(buf);
 	gflog_debug(GFARM_MSG_1000796, "gfarmReadInt8() failed");
+	errno = save_errno;
 	return -1;
     }
 
@@ -537,9 +563,10 @@ gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf, int timeoutMsec)
 
 int
 gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
-    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr, gss_name_t *remoteNamePtr,
-    gss_cred_id_t *remoteCredPtr)
+    int *gsiErrNoPtr, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr,
+    gss_name_t *remoteNamePtr, gss_cred_id_t *remoteCredPtr)
 {
+    int gsiErrNo = 0;
     OM_uint32 majStat;
     OM_uint32 minStat, minStat2;
     OM_uint32 retFlag = GFARM_GSS_DEFAULT_SECURITY_ACCEPT_FLAG;
@@ -562,16 +589,19 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
     *scPtr = GSS_C_NO_CONTEXT;
 
     do {
-	tknStat = gfarmGssReceiveToken(fd, itPtr, GFARM_GSS_TIMEOUT_INFINITE);
+	tknStat = gfarmGssReceiveToken(fd, itPtr, GFARM_GSS_AUTH_TIMEOUT_MSEC);
 	if (tknStat <= 0) {
-	    gflog_auth_info(GFARM_MSG_1000616,
-		"gfarmGssAcceptSecurityContext(): failed to receive response");
+	    gsiErrNo = errno;
+	    gflog_auth_info(GFARM_MSG_1003845,
+		"gfarmGssAcceptSecurityContext(): failed to receive response: "
+		"%s", strerror(gsiErrNo));
 	    majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    break;
 	}
 
-	gfarm_mutex_lock(&gss_mutex, diag, gssDiag);
+	/* gss_accept_sec_context() may call gss_acquire_cred() internally */
+	gfarm_privilege_lock(diag);
 	majStat = gss_accept_sec_context(&minStat,
 					 scPtr,
 					 cred,
@@ -583,55 +613,64 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 					 &retFlag,
 					 &timeRet,
 					 &remCred);
+	gfarm_privilege_unlock(diag);
 
-	gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
 	if (itPtr->length > 0)
 	    gss_release_buffer(&minStat2, itPtr);
 
 	if (otPtr->length > 0) {
 	    tknStat = gfarmGssSendToken(fd, otPtr);
+	    gsiErrNo = errno;
 	    gss_release_buffer(&minStat2, otPtr);
-	    if (tknStat <= 0) {
-		gflog_auth_info(GFARM_MSG_1000617,
-		    "gfarmGssAcceptSecurityContext(): failed to send response");
+	    if (tknStat > 0) {
+		gsiErrNo = 0;
+	    } else {
+		gflog_auth_info(GFARM_MSG_1003846,
+		    "gfarmGssAcceptSecurityContext(): failed to send response"
+		    ": %s", strerror(gsiErrNo));
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
 		minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    }
 	}
 
-	if (GSS_ERROR(majStat)) {
+	if (gsiErrNo != 0 || GSS_ERROR(majStat)) {
 	    break;
 	}
 
     } while (majStat & GSS_S_CONTINUE_NEEDED);
 
+    if (gsiErrNoPtr != NULL)
+	*gsiErrNoPtr = gsiErrNo;
     if (majStatPtr != NULL)
 	*majStatPtr = majStat;
     if (minStatPtr != NULL)
 	*minStatPtr = minStat;
 
-    if (majStat == GSS_S_COMPLETE && remoteNamePtr != NULL)
+    if (gsiErrNo == 0 && majStat == GSS_S_COMPLETE && remoteNamePtr != NULL)
 	*remoteNamePtr = initiatorName;
     else if (initiatorName != GSS_C_NO_NAME)
 	gss_release_name(&minStat2, &initiatorName);
 
-    if (majStat == GSS_S_COMPLETE && remoteCredPtr != NULL)
+    if (gsiErrNo == 0 && majStat == GSS_S_COMPLETE && remoteCredPtr != NULL)
 	*remoteCredPtr = remCred;
     else if (remCred != GSS_C_NO_CREDENTIAL)
 	gss_release_cred(&minStat2, &remCred);
     
-    if (majStat != GSS_S_COMPLETE && *scPtr != GSS_C_NO_CONTEXT)
+    if ((gsiErrNo != 0 || majStat != GSS_S_COMPLETE) &&
+	*scPtr != GSS_C_NO_CONTEXT)
 	gss_delete_sec_context(&minStat2, scPtr, GSS_C_NO_BUFFER);
 
-    return majStat == GSS_S_COMPLETE ? 1 : -1;
+    return (gsiErrNo == 0 && majStat == GSS_S_COMPLETE) ? 1 : -1;
 }
 
 
 int
 gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
     gss_cred_id_t cred, OM_uint32 reqFlag, gss_ctx_id_t *scPtr,
-    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr, gss_name_t *remoteNamePtr)
+    int *gsiErrNoPtr, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr,
+    gss_name_t *remoteNamePtr)
 {
+    int gsiErrNo = 0;
     OM_uint32 majStat;
     OM_uint32 minStat, minStat2;
     OM_uint32 retFlag = 0;
@@ -660,13 +699,20 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 	gflog_auth_error(GFARM_MSG_1000618,
 	    "gfarmGssInitiateSecurityContext(): "
 	    "GSS_C_ANON_FLAG is not allowed");
+	gsiErrNo = EINVAL;
 	majStat = GSS_S_UNAVAILABLE;
 	minStat = GFSL_DEFAULT_MINOR_ERROR;
 	goto Done;
     }
 
     while (1) {
-	gfarm_mutex_lock(&gss_mutex, diag, gssDiag);
+	/*
+	 * gss_init_sec_context() may call gss_acquire_cred() internally
+	 *
+	 * NOTE: this code may be called from a client,
+	 * see the comment in gfarmGssNewCredentialName() about this issue.
+	 */
+	gfarm_privilege_lock(diag);
 	majStat = gss_init_sec_context(&minStat,
 				       cred,
 				       scPtr,
@@ -680,34 +726,38 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 				       otPtr,
 				       &retFlag,
 				       &timeRet);
-	gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
-	
+	gfarm_privilege_unlock(diag);
+
 	if (itPtr->length > 0)
 	    gss_release_buffer(&minStat2, itPtr);
 
 	if (otPtr->length > 0) {
 	    tknStat = gfarmGssSendToken(fd, otPtr);
+	    gsiErrNo = errno;
 	    gss_release_buffer(&minStat2, otPtr);
-	    if (tknStat <= 0) {
-		gflog_auth_error(GFARM_MSG_1000619,
+	    if (tknStat > 0) {
+		gsiErrNo = 0;
+	    } else {
+		gflog_auth_error(GFARM_MSG_1003847,
 		    "gfarmGssInitiateSecurityContext(): "
-				 "failed to send response");
+		    "failed to send response: %s", strerror(gsiErrNo));
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
 		minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    }
 	}
 
-	if (GSS_ERROR(majStat)) {
+	if (gsiErrNo != 0 || GSS_ERROR(majStat)) {
 	    break;
 	}
     
 	if (majStat & GSS_S_CONTINUE_NEEDED) {
 	    tknStat = gfarmGssReceiveToken(fd, itPtr,
-					   GFARM_GSS_TIMEOUT_INFINITE);
+			GFARM_GSS_AUTH_TIMEOUT_MSEC);
 	    if (tknStat <= 0) {
-		gflog_auth_error(GFARM_MSG_1000620,
+		gsiErrNo = errno;
+		gflog_auth_error(GFARM_MSG_1003848,
 		    "gfarmGssInitiateSecurityContext(): "
-				 "failed to receive response");
+		    "failed to receive response: %s", strerror(gsiErrNo));
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
 		minStat = GFSL_DEFAULT_MINOR_ERROR;
 		break;
@@ -720,7 +770,7 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
     if (itPtr->length > 0)
 	gss_release_buffer(&minStat2, itPtr);
 
-    if (majStat == GSS_S_COMPLETE && remoteNamePtr != NULL) {
+    if (gsiErrNo == 0 && majStat == GSS_S_COMPLETE && remoteNamePtr != NULL) {
 	majStat = gss_inquire_context(&minStat,
 				      *scPtr,
 				      NULL,
@@ -733,12 +783,15 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
     }
 
     Done:
+    if (gsiErrNoPtr != NULL)
+	*gsiErrNoPtr = gsiErrNo;
     if (majStatPtr != NULL)
 	*majStatPtr = majStat;
     if (minStatPtr != NULL)
 	*minStatPtr = minStat;
 
-    if (majStat != GSS_S_COMPLETE && *scPtr != GSS_C_NO_CONTEXT)
+    if ((gsiErrNo != 0 || majStat != GSS_S_COMPLETE) &&
+	*scPtr != GSS_C_NO_CONTEXT)
 	gss_delete_sec_context(&minStat2, scPtr, GSS_C_NO_BUFFER);
 
     return majStat == GSS_S_COMPLETE ? 1 : -1;
@@ -806,8 +859,9 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
 
     int sum = 0;
     int rem = n;
-    int len, tknStat;
+    int len, tknStat, save_errno;
     gfarm_int32_t n_buf = n;
+    static const char diag[] = "gfarmGssSend";
 
     /*
      * Send a length of a PLAIN TEXT.
@@ -823,6 +877,7 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
     }
 
     if (gfarmWriteInt32(fd, &n_buf, 1) != 1) {
+	gflog_info(GFARM_MSG_1004283, "%s: %s", diag, strerror(errno));
 	majStat = GSS_S_CALL_INACCESSIBLE_WRITE;
 	goto Done;
     }
@@ -838,18 +893,25 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
 	if (majStat == GSS_S_COMPLETE) {
 	    if (otPtr->length > 0) {
 		tknStat = gfarmGssSendToken(fd, otPtr);
+		save_errno = errno;
 		gss_release_buffer(&minStat, otPtr);
 		if (tknStat <= 0) {
+		    gflog_info(GFARM_MSG_1004284, "%s: %s", diag,
+			strerror(save_errno));
 		    majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
 		    goto Done;
 		}
 		rem -= len;
 		sum += len;
 	    } else {
+		gflog_info(GFARM_MSG_1004285, "%s: zero length", diag);
 		majStat = GSS_S_DEFECTIVE_TOKEN;
 		goto Done;
 	    }
 	} else {
+	    gflog_info(GFARM_MSG_1004286, "%s: gss_wrap fails", diag);
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
 	    break;
 	}
     } while (rem > 0);
@@ -878,7 +940,7 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
 {
     int ret = -1;
     OM_uint32 majStat;
-    OM_uint32 minStat;
+    OM_uint32 minStat, minStat2;
 
     gss_buffer_desc inputToken = GSS_C_EMPTY_BUFFER;
     gss_buffer_t itPtr = &inputToken;
@@ -891,6 +953,7 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
     int len;
     gfarm_int8_t *buf = NULL;
     int i;
+    static const char diag[] = "gfarmGssReceive";
 
     /*
      * Receive a length of a PLAIN TEXT.
@@ -907,11 +970,13 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
 	majStat = GSS_S_COMPLETE;
 	goto Done;
     } else if (i != 1) {
+	gflog_info(GFARM_MSG_1004287, "%s: %s", diag, strerror(errno));
 	majStat = GSS_S_CALL_INACCESSIBLE_READ;
 	goto Done;
     }
     GFARM_MALLOC_ARRAY(buf, n);
     if (buf == NULL) {
+	gflog_info(GFARM_MSG_1004288, "%s: no memory", diag);
 	majStat = GSS_S_FAILURE;
 	goto Done;
     }
@@ -919,6 +984,7 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
     rem = n;
     do {
 	if (gfarmGssReceiveToken(fd, itPtr, timeoutMsec) <= 0) {
+	    gflog_info(GFARM_MSG_1004289, "%s: %s", diag, strerror(errno));
 	    majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
 	    goto Done;
 	}
@@ -926,7 +992,7 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
 			     (const gss_buffer_t)itPtr,
 			     otPtr,
 			     NULL, NULL);
-	gss_release_buffer(&minStat, itPtr);
+	gss_release_buffer(&minStat2, itPtr);
 	if (majStat == GSS_S_COMPLETE) {
 	    if (otPtr->length > 0) {
 		memcpy(buf + sum, otPtr->value, otPtr->length);
@@ -935,10 +1001,14 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
 		sum += len;
 		gss_release_buffer(&minStat, otPtr);
 	    } else {
+		gflog_info(GFARM_MSG_1004290, "%s: zero length", diag);
 		majStat = GSS_S_DEFECTIVE_TOKEN;
 		goto Done;
 	    }
 	} else {
+	    gflog_info(GFARM_MSG_1004291, "%s: gss_unwrap fails", diag);
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
 	    break;
 	}
     } while (rem > 0);
@@ -985,8 +1055,15 @@ gfarmGssExportCredential(gss_cred_id_t cred, OM_uint32 *statPtr)
     static char exported_name[] = "X509_USER_DELEG_PROXY=";
     static char env_name[] = "X509_USER_PROXY=";
     static char file_prefix[] = "FILE:";
+    static const char diag[] = "gfarmGssExportCredential";
 
+    /*
+     * NOTE: this code may be called from a client,
+     * see the comment in gfarmGssNewCredentialName() about this issue.
+     */
+    gfarm_privilege_lock(diag);
     majStat = gss_export_cred(&minStat, cred, GSS_C_NO_OID, 1, &buf);
+    gfarm_privilege_unlock(diag);
     if (GSS_ERROR(majStat))
 	goto Done;
 
@@ -1052,8 +1129,13 @@ void
 gfarmGssDeleteExportedCredential(gfarmExportedCredential *exportedCred,
     int sigHandler)
 {
-    if (exportedCred->filename != NULL)
+    static const char diag[] = "gfarmGssDeleteExportedCredential";
+
+    if (exportedCred->filename != NULL) {
+	gfarm_privilege_lock(diag);
 	unlink(exportedCred->filename);
+	gfarm_privilege_unlock(diag);
+    }
 
     if (sigHandler) /* It's not safe to do the following operation */
 	    return;
@@ -1135,7 +1217,13 @@ gssInitiateSecurityContextNext(
     int rv;
     static const char diag[] = "gssInitiateSecurityContextNext()";
 
-    gfarm_mutex_lock(&gss_mutex, diag, gssDiag);
+    /*
+     * gss_init_sec_context() may call gss_acquire_cred() internally
+     *
+     * NOTE: this code may be called from a client,
+     * see the comment in gfarmGssNewCredentialName() about this issue.
+     */
+    gfarm_privilege_lock(diag);
     state->majStat = gss_init_sec_context(&state->minStat,
 					  state->cred,
 					  &state->sc,
@@ -1149,7 +1237,7 @@ gssInitiateSecurityContextNext(
 					  state->otPtr,
 					  &state->retFlag,
 					  &state->timeRet);
-    gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
+    gfarm_privilege_unlock(diag);
 
     if (state->itPtr->length > 0)
 	gss_release_buffer(&minStat2, state->itPtr);
@@ -1209,7 +1297,7 @@ gfarmGssInitiateSecurityContextReceiveToken(int events, int fd,
     } else {
 	assert(events == GFARM_EVENT_READ);
 	tknStat = gfarmGssReceiveToken(fd, state->itPtr,
-				       GFARM_GSS_TIMEOUT_INFINITE);
+			GFARM_GSS_AUTH_TIMEOUT_MSEC);
 	if (tknStat <= 0) {
 	    gflog_auth_error(GFARM_MSG_1000624,
 		"gfarmGssInitiateSecurityContextReceiveToken(): "

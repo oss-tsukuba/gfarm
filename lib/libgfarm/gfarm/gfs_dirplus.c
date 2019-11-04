@@ -119,10 +119,10 @@ gfs_opendirplus(const char *path, GFS_DirPlus *dirp)
 	int fd, type;
 	char *url;
 	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 
-	if ((e = gfm_open_fd_with_ino(path, GFARM_FILE_RDONLY, &gfm_server,
-	    &fd, &type, &url, &ino))
-	    != GFARM_ERR_NO_ERROR) {
+	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &gfm_server,
+	    &fd, &type, &url, &ino, &gen, NULL)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001278,
 			"gfm_open_fd(%s) failed: %s",
 			path,
@@ -147,17 +147,16 @@ gfs_opendirplus(const char *path, GFS_DirPlus *dirp)
 			path,
 			gfarm_error_string(e));
 
-	(void)gfm_close_fd(gfm_server, fd); /* ignore result */
+	(void)gfm_close_fd(gfm_server, fd, NULL); /* ignore result */
 	gfm_client_connection_free(gfm_server);
 	return (e);
 }
 
 static gfarm_error_t
-gfm_getdirentsplus_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_getdirentsplus_request(struct gfm_connection *gfm_server, void *closure)
 {
 	gfarm_error_t e = gfm_client_getdirentsplus_request(
-	    gfm_server, ctx, DIRENTSPLUS_BUFCOUNT);
+	    gfm_server, DIRENTSPLUS_BUFCOUNT);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000090, "getdirentsplus request: %s",
@@ -166,11 +165,10 @@ gfm_getdirentsplus_request(struct gfm_connection *gfm_server,
 }
 
 static gfarm_error_t
-gfm_getdirentsplus_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_getdirentsplus_result(struct gfm_connection *gfm_server, void *closure)
 {
 	GFS_DirPlus dir = closure;
-	gfarm_error_t e = gfm_client_getdirentsplus_result(gfm_server, ctx,
+	gfarm_error_t e = gfm_client_getdirentsplus_result(gfm_server,
 	    &dir->n, dir->buffer, dir->stbuf);
 
 	if (e != GFARM_ERR_NO_ERROR)
@@ -198,7 +196,7 @@ gfs_readdirplus(GFS_DirPlus dir,
 		    NULL,
 		    dir);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003937,
 			    "gfm_client_compound_readonly_fd_op: %s",
 			    gfarm_error_string(e));
 			return (e);
@@ -228,8 +226,9 @@ gfs_closedirplus(GFS_DirPlus dir)
 {
 	gfarm_error_t e;
 
-	if ((e = gfm_close_fd(dir->gfm_server, dir->fd)) != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+	if ((e = gfm_close_fd(dir->gfm_server, dir->fd, NULL))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_1003938,
 		    "gfm_close_fd: %s",
 		    gfarm_error_string(e));
 	gfm_client_connection_free(dir->gfm_server);

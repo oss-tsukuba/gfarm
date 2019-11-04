@@ -111,7 +111,7 @@ gfsk_req_connect_sync(int cmd, uid_t uid,
 	gfskdev_request_send(dc, req);
 	err = req->out.h.error;
 	if (err != 0) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s:failed: uid=%d, err=%d",
+		gflog_error(GFARM_MSG_1004900, "%s:failed: uid=%d, err=%d",
 						__func__, uid, err);
 	} else {
 		down(&sem);

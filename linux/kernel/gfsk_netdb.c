@@ -17,12 +17,12 @@ getprotobyname(const char *name)
 	static char *tcp_alias[2] = {"TCP", NULL};
 	static struct protoent tcp = { "tcp", tcp_alias, IPPROTO_TCP};
 	if (!name) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004969,
 			"getprotobyname(NULLs) is called");
 	} else if (!strcasecmp(name, "tcp")) {
 		res = &tcp;
 	} else {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1004970,
 			"getprotobyname(%s) is called", name);
 	}
 	return (res);
@@ -31,7 +31,7 @@ getprotobyname(const char *name)
 struct servent *
 getservbyname(const char *name, const char *proto)
 {
-	gflog_warning(GFARM_MSG_UNFIXED,
+	gflog_warning(GFARM_MSG_1004971,
 		"getservbyname(%s) is called", name ? name : "NULL");
 	return (NULL);	/* metadb_server_port only */
 }
@@ -105,7 +105,7 @@ getaddrinfo_cb(void *arg, char *name, struct in_addr *addr, char **alias)
 	for (n = 0; addr[n].s_addr; n++)
 		;
 	if (!n) {
-		gflog_warning(GFARM_MSG_UNFIXED, "getaddrinfo: no addr");
+		gflog_warning(GFARM_MSG_1004972, "getaddrinfo: no addr");
 		return (-EINVAL);
 	}
 	if (alias[0]) {
@@ -146,14 +146,14 @@ getaddrinfo(const char *hostname, const char *servname,
 	info = kmalloc(PAGE_SIZE, GFP_KERNEL);
 	*res = NULL;
 	if (!info) {
-		gflog_warning(GFARM_MSG_UNFIXED, "getaddrinfo: nomem");
+		gflog_warning(GFARM_MSG_1004973, "getaddrinfo: nomem");
 		return (ENOMEM);
 	}
 	memset(info, 0, sizeof(*info));
 	if (servname) {
 		port = simple_strtoul(servname, &bp, 10);
 		if (port < 0 || port >= 0x10000) {
-			gflog_warning(GFARM_MSG_UNFIXED, "invalid port: %s",
+			gflog_warning(GFARM_MSG_1004974, "invalid port: %s",
 				servname);
 			return (EINVAL);
 		}
@@ -187,14 +187,14 @@ gethostbyname_cb(void *arg, char *name, struct in_addr *addr, char **alias)
 	ep = (char *)ent + PAGE_SIZE;
 
 	if (name != ent->h_name) {
-		gflog_warning(GFARM_MSG_UNFIXED, "gethostbyname: name differ");
+		gflog_warning(GFARM_MSG_1004975, "gethostbyname: name differ");
 		return (-EINVAL);
 	}
 
 	for (i = 0; alias[i]; i++)
 		;
 	if (!i) {
-		gflog_warning(GFARM_MSG_UNFIXED, "gethostbyname: no name");
+		gflog_warning(GFARM_MSG_1004976, "gethostbyname: no name");
 		return (-EINVAL);
 	}
 	ent->h_aliases = (char **) bp;
@@ -203,7 +203,7 @@ gethostbyname_cb(void *arg, char *name, struct in_addr *addr, char **alias)
 	for (i = 0; addr[i].s_addr; i++)
 		;
 	if (!i) {
-		gflog_warning(GFARM_MSG_UNFIXED, "gethostbyname: no addr");
+		gflog_warning(GFARM_MSG_1004977, "gethostbyname: no addr");
 		return (-EINVAL);
 	}
 	ent->h_addr_list = (char **) bp;
@@ -240,7 +240,7 @@ gethostbyname(const char *name)
 	struct hostent *ent;
 	ent = kmalloc(PAGE_SIZE, GFP_KERNEL);
 	if (!ent) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004978,
 			"gethostbyname: nomem");
 		errno = ENOMEM;
 		return (NULL);
@@ -271,7 +271,7 @@ getpwuid_r(uid_t uid, struct passwd *pwd,
 	if ((err = ug_map_uid_to_name(uid, buf, buflen)) < 0) {
 		return (-err);
 	} else if (err >= buflen) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004979,
 			"getpwuid_r: buflen %ld is short", buflen);
 		return (ERANGE);
 	} else {
@@ -295,7 +295,7 @@ getpwnam_r(const char *name, struct passwd *pwd,
 	if ((err = ug_map_name_to_uid(name, strlen(name), &uid)) < 0) {
 		return (-err);
 	} else if (strlen(name) >= buflen) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004980,
 			"getpwnam_r: buflen %ld is short", buflen);
 		return (ERANGE);
 	} else {
@@ -317,7 +317,7 @@ getgrgid_r(gid_t gid, struct group *grp,
 	if ((err = ug_map_gid_to_name(gid, buf, buflen)) < 0) {
 		return (-err);
 	} else if (err >= buflen) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004981,
 			"getgrgid_r: buflen %ld is short", buflen);
 		return (ERANGE);
 	} else {
@@ -340,7 +340,7 @@ getgrnam_r(const char *name, struct group *grp,
 	if ((err = ug_map_name_to_gid(name, strlen(name), &gid)) < 0) {
 		return (-err);
 	} else if (strlen(name) >= buflen) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1004982,
 			"getgrnam_r: buflen %ld is short", buflen);
 		return (ERANGE);
 	} else {

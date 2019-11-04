@@ -79,7 +79,7 @@ gfarm_iobuffer_blocking_read_timeout_fd_op(struct gfarm_iobuffer *b,
 				    "cannot convert peer address to string: ";
 			} else {
 				hostaddr = hostbuf;
-				hostaddr_prefix= "";
+				hostaddr_prefix = "";
 			}
 			gflog_error(GFARM_MSG_1003449,
 			    "closing network connection due to "
@@ -242,13 +242,6 @@ gfarm_error_t
 gfp_xdr_new_socket(int fd, struct gfp_xdr **connp)
 {
 	return (gfp_xdr_new(&gfp_xdr_socket_iobuffer_ops, NULL, fd,
-	    GFP_XDR_NEW_RECV|GFP_XDR_NEW_SEND, connp));
-}
-
-gfarm_error_t
-gfp_xdr_new_client_socket(int fd, struct gfp_xdr **connp)
-{
-	return (gfp_xdr_client_new(&gfp_xdr_socket_iobuffer_ops, NULL, fd,
 	    GFP_XDR_NEW_RECV|GFP_XDR_NEW_SEND, connp));
 }
 

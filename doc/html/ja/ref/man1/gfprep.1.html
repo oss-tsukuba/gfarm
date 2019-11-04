@@ -12,7 +12,7 @@
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfprep</code>  [-nqvdpPU] [-X <em class="replaceable"><code>regexp</code></em>] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>total-byte</code></em>] [-z <em class="replaceable"><code>minimum-byte</code></em>] [-Z <em class="replaceable"><code>maximum-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-mx] [-N <em class="replaceable"><code>num-of-replicas</code></em>]  <em class="replaceable"><code>path</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfprep</code>  [-nqvdpPBU] [-X <em class="replaceable"><code>regexp</code></em>] [-S <em class="replaceable"><code>source-domainname</code></em>] [-h <em class="replaceable"><code>source-hostfile</code></em>] [-D <em class="replaceable"><code>destination-domainname</code></em>] [-H <em class="replaceable"><code>destination-hostfile</code></em>] [-j <em class="replaceable"><code>num-of-processes</code></em>] [-J <em class="replaceable"><code>num-of-processes</code></em>] [-M <em class="replaceable"><code>total-byte</code></em>] [-z <em class="replaceable"><code>minimum-byte</code></em>] [-Z <em class="replaceable"><code>maximum-byte</code></em>] [-w <em class="replaceable"><code>way-of-scheduling</code></em>] [-W <em class="replaceable"><code>kilobytes-for-threshold</code></em>] [-s <em class="replaceable"><code>KB/s-to-simulate</code></em>] [-F <em class="replaceable"><code>num-for-readahead</code></em>] [-I <em class="replaceable"><code>sec-to-update</code></em>] [-mx] [-N <em class="replaceable"><code>num-of-replicas</code></em>]  <em class="replaceable"><code>path</code></em> </p></div>
 </div>
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
@@ -73,6 +73,7 @@ CPU 数については、<span class="command"><strong>gfhost</strong></span>
 <dd>
 <p>
 転送元から転送先にファイル複製を移動します。
+-mm のように 2 回指定すると、転送元ファイルを削除しません。
 </p>
 <p>
 -S または -h または -D または -H いずれかのオプションが必要です。
@@ -216,6 +217,35 @@ Connection とは、子プロセスごとにファイルを割り当てるため
 </p>
 <p>
 デフォルトは 50 * 1024 キビバイト (50 メビバイト) です。
+</p>
+</dd>
+<dt><span class="term"><code class="option">-I</code> <em class="parameter"><code>sec-to-update</code></em></span></dt>
+<dd>
+<p>
+gfprep,gfpcopy は gfsd ホストごとのロードアベレージやディスクの空き容量を
+定期的に取得します。それらの値を更新する間隔を秒で指定します。
+</p>
+<p>
+</p>
+<p>
+デフォルトは 300 秒です。
+</p>
+</dd>
+<dt><span class="term"><code class="option">-B</code></span></dt>
+<dd>
+<p>
+高負荷な gfsd ホストも書き込み先の対象にします。
+</p>
+<p>
+デフォルトでは高負荷な gfsd ホストを書き込み先の対象にしません。
+デフォルトでは、すべての gfsd ホストが高負荷の場合にファイルを転送しません。
+</p>
+<p>
+高負荷なホストとは、(ロードアベレージ / CPU 数) が gfarm2.conf の
+schedule_busy_load_thresh よりも高いホストです。
+schedule_busy_load_thresh のデフォルト値は gfarm2.conf
+のマニュアルを参照してください。
+CPU 数については gfhost のマニュアルを参照してください。
 </p>
 </dd>
 <dt><span class="term"><code class="option">-U</code></span></dt>

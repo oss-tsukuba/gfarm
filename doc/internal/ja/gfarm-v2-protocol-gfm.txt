@@ -420,6 +420,51 @@
 	  入力: なし
 	  出力: i:エラー, l:used, l:avail, l:files
 
+	GFM_PROTO_CONFIG_GET
+	  入力:	s: 設定種別文字列
+		c: 設定フォーマットタイプ
+	  出力:	i: エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		c: 設定フォーマットタイプ (入力と同一)
+		フォーマットタイプ依存の型: 設定値
+		※ 設定種別文字列が未知の場合:
+			エラー == GFARM_ERR_FUNCTION_NOT_IMPLEMENTED
+		   設定種別文字列が gfmd 用でない場合:
+			エラー == GFARM_ERR_OPERATION_NOT_PERMITTED
+		   設定フォーマットタイプが、期待と異なる場合:
+			エラー == GFARM_ERR_INVALID_ARGUMENT
+		   gfarmadm 権限が必要な値を、権限なしで取得しようとした場合:
+			エラー == GFARM_ERR_PERMISSION_DENIED
+
+	GFM_PROTO_CONFIG_SET ※ 現行バージョンでは未実装
+	  入力:	s: 設定種別文字列
+		c: 設定フォーマットタイプ
+		フォーマットタイプ依存の型: 設定値
+	  出力:
+		i: エラー
+		※ 設定種別文字列が未知の場合:
+			GFARM_ERR_FUNCTION_NOT_IMPLEMENTED
+		   設定種別文字列が gfmd 用でない場合:
+			エラー == GFARM_ERR_OPERATION_NOT_PERMITTED
+		   設定フォーマットタイプが、期待と異なる場合:
+			エラー == GFARM_ERR_INVALID_ARGUMENT
+		   設定値が、許容される範囲を越えた場合:
+			エラー == GFARM_ERR_INVALID_ARGUMENT
+		   gfarmadm 権限なしで GFM_PROTO_CONFIG_SET を指定した場合:
+			エラー == GFARM_ERR_PERMISSION_DENIED
+
+		※ GFM_RPTO_CONFIG_GET / GFM_PROTO_CONFIG_SET では、
+		   設定種別文字列として、gfarm2.conf の directive の
+		   サブセットが利用できる。
+		   それ以外に、GFM_RPTO_CONFIG_GET 専用で、以下も有効
+			version_major / i
+			version_minor / i
+			version_teeny / i
+		※ 設定フォーマットタイプを明示的に渡している理由は、
+		   WireShark 用 Lua スクリプトの実装を容易にするため。
+		   この文字は、現状、gfp_xdr.c のフォーマット文字列中の
+		   文字と互換だが、将来拡張する可能性あり。
+
 	GFM_PROTO_REPLICA_LIST_BY_NAME
 	  暗黙の入力: i:current file descriptor
 	  入力: なし
@@ -594,6 +639,21 @@
 		エラー == GFARM_ERR_NO_SUCH_OBJECT の場合:
 		入力の i_node_number 以降に該当する inode は無い
 
+	GFM_PROTO_REPLICA_GET_MY_ENTRIES_RANGE
+	  入力: l:i_node_number, l:n_inode, i:n_entries
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_entries, i:flags
+			flags の下位第0ビットが 1 の場合、
+				この出力以降に inode は無い
+			flags の下位第1ビットが 1 の場合、
+				この出力以降の指定した範囲内に inode は無い
+		下記の、n_entries 回の繰り返し:
+		l:i_node_number, l:generation, l:size
+
+		エラー == GFARM_ERR_NO_SUCH_OBJECT の場合:
+		入力の i_node_number 以降に該当する inode は無い
+
 	GFM_PROTO_REPLICA_CREATE_FILE_IN_LOST_FOUND
 	  入力: l:i_node_number, l:generation, l:size,
 		l:mtime_sec, i:mtime_nsec,
@@ -605,10 +665,7 @@
 	  暗黙の入力: i:current file descriptor
 	  入力: s:hostname
 	  出力: i:エラー
-	  ※ gfarm-2.5.8 RC1 (r6725 SF.net #453) 以降では、
-	     GFARM_FILE_REPLICA_SPEC を指定してオープンしたディスクリプタを
-	     current file descriptor に渡す必要がある
-
+	
 	GFM_PROTO_REPLICA_INFO_GET
 	  暗黙の入力: i:current file descriptor
 	  入力: i:flags
@@ -622,6 +679,24 @@
 	  暗黙の入力: i:current file descriptor
 	  入力: s:srchost, s:dsthost, i:flags
 	  出力: i:エラー
+
+	GFM_PROTO_REPLICA_CHECK_CTRL
+	  入力: i:ctrl
+	  出力: i:エラー
+
+	GFM_PROTO_REPLICA_CHECK_STATUS
+	  入力: i:status_target
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:status
+
+	GFM_PROTO_FHSET_CKSUM
+	  入力: l:i_node_number, l:generation
+		s:cksum_type, b:cksum
+		i:flags, l:mtime_sec, i:mtime_nsec
+	  出力: i:エラー
+		※ GFM_PROTO_CKSUM_GET とは異なり、書き込みオープン
+		   されている場合は、GFARM_ERR_FILE_BUSY を返す。
 
   gfs 系 / クライアントと gfsd の両方からのアクセス
 
@@ -935,12 +1010,19 @@
 	  出力: i:エラー
 
 	GFM_PROTO_PROCESS_SET
-	  入力: s:username, i:key_type, b:shared_key, l:pid
+	  入力: i:key_type, b:shared_key, l:pid
 	  出力: i:エラー
-	  ※ 入力パラメータ username は、gfarm v2 までは存在しなかったが、
-	     slave gfmd でこの RPC の内容を解釈する際に、
-	     master gfmd へ、この pid に対応するユーザを問い合わせる必要が
-	     なくなるため、gfarm v3 で追加した。
+
+	GFM_PROTO_PROCESS_FD_INFO
+	  入力: i:gfsd_domain, s:user_host_domain, s:user, l:flags
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_fds
+		下記、n_fds 回の繰り返し
+		s:user, l:pid, i:fd,
+		i:mode, l:inum, l:igen, i:open_flags, l:off,
+		s:client_host, i:client_port,
+		s:gfsd_host, i:gfsd_port, i:gfsd_peer_port, l:reserved
 
   quota 管理系
 
@@ -982,13 +1064,11 @@
 	  入力: なし
 	  出力: i:エラー
 	
-  gfmd 間通信 (gfmd channel)
+  メタデータ・レプリケーション系 (gfmd channel)
 
 	GFM_PROTO_SWITCH_GFMD_CHANNEL
 	  入力: なし
 	  出力: i:エラー
-
-     プロトコルメタデータ・レプリケーション系
 
 	GFM_PROTO_JOURNAL_READY_TO_RECV
 	  入力: l:seqnum
@@ -997,44 +1077,6 @@
 	GFM_PROTO_JOURNAL_SEND
 	  入力: l:from_seqnum, l:to_seqnum, b:journal_records
 	  出力: i:エラー
-
-     gfmd 間 RPC リレー系
-
-	GFM_PROTO_REMOTE_PEER_ALLOC
-	  入力: l:peer_id, i:auth_id_type, s:user, s:host,
-	        i:proto_family, i:proto_transport, i:port
-	  出力: i:エラー
-
-	GFM_PROTO_REMOTE_PEER_FREE
-	  入力: l:peer_id
-	  出力: i:エラー
-
-	GFM_PROTO_REMOTE_PEER_DISCONNECT
-	  入力: l:peer_id
-	  出力: i:エラー
-
-	  ※ slave gfmd に接続している gfsd に対する接続切断を、master
-	     gfmd が slave gfmd に対して要求する。gfsd が 別の gfmd に
-	     再接続したことを master gfmd が検知したり、gfsd のホスト情報
-	     が (gfhost -d によって) メタデータから削除されたりした際に
-	     使用する。
-
-	GFM_PROTO_REMOTE_RPC … クライアントおよびgfsdからの要求のリレー
-	  入力: l:peer_id
-		これ以降、リレーされた gfm protocol の
-			プロトコルID、入力引数が続く
-	  出力: i:エラー
-		エラー == GFARM_ERR_NO_ERROR の場合:
-		l:seqnum, l:db_update_flags
-		これ以降、リレーされた gfm protocol のエラーおよび出力が続く
-
-	GFM_PROTO_REMOTE_GFS_RPC … gfsd back channel への要求のリレー
-	  入力: l:peer_id
-		これ以降、リレーする gfs protocol の
-			プロトコルID、入力引数が続く
-	  出力: リレーされた gfs protocol の出力
-
-  MDHost 管理系
 
 	GFM_PROTO_METADB_SERVER_GET:
 	  入力: s:hostname
@@ -1061,7 +1103,6 @@
 	GFM_PROTO_METADB_SERVER_REMOVE:
 	  入力: s:hostname
 	  出力: i:エラー
-
 
 ------------------------------------------------------------------------
 

@@ -1,0 +1,78 @@
+'\" t
+.\"     Title: gftest
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 7 Apr 2013
+.\"    Manual: Gfarm
+.\"    Source: Gfarm
+.\"  Language: English
+.\"
+.TH "GFTEST" "1" "7 Apr 2013" "Gfarm" "Gfarm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+gftest \- Gfarm ファイルまたはディレクトリの情報を調べる
+.SH "SYNOPSIS"
+.HP \w'\fBgftest\fR\ 'u
+\fBgftest\fR \fIoptions\fR \fIpath\fR
+.SH "DESCRIPTION"
+.PP
+指定したファイルあるいはディレクトリの情報を調べます．
+.SH "OPTIONS"
+.PP
+\fB\-d\fR
+.RS 4
+ディレクトリであれば 0 を返します
+.RE
+.PP
+\fB\-e\fR
+.RS 4
+存在すれば 0 を返します
+.RE
+.PP
+\fB\-f\fR
+.RS 4
+通常ファイルであれば 0 を返します
+.RE
+.PP
+\fB\-h\fR
+.RS 4
+シンボリックリンクであれば 0 を返します
+.RE
+.PP
+\fB\-s\fR
+.RS 4
+通常ファイルで、サイズが 0 より大きければ 0 を返します
+.RE
+.PP
+\fB\-L\fR
+.RS 4
+通常ファイルで、実ファイルが同一ホストに格納されていれば 0 を返します
+.RE
+.PP
+\fB\-R\fR
+.RS 4
+通常ファイルで、実ファイルが同一ホストに格納されていなければ 0 を返します
+.RE
+.PP
+\fB\-?\fR
+.RS 4
+引数オプションを表示します．
+.RE

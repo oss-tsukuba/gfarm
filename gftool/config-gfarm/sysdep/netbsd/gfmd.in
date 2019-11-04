@@ -20,6 +20,7 @@ rcvar=${name}
 command="@config_gfarm_prefix@/sbin/${name}"
 pidfile="@config_gfarm_gfmd_pid_file@"
 required_files="$CONF"
+export GLOBUS_THREAD_MODEL=pthread
 
 CMD=$1
 case X$CMD in

@@ -16,6 +16,7 @@ SUBDIRS=	\
 	lib/libgfarm/gfarm/gfarm_error_to_errno \
 	lib/libgfarm/gfarm/gfs_dir_test \
 	lib/libgfarm/gfarm/gfs_pio_test \
+	lib/libgfarm/gfarm/gfs_pio_stat \
 	lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/file_busy \
 	lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/in_progress \
 	lib/libgfarm/gfarm/gfs_stat_cached \
@@ -23,7 +24,8 @@ SUBDIRS=	\
 	lib/libgfarm/gfarm/gfs_getxattr_cached \
 	lib/libgfarm/gfarm/gfm_inode_or_name_op_test \
 	server/gfmd/db_journal \
-	manual/lib/libgfarm/gfarm/gfs_pio_failover
+	manual/lib/libgfarm/gfarm/gfs_pio_failover \
+	manual/server/gfsd/fo_notify_test
 
 check test: all
 	@echo ""

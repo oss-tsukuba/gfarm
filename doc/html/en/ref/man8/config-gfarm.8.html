@@ -199,11 +199,12 @@ Note that you need to recompile Gfarm if you'd like to make Gfarm on
 your system support a backend database not in the list.
 </p>
 </dd>
-<dt><span class="term"><code class="option">-d</code> <em class="parameter"><code>domainname</code></em></span></dt>
+<dt><span class="term"><code class="option">-d</code> <em class="parameter"><code>digest_type</code></em></span></dt>
 <dd><p>
-This option is used to specify a base DN of metadata.
-This option takes an effect only when the backend database is LDAP.
-The default is the fully qualified domainname of the host on DNS.
+Enable checksum calculation and specify the digest type of the checksum.
+The <em class="parameter"><code>digest_type</code></em> argument is a
+lower-case name which is supported by the OpenSSL library on the host,
+such as "md5".
 </p></dd>
 <dt><span class="term"><code class="option">-U</code> <em class="parameter"><code>username</code></em></span></dt>
 <dd><p>

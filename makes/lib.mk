@@ -1,26 +1,24 @@
-install: all lib-install post-install-hook
-clean: lib-clean post-clean-hook
-veryclean: lib-veryclean post-veryclean-hook
-distclean: lib-distclean post-distclean-hook
-gfregister: lib-gfregister post-gfregister-hook
-man: lib-man post-man-hook
-html: lib-html post-html-hook
+install: post-install-hook
+clean: post-clean-hook
+veryclean: post-veryclean-hook
+distclean: post-distclean-hook
+man: post-man-hook
+html: post-html-hook
 msgno: lib-msgno
 
 include $(top_srcdir)/makes/private-file.mk
 
-post-install-hook:
-post-clean-hook:
-post-veryclean-hook:
-post-distclean-hook:
-post-gfregister-hook:
-post-man-hook:
-post-html-hook:
+post-install-hook: lib-install
+post-clean-hook: lib-clean
+post-veryclean-hook: lib-veryclean
+post-distclean-hook: lib-distclean
+post-man-hook: lib-man
+post-html-hook: lib-html
 
 $(LIBRARY): $(OBJS) $(DEPLIBS)
 	$(LTLINK) $(OBJS) $(LDLIBS)
 
-lib-install:
+lib-install: all
 	@$(MKDIR_P) $(DESTDIR)$(libdir)
 	@for i in -- $(LIBRARY_RESULT); do \
 		case $$i in --) continue;; esac; \
@@ -41,7 +39,6 @@ lib-veryclean: clean private-finalize
 lib-distclean: veryclean
 	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
 
-lib-gfregister:
 lib-man:
 lib-html:
 lib-msgno:

@@ -20,6 +20,7 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 
+#include "thrsubr.h"
 #include "gfutil.h"
 
 #include "context.h"
@@ -46,11 +47,8 @@ gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *, int,
 	 * This table entry should be ordered by enum gfarm_auth_method.
 	 */
 	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_NONE */
-	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_SHAREDSECRET_V2 */
-	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_GSI_OLD */
-	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_GSI_V2 */
-	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_GSI_AUTH_V2 */
 	gfarm_authorize_sharedsecret,	/* GFARM_AUTH_METHOD_SHAREDSECRET */
+	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_GSI_OLD */
 #ifdef HAVE_GSI
 	gfarm_authorize_gsi,		/* GFARM_AUTH_METHOD_GSI */
 	gfarm_authorize_gsi_auth,	/* GFARM_AUTH_METHOD_GSI_AUTH */
@@ -71,6 +69,67 @@ gfarm_authorize_panic(struct gfp_xdr *conn, int switch_to,
 	    "gfarm_authorize: authorization assertion failed");
 	return (GFARM_ERR_PROTOCOL);
 }
+
+/*
+ * gfsd_shared_key_cache: cache of ~_gfarmfs/.gfarm_shared_key
+ * to reduce gfarm_privilege_lock contention in gfmd
+ */
+
+static const char gfsd_shared_key_cache_mutex_diag[] =
+	"gfsd_shared_key_cache_mutex";
+static pthread_mutex_t gfsd_shared_key_cache_mutex =
+	GFARM_MUTEX_INITIALIZER(gfsd_shared_key_cache_mutex);
+static int gfsd_shared_key_cache_avaiable = 0;
+static gfarm_uint32_t gfsd_shared_key_cache_expire;
+static char gfsd_shared_key_cache[GFARM_AUTH_SHARED_KEY_LEN];
+
+static gfarm_error_t
+gfsd_shared_key_cache_get(
+	gfarm_uint32_t *expire_expected, char *shared_key_expected)
+{
+	gfarm_error_t e;
+	static const char diag[] = "gfsd_shared_key_cache_get";
+
+	gfarm_mutex_lock(&gfsd_shared_key_cache_mutex,
+	    diag, gfsd_shared_key_cache_mutex_diag);
+
+	if (!gfsd_shared_key_cache_avaiable) {
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	} else if (time(0) >= gfsd_shared_key_cache_expire) {
+		e = GFARM_ERR_EXPIRED;
+	} else {
+		e = GFARM_ERR_NO_ERROR;
+		*expire_expected = gfsd_shared_key_cache_expire;
+		memcpy(shared_key_expected, gfsd_shared_key_cache,
+		    sizeof(gfsd_shared_key_cache));
+	}
+
+	gfarm_mutex_unlock(&gfsd_shared_key_cache_mutex,
+	    diag, gfsd_shared_key_cache_mutex_diag);
+
+	return (e);
+}
+
+static void
+gfsd_shared_key_cache_set(gfarm_uint32_t expire, const char *shared_key)
+{
+	static const char diag[] = "gfsd_shared_key_cache_set";
+
+	gfarm_mutex_lock(&gfsd_shared_key_cache_mutex,
+	    diag, gfsd_shared_key_cache_mutex_diag);
+
+	gfsd_shared_key_cache_avaiable = 1;
+	gfsd_shared_key_cache_expire = expire;
+	memcpy(gfsd_shared_key_cache, shared_key,
+	    sizeof(gfsd_shared_key_cache));
+
+	gfarm_mutex_unlock(&gfsd_shared_key_cache_mutex,
+	    diag, gfsd_shared_key_cache_mutex_diag);
+}
+
+/*
+ * sharedsecret authorization
+ */
 
 static gfarm_error_t
 gfarm_auth_sharedsecret_giveup_response(struct gfp_xdr *conn,
@@ -108,18 +167,108 @@ gfarm_auth_sharedsecret_giveup_response(struct gfp_xdr *conn,
 	return (e);
 }
 
+static enum gfarm_auth_error
+gfarm_auth_sharedsecret_compare(
+	const char *hostname, const char *global_username,
+	gfarm_uint32_t expire, char *challenge,
+	char *response, size_t response_size,
+	gfarm_uint32_t expire_expected, char *shared_key_expected,
+	const char *diag)
+{
+	gfarm_error_t e;
+	char response_expected[GFARM_AUTH_RESPONSE_LEN];
+	enum gfarm_auth_error error;
+
+	/* may also reach here even if shared_key_expected is expired */
+	e = gfarm_auth_sharedsecret_response_data(
+	    shared_key_expected, challenge, response_expected);
+	if (expire != expire_expected) {
+		error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
+		gflog_info(GFARM_MSG_1004489,
+		    "(%s@%s) auth_sharedsecret: expire time mismatch%s",
+		    global_username, hostname, diag);
+	} else if (e != GFARM_ERR_NO_ERROR) {
+		error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
+		gflog_error(GFARM_MSG_1004517,
+		    "(%s@%s) auth_sharedsecret: "
+		    "calculating challenge-response: %s",
+		    global_username, hostname, gfarm_error_string(e));
+	} else if (memcmp(response, response_expected, response_size) != 0) {
+		error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
+		gflog_info(GFARM_MSG_1004490,
+		    "(%s@%s) auth_sharedsecret: key mismatch%s",
+		    global_username, hostname, diag);
+	} else { /* success */
+		error = GFARM_AUTH_ERROR_NO_ERROR;
+	}
+	return (error);
+}
+
+static enum gfarm_auth_error
+gfarm_auth_sharedsecret_check(
+	const char *hostname, const char *global_username, struct passwd *pwd,
+	gfarm_uint32_t expire, char *challenge,
+	char *response, size_t response_size)
+{
+	gfarm_error_t e;
+	gfarm_uint32_t expire_expected;
+	char shared_key_expected[GFARM_AUTH_SHARED_KEY_LEN];
+	enum gfarm_auth_error error;
+	int gfsd_shared_key_cache_needs_update = 0;
+
+	if (strcmp(global_username, GFSD_USERNAME) == 0) {
+		e = gfsd_shared_key_cache_get(
+		    &expire_expected, shared_key_expected);
+		if (e == GFARM_ERR_NO_ERROR) {
+			error = gfarm_auth_sharedsecret_compare(
+			    hostname, global_username,
+			    expire, challenge, response, response_size,
+			    expire_expected, shared_key_expected,
+			    " with cache");
+			if (error == GFARM_AUTH_ERROR_NO_ERROR)
+				return (error);
+		}
+		gfsd_shared_key_cache_needs_update = 1;
+	}
+
+	e = gfarm_auth_shared_key_get(&expire_expected, shared_key_expected,
+	    pwd->pw_dir, pwd, GFARM_AUTH_SHARED_KEY_GET, 0);
+	if (e == GFARM_ERR_NO_ERROR && gfsd_shared_key_cache_needs_update) {
+		gfsd_shared_key_cache_set(
+		    expire_expected, shared_key_expected);
+	}
+
+	if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_EXPIRED) {
+		error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
+		gflog_info(GFARM_MSG_1003576,
+		    "(%s@%s) auth_sharedsecret: .gfarm_shared_key: %s",
+		    global_username, hostname, gfarm_error_string(e));
+	} else if (time(0) >= expire) {
+		/* may reach here if (e == GFARM_ERR_EXPIRED) */
+		error = GFARM_AUTH_ERROR_EXPIRED;
+		gflog_info(GFARM_MSG_1003577,
+		    "(%s@%s) auth_sharedsecret: key expired",
+		    global_username, hostname);
+	} else {
+		/* may also reach here if (e == GFARM_ERR_EXPIRED) */
+		error = gfarm_auth_sharedsecret_compare(
+		    hostname, global_username,
+		    expire, challenge, response, response_size,
+		    expire_expected, shared_key_expected, "");
+	}
+	return (error);
+}
+
 static gfarm_error_t
 gfarm_auth_sharedsecret_md5_response(struct gfp_xdr *conn,
-	const char *hostname, const char *global_username, 
+	const char *hostname, const char *global_username,
 	struct passwd *pwd, gfarm_int32_t *errorp)
 {
 	int eof;
 	size_t len;
-	gfarm_uint32_t expire, expire_expected;
+	gfarm_uint32_t expire;
 	char challenge[GFARM_AUTH_CHALLENGE_LEN];
 	char response[GFARM_AUTH_RESPONSE_LEN];
-	char shared_key_expected[GFARM_AUTH_SHARED_KEY_LEN];
-	char response_expected[GFARM_AUTH_RESPONSE_LEN];
 	gfarm_int32_t error; /* gfarm_auth_error */
 	gfarm_error_t e;
 
@@ -154,41 +303,13 @@ gfarm_auth_sharedsecret_md5_response(struct gfp_xdr *conn,
 	if (pwd == NULL) {
 		/* *errorp should have a valid value only in this case */
 		error = *errorp;
-		gflog_debug(GFARM_MSG_UNFIXED, "Password is null (%d)",
+		gflog_debug(GFARM_MSG_1003723, "Password is null (%d)",
 		    (int)error);
 		/* already logged at gfarm_authorize_sharedsecret() */
-	} else if ((e = gfarm_auth_shared_key_get(&expire_expected,
-	    shared_key_expected, pwd->pw_dir, pwd,
-	    GFARM_AUTH_SHARED_KEY_GET, 0))
-	    != GFARM_ERR_NO_ERROR && e != GFARM_ERR_EXPIRED) {
-		error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-		gflog_info(GFARM_MSG_1003576,
-		    "(%s@%s) auth_sharedsecret: .gfarm_shared_key: %s",
-		    global_username, hostname, gfarm_error_string(e));
-	} else if (time(0) >= expire) {
-		/* may reach here if (e == GFARM_ERR_EXPIRED) */
-		error = GFARM_AUTH_ERROR_EXPIRED;
-		gflog_info(GFARM_MSG_1003577,
-		    "(%s@%s) auth_sharedsecret: key expired",
-		    global_username, hostname);
 	} else {
-		/* may also reach here if (e == GFARM_ERR_EXPIRED) */
-		gfarm_auth_sharedsecret_response_data(
-		    shared_key_expected, challenge, response_expected);
-		if (expire != expire_expected) {
-			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-			gflog_info(GFARM_MSG_1003578,
-			    "(%s@%s) auth_sharedsecret: expire time mismatch",
-			    global_username, hostname);
-		} else if (memcmp(response, response_expected,
-		    sizeof(response)) != 0) {
-			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-			gflog_info(GFARM_MSG_1000031,
-			    "(%s@%s) auth_sharedsecret: key mismatch",
-			    global_username, hostname);
-		} else { /* success */
-			error = GFARM_AUTH_ERROR_NO_ERROR;
-		}
+		error = gfarm_auth_sharedsecret_check(
+		    hostname, global_username, pwd,
+		    expire, challenge, response, sizeof(response));
 	}
 	*errorp = error;
 	e = gfp_xdr_send(conn, "i", error);

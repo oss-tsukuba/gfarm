@@ -15,8 +15,8 @@
 </div>
 <div class="refsynopsisdiv" title="Synopsis">
 <a name="synopsis"></a><h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gfsched</code>   -f <em class="replaceable"><code>gfarm-URL</code></em>  [-D <em class="replaceable"><code>ドメイン名</code></em>] [-n <em class="replaceable"><code>ノード数</code></em>] [-LMclw]</p></div>
-<div class="cmdsynopsis"><p><code class="command">gfsched</code>  [-P <em class="replaceable"><code>gfarm-URL</code></em>] [-D <em class="replaceable"><code>ドメイン名</code></em>] [-n <em class="replaceable"><code>ノード数</code></em>] [-LMlw]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfsched</code>   -f <em class="replaceable"><code>gfarm-URL</code></em>  [-D <em class="replaceable"><code>ドメイン名</code></em>] [-n <em class="replaceable"><code>ノード数</code></em>] [-LMOSclw]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gfsched</code>  [-P <em class="replaceable"><code>gfarm-URL</code></em>] [-D <em class="replaceable"><code>ドメイン名</code></em>] [-n <em class="replaceable"><code>ノード数</code></em>] [-LMOSlw]</p></div>
 </div>
 <div class="refsect1" title="DESCRIPTION">
 <a name="description"></a><h2>DESCRIPTION</h2>
@@ -53,10 +53,20 @@
 このオプションを指定すると、動作は高速になりますが、ネットワーク的に到
 達不能なホストや、認証不能なホストが表示される危険があります。
 </p></dd>
+<dt><span class="term"><code class="option">-O</code></span></dt>
+<dd><p>
+gfsched コマンドを実行しているホストとは異なるホストである
+ファイルシステムノードのみ表示します。
+</p></dd>
 <dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>gfarm-URL</code></em></span></dt>
 <dd><p>ファイルシステムノードを管理するメタデータサーバを特定する
 ために、gfarm-URL ないしパス名を指定します。
 このオプションは、<code class="option">-f</code> オプションと排他的です。
+</p></dd>
+<dt><span class="term"><code class="option">-S</code></span></dt>
+<dd><p>
+gfsched コマンドを実行しているホストと同一ホストである
+ファイルシステムノードのみ表示します。
 </p></dd>
 <dt><span class="term"><code class="option">-f</code> <em class="parameter"><code>gfarm-URL</code></em></span></dt>
 <dd><p>指定したファイルについて、その複製を保持するファイルシステムノードを

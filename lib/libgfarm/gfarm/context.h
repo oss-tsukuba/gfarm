@@ -8,7 +8,9 @@ struct gfarm_context {
 
 	int log_level;
 	int no_file_system_node_timeout;
+	int gfmd_authentication_timeout;
 	int gfmd_reconnection_timeout;
+	int gfsd_connection_timeout;
 	int attr_cache_limit;
 	int attr_cache_timeout;
 	int page_cache_timeout;
@@ -23,8 +25,10 @@ struct gfarm_context {
 	int schedule_rtt_thresh_diff;
 	char *schedule_write_target_domain;
 	int schedule_write_local_priority;
+	int direct_local_access;
 	int gfmd_connection_cache;
 	int gfsd_connection_cache;
+	int client_digest_check;
 	int client_file_bufsize;
 	int client_parallel_copy;
 	int client_parallel_max;
@@ -55,6 +59,8 @@ struct gfarm_context {
 	struct gfarm_schedule_static *schedule_static;
 	struct gfarm_gfs_pio_static *gfs_pio_static;
 	struct gfarm_gfs_pio_section_static *gfs_pio_section_static;
+	struct gfarm_gfs_pio_local_static *gfs_pio_local_static;
+	struct gfarm_gfs_pio_remote_static *gfs_pio_remote_static;
 	struct gfarm_gfs_stat_static *gfs_stat_static;
 	struct gfarm_gfs_unlink_static *gfs_unlink_static;
 	struct gfarm_gfs_xattr_static *gfs_xattr_static;
@@ -107,6 +113,12 @@ void          gfarm_gfs_pio_static_term(struct gfarm_context *);
 
 gfarm_error_t gfarm_gfs_pio_section_static_init(struct gfarm_context *);
 void          gfarm_gfs_pio_section_static_term(struct gfarm_context *);
+
+gfarm_error_t gfarm_gfs_pio_local_static_init(struct gfarm_context *);
+void          gfarm_gfs_pio_local_static_term(struct gfarm_context *);
+
+gfarm_error_t gfarm_gfs_pio_remote_static_init(struct gfarm_context *);
+void          gfarm_gfs_pio_remote_static_term(struct gfarm_context *);
 
 gfarm_error_t gfarm_gfs_stat_static_init(struct gfarm_context *);
 void          gfarm_gfs_stat_static_term(struct gfarm_context *);

@@ -2,12 +2,12 @@
 .\"     Title: gfs_pio_create
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 27 Jun 2010
+.\"      Date: 3 Sep 2015
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFS_PIO_CREATE" "3" "27 Jun 2010" "Gfarm" "Gfarm"
+.TH "GFS_PIO_CREATE" "3" "3 Sep 2015" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -59,7 +59,10 @@ argument has the same meaning as the second argument of
 \fIGFARM_FILE_RDONLY\fR,
 \fIGFARM_FILE_WRONLY\fR, and
 \fIGFARM_FILE_RDWR\fR
-should be specified\&.
+should be specified\&. In addition, it is possible to specify
+\fIGFARM_FILE_EXCLUSIVE\fR\&. With this flag,
+\fBgfs_pio_create()\fR
+will fail when the file already exists\&.
 .PP
 Note that
 \fIGFARM_FILE_TRUNC\fR
@@ -171,6 +174,12 @@ Specified authentication protocol is not supported\&.
 \fBGFARM_ERR_AUTHENTICATION\fR
 .RS 4
 User authentication failed when connecting to the metadata server\&.
+.RE
+.PP
+\fBGFARM_ERR_ALREADY_EXISTS\fR
+.RS 4
+\fIgfarm_url\fR
+already exists and GFARM_FILE_EXCLUSIVE was used\&.
 .RE
 .PP
 Others

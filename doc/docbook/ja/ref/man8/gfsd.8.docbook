@@ -6,7 +6,7 @@
 
 <refentry id="gfsd.8">
 
-<refentryinfo><date>08 Nov 2012</date></refentryinfo>
+<refentryinfo><date>5 March 2016</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsd</refentrytitle>
@@ -132,6 +132,7 @@ gfsdはユーザ権限で動作させることも可能ですが，この場合�
 <term><option>-r</option> <parameter moreinfo="none">スプール・ディレクトリ</parameter></term>
 <listitem>
 <para>gfsdが、ファイルの実体を保持するディレクトリ名を指定します。
+このオプションを複数回（最大5回まで）指定することにより複数のディレクトリを指定可能です。
 </para>
 </listitem>
 </varlistentry>

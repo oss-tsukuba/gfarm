@@ -6,9 +6,16 @@ TO RUN TEST
 	gfmkdir /tmp
 	gfchmod 777 /tmp
 
-2. run "make check"
+2. prepare some optional tests
+  although this is optional, it's STRONGLY recommended to do this.
+
+  this is long, see "SETTING UP TEST ENVIRONMENT" section below.
+
+3. run "make check"
 
 optional variables:
+	$GFARM_TEST_CKSUM_MISMATCH=<path>
+					... a file which causes cksum mismatch
 	$GFARM_TEST_MDS2=<host>:<port>	... optional gfmd
 	$GFARM_TEST_MDS3=<host>:<port>	... optional gfmd
 	$GFARM_TEST_MDS4=<host>:<port>	... optional gfmd
@@ -19,6 +26,12 @@ optional conditions:
 	- whether there are at least two filesystem nodes or not.
 	- whether there are at least two users or not.
 	- whether XML attribute is enabled by the configure command or not.
+	- whether cksum calculation is enabled or not.
+	- whether client-side cksum calculation is enabled or not.
+	- which cksum type is set
+	- whether $GFARM_TEST_CKSUM_MISMATCH is set or not
+	- the $GFARM_TEST_CKSUM_MISMATCH is larger than client_file_bufsize
+	- whether $GFARM_TEST_MDS* is set or not
 
 TO WRITE TEST
 - each test should be independent from other test.
@@ -37,4 +50,106 @@ i.e.
 
 TODO
 - test by root?
-- make 
+
+========================================================================
+
+SETTING UP TEST ENVIRONMENT
+
+----------------------------------------
+SETTING UP CKSUM RELATED TESTS
+----------------------------------------
+
+BASIC SETTING
+
+  - you should have the following setting in your gfmd.conf for
+    all metadata servers:
+	  digest md5
+    ("digest sha1" is also OK)
+
+    if this setting is newly added, you have to restart gfmd.
+    if you haven't set up your metadata servers yet, adding the "-d md5" option
+    to the config-gfarm command does this automatically.
+
+    if you don't have this setting, Gfarm won't calculate any cksum,
+    thus, the results of the cksum related tests will be UNSUPPORTED.
+
+  - you should have the following setting in your gfarm2.conf for
+    your Gfarm clients:
+	  client_digest_check enable
+
+    if you don't have this setting, the results of the client-side cksum tests
+    (cksum*.local.sh) will be UNSUPPORTED.
+
+SETTING ABOUT $GFARM_TEST_CKSUM_MISMATCH
+
+  you should have a Gfarm file which contents do not match with
+  cksum metadata of the file.
+  you should set the $GFARM_TEST_CKSUM_MISMATCH environment varaible
+  to the pathname of the Gfarm file.
+
+  if you don't have this setting, the results of cksum_mismatch*.sh tests
+  and cksum_no_check.*.sh tests will be UNSUPPORTED.
+
+  You can choose an arbitrary pathname as $GFARM_TEST_CKSUM_MISMATCH.
+  The following description assumes that the environment variable is already
+  set by you.
+
+  To create the Gfarm file which contents do not match with cksum metadata
+  of the file, you should follow the procedure below.
+
+  - choose a filesystem node which holds the contents of the Gfarm file.
+    we call this filesystem node FILESYSTEM-NODE-1 in this description.
+
+  - make sure you have the following line in gfarm2.conf for gfsd
+    on FILESYSTEM-NODE-1:
+	spool_digest_error_check disable
+
+    if this setting is newly added, you have to restart gfsd.
+
+    if you don't have this setting, the Gfarm file which is pointed by
+    $GFARM_TEST_CKSUM_MISMATCH will be moved to /lost+found automatically
+    as soon as cksum mismatch is detected, so subsequent regression tests
+    about the Gfarm file won't be executed.
+    the "spool_digest_error_check disable" setting prevents this automatic
+    movement to /lost+found.
+
+  - to register a file on FILESYSTEM-NODE-1, run the following command (*1):
+
+	$ printf '%4194308s' ' ' | gfreg -h FILESYSTEM-NODE-1 - $GFARM_TEST_CKSUM_MISMATCH
+
+  - then, you should see the relative pathname of this file from gfsd spool,
+    by running the following command:
+
+	$ gfspoolpath $GFARM_TEST_CKSUM_MISMATCH
+
+    you should remember the output of this command.
+    this output will be refered as "data/ABCDEF01/23/45/67/89ABCDEF0123456789"
+    in description below.
+
+  - to make cksum mismatch, you should replace the contents of the Gfarm file
+    by running the following command with root privilege on FILESYSTEM-NODE-1:
+
+	# printf '%4194307sX' ' ' > /PATH/TO/CONFIG_PREFIX/var/gfarm-spool/data/ABCDEF01/23/45/67/89ABCDEF0123456789
+
+    NOTE: you should replace the "data/ABCDEF01/23/45/67/89ABCDEF0123456789"
+	  part above by the output of the gfspoolpath command.
+
+    NOTE: you should replace the "/PATH/TO/CONFIG_PREFIX/var/gfarm-spool"
+	  part above by the spool directory pathname of the gfsd.
+	  if you did specify neither --prefix option nor a spool directory
+	  argument in the config-gfsd command for this gfsd,
+	  the part should be just "/var/gfarm-spool".
+
+   (*1) the file size (4194308 bytes) is chosen to make the file size
+        larger than client_file_bufsize.
+	if you have spare time, it's recommended to create another file
+	which size is smaller than 1MB, and use the small file
+	for cksum mismatch tests too.
+
+  That's all.
+
+  If you run "make check" on FILESYSTEM-NODE-1, you can see
+  the results of cksum_mismatch*.local.sh and cksum_no_check.local.sh.
+
+  If you run "make check" on a host which is not FILESYSTEM-NODE-1, you can see
+  the results of cksum_mismatch*.remote.sh and cksum_no_check.remote.sh.

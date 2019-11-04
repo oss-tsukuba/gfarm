@@ -75,9 +75,6 @@ int gfarm_iobuffer_is_eof(struct gfarm_iobuffer *);
 void gfarm_iobuffer_set_read_auto_expansion(struct gfarm_iobuffer *, int);
 void gfarm_iobuffer_begin_pindown(struct gfarm_iobuffer *);
 void gfarm_iobuffer_end_pindown(struct gfarm_iobuffer *);
-void gfarm_iobuffer_get_pos(struct gfarm_iobuffer *, int *);
-void gfarm_iobuffer_overwrite_at(struct gfarm_iobuffer *,
-	const void *, int, int);
 
 /* enqueue */
 void gfarm_iobuffer_set_read_timeout(struct gfarm_iobuffer *,

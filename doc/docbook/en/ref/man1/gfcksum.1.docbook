@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<refentry id="gfcksum.1">
+
+<refentryinfo><date>3 Mar 2014</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfcksum</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id="name">
+<refname>gfcksum</refname>
+<refpurpose>print checksum</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id="synopsis">
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfcksum</command>
+    <arg choice="opt" rep="norepeat">-rl</arg>
+    <group choice="opt" rep="norepeat">
+      <arg choice="plain" rep="norepeat">-T</arg>
+      <arg choice="plain" rep="norepeat">-t</arg>
+    </group>
+    <arg choice="plain" rep="repeat"><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis sepchar=" ">
+  <command moreinfo="none">gfcksum</command>
+    <arg choice="plain" rep="norepeat">-c</arg>
+    <arg choice="opt" rep="norepeat">-rlv</arg>
+    <arg choice="opt" rep="norepeat">-h <replaceable>host</replaceable></arg>
+    <arg choice="plain" rep="repeat"><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id="description"><title>DESCRIPTION</title>
+<para>
+<command moreinfo="none">gfcksum</command> prints checksum of
+specified files.  When -r option is specified, it prints checksum of
+subentries in the specified directories recursively.
+</para>
+
+<para>
+When -t option is specified, only checksum type which is currently set
+to the file is printed.
+When -T option is specified, which checksum type will be calculated is printed.
+</para>
+
+<para>
+When the -c option is specified, it calculates the checksum of the
+specified files, and compares it with the checksum stored in the
+metadata.  The -h option specifies the location of the file replica to
+be calculated.  With the -v option, the verbose information including
+modification time of the file replica is displayed.
+</para>
+
+<para>
+If the -l option is present, <command moreinfo="none">gfcksum</command>
+displays a path for each file.
+By default, gfcksum shows its basename only.
+</para>
+</refsect1>
+
+<refsect1 id="options"><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>Displays subdirectories recursively.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-c</option></term>
+<listitem>
+<para>Calculates the checksum of the specified files, and compares it with
+the checksum stored in the metadata.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option> <parameter moreinfo="none">host</parameter></term>
+<listitem>
+<para>Specifies the location of the file replica, when the -c option
+is specified.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>Displays the verbose information including modification time of
+the file replica, when the -c option is specified.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>Displays a path for each file.
+By default, gfcksum shows its basename only.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>Displays a list of command options.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+</refentry>
+

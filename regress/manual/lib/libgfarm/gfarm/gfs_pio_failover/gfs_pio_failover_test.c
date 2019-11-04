@@ -1,12 +1,15 @@
 #define _BSD_SOURCE /* usleep() in unistd.h */
 
+#include <errno.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
 #include <time.h>
 #include <libgen.h>
+#include <limits.h>
 #include <signal.h>
 #include <assert.h>
 #include <sys/time.h>
@@ -72,6 +75,24 @@ chkerr_e(gfarm_error_t e_expected, gfarm_error_t e, const char *diag)
 		return;
 	fprintf(stderr, "%s: expected '%s' but '%s'\n", diag,
 	    gfarm_error_string(e_expected), gfarm_error_string(e));
+	exit(1);
+}
+
+static void
+chkerrno_n(int rv, const char *diag, int i)
+{
+	if (rv != -1)
+		return;
+	fprintf(stderr, "error at [%d]: %s: %s\n", i, diag, strerror(errno));
+	exit(1);
+}
+
+static void
+chkerrno(int rv, const char *diag)
+{
+	if (rv != -1)
+		return;
+	fprintf(stderr, "error: %s: %s\n", diag, strerror(errno));
 	exit(1);
 }
 
@@ -191,7 +212,35 @@ match_memory(const char *expected, const char *result, int len,
 }
 
 static void
-create_dirty_file(GFS_File gf[], char path[][GFS_MAXNAMLEN],
+match_file(const char *expected, int fd, off_t off, int len, const char *diag)
+{
+	ssize_t rv;
+	char buf[STR_BUFSIZE];
+
+	assert(len <= STR_BUFSIZE);
+
+	if (lseek(fd, off, SEEK_SET) == -1)
+		chkerrno(-1, diag);
+	rv = read(fd, buf, len);
+	if (rv != len) {
+		if (rv == -1) {
+			chkerrno(-1, diag);
+		} else {
+			fprintf(stderr,
+			    "error: %s: read %d bytes expected, but %d\n",
+			    diag, len, (int)rv);
+			exit(1);
+		}
+	}
+	if (memcmp(expected, buf, len) != 0) {
+		msg("error: %s: string not matched: "
+		    "expected=[%.*s] result=[%.*s]\n",
+		    diag, len, expected, len, buf);
+	}
+}
+
+static void
+create_dirty_file(GFS_File gf[], char path[][PATH_MAX],
 	const char *path_base, int nfiles)
 {
 	size_t sz1, sz2;
@@ -202,7 +251,7 @@ create_dirty_file(GFS_File gf[], char path[][GFS_MAXNAMLEN],
 	sz2 = 1;
 
 	for (i = 0; i < nfiles; ++i) {
-		sprintf(path[i], "%s.%d", path_base, i);
+		snprintf(path[i], PATH_MAX, "%s.%d", path_base, i);
 		msg("gf[%d]: create %s\n", i, path[i]);
 		chkerr_n(gfs_pio_create(path[i], GFARM_FILE_RDWR, 0777, &gf[i]),
 		    "create", i);
@@ -227,7 +276,7 @@ create_dirty_file(GFS_File gf[], char path[][GFS_MAXNAMLEN],
 }
 
 static void
-create_and_write_file(GFS_File gf[], char path[][GFS_MAXNAMLEN],
+create_and_write_file(GFS_File gf[], char path[][PATH_MAX],
 	const char *path_base, int nfiles)
 {
 	size_t sz;
@@ -236,7 +285,7 @@ create_and_write_file(GFS_File gf[], char path[][GFS_MAXNAMLEN],
 	sz = strlen(TEXT1);
 
 	for (i = 0; i < nfiles; ++i) {
-		sprintf(path[i], "%s.%d", path_base, i);
+		snprintf(path[i], PATH_MAX, "%s.%d", path_base, i);
 		msg("gf[%d]: create %s\n", i, path[i]);
 		chkerr_n(gfs_pio_create(path[i], GFARM_FILE_WRONLY,
 		    0777, &gf[i]), "create", i);
@@ -288,12 +337,12 @@ test_rename(const char **argv)
 {
 	const char *path_base = argv[0];
 	GFS_File gf[1];
-	char *path, paths[1][GFS_MAXNAMLEN];
-	char to_path[GFS_MAXNAMLEN];
+	char *path, paths[1][PATH_MAX];
+	char to_path[PATH_MAX];
 
 	create_and_write_file(gf, paths, path_base, 1);
 	path = paths[0];
-	sprintf(to_path, "%s.to", path);
+	snprintf(to_path, sizeof to_path, "%s.to", path);
 
 	wait_for_failover();
 
@@ -502,6 +551,67 @@ test_fstat(const char **argv)
 }
 
 static void
+test_stat_cksum(const char **argv)
+{
+	const char *path = argv[0];
+	struct gfs_stat_cksum gfcksum;
+	GFS_File gf;
+	static const char diag[] = "gfs_stat_cksum";
+	struct gfm_connection *con = cache_gfm_connection(&gf, path);
+
+	wait_for_failover();
+
+	msg("%s\n", diag);
+	chkerr(gfs_stat_cksum(path, &gfcksum), diag);
+	msg("%s ok\n", diag);
+	assert(con != gfs_pio_metadb(gf));
+	gfs_stat_cksum_free(&gfcksum);
+
+	msg("gf: close\n");
+	chkerr(gfs_pio_close(gf), "close");
+}
+
+static void
+test_fstat_cksum(const char **argv)
+{
+	const char *path = argv[0];
+	struct gfs_stat_cksum gfcksum;
+	GFS_File gf;
+	struct gfm_connection *con = cache_gfm_connection(&gf, path);
+
+	wait_for_failover();
+
+	msg("fstat_cksum\n");
+	chkerr(gfs_fstat_cksum(gf, &gfcksum), "fstat_cksum");
+	msg("fstat_cksum ok\n");
+	assert(con != gfs_pio_metadb(gf));
+	gfs_stat_cksum_free(&gfcksum);
+
+	msg("gf: close\n");
+	chkerr(gfs_pio_close(gf), "close");
+}
+
+static void
+test_pio_cksum(const char **argv)
+{
+	const char *path = argv[0];
+	struct gfs_stat_cksum gfcksum;
+	GFS_File gf;
+	struct gfm_connection *con = cache_gfm_connection(&gf, path);
+
+	wait_for_failover();
+
+	msg("pio_cksum\n");
+	chkerr(gfs_pio_cksum(gf, "md5", &gfcksum), "pio_cksum");
+	msg("pio_cksum ok\n");
+	assert(con != gfs_pio_metadb(gf));
+	gfs_stat_cksum_free(&gfcksum);
+
+	msg("gf: close\n");
+	chkerr(gfs_pio_close(gf), "close");
+}
+
+static void
 test_utimes0(const char **argv, int follow)
 {
 	const char *path = argv[0];
@@ -539,11 +649,11 @@ static void
 test_remove(const char **argv)
 {
 	const char *path_base = argv[0];
-	char path[GFS_MAXNAMLEN];
+	char path[PATH_MAX];
 	GFS_File gf;
 	struct gfm_connection *con = cache_gfm_connection(&gf, path_base);
 
-	sprintf(path, "%s.0", path_base);
+	snprintf(path, sizeof path, "%s.0", path_base);
 
 	msg("link\n");
 	chkerr(gfs_link(path_base, path), "link");
@@ -564,11 +674,11 @@ static void
 test_unlink(const char **argv)
 {
 	const char *path_base = argv[0];
-	char path[GFS_MAXNAMLEN];
+	char path[PATH_MAX];
 	GFS_File gf;
 	struct gfm_connection *con = cache_gfm_connection(&gf, path_base);
 
-	sprintf(path, "%s.0", path_base);
+	snprintf(path, sizeof path, "%s.0", path_base);
 
 	msg("link\n");
 	chkerr(gfs_link(path_base, path), "link");
@@ -589,11 +699,11 @@ static void
 test_link(const char **argv)
 {
 	const char *src = argv[0];
-	char dst[GFS_MAXNAMLEN];
+	char dst[PATH_MAX];
 	GFS_File gf;
 	struct gfm_connection *con = cache_gfm_connection(&gf, src);
 
-	sprintf(dst, "%s.0", src);
+	snprintf(dst, sizeof dst, "%s.0", src);
 
 	wait_for_failover();
 
@@ -610,11 +720,11 @@ static void
 test_symlink(const char **argv)
 {
 	const char *src = argv[0];
-	char dst[GFS_MAXNAMLEN];
+	char dst[PATH_MAX];
 	GFS_File gf;
 	struct gfm_connection *con = cache_gfm_connection(&gf, src);
 
-	sprintf(dst, "%s.0", src);
+	snprintf(dst, sizeof dst, "%s.0", src);
 
 	wait_for_failover();
 
@@ -631,13 +741,13 @@ static void
 test_mkdir(const char **argv)
 {
 	const char *fpath = argv[0], *path_base = argv[1];
-	char path[GFS_MAXNAMLEN];
+	char path[PATH_MAX];
 	GFS_File gf;
 	struct gfm_connection *con = cache_gfm_connection(&gf, fpath);
 
 	wait_for_failover();
 
-	sprintf(path, "%s.0", path_base);
+	snprintf(path, sizeof path, "%s.0", path_base);
 	msg("mkdir\n");
 	chkerr(gfs_mkdir(path, 0777), "mkdir");
 	msg("mkdir ok\n");
@@ -651,11 +761,11 @@ static void
 test_rmdir(const char **argv)
 {
 	const char *fpath = argv[0], *path_base = argv[1];
-	char path[GFS_MAXNAMLEN];
+	char path[PATH_MAX];
 	GFS_File gf;
 	struct gfm_connection *con = cache_gfm_connection(&gf, fpath);
 
-	sprintf(path, "%s.0", path_base);
+	snprintf(path, sizeof path, "%s.0", path_base);
 
 	msg("mkdir\n");
 	chkerr(gfs_mkdir(path, 0777), "mkdir");
@@ -1002,8 +1112,7 @@ test_read0(const char *path, int explicit_failover)
 		if (i != NUM_FILES - 1) {
 			match_memory(TEXT2, buf, len, "match_memory2");
 		} else {
-			match_memory(TEXT1, buf, len,
-			    "match_memory2");
+			match_memory(TEXT1, buf, len, "match_memory2");
 		}
 		msg("gf[%d]: seek to 0\n", i);
 		chkerr_n(gfs_pio_seek(gf[i], 0, GFARM_SEEK_SET, &ofs),
@@ -1015,8 +1124,7 @@ test_read0(const char *path, int explicit_failover)
 		if (i != NUM_FILES - 1) {
 			match_memory(TEXT1, buf, len, "match_memory3");
 		} else {
-			match_memory(TEXT1, buf, len,
-			    "match_memory3");
+			match_memory(TEXT1, buf, len, "match_memory3");
 		}
 
 		msg("gf[%d]: close\n", i);
@@ -1037,12 +1145,81 @@ test_read_stat(const char **argv)
 }
 
 static void
+test_recvfile0(const char *path, const char *local_dir, int explicit_failover)
+{
+	GFS_File gf[NUM_FILES];
+	int lfd[NUM_FILES];
+	size_t sz = 10;
+	int i;
+	gfarm_off_t len;
+	char localtmp[PATH_MAX];
+
+	for (i = 0; i < NUM_FILES; ++i) {
+		snprintf(localtmp, sizeof localtmp, "%s/%d", local_dir, i);
+		lfd[i] = open(localtmp, O_RDWR|O_CREAT|O_TRUNC, 0777);
+		chkerrno_n(lfd[i], "open", i);
+
+		msg("gf[%d]: gfs_pio_open %s\n", i, path);
+		chkerr_n(gfs_pio_open(path, GFARM_FILE_RDONLY, &gf[i]),
+		    "gfs_pio_open", i);
+
+		if (i != NUM_FILES - 1) {
+			msg("gf[%d]: gfs_pio_recvfile %d bytes\n", i, sz);
+			chkerr_n(gfs_pio_recvfile(gf[i], 0, lfd[i], 0, sz,
+			    &len), "gfs_pio_recvfile#1", i);
+			msg("gf[%d]: gfs_pio_recvfile %d bytes ok\n", i, len);
+			match_file(TEXT1, lfd[i], 0, sz, "match_file#1");
+		}
+	}
+
+	wait_for_failover();
+	if (explicit_failover)
+		connection_failover(gf[0], 0);
+
+	for (i = 0; i < NUM_FILES; ++i) {
+		msg("gf[%d]: gfs_pio_recvfile %d bytes\n", i, sz);
+		chkerr_n(gfs_pio_recvfile(gf[i],
+		    i != NUM_FILES - 1 ? sz : 0, lfd[i],
+		    i != NUM_FILES - 1 ? sz : 0, sz, &len),
+		    "gfs_pio_recvfile#2", i);
+		msg("gf[%d]: gfs_pio_recvfile %d bytes ok\n", i, len);
+		if (i != NUM_FILES - 1) {
+			match_file(TEXT2, lfd[i], sz, sz, "match_file#2");
+		} else {
+			match_file(TEXT1, lfd[i], 0, sz, "match_file#2:last");
+		}
+
+		msg("gf[%d]: gfs_pio_recvfile %d bytes\n", i, sz);
+		chkerr_n(gfs_pio_recvfile(gf[i], 0, lfd[i], 0, sz, &len),
+		    "gfs_pio_recvfile#2", i);
+		msg("gf[%d]: gfs_pio_recvfile %d bytes ok\n", i, len);
+		match_file(TEXT1, lfd[i], 0, sz, "match_file#3");
+
+		msg("gf[%d]: gfs_pio_close\n", i);
+		chkerr_n(gfs_pio_close(gf[i]), "close", i);
+		chkerrno_n(close(lfd[i]), "close", i);
+	}
+}
+
+static void
+test_recvfile(const char **argv)
+{
+	test_recvfile0(argv[0], argv[1], 0);
+}
+
+static void
+test_recvfile_stat(const char **argv)
+{
+	test_recvfile0(argv[0], argv[1], 1);
+}
+
+static void
 test_write0(const char *path_base, int explicit_failover)
 {
 	GFS_File gf[NUM_FILES];
 	size_t sz;
 	int i, len;
-	char path[NUM_FILES][GFS_MAXNAMLEN];
+	char path[NUM_FILES][PATH_MAX];
 
 	create_and_write_file(gf, path, path_base, NUM_FILES);
 
@@ -1075,6 +1252,63 @@ test_write_stat(const char **argv)
 }
 
 static void
+test_sendfile0(const char *path_base, const char *local_path,
+	int explicit_failover)
+{
+	GFS_File gf[NUM_FILES];
+	size_t sz1 = strlen(TEXT1), sz2 = strlen(TEXT2);
+	int i, lfd;
+	gfarm_off_t len;
+	char path[NUM_FILES][PATH_MAX];
+
+	lfd = open(local_path, O_RDONLY);
+	chkerrno(lfd, "open");
+
+	for (i = 0; i < NUM_FILES; ++i) {
+		snprintf(path[i], sizeof path[i], "%s.%d", path_base, i);
+		msg("gf[%d]: create %s\n", i, path[i]);
+		chkerr_n(gfs_pio_create(path[i], GFARM_FILE_WRONLY,
+		    0777, &gf[i]), "create", i);
+
+		if (i != NUM_FILES - 1) {
+			msg("gf[%d]: gfs_pio_sendfile %d bytes\n", i, sz1);
+			chkerr_n(gfs_pio_sendfile(gf[i], 0, lfd, 0, sz1, &len),
+			    "sendfile1", i);
+			msg("gf[%d]: gfs_pio_sendfile %d bytes ok\n", i, len);
+		}
+	}
+
+	wait_for_failover();
+	if (explicit_failover)
+		connection_failover(gf[0], 0);
+
+	sz2 = strlen(TEXT2);
+
+	for (i = 0; i < NUM_FILES; ++i) {
+		msg("gf[%d]: gfs_pio_sendfile %d bytes\n", i, sz2);
+		chkerr_n(gfs_pio_sendfile(gf[i], sz1, lfd, sz1, sz2, &len),
+		    "sendfile2", i);
+		msg("gf[%d]: gfs_pio_sendfile %d bytes ok\n", i, len);
+		msg("gf[%d]: close\n", i);
+		chkerr_n(gfs_pio_close(gf[i]), "close", i);
+	}
+
+	chkerrno(close(lfd), "close");
+}
+
+static void
+test_sendfile(const char **argv)
+{
+	test_sendfile0(argv[0], argv[1], 0);
+}
+
+static void
+test_sendfile_stat(const char **argv)
+{
+	test_sendfile0(argv[0], argv[1], 1);
+}
+
+static void
 test_sched_read(const char **argv)
 {
 	const char *path = argv[0];
@@ -1098,17 +1332,45 @@ test_sched_read(const char **argv)
 }
 
 static void
+test_sched_recvfile(const char **argv)
+{
+	const char *path = argv[0];
+	const char *local_path = argv[1];
+	GFS_File gf = NULL;
+	int lfd;
+	size_t sz = 10;
+	gfarm_off_t len;
+
+	lfd = open(local_path, O_RDWR|O_CREAT|O_TRUNC, 0777);
+	chkerrno(lfd, "open");
+
+	msg("gfs_pio_open\n", path);
+	chkerr(gfs_pio_open(path, GFARM_FILE_RDONLY, &gf), "gfs_pio_open");
+
+	wait_for_failover();
+
+	msg("gfs_pio_recvfile %d bytes\n", sz);
+	chkerr(gfs_pio_recvfile(gf, 0, lfd, 0, sz, &len), "gfs_pio_recvfile");
+	msg("gfs_pio_recvfile %d bytes ok\n", 0, (int)len);
+	match_file(TEXT1, lfd, 0, sz, "match_file");
+	msg("gfs_pio_close\n");
+	chkerr(gfs_pio_close(gf), "gfs_pio_close");
+
+	chkerrno(close(lfd), "close");
+}
+
+static void
 test_sched_open_write(const char **argv)
 {
 	const char *path_base = argv[0];
 	GFS_File gf;
 	size_t sz;
 	int len;
-	char path[GFS_MAXNAMLEN];
+	char path[PATH_MAX];
 
 	sz = strlen(TEXT1);
 
-	sprintf(path, "%s.%d", path_base, 0);
+	snprintf(path, sizeof path, "%s.%d", path_base, 0);
 	msg("gf[%d]: create %s\n", 0, path);
 	chkerr_n(gfs_pio_create(path, GFARM_FILE_WRONLY, 0777, &gf),
 	    "create", 0);
@@ -1136,11 +1398,11 @@ test_sched_create_write(const char **argv)
 	GFS_File gf;
 	size_t sz;
 	int len;
-	char path[GFS_MAXNAMLEN];
+	char path[PATH_MAX];
 
 	sz = strlen(TEXT1);
 
-	sprintf(path, "%s.%d", path_base, 0);
+	snprintf(path, sizeof path, "%s.%d", path_base, 0);
 	msg("gf[%d]: create %s\n", 0, path);
 	chkerr_n(gfs_pio_create(path, GFARM_FILE_WRONLY, 0777, &gf),
 	    "create", 0);
@@ -1157,17 +1419,80 @@ test_sched_create_write(const char **argv)
 }
 
 static void
+test_sched_open_sendfile(const char **argv)
+{
+	const char *path = argv[0];
+	const char *local_path = argv[1];
+	GFS_File gf;
+	int lfd;
+	size_t sz = strlen(TEXT1);
+	gfarm_off_t len;
+
+	lfd = open(local_path, O_RDONLY);
+	chkerrno(lfd, "local-file");
+
+	msg("gfs_pio_create %s\n", path);
+	chkerr(gfs_pio_create(path, GFARM_FILE_WRONLY, 0777, &gf),
+	    "gfs_pio_create");
+	msg("gfs_pio_close#0\n");
+	chkerr(gfs_pio_close(gf), "gfs_pio_close#0");
+
+	msg("gfs_pio_open %s\n", path);
+	chkerr(gfs_pio_open(path, GFARM_FILE_WRONLY, &gf), "gfs_pio_open");
+
+	wait_for_failover();
+
+	msg("gfs_pio_sendfile %d bytes\n", sz);
+	chkerr(gfs_pio_sendfile(gf, 0, lfd, 0, sz, &len), "gfs_pio_sendfile");
+	msg("gfs_pio_sendfile %d bytes ok\n", len);
+
+	msg("gfs_pio_close#1\n");
+	chkerr(gfs_pio_close(gf), "gfs_pio_close#1");
+
+	chkerrno(close(lfd), "close");
+}
+
+static void
+test_sched_create_sendfile(const char **argv)
+{
+	const char *path = argv[0];
+	const char *local_path = argv[1];
+	GFS_File gf;
+	int lfd;
+	size_t sz = strlen(TEXT1);
+	gfarm_off_t len;
+
+	lfd = open(local_path, O_RDONLY);
+	chkerrno(lfd, "local-file");
+
+	msg("gfs_pio_create %s\n", path);
+	chkerr(gfs_pio_create(path, GFARM_FILE_WRONLY, 0777, &gf),
+	    "gfs_pio_create");
+
+	wait_for_failover();
+
+	msg("gfs_pio_sendfile %d bytes\n", sz);
+	chkerr(gfs_pio_sendfile(gf, 0, lfd, 0, sz, &len), "gfs_pio_sendfile");
+	msg("gfs_pio_sendfile %d bytes ok\n", len);
+
+	msg("gfs_pio_close\n");
+	chkerr_n(gfs_pio_close(gf), "gfs_pio_close", 0);
+
+	chkerrno(close(lfd), "close");
+}
+
+static void
 test_close(const char **argv)
 {
 	const char *path_base = argv[0];
 	GFS_File gf;
 	size_t sz;
 	int len;
-	char path[GFS_MAXNAMLEN];
+	char path[PATH_MAX];
 
 	sz = strlen(TEXT1);
 
-	sprintf(path, "%s.%d", path_base, 0);
+	snprintf(path, sizeof path, "%s.%d", path_base, 0);
 	msg("gf[%d]: create %s\n", 0, path);
 	chkerr_n(gfs_pio_create(path, GFARM_FILE_WRONLY, 0777, &gf),
 	    "create", 0);
@@ -1316,6 +1641,73 @@ test_close_open2(const char **argv)
 }
 
 static void
+test_fhopen_file(const char **argv)
+{
+	const char *path = argv[0];
+	GFS_File gf0, gf1, gf2;
+	struct gfs_stat st;
+	struct gfm_connection *con0, *con1, *con2;
+
+	msg("gf[%d]: open %s\n", 0, path);
+	chkerr_n(gfs_pio_open(path, GFARM_FILE_RDONLY, &gf0), "open", 0);
+	msg("gf[%d]: open ok\n", 0);
+
+	msg("gf[%d]: pio_stat %s\n", 0, path);
+	chkerr_n(gfs_pio_stat(gf0, &st), "pio_stat", 0);
+	msg("gf[%d]: pio_stat ok\n", 0);
+
+	msg("gf[%d]: fhopen %s\n", 1, path);
+	chkerr_n(gfs_pio_fhopen(st.st_ino, st.st_gen, GFARM_FILE_RDONLY,
+	    &gf1), "fhopen", 1);
+	msg("gf[%d]: fhopen ok\n", 1);
+
+	/* schedule gf0 */
+	do_read(gf0, 0);
+
+	/* schedule gf1 */
+	do_read(gf1, 1);
+
+	wait_for_failover();
+
+	con0 = gfs_pio_metadb(gf0);
+	con1 = gfs_pio_metadb(gf1);
+	assert(con0 == con1);
+
+	/* open and failover */
+	msg("gf[%d]: open %s\n", 2, path);
+	/* gfm_client_connection_failover_pre_connect() will be called */
+	chkerr_n(gfs_pio_open(path, GFARM_FILE_RDONLY, &gf2), "open", 2);
+	msg("gf[%d]: open ok\n", 2);
+
+	/* gfm_connection in gf1 is new connection */
+	con2 = gfs_pio_metadb(gf2);
+	assert(con0 != con2);
+	/* schedule gf2 */
+	do_read(gf2, 2);
+
+	assert(con0 != gfs_pio_metadb(gf0));
+	/* gfm_connection is not changed in gf2 after failover */
+	assert(con2 == gfs_pio_metadb(gf2));
+	con0 = gfs_pio_metadb(gf0);
+	assert(con0 == con2);
+
+	/* schedule gf1 */
+	do_read(gf1, 1);
+
+	msg("gf[%d]: close\n", 0);
+	chkerr_n(gfs_pio_close(gf0), "close", 0);
+	msg("gf[%d]: close ok\n", 0);
+
+	msg("gf[%d]: close\n", 0);
+	chkerr_n(gfs_pio_close(gf1), "close", 1);
+	msg("gf[%d]: close ok\n", 1);
+
+	msg("gf[%d]: close\n", 2);
+	chkerr_n(gfs_pio_close(gf2), "close", 2);
+	msg("gf[%d]: close ok\n", 2);
+}
+
+static void
 test_open_read_loop(const char **argv)
 {
 	const char *path = argv[0];
@@ -1335,6 +1727,37 @@ test_open_read_loop(const char **argv)
 		chkerr_n(gfs_pio_close(gf), "close", i);
 	}
 	msg("gf: open/read/close loop end\n");
+}
+
+static void
+test_open_recvfile_loop(const char **argv)
+{
+	const char *path = argv[0];
+	const char *local_path = argv[1];
+	GFS_File gf;
+	int lfd;
+	size_t sz = 1;
+	gfarm_off_t len;
+	int i;
+
+	msg("gf: gfs_pio_open/gfs_pio_recvfile/gfs_pio_close loop start\n");
+
+	lfd = open(local_path, O_RDWR|O_CREAT|O_TRUNC, 0777);
+	chkerrno(lfd, "open");
+
+	for (i = 0; i < GFMD_FILETAB_MAX + 1; ++i) {
+		chkerr_n(gfs_pio_open(path, GFARM_FILE_RDONLY, &gf),
+		    "gfs_pio_open", i);
+		chkerr_n((gfs_pio_recvfile(gf, 0, lfd, 0, sz, &len),
+		    gfs_pio_error(gf)), "gfs_pio_recvfile", i);
+		if (i == 0)
+			wait_for_failover();
+		chkerr_n(gfs_pio_close(gf), "gfs_pio_close", i);
+	}
+
+	chkerrno(close(lfd), "close");
+
+	msg("gf: gfs_pio_open/gfs_pio_recvfile/gfs_pio_close loop end\n");
 }
 
 static void
@@ -1425,7 +1848,7 @@ test_seek_dirty(const char **argv)
 	GFS_File gf[NUM_FILES];
 	int i;
 	gfarm_off_t ofs;
-	char path[NUM_FILES][GFS_MAXNAMLEN];
+	char path[NUM_FILES][PATH_MAX];
 
 	create_dirty_file(gf, path, path_base, NUM_FILES);
 
@@ -1447,10 +1870,10 @@ test_putc(const char **argv)
 	const char *path_base = argv[0];
 	GFS_File gf[NUM_FILES];
 	int i;
-	char path[NUM_FILES][GFS_MAXNAMLEN];
+	char path[NUM_FILES][PATH_MAX];
 
 	for (i = 0; i < NUM_FILES; ++i) {
-		sprintf(path[i], "%s.%d", path_base, i);
+		snprintf(path[i], sizeof path[i], "%s.%d", path_base, i);
 		msg("gf[%d]: create %s\n", i, path[i]);
 		chkerr_n(gfs_pio_create(path[i], GFARM_FILE_WRONLY,
 		    0777, &gf[i]), "create", i);
@@ -1479,7 +1902,7 @@ test_truncate(const char **argv)
 	const char *path_base = argv[0];
 	GFS_File gf[NUM_FILES];
 	int i;
-	char path[NUM_FILES][GFS_MAXNAMLEN];
+	char path[NUM_FILES][PATH_MAX];
 
 	create_dirty_file(gf, path, path_base, NUM_FILES);
 
@@ -1500,7 +1923,7 @@ test_flush(const char **argv)
 	const char *path_base = argv[0];
 	GFS_File gf[NUM_FILES];
 	int i;
-	char path[NUM_FILES][GFS_MAXNAMLEN];
+	char path[NUM_FILES][PATH_MAX];
 
 	create_dirty_file(gf, path, path_base, NUM_FILES);
 
@@ -1521,7 +1944,7 @@ test_sync(const char **argv)
 	const char *path_base = argv[0];
 	GFS_File gf[NUM_FILES];
 	int i;
-	char path[NUM_FILES][GFS_MAXNAMLEN];
+	char path[NUM_FILES][PATH_MAX];
 
 	create_dirty_file(gf, path, path_base, NUM_FILES);
 
@@ -1542,7 +1965,7 @@ test_datasync(const char **argv)
 	const char *path_base = argv[0];
 	GFS_File gf[NUM_FILES];
 	int i;
-	char path[NUM_FILES][GFS_MAXNAMLEN];
+	char path[NUM_FILES][PATH_MAX];
 
 	create_dirty_file(gf, path, path_base, NUM_FILES);
 
@@ -1555,6 +1978,113 @@ test_datasync(const char **argv)
 		msg("gf[%d]: close\n", i);
 		chkerr_n(gfs_pio_close(gf[i]), "close", i);
 	}
+}
+
+static void
+test_read_close_read(const char **argv)
+{
+	const char *path = argv[0];
+	GFS_File gf0, gf1;
+	struct gfm_connection *con0, *con1;
+	char buf[STR_BUFSIZE];
+	size_t sz = 10;
+	int len;
+
+	msg("gf[%d]: open %s\n", 0, path);
+	chkerr_n(gfs_pio_open(path, GFARM_FILE_RDONLY, &gf0), "open0", 0);
+	msg("gf[%d]: open ok\n", 0);
+
+	msg("gf[%d]: open %s\n", 1, path);
+	chkerr_n(gfs_pio_open(path, GFARM_FILE_RDONLY, &gf1), "open1", 1);
+	msg("gf[%d]: open ok\n", 1);
+
+	msg("gf[%d]: read %d bytes\n", 1, sz);
+	chkerr_n(gfs_pio_read(gf1, buf, sz, &len), "read1", 1);
+	msg("gf[%d]: read %d bytes ok\n", 1, len);
+	match_memory(TEXT1, buf, len, "match_memory1");
+
+	wait_for_failover();
+
+	con0 = gfs_pio_metadb(gf0);
+	con1 = gfs_pio_metadb(gf1);
+	assert(con0 == con1);
+
+	/* gfm_connection in gf0 will be purged */
+	msg("gf[%d]: close\n", 1);
+	/* no faileover */
+	chkerr_n(gfs_pio_close(gf1), "close", 1);
+	msg("gf[%d]: close ok\n", 1);
+
+	msg("gf[%d]: read %d bytes\n", 0, sz);
+	chkerr_n(gfs_pio_read(gf0, buf, sz, &len), "read0", 1);
+	msg("gf[%d]: read %d bytes ok\n", 0, len);
+	match_memory(TEXT1, buf, len, "match_memory0");
+
+	msg("gf[%d]: close\n", 0);
+	chkerr_n(gfs_pio_close(gf0), "close", 0);
+	msg("gf[%d]: close ok\n", 0);
+}
+
+static void
+test_recvfile_close_recvfile(const char **argv)
+{
+	const char *path = argv[0];
+	const char *local_dir = argv[1];
+	char localtmp0[PATH_MAX], localtmp1[PATH_MAX];
+	GFS_File gf0, gf1;
+	int lfd0, lfd1;
+	struct gfm_connection *con0, *con1;
+	size_t sz = 10;
+	gfarm_off_t len;
+
+	snprintf(localtmp0, sizeof localtmp0, "%s/%d", local_dir, 0);
+	lfd0 = open(localtmp0, O_RDWR|O_CREAT|O_TRUNC, 0777);
+	chkerrno_n(lfd0, "open#0", 0);
+
+	snprintf(localtmp1, sizeof localtmp1, "%s/%d", local_dir, 1);
+	lfd1 = open(localtmp1, O_RDWR|O_CREAT|O_TRUNC, 0777);
+	chkerrno_n(lfd1, "open#1", 1);
+
+	msg("gf[%d]: gfs_pio_open %s\n", 0, path);
+	chkerr_n(gfs_pio_open(path, GFARM_FILE_RDONLY, &gf0),
+	    "gfs_pio_open#0", 0);
+	msg("gf[%d]: gfs_pio_open ok\n", 0);
+
+	msg("gf[%d]: gfs_pio_open %s\n", 1, path);
+	chkerr_n(gfs_pio_open(path, GFARM_FILE_RDONLY, &gf1),
+	    "gfs_pio_open#1", 1);
+	msg("gf[%d]: gfs_pio_open ok\n", 1);
+
+	msg("gf[%d]: gfs_pio_recvfile %d bytes\n", 1, sz);
+	chkerr_n(gfs_pio_recvfile(gf1, 0, lfd1, 0, sz, &len),
+	    "gfs_pio_recvfile#0", 1);
+	msg("gf[%d]: gfs_pio_recvfile %d bytes ok\n", 1, len);
+	match_file(TEXT1, lfd1, 0, sz, "match_file#1");
+
+	wait_for_failover();
+
+	con0 = gfs_pio_metadb(gf0);
+	con1 = gfs_pio_metadb(gf1);
+	assert(con0 == con1);
+
+	/* gfm_connection in gf0 will be purged */
+	msg("gf[%d]: gfs_pio_close\n", 1);
+	/* no faileover */
+	chkerr_n(gfs_pio_close(gf1), "gfs_pio_close", 1);
+	msg("gf[%d]: gfs_pio_close ok\n", 1);
+
+	msg("gf[%d]: gfs_pio_recvfile %d bytes\n", 0, sz);
+	chkerr_n(gfs_pio_recvfile(gf0, 0, lfd0, 0, sz, &len),
+	    "gfs_pio_recvfile#1", 1);
+	msg("gf[%d]: gfs_pio_recvfile %d bytes ok\n", 0, len);
+	match_file(TEXT1, lfd0, 0, sz, "match_file#0");
+
+	msg("gf[%d]: gfs_pio_close\n", 0);
+	chkerr_n(gfs_pio_close(gf0), "close", 0);
+	msg("gf[%d]: gfs_pio_close ok\n", 0);
+
+	chkerrno(close(lfd1), "close#1");
+	chkerrno(close(lfd0), "close#0");
 }
 
 static void
@@ -1580,9 +2110,9 @@ test_write_long_loop(const char **argv)
 	fsz = (size_t *)malloc(files * sizeof(size_t));
 	path = (char **)malloc(files * sizeof(char *));
 	for (i = 0; i < files; ++i)
-		path[i] = malloc(GFS_MAXNAMLEN);
+		path[i] = malloc(PATH_MAX);
 
-	sprintf(cmd, "./failover-loop-start.sh %d &", tmlimit);
+	snprintf(cmd, sizeof cmd, "./failover-loop-start.sh %d &", tmlimit);
 	wstatus = system(cmd);
 	r = WEXITSTATUS(wstatus);
 	if (r != 0) {
@@ -1595,7 +2125,7 @@ test_write_long_loop(const char **argv)
 	memset(buf, 'a', WRITE_LOOP_BUFSZ);
 
 	for (i = 0; i < files; ++i) {
-		sprintf(path[i], "%s.%d", path_base, i);
+		snprintf(path[i], PATH_MAX, "%s.%d", path_base, i);
 		(void)gfs_remove(path[i]);
 	}
 
@@ -1697,6 +2227,152 @@ end:
 }
 
 static void
+test_sendfile_long_loop(const char **argv)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	const char *path_base = argv[0];
+	const char *local_path = argv[1];
+	int tmlimit = atoi(argv[2]);
+	int files = atoi(argv[3]);
+	int blocks = atoi(argv[4]);
+	int chunksz = strlen(TEXT1);
+	int filesz = blocks * chunksz;
+	char cmd[256];
+	GFS_File *gf;
+	int lfd;
+	off_t *fsz;
+	int loop = 0, wstatus, r, i, rest_files;
+	gfarm_off_t len;
+	char **path;
+	struct gfs_stat st;
+	struct timeval tm;
+
+	lfd = open(local_path, O_RDONLY);
+	chkerrno(lfd, "open");
+
+	gf = (GFS_File *)malloc(files * sizeof(gf[0]));
+	fsz = (off_t *)malloc(files * sizeof(fsz[0]));
+	path = (char **)malloc(files * sizeof(path[0]));
+	for (i = 0; i < files; ++i)
+		path[i] = malloc(PATH_MAX);
+
+	snprintf(cmd, sizeof cmd, "./failover-loop-start.sh %d &", tmlimit);
+	wstatus = system(cmd);
+	r = WEXITSTATUS(wstatus);
+	if (r != 0) {
+		msg("failed to exec ./failover-loop-start.sh\n");
+		exit(1);
+	}
+
+	gettimeofday(&tm, NULL);
+	tm.tv_sec += tmlimit;
+
+	for (i = 0; i < files; ++i) {
+		snprintf(path[i], PATH_MAX, "%s.%d", path_base, i);
+		(void)gfs_remove(path[i]);
+	}
+
+	for (;; ++loop) {
+		msg("loop: %d\n", loop);
+		for (i = 0; i < files; ++i) {
+			msg("gfs_pio_create: %s\n", path[i]);
+			e = gfs_pio_create(path[i], GFARM_FILE_WRONLY, 0777,
+			    &gf[i]);
+			if (e != GFARM_ERR_NO_ERROR) {
+				msg("gf[%d]: gfs_pio_create: %s\n", i,
+				    gfarm_error_string(e));
+				goto end;
+			}
+			msg("gfs_pio_create: %s ok\n", path[i]);
+		}
+		rest_files = files;
+		for (i = 0; i < files; ++i)
+			fsz[i] = 0;
+		while (rest_files > 0) {
+			for (i = 0; i < files; ++i) {
+				e = gfs_pio_sendfile(gf[i], fsz[i], lfd, 0,
+				    chunksz, &len);
+				if (e != GFARM_ERR_NO_ERROR) {
+					msg("gf[%d]: gfs_pio_sendfile: %s\n",
+					    i, gfarm_error_string(e));
+					goto end;
+				}
+				fsz[i] += len;
+				if (fsz[i] == filesz)
+					--rest_files;
+			}
+		}
+		for (i = 0; i < files; ++i) {
+			msg("gfs_pio_close: %s\n", path[i]);
+			e = gfs_pio_close(gf[i]);
+			if (e != GFARM_ERR_NO_ERROR) {
+				msg("gf[%d]: gfs_pio_close: %s\n", i,
+				    gfarm_error_string(e));
+				goto end;
+			}
+			msg("close: %s ok\n", path[i]);
+			usleep(300 * 1000);
+		}
+		for (i = 0; i < files; ++i) {
+			msg("gfs_stat: %s\n", path[i]);
+			e = gfs_stat(path[i], &st);
+			if (e != GFARM_ERR_NO_ERROR) {
+				msg("gf[%d]: gfs_stat: %s\n", i,
+				    gfarm_error_string(e));
+				goto end;
+			}
+			if (st.st_size != fsz[i]) {
+				msg("gf[%d]: size: expected %ld but %ld \n", i,
+				    (long)fsz[i], (long)st.st_size);
+				e = GFARM_ERR_UNKNOWN;
+				goto end;
+			}
+			msg("gfs_stat: %s ok\n", path[i]);
+		}
+		for (i = 0; i < files; ++i) {
+			msg("gfs_remove: %s\n", path[i]);
+			e = gfs_remove(path[i]);
+			/*
+			 * if failover occurs during removing file,
+			 * a retry may fail by the error
+			 * GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY.
+			 */
+			if (e != GFARM_ERR_NO_ERROR) {
+				if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
+					msg("gf[%d]: gfs_remove(%s): "
+					    "ignored error: %s\n", i,
+					    path[i], gfarm_error_string(e));
+				} else {
+					msg("gf[%d]: gfs_remove(%s): %s\n", i,
+					    path[i], gfarm_error_string(e));
+					goto end;
+				}
+			}
+			msg("gfs_remove ok: %s\n", path[i]);
+		}
+
+		if (gfarm_timeval_is_expired(&tm))
+			break;
+	}
+end:
+	wstatus = system("./failover-loop-end.sh");
+	r = WEXITSTATUS(wstatus);
+	if (r != 0) {
+		msg("failed to exec ./failover-loop-end.sh\n");
+		exit(1);
+	}
+	if (e != GFARM_ERR_NO_ERROR)
+		exit(1);
+	free(gf);
+	free(fsz);
+	for (i = 0; i < files; ++i)
+		free(path[i]);
+	free(path);
+
+	chkerrno(close(lfd), "close");
+}
+
+static void
 test_getxattr0(const char **argv, int follow, int xml)
 {
 	const char *path = argv[0];
@@ -1792,7 +2468,7 @@ test_setxattr0(const char **argv, int follow, int xml)
 
 	wait_for_failover();
 
-	sprintf(name, "user.%s.%ld", diag, time0);
+	snprintf(name, sizeof name, "user.%s.%ld", diag, time0);
 
 	msg("%s\n", diag);
 	chkerr((xml ? (follow ? gfs_setxmlattr : gfs_lsetxmlattr) :
@@ -1836,7 +2512,7 @@ test_removexattr0(const char **argv, int follow, int xml)
 	if (xml)
 		val[sz++] = 0; /* xml must be null-termination string */
 
-	sprintf(name, "user.removexattr.%d.%ld", follow, time0);
+	snprintf(name, sizeof name, "user.removexattr.%d.%ld", follow, time0);
 	msg("%s\n", diag1);
 	chkerr((xml ? (follow ? gfs_setxmlattr : gfs_lsetxmlattr) :
 		    (follow ? gfs_setxattr : gfs_lsetxattr))
@@ -1874,7 +2550,7 @@ test_fgetxattr(const char **argv)
 	const char *path = argv[0];
 	GFS_File gf;
 	char val[STR_BUFSIZE];
-	size_t sz;
+	size_t sz = sizeof(val);
 	struct gfm_connection *con = cache_gfm_connection(&gf, path);
 
 	wait_for_failover();
@@ -1923,7 +2599,7 @@ test_fremovexattr(const char **argv)
 	const char *diag2 = "fremovexattr";
 	struct gfm_connection *con = cache_gfm_connection(&gf, path);
 
-	sprintf(name, "user.fremovexattr.%ld", time0);
+	snprintf(name, sizeof name, "user.fremovexattr.%ld", time0);
 	msg("%s\n", diag1);
 	chkerr(gfs_setxattr(path, name, val, sz, GFS_XATTR_CREATE), diag1);
 	msg("%s ok\n", diag1);
@@ -2369,6 +3045,9 @@ struct type_info {
 	{ "stat",		1, test_stat },
 	{ "lstat",		1, test_lstat },
 	{ "fstat",		1, test_fstat },
+	{ "stat_cksum",		1, test_stat_cksum },
+	{ "fstat_cksum",	1, test_fstat_cksum },
+	{ "pio_cksum",		1, test_pio_cksum },
 	{ "utimes",		1, test_utimes },
 	{ "lutimes",		1, test_lutimes },
 	{ "remove",		1, test_remove },
@@ -2392,25 +3071,37 @@ struct type_info {
 
 	/* gfs_pio */
 	{ "sched-read",		1, test_sched_read },
+	{ "sched-recvfile",	2, test_sched_recvfile },
 	{ "sched-open-write",	1, test_sched_open_write },
 	{ "sched-create-write",	1, test_sched_create_write },
+	{ "sched-open-sendfile", 2, test_sched_open_sendfile },
+	{ "sched-create-sendfile", 2, test_sched_create_sendfile },
+	{ "fhopen-file",	1, test_fhopen_file },
 	{ "close",		1, test_close },
 	{ "close-open",		1, test_close_open },
 	{ "close-open2",	1, test_close_open2 },
 	{ "read",		1, test_read },
 	{ "read-stat",		1, test_read_stat },
 	{ "open-read-loop",	1, test_open_read_loop },
+	{ "recvfile",		2, test_recvfile },
+	{ "recvfile-stat",	2, test_recvfile_stat },
+	{ "open-recvfile-loop",	2, test_open_recvfile_loop },
 	{ "getc",		1, test_getc },
 	{ "seek",		1, test_seek },
 	{ "seek-dirty",		1, test_seek_dirty },
 	{ "write",		1, test_write },
 	{ "write-stat",		1, test_write_stat },
+	{ "sendfile",		2, test_sendfile },
+	{ "sendfile-stat",	2, test_sendfile_stat },
 	{ "putc",		1, test_putc },
 	{ "truncate",		1, test_truncate },
 	{ "flush",		1, test_flush },
 	{ "sync",		1, test_sync },
 	{ "datasync",		1, test_datasync },
+	{ "read-close-read",	1, test_read_close_read },
+	{ "recvfile-close-recvfile", 2, test_recvfile_close_recvfile },
 	{ "write-long-loop",	4, test_write_long_loop },
+	{ "sendfile-long-loop",	5, test_sendfile_long_loop },
 
 	/* xattr/xmlattr */
 	{ "getxattr",		1, test_getxattr },

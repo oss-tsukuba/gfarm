@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>27 Aug 2015</date></refentryinfo>
+<refentryinfo><date>22 Nov 2017</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -121,6 +121,7 @@ IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワ
 <listitem>
 <para>gfsdが、gfarmファイルの実体を保持するディレクトリ名を
 指定します。
+複数回（最大5回まで）指定することで複数のディレクトリを指定可能です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -319,6 +320,26 @@ GSI認証において、<token>spool_server_cred_type</token>で指定した値�
 </varlistentry>
 
 <varlistentry>
+<term><token>spool_server_back_channel_rcvbuf_limit</token> <parameter moreinfo="none">サイズ制限値</parameter></term>
+<listitem>
+<para>gfsd の back channel ソケットの、SO_RCVBUF サイズの上限を指定します。
+バッファ長を短くすると，メタデータサーバからの要求が過度に溜らなくなり、
+gfsd の back channel 接続が切れてしまう問題を緩和できます。
+引数に<token>disable</token>と指定すると、制限がかからなくなります。
+デフォルトの制限値は 4096バイトです。
+</para>
+<para>
+この文は gfsd が参照する gfarm2.conf のみで有効であり、
+クライアントや gfmd.conf では無視されます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_server_back_channel_rcvbuf_limit 16384
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>spool_check_level</token> <parameter moreinfo="none">レベル</parameter></term>
 <listitem>
 <para>
@@ -332,6 +353,135 @@ gfsd起動時のスプールチェックを有効にします。スプールチ�
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	spool_check_level disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel</token> <parameter moreinfo="none">並列度</parameter></term>
+<listitem>
+<para>
+gfsd起動時のスプールチェック並列度を数字で設定します。
+</para>
+<para>
+デフォルトでは spool_check_parallel_per_capacity を用いて
+並列度を自動的に決定します。
+</para>
+<para>
+この文はgfsdが参照するgfarm2.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel 16
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel_max</token> <parameter moreinfo="none">並列度</parameter></term>
+<listitem>
+<para>
+spool_check_parallel_per_capacity を用いて並列度を自動的に決定する際の
+上限値を指定します。
+自動設定の場合にはこの上限よりも大きな並列度にはなりません。
+spool_check_parallel で並列度が指定されていた場合は、
+こちらの設定は無視されます。
+</para>
+<para>
+デフォルトは64です。
+</para>
+<para>
+この文はgfsdが参照するgfarm2.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel_max 128
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel_per_capacity</token> <parameter moreinfo="none">バイト数</parameter></term>
+<listitem>
+<para>
+gfsd のスプール領域のディスク容量を、この設定値で割った値を、
+gfsd起動時のスプールチェック並列度として用います。
+ただし、spool_check_parallel で並列度が指定されていた場合は、
+こちらの設定は無視されます。
+指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定
+することで、それぞれ1KiB／1MiB／1GiB／1TiBを単位とする
+ことができます。
+</para>
+<para>
+デフォルトは64TiBです。
+</para>
+<para>
+この文はgfsdが参照するgfarm2.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel_per_capacity 10T
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_parallel_step</token> <parameter moreinfo="none">数</parameter></term>
+<listitem>
+<para>
+gfsd起動時のスプールチェック並列処理において、
+各プロセスが一度に処理する単位を設定します。
+通常、この値を調整する必要はありませんが、
+gfmd との間の通信遅延が大きい場合は、この値を大きくすることによって
+性能が改善する可能性があります。
+</para>
+<para>
+デフォルトは 1 です。
+</para>
+<para>
+この文はgfsdが参照するgfarm2.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_check_parallel_step 16
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_base_load</token> <parameter moreinfo="none">CPU負荷</parameter></term>
+<listitem>
+<para>
+指定されたCPU負荷をgfsdのCPU負荷に加えます。
+このオプションはgfsdノード（ファイルシステムノード）でのみ有効です。
+デフォルトは0.0です。
+このオプションにより、スケジューリングの優先度を変更することができます。
+</para>
+<para>例:</para>
+<literallayout>
+	spool_base_load 1.0
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_digest_error_check</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+digest文によりチェックサム計算が有効となっている場合、
+ファイル読込時にチェックサムが計算されます。
+チェックサムが異なる場合、つまり、ファイルが損傷している場合は
+lost+foundディレクトリに移動し、損傷したファイルは自動的に除かれます。
+この文で<token>disable</token>と指定することによって、
+この移動を抑制することができます。
+</para>
+<para>
+このオプションはgfsdノード（ファイルシステムノード）でのみ有効です。
+デフォルトはenableです。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_digest_error_check disable
 </literallayout>
 </listitem>
 </varlistentry>
@@ -498,6 +648,43 @@ gfmd が
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_server_remove_scan_log_interval</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>メタデータサーバgfmdの削除キュー処理に関する統計情報ログの、
+記録頻度を秒数で指定します。
+デフォルト値は3600秒です。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_remove_scan_log_interval 86400
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_remove_scan_interval_factor</token> <parameter moreinfo="none">数字</parameter></term>
+<listitem>
+<para>メタデータサーバgfmdの削除キュー処理が、
+CPU時間をどの程度使用してよいかを調整するパラメータを指定します。
+削除キュー処理は、最大でCPU時間の
+1 / (metadb_server_remove_scan_interval_factor + 1)
+を使用することになります。
+デフォルト値は5です。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_remove_scan_interval_factor 2
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>metadb_server_heartbeat_interval</token> <parameter moreinfo="none">秒数</parameter></term>
 <listitem>
 <para>メタデータサーバgfmdが各ファイルシステムサーバgfsd
@@ -531,6 +718,50 @@ gfarm2.confとgfmd.confの両方で指定する必要があります。
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	metadb_server_dbq_size 65536
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_back_channel_sndbuf_limit</token> <parameter moreinfo="none">サイズ制限値</parameter></term>
+<listitem>
+<para>メタデータサーバが gfsd back channel への接続に用いるソケットの
+SO_SNDBUF サイズの上限を指定します。
+バッファ長を短くすると，メタデータサーバからの要求が過度に溜らなくなり、
+gfsd の back channel 接続が切れてしまう問題を緩和できます。
+引数に<token>disable</token>と指定すると、制限がかからなくなります。
+デフォルトの制限値は 4096バイトです。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_back_channel_sndbuf_limit 16384
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_nfs_root_squash_support</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>enable の場合、gfmd はホームディレクトリの .gfarm_shared_key ファイルを
+読む際に、そのホームディレクトリのオーナー権限を用います。
+disable の場合、root 権限のままで読みます。
+</para>
+<para>
+sharedsecret 認証を行なう Gfarm ユーザーのホームディレクトリを、
+no_root_squash エクスポート・オプションなしの NFS を用いて共有している場合、
+enable にしておく必要があります。
+デフォルトはenableですが、利用環境が許すのであれば disableに変更すると、
+gfmdのCPU負荷を若干低減できます。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>Example:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_nfs_root_squash_support disable
 </literallayout>
 </listitem>
 </varlistentry>
@@ -725,6 +956,73 @@ GSIは利用できません。この場合、<token>gsi</token>および
 すなわち、ホスト192.168.0.100と192.168.0.101の2つのホストは、
 <token>gsi</token>認証のみを試みることになります。</para>
 
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>shared_key_file</token> <parameter moreinfo="none">パス名</parameter></term>
+<listitem>
+<para>sharedsecret認証に用いる秘密鍵ファイルのパス名を指定します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>digest</token> <parameter moreinfo="none">digestタイプ</parameter></term>
+<listitem>
+<para>
+チェックサム計算を有効にし、
+digestタイプで指定されたチェックサムを計算します。
+digestタイプとしては、チェックサム計算を実行するファイルシステムノード上の
+OpenSSL ライブラリがサポートしているタイプを、小文字で、
+例えば md5 や sha256 のように指定します。
+あるいは <token>client_digest_check</token>文で<token>enable</token>を指定して
+いる場合は、このdigstタイプをクライアント上の OpenSSL ライブラリもサポート
+している必要があります。
+</para>
+<para>
+digestタイプとして disable と指定した場合は、チェックサム計算を抑制します。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>
+注:
+たとえこの設定でチェックサム計算を有効にしても、
+ローカルホストの gfsd が管理するファイル複製にクライアントがアクセスする
+場合には、そのままではチェックサムが計算されません。
+これは、デフォルト設定だと gfsd のみがチェックサム計算を行なうのに対し、
+ローカルアクセスについては、クライアントがファイルを直接読み書きするためです。
+ローカルアクセスについてもチェックサム計算を行うためには、
+<token>direct_local_access</token>文で<token>disable</token>を指定して、
+ローカルアクセスの場合の直接読み書きを抑制するか、
+あるいは <token>client_digest_check</token>文で<token>enable</token>を指定して、
+チェックサム計算をクライアント側でも行なうようにする必要があります。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	digest md5
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>max_directory_depth</token> <parameter moreinfo="none">数</parameter></term>
+<listitem>
+<para>
+directory の深さとして許される最大値を設定します。
+ただし、深さの検査は厳密ではないので、この設定よりも深いディレクトリを
+許容する処理もあります。
+</para>
+<para>
+デフォルトは100です。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	max_directory_depth 200
+</literallayout>
 </listitem>
 </varlistentry>
 
@@ -1076,6 +1374,9 @@ CPU負荷が高いとみなされるCPU負荷を指定します。
 当初スケジュール対象となりません。
 デフォルト値は0.5です。
 </para>
+<para>
+この文はクライアントおよびgfmdで有効です。
+</para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	schedule_busy_load_thresh 0.5
@@ -1220,7 +1521,7 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負�
 指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定
 することで、それぞれ1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする
 ことができます。
-デフォルトは128Mバイトです。
+デフォルトは512Mバイトです。
 </para>
 <para>
 このパラメータは、gfarm2.confとgfmd.confの両方で指定する必要があります。
@@ -1234,29 +1535,26 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負�
 </varlistentry>
 
 <varlistentry>
-<term><token>gfs_proto_fhremove_request_window</token> <parameter moreinfo="none">同時処理数</parameter></term>
+<term><token>direct_local_access</token> <parameter moreinfo="none">有効性</parameter></term>
 <listitem>
-<para>gfmd から gfsd に対する複製ファイル削除を、
-同時にいくつまで並行して要求できるかを設定します。
-デフォルトは 50 です。
+<para>
+ローカルホストの gfsd が管理するファイル複製にクライアントがアクセスする場合、
+オーバヘッドを削減するため、ファイルの読み書きに関しては、
+通常 gfsd をバイパスして直接アクセスします。
+この文で<token>disable</token>と指定することによって、
+このバイパスを無効化することができます。
+この無効化機能は、ローカルホストのファイルアクセスに対して、
+gfsdによるチェックサム計算を行うために用意されています。
+詳しくは <token>direct_local_access</token>文の説明を参照してください。
+デフォルトはenableです。
+</para>
+<para>
+この文は、クライアントが参照するgfarm2.confのみで有効です。
+gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
-	gfs_proto_fhremove_request_window 50
-</literallayout>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><token>gfs_proto_replication_request_window</token> <parameter moreinfo="none">同時処理数</parameter></term>
-<listitem>
-<para>gfmd 主導の複製処理を、gfmd から複製作成側の gfsd に対して、
-同時にいくつまで並行して要求できるかを設定します。
-デフォルトは 20 です。
-</para>
-<para>例:</para>
-<literallayout format="linespecific" class="normal">
-	gfs_proto_replication_request_window 20
+	direct_local_access disable
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1264,30 +1562,27 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負�
 <varlistentry>
 <term><token>simultaneous_replication_receivers</token> <parameter moreinfo="none">同時処理数</parameter></term>
 <listitem>
-<para>gfarm-2.6 以降では、
-このパラメータは gfs_proto_replication_request_window と同じ意味となりますので、
-そちらを利用してください。
-このパラメータは以前のバージョンとの互換性のために残されています。
+<para>gfmd 主導の複製処理を、単一複製作成ホストに対して、
+同時にいくつまで並行して行なうことを許すかを設定します。
 デフォルトは 20です。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
-	simultaneous_replication_receivers 20
+	simultaneous_replication_receivers 40
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>outstanding_file_replication_limit</token> <parameter moreinfo="none">同時処理数</parameter></term>
+<term><token>replication_busy_host</token> <parameter moreinfo="none">有効性</parameter></term>
 <listitem>
-<para>gfmd 主導の複製処理要求を、システム全体で、
-同時にいくつまで未了のまま保持しておけるかを設定します。
-このパラメータは、大量の複製要求によるメモリ不足を防ぐために存在します。
-デフォルトは 4194304 であり、これはおよそ 512MB のメモリに対応します。
+<para>gfmd主導の複製先にbusyホストを含むかどうか設定します。
+disableにすると、busyホストには複製は作成されません。
+デフォルトはenableです。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
-	outstanding_file_replication_limit 4194304
+	replication_busy_host disable
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1454,7 +1749,7 @@ enableと指定した場合、ファイル作成・変更・削除に関する
 </para>
 <para>
 <!-- この項を下にある<variablelist>の項の後ろに書くと、
-     man page でのインデントが無効化されます。-->
+     man page でのインデントが無効化されます。 -->
 例:
 </para>
 <literallayout format="linespecific" class="normal">
@@ -1552,6 +1847,20 @@ Gfarmクライアントライブラリはファイルシステムノードが利
 </varlistentry>
 
 <varlistentry>
+<term><token>gfmd_authentication_timeout</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>メタデータサーバへの接続後、認証要求への反応がない場合の
+タイムアウト時間を秒単位で指定します。
+デフォルトは 35秒です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	gfmd_authentication_timeout 45
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>gfmd_reconnection_timeout</token> <parameter moreinfo="none">秒数</parameter></term>
 <listitem>
 <para>メタデータサーバへの接続が切断された場合，
@@ -1562,6 +1871,19 @@ Gfarmクライアントライブラリはファイルシステムノードが利
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	gfmd_reconnection_timeout 30
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>gfsd_connection_timeout</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>ファイルシステムノードへの接続タイムアウトを指定します。
+デフォルトは 30秒です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	gfsd_connection_timeout 30
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1606,13 +1928,55 @@ disable設定は、通常のファイルシステムにおける"noatime"オプ�
 </varlistentry>
 
 <varlistentry>
+<term><token>max_open_files</token> <parameter moreinfo="none">ファイル数</parameter></term>
+<listitem>
+<para>
+同時にオープンできるファイル数の最大値を指定します。
+デフォルトは1024です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	max_open_files 1024
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>client_digest_check</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+このオプションがenableの場合、Gfarmクライアントライブラリ (libgfarm)は、
+ファイル全体をシーケンシャルにアクセスする際、チェックサムを計算し、
+そのファイルのメタデータに設定されているチェックサムと比較して検証します。
+また、メタデータにチェックサムが設定されておらず、
+書き込みオープンしている場合には、計算したチェックサムをメタデータに設定します。
+デフォルトはdiableです。
+</para>
+<para>
+この文は、クライアントが参照するgfarm2.confのみで有効です。
+gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	client_digest_check enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>client_file_bufsize</token> <parameter moreinfo="none">バイト数</parameter></term>
 <listitem>
 <para>Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ
-  サイズをバイト単位で指定します。デフォルトは1048568バイト（= 1MiB -
-  8B）です。Gfarm-2.5.0以前では、ファイルのバッファサイズは、遠隔ファイ
-  ルアクセス性能を極端に低下させないためにも、デフォルト値以下である必
-  要があります。
+  サイズをバイト単位で指定します。デフォルトは1048576バイト（= 1MiB）です。
+  ファイルのバッファサイズは、遠隔ファイルアクセス性能を極端に低下させ
+  ないためにも、デフォルト値以下である必要があります。
+</para>
+<para>
+この文は、クライアントが参照するgfarm2.confのみで有効です。
+gfsd や gfmd は、gfarm2.conf や gfmd.conf 中のこの文を無視します。
 </para>
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
@@ -1745,25 +2109,6 @@ disable設定は、通常のファイルシステムにおける"noatime"オプ�
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_server_slave_listen</token> <parameter moreinfo="none">有効性</parameter></term>
-<listitem>
-<para>enable のとき、スレーブgfmdとして設定されている場合でも、クライアントからの要求を受け付けます。
-デフォルトはdisableです。
-</para>
-<para>
-注意: この機能は開発用に用意されていますので、通常の用途では設定しないでください。
-</para>
-<para>
-この文はgfmd.confのみで有効です。
-</para>
-<para>例:</para>
-<literallayout format="linespecific" class="normal">
-	metadb_server_slave_listen enable
-</literallayout>
-</listitem>
-</varlistentry>
-
-<varlistentry>
 <term><token>metadb_server_slave_max_size</token> <parameter moreinfo="none">ノード数</parameter></term>
 <listitem>
 <para>スレーブgfmdの最大ノード数を指定します。デフォルトは16です。
@@ -1774,6 +2119,25 @@ disable設定は、通常のファイルシステムにおける"noatime"オプ�
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	metadb_server_slave_max_size 40
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_slave_replication_timeout</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>gfmd が SIGTERM シグナルを受けて停止する際に、
+スレーブ gfmd へのメタデータ・レプリケーション完了を待つ
+タイムアウト時間を秒単位で設定します。
+タイムアウト時間を過ぎた場合、スレーブ gfmd へのレプリケーションを諦めます。
+デフォルトは 120 秒です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_server_slave_replication_timeout 180
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1832,13 +2196,74 @@ disable設定は、通常のファイルシステムにおける"noatime"オプ�
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_replica_remover_by_host_sleep_time</token> <parameter moreinfo="none">ナノ秒</parameter></term>
+<listitem>
+<para>
+ファイルシステムノード削除時のレプリカ削除処理が、
+gfmdが忙しい場合に処理を休む時間をナノ秒で指定します。
+この値を増やすと、この処理の優先度が下がり、ゆっくり動作します。
+デフォルトは20000000ナノ秒(20ミリ秒)です。
+最大値は1000000000ナノ秒(1秒)です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_replica_remover_by_host_sleep_time 20000000
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_replica_remover_by_host_inode_step</token> <parameter moreinfo="none">個数</parameter></term>
+<listitem>
+<para>
+ファイルシステムノード削除時のレプリカ削除処理が、
+一度に処理するi-nodeの数を指定します。
+この値を減らすと、この処理の優先度が下がり、ゆっくり動作します。
+デフォルトは1024個です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	metadb_replica_remover_by_host_inode_step 1024
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>replica_check</token> <parameter moreinfo="none">有効性</parameter></term>
 <listitem>
 <para>
-enableと指定した場合、gfmd内のreplica_check機能が自動的に、
-ファイル複製の数と配置をチェックし、修復します。
-replica_checkは必要なときにしか動作しません。
+enableと指定した場合、gfmd内のreplica_check機能が、必要なときに自動的に
+ファイル複製の数と配置を監視し、不足しているファイル複製があれば増やします。
 デフォルトはenableです。
+</para>
+<para>
+下記のイベントが発生するとreplica_checkが開始します。
+<literallayout format="linespecific" class="normal">
+  - gfsd起動時
+  - gfsd停止からreplica_check_host_down_thresh秒後
+  - gfncopyで複製数設定を変更時
+  - ディレクトリ名変更時、またはファイルを別ディレクトリへ移動時
+    (同一ディレクトリ内で改名した場合は開始しない)
+    (ファイル自身に複製数が設定されている場合は開始しない)
+  - ファイルclose時ファイル複製自動作成要求がエラー時
+  - ファイルclose時ファイル複製自動作成処理中にエラー時
+  - gfsdが忙しくなくなった場合
+    (ロードアベレージがschedule_busy_load_thresh以下に変化時)
+  - replica_check処理中にエラーが起きた場合、チェック完了後にリトライ
+</literallayout>
+</para>
+<para>
+<command moreinfo="none">gfrepcheck</command> コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
+<command moreinfo="none">gfrepcheck enable</command> は即座に開始します。
+<command moreinfo="none">gfrepcheck disable</command> は即座に停止します。
+startはenableと同等、stopはdisableと同等です。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
@@ -1851,12 +2276,120 @@ replica_checkは必要なときにしか動作しません。
 </varlistentry>
 
 <varlistentry>
+<term><token>replica_check_remove</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+<token>replica_check enable</token>の場合に効果があります。enableと指定
+した場合、replica_check機能が余剰ファイル複製を自動的に削除します。例
+外として、ファイルがハードリンクされていて (nlink >= 2)、そのファイル
+自身に複製数の設定 (gfarm.ncopyまたはgfarm.replicainfo)がされていない
+場合、そのファイルの余剰ファイル複製は削除されません。デフォルトは
+enableです。
+</para>
+<para>
+<command moreinfo="none">gfrepcheck remove</command> コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_remove disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replica_check_remove_grace_used_space_ratio</token> <parameter moreinfo="none">パーセント</parameter></term>
+<listitem>
+<para>
+<token>replica_check_remove</token>が有効な場合に効果があります。
+なるべく余剰ファイル複製を削除せず残しておくために、猶予容量使用率を指
+定します。猶予容量使用率は、gfsdごとのディスク使用率を百分率(パーセン
+ト, 0から100の整数)で指定します。ここで指定した使用率を超えているgfsd上に
+ある余剰ファイル複製のうち、
+<token>replica_check_remove_grace_time</token>の時間を経過している場合
+に削除されます。0を指定すると、ディスク使用率に関わら
+ず<token>replica_check_remove_grace_time</token>次第で削除されます。
+100を指定すると、<token>replica_check_remove disable</token>と同等にな
+ります。デフォルトは0です。
+</para>
+<para>
+<command moreinfo="none">gfrepcheck remove_grace_used_space_ratio</command>
+コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_remove_grace_used_space_ratio 70
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replica_check_remove_grace_time</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>
+<token>replica_check_remove</token>が有効な場合に効果があります。
+猶予容量使用率が
+<token>replica_check_remove_grace_used_space_ratio</token>を超えた場
+合に、余剰ファイル複製が削除されるまでの猶予期間を指定します。
+猶予期間としてファイルのアクセス時間(atime)からの経過時間を秒数で指定します。
+デフォルトは0です。
+</para>
+<para>
+<command moreinfo="none">gfrepcheck remove_grace_time</command>
+コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_remove_grace_time 604800
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replica_check_reduced_log</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+enableと指定した場合、
+replica_check機能が出力するログメッセージの数を削減することができます。
+デフォルトはenableです。
+</para>
+<para>
+<command moreinfo="none">gfrepcheck reduced_log</command> コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	replica_check_reduced_log disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>replica_check_host_down_thresh</token> <parameter moreinfo="none">秒数</parameter></term>
 <listitem>
 <para>
-gfsdが停止した場合、replica_checkは指定した秒数までそのgfsdが停止してい
-ないとみなします。これはgfsdを保守するために有用です。
-デフォルトは10800秒(3時間)です。
+gfsdが停止した場合、ここで指定した秒数までそのgfsdが停止していない(そ
+のgfsd上のファイル複製は正常である)とreplica_checkがみなします。これは
+gfsdを保守するために有用です。デフォルトは10800秒(3時間)です。
+</para>
+<para>
+<command moreinfo="none">gfrepcheck host_down_thresh</command>
+コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
@@ -1872,11 +2405,19 @@ gfsdが停止した場合、replica_checkは指定した秒数までそのgfsd�
 <term><token>replica_check_sleep_time</token> <parameter moreinfo="none">ナノ秒</parameter></term>
 <listitem>
 <para>
-この値を増やすと、replica_checkはgfmdが忙しい場合に限り、ゆっくり動作します。
+この値を増やすと、gfmdが忙しい場合に限り、replica_checkがゆっくり動作します。
+クライアントからのアクセスへの応答を優先するために有用です。
 gfmdが忙しくない場合、replica_checkは全力で動作します。
-replica_check内でスリープする時間をナノ秒で指定します。
+
+replica_check以外の処理が多いと検出した場合に、replica_checkの処理を一
+時的に停止する時間をナノ秒で指定します。
+
 デフォルトは100000ナノ秒(0.1ミリ秒)です。
 最大値は1000000000ナノ秒(1秒)です。
+</para>
+<para>
+<command moreinfo="none">gfrepcheck sleep_time</command> コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
@@ -1892,9 +2433,13 @@ replica_check内でスリープする時間をナノ秒で指定します。
 <term><token>replica_check_minimum_interval</token> <parameter moreinfo="none">秒</parameter></term>
 <listitem>
 <para>
-replica_checkが動作するための最小間隔(秒)を指定します。
+replica_checkが次回動作するまでの最小間隔(秒)を指定します。
 デフォルトは10秒です。
-つまり、replica_checkは10秒間に最大1回動作することができます。
+</para>
+<para>
+<command moreinfo="none">gfrepcheck minimum_interval</command>
+コマンドを使うと、
+この値を動的に変更したり、statusで現在の値を取得できます。
 </para>
 <para>
 この文はgfmd.confのみで有効です。
@@ -1902,6 +2447,128 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	replica_check_minimum_interval 5
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replicainfo</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+enableと指定した場合、
+gfarm.replicainfo拡張属性に従って複製を自動的に配置します。
+disableと指定した場合、
+gfarm.replicainfo拡張属性のホストグループごとの複製数の指定を無視して、
+その合計数またはgfarm.ncopy拡張属性の値が大きい方を目標の複製数として
+複製を配置します。
+gfarm.replicainfo拡張属性については、
+<command moreinfo="none">gfncopy</command>のマニュアルを参照してください。
+デフォルトは <token>enable</token> です。
+</para>
+<para>
+gfstatus -Mm 'replicainfo disable' により、一時的に無効にすることができます。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	replicainfo disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_verify</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+enableと指定した場合、
+ファイル書き込み後しばらく後に、gfsd がデータを読み直してチェックサムを
+再確認する write_verify 機能が有効になります。
+デフォルトは <token>disable</token> です。
+</para>
+<para>
+この文は gfmd.conf のみで有効です。
+gfarm2.confでは無視されます。
+gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	write_verify enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_verify_interval</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>
+ファイルへの書き込み完了後、どの程度時間をおいて、write_verify を実施するか、
+秒数で指定します。
+デフォルトは 21600秒 (6時間) です。
+</para>
+<para>
+write_verify のための読み込みは、O_DIRECT 機能が存在する OS では、
+direct I/O を用います。しかし、ディスクコントローラ内のキャッシュや、
+メタデータ・キャッシュのクリアは行ないませんので、write_verify_interval
+には、十分長い時間を指定することを推奨します。
+</para>
+<para>
+この文は gfmd.conf のみで有効です。
+gfarm2.confでは無視されます。
+gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	write_verify_interval 21600
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_verify_retry_interval</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>
+write_verify を試みたが、対象ファイルが書き込みオープンされていて
+実施できなかった場合に、どれだけの時間待ってから、再度 write_verify を
+試みるかを指定します。
+</para>
+<para>
+この設定値は、write_verify_interval で指定した時間より十分短い時間と
+することを推奨します。
+デフォルトは 600秒 (10分) です。
+</para>
+<para>
+この文は gfmd.conf のみで有効です。
+gfarm2.confでは無視されます。
+gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	write_verify_retry_interval 600
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_verify_log_interval</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>
+write_verify に関する統計情報をログ出力する間隔を指定します。
+設定した値以上の時間が経過して、ファイルシステムノードでファイルが
+更新されると、統計情報がそのファイルシステムノードのログに記録されます。
+</para>
+<para>
+デフォルトは 3600秒 (1時間) です。
+</para>
+<para>
+この文は gfmd.conf のみで有効です。
+gfarm2.confでは無視されます。
+gfsd はその起動時に、gfmd に対して、この設定を問い合わせて動作します。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	write_verify_log_interval 3600
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1914,13 +2581,21 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <variablelist>
 <varlistentry>
 <term>&lt;statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">&lt;spool_statement&gt; |
+<listitem><literallayout format="linespecific" class="normal">
+	&lt;spool_statement&gt; |
 	&lt;spool_server_listen_address_statement&gt; |
 	&lt;spool_server_listen_backlog_statement&gt; |
 	&lt;spool_server_cred_type_statement&gt; |
 	&lt;spool_server_cred_service_statement&gt; |
 	&lt;spool_server_cred_name_statement&gt; |
+	&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; |
 	&lt;spool_check_level_statement&gt; |
+	&lt;spool_check_parallel_statement&gt; |
+	&lt;spool_check_parallel_max_statement&gt; |
+	&lt;spool_check_parallel_per_capacity_statement&gt; |
+	&lt;spool_check_parallel_step_statement&gt; |
+	&lt;spool_base_load_statement&gt; |
+	&lt;spool_digest_error_check_statement&gt; |
 	&lt;metadb_server_host_statement&gt; |
 	&lt;metadb_server_port_statement&gt; |
 	&lt;metadb_server_cred_type_statement&gt; |
@@ -1931,8 +2606,12 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;metadb_server_stack_size_statement&gt; |
 	&lt;metadb_server_thread_pool_size_statement&gt; |
 	&lt;metadb_server_job_queue_length_statement&gt; |
+	&lt;metadb_server_remove_scan_log_interval_statement&gt; |
+	&lt;metadb_server_remove_scan_interval_factor_statement&gt; |
 	&lt;metadb_server_heartbeat_interval_statement&gt; |
 	&lt;metadb_server_dbq_size_statement&gt; |
+	&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; |
+	&lt;metadb_server_nfs_root_squash_support_statement&gt; |
 	&lt;ldap_server_host_statement&gt; |
 	&lt;ldap_server_port_statement&gt; |
 	&lt;ldap_base_dn_statement&gt; |
@@ -1945,6 +2624,9 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;postgresql_password_statement&gt; |
 	&lt;postgresql_conninfo_statement&gt; |
 	&lt;auth_statement&gt; |
+	&lt;shared_key_file_statement&gt; |
+	&lt;digest_statement&gt; |
+	&lt;max_directory_depth_statement&gt; |
 <!--	&lt;netparam_statement&gt; | -->
 	&lt;sockopt_statement&gt; |
 <!--	&lt;address_use_statement&gt; | -->
@@ -1969,10 +2651,9 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;write_local_priority_statement&gt; |
 	&lt;write_target_domain_statement&gt; |
 	&lt;minimum_free_disk_space_statement&gt; |
-	&lt;gfs_proto_fhremove_request_window_statement&gt; |
-	&lt;gfs_proto_replication_request_window_statement&gt; |
+	&lt;direct_local_access_statement&gt; |
 	&lt;simultaneous_replication_receivers_statement&gt; |
-	&lt;outstanding_file_replication_limit_statement&gt; |
+	&lt;replication_busy_host_statement&gt; |
 	&lt;gfsd_connection_cache_statement&gt; |
 	&lt;xmlattr_size_limit_statement&gt; |
 	&lt;xattr_size_limit_statement&gt; |
@@ -1985,8 +2666,14 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;file_trace_statement&gt; |
 	&lt;fatal_action_statement&gt; |
 	&lt;debug_command_statement&gt; |
+	&lt;no_file_system_node_timeout_statement&gt; |
+	&lt;gfmd_authentication_timeout_statement&gt; |
+	&lt;gfmd_reconnection_timeout_statement&gt; |
+	&lt;gfsd_connection_timeout_statement&gt; |
 <!--	&lt;record_atime_statement&gt; | -->
 	&lt;atime_statement&gt; |
+	&lt;max_open_files_statement&gt; |
+	&lt;client_digest_check_statement&gt; |
 	&lt;client_file_bufsize_statement&gt; |
 	&lt;client_parallel_copy_statement&gt; |
 	&lt;profile_statement&gt; |
@@ -1995,15 +2682,26 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;synchronous_replication_timeout_statement&gt; |
 	&lt;synchronous_journaling_statement&gt; |
 	&lt;metadb_server_force_slave_statement&gt; |
-	&lt;metadb_server_slave_listen_statement&gt; |
 	&lt;metadb_server_slave_max_size_statement&gt; |
+	&lt;metadb_server_slave_replication_timeout_statement&gt; |
 	&lt;metadb_journal_dir_statement&gt; |
 	&lt;metadb_journal_max_size_statement&gt; |
 	&lt;metadb_journal_recvq_size_statement&gt; |
+	&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; |
+	&lt;metadb_replica_remover_by_host_inode_step_statement&gt; |
 	&lt;replica_check_statement&gt; |
+	&lt;replica_check_remove_statement&gt; |
+	&lt;replica_check_remove_grace_used_space_ratio_statement&gt; |
+	&lt;replica_check_remove_grace_time_statement&gt; |
+	&lt;replica_check_reduced_log_statement&gt; |
 	&lt;replica_check_host_down_thresh_statement&gt; |
 	&lt;replica_check_sleep_time_statement&gt; |
-	&lt;replica_check_minimum_interval_statement&gt;</literallayout></listitem>
+	&lt;replica_check_minimum_interval_statement&gt; |
+	&lt;replicainfo_statement&gt; |
+	&lt;write_verify_statement&gt; |
+	&lt;write_verify_interval_statement&gt; |
+	&lt;write_verify_retry_interval_statement&gt; |
+	&lt;write_verify_log_interval_statement&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2037,8 +2735,43 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 </varlistentry>
 
 <varlistentry>
+<term>&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_server_back_channel_rcvbuf_limit" &lt;size_limit&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
 <term>&lt;spool_check_level_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"spool_check_level" &lt;spck_level&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_max_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel_max" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_per_capacity_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel_per_capacity" &lt;size&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_check_parallel_step_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_check_parallel_step" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_base_load_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_base_load" &lt;load&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_digest_error_check_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_digest_error_check" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2092,6 +2825,16 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 </varlistentry>
 
 <varlistentry>
+<term>&lt;metadb_server_remove_scan_log_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_remove_scan_log_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_remove_scan_interval_factor_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_remove_scan_interval_factor" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
 <term>&lt;metadb_server_heartbeat_interval_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_server_heartbeat_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
@@ -2099,6 +2842,16 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <varlistentry>
 <term>&lt;metadb_server_dbq_size_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_server_dbq_size" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_back_channel_sndbuf_limit" &lt;size_limit&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_nfs_root_squash_support_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_nfs_root_squash_support" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2169,6 +2922,21 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <varlistentry>
 <term>&lt;auth_method&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"gsi" | "gsi_auth" | "sharedsecret"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;shared_key_file_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"shared_key_file" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;digest_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"digest" &lt;digest_type&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;max_directory_depth_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"max_directory_depth" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--
@@ -2343,13 +3111,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 </varlistentry>
 
 <varlistentry>
-<term>&lt;gfs_proto_fhremove_request_window_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"gfs_proto_fhremove_request_window" &lt;number&gt;</literallayout></listitem>
-</varlistentry>
-
-<varlistentry>
-<term>&lt;gfs_proto_replication_request_window_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"gfs_proto_replication_request_window" &lt;number&gt;</literallayout></listitem>
+<term>&lt;direct_local_access_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"direct_local_access" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2358,8 +3121,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 </varlistentry>
 
 <varlistentry>
-<term>&lt;outstanding_file_replication_limit_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"outstanding_file_replication_limit" &lt;number&gt;</literallayout></listitem>
+<term>&lt;replication_busy_host_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replication_busy_host" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2428,8 +3191,18 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 </varlistentry>
 
 <varlistentry>
+<term>&lt;gfmd_authentication_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"gfmd_authentication_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
 <term>&lt;gfmd_reconnection_timeout_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"gfmd_reconnection_timeout" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;gfsd_connection_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"gfsd_connection_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <!--
@@ -2442,6 +3215,16 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <varlistentry>
 <term>&lt;atime_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"atime" &lt;atime_type&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;max_open_files_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"max_open_files" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;client_digest_check_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"client_digest_check" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2491,13 +3274,13 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 </varlistentry>
 
 <varlistentry>
-<term>&lt;metadb_server_slave_listen_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"metadb_server_slave_listen" &lt;validity&gt;</literallayout></listitem>
+<term>&lt;metadb_server_slave_max_size_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_slave_max_size" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
-<term>&lt;metadb_server_slave_max_size_statement&gt; ::=</term>
-<listitem><literallayout format="linespecific" class="normal">"metadb_server_slave_max_size" &lt;number&gt;</literallayout></listitem>
+<term>&lt;metadb_server_slave_replication_timeout_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_server_slave_replication_timeout" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2516,8 +3299,38 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 </varlistentry>
 
 <varlistentry>
+<term>&lt;metadb_replica_remover_by_host_sleep_time_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_replica_remover_by_host_sleep_time" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_replica_remover_by_host_inode_step_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"metadb_replica_remover_by_host_inode_step" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
 <term>&lt;replica_check_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"replica_check" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_remove_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_remove" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_remove_grace_used_space_ratio_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_remove_grace_used_space_ratio" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_remove_grace_time&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_remove_grace_time" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replica_check_reduced_log_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replica_check_reduced_log" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
@@ -2594,6 +3407,11 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 </varlistentry>
 
 <varlistentry>
+<term>&lt;size_limit&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">&lt;number&gt; | "disable" </literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
 <term>&lt;string&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">""" &lt;double_quoted_character&gt;* """</literallayout></listitem>
 </varlistentry>
@@ -2648,6 +3466,31 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 <term>&lt;fatal_action_name&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"backtrace_and_abort" | "backtrace_and_exit" |
 	"abort" | "exit"</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;replicainfo_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"replicainfo" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_retry_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify_retry_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;write_verify_log_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"write_verify_log_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 </variablelist>

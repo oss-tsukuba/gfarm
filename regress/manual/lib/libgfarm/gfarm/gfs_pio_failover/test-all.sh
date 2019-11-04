@@ -11,8 +11,8 @@ autotest=$1
 ./cleanup.sh
 ./setup.sh
 
-printf '' > failed-list
-printf '' > log
+echo -n > failed-list
+echo -n > log
 
 npass=0
 nfail=0

@@ -3,14 +3,12 @@
  */
 
 #include <pthread.h>	/* db_access.h currently needs this */
-#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include <gfarm/gfarm.h>
 
-#include "gfp_xdr.h"
 #include "metadb_common.h"
 #include "metadb_server.h"
 #include "quota.h"

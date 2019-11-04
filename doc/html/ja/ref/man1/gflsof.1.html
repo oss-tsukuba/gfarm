@@ -1,0 +1,155 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gflsof</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gflsof">
+<a name="gflsof.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gflsof — 現在オープンされている Gfarm ファイルのリストを表示する。</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gflsof</code>  [-AW] [-P <em class="replaceable"><code>パス名</code></em>] [-D <em class="replaceable"><code>gfsdのドメイン名</code></em>] [-U <em class="replaceable"><code>ユーザーホストのドメイン名</code></em>] [-u <em class="replaceable"><code>ユーザー名</code></em>]</p></div>
+<div class="cmdsynopsis"><p><code class="command">gflsof</code>  [-AW] [-P <em class="replaceable"><code>パス名</code></em>] [-D <em class="replaceable"><code>gfsdのドメイン名</code></em>] [-U <em class="replaceable"><code>ユーザーホストのドメイン名</code></em>] [-u <em class="replaceable"><code>ユーザー名</code></em>]  -C </p></div>
+<div class="cmdsynopsis"><p><code class="command">gflsof</code>  [-AW] [-P <em class="replaceable"><code>パス名</code></em>] [-D <em class="replaceable"><code>gfsdのドメイン名</code></em>] [-U <em class="replaceable"><code>ユーザーホストのドメイン名</code></em>] [-u <em class="replaceable"><code>ユーザー名</code></em>]  -G </p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+<code class="option">-C</code> オプションや <code class="option">-G</code> を指定しない場合、
+現在オープン中の Gfarm ファイルについて、ファイルディスクリプタ毎の情報を
+表示します。
+表示の
+USER 欄はユーザー名、
+GPID 欄は Gfarm プロセスID、
+FD 欄は Gfarm ファイルディスクリプタ番号、
+ファイルディスクリプタ番号の直後の文字が 'r' の場合 read-only オープン、
+ファイルディスクリプタ番号の直後の文字が 'w' の場合 write-only オープン、
+ファイルディスクリプタ番号の直後の文字が 'u' の場合 read-write オープン、
+TYPE 欄はファイル (REG) / ディレクトリ (DIR) / シンボリックリンク (LNK) の種別、
+INODE 欄は inode 番号、
+GEN 欄は inode の世代番号、
+SIZE/OFF 欄は
+ディレクトリの場合であればシーク・オフセット値、
+ファイルの場合であればファイル・サイズ、
+CLIENT 欄は gfmd に接続しているクライアントのホスト名とポート番号、
+GFSD 欄は gfmd に接続している gfsd のホスト名とポート番号
+です。
+</p>
+<p>
+<code class="option">-C</code> オプションを指定した場合には、
+ディスクリプタをオープンしているクライアントのホスト名のみを表示します。
+</p>
+<p>
+<code class="option">-G</code> オプションを指定した場合には、
+実体ファイルをオープンしている gfsd のホスト名のみを表示します。
+</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-A</code></span></dt>
+<dd><p>
+全ユーザーについて表示します。
+このオプションの利用には、gfarmadm グループ権限が必要です。
+</p></dd>
+<dt><span class="term"><code class="option">-W</code></span></dt>
+<dd><p>
+書き込みオープンされているディスクリプタに関する情報のみを表示します。
+</p></dd>
+<dt><span class="term"><code class="option">-P</code> <em class="parameter"><code>パス名</code></em></span></dt>
+<dd><p>
+このコマンドがアクセスするメタデータサーバを特定するための
+パス名または Gfarm URL を指定します。
+省略した場合は、「.」を指定したのと同じ意味になります。
+</p></dd>
+<dt><span class="term"><code class="option">-D</code> <em class="parameter"><code>gfsdのドメイン名</code></em></span></dt>
+<dd><p>
+表示対象のディスクリプタを、
+指定したドメイン名ないしホスト名のgfsdが
+実体ファイルをオープンしているものに限定します。
+</p></dd>
+<dt><span class="term"><code class="option">-U</code> <em class="parameter"><code>ユーザーホストのドメイン名</code></em></span></dt>
+<dd><p>
+表示対象のディスクリプタを、
+指定したドメイン名ないしホスト名で動作しているクライアントが
+オープンしているものに限定します。
+</p></dd>
+<dt><span class="term"><code class="option">-u</code> <em class="parameter"><code>ユーザー名</code></em></span></dt>
+<dd><p>
+指定したユーザーがオープンしているディスクリプタについて表示を行ないます。
+このオプションの利用には、gfarmadm グループ権限が必要です。
+</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>引数オプションを表示します。</p></dd>
+</dl></div>
+</div>
+<div class="refsect1" title="EXAMPLES">
+<a name="examples"></a><h2>EXAMPLES</h2>
+<div class="example">
+<a name="idp68128"></a><p class="title"><b>Example 1. 自身のオープンしているファイルディスクリプタ一覧を表示する</b></p>
+<div class="example-contents">
+<p>
+</p>
+<pre class="screen">
+gflsof
+</pre>
+<p>
+</p>
+</div>
+</div>
+<br class="example-break"><div class="example">
+<a name="idp4708784"></a><p class="title"><b>Example 2. ファイルディスクリプタ全ての一覧を表示する</b></p>
+<div class="example-contents">
+<p>
+</p>
+<pre class="screen">
+gflsof -A
+</pre>
+<p>
+</p>
+</div>
+</div>
+<br class="example-break"><div class="example">
+<a name="idp4710800"></a><p class="title"><b>Example 3. gfsd が実体ファイルを書き込みオープンしているファイルシステムノード全ての一覧を表示する</b></p>
+<div class="example-contents">
+<p>
+</p>
+<pre class="screen">
+gflsof -AWG
+</pre>
+<p>
+</p>
+</div>
+</div>
+<br class="example-break"><div class="example">
+<a name="idp4713088"></a><p class="title"><b>Example 4. gfsdが実体ファイルを書き込みオープンしているファイルディスクリプタ全ての一覧を表示する</b></p>
+<div class="example-contents">
+<p>
+</p>
+<pre class="screen">
+gflsof -AW -D ''
+</pre>
+<p>
+</p>
+</div>
+</div>
+<br class="example-break"><div class="example">
+<a name="idp4715376"></a><p class="title"><b>Example 5. example.org ドメインに属し、かつユーザー john がディスクリプタをオープン中のクライアントホストの一覧を表示する</b></p>
+<div class="example-contents">
+<p>
+</p>
+<pre class="screen">
+gflsof -U example.org -u john -C
+</pre>
+<p>
+</p>
+</div>
+</div>
+<br class="example-break">
+</div>
+</div></body>
+</html>

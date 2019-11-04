@@ -21,6 +21,9 @@ struct options {
 	int print_dead_copy;
 
 	int do_not_display_name;
+	int max_ncopy;
+#define MAX_HOSTS	3
+	char *host[MAX_HOSTS];
 
 	int flags;
 };
@@ -97,22 +100,37 @@ static gfarm_error_t
 display_copy(char *path, struct gfs_stat *st, struct options *opt)
 {
 	gfarm_error_t e;
-	int n, i;
+	int n, i, j;
 	struct gfs_replica_info *ri;
+	const char *h;
 
 	e = gfs_replica_info_by_name(path, opt->flags, &ri);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
+	n = gfs_replica_info_number(ri);
+	if (opt->max_ncopy > 0)
+		if (n > opt->max_ncopy || st->st_size == 0)
+			goto replica_info_free;
+	for (j = 0; j < MAX_HOSTS; ++j) {
+		if (opt->host[j] == NULL)
+			break;
+		for (i = 0; i < n; ++i) {
+			h = gfs_replica_info_nth_host(ri, i);
+			if (strcmp(opt->host[j], h) == 0)
+				break;
+		}
+		if (i == n)
+			goto replica_info_free;
+	}
 	if (!opt->do_not_display_name)
 		display_name(path);
 
-	n = gfs_replica_info_number(ri);
 	for (i = 0; i < n; ++i) {
 		display_replica(st, ri, i, opt);
 	}
 	printf("\n");
-
+replica_info_free:
 	gfs_replica_info_free(ri);
 
 	return (e);
@@ -151,13 +169,16 @@ usage(void)
 {
 	fprintf(stderr, "Usage: %s [option] <path>...\n", program_name);
 	fprintf(stderr, "option:\n");
-	fprintf(stderr, "\t-a\t\tall replicas; equals -dio\n");
-	fprintf(stderr, "\t-d\t\tdead filesystem node is displayed\n");
-	fprintf(stderr, "\t-F\t\tappend indicator (-, ?, ;gen) to replicas\n");
-	fprintf(stderr, "\t-i\t\tincomplete replica is displayed\n");
-	fprintf(stderr, "\t-l\t\tlong format\n");
-	fprintf(stderr, "\t-o\t\tobsolete replica is displayed\n");
-	fprintf(stderr, "\t-r, -R\t\tdisplay subdirectories recursively\n");
+	fprintf(stderr, "\t-a\tall replicas; equals -dio\n");
+	fprintf(stderr, "\t-d\tdead filesystem node is displayed\n");
+	fprintf(stderr, "\t-F\tappend indicator (-, ?, ;gen) to replicas\n");
+	fprintf(stderr, "\t-i\tincomplete replica is displayed\n");
+	fprintf(stderr, "\t-o\tobsolete replica is displayed\n");
+	fprintf(stderr, "\t-l\tlong format\n");
+	fprintf(stderr, "\t-r, -R\tdisplay subdirectories recursively\n");
+	fprintf(stderr, "\t-h host\tdisplay files that stored on host\n");
+	fprintf(stderr, "\t-m N\tdisplay files having less than or equal to "
+		"N replicas\n");
 	exit(2);
 }
 
@@ -180,8 +201,11 @@ main(int argc, char **argv)
 	opt.print_dead_host = 0;
 	opt.print_incomplete_copy = 0;
 	opt.print_dead_copy = 0;
+	opt.max_ncopy = 0;
+	for (i = 0; i < MAX_HOSTS; ++i)
+		opt.host[i] = NULL;
 
-	while ((ch = getopt(argc, argv, "adFilorR?")) != -1) {
+	while ((ch = getopt(argc, argv, "adFh:ilm:orR?")) != -1) {
 		switch (ch) {
 		case 'a':
 			opt.print_dead_host =
@@ -194,11 +218,26 @@ main(int argc, char **argv)
 		case 'F':
 			opt.type_suffix = 1;
 			break;
+		case 'h':
+			for (i = 0; i < MAX_HOSTS; ++i) {
+				if (opt.host[i] == NULL) {
+					opt.host[i] = optarg;
+					break;
+				}
+			}
+			if (i == MAX_HOSTS) {
+				fprintf(stderr, "too many hosts\n");
+				exit(2);
+			}
+			break;
 		case 'i':
 			opt.print_incomplete_copy = 1;
 			break;
 		case 'l':
 			opt.long_format = 1;
+			break;
+		case 'm':
+			opt.max_ncopy = atoi(optarg);
 			break;
 		case 'o':
 			opt.print_dead_copy = 1;
@@ -275,7 +314,6 @@ main(int argc, char **argv)
 			e_save = e;
 		free(pi);
 	}
-	gfs_glob_free(&types);
 	gfarm_stringlist_free_deeply(&paths);
 
 	e = gfarm_terminate();

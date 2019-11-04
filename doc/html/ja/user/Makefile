@@ -12,7 +12,8 @@ HTML =	\
 	index.html \
 	samba-gfarmfs.html \
 	smboverssh.html \
-	redundancy-tutorial.html
+	redundancy-tutorial.html \
+	cipher-comparison.html
 #	export-gfarm.html
 #	nfs-gfarmfs.html
 #	samba-hook.html

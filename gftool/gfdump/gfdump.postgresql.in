@@ -199,7 +199,7 @@ postgresql)
 		PGPASSWORD=$BACKEND_USER_PASSWD
 		OPT_F=
 		[ "X$DUMPF" != X- ] && OPT_F="-f $DUMPF"
-		$pg_dump -x -O -h $BACKEND_HOST -p $BACKEND_PORT -U $BACKEND_USER $OPT_F $DB_NAME ||
+		$pg_dump -x -O -U $BACKEND_USER $OPT_F $DB_NAME ||
 			ABORT "pg_dump fails"
 		status=0
 		;;
@@ -208,16 +208,16 @@ postgresql)
 			ABORT "$DUMPF: database dump file not exist"
 		$STOP_GFMD && service_ctl gfmd stop
 		PGPASSWORD=$BACKEND_ADMIN_PASSWD
-		$dropdb -p $BACKEND_PORT -U $BACKEND_ADMIN_USER $DB_NAME ||
+		$dropdb -U $BACKEND_ADMIN_USER $DB_NAME ||
 			ABORT "dropdb fails"
-		$createdb -p $BACKEND_PORT -U $BACKEND_ADMIN_USER $DB_NAME ||
+		$createdb -U $BACKEND_ADMIN_USER $DB_NAME ||
 			ABORT "createdb fails"
-		$psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME -f $DUMPF > /dev/null ||
+		$psql -U $BACKEND_ADMIN_USER -d $DB_NAME -f $DUMPF > /dev/null ||
 			ABORT "restore fails"
 
 		# Get a list of tables in the database using '\dt' command
 		# of 'psql'.
-		env LC_ALL=C $psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME -A -F/ -c '\dt' | grep / > $tablelist ||
+		env LC_ALL=C $psql -U $BACKEND_ADMIN_USER -d $DB_NAME -A -F/ -c '\dt' | grep / > $tablelist ||
 			ABORT "getting tablenames fails"
 
 		# Check the output layout of the '\dt' command.
@@ -228,7 +228,7 @@ postgresql)
 		# Grant permissions on tables listed by '\dt'.
 		sed -e 1d $tablelist \
 		| awk -F/ "{print \"GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE \" \$2 \" TO $BACKEND_USER ;\"}" \
-		| $psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME > /dev/null ||
+		| $psql -U $BACKEND_ADMIN_USER -d $DB_NAME > /dev/null ||
 			ABORT "grant fails"
 		rm -f $tablelist
 

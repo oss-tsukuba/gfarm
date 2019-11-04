@@ -3,16 +3,22 @@
  */
 
 #include <pthread.h>
+#include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+#include <time.h>
 #include <sys/time.h>
+#include <sys/socket.h>
 
-#include <gfarm/gfarm.h>
+#include <gfarm/gflog.h>
+#include <gfarm/gfarm_config.h>
+#include <gfarm/error.h>
+#include <gfarm/gfarm_misc.h>
+#include <gfarm/gfs.h>
 
-#include "queue.h"
 #include "gfutil.h"
+#include "gflog_reduced.h"
 #include "thrsubr.h"
 
 #include "context.h"
@@ -23,39 +29,38 @@
 #include "config.h"
 
 #include "gfmd.h"
-#include "peer_watcher.h"
 #include "peer.h"
-#include "local_peer.h"
 #include "subr.h"
 #include "rpcsubr.h"
 #include "thrpool.h"
 #include "callout.h"
 #include "abstract_host.h"
 #include "host.h"
-#include "mdhost.h"
-#include "netsendq.h"
-#include "netsendq_impl.h"
 #include "inode.h"
 #include "dead_file_copy.h"
-#include "file_replication.h"
-#include "gfmd_channel.h"
-#include "relay.h"
-#include "thrstatewait.h"
 
 #include "back_channel.h"
 
+static struct thread_pool *back_channel_send_thread_pool;
+static struct thread_pool *proto_status_send_thread_pool;
+
 static struct peer_watcher *back_channel_recv_watcher;
+
+/* SF.net #429: use short timeout, to make GFS_PROTO_STATUS success */
+#define GFS_PROTO_REPLICATION_REQUEST_TIMEOUT	1000000  /*  1.0 sec. */
+#define GFS_PROTO_FHREMOVE_TIMEOUT		100000   /*  0.1 sec. */
 
 /*
  * responsibility to call host_disconnect_request():
  *
  * back_channel_main() is the handler of back_channel_recv_watcher.
  *
- * gfs_client_send_request() (and other leaf functions) is responsible
- * for threads in back_channel_send_manager thread_pool.
+ * gfm_client_channel_send_request() (and other leaf functions) is responsible
+ * for threads in back_channel_send_thread_pool.
  *
- * gfm_async_server_put_reply() should be responsible
- * for threads in back_channel_send_manager thread_pool, too.
+ * gfm_async_server_put_reply() should be responsible for threads in
+ * back_channel_send_thread_pool too, but currently it's not because
+ * it's called by threads for back_channel_recv_watcher. XXX FIXME
  */
 
 static void
@@ -64,18 +69,18 @@ gfs_client_status_disconnect_or_message(struct host *host,
 	const char *condition)
 {
 	if (peer != NULL) { /* to make the race condition harmless */
-		async_server_disconnect_request(
+		gfm_server_channel_disconnect_request(
 		    host_to_abstract_host(host), peer,
 		    proto, op, condition);
 	} else {
-		async_server_already_disconnected_message(
+		gfm_server_channel_already_disconnected_message(
 		    host_to_abstract_host(host),
 		    proto, op, condition);
 	}
 }
 
 /* host_receiver_lock() must be already called here by back_channel_main() */
-gfarm_error_t
+static gfarm_error_t
 gfm_async_server_get_request(struct peer *peer, size_t size,
 	const char *diag, const char *format, ...)
 {
@@ -83,83 +88,30 @@ gfm_async_server_get_request(struct peer *peer, size_t size,
 	va_list ap;
 
 	va_start(ap, format);
-	e = async_server_vget_request(peer, size, diag, format, &ap);
+	e = gfm_server_channel_vget_request(peer, size, diag, format, &ap);
 	va_end(ap);
 
 	return (e);
 }
 
-gfarm_error_t
+static gfarm_error_t
 gfm_async_server_put_reply(struct host *host,
-	struct peer *peer0, gfp_xdr_xid_t xid,
+	struct peer *peer, gfp_xdr_xid_t xid,
 	const char *diag, gfarm_error_t errcode, char *format, ...)
 {
 	gfarm_error_t e;
 	va_list ap;
-	struct peer *peer;
-
-	if (peer0 == NULL)
-		peer = host_get_peer(host);  /* increment refcount */
-	else
-		peer = peer0;
 
 	va_start(ap, format);
-	if (peer == NULL || peer_get_parent(peer) == NULL) {
-		e = async_server_vput_reply(host_to_abstract_host(host),
-		    peer, xid, diag, errcode, format, &ap);
-	} else {
-		e = gfmdc_server_vput_remote_gfs_rpc_reply(
-		    host_to_abstract_host(host), peer, xid, diag, errcode,
-		    format, &ap);
-	}
+	e = gfm_server_channel_vput_reply(
+	    host_to_abstract_host(host), peer, xid, diag,
+	    errcode, format, &ap);
 	va_end(ap);
-
-	if (peer0 == NULL)
-		host_put_peer(host, peer);  /* decrement refcount */
 
 	return (e);
 }
 
-gfarm_error_t
-gfs_client_send_request(struct host *host,
-	struct peer *peer0, const char *diag,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *),
-	void *closure,
-	gfarm_int32_t command, const char *format, ...)
-{
-	gfarm_error_t e;
-	va_list ap;
-	struct peer *peer;
-
-	if (peer0 == NULL)
-		peer = host_get_peer(host);  /* increment refcount */
-	else
-		peer = peer0;
-
-	va_start(ap, format);
-	if (peer == NULL || peer_get_parent(peer) == NULL) {
-		e = async_client_vsend_request(
-		    host_to_abstract_host(host), peer, diag,
-			result_callback, disconnect_callback, closure,
-#ifdef COMPAT_GFARM_2_3
-			host_set_callback,
-#endif
-			command, format, &ap);
-	} else {
-		e = gfmdc_master_client_remote_gfs_rpc(
-		    host_to_abstract_host(host), peer, diag, result_callback,
-		    disconnect_callback, closure, command, format, &ap);
-	}
-	va_end(ap);
-
-	if (peer0 == NULL)
-		host_put_peer(host, peer);  /* decrement refcount */
-
-	return (e);
-}
-
-gfarm_error_t
+static gfarm_error_t
 gfs_client_recv_result_and_error(struct peer *peer, struct host *host,
 	size_t size, gfarm_error_t *errcodep,
 	const char *diag, const char *format, ...)
@@ -168,14 +120,14 @@ gfs_client_recv_result_and_error(struct peer *peer, struct host *host,
 	va_list ap;
 
 	va_start(ap, format);
-	e = async_client_vrecv_result(
+	e = gfm_client_channel_vrecv_result(
 	    peer, host_to_abstract_host(host), size, diag,
 	    &format, errcodep, &ap);
 	va_end(ap);
 	return (e);
 }
 
-gfarm_error_t
+static gfarm_error_t
 gfs_client_recv_result(struct peer *peer, struct host *host,
        size_t size, const char *diag, const char *format, ...)
 {
@@ -183,7 +135,7 @@ gfs_client_recv_result(struct peer *peer, struct host *host,
 	va_list ap;
 
 	va_start(ap, format);
-	e = async_client_vrecv_result(
+	e = gfm_client_channel_vrecv_result(
 	    peer, host_to_abstract_host(host), size, diag,
 	    &format, &errcode, &ap);
 	va_end(ap);
@@ -197,17 +149,12 @@ gfs_client_recv_result(struct peer *peer, struct host *host,
 	return (errcode);
 }
 
-struct gfs_client_status_entry {
-	struct netsendq_entry qentry; /* must be first member */
-};
-
 static gfarm_int32_t
 gfs_client_status_result(void *p, void *arg, size_t size)
 {
 	gfarm_error_t e;
 	struct peer *peer = p;
-	struct gfs_client_status_entry *qe = arg;
-	struct host *host = abstract_host_to_host(qe->qentry.abhost);
+	struct host *host = arg;
 	struct host_status st;
 	static const char diag[] = "GFS_PROTO_STATUS";
 
@@ -215,9 +162,6 @@ gfs_client_status_result(void *p, void *arg, size_t size)
 	    size, diag, "fffll",
 	    &st.loadavg_1min, &st.loadavg_5min, &st.loadavg_15min,
 	    &st.disk_used, &st.disk_avail);
-	netsendq_remove_entry(abstract_host_get_sendq(qe->qentry.abhost),
-	    &qe->qentry, e);
-
 	if (e == GFARM_ERR_NO_ERROR) {
 		host_status_update(host, &st);
 	} else {
@@ -232,39 +176,68 @@ gfs_client_status_result(void *p, void *arg, size_t size)
 static void
 gfs_client_status_free(void *p, void *arg)
 {
+#if 0
 	struct peer *peer = p;
-	struct gfs_client_status_entry *qe = arg;
-	struct host *host = abstract_host_to_host(qe->qentry.abhost);
-	static const char diag[] = "GFS_PROTO_STATUS";
-
-	gfs_client_status_disconnect_or_message(host, peer,
-	    diag, "connection aborted", gfarm_error_string(qe->qentry.result));
-	netsendq_remove_entry(abstract_host_get_sendq(qe->qentry.abhost),
-	    &qe->qentry, GFARM_ERR_CONNECTION_ABORTED);
+	struct host *host = arg;
+#endif
 }
 
+static gfarm_error_t
+gfs_client_send_request(struct host *host,
+	struct peer *peer0, const char *diag,
+	gfarm_int32_t (*result_callback)(void *, void *, size_t),
+	void (*disconnect_callback)(void *, void *),
+	void *closure, long timeout_microsec,
+	gfarm_int32_t command, const char *format, ...)
+{
+	gfarm_error_t e;
+	va_list ap;
+
+	va_start(ap, format);
+	e = gfm_client_channel_vsend_request(
+	    host_to_abstract_host(host), peer0, diag,
+	    result_callback, disconnect_callback, closure,
+#ifdef COMPAT_GFARM_2_3
+	    host_set_callback,
+#endif
+	    timeout_microsec, command, format, &ap);
+	va_end(ap);
+	return (e);
+}
+
+/* this function is called via callout */
 static void *
 gfs_client_status_request(void *arg)
 {
 	gfarm_error_t e;
-	struct gfs_client_status_entry *qe = arg;
-	struct host *host = abstract_host_to_host(qe->qentry.abhost);
+	struct host *host = arg;
 	struct peer *peer = host_get_peer(host); /* increment refcount */
 	static const char diag[] = "GFS_PROTO_STATUS";
 
-	e = gfs_client_send_request(host, peer, diag,
-	    gfs_client_status_result, gfs_client_status_free, qe,
-	    GFS_PROTO_STATUS, "");
-	netsendq_entry_was_sent(abstract_host_get_sendq(qe->qentry.abhost),
-	    &qe->qentry);
+	if (host_status_reply_is_waiting(host)) {
+		gfs_client_status_disconnect_or_message(host, peer,
+		    diag, "request", "no status");
+		host_put_peer(host, peer); /* decrement refcount */
+		return (NULL);
+	}
 
+	/*
+	 * schedule here instead of the end of gfs_client_status_result(),
+	 * because gfs_client_send_request() may block, and we should
+	 * detect it at next call of gfs_client_status_request().
+	 */
+	callout_schedule(host_status_callout(host),
+	    gfarm_metadb_heartbeat_interval * 1000000);
+
+	host_status_reply_waiting_set(host);
+	e = gfs_client_send_request(host, NULL, diag,
+	    gfs_client_status_result, gfs_client_status_free, host,
+	    GFM_CLIENT_CHANNEL_TIMEOUT_INFINITY, GFS_PROTO_STATUS, "");
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_1001986,
+		host_status_reply_waiting_reset(host);
+		gflog_error(GFARM_MSG_1001986,
 		    "gfs_client_status_request: %s",
 		    gfarm_error_string(e));
-		/* accessing `qe' is only allowed if e != GFARM_ERR_NO_ERROR */
-		qe->qentry.result = e;
-		gfs_client_status_free(peer, qe);
 	}
 
 	host_put_peer(host, peer); /* decrement refcount */
@@ -273,188 +246,408 @@ gfs_client_status_request(void *arg)
 	return (NULL);
 }
 
-static void
-gfs_client_status_finalize(struct netsendq_entry *qentryp)
+static gfarm_int32_t
+gfs_client_fhremove_result(void *p, void *arg, size_t size)
 {
-	netsendq_entry_destroy(qentryp);
-	free(qentryp);
-}
-
-struct netsendq_type gfs_proto_status_queue = {
-	gfs_client_status_request,
-	gfs_client_status_finalize,
-	1,
-	NETSENDQ_FLAG_PRIOR_ONE_SHOT,
-	NETSENDQ_TYPE_GFS_PROTO_STATUS
-};
-
-static void
-gfs_client_status_schedule(struct host *host, int first_attempt)
-{
+	struct peer *peer = p;
+	struct dead_file_copy *dfc = arg;
+	struct host *host = dead_file_copy_get_host(dfc);
 	gfarm_error_t e;
-	struct gfs_client_status_entry *qe;
-	enum { stop_callout, do_next, do_retry } callout_next = do_next;
-	const char diag[] = "GFS_PROTO_STATUS";
+	static const char diag[] = "GFS_PROTO_FHREMOVE";
 
-	GFARM_MALLOC(qe);
-	if (qe == NULL) {
-		callout_next = do_retry;
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s: %s: no memory for queue entry",
-		    host_name(host), diag);
-	} else {
-		netsendq_entry_init(&qe->qentry, &gfs_proto_status_queue);
-		qe->qentry.abhost = host_to_abstract_host(host);
-		e = netsendq_add_entry(host_sendq(host), &qe->qentry,
-		    NETSENDQ_ADD_FLAG_DETACH_ERROR_HANDLING);
-		if (e == GFARM_ERR_NO_ERROR) {
-			/* OK */
-		} else if (first_attempt && e == GFARM_ERR_DEVICE_BUSY) {
-			/*
-			 * if this is first attempt just after
-			 * the back channel connection is made,
-			 * it's possible previous callout remains
-			 * with the following scenario:
-			 * 1. gfs_client_status_callout() thread begins to run
-			 * 2. host_unset_peer() calls callout_stop()
-			 * 3. netsendq_host_becomes_down() clears readyq
-			 * 4. the gfs_client_status_callout() thread in 1
-			 *    adds an entry to workq and readyq
-			 */
-			gflog_info(GFARM_MSG_UNFIXED,
-			    "%s: %s queueing conflict", host_name(host), diag);
-		} else {
-			/* increment refcount */
-			struct peer *peer = host_get_peer(host);
-
-			callout_next = stop_callout;
-			gflog_info(GFARM_MSG_UNFIXED,
-			    "%s: %s queueing: %s",
-			    host_name(host), diag, gfarm_error_string(e));
-			/* `qe' is be freed by gfs_client_status_finalize() */
-			if (peer == NULL) {
-				gflog_info(GFARM_MSG_UNFIXED,
-				    "%s: %s: already disconnected",
-				    host_name(host), diag);
-			} else {
-				gfs_client_status_disconnect_or_message(host,
-				    peer, diag, "queueing",
-				    gfarm_error_string(e));
-				 /* decrement refcount */
-				host_put_peer(host, peer);
-			}
-		}
-	}
-	switch (callout_next) {
-	case stop_callout:
-		/* do nothing */
-		break;
-	case do_next:
-		callout_schedule(host_status_callout(host),
-		    gfarm_metadb_heartbeat_interval * 1000000);
-		break;
-	case do_retry:
-		callout_schedule(host_status_callout(host),
-		    gfarm_metadb_heartbeat_interval * 1000000 / 10);
-		break;
-	}
+	e = gfs_client_recv_result(peer, host, size, diag, "");
+	removal_finishedq_enqueue(dfc, e);
+	return (e);
 }
+
+/* both giant_lock and peer_table_lock are held before calling this function */
+static void
+gfs_client_fhremove_free(void *p, void *arg)
+{
+#if 0
+	struct peer *peer = p;
+#endif
+	struct dead_file_copy *dfc = arg;
+
+	removal_finishedq_enqueue(dfc, GFARM_ERR_CONNECTION_ABORTED);
+}
+
+#define SAME_WARNING_TRIGGER	10	/* check reduced mode */
+#define SAME_WARNING_THRESHOLD	30	/* more than this -> reduced mode */
+#define SAME_WARNING_DURATION	600	/* seconds to measure the limit */
+#define	SAME_WARNING_INTERVAL	60	/* seconds: interval of reduced log */
+
+struct gflog_reduced_state busy_state = GFLOG_REDUCED_STATE_INITIALIZER(
+	SAME_WARNING_TRIGGER,
+	SAME_WARNING_THRESHOLD,
+	SAME_WARNING_DURATION,
+	SAME_WARNING_INTERVAL);
 
 static void *
-gfs_client_status_callout(void *arg)
+gfs_client_fhremove_request(void *closure)
 {
-	gfs_client_status_schedule(arg, 0);
+	struct dead_file_copy *dfc = closure;
+	gfarm_ino_t ino = dead_file_copy_get_ino(dfc);
+	gfarm_int64_t gen = dead_file_copy_get_gen(dfc);
+	struct host *host = dead_file_copy_get_host(dfc);
+	gfarm_error_t e;
+	static const char diag[] = "GFS_PROTO_FHREMOVE";
+
+	e = gfs_client_send_request(host, NULL, diag,
+	    gfs_client_fhremove_result, gfs_client_fhremove_free, dfc,
+	    GFS_PROTO_FHREMOVE_TIMEOUT, GFS_PROTO_FHREMOVE, "ll", ino, gen);
+	if (e == GFARM_ERR_NO_ERROR) {
+		return (NULL);
+	} else if (e == GFARM_ERR_DEVICE_BUSY) {
+		gflog_reduced_info(GFARM_MSG_1002284, &busy_state,
+		    "%s(%lld, %lld, %s): "
+		    "busy, waiting for some time", diag,
+		    (long long)dead_file_copy_get_ino(dfc),
+		    (long long)dead_file_copy_get_gen(dfc),
+		    host_name(dead_file_copy_get_host(dfc)));
+		host_busyq_enqueue(dfc);
+	} else {
+		removal_finishedq_enqueue(dfc, e);
+	}
+
+	/* this return value won't be used, because this thread is detached */
 	return (NULL);
 }
 
-#ifdef not_def_REPLY_QUEUE
-
-struct gfm_async_server_reply_to_gfsd_entry {
-	struct netsendq_entry qentry; /* must be first member */
-
-	struct peer *peer;
-	gfp_xdr_xid_t xid;
-	gfarm_int32_t errcode;
-	const char *diag;
-};
-
 static void *
-gfm_async_server_reply_to_gfsd(void *arg)
+remover(void *closure)
 {
-	gfarm_error_t e;
-	struct gfm_async_server_reply_to_gfsd_entry *qe = arg;
-	struct host *host = abstract_host_to_host(qe->qentry.abhost);
-	struct netsendq *qhost = abstract_host_get_sendq(qe->qentry.abhost);
-	const char *diag = qe->diag;
+	struct dead_file_copy *dfc;
 
-	e = gfm_async_server_put_reply(host, qe->peer, qe->xid, diag,
-	    qe->errcode, "");
-	netsendq_entry_was_sent(qhost, &qe->qentry);
-	netsendq_remove_entry(qhost, &qe->qentry, e);
+	for (;;) {
+		dfc = removal_pendingq_dequeue();
+		if (host_is_up(dead_file_copy_get_host(dfc)))
+			thrpool_add_job(back_channel_send_thread_pool,
+			    gfs_client_fhremove_request, dfc);
+		else /* make this dfcstate_deferred */
+			removal_finishedq_enqueue(dfc,
+			    GFARM_ERR_NO_ROUTE_TO_HOST);
+	}
 
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
-		    "%s: %s reply: %s",
-		    host_name(host), diag, gfarm_error_string(e));
+	/*NOTREACHED*/
 	return (NULL);
 }
-
-static void
-gfm_async_server_reply_to_gfsd_finalize(struct netsendq_entry *qentryp)
-{
-	netsendq_entry_destroy(qentryp);
-	free(qentryp);
-}
-
-struct netsendq_type gfm_async_server_reply_to_gfsd_queue = {
-	gfm_async_server_reply_to_gfsd,
-	gfm_async_server_reply_to_gfsd_finalize,
-	0 /* will be initialized by gfm_proto_reply_to_gfsd_window */,
-	0,
-	NETSENDQ_TYPE_GFM_PROTO_REPLY_TO_GFSD
-};
-
-/* FIXME: should support return values other than gfarm_error_t too */
-void
-gfm_async_server_reply_to_gfsd_schedule(struct host *host,
-	struct peer *peer, gfp_xdr_xid_t xid,
-	gfarm_error_t errcode, int flags, const char *diag)
-{
-	gfarm_error_t e;
-	struct gfm_async_server_reply_to_gfsd_entry *qe;
-
-	GFARM_MALLOC(qe);
-	if (qe == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s: %s: no memory for queue entry",
-		    host_name(host), diag);
-	} else {
-		netsendq_entry_init(&qe->qentry,
-		    &gfm_async_server_reply_to_gfsd_queue);
-		qe->qentry.abhost = host_to_abstract_host(host);
-		qe->peer = peer;
-		qe->xid = xid;
-		qe->errcode = errcode;
-		qe->diag = diag;
-		e = netsendq_add_entry(host_sendq(host), &qe->qentry, flags);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_info(GFARM_MSG_UNFIXED,
-			    "%s: %s queueing: %s",
-			    host_name(host), diag, gfarm_error_string(e));
-			if ((flags & NETSENDQ_ADD_FLAG_DETACH_ERROR_HANDLING)
-			    == 0)
-				free(qe);
-		}
-	}
-}
-
-#endif /* not_def_REPLY_QUEUE */
 
 /*
- * Back channel protocol switch for master gfmd.
+ * GFS_PROTO_REPLICATION_REQUEST didn't exist before gfarm-2.4.0
+ */
+static gfarm_int32_t
+gfs_client_replication_request_result(void *p, void *arg, size_t size)
+{
+	struct peer *peer = p;
+	struct file_replicating *fr = arg;
+	gfarm_int64_t handle;
+	struct host *dst;
+	gfarm_ino_t ino;
+	gfarm_int64_t gen;
+	gfarm_error_t e, errcode, e2;
+	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST result";
+
+	/* XXX FIXME, src_err and dst_err should be passed separately */
+	e = gfs_client_recv_result_and_error(peer, fr->dst, size, &errcode,
+	    diag, "l", &handle);
+	/* XXX FIXME: deadlock */
+	giant_lock();
+	if (e == GFARM_ERR_NO_ERROR && errcode == GFARM_ERR_NO_ERROR)
+		file_replicating_set_handle(fr, handle);
+	else {
+		dst = fr->dst;
+		ino = inode_get_number(fr->inode);
+		gen = fr->igen;
+		if (e != GFARM_ERR_NO_ERROR)
+			e2 = peer_replicated(peer, dst, ino, gen,
+			    GFS_PROTO_REPLICATION_HANDLE_INVALID,
+			    GFARM_ERR_NO_ERROR, e, -1,
+			    0, NULL, 0, NULL, 0);
+		else if (IS_CONNECTION_ERROR(errcode))
+			e2 = peer_replicated(peer, dst, ino, gen,
+			    GFS_PROTO_REPLICATION_HANDLE_INVALID,
+			    errcode, GFARM_ERR_NO_ERROR, -1,
+			    0, NULL, 0, NULL, 0);
+		else
+			e2 = peer_replicated(peer, dst, ino, gen,
+			    GFS_PROTO_REPLICATION_HANDLE_INVALID,
+			    GFARM_ERR_NO_ERROR, errcode, -1,
+			    0, NULL, 0, NULL, 0);
+		gflog_debug(GFARM_MSG_1002359,
+		    "%s: (%s, %lld:%lld): aborted: %s - (%s, %s)",
+		    diag, host_name(dst), (long long)ino, (long long)gen,
+		    gfarm_error_string(errcode),
+		    gfarm_error_string(e), gfarm_error_string(e2));
+	}
+	giant_unlock();
+	return (e);
+}
+
+/*
+ * GFS_PROTO_REPLICATION_CKSUM_REQUEST didn't exist before gfarm-2.6.0
+ */
+static gfarm_int32_t
+gfs_client_replication_cksum_request_result(void *p, void *arg, size_t size)
+{
+	struct peer *peer = p;
+	struct file_replicating *fr = arg;
+	gfarm_int64_t handle = GFS_PROTO_REPLICATION_HANDLE_INVALID;
+	struct host *dst;
+	gfarm_ino_t ino;
+	gfarm_int64_t gen;
+	gfarm_error_t e, e2;
+	gfarm_int32_t src_errcode = GFARM_ERR_NO_ERROR;
+	gfarm_int32_t dst_errcode = GFARM_ERR_NO_ERROR;
+	static const char diag[] =
+	    "GFS_PROTO_REPLICATION_CKSUM_REQUEST result";
+
+	e = gfs_client_recv_result_and_error(peer, fr->dst, size, &dst_errcode,
+	    diag, "li", &handle, &src_errcode);
+	/* XXX FIXME: deadlock */
+	giant_lock();
+	if (e == GFARM_ERR_NO_ERROR && dst_errcode == GFARM_ERR_NO_ERROR)
+		file_replicating_set_handle(fr, handle);
+	if (e != GFARM_ERR_NO_ERROR ||
+	    dst_errcode != GFARM_ERR_NO_ERROR ||
+	    src_errcode != GFARM_ERR_NO_ERROR) {
+		dst = fr->dst;
+		ino = inode_get_number(fr->inode);
+		gen = fr->igen;
+		if (e != GFARM_ERR_NO_ERROR) {
+			dst_errcode = e;
+			src_errcode = GFARM_ERR_NO_ERROR;
+		}
+		e2 = peer_replicated(peer, dst, ino, gen,
+		    handle, src_errcode, dst_errcode, -1,
+		    1, NULL, 0, NULL, 0);
+		gflog_debug(GFARM_MSG_1004036,
+		    "%s: (%s, %lld:%lld): aborted: %s/%s - (%s, %s)",
+		    diag, host_name(dst), (long long)ino, (long long)gen,
+		    gfarm_error_string(src_errcode),
+		    gfarm_error_string(dst_errcode),
+		    gfarm_error_string(e), gfarm_error_string(e2));
+	}
+	giant_unlock();
+	return (e);
+}
+
+/* both giant_lock and peer_table_lock are held before calling this function */
+static void
+gfs_client_replication_request_free(void *p, void *arg)
+{
+	struct peer *peer = p;
+	struct file_replicating *fr = arg;
+	struct host *dst = fr->dst;
+	gfarm_ino_t ino = inode_get_number(fr->inode);
+	gfarm_int64_t gen = fr->igen;
+	gfarm_error_t e;
+	int cksum_protocol =
+	    (file_replicating_get_cksum_request_flags(fr) &
+	     GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED) != 0;
+	const char *diag = cksum_protocol ?
+	    "GFS_PROTO_REPLICATION_CKSUM_REQUEST free" :
+	    "GFS_PROTO_REPLICATION_REQUEST free";
+
+	e = peer_replicated(peer, dst, ino, gen,
+	    GFS_PROTO_REPLICATION_HANDLE_INVALID,
+	    GFARM_ERR_NO_ERROR, GFARM_ERR_CONNECTION_ABORTED, -1,
+	    cksum_protocol, NULL, 0, NULL, 0);
+	gflog_debug(GFARM_MSG_1002360,
+	    "%s: (%s, %lld:%lld): connection aborted: %s",
+	    diag, host_name(dst), (long long)ino, (long long)gen,
+	    gfarm_error_string(e));
+}
+
+struct gfs_client_replication_request_arg {
+	char *srchost;
+	int srcport;
+	struct host *dst;
+	gfarm_ino_t ino;
+	gfarm_int64_t gen;
+
+	struct file_replicating *fr;
+
+	/* only used by GFS_PROTO_REPLICATION_CKSUM_REQUEST */
+	gfarm_int64_t filesize;
+	char *cksum_type;
+	size_t cksum_len;
+	char *cksum;
+	gfarm_int32_t cksum_request_flags;
+};
+
+static void *
+gfs_client_replication_request_request(void *closure)
+{
+	struct gfs_client_replication_request_arg *arg = closure;
+	struct peer *peer = file_replicating_get_peer(arg->fr);
+	gfarm_error_t e, e2;
+	int cksum_protocol = (arg->cksum_request_flags &
+	    GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED) != 0;
+	const char *diag = cksum_protocol ?
+	    "GFS_PROTO_REPLICATION_CKSUM_REQUEST request" :
+	    "GFS_PROTO_REPLICATION_REQUEST request";
+
+	if (cksum_protocol) {
+		e = gfs_client_send_request(arg->dst, peer, diag,
+		    gfs_client_replication_cksum_request_result,
+		    gfs_client_replication_request_free, arg->fr,
+		    GFS_PROTO_REPLICATION_REQUEST_TIMEOUT,
+		    GFS_PROTO_REPLICATION_CKSUM_REQUEST, "silllsbi",
+		    arg->srchost, arg->srcport, arg->ino, arg->gen,
+		    arg->filesize, arg->cksum_type, arg->cksum_len, arg->cksum,
+		    arg->cksum_request_flags &
+		    ~GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_MASK);
+		free(arg->cksum_type);
+		free(arg->cksum);
+	} else {
+		e = gfs_client_send_request(arg->dst, peer, diag,
+		    gfs_client_replication_request_result,
+		    gfs_client_replication_request_free, arg->fr,
+		    GFS_PROTO_REPLICATION_REQUEST_TIMEOUT,
+		    GFS_PROTO_REPLICATION_REQUEST, "sill",
+		    arg->srchost, arg->srcport, arg->ino, arg->gen);
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		giant_lock(); /* XXX FIXME: deadlock */
+		e2 = peer_replicated(peer, arg->dst, arg->ino, arg->gen,
+		    GFS_PROTO_REPLICATION_HANDLE_INVALID,
+		    GFARM_ERR_NO_ERROR, e, -1,
+		    cksum_protocol, NULL, 0, NULL, 0);
+		giant_unlock();
+		gflog_debug(GFARM_MSG_1002361,
+		    "%s: %s->(%s, %lld:%lld): aborted: %s (%s)", diag,
+		    arg->srchost, host_name(arg->dst),
+		    (long long)arg->ino, (long long)arg->gen,
+		    gfarm_error_string(e), gfarm_error_string(e2));
+	}
+	free(arg);
+
+	/* this return value won't be used, because this thread is detached */
+	return (NULL);
+}
+
+gfarm_error_t
+async_back_channel_replication_cksum_request(char *srchost, int srcport,
+	struct host *dst, gfarm_ino_t ino, gfarm_int64_t gen,
+	gfarm_int64_t filesize,
+	char *cksum_type, size_t cksum_len, char *cksum,
+	gfarm_int32_t cksum_request_flags,
+	struct file_replicating *fr)
+{
+	struct gfs_client_replication_request_arg *arg;
+
+	/* XXX FIXME: check host_is_up(dst) */
+
+	GFARM_MALLOC(arg);
+	if (arg == NULL) {
+		gflog_error(GFARM_MSG_1001988,
+		    "async_back_channel_replication_request: no memory");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	arg->srchost = srchost;
+	arg->srcport = srcport;
+	arg->dst = dst;
+	arg->ino = ino;
+	arg->gen = gen;
+	arg->fr = fr;
+	arg->filesize = filesize;
+	arg->cksum_type = cksum_type;
+	arg->cksum_len = cksum_len;
+	arg->cksum = cksum;
+	arg->cksum_request_flags = cksum_request_flags;
+	assert(
+	    (cksum_type != NULL &&
+	     (cksum_request_flags &
+	      GFS_PROTO_REPLICATION_CKSUM_REQFLAG_INTERNAL_ENABLED) != 0) ||
+	    (cksum_type == NULL &&
+	     cksum_len == 0 && cksum == NULL && cksum_request_flags == 0));
+	thrpool_add_job(back_channel_send_thread_pool,
+	    gfs_client_replication_request_request, arg);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+async_back_channel_replication_request(char *srchost, int srcport,
+	struct host *dst, gfarm_ino_t ino, gfarm_int64_t gen,
+	struct file_replicating *fr)
+{
+	return (async_back_channel_replication_cksum_request(srchost, srcport,
+	    dst, ino, gen, -1, NULL, 0, NULL, 0, fr));
+}
+
+/*
+ * SLEEPS: shoundn't
+ *	but gfm_async_server_put_reply is calling peer_sender_lock() XXX FIXME
  */
 static gfarm_error_t
-async_back_channel_protocol_switch_master(struct abstract_host *h,
+gfm_async_server_replication_result(struct host *host,
+	struct peer *peer, gfp_xdr_xid_t xid, size_t size, int cksum_protocol)
+{
+	gfarm_error_t e, e2;
+	gfarm_int32_t src_errcode, dst_errcode;
+	gfarm_ino_t ino;
+	gfarm_int64_t gen;
+	gfarm_int64_t handle;
+	gfarm_int64_t trace_seq_num; /* for gfarm_file_trace */
+	gfarm_off_t filesize;
+	char *cksum_type = NULL;
+	size_t cksum_len = 0;
+	char cksum[GFM_PROTO_CKSUM_MAXLEN];
+	gfarm_int32_t cksum_result_flags = 0;
+	const char *diag = cksum_protocol ?
+	    "GFM_PROTO_REPLICATION_CKSUM_RESULT" :
+	    "GFM_PROTO_REPLICATION_RESULT";
+
+	/*
+	 * The reason why these protocols return not only handle
+	 * but also ino and gen is because it's possible that
+	 * this request may arrive in the peer layer earlier
+	 * than the result of GFS_PROTO_REPLICATION_REQUEST
+	 * due to race condition of gfmd thread scheduling.
+	 */
+	if (cksum_protocol)
+		e = gfm_async_server_get_request(peer, size, diag, "llliilsbi",
+		    &ino, &gen, &handle,
+		    &src_errcode, &dst_errcode, &filesize,
+		    &cksum_type, sizeof(cksum), &cksum_len, cksum,
+		    &cksum_result_flags);
+	else
+		e = gfm_async_server_get_request(peer, size, diag, "llliil",
+		    &ino, &gen, &handle,
+		    &src_errcode, &dst_errcode, &filesize);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	giant_lock(); /* XXX FIXME: deadlock */
+	e = peer_replicated(peer, host, ino, gen, handle,
+	    src_errcode, dst_errcode, filesize,
+	    cksum_protocol, cksum_type, cksum_len, cksum, cksum_result_flags);
+	free(cksum_type);
+	trace_seq_num = trace_log_get_sequence_number(),
+	giant_unlock();
+
+	/*
+	 * XXX FIXME
+	 * There is a slight possibility of deadlock in the following call,
+	 * because currently this is called in the context
+	 * of threads for back_channel_recv_watcher,
+	 * although it unlikely blocks, since this is a reply.
+	 */
+	e2 = gfm_async_server_put_reply(host, peer, xid, diag, e, "");
+
+	if (gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR)
+		gflog_trace(GFARM_MSG_1003320,
+		    "%lld/////REPLICATE/%s/%d/%s/%lld/%lld///////",
+		    (long long int)trace_seq_num,
+		    gfarm_host_get_self_name(), gfmd_port,
+		    host_name(host), (long long int)ino, (long long int)gen);
+
+	return (e2);
+}
+
+static gfarm_error_t
+async_back_channel_protocol_switch(struct abstract_host *h,
 	struct peer *peer, int request, gfp_xdr_xid_t xid, size_t size,
 	int *unknown_request)
 {
@@ -463,198 +656,18 @@ async_back_channel_protocol_switch_master(struct abstract_host *h,
 
 	switch (request) {
 	case GFM_PROTO_REPLICATION_RESULT:
-		e = gfm_async_server_replication_result(host, peer, xid, size);
+		e = gfm_async_server_replication_result(host, peer, xid,
+		    size, 0);
+		break;
+	case GFM_PROTO_REPLICATION_CKSUM_RESULT:
+		e = gfm_async_server_replication_result(host, peer, xid,
+		    size, 1);
 		break;
 	default:
 		*unknown_request = 1;
 		e = GFARM_ERR_PROTOCOL;
 		break;
 	}
-	return (e);
-}
-
-/*
- * Closure for async_back_channel_protocol_switch_slave().
- */
-struct protocol_switch_slave_closure {
-	struct abstract_host *abhost;
-	gfarm_int64_t private_peer_id;
-	gfp_xdr_xid_t xid;
-	size_t size;
-	void *data;
-};
-
-/*
- * Create an object of 'struct protocol_switch_slave_closure'.
- */
-static struct protocol_switch_slave_closure *
-protocol_switch_slave_closure_alloc(struct abstract_host *abhost,
-	gfarm_int64_t private_peer_id, gfp_xdr_xid_t xid, size_t size,
-	void *data)
-{
-	static struct protocol_switch_slave_closure *closure;
-
-	GFARM_MALLOC(closure);
-	if (closure == NULL)
-		return (NULL);
-	closure->abhost          = abhost;
-	closure->private_peer_id = private_peer_id;
-	closure->xid             = xid;
-	closure->size            = size;
-	closure->data            = malloc(size);
-	if (closure->data == NULL) {
-		free(closure);
-		return (NULL);
-	}
-	if (data != NULL)
-		memcpy(closure->data, data, size);
-
-	return (closure);
-}
-
-/*
- * Dispose an object of 'struct protocol_switch_slave_closure'.
- */
-static void
-protocol_switch_slave_closure_free(
-	struct protocol_switch_slave_closure *closure)
-{
-	free(closure->data);
-	free(closure);
-}
-
-/*
- * 'result_callback' handler for
- * async_back_channel_protocol_switch_slave().
- */
-static gfarm_error_t
-async_back_channel_protocol_switch_slave_result(gfarm_error_t errcode,
-    void *arg, size_t size, void *data)
-{
-	gfarm_error_t e = errcode;
-	struct peer *peer;
-	struct protocol_switch_slave_closure *closure = arg;
-	static const char diag[] =
-	    "GFM_PROTO_REMOTE_GFS_RPC slave (relay reply to gfsd)";
-
-	/* increment refcount */
-	peer = abstract_host_get_peer_with_id(closure->abhost,
-	    closure->private_peer_id, diag);
-	if (peer == NULL) {
-		if (e == GFARM_ERR_NO_ERROR)
-			e = GFARM_ERR_CONNECTION_ABORTED;
-	} else if (errcode == GFARM_ERR_NO_ERROR) {
-		e = async_server_put_reply(closure->abhost, peer,
-		    closure->xid, diag, errcode, "r", size, data);
-	} else {
-		(void) async_server_put_reply(closure->abhost, peer,
-		    closure->xid, diag, errcode, "");
-		e = errcode;
-	}
-
-	/* decrement refcount */
-	if (peer != NULL)
-		abstract_host_put_peer(closure->abhost, peer);
-	protocol_switch_slave_closure_free(closure);
-	return (e);
-}
-
-/*
- * 'disconnect_callback' handler for
- * async_back_channel_protocol_switch_slave().
- */
-static void
-async_back_channel_protocol_switch_slave_disconnect(gfarm_error_t errcode,
-	void *arg)
-{
-	(void) async_back_channel_protocol_switch_slave_result(errcode, arg,
-	    0, "");
-}
-
-/*
- * Back channel protocol switch for slave gfmd.  It forwards a GFS protocol
- * request from gfsd it a master gmfd and relays its reply in the opposite
- * direction.
- */
-static gfarm_error_t
-async_back_channel_protocol_switch_slave(struct abstract_host *h,
-	struct peer *peer, int request, gfp_xdr_xid_t xid, size_t size,
-	int *unknown_request)
-{
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	struct host *host = abstract_host_to_host(h);
-	struct gfp_xdr *conn = peer_get_conn(peer);
-	struct protocol_switch_slave_closure *closure = NULL;
-	size_t data_size;
-	int eof;
-	static const char diag[] = "async_back_channel_protocol_switch_slave";
-
-	if (debug_mode)
-		gflog_info(GFARM_MSG_UNFIXED,
-		    "%s: <%s> back_channel start receiving request(%d)",
-		    peer_get_hostname(peer), diag, (int)request);
-
-	do {
-		/*
-		 * We dispose 'closure' in
-		 * async_back_channel_protocol_switch_slave_result().
-		 */
-		closure = protocol_switch_slave_closure_alloc(h,
-		    peer_get_private_peer_id(peer), xid, size, NULL);
-		if (closure == NULL) {
-			e = GFARM_ERR_NO_MEMORY;
-			(void) gfp_xdr_purge(conn, 0, size);
-			break;
-		}
-
-		data_size = size;
-		e = gfp_xdr_recv(conn, 1, &eof, "r", data_size, &data_size,
-		    closure->data);
-		if (e != GFARM_ERR_NO_ERROR) {
-			(void) gfp_xdr_purge(conn, 0, size);
-			break;
-		} else if (eof) {
-			e = GFARM_ERR_UNEXPECTED_EOF;
-			break;
-		} else if (data_size != 0) {
-			e = GFARM_ERR_PROTOCOL;
-			gflog_warning(GFARM_MSG_UNFIXED,
-			    "%s: <%s> protocol redidual %u",
-			    peer_get_hostname(peer), diag, (int)data_size);
-		}
-
-		e = gfmdc_slave_client_remote_gfs_rpc(peer, closure,
-		    async_back_channel_protocol_switch_slave_result,
-		    async_back_channel_protocol_switch_slave_disconnect,
-		    request, size, closure->data);
-	} while (0);
-
-	if (e != GFARM_ERR_NO_ERROR) {
-		if (!eof) {
-			(void) gfm_async_server_put_reply(host, peer, xid,
-			    diag, e, "");
-		}
-		if (closure != NULL)
-			protocol_switch_slave_closure_free(closure);
-	}
-	return (e);
-}
-
-gfarm_error_t
-async_back_channel_protocol_switch(struct abstract_host *h,
-	struct peer *peer, int request, gfp_xdr_xid_t xid, size_t size,
-	int *unknown_request)
-{
-	gfarm_error_t e;
-
-	if (mdhost_self_is_master()) {
-		e = async_back_channel_protocol_switch_master(h, peer, request,
-		    xid, size, unknown_request);
-	} else {
-		e = async_back_channel_protocol_switch_slave(h, peer, request,
-		    xid, size, unknown_request);
-	}
-
 	return (e);
 }
 
@@ -700,99 +713,100 @@ sync_back_channel_free(struct abstract_host *h)
 static void *
 back_channel_main(void *arg)
 {
-	struct local_peer *local_peer = arg;
-
-	return (async_server_main(local_peer,
-		async_back_channel_protocol_switch
+	return (gfm_server_channel_main(arg,
+		async_back_channel_protocol_switch,
 #ifdef COMPAT_GFARM_2_3
-		, sync_back_channel_free,
+		sync_back_channel_free,
 		sync_back_channel_service
 #endif
 		));
 }
 
+/* giant_lock is held before calling this function */
+static void
+back_channel_async_peer_free(struct peer *peer, gfp_xdr_async_peer_t async)
+{
+	gfp_xdr_async_peer_free(async, peer);
+}
+
 static gfarm_error_t
-gfm_server_switch_back_channel_common(
-	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
-	int from_client,
-	int version, const char *diag, struct relayed_request *relay)
+gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
+	int is_async, int version, const char *diag)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
 	struct host *host;
 	gfp_xdr_async_peer_t async = NULL;
-	struct local_peer *local_peer = NULL;
-	int is_direct_connection;
-	int i = 0;
 
 #ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
 	host = NULL;
 #endif
-	is_direct_connection = (peer_get_parent(peer) == NULL);
 
 	giant_lock();
-
 	if (from_client) {
 		gflog_debug(GFARM_MSG_1001995,
-		    "Operation not permitted: from_client");
+			"Operation not permitted: from_client");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((host = peer_get_host(peer)) == NULL) {
 		gflog_debug(GFARM_MSG_1001996,
-		    "Operation not permitted: peer_get_host() failed");
+			"Operation not permitted: peer_get_host() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (is_direct_connection &&
+	} else if (is_async ? (
+	    version <  GFS_PROTOCOL_VERSION_V2_4 ||
+	    version >  GFS_PROTOCOL_VERSION_V2_6) :
+	    version != GFS_PROTOCOL_VERSION_V2_3) {
+		e = GFARM_ERR_PROTOCOL_NOT_SUPPORTED;
+		gflog_info(GFARM_MSG_1004037,
+		    "%s: %s@%s: unsupported protocol version %d",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    version);
+	} else if (is_async &&
 	    (e = gfp_xdr_async_peer_new(&async)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002288,
 		    "%s: gfp_xdr_async_peer_new(): %s",
 		    diag, gfarm_error_string(e));
 	}
 	giant_unlock();
-
-	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay,
-	    diag, &e,  "i", &i/*XXX FIXME*/);
+	if (!is_async)
+		e2 = gfm_server_put_reply(peer, diag, e, "");
+	else
+		e2 = gfm_server_put_reply(peer, diag, e, "i", 0 /*XXX FIXME*/);
 	if (e2 != GFARM_ERR_NO_ERROR)
 		return (e2);
+
 	if (debug_mode)
 		gflog_debug(GFARM_MSG_1000404, "gfp_xdr_flush");
 	e2 = gfp_xdr_flush(peer_get_conn(peer));
-	if (e2 != GFARM_ERR_NO_ERROR) {
+	if (e2 != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000405,
 		    "%s: protocol flush: %s",
 		    diag, gfarm_error_string(e2));
-		return (e2);
-	} else if (e != GFARM_ERR_NO_ERROR)
-		return (e2);
+	else if (e == GFARM_ERR_NO_ERROR) {
+		peer_set_async(peer, async);
+		peer_set_watcher(peer, back_channel_recv_watcher);
 
-	if (is_direct_connection) {
-		local_peer = peer_to_local_peer(peer);
-		local_peer_set_async(local_peer, async); /* XXXRELAY */
-		local_peer_set_readable_watcher(local_peer,
-		    back_channel_recv_watcher);
+		if (host_is_up(host)) /* throw away old connetion */ {
+			gflog_warning(GFARM_MSG_1002440,
+			    "back_channel(%s): switching to new connection",
+			    host_name(host));
+			host_disconnect_request(host, NULL);
+		}
+
+		giant_lock();
+		abstract_host_set_peer(host_to_abstract_host(host),
+		    peer, version);
+		giant_unlock();
+
+		(void)gfarm_sockbuf_apply_limit(peer_get_fd(peer),
+		    SO_SNDBUF, gfarm_metadb_server_back_channel_sndbuf_limit,
+		    "metadb_server_back_channel_sndbuf_limit");
+		peer_watch_access(peer);
+		callout_setfunc(host_status_callout(host),
+		    proto_status_send_thread_pool,
+		    gfs_client_status_request, host);
+		thrpool_add_job(
+		    proto_status_send_thread_pool,
+		    gfs_client_status_request, host);
 	}
-
-	if (host_is_up(host)) /* throw away old connetion */ {
-		gflog_warning(GFARM_MSG_1002440,
-		    "back_channel(%s): switching to new connection",
-		    host_name(host));
-		host_disconnect_request(host, NULL);
-	}
-
-	giant_lock();
-	peer_set_peer_type(peer, peer_type_back_channel);
-	abstract_host_set_peer(host_to_abstract_host(host), peer, version);
-	giant_unlock();
-
-	if (is_direct_connection) {
-		local_peer_watch_readable(local_peer);
-		gfarm_thr_statewait_signal(
-		    local_peer_get_statewait(local_peer), e2, diag);
-	}
-
-	callout_setfunc(host_status_callout(host),
-	    NULL /* or, use back_channel_send_manager thread pool? */,
-	    gfs_client_status_callout, host);
-	gfs_client_status_schedule(host, 1);
-	gflog_info(GFARM_MSG_UNFIXED,
-	    "back_channel(%s): started", host_name(host));
 
 	return (e2);
 }
@@ -800,23 +814,16 @@ gfm_server_switch_back_channel_common(
 #ifdef COMPAT_GFARM_2_3
 
 gfarm_error_t
-gfm_server_switch_back_channel(
-	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
-	int from_client, int skip)
+gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
-	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_SWITCH_BACK_CHANNEL";
 
-	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
-	    GFM_PROTO_SWITCH_BACK_CHANNEL, "");
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	e = gfm_server_switch_back_channel_common(peer, xid, sizep,
-	    from_client, GFS_PROTOCOL_VERSION_V2_3, diag, relay);
+	e = gfm_server_switch_back_channel_common(peer, from_client,
+	    0, GFS_PROTOCOL_VERSION_V2_3, diag);
 
 	return (e);
 }
@@ -824,206 +831,77 @@ gfm_server_switch_back_channel(
 #endif /* defined(COMPAT_GFARM_2_3) */
 
 gfarm_error_t
-gfm_server_switch_async_back_channel(
-	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
-	int from_client, int skip)
+gfm_server_switch_async_back_channel(struct peer *peer, int from_client,
+	int skip)
 {
 	gfarm_error_t e;
 	gfarm_int32_t version;
 	gfarm_int64_t gfsd_cookie;
-	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL";
 
-	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
-	    GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL, "il", &version, &gfsd_cookie);
+	e = gfm_server_get_request(peer, diag, "il", &version, &gfsd_cookie);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	e = gfm_server_switch_back_channel_common(peer, xid, sizep,
-	    from_client, version, diag, relay);
+	e = gfm_server_switch_back_channel_common(peer, from_client,
+	    1, version, diag);
 
 	return (e);
 }
 
-/*
- * Wrapped closure for gfm_server_relay_gfs_rpc().
- */
-struct gfs_client_relay_closure {
-	struct abstract_host *abhost;
-	gfarm_int64_t private_peer_id;
-	size_t size;
-	void *data;
-	void *closure;
-	gfarm_int32_t (*result_callback)(gfarm_error_t, void *, size_t,
-	    void *);
-	void (*disconnect_callback)(gfarm_error_t, void *);
-};
-
-/*
- * Create an object of 'struct gfs_client_relay_closure'.
- */
-static struct gfs_client_relay_closure *
-gfs_client_relay_closure_alloc(struct abstract_host *abhost,
-	gfarm_int64_t private_peer_id, size_t size, void *data, void *closure,
-	gfarm_int32_t (*result_callback)(gfarm_error_t, void *, size_t,
-	    void *),
-	void (*disconnect_callback)(gfarm_error_t, void *))
+struct watcher *
+back_channel_watcher(void)
 {
-	struct gfs_client_relay_closure *wclosure;
-
-	GFARM_MALLOC(wclosure);
-	if (wclosure == NULL)
-		return (NULL);
-	wclosure->data = malloc(size);
-	if (wclosure->data == NULL) {
-		free(wclosure);
-		return (NULL);
-	}
-
-	wclosure->abhost              = abhost;
-	wclosure->private_peer_id     = private_peer_id;
-	wclosure->size                = size;
-	if (data != NULL)
-		memcpy(wclosure->data, data, size);
-	wclosure->closure             = closure;
-	wclosure->result_callback     = result_callback;
-	wclosure->disconnect_callback = disconnect_callback;
-
-	return (wclosure);
+	return (peer_watcher_get_watcher(back_channel_recv_watcher));
 }
 
-/*
- * Dispose an object of 'struct gfs_client_relay_closure'.
- */
-static void
-gfs_client_relay_closure_free(struct gfs_client_relay_closure *wclosure)
+struct thread_pool *
+back_channel_recv_thrpool(void)
 {
-	free(wclosure->data);
-	free(wclosure);
-}
-
-/*
- * 'result_callback' handler for gfs_client_relay().
- */
-static gfarm_int32_t
-gfs_client_relay_result(void *p, void *arg, size_t size)
-{
-	gfarm_error_t e, e2;
-	struct peer *peer = p;
-	struct gfp_xdr *conn = peer_get_conn(peer);
-	struct gfs_client_relay_closure *wclosure = arg;
-	void *data = NULL;
-	size_t data_size;
-	int eof;
-	static const char diag[] = "gfs_client_relay_result";
-
-	do {
-		data = malloc(size);
-		if (data == NULL) {
-			e = GFARM_ERR_NO_MEMORY;
-			(void) gfp_xdr_purge(conn, 0, size);
-			break;
-		}
-		data_size = size;
-		e = gfp_xdr_recv(conn, 1, &eof, "r", data_size, &data_size,
-		    data);
-		if (e != GFARM_ERR_NO_ERROR) {
-			(void) gfp_xdr_purge(conn, 0, size);
-			break;
-		} else if (eof) {
-			e = GFARM_ERR_UNEXPECTED_EOF;
-		} else if (data_size != 0) {
-			e = GFARM_ERR_PROTOCOL;
-			gflog_warning(GFARM_MSG_UNFIXED,
-			    "%s: <%s> protocol redidual %u",
-			    peer_get_hostname(peer), diag, (int)data_size);
-		}
-
-	} while (0);
-
-	e2 = wclosure->result_callback(e, wclosure->closure, size, data);
-	if (e == GFARM_ERR_NO_ERROR)
-		e = e2;
-
-	free(data);
-	gfs_client_relay_closure_free(wclosure);
-	return (e);
-}
-
-/*
- * 'disconnect_callback' handler for gfs_client_relay().
- */
-static void
-gfs_client_relay_disconnect(void *p, void *arg)
-{
-	struct gfs_client_relay_closure *wclosure = arg;
-
-	wclosure->disconnect_callback(GFARM_ERR_UNEXPECTED_EOF,
-	    wclosure->closure);
-	gfs_client_relay_closure_free(wclosure);
-}
-
-static void *
-gfs_client_relay_thread(void *arg)
-{
-	struct gfs_client_relay_closure *wclosure = arg;
-	struct peer *peer;
-	static const char diag[] = "gfs_client_relay";
-
-	/* increment refcount */
-	peer = abstract_host_get_peer_with_id(wclosure->abhost,
-	    wclosure->private_peer_id, diag);
-	if (peer == NULL)
-		return (NULL);
-
-	(void) async_client_send_raw_request(wclosure->abhost, peer, diag,
-	    gfs_client_relay_result, gfs_client_relay_disconnect, wclosure,
-	    wclosure->size, wclosure->data);
-
-	/* decrement refcount */
-	abstract_host_put_peer(wclosure->abhost, peer);
-
-	return (NULL);
-}
-
-/*
- * Forward a GFS protocol request received from a master gfmd to gfsd.
- * This function is used by slave gfmd only.
- */
-gfarm_error_t
-gfs_client_relay(struct abstract_host *abhost, struct peer *peer,
-	size_t size, void *data, void *closure,
-	gfarm_int32_t (*result_callback)(gfarm_error_t, void *, size_t,
-	    void *),
-	void (*disconnect_callback)(gfarm_error_t, void *))
-{
-	struct gfs_client_relay_closure *wclosure;
-
-	wclosure = gfs_client_relay_closure_alloc(abhost,
-	    peer_get_private_peer_id(peer), size, data, closure,
-	    result_callback, disconnect_callback);
-	if (wclosure == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	thrpool_add_job(mdhost_send_manager_get_thrpool(),
-	    gfs_client_relay_thread, wclosure);
-
-	return (GFARM_ERR_NO_ERROR);
+	return (peer_watcher_get_thrpool(back_channel_recv_watcher));
 }
 
 void
 back_channel_init(void)
 {
-#ifdef not_def_REPLY_QUEUE
-	gfm_async_server_reply_to_gfsd_queue.window_size =
-	    gfm_proto_reply_to_gfsd_window;
-#endif
-	file_replication_init();
+	gfarm_error_t e;
+
+	peer_set_free_async(back_channel_async_peer_free);
 
 	back_channel_recv_watcher = peer_watcher_alloc(
 	    /* XXX FIXME: use different config parameter */
 	    gfarm_metadb_thread_pool_size, gfarm_metadb_job_queue_length,
 	    back_channel_main, "receiving from filesystem nodes");
+
+	back_channel_send_thread_pool = thrpool_new(
+	    /* XXX FIXME: use different config parameter */
+	    gfarm_metadb_thread_pool_size, gfarm_metadb_job_queue_length,
+	    "sending to filesystem nodes");
+	if (back_channel_send_thread_pool == NULL)
+		gflog_fatal(GFARM_MSG_1001998,
+		    "filesystem node thread pool size:"
+		    "%d, queue length:%d: no memory",
+		    gfarm_metadb_thread_pool_size,
+		    gfarm_metadb_job_queue_length);
+
+	proto_status_send_thread_pool = thrpool_new(
+	    /* XXX FIXME: use different config parameter */
+	    gfarm_metadb_thread_pool_size, gfarm_metadb_job_queue_length,
+	    "sending to filesystem nodes");
+	if (proto_status_send_thread_pool == NULL)
+		gflog_fatal(GFARM_MSG_1003498,
+		    "GFS_PROTO_STATUS thread pool size:"
+		    "%d, queue length:%d: no memory",
+		    gfarm_metadb_thread_pool_size,
+		    gfarm_metadb_job_queue_length);
+
+	e = create_detached_thread(remover, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_1002289,
+		    "create_detached_thread(remover): %s",
+		    gfarm_error_string(e));
 
 }

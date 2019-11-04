@@ -6,7 +6,7 @@
 
 <refentry id="gfsched.1">
 
-<refentryinfo><date>28 Dec 2010</date></refentryinfo>
+<refentryinfo><date>22 Dec 2014</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsched</refentrytitle>
@@ -32,7 +32,7 @@
     <arg choice="plain" rep="norepeat">-f <replaceable>gfarm-URL</replaceable></arg>
     <arg choice="opt" rep="norepeat">-D <replaceable>ドメイン名</replaceable></arg>
     <arg choice="opt" rep="norepeat">-n <replaceable>ノード数</replaceable></arg>
-    <arg choice="opt" rep="norepeat">-LMclw</arg>
+    <arg choice="opt" rep="norepeat">-LMOSclw</arg>
 </cmdsynopsis>
 
 <cmdsynopsis sepchar=" ">
@@ -44,7 +44,7 @@
     <arg choice="opt" rep="norepeat">-P <replaceable>gfarm-URL</replaceable></arg>
     <arg choice="opt" rep="norepeat">-D <replaceable>ドメイン名</replaceable></arg>
     <arg choice="opt" rep="norepeat">-n <replaceable>ノード数</replaceable></arg>
-    <arg choice="opt" rep="norepeat">-LMlw</arg>
+    <arg choice="opt" rep="norepeat">-LMOSlw</arg>
 </cmdsynopsis>
 
 </refsynopsisdiv>
@@ -132,11 +132,31 @@
 </varlistentry>
 
 <varlistentry>
+<term><option>-O</option></term>
+<listitem>
+<para>
+gfsched コマンドを実行しているホストとは異なるホストである
+ファイルシステムノードのみ表示します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-P</option> <parameter moreinfo="none">gfarm-URL</parameter></term>
 <listitem>
 <para>ファイルシステムノードを管理するメタデータサーバを特定する
 ために、gfarm-URL ないしパス名を指定します。
 このオプションは、<option>-f</option> オプションと排他的です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option></term>
+<listitem>
+<para>
+gfsched コマンドを実行しているホストと同一ホストである
+ファイルシステムノードのみ表示します。
 </para>
 </listitem>
 </varlistentry>

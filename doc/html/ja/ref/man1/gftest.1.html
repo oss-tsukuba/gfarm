@@ -1,0 +1,43 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gftest</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gftest">
+<a name="gftest.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gftest — Gfarm ファイルまたはディレクトリの情報を調べる</p>
+</div>
+<div class="refsynopsisdiv" title="Synopsis">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gftest</code>   <em class="replaceable"><code>options</code></em>   <em class="replaceable"><code>path</code></em> </p></div>
+</div>
+<div class="refsect1" title="DESCRIPTION">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>指定したファイルあるいはディレクトリの情報を調べます．</p>
+</div>
+<div class="refsect1" title="OPTIONS">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl>
+<dt><span class="term"><code class="option">-d</code></span></dt>
+<dd><p>ディレクトリであれば 0 を返します</p></dd>
+<dt><span class="term"><code class="option">-e</code></span></dt>
+<dd><p>存在すれば 0 を返します</p></dd>
+<dt><span class="term"><code class="option">-f</code></span></dt>
+<dd><p>通常ファイルであれば 0 を返します</p></dd>
+<dt><span class="term"><code class="option">-h</code></span></dt>
+<dd><p>シンボリックリンクであれば 0 を返します</p></dd>
+<dt><span class="term"><code class="option">-s</code></span></dt>
+<dd><p>通常ファイルで、サイズが 0 より大きければ 0 を返します</p></dd>
+<dt><span class="term"><code class="option">-L</code></span></dt>
+<dd><p>通常ファイルで、実ファイルが同一ホストに格納されていれば 0 を返します</p></dd>
+<dt><span class="term"><code class="option">-R</code></span></dt>
+<dd><p>通常ファイルで、実ファイルが同一ホストに格納されていなければ 0 を返します</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>引数オプションを表示します．</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

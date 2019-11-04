@@ -1,7 +1,7 @@
 #include <gfarm/gflog.h>
 
 void
-gfarm_assert_fail(const char *file, int line_no, const char *func, 
+gfarm_assert_fail(const char *file, int line_no, const char *func,
     const char *message)
 {
 	gflog_set_message_verbose(2);

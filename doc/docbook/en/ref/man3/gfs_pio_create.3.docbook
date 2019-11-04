@@ -6,7 +6,7 @@
 
 <refentry id="gfs-pio-create.3">
 
-<refentryinfo><date>27 Jun 2010</date></refentryinfo>
+<refentryinfo><date>3 Sep 2015</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_create</refentrytitle>
@@ -55,13 +55,11 @@ such that exactly one of
 <parameter moreinfo="none">GFARM_FILE_WRONLY</parameter>, and
 <parameter moreinfo="none">GFARM_FILE_RDWR</parameter>
 should be specified.
-<!--
 In addition, it is possible to specify
 <parameter moreinfo="none">GFARM_FILE_EXCLUSIVE</parameter>.
 With this flag, 
 <function moreinfo="none">gfs_pio_create()</function>
 will fail when the file already exists.
- -->
 </para>
 <para>
 Note that
@@ -196,14 +194,12 @@ does not include a port number of the metadata server.</para>
 <para>User authentication failed when connecting to the metadata server.</para>
 </listitem>
 </varlistentry>
-<!--
 <varlistentry>
 <term><constant>GFARM_ERR_ALREADY_EXISTS</constant></term>
 <listitem>
 <para><parameter moreinfo="none">gfarm_url</parameter> already exists and GFARM_FILE_EXCLUSIVE was used.</para>
 </listitem>
 </varlistentry>
- -->
 
 <!--
 <varlistentry>

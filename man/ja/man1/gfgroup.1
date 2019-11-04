@@ -35,7 +35,7 @@ gfgroup \- Gfarm グループ管理コマンド
 .HP \w'\fBgfgroup\fR\ 'u
 \fBgfgroup\fR [\-P\ \fIpath\fR] \-c groupname [\fIuser\fR...]
 .HP \w'\fBgfgroup\fR\ 'u
-\fBgfgroup\fR [\-P\ \fIpath\fR] \-m groupname [\fIuser\fR...]
+\fBgfgroup\fR [\-P\ \fIpath\fR] [\-a] [\-r] \-m groupname [\fIuser\fR...]
 .HP \w'\fBgfgroup\fR\ 'u
 \fBgfgroup\fR [\-P\ \fIpath\fR] \-d groupname
 .SH "DESCRIPTION"
@@ -61,6 +61,16 @@ Gfarm ファイルシステムにおけるグループ管理を行います． �
 \fB\-m\fR
 .RS 4
 グループメンバの変更を行います． 変更したいグループ名とメンバのリスト指定します． Gfarmの管理者が実行可能です．
+.RE
+.PP
+\fB\-a\fR
+.RS 4
+このオプションは\fB\-m\fRと一緒に用いることにより グループメンバの追加を行います． 変更したいグループ名と追加メンバのリストを指定します． Gfarmの管理者が実行可能です．
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+このオプションは\fB\-m\fRと一緒に用いることにより グループメンバの削除を行います． 変更したいグループ名と削除メンバのリストを指定します． Gfarmの管理者が実行可能です．
 .RE
 .PP
 \fB\-d\fR

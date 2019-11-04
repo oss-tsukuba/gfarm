@@ -17,11 +17,10 @@ struct gfm_utimes_closure {
 };
 
 static gfarm_error_t
-gfm_utimes_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_utimes_request(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_utimes_closure *c = closure;
-	gfarm_error_t e = gfm_client_futimes_request(gfm_server, ctx,
+	gfarm_error_t e = gfm_client_futimes_request(gfm_server,
 	    c->atime.tv_sec, c->atime.tv_nsec,
 	    c->mtime.tv_sec, c->mtime.tv_nsec);
 
@@ -32,10 +31,9 @@ gfm_utimes_request(struct gfm_connection *gfm_server,
 }
 
 static gfarm_error_t
-gfm_utimes_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_utimes_result(struct gfm_connection *gfm_server, void *closure)
 {
-	gfarm_error_t e = gfm_client_futimes_result(gfm_server, ctx);
+	gfarm_error_t e = gfm_client_futimes_result(gfm_server);
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
@@ -64,17 +62,16 @@ gfs_utimes_common(const char *path, const struct gfarm_timespec *tsp,
 		closure.atime.tv_nsec = closure.mtime.tv_nsec =
 		    now.tv_usec * 1000;
 	} else {
-		
+		closure.atime = tsp[0];
+		closure.mtime = tsp[1];
 		if (tsp[0].tv_nsec == GFARM_UTIME_NOW) {
 			closure.atime.tv_sec  = now.tv_sec;
 			closure.atime.tv_nsec = now.tv_usec * 1000;
-		} else 
-			closure.atime = tsp[0];
+		}
 		if (tsp[1].tv_nsec == GFARM_UTIME_NOW) {
 			closure.mtime.tv_sec  = now.tv_sec;
 			closure.mtime.tv_nsec = now.tv_usec * 1000;
-		} else 
-			closure.mtime = tsp[1];
+		}
 	}
 
 	return ((*inode_op)(path, GFARM_FILE_LOOKUP,

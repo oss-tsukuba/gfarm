@@ -88,13 +88,13 @@ gfsk_set_cache_updatetime(struct inode *inode)
 {
 	struct gfarm_inode *gi = get_gfarm_inode(inode);
 	uint64_t jiffies = get_jiffies_64();
-	gflog_debug(GFARM_MSG_UNFIXED, "gfsk_set_cache_updatetime. ino=%lu, "
+	gflog_debug(GFARM_MSG_1004922, "gfsk_set_cache_updatetime. ino=%lu, "
 			"pctime=%llu, jiffies=%llu",
 			inode->i_ino, gi->i_pctime, jiffies);
 	if ((gi->i_pctime == 0) || (jiffies < gi->i_pctime)) {
 		/* expand cache valid period */
 		gi->i_pctime = jiffies + gfsk_fsp->gf_pctime;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1004923,
 			"gfsk_set_cache_updatetime updated."
 			" ino=%lu, pctime=%llu", inode->i_ino, gi->i_pctime);
 	} else {
@@ -117,7 +117,7 @@ void
 gfsk_invalidate_pages(struct inode *inode)
 {
 	invalidate_inode_pages2(inode->i_mapping);
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1004924,
 		"gfsk_invalidate_pages done. ino=%lu", inode->i_ino);
 	gfsk_set_cache_invalidate(inode);
 }

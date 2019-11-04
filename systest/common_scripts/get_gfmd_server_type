@@ -147,7 +147,7 @@ get_gfmd_server_type_all()
 # Usage: get_master_gfmd
 #
 # The function prints a host-ID of the master gfmd.  Note that it doesn't
-# correct the current status of gfmds.  It checks '<HOSTID>_SERVER_TYPE'
+# collect the current status of gfmds.  It checks '<HOSTID>_SERVER_TYPE'
 # variables (e.g. gfmd1_SERVER_TYPE) and prints a host-ID whose
 # '<HOSTID>_SERVER_TYPE' value is 'master'.  Please call
 # get_gfmd_server_type_all() prior to this function.
@@ -171,7 +171,7 @@ get_master_gfmd()
 # Usage: get_master_candidate_gfmds
 #
 # The function prints a host-IDs of the master candidate gfmds.  Note that
-# it doesn't correct the current status of gfmds.  It checks the variables
+# it doesn't collect the current status of gfmds.  It checks the variables
 # '<HOSTID>_SERVER_TYPE' (e.g. gfmd1_SERVER_TYPE) and
 # '<HOSTID>_MASTER_CANDIDATE' (e.g. gfmd1_MASTER_CANDIDATE), and prints a
 # host-ID whose '<HOSTID>_SERVER_TYPE' is 'slave' and

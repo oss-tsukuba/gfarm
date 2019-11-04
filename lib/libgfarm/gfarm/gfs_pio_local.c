@@ -9,25 +9,66 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h> /* gfs_client.h needs socklen_t */
+#include <sys/time.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include <libgen.h>
+
 #include <openssl/evp.h>
 
 #include <gfarm/gfarm.h>
 
 #include "queue.h"
+#include "timer.h"
 
+#include "gfm_proto.h"	/* GFM_PROTO_CKSUM_MAXLEN in gfs_io.h */
 #include "gfs_proto.h"	/* GFS_PROTO_FSYNC_* */
 #include "gfs_client.h"
+#define GFARM_USE_GFS_PIO_INTERNAL_CKSUM_INFO
 #include "gfs_io.h"
 #include "gfs_pio.h"
+#include "gfs_pio_impl.h"
 #include "schedule.h"
+#include "gfs_profile.h"
 #include "context.h"
 #ifdef __KERNEL__
 #include <linux/fs.h>  /* just for SEEK_XXX */
 #endif
+
+#define staticp	(gfarm_ctxp->gfs_pio_local_static)
+
+struct gfarm_gfs_pio_local_static {
+	double write_time, read_time;
+	unsigned long long write_size, read_size;
+	unsigned long long write_count, read_count;
+};
+
+gfarm_error_t
+gfarm_gfs_pio_local_static_init(struct gfarm_context *ctxp)
+{
+	struct gfarm_gfs_pio_local_static *s;
+
+	GFARM_MALLOC(s);
+	if (s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	s->write_time =
+	s->read_time = 0;
+	s->write_size =
+	s->read_size =
+	s->write_count =
+	s->read_count = 0;
+
+	ctxp->gfs_pio_local_static = s;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+gfarm_gfs_pio_local_static_term(struct gfarm_context *ctxp)
+{
+	free(ctxp->gfs_pio_local_static);
+}
 
 #if 0 /* not yet in gfarm v2 */
 
@@ -126,7 +167,11 @@ gfs_pio_local_storage_close(GFS_File gf)
 		return (e);
 	}
 #endif /* __KERNEL__ */
-	e2 = gfs_client_close(gfs_server, gf->fd);
+	if ((gf->mode & GFS_FILE_MODE_MODIFIED) != 0)
+		e2 = gfs_client_close_write(
+		    gfs_server, gf->fd, GFS_PROTO_CLOSE_FLAG_MODIFIED);
+	else
+		e2 = gfs_client_close(gfs_server, gf->fd);
 	gfarm_schedule_host_unused(
 	    gfs_client_hostname(gfs_server),
 	    gfs_client_port(gfs_server),
@@ -151,29 +196,25 @@ gfs_pio_local_storage_pwrite(GFS_File gf,
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 	int rv, save_errno;
+	gfarm_timerval_t t1, t2;
 
-#ifdef __KERNEL__
-	rv = pwrite(vc->fd, buffer, offset, size);
-#else
-	if (lseek(vc->fd, offset, SEEK_SET) == -1) {
-		save_errno = errno;
-		gflog_debug(GFARM_MSG_1001364,
-			"lseek() on view context file descriptor failed: %s",
-			strerror(save_errno));
-		return (gfarm_errno_to_error(save_errno));
-	}
-
-	rv = write(vc->fd, buffer, size);
-#endif
-
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+	if (gf->open_flags & GFARM_FILE_APPEND)
+		rv = write(vc->fd, buffer, size);
+	else
+		rv = pwrite(vc->fd, buffer, size, offset);
 	if (rv == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_1001365,
-			"write() on view context file descriptor failed: %s",
+		gflog_debug(GFARM_MSG_1003822, "pwrite: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
 	*lengthp = rv;
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(staticp->write_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->write_size += rv);
+	gfs_profile(staticp->write_count++);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -188,7 +229,7 @@ gfs_pio_local_storage_write(GFS_File gf,
 	rv = write(vc->fd, buffer, size);
 	if (rv == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003690,
 			"write() on view context file descriptor failed: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
@@ -205,29 +246,151 @@ gfs_pio_local_storage_pread(GFS_File gf,
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 	int rv, save_errno;
+	gfarm_timerval_t t1, t2;
 
-#ifdef __KERNEL__
-	rv = pread(vc->fd, buffer, offset, size);
-#else
-	if (lseek(vc->fd, offset, SEEK_SET) == -1) {
-		save_errno = errno;
-		gflog_debug(GFARM_MSG_1001366,
-			"lseek() on view context file descriptor failed: %s",
-			strerror(save_errno));
-		return (gfarm_errno_to_error(save_errno));
-	}
-	rv = read(vc->fd, buffer, size);
-#endif
-
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+	rv = pread(vc->fd, buffer, size, offset);
 	if (rv == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_1001367,
-			"read() on view context file descriptor failed: %s",
+		gflog_debug(GFARM_MSG_1003823, "pread: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
 	*lengthp = rv;
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(staticp->read_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->read_size += rv);
+	gfs_profile(staticp->read_count++);
 	return (GFARM_ERR_NO_ERROR);
+}
+
+/* GFS_PROTO_MAX_IOSIZE is somewhat too large, and is not a power of 2 */
+#define COPYFILE_BUFSIZE	65536
+
+/*
+ * *writtenp: set even if an error happens.
+ *
+ * NOTE:
+ * the `md_aborted' related code in gfsd.c:gfs_server_bulkwrite()
+ * and gfs_client.c:gfs_recvfile_common() is unnecessary here,
+ * because gfs_pio_view_section_sendfile() is effectively resetting
+ * the GFS_FILE_MODE_DIGEST_CALC bit by using gf->md.filesize.
+ * i.e. the `md_aborted' related code in gfsd.c can be eliminated,
+ * if gfsd maintains struct file_entry::size just like
+ * gf->md.filesize in libgfarm.
+ */
+static gfarm_error_t
+gfs_pio_local_copyfile(int r_fd, gfarm_off_t r_off,
+	int w_fd, gfarm_off_t w_off, gfarm_off_t len, int append_mode,
+	EVP_MD_CTX *md_ctx, gfarm_off_t *writtenp)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	int until_eof = len < 0;
+	int read_mode_unknown = 1, read_mode_thread_safe = 1;
+	int write_mode_unknown = 1, write_mode_thread_safe = 1;
+	size_t to_read;
+	ssize_t rv, i, to_write;
+	gfarm_off_t written = 0;
+	char buffer[COPYFILE_BUFSIZE];
+
+	if (append_mode) {
+		write_mode_unknown = 0;
+		write_mode_thread_safe = 0;
+	}
+	if (until_eof || len > 0) {
+		for (;;) {
+			to_read = until_eof ? sizeof buffer :
+			    len < sizeof buffer ?
+			    len : sizeof buffer;
+			if (read_mode_unknown) {
+				read_mode_unknown = 0;
+				rv = pread(r_fd, buffer, to_read, r_off);
+				if (rv == -1 && errno == ESPIPE &&
+				    r_off <= 0) {
+					read_mode_thread_safe = 0;
+					rv = read(r_fd, buffer, to_read);
+				}
+			} else if (read_mode_thread_safe) {
+				rv = pread(r_fd, buffer, to_read, r_off);
+			} else {
+				rv = read(r_fd, buffer, to_read);
+			}
+			if (rv == 0)
+				break;
+			if (rv == -1) {
+				e = gfarm_errno_to_error(errno);
+				break;
+			}
+			r_off += rv;
+			if (!until_eof)
+				len -= rv;
+
+			for (to_write = rv, i = 0; i < to_write; i += rv) {
+				if (write_mode_unknown) {
+					write_mode_unknown = 0;
+					rv = pwrite(w_fd,
+					    buffer + i, to_write - i, w_off);
+					if (rv == -1 && errno == ESPIPE &&
+					    w_off <= 0) {
+						write_mode_thread_safe = 0;
+						rv = write(w_fd,
+						    buffer + i, to_write - i);
+					}
+				} else if (write_mode_thread_safe) {
+					rv = pwrite(w_fd,
+					    buffer + i, to_write - i, w_off);
+				} else {
+					rv = write(w_fd,
+					    buffer + i, to_write - i);
+				}
+				if (rv == 0) {
+					/*
+					 * pwrite(2) never returns 0,
+					 * so this is just warm fuzzy.
+					 */
+					e = GFARM_ERR_NO_SPACE;
+					break;
+				}
+				if (rv == -1) {
+					e = gfarm_errno_to_error(errno);
+					break;
+				}
+				w_off += rv;
+				written += rv;
+				if (md_ctx != NULL)
+					EVP_DigestUpdate(
+					    md_ctx, buffer + i, rv);
+			}
+			if (e != GFARM_ERR_NO_ERROR)
+				break;
+		}
+	}
+	if (writtenp != NULL)
+		*writtenp = written;
+	return (e);
+}
+
+static gfarm_error_t
+gfs_pio_local_storage_recvfile(GFS_File gf, gfarm_off_t r_off,
+	int w_fd, gfarm_off_t w_off, gfarm_off_t len,
+	EVP_MD_CTX *md_ctx, gfarm_off_t *recvp)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+
+	return (gfs_pio_local_copyfile(vc->fd, r_off, w_fd, w_off, len, 0,
+	    md_ctx, recvp));
+}
+
+static gfarm_error_t
+gfs_pio_local_storage_sendfile(GFS_File gf, gfarm_off_t w_off,
+	int r_fd, gfarm_off_t r_off, gfarm_off_t len,
+	EVP_MD_CTX *md_ctx, gfarm_off_t *sentp)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+
+	return (gfs_pio_local_copyfile(r_fd, r_off, vc->fd, w_off, len,
+	    (gf->open_flags & GFARM_FILE_APPEND) != 0, md_ctx, sentp));
 }
 
 static gfarm_error_t
@@ -313,12 +476,28 @@ gfs_pio_local_storage_fstat(GFS_File gf, struct gfs_stat *st)
 }
 
 static gfarm_error_t
+gfs_pio_local_storage_cksum(GFS_File gf, const char *type,
+	char *cksum, size_t size, size_t *lenp)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	struct gfs_connection *gfs_server = vc->storage_context;
+
+	return (gfs_client_cksum(gfs_server, gf->fd, type, cksum, size, lenp));
+}
+
+static gfarm_error_t
 gfs_pio_local_storage_reopen(GFS_File gf)
 {
 	gfarm_error_t e;
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
 
+	if (close(vc->fd) == -1) {
+		/* this shouldn't happen */
+		gflog_error_errno(GFARM_MSG_1003961,
+		    "closing obsolete local fd during gfmd failover");
+	}
+	vc->fd = -1;
 	if ((e = gfs_client_open_local(gfs_server, gf->fd, &vc->fd)) !=
 	    GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1003378,
@@ -344,6 +523,9 @@ struct gfs_storage_ops gfs_pio_local_storage_ops = {
 	gfs_pio_local_storage_fstat,
 	gfs_pio_local_storage_reopen,
 	gfs_pio_local_storage_write,
+	gfs_pio_local_storage_cksum,
+	gfs_pio_local_storage_recvfile,
+	gfs_pio_local_storage_sendfile,
 };
 
 gfarm_error_t
@@ -364,4 +546,21 @@ gfs_pio_open_local_section(GFS_File gf, struct gfs_connection *gfs_server)
 	vc->storage_context = gfs_server;
 	vc->pid = getpid();
 	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+gfs_pio_local_display_timers(void)
+{
+	gflog_info(GFARM_MSG_1003824,
+	    "local read time   : %g sec", staticp->read_time);
+	gflog_info(GFARM_MSG_1003825,
+	    "local read size   : %llu", staticp->read_size);
+	gflog_info(GFARM_MSG_1003826,
+	    "local read count  : %llu", staticp->read_count);
+	gflog_info(GFARM_MSG_1003827,
+	    "local write time  : %g sec", staticp->write_time);
+	gflog_info(GFARM_MSG_1003828,
+	    "local write size  : %llu", staticp->write_size);
+	gflog_info(GFARM_MSG_1003829,
+	    "local write count : %llu", staticp->write_count);
 }

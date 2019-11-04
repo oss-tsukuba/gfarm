@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <libgen.h>
 #include <unistd.h>
-#include <string.h>
 
 #include <gfarm/gfarm.h>
 #include "gfarm_foreach.h"
@@ -21,29 +20,12 @@ struct options {
 	int recursive;
 };
 
-struct files {
-	gfarm_stringlist files, dirs;
-};
-
 static void
 usage(void)
 {
 	fprintf(stderr, "Usage: %s [-r] [-n] [-f] [-h hostname] "
 	    "[-D domainname] file...\n", program_name);
 	exit(EXIT_FAILURE);
-}
-
-static gfarm_error_t
-add_file(char *file, struct gfs_stat *st, void *arg)
-{
-	struct files *a = arg;
-	char *f;
-
-	f = strdup(file);
-	if (f == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
-	return (gfarm_stringlist_add(&a->files, f));
 }
 
 static gfarm_error_t
@@ -57,22 +39,12 @@ is_valid_dir(char *file, struct gfs_stat *st, void *arg)
 }
 
 static gfarm_error_t
-do_not_add_dir(char *file, struct gfs_stat *st, void *arg)
+err_is_a_dir(char *file, struct gfs_stat *st, void *arg)
 {
-	return (GFARM_ERR_IS_A_DIRECTORY);
-}
+	gfarm_error_t e = GFARM_ERR_IS_A_DIRECTORY;
 
-static gfarm_error_t
-add_dir(char *file, struct gfs_stat *st, void *arg)
-{
-	struct files *a = arg;
-	char *f;
-
-	f = strdup(file);
-	if (f == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
-	return (gfarm_stringlist_add(&a->dirs, f));
+	fprintf(stderr, "%s: %s\n", file, gfarm_error_string(e));
+	return (e);
 }
 
 static gfarm_error_t
@@ -99,66 +71,59 @@ gfs_replica_remove_by_domain(const char *path, const char *domain)
 }
 
 static gfarm_error_t
-remove_files(gfarm_stringlist *files, gfarm_stringlist *dirs,
-	struct options *options)
+remove_file(char *file, struct gfs_stat *st, void *arg)
 {
-	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2 = GFARM_ERR_NO_ERROR;
-	int i, nerr = 0;
+	struct options *options = arg;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
-	for(i = 0; i < gfarm_stringlist_length(files); i++) {
-		char *file = gfarm_stringlist_elem(files, i);
+	if ((options->host != NULL || options->domain != NULL)
+	    && !GFARM_S_ISREG(st->st_mode))
+		return (e);
 
-		if (options->noexecute)
-			printf("%s\n", file);
-		else if (options->host != NULL)
-			e = gfs_replica_remove_by_file(file, options->host);
-		else if (options->domain != NULL)
-			e = gfs_replica_remove_by_domain(file, options->domain);
-		else
-			e = gfs_unlink(file);
+	if (options->noexecute)
+		printf("%s\n", file);
+	else if (options->host != NULL)
+		e = gfs_replica_remove_by_file(file, options->host);
+	else if (options->domain != NULL)
+		e = gfs_replica_remove_by_domain(file, options->domain);
+	else
+		e = gfs_unlink(file);
 
-		if (e != GFARM_ERR_NO_ERROR &&
-		    (!options->force ||
-		     e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) &&
-		    (!options->recursive || e != GFARM_ERR_NO_SUCH_OBJECT)) {
-			fprintf(stderr, "%s: %s: %s\n",
-				program_name, file, gfarm_error_string(e));
-			if (e2 == GFARM_ERR_NO_ERROR)
-				e2 = e;
-			nerr++;
-		}
-	}
+	if (options->force &&
+	    (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY ||
+	     e == GFARM_ERR_NO_SUCH_OBJECT))
+		e = GFARM_ERR_NO_ERROR;
+	if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "%s: %s\n", file, gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+remove_dir(char *dir, struct gfs_stat *st, void *arg)
+{
+	struct options *options = arg;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
 	if (options->host != NULL || options->domain != NULL)
-		goto skip_directory_remove;
-	/* remove directories only if the -h option is not specified */
-	for (i = 0; i < gfarm_stringlist_length(dirs); i++) {
-		char *dir = gfarm_stringlist_elem(dirs, i);
+		return (e);
 
-		if (options->noexecute)
-			printf("%s\n", dir);
-		else
-			e = gfs_rmdir(dir);
+	if (options->noexecute)
+		printf("%s\n", dir);
+	else
+		e = gfs_rmdir(dir);
 
-		if (e != GFARM_ERR_NO_ERROR &&
-		    (!options->force ||
-		     e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)) {
-			fprintf(stderr, "%s: %s: %s\n",
-				program_name, dir, gfarm_error_string(e));
-			if (e2 == GFARM_ERR_NO_ERROR)
-				e2 = e;
-			nerr++;
-		}
-	}
-skip_directory_remove:
-	return (nerr == 0 ? GFARM_ERR_NO_ERROR : e2);
+	if (options->force && e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
+		e = GFARM_ERR_NO_ERROR;
+	if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "%s: %s\n", dir, gfarm_error_string(e));
+	return (e);
 }
 
 static int
 error_check(gfarm_error_t e)
 {
 	if (e == GFARM_ERR_NO_ERROR)
-		return 0;
+		return (0);
 
 	fprintf(stderr, "%s: %s\n", program_name, gfarm_error_string(e));
 	exit(EXIT_FAILURE);
@@ -171,9 +136,9 @@ main(int argc, char **argv)
 	int i, n, c, status = 0;
 	gfarm_stringlist paths;
 	gfs_glob_t types;
-	struct files files;
 	struct options options;
-	gfarm_error_t (*op_dir_before)(char *, struct gfs_stat *, void *);
+	gfarm_error_t (*is_dir)(char *, struct gfs_stat *, void *)
+		= err_is_a_dir;
 
 	options.host =
 	options.domain = NULL;
@@ -212,14 +177,7 @@ main(int argc, char **argv)
 		usage();
 
 	if (options.recursive)
-		op_dir_before = is_valid_dir;
-	else
-		op_dir_before = do_not_add_dir;
-	e = gfarm_stringlist_init(&files.files);
-	error_check(e);
-
-	e = gfarm_stringlist_init(&files.dirs);
-	error_check(e);
+		is_dir = is_valid_dir;
 
 	e = gfarm_stringlist_init(&paths);
 	error_check(e);
@@ -233,31 +191,27 @@ main(int argc, char **argv)
 
 	n = gfarm_stringlist_length(&paths);
 	for (i = 0; i < n; i++) {
-		char *file = gfarm_stringlist_elem(&paths, i), *realpath = NULL;
+		char *file = gfarm_stringlist_elem(&paths, i), *rpath = NULL;
+		struct gfs_stat st;
 
-		e = gfarm_realpath_by_gfarm2fs(file, &realpath);
+		e = gfarm_realpath_by_gfarm2fs(file, &rpath);
 		if (e == GFARM_ERR_NO_ERROR)
-			file = realpath;
-		e = gfarm_foreach_directory_hierarchy(
-			add_file, op_dir_before, add_dir, file, &files);
-
-		if (e != GFARM_ERR_NO_ERROR &&
-		    (!options.force ||
-		     e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)) {
-			fprintf(stderr, "%s: %s: %s\n",
-			    program_name, file, gfarm_error_string(e));
+			file = rpath;
+		if ((e = gfs_lstat(file, &st)) == GFARM_ERR_NO_ERROR) {
+			e = gfarm_foreach_directory_hierarchy(remove_file,
+				is_dir, remove_dir, file, &options);
+			gfs_stat_free(&st);
+		} else if (options.force &&
+			   e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
+			e = GFARM_ERR_NO_ERROR;
+		else
+			fprintf(stderr, "%s: %s\n", file,
+			    gfarm_error_string(e));
+		if (e != GFARM_ERR_NO_ERROR)
 			status = 1;
-		}
-		free(realpath);
+		free(rpath);
 	}
 	gfarm_stringlist_free_deeply(&paths);
-
-	if (remove_files(&files.files, &files.dirs, &options) !=
-	    GFARM_ERR_NO_ERROR)
-		status = 1; /* error message is already printed */
-
-	gfarm_stringlist_free_deeply(&files.dirs);
-	gfarm_stringlist_free_deeply(&files.files);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {

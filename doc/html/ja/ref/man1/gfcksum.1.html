@@ -1,0 +1,58 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gfcksum</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
+<a name="gfcksum.1"></a><div class="titlepage"></div>
+<div class="refnamediv">
+<a name="name"></a><h2>Name</h2>
+<p>gfcksum — Gfarm ファイルのチェックサムを表示する。</p>
+</div>
+<div class="refsynopsisdiv">
+<a name="synopsis"></a><h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gfcksum</code>  [-rl] [ -T  |   -t ]  <em class="replaceable"><code>path</code></em>... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gfcksum</code>   -c  [-rlv] [-h <em class="replaceable"><code>host</code></em>]  <em class="replaceable"><code>path</code></em>... </p></div>
+</div>
+<div class="refsect1">
+<a name="description"></a><h2>DESCRIPTION</h2>
+<p>
+指定したファイルについてチェックサムを表示します。
+-r オプションを指定すると、指定されたディレクトリに含まれるファイルのチェックサムを再帰的に表示します。
+</p>
+<p>
+-t オプションを指定すると、現在設定されているチェックサムの種類のみを表示します。
+-T オプションを指定すると、ファイルを修正したとき、どの種類のチェックサムが計算されるかを表示します。
+</p>
+<p>
+-c オプションを指定すると、ファイルのチェックサムを計算し、
+メタデータに格納されているチェックサムと比較します。
+-h オプションにより、ファイルが格納されているホストを指定することができます。
+-v オプションを指定すると、実際に格納されているファイルの修正時刻なども表示します。
+</p>
+<p>
+-l オプションを指定すると、それぞれのファイルのパスを表示します。
+デフォルトでは、ベース名 (basename) しか表示しません。
+</p>
+</div>
+<div class="refsect1">
+<a name="options"></a><h2>OPTIONS</h2>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-r</code></span></dt>
+<dd><p>ディレクトリに含まれるファイルのチェックサムを再帰的に表示します。</p></dd>
+<dt><span class="term"><code class="option">-c</code></span></dt>
+<dd><p>ファイルのチェックサムを計算し、メタデータに格納されているチェックサムと比較します。</p></dd>
+<dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>host</code></em></span></dt>
+<dd><p>-c オプションとともに用いられ、ファイルが格納されているホストを指定します。</p></dd>
+<dt><span class="term"><code class="option">-v</code></span></dt>
+<dd><p>-c オプションとともに用いられ、実際に格納されているファイルの修正日時など詳細な情報を表示します。</p></dd>
+<dt><span class="term"><code class="option">-l</code></span></dt>
+<dd><p>それぞれのファイルのパスを表示します。
+デフォルトでは、gfcksum はベース名 (basename) しか表示しません。</p></dd>
+<dt><span class="term"><code class="option">-?</code></span></dt>
+<dd><p>引数オプションを表示します。</p></dd>
+</dl></div>
+</div>
+</div></body>
+</html>

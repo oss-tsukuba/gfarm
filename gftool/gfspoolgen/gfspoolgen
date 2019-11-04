@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# gfspoolgen - obtain generation number from the spool path
+#
+# Usage: gfspoolgen spool_files ...
+
+PROG=`basename $0`
+
+usage() {
+	exec >&2
+	echo "Usage: $PROG spool_file ..."
+	exit 2
+}
+
+spoolpath_to_gen()
+{
+	file=$1
+	inumgen=`echo $file | sed 's/.*lost+found//;s/.*data//;s|/||g'`
+	[ $? -ne 0 ] && return
+	gen_hex=`echo $inumgen | sed 's/^.\{16\}\(.\{16\}\).*$/\1/'`
+	[ $? -ne 0 ] && return
+	gen=`printf "%d" 0x$gen_hex`
+	[ $? -ne 0 ] && return
+
+	echo $gen
+}
+
+[ $# -eq 0 ] && usage
+
+while [ $# -gt 0 ]
+do
+	spoolpath_to_gen $1
+	shift
+done

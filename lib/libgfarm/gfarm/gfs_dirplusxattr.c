@@ -32,7 +32,6 @@ struct gfs_dirplusxattr {
 	size_t *attrsizebuf[DIRENTSPLUSXATTR_BUFCOUNT];
 	int n, index;
 	gfarm_off_t seek_pos;
-
 	/* remember opened url */
 	char *url;
 	/* remember opened inode num */
@@ -105,7 +104,6 @@ gfs_dirplusxattr_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 
 	dir->n = dir->index = 0;
 	dir->seek_pos = 0;
-
 	dir->url = url;
 	dir->ino = ino;
 
@@ -146,9 +144,10 @@ gfs_opendirplusxattr(const char *path, GFS_DirPlusXAttr *dirp)
 	int fd, type;
 	char *url;
 	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 
-	if ((e = gfm_open_fd_with_ino(path, GFARM_FILE_RDONLY, &gfm_server,
-	    &fd, &type, &url, &ino)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &gfm_server,
+	    &fd, &type, &url, &ino, &gen, NULL)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002459,
 			"gfm_open_fd(%s) failed: %s",
 			path,
@@ -173,18 +172,17 @@ gfs_opendirplusxattr(const char *path, GFS_DirPlusXAttr *dirp)
 			path,
 			gfarm_error_string(e));
 
-	(void)gfm_close_fd(gfm_server, fd); /* ignore result */
+	(void)gfm_close_fd(gfm_server, fd, NULL); /* ignore result */
 	gfm_client_connection_free(gfm_server);
 	return (e);
 }
 
 static gfarm_error_t
 gfm_getdirentsplusxattr_request(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx,
 	void *closure)
 {
 	gfarm_error_t e = gfm_client_getdirentsplusxattr_request(
-	    gfm_server, ctx, DIRENTSPLUSXATTR_BUFCOUNT,
+	    gfm_server, DIRENTSPLUSXATTR_BUFCOUNT,
 	    gfarm_xattr_caching_patterns(),
 	    gfarm_xattr_caching_patterns_number());
 
@@ -196,12 +194,10 @@ gfm_getdirentsplusxattr_request(struct gfm_connection *gfm_server,
 }
 
 static gfarm_error_t
-gfm_getdirentsplusxattr_result(struct gfm_connection *gfm_server,
-	struct gfp_xdr_context *ctx, void *closure)
+gfm_getdirentsplusxattr_result(struct gfm_connection *gfm_server, void *closure)
 {
 	GFS_DirPlusXAttr dir = closure;
-	gfarm_error_t e = gfm_client_getdirentsplusxattr_result(
-	    gfm_server, ctx,
+	gfarm_error_t e = gfm_client_getdirentsplusxattr_result(gfm_server,
 	    &dir->n, dir->buffer, dir->stbuf, dir->nattrbuf,
 	    dir->attrnamebuf, dir->attrvaluebuf, dir->attrsizebuf);
 
@@ -234,7 +230,7 @@ gfs_readdirplusxattr(GFS_DirPlusXAttr dir,
 		    NULL,
 		    dir);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003939,
 			    "gfm_client_compound_readonly_fd_op: %s",
 			    gfarm_error_string(e));
 			return (e);
@@ -302,8 +298,9 @@ gfs_closedirplusxattr(GFS_DirPlusXAttr dir)
 {
 	gfarm_error_t e;
 
-	if ((e = gfm_close_fd(dir->gfm_server, dir->fd)) != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+	if ((e = gfm_close_fd(dir->gfm_server, dir->fd, NULL))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_1003940,
 		    "gfm_close_fd: %s",
 		    gfarm_error_string(e));
 	gfm_client_connection_free(dir->gfm_server);
