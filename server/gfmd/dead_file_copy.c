@@ -310,7 +310,7 @@ handle_removal_result(struct dead_file_copy *dfc)
 	if (dfc->result == GFARM_ERR_NO_ERROR ||
 	    dfc->result == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
 		dead_file_copy_free(dfc); /* sleeps to wait for dbq.mutex */
-	} else if (host_is_up(dfc->host)) {
+	} else if (host_is_file_removable(dfc->host)) {
 		/* unexpected error, try again later to avoid busy loop */
 		gflog_notice(GFARM_MSG_1002223,
 		    "waiting removal of (%lld, %lld, %s): %s",
@@ -453,7 +453,8 @@ dead_file_copy_host_busyq_scan(void)
 		} else if (!busy) {
 			dfc_workq_remove(dfc);
 
-			if (dead_file_copy_is_removable(dfc)) {
+			if (dead_file_copy_is_removable(dfc) &&
+			    host_is_file_removable(dfc->host)) {
 				removal_pendingq_enqueue(dfc);
 			} else {
 				/* leave it as dfcstate_deferred */
@@ -622,7 +623,8 @@ dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
 			removal_finishedq_enqueue(dfc, GFARM_ERR_NO_ERROR);
 		} else {
 			busy = host_check_busy(dfc->host, now);
-			if (!busy && dead_file_copy_is_removable(dfc))
+			if (!busy && dead_file_copy_is_removable(dfc) &&
+			    host_is_file_removable(dfc->host))
 				removal_pendingq_enqueue(dfc);
 		}
 
@@ -1435,7 +1437,8 @@ dead_file_copy_add_one(void *closure,
 		    "%s: dead replica(%lld, %lld, %s): no memory",
 		    diag, (long long)inum, (long long)igen, hostname);
 #if 0 /* this is unnecessary, since all hosts are down in this point */
-	} else if (dead_file_copy_is_removable(dfc)) {
+	} else if (dead_file_copy_is_removable(dfc) &&
+	    host_is_file_removable(dfc->host)) {
 		removal_pendingq_enqueue(dfc);
 #endif
 	} /* otherwise leave it as dfcstate_deferred */
