@@ -370,6 +370,8 @@ remover(void *closure)
 			    gfs_client_fhremove_request, dfc);
 		else /* make this dfcstate_deferred */
 			removal_finishedq_enqueue(dfc,
+			    host_is_up(dead_file_copy_get_host(dfc)) ?
+			    GFARM_ERR_READ_ONLY_FILE_SYSTEM :
 			    GFARM_ERR_NO_ROUTE_TO_HOST);
 	}
 
