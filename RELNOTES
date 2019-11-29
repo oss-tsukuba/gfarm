@@ -1,3 +1,11 @@
+Release note for Gfarm 2.7.16
+=============================
+
+[2019.11.30]
+
+Updated feature
+* reduce logs when files on a readonly gfsd are removed
+
 Release note for Gfarm 2.7.15
 =============================
 
