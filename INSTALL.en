@@ -120,11 +120,8 @@ postgresql, postgresql-server		(required to execute config-gfarm)
 fuse-devel				(required to build gfarm2fs)
 ganglia-gmond-python		(required to execute config-gf[ms]d-iostat)
 
-(*) Globus packages are included in EPEL and Globus repository.  For
-    Globus repository, See
-    http://toolkit.globus.org/toolkit/downloads/latest-stable/
-    Here is an example in case of CentOS 6 or 7 and Globus 6.0.
-    # rpm -Uvh http://toolkit.globus.org/ftppub/gt6/installers/repo/globus-toolkit-repo-latest.noarch.rpm
+(*) Globus packages are included in EPEL.  EPEL packages can be used by
+    # yum install epel-release
 
 * Debian Package
 
