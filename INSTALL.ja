@@ -127,11 +127,8 @@ postgresql, postgresql-server		(config-gfarm の実行に必要)
 fuse-devel				(gfarm2fs の構築に必要)
 ganglia-gmond-python			(config-gf[ms]d-iostat の実行に必要)
 
-(*) EPEL あるいは Globus Repository に含まれます．Globus Repository を用
-    いる場合は，http://toolkit.globus.org/toolkit/downloads/latest-stable/
-    を参考に Globus configuration ファイルを導入します．
-    例えば，CentOS 6，Globus 6.0 の場合，以下の様になります．
-    # rpm -Uvh http://toolkit.globus.org/ftppub/gt6/installers/repo/globus-toolkit-repo-latest.noarch.rpm
+(*) EPELに含まれます．EPELは以下で利用できます．
+    # yum install epel-release
 
 * Debian パッケージ
 
