@@ -12,11 +12,18 @@ if [ "$?" -ne 0 ] || [ "X${flags}" = X ]; then
 fi
 
 SHORT_TIMEOUT_CONF_FILE="${localtmp}/SHORT_timeout.gfarm2.conf"
+if [ X"$GFARM_CONFIG_FILE" != X ]; then
+    conf_file="$GFARM_CONFIG_FILE"
+else
+    conf_file=~/.gfarm2rc
+fi
+if [ -r "$conf_file" ]; then
+    cp "$conf_file" "$SHORT_TIMEOUT_CONF_FILE" || exit
+fi
 cat << __EOF__ >> "$SHORT_TIMEOUT_CONF_FILE" || exit
 no_file_system_node_timeout 3
 #log_level debug
 __EOF__
-
 
 test_readonly_enable() {
   host="$1"
@@ -73,17 +80,10 @@ test_readonly_enable_all_host() {
   done
   IFS="$_IFS"
 
-  if [ X"$GFARM_CONFIG_FILE" != X ]; then
-    save_exit_code=$exit_code
-    exit_code=$exit_xfail
-  fi
   GFARM_CONFIG_FILE="$SHORT_TIMEOUT_CONF_FILE" gfreg "${data}/1byte" "${gftmp}/test3"
   if [ "$?" -eq 0 ]; then
     echo "unexpected success: ${diag}: gfreg"
     exit
-  fi
-  if [ X"$GFARM_CONFIG_FILE" != X ]; then
-    exit_code=$save_exit_code
   fi
 }
 
