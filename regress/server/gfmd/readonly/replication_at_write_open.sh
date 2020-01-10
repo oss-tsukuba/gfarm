@@ -8,17 +8,23 @@ FLAGS="$(query_host_flags "$ROHOST")"
 GF_TEST_FILE="${gftmp}/test"
 REP_ENABLE_CONF_FILE="${localtmp}/enable.gfarm2.conf"
 REP_DISABLE_CONF_FILE="${localtmp}/disable.gfarm2.conf"
-cat << __EOF__ > "$REP_ENABLE_CONF_FILE" || exit
+if [ X"$GFARM_CONFIG_FILE" != X ]; then
+    conf_file="$GFARM_CONFIG_FILE"
+else
+    conf_file=~/.gfarm2rc
+fi
+if [ -r "$conf_file" ]; then
+    cp "$conf_file" "$REP_ENABLE_CONF_FILE" || exit
+    cp "$conf_file" "$REP_DISABLE_CONF_FILE" || exit
+fi
+cat << __EOF__ >> "$REP_ENABLE_CONF_FILE" || exit
 replication_at_write_open enable
 #log_level debug
 __EOF__
-cat << __EOF__ > "$REP_DISABLE_CONF_FILE" || exit
+cat << __EOF__ >> "$REP_DISABLE_CONF_FILE" || exit
 replication_at_write_open disable
 #log_level debug
 __EOF__
-if [ X"$GFARM_CONFIG_FILE" != X ]; then
-  exit_code=$exit_xfail
-fi
 
 prepare_file() {
   CONFIG_FILE="$1"
