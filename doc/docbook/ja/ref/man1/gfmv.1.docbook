@@ -75,6 +75,17 @@ Gfarm ファイルを<parameter moreinfo="none">src</parameter>から
 </varlistentry>
 
 <varlistentry>
+<term><option>-x</option></term>
+<listitem>
+<para>
+異なる directory quota 間でのディレクトリ移動をエラーにします．
+このオプションを指定しない場合は，ディレクトリツリーを再帰的に作成する
+ことによって異なる directory quota 間でのディレクトリ移動を模擬的に行ないます．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>引数オプションを表示します．</para>
