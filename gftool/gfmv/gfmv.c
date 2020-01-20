@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,13 +9,179 @@
 #endif
 
 #include <gfarm/gfarm.h>
+#include "gfarm_foreach.h"
 #include "gfarm_path.h"
 
 static char *program_name = "gfmv";
 
 static int opt_force = 0;
 static int opt_interactive = 0;
+static int opt_disallow_inter_dirquota = 0;
 static int is_terminal;
+
+struct inter_dirquota_arg {
+	const char *srcdir, *dstdir;
+	size_t srcdirlen, dstdirlen;
+
+	/* work area */
+	gfarm_error_t error;
+	int try_chown;
+};
+
+char *
+alloc_dst(struct inter_dirquota_arg *a, const char *src)
+{
+	char *s = malloc(strlen(src) - a->srcdirlen + a->dstdirlen + 1);
+
+	if (s == NULL)
+		return (NULL);
+	memcpy(s, a->dstdir, a->dstdirlen);
+	strcpy(s + a->dstdirlen, &src[a->srcdirlen]);
+	return (s);
+}
+
+gfarm_error_t
+move_dir_inter_dirquota_dir_prep(char *src, struct gfs_stat *gst, void *arg)
+{
+	struct inter_dirquota_arg *a = arg;
+	gfarm_error_t e;
+	char *dst = alloc_dst(a, src);
+	struct gfs_stat src_gst;
+
+	if (dst == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	e = gfs_lstat_cached(src, &src_gst);
+	if (e != GFARM_ERR_NO_ERROR) { /* race */
+		free(dst);
+		return (e);
+	}
+	if (!GFARM_S_ISDIR(src_gst.st_mode)) { /* race */
+		gfs_stat_free(&src_gst);
+		free(dst);
+		return (GFARM_ERR_NOT_A_DIRECTORY);
+	}
+	e = gfs_mkdir(dst, (src_gst.st_mode & GFARM_S_ALLPERM) | 0700);
+	gfs_stat_free(&src_gst);
+	free(dst);
+	return (e);
+}
+
+gfarm_error_t
+move_dir_inter_dirquota_dir_post(char *src, struct gfs_stat *gst, void *arg)
+{
+	struct inter_dirquota_arg *a = arg;
+	gfarm_error_t e, e2;
+	char *dst = alloc_dst(a, src);
+	struct gfs_stat src_gst;
+	struct gfarm_timespec ts[2];
+
+	if (dst == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	e = gfs_lstat_cached(src, &src_gst);
+	if (e != GFARM_ERR_NO_ERROR) { /* check race */
+		fprintf(stderr, "%s: %s\n", src, gfarm_error_string(e));
+	} else {
+		if (!GFARM_S_ISDIR(src_gst.st_mode)) { /* check race */
+			e = GFARM_ERR_NOT_A_DIRECTORY;
+			fprintf(stderr, "%s: %s\n",
+			    src, gfarm_error_string(e));
+		} else if ((e =
+		    gfs_lchmod(dst, (src_gst.st_mode & GFARM_S_ALLPERM)) )
+		    != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "gfs_lchmod(%s): %s\n",
+			    dst, gfarm_error_string(e));
+		} else {
+			ts[0] = src_gst.st_atimespec;
+			ts[1] = src_gst.st_mtimespec;
+			(void)gfs_lutimes(dst, ts);
+			if (a->try_chown) {
+				e2 = gfs_lchown(dst,
+				    src_gst.st_user, src_gst.st_group);
+				if (e2 == GFARM_ERR_OPERATION_NOT_PERMITTED) {
+					a->try_chown = 0;
+				} else if (e2 != GFARM_ERR_NO_ERROR) {
+					fprintf(stderr, "gfs_lchown(%s): %s\n",
+					    dst, gfarm_error_string(e2));
+					e = e2;
+				}
+			}
+		}
+		e2 = gfs_rmdir(src);
+		if (e2 != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "gfs_rmdir(%s): %s\n",
+			    src, gfarm_error_string(e2));
+			e = e2;
+		}
+		gfs_stat_free(&src_gst);
+	}
+	free(dst);
+	if (a->error == GFARM_ERR_NO_ERROR)
+		a->error = e;
+
+	/* return GFARM_NO_ERROR, to always call later dir_post() */
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+move_dir_inter_dirquota_file_op(char *src, struct gfs_stat *gst, void *arg)
+{
+	struct inter_dirquota_arg *a = arg;
+	gfarm_error_t e;
+	char *dst = alloc_dst(a, src);
+
+	if (dst == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	e = gfs_rename(src, dst);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s %s %s: %s\n",
+		    program_name, src, dst, gfarm_error_string(e));
+	}
+	free(dst);
+	if (a->error == GFARM_ERR_NO_ERROR)
+		a->error = e;
+
+	/* return GFARM_NO_ERROR, to always call later dir_post() */
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+move_dir_inter_dirquota(const char *src, const char *dst)
+{
+	gfarm_error_t e;
+	struct gfs_stat src_gst;
+	struct inter_dirquota_arg a;
+
+	e = gfs_lstat_cached(src, &src_gst);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (!GFARM_S_ISDIR(src_gst.st_mode)) {
+		fprintf(stderr, "%s: %s must be a directory, but it is not\n",
+		    program_name, src);
+		e = GFARM_ERR_UNKNOWN;
+	}
+	gfs_stat_free(&src_gst);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	a.srcdir = src;
+	a.dstdir = dst;
+	a.srcdirlen = strlen(src);
+	a.dstdirlen = strlen(dst);
+	a.error = GFARM_ERR_NO_ERROR;
+	a.try_chown = 1;
+	/* XXX make 4th argument of gfarm_foreach_directory_hierarchy const */
+	e = gfarm_foreach_directory_hierarchy(
+	    move_dir_inter_dirquota_file_op,
+	    move_dir_inter_dirquota_dir_prep,
+	    move_dir_inter_dirquota_dir_post,
+	    (char *)src /* UNCONST */, &a);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (a.error);
+}
 
 /* XXX should be gfs_access(path, GFS_F_OK) */
 static int
@@ -105,6 +267,10 @@ move_file(const char *srcarg, const char *dst)
 
 	if (do_rename) {
 		e = gfs_rename(src, dst);
+		if (e == GFARM_ERR_OPERATION_NOT_SUPPORTED &&
+		    !opt_disallow_inter_dirquota) {
+			e = move_dir_inter_dirquota(src, dst);
+		}
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s %s %s: %s\n",
 			    program_name, src, dst, gfarm_error_string(e));
@@ -119,8 +285,8 @@ move_file(const char *srcarg, const char *dst)
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage:\t%s [-fi] source target-file\n", program_name);
-	fprintf(stderr, "\t%s [-fi] source... target-dir\n", program_name);
+	fprintf(stderr, "Usage:\t%s [-fix] source target-file\n", program_name);
+	fprintf(stderr, "\t%s [-fix] source... target-dir\n", program_name);
 	exit(2);
 }
 
@@ -144,13 +310,16 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "fi?")) != -1) {
+	while ((c = getopt(argc, argv, "fix?")) != -1) {
 		switch (c) {
 		case 'f':
 			opt_force = 1;
 			break;
 		case 'i':
 			opt_interactive = 1;
+			break;
+		case 'x':
+			opt_disallow_inter_dirquota = 1;
 			break;
 		case '?':
 		default:

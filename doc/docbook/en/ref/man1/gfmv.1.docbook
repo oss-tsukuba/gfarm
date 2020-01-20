@@ -72,6 +72,17 @@ to under the existing <parameter moreinfo="none">dest-dir</parameter>.
 </varlistentry>
 
 <varlistentry>
+<term><option>-x</option></term>
+<listitem>
+<para>
+Do not allow moving a directory between different directory quota settings.
+If this option is not specified, gfmv tries to emulate such moving
+by recursively creating the directory hierarchy.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>Displays a list of command options.</para>

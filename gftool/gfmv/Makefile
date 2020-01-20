@@ -19,4 +19,6 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/gfarm_path.h
+$(OBJS): $(DEPGFARMINC) \
+	$(GFARMLIB_SRCDIR)/gfarm_foreach.h \
+	$(GFARMLIB_SRCDIR)/gfarm_path.h
