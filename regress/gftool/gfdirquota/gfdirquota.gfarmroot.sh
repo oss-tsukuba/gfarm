@@ -42,11 +42,11 @@ if gfmkdir ${gftmp}.0 &&
    gfln ${gftmp}.A/file ${gftmp}.A2/file2 &&
 
    # an existing hardlink cannot go across a different dirset
-   gfmv ${gftmp}.0/file ${gftmp}.A/file3 2>&1 |
+   gfmv -x ${gftmp}.0/file ${gftmp}.A/file3 2>&1 |
 	grep 'operation not supported' >/dev/null
-   gfmv ${gftmp}.A/file ${gftmp}.0/file3 2>&1 |
+   gfmv -x ${gftmp}.A/file ${gftmp}.0/file3 2>&1 |
 	grep 'operation not supported' >/dev/null
-   gfmv ${gftmp}.A/file ${gftmp}.B/file3 2>&1 |
+   gfmv -x ${gftmp}.A/file ${gftmp}.B/file3 2>&1 |
 	grep 'operation not supported' >/dev/null
 
    # an existing hardlink can go to same dirset
@@ -56,9 +56,9 @@ if gfmkdir ${gftmp}.0 &&
    gfrm ${gftmp}.A2/file2 ${gftmp}.A2/file3 &&
 
    # a non-hardlinked file can go across a different dirset
-   gfmv ${gftmp}.0/file  ${gftmp}.A/file4 &&
-   gfmv ${gftmp}.A/file4 ${gftmp}.B/file4 &&
-   gfmv ${gftmp}.B/file4 ${gftmp}.0/file &&
+   gfmv -x ${gftmp}.0/file  ${gftmp}.A/file4 &&
+   gfmv -x ${gftmp}.A/file4 ${gftmp}.B/file4 &&
+   gfmv -x ${gftmp}.B/file4 ${gftmp}.0/file &&
 
    gfmkdir ${gftmp}.0/dir &&
    gfmkdir ${gftmp}.A/dir &&
@@ -73,18 +73,18 @@ if gfmkdir ${gftmp}.0 &&
    gfln ${gftmp}.A/dir/file5 ${gftmp}.A/dir/file6 &&
 
    # a directory can go same dirset
-   gfmv ${gftmp}.A/dir ${gftmp}.A2/dir  &&
+   gfmv -x ${gftmp}.A/dir ${gftmp}.A2/dir  &&
 
    # a directory can go across a different dirset by gfarmroot
-   gfmv ${gftmp}.0/dir  ${gftmp}.A/dir2 &&
-   gfmv ${gftmp}.A2/dir ${gftmp}.0/dir2 &&
-   gfmv ${gftmp}.A/dir2  ${gftmp}.B/dir2 &&
+   gfmv -x ${gftmp}.0/dir  ${gftmp}.A/dir2 &&
+   gfmv -x ${gftmp}.A2/dir ${gftmp}.0/dir2 &&
+   gfmv -x ${gftmp}.A/dir2  ${gftmp}.B/dir2 &&
 
    # but a directory which contains a hardlink to a different directory
    # cannot go across a different dirset even by gfarmroot
    gfmkdir ${gftmp}.A2/dir3 &&
    gfln ${gftmp}.A/file ${gftmp}.A2/dir3/file7 &&
-   gfmv ${gftmp}.A2/dir3  ${gftmp}.B/dir3 2>&1 |
+   gfmv -x ${gftmp}.A2/dir3  ${gftmp}.B/dir3 2>&1 |
 	grep 'operation not supported' >/dev/null &&
 
    gfrm ${gftmp}.0/file ${gftmp}.A/file \
