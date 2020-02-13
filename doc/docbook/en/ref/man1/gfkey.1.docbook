@@ -6,7 +6,7 @@
 
 <refentry id="gfkey.1">
 
-<refentryinfo><date>6 Jun 2019</date></refentryinfo>
+<refentryinfo><date>13 Feb 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfkey</refentrytitle>
@@ -100,6 +100,13 @@ this option.</para>
 </varlistentry>
 
 <varlistentry>
+<term><option>-V</option></term>
+<listitem>
+<para>Displays the version information.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>Displays a list of command options.</para>
@@ -122,4 +129,3 @@ this option.</para>
 
 </refsect1>
 </refentry>
-
