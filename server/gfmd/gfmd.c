@@ -1726,6 +1726,7 @@ gfmd_modules_init_default(int table_size)
 	host_init();
 	user_init();
 	group_init();
+	quota_init();
 
 	/* filesystem */
 	inode_init();
@@ -1735,7 +1736,6 @@ gfmd_modules_init_default(int table_size)
 	if (gfarm_backend_db_type == GFARM_BACKEND_DB_TYPE_NONE)
 		xattr_init_cache_all();
 	xattr_init();
-	quota_init();
 	dirset_init();
 	quota_dir_init();
 

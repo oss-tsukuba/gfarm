@@ -255,6 +255,9 @@ user_remove_internal(const char *username, int update_quota)
 	/* free group assignment */
 	while ((ga = u->groups.group_next) != &u->groups)
 		grpassign_remove(ga);
+
+	/* NOTE: this user remains in struct inode, dirset and quota_dir */
+
 	/*
 	 * do not purge the hash entry.  Instead, invalidate it so
 	 * that it can be activated later.
@@ -322,6 +325,12 @@ user_name(struct user *u)
 {
 	return (u != NULL && user_is_valid(u) ?
 	    u->ui.username : REMOVED_USER_NAME);
+}
+
+char *
+user_name_even_invalid(struct user *u)
+{
+	return (u != NULL ? u->ui.username : REMOVED_USER_NAME);
 }
 
 char *

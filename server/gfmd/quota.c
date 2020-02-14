@@ -177,6 +177,15 @@ dirquota_softlimit_exceed(struct quota_metadata *q, struct dirset *ds)
 }
 
 static void
+quota_info_usage_clear(struct gfarm_quota_info *usage)
+{
+	usage->space = 0;
+	usage->num = 0;
+	usage->phy_space = 0;
+	usage->phy_num = 0;
+}
+
+static void
 quota_usage_clear(struct gfarm_quota_subject_info *usage)
 {
 	usage->space = 0;
@@ -205,12 +214,27 @@ usage_tmp_clear(void)
 }
 
 static void
-usage_to_quota(struct gfarm_quota_subject_info *src_usage, struct quota *dst)
+usage_to_quota(struct gfarm_quota_subject_info *src_usage, struct quota *dst,
+	const char *type, const char *name)
 {
-	dst->space = src_usage->space;
-	dst->num = src_usage->num;
-	dst->phy_space = src_usage->phy_space;
-	dst->phy_num = src_usage->phy_num;
+	if (dst->space != src_usage->space ||
+	    dst->num != src_usage->num ||
+	    dst->phy_space != src_usage->phy_space ||
+	    dst->phy_num != src_usage->phy_num) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s %s: unexpected quota update: "
+		    "space:%llu->%llu, num:%llu->%llu, "
+		    "phy_space:%llu->%llu, phy_num:%llu->%llu",
+		    type, name,
+		    (long long)dst->space, (long long)src_usage->space,
+		    (long long)dst->num, (long long)src_usage->num,
+		    (long long)dst->phy_space, (long long)src_usage->phy_space,
+		    (long long)dst->phy_num, (long long)src_usage->phy_num);
+		dst->space = src_usage->space;
+		dst->num = src_usage->num;
+		dst->phy_space = src_usage->phy_space;
+		dst->phy_num = src_usage->phy_num;
+	}
 }
 
 static void
@@ -219,9 +243,10 @@ quota_update_usage_user(void *closure, struct user *u)
 	struct quota *q = user_quota(u);
 	struct gfarm_quota_subject_info *usage_tmp = user_usage_tmp(u);
 
-	usage_to_quota(usage_tmp, q);
+	usage_to_quota(usage_tmp, q, "user", user_name(u));
 	quota_softlimit_exceed_user(q, u);
 
+#if 0 /* this is OK since gfarm-2.7.17 */
 	if (!user_is_valid(u))
 		gflog_notice(GFARM_MSG_1004294,
 		    "quota_check: removed user(%s), Usage: "
@@ -229,6 +254,7 @@ quota_update_usage_user(void *closure, struct user *u)
 		    user_name_with_invalid(u),
 		    (long long)q->space, (long long)q->num,
 		    (long long)q->phy_space, (long long)q->phy_num);
+#endif
 }
 
 static void
@@ -237,9 +263,10 @@ quota_update_usage_group(void *closure, struct group *g)
 	struct quota *q = group_quota(g);
 	struct gfarm_quota_subject_info *usage_tmp = group_usage_tmp(g);
 
-	usage_to_quota(usage_tmp, q);
+	usage_to_quota(usage_tmp, q, "group", group_name(g));
 	quota_softlimit_exceed_group(q, g);
 
+#if 0 /* this is OK since gfarm-2.7.17 */
 	if (!group_is_valid(g))
 		gflog_notice(GFARM_MSG_1004295,
 		    "quota_check: removed group(%s), Usage: "
@@ -247,6 +274,7 @@ quota_update_usage_group(void *closure, struct group *g)
 		    group_name_with_invalid(g),
 		    (long long)q->space, (long long)q->num,
 		    (long long)q->phy_space, (long long)q->phy_num);
+#endif
 }
 
 static void
@@ -382,6 +410,8 @@ quota_user_set_one_from_db(void *closure, struct gfarm_quota_info *qi)
 		quota_user_remove_db(qi->name);
 	} else {
 		struct quota *q = user_quota(u);
+
+		quota_info_usage_clear(qi); /* usage in DB cannot be trusted */
 		quota_convert_2(qi, q);
 		q->on_db = 1; /* load from db */
 	}
@@ -400,6 +430,8 @@ quota_group_set_one_from_db(void *closure, struct gfarm_quota_info *qi)
 		quota_group_remove_db(qi->name);
 	} else {
 		struct quota *q = group_quota(g);
+
+		quota_info_usage_clear(qi); /* usage in DB cannot be trusted */
 		quota_convert_2(qi, q);
 		q->on_db = 1; /* load from db */
 	}
@@ -433,7 +465,7 @@ quota_data_init(struct quota *q)
 	/* disable all softlimit */
 	q->grace_period = GFARM_QUOTA_INVALID;
 	/* gfarmadm do not execute gfquotacheck yet */
-	q->space = QUOTA_NOT_CHECK_YET;
+	q->space = 0;
 	q->space_exceed = GFARM_QUOTA_INVALID;
 	q->space_soft = GFARM_QUOTA_INVALID;
 	q->space_hard = GFARM_QUOTA_INVALID;
@@ -1090,7 +1122,6 @@ quota_user_remove(struct user *u)
 		quota_user_remove_db(user_name(u));
 		q->on_db = 0;
 	}
-	q->space = QUOTA_NOT_CHECK_YET;
 }
 
 void
@@ -1102,7 +1133,6 @@ quota_group_remove(struct group *g)
 		quota_group_remove_db(group_name(g));
 		q->on_db = 0;
 	}
-	q->space = QUOTA_NOT_CHECK_YET;
 }
 
 /*
@@ -1192,15 +1222,18 @@ quota_check_thread(void *arg)
 }
 
 static gfarm_error_t
-quota_check_at_the_start(struct quota_check_control *ctl)
+quota_check_at_the_start(struct quota_check_control *ctl, int check_start)
 {
 	gfarm_error_t e = create_detached_thread(quota_check_thread, ctl);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	quota_check_start(ctl);
-	quota_check_wait_for_end(ctl);
+	if (check_start) {
+		quota_check_start(ctl);
+		quota_check_wait_for_end(ctl);
+	}
+
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1605,13 +1638,15 @@ quota_check_init(void)
 {
 	gfarm_error_t e;
 
-	e = quota_check_at_the_start(&quota_check_ctl);
+	/* quota_check at startup is unnecessary since gfarm-2.7.17 */
+	e = quota_check_at_the_start(&quota_check_ctl, 0);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1004299,
 		    "create_detached_thread(quota_check): %s",
 		    gfarm_error_string(e));
 
-	e = quota_check_at_the_start(&dirquota_check_ctl);
+	/* dirquota_check at startup is still necessary */
+	e = quota_check_at_the_start(&dirquota_check_ctl, 1);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1004641,
 		    "create_detached_thread(dirquota_check): %s",
@@ -1663,7 +1698,8 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 	if (is_group) {
 		if (strcmp(name, "") == 0)
 			e = GFARM_ERR_NO_SUCH_GROUP;
-		else if ((group = group_lookup(name)) == NULL) {
+		else if ((group = group_lookup_including_invalid(name))
+		    == NULL) {
 			if (user_is_admin(peer_user))
 				e = GFARM_ERR_NO_SUCH_GROUP;
 			else  /* hidden groupnames */
@@ -1683,7 +1719,7 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 			user = peer_user; /* permit not-admin */
 		else if (!user_is_admin(peer_user))
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		else if ((user = user_lookup(name)) == NULL)
+		else if ((user = user_lookup_including_invalid(name)) == NULL)
 			e = GFARM_ERR_NO_SUCH_USER;
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
