@@ -7,6 +7,7 @@ struct user *user_lookup_or_enter_invalid(const char *);
 struct user *user_lookup(const char *);
 struct user *user_lookup_gsi_dn(const char *);
 char *user_name(struct user *);
+char *user_name_even_invalid(struct user *);
 char *user_name_with_invalid(struct user *);
 char *user_realname(struct user *);
 char *user_gsi_dn(struct user *);

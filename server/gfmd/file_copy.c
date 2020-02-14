@@ -78,11 +78,11 @@ file_copy_by_host_remove(void)
 			if (inum_target > inum_limit)
 				inum_target = inum_limit;
 		}
-		inode_remove_replica_in_cache_for_invalid_host(inum);
+		inode_remove_file_copy_for_invalid_host(inum);
 	}
 	/*
 	 * NOTE:
-	 * inode_remove_replica_in_cache_for_invalid_host() has
+	 * inode_remove_file_copy_for_invalid_host() has
 	 * no way to know relevant dirset,
 	 * and calls dirquota_check_schedule()
 	 */

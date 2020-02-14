@@ -57,7 +57,6 @@ gfarm_mode_t inode_get_mode(struct inode *);
 gfarm_error_t inode_set_mode(struct inode *, gfarm_mode_t);
 void inode_set_mode_in_cache(struct inode *, gfarm_mode_t);
 gfarm_off_t inode_get_size(struct inode *);
-void inode_set_size(struct inode *, struct dirset *, gfarm_off_t);
 void inode_set_size_in_cache(struct inode *, gfarm_off_t);
 gfarm_error_t inode_set_owner(struct inode *, struct user *, struct group *);
 struct gfarm_timespec *inode_get_atime(struct inode *);
@@ -77,7 +76,6 @@ char *inode_get_symlink(struct inode *);
 int inode_dir_is_empty(struct inode *);
 int inode_desired_dead_file_copy(gfarm_ino_t);
 gfarm_error_t inode_add_or_modify_in_cache(struct gfs_stat *, struct inode **);
-void inode_modify(struct inode *, struct gfs_stat *);
 gfarm_error_t symlink_add(gfarm_ino_t, char *);
 void inode_clear_symlink(struct inode *);
 void inode_free(struct inode *);
@@ -138,7 +136,7 @@ gfarm_error_t inode_remove_replica_orphan(struct inode *, struct host *);
 void inode_remove_replica_incomplete(struct inode *, struct host *,
 	gfarm_int64_t);
 gfarm_error_t inode_remove_replica_in_cache(struct inode *, struct host *);
-void inode_remove_replica_in_cache_for_invalid_host(gfarm_ino_t);
+void inode_remove_file_copy_for_invalid_host(gfarm_ino_t);
 int inode_is_updated(struct inode *, struct gfarm_timespec *);
 gfarm_error_t dir_entry_add(gfarm_ino_t, char *, int, gfarm_ino_t);
 

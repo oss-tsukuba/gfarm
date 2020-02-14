@@ -203,6 +203,9 @@ group_remove_internal(const char *groupname, int update_quota)
 	}
 	if (update_quota)
 		quota_group_remove(g);
+
+	/* NOTE: this group remains in struct inode */
+
 	/*
 	 * do not purge the hash entry.  Instead, invalidate it so
 	 * that it can be activated later.
@@ -267,6 +270,12 @@ group_name(struct group *g)
 {
 	return (g != NULL && group_is_valid(g) ?
 	    g->groupname : REMOVED_GROUP_NAME);
+}
+
+char *
+group_name_even_invalid(struct group *g)
+{
+	return (g != NULL ? g->groupname : REMOVED_GROUP_NAME);
 }
 
 char *

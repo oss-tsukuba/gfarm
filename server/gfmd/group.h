@@ -24,6 +24,7 @@ struct group *group_lookup(const char *);
 gfarm_error_t grpassign_add(struct user *, struct group *);
 void grpassign_remove(struct group_assignment *);
 char *group_name(struct group *);
+char *group_name_even_invalid(struct group *);
 char *group_name_with_invalid(struct group *);
 int group_is_invalid(struct group *);
 int group_is_valid(struct group *);
