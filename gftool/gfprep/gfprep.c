@@ -2398,7 +2398,7 @@ gfprep_sigs_handler(void *p)
 static void
 gfprep_signal_init()
 {
-	sigset_t sigs;
+	static sigset_t sigs;
 	int err;
 	pthread_t signal_thread;
 

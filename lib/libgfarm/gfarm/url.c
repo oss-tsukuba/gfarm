@@ -20,8 +20,14 @@ const char GFARM_PATH_ROOT[] = "/";
 int
 gfarm_is_url(const char *gfarm_url)
 {
-	return (memcmp(gfarm_url, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH)
-	    == 0);
+	int i;
+
+	if (gfarm_url == NULL)
+		return (0);
+	for (i = 0; i < GFARM_URL_PREFIX_LENGTH; ++i)
+		if (gfarm_url[i] != GFARM_URL_PREFIX[i])
+			return (0);
+	return (1);
 }
 
 const char *

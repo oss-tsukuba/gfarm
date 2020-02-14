@@ -5,7 +5,7 @@
 
 <refentry id="gfkey.1">
 
-<refentryinfo><date>6 Jun 2019</date></refentryinfo>
+<refentryinfo><date>13 Feb 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfkey</refentrytitle>
@@ -91,6 +91,12 @@
 </listitem>
 </varlistentry>
 <varlistentry>
+<term><option>-V</option></term>
+<listitem>
+<para>バージョンを表示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>引数オプションを表示します。</para>
@@ -110,4 +116,3 @@
 </variablelist>
 </refsect1>
 </refentry>
-

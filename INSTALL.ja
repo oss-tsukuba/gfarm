@@ -121,7 +121,7 @@ configure コマンドには，下記のオプションがあります．
 
 openssl-devel
 openldap-devel
-postgresql-devel
+postgresql-devel or libpq-devel
 globus-gssapi-gsi-devel(*), pkgconfig	(--with-globus オプションに必要)
 postgresql, postgresql-server		(config-gfarm の実行に必要)
 fuse-devel				(gfarm2fs の構築に必要)
