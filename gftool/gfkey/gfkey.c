@@ -34,14 +34,15 @@ usage(void)
 	    program_name);
 
 	fprintf(stderr, "option:\n");
-	fprintf(stderr, "\t-c\t\tcreate a new key, if it doesn't exist or "
-	    "it is expired\n");
+	fprintf(stderr, "\t-c\t\tcreate a new key when there is no valid "
+	    "key\n");
 	fprintf(stderr, "\t-f\t\tforce to create a new key\n");
 	fprintf(stderr, "\t-p <period>\tspecify term of validity in second\n");
-	fprintf(stderr, "\t-l\t\tlist the existing key\n");
+	fprintf(stderr, "\t-l\t\tdisplay the current key\n");
 	fprintf(stderr, "\t-e\t\treport the expiration time\n");
 	fprintf(stderr, "\t-L <message-priority-level>\tmessage priority "
 	    "level\n");
+	fprintf(stderr, "\t-V\t\tdisplay version information\n");
 	exit(1);
 }
 
@@ -73,7 +74,7 @@ main(argc, argv)
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "ceflp:L:?")) != -1) {
+	while ((ch = getopt(argc, argv, "ceflp:L:V?")) != -1) {
 		switch (ch) {
 		case 'c':
 			if (mode == GFARM_AUTH_SHARED_KEY_CREATE_FORCE)
@@ -103,6 +104,9 @@ main(argc, argv)
 				exit(1);
 			}
 			break;
+		case 'V':
+			fprintf(stderr, "Gfarm version %s\n", gfarm_version());
+			exit(0);
 		case '?':
 		default:
 			usage();
