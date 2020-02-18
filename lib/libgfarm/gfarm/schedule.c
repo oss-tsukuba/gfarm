@@ -733,8 +733,11 @@ gfarm_schedule_host_cache_purge(struct gfs_connection *gfs_server)
 	struct gfarm_hash_entry *entry;
 	struct search_idle_host_state *h;
 
-	if (staticp->search_idle_hosts_state == NULL)
+	SCHED_MUTEX_LOCK(staticp);
+	if (staticp->search_idle_hosts_state == NULL) {
+		SCHED_MUTEX_UNLOCK(staticp);
 		return (GFARM_ERR_NO_ERROR);
+	}
 
 	e = gfp_conn_hash_lookup(&staticp->search_idle_hosts_state,
 	    HOSTS_HASHTAB_SIZE,
@@ -747,11 +750,13 @@ gfarm_schedule_host_cache_purge(struct gfs_connection *gfs_server)
 		    "gfarm_schedule_host_cache_purge: "
 		    "connection is not cached: %s",
 		    gfarm_error_string(e));
+		SCHED_MUTEX_UNLOCK(staticp);
 		return (e);
 	}
 
 	h = gfarm_hash_entry_data(entry);
 	h->flags &= ~HOST_STATE_FLAG_AUTH_SUCCEED;
+	SCHED_MUTEX_UNLOCK(staticp);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -771,8 +776,11 @@ gfarm_schedule_host_cache_reset(struct gfm_connection *gfm_server, int nhosts,
 	    HOST_STATE_FLAG_AVAILABLE|
 	    HOST_STATE_FLAG_CACHE_WAS_USED;
 
-	if (staticp->search_idle_hosts_state == NULL)
+	SCHED_MUTEX_LOCK(staticp);
+	if (staticp->search_idle_hosts_state == NULL) {
+		SCHED_MUTEX_UNLOCK(staticp);
 		return;
+	}
 
 	for (i = 0; i < nhosts; ++i) {
 		e = gfp_conn_hash_lookup(&staticp->search_idle_hosts_state,
@@ -784,6 +792,7 @@ gfarm_schedule_host_cache_reset(struct gfm_connection *gfm_server, int nhosts,
 		h = gfarm_hash_entry_data(entry);
 		h->flags &= ~host_flags;
 	}
+	SCHED_MUTEX_UNLOCK(staticp);
 	return;
 }
 
@@ -984,7 +993,9 @@ search_idle_candidate_list_add(struct gfm_connection *gfm_server,
 void
 gfarm_schedule_search_mode_use_loadavg(void)
 {
+	SCHED_MUTEX_LOCK(staticp);
 	staticp->default_search_method = GFARM_SCHEDULE_SEARCH_BY_LOADAVG;
+	SCHED_MUTEX_UNLOCK(staticp);
 }
 
 #define IDLE_LOAD_AVERAGE	(gfarm_ctxp->schedule_idle_load * \
@@ -2011,15 +2022,18 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 	if (target_domain != NULL && e == GFARM_ERR_NO_FILESYSTEM_NODE)
 		e = select_hosts(gfm_server, 1, write_mode, NULL,
 			nhosts, infos, &n, &host, &port);
-	SCHED_MUTEX_UNLOCK(staticp)
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		SCHED_MUTEX_UNLOCK(staticp)
 		return (e);
+	}
 	if (n == 0) { /* although this shouldn't happen */
 		gflog_debug(GFARM_MSG_1001456,
 		    "gfarm_schedule_select_host: no filesystem node");
+		SCHED_MUTEX_UNLOCK(staticp)
 		return (GFARM_ERR_NO_FILESYSTEM_NODE);
 	}
 	host = strdup(host);
+	SCHED_MUTEX_UNLOCK(staticp)
 	if (host == NULL) {
 		gflog_debug(GFARM_MSG_1001457,
 		    "gfarm_schedule_select_host: no memory");
@@ -2164,16 +2178,22 @@ gfarm_schedule_host_used(const char *hostname, int port, const char *username)
 	struct gfarm_hash_entry *entry;
 	struct search_idle_host_state *h;
 
-	if (staticp->search_idle_hosts_state == NULL)
+	SCHED_MUTEX_LOCK(staticp);
+	if (staticp->search_idle_hosts_state == NULL) {
+		SCHED_MUTEX_UNLOCK(staticp);
 		return (HOST_STATE_SCHEDULED_AGE_NOT_FOUND);
+	}
 
 	e = gfp_conn_hash_lookup(&staticp->search_idle_hosts_state,
 	    HOSTS_HASHTAB_SIZE, hostname, port, username, &entry);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		SCHED_MUTEX_UNLOCK(staticp);
 		return (HOST_STATE_SCHEDULED_AGE_NOT_FOUND);
+	}
 
 	h = gfarm_hash_entry_data(entry);
 	h->scheduled++;
+	SCHED_MUTEX_UNLOCK(staticp);
 	return (h->scheduled_age);
 }
 
@@ -2188,18 +2208,23 @@ gfarm_schedule_host_unused(const char *hostname, int port, const char *username,
 
 	if (scheduled_age == HOST_STATE_SCHEDULED_AGE_NOT_FOUND)
 		return;
+	SCHED_MUTEX_LOCK(staticp);
 	if (staticp->search_idle_hosts_state == NULL) {
 		gflog_notice(GFARM_MSG_1004318, "%s: internal error", diag);
+		SCHED_MUTEX_UNLOCK(staticp);
 		return;
 	}
 	e = gfp_conn_hash_lookup(&staticp->search_idle_hosts_state,
 	    HOSTS_HASHTAB_SIZE, hostname, port, username, &entry);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		SCHED_MUTEX_UNLOCK(staticp);
 		return;
+	}
 
 	h = gfarm_hash_entry_data(entry);
 	if (h->scheduled_age == scheduled_age)
 		--h->scheduled;
+	SCHED_MUTEX_UNLOCK(staticp);
 }
 
 /* this function shouldn't belong to this file, but... */
@@ -2208,6 +2233,7 @@ gfm_host_is_in_local_net(struct gfm_connection *gfm_server, const char *host)
 {
 	gfarm_error_t e;
 	struct sockaddr addr;
+	int rv;
 
 	/* XXX it's desirable to use struct sockaddr in the scheduling cache */
 
@@ -2216,12 +2242,17 @@ gfm_host_is_in_local_net(struct gfm_connection *gfm_server, const char *host)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (0);
 
+	SCHED_MUTEX_LOCK(staticp);
 	if (staticp->search_idle_local_net == NULL &&
-	    search_idle_network_list_init(gfm_server) != GFARM_ERR_NO_ERROR)
+	    search_idle_network_list_init(gfm_server) != GFARM_ERR_NO_ERROR) {
+		SCHED_MUTEX_UNLOCK(staticp);
 		return (0);
+	}
 
-	return (gfarm_hostspec_match(staticp->search_idle_local_net->network,
-	    NULL, &addr));
+	rv = gfarm_hostspec_match(staticp->search_idle_local_net->network,
+	    NULL, &addr);
+	SCHED_MUTEX_UNLOCK(staticp);
+	return (rv);
 }
 
 /*
@@ -2233,6 +2264,7 @@ gfarm_schedule_network_cache_dump(void)
 	struct search_idle_network *n;
 	char addr[GFARM_HOSTSPEC_STRLEN];
 
+	SCHED_MUTEX_LOCK(staticp);
 	for (n = staticp->search_idle_network_list; n != NULL; n = n->next) {
 		/*
 		 * the reason why we don't use inet_ntoa() here is
@@ -2247,6 +2279,7 @@ gfarm_schedule_network_cache_dump(void)
 			gflog_info(GFARM_MSG_1000175,
 			    "%s: RTT unavailable", addr);
 	}
+	SCHED_MUTEX_UNLOCK(staticp);
 }
 
 void
@@ -2263,8 +2296,10 @@ gfarm_schedule_host_cache_dump(void)
 	char disktotalbuf[GFARM_INT64STRLEN];
 	struct timeval period;
 
+	SCHED_MUTEX_LOCK(staticp);
 	if (staticp->search_idle_hosts_state == NULL) {
 		gflog_info(GFARM_MSG_1000176, "<empty>");
+		SCHED_MUTEX_UNLOCK(staticp);
 		return;
 	}
 
@@ -2343,6 +2378,7 @@ gfarm_schedule_host_cache_dump(void)
 		gflog_info(GFARM_MSG_1000177,
 		    "%s %s %s %s", hostbuf, rttbuf, loadbuf, diskbuf);
 	}
+	SCHED_MUTEX_UNLOCK(staticp);
 }
 
 void
