@@ -4,11 +4,13 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <stddef.h>
+#include <pthread.h>
 
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
 #include "hash.h"
+#include "thrsubr.h"
 
 #include "context.h"
 #include "config.h"
@@ -70,6 +72,20 @@ static struct stat_cache lstat_cache = {
 	gfs_lstat
 };
 
+static pthread_mutex_t stat_cache_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void
+stat_cache_lock(const char *where)
+{
+	gfarm_mutex_lock(&stat_cache_mutex, where, "stat_cache");
+}
+
+static void
+stat_cache_unlock(const char *where)
+{
+	gfarm_mutex_unlock(&stat_cache_mutex, where, "stat_cache");
+}
+
 static gfarm_error_t
 gfs_stat_cache_init0(struct stat_cache *cache)
 {
@@ -103,8 +119,10 @@ gfs_stat_cache_init(void)
 {
 	gfarm_error_t e1, e2;
 
+	stat_cache_lock(__func__);
 	e1 = gfs_stat_cache_init0(&stat_cache);
 	e2 = gfs_stat_cache_init0(&lstat_cache);
+	stat_cache_unlock(__func__);
 	return (e1 != GFARM_ERR_NO_ERROR ? e1 : e2);
 }
 
@@ -149,8 +167,10 @@ gfs_stat_cache_clear0(struct stat_cache *cache)
 void
 gfs_stat_cache_clear(void)
 {
+	stat_cache_lock(__func__);
 	gfs_stat_cache_clear0(&stat_cache);
 	gfs_stat_cache_clear0(&lstat_cache);
+	stat_cache_unlock(__func__);
 }
 
 static void
@@ -188,8 +208,10 @@ gfs_stat_cache_expire0(struct stat_cache *cache)
 void
 gfs_stat_cache_expire(void)
 {
-    gfs_stat_cache_expire0(&stat_cache);
-    gfs_stat_cache_expire0(&lstat_cache);
+	stat_cache_lock(__func__);
+	gfs_stat_cache_expire0(&stat_cache);
+	gfs_stat_cache_expire0(&lstat_cache);
+	stat_cache_unlock(__func__);
 }
 
 static void
@@ -213,8 +235,10 @@ gfs_stat_cache_expiration_set0(struct stat_cache *cache,
 void
 gfs_stat_cache_expiration_set(long lifespan_millsecond)
 {
+	stat_cache_lock(__func__);
 	gfs_stat_cache_expiration_set0(&stat_cache, lifespan_millsecond);
 	gfs_stat_cache_expiration_set0(&lstat_cache, lifespan_millsecond);
+	stat_cache_unlock(__func__);
 }
 
 static gfarm_error_t
@@ -405,13 +429,16 @@ gfs_stat_cache_purge(const char *path)
 	gfarm_error_t e1, e2;
 
 	/* both cache must be purged, regardless of any error */
+	stat_cache_lock(__func__);
 	e1 = gfs_stat_cache_purge0(&lstat_cache, path);
 	e2 = gfs_stat_cache_purge0(&stat_cache, path);
+	stat_cache_unlock(__func__);
 	/* only if not found in both lstat cache and stat cache */
 	if (e1 == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY &&
 	    e2 == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
 		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
 #if 0 /* this is ok with current gfs_stat_cache_purge0() implementation */
+	stat_cache_unlock(__func__);
 	return (GFARM_ERR_NO_ERROR);
 #else /* if gfs_stat_cache_purge0() returns other error, this is necessary */
 	if (e1 == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
@@ -499,14 +526,22 @@ gfs_stat_caching0(struct stat_cache *cache, const char *path,
 gfarm_error_t
 gfs_stat_caching(const char *path, struct gfs_stat *st)
 {
-	return (gfs_stat_caching0(&stat_cache, path, st));
+	gfarm_error_t rv;
+	stat_cache_lock(__func__);
+	rv = gfs_stat_caching0(&stat_cache, path, st);
+	stat_cache_unlock(__func__);
+	return (rv);
 }
 
 /* this returns uncached result, but enter the result to the cache */
 gfarm_error_t
 gfs_lstat_caching(const char *path, struct gfs_stat *st)
 {
-	return (gfs_stat_caching0(&lstat_cache, path, st));
+	gfarm_error_t rv;
+	stat_cache_lock(__func__);
+	rv = gfs_stat_caching0(&lstat_cache, path, st);
+	stat_cache_unlock(__func__);
+	return (rv);
 }
 
 /* this returns uncached result, but enter the result to the cache */
@@ -570,7 +605,11 @@ gfarm_error_t
 gfs_getxattr_caching(const char *path, const char *name,
 	void *value, size_t *sizep)
 {
-	return (gfs_getxattr_caching0(&stat_cache, path, name, value, sizep));
+	gfarm_error_t rv;
+	stat_cache_lock(__func__);
+	rv = gfs_getxattr_caching0(&stat_cache, path, name, value, sizep);
+	stat_cache_unlock(__func__);
+	return (rv);
 }
 
 /* this returns uncached result, but enter the result to the cache */
@@ -578,7 +617,11 @@ gfarm_error_t
 gfs_lgetxattr_caching(const char *path, const char *name,
 	void *value, size_t *sizep)
 {
-	return (gfs_getxattr_caching0(&lstat_cache, path, name, value, sizep));
+	gfarm_error_t rv;
+	stat_cache_lock(__func__);
+	rv = gfs_getxattr_caching0(&lstat_cache, path, name, value, sizep);
+	stat_cache_unlock(__func__);
+	return (rv);
 }
 
 static gfarm_error_t
@@ -638,14 +681,22 @@ gfs_stat_cached_internal0(struct stat_cache *cache, const char *path,
 gfarm_error_t
 gfs_stat_cached_internal(const char *path, struct gfs_stat *st)
 {
-	return (gfs_stat_cached_internal0(&stat_cache, path, st));
+	gfarm_error_t rv;
+	stat_cache_lock(__func__);
+	rv = gfs_stat_cached_internal0(&stat_cache, path, st);
+	stat_cache_unlock(__func__);
+	return (rv);
 }
 
 /* this returns cached result */
 gfarm_error_t
 gfs_lstat_cached_internal(const char *path, struct gfs_stat *st)
 {
-	return (gfs_stat_cached_internal0(&lstat_cache, path, st));
+	gfarm_error_t rv;
+	stat_cache_lock(__func__);
+	rv = gfs_stat_cached_internal0(&lstat_cache, path, st);
+	stat_cache_unlock(__func__);
+	return (rv);
 }
 
 /* this returns cached result */
@@ -701,16 +752,24 @@ gfarm_error_t
 gfs_getxattr_cached_internal(const char *path, const char *name,
 	void *value, size_t *sizep)
 {
-	return (gfs_getxattr_cached_internal0(&stat_cache, path, name,
-		value, sizep));
+	gfarm_error_t rv;
+	stat_cache_lock(__func__);
+	rv = gfs_getxattr_cached_internal0(&stat_cache, path, name,
+		value, sizep);
+	stat_cache_unlock(__func__);
+	return (rv);
 }
 
 gfarm_error_t
 gfs_lgetxattr_cached_internal(const char *path, const char *name,
 	void *value, size_t *sizep)
 {
-	return (gfs_getxattr_cached_internal0(&lstat_cache, path, name,
-	    value, sizep));
+	gfarm_error_t rv;
+	stat_cache_lock(__func__);
+	rv = gfs_getxattr_cached_internal0(&lstat_cache, path, name,
+	    value, sizep);
+	stat_cache_unlock(__func__);
+	return (rv);
 }
 
 /*
@@ -737,13 +796,17 @@ gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 	void **attrvalues;
 	size_t *attrsizes;
 	char *path;
-	gfarm_error_t e = gfs_readdirplusxattr(dir->dp,
-		&ep, &stp, &nattrs, &attrnames, &attrvalues, &attrsizes);
+	gfarm_error_t e;
 
+	stat_cache_lock(__func__);
+
+	e = gfs_readdirplusxattr(dir->dp,
+		&ep, &stp, &nattrs, &attrnames, &attrvalues, &attrsizes);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001289,
 			"gfs_readdirplusxattr() failed: %s",
 			gfarm_error_string(e));
+		stat_cache_unlock(__func__);
 		return (e);
 	}
 
@@ -797,6 +860,7 @@ gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 		}
 	}
 
+	stat_cache_unlock(__func__);
 	*entryp = ep;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -804,24 +868,36 @@ gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 static gfarm_error_t
 gfs_seekdir_caching_internal(GFS_Dir super, gfarm_off_t off)
 {
+	gfarm_error_t e;
 	struct gfs_dir_caching *dir = (struct gfs_dir_caching *)super;
 
-	return (gfs_seekdirplusxattr(dir->dp, off));
+	stat_cache_lock(__func__);
+	e = gfs_seekdirplusxattr(dir->dp, off);
+	stat_cache_unlock(__func__);
+	return (e);
 }
 
 static gfarm_error_t
 gfs_telldir_caching_internal(GFS_Dir super, gfarm_off_t *offp)
 {
+	gfarm_error_t e;
 	struct gfs_dir_caching *dir = (struct gfs_dir_caching *)super;
 
-	return (gfs_telldirplusxattr(dir->dp, offp));
+	stat_cache_lock(__func__);
+	e = gfs_telldirplusxattr(dir->dp, offp);
+	stat_cache_unlock(__func__);
+	return (e);
 }
 
 static gfarm_error_t
 gfs_closedir_caching_internal(GFS_Dir super)
 {
 	struct gfs_dir_caching *dir = (struct gfs_dir_caching *)super;
-	gfarm_error_t e = gfs_closedirplusxattr(dir->dp);
+	gfarm_error_t e;
+
+	stat_cache_lock(__func__);
+	e = gfs_closedirplusxattr(dir->dp);
+	stat_cache_unlock(__func__);
 
 	free(dir->path);
 	free(dir);
@@ -842,11 +918,14 @@ gfs_opendir_caching_internal(const char *path, GFS_Dir *dirp)
 		gfs_telldir_caching_internal
 	};
 
+	stat_cache_lock(__func__);
+
 	if ((e = gfs_opendirplusxattr(path, &dp)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001290,
 			"gfs_opendirplusxattr(%s) failed: %s",
 			path,
 			gfarm_error_string(e));
+		stat_cache_unlock(__func__);
 		return (e);
 	}
 
@@ -870,12 +949,15 @@ gfs_opendir_caching_internal(const char *path, GFS_Dir *dirp)
 		gflog_debug(GFARM_MSG_1001291,
 			"allocation of dir or path failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		stat_cache_unlock(__func__);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
 	dir->super.ops = &ops;
 	dir->dp = dp;
 	dir->path = p;
+
+	stat_cache_unlock(__func__);
 	*dirp = &dir->super;
 	return (GFARM_ERR_NO_ERROR);
 }
