@@ -33,6 +33,7 @@
 #include "gfevent.h"
 #include "hash.h"
 #include "timer.h"
+#include "thrsubr.h"
 
 #include "context.h"
 #include "liberror.h"
@@ -50,11 +51,19 @@
 #include "gfs_failover.h"
 
 #ifndef __KERNEL__
-#define SCHED_MUTEX_DCL
-#define SCHED_MUTEX_INIT(s)
-#define SCHED_MUTEX_DESTROY(s)
-#define SCHED_MUTEX_LOCK(s)
-#define SCHED_MUTEX_UNLOCK(s)
+#define SCHED_MUTEX_DCL		pthread_mutex_t sched_mutex;
+#define SCHED_MUTEX_INIT(s)	do { \
+	gfarm_mutex_init(&(s)->sched_mutex, __func__, "sched_mutex"); \
+} while (/*CONSTCOND*/0);
+#define SCHED_MUTEX_DESTROY(s)	do { \
+	gfarm_mutex_destroy(&(s)->sched_mutex, __func__, "sched_mutex"); \
+} while (/*CONSTCOND*/0);
+#define SCHED_MUTEX_LOCK(s)	do { \
+	gfarm_mutex_lock(&(s)->sched_mutex, __func__, "sched_mutex"); \
+} while (/*CONSTCOND*/0);
+#define SCHED_MUTEX_UNLOCK(s)	do { \
+	gfarm_mutex_unlock(&(s)->sched_mutex, __func__, "sched_mutex"); \
+} while (/*CONSTCOND*/0);
 #else /* __KERNEL__ */
 #define SCHED_MUTEX_DCL	pthread_mutex_t sched_mutex;
 #define SCHED_MUTEX_INIT(s)	pthread_mutex_init(&(s)->sched_mutex, NULL);
