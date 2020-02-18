@@ -1537,7 +1537,8 @@ gfs_pio_pread(GFS_File gf, void *buffer, int size, gfarm_off_t offset, int *np)
 }
 
 gfarm_error_t
-gfs_pio_pwrite(GFS_File gf, void *buffer, int size, gfarm_off_t offset, int *np)
+gfs_pio_pwrite(GFS_File gf,
+		const void *buffer, int size, gfarm_off_t offset, int *np)
 {
 	gfarm_error_t e;
 

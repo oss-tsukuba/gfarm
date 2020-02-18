@@ -136,7 +136,7 @@ gfarm_error_t gfs_pio_sync(GFS_File);
 gfarm_error_t gfs_pio_datasync(GFS_File);
 gfarm_error_t gfs_pio_truncate(GFS_File, gfarm_off_t);
 gfarm_error_t gfs_pio_pread(GFS_File, void *, int, gfarm_off_t, int *);
-gfarm_error_t gfs_pio_pwrite(GFS_File, void *, int, gfarm_off_t, int *);
+gfarm_error_t gfs_pio_pwrite(GFS_File, const void *, int, gfarm_off_t, int *);
 typedef gfarm_off_t (*gfs_pageio_t)(char *, gfarm_off_t, int, void*);
 gfarm_error_t gfs_pio_pread_page(GFS_File, gfarm_off_t, int, int,
 		gfs_pageio_t,  void*);
