@@ -43,6 +43,7 @@
 #include "host.h" /* XXX address_use is disabled for now */
 #include "auth.h"
 #include "gfpath.h"
+#define GFARM_USE_STDIO
 #include "config.h"
 #include "gfm_proto.h" /* GFMD_DEFAULT_PORT */
 #include "gfs_proto.h" /* GFSD_DEFAULT_PORT */
@@ -1553,7 +1554,7 @@ gfarm_atime_type_set_by_name(const char *name)
  *		error message
  */
 
-gfarm_error_t
+static gfarm_error_t
 gfarm_strtoken(char **cursorp, char **tokenp)
 {
 	unsigned char *top, *p, *s = *(unsigned char **)cursorp;
@@ -3150,13 +3151,62 @@ parse_fatal_action(char *p, int *vp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static gfarm_error_t parse_one_line(char *, char *, char **, const char *);
+
 static gfarm_error_t
-parse_one_line(char *s, char *p, char **op)
+parse_include(char *p, char **op, const char *file)
+{
+	gfarm_error_t e;
+	char *s, *malloced_filename = NULL;;
+	FILE *config;
+	int lineno = 0;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"get_one_argument failed "
+			"when parsing misc enabled (%s): %s",
+			p, gfarm_error_string(e));
+		return (e);
+	}
+
+	if (s[0] != '/' && file != NULL)  {
+		malloced_filename = gfarm_config_dirname_add(s, file);
+		if (malloced_filename == NULL) {
+			gflog_error(GFARM_MSG_UNFIXED, 
+			    "file %s, line %d: no memory to include %s",
+			    file, lineno, s);
+		}
+		s = malloced_filename;
+	}
+	config = fopen(s, "r");
+	if (config == NULL) {
+		*op = s;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: cannot open include file", s);
+		free(malloced_filename);
+		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
+	}
+	e = gfarm_config_read_file(config, &lineno, s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		*op = s;
+		gflog_error(GFARM_MSG_UNFIXED, "%s: line %d: %s",
+		    s, lineno, gfarm_error_string(e));
+	}
+	/* fclose(config) is done by gfarm_config_read_file() */
+	free(malloced_filename);
+	return (e);
+}
+
+static gfarm_error_t
+parse_one_line(char *s, char *p, char **op, const char *file)
 {
 	gfarm_error_t e;
 	char *o;
 
-	if (strcmp(s, o = "spool") == 0) {
+	if (strcmp(s, o = "include") == 0) {
+		e = parse_include(p, &o, file);
+	} else if (strcmp(s, o = "spool") == 0) {
 		e = parse_set_spool_root(p);
 	} else if (strcmp(s, o = "spool_server_listen_address") == 0) {
 		e = parse_set_var(p, &gfarm_spool_server_listen_address);
@@ -3597,7 +3647,7 @@ parse_one_line(char *s, char *p, char **op)
 }
 
 gfarm_error_t
-gfarm_config_read_file(FILE *config, int *lineno_p)
+gfarm_config_read_file(FILE *config, int *lineno_p, const char *file)
 {
 	gfarm_error_t e;
 	int lineno = 0;
@@ -3611,7 +3661,7 @@ gfarm_config_read_file(FILE *config, int *lineno_p)
 		if (e == GFARM_ERR_NO_ERROR) {
 			if (s == NULL) /* blank or comment line */
 				continue;
-			e = parse_one_line(s, p, &o);
+			e = parse_one_line(s, p, &o, file);
 		}
 		if (e != GFARM_ERR_NO_ERROR) {
 			fclose(config);
@@ -4276,6 +4326,7 @@ gfarm_config_type_by_name_for_metadb(const char *name,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
+	/* NOTE: gfarm_metadb_config_set_by_string() uses this error code */
 	if (!type->for_metadb)
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 
@@ -4403,6 +4454,84 @@ gfarm_config_copyout(const struct gfarm_config_type *type,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+gfarm_error_t
+gfarm_config_apply_directive_for_metadb(char *directive, char *rest_of_line,
+	const char *file, int lineno)
+{
+	gfarm_error_t e;
+	const struct gfarm_config_type *type = NULL;
+	void *addr;
+	char *s, *p, *o = NULL;
+
+	s = directive;
+	p = rest_of_line;
+
+	e = gfarm_config_type_by_name_for_metadb(s, &type);
+	if (e == GFARM_ERR_NO_ERROR) {
+		addr = gfarm_config_addr(type);
+		if (addr == NULL)
+			e = GFARM_ERR_BAD_ADDRESS;
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_OPERATION_NOT_PERMITTED) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s, line %d: %s: not available in gfmd",
+			    file, lineno, s);
+		} else {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s, line %d: %s: %s",
+			    file, lineno, s, gfarm_error_string(e));
+		}
+		return (e);
+	}
+
+	(*type->set_default)(addr);
+	e = parse_one_line(s, p, &o, file);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (o == NULL) {
+			gflog_error(GFARM_MSG_UNFIXED, "%s, line %d: %s",
+			    file, lineno, gfarm_error_string(e));
+		} else {
+			gflog_error(GFARM_MSG_UNFIXED, "%s, line %d: %s: %s",
+			    file, lineno, o, gfarm_error_string(e));
+		}
+	}
+	return (e);
+}
+
+char *
+gfarm_config_dirname_add(const char *basename, const char *base_filename)
+{
+	char *basename_of_base_filename =
+	    (char *)gfarm_path_dir_skip(base_filename); /* UNCONST */
+	char *p;
+	size_t sz;
+	int overflow = 0;
+
+	if (basename_of_base_filename == base_filename) /* i.e. no dir */
+		return (strdup(basename));
+
+	sz = gfarm_size_add(&overflow, strlen(basename),
+	    basename_of_base_filename - base_filename + 1);
+	if (overflow)
+		return (NULL);
+	p = malloc(sz);
+	if (p == NULL)
+		return (NULL);
+	snprintf(p, sz, "%.*s%s",
+	    (int)(basename_of_base_filename - base_filename),
+	    base_filename, basename);
+	return (p);
+}
+
+/* XXX - rename all gfarm_strtoken() to gfarm_config_strtoken() */
+gfarm_error_t
+gfarm_config_strtoken(char **cursorp, char **tokenp)
+{
+	return (gfarm_strtoken(cursorp, tokenp));
+}
+
 static gfarm_error_t
 gfm_client_config_type_get(struct gfm_connection *gfm_server,
 	const struct gfarm_config_type *type)
@@ -4475,7 +4604,7 @@ gfm_client_config_set_by_string(
 			return (GFARM_ERR_BAD_ADDRESS);
 
 		(*type->set_default)(addr);
-		e = parse_one_line(s, p, &o);
+		e = parse_one_line(s, p, &o, NULL);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1004465,
