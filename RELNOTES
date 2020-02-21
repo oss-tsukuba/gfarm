@@ -1,6 +1,16 @@
 Release note for Gfarm 2.7.16
 =============================
 
+[NOT-RELEASED-YET]
+
+New feature
+* etc/gfmd.failover.conf: configuration file which will be read at failover.
+  please create 0-byte file as this name at least, otherwise "cannot open"
+  error will be logged at failover.
+
+Release note for Gfarm 2.7.16
+=============================
+
 [2019.11.30]
 
 Updated feature

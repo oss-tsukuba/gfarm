@@ -194,6 +194,10 @@ gfarm_error_t gfarm_config_copyin(const struct gfarm_config_type *,
 	union gfarm_config_storage *);
 gfarm_error_t gfarm_config_copyout(const struct gfarm_config_type *,
 	union gfarm_config_storage *);
+gfarm_error_t gfarm_config_apply_directive_for_metadb(char *, char *,
+	const char *, int);
+gfarm_error_t gfarm_config_strtoken(char **, char **);
+char *gfarm_config_dirname_add(const char *, const char *);
 
 gfarm_error_t gfarm_config_local_name_to_string(const char *, char *, size_t);
 gfarm_error_t gfarm_config_name_foreach(
@@ -219,7 +223,7 @@ char *gfarm_config_get_filename(void);
 
 void gfarm_config_clear(void);
 #ifdef GFARM_USE_STDIO
-gfarm_error_t gfarm_config_read_file(FILE *, int *);
+gfarm_error_t gfarm_config_read_file(FILE *, int *, const char *);
 #endif
 void gfarm_config_set_default_ports(void);
 void gfarm_config_set_default_misc(void);

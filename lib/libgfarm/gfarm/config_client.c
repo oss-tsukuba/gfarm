@@ -71,7 +71,7 @@ gfarm_config_read(void)
 		user_config_errno = errno;
 	} else {
 		user_config_errno = 0;
-		e = gfarm_config_read_file(config, &lineno);
+		e = gfarm_config_read_file(config, &lineno, rc);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1000015, "%s: line %d: %s",
 			    rc, lineno, gfarm_error_string(e));
@@ -91,7 +91,7 @@ gfarm_config_read(void)
 			return (e);
 		}
 	} else {
-		e = gfarm_config_read_file(config, &lineno);
+		e = gfarm_config_read_file(config, &lineno, config_file);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1000016, "%s: line %d: %s",
 			    config_file, lineno, gfarm_error_string(e));

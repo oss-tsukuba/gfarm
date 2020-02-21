@@ -86,6 +86,8 @@
 #define GFMD_CONFIG		"/etc/gfmd.conf"
 #endif
 
+#define GFMD_FAILOVER_CONFIG_BASENAME	"gfmd.failover.conf"
+
 #ifndef CALLOUT_NTHREADS
 /*
  * this is number of thread pools which are used by callouts,
@@ -1310,8 +1312,118 @@ start_gfmdc_threads(void)
 		    gfarm_error_string(e));
 }
 
+static void dynamic_config_read(FILE *, const char *);
+
+static void
+dynamic_config_include_file(char *rest_of_line, const char *file, int lineno)
+{
+	gfarm_error_t e;
+	char *tmp, *s, *p, *malloced_filename = NULL;
+	FILE *config;
+
+	p = rest_of_line;
+	e = gfarm_config_strtoken(&p, &s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "file %s, line %d: parsing token (%s) failed: %s",
+		    file, lineno, p, gfarm_error_string(e));
+		return;
+	}
+	if (s == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "file %s, line %d: missing include filename",
+		    file, lineno);
+		return;
+	}
+	e = gfarm_config_strtoken(&p, &tmp);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "file %s, line %d: parsing token (%s) failed: %s",
+		    file, lineno, p, gfarm_error_string(e));
+		return;
+	}
+	if (tmp != NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "file %s, line %d: too many arguments for include",
+		    file, lineno);
+		return;
+	}
+
+	if (s[0] != '/')  {
+		malloced_filename = gfarm_config_dirname_add(s, file);
+		if (malloced_filename == NULL) {
+			gflog_error(GFARM_MSG_UNFIXED, 
+			    "file %s, line %d: no memory to include %s",
+			    file, lineno, s);
+		}
+		s = malloced_filename;
+	}
+	config = fopen(s, "r");
+	if (config == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "file %s, line %d: %s: cannot open include file",
+		    file, lineno, s);
+		free(malloced_filename);
+		return;
+	}
+	dynamic_config_read(config, file);
+	fclose(config);
+	free(malloced_filename);
+}
+
+/* this constant can be different from same macro in config.c */
+#define MAX_CONFIG_LINE_LENGTH	1023
+
+static void
+dynamic_config_read(FILE *config, const char *file)
+{
+	gfarm_error_t e;
+	int lineno = 0;
+	char *s, *p, buffer[MAX_CONFIG_LINE_LENGTH + 1];
+
+	while (fgets(buffer, sizeof buffer, config) != NULL) {
+		lineno++;
+		p = buffer;
+
+		e = gfarm_config_strtoken(&p, &s);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s, line %d: invalid token: %s",
+			    file, lineno, gfarm_error_string(e));
+			/* don't stop, just ignore this line line */
+			continue;
+		}
+
+		if (s == NULL) /* blank or comment line */
+			continue;
+
+		if (strcmp(s, "include") == 0) {
+			dynamic_config_include_file(p, file, lineno);
+		} else {
+			/* error message will be logged by this function */
+			(void)gfarm_config_apply_directive_for_metadb(
+				s, p, file, lineno);
+		}
+	}
+}
+
+static void
+dynamic_config_read_file(const char *file)
+{
+	FILE *config = fopen(file, "r");
+
+	if (config == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: cannot open config file", file);
+		return;
+	}
+	dynamic_config_read(config, file);
+	fclose(config);
+}
+
 static pthread_mutex_t transform_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t transform_cond = PTHREAD_COND_INITIALIZER;
+static char *failover_config_file = NULL;
 
 static void
 transform_to_master(void)
@@ -1370,6 +1482,7 @@ transform_to_master(void)
 
 	giant_lock();
 	mdhost_set_self_as_default_master();
+	dynamic_config_read_file(failover_config_file);
 	giant_unlock();
 
 	gflog_info(GFARM_MSG_1002731,
@@ -1840,6 +1953,15 @@ main(int argc, char **argv)
 
 	if (config_file == NULL)
 		config_file = GFMD_CONFIG;
+	if (failover_config_file == NULL) {
+		failover_config_file = gfarm_config_dirname_add(
+		    GFMD_FAILOVER_CONFIG_BASENAME, config_file);
+		if (failover_config_file == NULL) {
+			fprintf(stderr, "gfmd: no memory for %s\n",
+			    GFMD_FAILOVER_CONFIG_BASENAME);
+			exit(1);
+		}
+	}
 	gfarm_metadb_version_major = gfarm_version_major();
 	gfarm_metadb_version_minor = gfarm_version_minor();
 	gfarm_metadb_version_teeny = gfarm_version_teeny();
