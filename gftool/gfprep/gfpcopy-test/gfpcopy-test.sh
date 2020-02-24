@@ -111,8 +111,8 @@ function do_gfpcopy_togfarm() {
     print_parallels $1
 
     tmp_str=`exec_gfpcopy 1 $1 -p "${src_dir}" "${dst_dir}"`
-    val=`echo ${tmp_str}  | cut -d ' ' -f 8`
-    time=`echo ${tmp_str}  | cut -d ' ' -f 11`
+    val=`echo ${tmp_str}  | cut -d ' ' -f 10`
+    time=`echo ${tmp_str}  | cut -d ' ' -f 13`
     print_result $val $time
     gfrm -rf "$dst_dir"
 }
@@ -125,8 +125,8 @@ function do_gfpcopy_fromgfarm() {
     print_parallels $1
 
     tmp_str=`exec_gfpcopy 0 $1 -p "${src_dir}" "file://${dst_dir}"`
-    val=`echo ${tmp_str}  | cut -d ' ' -f 8`
-    time=`echo ${tmp_str}  | cut -d ' ' -f 11`
+    val=`echo ${tmp_str}  | cut -d ' ' -f 10`
+    time=`echo ${tmp_str}  | cut -d ' ' -f 13`
     print_result $val $time
     rm -rf "${dst_dir}"
 }
@@ -140,8 +140,8 @@ function do_gfprep() {
     print_parallels $1
 
     tmp_str=`gfprep -p -N ${NUM_REPLICA} -j $1 "${tmp_dir}"`
-    val=`echo ${tmp_str}  | cut -d ' ' -f 8`
-    time=`echo ${tmp_str}  | cut -d ' ' -f 11`
+    val=`echo ${tmp_str}  | cut -d ' ' -f 10`
+    time=`echo ${tmp_str}  | cut -d ' ' -f 13`
     print_result $val $time
 }
 
