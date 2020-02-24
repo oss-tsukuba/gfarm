@@ -235,6 +235,7 @@ dirtree_local_readdirplus(struct dirtree_dir_handle *dh,
 	char *child;
 	DIR *dir = dh->dir;
 	struct stat st;
+	size_t buflen;
 
 	errno = 0;
 	dent = readdir(dir);
@@ -270,7 +271,9 @@ dirtree_local_readdirplus(struct dirtree_dir_handle *dh,
 		dentp->d_type = GFS_DT_LNK;
 	else
 		dentp->d_type = GFS_DT_UNKNOWN;
-	strncpy(dentp->d_name, dent->d_name, strlen(dent->d_name) + 1);
+	buflen = sizeof(dentp->d_name);
+	strncpy(dentp->d_name, dent->d_name, buflen - 1);
+	dentp->d_name[buflen - 1] = '\0';
 	return (GFARM_ERR_NO_ERROR);
 }
 
