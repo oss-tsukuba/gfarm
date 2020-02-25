@@ -793,6 +793,7 @@ with_openldap
 with_postgresql
 enable_voms
 enable_xmlattr
+enable_getdigest_lock
 enable_linuxkernel
 with_ib_symvers
 with_ib_include
@@ -1432,6 +1433,9 @@ Optional Features:
                           [default=disable]
   --enable-xmlattr        support XML extended attributes and XPath search
                           [default=disable]
+  --disable-getdigest-lock
+                          avoid locking for EVP_get_digestbyname()
+                          [default=enable]
   --enable-linuxkernel    support Linux kernel module utils.[[default=no]]
 
 Optional Packages:
@@ -14292,6 +14296,20 @@ if test "${enable_xmlattr+set}" = set; then :
   enableval=$enable_xmlattr; if test "${enable_xmlattr}" = "yes"; then
 
 $as_echo "#define ENABLE_XMLATTR 1" >>confdefs.h
+
+fi
+fi
+
+
+###
+###  --disable-getdigest-lock		avoid locking for calling EVP_get_digestbyname()
+###
+
+# Check whether --enable-getdigest-lock was given.
+if test "${enable_getdigest_lock+set}" = set; then :
+  enableval=$enable_getdigest_lock; if test "${enable_getdigest_lock}" = "no"; then
+
+$as_echo "#define DISABLE_GETDIGEST_LOCK 1" >>confdefs.h
 
 fi
 fi
