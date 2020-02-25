@@ -200,6 +200,8 @@ gfarm_error_t gfarm_config_strtoken(char **, char **);
 char *gfarm_config_dirname_add(const char *, const char *);
 
 gfarm_error_t gfarm_config_local_name_to_string(const char *, char *, size_t);
+gfarm_error_t gfarm_config_metadb_name_to_string(const char *, char *, size_t);
+
 gfarm_error_t gfarm_config_name_foreach(
 	gfarm_error_t (*)(void *, const char *), void *, int);
 #define GFARM_CONFIG_NAME_FLAG_FOR_METADB	1

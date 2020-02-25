@@ -4079,6 +4079,22 @@ gfm_server_config_set(struct peer *peer, int from_client, int skip)
 
 	giant_unlock();
 
+	if (e == GFARM_ERR_NO_ERROR) {
+		gfarm_error_t e_log;
+		char log_buf[LOG_BUFSIZE];
+
+		e_log = gfarm_config_metadb_name_to_string(
+		    name, log_buf, sizeof log_buf);
+		if (e_log != GFARM_ERR_NO_ERROR &&
+		    e_log != GFARM_ERR_RESULT_OUT_OF_RANGE)
+			snprintf(log_buf, sizeof log_buf,
+			    "<%s>", gfarm_error_string(e_log));
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "config changed by (%s@%s): %s %s",
+		    peer_get_username(peer), peer_get_hostname(peer),
+		    name, log_buf);
+	}
+
 	if (fmt == 's')
 		free(storage.s);
 	free(name);
