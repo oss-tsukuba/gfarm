@@ -1,3 +1,5 @@
+#define LOG_BUFSIZE	2048
+
 extern int gfmd_port;
 
 struct peer;
