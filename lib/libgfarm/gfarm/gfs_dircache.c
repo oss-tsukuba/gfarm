@@ -438,7 +438,6 @@ gfs_stat_cache_purge(const char *path)
 	    e2 == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
 		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
 #if 0 /* this is ok with current gfs_stat_cache_purge0() implementation */
-	stat_cache_unlock(__func__);
 	return (GFARM_ERR_NO_ERROR);
 #else /* if gfs_stat_cache_purge0() returns other error, this is necessary */
 	if (e1 == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
