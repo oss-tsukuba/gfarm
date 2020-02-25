@@ -1238,6 +1238,7 @@ dynamic_config_include_file(char *rest_of_line, const char *file, int lineno)
 	gfarm_error_t e;
 	char *tmp, *s, *p, *malloced_filename = NULL;
 	FILE *config;
+	int nesting_limit = gfarm_ctxp->include_nesting_limit;
 
 	p = rest_of_line;
 	e = gfarm_config_strtoken(&p, &s);
@@ -1267,6 +1268,17 @@ dynamic_config_include_file(char *rest_of_line, const char *file, int lineno)
 		return;
 	}
 
+	++gfarm_ctxp->include_nesting_level;
+	if (gfarm_ctxp->include_nesting_level > nesting_limit) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "file %s, line %d: include nesting level %d "
+		    "exceeds include_nesting_limit %d",
+		    file, lineno,
+		    gfarm_ctxp->include_nesting_level, nesting_limit);
+		--gfarm_ctxp->include_nesting_level;
+		return;
+	}
+
 	if (s[0] != '/')  {
 		malloced_filename = gfarm_config_dirname_add(s, file);
 		if (malloced_filename == NULL) {
@@ -1278,15 +1290,17 @@ dynamic_config_include_file(char *rest_of_line, const char *file, int lineno)
 	}
 	config = fopen(s, "r");
 	if (config == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_UNFIXED,
 		    "file %s, line %d: %s: cannot open include file",
 		    file, lineno, s);
 		free(malloced_filename);
+		--gfarm_ctxp->include_nesting_level;
 		return;
 	}
-	dynamic_config_read(config, file);
+	dynamic_config_read(config, s);
 	fclose(config);
 	free(malloced_filename);
+	--gfarm_ctxp->include_nesting_level;
 }
 
 /* this constant can be different from same macro in config.c */
@@ -1331,7 +1345,7 @@ dynamic_config_read_file(const char *file)
 	FILE *config = fopen(file, "r");
 
 	if (config == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_UNFIXED,
 		    "%s: cannot open config file", file);
 		return;
 	}
@@ -1820,7 +1834,7 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "F:L:P:df:p:Ss:tv")) != -1) {
+	while ((ch = getopt(argc, argv, "F:L:P:df:p:Ss:tu:v")) != -1) {
 		switch (ch) {
 		case 'F':
 			syslog_file = optarg;
@@ -1860,6 +1874,9 @@ main(int argc, char **argv)
 		case 't':
 			file_trace = 1;
 			break;
+		case 'u':
+			failover_config_file = optarg;
+			break;
 		case 'v':
 			gflog_auth_set_verbose(1);
 			break;
@@ -1871,9 +1888,11 @@ main(int argc, char **argv)
 
 	if (config_file == NULL)
 		config_file = GFMD_CONFIG;
-	if (failover_config_file == NULL) {
+	if (failover_config_file == NULL)
+		failover_config_file = GFMD_FAILOVER_CONFIG_BASENAME;
+	if (failover_config_file[0] != '/')  {
 		failover_config_file = gfarm_config_dirname_add(
-		    GFMD_FAILOVER_CONFIG_BASENAME, config_file);
+		    failover_config_file, config_file);
 		if (failover_config_file == NULL) {
 			fprintf(stderr, "gfmd: no memory for %s\n",
 			    GFMD_FAILOVER_CONFIG_BASENAME);

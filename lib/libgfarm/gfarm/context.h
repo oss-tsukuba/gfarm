@@ -6,6 +6,8 @@ struct gfarm_context {
 	char *metadb_admin_user_gsi_dn;
 	char *shared_key_file;
 
+	int include_nesting_level;
+	int include_nesting_limit;
 	int log_level;
 	int no_file_system_node_timeout;
 	int gfmd_authentication_timeout;

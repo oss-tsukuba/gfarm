@@ -125,6 +125,8 @@ gfarm_context_init(void)
 	ctxp->metadb_admin_user = NULL;
 	ctxp->metadb_admin_user_gsi_dn = NULL;
 
+	ctxp->include_nesting_level = 0;
+	ctxp->include_nesting_limit = GFARM_CONFIG_MISC_DEFAULT;;
 	ctxp->log_level = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->no_file_system_node_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->gfmd_authentication_timeout = GFARM_CONFIG_MISC_DEFAULT;

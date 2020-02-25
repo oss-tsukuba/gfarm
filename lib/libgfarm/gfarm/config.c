@@ -990,6 +990,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_IOSTAT_MAX_CLIENT 1024
 
 /* miscellaneous */
+#define GFARM_CONFIG_INCLUDE_NESTING_LIMIT_DEFAULT	20
 #define GFARM_LOG_MESSAGE_VERBOSE_DEFAULT	0
 #define GFARM_NO_FILE_SYSTEM_NODE_TIMEOUT_DEFAULT 30 /* 30 seconds */
 
@@ -3151,15 +3152,22 @@ parse_fatal_action(char *p, int *vp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static gfarm_error_t parse_one_line(char *, char *, char **, const char *);
+static gfarm_error_t parse_one_line(char *, char *, char **,
+	const char *, int);
 
 static gfarm_error_t
-parse_include(char *p, char **op, const char *file)
+parse_include(char *p, char **op, const char *file, int lineno)
 {
 	gfarm_error_t e;
-	char *s, *malloced_filename = NULL;;
+	char *s, *malloced_filename = NULL;
 	FILE *config;
-	int lineno = 0;
+	int nesting_limit =
+	    gfarm_ctxp->include_nesting_limit != GFARM_CONFIG_MISC_DEFAULT ?
+	    gfarm_ctxp->include_nesting_limit :
+	    GFARM_CONFIG_INCLUDE_NESTING_LIMIT_DEFAULT;
+
+	if (file == NULL)
+		file = "<no file name>";
 
 	e = get_one_argument(p, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -3168,6 +3176,17 @@ parse_include(char *p, char **op, const char *file)
 			"when parsing misc enabled (%s): %s",
 			p, gfarm_error_string(e));
 		return (e);
+	}
+
+	++gfarm_ctxp->include_nesting_level;
+	if (gfarm_ctxp->include_nesting_level > nesting_limit) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "file %s, line %d: include nesting level %d "
+		    "exceeds include_nesting_limit %d",
+		    file, lineno,
+		    gfarm_ctxp->include_nesting_level, nesting_limit);
+		--gfarm_ctxp->include_nesting_level;
+		return (GFARM_ERR_TOO_MANY_OPEN_FILES);
 	}
 
 	if (s[0] != '/' && file != NULL)  {
@@ -3185,27 +3204,32 @@ parse_include(char *p, char **op, const char *file)
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: cannot open include file", s);
 		free(malloced_filename);
+		--gfarm_ctxp->include_nesting_level;
 		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
 	}
 	e = gfarm_config_read_file(config, &lineno, s);
 	if (e != GFARM_ERR_NO_ERROR) {
 		*op = s;
-		gflog_error(GFARM_MSG_UNFIXED, "%s: line %d: %s",
+		/* caller will show this error */
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: line %d: %s",
 		    s, lineno, gfarm_error_string(e));
 	}
 	/* fclose(config) is done by gfarm_config_read_file() */
 	free(malloced_filename);
+	--gfarm_ctxp->include_nesting_level;
 	return (e);
 }
 
 static gfarm_error_t
-parse_one_line(char *s, char *p, char **op, const char *file)
+parse_one_line(char *s, char *p, char **op, const char *file, int lineno)
 {
 	gfarm_error_t e;
 	char *o;
 
 	if (strcmp(s, o = "include") == 0) {
-		e = parse_include(p, &o, file);
+		e = parse_include(p, &o, file, lineno);
+	} else if (strcmp(s, o = "include_nesting_limit") == 0) {
+		e = parse_set_misc_int(p, &gfarm_ctxp->include_nesting_limit);
 	} else if (strcmp(s, o = "spool") == 0) {
 		e = parse_set_spool_root(p);
 	} else if (strcmp(s, o = "spool_server_listen_address") == 0) {
@@ -3661,7 +3685,7 @@ gfarm_config_read_file(FILE *config, int *lineno_p, const char *file)
 		if (e == GFARM_ERR_NO_ERROR) {
 			if (s == NULL) /* blank or comment line */
 				continue;
-			e = parse_one_line(s, p, &o, file);
+			e = parse_one_line(s, p, &o, file, lineno);
 		}
 		if (e != GFARM_ERR_NO_ERROR) {
 			fclose(config);
@@ -3738,6 +3762,10 @@ error:
 void
 gfarm_config_set_default_misc(void)
 {
+	if (gfarm_ctxp->include_nesting_limit == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->include_nesting_limit =
+		    GFARM_CONFIG_INCLUDE_NESTING_LIMIT_DEFAULT;
+
 	if (gfarm_spool_check_level == GFARM_SPOOL_CHECK_LEVEL_DEFAULT)
 		(void)gfarm_spool_check_level_set(
 			GFARM_SPOOL_CHECK_LEVEL_LOST_FOUND);
@@ -4177,6 +4205,9 @@ const struct gfarm_config_type {
 	{ "protocol_teeny", 'i', 1, gfarm_config_print_int,
 	  gfarm_config_set_default_int, gfarm_config_validate_false,
 	  &gfarm_metadb_version_teeny, 0 },
+	{ "include_nesting_limit", 'i', 1, gfarm_config_print_int,
+	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
+	  NULL, offsetof(struct gfarm_context, include_nesting_limit) },
 	{ "digest", 's', 1, gfarm_config_print_string,
 	  gfarm_config_set_default_string, gfarm_config_validate_digest,
 	  &gfarm_digest, 0 },
@@ -4486,7 +4517,7 @@ gfarm_config_apply_directive_for_metadb(char *directive, char *rest_of_line,
 	}
 
 	(*type->set_default)(addr);
-	e = parse_one_line(s, p, &o, file);
+	e = parse_one_line(s, p, &o, file, lineno);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (o == NULL) {
@@ -4604,7 +4635,7 @@ gfm_client_config_set_by_string(
 			return (GFARM_ERR_BAD_ADDRESS);
 
 		(*type->set_default)(addr);
-		e = parse_one_line(s, p, &o, NULL);
+		e = parse_one_line(s, p, &o, NULL, 0);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1004465,
