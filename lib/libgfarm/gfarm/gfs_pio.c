@@ -144,6 +144,7 @@ int
 gfs_pio_eof(GFS_File gf)
 {
 	int rv;
+
 	gfs_pio_mutex_lock(&gf->mutex, __func__);
 	rv = (gf->error == GFARM_ERRMSG_GFS_PIO_IS_EOF);
 	gfs_pio_mutex_unlock(&gf->mutex, __func__);
@@ -157,11 +158,12 @@ gfs_pio_eof(GFS_File gf)
 gfarm_error_t
 gfs_pio_error(GFS_File gf)
 {
-	gfarm_error_t rv;
+	gfarm_error_t e;
+
 	gfs_pio_mutex_lock(&gf->mutex, __func__);
-	rv = GFS_PIO_ERROR(gf);
+	e = GFS_PIO_ERROR(gf);
 	gfs_pio_mutex_unlock(&gf->mutex, __func__);
-	return (rv);
+	return (e);
 }
 
 void
@@ -1781,23 +1783,25 @@ finish:
 gfarm_error_t
 gfs_pio_sync(GFS_File gf)
 {
-	gfarm_error_t rv;
+	gfarm_error_t e;
+
 	gfs_pio_mutex_lock(&gf->mutex, __func__);
-	rv = sync_internal(gf, GFS_PROTO_FSYNC_WITH_METADATA,
+	e = sync_internal(gf, GFS_PROTO_FSYNC_WITH_METADATA,
 		    &staticp->sync_time, &staticp->sync_count);
 	gfs_pio_mutex_unlock(&gf->mutex, __func__);
-	return (rv);
+	return (e);
 }
 
 gfarm_error_t
 gfs_pio_datasync(GFS_File gf)
 {
-	gfarm_error_t rv;
+	gfarm_error_t e;
+
 	gfs_pio_mutex_lock(&gf->mutex, __func__);
-	rv = sync_internal(gf, GFS_PROTO_FSYNC_WITHOUT_METADATA,
+	e = sync_internal(gf, GFS_PROTO_FSYNC_WITHOUT_METADATA,
 		    &staticp->datasync_time, &staticp->datasync_count);
 	gfs_pio_mutex_unlock(&gf->mutex, __func__);
-	return (rv);
+	return (e);
 }
 
 static int
