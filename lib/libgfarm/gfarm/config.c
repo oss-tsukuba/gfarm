@@ -3193,7 +3193,7 @@ parse_include(char *p, char **op, const char *file, int lineno)
 	if (s[0] != '/' && file != NULL)  {
 		malloced_filename = gfarm_config_dirname_add(s, file);
 		if (malloced_filename == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED, 
+			gflog_error(GFARM_MSG_UNFIXED,
 			    "file %s, line %d: no memory to include %s",
 			    file, lineno, s);
 		}

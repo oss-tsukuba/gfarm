@@ -1364,7 +1364,7 @@ dynamic_config_include_file(char *rest_of_line, const char *file, int lineno)
 	if (s[0] != '/')  {
 		malloced_filename = gfarm_config_dirname_add(s, file);
 		if (malloced_filename == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED, 
+			gflog_error(GFARM_MSG_UNFIXED,
 			    "file %s, line %d: no memory to include %s",
 			    file, lineno, s);
 		}
