@@ -1102,6 +1102,7 @@ gfm_name2_op0(const char *src, const char *dst, int flags,
 	gfarm_int32_t sfd = -1, dfd = -1;
 	gfarm_ino_t ino;
 	gfarm_uint64_t igen;
+	int sconn_locked = 0, dconn_locked = 0;
 
 	snextpath = trim_trailing_file_separator(src);
 	dnextpath = trim_trailing_file_separator(dst);
@@ -1227,6 +1228,7 @@ gfm_name2_op0(const char *src, const char *dst, int flags,
 				gfm_client_connection_free(sconn);
 				sconn = NULL;
 			}
+			sconn_locked = 0;
 			if ((e = gfarm_url_parse_metadb(&spath, &sconn))
 			    != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1002623,
@@ -1243,6 +1245,7 @@ gfm_name2_op0(const char *src, const char *dst, int flags,
 				gfm_client_connection_free(dconn);
 				dconn = NULL;
 			}
+			dconn_locked = 0;
 			if ((e = gfarm_url_parse_metadb(&dpath, &dconn))
 			    != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1002624,
@@ -1269,6 +1272,7 @@ gfm_name2_op0(const char *src, const char *dst, int flags,
 			gfm_client_connection_lock(dconn);
 			gfm_client_connection_lock(sconn);
 		}
+		sconn_locked = dconn_locked = 1;
 
 		same_mds = sconn == dconn;
 
@@ -1587,11 +1591,11 @@ on_error_result:
 
 	free(snextpath);
 	free(dnextpath);
-	if (sconn) {
+	if (sconn && sconn_locked) {
 		gfm_client_connection_unlock(sconn);
 		*sconnp = sconn;
 	}
-	if (dconn) {
+	if (dconn && dconn_locked) {
 		gfm_client_connection_unlock(dconn);
 	}
 	if (dconn && !same_mds)
