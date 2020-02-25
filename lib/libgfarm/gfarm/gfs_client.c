@@ -970,11 +970,13 @@ gfs_client_connection_and_process_acquire(
 				return (e);
 		}
 
+		gfs_client_connection_lock(gfs_server);
 		if (gfs_client_pid(gfs_server) == 0) /* new connection */
 			e = gfarm_client_process_set(gfs_server, *gfm_serverp);
 		else /* cached connection */
 			e = gfs_client_check_failovercount_or_reset_process(
 			    gfs_server, *gfm_serverp);
+		gfs_client_connection_unlock(gfs_server);
 
 		if (e == GFARM_ERR_NO_ERROR) {
 			*gfs_serverp = gfs_server;
