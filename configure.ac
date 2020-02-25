@@ -1271,6 +1271,16 @@ AS_HELP_STRING([--enable-xmlattr],[support XML extended attributes and XPath sea
 fi],[])
 
 ###
+###  --disable-getdigest-lock		avoid locking for calling EVP_get_digestbyname()
+###
+
+AC_ARG_ENABLE(getdigest-lock,
+AS_HELP_STRING([--disable-getdigest-lock],[avoid locking for EVP_get_digestbyname() [default=enable]]),
+[if test "${enable_getdigest_lock}" = "no"; then
+	AC_DEFINE(DISABLE_GETDIGEST_LOCK, 1, [avoid locking for calling EVP_get_digestbyname()])
+fi],[])
+
+###
 ###  --enable-linuxkernel		support Linux kernel module utils
 ###
 

@@ -1,10 +1,20 @@
 #include <errno.h>
 #include <ctype.h>
 #include <stdlib.h>
+#ifndef DISABLE_GETDIGEST_LOCK
+#include <pthread.h>
+#endif /*DISABLE_GETDIGEST_LOCK*/
 
 #include <openssl/evp.h>
 
 #include "msgdigest.h"
+#ifndef DISABLE_GETDIGEST_LOCK
+#include "thrsubr.h"
+#endif /*DISABLE_GETDIGEST_LOCK*/
+
+#ifndef DISABLE_GETDIGEST_LOCK
+static pthread_mutex_t getdigest_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif /*DISABLE_GETDIGEST_LOCK*/
 
 int
 gfarm_msgdigest_name_verify(const char *gfarm_name)
@@ -21,8 +31,14 @@ gfarm_msgdigest_name_verify(const char *gfarm_name)
 			return 0;
 	}
 
+#ifndef DISABLE_GETDIGEST_LOCK
+	gfarm_mutex_lock(&getdigest_mutex, __func__, "getdigest_mutex");
+#endif /*DISABLE_GETDIGEST_LOCK*/
 	md_type = EVP_get_digestbyname(
 	    gfarm_msgdigest_name_to_openssl(gfarm_name));
+#ifndef DISABLE_GETDIGEST_LOCK
+	gfarm_mutex_unlock(&getdigest_mutex, __func__, "getdigest_mutex");
+#endif /*DISABLE_GETDIGEST_LOCK*/
 
 	return (md_type != NULL);
 }
@@ -58,6 +74,9 @@ gfarm_msgdigest_alloc_by_name(const char *md_type_name, int *cause_p)
 		return (NULL);
 	}
 
+#ifndef DISABLE_GETDIGEST_LOCK
+	gfarm_mutex_lock(&getdigest_mutex, __func__, "getdigest_mutex");
+#endif /*DISABLE_GETDIGEST_LOCK*/
 	md_type = EVP_get_digestbyname(
 	    gfarm_msgdigest_name_to_openssl(md_type_name));
 	if (md_type == NULL) {
@@ -67,6 +86,9 @@ gfarm_msgdigest_alloc_by_name(const char *md_type_name, int *cause_p)
 	}
 
 	md_ctx = gfarm_msgdigest_alloc(md_type);
+#ifndef DISABLE_GETDIGEST_LOCK
+	gfarm_mutex_unlock(&getdigest_mutex, __func__, "getdigest_mutex");
+#endif /*DISABLE_GETDIGEST_LOCK*/
 	if (md_ctx == NULL) {
 		if (cause_p != NULL)
 			*cause_p = ENOMEM; /* no memory */
