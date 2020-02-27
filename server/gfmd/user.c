@@ -925,6 +925,10 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 			"User already exists");
 	} else if ((e = user_info_verify(&ui, diag)) != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else {
 		e = user_enter(&ui, NULL);
 		if (e == GFARM_ERR_NO_ERROR) {
@@ -1032,6 +1036,10 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 	} else if ((e = user_info_verify(&ui, diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003462,
 		    "%s: user_info_verify: %s", diag, gfarm_error_string(e));
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = user_modify(u, &ui)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003463,
 		    "%s: user_modify: %s", diag, gfarm_error_string(e));
@@ -1097,6 +1105,10 @@ gfm_server_user_info_remove(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001513,
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else
 		e = user_info_remove(username, diag);
 	free(username);

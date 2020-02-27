@@ -1858,6 +1858,13 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 	} else if ((e = quota_lookup(qi.name, is_group, &q, diag))
 	    != GFARM_ERR_NO_ERROR) {
 		goto end;
+	} else if (gfarm_read_only_mode()) {
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "name %s during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    qi.name);
+		goto end;
 	}
 
 	/* set limits */

@@ -26,6 +26,7 @@
 #include "subr.h"
 #include "rpcsubr.h"
 #include "db_access.h"
+#include "mdhost.h"
 #include "host.h"
 #include "user.h"
 #include "group.h"
@@ -242,6 +243,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	gfarm_int32_t cfd, fd = -1;
 	char *repattr;
 	int desired_number;
+	int read_only = gfarm_read_only_mode();
 
 	/* for gfarm_file_trace */
 	int path_len = 0;
@@ -291,8 +293,17 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	op = accmode_to_op(flag);
+	if ((op & GFS_W_OK) != 0 && read_only) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) parent %llu:%llu"
+		    "name %s flag 0x%x during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inode_get_number(base),
+		    (long long)inode_get_gen(base),
+		    name, flag);
+		return (GFARM_ERR_READ_ONLY_FILE_SYSTEM);
+	}
 
-	if (to_create) {
+	if (to_create && !read_only) {
 		if (mode & ~GFARM_S_ALLPERM) {
 			gflog_debug(GFARM_MSG_1001795,
 				"argument 'mode' is invalid");
@@ -351,6 +362,9 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 			gfarm_error_string(e));
 		if (transaction)
 			db_end(diag);
+		if (to_create && read_only &&
+		    e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
+			e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 		return (e);
 	}
 	if (created && !from_client) {
@@ -742,6 +756,10 @@ gfm_server_fhopen(struct peer *peer, int from_client, int skip)
 	} else if  (flag & ~GFARM_FILE_USER_MODE) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
 		msg = "invalid flag";
+	} else if ((accmode_to_op(flag) & GFS_W_OK) != 0 &&
+	    gfarm_read_only_mode()) {
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+		msg = "during read_only";
 	} else if ((e = process_open_file(process, inode, flag, 0, peer,
 	    NULL, TDIRSET_IS_UNKNOWN /* XXX unavoidable */, &fd))
 	    != GFARM_ERR_NO_ERROR)
@@ -830,7 +848,12 @@ gfm_server_close_gen(struct peer *peer, int from_client, int skip, int getgen)
 		e_save = save_inum_for_close_check(process, peer, fd,
 			&saved_inum, &saved_igen, diag);
 
-		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		/*
+		 * if read_only, atime update will be ignored.
+		 * other updates will be handled in close_write RPC
+		 */
+		if (!gfarm_read_only_mode() &&
+		    db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
 		/*
 		 * closing must be done regardless of the result of db_begin().
@@ -1355,6 +1378,13 @@ gfm_server_futimes(struct peer *peer, int from_client, int skip)
 	    GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001826, "permission denied");
 		e = GFARM_ERR_PERMISSION_DENIED;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for inode %llu:%llu"
+		    " during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001827, "db_begin() failed: %s",
 			gfarm_error_string(e));
@@ -1421,6 +1451,13 @@ gfm_server_fchmod(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1001834,
 			"operation is not permitted for user");
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for inode %llu:%llu"
+		    " during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else {
 		if (!user_is_root_for_inode(user, inode)) {
 			/* POSIX requirement for setgid-bit security */
@@ -1510,6 +1547,13 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001844,
 			"operation is not permitted for group");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for inode %llu:%llu"
+		    " during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001845, "db_begin() failed: %s",
 			gfarm_error_string(e));
@@ -1637,6 +1681,13 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 		    "%s: invalid cksum type:\"%s\" length: %d bytes",
 		    diag, cksum_type, (int)cksum_len);
 		e = GFARM_ERR_INVALID_ARGUMENT;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for inode %llu:%llu"
+		    " during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001855, "db_begin() failed: %s",
 			gfarm_error_string(e));
@@ -1791,6 +1842,13 @@ gfm_server_remove(struct peer *peer, int from_client, int skip)
 	    ) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001868, "process_get_file_inode() "
 			"failed: %s", gfarm_error_string(e));
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "parent %llu:%llu name %s during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inode_get_number(base),
+		    (long long)inode_get_gen(base), name);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001869, "db_begin() failed: %s",
 			gfarm_error_string(e));
@@ -1896,6 +1954,16 @@ gfm_server_rename(struct peer *peer, int from_client, int skip)
 	    ) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001876, "process_get_file_inode() "
 			"failed: %s", gfarm_error_string(e));
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) from "
+		    "parent %llu:%llu name %s to "
+		    "parent %llu:%llu name %s during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inode_get_number(sdir),
+		    (long long)inode_get_gen(sdir), sname,
+		    (long long)inode_get_number(ddir),
+		    (long long)inode_get_gen(ddir), dname);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001877, "db_begin() failed: %s",
 			gfarm_error_string(e));
@@ -2032,6 +2100,15 @@ gfm_server_flink(struct peer *peer, int from_client, int skip)
 	    ) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001886, "process_get_file_inode() "
 			"failed: %s", gfarm_error_string(e));
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for inode %llu:%llu"
+		    " parent %llu:%llu name %s during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inode_get_number(src),
+		    (long long)inode_get_gen(src),
+		    (long long)inode_get_number(base),
+		    (long long)inode_get_gen(base), name);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001887, "db_begin() failed: %s",
 			gfarm_error_string(e));
@@ -2122,6 +2199,13 @@ gfm_server_mkdir(struct peer *peer, int from_client, int skip)
 	} else if (mode & ~GFARM_S_ALLPERM) {
 		gflog_debug(GFARM_MSG_1001893, "argument 'mode' is invalid");
 		e = GFARM_ERR_INVALID_ARGUMENT;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "parent %llu:%llu name %s during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inode_get_number(base),
+		    (long long)inode_get_gen(base), name);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001894, "db_begin() failed: %s",
 			gfarm_error_string(e));
@@ -2185,6 +2269,14 @@ gfm_server_symlink(struct peer *peer, int from_client, int skip)
 	    ) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001900, "process_get_file_inode() "
 			"failed: %s", gfarm_error_string(e));
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for %s to "
+		    "parent %llu:%llu name %s during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    source_path,
+		    (long long)inode_get_number(base),
+		    (long long)inode_get_gen(base), name);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001901, "db_begin() failed: %s",
 			gfarm_error_string(e));
@@ -2903,6 +2995,14 @@ reopen_resume(struct peer *peer, void *closure, int *suspendedp)
 		gflog_debug(GFARM_MSG_1002262,
 		    "%s: peer_get_process() failed", diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (gfarm_read_only_mode() &&
+	    process_fd_is_for_modification(
+	    process, peer, arg->fd, &inum, &gen, &flags, diag)) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for inode %llu:%llu"
+		    "flags 0x%x during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inum, (long long)gen, flags);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
@@ -2955,7 +3055,7 @@ gfm_server_reopen(struct peer *peer, int from_client, int skip,
 	gfarm_uint64_t gen = 0;
 	gfarm_int32_t mode = 0, flags = 0, to_create = 0;
 	struct reopen_resume_arg *arg;
-	int transaction = 0;
+	int read_only, transaction = 0;
 
 	/* for gfarm_file_trace */
 	gfarm_error_t e2;
@@ -2967,6 +3067,7 @@ gfm_server_reopen(struct peer *peer, int from_client, int skip,
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
+	read_only = gfarm_read_only_mode();
 
 	if (from_client) { /* from gfsd only */
 		gflog_debug(GFARM_MSG_1001935, "operation is not permitted");
@@ -2982,8 +3083,16 @@ gfm_server_reopen(struct peer *peer, int from_client, int skip,
 		gflog_debug(GFARM_MSG_1001938,
 			"peer_fdpair_get_current() failed: %s",
 			gfarm_error_string(e));
+	} else if (read_only &&
+	    process_fd_is_for_modification(
+	    process, peer, fd, &inum, &gen, &flags, diag)) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for inode %llu:%llu"
+		    "flags 0x%x during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inum, (long long)gen, flags);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else {
-		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		if (!read_only && db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
 		e = process_reopen_file(process, peer, spool_host, fd,
 		    &inum, &gen, &mode, &flags, &to_create, diag);
@@ -3066,7 +3175,9 @@ gfm_server_close_read(struct peer *peer, int from_client, int skip)
 			"peer_fdpair_get_current() failed: %s",
 			gfarm_error_string(e));
 	} else {
-		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		/* if read_only, atime update will be ignored */
+		if (!gfarm_read_only_mode() &&
+		    db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
 		/*
 		 * closing must be done regardless of the result of db_begin().
@@ -3113,6 +3224,27 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 		gflog_debug(GFARM_MSG_1002264,
 		    "%s: peer_get_process() failed", diag);
 		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (gfarm_read_only_mode()) {
+		struct file_opening *fo;
+
+		e_rpc = process_get_file_opening(process, peer, arg->fd,
+		    &fo, diag);
+		if (e_rpc != GFARM_ERR_NO_ERROR) {
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "%s (%s@%s) bad descriptor %d: %s", diag,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    arg->fd, gfarm_error_string(e_rpc));
+		} else {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "%s (%s@%s) for inode %llu:%llu flag 0x%x "
+			    "during read_only",
+			    diag,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    (long long)inode_get_number(fo->inode),
+			    (long long)inode_get_gen(fo->inode), fo->flag);
+			/* this makes gfsd retry */
+			e_rpc = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+		}
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
@@ -3195,6 +3327,26 @@ gfm_server_close_write_common(const char *diag,
 		gflog_debug(GFARM_MSG_1001947,
 			"peer_fdpair_get_current() failed: %s",
 			gfarm_error_string(e));
+	} else if (gfarm_read_only_mode()) {
+		struct file_opening *fo;
+
+		e = process_get_file_opening(process, peer, fd, &fo, diag);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "%s (%s@%s) bad descriptor %d: %s", diag,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    fd, gfarm_error_string(e));
+		} else {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "%s (%s@%s) for inode %llu:%llu flag 0x%x "
+			    "during read_only",
+			    diag,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    (long long)inode_get_number(fo->inode),
+			    (long long)inode_get_gen(fo->inode), fo->flag);
+			/* this makes gfsd retry */
+			e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+		}
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
@@ -3343,7 +3495,9 @@ gfm_server_fhclose_read(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1003313, "inode_lookup() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else {
-		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		/* if read_only, atime update will be ignored */
+		if (!gfarm_read_only_mode() &&
+		    db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
 
 		/*
@@ -3372,6 +3526,19 @@ fhclose_write(struct peer *peer, struct host *spool_host, struct inode *inode,
 	gfarm_off_t old_size;
 	gfarm_int32_t flags = 0;
 	gfarm_uint64_t cookie;
+
+	if (gfarm_read_only_mode()) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "%s (%s@%s) for inode %llu:%llu size %llu mtime:%llu.%09u "
+		    "during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    (long long)size,
+		    (long long)mtimep->tv_sec, (int)mtimep->tv_nsec);
+		/* this makes gfsd retry */
+		return (GFARM_ERR_READ_ONLY_FILE_SYSTEM);
+	}
 
 	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 		transaction = 1;
@@ -3625,6 +3792,8 @@ gfm_server_generation_updated(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
 
+	/* callees of process_new_generation_done() handle read_only */
+
 	if (from_client) { /* from gfsd only */
 		gflog_debug(GFARM_MSG_1002266, "%s: from client", diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -3677,7 +3846,7 @@ gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
 	struct host *spool_host;
 	struct inode *inode;
 	gfarm_off_t new_size, old_size;
-	int transaction = 0;
+	int read_only, transaction = 0;
 	static const char diag[] = "GFM_PROTO_GENERATION_UPDATED_BY_COOKIE";
 
 	e = gfm_server_get_request(peer, diag, "li", &cookie, &result);
@@ -3689,6 +3858,7 @@ gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
+	read_only = gfarm_read_only_mode();
 
 	if (from_client) { /* from gfsd only */
 		gflog_debug(GFARM_MSG_1003317, "%s: from client",
@@ -3698,6 +3868,31 @@ gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
 		gflog_debug(GFARM_MSG_1003318,
 		    "%s: peer_get_host() failed", diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (gfarm_read_only_mode()) {
+		struct inode *inode =
+		    peer_get_pending_new_generation_by_cookie(peer, cookie);
+
+		if (inode == NULL) {
+			gflog_info(GFARM_MSG_UNFIXED, "%s (%s@%s) "
+			    "cookie %llu for inode %llu:%llu during read_only:"
+			    " obsolete cookie",
+			    diag,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    (long long)inode_get_number(inode),
+			    (long long)inode_get_gen(inode),
+			    (long long)cookie);
+			e = GFARM_ERR_BAD_COOKIE;
+		} else {
+			gflog_notice(GFARM_MSG_UNFIXED, "%s (%s@%s) "
+			    "cookie %llu for inode %llu:%llu during read_only",
+			    diag,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    (long long)cookie,
+			    (long long)inode_get_number(inode),
+			    (long long)inode_get_gen(inode));
+			/* this makes gfsd retry */
+			e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+		}
 	} else if (!peer_remove_pending_new_generation_by_cookie(
 	    peer, cookie, &inode, &old_size)) {
 		gflog_error(GFARM_MSG_1004032,
@@ -3706,7 +3901,7 @@ gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
 	} else {
 		new_size = inode_get_size(inode);
 
-		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+		if (!read_only && db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
 		e = inode_new_generation_by_cookie_finish(
 		    inode, result == GFARM_ERR_CONFLICT_DETECTED ?
@@ -4072,9 +4267,22 @@ gfm_server_config_set(struct peer *peer, int from_client, int skip)
 		    diag, name, gfarm_config_type_get_format(type), fmt,
 		    gfarm_error_string(e));
 	} else {
+		int old_read_only, read_only_disabled;
+
 		config_var_lock();
+
+		old_read_only = gfarm_read_only;
+
 		e = gfarm_config_copyin(type, &storage);
+
+		read_only_disabled = old_read_only && !gfarm_read_only;
+
 		config_var_unlock();
+
+		if (read_only_disabled) {
+			mdhost_read_only_disabled();
+			gfarm_read_only_disabled_broadcast(diag);
+		}
 	}
 
 	giant_unlock();
@@ -4264,6 +4472,13 @@ gfm_server_replica_remove_by_file(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1003649,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "inode %llu:%llu during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
@@ -4371,7 +4586,27 @@ gfm_server_replicate_file_from_to(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_UNKNOWN_HOST;
 	else if ((dst = host_lookup(dsthost)) == NULL)
 		e = GFARM_ERR_UNKNOWN_HOST;
-	else
+	else if (gfarm_read_only_mode()) {
+		struct file_opening *fo;
+
+		e = process_get_file_opening(process, peer, cfd, &fo, diag);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "%s (%s@%s) bad descriptor %d: %s", diag,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    cfd, gfarm_error_string(e));
+		} else {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s (%s@%s) for inode %llu:%llu "
+			    "from %s to %s flag 0x%x during read_only",
+			    diag,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    (long long)inode_get_number(fo->inode),
+			    (long long)inode_get_gen(fo->inode),
+			    srchost, dsthost, (int)flags);
+			e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+		}
+	} else
 		e = process_replication_request(process, peer, src, dst,
 		    cfd, flags, diag);
 
@@ -4423,6 +4658,27 @@ replica_adding_resume(struct peer *peer, void *closure, int *suspendedp)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((src = host_lookup(arg->src_host)) == NULL) {
 		e = GFARM_ERR_UNKNOWN_HOST;
+	} else if (gfarm_read_only_mode()) {
+		struct file_opening *fo;
+
+		e = process_get_file_opening(process, peer, arg->fd,
+		    &fo, diag);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "%s (%s@%s) bad descriptor %d: %s", diag,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    arg->fd, gfarm_error_string(e));
+		} else {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s (%s@%s) for inode %llu:%llu to %s "
+			    "during read_only",
+			    diag,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    (long long)inode_get_number(fo->inode),
+			    (long long)inode_get_gen(fo->inode),
+			    arg->src_host);
+			e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+		}
 	} else if ((e = process_replica_adding(process, peer,
 	    cksum_protocol, src, spool_host, arg->fd, &inode,
 	    &cksum_type, &cksum_len, cksum, &cksum_request_flags, diag)) ==
@@ -4513,7 +4769,27 @@ gfm_server_replica_adding_common(struct peer *peer, int from_client, int skip,
 		;
 	else if ((src = host_lookup(src_host)) == NULL)
 		e = GFARM_ERR_UNKNOWN_HOST;
-	else if ((e = process_replica_adding(process, peer,
+	else if (gfarm_read_only_mode()) {
+		struct file_opening *fo;
+
+		e = process_get_file_opening(process, peer, fd, &fo, diag);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "%s (%s@%s) bad descriptor %d: %s", diag,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    fd, gfarm_error_string(e));
+		} else {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s (%s@%s) for inode %llu:%llu to %s "
+			    "during read_only",
+			    diag,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    (long long)inode_get_number(fo->inode),
+			    (long long)inode_get_gen(fo->inode),
+			    src_host);
+			e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+		}
+	} else if ((e = process_replica_adding(process, peer,
 	    cksum_protocol, src, spool_host, fd, &inode,
 	    &cksum_type, &cksum_len, cksum, &cksum_request_flags, diag)) ==
 	    GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
@@ -4614,6 +4890,24 @@ gfm_server_replica_added_common(const char *diag,
 		gflog_debug(GFARM_MSG_1001966,
 			"peer_fdpair_get_current() failed: %s",
 			gfarm_error_string(e));
+	} else if (gfarm_read_only_mode()) {
+		struct file_opening *fo;
+
+		e = process_get_file_opening(process, peer, fd, &fo, diag);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "%s (%s@%s) bad descriptor %d: %s", diag,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    fd, gfarm_error_string(e));
+		} else {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s (%s@%s) for inode %llu:%llu during read_only",
+			    diag,
+			    peer_get_username(peer), peer_get_hostname(peer),
+			    (long long)inode_get_number(fo->inode),
+			    (long long)inode_get_gen(fo->inode));
+			e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+		}
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
@@ -4770,6 +5064,12 @@ gfm_server_replica_lost(struct peer *peer, int from_client, int skip)
 		 */
 		gflog_debug(GFARM_MSG_1003554, "%s: writing", diag);
 		e = GFARM_ERR_FILE_BUSY;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "inode %llu:%llu during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inum, (long long)gen);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
@@ -4885,6 +5185,12 @@ gfm_server_replica_add(struct peer *peer, int from_client, int skip)
 		    "%lld:%lld on %s: invalid file replica, rejected",
 		    (long long)inum, (long long)gen, host_name(spool_host));
 		e = GFARM_ERR_INVALID_FILE_REPLICA; /* invalid file */
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "inode %llu:%llu size %llu during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inum, (long long)gen, (long long)size);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else { /* add a replica */
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
@@ -5068,6 +5374,14 @@ gfm_server_replica_create_file_in_lost_found(struct peer *peer,
 		gflog_debug(GFARM_MSG_1003496,
 		    "not permitted: peer_get_host() failed");
 		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "inode %llu:%llu size %llu mtime %llu.%09u "
+		    "during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inum_old, (long long)gen_old, (long long)size,
+		    (long long)mtime.tv_sec, (int)mtime.tv_nsec);
+		e_rpc = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
@@ -5249,6 +5563,12 @@ gfm_server_fhset_cksum(struct peer *peer, int from_client, int skip)
 		    "%s: inode %lld:%lld: different generation",
 		    diag, (long long)inum, (long long)igen);
 		e = GFARM_ERR_NO_SUCH_OBJECT;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "inode %llu:%llu flags 0x%x during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inum, (long long)igen, (int)flags);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1004373, "db_begin() failed: %s",
 			gfarm_error_string(e));

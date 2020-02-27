@@ -910,6 +910,7 @@ gfarm_set_local_user_for_this_uid(uid_t uid)
 	(64LL*1024*1024*1024*1024) /* one process per 64TB */
 #define GFARM_SPOOL_BASE_LOAD_DEFAULT	0.0F
 #define GFARM_SPOOL_DIGEST_ERROR_CHECK_DEFAULT	1 /* enable */
+#define GFARM_SPOOL_SERVER_READ_ONLY_RETRY_INTERVAL_DEFAULT 60 /* second */
 #define GFARM_WRITE_VERIFY_DEFAULT 0 /* disable */
 #define GFARM_WRITE_VERIFY_INTERVAL_DEFAULT 21600 /* seconds (6 hours) */
 #define GFARM_WRITE_VERIFY_RETRY_INTERVAL_DEFAULT 600 /* 600 seconds (10min) */
@@ -918,6 +919,7 @@ gfarm_set_local_user_for_this_uid(uid_t uid)
 int gfarm_spool_server_listen_backlog = GFARM_CONFIG_MISC_DEFAULT;
 char *gfarm_spool_server_listen_address = NULL;
 int gfarm_spool_server_back_channel_rcvbuf_limit = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_spool_server_read_only_retry_interval = GFARM_CONFIG_MISC_DEFAULT;
 char *gfarm_spool_root[GFARM_SPOOL_ROOT_NUM];
 static struct {
 	enum gfarm_spool_check_level level;
@@ -944,6 +946,7 @@ int gfarm_write_verify_retry_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_write_verify_log_interval = GFARM_CONFIG_MISC_DEFAULT;
 
 /* GFM dependent */
+
 enum gfarm_backend_db_type gfarm_backend_db_type = GFARM_BACKEND_DB_TYPE_NONE;
 enum gfarm_db_access_type gfarm_db_access_type = GFARM_DB_ACCESS_TYPE_DBQ;
 int gfarm_metadb_server_listen_backlog = GFARM_CONFIG_MISC_DEFAULT;
@@ -1019,6 +1022,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(512 * 1024 * 1024) /* 512MB */
 #define GFARM_DIRECT_LOCAL_ACCESS_DEFAULT	1 /* enable */
 #define GFARM_REPLICATION_AT_WRITE_OPEN_DEFAULT	1 /* enable */
+#define GFARM_READ_ONLY_DEFAULT 0 /* disable */
 #define GFARM_SIMULTANEOUS_REPLICATION_RECEIVERS_DEFAULT	20
 #define GFARM_REPLICATION_BUSY_HOST_DEFAULT	1
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT	256 /* 256 free connections */
@@ -1073,6 +1077,7 @@ int gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_REPLICAINFO_ENABLED_DEFAULT	1 /* enable */
 
 char *gfarm_digest = NULL;
+int gfarm_read_only = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_simultaneous_replication_receivers = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replication_busy_host = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
@@ -3249,6 +3254,10 @@ parse_one_line(char *s, char *p, char **op, const char *file, int lineno)
 	    == 0) {
 		e = parse_set_sockbuf_limit_int(p,
 		    &gfarm_spool_server_back_channel_rcvbuf_limit);
+	} else if (strcmp(s, o = "spool_server_read_only_retry_interval") == 0
+	    ) {
+		e = parse_set_misc_int(p,
+		    &gfarm_spool_server_read_only_retry_interval);
 	} else if (strcmp(s, o = "spool_check_level") == 0) {
 		e = parse_spool_check_level(p);
 	} else if (strcmp(s, o = "spool_check_parallel") == 0) {
@@ -3470,6 +3479,8 @@ parse_one_line(char *s, char *p, char **op, const char *file, int lineno)
 	} else if (strcmp(s, o = "replication_at_write_open") == 0) {
 		e = parse_set_misc_enabled(p,
 		    &gfarm_ctxp->replication_at_write_open);
+	} else if (strcmp(s, o = "read_only") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_read_only);
 	} else if (strcmp(s, o = "simultaneous_replication_receivers") == 0) {
 		e = parse_set_misc_int(p,
 		    &gfarm_simultaneous_replication_receivers);
@@ -3808,6 +3819,10 @@ gfarm_config_set_default_misc(void)
 	    GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_spool_server_back_channel_rcvbuf_limit =
 		    GFARM_BACK_CHANNEL_SOCKBUF_LIMIT_DEFAULT;
+	if (gfarm_spool_server_read_only_retry_interval ==
+	    GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_spool_server_read_only_retry_interval =
+		    GFARM_SPOOL_SERVER_READ_ONLY_RETRY_INTERVAL_DEFAULT;
 	if (gfarm_metadb_server_back_channel_sndbuf_limit ==
 	    GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_server_back_channel_sndbuf_limit =
@@ -3887,6 +3902,8 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->replication_at_write_open == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->replication_at_write_open =
 		    GFARM_REPLICATION_AT_WRITE_OPEN_DEFAULT;
+	if (gfarm_read_only == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_read_only = GFARM_READ_ONLY_DEFAULT;
 	if (gfarm_simultaneous_replication_receivers ==
 	    GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_simultaneous_replication_receivers =
@@ -4229,6 +4246,9 @@ const struct gfarm_config_type {
 	{ "replication_at_write_open", 'i', 0, gfarm_config_print_enabled,
 	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
 	  NULL, offsetof(struct gfarm_context, replication_at_write_open) },
+	{ "read_only", 'i', 1, gfarm_config_print_enabled,
+	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
+	  &gfarm_read_only, 0 },
 	{ "simultaneous_replication_receivers", 'i', 1, gfarm_config_print_int,
 	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
 	  &gfarm_simultaneous_replication_receivers, 0 },

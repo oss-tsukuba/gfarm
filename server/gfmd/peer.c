@@ -1039,7 +1039,7 @@ peer_free(struct peer *peer)
 		    &peer->u.client.jobs);
 	peer->u.client.jobs = NULL;
 
-	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+	if (!gfarm_read_only_mode() && db_begin(diag) == GFARM_ERR_NO_ERROR)
 		transaction = 1;
 
 	peer_unset_pending_new_generation(peer, GFARM_ERR_CONNECTION_ABORTED);
@@ -1401,6 +1401,21 @@ peer_add_pending_new_generation_by_cookie(
 	    cookie, cookie_link);
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+/* NOTE: caller of this function should acquire giant_lock as well */
+struct inode *
+peer_get_pending_new_generation_by_cookie(
+	struct peer *peer, gfarm_uint64_t cookie_id)
+{
+	struct pending_new_generation_by_cookie *cookie;
+
+	GFARM_HCIRCLEQ_FOREACH(cookie, peer->pending_new_generation_cookies,
+	    cookie_link) {
+		if (cookie->id == cookie_id)
+			return (cookie->inode);
+	}
+	return (NULL);
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */

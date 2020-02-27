@@ -535,6 +535,13 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1003035,
 			    "xattr_access() failed: %s",
 			    gfarm_error_string(e));
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "inode %llu:%llu during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
@@ -794,6 +801,13 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 		gflog_debug(GFARM_MSG_1003038,
 			"xattr_access() failed: %s",
 			gfarm_error_string(e));
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "inode %llu:%llu during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else
 		e = removexattr(xmlMode, inode, attrname);
 	giant_unlock();

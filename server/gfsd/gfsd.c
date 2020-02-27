@@ -3021,7 +3021,9 @@ close_fd(struct gfp_xdr *client, gfarm_int32_t fd, struct file_entry *fe,
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (fe->flags & FILE_FLAG_WRITTEN) {
-			if (fe->new_gen != fe->gen)
+			if (e == GFARM_ERR_READ_ONLY_FILE_SYSTEM) {
+				/* will retry */
+			} else if (fe->new_gen != fe->gen)
 				gflog_error(GFARM_MSG_1003507,
 				    "inode %lld generation %lld -> %lld: "
 				    "error occurred during close operation "
@@ -3112,7 +3114,9 @@ fhclose_fd(struct gfp_xdr *client, struct file_entry *fe, const char *diag)
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (fe->flags & FILE_FLAG_WRITTEN) {
-			if (fe->new_gen != fe->gen)
+			if (e == GFARM_ERR_READ_ONLY_FILE_SYSTEM) {
+				/* will retry */
+			} else if (fe->new_gen != fe->gen)
 				gflog_error(GFARM_MSG_1003509,
 				    "inode %lld generation %lld -> %lld: "
 				    "error occurred during close operation "
@@ -3188,7 +3192,18 @@ close_fd_somehow(struct gfp_xdr *client,
 	} else {
 
 		if (fd_usable_to_gfmd) {
-			e = close_fd(client, fd, fe, diag);
+			while ((e = close_fd(client, fd, fe, diag)) ==
+			    GFARM_ERR_READ_ONLY_FILE_SYSTEM) {
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "close_write: inode %llu:%llu waiting "
+				    "for %d seconds until read_only disabled",
+				    (long long)fe->ino, (long long)fe->gen,
+				    gfarm_spool_server_read_only_retry_interval
+				    );
+				gfarm_sleep(
+				    gfarm_spool_server_read_only_retry_interval
+				    );
+			}
 			if (IS_CONNECTION_ERROR(e)) {
 				/* fd_usable_to_gfmd will be set to 0 */
 				reconnect_gfm_server_for_failover(
@@ -3202,7 +3217,18 @@ close_fd_somehow(struct gfp_xdr *client,
 		}
 
 		if (!fd_usable_to_gfmd) {
-			e = fhclose_fd(client, fe, diag);
+			while ((e = fhclose_fd(client, fe, diag)) ==
+			    GFARM_ERR_READ_ONLY_FILE_SYSTEM) {
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "fhclose_write: inode %llu:%llu waiting "
+				    "for %d seconds until read_only disabled",
+				    (long long)fe->ino, (long long)fe->gen,
+				    gfarm_spool_server_read_only_retry_interval
+				    );
+				gfarm_sleep(
+				    gfarm_spool_server_read_only_retry_interval
+				    );
+			}
 			if (IS_CONNECTION_ERROR(e)) {
 				reconnect_gfm_server_for_failover(
 				    "close_fd_somehow/fhclose_fd");

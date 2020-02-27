@@ -562,6 +562,10 @@ db_journal_write(gfarm_uint64_t seqnum, enum journal_operation ope,
 
 	assert(journal_seqnum_pre == GFARM_METADB_SERVER_SEQNUM_INVALID ||
 	    journal_seqnum_pre + 1 == seqnum);
+	if (gfarm_read_only_mode())
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "writing journal during read_only mode");
+
 	if (journal_begin_called) {
 		/* Write 'BEGIN' which is suppressed in previous
 		 * sequence number.

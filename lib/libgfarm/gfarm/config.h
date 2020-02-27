@@ -7,6 +7,7 @@
 extern int gfarm_spool_server_listen_backlog;
 extern char *gfarm_spool_server_listen_address;
 extern int gfarm_spool_server_back_channel_rcvbuf_limit;
+extern int gfarm_spool_server_read_only_retry_interval;
 #define GFARM_SPOOL_ROOT_NUM	5
 extern char *gfarm_spool_root[];
 gfarm_error_t parse_set_spool_root(char *);
@@ -152,6 +153,7 @@ extern int gfarm_iostat_max_client;
 
 /* miscellaneous configurations */
 extern char *gfarm_digest;
+extern int gfarm_read_only;
 extern int gfarm_simultaneous_replication_receivers;
 extern int gfarm_replication_busy_host;
 

@@ -1508,6 +1508,14 @@ inode_remove(struct inode *inode, struct dirset *tdirset)
 {
 	int dfc_needs_free = 0;
 
+	if (gfarm_read_only_mode()) {
+		gflog_warning(GFARM_MSG_UNFIXED, "inode %llu:%llu: "
+		    "cannot remove unreferenced inode due to read_only",
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode));
+		return;
+	}
+
 	inode_remove_all_xattrs(inode);
 
 	if (inode->u.c.activity != NULL)
@@ -2306,6 +2314,9 @@ inode_set_atime_main(struct inode *inode, struct gfarm_timespec *atime)
 	if (gfarm_timespec_cmp(&inode->i_atimespec, atime) == 0)
 		return; /* not necessary to change */
 
+	if (gfarm_read_only_mode())
+		return;
+
 	inode_set_atime_in_cache(inode, atime);
 
 	e = db_inode_atime_modify(inode->i_number, &inode->i_atimespec);
@@ -2664,8 +2675,20 @@ inode_new_generation_by_cookie_finish(
 		dirset_add_ref(tdirset);
 	inum = inode_get_number(inode);
 
-	if (size != inode_get_size(inode))
-		inode_set_size(inode, tdirset, size);
+	if (size != inode_get_size(inode)) {
+		if (gfarm_read_only_mode()) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "GFM_PROTO_GENERATION_UPDATED_BY_COOKIE: "
+			    "inode %llu:%llu conflict detected, "
+			    "but reverting size %llu to %llu skipped "
+			    "due to read_only",
+			    (long long)inode_get_number(inode),
+			    (long long)inode_get_gen(inode),
+			    (long long)inode_get_size(inode), (long long)size);
+		} else {
+			inode_set_size(inode, tdirset, size);
+		}
+	}
 	if (inode_activity_free_try(inode))
 		inode_remove_try(inode, tdirset);
 
@@ -4775,6 +4798,7 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 	struct inode *inode = fo->inode;
 	struct inode_activity *ia = inode->u.c.activity;
 	struct dirset *tdirset = inode_get_tdirset(inode);
+	int read_only = gfarm_read_only_mode();
 
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 		--ia->u.f.writers;
@@ -4789,10 +4813,21 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 		 * of open(O_TRUNC) is ignored in this case.
 		 * see SF.net #472 and #441.
 		 */
-		inode_file_update(fo, 0, atime, &inode->i_mtimespec, 0,
-		    NULL, NULL, trace_logp, diag);
-	} else if (atime != NULL)
-		inode_set_relatime(inode, atime);
+		if (read_only) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "inode %llu:%llu: GFARM_FILE_TRUNC is "
+				      "not performed due to read_only",
+			    (long long)inode_get_number(inode),
+			    (long long)inode_get_gen(inode));
+		} else {
+			inode_file_update(fo, 0, atime, &inode->i_mtimespec, 0,
+			    NULL, NULL, trace_logp, diag);
+		}
+	} else {
+		/* if read_only, atime update will be ignored */
+		if (atime != NULL && !read_only)
+			inode_set_relatime(inode, atime);
+	}
 
 	/* inode_activity_free_try() may free tdirset, so we need protection */
 	if (tdirset != TDIRSET_IS_UNKNOWN && tdirset != TDIRSET_IS_NOT_SET)
@@ -4827,7 +4862,7 @@ inode_fhclose_read(struct inode *inode, struct gfarm_timespec *atime)
 		gflog_error(GFARM_MSG_1003283, "%s: not a file", diag);
 		return (GFARM_ERR_STALE_FILE_HANDLE);
 	}
-	if (atime != NULL)
+	if (atime != NULL && !gfarm_read_only_mode())
 		inode_set_relatime(inode, atime);
 
 	return (GFARM_ERR_NO_ERROR);
@@ -4864,10 +4899,14 @@ inode_check_pending_replication(struct file_opening *fo)
 	if (host_supports_async_protocols(spool_host) &&
 	    ia->u.f.spool_writers == 0 && ia->u.f.replication_pending) {
 		ia->u.f.replication_pending = 0;
-		e = make_replicas_except(inode, ia->tdirset, spool_host,
-		    fo->u.f.replica_spec.desired_number,
-		    fo->u.f.replica_spec.repattr,
-		    inode->u.c.s.f.copies);
+		if (gfarm_read_only_mode())
+			e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+		else
+			e = make_replicas_except(
+			    inode, ia->tdirset, spool_host,
+			    fo->u.f.replica_spec.desired_number,
+			    fo->u.f.replica_spec.repattr,
+			    inode->u.c.s.f.copies);
 		/*
 		 * #464 - retry automatic replication after
 		 * GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE
@@ -6285,6 +6324,15 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 				    (long long)inode->i_number, (long long)gen,
 				    host_name(spool_host));
 				e = GFARM_ERR_FILE_BUSY;
+			} else if (gfarm_read_only_mode()) {
+				gflog_warning(GFARM_MSG_UNFIXED,
+				    "inode %llu:%llu @ %s: replica "
+				    "entity must be removed, "
+				    "but currently read_only",
+				    (unsigned long long)inode->i_number,
+				    (unsigned long long)gen,
+				    host_name(spool_host));
+				e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 			} else {
 				/*
 				 * XXX FIXME invalid_is_removable case is wrong
@@ -6303,9 +6351,19 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 			}
 		} else {
 			if (FILE_COPY_IS_VALID(copy)) {
-				e = remove_replica_metadata(inode, copy->host,
-				    tdirset);
-				if (e != GFARM_ERR_NO_ERROR) {
+				if (gfarm_read_only_mode()) {
+					gflog_warning(GFARM_MSG_UNFIXED,
+					    "inode %llu:%llu @ %s: replica "
+					    "metadata must be removed, "
+					    "but currently read_only",
+					    (unsigned long long)
+					    inode->i_number,
+					    (unsigned long long)gen,
+					    host_name(spool_host));
+					e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+				} else if ((e = remove_replica_metadata(
+				    inode, copy->host, tdirset))
+				    != GFARM_ERR_NO_ERROR) {
 					gflog_error(GFARM_MSG_1003701,
 					    "remove_replica_metadata("
 					    "%lld, %lld, %s): %s",
@@ -6339,9 +6397,23 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 			}
 		}
 	} else if (!metadata_only) {
-		/* tdirset is not needed, because this is obsolete replica */
-		e = remove_replica_entity(inode, gen, spool_host, 0, tdirset,
-		    deferred_cleanupp);
+		if (gfarm_read_only_mode()) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "inode %llu:%llu @ %s: obsolete replica "
+			    "entity must be removed, but currently read_only",
+			    (unsigned long long)inode->i_number,
+			    (unsigned long long)gen,
+			    host_name(spool_host));
+			e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+		} else {
+			/*
+			 * tdirset is not needed,
+			 * because this is obsolete replica
+			 */
+			e = remove_replica_entity(
+			    inode, gen, spool_host, 0, tdirset,
+			    deferred_cleanupp);
+		}
 	} else {
 		/* remove_replica_entity() must be already called */
 		gflog_debug(GFARM_MSG_1002488,

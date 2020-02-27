@@ -479,6 +479,13 @@ gfm_server_quota_dir_set(struct peer *peer, int from_client, int skip)
 	} else if ((e = quota_dir_settable(inode, ds, user, diag))
 	    != GFARM_ERR_NO_ERROR) {
 		;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "inode %llu:%llu user %s dirset %s during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode), username, dirsetname);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = quota_dir_enter(inode_get_number(inode), ds, NULL))
 	    != GFARM_ERR_NO_ERROR) {
 		;
