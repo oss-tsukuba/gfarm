@@ -545,6 +545,8 @@ sleep_time_update(int *varp, int nanosec)
 static void
 replica_check_giant_lock(void)
 {
+	static const char diag[] = "replica_check_giant_lock";
+
 	if (yield_time > 0) {
 		gfarm_nanosleep(yield_time);
 		total_yield_time += .000000001 * yield_time;
@@ -556,6 +558,17 @@ replica_check_giant_lock(void)
 #endif
 		gfarm_nanosleep(sleep_time);
 		lock_sleep_time += .000000001 * sleep_time;
+
+		giant_lock();
+		/* gfarm_replica_check_sleep_time is giant_lock()ed */
+		sleep_time_update(&sleep_time, gfarm_replica_check_sleep_time);
+		sleep_time_update(&yield_time, gfarm_replica_check_yield_time);
+	}
+
+	while (gfarm_read_only_mode()) {
+		giant_unlock();
+
+		gfarm_read_only_disabled_wait(diag);
 
 		giant_lock();
 		/* gfarm_replica_check_sleep_time is giant_lock()ed */

@@ -1348,12 +1348,19 @@ mdhost_set_self_as_default_master(void)
 	static const char diag[] = "mdhost_set_self_as_default_master";
 
 	mdhost_set_is_default_master(self, 1);
-	if ((e = mdhost_db_modify_default_master(self, &self->ms, diag)) !=
+	if (gfarm_read_only_mode() ||
+	    (e = mdhost_db_modify_default_master(self, &self->ms, diag)) !=
 	    GFARM_ERR_NO_ERROR)
 		;
 	else if ((e = mdhost_updated()) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1002950, "%s: mdhost_updated: %s",
 		    diag, gfarm_error_string(e));
+}
+
+void
+mdhost_read_only_disabled(void)
+{
+	mdhost_set_self_as_default_master();
 }
 
 static gfarm_error_t
@@ -1406,6 +1413,12 @@ gfm_server_metadb_server_set(struct peer *peer, int from_client, int skip)
 	} else if ((e = metadb_server_verify(&ms, diag))
 	    != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "name %s port %d flags 0x%x during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    ms.name, (int)ms.port, (int)ms.flags);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = mdhost_enter_internal(&ms, &mh))
 	    != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
@@ -1497,6 +1510,12 @@ gfm_server_metadb_server_modify(struct peer *peer, int from_client, int skip)
 	} else if ((e = metadb_server_verify(&ms, diag))
 		   != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "name %s port %d flags 0x%x during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    ms.name, (int)ms.port, (int)ms.flags);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else {
 		mdhost_modify_in_cache_internal(mh, &ms);
 		if (isdm) {
@@ -1555,6 +1574,12 @@ gfm_server_metadb_server_remove(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1002967,
 		    "%s: cannot remove self host", diag);
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "name %s during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    name);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = mdhost_remove_in_cache(name)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002968,
 		    "%s: mdhost_remove_in_cache(%s) failed: %s",

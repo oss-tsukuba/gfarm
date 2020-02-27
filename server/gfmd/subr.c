@@ -235,6 +235,38 @@ config_var_unlock(void)
 	    "config_var");
 }
 
+int
+gfarm_read_only_mode(void)
+{
+	int rv;
+
+	config_var_lock();
+	rv = gfarm_read_only;
+	config_var_unlock();
+	return (rv);
+}
+
+static pthread_cond_t gfarm_read_only_disabled = PTHREAD_COND_INITIALIZER;
+
+void
+gfarm_read_only_disabled_wait(const char *where)
+{
+	config_var_lock();
+	while (gfarm_read_only)
+		gfarm_cond_wait(&gfarm_read_only_disabled, &config_var_mutex,
+		    where, "read_only_disabled");
+	config_var_unlock();
+}
+
+void
+gfarm_read_only_disabled_broadcast(const char *where)
+{
+	config_var_lock();
+	gfarm_cond_broadcast(&gfarm_read_only_disabled,
+	    where, "read_only_disabled");
+	config_var_unlock();
+}
+
 static void
 gfarm_pthread_attr_setstacksize(pthread_attr_t *attr)
 {

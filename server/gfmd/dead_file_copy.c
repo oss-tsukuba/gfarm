@@ -308,7 +308,14 @@ handle_removal_result(struct dead_file_copy *dfc)
 	/* giant_lock is necessary before calling dead_file_copy_free() */
 	giant_lock();
 
-	if (dfc->result == GFARM_ERR_NO_ERROR ||
+	/*
+	 * because there is race condition between
+	 * the gfarm_read_only check in removal_finalizer() and here,
+	 * we must re-check gfarm_read_only here
+	 */
+	if (gfarm_read_only_mode()) {
+		removal_finishedq_enqueue(dfc, dfc->result);
+	} else if (dfc->result == GFARM_ERR_NO_ERROR ||
 	    dfc->result == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
 		dead_file_copy_free(dfc); /* sleeps to wait for dbq.mutex */
 	} else if (host_is_file_removable(dfc->host)) {
@@ -342,6 +349,8 @@ removal_finalizer(void *arg)
 		    diag, gfarm_error_string(e));
 
 	for (;;) {
+		gfarm_read_only_disabled_wait(diag);
+
 		handle_removal_result(removal_finishedq_dequeue());
 	}
 
@@ -428,6 +437,12 @@ dead_file_copy_host_busyq_scan(void)
 	static const char diag[] = "dead_file_copy_host_busyq_scan";
 
 	giant_lock();
+
+	if (gfarm_read_only_mode()) {
+		giant_unlock();
+		return;
+	}
+
 	gfarm_mutex_lock(&host_busyq.mutex, diag, "host_busyq lock");
 
 	now = time(NULL);
@@ -1044,6 +1059,13 @@ dead_file_copy_scanner(void *arg)
 		    diag, dead_file_copy_scan_diag);
 
 		giant_lock();
+
+		if (gfarm_read_only_mode()) {
+			giant_unlock();
+
+			gfarm_read_only_disabled_wait(diag);
+			continue; /* try again */
+		}
 
 		if (inum != 0 && host != NULL) {
 			t = dead_file_copy_replica_status_changed_run(

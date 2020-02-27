@@ -2167,9 +2167,12 @@ main(int argc, char **argv)
 			    "another master gfmd is already running");
 		}
 		/* these functions write db, thus, must be after db_thread  */
-		inode_remove_orphan(); /* should be before
-					  inode_check_and_repair() */
-		inode_check_and_repair();
+		if (!gfarm_read_only_mode()) {
+			/* do this before inode_check_and_repair() */
+			inode_remove_orphan();
+
+			inode_check_and_repair();
+		}
 	}
 	inode_free_orphan();
 	gflog_info(GFARM_MSG_1004204, "end bootstrap");

@@ -9,6 +9,9 @@ void giant_unlock(void);
 void config_var_init(void);
 void config_var_lock(void);
 void config_var_unlock(void);
+int gfarm_read_only_mode(void);
+void gfarm_read_only_disabled_wait(const char *);
+void gfarm_read_only_disabled_broadcast(const char *);
 
 gfarm_error_t create_detached_thread(void *(*)(void *), void *);
 gfarm_error_t gfarm_pthread_set_priority_minimum(const char *);

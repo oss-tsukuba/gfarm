@@ -38,6 +38,7 @@ gfarm_error_t gfm_server_metadb_server_remove(struct peer *, int, int);
 
 void mdhost_set_self_as_master(void);
 void mdhost_set_self_as_default_master(void);
+void mdhost_read_only_disabled();
 int mdhost_is_sync_replication(struct mdhost *);
 int mdhost_get_flags(struct mdhost *);
 void mdhost_set_seqnum_unknown(struct mdhost *);

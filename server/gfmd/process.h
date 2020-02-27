@@ -110,6 +110,8 @@ gfarm_error_t process_open_file(struct process *, struct inode *,
 	struct dirset *, gfarm_int32_t *);
 gfarm_error_t process_schedule_file(struct process *,
 	struct peer *, int, gfarm_int32_t *, struct host ***, const char *);
+int process_fd_is_for_modification(struct process *, struct peer *, int,
+	gfarm_ino_t *, gfarm_uint64_t *, gfarm_int32_t *, const char *);
 gfarm_error_t process_reopen_file(struct process *,
 	struct peer *, struct host *, int,
 	gfarm_ino_t *, gfarm_uint64_t *, gfarm_int32_t *,

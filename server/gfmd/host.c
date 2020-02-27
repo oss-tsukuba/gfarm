@@ -1845,6 +1845,10 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_ALREADY_EXISTS;
 	} else if ((e = host_info_verify(&hi, diag)) != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = host_enter(&hi, NULL)) != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
 	} else if ((e = db_host_add(&hi)) != GFARM_ERR_NO_ERROR) {
@@ -1950,6 +1954,11 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 		needs_free = 1;
 	} else if ((e = host_info_verify(&hi, diag)) != GFARM_ERR_NO_ERROR) {
 		needs_free = 1;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+		needs_free = 1;
 	} else if ((e = db_host_modify(&hi,
 	    DB_HOST_MOD_ARCHITECTURE|DB_HOST_MOD_NCPU|DB_HOST_MOD_FLAGS,
 	    /* XXX */ 0, NULL, 0, NULL)) != GFARM_ERR_NO_ERROR) {
@@ -2051,6 +2060,10 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001572,
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else
 		e = host_info_remove(hostname, diag);
 	free(hostname);

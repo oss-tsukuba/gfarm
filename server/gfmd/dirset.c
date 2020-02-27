@@ -493,6 +493,12 @@ gfm_server_dirset_info_set(struct peer *peer, int from_client, int skip)
 		 * all diresets in the GFM_PROTO_DIRSET_DIR_LIST protocol
 		 */
 		e = GFARM_ERR_INVALID_ARGUMENT;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "user %s dirset %s during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    username, dirsetname);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = user_enter_dirset(u, dirsetname, 1, &ds))
 	    != GFARM_ERR_NO_ERROR) {
 		;
@@ -538,6 +544,12 @@ gfm_server_dirset_info_remove(struct peer *peer, int from_client, int skip)
 	} else if (u != peer_get_user(peer) &&
 	    !user_is_root(peer_get_user(peer))) {
 		e = GFARM_ERR_PERMISSION_DENIED;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "user %s dirset %s during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    username, dirsetname);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else if ((e = user_remove_dirset(u, dirsetname))
 	    != GFARM_ERR_NO_ERROR) {
 		;
@@ -789,6 +801,12 @@ gfm_server_quota_dirset_set(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((ds = user_lookup_dirset(u, dirsetname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
+		    "user %s dirset %s during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer),
+		    username, dirsetname);
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else {
 		ds->dq.qmm.q.limit = limit;
 		dirquota_softlimit_exceed(&ds->dq.qmm.q, ds);

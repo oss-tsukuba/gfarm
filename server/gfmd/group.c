@@ -810,6 +810,10 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001537,
 			"group_user_check() failed: %s",
 			gfarm_error_string(e));
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	/*
 	 * We have to call this before group_info_add(),
 	 * because group_info_add() frees the memory of gi
@@ -896,10 +900,14 @@ gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001541,
 			"group_lookup() failed");
 		e = GFARM_ERR_NO_SUCH_GROUP;
-	} else if ((e = group_user_check(&gi, diag)) != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_1001542,
-			"group_user_check() failed: %s", gfarm_error_string(e));
-	else {
+	} else if ((e = group_user_check(&gi, diag)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1001542, "group_user_check() failed: %s",
+		    gfarm_error_string(e));
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
+	} else {
 		group_modify(group, &gi, diag);
 		/* change all entries */
 		e = db_group_modify(&gi, 0, 0, NULL, 0, NULL);
@@ -963,6 +971,10 @@ gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 		    "%s: administrator group \"%s\" should not be deleted",
 		    diag, groupname);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (gfarm_read_only_mode()) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) during read_only",
+		    diag, peer_get_username(peer), peer_get_hostname(peer));
+		e = GFARM_ERR_READ_ONLY_FILE_SYSTEM;
 	} else
 		e = group_info_remove(groupname, diag);
 	free(groupname);

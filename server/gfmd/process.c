@@ -772,6 +772,43 @@ process_schedule_file(struct process *process, struct peer *peer, int fd,
 	return (e);
 }
 
+int
+process_fd_is_for_modification(struct process *process,
+	struct peer *peer, int fd,
+	gfarm_ino_t *inump, gfarm_uint64_t *genp, gfarm_int32_t *flagsp,
+	const char *diag)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, peer, fd,
+	    &fo, diag);
+	int no_replica, is_creating_file_replica;
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "process_get_file_opening() failed: %s",
+		    gfarm_error_string(e));
+		return (0);
+	}
+	if (!inode_is_file(fo->inode)) { /* i.e. is a directory */
+		gflog_debug(GFARM_MSG_UNFIXED, "inode is not file");
+		return (0);
+	}
+
+	no_replica = inode_has_no_replica(fo->inode);
+	is_creating_file_replica = (fo->flag & GFARM_FILE_CREATE_REPLICA) != 0;
+
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 || no_replica ||
+	    is_creating_file_replica ||
+	    (fo->flag & GFARM_FILE_TRUNC) != 0) {
+		*inump = inode_get_number(fo->inode);
+		*genp = inode_get_gen(fo->inode);
+		*flagsp = fo->flag & GFARM_FILE_USER_MODE;
+		return (1);
+	}
+
+	return (0);
+}
+
 gfarm_error_t
 process_reopen_file(struct process *process,
 	struct peer *peer, struct host *spool_host, int fd,
@@ -926,6 +963,7 @@ process_getgen(struct process *process, struct peer *peer, int fd,
 	*genp = fo->gen;
 	return (GFARM_ERR_NO_ERROR);
 }
+
 static gfarm_error_t
 process_close_or_abort_file(struct process *process, struct peer *peer, int fd,
 	char **trace_logp, int aborted, const char *diag)
@@ -1038,7 +1076,8 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 		/* closing REOPENed file, but the client is still opening */
 		fo->u.f.spool_opener = NULL;
 		fo->u.f.spool_host = NULL;
-		inode_set_relatime(fo->inode, atime);
+		if (!gfarm_read_only_mode())
+			inode_set_relatime(fo->inode, atime);
 		return (GFARM_ERR_NO_ERROR);
 	}
 
