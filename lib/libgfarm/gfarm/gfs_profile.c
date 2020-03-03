@@ -19,7 +19,7 @@
 #endif /*__KERNEL__*/
 
 #ifndef __KERNEL__
-pthread_mutex_t profile_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t profile_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void
 gfs_profile_lock(const char *where) {
