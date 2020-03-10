@@ -1817,6 +1817,23 @@ This directive is only available for clients in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
+<term><token>read_only</token> <parameter moreinfo="none">validity</parameter></term>
+<listitem>
+<para>
+This directive makes whole file system read_only mode.
+The default is <token>disable</token>.
+</para>
+<para>
+This directive is only available in gfmd configuration files.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	read_only enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>simultaneous_replication_receivers</token> <parameter moreinfo="none">number</parameter></term>
 <listitem>
 <para>This directive specifies maximum number of simultaneous
@@ -3046,6 +3063,7 @@ The default size is 16 MiB.
 	&lt;minimum_free_disk_space_statement&gt; |
 	&lt;direct_local_access_statement&gt; |
 	&lt;replication_at_write_open_statement&gt; |
+	&lt;read_only_statement&gt; |
 	&lt;simultaneous_replication_receivers_statement&gt; |
 	&lt;replication_busy_host_statement&gt; |
 	&lt;gfsd_connection_cache_statement&gt; |
@@ -3561,6 +3579,11 @@ The default size is 16 MiB.
 <varlistentry>
 <term>&lt;replication_at_write_open_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"replication_at_write_open" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;read_only_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"read_only" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
