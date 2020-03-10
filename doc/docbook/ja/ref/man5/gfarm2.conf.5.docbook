@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>10 Sep 2019</date></refentryinfo>
+<refentryinfo><date>10 Mar 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -115,6 +115,30 @@ IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワ
 <refsect1 id="statement"><title>文</title>
 <para>文には、下記の種類があります。</para>
 <variablelist>
+
+<varlistentry>
+<term><token>include</token> <parameter moreinfo="none">パス名</parameter></term>
+<listitem>
+<para>パス名で指定された設定ファイルを読み込みます。</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	include /etc/gfarm2.common.conf
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>include_nesting_limit</token> <parameter moreinfo="none">制限値</parameter></term>
+<listitem>
+<para><token>include</token> 文のネスティングの上限を指定します。
+デフォルトの制限値は 20 です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	include_nesting_limit 30
+</literallayout>
+</listitem>
+</varlistentry>
 
 <varlistentry>
 <term><token>spool</token> <parameter moreinfo="none">gfsdスプール・ディレクトリ</parameter></term>
@@ -2923,6 +2947,8 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <varlistentry>
 <term>&lt;statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">
+	&lt;include_statement&gt; |
+	&lt;include_nesting_limit_statement&gt; |
 	&lt;spool_statement&gt; |
 	&lt;spool_server_listen_address_statement&gt; |
 	&lt;spool_server_listen_backlog_statement&gt; |
@@ -3059,6 +3085,16 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;write_verify_interval_statement&gt; |
 	&lt;write_verify_retry_interval_statement&gt; |
 	&lt;write_verify_log_interval_statement&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;include_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"include" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;include_nesting_limit_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"include_nesting_limit" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

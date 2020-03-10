@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>10 Sep 2019</date></refentryinfo>
+<refentryinfo><date>10 Mar 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -97,6 +97,36 @@ from 0 to 31 separated by "/".</para>
 <refsect1 id="statement"><title>Statement</title>
 <para>The following statements are supported.</para>
 <variablelist>
+
+<varlistentry>
+<term><token>include</token> <parameter moreinfo="none">pathname</parameter></term>
+<listitem>
+<para>
+The file specified by the pathname parameter will be read
+as a configuration file.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	include /etc/gfarm2.common.conf
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>include_nesting_limit</token> <parameter moreinfo="none">number</parameter></term>
+<listitem>
+<para>
+This directive specifies the upper limit of nesting level of
+the <token>include</token> statement.
+The default limit is 20 level.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	include_nesting_limit 30
+</literallayout>
+</listitem>
+</varlistentry>
+
 
 <varlistentry>
 <term><token>spool</token> <parameter moreinfo="none">directory</parameter></term>
@@ -2937,6 +2967,8 @@ The default size is 16 MiB.
 <varlistentry>
 <term>&lt;statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">
+	&lt;include_statement&gt; |
+	&lt;include_nesting_limit_statement&gt; |
 	&lt;spool_statement&gt; |
 	&lt;spool_server_listen_address_statement&gt; |
 	&lt;spool_server_listen_backlog_statement&gt; |
@@ -3073,6 +3105,16 @@ The default size is 16 MiB.
 	&lt;write_verify_interval_statement&gt; |
 	&lt;write_verify_retry_interval_statement&gt; |
 	&lt;write_verify_log_interval_statement&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;include_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"include" &lt;pathname&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;include_nesting_limit_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"include_nesting_limit" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
