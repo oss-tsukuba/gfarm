@@ -1027,6 +1027,7 @@ dead_file_copy_scanner(void *arg)
 {
 	gfarm_error_t e;
 	static const char diag[] = "dead_file_copy_scanner";
+	static const char diag_read_only[] = "dead_file_copy_scanner:ro";
 	gfarm_ino_t inum;
 	struct host *host;
 	long long t;
@@ -1061,6 +1062,24 @@ dead_file_copy_scanner(void *arg)
 
 		if (gfarm_read_only_mode()) {
 			giant_unlock();
+
+			gfarm_mutex_lock(&dead_file_copy_scan.mutex,
+			    diag_read_only, dead_file_copy_scan_diag);
+
+			/*
+			 * there is race about inum and host, but it will be
+			 * fixed by the dead_file_copy_scan_deferred_all() call
+			 * in replica_check_thread()
+			 */
+			dead_file_copy_scan.need_to_run = 1;
+			dead_file_copy_scan.inum = inum;
+			dead_file_copy_scan.host = host;
+			gfarm_cond_signal(
+			    &dead_file_copy_scan.requested, diag_read_only,
+			    dead_file_copy_scan_requested_diag);
+
+			gfarm_mutex_unlock(&dead_file_copy_scan.mutex,
+			    diag_read_only, dead_file_copy_scan_diag);
 
 			gfarm_read_only_disabled_wait(diag);
 			continue; /* try again */
