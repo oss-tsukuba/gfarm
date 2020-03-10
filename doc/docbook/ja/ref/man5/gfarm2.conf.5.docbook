@@ -1777,6 +1777,24 @@ enable にすると、その他のファイルシステムノードにファイ�
 </varlistentry>
 
 <varlistentry>
+<term><token>read_only</token> <parameter moreinfo="none">有効性</parameter></term>
+<listitem>
+<para>
+ファイルシステム全体を read only モードにします。
+
+デフォルトは<token>disable</token>です。
+</para>
+<para>
+この文はgfmdでのみ有効です。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	read_only enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>simultaneous_replication_receivers</token> <parameter moreinfo="none">同時処理数</parameter></term>
 <listitem>
 <para>gfmd 主導の複製処理を、単一複製作成ホストに対して、
@@ -3050,6 +3068,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;minimum_free_disk_space_statement&gt; |
 	&lt;direct_local_access_statement&gt; |
 	&lt;replication_at_write_open_statement&gt; |
+	&lt;read_only_statement&gt; |
 	&lt;simultaneous_replication_receivers_statement&gt; |
 	&lt;replication_busy_host_statement&gt; |
 	&lt;gfsd_connection_cache_statement&gt; |
@@ -3565,6 +3584,11 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <varlistentry>
 <term>&lt;replication_at_write_open_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"replication_at_write_open" &lt;validity&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;read_only_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"read_only" &lt;validity&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
