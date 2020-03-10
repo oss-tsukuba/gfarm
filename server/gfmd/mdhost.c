@@ -1338,6 +1338,9 @@ mdhost_db_modify_default_master(struct mdhost *mh,
 	return (e);
 }
 
+/* needs giant_lock */
+static int master_transformation_has_to_be_propagated = 0;
+
 /* PREREQUISITE: giant_lock */
 void
 mdhost_set_self_as_default_master(void)
@@ -1347,8 +1350,16 @@ mdhost_set_self_as_default_master(void)
 	static const char diag[] = "mdhost_set_self_as_default_master";
 
 	mdhost_set_is_default_master(self, 1);
-	if (gfarm_read_only_mode() ||
-	    (e = mdhost_db_modify_default_master(self, &self->ms, diag)) !=
+
+	if (gfarm_read_only_mode()) {
+		master_transformation_has_to_be_propagated = 1;
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "propagating master transformation is postponed "
+		    "due to read_only");
+		return;
+	}
+
+	if ((e = mdhost_db_modify_default_master(self, &self->ms, diag)) !=
 	    GFARM_ERR_NO_ERROR)
 		;
 	else if ((e = mdhost_updated()) != GFARM_ERR_NO_ERROR)
@@ -1356,10 +1367,16 @@ mdhost_set_self_as_default_master(void)
 		    diag, gfarm_error_string(e));
 }
 
+/* PREREQUISITE: giant_lock */
 void
 mdhost_read_only_disabled(void)
 {
-	mdhost_set_self_as_default_master();
+	if (master_transformation_has_to_be_propagated) {
+		master_transformation_has_to_be_propagated = 0;
+		mdhost_set_self_as_default_master();
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "master transformation is propagated");
+	}
 }
 
 static gfarm_error_t

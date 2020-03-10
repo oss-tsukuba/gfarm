@@ -1427,8 +1427,8 @@ transform_to_master(void)
 	start_gfmdc_threads();
 
 	giant_lock();
-	mdhost_set_self_as_default_master();
 	dynamic_config_read_file(failover_config_file);
+	mdhost_set_self_as_default_master();
 	giant_unlock();
 
 	gflog_info(GFARM_MSG_1002731,
