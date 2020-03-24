@@ -156,13 +156,17 @@ stop() {
 
 status() {
     echo "[df]"
-    prun-verb "df -t fuse.gfarm2fs 2> /dev/null || :"
-    echo "[ls -lAR]"
-    prun-verb "ls -lAR $TMPDIR 2> /dev/null || :"
+    prun-verb "df -t fuse.gfarm2fs 2>&1 || :"
+    echo "[ls -la $TMPDIR]"
+    prun-verb "ls -la $TMPDIR 2>&1 || :"
     echo "[ps]"
-    prun-verb "ps -ef | grep gf | egrep -v '(grep|status)'"
+    prun-verb "ps -ef | grep gf | egrep -v '(grep|status|beegfs)' || :"
     echo "[netstat]"
-    prun-verb "netstat -apn 2> /dev/null | grep gf"
+    prun-verb "netstat -an | grep gf || :"
+    if [ X"$MDIR" != X ]; then
+	echo "[ls -la $MDIR]"
+	prun-verb "ls -la $MDIR 2>&1 || :"
+    fi
 }
 
 which config-gfarm > /dev/null 2>&1 || err no gfarm installation
