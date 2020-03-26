@@ -57,7 +57,8 @@ fi
 
 usage()
 {
-	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t|-T] [-f]"
+	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [--confdir dir]"
+	echo >&2 "	[-t|-T] [-f]"
 	echo >&2 "	[-a arch] [-p port] [-h hostname] [-n ncpu] "
 	echo >&2 "	[-l listen_address] [-S] [-N] spool_directory"
 	exit 1
@@ -81,6 +82,7 @@ sanity()
 display_plain_params()
 {
 	echo "prefix                 [--prefix]: $CONFIG_PREFIX"
+	echo "confdir               [--confdir]: $CONFIG_ETC_DIR"
 	echo "hostname                     [-h]: $GFSD_HOSTNAME"
 	echo "listen address               [-l]: `if [ x$LISTEN_ADDRESS != x ]; then echo $LISTEN_ADDRESS; else echo '(all local IP addresses)'; fi`"
 	echo "architecture                 [-a]: $ARCH"
@@ -126,6 +128,10 @@ while [ $# -gt 0 ] ; do
 	# set parameters
 	  --prefix) shift; [ $# -ge 1 ] || usage
 		CONFIG_PREFIX=$1
+		;;
+	  # only for gfarm2.conf, gfsd.conf and usermap
+	  --confdir) shift; [ $# -ge 1 ] || usage
+		CONFIG_ETC_DIR=$1
 		;;
 	  -a) shift; [ $# -ge 1 ] || usage
 		ARCH=$1
@@ -207,15 +213,16 @@ if [ X"$CONFIG_PREFIX" != X ]; then
 else
 	: ${GFARM_CONF_DIR:="$sysconfdir"}
 fi
+: ${CONFIG_ETC_DIR:=$GFARM_CONF_DIR}
 : ${UNCONFIG_SCRIPT:="$GFARM_CONF_DIR/unconfig-gfsd.sh"}
 : ${UNCONFIG_SCRIPT_IN:="$config_dir/unconfig-gfsd.sh.in"}
 if $PRIVATE_MODE; then
-	: ${GFARM_CONF:="$GFARM_CONF_DIR/gfsd.conf"}
+	: ${GFARM_CONF:="$CONFIG_ETC_DIR/gfsd.conf"}
 else
-	: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
+	: ${GFARM_CONF:="$CONFIG_ETC_DIR/gfarm2.conf"}
 fi
-: ${GFARM_CLIENT_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
-: ${USERMAP_FILE:="$GFARM_CONF_DIR/usermap"}
+: ${GFARM_CLIENT_CONF:="$CONFIG_ETC_DIR/gfarm2.conf"}
+: ${USERMAP_FILE:="$CONFIG_ETC_DIR/usermap"}
 
 : ${FQ_HOSTNAME:=`fq_hostname`}
 
