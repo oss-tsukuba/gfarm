@@ -51,7 +51,8 @@ fi
 
 usage()
 {
-	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t|-T] [-f] [-S]"
+	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [--confdir dir]"
+	echo >&2 "	[-t|-T] [-f] [-S]"
 	usage_iostat
 	echo >&2 "	[--iostat-max-client iostat_max_client"\
 			"(currentry $IOSTAT_MAX_CLIENT)]"
@@ -61,8 +62,9 @@ usage()
 
 display_plain_params()
 {
-	echo "prefix [--prefix]: $CONFIG_PREFIX"
-	echo "config file      : $IOSTAT_CONF"
+	echo "prefix   [--prefix]: $CONFIG_PREFIX"
+	echo "confdir [--confdir]: $CONFIG_ETC_DIR"
+	echo "config file        : $IOSTAT_CONF"
 	display_iostat_params gfsd
 	if $IOSTAT_ENABLE; then
 		echo "iostat max client  [--iostat-max-client]: $IOSTAT_MAX_CLIENT"
@@ -87,6 +89,10 @@ while [ $# -gt 0 ] ; do
 	# set parameters
 	  --prefix) shift; [ $# -ge 1 ] || usage
 		CONFIG_PREFIX=$1
+		;;
+	  # only for gfarm2.conf, gfsd.conf and usermap
+	  --confdir) shift; [ $# -ge 1 ] || usage
+		CONFIG_ETC_DIR=$1
 		;;
 	  --iostat*)
 		key=$1
@@ -143,10 +149,11 @@ if [ X"$CONFIG_PREFIX" != X ]; then
 else
 	: ${GFARM_CONF_DIR:="$sysconfdir"}
 fi
+: ${CONFIG_ETC_DIR:=$GFARM_CONF_DIR}
 if $PRIVATE_MODE; then
-	: ${IOSTAT_CONF:="$GFARM_CONF_DIR/gfsd.conf"}
+	: ${IOSTAT_CONF:="$CONFIG_ETC_DIR/gfsd.conf"}
 else
-	: ${IOSTAT_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
+	: ${IOSTAT_CONF:="$CONFIG_ETC_DIR/gfarm2.conf"}
 fi
 
 # -t option; display parameters

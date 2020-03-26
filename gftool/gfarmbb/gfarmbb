@@ -17,12 +17,16 @@ usage() {
     echo "usage: $PROGRAM [-h hostfile] [-scr scratch_dir] [-m mount_point] [options] start | stop | status"
     echo ""
     echo "options:"
+    echo "        -mpi mpirun_cmd"
+    echo "            setup using MPI."
     echo "        -e"
     echo "            excludes Gfmd node from file system nodes."
     echo "        -h hostfile"
     echo "            specifies a hostfile."
     echo "        -scr scratch_dir"
     echo "            specifies a scratch directory. ($TMPDIR)"
+    echo "        -conf conf_dir"
+    echo "            specifies a shared configuration directory. ($CONFDIR)"
     echo "        -l"
     echo "            enables Gfarm/BB access from login nodes."
     echo "        -L log_dir"
@@ -50,9 +54,11 @@ while [ $# -gt 0 ]; do
 	start) mode=start ;;
 	stop) mode=stop ;;
 	status) mode=status ;;
+	-mpi) shift; MPIRUN="$1" ;;
 	-e) EXCLUDE_GFMD= ;;
 	-h) shift; HOSTFILE=$1 ;;
 	-scr) shift; TMPDIR=$1 ;;
+	-conf) shift; CONFDIR=$1 ;;
 	-l) LOGIN_NODE_ACCESS=true ;;
 	-L) shift; LOGDIR=$1 ;;
 	-m) shift; MDIR=$1 ;;
@@ -66,10 +72,21 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
+# sanity check
+[ X"$MPIRUN" != X -a X"$CONFDIR" = X ] && err -mpi option requires -conf option
+
+: ${CONFDIR:=$TMPDIR/etc}
 : ${LOGDIR:=$TMPDIR/log}
 : ${USER:=`whoami`}
 
-if [ X"$HOSTFILE" != X ]; then
+if [ X"$MPIRUN" != X ]; then
+    prun() {
+	$MPIRUN sh -c "$*"
+    }
+    alias prun-all=prun
+    alias prun-verb=prun
+    alias pcp=:
+elif [ X"$HOSTFILE" != X ]; then
     [ -e $HOSTFILE ] || err $HOSTFILE: no such host file
 
     alias prun="gfarm-prun $EXCLUDE_GFMD -p -h $HOSTFILE"
@@ -80,7 +97,7 @@ else
     alias prun="sh -c"
     alias prun-all="sh -c"
     alias prun-verb="sh -c"
-    alias pcp=":"
+    alias pcp=:
 fi
 
 start() {
@@ -88,30 +105,35 @@ start() {
 
     [ -d $TMPDIR/etc ] || mkdir -p $TMPDIR/etc
     [ -d $TMPDIR/etc ] || err $TMPDIR: no such scratch directory
+    [ -d $CONFDIR ] || mkdir -p $CONFDIR
+    [ -d $CONFDIR ] || err $CONFDIR: no such config directory
     [ -d $LOGDIR ] || mkdir -p $LOGDIR
     [ -d $LOGDIR ] || err $LOGDIR: no such log directory
 
-    GFARM_CONFIG_FILE=$TMPDIR/etc/gfarm2.conf
+    GFARM_CONFIG_FILE=$CONFDIR/gfarm2.conf
     export GFARM_CONFIG_FILE
-    SHARED_KEY_FILE=$TMPDIR/etc/.gfarm_shared_key
+    GFMD_CONF=$TMPDIR/etc/gfmd.conf
+    GFSD_CONF=$CONFDIR/gfsd.conf
+    USERMAP_FILE=$CONFDIR/usermap
+    SHARED_KEY_FILE=$CONFDIR/.gfarm_shared_key
     prun "mkdir -p $TMPDIR/etc $LOGDIR"
-    config-gfarm --prefix $TMPDIR -S -N -A $USER -b none > /dev/null
+    config-gfarm --prefix $TMPDIR --confdir $CONFDIR -S -N -A $USER -b none > /dev/null
 
-    echo metadb_server_listen_backlog 2048 >> $TMPDIR/etc/gfmd.conf
-    echo metadb_server_max_descriptors 262144 >> $TMPDIR/etc/gfmd.conf
-    echo metadb_server_long_term_lock_type mutex >> $TMPDIR/etc/gfmd.conf
-    echo metadb_server_nfs_root_squash_support disable >> $TMPDIR/etc/gfmd.conf
-    echo metadb_db_access_type none >> $TMPDIR/etc/gfmd.conf
-    echo schedule_idle_load_thresh 200 >> $TMPDIR/etc/gfmd.conf
-    echo atime disable >> $TMPDIR/etc/gfmd.conf
-    echo replica_check disable >> $TMPDIR/etc/gfmd.conf
-    echo log_level warning >> $TMPDIR/etc/gfmd.conf
-    echo log_file $LOGDIR/gfmd-$ID.log >> $TMPDIR/etc/gfmd.conf
-    echo shared_key_file $SHARED_KEY_FILE >> $TMPDIR/etc/gfmd.conf
+    echo metadb_server_listen_backlog 2048 >> $GFMD_CONF
+    echo metadb_server_max_descriptors 262144 >> $GFMD_CONF
+    echo metadb_server_long_term_lock_type mutex >> $GFMD_CONF
+    echo metadb_server_nfs_root_squash_support disable >> $GFMD_CONF
+    echo metadb_db_access_type none >> $GFMD_CONF
+    echo schedule_idle_load_thresh 200 >> $GFMD_CONF
+    echo atime disable >> $GFMD_CONF
+    echo replica_check disable >> $GFMD_CONF
+    echo log_level warning >> $GFMD_CONF
+    echo log_file $LOGDIR/gfmd-$ID.log >> $GFMD_CONF
+    echo shared_key_file $SHARED_KEY_FILE >> $GFMD_CONF
 
-    echo log_level warning >> $TMPDIR/etc/gfsd.conf
-    echo log_file $LOGDIR/gfsd-$ID.log >> $TMPDIR/etc/gfsd.conf
-    echo shared_key_file $SHARED_KEY_FILE >> $TMPDIR/etc/gfsd.conf
+    echo log_level warning >> $GFSD_CONF
+    echo log_file $LOGDIR/gfsd-$ID.log >> $GFSD_CONF
+    echo shared_key_file $SHARED_KEY_FILE >> $GFSD_CONF
 
     echo log_level warning >> $GFARM_CONFIG_FILE
     echo schedule_idle_load_thresh 200 >> $GFARM_CONFIG_FILE
@@ -128,8 +150,8 @@ start() {
 	cp -p $SHARED_KEY_FILE $HOME/.gfarm_shared_key-$ID
     fi
     $TMPDIR/etc/init.d/gfmd start
-    pcp $GFARM_CONFIG_FILE $TMPDIR/etc/gfsd.conf $TMPDIR/etc/usermap $SHARED_KEY_FILE $TMPDIR/etc > /dev/null
-    prun "config-gfsd --prefix $TMPDIR -S > /dev/null"
+    pcp $GFARM_CONFIG_FILE $GFSD_CONF $USERMAP_FILE $SHARED_KEY_FILE $TMPDIR/etc > /dev/null
+    prun "config-gfsd --prefix $TMPDIR --confdir $CONFDIR -S > /dev/null"
     if [ X"$MDIR" != X ]; then
 	gfmkdir -p $MDIR || :
 	prun "env GFARMFS_ROOT=$MDIR mount.gfarm2fs $GFARM_CONFIG_FILE $MDIR $MOPTIONS > /dev/null || :"
@@ -146,6 +168,7 @@ stop() {
     prun-all "pkill gfsd > /dev/null 2>&1 || :"
     prun-all "pkill gfmd > /dev/null 2>&1 || :"
     prun-all "rm -rf $TMPDIR > /dev/null 2>&1 || :"
+    rm -rf $CONFDIR
     if $LOGIN_NODE_ACCESS; then
 	rm -f $HOME/.gfarm2rc-$ID $HOME/.gfarm_shared_key-$ID
     fi
