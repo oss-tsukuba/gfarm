@@ -45,6 +45,13 @@ should be start, stop or status\&. When the mode is start, it displays the envir
 Basically, specify the same option for start, stop and status\&.
 .SH "OPTIONS"
 .PP
+\fB\-mpi\fR \fImpirun_cmd\fR
+.RS 4
+sets up Gfarm/BB using MPI instead of gfarm\-prun\&.
+\fImpirun_cmd\fR
+is a command line to execute MPI that is used to configure and execute gfsd on each node\&. This option should be used with the \-conf option\&. When using this option, the \-e option is ignored\&.
+.RE
+.PP
 \fB\-e\fR
 .RS 4
 excludes Gfmd node from file system nodes\&. Gfmd is executed on the node where gfarmbb is executed\&. With this option, gfsd is not executed on that node\&. This option expects there are N + 1 node allocations, and gfarmbb is executed on the last host in the hostfile\&. This option is available only for gfarmbb start\&.
@@ -60,6 +67,11 @@ that contains a list of hostnames of compute nodes\&.
 \fB\-scr\fR \fIscratch_dir\fR
 .RS 4
 specifies a scratch directory on each compute node for Gfarm/BB\&. If it does not exist, it is created\&. This directory will be removed by gfarmbb stop\&. Default is /tmp/gfarmbb\-scratch\&.
+.RE
+.PP
+\fB\-conf\fR \fIconf_dir\fR
+.RS 4
+specifies a scratch directory that can be shared among compute nodes to store temporal configuration files\&. If it does not exist, it is created\&. This directory will be removed by gfarmbb stop\&.
 .RE
 .PP
 \fB\-l\fR

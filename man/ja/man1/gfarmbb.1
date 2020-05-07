@@ -42,6 +42,12 @@ Gfarm/BBは計算ノードのローカルストレージを用いる、一時的
 原則的に、start, stop, statusについて同じオプションを指定して下さい。
 .SH "OPTIONS"
 .PP
+\fB\-mpi\fR \fImpirun_cmd\fR
+.RS 4
+Gfarm/BBをMPIを用いて構築します。
+\fImpirun_cmd\fRはGfarm/BBの構築とgfsd の起動に用いられるMPIのコマンドラインを指定します。本オプションは \-confオプションと共に用います。本オプションが指定された場合、\-eオプ ションは無視されます。
+.RE
+.PP
 \fB\-e\fR
 .RS 4
 gfmdを別ノードで実行します。gfmdはgfarmbbを実行したホストで実行さ れますが、gfmdを起動したノードではgfsdを起動しません。本オプション は、N+1ホストが割り当てられ、ホストファイルの最後のノードでgfarmbb を起動することを想定しています。本オプションはstartの時だけ有効です。
@@ -56,6 +62,11 @@ gfmdを別ノードで実行します。gfmdはgfarmbbを実行したホスト�
 \fB\-scr\fR \fIscratch_dir\fR
 .RS 4
 Gfarm/BBを構成するための各計算ノードのスクラッチディレクトリを指定 します。指定されたディレクトリが存在しない場合は作成されます。また このディレクトリ以下のファイルはgfarmbb stopで削除されます。 デフォルトは/tmp/gfarmbb\-scratchです。
+.RE
+.PP
+\fB\-conf\fR \fIconf_dir\fR
+.RS 4
+Gfarm/BBの設定ファイルを一時的に保持するためのディレクトリを指定し ます。本ディレクトリは全計算ノードからアクセスできる必要があります。 指定されたディレクトリが存在しない場合は作成されます。またこのディ レクトリ以下のファイルはgfarmbb stopで削除されます。
 .RE
 .PP
 \fB\-l\fR
