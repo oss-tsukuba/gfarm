@@ -34,6 +34,14 @@ Basically, specify the same option for start, stop and status.
 <div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
 <div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-mpi</code> <em class="parameter"><code>mpirun_cmd</code></em></span></dt>
+<dd><p>
+sets up Gfarm/BB using MPI instead of gfarm-prun.
+<em class="parameter"><code>mpirun_cmd</code></em> is a command
+line to execute MPI that is used to configure and execute gfsd on each
+node.  This option should be used with the -conf option.  When using
+this option, the -e option is ignored.
+</p></dd>
 <dt><span class="term"><code class="option">-e</code></span></dt>
 <dd><p>
 excludes Gfmd node from file system nodes.  Gfmd is executed on the
@@ -52,6 +60,12 @@ contains a list of hostnames of compute nodes.
 specifies a scratch directory on each compute node for Gfarm/BB.  If
 it does not exist, it is created.  This directory will be removed by
 gfarmbb stop.  Default is /tmp/gfarmbb-scratch.
+</p></dd>
+<dt><span class="term"><code class="option">-conf</code> <em class="parameter"><code>conf_dir</code></em></span></dt>
+<dd><p>
+specifies a scratch directory that can be shared among compute nodes
+to store temporal configuration files.  If it does not exist, it is
+created.  This directory will be removed by gfarmbb stop.
 </p></dd>
 <dt><span class="term"><code class="option">-l</code></span></dt>
 <dd><p>

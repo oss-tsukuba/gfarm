@@ -34,6 +34,14 @@ Gfarm/BBを利用するための環境変数が表示されます。Gfarm/BBに�
 <div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
 <div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-mpi</code> <em class="parameter"><code>mpirun_cmd</code></em></span></dt>
+<dd><p>
+Gfarm/BBをMPIを用いて構築します。
+<em class="parameter"><code>mpirun_cmd</code></em>はGfarm/BBの構築とgfsd
+の起動に用いられるMPIのコマンドラインを指定します。本オプションは
+-confオプションと共に用います。本オプションが指定された場合、-eオプ
+ションは無視されます。
+</p></dd>
 <dt><span class="term"><code class="option">-e</code></span></dt>
 <dd><p>
 gfmdを別ノードで実行します。gfmdはgfarmbbを実行したホストで実行さ
@@ -52,6 +60,13 @@ Gfarm/BBを構成するための各計算ノードのスクラッチディレク
 します。指定されたディレクトリが存在しない場合は作成されます。また
 このディレクトリ以下のファイルはgfarmbb stopで削除されます。
 デフォルトは/tmp/gfarmbb-scratchです。
+</p></dd>
+<dt><span class="term"><code class="option">-conf</code> <em class="parameter"><code>conf_dir</code></em></span></dt>
+<dd><p>
+Gfarm/BBの設定ファイルを一時的に保持するためのディレクトリを指定し
+ます。本ディレクトリは全計算ノードからアクセスできる必要があります。
+指定されたディレクトリが存在しない場合は作成されます。またこのディ
+レクトリ以下のファイルはgfarmbb stopで削除されます。
 </p></dd>
 <dt><span class="term"><code class="option">-l</code></span></dt>
 <dd><p>
