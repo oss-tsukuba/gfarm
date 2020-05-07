@@ -51,6 +51,19 @@ Gfarm/BBを利用するための環境変数が表示されます。Gfarm/BBに�
 <variablelist>
 
 <varlistentry>
+<term><option>-mpi</option> <parameter moreinfo="none">mpirun_cmd</parameter></term>
+<listitem>
+<para>
+Gfarm/BBをMPIを用いて構築します。
+<parameter moreinfo="none">mpirun_cmd</parameter>はGfarm/BBの構築とgfsd
+の起動に用いられるMPIのコマンドラインを指定します。本オプションは
+-confオプションと共に用います。本オプションが指定された場合、-eオプ
+ションは無視されます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-e</option></term>
 <listitem>
 <para>
@@ -80,6 +93,18 @@ Gfarm/BBを構成するための各計算ノードのスクラッチディレク
 します。指定されたディレクトリが存在しない場合は作成されます。また
 このディレクトリ以下のファイルはgfarmbb stopで削除されます。
 デフォルトは/tmp/gfarmbb-scratchです。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-conf</option> <parameter moreinfo="none">conf_dir</parameter></term>
+<listitem>
+<para>
+Gfarm/BBの設定ファイルを一時的に保持するためのディレクトリを指定し
+ます。本ディレクトリは全計算ノードからアクセスできる必要があります。
+指定されたディレクトリが存在しない場合は作成されます。またこのディ
+レクトリ以下のファイルはgfarmbb stopで削除されます。
 </para>
 </listitem>
 </varlistentry>
