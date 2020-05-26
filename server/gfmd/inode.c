@@ -3789,9 +3789,10 @@ inode_create_file_in_lost_found(
 	}
 	e = db_inode_nlink_modify(inode_get_number(n), n->i_nlink);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_1003478,
-		    "db_inode_nlink_modify(%lld): %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_inode_nlink_modify(%llu:%llu): %s",
 		    (unsigned long long)inode_get_number(n),
+		    (unsigned long long)inode_get_gen(n),
 		    gfarm_error_string(e));
 	/* abandon `e' */
 
@@ -3806,15 +3807,18 @@ inode_link_to_lost_found_and_report(struct inode *inode)
 {
 	gfarm_error_t e;
 
-	gflog_warning(GFARM_MSG_1002491,
-	    "inode %llu is not referenced, moving to /%s",
-	    (unsigned long long)inode_get_number(inode), lost_found);
+	gflog_warning(GFARM_MSG_UNFIXED,
+	    "inode %llu:%llu is not referenced, moving to /%s",
+	    (unsigned long long)inode_get_number(inode),
+	    (unsigned long long)inode_get_gen(inode),
+	    lost_found);
 	/* move to the /lost+found directory */
 	e = inode_link_to_lost_found(inode);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1002492,
-		    "failed to link inode %llu in /%s: %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "failed to link inode %llu:%llu in /%s: %s",
 		    (unsigned long long)inode_get_number(inode),
+		    (unsigned long long)inode_get_gen(inode),
 		    lost_found, gfarm_error_string(e));
 	}
 }
@@ -7648,9 +7652,10 @@ inode_check_and_repair_nlink(void *closure, struct inode *inode)
 
 	if (inode_get_nlink(inode) != inode_get_nlink_ini(inode)) {
 		if (!inode_is_dir(inode) || !dir_reported) {
-			gflog_warning(GFARM_MSG_1002490,
-			    "inode %llu nlink %llu should be %llu: fixed",
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "inode %llu:%llu nlink %llu should be %llu: fixed",
 			    (unsigned long long)inode_get_number(inode),
+			    (unsigned long long)inode_get_gen(inode),
 			    (unsigned long long)inode_get_nlink(inode),
 			    (unsigned long long)inode_get_nlink_ini(inode));
 			if (inode_is_dir(inode)) { /* too noisy */
@@ -7713,10 +7718,12 @@ inode_check_and_repair(void)
 			e = db_inode_nlink_modify(inode_get_number(lost_found),
 			    lost_found->i_nlink);
 			if (e != GFARM_ERR_NO_ERROR)
-				gflog_error(GFARM_MSG_1002842,
-				    "db_inode_nlink_modify(%llu): %s",
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "db_inode_nlink_modify(%llu:%llu): %s",
 				    (unsigned long long)
 				    inode_get_number(lost_found),
+				    (unsigned long long)
+				    inode_get_gen(lost_found),
 				    gfarm_error_string(e));
 			inode_modified(lost_found);
 		}
