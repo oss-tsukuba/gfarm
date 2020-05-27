@@ -15,7 +15,8 @@ DOC =	../LICENSE ../RELNOTES \
 	Gfarm-FAQ.en Gfarm-FAQ.ja \
 	KNOWN_PROBLEMS.en KNOWN_PROBLEMS.ja \
 	quota.en \
-	failover.ja disaster.ja
+	failover.ja disaster.ja \
+	encfs.en.md encfs.ja.md
 
 include $(top_srcdir)/makes/subdir.mk
 
