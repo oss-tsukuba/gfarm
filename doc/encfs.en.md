@@ -57,7 +57,7 @@ Encrypted files are stored in /tmp/gfarm/.crypt.
 
 4. Mount again
 
-       $ encfs /gfarm/hp120273/tatebe/.crypt /tmp/b
+       $ encfs /tmp/gfarm/.crypt /tmp/crypt
        EncFS Password: *enter password*
 
 ## More details
