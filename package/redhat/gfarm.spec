@@ -1102,6 +1102,8 @@ fi
 %{doc_prefix}/Gfarm-FAQ.ja
 %{doc_prefix}/KNOWN_PROBLEMS.en
 %{doc_prefix}/KNOWN_PROBLEMS.ja
+%{doc_prefix}/encfs.en.md
+%{doc_prefix}/encfs.ja.md
 %{doc_prefix}/quota.en
 %{doc_prefix}/failover.ja
 %{doc_prefix}/disaster.ja
