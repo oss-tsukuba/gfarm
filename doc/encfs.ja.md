@@ -57,11 +57,11 @@ EncFSをインストールします
 
 4. 再びマウントする
 
-       $ encfs /gfarm/hp120273/tatebe/.crypt /tmp/b
+       $ encfs /tmp/gfarm/.crypt /tmp/crypt
        EncFS Password: *enter password*
 
 ## もっと知りたい
 
-EncFS についての詳細は以下を参照してください
+EncFS についての詳細は以下を参照してください。
 
 https://github.com/vgough/encfs/blob/master/encfs/encfs.pod
