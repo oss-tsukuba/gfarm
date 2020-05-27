@@ -63,7 +63,7 @@ Source: %{pkg}-%{ver}.tar.gz
 Group: Applications/File
 License: BSD
 Vendor: National Institute of Advanced Industrial Science and Technology (AIST) and Osamu Tatebe
-URL: http://gfarm.sourceforge.net/
+URL: https://github.com/oss-tsukuba/gfarm
 Packager: Osamu Tatebe <tatebe@cs.tsukuba.ac.jp>
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 
