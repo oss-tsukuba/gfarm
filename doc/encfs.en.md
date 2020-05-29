@@ -17,6 +17,8 @@ EncFS needs to be installed
 
        $ gfarm2fs /tmp/gfarm
 
+This example mounts the Gfarm file system at /tmp/gfarm.
+
 2. Create and mount an encrypted file system
 
        $ encfs /tmp/gfarm/.crypt /tmp/crypt
@@ -49,7 +51,10 @@ EncFS needs to be installed
        New Encfs Password: *enter password*
        Verify Encfs Password: *enter password again*
 
-Encrypted files are stored in /tmp/gfarm/.crypt.
+This example creates an encrypted file system in .crypt directory in
+the Gfarm file system, and mounts it at /tmp/crypt.  Encrypted files
+are stored in .crypt directory.  You can use your favorite directories
+for each.
 
 3. Umount the encrypted file system
 
@@ -59,6 +64,10 @@ Encrypted files are stored in /tmp/gfarm/.crypt.
 
        $ encfs /tmp/gfarm/.crypt /tmp/crypt
        EncFS Password: *enter password*
+
+You need to specify a directory of the encrypted file system and the
+mount point.  This assumes the Gfarm file system is mounted at
+/tmp/gfarm.
 
 ## More details
 
