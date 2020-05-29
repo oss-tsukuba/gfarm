@@ -17,6 +17,8 @@ EncFSをインストールします
 
        $ gfarm2fs /tmp/gfarm
 
+この例では、/tmp/gfarmにGfarmファイルシステムをマウントしています。
+
 2. 暗号化ファイルシステムを作成しマウントする
 
        $ encfs /tmp/gfarm/.crypt /tmp/crypt
@@ -49,7 +51,10 @@ EncFSをインストールします
        New Encfs Password: *enter password*
        Verify Encfs Password: *enter password again*
 
-暗号化されたデータは /tmp/gfarm/.crypt に格納されます。
+この例では、暗号化ファイルシステムをGfarmファイルシステムの .crypt ディ
+レクトリに作成し、暗号化ファイルシステムを /tmp/crypt にマウントしてい
+ます。暗号化されたデータは .crypt ディレクトリに格納されます。ディレク
+トリ名は自由に決めてください。
 
 3. アンマウントする
 
@@ -59,6 +64,10 @@ EncFSをインストールします
 
        $ encfs /tmp/gfarm/.crypt /tmp/crypt
        EncFS Password: *enter password*
+
+再びマウントするときには、暗号化ファイルシステムのディレクトリとマウン
+トポイントを指定します。この例では、Gfarmファイルシステムは /tmp/gfarm
+にマウントされていることを仮定しています。
 
 ## もっと知りたい
 
