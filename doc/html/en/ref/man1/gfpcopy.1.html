@@ -20,7 +20,7 @@
 <span class="command"><strong>gfpcopy</strong></span> copies files in parallel.
 </p>
 <p>
-When the <em class="parameter"><code>source-path</code></em> parameter is
+When the <em class="parameter"><code>source-path</code></em> is
 a directory, files under the directory will be copied recursively.
 </p>
 <p>
@@ -34,40 +34,35 @@ under the <em class="parameter"><code>destination-path</code></em>.
 <p>
 A set of source/destination hosts can be specified by a domain name
 and/or a hostlist file.  When both a domain name and a hostlist file
-are specified, a set of hosts is determined by both conditions. When a
+are specified, a set of hosts is determined by both conditions.  When a
 set of source hosts is specified, only files stored on the source
 hosts are cppied.
-
-When a set of source hosts are specified, only files stored on the set
-of source hosts are copied.  A set of hosts can be specified by a
-domain name and/or a host file.  When both a domain name and a host
-file are specified, a set of hosts is determined by both conditions.
 </p>
 <p>
-<span class="command"><strong>gfpcopy</strong></span> can also read the directory
-and get information of the entries in parallel.
+<span class="command"><strong>gfpcopy</strong></span> also retrieves the directory
+entries in parallel.
 </p>
 </div>
 <div class="refsect1">
 <a name="source-path"></a><h2>SOURCE PATH</h2>
 <p>
-<em class="parameter"><code>source-path</code></em> must be following format.
+<em class="parameter"><code>source-path</code></em> must be one of the following formats.
 Files on HPSS cannot be copied.
 </p>
 <div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><em class="parameter"><code>path-name</code></em></span></dt>
+<dd><p>
+is a relative path or an absolute path of a local file system.  When the path
+is a mount point on gfarm2fs, files are copied without passing through
+the gfarm2fs.
+</p></dd>
 <dt><span class="term"><em class="parameter"><code>gfarm:...</code></em></span></dt>
 <dd><p>
-is Gfarm URL.
+is a Gfarm URL.
 </p></dd>
 <dt><span class="term"><em class="parameter"><code>file:...</code></em></span></dt>
 <dd><p>
-is URL of Local Filesystem.
-</p></dd>
-<dt><span class="term"><em class="parameter"><code>ANY</code></em></span></dt>
-<dd><p>
-is relative path or absolute path of Local Filesystem.  When the path
-is a mountpoint on gfarm2fs, files are copied without passing through
-the gfarm2fs.
+is an URL of a local file system.
 </p></dd>
 </dl></div>
 </div>
@@ -75,46 +70,45 @@ the gfarm2fs.
 <a name="source-path"></a><h2>DESTINATION PATH</h2>
 <p>
 <em class="parameter"><code>destination-path</code></em>
-must be following format.
+must be one of the following formats.
 </p>
 <div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><em class="parameter"><code>path-name</code></em></span></dt>
+<dd><p>
+is a relative path or an absolute path of a local file system.  When the path
+is a mount point on gfarm2fs, files are copied without passing through
+the gfarm2fs.
+</p></dd>
 <dt><span class="term"><em class="parameter"><code>gfarm:...</code></em></span></dt>
 <dd><p>
-is Gfarm URL of a directory.
+is a Gfarm URL of a directory.
 </p></dd>
 <dt><span class="term"><em class="parameter"><code>file:...</code></em></span></dt>
 <dd><p>
-is URL of a directory on Local Filesystem.
+is an URL of a directory on a local file system.
 </p></dd>
 <dt><span class="term"><em class="parameter"><code>hpss:...</code></em></span></dt>
 <dd><p>
-is URL of a directory on HPSS.
-
-If A directory named the same as
+is an URL of a directory on HPSS.
+If the same directory as
 the <em class="parameter"><code>source-path</code></em> exists under
 this directory, the <em class="parameter"><code>source-path</code></em>
 cannot be copied.
-The difference of files cannot be copied to HPSS.
-Relative path such as "hpss:". or "hpss:dir" can be also specified.
-</p></dd>
-<dt><span class="term"><em class="parameter"><code>ANY</code></em></span></dt>
-<dd><p>
-is relative path or absolute path of Local Filesystem.  When the path
-is a mountpoint on gfarm2fs, files are copied without passing through
-the gfarm2fs.
+The differencial copy is not supported for HPSS.
+Relative path such as "hpss:". and "hpss:dir" can be specified.
 </p></dd>
 </dl></div>
 </div>
 <div class="refsect1">
 <a name="options"></a><h2>GFPCOPY OPTIONS</h2>
 <p>
-These are the options only for <span class="command"><strong>gfpcopy</strong></span>.
+These are options only for <span class="command"><strong>gfpcopy</strong></span>.
 </p>
 <div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-b</code> <em class="parameter"><code>bufsize</code></em></span></dt>
 <dd>
 <p>
-Specifies the buffer size to copy.
+Specifies the buffer size in bytes to copy.
 </p>
 <p>
 The default value is 64KiB (64 * 1024).
@@ -123,19 +117,19 @@ The default value is 64KiB (64 * 1024).
 <dt><span class="term"><code class="option">-f</code></span></dt>
 <dd>
 <p>
-With -f option, existing destination files will be overwritten when
+With the -f option, existing files will be overwritten when
 the size is different or the modification time (mtime) is different from the
 source file.
 </p>
 <p>
-Without -f option, existing destination files will be overwritten when
-that they are older than the corresponding source files in the
+Without the -f option, existing files will be overwritten when
+they are older than the corresponding source files in the
 modification time.
 </p>
 </dd>
 <dt><span class="term"><code class="option">-e</code></span></dt>
 <dd><p>
-Skips existing destination files in order to execute multiple gfpcopy
+Skips existing files in order to execute gfpcopy
 simultaneously.
 </p></dd>
 <dt><span class="term"><code class="option">-k</code></span></dt>
@@ -147,8 +141,9 @@ Does not copy symbolic links.
 <div class="refsect1">
 <a name="common-options"></a><h2>COMMON OPTIONS</h2>
 <p>
-<span class="command"><strong>gfpcopy</strong></span> has the same options
-with <span class="command"><strong>gfprep</strong></span>.  (see man <span class="command"><strong>gfprep</strong></span>)
+There are several common options
+with <span class="command"><strong>gfprep</strong></span>.  (see
+man <span class="command"><strong>gfprep</strong></span>)
 </p>
 </div>
 <div class="refsect1">
@@ -186,10 +181,12 @@ $ gfpcopy file /tmp/dir<br>
 <div class="refsect1">
 <a name="notes"></a><h2>NOTES</h2>
 <p>
-If the gfmd and <span class="command"><strong>gfpcopy</strong></span> are far
-apart, the <span class="command"><strong>gfpcopy</strong></span> operation is
-slow.  Specifying a large value by -j or -J options may be effective
-in such a case.
+To retrieve the directory entries efficiently, it is better to execute 
+<span class="command"><strong>gfpcopy</strong></span> command near the metadata
+server.  When you need to
+execute <span class="command"><strong>gfpcopy</strong></span> command far from
+the metadata server, increase the parallelism by the -j and -J
+options.
 </p>
 </div>
 <div class="refsect1">

@@ -39,7 +39,7 @@ copies files in parallel\&.
 .PP
 When the
 \fIsource\-path\fR
-parameter is a directory, files under the directory will be copied recursively\&.
+is a directory, files under the directory will be copied recursively\&.
 .PP
 When the
 \fIdestination\-path\fR
@@ -50,79 +50,79 @@ exists, a directry of the same name as the
 is created under the
 \fIdestination\-path\fR\&.
 .PP
-A set of source/destination hosts can be specified by a domain name and/or a hostlist file\&. When both a domain name and a hostlist file are specified, a set of hosts is determined by both conditions\&. When a set of source hosts is specified, only files stored on the source hosts are cppied\&. When a set of source hosts are specified, only files stored on the set of source hosts are copied\&. A set of hosts can be specified by a domain name and/or a host file\&. When both a domain name and a host file are specified, a set of hosts is determined by both conditions\&.
+A set of source/destination hosts can be specified by a domain name and/or a hostlist file\&. When both a domain name and a hostlist file are specified, a set of hosts is determined by both conditions\&. When a set of source hosts is specified, only files stored on the source hosts are cppied\&.
 .PP
 \fBgfpcopy\fR
-can also read the directory and get information of the entries in parallel\&.
+also retrieves the directory entries in parallel\&.
 .SH "SOURCE PATH"
 .PP
 \fIsource\-path\fR
-must be following format\&. Files on HPSS cannot be copied\&.
+must be one of the following formats\&. Files on HPSS cannot be copied\&.
+.PP
+\fIpath\-name\fR
+.RS 4
+is a relative path or an absolute path of a local file system\&. When the path is a mount point on gfarm2fs, files are copied without passing through the gfarm2fs\&.
+.RE
 .PP
 \fIgfarm:\&.\&.\&.\fR
 .RS 4
-is Gfarm URL\&.
+is a Gfarm URL\&.
 .RE
 .PP
 \fIfile:\&.\&.\&.\fR
 .RS 4
-is URL of Local Filesystem\&.
-.RE
-.PP
-\fIANY\fR
-.RS 4
-is relative path or absolute path of Local Filesystem\&. When the path is a mountpoint on gfarm2fs, files are copied without passing through the gfarm2fs\&.
+is an URL of a local file system\&.
 .RE
 .SH "DESTINATION PATH"
 .PP
 \fIdestination\-path\fR
-must be following format\&.
+must be one of the following formats\&.
+.PP
+\fIpath\-name\fR
+.RS 4
+is a relative path or an absolute path of a local file system\&. When the path is a mount point on gfarm2fs, files are copied without passing through the gfarm2fs\&.
+.RE
 .PP
 \fIgfarm:\&.\&.\&.\fR
 .RS 4
-is Gfarm URL of a directory\&.
+is a Gfarm URL of a directory\&.
 .RE
 .PP
 \fIfile:\&.\&.\&.\fR
 .RS 4
-is URL of a directory on Local Filesystem\&.
+is an URL of a directory on a local file system\&.
 .RE
 .PP
 \fIhpss:\&.\&.\&.\fR
 .RS 4
-is URL of a directory on HPSS\&. If A directory named the same as the
+is an URL of a directory on HPSS\&. If the same directory as the
 \fIsource\-path\fR
 exists under this directory, the
 \fIsource\-path\fR
-cannot be copied\&. The difference of files cannot be copied to HPSS\&. Relative path such as "hpss:"\&. or "hpss:dir" can be also specified\&.
-.RE
-.PP
-\fIANY\fR
-.RS 4
-is relative path or absolute path of Local Filesystem\&. When the path is a mountpoint on gfarm2fs, files are copied without passing through the gfarm2fs\&.
+cannot be copied\&. The differencial copy is not supported for HPSS\&. Relative path such as "hpss:"\&. and "hpss:dir" can be specified\&.
 .RE
 .SH "GFPCOPY OPTIONS"
 .PP
-These are the options only for
+These are options only for
 \fBgfpcopy\fR\&.
 .PP
 \fB\-b\fR \fIbufsize\fR
 .RS 4
-Specifies the buffer size to copy\&.
+Specifies the buffer size in bytes to copy\&.
 .sp
 The default value is 64KiB (64 * 1024)\&.
 .RE
 .PP
 \fB\-f\fR
 .RS 4
-With \-f option, existing destination files will be overwritten when the size is different or the modification time (mtime) is different from the source file\&.
+With the \-f option, existing files will be overwritten when the size is different or the modification time (mtime) is different from the source file\&.
 .sp
-Without \-f option, existing destination files will be overwritten when that they are older than the corresponding source files in the modification time\&.
+Without the \-f option, existing files will be overwritten when they are older than the corresponding source files in the modification time\&.
 .RE
 .PP
 \fB\-e\fR
 .RS 4
-Skips existing destination files in order to execute multiple gfpcopy simultaneously\&.
+Skips existing files in order to execute gfpcopy simultaneously\&.
 .RE
 .PP
 \fB\-k\fR
@@ -131,8 +131,7 @@ Does not copy symbolic links\&.
 .RE
 .SH "COMMON OPTIONS"
 .PP
-\fBgfpcopy\fR
-has the same options with
+There are several common options with
 \fBgfprep\fR\&. (see man
 \fBgfprep\fR)
 .SH "EXAMPLES"
@@ -214,11 +213,11 @@ $ gfpcopy file /tmp/dir
 .\}
 .SH "NOTES"
 .PP
-If the gfmd and
+To retrieve the directory entries efficiently, it is better to execute
 \fBgfpcopy\fR
-are far apart, the
+command near the metadata server\&. When you need to execute
 \fBgfpcopy\fR
-operation is slow\&. Specifying a large value by \-j or \-J options may be effective in such a case\&.
+command far from the metadata server, increase the parallelism by the \-j and \-J options\&.
 .SH "SEE ALSO"
 .PP
 \fBgfprep\fR(1),
