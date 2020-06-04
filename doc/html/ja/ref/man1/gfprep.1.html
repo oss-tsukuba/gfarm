@@ -8,7 +8,7 @@
 <a name="gfprep.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
-<p>gfprep — Gfarm ファイル複製を並列に作成する</p>
+<p>gfprep — ファイルの複製を並列に作成する</p>
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
@@ -17,34 +17,37 @@
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
-<span class="command"><strong>gfprep</strong></span> は、
-Gfarm ファイル複製を並列に作成します。
+<span class="command"><strong>gfprep</strong></span> は、ファイルの複製を並列に作成します。
 </p>
 <p>
 <em class="parameter"><code>path</code></em> がディレクトリの場合、
-その下にあるすべてのファイルに対する複製を作成します。
+その下にあるすべてのファイルに対する複製を
+作成します。
 </p>
 <p>
 <em class="parameter"><code>path</code></em> には、
 Gfarm URL または gfarm2fs 上のパスを指定できます。
 </p>
 <p>
-転送先や転送元のホスト群を指定するには、ドメイン名で指定するか、
-ホスト名を行ごとに記述したホストリストファイルを指定します。
-ドメイン名とホストリストファイルを両方指定した場合は、
-両方の条件に合うホスト群を決定します。
-転送元ホスト群を指定した場合、
-そのホストに存在するファイルのみ複製が作成されます。
+作成先のホスト群を指定することにより、ファイルの複製を作成するホストを
+指定することができます。ホスト群は、ドメイン名か、ホスト名を行ごとに記
+述したホストファイルで指定します。ドメイン名とホストファイルを両方指定
+した場合は、両方の条件に合うホスト群が選ばれます。また、作成元のホスト
+群も指定可能です。その場合、そのホスト群に存在するファイルのみ複製が作
+成されます。
 </p>
 <p>
-なるべく転送中ではないホストを選択して転送開始します。
-転送元や転送先 1 ホストあたりの最大並列転送数は、ホストごとの CPU 数です。
+<span class="command"><strong>gfprep</strong></span>は、なるべく複製を作成中ではないホストを選択してファイル複製を作
+成します。作成元や作成先 1 ホストあたりの最大並列転送数は、ホストごと
+の CPU数です。
 CPU 数については、<span class="command"><strong>gfhost</strong></span>
-コマンドのマニュアルを参照してください。
+コマンドのマニュアルを参照して
+ください。
 </p>
 <p>
 <span class="command"><strong>gfprep</strong></span> は、ディレクトリを辿る際に、
-ディレクトリエントリ情報も並列に取得します。
+ディレクトリエントリ情報も並列に取
+得します。
 </p>
 </div>
 <div class="refsect1">
@@ -57,8 +60,8 @@ CPU 数については、<span class="command"><strong>gfhost</strong></span>
 <dd>
 <p>
 ファイル複製数を指定します。
-転送先ファイルに十分な数の複製が存在する場合、
-複製作成も複製削除も、どちらもしません。
+作成先のホスト群に十分な数の複製が存
+在する場合、複製作成も複製削除も、どちらもしません。
 </p>
 <p>
 このオプションを指定しない場合は、-N 1 を指定したことになります。
@@ -66,17 +69,18 @@ CPU 数については、<span class="command"><strong>gfhost</strong></span>
 </dd>
 <dt><span class="term"><code class="option">-x</code></span></dt>
 <dd><p>
--N オプションで指定された数よりも多くのファイル複製が転送先に存在する場合は、
-余分なファイル複製を削除します。
+-N オプションで指定された数よりも多くのファイル複製が作成先のホス
+ト群に存在する場合は、余分なファイル複製を削除します。
 </p></dd>
 <dt><span class="term"><code class="option">-m</code></span></dt>
 <dd>
 <p>
-転送元から転送先にファイル複製を移動します。
--mm のように 2 回指定すると、転送元ファイルを削除しません。
+作成元から作成先にファイルの複製を移動します。
+-mm のように 2 回指
+定すると、作成元のファイルの複製を削除しません。
 </p>
 <p>
--S または -h または -D または -H いずれかのオプションが必要です。
+-S, -h, -D, -H のいずれかのオプションが必要です。
 </p>
 <p>
 このオプションと -N オプションは、どちらか一方を使用できます。
@@ -95,21 +99,22 @@ CPU 数については、<span class="command"><strong>gfhost</strong></span>
 <dt><span class="term"><code class="option">-X</code> <em class="parameter"><code>regexp</code></em></span></dt>
 <dd><p>
 <em class="parameter"><code>regexp</code></em>で指定した正規表現による
-パターンと一致する転送元パス名を無視します。
-複数個のパターンを指定する場合は、-X オプションを複数回指定します。
+パターンと一致するパス名を無視しま
+す。
+複数個のパターンを指定する場合は、-X オプションを複数回指定し
+ます。
 </p></dd>
 <dt><span class="term"><code class="option">-S</code> <em class="parameter"><code>source-domainname</code></em></span></dt>
 <dd><p>
-転送対象ファイルを選ぶためのドメイン名を指定します。
-そのドメイン名の範囲に、
-ファイル複製の実体が存在するファイルだけを転送対象にします。
+指定されたドメイン名に格納されているファイルだけを複製作成、コピー
+の対象にします。
 </p></dd>
 <dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>source-hostfile</code></em></span></dt>
 <dd>
 <p>
-転送対象ファイルを選ぶためのホスト名が記述されたリストを指定します。
-そのホスト名の範囲に実体が存在するファイルだけを転送対象にします。
-そのホスト名のリストには、ファイルシステムノードを一行ずつに記述します。
+指定されたホストファイルのホストに格納されているファイルだけを複
+製作成、コピーの対象にします。ホストファイルには、ホストを一行ず
+つ記述します。
 </p>
 <p>
 ``-'' を指定すると、ホスト名のリストを標準入力から読み込みます。
@@ -117,22 +122,23 @@ CPU 数については、<span class="command"><strong>gfhost</strong></span>
 </dd>
 <dt><span class="term"><code class="option">-L</code></span></dt>
 <dd><p>
--S または -h で指定した範囲のみから転送元を選択します。
+-S または -h で指定したホストから複製、コピーを作成します。
 </p></dd>
 <dt><span class="term"><code class="option">-D</code> <em class="parameter"><code>destination-domainname</code></em></span></dt>
 <dd>
 <p>
-転送先範囲とするドメイン名を指定します。
+指定されたドメイン名のホストに複製、コピーを作成します。
 </p>
 <p>
-このオプションも -H オプションも指定しない場合、利用可能なホストに転送します。
+このオプションも -H オプションも指定しない場合、利用可能な全ホスト
+を対象に複製、コピーを作成します。
 </p>
 </dd>
 <dt><span class="term"><code class="option">-H</code> <em class="parameter"><code>destination-hostfile</code></em></span></dt>
 <dd>
 <p>
-転送先範囲を示すホスト名が記述されたファイルを指定します。
-そのホスト名のリストには、ファイルシステムノードを一行ずつ記述します。
+指定されたホストファイルのホストに複製、コピーを作成します。ホスト
+ファイルには、ホストを一行ずつ記述します。
 </p>
 <p>
 ``-'' を指定すると、ホスト名のリストを標準入力から読み込みます。
@@ -146,13 +152,15 @@ CPU 数については、<span class="command"><strong>gfhost</strong></span>
 <p>
 デフォルト値は gfarm2.conf の client_parallel_copy パラメータです。
 最大値は gfarm2.conf の client_parallel_max パラメータです。
-詳細は gfarm2.conf のマニュアルを参照してください。
+詳細
+は gfarm2.conf のマニュアルを参照してください。
 </p>
 <p>
-転送元または転送先のファイルシステムノードごとの最大並列数は、
-その CPU 数までです。
-CPU 数については、<span class="command"><strong>gfhost</strong></span>
-のマニュアルを参照してください。
+作成元または作成先のホストごとの最大並列数は、CPU 数です。
+CPU 数
+については、<span class="command"><strong>gfhost</strong></span>
+のマニュアルを
+参照してください。
 </p>
 </dd>
 <dt><span class="term"><code class="option">-J</code> <em class="parameter"><code>num-of-processes</code></em></span></dt>
@@ -167,7 +175,9 @@ CPU 数については、<span class="command"><strong>gfhost</strong></span>
 <dt><span class="term"><code class="option">-M</code> <em class="parameter"><code>total-byte</code></em></span></dt>
 <dd>
 <p>
-コピーする際に制限する合計サイズをバイト数で指定します。
+ファイル複製、またはコピーするファイルの合計のバイト数を指定します。
+あるホストに格納されているファイルの容量を、指定バイト数移動して減
+らしたいときなどに便利です。
 </p>
 <p>
 デフォルトでは制限しません。
@@ -176,7 +186,9 @@ CPU 数については、<span class="command"><strong>gfhost</strong></span>
 <dt><span class="term"><code class="option">-z</code> <em class="parameter"><code>minimum-byte</code></em></span></dt>
 <dd>
 <p>
-コピーする際に制限する最小ファイルサイズをバイト数で指定します。
+ファイル複製、またはコピーするファイルの最低サイズをバイト単位
+で指定します。小さいファイルはファイル複製やコピーの対象外とし
+たいときに便利です。
 </p>
 <p>
 デフォルトでは制限しません。
@@ -185,7 +197,9 @@ CPU 数については、<span class="command"><strong>gfhost</strong></span>
 <dt><span class="term"><code class="option">-Z</code> <em class="parameter"><code>maximum-byte</code></em></span></dt>
 <dd>
 <p>
-コピーする際に制限する最大ファイルサイズをバイト数で指定します。
+ファイル複製、またはコピーするファイルの最大サイズをバイト単位
+で指定します。大きいファイルはファイル複製やコピーの対象外とし
+たいときに便利です。
 </p>
 <p>
 デフォルトでは制限しません。
@@ -195,8 +209,10 @@ CPU 数については、<span class="command"><strong>gfhost</strong></span>
 <dd>
 <p>
 スケジューリング方法を指定します。
-noplan にすると、ファイルを見つけながら、複製作成またはコピーします。
-greedy にすると、複製作成やコピーする前に、貪欲法によってスケジューリングします。
+noplan にすると、ファイルを
+見つけながら、複製作成またはコピーします。
+greedy にすると、複
+製作成やコピーする前に、貪欲法によってスケジューリングします。
 </p>
 <p>
 デフォルトは noplan です。
@@ -208,9 +224,9 @@ greedy にすると、-N や -m オプションを使用することができま
 <dt><span class="term"><code class="option">-W</code> <em class="parameter"><code>kibibytes</code></em></span></dt>
 <dd>
 <p>
-各 Connection のコスト(合計ファイルサイズ)を
-平均とみなすまでの閾値をキビバイトで指定します。
-Connection とは、子プロセスごとにファイルを割り当てるための、計画情報です。
+各 Connection のコスト(合計ファイルサイズ)を平均とみなすまでの
+閾値をキビバイトで指定します。Connection とは、子プロセスごとに
+ファイルを割り当てるための、計画情報です。
 </p>
 <p>
 -w greedy オプションを使用した場合のみ効果があります。
@@ -222,8 +238,8 @@ Connection とは、子プロセスごとにファイルを割り当てるため
 <dt><span class="term"><code class="option">-I</code> <em class="parameter"><code>sec-to-update</code></em></span></dt>
 <dd>
 <p>
-gfprep,gfpcopy は gfsd ホストごとのロードアベレージやディスクの空き容量を
-定期的に取得します。それらの値を更新する間隔を秒で指定します。
+各ホストのロードアベレージやディスクの空き容量を定期的に取得する
+間隔を秒単位で指定します。
 </p>
 <p>
 </p>
@@ -234,23 +250,25 @@ gfprep,gfpcopy は gfsd ホストごとのロードアベレージやディス�
 <dt><span class="term"><code class="option">-B</code></span></dt>
 <dd>
 <p>
-高負荷な gfsd ホストも書き込み先の対象にします。
+高負荷なホストも作成先の対象にします。
 </p>
 <p>
-デフォルトでは高負荷な gfsd ホストを書き込み先の対象にしません。
-デフォルトでは、すべての gfsd ホストが高負荷の場合にファイルを転送しません。
+デフォルトでは高負荷なホストを作成先の対象にしません。そのため、
+すべてのホストが高負荷の場合はファイル複製、コピーは行われません。
 </p>
 <p>
 高負荷なホストとは、(ロードアベレージ / CPU 数) が gfarm2.conf の
 schedule_busy_load_thresh よりも高いホストです。
 schedule_busy_load_thresh のデフォルト値は gfarm2.conf
-のマニュアルを参照してください。
-CPU 数については gfhost のマニュアルを参照してください。
+のマニュ
+アルを参照してください。
+CPU 数については gfhost のマニュアルを
+参照してください。
 </p>
 </dd>
 <dt><span class="term"><code class="option">-U</code></span></dt>
 <dd><p>
-ファイルシステムノードのディスク空き容量を毎回チェックしなくなります。
+ホストのディスクの空き容量を毎回チェックしなくなります。
 </p></dd>
 <dt><span class="term"><code class="option">-F</code> <em class="parameter"><code>num-of-dirents</code></em></span></dt>
 <dd>
@@ -258,10 +276,10 @@ CPU 数については gfhost のマニュアルを参照してください。
 ディレクトリエントリの情報を先読みする数を指定します。
 </p>
 <p>
-デフォルトは 1000 です。
+デフォルトは 10000 です。
 </p>
 </dd>
-<dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>kilobytes-per-sec.</code></em></span></dt>
+<dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>kilobytes-per-second</code></em></span></dt>
 <dd><p>
 シミュレーションする際の転送速度を KB/s で指定します。
 実際にはコピーせず、ファイル情報を取得するのみになります。
@@ -300,7 +318,7 @@ CPU 数については gfhost のマニュアルを参照してください。
 <div class="refsect1">
 <a name="examples"></a><h2>EXAMPLES</h2>
 <p>
-ディレクトリ以下すべてのファイルを複製作成します。
+ディレクトリ以下すべてのファイルの複製を作成します。
 </p>
 <div class="literallayout"><p><br>
 $ gfprep -N 3 gfarm:///dir<br>
@@ -325,8 +343,8 @@ $ gfprep -m -S gfsd1.example.com gfarm:///<br>
 <div class="refsect1">
 <a name="notes"></a><h2>NOTES</h2>
 <p>
--L または -m オプションを使用しない場合は、指定した転送元範囲の中から
-ファイルシステムノードが選ばれるとは限りません。
+-L または -m オプションを使用しない場合は、指定した作成元の中から
+ファイルの複製、コピーが行われるとはとは限りません。
 </p>
 <p>
 <span class="command"><strong>gfprep</strong></span> コマンドは、

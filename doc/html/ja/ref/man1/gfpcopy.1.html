@@ -8,7 +8,7 @@
 <a name="gfpcopy.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
-<p>gfpcopy — copy Gfarm files in parallel</p>
+<p>gfpcopy — ファイルを並列にコピーする</p>
 </div>
 <div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
@@ -17,40 +17,50 @@
 <div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
-<span class="command"><strong>gfpcopy</strong></span> は、
-複数のファイルを並列にコピーします。
+<span class="command"><strong>gfpcopy</strong></span>
+は、複数のファイルを並列にコピーします。
 </p>
 <p>
-<em class="parameter"><code>source-path</code></em> がディレクトリの場合は、
-その下にあるすべてのファイルとディレクトリをコピーします。
+<em class="parameter"><code>source-path</code></em>
+がディレクトリの場合は、その下にあるすべてのファイルとディ
+レクトリをコピーします。
 </p>
 <p>
 <em class="parameter"><code>destination-path</code></em> が存在しない場合は、
 ディレクトリを作成します。
 <em class="parameter"><code>destination-path</code></em> が存在する場合は、
-そのディレクトリの下に <em class="parameter"><code>source-path</code></em>
-のディレクトリと同名のディレクトリを作成します。
+そのディレクトリの下に<em class="parameter"><code>source-path</code></em>
+と同名のディレクトリを作成します。
 </p>
 <p>
-転送先や転送元のホスト群を指定するには、ドメイン名で指定するか、
-ホスト名を行ごとに記述したホストリストファイルを指定します。
-ドメイン名とホストリストファイルを両方指定した場合は、
-両方の条件に合うホスト群を決定します。
-転送元ホスト群を指定した場合、
-そのホストに存在するファイルのみコピーされます。
+作成先のホスト群を指定することにより、コピーしたファイルを格納するホス
+トを指定することができます。ホスト群は、ドメイン名か、ホスト名を行ごと
+に記述したホストファイルで指定します。ドメイン名とホストファイルを両方
+指定した場合は、両方の条件に合うホスト群が選ばれます。また、作成元のホ
+スト群も指定可能です。その場合、そのホスト群に存在するファイルのみコピー
+されます。
 </p>
 <p>
-<span class="command"><strong>gfpcopy</strong></span> は、ディレクトリを辿る際に、
-ディレクトリエントリ情報も並列に取得します。
+<span class="command"><strong>gfpcopy</strong></span>
+は、ディレクトリを辿る際に、ディレクトリエントリ情報も並列に
+取得します。
 </p>
 </div>
 <div class="refsect1">
 <a name="source-path"></a><h2>SOURCE PATH</h2>
 <p>
 <em class="parameter"><code>source-path</code></em> には以下を指定できます。
-HPSS 上のファイルをコピーできません。
+なお、HPSS上のファイルはコピーでき
+ません。
 </p>
 <div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><em class="parameter"><code>パス名</code></em></span></dt>
+<dd><p>
+ローカルファイルシステム上のパスを絶対パスまたは相対パスで指定しま
+す。そのパスが gfarm2fs のマウントポイントの場合は、gfarm2fsを経由
+せずに
+Gfarm からコピーします。
+</p></dd>
 <dt><span class="term"><em class="parameter"><code>gfarm:...</code></em></span></dt>
 <dd><p>
 Gfarm URL で指定します。
@@ -58,12 +68,6 @@ Gfarm URL で指定します。
 <dt><span class="term"><em class="parameter"><code>file:...</code></em></span></dt>
 <dd><p>
 ローカルファイルシステム上のパスを URL で指定します。
-</p></dd>
-<dt><span class="term"><em class="parameter"><code>任意</code></em></span></dt>
-<dd><p>
-ローカルファイルシステム上のパスを絶対パスまたは相対パスで指定します。
-そのパスが gfarm2fs のマウントポイントの場合は、
-gfarm2fs を経由せずに Gfarm からコピーします。
 </p></dd>
 </dl></div>
 </div>
@@ -74,6 +78,12 @@ gfarm2fs を経由せずに Gfarm からコピーします。
 には以下を指定できます。
 </p>
 <div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><em class="parameter"><code>パス名</code></em></span></dt>
+<dd><p>
+ローカルファイルシステム上のディレクトリを絶対パスまたは相対パスで
+指定します。そのパスが gfarm2fs のマウントポイントの場合は、
+gfarm2fs を経由せずに Gfarm へコピーします。
+</p></dd>
 <dt><span class="term"><em class="parameter"><code>gfarm:...</code></em></span></dt>
 <dd><p>
 ディレクトリを Gfarm URL で指定します。
@@ -88,13 +98,8 @@ HPSS 上に存在するディレクトリを URL で指定します。
 その下に <em class="parameter"><code>source-path</code></em>
 と同名のディレクトリが存在する場合はエラーになります。
 HPSS に対して差分コピーはできません。
-hpss:. や hpss:dir のように相対パスで指定することもできます。
-</p></dd>
-<dt><span class="term"><em class="parameter"><code>任意</code></em></span></dt>
-<dd><p>
-ローカルファイルシステム上のディレクトリを絶対パスまたは相対パスで指定します。
-そのパスが gfarm2fs のマウントポイントの場合は、
-gfarm2fs を経由せずに Gfarm へコピーします。
+hpss:. や hpss:dir のように
+相対パスで指定することもできます。
 </p></dd>
 </dl></div>
 </div>
@@ -105,29 +110,25 @@ gfarm2fs を経由せずに Gfarm へコピーします。
 </p>
 <div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-b</code> <em class="parameter"><code>bufsize</code></em></span></dt>
-<dd>
-<p>
+<dd><p>
 コピー時に使用するバッファサイズを指定します。
-</p>
-<p>
-標準は 64 キビバイト (64 * 1024) です。
-</p>
-</dd>
+デフォルトは 64 KiByte (64 * 1024) です。
+</p></dd>
 <dt><span class="term"><code class="option">-f</code></span></dt>
 <dd>
 <p>
--f オプションを指定する場合、コピー先のファイルとコピー元のファイルが、
-サイズまたは mtime が異なる場合に上書きします。
+-f オプションを指定する場合、コピー先のファイルとコピー元のファイル
+が、サイズまたは mtime が異なる場合に上書きします。
 </p>
 <p>
--f オプションを指定しない場合、
-コピー先のほうが mtime が古い場合に、上書きします。
+-f オプションを指定しない場合、コピー先のほうが mtime が古い場合
+に、上書きします。
 </p>
 </dd>
 <dt><span class="term"><code class="option">-e</code></span></dt>
 <dd><p>
-gfpcopy を複数同時に実行するために、コピー先にファイルが存在すれば無視
-します。
+gfpcopy を複数同時に実行するために、コピー先にファイルが存在すれば
+無視します。
 </p></dd>
 <dt><span class="term"><code class="option">-k</code></span></dt>
 <dd><p>
@@ -141,7 +142,8 @@ gfpcopy を複数同時に実行するために、コピー先にファイルが
 
 <span class="command"><strong>gfpcopy</strong></span> には
 <span class="command"><strong>gfprep</strong></span> と共通のオプションがあります。
-<span class="command"><strong>gfprep</strong></span> のマニュアルを参照してください。
+<span class="command"><strong>gfprep</strong></span> のマニュアル
+を参照してください。
 </p>
 </div>
 <div class="refsect1">
@@ -179,10 +181,9 @@ $ gfpcopy file /tmp/dir<br>
 <div class="refsect1">
 <a name="notes"></a><h2>NOTES</h2>
 <p>
-<span class="command"><strong>gfmd</strong></span> と
-<span class="command"><strong>gfpcopy</strong></span> が距離的に離れている場合には、
-<span class="command"><strong>gfpcopy</strong></span> の動作が遅くなります。
-そのような場合には、-j または -J オプションに大きな値を指定すると、
+<span class="command"><strong>gfmd</strong></span>と<span class="command"><strong>gfpcopy</strong></span> が距離的に離れている場合には、
+<span class="command"><strong>gfpcopy</strong></span> の動作が遅くなりま
+す。そのような場合には、-j または -J オプションに大きな値を指定すると、
 性能が改善するかもしれません。
 </p>
 </div>

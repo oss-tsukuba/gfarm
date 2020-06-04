@@ -21,12 +21,12 @@
 files in parallel.
 </p>
 <p>
-If the <em class="parameter"><code>path</code></em> parameter is a
+When the <em class="parameter"><code>path</code></em> specifies a
 directory, files under the directory will be replicated recursively.
 </p>
 <p>
-<em class="parameter"><code>path</code></em> is a Gfarm URL or a path
-on a mountpoint of gfarm2fs.
+<em class="parameter"><code>Path</code></em> can be specified by a
+Gfarm URL or a path on a mount point of gfarm2fs.
 </p>
 <p>
 A set of source/destination hosts can be specified by a domain name
@@ -36,21 +36,21 @@ a set of source hosts is specified, only files stored on the source
 hosts are replicated.
 </p>
 <p>
-Idler filesystem nodes will be selected for source or destination.
-The maximum number of parallel to send or receive per host is the
+Less busy file system nodes will be selected for source or destination.
+The maximum number of parallel replications/copies per host is the
 number of CPUs.  Please see the manual page
 of <span class="command"><strong>gfhost</strong></span> for information about the
 number of CPUs.
 </p>
 <p>
-<span class="command"><strong>gfprep</strong></span> can also read the directory and get
-information of the entries in parallel.
+<span class="command"><strong>gfprep</strong></span> also retrieves the directory 
+entries in parallel.
 </p>
 </div>
 <div class="refsect1">
 <a name="options"></a><h2>GFPREP OPTIONS</h2>
 <p>
-These are the options only for <span class="command"><strong>gfprep</strong></span>.
+These are options only for <span class="command"><strong>gfprep</strong></span>.
 </p>
 <div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-N</code> <em class="parameter"><code>num-of-replicas</code></em></span></dt>
@@ -67,19 +67,19 @@ If this option is not specified, -N 1 is assumed.
 <dt><span class="term"><code class="option">-x</code></span></dt>
 <dd><p>
 Removes extra file replicas when a set of destination nodes has more
-file replicas than specified by -N option.
+file replicas than specified by the -N option.
 </p></dd>
 <dt><span class="term"><code class="option">-m</code></span></dt>
 <dd>
 <p>
-Migrates file replicas within a set of source nodes to destination
+Migrates file replicas from a set of source nodes to destination
 nodes.  When specifying twice like -mm, it leaves the source file replica.
 </p>
 <p>
-This option requires -S or -h or -D or -H options.
+This option requires at least one of -S, -h, -D, and -H options.
 </p>
 <p>
-This option and -N option are mutually exclusive.
+This option and the -N option are mutually exclusive.
 </p>
 </dd>
 </dl></div>
@@ -87,37 +87,37 @@ This option and -N option are mutually exclusive.
 <div class="refsect1">
 <a name="common-options"></a><h2>COMMON OPTIONS</h2>
 <p>
-<span class="command"><strong>gfprep</strong></span> has the same options
-with <span class="command"><strong>gfpcopy</strong></span>.
+The following options are common options
+for <span class="command"><strong>gfprep</strong></span>
+and <span class="command"><strong>gfpcopy</strong></span>.
 </p>
 <div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-X</code> <em class="parameter"><code>regexp</code></em></span></dt>
 <dd><p>
-Skips source-files matched by pattern
-of <em class="parameter"><code>regexp</code></em>.
-If multiple patterns are specified, multiple -X options can be specified.
+Skips files matched by the pattern
+of <em class="parameter"><code>regexp</code></em>.  When multiple
+patterns need to be specified, specify -X options multiple times.
 </p></dd>
 <dt><span class="term"><code class="option">-S</code> <em class="parameter"><code>source-domainname</code></em></span></dt>
 <dd><p>
-Specifies a domain name to select files.
-Only files which have the real file on the domain will be sent.
+Creates file replicas or copies files only stored on the hosts in the
+specified domain name.
 </p></dd>
 <dt><span class="term"><code class="option">-h</code> <em class="parameter"><code>source-hostfile</code></em></span></dt>
 <dd>
 <p>
-Specifies a file of which describes hostnames of file system nodes to
-replicate or copy files.  Only files which have the real file on the
-host names will be selected.
+Creates file replicas or copies files only stored on the hosts listed
+in the specified hostfile.
 The <em class="parameter"><code>source-hostfile</code></em> consists of
-a filesystem node name on each line.
+a file system node name on each line.
 </p>
 <p>
 If ``-'' is specified, standard input is used to read the host list.</p>
 </dd>
 <dt><span class="term"><code class="option">-L</code></span></dt>
 <dd><p>
-Filesystem nodes selected by -S or -h are only used to send for the
-source.
+Creates file replicas or copies files from the hosts specified by the
+-S or -h option.
 </p></dd>
 <dt><span class="term"><code class="option">-D</code> <em class="parameter"><code>destination-domainname</code></em></span></dt>
 <dd>
@@ -132,10 +132,9 @@ replicas may be copied to any available host.
 <dt><span class="term"><code class="option">-H</code> <em class="parameter"><code>destination-hostfile</code></em></span></dt>
 <dd>
 <p>
-
 Specifies a file which describes hostnames for destination.
 The <em class="parameter"><code>destination-hostfile</code></em>
-consists of a filesystem node name on each line.
+consists of a file system node name on each line.
 </p>
 <p>
 If ``-'' is specified, standard input is used to read the host list.
@@ -152,14 +151,14 @@ The default value is the parameter of client_parallel_copy in gfarm2.conf.
 (see man gfarm2.conf)
 </p>
 <p>
-The maximum number of process per filesystem node for source or destination
+The maximum number of process per file system node for source or destination
 is the number of CPUs (see man <span class="command"><strong>gfhost</strong></span>).
 </p>
 </dd>
 <dt><span class="term"><code class="option">-J</code> <em class="parameter"><code>num-of-processes</code></em></span></dt>
 <dd>
 <p>
-Specifies the number of processes to read directories in parallel.
+Specifies the number of processes to retrieve directory entries in parallel.
 </p>
 <p>
 The default value is 8.
@@ -168,7 +167,9 @@ The default value is 8.
 <dt><span class="term"><code class="option">-M</code> <em class="parameter"><code>total-byte</code></em></span></dt>
 <dd>
 <p>
-Specifies the bytes to limit total copied size.
+Specifies the total file size in bytes to replicate or copy.  This
+option is useful to increase the available capacity by moving the
+specified bytes of files.
 </p>
 <p>
 The default value is unlimited.
@@ -177,7 +178,8 @@ The default value is unlimited.
 <dt><span class="term"><code class="option">-z</code> <em class="parameter"><code>minimum-byte</code></em></span></dt>
 <dd>
 <p>
-Specifies the bytes to limit minimum size of a file.
+Specifies the minimum file size in bytes to replicate or copy.  This
+option is useful not to replicate or copy small files.
 </p>
 <p>
 The default value is unlimited.
@@ -186,7 +188,8 @@ The default value is unlimited.
 <dt><span class="term"><code class="option">-Z</code> <em class="parameter"><code>maximum-byte</code></em></span></dt>
 <dd>
 <p>
-Specifies the bytes to limit maximum size of a file.
+Specifies the maximum file size in bytes to replicate or copy.  This
+option is useful not to replicate or copy large files.
 </p>
 <p>
 The default value is unlimited.
@@ -195,23 +198,23 @@ The default value is unlimited.
 <dt><span class="term"><code class="option">-w</code> <em class="parameter"><code>way-of-scheduling</code></em></span></dt>
 <dd>
 <p>
-Specifies the name of scheduling way.
-``noplan'' replicates/copies while files are found.
+Specifies a scheduling method.
+``noplan'' replicates/copies while finding files.
 ``greedy'' schedules greedily the order of replication/copy beforehand.
 </p>
 <p>
 The default behavior is ``noplan''.
 </p>
 <p>
-``greedy'' scheduling cannot use the -N option or -m option.
+``greedy'' scheduling cannot use with the -N option and -m option.
 </p>
 </dd>
 <dt><span class="term"><code class="option">-W</code> <em class="parameter"><code>kibibytes</code></em></span></dt>
 <dd>
 <p>
 Specifies a threshold size/cost(KiB) to flat costs of Connections.
-A Connection means a scheduling information (assgined files) per a
-child-process.
+A Connection means a scheduling information to assign files per a
+child-process
 </p>
 <p>
 This option is effective with -w greedy.
@@ -223,9 +226,8 @@ The default value is 50*1024 KiB (50MiB).
 <dt><span class="term"><code class="option">-I</code> <em class="parameter"><code>sec-to-update</code></em></span></dt>
 <dd>
 <p>
-gfprep and gfpcopy collect load average and available capacity regularly.  This option specifies the interval to collect the information in seconds.
-</p>
-<p>
+Specifies the interval in seconds to collect load average and
+available capacity.
 </p>
 <p>
 Default is 300 seconds.
@@ -234,7 +236,8 @@ Default is 300 seconds.
 <dt><span class="term"><code class="option">-B</code></span></dt>
 <dd>
 <p>
-Without this option, high loaded file system node is not selected after Gfarm 2.6.16 or later.  This option disables this feature.
+Gfarm 2.6.16 or later does not select high loaded file system nodes.
+This option disables this feature.
 </p>
 <p>
 High loaded node is defined by having more CPU load than schedule_busy_load_thresh * number of CPUs.  For details of schedule_busy_load_thresh, refer to a manual page of gfarm2.conf.
@@ -248,13 +251,14 @@ time.
 <dt><span class="term"><code class="option">-F</code> <em class="parameter"><code>num-of-dirents</code></em></span></dt>
 <dd>
 <p>
-Specifies the number of entries to perform the directory readahead.
+Specifies the number of readahead entries to retrieve the directory
+entries.
 </p>
 <p>
 The default value is 10000.
 </p>
 </dd>
-<dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>kilobytes-per-sec.</code></em></span></dt>
+<dt><span class="term"><code class="option">-s</code> <em class="parameter"><code>kilobytes-per-second</code></em></span></dt>
 <dd><p>
 Specifies a throughput(KB/s) to simulate the replication/copy, and
 does nothing (gets file information only).
@@ -265,11 +269,11 @@ Does nothing.
 </p></dd>
 <dt><span class="term"><code class="option">-p</code></span></dt>
 <dd><p>
-Reports the total performance and various results.
+Reports the total performance information.
 </p></dd>
 <dt><span class="term"><code class="option">-P</code></span></dt>
 <dd><p>
-Reports the each and total performance and various results.
+Reports the performance information for each file and all files.
 </p></dd>
 <dt><span class="term"><code class="option">-q</code></span></dt>
 <dd><p>
@@ -298,7 +302,7 @@ $ cd /mnt/gfarm2fs<br>
 $ gfprep -N 3 dir<br>
 </p></div>
 <p>
-To replicate a file or reduce surplus replicas of the file.
+To replicate a file or remove surplus replicas of the file.
 </p>
 <div class="literallayout"><p><br>
 $ gfprep -N 3 -x gfarm:///dir/file<br>
@@ -314,15 +318,14 @@ $ gfprep -m -S gfsd1.example.com gfarm:///<br>
 <a name="notes"></a><h2>NOTES</h2>
 <p>
 When the -L or -m option is not specified, a source node is not always
-selected within a set of specified source filesystem nodes.
+selected within a set of specified source file system nodes.
 </p>
 <p>
-<span class="command"><strong>gfprep</strong></span> command should be executed
-at the same host of gfmd.  If the gfmd
-and <span class="command"><strong>gfprep</strong></span> are far apart,
-the <span class="command"><strong>gfprep</strong></span> operation is slow.
-Specifying a large value by -j or -J options may be effective in such
-a case.
+It is better to execute
+<span class="command"><strong>gfprep</strong></span> command near the metadata
+server.  When you need to
+execute <span class="command"><strong>gfprep</strong></span> command far from the
+metadata server, increase the parallelism by the -j and -J options.
 </p>
 </div>
 <div class="refsect1">

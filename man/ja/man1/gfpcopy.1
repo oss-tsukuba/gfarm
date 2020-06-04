@@ -28,33 +28,37 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-gfpcopy \- copy Gfarm files in parallel
+gfpcopy \- ファイルを並列にコピーする
 .SH "SYNOPSIS"
 .HP \w'\fBgfpcopy\fR\ 'u
 \fBgfpcopy\fR [\-nqvdpPU] [\-X\ \fIregexp\fR] [\-S\ \fIsource\-domainname\fR] [\-h\ \fIsource\-hostfile\fR] [\-D\ \fIdestination\-domainname\fR] [\-H\ \fIdestination\-hostfile\fR] [\-j\ \fInum\-of\-processes\fR] [\-J\ \fInum\-of\-processes\fR] [\-M\ \fItotal\-byte\fR] [\-z\ \fIminimum\-byte\fR] [\-Z\ \fImaximum\-byte\fR] [\-w\ \fIway\-of\-scheduling\fR] [\-W\ \fIkilobytes\-for\-threshold\fR] [\-s\ \fIKB/s\-to\-simulate\fR] [\-F\ \fInum\-for\-readahead\fR] [\-f] [\-b\ \fIbufsize\fR] [\-e] [\-k] \fIsource\-path\fR \fIdestination\-path\fR
 .SH "DESCRIPTION"
 .PP
 \fBgfpcopy\fR
-は、 複数のファイルを並列にコピーします。
+は、複数のファイルを並列にコピーします。
 .PP
 \fIsource\-path\fR
-がディレクトリの場合は、 その下にあるすべてのファイルとディレクトリをコピーします。
+がディレクトリの場合は、その下にあるすべてのファイルとディ レクトリをコピーします。
 .PP
 \fIdestination\-path\fR
 が存在しない場合は、 ディレクトリを作成します。
 \fIdestination\-path\fR
-が存在する場合は、 そのディレクトリの下に
-\fIsource\-path\fR
-のディレクトリと同名のディレクトリを作成します。
+が存在する場合は、 そのディレクトリの下に\fIsource\-path\fR
+と同名のディレクトリを作成します。
 .PP
-転送先や転送元のホスト群を指定するには、ドメイン名で指定するか、 ホスト名を行ごとに記述したホストリストファイルを指定します。 ドメイン名とホストリストファイルを両方指定した場合は、 両方の条件に合うホスト群を決定します。 転送元ホスト群を指定した場合、 そのホストに存在するファイルのみコピーされます。
+作成先のホスト群を指定することにより、コピーしたファイルを格納するホス トを指定することができます。ホスト群は、ドメイン名か、ホスト名を行ごと に記述したホストファイルで指定します。ドメイン名とホストファイルを両方 指定した場合は、両方の条件に合うホスト群が選ばれます。また、作成元のホ スト群も指定可能です。その場合、そのホスト群に存在するファイルのみコピー されます。
 .PP
 \fBgfpcopy\fR
-は、ディレクトリを辿る際に、 ディレクトリエントリ情報も並列に取得します。
+は、ディレクトリを辿る際に、ディレクトリエントリ情報も並列に 取得します。
 .SH "SOURCE PATH"
 .PP
 \fIsource\-path\fR
-には以下を指定できます。 HPSS 上のファイルをコピーできません。
+には以下を指定できます。 なお、HPSS上のファイルはコピーでき ません。
+.PP
+\fIパス名\fR
+.RS 4
+ローカルファイルシステム上のパスを絶対パスまたは相対パスで指定しま す。そのパスが gfarm2fs のマウントポイントの場合は、gfarm2fsを経由 せずに Gfarm からコピーします。
+.RE
 .PP
 \fIgfarm:\&.\&.\&.\fR
 .RS 4
@@ -65,15 +69,15 @@ Gfarm URL で指定します。
 .RS 4
 ローカルファイルシステム上のパスを URL で指定します。
 .RE
-.PP
-\fI任意\fR
-.RS 4
-ローカルファイルシステム上のパスを絶対パスまたは相対パスで指定します。 そのパスが gfarm2fs のマウントポイントの場合は、 gfarm2fs を経由せずに Gfarm からコピーします。
-.RE
 .SH "DESTINATION PATH"
 .PP
 \fIdestination\-path\fR
 には以下を指定できます。
+.PP
+\fIパス名\fR
+.RS 4
+ローカルファイルシステム上のディレクトリを絶対パスまたは相対パスで 指定します。そのパスが gfarm2fs のマウントポイントの場合は、 gfarm2fs を経由せずに Gfarm へコピーします。
+.RE
 .PP
 \fIgfarm:\&.\&.\&.\fR
 .RS 4
@@ -89,12 +93,7 @@ Gfarm URL で指定します。
 .RS 4
 HPSS 上に存在するディレクトリを URL で指定します。 その下に
 \fIsource\-path\fR
-と同名のディレクトリが存在する場合はエラーになります。 HPSS に対して差分コピーはできません。 hpss:\&. や hpss:dir のように相対パスで指定することもできます。
-.RE
-.PP
-\fI任意\fR
-.RS 4
-ローカルファイルシステム上のディレクトリを絶対パスまたは相対パスで指定します。 そのパスが gfarm2fs のマウントポイントの場合は、 gfarm2fs を経由せずに Gfarm へコピーします。
+と同名のディレクトリが存在する場合はエラーになります。 HPSS に対して差分コピーはできません。 hpss:\&. や hpss:dir のように 相対パスで指定することもできます。
 .RE
 .SH "GFPCOPY OPTIONS"
 .PP
@@ -104,21 +103,19 @@ HPSS 上に存在するディレクトリを URL で指定します。 その下
 .PP
 \fB\-b\fR \fIbufsize\fR
 .RS 4
-コピー時に使用するバッファサイズを指定します。
-.sp
-標準は 64 キビバイト (64 * 1024) です。
+コピー時に使用するバッファサイズを指定します。 デフォルトは 64 KiByte (64 * 1024) です。
 .RE
 .PP
 \fB\-f\fR
 .RS 4
-\-f オプションを指定する場合、コピー先のファイルとコピー元のファイルが、 サイズまたは mtime が異なる場合に上書きします。
+\-f オプションを指定する場合、コピー先のファイルとコピー元のファイル が、サイズまたは mtime が異なる場合に上書きします。
 .sp
-\-f オプションを指定しない場合、 コピー先のほうが mtime が古い場合に、上書きします。
+\-f オプションを指定しない場合、コピー先のほうが mtime が古い場合 に、上書きします。
 .RE
 .PP
 \fB\-e\fR
 .RS 4
-gfpcopy を複数同時に実行するために、コピー先にファイルが存在すれば無視 します。
+gfpcopy を複数同時に実行するために、コピー先にファイルが存在すれば 無視します。
 .RE
 .PP
 \fB\-k\fR
@@ -132,7 +129,7 @@ gfpcopy を複数同時に実行するために、コピー先にファイルが
 \fBgfprep\fR
 と共通のオプションがあります。
 \fBgfprep\fR
-のマニュアルを参照してください。
+のマニュアル を参照してください。
 .SH "EXAMPLES"
 .PP
 ディレクトリ以下すべてをコピーします。
@@ -212,12 +209,10 @@ $ gfpcopy file /tmp/dir
 .\}
 .SH "NOTES"
 .PP
-\fBgfmd\fR
-と
-\fBgfpcopy\fR
+\fBgfmd\fRと\fBgfpcopy\fR
 が距離的に離れている場合には、
 \fBgfpcopy\fR
-の動作が遅くなります。 そのような場合には、\-j または \-J オプションに大きな値を指定すると、 性能が改善するかもしれません。
+の動作が遅くなりま す。そのような場合には、\-j または \-J オプションに大きな値を指定すると、 性能が改善するかもしれません。
 .SH "SEE ALSO"
 .PP
 \fBgfprep\fR(1),
