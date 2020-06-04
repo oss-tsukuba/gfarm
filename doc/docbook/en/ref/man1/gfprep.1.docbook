@@ -53,12 +53,12 @@
 files in parallel.
 </para>
 <para>
-If the <parameter moreinfo="none">path</parameter> parameter is a
+When the <parameter moreinfo="none">path</parameter> specifies a
 directory, files under the directory will be replicated recursively.
 </para>
 <para>
-<parameter moreinfo="none">path</parameter> is a Gfarm URL or a path
-on a mountpoint of gfarm2fs.
+<parameter moreinfo="none">Path</parameter> can be specified by a
+Gfarm URL or a path on a mount point of gfarm2fs.
 </para>
 <para>
 A set of source/destination hosts can be specified by a domain name
@@ -68,21 +68,21 @@ a set of source hosts is specified, only files stored on the source
 hosts are replicated.
 </para>
 <para>
-Idler filesystem nodes will be selected for source or destination.
-The maximum number of parallel to send or receive per host is the
+Less busy file system nodes will be selected for source or destination.
+The maximum number of parallel replications/copies per host is the
 number of CPUs.  Please see the manual page
 of <command moreinfo="none">gfhost</command> for information about the
 number of CPUs.
 </para>
 <para>
-<command moreinfo="none">gfprep</command> can also read the directory and get
-information of the entries in parallel.
+<command moreinfo="none">gfprep</command> also retrieves the directory 
+entries in parallel.
 </para>
 </refsect1>
 
 <refsect1 id="options"><title>GFPREP OPTIONS</title>
 <para>
-These are the options only for <command moreinfo="none">gfprep</command>.
+These are options only for <command moreinfo="none">gfprep</command>.
 </para>
 <variablelist>
 
@@ -105,7 +105,7 @@ If this option is not specified, -N 1 is assumed.
 <listitem>
 <para>
 Removes extra file replicas when a set of destination nodes has more
-file replicas than specified by -N option.
+file replicas than specified by the -N option.
 </para>
 </listitem>
 </varlistentry>
@@ -114,14 +114,14 @@ file replicas than specified by -N option.
 <term><option>-m</option></term>
 <listitem>
 <para>
-Migrates file replicas within a set of source nodes to destination
+Migrates file replicas from a set of source nodes to destination
 nodes.  When specifying twice like -mm, it leaves the source file replica.
 </para>
 <para>
-This option requires -S or -h or -D or -H options.
+This option requires at least one of -S, -h, -D, and -H options.
 </para>
 <para>
-This option and -N option are mutually exclusive.
+This option and the -N option are mutually exclusive.
 </para>
 </listitem>
 </varlistentry>
@@ -131,8 +131,9 @@ This option and -N option are mutually exclusive.
 
 <refsect1 id="common-options"><title>COMMON OPTIONS</title>
 <para>
-<command moreinfo="none">gfprep</command> has the same options
-with <command moreinfo="none">gfpcopy</command>.
+The following options are common options
+for <command moreinfo="none">gfprep</command>
+and <command moreinfo="none">gfpcopy</command>.
 </para>
 
 <variablelist>
@@ -140,9 +141,9 @@ with <command moreinfo="none">gfpcopy</command>.
 <term><option>-X</option> <parameter moreinfo="none">regexp</parameter></term>
 <listitem>
 <para>
-Skips source-files matched by pattern
-of <parameter moreinfo="none">regexp</parameter>.
-If multiple patterns are specified, multiple -X options can be specified.
+Skips files matched by the pattern
+of <parameter moreinfo="none">regexp</parameter>.  When multiple
+patterns need to be specified, specify -X options multiple times.
 </para>
 </listitem>
 </varlistentry>
@@ -151,8 +152,8 @@ If multiple patterns are specified, multiple -X options can be specified.
 <term><option>-S</option> <parameter moreinfo="none">source-domainname</parameter></term>
 <listitem>
 <para>
-Specifies a domain name to select files.
-Only files which have the real file on the domain will be sent.
+Creates file replicas or copies files only stored on the hosts in the
+specified domain name.
 </para>
 </listitem>
 </varlistentry>
@@ -161,11 +162,10 @@ Only files which have the real file on the domain will be sent.
 <term><option>-h</option> <parameter moreinfo="none">source-hostfile</parameter></term>
 <listitem>
 <para>
-Specifies a file of which describes hostnames of file system nodes to
-replicate or copy files.  Only files which have the real file on the
-host names will be selected.
+Creates file replicas or copies files only stored on the hosts listed
+in the specified hostfile.
 The <parameter moreinfo="none">source-hostfile</parameter> consists of
-a filesystem node name on each line.
+a file system node name on each line.
 </para>
 <para>
 If ``-'' is specified, standard input is used to read the host list.</para>
@@ -176,8 +176,8 @@ If ``-'' is specified, standard input is used to read the host list.</para>
 <term><option>-L</option></term>
 <listitem>
 <para>
-Filesystem nodes selected by -S or -h are only used to send for the
-source.
+Creates file replicas or copies files from the hosts specified by the
+-S or -h option.
 </para>
 </listitem>
 </varlistentry>
@@ -199,10 +199,9 @@ replicas may be copied to any available host.
 <term><option>-H</option> <parameter moreinfo="none">destination-hostfile</parameter></term>
 <listitem>
 <para>
-
 Specifies a file which describes hostnames for destination.
 The <parameter moreinfo="none">destination-hostfile</parameter>
-consists of a filesystem node name on each line.
+consists of a file system node name on each line.
 </para>
 <para>
 If ``-'' is specified, standard input is used to read the host list.
@@ -222,7 +221,7 @@ The default value is the parameter of client_parallel_copy in gfarm2.conf.
 (see man gfarm2.conf)
 </para>
 <para>
-The maximum number of process per filesystem node for source or destination
+The maximum number of process per file system node for source or destination
 is the number of CPUs (see man <command moreinfo="none">gfhost</command>).
 </para>
 </listitem>
@@ -232,7 +231,7 @@ is the number of CPUs (see man <command moreinfo="none">gfhost</command>).
 <term><option>-J</option> <parameter moreinfo="none">num-of-processes</parameter></term>
 <listitem>
 <para>
-Specifies the number of processes to read directories in parallel.
+Specifies the number of processes to retrieve directory entries in parallel.
 </para>
 <para>
 The default value is 8.
@@ -244,7 +243,9 @@ The default value is 8.
 <term><option>-M</option> <parameter moreinfo="none">total-byte</parameter></term>
 <listitem>
 <para>
-Specifies the bytes to limit total copied size.
+Specifies the total file size in bytes to replicate or copy.  This
+option is useful to increase the available capacity by moving the
+specified bytes of files.
 </para>
 <para>
 The default value is unlimited.
@@ -256,7 +257,8 @@ The default value is unlimited.
 <term><option>-z</option> <parameter moreinfo="none">minimum-byte</parameter></term>
 <listitem>
 <para>
-Specifies the bytes to limit minimum size of a file.
+Specifies the minimum file size in bytes to replicate or copy.  This
+option is useful not to replicate or copy small files.
 </para>
 <para>
 The default value is unlimited.
@@ -268,7 +270,8 @@ The default value is unlimited.
 <term><option>-Z</option> <parameter moreinfo="none">maximum-byte</parameter></term>
 <listitem>
 <para>
-Specifies the bytes to limit maximum size of a file.
+Specifies the maximum file size in bytes to replicate or copy.  This
+option is useful not to replicate or copy large files.
 </para>
 <para>
 The default value is unlimited.
@@ -280,15 +283,15 @@ The default value is unlimited.
 <term><option>-w</option> <parameter moreinfo="none">way-of-scheduling</parameter></term>
 <listitem>
 <para>
-Specifies the name of scheduling way.
-``noplan'' replicates/copies while files are found.
+Specifies a scheduling method.
+``noplan'' replicates/copies while finding files.
 ``greedy'' schedules greedily the order of replication/copy beforehand.
 </para>
 <para>
 The default behavior is ``noplan''.
 </para>
 <para>
-``greedy'' scheduling cannot use the -N option or -m option.
+``greedy'' scheduling cannot use with the -N option and -m option.
 </para>
 </listitem>
 </varlistentry>
@@ -298,8 +301,8 @@ The default behavior is ``noplan''.
 <listitem>
 <para>
 Specifies a threshold size/cost(KiB) to flat costs of Connections.
-A Connection means a scheduling information (assgined files) per a
-child-process.
+A Connection means a scheduling information to assign files per a
+child-process
 </para>
 <para>
 This option is effective with -w greedy.
@@ -314,9 +317,8 @@ The default value is 50*1024 KiB (50MiB).
 <term><option>-I</option> <parameter moreinfo="none">sec-to-update</parameter></term>
 <listitem>
 <para>
-gfprep and gfpcopy collect load average and available capacity regularly.  This option specifies the interval to collect the information in seconds.
-</para>
-<para>
+Specifies the interval in seconds to collect load average and
+available capacity.
 </para>
 <para>
 Default is 300 seconds.
@@ -328,7 +330,8 @@ Default is 300 seconds.
 <term><option>-B</option></term>
 <listitem>
 <para>
-Without this option, high loaded file system node is not selected after Gfarm 2.6.16 or later.  This option disables this feature.
+Gfarm 2.6.16 or later does not select high loaded file system nodes.
+This option disables this feature.
 </para>
 <para>
 High loaded node is defined by having more CPU load than schedule_busy_load_thresh * number of CPUs.  For details of schedule_busy_load_thresh, refer to a manual page of gfarm2.conf.
@@ -350,7 +353,8 @@ time.
 <term><option>-F</option> <parameter moreinfo="none">num-of-dirents</parameter></term>
 <listitem>
 <para>
-Specifies the number of entries to perform the directory readahead.
+Specifies the number of readahead entries to retrieve the directory
+entries.
 </para>
 <para>
 The default value is 10000.
@@ -359,7 +363,7 @@ The default value is 10000.
 </varlistentry>
 
 <varlistentry>
-<term><option>-s</option> <parameter moreinfo="none">kilobytes-per-sec.</parameter></term>
+<term><option>-s</option> <parameter moreinfo="none">kilobytes-per-second</parameter></term>
 <listitem>
 <para>
 Specifies a throughput(KB/s) to simulate the replication/copy, and
@@ -381,7 +385,7 @@ Does nothing.
 <term><option>-p</option></term>
 <listitem>
 <para>
-Reports the total performance and various results.
+Reports the total performance information.
 </para>
 </listitem>
 </varlistentry>
@@ -390,7 +394,7 @@ Reports the total performance and various results.
 <term><option>-P</option></term>
 <listitem>
 <para>
-Reports the each and total performance and various results.
+Reports the performance information for each file and all files.
 </para>
 </listitem>
 </varlistentry>
@@ -443,7 +447,7 @@ $ gfprep -N 3 dir
 </literallayout>
 
 <para>
-To replicate a file or reduce surplus replicas of the file.
+To replicate a file or remove surplus replicas of the file.
 </para>
 <literallayout format="linespecific" class="normal">
 $ gfprep -N 3 -x gfarm:///dir/file
@@ -460,15 +464,14 @@ $ gfprep -m -S gfsd1.example.com gfarm:///
 <refsect1 id="notes"><title>NOTES</title>
 <para>
 When the -L or -m option is not specified, a source node is not always
-selected within a set of specified source filesystem nodes.
+selected within a set of specified source file system nodes.
 </para>
 <para>
-<command moreinfo="none">gfprep</command> command should be executed
-at the same host of gfmd.  If the gfmd
-and <command moreinfo="none">gfprep</command> are far apart,
-the <command moreinfo="none">gfprep</command> operation is slow.
-Specifying a large value by -j or -J options may be effective in such
-a case.
+It is better to execute
+<command moreinfo="none">gfprep</command> command near the metadata
+server.  When you need to
+execute <command moreinfo="none">gfprep</command> command far from the
+metadata server, increase the parallelism by the -j and -J options.
 </para>
 </refsect1>
 
