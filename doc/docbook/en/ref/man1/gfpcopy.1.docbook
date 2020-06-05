@@ -61,7 +61,7 @@ a directory, files under the directory will be copied recursively.
 When the <parameter moreinfo="none">destination-path</parameter> does
 not exist, the directory is created.
 When the <parameter moreinfo="none">destination-path</parameter>
-exists, a directry of the same name as
+exists, a directory of the same name as
 the <parameter moreinfo="none">source-path</parameter> is created
 under the <parameter moreinfo="none">destination-path</parameter>.
 </para>
@@ -70,7 +70,7 @@ A set of source/destination hosts can be specified by a domain name
 and/or a hostlist file.  When both a domain name and a hostlist file
 are specified, a set of hosts is determined by both conditions.  When a
 set of source hosts is specified, only files stored on the source
-hosts are cppied.
+hosts are copied.
 </para>
 <para>
 <command moreinfo="none">gfpcopy</command> also retrieves the directory
@@ -164,7 +164,7 @@ If the same directory as
 the <parameter moreinfo="none">source-path</parameter> exists under
 this directory, the <parameter moreinfo="none">source-path</parameter>
 cannot be copied.
-The differencial copy is not supported for HPSS.
+The differential copy is not supported for HPSS.
 Relative path such as "hpss:". and "hpss:dir" can be specified.
 </para>
 </listitem>
@@ -186,7 +186,7 @@ These are options only for <command moreinfo="none">gfpcopy</command>.
 Specifies the buffer size in bytes to copy.
 </para>
 <para>
-The default value is 64KiB (64 * 1024).
+The default value is 64 KiB (64 * 1024).
 </para>
 </listitem>
 </varlistentry>

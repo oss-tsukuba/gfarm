@@ -308,7 +308,7 @@ child-process
 This option is effective with -w greedy.
 </para>
 <para>
-The default value is 50*1024 KiB (50MiB).
+The default value is 50*1024 KiB (50 MiB).
 </para>
 </listitem>
 </varlistentry>
