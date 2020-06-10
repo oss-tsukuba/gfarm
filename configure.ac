@@ -1458,6 +1458,18 @@ AC_SUBST(optional_targets)
 ## private sources macros end here.
 ##
 
+##
+## TLS support
+##
+AC_ARG_ENABLE(tls,
+AS_HELP_STRING([--enable-tls],[support TLS [default=disable]]),
+[if test "${enable_tls}" = "yes"; then
+	AC_DEFINE(ENABLE_TLS, 1, [support TLS])
+fi],[])
+##
+## TLS support ends here.
+##
+
 # The following is for --srcdir option.
 # AC_OUTPUT() assumes that parent directory of the Makefile exists
 test -d include || mkdir include
