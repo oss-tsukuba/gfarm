@@ -22,8 +22,8 @@ GLOBUS_OBJS = auth_client_gsi.lo auth_common_gsi.lo \
 	auth_server_gsi.lo auth_server_uid_gsi.lo io_gfsl.lo
 GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes)
 
-TLS_SRCS = 
-TLS_OBJS = 
+TLS_SRCS = tlsutils.c
+TLS_OBJS = tlsutils.lo
 
 SRCS = \
 	context.c \
