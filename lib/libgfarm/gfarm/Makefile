@@ -22,6 +22,9 @@ GLOBUS_OBJS = auth_client_gsi.lo auth_common_gsi.lo \
 	auth_server_gsi.lo auth_server_uid_gsi.lo io_gfsl.lo
 GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes)
 
+TLS_SRCS = 
+TLS_OBJS = 
+
 SRCS = \
 	context.c \
 	crc32.c \
@@ -104,6 +107,7 @@ SRCS = \
 	repattr.c \
 	iostat.c \
 	$(globus_srcs) \
+	$(tls_srcs) \
 	$(optional_srcs)
 
 #	$(ldap_srcs) $(postgresql_srcs)
@@ -190,6 +194,7 @@ OBJS = \
 	repattr.lo \
 	iostat.lo \
 	$(globus_objs) \
+	$(tls_objs) \
 	$(optional_objs)
 
 #	$(ldap_objs) $(postgresql_objs)

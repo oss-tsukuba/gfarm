@@ -1400,6 +1400,25 @@ if test "${linuxkernel_targets}" = "linux"; then
 else
 	AC_MSG_RESULT([no])
 fi
+
+##
+## TLS support
+##
+tls_srcs=
+tls_objs=
+AC_ARG_ENABLE(tls,
+AS_HELP_STRING([--enable-tls],[support TLS [default=disable]]),
+[if test "${enable_tls}" = "yes"; then
+    tls_srcs='${TLS_SRCS}'
+    tls_objs='${TLS_OBJS}'
+ AC_DEFINE(ENABLE_TLS, 1, [support TLS])
+fi],[])
+AC_SUBST(tls_srcs)
+AC_SUBST(tls_objs)
+##
+## TLS support ends here.
+##
+
 ###
 ### --with-private-srcdir
 ###
@@ -1456,18 +1475,6 @@ AC_SUBST(optional_targets)
 
 ##
 ## private sources macros end here.
-##
-
-##
-## TLS support
-##
-AC_ARG_ENABLE(tls,
-AS_HELP_STRING([--enable-tls],[support TLS [default=disable]]),
-[if test "${enable_tls}" = "yes"; then
-	AC_DEFINE(ENABLE_TLS, 1, [support TLS])
-fi],[])
-##
-## TLS support ends here.
 ##
 
 # The following is for --srcdir option.
