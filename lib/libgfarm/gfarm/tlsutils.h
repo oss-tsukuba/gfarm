@@ -7,6 +7,8 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <pwd.h>
+#include <grp.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <stdarg.h>

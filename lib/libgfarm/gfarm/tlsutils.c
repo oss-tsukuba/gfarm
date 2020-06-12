@@ -100,6 +100,72 @@ passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 }
 
 static inline bool
+is_user_in_group(uid_t uid, gid_t gid)
+{
+	bool ret = false;
+
+	if (geteuid() == uid && getegid() == gid) {
+		ret = true;
+	} else {
+		struct passwd u;
+		struct passwd *ures = NULL;
+		char ubuf[256];
+
+		errno = 0;
+		if (likely(getpwuid_r(uid, &u,
+			ubuf, sizeof(ubuf), &ures) == 0 && ures != NULL)) {
+			if (u.pw_gid == gid) {
+				ret = true;
+			} else {
+				struct group g;
+				struct group *gres = NULL;
+				char gbuf[8192];
+
+				errno = 0;
+				if (likely(getgrgid_r(gid, &g,
+					gbuf, sizeof(gbuf), &gres) == 0 &&
+					gres != NULL)) {
+					char **p = g.gr_mem;
+
+					while (p != NULL) {
+						if (strcmp(u.pw_name,
+							*p) == 0) {
+							ret = true;
+							break;
+						}
+						p++;
+					}
+				} else {
+					if (errno != 0) {
+						gflog_error(GFARM_MSG_UNFIXED,
+							"Failed to acquire a "
+							"group entry for "
+							"gid %d: %s",
+							gid, strerror(errno));
+					} else {
+						gflog_error(GFARM_MSG_UNFIXED,
+							"Can't find the group "
+							"%d.", gid);
+					}
+				}
+			}
+		} else {
+			if (errno != 0) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"Failed to acquire a passwd entry "
+					"for uid %d: %s",
+					uid, strerror(errno));
+			} else {
+				gflog_error(GFARM_MSG_UNFIXED,
+					    "Can't find the user %d.", uid);
+			}
+		}
+	}
+
+	return(ret);
+}
+
+static inline bool
 is_valid_ca_dir(const char *dir)
 {
 	bool ret = false;
@@ -109,16 +175,19 @@ is_valid_ca_dir(const char *dir)
 
 		if (stat(dir, &s) == 0) {
 			if (S_ISDIR(s.st_mode)) {
-				if (((s.st_mode & S_IRWXU) != 0 &&
-					s.st_uid == geteuid()) ||
+				uid_t uid = geteuid();
+
+				if (((s.st_mode & S_IRWXO) != 0) ||
+					((s.st_mode & S_IRWXU) != 0 &&
+					s.st_uid == uid) ||
 					((s.st_mode & S_IRWXG) != 0 &&
-					s.st_gid == getegid()) ||
-					((s.st_mode & S_IRWXO) != 0)) {
+					is_user_in_group(uid, s.st_gid) ==
+					true)) {
 					ret = true;
 				} else {
 					gflog_error(GFARM_MSG_UNFIXED,
-						"%s seems not accessible.",
-						dir);
+						"%s seems not accessible for "
+						"uid %d.", dir, uid);
 				}
 			} else {
 				gflog_error(GFARM_MSG_UNFIXED,
@@ -142,29 +211,29 @@ load_cert(const char *file)
 {
 	X509 *ret = NULL;
 
-	if (is_valid_string(file) == true) {
+	if (likely(is_valid_string(file) == true)) {
 		struct stat s;
 
-		if (stat(file, &s) == 0) {
-			if (!S_ISDIR(s.st_mode)) {
+		if (likely(stat(file, &s) == 0)) {
+			if (likely(!S_ISDIR(s.st_mode))) {
 				FILE *f = fopen(file, "r");
 
-				if (f != NULL) {
+				if (likely(f != NULL)) {
 					ret = PEM_read_X509(f, NULL,
 						passwd_callback,
 						(void *)file);
 					(void)fclose(f);
-					if (ret == NULL) {
+					if (unlikely(ret == NULL)) {
 						char b[4096];
-						unsigned long e =
-							ERR_get_error();
 
+						ERR_error_string_n(
+							ERR_get_error(), b,
+							sizeof(b));
 						gflog_error(GFARM_MSG_UNFIXED,
 							"Can't read a PEM "
 							"format certificate "
 							"from %s: %s", file,
-							ERR_error_string(
-								e, b));
+							b);
 					}
 				} else {
 					gflog_error(GFARM_MSG_UNFIXED,
@@ -189,53 +258,89 @@ load_cert(const char *file)
 	return(ret);
 }
 
+static inline bool
+is_valid_pkey_file_permission(const char *file)
+{
+	bool ret = false;
+
+	if (likely(is_valid_string(file) == true)) {
+		struct stat s;
+
+		errno = 0;
+		if (likely(stat(file, &s) == 0)) {
+			if (likely(!S_ISDIR(s.st_mode))) {
+				uid_t uid;
+				
+				if (likely((uid = geteuid()) == s.st_uid)) {
+					if (likely((s.st_mode &
+						(S_IRGRP | S_IWGRP |
+						S_IROTH | S_IWOTH)) == 0)) {
+						ret = true;
+					} else {
+						gflog_error(GFARM_MSG_UNFIXED,
+							"The file perrmssion "
+							"of the specified "
+							"file %s is open too "
+							"widely. It would be "
+							"nice if the file "
+							"permission were "
+							"0600.", file);
+					}
+				} else {
+					gflog_error(GFARM_MSG_UNFIXED,
+						"The process is about to "
+						"read other uid(%d)'s "
+						" private key file %s, which "
+						"is strongly discouraged even "
+						"if he process could read it "
+						"for privacy and security.",
+						uid, file);
+				}
+			} else {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"%s is a directory, not a file", file);
+			}
+		} else {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"Can't access %s: %s", file, strerror(errno));
+		}
+	} else {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"The specified filename is a nul.");
+	}
+
+	return(ret);
+}
+
 static inline EVP_PKEY *
 load_pkey(const char *file)
 {
 	EVP_PKEY *ret = NULL;
 
-	if (is_valid_string(file) == true) {
-		struct stat s;
+	if (likely(is_valid_pkey_file_permission(file) == true)) {
+		FILE *f;
 
-		if (stat(file, &s) == 0) {
-			if (!S_ISDIR(s.st_mode)) {
-				FILE *f = fopen(file, "r");
+		errno = 0;
+		if (likely((f = fopen(file, "r")) != NULL)) {
+			ret = PEM_read_PrivateKey(f, NULL, passwd_callback,
+				(void *)file);
+			(void)fclose(f);
+			if (unlikely(ret == NULL)) {
+				char b[4096];
 
-				if (f != NULL) {
-					ret = PEM_read_PrivateKey(f, NULL,
-						passwd_callback,
-						(void *)file);
-					(void)fclose(f);
-					if (ret == NULL) {
-						char b[4096];
-						unsigned long e =
-							ERR_get_error();
-
-						gflog_error(GFARM_MSG_UNFIXED,
+				ERR_error_string_n(ERR_get_error(), b,
+					sizeof(b));
+				gflog_error(GFARM_MSG_UNFIXED,
 							"Can't read a PEM "
 							"format private key "
 							"from %s: %s", file,
-							ERR_error_string(
-								e, b));
-					}
-				} else {
-					gflog_error(GFARM_MSG_UNFIXED,
-						"Can't open %s: %s", file,
-						strerror(errno));
-				}
-			} else {
-				gflog_error(GFARM_MSG_UNFIXED,
-						"%s is a directory, "
-						"not a file", file);
+							b);
 			}
 		} else {
 			gflog_error(GFARM_MSG_UNFIXED,
 				"Can't open %s: %s", file,
 				strerror(errno));
 		}
-	} else {
-		gflog_error(GFARM_MSG_UNFIXED,
-			"Specified private key file name is nul.");
 	}
 
 	return(ret);
