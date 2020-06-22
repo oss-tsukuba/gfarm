@@ -4,11 +4,31 @@
 #define OWN_CERT	"./self.crt"
 #define OWN_KEY		"./self.key"
 
-SSL_CTX *own_sslctx = NULL;
-
 static const char *ca_dir_ = CA_CERT_DIR;
 static const char *cert_file_ = OWN_CERT;
 static const char *key_file_ = OWN_KEY;
+
+struct tls_static_ctx_struct {
+	const bool is_initilized_;
+	int n_initilizer_;
+	const uid_t the_uid_;
+	const gid_t the_gid_;
+	const char *the_ca_dirname_;
+	const char *the_cert_filename_;
+	const char *the_prvkey_filename_;
+	const X509 *the_cert_;
+	const EVP_PKEY *the_privkey_;
+	const SSL_CTX *the_ssl_ctx_;
+	const SSL_CTX *the_ssl_ctx_client_auth_;
+};
+
+struct tls_session_ctx_struct {
+	const char *peer_subject_dn_;
+	int org_fd_;
+	SSL *ssl_;
+};
+
+struct tls_static_ctx_struct the_tls_static_ctx_;
 
 static inline void
 trim_string_tail(char *buf)
@@ -313,7 +333,7 @@ is_valid_pkey_file_permission(const char *file)
 }
 
 static inline EVP_PKEY *
-load_pkey(const char *file)
+load_prvkey(const char *file)
 {
 	EVP_PKEY *ret = NULL;
 
@@ -331,10 +351,8 @@ load_pkey(const char *file)
 				ERR_error_string_n(ERR_get_error(), b,
 					sizeof(b));
 				gflog_error(GFARM_MSG_UNFIXED,
-							"Can't read a PEM "
-							"format private key "
-							"from %s: %s", file,
-							b);
+					"Can't read a PEM format private key "
+					"from %s: %s", file, b);
 			}
 		} else {
 			gflog_error(GFARM_MSG_UNFIXED,
@@ -346,15 +364,64 @@ load_pkey(const char *file)
 	return(ret);
 }
 
+static int
+chain_verify_callback(int ok, X509_STORE_CTX *sctx)
+{
+	if (ok != 1 && sctx != NULL) {
+		int err = X509_STORE_CTX_get_error(sctx);
+		X509 *cert = X509_STORE_CTX_get_current_cert(sctx);
+		int depth = X509_STORE_CTX_get_error_depth(sctx);
+		char errbuf[4096];
+
+		ERR_error_string_n(err, errbuf, sizeof(errbuf));
+		if (likely(cert != NULL)) {
+			X509_NAME *xname = X509_get_subject_name(cert);
+
+			if (likely(xname != NULL)) {
+				char sbjDN[4096];
+
+				if (likely(X509_NAME_oneline(xname, sbjDN,
+					sizeof(sbjDN)) != NULL)) {
+					gflog_error(GFARM_MSG_UNFIXED,
+						"Certiticate chain verify "
+						"failed for \"%s\", depth %d: "
+						"%s", sbjDN, depth, errbuf);
+				} else {
+					gflog_error(GFARM_MSG_UNFIXED,
+						"Certiticate chain verify "
+						"failed, no DN acquired, "
+						"depth %d: %s", depth, errbuf);
+				}
+			} else {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"Certiticate chain verify failed, no "
+					"X509 name acquired, depth %d: %s",
+					depth, errbuf);
+			}
+		} else {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"Certiticate chain verify failed, no "
+				"cert acquired, depth %d: %s", depth, errbuf);
+		}
+	} else if (sctx == NULL) {
+		if (ok == 0) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"Certiticate chain verify failed, no verify "
+				"context.");
+		} else {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"Something wrong is going on, certificate "
+				"verify succeeded without a verify context.");
+		}
+		ok = 0;
+	}
+
+	return(ok);
+}
+
 static gfarm_error_t
 tls_init_context(const char *ca_dir,
 		 const char *cert_file, const char *key_file)
 {
-	if (unlikely(own_sslctx == NULL)) {
-		own_sslctx = SSL_CTX_new(TLS_method());
-		if (likely(own_sslctx != NULL)) {
-		}
-	}
-
 	return GFARM_ERR_NO_ERROR;
 }

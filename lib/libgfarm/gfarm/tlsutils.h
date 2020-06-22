@@ -48,4 +48,5 @@
 #endif /* is_valid_string */
 #define is_valid_string(x)	((x != NULL && *x != '\0') ? true : false)
 
-extern SSL_CTX *own_sslctx;
+typedef struct tls_static_ctx_struct	*tls_static_ctx_t;
+typedef struct tls_session_ctx_struct	*tls_session_ctx_t;
