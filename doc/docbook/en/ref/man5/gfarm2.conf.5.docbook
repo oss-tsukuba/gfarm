@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>10 Mar 2020</date></refentryinfo>
+<refentryinfo><date>1 Jul 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -369,6 +369,29 @@ and ignored clients, and ignored in gfmd.conf.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	spool_server_back_channel_rcvbuf_limit 16384
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_server_read_only_retry_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+When gfmd is turned into read_only mode,
+gfsd detects the event when a modified file is closed,
+and repeats retries and waits until the gfmd is turned into read_write mode.
+This directive changes the interval of the retries.
+</para>
+<para>
+The default time is 60 seconds, i.e. one minute.
+</para>
+<para>
+This parameter is only available in gfarm2.conf which is referred by gfsd,
+and ignored clients, and ignored in gfmd.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	spool_server_read_only_retry_interval 600
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2993,6 +3016,7 @@ The default size is 16 MiB.
 	&lt;spool_server_cred_service_statement&gt; |
 	&lt;spool_server_cred_name_statement&gt; |
 	&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; |
+	&lt;spool_server_read_only_retry_interval_statement&gt; |
 	&lt;spool_check_level_statement&gt; |
 	&lt;spool_check_parallel_statement&gt; |
 	&lt;spool_check_parallel_max_statement&gt; |
@@ -3168,6 +3192,11 @@ The default size is 16 MiB.
 <varlistentry>
 <term>&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"spool_server_back_channel_rcvbuf_limit" &lt;size_limit&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_server_read_only_retry_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_server_read_only_retry_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

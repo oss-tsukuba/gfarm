@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>10 Mar 2020</date></refentryinfo>
+<refentryinfo><date>1 Jul 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -359,6 +359,29 @@ gfsd の back channel 接続が切れてしまう問題を緩和できます。
 <para>例:</para>
 <literallayout format="linespecific" class="normal">
 	spool_server_back_channel_rcvbuf_limit 16384
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_server_read_only_retry_interval</token> <parameter moreinfo="none">秒数</parameter></term>
+<listitem>
+<para>
+書き込み中に gfmd が read_only モードに変更された場合、
+gfsd はクローズ処理時にそれを検知して gfmd が read write モードになるまで
+リトライを繰り返しながら待ちます。
+このリトライの間隔を変更します。
+</para>
+<para>
+デフォルトは 60秒 (1分) です。
+</para>
+<para>
+この文は gfsd が参照する gfarm2.conf のみで有効であり、
+クライアントや gfmd.conf では無視されます。
+</para>
+<para>例:</para>
+<literallayout format="linespecific" class="normal">
+	spool_server_read_only_retry_interval 600
 </literallayout>
 </listitem>
 </varlistentry>
@@ -2974,6 +2997,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;spool_server_cred_service_statement&gt; |
 	&lt;spool_server_cred_name_statement&gt; |
 	&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; |
+	&lt;spool_server_read_only_retry_interval_statement&gt; |
 	&lt;spool_check_level_statement&gt; |
 	&lt;spool_check_parallel_statement&gt; |
 	&lt;spool_check_parallel_max_statement&gt; |
@@ -3149,6 +3173,11 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <varlistentry>
 <term>&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"spool_server_back_channel_rcvbuf_limit" &lt;size_limit&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;spool_server_read_only_retry_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_server_read_only_retry_interval" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>
