@@ -5,7 +5,7 @@
 
 <refentry id="gfncopy.1">
 
-<refentryinfo><date>25 Jan 2017</date></refentryinfo>
+<refentryinfo><date>15 Jul 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfncopy</refentrytitle>
@@ -103,7 +103,16 @@ attribute of gfarm.ncopy.
 <term><option>-S</option> <parameter moreinfo="none">REPATTR</parameter></term>
 <listitem>
 <para>specifies the attribute for automatic replication represented by
-host groups to a file or directory.
+host groups to a file or directory.</para>
+
+<para>
+When both <parameter moreinfo="none">NCOPY</parameter>
+and <parameter moreinfo="none">REPATTR</parameter> are set to a same file,
+the following number of replicas will be created.
+If N is the total number of replicas specified by REPATTR,
+and N is greater than NCOPY, at least N replicas will be created.
+Otherwise, replicas will be created according to REPATTR,
+and more replicas will be added until total number of replicas reaches NCOPY.
 <parameter moreinfo="none">REPATTR</parameter> is stored in the extended
 attribute of gfarm.replicainfo.
 </para>
