@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 10 Sep 2019
+.\"      Date: 1 Jul 2020
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "10 Sep 2019" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "1 Jul 2020" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -72,6 +72,41 @@ IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワ
 .SH "文"
 .PP
 文には、下記の種類があります。
+.PP
+include \fIパス名\fR
+.RS 4
+パス名で指定された設定ファイルを読み込みます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	include /etc/gfarm2\&.common\&.conf
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+include_nesting_limit \fI制限値\fR
+.RS 4
+include
+文のネスティングの上限を指定します。 デフォルトの制限値は 20 です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	include_nesting_limit 30
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .PP
 spool \fIgfsdスプール・ディレクトリ\fR
 .RS 4
@@ -251,6 +286,27 @@ gfsd の back channel ソケットの、SO_RCVBUF サイズの上限を指定し
 .\}
 .nf
 	spool_server_back_channel_rcvbuf_limit 16384
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+spool_server_read_only_retry_interval \fI秒数\fR
+.RS 4
+書き込み中に gfmd が read_only モードに変更された場合、 gfsd はクローズ処理時にそれを検知して gfmd が read write モードになるまで リトライを繰り返しながら待ちます。 このリトライの間隔を変更します。
+.sp
+デフォルトは 60秒 (1分) です。
+.sp
+この文は gfsd が参照する gfarm2\&.conf のみで有効であり、 クライアントや gfmd\&.conf では無視されます。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_server_read_only_retry_interval 600
 .fi
 .if n \{\
 .RE
@@ -1508,6 +1564,25 @@ replication_at_write_open \fI有効性\fR
 .\}
 .RE
 .PP
+read_only \fI有効性\fR
+.RS 4
+ファイルシステム全体を read only モードにします。 デフォルトはdisableです。
+.sp
+この文はgfmdでのみ有効です。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	read_only enable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 simultaneous_replication_receivers \fI同時処理数\fR
 .RS 4
 gfmd 主導の複製処理を、単一複製作成ホストに対して、 同時にいくつまで並行して行なうことを許すかを設定します。 デフォルトは 20です。
@@ -2707,6 +2782,8 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .RS 4
 .\}
 .nf
+	<include_statement> |
+	<include_nesting_limit_statement> |
 	<spool_statement> |
 	<spool_server_listen_address_statement> |
 	<spool_server_listen_backlog_statement> |
@@ -2714,6 +2791,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<spool_server_cred_service_statement> |
 	<spool_server_cred_name_statement> |
 	<spool_server_back_channel_rcvbuf_limit_statement> |
+	<spool_server_read_only_retry_interval_statement> |
 	<spool_check_level_statement> |
 	<spool_check_parallel_statement> |
 	<spool_check_parallel_max_statement> |
@@ -2784,6 +2862,7 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<minimum_free_disk_space_statement> |
 	<direct_local_access_statement> |
 	<replication_at_write_open_statement> |
+	<read_only_statement> |
 	<simultaneous_replication_receivers_statement> |
 	<replication_busy_host_statement> |
 	<gfsd_connection_cache_statement> |
@@ -2843,6 +2922,34 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 	<write_verify_interval_statement> |
 	<write_verify_retry_interval_statement> |
 	<write_verify_log_interval_statement>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<include_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"include" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<include_nesting_limit_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"include_nesting_limit" <number>
 .fi
 .if n \{\
 .RE
@@ -2941,6 +3048,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "spool_server_back_channel_rcvbuf_limit" <size_limit>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<spool_server_read_only_retry_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"spool_server_read_only_retry_interval" <number>
 .fi
 .if n \{\
 .RE
@@ -3924,6 +4045,20 @@ gfarm2\&.confの文法をBNFで記述すると、下記のようになります�
 .\}
 .nf
 "replication_at_write_open" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<read_only_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"read_only" <validity>
 .fi
 .if n \{\
 .RE

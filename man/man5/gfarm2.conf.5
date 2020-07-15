@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 10 Sep 2019
+.\"      Date: 1 Jul 2020
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "10 Sep 2019" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "1 Jul 2020" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -68,6 +68,42 @@ Specifies all hosts\&.
 .SH "STATEMENT"
 .PP
 The following statements are supported\&.
+.PP
+include \fIpathname\fR
+.RS 4
+The file specified by the pathname parameter will be read as a configuration file\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	include /etc/gfarm2\&.common\&.conf
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+include_nesting_limit \fInumber\fR
+.RS 4
+This directive specifies the upper limit of nesting level of the
+include
+statement\&. The default limit is 20 level\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	include_nesting_limit 30
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .PP
 spool \fIdirectory\fR
 .RS 4
@@ -281,6 +317,27 @@ For example,
 .\}
 .nf
 	spool_server_back_channel_rcvbuf_limit 16384
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+spool_server_read_only_retry_interval \fIseconds\fR
+.RS 4
+When gfmd is turned into read_only mode, gfsd detects the event when a modified file is closed, and repeats retries and waits until the gfmd is turned into read_write mode\&. This directive changes the interval of the retries\&.
+.sp
+The default time is 60 seconds, i\&.e\&. one minute\&.
+.sp
+This parameter is only available in gfarm2\&.conf which is referred by gfsd, and ignored clients, and ignored in gfmd\&.conf\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	spool_server_read_only_retry_interval 600
 .fi
 .if n \{\
 .RE
@@ -1677,6 +1734,26 @@ For example,
 .\}
 .RE
 .PP
+read_only \fIvalidity\fR
+.RS 4
+This directive makes whole file system read_only mode\&. The default is
+disable\&.
+.sp
+This directive is only available in gfmd configuration files\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	read_only enable
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
 simultaneous_replication_receivers \fInumber\fR
 .RS 4
 This directive specifies maximum number of simultaneous gfmd\-initiated replications to same host\&. The default is 20\&.
@@ -2861,6 +2938,8 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .RS 4
 .\}
 .nf
+	<include_statement> |
+	<include_nesting_limit_statement> |
 	<spool_statement> |
 	<spool_server_listen_address_statement> |
 	<spool_server_listen_backlog_statement> |
@@ -2868,6 +2947,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<spool_server_cred_service_statement> |
 	<spool_server_cred_name_statement> |
 	<spool_server_back_channel_rcvbuf_limit_statement> |
+	<spool_server_read_only_retry_interval_statement> |
 	<spool_check_level_statement> |
 	<spool_check_parallel_statement> |
 	<spool_check_parallel_max_statement> |
@@ -2938,6 +3018,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<minimum_free_disk_space_statement> |
 	<direct_local_access_statement> |
 	<replication_at_write_open_statement> |
+	<read_only_statement> |
 	<simultaneous_replication_receivers_statement> |
 	<replication_busy_host_statement> |
 	<gfsd_connection_cache_statement> |
@@ -2997,6 +3078,34 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<write_verify_interval_statement> |
 	<write_verify_retry_interval_statement> |
 	<write_verify_log_interval_statement>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<include_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"include" <pathname>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<include_nesting_limit_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"include_nesting_limit" <number>
 .fi
 .if n \{\
 .RE
@@ -3095,6 +3204,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "spool_server_back_channel_rcvbuf_limit" <size_limit>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<spool_server_read_only_retry_interval_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"spool_server_read_only_retry_interval" <number>
 .fi
 .if n \{\
 .RE
@@ -4078,6 +4201,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "replication_at_write_open" <validity>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<read_only_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"read_only" <validity>
 .fi
 .if n \{\
 .RE

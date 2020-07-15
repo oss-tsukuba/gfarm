@@ -59,6 +59,29 @@ from 0 to 31 separated by "/".</p></dd>
 <a name="statement"></a><h2>Statement</h2>
 <p>The following statements are supported.</p>
 <div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><span class="token">include</span> <em class="parameter"><code>pathname</code></em></span></dt>
+<dd>
+<p>
+The file specified by the pathname parameter will be read
+as a configuration file.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	include /etc/gfarm2.common.conf<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">include_nesting_limit</span> <em class="parameter"><code>number</code></em></span></dt>
+<dd>
+<p>
+This directive specifies the upper limit of nesting level of
+the <span class="token">include</span> statement.
+The default limit is 20 level.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	include_nesting_limit 30<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">spool</span> <em class="parameter"><code>directory</code></em></span></dt>
 <dd>
 <p>The <span class="token">spool</span> statement specifies a spool directory
@@ -265,6 +288,26 @@ and ignored clients, and ignored in gfmd.conf.
 <p>For example,</p>
 <div class="literallayout"><p><br>
 	spool_server_back_channel_rcvbuf_limit 16384<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">spool_server_read_only_retry_interval</span> <em class="parameter"><code>seconds</code></em></span></dt>
+<dd>
+<p>
+When gfmd is turned into read_only mode,
+gfsd detects the event when a modified file is closed,
+and repeats retries and waits until the gfmd is turned into read_write mode.
+This directive changes the interval of the retries.
+</p>
+<p>
+The default time is 60 seconds, i.e. one minute.
+</p>
+<p>
+This parameter is only available in gfarm2.conf which is referred by gfsd,
+and ignored clients, and ignored in gfmd.conf.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	spool_server_read_only_retry_interval 600<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">spool_check_level</span> <em class="parameter"><code>level</code></em></span></dt>
@@ -1374,6 +1417,20 @@ This directive is only available for clients in gfarm2.conf.
        replication_at_write_open enable<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">read_only</span> <em class="parameter"><code>validity</code></em></span></dt>
+<dd>
+<p>
+This directive makes whole file system read_only mode.
+The default is <span class="token">disable</span>.
+</p>
+<p>
+This directive is only available in gfmd configuration files.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	read_only enable<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">simultaneous_replication_receivers</span> <em class="parameter"><code>number</code></em></span></dt>
 <dd>
 <p>This directive specifies maximum number of simultaneous
@@ -2298,6 +2355,8 @@ The default size is 16 MiB.
 <div class="variablelist"><dl class="variablelist">
 <dt><span class="term">&lt;statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p><br>
+	&lt;include_statement&gt; |<br>
+	&lt;include_nesting_limit_statement&gt; |<br>
 	&lt;spool_statement&gt; |<br>
 	&lt;spool_server_listen_address_statement&gt; |<br>
 	&lt;spool_server_listen_backlog_statement&gt; |<br>
@@ -2305,6 +2364,7 @@ The default size is 16 MiB.
 	&lt;spool_server_cred_service_statement&gt; |<br>
 	&lt;spool_server_cred_name_statement&gt; |<br>
 	&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; |<br>
+	&lt;spool_server_read_only_retry_interval_statement&gt; |<br>
 	&lt;spool_check_level_statement&gt; |<br>
 	&lt;spool_check_parallel_statement&gt; |<br>
 	&lt;spool_check_parallel_max_statement&gt; |<br>
@@ -2375,6 +2435,7 @@ The default size is 16 MiB.
 	&lt;minimum_free_disk_space_statement&gt; |<br>
 	&lt;direct_local_access_statement&gt; |<br>
 	&lt;replication_at_write_open_statement&gt; |<br>
+	&lt;read_only_statement&gt; |<br>
 	&lt;simultaneous_replication_receivers_statement&gt; |<br>
 	&lt;replication_busy_host_statement&gt; |<br>
 	&lt;gfsd_connection_cache_statement&gt; |<br>
@@ -2434,6 +2495,10 @@ The default size is 16 MiB.
 	&lt;write_verify_interval_statement&gt; |<br>
 	&lt;write_verify_retry_interval_statement&gt; |<br>
 	&lt;write_verify_log_interval_statement&gt;</p></div></dd>
+<dt><span class="term">&lt;include_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"include" &lt;pathname&gt;</p></div></dd>
+<dt><span class="term">&lt;include_nesting_limit_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"include_nesting_limit" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_server_listen_address_statement&gt; ::=</span></dt>
@@ -2448,6 +2513,8 @@ The default size is 16 MiB.
 <dd><div class="literallayout"><p>"spool_server_cred_name" &lt;cred_name&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool_server_back_channel_rcvbuf_limit" &lt;size_limit&gt;</p></div></dd>
+<dt><span class="term">&lt;spool_server_read_only_retry_interval_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"spool_server_read_only_retry_interval" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_check_level_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool_check_level" &lt;spck_level&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_check_parallel_statement&gt; ::=</span></dt>
@@ -2591,6 +2658,8 @@ The default size is 16 MiB.
 <dd><div class="literallayout"><p>"direct_local_access" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;replication_at_write_open_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"replication_at_write_open" &lt;validity&gt;</p></div></dd>
+<dt><span class="term">&lt;read_only_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"read_only" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;simultaneous_replication_receivers_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"simultaneous_replication_receivers" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;replication_busy_host_statement&gt; ::=</span></dt>
