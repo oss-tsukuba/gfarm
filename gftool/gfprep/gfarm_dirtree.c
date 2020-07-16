@@ -261,6 +261,8 @@ dirtree_local_readdirplus(struct dirtree_dir_handle *dh,
 	}
 	free(child);
 	dirtree_convert_stat(&st, stp);
+
+	/* XXX - fabricating struct dirent in apps is not good style */
 	/* not use dent->d_type here */
 	if (S_ISREG(st.st_mode))
 		dentp->d_type = GFS_DT_REG;
@@ -270,7 +272,7 @@ dirtree_local_readdirplus(struct dirtree_dir_handle *dh,
 		dentp->d_type = GFS_DT_LNK;
 	else
 		dentp->d_type = GFS_DT_UNKNOWN;
-	strncpy(dentp->d_name, dent->d_name, strlen(dent->d_name) + 1);
+	snprintf(dentp->d_name, sizeof dentp->d_name, "%s", dent->d_name);
 	return (GFARM_ERR_NO_ERROR);
 }
 

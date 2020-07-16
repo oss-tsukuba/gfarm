@@ -31,8 +31,13 @@ gfs_sockaddr_to_local_addr(struct sockaddr *addr, socklen_t addrlen, int port,
 	}
 	memset(local_addr, 0, sizeof(*local_addr));
 	local_addr->sun_family = AF_UNIX;
-	snprintf(local_addr->sun_path, sizeof local_addr->sun_path,
+	rv = snprintf(local_addr->sun_path, sizeof local_addr->sun_path,
 	    GFSD_LOCAL_SOCKET_NAME, hbuf, port);
+	if (rv < 0 || rv >= sizeof local_addr->sun_path) {
+		/* to shut up gcc -Wformat-truncation warning */
+		gflog_debug(GFARM_MSG_UNFIXED, "sockname generation: "
+		    GFSD_LOCAL_SOCKET_NAME ": %d", hbuf, port, rv);
+	}
 
 	if (dirp != NULL) {
 		snprintf(dir_buf, sizeof dir_buf,
