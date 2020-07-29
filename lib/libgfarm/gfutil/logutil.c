@@ -29,7 +29,7 @@ static enum {
 	use_syslog,
 	use_file
 } syslog_output = use_stderr;
-static FILE *log_file;
+static FILE *log_file = NULL;
 static int log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
 
 static nl_catd catd = (nl_catd)-1;
@@ -82,8 +82,10 @@ void
 gflog_terminate(void)
 {
 	gflog_catclose();
-	if (syslog_output == use_file)
+	if (syslog_output == use_file) {
 		fclose(log_file);
+		log_file = NULL;
+	}
 }
 
 #define GFLOG_PRIORITY_SIZE	8
@@ -450,7 +452,7 @@ gflog_file_open(const char *path)
 	f = fopen(path, "a");
 	if (f == NULL)
 		return (NULL);
-	if (syslog_output == use_file)
+	if (syslog_output == use_file && log_file != NULL)
 		fclose(log_file);
 	setbuf(f, NULL);
 	log_file = f;
