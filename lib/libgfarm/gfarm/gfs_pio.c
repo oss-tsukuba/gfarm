@@ -364,7 +364,8 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 	if ((flags & GFARM_FILE_TRUNC) != 0)
 		gf->mode |= GFS_FILE_MODE_MODIFIED;
 
-	if ((flags & GFARM_FILE_UNBUFFERED) == 0) {
+	if ((flags & GFARM_FILE_UNBUFFERED) == 0 &&
+	    gfarm_ctxp->client_file_bufsize > 0) {
 		GFARM_MALLOC_ARRAY(buffer, gfarm_ctxp->client_file_bufsize);
 		if (buffer == NULL) {
 			free(gf);
