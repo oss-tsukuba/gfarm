@@ -25,6 +25,9 @@ char *program_name = "gfs_pio_test";
 /* the OP_* codes below are also used as EXIT_* codes */
 #define OP_READ		'R'
 #define OP_WRITE	'W'
+#define OP_GETC		'G'
+#define OP_UNGETC	'N'
+#define OP_PUTC		'U'
 #define OP_SEEK_SET	'S'
 #define OP_SEEK_CUR	'C'
 #define OP_SEEK_END	'E'
@@ -96,8 +99,8 @@ main(int argc, char **argv)
 		return (EXIT_GF_INIT);
 	}
 
-	while ((c = getopt(argc, argv, "aA:cC:DeE:Fh:Im:MnOP:QrR:S:tT:vwW:Y:"))
-	    != -1) {
+	while ((c = getopt(argc, argv,
+	    "aA:cC:DeE:FGh:Im:MnN:OP:QrR:S:tT:uU:vwW:Y:")) != -1) {
 		off = off2 = off3 = -1;
 		switch (c) {
 		case OP_RECVFILE:
@@ -112,6 +115,8 @@ main(int argc, char **argv)
 			/*FALLTHROUGH*/
 		case OP_READ:
 		case OP_WRITE:
+		case OP_UNGETC:
+		case OP_PUTC:
 		case OP_SEEK_SET:
 		case OP_SEEK_CUR:
 		case OP_SEEK_END:
@@ -119,6 +124,7 @@ main(int argc, char **argv)
 		case OP_PAUSE:
 			off = strtol(optarg, NULL, 0);
 			/*FALLTHROUGH*/
+		case OP_GETC:
 		case OP_FLUSH:
 		case OP_SYNC:
 		case OP_DATASYNC:
@@ -161,6 +167,9 @@ main(int argc, char **argv)
 			break;
 		case 't':
 			flags |= GFARM_FILE_TRUNC;
+			break;
+		case 'u':
+			flags |= GFARM_FILE_UNBUFFERED;
 			break;
 		case 'v':
 			verbose = 1;
@@ -269,6 +278,44 @@ main(int argc, char **argv)
 			if (verbose)
 				fprintf(stderr, "gfs_pio_write(%d): %d\n",
 				    done, rv);
+			break;
+		case OP_GETC:
+			rv = gfs_pio_getc(gf);
+			if (rv == EOF) {
+				fprintf(stderr, "gfs_pio_getc: EOF\n");
+				return (c);
+			}
+			if (verbose)
+				fprintf(stderr, "gfs_pio_getc: %d\n", rv);
+			off = write(1, &rv, sizeof(rv));
+			if (off == -1) {
+				if (errno == EINTR)
+					continue;
+				perror("write");
+				return (EXIT_SYS_WRITE);
+			}
+			if (verbose)
+				fprintf(stderr, "write(%d): %d\n", 1, (int)off);
+			break;
+		case OP_UNGETC:
+			rv = gfs_pio_ungetc(gf, (int)off);
+			if (rv == EOF) {
+				fprintf(stderr, "gfs_pio_ungetc: EOF\n");
+				return (c);
+			}
+			if (verbose)
+				fprintf(stderr, "gfs_pio_ungetc: %d\n", rv);
+			break;
+		case OP_PUTC:
+			e = gfs_pio_putc(gf, (int)off);
+			if (e != GFARM_ERR_NO_ERROR) {
+				fprintf(stderr, "gfs_pio_putc: %s\n",
+				    gfarm_error_string(e));
+				return (c);
+			}
+			if (verbose)
+				fprintf(stderr, "gfs_pio_putc(%d): success\n",
+				    (int)off);
 			break;
 		case OP_SEEK_SET:
 		case OP_SEEK_CUR:

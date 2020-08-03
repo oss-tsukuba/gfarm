@@ -336,7 +336,7 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 	struct gfs_pio_internal_cksum_info *cip, GFS_File *gfp)
 {
 	GFS_File gf;
-	char *buffer;
+	char *buffer = NULL;
 	struct gfs_file_list *gfl;
 
 	GFARM_MALLOC(gf);
@@ -364,9 +364,7 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 	if ((flags & GFARM_FILE_TRUNC) != 0)
 		gf->mode |= GFS_FILE_MODE_MODIFIED;
 
-	if ((flags & GFARM_FILE_UNBUFFERED) != 0) {
-		buffer = NULL;
-	} else {
+	if ((flags & GFARM_FILE_UNBUFFERED) == 0) {
 		GFARM_MALLOC_ARRAY(buffer, gfarm_ctxp->client_file_bufsize);
 		if (buffer == NULL) {
 			free(gf);
@@ -432,8 +430,7 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 static void
 gfs_file_free(GFS_File gf)
 {
-	if (!(gf->open_flags & GFARM_FILE_UNBUFFERED))
-		free(gf->buffer);
+	free(gf->buffer);
 	free(gf->url);
 	free(gf->md.cksum_type);
 	/* do not touch gf->pi here */
@@ -954,6 +951,11 @@ gfs_pio_fillbuf(GFS_File gf, size_t size)
 		}
 		return (GFS_PIO_ERROR(gf));
 	}
+	/* UNBUFFERED case */
+	if (gf->buffer == NULL) {
+		gf->error = GFARM_ERR_NO_BUFFER_SPACE_AVAILABLE;
+		return (gf->error);
+	}
 	if (gf->p < gf->length)
 		return (GFARM_ERR_NO_ERROR);
 
@@ -1004,6 +1006,7 @@ do_write(GFS_File gf, const char *buffer, size_t length,
 		*writtenp = 0;
 		return (GFARM_ERR_NO_ERROR);
 	}
+	assert(buffer);
 	if (gf->io_offset != gf->offset) {
 		gf->io_offset = gf->offset;
 	}
@@ -1304,11 +1307,15 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 
 	CHECK_READABLE(gf);
 
-	if (!gf->buffer) {
+	/* UNBUFFERED case */
+	if (gf->buffer == NULL) {
 		gfarm_off_t result, offset = gf->offset + gf->p;
+
 		e = gfs_pio_pread_unbuffer(gf, buffer, size, offset, np);
-		if (e == GFARM_ERR_NO_ERROR)
+		if (e == GFARM_ERR_NO_ERROR) {
 			gfs_pio_seek(gf, offset + *np, GFARM_SEEK_SET, &result);
+			n = *np;
+		}
 		goto finish;
 	}
 	if (size >= gf->bufsize + (gf->length - gf->p)) {
@@ -1446,7 +1453,7 @@ gfarm_error_t
 gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 {
 	gfarm_error_t e;
-	size_t written;
+	size_t written = 0;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_KERNEL_UNUSE2(t1, t2);
@@ -1463,12 +1470,15 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 
 	CHECK_WRITABLE(gf);
 
+	/* UNBUFFERED case */
 	if (gf->buffer == NULL) {
 		gfarm_off_t result, offset = gf->offset + gf->p;
 
 		e = gfs_pio_pwrite_unbuffer(gf, buffer, size, offset, np);
-		if (e == GFARM_ERR_NO_ERROR)
+		if (e == GFARM_ERR_NO_ERROR) {
 			gfs_pio_seek(gf, offset + *np, GFARM_SEEK_SET, &result);
+			written = *np;
+		}
 		goto finish;
 	}
 
@@ -1513,14 +1523,14 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 	gf->p += size;
 	if (gf->p > gf->length)
 		gf->length = gf->p;
-	*np = size;
+	*np = written = size;
 	e = GFARM_ERR_NO_ERROR;
 	if (gf->p >= gf->bufsize)
 		e = gfs_pio_flush(gf);
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->write_time += gfarm_timerval_sub(&t2, &t1));
-	gfs_profile(staticp->write_size += size);
+	gfs_profile(staticp->write_size += written);
 	gfs_profile(staticp->write_count++);
 
 	return (e);
@@ -1706,6 +1716,7 @@ gfs_pio_getc(GFS_File gf)
 			goto finish;
 		}
 	}
+	assert(gf->buffer);
 	c = ((unsigned char *)gf->buffer)[gf->p++];
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
@@ -1737,6 +1748,7 @@ gfs_pio_ungetc(GFS_File gf, int c)
 			return (EOF);
 		}
 		/* We do not mark this buffer dirty here. */
+		assert(gf->buffer);
 		gf->buffer[--gf->p] = c;
 	}
 	return (c);
@@ -1762,6 +1774,11 @@ gfs_pio_putc(GFS_File gf, int c)
 
 	CHECK_WRITABLE(gf);
 
+	/* UNBUFFERED case */
+	if (gf->buffer == NULL) {
+		gf->error = GFARM_ERR_NO_BUFFER_SPACE_AVAILABLE;
+		return (gf->error);
+	}
 	if (gf->p >= gf->bufsize) {
 		gfarm_error_t e = gfs_pio_flush(gf); /* this does purge too */
 

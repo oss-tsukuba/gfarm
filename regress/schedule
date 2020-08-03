@@ -42,6 +42,7 @@ lib/libgfarm/gfarm/gfs_pio_open/cksum_simultaneous.remote.sh
 lib/libgfarm/gfarm/gfs_pio_stat/gfs_stat_pio_stat_consistency.sh
 lib/libgfarm/gfarm/gfs_pio_stat/gfs_pio_stat_mtime.sh
 lib/libgfarm/gfarm/gfs_pio_stat/replica_mtime.sh
+lib/libgfarm/gfarm/gfs_pio_putc/putc_getc.sh
 lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/file_busy/file_busy.sh
 lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/in_progress/in_progress.sh
 lib/libgfarm/gfarm/gfs_stat_cached/purge.sh
