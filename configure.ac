@@ -933,7 +933,7 @@ AC_SUBST(postgresql_targets)
 ###### Checks for header files.
 ######
 
-AC_CHECK_HEADERS(inttypes.h shadow.h crypt.h machine/endian.h sys/loadavg.h byteswap.h execinfo.h sys/xattr.h)
+AC_CHECK_HEADERS(byteswap.h crypt.h execinfo.h inttypes.h shadow.h machine/endian.h sys/loadavg.h sys/pstat.h sys/xattr.h)
 
 ######
 ###### Checks for types.
@@ -1062,7 +1062,7 @@ fi
 ###### Checks for library functions.
 ######
 
-AC_CHECK_FUNCS(clock_gettime getdents fdatasync fdopendir poll popcount64 pread pwrite snprintf getpassphrase mkdtemp setlogin sigtimedwait strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long backtrace_symbols futimes futimesat utimensat)
+AC_CHECK_FUNCS(backtrace daemon_symbols clock_gettime fdatasync fdopendir futimes futimesat getdents getifaddrs getloadavg getopt_long getpassphrase mkdtemp poll popcount64 pread pstat pwrite random setlogin setproctitle setrlimit sigtimedwait snprintf statfs statvfs strtoll strtoq utimensat)
 
 ### Check gcc builtin __builtin_popcountll()
 
@@ -1093,7 +1093,7 @@ fi
 
 ### SUSv2 getpwnam_r() has 5 args, but Solaris's only has 4.
 
-AC_MSG_CHECKING([SUSv2 compliant getpwnam_r])
+AC_MSG_CHECKING([for SUSv2 compliant getpwnam_r])
 AC_TRY_LINK([
 #include <sys/types.h>
 #include <pwd.h>],[
@@ -1111,7 +1111,7 @@ fi
 
 ### SUSv2 getspnam_r() has 5 args, but Solaris's only has 4.
 
-AC_MSG_CHECKING([SUSv2 compliant getspnam_r])
+AC_MSG_CHECKING([for SUSv2 compliant getspnam_r])
 AC_TRY_LINK([
 #include <shadow.h>],[
 int rv;
@@ -1127,7 +1127,7 @@ fi
 
 ### Check whether PTHREAD_PRIO_INHERIT is usable or not
 
-AC_MSG_CHECKING([PTHREAD_PRIO_INHERIT])
+AC_MSG_CHECKING([for PTHREAD_PRIO_INHERIT])
 AC_TRY_COMPILE([
 #define _GNU_SOURCE /* CentOS 6 needs this, although CentOS 7 doesn't */
 #include <pthread.h>],[
@@ -1140,6 +1140,19 @@ if test "$ax_cv_have_pthread_prio_inherit" = yes; then
   AC_DEFINE(HAVE_PTHREAD_PRIO_INHERIT, 1, [PTHREAD_PRIO_INHERIT is usable])
 fi
 
+### Check whether PS_STRINGS is available or not
+
+AC_MSG_CHECKING([for PS_STRINGS])
+AC_TRY_LINK([
+#include <machine/vmparam.h>
+#include <sys/exec.h>],[
+PS_STRINGS->ps_nargvstr = 1;
+PS_STRINGS->ps_argvstr = "test";
+], [ax_cv_have_ps_strings=yes], [ax_cv_have_ps_strings=no])
+AC_MSG_RESULT([$ax_cv_have_ps_strings])
+if test "$ax_cv_have_ps_strings" = yes; then
+  AC_DEFINE(HAVE_PS_STRINGS, 1, [PS_STRINGS exists])
+fi
 
 ###### Checks for system services.
 # empty for now

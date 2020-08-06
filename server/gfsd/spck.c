@@ -22,6 +22,7 @@
 
 #include "gfutil.h"
 #include "hash.h"
+#include "proctitle.h"
 
 #include "config.h"
 #include "gfp_xdr.h"
@@ -720,6 +721,9 @@ gfs_spool_check_parallel_fork(void)
 			char diag[sizeof(base) + GFARM_INT32STRLEN + 1];
 
 			snprintf(diag, sizeof diag, "spool_check(%d)", i);
+			(void)gfarm_proctitle_set("spool_check #%d/%d",
+			    i, gfarm_spool_check_parallel);
+
 			free_gfm_server(); /* to make sure to avoid race */
 			e = connect_gfm_server(diag);
 			if (e != GFARM_ERR_NO_ERROR)

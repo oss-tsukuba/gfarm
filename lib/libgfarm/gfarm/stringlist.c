@@ -124,24 +124,13 @@ gfarm_stringlist_cat(gfarm_stringlist *listp, char **v)
 gfarm_error_t
 gfarm_fixedstrings_dup(int n, char **dst, char **src)
 {
-	int i;
+	int rv = gfutil_fixedstrings_dup(n, dst, src);
 
-	for (i = 0; i < n; i++) {
-		dst[i] = strdup(src[i]);
-		if (dst[i] == NULL) {
-			while (--i >= 0) {
-				free(dst[i]);
-				dst[i] = NULL;
-			}
-			gflog_debug(GFARM_MSG_1000915,
-				"allocation of string 'dst' failed: %s",
-				gfarm_error_string(GFARM_ERR_NO_MEMORY));
-			return (GFARM_ERR_NO_MEMORY);
-		}
-	}
-	return (GFARM_ERR_NO_ERROR);
+	if (rv == 0)
+		return (GFARM_ERR_NO_ERROR);
+	else
+		return (gfarm_errno_to_error(rv));
 }
-
 
 /* gfarm_strings: dynamically allocated string array and array contents */
 
@@ -172,45 +161,4 @@ gfarm_strings_free_deeply(int n, char **strings)
 			free(strings[i]);
 	}
 	free(strings);
-}
-
-/* gfarm_array: NULL terminated gfarm_strings */
-
-int
-gfarm_strarray_length(char **array)
-{
-	int i;
-
-	for (i = 0; array[i] != NULL; i++)
-		;
-	return (i);
-}
-
-char**
-gfarm_strarray_dup(char **array)
-{
-	int n = gfarm_strarray_length(array);
-	char **v;
-
-	GFARM_MALLOC_ARRAY(v, n + 1);
-	if (v == NULL) {
-		gflog_debug(GFARM_MSG_1000917,
-			"allocation of string failed: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		return (v);
-	}
-	if (gfarm_fixedstrings_dup(n, v, array) != GFARM_ERR_NO_ERROR)
-		return (NULL);
-	v[n] = NULL;
-	return (v);
-}
-
-void
-gfarm_strarray_free(char **array)
-{
-	int i;
-
-	for (i = 0; array[i] != NULL; i++)
-		free(array[i]);
-	free(array);
 }
