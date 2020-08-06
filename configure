@@ -13405,7 +13405,7 @@ esac
 ###### Checks for header files.
 ######
 
-for ac_header in inttypes.h shadow.h crypt.h machine/endian.h sys/loadavg.h byteswap.h execinfo.h sys/xattr.h
+for ac_header in byteswap.h crypt.h execinfo.h inttypes.h shadow.h machine/endian.h sys/loadavg.h sys/pstat.h sys/xattr.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -13970,7 +13970,7 @@ fi
 ###### Checks for library functions.
 ######
 
-for ac_func in clock_gettime getdents fdatasync fdopendir poll popcount64 pread pwrite snprintf getpassphrase mkdtemp setlogin sigtimedwait strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long backtrace_symbols futimes futimesat utimensat
+for ac_func in backtrace daemon_symbols clock_gettime fdatasync fdopendir futimes futimesat getdents getifaddrs getloadavg getopt_long getpassphrase mkdtemp poll popcount64 pread pstat pwrite random setlogin setproctitle setrlimit sigtimedwait snprintf statfs statvfs strtoll strtoq utimensat
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -14051,8 +14051,8 @@ fi
 
 ### SUSv2 getpwnam_r() has 5 args, but Solaris's only has 4.
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking SUSv2 compliant getpwnam_r" >&5
-$as_echo_n "checking SUSv2 compliant getpwnam_r... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SUSv2 compliant getpwnam_r" >&5
+$as_echo_n "checking for SUSv2 compliant getpwnam_r... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14089,8 +14089,8 @@ fi
 
 ### SUSv2 getspnam_r() has 5 args, but Solaris's only has 4.
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking SUSv2 compliant getspnam_r" >&5
-$as_echo_n "checking SUSv2 compliant getspnam_r... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SUSv2 compliant getspnam_r" >&5
+$as_echo_n "checking for SUSv2 compliant getspnam_r... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14126,8 +14126,8 @@ fi
 
 ### Check whether PTHREAD_PRIO_INHERIT is usable or not
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking PTHREAD_PRIO_INHERIT" >&5
-$as_echo_n "checking PTHREAD_PRIO_INHERIT... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PTHREAD_PRIO_INHERIT" >&5
+$as_echo_n "checking for PTHREAD_PRIO_INHERIT... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14159,6 +14159,40 @@ $as_echo "#define HAVE_PTHREAD_PRIO_INHERIT 1" >>confdefs.h
 
 fi
 
+### Check whether PS_STRINGS is available or not
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PS_STRINGS" >&5
+$as_echo_n "checking for PS_STRINGS... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <machine/vmparam.h>
+#include <sys/exec.h>
+int
+main ()
+{
+
+PS_STRINGS->ps_nargvstr = 1;
+PS_STRINGS->ps_argvstr = "test";
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_have_ps_strings=yes
+else
+  ax_cv_have_ps_strings=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_have_ps_strings" >&5
+$as_echo "$ax_cv_have_ps_strings" >&6; }
+if test "$ax_cv_have_ps_strings" = yes; then
+
+$as_echo "#define HAVE_PS_STRINGS 1" >>confdefs.h
+
+fi
 
 ###### Checks for system services.
 # empty for now
