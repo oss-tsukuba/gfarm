@@ -8,6 +8,8 @@
  * Every other modules shouldn't include this.
  */
 
+#include <pthread.h>
+
 struct stat;
 
 #define	GFS_FILE_IS_PROGRAM(gf) (GFARM_S_IS_PROGRAM(gf->pi.status.st_mode))
@@ -107,6 +109,8 @@ struct gfs_file {
 
 	/* opening files */
 	GFARM_HCIRCLEQ_ENTRY(gfs_file) hcircleq;
+
+	pthread_mutex_t mutex;
 };
 
 

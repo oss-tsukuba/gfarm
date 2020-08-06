@@ -1,5 +1,11 @@
 #ifndef __KERNEL__
-#define gfs_profile(x) if (gfarm_ctxp->profile) { x; }
+void gfs_profile_lock(const char *);
+void gfs_profile_unlock(const char *);
+#define gfs_profile(x) if (gfarm_ctxp->profile) { \
+	gfs_profile_lock(__func__); \
+	x; \
+	gfs_profile_unlock(__func__); \
+    }
 #define GFARM_KERNEL_UNUSE(x)
 #define GFARM_KERNEL_UNUSE2(t1, t2)
 #define GFARM_KERNEL_UNUSE3(t1, t2, t3)

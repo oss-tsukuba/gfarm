@@ -6,11 +6,31 @@
 #include <string.h>
 #include <stdio.h>
 #include <gfarm/gfarm.h>
+#ifndef __KERNEL__
+#include <pthread.h>
+#endif /*__KERNEL__*/
 
 #include "timer.h"
 
 #include "context.h"
 #include "gfs_profile.h"
+#ifndef __KERNEL__
+#include "thrsubr.h"
+#endif /*__KERNEL__*/
+
+#ifndef __KERNEL__
+static pthread_mutex_t profile_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void
+gfs_profile_lock(const char *where) {
+	gfarm_mutex_lock(&profile_mutex, where, "profile_mutex");
+}
+
+void
+gfs_profile_unlock(const char *where) {
+	gfarm_mutex_unlock(&profile_mutex, where, "profile_mutex");
+}
+#endif /*__KERNEL__*/
 
 void
 gfs_profile_set(void)

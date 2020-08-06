@@ -69,6 +69,28 @@
 
 #define XAUTH_NEXTRACT_MAXLEN	512
 
+#ifndef __KERNEL__
+#define GFS_CLIENT_MUTEX		pthread_mutex_t client_mutex;
+#define GFS_CLIENT_MUTEX_INIT(s)	do { \
+	gfarm_mutex_init(&(s)->client_mutex, __func__, "client_mutex"); \
+} while (/*CONSTCOND*/0)
+#define GFS_CLIENT_MUTEX_DESTROY(s)	do { \
+	gfarm_mutex_destroy(&(s)->client_mutex, __func__, "client_mutex"); \
+} while (/*CONSTCOND*/0)
+#define GFS_CLIENT_MUTEX_LOCK(s)	do { \
+	gfarm_mutex_lock(&(s)->client_mutex, __func__, "client_mutex"); \
+} while (/*CONSTCOND*/0)
+#define GFS_CLIENT_MUTEX_UNLOCK(s)	do { \
+	gfarm_mutex_unlock(&(s)->client_mutex, __func__, "client_mutex"); \
+} while (/*CONSTCOND*/0)
+#else /* __KERNEL__ */
+#define GFS_CLIENT_MUTEX
+#define GFS_CLIENT_MUTEX_INIT(s)
+#define GFS_CLIENT_MUTEX_DESTROY(s)
+#define GFS_CLIENT_MUTEX_LOCK(s)
+#define GFS_CLIENT_MUTEX_UNLOCK(s)
+#endif /* __KERNEL__ */
+
 struct gfs_connection {
 	struct gfp_cached_connection *cache_entry;
 
@@ -101,6 +123,7 @@ struct gfs_client_static {
 	int self_ip_asked;
 	int self_ip_count;
 	struct in_addr *self_ip_list;
+	GFS_CLIENT_MUTEX;
 };
 
 #define SERVER_HASHTAB_SIZE	3079	/* prime number */
@@ -130,6 +153,8 @@ gfs_client_static_init(struct gfarm_context *ctxp)
 	s->self_ip_count = 0;
 	s->self_ip_list = NULL;
 
+	GFS_CLIENT_MUTEX_INIT(s);
+
 	ctxp->gfs_client_static = s;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -142,6 +167,7 @@ gfs_client_static_term(struct gfarm_context *ctxp)
 	if (s == NULL)
 		return;
 
+	GFS_CLIENT_MUTEX_DESTROY(s);
 	gfp_conn_cache_term(&s->server_cache);
 	free(staticp->self_ip_list);
 	free(s);
@@ -155,7 +181,9 @@ void
 gfs_client_add_hook_for_connection_error(
 	gfarm_error_t (*hook)(struct gfs_connection *))
 {
+	GFS_CLIENT_MUTEX_LOCK(staticp);
 	staticp->hook_for_connection_error = hook;
+	GFS_CLIENT_MUTEX_UNLOCK(staticp);
 }
 
 static void
@@ -236,18 +264,22 @@ gfs_client_connection_set_failover_count(
 void
 gfs_client_purge_from_cache(struct gfs_connection *gfs_server)
 {
+	GFS_CLIENT_MUTEX_LOCK(staticp);
 	gfp_cached_connection_purge_from_cache(&staticp->server_cache,
 	    gfs_server->cache_entry);
+	GFS_CLIENT_MUTEX_UNLOCK(staticp);
 }
 
 void
 gfs_client_connection_gc(void)
 {
+	GFS_CLIENT_MUTEX_LOCK(staticp);
 	gfp_cached_connection_gc_all(&staticp->server_cache);
+	GFS_CLIENT_MUTEX_UNLOCK(staticp);
 }
 
-int
-gfs_client_sockaddr_is_local(struct sockaddr *peer_addr)
+static int
+sockaddr_is_local_internal(struct sockaddr *peer_addr)
 {
 	struct sockaddr_in *peer_in;
 	int i;
@@ -271,6 +303,16 @@ gfs_client_sockaddr_is_local(struct sockaddr *peer_addr)
 			return (1);
 	}
 	return (0);
+}
+
+int
+gfs_client_sockaddr_is_local(struct sockaddr *peer_addr)
+{
+	int rv;
+	GFS_CLIENT_MUTEX_LOCK(staticp);
+	rv = sockaddr_is_local_internal(peer_addr);
+	GFS_CLIENT_MUTEX_UNLOCK(staticp);
+	return (rv);
 }
 
 #ifndef __KERNEL__	/* gfs_client_connect_xxx :: in user mode */
@@ -407,7 +449,7 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 #ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
 	connection_in_progress = 0;
 #endif
-	if (gfs_client_sockaddr_is_local(peer_addr)) {
+	if (sockaddr_is_local_internal(peer_addr)) {
 		e = gfs_client_connect_unix(peer_addr, &sock);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001177,
@@ -558,9 +600,8 @@ gfsk_client_connection_alloc_and_auth(struct gfarm_eventqueue *q,
 	int sock = -1, is_local = 0;
 	int fd = -1;
 
-	if (gfs_client_sockaddr_is_local(peer_addr)) {
+	if (sockaddr_is_local_internal(peer_addr))
 		is_local = 1;
-	}
 
 	GFARM_MALLOC(gfs_server);
 	if (gfs_server == NULL) {
@@ -652,14 +693,18 @@ gfs_client_connection_dispose(void *connection_data)
 void
 gfs_client_connection_free(struct gfs_connection *gfs_server)
 {
+	GFS_CLIENT_MUTEX_LOCK(staticp);
 	gfp_cached_or_uncached_connection_free(&staticp->server_cache,
 	    gfs_server->cache_entry);
+	GFS_CLIENT_MUTEX_UNLOCK(staticp);
 }
 
 void
 gfs_client_terminate(void)
 {
+	GFS_CLIENT_MUTEX_LOCK(staticp);
 	gfp_cached_connection_terminate(&staticp->server_cache);
+	GFS_CLIENT_MUTEX_UNLOCK(staticp);
 }
 void
 gfs_client_connection_unlock(struct gfs_connection *gfs_server)
@@ -684,6 +729,8 @@ gfs_client_connection_acquire(const char *canonical_hostname, const char *user,
 	struct gfp_cached_connection *cache_entry;
 	int created;
 
+	GFS_CLIENT_MUTEX_LOCK(staticp);
+
 #ifdef __KERNEL__
 retry:
 #endif
@@ -696,6 +743,7 @@ retry:
 			"acquirement of cached connection (%s) failed: %s",
 			canonical_hostname,
 			gfarm_error_string(e));
+		GFS_CLIENT_MUTEX_UNLOCK(staticp);
 		return (e);
 	}
 	if (!created) {
@@ -711,6 +759,7 @@ retry:
 			goto retry;
 		}
 #endif /* __KERNEL__ */
+		GFS_CLIENT_MUTEX_UNLOCK(staticp);
 		return (GFARM_ERR_NO_ERROR);
 	}
 	e = gfs_client_connection_alloc_and_auth(canonical_hostname, user,
@@ -723,6 +772,7 @@ retry:
 			"allocation or authentication failed: %s",
 			gfarm_error_string(e));
 	}
+	GFS_CLIENT_MUTEX_UNLOCK(staticp);
 	return (e);
 }
 
@@ -738,6 +788,8 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 	struct sockaddr peer_addr;
 	const char *user = gfm_client_username(gfm_server);
 
+	GFS_CLIENT_MUTEX_LOCK(staticp);
+
 #ifdef __KERNEL__
 retry:
 #endif /* __KERNEL__ */
@@ -752,6 +804,7 @@ retry:
 			"acquirement of cached connection (%s) failed: %s",
 			canonical_hostname,
 			gfarm_error_string(e));
+		GFS_CLIENT_MUTEX_UNLOCK(staticp);
 		return (e);
 	}
 	if (!created) {
@@ -767,6 +820,7 @@ retry:
 			goto retry;
 		}
 #endif /* __KERNEL__ */
+		GFS_CLIENT_MUTEX_UNLOCK(staticp);
 		return (GFARM_ERR_NO_ERROR);
 	}
 	e = gfm_host_address_get(gfm_server, canonical_hostname, port,
@@ -784,6 +838,7 @@ retry:
 			"client authentication failed: %s",
 			gfarm_error_string(e));
 	}
+	GFS_CLIENT_MUTEX_UNLOCK(staticp);
 	return (e);
 }
 
@@ -915,11 +970,13 @@ gfs_client_connection_and_process_acquire(
 				return (e);
 		}
 
+		gfs_client_connection_lock(gfs_server);
 		if (gfs_client_pid(gfs_server) == 0) /* new connection */
 			e = gfarm_client_process_set(gfs_server, *gfm_serverp);
 		else /* cached connection */
 			e = gfs_client_check_failovercount_or_reset_process(
 			    gfs_server, *gfm_serverp);
+		gfs_client_connection_unlock(gfs_server);
 
 		if (e == GFARM_ERR_NO_ERROR) {
 			*gfs_serverp = gfs_server;
@@ -982,29 +1039,41 @@ gfs_client_connect(const char *canonical_hostname, int port, const char *user,
 gfarm_error_t
 gfs_client_connection_enter_cache(struct gfs_connection *gfs_server)
 {
+	gfarm_error_t e;
+	GFS_CLIENT_MUTEX_LOCK(staticp);
 	if (gfs_client_connection_is_cached(gfs_server)) {
 		gflog_fatal(GFARM_MSG_1000068,
 		    "gfs_client_connection_enter_cache: "
 		    "programming error");
 	}
-	return (gfp_uncached_connection_enter_cache(&staticp->server_cache,
-	    gfs_server->cache_entry));
+	e = gfp_uncached_connection_enter_cache(&staticp->server_cache,
+	    gfs_server->cache_entry);
+	GFS_CLIENT_MUTEX_UNLOCK(staticp);
+	return (e);
 }
 gfarm_error_t
 gfs_client_connection_enter_cache_tail(struct gfs_connection *gfs_server)
 {
+	gfarm_error_t e;
+	GFS_CLIENT_MUTEX_LOCK(staticp);
 	if (gfs_client_connection_is_cached(gfs_server)) {
 		gflog_fatal(GFARM_MSG_1000068,
 		    "gfs_client_connection_enter_cache_tail: "
 		    "programming error");
 	}
-	return (gfp_uncached_connection_enter_cache_tail(&staticp->server_cache,
-	    gfs_server->cache_entry));
+	e = gfp_uncached_connection_enter_cache_tail(&staticp->server_cache,
+	    gfs_server->cache_entry);
+	GFS_CLIENT_MUTEX_UNLOCK(staticp);
+	return (e);
 }
 int
 gfs_client_connection_cache_change(int cnt)
 {
-	return (gfp_connection_cache_change(&staticp->server_cache, cnt));
+	gfarm_error_t e;
+	GFS_CLIENT_MUTEX_LOCK(staticp);
+	e = gfp_connection_cache_change(&staticp->server_cache, cnt);
+	GFS_CLIENT_MUTEX_UNLOCK(staticp);
+	return (e);
 }
 
 /*
