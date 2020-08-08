@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfs_pio_open
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 3 Sep 2015
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 8 Aug 2020
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFS_PIO_OPEN" "3" "3 Sep 2015" "Gfarm" "Gfarm"
+.TH "GFS_PIO_OPEN" "3" "8 Aug 2020" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -40,15 +40,13 @@ gfs_pio_open \- Gfarmファイルシステムのファイルのオープン
 .BI "gfarm_error_t\ gfs_pio_open(const\ char\ *\ " "gfarm_url" ", int\ " "flags" ", GFS_File\ *\ " "gfp" ");"
 .SH "DESCRIPTION"
 .PP
-
 \fIgfarm_url\fR
 で指定したファイルをオープンし、GFS_File 構造体を
 \fIgfp\fR
 の指す先に返します。
 \fIgfarm_url\fR
-はGfarmファイルシステムのパス名、あるいは gfarm://metaserver:port/path/name 形式のGfarm URLです。
+はGfarmファイルシステムのパス名、 あるいは gfarm://metaserver:port/path/name 形式のGfarm URLです。
 .PP
-
 \fIflags\fR
 は、以下のフラグの bitwise\-or で指定します。 はじめの三つのフラグはどれかが指定されている必要があります。
 .PP
@@ -69,12 +67,17 @@ gfs_pio_open \- Gfarmファイルシステムのファイルのオープン
 .PP
 \fBGFARM_FILE_TRUNC\fR
 .RS 4
-ファイルが存在し、レギュラーファイルで書込みが許される場合、ファイルサイズを0にします。
+ファイルが存在し、レギュラーファイルで書込みが許される場合、 ファイルサイズを0にします。
 .RE
 .PP
 \fBGFARM_FILE_APPEND\fR
 .RS 4
 ファイルをアペンドモードでオープンします。
+.RE
+.PP
+\fBGFARM_FILE_UNBUFFERED\fR
+.RS 4
+バッファを用いないで読み書きを行います。
 .RE
 .SH "RETURN VALUES"
 .PP
@@ -191,7 +194,6 @@ gfs_pio_open \- Gfarmファイルシステムのファイルのオープン
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfs_pio_close\fR(3),
 \fBgfs_pio_create\fR(3),
 \fBgfs_pio_eof\fR(3),
