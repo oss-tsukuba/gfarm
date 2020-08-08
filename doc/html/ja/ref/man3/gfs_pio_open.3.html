@@ -2,21 +2,21 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfs_pio_open</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfs_pio_open">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfs-pio-open.3"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfs_pio_open — Gfarmファイルシステムのファイルのオープン</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="funcsynopsis">
 <pre class="funcsynopsisinfo">
 #include &lt;gfarm/gfarm.h&gt;
 </pre>
-<table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" class="funcprototype-table">
+<table border="0" class="funcprototype-table" summary="Function synopsis" style="cellspacing: 0; cellpadding: 0;">
 <tr>
 <td><code class="funcdef"><b class="fsfunc">gfarm_error_t gfs_pio_open</b>(</code></td>
 <td>
@@ -41,7 +41,7 @@
 <div class="funcprototype-spacer"> </div>
 </div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 <em class="parameter"><code>gfarm_url</code></em>
@@ -49,7 +49,8 @@
 <em class="parameter"><code>gfp</code></em>
 の指す先に返します。
 <em class="parameter"><code>gfarm_url</code></em>
-はGfarmファイルシステムのパス名、あるいは
+はGfarmファイルシステムのパス名、
+あるいは
 gfarm://metaserver:port/path/name
 形式のGfarm URLです。
 </p>
@@ -58,7 +59,7 @@ gfarm://metaserver:port/path/name
 は、以下のフラグの bitwise-or で指定します。
 はじめの三つのフラグはどれかが指定されている必要があります。
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="constant">GFARM_FILE_RDONLY</code></span></dt>
 <dd><p>読込みモードでファイルをオープンします。</p></dd>
 <dt><span class="term"><code class="constant">GFARM_FILE_WRONLY</code></span></dt>
@@ -66,14 +67,17 @@ gfarm://metaserver:port/path/name
 <dt><span class="term"><code class="constant">GFARM_FILE_RDWR</code></span></dt>
 <dd><p>読み書きモードでファイルをオープンします。</p></dd>
 <dt><span class="term"><code class="constant">GFARM_FILE_TRUNC</code></span></dt>
-<dd><p>ファイルが存在し、レギュラーファイルで書込みが許される場合、ファイルサイズを0にします。</p></dd>
+<dd><p>ファイルが存在し、レギュラーファイルで書込みが許される場合、
+ファイルサイズを0にします。</p></dd>
 <dt><span class="term"><code class="constant">GFARM_FILE_APPEND</code></span></dt>
 <dd><p>ファイルをアペンドモードでオープンします。</p></dd>
+<dt><span class="term"><code class="constant">GFARM_FILE_UNBUFFERED</code></span></dt>
+<dd><p>バッファを用いないで読み書きを行います。</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="RETURN VALUES">
+<div class="refsect1">
 <a name="return-values"></a><h2>RETURN VALUES</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="constant">GFARM_ERR_NO_ERROR</code></span></dt>
 <dd><p>正常終了を示します。</p></dd>
 <dt><span class="term"><code class="constant">GFARM_ERR_IS_A_DIRECTORY</code></span></dt>
@@ -129,7 +133,7 @@ gfarm://metaserver:port/path/name
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
 <span class="citerefentry"><span class="refentrytitle">gfs_pio_close</span>(3)</span>,
