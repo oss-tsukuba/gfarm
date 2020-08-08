@@ -1401,10 +1401,11 @@ read_internal(GFS_File gf, void *buffer, int size, int *np)
 		gfarm_off_t result, offset = gf->offset + gf->p;
 
 		e = gfs_pio_pread_unbuffer(gf, buffer, size, offset, np);
-		if (e == GFARM_ERR_NO_ERROR)
+		if (e == GFARM_ERR_NO_ERROR) {
 			seek_internal(gf,
 			    offset + *np, GFARM_SEEK_SET, &result);
 			n = *np;
+		}
 		goto finish;
 	}
 	if (size >= gf->bufsize + (gf->length - gf->p)) {
@@ -1579,10 +1580,11 @@ write_internal(GFS_File gf, const void *buffer, int size, int *np)
 		gfarm_off_t result, offset = gf->offset + gf->p;
 
 		e = gfs_pio_pwrite_unbuffer(gf, buffer, size, offset, np);
-		if (e == GFARM_ERR_NO_ERROR)
+		if (e == GFARM_ERR_NO_ERROR) {
 			seek_internal(gf,
 			    offset + *np, GFARM_SEEK_SET, &result);
 			written = *np;
+		}
 		goto finish;
 	}
 
