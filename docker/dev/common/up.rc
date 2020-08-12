@@ -21,6 +21,23 @@ for i in $(seq 1 $GFDOCKER_NUM_CLIENTS); do
   clients="${clients} ${GFDOCKER_HOSTNAME_PREFIX_CLIENT}${i}"
 done
 
+ssh_retry() {
+  host="$1"
+  retry_sec=30
+  for i in $(seq 1 $retry_sec); do
+     if ssh "$host" hostname; then
+         break
+     fi
+     echo "retry: ssh $host"
+     sleep 1
+  done
+}
+
+# wait for the startup of sshd
+for host in $gfmds $gfsds $clients; do
+  ssh_retry "$host"
+done
+
 for host in $gfmds; do
   cat <<EOF | ssh "$host" sudo sh
 set -eux
