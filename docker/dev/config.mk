@@ -13,18 +13,16 @@ GFDOCKER_NUM_GFMDS = 3
 GFDOCKER_NUM_GFSDS = 8
 GFDOCKER_NUM_CLIENTS = 1
 
-# number of unix accounts
+# number of local/global accounts
 GFDOCKER_NUM_USERS = 4
 
 # requirements:
 #GFDOCKER_IP_VERSION: syntax: 4 or 6
 #GFDOCKER_SUBNET: syntax: ${ip_address}/${prefix}
 #GFDOCKER_START_HOST_ADDR: syntax: intager
-
-# examples:
-#GFDOCKER_IP_VERSION = 4
-#GFDOCKER_SUBNET = 192.168.224.0/24
-#GFDOCKER_START_HOST_ADDR = 11
+GFDOCKER_IP_VERSION = 4
+GFDOCKER_SUBNET = 192.168.224.0/24
+GFDOCKER_START_HOST_ADDR = 11
 
 # syntax: [A-Za-z0-9]([A-Za-z0-9]|-|_)*
 GFDOCKER_HOSTNAME_PREFIX_GFMD = gfmd
