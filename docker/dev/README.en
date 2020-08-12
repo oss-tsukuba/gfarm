@@ -10,7 +10,7 @@ Quick start for Ubuntu 18.04
 ============================
 
 1. Install Docker.
-   See https://docs.docker.com/install/linux/docker-ce/ubuntu/ for details.
+   See https://docs.docker.com/engine/install/ubuntu/ for details.
 
 $ sudo apt-get update
 $ sudo apt-get install \
@@ -40,12 +40,12 @@ $ sudo chmod +x /usr/local/bin/docker-compose
 
 3. Install other packages.
 
-$ sudo apt install make subversion
+$ sudo apt install make git
 
 4. Checkout gfarm2fs.
 
 $ cd path/to/gfarm-src-top
-$ svn checkout https://svn.code.sf.net/p/gfarm/code/gfarm2fs/trunk gfarm2fs
+$ git clone git@github.com:oss-tsukuba/gfarm2fs.git
 
 5. Use Docker
 
