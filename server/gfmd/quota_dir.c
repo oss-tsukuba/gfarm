@@ -264,10 +264,11 @@ quota_dir_add_one(
 	struct dirset *ds;
 	static const char diag[] = "quota_dir_add_one";
 
-	u = user_lookup(dirset->username);
+	u = user_lookup_or_enter_invalid(dirset->username);
 	if (u == NULL) {
 		gflog_error(GFARM_MSG_1004646,
-		    "%s: unknown user %s", diag, dirset->username);
+		    "%s: cannot enter obsolete user %s",
+		    diag, dirset->username);
 		return;
 	}
 	ds = user_lookup_dirset(u, dirset->dirsetname);

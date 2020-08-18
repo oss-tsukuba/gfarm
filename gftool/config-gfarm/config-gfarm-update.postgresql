@@ -152,6 +152,25 @@ update_host_table()
 	fi
 }
 
+update_quota_dirset_table()
+{
+	# Is there following constraint in username?:
+	# 	REFERENCES GfarmUser(username) ON DELETE CASCADE
+	if $psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "SELECT table_name FROM information_schema.table_constraints WHERE table_name='quotadirset' AND constraint_type = 'FOREIGN KEY';" | grep "quotadirset" >/dev/null; then
+		# delete the constraint
+		$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "BEGIN; ALTER TABLE quotadirset DROP CONSTRAINT quotadirset_username_fkey; COMMIT;"
+	fi
+}
+
+update_quota_directory_table()
+{
+	# delete an entry from QuotaDirectory if its dirset was already deleted
+	echo 'DELETE FROM QuotaDirectory d WHERE NOT EXISTS ( SELECT *
+		FROM QuotaDirSet s WHERE
+		d.username = s.username AND d.dirsetname = s.dirsetname );' |
+		$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+}
+
 update_postgresql()
 {
 	create_table Symlink
@@ -164,6 +183,8 @@ update_postgresql()
 	create_table QuotaDirectory
 
 	update_host_table
+	update_quota_dirset_table
+	update_quota_directory_table
 
 	seqnum_count=`$psql -q -t -A -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "select count(*) from SeqNum"`
 	if [ X"$seqnum_count" = X"0" ]; then
