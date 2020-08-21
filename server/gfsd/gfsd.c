@@ -6923,6 +6923,17 @@ main(int argc, char **argv)
 	int spool_check_level = 0;
 	int is_root = geteuid() == 0;
 
+	/*
+	 * gfarm_proctitle_set() breaks argv[] contents on platforms which use
+	 * the PROCTITLE_USE_ARGV_ENVIRON_SPACE implemenation.
+	 * thus, gfarm_proctitle_init() has to called before saving
+	 * a pointer to argv[] (including optarg).
+	 */
+	save_errno = gfarm_proctitle_init(program_name, argc, &argv);
+	if (save_errno != 0)
+		fprintf(stderr, "%s: setproctitle: %s", program_name,
+		    strerror(save_errno));
+
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
@@ -6998,11 +7009,6 @@ main(int argc, char **argv)
 		break;
 	}
 	assert(e == GFARM_ERR_NO_ERROR);
-
-	save_errno = gfarm_proctitle_init(program_name, argc, &argv);
-	if (save_errno != 0)
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "setproctitle: %s", strerror(save_errno));
 
 	e = gfarm_server_initialize(config_file, &argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
