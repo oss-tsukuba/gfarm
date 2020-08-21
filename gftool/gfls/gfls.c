@@ -321,6 +321,19 @@ put_stat(struct gfs_stat *st)
 	putchar(' ');
 }
 
+static void
+free_ls_entry(int n, struct ls_entry *ls)
+{
+	int i;
+
+	for (i = 0; i < n; ++i) {
+		free(ls[i].symlink);
+		free(ls[i].dirset_user);
+		free(ls[i].dirset_name);
+	}
+	free(ls);
+}
+
 gfarm_error_t
 list_files(char *prefix, int n, char **files, int *need_newline)
 {
@@ -433,7 +446,7 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 		}
 		free(stats);
 	}
-	free(ls);
+	free_ls_entry(n, ls);
 	return (e);
 }
 
