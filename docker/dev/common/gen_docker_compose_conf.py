@@ -68,6 +68,7 @@ x-common:
     - apparmor:unconfined
   cap_add:
     - SYS_ADMIN
+    - SYS_PTRACE
   devices:
     - /dev/fuse
   privileged: false
