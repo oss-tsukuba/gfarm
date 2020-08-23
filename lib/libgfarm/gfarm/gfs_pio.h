@@ -1,3 +1,4 @@
+gfarm_error_t gfs_pio_error_unlocked(GFS_File);
 gfarm_error_t gfs_pio_set_view_default(GFS_File);
 #if 0 /* not yet in gfarm v2 */
 gfarm_error_t gfs_pio_set_view_global(GFS_File, int);

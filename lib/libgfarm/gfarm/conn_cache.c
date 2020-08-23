@@ -18,24 +18,13 @@
 #ifndef __KERNEL__	/* GFSP_CONN_MUTEX :: conn_lock */
 #define	GFSP_CONN_MUTEX		pthread_mutex_t conn_lock;
 #define	GFSP_CONN_INIT(conn)	do { \
-	int rc; \
-	pthread_mutexattr_t attr; \
-	rc = pthread_mutexattr_init(&attr); \
-	assert(rc == 0); \
-	rc = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE); \
-	assert(rc == 0); \
-	rc = pthread_mutex_init(&(conn)->conn_lock, &attr); \
-	assert(rc == 0); \
+	gfarm_mutex_recursive_init(&(conn)->conn_lock, __func__, "conn"); \
 } while (/*CONSTCOND*/0);
 #define	GFSP_CONN_LOCK(conn)	do { \
-	int rc; \
-	rc = pthread_mutex_lock(&(conn)->conn_lock); \
-	assert(rc == 0); \
+	gfarm_mutex_lock(&(conn)->conn_lock, __func__, "conn"); \
 } while (/*CONSTCOND*/0);
 #define	GFSP_CONN_UNLOCK(conn)	do { \
-	int rc; \
-	rc = pthread_mutex_unlock(&(conn)->conn_lock); \
-	assert(rc == 0); \
+	gfarm_mutex_unlock(&(conn)->conn_lock, __func__, "conn"); \
 } while (/*CONSTCOND*/0);
 #else /* __KERNEL__ */
 /*

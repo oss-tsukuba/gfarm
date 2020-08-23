@@ -1,6 +1,7 @@
 struct timespec;
 
 void gfarm_mutex_init(pthread_mutex_t *, const char *, const char *);
+void gfarm_mutex_recursive_init(pthread_mutex_t *, const char *, const char *);
 void gfarm_mutex_lock(pthread_mutex_t *, const char *, const char *);
 int gfarm_mutex_trylock(pthread_mutex_t *, const char *, const char *);
 int gfarm_mutex_timedlock(pthread_mutex_t *, const struct timespec *,

@@ -246,7 +246,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 	}
 
 	/* reopen file */
-	if (gfs_pio_error(gf) != GFARM_ERR_STALE_FILE_HANDLE &&
+	if (gfs_pio_error_unlocked(gf) != GFARM_ERR_STALE_FILE_HANDLE &&
 	    (e = gfs_pio_reopen(fs, gf)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003387,
 		    "gfs_pio_reopen: %s", gfarm_error_string(e));

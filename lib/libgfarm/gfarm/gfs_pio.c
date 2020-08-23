@@ -114,7 +114,8 @@ struct gfs_file_list {
 static void
 gfs_pio_mutex_init(pthread_mutex_t *mutex, const char *where)
 {
-	gfarm_mutex_init(mutex, where, "GFS_File");
+	/* recursive lock may not be necessary but just in case */
+	gfarm_mutex_recursive_init(mutex, where, "GFS_File");
 }
 
 static void
@@ -156,12 +157,18 @@ gfs_pio_eof(GFS_File gf)
 	 (gf)->error : GFARM_ERR_NO_ERROR)
 
 gfarm_error_t
+gfs_pio_error_unlocked(GFS_File gf)
+{
+	return (GFS_PIO_ERROR(gf));
+}
+
+gfarm_error_t
 gfs_pio_error(GFS_File gf)
 {
 	gfarm_error_t e;
 
 	gfs_pio_mutex_lock(&gf->mutex, __func__);
-	e = GFS_PIO_ERROR(gf);
+	e = gfs_pio_error_unlocked(gf);
 	gfs_pio_mutex_unlock(&gf->mutex, __func__);
 	return (e);
 }
