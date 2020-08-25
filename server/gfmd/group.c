@@ -298,10 +298,11 @@ group_usage_tmp(struct group *g)
 
 void
 group_foreach(void *closure, void (*callback)(void *, struct group *),
-	int valid_only)
+	int flags)
 {
 	struct gfarm_hash_iterator it;
 	struct group **g;
+	int valid_only = (flags & GROUP_FOREARCH_FLAG_VALID_ONLY) != 0;
 
 	for (gfarm_hash_iterator_begin(group_hashtab, &it);
 	     !gfarm_hash_iterator_is_end(&it);

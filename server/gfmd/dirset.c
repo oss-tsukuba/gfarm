@@ -28,6 +28,20 @@
 #include "rpcsubr.h"
 
 /*
+ * NOTE: directory quota related code uses the following APIs:
+ * 
+ * - user_name_even_invalid() instead of user_name()
+ *   to show original user names even if the users were removed
+ * - user_lookup_or_enter_invalid() instead of user_lookup()
+ *   to load all directory quotas even if the owners of the quotas were removed
+ * - user_lookup_including_invalid() instead of user_lookup()
+ *   to allow the gfarmroot group to remove a directory quota which owner
+ *   was removed
+ * - specify USER_FOREARCH_FLAG_INCLUDING_INVALID in user_foreach()
+ *   to show all directory quotas even if the owners of the quotas were removed
+ */
+
+/*
  * dirset
  */
 
@@ -220,6 +234,10 @@ dirset_add_one(void *closure,
 	struct gfarm_dirset_info *di, struct quota_metadata *q)
 {
 	gfarm_error_t e;
+	/*
+	 * use user_lookup_or_enter_invalid() to load a dirset
+	 * which owner was already removed
+	 */
 	struct user *u = user_lookup_or_enter_invalid(di->username);
 	struct dirset *ds;
 
@@ -635,7 +653,12 @@ gfm_server_dirset_info_list(struct peer *peer, int from_client, int skip)
 		/* XXX FIXME too long giant lock */
 		count = 0;
 		if (all_users) {
-			user_foreach(&count, dirset_count_add, 0);
+			/*
+			 * specify USER_FOREARCH_FLAG_INCLUDING_INVALID to show
+			 * stale directory quotas to the gfarmroot group
+			 */
+			user_foreach(&count, dirset_count_add,
+			    USER_FOREARCH_FLAG_INCLUDING_INVALID);
 		} else {
 			dirset_count_add(&count, u);
 		}
@@ -646,8 +669,13 @@ gfm_server_dirset_info_list(struct peer *peer, int from_client, int skip)
 			;
 		} else {
 			if (all_users) {
+				/*
+				 * re: USER_FOREARCH_FLAG_INCLUDING_INVALID
+				 * see the comment above
+				 */
 				user_foreach(peer_get_conn(peer),
-				    dirset_reply_per_user, 0);
+				    dirset_reply_per_user,
+				    USER_FOREARCH_FLAG_INCLUDING_INVALID);
 			} else {
 				dirset_reply_per_user(peer_get_conn(peer), u);
 			}
@@ -973,7 +1001,12 @@ gfm_server_dirset_dir_list(struct peer *peer, int from_client, int skip)
 		closure.dirsetname = dirsetname;
 		closure.count = 0;
 		if (all_users) {
-			user_foreach(&closure, named_dirset_count_per_user, 0);
+			/*
+			 * specify USER_FOREARCH_FLAG_INCLUDING_INVALID to show
+			 * stale directory quotas to the gfarmroot group
+			 */
+			user_foreach(&closure, named_dirset_count_per_user,
+			    USER_FOREARCH_FLAG_INCLUDING_INVALID);
 		} else {
 			named_dirset_count_per_user(&closure, u);
 		}
@@ -984,8 +1017,13 @@ gfm_server_dirset_dir_list(struct peer *peer, int from_client, int skip)
 			;
 		} else {
 			if (all_users) {
+				/*
+				 * re: USER_FOREARCH_FLAG_INCLUDING_INVALID
+				 * see the comment above
+				 */
 				user_foreach(&closure,
-				    named_dirset_reply_per_user, 0);
+				    named_dirset_reply_per_user,
+				    USER_FOREARCH_FLAG_INCLUDING_INVALID);
 			} else {
 				named_dirset_reply_per_user(&closure, u);
 			}

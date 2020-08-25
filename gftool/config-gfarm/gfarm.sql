@@ -148,6 +148,10 @@ CREATE TABLE QuotaGroup (
 	phyNumHard	INT8	NOT NULL
 );
 
+
+-- QuotaDirSet doesn't have "REFERENCES GfarmUser(username) ON DELETE CASCADE",
+-- because we preserve the dirset even its owner is removed.
+
 CREATE TABLE QuotaDirSet (
 	username	VARCHAR(64)	NOT NULL,
 	dirSetName	VARCHAR(64)	NOT NULL,

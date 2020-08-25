@@ -29,6 +29,8 @@ char *group_name_with_invalid(struct group *);
 int group_is_invalid(struct group *);
 int group_is_valid(struct group *);
 
+#define GROUP_FOREARCH_FLAG_INCLUDING_INVALID	0
+#define GROUP_FOREARCH_FLAG_VALID_ONLY		1
 void group_foreach(void *, void (*)(void *, struct group *), int);
 
 struct gfarm_group_info;

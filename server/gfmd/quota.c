@@ -209,8 +209,10 @@ usage_tmp_clear_group(void *closure, struct group *g)
 static void
 usage_tmp_clear(void)
 {
-	user_foreach(NULL, usage_tmp_clear_user, 0);
-	group_foreach(NULL, usage_tmp_clear_group, 0);
+	user_foreach(NULL, usage_tmp_clear_user,
+	    USER_FOREARCH_FLAG_INCLUDING_INVALID);
+	group_foreach(NULL, usage_tmp_clear_group,
+	    GROUP_FOREARCH_FLAG_INCLUDING_INVALID);
 }
 
 static void
@@ -280,8 +282,10 @@ quota_update_usage_group(void *closure, struct group *g)
 static void
 quota_update_usage(void)
 {
-	user_foreach(NULL, quota_update_usage_user, 0);
-	group_foreach(NULL, quota_update_usage_group, 0);
+	user_foreach(NULL, quota_update_usage_user,
+	    USER_FOREARCH_FLAG_INCLUDING_INVALID);
+	group_foreach(NULL, quota_update_usage_group,
+	    GROUP_FOREARCH_FLAG_INCLUDING_INVALID);
 }
 
 static gfarm_time_t

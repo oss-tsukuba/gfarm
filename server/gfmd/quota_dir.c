@@ -26,6 +26,20 @@
 #include "dirset.h"
 #include "process.h"
 
+/*
+ * NOTE: directory quota related code uses the following APIs:
+ * 
+ * - user_name_even_invalid() instead of user_name()
+ *   to show original user names even if the users were removed
+ * - user_lookup_or_enter_invalid() instead of user_lookup()
+ *   to load all directory quotas even if the owners of the quotas were removed
+ * - user_lookup_including_invalid() instead of user_lookup()
+ *   to allow the gfarmroot group to remove a directory quota which owner
+ *   was removed
+ * - specify USER_FOREARCH_FLAG_INCLUDING_INVALID in user_foreach()
+ *   to show all directory quotas even if the owners of the quotas were removed
+ */
+
 #define MANAGEMENT_USERS 1000
 
 /*
@@ -264,6 +278,10 @@ quota_dir_add_one(
 	struct dirset *ds;
 	static const char diag[] = "quota_dir_add_one";
 
+	/*
+	 * use user_lookup_or_enter_invalid() to load a quota_dir
+	 * which owner was already removed
+	 */
 	u = user_lookup_or_enter_invalid(dirset->username);
 	if (u == NULL) {
 		gflog_error(GFARM_MSG_1004646,

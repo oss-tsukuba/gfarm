@@ -1,3 +1,24 @@
+psql_err_happen=false
+psql_err=/tmp/psql_err$$
+rm -f $psql_err
+tmpfiles="$tmpfiles $psql_err"
+
+psql_err_report()
+{
+	if [ -s "$psql_err" ]; then
+		echo -n "$*: "
+		cat $psql_err >&2
+		psql_err_happen=true
+	fi
+}
+
+psql_err_last_report()
+{
+	if $psql_err_happen; then
+		echo >&2 "ERROR: $* was incomplete"
+	fi
+}
+
 update_usage_postgresql()
 {
 	echo >&2 "	[-X]"
@@ -46,7 +67,8 @@ update_sanity_postgresql()
 create_table()
 {
 	table=$1
-	count=`$psql -q -t -A -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "\\dt ${table}" | wc -l`
+	count=`$psql -q -t -A -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "\\dt ${table}" 2>$psql_err | wc -l`
+	psql_err_report "create_table $table - check existence"
 	[ X"$count" = X ] && return
 	if [ $count -eq 0 ]; then
 		echo "${PROGNAME}: adding ${table} table"
@@ -56,8 +78,8 @@ create_table()
 		cat <<__EOF__
 GRANT SELECT, INSERT, UPDATE, DELETE ON ${table} TO $BACKEND_USER;
 __EOF__
-		) |
-			$psql -q -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+		) | $psql -q -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} 2>$psql_err
+		psql_err_report "create_table $table"
 	fi
 }
 
@@ -116,7 +138,8 @@ find_column_in_db()
 	fi
 	tbl=$1
 	col=$2
-	x=`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "\\d ${tbl}" | grep ${col}`
+	x=`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "\\d ${tbl}" 2>$psql_err | grep ${col}`
+	psql_err_report "create_table $table $tbl $col"
 	if test "X${x}" = "X"; then
 		unset tbl col x
 		return 0
@@ -140,7 +163,8 @@ update_host_table()
 			return 1
 		fi
 		echo "BEGIN; ALTER TABLE Host ADD ${def}; COMMIT;" | \
-			$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+			$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} 2>$psql_err
+		psql_err_report "update_host_table"
 		find_column_in_db Host fsngroupname
 		if test $? -eq 1; then
 			return 0
@@ -156,9 +180,13 @@ update_quota_dirset_table()
 {
 	# Is there following constraint in username?:
 	# 	REFERENCES GfarmUser(username) ON DELETE CASCADE
-	if $psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "SELECT table_name FROM information_schema.table_constraints WHERE table_name='quotadirset' AND constraint_type = 'FOREIGN KEY';" | grep "quotadirset" >/dev/null; then
+	if $psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "SELECT table_name FROM information_schema.table_constraints WHERE table_name='quotadirset' AND constraint_type = 'FOREIGN KEY';" 2>$psql_err | grep "quotadirset" >/dev/null; then
+		psql_err_report "check old QuotaDirSet definition"
 		# delete the constraint
-		$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "BEGIN; ALTER TABLE quotadirset DROP CONSTRAINT quotadirset_username_fkey; COMMIT;"
+		$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "BEGIN; ALTER TABLE quotadirset DROP CONSTRAINT quotadirset_username_fkey; COMMIT;" 2>$psql_err
+		psql_err_report "update_quota_dirset_table"
+	else
+		psql_err_report "check old QuotaDirSet definition"
 	fi
 }
 
@@ -168,7 +196,8 @@ update_quota_directory_table()
 	echo 'DELETE FROM QuotaDirectory d WHERE NOT EXISTS ( SELECT *
 		FROM QuotaDirSet s WHERE
 		d.username = s.username AND d.dirsetname = s.dirsetname );' |
-		$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+		$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} 2>$psql_err
+	psql_err_report "update_quota_directory_table"
 }
 
 update_postgresql()
@@ -186,14 +215,18 @@ update_postgresql()
 	update_quota_dirset_table
 	update_quota_directory_table
 
-	seqnum_count=`$psql -q -t -A -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "select count(*) from SeqNum"`
+	seqnum_count=`$psql -q -t -A -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "select count(*) from SeqNum" 2>$psql_err`
+	psql_err_report "seqnum_count"
 	if [ X"$seqnum_count" = X"0" ]; then
 		echo "INSERT INTO SeqNum (name, value) VALUES ('', '1')" \
-			| $psql -q -t -A -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+			| $psql -q -t -A -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} 2>$psql_err
+		psql_err_report "insert seqnum"
 	fi
 
 	if [ X"$SUPPORT_XML_TYPE" = Xyes -a \
-		"`$psql -q -t -A -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c '\dt XmlAttr' | wc -l`" -eq 0 ]; then
+		"`$psql -q -t -A -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c '\dt XmlAttr' 2>$psql_err | wc -l`" -eq 0 ]; then
+		psql_err_report "XmlAttr table - check existence"
+
 		echo "${PROGNAME}: adding XmlAttr table"
 
 		(
@@ -202,13 +235,18 @@ update_postgresql()
 GRANT SELECT, INSERT, UPDATE, DELETE ON XmlAttr TO $BACKEND_USER;
 __EOF__
 		) |
-			$psql -q -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+			$psql -q -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} 2>$psql_err
+		psql_err_report "grant on XmlAttr table"
 	fi
+
+	psql_err_last_report "update_postgresql"
 }
 
 update_access_db_postgresql()
 {
 	OPTIONS="$*"
 
-	$psql $OPTIONS $DB_NAME $BACKEND_ADMIN_USER
+	$psql $OPTIONS $DB_NAME $BACKEND_ADMIN_USER 2>$psql_err
+	psql_err_report "update_access_db_postgresql"
+	psql_err_last_report "update_access_db_postgresql"
 }

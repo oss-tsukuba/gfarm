@@ -27,8 +27,9 @@ if [ -f /usr/bin/nawk ]; then awk=/usr/bin/nawk; fi
 status=1
 admin_password=/tmp/ap$$
 password=/tmp/up$$
+tmpfiles="$password $admin_password"
 rm -f $password $admin_password
-trap 'rm -f $password $admin_password; stty echo 2>/dev/null; exit $status' 0 1 2 15
+trap 'rm -f $tmpfiles; stty echo 2>/dev/null; exit $status' 0 1 2 15
 
 getvalue()
 {
