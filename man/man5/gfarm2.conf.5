@@ -325,11 +325,11 @@ For example,
 .PP
 spool_server_read_only_retry_interval \fIseconds\fR
 .RS 4
-When gfmd is turned into read_only mode, gfsd detects the event when a modified file is closed, and repeats retries and waits until the gfmd is turned into read_write mode\&. This directive changes the interval of the retries\&.
+If there are files still opened and modified when Gfarm is changed to a read\-only file system, these files cannot be closed until Gfarm is changed to a read\-write file system\&. This directive specifies the interval in second for gfsd to check the gfmd status change\&.
 .sp
 The default time is 60 seconds, i\&.e\&. one minute\&.
 .sp
-This parameter is only available in gfarm2\&.conf which is referred by gfsd, and ignored clients, and ignored in gfmd\&.conf\&.
+This parameter is only available in gfarm2\&.conf which is referred by gfsd, and ignored by clients, and ignored in gfmd\&.conf\&.
 .sp
 For example,
 .sp
@@ -1736,7 +1736,7 @@ For example,
 .PP
 read_only \fIvalidity\fR
 .RS 4
-This directive makes whole file system read_only mode\&. The default is
+This directive makes Gfarm file system read only\&. The default is
 disable\&.
 .sp
 This directive is only available in gfmd configuration files\&.
