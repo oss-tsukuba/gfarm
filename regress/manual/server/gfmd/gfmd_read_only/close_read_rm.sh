@@ -23,7 +23,7 @@ if gfreg $data/65byte $gftmp; then
 else
 	exit_code=$exit_fail
 	exit
-fi	
+fi
 
 $gfs_pio_test -r -I -P $SLEEP_TIME $gftmp >/dev/null &
 sleep 1
@@ -32,7 +32,7 @@ if gfrm $gftmp; then
 else
 	exit_code=$exit_fail
 	exit
-fi	
+fi
 
 gfstatus -Mm 'read_only enable'
 

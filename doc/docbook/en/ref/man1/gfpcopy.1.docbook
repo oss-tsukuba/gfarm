@@ -272,7 +272,7 @@ $ gfpcopy file /tmp/dir
 
 <refsect1 id="notes"><title>NOTES</title>
 <para>
-To retrieve the directory entries efficiently, it is better to execute 
+To retrieve the directory entries efficiently, it is better to execute
 <command moreinfo="none">gfpcopy</command> command near the metadata
 server.  When you need to
 execute <command moreinfo="none">gfpcopy</command> command far from

@@ -42,7 +42,7 @@ gfarm_strarray_length(char **array)
 	return (i);
 }
 
-char **
+char**
 gfarm_strarray_dup(char **array)
 {
 	int n = gfarm_strarray_length(array);
