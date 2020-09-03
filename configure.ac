@@ -1490,5 +1490,6 @@ test -d util || mkdir util
 AC_CONFIG_FILES(Makefile makes/config.mk makes/install-doc makes/build-script
 	${ns_makefiles} ${linuxkernel_makefile}
 	package/solaris/gfmd package/solaris/gfsd
+	pkgconfig/gfarm.pc
 )
 AC_OUTPUT

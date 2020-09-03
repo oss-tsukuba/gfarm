@@ -1124,6 +1124,8 @@ fi
 %{lib_prefix}/libgfarm.so.1.0.0
 %{lib_prefix}/libgfperf.so.1
 %{lib_prefix}/libgfperf.so.1.0.0
+%dir %{lib_prefix}/pkgconfig
+%{lib_prefix}/pkgconfig/gfarm.pc
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/config-gfarm.sysdep

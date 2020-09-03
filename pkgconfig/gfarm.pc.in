@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=${prefix}
+libdir=@libdir@
+includedir=@includedir@
+
+Name: Gfarm
+Description: Gfarm filesystem
+Version: @PACKAGE_VERSION@
+Libs: -L${libdir} -lgfarm
+Cflags: -I${includedir}
