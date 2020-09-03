@@ -377,17 +377,17 @@ and ignored clients, and ignored in gfmd.conf.
 <term><token>spool_server_read_only_retry_interval</token> <parameter moreinfo="none">seconds</parameter></term>
 <listitem>
 <para>
-When gfmd is turned into read_only mode,
-gfsd detects the event when a modified file is closed,
-and repeats retries and waits until the gfmd is turned into read_write mode.
-This directive changes the interval of the retries.
+If there are files still opened and modified when Gfarm is changed
+to a read-only file system, these files cannot be closed until Gfarm is
+changed to a read-write file system.  This directive specifies the
+interval in second for gfsd to check the gfmd status change.
 </para>
 <para>
 The default time is 60 seconds, i.e. one minute.
 </para>
 <para>
 This parameter is only available in gfarm2.conf which is referred by gfsd,
-and ignored clients, and ignored in gfmd.conf.
+and ignored by clients, and ignored in gfmd.conf.
 </para>
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
@@ -1843,7 +1843,7 @@ This directive is only available for clients in gfarm2.conf.
 <term><token>read_only</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>
-This directive makes whole file system read_only mode.
+This directive makes Gfarm file system read only.
 The default is <token>disable</token>.
 </para>
 <para>

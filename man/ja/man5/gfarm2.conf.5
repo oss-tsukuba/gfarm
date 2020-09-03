@@ -294,7 +294,7 @@ gfsd の back channel ソケットの、SO_RCVBUF サイズの上限を指定し
 .PP
 spool_server_read_only_retry_interval \fI秒数\fR
 .RS 4
-書き込み中に gfmd が read_only モードに変更された場合、 gfsd はクローズ処理時にそれを検知して gfmd が read write モードになるまで リトライを繰り返しながら待ちます。 このリトライの間隔を変更します。
+Gfarmファイルシステムが read only に変更された時、既にオープン され、変更されたファイルがある場合、それらのファイルは Gfarm ファイルシステムがread write 可能となるまでクローズは遅延され ます。 gfsd が Gfarmファイルシステムのモード変更の確認を行う 間隔を秒単位で指定します。
 .sp
 デフォルトは 60秒 (1分) です。
 .sp
@@ -1566,7 +1566,7 @@ replication_at_write_open \fI有効性\fR
 .PP
 read_only \fI有効性\fR
 .RS 4
-ファイルシステム全体を read only モードにします。 デフォルトはdisableです。
+Gfarmファイルシステムを read only にします。 デフォルトはdisableです。
 .sp
 この文はgfmdでのみ有効です。
 .sp

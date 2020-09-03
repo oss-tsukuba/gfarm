@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <sys/param.h>			/* "BSD" symbol */
 #ifdef HAVE_SYS_PSTAT_H			/* for HP-UX */
-#include <sys/pstat.h>		
+#include <sys/pstat.h>
 #endif
 #ifdef HAVE_PS_STRINGS			/* for old BSD */
 #include <sys/exec.h>
@@ -114,7 +114,7 @@ proctitle_progname_init(const char *progname, char *argv0)
 int
 gfarm_proctitle_init(const char *progname, int argc, char ***argvp)
 {
-	return proctitle_progname_init(progname, (*argvp)[0]);
+	return (proctitle_progname_init(progname, (*argvp)[0]));
 }
 
 int
@@ -145,7 +145,7 @@ gfarm_proctitle_set(const char *fmt, ...)
 int
 gfarm_proctitle_init(const char *progname, int argc, char ***argvp)
 {
-	return proctitle_progname_init(progname, (*argvp)[0]);
+	return (proctitle_progname_init(progname, (*argvp)[0]));
 }
 
 int
@@ -183,7 +183,7 @@ gfarm_proctitle_init(const char *progname, int argc, char ***argvp)
 	char **new_argv, **old_argv = *argvp;
 
 	if (err != 0)
-		return err;
+		return (err);
 
 	new_argv = gfarm_strarray_dup(old_argv);
 	if (new_argv == NULL)
@@ -236,7 +236,7 @@ gfarm_proctitle_init(const char *progname, int argc, char ***argvp)
 #endif
 
 	if (err != 0)
-		return err;
+		return (err);
 
 	/* tail = the end of contiguous space for argv and environ */
 	tail = old_argv[0] + strlen(old_argv[0]);

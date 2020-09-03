@@ -75,7 +75,7 @@ of <command moreinfo="none">gfhost</command> for information about the
 number of CPUs.
 </para>
 <para>
-<command moreinfo="none">gfprep</command> also retrieves the directory 
+<command moreinfo="none">gfprep</command> also retrieves the directory
 entries in parallel.
 </para>
 </refsect1>

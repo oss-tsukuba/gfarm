@@ -28,7 +28,7 @@
 
 /*
  * NOTE: directory quota related code uses the following APIs:
- * 
+ *
  * - user_name_even_invalid() instead of user_name()
  *   to show original user names even if the users were removed
  * - user_lookup_or_enter_invalid() instead of user_lookup()

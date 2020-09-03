@@ -58,7 +58,7 @@ Gfarm/BBをMPIを用いて構築します。
 <parameter moreinfo="none">mpirun_cmd</parameter>はGfarm/BBの構築とgfsd
 の起動に用いられるMPIのコマンドラインを指定します。本オプションは
 -confオプションと共に用います。本オプションが指定された場合、-eオプ
-ションは無視されます。
+ションと-hオプションは無視されます。
 </para>
 </listitem>
 </varlistentry>

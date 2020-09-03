@@ -88,7 +88,7 @@ move_dir_inter_dirquota_dir_post(char *src, struct gfs_stat *gst, void *arg)
 			fprintf(stderr, "%s: %s\n",
 			    src, gfarm_error_string(e));
 		} else if ((e =
-		    gfs_lchmod(dst, (src_gst.st_mode & GFARM_S_ALLPERM)) )
+		    gfs_lchmod(dst, (src_gst.st_mode & GFARM_S_ALLPERM)))
 		    != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "gfs_lchmod(%s): %s\n",
 			    dst, gfarm_error_string(e));

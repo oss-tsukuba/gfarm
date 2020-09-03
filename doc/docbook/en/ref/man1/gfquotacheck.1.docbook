@@ -28,6 +28,10 @@
 
 <refsect1 id="description"><title>DESCRIPTION</title>
 
+<para>
+Gfarm 2.7.17 or later basically does not need to execute this command.
+</para>
+
 <para><command moreinfo="none">gfquotacheck</command> explicitly
 rebuilds a table of the current file usage for users and groups.</para>
 

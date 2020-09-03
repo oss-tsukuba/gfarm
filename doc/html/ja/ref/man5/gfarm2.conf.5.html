@@ -279,10 +279,12 @@ gfsd の back channel 接続が切れてしまう問題を緩和できます。
 <dt><span class="term"><span class="token">spool_server_read_only_retry_interval</span> <em class="parameter"><code>秒数</code></em></span></dt>
 <dd>
 <p>
-書き込み中に gfmd が read_only モードに変更された場合、
-gfsd はクローズ処理時にそれを検知して gfmd が read write モードになるまで
-リトライを繰り返しながら待ちます。
-このリトライの間隔を変更します。
+Gfarmファイルシステムが read only に変更された時、既にオープン
+され、変更されたファイルがある場合、それらのファイルは Gfarm
+ファイルシステムがread write 可能となるまでクローズは遅延され
+ます。
+gfsd が Gfarmファイルシステムのモード変更の確認を行う
+間隔を秒単位で指定します。
 </p>
 <p>
 デフォルトは 60秒 (1分) です。
@@ -1358,7 +1360,7 @@ enable にすると、その他のファイルシステムノードにファイ�
 <dt><span class="term"><span class="token">read_only</span> <em class="parameter"><code>有効性</code></em></span></dt>
 <dd>
 <p>
-ファイルシステム全体を read only モードにします。
+Gfarmファイルシステムを read only にします。
 
 デフォルトは<span class="token">disable</span>です。
 </p>
