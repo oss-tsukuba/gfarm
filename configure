@@ -14590,7 +14590,7 @@ test -d include || mkdir include
 test -d package || mkdir package
 test -d util || mkdir util
 
-ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc makes/build-script ${ns_makefiles} ${linuxkernel_makefile} package/solaris/gfmd package/solaris/gfsd"
+ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc makes/build-script ${ns_makefiles} ${linuxkernel_makefile} package/solaris/gfmd package/solaris/gfsd pkgconfig/gfarm.pc"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -15579,6 +15579,7 @@ do
     "${linuxkernel_makefile}") CONFIG_FILES="$CONFIG_FILES ${linuxkernel_makefile}" ;;
     "package/solaris/gfmd") CONFIG_FILES="$CONFIG_FILES package/solaris/gfmd" ;;
     "package/solaris/gfsd") CONFIG_FILES="$CONFIG_FILES package/solaris/gfsd" ;;
+    "pkgconfig/gfarm.pc") CONFIG_FILES="$CONFIG_FILES pkgconfig/gfarm.pc" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
