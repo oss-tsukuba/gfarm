@@ -16,7 +16,7 @@ int gfarm_hostspec_match(struct gfarm_hostspec *, const char *,
 
 /* 41 "IPv6 address" + 1 '/' + 41 + 1 '\0' */
 #define GFARM_HOSTSPEC_STRLEN	84
-void gfarm_hostspec_to_string(struct gfarm_hostspec *, char *, size_t);
+int gfarm_hostspec_to_string(struct gfarm_hostspec *, char *, size_t);
 
 gfarm_error_t gfarm_sockaddr_to_name(struct sockaddr *, char **);
 

@@ -13,6 +13,8 @@
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 
+#include "gfutil.h"
+
 #ifdef HAVE_GSI
 #include "gfarm_gsi.h"
 #endif
@@ -59,6 +61,7 @@ struct gfarm_auth_cred_config {
 struct gfarm_auth_config_static {
 	struct gfarm_auth_config *auth_config_list;
 	struct gfarm_auth_config **auth_config_last;
+	struct gfarm_auth_config **auth_config_mark;
 	struct gfarm_auth_cred_config *auth_server_cred_config_list;
 
 	/* authentication status */
@@ -76,6 +79,7 @@ gfarm_auth_config_static_init(struct gfarm_context *ctxp)
 
 	s->auth_config_list = NULL;
 	s->auth_config_last = &s->auth_config_list;
+	s->auth_config_mark = &s->auth_config_list;
 	s->auth_server_cred_config_list = NULL;
 	s->gsi_auth_error = 0;
 
@@ -105,6 +109,15 @@ gfarm_auth_config_static_term(struct gfarm_context *ctxp)
 		free(cc);
 	}
 	free(s);
+}
+
+static char *
+gfarm_auth_config_command_name(enum gfarm_auth_config_command command)
+{
+	return (
+	    command == GFARM_AUTH_ENABLE ? "enable" :
+	    command == GFARM_AUTH_DISABLE ? "disable" :
+	    "internal-error");
 }
 
 char
@@ -156,11 +169,12 @@ gfarm_auth_method_parse(char *name, enum gfarm_auth_method *methodp)
 	return (GFARM_ERR_NO_SUCH_OBJECT);
 }
 
-gfarm_error_t
+static gfarm_error_t
 gfarm_auth_config_add(
 	enum gfarm_auth_config_command command,
 	enum gfarm_auth_method method,
-	struct gfarm_hostspec *hsp)
+	struct gfarm_hostspec *hsp,
+	enum gfarm_auth_config_position position)
 {
 	struct gfarm_auth_config *acp;
 
@@ -175,23 +189,48 @@ gfarm_auth_config_add(
 	acp->method = method;
 	acp->hostspec = hsp;
 
-	*staticp->auth_config_last = acp;
-	staticp->auth_config_last = &acp->next;
+	switch (position) {
+	case GFARM_AUTH_CONFIG_AT_HEAD:
+		acp->next = staticp->auth_config_list;
+		staticp->auth_config_list = acp;
+		break;
+	case GFARM_AUTH_CONFIG_AT_TAIL:
+		if (staticp->auth_config_mark == staticp->auth_config_last)
+			staticp->auth_config_mark = &acp->next;
+		*staticp->auth_config_last = acp;
+		staticp->auth_config_last = &acp->next;
+		break;
+	case GFARM_AUTH_CONFIG_AT_MARK:
+		if (staticp->auth_config_last == staticp->auth_config_mark)
+			staticp->auth_config_last = &acp->next;
+		acp->next = *staticp->auth_config_mark;
+		*staticp->auth_config_mark = acp;
+		staticp->auth_config_mark = &acp->next;
+		break;
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
-gfarm_auth_enable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp)
+void
+gfarm_auth_config_set_mark(void)
 {
-	return (gfarm_auth_config_add(GFARM_AUTH_ENABLE,
-	    method, hsp));
+	staticp->auth_config_mark = &staticp->auth_config_list;
 }
 
 gfarm_error_t
-gfarm_auth_disable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp)
+gfarm_auth_enable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp,
+	enum gfarm_auth_config_position position)
+{
+	return (gfarm_auth_config_add(GFARM_AUTH_ENABLE,
+	    method, hsp, position));
+}
+
+gfarm_error_t
+gfarm_auth_disable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp,
+	enum gfarm_auth_config_position position)
 {
 	return (gfarm_auth_config_add(GFARM_AUTH_DISABLE,
-	    method, hsp));
+	    method, hsp, position));
 }
 
 /* this i/f have to be changed, if we support more than 31 auth methods */
@@ -492,4 +531,84 @@ gfarm_auth_server_cred_name_set(char *service_tag, char *name)
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	return (GFARM_ERR_NO_ERROR);
+}
+
+#define ADVANCE(string, size, len) \
+	do { \
+		if (string == NULL) { \
+			/* do nothing */ \
+		} else if (size >= len) { \
+			size -= len; \
+			string += len; \
+		} else { \
+			size = 0; \
+			string = NULL; \
+		} \
+	} while (0)
+
+/* string can be NULL */
+static int
+gfarm_auth_config_elem_string(
+	struct gfarm_auth_config *acp, char *string, size_t size)
+{
+	int len;
+
+	len = snprintf(string, size, "%s %s ",
+	    gfarm_auth_config_command_name(acp->command),
+	    gfarm_auth_method_name(acp->method));
+
+	ADVANCE(string, size, len);
+
+	/* the following shouldn't overflow. i.e. must be less than SIZE_MAX */
+	return (len + gfarm_hostspec_to_string(acp->hostspec, string, size));
+}
+
+/* string can be NULL */
+int
+gfarm_auth_config_string(char *string, size_t size)
+{
+	struct gfarm_auth_config *acp;
+	int rv, len;
+	char *s;
+	int overflow = 0;
+
+	s = string;
+	rv = 0;
+	for (acp = staticp->auth_config_list; acp != NULL; acp = acp->next) {
+		len = gfarm_auth_config_elem_string(acp, s, size);
+		rv = gfarm_size_add(&overflow, rv, len);
+		ADVANCE(s, size, len);
+
+		len = snprintf(s, size, "\n");
+		rv = gfarm_size_add(&overflow, rv, len);
+		ADVANCE(s, size, len);
+	}
+	if (overflow) {
+		rv = -1;
+		errno = EOVERFLOW;
+	}
+	return (rv);
+}
+
+char *
+gfarm_auth_config_string_dup(void)
+{
+	char *string;
+	int size;
+	int overflow = 0;
+
+	size = gfarm_auth_config_string(NULL, 0);
+	if (size == -1)
+		return (NULL);
+
+	size = gfarm_size_add(&overflow, size, 1); /* for '\0' */
+	if (overflow)
+		return (NULL);
+
+	GFARM_MALLOC_ARRAY(string, size);
+	if (string == NULL)
+		return (NULL);
+
+	gfarm_auth_config_string(string, size);
+	return (string);
 }

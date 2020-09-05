@@ -188,6 +188,10 @@ union gfarm_config_storage {
 	int i;
 	char *s;
 };
+void gfarm_config_storage_free(const struct gfarm_config_type *,
+	union gfarm_config_storage *);
+gfarm_error_t gfarm_config_storage_dup(const struct gfarm_config_type *,
+	union gfarm_config_storage *, union gfarm_config_storage *);
 gfarm_error_t gfarm_config_type_by_name_for_metadb(const char *,
 	const struct gfarm_config_type **);
 char gfarm_config_type_get_format(const struct gfarm_config_type *);
@@ -196,13 +200,18 @@ gfarm_error_t gfarm_config_copyin(const struct gfarm_config_type *,
 	union gfarm_config_storage *);
 gfarm_error_t gfarm_config_copyout(const struct gfarm_config_type *,
 	union gfarm_config_storage *);
-gfarm_error_t gfarm_config_apply_directive_for_metadb(char *, char *,
-	const char *, int);
+void gfarm_config_log_change(const struct gfarm_config_type *,
+	union gfarm_config_storage *, const char *, const char *);
+
+void gfarm_config_apply_begin(void);
+void gfarm_config_apply_end(void);
+gfarm_error_t gfarm_config_apply_to_metadb(char *, char *,
+	const char *, int, int);
+
 gfarm_error_t gfarm_config_strtoken(char **, char **);
 char *gfarm_config_dirname_add(const char *, const char *);
 
 gfarm_error_t gfarm_config_local_name_to_string(const char *, char *, size_t);
-gfarm_error_t gfarm_config_metadb_name_to_string(const char *, char *, size_t);
 
 gfarm_error_t gfarm_config_name_foreach(
 	gfarm_error_t (*)(void *, const char *), void *, int);
