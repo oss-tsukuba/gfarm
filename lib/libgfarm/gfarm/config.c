@@ -2181,7 +2181,7 @@ parse_set_var(char *p, char **rv)
 }
 
 gfarm_error_t
-parse_set_spool_root(char *p)
+gfarm_parse_set_spool_root(char *p)
 {
 	gfarm_error_t e;
 	char *s;
@@ -3239,7 +3239,7 @@ parse_one_line(const char *s, char *p,
 	} else if (strcmp(s, o = "include_nesting_limit") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->include_nesting_limit);
 	} else if (strcmp(s, o = "spool") == 0) {
-		e = parse_set_spool_root(p);
+		e = gfarm_parse_set_spool_root(p);
 	} else if (strcmp(s, o = "spool_server_listen_address") == 0) {
 		e = parse_set_var(p, &gfarm_spool_server_listen_address);
 	} else if (strcmp(s, o = "spool_server_listen_backlog") == 0) {

@@ -1878,7 +1878,7 @@ gfs_pio_getc(GFS_File gf)
 	return (c);
 }
 
-int
+static int
 ungetc_internal(GFS_File gf, int c)
 {
 	gfarm_error_t e;

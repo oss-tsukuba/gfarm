@@ -10,7 +10,7 @@ extern int gfarm_spool_server_back_channel_rcvbuf_limit;
 extern int gfarm_spool_server_read_only_retry_interval;
 #define GFARM_SPOOL_ROOT_NUM	5
 extern char *gfarm_spool_root[];
-gfarm_error_t parse_set_spool_root(char *);
+gfarm_error_t gfarm_parse_set_spool_root(char *);
 enum gfarm_spool_check_level {
 	GFARM_SPOOL_CHECK_LEVEL_DEFAULT,
 	GFARM_SPOOL_CHECK_LEVEL_DISABLE,
