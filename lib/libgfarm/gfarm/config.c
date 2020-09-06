@@ -3162,7 +3162,7 @@ static gfarm_error_t parse_one_line(const char *, char *,
 	enum gfarm_auth_config_position, const char *, int, const char **);
 
 static gfarm_error_t
-parse_include(char *p, const const char **op, const char *file, int lineno)
+parse_include(char *p, const char **op, const char *file, int lineno)
 {
 	gfarm_error_t e;
 	char *s, *malloced_filename = NULL;
