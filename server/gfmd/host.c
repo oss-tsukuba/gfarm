@@ -523,10 +523,9 @@ host_remove(const char *hostname)
 gfarm_error_t
 host_remove_in_cache(const char *hostname)
 {
-	gfarm_error_t e = host_remove_internal(hostname, 0);
+	/* NOTE: slave gfmd shouldn't call file_copy_removal_by_host_start() */
 
-	file_copy_removal_by_host_start();
-	return (e);
+	return (host_remove_internal(hostname, 0));
 }
 
 struct abstract_host *
