@@ -100,6 +100,10 @@ help:
 	@echo '  make opensuse'
 
 define check_config
+if [ ! -d $(TOP)/gfarm2fs ]; then \
+	echo '<Gfarm source directory>/gfarm2fs does not exist.' 1>&2; \
+	false; \
+fi
 if ! [ -f $(TOP)/docker/dev/.shadow.config.mk ]; then \
 	echo '.shadow.config.mk does not exist.' \
 		'Containers are maybe down.' \

@@ -1,8 +1,6 @@
 #! /bin/sh
 
-# Usage (Dockerfile):
-#
-# ENV GFDOCKER_DIST_NAME <centos of opensuse>
+# Usage (in *-base-Dockerfile):
 #
 # ARG GFDOCKER_USERNAME_PREFIX
 # ARG GFDOCKER_PRIMARY_USER
@@ -11,30 +9,9 @@
 # ARG GFDOCKER_NUM_USERS
 # ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
 # ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
-#
-# RUN for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do \
-# 		useradd -m -s /bin/bash -U \
-# 			"${GFDOCKER_USERNAME_PREFIX}${i}"; \
-# 	done
-#
-# # chown option does not use variables.
-# # see https://github.com/moby/moby/issues/35018 for details.
-# # XXX FIXME: use variable.
-# # NOTE: Enable buildkit
-# #COPY --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-# #	. "/home/${GFDOCKER_PRIMARY_USER}/gfarm"
-# #COPY --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-# #	gfarm2fs "/home/${GFDOCKER_PRIMARY_USER}/gfarm2fs"
-#
-# # "chown -R" is too slow.
 # COPY . /tmp/gfarm
 # COPY gfarm2fs /tmp/gfarm2fs
-# RUN rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-# 	/tmp/gfarm "/home/${GFDOCKER_PRIMARY_USER}"
-# RUN rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-# 	/tmp/gfarm2fs "/home/${GFDOCKER_PRIMARY_USER}"
-#
-# RUN "/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common/setup-univ.sh"
+# RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
 
 set -eux
 
@@ -46,28 +23,31 @@ set -eux
 : $GFDOCKER_HOSTNAME_PREFIX_GFMD
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 
-: $GFDOCKER_DIST_NAME
-
-gfarm_src_path="/home/${GFDOCKER_PRIMARY_USER}/gfarm"
+MY_SHELL=/bin/bash
+USERADD="useradd -m -s "$MY_SHELL" -U"
+ca_key_pass=PASSWORD
+GRID_MAPFILE=/etc/grid-security/grid-mapfile
+PRIMARY_HOME=/home/${GFDOCKER_PRIMARY_USER}
+gfarm_src_path="${PRIMARY_HOME}/gfarm"
 
 for u in _gfarmmd _gfarmfs; do
-  useradd -m -s /bin/bash "$u"
+  $USERADD "$u"
 done
 
-ca_key_pass=PASSWORD
+for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
+  $USERADD "${GFDOCKER_USERNAME_PREFIX}${i}";
+done
+
+# "chown -R" is slow.
+rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
+      /tmp/gfarm/ "${PRIMARY_HOME}"/gfarm
+rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
+      /tmp/gfarm2fs/ "${PRIMARY_HOME}"/gfarm2fs
 
 grid-ca-create -pass "$ca_key_pass" -noint \
   -subject 'cn=GlobusSimpleCA,ou=GlobusTest,o=Grid'
 ls globus_simple_ca_*.tar.gz \
   | sed -E 's/^globus_simple_ca_(.*)\.tar\.gz$/\1/' > /ca_hash
-
-## opensuse only? difference of globus versions?
-#if [ "$GFDOCKER_DIST_NAME" = opensuse ]; then
-#  cd /etc/grid-security/
-#  mv hostcert.pem myca-hostcert.pem
-#  mv hostcert_request.pem myca-hostcert_request.pem
-#  mv hostkey.pem myca-hostkey.pem
-#fi
 
 force_yes=y
 
@@ -81,7 +61,6 @@ for i in $(seq 1 "$GFDOCKER_NUM_GFMDS"); do
     -passin pass:"$ca_key_pass"
 done
 
-GRID_MAPFILE=/etc/grid-security/grid-mapfile
 
 for i in $(seq 1 "$GFDOCKER_NUM_GFSDS"); do
   fqdn="${GFDOCKER_HOSTNAME_PREFIX_GFSD}${i}"

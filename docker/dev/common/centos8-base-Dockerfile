@@ -40,9 +40,7 @@ RUN rm -rf /var/cache/yum/* && yum clean all
 RUN mkdir -p /var/adm && head -1000 /dev/urandom >> /var/adm/wtmp && \
     cp /var/adm/wtmp /var/log/messages
 
-ENV GFDOCKER_DIST_NAME centos
-
-# System independent (incompleteness. see setup-univ.sh.)
+# System independent (see setup-univ.sh)
 
 ARG GFDOCKER_USERNAME_PREFIX
 ARG GFDOCKER_PRIMARY_USER
@@ -51,29 +49,8 @@ ARG GFDOCKER_NUM_GFSDS
 ARG GFDOCKER_NUM_USERS
 ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
 ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
-
-RUN for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do \
-		useradd -m -s /bin/bash -U \
-			"${GFDOCKER_USERNAME_PREFIX}${i}"; \
-	done
-
-# chown option does not use variables.
-# see https://github.com/moby/moby/issues/35018 for details.
-# XXX FIXME: use variable.
-# NOTE: Enable buildkit
-#COPY --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-#	. "/home/${GFDOCKER_PRIMARY_USER}/gfarm"
-#COPY --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-#	gfarm2fs "/home/${GFDOCKER_PRIMARY_USER}/gfarm2fs"
-
-# "chown -R" is too slow.
 COPY . /tmp/gfarm
 COPY gfarm2fs /tmp/gfarm2fs
-RUN rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-	/tmp/gfarm "/home/${GFDOCKER_PRIMARY_USER}"
-RUN rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-	/tmp/gfarm2fs "/home/${GFDOCKER_PRIMARY_USER}"
-
-RUN "/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common/setup-univ.sh"
+RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
 
 CMD ["/sbin/init"]
