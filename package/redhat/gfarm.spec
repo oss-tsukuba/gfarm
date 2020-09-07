@@ -12,6 +12,8 @@
 
 %define prefix		%{_prefix}
 %define lib_prefix	%{_libdir}
+# _libexecdir is not defined in openSUSE
+%define _libexecdir     %{_prefix}/libexec
 %define libexec_prefix	%{_libexecdir}
 %define man_prefix	%{_mandir}
 %define share_prefix	%{_prefix}/share/%{pkg}
