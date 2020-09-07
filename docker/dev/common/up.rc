@@ -55,10 +55,17 @@ gfservice -k -d config-all
 for host in $gfmds; do
   gfservice set-gfmd-conf "$host" digest md5
   gfservice set-gfmd-conf "$host" metadb_server_heartbeat_interval 10
+  gfservice restart-gfmd "$host"
+  gfservice gfmd-status "$host"
+done
+
+for host in $gfsds; do
+  gfservice gfsd-status "$host"
 done
 
 for host in $clients; do
   gfservice set-gfarm-conf "$host" client_digest_check enable
 done
 
-gfservice restart-all
+gfmdhost -l
+gfhost -lv

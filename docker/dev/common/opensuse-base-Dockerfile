@@ -1,4 +1,4 @@
-FROM opensuse:latest
+FROM opensuse/leap
 
 # System dependent
 
@@ -6,34 +6,35 @@ RUN zypper install -y sudo openssh systemd-sysvinit
 RUN systemctl enable sshd
 RUN sed -i 's@^Defaults secure_path="/usr/sbin:@Defaults secure_path="/usr/local/bin:/usr/sbin:@' /etc/sudoers
 
-RUN zypper install -y openssl-devel postgresql-devel postgresql \
-    postgresql-server fuse fuse-devel libacl-devel
-RUN zypper install -y libtool patch rpm-build
+# postgresql12(default) does not have pg_config.
+RUN zypper install -y \
+	openssl-devel postgresql10-devel postgresql10 postgresql-server \
+	fuse fuse-devel libacl-devel ruby \
+	libtool patch rpm-build wget rsync
 
-RUN zypper install -y wget rsync
+# Grid Community Toolkit (Globus Tool Kit)
+RUN zypper addrepo \
+	https://download.opensuse.org/repositories/home:frank_scheiner:gct/openSUSE_Leap_15.2/home:frank_scheiner:gct.repo \
+	&& zypper --non-interactive --no-gpg-checks refresh \
+	&& zypper install -y \
+		globus-gssapi-gsi-devel globus-simple-ca \
+		globus-gsi-cert-utils-progs globus-proxy-utils \
+	&& globus-version
 
-ENV gt_repo_url https://downloads.globus.org/toolkit/gt6/stable/installers/repo/rpm
-ENV gt_repo_file globus-toolkit-repo-latest.noarch.rpm
-ENV gt_key_url https://downloads.globus.org/toolkit/gt6/stable/repo/rpm
-ENV gt_key_file RPM-GPG-KEY-Globus
+# for debug
+RUN zypper install -y \
+	telnet ncat ldns iproute2 net-tools bind-utils \
+	gdb valgrind strace \
+	nano emacs-nox vim less which \
+	man man-pages man-pages-ja
 
-RUN cd /tmp && wget $gt_repo_url/$gt_repo_file
-RUN cd /tmp && wget $gt_key_url/$gt_key_file
-RUN cd /tmp && rpm -ivh $gt_repo_file
-RUN cd /tmp && rpm --import $gt_key_file
+# for grid-cert-request
+RUN mkdir -p /var/adm && head -1000 /dev/urandom >> /var/adm/wtmp && \
+	cp /var/adm/wtmp /var/log/messages
 
-RUN zypper ar /usr/share/globus/repo/globus-toolkit-6-stable-sles12.repo
-
-RUN zypper install -y globus-gssapi-gsi-devel globus-simple-ca \
-	globus-gsi-cert-utils-progs globus-proxy-utils
-RUN globus-version
-
-## for debug
-RUN zypper install -y ldns iproute2 net-tools which bind-utils man gdb \
-    valgrind strace nano emacs-nox vim telnet ncat
+RUN cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 
 ENV GFDOCKER_DIST_NAME opensuse
-
 
 # System independent (incompleteness. see setup-univ.sh.)
 

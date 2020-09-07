@@ -24,7 +24,7 @@ ifneq ($(and $(GFDOCKER_PROXY_HOST),$(GFDOCKER_PROXY_PORT)),)
 GFDOCKER_ENABLE_PROXY = true
 endif
 
-PROXY_URL = http://$(PROXY_HOST):$(PROXY_PORT)/
+PROXY_URL = http://$(GFDOCKER_PROXY_HOST):$(GFDOCKER_PROXY_PORT)/
 GFDOCKER_USERNAME_PREFIX = user
 GFDOCKER_PRIMARY_USER = $(GFDOCKER_USERNAME_PREFIX)1
 PRIMARY_CLIENT_CONTAINER = $(GFDOCKER_HOSTNAME_PREFIX_CLIENT)1
@@ -231,7 +231,7 @@ docker-compose:
 test-all:
 	$(check_config)
 	$(regress)
-	$(test-fo)
+	$(test_fo)
 	$(systest)
 
 valgrind-gfmd:
@@ -242,5 +242,8 @@ valgrind-gfmd:
 centos7:
 	$(DOCKER) run -it --rm 'centos:7' bash
 
+centos8:
+	$(DOCKER) run -it --rm 'centos:8' bash
+
 opensuse:
-	$(DOCKER) run -it --rm opensuse bash
+	$(DOCKER) run -it --rm 'opensuse/leap' bash

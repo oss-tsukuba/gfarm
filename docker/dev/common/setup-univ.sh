@@ -54,20 +54,20 @@ for u in _gfarmmd _gfarmfs; do
   useradd -m -s /bin/bash "$u"
 done
 
-ca_key_pass=pw
+ca_key_pass=PASSWORD
 
 grid-ca-create -pass "$ca_key_pass" -noint \
   -subject 'cn=GlobusSimpleCA,ou=GlobusTest,o=Grid'
 ls globus_simple_ca_*.tar.gz \
   | sed -E 's/^globus_simple_ca_(.*)\.tar\.gz$/\1/' > /ca_hash
 
-# opensuse only? difference of globus versions?
-if [ "$GFDOCKER_DIST_NAME" = opensuse ]; then
-  cd /etc/grid-security/
-  mv hostcert.pem myca-hostcert.pem
-  mv hostcert_request.pem myca-hostcert_request.pem
-  mv hostkey.pem myca-hostkey.pem
-fi
+## opensuse only? difference of globus versions?
+#if [ "$GFDOCKER_DIST_NAME" = opensuse ]; then
+#  cd /etc/grid-security/
+#  mv hostcert.pem myca-hostcert.pem
+#  mv hostcert_request.pem myca-hostcert_request.pem
+#  mv hostkey.pem myca-hostkey.pem
+#fi
 
 force_yes=y
 
@@ -76,9 +76,9 @@ for i in $(seq 1 "$GFDOCKER_NUM_GFMDS"); do
   echo "$force_yes" \
     | grid-cert-request -verbose -nopw -prefix "$fqdn" -host "$fqdn" \
       -ca "$(cat /ca_hash)"
-  echo "$ca_key_pass" \
-    | grid-ca-sign -in "/etc/grid-security/${fqdn}cert_request.pem" \
-      -out "/etc/grid-security/${fqdn}cert.pem"
+  grid-ca-sign -in "/etc/grid-security/${fqdn}cert_request.pem" \
+    -out "/etc/grid-security/${fqdn}cert.pem" \
+    -passin pass:"$ca_key_pass"
 done
 
 GRID_MAPFILE=/etc/grid-security/grid-mapfile
@@ -91,9 +91,9 @@ for i in $(seq 1 "$GFDOCKER_NUM_GFSDS"); do
     | grid-cert-request -verbose -nopw -prefix gfsd -host "$fqdn" \
       -dir "$cert_path" -commonname "$common_name" -service gfsd \
       -ca "$(cat /ca_hash)"
-  echo "$ca_key_pass" \
-    | grid-ca-sign -in "${cert_path}/gfsdcert_request.pem" \
-      -out "${cert_path}/gfsdcert.pem"
+  grid-ca-sign -in "${cert_path}/gfsdcert_request.pem" \
+    -out "${cert_path}/gfsdcert.pem" \
+    -passin pass:"$ca_key_pass"
   chown -R _gfarmfs "$cert_path"
   echo "/O=Grid/OU=GlobusTest/CN=${common_name} @host@ ${fqdn}" \
     >> "$GRID_MAPFILE"
@@ -126,9 +126,9 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
   su - "$user" -c ' \
     grid-cert-request -verbose -cn "$(whoami)" -nopw -ca "$(cat /ca_hash)" \
   '
-  echo "$ca_key_pass" \
-    | grid-ca-sign -in "${globus_dir}/usercert_request.pem" \
-      -out "${globus_dir}/usercert.pem"
+  grid-ca-sign -in "${globus_dir}/usercert_request.pem" \
+    -out "${globus_dir}/usercert.pem" \
+    -passin pass:"$ca_key_pass"
   echo "/O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${user} ${user}" \
     >> "$GRID_MAPFILE"
 done
