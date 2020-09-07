@@ -78,7 +78,6 @@ int inode_desired_dead_file_copy(gfarm_ino_t);
 gfarm_error_t inode_add_or_modify_in_cache(struct gfs_stat *, struct inode **);
 gfarm_error_t symlink_add(gfarm_ino_t, char *);
 void inode_clear_symlink(struct inode *);
-void inode_free(struct inode *);
 struct inode *inode_alloc_num(gfarm_ino_t);
 
 struct peer;
