@@ -2,16 +2,15 @@
 #GFDOCKER_PROXY_PORT = 8080
 GFDOCKER_PROXY_HOST =
 GFDOCKER_PROXY_PORT =
-GFDOCKER_NUM_JOBS = 4
-SUDO = sudo
+GFDOCKER_NUM_JOBS = 8
 
 # number of containers
 #GFDOCKER_NUM_GFMDS >= 1
 #GFDOCKER_NUM_GFSDS >= 1
 #GFDOCKER_NUM_CLIENTS >= 1
 GFDOCKER_NUM_GFMDS = 3
-GFDOCKER_NUM_GFSDS = 8
-GFDOCKER_NUM_CLIENTS = 1
+GFDOCKER_NUM_GFSDS = 4
+GFDOCKER_NUM_CLIENTS = 2
 
 # number of local/global accounts
 GFDOCKER_NUM_USERS = 4
@@ -31,3 +30,7 @@ GFDOCKER_HOSTNAME_PREFIX_CLIENT = client
 
 # syntax: sharedsecret, gsi or gsi_auth
 GFDOCKER_AUTH_TYPE = sharedsecret
+
+# --no-cache for docker build (0: disable, 1: enable)
+GFDOCKER_NO_CACHE = 0
+SUDO = sudo

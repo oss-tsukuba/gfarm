@@ -50,9 +50,10 @@ $ git clone git@github.com:oss-tsukuba/gfarm2fs.git
 5. Use Docker
 
 $ cd docker/dev
-  # set GFDOCKER_IP_VERSION, GFDOCKER_SUBNET, and GFDOCKER_START_HOST_ADDR
 $ editor config.mk
-$ cd dist/centos7/src  # use CentOS 7
+  # override GFDOCKER_IP_VERSION, GFDOCKER_SUBNET, and GFDOCKER_START_HOST_ADDR
+  # from config-default.mk
+$ cd dist/centos7/src  # use source package on CentOS 7
   # note: execute 'sudo' in Makefile
 $ make help  # display usage.
 $ make reborn  # up the containers.

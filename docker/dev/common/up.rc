@@ -69,3 +69,7 @@ done
 
 gfmdhost -l
 gfhost -lv
+num_gfmdhost=$(gfmdhost | wc -l)
+num_gfsched=$(gfsched | wc -l)
+[ $num_gfmdhost -eq $GFDOCKER_NUM_GFMDS ] || exit 1
+[ $num_gfsched -eq $GFDOCKER_NUM_GFSDS ] || exit 1

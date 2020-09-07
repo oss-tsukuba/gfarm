@@ -1,5 +1,8 @@
 # This file need config.mk
 
+include $(ROOTDIR)/config-default.mk
+include $(ROOTDIR)/config.mk
+
 .PHONY: help ps build up down start stop shell shell-root shell-user \
 		regress test-fo systest test-all valgrind-gfmd docker-compose \
 		gen
@@ -30,7 +33,14 @@ GFDOCKER_PRIMARY_USER = $(GFDOCKER_USERNAME_PREFIX)1
 PRIMARY_CLIENT_CONTAINER = $(GFDOCKER_HOSTNAME_PREFIX_CLIENT)1
 TOP = ../../../../..
 
+ifneq ($(GFDOCKER_NO_CACHE), 0)
+NO_CACHE = --no-cache
+else
+NO_CACHE =
+endif
+
 DOCKER_BUILD_FLAGS = \
+		$(NO_CACHE) \
 		--build-arg GFDOCKER_NUM_JOBS='$(GFDOCKER_NUM_JOBS)' \
 		--build-arg GFDOCKER_USERNAME_PREFIX='$(GFDOCKER_USERNAME_PREFIX)' \
 		--build-arg GFDOCKER_PRIMARY_USER='$(GFDOCKER_PRIMARY_USER)' \
