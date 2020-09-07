@@ -194,7 +194,7 @@ stop:
 	$(COMPOSE) stop
 
 define shell_user
-$(CONTSHELL)
+$(CONTSHELL) -c 'cd ~ && bash'
 endef
 
 shell:
@@ -205,9 +205,9 @@ shell-user:
 	$(check_config)
 	$(shell_user)
 
-shell-root:
-	$(check_config)
-	$(COMPOSE) exec '$(PRIMARY_CLIENT_CONTAINER)' bash
+# shell-root:
+# 	$(check_config)
+# 	$(COMPOSE) exec '$(PRIMARY_CLIENT_CONTAINER)' bash -c 'cd ~ && bash'
 
 define regress
 $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/regress.rc'
