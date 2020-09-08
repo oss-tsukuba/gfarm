@@ -1,7 +1,9 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <limits.h>
+#include <errno.h>
 
 #include <gfarm/gfarm_config.h>
 
