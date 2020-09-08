@@ -2,7 +2,6 @@
 docker/dev/config.mk
 docker/dev/.shadow.config.mk
 docker/dev/common/rc.gfservice
-docker/dev/common/up.rc.orig
 docker/dev/docker-compose.yml
 docker/dev/mnt/
 gfarm2fs/
