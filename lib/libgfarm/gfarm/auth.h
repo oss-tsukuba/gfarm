@@ -143,7 +143,6 @@ gfarm_error_t gfarm_auth_server_cred_type_set(char *,
 gfarm_error_t gfarm_auth_server_cred_service_set(char *, char *);
 gfarm_error_t gfarm_auth_server_cred_name_set(char *, char *);
 
-int gfarm_auth_config_string(char *, size_t);
 char *gfarm_auth_config_string_dup(void);
 
 /* auth_client_sharedsecret */

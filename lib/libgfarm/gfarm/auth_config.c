@@ -539,7 +539,7 @@ gfarm_auth_server_cred_name_set(char *service_tag, char *name)
 	do { \
 		if (string == NULL) { \
 			/* do nothing */ \
-		} else if (size >= len) { \
+		} else if (size > len) { \
 			size -= len; \
 			string += len; \
 		} else { \
@@ -553,37 +553,60 @@ static int
 gfarm_auth_config_elem_string(
 	struct gfarm_auth_config *acp, char *string, size_t size)
 {
-	int len;
+	int len, len2, save_errno;
 
 	len = snprintf(string, size, "%s %s ",
 	    gfarm_auth_config_command_name(acp->command),
 	    gfarm_auth_method_name(acp->method));
+	if (len < 0) {
+		save_errno = errno;
+		gflog_debug_errno(GFARM_MSG_UNFIXED, "snprintf");
+		errno = save_errno;
+		return (-1);
+	}
+	ADVANCE(string, size, (size_t)len);
 
-	ADVANCE(string, size, len);
-
-	/* the following shouldn't overflow. i.e. must be less than SIZE_MAX */
-	return (len + gfarm_hostspec_to_string(acp->hostspec, string, size));
+	len2 = gfarm_hostspec_to_string(acp->hostspec, string, size);
+	if (len2 < 0) {
+		save_errno = errno;
+		gflog_debug_errno(GFARM_MSG_UNFIXED, "snprintf");
+		errno = save_errno;
+		return (-1);
+	}
+	
+	/* the following shouldn't overflow. i.e. must be less than INT_MAX */
+	return (len + len2);
 }
 
 /* string can be NULL */
-int
+static int
 gfarm_auth_config_string(char *string, size_t size)
 {
 	struct gfarm_auth_config *acp;
-	int rv, len;
-	char *s;
+	int rv, len, save_errno;
 	int overflow = 0;
 
-	s = string;
 	rv = 0;
 	for (acp = staticp->auth_config_list; acp != NULL; acp = acp->next) {
-		len = gfarm_auth_config_elem_string(acp, s, size);
+		len = gfarm_auth_config_elem_string(acp, string, size);
+		if (len < 0) {
+			save_errno = errno;
+			gflog_debug_errno(GFARM_MSG_UNFIXED, "snprintf");
+			errno = save_errno;
+			return (-1);
+		}
 		rv = gfarm_size_add(&overflow, rv, len);
-		ADVANCE(s, size, len);
+		ADVANCE(string, size, (size_t)len);
 
-		len = snprintf(s, size, "\n");
+		len = snprintf(string, size, "%c", '\n');
+		if (len < 0) {
+			save_errno = errno;
+			gflog_debug_errno(GFARM_MSG_UNFIXED, "snprintf");
+			errno = save_errno;
+			return (-1);
+		}
 		rv = gfarm_size_add(&overflow, rv, len);
-		ADVANCE(s, size, len);
+		ADVANCE(string, size, (size_t)len);
 	}
 	if (overflow) {
 		rv = -1;
@@ -600,7 +623,7 @@ gfarm_auth_config_string_dup(void)
 	int overflow = 0;
 
 	size = gfarm_auth_config_string(NULL, 0);
-	if (size == -1)
+	if (size < 0)
 		return (NULL);
 
 	size = gfarm_size_add(&overflow, size, 1); /* for '\0' */
