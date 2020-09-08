@@ -29,7 +29,7 @@ GFDOCKER_HOSTNAME_PREFIX_GFSD = gfsd
 GFDOCKER_HOSTNAME_PREFIX_CLIENT = client
 
 # syntax: sharedsecret, gsi or gsi_auth
-GFDOCKER_AUTH_TYPE = sharedsecret
+GFDOCKER_AUTH_TYPE = gsi_auth
 
 # --no-cache for docker build (0: disable, 1: enable)
 GFDOCKER_NO_CACHE = 0

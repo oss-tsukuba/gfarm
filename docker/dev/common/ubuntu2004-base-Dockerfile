@@ -1,0 +1,54 @@
+FROM ubuntu:20.04
+RUN DEBIAN_FRONTEND=noninteractive
+
+# System dependent
+
+RUN apt-get update
+RUN apt-get -y upgrade
+
+# include systemd
+RUN apt -y install sudo openssh-server rsync tzdata
+
+RUN cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+
+RUN apt-get -y install build-essential
+
+RUN apt-get -y install \
+    libssl-dev \
+    libldap2-dev \
+    libpq-dev \
+    libglobus-gssapi-gsi-dev \
+    pkg-config \
+    postgresql \
+    postgresql-client \
+    libfuse-dev \
+    libacl1-dev \
+    ruby
+
+RUN apt-get -y install \
+     globus-simple-ca \
+     globus-gsi-cert-utils-progs \
+     globus-proxy-utils \
+     && globus-version
+
+# for debug
+RUN apt-get -y install \
+    ncat ldnsutils iproute2 net-tools bind9-dnsutils telnet \
+    manpages manpages-ja man-db \
+    gdb valgrind strace \
+    vim nano emacs-nox less
+
+# System independent (see setup-univ.sh)
+
+ARG GFDOCKER_USERNAME_PREFIX
+ARG GFDOCKER_PRIMARY_USER
+ARG GFDOCKER_NUM_GFMDS
+ARG GFDOCKER_NUM_GFSDS
+ARG GFDOCKER_NUM_USERS
+ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
+ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
+COPY . /tmp/gfarm
+COPY gfarm2fs /tmp/gfarm2fs
+RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
+
+CMD ["/sbin/init"]

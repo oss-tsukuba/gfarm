@@ -44,6 +44,17 @@ rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
 rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
       /tmp/gfarm2fs/ "${PRIMARY_HOME}"/gfarm2fs
 
+# for grid-cert-request
+VARADM=/var/adm
+VARADMWTMP=${VARADM}/wtmp
+VARLOGMESSAGES=/var/log/messages
+if [ ! -s $VARADMWTMP ]; then  # not exist or size is zero
+    mkdir -p $VARADM && head -1000 /dev/urandom >> $VARADMWTMP
+fi
+if [ ! -s $VARLOGMESSAGES ]; then
+    cat $VARADMWTMP >> $VARLOGMESSAGES
+fi
+
 grid-ca-create -pass "$ca_key_pass" -noint \
   -subject 'cn=GlobusSimpleCA,ou=GlobusTest,o=Grid'
 ls globus_simple_ca_*.tar.gz \

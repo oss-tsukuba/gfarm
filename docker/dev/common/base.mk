@@ -167,6 +167,7 @@ TOP='$(TOP)' \
 	GFDOCKER_HOSTNAME_PREFIX_GFSD='$(GFDOCKER_HOSTNAME_PREFIX_GFSD)' \
 	GFDOCKER_HOSTNAME_PREFIX_CLIENT='$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)' \
 	GFDOCKER_AUTH_TYPE='$(GFDOCKER_AUTH_TYPE)' \
+	GFDOCKER_PRJ_NAME='$(GFDOCKER_PRJ_NAME)' \
 	'$(TOP)/docker/dev/common/gen.sh'
 	cp $(TOP)/docker/dev/config.mk $(TOP)/docker/dev/.shadow.config.mk
 endef
@@ -261,3 +262,6 @@ centos8:
 
 opensuse:
 	$(DOCKER) run -it --rm 'opensuse/leap' bash
+
+ubuntu2004:
+	$(DOCKER) run -it --rm 'ubuntu:20.04' bash
