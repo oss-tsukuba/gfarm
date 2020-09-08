@@ -523,10 +523,9 @@ host_remove(const char *hostname)
 gfarm_error_t
 host_remove_in_cache(const char *hostname)
 {
-	gfarm_error_t e = host_remove_internal(hostname, 0);
+	/* NOTE: slave gfmd shouldn't call file_copy_removal_by_host_start() */
 
-	file_copy_removal_by_host_start();
-	return (e);
+	return (host_remove_internal(hostname, 0));
 }
 
 struct abstract_host *
@@ -805,7 +804,7 @@ host_is_readonly_update(struct host *h)
 	static const char diag[] = "host_is_readonly_update";
 
 	abstract_host_mutex_lock(&h->ah, diag);
-	h->is_readonly = host_info_is_readonly(&h->hi);
+	h->is_readonly = gfarm_host_info_is_readonly(&h->hi);
 	abstract_host_mutex_unlock(&h->ah, diag);
 }
 
@@ -1238,7 +1237,7 @@ host_new(struct gfarm_host_info *hi, struct callout *callout)
 #endif
 	h->status_reply_waiting = 0;
 	h->report_flags = 0;
-	h->is_readonly = host_info_is_readonly(hi);
+	h->is_readonly = gfarm_host_info_is_readonly(hi);
 	h->status.loadavg_1min =
 	h->status.loadavg_5min =
 	h->status.loadavg_15min = 0.0;

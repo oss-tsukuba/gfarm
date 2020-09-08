@@ -29,8 +29,11 @@ gfarm_daemon(int not_chdir, int not_close)
 		exit(0);
 	}
 	setsid();
-	if (!not_chdir)
-		chdir("/");
+	if (!not_chdir) {
+		if (chdir("/") == -1)
+			gflog_debug_errno(GFARM_MSG_UNFIXED, "chdir(/)");
+	}
+	    
 	if (!not_close) {
 		int fd = open("/dev/null", O_RDWR, 0);
 

@@ -133,14 +133,35 @@ show_config(struct gfm_connection *gfm_server, const char *config_name,
 	int ask_gfmd, int print_config_name)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	char buffer[2048];
+	size_t bufsize = 2048;
+	char *b, *buffer = malloc(bufsize);
 
-	if (ask_gfmd) {
-		e = gfm_client_config_name_to_string(gfm_server,
-		    config_name, buffer, sizeof buffer);
-	} else {
-		e = gfarm_config_local_name_to_string(
-		    config_name, buffer, sizeof buffer);
+	if (buffer == NULL) {
+		fprintf(stderr, "%s: no memory for %zd bytes result",
+		    program_name, bufsize);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	for (;;) {
+		if (ask_gfmd) {
+			e = gfm_client_config_name_to_string(gfm_server,
+			    config_name, buffer, bufsize);
+		} else {
+			e = gfarm_config_local_name_to_string(
+			    config_name, buffer, bufsize);
+		}
+		if (e != GFARM_ERR_RESULT_OUT_OF_RANGE)
+			break;
+
+		bufsize *= 2;
+		b = realloc(buffer, bufsize);
+		if (b == NULL) {
+			fprintf(stderr, "%s: no memory for %zd bytes result\n",
+			    program_name, bufsize);
+			free(buffer);
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		buffer = b;
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
 		if (print_config_name)
@@ -154,6 +175,7 @@ show_config(struct gfm_connection *gfm_server, const char *config_name,
 		fprintf(stderr, "%s: %s: %s\n",
 		    program_name, config_name, gfarm_error_string(e));
 	}
+	free(buffer);
 	return (e);
 }
 

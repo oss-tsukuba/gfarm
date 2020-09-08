@@ -6970,7 +6970,7 @@ main(int argc, char **argv)
 			listen_addrname = optarg;
 			break;
 		case 'r':
-			e = parse_set_spool_root(optarg);
+			e = gfarm_parse_set_spool_root(optarg);
 			if (e != GFARM_ERR_NO_ERROR)
 				gflog_fatal(GFARM_MSG_1000586, "%s",
 				    gfarm_error_string(e));
