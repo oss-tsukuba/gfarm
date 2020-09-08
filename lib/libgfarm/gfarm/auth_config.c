@@ -538,7 +538,8 @@ gfarm_auth_server_cred_name_set(char *service_tag, char *name)
 #define ADVANCE(string, size, len) \
 	do { \
 		if (string == NULL) { \
-			/* do nothing */ \
+			/* to shut up gcc -Wformat-truncation warning */ \
+			size = 0; \
 		} else if (size > len) { \
 			size -= len; \
 			string += len; \
