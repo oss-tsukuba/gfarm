@@ -23,7 +23,8 @@ RUN yum -y install nc
 RUN sed -i -e '/tsflags=nodocs/s/^/#/' /etc/yum.conf
 
 RUN yum -y install ldns iproute2 net-tools which bind-utils man gdb valgrind \
-	strace nano emacs-nox telnet less man-pages man-db
+	strace nano emacs-nox telnet less man-pages man-db \
+	inotify-tools tcpdump
 
 ENV GFDOCKER_DIST_NAME centos
 
