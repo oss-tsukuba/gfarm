@@ -7,6 +7,8 @@ centos8/src
 centos8/pkg
 opensuse/src
 opensuse/pkg
+ubuntu1804/src
+ubuntu2004/src
 "
 
 BASEDIR=dist

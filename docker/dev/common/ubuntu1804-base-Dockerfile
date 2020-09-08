@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:18.04
 RUN DEBIAN_FRONTEND=noninteractive
 
 # System dependent
@@ -34,7 +34,7 @@ RUN apt-get -y install \
 
 # for debug
 RUN apt-get -y install \
-    ncat ldnsutils iproute2 net-tools bind9-dnsutils telnet \
+    netcat ldnsutils iproute2 net-tools bind9utils telnet \
     manpages manpages-ja man-db \
     gdb valgrind strace \
     vim nano emacs-nox less

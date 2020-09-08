@@ -263,5 +263,8 @@ centos8:
 opensuse:
 	$(DOCKER) run -it --rm 'opensuse/leap' bash
 
+ubuntu1804:
+	$(DOCKER) run -it --rm 'ubuntu:18.04' bash
+
 ubuntu2004:
 	$(DOCKER) run -it --rm 'ubuntu:20.04' bash
