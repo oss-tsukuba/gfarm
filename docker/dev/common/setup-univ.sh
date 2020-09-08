@@ -100,6 +100,8 @@ for i in $(seq 1 "$GFDOCKER_NUM_GFSDS"); do
 done
 
 base_ssh_config="${gfarm_src_path}/docker/dev/common/ssh_config"
+sys_ssh_host_key="${gfarm_src_path}/docker/dev/common/ssh_host_key.tar"
+additional_authkeys="${gfarm_src_path}/docker/dev/common/additional_authorized_keys"
 echo >> /etc/sudoers
 echo '# for Gfarm' >> /etc/sudoers
 for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
@@ -116,10 +118,12 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
   ssh-keygen -f "${ssh_dir}/key-gfarm" -N ''
   authkeys="${ssh_dir}/authorized_keys"
   cp "${ssh_dir}/key-gfarm.pub" "$authkeys"
+  cat "${additional_authkeys}" >> "$authkeys"
   chmod 0644 "$authkeys"
   ssh_config="${ssh_dir}/config"
   cp "$base_ssh_config" "$ssh_config"
   chmod 0644 "$ssh_config"
+  tar xCfp /etc/ssh "${sys_ssh_host_key}"
   mkdir -m 0700 -p "${ssh_dir}/ControlMasters"
   chown -R "${user}:${user}" "$ssh_dir"
   globus_dir="/home/${user}/.globus/"
