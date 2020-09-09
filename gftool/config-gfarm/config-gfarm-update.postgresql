@@ -246,7 +246,5 @@ update_access_db_postgresql()
 {
 	OPTIONS="$*"
 
-	$psql $OPTIONS $DB_NAME $BACKEND_ADMIN_USER 2>$psql_err
-	psql_err_report "update_access_db_postgresql"
-	psql_err_last_report "update_access_db_postgresql"
+	$psql $OPTIONS $DB_NAME $BACKEND_ADMIN_USER
 }
