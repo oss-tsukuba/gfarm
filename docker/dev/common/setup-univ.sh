@@ -61,6 +61,7 @@ ls globus_simple_ca_*.tar.gz \
   | sed -E 's/^globus_simple_ca_(.*)\.tar\.gz$/\1/' > /ca_hash
 
 force_yes=y
+MD=sha256
 
 for i in $(seq 1 "$GFDOCKER_NUM_GFMDS"); do
   fqdn="${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
@@ -69,7 +70,7 @@ for i in $(seq 1 "$GFDOCKER_NUM_GFMDS"); do
       -ca "$(cat /ca_hash)"
   grid-ca-sign -in "/etc/grid-security/${fqdn}cert_request.pem" \
     -out "/etc/grid-security/${fqdn}cert.pem" \
-    -passin pass:"$ca_key_pass"
+    -passin pass:"$ca_key_pass" -md $MD
 done
 
 
@@ -83,7 +84,7 @@ for i in $(seq 1 "$GFDOCKER_NUM_GFSDS"); do
       -ca "$(cat /ca_hash)"
   grid-ca-sign -in "${cert_path}/gfsdcert_request.pem" \
     -out "${cert_path}/gfsdcert.pem" \
-    -passin pass:"$ca_key_pass"
+    -passin pass:"$ca_key_pass" -md $MD
   chown -R _gfarmfs "$cert_path"
   echo "/O=Grid/OU=GlobusTest/CN=${common_name} @host@ ${fqdn}" \
     >> "$GRID_MAPFILE"
@@ -118,7 +119,7 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
   '
   grid-ca-sign -in "${globus_dir}/usercert_request.pem" \
     -out "${globus_dir}/usercert.pem" \
-    -passin pass:"$ca_key_pass"
+    -passin pass:"$ca_key_pass" -md $MD
   echo "/O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${user} ${user}" \
     >> "$GRID_MAPFILE"
 done

@@ -14,13 +14,6 @@ set -eu
 : $GFDOCKER_AUTH_TYPE
 : $GFDOCKER_PRJ_NAME
 
-case "$GFDOCKER_PRJ_NAME" in
-    ubuntu2004-*)
-	# not work when auth type is  gsi_auth or gsi on Ubuntu
-	GFDOCKER_AUTH_TYPE=sharedsecret
-	;;
-esac
-
 gen_gfservicerc() {
   cat <<EOF
 # This file was automatically generated.
