@@ -23,8 +23,8 @@ RUN zypper addrepo \
 
 # for debug
 RUN zypper install -y \
-	telnet ncat ldns iproute2 net-tools bind-utils \
-	gdb valgrind strace \
+	telnet ncat ldns iproute2 net-tools bind-utils tcpdump \
+	gdb valgrind strace inotify-tools \
 	nano emacs-nox vim less which \
 	man man-pages man-pages-ja
 

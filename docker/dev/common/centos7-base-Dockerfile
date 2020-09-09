@@ -22,12 +22,11 @@ RUN yum -y --enablerepo=epel install globus-gssapi-gsi-devel globus-simple-ca \
 
 ## for debug
 RUN sed -i -e '/tsflags=nodocs/s/^/#/' /etc/yum.conf
-RUN yum -y install nc ldns iproute2 net-tools bind-utils telnet \
+RUN yum -y install \
+	nc ldns iproute2 net-tools bind-utils telnet tcpdump \
 	man man-pages man-db which \
-	gdb valgrind strace \
+	gdb valgrind strace inotify-tools \
 	nano emacs-nox less
-
-# System independent (see setup-univ.sh)
 
 ARG GFDOCKER_USERNAME_PREFIX
 ARG GFDOCKER_PRIMARY_USER

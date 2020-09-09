@@ -28,9 +28,10 @@ RUN yum -y --enablerepo=epel install globus-gssapi-gsi-devel globus-simple-ca \
 
 ## for debug
 # RUN sed -i -e '/tsflags=nodocs/s/^/#/' /etc/yum.conf
-RUN yum -y install nc ldns iproute net-tools bind-utils telnet \
+RUN yum -y install \
+	nc ldns iproute net-tools bind-utils telnet tcpdump \
 	man man-pages man-db which \
-	gdb strace valgrind libtsan \
+	gdb strace valgrind inotify-tools libtsan \
 	nano emacs-nox less
 
 ## clean

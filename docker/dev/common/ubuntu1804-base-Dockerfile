@@ -35,9 +35,9 @@ RUN apt-get update \
 
 # for debug
 RUN apt-get -y install \
-    netcat ldnsutils iproute2 net-tools bind9utils telnet \
+    netcat ldnsutils iproute2 net-tools bind9utils telnet tcpdump \
     manpages manpages-ja man-db \
-    gdb valgrind strace \
+    gdb valgrind strace inotify-tools \
     vim nano emacs-nox less
 
 # System independent (see setup-univ.sh)
