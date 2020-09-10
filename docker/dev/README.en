@@ -66,8 +66,6 @@ Keep keys
 
 1. to keep ssh host keys only for client1 container
 
-- In container
-
   $ cd dist/centos7/src  # when using source package on CentOS 7
   $ make shell
   ### in container
@@ -75,9 +73,7 @@ Keep keys
 
   Note: These keys are used next time in all distributions.
 
-2. to add your ssh public keys to authorized keys only for user1@client1
-
-- In host OS
+2. to add your ssh public keys to authorized keys only for user*@client1
 
   $ cd docker/dev
   $ sudo editor mnt/ssh_authorized_keys  # add your public keys
@@ -86,7 +82,7 @@ Keep keys
   $ make reborn
 
   ### use "ssh" instead of "make shell"
-  $ ssh user1@192.168.224.18  # IP addresss of client1 container
+  $ ssh user2@192.168.224.18  # IP addresss of client1 container
 
 Note
 ====

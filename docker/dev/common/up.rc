@@ -1,8 +1,11 @@
 set -eux
 
+: $GFDOCKER_USERNAME_PREFIX
+: $GFDOCKER_PRIMARY_USER
 : $GFDOCKER_NUM_GFMDS
 : $GFDOCKER_NUM_GFSDS
 : $GFDOCKER_NUM_CLIENTS
+: $GFDOCKER_NUM_USERS
 : $GFDOCKER_HOSTNAME_PREFIX_GFMD
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 : $GFDOCKER_HOSTNAME_PREFIX_CLIENT
@@ -10,6 +13,7 @@ set -eux
 gfmds=
 gfsds=
 clients=
+users=
 
 for i in $(seq 1 $GFDOCKER_NUM_GFMDS); do
   gfmds="${gfmds} ${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
@@ -20,33 +24,43 @@ done
 for i in $(seq 1 $GFDOCKER_NUM_CLIENTS); do
   clients="${clients} ${GFDOCKER_HOSTNAME_PREFIX_CLIENT}${i}"
 done
+for i in $(seq 1 $GFDOCKER_NUM_USERS); do
+  users="${users} ${GFDOCKER_USERNAME_PREFIX}${i}"
+done
 
-# keep ssh keys only for user1@client1
+# keep ssh host keys only for client1
 
 MNT=/mnt
 MNT_SSH_HOST_KEY_DIR=${MNT}/ssh_host_keys
 MNT_SSH_AUTHORIZED_KEYS_FILE=${MNT}/ssh_authorized_keys
-HOST_KEY_DIR=/etc/ssh
-SSH_AUTHORIZED_KEYS_FILE=~user1/.ssh/authorized_keys
+SSH_HOST_KEY_DIR=/etc/ssh
 
 if [ ! -d $MNT_SSH_HOST_KEY_DIR ]; then
   sudo mkdir $MNT_SSH_HOST_KEY_DIR
 fi
 for f in $(echo $MNT_SSH_HOST_KEY_DIR/ssh_host_*_key); do
   if [ -f "$f" ]; then
-    sudo cp -p "$f" $HOST_KEY_DIR/
+    sudo cp -p "$f" $SSH_HOST_KEY_DIR/
   fi
+  sudo chmod 400 $SSH_HOST_KEY_DIR/ssh_host_*_key
 done
 sudo systemctl restart sshd
 
-SAVE_KEYS_SCRIPT=~user1/SAVE_SSH_HOST_KEYS.sh
+SAVE_KEYS_SCRIPT=/home/${GFDOCKER_PRIMARY_USER}/SAVE_SSH_HOST_KEYS.sh
 cat << EOF > $SAVE_KEYS_SCRIPT
-cp -a /etc/ssh/ssh_host_*_key /mnt/ssh_host_keys/
+cp -a ${SSH_HOST_KEY_DIR}/ssh_host_*_key $MNT_SSH_HOST_KEY_DIR
+chmod 400 ${MNT_SSH_HOST_KEY_DIR}/ssh_host_*_key
 EOF
 chmod +x $SAVE_KEYS_SCRIPT
 
+# copy ssh authorized keys only for users
+SSH_AUTHORIZED_KEYS=.ssh/authorized_keys
+
 if [ -f $MNT_SSH_AUTHORIZED_KEYS_FILE ]; then
-  cat $MNT_SSH_AUTHORIZED_KEYS_FILE >> $SSH_AUTHORIZED_KEYS_FILE
+  for user in $users; do
+    cat $MNT_SSH_AUTHORIZED_KEYS_FILE \
+    | sudo tee -a /home/${user}/$SSH_AUTHORIZED_KEYS > /dev/null
+  done
 fi
 
 ssh_retry() {
