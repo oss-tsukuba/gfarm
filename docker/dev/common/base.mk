@@ -74,6 +74,8 @@ CONTSHELL_FLAGS = \
 		--env GFDOCKER_HOSTNAME_PREFIX_CLIENT='$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)'
 CONTSHELL = $(COMPOSE) exec $(CONTSHELL_FLAGS) -u '$(GFDOCKER_PRIMARY_USER)' \
 		'$(PRIMARY_CLIENT_CONTAINER)' bash
+# overridable
+CONTSHELL_ARGS :=  -c 'cd ~ && bash'
 
 help:
 	@echo 'Usage:'
@@ -195,7 +197,7 @@ stop:
 	$(COMPOSE) stop
 
 define shell_user
-$(CONTSHELL) -c 'cd ~ && bash'
+$(CONTSHELL) $(CONTSHELL_ARGS)
 endef
 
 shell:
@@ -206,9 +208,10 @@ shell-user:
 	$(check_config)
 	$(shell_user)
 
-# shell-root:
-# 	$(check_config)
-# 	$(COMPOSE) exec '$(PRIMARY_CLIENT_CONTAINER)' bash -c 'cd ~ && bash'
+shell-root:
+	$(check_config)
+	echo "*** Please use sudo on shell-suer instead of shell-root ***"
+	$(COMPOSE) exec '$(PRIMARY_CLIENT_CONTAINER)' bash $(CONTSHELL_ARGS)
 
 define regress
 $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/regress.rc'
