@@ -21,6 +21,34 @@ for i in $(seq 1 $GFDOCKER_NUM_CLIENTS); do
   clients="${clients} ${GFDOCKER_HOSTNAME_PREFIX_CLIENT}${i}"
 done
 
+# keep ssh keys only for user1@client1
+
+MNT=/mnt
+MNT_SSH_HOST_KEY_DIR=${MNT}/ssh_host_keys
+MNT_SSH_AUTHORIZED_KEYS_FILE=${MNT}/ssh_authorized_keys
+HOST_KEY_DIR=/etc/ssh
+SSH_AUTHORIZED_KEYS_FILE=~user1/.ssh/authorized_keys
+
+if [ ! -d $MNT_SSH_HOST_KEY_DIR ]; then
+  sudo mkdir $MNT_SSH_HOST_KEY_DIR
+fi
+for f in $(echo $MNT_SSH_HOST_KEY_DIR/ssh_host_*_key); do
+  if [ -f "$f" ]; then
+    sudo cp -p "$f" $HOST_KEY_DIR/
+  fi
+done
+sudo systemctl restart sshd
+
+SAVE_KEYS_SCRIPT=~user1/SAVE_SSH_HOST_KEYS.sh
+cat << EOF > $SAVE_KEYS_SCRIPT
+cp -a /etc/ssh/ssh_host_*_key /mnt/ssh_host_keys/
+EOF
+chmod +x $SAVE_KEYS_SCRIPT
+
+if [ -f $MNT_SSH_AUTHORIZED_KEYS_FILE ]; then
+  cat $MNT_SSH_AUTHORIZED_KEYS_FILE >> $SSH_AUTHORIZED_KEYS_FILE
+fi
+
 ssh_retry() {
   host="$1"
   retry_sec=30
