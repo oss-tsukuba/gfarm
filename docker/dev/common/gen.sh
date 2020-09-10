@@ -12,6 +12,7 @@ set -eu
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 : $GFDOCKER_HOSTNAME_PREFIX_CLIENT
 : $GFDOCKER_AUTH_TYPE
+: $GFDOCKER_PRJ_NAME
 
 gen_gfservicerc() {
   cat <<EOF
@@ -24,13 +25,14 @@ EOF
     gfmd="${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
     cat <<EOF
 
+## *_AUTH_TYPE=sharedsecret can copy ~/.gfarm_shared_key
 
 ##
 ## gfmd ${i}
 ##
 gfmd${i}=${gfmd}
-${gfmd}_CONFIG_GFARM_OPTIONS="-r -X -A \$LOGNAME -h \$gfmd${i} -a gsi_auth -D /O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${GFDOCKER_PRIMARY_USER}"
-gfmd${i}_AUTH_TYPE=${GFDOCKER_AUTH_TYPE}
+${gfmd}_CONFIG_GFARM_OPTIONS="-r -X -A \$LOGNAME -h \$gfmd${i} -a ${GFDOCKER_AUTH_TYPE} -D /O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=${GFDOCKER_PRIMARY_USER}"
+gfmd${i}_AUTH_TYPE=sharedsecret
 EOF
   done
 
@@ -44,7 +46,7 @@ EOF
 ##
 gfsd${i}=${gfsd}
 gfsd${i}_CONFIG_GFSD_OPTIONS="-h \$gfsd${i} -l \$gfsd${i} -a docker"
-gfsd${i}_AUTH_TYPE=${GFDOCKER_AUTH_TYPE}
+gfsd${i}_AUTH_TYPE=sharedsecret
 EOF
   done
 
@@ -57,6 +59,7 @@ EOF
 ## client ${i}
 ##
 client${i}=${client}
+client${i}_AUTH_TYPE=sharedsecret
 EOF
   done
 }

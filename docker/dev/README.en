@@ -6,8 +6,8 @@ Requirements
 - Docker
 - Docker Compose
 
-Quick start for Ubuntu 18.04
-============================
+Quick start on Ubuntu 18.04 host
+================================
 
 1. Install Docker.
    See https://docs.docker.com/engine/install/ubuntu/ for details.
@@ -50,15 +50,39 @@ $ git clone git@github.com:oss-tsukuba/gfarm2fs.git
 5. Use Docker
 
 $ cd docker/dev
-  # set GFDOCKER_IP_VERSION, GFDOCKER_SUBNET, and GFDOCKER_START_HOST_ADDR
 $ editor config.mk
-$ cd dist/centos7/src  # use CentOS 7
+  # override GFDOCKER_IP_VERSION, GFDOCKER_SUBNET, and GFDOCKER_START_HOST_ADDR
+  # from config-default.mk
+$ cd dist/centos7/src  # when using source package on CentOS 7
   # note: execute 'sudo' in Makefile
 $ make help  # display usage.
 $ make reborn  # up the containers.
 $ make shell  # enter the container.
 $ make regress  # execute regress.
 $ make down  # down the containers.
+
+Keep keys
+=========
+
+1. to keep ssh host keys only for client1 container
+
+  $ cd dist/centos7/src  # when using source package on CentOS 7
+  $ make shell
+  ### in container
+  user1$ sudo ./SAVE_SSH_HOST_KEYS.sh
+
+  Note: These keys are used next time in all distributions.
+
+2. to add your ssh public keys to authorized keys only for user*@client1
+
+  $ cd docker/dev
+  $ sudo editor mnt/ssh_authorized_keys  # add your public keys
+
+  $ cd dist/centos7/src  # when using source package on CentOS 7
+  $ make reborn
+
+  ### use "ssh" instead of "make shell"
+  $ ssh user2@192.168.224.18  # IP addresss of client1 container
 
 Note
 ====

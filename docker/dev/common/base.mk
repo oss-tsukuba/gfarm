@@ -1,5 +1,8 @@
 # This file need config.mk
 
+include $(ROOTDIR)/config-default.mk
+include $(ROOTDIR)/config.mk
+
 .PHONY: help ps build up down start stop shell shell-root shell-user \
 		regress test-fo systest test-all valgrind-gfmd docker-compose \
 		gen
@@ -24,13 +27,20 @@ ifneq ($(and $(GFDOCKER_PROXY_HOST),$(GFDOCKER_PROXY_PORT)),)
 GFDOCKER_ENABLE_PROXY = true
 endif
 
-PROXY_URL = http://$(PROXY_HOST):$(PROXY_PORT)/
+PROXY_URL = http://$(GFDOCKER_PROXY_HOST):$(GFDOCKER_PROXY_PORT)/
 GFDOCKER_USERNAME_PREFIX = user
 GFDOCKER_PRIMARY_USER = $(GFDOCKER_USERNAME_PREFIX)1
 PRIMARY_CLIENT_CONTAINER = $(GFDOCKER_HOSTNAME_PREFIX_CLIENT)1
 TOP = ../../../../..
 
+ifneq ($(GFDOCKER_NO_CACHE), 0)
+NO_CACHE = --no-cache
+else
+NO_CACHE =
+endif
+
 DOCKER_BUILD_FLAGS = \
+		$(NO_CACHE) \
 		--build-arg GFDOCKER_NUM_JOBS='$(GFDOCKER_NUM_JOBS)' \
 		--build-arg GFDOCKER_USERNAME_PREFIX='$(GFDOCKER_USERNAME_PREFIX)' \
 		--build-arg GFDOCKER_PRIMARY_USER='$(GFDOCKER_PRIMARY_USER)' \
@@ -55,15 +65,19 @@ DOCKER = $(SUDO) docker
 COMPOSE = $(SUDO) COMPOSE_PROJECT_NAME=gfarm-$(GFDOCKER_PRJ_NAME) \
 	GFDOCKER_PRJ_NAME=$(GFDOCKER_PRJ_NAME) docker-compose
 CONTSHELL_FLAGS = \
+		--env GFDOCKER_USERNAME_PREFIX='$(GFDOCKER_USERNAME_PREFIX)' \
 		--env GFDOCKER_PRIMARY_USER='$(GFDOCKER_PRIMARY_USER)' \
 		--env GFDOCKER_NUM_GFMDS='$(GFDOCKER_NUM_GFMDS)' \
 		--env GFDOCKER_NUM_GFSDS='$(GFDOCKER_NUM_GFSDS)' \
 		--env GFDOCKER_NUM_CLIENTS='$(GFDOCKER_NUM_CLIENTS)' \
+		--env GFDOCKER_NUM_USERS='$(GFDOCKER_NUM_USERS)' \
 		--env GFDOCKER_HOSTNAME_PREFIX_GFMD='$(GFDOCKER_HOSTNAME_PREFIX_GFMD)' \
 		--env GFDOCKER_HOSTNAME_PREFIX_GFSD='$(GFDOCKER_HOSTNAME_PREFIX_GFSD)' \
 		--env GFDOCKER_HOSTNAME_PREFIX_CLIENT='$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)'
 CONTSHELL = $(COMPOSE) exec $(CONTSHELL_FLAGS) -u '$(GFDOCKER_PRIMARY_USER)' \
 		'$(PRIMARY_CLIENT_CONTAINER)' bash
+# overridable
+CONTSHELL_ARGS :=  -c 'cd ~ && bash'
 
 help:
 	@echo 'Usage:'
@@ -90,6 +104,10 @@ help:
 	@echo '  make opensuse'
 
 define check_config
+if [ ! -d $(TOP)/gfarm2fs ]; then \
+	echo '<Gfarm source directory>/gfarm2fs does not exist.' 1>&2; \
+	false; \
+fi
 if ! [ -f $(TOP)/docker/dev/.shadow.config.mk ]; then \
 	echo '.shadow.config.mk does not exist.' \
 		'Containers are maybe down.' \
@@ -153,6 +171,7 @@ TOP='$(TOP)' \
 	GFDOCKER_HOSTNAME_PREFIX_GFSD='$(GFDOCKER_HOSTNAME_PREFIX_GFSD)' \
 	GFDOCKER_HOSTNAME_PREFIX_CLIENT='$(GFDOCKER_HOSTNAME_PREFIX_CLIENT)' \
 	GFDOCKER_AUTH_TYPE='$(GFDOCKER_AUTH_TYPE)' \
+	GFDOCKER_PRJ_NAME='$(GFDOCKER_PRJ_NAME)' \
 	'$(TOP)/docker/dev/common/gen.sh'
 	cp $(TOP)/docker/dev/config.mk $(TOP)/docker/dev/.shadow.config.mk
 endef
@@ -180,7 +199,7 @@ stop:
 	$(COMPOSE) stop
 
 define shell_user
-$(CONTSHELL)
+$(CONTSHELL) $(CONTSHELL_ARGS)
 endef
 
 shell:
@@ -193,7 +212,8 @@ shell-user:
 
 shell-root:
 	$(check_config)
-	$(COMPOSE) exec '$(PRIMARY_CLIENT_CONTAINER)' bash
+	echo "*** Please use sudo on shell-suer instead of shell-root ***"
+	$(COMPOSE) exec '$(PRIMARY_CLIENT_CONTAINER)' bash $(CONTSHELL_ARGS)
 
 define regress
 $(CONTSHELL) -c '. ~/gfarm/docker/dev/common/regress.rc'
@@ -231,7 +251,7 @@ docker-compose:
 test-all:
 	$(check_config)
 	$(regress)
-	$(test-fo)
+	$(test_fo)
 	$(systest)
 
 valgrind-gfmd:
@@ -242,5 +262,14 @@ valgrind-gfmd:
 centos7:
 	$(DOCKER) run -it --rm 'centos:7' bash
 
+centos8:
+	$(DOCKER) run -it --rm 'centos:8' bash
+
 opensuse:
-	$(DOCKER) run -it --rm opensuse bash
+	$(DOCKER) run -it --rm 'opensuse/leap' bash
+
+ubuntu1804:
+	$(DOCKER) run -it --rm 'ubuntu:18.04' bash
+
+ubuntu2004:
+	$(DOCKER) run -it --rm 'ubuntu:20.04' bash

@@ -1,7 +1,8 @@
-FROM centos:7
+FROM centos:8
 
 # System dependent
 
+RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
 ENV TZ=Asia/Tokyo
 
 RUN yum -y update \
@@ -33,10 +34,10 @@ RUN yum -y update \
     && globus-version
 
 ## for debug
-RUN sed -i -e '/tsflags=nodocs/s/^/#/' /etc/yum.conf
-RUN yum -y install \
-    nc ldns iproute2 net-tools bind-utils telnet tcpdump \
-    gdb valgrind strace inotify-tools \
+RUN yum -y update \
+    && yum -y install \
+    nc ldns iproute net-tools bind-utils telnet tcpdump \
+    gdb strace valgrind inotify-tools libtsan \
     man man-pages man-db which \
     nano emacs-nox less
 
