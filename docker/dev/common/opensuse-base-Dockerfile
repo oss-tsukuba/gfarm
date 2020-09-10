@@ -2,37 +2,51 @@ FROM opensuse/leap
 
 # System dependent
 
-RUN zypper install -y sudo openssh systemd-sysvinit
+ENV TZ=Asia/Tokyo
+
+RUN zypper install -y \
+    sudo \
+    openssh \
+    systemd-sysvinit \
+    patch \
+    rpm-build \
+    wget \
+    rsync
+
 RUN systemctl enable sshd
-RUN sed -i 's@^Defaults secure_path="/usr/sbin:@Defaults secure_path="/usr/local/bin:/usr/sbin:@' /etc/sudoers
 
 # postgresql12(default) does not have pg_config.
 RUN zypper install -y \
-	openssl-devel postgresql10-devel postgresql10 postgresql-server \
-	fuse fuse-devel libacl-devel ruby \
-	libtool patch rpm-build wget rsync
+    openssl-devel \
+    postgresql10-devel \
+    postgresql10 \
+    postgresql-server \
+    fuse \
+    fuse-devel \
+    libacl-devel \
+    ruby \
+    libtool
 
 # Grid Community Toolkit (Globus Tool Kit)
 RUN zypper addrepo \
-	https://download.opensuse.org/repositories/home:frank_scheiner:gct/openSUSE_Leap_15.2/home:frank_scheiner:gct.repo \
-	&& zypper --non-interactive --no-gpg-checks refresh \
-	&& zypper install -y \
-		globus-gssapi-gsi-devel globus-simple-ca \
-		globus-gsi-cert-utils-progs globus-proxy-utils \
-	&& globus-version
+    https://download.opensuse.org/repositories/home:frank_scheiner:gct/openSUSE_Leap_15.2/home:frank_scheiner:gct.repo \
+    && zypper --non-interactive --no-gpg-checks refresh \
+    && zypper install -y \
+    globus-gssapi-gsi-devel \
+    globus-simple-ca \
+    globus-gsi-cert-utils-progs \
+    globus-proxy-utils \
+    && globus-version
 
 # for debug
 RUN zypper install -y \
-	telnet ncat ldns iproute2 net-tools bind-utils tcpdump \
-	gdb valgrind strace inotify-tools \
-	nano emacs-nox vim less which \
-	man man-pages man-pages-ja
+    telnet ncat ldns iproute2 net-tools bind-utils tcpdump \
+    gdb valgrind strace inotify-tools \
+    man man-pages man-pages-ja \
+    nano emacs-nox vim less which
 
-# for grid-cert-request
-RUN mkdir -p /var/adm && head -1000 /dev/urandom >> /var/adm/wtmp && \
-	cp /var/adm/wtmp /var/log/messages
+RUN sed -i 's@^Defaults secure_path="/usr/sbin:@Defaults secure_path="/usr/local/bin:/usr/sbin:@' /etc/sudoers
 
-RUN cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 
 # System independent (see setup-univ.sh)
 

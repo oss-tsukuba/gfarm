@@ -3,43 +3,46 @@ FROM centos:8
 # System dependent
 
 RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+ENV TZ=Asia/Tokyo
 
-RUN yum -y update
-RUN yum -y install langpacks-ja
+RUN yum -y update \
+    && yum -y install \
+    sudo \
+    openssh-server \
+    rsync \
+    langpacks-ja \
+    && yum -y groupinstall "Development Tools"
 
-# include systemd
-RUN yum -y install sudo openssh-server rsync
+RUN yum -y update \
+    && yum -y install \
+    epel-release \
+    openssl-devel \
+    postgresql-devel \
+    postgresql \
+    postgresql-server \
+    fuse \
+    fuse-devel \
+    libacl-devel \
+    ruby
 
-### timedatectl ... System has not been booted with systemd as init
-### system (PID 1).  Can't operte.  Failed to create bus connection:
-### Host is down
-# RUN timedatectl set-timezone Asia/Tokyo
-RUN cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+RUN yum -y update \
+    && yum -y --enablerepo=epel install \
+    globus-gssapi-gsi-devel \
+    globus-simple-ca \
+    globus-gsi-cert-utils-progs \
+    globus-proxy-utils \
+    && globus-version
+
+## for debug
+RUN yum -y update \
+    && yum -y install \
+    nc ldns iproute net-tools bind-utils telnet tcpdump \
+    gdb strace valgrind inotify-tools libtsan \
+    man man-pages man-db which \
+    nano emacs-nox less
 
 RUN sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
 
-RUN yum -y groupinstall "Development Tools"
-
-RUN yum -y install epel-release openssl-devel postgresql-devel postgresql \
-	postgresql-server fuse fuse-devel libacl-devel ruby
-
-RUN yum -y --enablerepo=epel install globus-gssapi-gsi-devel globus-simple-ca \
-	globus-gsi-cert-utils-progs globus-proxy-utils
-
-## for debug
-# RUN sed -i -e '/tsflags=nodocs/s/^/#/' /etc/yum.conf
-RUN yum -y install \
-	nc ldns iproute net-tools bind-utils telnet tcpdump \
-	man man-pages man-db which \
-	gdb strace valgrind inotify-tools libtsan \
-	nano emacs-nox less
-
-## clean
-RUN rm -rf /var/cache/yum/* && yum clean all
-
-## for grid-cert-request
-RUN mkdir -p /var/adm && head -1000 /dev/urandom >> /var/adm/wtmp && \
-    cp /var/adm/wtmp /var/log/messages
 
 # System independent (see setup-univ.sh)
 
