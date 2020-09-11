@@ -32,6 +32,12 @@ hosts = []
 for i in range(0, start_host_addr - 1):
     next(hi)  # skip unused hosts
 
+# pin IP address for client1
+for i in range(0, num_clients):
+    hosts.append(ContainerHost(
+        '{}{}'.format(hostname_prefix_client, i+1),
+        next(hi)
+    ))
 for i in range(0, num_gfmds):
     hosts.append(ContainerHost(
         '{}{}'.format(hostname_prefix_gfmd, i+1),
@@ -44,11 +50,6 @@ for i in range(0, num_gfsds):
         next(hi)
     ))
 
-for i in range(0, num_clients):
-    hosts.append(ContainerHost(
-        '{}{}'.format(hostname_prefix_client, i+1),
-        next(hi)
-    ))
 
 print('''\
 # This file was automatically generated.

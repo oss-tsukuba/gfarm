@@ -35,12 +35,13 @@ GRID_MAPFILE=/etc/grid-security/grid-mapfile
 PRIMARY_HOME=/home/${GFDOCKER_PRIMARY_USER}
 gfarm_src_path="${PRIMARY_HOME}/gfarm"
 
-for u in _gfarmmd _gfarmfs; do
-  $USERADD "$u"
-done
-
+# pin UID for user1
 for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
   $USERADD "${GFDOCKER_USERNAME_PREFIX}${i}";
+done
+
+for u in _gfarmmd _gfarmfs; do
+  $USERADD "$u"
 done
 
 # "chown -R" is slow.
