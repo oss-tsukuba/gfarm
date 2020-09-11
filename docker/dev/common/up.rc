@@ -89,25 +89,29 @@ EOF
 done
 
 for host in $gfmds $gfsds $clients; do
-  gfservice -d grid-proxy-init "$host"
+  gfservice -d grid-proxy-init "$host" &
 done
+wait
 
 gfservice -k -d config-all
 
 for host in $gfmds; do
-  gfservice set-gfmd-conf "$host" digest md5
-  gfservice set-gfmd-conf "$host" metadb_server_heartbeat_interval 10
-  gfservice restart-gfmd "$host"
-  gfservice gfmd-status "$host"
+  (gfservice set-gfmd-conf "$host" digest md5 \
+  && gfservice set-gfmd-conf "$host" metadb_server_heartbeat_interval 10 \
+  && gfservice restart-gfmd "$host" \
+  && gfservice gfmd-status "$host") &
 done
+wait
 
 for host in $gfsds; do
-  gfservice gfsd-status "$host"
+  gfservice gfsd-status "$host" &
 done
+wait
 
 for host in $clients; do
-  gfservice set-gfarm-conf "$host" client_digest_check enable
+  gfservice set-gfarm-conf "$host" client_digest_check enable &
 done
+wait
 
 gfmdhost -l
 gfhost -lv
