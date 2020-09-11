@@ -3,17 +3,19 @@ Release note for Gfarm 2.7.17
 
 [NOT-RELEASED-YET]
 
+Update note
+* this release requires config-gfarm-update --update
+
 New feature
 * libgfarm - Multithread safe.  For details, see lib/libgfarm/README.MT-safe
 * Gfarm read only file system - gfstatus -Mm 'read_only enable'
+* pkg-config support
 
 New configuration file
-
 * gfmd.failover.conf - this configuration file will be read at
   failover, which is mainly used by Gfarm-zabbix failover mechanism to
   make Gfarm read only when gfmd is failed over but it may be stale.
-  When this file does not exist, "cannot open" error will be logged at
-  failover.  Create an empty file at least.
+  This file is created by config-gfarm or config-gfarm-update --update.
 
 New configuration directive
 * read_only - read only file system
@@ -32,6 +34,8 @@ Updated feature
 * gfarmbb - -mpi and -conf options to set up Gfarm/BB using mpirun
 * gfmv - allow gfmv between different directory quota setting [#1081]
 * gfkey - -V option to display version information
+* gfstatus - auth directive can be dynamically updated
+* config-gfarm-update - error check
 * gfsd - display gfsd type in command line field of ps(1) [#1100]
 * gfmd - record gfmd config changes in log [#1097]
 * gfmd - -u option to specify file name of gfmd.failover.conf
@@ -44,6 +48,7 @@ Bug fix
   [#1102]
 * fix segfault when calling gfarm_initialize after gfarm_terminate if
   log_file directive is used
+* when gfmd is failovered, quota is not correct [#1101]
 
 Release note for Gfarm 2.7.16
 =============================
