@@ -23,6 +23,11 @@ set -eux
 : $GFDOCKER_HOSTNAME_PREFIX_GFMD
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 
+# sshd avoids users when /run/nologin exists. (/run/nologin may exist.)
+cat <<EOF > /etc/tmpfiles.d/run_nologin.conf
+rm -f /run/nologin
+EOF
+
 MY_SHELL=/bin/bash
 USERADD="useradd -m -s "$MY_SHELL" -U"
 ca_key_pass=PASSWORD
