@@ -1,9 +1,38 @@
-set -x
+set -xu
 
-cd ~/gfarm/regress
-gfmkdir /tmp
+GFARM_SRCDIR=~/gfarm
+RUN_REGRESS=$GFARM_SRCDIR/docker/dev/common/run_regress.sh
+
+cd $GFARM_SRCDIR/regress
+gfmkdir -p /tmp
 gfchmod 777 /tmp
-if ! [ -e bin/gfmd_restart_all ]; then
-  ln -s gfmd_restart_all.gfservice.sh bin/gfmd_restart_all
+
+LOG_REMOTE_ROOT=log.w_root.remote
+LOG_LOCAL_NONROOT=log.wo_root.local
+
+bin/am_I_gfarmroot
+is_gfarmroot=$?
+
+me=$(gfwhoami)
+gfsdhost=gfsd1
+
+GFARM_TEST_CKSUM_MISMATCH=/tmp/cksum_mismatch
+printf '%4194308s' ' ' | gfreg -h $gfsdhost - $GFARM_TEST_CKSUM_MISMATCH
+SPOOL_PATH=/var/gfarm-spool-$gfsdhost/$(gfspoolpath $GFARM_TEST_CKSUM_MISMATCH)
+ssh $gfsdhost "printf '%4194307sX' ' ' | sudo dd of=$SPOOL_PATH"
+
+if [ $is_gfarmroot -ne 0 ]; then
+    gfgroup -a -m gfarmroot $me
 fi
-make check
+$RUN_REGRESS $GFARM_SRCDIR $LOG_REMOTE_ROOT $GFARM_TEST_CKSUM_MISMATCH || true
+
+gfgroup -r -m gfarmroot $me
+ssh $gfsdhost $RUN_REGRESS $GFARM_SRCDIR $LOG_LOCAL_NONROOT $GFARM_TEST_CKSUM_MISMATCH || true
+
+### restore
+if [ $is_gfarmroot -eq 0 ]; then
+    gfgroup -a -m gfarmroot $me
+fi
+
+scp $gfsdhost:$GFARM_SRCDIR/regress/$LOG_LOCAL_NONROOT .
+./addup.sh -v $LOG_REMOTE_ROOT $LOG_LOCAL_NONROOT

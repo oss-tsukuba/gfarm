@@ -1,1 +1,1 @@
-#auth enable sharedsecret *
+auth enable sharedsecret *
