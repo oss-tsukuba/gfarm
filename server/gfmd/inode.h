@@ -237,6 +237,8 @@ gfarm_error_t inode_xattr_modify(struct inode *, int, const char *,
 	void *, size_t);
 gfarm_error_t inode_xattr_get_cache(struct inode *, int, const char *,
 	void **, size_t *);
+gfarm_error_t inode_xattr_get_cache_with_process(struct inode *, int,
+	const char *, void **, size_t *, struct process *);
 gfarm_error_t inode_xattr_cache_is_same(struct inode *, int, const char *,
 	const void *, size_t);
 int inode_xattr_has_attr(struct inode *, int, const char *);
@@ -252,6 +254,7 @@ struct xattr_list {
 };
 void inode_xattr_list_free(struct xattr_list *, size_t);
 gfarm_error_t inode_xattr_list_get_cached_by_patterns(gfarm_ino_t,
+	struct process *,
 	char **, int, struct dirset *, struct xattr_list **, size_t *);
 
 gfarm_error_t inode_xattr_to_uint(const void *, size_t, unsigned int *, int *);

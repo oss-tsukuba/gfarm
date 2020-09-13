@@ -139,7 +139,8 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 		    strcmp(type, "acl_access") != 0 &&
 		    strcmp(type, "acl_default") != 0 &&
 		    strcmp(type, GFARM_EA_REPATTR_TYPE) != 0 &&
-		    strcmp(type, GFARM_EA_DIRECTORY_QUOTA_TYPE) != 0)
+		    strcmp(type, GFARM_EA_DIRECTORY_QUOTA_TYPE) != 0 &&
+		    strcmp(type, GFARM_EA_EFFECTIVE_PERM_TYPE) != 0)
 			goto not_supp;
 		else if (inode_is_symlink(inode))
 			goto symlink;
@@ -637,8 +638,8 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		e = GFARM_ERR_INVALID_ARGUMENT;
 		gflog_debug(GFARM_MSG_1002077,
 			"argument 'attrname' is invalid");
-	} else if ((e = inode_xattr_get_cache(inode, xmlMode, attrname,
-	    &value, &size)) != GFARM_ERR_NO_ERROR) {
+	} else if ((e = inode_xattr_get_cache_with_process(inode, xmlMode,
+	    attrname, &value, &size, process)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002510,
 		    "getxattr(%s): %s", attrname, gfarm_error_string(e));
 	} else if (value == NULL) { /* not cached */
