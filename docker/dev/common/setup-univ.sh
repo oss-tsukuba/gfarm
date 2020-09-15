@@ -102,6 +102,8 @@ for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do
     >> /etc/sudoers
   echo "${user} ALL=(root, _gfarmfs, _gfarmmd) NOPASSWD: /usr/local/bin/gfservice-agent" \
     >> /etc/sudoers
+  echo "### for regress" >> /etc/sudoers
+  echo "${user} ALL=(_gfarmfs) NOPASSWD: ALL" >> /etc/sudoers
   echo "${user} ALL=NOPASSWD: ALL" >> /etc/sudoers
   ssh_dir="/home/${user}/.ssh"
   mkdir -m 0700 -p "$ssh_dir"

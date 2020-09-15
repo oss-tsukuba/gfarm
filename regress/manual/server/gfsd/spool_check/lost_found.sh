@@ -21,8 +21,8 @@ if [ -z "$GFSD_HOST_NAME" ]; then
     echo >&2 "need GFSD_HOST_NAME in $TEST_CONFIG"
     exit $exit_unsupported
 fi
-if [ -z "$GFSD_START_SCRIPT" -o ! -f $GFSD_START_SCRIPT ]; then
-    echo >&2 "need GFSD_START_SCRIPT in $TEST_CONFIG"
+if [ -z "$GFSD_RESTART_COMMAND" ]; then
+    echo >&2 "need GFSD_RESTART_COMMAND in $TEST_CONFIG"
     exit $exit_unsupported
 fi
 if [ -z "$GFSD_SPOOL_DIR" -o ! -d $GFSD_SPOOL_DIR ]; then
@@ -157,7 +157,7 @@ if [ $? -ne 0 ]; then
 fi
 
 ### gfsd restart
-$SUDO $GFSD_START_SCRIPT restart
+$SUDO $GFSD_RESTART_COMMAND
 while :; do
     gfsched | grep $GFSD_HOST_NAME
     if [ $? -eq 0 ]; then

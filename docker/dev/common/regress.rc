@@ -7,8 +7,8 @@ cd $GFARM_SRCDIR/regress
 gfmkdir -p /tmp
 gfchmod 777 /tmp
 
-LOG_REMOTE_ROOT=log.w_root.remote
-LOG_LOCAL_NONROOT=log.wo_root.local
+LOG_REMOTE_NONROOT=log.wo_root.remote
+LOG_LOCAL_ROOT=log.w_root.local
 
 bin/am_I_gfarmroot
 is_gfarmroot=$?
@@ -21,18 +21,39 @@ printf '%4194308s' ' ' | gfreg -h $gfsdhost - $GFARM_TEST_CKSUM_MISMATCH
 SPOOL_PATH=/var/gfarm-spool-$gfsdhost/$(gfspoolpath $GFARM_TEST_CKSUM_MISMATCH)
 ssh $gfsdhost "printf '%4194307sX' ' ' | sudo dd of=$SPOOL_PATH"
 
-if [ $is_gfarmroot -ne 0 ]; then
-    gfgroup -a -m gfarmroot $me
-fi
-$RUN_REGRESS $GFARM_SRCDIR $LOG_REMOTE_ROOT $GFARM_TEST_CKSUM_MISMATCH || true
+eval $(config-gfarm -T | grep GFARM_CONF=)
 
-gfgroup -r -m gfarmroot $me
-ssh $gfsdhost $RUN_REGRESS $GFARM_SRCDIR $LOG_LOCAL_NONROOT $GFARM_TEST_CKSUM_MISMATCH || true
+SPOOL_CHECK_CONFIG=spool_check_config.sh
+cat <<EOF > $SPOOL_CHECK_CONFIG
+GFSD_HOST_NAME=${gfsdhost}
+GFSD_RESTART_COMMAND="systemctl restart gfsd-${gfsdhost}"
+GFSD_SPOOL_DIR=/var/gfarm-spool-${gfsdhost}
+GFSD_CONFIG_FILE=${GFARM_CONF}
+USE_SUDO=true
+EOF
 
-### restore
+scp $SPOOL_CHECK_CONFIG $gfsdhost:~/gfarm/regress/manual/server/gfsd/spool_check/config.sh
+
+trap_sigs='1 2 15'
+restore() {
+    if [ $is_gfarmroot -ne 0 ]; then
+        gfgroup -r -m gfarmroot $me
+    fi
+}
+trap 'restore' $trap_sigs
+
 if [ $is_gfarmroot -eq 0 ]; then
-    gfgroup -a -m gfarmroot $me
+    gfgroup -r -m gfarmroot $me
 fi
+# remote access and non-gfarmroot
+$RUN_REGRESS $GFARM_SRCDIR $LOG_REMOTE_NONROOT $GFARM_TEST_CKSUM_MISMATCH || true
 
-scp $gfsdhost:$GFARM_SRCDIR/regress/$LOG_LOCAL_NONROOT .
-./addup.sh -v $LOG_REMOTE_ROOT $LOG_LOCAL_NONROOT
+# local access and gfarmroot
+gfgroup -a -m gfarmroot $me
+ssh $gfsdhost $RUN_REGRESS $GFARM_SRCDIR $LOG_LOCAL_ROOT $GFARM_TEST_CKSUM_MISMATCH || true
+
+restore
+
+scp $gfsdhost:$GFARM_SRCDIR/regress/$LOG_LOCAL_ROOT .
+./addup.sh -v $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT
+./addup.sh $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT
