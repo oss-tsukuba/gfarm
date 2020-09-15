@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %if %{undefined ver}
-%define ver	2.7.16
+%define ver	2.7.17
 %endif
 %if %{undefined rel}
 %define rel	1
@@ -1307,6 +1307,8 @@ fi
 %{share_prefix}/config/gfarm.sql
 %{share_prefix}/config/gfarm-xmlattr.sql
 %{share_prefix}/config/gfarm.schema
+%{share_prefix}/config/gfmd.failover.agent.conf
+%{share_prefix}/config/gfmd.failover.conf
 %{share_prefix}/config/initial.ldif.in
 %{share_prefix}/config/linux/debian/gfarm-pgsql.in
 %{share_prefix}/config/linux/debian/gfarm-slapd.in

@@ -8,6 +8,9 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
+/* avoid locking for calling EVP_get_digestbyname() */
+#undef DISABLE_GETDIGEST_LOCK
+
 /* support XML extended attributes and XPath search */
 #undef ENABLE_XMLATTR
 
