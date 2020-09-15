@@ -1,1 +1,3 @@
 auth enable sharedsecret *
+#auth enable gsi_auth *
+#auth enable gsi *

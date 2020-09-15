@@ -98,6 +98,7 @@ gfservice -k -d config-all
 for host in $gfmds; do
   (gfservice set-gfmd-conf "$host" digest md5 \
   && gfservice set-gfmd-conf "$host" metadb_server_heartbeat_interval 10 \
+  && gfservice set-gfmd-conf "$host" 'auth enable gsi' '*' \
   && gfservice restart-gfmd "$host") &
 done
 wait
@@ -105,6 +106,7 @@ wait
 for host in $gfsds; do
   (gfservice set-gfarm-conf "$host" client_digest_check enable \
   && gfservice set-gfarm-conf "$host" spool_digest_error_check disable \
+  && gfservice set-gfarm-conf "$host" 'auth enable gsi' '*' \
   && gfservice restart-gfsd "$host") &
 done
 wait
@@ -114,10 +116,40 @@ for host in $clients; do
 done
 wait
 
-gfmdhost -l
-gfhost -lv
-num_gfmdhost=$(gfmdhost | wc -l)
-num_gfsched=$(gfsched | wc -l)
-[ $num_gfmdhost -eq $GFDOCKER_NUM_GFMDS ] || exit 1
-[ $num_gfsched -eq $GFDOCKER_NUM_GFSDS ] || exit 1
+set +x
+
+test_auth() {
+  echo "***** $authtype *****"
+  gfmdhost -l
+  gfhost -lv
+  num_gfmdhost=$(gfmdhost | wc -l)
+  num_gfsched=$(gfsched | wc -l)
+  [ $num_gfmdhost -eq $GFDOCKER_NUM_GFMDS ] || exit 1
+  [ $num_gfsched -eq $GFDOCKER_NUM_GFSDS ] || exit 1
+}
+
+tmp_gfarmconf=$(mktemp)
+for authtype in sharedsecret gsi_auth gsi; do
+  if [ $authtype = sharedsecret ]; then
+    cat <<EOF  > $tmp_gfarmconf
+auth enable sharedsecret *
+auth disable gsi_auth *
+auth disable gsi *
+EOF
+  elif [ $authtype = gsi_auth ]; then
+    cat <<EOF  > $tmp_gfarmconf
+auth disable sharedsecret *
+auth enable gsi_auth *
+auth disable gsi *
+EOF
+  elif [ $authtype = gsi ]; then
+    cat <<EOF  > $tmp_gfarmconf
+auth disable sharedsecret *
+auth disable gsi_auth *
+auth enable gsi *
+EOF
+  fi
+  GFARM_CONFIG_FILE=$tmp_gfarmconf test_auth $authtype
+done
+rm -f $tmp_gfarmconf
 date
