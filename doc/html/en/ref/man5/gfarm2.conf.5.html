@@ -637,6 +637,26 @@ has to be specified in both gfarm2.conf and gfmd.conf.
 	metadb_server_heartbeat_interval 180<br>
 </p></div>
 </dd>
+<dt><span class="term"><span class="token">failover_notify_delay</span> <em class="parameter"><code>seconds</code></em></span></dt>
+<dd>
+<p>
+This directive specifies the delay (in seconds) that
+new master gfmd notifies its start to gfsd processes on each
+filesystem node.
+If this delay is 0 seconds, it's highly possible that some gfsd process
+detects a stop of previous master gfmd and connects to the new master gfmd
+just before the notification, and in that case, the gfsd process will
+disconnect and retry connecting to the new gfmd again.
+To avoid such inefficiency, the default of this delay is 5 seconds.
+</p>
+<p>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</p>
+<p>For example,</p>
+<div class="literallayout"><p><br>
+	failover_notify_delay 10<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">metadb_server_dbq_size</span> <em class="parameter"><code>size</code></em></span></dt>
 <dd>
 <p>This directive specifies the queue length of metadata updates
@@ -2386,6 +2406,7 @@ The default size is 16 MiB.
 	&lt;metadb_server_remove_scan_log_interval_statement&gt; |<br>
 	&lt;metadb_server_remove_scan_interval_factor_statement&gt; |<br>
 	&lt;metadb_server_heartbeat_interval_statement&gt; |<br>
+	&lt;metadb_server_failover_notify_delay_statement&gt; |<br>
 	&lt;metadb_server_dbq_size_statement&gt; |<br>
 	&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; |<br>
 	&lt;metadb_server_nfs_root_squash_support_statement&gt; |<br>
@@ -2557,6 +2578,8 @@ The default size is 16 MiB.
 <dd><div class="literallayout"><p>"metadb_server_remove_scan_interval_factor" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_heartbeat_interval_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_server_heartbeat_interval" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;metadb_server_failover_notify_delay_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"failover_notify_delay" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_dbq_size_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_server_dbq_size" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; ::=</span></dt>
