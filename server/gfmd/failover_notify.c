@@ -13,6 +13,7 @@
 
 #include <gfarm/gfarm.h>
 
+#include "gfutil.h"
 #include "gfnetdb.h"
 
 #include "gfs_proto.h"
@@ -20,6 +21,7 @@
 #include "context.h"
 #include "auth.h" /* for gfarm_auth_random() */
 #include "hostspec.h" /* GFARM_SOCKADDR_STRLEN */
+#include "config.h"
 
 #include "subr.h"
 #include "watcher.h"
@@ -407,8 +409,8 @@ record_fsnode(struct host *h, void *junk, void *rec)
 	return (1); /* record all fsnode */
 }
 
-void
-failover_notify(void)
+static void *
+failover_notify_thread(void *arg)
 {
 	gfarm_error_t e;
 	struct host **fsnodes;
@@ -416,6 +418,8 @@ failover_notify(void)
 	void *tmp;
 	struct failover_notify_closure *fnc;
 	int sock;
+
+	gfarm_sleep(gfarm_metadb_failover_notify_delay);
 
 	giant_lock();
 	e = host_iterate(record_fsnode, NULL, sizeof(*fsnodes),
@@ -425,11 +429,13 @@ failover_notify(void)
 		gflog_error(GFARM_MSG_1004083,
 		    "failover_notify: filesystem node allocation: %s",
 		    gfarm_error_string(e));
-		return;
+		return (NULL);
 	}
 	fsnodes = tmp;
 
 	for (i = 0; i < nfsnodes; i++) {
+		if (host_is_up(fsnodes[i])) /* already connected, skip */
+			continue;
 		if ((sock = udp_connect_to(
 		    host_name(fsnodes[i]), host_port(fsnodes[i]))) == -1)
 			;
@@ -440,4 +446,18 @@ failover_notify(void)
 			failover_notify_send(fnc);
 	}
 	free(fsnodes);
+
+	return (NULL);
+}
+
+void
+failover_notify(void)
+{
+	gfarm_error_t e;
+
+	e = create_detached_thread(failover_notify_thread, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "create_detached_thread(failover_notify): %s",
+		    gfarm_error_string(e));
 }
