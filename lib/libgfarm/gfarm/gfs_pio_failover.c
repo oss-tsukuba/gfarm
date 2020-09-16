@@ -127,9 +127,9 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 	/* increment ref count of gfm_server */
 	if ((e = gfs_pio_reopen_fd(gf, &gfm_server, &fd, &type, &real_url,
 	    &ino, &gen)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1003380,
-		    "reopen operation on file descriptor for URL (%s) "
-		    "failed: %s",
+		gflog_warning(GFARM_MSG_1003380,
+		    "WARNING: reopen operation on file descriptor for URL (%s)"
+		    " failed: %s",
 		    gfs_pio_url(gf),
 		    gfarm_error_string(e));
 		free(real_url);
@@ -153,11 +153,12 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 		if (real_url != NULL) {
 			free(real_url);
 		}
-		(void)gfm_close_fd(gfm_server, fd, NULL, NULL);
+		if (fd != -1)
+			(void)gfm_close_fd(gfm_server, fd, NULL, NULL);
 		gf->fd = -1;
 		gf->error = e;
-		gflog_debug(GFARM_MSG_1003381,
-		    "reopen operation on pio for URL (%s) failed: %s",
+		gflog_warning(GFARM_MSG_1003381,
+		    "WARNING: reopen operation on pio for URL (%s) failed: %s",
 		    gf->url,
 		    gfarm_error_string(e));
 	}
