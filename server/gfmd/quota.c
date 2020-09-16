@@ -1225,21 +1225,6 @@ quota_check_thread(void *arg)
 	return (NULL);
 }
 
-static gfarm_error_t
-quota_check_at_the_start(struct quota_check_control *ctl, int check_start)
-{
-	gfarm_error_t e = create_detached_thread(quota_check_thread, ctl);
-
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-
-	if (check_start) {
-		quota_check_start(ctl);
-		quota_check_wait_for_end(ctl);
-	}
-
-	return (GFARM_ERR_NO_ERROR);
-}
 
 /*
  * quota_check
@@ -1642,19 +1627,21 @@ quota_check_init(void)
 {
 	gfarm_error_t e;
 
-	/* quota_check at startup is unnecessary since gfarm-2.7.17 */
-	e = quota_check_at_the_start(&quota_check_ctl, 0);
+	e = create_detached_thread(quota_check_thread, &quota_check_ctl);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1004299,
 		    "create_detached_thread(quota_check): %s",
 		    gfarm_error_string(e));
+	/* quota_check_start() at startup is unnecessary since gfarm-2.7.17 */
 
-	/* dirquota_check at startup is still necessary */
-	e = quota_check_at_the_start(&dirquota_check_ctl, 1);
+	e = create_detached_thread(quota_check_thread, &dirquota_check_ctl);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1004641,
 		    "create_detached_thread(dirquota_check): %s",
 		    gfarm_error_string(e));
+	/* quota_check_start() for dirquota at startup is still necessary */
+	quota_check_start(&dirquota_check_ctl);
+	/* don't call quota_check_wait_for_end() here to make startup faster */
 }
 
 /*
