@@ -2,7 +2,37 @@ set -ux
 
 : $GFDOCKER_PRIMARY_USER
 
+REGRESS_DIR=~/gfarm/regress
+
+$REGRESS_DIR/bin/am_I_gfarmroot
+is_gfarmroot=$?
+me=$GFDOCKER_PRIMARY_USER
+
+trap_sigs='1 2 15'
+restore() {
+    if [ $is_gfarmroot -ne 0 ]; then
+        gfgroup -r -m gfarmroot $me
+    fi
+}
+trap 'restore' $trap_sigs
+
+if [ $is_gfarmroot -ne 0 ]; then
+    gfgroup -a -m gfarmroot $me
+fi
+
 cd ~/gfarm/systest
-gfgroup -a -m gfarmroot "$GFDOCKER_PRIMARY_USER"
-gfruntest gfarm2fs::make_dir  # using test case
-gfruntest -s gfarm2fs/file_dir_operations  # using scenario file
+
+RESULT=0
+
+# scenario file
+gfruntest -l gfarm2fs_file_dir_operations.log -s gfarm2fs/file_dir_operations
+RESULT1=$?
+[ $RESULT1 -eq 0 ] || RESULT=$RESULT1
+
+# call a test case
+#gfruntest gfarm2fs::make_dir
+#RESULT2=$?
+#[ $RESULT2 -eq 0 ] || RESULT=$RESULT2
+
+restore
+exit $RESULT

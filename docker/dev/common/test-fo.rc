@@ -2,11 +2,30 @@ set -ux
 
 : $GFDOCKER_PRIMARY_USER
 
-cd ~/gfarm/regress/manual/lib/libgfarm/gfarm/gfs_pio_failover
+REGRESS_DIR=~/gfarm/regress
+
+$REGRESS_DIR/bin/am_I_gfarmroot
+is_gfarmroot=$?
+me=$GFDOCKER_PRIMARY_USER
+
+trap_sigs='1 2 15'
+restore() {
+    if [ $is_gfarmroot -ne 0 ]; then
+        gfgroup -r -m gfarmroot $me
+    fi
+}
+trap 'restore' $trap_sigs
+
+if [ $is_gfarmroot -ne 0 ]; then
+    gfgroup -a -m gfarmroot $me
+fi
+
+cd $REGRESS_DIR/manual/lib/libgfarm/gfarm/gfs_pio_failover
 cp gfmd-failover-local.gfservice.sh gfmd-failover-local.sh
 make
-gfmkdir /tmp
+gfmkdir -p /tmp
 gfchmod 777 /tmp
-gfgroup -a -m gfarmroot "$GFDOCKER_PRIMARY_USER"
 ./test-all.sh auto
-gfgroup -r -m gfarmroot "$GFDOCKER_PRIMARY_USER"
+RESULT=$?
+restore
+exit $RESULT

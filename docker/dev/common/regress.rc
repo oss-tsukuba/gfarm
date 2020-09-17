@@ -1,5 +1,8 @@
 set -xu
 
+: $GFDOCKER_PRIMARY_USER
+: $GFDOCKER_HOSTNAME_PREFIX_GFSD
+
 GFARM_SRCDIR=~/gfarm
 RUN_REGRESS=$GFARM_SRCDIR/docker/dev/common/run_regress.sh
 
@@ -13,8 +16,8 @@ LOG_LOCAL_ROOT=log.w_root.local
 bin/am_I_gfarmroot
 is_gfarmroot=$?
 
-me=$(gfwhoami)
-gfsdhost=gfsd1
+me=$GFDOCKER_PRIMARY_USER
+gfsdhost=${GFDOCKER_HOSTNAME_PREFIX_GFSD}1
 
 GFARM_TEST_CKSUM_MISMATCH=/tmp/cksum_mismatch
 printf '%4194308s' ' ' | gfreg -h $gfsdhost - $GFARM_TEST_CKSUM_MISMATCH
