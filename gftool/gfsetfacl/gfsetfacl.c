@@ -10,6 +10,7 @@
 #include <errno.h>
 
 #include <gfarm/gfarm.h>
+#include "gfarm_foreach.h"
 #include "gfarm_path.h"
 
 char *program_name = "gfsetfacl";
@@ -18,10 +19,15 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-		"Usage: %s [-bknrt] [-m acl_spec] [-M acl_file] path...\n",
+		"Usage: %s [-bknrtR] [-m acl_spec] [-M acl_file] path...\n",
 		program_name);
 	exit(1);
 }
+
+struct gfsetfacl_arg {
+	int remove_acl_acccess, remove_acl_default, is_test, recalc_mask;
+	char *acl_file_buf, *acl_spec_buf;
+};
 
 static void
 print_acl(const char *title, const char *path,
@@ -325,37 +331,28 @@ merge_acl_buf(gfarm_acl_t *acl_acc_p, gfarm_acl_t *acl_def_p,
 }
 
 static gfarm_error_t
-acl_set(const char *path,
-	int remove_acl_acccess, int remove_acl_default,
-	const char *acl_file_buf, const char *acl_spec_buf,
-	int is_test, int recalc_mask)
+acl_set(char *path, struct gfs_stat *st, void *arg)
 {
 	gfarm_error_t e;
-	struct gfs_stat sb;
 	gfarm_acl_t acl_acc, acl_def;
 	gfarm_acl_t acl_acc_orig, acl_def_orig;
 	int modified_acc = 0, modified_def = 0;
 	int is_not_equiv;
 	int give_mask_acc = 0, give_mask_def = 0;
 	int acl_check_err;
+	struct gfsetfacl_arg *a = arg;
 
-	e = gfs_stat_cached(path, &sb);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
 	e = gfs_acl_get_file_cached(path, GFARM_ACL_TYPE_ACCESS, &acl_acc);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT)
-		e = gfs_acl_from_mode(sb.st_mode, &acl_acc);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gfs_stat_free(&sb);
+		e = gfs_acl_from_mode(st->st_mode, &acl_acc);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
-	if (GFARM_S_ISDIR(sb.st_mode)) {
+	if (GFARM_S_ISDIR(st->st_mode)) {
 		e = gfs_acl_get_file_cached(path, GFARM_ACL_TYPE_DEFAULT,
 					    &acl_def);
 		if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			acl_def = NULL;
 		else if (e != GFARM_ERR_NO_ERROR) {
-			gfs_stat_free(&sb);
 			gfs_acl_free(acl_acc);
 			return (e);
 		} else if (gfs_acl_entries(acl_def) == 0) {
@@ -369,7 +366,6 @@ acl_set(const char *path,
 	/* save original ACL */
 	e = gfs_acl_dup(&acl_acc_orig, acl_acc);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gfs_stat_free(&sb);
 		gfs_acl_free(acl_acc);
 		gfs_acl_free(acl_def);
 		return (e);
@@ -377,7 +373,6 @@ acl_set(const char *path,
 	if (acl_def != NULL) {
 		e = gfs_acl_dup(&acl_def_orig, acl_def);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gfs_stat_free(&sb);
 			gfs_acl_free(acl_acc);
 			gfs_acl_free(acl_def);
 			gfs_acl_free(acl_acc_orig);
@@ -387,12 +382,12 @@ acl_set(const char *path,
 		acl_def_orig = NULL;
 
 	/* remove ACL entries */
-	if (remove_acl_acccess) {
+	if (a->remove_acl_acccess) {
 		e = remove_extended_acl(acl_acc);
 		if (e != GFARM_ERR_NO_ERROR)
 			goto end;
 	}
-	if (remove_acl_default && acl_def != NULL) {
+	if (a->remove_acl_default && acl_def != NULL) {
 		gfs_acl_free(acl_def);
 		e = gfs_acl_init(5, &acl_def);
 		if (e != GFARM_ERR_NO_ERROR)
@@ -400,20 +395,20 @@ acl_set(const char *path,
 	}
 
 	/* set/replace ACL entries from file */
-	if (acl_file_buf) {
-		e = merge_acl_buf(&acl_acc, &acl_def, acl_file_buf,
-				  &modified_acc, &give_mask_acc,
-				  &modified_def, &give_mask_def,
-				  is_test, path, "--- file input ---");
+	if (a->acl_file_buf) {
+		e = merge_acl_buf(&acl_acc, &acl_def, a->acl_file_buf,
+		    &modified_acc, &give_mask_acc,
+		    &modified_def, &give_mask_def,
+		    a->is_test, path, "--- file input ---");
 		if (e != GFARM_ERR_NO_ERROR)
 			goto end;
 	}
 	/* set/replace ACL entries from command line */
-	if (acl_spec_buf) {
-		e = merge_acl_buf(&acl_acc, &acl_def, acl_spec_buf,
-				  &modified_acc, &give_mask_acc,
-				  &modified_def, &give_mask_def,
-				  is_test, path, "--- command line input ---");
+	if (a->acl_spec_buf) {
+		e = merge_acl_buf(&acl_acc, &acl_def, a->acl_spec_buf,
+		    &modified_acc, &give_mask_acc,
+		    &modified_def, &give_mask_def,
+		    a->is_test, path, "--- command line input ---");
 		if (e != GFARM_ERR_NO_ERROR)
 			goto end;
 	}
@@ -441,8 +436,8 @@ acl_set(const char *path,
 				if (e != GFARM_ERR_NO_ERROR)
 					goto end;
 			}
-			if (recalc_mask == 1 ||
-			    (recalc_mask == 0 && !give_mask_acc)) {
+			if (a->recalc_mask == 1 ||
+			    (a->recalc_mask == 0 && !give_mask_acc)) {
 				e = gfs_acl_calc_mask(&acl_acc);
 				if (e != GFARM_ERR_NO_ERROR)
 					goto end;
@@ -461,8 +456,8 @@ acl_set(const char *path,
 				if (e != GFARM_ERR_NO_ERROR)
 					goto end;
 			}
-			if (recalc_mask == 1 ||
-			    (recalc_mask == 0 && !give_mask_def)) {
+			if (a->recalc_mask == 1 ||
+			    (a->recalc_mask == 0 && !give_mask_def)) {
 				e = gfs_acl_calc_mask(&acl_def);
 				if (e != GFARM_ERR_NO_ERROR)
 					goto end;
@@ -505,9 +500,8 @@ acl_set(const char *path,
 	}
 
 	/* print ACL and exit */
-	if (is_test) {
-		print_acl("--- test output ---",
-			  path, acl_acc, acl_def);
+	if (a->is_test) {
+		print_acl("--- test output ---", path, acl_acc, acl_def);
 		goto end;
 	}
 
@@ -518,7 +512,7 @@ acl_set(const char *path,
 			goto end;
 	}
 	if (acl_def != NULL) {
-		if (GFARM_S_ISDIR(sb.st_mode)) {
+		if (GFARM_S_ISDIR(st->st_mode)) {
 			if (gfs_acl_entries(acl_def) > 0)
 				e = gfs_acl_set_file(path,
 						     GFARM_ACL_TYPE_DEFAULT,
@@ -534,7 +528,6 @@ acl_set(const char *path,
 	}
 	gfs_stat_cache_purge(path);
 end:
-	gfs_stat_free(&sb);
 	gfs_acl_free(acl_acc);
 	gfs_acl_free(acl_def);
 	gfs_acl_free(acl_acc_orig);
@@ -546,12 +539,14 @@ end:
 int
 main(int argc, char **argv)
 {
-	gfarm_error_t e;
-	int i, c, status = 0;
-	const char *acl_spec = NULL, *acl_file = NULL;
-	char *path = NULL, *acl_file_buf = NULL;
-	int remove_acl_acccess = 0, remove_acl_default = 0;
-	int is_test = 0, recalc_mask = 0;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
+	int c, i, n, recursive = 0;
+	const char *acl_file = NULL;
+	char *si = NULL, *s;
+	struct gfsetfacl_arg arg;
+	gfarm_stringlist paths;
+	gfs_glob_t types;
+	struct gfs_stat st;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -562,29 +557,39 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "bkm:M:nrth?")) != -1) {
+	arg.remove_acl_acccess = 0;
+	arg.remove_acl_default = 0;
+	arg.acl_file_buf = NULL;
+	arg.acl_spec_buf = NULL;
+	arg.is_test = 0;
+	arg.recalc_mask = 0;
+	while ((c = getopt(argc, argv, "bkm:M:nrthR?")) != -1) {
 		switch (c) {
 		case 'b':
-			remove_acl_acccess = 1;
-			remove_acl_default = 1;
+			arg.remove_acl_acccess = 1;
+			arg.remove_acl_default = 1;
 			break;
 		case 'k':
-			remove_acl_default = 1;
+			arg.remove_acl_default = 1;
 			break;
 		case 'm':
-			acl_spec = optarg;
+			arg.acl_spec_buf = optarg;
 			break;
 		case 'M':
+			/* filename */
 			acl_file = optarg;
 			break;
 		case 'n': /* no mask */
-			recalc_mask = -1;
+			arg.recalc_mask = -1;
 			break;
 		case 'r': /* force mask */
-			recalc_mask = 1;
+			arg.recalc_mask = 1;
 			break;
 		case 't':
-			is_test = 1;
+			arg.is_test = 1;
+			break;
+		case 'R':
+			recursive = 1;
 			break;
 		case 'h':
 		case '?':
@@ -616,8 +621,8 @@ main(int argc, char **argv)
 				goto terminate;
 			}
 		}
-		GFARM_MALLOC_ARRAY(acl_file_buf, BUFSIZE);
-		if (acl_file_buf == NULL) {
+		GFARM_MALLOC_ARRAY(arg.acl_file_buf, BUFSIZE);
+		if (arg.acl_file_buf == NULL) {
 			fprintf(stderr, "%s: no memory", program_name);
 			if (f != stdin)
 				fclose(f);
@@ -629,32 +634,32 @@ main(int argc, char **argv)
 			if (pos >= bufsize) {
 				char *tmp;
 				bufsize *= 2;
-				GFARM_REALLOC_ARRAY(tmp, acl_file_buf,
+				GFARM_REALLOC_ARRAY(tmp, arg.acl_file_buf,
 						    bufsize);
 				if (tmp == NULL) {
 					fprintf(stderr, "%s: no memory",
 						program_name);
-					free(acl_file_buf);
+					free(arg.acl_file_buf);
 					if (f != stdin)
 						fclose(f);
 					goto terminate;
 				}
-				acl_file_buf = tmp;
+				arg.acl_file_buf = tmp;
 			}
 			reqsize = bufsize - pos;
-			retsize = fread(acl_file_buf + pos, 1, reqsize, f);
+			retsize = fread(arg.acl_file_buf + pos, 1, reqsize, f);
 			if (retsize < reqsize) {
 				if (ferror(f)) {
 					fprintf(stderr,
 						"%s: fread(%s) failed: %s",
 						program_name, acl_file,
 						strerror(errno));
-					free(acl_file_buf);
+					free(arg.acl_file_buf);
 					if (f != stdin)
 						fclose(f);
 					goto terminate;
 				}
-				acl_file_buf[pos + retsize] = '\0';
+				arg.acl_file_buf[pos + retsize] = '\0';
 				break;
 			}
 			pos += retsize;
@@ -665,26 +670,55 @@ main(int argc, char **argv)
 
 	gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_ACCESS);
 	gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_DEFAULT);
-	for (i = 0; i < argc; i++) {
-		e = gfarm_realpath_by_gfarm2fs(argv[i], &path);
-		if (e == GFARM_ERR_NO_ERROR)
-			argv[i] = path;
-		e = acl_set(argv[i], remove_acl_acccess, remove_acl_default,
-			    acl_file_buf, acl_spec, is_test, recalc_mask);
-		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "%s: %s: %s\n",
-			    program_name, argv[i], gfarm_error_string(e));
-			status = 1;
-		}
-		free(path);
+
+	if ((e = gfarm_stringlist_init(&paths)) != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
+		exit(EXIT_FAILURE);
 	}
+	if ((e = gfs_glob_init(&types)) != GFARM_ERR_NO_ERROR) {
+		gfarm_stringlist_free_deeply(&paths);
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
+		exit(EXIT_FAILURE);
+	}
+	for (i = 0; i < argc; i++)
+		gfs_glob(argv[i], &paths, &types);
+
+	n = gfarm_stringlist_length(&paths);
+	for (i = 0; i < n; i++) {
+		s = gfarm_stringlist_elem(&paths, i);
+		e = gfarm_realpath_by_gfarm2fs(s, &si);
+		if (e == GFARM_ERR_NO_ERROR)
+			s = si;
+		if ((e = gfs_lstat(s, &st)) != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: %s\n", s, gfarm_error_string(e));
+		} else {
+			if (GFARM_S_ISDIR(st.st_mode) && recursive)
+				e = gfarm_foreach_directory_hierarchy(
+					acl_set, acl_set, NULL, s, &arg);
+			else
+				e = acl_set(s, &st, &arg);
+			if (e != GFARM_ERR_NO_ERROR) {
+				fprintf(stderr, "%s: %s: %s\n",
+				    program_name, s, gfarm_error_string(e));
+			}
+			gfs_stat_free(&st);
+		}
+		if (e_save == GFARM_ERR_NO_ERROR)
+			e_save = e;
+		free(si);
+	}
+	gfs_glob_free(&types);
+	gfarm_stringlist_free_deeply(&paths);
+
 terminate:
-	free(acl_file_buf);
+	free(arg.acl_file_buf);
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
 		    gfarm_error_string(e));
-		status = 1;
+		exit(EXIT_FAILURE);
 	}
-	return (status);
+	return (e_save == GFARM_ERR_NO_ERROR ? EXIT_SUCCESS : EXIT_FAILURE);
 }
