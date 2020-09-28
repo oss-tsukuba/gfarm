@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfarm_attr
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 31 Mar 2014
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 28 Sep 2020
 .\"    Manual: Gfarm_attr
 .\"    Source: Gfarm_attr
 .\"  Language: English
 .\"
-.TH "GFARM_ATTR" "5" "31 Mar 2014" "Gfarm_attr" "Gfarm_attr"
+.TH "GFARM_ATTR" "5" "28 Sep 2020" "Gfarm_attr" "Gfarm_attr"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -69,6 +69,11 @@ ACL(アクセスコントロールリスト)を格納します．
 デフォルトACLを格納します．ディレクトリだけがこの拡張属性を利用します．
 .RE
 .PP
+\fIgfarm\&.effective_perm\fR
+.RS 4
+ファイルにアクセスする際の実効アクセス権を返します． その値は読み取り専用で， 読み取り(4), 書き込みwrite(2), 実行(1) のビットを組み合わせた値です．
+.RE
+.PP
 \fIgfarm_root\&.user\fR
 .RS 4
 このファイルやディレクトリに特権を与えるユーザ名のリストを格納します． 名前は改行 (\en) で区切られます．この拡張属性がディレクトリに付いている 場合，新規作成された子エントリにもこの拡張属性がコピーされます．
@@ -83,7 +88,6 @@ ACL(アクセスコントロールリスト)を格納します．
 任意のディレクトリやファイルの gfarm_root\&.{user,group} 拡張属性に，信頼 していないユーザを登録している場合，\-o suid,allow_other オプションを指 定して root 権限でマウントしている gfarm2fs には (\-o ro オプションまた は \-o default_permissions オプションを付けていたとしても) セキュリティ・ ホールがあります．このため，gfarm2fs の \-o suid,allow_other オプション と gfarm_root\&.{user,group} 拡張属性の両方を同時に利用すべきではありませ ん．
 .SH "SEE ALSO"
 .PP
-
 \fBgfxattr\fR(1),
 \fBgfgetfacl\fR(1),
 \fBgfsetfacl\fR(1),

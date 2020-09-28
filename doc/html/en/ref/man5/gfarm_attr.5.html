@@ -2,22 +2,22 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfarm_attr</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfarm_attr">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfarm-attr.5"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfarm_attr — Gfarm Extended Attributes</p>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p>
 Every files and directories in Gfarm filesystem can have extended
 attributes.  Extended attributes are name:value pairs.
 </p>
 </div>
-<div class="refsect1" title="EXTENDED ATTRIBUTE NAMESPACES">
+<div class="refsect1">
 <a name="xattrnamespace"></a><h2>EXTENDED ATTRIBUTE NAMESPACES</h2>
 <p>
 The extended attributes which have "gfarm." or "gfarm_root." prefix
@@ -42,13 +42,13 @@ The "user.*" extended attributes can be gotten/modified on the entry
 Symbolic links cannot have any extended attributes.
 </p>
 </div>
-<div class="refsect1" title="GFARM EXTENDED ATTRIBUTES">
+<div class="refsect1">
 <a name="gfarm-xattr"></a><h2>GFARM EXTENDED ATTRIBUTES</h2>
 <p>
 The following is a list of the extended attribute names used in Gfarm
 filesystem.
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><em class="parameter"><code>gfarm.ncopy</code></em></span></dt>
 <dd><p>
 This is the number of file replicas to be created automatically.
@@ -69,6 +69,12 @@ This is Access ACL (Access Control List).
 This is Default ACL. Only directories can have/use this extended
 attribute.
 </p></dd>
+<dt><span class="term"><em class="parameter"><code>gfarm.effective_perm</code></em></span></dt>
+<dd><p>
+This is user's effective permissions for a file.
+The value is read-only,
+and represents bits in combination with read (4), write (2) and execute (1).
+</p></dd>
 <dt><span class="term"><em class="parameter"><code>gfarm_root.user</code></em></span></dt>
 <dd><p>
 This is the list of user names who can have the privilege for the
@@ -87,7 +93,7 @@ this extended attribute).
 </p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SECURITY NOTES">
+<div class="refsect1">
 <a name="security"></a><h2>SECURITY NOTES</h2>
 <p>
 When untrusted users are registered in the gfarm_root.{user,group}
@@ -99,7 +105,7 @@ Therefore both "-o suid,allow_other" option and
 gfarm_root.{user,group} extended attributes should not be used.
 </p>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfxattr</span>(1)</span>,
