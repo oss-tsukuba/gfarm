@@ -5,7 +5,7 @@
 
 <refentry id="gfls.1">
 
-<refentryinfo><date>11 Nov 2016</date></refentryinfo>
+<refentryinfo><date>28 Sep 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfls</refentrytitle>
@@ -77,6 +77,13 @@
 <term><option>-d</option></term>
 <listitem>
 <para>そのディレクトリに属する内容ではなく、ディレクトリ自身を表示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-e</option></term>
+<listitem>
+<para>ファイルに対する実効アクセス権を表示します。</para>
 </listitem>
 </varlistentry>
 
