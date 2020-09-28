@@ -2,27 +2,27 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfsetfacl</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfsetfacl">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfsetfacl.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfsetfacl — set Gfarm file access control lists</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfsetfacl</code>  [<em class="replaceable"><code>options</code></em>] [<em class="replaceable"><code>path</code></em>...]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p><span class="command"><strong>gfsetfacl</strong></span> changes the Access Control List (ACL)
 of files or directories in the Gfarm filesystem.
 </p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term"><code class="option">-b</code></span></dt>
 <dd><p>removes all extended ACL entries. (The base ACL entries of the
 owner, group and others are not removed.)</p></dd>
@@ -47,11 +47,15 @@ separated by comma characters (`,').</p></dd>
 <dd><p>This option specifies the file or standard input (`-') to
 add/replace the ACL entries of a Gfarm files or directories. This
 input of ACL file accepts the output of gfgetfacl command.</p></dd>
+<dt><span class="term"><code class="option">-R</code></span></dt>
+<dd><p>
+changes ACL recursively.
+</p></dd>
 <dt><span class="term"><code class="option">-?</code></span></dt>
 <dd><p>displays a list of command options.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="ACL ENTRIES">
+<div class="refsect1">
 <a name="acl-entries"></a><h2>ACL ENTRIES</h2>
 <p>
 The gfsetfacl command recognizes the following ACL entry formats.  The
@@ -59,7 +63,7 @@ perms field is a combination of characters that indicate the
 permissions: read (r), write (w), execute (x).  A Default ACL entry
 has a d[efault:] prefix.
 </p>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">[d[efault:]u[ser]::perms</span></dt>
 <dd><p>Permissions of owner.</p></dd>
 <dt><span class="term">[d[efault:]u[ser]:username:perms</span></dt>
@@ -74,9 +78,9 @@ has a d[efault:] prefix.
 <dd><p>Permissions of others.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="EXAMPLES">
+<div class="refsect1">
 <a name="examples"></a><h2>EXAMPLES</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
 <dt><span class="term">Granting read access to a named user</span></dt>
 <dd><p>gfsetfalc -m u:testuser:r filename</p></dd>
 <dt><span class="term">Replacing the ACL of filename2 by filename1</span></dt>
@@ -100,7 +104,7 @@ u::rw,u:user1:rw,g::r,g:group1:rw,m::r,o::r,d:u::rwx,d:g::rx,d:o::rx<br>
 </p></div></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfgetfacl</span>(1)</span>
