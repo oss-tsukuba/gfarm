@@ -226,9 +226,9 @@ test_bk() {
         exit $exit_fail
     fi
     acl_len=`wc -l $local_acl | awk '{print $1}'`
-    if [ x"$option" = x"-b" -a $acl_len -eq 6 ]; then
+    if [ x"$option" = x"-b" -a $acl_len -eq 7 ]; then
         :
-    elif [ x"$option" = x"-k" -a $acl_len -eq 7 ]; then
+    elif [ x"$option" = x"-k" -a $acl_len -eq 8 ]; then
         :
     else
         echo "cannot remove ACL (setfacl $option $entry)"
