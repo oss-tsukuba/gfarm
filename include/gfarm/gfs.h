@@ -258,6 +258,10 @@ gfarm_error_t gfs_access(const char *, int);
 #define GFARM_EA_DIRECTORY_QUOTA	\
 	GFARM_EA_PREFIX GFARM_EA_DIRECTORY_QUOTA_TYPE
 
+/* Key name of virtual extended attribute for like access(2) */
+#define GFARM_EA_EFFECTIVE_PERM_TYPE	"effective_perm"
+#define GFARM_EA_EFFECTIVE_PERM	\
+	GFARM_EA_PREFIX GFARM_EA_EFFECTIVE_PERM_TYPE
 
 /* 5th argument (flags) of gfs_setxattr() and gfs_fsetxattr() */
 #define GFS_XATTR_CREATE    0x1     /* set value, fail if attr already exists */

@@ -1249,7 +1249,7 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 
 		needs_free = 1;
 		e_rpc = inode_xattr_list_get_cached_by_patterns(
-		    st.st_ino, attrpatterns, nattrpatterns, dirset,
+		    st.st_ino, process, attrpatterns, nattrpatterns, dirset,
 		    &xattrs, &nxattrs);
 		if (e_rpc != GFARM_ERR_NO_ERROR) {
 			xattrs = NULL;
@@ -2778,7 +2778,8 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 		for (i = 0; i < n; i++) {
 			pp = &p[i];
 			e_rpc = inode_xattr_list_get_cached_by_patterns(
-			    pp->st.st_ino, attrpatterns, nattrpatterns,
+			    pp->st.st_ino, process,
+			    attrpatterns, nattrpatterns,
 			    dirset, &pp->xattrs, &pp->nxattrs);
 			if (e_rpc != GFARM_ERR_NO_ERROR) {
 				pp->xattrs = NULL;

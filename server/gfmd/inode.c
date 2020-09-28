@@ -2853,6 +2853,41 @@ inode_access(struct inode *inode, struct user *user, int op)
 	return (check_mode(inode->i_mode, mask));
 }
 
+static int
+inode_access_flags(struct inode *inode, struct user *user)
+{
+	char flags = 0;
+
+	if (inode_access(inode, user, GFS_R_OK) == GFARM_ERR_NO_ERROR)
+		flags |= GFS_R_OK;
+	if (inode_access(inode, user, GFS_W_OK) == GFARM_ERR_NO_ERROR)
+		flags |= GFS_W_OK;
+	if (inode_access(inode, user, GFS_X_OK) == GFARM_ERR_NO_ERROR)
+		flags |= GFS_X_OK;
+	return (flags);
+}
+
+static gfarm_error_t
+xattr_list_set_by_inode_access(struct xattr_list *entry,
+	const char *name, struct inode *inode, struct user *user,
+	const char *diag)
+{
+	size_t size = 1;
+	char *value;
+
+	GFARM_MALLOC_ARRAY(value, size);
+	if (value == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	*value = inode_access_flags(inode, user);
+	if (name != NULL)
+		entry->name = strdup_log(name, diag);
+	else
+		entry->name = NULL;
+	entry->value = value;
+	entry->size = size;
+	return (GFARM_ERR_NO_ERROR);
+}
+
 static gfarm_error_t
 inode_add_xattr_common(struct inode *ino, const char *name,
 		       const void *value, size_t size)
@@ -8056,38 +8091,52 @@ inode_xattr_modify(struct inode *inode, int xmlMode, const char *attrname,
 }
 
 gfarm_error_t
-inode_xattr_get_cache(struct inode *inode, int xmlMode,
-	const char *attrname, void **cached_valuep, size_t *cached_sizep)
+inode_xattr_get_cache_with_process(struct inode *inode, int xmlMode,
+	const char *attrname, void **cached_valuep, size_t *cached_sizep,
+	struct process *process)
 {
 	struct xattrs *xattrs =
 		xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs;
 	struct xattr_entry *entry;
 	void *r;
+	struct xattr_list l;
+	gfarm_error_t e;
 	static const char diag[] = "inode_xattr_get_cache";
 
-	if (!xmlMode && strcmp(attrname, GFARM_EA_DIRECTORY_QUOTA) == 0) {
-		gfarm_error_t e;
-		struct dirset *tdirset;
-		struct xattr_list l;
+	if (!xmlMode) {
+		/* virtual extended attributes */
+		if (strcmp(attrname, GFARM_EA_DIRECTORY_QUOTA) == 0) {
+			struct dirset *tdirset;
 
-		/*
-		 * when this is called from gfm_server_getxattr(),
-		 * inode is already opened.
-		 */
-		tdirset = inode_get_tdirset(inode);
-		if (tdirset == TDIRSET_IS_UNKNOWN ||
-		    tdirset == TDIRSET_IS_NOT_SET)
-			return (GFARM_ERR_NO_SUCH_OBJECT);
-		e = xattr_list_set_by_dirset(&l,
-		    GFARM_EA_DIRECTORY_QUOTA, tdirset, diag);
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e);
-		*cached_valuep = l.value;
-		*cached_sizep = l.size;
-		free(l.name);
-		return (GFARM_ERR_NO_ERROR);
+			/*
+			 * when this is called from gfm_server_getxattr(),
+			 * inode is already opened.
+			 */
+			tdirset = inode_get_tdirset(inode);
+			if (tdirset == TDIRSET_IS_UNKNOWN ||
+			    tdirset == TDIRSET_IS_NOT_SET)
+				return (GFARM_ERR_NO_SUCH_OBJECT);
+			e = xattr_list_set_by_dirset(&l,
+			    GFARM_EA_DIRECTORY_QUOTA, tdirset, diag);
+			if (e != GFARM_ERR_NO_ERROR)
+				return (e);
+			*cached_valuep = l.value;
+			*cached_sizep = l.size;
+			free(l.name);
+			return (GFARM_ERR_NO_ERROR);
+		} else if (process &&
+			   strcmp(attrname, GFARM_EA_EFFECTIVE_PERM) == 0) {
+			struct user *user = process_get_user(process);
+
+			e = xattr_list_set_by_inode_access(
+			    &l, NULL, inode, user, diag);
+			if (e != GFARM_ERR_NO_ERROR)
+				return (e);
+			*cached_valuep = l.value;
+			*cached_sizep = 1;
+			return (GFARM_ERR_NO_ERROR);
+		}
 	}
-
 	entry = xattr_find(xattrs, attrname);
 	if (entry == NULL)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -8105,6 +8154,14 @@ inode_xattr_get_cache(struct inode *inode, int xmlMode,
 	}
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+inode_xattr_get_cache(struct inode *inode, int xmlMode,
+	const char *attrname, void **cached_valuep, size_t *cached_sizep)
+{
+	return (inode_xattr_get_cache_with_process(inode, xmlMode,
+	    attrname, cached_valuep, cached_sizep, NULL));
 }
 
 int
@@ -8144,15 +8201,17 @@ inode_xattr_list_free(struct xattr_list *list, size_t n)
 
 gfarm_error_t
 inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
+	struct process *process,
 	char **patterns, int npattern, struct dirset *dirset,
 	struct xattr_list **listp, size_t *np)
 {
 	struct inode *inode;
+	struct user *user = process_get_user(process);
 	size_t nxattrs;
 	struct xattr_list *list;
 	struct xattrs *xattrs;
 	struct xattr_entry *entry;
-	int i, j, directory_quota = 0;
+	int i, j, directory_quota = 0, effective_perm = 0;
 	static const char diag[] = "inode_xattr_list_get_cached_by_patterns";
 
 	inode = inode_lookup(inum);
@@ -8163,6 +8222,7 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 	nxattrs = 0;
 
 	for (j = 0; j < npattern; j++) {
+		/* virtual extended attributes */
 		if (strcmp(patterns[j], GFARM_EA_DIRECTORY_QUOTA) == 0) {
 			if (dirset != NULL)
 				directory_quota = 1;
@@ -8170,10 +8230,15 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 			    (dirset = quota_dir_get_dirset_by_inum(inum))
 			    != NULL)
 				directory_quota = 1;
-			break;
+		} else if (strcmp(patterns[j], GFARM_EA_EFFECTIVE_PERM) == 0) {
+			effective_perm = 1;
 		}
+		if (directory_quota && effective_perm)
+			break;
 	}
 	if (directory_quota)
+		++nxattrs;
+	if (effective_perm)
 		++nxattrs;
 
 	for (entry = xattrs->head; entry != NULL; entry = entry->next) {
@@ -8199,6 +8264,14 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 	if (directory_quota) { /* only true if dirset is set */
 		if (xattr_list_set_by_dirset(&list[i],
 		    GFARM_EA_DIRECTORY_QUOTA, dirset, diag)
+		    != GFARM_ERR_NO_ERROR)
+			nxattrs = i;
+		else
+			i++;
+	}
+	if (effective_perm) {
+		if (xattr_list_set_by_inode_access(&list[i],
+		    GFARM_EA_EFFECTIVE_PERM, inode, user, diag)
 		    != GFARM_ERR_NO_ERROR)
 			nxattrs = i;
 		else
