@@ -41,6 +41,15 @@
 <variablelist>
 
 <varlistentry>
+<term><option>-R</option></term>
+<listitem>
+<para>
+再帰的にACLを表示します．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>引数オプションを表示します．</para>

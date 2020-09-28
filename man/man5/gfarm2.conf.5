@@ -2,12 +2,12 @@
 .\"     Title: gfarm2.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 1 Jul 2020
+.\"      Date: 17 Sep 2020
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFARM2\&.CONF" "5" "1 Jul 2020" "Gfarm" "Gfarm"
+.TH "GFARM2\&.CONF" "5" "17 Sep 2020" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -730,6 +730,25 @@ For example,
 .\}
 .nf
 	metadb_server_heartbeat_interval 180
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+failover_notify_delay \fIseconds\fR
+.RS 4
+This directive specifies the delay (in seconds) that new master gfmd notifies its start to gfsd processes on each filesystem node\&. If this delay is 0 seconds, it\*(Aqs highly possible that some gfsd process detects a stop of previous master gfmd and connects to the new master gfmd just before the notification, and in that case, the gfsd process will disconnect and retry connecting to the new gfmd again\&. To avoid such inefficiency, the default of this delay is 5 seconds\&.
+.sp
+This parameter is only available in gfmd\&.conf, and ignored in gfarm2\&.conf\&.
+.sp
+For example,
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+	failover_notify_delay 10
 .fi
 .if n \{\
 .RE
@@ -2969,6 +2988,7 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 	<metadb_server_remove_scan_log_interval_statement> |
 	<metadb_server_remove_scan_interval_factor_statement> |
 	<metadb_server_heartbeat_interval_statement> |
+	<metadb_server_failover_notify_delay_statement> |
 	<metadb_server_dbq_size_statement> |
 	<metadb_server_back_channel_sndbuf_limit_statement> |
 	<metadb_server_nfs_root_squash_support_statement> |
@@ -3512,6 +3532,20 @@ This is a grammar of gfarm2\&.conf described by the BNF notation\&.
 .\}
 .nf
 "metadb_server_heartbeat_interval" <number>
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+<metadb_server_failover_notify_delay_statement> ::=
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+"failover_notify_delay" <number>
 .fi
 .if n \{\
 .RE

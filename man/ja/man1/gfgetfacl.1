@@ -1,7 +1,7 @@
 '\" t
 .\"     Title: gfgetfacl
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
 .\"      Date: 4 Feb 2011
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
@@ -38,6 +38,11 @@ gfgetfacl \- Gfarm ファイルのアクセス制御リストを表示する
 は Gfarm ファイルシステム上の ファイルやディレクトリの名前，所有者名，グループ名， アクセスコントロールリスト (ACL) を表示します．
 .SH "OPTIONS"
 .PP
+\fB\-R\fR
+.RS 4
+再帰的にACLを表示します．
+.RE
+.PP
 \fB\-?\fR
 .RS 4
 引数オプションを表示します．
@@ -47,5 +52,4 @@ gfgetfacl \- Gfarm ファイルのアクセス制御リストを表示する
 Gfarm ファイルシステムから Gfarm のユーザやグループを削除しても、ACL エ ントリに指定したユーザ名やグループ名は ACL に残ります．
 .SH "SEE ALSO"
 .PP
-
 \fBgfsetfacl\fR(1)

@@ -2100,9 +2100,9 @@ main(int argc, char **argv)
 
 	/* master */
 
-	failover_notify();
 	quota_check_init();
 	replica_check_init();
+	failover_notify();
 	accepting_loop(sock);
 
 	/*NOTREACHED*/

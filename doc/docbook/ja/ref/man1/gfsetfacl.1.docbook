@@ -103,6 +103,15 @@ ACL 文字列表現が記述されたファイルまたは標準入力 (`-')
 </varlistentry>
 
 <varlistentry>
+<term><option>-R</option></term>
+<listitem>
+<para>
+再帰的にACLを変更します．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>引数オプションを表示します．</para>

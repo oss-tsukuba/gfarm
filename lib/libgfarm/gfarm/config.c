@@ -1098,6 +1098,7 @@ int gfarm_metadb_remover_queue_length = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_remove_scan_log_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_remove_scan_interval_factor = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_heartbeat_interval = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_failover_notify_delay = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_dbq_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_server_back_channel_sndbuf_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_server_nfs_root_squash_support = GFARM_CONFIG_MISC_DEFAULT;
@@ -3552,6 +3553,8 @@ parse_one_line(const char *s, char *p,
 		    &gfarm_metadb_remove_scan_interval_factor);
 	} else if (strcmp(s, o = "metadb_server_heartbeat_interval") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_heartbeat_interval);
+	} else if (strcmp(s, o = "failover_notify_delay") == 0) {
+		e = parse_set_misc_int(p, &gfarm_metadb_failover_notify_delay);
 	} else if (strcmp(s, o = "metadb_server_dbq_size") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_dbq_size);
 	} else if (strcmp(s, o = "metadb_server_back_channel_sndbuf_limit")
@@ -3960,6 +3963,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_metadb_heartbeat_interval == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_heartbeat_interval =
 		    GFARM_METADB_HEARTBEAT_INTERVAL_DEFAULT;
+	if (gfarm_metadb_failover_notify_delay == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_metadb_failover_notify_delay =
+		    GFARM_METADB_FAILOVER_NOTIFY_DELAY_DEFAULT;
 	if (gfarm_metadb_remove_scan_log_interval == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_remove_scan_log_interval =
 		    GFARM_METADB_REMOVE_SCAN_LOG_INTERVAL_DEFAULT;
