@@ -82,7 +82,7 @@ has a d[efault:] prefix.
 <a name="examples"></a><h2>EXAMPLES</h2>
 <div class="variablelist"><dl class="variablelist">
 <dt><span class="term">Granting read access to a named user</span></dt>
-<dd><p>gfsetfalc -m u:testuser:r filename</p></dd>
+<dd><p>gfsetfacl -m u:testuser:r filename</p></dd>
 <dt><span class="term">Replacing the ACL of filename2 by filename1</span></dt>
 <dd><p>gfgetfacl filename1 | gfsetfacl -b -M - filename2</p></dd>
 <dt><span class="term">ACL text of long form</span></dt>

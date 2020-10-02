@@ -83,7 +83,7 @@ perms フィールドは許可を表す文字を組み合わせです．
 <a name="examples"></a><h2>EXAMPLES</h2>
 <div class="variablelist"><dl class="variablelist">
 <dt><span class="term">指名ユーザへの読み込みアクセスを許可する．</span></dt>
-<dd><p>gfsetfalc -m u:testuser:r filename</p></dd>
+<dd><p>gfsetfacl -m u:testuser:r filename</p></dd>
 <dt><span class="term">filename2 の ACL をfilename1 の ACL で置換する．</span></dt>
 <dd><p>gfgetfacl filename1 | gfsetfacl -b -M - filename2</p></dd>
 <dt><span class="term">長い形式の ACL 文字列表現</span></dt>
