@@ -172,7 +172,7 @@ has a d[efault:] prefix.
 <varlistentry>
 <term>Granting read access to a named user</term>
 <listitem>
-<para>gfsetfalc -m u:testuser:r filename</para>
+<para>gfsetfacl -m u:testuser:r filename</para>
 </listitem>
 </varlistentry>
 

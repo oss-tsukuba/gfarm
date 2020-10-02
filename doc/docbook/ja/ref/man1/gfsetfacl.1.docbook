@@ -174,7 +174,7 @@ perms フィールドは許可を表す文字を組み合わせです．
 <varlistentry>
 <term>指名ユーザへの読み込みアクセスを許可する．</term>
 <listitem>
-<para>gfsetfalc -m u:testuser:r filename</para>
+<para>gfsetfacl -m u:testuser:r filename</para>
 </listitem>
 </varlistentry>
 
