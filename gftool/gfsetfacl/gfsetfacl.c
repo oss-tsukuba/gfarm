@@ -26,6 +26,7 @@ usage(void)
 
 struct gfsetfacl_arg {
 	int remove_acl_acccess, remove_acl_default, is_test, recalc_mask;
+	int recursive;
 	char *acl_file_buf, *acl_spec_buf;
 };
 
@@ -334,27 +335,42 @@ static gfarm_error_t
 acl_set(char *path, struct gfs_stat *st, void *arg)
 {
 	gfarm_error_t e;
-	gfarm_acl_t acl_acc, acl_def;
-	gfarm_acl_t acl_acc_orig, acl_def_orig;
+	gfarm_acl_t acl_acc = NULL, acl_def = NULL;
+	gfarm_acl_t acl_acc_orig = NULL, acl_def_orig = NULL;
 	int modified_acc = 0, modified_def = 0;
 	int is_not_equiv;
 	int give_mask_acc = 0, give_mask_def = 0;
 	int acl_check_err;
 	struct gfsetfacl_arg *a = arg;
 
+	if (GFARM_S_ISLNK(st->st_mode))  /* ignore */
+		return (GFARM_ERR_NO_ERROR);
+
+	/* gfs_getxattr_cached follows symlinks */
 	e = gfs_acl_get_file_cached(path, GFARM_ACL_TYPE_ACCESS, &acl_acc);
-	if (e == GFARM_ERR_NO_SUCH_OBJECT)
-		e = gfs_acl_from_mode(st->st_mode, &acl_acc);
+	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		gfarm_mode_t st_mode = st->st_mode;
+		struct gfs_stat st2;
+
+		if (GFARM_S_ISLNK(st->st_mode)) {
+			/* follow symlinks */
+			e = gfs_lstat(path, &st2);
+			if (e != GFARM_ERR_NO_ERROR)
+				goto end;
+			st_mode = st2.st_mode;
+			gfs_stat_free(&st2);
+		}
+		e = gfs_acl_from_mode(st_mode, &acl_acc);
+	}
 	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
+		goto end;
 	if (GFARM_S_ISDIR(st->st_mode)) {
 		e = gfs_acl_get_file_cached(path, GFARM_ACL_TYPE_DEFAULT,
 					    &acl_def);
 		if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			acl_def = NULL;
 		else if (e != GFARM_ERR_NO_ERROR) {
-			gfs_acl_free(acl_acc);
-			return (e);
+			goto end;
 		} else if (gfs_acl_entries(acl_def) == 0) {
 			gfs_acl_free(acl_def);
 			acl_def = NULL;
@@ -365,19 +381,12 @@ acl_set(char *path, struct gfs_stat *st, void *arg)
 
 	/* save original ACL */
 	e = gfs_acl_dup(&acl_acc_orig, acl_acc);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gfs_acl_free(acl_acc);
-		gfs_acl_free(acl_def);
-		return (e);
-	}
+	if (e != GFARM_ERR_NO_ERROR)
+		goto end;
 	if (acl_def != NULL) {
 		e = gfs_acl_dup(&acl_def_orig, acl_def);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gfs_acl_free(acl_acc);
-			gfs_acl_free(acl_def);
-			gfs_acl_free(acl_acc_orig);
-			return (e);
-		}
+		if (e != GFARM_ERR_NO_ERROR)
+			goto end;
 	} else
 		acl_def_orig = NULL;
 
@@ -519,7 +528,7 @@ acl_set(char *path, struct gfs_stat *st, void *arg)
 						     acl_def);
 			else
 				e = gfs_acl_delete_def_file(path);
-		} else if (gfs_acl_entries(acl_def) > 0) {
+		} else if (gfs_acl_entries(acl_def) > 0 && !a->recursive) {
 			fprintf(stderr,
 				"%s: Only directory can have default ACL\n",
 				program_name);
@@ -533,6 +542,9 @@ end:
 	gfs_acl_free(acl_acc_orig);
 	gfs_acl_free(acl_def_orig);
 
+	if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "%s: %s: %s\n",
+		    program_name, path, gfarm_error_string(e));
 	return (e);
 }
 
@@ -540,7 +552,7 @@ int
 main(int argc, char **argv)
 {
 	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
-	int c, i, n, recursive = 0;
+	int c, i, n;
 	const char *acl_file = NULL;
 	char *si = NULL, *s;
 	struct gfsetfacl_arg arg;
@@ -563,6 +575,7 @@ main(int argc, char **argv)
 	arg.acl_spec_buf = NULL;
 	arg.is_test = 0;
 	arg.recalc_mask = 0;
+	arg.recursive = 0;
 	while ((c = getopt(argc, argv, "bkm:M:nrthR?")) != -1) {
 		switch (c) {
 		case 'b':
@@ -589,7 +602,7 @@ main(int argc, char **argv)
 			arg.is_test = 1;
 			break;
 		case 'R':
-			recursive = 1;
+			arg.recursive = 1;
 			break;
 		case 'h':
 		case '?':
@@ -694,16 +707,25 @@ main(int argc, char **argv)
 		if ((e = gfs_lstat(s, &st)) != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s\n", s, gfarm_error_string(e));
 		} else {
-			if (GFARM_S_ISDIR(st.st_mode) && recursive)
+			if (GFARM_S_ISDIR(st.st_mode) && arg.recursive) {
 				e = gfarm_foreach_directory_hierarchy(
-					acl_set, acl_set, NULL, s, &arg);
-			else
+				    acl_set, acl_set, NULL, s, &arg);
+				gfs_stat_free(&st);
+			} else if (GFARM_S_ISLNK(st.st_mode)) {
+				gfs_stat_free(&st);
+				/* follow symlinks */
+				e = gfs_stat(s, &st);
+				if (e == GFARM_ERR_NO_ERROR) {
+					e = acl_set(s, &st, &arg);
+					gfs_stat_free(&st);
+				} else {
+					fprintf(stderr, "%s: %s\n",
+					    s, gfarm_error_string(e));
+				}
+			} else {
 				e = acl_set(s, &st, &arg);
-			if (e != GFARM_ERR_NO_ERROR) {
-				fprintf(stderr, "%s: %s: %s\n",
-				    program_name, s, gfarm_error_string(e));
+				gfs_stat_free(&st);
 			}
-			gfs_stat_free(&st);
 		}
 		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
