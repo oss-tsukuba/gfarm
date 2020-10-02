@@ -31,7 +31,7 @@ cleanup() {
     gfroot_enable
     gfrm -f $testfile
     gfrmdir $testdir
-    if $test_for_gfarmroot: then
+    if $test_for_gfarmroot; then
         gfuser -d $tmpuser1
         gfgroup -d $tmpgroup1
         gfgroup -d $tmpgroup2
