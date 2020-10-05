@@ -128,7 +128,7 @@ ganglia-gmond-python		(required to execute config-gf[ms]d-iostat)
 libssl-dev
 libldap2-dev
 libpq-dev
-libglobus-gssapi-gsi-dev, pkg-config	(required for --with-globus option)
+libglobus-gssapi-gsi-dev, pkgconf	(required for --with-globus option)
 postgresql, postgresql-client		(required to execute config-gfarm)
 libfuse-dev				(required to build gfarm2fs)
 
