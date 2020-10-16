@@ -1,0 +1,160 @@
+set -xeu
+
+GFARM_SE_MINIO_WEB_SRC=/mnt/work/gfarm-s3-minio-web
+GFARM_SE_MINIO_SRC=/mnt/work/gfarm-s3-minio
+
+if [ ! -d $GFARM_SE_MINIO_WEB_SRC ]; then
+	exit 1
+fi
+
+### choose parameters
+GFARM_S3_PREFIX=/usr/local
+SHARED_DIR=$GFDOCKER_GFARMS3_SHARED_DIR
+CACHE_BASEDIR=$GFDOCKER_GFARMS3_CACHE_BASEDIR
+CACHE_SIZE=$GFDOCKER_GFARMS3_CACHE_SIZE
+WSGI_HOMEDIR=$GFDOCKER_GFARMS3_WSGI_HOMEDIR
+WSGI_USER=$GFDOCKER_GFARMS3_WSGI_USER
+WSGI_GROUP=$GFDOCKER_GFARMS3_WSGI_GROUP
+WSGI_PORT=$GFDOCKER_GFARMS3_WSGI_PORT
+MYPROXY_SERVER=$GFDOCKER_GFARMS3_MYPROXY_SERVER
+USERS=$GFDOCKER_GFARMS3_USERS
+
+### install prerequisites
+sudo yum update -y
+sudo yum install -y \
+	httpd \
+	mod_ssl \
+	uuid \
+	myproxy \
+	python3-devel \
+	python3-pip \
+	nodejs \
+
+### nginx is not supported yet
+#sudo yum install -y nginx
+
+sudo python3 -m pip install 'Django<2.2'
+sudo python3 -m pip install gunicorn
+
+## fot test.py
+sudo python3 -m pip install boto3
+
+### site settings
+
+## deploy apache http server
+HTTPD_CONF=/etc/httpd/conf.d/myserver.conf
+HTTPD_DocumentRoot=/usr/local/share/www
+
+cat <<EOF | sudo dd of=$HTTPD_CONF
+ServerName ${GFDOCKER_SUBNET%.0/24}.$GFDOCKER_START_HOST_ADDR
+<VirtualHost *:80>
+	DocumentRoot $HTTPD_DocumentRoot
+	ServerAdmin root@localhost
+	CustomLog logs/access_log common
+	ErrorLog logs/error_log
+
+	<Directory "$HTTPD_DocumentRoot">
+		AllowOverride FileInfo AuthConfig Limit Indexes
+		Options MultiViews Indexes SymLinksIfOwnerMatch Includes
+		AllowOverride All
+		Require all granted
+	</Directory>
+
+</VirtualHost>
+EOF
+
+sudo mkdir -p $HTTPD_DocumentRoot
+echo "gfarm -- $(date)" | sudo dd of=$HTTPD_DocumentRoot/index.html
+
+## for debug (do not apply following settings on service host)
+sudo chmod og+rX /var/log/httpd
+
+sudo systemctl enable httpd
+
+## create user for wsgi
+id wsgi || sudo useradd wsgi
+
+### nginx is not supported yet
+#vi /etc/nginx/nginx.conf
+#systemctl enable nginx.service
+## debug
+#chmod o+rx /var/log/nginx
+
+#### install gfarm-s3
+
+## choose working directory
+export WORK=$HOME/tmp/work
+mkdir -p $WORK
+export MINIO_BUILDDIR=$HOME/tmp/work
+mkdir -p $MINIO_BUILDDIR
+mkdir -p $MINIO_BUILDDIR/minio/work/build
+
+## obtain source code
+rsync -a $GFARM_SE_MINIO_WEB_SRC/ $WORK/gfarm-s3-minio-web/
+if [ -e $GFARM_SE_MINIO_SRC ]; then
+	rsync -a $GFARM_SE_MINIO_SRC/ $MINIO_BUILDDIR/minio/work/build/gfarm-s3-minio/
+fi
+
+## create cache directory
+sudo mkdir -p $CACHE_BASEDIR
+sudo chmod 1777 $CACHE_BASEDIR
+
+(cd $WORK/gfarm-s3-minio-web && ./configure \
+	--prefix=$GFARM_S3_PREFIX \
+	--with-gfarm=/usr/local \
+	--with-globus=/usr \
+	--with-myproxy=/usr \
+	--with-apache=/usr \
+	--with-gunicorn=/usr/local \
+	--with-wsgi-homedir=$WSGI_HOMEDIR \
+	--with-wsgi-user=$WSGI_USER \
+	--with-wsgi-group=$WSGI_GROUP \
+	--with-wsgi-port=$WSGI_PORT \
+	--with-cache-basedir=$CACHE_BASEDIR \
+	--with-cache-size=$CACHE_SIZE \
+	--with-myproxy-server=$MYPROXY_SERVER \
+	--with-gfarm-shared-dir=$SHARED_DIR \
+	--with-minio-builddir=$MINIO_BUILDDIR)
+
+(cd $WORK/gfarm-s3-minio-web/minio && make install-go)
+(cd $WORK/gfarm-s3-minio-web && make)
+(cd $WORK/gfarm-s3-minio-web && sudo make install)
+
+#### gfarm-s3-settings
+
+## create shared directory
+gfmkdir -p ${SHARED_DIR#/} || true
+gfchmod 1777 ${SHARED_DIR#/} || true
+
+## register users
+for u in $USERS; do
+	global_user=${u%%:*}
+	local_user=${u%:*}
+	local_user=${local_user#*:}
+	access_key_id=${u##*:}
+	sudo $GFARM_S3_PREFIX/bin/gfarm-s3-useradd $global_user $local_user $access_key_id
+	sudo usermod -a -G gfarms3 $local_user
+	gfmkdir ${SHARED_DIR#/}/$local_user || true
+done
+
+## fix httpd.conf
+tmpfile=$(mktemp /tmp/XXXXXX) || exit 1
+(head -n -1 $HTTPD_CONF
+ cat $WORK/gfarm-s3-minio-web/etc/apache-gfarm-s3.conf
+ tail -1 $HTTPD_CONF) >$tmpfile
+sudo apachectl stop
+sudo chown --reference $HTTPD_CONF $tmpfile
+sudo chgrp --reference $HTTPD_CONF $tmpfile
+sudo chmod --reference $HTTPD_CONF $tmpfile
+sudo mv $tmpfile $HTTPD_CONF
+sudo apachectl start
+
+## start gunicorn service
+sudo systemctl enable --now gunicorn.service
+
+## cleanup
+(cd $WORK/gfarm-s3-minio-web && sudo make clean)
+(cd $WORK/gfarm-s3-minio-web && sudo make distclean)
+
+## show sharedsecret password
+$GFARM_S3_PREFIX/bin/gfarm-s3-sharedsecret-password
