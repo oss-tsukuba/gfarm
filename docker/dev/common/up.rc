@@ -116,6 +116,8 @@ for host in $clients; do
 done
 wait
 
+gfuser -c user2 user2 / /O=Grid/OU=GlobusTest/OU=GlobusSimpleCA/CN=user2
+
 set +x
 
 test_auth() {
