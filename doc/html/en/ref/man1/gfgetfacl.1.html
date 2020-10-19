@@ -2,32 +2,36 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gfgetfacl</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" title="gfgetfacl">
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry">
 <a name="gfgetfacl.1"></a><div class="titlepage"></div>
 <div class="refnamediv">
 <a name="name"></a><h2>Name</h2>
 <p>gfgetfacl — display Gfarm file access control lists</p>
 </div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="synopsis"></a><h2>Synopsis</h2>
 <div class="cmdsynopsis"><p><code class="command">gfgetfacl</code>  [<em class="replaceable"><code>options</code></em>] [<em class="replaceable"><code>path</code></em>...]</p></div>
 </div>
-<div class="refsect1" title="DESCRIPTION">
+<div class="refsect1">
 <a name="description"></a><h2>DESCRIPTION</h2>
 <p><span class="command"><strong>gfgetfacl</strong></span> displays the file/directory name,
  owner, the group, and the Access Control List (ACL) about the
  specified files or directories in the Gfarm filesystem.</p>
 </div>
-<div class="refsect1" title="OPTIONS">
+<div class="refsect1">
 <a name="options"></a><h2>OPTIONS</h2>
-<div class="variablelist"><dl>
+<div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><code class="option">-R</code></span></dt>
+<dd><p>
+lists ACL recursively.
+</p></dd>
 <dt><span class="term"><code class="option">-?</code></span></dt>
 <dd><p>displays a list of command options.</p></dd>
 </dl></div>
 </div>
-<div class="refsect1" title="NOTES">
+<div class="refsect1">
 <a name="notes"></a><h2>NOTES</h2>
 <p>
 If a Gfarm user/group is removed from a Gfarm filesystem, all of the
@@ -35,7 +39,7 @@ ACL enties which have the same user/group name (qualifier) remain in
 the ACLs of files/directories.
 </p>
 </div>
-<div class="refsect1" title="SEE ALSO">
+<div class="refsect1">
 <a name="see-also"></a><h2>SEE ALSO</h2>
 <p>
   <span class="citerefentry"><span class="refentrytitle">gfsetfacl</span>(1)</span>

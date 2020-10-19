@@ -16,6 +16,10 @@
 
 #include <openssl/evp.h>
 
+#if (defined(__hurd__) || defined(__gnu_hurd__)) && !defined(PIPE_BUF)
+#define PIPE_BUF 4096	/* XXX FIXME */
+#endif
+
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
@@ -26,6 +30,7 @@
 #include "timer.h"
 #include "tree.h"
 #include "msgdigest.h"
+#include "proctitle.h"
 
 #include "crc32.h"
 #include "context.h"
@@ -1549,6 +1554,7 @@ start_write_verify_controller(void)
 	case 0: /* child: type_write_verify_controller */
 
 		gflog_set_auxiliary_info(canonical_self_name);
+		(void)gfarm_proctitle_set("write_verify_ctrl");
 
 		if (socketpair(PF_UNIX, SOCK_STREAM, 0, sockfds) == -1)
 			fatal(GFARM_MSG_1004459,
@@ -1566,6 +1572,7 @@ start_write_verify_controller(void)
 			close(pipefds[1]);
 			write_verify_job_verifier_fd = sockfds[0];
 			close(sockfds[1]);
+			(void)gfarm_proctitle_set("write_verify");
 			write_verify();
 			/*NOTREACHED*/
 			break;

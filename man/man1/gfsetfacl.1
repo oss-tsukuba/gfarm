@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfsetfacl
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 4 Feb 2011
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 28 Sep 2020
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSETFACL" "1" "4 Feb 2011" "Gfarm" "Gfarm"
+.TH "GFSETFACL" "1" "28 Sep 2020" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -73,6 +73,11 @@ This option specifies the ACL entries text to add/replace the ACL entries of a G
 This option specifies the file or standard input (`\-\*(Aq) to add/replace the ACL entries of a Gfarm files or directories\&. This input of ACL file accepts the output of gfgetfacl command\&.
 .RE
 .PP
+\fB\-R\fR
+.RS 4
+changes ACL recursively\&.
+.RE
+.PP
 \fB\-?\fR
 .RS 4
 displays a list of command options\&.
@@ -114,7 +119,7 @@ Permissions of others\&.
 .PP
 Granting read access to a named user
 .RS 4
-gfsetfalc \-m u:testuser:r filename
+gfsetfacl \-m u:testuser:r filename
 .RE
 .PP
 Replacing the ACL of filename2 by filename1
@@ -160,5 +165,4 @@ u::rw,u:user1:rw,g::r,g:group1:rw,m::r,o::r,d:u::rwx,d:g::rx,d:o::rx
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfgetfacl\fR(1)

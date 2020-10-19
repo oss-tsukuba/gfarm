@@ -5,7 +5,7 @@
 
 <refentry id="gfs-pio-open.3">
 
-<refentryinfo><date>3 Sep 2015</date></refentryinfo>
+<refentryinfo><date>8 Aug 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_open</refentrytitle>
@@ -42,7 +42,8 @@
 <parameter moreinfo="none">gfp</parameter>
 の指す先に返します。
 <parameter moreinfo="none">gfarm_url</parameter>
-はGfarmファイルシステムのパス名、あるいは
+はGfarmファイルシステムのパス名、
+あるいは
 gfarm://metaserver:port/path/name
 形式のGfarm URLです。
 </para>
@@ -74,13 +75,20 @@ gfarm://metaserver:port/path/name
 <varlistentry>
 <term><constant>GFARM_FILE_TRUNC</constant></term>
 <listitem>
-<para>ファイルが存在し、レギュラーファイルで書込みが許される場合、ファイルサイズを0にします。</para>
+<para>ファイルが存在し、レギュラーファイルで書込みが許される場合、
+ファイルサイズを0にします。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_FILE_APPEND</constant></term>
 <listitem>
 <para>ファイルをアペンドモードでオープンします。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_UNBUFFERED</constant></term>
+<listitem>
+<para>バッファを用いないで読み書きを行います。</para>
 </listitem>
 </varlistentry>
 </variablelist>

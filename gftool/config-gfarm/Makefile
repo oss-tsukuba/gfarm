@@ -30,6 +30,8 @@ DATA =	$(srcdir)/config-gfarm.common \
 	$(srcdir)/gfarm.conf-ldap.in \
 	$(srcdir)/gfarm.conf-none.in \
 	$(srcdir)/gfarm.conf.in \
+	$(srcdir)/gfmd.failover.conf \
+	$(srcdir)/gfmd.failover.agent.conf \
 	$(srcdir)/slapd.conf-2.0.in \
 	$(srcdir)/slapd.conf-2.1.in \
 	$(srcdir)/gfarm.sql \

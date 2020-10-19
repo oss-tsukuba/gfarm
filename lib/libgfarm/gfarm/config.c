@@ -299,7 +299,7 @@ local_ug_maps_hash_index(const void *key, int keylen)
 	    id->port * 3);
 }
 
-int
+static int
 local_ug_maps_hash_equal(const void *key1, int key1len,
 	const void *key2, int key2len)
 {
@@ -1098,6 +1098,7 @@ int gfarm_metadb_remover_queue_length = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_remove_scan_log_interval = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_remove_scan_interval_factor = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_heartbeat_interval = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_failover_notify_delay = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_dbq_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_server_back_channel_sndbuf_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_server_nfs_root_squash_support = GFARM_CONFIG_MISC_DEFAULT;
@@ -1652,7 +1653,8 @@ gfarm_strtoken(char **cursorp, char **tokenp)
 }
 
 static gfarm_error_t
-parse_auth_arguments(char *p, char **op)
+parse_auth_arguments(char *p, enum gfarm_auth_config_position position,
+	const char **op)
 {
 #ifndef __KERNEL__	/* parse_auth_arguments */
 
@@ -1741,9 +1743,9 @@ parse_auth_arguments(char *p, char **op)
 	}
 
 	if (strcmp(command, "enable") == 0) {
-		e = gfarm_auth_enable(auth_method, hostspecp);
+		e = gfarm_auth_enable(auth_method, hostspecp, position);
 	} else if (strcmp(command, "disable") == 0) {
-		e = gfarm_auth_disable(auth_method, hostspecp);
+		e = gfarm_auth_disable(auth_method, hostspecp, position);
 	} else {
 		/*
 		 * we don't return `command' to *op here,
@@ -1771,7 +1773,7 @@ parse_auth_arguments(char *p, char **op)
 
 #if 0 /* not yet in gfarm v2 */
 static gfarm_error_t
-parse_netparam_arguments(char *p, char **op)
+parse_netparam_arguments(char *p, const char **op)
 {
 	gfarm_error_t e;
 	char *tmp, *option, *host;
@@ -1844,7 +1846,7 @@ parse_netparam_arguments(char *p, char **op)
 #endif
 
 static gfarm_error_t
-parse_sockopt_arguments(char *p, char **op)
+parse_sockopt_arguments(char *p, const char **op)
 {
 	gfarm_error_t e;
 	char *tmp, *option, *host;
@@ -1943,7 +1945,7 @@ parse_sockopt_arguments(char *p, char **op)
 
 #if 0 /* XXX address_use is disabled for now */
 static gfarm_error_t
-parse_address_use_arguments(char *p, char **op)
+parse_address_use_arguments(char *p, const char **op)
 {
 	gfarm_error_t e;
 	char *tmp, *address;
@@ -1987,7 +1989,7 @@ parse_address_use_arguments(char *p, char **op)
 #endif
 
 static gfarm_error_t
-parse_known_network_arguments(char *p, char **op)
+parse_known_network_arguments(char *p, const char **op)
 {
 	gfarm_error_t e;
 	char *tmp, *address;
@@ -2030,7 +2032,7 @@ parse_known_network_arguments(char *p, char **op)
 }
 
 static gfarm_error_t
-parse_stringlist(char *p, char **op,
+parse_stringlist(char *p, const char **op,
 	gfarm_stringlist *list, const char *listname)
 {
 	gfarm_error_t e;
@@ -2079,7 +2081,7 @@ parse_stringlist(char *p, char **op,
 
 #if 0 /* XXX NOTYET */
 static gfarm_error_t
-parse_client_architecture(char *p, char **op)
+parse_client_architecture(char *p, const char **op)
 {
 	gfarm_error_t e;
 	char *architecture, *host, *junk;
@@ -2180,7 +2182,7 @@ parse_set_var(char *p, char **rv)
 }
 
 gfarm_error_t
-parse_set_spool_root(char *p)
+gfarm_parse_set_spool_root(char *p)
 {
 	gfarm_error_t e;
 	char *s;
@@ -2474,7 +2476,7 @@ parse_set_misc_enabled(char *p, int *vp)
 }
 
 static gfarm_error_t
-parse_metadb_server_port(char *p, char **op)
+parse_metadb_server_port(char *p, const char **op)
 {
 	char *s;
 	const char *listname = *op;
@@ -2747,7 +2749,7 @@ parse_hostname_and_port(char *host_and_port, const char *listname,
 }
 
 static gfarm_error_t
-parse_local_usergroup_map_arguments(char *p, char **op, int is_user)
+parse_local_usergroup_map_arguments(char *p, const char **op, int is_user)
 {
 	gfarm_error_t e;
 	char *tmp, *filepath, *host_and_port, *host = NULL;
@@ -2830,7 +2832,7 @@ parse_profile(char *p, int *vp)
 }
 
 static gfarm_error_t
-parse_metadb_server_list_arguments(char *p, char **op)
+parse_metadb_server_list_arguments(char *p, const char **op)
 {
 #ifndef __KERNEL__	/* METADB_SERVER_NUM_MAX :: too big */
 #define METADB_SERVER_NUM_MAX 1024
@@ -3052,7 +3054,7 @@ expand_debug_command_arg_pattern(const char *pattern)
 #define MAX_DEBUG_COMMAND_LENGTH	20
 
 static gfarm_error_t
-parse_debug_command(char *p, char **op)
+parse_debug_command(char *p, const char **op)
 {
 	gfarm_error_t e;
 	char *argv[MAX_DEBUG_COMMAND_LENGTH], *arg, *diag = "debug_command";
@@ -3157,11 +3159,11 @@ parse_fatal_action(char *p, int *vp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static gfarm_error_t parse_one_line(char *, char *, char **,
-	const char *, int);
+static gfarm_error_t parse_one_line(const char *, char *,
+	enum gfarm_auth_config_position, const char *, int, const char **);
 
 static gfarm_error_t
-parse_include(char *p, char **op, const char *file, int lineno)
+parse_include(char *p, const char **op, const char *file, int lineno)
 {
 	gfarm_error_t e;
 	char *s, *malloced_filename = NULL;
@@ -3226,17 +3228,19 @@ parse_include(char *p, char **op, const char *file, int lineno)
 }
 
 static gfarm_error_t
-parse_one_line(char *s, char *p, char **op, const char *file, int lineno)
+parse_one_line(const char *s, char *p,
+	enum gfarm_auth_config_position position, const char *file, int lineno,
+	const char **op)
 {
 	gfarm_error_t e;
-	char *o;
+	const char *o;
 
 	if (strcmp(s, o = "include") == 0) {
 		e = parse_include(p, &o, file, lineno);
 	} else if (strcmp(s, o = "include_nesting_limit") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->include_nesting_limit);
 	} else if (strcmp(s, o = "spool") == 0) {
-		e = parse_set_spool_root(p);
+		e = gfarm_parse_set_spool_root(p);
 	} else if (strcmp(s, o = "spool_server_listen_address") == 0) {
 		e = parse_set_var(p, &gfarm_spool_server_listen_address);
 	} else if (strcmp(s, o = "spool_server_listen_backlog") == 0) {
@@ -3376,7 +3380,7 @@ parse_one_line(char *s, char *p, char **op, const char *file, int lineno)
 	} else if (strcmp(s, o = "shared_key_file") == 0) {
 		e = parse_set_var(p, &staticp->shared_key_file);
 	} else if (strcmp(s, o = "auth") == 0) {
-		e = parse_auth_arguments(p, &o);
+		e = parse_auth_arguments(p, position, &o);
 #if 0 /* not yet in gfarm v2 */
 	} else if (strcmp(s, o = "netparam") == 0) {
 		e = parse_netparam_arguments(p, &o);
@@ -3549,6 +3553,8 @@ parse_one_line(char *s, char *p, char **op, const char *file, int lineno)
 		    &gfarm_metadb_remove_scan_interval_factor);
 	} else if (strcmp(s, o = "metadb_server_heartbeat_interval") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_heartbeat_interval);
+	} else if (strcmp(s, o = "failover_notify_delay") == 0) {
+		e = parse_set_misc_int(p, &gfarm_metadb_failover_notify_delay);
 	} else if (strcmp(s, o = "metadb_server_dbq_size") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_dbq_size);
 	} else if (strcmp(s, o = "metadb_server_back_channel_sndbuf_limit")
@@ -3686,7 +3692,8 @@ gfarm_config_read_file(FILE *config, int *lineno_p, const char *file)
 {
 	gfarm_error_t e;
 	int lineno = 0;
-	char *s, *p, *o = NULL, buffer[MAX_CONFIG_LINE_LENGTH + 1];
+	char *s, *p, buffer[MAX_CONFIG_LINE_LENGTH + 1];
+	const char *o = NULL;
 
 	while (fgets(buffer, sizeof buffer, config) != NULL) {
 		lineno++;
@@ -3696,7 +3703,8 @@ gfarm_config_read_file(FILE *config, int *lineno_p, const char *file)
 		if (e == GFARM_ERR_NO_ERROR) {
 			if (s == NULL) /* blank or comment line */
 				continue;
-			e = parse_one_line(s, p, &o, file, lineno);
+			e = parse_one_line(s, p, GFARM_AUTH_CONFIG_AT_TAIL,
+			    file, lineno, &o);
 		}
 		if (e != GFARM_ERR_NO_ERROR) {
 			fclose(config);
@@ -3955,6 +3963,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_metadb_heartbeat_interval == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_heartbeat_interval =
 		    GFARM_METADB_HEARTBEAT_INTERVAL_DEFAULT;
+	if (gfarm_metadb_failover_notify_delay == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_metadb_failover_notify_delay =
+		    GFARM_METADB_FAILOVER_NOTIFY_DELAY_DEFAULT;
 	if (gfarm_metadb_remove_scan_log_interval == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_remove_scan_log_interval =
 		    GFARM_METADB_REMOVE_SCAN_LOG_INTERVAL_DEFAULT;
@@ -4080,9 +4091,257 @@ gfarm_config_set_default_misc(void)
 
 /*
  * configuration manipulation
+ *
+ * - gfarm_config_copyin() in gfmd:
+ *	gfarm_config_storage -> (*type->copyin)()
+ *		-> gfmd configuration
+ * - gfarm_config_copyin_default():
+ *	gfarm_config_storage
+ *		-> checking by (*type->validator)()
+ *		-> memory at gfarm_config_addr(), i.e. gfmd configuration
+ *
+ * - gfarm_config_copyout() in both gfmd and client:
+ *	configuration -> (*type->copyout)()
+ *		-> gfarm_config_storage
+ * - gfarm_config_copyout_default():
+ *	 memory at gfarm_config_addr(), i.e. configuration
+ *		-> gfarm_config_storage
+ *
+ * - gfarm_config_client_side_parse_default():
+ *	parameters -> parse_one_line()
+ *		-> memory at gfarm_config_addr(), i.e. client configuration
+ *		-> gfarm_config_storage
+ *
+ * - gfm_client_config_set_by_string():
+ *	parameters -> (*type->client_side_parse)()
+ *		-> gfarm_config_storage
+ *		-> RPC to gfmd
+ *
+ * - gfm_client_config_name_to_string():
+ *	gfmd configuration -> gfm_client_config_get()
+ *		-> gfarm_config_storage -> (*type->printer)()
+ *		-> a string
+ *
+ * - gfarm_config_local_name_to_string():
+ *	client configuration -> (*type->copyout)()
+ *		-> gfarm_config_storage -> (*type->printer)()
+ *		-> a string
+ *
  */
 
-int
+struct gfarm_config_type {
+	const char *name;
+	int target;
+	gfarm_error_t (*client_side_parse)(const struct gfarm_config_type *,
+		char *, union gfarm_config_storage *storage);
+	gfarm_error_t (*copyin)(const struct gfarm_config_type *,
+		union gfarm_config_storage *);
+	gfarm_error_t (*copyout)(const struct gfarm_config_type *,
+		union gfarm_config_storage *);
+
+	char fmt;
+	int (*printer)(void *, char *, size_t);
+	void (*set_default)(void *);
+
+	/* the followings are only for gfarm_config_*_default() functions */
+	int (*validator)(union gfarm_config_storage *);
+	void *addr; /* maybe NULL, if it's in gfarm_ctxp-> */
+	size_t offset; /* only available if it's in gfarm_ctxp-> */
+};
+
+void
+gfarm_config_storage_free(const struct gfarm_config_type *type,
+	union gfarm_config_storage *storage)
+{
+	if (type->fmt == 's') {
+		free(storage->s);
+		storage->s = NULL;
+	}
+}
+
+gfarm_error_t
+gfarm_config_storage_dup(const struct gfarm_config_type *type,
+	union gfarm_config_storage *dst, union gfarm_config_storage *src)
+{
+	switch (type->fmt) {
+	case 'i':
+		dst->i = src->i;
+		break;
+	case 's':
+		if (src->s == NULL) {
+			dst->s = NULL;
+		} else {
+			dst->s = strdup(src->s);
+			if (dst->s == NULL)
+				return (GFARM_ERR_NO_MEMORY);
+		}
+		break;
+	default:
+		return (GFARM_ERR_UNKNOWN);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static void *
+gfarm_config_addr(const struct gfarm_config_type *type)
+{
+	if (type->addr != NULL)
+		return (type->addr);
+	if (gfarm_ctxp == NULL)
+		return (NULL);
+	return ((char *)gfarm_ctxp + type->offset);
+}
+
+static gfarm_error_t
+gfarm_config_copyin_default(const struct gfarm_config_type *type,
+	union gfarm_config_storage *storage)
+{
+	void *addr = gfarm_config_addr(type);
+	char *t;
+
+	if (addr == NULL)
+		return (GFARM_ERR_BAD_ADDRESS);
+
+	if (!(*type->validator)(storage))
+		return (GFARM_ERR_INVALID_ARGUMENT);
+
+	switch (type->fmt) {
+	case 'i':
+		*(int *)addr = storage->i;
+		break;
+	case 's':
+		t = storage->s;
+
+		/* "" means: change the variable to default (NULL) */
+		if (t != NULL && *t == '\0')
+			t = NULL;
+
+		if (t != NULL) {
+			t = strdup(t);
+			if (t == NULL)
+				return (GFARM_ERR_NO_MEMORY);
+		}
+		free(*(char **)addr);
+		*(char **)addr = t;
+		break;
+	default:
+		return (GFARM_ERR_UNKNOWN);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfarm_config_copyin_parse(const struct gfarm_config_type *type,
+	union gfarm_config_storage *storage)
+{
+	gfarm_error_t e;
+	void *addr = gfarm_config_addr(type);
+	const char *o;
+
+	if (type->fmt != 's')
+		return (GFARM_ERR_INTERNAL_ERROR); /* shouldn't happen */
+
+	/* addr may be NULL */
+	(*type->set_default)(addr);
+	e = parse_one_line(type->name, storage->s, GFARM_AUTH_CONFIG_AT_HEAD,
+	    NULL, 0, &o);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_config_copyout_default(const struct gfarm_config_type *type,
+	union gfarm_config_storage *storage)
+{
+	void *addr = gfarm_config_addr(type);
+
+	if (addr == NULL)
+		return (GFARM_ERR_BAD_ADDRESS);
+
+	switch (type->fmt) {
+	case 'i':
+		storage->i = *(int *)addr;
+		break;
+	case 's':
+		if (*(char **)addr == NULL)
+			storage->s = NULL;
+		else if ((storage->s = strdup(*(char **)addr)) == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		break;
+	default:
+		return (GFARM_ERR_UNKNOWN);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfarm_config_copyout_auth(const struct gfarm_config_type *type,
+	union gfarm_config_storage *storage)
+{
+	assert(type->fmt == 's');
+
+	storage->s = gfarm_auth_config_string_dup();
+	if (storage->s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfarm_config_client_side_parse_default(
+	const struct gfarm_config_type *type, char *args,
+	union gfarm_config_storage *storage)
+{
+	gfarm_error_t e;
+	void *addr = gfarm_config_addr(type);;
+	const char *o = NULL;
+
+	/* hack to prevent unwanted gfs_display_timers() output */
+	int profile_save = gfarm_ctxp->profile;
+
+	if (addr == NULL)
+		return (GFARM_ERR_BAD_ADDRESS);
+
+	(*type->set_default)(addr);
+	e = parse_one_line(type->name, args, GFARM_AUTH_CONFIG_AT_HEAD,
+	    NULL, 0, &o);
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (o != NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s %s: %s: %s", type->name, args, o,
+			    gfarm_error_string(e));
+		} else {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s %s: %s", type->name, args,
+			    gfarm_error_string(e));
+		}
+		return (e);
+	}
+	e = gfarm_config_copyout_default(type, storage);
+
+	/* hack to prevent unwanted gfs_display_timers() output */
+	gfarm_ctxp->profile = profile_save;
+
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_config_client_side_parse_nop(
+	const struct gfarm_config_type *type, char *args,
+	union gfarm_config_storage *storage)
+{
+	assert(gfarm_config_type_get_format(type) == 's');
+
+	if ((storage->s = strdup(args)) == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static void
+gfarm_config_set_default_nop(void *addr)
+{
+	/* no operation */
+}
+
+static int
 gfarm_config_print_int(void *addr, char *string, size_t sz)
 {
 	int *ip = addr;
@@ -4090,7 +4349,7 @@ gfarm_config_print_int(void *addr, char *string, size_t sz)
 	return (snprintf(string, sz, "%d", *ip));
 }
 
-void
+static void
 gfarm_config_set_default_int(void *addr)
 {
 	int *ip = addr;
@@ -4098,37 +4357,39 @@ gfarm_config_set_default_int(void *addr)
 	*ip = GFARM_CONFIG_MISC_DEFAULT;
 }
 
-int
+#if 0 /* not used */
+static int
 gfarm_config_validate_true(union gfarm_config_storage *storage)
 {
 	return (1);
 }
+#endif
 
-int
+static int
 gfarm_config_validate_false(union gfarm_config_storage *storage)
 {
 	return (0);
 }
 
-int
+static int
 gfarm_config_validate_positive_int(union gfarm_config_storage *storage)
 {
 	return (storage->i > 0);
 }
 
-int
+static int
 gfarm_config_validate_non_negative_int(union gfarm_config_storage *storage)
 {
 	return (storage->i >= 0);
 }
 
-int
+static int
 gfarm_config_validate_percentage(union gfarm_config_storage *storage)
 {
 	return (storage->i >= 0 && storage->i <= 100);
 }
 
-int
+static int
 gfarm_config_validate_max_directory_depth(union gfarm_config_storage *storage)
 {
 	/*
@@ -4139,7 +4400,7 @@ gfarm_config_validate_max_directory_depth(union gfarm_config_storage *storage)
 	    storage->i <= GFARM_MAX_DIRECTORY_DEPTH_MAXIMUM);
 }
 
-int
+static int
 gfarm_config_print_enabled(void *addr, char *string, size_t sz)
 {
 	int *enabledp = addr;
@@ -4150,7 +4411,7 @@ gfarm_config_print_enabled(void *addr, char *string, size_t sz)
 		return (snprintf(string, sz, "%s", "disabled"));
 }
 
-void
+static void
 gfarm_config_set_default_enabled(void *addr)
 {
 	int *ip = addr;
@@ -4158,13 +4419,13 @@ gfarm_config_set_default_enabled(void *addr)
 	*ip = GFARM_CONFIG_MISC_DEFAULT;
 }
 
-int
+static int
 gfarm_config_validate_enabled(union gfarm_config_storage *storage)
 {
 	return (storage->i == 0 || storage->i == 1);
 }
 
-int
+static int
 gfarm_config_validate_profile(union gfarm_config_storage *storage)
 {
 	if (!gfarm_config_validate_enabled(storage))
@@ -4176,7 +4437,7 @@ gfarm_config_validate_profile(union gfarm_config_storage *storage)
 	return (1);
 }
 
-int
+static int
 gfarm_config_print_string(void *addr, char *string, size_t sz)
 {
 	char **sp = addr;
@@ -4184,7 +4445,7 @@ gfarm_config_print_string(void *addr, char *string, size_t sz)
 	return (snprintf(string, sz, "%s", *sp));
 }
 
-void
+static void
 gfarm_config_set_default_string(void *addr)
 {
 	char **sp = addr;
@@ -4192,7 +4453,7 @@ gfarm_config_set_default_string(void *addr)
 	*sp = NULL;
 }
 
-int
+static int
 gfarm_config_validate_digest(union gfarm_config_storage *storage)
 {
 	if (storage->s == NULL)
@@ -4202,138 +4463,167 @@ gfarm_config_validate_digest(union gfarm_config_storage *storage)
 	return (gfarm_msgdigest_name_verify(storage->s));
 }
 
-/* These variables require giant_lock() or config_var_lock() in gfmd */
-const struct gfarm_config_type {
-	const char *name;
-	char fmt;
-	int for_metadb;
-	int (*printer)(void *, char *, size_t);
-	void (*set_default)(void *);
-	int (*validator)(union gfarm_config_storage *);
-	void *addr; /* maybe NULL, if it's in gfarm_ctxp-> */
-	size_t offset; /* only available if it's in gfarm_ctxp-> */
-} config_types[] = {
-	{ "protocol_major", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_false,
+#define FOR_METADB	GFARM_CONFIG_NAME_FLAG_FOR_METADB
+#define FOR_CLIENT	GFARM_CONFIG_NAME_FLAG_FOR_CLIENT
+
+#define CLIENT_PARSE	gfarm_config_client_side_parse_default, \
+			gfarm_config_copyin_default, \
+			gfarm_config_copyout_default
+#define	SERVER_PARSE(copyout) \
+			gfarm_config_client_side_parse_nop, \
+			gfarm_config_copyin_parse, \
+			copyout
+
+#define	INT_IMMUTABLE	'i', \
+			gfarm_config_print_int, \
+			gfarm_config_set_default_int, \
+			gfarm_config_validate_false
+#define	INT_POSITIVE	'i', \
+			gfarm_config_print_int, \
+			gfarm_config_set_default_int, \
+			gfarm_config_validate_positive_int
+#define	INT_NON_NEGATIVE \
+			'i', \
+			gfarm_config_print_int, \
+			gfarm_config_set_default_int, \
+			gfarm_config_validate_non_negative_int
+#define	INT_PERCENTAGE	'i', \
+			gfarm_config_print_int, \
+			gfarm_config_set_default_int, \
+			gfarm_config_validate_percentage
+
+#define	TYPE_ENABLED	'i', \
+			gfarm_config_print_enabled, \
+			gfarm_config_set_default_enabled, \
+			gfarm_config_validate_enabled
+
+/*
+ * BE CAREFUL to prevent information leak:
+ * To add an entry to config_types[] table, you have to review the following
+ * functions to prevent information leak in log:
+ *	gfarm_config_change_log()
+ *	gfarm_config_apply_to_metadb()
+ * Maybe we should add a secret flag and these functions should check the flag.
+ *
+ * In gfmd, giant_lock() or config_var_lock() is needed
+ * to access the variables pointed by gfarm_config_addr()
+ *
+ * NOTE:
+ * CLIENT_PARSE/SERVER_PARSE setting shouldn't be changed,
+ * because such change introduces protocol incompatibility.
+ */
+
+static const struct gfarm_config_type config_types[] = {
+	{ "protocol_major",
+	  FOR_METADB, CLIENT_PARSE, INT_IMMUTABLE,
 	  &gfarm_metadb_version_major, 0 },
-	{ "protocol_minor", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_false,
+	{ "protocol_minor",
+	  FOR_METADB, CLIENT_PARSE, INT_IMMUTABLE,
 	  &gfarm_metadb_version_minor, 0 },
-	{ "protocol_teeny", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_false,
+	{ "protocol_teeny",
+	  FOR_METADB, CLIENT_PARSE, INT_IMMUTABLE,
 	  &gfarm_metadb_version_teeny, 0 },
-	{ "include_nesting_limit", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
+	{ "include_nesting_limit",
+	  FOR_METADB, CLIENT_PARSE, INT_POSITIVE,
 	  NULL, offsetof(struct gfarm_context, include_nesting_limit) },
-	{ "digest", 's', 1, gfarm_config_print_string,
+	{ "auth",
+	  FOR_METADB|FOR_CLIENT, SERVER_PARSE(gfarm_config_copyout_auth),
+	  's', gfarm_config_print_string, gfarm_config_set_default_nop, NULL,
+	  NULL, 0 },
+	{ "digest",
+	  FOR_METADB, CLIENT_PARSE, 's', gfarm_config_print_string,
 	  gfarm_config_set_default_string, gfarm_config_validate_digest,
 	  &gfarm_digest, 0 },
-	{ "write_verify", 'i', 1, gfarm_config_print_enabled,
-	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
+	{ "write_verify",
+	  FOR_METADB, CLIENT_PARSE, TYPE_ENABLED,
 	  &gfarm_write_verify, 0 },
-	{ "write_verify_interval", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
+	{ "write_verify_interval",
+	  FOR_METADB, CLIENT_PARSE, INT_POSITIVE,
 	  &gfarm_write_verify_interval, 0 },
-	{ "write_verify_retry_interval", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
+	{ "write_verify_retry_interval",
+	  FOR_METADB, CLIENT_PARSE, INT_POSITIVE,
 	  &gfarm_write_verify_retry_interval, 0 },
-	{ "write_verify_log_interval", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
+	{ "write_verify_log_interval",
+	  FOR_METADB, CLIENT_PARSE, INT_POSITIVE,
 	  &gfarm_write_verify_log_interval, 0 },
-	{ "direct_local_access", 'i', 0, gfarm_config_print_enabled,
-	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
+	{ "direct_local_access",
+	  FOR_CLIENT, CLIENT_PARSE, TYPE_ENABLED,
 	  NULL, offsetof(struct gfarm_context, direct_local_access) },
-	{ "replication_at_write_open", 'i', 0, gfarm_config_print_enabled,
-	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
+	{ "replication_at_write_open",
+	  FOR_CLIENT, CLIENT_PARSE, TYPE_ENABLED,
 	  NULL, offsetof(struct gfarm_context, replication_at_write_open) },
-	{ "read_only", 'i', 1, gfarm_config_print_enabled,
-	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
+	{ "read_only",
+	  FOR_METADB, CLIENT_PARSE, TYPE_ENABLED,
 	  &gfarm_read_only, 0 },
-	{ "simultaneous_replication_receivers", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
+	{ "simultaneous_replication_receivers",
+	  FOR_METADB, CLIENT_PARSE, INT_POSITIVE,
 	  &gfarm_simultaneous_replication_receivers, 0 },
-	{ "client_digest_check", 'i', 0, gfarm_config_print_enabled,
-	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
+	{ "client_digest_check",
+	  FOR_CLIENT, CLIENT_PARSE, TYPE_ENABLED,
 	  NULL, offsetof(struct gfarm_context, client_digest_check) },
-	{ "client_file_bufsize", 'i', 0, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
+	{ "client_file_bufsize",
+	  FOR_CLIENT, CLIENT_PARSE, INT_POSITIVE,
 	  NULL, offsetof(struct gfarm_context, client_file_bufsize) },
-	{ "max_open_files", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
+	{ "max_open_files",
+	  FOR_METADB, CLIENT_PARSE, INT_POSITIVE,
 	  &gfarm_max_open_files, 0 },
-	{ "directory_quota_count_per_user_limit", 'i', 1,
-	  gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
+	{ "directory_quota_count_per_user_limit",
+	  FOR_METADB, CLIENT_PARSE, INT_POSITIVE,
 	  &gfarm_directory_quota_count_per_user_limit, 0 },
-	{ "directory_quota_check_start_delay", 'i', 1,
-	  gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
+	{ "directory_quota_check_start_delay",
+	  FOR_METADB, CLIENT_PARSE, INT_NON_NEGATIVE,
 	  &gfarm_directory_quota_check_start_delay, 0 },
-	{ "directory_quota_check_retry_interval", 'i', 1,
-	  gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
+	{ "directory_quota_check_retry_interval",
+	  FOR_METADB, CLIENT_PARSE, INT_NON_NEGATIVE,
 	  &gfarm_directory_quota_check_retry_interval, 0 },
-	{ "quota_check_retry_interval", 'i', 1,
-	  gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
+	{ "quota_check_retry_interval",
+	  FOR_METADB, CLIENT_PARSE, INT_NON_NEGATIVE,
 	  &gfarm_quota_check_retry_interval, 0 },
-	{ "max_directory_depth", 'i', 1,
-	  gfarm_config_print_int,
-	  gfarm_config_set_default_int,
+	{ "max_directory_depth",
+	  FOR_METADB, CLIENT_PARSE,
+	  'i', gfarm_config_print_int, gfarm_config_set_default_int,
 	  gfarm_config_validate_max_directory_depth,
 	  &gfarm_max_directory_depth, 0 },
-	{ "metadb_server_remove_scan_log_interval", 'i', 1,
-	  gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
+	{ "metadb_server_remove_scan_log_interval",
+	  FOR_METADB, CLIENT_PARSE, INT_POSITIVE,
 	  &gfarm_metadb_remove_scan_log_interval, 0 },
-	{ "metadb_server_remove_scan_interval_factor", 'i', 1,
-	  gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_positive_int,
+	{ "metadb_server_remove_scan_interval_factor",
+	  FOR_METADB, CLIENT_PARSE, INT_POSITIVE,
 	  &gfarm_metadb_remove_scan_interval_factor, 0 },
-	{ "profile", 'i', 1, gfarm_config_print_enabled,
-	  gfarm_config_set_default_enabled, gfarm_config_validate_profile,
+	{ "profile",
+	  FOR_METADB, CLIENT_PARSE,
+	  'i', gfarm_config_print_enabled, gfarm_config_set_default_enabled,
+	  gfarm_config_validate_profile,
 	  NULL, offsetof(struct gfarm_context, profile) },
-	{ "replicainfo", 'i', 1, gfarm_config_print_enabled,
-	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
+	{ "replicainfo",
+	  FOR_METADB, CLIENT_PARSE, TYPE_ENABLED,
 	  &gfarm_replicainfo_enabled, 0 },
 	/*
 	 * replica_check, replica_check_remove and replica_check_reduced_log
 	 * are treated in replica_check.c to maintain compatibility.
 	 */
-	{ "replica_check_remove_grace_used_space_ratio", 'i', 1,
-	  gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_percentage,
+	{ "replica_check_remove_grace_used_space_ratio",
+	  FOR_METADB, CLIENT_PARSE, INT_PERCENTAGE,
 	  &gfarm_replica_check_remove_grace_used_space_ratio, 0 },
-	{ "replica_check_remove_grace_time", 'i', 1,
-	  gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
+	{ "replica_check_remove_grace_time",
+	  FOR_METADB, CLIENT_PARSE, INT_NON_NEGATIVE,
 	  &gfarm_replica_check_remove_grace_time, 0 },
-	{ "replica_check_host_down_thresh", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
+	{ "replica_check_host_down_thresh",
+	  FOR_METADB, CLIENT_PARSE, INT_NON_NEGATIVE,
 	  &gfarm_replica_check_host_down_thresh, 0 },
-	{ "replica_check_sleep_time", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
+	{ "replica_check_sleep_time",
+	  FOR_METADB, CLIENT_PARSE, INT_NON_NEGATIVE,
 	  &gfarm_replica_check_sleep_time, 0 },
-	{ "replica_check_yield_time", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
+	{ "replica_check_yield_time",
+	  FOR_METADB, CLIENT_PARSE, INT_NON_NEGATIVE,
 	  &gfarm_replica_check_yield_time, 0 },
-	{ "replica_check_minimum_interval", 'i', 1, gfarm_config_print_int,
-	  gfarm_config_set_default_int, gfarm_config_validate_non_negative_int,
+	{ "replica_check_minimum_interval",
+	  FOR_METADB, CLIENT_PARSE, INT_NON_NEGATIVE,
 	  &gfarm_replica_check_minimum_interval, 0 },
-	{ "replication_busy_host", 'i', 1, gfarm_config_print_enabled,
-	  gfarm_config_set_default_enabled, gfarm_config_validate_enabled,
+	{ "replication_busy_host",
+	  FOR_METADB, CLIENT_PARSE, TYPE_ENABLED,
 	  &gfarm_replication_busy_host, 0 },
 };
-
-static void *
-gfarm_config_addr(const struct gfarm_config_type *type)
-{
-	if (type->addr != NULL)
-		return (type->addr);
-	if (gfarm_ctxp == NULL)
-		return (NULL);
-	return ((char *)gfarm_ctxp + type->offset);
-}
 
 static gfarm_error_t
 gfarm_config_type_by_var(void *var, const struct gfarm_config_type **typep)
@@ -4378,7 +4668,7 @@ gfarm_config_type_by_name_for_metadb(const char *name,
 		return (e);
 
 	/* NOTE: gfarm_metadb_config_set_by_string() uses this error code */
-	if (!type->for_metadb)
+	if ((type->target & FOR_METADB) == 0)
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 
 	*typep = type;
@@ -4402,44 +4692,24 @@ gfarm_config_local_name_to_string(const char *name, char *string, size_t sz)
 {
 	gfarm_error_t e;
 	const struct gfarm_config_type *type;
-	void *addr;
+	union gfarm_config_storage storage;
+	int len;
 
 	e = gfarm_config_type_by_name(name, &type);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 
-	if (type->for_metadb)
+	if ((type->target & FOR_CLIENT) == 0)
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 
-	addr = gfarm_config_addr(type);
-	if (addr == NULL)
-		return (GFARM_ERR_BAD_ADDRESS);
-
-	if ((*type->printer)(addr, string, sz) >= sz)
-		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
-
-	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
-gfarm_config_metadb_name_to_string(const char *name, char *string, size_t sz)
-{
-	gfarm_error_t e;
-	const struct gfarm_config_type *type;
-	void *addr;
-
-	e = gfarm_config_type_by_name(name, &type);
+	e = (*type->copyout)(type, &storage);
 	if (e != GFARM_ERR_NO_ERROR)
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+		return (e);
 
-	if (!type->for_metadb)
-		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-
-	addr = gfarm_config_addr(type);
-	if (addr == NULL)
-		return (GFARM_ERR_BAD_ADDRESS);
-
-	if ((*type->printer)(addr, string, sz) >= sz)
+	len = (*type->printer)(&storage, string, sz);
+	if (len == -1)
+		return (gfarm_errno_to_error(errno));
+	if (len >= sz)
 		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
 
 	return (GFARM_ERR_NO_ERROR);
@@ -4450,13 +4720,12 @@ gfarm_config_name_foreach(gfarm_error_t (*callback)(void *, const char *),
 	void *closure, int flags)
 {
 	gfarm_error_t e_save = GFARM_ERR_NO_ERROR;
-	int for_metadb = flags == GFARM_CONFIG_NAME_FLAG_FOR_METADB;
 	int i;
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(config_types); i++) {
 		const struct gfarm_config_type *type = &config_types[i];
 
-		if (type->for_metadb == for_metadb) {
+		if ((type->target & flags) != 0) {
 			gfarm_error_t e = callback(closure, type->name);
 
 			if (e_save == GFARM_ERR_NO_ERROR)
@@ -4470,98 +4739,118 @@ gfarm_error_t
 gfarm_config_copyin(const struct gfarm_config_type *type,
 	union gfarm_config_storage *storage)
 {
-	void *addr = gfarm_config_addr(type);
-	char *t;
-
-	if (addr == NULL)
-		return (GFARM_ERR_BAD_ADDRESS);
-
-	if (!(*type->validator)(storage))
-		return (GFARM_ERR_INVALID_ARGUMENT);
-
-	switch (type->fmt) {
-	case 'i':
-		*(int *)addr = storage->i;
-		break;
-	case 's':
-		t = storage->s;
-
-		/* "" means: change the variable to default (NULL) */
-		if (t != NULL && *t == '\0')
-			t = NULL;
-
-		if (t != NULL) {
-			t = strdup(t);
-			if (t == NULL)
-				return (GFARM_ERR_NO_MEMORY);
-		}
-		free(*(char **)addr);
-		*(char **)addr = t;
-		break;
-	default:
-		return (GFARM_ERR_UNKNOWN);
-	}
-	return (GFARM_ERR_NO_ERROR);
+	return ((*type->copyin)(type, storage));
 }
 
 gfarm_error_t
 gfarm_config_copyout(const struct gfarm_config_type *type,
 	union gfarm_config_storage *storage)
 {
-	void *addr = gfarm_config_addr(type);
-
-	if (addr == NULL)
-		return (GFARM_ERR_BAD_ADDRESS);
-
-	switch (type->fmt) {
-	case 'i':
-		storage->i = *(int *)addr;
-		break;
-	case 's':
-		if (*(char **)addr == NULL)
-			storage->s = NULL;
-		else if ((storage->s = strdup(*(char **)addr)) == NULL)
-			return (GFARM_ERR_NO_MEMORY);
-		break;
-	default:
-		return (GFARM_ERR_UNKNOWN);
-	}
-	return (GFARM_ERR_NO_ERROR);
+	return ((*type->copyout)(type, storage));
 }
 
+void
+gfarm_config_log_change(const struct gfarm_config_type *type,
+	union gfarm_config_storage *storage,
+	const char *user, const char *host)
+{
+	int len;
+	size_t bufsize = 2048;
+	char *buffer = malloc(bufsize);
+	static const char diag[] = "gfarm_config_log_change";
+
+	if (buffer == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: no memory for %zd bytes",
+		    diag, bufsize);
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "config changed by (%s@%s): %s: no memory",
+		    user, host, type->name);
+		return;
+	}
+
+	/*
+	 * other use of (*type->printer)() refers storage as a result of
+	 * (*type->copyout)(), but this (*type->printer)() refers storage
+	 * as an input of (*type->copyin)().
+	 * with current implmentation, these two storage types are always
+	 * same, and same type->printer function works for both.
+	 * but be careful about future extension.
+	 */
+	len = (*type->printer)(storage, buffer, bufsize);
+	if (len == -1) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "config changed by (%s@%s) %s: cannot log: %s",
+		    user, host, type->name, strerror(errno));
+		return;
+	}
+	if (len >= bufsize) {
+		char *b = realloc(buffer, len + 1);
+
+		if (b == NULL) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: no memory for %d bytes", diag, len + 1);
+		} else {
+			buffer = b;
+
+			len = (*type->printer)(storage, buffer, len + 1);
+			if (len == -1) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "config changed by (%s@%s) %s: "
+				    "cannot log: %s",
+				    user, host, type->name, strerror(errno));
+				return;
+			}
+		}
+	}
+	gflog_info(GFARM_MSG_UNFIXED, "config changed by (%s@%s): %s %s",
+	    user, host, type->name, buffer);
+	free(buffer);
+}
+
+void
+gfarm_config_apply_begin(void)
+{
+	gfarm_auth_config_set_mark();
+}
+
+void
+gfarm_config_apply_end(void)
+{
+}
+
+/* error message will be logged by this function instead of callers  */
 gfarm_error_t
-gfarm_config_apply_directive_for_metadb(char *directive, char *rest_of_line,
-	const char *file, int lineno)
+gfarm_config_apply_to_metadb(char *directive, char *rest_of_line,
+	const char *file, int lineno, int log_changes)
 {
 	gfarm_error_t e;
 	const struct gfarm_config_type *type = NULL;
 	void *addr;
-	char *s, *p, *o = NULL;
+	char *rest_of_line_save;
+	const char *o = NULL;
 
-	s = directive;
-	p = rest_of_line;
-
-	e = gfarm_config_type_by_name_for_metadb(s, &type);
-	if (e == GFARM_ERR_NO_ERROR) {
-		addr = gfarm_config_addr(type);
-		if (addr == NULL)
-			e = GFARM_ERR_BAD_ADDRESS;
-	}
+	e = gfarm_config_type_by_name_for_metadb(directive, &type);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e == GFARM_ERR_OPERATION_NOT_PERMITTED) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "%s, line %d: %s: not available in gfmd",
-			    file, lineno, s);
+			    file, lineno, directive);
 		} else {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "%s, line %d: %s: %s",
-			    file, lineno, s, gfarm_error_string(e));
+			    file, lineno, directive, gfarm_error_string(e));
 		}
 		return (e);
 	}
 
+	/* parse_one_line() breaks rest_of_line */
+	rest_of_line_save = strdup(rest_of_line); /* NULL is OK, see below */
+
+	addr = gfarm_config_addr(type);
+	/* addr may be NULL */
 	(*type->set_default)(addr);
-	e = parse_one_line(s, p, &o, file, lineno);
+	e = parse_one_line(directive, rest_of_line, GFARM_AUTH_CONFIG_AT_MARK,
+	    file, lineno, &o);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (o == NULL) {
@@ -4571,7 +4860,24 @@ gfarm_config_apply_directive_for_metadb(char *directive, char *rest_of_line,
 			gflog_error(GFARM_MSG_UNFIXED, "%s, line %d: %s: %s",
 			    file, lineno, o, gfarm_error_string(e));
 		}
+	} else if (log_changes) {
+		/*
+		 * BE CAREFUL to prevent information leak:
+		 *
+		 * if there is secret information (e.g. password)
+		 * in the directive or the rest_of_line above,
+		 * we cannot log them.
+		 * but currently no such secret thing in config_types[],
+		 * we just log them.
+		 */
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s, line %d: config set: %s %s",
+		    file, lineno, directive,
+		    rest_of_line_save != NULL ? rest_of_line_save :
+		    rest_of_line /* better than nothing */);
 	}
+	free(rest_of_line_save);
+
 	return (e);
 }
 
@@ -4607,18 +4913,6 @@ gfarm_config_strtoken(char **cursorp, char **tokenp)
 	return (gfarm_strtoken(cursorp, tokenp));
 }
 
-static gfarm_error_t
-gfm_client_config_type_get(struct gfm_connection *gfm_server,
-	const struct gfarm_config_type *type)
-{
-	void *addr = gfarm_config_addr(type);
-
-	if (addr == NULL)
-		return (GFARM_ERR_BAD_ADDRESS);
-	return (gfm_client_config_get(gfm_server, type->name, type->fmt,
-	    addr));
-}
-
 gfarm_error_t
 gfm_client_config_name_to_string(
 	struct gfm_connection *gfm_server, const char *name,
@@ -4626,28 +4920,22 @@ gfm_client_config_name_to_string(
 {
 	gfarm_error_t e;
 	const struct gfarm_config_type *type;
-	void *addr;
-
-	/* hack to prevent unwanted gfs_display_timers() output */
-	int profile_save = gfarm_ctxp->profile;
+	union gfarm_config_storage storage;
+	int len;
 
 	e = gfarm_config_type_by_name(name, &type);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 
-	e = gfm_client_config_type_get(gfm_server, type);
+	e = gfm_client_config_get(gfm_server, type->name, type->fmt, &storage);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	addr = gfarm_config_addr(type);
-	if (addr == NULL)
-		return (GFARM_ERR_BAD_ADDRESS);
-
-	if ((*type->printer)(addr, string, sz) >= sz)
+	len = (*type->printer)(&storage, string, sz);
+	if (len == -1)
+		return (gfarm_errno_to_error(errno));
+	if (len >= sz)
 		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
-
-	/* hack to prevent unwanted gfs_display_timers() output */
-	gfarm_ctxp->profile = profile_save;
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -4658,11 +4946,8 @@ gfm_client_config_set_by_string(
 {
 	gfarm_error_t e;
 	const struct gfarm_config_type *type = NULL;
-	void *addr;
-	char *s, *p, *o = NULL;
-
-	/* hack to prevent unwanted gfs_display_timers() output */
-	int profile_save = gfarm_ctxp->profile;
+	union gfarm_config_storage storage;
+	char *s, *p;
 
 	p = string;
 	e = gfarm_strtoken(&p, &s);
@@ -4674,25 +4959,17 @@ gfm_client_config_set_by_string(
 		e = gfarm_config_type_by_name_for_metadb(s, &type);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
-		addr = gfarm_config_addr(type);
-		if (addr == NULL)
-			return (GFARM_ERR_BAD_ADDRESS);
 
-		(*type->set_default)(addr);
-		e = parse_one_line(s, p, &o, NULL, 0);
+		e = (*type->client_side_parse)(type, p, &storage);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1004465,
-		    "gfm_client_config_set_by_string(): %s: %s: %s",
-		    o == NULL ? "" : o, p, gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s %s: %s", s, p, gfarm_error_string(e));
 	} else {
-
 		e = gfm_client_config_set(gfm_server,
-		    type->name, type->fmt, addr);
+		    type->name, type->fmt, &storage);
+		gfarm_config_storage_free(type, &storage);
 	}
-
-	/* hack to prevent unwanted gfs_display_timers() output */
-	gfarm_ctxp->profile = profile_save;
 
 	return (e);
 }

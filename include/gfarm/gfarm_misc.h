@@ -151,9 +151,12 @@ void *gfarm_realloc_array(void *, size_t, size_t);
 
 gfarm_error_t gfarm_fixedstrings_dup(int, char **, char **);
 void gfarm_strings_free_deeply(int, char **);
+
+int gfutil_fixedstrings_dup(int, char **, char **);
 int gfarm_strarray_length(char **);
 char **gfarm_strarray_dup(char **);
 void gfarm_strarray_free(char **);
+
 int gfarm_attach_debugger(void);
 
 size_t gfarm_humanize_number(char *, size_t, unsigned long long, int);

@@ -1332,23 +1332,10 @@ dynamic_config_read(FILE *config, const char *file)
 		if (strcmp(s, "include") == 0) {
 			dynamic_config_include_file(p, file, lineno);
 		} else {
-			/* error message will be logged by this function */
-			e = gfarm_config_apply_directive_for_metadb(
-			    s, p, file, lineno);
-			if (e == GFARM_ERR_NO_ERROR) {
-				gfarm_error_t e_log;
-				char log_buf[LOG_BUFSIZE];
-
-				e_log = gfarm_config_metadb_name_to_string(
-				    s, log_buf, sizeof log_buf);
-				if (e_log != GFARM_ERR_NO_ERROR &&
-				    e_log != GFARM_ERR_RESULT_OUT_OF_RANGE)
-					snprintf(log_buf, sizeof log_buf,
-					    "<%s>", gfarm_error_string(e_log));
-				gflog_info(GFARM_MSG_UNFIXED,
-				    "%s, line %d: config set: %s %s",
-				    file, lineno, s, log_buf);
-			}
+			/* error message will be logged by callee */
+			e = gfarm_config_apply_to_metadb(
+			    s, p, file, lineno, /* log changes */ 1);
+			(void)e;
 		}
 	}
 }
@@ -1363,7 +1350,9 @@ dynamic_config_read_file(const char *file)
 		    "%s: cannot open config file", file);
 		return;
 	}
+	gfarm_config_apply_begin();
 	dynamic_config_read(config, file);
+	gfarm_config_apply_end();
 	fclose(config);
 }
 
@@ -2111,9 +2100,9 @@ main(int argc, char **argv)
 
 	/* master */
 
-	failover_notify();
 	quota_check_init();
 	replica_check_init();
+	failover_notify();
 	accepting_loop(sock);
 
 	/*NOTREACHED*/

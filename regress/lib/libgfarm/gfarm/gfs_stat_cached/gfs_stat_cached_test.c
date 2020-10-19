@@ -51,6 +51,7 @@ test_purge(gfarm_error_t (*stat_cached)(const char *, struct gfs_stat *),
 		    diag, gfarm_error_string(e));
 		return (0);
 	}
+	gfs_stat_free(&st);
 	if ((e = gfs_unlink(opt_gfarm_filepath)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNUSED, "%s : gfs_unlink : %s",
 		    diag, gfarm_error_string(e));

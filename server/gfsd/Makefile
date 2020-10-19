@@ -30,6 +30,7 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/gflog_reduced.h \
 	$(GFUTIL_SRCDIR)/msgdigest.h \
 	$(GFUTIL_SRCDIR)/nanosec.h \
+	$(GFUTIL_SRCDIR)/proctitle.h \
 	$(GFUTIL_SRCDIR)/hash.h \
 	$(GFUTIL_SRCDIR)/timer.h \
 	$(GFUTIL_SRCDIR)/tree.h \

@@ -14,6 +14,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#if (defined(__hurd__) || defined(__gnu_hurd__)) && !defined(PATH_MAX)
+#define PATH_MAX	2048	/* XXX FIXME */
+#endif
+
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"

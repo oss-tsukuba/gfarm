@@ -5,7 +5,7 @@
 
 <refentry id="gfarm-attr.5">
 
-<refentryinfo><date>31 Mar 2014</date></refentryinfo>
+<refentryinfo><date>28 Sep 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm_attr</refentrytitle>
@@ -107,6 +107,17 @@ This is Access ACL (Access Control List).
 <para>
 This is Default ACL. Only directories can have/use this extended
 attribute.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">gfarm.effective_perm</parameter></term>
+<listitem>
+<para>
+This is user's effective permissions for a file.
+The value is read-only,
+and represents bits in combination with read (4), write (2) and execute (1).
 </para>
 </listitem>
 </varlistentry>

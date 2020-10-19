@@ -10,7 +10,7 @@ extern int gfarm_spool_server_back_channel_rcvbuf_limit;
 extern int gfarm_spool_server_read_only_retry_interval;
 #define GFARM_SPOOL_ROOT_NUM	5
 extern char *gfarm_spool_root[];
-gfarm_error_t parse_set_spool_root(char *);
+gfarm_error_t gfarm_parse_set_spool_root(char *);
 enum gfarm_spool_check_level {
 	GFARM_SPOOL_CHECK_LEVEL_DEFAULT,
 	GFARM_SPOOL_CHECK_LEVEL_DISABLE,
@@ -82,6 +82,7 @@ extern int gfarm_metadb_remover_queue_length;
 extern int gfarm_metadb_remove_scan_log_interval;
 extern int gfarm_metadb_remove_scan_interval_factor;
 extern int gfarm_metadb_heartbeat_interval;
+extern int gfarm_metadb_failover_notify_delay;
 extern int gfarm_metadb_dbq_size;
 extern int gfarm_metadb_server_back_channel_sndbuf_limit;
 extern int gfarm_metadb_server_nfs_root_squash_support;
@@ -118,6 +119,7 @@ extern int gfarm_replicainfo_enabled;
 #define GFARM_METADB_REMOVE_SCAN_LOG_INTERVAL_DEFAULT	3600 /* 3600 seconds */
 #define GFARM_METADB_REMOVE_SCAN_INTERVAL_FACTOR_DEFAULT 5 /* 1/5 */
 #define GFARM_METADB_HEARTBEAT_INTERVAL_DEFAULT 180 /* 3 min */
+#define GFARM_METADB_FAILOVER_NOTIFY_DELAY_DEFAULT 5 /* 5 seconds */
 #define GFARM_METADB_DBQ_SIZE_DEFAULT	65536
 #define GFARM_SYMLINK_LEVEL_MAX			20
 
@@ -188,6 +190,10 @@ union gfarm_config_storage {
 	int i;
 	char *s;
 };
+void gfarm_config_storage_free(const struct gfarm_config_type *,
+	union gfarm_config_storage *);
+gfarm_error_t gfarm_config_storage_dup(const struct gfarm_config_type *,
+	union gfarm_config_storage *, union gfarm_config_storage *);
 gfarm_error_t gfarm_config_type_by_name_for_metadb(const char *,
 	const struct gfarm_config_type **);
 char gfarm_config_type_get_format(const struct gfarm_config_type *);
@@ -196,13 +202,18 @@ gfarm_error_t gfarm_config_copyin(const struct gfarm_config_type *,
 	union gfarm_config_storage *);
 gfarm_error_t gfarm_config_copyout(const struct gfarm_config_type *,
 	union gfarm_config_storage *);
-gfarm_error_t gfarm_config_apply_directive_for_metadb(char *, char *,
-	const char *, int);
+void gfarm_config_log_change(const struct gfarm_config_type *,
+	union gfarm_config_storage *, const char *, const char *);
+
+void gfarm_config_apply_begin(void);
+void gfarm_config_apply_end(void);
+gfarm_error_t gfarm_config_apply_to_metadb(char *, char *,
+	const char *, int, int);
+
 gfarm_error_t gfarm_config_strtoken(char **, char **);
 char *gfarm_config_dirname_add(const char *, const char *);
 
 gfarm_error_t gfarm_config_local_name_to_string(const char *, char *, size_t);
-gfarm_error_t gfarm_config_metadb_name_to_string(const char *, char *, size_t);
 
 gfarm_error_t gfarm_config_name_foreach(
 	gfarm_error_t (*)(void *, const char *), void *, int);

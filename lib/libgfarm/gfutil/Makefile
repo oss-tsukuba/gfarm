@@ -23,9 +23,11 @@ SRCS =	alloc.c \
 	lru_cache.c \
 	nanosec.c \
 	privlock.c \
+	proctitle.c \
 	random.c \
 	send_no_sigpipe.c \
 	sleep.c \
+	strarray.c \
 	thrbarrier.c \
 	thrsubr.c \
 	timer.c \
@@ -46,9 +48,11 @@ OBJS =	alloc.lo \
 	msgdigest.lo \
 	nanosec.lo \
 	privlock.lo \
+	proctitle.lo \
 	random.lo \
 	send_no_sigpipe.lo \
 	sleep.lo \
+	strarray.lo \
 	thrbarrier.lo \
 	thrsubr.lo \
 	timer.lo \
@@ -79,7 +83,9 @@ lru_cache.lo: lru_cache.h
 msgdigest.lo: msgdigest.h
 nanosec.lo: nanosec.h
 privlock.lo: nanosec.h thrsubr.h gfutil.h
+proctitle.lo: proctitle.h
 random.lo: thrsubr.h
 sleep.lo: nanosec.h gfutil.h
+strarray.lo:
 timer.lo: timer.h
 timeval.lo: gfutil.h

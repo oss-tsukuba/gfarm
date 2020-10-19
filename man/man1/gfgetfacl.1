@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfgetfacl
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 4 Feb 2011
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 28 Sep 2020
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFGETFACL" "1" "4 Feb 2011" "Gfarm" "Gfarm"
+.TH "GFGETFACL" "1" "28 Sep 2020" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -38,6 +38,11 @@ gfgetfacl \- display Gfarm file access control lists
 displays the file/directory name, owner, the group, and the Access Control List (ACL) about the specified files or directories in the Gfarm filesystem\&.
 .SH "OPTIONS"
 .PP
+\fB\-R\fR
+.RS 4
+lists ACL recursively\&.
+.RE
+.PP
 \fB\-?\fR
 .RS 4
 displays a list of command options\&.
@@ -47,5 +52,4 @@ displays a list of command options\&.
 If a Gfarm user/group is removed from a Gfarm filesystem, all of the ACL enties which have the same user/group name (qualifier) remain in the ACLs of files/directories\&.
 .SH "SEE ALSO"
 .PP
-
 \fBgfsetfacl\fR(1)

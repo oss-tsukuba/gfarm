@@ -1,9 +1,62 @@
-set -x
+set -xu
 
-cd ~/gfarm/regress
-gfmkdir /tmp
+: $GFDOCKER_PRIMARY_USER
+: $GFDOCKER_HOSTNAME_PREFIX_GFSD
+
+GFARM_SRCDIR=~/gfarm
+RUN_REGRESS=$GFARM_SRCDIR/docker/dev/common/run_regress.sh
+
+cd $GFARM_SRCDIR/regress
+gfmkdir -p /tmp
 gfchmod 777 /tmp
-if ! [ -e bin/gfmd_restart_all ]; then
-  ln -s gfmd_restart_all.gfservice.sh bin/gfmd_restart_all
+
+LOG_REMOTE_NONROOT=log.wo_root.remote
+LOG_LOCAL_ROOT=log.w_root.local
+
+bin/am_I_gfarmroot
+is_gfarmroot=$?
+
+me=$GFDOCKER_PRIMARY_USER
+gfsdhost=${GFDOCKER_HOSTNAME_PREFIX_GFSD}1
+
+GFARM_TEST_CKSUM_MISMATCH=/tmp/cksum_mismatch
+printf '%4194308s' ' ' | gfreg -h $gfsdhost - $GFARM_TEST_CKSUM_MISMATCH
+SPOOL_PATH=/var/gfarm-spool-$gfsdhost/$(gfspoolpath $GFARM_TEST_CKSUM_MISMATCH)
+ssh $gfsdhost "printf '%4194307sX' ' ' | sudo dd of=$SPOOL_PATH"
+
+eval $(config-gfarm -T | grep GFARM_CONF=)
+
+SPOOL_CHECK_CONFIG=spool_check_config.sh
+cat <<EOF > $SPOOL_CHECK_CONFIG
+GFSD_HOST_NAME=${gfsdhost}
+GFSD_RESTART_COMMAND="systemctl restart gfsd-${gfsdhost}"
+GFSD_SPOOL_DIR=/var/gfarm-spool-${gfsdhost}
+GFSD_CONFIG_FILE=${GFARM_CONF}
+USE_SUDO=true
+EOF
+
+scp $SPOOL_CHECK_CONFIG $gfsdhost:~/gfarm/regress/manual/server/gfsd/spool_check/config.sh
+
+trap_sigs='1 2 15'
+restore() {
+    if [ $is_gfarmroot -ne 0 ]; then
+        gfgroup -r -m gfarmroot $me
+    fi
+}
+trap 'restore' $trap_sigs
+
+if [ $is_gfarmroot -eq 0 ]; then
+    gfgroup -r -m gfarmroot $me
 fi
-make check
+# remote access and non-gfarmroot
+$RUN_REGRESS $GFARM_SRCDIR $LOG_REMOTE_NONROOT $GFARM_TEST_CKSUM_MISMATCH || true
+
+# local access and gfarmroot
+gfgroup -a -m gfarmroot $me
+ssh $gfsdhost $RUN_REGRESS $GFARM_SRCDIR $LOG_LOCAL_ROOT $GFARM_TEST_CKSUM_MISMATCH || true
+
+restore
+
+scp $gfsdhost:$GFARM_SRCDIR/regress/$LOG_LOCAL_ROOT .
+./addup.sh -v $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT
+./addup.sh $LOG_REMOTE_NONROOT $LOG_LOCAL_ROOT

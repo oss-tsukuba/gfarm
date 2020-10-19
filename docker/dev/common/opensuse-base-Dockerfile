@@ -1,41 +1,54 @@
-FROM opensuse:latest
+FROM opensuse/leap
 
 # System dependent
 
-RUN zypper install -y sudo openssh systemd-sysvinit
+ENV TZ=Asia/Tokyo
+
+RUN zypper install -y \
+    sudo \
+    openssh \
+    systemd-sysvinit \
+    patch \
+    rpm-build \
+    wget \
+    rsync
+
 RUN systemctl enable sshd
+
+# postgresql12(default) does not have pg_config.
+RUN zypper install -y \
+    openssl-devel \
+    postgresql10-devel \
+    postgresql10 \
+    postgresql-server \
+    fuse \
+    fuse-devel \
+    libacl-devel \
+    ruby \
+    libtool
+
+# Grid Community Toolkit (Globus Tool Kit)
+RUN zypper addrepo \
+    https://download.opensuse.org/repositories/home:frank_scheiner:gct/openSUSE_Leap_15.2/home:frank_scheiner:gct.repo \
+    && zypper --non-interactive --no-gpg-checks refresh \
+    && zypper install -y \
+    globus-gssapi-gsi-devel \
+    globus-simple-ca \
+    globus-gsi-cert-utils-progs \
+    globus-proxy-utils \
+    && globus-version
+
+# for debug
+RUN zypper install -y \
+    telnet ncat ldns iproute2 net-tools bind-utils tcpdump \
+    gdb valgrind strace inotify-tools \
+    man man-pages man-pages-ja \
+    nano emacs-nox vim less which
+
 RUN sed -i 's@^Defaults secure_path="/usr/sbin:@Defaults secure_path="/usr/local/bin:/usr/sbin:@' /etc/sudoers
 
-RUN zypper install -y openssl-devel postgresql-devel postgresql \
-    postgresql-server fuse fuse-devel libacl-devel
-RUN zypper install -y libtool patch rpm-build
 
-RUN zypper install -y wget rsync
-
-ENV gt_repo_url https://downloads.globus.org/toolkit/gt6/stable/installers/repo/rpm
-ENV gt_repo_file globus-toolkit-repo-latest.noarch.rpm
-ENV gt_key_url https://downloads.globus.org/toolkit/gt6/stable/repo/rpm
-ENV gt_key_file RPM-GPG-KEY-Globus
-
-RUN cd /tmp && wget $gt_repo_url/$gt_repo_file
-RUN cd /tmp && wget $gt_key_url/$gt_key_file
-RUN cd /tmp && rpm -ivh $gt_repo_file
-RUN cd /tmp && rpm --import $gt_key_file
-
-RUN zypper ar /usr/share/globus/repo/globus-toolkit-6-stable-sles12.repo
-
-RUN zypper install -y globus-gssapi-gsi-devel globus-simple-ca \
-	globus-gsi-cert-utils-progs globus-proxy-utils
-RUN globus-version
-
-## for debug
-RUN zypper install -y ldns iproute2 net-tools which bind-utils man gdb \
-    valgrind strace nano emacs-nox vim telnet ncat
-
-ENV GFDOCKER_DIST_NAME opensuse
-
-
-# System independent (incompleteness. see setup-univ.sh.)
+# System independent (see setup-univ.sh)
 
 ARG GFDOCKER_USERNAME_PREFIX
 ARG GFDOCKER_PRIMARY_USER
@@ -44,29 +57,8 @@ ARG GFDOCKER_NUM_GFSDS
 ARG GFDOCKER_NUM_USERS
 ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
 ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
-
-RUN for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do \
-		useradd -m -s /bin/bash -U \
-			"${GFDOCKER_USERNAME_PREFIX}${i}"; \
-	done
-
-# chown option does not use variables.
-# see https://github.com/moby/moby/issues/35018 for details.
-# XXX FIXME: use variable.
-# NOTE: Enable buildkit
-#COPY --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-#	. "/home/${GFDOCKER_PRIMARY_USER}/gfarm"
-#COPY --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-#	gfarm2fs "/home/${GFDOCKER_PRIMARY_USER}/gfarm2fs"
-
-# "chown -R" is too slow.
 COPY . /tmp/gfarm
 COPY gfarm2fs /tmp/gfarm2fs
-RUN rsync -a --chown="${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER}" \
-	/tmp/gfarm "/home/${GFDOCKER_PRIMARY_USER}"
-RUN rsync -a --chown="${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER}" \
-	/tmp/gfarm2fs "/home/${GFDOCKER_PRIMARY_USER}"
-
-RUN "/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common/setup-univ.sh"
+RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
 
 CMD ["/sbin/init"]

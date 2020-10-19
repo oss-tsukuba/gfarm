@@ -6,7 +6,7 @@
 
 <refentry id="gfls.1">
 
-<refentryinfo><date>11 Nov 2016</date></refentryinfo>
+<refentryinfo><date>28 Sep 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfls</refentrytitle>
@@ -80,6 +80,13 @@
 <term><option>-d</option></term>
 <listitem>
 <para>List directory entries instead of the contents.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-e</option></term>
+<listitem>
+<para>Display effective permissions for a file.</para>
 </listitem>
 </varlistentry>
 

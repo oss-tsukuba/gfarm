@@ -8,21 +8,31 @@
 
 set -eux
 
+GFDOCKER_USE_TSAN=0
+
 : $GFDOCKER_NUM_JOBS
 : $GFDOCKER_PRIMARY_USER
 
+if [ "$GFDOCKER_USE_TSAN" -eq 1 ]; then
+  CFLAGS_ARGS="CFLAGS=\\\"-fsanitize=thread -fPIE -pie -g -Wall\\\""
+else
+  CFLAGS_ARGS=""
+fi
+
 su - "$GFDOCKER_PRIMARY_USER" -c " \
   cd ~/gfarm \
-    && ./configure --with-globus --enable-xmlattr \
+    && (test -f Makefile && make distclean || true) \
+    && eval \"${CFLAGS_ARGS}\" ./configure --with-globus --enable-xmlattr \
     && make -j '${GFDOCKER_NUM_JOBS}' \
 " \
   && cd "/home/${GFDOCKER_PRIMARY_USER}/gfarm" \
-  && make install
+  && make install || exit 1
 
 su - "$GFDOCKER_PRIMARY_USER" -c " \
   cd ~/gfarm2fs \
-    && ./configure --with-gfarm=/usr/local \
+    && (test -f Makefile && make distclean || true) \
+    && eval \"${CFLAGS_ARGS}\" ./configure --with-gfarm=/usr/local \
     && make -j '${GFDOCKER_NUM_JOBS}' \
 " \
   && cd "/home/${GFDOCKER_PRIMARY_USER}/gfarm2fs" \
-  && make install
+  && make install || exit 1

@@ -5,7 +5,7 @@
 
 <refentry id="gfsetfacl.1">
 
-<refentryinfo><date>4 Feb 2011</date></refentryinfo>
+<refentryinfo><date>28 Sep 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsetfacl</refentrytitle>
@@ -100,6 +100,15 @@ input of ACL file accepts the output of gfgetfacl command.</para>
 </varlistentry>
 
 <varlistentry>
+<term><option>-R</option></term>
+<listitem>
+<para>
+changes ACL recursively.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>displays a list of command options.</para>
@@ -163,7 +172,7 @@ has a d[efault:] prefix.
 <varlistentry>
 <term>Granting read access to a named user</term>
 <listitem>
-<para>gfsetfalc -m u:testuser:r filename</para>
+<para>gfsetfacl -m u:testuser:r filename</para>
 </listitem>
 </varlistentry>
 

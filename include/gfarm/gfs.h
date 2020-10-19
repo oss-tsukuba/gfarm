@@ -74,10 +74,10 @@ struct gfs_stat_cksum {
 #ifdef GFARM_INTERNAL_USE /* internal use only, but passed via protocol */
 #define GFARM_FILE_REPLICA_SPEC		0x00010000
 #endif
+#define GFARM_FILE_UNBUFFERED		0x00200000
 #ifdef GFARM_INTERNAL_USE /* internal use only, never passed via protocol */
 #define GFARM_FILE_GFSD_ACCESS_REVOKED	0x00400000 /* used by gfmd only */
 #define GFARM_FILE_SYMLINK_NO_FOLLOW	0x00400000 /* used by libgfarm only */
-#define GFARM_FILE_UNBUFFERED		0x00200000
 #define GFARM_FILE_TRUNC_PENDING	0x00800000 /* used by gfmd only */
 #define GFARM_FILE_OPEN_LAST_COMPONENT	0x00800000 /* used by libgfarm only */
 #endif
@@ -136,7 +136,7 @@ gfarm_error_t gfs_pio_sync(GFS_File);
 gfarm_error_t gfs_pio_datasync(GFS_File);
 gfarm_error_t gfs_pio_truncate(GFS_File, gfarm_off_t);
 gfarm_error_t gfs_pio_pread(GFS_File, void *, int, gfarm_off_t, int *);
-gfarm_error_t gfs_pio_pwrite(GFS_File, void *, int, gfarm_off_t, int *);
+gfarm_error_t gfs_pio_pwrite(GFS_File, const void *, int, gfarm_off_t, int *);
 typedef gfarm_off_t (*gfs_pageio_t)(char *, gfarm_off_t, int, void*);
 gfarm_error_t gfs_pio_pread_page(GFS_File, gfarm_off_t, int, int,
 		gfs_pageio_t,  void*);
@@ -258,6 +258,10 @@ gfarm_error_t gfs_access(const char *, int);
 #define GFARM_EA_DIRECTORY_QUOTA	\
 	GFARM_EA_PREFIX GFARM_EA_DIRECTORY_QUOTA_TYPE
 
+/* Key name of virtual extended attribute for like access(2) */
+#define GFARM_EA_EFFECTIVE_PERM_TYPE	"effective_perm"
+#define GFARM_EA_EFFECTIVE_PERM	\
+	GFARM_EA_PREFIX GFARM_EA_EFFECTIVE_PERM_TYPE
 
 /* 5th argument (flags) of gfs_setxattr() and gfs_fsetxattr() */
 #define GFS_XATTR_CREATE    0x1     /* set value, fail if attr already exists */

@@ -805,7 +805,7 @@ host_is_readonly_update(struct host *h)
 	static const char diag[] = "host_is_readonly_update";
 
 	abstract_host_mutex_lock(&h->ah, diag);
-	h->is_readonly = host_info_is_readonly(&h->hi);
+	h->is_readonly = gfarm_host_info_is_readonly(&h->hi);
 	abstract_host_mutex_unlock(&h->ah, diag);
 }
 
@@ -1238,7 +1238,7 @@ host_new(struct gfarm_host_info *hi, struct callout *callout)
 #endif
 	h->status_reply_waiting = 0;
 	h->report_flags = 0;
-	h->is_readonly = host_info_is_readonly(hi);
+	h->is_readonly = gfarm_host_info_is_readonly(hi);
 	h->status.loadavg_1min =
 	h->status.loadavg_5min =
 	h->status.loadavg_15min = 0.0;

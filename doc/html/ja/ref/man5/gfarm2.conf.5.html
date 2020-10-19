@@ -72,6 +72,24 @@ IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワ
 <a name="statement"></a><h2>文</h2>
 <p>文には、下記の種類があります。</p>
 <div class="variablelist"><dl class="variablelist">
+<dt><span class="term"><span class="token">include</span> <em class="parameter"><code>パス名</code></em></span></dt>
+<dd>
+<p>パス名で指定された設定ファイルを読み込みます。</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	include /etc/gfarm2.common.conf<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">include_nesting_limit</span> <em class="parameter"><code>制限値</code></em></span></dt>
+<dd>
+<p><span class="token">include</span> 文のネスティングの上限を指定します。
+デフォルトの制限値は 20 です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	include_nesting_limit 30<br>
+</p></div>
+</dd>
 <dt><span class="term"><span class="token">spool</span> <em class="parameter"><code>gfsdスプール・ディレクトリ</code></em></span></dt>
 <dd>
 <p>gfsdが、gfarmファイルの実体を保持するディレクトリ名を
@@ -256,6 +274,28 @@ gfsd の back channel 接続が切れてしまう問題を緩和できます。
 <p>例:</p>
 <div class="literallayout"><p><br>
 	spool_server_back_channel_rcvbuf_limit 16384<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">spool_server_read_only_retry_interval</span> <em class="parameter"><code>秒数</code></em></span></dt>
+<dd>
+<p>
+Gfarmファイルシステムが read only に変更された時、既にオープン
+され、変更されたファイルがある場合、それらのファイルは Gfarm
+ファイルシステムがread write 可能となるまでクローズは遅延され
+ます。
+gfsd が Gfarmファイルシステムのモード変更の確認を行う
+間隔を秒単位で指定します。
+</p>
+<p>
+デフォルトは 60秒 (1分) です。
+</p>
+<p>
+この文は gfsd が参照する gfarm2.conf のみで有効であり、
+クライアントや gfmd.conf では無視されます。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	spool_server_read_only_retry_interval 600<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">spool_check_level</span> <em class="parameter"><code>レベル</code></em></span></dt>
@@ -577,6 +617,23 @@ gfarm2.confとgfmd.confの両方で指定する必要があります。
 <p>例:</p>
 <div class="literallayout"><p><br>
 	metadb_server_heartbeat_interval 180<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">failover_notify_delay</span> <em class="parameter"><code>秒数</code></em></span></dt>
+<dd>
+<p>新マスターgfmdが各ファイルシステムサーバのgfsdプロセスに起動を通知する
+処理を行なうまでの遅延時間を秒数で指定します。
+もしこの時間間隔が0秒だと、それまで動作していたマスターの停止を検知したgfsdの
+再接続処理と入れ違いとなる可能性が高く、その場合gfsdがいったん接続を切り
+もう一度再接続を試みることになり非効率です。
+これを避けるためデフォルト値は5秒となっています。
+</p>
+<p>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	failover_notify_delay 10<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">metadb_server_dbq_size</span> <em class="parameter"><code>キュー長</code></em></span></dt>
@@ -1315,6 +1372,21 @@ enable にすると、その他のファイルシステムノードにファイ�
 <p>例:</p>
 <div class="literallayout"><p><br>
        replication_at_write_open enable<br>
+</p></div>
+</dd>
+<dt><span class="term"><span class="token">read_only</span> <em class="parameter"><code>有効性</code></em></span></dt>
+<dd>
+<p>
+Gfarmファイルシステムを read only にします。
+
+デフォルトは<span class="token">disable</span>です。
+</p>
+<p>
+この文はgfmdでのみ有効です。
+</p>
+<p>例:</p>
+<div class="literallayout"><p><br>
+	read_only enable<br>
 </p></div>
 </dd>
 <dt><span class="term"><span class="token">simultaneous_replication_receivers</span> <em class="parameter"><code>同時処理数</code></em></span></dt>
@@ -2288,6 +2360,8 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <div class="variablelist"><dl class="variablelist">
 <dt><span class="term">&lt;statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p><br>
+	&lt;include_statement&gt; |<br>
+	&lt;include_nesting_limit_statement&gt; |<br>
 	&lt;spool_statement&gt; |<br>
 	&lt;spool_server_listen_address_statement&gt; |<br>
 	&lt;spool_server_listen_backlog_statement&gt; |<br>
@@ -2295,6 +2369,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;spool_server_cred_service_statement&gt; |<br>
 	&lt;spool_server_cred_name_statement&gt; |<br>
 	&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; |<br>
+	&lt;spool_server_read_only_retry_interval_statement&gt; |<br>
 	&lt;spool_check_level_statement&gt; |<br>
 	&lt;spool_check_parallel_statement&gt; |<br>
 	&lt;spool_check_parallel_max_statement&gt; |<br>
@@ -2316,6 +2391,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;metadb_server_remove_scan_log_interval_statement&gt; |<br>
 	&lt;metadb_server_remove_scan_interval_factor_statement&gt; |<br>
 	&lt;metadb_server_heartbeat_interval_statement&gt; |<br>
+	&lt;metadb_server_failover_notify_delay_statement&gt; |<br>
 	&lt;metadb_server_dbq_size_statement&gt; |<br>
 	&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; |<br>
 	&lt;metadb_server_nfs_root_squash_support_statement&gt; |<br>
@@ -2365,6 +2441,7 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;minimum_free_disk_space_statement&gt; |<br>
 	&lt;direct_local_access_statement&gt; |<br>
 	&lt;replication_at_write_open_statement&gt; |<br>
+	&lt;read_only_statement&gt; |<br>
 	&lt;simultaneous_replication_receivers_statement&gt; |<br>
 	&lt;replication_busy_host_statement&gt; |<br>
 	&lt;gfsd_connection_cache_statement&gt; |<br>
@@ -2424,6 +2501,10 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 	&lt;write_verify_interval_statement&gt; |<br>
 	&lt;write_verify_retry_interval_statement&gt; |<br>
 	&lt;write_verify_log_interval_statement&gt;</p></div></dd>
+<dt><span class="term">&lt;include_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"include" &lt;pathname&gt;</p></div></dd>
+<dt><span class="term">&lt;include_nesting_limit_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"include_nesting_limit" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool" &lt;pathname&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_server_listen_address_statement&gt; ::=</span></dt>
@@ -2438,6 +2519,8 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <dd><div class="literallayout"><p>"spool_server_cred_name" &lt;cred_name&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool_server_back_channel_rcvbuf_limit" &lt;size_limit&gt;</p></div></dd>
+<dt><span class="term">&lt;spool_server_read_only_retry_interval_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"spool_server_read_only_retry_interval" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_check_level_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"spool_check_level" &lt;spck_level&gt;</p></div></dd>
 <dt><span class="term">&lt;spool_check_parallel_statement&gt; ::=</span></dt>
@@ -2480,6 +2563,8 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <dd><div class="literallayout"><p>"metadb_server_remove_scan_interval_factor" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_heartbeat_interval_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_server_heartbeat_interval" &lt;number&gt;</p></div></dd>
+<dt><span class="term">&lt;metadb_server_failover_notify_delay_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"failover_notify_delay" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_dbq_size_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"metadb_server_dbq_size" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; ::=</span></dt>
@@ -2581,6 +2666,8 @@ static のほうが登録の回数が少ないので若干速いメリットは�
 <dd><div class="literallayout"><p>"direct_local_access" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;replication_at_write_open_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"replication_at_write_open" &lt;validity&gt;</p></div></dd>
+<dt><span class="term">&lt;read_only_statement&gt; ::=</span></dt>
+<dd><div class="literallayout"><p>"read_only" &lt;validity&gt;</p></div></dd>
 <dt><span class="term">&lt;simultaneous_replication_receivers_statement&gt; ::=</span></dt>
 <dd><div class="literallayout"><p>"simultaneous_replication_receivers" &lt;number&gt;</p></div></dd>
 <dt><span class="term">&lt;replication_busy_host_statement&gt; ::=</span></dt>

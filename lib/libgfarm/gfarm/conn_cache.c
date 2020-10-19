@@ -16,10 +16,16 @@
 #include "conn_cache.h"
 
 #ifndef __KERNEL__	/* GFSP_CONN_MUTEX :: conn_lock */
-#define	GFSP_CONN_MUTEX
-#define	GFSP_CONN_INIT(conn)
-#define	GFSP_CONN_LOCK(conn)
-#define	GFSP_CONN_UNLOCK(conn)
+#define	GFSP_CONN_MUTEX		pthread_mutex_t conn_lock;
+#define	GFSP_CONN_INIT(conn)	do { \
+	gfarm_mutex_recursive_init(&(conn)->conn_lock, __func__, "conn"); \
+} while (/*CONSTCOND*/0);
+#define	GFSP_CONN_LOCK(conn)	do { \
+	gfarm_mutex_lock(&(conn)->conn_lock, __func__, "conn"); \
+} while (/*CONSTCOND*/0);
+#define	GFSP_CONN_UNLOCK(conn)	do { \
+	gfarm_mutex_unlock(&(conn)->conn_lock, __func__, "conn"); \
+} while (/*CONSTCOND*/0);
 #else /* __KERNEL__ */
 /*
  * In kernel mode, processes of the same user use the same connection.
@@ -163,6 +169,8 @@ gfp_connection_unlock(struct gfp_cached_connection *connection)
 			connection->conn_lock.r_owner,
 			connection->conn_lock.r_locked);
 	}
+#else /* __KERNEL__ */
+	GFSP_CONN_UNLOCK(connection);
 #endif /* __KERNEL__ */
 }
 

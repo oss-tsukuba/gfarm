@@ -355,11 +355,13 @@ get_pgsql_status()
 
 	if [ -x /bin/systemctl ]; then
 		systemctl status `basename $BACKEND_RC` > /dev/null 2>&1
+		RESULT=$?
 	else
 		$BACKEND_RC status > /dev/null 2>&1
+		RESULT=$?
 	fi
 
-	if [ $? -eq 0 ]; then
+	if [ $RESULT -eq 0 ]; then
 		log_debug "end get_pgsql_status: return 0"
 		return 0
 	else
@@ -384,7 +386,7 @@ get_gfmd_status()
 		RESULT=$?
 	fi
 
-	if [ $? -eq 0 ]; then
+	if [ $RESULT -eq 0 ]; then
 		log_debug "end get_gfmd_status: return 0"
 		return 0
 	else
@@ -409,7 +411,7 @@ get_gfsd_status()
 		RESULT=$?
 	fi
 
-	if [ $? -eq 0 ]; then
+	if [ $RESULT -eq 0 ]; then
 		log_debug "end get_gfsd_status: return 0"
 		return 0
 	else

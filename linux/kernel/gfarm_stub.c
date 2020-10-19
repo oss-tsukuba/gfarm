@@ -46,15 +46,23 @@ gfarm_auth_server_cred_name_set(char *service_tag, char *name)
 	return (GFARM_ERR_NO_ERROR);
 }
 gfarm_error_t
-gfarm_auth_enable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp)
+gfarm_auth_enable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp,
+	enum gfarm_auth_config_position position)
 {
 	gflog_debug(GFARM_MSG_1004805, "Not supported yet");
 	return (GFARM_ERR_NO_ERROR);
 }
 gfarm_error_t
-gfarm_auth_disable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp)
+gfarm_auth_disable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp,
+	enum gfarm_auth_config_position position)
 {
 	gflog_debug(GFARM_MSG_1004806, "Not supported yet");
+	return (GFARM_ERR_NO_ERROR);
+}
+void
+gfarm_auth_config_set_mark(void)
+{
+	gflog_debug(GFARM_UNFIXED_UNFIXED, "Not supported yet");
 	return (GFARM_ERR_NO_ERROR);
 }
 gfarm_error_t

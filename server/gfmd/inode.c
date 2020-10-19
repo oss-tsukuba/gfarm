@@ -916,15 +916,20 @@ inode_undo_alloc(struct inode *inode)
 	 */
 	inode->i_gen--;
 
-	inode_clear(inode);
+	/*
+	 * either inode_clear(inode) or inode_free(inode) should be done
+	 * just after inode_undo_alloc()
+	 */
 }
 
-void
-inode_free(struct inode *inode)
+static void inode_free(struct inode *);
+
+static void
+inode_release(struct inode *inode)
 {
 	gfarm_error_t e;
 
-	inode_clear(inode);
+	inode_free(inode);
 
 	e = db_inode_nlink_modify(inode->i_number, inode->i_nlink);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1503,7 +1508,7 @@ update_replicas(struct inode *inode, struct host *spool_host,
 		replica_check_start_rep_request_failed();
 }
 
-void
+static void
 inode_remove(struct inode *inode, struct dirset *tdirset)
 {
 	int dfc_needs_free = 0;
@@ -1538,10 +1543,11 @@ inode_remove(struct inode *inode, struct dirset *tdirset)
 		inode->u.c.s.f.copies = NULL; /* ncopy == 0 */
 		inode_cksum_remove(inode);
 		dfc_needs_free = 1;
-	} else if (inode_is_dir(inode)) {
-		dir_free(inode->u.c.s.d.entries);
-	} else if (inode_is_symlink(inode)) {
-		free(inode->u.c.s.l.source_path);
+	} else if (inode_is_dir(inode) || inode_is_symlink(inode)) {
+		/*
+		 * inode_release() will call inode_free(), and
+		 * inode_free() will do enough job.
+		 */
 	} else {
 		gflog_fatal(GFARM_MSG_1002800,
 		    "inode_unlink(%llu): unknown inode type: 0%o",
@@ -1549,7 +1555,7 @@ inode_remove(struct inode *inode, struct dirset *tdirset)
 		/*NOTREACHED*/
 	}
 	quota_update_file_remove(inode, tdirset);
-	inode_free(inode);
+	inode_release(inode);
 
 	if (dfc_needs_free)
 		dead_file_copy_inode_status_changed(inode->i_number);
@@ -1569,6 +1575,8 @@ inode_remove_try(struct inode *inode, struct dirset *tdirset)
 static gfarm_error_t
 inode_init_dir_internal(struct inode *inode)
 {
+	/* if this function is modified, update inode_free() too */
+
 	inode->u.c.s.d.entries = dir_alloc();
 	if (inode->u.c.s.d.entries == NULL) {
 		gflog_debug(GFARM_MSG_1001722,
@@ -1624,6 +1632,8 @@ inode_init_dir(struct inode *inode, struct inode *parent)
 gfarm_error_t
 inode_init_file(struct inode *inode)
 {
+	/* if this function is modified, update inode_free() too */
+
 	inode->i_nlink = 1;
 	inode->i_mode = GFARM_S_IFREG;
 	inode->u.c.s.f.copies = NULL;
@@ -1634,6 +1644,8 @@ inode_init_file(struct inode *inode)
 gfarm_error_t
 inode_init_symlink(struct inode *inode, char *source_path)
 {
+	/* if this function is modified, update inode_clear_symlink() too */
+
 	static const char diag[] = "inode_init_symlink";
 
 	if (source_path != NULL) {
@@ -1650,8 +1662,31 @@ inode_init_symlink(struct inode *inode, char *source_path)
 void
 inode_clear_symlink(struct inode *inode)
 {
+	/* should be consistent with inode_init_symlink() */
+
 	free(inode->u.c.s.l.source_path);
 	inode->u.c.s.l.source_path = NULL;
+}
+
+static void
+inode_free(struct inode *inode)
+{
+	switch (GFARM_S_IFMT & inode->i_mode) {
+	case GFARM_S_IFDIR:
+		/* should be consistent with inode_init_dir_internal() */
+		dir_free(inode->u.c.s.d.entries);
+		inode->u.c.s.d.entries = NULL;
+		break;
+	case GFARM_S_IFREG:
+		/* should be consistent with inode_init_file() */
+		/* must be no file_copy */
+		break;
+	case GFARM_S_IFLNK:
+		inode_clear_symlink(inode);
+		break;
+	}
+
+	inode_clear(inode);
 }
 
 gfarm_error_t
@@ -2084,11 +2119,29 @@ inode_get_mode(struct inode *inode)
 	return (inode->i_mode);
 }
 
+/*
+ * NOTE:
+ * only db_journal_apply_inode_mode_modify() is allowed to call this function.
+ */
 void
 inode_set_mode_in_cache(struct inode *inode, gfarm_mode_t mode)
 {
-	inode->i_mode = (inode->i_mode & GFARM_S_IFMT) |
-	    (mode & GFARM_S_ALLPERM);
+	if (mode == INODE_MODE_FREE) {
+		quota_update_file_remove(inode, TDIRSET_IS_UNKNOWN);
+		inode_free(inode);
+		return;
+	}
+
+	if (inode->i_mode != INODE_MODE_FREE &&
+	    (mode & GFARM_S_IFMT) != (inode->i_mode & GFARM_S_IFMT)) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "inode %llu:%llu: unexpected inode type change: 0%o->0%o",
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    (int)inode->i_mode, (int)mode);
+	}
+
+	inode->i_mode = mode;
 }
 
 gfarm_error_t
@@ -2101,7 +2154,8 @@ inode_set_mode(struct inode *inode, gfarm_mode_t mode)
 			"argument 'mode' is invalid");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
-	inode_set_mode_in_cache(inode, mode);
+	inode->i_mode = (inode->i_mode & GFARM_S_IFMT) |
+	    (mode & GFARM_S_ALLPERM);
 
 	inode_status_changed(inode);
 	e = db_inode_mode_modify(inode->i_number, inode->i_mode);
@@ -2799,6 +2853,41 @@ inode_access(struct inode *inode, struct user *user, int op)
 	return (check_mode(inode->i_mode, mask));
 }
 
+static int
+inode_access_flags(struct inode *inode, struct user *user)
+{
+	char flags = 0;
+
+	if (inode_access(inode, user, GFS_R_OK) == GFARM_ERR_NO_ERROR)
+		flags |= GFS_R_OK;
+	if (inode_access(inode, user, GFS_W_OK) == GFARM_ERR_NO_ERROR)
+		flags |= GFS_W_OK;
+	if (inode_access(inode, user, GFS_X_OK) == GFARM_ERR_NO_ERROR)
+		flags |= GFS_X_OK;
+	return (flags);
+}
+
+static gfarm_error_t
+xattr_list_set_by_inode_access(struct xattr_list *entry,
+	const char *name, struct inode *inode, struct user *user,
+	const char *diag)
+{
+	size_t size = 1;
+	char *value;
+
+	GFARM_MALLOC_ARRAY(value, size);
+	if (value == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	*value = inode_access_flags(inode, user);
+	if (name != NULL)
+		entry->name = strdup_log(name, diag);
+	else
+		entry->name = NULL;
+	entry->value = value;
+	entry->size = size;
+	return (GFARM_ERR_NO_ERROR);
+}
+
 static gfarm_error_t
 inode_add_xattr_common(struct inode *ino, const char *name,
 		       const void *value, size_t size)
@@ -3077,6 +3166,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			gfarm_error_string(e));
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
 		inode_undo_alloc(n);
+		inode_clear(n);
 		return (e);
 	}
 	n->i_mode |= new_mode;
@@ -3095,14 +3185,10 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002803, "xattr_inherit() failed: %s",
 			    gfarm_error_string(e));
-		if (inode_is_dir(n)) {
-			/* "." and ".." are freed automatically */
-			dir_free(n->u.c.s.d.entries);
-		} else if (inode_is_symlink(n)) {
-			free(n->u.c.s.l.source_path);
-		}
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
 		inode_undo_alloc(n);
+		/* if inode_is_dir(n), "." and ".." are freed automatically */
+		inode_free(n);
 		return (e);
 	}
 
@@ -3784,7 +3870,7 @@ inode_create_file_in_lost_found(
 		    (long long)inode_get_number(n),
 		    (long long)inode_get_gen(n),
 		    lost_found, fname, gfarm_error_string(e));
-		inode_free(n);
+		inode_release(n);
 		return (e);
 	}
 	e = db_inode_nlink_modify(inode_get_number(n), n->i_nlink);
@@ -7265,18 +7351,7 @@ inode_add_or_modify_in_cache(struct gfs_stat *st, struct inode **inodep)
 			*inodep = n;
 			return (GFARM_ERR_NO_ERROR);
 		}
-		switch (GFARM_S_IFMT & n->i_mode) {
-		case GFARM_S_IFDIR:
-			dir_free(n->u.c.s.d.entries);
-			break;
-		case GFARM_S_IFREG:
-			/* XXX need to free file_copy ? */
-			break;
-		case GFARM_S_IFLNK:
-			inode_clear_symlink(n);
-			break;
-		}
-		inode_clear(n);
+		inode_free(n);
 	}
 	return (inode_add(st, inodep));
 }
@@ -8016,38 +8091,52 @@ inode_xattr_modify(struct inode *inode, int xmlMode, const char *attrname,
 }
 
 gfarm_error_t
-inode_xattr_get_cache(struct inode *inode, int xmlMode,
-	const char *attrname, void **cached_valuep, size_t *cached_sizep)
+inode_xattr_get_cache_with_process(struct inode *inode, int xmlMode,
+	const char *attrname, void **cached_valuep, size_t *cached_sizep,
+	struct process *process)
 {
 	struct xattrs *xattrs =
 		xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs;
 	struct xattr_entry *entry;
 	void *r;
+	struct xattr_list l;
+	gfarm_error_t e;
 	static const char diag[] = "inode_xattr_get_cache";
 
-	if (!xmlMode && strcmp(attrname, GFARM_EA_DIRECTORY_QUOTA) == 0) {
-		gfarm_error_t e;
-		struct dirset *tdirset;
-		struct xattr_list l;
+	if (!xmlMode) {
+		/* virtual extended attributes */
+		if (strcmp(attrname, GFARM_EA_DIRECTORY_QUOTA) == 0) {
+			struct dirset *tdirset;
 
-		/*
-		 * when this is called from gfm_server_getxattr(),
-		 * inode is already opened.
-		 */
-		tdirset = inode_get_tdirset(inode);
-		if (tdirset == TDIRSET_IS_UNKNOWN ||
-		    tdirset == TDIRSET_IS_NOT_SET)
-			return (GFARM_ERR_NO_SUCH_OBJECT);
-		e = xattr_list_set_by_dirset(&l,
-		    GFARM_EA_DIRECTORY_QUOTA, tdirset, diag);
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e);
-		*cached_valuep = l.value;
-		*cached_sizep = l.size;
-		free(l.name);
-		return (GFARM_ERR_NO_ERROR);
+			/*
+			 * when this is called from gfm_server_getxattr(),
+			 * inode is already opened.
+			 */
+			tdirset = inode_get_tdirset(inode);
+			if (tdirset == TDIRSET_IS_UNKNOWN ||
+			    tdirset == TDIRSET_IS_NOT_SET)
+				return (GFARM_ERR_NO_SUCH_OBJECT);
+			e = xattr_list_set_by_dirset(&l,
+			    GFARM_EA_DIRECTORY_QUOTA, tdirset, diag);
+			if (e != GFARM_ERR_NO_ERROR)
+				return (e);
+			*cached_valuep = l.value;
+			*cached_sizep = l.size;
+			free(l.name);
+			return (GFARM_ERR_NO_ERROR);
+		} else if (process &&
+			   strcmp(attrname, GFARM_EA_EFFECTIVE_PERM) == 0) {
+			struct user *user = process_get_user(process);
+
+			e = xattr_list_set_by_inode_access(
+			    &l, NULL, inode, user, diag);
+			if (e != GFARM_ERR_NO_ERROR)
+				return (e);
+			*cached_valuep = l.value;
+			*cached_sizep = 1;
+			return (GFARM_ERR_NO_ERROR);
+		}
 	}
-
 	entry = xattr_find(xattrs, attrname);
 	if (entry == NULL)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -8065,6 +8154,14 @@ inode_xattr_get_cache(struct inode *inode, int xmlMode,
 	}
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+inode_xattr_get_cache(struct inode *inode, int xmlMode,
+	const char *attrname, void **cached_valuep, size_t *cached_sizep)
+{
+	return (inode_xattr_get_cache_with_process(inode, xmlMode,
+	    attrname, cached_valuep, cached_sizep, NULL));
 }
 
 int
@@ -8104,15 +8201,17 @@ inode_xattr_list_free(struct xattr_list *list, size_t n)
 
 gfarm_error_t
 inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
+	struct process *process,
 	char **patterns, int npattern, struct dirset *dirset,
 	struct xattr_list **listp, size_t *np)
 {
 	struct inode *inode;
+	struct user *user = process_get_user(process);
 	size_t nxattrs;
 	struct xattr_list *list;
 	struct xattrs *xattrs;
 	struct xattr_entry *entry;
-	int i, j, directory_quota = 0;
+	int i, j, directory_quota = 0, effective_perm = 0;
 	static const char diag[] = "inode_xattr_list_get_cached_by_patterns";
 
 	inode = inode_lookup(inum);
@@ -8123,6 +8222,7 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 	nxattrs = 0;
 
 	for (j = 0; j < npattern; j++) {
+		/* virtual extended attributes */
 		if (strcmp(patterns[j], GFARM_EA_DIRECTORY_QUOTA) == 0) {
 			if (dirset != NULL)
 				directory_quota = 1;
@@ -8130,10 +8230,15 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 			    (dirset = quota_dir_get_dirset_by_inum(inum))
 			    != NULL)
 				directory_quota = 1;
-			break;
+		} else if (strcmp(patterns[j], GFARM_EA_EFFECTIVE_PERM) == 0) {
+			effective_perm = 1;
 		}
+		if (directory_quota && effective_perm)
+			break;
 	}
 	if (directory_quota)
+		++nxattrs;
+	if (effective_perm)
 		++nxattrs;
 
 	for (entry = xattrs->head; entry != NULL; entry = entry->next) {
@@ -8159,6 +8264,14 @@ inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
 	if (directory_quota) { /* only true if dirset is set */
 		if (xattr_list_set_by_dirset(&list[i],
 		    GFARM_EA_DIRECTORY_QUOTA, dirset, diag)
+		    != GFARM_ERR_NO_ERROR)
+			nxattrs = i;
+		else
+			i++;
+	}
+	if (effective_perm) {
+		if (xattr_list_set_by_inode_access(&list[i],
+		    GFARM_EA_EFFECTIVE_PERM, inode, user, diag)
 		    != GFARM_ERR_NO_ERROR)
 			nxattrs = i;
 		else

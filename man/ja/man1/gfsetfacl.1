@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: gfsetfacl
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 4 Feb 2011
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 28 Sep 2020
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFSETFACL" "1" "4 Feb 2011" "Gfarm" "Gfarm"
+.TH "GFSETFACL" "1" "28 Sep 2020" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -73,6 +73,11 @@ ACL マスクエントリを再計算しません．gfsetfacl コマンドデフ
 ファイルやディレクトリの ACL エントリを追加または置換するために， ACL 文字列表現が記述されたファイルまたは標準入力 (`\-\*(Aq) を指定します． この ACL ファイル入力は gfgetfacl コマンドの出力を受け付けます．
 .RE
 .PP
+\fB\-R\fR
+.RS 4
+再帰的にACLを変更します．
+.RE
+.PP
 \fB\-?\fR
 .RS 4
 引数オプションを表示します．
@@ -114,7 +119,7 @@ gfsetfacl コマンドは以下の ACL エントリ書式を認識します． p
 .PP
 指名ユーザへの読み込みアクセスを許可する．
 .RS 4
-gfsetfalc \-m u:testuser:r filename
+gfsetfacl \-m u:testuser:r filename
 .RE
 .PP
 filename2 の ACL をfilename1 の ACL で置換する．
@@ -160,5 +165,4 @@ u::rw,u:user1:rw,g::r,g:group1:rw,m::r,o::r,d:u::rwx,d:g::rx,d:o::rx
 .RE
 .SH "SEE ALSO"
 .PP
-
 \fBgfgetfacl\fR(1)

@@ -38,6 +38,10 @@
 #include "gfm_client.h"
 #include "host.h"
 
+#if (defined(__hurd__) || defined(__gnu_hurd__)) && !defined(MAXHOSTNAMELEN)
+#define MAXHOSTNAMELEN	256 /* XXX FIXME */
+#endif
+
 #ifndef __KERNEL__
 #define free_gethost_buff(buf)
 #else /* __KERNEL__ */

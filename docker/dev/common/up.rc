@@ -1,8 +1,11 @@
 set -eux
 
+: $GFDOCKER_USERNAME_PREFIX
+: $GFDOCKER_PRIMARY_USER
 : $GFDOCKER_NUM_GFMDS
 : $GFDOCKER_NUM_GFSDS
 : $GFDOCKER_NUM_CLIENTS
+: $GFDOCKER_NUM_USERS
 : $GFDOCKER_HOSTNAME_PREFIX_GFMD
 : $GFDOCKER_HOSTNAME_PREFIX_GFSD
 : $GFDOCKER_HOSTNAME_PREFIX_CLIENT
@@ -10,6 +13,7 @@ set -eux
 gfmds=
 gfsds=
 clients=
+users=
 
 for i in $(seq 1 $GFDOCKER_NUM_GFMDS); do
   gfmds="${gfmds} ${GFDOCKER_HOSTNAME_PREFIX_GFMD}${i}"
@@ -19,6 +23,61 @@ for i in $(seq 1 $GFDOCKER_NUM_GFSDS); do
 done
 for i in $(seq 1 $GFDOCKER_NUM_CLIENTS); do
   clients="${clients} ${GFDOCKER_HOSTNAME_PREFIX_CLIENT}${i}"
+done
+for i in $(seq 1 $GFDOCKER_NUM_USERS); do
+  users="${users} ${GFDOCKER_USERNAME_PREFIX}${i}"
+done
+
+# keep ssh host keys only for client1
+
+MNT=/mnt
+MNT_SSH_HOST_KEY_DIR=${MNT}/ssh_host_keys
+MNT_SSH_AUTHORIZED_KEYS_FILE=${MNT}/ssh_authorized_keys
+SSH_HOST_KEY_DIR=/etc/ssh
+
+if [ ! -d $MNT_SSH_HOST_KEY_DIR ]; then
+  sudo mkdir $MNT_SSH_HOST_KEY_DIR
+fi
+for f in $(echo $MNT_SSH_HOST_KEY_DIR/ssh_host_*_key); do
+  if [ -f "$f" ]; then
+    sudo cp -p "$f" $SSH_HOST_KEY_DIR/
+  fi
+  sudo chmod 400 $SSH_HOST_KEY_DIR/ssh_host_*_key
+done
+sudo systemctl restart sshd
+
+SAVE_KEYS_SCRIPT=/home/${GFDOCKER_PRIMARY_USER}/SAVE_SSH_HOST_KEYS.sh
+cat << EOF > $SAVE_KEYS_SCRIPT
+cp -a ${SSH_HOST_KEY_DIR}/ssh_host_*_key $MNT_SSH_HOST_KEY_DIR
+chmod 400 ${MNT_SSH_HOST_KEY_DIR}/ssh_host_*_key
+EOF
+chmod +x $SAVE_KEYS_SCRIPT
+
+# copy ssh authorized keys only for users
+SSH_AUTHORIZED_KEYS=.ssh/authorized_keys
+
+if [ -f $MNT_SSH_AUTHORIZED_KEYS_FILE ]; then
+  for user in $users; do
+    cat $MNT_SSH_AUTHORIZED_KEYS_FILE \
+    | sudo tee -a /home/${user}/$SSH_AUTHORIZED_KEYS > /dev/null
+  done
+fi
+
+ssh_retry() {
+  host="$1"
+  retry_sec=30
+  for i in $(seq 1 $retry_sec); do
+     if ssh "$host" hostname; then
+         break
+     fi
+     echo "retry: ssh $host"
+     sleep 1
+  done
+}
+
+# wait for the startup of sshd
+for host in $gfmds $gfsds $clients; do
+  ssh_retry "$host"
 done
 
 for host in $gfmds; do
@@ -30,18 +89,67 @@ EOF
 done
 
 for host in $gfmds $gfsds $clients; do
-  gfservice -d grid-proxy-init "$host"
+  gfservice -d grid-proxy-init "$host" &
 done
+wait
 
 gfservice -k -d config-all
 
 for host in $gfmds; do
-  gfservice set-gfmd-conf "$host" digest md5
-  gfservice set-gfmd-conf "$host" metadb_server_heartbeat_interval 10
+  (gfservice set-gfmd-conf "$host" digest md5 \
+  && gfservice set-gfmd-conf "$host" metadb_server_heartbeat_interval 10 \
+  && gfservice set-gfmd-conf "$host" 'auth enable gsi' '*' \
+  && gfservice restart-gfmd "$host") &
 done
+wait
+
+for host in $gfsds; do
+  (gfservice set-gfarm-conf "$host" client_digest_check enable \
+  && gfservice set-gfarm-conf "$host" spool_digest_error_check disable \
+  && gfservice set-gfarm-conf "$host" 'auth enable gsi' '*' \
+  && gfservice restart-gfsd "$host") &
+done
+wait
 
 for host in $clients; do
-  gfservice set-gfarm-conf "$host" client_digest_check enable
+  gfservice set-gfarm-conf "$host" client_digest_check enable &
 done
+wait
 
-gfservice restart-all
+set +x
+
+test_auth() {
+  echo "***** $authtype *****"
+  gfmdhost -l
+  gfhost -lv
+  num_gfmdhost=$(gfmdhost | wc -l)
+  num_gfsched=$(gfsched | wc -l)
+  [ $num_gfmdhost -eq $GFDOCKER_NUM_GFMDS ] || exit 1
+  [ $num_gfsched -eq $GFDOCKER_NUM_GFSDS ] || exit 1
+}
+
+tmp_gfarmconf=$(mktemp)
+for authtype in sharedsecret gsi_auth gsi; do
+  if [ $authtype = sharedsecret ]; then
+    cat <<EOF  > $tmp_gfarmconf
+auth enable sharedsecret *
+auth disable gsi_auth *
+auth disable gsi *
+EOF
+  elif [ $authtype = gsi_auth ]; then
+    cat <<EOF  > $tmp_gfarmconf
+auth disable sharedsecret *
+auth enable gsi_auth *
+auth disable gsi *
+EOF
+  elif [ $authtype = gsi ]; then
+    cat <<EOF  > $tmp_gfarmconf
+auth disable sharedsecret *
+auth disable gsi_auth *
+auth enable gsi *
+EOF
+  fi
+  GFARM_CONFIG_FILE=$tmp_gfarmconf test_auth $authtype
+done
+rm -f $tmp_gfarmconf
+date

@@ -18,6 +18,8 @@ gfarm_error_t user_enter(struct gfarm_user_info *, struct user **);
 gfarm_error_t user_modify(struct user *, struct gfarm_user_info *);
 gfarm_error_t user_remove_in_cache(const char *);
 
+#define USER_FOREARCH_FLAG_INCLUDING_INVALID	0
+#define USER_FOREARCH_FLAG_VALID_ONLY		1
 void user_foreach(void *, void (*)(void *, struct user *), int);
 
 struct quota;

@@ -42,6 +42,7 @@ lib/libgfarm/gfarm/gfs_pio_open/cksum_simultaneous.remote.sh
 lib/libgfarm/gfarm/gfs_pio_stat/gfs_stat_pio_stat_consistency.sh
 lib/libgfarm/gfarm/gfs_pio_stat/gfs_pio_stat_mtime.sh
 lib/libgfarm/gfarm/gfs_pio_stat/replica_mtime.sh
+lib/libgfarm/gfarm/gfs_pio_putc/putc_getc.sh
 lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/file_busy/file_busy.sh
 lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/in_progress/in_progress.sh
 lib/libgfarm/gfarm/gfs_stat_cached/purge.sh
@@ -104,6 +105,8 @@ gftool/gfln/gfln-s_toolong.sh
 gftool/gfls/root.sh
 gftool/gfls/notexist.sh
 gftool/gfls/unknownhost.sh
+gftool/gfls/effective_perm.sh
+gftool/gfls/effective_perm.gfarmroot.sh
 gftool/gflsof/gflsof-G.sh
 gftool/gfmkdir/mkdir.sh
 gftool/gfmkdir/mkdir_toolong.sh
@@ -124,6 +127,7 @@ gftool/gfreg/1byte.sh
 gftool/gfrm/1byte.sh
 #gftool/gfsetfacl/acl.sh
 gftool/gfsetfacl/acl-light.sh
+gftool/gfsetfacl/gfsetfacl-R.sh
 gftool/gfstat/gfstat.sh
 gftool/gftest/gftest_reg.sh
 gftool/gftest/gftest_dir.sh

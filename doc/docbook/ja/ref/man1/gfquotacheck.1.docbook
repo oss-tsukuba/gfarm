@@ -28,6 +28,11 @@
 
 <refsect1 id="description"><title>DESCRIPTION</title>
 
+<para>
+Gfarm 2.7.17以降は、基本的にこのコマンドを実行する必要はなくなりま
+した。
+</para>
+
 <para><command moreinfo="none">gfquotacheck</command>は、ユーザやグループごとのファイル数とファイルサイズの
 合計をカウントしなおします。
 </para>

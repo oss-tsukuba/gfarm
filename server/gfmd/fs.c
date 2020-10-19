@@ -1249,7 +1249,7 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 
 		needs_free = 1;
 		e_rpc = inode_xattr_list_get_cached_by_patterns(
-		    st.st_ino, attrpatterns, nattrpatterns, dirset,
+		    st.st_ino, process, attrpatterns, nattrpatterns, dirset,
 		    &xattrs, &nxattrs);
 		if (e_rpc != GFARM_ERR_NO_ERROR) {
 			xattrs = NULL;
@@ -2778,7 +2778,8 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 		for (i = 0; i < n; i++) {
 			pp = &p[i];
 			e_rpc = inode_xattr_list_get_cached_by_patterns(
-			    pp->st.st_ino, attrpatterns, nattrpatterns,
+			    pp->st.st_ino, process,
+			    attrpatterns, nattrpatterns,
 			    dirset, &pp->xattrs, &pp->nxattrs);
 			if (e_rpc != GFARM_ERR_NO_ERROR) {
 				pp->xattrs = NULL;
@@ -4205,13 +4206,13 @@ gfm_server_config_get(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 gfm_server_config_set(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
-	int eof;
+	gfarm_error_t e, e2, e_copyin = GFARM_ERR_NO_ERROR;
+	int eof, storage_save_alloced = 0;
 	struct gfp_xdr *client = peer_get_conn(peer);
 	struct user *user = peer_get_user(peer);
 	char *name = NULL, fmt = '\0';
 	const struct gfarm_config_type *type;
-	union gfarm_config_storage storage;
+	union gfarm_config_storage storage, storage_save;
 	static const char diag[] = "GFM_PROTO_CONFIG_SET";
 
 	e = gfm_server_get_request(peer, diag, "sc", &name, &fmt);
@@ -4248,6 +4249,7 @@ gfm_server_config_set(struct peer *peer, int from_client, int skip)
 		free(name);
 		return (GFARM_ERR_NO_ERROR);
 	}
+
 	giant_lock();
 
 	if (!from_client || user == NULL || !user_is_admin(user)) {
@@ -4269,11 +4271,20 @@ gfm_server_config_set(struct peer *peer, int from_client, int skip)
 	} else {
 		int old_read_only, read_only_disabled;
 
+		/* save storage, because gfarm_config_copyin() may breaks it */
+		e2 = gfarm_config_storage_dup(type, &storage_save, &storage);
+		if (e2 == GFARM_ERR_NO_ERROR) {
+			storage_save_alloced = 1;
+		} else {
+			assert(!storage_save_alloced);
+			storage_save.s = "error in gfarm_config_storage_dup";
+		}
+
 		config_var_lock();
 
 		old_read_only = gfarm_read_only;
 
-		e = gfarm_config_copyin(type, &storage);
+		e = e_copyin = gfarm_config_copyin(type, &storage);
 
 		read_only_disabled = old_read_only && !gfarm_read_only;
 
@@ -4287,24 +4298,24 @@ gfm_server_config_set(struct peer *peer, int from_client, int skip)
 
 	giant_unlock();
 
-	if (e == GFARM_ERR_NO_ERROR) {
-		gfarm_error_t e_log;
-		char log_buf[LOG_BUFSIZE];
-
-		e_log = gfarm_config_metadb_name_to_string(
-		    name, log_buf, sizeof log_buf);
-		if (e_log != GFARM_ERR_NO_ERROR &&
-		    e_log != GFARM_ERR_RESULT_OUT_OF_RANGE)
-			snprintf(log_buf, sizeof log_buf,
-			    "<%s>", gfarm_error_string(e_log));
-		gflog_info(GFARM_MSG_UNFIXED,
-		    "config changed by (%s@%s): %s %s",
+	if (e == GFARM_ERR_NO_ERROR)
+		gfarm_config_log_change(type, &storage_save,
+		    peer_get_username(peer), peer_get_hostname(peer));
+	else if (e_copyin != GFARM_ERR_NO_ERROR)
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "config change by (%s@%s) failed: %s: %s",
 		    peer_get_username(peer), peer_get_hostname(peer),
-		    name, log_buf);
-	}
+		    name, gfarm_error_string(e_copyin));
 
+	if (storage_save_alloced)
+		gfarm_config_storage_free(type, &storage_save);
+	/*
+	 * do not use gfarm_config_storage_free(type, &storage),
+	 * because fmt may not be same with gfarm_config_type_get_format(type)
+	 */
 	if (fmt == 's')
 		free(storage.s);
+
 	free(name);
 
 	return (gfm_server_put_reply(peer, diag, e, ""));

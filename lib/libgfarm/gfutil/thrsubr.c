@@ -93,6 +93,30 @@ gfarm_mutex_init(pthread_mutex_t *mutex, const char *where, const char *what)
 }
 
 void
+gfarm_mutex_recursive_init(pthread_mutex_t *mutex, const char *where,
+	const char *what)
+{
+	int err;
+	pthread_mutexattr_t attr;
+
+	err = pthread_mutexattr_init(&attr);
+	if (err != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "%s: %s pthread_mutexattr_init: %s",
+		    where, what, strerror(err));
+	err = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+	if (err != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "%s: %s pthread_mutexattr_settype: %s",
+		    where, what, strerror(err));
+	err = pthread_mutex_init(mutex, &attr);
+	if (err != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "%s: %s pthread_mutex_init: %s",
+		    where, what, strerror(err));
+}
+
+void
 gfarm_mutex_lock(pthread_mutex_t *mutex, const char *where, const char *what)
 {
 	int err = pthread_mutex_lock(mutex);

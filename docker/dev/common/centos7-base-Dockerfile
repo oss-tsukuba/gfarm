@@ -2,31 +2,54 @@ FROM centos:7
 
 # System dependent
 
-RUN yum -y update
+ENV TZ=Asia/Tokyo
 
-RUN yum -y install sudo openssh-server
-RUN sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' \
-	/etc/sudoers
+RUN sed -i -e '/override_install_langs/s/$/,ja_JP.utf8/g' /etc/yum.conf
+RUN sed -i -e '/tsflags=nodocs/s/^/#/' /etc/yum.conf
 
-RUN yum -y groupinstall "Development Tools"
+RUN yum -y reinstall glibc-common
 
-RUN yum -y install epel-release openssl-devel postgresql-devel postgresql \
-	postgresql-server fuse fuse-devel libacl-devel
+RUN yum -y update \
+    && yum -y install \
+    sudo \
+    openssh-server \
+    rsync \
+    langpacks-ja \
+    && yum -y groupinstall "Development Tools"
 
-RUN yum -y --enablerepo=epel install globus-gssapi-gsi-devel globus-simple-ca \
-	globus-gsi-cert-utils-progs globus-proxy-utils
+RUN yum -y update \
+    && yum -y install \
+    epel-release \
+    openssl-devel \
+    postgresql-devel \
+    postgresql \
+    postgresql-server \
+    fuse \
+    fuse-devel \
+    libacl-devel \
+    ruby
 
-## for test
-RUN yum -y install nc
+RUN yum -y update \
+    && yum -y --enablerepo=epel install \
+    globus-gssapi-gsi-devel \
+    globus-simple-ca \
+    globus-gsi-cert-utils-progs \
+    globus-proxy-utils \
+    && globus-version
 
 ## for debug
-RUN yum -y install ldns iproute2 net-tools which bind-utils man gdb valgrind \
-	strace nano emacs-nox telnet less
+RUN yum -y update \
+    && yum -y install \
+    docbook-utils docbook-style-xsl libxslt \
+    nc ldns iproute2 net-tools bind-utils telnet tcpdump \
+    gdb valgrind strace inotify-tools \
+    man man-pages man-pages-ja man-db which \
+    nano emacs-nox less
 
-ENV GFDOCKER_DIST_NAME centos
+RUN sed -i 's@^Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin$@Defaults    secure_path = /usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin@' /etc/sudoers
 
 
-# System independent (incompleteness. see setup-univ.sh.)
+# System independent (see setup-univ.sh)
 
 ARG GFDOCKER_USERNAME_PREFIX
 ARG GFDOCKER_PRIMARY_USER
@@ -35,29 +58,8 @@ ARG GFDOCKER_NUM_GFSDS
 ARG GFDOCKER_NUM_USERS
 ARG GFDOCKER_HOSTNAME_PREFIX_GFMD
 ARG GFDOCKER_HOSTNAME_PREFIX_GFSD
-
-RUN for i in $(seq 1 "$GFDOCKER_NUM_USERS"); do \
-		useradd -m -s /bin/bash -U \
-			"${GFDOCKER_USERNAME_PREFIX}${i}"; \
-	done
-
-# chown option does not use variables.
-# see https://github.com/moby/moby/issues/35018 for details.
-# XXX FIXME: use variable.
-# NOTE: Enable buildkit
-#COPY --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-#	. "/home/${GFDOCKER_PRIMARY_USER}/gfarm"
-#COPY --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-#	gfarm2fs "/home/${GFDOCKER_PRIMARY_USER}/gfarm2fs"
-
-# "chown -R" is too slow.
 COPY . /tmp/gfarm
 COPY gfarm2fs /tmp/gfarm2fs
-RUN rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-	/tmp/gfarm "/home/${GFDOCKER_PRIMARY_USER}"
-RUN rsync -a --chown=${GFDOCKER_PRIMARY_USER}:${GFDOCKER_PRIMARY_USER} \
-	/tmp/gfarm2fs "/home/${GFDOCKER_PRIMARY_USER}"
-
-RUN "/home/${GFDOCKER_PRIMARY_USER}/gfarm/docker/dev/common/setup-univ.sh"
+RUN "/tmp/gfarm/docker/dev/common/setup-univ.sh"
 
 CMD ["/sbin/init"]

@@ -53,7 +53,7 @@ gfsd_readonly_config_update(int host_info_flags)
 	int rv;
 	static const char diag[] = "gfsd_readonly_config_update";
 
-	if (host_info_flags_is_readonly(host_info_flags)) {
+	if (gfarm_host_info_flags_is_readonly(host_info_flags)) {
 		if ((rv = open(READONLY_CONFIG_TMP_FILE,
 			       O_RDONLY|O_CREAT|O_EXCL, 0400)) != -1) {
 			close(rv);

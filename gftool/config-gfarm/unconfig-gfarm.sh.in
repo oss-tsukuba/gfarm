@@ -18,6 +18,8 @@ RC_GFMD="@config_gfarm_rc_gfmd@"
 RC_BACKEND="@config_gfarm_rc_backend@"
 RC_BACKEND_BASENAME="@rc_backend_basename@"
 GFMD_CONF="@config_gfarm_gfmd_config@"
+GFMD_FAILOVER_CONF="@config_gfarm_gfmd_failover_config@
+GFMD_FAILOVER_AGENT_CONF="@config_gfarm_gfmd_failover_agent_config@
 GFARM_CONF="@config_gfarm_gfarm_config@"
 GFARM_CONF_DIR="@config_gfarm_gfarm_config_dir@"
 CONFIG_PREFIX="@config_gfarm_config_prefix@"
@@ -78,6 +80,8 @@ service_unconfig()
 	service_ctl $TEST_OPT gfmd stop
 	service_stop_$BACKEND_TYPE $TEST_OPT $RC_BACKEND_BASENAME
 
+	delete_file_or_directory -f $TEST_OPT "$GFMD_FAILOVER_AGENT_CONF"
+	delete_file_or_directory -f $TEST_OPT "$GFMD_FAILOVER_CONF"
 	delete_file_or_directory -f $TEST_OPT "$GFMD_CONF"
 	delete_file_or_directory -f $TEST_OPT "$GFARM_CONF"
 

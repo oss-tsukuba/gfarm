@@ -50,6 +50,10 @@
 
 #include <openssl/evp.h>
 
+#if defined(__hurd__) || defined(__gnu_hurd__) && !defined(PATH_MAX)
+#define PATH_MAX	2048	/* XXX FIXME */
+#endif
+
 #define GFLOG_USE_STDARG
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
@@ -64,6 +68,7 @@
 #define GFARM_USE_OPENSSL
 #include "msgdigest.h"
 #include "nanosec.h"
+#include "proctitle.h"
 #include "timer.h"
 #include "timespec.h"
 
@@ -1316,6 +1321,9 @@ gfs_server_process_set(struct gfp_xdr *client)
 	    keytype, sharedkey, keylen, pid)) != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1003400,
 		    "gfm_client_process_set: %s", gfarm_error_string(e));
+	else
+		(void)gfarm_proctitle_set("cilent/%lld %s",
+		    (long long)pid, gflog_get_auxiliary_info());
 
 	gfs_server_put_reply(client, diag, e, "");
 }
@@ -1348,6 +1356,8 @@ gfs_server_process_reset(struct gfp_xdr *client)
 		    keylen, pid);
 		if (e == GFARM_ERR_NO_ERROR) {
 			fd_usable_to_gfmd = 1;
+			(void)gfarm_proctitle_set("cilent/%lld %s",
+			    (long long)pid, gflog_get_auxiliary_info());
 			break;
 		}
 		if (e == GFARM_ERR_ALREADY_EXISTS) {
@@ -4836,6 +4846,9 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	} else if ((pid = do_fork(type_replication)) == 0) { /* child */
 		close(fds[0]);
 
+		(void)gfarm_proctitle_set(
+		    "replication %s", gfp_conn_hash_hostname(q));
+
 		memset(&res, 0, sizeof(res)); /* to shut up valgrind */
 		replica_receive(q, rep, src_gfsd, local_fd, &res, diag);
 
@@ -5604,6 +5617,8 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	enum gfarm_auth_id_type peer_type;
 	enum gfarm_auth_method auth_method;
 
+	(void)gfarm_proctitle_set("client");
+
 	if ((e = connect_gfm_server("gfsd-for-client")) != GFARM_ERR_NO_ERROR)
 		fatal(GFARM_MSG_1003361, "die");
 
@@ -5629,6 +5644,8 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 			client_name = s;
 		}
 	}
+	(void)gfarm_proctitle_set("client @%s", client_name);
+
 	e = gfp_xdr_new_socket(client_fd, &client);
 	if (e != GFARM_ERR_NO_ERROR) {
 		close(client_fd);
@@ -5651,6 +5668,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		fatal(GFARM_MSG_1000556, "%s: no memory", client_name);
 	sprintf(aux, "%s@%s", username, client_name);
 	gflog_set_auxiliary_info(aux);
+	(void)gfarm_proctitle_set("client %s", aux);
 	current_client = client; /* for cleanup() */
 
 #ifdef HAVE_INFINIBAND
@@ -6476,6 +6494,9 @@ back_channel_server(void)
 			fatal(GFARM_MSG_1003364, "die");
 		back_channel = gfm_server;
 		bc_conn = gfm_client_connection_conn(gfm_server);
+		(void)gfarm_proctitle_set("back_channel %s:%d",
+		    gfm_client_hostname(back_channel),
+		    gfm_client_port(back_channel));
 
 		e = gfm_client_switch_async_back_channel(back_channel,
 		    GFS_PROTOCOL_VERSION,
@@ -6902,6 +6923,17 @@ main(int argc, char **argv)
 	int spool_check_level = 0;
 	int is_root = geteuid() == 0;
 
+	/*
+	 * gfarm_proctitle_set() breaks argv[] contents on platforms which use
+	 * the PROCTITLE_USE_ARGV_ENVIRON_SPACE implemenation.
+	 * thus, gfarm_proctitle_init() has to called before saving
+	 * a pointer to argv[] (including optarg).
+	 */
+	save_errno = gfarm_proctitle_init(program_name, argc, &argv);
+	if (save_errno != 0)
+		fprintf(stderr, "%s: setproctitle: %s", program_name,
+		    strerror(save_errno));
+
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
@@ -6938,7 +6970,7 @@ main(int argc, char **argv)
 			listen_addrname = optarg;
 			break;
 		case 'r':
-			e = parse_set_spool_root(optarg);
+			e = gfarm_parse_set_spool_root(optarg);
 			if (e != GFARM_ERR_NO_ERROR)
 				gflog_fatal(GFARM_MSG_1000586, "%s",
 				    gfarm_error_string(e));
@@ -6987,7 +7019,6 @@ main(int argc, char **argv)
 #ifdef HAVE_INFINIBAND
 	gfs_ib_rdma_initialize(0);
 #endif
-
 
 	argc -= optind;
 	argv += optind;

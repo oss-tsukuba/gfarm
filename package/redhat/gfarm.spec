@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %if %{undefined ver}
-%define ver	2.7.16
+%define ver	2.7.17
 %endif
 %if %{undefined rel}
 %define rel	1
@@ -12,6 +12,8 @@
 
 %define prefix		%{_prefix}
 %define lib_prefix	%{_libdir}
+# _libexecdir is not defined in openSUSE
+%define _libexecdir     %{_prefix}/libexec
 %define libexec_prefix	%{_libexecdir}
 %define man_prefix	%{_mandir}
 %define share_prefix	%{_prefix}/share/%{pkg}
@@ -1124,6 +1126,8 @@ fi
 %{lib_prefix}/libgfarm.so.1.0.0
 %{lib_prefix}/libgfperf.so.1
 %{lib_prefix}/libgfperf.so.1.0.0
+%dir %{lib_prefix}/pkgconfig
+%{lib_prefix}/pkgconfig/gfarm.pc
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/config-gfarm.sysdep
@@ -1303,6 +1307,8 @@ fi
 %{share_prefix}/config/gfarm.sql
 %{share_prefix}/config/gfarm-xmlattr.sql
 %{share_prefix}/config/gfarm.schema
+%{share_prefix}/config/gfmd.failover.agent.conf
+%{share_prefix}/config/gfmd.failover.conf
 %{share_prefix}/config/initial.ldif.in
 %{share_prefix}/config/linux/debian/gfarm-pgsql.in
 %{share_prefix}/config/linux/debian/gfarm-slapd.in

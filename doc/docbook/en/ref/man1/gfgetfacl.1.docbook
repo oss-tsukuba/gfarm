@@ -5,7 +5,7 @@
 
 <refentry id="gfgetfacl.1">
 
-<refentryinfo><date>4 Feb 2011</date></refentryinfo>
+<refentryinfo><date>28 Sep 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfgetfacl</refentrytitle>
@@ -39,6 +39,15 @@
 <refsect1 id="options"><title>OPTIONS</title>
 
 <variablelist>
+
+<varlistentry>
+<term><option>-R</option></term>
+<listitem>
+<para>
+lists ACL recursively.
+</para>
+</listitem>
+</varlistentry>
 
 <varlistentry>
 <term><option>-?</option></term>

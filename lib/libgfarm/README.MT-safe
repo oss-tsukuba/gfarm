@@ -1,0 +1,93 @@
+README.MT-safe
+
+- MT-safe APIs
+
+  - gfs_pio_open
+  - gfs_pio_fhopen
+  - gfs_pio_create
+  - gfs_pio_close
+  - gfs_pio_close_getgen
+  - gfs_pio_eof
+  - gfs_pio_error
+  - gfs_pio_clearerr
+  - gfs_pio_seek
+  - gfs_pio_pread
+  - gfs_pio_read
+  - gfs_pio_pwrite
+  - gfs_pio_write
+  - gfs_pio_flush
+  - gfs_pio_sync
+  - gfs_pio_datasync
+  - gfs_pio_truncate
+  - gfs_pio_pread_page
+  - gfs_pio_getc
+  - gfs_pio_ungetc
+  - gfs_pio_putc
+  - gfs_pio_puts
+  - gfs_pio_gets
+  - gfs_pio_getline
+  - gfs_pio_putline
+  - gfs_pio_readline
+  - gfs_pio_readdelim
+  - gfs_pio_stat
+  - gfs_pio_cksum
+  - gfs_pio_sendfile
+  - gfs_pio_recvfile
+  - gfs_opendir
+  - gfs_openfhdir
+
+- not yet MT-safe APIs
+
+  - directory control APIs
+    - gfs_seekdir
+    - gfs_telldir
+    - gfs_readdir
+    - gfs_closedir
+
+    Helgrind warns data race at APIs above. However we cannot find out what's
+    wrong. ThreadSantizer (libtsan) never warned it.
+
+- MT not supported APIs
+
+  - gfarm_initialize
+  - gfarm_finalize
+
+  - gfs_pio_readdir
+    Currently returned data is a part of buffer stored in gfs_dir_internal
+    and can be purged. Reentrant API gfs_pio_readdir_r should be implemented
+    instead.
+    Another note: Clients should call gfs_seekdir and gfs_readdir atomically.
+
+- locks and locking order
+
+  Locks below are implemented or expanded. They are not related each other.
+
+  - gfarm/
+    - conn_cache.c: GFSP_CONN_MUTEX (included in staticp)
+    - gfs_client.c: GFS_CLIENT_MUTEX (included in staticp)
+    - gfs_dircache.c: stat_cache_mutex (static variable)
+    - gfs_pio_impl.h: struct gfs_file { mutex; }
+    - gfs_profile.c: profile_mutex (static variable)
+    - schedule.c: SCHED_MUTEX_DCL (included in staticp)
+  - gfutil/
+    - msgdigest.c: getdigest_mutex (static variable)
+
+- note
+
+  - lock depends on each GFS_Dir
+    File control APIs like gfs_pio_pread are locked depends on specified
+    GFS_File, but directory control APIs like gfs_readdir are not.
+
+  - staticp
+    Files below have a macro 'staticp' and static data is stored in them.
+    We may need protect them with lock.
+
+    - auth_client.c
+    - auth_common_gsi.c
+    - auth_config.c
+    - config.c
+    - filesystem.c
+    - gfm_client.c
+    - gfs_rdma.c
+
+

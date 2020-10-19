@@ -2,12 +2,12 @@
 .\"     Title: gfncopy
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 25 Jan 2017
+.\"      Date: 15 Jul 2020
 .\"    Manual: Gfarm
 .\"    Source: Gfarm
 .\"  Language: English
 .\"
-.TH "GFNCOPY" "1" "25 Jan 2017" "Gfarm" "Gfarm"
+.TH "GFNCOPY" "1" "15 Jul 2020" "Gfarm" "Gfarm"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -59,6 +59,12 @@ is stored in the extended attribute of gfarm\&.ncopy\&.
 \fB\-S\fR \fIREPATTR\fR
 .RS 4
 specifies the attribute for automatic replication represented by host groups to a file or directory\&.
+.sp
+When both
+\fINCOPY\fR
+and
+\fIREPATTR\fR
+are set to a same file, the following number of replicas will be created\&. If N is the total number of replicas specified by REPATTR, and N is greater than NCOPY, at least N replicas will be created\&. Otherwise, replicas will be created according to REPATTR, and more replicas will be added until total number of replicas reaches NCOPY\&.
 \fIREPATTR\fR
 is stored in the extended attribute of gfarm\&.replicainfo\&.
 .sp

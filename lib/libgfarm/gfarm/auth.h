@@ -115,10 +115,18 @@ struct gfarm_hostspec;
 char gfarm_auth_method_mnemonic(enum gfarm_auth_method);
 char *gfarm_auth_method_name(enum gfarm_auth_method);
 gfarm_error_t gfarm_auth_method_parse(char *, enum gfarm_auth_method *);
+enum gfarm_auth_config_position {
+	GFARM_AUTH_CONFIG_AT_HEAD,
+	GFARM_AUTH_CONFIG_AT_TAIL,
+	GFARM_AUTH_CONFIG_AT_MARK
+};
 gfarm_error_t gfarm_auth_enable(
-	enum gfarm_auth_method, struct gfarm_hostspec *);
+	enum gfarm_auth_method, struct gfarm_hostspec *,
+	enum gfarm_auth_config_position);
 gfarm_error_t gfarm_auth_disable(
-	enum gfarm_auth_method, struct gfarm_hostspec *);
+	enum gfarm_auth_method, struct gfarm_hostspec *,
+	enum gfarm_auth_config_position);
+void gfarm_auth_config_set_mark(void);
 
 /* this i/f have to be changed, if we support more than 31 auth methods */
 gfarm_int32_t gfarm_auth_method_get_enabled_by_name_addr(
@@ -134,6 +142,8 @@ gfarm_error_t gfarm_auth_server_cred_type_set(char *,
 	enum gfarm_auth_cred_type);
 gfarm_error_t gfarm_auth_server_cred_service_set(char *, char *);
 gfarm_error_t gfarm_auth_server_cred_name_set(char *, char *);
+
+char *gfarm_auth_config_string_dup(void);
 
 /* auth_client_sharedsecret */
 gfarm_error_t gfarm_auth_request_sharedsecret(struct gfp_xdr *,

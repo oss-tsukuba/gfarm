@@ -415,10 +415,11 @@ user_get_dirsets(struct user *u)
 
 void
 user_foreach(void *closure, void (*callback)(void *, struct user *),
-	int valid_only)
+	int flags)
 {
 	struct gfarm_hash_iterator it;
 	struct user **u;
+	int valid_only = (flags & USER_FOREARCH_FLAG_VALID_ONLY) != 0;
 
 	for (gfarm_hash_iterator_begin(user_hashtab, &it);
 	     !gfarm_hash_iterator_is_end(&it);

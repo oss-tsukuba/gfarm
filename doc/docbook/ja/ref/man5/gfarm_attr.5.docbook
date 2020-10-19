@@ -5,7 +5,7 @@
 
 <refentry id="gfarm-attr.5">
 
-<refentryinfo><date>31 Mar 2014</date></refentryinfo>
+<refentryinfo><date>28 Sep 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm_attr</refentrytitle>
@@ -106,6 +106,17 @@ ACL(アクセスコントロールリスト)を格納します．
 <listitem>
 <para>
 デフォルトACLを格納します．ディレクトリだけがこの拡張属性を利用します．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter moreinfo="none">gfarm.effective_perm</parameter></term>
+<listitem>
+<para>
+ファイルにアクセスする際の実効アクセス権を返します．
+その値は読み取り専用で，
+読み取り(4), 書き込みwrite(2), 実行(1) のビットを組み合わせた値です．
 </para>
 </listitem>
 </varlistentry>

@@ -14,6 +14,10 @@
 #include <sys/param.h>
 #include <sys/time.h>
 
+#if (defined(__hurd__) || defined(__gnu_hurd__)) && !defined(MAXPATHLEN)
+#define MAXPATHLEN	2048 /* XXX FIXME */
+#endif
+
 #include <gfarm/gfarm.h>
 
 #include "queue.h"

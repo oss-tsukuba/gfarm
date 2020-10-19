@@ -207,6 +207,8 @@ display_plain_params()
 
     echo "rc script for gfmd               : $RC_GFMD"
     echo "gfmd conf file                   : $GFMD_CONF"
+    echo "gfmd failover conf file          : $GFMD_FAILOVER_CONF"
+    echo "gfmd failover agent conf file    : $GFMD_FAILOVER_AGENT_CONF"
     if $PRIVATE_MODE; then
 	echo "gfsd conf file                   : $GFSD_CONF"
 	echo "usermap file                     : $USERMAP_FILE"
@@ -244,6 +246,8 @@ display_script_params()
 
     echo     "GFMD_RC=$RC_GFMD"
     echo     "GFMD_CONF=$GFMD_CONF"
+    echo     "GFMD_FAILOVER_CONF=$GFMD_FAILOVER_CONF"
+    echo     "GFMD_FAILOVER_AGENT_CONF=$GFMD_FAILOVER_AGENT_CONF"
     if $PRIVATE_MODE; then
 	echo     "GFSD_CONF=$GFSD_CONF"
 	echo     "USERMAP_FILE=$USERMAP_FILE"
@@ -438,6 +442,12 @@ fi
 : ${CONFIG_ETC_DIR:=$GFARM_CONF_DIR}
 : ${GFARM_CONF:="$CONFIG_ETC_DIR/gfarm2.conf"}
 : ${GFMD_CONF:="$GFARM_CONF_DIR/gfmd.conf"}
+
+# do not make these two files customizable,
+# that introduces extra complexity to config-gfarm-update
+GFMD_FAILOVER_CONF="`dirname $GFMD_CONF`/gfmd.failover.conf"
+GFMD_FAILOVER_AGENT_CONF="`dirname $GFMD_FAILOVER_CONF`/gfmd.failover.agent.conf"
+
 : ${UNCONFIG_SCRIPT:="$GFARM_CONF_DIR/unconfig-gfarm.sh"}
 : ${UNCONFIG_SCRIPT_IN:="$config_dir/unconfig-gfarm.sh.in"}
 if $PRIVATE_MODE; then
@@ -507,6 +517,8 @@ init_replace()
 s|@config_gfarm_prefix@|$prefix|g
 s|@config_gfarm_gfarm_config@|$GFARM_CONF|g
 s|@config_gfarm_gfmd_config@|$GFMD_CONF|g
+s|@config_gfarm_gfmd_failover_config@|$GFMD_FAILOVER_CONF|g
+s|@config_gfarm_gfmd_failover_agent_config@|$GFMD_FAILOVER_AGENT_CONF|g
 s|@config_gfarm_globus_location@|${GLOBUS_LOCATION:-$globus_location}|g
 s|@config_gfarm_metadata_admin_user@|$METADATA_ADMIN_USER|g
 s|@config_gfarm_gfmd_port@|$GFMD_PORT|g
@@ -542,6 +554,8 @@ s|@config_gfarm_rc_gfmd@|$RC_GFMD|g
 s|@config_gfarm_rc_backend@|$RC_BACKEND|g
 s|@rc_backend_basename@|$RC_BACKEND_BASENAME|g
 s|@config_gfarm_gfmd_config@|$GFMD_CONF|g
+s|@config_gfarm_gfmd_failover_config@|$GFMD_FAILOVER_CONF|g
+s|@config_gfarm_gfmd_failover_agent_config@|$GFMD_FAILOVER_AGANT_CONF|g
 s|@config_gfarm_gfarm_config@|$GFARM_CONF|g
 s|@config_gfarm_gfarm_config_dir@|$GFARM_CONF_DIR|g
 s|@config_gfarm_config_prefix@|$CONFIG_PREFIX|g
@@ -573,7 +587,9 @@ replace()
 
 delete_file_or_directory \
 	"$GFARM_CONF" \
-	"$GFMD_CONF"
+	"$GFMD_CONF" \
+	"$GFMD_FAILOVER_CONF" \
+	"$GFMD_FAILOVER_AGENT_CONF"
 $USE_BACKEND &&
 	delete_file_or_directory \
 		"$BACKEND_DATA_DIR" \
@@ -662,6 +678,12 @@ echo "metadb_journal_dir $METADATA_JOURNAL_DIR" >> $GFMD_CONF
 if [ X"$DIGEST_TYPE" != X ]; then
 	echo "digest $DIGEST_TYPE" >> $GFMD_CONF
 fi
+
+# use "cat" instead of replace() to reduce complexity of config-gfarm-update
+mkcnf "$GFMD_FAILOVER_CONF" \
+	cat "$config_dir/gfmd.failover.conf"
+mkcnf "$GFMD_FAILOVER_AGENT_CONF" \
+	cat "$config_dir/gfmd.failover.agent.conf"
 
 # by backend type
 make_configuration_file_$BACKEND_TYPE

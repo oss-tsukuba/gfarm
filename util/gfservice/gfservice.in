@@ -1185,6 +1185,28 @@ subcmd_start_backend_db()
 }
 
 #
+# Function for start-gfmd and start-gfmd-lave
+#
+exec_retry_start_gfmd()
+{
+	HOSTID=$1
+	RETRY=10
+	COUNT=0
+	RESULT=1
+
+	while true; do
+		exec_remote_host_agent $@
+		exec_remote_host_agent $HOSTID root gfmd-status
+		RESULT=$?
+		[ $RESULT -eq 0 ] && break
+		COUNT=`expr $COUNT + 1`
+		[ $COUNT -ge $RETRY ] && break
+		sleep 1
+	done
+	return $RESULT
+}
+
+#
 # Sub-command: start-gfmd
 #
 subcmd_start_gfmd()
@@ -1193,7 +1215,7 @@ subcmd_start_gfmd()
 
 	check_argc $# 0
 	check_hostid gfmd $HOSTID
-	exec_remote_host_agent $HOSTID root start-gfmd
+	exec_retry_start_gfmd $HOSTID root start-gfmd
 	[ $? -ne 0 ] && log_error "gfservice-agent start-gfmd failed"
 
 	log_debug "end subcmd_start_gfmd"
@@ -1208,7 +1230,7 @@ subcmd_start_gfmd_slave()
 
 	check_argc $# 0
 	check_hostid gfmd $HOSTID
-	exec_remote_host_agent $HOSTID root start-gfmd-slave
+	exec_retry_start_gfmd $HOSTID root start-gfmd-slave
 	[ $? -ne 0 ] && log_error "gfservice-agent start-gfmd-slave failed"
 
 	log_debug "end subcmd_start_gfmd_slave"
@@ -2323,12 +2345,12 @@ start-gfmd-slave)
 	;;
 start-gfarm|start-gfarm-master)
 	subcmd_start_backend_db "$@"
-	sleep_postmaster_startup "$@"
+	# sleep_postmaster_startup "$@"
 	subcmd_start_gfmd
 	;;
 start-gfarm-slave)
 	subcmd_start_backend_db "$@"
-	sleep_postmaster_startup "$@"
+	# sleep_postmaster_startup "$@"
 	subcmd_start_gfmd_slave "$@"
 	;;
 start-gfsd)
@@ -2375,14 +2397,14 @@ restart-gfarm|restart-gfarm-master)
 	subcmd_stop_gfmd "$@"
 	subcmd_stop_backend_db "$@"
 	subcmd_start_backend_db "$@"
-	sleep_postmaster_startup "$@"
+	# sleep_postmaster_startup "$@"
 	subcmd_start_gfmd "$@"
 	;;
 restart-gfarm-slave)
 	subcmd_stop_gfmd "$@"
 	subcmd_stop_backend_db "$@"
 	subcmd_start_backend_db "$@"
-	sleep_postmaster_startup "$@"
+	# sleep_postmaster_startup "$@"
 	subcmd_start_gfmd_slave "$@"
 	;;
 restart-gfsd)

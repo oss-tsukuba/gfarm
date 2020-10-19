@@ -795,6 +795,7 @@ gfs_file_section_context_alloc(void)
 	return (vc);
 }
 
+/* internal function: do not call external functions */
 gfarm_error_t
 gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 {
@@ -873,7 +874,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 		}
 
 		if (gf->open_flags & GFARM_FILE_APPEND) {
-			e = gfs_pio_seek(gf, 0, SEEK_END, NULL);
+			e = gfs_pio_seek_unlocked(gf, 0, SEEK_END, NULL);
 			if (e == GFARM_ERR_NO_ERROR)
 				goto finish;
 			(*vc->ops->storage_close)(gf);
@@ -1152,7 +1153,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	/* XXX - need to figure out ignorable error or not */
 
 	if (gf->open_flags & GFARM_FILE_APPEND)
-		e = gfs_pio_seek(gf, 0, SEEK_END, NULL);
+		e = gfs_pio_seek_unlocked(gf, 0, SEEK_END, NULL);
 
 storage_close:
 	if (e != GFARM_ERR_NO_ERROR)

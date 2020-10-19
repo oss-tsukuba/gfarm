@@ -5,7 +5,7 @@
 
 <refentry id="gfsetfacl.1">
 
-<refentryinfo><date>4 Feb 2011</date></refentryinfo>
+<refentryinfo><date>28 Sep 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsetfacl</refentrytitle>
@@ -103,6 +103,15 @@ ACL 文字列表現が記述されたファイルまたは標準入力 (`-')
 </varlistentry>
 
 <varlistentry>
+<term><option>-R</option></term>
+<listitem>
+<para>
+再帰的にACLを変更します．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>引数オプションを表示します．</para>
@@ -165,7 +174,7 @@ perms フィールドは許可を表す文字を組み合わせです．
 <varlistentry>
 <term>指名ユーザへの読み込みアクセスを許可する．</term>
 <listitem>
-<para>gfsetfalc -m u:testuser:r filename</para>
+<para>gfsetfacl -m u:testuser:r filename</para>
 </listitem>
 </varlistentry>
 

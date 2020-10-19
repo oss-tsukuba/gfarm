@@ -6,7 +6,7 @@
 
 <refentry id="gfs-pio-open.3">
 
-<refentryinfo><date>3 Sep 2015</date></refentryinfo>
+<refentryinfo><date>8 Aug 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_open</refentrytitle>
@@ -80,6 +80,12 @@ truncated to length 0 if the open mode allows writing.</para>
 <term><constant>GFARM_FILE_APPEND</constant></term>
 <listitem>
 <para>The file is opened in append mode.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_UNBUFFERED</constant></term>
+<listitem>
+<para>The file is accessed without buffering.</para>
 </listitem>
 </varlistentry>
 </variablelist>

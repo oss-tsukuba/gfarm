@@ -5,7 +5,7 @@
 
 <refentry id="gfarm2.conf.5">
 
-<refentryinfo><date>10 Mar 2020</date></refentryinfo>
+<refentryinfo><date>17 Sep 2020</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -369,6 +369,29 @@ and ignored clients, and ignored in gfmd.conf.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	spool_server_back_channel_rcvbuf_limit 16384
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_server_read_only_retry_interval</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+If there are files still opened and modified when Gfarm is changed
+to a read-only file system, these files cannot be closed until Gfarm is
+changed to a read-write file system.  This directive specifies the
+interval in second for gfsd to check the gfmd status change.
+</para>
+<para>
+The default time is 60 seconds, i.e. one minute.
+</para>
+<para>
+This parameter is only available in gfarm2.conf which is referred by gfsd,
+and ignored by clients, and ignored in gfmd.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	spool_server_read_only_retry_interval 600
 </literallayout>
 </listitem>
 </varlistentry>
@@ -767,6 +790,29 @@ has to be specified in both gfarm2.conf and gfmd.conf.
 <para>For example,</para>
 <literallayout format="linespecific" class="normal">
 	metadb_server_heartbeat_interval 180
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>failover_notify_delay</token> <parameter moreinfo="none">seconds</parameter></term>
+<listitem>
+<para>
+This directive specifies the delay (in seconds) that
+new master gfmd notifies its start to gfsd processes on each
+filesystem node.
+If this delay is 0 seconds, it's highly possible that some gfsd process
+detects a stop of previous master gfmd and connects to the new master gfmd
+just before the notification, and in that case, the gfsd process will
+disconnect and retry connecting to the new gfmd again.
+To avoid such inefficiency, the default of this delay is 5 seconds.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout format="linespecific" class="normal">
+	failover_notify_delay 10
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1820,7 +1866,7 @@ This directive is only available for clients in gfarm2.conf.
 <term><token>read_only</token> <parameter moreinfo="none">validity</parameter></term>
 <listitem>
 <para>
-This directive makes whole file system read_only mode.
+This directive makes Gfarm file system read only.
 The default is <token>disable</token>.
 </para>
 <para>
@@ -2993,6 +3039,7 @@ The default size is 16 MiB.
 	&lt;spool_server_cred_service_statement&gt; |
 	&lt;spool_server_cred_name_statement&gt; |
 	&lt;spool_server_back_channel_rcvbuf_limit_statement&gt; |
+	&lt;spool_server_read_only_retry_interval_statement&gt; |
 	&lt;spool_check_level_statement&gt; |
 	&lt;spool_check_parallel_statement&gt; |
 	&lt;spool_check_parallel_max_statement&gt; |
@@ -3014,6 +3061,7 @@ The default size is 16 MiB.
 	&lt;metadb_server_remove_scan_log_interval_statement&gt; |
 	&lt;metadb_server_remove_scan_interval_factor_statement&gt; |
 	&lt;metadb_server_heartbeat_interval_statement&gt; |
+	&lt;metadb_server_failover_notify_delay_statement&gt; |
 	&lt;metadb_server_dbq_size_statement&gt; |
 	&lt;metadb_server_back_channel_sndbuf_limit_statement&gt; |
 	&lt;metadb_server_nfs_root_squash_support_statement&gt; |
@@ -3171,6 +3219,11 @@ The default size is 16 MiB.
 </varlistentry>
 
 <varlistentry>
+<term>&lt;spool_server_read_only_retry_interval_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"spool_server_read_only_retry_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
 <term>&lt;spool_check_level_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"spool_check_level" &lt;spck_level&gt;</literallayout></listitem>
 </varlistentry>
@@ -3273,6 +3326,11 @@ The default size is 16 MiB.
 <varlistentry>
 <term>&lt;metadb_server_heartbeat_interval_statement&gt; ::=</term>
 <listitem><literallayout format="linespecific" class="normal">"metadb_server_heartbeat_interval" &lt;number&gt;</literallayout></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>&lt;metadb_server_failover_notify_delay_statement&gt; ::=</term>
+<listitem><literallayout format="linespecific" class="normal">"failover_notify_delay" &lt;number&gt;</literallayout></listitem>
 </varlistentry>
 
 <varlistentry>

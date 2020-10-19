@@ -21,6 +21,7 @@ SUBDIRS = \
 	bench/gfiops \
 	bench/gfcreate-test \
 	regress/lib/libgfarm/gfarm/gfs_pio_test \
+	pkgconfig \
 	@linuxkernel_targets@
 
 #	`[ -d $(srcdir)/ns ] && echo ns` \
@@ -42,4 +43,5 @@ post-distclean-hook:
 		gftool/config-gfarm/config-gfarm-update \
 		gftool/config-gfarm/config-gfsd \
 		gftool/gfdump/gfdump.postgresql \
-		package/solaris/gfmd package/solaris/gfsd
+		package/solaris/gfmd package/solaris/gfsd \
+		pkgconfig/gfarm.pc

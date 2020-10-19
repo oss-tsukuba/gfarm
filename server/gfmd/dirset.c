@@ -28,6 +28,20 @@
 #include "rpcsubr.h"
 
 /*
+ * NOTE: directory quota related code uses the following APIs:
+ *
+ * - user_name_even_invalid() instead of user_name()
+ *   to show original user names even if the users were removed
+ * - user_lookup_or_enter_invalid() instead of user_lookup()
+ *   to load all directory quotas even if the owners of the quotas were removed
+ * - user_lookup_including_invalid() instead of user_lookup()
+ *   to allow the gfarmroot group to remove a directory quota which owner
+ *   was removed
+ * - specify USER_FOREARCH_FLAG_INCLUDING_INVALID in user_foreach()
+ *   to show all directory quotas even if the owners of the quotas were removed
+ */
+
+/*
  * dirset
  */
 
@@ -129,7 +143,7 @@ dirset_is_valid(struct dirset *ds)
 const char *
 dirset_get_username(struct dirset *ds)
 {
-	return (user_name(ds->user));
+	return (user_name_even_invalid(ds->user));
 }
 
 const char *
@@ -220,12 +234,16 @@ dirset_add_one(void *closure,
 	struct gfarm_dirset_info *di, struct quota_metadata *q)
 {
 	gfarm_error_t e;
-	struct user *u = user_lookup(di->username);
+	/*
+	 * use user_lookup_or_enter_invalid() to load a dirset
+	 * which owner was already removed
+	 */
+	struct user *u = user_lookup_or_enter_invalid(di->username);
 	struct dirset *ds;
 
 	if (u == NULL) {
-		gflog_error(GFARM_MSG_1004684,
-		    "dirset_add_one(%s, %s): user doesn't exist",
+		gflog_error(GFARM_MSG_1004684, "dirset_add_one: "
+		    "cannot enter obsolete user %s for dirset %s",
 		    di->username, di->dirsetname);
 		return;
 	}
@@ -298,7 +316,7 @@ gfarm_error_t
 xattr_list_set_by_dirset(struct xattr_list *entry,
 	const char *name, struct dirset *ds, const char *diag)
 {
-	const char *username = user_name(ds->user);
+	const char *username = user_name_even_invalid(ds->user);
 	size_t userlen = strlen(username);
 	size_t dslen = strlen(ds->dirsetname);
 	size_t size = userlen + 1 + dslen + 1; /* never overflow */
@@ -480,11 +498,12 @@ gfm_server_dirset_info_set(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1004689,
 		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((u = user_lookup(username)) == NULL) {
+	} else if ((u = user_lookup_including_invalid(username)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else if (u != peer_get_user(peer) &&
 	    !user_is_root(peer_get_user(peer))) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		e = user_is_invalid(u) ?
+		    GFARM_ERR_NO_SUCH_USER : GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (strlen(dirsetname) > GFARM_DIRSET_NAME_MAX) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	} else if (*dirsetname == '\0') {
@@ -539,11 +558,12 @@ gfm_server_dirset_info_remove(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1004691,
 		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((u = user_lookup(username)) == NULL) {
+	} else if ((u = user_lookup_including_invalid(username)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else if (u != peer_get_user(peer) &&
 	    !user_is_root(peer_get_user(peer))) {
-		e = GFARM_ERR_PERMISSION_DENIED;
+		e = user_is_invalid(u) ?
+		    GFARM_ERR_NO_SUCH_USER : GFARM_ERR_PERMISSION_DENIED;
 	} else if (gfarm_read_only_mode()) {
 		gflog_debug(GFARM_MSG_UNFIXED, "%s (%s@%s) for "
 		    "user %s dirset %s during read_only",
@@ -583,7 +603,8 @@ dirset_reply(void *closure, struct dirset *ds)
 {
 	struct gfp_xdr *client = closure;
 
-	gfp_xdr_send(client, "ss", user_name(ds->user), ds->dirsetname);
+	gfp_xdr_send(client, "ss",
+	    user_name_even_invalid(ds->user), ds->dirsetname);
 }
 
 static void
@@ -621,16 +642,23 @@ gfm_server_dirset_info_list(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1004693,
 		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (!all_users && (u = user_lookup(username)) == NULL) {
+	} else if (!all_users &&
+	    (u = user_lookup_including_invalid(username)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else if (all_users ? !user_is_root(peer_get_user(peer)) :
 	    (u != peer_get_user(peer) && !user_is_root(peer_get_user(peer)))) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		e = (!all_users && user_is_invalid(u)) ?
+		    GFARM_ERR_NO_SUCH_USER : GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else {
 		/* XXX FIXME too long giant lock */
 		count = 0;
 		if (all_users) {
-			user_foreach(&count, dirset_count_add, 1);
+			/*
+			 * specify USER_FOREARCH_FLAG_INCLUDING_INVALID to show
+			 * stale directory quotas to the gfarmroot group
+			 */
+			user_foreach(&count, dirset_count_add,
+			    USER_FOREARCH_FLAG_INCLUDING_INVALID);
 		} else {
 			dirset_count_add(&count, u);
 		}
@@ -641,8 +669,13 @@ gfm_server_dirset_info_list(struct peer *peer, int from_client, int skip)
 			;
 		} else {
 			if (all_users) {
+				/*
+				 * re: USER_FOREARCH_FLAG_INCLUDING_INVALID
+				 * see the comment above
+				 */
 				user_foreach(peer_get_conn(peer),
-				    dirset_reply_per_user, 1);
+				    dirset_reply_per_user,
+				    USER_FOREARCH_FLAG_INCLUDING_INVALID);
 			} else {
 				dirset_reply_per_user(peer_get_conn(peer), u);
 			}
@@ -685,11 +718,12 @@ gfm_server_quota_dirset_get(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1004694,
 		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((u = user_lookup(username)) == NULL) {
+	} else if ((u = user_lookup_including_invalid(username)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else if (u != peer_get_user(peer) &&
 	    !user_is_root(peer_get_user(peer))) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		e = user_is_invalid(u) ?
+		    GFARM_ERR_NO_SUCH_USER : GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((ds = user_lookup_dirset(u, dirsetname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else {
@@ -737,7 +771,7 @@ quota_dirset_put_reply(struct peer *peer, struct dirset *ds, const char *diag)
 
 	return (gfm_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR,
 	    "ssllllllllllllllllll",
-	    user_name(ds->user),
+	    user_name_even_invalid(ds->user),
 	    ds->dirsetname,
 	    flags,
 	    ds->dq.qmm.q.limit.grace_period,
@@ -794,11 +828,12 @@ gfm_server_quota_dirset_set(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1004695,
 		    "%s: from gfsd %s", diag, peer_get_hostname(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((u = user_lookup(username)) == NULL) {
+	} else if ((u = user_lookup_including_invalid(username)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else if (u != peer_get_user(peer) &&
 	    !user_is_root(peer_get_user(peer))) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		e = user_is_invalid(u) ?
+		    GFARM_ERR_NO_SUCH_USER : GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((ds = user_lookup_dirset(u, dirsetname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if (gfarm_read_only_mode()) {
@@ -847,7 +882,7 @@ quota_dir_reply(void *closure, struct quota_dir *qd)
 		gflog_error(GFARM_MSG_1004697,
 		    "quota_dir %lld in dirset %s:%s does not exist",
 		    (long long)inum,
-		    user_name(c->ds->user), c->ds->dirsetname);
+		    user_name_even_invalid(c->ds->user), c->ds->dirsetname);
 		e = GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY;
 	} else if ((e = inode_getdirpath(inode, c->process, &pathname))
 	    != GFARM_ERR_NO_ERROR) {
@@ -871,12 +906,12 @@ dirset_reply_dirs(void *closure, struct dirset *ds)
 	if (ndirs != ds->dir_count) {
 		gflog_error(GFARM_MSG_1004698,
 		    "GFM_PROTO_DIRSET_DIR_LIST: %s:%s %llu dirs - too many",
-		    user_name(ds->user), ds->dirsetname,
+		    user_name_even_invalid(ds->user), ds->dirsetname,
 		    (unsigned long long)ds->dir_count);
 		ndirs = 0;
 	}
 	gfp_xdr_send(c->client, "ssi",
-		     user_name(ds->user), ds->dirsetname, ndirs);
+		     user_name_even_invalid(ds->user), ds->dirsetname, ndirs);
 
 	if (ndirs > 0) {
 		c->ds = ds;
@@ -952,11 +987,13 @@ gfm_server_dirset_dir_list(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1004700, "%s: %s has no process",
 		    diag, peer_get_username(peer));
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (!all_users && (u = user_lookup(username)) == NULL) {
+	} else if (!all_users &&
+	    (u = user_lookup_including_invalid(username)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else if (all_users ? !user_is_root(peer_get_user(peer)) :
 	    (u != peer_get_user(peer) && !user_is_root(peer_get_user(peer)))) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		e = (!all_users && user_is_invalid(u)) ?
+		    GFARM_ERR_NO_SUCH_USER : GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else {
 		/* XXX FIXME too long giant lock */
 		closure.client = peer_get_conn(peer);
@@ -964,7 +1001,12 @@ gfm_server_dirset_dir_list(struct peer *peer, int from_client, int skip)
 		closure.dirsetname = dirsetname;
 		closure.count = 0;
 		if (all_users) {
-			user_foreach(&closure, named_dirset_count_per_user, 1);
+			/*
+			 * specify USER_FOREARCH_FLAG_INCLUDING_INVALID to show
+			 * stale directory quotas to the gfarmroot group
+			 */
+			user_foreach(&closure, named_dirset_count_per_user,
+			    USER_FOREARCH_FLAG_INCLUDING_INVALID);
 		} else {
 			named_dirset_count_per_user(&closure, u);
 		}
@@ -975,8 +1017,13 @@ gfm_server_dirset_dir_list(struct peer *peer, int from_client, int skip)
 			;
 		} else {
 			if (all_users) {
+				/*
+				 * re: USER_FOREARCH_FLAG_INCLUDING_INVALID
+				 * see the comment above
+				 */
 				user_foreach(&closure,
-				    named_dirset_reply_per_user, 1);
+				    named_dirset_reply_per_user,
+				    USER_FOREARCH_FLAG_INCLUDING_INVALID);
 			} else {
 				named_dirset_reply_per_user(&closure, u);
 			}
