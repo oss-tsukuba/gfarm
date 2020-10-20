@@ -68,16 +68,18 @@ xattr_inherit_common(struct inode *parent, struct inode *child,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* for inode_lookup_basename() */
 gfarm_error_t
 xattr_inherit(struct inode *parent, struct inode *child,
-	      void **acl_def_p, size_t *acl_def_size_p,
-	      void **acl_acc_p, size_t *acl_acc_size_p,
-	      void **root_user_p, size_t *root_user_size_p,
-	      void **root_group_p, size_t *root_group_size_p)
+	void **acl_def_p, size_t *acl_def_size_p,
+	void **acl_acc_p, size_t *acl_acc_size_p,
+	gfarm_mode_t *new_modep, int *mode_updated,
+	void **root_user_p, size_t *root_user_size_p,
+	void **root_group_p, size_t *root_group_size_p)
 {
 	gfarm_error_t e = acl_inherit_default_acl(parent, child,
-						  acl_def_p, acl_def_size_p,
-						  acl_acc_p, acl_acc_size_p);
+	    acl_def_p, acl_def_size_p, acl_acc_p, acl_acc_size_p,
+	    new_modep, mode_updated);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003029,
 			    "acl_inherit_default_acl() failed: %s",
@@ -316,7 +318,8 @@ xattr_check_replica_spec(
 static gfarm_error_t
 xattr_check_acl(
 	struct inode *inode, char *attrname,
-	void **valuep, size_t *sizep, int *done)
+	void **valuep, size_t *sizep,
+	gfarm_mode_t *new_modep, int *mode_updatedp, int *need_to_update_db)
 {
 	gfarm_error_t e;
 	gfarm_acl_type_t acltype;
@@ -326,18 +329,20 @@ xattr_check_acl(
 	else if (strcmp(attrname, GFARM_ACL_EA_DEFAULT) == 0)
 		acltype = GFARM_ACL_TYPE_DEFAULT;
 	else {
-		*done = 0;
+		*need_to_update_db = 1;
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	e = acl_convert_for_setxattr(inode, acltype, valuep, sizep);
+	e = acl_convert_for_setxattr(inode, acltype, valuep, sizep,
+	    new_modep, mode_updatedp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003033,
 		    "acl_convert_for_setxattr(%s): %s",
 		    attrname, gfarm_error_string(e));
-		*done = 1;
+		*need_to_update_db = 0;
 		return (e);
 	}
+
 	/* The *valuep has only version number if size == 4 */
 	if (*valuep == NULL || *sizep <= 4) {
 		void *value;
@@ -355,10 +360,10 @@ xattr_check_acl(
 				    (long long)inode_get_number(inode),
 				    attrname, gfarm_error_string(e));
 		}
-		*done = 1;
+		*need_to_update_db = 0;
 		return (GFARM_ERR_NO_ERROR);
 	}
-	*done = 0;
+	*need_to_update_db = 1;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -368,8 +373,9 @@ xattr_set(int xmlMode, struct inode *inode,
 	 struct db_waitctx *waitctx, int *addattr)
 {
 	gfarm_error_t e;
-	int have_replica_spec, change_replica_spec = 0, done;
-	int size_limit;
+	int have_replica_spec, change_replica_spec = 0, need_to_update_db;
+	int size_limit, mode_updated = 0;
+	gfarm_mode_t new_mode = 0;
 
 	if (xmlMode) {
 		/*
@@ -415,11 +421,15 @@ xattr_set(int xmlMode, struct inode *inode,
 			/* else: need to update xattr */
 		} else {
 			e = xattr_check_acl(
-			    inode, attrname, valuep, sizep, &done);
+			    inode, attrname, valuep, sizep, &new_mode,
+			    &mode_updated, &need_to_update_db);
 			if (e != GFARM_ERR_NO_ERROR)
 				return (e);
-			else if (done)
+			else if (!need_to_update_db) {
+				if (mode_updated)
+					inode_set_mode(inode, new_mode);
 				return (GFARM_ERR_NO_ERROR);
+			}
 			/* else: need to update xattr */
 		}
 	}
@@ -456,6 +466,9 @@ xattr_set(int xmlMode, struct inode *inode,
 	}
 	if (change_replica_spec)
 		replica_check_start_xattr_update();
+
+	if (mode_updated)
+		inode_set_mode(inode, new_mode);
 
 	if (*addattr) {
 		e = db_xattr_add(xmlMode, inode_get_number(inode),

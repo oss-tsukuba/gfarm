@@ -2985,13 +2985,14 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 {
 	gfarm_error_t e;
 	DirEntry entry;
-	int created;
+	int created, mode_updated = 0;
 	struct inode *n;
 	struct dirset *parent_tdirset = TDIRSET_IS_UNKNOWN;
 	void *acl_acc = NULL, *acl_def = NULL;
 	size_t acl_acc_size, acl_def_size;
 	void *root_user = NULL, *root_group = NULL;
 	size_t root_user_size, root_group_size;
+	gfarm_mode_t new_mode_from_default_acl;
 
 	if (len == 0) {
 		if (op != INODE_LOOKUP) {
@@ -3178,10 +3179,11 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	inode_modified(parent);
 
 	e = xattr_inherit(parent, n,
-			  &acl_def, &acl_def_size,
-			  &acl_acc, &acl_acc_size,
-			  &root_user, &root_user_size,
-			  &root_group, &root_group_size);
+	    &acl_def, &acl_def_size,
+	    &acl_acc, &acl_acc_size,
+	    &new_mode_from_default_acl, &mode_updated,
+	    &root_user, &root_user_size,
+	    &root_group, &root_group_size);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002803, "xattr_inherit() failed: %s",
 			    gfarm_error_string(e));
@@ -3191,6 +3193,10 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		inode_free(n);
 		return (e);
 	}
+	if (mode_updated)
+		n->i_mode = (n->i_mode \
+		    & (GFARM_S_IFMT|GFARM_S_ISUID|GFARM_S_ISGID|GFARM_S_ISTXT))
+		    | (new_mode_from_default_acl & GFARM_S_ALLPERM);
 
 	inode_db_init(n);
 	quota_update_file_add(n, parent_tdirset);

@@ -41,6 +41,7 @@ acl_convert_for_setxattr_internal(
 	struct inode *inode, gfarm_acl_type_t type,
 	const void *in_value, size_t in_size,
 	void **out_valuep, size_t *out_sizep,
+	gfarm_mode_t *new_modep, int *mode_updatedp,
 	int replace_mode_t, int check_validity)
 {
 	gfarm_error_t e;
@@ -50,6 +51,7 @@ acl_convert_for_setxattr_internal(
 	gfarm_acl_tag_t tag;
 	gfarm_mode_t mode = 0;
 
+	*mode_updatedp = 0;
 	if (type == GFARM_ACL_TYPE_DEFAULT && !inode_is_dir(inode))
 		return (GFARM_ERR_INVALID_ARGUMENT);
 
@@ -122,19 +124,12 @@ acl_convert_for_setxattr_internal(
 
 	if (type == GFARM_ACL_TYPE_ACCESS) {
 		gfarm_mode_t old_mode = inode_get_mode(inode);
+
 		if (replace_mode_t)  /* chmod by setfacl */
-			e = inode_set_mode(
-				inode, (old_mode & 07000) | mode);
+			*new_modep = (old_mode & 07000) | mode;
 		else  /* inheritance of Default ACL */
-			e = inode_set_mode(
-				inode, (old_mode & 07000) | (old_mode & mode));
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1002859,
-				    "inode_set_mode() failed: %s",
-				    gfarm_error_string(e));
-			gfs_acl_free(acl);
-			return (e);
-		}
+			*new_modep = (old_mode & 07000) | (old_mode & mode);
+		*mode_updatedp = 1;
 
 		/* GFARM_ACL_TYPE_ACCESS has extended ACL only */
 		e = gfs_acl_delete_mode(acl);
@@ -163,7 +158,8 @@ acl_convert_for_setxattr_internal(
 gfarm_error_t
 acl_convert_for_setxattr(
 	struct inode *inode, gfarm_acl_type_t type,
-	void **valuep, size_t *sizep)
+	void **valuep, size_t *sizep,
+	gfarm_mode_t *new_modep, int *mode_updatedp)
 {
 	gfarm_error_t e;
 	void *out_value = NULL;
@@ -171,7 +167,7 @@ acl_convert_for_setxattr(
 
 	e = acl_convert_for_setxattr_internal(
 	    inode, type, *valuep, *sizep, &out_value, &out_size,
-	    REPLACE_MODE_T,
+	    new_modep, mode_updatedp, REPLACE_MODE_T,
 	    type == GFARM_ACL_TYPE_DEFAULT ? !CHECK_VALIDITY : CHECK_VALIDITY);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002862,
@@ -281,8 +277,9 @@ acl_convert_for_getxattr(
 
 gfarm_error_t
 acl_inherit_default_acl(struct inode *parent, struct inode *child,
-			void **acl_def_p, size_t *acl_def_size_p,
-			void **acl_acc_p, size_t *acl_acc_size_p)
+	void **acl_def_p, size_t *acl_def_size_p,
+	void **acl_acc_p, size_t *acl_acc_size_p,
+	gfarm_mode_t *new_modep, int *mode_updatedp)
 {
 	gfarm_error_t e;
 
@@ -304,7 +301,7 @@ acl_inherit_default_acl(struct inode *parent, struct inode *child,
 	e = acl_convert_for_setxattr_internal(
 		child, GFARM_ACL_TYPE_ACCESS,
 		*acl_def_p, *acl_def_size_p,
-		acl_acc_p, acl_acc_size_p,
+		acl_acc_p, acl_acc_size_p, new_modep, mode_updatedp,
 		!REPLACE_MODE_T, !CHECK_VALIDITY);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002867,
