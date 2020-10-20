@@ -1,5 +1,5 @@
 set -o xtrace
-set -o nounset
+#set -o nounset
 
 if [ ! -d /mnt/work/gfarm-s3-minio-web ]; then
 	exit 1
@@ -15,4 +15,4 @@ if [ ! -e $WORK/gfarm-s3-minio-web ]; then
 (cd $WORK/gfarm-s3-minio-web && git checkout develop)
 fi
 
-(cd $WORK/gfarm-s3-minio-web/test && python3 test.py)
+(cd $WORK/gfarm-s3-minio-web/test && python3 test_s3.py)
