@@ -36,7 +36,7 @@ sudo yum install -y \
 sudo python3 -m pip install 'Django<2.2'
 sudo python3 -m pip install gunicorn
 
-## fot test.py
+## for test.py
 sudo python3 -m pip install boto3
 
 ### site settings
@@ -95,10 +95,6 @@ if [ -e $GFARM_SE_MINIO_SRC ]; then
 	rsync -a $GFARM_SE_MINIO_SRC/ $MINIO_BUILDDIR/minio/work/build/gfarm-s3-minio/
 fi
 
-## create cache directory
-sudo mkdir -p $CACHE_BASEDIR
-sudo chmod 1777 $CACHE_BASEDIR
-
 (cd $WORK/gfarm-s3-minio-web && ./configure \
 	--prefix=$GFARM_S3_PREFIX \
 	--with-gfarm=/usr/local \
@@ -121,6 +117,10 @@ sudo chmod 1777 $CACHE_BASEDIR
 (cd $WORK/gfarm-s3-minio-web && sudo make install)
 
 #### gfarm-s3-settings
+
+## create cache directory
+sudo mkdir -p $CACHE_BASEDIR
+sudo chmod 1777 $CACHE_BASEDIR
 
 ## create shared directory
 gfmkdir -p ${SHARED_DIR#/} || true
