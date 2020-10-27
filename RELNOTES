@@ -1,7 +1,7 @@
 Release note for Gfarm 2.7.17
 =============================
 
-[NOT-RELEASED-YET]
+[2020.9.17]
 
 Update note
 * this release requires config-gfarm-update --update
@@ -26,6 +26,7 @@ New configuration directive
   check the status change.
 * include - includes a configuration file
 * include_nesting_limit - limits the nesting level of include files
+* failover_notify_delay - delay to notify failover to gfsd servers
 
 Documentation
 * document for Gfarm encrypted file system using EncFS

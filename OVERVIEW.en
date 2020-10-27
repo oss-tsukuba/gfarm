@@ -26,13 +26,19 @@ Gfarm file system, refer to the following papers.
     Proceedings of the 2nd IEEE/ACM International Symposium on Cluster
     Computing and the Grid (CCGrid 2002),
     IEEE, pp.102-110, 2002
-    http://www.hpcs.cs.tsukuba.ac.jp/~tatebe/research/publication.html
+    https://doi.org/10.1109/CCGRID.2002.1017117
 
 [2] Osamu Tatebe, Kohei Hiraga, Noriyuki Soda,
     "Gfarm Grid File System,"
     New Generation Computing, Ohmsha, Ltd. and Springer,
-    Vol.28, No.3, pp.257-275, DOI: 10.1007/s00354-009-0089-5, 2010.
-    http://www.springerlink.com/openurl.asp?genre=article&id=doi:10.1007/s00354-009-0089-5
+    Vol.28, No.3, pp.257-275, DOI: 10.1007/s00354-009-0089-5, 2010
+    https://doi.org/10.1007/s00354-009-0089-5
+
+[3] Osamu Tatebe, Shukuko Moriwake, Yoshihiro Oyama,
+    "Gfarm/BB - Gfarm file system for node-local burst buffer",
+    Journal of Computer Science and Technology,
+    Vol.35, Issue 1, pp.61-71, 2020
+    https://doi.org/10.1007/s11390-020-9803-z
 
 How to access Gfarm
 ===================
