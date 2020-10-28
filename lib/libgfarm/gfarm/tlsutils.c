@@ -1,6 +1,39 @@
+#include <gfarm/gfarm_config.h>
+
 #ifdef HAVE_TLS
 
 
+
+#include <inttypes.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <limits.h>
+#include <sys/param.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <pwd.h>
+#include <grp.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <time.h>
+#include <errno.h>
+#include <sys/socket.h>
+#include <pthread.h>
+#include <termios.h>
+
+#include <openssl/ssl.h>
+#include <openssl/rand.h>
+#include <openssl/err.h>
+
+#include <gfarm/gflog.h>
+#include <gfarm/error.h>
+
+#include "context.h"
 
 #include "tlsutils.h"
 
@@ -99,7 +132,7 @@ tty_reset(int ttyfd)
 			struct termios ts;
 
 			(void)tcgetattr(ttyfd, &ts);
-			ts.c_lflags |= ECHO;
+			ts.c_lflag |= ECHO;
 			(void)tcsetattr(ttyfd, TCSAFLUSH, &ts);
 		}
 	}
@@ -113,7 +146,7 @@ tty_echo_off(int ttyfd)
 
 		tty_save(ttyfd);
 		ts = saved_tty;
-		ts.c_lflags &= ~ECHO;
+		ts.c_lflag &= ~ECHO;
 		(void)tcsetattr(ttyfd, TCSAFLUSH, &ts);
 	}
 }
@@ -152,9 +185,7 @@ get_passwd_from_stdin(char *buf, size_t maxlen, const char *prompt)
 	if (likely(stdin != NULL)) {
 		if (likely(buf != NULL && maxlen > 1)) {
 			char *rst = NULL;
-			struct termios t;
 			int s_errno;
-			tcflag_t saved_lflag;
 			int f = fileno(stdin);
 			bool is_tty = (isatty(f) == 1) ? true : false;
 #if 1
@@ -221,18 +252,17 @@ get_passwd_from_tty(char *buf, size_t maxlen, const char *prompt)
 	if (likely(buf != NULL && maxlen > 1)) {
 		int ttyfd = -1;
 		FILE *fd = NULL;
-
+		int s_errno;
+		
 		errno = 0;
 		ttyfd = open("/dev/tty", O_RDWR);
 		s_errno = errno;
 		if (ttyfd >= 0 && (fd = fdopen(ttyfd, "rw")) != NULL) {
 			int s_errno;
 			char *rst = NULL;
-			struct termios t;
-			tcflag_t saved_lflag;
 			FILE *fd = fdopen(ttyfd, "rw");
 
-			(void)frpintf(fd, "%s", prompt);
+			(void)fprintf(fd, "%s", prompt);
 
 			tty_echo_off(ttyfd);
 
@@ -543,7 +573,7 @@ load_prvkey(const char *file)
 {
 	EVP_PKEY *ret = NULL;
 
-	if (likely(is_valid_pkey_file_permission(file) == true)) {
+	if (likely(is_valid_prvkey_file_permission(file) == true)) {
 		FILE *f;
 
 		errno = 0;
