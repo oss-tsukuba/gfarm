@@ -1,5 +1,11 @@
 set -xeu
 
+case $GFDOCKER_PRJ_NAME in
+	*-src) WITH_GFARM=/usr/local;;
+	*-pkg) WITH_GFARM=/usr;;
+	*) exit 1;;
+esac
+
 GFARM_SE_MINIO_WEB_SRC=/mnt/work/gfarm-s3-minio-web
 GFARM_SE_MINIO_SRC=/mnt/work/gfarm-s3-minio
 
@@ -97,7 +103,7 @@ fi
 
 (cd $WORK/gfarm-s3-minio-web && ./configure \
 	--prefix=$GFARM_S3_PREFIX \
-	--with-gfarm=/usr/local \
+	--with-gfarm=$WITH_GFARM \
 	--with-globus=/usr \
 	--with-myproxy=/usr \
 	--with-apache=/usr \
