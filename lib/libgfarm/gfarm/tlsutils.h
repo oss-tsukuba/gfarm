@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef HAVE_TLS
+
+
+
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -29,24 +33,12 @@
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 
-#ifdef likely
-#undef likely
-#endif /* likely */
-#ifdef unlikely
-#undef unlikely
-#endif /* unlikely */
-#ifdef __GNUC__
-#define likely(x)       __builtin_expect(!!(x), 1)
-#define unlikely(x)     __builtin_expect(!!(x), 0)
+#include "context.h"
+
 #else
-#define likely(x)       (x)
-#define unlikely(x)     (x)
-#endif /* __GNUC__ */
 
-#ifdef is_valid_string
-#undef is_valid_string
-#endif /* is_valid_string */
-#define is_valid_string(x)	((x != NULL && *x != '\0') ? true : false)
+extern const int tls_not_used;
 
-typedef struct tls_static_ctx_struct	*tls_static_ctx_t;
-typedef struct tls_session_ctx_struct	*tls_session_ctx_t;
+
+
+#endif /* HAVE_TLS */
