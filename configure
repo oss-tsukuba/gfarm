@@ -14535,7 +14535,7 @@ if test "${enable_tls+set}" = set; then :
     tls_srcs='${TLS_SRCS}'
     tls_objs='${TLS_OBJS}'
 
-$as_echo "#define ENABLE_TLS 1" >>confdefs.h
+$as_echo "#define HAVE_TLS 1" >>confdefs.h
 
 fi
 fi

@@ -1434,7 +1434,7 @@ AS_HELP_STRING([--enable-tls],[support TLS [default=disable]]),
 [if test "${enable_tls}" = "yes"; then
     tls_srcs='${TLS_SRCS}'
     tls_objs='${TLS_OBJS}'
- AC_DEFINE(ENABLE_TLS, 1, [support TLS])
+ AC_DEFINE(HAVE_TLS, 1, [support TLS])
 fi],[])
 AC_SUBST(tls_srcs)
 AC_SUBST(tls_objs)

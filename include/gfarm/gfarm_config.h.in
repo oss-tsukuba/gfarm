@@ -8,9 +8,6 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* support TLS */
-#undef ENABLE_TLS
-
 /* avoid locking for calling EVP_get_digestbyname() */
 #undef DISABLE_GETDIGEST_LOCK
 
@@ -268,6 +265,9 @@
 
 /* Define to 1 if you have the <sys/xattr.h> header file. */
 #undef HAVE_SYS_XATTR_H
+
+/* support TLS */
+#undef HAVE_TLS
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
