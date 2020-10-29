@@ -59,14 +59,25 @@
 
 
 /*
+ * TLS role
+ */
+typedef enum {
+	TLS_ROLE_UNKNOWN = 0,
+	TLS_ROLE_CLIENT,
+	TLS_ROLE_SERVER
+} tls_role_t;
+#define TLS_ROLE_INITIATOR	TLS_ROLE_CLIENT
+#define TLS_ROLE_ACCEPTOR	TLS_ROLE_SERVER
+
+/*
  * The cookie for TLS
  */
 struct tls_session_ctx_struct {
-	const char *the_peer_dn_;
-	const EVP_PKEY *the_privkey_;
-	const X509 *the_cert_;
-	const SSL_CTX *ssl_ctx_;
-	SSL *ssl_;
+	tls_role_t role_;
+	char *the_peer_dn_;	/* malloc'd */
+	EVP_PKEY *prvkey_;	/* malloc'd */
+	SSL_CTX *ssl_ctx_;	/* malloc'd */
+	SSL *ssl_;		/* malloc'd */
 };
 typedef struct tls_session_ctx_struct *tls_session_ctx_t;
 
@@ -99,9 +110,8 @@ typedef struct tls_passwd_cb_arg_struct *tls_passwd_cb_arg_t;
 */
 
 /*
- * Static passwd buffers
+ * Static passwd buffer
  */
-static char the_cert_passwd[4096] = { 0 };
 static char the_privkey_passwd[4096] = { 0 };
 
 static bool is_tty_saved = false;
@@ -127,8 +137,10 @@ tty_reset(int ttyfd)
 		if (is_tty_saved == true) {
 			(void)tcsetattr(ttyfd, TCSAFLUSH, &saved_tty);
 		} else {
-			/* A wild guess: Assume only an ECHO flag is
-			 * dropped. */
+			/*
+			 * A wild guess: Assume only an ECHO flag is
+			 * dropped.
+			 */
 			struct termios ts;
 
 			(void)tcgetattr(ttyfd, &ts);
@@ -239,7 +251,6 @@ get_passwd_from_stdin(char *buf, size_t maxlen, const char *prompt)
 
 	return(ret);
 }
-
 
 /*
  * Passwords are must be acquired from /dev/tty.
@@ -415,6 +426,49 @@ is_user_in_group(uid_t uid, gid_t gid)
 }
 
 static inline bool
+is_file_readable(const char *file)
+{
+	bool ret = false;
+
+	if (likely(is_valid_string(file) == true)) {
+		struct stat s;
+
+		if (stat(file, &s) == 0) {
+			if (likely(!S_ISDIR(s.st_mode))) {
+				uid_t uid = geteuid();
+				if (likely((s.st_uid == uid &&
+					    (s.st_mode & S_IRUSR) != 0) ||
+					   (is_user_in_group(uid, s.st_gid)
+					    == true &&
+					    (s.st_mode & S_IRGRP) != 0) ||
+					   ((s.st_mode & S_IROTH) != 0))) {
+					ret = true;
+				} else {
+					gflog_error(GFARM_MSG_UNFIXED,
+						"The file perrmssion "
+						"of the specified "
+						"file %s is "
+						"insufficient for "
+						"read. ", file);
+				}
+			} else {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"%s is a directory.", file);
+			}
+		} else {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"Failed to stat(\"%s\"): %s",
+				file, strerror(errno));
+		}
+	} else {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"Specified filename is nul.");
+	}
+
+	return(ret);
+}
+
+static inline bool
 is_valid_ca_dir(const char *dir)
 {
 	bool ret = false;
@@ -514,7 +568,7 @@ is_valid_prvkey_file_permission(const char *file)
 /*
  * Certificate/Private key loaders
  */
-
+#if 0
 static inline X509 *
 load_cert(const char *file)
 {
@@ -529,8 +583,7 @@ load_cert(const char *file)
 
 				if (likely(f != NULL)) {
 					ret = PEM_read_X509(f, NULL,
-						passwd_callback,
-						(void *)file);
+						NULL, NULL);
 					(void)fclose(f);
 					if (unlikely(ret == NULL)) {
 						char b[4096];
@@ -566,7 +619,7 @@ load_cert(const char *file)
 
 	return(ret);
 }
-
+#endif
 
 static inline EVP_PKEY *
 load_prvkey(const char *file)
@@ -578,8 +631,12 @@ load_prvkey(const char *file)
 
 		errno = 0;
 		if (likely((f = fopen(file, "r")) != NULL)) {
+			struct tls_passwd_cb_arg_struct a = {
+				.pw_buf_maxlen_ = sizeof(the_privkey_passwd),
+				.pw_buf_ = the_privkey_passwd,
+				.filename_ = file };
 			ret = PEM_read_PrivateKey(f, NULL, passwd_callback,
-				(void *)file);
+				(void *)&a);
 			(void)fclose(f);
 			if (unlikely(ret == NULL)) {
 				char b[4096];
@@ -663,11 +720,156 @@ chain_verify_callback(int ok, X509_STORE_CTX *sctx)
 
 
 
-static gfarm_error_t
-tls_init_context(const char *ca_dir,
-		 const char *cert_file, const char *key_file)
+/*
+ * Internal TLS context constructor
+ */
+
+static inline tls_session_ctx_t
+tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 {
-	return GFARM_ERR_NO_ERROR;
+	tls_session_ctx_t ret = NULL;
+	char *cert_file = NULL;
+	char *cert_chain_file = NULL;
+	char *prvkey_file = NULL;
+	char *cert_to_use = NULL;
+	bool is_chain_cert = false;
+	EVP_PKEY *prvkey = NULL;
+	SSL_CTX *ssl_ctx = NULL;
+	bool need_cert = false;
+
+	if (do_mutual_auth == true || role == TLS_ROLE_SERVER) {
+		need_cert = true;
+	}
+
+	/*
+	 * only load prvkey and cert/cert chain file.
+	 * Any other attributes vary depend on role (server/client)
+	 */
+	if (unlikely(gfarm_ctxp == NULL)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"fatal: NULL gfarm_ctxp.");
+		goto bailout;
+	}
+
+	if (unlikely(role != TLS_ROLE_SERVER && role != TLS_ROLE_CLIENT)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"fatal: invalid TLS role.");
+		goto bailout;
+	}
+
+	if (need_cert == true) {
+#ifdef TLS_SODA_OK
+		cert_file = gfarm_ctxp->tls_certificate_file;
+		cert_chain_file = gfarm_ctxp->tls_certificate_chain_file;
+#endif /* TLS_SODA_OK */
+		/*
+		 * Use cert_chainfile if both cert_file and
+		 * cert_chain_file are specified.
+		 */
+		if (is_valid_string(cert_chain_file) == true &&
+			is_file_readable(cert_chain_file) == true) {
+			cert_to_use = cert_chain_file;
+			is_chain_cert = true;
+		} else if (is_valid_string(cert_file) == true &&
+			is_file_readable(cert_file) == true) {
+			cert_to_use = cert_file;
+		}
+		if (unlikely(is_valid_string(cert_to_use) == false)) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"None of a certificate file or a "
+				"certificate chain file is specified.");
+			goto bailout;
+		}
+	}
+
+	/*
+	 * Load a private key
+	 */
+#ifdef TLS_SODA_OK
+	prvkey_file = gfarm_ctxp->tls_key_file;
+#endif /* TLS_SODA_OK */
+	if (unlikely(is_valid_string(prvkey_file) == false)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"A private key file is not specified.");
+		goto bailout;
+	}
+	prvkey = load_prvkey(prvkey_file);
+	if (unlikely(prvkey == NULL)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"Can't load a private key file \"%s\".",
+			prvkey_file);
+		goto bailout;
+	}
+
+	/*
+	 * Create a SSL_CTX
+	 */
+	if (role == TLS_ROLE_SERVER) {
+		ssl_ctx = SSL_CTX_new(TLS_server_method());
+	} else if (role == TLS_ROLE_CLIENT) {
+		ssl_ctx = SSL_CTX_new(TLS_client_method());
+	}
+	if (likely(ssl_ctx != NULL)) {
+		int osst;
+
+		/*
+		 * Load a cert into the SSL_CTX
+		 */
+		if (need_cert == true) {
+			if (is_chain_cert == true) {
+				osst = SSL_CTX_use_certificate_chain_file(
+					ssl_ctx, cert_to_use);
+			} else {
+				osst = SSL_CTX_use_certificate_file(
+					ssl_ctx, cert_to_use,
+					SSL_FILETYPE_PEM);
+			}
+			if (unlikely(osst != 1)) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"Can't load a certificate "
+					"file \"%s\" into a SSL_CTX.",
+					cert_to_use);
+				goto bailout;
+			}
+		}
+
+		/*
+		 * Set a private key into the SSL_CTX
+		 */
+		if (unlikely((osst = SSL_CTX_use_PrivateKey(
+				      ssl_ctx, prvkey)) != 1)) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"Can't set a private key to a SSL_CTX.");
+			goto bailout;
+		}
+	}
+
+	/*
+	 * Create a new tls_session_ctx_t
+	 */
+	ret = (tls_session_ctx_t)malloc(
+		sizeof(struct tls_session_ctx_struct));
+	if (likely(ret != NULL)) {
+		(void)memset(ret, 0,
+			sizeof(struct tls_session_ctx_struct));
+				
+		ret->role_ = TLS_ROLE_UNKNOWN;
+		ret->prvkey_ = prvkey;
+		ret->ssl_ctx_ = ssl_ctx;
+		goto ok;
+	}
+
+bailout:
+	if (prvkey != NULL) {
+		EVP_PKEY_free(prvkey);
+	}
+	if (ssl_ctx != NULL) {
+		SSL_CTX_free(ssl_ctx);
+	}
+	free(ret);
+
+ok:
+	return(ret);
 }
 
 #else
