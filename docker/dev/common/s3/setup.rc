@@ -77,14 +77,15 @@ sudo chmod og+rX /var/log/httpd
 
 sudo systemctl enable httpd
 
-## create user for wsgi
-id wsgi || sudo useradd wsgi
-
 ### nginx is not supported yet
 #vi /etc/nginx/nginx.conf
 #systemctl enable nginx.service
 ## debug
 #chmod o+rx /var/log/nginx
+
+## create user for wsgi
+sudo groupadd $WSGI_GROUP || true
+id $WSGI_USER || sudo useradd $WSGI_USER -g $WSGI_GROUP -d $WSGI_HOMEDIR
 
 #### install gfarm-s3
 
@@ -154,6 +155,9 @@ sudo chgrp --reference $HTTPD_CONF $tmpfile
 sudo chmod --reference $HTTPD_CONF $tmpfile
 sudo mv $tmpfile $HTTPD_CONF
 sudo apachectl start
+
+echo '<a href="/d/console">gfarm-s3</a>' |
+	sudo sh -c "cat >> $HTTPD_DocumentRoot/index.html"
 
 ## start gunicorn service
 sudo systemctl enable --now gunicorn.service
