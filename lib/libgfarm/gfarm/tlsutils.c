@@ -74,10 +74,10 @@ typedef enum {
  */
 struct tls_session_ctx_struct {
 	tls_role_t role_;
-	char *the_peer_dn_;	/* malloc'd */
-	EVP_PKEY *prvkey_;	/* malloc'd */
-	SSL_CTX *ssl_ctx_;	/* malloc'd */
-	SSL *ssl_;		/* malloc'd */
+	char *peer_dn_;		/* malloc'd */
+	EVP_PKEY *prvkey_;	/* API alloc'd */
+	SSL_CTX *ssl_ctx_;	/* API alloc'd */
+	SSL *ssl_;		/* API alloc'd */
 };
 typedef struct tls_session_ctx_struct *tls_session_ctx_t;
 
@@ -578,8 +578,63 @@ load_prvkey(const char *file)
 
 
 /*
- * Internal TLS context constructor
+ * TLS runtime library initialization/finalization
  */
+
+static pthread_once_t tls_init_once = PTHREAD_ONCE_INIT;
+static bool is_tls_runtime_initd = false;
+	
+static void
+tls_runtime_init_once(void)
+{
+	/*
+	 * FIXME:
+	 *	Are option flags sufficient enough or too much?
+	 *	I'm not sure about it, hope it would be a OK.
+	 */
+	if (likely(OPENSSL_init_ssl(
+			OPENSSL_INIT_LOAD_SSL_STRINGS |
+			OPENSSL_INIT_LOAD_CRYPTO_STRINGS |
+			OPENSSL_INIT_NO_ADD_ALL_CIPHERS |
+			OPENSSL_INIT_NO_ADD_ALL_DIGESTS |
+			OPENSSL_INIT_ENGINE_ALL_BUILTIN,
+			NULL) == 1)) {
+		is_tls_runtime_initd = true;
+	}
+}
+
+static inline bool
+tls_session_runtime_initialize(void)
+{
+	(void)pthread_once(&tls_init_once, tls_runtime_init_once);
+	return is_tls_runtime_initd;
+}
+
+
+
+
+/*
+ * Internal TLS context constructor/destructor
+ */
+
+static inline void
+tls_session_ctx_destroy(tls_session_ctx_t x)
+{
+	if (x != NULL) {
+		free(x->peer_dn_);
+		if (x->prvkey_ != NULL) {
+			EVP_PKEY_free(x->prvkey_);
+		}
+		if (x->ssl_ctx_ != NULL) {
+			(void)SSL_CTX_clear_chain_certs(x->ssl_ctx_);
+			SSL_CTX_free(x->ssl_ctx_);
+		}
+		if (x->ssl_ != NULL) {
+			SSL_free(x->ssl_);
+		}
+		free(x);
+	}
+}
 
 static inline tls_session_ctx_t
 tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
@@ -589,52 +644,70 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 	char *cert_chain_file = NULL;
 	char *prvkey_file = NULL;
 	char *cert_to_use = NULL;
-	bool is_chain_cert = false;
 	EVP_PKEY *prvkey = NULL;
 	SSL_CTX *ssl_ctx = NULL;
-	bool need_cert = false;
+	bool need_self_cert = false;
+	bool need_cert_merge = false;
+	bool has_cert_file = false;
+	bool has_cert_chain_file = false;
 
-	if (do_mutual_auth == true || role == TLS_ROLE_SERVER) {
-		need_cert = true;
-	}
-
-	/*
-	 * only load prvkey and cert/cert chain file.
-	 * Any other attributes vary depend on role (server/client)
-	 */
 	if (unlikely(gfarm_ctxp == NULL)) {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"fatal: NULL gfarm_ctxp.");
 		goto bailout;
 	}
-
 	if (unlikely(role != TLS_ROLE_SERVER && role != TLS_ROLE_CLIENT)) {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"fatal: invalid TLS role.");
 		goto bailout;
 	}
+	if (unlikely(tls_session_runtime_initialize() == false)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"TLS runtime library initialization failed.");
+		goto bailout;
+	}
 
-	if (need_cert == true) {
+	if (do_mutual_auth == true || role == TLS_ROLE_SERVER) {
+		need_self_cert = true;
+	}
+	if (need_self_cert == true) {
 #ifdef TLS_SODA_OK
 		cert_file = gfarm_ctxp->tls_certificate_file;
 		cert_chain_file = gfarm_ctxp->tls_certificate_chain_file;
 #endif /* TLS_SODA_OK */
+
 		/*
-		 * Use cert_chainfile if both cert_file and
-		 * cert_chain_file are specified.
+		 * FIXME:
+		 *	Using both cert file and cert chain file is
+		 *	not supported at this moment. Marging both
+		 *	files into single chained cert is needed and
+		 *	now we are working on it.
+		 *
+		 *	IMO, SSL_CTX_add0_chain_cert() siblings and
+		 *	SSL_CTX_set_current_cert(SSL_CERT_SET_FIRST)
+		 *	should work.
 		 */
 		if (is_valid_string(cert_chain_file) == true &&
 			is_file_readable(cert_chain_file) == true) {
-			cert_to_use = cert_chain_file;
-			is_chain_cert = true;
-		} else if (is_valid_string(cert_file) == true &&
-			is_file_readable(cert_file) == true) {
-			cert_to_use = cert_file;
+			has_cert_chain_file = true;
 		}
-		if (unlikely(is_valid_string(cert_to_use) == false)) {
+		if (is_valid_string(cert_file) == true &&
+			is_file_readable(cert_file) == true) {
+			has_cert_file = true;
+		}
+
+		if (has_cert_chain_file == true && has_cert_file == true) {
+			need_cert_merge = true;
+		} else if (has_cert_chain_file == true &&
+				has_cert_file == false) {
+			cert_to_use = cert_chain_file;
+		} else if (has_cert_chain_file == false &&
+				has_cert_file == true) {
+			cert_to_use = cert_file;
+		} else {
 			gflog_error(GFARM_MSG_UNFIXED,
-				"None of a certificate file or a "
-				"certificate chain file is specified.");
+				"Neither a cert file nor a cert chain "
+				"file is specified.");
 			goto bailout;
 		}
 	}
@@ -670,17 +743,38 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 		int osst;
 
 		/*
+		 * Clear cert chain for our sanity.
+		 */
+		(void)SSL_CTX_clear_chain_certs(ssl_ctx);
+
+		/*
+		 * Inhibit other than TLSv1.3
+		 *	NOTE:
+		 *		For environment not support setting
+		 *		min/max proto. to only TLS1.3 by
+		 *		SSL_CTX_set_{min|max}_proto_version(),
+		 *		we use SSL_CTX_set_options().
+		 */
+		(void)SSL_CTX_set_options(ssl_ctx,
+			(SSL_OP_NO_SSLv3 |
+			 SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 |
+			 SSL_OP_NO_TLSv1_2 |
+			 SSL_OP_NO_DTLSv1 | SSL_OP_NO_DTLSv1_2));
+
+		/*
 		 * Load a cert into the SSL_CTX
 		 */
-		if (need_cert == true) {
-			if (is_chain_cert == true) {
-				osst = SSL_CTX_use_certificate_chain_file(
-					ssl_ctx, cert_to_use);
-			} else {
-				osst = SSL_CTX_use_certificate_file(
-					ssl_ctx, cert_to_use,
-					SSL_FILETYPE_PEM);
+		if (need_self_cert == true) {
+			if (need_cert_merge == true) {
+				gflog_warning(GFARM_MSG_UNFIXED,
+					"Merging a cert file and a cert chain "
+					"file is not supported at this "
+					"moment. It continues with the cert "
+					"file \"%s\".", cert_file);
+				cert_to_use = cert_file;
 			}
+			osst = SSL_CTX_use_certificate_chain_file(
+				ssl_ctx, cert_to_use);
 			if (unlikely(osst != 1)) {
 				gflog_error(GFARM_MSG_UNFIXED,
 					"Can't load a certificate "
@@ -721,6 +815,7 @@ bailout:
 		EVP_PKEY_free(prvkey);
 	}
 	if (ssl_ctx != NULL) {
+		(void)SSL_CTX_clear_chain_certs(ssl_ctx);
 		SSL_CTX_free(ssl_ctx);
 	}
 	free(ret);
@@ -728,6 +823,8 @@ bailout:
 ok:
 	return(ret);
 }
+
+
 
 #else
 
