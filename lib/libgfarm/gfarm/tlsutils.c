@@ -33,7 +33,7 @@
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
-#include <gfarm/gfs.h> /* for definition of gfarm_off_t */
+#include <gfarm/gfs.h>
 
 #include "context.h"
 #include "iobuffer.h"
@@ -79,11 +79,12 @@ typedef enum {
  * The cookie for TLS
  */
 struct tls_session_ctx_struct {
+	int fd_;
 	tls_role_t role_;
-	char *peer_dn_;		/* malloc'd */
 	EVP_PKEY *prvkey_;	/* API alloc'd */
 	SSL_CTX *ssl_ctx_;	/* API alloc'd */
 	SSL *ssl_;		/* API alloc'd */
+	char *peer_dn_;		/* malloc'd */
 };
 typedef struct tls_session_ctx_struct *tls_session_ctx_t;
 
@@ -323,7 +324,7 @@ passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 
 
 /*
- * Certificate store & private key file permission check primitives
+ * Directory/File permission check primitives
  */
 
 static inline bool
@@ -393,16 +394,21 @@ is_user_in_group(uid_t uid, gid_t gid)
 }
 
 static inline bool
-is_file_readable(const char *file)
+is_file_readable(int fd, const char *file)
 {
 	bool ret = false;
 
-	if (likely(is_valid_string(file) == true)) {
+	if (likely(is_valid_string(file) == true || fd >= 0)) {
 		struct stat s;
+		int st;
 
 		errno = 0;
-		if (likely((stat(file, &s) == 0) &&
-			(S_ISDIR(s.st_mode) == 0))) {
+		if (fd >= 0) {
+			st = fstat(fd, &s);
+		} else {
+			st = stat(file, &s);
+		}
+		if (likely((st == 0) &&	(S_ISDIR(s.st_mode) == 0))) {
 			uid_t uid = geteuid();
 
 			if (likely((s.st_uid == uid &&
@@ -430,6 +436,66 @@ is_file_readable(const char *file)
 	} else {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"Specified filename is nul.");
+	}
+
+	return(ret);
+}
+
+static inline bool
+is_valid_prvkey_file_permission(int fd, const char *file)
+{
+	bool ret = false;
+
+	if (fd >= 0) {
+		struct stat s;
+		int st;
+
+		errno = 0;
+		if (fd >= 0) {
+			st = fstat(fd, &s);
+		} else {
+			st = stat(file, &s);
+		}
+		if (likely((st == 0) &&	(S_ISDIR(s.st_mode) == 0))) {
+			uid_t uid;
+				
+			if (likely((uid = geteuid()) == s.st_uid)) {
+				if (likely(((s.st_mode &
+					(S_IRGRP | S_IWGRP |
+					 S_IROTH | S_IWOTH)) == 0) &&
+					((s.st_mode &
+					  S_IRUSR) != 0))) {
+					ret = true;
+				} else {
+					gflog_error(GFARM_MSG_UNFIXED,
+						"The file perrmssion of the "
+						"specified file \"%s\" is "
+						"open too widely. It would "
+						"be nice if the file "
+						"permission was 0600.", file);
+				}
+			} else {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"This process is about to read other "
+					"uid(%d)'s private key file \"%s\", "
+					"which is strongly discouraged even "
+					"this process can read it for privacy "
+					"and security.", uid, file);
+			}
+
+		} else {
+			if (errno != 0) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"Can't access %s: %s",
+					file, strerror(errno));
+			} else {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"%s is a directory, not a file", file);
+			}
+		}
+	} else {
+		gflog_error(GFARM_MSG_UNFIXED, "Invalid file descriptor: %d.",
+			fd);
 	}
 
 	return(ret);
@@ -473,61 +539,6 @@ is_valid_ca_dir(const char *dir)
 	} else {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"Specified CA cert directory name is nul.");
-	}
-
-	return(ret);
-}
-
-static inline bool
-is_valid_prvkey_file_permission(int fd, const char *file)
-{
-	bool ret = false;
-
-	if (fd >= 0) {
-		struct stat s;
-
-		errno = 0;
-		if (likely((fstat(fd, &s) == 0) &&
-			(S_ISDIR(s.st_mode) == 0))) {
-			uid_t uid;
-				
-			if (likely((uid = geteuid()) == s.st_uid)) {
-				if (likely(((s.st_mode &
-					(S_IRGRP | S_IWGRP |
-					 S_IROTH | S_IWOTH)) == 0) &&
-					((s.st_mode &
-					  S_IRUSR) != 0))) {
-					ret = true;
-				} else {
-					gflog_error(GFARM_MSG_UNFIXED,
-						"The file perrmssion of the "
-						"specified file \"%s\" is "
-						"open too widely. It would "
-						"be nice if the file "
-						"permission was 0600.", file);
-				}
-			} else {
-				gflog_error(GFARM_MSG_UNFIXED,
-					"This process is about to read other "
-					"uid(%d)'s private key file \"%s\", "
-					"which is strongly discouraged even "
-					"this process can read it for privacy "
-					"and security.", uid, file);
-			}
-
-		} else {
-			if (errno != 0) {
-				gflog_error(GFARM_MSG_UNFIXED,
-					"Can't access %s: %s",
-					file, strerror(errno));
-			} else {
-				gflog_error(GFARM_MSG_UNFIXED,
-					"%s is a directory, not a file", file);
-			}
-		}
-	} else {
-		gflog_error(GFARM_MSG_UNFIXED, "Invalid file descriptor: %d.",
-			fd);
 	}
 
 	return(ret);
@@ -716,11 +727,11 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 #endif /* TLS_SODA_OK */
 
 		if (is_valid_string(cert_chain_file) == true &&
-			is_file_readable(cert_chain_file) == true) {
+			is_file_readable(-1, cert_chain_file) == true) {
 			has_cert_chain_file = true;
 		}
 		if (is_valid_string(cert_file) == true &&
-			is_file_readable(cert_file) == true) {
+			is_file_readable(-1, cert_file) == true) {
 			has_cert_file = true;
 		}
 
@@ -866,6 +877,10 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 			ret = GFARM_ERR_TLS_RUNTIME_FAILURE;
 			goto bailout;
 		}
+
+		/*
+		 * CA store/Revocation path
+		 */
 	}
 
 	/*
@@ -909,20 +924,6 @@ ok:
  */
 
 /*
- * An SSL destructor
- */
-void
-gfp_xdr_tls_reset(struct gfp_xdr *conn)
-{
-	tls_session_ctx_t ctx = NULL;
-
-	if (likely(conn != NULL &&
-		(ctx = gfp_xdr_cookie(conn)) != NULL)) {
-		tls_session_ctx_destroy(ctx);
-	}
-}
-
-/*
  * An SSL constructor
  */
 gfarm_error_t
@@ -947,11 +948,26 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd,
 
 		ret = tls_session_ctx_create(&ctx, role, do_mutual_auth);
 		if (likely(ret == GFARM_ERR_NO_ERROR && ctx != NULL)) {
+			ctx->fd_ = fd;
 			gfp_xdr_set(conn, NULL, ctx, fd);
 		}
 	}
 
 	return(ret);
+}
+
+/*
+ * An SSL destructor
+ */
+void
+gfp_xdr_tls_reset(struct gfp_xdr *conn)
+{
+	tls_session_ctx_t ctx = NULL;
+
+	if (likely(conn != NULL &&
+		(ctx = gfp_xdr_cookie(conn)) != NULL)) {
+		tls_session_ctx_destroy(ctx);
+	}
 }
 
 char *
