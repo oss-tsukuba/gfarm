@@ -588,7 +588,7 @@ static void
 tls_runtime_init_once(void)
 {
 	/*
-	 * FIXME:
+	 * XXX FIXME:
 	 *	Are option flags sufficient enough or too much?
 	 *	I'm not sure about it, hope it would be a OK.
 	 */
@@ -631,6 +631,9 @@ const char *tls_default_ciphersuites =
 	"TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_CCM_SHA256:"
 	"TLS_AES_128_CCM_8_SHA256";
 
+/*
+ * Destructor
+ */
 static inline void
 tls_session_ctx_destroy(tls_session_ctx_t x)
 {
@@ -650,6 +653,9 @@ tls_session_ctx_destroy(tls_session_ctx_t x)
 	}
 }
 
+/*
+ * Constructor
+ */
 static inline tls_session_ctx_t
 tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 {
@@ -690,17 +696,6 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 		cert_chain_file = gfarm_ctxp->tls_certificate_chain_file;
 #endif /* TLS_SODA_OK */
 
-		/*
-		 * FIXME:
-		 *	Using both cert file and cert chain file is
-		 *	not supported at this moment. Marging both
-		 *	files into single chained cert is needed and
-		 *	now we are working on it.
-		 *
-		 *	IMO, SSL_CTX_add0_chain_cert() siblings and
-		 *	SSL_CTX_set_current_cert(SSL_CERT_SET_FIRST)
-		 *	should work.
-		 */
 		if (is_valid_string(cert_chain_file) == true &&
 			is_file_readable(cert_chain_file) == true) {
 			has_cert_chain_file = true;
@@ -794,7 +789,7 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 			goto bailout;
 		} else {
 			/*
-			 * FIXME:
+			 * XXX FIXME:
 			 *	How one can check the ciphers are
 			 *	successfully set?
 			 *
@@ -807,6 +802,17 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 		 * Load a cert into the SSL_CTX
 		 */
 		if (need_self_cert == true) {
+			/*
+			 * XXX FIXME:
+			 *	Using both cert file and cert chain file is
+			 *	not supported at this moment. Marging both
+			 *	files into single chained cert is needed and
+			 *	now we are working on it.
+			 *
+			 *	IMO, SSL_CTX_add0_chain_cert() siblings and
+			 *	SSL_CTX_set_current_cert(SSL_CERT_SET_FIRST)
+			 *	should work.
+			 */
 			if (need_cert_merge == true) {
 				gflog_warning(GFARM_MSG_UNFIXED,
 					"Merging a cert file and a cert chain "
