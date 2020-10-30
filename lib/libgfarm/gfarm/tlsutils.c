@@ -617,6 +617,20 @@ tls_session_runtime_initialize(void)
  * Internal TLS context constructor/destructor
  */
 
+/*
+ * Default ciphersuites for TLSv1.3
+ *
+ * See also:
+ *	https://www.openssl.org/docs/manmaster/man3/\
+ *	SSL_CTX_set_ciphersuites.html
+ *	https://wiki.openssl.org/index.php/TLS1.3
+ *		"Ciphersuites"
+ */
+const char *tls_default_ciphersuites = 
+	"TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:"
+	"TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_CCM_SHA256:"
+	"TLS_AES_128_CCM_8_SHA256";
+
 static inline void
 tls_session_ctx_destroy(tls_session_ctx_t x)
 {
@@ -741,6 +755,7 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 	}
 	if (likely(ssl_ctx != NULL)) {
 		int osst;
+		char *ciphersuites = NULL;
 
 		/*
 		 * Clear cert chain for our sanity.
@@ -760,6 +775,33 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 			 SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 |
 			 SSL_OP_NO_TLSv1_2 |
 			 SSL_OP_NO_DTLSv1 | SSL_OP_NO_DTLSv1_2));
+
+		/*
+		 * Set only TLSv1.3 Ciphersuites to the SSL_CTX
+		 */
+#ifdef TLS_SODA_OK		
+		if (is_valid_string(gfarm_ctxp->tls_cipher_suite) == true) {
+			ciphersuites = gfarm_ctxp->tls_cipher_suite;
+		} else {
+			ciphersuites = tls_default_ciphersuites;
+		}
+#endif /* TLS_SODA_OK */
+		if (unlikely(SSL_CTX_set_ciphersuites(ssl_ctx, ciphersuites)
+			!= 1)) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"Failed to set ciphersuites \"%s\" to the "
+				"SSL_CTX.", ciphersuites);
+			goto bailout;
+		} else {
+			/*
+			 * FIXME:
+			 *	How one can check the ciphers are
+			 *	successfully set?
+			 *
+			 *	call SSL_CTX_get_ciphers() and check each
+			 *	STACK_OF(SSL_CIPHER)?
+			 */
+		}
 
 		/*
 		 * Load a cert into the SSL_CTX
