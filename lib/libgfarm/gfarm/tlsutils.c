@@ -237,7 +237,8 @@ get_passwd_from_tty(char *buf, size_t maxlen, const char *prompt)
 			(void)fflush(fd);
 
 			(void)fclose(fd);
-
+			(void)close(ttyfd);
+			
 			if (likely(rst != NULL)) {
 				trim_string_tail(buf);
 				ret = strlen(buf);
@@ -393,32 +394,32 @@ is_file_readable(const char *file)
 	if (likely(is_valid_string(file) == true)) {
 		struct stat s;
 
-		if (stat(file, &s) == 0) {
-			if (likely(!S_ISDIR(s.st_mode))) {
-				uid_t uid = geteuid();
-				if (likely((s.st_uid == uid &&
-					    (s.st_mode & S_IRUSR) != 0) ||
-					   (is_user_in_group(uid, s.st_gid)
-					    == true &&
-					    (s.st_mode & S_IRGRP) != 0) ||
-					   ((s.st_mode & S_IROTH) != 0))) {
-					ret = true;
-				} else {
-					gflog_error(GFARM_MSG_UNFIXED,
-						"The file perrmssion "
-						"of the specified "
-						"file %s is "
-						"insufficient for "
-						"read. ", file);
-				}
+		errno = 0;
+		if (likely((stat(file, &s) == 0) &&
+			(S_ISDIR(s.st_mode) == 0))) {
+			uid_t uid = geteuid();
+
+			if (likely((s.st_uid == uid &&
+				    (s.st_mode & S_IRUSR) != 0) ||
+				   (is_user_in_group(uid, s.st_gid) == true &&
+				    (s.st_mode & S_IRGRP) != 0) ||
+				   ((s.st_mode & S_IROTH) != 0))) {
+				ret = true;
+			} else {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"The file perrmssion of the specified "
+					"file %s is insufficient for read.",
+					file);
+			}
+		} else {
+			if (errno != 0) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"Failed to stat(\"%s\"): %s",
+					file, strerror(errno));
 			} else {
 				gflog_error(GFARM_MSG_UNFIXED,
 					"%s is a directory.", file);
 			}
-		} else {
-			gflog_error(GFARM_MSG_UNFIXED,
-				"Failed to stat(\"%s\"): %s",
-				file, strerror(errno));
 		}
 	} else {
 		gflog_error(GFARM_MSG_UNFIXED,
@@ -436,30 +437,32 @@ is_valid_ca_dir(const char *dir)
 	if (is_valid_string(dir) == true) {
 		struct stat s;
 
-		if (stat(dir, &s) == 0) {
-			if (S_ISDIR(s.st_mode)) {
-				uid_t uid = geteuid();
+		errno = 0;
+		if (likely((stat(dir, &s) == 0) &&
+			(S_ISDIR(s.st_mode) != 0))) {
+			uid_t uid = geteuid();
 
-				if (((s.st_mode & S_IRWXO) != 0) ||
-					((s.st_mode & S_IRWXU) != 0 &&
-					s.st_uid == uid) ||
-					((s.st_mode & S_IRWXG) != 0 &&
-					is_user_in_group(uid, s.st_gid) ==
-					true)) {
-					ret = true;
-				} else {
-					gflog_error(GFARM_MSG_UNFIXED,
-						"%s seems not accessible for "
-						"uid %d.", dir, uid);
-				}
+			if (((s.st_mode & S_IRWXO) != 0) ||
+				((s.st_mode & S_IRWXU) != 0 &&
+				 s.st_uid == uid) ||
+				((s.st_mode & S_IRWXG) != 0 &&
+				 is_user_in_group(uid, s.st_gid) ==
+				 true)) {
+				ret = true;
+			} else {
+				gflog_error(GFARM_MSG_UNFIXED,
+					    "%s seems not accessible for "
+					    "uid %d.", dir, uid);
+			}
+		} else {
+			if (errno != 0) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"Can't access to %s: %s",
+					dir, strerror(errno));
 			} else {
 				gflog_error(GFARM_MSG_UNFIXED,
 					"%s is not a directory.", dir);
 			}
-		} else {
-			gflog_error(GFARM_MSG_UNFIXED,
-				"Can't access to %s: %s",
-				dir, strerror(errno));
 		}
 	} else {
 		gflog_error(GFARM_MSG_UNFIXED,
@@ -470,56 +473,55 @@ is_valid_ca_dir(const char *dir)
 }
 
 static inline bool
-is_valid_prvkey_file_permission(const char *file)
+is_valid_prvkey_file_permission(int fd, const char *file)
 {
 	bool ret = false;
 
-	if (likely(is_valid_string(file) == true)) {
+	if (fd >= 0) {
 		struct stat s;
 
 		errno = 0;
-		if (likely(stat(file, &s) == 0)) {
-			if (likely(!S_ISDIR(s.st_mode))) {
-				uid_t uid;
+		if (likely((fstat(fd, &s) == 0) &&
+			(S_ISDIR(s.st_mode) == 0))) {
+			uid_t uid;
 				
-				if (likely((uid = geteuid()) == s.st_uid)) {
-					if (likely(((s.st_mode &
-						(S_IRGRP | S_IWGRP |
-						 S_IROTH | S_IWOTH)) == 0) &&
-						((s.st_mode &
-						  S_IRUSR) != 0))) {
-						ret = true;
-					} else {
-						gflog_error(GFARM_MSG_UNFIXED,
-							"The file perrmssion "
-							"of the specified "
-							"file \"%s\" is open "
-							"too widely. It would "
-							"be nice if the file "
-							"permission was "
-							"0600.", file);
-					}
+			if (likely((uid = geteuid()) == s.st_uid)) {
+				if (likely(((s.st_mode &
+					(S_IRGRP | S_IWGRP |
+					 S_IROTH | S_IWOTH)) == 0) &&
+					((s.st_mode &
+					  S_IRUSR) != 0))) {
+					ret = true;
 				} else {
 					gflog_error(GFARM_MSG_UNFIXED,
-						"The process is about to "
-						"read other uid(%d)'s "
-						" private key file %s, which "
-						"is strongly discouraged even "
-						"if he process could read it "
-						"for privacy and security.",
-						uid, file);
+						"The file perrmssion of the "
+						"specified file \"%s\" is "
+						"open too widely. It would "
+						"be nice if the file "
+						"permission was 0600.", file);
 				}
+			} else {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"This process is about to read other "
+					"uid(%d)'s private key file \"%s\", "
+					"which is strongly discouraged even "
+					"this process can read it for privacy "
+					"and security.", uid, file);
+			}
+
+		} else {
+			if (errno != 0) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"Can't access %s: %s",
+					file, strerror(errno));
 			} else {
 				gflog_error(GFARM_MSG_UNFIXED,
 					"%s is a directory, not a file", file);
 			}
-		} else {
-			gflog_error(GFARM_MSG_UNFIXED,
-				"Can't access %s: %s", file, strerror(errno));
 		}
 	} else {
-		gflog_error(GFARM_MSG_UNFIXED,
-			"The specified filename is a nul.");
+		gflog_error(GFARM_MSG_UNFIXED, "Invalid file descriptor: %d.",
+			fd);
 	}
 
 	return(ret);
@@ -536,15 +538,19 @@ load_prvkey(const char *file)
 {
 	EVP_PKEY *ret = NULL;
 
-	if (likely(is_valid_prvkey_file_permission(file) == true)) {
-		FILE *f;
+	if (likely(is_valid_string(file) == true)) {
+		FILE *f = NULL;
 
 		errno = 0;
-		if (likely((f = fopen(file, "r")) != NULL)) {
+		if (likely(((f = fopen(file, "r")) != NULL) &&
+			(is_valid_prvkey_file_permission(fileno(f), file)
+			 == true))) {
+
 			struct tls_passwd_cb_arg_struct a = {
 				.pw_buf_maxlen_ = sizeof(the_privkey_passwd),
 				.pw_buf_ = the_privkey_passwd,
-				.filename_ = file };
+				.filename_ = file
+			};
 			ret = PEM_read_PrivateKey(f, NULL, passwd_callback,
 				(void *)&a);
 			(void)fclose(f);
@@ -558,9 +564,11 @@ load_prvkey(const char *file)
 					"from %s: %s", file, b);
 			}
 		} else {
-			gflog_error(GFARM_MSG_UNFIXED,
-				"Can't open %s: %s", file,
-				strerror(errno));
+			if (errno != 0) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"Can't open %s: %s", file,
+					strerror(errno));
+			}
 		}
 	}
 
