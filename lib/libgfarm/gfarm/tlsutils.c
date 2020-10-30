@@ -32,10 +32,16 @@
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
+#include <gfarm/gfarm_misc.h>
+#include <gfarm/gfs.h> /* for definition of gfarm_off_t */
 
 #include "context.h"
-
+#include "iobuffer.h"
+#include "gfp_xdr.h"
 #include "tlsutils.h"
+#include "config.h"
+
+
 
 #ifdef likely
 #undef likely
@@ -54,7 +60,7 @@
 #ifdef is_valid_string
 #undef is_valid_string
 #endif /* is_valid_string */
-#define is_valid_string(x)	((x != NULL && *x != '\0') ? true : false)
+#define is_valid_string(x)	(((x) != NULL && *(x) != '\0') ? true : false)
 
 
 
@@ -656,10 +662,12 @@ tls_session_ctx_destroy(tls_session_ctx_t x)
 /*
  * Constructor
  */
-static inline tls_session_ctx_t
-tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
+static inline gfarm_error_t
+tls_session_ctx_create(tls_session_ctx_t *ctxptr,
+		       tls_role_t role, bool do_mutual_auth)
 {
-	tls_session_ctx_t ret = NULL;
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	tls_session_ctx_t ctxret = NULL;
 	char *cert_file = NULL;
 	char *cert_chain_file = NULL;
 	char *prvkey_file = NULL;
@@ -674,16 +682,27 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 	if (unlikely(gfarm_ctxp == NULL)) {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"fatal: NULL gfarm_ctxp.");
+		ret = GFARM_ERR_INTERNAL_ERROR;
 		goto bailout;
+	}
+	if (unlikely(ctxptr == NULL)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"return pointer is NULL.");
+		ret = GFARM_ERR_INVALID_ARGUMENT;
+		goto bailout;
+	} else {
+		*ctxptr = NULL;
 	}
 	if (unlikely(role != TLS_ROLE_SERVER && role != TLS_ROLE_CLIENT)) {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"fatal: invalid TLS role.");
+		ret = GFARM_ERR_INVALID_ARGUMENT;
 		goto bailout;
 	}
 	if (unlikely(tls_session_runtime_initialize() == false)) {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"TLS runtime library initialization failed.");
+		ret = GFARM_ERR_TLS_RUNTIME_FAILURE;
 		goto bailout;
 	}
 
@@ -717,6 +736,7 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 			gflog_error(GFARM_MSG_UNFIXED,
 				"Neither a cert file nor a cert chain "
 				"file is specified.");
+			ret = GFARM_ERR_INVALID_ARGUMENT;
 			goto bailout;
 		}
 	}
@@ -730,6 +750,7 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 	if (unlikely(is_valid_string(prvkey_file) == false)) {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"A private key file is not specified.");
+		ret = GFARM_ERR_INVALID_ARGUMENT;
 		goto bailout;
 	}
 	prvkey = load_prvkey(prvkey_file);
@@ -737,6 +758,7 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 		gflog_error(GFARM_MSG_UNFIXED,
 			"Can't load a private key file \"%s\".",
 			prvkey_file);
+		ret = GFARM_ERR_INVALID_CREDENTIAL;
 		goto bailout;
 	}
 
@@ -786,6 +808,7 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 			gflog_error(GFARM_MSG_UNFIXED,
 				"Failed to set ciphersuites \"%s\" to the "
 				"SSL_CTX.", ciphersuites);
+			ret = GFARM_ERR_TLS_RUNTIME_FAILURE;
 			goto bailout;
 		} else {
 			/*
@@ -828,6 +851,7 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 					"Can't load a certificate "
 					"file \"%s\" into a SSL_CTX.",
 					cert_to_use);
+				ret = GFARM_ERR_TLS_RUNTIME_FAILURE;
 				goto bailout;
 			}
 		}
@@ -839,6 +863,7 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 				      ssl_ctx, prvkey)) != 1)) {
 			gflog_error(GFARM_MSG_UNFIXED,
 				"Can't set a private key to a SSL_CTX.");
+			ret = GFARM_ERR_TLS_RUNTIME_FAILURE;
 			goto bailout;
 		}
 	}
@@ -846,15 +871,20 @@ tls_session_ctx_create(tls_role_t role, bool do_mutual_auth)
 	/*
 	 * Create a new tls_session_ctx_t
 	 */
-	ret = (tls_session_ctx_t)malloc(
+	ctxret = (tls_session_ctx_t)malloc(
 		sizeof(struct tls_session_ctx_struct));
-	if (likely(ret != NULL)) {
-		(void)memset(ret, 0,
+	if (likely(ctxret != NULL)) {
+		(void)memset(ctxret, 0,
 			sizeof(struct tls_session_ctx_struct));
-				
-		ret->role_ = TLS_ROLE_UNKNOWN;
-		ret->prvkey_ = prvkey;
-		ret->ssl_ctx_ = ssl_ctx;
+		ctxret->role_ = role;
+		ctxret->prvkey_ = prvkey;
+		ctxret->ssl_ctx_ = ssl_ctx;
+
+		/*
+		 * All done.
+		 */
+		*ctxptr = ctxret;
+		ret = GFARM_ERR_NO_ERROR;
 		goto ok;
 	}
 
@@ -866,7 +896,7 @@ bailout:
 		(void)SSL_CTX_clear_chain_certs(ssl_ctx);
 		SSL_CTX_free(ssl_ctx);
 	}
-	free(ret);
+	free(ctxret);
 
 ok:
 	return(ret);
@@ -874,9 +904,75 @@ ok:
 
 
 
+/*
+ * Gfarm internal APIs
+ */
+
+/*
+ * An SSL destructor
+ */
+void
+gfp_xdr_tls_reset(struct gfp_xdr *conn)
+{
+	tls_session_ctx_t ctx = NULL;
+
+	if (likely(conn != NULL &&
+		(ctx = gfp_xdr_cookie(conn)) != NULL)) {
+		tls_session_ctx_destroy(ctx);
+	}
+}
+
+/*
+ * An SSL constructor
+ */
+gfarm_error_t
+gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd,
+	int flags, char *service, char *name)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+
+	/* just for now */
+	(void)fd;
+	(void)service;
+	(void)name;
+
+	if (likely(conn != NULL)) {
+		tls_session_ctx_t ctx = NULL;
+		bool do_mutual_auth =
+			((flags & GFP_XDR_TLS_CLIENT_AUTHENTICATION) != 0) ?
+			true : false;
+		tls_role_t role =
+			(GFP_XDR_TLS_ROLE_IS_INITIATOR(flags)) ?
+			TLS_ROLE_INITIATOR : TLS_ROLE_ACCEPTOR;
+
+		ret = tls_session_ctx_create(&ctx, role, do_mutual_auth);
+		if (likely(ret == GFARM_ERR_NO_ERROR && ctx != NULL)) {
+			gfp_xdr_set(conn, NULL, ctx, fd);
+		}
+	}
+
+	return(ret);
+}
+
+char *
+gfp_xdr_tls_initiator_dn(struct gfp_xdr *conn)
+{
+	tls_session_ctx_t ctx = NULL;
+	char *ret = NULL;
+
+	if (likely(conn != NULL &&
+		(ctx = gfp_xdr_cookie(conn)) != NULL)) {
+		ret = ctx->peer_dn_;
+	}
+
+	return(ret);
+}
+
+
+
 #else
 
-const int tls_not_used = 1;
+const bool tls_not_used = true;
 
 
 
