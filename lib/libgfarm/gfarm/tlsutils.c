@@ -62,6 +62,15 @@
 #endif /* is_valid_string */
 #define is_valid_string(x)	(((x) != NULL && *(x) != '\0') ? true : false)
 
+/*
+ * gflog with TLS runtime message
+ */
+#define gflog_tls_error(msg_no, ...)	     \
+	tls_runtime_message(msg_no, LOG_ERR, \
+		__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_tls_warning(msg_no, ...)	     \
+	tls_runtime_message(msg_no, LOG_WARNING, \
+		__FILE__, __LINE__, __func__, __VA_ARGS__)
 
 
 /*
@@ -109,6 +118,74 @@ struct tls_passwd_cb_arg_struct {
 	const char *filename_;
 };
 typedef struct tls_passwd_cb_arg_struct *tls_passwd_cb_arg_t;
+
+
+
+/*
+ * TLS runtime error handling
+ */
+
+/*
+ * TLS support version of gflog_message()
+ */
+static inline void
+tls_runtime_message(int msg_no, int priority,
+	const char *file, int line_no, const char *func,
+	const char *format, ...) GFLOG_PRINTF_ARG(6, 7);
+
+static inline void
+tls_runtime_flush_error(void)
+{
+	while (ERR_get_error() != 0) {
+		;
+	}
+}
+
+static inline bool
+tls_has_runtime_error(void)
+{
+	return((ERR_peek_error() == 0) ? false : true);
+}
+
+static inline void
+tls_runtime_message(int msg_no, int priority,
+	const char *file, int line_no, const char *func,
+	const char *format, ...)
+{
+	char msgbuf[4096];
+	va_list ap;
+
+	va_start(ap, format);
+	(void)vsnprintf(msgbuf, sizeof(msgbuf), format, ap);
+	va_end(ap);
+
+	if (ERR_peek_error() == 0) {
+		gflog_message(msg_no, priority, file, line_no, func,
+			"%s", msgbuf);
+	} else {
+		char msgbuf2[4096];
+		char tlsmsg[4096];
+		const char *tls_file = NULL;
+		int tls_line = -1;
+		unsigned int err;
+
+		/*
+		 * NOTE:
+		 *	OpenSSL 1.1.1 has no ERR_get_error_all().
+		 */
+		err = ERR_get_error_line_data(&tls_file, &tls_line,
+			NULL, NULL);
+
+		ERR_error_string_n(err, tlsmsg, sizeof(tlsmsg));
+
+		(void)snprintf(msgbuf2, sizeof(msgbuf2),
+			"%s: [TLS runtime info:%s:%d: %s]",
+			msgbuf, tls_file, tls_line, tlsmsg);
+
+		gflog_message(msg_no, priority, file, line_no, func,
+			"%s", msgbuf2);
+	}
+}
 
 
 
@@ -568,17 +645,16 @@ load_prvkey(const char *file)
 				.pw_buf_ = the_privkey_passwd,
 				.filename_ = file
 			};
+
+			tls_runtime_flush_error();
 			ret = PEM_read_PrivateKey(f, NULL, passwd_callback,
 				(void *)&a);
 			(void)fclose(f);
-			if (unlikely(ret == NULL)) {
-				char b[4096];
-
-				ERR_error_string_n(ERR_get_error(), b,
-					sizeof(b));
-				gflog_error(GFARM_MSG_UNFIXED,
+			if (unlikely(ret == NULL ||
+				tls_has_runtime_error() == true)) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Can't read a PEM format private key "
-					"from %s: %s", file, b);
+					"from %s.", file);
 			}
 		} else {
 			if (errno != 0) {
