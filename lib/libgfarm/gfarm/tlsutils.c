@@ -71,6 +71,45 @@
 #define gflog_tls_warning(msg_no, ...)	     \
 	tls_runtime_message(msg_no, LOG_WARNING, \
 		__FILE__, __LINE__, __func__, __VA_ARGS__)
+
+/*
+ * Default ciphersuites for TLSv1.3
+ *
+ * See also:
+ *	https://www.openssl.org/docs/manmaster/man3/\
+ *	SSL_CTX_set_ciphersuites.html
+ *	https://wiki.openssl.org/index.php/TLS1.3
+ *		"Ciphersuites"
+ */
+#define TLS13_DEFAULT_CIPHERSUITES \
+	"TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:" \
+	"TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_CCM_SHA256:" \
+	"TLS_AES_128_CCM_8_SHA256"
+
+  
+
+#define TLS_TEST
+
+#ifdef TLS_TEST
+
+#define gfarm_ctxp	fake_gfarm_ctxp
+
+struct tls_test_ctx_struct {
+	char *tls_cipher_suite;
+	char *tls_ca_certificate_path;
+	char *tls_ca_revocation_path;
+	char *tls_client_ca_certificate_path;
+	char *tls_client_ca_revocation_path;
+	char *tls_certificate_file;
+	char *tls_certificate_chain_file;
+	char *tls_key_file;
+};
+typedef struct tls_test_ctx_struct *tls_test_ctx_p;
+
+static tls_test_ctx_p gfarm_ctxp = NULL;
+
+#endif /* TLS_TEST */
+
 
 
 /*
@@ -152,7 +191,12 @@ tls_runtime_message(int msg_no, int priority,
 	const char *file, int line_no, const char *func,
 	const char *format, ...)
 {
-	char msgbuf[4096];
+#ifdef BASIC_BUFSZ
+#define BASIC_BUFSZ_ORG	BASIC_BUFSZ	
+#endif /* BASIC_BUFSZ */
+#define BASIC_BUFSZ	PATH_MAX
+
+	char msgbuf[BASIC_BUFSZ];
 	va_list ap;
 
 	va_start(ap, format);
@@ -163,8 +207,8 @@ tls_runtime_message(int msg_no, int priority,
 		gflog_message(msg_no, priority, file, line_no, func,
 			"%s", msgbuf);
 	} else {
-		char msgbuf2[4096];
-		char tlsmsg[4096];
+		char msgbuf2[BASIC_BUFSZ * 3];
+		char tlsmsg[BASIC_BUFSZ];
 		const char *tls_file = NULL;
 		int tls_line = -1;
 		unsigned int err;
@@ -185,6 +229,11 @@ tls_runtime_message(int msg_no, int priority,
 		gflog_message(msg_no, priority, file, line_no, func,
 			"%s", msgbuf2);
 	}
+#undef BASIC_BUFSZ
+#ifdef BASIC_BUFSZ_ORG
+#define BASIC_BUFSZ BASIC_BUFSZ_ORG
+#undef BASIC_BUFSZ_ORG
+#endif /* BASIC_BUFSZ_ORG */
 }
 
 
@@ -649,7 +698,6 @@ load_prvkey(const char *file)
 			tls_runtime_flush_error();
 			ret = PEM_read_PrivateKey(f, NULL, passwd_callback,
 				(void *)&a);
-			(void)fclose(f);
 			if (unlikely(ret == NULL ||
 				tls_has_runtime_error() == true)) {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -663,6 +711,10 @@ load_prvkey(const char *file)
 					strerror(errno));
 			}
 		}
+		if (f != NULL) {
+			(void)fclose(f);
+		}
+
 	}
 
 	return(ret);
@@ -671,7 +723,7 @@ load_prvkey(const char *file)
 
 
 /*
- * TLS runtime library initialization/finalization
+ * TLS runtime library initialization
  */
 
 static pthread_once_t tls_init_once = PTHREAD_ONCE_INIT;
@@ -710,41 +762,6 @@ tls_session_runtime_initialize(void)
  * Internal TLS context constructor/destructor
  */
 
-/*
- * Default ciphersuites for TLSv1.3
- *
- * See also:
- *	https://www.openssl.org/docs/manmaster/man3/\
- *	SSL_CTX_set_ciphersuites.html
- *	https://wiki.openssl.org/index.php/TLS1.3
- *		"Ciphersuites"
- */
-const char *tls_default_ciphersuites = 
-	"TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:"
-	"TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_CCM_SHA256:"
-	"TLS_AES_128_CCM_8_SHA256";
-
-/*
- * Destructor
- */
-static inline void
-tls_session_ctx_destroy(tls_session_ctx_t x)
-{
-	if (x != NULL) {
-		free(x->peer_dn_);
-		if (x->prvkey_ != NULL) {
-			EVP_PKEY_free(x->prvkey_);
-		}
-		if (x->ssl_ctx_ != NULL) {
-			(void)SSL_CTX_clear_chain_certs(x->ssl_ctx_);
-			SSL_CTX_free(x->ssl_ctx_);
-		}
-		if (x->ssl_ != NULL) {
-			SSL_free(x->ssl_);
-		}
-		free(x);
-	}
-}
 
 /*
  * Constructor
@@ -797,10 +814,8 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		need_self_cert = true;
 	}
 	if (need_self_cert == true) {
-#ifdef TLS_SODA_OK
 		cert_file = gfarm_ctxp->tls_certificate_file;
 		cert_chain_file = gfarm_ctxp->tls_certificate_chain_file;
-#endif /* TLS_SODA_OK */
 
 		if (is_valid_string(cert_chain_file) == true &&
 			is_file_readable(-1, cert_chain_file) == true) {
@@ -831,9 +846,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	/*
 	 * Load a private key
 	 */
-#ifdef TLS_SODA_OK
 	prvkey_file = gfarm_ctxp->tls_key_file;
-#endif /* TLS_SODA_OK */
 	if (unlikely(is_valid_string(prvkey_file) == false)) {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"A private key file is not specified.");
@@ -883,13 +896,11 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		/*
 		 * Set only TLSv1.3 Ciphersuites to the SSL_CTX
 		 */
-#ifdef TLS_SODA_OK		
 		if (is_valid_string(gfarm_ctxp->tls_cipher_suite) == true) {
 			ciphersuites = gfarm_ctxp->tls_cipher_suite;
 		} else {
-			ciphersuites = tls_default_ciphersuites;
+			ciphersuites = TLS13_DEFAULT_CIPHERSUITES;
 		}
-#endif /* TLS_SODA_OK */
 		if (unlikely(SSL_CTX_set_ciphersuites(ssl_ctx, ciphersuites)
 			!= 1)) {
 			gflog_error(GFARM_MSG_UNFIXED,
@@ -991,6 +1002,28 @@ bailout:
 
 ok:
 	return(ret);
+}
+
+/*
+ * Destructor
+ */
+static inline void
+tls_session_ctx_destroy(tls_session_ctx_t x)
+{
+	if (x != NULL) {
+		free(x->peer_dn_);
+		if (x->prvkey_ != NULL) {
+			EVP_PKEY_free(x->prvkey_);
+		}
+		if (x->ssl_ctx_ != NULL) {
+			(void)SSL_CTX_clear_chain_certs(x->ssl_ctx_);
+			SSL_CTX_free(x->ssl_ctx_);
+		}
+		if (x->ssl_ != NULL) {
+			SSL_free(x->ssl_);
+		}
+		free(x);
+	}
 }
 
 
