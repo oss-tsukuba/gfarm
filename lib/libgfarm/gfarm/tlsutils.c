@@ -86,13 +86,21 @@
 	"TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_CCM_SHA256:" \
 	"TLS_AES_128_CCM_8_SHA256"
 
-  
+static const char *const tls13_valid_cyphers[] = {
+	"TLS_AES_128_GCM_SHA256",
+	"TLS_AES_256_GCM_SHA384",
+	"TLS_CHACHA20_POLY1305_SHA256",
+	"TLS_AES_128_CCM_SHA256:",
+	"TLS_AES_128_CCM_8_SHA256",
+
+	NULL
+};
 
 #define TLS_TEST
 
 #ifdef TLS_TEST
 
-#define gfarm_ctxp	fake_gfarm_ctxp
+#define gfarm_ctxp	o_r_g_gfarm_ctxp__
 
 struct tls_test_ctx_struct {
 	char *tls_cipher_suite;
@@ -450,6 +458,70 @@ passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 
 
 /*
+ * TLSv1.3 suitable cipher checker
+ */
+static inline bool
+is_str_a_tls13_allowed_cipher(const char *str)
+{
+	bool ret = false;
+
+	if (likely(is_valid_string(str) == true)) {
+		const char * const *c = tls13_valid_cyphers;
+		do {
+			if (strcmp(str, *c) == 0) {
+				ret = true;
+				break;
+			}
+		} while (*++c != NULL);
+
+		if (ret != true) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"\"%s\" is not a TLSv1.3 suitable cipher.",
+				str);
+		}
+	}
+
+	return(ret);
+}
+
+static inline bool
+check_ciphersuites(const char *cipher_list)
+{
+	bool ret = false;
+
+	if (likely(is_valid_string(cipher_list) == true)) {
+		if (strchr(cipher_list, ':') == NULL) {
+			ret = is_str_a_tls13_allowed_cipher(cipher_list);
+		} else {
+			char *str = strdup(cipher_list);
+			char *p = str;
+			char *c;
+			bool loop = true;
+
+			do {
+				c = strchr(p, ':');
+				if (c != NULL) {
+					*c = '\0';
+				} else {
+					loop = false;
+				}
+				ret = is_str_a_tls13_allowed_cipher(p);
+				if (ret == true) {
+					break;
+				}
+				p = ++c;
+			} while (loop == true);
+
+			free(str);
+		}
+	}
+
+	return(ret);
+}
+
+
+
+/*
  * Directory/File permission check primitives
  */
 
@@ -775,6 +847,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	char *cert_file = NULL;
 	char *cert_chain_file = NULL;
 	char *prvkey_file = NULL;
+	char *ciphersuites = NULL;
 	char *cert_to_use = NULL;
 	EVP_PKEY *prvkey = NULL;
 	SSL_CTX *ssl_ctx = NULL;
@@ -783,12 +856,9 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	bool has_cert_file = false;
 	bool has_cert_chain_file = false;
 
-	if (unlikely(gfarm_ctxp == NULL)) {
-		gflog_error(GFARM_MSG_UNFIXED,
-			"fatal: NULL gfarm_ctxp.");
-		ret = GFARM_ERR_INTERNAL_ERROR;
-		goto bailout;
-	}
+	/*
+	 * Parameter check
+	 */
 	if (unlikely(ctxptr == NULL)) {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"return pointer is NULL.");
@@ -803,13 +873,20 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		ret = GFARM_ERR_INVALID_ARGUMENT;
 		goto bailout;
 	}
-	if (unlikely(tls_session_runtime_initialize() == false)) {
+
+	/*
+	 * Gfarm context check
+	 */
+	if (unlikely(gfarm_ctxp == NULL)) {
 		gflog_error(GFARM_MSG_UNFIXED,
-			"TLS runtime library initialization failed.");
-		ret = GFARM_ERR_TLS_RUNTIME_FAILURE;
+			"fatal: NULL gfarm_ctxp.");
+		ret = GFARM_ERR_INTERNAL_ERROR;
 		goto bailout;
 	}
 
+	/*
+	 * Self certificate check
+	 */
 	if (do_mutual_auth == true || role == TLS_ROLE_SERVER) {
 		need_self_cert = true;
 	}
@@ -844,7 +921,23 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	}
 
 	/*
-	 * Load a private key
+	 * Ciphersuites check
+	 * Set only TLSv1.3 allowed ciphersuites
+	 */
+	if (is_valid_string(gfarm_ctxp->tls_cipher_suite) == true) {
+		if (check_ciphersuites(
+			gfarm_ctxp->tls_cipher_suite) == true) {
+			ciphersuites = gfarm_ctxp->tls_cipher_suite;
+		} else {
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+			goto bailout;
+		}
+	} else {
+		ciphersuites = TLS13_DEFAULT_CIPHERSUITES;
+	}
+
+	/*
+	 * Private key check
 	 */
 	prvkey_file = gfarm_ctxp->tls_key_file;
 	if (unlikely(is_valid_string(prvkey_file) == false)) {
@@ -853,6 +946,24 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		ret = GFARM_ERR_INVALID_ARGUMENT;
 		goto bailout;
 	}
+
+	/*
+	 * TLS runtime initialize
+	 */
+	if (unlikely(tls_session_runtime_initialize() == false)) {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"TLS runtime library initialization failed.");
+		ret = GFARM_ERR_TLS_RUNTIME_FAILURE;
+		goto bailout;
+	}
+
+	/*
+	 * OK, ready to build a TSL environment up.
+	 */
+
+	/*
+	 * Load a private key
+	 */
 	prvkey = load_prvkey(prvkey_file);
 	if (unlikely(prvkey == NULL)) {
 		gflog_error(GFARM_MSG_UNFIXED,
@@ -872,7 +983,6 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	}
 	if (likely(ssl_ctx != NULL)) {
 		int osst;
-		char *ciphersuites = NULL;
 
 		/*
 		 * Clear cert chain for our sanity.
@@ -886,21 +996,28 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		 *		min/max proto. to only TLS1.3 by
 		 *		SSL_CTX_set_{min|max}_proto_version(),
 		 *		we use SSL_CTX_set_options().
+		 *
+		 *	XXX FIXMR:
+		 *		Since the manual doesn't mention about
+		 *		failure return code, checking TLS
+		 *		errors instead checking return code.
 		 */
+		tls_runtime_flush_error();
 		(void)SSL_CTX_set_options(ssl_ctx,
 			(SSL_OP_NO_SSLv3 |
 			 SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 |
 			 SSL_OP_NO_TLSv1_2 |
 			 SSL_OP_NO_DTLSv1 | SSL_OP_NO_DTLSv1_2));
+		if (unlikely(tls_has_runtime_error() == true)) {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Undocumented runtime failure.");
+			ret = GFARM_ERR_TLS_RUNTIME_FAILURE;
+			goto bailout;
+		}
 
 		/*
-		 * Set only TLSv1.3 Ciphersuites to the SSL_CTX
+		 * Set ciphersuites
 		 */
-		if (is_valid_string(gfarm_ctxp->tls_cipher_suite) == true) {
-			ciphersuites = gfarm_ctxp->tls_cipher_suite;
-		} else {
-			ciphersuites = TLS13_DEFAULT_CIPHERSUITES;
-		}
 		if (unlikely(SSL_CTX_set_ciphersuites(ssl_ctx, ciphersuites)
 			!= 1)) {
 			gflog_error(GFARM_MSG_UNFIXED,
@@ -942,10 +1059,12 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 					"file \"%s\".", cert_file);
 				cert_to_use = cert_file;
 			}
+			tls_runtime_flush_error();			
 			osst = SSL_CTX_use_certificate_chain_file(
 				ssl_ctx, cert_to_use);
-			if (unlikely(osst != 1)) {
-				gflog_error(GFARM_MSG_UNFIXED,
+			if (unlikely(osst != 1 ||
+				tls_has_runtime_error() == true)) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Can't load a certificate "
 					"file \"%s\" into a SSL_CTX.",
 					cert_to_use);
@@ -957,9 +1076,11 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		/*
 		 * Set a private key into the SSL_CTX
 		 */
+		tls_runtime_flush_error();
 		if (unlikely((osst = SSL_CTX_use_PrivateKey(
-				      ssl_ctx, prvkey)) != 1)) {
-			gflog_error(GFARM_MSG_UNFIXED,
+				      ssl_ctx, prvkey) != 1) ||
+			(tls_has_runtime_error() == true))) {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"Can't set a private key to a SSL_CTX.");
 			ret = GFARM_ERR_TLS_RUNTIME_FAILURE;
 			goto bailout;
