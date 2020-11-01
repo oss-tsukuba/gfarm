@@ -62,39 +62,7 @@
 #endif /* is_valid_string */
 #define is_valid_string(x)	(((x) != NULL && *(x) != '\0') ? true : false)
 
-/*
- * gflog with TLS runtime message
- */
-#define gflog_tls_error(msg_no, ...)	     \
-	tls_runtime_message(msg_no, LOG_ERR, \
-		__FILE__, __LINE__, __func__, __VA_ARGS__)
-#define gflog_tls_warning(msg_no, ...)	     \
-	tls_runtime_message(msg_no, LOG_WARNING, \
-		__FILE__, __LINE__, __func__, __VA_ARGS__)
-
-/*
- * Default ciphersuites for TLSv1.3
- *
- * See also:
- *	https://www.openssl.org/docs/manmaster/man3/\
- *	SSL_CTX_set_ciphersuites.html
- *	https://wiki.openssl.org/index.php/TLS1.3
- *		"Ciphersuites"
- */
-#define TLS13_DEFAULT_CIPHERSUITES \
-	"TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:" \
-	"TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_CCM_SHA256:" \
-	"TLS_AES_128_CCM_8_SHA256"
-
-static const char *const tls13_valid_cyphers[] = {
-	"TLS_AES_128_GCM_SHA256",
-	"TLS_AES_256_GCM_SHA384",
-	"TLS_CHACHA20_POLY1305_SHA256",
-	"TLS_AES_128_CCM_SHA256:",
-	"TLS_AES_128_CCM_8_SHA256",
-
-	NULL
-};
+
 
 #define TLS_TEST
 
@@ -121,6 +89,64 @@ static tls_test_ctx_p gfarm_ctxp = NULL;
 
 
 /*
+ * Logger
+ */
+
+/*
+ * gflog with TLS runtime message
+ */
+#define gflog_tls_error(msg_no, ...)	     \
+	tlslog_runtime_message(msg_no, LOG_ERR, \
+		__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_tls_warning(msg_no, ...)	     \
+	tlslog_runtime_message(msg_no, LOG_WARNING, \
+		__FILE__, __LINE__, __func__, __VA_ARGS__)
+/*
+ * Declaration: TLS support version of gflog_message()
+ */
+static inline void
+tlslog_runtime_message(int msg_no, int priority,
+	const char *file, int line_no, const char *func,
+	const char *format, ...) GFLOG_PRINTF_ARG(6, 7);
+
+
+
+/*
+ * Default ciphersuites for TLSv1.3
+ *
+ * See also:
+ *	https://www.openssl.org/docs/manmaster/man3/\
+ *	SSL_CTX_set_ciphersuites.html
+ *	https://wiki.openssl.org/index.php/TLS1.3
+ *		"Ciphersuites"
+ */
+#define TLS13_DEFAULT_CIPHERSUITES \
+	"TLS_AES_128_GCM_SHA256:" \
+	"TLS_AES_256_GCM_SHA384:" \
+	"TLS_CHACHA20_POLY1305_SHA256:" \
+	"TLS_AES_128_CCM_SHA256:" \
+	"TLS_AES_128_CCM_8_SHA256"
+
+static const char *const tls13_valid_cyphers[] = {
+	"TLS_AES_128_GCM_SHA256",
+	"TLS_AES_256_GCM_SHA384",
+	"TLS_CHACHA20_POLY1305_SHA256",
+	"TLS_AES_128_CCM_SHA256:",
+	"TLS_AES_128_CCM_8_SHA256",
+
+	NULL
+};
+
+/*
+ * TLS session re-key threshold (in bytes)
+ *
+ * XXX FIXME:	how many bytes should we choose?
+ */
+#define TLS_SESSION_REKEY_BYTES	1024*1024*1024
+
+
+
+/*
  * TLS role
  */
 typedef enum {
@@ -135,12 +161,17 @@ typedef enum {
  * The cookie for TLS
  */
 struct tls_session_ctx_struct {
-	int fd_;
 	tls_role_t role_;
 	EVP_PKEY *prvkey_;	/* API alloc'd */
 	SSL_CTX *ssl_ctx_;	/* API alloc'd */
 	SSL *ssl_;		/* API alloc'd */
 	char *peer_dn_;		/* malloc'd */
+	size_t r_total_;	/* total bytes read */
+	size_t w_total_;	/* total bytes written */
+	bool got_fatal_ssl_error_;
+				/* got SSL_ERROR_SYSCALL or SSL_ERROR_SSL */
+	int last_ssl_error_;
+	gfarm_error_t last_gfarm_error_;
 };
 typedef struct tls_session_ctx_struct *tls_session_ctx_t;
 
@@ -166,83 +197,39 @@ struct tls_passwd_cb_arg_struct {
 };
 typedef struct tls_passwd_cb_arg_struct *tls_passwd_cb_arg_t;
 
+/*
+ * SSL_{read|write} function type
+ */
+typedef int (*SSL_io_func_t)(SSL *ssl, void *buf, int num);
+
 
 
 /*
- * TLS runtime error handling
+ * misc. utils.
  */
 
-/*
- * TLS support version of gflog_message()
- */
 static inline void
-tls_runtime_message(int msg_no, int priority,
-	const char *file, int line_no, const char *func,
-	const char *format, ...) GFLOG_PRINTF_ARG(6, 7);
-
-static inline void
-tls_runtime_flush_error(void)
+trim_string_tail(char *buf)
 {
-	while (ERR_get_error() != 0) {
-		;
+	if (is_valid_string(buf) == true) {
+		size_t l = strlen(buf);
+		char *s = buf;
+		char *e = buf + l - 1;
+
+		while (e >= s) {
+			if (*e == '\r' || *e == '\n') {
+				*e = '\0';
+				e--;
+			} else {
+				break;
+			}
+		}
 	}
+
+	return;
 }
 
-static inline bool
-tls_has_runtime_error(void)
-{
-	return((ERR_peek_error() == 0) ? false : true);
-}
-
-static inline void
-tls_runtime_message(int msg_no, int priority,
-	const char *file, int line_no, const char *func,
-	const char *format, ...)
-{
-#ifdef BASIC_BUFSZ
-#define BASIC_BUFSZ_ORG	BASIC_BUFSZ	
-#endif /* BASIC_BUFSZ */
-#define BASIC_BUFSZ	PATH_MAX
-
-	char msgbuf[BASIC_BUFSZ];
-	va_list ap;
-
-	va_start(ap, format);
-	(void)vsnprintf(msgbuf, sizeof(msgbuf), format, ap);
-	va_end(ap);
-
-	if (ERR_peek_error() == 0) {
-		gflog_message(msg_no, priority, file, line_no, func,
-			"%s", msgbuf);
-	} else {
-		char msgbuf2[BASIC_BUFSZ * 3];
-		char tlsmsg[BASIC_BUFSZ];
-		const char *tls_file = NULL;
-		int tls_line = -1;
-		unsigned int err;
-
-		/*
-		 * NOTE:
-		 *	OpenSSL 1.1.1 has no ERR_get_error_all().
-		 */
-		err = ERR_get_error_line_data(&tls_file, &tls_line,
-			NULL, NULL);
-
-		ERR_error_string_n(err, tlsmsg, sizeof(tlsmsg));
-
-		(void)snprintf(msgbuf2, sizeof(msgbuf2),
-			"%s: [TLS runtime info:%s:%d: %s]",
-			msgbuf, tls_file, tls_line, tlsmsg);
-
-		gflog_message(msg_no, priority, file, line_no, func,
-			"%s", msgbuf2);
-	}
-#undef BASIC_BUFSZ
-#ifdef BASIC_BUFSZ_ORG
-#define BASIC_BUFSZ BASIC_BUFSZ_ORG
-#undef BASIC_BUFSZ_ORG
-#endif /* BASIC_BUFSZ_ORG */
-}
+
 
 
 
@@ -321,33 +308,12 @@ tty_echo_off(int ttyfd)
 		(void)tcsetattr(ttyfd, TCSAFLUSH, &ts);
 	}
 }
-		
-static inline void
-trim_string_tail(char *buf)
-{
-	if (is_valid_string(buf) == true) {
-		size_t l = strlen(buf);
-		char *s = buf;
-		char *e = buf + l - 1;
-
-		while (e >= s) {
-			if (*e == '\r' || *e == '\n') {
-				*e = '\0';
-				e--;
-			} else {
-				break;
-			}
-		}
-	}
-
-	return;
-}
 
 /*
  * A password must be acquired from the /dev/tty.
  */
 static inline size_t
-get_passwd_from_tty(char *buf, size_t maxlen, const char *prompt)
+tty_get_passwd(char *buf, size_t maxlen, const char *prompt)
 {
 	size_t ret = 0;
 
@@ -406,7 +372,7 @@ get_passwd_from_tty(char *buf, size_t maxlen, const char *prompt)
 }
 
 static int
-passwd_callback(char *buf, int maxlen, int rwflag, void *u)
+tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 {
 	int ret = 0;
 	tls_passwd_cb_arg_t arg = (tls_passwd_cb_arg_t)u;
@@ -439,7 +405,7 @@ passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 		tty_lock();
 		{
 			if (unlikely(do_passwd == true)) {
-				if (get_passwd_from_tty(arg->pw_buf_,
+				if (tty_get_passwd(arg->pw_buf_,
 					arg->pw_buf_maxlen_, p) > 0) {
 					goto copy_cache;
 				}
@@ -456,6 +422,10 @@ passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 }
 
 
+
+/*
+ * Validators
+ */
 
 /*
  * TLSv1.3 suitable cipher checker
@@ -485,7 +455,7 @@ is_str_a_tls13_allowed_cipher(const char *str)
 }
 
 static inline bool
-check_ciphersuites(const char *cipher_list)
+is_ciphersuites_ok(const char *cipher_list)
 {
 	bool ret = false;
 
@@ -518,8 +488,6 @@ check_ciphersuites(const char *cipher_list)
 
 	return(ret);
 }
-
-
 
 /*
  * Directory/File permission check primitives
@@ -700,7 +668,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 }
 
 static inline bool
-is_valid_ca_dir(const char *dir)
+is_valid_cert_store_dir(const char *dir)
 {
 	bool ret = false;
 
@@ -745,59 +713,65 @@ is_valid_ca_dir(const char *dir)
 
 
 /*
- * Private key loader
+ * TLS thingies
  */
 
-static inline EVP_PKEY *
-load_prvkey(const char *file)
+/*
+ * Implementation: TLS support version of gflog_message()
+ */
+static inline void
+tlslog_runtime_message(int msg_no, int priority,
+	const char *file, int line_no, const char *func,
+	const char *format, ...)
 {
-	EVP_PKEY *ret = NULL;
+#ifdef BASIC_BUFSZ
+#define BASIC_BUFSZ_ORG	BASIC_BUFSZ	
+#endif /* BASIC_BUFSZ */
+#define BASIC_BUFSZ	PATH_MAX
 
-	if (likely(is_valid_string(file) == true)) {
-		FILE *f = NULL;
+	char msgbuf[BASIC_BUFSZ];
+	va_list ap;
 
-		errno = 0;
-		if (likely(((f = fopen(file, "r")) != NULL) &&
-			(is_valid_prvkey_file_permission(fileno(f), file)
-			 == true))) {
+	va_start(ap, format);
+	(void)vsnprintf(msgbuf, sizeof(msgbuf), format, ap);
+	va_end(ap);
 
-			struct tls_passwd_cb_arg_struct a = {
-				.pw_buf_maxlen_ = sizeof(the_privkey_passwd),
-				.pw_buf_ = the_privkey_passwd,
-				.filename_ = file
-			};
+	if (ERR_peek_error() == 0) {
+		gflog_message(msg_no, priority, file, line_no, func,
+			"%s", msgbuf);
+	} else {
+		char msgbuf2[BASIC_BUFSZ * 3];
+		char tlsmsg[BASIC_BUFSZ];
+		const char *tls_file = NULL;
+		int tls_line = -1;
+		unsigned int err;
 
-			tls_runtime_flush_error();
-			ret = PEM_read_PrivateKey(f, NULL, passwd_callback,
-				(void *)&a);
-			if (unlikely(ret == NULL ||
-				tls_has_runtime_error() == true)) {
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"Can't read a PEM format private key "
-					"from %s.", file);
-			}
-		} else {
-			if (errno != 0) {
-				gflog_error(GFARM_MSG_UNFIXED,
-					"Can't open %s: %s", file,
-					strerror(errno));
-			}
-		}
-		if (f != NULL) {
-			(void)fclose(f);
-		}
+		/*
+		 * NOTE:
+		 *	OpenSSL 1.1.1 has no ERR_get_error_all().
+		 */
+		err = ERR_get_error_line_data(&tls_file, &tls_line,
+			NULL, NULL);
 
+		ERR_error_string_n(err, tlsmsg, sizeof(tlsmsg));
+
+		(void)snprintf(msgbuf2, sizeof(msgbuf2),
+			"%s: [TLS runtime info:%s:%d: %s]",
+			msgbuf, tls_file, tls_line, tlsmsg);
+
+		gflog_message(msg_no, priority, file, line_no, func,
+			"%s", msgbuf2);
 	}
-
-	return(ret);
+#undef BASIC_BUFSZ
+#ifdef BASIC_BUFSZ_ORG
+#define BASIC_BUFSZ BASIC_BUFSZ_ORG
+#undef BASIC_BUFSZ_ORG
+#endif /* BASIC_BUFSZ_ORG */
 }
-
-
 
 /*
  * TLS runtime library initialization
  */
-
 static pthread_once_t tls_init_once = PTHREAD_ONCE_INIT;
 static bool is_tls_runtime_initd = false;
 	
@@ -827,13 +801,72 @@ tls_session_runtime_initialize(void)
 	return is_tls_runtime_initd;
 }
 
+/*
+ * TLS runtime error handling
+ */
 
-
+static inline bool
+tls_has_runtime_error(void)
+{
+	return((ERR_peek_error() == 0) ? false : true);
+}
+
+static inline void
+tls_runtime_flush_error(void)
+{
+	for ((void)ERR_get_error(); ERR_get_error() != 0;);
+}
+
+/*
+ * Private key loader
+ */
+static inline EVP_PKEY *
+tls_load_prvkey(const char *file)
+{
+	EVP_PKEY *ret = NULL;
+
+	if (likely(is_valid_string(file) == true)) {
+		FILE *f = NULL;
+
+		errno = 0;
+		if (likely(((f = fopen(file, "r")) != NULL) &&
+			(is_valid_prvkey_file_permission(fileno(f), file)
+			 == true))) {
+
+			struct tls_passwd_cb_arg_struct a = {
+				.pw_buf_maxlen_ = sizeof(the_privkey_passwd),
+				.pw_buf_ = the_privkey_passwd,
+				.filename_ = file
+			};
+
+			tls_runtime_flush_error();
+			ret = PEM_read_PrivateKey(f, NULL, tty_passwd_callback,
+				(void *)&a);
+			if (unlikely(ret == NULL ||
+				tls_has_runtime_error() == true)) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Can't read a PEM format private key "
+					"from %s.", file);
+			}
+		} else {
+			if (errno != 0) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"Can't open %s: %s", file,
+					strerror(errno));
+			}
+		}
+		if (f != NULL) {
+			(void)fclose(f);
+		}
+
+	}
+
+	return(ret);
+}
 
 /*
  * Internal TLS context constructor/destructor
  */
-
 
 /*
  * Constructor
@@ -925,7 +958,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	 * Set only TLSv1.3 allowed ciphersuites
 	 */
 	if (is_valid_string(gfarm_ctxp->tls_cipher_suite) == true) {
-		if (check_ciphersuites(
+		if (is_ciphersuites_ok(
 			gfarm_ctxp->tls_cipher_suite) == true) {
 			ciphersuites = gfarm_ctxp->tls_cipher_suite;
 		} else {
@@ -953,7 +986,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	if (unlikely(tls_session_runtime_initialize() == false)) {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"TLS runtime library initialization failed.");
-		ret = GFARM_ERR_TLS_RUNTIME_FAILURE;
+		ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 		goto bailout;
 	}
 
@@ -964,7 +997,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	/*
 	 * Load a private key
 	 */
-	prvkey = load_prvkey(prvkey_file);
+	prvkey = tls_load_prvkey(prvkey_file);
 	if (unlikely(prvkey == NULL)) {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"Can't load a private key file \"%s\".",
@@ -1011,7 +1044,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		if (unlikely(tls_has_runtime_error() == true)) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"Undocumented runtime failure.");
-			ret = GFARM_ERR_TLS_RUNTIME_FAILURE;
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 			goto bailout;
 		}
 
@@ -1023,7 +1056,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 			gflog_error(GFARM_MSG_UNFIXED,
 				"Failed to set ciphersuites \"%s\" to the "
 				"SSL_CTX.", ciphersuites);
-			ret = GFARM_ERR_TLS_RUNTIME_FAILURE;
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 			goto bailout;
 		} else {
 			/*
@@ -1068,7 +1101,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 					"Can't load a certificate "
 					"file \"%s\" into a SSL_CTX.",
 					cert_to_use);
-				ret = GFARM_ERR_TLS_RUNTIME_FAILURE;
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 				goto bailout;
 			}
 		}
@@ -1082,7 +1115,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 			(tls_has_runtime_error() == true))) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"Can't set a private key to a SSL_CTX.");
-			ret = GFARM_ERR_TLS_RUNTIME_FAILURE;
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 			goto bailout;
 		}
 
@@ -1109,6 +1142,10 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		*ctxptr = ctxret;
 		ret = GFARM_ERR_NO_ERROR;
 		goto ok;
+	} else {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"Can't allocate a TLS session context.");
+		ret = GFARM_ERR_NO_MEMORY;
 	}
 
 bailout:
@@ -1150,6 +1187,238 @@ tls_session_ctx_destroy(tls_session_ctx_t x)
 
 
 /*
+ * TLS I/O operations
+ */
+
+/*
+ * SSL_ERROR_ handler
+ */
+static inline bool
+tls_io_continuable(int sslerr, tls_session_ctx_t ctx)
+{
+	bool ret = false;
+
+	/*
+	 * NOTE:
+	 *	This routine must be transparent among all the type of
+	 *	BIO.  So whole the causable SSL_ERROR_* must be care
+	 *	about.
+	 */
+
+	ctx->last_ssl_error_ = sslerr;
+
+	switch (sslerr) {
+
+	case SSL_ERROR_WANT_READ:
+	case SSL_ERROR_WANT_ASYNC:
+	case SSL_ERROR_WANT_ASYNC_JOB:
+		/*
+		 * just retry.
+		 */
+		ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
+		ret = true;
+		break;
+
+	case SSL_ERROR_SYSCALL:
+		/*
+		 * fetch errno
+		 */
+		if (unlikely(errno == 0)) {
+			/*
+			 * NOTE:
+			 *	This happend on OpenSSL version < 3.0.0
+			 *	means "unexpected EOF from the peer."
+			 */
+			ctx->last_gfarm_error_ = GFARM_ERR_UNEXPECTED_EOF;
+		} else {
+			ctx->last_gfarm_error_ = gfarm_errno_to_error(errno);
+		}
+		ctx->got_fatal_ssl_error_ = true;
+		break;
+
+	case SSL_ERROR_SSL:
+		/*
+		 * TLS runtime error
+		 */
+		ctx->last_gfarm_error_ = GFARM_ERR_TLS_RUNTIME_ERROR;
+		ctx->got_fatal_ssl_error_ = true;
+		break;
+
+	case SSL_ERROR_ZERO_RETURN:
+		/*
+		 * Peer sent close_notify. Not retryable.
+		 */
+		ctx->last_gfarm_error_ = GFARM_ERR_TLS_GOT_CLOSE_NOTIFY;
+		break;
+
+	case SSL_ERROR_WANT_X509_LOOKUP:
+	case SSL_ERROR_WANT_CLIENT_HELLO_CB:
+	case SSL_ERROR_WANT_CONNECT:
+	case SSL_ERROR_WANT_ACCEPT:
+		/*
+		 * MUST not occured, connect/accept must be done
+		 * BEFORE gfp_* thingies call this function.
+		 */
+		gflog_error(GFARM_MSG_UNFIXED,
+			"The TLS handshake must be done before begining "
+			"data I/O in Gfarm.");
+		ctx->last_gfarm_error_ = GFARM_ERR_INTERNAL_ERROR;
+		break;
+
+	default:
+		gflog_error(GFARM_MSG_UNFIXED,
+			"All the TLS I/O error must be handled, but got "
+			"TLS I/O error %d.", sslerr);
+		ctx->last_gfarm_error_ = GFARM_ERR_INTERNAL_ERROR;
+		break;
+	}
+
+	return(ret);
+}
+
+/*
+ * TLS session read(2)/write(2)'ish API
+ */
+static inline gfarm_error_t
+tls_session_io(tls_session_ctx_t ctx, SSL_io_func_t func, void *buf, int len,
+	int *actual_read)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	SSL *ssl = NULL;
+
+	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL && buf == NULL &&
+			len < 0 && actual_read != NULL)) {
+		int n_total = 0;
+		int s_n;
+		int ssl_err;
+		bool loop = true;
+
+		*actual_read = 0;
+		if (unlikely(len == 0)) {
+			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
+			goto done;
+		}
+		while (n_total < len && loop == true) {
+			errno = 0;
+			(void)SSL_get_error(ssl, 1);
+			s_n = func(ssl, buf + n_total, len - n_total);
+			if (likely(s_n > 0)) {
+				n_total += s_n;
+				continue;
+			} else {
+				ssl_err = SSL_get_error(ssl, 1);
+				if (likely(tls_io_continuable(ssl_err, ctx)
+						== true)) {
+					continue;
+				} else {
+					loop = false;
+					break;
+				}
+			}
+		}
+		*actual_read = n_total;
+		if (likely(loop == true)) {
+			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
+		}
+		ret = ctx->last_gfarm_error_;
+	} else {
+		ret = ctx->last_gfarm_error_ = GFARM_ERR_INVALID_ARGUMENT;
+	}
+
+done:
+	return(ret);
+}
+
+/*
+ * TLS session shutdown
+ */
+static inline gfarm_error_t
+tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	SSL *ssl;
+	
+	if (likely((ctx != NULL) && ((ssl = ctx->ssl_) != NULL) &&
+			fd >= 0)) {
+		int st;
+
+		if (ctx->got_fatal_ssl_error_ == true) {
+			st = 1;
+		} else {
+			(void)SSL_get_error(ssl, 1);
+			st = SSL_shutdown(ssl);
+		}
+		if (st == 1) {
+		do_close:
+			errno = 0;
+			if (do_close == true) {
+				st = close(fd);
+			} else {
+				st = shutdown(fd, SHUT_RDWR);
+			}
+			if (likely(close(fd) == 0)) {
+				ret = GFARM_ERR_NO_ERROR;
+			} else {
+				ret = gfarm_errno_to_error(errno);
+			}
+		} else if (st == 0) {
+			/*
+			 * SSL Bi-diectional shutdown, by calling
+			 * SSL_read and waiting for
+			 * SSL_ERROR_ZERO_RETURN or SSL_ERROR_NONE
+			 * (SSL_read returns >0)
+			 */
+			uint8_t buf[65536];
+			int s_n;
+
+			ret = tls_session_io(ctx,
+				SSL_read, buf, sizeof(buf), &s_n);
+			if ((ret == GFARM_ERR_NO_ERROR && s_n > 0) ||
+				(ret == GFARM_ERR_TLS_GOT_CLOSE_NOTIFY)) {
+				goto do_close;
+			}
+		}
+	}
+
+	return(ret);
+}
+
+static gfarm_error_t
+tls_iobufop_shutdown(void *cookie, int fd)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	tls_session_ctx_t ctx = (tls_session_ctx_t)cookie;
+
+	if (likely(ctx != NULL)) { 
+		ret = tls_session_shutdown(ctx, fd, false);
+	} else {
+		ret = GFARM_ERR_INVALID_ARGUMENT;
+	}
+
+	return(ret);
+}
+
+static gfarm_error_t
+tls_iobufop_close(void *cookie, int fd)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	tls_session_ctx_t ctx = (tls_session_ctx_t)cookie;
+
+	if (likely(ctx != NULL)) { 
+		ret = tls_session_shutdown(ctx, fd, true);
+		if (likely(ret == GFARM_ERR_NO_ERROR)) {
+			tls_session_ctx_destroy(ctx);
+		}
+	} else {
+		ret = GFARM_ERR_INVALID_ARGUMENT;
+	}
+
+	return(ret);
+}
+
+
+
+/*
  * Gfarm internal APIs
  */
 
@@ -1163,7 +1432,6 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd,
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
 	/* just for now */
-	(void)fd;
 	(void)service;
 	(void)name;
 
@@ -1178,7 +1446,6 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd,
 
 		ret = tls_session_ctx_create(&ctx, role, do_mutual_auth);
 		if (likely(ret == GFARM_ERR_NO_ERROR && ctx != NULL)) {
-			ctx->fd_ = fd;
 			gfp_xdr_set(conn, NULL, ctx, fd);
 		}
 	}

@@ -147,6 +147,10 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"invalid credential",
 	"no filesystem node",
 	"directory quota exists",
+
+	/* TLS related errors */
+	"TLS runtime library error",
+	"got a TLS protocol Fatal Alert: Close Notify"
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
