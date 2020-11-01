@@ -76,13 +76,15 @@ Keep keys
 2. to add your ssh public keys to authorized keys only for user*@client1
 
   $ cd docker/dev
-  $ sudo editor mnt/ssh_authorized_keys  # add your public keys
+  ### add your public keys
+  ### (Example)
+  $ cat ~/.ssh/id_rsa.pub >> mnt/ssh_authorized_keys
 
   $ cd dist/centos7/src  # when using source package on CentOS 7
   $ make reborn
 
   ### use "ssh" instead of "make shell"
-  $ ssh user2@192.168.224.18  # IP addresss of client1 container
+  $ ssh user2@192.168.224.11  # IP address of client1 container
 
 Note
 ====
@@ -95,7 +97,7 @@ Gfarm-S3
 
 1. preparation: clone gfarm-s3-web source code into docker/dev/mnt/work
 
-  $ mkdir -p docker/dev/mnt 
+  $ mkdir -p docker/dev/mnt
   $ cd docker/dev/mnt
   $ git clone git@github.com:oss-tsukuba/gfarm-s3-minio-web.git
 
@@ -104,7 +106,7 @@ Gfarm-S3
   $ cd dist/centos7/src  # when using source package on CentOS 7
   $ make s3setup
 
-3. to run s3 unittest
+3. to run s3 unit test
 
   $ cd dist/centos7/src  # when using source package on CentOS 7
   $ make s3setup
@@ -112,7 +114,7 @@ Gfarm-S3
 
 4. for HPCI environment run s3setup-for-hpci instead of s3setup
 
-  $ 
+  $
   $ make hpcisetup       # to get back local settings
                          # fix following links: ~/.globus ~/.gfarm2rc
-  $ make s3setup-for-hpci 
+  $ make s3setup-for-hpci
