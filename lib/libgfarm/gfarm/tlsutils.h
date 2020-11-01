@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef HAVE_TLS
+#ifdef HAVE_TLS_1_3
 
 
 
@@ -30,4 +30,4 @@ extern const bool tls_not_used;
 
 
 
-#endif /* HAVE_TLS */
+#endif /* HAVE_TLS_1_3 */

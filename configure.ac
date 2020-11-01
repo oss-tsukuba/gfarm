@@ -1429,12 +1429,34 @@ fi
 ##
 tls_srcs=
 tls_objs=
-AC_ARG_ENABLE(tls,
-AS_HELP_STRING([--enable-tls],[support TLS [default=disable]]),
-[if test "${enable_tls}" = "yes"; then
-    tls_srcs='${TLS_SRCS}'
-    tls_objs='${TLS_OBJS}'
- AC_DEFINE(HAVE_TLS, 1, [support TLS])
+AC_ARG_ENABLE(tls13,
+AS_HELP_STRING([--enable-tls13],[support TLS 1.3 [default=disable]]),
+[if test "${enable_tls13}" = "yes"; then
+   AC_MSG_CHECKING([OpenSSL version])
+   if test ! -z "${openssl_includes}"; then
+     _osl_ver_h="${openssl_includes}/include/openssl/opensslv.h"
+   else
+     _osl_ver_h="/usr/include/openssl/opensslv.h"
+   fi
+   _verstr=`grep OPENSSL_VERSION_TEXT "${_osl_ver_h}" | \
+     awk -F'"' '{ print $2 }' | awk '{ print $2 }'` 2>/dev/null
+   _st=$?
+   if test ${_st} -ne 0; then
+     AC_MSG_RESULT([undetermined])
+     AC_MSG_ERROR([can't determine OpenSSL version.])
+     exit ${_st}
+   fi
+   AC_MSG_RESULT([${_verstr}])
+   case ${_verstr} in
+     1.1.1*)
+       true;;
+     *)
+       AC_MSG_ERROR([OpenSSL version must be >= 1.1.1.])
+       exit ${_st};;
+   esac
+   tls_srcs='${TLS_SRCS}'
+   tls_objs='${TLS_OBJS}'
+ AC_DEFINE(HAVE_TLS_1_3, 1, [support TLS 1.3])
 fi],[])
 AC_SUBST(tls_srcs)
 AC_SUBST(tls_objs)

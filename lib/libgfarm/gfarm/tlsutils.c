@@ -1,6 +1,6 @@
 #include <gfarm/gfarm_config.h>
 
-#ifdef HAVE_TLS
+#ifdef HAVE_TLS_1_3
 
 
 
@@ -1489,4 +1489,4 @@ const bool tls_not_used = true;
 
 
 
-#endif /* HAVE_TLS */
+#endif /* HAVE_TLS_1_3 */
