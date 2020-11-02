@@ -14551,7 +14551,7 @@ $as_echo "undetermined" >&6; }
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${_verstr}" >&5
 $as_echo "${_verstr}" >&6; }
    case ${_verstr} in
-     1.1.1*)
+     1.1.1?|3.0*)
        true;;
      *)
        as_fn_error $? "OpenSSL version must be >= 1.1.1." "$LINENO" 5

@@ -1448,7 +1448,7 @@ AS_HELP_STRING([--enable-tls13],[support TLS 1.3 [default=disable]]),
    fi
    AC_MSG_RESULT([${_verstr}])
    case ${_verstr} in
-     1.1.1*)
+     1.1.1?|3.0*)
        true;;
      *)
        AC_MSG_ERROR([OpenSSL version must be >= 1.1.1.])
