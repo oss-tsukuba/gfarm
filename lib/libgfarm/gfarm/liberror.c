@@ -150,7 +150,8 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 
 	/* TLS related errors */
 	"TLS runtime library error",
-	"got a TLS protocol Fatal Alert: Close Notify"
+	"got a TLS protocol Fatal Alert: Close Notify",
+	"TLS 1.3 protocol Key Update error"
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {

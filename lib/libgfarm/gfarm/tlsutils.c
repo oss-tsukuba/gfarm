@@ -25,7 +25,10 @@
 #include <sys/socket.h>
 #include <pthread.h>
 #include <termios.h>
-
+#ifdef HAVE_POLL
+#include <poll.h>
+#endif /* HAVE_POLL */
+#include <sys/time.h>
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
@@ -161,17 +164,24 @@ typedef enum {
  * The cookie for TLS
  */
 struct tls_session_ctx_struct {
-	tls_role_t role_;
-	EVP_PKEY *prvkey_;	/* API alloc'd */
-	SSL_CTX *ssl_ctx_;	/* API alloc'd */
+	/*
+	 * Cache aware alignment
+	 */
 	SSL *ssl_;		/* API alloc'd */
-	char *peer_dn_;		/* malloc'd */
-	size_t r_total_;	/* total bytes read */
-	size_t w_total_;	/* total bytes written */
+
+	gfarm_error_t last_gfarm_error_;
+	int last_ssl_error_;
 	bool got_fatal_ssl_error_;
 				/* got SSL_ERROR_SYSCALL or SSL_ERROR_SSL */
-	int last_ssl_error_;
-	gfarm_error_t last_gfarm_error_;
+
+	tls_role_t role_;
+	size_t io_total_;	/* How many bytes transmitted */
+	size_t io_key_update_;	/* KeyUpdate water level (bytes) */
+	size_t keyupd_thresh_;	/* KeyUpdate threshold (bytes) */
+
+	SSL_CTX *ssl_ctx_;	/* API alloc'd */
+	EVP_PKEY *prvkey_;	/* API alloc'd */
+	char *peer_dn_;		/* malloc'd */
 };
 typedef struct tls_session_ctx_struct *tls_session_ctx_t;
 
@@ -368,7 +378,7 @@ tty_get_passwd(char *buf, size_t maxlen, const char *prompt)
 			"for password input: %p, %zu", buf, maxlen);
 	}
 
-	return(ret);
+	return (ret);
 }
 
 static int
@@ -418,7 +428,7 @@ tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 		tty_unlock();
 	}
 
-	return(ret);
+	return (ret);
 }
 
 
@@ -451,7 +461,7 @@ is_str_a_tls13_allowed_cipher(const char *str)
 		}
 	}
 
-	return(ret);
+	return (ret);
 }
 
 static inline bool
@@ -486,7 +496,7 @@ is_ciphersuites_ok(const char *cipher_list)
 		}
 	}
 
-	return(ret);
+	return (ret);
 }
 
 /*
@@ -556,7 +566,7 @@ is_user_in_group(uid_t uid, gid_t gid)
 		}
 	}
 
-	return(ret);
+	return (ret);
 }
 
 static inline bool
@@ -604,7 +614,7 @@ is_file_readable(int fd, const char *file)
 			"Specified filename is nul.");
 	}
 
-	return(ret);
+	return (ret);
 }
 
 static inline bool
@@ -664,7 +674,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 			fd);
 	}
 
-	return(ret);
+	return (ret);
 }
 
 static inline bool
@@ -707,7 +717,7 @@ is_valid_cert_store_dir(const char *dir)
 			"Specified CA cert directory name is nul.");
 	}
 
-	return(ret);
+	return (ret);
 }
 
 
@@ -808,7 +818,7 @@ tls_session_runtime_initialize(void)
 static inline bool
 tls_has_runtime_error(void)
 {
-	return((ERR_peek_error() == 0) ? false : true);
+	return ((ERR_peek_error() == 0) ? false : true);
 }
 
 static inline void
@@ -861,7 +871,7 @@ tls_load_prvkey(const char *file)
 
 	}
 
-	return(ret);
+	return (ret);
 }
 
 /*
@@ -1159,7 +1169,7 @@ bailout:
 	free(ctxret);
 
 ok:
-	return(ret);
+	return (ret);
 }
 
 /*
@@ -1191,10 +1201,10 @@ tls_session_ctx_destroy(tls_session_ctx_t x)
  */
 
 /*
- * SSL_ERROR_ handler
+ * SSL_ERROR_* handler
  */
 static inline bool
-tls_io_continuable(int sslerr, tls_session_ctx_t ctx)
+tls_session_io_continuable(int sslerr, tls_session_ctx_t ctx)
 {
 	bool ret = false;
 
@@ -1209,6 +1219,7 @@ tls_io_continuable(int sslerr, tls_session_ctx_t ctx)
 
 	switch (sslerr) {
 
+	case SSL_ERROR_NONE:
 	case SSL_ERROR_WANT_READ:
 	case SSL_ERROR_WANT_ASYNC:
 	case SSL_ERROR_WANT_ASYNC_JOB:
@@ -1248,7 +1259,7 @@ tls_io_continuable(int sslerr, tls_session_ctx_t ctx)
 		/*
 		 * Peer sent close_notify. Not retryable.
 		 */
-		ctx->last_gfarm_error_ = GFARM_ERR_TLS_GOT_CLOSE_NOTIFY;
+		ctx->last_gfarm_error_ = GFARM_ERR_TLS_PROTO_GOT_CLOSE_NOTIFY;
 		break;
 
 	case SSL_ERROR_WANT_X509_LOOKUP:
@@ -1273,60 +1284,169 @@ tls_io_continuable(int sslerr, tls_session_ctx_t ctx)
 		break;
 	}
 
-	return(ret);
+	return (ret);
 }
 
+/*
+ * TLS session read timeout checker
+ */
+static inline gfarm_error_t
+tls_session_read_timeout(tls_session_ctx_t ctx, int fd, int tous)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	int st;
+	bool loop = true;
+
+#ifdef HAVE_POLL
+	struct pollfd fds[1];
+	int tos_save = (tous >= 0) ? tous / 1000 : -1;
+	int tos;
+	
+	while (loop == true) {
+		fds[0].fd = fd;
+		fds[0].events = POLLIN;
+		tos = tos_save;
+
+		st = poll(fds, 1, tos);
+#else
+	fd_set fds;
+	struct timeval tv_save;
+	struct timeval *tvp = MULL;
+	if (tous >= 0) {
+		tv_save.tv_isec = tous % (1000 * 1000);
+		tv_save.tv_sec = tous / (1000 * 1000);
+	}
+	
+	while (loop == true) {
+		FD_ZERO(&fds);
+		FD_SET(fd, &fds);
+		tv = rv_save;
+		tvp = &tv;
+
+		st = select(fd + 1, &fds, NULL, NULL, tvp);
+#endif /* HAVE_POLL */
+
+		switch (st) {
+		case 0:
+			ret = ctx->last_gfarm_error_ =
+				GFARM_ERR_OPERATION_TIMED_OUT;
+			loop = false;
+			break;
+
+		case -1:
+			if (errno != EINTR) {
+				ret = ctx->last_gfarm_error_ =
+					gfarm_errno_to_error(errno);
+				loop = false;
+			}
+			break;
+			
+		default:
+			ret = ctx->last_gfarm_error_ =
+				GFARM_ERR_NO_ERROR;
+			loop = false;
+			break;
+		}
+	}
+
+	return (ret);
+}
+
+/*
+ * TLS 1.3 key update
+ */
+static inline gfarm_error_t
+tls_session_update_key(tls_session_ctx_t ctx, int delta)
+{
+	/*
+	 * Only clients initiate KeyUpdate.
+	 */
+	gfarm_error_t ret = GFARM_ERR_NO_ERROR;
+	SSL *ssl;
+
+	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL &&
+		ctx->role_ == TLS_ROLE_CLIENT &&
+		ctx->keyupd_thresh_ > 0 &&
+		ctx->got_fatal_ssl_error_ == false &&
+		((ctx->io_key_update_ += delta) >= ctx->keyupd_thresh_))) {
+		if (likely(SSL_key_update(ssl,
+				SSL_KEY_UPDATE_REQUESTED) == 1)) {
+			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
+		} else {
+			/*
+			 * XXX FIXME:
+			 *	OpenSSL 1.1.1 manual doesn't refer
+			 *	what to do when SSSL_key_update()
+			 *	failure.
+			 */
+			gflog_warning(GFARM_MSG_UNFIXED,
+				"SSL_update_key() failed but we don't know "
+				"how to deal with it.");
+			ret = ctx->last_gfarm_error_ =
+				GFARM_ERR_TLS_PROTO_KEY_UPDATE_ERROR;
+		}
+		ctx->io_key_update_ = 0;
+	} else {
+		ret = ctx->last_gfarm_error_;
+	}
+
+	return (ret);
+}
+	
 /*
  * TLS session read(2)/write(2)'ish API
  */
 static inline gfarm_error_t
 tls_session_io(tls_session_ctx_t ctx, SSL_io_func_t func, void *buf, int len,
-	int *actual_read)
+	int *actual_io_bytes)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl = NULL;
 
 	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL && buf == NULL &&
-			len < 0 && actual_read != NULL)) {
-		int n_total = 0;
-		int s_n;
+			len < 0 && actual_io_bytes != NULL &&
+		   	ctx->got_fatal_ssl_error_ == false)) {
+		int n;
 		int ssl_err;
-		bool loop = true;
+		bool continuable;
 
-		*actual_read = 0;
 		if (unlikely(len == 0)) {
 			ret = ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			goto done;
 		}
-		while (n_total < len && loop == true) {
-			errno = 0;
-			(void)SSL_get_error(ssl, 1);
-			s_n = func(ssl, buf + n_total, len - n_total);
-			if (likely(s_n > 0)) {
-				n_total += s_n;
-				continue;
+
+		*actual_io_bytes = 0;
+	retry:
+		errno = 0;
+		(void)SSL_get_error(ssl, 1);
+		n = func(ssl, buf, len);
+		/*
+		 * NOTE:
+		 *	To avoid sending key update request on broken
+		 *	TLS stream, check SSL_ERROR_ for the session
+		 *	continuity.
+		 */
+		ssl_err = SSL_get_error(ssl, 1);
+		continuable = tls_session_io_continuable(ssl_err, ctx);
+		if (likely(n > 0 && ssl_err == SSL_ERROR_NONE)) {
+			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
+			ctx->last_ssl_error_ = ssl_err;
+			*actual_io_bytes = n;
+			ctx->io_total_ += n;
+			ret = tls_session_update_key(ctx, n);
+		} else {
+			if (likely(continuable == true)) {
+				goto retry;
 			} else {
-				ssl_err = SSL_get_error(ssl, 1);
-				if (likely(tls_io_continuable(ssl_err, ctx)
-						== true)) {
-					continue;
-				} else {
-					loop = false;
-					break;
-				}
+				ret = ctx->last_gfarm_error_;
 			}
 		}
-		*actual_read = n_total;
-		if (likely(loop == true)) {
-			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
-		}
-		ret = ctx->last_gfarm_error_;
 	} else {
 		ret = ctx->last_gfarm_error_ = GFARM_ERR_INVALID_ARGUMENT;
 	}
 
 done:
-	return(ret);
+	return (ret);
 }
 
 /*
@@ -1337,7 +1457,7 @@ tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl;
-	
+
 	if (likely((ctx != NULL) && ((ssl = ctx->ssl_) != NULL) &&
 			fd >= 0)) {
 		int st;
@@ -1374,13 +1494,14 @@ tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
 			ret = tls_session_io(ctx,
 				SSL_read, buf, sizeof(buf), &s_n);
 			if ((ret == GFARM_ERR_NO_ERROR && s_n > 0) ||
-				(ret == GFARM_ERR_TLS_GOT_CLOSE_NOTIFY)) {
+				(ret ==
+				 GFARM_ERR_TLS_PROTO_GOT_CLOSE_NOTIFY)) {
 				goto do_close;
 			}
 		}
 	}
 
-	return(ret);
+	return (ret);
 }
 
 static gfarm_error_t
@@ -1395,7 +1516,7 @@ tls_iobufop_shutdown(void *cookie, int fd)
 		ret = GFARM_ERR_INVALID_ARGUMENT;
 	}
 
-	return(ret);
+	return (ret);
 }
 
 static gfarm_error_t
@@ -1413,7 +1534,7 @@ tls_iobufop_close(void *cookie, int fd)
 		ret = GFARM_ERR_INVALID_ARGUMENT;
 	}
 
-	return(ret);
+	return (ret);
 }
 
 
@@ -1450,7 +1571,7 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd,
 		}
 	}
 
-	return(ret);
+	return (ret);
 }
 
 /*
@@ -1478,7 +1599,7 @@ gfp_xdr_tls_initiator_dn(struct gfp_xdr *conn)
 		ret = ctx->peer_dn_;
 	}
 
-	return(ret);
+	return (ret);
 }
 
 
