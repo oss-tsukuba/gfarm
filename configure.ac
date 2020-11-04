@@ -1433,8 +1433,10 @@ AC_ARG_ENABLE(tls13,
 AS_HELP_STRING([--enable-tls13],[support TLS 1.3 [default=disable]]),
 [if test "${enable_tls13}" = "yes"; then
    AC_MSG_CHECKING([OpenSSL version])
+   ### XXX use AC_COMPILE_IFELSE to check SSL_key_update() ###
    if test ! -z "${openssl_includes}"; then
      _osl_ver_h="${openssl_includes}/include/openssl/opensslv.h"
+     _osl_ver_h=`echo ${_osl_ver_h} | swd 's:^-l::'`
    else
      _osl_ver_h="/usr/include/openssl/opensslv.h"
    fi
