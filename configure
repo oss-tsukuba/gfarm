@@ -14536,8 +14536,8 @@ if test "${enable_tls13+set}" = set; then :
 $as_echo_n "checking OpenSSL version... " >&6; }
    ### XXX use AC_COMPILE_IFELSE to check SSL_key_update() ###
    if test ! -z "${openssl_includes}"; then
-     _osl_ver_h="${openssl_includes}/include/openssl/opensslv.h"
-     _osl_ver_h=`echo ${_osl_ver_h} | swd 's:^-l::'`
+     _osl_ver_h="${openssl_includes}/openssl/opensslv.h"
+     _osl_ver_h=`echo ${_osl_ver_h} | sed 's:^-I::'`
    else
      _osl_ver_h="/usr/include/openssl/opensslv.h"
    fi
