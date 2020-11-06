@@ -58,7 +58,8 @@ Basically, specify the same option for start, stop and status.
 sets up Gfarm/BB using MPI instead of gfarm-prun.
 <parameter moreinfo="none">mpirun_cmd</parameter> is a command
 line to execute MPI that is used to configure and execute gfsd on each
-node.  This option should be used with the -conf option.  When using
+node.  MPI command should execute 1 process per node.
+This option should be used with the -conf option.  When using
 this option, the -e option and the -h option are ignored.
 </para>
 </listitem>
