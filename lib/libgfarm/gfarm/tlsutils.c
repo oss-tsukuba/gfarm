@@ -101,16 +101,16 @@ static tls_test_ctx_p gfarm_ctxp = NULL;
  * gflog with TLS runtime message
  */
 #define gflog_tls_error(msg_no, ...)	     \
-	tlslog_runtime_message(msg_no, LOG_ERR, \
+	tlslog_tls_message(msg_no, LOG_ERR, \
 		__FILE__, __LINE__, __func__, __VA_ARGS__)
 #define gflog_tls_warning(msg_no, ...)	     \
-	tlslog_runtime_message(msg_no, LOG_WARNING, \
+	tlslog_tls_message(msg_no, LOG_WARNING, \
 		__FILE__, __LINE__, __func__, __VA_ARGS__)
 /*
  * Declaration: TLS support version of gflog_message()
  */
 static inline void
-tlslog_runtime_message(int msg_no, int priority,
+tlslog_tls_message(int msg_no, int priority,
 	const char *file, int line_no, const char *func,
 	const char *format, ...) GFLOG_PRINTF_ARG(6, 7);
 
@@ -235,8 +235,6 @@ trim_string_tail(char *buf)
 
 	return;
 }
-
-
 
 
 
@@ -727,7 +725,7 @@ is_valid_cert_store_dir(const char *dir)
  * Implementation: TLS support version of gflog_message()
  */
 static inline void
-tlslog_runtime_message(int msg_no, int priority,
+tlslog_tls_message(int msg_no, int priority,
 	const char *file, int line_no, const char *func,
 	const char *format, ...)
 {
@@ -735,7 +733,6 @@ tlslog_runtime_message(int msg_no, int priority,
 #define BASIC_BUFSZ_ORG	BASIC_BUFSZ	
 #endif /* BASIC_BUFSZ */
 #define BASIC_BUFSZ	PATH_MAX
-
 	char msgbuf[BASIC_BUFSZ];
 	va_list ap;
 
@@ -746,7 +743,7 @@ tlslog_runtime_message(int msg_no, int priority,
 	if (ERR_peek_error() == 0) {
 		gflog_message(msg_no, priority, file, line_no, func,
 			"%s", msgbuf);
-	} else {
+	} else if (gflog_auth_get_verbose() != 0) {
 		char msgbuf2[BASIC_BUFSZ * 3];
 		char tlsmsg[BASIC_BUFSZ];
 		const char *tls_file = NULL;
@@ -763,10 +760,10 @@ tlslog_runtime_message(int msg_no, int priority,
 		ERR_error_string_n(err, tlsmsg, sizeof(tlsmsg));
 
 		(void)snprintf(msgbuf2, sizeof(msgbuf2),
-			"%s: [TLS runtime info:%s:%d: %s]",
+			"%s: [OpenSSL error info:%s:%d: %s]",
 			msgbuf, tls_file, tls_line, tlsmsg);
 
-		gflog_message(msg_no, priority, file, line_no, func,
+		gflog_auth_message(msg_no, priority, file, line_no, func,
 			"%s", msgbuf2);
 	}
 #undef BASIC_BUFSZ
@@ -801,11 +798,12 @@ tls_runtime_init_once(void)
 	}
 }
 
-static inline bool
+static inline gfarm_error_t
 tls_session_runtime_initialize(void)
 {
 	(void)pthread_once(&tls_init_once, tls_runtime_init_once);
-	return is_tls_runtime_initd;
+	return ((is_tls_runtime_initd == true) ?
+		GFARM_ERR_NO_ERROR : GFARM_ERR_INTERNAL_ERROR);
 }
 
 /*
@@ -990,10 +988,10 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	/*
 	 * TLS runtime initialize
 	 */
-	if (unlikely(tls_session_runtime_initialize() == false)) {
+	if (unlikely((ret = tls_session_runtime_initialize())
+		!= GFARM_ERR_NO_ERROR)) {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"TLS runtime library initialization failed.");
-		ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 		goto bailout;
 	}
 
@@ -1051,18 +1049,20 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		if (unlikely(tls_has_runtime_error() == true)) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"Undocumented runtime failure.");
-			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			ret = GFARM_ERR_INTERNAL_ERROR;
 			goto bailout;
 		}
 
 		/*
 		 * Set ciphersuites
 		 */
+		tls_runtime_flush_error();
 		if (unlikely(SSL_CTX_set_ciphersuites(ssl_ctx, ciphersuites)
 			!= 1)) {
 			gflog_error(GFARM_MSG_UNFIXED,
 				"Failed to set ciphersuites \"%s\" to the "
 				"SSL_CTX.", ciphersuites);
+			/* GFARM_ERRMSG_TLS_CIPHERSUITES_IS_WRONG */
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 			goto bailout;
 		} else {
@@ -1108,6 +1108,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 					"Can't load a certificate "
 					"file \"%s\" into a SSL_CTX.",
 					cert_to_use);
+				/* XXX ret code */
 				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 				goto bailout;
 			}
@@ -1122,6 +1123,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 			(tls_has_runtime_error() == true))) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"Can't set a private key to a SSL_CTX.");
+			/* GFARM_ERRMSG_TLS_IBVALID_KEY */
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 			goto bailout;
 		}
@@ -1256,6 +1258,7 @@ tls_session_io_continuable(int sslerr, tls_session_ctx_t ctx)
 		/*
 		 * Peer sent close_notify. Not retryable.
 		 */
+		/* GFARM_ERR_PROTOCOL */
 		ctx->last_gfarm_error_ = GFARM_ERR_TLS_PROTO_GOT_CLOSE_NOTIFY;
 		break;
 
@@ -1380,7 +1383,10 @@ tls_session_update_key(tls_session_ctx_t ctx, int delta)
 				"SSL_update_key() failed but we don't know "
 				"how to deal with it.");
 			ret = ctx->last_gfarm_error_ =
+				/* GFARM_ERR_INTRNAL_ERROR */
 				GFARM_ERR_TLS_PROTO_KEY_UPDATE_ERROR;
+
+			
 		}
 		ctx->io_key_update_ = 0;
 	} else {
