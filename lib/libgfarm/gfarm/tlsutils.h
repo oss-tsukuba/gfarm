@@ -26,7 +26,7 @@ gfp_xdr_tls_initiator_dn(struct gfp_xdr *conn);
 
 #else
 
-extern const bool tls_not_used;
+extern const int tls_not_used;
 
 
 

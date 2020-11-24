@@ -1413,7 +1413,7 @@ tls_session_update_key(tls_session_ctx_t ctx, int delta)
 			/*
 			 * XXX FIXME:
 			 *	OpenSSL 1.1.1 manual doesn't refer
-			 *	what to do when SSSL_key_update()
+			 *	what to do when SSL_key_update()
 			 *	failure.
 			 */
 			gflog_warning(GFARM_MSG_UNFIXED,
@@ -1821,7 +1821,7 @@ gfp_xdr_tls_initiator_dn(struct gfp_xdr *conn)
 
 #else
 
-const bool tls_not_used = true;
+const int tls_not_used = 1;
 
 
 
