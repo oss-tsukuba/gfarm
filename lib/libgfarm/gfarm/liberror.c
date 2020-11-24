@@ -149,9 +149,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"directory quota exists",
 
 	/* TLS related errors */
-	"TLS runtime library error",
-	"got a TLS protocol Fatal Alert: Close Notify",
-	"TLS 1.3 protocol Key Update error"
+	"TLS runtime library error"
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
@@ -289,6 +287,15 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 
 	/* refered only from gfarm/config.c */
 	"invalid digest type",
+
+	/* TLS private key file permission too widely open. */
+	"TLS private key file permission too widely open.",
+	/* TLS private key file about to be opened by others. */
+	"TLS private key file about to be opened by others.",
+	/* TLS private key read failure. */
+	"TLS private key read failure.",
+	/* TLS invalid cipher. */
+	"TLS invalid cipher.",
 };
 
 /*

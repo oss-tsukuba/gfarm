@@ -38,6 +38,7 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 
+#include "liberror.h"
 #include "context.h"
 #include "iobuffer.h"
 #include "gfp_xdr.h"
@@ -317,16 +318,17 @@ tty_echo_off(int ttyfd)
 /*
  * A password must be acquired from the /dev/tty.
  */
-static inline size_t
-tty_get_passwd(char *buf, size_t maxlen, const char *prompt)
+static inline gfarm_error_t
+tty_get_passwd(char *buf, size_t maxlen, const char *prompt, int *lenptr)
 {
-	size_t ret = 0;
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
-	if (likely(buf != NULL && maxlen > 1)) {
+	if (likely(buf != NULL && maxlen > 1 && lenptr != NULL)) {
 		int ttyfd = -1;
 		FILE *fd = NULL;
 		int s_errno;
-		
+
+		*lenptr = 0;
 		errno = 0;
 		ttyfd = open("/dev/tty", O_RDWR);
 		s_errno = errno;
@@ -353,24 +355,27 @@ tty_get_passwd(char *buf, size_t maxlen, const char *prompt)
 			
 			if (likely(rst != NULL)) {
 				trim_string_tail(buf);
-				ret = strlen(buf);
+				*lenptr = strlen(buf);
+				ret = GFARM_ERR_NO_ERROR;
 			} else {
 				if (s_errno != 0) {
 					gflog_error(GFARM_MSG_UNFIXED,
 						"Failed to get a password: %s",
 						strerror(s_errno));
+					ret = gfarm_errno_to_error(s_errno);
 				}
 			}
 		} else {
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"Failed to open a control terminal: %s",
 				strerror(s_errno));
-			
+			ret = gfarm_errno_to_error(s_errno);
 		}
 	} else {
 		gflog_warning(GFARM_MSG_UNFIXED,
 			"Invalid buffer and/or buffer length "
 			"for password input: %p, %zu", buf, maxlen);
+		ret = GFARM_ERR_INVALID_ARGUMENT;
 	}
 
 	return (ret);
@@ -411,7 +416,8 @@ tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 		{
 			if (unlikely(do_passwd == true)) {
 				if (tty_get_passwd(arg->pw_buf_,
-					arg->pw_buf_maxlen_, p) > 0) {
+					arg->pw_buf_maxlen_, p, &ret) ==
+					GFARM_ERR_NO_ERROR) {
 					goto copy_cache;
 				}
 			} else if (likely(has_passwd_cache == true)) {
@@ -435,22 +441,22 @@ tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 /*
  * TLSv1.3 suitable cipher checker
  */
-static inline bool
+static inline gfarm_error_t
 is_str_a_tls13_allowed_cipher(const char *str)
 {
-	bool ret = false;
+	gfarm_error_t ret = GFARM_ERRMSG_TLS_INVALID_CIPHER;
 
 	if (likely(is_valid_string(str) == true)) {
 		const char * const *c = tls13_valid_cyphers;
 		do {
 			if (strcmp(str, *c) == 0) {
-				ret = true;
+				ret = GFARM_ERR_NO_ERROR;
 				break;
 			}
 		} while (*++c != NULL);
 
-		if (ret != true) {
-			gflog_error(GFARM_MSG_UNFIXED,
+		if (ret != GFARM_ERR_NO_ERROR) {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"\"%s\" is not a TLSv1.3 suitable cipher.",
 				str);
 		}
@@ -459,10 +465,10 @@ is_str_a_tls13_allowed_cipher(const char *str)
 	return (ret);
 }
 
-static inline bool
+static inline gfarm_error_t
 is_ciphersuites_ok(const char *cipher_list)
 {
-	bool ret = false;
+	gfarm_error_t ret = GFARM_ERR_INVALID_ARGUMENT;
 
 	if (likely(is_valid_string(cipher_list) == true)) {
 		if (strchr(cipher_list, ':') == NULL) {
@@ -481,7 +487,7 @@ is_ciphersuites_ok(const char *cipher_list)
 					loop = false;
 				}
 				ret = is_str_a_tls13_allowed_cipher(p);
-				if (ret == true) {
+				if (ret == GFARM_ERR_NO_ERROR) {
 					break;
 				}
 				p = ++c;
@@ -498,13 +504,13 @@ is_ciphersuites_ok(const char *cipher_list)
  * Directory/File permission check primitives
  */
 
-static inline bool
+static inline gfarm_error_t
 is_user_in_group(uid_t uid, gid_t gid)
 {
-	bool ret = false;
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
 	if (geteuid() == uid && getegid() == gid) {
-		ret = true;
+		ret = GFARM_ERR_NO_ERROR;
 	} else {
 		struct passwd u;
 		struct passwd *ures = NULL;
@@ -514,7 +520,7 @@ is_user_in_group(uid_t uid, gid_t gid)
 		if (likely(getpwuid_r(uid, &u,
 			ubuf, sizeof(ubuf), &ures) == 0 && ures != NULL)) {
 			if (u.pw_gid == gid) {
-				ret = true;
+				ret = GFARM_ERR_NO_ERROR;
 			} else {
 				struct group g;
 				struct group *gres = NULL;
@@ -529,7 +535,8 @@ is_user_in_group(uid_t uid, gid_t gid)
 					while (p != NULL) {
 						if (strcmp(u.pw_name,
 							*p) == 0) {
-							ret = true;
+							ret =
+							GFARM_ERR_NO_ERROR;
 							break;
 						}
 						p++;
@@ -541,10 +548,14 @@ is_user_in_group(uid_t uid, gid_t gid)
 							"group entry for "
 							"gid %d: %s",
 							gid, strerror(errno));
+						ret = gfarm_errno_to_error(
+							errno);
 					} else {
 						gflog_error(GFARM_MSG_UNFIXED,
 							"Can't find the group "
 							"%d.", gid);
+						ret = gfarm_errno_to_error(
+							errno);
 					}
 				}
 			}
@@ -554,9 +565,11 @@ is_user_in_group(uid_t uid, gid_t gid)
 					"Failed to acquire a passwd entry "
 					"for uid %d: %s",
 					uid, strerror(errno));
+				ret = gfarm_errno_to_error(errno);
 			} else {
 				gflog_error(GFARM_MSG_UNFIXED,
 					    "Can't find the user %d.", uid);
+				ret = GFARM_ERR_INVALID_ARGUMENT;
 			}
 		}
 	}
@@ -564,10 +577,10 @@ is_user_in_group(uid_t uid, gid_t gid)
 	return (ret);
 }
 
-static inline bool
+static inline gfarm_error_t
 is_file_readable(int fd, const char *file)
 {
-	bool ret = false;
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
 	if (likely(is_valid_string(file) == true || fd >= 0)) {
 		struct stat s;
@@ -584,40 +597,46 @@ is_file_readable(int fd, const char *file)
 
 			if (likely((s.st_uid == uid &&
 				    (s.st_mode & S_IRUSR) != 0) ||
-				   (is_user_in_group(uid, s.st_gid) == true &&
+				   (is_user_in_group(uid, s.st_gid) ==
+				    GFARM_ERR_NO_ERROR &&
 				    (s.st_mode & S_IRGRP) != 0) ||
 				   ((s.st_mode & S_IROTH) != 0))) {
-				ret = true;
+				ret = GFARM_ERR_NO_ERROR;
 			} else {
+				ret = GFARM_ERR_PERMISSION_DENIED;
 				gflog_error(GFARM_MSG_UNFIXED,
-					"The file perrmssion of the specified "
-					"file %s is insufficient for read.",
-					file);
+					"%s: %s", file,
+					gfarm_error_string(ret));
+
 			}
 		} else {
 			if (errno != 0) {
 				gflog_error(GFARM_MSG_UNFIXED,
 					"Failed to stat(\"%s\"): %s",
 					file, strerror(errno));
+				ret = gfarm_errno_to_error(errno);
 			} else {
 				gflog_error(GFARM_MSG_UNFIXED,
 					"%s is a directory.", file);
+				ret = GFARM_ERR_IS_A_DIRECTORY;
 			}
 		}
 	} else {
 		gflog_error(GFARM_MSG_UNFIXED,
-			"Specified filename is nul.");
+			"Specified filename is nul or "
+			"file invalid file descriptor.");
+		ret = GFARM_ERR_INVALID_ARGUMENT;
 	}
 
 	return (ret);
 }
 
-static inline bool
+static inline gfarm_error_t
 is_valid_prvkey_file_permission(int fd, const char *file)
 {
-	bool ret = false;
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
-	if (fd >= 0) {
+	if (likely(is_valid_string(file) == true || fd >= 0)) {
 		struct stat s;
 		int st;
 
@@ -636,7 +655,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 					 S_IROTH | S_IWOTH)) == 0) &&
 					((s.st_mode &
 					  S_IRUSR) != 0))) {
-					ret = true;
+					ret = GFARM_ERR_NO_ERROR;
 				} else {
 					gflog_error(GFARM_MSG_UNFIXED,
 						"The file perrmssion of the "
@@ -644,6 +663,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 						"open too widely. It would "
 						"be nice if the file "
 						"permission was 0600.", file);
+					ret = GFARM_ERRMSG_TLS_PRIVATE_KEY_FILE_PERMISSION_TOO_WIDELY_OPEN;
 				}
 			} else {
 				gflog_error(GFARM_MSG_UNFIXED,
@@ -652,6 +672,7 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 					"which is strongly discouraged even "
 					"this process can read it for privacy "
 					"and security.", uid, file);
+				ret = GFARM_ERRMSG_TLS_PRIVATE_KEY_FILE_ABOUT_TO_BE_OPENED_BY_OTHERS;
 			}
 
 		} else {
@@ -659,23 +680,27 @@ is_valid_prvkey_file_permission(int fd, const char *file)
 				gflog_error(GFARM_MSG_UNFIXED,
 					"Can't access %s: %s",
 					file, strerror(errno));
+				ret = gfarm_errno_to_error(errno);
 			} else {
 				gflog_error(GFARM_MSG_UNFIXED,
 					"%s is a directory, not a file", file);
+				ret = GFARM_ERR_IS_A_DIRECTORY;
 			}
 		}
 	} else {
-		gflog_error(GFARM_MSG_UNFIXED, "Invalid file descriptor: %d.",
-			fd);
+		gflog_error(GFARM_MSG_UNFIXED,
+			"Specified filename is nul or "
+			"file invalid file descriptor.");
+		ret = GFARM_ERR_INVALID_ARGUMENT;			
 	}
 
 	return (ret);
 }
 
-static inline bool
+static inline gfarm_error_t
 is_valid_cert_store_dir(const char *dir)
 {
-	bool ret = false;
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
 	if (is_valid_string(dir) == true) {
 		struct stat s;
@@ -691,25 +716,29 @@ is_valid_cert_store_dir(const char *dir)
 				((s.st_mode & S_IRWXG) != 0 &&
 				 is_user_in_group(uid, s.st_gid) ==
 				 true)) {
-				ret = true;
+				ret = GFARM_ERR_NO_ERROR;
 			} else {
+				ret = GFARM_ERR_PERMISSION_DENIED;
 				gflog_error(GFARM_MSG_UNFIXED,
-					    "%s seems not accessible for "
-					    "uid %d.", dir, uid);
+					"%s: %s", dir,
+					gfarm_error_string(ret));
 			}
 		} else {
 			if (errno != 0) {
 				gflog_error(GFARM_MSG_UNFIXED,
 					"Can't access to %s: %s",
 					dir, strerror(errno));
+				ret = gfarm_errno_to_error(errno);
 			} else {
 				gflog_error(GFARM_MSG_UNFIXED,
 					"%s is not a directory.", dir);
+				ret = GFARM_ERR_NOT_A_DIRECTORY;
 			}
 		}
 	} else {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"Specified CA cert directory name is nul.");
+		ret = GFARM_ERR_INVALID_ARGUMENT;
 	}
 
 	return (ret);
@@ -825,18 +854,20 @@ tls_runtime_flush_error(void)
 /*
  * Private key loader
  */
-static inline EVP_PKEY *
-tls_load_prvkey(const char *file)
+static inline gfarm_error_t
+tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 {
-	EVP_PKEY *ret = NULL;
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
-	if (likely(is_valid_string(file) == true)) {
+	if (likely(is_valid_string(file) == true && *keyptr != NULL)) {
 		FILE *f = NULL;
+		EVP_PKEY *pkey = NULL;
 
+		*keyptr = NULL;
 		errno = 0;
 		if (likely(((f = fopen(file, "r")) != NULL) &&
-			(is_valid_prvkey_file_permission(fileno(f), file)
-			 == true))) {
+			((ret = is_valid_prvkey_file_permission(fileno(f),
+					file)) == GFARM_ERR_NO_ERROR))) {
 
 			struct tls_passwd_cb_arg_struct a = {
 				.pw_buf_maxlen_ = sizeof(the_privkey_passwd),
@@ -845,19 +876,24 @@ tls_load_prvkey(const char *file)
 			};
 
 			tls_runtime_flush_error();
-			ret = PEM_read_PrivateKey(f, NULL, tty_passwd_callback,
-				(void *)&a);
-			if (unlikely(ret == NULL ||
-				tls_has_runtime_error() == true)) {
+			pkey = PEM_read_PrivateKey(f, NULL,
+					tty_passwd_callback, (void *)&a);
+			if (likely(pkey != NULL &&
+				tls_has_runtime_error() == false)) {
+				ret = GFARM_ERR_NO_ERROR;
+				*keyptr = pkey;
+			} else {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Can't read a PEM format private key "
 					"from %s.", file);
+				ret = GFARM_ERRMSG_TLS_PRIVATE_KEY_READ_FAILURE;
 			}
 		} else {
 			if (errno != 0) {
 				gflog_error(GFARM_MSG_UNFIXED,
 					"Can't open %s: %s", file,
 					strerror(errno));
+				ret = gfarm_errno_to_error(errno);
 			}
 		}
 		if (f != NULL) {
@@ -932,12 +968,14 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		cert_file = gfarm_ctxp->tls_certificate_file;
 		cert_chain_file = gfarm_ctxp->tls_certificate_chain_file;
 
-		if (is_valid_string(cert_chain_file) == true &&
-			is_file_readable(-1, cert_chain_file) == true) {
+		if ((is_valid_string(cert_chain_file) == true) &&
+			((ret = is_file_readable(-1, cert_chain_file))
+			== GFARM_ERR_NO_ERROR)) {
 			has_cert_chain_file = true;
 		}
-		if (is_valid_string(cert_file) == true &&
-			is_file_readable(-1, cert_file) == true) {
+		if ((is_valid_string(cert_file) == true) &&
+			((ret = is_file_readable(-1, cert_file))
+			== GFARM_ERR_NO_ERROR)) {
 			has_cert_file = true;
 		}
 
@@ -953,7 +991,9 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 			gflog_error(GFARM_MSG_UNFIXED,
 				"Neither a cert file nor a cert chain "
 				"file is specified.");
-			ret = GFARM_ERR_INVALID_ARGUMENT;
+			if (ret == GFARM_ERR_UNKNOWN) {
+				ret = GFARM_ERR_INVALID_ARGUMENT;
+			}
 			goto bailout;
 		}
 	}
@@ -963,11 +1003,10 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	 * Set only TLSv1.3 allowed ciphersuites
 	 */
 	if (is_valid_string(gfarm_ctxp->tls_cipher_suite) == true) {
-		if (is_ciphersuites_ok(
-			gfarm_ctxp->tls_cipher_suite) == true) {
+		if ((ret = is_ciphersuites_ok(gfarm_ctxp->tls_cipher_suite)
+			== GFARM_ERR_NO_ERROR)) {
 			ciphersuites = gfarm_ctxp->tls_cipher_suite;
 		} else {
-			ret = GFARM_ERR_INVALID_ARGUMENT;
 			goto bailout;
 		}
 	} else {
@@ -1002,12 +1041,11 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	/*
 	 * Load a private key
 	 */
-	prvkey = tls_load_prvkey(prvkey_file);
-	if (unlikely(prvkey == NULL)) {
+	ret = tls_load_prvkey(prvkey_file, &prvkey);
+	if (unlikely(ret != GFARM_ERR_NO_ERROR || prvkey == NULL)) {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"Can't load a private key file \"%s\".",
 			prvkey_file);
-		ret = GFARM_ERR_INVALID_CREDENTIAL;
 		goto bailout;
 	}
 
@@ -1062,8 +1100,8 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 			gflog_error(GFARM_MSG_UNFIXED,
 				"Failed to set ciphersuites \"%s\" to the "
 				"SSL_CTX.", ciphersuites);
-			/* GFARM_ERRMSG_TLS_CIPHERSUITES_IS_WRONG */
-			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			/* ?? GFARM_ERRMSG_TLS_INVALID_CIPHER ?? */
+			ret = GFARM_ERR_INTERNAL_ERROR;
 			goto bailout;
 		} else {
 			/*
@@ -1123,7 +1161,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 			(tls_has_runtime_error() == true))) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"Can't set a private key to a SSL_CTX.");
-			/* GFARM_ERRMSG_TLS_IBVALID_KEY */
+			/* ?? GFARM_ERRMSG_TLS_IBVALID_KEY ?? */
 			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 			goto bailout;
 		}
@@ -1258,8 +1296,7 @@ tls_session_io_continuable(int sslerr, tls_session_ctx_t ctx)
 		/*
 		 * Peer sent close_notify. Not retryable.
 		 */
-		/* GFARM_ERR_PROTOCOL */
-		ctx->last_gfarm_error_ = GFARM_ERR_TLS_PROTO_GOT_CLOSE_NOTIFY;
+		ctx->last_gfarm_error_ = GFARM_ERR_PROTOCOL;
 		break;
 
 	case SSL_ERROR_WANT_X509_LOOKUP:
@@ -1383,10 +1420,7 @@ tls_session_update_key(tls_session_ctx_t ctx, int delta)
 				"SSL_update_key() failed but we don't know "
 				"how to deal with it.");
 			ret = ctx->last_gfarm_error_ =
-				/* GFARM_ERR_INTRNAL_ERROR */
-				GFARM_ERR_TLS_PROTO_KEY_UPDATE_ERROR;
-
-			
+				GFARM_ERR_INTERNAL_ERROR;
 		}
 		ctx->io_key_update_ = 0;
 	} else {
@@ -1569,8 +1603,7 @@ tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
 
 			ret = tls_session_read(ctx, buf, sizeof(buf), &s_n);
 			if ((ret == GFARM_ERR_NO_ERROR && s_n > 0) ||
-				(ret ==
-				 GFARM_ERR_TLS_PROTO_GOT_CLOSE_NOTIFY)) {
+				(ret == GFARM_ERR_PROTOCOL)) {
 				goto do_close;
 			}
 		}

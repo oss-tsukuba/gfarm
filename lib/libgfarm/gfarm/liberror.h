@@ -141,6 +141,15 @@ enum gfarm_errmsg {
 	/* refered only from gfarm/config.c */
 	GFARM_ERRMSG_INVALID_DIGEST_TYPE,
 
+	/* TLS private key file permission is too widely open. */
+	GFARM_ERRMSG_TLS_PRIVATE_KEY_FILE_PERMISSION_TOO_WIDELY_OPEN,
+	/* TLS private key file about to be opened by others. */
+	GFARM_ERRMSG_TLS_PRIVATE_KEY_FILE_ABOUT_TO_BE_OPENED_BY_OTHERS,
+	/* TLS private key read failure. */
+	GFARM_ERRMSG_TLS_PRIVATE_KEY_READ_FAILURE,
+	/* TLS invalid cipher. */
+	GFARM_ERRMSG_TLS_INVALID_CIPHER,
+
 	GFARM_ERRMSG_END
 };
 
