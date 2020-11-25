@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef HAVE_TLS_1_3
+#if defined(HAVE_TLS_1_3) && defined(IN_TLS_CORE)
 
 
 
@@ -252,4 +252,4 @@ tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u);
 
 #error Don not include this header unless you know what you need.
 
-#endif /* HAVE_TLS_1_3 */
+#endif /* HAVE_TLS_1_3 && IN_TLS_CORE */
