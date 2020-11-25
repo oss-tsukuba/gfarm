@@ -42,8 +42,9 @@
 #include "context.h"
 #include "iobuffer.h"
 #include "gfp_xdr.h"
-#include "tlsutils.h"
 #include "config.h"
+
+#include "tlsutils.h"
 
 
 
@@ -65,6 +66,23 @@
 #undef is_valid_string
 #endif /* is_valid_string */
 #define is_valid_string(x)	(((x) != NULL && *(x) != '\0') ? true : false)
+
+#ifndef GFP_XDR_TLS_ROLE
+#define GFP_XDR_TLS_ROLE    1
+#endif /* GFP_XDR_TLS_ROLE */
+#ifndef GFP_XDR_TLS_ACCEPT
+#define GFP_XDR_TLS_ACCEPT    0
+#endif /* GFP_XDR_TLS_ACCEPT */
+#ifndef GFP_XDR_TLS_INITIATE
+#define GFP_XDR_TLS_INITIATE    1
+#endif /* GFP_XDR_TLS_INITIATE */
+#ifndef GFP_XDR_TLS_CLIENT_AUTHENTICATION
+#define GFP_XDR_TLS_CLIENT_AUTHENTICATION    2
+#endif /* GFP_XDR_TLS_CLIENT_AUTHENTICATION */
+#ifndef GFP_XDR_TLS_ROLE_IS_INITIATOR
+#define GFP_XDR_TLS_ROLE_IS_INITIATOR(flags)			\
+	(((flags) & GFP_XDR_TLS_ROLE) == GFP_XDR_TLS_INITIATE)
+#endif /* GFP_XDR_TLS_ROLE_IS_INITIATOR */
 
 
 
