@@ -3095,7 +3095,8 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		}
 		assert(op == INODE_CREATE);
 		*inp = dir_entry_get_inode(entry);
-		*createdp = 0;
+		if (createdp)
+			*createdp = 0;
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if ((e = inode_access(parent, user, GFS_W_OK)) != GFARM_ERR_NO_ERROR) {
@@ -3273,7 +3274,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		    gfarm_error_string(e));
 
 	*inp = n;
-	if (expected_type == GFS_DT_REG)
+	if (createdp)
 		*createdp = 1;
 	return (GFARM_ERR_NO_ERROR);
 }

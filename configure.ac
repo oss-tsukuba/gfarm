@@ -1432,33 +1432,26 @@ tls_objs=
 AC_ARG_ENABLE(tls13,
 AS_HELP_STRING([--enable-tls13],[support TLS 1.3 [default=disable]]),
 [if test "x${enable_tls13}" = "xyes"; then
-   _oCFLAGS="${CFLAGS}"
    _oLIBS="${LIBS}"
-   CFLAGS="${openssl_includes}"
-   LIBS="${openssl_libs}"
+   _oCPPFLAGS="${CPPFLAGS}"
+   CPPFLAGS="${openssl_includes} ${CPPFLAGS}"
+   LIBS=`echo ${openssl_libs} ${LIBS} | sed 's/-R[[^ ]]*//g'`
    _has_13_APIs=0
+   AC_CHECK_FUNC(SSL_key_update, [_has_13_APIs=1], [_has_13_APIs=0])
    AC_MSG_CHECKING([OpenSSL support TLS 1.3])
-   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
-       [
-       #include <stdio.h>
-       #include <openssl/ssl.h>
-       ]],
-       [(void)SSL_key_update(NULL, 0);],
-       )],
-     [_has_13_APIs=1], [_has_13_APIs=0])
    if test ${_has_13_APIs} -eq 1; then
        AC_MSG_RESULT([yes])
-   else
+       tls_srcs='${TLS_SRCS}'
+       tls_objs='${TLS_OBJS}'
+       AC_DEFINE(HAVE_TLS_1_3, 1, [support TLS 1.3])
+  else
        AC_MSG_RESULT([no])
-       AC_MSG_ERROR([OpenSSL version must be >= 1.1.1.])
+       AC_MSG_ERROR([OpenSSL version must be >= 1.1.1 for TLS 1.3 support.])
        exit 1
    fi
-   tls_srcs='${TLS_SRCS}'
-   tls_objs='${TLS_OBJS}'
-   CFLAGS="${_oCFLAGS}"
+   CPPFLAGS="${_oCPPFLAGS}"
    LIBS="${_oLIBS}"
-   AC_DEFINE(HAVE_TLS_1_3, 1, [support TLS 1.3])
-   unset _oCFLAGS _oLIBS
+   unset _oCPPFLAGS _oLIBS
 fi], [])
 AC_SUBST(tls_srcs)
 AC_SUBST(tls_objs)

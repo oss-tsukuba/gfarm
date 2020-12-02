@@ -56,7 +56,8 @@ Gfarm/BBを利用するための環境変数が表示されます。Gfarm/BBに�
 <para>
 Gfarm/BBをMPIを用いて構築します。
 <parameter moreinfo="none">mpirun_cmd</parameter>はGfarm/BBの構築とgfsd
-の起動に用いられるMPIのコマンドラインを指定します。本オプションは
+の起動に用いられるMPIのコマンドラインを指定します。MPIのコマンドラ
+インではノード毎に1プロセス起動するようにします。本オプションは
 -confオプションと共に用います。本オプションが指定された場合、-eオプ
 ションと-hオプションは無視されます。
 </para>
