@@ -51,9 +51,7 @@ err() {
 
 while [ $# -gt 0 ]; do
     case $1 in
-	start) mode=start ;;
-	stop) mode=stop ;;
-	status) mode=status ;;
+	start|stop|status) mode=$1 ;;
 	-mpi) shift; MPIRUN="$1" ;;
 	-e) EXCLUDE_GFMD= ;;
 	-h) shift; HOSTFILE=$1 ;;
