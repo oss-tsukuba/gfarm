@@ -270,6 +270,9 @@ int main(int argc, char **argv)
 {
 	int ret = 1;
 
+	trim_string_tail(NULL);
+	(void)tls_session_runtime_initialize();
+
 	snprintf(ipaddr, IPADDR_LEN + 1, "127.0.0.1");
 
 	if (prologue(argc, argv) == 0) {
