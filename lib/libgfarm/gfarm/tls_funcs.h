@@ -501,7 +501,9 @@ tlslog_tls_message(int msg_no, int priority,
 
 		/*
 		 * NOTE:
-		 *	OpenSSL 1.1.1 has no ERR_get_error_all().
+		 *	OpenSSL 1.1.1 doesn't have ERR_get_error_all()
+		 *	but 3.0 does. To dig into 3.0 API, check
+		 *	Apache 2.4 source.
 		 */
 		err = ERR_get_error_line_data(&tls_file, &tls_line,
 			NULL, NULL);
@@ -622,10 +624,18 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	tls_session_ctx_t ctxret = NULL;
-	char *cert_file = NULL;
-	char *cert_chain_file = NULL;
-	char *prvkey_file = NULL;
+
+	/*
+	 * Following strings must be copied to *ctxret
+	 */
+	char *cert_file = NULL;		/* required for server/mutual */
+	char *cert_chain_file = NULL;	/* required for server/mutual */
+	char *prvkey_file = NULL;	/* required for server/mutual */
 	char *ciphersuites = NULL;
+	char *ca_path = NULL;		/* required for server/mutual */
+	char *acceptable_ca_path = NULL;
+	char *revoke_path = NULL;
+
 	char *cert_to_use = NULL;
 	EVP_PKEY *prvkey = NULL;
 	SSL_CTX *ssl_ctx = NULL;
@@ -633,7 +643,8 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	bool need_cert_merge = false;
 	bool has_cert_file = false;
 	bool has_cert_chain_file = false;
-
+	bool use_default_ciphers = false;
+	
 	/*
 	 * Parameter check
 	 */
@@ -715,6 +726,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		}
 	} else {
 		ciphersuites = TLS13_DEFAULT_CIPHERSUITES;
+		use_default_ciphers = true;
 	}
 
 	/*
@@ -871,9 +883,32 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		}
 
 		/*
-		 * CA store/Revocation path
+		 * CA store path
 		 */
+		/*
+		 * NOTE: What Apache 2.4 does for this are:
+		 *
+		 *	SSL_CTX_load_verify_locations(ctx,
+		 *		tls_ca_certificate_path);
+		 *	if (tls_client_ca_certificate_path) {
+		 *		dir = tls_client_ca_certificate_path;
+		 *	} else {
+		 *		dir = tls_ca_certificate_path;
+		 *	}
+		 *	STACK_OF(X509_NAME) *ca_list;
+		 *
+		 *	while (opendir(dir)/readdir()) {
+		 *		SSL_add_file_cert_subjects_to_stack(ca_list,
+		 *			file);
+		 *	}
+		 *	SSL_CTX_set_client_CA_list(ctx, ca_list);
+		 *
+		 * XXX FIXME:
+		 *	Call SSL_CTX_load_verify_location() FOR NOW.
+		 */
+		
 	}
+
 
 	/*
 	 * Create a new tls_session_ctx_t
@@ -900,6 +935,16 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	}
 
 bailout:
+	free(cert_file);
+	free(cert_chain_file);
+	free(prvkey_file);
+	if (use_default_ciphers == false) {
+		free(ciphersuites);
+	}
+	free(ca_path);
+	free(acceptable_ca_path);
+	free(revoke_path);
+
 	if (prvkey != NULL) {
 		EVP_PKEY_free(prvkey);
 	}
@@ -931,6 +976,14 @@ tls_session_ctx_destroy(tls_session_ctx_t x)
 		if (x->ssl_ != NULL) {
 			SSL_free(x->ssl_);
 		}
+		free(x->cert_file_);
+		free(x->cert_chain_file_);
+		free(x->prvkey_file_);
+		free(x->ciphersuites_);
+		free(x->ca_path_);
+		free(x->acceptable_ca_path_);
+		free(x->revoke_path_);
+
 		free(x);
 	}
 }
