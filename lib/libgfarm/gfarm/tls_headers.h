@@ -89,8 +89,6 @@
 
 #ifdef TLS_TEST
 
-#define gfarm_ctxp	o_r_g_gfarm_ctxp__
-
 struct tls_test_ctx_struct {
 	char *tls_cipher_suite;
 	char *tls_ca_certificate_path;
@@ -105,7 +103,9 @@ struct tls_test_ctx_struct {
 };
 typedef struct tls_test_ctx_struct *tls_test_ctx_p;
 
-static tls_test_ctx_p gfarm_ctxp = NULL;
+static tls_test_ctx_p test_gfarm_ctxp__ = NULL;
+
+#define gfarm_ctxp	test_gfarm_ctxp__
 
 #endif /* TLS_TEST */
 

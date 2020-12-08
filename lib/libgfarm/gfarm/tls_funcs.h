@@ -999,6 +999,14 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		ctxret->prvkey_ = prvkey;
 		ctxret->ssl_ctx_ = ssl_ctx;
 
+		ctxret->cert_file_ = cert_file;
+		ctxret->cert_chain_file_ = cert_chain_file;
+		ctxret->prvkey_file_ = prvkey_file;
+		ctxret->ciphersuites_ = ciphersuites;
+		ctxret->ca_path_ = ca_path;
+		ctxret->acceptable_ca_path_ = acceptable_ca_path;
+		ctxret->revoke_path_ = revoke_path;
+
 		/*
 		 * All done.
 		 */
