@@ -200,6 +200,17 @@ struct tls_session_ctx_struct {
 	SSL_CTX *ssl_ctx_;	/* API alloc'd */
 	EVP_PKEY *prvkey_;	/* API alloc'd */
 	char *peer_dn_;		/* malloc'd */
+
+	/*
+	 * gfarm_ctxp contents backup
+	 */
+	char *cert_file_;
+	char *cert_chain_file_;
+	char *prvkey_file_;
+	char *ciphersuites_;
+	char *ca_path_;
+	char *acceptable_ca_path_;
+	char *revoke_path_;
 };
 typedef struct tls_session_ctx_struct *tls_session_ctx_t;
 

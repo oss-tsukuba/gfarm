@@ -501,7 +501,9 @@ tlslog_tls_message(int msg_no, int priority,
 
 		/*
 		 * NOTE:
-		 *	OpenSSL 1.1.1 has no ERR_get_error_all().
+		 *	OpenSSL 1.1.1 doesn't have ERR_get_error_all()
+		 *	but 3.0 does. To dig into 3.0 API, check
+		 *	Apache 2.4 source.
 		 */
 		err = ERR_get_error_line_data(&tls_file, &tls_line,
 			NULL, NULL);
@@ -622,10 +624,18 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	tls_session_ctx_t ctxret = NULL;
-	char *cert_file = NULL;
-	char *cert_chain_file = NULL;
-	char *prvkey_file = NULL;
+
+	/*
+	 * Following strings must be copied to *ctxret
+	 */
+	char *cert_file = NULL;		/* required for server/mutual */
+	char *cert_chain_file = NULL;	/* required for server/mutual */
+	char *prvkey_file = NULL;	/* required for server/mutual */
+	char *ca_path = NULL;		/* required for server/mutual */
+	char *acceptable_ca_path = NULL;
+	char *revoke_path = NULL;
 	char *ciphersuites = NULL;
+
 	char *cert_to_use = NULL;
 	EVP_PKEY *prvkey = NULL;
 	SSL_CTX *ssl_ctx = NULL;
@@ -633,7 +643,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	bool need_cert_merge = false;
 	bool has_cert_file = false;
 	bool has_cert_chain_file = false;
-
+	
 	/*
 	 * Parameter check
 	 */
@@ -671,7 +681,13 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	if (need_self_cert == true) {
 		cert_file = gfarm_ctxp->tls_certificate_file;
 		cert_chain_file = gfarm_ctxp->tls_certificate_chain_file;
+		prvkey_file = gfarm_ctxp->tls_key_file;
+		ca_path = gfarm_ctxp->tls_ca_certificate_path;
+		acceptable_ca_path =
+			gfarm_ctxp->tls_client_ca_certificate_path;
+		revoke_path = gfarm_ctxp->tls_ca_revocation_path;
 
+		/* cert/cert chain file */
 		if ((is_valid_string(cert_chain_file) == true) &&
 			((ret = is_file_readable(-1, cert_chain_file))
 			== GFARM_ERR_NO_ERROR)) {
@@ -682,15 +698,33 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 			== GFARM_ERR_NO_ERROR)) {
 			has_cert_file = true;
 		}
-
 		if (has_cert_chain_file == true && has_cert_file == true) {
 			need_cert_merge = true;
 		} else if (has_cert_chain_file == true &&
 				has_cert_file == false) {
-			cert_to_use = cert_chain_file;
+			cert_chain_file = strdup(cert_chain_file);
+			if (unlikely(cert_chain_file == NULL)) {
+				cert_to_use = cert_chain_file;
+			} else {
+				ret = GFARM_ERR_NO_MEMORY;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"can't dulicate a cert chain "
+					"filename: %s",
+					gfarm_error_string(ret));
+				goto bailout;
+			}
 		} else if (has_cert_chain_file == false &&
 				has_cert_file == true) {
-			cert_to_use = cert_file;
+			cert_file = strdup(cert_file);
+			if (unlikely(cert_file == NULL)) {
+				cert_to_use = cert_file;
+			} else {
+				ret = GFARM_ERR_NO_MEMORY;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"can't dulicate a cert filename: %s",
+					gfarm_error_string(ret));
+				goto bailout;
+			}
 		} else {
 			gflog_error(GFARM_MSG_UNFIXED,
 				"Neither a cert file nor a cert chain "
@@ -698,6 +732,62 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 			if (ret == GFARM_ERR_UNKNOWN) {
 				ret = GFARM_ERR_INVALID_ARGUMENT;
 			}
+			goto bailout;
+		}
+
+		/* Private key */
+		if (unlikely(is_valid_string(prvkey_file) == false)) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"A private key file is not specified.");
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+			goto bailout;
+		} else {
+			prvkey_file = strdup(prvkey_file);
+			if (unlikely(prvkey_file == NULL)) {
+				ret = GFARM_ERR_NO_MEMORY;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"can't dulicate a private key "
+					"filename: %s",
+						gfarm_error_string(ret));
+				goto bailout;
+			}
+		}
+
+		/* CA certs store */
+		if ((is_valid_string(ca_path) == true) &&
+			((ret = is_valid_cert_store_dir(ca_path))
+			 == GFARM_ERR_NO_ERROR)) {
+			ca_path = strdup(ca_path);
+			if (unlikely(ca_path == NULL)) {
+				ret = GFARM_ERR_NO_MEMORY;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"can't dulicate a CA certs directory "
+					" name: %s", gfarm_error_string(ret));
+				goto bailout;
+			}
+		}
+
+		/* Acceptable CA cert path (server only) */
+		if (role == TLS_ROLE_SERVER &&
+			is_valid_string(acceptable_ca_path) == true &&
+			(acceptable_ca_path = strdup(acceptable_ca_path))
+			!= NULL) {
+			ret = GFARM_ERR_NO_MEMORY;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"can't dulicate an acceptable CA certs "
+				"directory nmae: %s",
+				gfarm_error_string(ret));
+			goto bailout;
+		}
+
+		/* Revocation path */
+		if (is_valid_string(revoke_path) == true &&
+			(revoke_path = strdup(revoke_path)) != NULL) {
+			ret = GFARM_ERR_NO_MEMORY;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"can't dulicate a revoked CA certs "
+				"directory nmae: %s",
+				gfarm_error_string(ret));
 			goto bailout;
 		}
 	}
@@ -716,18 +806,17 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	} else {
 		ciphersuites = TLS13_DEFAULT_CIPHERSUITES;
 	}
-
-	/*
-	 * Private key check
-	 */
-	prvkey_file = gfarm_ctxp->tls_key_file;
-	if (unlikely(is_valid_string(prvkey_file) == false)) {
-		gflog_error(GFARM_MSG_UNFIXED,
-			"A private key file is not specified.");
-		ret = GFARM_ERR_INVALID_ARGUMENT;
-		goto bailout;
+	if (ciphersuites != NULL) {
+		ciphersuites = strdup(ciphersuites);
+		if (unlikely(ciphersuites == NULL)) {
+			ret = GFARM_ERR_NO_MEMORY;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"can't dulicate a CA cert store name: %s",
+				gfarm_error_string(ret));
+			goto bailout;
+		}
 	}
-
+	
 	/*
 	 * TLS runtime initialize
 	 */
@@ -871,9 +960,32 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		}
 
 		/*
-		 * CA store/Revocation path
+		 * CA store path
 		 */
+		/*
+		 * NOTE: What Apache 2.4 does for this are:
+		 *
+		 *	SSL_CTX_load_verify_locations(ctx,
+		 *		tls_ca_certificate_path);
+		 *	if (tls_client_ca_certificate_path) {
+		 *		dir = tls_client_ca_certificate_path;
+		 *	} else {
+		 *		dir = tls_ca_certificate_path;
+		 *	}
+		 *	STACK_OF(X509_NAME) *ca_list;
+		 *
+		 *	while (opendir(dir)/readdir()) {
+		 *		SSL_add_file_cert_subjects_to_stack(ca_list,
+		 *			file);
+		 *	}
+		 *	SSL_CTX_set_client_CA_list(ctx, ca_list);
+		 *
+		 * XXX FIXME:
+		 *	Call SSL_CTX_load_verify_location() FOR NOW.
+		 */
+		
 	}
+
 
 	/*
 	 * Create a new tls_session_ctx_t
@@ -900,6 +1012,14 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	}
 
 bailout:
+	free(cert_file);
+	free(cert_chain_file);
+	free(prvkey_file);
+	free(ciphersuites);
+	free(ca_path);
+	free(acceptable_ca_path);
+	free(revoke_path);
+
 	if (prvkey != NULL) {
 		EVP_PKEY_free(prvkey);
 	}
@@ -931,6 +1051,14 @@ tls_session_ctx_destroy(tls_session_ctx_t x)
 		if (x->ssl_ != NULL) {
 			SSL_free(x->ssl_);
 		}
+		free(x->cert_file_);
+		free(x->cert_chain_file_);
+		free(x->prvkey_file_);
+		free(x->ciphersuites_);
+		free(x->ca_path_);
+		free(x->acceptable_ca_path_);
+		free(x->revoke_path_);
+
 		free(x);
 	}
 }
