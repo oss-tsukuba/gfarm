@@ -1,5 +1,5 @@
 #include <netdb.h>
-
+#include <getopt.h>
 #include <gfarm/gfarm_config.h>
 
 #define IN_TLS_CORE
@@ -8,22 +8,33 @@
 #include "tls_headers.h"
 #include "tls_funcs.h"
 
-#define ARGUMENT_LEN 3
-#define IPADDR_LEN 15
-#define PORT_LEN 5
 #define MAX_PORT_NUMBER 65535
 #define MIN_PORT_NUMBER 1024
-#define DECIMAL_NUMBER 10
 #define LISTEN_BACKLOG 64
+#define DECIMAL_NUMBER 10
 #define BUF_SIZE 1024
 
 static int socketfd;
 static bool is_server = false;
-static char portnum[PORT_LEN + 1] = "12345";
-static char ipaddr[IPADDR_LEN + 1] = {0};
+static char *portnum = "12345";
+static char *ipaddr = "127.0.0.1";
 
 static struct addrinfo hints, *res;
-struct sockaddr_in *saddrin;
+static struct sockaddr_in *saddrin;
+
+static struct tls_test_ctx_struct ttcs = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	-INT_MAX,
+	-INT_MAX
+};
+gfarm_ctxp = &ttcs;
 
 static void
 tls_runtime_init_once(void)
@@ -98,28 +109,119 @@ tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 static inline void usage()
 {
 	fprintf(stderr, "usage:\n\
-		-s                  run as server.\n\
-		-a <IP address>     specify the ip address.\n\
-		-p <port number>    specify the port number.\n\
-		-h                  this help\n");
+		-h                  			this help.\n\
+		-s                  			run as server.\n\
+		-a <IP address>     			specify the ip address.\n\
+		-p <port number>    			specify the port number.\n\
+		--tls_cipher_suite\n\
+		--tls_ca_certificate_path\n\
+		--tls_ca_revocation_path\n\
+		--tls_client_ca_certificate_path\n\
+		--tls_client_ca_revocation_path\n\
+		--tls_certificate_file\n\
+		--tls_certificate_chain_file\n\
+		--tls_key_file\n\
+		--tls_key_update\n\
+		--network_receive_timeout\n\
+		");
 	return;
 }
 
 static inline int prologue(int argc, char **argv)
 {
-	int opt, err, ret = 1;
+	int opt, longindex = 0, err, ret = 1;
+	long retval_strtol;
+	char *endptr;
 	uint16_t result;
+	size_t optname_size;
 
-	while ((opt = getopt(argc, argv, "sa:p:h")) != -1) {
+	struct option longopts[] = {
+		{"tls_cipher_suite",               required_argument, 0, 0 },
+		{"tls_ca_certificate_path",        required_argument, 0, 0 },
+		{"tls_ca_revocation_path",         required_argument, 0, 0 },
+		{"tls_client_ca_certificate_path", required_argument, 0, 0 },
+		{"tls_client_ca_revocation_path",  required_argument, 0, 0 },
+		{"tls_certificate_file",           required_argument, 0, 0 },
+		{"tls_certificate_chain_file",     required_argument, 0, 0 },
+		{"tls_key_file",                   required_argument, 0, 0 },
+		{"tls_key_update",                 required_argument, 0, 0 },
+		{"network_receive_timeout",        required_argument, 0, 0 },
+		{0,                                0,                 0, 0 }
+	};
+
+	while ((opt = getopt_long(argc, argv, "sa:p:h", longopts, &longindex)) != -1) {
 		switch (opt) {
+		case 0:
+			optname_size = sizeof(longopts[longindex].name);
+			if (strncmp(longopts[longindex].name, "tls_cipher_suite", optname_size) == 0) {
+				gfarm_ctxp->tls_cipher_suite = optarg;
+				printf("set tls_cipher_suite: %s\n", gfarm_ctxp->tls_cipher_suite);
+			} else if (strncmp(longopts[longindex].name, "tls_ca_certificate_path", optname_size) == 0) {
+				gfarm_ctxp->tls_ca_certificate_path = optarg;
+				printf("set tls_ca_certificate_path: %s\n", gfarm_ctxp->tls_ca_certificate_path);
+			} else if (strncmp(longopts[longindex].name, "tls_ca_revocation_path", optname_size) == 0) {
+				gfarm_ctxp->tls_ca_revocation_path = optarg;
+				printf("set tls_ca_revocation_path: %s\n", gfarm_ctxp->tls_ca_revocation_path);
+			} else if (strncmp(longopts[longindex].name, "tls_client_ca_certificate_path", optname_size) == 0) {
+				gfarm_ctxp->tls_client_ca_certificate_path = optarg;
+				printf("set tls_client_ca_certificate_path: %s\n", gfarm_ctxp->tls_client_ca_certificate_path);
+			} else if (strncmp(longopts[longindex].name, "tls_client_ca_revocation_path", optname_size) == 0) {
+				gfarm_ctxp->tls_client_ca_revocation_path = optarg;
+				printf("set tls_client_ca_revocation_path: %s\n", gfarm_ctxp->tls_client_ca_revocation_path);
+			} else if (strncmp(longopts[longindex].name, "tls_certificate_file", optname_size) == 0) {
+				gfarm_ctxp->tls_certificate_file = optarg;
+				printf("set tls_certificate_file: %s\n", gfarm_ctxp->tls_certificate_file);
+			} else if (strncmp(longopts[longindex].name, "tls_certificate_chain_file", optname_size) == 0) {
+				gfarm_ctxp->tls_certificate_chain_file = optarg;
+				printf("set tls_certificate_chain_file: %s\n", gfarm_ctxp->tls_certificate_chain_file);
+			} else if (strncmp(longopts[longindex].name, "tls_key_file", optname_size) == 0) {
+				gfarm_ctxp->tls_key_file = optarg;
+				printf("set tls_key_file: %s\n", gfarm_ctxp->tls_key_file);
+			} else if (strncmp(longopts[longindex].name, "tls_key_update", optname_size) == 0) {
+				errno = 0;
+				retval_strtol = strtol(optarg, &endptr, DECIMAL_NUMBER);
+				if (errno == 0) {
+					if (optarg != '\0' && endptr == '\0'){
+						if (retval_strtol <= INT_MAX && retval_strtol >= INT_MIN){
+							gfarm_ctxp->tls_key_update = (int)retval_strtol;
+							printf("set tls_key_update: %d\n", gfarm_ctxp->tls_key_update);
+						} else {
+							fprintf(stderr, "out of integer range.");
+						}
+					} else {
+						fprintf(stderr, "invalid argument: %s\n", endptr);
+					}
+				} else {
+					perror("strtol");
+				}
+			} else if (strncmp(longopts[longindex].name, "network_receive_timeout", optname_size) == 0) {
+				errno = 0;
+				retval_strtol = strtol(optarg, &endptr, DECIMAL_NUMBER);
+				if (errno == 0) {
+					if (optarg != '\0' && endptr == '\0'){
+						if (retval_strtol <= INT_MAX && retval_strtol >= INT_MIN){
+							gfarm_ctxp->network_receive_timeout = (int)retval_strtol;
+							printf("set network_receive_timeout: %d\n", gfarm_ctxp->network_receive_timeout);
+						} else {
+							fprintf(stderr, "out of integer range.");
+						}
+					} else {
+						fprintf(stderr, "invalid argument: %s\n", endptr);
+					}
+				} else {
+					perror("strtol");
+				}
+			} 
+
+			break;
 		case 's':
 			is_server = true;
 			break;
 		case 'a':
-			snprintf(ipaddr, IPADDR_LEN + 1, "%s", optarg);
+			ipaddr = optarg;
 			break;
 		case 'p':
-			snprintf(portnum, PORT_LEN + 1, "%s", optarg);
+			portnum = optarg;
 			break;
 		case 'h':
 		default:
@@ -151,13 +253,13 @@ static inline int prologue(int argc, char **argv)
 static inline int run_server_process()
 {
 	int acceptfd, ret = 1;
-	socklen_t len = sizeof(struct sockaddr_in);
-	struct sockaddr_in clientaddr;
+	struct addrinfo clientaddr;
+	clientaddr.ai_addrlen = sizeof(clientaddr.ai_addr);
 
-	while (1) {
+	while (true) {
 		if ((acceptfd = accept(socketfd,
-					(struct sockaddr *)&clientaddr,
-					&len)) > -1) {
+					clientaddr.ai_addr,
+					&clientaddr.ai_addrlen)) > -1) {
 			printf("accept success.\n");
 
 			int recv_size;
@@ -201,7 +303,7 @@ static inline int run_server()
 				sizeof(optval)) > -1) {
 			saddrin->sin_addr.s_addr = INADDR_ANY;
 			if (bind(socketfd, res->ai_addr,
-					sizeof(*res->ai_addr)) > -1) {
+					res->ai_addrlen) > -1) {
 				if (listen(socketfd, LISTEN_BACKLOG) > -1) {
 					ret = run_server_process();
 				} else {
@@ -252,7 +354,7 @@ static inline int run_client()
 	int ret = 1;
 	if ((socketfd = socket(res->ai_family, res->ai_socktype, 0)) > -1) {
 		if (connect(socketfd, res->ai_addr,
-			sizeof(*res->ai_addr)) > -1) {
+			res->ai_addrlen) > -1) {
 			printf("connect success.\n");
 
 			ret = run_client_process();
@@ -272,8 +374,7 @@ int main(int argc, char **argv)
 
 	trim_string_tail(NULL);
 	(void)tls_session_runtime_initialize();
-
-	snprintf(ipaddr, IPADDR_LEN + 1, "127.0.0.1");
+	gflog_initialize();
 
 	if (prologue(argc, argv) == 0) {
 		if (is_server) {
