@@ -611,9 +611,12 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 	return (ret);
 }
 
+/*
+ * Cert files collector for acceptable certs list.
+ */
 static inline gfarm_error_t
 tls_get_x509_name_stack_from_dir(const char *dir,
-				 STACK_OF(X509_NAME) *stack, int *nptr)
+	STACK_OF(X509_NAME) *stack, int *nptr)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
@@ -767,6 +770,11 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 				GFARM_ERR_NO_ERROR && ncerts > 0)) {
 				tls_runtime_flush_error();
 				SSL_CTX_set_client_CA_list(ssl_ctx, ca_list);
+				/*
+				 * NOTE:
+				 *	To release ca_list, check runtime 
+				 *	error.
+				 */
 				if (unlikely(tls_has_runtime_error() ==
 					true)) {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -834,6 +842,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	char *cert_to_use = NULL;
 	EVP_PKEY *prvkey = NULL;
 	SSL_CTX *ssl_ctx = NULL;
+	SSL *ssl = NULL;
 	bool need_self_cert = false;
 	bool need_cert_merge = false;
 	bool has_cert_file = false;
@@ -1173,6 +1182,49 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		/*
 		 * Set revocation path
 		 */
+
+
+		/*
+		 * Create an SSL
+		 */
+		tls_runtime_flush_error();
+		if (likely((ssl = SSL_new(ssl_ctx)) != NULL)) {
+			/*
+			 * XXX FIXME:
+			 *	50 is too much?
+			 */
+			SSL_set_verify_depth(ssl, 50);
+			if (role == TLS_ROLE_SERVER) {
+#define SERVER_MUTUAL_FLAGS \
+	(SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | \
+	 SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
+				int v = (do_mutual_auth == true) ?
+					SERVER_MUTUAL_FLAGS : SSL_VERIFY_NONE;
+				SSL_set_verify(ssl, v, NULL);
+#undef SERVER_MUTUAL_FLAGS
+				tls_runtime_flush_error();
+				if (unlikely(SSL_verify_client_post_handshake(
+						ssl) != 1)) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+							"Failed to set a "
+							"server SSL to use "
+							"post-handshake.");
+					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+					goto bailout;
+				}
+			} else {
+				/*
+				 * Clients always check server certs.
+				 */
+				SSL_set_verify(ssl, SSL_VERIFY_PEER, NULL);
+				SSL_set_post_handshake_auth(ssl, 1);
+			}
+		} else {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to create a SSL.");
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			goto bailout;
+		}
 	}
 
 	/*
@@ -1186,6 +1238,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		ctxret->role_ = role;
 		ctxret->prvkey_ = prvkey;
 		ctxret->ssl_ctx_ = ssl_ctx;
+		ctxret->ssl_ = ssl;
 
 		ctxret->cert_file_ = cert_file;
 		ctxret->cert_chain_file_ = cert_chain_file;
@@ -1218,6 +1271,9 @@ bailout:
 
 	if (prvkey != NULL) {
 		EVP_PKEY_free(prvkey);
+	}
+	if (ssl != NULL) {
+		SSL_free(ssl);
 	}
 	if (ssl_ctx != NULL) {
 		(void)SSL_CTX_clear_chain_certs(ssl_ctx);
@@ -1269,7 +1325,8 @@ tls_session_ctx_destroy(tls_session_ctx_t x)
  * SSL_ERROR_* handler
  */
 static inline bool
-tls_session_io_continuable(int sslerr, tls_session_ctx_t ctx)
+tls_session_io_continuable(int sslerr, tls_session_ctx_t ctx,
+	bool in_handshake)
 {
 	bool ret = false;
 
@@ -1331,14 +1388,20 @@ tls_session_io_continuable(int sslerr, tls_session_ctx_t ctx)
 	case SSL_ERROR_WANT_CLIENT_HELLO_CB:
 	case SSL_ERROR_WANT_CONNECT:
 	case SSL_ERROR_WANT_ACCEPT:
-		/*
-		 * MUST not occured, connect/accept must be done
-		 * BEFORE gfp_* thingies call this function.
-		 */
-		gflog_error(GFARM_MSG_UNFIXED,
-			"The TLS handshake must be done before begining "
-			"data I/O in Gfarm.");
-		ctx->last_gfarm_error_ = GFARM_ERR_INTERNAL_ERROR;
+		if (likely(in_handshake == false)) {
+			/*
+			 * MUST not occured, connect/accept must be
+			 * done BEFORE gfp_* thingies call this
+			 * function.
+			 */
+			gflog_error(GFARM_MSG_UNFIXED,
+				    "The TLS handshake must be done before "
+				    "begining data I/O in Gfarm.");
+			ctx->last_gfarm_error_ = GFARM_ERR_INTERNAL_ERROR;
+		} else {
+			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
+			ret = true;
+		}
 		break;
 
 	default:
@@ -1416,6 +1479,87 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
 
 	return (ret);
 }
+	
+/*
+ * Session establish
+ */
+static inline gfarm_error_t
+tls_session_establish(tls_session_ctx_t ctx, int fd)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	struct sockaddr sa;
+	socklen_t salen = sizeof(sa);
+	int pst = -1;
+	typedef int (*tls_handshake_proc_t)(SSL *ssl);
+	tls_handshake_proc_t p = NULL;
+	SSL *ssl = NULL;
+
+	errno = 0;
+	if (likely(fd >= 0 &&
+		(pst = getpeername(fd, &sa, &salen)) == 0 &&
+		 ctx != NULL && (ssl = ctx->ssl_) != NULL)) {
+
+		tls_runtime_flush_error();
+		if (likely(SSL_set_fd(ssl, fd) == 1)) {
+			int st;
+			int ssl_err;
+			bool do_cont = false;
+
+			p = (ctx->role_ == TLS_ROLE_SERVER) ?
+				SSL_accept : SSL_connect;
+
+		retry:
+			errno = 0;
+			(void)SSL_get_error(ssl, 1);
+			st = p(ssl);
+			ssl_err = SSL_get_error(ssl, 1);
+			do_cont = tls_session_io_continuable(
+					ssl_err, ctx, false);
+			if (likely(st == 1 && ssl_err == SSL_ERROR_NONE)) {
+				ret = ctx->last_gfarm_error_ =
+					GFARM_ERR_NO_ERROR;
+			} else if (st == 0 && do_cont == true) {
+				goto retry;
+			} else {
+				ret = ctx->last_gfarm_error_;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"SSL handshake failed: %s",
+					gfarm_error_string(ret));
+			}
+		} else {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Failed to set a file "
+				"descriptor %d to an SSL.", fd);
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+		}
+	} else {
+		if (pst != 0 && errno != 0) {
+			ret = gfarm_errno_to_error(errno);
+			if (errno == ENOTCONN) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"The file descriptor %d is not yet "
+					"connected: %s",
+					fd, gfarm_error_string(ret));
+			} else if (errno == ENOTSOCK) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"The file descriptor %d is not a "
+					"socket: %s",
+					fd, gfarm_error_string(ret));
+			} else {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to check connection status of "
+					"the file descriptor %d: %s",
+					fd, gfarm_error_string(ret));
+			}
+		} else {
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"The tls context is not initialized.");
+		}
+	}
+
+	return ret;
+}
 
 /*
  * TLS 1.3 key update
@@ -1492,7 +1636,7 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 		 *	continuity.
 		 */
 		ssl_err = SSL_get_error(ssl, 1);
-		continuable = tls_session_io_continuable(ssl_err, ctx);
+		continuable = tls_session_io_continuable(ssl_err, ctx, false);
 		if (likely(n > 0 && ssl_err == SSL_ERROR_NONE)) {
 			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			ctx->last_ssl_error_ = ssl_err;
@@ -1548,7 +1692,7 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 		 *	continuity.
 		 */
 		ssl_err = SSL_get_error(ssl, 1);
-		continuable = tls_session_io_continuable(ssl_err, ctx);
+		continuable = tls_session_io_continuable(ssl_err, ctx, false);
 		if (likely(n > 0 && ssl_err == SSL_ERROR_NONE)) {
 			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			ctx->last_ssl_error_ = ssl_err;

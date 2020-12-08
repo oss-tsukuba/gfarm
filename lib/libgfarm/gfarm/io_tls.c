@@ -252,7 +252,13 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd,
 
 		ret = tls_session_ctx_create(&ctx, role, do_mutual_auth);
 		if (likely(ret == GFARM_ERR_NO_ERROR && ctx != NULL)) {
-			gfp_xdr_set(conn, &gfp_xdr_tls_iobuf_ops, ctx, fd);
+			ret = tls_session_establish(ctx, fd);
+			if (likely(ret == GFARM_ERR_NO_ERROR)) {
+				gfp_xdr_set(conn, &gfp_xdr_tls_iobuf_ops,
+					ctx, fd);
+			} else {
+				tls_session_ctx_destroy(ctx);
+			}
 		}
 	}
 
