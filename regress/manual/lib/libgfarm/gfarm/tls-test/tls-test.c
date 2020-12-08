@@ -34,7 +34,7 @@ static struct tls_test_ctx_struct ttcs = {
 	-INT_MAX,
 	-INT_MAX
 };
-gfarm_ctxp = &ttcs;
+tls_test_ctx_p gfarm_ctxp = &ttcs;
 
 static void
 tls_runtime_init_once(void)

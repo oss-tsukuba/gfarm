@@ -40,7 +40,9 @@
 #include <gfarm/gfs.h>
 
 #include "liberror.h"
+#ifndef TLS_TEST
 #include "context.h"
+#endif /* ! TLS_TEST */
 #include "iobuffer.h"
 #include "gfp_xdr.h"
 #include "config.h"
@@ -103,9 +105,7 @@ struct tls_test_ctx_struct {
 };
 typedef struct tls_test_ctx_struct *tls_test_ctx_p;
 
-static tls_test_ctx_p test_gfarm_ctxp__ = NULL;
-
-#define gfarm_ctxp	test_gfarm_ctxp__
+extern tls_test_ctx_p gfarm_ctxp;
 
 #endif /* TLS_TEST */
 
