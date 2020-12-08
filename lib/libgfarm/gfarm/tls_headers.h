@@ -25,6 +25,7 @@
 #include <sys/socket.h>
 #include <pthread.h>
 #include <termios.h>
+#include <dirent.h>
 #ifdef HAVE_POLL
 #include <poll.h>
 #endif /* HAVE_POLL */

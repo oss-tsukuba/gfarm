@@ -611,6 +611,201 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 	return (ret);
 }
 
+static inline gfarm_error_t
+tls_get_x509_name_stack_from_dir(const char *dir,
+				 STACK_OF(X509_NAME) *stack, int *nptr)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+
+	DIR *d = NULL;
+	struct dirent *de = (struct dirent *)
+		malloc(offsetof(struct dirent, d_name) + PATH_MAX + 1);
+
+	errno = 0;
+	if (likely(dir != NULL && stack != NULL && nptr != NULL &&
+		   (d = opendir(dir)) != NULL && errno == 0)) {
+
+		struct stat s;
+		struct dirent *chk = de;
+		char cert_file[PATH_MAX];
+		char *fpath = NULL;
+		int nadd = 0;
+		
+		*nptr = 0;
+		errno = 0;
+		for (;
+		     /*
+		      * XXX FIXME:
+		      *		readdir_r() is deprected in glibc
+		      *		2.24, but we won't to accept using
+		      *		lock and readdir() since it must be
+		      *		soooo slow. So, we use readdir_r()
+		      *		with a large-chunk'ish struct dient
+		      *		buffer.
+		      */
+		    	readdir_r(d, de, &chk) == 0 && chk != NULL;
+			chk = de, errno = 0) {
+
+			(void)snprintf(cert_file, sizeof(cert_file),
+				       "%s/%s", dir, de->d_name);
+			errno = 0;
+			if (stat(cert_file, &s) == 0 &&
+				S_ISREG(s.st_mode) != 0 &&
+				(ret = is_file_readable(-1, cert_file)) ==
+				GFARM_ERR_NO_ERROR) {
+				/*
+				 * Seems SSL_add_file_cert_subjects_to_stack()
+				 * require heap allocated filename.
+				 */
+				fpath = strdup(cert_file);
+				if (unlikely(fpath == NULL)) {
+					ret = GFARM_ERR_NO_MEMORY;
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't allocate a "
+						"filename buffer: %s",
+						gfarm_error_string(ret));
+					break;
+				}
+				/*
+				 * NOTE:
+				 *	SSL_add_file_cert_subjects_to_stack()
+				 *	has no explanation of return value.
+				 */
+				tls_runtime_flush_error();
+				(void)SSL_add_file_cert_subjects_to_stack(
+					stack, fpath);
+				if (likely(tls_has_runtime_error() == false)) {
+					nadd++;
+				} else {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Failed to add a cert"
+						"file to X509_NAME "
+						"stack: %s", fpath);
+					free(fpath);
+					ret = GFARM_ERR_INTERNAL_ERROR;
+					break;
+				}
+			} else {
+				if (ret != GFARM_ERR_NO_ERROR) {
+					gflog_tls_warning(GFARM_MSG_UNFIXED,
+						"Skip adding %s as a valid "
+						"cert.", cert_file);
+					continue;
+				}
+			}
+		}
+		if (likely(ret == GFARM_ERR_NO_ERROR)) {
+			*nptr = nadd;
+		}
+			
+	} else if (unlikely(de == NULL)) {
+		ret = GFARM_ERR_NO_MEMORY;
+		gflog_tls_error(GFARM_MSG_UNFIXED,
+			"Can't allocate a directory entry: %s",
+			gfarm_error_string(ret));
+	} else {
+		if (errno != 0) {
+			ret = gfarm_errno_to_error(errno);
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't open a directory %s: %s", dir,
+				gfarm_error_string(ret));
+		} else {
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+		}
+	}
+
+	if (d != NULL) {
+		(void)closedir(d);
+	}
+	free(de);
+
+	return ret;
+}
+
+static inline gfarm_error_t
+tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
+	const char *ca_path, const char* acceptable_ca_path)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+
+	/*
+	 * NOTE: What Apache 2.4 does for this are:
+	 *
+	 *	SSL_CTX_load_verify_locations(ctx,
+	 *		tls_ca_certificate_path);
+	 *	if (tls_client_ca_certificate_path) {
+	 *		dir = tls_client_ca_certificate_path;
+	 *	} else {
+	 *		dir = tls_ca_certificate_path;
+	 *	}
+	 *	STACK_OF(X509_NAME) *ca_list;
+	 *
+	 *	while (opendir(dir)/readdir()) {
+	 *		SSL_add_file_cert_subjects_to_stack(ca_list,
+	 *			file);
+	 *	}
+	 *	SSL_CTX_set_client_CA_list(ctx, ca_list);
+	 */
+
+	if (likely(ssl_ctx != NULL && is_valid_string(ca_path) == true)) {
+		tls_runtime_flush_error();
+		if (unlikely(SSL_CTX_load_verify_locations(ssl_ctx,
+				NULL, ca_path) == 0)) {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Failed to set CA store to a SSL_CTX.");
+			goto done;
+		}
+		if (role == TLS_ROLE_SERVER) {
+			int ncerts = 0;
+			const char *dir =
+				(is_valid_string(acceptable_ca_path) == true)
+				? acceptable_ca_path : ca_path;
+			STACK_OF(X509_NAME) *ca_list = sk_X509_NAME_new_null();
+			if (likely(ca_list != NULL &&
+				(ret = tls_get_x509_name_stack_from_dir(
+					ca_path, ca_list, &ncerts)) ==
+				GFARM_ERR_NO_ERROR && ncerts > 0)) {
+				tls_runtime_flush_error();
+				SSL_CTX_set_client_CA_list(ssl_ctx, ca_list);
+				if (unlikely(tls_has_runtime_error() ==
+					true)) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+							"Can't add valid "
+							"clients CA certs in "
+							"%s for server.", dir);
+					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+					goto free_ca_list;
+				}
+			} else {
+				if (ca_list == NULL) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't allocate "
+						"STACK_OF(X509_NAME).");
+					ret = GFARM_ERR_NO_MEMORY;
+					goto done;
+				} else if (ret == GFARM_ERR_NO_ERROR &&
+						ncerts == 0) {
+					gflog_tls_warning(GFARM_MSG_UNFIXED,
+						"No cert file is "
+						"added as a valid cert under "
+						"%s directory.", dir);
+				}
+			free_ca_list:
+				sk_X509_NAME_pop_free(ca_list,
+						X509_NAME_free);
+				
+			}
+		} else {
+			ret = GFARM_ERR_NO_ERROR;
+		}
+	} else {
+		ret = GFARM_ERR_INVALID_ARGUMENT;
+	}
+
+done:
+	return ret;
+}
+
 /*
  * Internal TLS context constructor/destructor
  */
@@ -764,20 +959,27 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 					"can't dulicate a CA certs directory "
 					" name: %s", gfarm_error_string(ret));
 				goto bailout;
+			} else if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+				goto bailout;
 			}
 		}
 
 		/* Acceptable CA cert path (server only) */
 		if (role == TLS_ROLE_SERVER &&
-			is_valid_string(acceptable_ca_path) == true &&
-			(acceptable_ca_path = strdup(acceptable_ca_path))
-			!= NULL) {
-			ret = GFARM_ERR_NO_MEMORY;
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"can't dulicate an acceptable CA certs "
-				"directory nmae: %s",
-				gfarm_error_string(ret));
-			goto bailout;
+			(is_valid_string(acceptable_ca_path) == true) &&
+			((ret = is_valid_cert_store_dir(acceptable_ca_path)) ==
+			 GFARM_ERR_NO_ERROR)) {
+			acceptable_ca_path = strdup(acceptable_ca_path);
+			if (unlikely(acceptable_ca_path == NULL)) {
+				ret = GFARM_ERR_NO_MEMORY;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"can't dulicate an acceptable CA "
+					"certs directory nmae: %s",
+					gfarm_error_string(ret));
+				goto bailout;
+			} else if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+				goto bailout;
+			}
 		}
 
 		/* Revocation path */
@@ -960,32 +1162,18 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		}
 
 		/*
-		 * CA store path
+		 * Set CA store path
 		 */
-		/*
-		 * NOTE: What Apache 2.4 does for this are:
-		 *
-		 *	SSL_CTX_load_verify_locations(ctx,
-		 *		tls_ca_certificate_path);
-		 *	if (tls_client_ca_certificate_path) {
-		 *		dir = tls_client_ca_certificate_path;
-		 *	} else {
-		 *		dir = tls_ca_certificate_path;
-		 *	}
-		 *	STACK_OF(X509_NAME) *ca_list;
-		 *
-		 *	while (opendir(dir)/readdir()) {
-		 *		SSL_add_file_cert_subjects_to_stack(ca_list,
-		 *			file);
-		 *	}
-		 *	SSL_CTX_set_client_CA_list(ctx, ca_list);
-		 *
-		 * XXX FIXME:
-		 *	Call SSL_CTX_load_verify_location() FOR NOW.
-		 */
-		
-	}
+		ret = tls_set_ca_path(ssl_ctx, role,
+			ca_path, acceptable_ca_path);
+		if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+			goto bailout;
+		}
 
+		/*
+		 * Set revocation path
+		 */
+	}
 
 	/*
 	 * Create a new tls_session_ctx_t
