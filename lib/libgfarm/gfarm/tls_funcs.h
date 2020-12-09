@@ -619,38 +619,33 @@ tls_get_x509_name_stack_from_dir(const char *dir,
 	STACK_OF(X509_NAME) *stack, int *nptr)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
-
 	DIR *d = NULL;
-	struct dirent *de = (struct dirent *)
-		malloc(offsetof(struct dirent, d_name) + PATH_MAX + 1);
+	struct stat s;
+	struct dirent *de = NULL;
+	char cert_file[PATH_MAX];
+	char *fpath = NULL;
+	int nadd = 0;
 
 	errno = 0;
-	if (likely(dir != NULL && stack != NULL && nptr != NULL &&
-		   (d = opendir(dir)) != NULL && errno == 0)) {
-
-		struct stat s;
-		struct dirent *chk = de;
-		char cert_file[PATH_MAX];
-		char *fpath = NULL;
-		int nadd = 0;
+	if (unlikely(dir == NULL || stack == NULL || nptr != NULL ||
+		   (d = opendir(dir)) == NULL || errno != 0)) {
+		if (errno != 0) {
+			ret = gfarm_errno_to_error(errno);
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't open a directory %s: %s", dir,
+				gfarm_error_string(ret));
+		} else {
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+		}
+		goto done;
+	}
 		
-		*nptr = 0;
+	*nptr = 0;
+	do {
 		errno = 0;
-		for (;
-		     /*
-		      * XXX FIXME:
-		      *		readdir_r() is deprected in glibc
-		      *		2.24, but we won't to accept using
-		      *		lock and readdir() since it must be
-		      *		soooo slow. So, we use readdir_r()
-		      *		with a large-chunk'ish struct dient
-		      *		buffer.
-		      */
-		    	readdir_r(d, de, &chk) == 0 && chk != NULL;
-			chk = de, errno = 0) {
-
+		if (likely((de = readdir(d)) != NULL)) {
 			(void)snprintf(cert_file, sizeof(cert_file),
-				       "%s/%s", dir, de->d_name);
+				"%s/%s", dir, de->d_name);
 			errno = 0;
 			if (stat(cert_file, &s) == 0 &&
 				S_ISREG(s.st_mode) != 0 &&
@@ -658,7 +653,7 @@ tls_get_x509_name_stack_from_dir(const char *dir,
 				GFARM_ERR_NO_ERROR) {
 				/*
 				 * Seems SSL_add_file_cert_subjects_to_stack()
-				 * require heap allocated filename.
+				 * requires heap allocated filename.
 				 */
 				fpath = strdup(cert_file);
 				if (unlikely(fpath == NULL)) {
@@ -696,33 +691,28 @@ tls_get_x509_name_stack_from_dir(const char *dir,
 					continue;
 				}
 			}
-		}
-		if (likely(ret == GFARM_ERR_NO_ERROR)) {
-			*nptr = nadd;
-		}
-			
-	} else if (unlikely(de == NULL)) {
-		ret = GFARM_ERR_NO_MEMORY;
-		gflog_tls_error(GFARM_MSG_UNFIXED,
-			"Can't allocate a directory entry: %s",
-			gfarm_error_string(ret));
-	} else {
-		if (errno != 0) {
-			ret = gfarm_errno_to_error(errno);
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Can't open a directory %s: %s", dir,
-				gfarm_error_string(ret));
 		} else {
-			ret = GFARM_ERR_INVALID_ARGUMENT;
+			if (errno == 0) {
+				ret = GFARM_ERR_NO_ERROR;
+			} else {
+				ret = gfarm_errno_to_error(errno);
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"readdir(3) error: %s (%d)",
+					gfarm_error_string(ret), errno);
+			}
+			break;
 		}
-	}
+	} while (true);
 
+done:
+	if (likely(ret == GFARM_ERR_NO_ERROR)) {
+		*nptr = nadd;
+	}
 	if (d != NULL) {
 		(void)closedir(d);
 	}
-	free(de);
 
-	return ret;
+	return (ret);
 }
 
 static inline gfarm_error_t
@@ -811,7 +801,7 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 	}
 
 done:
-	return ret;
+	return (ret);
 }
 
 /*
@@ -860,7 +850,7 @@ tls_set_revoke_path(SSL_CTX *ssl_ctx, const char *revoke_path)
 		}
 	}
 
-	return ret;
+	return (ret);
 }
 
 /*
@@ -939,7 +929,7 @@ done:
 		*sslret = NULL;
 	}
 
-	return ret;
+	return (ret);
 }
 
 /*
@@ -1186,6 +1176,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	/*
 	 * Create a SSL_CTX
 	 */
+	tls_runtime_flush_error();
 	if (role == TLS_ROLE_SERVER) {
 		ssl_ctx = SSL_CTX_new(TLS_server_method());
 	} else if (role == TLS_ROLE_CLIENT) {
@@ -1292,8 +1283,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 			tls_runtime_flush_error();			
 			osst = SSL_CTX_use_certificate_chain_file(
 				ssl_ctx, cert_to_use);
-			if (unlikely(osst != 1 ||
-				tls_has_runtime_error() == true)) {
+			if (unlikely(osst != 1)) {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Can't load a certificate "
 					"file \"%s\" into a SSL_CTX.",
@@ -1307,9 +1297,8 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 			 * Set a private key into the SSL_CTX
 			 */
 			tls_runtime_flush_error();
-			if (unlikely((osst = SSL_CTX_use_PrivateKey(
-						ssl_ctx, prvkey) != 1) ||
-				(tls_has_runtime_error() == true))) {
+			osst = SSL_CTX_use_PrivateKey(ssl_ctx, prvkey);
+			if (unlikely(osst != 1)) {
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Can't set a private key to a "
 					"SSL_CTX.");
@@ -1318,6 +1307,11 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 				goto bailout;
 			}
 		}
+	} else {
+		gflog_tls_error(GFARM_MSG_UNFIXED,
+			"Failed to create a SSL_CTX.");
+		ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+		goto bailout;
 	}
 
 	/*
