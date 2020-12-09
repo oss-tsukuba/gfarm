@@ -159,13 +159,6 @@ static const char *const tls13_valid_cyphers[] = {
 	NULL
 };
 
-/*
- * TLS session re-key threshold (in bytes)
- *
- * XXX FIXME:	how many bytes should we choose?
- */
-#define TLS_SESSION_REKEY_BYTES	1024*1024*1024
-
 
 
 /*
@@ -194,9 +187,11 @@ struct tls_session_ctx_struct {
 				/* got SSL_ERROR_SYSCALL or SSL_ERROR_SSL */
 
 	tls_role_t role_;
+	bool do_mutual_auth_;
+	bool is_verified_;
 	size_t io_total_;	/* How many bytes transmitted */
 	size_t io_key_update_;	/* KeyUpdate water level (bytes) */
-	size_t keyupd_thresh_;	/* KeyUpdate threshold (bytes) */
+	ssize_t keyupd_thresh_;	/* KeyUpdate threshold (bytes) */
 	
 	SSL_CTX *ssl_ctx_;	/* API alloc'd */
 	EVP_PKEY *prvkey_;	/* API alloc'd */

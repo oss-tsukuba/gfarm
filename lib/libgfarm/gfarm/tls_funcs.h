@@ -1331,6 +1331,8 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		(void)memset(ctxret, 0,
 			sizeof(struct tls_session_ctx_struct));
 		ctxret->role_ = role;
+		ctxret->do_mutual_auth_ = do_mutual_auth;
+		ctxret->keyupd_thresh_ = gfarm_ctxp->tls_key_update;
 		ctxret->prvkey_ = prvkey;
 		ctxret->ssl_ctx_ = ssl_ctx;
 		ctxret->ssl_ = ssl;
@@ -1536,7 +1538,7 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
 	struct timeval tv_save;
 	struct timeval *tvp = MULL;
 	if (tous >= 0) {
-		tv_save.tv_isec = tous % (1000 * 1000);
+		tv_save.tv_usec = tous % (1000 * 1000);
 		tv_save.tv_sec = tous / (1000 * 1000);
 	}
 	
@@ -1578,6 +1580,91 @@ tls_session_wait_readable(tls_session_ctx_t ctx, int fd, int tous)
 /*
  * Session establish
  */
+
+static inline gfarm_error_t
+tls_session_verify(tls_session_ctx_t ctx, bool *is_verified)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	SSL *ssl = NULL;
+	X509 *p = NULL;
+	X509_NAME *pn = NULL;
+
+	/*
+	(res = SSL_get_verify_result(ssl)) == X509_V_OK
+	*/
+
+	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL)) {
+		/*
+		 * No matter verified or not, get a peer cert.
+		 */
+		ctx->peer_dn_ = NULL;
+		tls_runtime_flush_error();
+		if (likely(((p = SSL_get_peer_certificate(ssl)) != NULL) &&
+			((pn = X509_get_subject_name(p)) != NULL))) {
+			BIO *bio = BIO_new(BIO_s_mem());
+			if (likely(bio != NULL)) {
+				int len;
+#define DN_FORMAT \
+	(XN_FLAG_ONELINE | XN_FLAG_DN_REV | ASN1_STRFLGS_ESC_MSB)
+				(void)X509_NAME_print_ex(bio, pn,
+						0, DN_FORMAT);
+				len = BIO_pending(bio);
+				if (likely(len > 0)) {
+					char *buf = (char *)malloc(len + 1);
+					if (buf != NULL) {
+						(void)BIO_read(bio, buf, len);
+						buf[len] = '\0';
+						ctx->peer_dn_ = buf;
+						ret = ctx->last_gfarm_error_ =
+							GFARM_ERR_NO_ERROR;
+					} else {
+						ret = ctx->last_gfarm_error_ =
+							GFARM_ERR_NO_MEMORY;
+						gflog_tls_error(
+							GFARM_MSG_UNFIXED,
+							"Can't allcate a "
+							"buffer for a "
+							"SubjectDN, %d "
+							"bytes.", len);
+					}
+				}
+				BIO_free(bio);
+			}
+		} else {
+			if (ctx->role_ == TLS_ROLE_CLIENT ||
+				ctx->do_mutual_auth_ == true) {
+				ret = ctx->last_gfarm_error_ =
+					GFARM_ERR_INTERNAL_ERROR;
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to acquire a peer "
+					"ceet but verification "
+					"succeeded: %s",
+					gfarm_error_string(ret));
+			} else {
+				ret = ctx->last_gfarm_error_ =
+					GFARM_ERR_NO_ERROR;
+			}
+		}
+	} else {
+		ret = ctx->last_gfarm_error_ =
+			GFARM_ERR_INVALID_ARGUMENT;
+	}
+
+	if  (ssl != NULL) {
+		bool v;
+
+		tls_runtime_flush_error();
+		v = (SSL_get_verify_result(ssl) == X509_V_OK) ?
+			true : false;
+		ctx->is_verified_ = v;
+		if (is_verified != NULL) {
+			*is_verified = v;
+		}
+	}
+
+	return (ret);
+}
+
 static inline gfarm_error_t
 tls_session_establish(tls_session_ctx_t ctx, int fd)
 {
@@ -1653,7 +1740,25 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 		}
 	}
 
-	return ret;
+	if (ret == GFARM_ERR_NO_ERROR && ctx != NULL) {
+		bool is_verified = false;
+		ret = tls_session_verify(ctx, &is_verified);
+		if (is_verified == false) {
+			ret = ctx->last_gfarm_error_ =
+				GFARM_ERR_AUTHENTICATION;
+			if (is_valid_string(ctx->peer_dn_) == true) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Authentication failed between peer: "
+					"'%s'", ctx->peer_dn_);
+			} else {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Authentication failed "
+					"(no cert acquired.)");
+			}
+		}
+	}
+
+	return (ret);
 }
 
 /*

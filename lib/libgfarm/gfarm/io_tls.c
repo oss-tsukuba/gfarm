@@ -139,7 +139,8 @@ tls_iobufop_timeout_read(struct gfarm_iobuffer *b,
 
 	if (likely(ctx != NULL && b != NULL && gfarm_ctxp != NULL)) {
 		gfarm_error_t gfe = tls_session_timeout_read(ctx, fd, buf, len,
-					gfarm_ctxp->network_receive_timeout,
+					gfarm_ctxp->network_receive_timeout *
+						1000 * 1000,
 					&ret);
 		if (likely(gfe == GFARM_ERR_NO_ERROR)) {
 			gfarm_iobuffer_set_error(b, gfe);
