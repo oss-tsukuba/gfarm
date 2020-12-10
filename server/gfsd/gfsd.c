@@ -7010,7 +7010,7 @@ main(int argc, char **argv)
 	}
 	assert(e == GFARM_ERR_NO_ERROR);
 
-	e = gfarm_server_initialize(config_file, &argc, &argv);
+	e = gfarm_server_initialize_for_gfsd(config_file, &argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "gfarm_server_initialize: %s\n",
 		    gfarm_error_string(e));

@@ -1,23 +1,17 @@
-#pragma once
+/*
+ * gfp_xdr_tls_alloc() flags:
+ */
+#define GFP_XDR_TLS_ROLE_IS_INITIATOR(flags)	\
+	(((flags) & GFP_XDR_TLS_ROLE) == GFP_XDR_TLS_INITIATE)
+#define GFP_XDR_TLS_ACCEPT			0
+#define GFP_XDR_TLS_INITIATE			1
+#define GFP_XDR_TLS_ROLE			1
 
-#ifdef HAVE_TLS_1_3
+#define GFP_XDR_TLS_CLIENT_AUTHENTICATION	2 /* tls_client_certificate */
 
-
+gfarm_error_t gfp_xdr_tls_alloc(struct gfp_xdr *, int, int,
+	const char *, const char *);
+	/* gfp_xdr_tls_alloc(conn, fd, flags, service, name */
 
-gfarm_error_t
-gfp_xdr_tls_alloc(struct gfp_xdr *conn, int fd,
-	int flags, char *service, char *name);
-void
-gfp_xdr_tls_reset(struct gfp_xdr *conn);
-char *
-gfp_xdr_tls_initiator_dn(struct gfp_xdr *conn);
-
-
-
-#else
-
-extern const int tls_not_used;
-
-
-
-#endif /* HAVE_TLS_1_3 */
+void gfp_xdr_tls_reset(struct gfp_xdr *);
+char *gfp_xdr_tls_initiator_dn(struct gfp_xdr *);

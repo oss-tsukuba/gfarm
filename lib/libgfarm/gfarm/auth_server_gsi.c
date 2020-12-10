@@ -40,7 +40,8 @@ static gfarm_error_t
 gfarm_authorize_gsi_common0(struct gfp_xdr *conn, int switch_to,
 	char *service_tag, char *hostname, enum gfarm_auth_method auth_method,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, const char *, char **), void *closure,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	int gsi_errno = 0, fd = gfp_xdr_fd(conn);
@@ -181,7 +182,7 @@ gfarm_authorize_gsi_common0(struct gfp_xdr *conn, int switch_to,
 	case GFARM_AUTH_USER:
 		peer_type = GFARM_AUTH_ID_TYPE_USER;
 		e = (*auth_uid_to_global_user)(closure, auth_method,
-		    distname, &global_username);
+		    peer_type, distname, &global_username);
 		if (e != GFARM_ERR_NO_ERROR) {
 			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
 			gflog_notice(GFARM_MSG_1003394,
@@ -295,7 +296,8 @@ static gfarm_error_t
 gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	char *service_tag, char *hostname, enum gfarm_auth_method auth_method,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, const char *, char **), void *closure,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gfarm_error_t e;
@@ -313,7 +315,8 @@ gfarm_error_t
 gfarm_authorize_gsi(struct gfp_xdr *conn,
 	int switch_to, char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, const char *, char **), void *closure,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	return (gfarm_authorize_gsi_common(conn,
@@ -330,7 +333,8 @@ gfarm_error_t
 gfarm_authorize_gsi_auth(struct gfp_xdr *conn,
 	int switch_to, char *service_tag, char *hostname,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
-	    enum gfarm_auth_method, const char *, char **), void *closure,
+	    enum gfarm_auth_method, enum gfarm_auth_id_type, const char *,
+	    char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gfarm_error_t e = gfarm_authorize_gsi_common(conn,
