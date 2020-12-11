@@ -11,7 +11,7 @@
 #include "tls_funcs.h"
 
 
-	
+
 static void
 tls_runtime_init_once(void)
 {

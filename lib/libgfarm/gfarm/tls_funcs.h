@@ -961,7 +961,7 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	bool need_cert_merge = false;
 	bool has_cert_file = false;
 	bool has_cert_chain_file = false;
-	
+
 	/*
 	 * Parameter check
 	 */
