@@ -15,7 +15,7 @@
 #define BUF_SIZE 1024
 
 static int socketfd;
-static bool is_server = false;
+static bool is_server = false, is_mutual_authentication = false;
 static char *portnum = "12345";
 static char *ipaddr = "127.0.0.1";
 
@@ -123,7 +123,7 @@ static inline void usage()
 		--tls_key_file\n\
 		--tls_key_update\n\
 		--network_receive_timeout\n\
-		");
+		--mutual_authentication\n");
 	return;
 }
 
@@ -146,6 +146,7 @@ static inline int prologue(int argc, char **argv)
 		{"tls_key_file",                   required_argument, 0, 0 },
 		{"tls_key_update",                 required_argument, 0, 0 },
 		{"network_receive_timeout",        required_argument, 0, 0 },
+		{"mutual_authentication",          no_argument,       0, 0 },
 		{0,                                0,                 0, 0 }
 	};
 
@@ -155,28 +156,20 @@ static inline int prologue(int argc, char **argv)
 			optname_size = sizeof(longopts[longindex].name);
 			if (strncmp(longopts[longindex].name, "tls_cipher_suite", optname_size) == 0) {
 				gfarm_ctxp->tls_cipher_suite = optarg;
-				printf("set tls_cipher_suite: %s\n", gfarm_ctxp->tls_cipher_suite);
 			} else if (strncmp(longopts[longindex].name, "tls_ca_certificate_path", optname_size) == 0) {
 				gfarm_ctxp->tls_ca_certificate_path = optarg;
-				printf("set tls_ca_certificate_path: %s\n", gfarm_ctxp->tls_ca_certificate_path);
 			} else if (strncmp(longopts[longindex].name, "tls_ca_revocation_path", optname_size) == 0) {
 				gfarm_ctxp->tls_ca_revocation_path = optarg;
-				printf("set tls_ca_revocation_path: %s\n", gfarm_ctxp->tls_ca_revocation_path);
 			} else if (strncmp(longopts[longindex].name, "tls_client_ca_certificate_path", optname_size) == 0) {
 				gfarm_ctxp->tls_client_ca_certificate_path = optarg;
-				printf("set tls_client_ca_certificate_path: %s\n", gfarm_ctxp->tls_client_ca_certificate_path);
 			} else if (strncmp(longopts[longindex].name, "tls_client_ca_revocation_path", optname_size) == 0) {
 				gfarm_ctxp->tls_client_ca_revocation_path = optarg;
-				printf("set tls_client_ca_revocation_path: %s\n", gfarm_ctxp->tls_client_ca_revocation_path);
 			} else if (strncmp(longopts[longindex].name, "tls_certificate_file", optname_size) == 0) {
 				gfarm_ctxp->tls_certificate_file = optarg;
-				printf("set tls_certificate_file: %s\n", gfarm_ctxp->tls_certificate_file);
 			} else if (strncmp(longopts[longindex].name, "tls_certificate_chain_file", optname_size) == 0) {
 				gfarm_ctxp->tls_certificate_chain_file = optarg;
-				printf("set tls_certificate_chain_file: %s\n", gfarm_ctxp->tls_certificate_chain_file);
 			} else if (strncmp(longopts[longindex].name, "tls_key_file", optname_size) == 0) {
 				gfarm_ctxp->tls_key_file = optarg;
-				printf("set tls_key_file: %s\n", gfarm_ctxp->tls_key_file);
 			} else if (strncmp(longopts[longindex].name, "tls_key_update", optname_size) == 0) {
 				errno = 0;
 				retval_strtol = strtol(optarg, &endptr, DECIMAL_NUMBER);
@@ -184,7 +177,6 @@ static inline int prologue(int argc, char **argv)
 					if (optarg != '\0' && endptr == '\0'){
 						if (retval_strtol <= INT_MAX && retval_strtol >= INT_MIN){
 							gfarm_ctxp->tls_key_update = (int)retval_strtol;
-							printf("set tls_key_update: %d\n", gfarm_ctxp->tls_key_update);
 						} else {
 							fprintf(stderr, "out of integer range.");
 						}
@@ -201,7 +193,6 @@ static inline int prologue(int argc, char **argv)
 					if (optarg != '\0' && endptr == '\0'){
 						if (retval_strtol <= INT_MAX && retval_strtol >= INT_MIN){
 							gfarm_ctxp->network_receive_timeout = (int)retval_strtol;
-							printf("set network_receive_timeout: %d\n", gfarm_ctxp->network_receive_timeout);
 						} else {
 							fprintf(stderr, "out of integer range.");
 						}
@@ -211,7 +202,9 @@ static inline int prologue(int argc, char **argv)
 				} else {
 					perror("strtol");
 				}
-			} 
+			} else if (strncmp(longopts[longindex].name, "mutual_authentication", optname_size) == 0) {
+				is_mutual_authentication = true;
+			}
 
 			break;
 		case 's':
