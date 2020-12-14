@@ -100,7 +100,7 @@ tls_iobufop_close(void *cookie, int fd)
 	if (likely(ctx != NULL)) { 
 		ret = tls_session_shutdown(ctx, fd, true);
 		if (likely(ret == GFARM_ERR_NO_ERROR)) {
-			tls_session_ctx_destroy(ctx);
+			tls_session_destroy_ctx(ctx);
 		}
 	} else {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -250,14 +250,14 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd,
 		(GFP_XDR_TLS_ROLE_IS_INITIATOR(flags)) ?
 		TLS_ROLE_INITIATOR : TLS_ROLE_ACCEPTOR;
 
-	ret = tls_session_ctx_create(&ctx, role, do_mutual_auth);
+	ret = tls_session_create_ctx(&ctx, role, do_mutual_auth);
 	if (likely(ret == GFARM_ERR_NO_ERROR && ctx != NULL)) {
 		ret = tls_session_establish(ctx, fd);
 		if (likely(ret == GFARM_ERR_NO_ERROR)) {
 			gfp_xdr_set(conn, &gfp_xdr_tls_iobuf_ops,
 				ctx, fd);
 		} else {
-			tls_session_ctx_destroy(ctx);
+			tls_session_destroy_ctx(ctx);
 		}
 	}
 
@@ -272,7 +272,7 @@ gfp_xdr_tls_reset(struct gfp_xdr *conn)
 {
 	tls_session_ctx_t ctx = gfp_xdr_cookie(conn);
 
-	tls_session_ctx_destroy(ctx);
+	tls_session_destroy_ctx(ctx);
 }
 
 char *
