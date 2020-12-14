@@ -71,6 +71,16 @@ static const struct gfarm_auth_client_method {
 	  gfarm_auth_request_sharedsecret,
 	  gfarm_auth_request_sharedsecret_multiplexed,
 	  gfarm_auth_result_sharedsecret_multiplexed },
+#ifdef HAVE_TLS_1_3
+	{ GFARM_AUTH_METHOD_TLS_SHAREDSECRET,
+	  gfarm_auth_request_tls_sharedsecret,
+	  gfarm_auth_request_tls_sharedsecret_multiplexed,
+	  gfarm_auth_result_tls_sharedsecret_multiplexed },
+	{ GFARM_AUTH_METHOD_TLS_CLIENT_CERTIFICATE,
+	  gfarm_auth_request_tls_client_certificate,
+	  gfarm_auth_request_tls_client_certificate_multiplexed,
+	  gfarm_auth_result_tls_client_certificate_multiplexed },
+#endif /* HAVE_TLS_1_3 */
 #ifdef HAVE_GSI
 	{ GFARM_AUTH_METHOD_GSI_AUTH,
 	  gfarm_auth_request_gsi_auth,
@@ -80,7 +90,7 @@ static const struct gfarm_auth_client_method {
 	  gfarm_auth_request_gsi,
 	  gfarm_auth_request_gsi_multiplexed,
 	  gfarm_auth_result_gsi_multiplexed },
-#endif
+#endif /* HAVE_GSI */
 	{ GFARM_AUTH_METHOD_NONE,	  NULL, NULL, NULL }	/* sentinel */
 };
 

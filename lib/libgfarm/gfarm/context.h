@@ -82,6 +82,17 @@ struct gfarm_context {
 #ifdef HAVE_INFINIBAND
 	struct gfs_ib_rdma_static *ib_rdma_static;
 #endif /* HAVE_INFINIBAND */
+
+	/* auth tls_* */
+	char *tls_cipher_suite;
+	char *tls_ca_certificate_path;
+	char *tls_ca_revocation_path;
+	char *tls_client_ca_certificate_path;
+	char *tls_client_ca_revocation_path;
+	char *tls_certificate_file;
+	char *tls_certificate_chain_file;
+	char *tls_key_file;
+	int tls_key_update; /* boolean */
 };
 #ifndef __KERNEL__	/* gfarm_ctxp */
 extern struct gfarm_context *gfarm_ctxp;

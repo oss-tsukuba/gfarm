@@ -5,13 +5,13 @@
 
 
 #define IN_TLS_CORE
-#define TLS_TEST
+#undef TLS_TEST
 
 #include "tls_headers.h"
 #include "tls_funcs.h"
 
 
-	
+
 static void
 tls_runtime_init_once(void)
 {
@@ -234,32 +234,30 @@ static struct gfp_iobuffer_ops gfp_xdr_tls_iobuf_ops = {
  */
 gfarm_error_t
 gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd,
-	int flags, char *service, char *name)
+	int flags, const char *service, const char *name)
 {
-	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	gfarm_error_t ret;
 
 	/* just for now */
 	(void)service;
 	(void)name;
 
-	if (likely(conn != NULL)) {
-		tls_session_ctx_t ctx = NULL;
-		bool do_mutual_auth =
-			((flags & GFP_XDR_TLS_CLIENT_AUTHENTICATION) != 0) ?
-			true : false;
-		tls_role_t role =
-			(GFP_XDR_TLS_ROLE_IS_INITIATOR(flags)) ?
-			TLS_ROLE_INITIATOR : TLS_ROLE_ACCEPTOR;
+	tls_session_ctx_t ctx = NULL;
+	bool do_mutual_auth =
+		((flags & GFP_XDR_TLS_CLIENT_AUTHENTICATION) != 0) ?
+		true : false;
+	tls_role_t role =
+		(GFP_XDR_TLS_ROLE_IS_INITIATOR(flags)) ?
+		TLS_ROLE_INITIATOR : TLS_ROLE_ACCEPTOR;
 
-		ret = tls_session_ctx_create(&ctx, role, do_mutual_auth);
-		if (likely(ret == GFARM_ERR_NO_ERROR && ctx != NULL)) {
-			ret = tls_session_establish(ctx, fd);
-			if (likely(ret == GFARM_ERR_NO_ERROR)) {
-				gfp_xdr_set(conn, &gfp_xdr_tls_iobuf_ops,
-					ctx, fd);
-			} else {
-				tls_session_ctx_destroy(ctx);
-			}
+	ret = tls_session_ctx_create(&ctx, role, do_mutual_auth);
+	if (likely(ret == GFARM_ERR_NO_ERROR && ctx != NULL)) {
+		ret = tls_session_establish(ctx, fd);
+		if (likely(ret == GFARM_ERR_NO_ERROR)) {
+			gfp_xdr_set(conn, &gfp_xdr_tls_iobuf_ops,
+				ctx, fd);
+		} else {
+			tls_session_ctx_destroy(ctx);
 		}
 	}
 
@@ -272,33 +270,18 @@ gfp_xdr_tls_alloc(struct gfp_xdr *conn,	int fd,
 void
 gfp_xdr_tls_reset(struct gfp_xdr *conn)
 {
-	tls_session_ctx_t ctx = NULL;
+	tls_session_ctx_t ctx = gfp_xdr_cookie(conn);
 
-	if (likely(conn != NULL &&
-		(ctx = gfp_xdr_cookie(conn)) != NULL)) {
-		tls_session_ctx_destroy(ctx);
-	}
+	tls_session_ctx_destroy(ctx);
 }
 
 char *
 gfp_xdr_tls_initiator_dn(struct gfp_xdr *conn)
 {
-	tls_session_ctx_t ctx = NULL;
-	char *ret = NULL;
+	tls_session_ctx_t ctx = gfp_xdr_cookie(conn);
 
-	if (likely(conn != NULL &&
-		(ctx = gfp_xdr_cookie(conn)) != NULL)) {
-		ret = ctx->peer_dn_;
-	}
-
-	return (ret);
+	return (ctx->peer_dn_);
 }
-
-
-
-#else
-
-const int tls_not_used = 1;
 
 
 
