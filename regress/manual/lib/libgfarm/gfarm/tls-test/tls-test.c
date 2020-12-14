@@ -108,23 +108,52 @@ tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 
 static inline void usage()
 {
-	fprintf(stderr, "usage:\n\
-		-h                  			this help.\n\
-		-s                  			run as server.\n\
-		-a <IP address>     			specify the ip address.\n\
-		-p <port number>    			specify the port number.\n\
-		--tls_cipher_suite\n\
-		--tls_ca_certificate_path\n\
-		--tls_ca_revocation_path\n\
-		--tls_client_ca_certificate_path\n\
-		--tls_client_ca_revocation_path\n\
-		--tls_certificate_file\n\
-		--tls_certificate_chain_file\n\
-		--tls_key_file\n\
-		--tls_key_update\n\
-		--network_receive_timeout\n\
-		--mutual_authentication\n");
+	fprintf(stderr, "usage:\n"
+		"\t-h                  			this help.\n"
+		"\t-s                  			run as server.\n"
+		"\t-a <IP address>     			specify the ip address.\n"
+		"\t-p <port number>    			specify the port number.\n"
+		"\t--tls_cipher_suite\n"
+		"\t--tls_ca_certificate_path\n"
+		"\t--tls_ca_revocation_path\n"
+		"\t--tls_client_ca_certificate_path\n"
+		"\t--tls_client_ca_revocation_path\n"
+		"\t--tls_certificate_file\n"
+		"\t--tls_certificate_chain_file\n"
+		"\t--tls_key_file\n"
+		"\t--tls_key_update\n"
+		"\t--network_receive_timeout\n"
+		"\t--mutual_authentication\n");
 	return;
+}
+
+static inline bool safe_strtol(const char *str, long *result, int base)
+{
+	bool ret = false;
+	long retval_strtol;
+	char *endptr;
+	size_t len;
+
+	if (str == NULL) {
+		return ret;
+	} else if (result != NULL) {
+		*result = 0;
+	}
+
+	if ((len = strlen(str)) > 0) {
+		errno = 0;
+		retval_strtol = strtol(str, &endptr, base);
+		if ((str + len) == endptr) {
+			if (errno == 0) {
+				if (result != NULL) {
+					*result = retval_strtol;
+				}
+				ret = true;
+			}
+		}
+	}
+
+	return ret;
 }
 
 static inline int prologue(int argc, char **argv)
@@ -171,36 +200,28 @@ static inline int prologue(int argc, char **argv)
 			} else if (strncmp(longopts[longindex].name, "tls_key_file", optname_size) == 0) {
 				gfarm_ctxp->tls_key_file = optarg;
 			} else if (strncmp(longopts[longindex].name, "tls_key_update", optname_size) == 0) {
-				errno = 0;
-				retval_strtol = strtol(optarg, &endptr, DECIMAL_NUMBER);
-				if (errno == 0) {
-					if (optarg != '\0' && endptr == '\0'){
-						if (retval_strtol <= INT_MAX && retval_strtol >= INT_MIN){
-							gfarm_ctxp->tls_key_update = (int)retval_strtol;
-						} else {
-							fprintf(stderr, "out of integer range.");
-						}
+				if (safe_strtol(optarg, &retval_strtol, DECIMAL_NUMBER)) {
+					if (retval_strtol <= INT_MAX && retval_strtol >= INT_MIN){
+						gfarm_ctxp->tls_key_update = (int)retval_strtol;
 					} else {
-						fprintf(stderr, "invalid argument: %s\n", endptr);
+						fprintf(stderr, "out of integer range.");
 					}
 				} else {
-					perror("strtol");
+					if (errno != 0) {
+						perror("strtol");
+					}
 				}
 			} else if (strncmp(longopts[longindex].name, "network_receive_timeout", optname_size) == 0) {
-				errno = 0;
-				retval_strtol = strtol(optarg, &endptr, DECIMAL_NUMBER);
-				if (errno == 0) {
-					if (optarg != '\0' && endptr == '\0'){
-						if (retval_strtol <= INT_MAX && retval_strtol >= INT_MIN){
-							gfarm_ctxp->network_receive_timeout = (int)retval_strtol;
-						} else {
-							fprintf(stderr, "out of integer range.");
-						}
+				if (safe_strtol(optarg, &retval_strtol, DECIMAL_NUMBER)) {
+					if (retval_strtol <= INT_MAX && retval_strtol >= INT_MIN){
+						gfarm_ctxp->network_receive_timeout = (int)retval_strtol;
 					} else {
-						fprintf(stderr, "invalid argument: %s\n", endptr);
+						fprintf(stderr, "out of integer range.");
 					}
 				} else {
-					perror("strtol");
+					if (errno != 0) {
+						perror("strtol");
+					}
 				}
 			} else if (strncmp(longopts[longindex].name, "mutual_authentication", optname_size) == 0) {
 				is_mutual_authentication = true;
