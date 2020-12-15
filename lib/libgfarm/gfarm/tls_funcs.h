@@ -1203,15 +1203,17 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	 * OK, ready to build a TSL environment up.
 	 */
 
-	/*
-	 * Load a private key
-	 */
-	ret = tls_load_prvkey(prvkey_file, &prvkey);
-	if (unlikely(ret != GFARM_ERR_NO_ERROR || prvkey == NULL)) {
-		gflog_error(GFARM_MSG_UNFIXED,
-			"Can't load a private key file \"%s\".",
-			prvkey_file);
-		goto bailout;
+	if (do_mutual_auth == true) {
+		/*
+		 * Load a private key
+		 */
+		ret = tls_load_prvkey(prvkey_file, &prvkey);
+		if (unlikely(ret != GFARM_ERR_NO_ERROR || prvkey == NULL)) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"Can't load a private key file \"%s\".",
+				prvkey_file);
+			goto bailout;
+		}
 	}
 
 	/*
