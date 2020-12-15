@@ -489,10 +489,7 @@ tlslog_tls_message(int msg_no, int priority,
 	(void)vsnprintf(msgbuf, sizeof(msgbuf), format, ap);
 	va_end(ap);
 
-	if (ERR_peek_error() == 0) {
-		gflog_message(msg_no, priority, file, line_no, func,
-			"%s", msgbuf);
-	} else if (gflog_auth_get_verbose() != 0) {
+	if (ERR_peek_error() != 0 && gflog_auth_get_verbose() != 0) {
 		char msgbuf2[BASIC_BUFSZ * 3];
 		char tlsmsg[BASIC_BUFSZ];
 		const char *tls_file = NULL;
@@ -511,11 +508,14 @@ tlslog_tls_message(int msg_no, int priority,
 		ERR_error_string_n(err, tlsmsg, sizeof(tlsmsg));
 
 		(void)snprintf(msgbuf2, sizeof(msgbuf2),
-			"%s: [OpenSSL error info:%s:%d: %s]",
+			"%s: [OpenSSL error info: %s:%d: %s]",
 			msgbuf, tls_file, tls_line, tlsmsg);
 
 		gflog_auth_message(msg_no, priority, file, line_no, func,
 			"%s", msgbuf2);
+	} else {
+		gflog_message(msg_no, priority, file, line_no, func,
+			"%s", msgbuf);
 	}
 #undef BASIC_BUFSZ
 #ifdef BASIC_BUFSZ_ORG
@@ -565,7 +565,7 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
-	if (likely(is_valid_string(file) == true && *keyptr != NULL)) {
+	if (likely(is_valid_string(file) == true && keyptr != NULL)) {
 		FILE *f = NULL;
 		EVP_PKEY *pkey = NULL;
 
@@ -627,7 +627,7 @@ tls_get_x509_name_stack_from_dir(const char *dir,
 	int nadd = 0;
 
 	errno = 0;
-	if (unlikely(dir == NULL || stack == NULL || nptr != NULL ||
+	if (unlikely(dir == NULL || stack == NULL || nptr == NULL ||
 		   (d = opendir(dir)) == NULL || errno != 0)) {
 		if (errno != 0) {
 			ret = gfarm_errno_to_error(errno);
@@ -756,7 +756,7 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 			STACK_OF(X509_NAME) *ca_list = sk_X509_NAME_new_null();
 			if (likely(ca_list != NULL &&
 				(ret = tls_get_x509_name_stack_from_dir(
-					ca_path, ca_list, &ncerts)) ==
+					dir, ca_list, &ncerts)) ==
 				GFARM_ERR_NO_ERROR && ncerts > 0)) {
 				tls_runtime_flush_error();
 				SSL_CTX_set_client_CA_list(ssl_ctx, ca_list);
@@ -1032,13 +1032,21 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		need_self_cert = true;
 	}
 	if (need_self_cert == true) {
-		cert_file = gfarm_ctxp->tls_certificate_file;
-		cert_chain_file = gfarm_ctxp->tls_certificate_chain_file;
-		prvkey_file = gfarm_ctxp->tls_key_file;
-		ca_path = gfarm_ctxp->tls_ca_certificate_path;
+#define str_or_NULL(x) \
+	((is_valid_string((x)) == true) ? (x) : NULL)
+		cert_file =
+			str_or_NULL(gfarm_ctxp->tls_certificate_file);
+		cert_chain_file =
+			str_or_NULL(gfarm_ctxp->tls_certificate_chain_file);
+		prvkey_file =
+			str_or_NULL(gfarm_ctxp->tls_key_file);
+		ca_path =
+			str_or_NULL(gfarm_ctxp->tls_ca_certificate_path);
 		acceptable_ca_path =
-			gfarm_ctxp->tls_client_ca_certificate_path;
-		revoke_path = gfarm_ctxp->tls_ca_revocation_path;
+		str_or_NULL(gfarm_ctxp->tls_client_ca_certificate_path);
+		revoke_path =
+			str_or_NULL(gfarm_ctxp->tls_ca_revocation_path);
+#undef str_or_NULL
 
 		/* cert/cert chain file */
 		if ((is_valid_string(cert_chain_file) == true) &&
@@ -1188,7 +1196,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			goto bailout;
 		}
 	}
-	
+
 	/*
 	 * TLS runtime initialize
 	 */
@@ -1199,11 +1207,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		goto bailout;
 	}
 
-	/*
-	 * OK, ready to build a TSL environment up.
-	 */
-
-	if (do_mutual_auth == true) {
+	if (need_self_cert == true) {
 		/*
 		 * Load a private key
 		 */
@@ -1716,10 +1720,10 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 		 * Create an SSL
 		 */
 		ret = tls_session_setup_handle(ctx);
-		if (unlikely(ret != GFARM_ERR_NO_ERROR || ssl == NULL)) {
+		if (unlikely(ret != GFARM_ERR_NO_ERROR || ctx->ssl_ == NULL)) {
 			goto bailout;
 		}
-		ctx->ssl_ = ssl;
+		ssl = ctx->ssl_;
 
 		tls_runtime_flush_error();
 		if (likely(SSL_set_fd(ssl, fd) == 1)) {
@@ -1732,6 +1736,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 
 		retry:
 			errno = 0;
+			tls_runtime_flush_error();
 			(void)SSL_get_error(ssl, 1);
 			st = p(ssl);
 			ssl_err = SSL_get_error(ssl, 1);
@@ -1743,7 +1748,16 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 			} else if (st == 0 && do_cont == true) {
 				goto retry;
 			} else {
-				ret = ctx->last_gfarm_error_;
+				/*
+				 * st < 0 but SSL_ERROR_NONE ???
+				 */
+				if (ctx->last_gfarm_error_ ==
+					GFARM_ERR_NO_ERROR) {
+					ret = ctx->last_gfarm_error_ =
+						GFARM_ERR_TLS_RUNTIME_ERROR;
+				} else {
+					ret = ctx->last_gfarm_error_;
+				}
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"SSL handshake failed: %s",
 					gfarm_error_string(ret));
