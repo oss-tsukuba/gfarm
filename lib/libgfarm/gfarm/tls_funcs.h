@@ -565,7 +565,7 @@ tls_load_prvkey(const char *file, EVP_PKEY **keyptr)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
-	if (likely(is_valid_string(file) == true && *keyptr != NULL)) {
+	if (likely(is_valid_string(file) == true && keyptr != NULL)) {
 		FILE *f = NULL;
 		EVP_PKEY *pkey = NULL;
 
@@ -627,7 +627,7 @@ tls_get_x509_name_stack_from_dir(const char *dir,
 	int nadd = 0;
 
 	errno = 0;
-	if (unlikely(dir == NULL || stack == NULL || nptr != NULL ||
+	if (unlikely(dir == NULL || stack == NULL || nptr == NULL ||
 		   (d = opendir(dir)) == NULL || errno != 0)) {
 		if (errno != 0) {
 			ret = gfarm_errno_to_error(errno);
@@ -756,7 +756,7 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 			STACK_OF(X509_NAME) *ca_list = sk_X509_NAME_new_null();
 			if (likely(ca_list != NULL &&
 				(ret = tls_get_x509_name_stack_from_dir(
-					ca_path, ca_list, &ncerts)) ==
+					dir, ca_list, &ncerts)) ==
 				GFARM_ERR_NO_ERROR && ncerts > 0)) {
 				tls_runtime_flush_error();
 				SSL_CTX_set_client_CA_list(ssl_ctx, ca_list);
@@ -1032,13 +1032,21 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		need_self_cert = true;
 	}
 	if (need_self_cert == true) {
-		cert_file = gfarm_ctxp->tls_certificate_file;
-		cert_chain_file = gfarm_ctxp->tls_certificate_chain_file;
-		prvkey_file = gfarm_ctxp->tls_key_file;
-		ca_path = gfarm_ctxp->tls_ca_certificate_path;
+#define str_or_NULL(x) \
+	((is_valid_string((x)) == true) ? (x) : NULL)
+		cert_file =
+			str_or_NULL(gfarm_ctxp->tls_certificate_file);
+		cert_chain_file =
+			str_or_NULL(gfarm_ctxp->tls_certificate_chain_file);
+		prvkey_file =
+			str_or_NULL(gfarm_ctxp->tls_key_file);
+		ca_path =
+			str_or_NULL(gfarm_ctxp->tls_ca_certificate_path);
 		acceptable_ca_path =
-			gfarm_ctxp->tls_client_ca_certificate_path;
-		revoke_path = gfarm_ctxp->tls_ca_revocation_path;
+		str_or_NULL(gfarm_ctxp->tls_client_ca_certificate_path);
+		revoke_path =
+			str_or_NULL(gfarm_ctxp->tls_ca_revocation_path);
+#undef str_or_NULL
 
 		/* cert/cert chain file */
 		if ((is_valid_string(cert_chain_file) == true) &&
@@ -1188,7 +1196,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			goto bailout;
 		}
 	}
-	
+
 	/*
 	 * TLS runtime initialize
 	 */
@@ -1199,11 +1207,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		goto bailout;
 	}
 
-	/*
-	 * OK, ready to build a TSL environment up.
-	 */
-
-	if (do_mutual_auth == true) {
+	if (need_self_cert == true) {
 		/*
 		 * Load a private key
 		 */
