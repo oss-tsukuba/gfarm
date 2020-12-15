@@ -464,27 +464,27 @@ static inline int run_client()
 int main(int argc, char **argv)
 {
 	int ret = 1;
-	gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
 
-	gflog_initialize();
-	gerr = tls_session_create_ctx(&tls_ctx,
-		      (is_server == true) ? TLS_ROLE_SERVER : TLS_ROLE_CLIENT,
-		      is_mutual_authentication);
-	if (gerr == GFARM_ERR_NO_ERROR) {
-		if (prologue(argc, argv) == 0) {
-			if (is_server) {
-				ret = run_server();
-			} else {
-				ret = run_client();
-			}
-			freeaddrinfo(res);
+	if ((ret = prologue(argc, argv)) == 0) {
+		gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
+	
+		gflog_initialize();
+		gerr = tls_session_create_ctx(&tls_ctx,
+				(is_server == true) ?
+				TLS_ROLE_SERVER : TLS_ROLE_CLIENT,
+				is_mutual_authentication);
+		if (gerr == GFARM_ERR_NO_ERROR) {
+			ret = (is_server == true) ?
+				run_server() : run_client();
+		} else {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"can't create a tls session context: %s",
+				gfarm_error_string(gerr));
 		}
-	} else {
-		gflog_error(GFARM_MSG_UNFIXED,
-			"can't create a tls session context: %s",
-			gfarm_error_string(gerr));
+
+		(void)tls_session_destroy_ctx(tls_ctx);
+		freeaddrinfo(res);
 	}
 
-	(void)tls_session_destroy_ctx(tls_ctx);
 	return (ret);
 }
