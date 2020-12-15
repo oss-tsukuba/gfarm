@@ -252,7 +252,7 @@ is_user_in_group(uid_t uid, gid_t gid)
 					gres != NULL)) {
 					char **p = g.gr_mem;
 
-					while (p != NULL) {
+					while (*p != NULL) {
 						if (strcmp(u.pw_name,
 							*p) == 0) {
 							ret =
