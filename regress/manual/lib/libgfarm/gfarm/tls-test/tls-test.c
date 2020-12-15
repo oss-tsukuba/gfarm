@@ -444,6 +444,8 @@ int main(int argc, char **argv)
 		gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
 	
 		gflog_initialize();
+		(void)gflog_auth_set_verbose(100);
+
 		gerr = tls_session_create_ctx(&tls_ctx,
 				(is_server == true) ?
 				TLS_ROLE_SERVER : TLS_ROLE_CLIENT,
