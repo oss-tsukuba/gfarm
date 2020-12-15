@@ -860,19 +860,21 @@ static inline gfarm_error_t
 tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close);
 
 static inline gfarm_error_t
-tls_session_teardown_handle(tls_session_ctx_t ctx)
+tls_session_clear_handle(tls_session_ctx_t ctx, bool do_free)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl = NULL;
-	
+
 	if (likely((ssl = ctx->ssl_) != NULL)) {
 		ret = tls_session_shutdown(ctx, -1, false);
 		if (likely(ret == GFARM_ERR_NO_ERROR)) {
 			(void)SSL_clear(ssl);
-			SSL_free(ssl);
-			ctx->ssl_ = NULL;
+			if (do_free == true) {
+				SSL_free(ssl);
+				ctx->ssl_ = NULL;
+			}
 			ctx->is_verified_ = false;
-			ctx->got_fatal_ssl_error_ = true;
+			ctx->got_fatal_ssl_error_ = false;
 			ctx->last_ssl_error_ = SSL_ERROR_SSL;
 			ctx->last_gfarm_error_ = GFARM_ERR_UNKNOWN;
 			ctx->io_total_ = 0;
@@ -902,8 +904,46 @@ tls_session_setup_handle(tls_session_ctx_t ctx)
 	}
 
 	tls_runtime_flush_error();
-	ssl = SSL_new(ssl_ctx);
+	if (ctx->ssl_ == NULL) {
+		ssl = SSL_new(ssl_ctx);
+	} else {
+		ssl = ctx->ssl_;
+	}
 	if (likely(ssl != NULL)) {
+		/*
+		 * Make this SSL only for TLSv1.3, for sure.
+		 */
+		int osst = -1;
+
+		if ((osst = SSL_get_min_proto_version(ssl)) !=
+			TLS1_3_VERSION ||
+			(osst = SSL_get_max_proto_version(
+			    ssl)) != TLS1_3_VERSION ) {
+
+			tls_runtime_flush_error();
+			if (unlikely((osst = SSL_set_min_proto_version(ssl,
+						TLS1_3_VERSION)) != 1 ||
+					(osst = SSL_set_max_proto_version(ssl,
+						TLS1_3_VERSION)) != 1)) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to set an SSL "
+					"only using TLSv1.3.");
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+				goto done;
+			} else {
+				if ((osst = SSL_get_min_proto_version(ssl)) !=
+					TLS1_3_VERSION ||
+					(osst = SSL_get_max_proto_version(
+						ssl)) != TLS1_3_VERSION ) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Failed to check if the SSL "
+						"only using TLSv1.3.");
+					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+					goto done;
+				}
+			}
+		}
+		
 		/*
 		 * XXX FIXME:
 		 *	50 is too much?
@@ -911,14 +951,39 @@ tls_session_setup_handle(tls_session_ctx_t ctx)
 		SSL_set_verify_depth(ssl, 50);
 		if (role == TLS_ROLE_SERVER) {
 			if (ctx->do_mutual_auth_ == true) {
+#ifdef NEED_SSL_verify_client_post_handshake
+#define SERVER_MUTUAL_FLAGS				     \
+	(SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | \
+	 SSL_VERIFY_FAIL_IF_NO_PEER_CERT | \
+	 SSL_VERIFY_POST_HANDSHAKE)
+#else
 #define SERVER_MUTUAL_FLAGS				     \
 	(SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | \
 	 SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
-				/* SERVER_MUTUAL_FLAGS :
-				 * SSL_VERIFY_NONE; */
+#endif /* NEED_SSL_verify_client_post_handshake */
+
 				SSL_set_verify(ssl,
 					SERVER_MUTUAL_FLAGS, NULL);
 #undef SERVER_MUTUAL_FLAGS
+
+#ifdef NEED_SSL_verify_client_post_handshake
+				/*
+				 * XXX FIXME:
+				 *
+				 * calling
+				 * SSL_verify_client_post_handshake()
+				 * always returns 0, with "wrong
+				 * protocol version" error even the
+				 * SSL is setup for TLSv1.3. Is
+				 * calling the API not needed?
+				 * Actually, there's no source code
+				 * calling the function in OpenSSL
+				 * sources. I thought s_server calls
+				 * it but it does not. Or maybe it
+				 * must be called "AFTER" the
+				 * handshake done, when the server
+				 * really needs client certs...
+				 */
 				tls_runtime_flush_error();
 				if (likely(SSL_verify_client_post_handshake(
 						ssl) == 1)) {
@@ -930,6 +995,9 @@ tls_session_setup_handle(tls_session_ctx_t ctx)
 						"post-handshake.");
 					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 				}
+#endif /* NEED_SSL_verify_client_post_handshake */
+
+				ret = GFARM_ERR_NO_ERROR;
 			} else {
 				SSL_set_verify(ssl, SSL_VERIFY_NONE, NULL);
 				ret = GFARM_ERR_NO_ERROR;
@@ -1239,30 +1307,30 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 
 		/*
 		 * Inhibit other than TLSv1.3
-		 *	NOTE:
-		 *		For environment not support setting
-		 *		min/max proto. to only TLS1.3 by
-		 *		SSL_CTX_set_{min|max}_proto_version(),
-		 *		we use SSL_CTX_set_options().
-		 *
-		 *	XXX FIXMR:
-		 *		Since the manual doesn't mention about
-		 *		failure return code, checking TLS
-		 *		errors instead checking return code.
 		 */
 		tls_runtime_flush_error();
-		(void)SSL_CTX_set_options(ssl_ctx,
-			(SSL_OP_NO_SSLv3 |
-			 SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 |
-			 SSL_OP_NO_TLSv1_2 |
-			 SSL_OP_NO_DTLSv1 | SSL_OP_NO_DTLSv1_2));
-		if (unlikely(tls_has_runtime_error() == true)) {
+		if (unlikely((osst = SSL_CTX_set_min_proto_version(ssl_ctx,
+					TLS1_3_VERSION)) != 1 ||
+			     (osst = SSL_CTX_set_max_proto_version(ssl_ctx,
+					TLS1_3_VERSION)) != 1)) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Undocumented runtime failure.");
-			ret = GFARM_ERR_INTERNAL_ERROR;
+					"Failed to set an SSL_CTX "
+					"only using TLSv1.3.");
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 			goto bailout;
+		} else {
+			if ((osst = SSL_CTX_get_min_proto_version(ssl_ctx)) !=
+				TLS1_3_VERSION ||
+				(osst = SSL_CTX_get_max_proto_version(
+						ssl_ctx)) != TLS1_3_VERSION ) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to check if the SSL_CTX "
+					"only using TLSv1.3.");
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+				goto bailout;
+			}
 		}
-
+			    
 		if (need_self_cert == true) {
 			/*
 			 * Set CA store path
@@ -1445,6 +1513,12 @@ tls_session_destroy_ctx(tls_session_ctx_t x)
 
 		free(x);
 	}
+}
+
+static inline gfarm_error_t
+tls_session_clear_ctx(tls_session_ctx_t x)
+{
+	return tls_session_clear_handle(x, true);
 }
 
 
@@ -1867,9 +1941,10 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl = NULL;
 
-	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL && buf == NULL &&
-			len < 0 && actual_io_bytes != NULL &&
-		   	ctx->got_fatal_ssl_error_ == false)) {
+	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL && buf != NULL &&
+			len > 0 && actual_io_bytes != NULL &&
+			ctx->is_verified_ == true &&
+			ctx->got_fatal_ssl_error_ == false)) {
 		int n;
 		int ssl_err;
 		bool continuable;
@@ -1892,12 +1967,17 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 		 */
 		ssl_err = SSL_get_error(ssl, 1);
 		continuable = tls_session_io_continuable(ssl_err, ctx, false);
-		if (likely(n > 0 && ssl_err == SSL_ERROR_NONE)) {
+		if (likely(n >= 0 && ssl_err == SSL_ERROR_NONE)) {
 			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			ctx->last_ssl_error_ = ssl_err;
 			*actual_io_bytes = n;
-			ctx->io_total_ += n;
-			ret = tls_session_update_key(ctx, n);
+			if (n > 0) {
+				ctx->io_total_ += n;
+				ret = tls_session_update_key(ctx, n);
+			} else {
+				ret = ctx->last_gfarm_error_ =
+					GFARM_ERR_NO_ERROR;
+			}
 		} else {
 			if (likely(continuable == true)) {
 				goto retry;
@@ -1923,9 +2003,10 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl = NULL;
 
-	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL && buf == NULL &&
-			len < 0 && actual_io_bytes != NULL &&
-		   	ctx->got_fatal_ssl_error_ == false)) {
+	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL && buf != NULL &&
+			len > 0 && actual_io_bytes != NULL &&
+			ctx->is_verified_ == true &&
+			ctx->got_fatal_ssl_error_ == false)) {
 		int n;
 		int ssl_err;
 		bool continuable;
@@ -1948,12 +2029,17 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 		 */
 		ssl_err = SSL_get_error(ssl, 1);
 		continuable = tls_session_io_continuable(ssl_err, ctx, false);
-		if (likely(n > 0 && ssl_err == SSL_ERROR_NONE)) {
+		if (likely(n >= 0 && ssl_err == SSL_ERROR_NONE)) {
 			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			ctx->last_ssl_error_ = ssl_err;
 			*actual_io_bytes = n;
-			ctx->io_total_ += n;
-			ret = tls_session_update_key(ctx, n);
+			if (n > 0) {
+				ctx->io_total_ += n;
+				ret = tls_session_update_key(ctx, n);
+			} else {
+				ret = ctx->last_gfarm_error_ =
+					GFARM_ERR_NO_ERROR;
+			}
 		} else {
 			if (likely(continuable == true)) {
 				goto retry;
@@ -1995,11 +2081,13 @@ tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl;
 
-	if (likely((ctx != NULL) && ((ssl = ctx->ssl_) != NULL) &&
-			fd >= 0)) {
-		int st;
+	if (likely((ctx != NULL) && ((ssl = ctx->ssl_) != NULL))) {
+		int st = -1;
 
-		if (ctx->got_fatal_ssl_error_ == true) {
+		if (ctx->is_verified_ == false) {
+			ret = GFARM_ERR_NO_ERROR;			
+			goto done;
+		} else if (ctx->got_fatal_ssl_error_ == true) {
 			st = 1;
 		} else {
 			(void)SSL_get_error(ssl, 1);
@@ -2007,16 +2095,20 @@ tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
 		}
 		if (st == 1) {
 		do_close:
-			errno = 0;
-			if (do_close == true) {
-				st = close(fd);
+			if (fd >= 0) {
+				errno = 0;
+				if (do_close == true) {
+					st = close(fd);
+				} else {
+					st = shutdown(fd, SHUT_RDWR);
+				}
+				if (likely(close(fd) == 0)) {
+					ret = GFARM_ERR_NO_ERROR;
+				} else {
+					ret = gfarm_errno_to_error(errno);
+				}
 			} else {
-				st = shutdown(fd, SHUT_RDWR);
-			}
-			if (likely(close(fd) == 0)) {
 				ret = GFARM_ERR_NO_ERROR;
-			} else {
-				ret = gfarm_errno_to_error(errno);
 			}
 		} else if (st == 0) {
 			/*
@@ -2036,13 +2128,14 @@ tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
 		}
 	}
 
+done:
+	ctx->last_gfarm_error_ = ret;
 	if (likely(ret == GFARM_ERR_NO_ERROR)) {
 		ctx->got_fatal_ssl_error_ = true;
 		ctx->is_verified_ = false;
 		ctx->io_key_update_ = 0;
 		ctx->io_total_ = 0;
 	}
-
 
 	return (ret);
 }
