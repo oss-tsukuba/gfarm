@@ -111,10 +111,10 @@ tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 static inline void usage()
 {
 	fprintf(stderr, "usage:\n"
-		"\t-h                  			this help.\n"
-		"\t-s                  			run as server.\n"
-		"\t-a <IP address>     			specify the ip address.\n"
-		"\t-p <port number>    			specify the port number.\n"
+		"\t-h, --help				this help.\n"
+		"\t-s, --server				run as server.\n"
+		"\t-a, --adress <IP address>		specify the ip address.\n"
+		"\t-p, --port  <port number>		specify the port number.\n"
 		"\t--tls_cipher_suite\n"
 		"\t--tls_ca_certificate_path\n"
 		"\t--tls_ca_revocation_path\n"
@@ -158,13 +158,29 @@ static inline bool safe_strtol(const char *str, long *result, int base)
 	return ret;
 }
 
+static inline bool string_to_int(const char *str, int *result, int base)
+{
+	bool ret = false;
+	long retval_strtol;
+	if (safe_strtol(str, &retval_strtol, base)) {
+		if (retval_strtol <= INT_MAX && retval_strtol >= INT_MIN){
+			*result = (int)retval_strtol;
+			ret = true;
+		} else {
+			fprintf(stderr, "out of integer range.\n");
+		}
+	} else if (errno != 0) {
+		perror("strtol");
+	}
+
+	return ret;
+}
+
 static inline int prologue(int argc, char **argv)
 {
 	int opt, longindex = 0, err, ret = 1;
 	long retval_strtol;
-	char *endptr;
 	uint16_t result;
-	size_t optname_size;
 
 	struct option longopts[] = {
 		{"help",                           no_argument,       0, 'h' },
@@ -182,57 +198,47 @@ static inline int prologue(int argc, char **argv)
 		{"tls_key_update",                 required_argument, 0,  8  },
 		{"network_receive_timeout",        required_argument, 0,  9  },
 		{"mutual_authentication",          no_argument,       0,  10 },
-		{0,                                0,                 0, 0 }
+		{0,                                0,                 0,  0  }
 	};
 
 	while ((opt = getopt_long_only(argc, argv, "sa:p:h", longopts, &longindex)) != -1) {
 		switch (opt) {
 		case 0:
-			optname_size = sizeof(longopts[longindex].name);
-			if (strncmp(longopts[longindex].name, "tls_cipher_suite", optname_size) == 0) {
-				gfarm_ctxp->tls_cipher_suite = optarg;
-			} else if (strncmp(longopts[longindex].name, "tls_ca_certificate_path", optname_size) == 0) {
-				gfarm_ctxp->tls_ca_certificate_path = optarg;
-			} else if (strncmp(longopts[longindex].name, "tls_ca_revocation_path", optname_size) == 0) {
-				gfarm_ctxp->tls_ca_revocation_path = optarg;
-			} else if (strncmp(longopts[longindex].name, "tls_client_ca_certificate_path", optname_size) == 0) {
-				gfarm_ctxp->tls_client_ca_certificate_path = optarg;
-			} else if (strncmp(longopts[longindex].name, "tls_client_ca_revocation_path", optname_size) == 0) {
-				gfarm_ctxp->tls_client_ca_revocation_path = optarg;
-			} else if (strncmp(longopts[longindex].name, "tls_certificate_file", optname_size) == 0) {
-				gfarm_ctxp->tls_certificate_file = optarg;
-			} else if (strncmp(longopts[longindex].name, "tls_certificate_chain_file", optname_size) == 0) {
-				gfarm_ctxp->tls_certificate_chain_file = optarg;
-			} else if (strncmp(longopts[longindex].name, "tls_key_file", optname_size) == 0) {
-				gfarm_ctxp->tls_key_file = optarg;
-			} else if (strncmp(longopts[longindex].name, "tls_key_update", optname_size) == 0) {
-				if (safe_strtol(optarg, &retval_strtol, DECIMAL_NUMBER)) {
-					if (retval_strtol <= INT_MAX && retval_strtol >= INT_MIN){
-						gfarm_ctxp->tls_key_update = (int)retval_strtol;
-					} else {
-						fprintf(stderr, "out of integer range.");
-					}
-				} else {
-					if (errno != 0) {
-						perror("strtol");
-					}
-				}
-			} else if (strncmp(longopts[longindex].name, "network_receive_timeout", optname_size) == 0) {
-				if (safe_strtol(optarg, &retval_strtol, DECIMAL_NUMBER)) {
-					if (retval_strtol <= INT_MAX && retval_strtol >= INT_MIN){
-						gfarm_ctxp->network_receive_timeout = (int)retval_strtol;
-					} else {
-						fprintf(stderr, "out of integer range.");
-					}
-				} else {
-					if (errno != 0) {
-						perror("strtol");
-					}
-				}
-			} else if (strncmp(longopts[longindex].name, "mutual_authentication", optname_size) == 0) {
-				is_mutual_authentication = true;
+			gfarm_ctxp->tls_cipher_suite = optarg;
+			break;
+		case 1:
+			gfarm_ctxp->tls_ca_certificate_path = optarg;
+			break;
+		case 2:
+			gfarm_ctxp->tls_ca_revocation_path = optarg;
+			break;
+		case 3:
+			gfarm_ctxp->tls_client_ca_certificate_path = optarg;
+			break;
+		case 4:
+			gfarm_ctxp->tls_client_ca_revocation_path = optarg;
+			break;
+		case 5:
+			gfarm_ctxp->tls_certificate_file = optarg;
+			break;
+		case 6:
+			gfarm_ctxp->tls_certificate_chain_file = optarg;
+			break;
+		case 7:
+			gfarm_ctxp->tls_key_file = optarg;
+			break;
+		case 8:
+			if (!(string_to_int(optarg, &gfarm_ctxp->tls_key_update, DECIMAL_NUMBER))) {
+				fprintf(stderr, "fail to set integer.\n");
 			}
-
+			break;
+		case 9:
+			if (!(string_to_int(optarg, &gfarm_ctxp->network_receive_timeout, DECIMAL_NUMBER))) {
+				fprintf(stderr, "fail to set integer.\n");
+			}
+			break;
+		case 10:
+			is_mutual_authentication = true;
 			break;
 		case 's':
 			is_server = true;
