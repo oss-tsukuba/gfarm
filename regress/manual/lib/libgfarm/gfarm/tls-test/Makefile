@@ -7,7 +7,7 @@ include $(top_srcdir)/makes/var.mk
 PROGRAM = tls-test
 SRCS = $(PROGRAM).c
 OBJS = $(PROGRAM).lo
-CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR) -I$(GFUTIL_SRCDIR) $(openssl_includes)
+CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR) -I$(GFUTIL_SRCDIR) $(openssl_includes) -g3 -O0 -fkeep-inline-functions
 LDLIBS = $(COMMON_LDLIBS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
