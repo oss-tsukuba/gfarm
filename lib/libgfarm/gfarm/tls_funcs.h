@@ -489,10 +489,7 @@ tlslog_tls_message(int msg_no, int priority,
 	(void)vsnprintf(msgbuf, sizeof(msgbuf), format, ap);
 	va_end(ap);
 
-	if (ERR_peek_error() == 0) {
-		gflog_message(msg_no, priority, file, line_no, func,
-			"%s", msgbuf);
-	} else if (gflog_auth_get_verbose() != 0) {
+	if (ERR_peek_error() != 0 && gflog_auth_get_verbose() != 0) {
 		char msgbuf2[BASIC_BUFSZ * 3];
 		char tlsmsg[BASIC_BUFSZ];
 		const char *tls_file = NULL;
@@ -511,11 +508,14 @@ tlslog_tls_message(int msg_no, int priority,
 		ERR_error_string_n(err, tlsmsg, sizeof(tlsmsg));
 
 		(void)snprintf(msgbuf2, sizeof(msgbuf2),
-			"%s: [OpenSSL error info:%s:%d: %s]",
+			"%s: [OpenSSL error info: %s:%d: %s]",
 			msgbuf, tls_file, tls_line, tlsmsg);
 
 		gflog_auth_message(msg_no, priority, file, line_no, func,
 			"%s", msgbuf2);
+	} else {
+		gflog_message(msg_no, priority, file, line_no, func,
+			"%s", msgbuf);
 	}
 #undef BASIC_BUFSZ
 #ifdef BASIC_BUFSZ_ORG
@@ -1720,10 +1720,10 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 		 * Create an SSL
 		 */
 		ret = tls_session_setup_handle(ctx);
-		if (unlikely(ret != GFARM_ERR_NO_ERROR || ssl == NULL)) {
+		if (unlikely(ret != GFARM_ERR_NO_ERROR || ctx->ssl_ == NULL)) {
 			goto bailout;
 		}
-		ctx->ssl_ = ssl;
+		ssl = ctx->ssl_;
 
 		tls_runtime_flush_error();
 		if (likely(SSL_set_fd(ssl, fd) == 1)) {
@@ -1736,6 +1736,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 
 		retry:
 			errno = 0;
+			tls_runtime_flush_error();
 			(void)SSL_get_error(ssl, 1);
 			st = p(ssl);
 			ssl_err = SSL_get_error(ssl, 1);
@@ -1747,7 +1748,16 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 			} else if (st == 0 && do_cont == true) {
 				goto retry;
 			} else {
-				ret = ctx->last_gfarm_error_;
+				/*
+				 * st < 0 but SSL_ERROR_NONE ???
+				 */
+				if (ctx->last_gfarm_error_ ==
+					GFARM_ERR_NO_ERROR) {
+					ret = ctx->last_gfarm_error_ =
+						GFARM_ERR_TLS_RUNTIME_ERROR;
+				} else {
+					ret = ctx->last_gfarm_error_;
+				}
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"SSL handshake failed: %s",
 					gfarm_error_string(ret));
