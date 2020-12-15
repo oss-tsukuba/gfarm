@@ -367,7 +367,7 @@ static inline int run_client_process()
 	if ((gerr = tls_session_establish(tls_ctx, socketfd)) !=
 		GFARM_ERR_NO_ERROR) {
 		gflog_tls_error(GFARM_MSG_UNFIXED,
-				"can't establish an SSL "
+				"Can't establish an SSL "
 				"connection: %s",
 				gfarm_error_string(gerr));
 		return (ret);
@@ -412,7 +412,7 @@ static inline int run_client_process()
 			}
 		}
 	} else {
-		fprintf(stderr, "fgets: can't read string.\n");
+		fprintf(stderr, "fgets: Can't read string.\n");
 	}
 
 done:
@@ -455,7 +455,7 @@ int main(int argc, char **argv)
 				run_server() : run_client();
 		} else {
 			gflog_error(GFARM_MSG_UNFIXED,
-				"can't create a tls session context: %s",
+				"Can't create a tls session context: %s",
 				gfarm_error_string(gerr));
 		}
 

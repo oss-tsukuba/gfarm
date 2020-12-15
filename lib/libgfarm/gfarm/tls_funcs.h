@@ -1140,7 +1140,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			} else {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_warning(GFARM_MSG_UNFIXED,
-					"can't dulicate a cert filename: %s",
+					"Can't dulicate a cert filename: %s",
 					gfarm_error_string(ret));
 			}
 		}
@@ -1173,7 +1173,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			if (unlikely(prvkey_file == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"can't dulicate a private key "
+					"Can't dulicate a private key "
 					"filename: %s",
 						gfarm_error_string(ret));
 				goto bailout;
@@ -1193,7 +1193,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			if (unlikely(ca_path == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"can't dulicate a CA certs directory "
+					"Can't dulicate a CA certs directory "
 					" name: %s", gfarm_error_string(ret));
 				goto bailout;
 			}
@@ -1213,7 +1213,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			if (unlikely(acceptable_ca_path == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"can't dulicate an acceptable CA "
+					"Can't dulicate an acceptable CA "
 					"certs directory nmae: %s",
 					gfarm_error_string(ret));
 				goto bailout;
@@ -1230,7 +1230,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			if (unlikely(revoke_path == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"can't dulicate a revoked CA certs "
+					"Can't dulicate a revoked CA certs "
 					"directory nmae: %s",
 					gfarm_error_string(ret));
 				goto bailout;
@@ -1259,7 +1259,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		if (unlikely(ciphersuites == NULL)) {
 			ret = GFARM_ERR_NO_MEMORY;
 			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"can't dulicate a CA cert store name: %s",
+				"Can't dulicate a CA cert store name: %s",
 				gfarm_error_string(ret));
 			goto bailout;
 		}
