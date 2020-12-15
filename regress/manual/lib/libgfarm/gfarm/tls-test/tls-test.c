@@ -111,10 +111,10 @@ tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 static inline void usage()
 {
 	fprintf(stderr, "usage:\n"
-		"\t-h, --help				this help.\n"
-		"\t-s, --server				run as server.\n"
-		"\t-a, --adress <IP address>		specify the ip address.\n"
-		"\t-p, --port  <port number>		specify the port number.\n"
+		"\t-h, --help\t\t\t\tthis help.\n"
+		"\t-s, --server\t\t\t\trun as server.\n"
+		"\t-a, --adress <IP address>\t\tspecify the ip address.\n"
+		"\t-p, --port <port number>\t\tspecify the port number.\n"
 		"\t--tls_cipher_suite\n"
 		"\t--tls_ca_certificate_path\n"
 		"\t--tls_ca_revocation_path\n"
@@ -179,7 +179,6 @@ static inline bool string_to_int(const char *str, int *result, int base)
 static inline int prologue(int argc, char **argv)
 {
 	int opt, longindex = 0, err, ret = 1;
-	long retval_strtol;
 	uint16_t result;
 
 	struct option longopts[] = {
@@ -201,7 +200,8 @@ static inline int prologue(int argc, char **argv)
 		{0,                                0,                 0,  0  }
 	};
 
-	while ((opt = getopt_long_only(argc, argv, "sa:p:h", longopts, &longindex)) != -1) {
+	while ((opt = getopt_long_only(argc, argv, "sa:p:h", longopts,
+					&longindex)) != -1) {
 		switch (opt) {
 		case 0:
 			gfarm_ctxp->tls_cipher_suite = optarg;
@@ -228,13 +228,19 @@ static inline int prologue(int argc, char **argv)
 			gfarm_ctxp->tls_key_file = optarg;
 			break;
 		case 8:
-			if (!(string_to_int(optarg, &gfarm_ctxp->tls_key_update, DECIMAL_NUMBER))) {
-				fprintf(stderr, "fail to set integer.\n");
+			if (!(string_to_int(optarg,
+					&gfarm_ctxp->tls_key_update,
+					DECIMAL_NUMBER))) {
+				fprintf(stderr,
+				"fail to set tls_key_update.\n");
 			}
 			break;
 		case 9:
-			if (!(string_to_int(optarg, &gfarm_ctxp->network_receive_timeout, DECIMAL_NUMBER))) {
-				fprintf(stderr, "fail to set integer.\n");
+			if (!(string_to_int(optarg,
+					&gfarm_ctxp->network_receive_timeout,
+					DECIMAL_NUMBER))) {
+				fprintf(stderr,
+				"fail to set network_receive_timeout.\n");
 			}
 			break;
 		case 10:
