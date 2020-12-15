@@ -36,6 +36,8 @@ static struct tls_test_ctx_struct ttcs = {
 };
 tls_test_ctx_p gfarm_ctxp = &ttcs;
 
+tls_session_ctx_t tls_ctx = NULL;
+
 static void
 tls_runtime_init_once(void)
 {
@@ -85,7 +87,7 @@ tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 					"Passphrase: ");
 			}
 		}
-
+		
 		tty_lock();
 		{
 			if (unlikely(do_passwd == true)) {
@@ -275,41 +277,79 @@ static inline int run_server_process()
 	clientaddr.ai_addrlen = sizeof(clientaddr.ai_addr);
 
 	while (true) {
+		errno = 0;
 		if ((acceptfd = accept(socketfd,
 					clientaddr.ai_addr,
 					&clientaddr.ai_addrlen)) > -1) {
-			printf("accept success.\n");
-
-			int recv_size;
+			int r_size = -1;
+			int w_size = -1;
 			char buf[BUF_SIZE];
-			memset(buf, 0, sizeof(buf));
-			errno = 0;
-			recv_size = recv(acceptfd, buf, sizeof(buf), 0);
-			if (recv_size > 0) {
-				printf("recv: %s\n", buf);
-			} else {
-				if (recv_size == 0) {
-					fprintf(stderr, "recv 0 byte.\n");
-				} else {
-					perror("recv");
-				}
-				(void)close(acceptfd);
-				continue;
+			gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
+
+			printf("accept success.\n");
+			if ((gerr = tls_session_establish(tls_ctx,
+					acceptfd)) != GFARM_ERR_NO_ERROR) {
+				close(acceptfd);
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"can't establish an SSL "
+					"connection: %s",
+					gfarm_error_string(gerr));
+				break;
 			}
 
-			errno = 0;
-			if (send(acceptfd, buf, recv_size, 0) > -1) {
-				printf("send: %s\n", buf);
+			gerr = tls_session_read(tls_ctx, buf, sizeof(buf),
+					&r_size);
+			if (gerr == GFARM_ERR_NO_ERROR) {
+				if (r_size > 0) {
+					printf("got: '%s'\n", buf);
+				} else if (r_size == 0) {
+					fprintf(stderr, "got 0 byte.\n");
+					goto teardown;
+				}
 			} else {
-				perror("send");
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"SSL read failure: %s",
+					gfarm_error_string(gerr));
+			teardown:
+				gerr = tls_session_teardown_handle(tls_ctx);
+				if (gerr == GFARM_ERR_NO_ERROR || 
+					r_size == 0) {
+					continue;
+				} else {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"SSL reset failure: %s",
+						gfarm_error_string(gerr));
+					break;
+				}
 			}
-			(void)close(acceptfd);
-			ret = 0;
+
+			buf[r_size] = '\0';
+			gerr = tls_session_write(tls_ctx, buf, r_size,
+					 &w_size);
+			if (gerr == GFARM_ERR_NO_ERROR && w_size == r_size) {
+				goto teardown2;
+			} else {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"SSL write failure: %s",
+					gfarm_error_string(gerr));
+			teardown2:
+				gerr = tls_session_teardown_handle(tls_ctx);
+				if (gerr == GFARM_ERR_NO_ERROR) {
+					continue;
+				} else {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"SSL reset failure: %s",
+						gfarm_error_string(gerr));
+					break;
+				}
+			}
 		} else {
 			perror("accept");
+			break;
 		}
 	}
-	return ret;
+
+	return (ret);
 }
 
 static inline int run_server()
@@ -344,26 +384,61 @@ static inline int run_client_process()
 {
 	int ret = 1;
 	char buf[BUF_SIZE];
-	memset(buf, 0, sizeof(buf));
-	if (fgets(buf, BUF_SIZE - 1, stdin) != NULL) {
+	gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
+	int r_size = -1;
+	int w_size = -1;
+
+	if ((gerr = tls_session_establish(tls_ctx, socketfd)) !=
+		GFARM_ERR_NO_ERROR) {
+		gflog_tls_error(GFARM_MSG_UNFIXED,
+				"can't establish an SSL "
+				"connection: %s",
+				gfarm_error_string(gerr));
+		return (ret);
+	}
+
+	errno = 0;
+	if (fgets(buf, sizeof(buf) -1, stdin) != NULL) {
+		r_size = strlen(buf);
 		errno = 0;
-		if (send(socketfd, buf, strlen(buf), 0) > -1) {
-			printf("send: %s\n", buf);
-		} else {
-			perror("send");
+		gerr = tls_session_write(tls_ctx, buf, r_size, &w_size);
+		if (gerr != GFARM_ERR_NO_ERROR || w_size == r_size) {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"SSL write failure: %s",
+				gfarm_error_string(gerr));
+			gerr = tls_session_teardown_handle(tls_ctx);
+			if (gerr != GFARM_ERR_NO_ERROR) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"SSL reset failure: %s",
+					gfarm_error_string(gerr));
+			}
+			goto done;
 		}
 
-		errno = 0;
-		if (recv(socketfd, buf, sizeof(buf), 0) > -1) {
-			printf("recv: %s\n", buf);
+		gerr = tls_session_read(tls_ctx, buf, sizeof(buf), &r_size);
+		if (gerr == GFARM_ERR_NO_ERROR && r_size == w_size) {
+			buf[r_size] = '\0';
+			fprintf(stdout, "got reply: '%s'\n", buf);
+			fflush(stdout);
+			ret = 0;
+			goto teardown;
 		} else {
-			perror("recv");
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"SSL read failure: %s",
+					gfarm_error_string(gerr));
+		teardown:
+			gerr = tls_session_teardown_handle(tls_ctx);
+			if (gerr != GFARM_ERR_NO_ERROR) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"SSL reset failure: %s",
+					gfarm_error_string(gerr));
+			}
 		}
-
-		ret = 0;
 	} else {
 		fprintf(stderr, "fgets: can't read string.\n");
 	}
+
+done:
 	return ret;
 }
 
@@ -389,18 +464,27 @@ static inline int run_client()
 int main(int argc, char **argv)
 {
 	int ret = 1;
+	gfarm_error_t gerr = GFARM_ERR_UNKNOWN;
 
-	trim_string_tail(NULL);
-	(void)tls_session_runtime_initialize();
 	gflog_initialize();
-
-	if (prologue(argc, argv) == 0) {
-		if (is_server) {
-			ret = run_server();
-		} else {
-			ret = run_client();
+	gerr = tls_session_create_ctx(&tls_ctx,
+		      (is_server == true) ? TLS_ROLE_SERVER : TLS_ROLE_CLIENT,
+		      is_mutual_authentication);
+	if (gerr == GFARM_ERR_NO_ERROR) {
+		if (prologue(argc, argv) == 0) {
+			if (is_server) {
+				ret = run_server();
+			} else {
+				ret = run_client();
+			}
+			freeaddrinfo(res);
 		}
-		freeaddrinfo(res);
+	} else {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"can't create a tls session context: %s",
+			gfarm_error_string(gerr));
 	}
-	return ret;
+
+	(void)tls_session_destroy_ctx(tls_ctx);
+	return (ret);
 }

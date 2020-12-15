@@ -856,22 +856,51 @@ tls_set_revoke_path(SSL_CTX *ssl_ctx, const char *revoke_path)
 /*
  * Internal TLS context constructor/destructor
  */
+static inline gfarm_error_t
+tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close);
 
 static inline gfarm_error_t
-tls_create_ssl(SSL_CTX *ssl_ctx, tls_role_t role, bool do_mutual_auth,
-	SSL **sslret)
+tls_session_teardown_handle(tls_session_ctx_t ctx)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl = NULL;
+	
+	if (likely((ssl = ctx->ssl_) != NULL)) {
+		ret = tls_session_shutdown(ctx, -1, false);
+		if (likely(ret == GFARM_ERR_NO_ERROR)) {
+			(void)SSL_clear(ssl);
+			SSL_free(ssl);
+			ctx->ssl_ = NULL;
+			ctx->is_verified_ = false;
+			ctx->got_fatal_ssl_error_ = true;
+			ctx->last_ssl_error_ = SSL_ERROR_SSL;
+			ctx->last_gfarm_error_ = GFARM_ERR_UNKNOWN;
+			ctx->io_total_ = 0;
+			ctx->io_key_update_ = 0;
+			free(ctx->peer_dn_);
+			ctx->peer_dn_ = NULL;
+		}
+	} else {
+		ret = GFARM_ERR_INVALID_ARGUMENT;
+	}
 
-	if (unlikely(ssl_ctx == NULL ||
-		(role != TLS_ROLE_SERVER && role != TLS_ROLE_CLIENT) ||
-		sslret == NULL)) {
+	return (ret);
+}
+
+static inline gfarm_error_t
+tls_session_setup_handle(tls_session_ctx_t ctx)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	SSL *ssl = NULL;
+	SSL_CTX *ssl_ctx = NULL;
+	tls_role_t role = TLS_ROLE_UNKNOWN;
+	
+	if (unlikely(ctx == NULL || (ssl_ctx = ctx->ssl_ctx_) == NULL ||
+		(role = ctx->role_) == TLS_ROLE_UNKNOWN)) {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
 		goto done;
 	}
 
-	*sslret = NULL;
 	tls_runtime_flush_error();
 	ssl = SSL_new(ssl_ctx);
 	if (likely(ssl != NULL)) {
@@ -881,7 +910,7 @@ tls_create_ssl(SSL_CTX *ssl_ctx, tls_role_t role, bool do_mutual_auth,
 		 */
 		SSL_set_verify_depth(ssl, 50);
 		if (role == TLS_ROLE_SERVER) {
-			if (do_mutual_auth == true) {
+			if (ctx->do_mutual_auth_ == true) {
 #define SERVER_MUTUAL_FLAGS				     \
 	(SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | \
 	 SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
@@ -910,14 +939,21 @@ tls_create_ssl(SSL_CTX *ssl_ctx, tls_role_t role, bool do_mutual_auth,
 			 * Clients always check server certs.
 			 */
 			SSL_set_verify(ssl, SSL_VERIFY_PEER, NULL);
-			if (do_mutual_auth == true) {
+			if (ctx->do_mutual_auth_ == true) {
 				SSL_set_post_handshake_auth(ssl, 1);
 			}
 			ret = GFARM_ERR_NO_ERROR;
 		}
 
 		if (ret == GFARM_ERR_NO_ERROR) {
-			*sslret = ssl;
+			ctx->ssl_ = ssl;
+			ctx->is_verified_ = false;
+			ctx->last_ssl_error_ = SSL_ERROR_NONE;
+			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
+			ctx->io_total_ = 0;
+			ctx->io_key_update_ = 0;
+			free(ctx->peer_dn_);
+			ctx->peer_dn_ = NULL;
 		}
 	} else {
 		ret = GFARM_ERR_INVALID_ARGUMENT;
@@ -926,7 +962,7 @@ tls_create_ssl(SSL_CTX *ssl_ctx, tls_role_t role, bool do_mutual_auth,
 done:
 	if (ssl != NULL && ret != GFARM_ERR_NO_ERROR) {
 		SSL_free(ssl);
-		*sslret = NULL;
+		ctx->ssl_ = NULL;
 	}
 
 	return (ret);
@@ -936,7 +972,7 @@ done:
  * Constructor
  */
 static inline gfarm_error_t
-tls_session_ctx_create(tls_session_ctx_t *ctxptr,
+tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		       tls_role_t role, bool do_mutual_auth)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
@@ -956,7 +992,6 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	char *cert_to_use = NULL;
 	EVP_PKEY *prvkey = NULL;
 	SSL_CTX *ssl_ctx = NULL;
-	SSL *ssl = NULL;
 	bool need_self_cert = false;
 	bool need_cert_merge = false;
 	bool has_cert_file = false;
@@ -1321,14 +1356,6 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 	}
 
 	/*
-	 * Create an SSL
-	 */
-	ret = tls_create_ssl(ssl_ctx, role, do_mutual_auth, &ssl);
-	if (unlikely(ret != GFARM_ERR_NO_ERROR || ssl == NULL)) {
-		goto bailout;
-	}
-
-	/*
 	 * Create a new tls_session_ctx_t
 	 */
 	ctxret = (tls_session_ctx_t)malloc(
@@ -1341,7 +1368,6 @@ tls_session_ctx_create(tls_session_ctx_t *ctxptr,
 		ctxret->keyupd_thresh_ = gfarm_ctxp->tls_key_update;
 		ctxret->prvkey_ = prvkey;
 		ctxret->ssl_ctx_ = ssl_ctx;
-		ctxret->ssl_ = ssl;
 
 		ctxret->cert_file_ = cert_file;
 		ctxret->cert_chain_file_ = cert_chain_file;
@@ -1375,9 +1401,6 @@ bailout:
 	if (prvkey != NULL) {
 		EVP_PKEY_free(prvkey);
 	}
-	if (ssl != NULL) {
-		SSL_free(ssl);
-	}
 	if (ssl_ctx != NULL) {
 		(void)SSL_CTX_clear_chain_certs(ssl_ctx);
 		SSL_CTX_free(ssl_ctx);
@@ -1392,7 +1415,7 @@ ok:
  * Destructor
  */
 static inline void
-tls_session_ctx_destroy(tls_session_ctx_t x)
+tls_session_destroy_ctx(tls_session_ctx_t x)
 {
 	if (x != NULL) {
 		free(x->peer_dn_);
@@ -1685,7 +1708,16 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 	errno = 0;
 	if (likely(fd >= 0 &&
 		(pst = getpeername(fd, &sa, &salen)) == 0 &&
-		 ctx != NULL && (ssl = ctx->ssl_) != NULL)) {
+		ctx != NULL)) {
+
+		/*
+		 * Create an SSL
+		 */
+		ret = tls_session_setup_handle(ctx);
+		if (unlikely(ret != GFARM_ERR_NO_ERROR || ssl == NULL)) {
+			goto bailout;
+		}
+		ctx->ssl_ = ssl;
 
 		tls_runtime_flush_error();
 		if (likely(SSL_set_fd(ssl, fd) == 1)) {
@@ -1764,6 +1796,7 @@ tls_session_establish(tls_session_ctx_t ctx, int fd)
 		}
 	}
 
+bailout:
 	return (ret);
 }
 
@@ -1986,6 +2019,14 @@ tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
 			}
 		}
 	}
+
+	if (likely(ret == GFARM_ERR_NO_ERROR)) {
+		ctx->got_fatal_ssl_error_ = true;
+		ctx->is_verified_ = false;
+		ctx->io_key_update_ = 0;
+		ctx->io_total_ = 0;
+	}
+
 
 	return (ret);
 }
