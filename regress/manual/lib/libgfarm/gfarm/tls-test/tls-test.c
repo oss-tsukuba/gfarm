@@ -165,21 +165,25 @@ static inline int prologue(int argc, char **argv)
 	size_t optname_size;
 
 	struct option longopts[] = {
-		{"tls_cipher_suite",               required_argument, 0, 0 },
-		{"tls_ca_certificate_path",        required_argument, 0, 0 },
-		{"tls_ca_revocation_path",         required_argument, 0, 0 },
-		{"tls_client_ca_certificate_path", required_argument, 0, 0 },
-		{"tls_client_ca_revocation_path",  required_argument, 0, 0 },
-		{"tls_certificate_file",           required_argument, 0, 0 },
-		{"tls_certificate_chain_file",     required_argument, 0, 0 },
-		{"tls_key_file",                   required_argument, 0, 0 },
-		{"tls_key_update",                 required_argument, 0, 0 },
-		{"network_receive_timeout",        required_argument, 0, 0 },
-		{"mutual_authentication",          no_argument,       0, 0 },
+		{"help",                           no_argument,       0, 'h' },
+		{"server",                         no_argument,       0, 's' },
+		{"adress",                         required_argument, 0, 'a' },
+		{"port",                           required_argument, 0, 'p' },
+		{"tls_cipher_suite",               required_argument, 0,  0  },
+		{"tls_ca_certificate_path",        required_argument, 0,  1  },
+		{"tls_ca_revocation_path",         required_argument, 0,  2  },
+		{"tls_client_ca_certificate_path", required_argument, 0,  3  },
+		{"tls_client_ca_revocation_path",  required_argument, 0,  4  },
+		{"tls_certificate_file",           required_argument, 0,  5  },
+		{"tls_certificate_chain_file",     required_argument, 0,  6  },
+		{"tls_key_file",                   required_argument, 0,  7  },
+		{"tls_key_update",                 required_argument, 0,  8  },
+		{"network_receive_timeout",        required_argument, 0,  9  },
+		{"mutual_authentication",          no_argument,       0,  10 },
 		{0,                                0,                 0, 0 }
 	};
 
-	while ((opt = getopt_long(argc, argv, "sa:p:h", longopts, &longindex)) != -1) {
+	while ((opt = getopt_long_only(argc, argv, "sa:p:h", longopts, &longindex)) != -1) {
 		switch (opt) {
 		case 0:
 			optname_size = sizeof(longopts[longindex].name);
