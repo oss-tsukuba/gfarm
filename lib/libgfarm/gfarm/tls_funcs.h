@@ -252,7 +252,7 @@ is_user_in_group(uid_t uid, gid_t gid)
 					gres != NULL)) {
 					char **p = g.gr_mem;
 
-					while (p != NULL) {
+					while (*p != NULL) {
 						if (strcmp(u.pw_name,
 							*p) == 0) {
 							ret =
@@ -745,7 +745,7 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 		if (unlikely(SSL_CTX_load_verify_locations(ssl_ctx,
 				NULL, ca_path) == 0)) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Failed to set CA store to a SSL_CTX.");
+				"Failed to set CA path to a SSL_CTX.");
 			goto done;
 		}
 		if (role == TLS_ROLE_SERVER) {
@@ -860,19 +860,21 @@ static inline gfarm_error_t
 tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close);
 
 static inline gfarm_error_t
-tls_session_teardown_handle(tls_session_ctx_t ctx)
+tls_session_clear_handle(tls_session_ctx_t ctx, bool do_free)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl = NULL;
-	
+
 	if (likely((ssl = ctx->ssl_) != NULL)) {
 		ret = tls_session_shutdown(ctx, -1, false);
 		if (likely(ret == GFARM_ERR_NO_ERROR)) {
 			(void)SSL_clear(ssl);
-			SSL_free(ssl);
-			ctx->ssl_ = NULL;
+			if (do_free == true) {
+				SSL_free(ssl);
+				ctx->ssl_ = NULL;
+			}
 			ctx->is_verified_ = false;
-			ctx->got_fatal_ssl_error_ = true;
+			ctx->got_fatal_ssl_error_ = false;
 			ctx->last_ssl_error_ = SSL_ERROR_SSL;
 			ctx->last_gfarm_error_ = GFARM_ERR_UNKNOWN;
 			ctx->io_total_ = 0;
@@ -902,48 +904,78 @@ tls_session_setup_handle(tls_session_ctx_t ctx)
 	}
 
 	tls_runtime_flush_error();
-	ssl = SSL_new(ssl_ctx);
+	if (ctx->ssl_ == NULL) {
+		ssl = SSL_new(ssl_ctx);
+	} else {
+		ssl = ctx->ssl_;
+	}
 	if (likely(ssl != NULL)) {
 		/*
-		 * XXX FIXME:
-		 *	50 is too much?
+		 * Make this SSL only for TLSv1.3, for sure.
 		 */
-		SSL_set_verify_depth(ssl, 50);
-		if (role == TLS_ROLE_SERVER) {
-			if (ctx->do_mutual_auth_ == true) {
-#define SERVER_MUTUAL_FLAGS				     \
-	(SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | \
-	 SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
-				/* SERVER_MUTUAL_FLAGS :
-				 * SSL_VERIFY_NONE; */
-				SSL_set_verify(ssl,
-					SERVER_MUTUAL_FLAGS, NULL);
-#undef SERVER_MUTUAL_FLAGS
-				tls_runtime_flush_error();
-				if (likely(SSL_verify_client_post_handshake(
-						ssl) == 1)) {
-					ret = GFARM_ERR_NO_ERROR;
-				} else {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
-						"Failed to set a "
-						"server SSL to use "
-						"post-handshake.");
-					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
-				}
+		int osst = -1;
+
+		if ((osst = SSL_get_min_proto_version(ssl)) !=
+			TLS1_3_VERSION ||
+			(osst = SSL_get_max_proto_version(
+			    ssl)) != TLS1_3_VERSION ) {
+
+			tls_runtime_flush_error();
+			if (unlikely((osst = SSL_set_min_proto_version(ssl,
+						TLS1_3_VERSION)) != 1 ||
+					(osst = SSL_set_max_proto_version(ssl,
+						TLS1_3_VERSION)) != 1)) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to set an SSL "
+					"only using TLSv1.3.");
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+				goto done;
 			} else {
-				SSL_set_verify(ssl, SSL_VERIFY_NONE, NULL);
-				ret = GFARM_ERR_NO_ERROR;
+				if ((osst = SSL_get_min_proto_version(ssl)) !=
+					TLS1_3_VERSION ||
+					(osst = SSL_get_max_proto_version(
+						ssl)) != TLS1_3_VERSION ) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Failed to check if the SSL "
+						"only using TLSv1.3.");
+					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+					goto done;
+				} else {
+					ret = GFARM_ERR_NO_ERROR;
+				}
 			}
 		} else {
-			/*
-			 * Clients always check server certs.
-			 */
-			SSL_set_verify(ssl, SSL_VERIFY_PEER, NULL);
-			if (ctx->do_mutual_auth_ == true) {
-				SSL_set_post_handshake_auth(ssl, 1);
-			}
 			ret = GFARM_ERR_NO_ERROR;
 		}
+
+#if 0
+		/*
+		 * XXX FIXME:
+		 *
+		 * calling SSL_verify_client_post_handshake() always
+		 * returns 0, with "wrong protocol version" error even
+		 * the SSL is setup for TLSv1.3. Is calling the API
+		 * not needed?  Actually, there's no source code
+		 * calling the function in OpenSSL sources. I thought
+		 * s_server calls it but it does not. Or maybe it must
+		 * be called "AFTER" the handshake done, when the
+		 * server really needs client certs...
+		 */
+		if (ctx->do_mutual_auth_ == true &&
+			role == TLS_ROLE_SERVER) {
+			tls_runtime_flush_error();
+			if (likely(SSL_verify_client_post_handshake(
+					ssl) == 1)) {
+				ret = GFARM_ERR_NO_ERROR;
+			} else {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to set a "
+					"server SSL to use "
+					"post-handshake.");
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			}
+		}
+#endif
 
 		if (ret == GFARM_ERR_NO_ERROR) {
 			ctx->ssl_ = ssl;
@@ -1025,6 +1057,52 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		goto bailout;
 	}
 
+#define str_or_NULL(x)					\
+	((is_valid_string((x)) == true) ? (x) : NULL)
+
+	/*
+	 * ca_path is mandatory always.
+	 */
+	/* CA certs path */
+	ca_path =
+		str_or_NULL(gfarm_ctxp->tls_ca_certificate_path);
+	if ((is_valid_string(ca_path) == true) &&
+		((ret = is_valid_cert_store_dir(ca_path))
+		== GFARM_ERR_NO_ERROR)) {
+		ca_path = strdup(ca_path);
+		if (unlikely(ca_path == NULL)) {
+			ret = GFARM_ERR_NO_MEMORY;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't dulicate a CA certs directory "
+				" name: %s", gfarm_error_string(ret));
+			goto bailout;
+		}
+	} else {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"A CA cert path is not specified.");
+		ret = GFARM_ERR_INVALID_ARGUMENT;
+		goto bailout;
+	}
+
+	/* Revocation path (optional) */
+	revoke_path =
+		str_or_NULL(gfarm_ctxp->tls_ca_revocation_path);
+	if ((is_valid_string(revoke_path) == true) &&
+		((ret = is_valid_cert_store_dir(revoke_path)) ==
+		GFARM_ERR_NO_ERROR)) {
+		revoke_path = strdup(revoke_path);
+		if (unlikely(revoke_path == NULL)) {
+			ret = GFARM_ERR_NO_MEMORY;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't dulicate a revoked CA certs "
+				"directory nmae: %s",
+				gfarm_error_string(ret));
+			goto bailout;
+		} else if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+			goto bailout;
+		}
+	}
+	
 	/*
 	 * Self certificate check
 	 */
@@ -1032,21 +1110,14 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		need_self_cert = true;
 	}
 	if (need_self_cert == true) {
-#define str_or_NULL(x) \
-	((is_valid_string((x)) == true) ? (x) : NULL)
 		cert_file =
 			str_or_NULL(gfarm_ctxp->tls_certificate_file);
 		cert_chain_file =
 			str_or_NULL(gfarm_ctxp->tls_certificate_chain_file);
 		prvkey_file =
 			str_or_NULL(gfarm_ctxp->tls_key_file);
-		ca_path =
-			str_or_NULL(gfarm_ctxp->tls_ca_certificate_path);
 		acceptable_ca_path =
 		str_or_NULL(gfarm_ctxp->tls_client_ca_certificate_path);
-		revoke_path =
-			str_or_NULL(gfarm_ctxp->tls_ca_revocation_path);
-#undef str_or_NULL
 
 		/* cert/cert chain file */
 		if ((is_valid_string(cert_chain_file) == true) &&
@@ -1072,7 +1143,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			} else {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_warning(GFARM_MSG_UNFIXED,
-					"can't dulicate a cert filename: %s",
+					"Can't dulicate a cert filename: %s",
 					gfarm_error_string(ret));
 			}
 		}
@@ -1105,7 +1176,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			if (unlikely(prvkey_file == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"can't dulicate a private key "
+					"Can't dulicate a private key "
 					"filename: %s",
 						gfarm_error_string(ret));
 				goto bailout;
@@ -1113,25 +1184,6 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		} else {
 			gflog_error(GFARM_MSG_UNFIXED,
 				"A private key file is not specified.");
-			ret = GFARM_ERR_INVALID_ARGUMENT;
-			goto bailout;
-		}
-
-		/* CA certs store */
-		if ((is_valid_string(ca_path) == true) &&
-			((ret = is_valid_cert_store_dir(ca_path))
-			 == GFARM_ERR_NO_ERROR)) {
-			ca_path = strdup(ca_path);
-			if (unlikely(ca_path == NULL)) {
-				ret = GFARM_ERR_NO_MEMORY;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"can't dulicate a CA certs directory "
-					" name: %s", gfarm_error_string(ret));
-				goto bailout;
-			}
-		} else {
-			gflog_error(GFARM_MSG_UNFIXED,
-				"A CA cert store is not specified.");
 			ret = GFARM_ERR_INVALID_ARGUMENT;
 			goto bailout;
 		}
@@ -1145,7 +1197,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			if (unlikely(acceptable_ca_path == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"can't dulicate an acceptable CA "
+					"Can't dulicate an acceptable CA "
 					"certs directory nmae: %s",
 					gfarm_error_string(ret));
 				goto bailout;
@@ -1154,22 +1206,6 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			}
 		}
 
-		/* Revocation path (optional) */
-		if ((is_valid_string(revoke_path) == true) &&
-			((ret = is_valid_cert_store_dir(revoke_path)) ==
-			GFARM_ERR_NO_ERROR)) {
-			revoke_path = strdup(revoke_path);
-			if (unlikely(revoke_path == NULL)) {
-				ret = GFARM_ERR_NO_MEMORY;
-				gflog_tls_error(GFARM_MSG_UNFIXED,
-					"can't dulicate a revoked CA certs "
-					"directory nmae: %s",
-					gfarm_error_string(ret));
-				goto bailout;
-			} else if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
-				goto bailout;
-			}
-		}
 	}
 
 	/*
@@ -1191,12 +1227,49 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		if (unlikely(ciphersuites == NULL)) {
 			ret = GFARM_ERR_NO_MEMORY;
 			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"can't dulicate a CA cert store name: %s",
+				"Can't dulicate a CA cert store name: %s",
 				gfarm_error_string(ret));
 			goto bailout;
 		}
 	}
 
+	/*
+	 * Final parameter check
+	 */
+	if (role == TLS_ROLE_SERVER) {
+		if (unlikely(is_valid_string(ca_path) != true ||
+			(is_valid_string(cert_file) != true &&
+			is_valid_string(cert_chain_file) != true) ||
+			is_valid_string(prvkey_file) != true)) {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"As a TLS server, at least a CA ptth, a cert "
+				"file/cert chain file and a private key file "
+				"must be presented.");
+			goto bailout;
+		}
+	} else {
+		if (do_mutual_auth == true) {
+			if (unlikely(is_valid_string(ca_path) != true ||
+				(is_valid_string(cert_file) != true &&
+				is_valid_string(cert_chain_file) != true) ||
+				is_valid_string(prvkey_file) != true)) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"For TLS client auth, at least "
+					"a CA ptth, a cert file/cert chain "
+					"file and a private key file "
+					"must be presented.");
+				goto bailout;
+			}
+		} else {
+			if (unlikely(is_valid_string(ca_path) != true)) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"At least a CA path must be "
+					"specified.");
+				goto bailout;
+			}
+		}
+	}
+	
 	/*
 	 * TLS runtime initialize
 	 */
@@ -1239,72 +1312,103 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 
 		/*
 		 * Inhibit other than TLSv1.3
-		 *	NOTE:
-		 *		For environment not support setting
-		 *		min/max proto. to only TLS1.3 by
-		 *		SSL_CTX_set_{min|max}_proto_version(),
-		 *		we use SSL_CTX_set_options().
-		 *
-		 *	XXX FIXMR:
-		 *		Since the manual doesn't mention about
-		 *		failure return code, checking TLS
-		 *		errors instead checking return code.
 		 */
 		tls_runtime_flush_error();
-		(void)SSL_CTX_set_options(ssl_ctx,
-			(SSL_OP_NO_SSLv3 |
-			 SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 |
-			 SSL_OP_NO_TLSv1_2 |
-			 SSL_OP_NO_DTLSv1 | SSL_OP_NO_DTLSv1_2));
-		if (unlikely(tls_has_runtime_error() == true)) {
+		if (unlikely((osst = SSL_CTX_set_min_proto_version(ssl_ctx,
+					TLS1_3_VERSION)) != 1 ||
+			     (osst = SSL_CTX_set_max_proto_version(ssl_ctx,
+					TLS1_3_VERSION)) != 1)) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"Undocumented runtime failure.");
+					"Failed to set an SSL_CTX "
+					"only using TLSv1.3.");
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			goto bailout;
+		} else {
+			if ((osst = SSL_CTX_get_min_proto_version(ssl_ctx)) !=
+				TLS1_3_VERSION ||
+				(osst = SSL_CTX_get_max_proto_version(
+						ssl_ctx)) != TLS1_3_VERSION ) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to check if the SSL_CTX "
+					"only using TLSv1.3.");
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+				goto bailout;
+			}
+		}
+
+#define VERIFY_DEPTH	50
+		/*
+		 * XXX FIXME:
+		 *	50 is too much?
+		 */
+		if (role == TLS_ROLE_SERVER) {
+			if (do_mutual_auth == true) {
+				SSL_CTX_set_verify_depth(ssl_ctx,
+					VERIFY_DEPTH);
+#define SERVER_MUTUAL_VERIFY_FLAGS			     \
+	(SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | \
+	 SSL_VERIFY_CLIENT_ONCE)
+				SSL_CTX_set_verify(ssl_ctx,
+					SERVER_MUTUAL_VERIFY_FLAGS, NULL);
+#undef SERVER_MUTUAL_VERIFY_FLAGS
+			} else {
+				SSL_CTX_set_verify(ssl_ctx,
+					SSL_VERIFY_NONE, NULL);
+			}
+		} else {
+			SSL_CTX_set_verify_depth(ssl_ctx,
+				VERIFY_DEPTH);
+#define CLIENT_VERIFY_FLAGS					\
+	(SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
+			SSL_CTX_set_verify(ssl_ctx, CLIENT_VERIFY_FLAGS, NULL);
+#undef CLIENT_VERIFY_FLAGS
+			if (do_mutual_auth == true) {
+				SSL_CTX_set_post_handshake_auth(ssl_ctx, 1);
+			}
+		}
+
+		/*
+		 * Set ciphersuites
+		 */
+		tls_runtime_flush_error();
+		if (unlikely(SSL_CTX_set_ciphersuites(ssl_ctx,
+					ciphersuites) != 1)) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"Failed to set ciphersuites "
+				"\"%s\" to the SSL_CTX.",
+				ciphersuites);
+			/* ?? GFARM_ERRMSG_TLS_INVALID_CIPHER ?? */
 			ret = GFARM_ERR_INTERNAL_ERROR;
+			goto bailout;
+		} else {
+			/*
+			 * XXX FIXME:
+			 *	How one can check the ciphers are
+			 *	successfully set?
+			 */
+		}
+
+		/*
+		 * Set CA path
+		 */
+		ret = tls_set_ca_path(ssl_ctx, role,
+			ca_path, acceptable_ca_path);
+		if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
 			goto bailout;
 		}
 
-		if (need_self_cert == true) {
-			/*
-			 * Set CA store path
-			 */
-			ret = tls_set_ca_path(ssl_ctx, role,
-				ca_path, acceptable_ca_path);
+		/*
+		 * Set revocation path
+		 */
+		if (is_valid_string(revoke_path) == true) {
+			ret = tls_set_revoke_path(ssl_ctx,
+				revoke_path);
 			if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
 				goto bailout;
 			}
-
-			/*
-			 * Set ciphersuites
-			 */
-			tls_runtime_flush_error();
-			if (unlikely(SSL_CTX_set_ciphersuites(ssl_ctx,
-					ciphersuites) != 1)) {
-				gflog_error(GFARM_MSG_UNFIXED,
-					    "Failed to set ciphersuites "
-					    "\"%s\" to the SSL_CTX.",
-					    ciphersuites);
-				/* ?? GFARM_ERRMSG_TLS_INVALID_CIPHER ?? */
-				ret = GFARM_ERR_INTERNAL_ERROR;
-				goto bailout;
-			} else {
-				/*
-				 * XXX FIXME:
-				 *	How one can check the ciphers are
-				 *	successfully set?
-				 */
-			}
-
-			/*
-			 * Set revocation path
-			 */
-			if (is_valid_string(revoke_path) == true) {
-				ret = tls_set_revoke_path(ssl_ctx,
-					revoke_path);
-				if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
-					goto bailout;
-				}
-			}
-
+		}
+		
+		if (need_self_cert == true) {
 			/*
 			 * Load a cert into the SSL_CTX
 			 */
@@ -1354,6 +1458,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 				goto bailout;
 			}
 		}
+
 	} else {
 		gflog_tls_error(GFARM_MSG_UNFIXED,
 			"Failed to create a SSL_CTX.");
@@ -1415,6 +1520,8 @@ bailout:
 
 ok:
 	return (ret);
+
+#undef str_or_NULL
 }
 
 /*
@@ -1445,6 +1552,12 @@ tls_session_destroy_ctx(tls_session_ctx_t x)
 
 		free(x);
 	}
+}
+
+static inline gfarm_error_t
+tls_session_clear_ctx(tls_session_ctx_t x)
+{
+	return tls_session_clear_handle(x, true);
 }
 
 
@@ -1867,9 +1980,10 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl = NULL;
 
-	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL && buf == NULL &&
-			len < 0 && actual_io_bytes != NULL &&
-		   	ctx->got_fatal_ssl_error_ == false)) {
+	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL && buf != NULL &&
+			len > 0 && actual_io_bytes != NULL &&
+			ctx->is_verified_ == true &&
+			ctx->got_fatal_ssl_error_ == false)) {
 		int n;
 		int ssl_err;
 		bool continuable;
@@ -1892,12 +2006,17 @@ tls_session_read(tls_session_ctx_t ctx, void *buf, int len,
 		 */
 		ssl_err = SSL_get_error(ssl, 1);
 		continuable = tls_session_io_continuable(ssl_err, ctx, false);
-		if (likely(n > 0 && ssl_err == SSL_ERROR_NONE)) {
+		if (likely(n >= 0 && ssl_err == SSL_ERROR_NONE)) {
 			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			ctx->last_ssl_error_ = ssl_err;
 			*actual_io_bytes = n;
-			ctx->io_total_ += n;
-			ret = tls_session_update_key(ctx, n);
+			if (n > 0) {
+				ctx->io_total_ += n;
+				ret = tls_session_update_key(ctx, n);
+			} else {
+				ret = ctx->last_gfarm_error_ =
+					GFARM_ERR_NO_ERROR;
+			}
 		} else {
 			if (likely(continuable == true)) {
 				goto retry;
@@ -1923,9 +2042,10 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl = NULL;
 
-	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL && buf == NULL &&
-			len < 0 && actual_io_bytes != NULL &&
-		   	ctx->got_fatal_ssl_error_ == false)) {
+	if (likely(ctx != NULL && (ssl = ctx->ssl_) != NULL && buf != NULL &&
+			len > 0 && actual_io_bytes != NULL &&
+			ctx->is_verified_ == true &&
+			ctx->got_fatal_ssl_error_ == false)) {
 		int n;
 		int ssl_err;
 		bool continuable;
@@ -1948,12 +2068,17 @@ tls_session_write(tls_session_ctx_t ctx, const void *buf, int len,
 		 */
 		ssl_err = SSL_get_error(ssl, 1);
 		continuable = tls_session_io_continuable(ssl_err, ctx, false);
-		if (likely(n > 0 && ssl_err == SSL_ERROR_NONE)) {
+		if (likely(n >= 0 && ssl_err == SSL_ERROR_NONE)) {
 			ctx->last_gfarm_error_ = GFARM_ERR_NO_ERROR;
 			ctx->last_ssl_error_ = ssl_err;
 			*actual_io_bytes = n;
-			ctx->io_total_ += n;
-			ret = tls_session_update_key(ctx, n);
+			if (n > 0) {
+				ctx->io_total_ += n;
+				ret = tls_session_update_key(ctx, n);
+			} else {
+				ret = ctx->last_gfarm_error_ =
+					GFARM_ERR_NO_ERROR;
+			}
 		} else {
 			if (likely(continuable == true)) {
 				goto retry;
@@ -1995,11 +2120,13 @@ tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 	SSL *ssl;
 
-	if (likely((ctx != NULL) && ((ssl = ctx->ssl_) != NULL) &&
-			fd >= 0)) {
-		int st;
+	if (likely((ctx != NULL) && ((ssl = ctx->ssl_) != NULL))) {
+		int st = -1;
 
-		if (ctx->got_fatal_ssl_error_ == true) {
+		if (ctx->is_verified_ == false) {
+			ret = GFARM_ERR_NO_ERROR;			
+			goto done;
+		} else if (ctx->got_fatal_ssl_error_ == true) {
 			st = 1;
 		} else {
 			(void)SSL_get_error(ssl, 1);
@@ -2007,16 +2134,20 @@ tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
 		}
 		if (st == 1) {
 		do_close:
-			errno = 0;
-			if (do_close == true) {
-				st = close(fd);
+			if (fd >= 0) {
+				errno = 0;
+				if (do_close == true) {
+					st = close(fd);
+				} else {
+					st = shutdown(fd, SHUT_RDWR);
+				}
+				if (likely(close(fd) == 0)) {
+					ret = GFARM_ERR_NO_ERROR;
+				} else {
+					ret = gfarm_errno_to_error(errno);
+				}
 			} else {
-				st = shutdown(fd, SHUT_RDWR);
-			}
-			if (likely(close(fd) == 0)) {
 				ret = GFARM_ERR_NO_ERROR;
-			} else {
-				ret = gfarm_errno_to_error(errno);
 			}
 		} else if (st == 0) {
 			/*
@@ -2036,13 +2167,14 @@ tls_session_shutdown(tls_session_ctx_t ctx, int fd, bool do_close)
 		}
 	}
 
+done:
+	ctx->last_gfarm_error_ = ret;
 	if (likely(ret == GFARM_ERR_NO_ERROR)) {
 		ctx->got_fatal_ssl_error_ = true;
 		ctx->is_verified_ = false;
 		ctx->io_key_update_ = 0;
 		ctx->io_total_ = 0;
 	}
-
 
 	return (ret);
 }
