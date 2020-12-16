@@ -15,7 +15,9 @@
 #define BUF_SIZE 1024
 
 static int socketfd;
-static bool is_server = false, is_mutual_authentication = false;
+static bool is_server = false;
+static bool is_mutual_authentication = false;
+static bool is_debug = false;
 static char *portnum = "12345";
 static char *ipaddr = "127.0.0.1";
 
@@ -125,7 +127,8 @@ static inline void usage()
 		"\t--tls_key_file\n"
 		"\t--tls_key_update\n"
 		"\t--network_receive_timeout\n"
-		"\t--mutual_authentication\n");
+		"\t--mutual_authentication\n"
+		"\t--debug\n");
 	return;
 }
 
@@ -176,6 +179,10 @@ static inline bool string_to_int(const char *str, int *result, int base)
 	return ret;
 }
 
+static inline void gfarm_tls_test_ctxp_dumper()
+{
+}
+
 static inline int prologue(int argc, char **argv)
 {
 	int opt, longindex = 0, err, ret = 1;
@@ -197,6 +204,7 @@ static inline int prologue(int argc, char **argv)
 		{"tls_key_update",                 required_argument, 0,  8  },
 		{"network_receive_timeout",        required_argument, 0,  9  },
 		{"mutual_authentication",          no_argument,       0,  10 },
+		{"debug",                          no_argument,       0,  11 },
 		{0,                                0,                 0,  0  }
 	};
 
@@ -246,6 +254,9 @@ static inline int prologue(int argc, char **argv)
 		case 10:
 			is_mutual_authentication = true;
 			break;
+		case 11:
+			is_debug = true;
+			break;
 		case 's':
 			is_server = true;
 			break;
@@ -260,6 +271,10 @@ static inline int prologue(int argc, char **argv)
 			usage();
 			return ret;
 		}
+	}
+
+	if (is_debug) {
+		gfarm_tls_test_ctxp_dumper();
 	}
 
 	memset(&hints, 0, sizeof(hints));
