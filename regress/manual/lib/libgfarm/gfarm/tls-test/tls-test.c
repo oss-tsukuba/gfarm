@@ -15,9 +15,9 @@
 #define BUF_SIZE 1024
 
 static int socketfd;
+static int debug_level = 0;
 static bool is_server = false;
 static bool is_mutual_authentication = false;
-static bool is_debug = false;
 static char *portnum = "12345";
 static char *ipaddr = "127.0.0.1";
 
@@ -110,7 +110,8 @@ tty_passwd_callback(char *buf, int maxlen, int rwflag, void *u)
 	return (ret);
 }
 
-static inline void usage()
+static inline void
+usage()
 {
 	fprintf(stderr, "usage:\n"
 		"\t-h, --help\t\t\t\tthis help.\n"
@@ -128,11 +129,12 @@ static inline void usage()
 		"\t--tls_key_update\n"
 		"\t--network_receive_timeout\n"
 		"\t--mutual_authentication\n"
-		"\t--debug\n");
+		"\t--debug_level\n");
 	return;
 }
 
-static inline bool safe_strtol(const char *str, long *result, int base)
+static inline bool
+safe_strtol(const char *str, long *result, int base)
 {
 	bool ret = false;
 	long retval_strtol;
@@ -161,7 +163,8 @@ static inline bool safe_strtol(const char *str, long *result, int base)
 	return ret;
 }
 
-static inline bool string_to_int(const char *str, int *result, int base)
+static inline bool
+string_to_int(const char *str, int *result, int base)
 {
 	bool ret = false;
 	long retval_strtol;
@@ -179,36 +182,77 @@ static inline bool string_to_int(const char *str, int *result, int base)
 	return ret;
 }
 
-static inline void gfarm_tls_test_ctxp_dumper()
+static inline void
+ctx_dump()
 {
+	fprintf(stderr, "tls_cipher_suite: %s\n",
+			gfarm_ctxp->tls_cipher_suite);
+	fprintf(stderr, "tls_ca_certificate_path: %s\n",
+			gfarm_ctxp->tls_ca_certificate_path);
+	fprintf(stderr, "tls_ca_revocation_path: %s\n",
+			gfarm_ctxp->tls_ca_revocation_path);
+	fprintf(stderr, "tls_client_ca_certificate_path: %s\n",
+			gfarm_ctxp->tls_client_ca_certificate_path);
+	fprintf(stderr, "tls_client_ca_revocation_path: %s\n",
+			gfarm_ctxp->tls_client_ca_revocation_path);
+	fprintf(stderr, "tls_certificate_file: %s\n",
+			gfarm_ctxp->tls_certificate_file);
+	fprintf(stderr, "tls_certificate_chain_file: %s\n",
+			gfarm_ctxp->tls_certificate_chain_file);
+	fprintf(stderr, "tls_key_file: %s\n",
+			gfarm_ctxp->tls_key_file);
+	fprintf(stderr, "tls_key_update: %d\n",
+			gfarm_ctxp->tls_key_update);
+	fprintf(stderr, "network_receive_timeout: %d\n",
+			gfarm_ctxp->network_receive_timeout);
+
+	return;
 }
 
-static inline int prologue(int argc, char **argv)
+static inline int
+prologue(int argc, char **argv)
 {
 	int opt, longindex = 0, err, ret = 1;
 	uint16_t result;
 
 	struct option longopts[] = {
-		{"help",                           no_argument,       0, 'h' },
-		{"server",                         no_argument,       0, 's' },
-		{"adress",                         required_argument, 0, 'a' },
-		{"port",                           required_argument, 0, 'p' },
-		{"tls_cipher_suite",               required_argument, 0,  0  },
-		{"tls_ca_certificate_path",        required_argument, 0,  1  },
-		{"tls_ca_revocation_path",         required_argument, 0,  2  },
-		{"tls_client_ca_certificate_path", required_argument, 0,  3  },
-		{"tls_client_ca_revocation_path",  required_argument, 0,  4  },
-		{"tls_certificate_file",           required_argument, 0,  5  },
-		{"tls_certificate_chain_file",     required_argument, 0,  6  },
-		{"tls_key_file",                   required_argument, 0,  7  },
-		{"tls_key_update",                 required_argument, 0,  8  },
-		{"network_receive_timeout",        required_argument, 0,  9  },
-		{"mutual_authentication",          no_argument,       0,  10 },
-		{"debug",                          no_argument,       0,  11 },
-		{0,                                0,                 0,  0  }
+		{"help",
+			no_argument,       NULL, 'h' },
+		{"server",
+			no_argument,       NULL, 's' },
+		{"adress",
+			required_argument, NULL, 'a' },
+		{"port",
+			required_argument, NULL, 'p' },
+		{"tls_cipher_suite",
+			required_argument, NULL,  0  },
+		{"tls_ca_certificate_path",
+			required_argument, NULL,  1  },
+		{"tls_ca_revocation_path",
+			required_argument, NULL,  2  },
+		{"tls_client_ca_certificate_path",
+			required_argument, NULL,  3  },
+		{"tls_client_ca_revocation_path",
+			required_argument, NULL,  4  },
+		{"tls_certificate_file",
+			required_argument, NULL,  5  },
+		{"tls_certificate_chain_file",
+			required_argument, NULL,  6  },
+		{"tls_key_file",
+			required_argument, NULL,  7  },
+		{"tls_key_update",
+			required_argument, NULL,  8  },
+		{"network_receive_timeout",
+			required_argument, NULL,  9  },
+		{"mutual_authentication",
+			no_argument,       NULL,  10 },
+		{"debug_level",
+			required_argument, NULL,  11 },
+		{0,
+			0,                 0,     0  }
 	};
 
-	while ((opt = getopt_long_only(argc, argv, "sa:p:h", longopts,
+	while ((opt = getopt_long(argc, argv, "sa:p:h", longopts,
 					&longindex)) != -1) {
 		switch (opt) {
 		case 0:
@@ -255,7 +299,12 @@ static inline int prologue(int argc, char **argv)
 			is_mutual_authentication = true;
 			break;
 		case 11:
-			is_debug = true;
+			if (!(string_to_int(optarg,
+					&debug_level,
+					DECIMAL_NUMBER))) {
+				fprintf(stderr,
+				"fail to set debug_level.\n");
+			}
 			break;
 		case 's':
 			is_server = true;
@@ -273,8 +322,8 @@ static inline int prologue(int argc, char **argv)
 		}
 	}
 
-	if (is_debug) {
-		gfarm_tls_test_ctxp_dumper();
+	if (debug_level == 10) {
+		ctx_dump();
 	}
 
 	memset(&hints, 0, sizeof(hints));
@@ -297,7 +346,8 @@ static inline int prologue(int argc, char **argv)
 	return ret;
 }
 
-static inline int run_server_process()
+static inline int
+run_server_process()
 {
 	int acceptfd, ret = 1;
 	struct addrinfo clientaddr;
@@ -380,7 +430,8 @@ static inline int run_server_process()
 	return (ret);
 }
 
-static inline int run_server()
+static inline int
+run_server()
 {
 	int optval = 1, ret = 1;
 
@@ -408,7 +459,8 @@ static inline int run_server()
 	return ret;
 }
 
-static inline int run_client_process()
+static inline int
+run_client_process()
 {
 	int ret = 1;
 	char buf[BUF_SIZE];
@@ -471,7 +523,8 @@ done:
 	return ret;
 }
 
-static inline int run_client()
+static inline int
+run_client()
 {
 	int ret = 1;
 	if ((socketfd = socket(res->ai_family, res->ai_socktype, 0)) > -1) {
@@ -488,7 +541,8 @@ static inline int run_client()
 	return ret;
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	int ret = 1;
 
