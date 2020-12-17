@@ -185,26 +185,59 @@ string_to_int(const char *str, int *result, int base)
 static inline void
 ctx_dump()
 {
-	fprintf(stderr, "tls_cipher_suite: %s\n",
+	fprintf(stderr, "tls_cipher_suite: '%s'\n",
 			gfarm_ctxp->tls_cipher_suite);
-	fprintf(stderr, "tls_ca_certificate_path: %s\n",
+	fprintf(stderr, "tls_ca_certificate_path: '%s'\n",
 			gfarm_ctxp->tls_ca_certificate_path);
-	fprintf(stderr, "tls_ca_revocation_path: %s\n",
+	fprintf(stderr, "tls_ca_revocation_path: '%s'\n",
 			gfarm_ctxp->tls_ca_revocation_path);
-	fprintf(stderr, "tls_client_ca_certificate_path: %s\n",
+	fprintf(stderr, "tls_client_ca_certificate_path: '%s'\n",
 			gfarm_ctxp->tls_client_ca_certificate_path);
-	fprintf(stderr, "tls_client_ca_revocation_path: %s\n",
+	fprintf(stderr, "tls_client_ca_revocation_path: '%s'\n",
 			gfarm_ctxp->tls_client_ca_revocation_path);
-	fprintf(stderr, "tls_certificate_file: %s\n",
+	fprintf(stderr, "tls_certificate_file: '%s'\n",
 			gfarm_ctxp->tls_certificate_file);
-	fprintf(stderr, "tls_certificate_chain_file: %s\n",
+	fprintf(stderr, "tls_certificate_chain_file: '%s'\n",
 			gfarm_ctxp->tls_certificate_chain_file);
-	fprintf(stderr, "tls_key_file: %s\n",
+	fprintf(stderr, "tls_key_file: '%s'\n",
 			gfarm_ctxp->tls_key_file);
 	fprintf(stderr, "tls_key_update: %d\n",
 			gfarm_ctxp->tls_key_update);
 	fprintf(stderr, "network_receive_timeout: %d\n",
 			gfarm_ctxp->network_receive_timeout);
+
+	return;
+}
+
+static inline void
+getopt_arg_dump()
+{
+	fprintf(stderr, "is_server: %d\n", is_server);
+	fprintf(stderr, "address: '%s'\n", ipaddr);
+	fprintf(stderr, "portnum: '%s'\n", portnum);
+	fprintf(stderr, "tls_cipher_suite: '%s'\n",
+			gfarm_ctxp->tls_cipher_suite);
+	fprintf(stderr, "tls_ca_certificate_path: '%s'\n",
+			gfarm_ctxp->tls_ca_certificate_path);
+	fprintf(stderr, "tls_ca_revocation_path: '%s'\n",
+			gfarm_ctxp->tls_ca_revocation_path);
+	fprintf(stderr, "tls_client_ca_certificate_path: '%s'\n",
+			gfarm_ctxp->tls_client_ca_certificate_path);
+	fprintf(stderr, "tls_client_ca_revocation_path: '%s'\n",
+			gfarm_ctxp->tls_client_ca_revocation_path);
+	fprintf(stderr, "tls_certificate_file: '%s'\n",
+			gfarm_ctxp->tls_certificate_file);
+	fprintf(stderr, "tls_certificate_chain_file: '%s'\n",
+			gfarm_ctxp->tls_certificate_chain_file);
+	fprintf(stderr, "tls_key_file: '%s'\n",
+			gfarm_ctxp->tls_key_file);
+	fprintf(stderr, "tls_key_update: %d\n",
+			gfarm_ctxp->tls_key_update);
+	fprintf(stderr, "network_receive_timeout: %d\n",
+			gfarm_ctxp->network_receive_timeout);
+	fprintf(stderr, "mutual_authentication: %d\n",
+			is_mutual_authentication);
+	fprintf(stderr, "debug_level: %d\n", debug_level);
 
 	return;
 }
@@ -216,40 +249,23 @@ prologue(int argc, char **argv)
 	uint16_t result;
 
 	struct option longopts[] = {
-		{"help",
-			no_argument,       NULL, 'h' },
-		{"server",
-			no_argument,       NULL, 's' },
-		{"adress",
-			required_argument, NULL, 'a' },
-		{"port",
-			required_argument, NULL, 'p' },
-		{"tls_cipher_suite",
-			required_argument, NULL,  0  },
-		{"tls_ca_certificate_path",
-			required_argument, NULL,  1  },
-		{"tls_ca_revocation_path",
-			required_argument, NULL,  2  },
-		{"tls_client_ca_certificate_path",
-			required_argument, NULL,  3  },
-		{"tls_client_ca_revocation_path",
-			required_argument, NULL,  4  },
-		{"tls_certificate_file",
-			required_argument, NULL,  5  },
-		{"tls_certificate_chain_file",
-			required_argument, NULL,  6  },
-		{"tls_key_file",
-			required_argument, NULL,  7  },
-		{"tls_key_update",
-			required_argument, NULL,  8  },
-		{"network_receive_timeout",
-			required_argument, NULL,  9  },
-		{"mutual_authentication",
-			no_argument,       NULL,  10 },
-		{"debug_level",
-			required_argument, NULL,  11 },
-		{0,
-			0,                 0,     0  }
+		{"help", no_argument, NULL, 'h'},
+		{"server", no_argument, NULL, 's'},
+		{"adress", required_argument, NULL, 'a'},
+		{"port", required_argument, NULL, 'p'},
+		{"tls_cipher_suite", required_argument, NULL, 0},
+		{"tls_ca_certificate_path", required_argument, NULL, 1},
+		{"tls_ca_revocation_path", required_argument, NULL, 2},
+		{"tls_client_ca_certificate_path", required_argument, NULL, 3},
+		{"tls_client_ca_revocation_path", required_argument, NULL, 4},
+		{"tls_certificate_file", required_argument, NULL, 5},
+		{"tls_certificate_chain_file", required_argument, NULL, 6},
+		{"tls_key_file", required_argument, NULL, 7},
+		{"tls_key_update", required_argument, NULL, 8},
+		{"network_receive_timeout", required_argument, NULL, 9},
+		{"mutual_authentication", no_argument, NULL, 10},
+		{"debug_level", required_argument, NULL, 11},
+		{NULL, 0, NULL, 0}
 	};
 
 	while ((opt = getopt_long(argc, argv, "sa:p:h", longopts,
@@ -322,8 +338,10 @@ prologue(int argc, char **argv)
 		}
 	}
 
-	if (debug_level == 10) {
+	if (debug_level == 10000) {
 		ctx_dump();
+	} else if (debug_level == 10001) {
+		getopt_arg_dump();
 	}
 
 	memset(&hints, 0, sizeof(hints));
