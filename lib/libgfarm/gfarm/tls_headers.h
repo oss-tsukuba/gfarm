@@ -102,6 +102,9 @@ struct tls_test_ctx_struct {
 	char *tls_certificate_chain_file;
 	char *tls_key_file;
 	int tls_key_update;
+#ifdef HAVE_CTXP_BUILD_CHAIN
+	int tls_build_certificate_chain;
+#endif /* HAVE_CTXP_BUILD_CHAIN */
 	int network_receive_timeout;
 };
 typedef struct tls_test_ctx_struct *tls_test_ctx_p;
