@@ -18,6 +18,7 @@ static int socketfd;
 static int debug_level = 0;
 static bool is_server = false;
 static bool is_mutual_authentication = false;
+static bool is_verify_only = false;
 static char *portnum = "12345";
 static char *ipaddr = "127.0.0.1";
 
@@ -129,6 +130,7 @@ usage()
 		"\t--tls_key_update\n"
 		"\t--network_receive_timeout\n"
 		"\t--mutual_authentication\n"
+		"\t--verify_only\n"
 		"\t--debug_level\n");
 	return;
 }
@@ -237,6 +239,7 @@ getopt_arg_dump()
 			gfarm_ctxp->network_receive_timeout);
 	fprintf(stderr, "mutual_authentication: %d\n",
 			is_mutual_authentication);
+	fprintf(stderr, "verify_only: %d\n", is_verify_only);
 	fprintf(stderr, "debug_level: %d\n", debug_level);
 
 	return;
@@ -265,6 +268,7 @@ prologue(int argc, char **argv)
 		{"network_receive_timeout", required_argument, NULL, 9},
 		{"mutual_authentication", no_argument, NULL, 10},
 		{"debug_level", required_argument, NULL, 11},
+		{"verify_only", no_argument, NULL, 12},
 		{NULL, 0, NULL, 0}
 	};
 
@@ -321,6 +325,9 @@ prologue(int argc, char **argv)
 				fprintf(stderr,
 				"fail to set debug_level.\n");
 			}
+			break;
+		case 12:
+			is_verify_only = true;
 			break;
 		case 's':
 			is_server = true;
@@ -390,16 +397,28 @@ run_server_process()
 					gfarm_error_string(gerr));
 				break;
 			}
-			fprintf(stderr, "TLS session established.\n");
-			
+			if (debug_level > 0) {
+				fprintf(stderr, "TLS session established.\n");
+			}
+
+			if (is_verify_only) {
+				return 0;
+			}
+	
 			gerr = tls_session_read(tls_ctx, buf, sizeof(buf),
 					&r_size);
 			if (gerr == GFARM_ERR_NO_ERROR) {
 				if (r_size > 0) {
 					buf[r_size] = '\0';
-					fprintf(stderr, "got: '%s'\n", buf);
+					if (debug_level > 0) {
+						fprintf(stderr,
+							"got: '%s'\n", buf);
+					}
 				} else if (r_size == 0) {
-					fprintf(stderr, "got 0 byte.\n");
+					if (debug_level > 0) {
+						fprintf(stderr,
+							"got 0 byte.\n");
+					}
 					goto teardown;
 				}
 			} else {
@@ -494,8 +513,15 @@ run_client_process()
 				gfarm_error_string(gerr));
 		return (ret);
 	}
-	fprintf(stderr, "TLS session established.\n");
-	
+	if (debug_level > 0) {
+		fprintf(stderr, "TLS session established.\n");
+	}
+
+	if (is_verify_only) {
+		sleep(1);
+		return 0;
+	}
+
 	errno = 0;
 	if (fgets(buf, sizeof(buf) -1, stdin) != NULL) {
 		r_size = strlen(buf);
@@ -517,7 +543,7 @@ run_client_process()
 		gerr = tls_session_read(tls_ctx, buf, sizeof(buf), &r_size);
 		if (gerr == GFARM_ERR_NO_ERROR && r_size == w_size) {
 			buf[r_size] = '\0';
-			fprintf(stdout, "got reply: '%s'\n", buf);
+			fprintf(stdout, "%s\n", buf);
 			fflush(stdout);
 			ret = 0;
 			goto teardown;
@@ -533,7 +559,7 @@ run_client_process()
 					gfarm_error_string(gerr));
 			}
 		}
-	} else {
+	} else if (debug_level > 0) {
 		fprintf(stderr, "fgets: Can't read string.\n");
 	}
 
