@@ -19,6 +19,7 @@ static int debug_level = 0;
 static bool is_server = false;
 static bool is_mutual_authentication = false;
 static bool is_verify_only = false;
+static bool is_once_loop = false;
 static char *portnum = "12345";
 static char *ipaddr = "127.0.0.1";
 
@@ -131,6 +132,7 @@ usage()
 		"\t--network_receive_timeout\n"
 		"\t--mutual_authentication\n"
 		"\t--verify_only\n"
+		"\t--once\n"
 		"\t--debug_level\n");
 	return;
 }
@@ -240,6 +242,7 @@ getopt_arg_dump()
 	fprintf(stderr, "mutual_authentication: %d\n",
 			is_mutual_authentication);
 	fprintf(stderr, "verify_only: %d\n", is_verify_only);
+	fprintf(stderr, "once: %d\n", is_once_loop);
 	fprintf(stderr, "debug_level: %d\n", debug_level);
 
 	return;
@@ -269,6 +272,7 @@ prologue(int argc, char **argv)
 		{"mutual_authentication", no_argument, NULL, 10},
 		{"debug_level", required_argument, NULL, 11},
 		{"verify_only", no_argument, NULL, 12},
+		{"once", no_argument, NULL, 13},
 		{NULL, 0, NULL, 0}
 	};
 
@@ -329,6 +333,9 @@ prologue(int argc, char **argv)
 		case 12:
 			is_verify_only = true;
 			break;
+		case 13:
+			is_once_loop = true;
+			break;
 		case 's':
 			is_server = true;
 			break;
@@ -377,8 +384,12 @@ run_server_process()
 	int acceptfd, ret = 1;
 	struct addrinfo clientaddr;
 	clientaddr.ai_addrlen = sizeof(clientaddr.ai_addr);
+	bool is_loop = true;
 
-	while (true) {
+	while (is_loop) {
+		if (is_once_loop) {
+			is_loop = false;
+		}
 		errno = 0;
 		if ((acceptfd = accept(socketfd,
 					clientaddr.ai_addr,
