@@ -4,6 +4,7 @@
 
 #define IN_TLS_CORE
 #define TLS_TEST
+#define HAVE_CTXP_BUILD_CHAIN
 
 #include "tls_headers.h"
 #include "tls_funcs.h"
