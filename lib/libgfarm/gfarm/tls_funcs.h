@@ -1457,6 +1457,38 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
 				goto bailout;
 			}
+
+			/*
+			 * XXX FIXME:
+			 *	Check prvkey in SSL_CTX by 
+			 *	SSL_CTX_check_private_key
+			 */
+			tls_runtime_flush_error();
+			osst = SSL_CTX_check_private_key(ssl_ctx);
+			if (unlikely(osst != 1)) {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Wrong private key file for the "
+					"current certificate.");
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+				goto bailout;
+			}
+
+#if defined(TLS_TEST) && defined(HAVE_CTXP_BUILD_CHAIN)
+			/*
+			 * OK, one more magic.
+			 */
+			if (gfarm_ctxp->tls_build_certificate_chain == 1) {
+				tls_runtime_flush_error();
+				osst = SSL_CTX_build_cert_chain(ssl_ctx, 0);
+				if (unlikely(osst != 1)) {
+					gflog_tls_error(GFARM_MSG_UNFIXED,
+						"Can't build a certificate "
+						"chain.");
+					ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+					goto bailout;
+				}
+			}
+#endif /* TLS_TEST && HAVE_CTXP_BUILD_CHAIN */
 		}
 
 	} else {
