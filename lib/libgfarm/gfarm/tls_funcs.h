@@ -1020,6 +1020,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	char *acceptable_ca_path = NULL;
 	char *revoke_path = NULL;
 	char *ciphersuites = NULL;
+	char *tmp = NULL;
 
 	char *cert_to_use = NULL;
 	EVP_PKEY *prvkey = NULL;
@@ -1064,12 +1065,11 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	 * ca_path is mandatory always.
 	 */
 	/* CA certs path */
-	ca_path =
-		str_or_NULL(gfarm_ctxp->tls_ca_certificate_path);
-	if ((is_valid_string(ca_path) == true) &&
-		((ret = is_valid_cert_store_dir(ca_path))
+	tmp = str_or_NULL(gfarm_ctxp->tls_ca_certificate_path);
+	if ((is_valid_string(tmp) == true) &&
+		((ret = is_valid_cert_store_dir(tmp))
 		== GFARM_ERR_NO_ERROR)) {
-		ca_path = strdup(ca_path);
+		ca_path = strdup(tmp);
 		if (unlikely(ca_path == NULL)) {
 			ret = GFARM_ERR_NO_MEMORY;
 			gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -1078,31 +1078,40 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 			goto bailout;
 		}
 	} else {
-		gflog_error(GFARM_MSG_UNFIXED,
-			"A CA cert path is not specified.");
-		ret = GFARM_ERR_INVALID_ARGUMENT;
+		if (tmp == NULL) {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"A CA cert path is not specified.");
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+		} else {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Failed to check a CA certs directory %s: %s",
+				tmp, gfarm_error_string(ret));
+		}
 		goto bailout;
 	}
 
 	/* Revocation path (optional) */
-	revoke_path =
-		str_or_NULL(gfarm_ctxp->tls_ca_revocation_path);
-	if ((is_valid_string(revoke_path) == true) &&
-		((ret = is_valid_cert_store_dir(revoke_path)) ==
+	tmp = str_or_NULL(gfarm_ctxp->tls_ca_revocation_path);
+	if ((is_valid_string(tmp) == true) &&
+		((ret = is_valid_cert_store_dir(tmp)) ==
 		GFARM_ERR_NO_ERROR)) {
-		revoke_path = strdup(revoke_path);
+		revoke_path = strdup(tmp);
 		if (unlikely(revoke_path == NULL)) {
 			ret = GFARM_ERR_NO_MEMORY;
 			gflog_tls_error(GFARM_MSG_UNFIXED,
 				"Can't dulicate a revoked CA certs "
-				"directory nmae: %s",
+				"directory name: %s",
 				gfarm_error_string(ret));
 			goto bailout;
-		} else if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
-			goto bailout;
+		}
+	} else {
+		if (tmp != NULL) {
+			gflog_tls_warning(GFARM_MSG_UNFIXED,
+				"Failed to check revoked certs directory "
+				"%s: %s", tmp, gfarm_error_string(ret));
 		}
 	}
-	
+
 	/*
 	 * Self certificate check
 	 */
@@ -1110,20 +1119,21 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		need_self_cert = true;
 	}
 	if (need_self_cert == true) {
-		cert_file =
+		char *tmp_cert_file =
 			str_or_NULL(gfarm_ctxp->tls_certificate_file);
-		cert_chain_file =
+		char *tmp_cert_chain_file =
 			str_or_NULL(gfarm_ctxp->tls_certificate_chain_file);
-		prvkey_file =
+		char *tmp_prvkey_file =
 			str_or_NULL(gfarm_ctxp->tls_key_file);
-		acceptable_ca_path =
-		str_or_NULL(gfarm_ctxp->tls_client_ca_certificate_path);
+		char *tmp_acceptable_ca_path =
+			str_or_NULL(
+				gfarm_ctxp->tls_client_ca_certificate_path);
 
 		/* cert/cert chain file */
-		if ((is_valid_string(cert_chain_file) == true) &&
-			((ret = is_file_readable(-1, cert_chain_file))
+		if ((is_valid_string(tmp_cert_chain_file) == true) &&
+			((ret = is_file_readable(-1, tmp_cert_chain_file))
 			== GFARM_ERR_NO_ERROR)) {
-			cert_chain_file = strdup(cert_chain_file);
+			cert_chain_file = strdup(tmp_cert_chain_file);
 			if (likely(cert_chain_file != NULL)) {
 				has_cert_chain_file = true;
 			} else {
@@ -1134,10 +1144,10 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 					gfarm_error_string(ret));
 			}
 		}
-		if ((is_valid_string(cert_file) == true) &&
-			((ret = is_file_readable(-1, cert_file))
+		if ((is_valid_string(tmp_cert_file) == true) &&
+			((ret = is_file_readable(-1, tmp_cert_file))
 			== GFARM_ERR_NO_ERROR)) {
-			cert_file = strdup(cert_file);
+			cert_file = strdup(tmp_cert_file);
 			if (likely(cert_file != NULL)) {
 				has_cert_file = true;
 			} else {
@@ -1171,14 +1181,14 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		}
 
 		/* Private key */
-		if (likely(is_valid_string(prvkey_file) == true)) {
-			prvkey_file = strdup(prvkey_file);
+		if (likely(is_valid_string(tmp_prvkey_file) == true)) {
+			prvkey_file = strdup(tmp_prvkey_file);
 			if (unlikely(prvkey_file == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_error(GFARM_MSG_UNFIXED,
 					"Can't dulicate a private key "
 					"filename: %s",
-						gfarm_error_string(ret));
+					gfarm_error_string(ret));
 				goto bailout;
 			}
 		} else {
@@ -1190,10 +1200,11 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 
 		/* Acceptable CA cert path (server only & optional) */
 		if (role == TLS_ROLE_SERVER &&
-			(is_valid_string(acceptable_ca_path) == true) &&
-			((ret = is_valid_cert_store_dir(acceptable_ca_path)) ==
+			(is_valid_string(tmp_acceptable_ca_path) == true) &&
+			((ret = is_valid_cert_store_dir(
+					tmp_acceptable_ca_path)) ==
 			 GFARM_ERR_NO_ERROR)) {
-			acceptable_ca_path = strdup(acceptable_ca_path);
+			acceptable_ca_path = strdup(tmp_acceptable_ca_path);
 			if (unlikely(acceptable_ca_path == NULL)) {
 				ret = GFARM_ERR_NO_MEMORY;
 				gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -1201,11 +1212,16 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 					"certs directory nmae: %s",
 					gfarm_error_string(ret));
 				goto bailout;
-			} else if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
-				goto bailout;
+			}
+		} else if (role == TLS_ROLE_SERVER) {
+			if (tmp_acceptable_ca_path != NULL) {
+				gflog_tls_warning(GFARM_MSG_UNFIXED,
+					"Failed to check server acceptable "
+					"certs directory %s: %s",
+					tmp_acceptable_ca_path,
+					gfarm_error_string(ret));
 			}
 		}
-
 	}
 
 	/*
@@ -1215,15 +1231,15 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 	if (is_valid_string(gfarm_ctxp->tls_cipher_suite) == true) {
 		if ((ret = is_ciphersuites_ok(gfarm_ctxp->tls_cipher_suite)
 			== GFARM_ERR_NO_ERROR)) {
-			ciphersuites = gfarm_ctxp->tls_cipher_suite;
+			tmp = gfarm_ctxp->tls_cipher_suite;
 		} else {
 			goto bailout;
 		}
 	} else {
-		ciphersuites = TLS13_DEFAULT_CIPHERSUITES;
+		tmp = TLS13_DEFAULT_CIPHERSUITES;
 	}
-	if (ciphersuites != NULL) {
-		ciphersuites = strdup(ciphersuites);
+	if (tmp != NULL) {
+		ciphersuites = strdup(tmp);
 		if (unlikely(ciphersuites == NULL)) {
 			ret = GFARM_ERR_NO_MEMORY;
 			gflog_tls_error(GFARM_MSG_UNFIXED,
