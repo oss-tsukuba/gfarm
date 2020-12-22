@@ -191,12 +191,15 @@ struct tls_session_ctx_struct {
 
 	tls_role_t role_;
 	bool do_mutual_auth_;
+	int n_cert_chain_;
 	bool is_verified_;
 	size_t io_total_;	/* How many bytes transmitted */
 	size_t io_key_update_;	/* KeyUpdate water level (bytes) */
 	ssize_t keyupd_thresh_;	/* KeyUpdate threshold (bytes) */
-	
+
 	SSL_CTX *ssl_ctx_;	/* API alloc'd */
+	STACK_OF(X509_NAME) *trusted_certs_;
+				/* API alloc'd */
 	EVP_PKEY *prvkey_;	/* API alloc'd */
 	char *peer_dn_;		/* malloc'd */
 

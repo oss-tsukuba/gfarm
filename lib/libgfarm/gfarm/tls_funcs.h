@@ -740,8 +740,45 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 	 *	SSL_CTX_set_client_CA_list(ctx, ca_list);
 	 */
 
+	/*
+	 * NOTE: And the above won't works
+	 *
+	 *	What we do is:
+	 *
+	 *	Making the ca_list and compare the x509_NAME in
+	 *	ca_list with peer cert one by one in verify callback
+	 *	func, for both the client and the server.
+	 *
+	 *	And, in case we WON'T do this, it is going to be a
+	 *	massive security problem since:
+	 *
+	 *	1) Sendig the CA list from server to client is easily
+	 *	ignored by client side. E.g.) Apache 2.4 sends the CA
+	 *	list in TLSv1.3 session, OpenSSL s_client ignores it
+	 *	and send a complet chained cert, the server accepts it
+	 *	and returns "200 OK."
+	 *
+	 *	2) Futhere more, any clients can send a complete
+	 *	chained certificate and servers won't reject it if the
+	 *	server has the root CA cert of the given chain in CA
+	 *	cert path.
+	 *
+	 *	3) In Gfarm, clients' end entity CN are the key for
+	 *	authorization and the CN could be easily acquireable
+	 *	by social hacking. If a malcious one somehow creates
+	 *	an intermediate CA which root CA is in servers' CA
+	 *	cert path, a cert having the CN could be forgeable for
+	 *	impersonation.
+	 */
+
 	if (likely(ssl_ctx != NULL && is_valid_string(ca_path) == true)) {
 		tls_runtime_flush_error();
+		/*
+		 * XXX FIXME:
+		 *
+		 *	IMO it would be nice to use
+		 *	SSL_CTX_set{0|1}_chain_cert_store() for this.
+		 */
 		if (unlikely(SSL_CTX_load_verify_locations(ssl_ctx,
 				NULL, ca_path) == 0)) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
