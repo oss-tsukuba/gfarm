@@ -717,7 +717,8 @@ done:
 
 static inline gfarm_error_t
 tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
-	const char *ca_path, const char* acceptable_ca_path)
+	const char *ca_path, const char* acceptable_ca_path,
+	STACK_OF(X509_NAME) **trust_ca_list)
 {
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
 
@@ -741,7 +742,8 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 	 */
 
 	/*
-	 * NOTE: And the above won't works
+	 * NOTE: And the above won't works since the CA list that
+	 *	server sent is just an advisory.
 	 *
 	 *	What we do is:
 	 *
@@ -754,9 +756,10 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 	 *
 	 *	1) Sendig the CA list from server to client is easily
 	 *	ignored by client side. E.g.) Apache 2.4 sends the CA
-	 *	list in TLSv1.3 session, OpenSSL s_client ignores it
-	 *	and send a complet chained cert, the server accepts it
-	 *	and returns "200 OK."
+	 *	list in TLSv1.3 session, OpenSSL 1.1.1 s_client
+	 *	ignores it and send a complet chained cert which
+	 *	includes any certs not in the CA list sent by the
+	 *	server, the server accepts it and returns "200 OK."
 	 *
 	 *	2) Futhere more, any clients can send a complete
 	 *	chained certificate and servers won't reject it if the
@@ -771,14 +774,9 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 	 *	impersonation.
 	 */
 
+#ifndef HAVE_OPENSSL_3_0
 	if (likely(ssl_ctx != NULL && is_valid_string(ca_path) == true)) {
 		tls_runtime_flush_error();
-		/*
-		 * XXX FIXME:
-		 *
-		 *	IMO it would be nice to use
-		 *	SSL_CTX_set{0|1}_chain_cert_store() for this.
-		 */
 		if (unlikely(SSL_CTX_load_verify_locations(ssl_ctx,
 				NULL, ca_path) == 0)) {
 			gflog_tls_error(GFARM_MSG_UNFIXED,
@@ -838,6 +836,98 @@ tls_set_ca_path(SSL_CTX *ssl_ctx, tls_role_t role,
 	}
 
 done:
+	
+#else
+	X509_STORE *ch = NULL;
+	X509_STORE *ve = NULL;
+	const char *ve_path = (is_valid_string(acceptable_ca_path) == true) ?
+		acceptable_ca_path : ca_path;
+
+	if (trust_ca_list != NULL) {
+		*trust_ca_list = NULL;
+	}
+
+	/* chain */
+	tls_runtime_flush_error();
+	if (likely(ssl_ctx != NULL && is_valid_string(ca_path) == true &&
+		(ch = X509_STORE_new()) != NULL)) {
+		tls_runtime_flush_error();
+		if (likely(X509_STORE_load_path(ch, ca_path) == 1)) {
+			tls_runtime_flush_error();
+			if (likely(SSL_CTX_set0_chain_cert_store(
+					ssl_ctx, ch) == 1)) {
+				ret = GFARM_ERR_NO_ERROR;
+			} else {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to set a CA chain path to a "
+					"SSL_CTX");
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+				goto done;
+			}
+		} else {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Failed to load a CA cnain path");
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			goto done;
+		}
+	} else {
+		if (ch == NULL) {
+			ret = GFARM_ERR_NO_MEMORY;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't allocate a X509_STORE: %s",
+				gfarm_error_string(ret));
+		} else {
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+		}
+		goto done;
+	}
+		
+	/* verify */
+	tls_runtime_flush_error();
+	if (likely(ssl_ctx != NULL && is_valid_string(ca_path) == true &&
+		(ve = X509_STORE_new()) != NULL)) {
+		tls_runtime_flush_error();
+		if (likely(X509_STORE_load_path(ve, ve_path) == 1)) {
+			tls_runtime_flush_error();
+			if (likely(SSL_CTX_set0_verify_cert_store(
+					ssl_ctx, ve) == 1)) {
+				ret = GFARM_ERR_NO_ERROR;
+			} else {
+				gflog_tls_error(GFARM_MSG_UNFIXED,
+					"Failed to set a CA verify path to a "
+					"SSL_CTX");
+				ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+				goto done;
+			}
+		} else {
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Failed to load a CA verify path");
+			ret = GFARM_ERR_TLS_RUNTIME_ERROR;
+			goto done;
+		}
+	} else {
+		if (ch == NULL) {
+			ret = GFARM_ERR_NO_MEMORY;
+			gflog_tls_error(GFARM_MSG_UNFIXED,
+				"Can't allocate a X509_STORE: %s",
+				gfarm_error_string(ret));
+		} else {
+			ret = GFARM_ERR_INVALID_ARGUMENT;
+		}
+		goto done;
+	}
+
+done:
+	if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
+		if (ch != NULL) {
+			X509_STORE_free(ch);
+		}
+		if (ve != NULL) {
+			X509_STORE_free(ve);
+		}
+	}
+#endif /* ! HAVE_OPENSSL_3_0 */
+	
 	return (ret);
 }
 
@@ -1445,7 +1535,7 @@ tls_session_create_ctx(tls_session_ctx_t *ctxptr,
 		 * Set CA path
 		 */
 		ret = tls_set_ca_path(ssl_ctx, role,
-			ca_path, acceptable_ca_path);
+			ca_path, acceptable_ca_path, NULL);
 		if (unlikely(ret != GFARM_ERR_NO_ERROR)) {
 			goto bailout;
 		}

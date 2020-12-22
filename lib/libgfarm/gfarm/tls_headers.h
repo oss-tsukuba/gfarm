@@ -34,6 +34,7 @@
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
+#include <openssl/x509_vfy.h>
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
