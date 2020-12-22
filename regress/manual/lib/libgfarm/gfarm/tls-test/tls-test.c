@@ -20,7 +20,7 @@ static int debug_level = 0;
 static bool is_server = false;
 static bool is_mutual_authentication = false;
 static bool is_verify_only = false;
-static bool is_once_loop = false;
+static bool is_once = false;
 static char *portnum = "12345";
 static char *ipaddr = "127.0.0.1";
 
@@ -249,7 +249,7 @@ getopt_arg_dump()
 	fprintf(stderr, "mutual_authentication: %d\n",
 			is_mutual_authentication);
 	fprintf(stderr, "verify_only: %d\n", is_verify_only);
-	fprintf(stderr, "once: %d\n", is_once_loop);
+	fprintf(stderr, "once: %d\n", is_once);
 	fprintf(stderr, "debug_level: %d\n", debug_level);
 
 	return;
@@ -262,25 +262,25 @@ prologue(int argc, char **argv)
 	uint16_t result;
 
 	struct option longopts[] = {
-		{"help", no_argument, NULL, 'h'},
-		{"server", no_argument, NULL, 's'},
-		{"adress", required_argument, NULL, 'a'},
-		{"port", required_argument, NULL, 'p'},
-		{"tls_cipher_suite", required_argument, NULL, 0},
-		{"tls_ca_certificate_path", required_argument, NULL, 1},
-		{"tls_ca_revocation_path", required_argument, NULL, 2},
-		{"tls_client_ca_certificate_path", required_argument, NULL, 3},
-		{"tls_client_ca_revocation_path", required_argument, NULL, 4},
-		{"tls_certificate_file", required_argument, NULL, 5},
-		{"tls_certificate_chain_file", required_argument, NULL, 6},
-		{"tls_key_file", required_argument, NULL, 7},
-		{"tls_key_update", required_argument, NULL, 8},
-		{"network_receive_timeout", required_argument, NULL, 9},
-		{"mutual_authentication", no_argument, NULL, 10},
-		{"debug_level", required_argument, NULL, 11},
-		{"verify_only", no_argument, NULL, 12},
-		{"once", no_argument, NULL, 13},
-		{"build_chain", no_argument, NULL, 14},
+		{"help", 0, NULL, 'h'},
+		{"server", 0, NULL, 's'},
+		{"adress", 1, NULL, 'a'},
+		{"port", 1, NULL, 'p'},
+		{"tls_cipher_suite", 1, NULL, 0},
+		{"tls_ca_certificate_path", 1, NULL, 1},
+		{"tls_ca_revocation_path", 1, NULL, 2},
+		{"tls_client_ca_certificate_path", 1, NULL, 3},
+		{"tls_client_ca_revocation_path", 1, NULL, 4},
+		{"tls_certificate_file", 1, NULL, 5},
+		{"tls_certificate_chain_file", 1, NULL, 6},
+		{"tls_key_file", 1, NULL, 7},
+		{"tls_key_update", 1, NULL, 8},
+		{"network_receive_timeout", 1, NULL, 9},
+		{"mutual_authentication", 0, NULL, 10},
+		{"debug_level", 1, NULL, 11},
+		{"verify_only", 0, NULL, 12},
+		{"once", 0, NULL, 13},
+		{"build_chain", 0, NULL, 14},
 		{NULL, 0, NULL, 0}
 	};
 
@@ -340,9 +340,10 @@ prologue(int argc, char **argv)
 			break;
 		case 12:
 			is_verify_only = true;
+			is_once = true;
 			break;
 		case 13:
-			is_once_loop = true;
+			is_once = true;
 			break;
 		case 14:
 			gfarm_ctxp->tls_build_certificate_chain = 1;
@@ -395,12 +396,8 @@ run_server_process()
 	int acceptfd, ret = 1;
 	struct addrinfo clientaddr;
 	clientaddr.ai_addrlen = sizeof(clientaddr.ai_addr);
-	bool is_loop = true;
 
-	while (is_loop) {
-		if (is_once_loop) {
-			is_loop = false;
-		}
+	while (true) {
 		errno = 0;
 		if ((acceptfd = accept(socketfd,
 					clientaddr.ai_addr,
@@ -424,15 +421,8 @@ run_server_process()
 			}
 
 			if (is_verify_only) {
-				gerr = tls_session_clear_ctx(tls_ctx);
-				if (gerr == GFARM_ERR_NO_ERROR) {
-					ret = 0;
-				} else {
-					gflog_tls_error(GFARM_MSG_UNFIXED,
-						"SSL reset failure: %s",
-						gfarm_error_string(gerr));
-				}
-				return ret;
+				ret = 0;
+				goto loop_end;
 			}
 	
 			gerr = tls_session_read(tls_ctx, buf, sizeof(buf),
@@ -459,7 +449,7 @@ run_server_process()
 				gerr = tls_session_clear_ctx(tls_ctx);
 				if (gerr == GFARM_ERR_NO_ERROR || 
 					r_size == 0) {
-					continue;
+					goto loop_end;
 				} else {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"SSL reset failure: %s",
@@ -480,7 +470,7 @@ run_server_process()
 			teardown2:
 				gerr = tls_session_clear_ctx(tls_ctx);
 				if (gerr == GFARM_ERR_NO_ERROR) {
-					continue;
+					goto loop_end;
 				} else {
 					gflog_tls_error(GFARM_MSG_UNFIXED,
 						"SSL reset failure: %s",
@@ -490,6 +480,11 @@ run_server_process()
 			}
 		} else {
 			perror("accept");
+			break;
+		}
+
+	loop_end:
+		if (is_once) {
 			break;
 		}
 	}
@@ -548,15 +543,9 @@ run_client_process()
 	}
 
 	if (is_verify_only) {
-		gerr = tls_session_clear_ctx(tls_ctx);
-		if (gerr == GFARM_ERR_NO_ERROR) {
-			ret = 0;
-		} else {
-			gflog_tls_error(GFARM_MSG_UNFIXED,
-				"SSL reset failure: %s",
-				gfarm_error_string(gerr));
-		}
-		return ret;
+		ret = 0;
+		sleep(1);
+		goto done;
 	}
 
 	errno = 0;
